@@ -16,7 +16,7 @@ a draft, when it gets feedback, and when it delivers.
 | 2 | The Lowest Note in the Universe | in production | session_01WcqqR7 (2026-10-21) | Claimed; building in `projects/lowest_note/` | - |
 | 4 | The Staircase That Never Ends | idea | - | - | - |
 | 6 | One String, Every Note | idea | - | - | - |
-| 7 | Mozart's Dice Waltz | idea | - | - | - |
+| 7 | Mozart's Dice Waltz | approved | ideas chat | Fully developed (beat sheet + sources in backlog). Hook corrected to 759 trillion. Verify column harmony from the table before building the climax | - |
 | 8 | Dinosaur Brass Band | idea | - | top-3 pick from the original research | - |
 | 9 | The 639-Year Song | idea | - | Copyright: don't use Cage's actual notes (still in copyright); use a generic held chord | - |
 | 10 | One Melody, 100 Years of Speakers | idea | - | - | - |
@@ -87,10 +87,57 @@ with the counter panel inside the sharp band.
 - **Science:** a string vibrates in 1, 2, 3, 4… segments, and each overtone climbs a glowing ladder. Stacked overtones form a major chord.
 - **Music:** payoff: a bugle can only play that ladder, which is why Taps (1862, public domain) uses four notes.
 
-### 7. Mozart's Dice Waltz
-- **Hook:** "46 QUADRILLION WALTZES"
-- **Science:** the musical dice game attributed to Mozart: 16 rolls of two dice, each picking one bar from a table, gives 11¹⁶ ≈ 46 quadrillion waltzes.
-- **Music:** dice tumble, each roll drops a bar onto a staff, a counter runs, and the waltz builds.
+### 7. Mozart's Dice Waltz — APPROVED
+- **Hook:** "759 TRILLION" / "WALTZES" (2 lines, in the first 2 s). Alt: "2 DICE, 1 WALTZ".
+  (Not "46 quadrillion": 11¹⁶ counts roll sequences, but bar 8 has 1 real option and bar 16 has 2.)
+- **Science (probability):** a 1792 Berlin game (Simrock) gives a table of 176 one-bar fragments. Roll two
+  dice for each of 16 bars; the sum (2–12) picks one of 11 options. Distinct waltzes: 2 × 11¹⁴ =
+  759,499,667,166,482. Two dice are unfair pickers: a 7 (6/36) is 6× more likely than a 2 or 12 (1/36).
+  Hearing every waltz at ~30 s each would take ~720 million years (calc).
+  Sources: [Wikipedia](https://en.wikipedia.org/wiki/Musikalisches_W%C3%BCrfelspiel),
+  [Science News](https://sciencenews.org/article/mozarts-melody-machine-0),
+  [Donald Sauter](https://www.oocities.org/donaldsauter/mozart-dice-game.htm),
+  [CCARH kern data](https://www.ccarh.org/courses/253/lab/kerndice).
+- **Music:** the dice literally compose the track: each roll's sum selects the next bar, which drops onto the
+  staff and plays on a synth fortepiano at waltz tempo. Music = the 1792 table (public domain). Back half:
+  more cups join, their waltzes layered on different timbres (fortepiano, music box, pizzicato, flute).
+- **Scene:** low-poly 18th-century Viennese salon diorama: moonlit window (key light), candelabras (warm
+  local lights), self-playing fortepiano, dice tray, giant parchment staff above it. Small life: curtains,
+  candle flicker, maybe a cat. Escalation: 1 cup → 2 → 10 → dice rain; a sum histogram on the wall grows
+  into the 2–12 triangle.
+- **Payoff / ending:** all cups roll at once, the histogram snaps to a perfect triangle and the waltzes play
+  together. "ROLL 2 DICE": dice settle into one cup, loop to the opening clack.
+
+**Beat sheet (60 s):**
+| Time | Visual | Caption | Sound |
+|---|---|---|---|
+| 0–4 | Dice clack in tray, bar 1 drops onto staff | 759 TRILLION / WALTZES | Clack + 1 fortepiano bar |
+| 4–8 | Parchment table of 176 bars unfurls | FROM 2 DICE / (1792) | Bar 2 |
+| 8–12 | Roll → 7 → row 7 lights → bar flies to staff | DICE SUM = BAR | Waltz builds bar by bar |
+| 12–16 | Camera drifts across the table grid | 11 SUMS × 16 BARS | " |
+| 16–20 | Sum histogram appears on the wall | 7 BEATS 2 / 6 TO 1 | " |
+| 20–24 | Bars 8 and 16 glow (1–2 real choices) | 46 QUADRILLION ROLLS… | Half cadence at bar 8 |
+| 24–28 | Number snaps down | …759 TRILLION / WALTZES | Waltz #1 finishes |
+| 28–35 | Calendar flips, moon arcs across window | ALL OF THEM: / ~720M YEARS | Short reprise |
+| 35–40 | Second cup rolls, two staves fill | 2 AT ONCE | Two waltzes layered |
+| 40–46 | 10 cups, histogram climbs | 10 DICE CUPS | Layers stack on new timbres |
+| 46–52 | Climax: dice rain, histogram locks to triangle | 7 ALWAYS WINS | Full stack |
+| 52–60 | Dice settle into one cup, loop to opening | ROLL 2 DICE / WRITE BAR 1 | Thins to one fortepiano bar |
+
+**Flags:**
+- Attribution: the 1792 cover credited Mozart, but it has never been authenticated (most scholars reject it).
+  Mozart did write a 1787 manuscript (K. 516f) of 176 one-bar fragments, with no evidence of dice.
+  Caption "1792" or "sold as Mozart's", never "Mozart wrote".
+- Climax: stacking waltzes only works if all 11 options per column share a harmony. Often claimed, NOT
+  verified: check the actual table first. Fallback: one lead waltz on top, other cups as quiet staggered echoes.
+- Use the 1792 *waltz* table, not the related contredanse version some catalogues list.
+- Note data: the music is public domain, but digital transcriptions may not be (CCARH files state no
+  license). Safest: transcribe from a scan of the 1792 print or re-enter the notes from a reference.
+
+**Feasibility:** easy: dice, table grid, bars flying to the staff, histogram, candles, moon key light (salon
+floor seen from above gives good shadows). Medium: dice tumble, so fake it with pre-baked tumble/bounce
+keyframes (no rigid-body sim); dice rain = instanced dice, no collisions. Avoid a Mozart character: use a
+self-playing fortepiano. Audio: cap audible layers at ~6–8, the rest a soft shimmer.
 
 ### 8. Dinosaur Brass Band
 - **Hook:** "A DINOSAUR TROMBONE"
