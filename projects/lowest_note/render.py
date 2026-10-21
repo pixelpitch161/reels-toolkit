@@ -614,7 +614,7 @@ def hud(img, t):
         label(img, T.NOTE_NAME[k], 146, y0 + 30, AMBER, 4)
         label(img, "ALL OCTAVES" if k == 0 else "A NOTE", 236, y0 + 44, MINT, 1)
     elif k >= -9:
-        label(img, "1 WAVE = 1 BEAT" if k >= -7 else "TOO FAST TO COUNT", 146, y0 + 10, SKYB, 1)
+        label(img, "1 WAVE = 1 BEAT" if k <= -7 else "TOO FAST TO COUNT", 146, y0 + 10, SKYB, 1)
         label(img, rd, 146, y0 + 22, AMBER, 3)
     else:
         label(img, "1 WAVE EVERY", 146, y0 + 10, SKYB, 1)
