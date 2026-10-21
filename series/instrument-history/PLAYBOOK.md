@@ -14,7 +14,7 @@ How to make a new instrument-history reel. One session = one instrument.
    they were first modelled from memory. Check the proportions, where the bell points, valve or slide
    placement, and how the tubing wraps.
 4. **One detailed request per video.** Give the session the instrument, eras, facts and any must-haves up front.
-5. **Turn the lighting on:** add `LIGHTING = True` (see README). Check stills mid-scene, not on a scene
+5. **Always turn the lighting on (approved standard since the tuba test):** add `LIGHTING = True` (see README). Check stills mid-scene, not on a scene
    boundary (the instrument is spinning in or out there).
 6. **Facts must be checkable.** Each fact line is 2 × ≤ 18 characters, uppercase. Verify every date and claim.
 7. **Music:** each scene plays a short riff in that era's style (`credit` names the style). `TRIM` evens out
