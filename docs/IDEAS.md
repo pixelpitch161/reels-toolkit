@@ -17,7 +17,7 @@ a draft, when it gets feedback, and when it delivers.
 | 4 | The Staircase That Never Ends | idea | - | - | - |
 | 6 | One String, Every Note | idea | - | - | - |
 | 7 | Mozart's Dice Waltz | in production | session_01UAUgj8 (2026-10-21) | Claimed; building in `projects/dice_waltz/`. Verifying column harmony from the table first | - |
-| 8 | Dinosaur Brass Band | approved | ideas chat | Fully developed (beat sheet + sources in backlog). Mechanism: crest size sets pitch. Hardest build (dinosaurs): see fallback | - |
+| 8 | Dinosaur Brass Band | in production | session_019KQA5D (2026-10-21) | Claimed; building in `projects/dinosaur_brass_band/`. Trying rigid-segment dinosaurs first; museum-hall fallback if they don't read | - |
 | 9 | The 639-Year Song | idea | - | Copyright: don't use Cage's actual notes (still in copyright); use a generic held chord | - |
 | 10 | One Melody, 100 Years of Speakers | idea | - | - | - |
 
