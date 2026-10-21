@@ -17,7 +17,7 @@ a draft, when it gets feedback, and when it delivers.
 | 4 | The Staircase That Never Ends | idea | - | - | - |
 | 6 | One String, Every Note | idea | - | - | - |
 | 7 | Mozart's Dice Waltz | review | session_01UAUgj8 (2026-10-21) | Draft v1 sent. Column harmony verified from the table (all 16 columns share one harmony), so the climax stacks 10 waltzes (no echo fallback). Notes: 2-of-3 vote over three transcriptions. Next: user feedback | `dice_waltz.mp4` |
-| 8 | Dinosaur Brass Band | in production | session_019KQA5D (2026-10-21) | Claimed; building in `projects/dinosaur_brass_band/`. Trying rigid-segment dinosaurs first; museum-hall fallback if they don't read | - |
+| 8 | Dinosaur Brass Band | review | session_019KQA5D (2026-10-21) | Draft v1 sent: real rigid-segment dinosaurs (fallback not needed), early sheet + video delivered with caption/tags. Awaiting feedback | `dinosaur_brass_band.mp4` |
 | 9 | The 639-Year Song | idea | - | Copyright: don't use Cage's actual notes (still in copyright); use a generic held chord | - |
 | 10 | One Melody, 100 Years of Speakers | idea | - | - | - |
 
