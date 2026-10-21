@@ -28,6 +28,13 @@ python3 pp_parallel.py tuba60_lowpoly.py tuba60.mp4   # full render, all cores
 python3 tuba60_lowpoly.py tuba60.mp4                  # full render, single process
 ```
 
+## Optional caption hooks
+
+- `INTRO_STEPS = ((0, lines, colours), (.42, lines, colours), (.75, lines, colours))` replaces the two-step showcase caption
+  (hook, then "BUT HOW DID WE / GET HERE?") with any number of steps, each starting at a fraction of the showcase. The ukulele
+  uses it to show the modern instrument's own fact between the hook and the question.
+- `OUTRO_NAME = "..."` shows a different instrument name during the outro (the ukulele returns to the modern soprano there).
+
 ## Lighting
 
 Add one line to a video script:

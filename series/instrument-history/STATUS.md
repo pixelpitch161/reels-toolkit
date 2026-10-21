@@ -38,7 +38,7 @@ below, and marks it `approved` when the user signs off. A production session the
 | P1 | Synthesizer | review | [session](https://claude.ai/code/session_01Scjyafon3vLxQ2TTrnUXBk) · 2026-10-21 | Rendered 2026-10-21 (`synth60_lowpoly.py`, 62.6 s, lit). Stills contact sheet + video sent to the user for review. One change from the draft: Eurorack year shown as 1995 (Doepfer's A-100 launched in 1995; draft said 1996). Next: user review, then post. |
 | P2 | Alto saxophone | review | [session](https://claude.ai/code/session_013UMaDd8usn4Db7tWhgAwUj) · 2026-10-21 | Rendered 2026-10-21 (`altosax60_lowpoly.py` → `altosax60_lowpoly.mp4`, 60.1 s, lit, −11.9 LUFS). Stills contact sheet + video sent to the user for review. Follows the draft; the 2020s YAS-62 row plays as the 9th scene, so the cut runs 60.1 s rather than the ≈53 s + chord estimate. Models from reference photos (Met 2005.82 Sax alto, NMM 13158 Conn, Yamaha, SMEM EWI1000). Note: NMM dates its Conn no. 16 to 1890–92; the 1888 date is Buescher's first prototype, as the draft cites. Next: user review, then post. |
 | P3 | Accordion | in production | [session](https://claude.ai/code/session_01RyAkaahcXy7gH8qpoCRfUF) · 2026-10-21 | Claimed 2026-10-21. Building `accordion60_lowpoly.py` from the approved draft. |
-| P4 | Ukulele | in production | [session](https://claude.ai/code/session_01FmQrsdwGhdezdxp3sm8YPa) · 2026-10-21 | Claimed 2026-10-21. Building `ukulele60_lowpoly.py` from the approved draft. |
+| P4 | Ukulele | review | [session](https://claude.ai/code/session_01FmQrsdwGhdezdxp3sm8YPa) · 2026-10-21 | 2026-10-21: `ukulele60_lowpoly.py` rendered to `ukulele60_lowpoly.mp4` (55.7 s, lit, wave-barrel backdrop); stills sheet, video and captions sent. Models built from Chrome reference photos (Kamaka site, NMM Kumalae, Horniman machete, Nunes, Islander, Vega baritone). Modern fact shown in the showcase via the new optional `INTRO_STEPS`; outro returns to the soprano (`OUTRO_NAME`). Awaiting user review. |
 
 ## Drafts
 
@@ -230,7 +230,7 @@ below, and marks it `approved` when the user signs off. A production session the
 >
 > Before the full render, send me `--still` frames taken mid-scene for every scene (contact sheet is fine) so I can review them, but don't wait for my OK: carry straight on and render with pp_parallel.py, watch it through, send the video, update STATUS.md, commit, git pull --rebase and push.
 
-### P4. Ukulele — IN PRODUCTION (approved 2026-10-21)
+### P4. Ukulele — REVIEW (approved 2026-10-21; rendered `ukulele60_lowpoly.py`)
 - **Hook (showcase lines):** "ITS NAME MEANS" / "'JUMPING FLEA'"   then   "BUT HOW DID WE" / "GET HERE?"
 - **Headline:** "147 YEARS" (1879 → 2026). `HEAD_INTRO = "THE UKULELE"`, `START_YEAR = 1870`
 - **Modern showcase:** Kamaka standard soprano, koa (the original size), indie-folk stomp riff. Credit INDIE FOLK STOMP.

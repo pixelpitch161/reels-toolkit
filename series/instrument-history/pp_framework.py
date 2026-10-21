@@ -190,14 +190,20 @@ def frame(c, T, fi=0):
         k = ease(t/c.BEAT)
         ys = year_str(int(lerp(prev, s["year"], k))) if k < 1 else s["ys"]
     center_text(d, 45, ys, GOLD, 3)
-    center_text(d, 74, s["name"], CREAM, 2 if text_w(s["name"], 2) <= 262 else 1)
+    name = getattr(c, "OUTRO_NAME", s["name"]) if outro else s["name"]   # optional: a different name for the outro instrument
+    center_text(d, 74, name, CREAM, 2 if text_w(name, 2) <= 262 else 1)
     credit = c.OUTRO_CREDIT if outro else s["credit"]
     center_text(d, 92, credit, mix(SHADOW, (226, 196, 130), ease((t - .3)/.3)), 1)
     if si == 0:
-        first = t < .75*s["len"]
-        lines = c.INTRO_LINES[0] if first else c.INTRO_LINES[1]
-        cols = (CREAM, CREAM) if first else (CREAM, GOLD)
-        fk = ease((t - .2)/.3) if first else ease((t - .75*s["len"])/.25)
+        steps = getattr(c, "INTRO_STEPS", None)   # optional: ((start fraction, lines, colours), ...) replaces the 2-step intro
+        if steps:
+            k = max(i for i, st in enumerate(steps) if t >= st[0]*s["len"]); f0, lines, cols = steps[k]
+            fk = ease((t - .2)/.3) if k == 0 else ease((t - f0*s["len"])/.25)
+        else:
+            first = t < .75*s["len"]
+            lines = c.INTRO_LINES[0] if first else c.INTRO_LINES[1]
+            cols = (CREAM, CREAM) if first else (CREAM, GOLD)
+            fk = ease((t - .2)/.3) if first else ease((t - .75*s["len"])/.25)
         for li, line in enumerate(lines): center_text(d, 336 + li*19, line, mix(SHADOW, cols[li], fk), 2)
     elif not outro:
         fk = ease((t - .2)/.3)
