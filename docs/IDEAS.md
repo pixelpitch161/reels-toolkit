@@ -16,7 +16,7 @@ a draft, when it gets feedback, and when it delivers.
 | 2 | The Lowest Note in the Universe | review | session_01WcqqR7 (2026-10-21) | v1 delivered with caption + tags; waiting for feedback | `lowest_note.mp4` |
 | 4 | The Staircase That Never Ends | idea | - | - | - |
 | 6 | One String, Every Note | idea | - | - | - |
-| 7 | Mozart's Dice Waltz | in production | session_01UAUgj8 (2026-10-21) | Claimed; building in `projects/dice_waltz/`. Verifying column harmony from the table first | - |
+| 7 | Mozart's Dice Waltz | review | session_01UAUgj8 (2026-10-21) | Draft v1 sent. Column harmony verified from the table (all 16 columns share one harmony), so the climax stacks 10 waltzes (no echo fallback). Notes: 2-of-3 vote over three transcriptions. Next: user feedback | `dice_waltz.mp4` |
 | 8 | Dinosaur Brass Band | in production | session_019KQA5D (2026-10-21) | Claimed; building in `projects/dinosaur_brass_band/`. Trying rigid-segment dinosaurs first; museum-hall fallback if they don't read | - |
 | 9 | The 639-Year Song | idea | - | Copyright: don't use Cage's actual notes (still in copyright); use a generic held chord | - |
 | 10 | One Melody, 100 Years of Speakers | idea | - | - | - |
