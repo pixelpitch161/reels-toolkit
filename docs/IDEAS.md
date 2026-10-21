@@ -13,7 +13,7 @@ a draft, when it gets feedback, and when it delivers.
 | 1 | 100 Metronomes Find the Beat | done | original chat | Delivered with caption + tags | `100_metronomes.mp4` |
 | 3 | Crickets Are Thermometers | done | original chat | Final pick: brighter diorama version (v4); the moody version read as too dark; focus locked on the cricket + thermometer | `cricket_diorama_v4.mp4` (also `cricket_thermometer.mp4`, open-environment cut) |
 | 5 | Sand That Draws Sound | done | original chat | v2: new lighting/shadows, richer courtyard, sand rattle cut about 24 dB. Next: confirm the sand sound level is right, or remove it completely | `sand_draws_sound_v2.mp4` |
-| 2 | The Lowest Note in the Universe | in production | session_01WcqqR7 (2026-10-21) | Claimed; building in `projects/lowest_note/` | - |
+| 2 | The Lowest Note in the Universe | in production | session_01WcqqR7 (2026-10-21) | Early contact sheet sent; first full render running (`projects/lowest_note/`) | - |
 | 4 | The Staircase That Never Ends | idea | - | - | - |
 | 6 | One String, Every Note | idea | - | - | - |
 | 7 | Mozart's Dice Waltz | in production | session_01UAUgj8 (2026-10-21) | Claimed; building in `projects/dice_waltz/`. Verifying column harmony from the table first | - |
