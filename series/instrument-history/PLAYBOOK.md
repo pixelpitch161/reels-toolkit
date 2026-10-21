@@ -9,8 +9,9 @@ How to make a new instrument-history reel. One session = one instrument.
    oldest to newest, and the outro returns to TODAY.
 2. **Every video gets its own background, colours and beat.** Never reuse another video's backdrop or
    groove. Change the backdrop per scene through `THEMES` (each era gets its own palette).
-3. **Build the models from real reference photos.** Look up photos of each historical instrument (Claude in
-   Chrome or web search) before modelling. The trombone and French horn both needed corrections because
+3. **Build the models from real reference photos.** The production session finds them itself in the user's
+   open Chrome (Claude in Chrome: image searches, museum collection pages, makers' sites) before modelling.
+   Never ask the user to send reference images. The trombone and French horn both needed corrections because
    they were first modelled from memory. Check the proportions, where the bell points, valve or slide
    placement, and how the tubing wraps.
 4. **One detailed request per video.** Give the session the instrument, eras, facts and any must-haves up front.
