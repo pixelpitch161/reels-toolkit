@@ -16,7 +16,7 @@ a draft, when it gets feedback, and when it delivers.
 | 2 | The Lowest Note in the Universe | in production | session_01WcqqR7 (2026-10-21) | Claimed; building in `projects/lowest_note/` | - |
 | 4 | The Staircase That Never Ends | idea | - | - | - |
 | 6 | One String, Every Note | idea | - | - | - |
-| 7 | Mozart's Dice Waltz | approved | ideas chat | Fully developed (beat sheet + sources in backlog). Hook corrected to 759 trillion. Verify column harmony from the table before building the climax | - |
+| 7 | Mozart's Dice Waltz | in production | session_01UAUgj8 (2026-10-21) | Claimed; building in `projects/dice_waltz/`. Verifying column harmony from the table first | - |
 | 8 | Dinosaur Brass Band | idea | - | top-3 pick from the original research | - |
 | 9 | The 639-Year Song | idea | - | Copyright: don't use Cage's actual notes (still in copyright); use a generic held chord | - |
 | 10 | One Melody, 100 Years of Speakers | idea | - | - | - |
