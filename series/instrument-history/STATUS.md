@@ -36,7 +36,7 @@ below, and marks it `approved` when the user signs off. A production session the
 | # | Instrument | Status | Session | Last feedback / next step |
 |---|---|---|---|---|
 | P1 | Synthesizer | in production | [session](https://claude.ai/code/session_01Scjyafon3vLxQ2TTrnUXBk) · 2026-10-21 | Claimed 2026-10-21. Building `synth60_lowpoly.py` from the approved draft. |
-| P2 | Alto saxophone | approved | — | Approved 2026-10-21. Ready for a production session (prompt under Drafts → P2). |
+| P2 | Alto saxophone | in production | [session](https://claude.ai/code/session_013UMaDd8usn4Db7tWhgAwUj) · 2026-10-21 | Claimed 2026-10-21. Building `altosax60_lowpoly.py` from the approved draft. |
 
 ## Drafts
 
@@ -114,7 +114,7 @@ below, and marks it `approved` when the user signs off. A production session the
 >
 > Before the full render, send me `--still` frames taken mid-scene for every scene (contact sheet is fine) so I can review them, but don't wait for my OK: carry straight on and render with pp_parallel.py, watch it through, send the video, update STATUS.md, commit, git pull --rebase and push.
 
-### P2. Alto saxophone — APPROVED (2026-10-21)
+### P2. Alto saxophone — IN PRODUCTION (approved 2026-10-21)
 - **Hook (showcase lines):** "ABOUT 600 PARTS," / "AND JUST ONE REED"   then   "BUT HOW DID WE" / "GET HERE?"
 - **Headline:** "180 YEARS" (1846 → 2026). `HEAD_INTRO = "THE ALTO SAX"`, `START_YEAR = 1830`
 - **Modern showcase:** Yamaha YAS-62 alto (gold lacquer), boom-bap jazz sax riff. Credit BOOM-BAP JAZZ.
