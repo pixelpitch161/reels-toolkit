@@ -11,5 +11,6 @@ for lifting scenes, simulations and music. New videos should start from `templat
 | `crickets_open` | `python audio.py` → `python make_video.py` | cricket_thermometer.mp4 |
 | `crickets_diorama` | `python audio.py` → `python make_video.py out.mp4` (uses `drender.py` + `dscene.py`) | cricket_diorama_v4.mp4 |
 | `lowest_note` | `python audio.py` → `python -m reelkit.video render.py audio.wav lowest_note.mp4` (built on `reelkit`, see its README) | lowest_note.mp4 |
+| `count_the_thunder` | `python audio.py` → `python -m reelkit.video render.py audio.wav count_the_thunder.mp4` (built on `reelkit`; checks in its README) | count_the_thunder.mp4 |
 
 Generated files (`*.wav`, `*.mp4`, `*.rgb`, `*.f32`, `*.f16`, `*.npz`, `test/`, `check/`) are git-ignored.
