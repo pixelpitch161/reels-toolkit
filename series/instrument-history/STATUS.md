@@ -35,7 +35,7 @@ below, and marks it `approved` when the user signs off. A production session the
 
 | # | Instrument | Status | Session | Last feedback / next step |
 |---|---|---|---|---|
-| P1 | Synthesizer | in production | [session](https://claude.ai/code/session_01Scjyafon3vLxQ2TTrnUXBk) · 2026-10-21 | Claimed 2026-10-21. Building `synth60_lowpoly.py` from the approved draft. |
+| P1 | Synthesizer | review | [session](https://claude.ai/code/session_01Scjyafon3vLxQ2TTrnUXBk) · 2026-10-21 | Rendered 2026-10-21 (`synth60_lowpoly.py`, 62.6 s, lit). Stills contact sheet + video sent to the user for review. One change from the draft: Eurorack year shown as 1995 (Doepfer's A-100 launched in 1995; draft said 1996). Next: user review, then post. |
 | P2 | Alto saxophone | in production | [session](https://claude.ai/code/session_013UMaDd8usn4Db7tWhgAwUj) · 2026-10-21 | Claimed 2026-10-21. Building `altosax60_lowpoly.py` from the approved draft. |
 | P3 | Accordion | in production | [session](https://claude.ai/code/session_01RyAkaahcXy7gH8qpoCRfUF) · 2026-10-21 | Claimed 2026-10-21. Building `accordion60_lowpoly.py` from the approved draft. |
 | P4 | Ukulele | in production | [session](https://claude.ai/code/session_01FmQrsdwGhdezdxp3sm8YPa) · 2026-10-21 | Claimed 2026-10-21. Building `ukulele60_lowpoly.py` from the approved draft. |
