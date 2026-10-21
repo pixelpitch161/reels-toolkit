@@ -1,0 +1,12 @@
+__pycache__/
+*.egg-info/
+*.mp4
+*.wav
+*.rgb
+*.f32
+*.f16
+*.npz
+*.log
+test/
+check/
+frames_raw.rgb
