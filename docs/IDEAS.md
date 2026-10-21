@@ -22,6 +22,7 @@ a draft, when it gets feedback, and when it delivers.
 | 10 | One Melody, 100 Years of Speakers | idea | - | - | - |
 | 11 | The Perfect Loop (15 pendulums) | in production | session_017rbUTK (2026-10-21) | Started: building timeline + attic scene from the backlog beat sheet | - |
 | 12 | Prime-Number Cicadas | in production | session_01UkvSDH (2026-10-21) | Started: building timeline + split-woodland cut-away from the backlog beat sheet | - |
+| 13 | Count the Thunder | approved | ideas chat | Fully developed (beat sheet + sources in backlog). Watch the safety (count from indoors) and photosensitivity (≤3 flashes/s) flags | - |
 
 ## Backlog (idea details)
 
@@ -318,6 +319,62 @@ cut-away with tunnels, year counter HUD. Medium: mass emergence as particles; pr
 year list so one list drives visuals and audio (as on #2 and #11). Audio: synthesise the Pharaoh call (buzz +
 pitch drop) and cassini clicks; hit density at 120 BPM sixteenths is fine. Fallback: one tree with two
 colour-coded broods and the soil cut-away below, if the split woodland is too busy.
+
+### 13. Count the Thunder — APPROVED
+- **Hook:** "SECONDS ÷ 5 = MI" / "SECONDS ÷ 3 = KM" (16 + 16 chars, in the first 2 s; both units for a global
+  audience).
+- **Science:** light arrives essentially instantly (~300,000 km/s); sound travels ~0.3 km/s. Count from flash
+  to thunder: ÷ 5 for miles (NWS), ÷ 3 for km (Environment Canada). Thunder can be heard ~10 miles away (NWS)
+  or 8–20 km depending on conditions (ECCC). Air absorbs high frequencies as sound travels, so distant thunder
+  is low and rumbling; a strike to your side gives a sharp clap, while a channel running toward or away from
+  you rumbles because its sound arrives over a stretch of time. Safety (NWS): if you can hear thunder you're
+  within striking distance, there's no safe place outside, and you wait 30 min after the last thunder.
+  Sources: [NWS: science of thunder](https://www.weather.gov/safety/lightning-science-thunder),
+  [NWS: lightning safety](https://www.weather.gov/safety/lightning-safety-overview),
+  [ECCC: how thunder sounds](https://www.canada.ca/en/environment-climate-change/services/lightning/science/how-thunder-sounds.html).
+- **Music:** distance drives rhythm AND timbre. First half (real time): the count is the click track
+  ("1… 2… 3…" at 60 BPM) and each thunder lands where the physics says. Back half: 120 BPM groove, one flash per
+  bar on the downbeat (bright snare); thunder = the kick, delayed by the real flash-to-bang time (2 s = a bar
+  late, then 1, ½, ¼, ⅛ s), walking back toward its flash and fusing on the downbeat at the overhead strike.
+  The thunder's low-pass opens as it nears (rumble → clap). Rain = shaker. All synthesised and original.
+- **Scene:** low-poly prairie cabin cut-away at night. Inside: warm lamp + fireplace (local lights), cat on the
+  windowsill, rain streaking the glass. Moon = key light until the storm swallows it; then each flash throws
+  window-frame shadows across the floor. Outside: fence posts with distance markers, a windmill spinning faster
+  in the rising wind, a storm cell (anvil cloud + rain curtain) crossing from the horizon to the cabin.
+- **Payoff / ending:** the overhead strike hits the barn's lightning rod: flash and clap on the same downbeat
+  with the full groove. The storm passes, the moon returns, and it loops to the calm opening (one distant flash).
+
+**Beat sheet (60 s; first-half delays in real time, distances from the on-screen rules, calc):**
+| Time | Visual | Caption | Sound |
+|---|---|---|---|
+| 0–4 | Calm cabin; distant flash at 0.5 s; counter starts | SECONDS ÷ 5 = MI / SECONDS ÷ 3 = KM | Count clicks (60 BPM) |
+| 4–8 | Counter climbs | LIGHT: INSTANT / SOUND: 1 KM / 3 S | Clicks, light rain |
+| 8–12 | Thunder arrives at ~10 s | 10 S = 2 MI | Low, muffled rumble |
+| 12–20 | Flash at 12 s → thunder at 19.5 s | FAR = RUMBLE / AIR EATS HIGHS | Rumble, a bit brighter |
+| 20–30 | Flashes 21 → 26 s and 27 → 30 s; storm crosses the fence posts | 5 S = 1 MI · 3 S = 1 KM | Rumbles turning into claps |
+| 30–35 | Moon swallowed; cat moves off the sill | HEAR THUNDER? / GO INDOORS | Groove fades in under rain |
+| 35–44 | One flash per bar; thunder 2 → 1 → ½ s late; distance HUD shrinks | 0.4 MI… 0.2 MI… | Kick walks back across the bar |
+| 44–50 | Thunder ¼ → ⅛ s late; window shadows flash | 100 M… 40 M… | Flams tighten; filter opens |
+| 50–52 | Climax: overhead strike on the lightning rod | 0 S | Flash + clap fuse with full groove |
+| 52–60 | Storm passes, moon returns; loop to opening | TRY IT: COUNT / FROM INSIDE | Rain thins to one distant rumble |
+
+**Flags:**
+- Safety: the character is indoors throughout and the ending says "from inside". Never show or imply counting
+  outdoors.
+- Photosensitivity: at most 3 flashes per second (we're at ~0.5/s) and no full-frame white flashes. Flash the
+  sky, window and floor shadows while the warm lamps keep the room lit (also matches the "too dark" lesson).
+- The rules are approximations: at 343 m/s it's ~4.7 s/mile and ~2.9 s/km, and it varies with temperature.
+  Fine for captions; don't claim precision.
+- Hearing range varies (NWS ~10 miles, ECCC 8–20 km): no single "max distance" number on screen.
+- No stock thunder recordings: synthesise everything.
+
+**Feasibility:** easy: lightning (jagged polyline + glow), dithered low-poly cloud blobs, rain-streak
+particles, fence posts, windmill. Reuse the #7 cut-away room lessons (narrow room ~3.4 units; moon pinned in
+the window as a painted backdrop). Medium: flash-lit window shadows on the floor (short key-light spike through
+the window mask; cheap with the existing shadow pipeline). Audio: thunder as filtered noise (sharp N-wave
+transient for close claps, long low-passed tail for far rumbles); carve the music's low end under each hit and
+add a click so it reads on phone speakers (#2 lesson). Font: add "÷" as a runtime glyph from the project (like
+♭ and ≈ on #2).
 
 ## Adding a new idea
 
