@@ -20,7 +20,7 @@ a draft, when it gets feedback, and when it delivers.
 | 8 | Dinosaur Brass Band | review | session_019KQA5D (2026-10-21) | Draft v1 sent: real rigid-segment dinosaurs (fallback not needed), early sheet + video delivered with caption/tags. Awaiting feedback | `dinosaur_brass_band.mp4` |
 | 9 | The 639-Year Song | idea | - | Copyright: don't use Cage's actual notes (still in copyright); use a generic held chord | - |
 | 10 | One Melody, 100 Years of Speakers | idea | - | - | - |
-| 11 | The Perfect Loop (15 pendulums) | in production | session_017rbUTK (2026-10-21) | Early contact sheet sent (sunset attic, focus locked 0 blur on all frames); audio done (plucks 11-12 dB over the music in 300-3000 Hz); full render running | - |
+| 11 | The Perfect Loop (15 pendulums) | review | session_017rbUTK (2026-10-21) | v1 delivered with caption + tags: sunset attic, 15 lantern-bobs, floor shadows redraw the wave, phase-ring HUD; seamless loop verified. Waiting for feedback | `perfect_loop.mp4` |
 | 12 | Prime-Number Cicadas | in production | session_01UkvSDH (2026-10-21) | Started: building timeline + split-woodland cut-away from the backlog beat sheet | - |
 | 13 | Count the Thunder | in production | session_01QAsUpz (2026-10-21) | Started: building timeline + prairie cabin cut-away from the backlog beat sheet (indoors-only, ≤3 flashes/s) | - |
 

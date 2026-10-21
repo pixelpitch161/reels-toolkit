@@ -80,3 +80,23 @@
   - Locked focus: size the sharp band from every vertex and face-mean depth of faces touching the screen
     (on-screen vertices alone left 1.3 px edge blur); `focus_check.py` verifies all frames without rendering.
 - Feedback: (pending)
+
+## The Perfect Loop (`projects/perfect_loop`)
+- 15 uncoupled pendulums (n = 51..65 swings per minute, exact analytic motion), so the 60 s video is one
+  physics cycle and frame 1800 == frame 0. Clockmaker's attic at sunset: a cut-away gable with a round window
+  behind the rig, so the low sun throws every bob's shadow forward across the floor (the wave is drawn twice).
+- One trigger list (t = 60 m / n_k) drives the flashes, the coloured floor light and the plucks: 3 octaves of
+  C pentatonic, longest = lowest = red. The middle pendulum (n = 58) is exactly the 58 BPM beat, so bass, pad
+  and kick lock to the physics; groups become eighths/triplets/sixteenths by themselves.
+- Lessons:
+  - Window glazing bars cast stripes across whatever the beam is aimed at: a rose window with a clear centre
+    (ring + spokes outside it) keeps the subject's light clean and still draws a pattern on the floor.
+  - A top beam directly above a row of bobs hides them from high cameras near the row axis: keep high shots
+    at yaw 30-55 (the end-on view only for "2 teams", where the halves sit left and right of the beam).
+  - First sun/beam pass was one orange wash: cool ambient (blue-violet) + warm key keeps sunset colour with range.
+  - Group tie-lines read as extra strings until dashed, 2 px and tinted per group.
+  - `reelkit.audio.pad()` is ~20 dB quieter than a pluck at equal gain; measure per-bus RMS before balancing.
+    Plucks sit 11-12 dB above the music in 300-3000 Hz in the back half.
+  - Loop audit: seam diff 1.4 with the frame-0 flash disabled vs 3.4 for a normal frame step; the only jump is
+    the intended unison flash. Focus audit: 0 blur on every bob in all 1800 frames (`focus_check.py`).
+- Feedback: (pending)
