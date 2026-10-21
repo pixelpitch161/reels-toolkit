@@ -38,6 +38,7 @@ below, and marks it `approved` when the user signs off. A production session the
 | P1 | Synthesizer | in production | [session](https://claude.ai/code/session_01Scjyafon3vLxQ2TTrnUXBk) · 2026-10-21 | Claimed 2026-10-21. Building `synth60_lowpoly.py` from the approved draft. |
 | P2 | Alto saxophone | in production | [session](https://claude.ai/code/session_013UMaDd8usn4Db7tWhgAwUj) · 2026-10-21 | Claimed 2026-10-21. Building `altosax60_lowpoly.py` from the approved draft. |
 | P3 | Accordion | approved | — | Approved 2026-10-21. Ready for a production session (prompt under Drafts → P3). |
+| P4 | Ukulele | approved | — | Approved 2026-10-21. Ready for a production session (prompt under Drafts → P4). |
 
 ## Drafts
 
@@ -226,5 +227,61 @@ below, and marks it `approved` when the user signs off. A production session the
 > Must-haves: new script `accordion60_lowpoly.py` (OUT "accordion60_lowpoly.mp4", TAG "ad"); modern Hohner Morino+ V first, then history oldest to newest (the year counter starts in BC, like the flute video), outro back to TODAY; `LIGHTING = True`; no brand logos on the models; each scene's riff in its credited style, with the musette scene audibly detuned.
 >
 > Reference photos: before modelling each instrument (the modern one and all 9 historical ones), use my open Chrome browser (Claude in Chrome) to find real reference photos yourself: image searches, museum collection pages, makers' sites. Use the "Reference photos to find" list and model notes in the draft. Check the treble side on the player's right and bass on the left, the bellows, buttons vs piano keys per era, the bandoneon's buttons on both ends, and the ancient sheng's gourd chest and curved mouthpiece. Don't ask me for images.
+>
+> Before the full render, send me `--still` frames taken mid-scene for every scene (contact sheet is fine) so I can review them, but don't wait for my OK: carry straight on and render with pp_parallel.py, watch it through, send the video, update STATUS.md, commit, git pull --rebase and push.
+
+### P4. Ukulele — APPROVED (2026-10-21)
+- **Hook (showcase lines):** "ITS NAME MEANS" / "'JUMPING FLEA'"   then   "BUT HOW DID WE" / "GET HERE?"
+- **Headline:** "147 YEARS" (1879 → 2026). `HEAD_INTRO = "THE UKULELE"`, `START_YEAR = 1870`
+- **Modern showcase:** Kamaka standard soprano, koa (the original size), indie-folk stomp riff. Credit INDIE FOLK STOMP.
+- **Timeline:** 104 BPM, `SHOW_BARS, SCENE_BARS, OUTRO_BARS = 4, 2, 1`, 9 history scenes (≈ 53 s + final chord).
+- **Scenes (oldest → newest):**
+
+| Year (ys) | Name | Credit | Fact | Model notes |
+|---|---|---|---|---|
+| 1879 | MADEIRAN MACHETE | MADEIRAN FOLK DANCE | SAILED TO HAWAII / ON THE RAVENSCRAG | Small double-bulged (figure-8) body, four METAL strings, often wooden pegs |
+| 1880s (1885) | HONOLULU UKULELE | HAWAIIAN COURT HULA | KING KALAKAUA / CHAMPIONED IT | Early plain koa soprano (Nunes / Dias / Santo) |
+| 1915 | KUMALAE UKULELE | HAPA HAOLE SONG | A GOLD AWARD AT / THE 1915 SF EXPO | Koa soprano (NMM Kumalae example) |
+| 1917 | BANJOLELE | VAUDEVILLE NOVELTY | A BANJO BODY FOR / VAUDEVILLE VOLUME | Small drum head with tension hooks round the rim, open back or resonator, ~16 frets |
+| 1928 | KAMAKA PINEAPPLE | JAZZ AGE CHARLESTON | PINEAPPLE-SHAPED, / PATENTED IN 1928 | OVAL body, not figure-8 |
+| 1949 | MACCAFERRI ISLANDER | 1950s TV SINGALONG | ABOUT 9 MILLION / PLASTIC UKES MADE | Moulded plastic; check colours and the moulded fingerboard |
+| 1960s (1962) | BARITONE UKULELE | FOLK HOOTENANNY | ARTHUR GODFREY / PUSHED IT ON TV | Noticeably bigger than the others (Vega / Favilla baritones) |
+| 1993 | TENOR UKULELE | ISLAND REGGAE | HAWAII'S FIRST / PLATINUM ALBUM | Mahogany-toned tenor so it reads differently from the koa Kamaka next |
+| 2006 | KAMAKA TENOR | ROCK BALLAD | ONE OF YOUTUBE'S / FIRST VIRAL HITS | Koa Kamaka tenor, 4 strings (Jake Shimabukuro's) |
+| 2020s | KAMAKA SOPRANO | INDIE FOLK STOMP | 21 INCHES LONG, / 13-INCH SCALE | Koa standard soprano |
+
+- **All:** count the strings (4 everywhere; metal on the machete); figure-8 vs oval body; friction pegs vs geared tuners per era; round soundhole; how many frets clear the body.
+- **Riff tones:** plucked/strummed nylon throughout; metal-string machete; banjo plunk for the banjolele; thin plastic tone for the Maccaferri; soft reggae skank for 1993; tremolo shred for 2006.
+- **Outro:** "147 YEARS FROM" / "A MADEIRAN MACHETE", credit INDIE FOLK STOMP
+- **Look:** "Inside a breaking wave": riding the barrel of a curling wave; foam bursts on each clap; sunlight ripples through the water wall; fish and turtle silhouettes drift past; water colour changes per era like vintage postcard tints.
+  Era palettes (water + accent): modern turquoise + white foam · 1879 Atlantic navy + Madeira-wine red · 1880s royal red + gold · 1915 expo ivory + coral · 1917 vaudeville sepia + spotlight cream · 1928 pineapple yellow + jungle green · 1949 TV cyan + cream · 1960s hootenanny mustard + brown · 1993 pastel with a rainbow over the wave · 2006 night-surf purple + lime.
+  Groove: **indie-folk stomp-clap**, 104 BPM: foot stomps on 1 and 3, hand claps on 2 and 4, tambourine 8ths, floor-tom pulse, whistled hook. `LIGHTING = True`. No brand logos or wordmarks on models.
+- **Reference photos to find:**
+  - Machete: Madeiran machete / braguinha ("machete de braga Madeira"; the Met; MIM Brussels)
+  - Honolulu ukulele: early Nunes / Dias / Santo koa ukuleles (Bishop Museum; "Manuel Nunes ukulele")
+  - Kumalae: National Music Museum soprano (emuseum.nmmusd.org/objects/18094)
+  - Banjolele: 1920s banjo ukuleles; George Formby's instruments
+  - Pineapple: Kamaka HP-1 page
+  - Maccaferri Islander: NMM "Digging the Fifties" post; ukesterbrown.com Islanders page
+  - Baritone: 1950s–60s Vega and Favilla baritones; Arthur Godfrey photos
+  - 1993 tenor: 1990s tenor ukuleles (mahogany); Iz performance photos for era feel
+  - Kamaka tenor: Jake Shimabukuro Kamaka tenor photos
+  - Modern soprano: Kamaka soprano pages
+- **Sources:**
+  - "Jumping flea"; Ravenscrag late Aug 1879; first makers 1880s; Kalākaua; 1915 SF expo; ~9 million Maccaferri ukes; Godfrey and the baritone on TV; soprano 21 in / 13 in scale: https://en.wikipedia.org/wiki/Ukulele
+  - Machete (Madeira, four metal strings, double-bulged body): https://en.wikipedia.org/wiki/Machete_(instrument)
+  - Kumalae Gold Award, 1915 Panama-Pacific Exposition: https://en.wikipedia.org/wiki/Jonah_Kumalae
+  - Banjolele (1917, vaudeville volume, Formby): https://en.wikipedia.org/wiki/Banjolele
+  - Pineapple patented 1928 by Sam Kamaka: https://kamakahawaii.com/our-story/our-legacy/ · https://kamakahawaii.com/instruments/standard-HP1.html
+  - Maccaferri plastic ukulele (1949, with Godfrey): https://en.wikipedia.org/wiki/Mario_Maccaferri
+  - Facing Future (1993), Hawaiʻi's first certified platinum album (2005): https://en.wikipedia.org/wiki/Israel_Kamakawiwo%CA%BBole
+  - Jake Shimabukuro video posted April 2006, one of YouTube's first viral videos; Kamaka tenor: https://en.wikipedia.org/wiki/Jake_Shimabukuro
+- **Production prompt:**
+
+> Make Pixel Pitch P4: the ukulele. Use the pixel-pitch-history skill and the repo pixelpitch161/reels-toolkit (series/instrument-history/). The approved draft is in STATUS.md under Drafts → "P4. Ukulele": follow it exactly (hook, headline, all 9 scenes with their years, names, credits and facts, outro, inside-a-wave background, era palettes, 104 BPM indie-folk stomp-clap groove). First claim the P4 row on the ideas board (in production, this session's link, today's date), commit and push.
+>
+> Must-haves: new script `ukulele60_lowpoly.py` (OUT "ukulele60_lowpoly.mp4", TAG "uk"); modern Kamaka soprano first, then history oldest to newest, outro back to TODAY; `LIGHTING = True`; no brand logos on the models; each scene's riff in its credited style. Copy from the closest plucked/guitar scripts (`harp60` / `acoustic` / `pp_guitar.py` helpers).
+>
+> Reference photos: before modelling each instrument (the modern one and all 9 historical ones), use my open Chrome browser (Claude in Chrome) to find real reference photos yourself: image searches, museum collection pages, makers' sites. Use the "Reference photos to find" list and model notes in the draft. Check string count (4; metal on the machete), figure-8 vs oval (pineapple) bodies, the banjolele's drum head and tension hooks, the baritone's larger size, and pegs vs tuners per era. Don't ask me for images.
 >
 > Before the full render, send me `--still` frames taken mid-scene for every scene (contact sheet is fine) so I can review them, but don't wait for my OK: carry straight on and render with pp_parallel.py, watch it through, send the video, update STATUS.md, commit, git pull --rebase and push.
