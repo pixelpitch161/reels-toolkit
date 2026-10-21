@@ -20,6 +20,7 @@ a draft, when it gets feedback, and when it delivers.
 | 8 | Dinosaur Brass Band | review | session_019KQA5D (2026-10-21) | Draft v1 sent: real rigid-segment dinosaurs (fallback not needed), early sheet + video delivered with caption/tags. Awaiting feedback | `dinosaur_brass_band.mp4` |
 | 9 | The 639-Year Song | idea | - | Copyright: don't use Cage's actual notes (still in copyright); use a generic held chord | - |
 | 10 | One Melody, 100 Years of Speakers | idea | - | - | - |
+| 11 | The Perfect Loop (15 pendulums) | approved | ideas chat | Fully developed (beat sheet + sources in backlog). The video is exactly one 60 s pendulum cycle, so the loop is built into the physics | - |
 
 ## Backlog (idea details)
 
@@ -205,6 +206,58 @@ animals).
 - **Hook:** "1925 → 2025"
 - **Science:** one static room and one public-domain melody, played in turn by a gramophone, radio, cassette player, Game Boy and earbuds. The sound quality changes to match each era.
 - **Style:** a story-driven piece.
+
+### 11. The Perfect Loop (15 pendulums) — APPROVED
+- **Hook:** "15 PENDULUMS" / "1 PERFECT LOOP" (2 lines, in the first 2 s).
+- **Science:** 15 uncoupled pendulums (no motor, magnets or links). The longest swings 51 times in 60 s;
+  each shorter one swings once more, up to 65. They drift into travelling waves, standing waves and apparent
+  random motion, split into two opposite halves at 30 s, and at exactly 60 s every pendulum has done a whole
+  number of swings, so they're back in line. T = 2π√(L/g), so lengths run ~34 cm → ~21 cm (calc).
+  Group milestones (calc): adjacent pendulums slip one full swing apart every 60 s, so at t = 60/n s they form
+  n groups: 6 @10 s, 5 @12, 4 @15, 3 @20, 2 @30, then 3 @40, 4 @45, 5 @48, 6 @50, one line @60.
+  Source: [Harvard Natural Sciences Lecture Demonstrations](https://sciencedemonstrations.fas.harvard.edu/presentations/pendulum-waves).
+- **Music:** each pendulum plucks its own note every time it reaches the far side (once per full swing).
+  Longest = lowest, across 3 octaves of a pentatonic scale so "chaos" stays consonant. The groups ARE the
+  rhythm: 2 groups = eighths, 3 = triplets, 4 = sixteenths, 5 = quintuplets, 6 = sextuplets. First half: the
+  subdivisions slow into the halftime call-and-answer at 30 s. Back half: they speed back up 3 → 4 → 5 → 6
+  into one unison chord at 60 s. Original bass + pad change chord with each pattern. All synthesised.
+- **Scene:** low-poly clockmaker's attic at sunset: round window (low sun = key light), oil lamps (warm local
+  lights), ticking wall clocks, a cat and dust motes (small life). A wooden frame holds 15 glowing lantern-bobs
+  in rainbow colours, one per note, each flashing as it plays. Floor seen from above, so the bobs' shadows draw
+  the wave a second time. Escalation is the physics: line → snake → groups → chaos → halves → groups → line.
+- **Payoff / ending:** the back-half acceleration lands on the 60 s realignment: all 15 hit together, which is
+  frame 0, so it's a true seamless loop.
+
+**Beat sheet (60 s; physics clock in real time, t = 0 = release):**
+| Time | Pendulums (calc) | Caption | Sound |
+|---|---|---|---|
+| 0–4 | All 15 released in a line, one flash | 15 PENDULUMS / 1 PERFECT LOOP | Unison chord, then rippling arpeggio |
+| 4–8 | They peel into a travelling snake | 51 → 65 SWINGS / PER MINUTE | Arpeggio ripples |
+| 8–12 | 6 groups (10 s), then 5 (12 s); length labels | LONGER = SLOWER | Sextuplets → quintuplets |
+| 12–16 | 4 groups (15 s) | NO MOTOR / NO MAGNETS | Sixteenths |
+| 16–22 | 3 groups (20 s) | 3 GROUPS / = TRIPLETS | Triplets |
+| 22–30 | Apparent chaos | LOOKS LIKE / CHAOS… | Polyrhythmic shimmer |
+| 30–35 | 2 opposite halves (30 s) | HALFTIME: / 2 TEAMS | Call and answer in eighths |
+| 35–40 | Chaos again; group-counter HUD slides up | IT'S REWINDING | Bass + pad enter |
+| 40–45 | 3 groups (40 s) | COUNT THE GROUPS | Triplets with the groove |
+| 45–50 | 4 (45 s), 5 (48 s), 6 (50 s) | 4… 5… 6… | Subdivisions accelerate |
+| 50–56 | Groups blur toward one line | TRY IT: 15 WASHERS / + STRING | Build |
+| 56–60 | Climax: all 15 snap back in line at 60.0 s = frame 0 | (loop) | One unison chord |
+
+**Flags:**
+- Small swings only: period changes slightly with swing size (why real builds drift). Keep the amplitude
+  modest on screen; the render can use exact analytic motion so the loop is perfect.
+- The cm lengths assume ideal simple pendulums (calc). A real washer-on-string build needs tuning by ear, so
+  keep "try it" captions general, not exact cm.
+- Overlap with #1 Metronomes: differentiate with setting, colours and the opposite idea (metronomes sync;
+  these drift apart and come back).
+- Don't copy the famous Harvard video's look (white balls on black): ours is lanterns in a sunlit attic.
+- Note density: 15 voices at 51–65 plucks/min ≈ 14 plucks/s. Keep plucks short; trigger once per full swing.
+
+**Feasibility:** very easy: spheres, strings and a frame with θ = θ₀·cos(2π·n·t/60), n = 51…65; no simulation.
+One list of trigger times drives both the flashes and the plucks (as on #2). Framing: a portrait frame only
+shows ~0.43 × distance in width, so run the row toward the camera at an oblique angle (the iconic view, and
+the snake reads best). Floor seen from above under the window light gives free shadow drama.
 
 ## Adding a new idea
 
