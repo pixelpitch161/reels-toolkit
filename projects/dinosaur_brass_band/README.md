@@ -12,8 +12,10 @@ python -m reelkit.sheet render.py test/sheet.png 1.5 6 10 13.5 17.5 21.5 26 30 3
 python -m reelkit.video render.py audio.wav dinosaur_brass_band.mp4
 ```
 
-Set `FOCUS_LOG=test/focus.log` during a render to log the worst blur (CoC px) on any dinosaur face per frame;
-it should be 0 everywhere (the sharp band is sized from every visible dinosaur vertex).
+`python focus_check.py` checks all 1800 frames without rendering: the worst blur (CoC px) on any visible
+dinosaur face must be 0 (the sharp band is sized from every vertex and face depth that touches the screen),
+and no walking animal may be removed while still on screen. `FOCUS_LOG=test/focus.log` logs the same
+number per frame during a real render.
 
 ## Files
 
@@ -30,6 +32,7 @@ it should be 0 everywhere (the sharp band is sized from every visible dinosaur v
 - Layout uses a depth / lat frame (`scene.wpos`): the herd recedes toward the low sun so a band of five
   long animals fits a portrait frame; wide shots are auto-framed from the posed geometry (`render.fit`).
 - Walk-ins arc in from behind-right and arrive along the heading (a straight walk along the heading went
-  through the adult); walk-off goes front animal first.
+  through the adult); walk-off curves away into the back-right, front animal first (walking straight on
+  passed right beside the camera and blurred).
 - Science wording follows the board flags: "could sound like", no Hz on screen, no "trombone", juveniles
   higher is "(PROBABLY)", a small "A MODEL, NOT A RECORDING" tag during the air-flow beat.

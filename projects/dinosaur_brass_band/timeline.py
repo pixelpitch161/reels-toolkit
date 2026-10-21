@@ -69,10 +69,12 @@ for v in VOICES:
     v['crest_f'] = v['air'] / v['scale']                            # crest length factor in the scaled model
 
 # walk-in: curved path from behind-right (depth -9, lat +5 from the spot) that arrives along the heading,
-# so nobody walks through the adult. walk-off: forward along the heading, front animal first.
+# so nobody walks through the adult. walk-off: a curve that turns away into the back-right (EXIT_TO),
+# front animal first, so nobody passes close to the camera.
 ENTRY = {'S': (19.0, 20.9), 'L': (27.5, 30.2), 'M': (27.8, 30.4), 'XS': (28.1, 30.6)}
 ENTRY_FROM = (-9.0, 5.0)
-EXIT = {'XS': (52.6, 56.4, 16.0), 'S': (52.75, 56.55, 16.0), 'M': (52.9, 56.7, 16.0), 'L': (53.05, 56.85, 16.0)}
+EXIT = {'XS': (52.6, 56.6), 'S': (52.75, 56.75), 'M': (52.9, 56.9), 'L': (53.05, 57.05)}
+EXIT_TO = (-13.0, 10.0)
 
 # ------------------------------------------------------------------ section times
 T_XRAY0, T_XRAY1 = 4.2, 16.4      # crest shown as X-ray
@@ -244,12 +246,19 @@ def walk(k, t):
             L = 11.5
             return px, pz, head, L * e, (2 * (1 - u) if t >= t0 else 0.0)
     if name in EXIT:
-        t0, t1, dx = EXIT[name]
+        t0, t1 = EXIT[name]
         u = (t - t0) / (t1 - t0)
         if u > 0:
             uu = min(u, 1.0)
-            off = dx * uu * uu
-            return off * f[0], off * f[1], v['heading'], off, (min(1.0, 2 * uu) if u < 1 else 0.0)
+            e = uu * uu * (1.6 - 0.6 * uu)                      # ease out of standing, keep walking
+            cx, cz = 2.5 * f[0], 2.5 * f[1]                      # step forward first, then curve away
+            ex, ez = _dl2xz(*EXIT_TO)
+            px = 2 * (1 - e) * e * cx + e * e * ex
+            pz = 2 * (1 - e) * e * cz + e * e * ez
+            tx = 2 * (1 - e) * cx + 2 * e * (ex - cx)
+            tz = 2 * (1 - e) * cz + 2 * e * (ez - cz)
+            head = math.degrees(math.atan2(tz, tx)) if e > 0.01 else v['heading']
+            return px, pz, head, 17.0 * e, (min(1.0, 2.5 * uu) if u < 1 else 0.0)
     return 0.0, 0.0, v['heading'], 0.0, 0.0
 
 

@@ -275,6 +275,61 @@ NOTE_M = np.array([[c == '#' for c in row] for row in NOTE])
 NOTE_M2 = np.repeat(np.repeat(NOTE_M, 2, 0), 2, 1)
 
 
+# ------------------------------------------------------------------ locked focus
+def visible_faces(cam, dfaces, margin=4):
+    """camera depths of (vertices, face means) of every dinosaur face that touches the screen"""
+    verts, means = [], []
+    for k, fl_ in dfaces.items():
+        for Q, n, c, tg in fl_:
+            dz = cam.depth(Q)
+            if (dz < cam.near).all():
+                continue
+            s = cam.wp(Q)
+            on = (dz > cam.near) & (s[:, 0] > -margin) & (s[:, 0] < W + margin) & (s[:, 1] > -margin) & (s[:, 1] < H + margin)
+            if not on.any():
+                cx, cy = s[:, 0], s[:, 1]
+                if not (cx.min() < W and cx.max() > 0 and cy.min() < H and cy.max() > 0 and (dz > cam.near).all()):
+                    continue
+            verts.append(dz[dz > cam.near])
+            means.append(float(dz.mean()))
+    if not verts:
+        return np.zeros(0), np.zeros(0)
+    return np.concatenate(verts), np.array(means)
+
+
+def focus(cam, dfaces):
+    """focus locked on the subject: zf at the camera target, sharp band wide enough for every visible animal"""
+    zf = cam.depth(cam.target)[0]
+    v, m = visible_faces(cam, dfaces)
+    need = 0.0
+    if len(v):
+        d = np.concatenate([v, m[m > cam.near]])
+        need = float(np.abs(1 - zf / d).max())
+    sharp = max(0.08, need + 0.03)
+    K = 0.012 * cam.f * min(1.2, 9.0 / zf)
+    return zf, sharp, K
+
+
+def subject_blur(cam, dfaces, zf, sharp, K):
+    """worst circle of confusion (px) on any visible dinosaur face (depth buffer uses face means)"""
+    v, m = visible_faces(cam, dfaces)
+    m = m[m > cam.near]
+    if not len(m):
+        return 0.0
+    return float(np.clip(K * np.maximum(0.0, np.abs(1 - zf / m) - sharp), 0, 10.5).max())
+
+
+def scene_state(t):
+    """camera + posed herd faces only (used by the focus check without rendering)"""
+    cam = camera(t)
+    dfaces = {}
+    for k in range(len(DINOS)):
+        if T.present(k, t):
+            M, pos = pose(k, t)
+            dfaces[k] = dino_world(k, M)
+    return cam, dfaces
+
+
 # ------------------------------------------------------------------ main render
 def render(f):
     t = f / FPS
@@ -597,28 +652,12 @@ def render(f):
             fr.glow(s[0], s[1], max(1.5, 0.05 * cam.f / z), (255, 230, 110), 0.55 * b)
     # ---- lens: focus locked on the subject (the whole visible herd stays inside the sharp band)
     img, depth = fr.array(), fr.depth()
-    zf = cam.depth(cam.target)[0]
-    need = 0.0
-    for k, fl_ in dfaces.items():
-        V = np.concatenate([Q for Q, n, c, tg in fl_])
-        dz = cam.depth(V)
-        sx = cam.wp(V)
-        vis = (dz > 0.3) & (sx[:, 0] > -20) & (sx[:, 0] < W + 20) & (sx[:, 1] > -20) & (sx[:, 1] < H + 20)
-        if vis.any():
-            need = max(need, float(np.abs(1 - zf / dz[vis]).max()))
-    sharp = max(0.08, need + 0.03)
-    K = 0.012 * cam.f * min(1.2, 9.0 / zf)
+    zf, sharp, K = focus(cam, dfaces)
     coc = coc_map(depth, zf, K, sharp=sharp)
     img = dof(img, coc)
     if os.environ.get('FOCUS_LOG'):
-        worst = 0.0
-        for k, fl_ in dfaces.items():
-            dz = np.array([cam.depth(Q.mean(0))[0] for Q, n, c, tg in fl_])
-            dz = dz[dz > 0.3]
-            if len(dz):
-                worst = max(worst, float(np.clip(K * np.maximum(0.0, np.abs(1 - zf / dz) - sharp), 0, None).max()))
         with open(os.environ['FOCUS_LOG'], 'a') as fh:
-            fh.write(f'{f} {worst:.4f}\n')
+            fh.write(f'{f} {subject_blur(cam, dfaces, zf, sharp, K):.4f}\n')
     # glows (sun, crater, air, fireflies, crest glow) and sound rings
     if sp is not None:
         fr.glow(sp[0], sp[1], min(40, 0.045 * cam.f * (1 + 0.5 * fl)), (255, 180, 100), 0.22 + 0.3 * fl)
