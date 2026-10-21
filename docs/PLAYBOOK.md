@@ -33,6 +33,9 @@
 
 ## Process
 
+0. **Claim the video on the board:** in `docs/IDEAS.md`, set its row to `in production`, note the
+   session, then commit and push that one-line change straight away. Ideas are drafted in the
+   separate ideas chat, not in production sessions.
 1. **Pick the idea:** the phenomenon, the hook line, how it makes music, and a 60 s beat sheet (see
    `templates/new_video/timeline.py` for the proven shape).
 2. **Simulate first** if the visual depends on physics (sand, metronomes). Cache the results per
@@ -59,6 +62,10 @@
    - make a contact sheet from the mp4 (`reelkit.video.frames_sheet`) at about 9–14 times;
    - look at it.
 10. **Deliver:** the mp4, plus a short caption and tags for Instagram Reels, TikTok and YouTube Shorts.
+11. **Update the board:**
+   - set the row in `docs/IDEAS.md` to `review` or `done`, with the last feedback and the output file name;
+   - add the lessons to `docs/LOG.md`;
+   - commit and push (run `git pull --rebase` first, because other sessions edit the board too).
 
 ## Lessons from feedback
 

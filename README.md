@@ -30,9 +30,14 @@ The full render takes about 10–25 min on 2 cores. It uses every core by defaul
 | `templates/new_video/` | a minimal working video using the whole pipeline. Copy it to start. |
 | `projects/` | the finished videos' source, for reference and reuse (see each folder's README) |
 | `docs/PLAYBOOK.md` | the style rules and the step-by-step process for every video. **Read it first.** |
+| `docs/IDEAS.md` | **ideas backlog + status board**: one row per video, updated by every session |
 | `docs/LOG.md` | what each video taught us (feedback received, fixes that worked) |
 
 ## Working in parallel
+
+- **Ideas chat:** one long-running chat for drafting ideas. Approved ideas go into `docs/IDEAS.md`.
+- **Production sessions:** one per video ("Make IDEAS #4 using the reels toolkit"). Each session claims its row
+  on the status board, then keeps it updated.
 
 One video per Claude session. Each session clones this repo, copies the template into
 `projects/<name>/`, and only changes files inside its own project folder. Changes to
