@@ -20,7 +20,7 @@ a draft, when it gets feedback, and when it delivers.
 | 8 | Dinosaur Brass Band | review | session_019KQA5D (2026-10-21) | Draft v1 sent: real rigid-segment dinosaurs (fallback not needed), early sheet + video delivered with caption/tags. Awaiting feedback | `dinosaur_brass_band.mp4` |
 | 9 | The 639-Year Song | idea | - | Copyright: don't use Cage's actual notes (still in copyright); use a generic held chord | - |
 | 10 | One Melody, 100 Years of Speakers | idea | - | - | - |
-| 11 | The Perfect Loop (15 pendulums) | approved | ideas chat | Fully developed (beat sheet + sources in backlog). The video is exactly one 60 s pendulum cycle, so the loop is built into the physics | - |
+| 11 | The Perfect Loop (15 pendulums) | in production | session_017rbUTK (2026-10-21) | Started: building timeline + attic scene from the backlog beat sheet | - |
 
 ## Backlog (idea details)
 
