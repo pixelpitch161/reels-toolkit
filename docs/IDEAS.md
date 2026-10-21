@@ -21,7 +21,7 @@ a draft, when it gets feedback, and when it delivers.
 | 9 | The 639-Year Song | idea | - | Copyright: don't use Cage's actual notes (still in copyright); use a generic held chord | - |
 | 10 | One Melody, 100 Years of Speakers | idea | - | - | - |
 | 11 | The Perfect Loop (15 pendulums) | in production | session_017rbUTK (2026-10-21) | Started: building timeline + attic scene from the backlog beat sheet | - |
-| 12 | Prime-Number Cicadas | approved | ideas chat | Fully developed (beat sheet + sources in backlog). Watch the wording flags: "these 2 broods" since 1803; "why prime" is debated | - |
+| 12 | Prime-Number Cicadas | in production | session_01UkvSDH (2026-10-21) | Started: building timeline + split-woodland cut-away from the backlog beat sheet | - |
 
 ## Backlog (idea details)
 
