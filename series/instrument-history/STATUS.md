@@ -37,6 +37,7 @@ below, and marks it `approved` when the user signs off. A production session the
 |---|---|---|---|---|
 | P1 | Synthesizer | in production | [session](https://claude.ai/code/session_01Scjyafon3vLxQ2TTrnUXBk) · 2026-10-21 | Claimed 2026-10-21. Building `synth60_lowpoly.py` from the approved draft. |
 | P2 | Alto saxophone | in production | [session](https://claude.ai/code/session_013UMaDd8usn4Db7tWhgAwUj) · 2026-10-21 | Claimed 2026-10-21. Building `altosax60_lowpoly.py` from the approved draft. |
+| P3 | Accordion | approved | — | Approved 2026-10-21. Ready for a production session (prompt under Drafts → P3). |
 
 ## Drafts
 
@@ -167,5 +168,63 @@ below, and marks it `approved` when the user signs off. A production session the
 > Must-haves: new script `altosax60_lowpoly.py` (OUT "altosax60_lowpoly.mp4", TAG "as"); modern Yamaha YAS-62 first, then history oldest to newest, outro back to TODAY; `LIGHTING = True`; no brand logos on the models or posters; each scene's riff in its credited style.
 >
 > Reference photos: before modelling each instrument (the modern one and all 8 historical ones), use my open Chrome browser (Claude in Chrome) to find real reference photos yourself: image searches, museum collection pages, makers' sites. Use the "Reference photos to find" list and model notes in the draft. Check bell direction (up and forward, player's right), the curved neck and U-bow, which side the low bell keys are on, the octave keys, and how keywork differs between eras (the 1846 Sax alto has far fewer keys; the EWI has no bell and no moving keys). Don't ask me for images.
+>
+> Before the full render, send me `--still` frames taken mid-scene for every scene (contact sheet is fine) so I can review them, but don't wait for my OK: carry straight on and render with pp_parallel.py, watch it through, send the video, update STATUS.md, commit, git pull --rebase and push.
+
+### P3. Accordion — APPROVED (2026-10-21)
+- **Hook (showcase lines):** "120 BASS BUTTONS," / "ALL FOR ONE HAND"   then   "BUT HOW DID WE" / "GET HERE?"
+- **Headline:** "2,450 YEARS" (433 BC → 2026). `HEAD_INTRO = "THE ACCORDION"`, `START_YEAR = -500`
+- **Modern showcase:** Hohner Morino+ V 120 (41 piano keys, 120 basses, black), digital cumbia riff. Credit DIGITAL CUMBIA.
+- **Timeline:** 100 BPM, `SHOW_BARS, SCENE_BARS, OUTRO_BARS = 4, 2, 1`, 9 history scenes (≈ 55 s + final chord).
+- **Scenes (oldest → newest):**
+
+| Year (ys) | Name | Credit | Fact | Model notes |
+|---|---|---|---|---|
+| -433 ("433 BC") | SHENG | ANCIENT CHINESE COURT | FREE REEDS SET IN / BAMBOO PIPES | Ancient form (Marquis Yi of Zeng tomb): round gourd wind chest, bamboo pipes standing in a ring, long curved mouthpiece. NOT the modern metal-keyed sheng |
+| 1829 | DEMIAN'S ACCORDION | VIENNESE SALON | ONE BUTTON PLAYS / A WHOLE CHORD | Tiny box, buttons on one end only (a few chord keys), small bellows, no treble keyboard |
+| 1870s (1870) | BANDONEON | ARGENTINE TANGO | MADE FOR HYMNS, / STOLEN BY TANGO | Buttons on both square ends (not a front keyboard), hand straps, played on the knee |
+| 1910 | PIANO ACCORDION | VAUDEVILLE RAG | COINED THE NAME / PIANO-ACCORDION | Guido Deiro-era ornate 1910s piano accordion, fewer bass buttons than modern |
+| 1928 | CAJUN ACCORDION | CAJUN TWO-STEP | 1ST CAJUN RECORD / STARS AN ACCORDION | Single-row diatonic (Acadian/Monarch type): ~10 buttons, two stop knobs, two bass levers |
+| 1930s (1934) | MUSETTE ACCORDION | BAL-MUSETTE WALTZ | 3 REEDS DETUNED / FOR THAT WOBBLE | French chromatic button accordion: rows of round buttons on the treble side, no piano keys |
+| 1955 | GOLDEN-AGE ACCORDION | POLKA | ON THE WELK SHOW / FOR 27 YEARS | 1950s US piano accordion: chrome grille, rhinestones, two-tone pearloid; check colours |
+| 1968 | VALLENATO ACCORDION | VALLENATO | THREE ROWS, THREE / REEDS PER NOTE | Small three-row button accordion (Hohner Corona type), often brightly coloured |
+| 2005 | ROLAND V-ACCORDION | EUROPOP | NO REEDS AT ALL: / IT'S ALL DIGITAL | Roland FR-5 / FR-7: looks acoustic, plus a display and a modern grille |
+| 2020s | HOHNER MORINO+ V | DIGITAL CUMBIA | 13 REGISTERS IN / A 12.4 KG BOX | 41 piano keys, 120 basses, black |
+
+- **All accordions:** treble side (keys or buttons) on the player's right, bass buttons on the left, bellows between. Show the treble side three-quarter, with the bellows folds visible.
+- **Riff tones:** sheng breathy reed organ; bandoneon dark and staccato; musette three detuned voices (wobble); V-Accordion a slightly too-clean digital version.
+- **Outro:** "2,450 YEARS FROM" / "THE SHENG", credit DIGITAL CUMBIA
+- **Look:** "A river cruise at night": riding a paddle-steamer deck under string lights; the paddle wheel turns on the beat; the riverbank scrolling past changes per era (pagodas, Vienna, Buenos Aires docks, Paris quais, Louisiana bayou, 1950s boardwalk, Magdalena river).
+  Era palettes (sky + string lights): modern deep teal + warm white · sheng ink black + vermilion · 1829 Biedermeier plum + candle gold · 1870s tango burgundy + brass · 1910 sepia + marquee bulbs · 1928 bayou olive + firefly yellow · 1930s Paris slate blue + accordion red · 1955 TV pink + chrome · 1968 tropical green + mango · 2005 silver + electric blue.
+  Groove: **digital cumbia**, 100 BPM: guacharaca scrape on 8ths, caja + conga pattern, kick on 1 and 3, root–fifth bass, synth pad. `LIGHTING = True`. No brand logos or wordmarks on models.
+- **Reference photos to find:**
+  - Sheng: Marquis Yi of Zeng tomb sheng (Hubei Provincial Museum); Han dynasty sheng (Met, British Museum)
+  - Demian's accordion: 1830s Viennese "Accordion" (Technisches Museum Wien, Deutsches Museum, Met; "Demian accordion 1829")
+  - Bandoneon: 19th-century German bandoneons; tango photos ("bandoneon 142 tones rheinische")
+  - 1910 piano accordion: Guido Deiro photos (henrydoktorski.com/GuidoDeiro); 1910s Italian piano accordions
+  - Cajun: Joe Falcon photos; Acadian / Monarch single-row diatonic accordions
+  - Musette: 1930s French chromatic button accordions ("accordéon chromatique 1930 musette")
+  - 1955: 1950s US piano accordions; Myron Floren photos
+  - Vallenato: Hohner Corona three-row; Festival de la Leyenda Vallenata photos
+  - Roland V-Accordion: Roland FR-5 / FR-7 product pages
+  - Morino+ V: Hohner product page
+- **Sources:**
+  - Sheng (Zeng tomb c. 433 BCE; bamboo pipes; free reeds): https://en.wikipedia.org/wiki/Sheng_(instrument)
+  - Demian 1829 patent (one key = whole chord; name from "Akkord"); Stradella bass, 120-bass most common; reedless digital V-Accordions: https://en.wikipedia.org/wiki/Accordion
+  - Bandoneon (religious and popular music; Argentina c. 1870; tango): https://en.wikipedia.org/wiki/Bandoneon
+  - Guido Deiro coined "piano-accordion" (1910): https://henrydoktorski.com/free-reed/essays/whowasfirst.html
+  - First Cajun record "Allons à Lafayette" (1928), Falcon on accordion: https://en.wikipedia.org/wiki/Joe_Falcon
+  - Musette tuning (three detuned 8′ reeds): https://en.wikipedia.org/wiki/Accordion_reed_ranks_and_switches
+  - Myron Floren on The Lawrence Welk Show 1955–1982: https://en.wikipedia.org/wiki/The_Lawrence_Welk_Show
+  - Vallenato three-row accordion, three reeds per note: https://en.wikipedia.org/wiki/Vallenato · festival origin 1968: https://en.wikipedia.org/wiki/Festival_de_la_Leyenda_Vallenata · UNESCO (2015): https://ich.unesco.org/en/USL/traditional-vallenato-music-of-the-greater-magdalena-region-01095
+  - Roland FR-5 / FR-7 reedless V-Accordions (2005): https://newatlas.com/the-piano-accordion-goes-digital/3666/
+  - Morino+ V (41 keys, 120 basses, 13 treble registers, 12.4 kg): https://www.muziker.no/hohner-morino-v-120-black
+- **Production prompt:**
+
+> Make Pixel Pitch P3: the accordion. Use the pixel-pitch-history skill and the repo pixelpitch161/reels-toolkit (series/instrument-history/). The approved draft is in STATUS.md under Drafts → "P3. Accordion": follow it exactly (hook, headline, all 9 scenes with their years, names, credits and facts, outro, river-cruise background, era palettes, 100 BPM digital-cumbia groove). First claim the P3 row on the ideas board (in production, this session's link, today's date), commit and push.
+>
+> Must-haves: new script `accordion60_lowpoly.py` (OUT "accordion60_lowpoly.mp4", TAG "ad"); modern Hohner Morino+ V first, then history oldest to newest (the year counter starts in BC, like the flute video), outro back to TODAY; `LIGHTING = True`; no brand logos on the models; each scene's riff in its credited style, with the musette scene audibly detuned.
+>
+> Reference photos: before modelling each instrument (the modern one and all 9 historical ones), use my open Chrome browser (Claude in Chrome) to find real reference photos yourself: image searches, museum collection pages, makers' sites. Use the "Reference photos to find" list and model notes in the draft. Check the treble side on the player's right and bass on the left, the bellows, buttons vs piano keys per era, the bandoneon's buttons on both ends, and the ancient sheng's gourd chest and curved mouthpiece. Don't ask me for images.
 >
 > Before the full render, send me `--still` frames taken mid-scene for every scene (contact sheet is fine) so I can review them, but don't wait for my OK: carry straight on and render with pp_parallel.py, watch it through, send the video, update STATUS.md, commit, git pull --rebase and push.
