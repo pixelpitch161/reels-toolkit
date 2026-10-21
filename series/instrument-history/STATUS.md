@@ -35,7 +35,7 @@ below, and marks it `approved` when the user signs off. A production session the
 
 | # | Instrument | Status | Session | Last feedback / next step |
 |---|---|---|---|---|
-| P1 | Synthesizer | approved | — | Approved 2026-10-21. Ready for a production session (prompt under Drafts → P1). |
+| P1 | Synthesizer | in production | [session](https://claude.ai/code/session_01Scjyafon3vLxQ2TTrnUXBk) · 2026-10-21 | Claimed 2026-10-21. Building `synth60_lowpoly.py` from the approved draft. |
 
 ## Drafts
 
