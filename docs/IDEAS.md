@@ -22,7 +22,7 @@ a draft, when it gets feedback, and when it delivers.
 | 10 | One Melody, 100 Years of Speakers | idea | - | - | - |
 | 11 | The Perfect Loop (15 pendulums) | review | session_017rbUTK (2026-10-21) | v1 delivered with caption + tags: sunset attic, 15 lantern-bobs, floor shadows redraw the wave, phase-ring HUD; seamless loop verified. Waiting for feedback | `perfect_loop.mp4` |
 | 12 | Prime-Number Cicadas | review | session_01UkvSDH (2026-10-21) | v1 delivered with caption + tags (early sheet sent first). Exact grid kept (1 yr = 1/16 at 120 BPM, 2024 on the 51 s downbeat), so near-miss captions moved to 29.75 s / 44.5 s. Waiting for feedback | `prime_cicadas.mp4` |
-| 13 | Count the Thunder | in production | session_01QAsUpz (2026-10-21) | Started: building timeline + prairie cabin cut-away from the backlog beat sheet (indoors-only, ≤3 flashes/s) | - |
+| 13 | Count the Thunder | review | session_01QAsUpz (2026-10-21) | v1 delivered with caption + tags (early sheet sent first). Checks: focus CoC 0 on all frames; flash test 0 general flashes (max 4 % of frame per strike); thunder ≥8 dB over music in 40-400 Hz. Waiting for feedback | `count_the_thunder.mp4` |
 
 ## Backlog (idea details)
 

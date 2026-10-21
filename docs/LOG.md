@@ -120,3 +120,26 @@
   - Focus audit: subject CoC = 0 on all 1800 frames; frame 0 vs last frame differ by 1.9/255.
 - Feedback: (pending)
 
+
+## Count the Thunder (`projects/count_the_thunder`)
+- Flash-to-bang counting: seconds ÷ 5 = miles (NWS), ÷ 3 = km (ECCC). Night prairie, cut-away log cabin, the
+  cat watches from the sill (indoors throughout; ends on "TRY IT: COUNT FROM INSIDE"). One strike list drives
+  flashes, bolts, a sound ring crawling across the prairie (reaches the cabin exactly at the thunder), the HUD,
+  captions and the mix. First half: pitched count ticks + real-time thunder (10, 7.5, 5, 3 s). Back half at
+  120 BPM: snare on each flash, the thunder is the kick, late by 2 s, 1, ½, ¼, ⅛ s, fusing at the barn-rod
+  strike (50 s). Thunder low-pass by distance: centroid ~130 Hz (3.4 km) -> ~4.9 kHz (overhead).
+- Lessons:
+  - Portrait cut-away + sky is an angle budget: seeing the floor needs ~20°+ down, the storm needs the horizon
+    in frame. fov 60 / pitch 21 fit horizon (y≈185), room (y≈265-527) and the HUD; a numeric probe of key points
+    (floor corners, wall tops, rod, strikes) found it far faster than test renders.
+  - Behind a cut-away wall the ground is hidden for ~8-10 units; storytelling on the prairie (ring, markers)
+    needs a high wide shot (used as the 6-9 s establishing move).
+  - Fireplace on a side wall is seen edge-on; moving it to the back wall made the fire (and the chimney above
+    the wall) read. Black cat vs a dark window vanished; ginger reads.
+  - A far storm must be squat to fit the sky band; lift it as it nears (cell_lift) so near bolts drop from the
+    top of frame.
+  - Flash envelope must peak ON the strike frame (a 1-frame ramp put the picture 33 ms behind the snare).
+  - Smoke as opaque polys read as floating rocks at night; banded GLOW-kernel sprites blended after the lens work.
+  - Photosensitivity (`flash_check.py`, Harding-style on the mp4): 0 general flashes; max 4 % of frame per strike.
+  - Mix: high-passed "bright" snare (280 Hz) + deep bass ducking keep the thunder-kick 8-15 dB over the music.
+- Feedback: (pending)
