@@ -22,6 +22,9 @@ python -m reelkit.video render.py audio.wav my_video.mp4             # full rend
 The full render takes about 10–25 min on 2 cores. It uses every core by default; pass
 `--procs N` to change that.
 
+Two series share this repo: the **science reels** (root `projects/`, `templates/`, `docs/`) and
+**Pixel Pitch instrument histories** (`series/instrument-history/`).
+
 ## Layout
 
 | path | what |
@@ -32,6 +35,7 @@ The full render takes about 10–25 min on 2 cores. It uses every core by defaul
 | `docs/PLAYBOOK.md` | the style rules and the step-by-step process for every video. **Read it first.** |
 | `docs/IDEAS.md` | **ideas backlog + status board**: one row per video, updated by every session |
 | `docs/LOG.md` | what each video taught us (feedback received, fixes that worked) |
+| `series/instrument-history/` | **Pixel Pitch**: the instrument-history series, with its own engine, playbook and status board. It uses `reelkit` lighting through `pp_light.py`. |
 
 ## Working in parallel
 
