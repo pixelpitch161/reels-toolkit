@@ -111,4 +111,4 @@ below, and marks it `approved` when the user signs off. A production session the
 >
 > Reference photos: before modelling each instrument (the modern one and all 11 historical ones), use my open Chrome browser (Claude in Chrome) to find real reference photos yourself: image searches, museum collection pages, makers' sites. Use the "Reference photos to find" list and model notes in the draft, and check the gotchas (theremin loop on the left, Minimoog panel tilted behind the keys with wheels on the left, Ondes wire in front of the keys, RCA Mark II as a wall of racks). Don't ask me for images.
 >
-> Before the full render, send me `--still` frames taken mid-scene for every scene (contact sheet is fine) and wait for my OK. Then render with pp_parallel.py, watch it through, send the video, update STATUS.md, commit, git pull --rebase and push.
+> Before the full render, send me `--still` frames taken mid-scene for every scene (contact sheet is fine) so I can review them, but don't wait for my OK: carry straight on and render with pp_parallel.py, watch it through, send the video, update STATUS.md, commit, git pull --rebase and push.
