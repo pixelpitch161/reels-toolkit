@@ -37,7 +37,7 @@ below, and marks it `approved` when the user signs off. A production session the
 |---|---|---|---|---|
 | P1 | Synthesizer | in production | [session](https://claude.ai/code/session_01Scjyafon3vLxQ2TTrnUXBk) · 2026-10-21 | Claimed 2026-10-21. Building `synth60_lowpoly.py` from the approved draft. |
 | P2 | Alto saxophone | in production | [session](https://claude.ai/code/session_013UMaDd8usn4Db7tWhgAwUj) · 2026-10-21 | Claimed 2026-10-21. Building `altosax60_lowpoly.py` from the approved draft. |
-| P3 | Accordion | approved | — | Approved 2026-10-21. Ready for a production session (prompt under Drafts → P3). |
+| P3 | Accordion | in production | [session](https://claude.ai/code/session_01RyAkaahcXy7gH8qpoCRfUF) · 2026-10-21 | Claimed 2026-10-21. Building `accordion60_lowpoly.py` from the approved draft. |
 | P4 | Ukulele | approved | — | Approved 2026-10-21. Ready for a production session (prompt under Drafts → P4). |
 
 ## Drafts
@@ -172,7 +172,7 @@ below, and marks it `approved` when the user signs off. A production session the
 >
 > Before the full render, send me `--still` frames taken mid-scene for every scene (contact sheet is fine) so I can review them, but don't wait for my OK: carry straight on and render with pp_parallel.py, watch it through, send the video, update STATUS.md, commit, git pull --rebase and push.
 
-### P3. Accordion — APPROVED (2026-10-21)
+### P3. Accordion — IN PRODUCTION (approved 2026-10-21)
 - **Hook (showcase lines):** "120 BASS BUTTONS," / "ALL FOR ONE HAND"   then   "BUT HOW DID WE" / "GET HERE?"
 - **Headline:** "2,450 YEARS" (433 BC → 2026). `HEAD_INTRO = "THE ACCORDION"`, `START_YEAR = -500`
 - **Modern showcase:** Hohner Morino+ V 120 (41 piano keys, 120 basses, black), digital cumbia riff. Credit DIGITAL CUMBIA.
