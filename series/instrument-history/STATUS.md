@@ -36,6 +36,7 @@ below, and marks it `approved` when the user signs off. A production session the
 | # | Instrument | Status | Session | Last feedback / next step |
 |---|---|---|---|---|
 | P1 | Synthesizer | in production | [session](https://claude.ai/code/session_01Scjyafon3vLxQ2TTrnUXBk) · 2026-10-21 | Claimed 2026-10-21. Building `synth60_lowpoly.py` from the approved draft. |
+| P2 | Alto saxophone | approved | — | Approved 2026-10-21. Ready for a production session (prompt under Drafts → P2). |
 
 ## Drafts
 
@@ -110,5 +111,61 @@ below, and marks it `approved` when the user signs off. A production session the
 > Must-haves: new script `synth60_lowpoly.py` (OUT "synth60_lowpoly.mp4", TAG "sx"); modern Korg minilogue xd first, then history oldest to newest, outro back to TODAY; `LIGHTING = True`; each scene's riff uses that instrument's own sound; no brand logos on the models; the background must not look like the electric guitar's synthwave grid or the cello's equalizer.
 >
 > Reference photos: before modelling each instrument (the modern one and all 11 historical ones), use my open Chrome browser (Claude in Chrome) to find real reference photos yourself: image searches, museum collection pages, makers' sites. Use the "Reference photos to find" list and model notes in the draft, and check the gotchas (theremin loop on the left, Minimoog panel tilted behind the keys with wheels on the left, Ondes wire in front of the keys, RCA Mark II as a wall of racks). Don't ask me for images.
+>
+> Before the full render, send me `--still` frames taken mid-scene for every scene (contact sheet is fine) so I can review them, but don't wait for my OK: carry straight on and render with pp_parallel.py, watch it through, send the video, update STATUS.md, commit, git pull --rebase and push.
+
+### P2. Alto saxophone — APPROVED (2026-10-21)
+- **Hook (showcase lines):** "ABOUT 600 PARTS," / "AND JUST ONE REED"   then   "BUT HOW DID WE" / "GET HERE?"
+- **Headline:** "180 YEARS" (1846 → 2026). `HEAD_INTRO = "THE ALTO SAX"`, `START_YEAR = 1830`
+- **Modern showcase:** Yamaha YAS-62 alto (gold lacquer), boom-bap jazz sax riff. Credit BOOM-BAP JAZZ.
+- **Timeline:** 96 BPM, `SHOW_BARS, SCENE_BARS, OUTRO_BARS = 4, 2, 1`, 8 history scenes (≈ 53 s + final chord).
+- **Scenes (oldest → newest):**
+
+| Year (ys) | Name | Credit | Fact | Model notes |
+|---|---|---|---|---|
+| 1846 | ADOLPHE SAX ALTO | FRENCH MILITARY BAND | BRASS POWER WITH / WOODWIND SPEED | Sax-made alto (1850s–60s museum examples); far fewer keys and simpler guards than a modern alto; check octave-key count and bell-key side from photos |
+| 1888 | CONN'S FIRST SAX | GILDED AGE CONCERT BAND | MADE IN ELKHART, / COPIED FROM A SAX | Earliest Conn alto (NMM Conn "Wonder" no. 16, 1892): gold-plated, ornately engraved bell and bow, mother-of-pearl touchpieces, single octave key, low keys on the LEFT of the bell, 12.5 cm bell |
+| 1920s (1922) | CONN NEW WONDER | 1920s DANCE BAND | OVER 1 MILLION / SOLD BY 1925 | Silver-plated body, gold-washed bell interior |
+| 1940s (1940) | CONN 6M | SWING ERA BALLAD | JOHNNY HODGES, / ELLINGTON'S ALTO | "Naked lady" bell engraving; tuning mechanism on the neck |
+| 1953 | GRAFTON ACRYLIC | BEBOP | PARKER PLAYS A / PLASTIC ALTO | Cream (not white, not clear) acrylic body with metal keys |
+| 1959 | SELMER SUPER ACTION | COOL JAZZ: TAKE FIVE | 1ST JAZZ SINGLE TO / SELL A MILLION | 1950s Selmer Paris Super (Balanced) Action alto, lacquered brass |
+| 1967 | SELMER VARITONE | 60s SOUL JAZZ | A MIC IN THE NECK, / PLUS SUB-OCTAVES | Selmer alto with the pickup built into the neck and the control box on the bottom key guard |
+| 1987 | AKAI EWI1000 | 80s FUSION | KEYS SENSE TOUCH, / THEY NEVER MOVE | Straight tube, no bell, touch plates instead of keys, roller octave switches, cable to the separate EWV2000 module (can sit on the pedestal); check colour from photos |
+| 2020s | YAMAHA YAS-62 | BOOM-BAP JAZZ | 25 TONE HOLES, / LEATHER PADS | Gold lacquer, hand-engraved two-piece bell, high F# and front F keys |
+
+- **All altos:** bell points up and forward on the player's right; detachable curved neck; U-shaped bow turns the tubing upward. Check bell-key side, octave keys and palm keys per era/maker from photos.
+- **Riff tones:** alto-sax voice throughout (darker, wide vibrato for Hodges; bright for bebop); Varitone riff doubled an octave down with echo; EWI riff as a synth lead.
+- **Outro:** "180 YEARS FROM" / "ADOLPHE SAX", credit BOOM-BAP JAZZ
+- **Look:** "A subway platform at night": tiled walls, arched tunnel mouths, train headlights rushing past on each bar's downbeat, invented platform posters (no real brands) that change per era, lights flicker on snare hits.
+  Era palettes (tiles + accent): modern white tile + yellow safety line · 1846 cream + gas-lamp amber · 1888 Victorian maroon + brass · 1920s Art Nouveau iron green + amber · 1940s Art Deco cream + oxblood · 1953 mint + red · 1959 navy + sky blue · 1967 burnt orange + brown · 1987 grey + spray-paint graffiti colours.
+  Groove: **boom bap**, 96 BPM: dusty kick, lazy swung snare on 2 and 4, vinyl crackle, upright-bass line, Rhodes chords. `LIGHTING = True`. No brand logos or wordmarks on models.
+- **Reference photos to find:**
+  - 1846 Sax alto: HMB Basel 1860 Sax alto; Edinburgh MIMEd (maker "Adolphe Sax", Paris); saxophone.org museum specimens
+  - 1888 Conn: National Music Museum, Conn "Wonder" alto no. 16 (emuseum.nmmusd.org/objects/13158); other 1890s Conn altos
+  - Conn New Wonder (1920s): saxophone.org Conn model pages
+  - Conn 6M: "Conn 6M naked lady"
+  - Grafton: "Grafton acrylic alto saxophone", museum photos
+  - Selmer Super Action: Selmer's Paul Desmond artist page; 1950s Super (Balanced) Action altos
+  - Varitone: tcgakki.com Selmer Varitone page; bassic-sax.info
+  - Akai EWI1000 + EWV2000: SMEM museum page; Muzines WX7 vs EWI review
+  - YAS-62: Yamaha product page
+- **Sources:**
+  - ~600 parts, 25 tone holes, leather pads: https://www.yamaha.com/en/musical_instrument_guide/saxophone/mechanism
+  - Single reed; invented early 1840s; patent 28 June 1846; "projection of a brass instrument and the agility of a woodwind": https://en.wikipedia.org/wiki/Saxophone
+  - Buescher built Conn's first sax prototype in 1888 after seeing an Adolphe Sax instrument; Conn in Elkhart: https://en.wikipedia.org/wiki/Buescher_Band_Instrument_Company · early Conn alto: https://emuseum.nmmusd.org/objects/13158/alto-saxophone-eflat-high-pitch
+  - Over one million saxophones sold c. 1915–1925: https://www.metmuseum.org/perspectives/conn-o-sax-and-other-rare-saxophone-voices
+  - Hodges, Ellington's alto, Conn 6M in the 1940s: https://en.wikipedia.org/wiki/Johnny_Hodges
+  - Parker played a Grafton at Massey Hall, May 1953: https://en.wikipedia.org/wiki/Grafton_saxophone
+  - Take Five (1959) first jazz single to pass a million; Desmond on alto: https://en.wikipedia.org/wiki/Take_Five · Desmond's Selmer Super Action: https://www.selmer.fr/en/artist/paul-desmond
+  - Varitone (1967, neck pickup, sub-octaves): https://en.wikipedia.org/wiki/Varitone · https://en.wikipedia.org/wiki/Sonny_Stitt
+  - EWI1000 (1987, touch-sensitive keys, roller octaves, EWV2000): https://www.smemmusic.ch/index.php/de/node/1833 · https://en.wikipedia.org/wiki/Electronic_wind_instrument
+  - YAS-62 specs: https://ca.yamaha.com/en/products/musical_instruments/winds/saxophones/yas-62/specs.html
+- **Production prompt:**
+
+> Make Pixel Pitch P2: the alto saxophone. Use the pixel-pitch-history skill and the repo pixelpitch161/reels-toolkit (series/instrument-history/). The approved draft is in STATUS.md under Drafts → "P2. Alto saxophone": follow it exactly (hook, headline, all 8 scenes with their years, names, credits and facts, outro, subway-platform background, era palettes, 96 BPM boom-bap groove). First claim the P2 row on the ideas board (in production, this session's link, today's date), commit and push.
+>
+> Must-haves: new script `altosax60_lowpoly.py` (OUT "altosax60_lowpoly.mp4", TAG "as"); modern Yamaha YAS-62 first, then history oldest to newest, outro back to TODAY; `LIGHTING = True`; no brand logos on the models or posters; each scene's riff in its credited style.
+>
+> Reference photos: before modelling each instrument (the modern one and all 8 historical ones), use my open Chrome browser (Claude in Chrome) to find real reference photos yourself: image searches, museum collection pages, makers' sites. Use the "Reference photos to find" list and model notes in the draft. Check bell direction (up and forward, player's right), the curved neck and U-bow, which side the low bell keys are on, the octave keys, and how keywork differs between eras (the 1846 Sax alto has far fewer keys; the EWI has no bell and no moving keys). Don't ask me for images.
 >
 > Before the full render, send me `--still` frames taken mid-scene for every scene (contact sheet is fine) so I can review them, but don't wait for my OK: carry straight on and render with pp_parallel.py, watch it through, send the video, update STATUS.md, commit, git pull --rebase and push.
