@@ -372,28 +372,6 @@ def die_traj(r, t, start, rest, yaw):
     return P, w
 
 
-def dice_world(r, t, which, cup_pos):
-    """(position, rotation) of die 0/1 of roll r at time t, or None when hidden in the cup"""
-    rg = np.random.default_rng(r.seed * 7 + which)
-    if r.where == 'tray':
-        cx = S.TRAY_C[0] + (-0.12 if r.cup == 'A' else 0.1) + rg.uniform(-0.07, 0.06)
-        cz = S.TRAY_C[2] + (which - 0.5) * 0.15 + rg.uniform(-0.04, 0.04)
-        rest = np.array([cx, S.FELT_Y + S.DIE / 2, cz])
-    else:
-        a = rg.uniform(0, 6.283)
-        rest = np.array([cup_pos[0] * 1.15 + 0.12 * (which - 0.5) + rg.uniform(-0.1, 0.1), S.DIE / 2, cup_pos[2] * 1.15 + 0.25 + rg.uniform(-0.1, 0.1)])
-        rest[0] = np.clip(rest[0], S.RX0 + 0.1, S.RX1 - 0.1)
-        rest[2] = np.clip(rest[2], S.RZ0 + 0.3, S.RZ1 - 0.1)
-    start = cup_pos + np.array([-0.06, 0.16, 0.0]) + np.array([0, 0, (which - 0.5) * 0.04])
-    yaw = rg.uniform(0, 6.283)
-    P, w = die_traj(r, t, start, rest, yaw)
-    Rf = S.rot_to_top(r.dice[which], yaw)
-    ax = nrm(rg.normal(0, 1, 3))
-    R = S.axis_rot(ax, (1 - w) ** 2 * rg.uniform(9, 14)) @ Rf
-    return P, R
-
-
-PIP_OFF = 0.25
 
 
 def draw_die(fr, cam, L, d, P, R, scale=1.0, tint=None):
@@ -426,72 +404,6 @@ def draw_die(fr, cam, L, d, P, R, scale=1.0, tint=None):
             pc3 = ctr + (aw * i + bw * j) * h * 0.5
             q = np.array([pc3 + (aw + bw) * r_ * 0.7, pc3 + (aw - bw) * r_ * 0.7, pc3 - (aw + bw) * r_ * 0.7, pc3 - (aw - bw) * r_ * 0.7])
             fr.poly(cam, q, pc)
-
-
-def cup_pos(cup, t):
-    """resting position of a cup (A on the table, the others float in a ring around it)"""
-    if cup == 'A':
-        return S.CUP_HOME.copy()
-    i = T.CUPS.index(cup)
-    if cup == 'B':
-        return np.array([S.TRAY_C[0] - 0.55, 1.12, S.TRAY_C[2] + 0.12])
-    a = math.radians(200 + (i - 2) * (140 / 7.0))
-    return np.array([S.TABLE_C[0] + 1.02 * math.cos(a), 1.32 + 0.05 * math.sin(i * 1.3 + t * 2), S.TABLE_C[2] + 0.9 * math.sin(a) + 0.25])
-
-
-def cup_state(cup, t):
-    """position, tilt and visibility (0..1 scale) of a cup at time t"""
-    pos = cup_pos(cup, t)
-    rolls = [r for r in T.ROLLS if r.cup == cup]
-    tilt, lift = 0.0, 0.0
-    for r in rolls + ([T.ROLLS[0]] if cup == 'A' else []):
-        t0 = r.t_throw if not (cup == 'A' and r is T.ROLLS[0] and t > 30) else T.T_LOOP_THROW
-        if t0 - 0.36 <= t <= t0 + 0.42:
-            u = (t - (t0 - 0.36)) / 0.36
-            if u < 1:
-                lift = 0.09 * ease(u)
-                tilt = 0.25 * math.sin(u * math.pi * 4) * (1 if cup == 'A' else 0.5)
-            else:
-                v = (t - t0) / 0.42
-                tilt = 1.9 * math.sin(math.pi * min(1, v))
-                lift = 0.09 * (1 - ease(v))
-    if cup == 'A' and T.T_SHAKE <= t < T.T_LOOP_THROW - 0.36:
-        u = (t - T.T_SHAKE)
-        lift = 0.09 * ss(0, 0.3, u)
-        tilt = 0.28 * math.sin(u * 26)
-    vis = 1.0
-    if cup != 'A':
-        tin = T.T_TWO - 0.6 if cup == 'B' else T.T_TEN - 0.6
-        vis = ease((t - tin) / 0.4) * (1 - ease((t - T.T_FINAL - 0.4) / 0.5))
-        if cup == 'B':
-            vis *= 1 - ease((t - T.T_FINAL - 0.4) / 0.5)
-    pos = pos + np.array([0, lift, 0])
-    return pos, tilt, vis
-
-
-def draw_cup(fr, cam, L, d, cup, t, glows):
-    pos, tilt, vis = cup_state(cup, t)
-    if vis <= 0.02:
-        return pos
-    tdir = math.atan2(S.TRAY_C[0] - pos[0], S.TRAY_C[2] - pos[2]) if cup != 'A' else -math.pi / 2
-    body, inner, R = S.cup_faces(np.zeros(3), tilt, tdir)
-    sc = vis
-    body = [(Q * sc + pos, n) for Q, n in body]
-    inner = [(Q * sc + pos, n) for Q, n in inner]
-    col = (122, 58, 40) if cup == 'A' else tuple(int(c * 0.55 + 40) for c in T.CUP_COLS[cup])
-    o = Obj(body, col, 'cup', grp=-7)
-    draw_obj(fr, cam, L, d, o)
-    ins = Obj(inner, (28, 16, 14), 'cupin', grp=-7, cast=False)
-    draw_obj(fr, cam, L, d, ins)
-    # gold rim line
-    rim = [(R @ np.array([0.094 * math.cos(a), 0.18, 0.094 * math.sin(a)])) * sc + pos for a in np.linspace(0, 6.283, 13)]
-    vis_pts = [q for q in rim if cam.depth(q)[0] > 0.2]
-    if len(vis_pts) == len(rim):
-        fr.line(cam, rim, (230, 186, 90), 1)
-    if cup != 'A':
-        s = cam.wp(pos + [0, 0.09, 0])
-        glows.append((s[0], s[1], 0.25 * cam.f / max(cam.depth(pos)[0], 0.5), T.CUP_COLS[cup], 0.25 * vis))
-    return pos
 
 
 # ---------------------------------------------------------------- staff (parchment on the back wall)
