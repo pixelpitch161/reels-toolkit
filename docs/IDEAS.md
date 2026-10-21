@@ -22,7 +22,7 @@ a draft, when it gets feedback, and when it delivers.
 | 10 | One Melody, 100 Years of Speakers | idea | - | - | - |
 | 11 | The Perfect Loop (15 pendulums) | in production | session_017rbUTK (2026-10-21) | Started: building timeline + attic scene from the backlog beat sheet | - |
 | 12 | Prime-Number Cicadas | in production | session_01UkvSDH (2026-10-21) | Started: building timeline + split-woodland cut-away from the backlog beat sheet | - |
-| 13 | Count the Thunder | approved | ideas chat | Fully developed (beat sheet + sources in backlog). Watch the safety (count from indoors) and photosensitivity (≤3 flashes/s) flags | - |
+| 13 | Count the Thunder | in production | session_01QAsUpz (2026-10-21) | Started: building timeline + prairie cabin cut-away from the backlog beat sheet (indoors-only, ≤3 flashes/s) | - |
 
 ## Backlog (idea details)
 
