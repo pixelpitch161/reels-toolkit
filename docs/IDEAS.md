@@ -27,7 +27,7 @@ a draft, when it gets feedback, and when it delivers.
 | 15 | Fireflies That Sync | review | session_012WAWkH (2026-10-21) | v1 delivered with caption + tags (early sheet sent first). Kuramoto lock-in (274 -> 8 ms spread over burst A), 0.5 m/s wave band, valley climax; first gap shortened to 8 beats so drop 1 lands at 21 s (all later gaps 16 beats). Checks: hero CoC 0 on all frames, 0 general flashes (climax 22 % area), bells 15-34 dB over music. Waiting for feedback | `fireflies_sync.mp4` |
 | 16 | The Metronome Choir (100 Metronomes, part 2) | in production | session_01EvbHha (2026-10-22) | Started: copying projects/100_metronomes/ into projects/metronome_choir/; two-layer sync sim + 5 risers + soloist next | - |
 | 17 | Domino Symphony | in production | session_01H2FWd5 (2026-10-22) | Started: projects/domino_symphony/ from the template; domino schedule + test sheet for render speed next | - |
-| 18 | Marble Waterfall Organ | in production | session_01TqVLeD (2026-10-22) | Started: projects/marble_waterfall_organ/ from the template; marble event list + machine/void test sheet next | - |
+| 18 | Marble Waterfall Organ | in production | session_01TqVLeD (2026-10-22) | Early contact sheet sent (machine, void, gate lock-ins, holdout, drop); soundtrack + full render next | - |
 
 ## Backlog (idea details)
 
