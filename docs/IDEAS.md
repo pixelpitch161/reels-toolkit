@@ -24,7 +24,7 @@ a draft, when it gets feedback, and when it delivers.
 | 12 | Prime-Number Cicadas | review | session_01UkvSDH (2026-10-21) | v1 delivered with caption + tags (early sheet sent first). Exact grid kept (1 yr = 1/16 at 120 BPM, 2024 on the 51 s downbeat), so near-miss captions moved to 29.75 s / 44.5 s. Waiting for feedback | `prime_cicadas.mp4` |
 | 13 | Count the Thunder | in production (v2) | session_01QAsUpz (v1); session_016ZWSrN (v2, 2026-10-21) | v1 feedback: not engaging enough at the start. Audio check: first 30 s ≈ count ticks + 4 thunders (~1 hit/s, ~−25 dBFS), groove only from 30 s, climax barely louder, whole mix 6–9 dB under the others. v2 re-cut started: v1 kept as `*_backup.py`; building cold open, storm chaos → lock-in, never quiet (see "v2 rework" in backlog) | v1: `count_the_thunder.mp4` |
 | 14 | Chaos Makes a Perfect Curve (Galton board) | in production | session_015Sj8e1 (2026-10-21) | Started: building timeline, seeded 50/50 simulation and Victorian lecture-hall scene | - |
-| 15 | Fireflies That Sync | approved | ideas chat | Fully developed (beat sheet + sources in backlog). Built to the engagement brief: random sparkle → lock-in; dark pauses are builds, bursts are drops | - |
+| 15 | Fireflies That Sync | in production | session_012WAWkH (2026-10-21) | Started: building timeline, coupled-oscillator flash schedule and Elkmont forest scene | - |
 
 ## Backlog (idea details)
 
