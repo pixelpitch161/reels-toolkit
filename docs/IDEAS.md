@@ -26,7 +26,7 @@ a draft, when it gets feedback, and when it delivers.
 | 14 | Chaos Makes a Perfect Curve (Galton board) | review | session_015Sj8e1 (2026-10-21) | v1 delivered with caption + tags (early sheet sent first). Honest seeded run (1,000 balls, seed 1889) + staged golden "what if" (never counted). Checks: focus CoC 0 on all frames; science band 9-25 dB over the music; quietest 0.5 s -22.7 dBFS; seamless loop. Waiting for feedback | `galton_board.mp4` |
 | 15 | Fireflies That Sync | review | session_012WAWkH (2026-10-21) | v1 delivered with caption + tags (early sheet sent first). Kuramoto lock-in (274 -> 8 ms spread over burst A), 0.5 m/s wave band, valley climax; first gap shortened to 8 beats so drop 1 lands at 21 s (all later gaps 16 beats). Checks: hero CoC 0 on all frames, 0 general flashes (climax 22 % area), bells 15-34 dB over music. Waiting for feedback | `fireflies_sync.mp4` |
 | 16 | The Metronome Choir (100 Metronomes, part 2) | in production | session_01EvbHha (2026-10-22) | Started: copying projects/100_metronomes/ into projects/metronome_choir/; two-layer sync sim + 5 risers + soloist next | - |
-| 17 | Domino Symphony | approved | ideas chat | Fully developed (beat sheet in backlog). Satisfying-first: 1 push → 64 clattering lines → lines lock into one rhythm → holdout domino → staircase drop → rewind loop | - |
+| 17 | Domino Symphony | in production | session_01H2FWd5 (2026-10-22) | Started: projects/domino_symphony/ from the template; domino schedule + test sheet for render speed next | - |
 
 ## Backlog (idea details)
 
