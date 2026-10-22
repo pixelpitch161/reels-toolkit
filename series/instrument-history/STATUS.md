@@ -41,7 +41,7 @@ below, and marks it `approved` when the user signs off. A production session the
 | P4 | Ukulele | review | [session](https://claude.ai/code/session_01FmQrsdwGhdezdxp3sm8YPa) · 2026-10-21 | 2026-10-21: `ukulele60_lowpoly.py` rendered to `ukulele60_lowpoly.mp4` (55.7 s, lit, wave-barrel backdrop); stills sheet, video and captions sent. Models built from Chrome reference photos (Kamaka site, NMM Kumalae, Horniman machete, Nunes, Islander, Vega baritone). Modern fact shown in the showcase via the new optional `INTRO_STEPS`; outro returns to the soprano (`OUTRO_NAME`). Awaiting user review. |
 | P5 | Bagpipes | in production | [session](https://claude.ai/code/session_01Qm7rGbs5v6N1NmF33f4ZdM) · 2026-10-22 | Claimed 2026-10-22. Building `bagpipes60_lowpoly.py` from the approved draft; reference photos via Chrome next. |
 | P6 | Turntables | in production | [session](https://claude.ai/code/session_01WFWhjRQP978z5jeTn6ZbEc) · 2026-10-22 | Claimed 2026-10-22. Building `turntables60_lowpoly.py` from the approved draft (must run 60 s); reference photos via Chrome next. |
-| P7 | Pipe organ | approved | — | Approved 2026-10-22. Must run 60 s. Ready for a production session (prompt under Drafts → P7). |
+| P7 | Pipe organ | in production | [session](https://claude.ai/code/session_01WEpQaZGXfpGprqXDV96RT4) · 2026-10-22 | Claimed 2026-10-22. Building `organ60_lowpoly.py` from the approved draft (must run 60 s); reference photos via Chrome next. |
 
 ## Drafts
 
