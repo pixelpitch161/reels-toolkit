@@ -4,7 +4,8 @@ Picture (render.py) and sound (audio.py) both import this file, sim.py and motio
 
 Arc (beat sheet in docs/IDEAS.md #16; 120 BPM grid, 1 beat = 0.5 s = one metronome tick):
     0-3     cold open: 199 metronomes on 5 fixed risers + the golden soloist, all ticking at random
-    3-6     sweep the 5 colour-coded sections                       "5 SECTIONS / 5 VOICES"
+    3-6     roll call: each section lights up in its colour in turn  "5 SECTIONS / 5 VOICES"
+            (a slow push, not a fast sweep: the sweep over the bright/dark tiers tripped the flash test)
     6-13    bass riser onto 2 soda cans (clunk), locks row by row   its two-note line rises out of the wash
     13-17   tenor riser onto cans, locks
     17-21   alto + soprano together                                 "4 OF 5"

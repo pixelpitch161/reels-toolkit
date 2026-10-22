@@ -14,6 +14,7 @@ python sim.py          # -> sim.npz (two-layer Kuramoto, calibrated: section fla
 python audio.py        # -> audio.wav + stems/ (prints section levels)
 python audio_check.py  # loudness, 2 s windows, hits/s, bells vs music, loop seam
 python focus_check.py  # every metronome on screen must have CoC 0 on all 1800 frames
+python flash_check.py --times 2.3 9.6   # photosensitivity on a window (or --mp4 metronome_choir.mp4 for the deliverable)
 python sheet_par.py test/sheet.png 1.5 7.3 11 23.2 26.5 32.5 36.6 39.2 45.2 49.2 55 58.15
 python -m reelkit.video render.py audio.wav metronome_choir.mp4
 ```
@@ -26,6 +27,7 @@ python -m reelkit.video render.py audio.wav metronome_choir.mp4
 | `motion.py` | lifts onto cans, hoist, sway, kick-out + thump, pendulum angles, in-sync bookkeeping (shared by picture + sound) |
 | `scene.py` | the hall (skylight, organ, wings, balconies), #1's metronome model, steps/boards/cans, podium, piano + cat, timpani, seats + pawns, truss |
 | `render.py` | ray-cast hall shell, per-pixel floor/platform/carpet/board tops with every metronome's and rod's shadow, metronomes (phase tips, LED panels in the drop), locked focus, sunbeam, HUD, captions |
+| `flash_check.py` | Harding-style general-flash test (adapted from Fireflies); camera moves over the striped loft are the risk |
 | `audio.py` | bells from every tick (impulse trains), soloist carousel, motion fx, pulse + riser, the drop arrangement, loop-aware master |
 
 How the science drives the sound: every tick is a bell at its exact simulated time. Each section rings a two-note

@@ -108,15 +108,14 @@ def KF(t, x, y, z, d, yaw, pitch, fov=46, sy=330):
 OPEN = KF(0.0, 0.0, 4.4, -7.6, 30.0, 0, 21, 46, 336)
 KEYS = [
     OPEN,
-    KF(2.9, 0.0, 4.6, -7.8, 28.5, 3, 21, 46, 336),
-    KF(3.25, 2.2, 8.6, -17.2, 12.5, 26, 20, 42, 330),            # sweep: high bells ...
-    KF(5.9, -0.6, 2.4, -0.4, 10.0, 22, 16, 42, 340),            # ... down to the bass
-    KF(6.6, 1.0, 2.0, 0.6, 16.5, 32, 24, 44, 300),              # bass onto its cans
+    KF(2.6, 0.0, 4.6, -7.8, 28.5, 3, 21, 46, 336),
+    KF(5.8, 0.0, 3.4, -5.0, 22.5, 8, 22, 46, 320),             # roll call: each section lights up in turn (slow push)
+    KF(6.9, 1.0, 2.0, 0.6, 16.5, 32, 24, 44, 300),              # bass onto its cans
     KF(9.0, 0.6, 2.4, 0.0, 15.0, 24, 22, 44, 300),
-    KF(12.6, 0.0, 2.9, -1.6, 12.0, -16, 26, 44, 300),           # bass locked, tenor behind still random
-    KF(13.6, 0.4, 3.8, -4.4, 13.0, 22, 22, 44, 300),            # tenor
-    KF(16.5, 0.0, 4.2, -5.0, 13.0, 12, 25, 44, 300),
-    KF(17.6, 0.0, 5.6, -10.0, 19.5, -14, 23, 46, 300),          # alto + soprano
+    KF(12.1, 0.0, 2.9, -1.6, 12.0, -16, 26, 44, 300),           # bass locked, tenor behind still random
+    KF(13.9, 0.4, 3.8, -4.4, 13.0, 14, 23, 44, 300),            # tenor
+    KF(16.1, 0.0, 4.2, -5.0, 13.5, 8, 25, 44, 300),
+    KF(17.9, 0.0, 5.6, -10.0, 19.5, -10, 23, 46, 300),          # alto + soprano
     KF(20.6, 0.0, 5.8, -10.0, 19.0, -6, 23, 46, 300),
     KF(21.6, 0.0, 3.8, -7.6, 30.0, 0, 18, 46, 290),             # all five, out of step (frontal)
     KF(24.8, 0.0, 3.9, -7.6, 29.0, 3, 18, 46, 290),
@@ -733,6 +732,16 @@ def led_color(i, t):
     return LED[k_], 0.8 + 0.2 * pulse
 
 
+ROLL_T = [3.2 + 0.55 * k for k in range(T.NSEC)]          # roll call: bass, tenor, alto, soprano, high bells
+
+
+def roll_glow(k, t):
+    u = t - ROLL_T[k]
+    if u < 0 or u > 1.2:
+        return 0.0
+    return min(1.0, u / 0.08) * math.exp(-u / 0.45)
+
+
 def met_prepare(st):
     """shade every visible face of every metronome in one go"""
     cam, L, t = st.cam, st.L, st.t
@@ -750,6 +759,11 @@ def met_prepare(st):
     if m.any():
         kv[m] *= st.occ.vis(Pv[m], 1000 + ii[m])
     cols = shade(L, Nv, Cv, base, kvis=kv[:, None])
+    for k in range(T.NSEC):
+        h = roll_glow(k, t)
+        if h > 0:
+            sel = (LY.SEC_ALL[ii] == k) & (ii < LY.NR)
+            cols[sel] = np.clip(cols[sel] * (1 + 0.35 * h) + np.array(T.SEC_COL[k], float) * 0.45 * h, 0, 255)
     st.met_vis = vis
     st.met_cols = {}
     for (i, j), c in zip(zip(ii, jj), cols):
@@ -913,6 +927,9 @@ def draw_loft(fr, st, glows):
             sh = np.maximum(BGRID.sample(BOARD_STATIC[k], lx, lz), BGRID.sample(dyn, lx, lz) * 0.9)
             sv = S.sky_lit(P) * (1 - sh)
             I = surf_light(st, P, sv)
+            h = roll_glow(k, st.t)
+            if h > 0:
+                I = I * (1 + 0.25 * h) + np.array(T.SEC_COL[k], float)[None] / 255 * 0.5 * h
             return I * BGRID.sample(BOARD_AO[k], lx, lz)[:, None]
         hsurf(fr, cam, np.array([[xoff - LY.BOARD_HX, top, LY.ZT[k] - LY.BOARD_HZ], [xoff + LY.BOARD_HX, top, LY.ZT[k] - LY.BOARD_HZ],
                                   [xoff + LY.BOARD_HX, top, LY.ZT[k] + LY.BOARD_HZ], [xoff - LY.BOARD_HX, top, LY.ZT[k] + LY.BOARD_HZ]]),
@@ -1128,7 +1145,7 @@ def section_tags(img, st):
     """3-6 s: each section's name floats beside its riser as the camera sweeps past; lock ticks later"""
     t, cam = st.t, st.cam
     for k in range(T.NSEC):
-        show = 3.2 <= t < 6.1
+        show = ROLL_T[k] <= t < 6.1
         lk = MO.T_LOCK[k]
         locked_tag = lk <= t < lk + 2.2 and t < T.PLAT[0]
         if not (show or locked_tag):
@@ -1141,7 +1158,7 @@ def section_tags(img, st):
         if not (-40 < s[0] < W + 40 and 160 < s[1] < H - 30):
             continue
         txt = T.SEC_NAMES[k] + (' ✓' if locked_tag else '')
-        al = min(1.0, (t - (3.2 if show else lk)) / 0.15)
+        al = min(1.0, (t - (ROLL_T[k] if show else lk)) / 0.15)
         hw = len(txt) * 6 + 4
         x = min(max(s[0], hw + 4), W - hw - 4)
         center_text(img, txt, x, s[1], MINT if locked_tag else tuple(min(255, c + 40) for c in T.SEC_COL[k]), 2, alpha=al)
