@@ -39,6 +39,7 @@ below, and marks it `approved` when the user signs off. A production session the
 | P2 | Alto saxophone | review | [session](https://claude.ai/code/session_013UMaDd8usn4Db7tWhgAwUj) · 2026-10-21 | Rendered 2026-10-21 (`altosax60_lowpoly.py` → `altosax60_lowpoly.mp4`, 60.1 s, lit, −11.9 LUFS). Stills contact sheet + video sent to the user for review. Follows the draft; the 2020s YAS-62 row plays as the 9th scene, so the cut runs 60.1 s rather than the ≈53 s + chord estimate. Models from reference photos (Met 2005.82 Sax alto, NMM 13158 Conn, Yamaha, SMEM EWI1000). Note: NMM dates its Conn no. 16 to 1890–92; the 1888 date is Buescher's first prototype, as the draft cites. Next: user review, then post. |
 | P3 | Accordion | review | [session](https://claude.ai/code/session_01RyAkaahcXy7gH8qpoCRfUF) · 2026-10-21 | Rendered 2026-10-21 (`accordion60_lowpoly.py` → `accordion60_lowpoly.mp4`, 62.6 s, lit, −11.7 dB mean). Stills contact sheet, video and captions sent to the user for review. Follows the draft; the 2020s Morino+ V row plays as the 10th scene, so the cut runs 62.6 s rather than the ≈55 s + chord estimate. Models from Chrome reference photos (Hohner Morino+ V, Zeng tomb sheng, Demian 1829, 142-tone bandoneons, Dallapè/Deiro-era piano accordion, Joe Falcon's accordion, 1930 French chromatic musette, 1950s pearloid, Corona III, Roland FR-7). One change from the model notes: the Cajun accordion has four stop knobs, as on Falcon's own instrument (draft said two). Musette reeds ±18 cents, phase-locked for an obvious ~7 Hz wobble. Next: user review, then post. |
 | P4 | Ukulele | review | [session](https://claude.ai/code/session_01FmQrsdwGhdezdxp3sm8YPa) · 2026-10-21 | 2026-10-21: `ukulele60_lowpoly.py` rendered to `ukulele60_lowpoly.mp4` (55.7 s, lit, wave-barrel backdrop); stills sheet, video and captions sent. Models built from Chrome reference photos (Kamaka site, NMM Kumalae, Horniman machete, Nunes, Islander, Vega baritone). Modern fact shown in the showcase via the new optional `INTRO_STEPS`; outro returns to the soprano (`OUTRO_NAME`). Awaiting user review. |
+| P5 | Bagpipes | approved | — | Approved 2026-10-22. Ready for a production session (prompt under Drafts → P5). |
 
 ## Drafts
 
@@ -283,5 +284,62 @@ below, and marks it `approved` when the user signs off. A production session the
 > Must-haves: new script `ukulele60_lowpoly.py` (OUT "ukulele60_lowpoly.mp4", TAG "uk"); modern Kamaka soprano first, then history oldest to newest, outro back to TODAY; `LIGHTING = True`; no brand logos on the models; each scene's riff in its credited style. Copy from the closest plucked/guitar scripts (`harp60` / `acoustic` / `pp_guitar.py` helpers).
 >
 > Reference photos: before modelling each instrument (the modern one and all 9 historical ones), use my open Chrome browser (Claude in Chrome) to find real reference photos yourself: image searches, museum collection pages, makers' sites. Use the "Reference photos to find" list and model notes in the draft. Check string count (4; metal on the machete), figure-8 vs oval (pineapple) bodies, the banjolele's drum head and tension hooks, the baritone's larger size, and pegs vs tuners per era. Don't ask me for images.
+>
+> Before the full render, send me `--still` frames taken mid-scene for every scene (contact sheet is fine) so I can review them, but don't wait for my OK: carry straight on and render with pp_parallel.py, watch it through, send the video, update STATUS.md, commit, git pull --rebase and push.
+
+### P5. Bagpipes — APPROVED (2026-10-22)
+- **Hook (showcase lines):** "9 NOTES, 3 DRONES," / "AND ZERO RESTS"   then   "BUT HOW DID WE" / "GET HERE?"
+- **Headline:** "1,960 YEARS" (60 AD → 2026). `HEAD_INTRO = "THE BAGPIPES"`, `START_YEAR = 0`
+- **Modern showcase:** Great Highland bagpipe (blackwood, tartan bag cover), bagpipe big-beat riff. Credit BAGPIPE BIG BEAT.
+- **Timeline:** 100 BPM, `SHOW_BARS, SCENE_BARS, OUTRO_BARS = 4, 2, 1`, 10 scene rows (9 history + the closing modern row) = 25 bars ≈ 60 s + final chord.
+- **Scenes (oldest → newest):**
+
+| Year (ys) | Name | Credit | Fact | Model notes |
+|---|---|---|---|---|
+| 60 ("60 AD") | ROMAN BAGPIPE | ANCIENT ROMAN MODE | EMPEROR NERO / PLAYED ONE | No surviving instrument: copy a Roman / Greco-Roman depiction (figurine or relief); keep it simple, no Highland-style drones |
+| 1255 ("1250s") | CANTIGAS BAGPIPE | MEDIEVAL CANTIGA | IN ALFONSO X'S / ROYAL SONGBOOK | Copy one Cantigas de Santa Maria miniature (drone count varies between them) |
+| 1567 | FLEMISH PIJPZAK | FLEMISH PEASANT DANCE | TWO PIPERS PLAY / BRUEGEL'S WEDDING | Bruegel's Peasant Wedding: single long drone over the shoulder, blowpipe, chanter |
+| 1672 | MUSETTE DE COUR | FRENCH BAROQUE GAVOTTE | BELLOWS-BLOWN FOR / FRENCH ARISTOCRATS | Bellows; two chanters (grand + petit chalumeau); short cylindrical "shuttle" drone with sliders (layettes); check bag cover and finish |
+| 1775 ("1770s") | UILLEANN PIPES | IRISH JIG | 'UILLEANN' MEANS / 'OF THE ELBOW' | Bellows under the right arm, bag under the left; chanter on the knee; 3 drones + 3 keyed regulators in one stock across the thigh |
+| 1805 ("1800s") | NORTHUMBRIAN PIPES | NORTHUMBRIAN RANT | A CLOSED CHANTER: / NOTES CAN STOP | Bellows; small keyed chanter (~7 keys); 4 drones in one common stock |
+| 1914 | WARTIME HIGHLAND PIPES | PIPE BAND MARCH | PIPED TROOPS INTO / WWI BATTLES | Great Highland pipes, 2 tenor + 1 bass drone over the left shoulder; bag cover from period photos |
+| 1977 | CAMPBELTOWN PIPE BAND | 70s FOLK-ROCK BALLAD | 1ST UK SINGLE TO / SELL 2 MILLION | Highland pipes with tartan cover, drone cords and ribbons |
+| 1993 ("1990s") | ELECTRONIC BAGPIPE | CELTIC DANCE POP | HEVIA'S PATENTED / ELECTRONIC PIPES | Copy Hevia's actual electronic instrument from live photos (not a generic practice chanter) |
+| 2020s | GREAT HIGHLAND BAGPIPE | BAGPIPE BIG BEAT | PLAYED ON THE ISS / IN NOVEMBER 2015 | Blackwood with mounts, tartan cover, 2 tenor + 1 bass drone, drone cords |
+
+- **All:** count the drones and where they point; mouth-blown vs bellows (musette, uilleann, Northumbrian are bellows); one chanter or two. The three Highland scenes (1914, 1977, modern) must read differently (bag cover, finish, lighting).
+- **Riff tones:** a drone sounds under every chanter riff; musette and uilleann sweeter and quieter; Northumbrian short and staccato (audibly different); electronic a clean synth-pipe tone.
+- **Outro:** "1,960 YEARS FROM" / "NERO'S BAGPIPE", credit BAGPIPE BIG BEAT
+- **Look:** "Standing stones in a storm": a ring of standing stones circles the pedestal on an open moor; sideways rain, racing clouds; lightning cracks on the first downbeat and on every snare roll; carvings on the stones glow with each chanter note. No lake, wave or big mountain range (keeps clear of the harp and ukulele).
+  Era palettes (sky + glow): modern storm slate + lightning white · Roman terracotta + olive gold · Cantigas vellum + lapis and gold leaf · Bruegel harvest ochre + russet · musette Versailles pastel blue + rose gold · uilleann emerald + peat brown · Northumbrian heather purple + grey stone · 1914 khaki + poppy red · 1977 Kintyre sunset orange + sea blue · 1990s Asturian green + neon cyan.
+  Groove: **big beat**, 100 BPM: chopped breakbeat, pipe-band snare rolls into each scene, distorted bass, a riser before the hook. `LIGHTING = True`. No brand logos or wordmarks on models.
+- **Reference photos to find:**
+  - Roman: "Roman bagpiper figurine", "tibia utricularis relief"; Met collection 503699
+  - Cantigas: Cantigas de Santa Maria bagpipe miniatures (Wikimedia "Cantiga bagpipes")
+  - Pijpzak: Bruegel, The Peasant Wedding (Kunsthistorisches Museum, khm.at)
+  - Musette de cour: Met, MIM Brussels, Musée de la Musique Paris ("musette de cour")
+  - Uilleann: "uilleann pipes full set"
+  - Northumbrian: Northumbrian Pipers' Society; "Northumbrian smallpipes"
+  - 1914: Imperial War Museum WWI piper photos
+  - 1977: Campbeltown Pipe Band / Mull of Kintyre photos; 1970s pipe bands
+  - Electronic: "Hevia gaita electrónica" live photos
+  - Modern: makers' product pages ("Great Highland bagpipe blackwood")
+- **Sources:**
+  - Nine-note chanter; 2 tenor + 1 bass drone; continuous airflow, no rests: https://en.wikipedia.org/wiki/Great_Highland_bagpipe
+  - Nero and the tibia utricularis (Suetonius, Dio Chrysostom); Cantigas bagpipes (mid-13th c.); WWI piping; Lindgren on the ISS: https://en.wikipedia.org/wiki/Bagpipes · https://www.wunc.org/2015-11-13/astronaut-kjell-lindgren-plays-bagpipes-in-space
+  - Cantigas compiled under Alfonso X: https://en.wikipedia.org/wiki/Cantigas_de_Santa_Maria
+  - The Peasant Wedding (1567), two pipers on the pijpzak: https://en.wikipedia.org/wiki/The_Peasant_Wedding
+  - Musette de cour (bellows, court and aristocracy, Borjon 1672): https://en.wikipedia.org/wiki/Musette_de_cour
+  - Uilleann = "of the elbow"; earliest surviving sets late 1700s: https://en.wikipedia.org/wiki/Uilleann_pipes
+  - Northumbrian closed chanter, four drones, early-1800s collections: https://en.wikipedia.org/wiki/Northumbrian_smallpipes
+  - Mull of Kintyre (1977, Campbeltown Pipe Band, first UK single to sell 2 million): https://en.wikipedia.org/wiki/Mull_of_Kintyre_(song)
+  - Hevia team patented electronic bagpipes, early 1990s: https://en.wikipedia.org/wiki/Electronic_bagpipes · https://en.wikipedia.org/wiki/Hevia
+- **Production prompt:**
+
+> Make Pixel Pitch P5: the bagpipes. Use the pixel-pitch-history skill and the repo pixelpitch161/reels-toolkit (series/instrument-history/). The approved draft is in STATUS.md under Drafts → "P5. Bagpipes": follow it exactly (hook, headline, all 10 scene rows with their years, names, credits and facts, outro, standing-stones storm background, era palettes, 100 BPM big-beat groove). First claim the P5 row on the ideas board (in production, this session's link, today's date), commit and push.
+>
+> Must-haves: new script `bagpipes60_lowpoly.py` (OUT "bagpipes60_lowpoly.mp4", TAG "bp"); modern Great Highland bagpipe first, then history oldest to newest (year counter starts at 0 / 60 AD), outro back to TODAY; `LIGHTING = True`; no brand logos on the models; a drone sounds under every scene's riff, and the Northumbrian riff is audibly staccato; lightning on the first downbeat so the opening grabs attention; the three Highland scenes must look different from each other.
+>
+> Reference photos: before modelling each instrument (the modern one and all 9 historical ones), use my open Chrome browser (Claude in Chrome) to find real reference photos yourself: image searches, museum collection pages, makers' sites. Use the "Reference photos to find" list and model notes in the draft. Check drone count and direction, bellows vs blowpipe, one chanter or two, the uilleann regulators and stock, and the musette's shuttle drone. For the Roman scene, copy an actual ancient depiction. Don't ask me for images.
 >
 > Before the full render, send me `--still` frames taken mid-scene for every scene (contact sheet is fine) so I can review them, but don't wait for my OK: carry straight on and render with pp_parallel.py, watch it through, send the video, update STATUS.md, commit, git pull --rebase and push.
