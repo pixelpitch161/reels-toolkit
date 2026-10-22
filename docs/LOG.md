@@ -161,7 +161,29 @@
   - Smoke as opaque polys read as floating rocks at night; banded GLOW-kernel sprites blended after the lens work.
   - Photosensitivity (`flash_check.py`, Harding-style on the mp4): 0 general flashes; max 4 % of frame per strike.
   - Mix: high-passed "bright" snare (280 Hz) + deep bass ducking keep the thunder-kick 8-15 dB over the music.
-- Feedback: (pending)
+- v1 feedback: not engaging enough, especially at the start (first 30 s ~1 hit/s at ~-25 dBFS, whole mix 6-9 dB under
+  the other reels).
+- v2 re-cut (`count_the_thunder_v2.mp4`, same scene/renderer, new timeline + audio): cold open on the climax (rod strike,
+  fused clap, full groove), a 2 s rewind back to the horizon, then ~1 flash/s of storm chaos at 1-5 km: every ring
+  reaches the cabin when its rumble sounds, so the rumbles land out of step. A tagged far flash is counted on the beat
+  (15 s = 3 MI ≈ 5 KM), delays shrink (5 s, 3 s), then v1's lock-in, and a second cell (3 s, 2 s, 1 s) whose rod strike
+  is frame 0. One strike list with kinds (pre / chaos / count / lock / rod / cell2) drives everything.
+- Lessons:
+  - v1 sat low because the big claps set the peak normalisation: a 3 ms lookahead limiter master (drive +5 dB) gets
+    -12 LUFS (other reels ~-11) and lets section gains shape the build (chaos -17…-19 dBFS -> climax -12).
+  - A 2 s-window "hits/s" probe (`engagement_check.py`: >= 6 dB energy jumps per band, within 20 dB of the loudest)
+    matched the ~1 hit/s measured on v1. Sustained pads/rumbles mean the 250-2500 Hz band never registers a hit; a
+    beat-synced sidechain pump on pads, rain and smear fixed that. Rain hiss masks hats: keep it down under a groove.
+  - Count ticks starting at D4 vanished under the full groove (no energy in 1.5-4 kHz); start at D5, one octave per
+    5 s (= 1 mile), and pull the flash snare back on downbeats that carry a tick.
+  - Ring clutter: ~1 flash/s with 4-17 s delays keeps <= 10 rings on screen; chaos rings at 0.6 strength so the amber
+    counted ring reads.
+  - Rewind: a "phase" clock that runs 10 s backwards inside the 2 s rewind, so the whole video spans 48 s of phase (a
+    multiple of the 3/4/6 s motion periods) and periodic motion still loops; windmill speed integrated and scaled to
+    whole blade steps. A 2/4 bar (27-28 s) moves the downbeats from odd to even seconds after the rewind.
+  - Loop: the second cell ends exactly where the main cell starts; seam diff 3.9 vs a normal 3.6 frame step (with the
+    intended frame-0 flash removed). Focus CoC 0 on all 1800 frames; flash check 0 general flashes, <= 5.1 % per strike.
+- Feedback: (pending, v2)
 
 ## Chaos Makes a Perfect Curve (`projects/galton_board`)
 - Galton board (12 rows, 4,096 paths, 13 bins) as a giant brass-and-walnut machine on the stage of a sunlit

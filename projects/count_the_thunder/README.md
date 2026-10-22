@@ -34,6 +34,7 @@ Build order:
 ```bash
 python audio.py                  # -> audio.wav + stems/ ; prints section levels
 python audio_check.py            # key thunders vs music (40-400 Hz), ticks vs music (1.5-4 kHz), phone band
+python engagement_check.py audio.wav   # LUFS, 2 s window levels + hits/s (never quiet, >= 3 hits/s)
 python focus_check.py            # subject CoC = 0 on all 1800 frames (no rendering)
 python -m reelkit.sheet render.py test/sheet.png 0 1 3.6 5.6 9 14 19.6 24.6 33.1 38.05 50 55.3 57.2 59.95
 python -m reelkit.video render.py audio.wav count_the_thunder_v2.mp4
@@ -46,7 +47,7 @@ python flash_check.py --mp4 count_the_thunder_v2.mp4     # photosensitivity (gen
 | `scene.py` | cabin cut-away, barn + rod, windmill, fence + distance markers (1 KM … 3 MI), the distance mapping, strike positions, storm cells (main, two far flanks, the second cell), one bolt per strike |
 | `render.py` | sky, per-pixel prairie (moon + lightning ground masks, sound rings with counted ones in amber), cells, ray-traced cabin shell, cat, fire, locked DOF, bolts, window beams, rewind overlay, HUD (count, lock-in grid, next-one panel) |
 | `audio.py` | distance-filtered thunder, count ticks, groove with a time-varying bed low-pass, beat pump, tape rewind, riser, lookahead-limited master |
-| `audio_check.py`, `focus_check.py`, `flash_check.py` | the verification passes |
+| `audio_check.py`, `engagement_check.py`, `focus_check.py`, `flash_check.py` | the verification passes |
 
 Safety and photosensitivity: nobody is ever outdoors (the cat stays inside); one luminance pulse per
 strike with no restrike flicker, ≤ 2 flashes/s in the chaos and far bolts small and dim; the warm lamps
