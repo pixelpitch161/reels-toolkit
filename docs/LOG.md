@@ -118,7 +118,28 @@
     Plucks sit 11-12 dB above the music in 300-3000 Hz in the back half.
   - Loop audit: seam diff 1.4 with the frame-0 flash disabled vs 3.4 for a normal frame step; the only jump is
     the intended unison flash. Focus audit: 0 blur on every bob in all 1800 frames (`focus_check.py`).
-- Feedback: (pending)
+- Feedback (v1): scale the concept up (more pendulums) -> v2.
+- v2 re-cut (`perfect_loop_v2.mp4`, v1 kept as `*_backup.py`, which import each other so v1 still rebuilds). Feedback on
+  v1: scale it up. Now 100 pendulums (n = 51..150, 34.4 -> 4.0 cm, 10 050 plucks ~167/s) in a long gallery lit by four round
+  windows in the left wall; physics = video + 8 s, so it opens mid-pattern (15 groups at frame 0), the ladder lands every 2-5 s
+  and all 100 line up at 52 s; frame 1800 = physics 68 = 8 = frame 0. Every milestone is exact and on the 120 BPM grid
+  (pendulum n = 120 plucks on every beat); hat subdivision = current group count. HUD counter races 60 / (52 - t): 8 -> 100 -> 1.
+- Lessons (v2):
+  - A 2.5 m row in portrait reads best near end-on (yaw 5-10, pitch 40-47): row up the frame, swing sideways. At yaw ~20 the
+    swing partly runs along the row on screen and group structure vanishes; side views turn the swing into depth.
+    (v1's yaw 30-55 rule was for 15 big bobs; with 100 the swing direction matters more than beam occlusion.)
+  - 100 overlapping glow sprites + white-hot cores + additive trails sum to white: saturated cores, glows only on a pluck,
+    and trails composited "strongest sample wins" with a screen blend keep the rainbow.
+  - Groups in a 100-bob row are faint in stills: bold 2 px tie-lines in fixed group colours plus matching markers on the
+    HUD phase-ring clumps make the count readable; the ring alone already shows clean clumps.
+  - Wider release at the long (far) end (8.5 -> 2.0 cm, capped 30 deg) evens out the on-screen swing in perspective.
+  - Focus audit only over on-screen bobs (a glide past the front end puts bobs behind the lens).
+  - Audio: the in-phase 100-voice strum sets the peak normalisation and left the mix ~4 dB quiet; a 24 ms lookahead limiter
+    (+4.5 dB drive) brought it to -18 -> -11 dBFS with the strum still loudest. A saw pad is what eats the pluck band:
+    dropping it an octave, lp 700 Hz and -4 dB took the margin from 4 to 9-10 dB (17-20 dB before the band enters).
+  - The rolled last-pluck sweeps (60 - j*T_k) converge visibly in the spectrogram: the physics makes its own riser.
+  - Seam diff 3.2/255 vs 3.0 for a normal frame step; subject blur 0 on all 1800 frames.
+- Feedback (v2): (pending)
 
 ## Prime-Number Cicadas (`projects/prime_cicadas`)
 - Brood XIX (13-yr) + Brood XIII (17-yr), together in 2024 for the first time since 1803 (next 2245). Golden-hour
