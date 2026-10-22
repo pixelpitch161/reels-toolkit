@@ -1,13 +1,18 @@
-"""The Lowest Note in the Universe: renderer.
+"""The Lowest Note in the Universe: renderer (v2 re-cut; v1 is render_backup.py).
 
-    python -m reelkit.sheet render.py test/sheet.png 1 6 12 22 30 40 48 58
-    python -m reelkit.video render.py audio.wav lowest_note.mp4
+    python -m reelkit.sheet render.py test/sheet.png 1 3.8 6 9 12.5 20 31 37 47 58
+    python -m reelkit.video render.py audio.wav lowest_note_v2.mp4
 
 Pipeline: banded nebula backdrop + stars + far galaxies -> island underside -> per-pixel rim floor
 (starlight, core light and lamp, each with real shadow masks, + contact AO) -> per-pixel gas basin
 (hot-gas haze, pressure-wave crests with their shadows, colour bands per octave) -> painter-sorted
 faces (lip, props, black hole, jets, bubbles, crest ridges, galaxies, satellite) -> locked DOF on
-the black hole -> glows -> light shafts -> bloom -> grade -> scrim -> captions + octave HUD."""
+the black hole -> glows -> light shafts -> bloom -> grade -> crest ripples -> scrim -> captions,
+time-lapse widget + octave HUD with the hearing-range ruler.
+
+v2 additions: camera shake per crest-kick, a screen-space ripple per crest, crystals / dishes / dust
+hop on the kicks, a scene clock (timeline.clock) that freezes at the tape-stop and whips round in the
+spin-up, the frozen 'real speed' look, the calendar/clock widget and the log-frequency ruler."""
 import math
 import os
 import sys
@@ -34,24 +39,79 @@ for ch, rows in {'♭': "#....|#....|#.##.|##..#|#...#|#..#.|###..",
                  '→': ".....|..#..|...#.|#####|...#.|..#..|....."}.items():
     RF.GLYPHS[ch] = np.array([[c == '#' for c in r] for r in rows.split('|')])
 
-# ------------------------------------------------------------------ camera: gentle 2.5D moves
+# ------------------------------------------------------------------ camera: gentle 2.5D moves + crest shake
 TGT = np.array([0.0, 1.35, 0.0])
-OPEN = (0.0, TGT, 17.2, -10, 31, 48, 352)
+OPEN = (0.0, TGT, 16.8, 6, 49, 48, 336)                       # the climax view (cold open = loop point)
 KEYS = [  # (t, target, dist, yaw, pitch, fov, sy)
     OPEN,
-    (3.6, TGT, 16.6, -8, 30, 48, 350),
-    (7.6, S.CORE + [0, -0.15, 0], 12.6, 4, 22, 46, 368),        # push in: jets fire, bubble inflates
-    (10.8, TGT + [0, -0.2, 0], 16.0, 8, 36, 48, 336),           # haze lights up
-    (14.0, TGT, 17.0, 6, 40, 48, 330),
-    (21.0, TGT, 18.0, -6, 46, 48, 326),
-    (28.6, TGT, 17.0, -14, 44, 48, 330),
-    (34.8, TGT, 15.5, -4, 40, 48, 332),
-    (38.4, TGT + [0, -0.2, 0], 16.5, 6, 58, 48, 330),           # look down on the colour bands
-    (44.0, TGT, 17.0, 10, 50, 48, 330),
-    (52.6, TGT, 18.0, -12, 38, 48, 342),
-    (58.4, TGT, 17.2, -10, 31, 48, 352),
+    (T.T_STOP, TGT, 16.6, 4, 48, 48, 336),
+    (T.T_THUD + 0.4, TGT, 16.7, 2, 46, 48, 338),                 # frozen: barely moves
+    (T.T_YEAR + 0.4, TGT, 17.6, -6, 37, 48, 346),               # wider and lower: galaxies whip round
+    (T.T_HOUR, TGT, 17.8, -12, 40, 48, 342),
+    (T.T9 - 0.3, TGT, 16.8, -8, 47, 48, 332),                    # rings accelerate (seen from above)
+    (T.G(4), S.CORE + [0, -0.15, 0], 12.8, 2, 24, 46, 366),     # push in: each kick = one bubble pop
+    (T.G(8), S.CORE + [0, -0.1, 0], 13.0, 7, 27, 46, 362),
+    (T.T8 + 0.6, TGT, 16.6, 8, 41, 48, 334),                     # pull back: the ring rides out
+    (T.T7, TGT, 17.4, -6, 46, 48, 328),
+    (T.T6, TGT, 14.9, -2, 41, 48, 336),                          # push in at 219 BPM
+    (T.T4, TGT + [0, -0.2, 0], 16.0, 4, 56, 48, 330),           # look down on the colour bands
+    (T.T0, TGT + [0, -0.2, 0], 16.6, 10, 58, 48, 330),
+    (T.T_CLIMAX, TGT, 17.0, 10, 51, 48, 330),
+    (T.T_LAND, TGT, 17.5, -2, 45, 48, 336),
+    (T.T_BUILD + 0.6, TGT, 16.9, 4, 48, 48, 335),
     (60.0,) + OPEN[1:],
 ]
+
+
+def _age(tl, t):
+    """time since a crest; cold-open crests age on the scene clock so the tape-stop freezes them"""
+    return T.clock(t) - T.clock(tl) if tl < T.T_STOP else t - tl
+
+
+def shake(t):
+    """(d_yaw, d_pitch) in degrees: a short decaying wobble on every crest-kick"""
+    amp = T.shake_amp(t)
+    if amp <= 0:
+        return 0.0, 0.0
+    dy = dp = 0.0
+    i = int(np.searchsorted(T.KICK_T, t, side='right'))
+    for j in range(max(0, i - 3), i):
+        tl = T.KICK_T[j]
+        age = _age(tl, t)
+        if age < 0 or age > 0.6:
+            continue
+        e = math.exp(-age / 0.09) * amp
+        dy += e * math.sin(2 * math.pi * 11 * age + j * 1.7)
+        dp += 0.7 * e * math.cos(2 * math.pi * 9 * age + j * 2.3)
+    return dy, dp
+
+
+def cam_at(t):
+    """interpolated camera keys + shake (kept off the frozen section)"""
+    if t <= KEYS[0][0]:
+        k = KEYS[0]
+    elif t >= KEYS[-1][0]:
+        k = KEYS[-1]
+    else:
+        for a, b in zip(KEYS, KEYS[1:]):
+            if t <= b[0]:
+                u = ease((t - a[0]) / (b[0] - a[0]))
+                k = [t] + [np.asarray(a[i], float) + (np.asarray(b[i], float) - np.asarray(a[i], float)) * u for i in range(1, 7)]
+                break
+    _, tgt, d, yaw, pitch, fov, sy = k
+    dy, dp = shake(t)
+    return Cam(tgt, float(d), float(yaw) + dy, float(pitch) + dp, float(fov), float(sy))
+
+
+def hop(t):
+    """crystals / dishes / dust hop on every crest-kick (world units)"""
+    i = int(np.searchsorted(T.KICK_T, t, side='right')) - 1
+    if i < 0:
+        return 0.0
+    age = _age(T.KICK_T[i], t)
+    if age < 0 or age > 0.22:
+        return 0.0
+    return 0.075 * (T.shake_amp(t) / 0.75) * math.sin(math.pi * age / 0.22)
 
 # ------------------------------------------------------------------ lights + cached shadow masks
 STAR_COL = np.array([0.42, 0.5, 0.78])
@@ -81,6 +141,7 @@ SF_NAME = [f[5] for f in _SF]
 SF_STARV = OCC.vis(SF_C + SF_N * 0.02, SF_G, d=S.STAR_D)
 SF_COREV = OCC.vis(SF_C + SF_N * 0.02, SF_G, lp=S.CORE)
 SF_HOT = np.array([nm in ('slit', 'win', 'lamp') for nm in SF_NAME])
+SF_HOP = np.array([nm in ('crystal', 'mast') for nm in SF_NAME])
 SF_LIP = np.array([nm == 'lip' for nm in SF_NAME])
 UF_Q = [Q for o in S.UNDER for Q, n in o.faces]
 UF_C = np.array([Q.mean(0) for Q in UF_Q])
@@ -160,8 +221,9 @@ def draw_stars(img, cam, t):
 
 
 def far_galaxies(fr, cam, t):
+    tc = T.clock(t)
     for c, R, nrm, ccore, carm, spin in S.FAR_GALAXIES:
-        faces = S.disc_galaxy(c, R, nrm, spin * 2 * math.pi * t / 60.0, n=16)
+        faces = S.disc_galaxy(c, R, nrm, spin * 2 * math.pi * tc / 60.0, n=16)
         for Q, n, ring_i, arm in faces:
             if ring_i > 0 and not arm:
                 continue                                   # inter-arm gaps: let the nebula show through
@@ -186,7 +248,9 @@ def moving_parts(t, cam):
     ck = core_k(t)
     jk = T.jets_k(t)
     kick = T.kick_env(t, 0.1)
-    be = T.beat_env(t)
+    be = max(T.beat_env(t), T.kick_env(t, 0.11) if t >= T.T9 else 0.0)
+    tc = T.clock(t)                       # scene clock: frozen at real speed, whips round in the spin-up
+    hp_ = hop(t)
     # black hole: dark sphere, hot accretion disc, glow of the host galaxy
     for Q, n in icosa(S.CORE, 0.2, (1, 1, 1), jit=0.05, rng=np.random.default_rng(3)):
         F.append((Q, n, np.array([24, 18, 44.0]), 0.0, 'bh'))
@@ -194,13 +258,13 @@ def moving_parts(t, cam):
     u = np.cross(tilt, [1.0, 0, 0]); u /= np.linalg.norm(u)
     v = np.cross(tilt, u)
     nseg = 18
-    spin = 2 * math.pi * t / 6.0
+    spin = 2 * math.pi * tc / 6.0
     for ring_i, (r0, r1, col) in enumerate(((0.26, 0.42, (255, 250, 230)), (0.42, 0.6, (255, 200, 120)), (0.6, 0.8, (255, 130, 80)))):
         for k in range(nseg):
             a0, a1 = spin + 2 * math.pi * k / nseg, spin + 2 * math.pi * (k + 1) / nseg
             P = lambda rr, a: S.CORE + rr * (math.cos(a) * u + math.sin(a) * v)
             Q = np.array([P(r0, a0), P(r0, a1), P(r1, a1), P(r1, a0)])
-            flick = 0.9 + 0.1 * math.sin(k * 2.1 + t * 3 + ring_i)
+            flick = 0.9 + 0.1 * math.sin(k * 2.1 + tc * math.pi + ring_i)
             F.append((Q, tilt, np.array(col, float) * flick, 1.0, 'disc'))
     s = cam.wp(S.CORE)
     zc = max(cam.depth(S.CORE)[0], 0.5)
@@ -215,7 +279,7 @@ def moving_parts(t, cam):
     for Q, n in S.cone(S.CORE - S.JET_AX * 0.12, bot, 0.11 * (0.6 + 0.4 * jk), 6):
         F.append((Q, n, jcol, 0.95, 'jet'))
     for k in range(7):
-        u_ = ((t * 0.9 + k / 7) % 1.0)
+        u_ = ((tc * 0.9 + k / 7) % 1.0)
         p = S.CORE + S.JET_AX * (0.2 + u_ * (L_up - 0.2))
         sp = cam.wp(p)
         G.append((sp[0], sp[1], 0.32 * cam.f / max(cam.depth(p)[0], 0.5), (150, 210, 255), (0.16 + 0.1 * kick) * jk * (1 - u_ * 0.5)))
@@ -266,12 +330,12 @@ def moving_parts(t, cam):
             F.append((Q, n, np.array(BAND_COLS[bi], float), 0.5 + 0.4 * be, 'bandedge'))
     # member galaxies
     for gi, (kind, r, hgt, phs, rev, size, col) in enumerate(S.GALAXIES):
-        th = phs + rev * 2 * math.pi * t / 60.0
-        pos = np.array([r * math.cos(th), hgt + 0.14 * math.sin(2 * math.pi * t / 20 + phs), r * math.sin(th)])
+        th = phs + rev * 2 * math.pi * tc / 60.0
+        pos = np.array([r * math.cos(th), hgt + 0.14 * math.sin(2 * math.pi * tc / 20 + phs), r * math.sin(th)])
         glow_k = 0.22 * (1 + 0.8 * be)
         if kind == 'spiral':
             nrm = np.array([math.sin(phs * 2.3) * 0.5, 1.0, math.cos(phs * 1.7) * 0.5])
-            for Q, n, ring_i, arm in S.disc_galaxy(pos, size, nrm, 2 * math.pi * t / 15.0 * (1 if gi % 2 else -1), n=12):
+            for Q, n, ring_i, arm in S.disc_galaxy(pos, size, nrm, 2 * math.pi * tc / 15.0 * (1 if gi % 2 else -1), n=12):
                 if ring_i > 0 and not arm:
                     continue
                 base = np.array([255, 232, 196.0]) if ring_i == 0 else np.array(col, float) * (0.95 if ring_i == 1 else 0.78)
@@ -287,9 +351,9 @@ def moving_parts(t, cam):
         sg = cam.wp(pos)
         G.append((sg[0], sg[1], size * 2.0 * cam.f / max(cam.depth(pos)[0], 0.5), col, glow_k * 0.6))
     # satellite: hovers front-right, aperture turned toward the core
-    sp = np.array([-2.2, 3.7 + 0.12 * math.sin(2 * math.pi * t / 12), 2.15])
-    yaw_s = math.pi - 0.35 + 0.12 * math.sin(2 * math.pi * t / 30)
-    parts, light_a, light_b = S.satellite(sp, yaw_s, roll=1.05 + 0.1 * math.sin(2 * math.pi * t / 20), sc=1.0)
+    sp = np.array([-2.2, 3.7 + 0.12 * math.sin(2 * math.pi * tc / 12), 2.15])
+    yaw_s = math.pi - 0.35 + 0.12 * math.sin(2 * math.pi * tc / 30)
+    parts, light_a, light_b = S.satellite(sp, yaw_s, roll=1.05 + 0.1 * math.sin(2 * math.pi * tc / 20), sc=1.0)
     for faces, col, em in parts:
         for Q, n in faces:
             F.append((Q, n, np.array(col, float), em, 'sat'))
@@ -299,10 +363,10 @@ def moving_parts(t, cam):
         G.append((sl[0], sl[1], 0.14 * cam.f / max(cam.depth(lp)[0], 0.5), c, 0.55 * blink + 0.12))
     # radio dishes (track the core with a little hunting)
     for k, (base, s, deg) in enumerate(S.DISHES):
-        top_p = base + np.array([0, 0.42 * s / 0.36, 0])
+        top_p = base + np.array([0, 0.42 * s / 0.36 + hp_, 0])
         aim = S.CORE - top_p
         aim /= np.linalg.norm(aim)
-        wob = 0.08 * math.sin(2 * math.pi * t / 20 + k * 2)
+        wob = 0.08 * math.sin(2 * math.pi * tc / 20 + k * 2)
         aim = aim + np.array([wob, 0, -wob]); aim /= np.linalg.norm(aim)
         uu = np.cross(aim, [0, 1.0, 0]); uu /= np.linalg.norm(uu)
         vv = np.cross(aim, uu)
@@ -316,8 +380,8 @@ def moving_parts(t, cam):
             F.append((Q, nn, np.array([224, 224, 238.0]), 0.0, 'dish2'))
     # floating rocks under the island
     for k, (r, y, phs, dr, sz, seed) in enumerate(S.ROCKS):
-        th = phs + dr * 2 * math.pi * t / 60.0
-        pos = np.array([r * math.cos(th), y + 0.12 * math.sin(2 * math.pi * t / 15 + k), r * math.sin(th)])
+        th = phs + dr * 2 * math.pi * tc / 60.0
+        pos = np.array([r * math.cos(th), y + 0.12 * math.sin(2 * math.pi * tc / 15 + k), r * math.sin(th)])
         for Q, n in icosa(pos, sz, (1.2, 0.8, 1.0), jit=0.15, rng=np.random.default_rng(seed)):
             F.append((Q, n, np.array([132, 104, 160.0]), 0.0, 'frock'))
     return F, G, ghosts, rings, pre
@@ -347,7 +411,9 @@ def make_lights(t, cam):
 # ------------------------------------------------------------------ the frame
 def render(f):
     t = f / FPS
-    cam = interp_keys(KEYS, t)
+    cam = cam_at(t)
+    hp_ = hop(t)
+    pulse = max(T.beat_env(t), T.kick_env(t, 0.11) if t >= T.T9 else 0.0)
     L, flick = make_lights(t, cam)
     ck = core_k(t)
     fr = Frame(backdrop(cam, t))
@@ -427,7 +493,7 @@ def render(f):
         r = np.hypot(X, Z)
         keep = r <= S.R_POOL
         xs, ys, X, Z, d, r = xs[keep], ys[keep], X[keep], Z[keep], d[keep], r[keep]
-        ang = 2 * math.pi * t / 60.0
+        ang = 2 * math.pi * T.clock(t) / 60.0
         ca, sa = math.cos(ang), math.sin(ang)
         u = ((X * ca - Z * sa) / 7.0 + 0.5) % 1.0
         v = ((X * sa + Z * ca) / 7.0 + 0.5) % 1.0
@@ -493,8 +559,9 @@ def render(f):
         emit[SF_HOT[idx]] += 0.9 * flick
         cols = shade(L, SF_N[idx], SF_C[idx], SF_B[idx], kvis=SF_STARV[idx, None], emit=emit)
         zs = cam.depth(SF_C[idx])
+        lift = np.array([0.0, hp_, 0.0])
         for i, c, z in zip(idx, cols, zs):
-            items.append((z, SF_Q[i], c))
+            items.append((z, SF_Q[i] + lift if (hp_ > 0 and SF_HOP[i]) else SF_Q[i], c))
     dyn = [(Q, n, b, e, k) for Q, n, b, e, k in F if k != 'frock']
     if dyn:
         C = np.array([q.mean(0) for q, *_ in dyn])
@@ -511,7 +578,7 @@ def render(f):
         emissive = np.array([k in ('disc', 'jet') for k in kinds])
         cols = np.where(emissive[:, None], glow * 1.15, lit)
         gal2 = np.array([k == 'gal2' for k in kinds])
-        cols[gal2] = B[gal2] * (1 + 0.35 * T.beat_env(t))
+        cols[gal2] = B[gal2] * (1 + 0.35 * pulse)
         bub = np.array([k == 'bubble' for k in kinds])
         if bub.any():
             cols[bub] = shade(L, N[bub], C[bub], B[bub], kvis=np.ones((bub.sum(), 1)), rimk=1.4,
@@ -541,20 +608,57 @@ def render(f):
     coc = coc_map(depth, zf, K, sharp=sharp)
     img = dof(img, coc)
     # window / lamp / crystal glows
-    for p, c, k in [(S.LAMP, (255, 180, 90), 0.5 * flick)] + [(cc + [0, 0.05, 0], col, 0.12) for cc, col in S.CRYSTALS]:
+    for p, c, k in [(S.LAMP, (255, 180, 90), 0.5 * flick)] + [(cc + [0, 0.05 + hp_, 0], col, 0.12 * (1 + 1.2 * pulse)) for cc, col in S.CRYSTALS]:
         sp = cam.wp(p)
         G.append((sp[0], sp[1], 0.42 * cam.f / max(cam.depth(p)[0], 0.5), c, k))
     img = apply_glows(img, G)
     sc = cam.wp(S.CORE)
     img = god_rays(img, depth, sc, (190, 160, 255), 0.13 * (0.6 + 0.4 * T.jets_k(t)))
     img = grade(bloom(np.clip(img, 0, 255), thr=196, k=0.42), contrast=0.16, sat=1.12)
+    fz = T.freeze_k(t)
+    if fz > 0:                                         # 'real speed': frozen, cooler, a little desaturated
+        g = img.mean(-1, keepdims=True)
+        img = img * (1 - 0.4 * fz) + g * np.array([0.92, 0.98, 1.12]) * 0.4 * fz
+    img = ripple(img, sc, t)
     img = np.clip(img * vignette(0.7, 0.62, 0.35) * top_scrim(), 0, 255).astype(np.uint8)
 
     # ---- UI
     out = img.copy()
+    timelapse_widget(out, t)
     hud(out, t)
     draw_captions(out, t, T.CAPTIONS)
     return out
+
+
+def ripple(img, sc, t):
+    """screen-space ripple from the core on every crest: bends the picture outward, then passes"""
+    disp = None
+    for tl, a, g in T.recent_launches(t, 6):
+        A = T.ripple_amp(g, a)
+        age = _age(tl, t)
+        if A <= 0 or age < 0 or age > 1.1:
+            continue
+        if tl < T.T_STOP and t > T.T_STOP:
+            A *= 1 - T.ss(T.T_THUD - 0.2, T.T_THUD + 0.6, t)          # frozen by the tape-stop, then fades
+        A *= 5.0 * math.exp(-age / 0.4) * (max(0.6, T.shake_amp(t) / 0.75) if t >= T.T_STOP else 1.0)
+        if A < 0.3:
+            continue
+        if disp is None:
+            dx, dy = XX - sc[0], YY - sc[1]
+            rho = np.hypot(dx, dy) + 1e-6
+            disp = np.zeros_like(rho)
+            lift = np.zeros_like(rho)
+        R = 26 + 560 * age
+        w = 8 + 14 * age
+        prof = np.exp(-((rho - R) / w) ** 2)
+        disp += A * prof
+        lift += A * np.exp(-((rho - R - 0.6 * w) / (0.45 * w)) ** 2)      # faint bright front
+    if disp is None:
+        return img
+    sx = np.clip(np.round(XX - disp * dx / rho), 0, W - 1).astype(np.int32)
+    sy = np.clip(np.round(YY - disp * dy / rho), 0, H - 1).astype(np.int32)
+    out = img[sy, sx]
+    return out + (np.minimum(lift, 6.0) * 2.6)[..., None] * np.array([0.8, 0.9, 1.0])
 
 
 COMETS = [(20.4, 22.2, (40, 236), (330, 190)), (46.0, 47.7, (320, 214), (20, 168))]
@@ -562,9 +666,11 @@ COMETS = [(20.4, 22.2, (40, 236), (330, 190)), (46.0, 47.7, (320, 214), (20, 168
 
 def motes_and_comets(img, depth, cam, t, G):
     """small moving life: dust motes drifting in the core's light, the odd comet across the sky"""
+    tc = T.clock(t)
+    jump = hop(t) * 2.2
     for r, y, phs, rev, ph2 in S.MOTES:
-        th = phs + rev * 2 * math.pi * t / 60.0
-        p = np.array([r * math.cos(th), y + 0.25 * math.sin(2 * math.pi * t / 20 + ph2), r * math.sin(th)])
+        th = phs + rev * 2 * math.pi * tc / 60.0
+        p = np.array([r * math.cos(th), y + 0.25 * math.sin(2 * math.pi * tc / 20 + ph2) + jump * (0.6 + 0.4 * math.sin(ph2 * 7)), r * math.sin(th)])
         z = cam.depth(p)[0]
         if z < 0.5:
             continue
@@ -588,14 +694,17 @@ def motes_and_comets(img, depth, cam, t, G):
             G.append((hx, hy, 5, (200, 230, 255), 0.5 * math.sin(math.pi * u)))
 
 
-METER_X0, METER_CELL = 32, 5
+RULER_X0, RULER_CELL, RULER_K0, RULER_K1 = 21, 5, -57, 6      # one cell per octave, -57 .. +6
+HEAR_K0, HEAR_K1 = math.log2(20 / T.BB4), math.log2(20000 / T.BB4)   # 20 Hz .. 20 kHz in octaves from B-flat4
+
+
+def ruler_x(k):
+    return RULER_X0 + (k - RULER_K0) * RULER_CELL
 
 
 def hud(img, t):
-    if t < T.T_PANEL_IN or t > T.T_PANEL_OUT + 0.4:
-        return
-    off = slide_offset(t, T.T_PANEL_IN, T.T_PANEL_OUT, dist=130)
-    y0 = 516 + off
+    """octave counter, rate, speed-up line and the log-frequency ruler with the hearing window"""
+    y0 = 514
     k = T.octave(t)
     blink = math.exp(-(t - T.last_step(t)) / 0.12)
     kick = T.kick_env(t, 0.09)
@@ -603,35 +712,116 @@ def hud(img, t):
     pil = Image.fromarray(img)
     d = ImageDraw.Draw(pil)
     edge = tuple(int(c) for c in mixc((70, 84, 140), (200, 240, 255), max(kick, be)))
-    panel(d, 14, y0, 346, y0 + 100, fill=(18, 16, 44), edge=edge)
+    panel(d, 14, y0, 346, y0 + 112, fill=(18, 16, 44), edge=edge)
+    # the hearing window (20 Hz - 20 kHz) on the ruler
+    km = T.octave_smooth(t)
+    inside = km >= HEAR_K0
+    hx0, hx1 = int(ruler_x(HEAR_K0)), int(ruler_x(HEAR_K1)) + 1
+    win_k = 1.0 if inside else 0.25 + 0.35 * T.ss(-12, -5, km)
+    win_fill = tuple(int(c) for c in mixc((24, 30, 60), (40, 92, 110), win_k))
+    d.rectangle([hx0 - 1, y0 + 78, hx1, y0 + 95], fill=win_fill,
+                outline=tuple(int(c) for c in mixc((80, 110, 150), (140, 255, 240), win_k * (0.7 + 0.3 * be))))
     img[:] = np.asarray(pil)
     label(img, "OCTAVE", 26, y0 + 9, SKYB, 2)
     num = f"{k}" if k < 0 else "0"
-    label(img, num, 26, y0 + 30, tuple(int(c) for c in mixc(MINT, (255, 255, 255), blink)), 5)
+    label(img, num, 26, y0 + 28, tuple(int(c) for c in mixc(MINT, (255, 255, 255), blink)), 5)
     rd = T.readout(k)
     if k >= -4:
-        label(img, rd, 146, y0 + 10, CREAM, 2)
-        label(img, T.NOTE_NAME[k], 146, y0 + 30, AMBER, 4)
-        label(img, "ALL OCTAVES" if k == 0 else "A NOTE", 236, y0 + 44, MINT, 1)
+        label(img, rd, 146, y0 + 9, CREAM, 2)
+        label(img, T.NOTE_NAME[k], 146, y0 + 25, AMBER, 4)
+        label(img, "ALL OCTAVES" if k == 0 else "A NOTE", 236, y0 + 39, MINT, 1)
     elif k >= -9:
-        label(img, "1 WAVE = 1 BEAT" if k <= -7 else "TOO FAST TO COUNT", 146, y0 + 10, SKYB, 1)
-        label(img, rd, 146, y0 + 22, AMBER, 3)
+        label(img, {-9: "1 WAVE = 2 BEATS", -8: "1 WAVE = 1 BEAT", -7: "1 WAVE = 1/2 BEAT"}.get(k, "TOO FAST TO COUNT"), 146, y0 + 9, SKYB, 1)
+        label(img, rd, 146, y0 + 21, AMBER, 3)
     else:
-        label(img, "1 WAVE EVERY", 146, y0 + 10, SKYB, 1)
-        label(img, rd, 146, y0 + 22, CREAM, 3 if len(rd) <= 10 else 2)
-        label(img, "EACH STEP DOUBLES IT" if t > 16.9 else "PERSEUS CLUSTER", 146, y0 + 52, (170, 170, 220), 1)
-    # 57-cell meter: one cell per octave climbed
-    lit = k + 57
-    for c in range(57):
-        x = METER_X0 + c * METER_CELL
+        label(img, "1 WAVE EVERY", 146, y0 + 9, SKYB, 1)
+        label(img, rd, 146, y0 + 21, CREAM, 3 if len(rd) <= 10 else 2)
+    sl = T.speed_line(k)
+    label(img, sl, 146, y0 + 53, CORAL if k <= -57 else MINT, 1)
+    label(img, "YOUR HEARING", min(hx1, 340) - 72, y0 + 69, mixc((150, 160, 210), CYAN, win_k), 1)
+    # ruler cells: one per octave; lit up to the marker
+    for c in range(RULER_K1 - RULER_K0):
+        kc = RULER_K0 + c
+        x = int(ruler_x(kc))
         u = c / 56
-        if c < lit:
-            col = mixc((150, 96, 230), (110, 240, 255), min(1, u * 1.6)) if u < 0.85 else mixc((110, 240, 255), (255, 200, 90), (u - 0.85) / 0.15)
-            if c == lit - 1:
-                col = mixc(col, (255, 255, 255), blink)
+        if kc < km:
+            col = mixc((150, 96, 230), (110, 240, 255), min(1, u * 1.6)) if u < 0.85 else mixc((110, 240, 255), (255, 200, 90), min(1, (u - 0.85) / 0.15))
             col = mixc(col, (255, 255, 255), 0.35 * be)
         else:
-            col = (44, 40, 84)
-        img[y0 + 80:y0 + 90, x:x + METER_CELL - 1] = np.array(col, float).astype(np.uint8)
-    label(img, "-57", METER_X0 - 2, y0 + 70, (150, 140, 200), 1)
-    label(img, "0", METER_X0 + 56 * METER_CELL - 2, y0 + 70, (150, 140, 200), 1)
+            col = (44, 40, 84) if not (HEAR_K0 - 1 < kc < HEAR_K1) else (52, 70, 104)
+        img[y0 + 82:y0 + 91, x:x + RULER_CELL - 1] = np.array(col, float).astype(np.uint8)
+    # the B-flat marker: a flag under the ruler that races toward the window
+    mx = int(round(ruler_x(km + 0.5)))
+    mcol = tuple(int(c) for c in mixc(AMBER, (255, 255, 255), max(blink, 0.5 * be)))
+    for j in range(4):
+        img[y0 + 93 + j, max(0, mx - j):min(W, mx + j + 1)] = mcol
+    label(img, "B♭", min(max(mx - 5, 18), 330), y0 + 98, mcol, 1)
+
+
+def _clock_face(d, cx, cy, r, hands):
+    d.ellipse([cx - r - 1, cy - r - 1, cx + r + 1, cy + r + 1], fill=(30, 26, 60))
+    d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=(246, 238, 220), outline=(120, 110, 160))
+    for j in range(12):
+        a = 2 * math.pi * j / 12
+        x0, y0 = cx + (r - 3) * math.sin(a), cy - (r - 3) * math.cos(a)
+        d.point((round(x0), round(y0)), fill=(80, 70, 110))
+    for ang, ln, col, wd in hands:
+        d.line([cx, cy, cx + ln * math.sin(ang), cy - ln * math.cos(ang)], fill=col, width=wd)
+    d.rectangle([cx - 1, cy - 1, cx + 1, cy + 1], fill=(40, 30, 60))
+
+
+MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"]
+
+
+def timelapse_widget(img, t):
+    """spin-up props: calendar pages flipping (a year per wave), then clock hands spinning (day, hour, minute)"""
+    t_in, t_out = T.T_YEAR - 0.3, T.T9 + 0.15
+    if t < t_in or t > t_out + 0.4:
+        return
+    off = slide_offset(t, t_in, t_out, dist=110, dur=0.3)
+    x0, y0, x1, y1 = 270 + off, 424, 346 + off, 504
+    pil = Image.fromarray(img)
+    d = ImageDraw.Draw(pil)
+    panel(d, x0, y0, x1, y1, fill=(18, 16, 44), edge=(90, 104, 160))
+    cx, cy = (x0 + x1) // 2, y0 + 46
+    gap = T.T_DAY - T.T_YEAR
+    if t < T.T_DAY:                                          # calendar: 12 months per wave
+        u = max(0.0, (t - T.T_YEAR) / gap) * 12
+        m = int(u) % 12
+        fl = u - int(u)
+        cy += 6
+        d.rectangle([cx - 24, cy - 22, cx + 24, cy + 20], fill=(246, 238, 220), outline=(120, 110, 160))
+        d.rectangle([cx - 24, cy - 22, cx + 24, cy - 12], fill=(232, 84, 84))
+        for hx in (cx - 12, cx + 12):
+            d.rectangle([hx - 1, cy - 26, hx + 1, cy - 18], fill=(70, 60, 90))
+        if t >= T.T_YEAR and fl < 0.6:                       # last month's page flipping up over the top
+            h = 32 * math.cos(math.pi * fl / 0.6)            # +32 (down) -> -32 (folded up behind the header)
+            top = cy - 12
+            lean = 10 * math.sin(math.pi * fl / 0.6)
+            if h > 0:
+                d.polygon([(cx - 24, top), (cx + 24, top), (cx + 24 + lean, top + h), (cx - 24 - lean, top + h)],
+                          fill=(232, 224, 206), outline=(170, 160, 200))
+            else:
+                d.polygon([(cx - 24, top), (cx + 24, top), (cx + 24 + lean, top + h * 0.45), (cx - 24 - lean, top + h * 0.45)],
+                          fill=(210, 200, 186), outline=(170, 160, 200))
+    else:
+        if t < T.T_HOUR:                                     # a day per wave: hour hand twice round
+            u = (t - T.T_DAY) / gap
+            hands = [(2 * math.pi * 24 * u, 17, (200, 190, 220), 1), (2 * math.pi * 2 * u, 11, (40, 34, 70), 2)]
+        elif t < T.T_MIN:                                    # an hour per wave: minute hand once round
+            u = (t - T.T_HOUR) / gap
+            hands = [(2 * math.pi * u, 17, (40, 34, 70), 2), (2 * math.pi * (3 + u) / 12, 11, (40, 34, 70), 2)]
+        else:                                                # a minute per wave: second hand once round
+            u = min(1.0, (t - T.T_MIN) / gap)
+            hands = [(2 * math.pi * 0.25, 17, (40, 34, 70), 2), (2 * math.pi * 3.3 / 12, 11, (40, 34, 70), 2),
+                     (2 * math.pi * u, 19, (232, 70, 70), 1)]
+        _clock_face(d, cx, cy, 24, hands)
+    img[:] = np.asarray(pil)
+    label(img, "1 WAVE =", x0 + 14, y0 + 7, SKYB, 1)
+    if t < T.T_DAY:
+        u = max(0.0, (t - T.T_YEAR) / gap) * 12
+        fl = u - int(u)
+        if not (t >= T.T_YEAR and fl < 0.3):                # hidden while the old page still covers it
+            label(img, MONTHS[int(u) % 12], cx - 17, cy + 1, (40, 34, 70), 2, outline=(246, 238, 220))
+    word = "1 YEAR" if t < T.T_DAY else "1 DAY" if t < T.T_HOUR else "1 HOUR" if t < T.T_MIN else "1 MIN"
+    label(img, word, cx - len(word) * 3, y1 - 10, AMBER, 1)
