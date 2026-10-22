@@ -13,7 +13,7 @@ a draft, when it gets feedback, and when it delivers.
 | 1 | 100 Metronomes Find the Beat | done | original chat | Delivered with caption + tags | `100_metronomes.mp4` |
 | 3 | Crickets Are Thermometers | done | original chat | Final pick: brighter diorama version (v4); the moody version read as too dark; focus locked on the cricket + thermometer | `cricket_diorama_v4.mp4` (also `cricket_thermometer.mp4`, open-environment cut) |
 | 5 | Sand That Draws Sound | done | original chat | v2: new lighting/shadows, richer courtyard, sand rattle cut about 24 dB. Next: confirm the sand sound level is right, or remove it completely | `sand_draws_sound_v2.mp4` |
-| 2 | The Lowest Note in the Universe | review | session_01WcqqR7 (2026-10-21) | v1 delivered with caption + tags; waiting for feedback | `lowest_note.mp4` |
+| 2 | The Lowest Note in the Universe | approved (v2) | session_01WcqqR7 (v1) | v1 feedback: looks cool, but near-silent for most of it (no beat until 29 s, no melody until 44 s), so it won't hold viewers. v2 rework approved: cold open on the climax, tape-stop, beat-synced spin-up, never quiet (see "v2 rework" in backlog). Next: re-cut in the original session | v1: `lowest_note.mp4` |
 | 4 | The Staircase That Never Ends | idea | - | - | - |
 | 6 | One String, Every Note | idea | - | - | - |
 | 7 | Mozart's Dice Waltz | review | session_01UAUgj8 (2026-10-21) | Draft v1 sent. Column harmony verified from the table (all 16 columns share one harmony), so the climax stacks 10 waltzes (no echo fallback). Notes: 2-of-3 vote over three transcriptions. Next: user feedback | `dice_waltz.mp4` |
@@ -79,6 +79,65 @@ Chandra says 57 octaves; NASA 2022 says 57–58: use 57. Rhythm → pitch at ~20
 or characters. Hard part is the playbook's shadow/"small life" rules in empty space. Fallback: sit the cluster
 on a dark diorama disc/plinth so shadows and contact AO have somewhere to land. Lock focus on core + inner rings
 with the counter panel inside the sharp band.
+
+#### 2 — v2 rework (APPROVED, supersedes the v1 beat sheet above)
+**User feedback on v1:** looks cool and it's a neat fact, but the video is near-silent for most of it, so it
+won't capture attention. Engagement brief: constantly stimulating, especially at the start; open on chaos with
+sound from frame 0; never go quiet; build to a satisfying lock-in; exaggerate where the phenomenon is calmer.
+**What v1 did (from its timeline.py / audio.py):** until 29 s only faint space hiss, a few whooshes and one
+pop (8–11 s "SPACE IS SILENT…" cut to near-silence on purpose); first real beat at 29 s; melody at 44 s; rings
+creep slowly until ~16 s.
+
+**v2 in one line:** open on the loudest moment, tape-stop to real speed, then speed the black hole back up in
+big beat-synced jumps: audible rhythm from frame 0, explanation over the beats, not before them.
+- **Cold open on chaos:** the climax itself (every octave roaring, rings blasting, camera shake), then a
+  tape-stop dive to real speed.
+- **Never quiet:** the tape-stop lands on a muffled groove, not silence: hot-gas crackle + a low-passed
+  (underwater-style) bed whose filter opens step by step as the hole climbs toward hearing range. The crests
+  are the kick throughout.
+- **Spin-up in 8 s (was 24):** −57 → −9 in quick slams: YEAR → DAY → HOUR → MINUTE → SECOND, each a hit plus a
+  visual (calendar pages flipping, clock hands spinning, galaxies whipping round in time-lapse).
+- **Explain over the beat:** at 55 BPM each kick is visibly one bubble pop at the core = one ring (piston seen
+  and heard at once).
+- **Exaggeration:** each crest throws a screen-space ripple that bends the scene; dust, crystals and dishes jump
+  on the kicks. A long log-frequency ruler along the bottom with a lit "YOUR HEARING" window (20 Hz–20 kHz);
+  the B♭ marker races 57 octaves toward it.
+- **New hard number:** NASA's 2022 sonification sped these waves up 144–288 quadrillion times; 2⁵⁷ = 144
+  quadrillion (calc), exactly our climb, so the landing caption is sourced.
+  Source: [NASA Science: data sonifications](https://science.nasa.gov/learners/highlights/data-sonifications).
+- **Ending builds instead of fading,** so the last bar slams back into the cold open for the loop.
+
+**v2 beat sheet (60 s):**
+| Time | Visual | Caption | Sound |
+|---|---|---|---|
+| 0–3 | Cold open: full climax, rings blasting, shake, ripples | THIS NOTE IS / 57 OCTAVES DOWN | Full B♭ stack + kicks + melody |
+| 3–5 | Tape-stop: everything freezes, counter slams to −57 | REAL SPEED: / 1 WAVE / 10M YRS | Pitch-dive whoosh → sub thud; gas crackle + muffled bed |
+| 5–7 | Spin-up; galaxies whip round | ≈1 WAVE A *YEAR* | Riser + hit; bed filter opens a notch |
+| 7–9 | Clock hands spin | ≈1 A *DAY* · ≈1 AN *HOUR* | Two quick hits |
+| 9–11 | Rings accelerate to a time-lapse blur | ≈1 A *MINUTE* | Hit; riser peaks |
+| 11–13 | Counter lands on −9; ruler marker near the window | SPED UP / 281 TRILLION × | Big drop: first real kick |
+| 13–16 | Each kick = a bubble pop at the core = one ring | JETS BLOW / BUBBLES | Kick 55 BPM + filtered bass |
+| 16–19 | Ring rides out through the gas haze | EACH POP = / 1 WAVE | Kicks; hats enter |
+| 19–25 | Doubles: rings twice as dense, shake on every hit | SPACE IS SILENT / EXCEPT IN HOT GAS | 109 BPM groove; filter opens further |
+| 25–29 | Doubles again, camera pushes in | 219 BPM | 219 BPM, snare rolls |
+| 29–33 | Rings blur to shimmer; marker touches the hearing window | BEATS → ? | Flutter 7 → 15 Hz, riser |
+| 33–36 | Drop: first colour band; window lights | IT'S A NOTE: *B♭* | B♭0 bass drop (29 Hz) |
+| 36–44 | Octave bands stack, one every 2 s; galaxies pulse | SAME BLACK HOLE / 4 OCTAVES UP | B♭1 → B♭4 over the full groove |
+| 44–52 | Climax: the cold-open image re-forms | SPED UP 144 / QUADRILLION × | Original melody over the stack, everything at once |
+| 52–60 | Hum prompt; counter flickers; last bar builds → loops to frame 0 | HUM A *B♭* / YOU'RE 57 OCTAVES UP | Hum over the groove, building; slams into the cold open |
+
+**v2 flags:**
+- Label the speed-ups ("SPED UP" / "REAL SPEED" whenever the rate changes). Still never say NASA "recorded" it.
+- The crackle bed is texture, not data: don't caption it as "the sound of the cluster".
+- Ripple and shake are stylisation: keep them tied to real crest times so the visuals still show the rhythm.
+- 2⁴⁸ ≈ 281 trillion and 2⁵⁷ ≈ 144 quadrillion are calc; 144 quadrillion matches the low end of NASA's range.
+- Spin-up captions last 1.5–2 s each: one short line, max ~18 chars.
+
+**v2 feasibility:** a re-cut, not a rebuild. Keep v1's scene.py / render.py pipeline (island, observatory,
+satellite, rings, colour bands, focus audit, phone-friendly kicks). Rewrite timeline.py and audio.py (new
+section times, continuous filtered groove, tape-stop and spin-up effects). Add to render: camera shake, a
+screen-space ripple per crest, calendar/clock milestone props, the hearing-range ruler. The last bar must match
+the cold open's first frame (picture and audio). Keep a `*_backup.py` of v1 before changing anything.
 
 ### 4. The Staircase That Never Ends
 - **Hook:** "ALWAYS GOING UP?"
