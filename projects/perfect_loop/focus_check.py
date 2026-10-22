@@ -1,4 +1,4 @@
-"""check every frame without rendering: the worst blur on any bob (centre and rim) must be 0"""
+"""check every frame without rendering: the worst blur on any on-screen bob (centre and rim) must be 0"""
 import os, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)

@@ -1,18 +1,23 @@
-"""The Perfect Loop - soundtrack. Everything is synthesised and original.
+"""The Perfect Loop v2 (100 pendulums) - soundtrack. Everything is synthesised and original.
 
     python audio.py        -> audio.wav, prints section levels and the pluck-band check
 
-The science sound is the plucks: every lantern plucks its own note (3 octaves of C major
-pentatonic, longest = lowest) each time it is back at its release side, at exactly the trigger
-times in timeline.py. So the patterns ARE the rhythm: 2 groups = eighths, 3 = triplets ...
-From 35 s an original bass + pad change chord with each pattern, and a soft groove locks to the
-middle pendulum (n = 58 -> 58 BPM, one pluck per beat). The build lands on the near-unison
-strum at 58.97 s; the exact unison at 60.0 s is frame 0 of the loop."""
+The science sound is the plucks: every lantern plucks its own note (4 octaves of C major pentatonic,
+five neighbouring pendulums per note, longest = lowest) each time it is back at its release side, at
+exactly the trigger times in timeline.py: 10 050 plucks, ~167 per second, a glassy wash. Plucks are
+short and individually quiet, so whenever pendulums align their plucks land together and the wash
+punches through by itself: the 2-team moment is a 50-voice chord, the line-up at 52 s a 100-voice strum.
+In the last seconds before 52 s every pendulum's last few plucks fall in rolled sweeps from low to high
+that tighten into the strum: the physics writes its own riser.
+
+The arrangement locks to the physics: 120 BPM = pendulum n = 120 (one pluck per beat), every group
+milestone is on that grid, and the hi-hat subdivision equals the current group count (6 groups =
+sextuplets, 5 = quintuplets, 4 = sixteenths, 3 = triplets, 2 = eighths, 8 = 32nds). Bass + pad enter
+at 27 s, the chords change with each pattern, and the level builds ~8 dB into the 52 s drop."""
 import math
 import os
 import sys
 import numpy as np
-from scipy.io import wavfile
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
 from reelkit import audio as A
@@ -27,157 +32,236 @@ def tt(n):
 
 
 # ---------------------------------------------------------------- instruments
-def lantern_pluck(m):
-    """glassy mallet pluck: a few partials (one slightly inharmonic) + a tiny strike click.
-    Short decay, because 15 voices make ~14.5 plucks per second."""
-    if m in _cache:
-        return _cache[m]
+def lantern_pluck(k):
+    """glassy mallet pluck for pendulum k: a few partials (one slightly inharmonic) + a tiny strike
+    click. Very short, because 100 voices make ~167 plucks per second."""
+    if k in _cache:
+        return _cache[k]
+    m = T.NOTES[k] + 0.06 * math.sin(k * 2.3)              # +-6 cents spread between the five voices of a note
     f = A.mtof(m)
-    dec = 0.4 * (261.6 / f) ** 0.3
-    n = int(min(1.2, dec * 4) * SR)
+    dec = 0.2 * (261.6 / f) ** 0.35
+    n = int(min(0.8, dec * 4.5) * SR)
     t = tt(n)
     out = np.zeros(n)
-    for ratio, amp, dk in ((1.0, 1.0, 1.0), (2.0, 0.45, 0.42), (3.0, 0.2, 0.28), (4.18, 0.13, 0.16)):
+    for ratio, amp, dk in ((1.0, 1.0, 1.0), (2.0, 0.42, 0.45), (3.0, 0.18, 0.3), (4.2, 0.12, 0.18)):
         if f * ratio < 9000:
-            out += amp * np.sin(2 * np.pi * f * ratio * t) * np.exp(-t / (dec * dk))
-    click = A.hp(np.random.default_rng(m).normal(0, 1, n), 2500) * np.exp(-t / 0.0018) * 0.12
-    out = (out + click) * np.clip(t / 0.0015, 0, 1)
-    out = A.lp(out, 7500)
-    _cache[m] = out
+            out += amp * np.sin(2 * np.pi * f * ratio * t + k) * np.exp(-t / (dec * dk))
+    click = A.hp(np.random.default_rng(k).normal(0, 1, n), 2500) * np.exp(-t / 0.0015) * 0.1
+    out = (out + click) * np.clip(t / 0.0012, 0, 1)
+    out = A.lp(out, 8000)
+    _cache[k] = out
     return out
 
 
-def bass_note(m, dur, vel=1.0):
+def bass_note(m, dur, vel=1.0, cut=None):
     n = int((dur + 0.08) * SR)
     t = tt(n)
     f = A.mtof(m)
     x = np.sin(2 * np.pi * f * t) + 0.35 * np.sin(4 * np.pi * f * t) + 0.12 * np.sin(6 * np.pi * f * t)
     x = np.tanh(1.4 * x) * A.adsr(n, 0.006, 0.15, 0.7, 0.07)
+    if cut:
+        x = A.lp(x, cut)
     return x * vel
 
 
-def soft_kick():
-    return A.kick(punch=0.9, dec=0.28, f0=120, f1=44)
-
-
-def tick():
-    """woody clock-tick for off-beats (kept out of the pluck band)"""
-    n = int(0.06 * SR)
-    t = tt(n)
-    return A.hp(np.random.default_rng(9).normal(0, 1, n), 6500) * np.exp(-t / 0.012) * 0.6
+def kick(cut=None):
+    x = A.kick(punch=1.0, dec=0.26, f0=130, f1=45)
+    return A.lp(x, cut) if cut else x
 
 
 def sub_thump(dur=0.9):
     n = int(dur * SR)
     t = tt(n)
-    f = 60 + 40 * np.exp(-t / 0.06)
-    return np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-t / 0.3)
+    f = 55 + 45 * np.exp(-t / 0.05)
+    return np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-t / 0.32)
 
 
-def shimmer(m, dur=2.5):
+def hat(acc=False):
+    return A.hat(0.022 if not acc else 0.035) * (1.0 if acc else 0.62)
+
+
+def clap():
+    return A.hp(A.clap(), 2800)
+
+
+def bell(m, dur=0.5):
+    """call-and-answer bell, kept above the pluck band"""
     n = int(dur * SR)
     t = tt(n)
     f = A.mtof(m)
-    x = sum(np.sin(2 * np.pi * f * r * t + r) * a for r, a in ((1, 1), (2.01, 0.4), (3.0, 0.2)))
-    return x * A.expenv(n, dur * 0.35, attack=0.02)
+    x = np.sin(2 * np.pi * f * t) + 0.4 * np.sin(2 * np.pi * f * 2.76 * t) * np.exp(-t / 0.05)
+    return A.hp(x * A.expenv(n, 0.12, attack=0.002), 2500)
 
 
 # ---------------------------------------------------------------- the score
+def place_loop(mix, bus, sig, t, gain=1.0, pan=0.0):
+    """place a sound; whatever rings past 60 s wraps to the start, so the loop seam is seamless"""
+    mix.place(bus, sig, t, gain, pan)
+    if t + len(sig) / SR > T.DUR:
+        mix.place(bus, sig, t - T.DUR, gain, pan)
+
+
 def plucks(mix):
-    """every pluck from the physics; simultaneous plucks are scaled so chords don't spike"""
+    """every pluck from the physics. Clusters are only gently tamed (dens^-0.3), so alignment punches."""
     times = np.array([e[0] for e in T.EVENTS])
     for tp, k in T.EVENTS:
-        dens = int(((times > tp - 0.025) & (times < tp + 0.025)).sum())
-        g = 0.34 / math.sqrt(dens)
-        vel = 0.92 + 0.08 * math.sin(tp * 7.3 + k)
-        mix.place('pluck', lantern_pluck(T.NOTES[k]), tp, g * vel, pan=-0.55 + 1.1 * k / (T.K - 1))
+        dens = int(np.searchsorted(times, tp + 0.012) - np.searchsorted(times, tp - 0.012))
+        g = 0.105 / dens ** 0.3
+        vel = 0.9 + 0.1 * math.sin(tp * 7.3 + k)
+        place_loop(mix, 'pluck', lantern_pluck(k), tp, g * vel, pan=-0.55 + 1.1 * k / (T.K - 1))
 
 
 def music(mix):
     B = T.BEAT
-    # pad + bass from 35 s: chords change with each pattern
-    for i, (b, name, pad, root) in enumerate(T.CHORDS):
-        b_next = T.CHORDS[i + 1][0] if i + 1 < len(T.CHORDS) else 58
-        t0, dur = T.beat(b), (b_next - b) * B
-        att = 1.2 if i == 0 else 0.25
-        mix.place('music', A.pad(pad, dur + 0.4, cut=1100, att=att), t0, 0.9 if i else 0.7)
-        sub = 1 if b < 48 else 2                                  # eighths in the build
-        nb = int(round((b_next - b) * sub))
+    # ---- hook + milestone hits before the band: kick, sub and a bass hit on the chord root
+    for tm in [0.0, 2.0, 4.0, 7.0, 12.0, 22.0]:
+        root = T.chord_at(tm)[3]
+        mix.place('drums', kick(), tm, 0.55 if tm == 0 else 0.42)
+        mix.place('fx', sub_thump(1.0), tm, 0.5 if tm == 0 else 0.34)
+        mix.place('bass', bass_note(root, 1.4, cut=900), tm, 0.5 if tm == 0 else 0.36)
+    mix.place('drums', A.crash(2.0), 0.0, 0.12)
+    # ---- 0-7: kick on each bar downbeat (the hits above cover 0 / 2 / 4)
+    mix.place('drums', kick(), 6.0, 0.36)
+    # ---- 7-22: filtered groove under the wash (4-on-the-floor + root bass, low-passed)
+    for b in range(14, 44):
+        tb = b * B
+        if tb in (7.0, 12.0):
+            continue
+        cut = 260 if tb < 17 else 170
+        mix.place('drums', kick(cut), tb, 0.5 if tb < 17 else 0.44)
+    for i, (t0, name, pad, root) in enumerate(T.CHORDS):
+        if not (7.0 <= t0 < 22.0):
+            continue
+        t1 = T.CHORDS[i + 1][0]
+        nb = int(round((t1 - t0) / B))
+        for j in range(nb):
+            mix.place('bass', bass_note(root if j % 4 != 2 else root + 7, B * 0.8, cut=320), t0 + j * B, 0.34)
+    # ---- 17-22 chaos: a slow noise swell keeps it moving
+    mix.place('fx', A.whoosh(4.8, 300, 3500, seed=17), 17.2, 0.06)
+    # ---- 22-27 halftime: kick on 1, clap on 3; call and answer in eighths (left / right)
+    for bar in range(11, 14):
+        t0 = bar * T.BAR
+        if t0 != 22.0:
+            mix.place('drums', kick(), t0, 0.46)
+        mix.place('drums', clap(), t0 + 2 * B, 0.3)
+    call = [81, 84, 81, 88]
+    for j in range(20):                                  # 22.0 .. 27.0 in eighths
+        tb = 22.0 + j * B / 2
+        side = -0.6 if j % 2 == 0 else 0.6
+        m = call[(j // 2) % 4] + (0 if j % 2 == 0 else -5)
+        mix.place('hats', bell(m), tb, 0.12, pan=side)
+    # ---- 27-60: bass + pad, chords change with each pattern
+    band = [c for c in T.CHORDS if c[0] >= T.T_BAND]
+    for i, (t0, name, pad, root) in enumerate(band):
+        t1 = band[i + 1][0] if i + 1 < len(band) else 60.0
+        dur = t1 - t0
+        att = 1.0 if t0 == T.T_BAND else 0.08
+        place_loop(mix, 'music', A.pad([m - 12 if m > 57 else m for m in pad], dur + 0.35, cut=700 if t0 < 52 else 800, att=att), t0, 1.0)
+        sub = 1 if t0 < 37 else 2                         # eighth-note bass from 37 s
+        nb = int(round(dur / B * sub))
         for j in range(nb):
             tb = t0 + j * B / sub
+            if 50.0 <= tb < 52.0:                         # the bass drops out for the last bar of the build
+                continue
             m = root if (j % 4) != 2 else root + 7
-            if b >= 52 and j % 2:
+            if t0 >= 52 and j % 2:
                 m = root + 12
             mix.place('bass', bass_note(m, B / sub * 0.85), tb, 0.42 if j % sub == 0 else 0.3)
-    # groove: soft kick on every beat (= the middle pendulum's pluck) from the C chord before 40 s
-    for b in range(38, 58):
-        tb = T.beat(b)
-        mix.place('drums', soft_kick(), tb, 0.42 if b % 2 == 0 else 0.3)
-        if b >= 43:
-            mix.place('drums', tick(), tb + B / 2, 0.14)
-        if b >= 48 and b % 2 == 1:
-            mix.place('drums', A.snare(0.12), tb, 0.16)
-    # build: snare roll 8ths -> 16ths -> 32nds into the climax strum, plus a riser
-    t_c = T.T_CLIMAX
-    for b in range(52, 57):
-        div = 2 if b < 54 else (4 if b < 56 else 8)
-        for j in range(div):
-            tb = T.beat(b) + j * B / div
-            mix.place('drums', A.snare(0.08), tb, 0.05 + 0.1 * (tb - T.beat(52)) / (t_c - T.beat(52)))
-    mix.place('fx', A.whoosh(4.6, 400, 6000), t_c - 4.6, 0.16)
-    mix.place('drums', A.crash(3.0), t_c, 0.32)
-    mix.place('drums', soft_kick(), t_c, 0.6)
-    mix.place('fx', sub_thump(1.2), t_c, 0.5)
-    mix.place('music', A.pad([48, 55, 60, 64, 67], 1.1, cut=1200, att=0.05), t_c, 0.5)   # brief C colour on the strum
-    # into the loop: a very soft air swell; the unison chord at 0.0 s is frame 0
-    mix.place('fx', A.whoosh(0.8, 800, 5000), 59.2, 0.05)
-
-
-def accents(mix):
-    """hook and the group milestones"""
-    mix.place('fx', sub_thump(1.2), 0.0, 0.45)
-    mix.place('fx', shimmer(84, 3.0), 0.0, 0.07, pan=0.2)
-    for tm, g in T.GROUPS:
-        mix.place('fx', A.whoosh(0.9, 500, 4500, seed=int(tm)), tm - 0.9, 0.05)
-        if tm < T.T_BAND:
-            mix.place('fx', sub_thump(0.8), tm, 0.22)
+    # ---- kick: 4-on-the-floor from 27, eighths 44.5-50, out for 50-52, back on the drop
+    for b in range(54, 120):
+        tb = b * B
+        if 50.0 <= tb < 52.0:
+            continue
+        mix.place('drums', kick(), tb, 0.55)
+        if 44.5 <= tb < 50.0:
+            mix.place('drums', kick(), tb + B / 2, 0.38)
+    # ---- clap on 2 and 4 from 32 s
+    for b in range(64, 120):
+        tb = b * B
+        if b % 2 == 1 and not (50.0 <= tb < 52.0):
+            mix.place('drums', clap(), tb, 0.3)
+    # ---- hats: the subdivision is the current group count
+    for b in range(0, 120):
+        tb = b * B
+        s = T.subdiv_at(tb + 1e-6)
+        if s == 0 or (22.0 <= tb < 27.0):
+            continue
+        g0 = 0.05 if tb < 7 else (0.065 if tb < 27 else 0.08)
+        if tb >= 44.5:
+            g0 = 0.09
+        for j in range(s):
+            mix.place('hats', hat(j == 0), tb + j * B / s, g0 * (1.25 if j == 0 else 1.0), pan=0.25 * math.sin(j * 1.7 + b))
+    # ---- build into the line-up: snare roll 8ths -> 16ths -> 32nds and a riser
+    tb, tl = 48.0, T.T_LINE
+    while tb < tl - 1e-6:
+        div = 2 if tb < 49.0 else (4 if tb < 50.5 else 8)
+        mix.place('drums', A.hp(A.snare(0.07), 1800), tb, 0.06 + 0.16 * (tb - 48.0) / (tl - 48.0))
+        tb += B / div
+    mix.place('fx', A.whoosh(4.0, 300, 7000, seed=48), tl - 4.0, 0.16)
+    # ---- the drop at 52 s: crash, kick, sub (the 100-voice strum is in the pluck bus)
+    mix.place('drums', A.crash(3.0), tl, 0.36)
+    mix.place('fx', sub_thump(1.4), tl, 0.62)
+    mix.place('drums', kick(), tl, 0.72)
+    # ---- 58-60: a soft reverse swell back into the opening (the bass hit at 0.0 lands the loop)
+    mix.place('fx', A.whoosh(1.9, 900, 5000, seed=58), 58.1, 0.07)
 
 
 def ambience(mix):
     n = int(T.DUR * SR)
-    room = A.lp(np.random.default_rng(1).normal(0, 1, n), 380) * 0.05
+    room = A.lp(np.random.default_rng(1).normal(0, 1, n), 380) * 0.04
     mix.place('amb', room, 0.0, 0.5)
+
+
+GAINS = {'pluck': 1.0, 'music': 0.5, 'bass': 0.9, 'drums': 1.3, 'hats': 1.0, 'fx': 1.0, 'amb': 1.0}
+# section automation: the build (+8 dB from the opening to the 52 s strum), a dip back into the loop
+GAIN_PTS = [(0, -2.0), (6.8, -2.0), (7.2, -1.5), (21.8, -0.8), (22.0, 0.2), (27.0, 1.2), (32, 2.0), (44, 3.2),
+            (51.9, 5.3), (52.0, 6.4), (54.0, 5.2), (57.5, 3.2), (59.4, 0.4), (60, -2.0)]
+
+
+def limit(x, drive_db=4.5, ceil=0.89, win=0.024):
+    """lookahead peak limiter: the in-phase 100-voice strum would otherwise set the normalisation and
+    leave the whole mix quiet. A min-filtered, smoothed gain keeps every peak under the ceiling."""
+    from scipy.ndimage import minimum_filter1d, uniform_filter1d
+    y = x * 10 ** (drive_db / 20)
+    need = np.minimum(1.0, ceil / np.maximum(np.abs(y).max(1), 1e-9))
+    n = int(win * SR)
+    g = uniform_filter1d(minimum_filter1d(need, 2 * n + 1), n | 1)
+    y = y * np.minimum(g, need)[:, None]
+    return np.clip(y, -ceil, ceil)
 
 
 def main():
     mix = A.Mix(T.DUR)
     plucks(mix)
     music(mix)
-    accents(mix)
     ambience(mix)
-    gains = {'pluck': 1.0, 'music': 1.0, 'bass': 0.9, 'drums': 1.4, 'fx': 1.0, 'amb': 1.0}
-    # carve the music bus under the plucks (300-3000 Hz) so the science sound stays on top
-    for k in ('music', 'drums', 'fx'):
+    # carve the music buses under the plucks (300-3000 Hz) so the science sound stays on top
+    for k, amt in (('music', 0.88), ('drums', 0.75), ('fx', 0.75), ('bass', 0.7)):
         b = mix.buses[k]
-        mid = A.bp(b, 300, 3000)
-        mix.buses[k] = b - 0.35 * mid
-    out = mix.master(gains=gains, reverb_buses={'pluck': 0.55, 'music': 1.0, 'fx': 0.4},
-                     gain_db_pts=[(0, 0), (34, 0), (36, 1.0), (52, 1.5), (59, 2.0), (60, 1.0)])
+        mix.buses[k] = b - amt * A.bp(b, 300, 3000)
+    out = mix.master(gains=GAINS, reverb_buses={'pluck': 0.5, 'music': 1.0, 'fx': 0.4, 'hats': 0.3}, gain_db_pts=GAIN_PTS)
+    out = limit(out)
     A.write('audio.wav', out)
-    for a, b, rms, pk in A.section_levels('audio.wav', [(0, 4), (4, 22), (22, 35), (35, 50), (50, 59), (59, 60)]):
-        print(f'{a:4.0f}-{b:4.0f}s  rms {rms:6.1f} dBFS  peak {pk:5.1f}')
+    spans = [(a, a + 2) for a in range(0, 60, 2)]
+    lv = A.section_levels('audio.wav', spans)
+    print('2 s windows (rms dBFS):')
+    print('  ' + ' '.join(f'{a:02d}:{rms:5.1f}' for a, b, rms, pk in lv))
+    print(f'  opening 0-6 s {np.mean([r for a, b, r, p in lv[:3]]):.1f}  strum 52-54 s {lv[26][2]:.1f}  '
+          f'min {min(r for a, b, r, p in lv):.1f}  max {max(r for a, b, r, p in lv):.1f}')
+    pk = A.section_levels('audio.wav', [(51.95, 52.25), (21.95, 22.25), (0, 0.3)])
+    print('  peak at the strum %.1f, 2 teams %.1f, frame 0 %.1f dBFS' % (pk[0][3], pk[1][3], pk[2][3]))
     # band check on the dry stems (same bus gains): plucks alone vs everything else
     from scipy.signal import butter, sosfilt
     sos = butter(4, [300, 3000], 'bp', fs=SR, output='sos')
 
     def stem(keep):
-        return sum(mix.buses[k][:mix.NS] * gains.get(k, 1.0) for k in keep if k in mix.buses).mean(1)
+        return sum(mix.buses[k][:mix.NS] * GAINS.get(k, 1.0) for k in keep if k in mix.buses).mean(1)
     yp = sosfilt(sos, stem(['pluck']))
-    yr = sosfilt(sos, stem(['music', 'bass', 'drums', 'fx', 'amb']))
+    yr = sosfilt(sos, stem(['music', 'bass', 'drums', 'hats', 'fx', 'amb']))
     lvl = lambda y, a, b: 20 * np.log10(np.sqrt((y[int(a * SR):int(b * SR)] ** 2).mean()) + 1e-12)
     print('pluck band 300-3000 Hz, plucks vs the rest of the mix:')
-    for a, b in [(4, 22), (22, 35), (35, 45), (45, 52), (52, 58.5)]:
-        print(f'  {a:4.0f}-{b:4.0f}s  margin {lvl(yp, a, b) - lvl(yr, a, b):5.1f} dB')
+    print('  ' + '  '.join(f'{a}-{b}s {lvl(yp, a, b) - lvl(yr, a, b):5.1f} dB' for a, b in
+                         [(0, 7), (7, 17), (17, 22), (22, 27), (27, 32), (32, 42), (42, 48), (48, 52), (52, 58)]))
 
 
 if __name__ == '__main__':
