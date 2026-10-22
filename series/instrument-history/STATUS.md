@@ -41,6 +41,7 @@ below, and marks it `approved` when the user signs off. A production session the
 | P4 | Ukulele | review | [session](https://claude.ai/code/session_01FmQrsdwGhdezdxp3sm8YPa) · 2026-10-21 | 2026-10-21: `ukulele60_lowpoly.py` rendered to `ukulele60_lowpoly.mp4` (55.7 s, lit, wave-barrel backdrop); stills sheet, video and captions sent. Models built from Chrome reference photos (Kamaka site, NMM Kumalae, Horniman machete, Nunes, Islander, Vega baritone). Modern fact shown in the showcase via the new optional `INTRO_STEPS`; outro returns to the soprano (`OUTRO_NAME`). Awaiting user review. |
 | P5 | Bagpipes | in production | [session](https://claude.ai/code/session_01Qm7rGbs5v6N1NmF33f4ZdM) · 2026-10-22 | Claimed 2026-10-22. Building `bagpipes60_lowpoly.py` from the approved draft; reference photos via Chrome next. |
 | P6 | Turntables | in production | [session](https://claude.ai/code/session_01WFWhjRQP978z5jeTn6ZbEc) · 2026-10-22 | Claimed 2026-10-22. Building `turntables60_lowpoly.py` from the approved draft (must run 60 s); reference photos via Chrome next. |
+| P7 | Pipe organ | approved | — | Approved 2026-10-22. Must run 60 s. Ready for a production session (prompt under Drafts → P7). |
 
 ## Drafts
 
@@ -404,5 +405,67 @@ below, and marks it `approved` when the user signs off. A production session the
 > Must-haves: the finished video must run 60 s (±1 s), final chord included; if it doesn't, nudge the BPM (128–132) or the final-chord length rather than dropping scenes. New script `turntables60_lowpoly.py` (OUT "turntables60_lowpoly.mp4", TAG "tt"); modern Technics SL-1200MK7 first, then history oldest to newest, outro back to TODAY; `LIGHTING = True`; no brand logos on the models or record labels; each riff sounds as if played through that era's machine, with real scratch sounds from 1975 on and a scratch fill at every scene change.
 >
 > Reference photos: before modelling each machine (the modern one and all 12 historical ones), use my open Chrome browser (Claude in Chrome) to find real reference photos yourself: image searches, museum collection pages, makers' sites. Use the "Reference photos to find" list and model notes in the draft. Check: the Edison phonograph is a tinfoil cylinder (no disc); the Victrola hides its horn in the cabinet; the 1972 SL-1200 has a rotary pitch knob while the MK2 has the slider; the CDJ-500 is clearly a CD player; the SL-1200 scenes must each look distinct. Don't ask me for images.
+>
+> Before the full render, send me `--still` frames taken mid-scene for every scene (contact sheet is fine) so I can review them, but don't wait for my OK: carry straight on and render with pp_parallel.py, check the runtime is 60 s, watch it through, send the video, update STATUS.md, commit, git pull --rebase and push.
+
+### P7. Pipe organ — APPROVED (2026-10-22)
+- **Hook (showcase lines):** "ONE ORGAN PIECE" / "LASTS 639 YEARS"   then   "BUT HOW DID WE" / "GET HERE?"
+- **Headline:** "2,275 YEARS" (250 BC → 2026). `HEAD_INTRO = "THE PIPE ORGAN"`, `START_YEAR = -300`
+- **Modern showcase:** the Halberstadt Cage organ (St. Burchardi church, Halberstadt), which has been playing John Cage's *ORGAN²/ASLSP* since 2001 and is still playing today, so the hook is about the instrument on screen. Riff: organ techno. Credit ORGAN TECHNO.
+- **Length: the finished video must run 60 s (±1 s), final chord included.** Timeline: 120 BPM, `SHOW_BARS, SCENE_BARS, OUTRO_BARS = 4, 2, 1`, 12 scene rows (11 history + the closing modern row) = 29 bars = 58 s + final chord ≈ 60 s. If the render misses, nudge the BPM or the final-chord length; don't drop scenes.
+- **Scenes (oldest → newest):**
+
+| Year (ys) | Name | Credit | Fact | Model notes |
+|---|---|---|---|---|
+| -250 ("250 BC") | HYDRAULIS | ANCIENT GREEK MODE | WATER KEEPS ITS / AIR PRESSURE EVEN | Aquincum replica / Dion reconstruction: water-cistern base, a hand pump on each side, one row of bronze pipes |
+| 1330 ("1300s") | PORTATIVE ORGAN | MEDIEVAL ESTAMPIE | ONE HAND PLAYS, / ONE HAND PUMPS | Small, carried on a strap; keys for one hand, bellows on the back for the other |
+| 1361 | HALBERSTADT ORGAN | GOTHIC ORGANUM | FIRST PERMANENT / ORGAN ON RECORD | Copy Praetorius's woodcut of the Halberstadt keyboards (very broad, primitive keys) |
+| 1435 | VALÈRE ORGAN, SION | RENAISSANCE MOTET | OLDEST ORGAN / STILL PLAYABLE | Swallow's-nest organ in the Valère Basilica; check painted wings and gallery from photos |
+| 1703 | BACH'S ARNSTADT ORGAN | BAROQUE TOCCATA | BACH, AGED 18, / HIRED TO PLAY IT | Wender organ, Bachkirche Arnstadt: two manuals, 21 stops, high on the third gallery tier |
+| 1862 | SAINT-SULPICE ORGAN | FRENCH ORGAN TOCCATA | WIDOR PLAYS IT / FOR 63 YEARS | Huge Chalgrin case with statues; five manuals |
+| 1920s (1925) | MIGHTY WURLITZER | SILENT-FILM CHASE | CAR HORNS, DRUMS / FOR SILENT FILMS | Horseshoe console with rows of coloured stop tabs; pipes hidden in chambers, so show the console plus a glockenspiel or drum |
+| 1932 | BOARDWALK HALL ORGAN | ART DECO SHOWTUNE | 33,112 PIPES: / LOUDEST EVER BUILT | The 7-manual console, 1,235 stop tabs |
+| 1935 | HAMMOND ORGAN | GOSPEL | 50,000 CHURCHES / HAD ONE BY 1966 | Model A: two 61-key manuals, 25-note pedalboard, flat "waterfall" keys, drawbars; no pipes |
+| 1979 | SYDNEY OPERA HOUSE | 70s PROG ROCK | LARGEST TRACKER / ORGAN EVER BUILT | Grand Organ façade in the Concert Hall |
+| 2016 | ELBPHILHARMONIE ORGAN | CONTEMPORARY CLASSICAL | 4,765 PIPES, / MOSTLY HIDDEN | Built into the Grand Hall's seating rows; only part of it visible |
+| 2020s | HALBERSTADT CAGE ORGAN | ORGAN TECHNO | SANDBAGS HOLD / THE NOTES DOWN | Small organ in an acrylic glass box (since 2011), sandbags on the pedals; bellows in the other transept |
+
+- **Riff tones:** each scene in that organ's own voice: hydraulis breathy; portative a small flute; Bach full baroque plenum; Saint-Sulpice French reeds; Wurlitzer tremulant tibias plus a car horn; Hammond drawbars through a Leslie; the Cage organ a slowly shifting cluster chord while the beat keeps going.
+- **Outro:** "2,275 YEARS FROM" / "A WATER ORGAN", credit ORGAN TECHNO
+- **Look:** "A limestone cavern": stalactites hang like organ pipes and glow with each note; mist drifts; drips land on the hi-hats; shafts of light come down from above. No real organ pipes on any wall (keeps clear of the French horn's concert-hall organ).
+  Era palettes (stone + glow): modern acrylic-clear white + pale green · hydraulis ochre + aqua · portative parchment + vermilion · 1361 Gothic slate + candle amber · Sion alpine grey + fresco red · Bach baroque white + gilt · Saint-Sulpice Paris blue-grey + gaslight · Wurlitzer cinema red velvet + marquee gold · 1932 Art Deco teal + chrome · Hammond church oak + stained-glass jewels · Sydney harbour blue + sail white · Elbphilharmonie white limestone + ice blue.
+  Groove: **industrial techno**, 120 BPM: distorted rumble kick, metallic anvil hits, choir pad, organ stabs; no claps, open hats or piano (keeps clear of the tuba's brass house). `LIGHTING = True`. No brand logos or wordmarks on models.
+- **Reference photos to find:**
+  - Hydraulis: Aquincum Museum (Budapest) working replica; Dion hydraulis reconstruction
+  - Portative: "portative organ medieval"; Memling's angel musicians
+  - Halberstadt 1361: Praetorius, Syntagma Musicum woodcut (sourcelibrary.org)
+  - Valère, Sion: Valère Basilica organ photos
+  - Arnstadt: Bachkirche Arnstadt organ photos
+  - Saint-Sulpice: organ façade photos
+  - Mighty Wurlitzer: theatre-organ console photos
+  - Boardwalk Hall: 7-manual console photos
+  - Hammond Model A: vintage listings and archive photos
+  - Sydney Opera House: Grand Organ photos
+  - Elbphilharmonie: Klais / Elbphilharmonie organ photos
+  - Halberstadt Cage organ: St. Burchardi "ASLSP organ" photos (acrylic box, sandbags)
+- **Sources:**
+  - Halberstadt ASLSP (began 5 Sept 2001, ends 2640, 639 years; sandbags; acrylic box since 2011; the 639 years count from the 1361 cathedral organ): https://en.wikipedia.org/wiki/As_Slow_as_Possible · https://www.classicfm.com/composers/cage/as-slow-a-possible-aslsp-germany-organ-chord-change/
+  - Hydraulis (Ctesibius, 3rd c. BC; water steadies the air pressure; Aquincum replica): https://en.wikipedia.org/wiki/Hydraulis
+  - Portative (one hand plays, the other pumps); Halberstadt 1361, first documented permanent organ: https://en.wikipedia.org/wiki/Pipe_organ · https://www.orgelbau-huefken.de/en/special/organ-town.html
+  - Valère organ, 1435, oldest playable: https://swissinfo.ch/eng/culture/swiss-music-lovers-to-hear-oldest-playable-organ-in-the-world/48666122
+  - Arnstadt organ (Wender, 1703), Bach hired aged 18: https://en.wikipedia.org/wiki/Bach_Church,_Arnstadt
+  - Saint-Sulpice (Cavaillé-Coll, 1862, 102 stops, five manuals): https://en.wikipedia.org/wiki/Aristide_Cavaill%C3%A9-Coll · Widor 1870–1933, 63 years: https://www.aross.fr/en/the-great-organ/
+  - Wurlitzer theatre organs (1911–1942; car horns, drums for silent films): https://en.wikipedia.org/wiki/Theatre_organ
+  - Boardwalk Hall (33,112 pipes; Guinness largest and loudest; 7 manuals; 1929–32): https://en.wikipedia.org/wiki/Boardwalk_Hall_Auditorium_Organ
+  - Hammond (1935; ~50,000 churches by 1966): https://en.wikipedia.org/wiki/Hammond_organ
+  - Sydney Opera House Grand Organ (1979; largest tracker organ ever built): https://en.wikipedia.org/wiki/Sydney_Opera_House_Grand_Organ
+  - Elbphilharmonie organ (4,765 pipes; 2016; Klais; mostly hidden; built into the seating): https://www.elbphilharmonie.de/en/mediatheque/elbphilharmonie-organ-the-pipe-cleaners/494
+- **Production prompt:**
+
+> Make Pixel Pitch P7: the pipe organ. Use the pixel-pitch-history skill and the repo pixelpitch161/reels-toolkit (series/instrument-history/). The approved draft is in STATUS.md under Drafts → "P7. Pipe organ": follow it exactly (hook, headline, all 12 scene rows with their years, names, credits and facts, outro, limestone-cavern background, era palettes, 120 BPM industrial-techno groove). First claim the P7 row on the ideas board (in production, this session's link, today's date), commit and push.
+>
+> Must-haves: the finished video must run 60 s (±1 s), final chord included; if it doesn't, nudge the BPM or the final-chord length rather than dropping scenes. New script `organ60_lowpoly.py` (OUT "organ60_lowpoly.mp4", TAG "po"); the Halberstadt Cage organ is the modern showcase (hook "ONE ORGAN PIECE / LASTS 639 YEARS") and the closing scene, with history oldest to newest in between; `LIGHTING = True`; no brand logos on the models; each scene's riff in that organ's own voice; no organ pipes in the background (it must not look like the French horn's concert hall).
+>
+> Reference photos: before modelling each instrument (the showcase and all 11 historical ones), use my open Chrome browser (Claude in Chrome) to find real reference photos yourself: image searches, museum collection pages, makers' sites. Use the "Reference photos to find" list and model notes in the draft. Check: the hydraulis's water cistern and pumps; the portative's bellows; copy Praetorius's woodcut for 1361; the Hammond has no pipes; the Cage organ sits in an acrylic box with sandbags on the pedals. The big organs (Saint-Sulpice, Boardwalk, Sydney, Elbphilharmonie) must each read differently, e.g. façade vs console. Don't ask me for images.
 >
 > Before the full render, send me `--still` frames taken mid-scene for every scene (contact sheet is fine) so I can review them, but don't wait for my OK: carry straight on and render with pp_parallel.py, check the runtime is 60 s, watch it through, send the video, update STATUS.md, commit, git pull --rebase and push.
