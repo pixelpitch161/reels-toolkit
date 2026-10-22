@@ -22,7 +22,7 @@ a draft, when it gets feedback, and when it delivers.
 | 10 | One Melody, 100 Years of Speakers | idea | - | - | - |
 | 11 | The Perfect Loop (15 pendulums) | review | session_017rbUTK (2026-10-21) | v1 delivered with caption + tags: sunset attic, 15 lantern-bobs, floor shadows redraw the wave, phase-ring HUD; seamless loop verified. Waiting for feedback | `perfect_loop.mp4` |
 | 12 | Prime-Number Cicadas | review | session_01UkvSDH (2026-10-21) | v1 delivered with caption + tags (early sheet sent first). Exact grid kept (1 yr = 1/16 at 120 BPM, 2024 on the 51 s downbeat), so near-miss captions moved to 29.75 s / 44.5 s. Waiting for feedback | `prime_cicadas.mp4` |
-| 13 | Count the Thunder | review | session_01QAsUpz (2026-10-21) | v1 delivered with caption + tags (early sheet sent first). Checks: focus CoC 0 on all frames; flash test 0 general flashes (max 4 % of frame per strike); thunder ≥8 dB over music in 40-400 Hz. Waiting for feedback | `count_the_thunder.mp4` |
+| 13 | Count the Thunder | approved (v2) | session_01QAsUpz (v1) | v1 feedback: not engaging enough at the start. Audio check: first 30 s ≈ count ticks + 4 thunders (~1 hit/s, ~−25 dBFS), groove only from 30 s, climax barely louder, whole mix 6–9 dB under the others. v2 rework approved: cold open on the overhead strike, storm chaos → lock-in, never quiet (see "v2 rework" in backlog). Next: re-cut in the original session | v1: `count_the_thunder.mp4` |
 | 14 | Chaos Makes a Perfect Curve (Galton board) | in production | session_015Sj8e1 (2026-10-21) | Started: building timeline, seeded 50/50 simulation and Victorian lecture-hall scene | - |
 
 ## Backlog (idea details)
@@ -435,6 +435,66 @@ the window mask; cheap with the existing shadow pipeline). Audio: thunder as fil
 transient for close claps, long low-passed tail for far rumbles); carve the music's low end under each hit and
 add a click so it reads on phone speakers (#2 lesson). Font: add "÷" as a runtime glyph from the project (like
 ♭ and ≈ on #2).
+
+#### 13 — v2 rework (APPROVED, supersedes the v1 beat sheet above)
+**User feedback on v1:** not engaging enough, especially at the start. Engagement brief: constantly
+stimulating; open on chaos with sound from frame 0; never go quiet; build to a satisfying lock-in (the 100
+Metronomes arc); exaggerate where the phenomenon is calmer.
+**Audio check of v1 (rendered audio.py, 2 s windows, vs 100 Metronomes):** first 10 s ≈ −27 dBFS and ~1 hit/s
+(Metronomes: −18.5 dBFS, ~4.4 hits/s); first 30 s is count ticks + 4 thunders; groove only from 30 s; climax
+(−19) barely louder than the start; whole mix 6–9 dB below the other reels.
+
+**v2 in one line:** a storm throws many strikes at different distances, so far away every thunder lands a
+different number of seconds after its flash: flashes and rumbles overlap out of sync (natural chaos). As the
+storm closes in, every delay shrinks and the thunder snaps onto the flashes until they fuse: chaos → lock-in,
+straight from the physics.
+- **Cold open on the climax:** the overhead strike on the barn rod (flash + clap fused, downpour, full groove),
+  seen from inside the cabin. Then "HOW FAR WAS THAT?" rewinds the storm back to the horizon.
+- **Never quiet:** rain + wind + a low-passed groove from frame 0; the bed's filter opens as the storm nears.
+  The counting rides on the beat (count ticks = hats), not over silence.
+- **Make the mismatch visible:** each flash spawns its sound ring crawling across the prairie (v1 already has
+  these). Many strikes = many rings at once, crossing each other; each rumble sounds exactly when its ring
+  reaches the cabin, so you can see why the rumbles don't match the flashes. As the storm nears, the rings
+  shorten and each lands right after its own flash.
+- **Lock-in (back half):** keep v1's best idea: flashes on the downbeat (snare), each thunder = the kick, late
+  by 2 → 1 → ½ → ¼ → ⅛ s, fusing at the overhead strike. The overlapping rumble smear thins out as each strike's
+  thunder pulls onto its own flash.
+- **Ending builds, doesn't fade:** a second cell races in: "THE NEXT ONE'S CLOSER", count 3… 2… 1…, and the
+  strike lands on frame 0 (the cold open) for the loop.
+- **Level:** start ≥ about −20 dBFS short-term with ≥3 hits/s, build ~8 dB to the climax, and no 2 s window
+  more than 12 dB below the peak except a deliberate ≤1 s tape-stop/rewind gap.
+
+**v2 beat sheet (60 s; every displayed delay/distance stays physically consistent, ÷5 mi / ÷3 km):**
+| Time | Visual | Caption | Sound |
+|---|---|---|---|
+| 0–3 | Cold open: overhead strike on the barn rod, downpour, cat bolts off the sill | SECONDS ÷ 5 = MI / SECONDS ÷ 3 = KM | Flash + clap fused, full groove |
+| 3–5 | "Rewind": rain streaks reverse, storm sucks back to the horizon | HOW FAR / WAS THAT? | Reverse whoosh + rewind scratch |
+| 5–9 | Horizon storm: many small flashes (≤2/s), rings crawling over the prairie | LIGHT: INSTANT / SOUND: 1 KM / 3 S | Rain/wind + low-passed groove; distant rumbles smear in |
+| 9–15 | One flash is tagged; counter runs with its ring | COUNT IT: / 1… 2… 3… | Count ticks as hats over the groove; overlapping rumbles |
+| 15–20 | Tagged ring reaches the cabin | 15 S = 3 MI / ≈ 5 KM | Its rumble lands: low, muffled |
+| 20–25 | Rings cross each other; rumbles arrive "wrong" | FAR = RUMBLE / AIR EATS HIGHS | Rumble smear, brighter; filter opens a notch |
+| 25–30 | Storm crosses the fence-post markers; rings shorten | IT'S COMING | Delays ~5 → 3 s; rumbles turning into claps |
+| 30–35 | Moon swallowed; cat moves off the sill; flashes start landing on downbeats | HEAR THUNDER? / GO INDOORS | Groove opens to full (120 BPM) |
+| 35–44 | One flash per bar; thunder 2 → 1 → ½ s late; distance HUD shrinks | 0.4 MI… 0.2 MI… | Kick walks back across the bar; smear thinning |
+| 44–50 | Thunder ¼ → ⅛ s late; window shadows flash | ≈80 M… ≈40 M… | Flams tighten; low-pass fully open |
+| 50–52 | Climax: overhead strike (same image as the cold open) | 0 S / RIGHT ON TOP | Flash + clap fused, everything at once |
+| 52–57 | Second cell races in from the horizon | TRY IT: COUNT / FROM INSIDE | Groove keeps driving; rain swells |
+| 57–60 | Count 3… 2… 1… with its ring; strike lands on frame 0 (loop) | THE NEXT ONE'S / CLOSER | Riser into the cold-open clap |
+
+**v2 flags:**
+- Safety unchanged: indoors throughout, including the cold open; ending says "from inside".
+- Photosensitivity: at most 3 flashes per second overall (≤2/s in the horizon chaos), distant bolts small, no
+  full-frame white flashes. Re-run v1's flash_check.py on v2.
+- Strikes landing on downbeats is stylisation (real lightning isn't rhythmic), but each strike's thunder delay
+  must still match its displayed distance; never caption a distance that disagrees with its delay.
+- The second cell in 52–60 is a staged loop device; keep its count consistent with its distance too.
+- Still synthesise all thunder (no stock recordings).
+
+**v2 feasibility:** a re-cut, not a rebuild. Keep v1's scene.py / render.py (cabin cut-away, cat, bolts, sound
+rings, HUD, window shadows) and its checks (focus_check, flash_check, audio_check). Rewrite timeline.py (a strike
+list with many distances, the rewind, the second cell) and audio.py (continuous rain/wind + filtered groove from
+0 s, overlapping distance-filtered rumbles, rewind and riser FX, louder master). Many simultaneous rings: cap
+visible rings (~8) and fade the oldest. Keep a `*_backup.py` of v1 before changing anything.
 
 ### 14. Chaos Makes a Perfect Curve (Galton board) — APPROVED
 **Engagement brief (user, Oct 2026):** constantly stimulating, especially at the start. Open on chaos with
