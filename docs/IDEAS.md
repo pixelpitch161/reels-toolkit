@@ -20,7 +20,7 @@ a draft, when it gets feedback, and when it delivers.
 | 8 | Dinosaur Brass Band | review | session_019KQA5D (2026-10-21) | Draft v1 sent: real rigid-segment dinosaurs (fallback not needed), early sheet + video delivered with caption/tags. Awaiting feedback | `dinosaur_brass_band.mp4` |
 | 9 | The 639-Year Song | idea | - | Copyright: don't use Cage's actual notes (still in copyright); use a generic held chord | - |
 | 10 | One Melody, 100 Years of Speakers | idea | - | - | - |
-| 11 | The Perfect Loop (15 pendulums) | review | session_017rbUTK (2026-10-21) | v1 delivered with caption + tags: sunset attic, 15 lantern-bobs, floor shadows redraw the wave, phase-ring HUD; seamless loop verified. Waiting for feedback | `perfect_loop.mp4` |
+| 11 | The Perfect Loop (100 pendulums) | approved (v2) | session_017rbUTK (v1) | v1 feedback: scale the concept up (more pendulums). Audio check: never quiet, but opens on the calm line-up and only builds ~2 dB. v2 rework approved: 100 pendulums (51→150 swings, 34→4 cm), start 8 s into the cycle, line-up as the climax at 52 s, +8 dB build (see "v2 rework" in backlog). Next: re-cut in the original session | v1: `perfect_loop.mp4` |
 | 12 | Prime-Number Cicadas | review | session_01UkvSDH (2026-10-21) | v1 delivered with caption + tags (early sheet sent first). Exact grid kept (1 yr = 1/16 at 120 BPM, 2024 on the 51 s downbeat), so near-miss captions moved to 29.75 s / 44.5 s. Waiting for feedback | `prime_cicadas.mp4` |
 | 13 | Count the Thunder | in production (v2) | session_01QAsUpz (v1); session_016ZWSrN (v2, 2026-10-21) | v1 feedback: not engaging enough at the start. Audio check: first 30 s ≈ count ticks + 4 thunders (~1 hit/s, ~−25 dBFS), groove only from 30 s, climax barely louder, whole mix 6–9 dB under the others. v2 re-cut started: v1 kept as `*_backup.py`; building cold open, storm chaos → lock-in, never quiet (see "v2 rework" in backlog) | v1: `count_the_thunder.mp4` |
 | 14 | Chaos Makes a Perfect Curve (Galton board) | in production | session_015Sj8e1 (2026-10-21) | Started: building timeline, seeded 50/50 simulation and Victorian lecture-hall scene | - |
@@ -320,6 +320,62 @@ animals).
 One list of trigger times drives both the flashes and the plucks (as on #2). Framing: a portrait frame only
 shows ~0.43 × distance in width, so run the row toward the camera at an oblique angle (the iconic view, and
 the snake reads best). Floor seen from above under the window light gives free shadow drama.
+
+#### 11 — v2 rework: 100 pendulums (APPROVED, supersedes the v1 beat sheet above)
+**User feedback on v1:** increase the scale of the concept: more pendulums. Engagement brief: constantly
+stimulating; open on chaos with sound from frame 0; never go quiet; build to a satisfying lock-in; exaggerate.
+**Audio check of v1 (rendered audio.py, 2 s windows):** never quiet (−17 → −13 dBFS, no dips), but it opens on
+the calmest image (all 15 in a line), real chaos only arrives at ~22 s, and the music builds just ~2 dB.
+
+- **100 pendulums, same rule:** longest swings 51 times a minute, each next one once more, so 51 → 150 swings;
+  lengths 34.4 cm → 4.0 cm (calc), a dramatic staircase. All realign at exactly 60 s, so the loop holds.
+  Why not 1,000: adjacent pendulums must differ by exactly 1 swing per minute, so the shortest would swing
+  ~1,050 times a minute and be under 1 mm long. ~100 is the realistic maximum.
+- **What 100 buys:** crisp patterns up to ~20–30 groups (15 pendulums turn to mush past ~6), with interleaved
+  kaleidoscope waves between them. One pluck per swing ≈ 167 plucks/s (calc): a real wash of chaos. When
+  pendulums bunch into groups their plucks land together and the wash snaps into a rhythm (emergent, from the
+  physics). The line-up is a 100-voice strum.
+- **Phase offset:** video time = physics time − 8 s. The video opens mid-kaleidoscope, the 6 → 5 → 4 → 3
+  group ladder arrives every 2–5 s, patterns accelerate in the back half (~10 → 50 groups between 46 and 51 s),
+  and all 100 snap into one line at 52 s (climax), then peel back into the opening. Frame 1800 = physics 68 s
+  = physics 8 s = frame 0, so the loop stays exact.
+- **Scene:** the ~2.5 m row needs a longer room: stretch the attic into a long gallery with a row of round
+  windows, still at sunset. Rainbow-ramp lantern-bobs, longest at the back (staircase silhouette reads); faint
+  light trails behind each bob so the waves read as ribbons; floor shadows from above.
+- **Audio:** plucks as a granular wash, each pendulum on a pentatonic pitch so the wash stays consonant;
+  clusters get louder naturally when pendulums align; build ~+8 dB from the opening to the 52 s strum (v1 built
+  ~2 dB).
+
+**v2 beat sheet (60 s; video = physics − 8 s; group times calc):**
+| Time | Pendulums | Caption | Sound |
+|---|---|---|---|
+| 0–2 | Cold open mid-kaleidoscope: 100 bobs, wave-on-wave | 100 PENDULUMS / 1 PERFECT LOOP | Pluck wash (~167/s) + bass hit |
+| 2–4 | 6 groups (2 s) | NO MOTOR / NO MAGNETS | Wash snaps into sextuplets |
+| 4–7 | 5 groups (4 s); length ramp labels | 34 CM → 4 CM | Quintuplets |
+| 7–12 | 4 groups (7 s); camera glides along the row | 51 → 150 SWINGS / PER MINUTE | Sixteenths; filtered groove under |
+| 12–17 | 3 groups (12 s) | 3 GROUPS / = TRIPLETS | Triplets |
+| 17–22 | Dissolves into chaos | LOOKS LIKE / CHAOS… | Full wash, low-passed groove |
+| 22–27 | 2 opposite halves (22 s) | HALFTIME: / 2 TEAMS | Call and answer in eighths |
+| 27–32 | Chaos again; group-counter HUD slides up | IT'S REWINDING | Bass + pad enter |
+| 32–42 | 3 (32 s), 4 (37 s), 5 (40 s), 6 (42 s) | COUNT THE GROUPS | Groove builds; each pattern a chord change |
+| 42–48 | 8 (44.5 s), 10 (46 s), 15 (48 s); patterns accelerate | 10… 15… | Rising build, kick doubles |
+| 48–52 | 20 → 30 → 50 groups, converging | (counter racing) | Riser; wash tightens |
+| 52 | Climax: all 100 snap into one line | 1 LINE | 100-voice strum on the drop (loudest moment) |
+| 52–60 | Peels back into snake and kaleidoscope, loops to the opening | TRY IT: 15 WASHERS / + STRING | Groove rides out into the opening wash |
+
+**v2 flags:**
+- Idealised build: a real 100-pendulum rig would need tuning to fractions of a millimetre and drifts with large
+  swings. Keep swings small on screen; the render uses exact motion, so don't claim a real build. "Try it" stays
+  the 15-washer version.
+- Pentatonic pitches are a stylisation: rhythm and timing come from the physics, the notes are a music choice.
+- Focus: a ~2.5 m row receding from the camera needs a deep sharp band so all 100 bobs stay crisp (v1's
+  focus_check.py).
+- Plucks: at ~167/s keep them very short and individually quiet, so the aligned clusters and the strum carry
+  the punch.
+
+**v2 feasibility:** easy: same θ = θ₀·cos(2π·n·t/60) for n = 51…150, no simulation, render cost barely changes.
+A re-cut in projects/perfect_loop/: keep v1's attic assets, stretch the room into a gallery, rewrite timeline.py
+and audio.py (8 s phase offset, granular plucks, the build). Keep a `*_backup.py` of v1 before changing anything.
 
 ### 12. Prime-Number Cicadas — APPROVED
 - **Hook:** "13 × 17 = 221 YRS" (17 chars, in the first 2 s). Alt: "LAST TIME: 1803".
