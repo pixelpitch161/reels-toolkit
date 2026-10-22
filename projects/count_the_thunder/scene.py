@@ -353,22 +353,32 @@ def ground_at(D, az):
     return np.array([D * math.sin(az), GROUND_Y, -D * math.cos(az)])
 
 
-AZ_JIT = [0.0, 3.0, -4.0, 4.0, -5.0, 3.0, -7.0, -2.0, -6.0, -3.0, -7.0, -3.0, 0.0]
-STRIKE_P = []
-for i in range(T.N_STRIKES):
+LOCK_JIT = [3.0, -4.0, 4.0, -5.0, 3.0, -7.0, -2.0, -6.0, -3.0]
+
+
+def strike_ground(i):
+    """where strike i hits: the rod for the overhead strikes, else the mapped distance at its azimuth
+    (strikes that follow the main cell use its approach azimuth, plus a little jitter)"""
+    tf, d, az, kind = T.STRIKES[i]
+    if kind == 'rod':
+        return ROD_TOP.copy()
     km = T.true_km(i)
-    if i == T.N_STRIKES - 1:
-        STRIKE_P.append(ROD_TOP.copy())
+    if az is None:
+        j = T.LOCK.index(i) if i in T.LOCK else 0
+        a = az_for(km) + math.radians(LOCK_JIT[j % len(LOCK_JIT)])
     else:
-        STRIKE_P.append(ground_at(dmap(km), az_for(km) + math.radians(AZ_JIT[i])))
-STRIKE_P = np.array(STRIKE_P)
+        a = math.radians(az)
+    return ground_at(dmap(km), a)
+
+
+STRIKE_P = np.array([strike_ground(i) for i in range(T.N_STRIKES)])
 
 # fence line out toward the storm, with distance markers on taller posts
 FENCE_AZ = math.radians(-17.0)
 FENCE_DIR = np.array([math.sin(FENCE_AZ), 0, -math.cos(FENCE_AZ)])
 FENCE_START = np.array([RX0 - 0.55, GROUND_Y, RZ0 - 0.9])
-FENCE_LEN = 44.0
-MARKERS = [('1 KM', 1.0), ('1 MI', 1.609), ('2 MI', 3.219)]
+FENCE_LEN = 46.0
+MARKERS = [('1 KM', 1.0), ('1 MI', 1.609), ('2 MI', 3.219), ('3 MI', 4.828)]
 fence = []
 d = 0.0
 while d <= FENCE_LEN:
@@ -436,39 +446,93 @@ def cell_lift(D):
     u = min(1.0, max(0.0, (D - 7.0) / 23.0))
     return 4.4 * (1 - u * u * (3 - 2 * u))
 
-# cell path: passes over each strike near its flash time, ends over the barn at the climax,
-# then sweeps overhead and off; a fresh distant cell fades in at the horizon for the loop.
-_kt = [0.0, 0.5, 12.0, 21.0, 27.0, 34.0, 38.5, 42.5, 46.0, 50.0, 53.5, 56.5]
-_kd = [dmap(T.true_km(0)) + 0.6, dmap(T.true_km(0)) + 0.3, dmap(T.true_km(1)) + 0.4, dmap(T.true_km(2)), dmap(T.true_km(3)),
-       dmap(T.true_km(4)), dmap(T.true_km(6)) + 0.3, dmap(T.true_km(8)), dmap(T.true_km(10)), ROD_D, -6.0, -18.0]
-_DPATH = PchipInterpolator(_kt, _kd)
-
-
+# Cells (ground point under each, alpha):
+#   main   overhead at the rod in the cold open (0-3 s), sucked back to the horizon by the rewind (3-5 s),
+#          then the approach: over the counted / lock-in strikes, over the rod at 50 s, then off
+#   cell2  races in from the horizon 52 -> 60 s over the 54/56/58 s strikes; at 60 s it is exactly where
+#          the main cell is at 0 s (seamless loop)
+#   flanks two far cells left and right that feed the chaos strikes, faded out as the storm closes in
 _P_ROD = ground_at(ROD_D, ROD_AZ)
-_P_PRE = ground_at(dmap(T.true_km(10)), az_for(T.true_km(10)))
+_P_PRE = ground_at(dmap(T.true_km(T.LOCK[-3])), az_for(T.true_km(T.LOCK[-3])))
 _HEAD = (_P_ROD - _P_PRE) / np.linalg.norm(_P_ROD - _P_PRE)
 
 
-def cell_ground(t):
-    """ground point under the main cell at time t"""
-    t = min(max(t, 0.0), 56.5)
-    D = float(_DPATH(t))
+def _ground_from_D(D):
     if D < ROD_D:                                      # past the barn: keep heading on, overhead and away
         return _P_ROD + _HEAD * (ROD_D - D)
     km = ((D - ROD_D) / 11.5) ** (1 / 0.72)
     return ground_at(D, az_for(km))
 
 
-START_CELL = cell_ground(0.0)
+def _kmD(i):
+    return dmap(T.true_km(i))
+
+
+_L = T.LOCK
+_kt = [5.0, 12.0, 18.0, 24.0, 30.0, 35.0, 39.0, 42.5, 46.0, 50.0, 53.5, 56.5]
+_kd = [dmap(3.6), dmap(3.3), dmap(2.6), _kmD(T.COUNTED[1]), _kmD(T.COUNTED[2]), _kmD(_L[1]), _kmD(_L[3]) + 0.3,
+       _kmD(_L[5]), _kmD(_L[7]), ROD_D, -6.0, -18.0]
+_DPATH = PchipInterpolator(_kt, _kd)
+D_CO_END = ROD_D - 1.6                                 # how far past the rod the cell drifts in the cold open
+
+
+def main_cell_D(t):
+    if t < T.T_CO:
+        return ROD_D + (D_CO_END - ROD_D) * (t / T.T_CO)
+    if t < T.T_REW:
+        u = T.ease(T.rew_u(t))
+        return D_CO_END + (float(_DPATH(T.T_REW)) - D_CO_END) * u
+    return float(_DPATH(min(t, 56.5)))
+
+
+def cell_ground(t):
+    """ground point under the main cell at time t"""
+    return _ground_from_D(main_cell_D(t))
+
+
+def main_cell_alpha(t):
+    return 1.0 - T.ss(52.6, 55.4, t)
+
+
+# cell 2: (t, D, az deg) knots; ends on the rod at 60 s along the main cell's 0 s heading
+_c2 = [(51.8, dmap(4.6), 2.0), (54.0, dmap(T.true_km(T.CELL2[0])), 6.0), (56.0, dmap(T.true_km(T.CELL2[1])), 9.0),
+       (58.0, dmap(T.true_km(T.CELL2[2])), 12.0), (60.0, ROD_D, math.degrees(ROD_AZ))]
+_C2D = PchipInterpolator([k[0] for k in _c2], [k[1] for k in _c2])
+_C2A = PchipInterpolator([k[0] for k in _c2], [k[2] for k in _c2])
+
+
+def cell2_ground(t):
+    t = min(max(t, 51.8), 60.0)
+    return ground_at(float(_C2D(t)), math.radians(float(_C2A(t))))
+
+
+def cell2_alpha(t):
+    return T.ss(51.8, 53.4, t)
+
+
+FLANKS = [(dmap(4.3), -17.0), (dmap(3.9), 7.0)]
+
+
+def flank_cells(t):
+    """[(ground point, alpha)] for the two far cells"""
+    a = T.ss(3.6, 5.0, t) * (1 - T.ss(27.0, 32.0, t))
+    if a <= 0.0:
+        return []
+    out = []
+    for k, (D0, az) in enumerate(FLANKS):
+        D = D0 - 0.22 * max(0.0, t - 5.0)
+        out.append((ground_at(D, math.radians(az + (1.5 if k else -1.0) * T.ss(5, 30, t))), a))
+    return out
 
 
 # ---------------------------------------------------------------- lightning bolts (one per strike)
 def make_bolt(i):
     """jagged channel from the cloud base to the strike point, plus two short branches"""
-    rb = np.random.default_rng(300 + i)
+    seed = 300 + (T.I_ROD0 if T.KIND[i] == 'rod' else i)
+    rb = np.random.default_rng(seed)
     end = STRIKE_P[i]
     top = end + np.array([rb.uniform(-0.6, 0.6), 0, rb.uniform(-0.6, 0.6)])
-    D = float(np.hypot(*cell_ground(T.STRIKES[i][0])[[0, 2]]))
+    D = float(np.hypot(end[0], end[2]))
     top[1] = CELL_BOTTOM + cell_lift(D) + 0.25
     n = 14
     main = [top]

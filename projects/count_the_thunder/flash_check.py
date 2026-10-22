@@ -78,10 +78,13 @@ def main():
         area, flashes, worst = analyse(Y)
         print(f'frames: {len(Y)}  general flashes (>=25% area): {len(flashes)}  worst in any 1 s: {worst}  (limit 3)')
         print(f'brightest mean frame luminance: {Y.mean((1, 2)).max():.3f}   darkest: {Y.mean((1, 2)).min():.3f}')
-        for i in range(T.N_STRIKES):
+        flashes_s = sorted(T.STRIKES[i][0] for i in T.SEEN)
+        worst_s = max(sum(1 for b in flashes_s if a <= b < a + 1.0) for a in flashes_s)
+        print(f'scheduled strikes per 1 s window (max): {worst_s}')
+        for i in T.SEEN:
             f0 = int(T.STRIKES[i][0] * FPS)
             seg = area[max(1, f0 - 1):f0 + 20]
-            print(f'  strike {i:2d} @ {T.STRIKES[i][0]:5.1f}s  max share of frame changing by >=0.1: {seg.max() * 100:5.1f} %')
+            print(f'  {T.KIND[i]:5s} {i:2d} @ {T.STRIKES[i][0]:5.1f}s  max share of frame changing by >=0.1: {seg.max() * 100:5.1f} %')
     else:
         import render as R
         for t0, t1 in zip(a.times[::2], a.times[1::2]):

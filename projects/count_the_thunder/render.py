@@ -85,39 +85,69 @@ def _out_flash_dir(i):
 
 
 OUT_FLASH_D = [_out_flash_dir(i) for i in range(T.N_STRIKES)]
-OUT_FLASH = [directional_mask(OUTG, OUT_FACES, OUT_FLASH_D[i], blur=1.5) for i in range(T.N_STRIKES)]
+_OUT_FLASH = {}
+
+
+def out_flash_mask(i):
+    """ground shadow mask for strike i's light (computed on first use; many strikes share a direction)"""
+    key = tuple(np.round(OUT_FLASH_D[i], 2))
+    if key not in _OUT_FLASH:
+        _OUT_FLASH[key] = directional_mask(OUTG, OUT_FACES, OUT_FLASH_D[i], blur=1.5)
+    return _OUT_FLASH[key]
 
 INFL = MaskGrid((S.RX0, S.RX1, S.RZ0, S.RZ1, 0.01))
 IN_STATIC = [o for o in S.OBJS_IN if o.cast]
 IN_FACES = [Q for o in IN_STATIC for Q, n in o.faces] + [Q for Q, n in S.rocking_chair(0.0)]
 IN_MOON = directional_mask(INFL, IN_FACES, MOON_L, blur=1.0)
-IN_FLASH = [directional_mask(INFL, IN_FACES, FLASH_D[i], blur=1.0) for i in range(T.N_STRIKES)]
+_IN_FLASH = {}
+
+
+def in_flash_mask(i):
+    key = tuple(np.round(FLASH_D[i], 2))
+    if key not in _IN_FLASH:
+        _IN_FLASH[key] = directional_mask(INFL, IN_FACES, FLASH_D[i], blur=1.0)
+    return _IN_FLASH[key]
 LAMP_MASK = point_mask(INFL, [Q for o in IN_STATIC if o.grp not in (S.LAMP_G,) for Q, n in o.faces] + [Q for Q, n in S.rocking_chair(0.0)], S.LAMP_P, blur=2.5)
 FIRE_MASK = point_mask(INFL, [Q for o in IN_STATIC if o.grp not in (S.FP_G,) for Q, n in o.faces] + [Q for Q, n in S.rocking_chair(0.0)], S.FIRE_P + [0, 0.25, 0.25], blur=3.0)
 
 # ---------------------------------------------------------------- camera
+CLX = (np.array([0.3, 0.75, -0.6]), 7.1, 6, 18, 60, 405)       # climax / cold-open framing: sky over the rod
+CAB = (np.array([0.05, 0.6, -0.3]), 6.5, 9, 22, 60, 395)        # cabin: cat on the sill, window, room
+WIDE = (np.array([-1.0, 0.0, -11.0]), 22.0, 3, 25, 52, 305)     # high and wide: rings crossing the prairie
+MED = (np.array([-0.6, 0.2, -5.5]), 14.0, 6, 23, 56, 360)       # rings closing on the cabin
+NEAR = (np.array([-0.3, 0.3, -3.8]), 11.5, 7, 22, 58, 385)      # the tagged ring reaches the cabin
+FENCE = (np.array([-0.4, 0.3, -3.5]), 10.5, 8, 21, 58, 400)     # the storm crosses the fence posts
+
+
+def _k(t, base, dd=0.0, **kw):
+    tgt, d, yaw, pitch, fov, sy = base
+    return (t, kw.get('tgt', tgt), d + dd, kw.get('yaw', yaw), kw.get('pitch', pitch), kw.get('fov', fov), kw.get('sy', sy))
+
+
 KEYS = [  # (t, target, dist, yaw, pitch, fov, sy)
-    (0.0, np.array([0.05, 0.6, -0.3]), 6.3, 9, 21, 60, 398),        # hook: cabin, cat in the window, distant flash
-    (3.6, np.array([0.05, 0.6, -0.3]), 6.4, 9, 21, 60, 398),
-    (6.2, np.array([-1.0, 0.0, -11.0]), 22.0, 3, 25, 52, 305),      # establishing: high and wide, the ring crosses the fence markers
-    (8.6, np.array([-1.0, 0.0, -11.0]), 21.0, 4, 25, 52, 309),
-    (10.4, np.array([0.05, 0.6, -0.3]), 6.5, 9, 21, 60, 398),       # the thunder reaches the cabin
-    (19.0, np.array([0.05, 0.6, -0.3]), 6.6, 11, 21, 60, 398),
-    (23.0, np.array([-0.4, 0.3, -3.5]), 10.5, 8, 21, 58, 400),      # wider: the storm crosses the fence posts
-    (28.5, np.array([-0.4, 0.3, -3.5]), 10.2, 8, 21, 58, 400),
-    (32.0, np.array([0.05, 0.6, -0.3]), 6.5, 9, 22, 60, 395),       # the cat leaves the sill
-    (42.0, np.array([0.15, 0.65, -0.4]), 6.8, 8, 20, 60, 400),      # groove: storm closing on the barn
-    (48.8, np.array([0.3, 0.75, -0.6]), 7.1, 6, 18, 60, 405),       # climax framing: more sky over the rod
-    (52.0, np.array([0.3, 0.75, -0.6]), 7.0, 6, 18, 60, 405),
-    (56.0, np.array([0.05, 0.6, -0.3]), 6.4, 9, 21, 60, 398),
-    (60.0, np.array([0.05, 0.6, -0.3]), 6.3, 9, 21, 60, 398),
+    _k(0.0, CLX),                       # cold open: the overhead strike
+    _k(2.9, CLX, -0.25),
+    _k(5.0, WIDE),                      # the rewind pulls back to the horizon
+    _k(12.0, WIDE, -1.0, yaw=4),
+    _k(15.5, MED),
+    _k(18.6, NEAR),
+    _k(21.6, NEAR, 0.3, yaw=8),
+    _k(24.5, FENCE),
+    _k(28.6, FENCE, -0.3),
+    _k(31.8, CAB),                      # the cat leaves the sill
+    (42.0, np.array([0.15, 0.65, -0.4]), 6.8, 8, 20, 60, 400),
+    _k(48.8, CLX),
+    _k(51.6, CLX, -0.1),
+    _k(54.4, FENCE, -0.6, yaw=7),       # the second cell races in
+    _k(57.0, FENCE, -0.9, yaw=7),
+    _k(59.3, CLX),
+    _k(60.0, CLX),
 ]
 
 
 def camera(t):
-    cam = interp_keys(KEYS, t)
-    # tiny handheld-free drift so the diorama breathes (periodic over 60 s for the loop)
-    return cam
+    # 2.9 -> 5.0 s: the pull-back from the rod to the horizon IS the rewind
+    return interp_keys(KEYS, t)
 
 
 # ---------------------------------------------------------------- procedural textures
@@ -232,12 +262,19 @@ def draw_sky(cam, t, flash):
 HORIZ_D = 72.0
 
 
+RING_CAP = 12
+
+
 def sound_rings(t):
-    """active rings: (centre xz, radius, strength)"""
+    """active rings: (centre xz, radius, strength, counted?). A ring leaves its strike at the flash and
+    reaches the cabin exactly when its thunder sounds (radius follows the same distance mapping)."""
+    rk = T.ring_k(t)
+    if rk <= 0:
+        return []
     out = []
-    for i in range(T.N_STRIKES - 1):
-        tf, d = T.STRIKES[i]
-        if d < 0.4:
+    for i in range(T.N_STRIKES):
+        tf, d = T.STRIKES[i][:2]
+        if d < 0.4 or T.KIND[i] == 'rod':
             continue
         tau = t - tf
         if tau < 0 or tau > d + 0.35:
@@ -249,8 +286,14 @@ def sound_rings(t):
         R = R0 - S.dmap(km * (1 - u)) + S.ROD_D * ss(0.75, 1.0, u)
         if tau > d:
             R = R0 + (tau - d) * 12
-        a = (1 - ss(d, d + 0.35, tau)) * (0.55 + 0.45 * ss(0, 0.15, tau))
-        out.append((P[[0, 2]], R, a))
+        a = (1 - ss(d, d + 0.35, tau)) * (0.55 + 0.45 * ss(0, 0.15, tau)) * rk
+        counted = i in T.COUNTED
+        if not counted:
+            a *= 0.6 * (0.62 + 0.38 * math.exp(-km / 2.5))    # chaos rings stay in the background
+        out.append((P[[0, 2]], R, a, counted))
+    if len(out) > RING_CAP:                                     # safety cap: drop the faintest
+        out.sort(key=lambda r: -(r[2] + (9 if r[3] else 0)))
+        out = out[:RING_CAP]
     return out
 
 
@@ -276,7 +319,7 @@ def ground_pass(fr, cam, t, Lx, flashes, z_hor, h_hor):
         sp = S.STRIKE_P[i]
         dist = np.hypot(X - sp[0], Z - sp[2])
         fall = 0.35 + 0.65 * np.exp(-dist / 9.0)
-        I += ((1 - OUTG.sample(OUT_FLASH[i], X, Z)) * fall * env * T.flash_gain(i) * 1.15)[:, None] * FLASH_RGB[None]
+        I += ((1 - OUTG.sample(out_flash_mask(i), X, Z)) * fall * env * T.flash_gain(i) * 1.15)[:, None] * FLASH_RGB[None]
     # warm spill from the window and the cut-away onto the yard
     sp = np.hypot((X - 0.0) / 2.2, (Z - 1.6) / 1.1)
     I += (0.22 * np.exp(-sp * sp))[:, None] * WARM[None]
@@ -284,11 +327,13 @@ def ground_pass(fr, cam, t, Lx, flashes, z_hor, h_hor):
     I *= ao[:, None]
     col = alb * I
     # the sound of each strike: a pale ring crawling across the prairie
-    for c, R, a in sound_rings(t):
-        dd = np.abs(np.hypot(X - c[0], Z - c[1]) - R)
-        w = 0.14 + 0.016 * R
-        ring = np.clip(1 - dd / w, 0, 1) ** 1.3 + 0.4 * np.clip(1 - np.abs(np.hypot(X - c[0], Z - c[1]) - (R - 0.7 - 0.04 * R)) / w, 0, 1)
-        col += (ring * a * 190)[:, None] * np.array([0.6, 0.85, 1.0])[None]
+    for c, R, a, counted in sound_rings(t):
+        rr = np.hypot(X - c[0], Z - c[1])
+        dd = np.abs(rr - R)
+        w = (0.26 if counted else 0.13) + (0.02 if counted else 0.014) * R
+        ring = np.clip(1 - dd / w, 0, 1) ** 1.3 + 0.4 * np.clip(1 - np.abs(rr - (R - 0.7 - 0.04 * R)) / w, 0, 1)
+        tint = np.array([1.0, 0.78, 0.4]) if counted else np.array([0.6, 0.85, 1.0])
+        col += (ring * a * (270 if counted else 190))[:, None] * tint[None]
     # fog to the horizon
     k = np.clip((hd - 9.0) / (HORIZ_D - 14.0), 0, 1) ** 0.85 * 0.92
     col = col * (1 - k[:, None]) + np.asarray(h_hor, float)[None] * k[:, None]
@@ -351,7 +396,7 @@ def draw_rain_curtain(fr, cam, t, base, alpha, rk):
     pts = r.uniform(-1, 1, (90, 2)) * 3.0
     for k in range(n):
         x, z = base[0] + pts[k, 0], base[2] + pts[k, 1]
-        ph = (t * 1.3 + k * 0.37) % 1.0
+        ph = (T.phase(t) * 1.3125 + k * 0.37) % 1.0
         y1 = S.CELL_BOTTOM + S.cell_lift(float(np.hypot(base[0], base[2]))) - ph * 1.2
         y0 = max(S.GROUND_Y, y1 - 2.6)
         P = np.array([[x + 0.35, y1, z], [x, y0, z]])
@@ -471,7 +516,7 @@ def shell_pass(fr, cam, t, L, lk, fk, flashes, cat_masks, rk):
             I += (ml_ * 0.95 * mk)[:, None] * MOON_RGB[None]
         for i, env in flashes:
             d = FLASH_D[i]
-            fl = S.win_lit(P + [0, 0.002, 0], d) * (1 - np.maximum(INFL.sample(IN_FLASH[i], X, Z), INFL.sample(cat_masks[1], X, Z)))
+            fl = S.win_lit(P + [0, 0.002, 0], d) * (1 - np.maximum(INFL.sample(in_flash_mask(i), X, Z), INFL.sample(cat_masks[1], X, Z)))
             I += (fl * env * T.flash_gain(i) * 1.55)[:, None] * FLASH_RGB[None]
             I += 0.06 * env * T.flash_gain(i) * FLASH_RGB[None]
         I += warm_at(P, np.array([0, 1.0, 0]), True)
@@ -513,10 +558,10 @@ def shell_pass(fr, cam, t, L, lk, fk, flashes, cat_masks, rk):
             cx = np.floor(Xw * 48)
             hs = hash2(cx, 5.0)
             speed = 0.25 + 0.5 * hs
-            yy = (Yw * 9 + t * speed * 9 + hs * 37) % 3.0
+            yy = (Yw * 9 + T.phase(t) * speed * 9 + hs * 37) % 3.0
             streak = (hs > 1 - 0.55 * rk) & (yy < 0.32 + 0.4 * hs) & (np.abs((Xw * 48) % 1 - 0.5) < 0.22)
             col[streak] = col[streak] * 0.6 + np.array([170, 186, 214.0]) * 0.4
-            drop = hash2(np.floor(Xw * 60), np.floor(Yw * 60) + np.floor(t * 0.7)) > 1 - 0.05 * rk
+            drop = hash2(np.floor(Xw * 60), np.floor(Yw * 60) + np.floor(T.phase(t) * 0.7)) > 1 - 0.05 * rk
             col[drop] = col[drop] * 0.5 + np.array([200, 214, 236.0]) * 0.5
         Pw = np.stack([Xw, Yw, np.full_like(Xw, S.RZ0)], 1)
         Iw = (L.amb * 0.7)[None] + warm_at(Pw, np.array([0, 0, 1.0]))
@@ -585,6 +630,21 @@ def _hop(a, b, u, h):
 
 def cat_state(t):
     """(position, yaw, pose, phase): yaw 0 = facing -z (out of the window)"""
+    mode, ct = T.cat_clock(t)
+    if mode == 'co':                                   # cold open bolt (and its replay backwards in the rewind)
+        j0, j1 = T.CO_JUMP
+        r0, r1 = T.CO_RUN
+        if ct < j0:
+            return S.CAT_SILL.copy(), 0.0, 'sit', 0.0
+        if ct < j1:
+            u = ease((ct - j0) / (j1 - j0))
+            return _hop(S.CAT_SILL, CAT_FLOOR, u, 0.25), math.pi, 'walk', u * 2
+        if ct < r1:
+            u = ease((ct - r0) / (r1 - r0))
+            p = CAT_FLOOR + (CAT_RUG - CAT_FLOOR) * u
+            yaw = math.atan2(-(CAT_RUG - CAT_FLOOR)[0], (CAT_RUG - CAT_FLOOR)[2]) + math.pi
+            return p, yaw, 'walk', (ct - r0) * 8
+        return CAT_RUG.copy(), 0.6, 'curl', 0.0
     j0, j1 = T.CAT_JUMP_DOWN
     w0, w1 = T.CAT_WALK
     b0, b1 = T.CAT_WALK_BACK
@@ -620,7 +680,7 @@ def cat_faces(t):
         f += icosa([0, 0.11 * crouch, 0.02], 0.1, (0.85, 1.12 * crouch, 0.9), jit=0.07, rng=r2)
         f += icosa([0, 0.16 * crouch, -0.05], 0.07, (0.9, 1.0, 0.8), jit=0.05, rng=r2)
         hc = np.array([0.0, 0.27 * crouch, -0.06])
-        look = 0.35 * math.sin(2 * math.pi * t / 12.0) * (1 - fl)
+        look = 0.35 * math.sin(2 * math.pi * T.phase(t) / 12.0) * (1 - fl)
         head = icosa(hc, 0.062, (1.05, 0.92, 1.0), jit=0.05, rng=r2)
         for sgn in (-1, 1):
             tilt = 0.035 * fl
@@ -629,7 +689,7 @@ def cat_faces(t):
         f += [((Q - hc) @ R.T + hc, n @ R.T) for Q, n in head]
         p = np.array([0.06, 0.02, 0.06])
         for k in range(7):
-            sw = 0.6 * math.sin(2 * math.pi * t / 3.0 - k * 0.5) * (1 + fl)
+            sw = 0.6 * math.sin(2 * math.pi * T.phase(t) / 3.0 - k * 0.5) * (1 + fl)
             q = p + np.array([0.035 + 0.004 * k, 0.003, 0.02 * sw - 0.012])
             w = 0.022 - 0.002 * k
             f.append(face([p + [0, w, 0], p + [0, -0.004, 0], q + [0, -0.004, 0], q + [0, w * 0.9, 0]], p + [0, 0, 1]))
@@ -652,7 +712,7 @@ def cat_faces(t):
             f.append(face([p + [-w, 0, 0], p + [w, 0, 0], q + [w, 0, 0], q + [-w, 0, 0]], p + [0, 0, 1]))
             p = q
     else:  # curl on the rug, breathing
-        br = 1 + 0.03 * math.sin(2 * math.pi * t / 2.5)
+        br = 1 + 0.03 * math.sin(2 * math.pi * T.phase(t) / 3.0)
         crouch = 1 - 0.1 * fl
         f += icosa([0, 0.07 * br * crouch, 0], 0.12, (1.15, 0.55 * br * crouch, 1.0), jit=0.07, rng=r2)
         hc = np.array([0.09, 0.08 + 0.03 * fl, -0.07])
@@ -697,7 +757,7 @@ def draw_bolts(img, depth, cam, flashes, glows):
         zimg = Image.new('F', (W, H), 1e9)
         dc, dh, dz = ImageDraw.Draw(core), ImageDraw.Draw(halo), ImageDraw.Draw(zimg)
         zc_all = cam.depth(main)
-        wcore = 3 if i == T.N_STRIKES - 1 else (2 if zc_all.mean() < 14 else 1)
+        wcore = 3 if T.KIND[i] == 'rod' else (2 if zc_all.mean() < 14 else 1)
         for pts, wk in [(main, 1.0)] + [(b, 0.55) for b in branches]:
             Pc = cam.to_cam(pts)
             if (Pc[:, 2] < 0.3).any():
@@ -754,7 +814,7 @@ def draw_rain(fr, cam, t, rk):
     wv = np.array([0.5 + 1.2 * T.wind(t), 0, 0.3])
     for k in range(n):
         p0 = RAIN[k]
-        y = (p0[1] - t * 9.0 - k * 0.13) % 7.0 + S.GROUND_Y
+        y = (p0[1] - T.phase(t) * 9.0417 - k * 0.13) % 7.0 + S.GROUND_Y
         P = np.array([p0[0] + (y - 3.5) * 0.12 * wv[0], y, p0[2]])
         if (S.RX0 - 0.4 < P[0] < S.RX1 + 0.4) and P[2] > S.RZ0 - 0.4:
             continue                                               # no rain inside or in front of the cut-away
@@ -770,24 +830,24 @@ def draw_rain(fr, cam, t, rk):
 
 
 # ---------------------------------------------------------------- windmill + tufts + wires + vane
-def windmill_angle(t):
-    """integrated spin; total over 60 s is a whole number of blade steps so the loop is seamless"""
-    base = 0.9 * t
-    gust = 0.0
-    # integral of 9 * wind(t) (piecewise smooth) approximated by a cumulative table
-    return base + 9.0 * _WIND_INT(t)
+def _wm_speed(t):
+    if T.rewinding(t):
+        return -26.0 * math.sin(math.pi * T.rew_u(t)) ** 0.7
+    return 0.9 + 9.0 * T.wind(t)
 
 
-_tw = np.linspace(0, 60, 2401)
-_wv = np.array([T.wind(x) for x in _tw])
-_wi = np.concatenate([[0], np.cumsum(0.5 * (_wv[1:] + _wv[:-1]) * np.diff(_tw))])
-_total = 0.9 * 60 + 9.0 * _wi[-1]
+_tw = np.linspace(0, 60, 6001)
+_wv = np.array([_wm_speed(x) for x in _tw])
+_pos = np.where(_wv > 0, _wv, 0.0)
+_neg = np.where(_wv < 0, _wv, 0.0)
+_ip = np.concatenate([[0], np.cumsum(0.5 * (_pos[1:] + _pos[:-1]) * np.diff(_tw))])
+_in = np.concatenate([[0], np.cumsum(0.5 * (_neg[1:] + _neg[:-1]) * np.diff(_tw))])
 _step = 2 * math.pi / 12
-_scale = (round(_total / _step) * _step - 0.9 * 60) / (9.0 * _wi[-1])
+_scale = (round((_ip[-1] + _in[-1]) / _step) * _step - _in[-1]) / _ip[-1]     # forward part scaled -> seamless loop
 
 
-def _WIND_INT(t):
-    return float(np.interp(t, _tw, _wi)) * _scale
+def windmill_angle(t):
+    return float(np.interp(t, _tw, _ip)) * _scale + float(np.interp(t, _tw, _in))
 
 
 def tuft_faces(t):
@@ -831,7 +891,7 @@ def smoke_puffs(t):
     out = []
     w = T.wind(t)
     for k in range(7):
-        u = (t * 0.25 + k / 7.0) % 1.0                 # 15 cycles in 60 s -> seamless loop
+        u = (T.phase(t) * 0.25 + k / 7.0) % 1.0        # phase clock: 12 cycles over the loop, backwards in the rewind
         age = u * 4.0
         p = S.SMOKE_P + np.array([(0.12 + 0.7 * w) * age, 0.32 * age * (1 - 0.45 * w), 0.1 * age])
         r_ = 0.05 + 0.05 * age
@@ -884,68 +944,93 @@ def bolt_icon(dr, x, y, s, col):
     dr.polygon(pts, fill=col, outline=(20, 20, 30))
 
 
+def _count_panel(dr, texts, t, y0):
+    st = T.counting(t)
+    if st is None:
+        return
+    k, sec, arrived = st
+    d = T.STRIKES[k][1]
+    shown = d if arrived else sec
+    stopwatch_icon(dr, 38, y0 + 30, 14, (shown % 1.0) if not arrived else 0.0)
+    texts.append(('COUNT', 62, y0 + 12, SKYB, 1))
+    texts.append((f'{shown:.1f} S', 62, y0 + 24, AMBER if arrived else CREAM, 3))
+    ncell = int(math.ceil(d - 1e-6))
+    n_t = int(min(shown, d) + 1e-6)
+    sp = 11 if ncell > 10 else 13
+    for j in range(ncell):
+        x = 26 + j * sp
+        dr.rectangle([x, y0 + 66, x + sp - 5, y0 + 72], fill=(255, 198, 92) if j < n_t else (40, 48, 76))
+    if arrived:
+        if ss(0, 0.3, t - T.thunder_t(k)) > 0:
+            texts.append(('÷ 5 = ' + T.mi_text(d), 196, y0 + 16, MINT, 2))
+            texts.append(('÷ 3 = ' + T.km_text(d), 196, y0 + 44, CYAN, 2))
+    else:
+        bolt_icon(dr, 200, y0 + 16, 22, (255, 230, 120))
+        texts.append(('FLASH: SEEN', 226, y0 + 20, CREAM, 1))
+        dots = '.' * (1 + int(t * 3) % 3)
+        texts.append(('THUNDER' + dots, 226, y0 + 38, SKYB, 1))
+
+
+def _grid_panel(dr, texts, t, y0):
+    texts.append(('FLASH = SNARE', 26, y0 + 9, (255, 230, 120), 1))
+    texts.append(('THUNDER = KICK', 248, y0 + 9, CORAL, 1))
+    x0, x1 = 34, 326
+    yl = y0 + 42
+    dr.line([x0, yl, x1, yl], fill=(90, 104, 150), width=1)
+    for bt in range(5):
+        x = x0 + (x1 - x0) * bt / 4
+        dr.line([x, yl - (7 if bt in (0, 4) else 4), x, yl + (7 if bt in (0, 4) else 4)], fill=(150, 164, 210))
+    k = T.last_strike(t, T.LOCK)
+    if k is None:
+        return
+    j = T.LOCK.index(k)
+    d = T.STRIKES[k][1]
+    dprev = T.STRIKES[T.LOCK[j - 1]][1] if j > 0 else d
+    u = ease((t - T.STRIKES[k][0]) / 0.35)
+    dd = dprev + (d - dprev) * u
+    tb = t - T.STRIKES[k][0]
+    px = x0 + (x1 - x0) * min(1.0, tb / T.BAR)
+    dr.line([px, yl - 12, px, yl + 12], fill=(240, 240, 255), width=1)
+    bolt_icon(dr, x0 - 7, yl - 26, 14, (255, 230, 120))
+    kx = x0 + (x1 - x0) * min(dd, T.BAR) / T.BAR
+    hit = math.exp(-max(0.0, t - T.thunder_t(k)) / 0.15) if t >= T.thunder_t(k) else 0.0
+    r = 6 + 4 * hit
+    dr.ellipse([kx - r, yl - r, kx + r, yl + r], fill=(255, int(118 + 100 * hit), int(96 + 100 * hit)), outline=(30, 20, 20))
+    label = f'{T.fmt_sec(d)} S LATE' if d > 0 else 'TOGETHER!'
+    texts.append((label, 180, y0 + 62, CREAM if d > 0 else AMBER, 2, 'c'))
+
+
+def _next_panel(dr, texts, t, y0):
+    """the second cell: three flashes, each counted to its thunder: 3 S, 2 S, 1 S"""
+    texts.append(('FLASH -> THUNDER', 180, y0 + 7, SKYB, 1, 'c'))
+    for c, i in enumerate(T.CELL2):
+        tf, d = T.STRIKES[i][:2]
+        cx = 66 + c * 114
+        if c:
+            dr.line([cx - 57, y0 + 22, cx - 57, y0 + 76], fill=(50, 62, 98))
+        lit = t >= tf
+        bolt_icon(dr, cx - 5, y0 + 17, 10, (255, 230, 120) if lit else (60, 68, 100))
+        if not lit:
+            texts.append(('-', cx, y0 + 42, (70, 80, 112), 3, 'c'))
+            continue
+        arrived = t >= tf + d
+        shown = d if arrived else t - tf
+        hit = math.exp(-max(0.0, t - (tf + d)) / 0.2) if arrived else 0.0
+        texts.append((f'{T.fmt_num(round(shown, 1)) if arrived else f"{shown:.1f}"} S', cx, y0 + 38 - int(2 * hit), AMBER if arrived else CREAM, 3, 'c'))
+        if arrived:
+            texts.append((T.km_text(d), cx, y0 + 66, CYAN, 1, 'c'))
+
+
 def draw_hud(out, t):
     pil = Image.fromarray(out)
     dr = ImageDraw.Draw(pil)
     texts = []
-    a, b = T.HUD_COUNT
-    if a - 0.4 <= t < b + 0.4:
-        off = slide_offset(t, a, b, 170)
-        y0 = 528 + off
-        panel(dr, 14, y0, 346, y0 + 84)
-        st = T.counting(t)
-        if st is not None:
-            k, sec, arrived = st
-            d = T.STRIKES[k][1]
-            shown = d if arrived else sec
-            stopwatch_icon(dr, 38, y0 + 30, 14, (shown % 1.0) if not arrived else 0.0)
-            texts.append(('COUNT', 62, y0 + 12, SKYB, 1))
-            num = f'{shown:.1f} S'
-            texts.append((num, 62, y0 + 24, AMBER if arrived else CREAM, 3))
-            n_t = int(min(shown, d) + 1e-6)
-            for j in range(10):
-                x = 26 + j * 13
-                on = j < n_t
-                dr.rectangle([x, y0 + 66, x + 8, y0 + 72], fill=(255, 198, 92) if on else (40, 48, 76))
-            if arrived:
-                u = ss(0, 0.3, t - T.thunder_t(k))
-                if u > 0:
-                    texts.append(('÷ 5 = ' + T.mi_text(d), 196, y0 + 16, MINT, 2))
-                    texts.append(('÷ 3 = ' + T.km_text(d), 196, y0 + 44, CYAN, 2))
-            else:
-                bolt_icon(dr, 200, y0 + 16, 22, (255, 230, 120))
-                texts.append(('FLASH: NOW', 226, y0 + 20, CREAM, 1))
-                dots = '.' * (1 + int(t * 3) % 3)
-                texts.append(('THUNDER' + dots, 226, y0 + 38, SKYB, 1))
-    a, b = T.HUD_GRID
-    if a - 0.4 <= t < b + 0.4:
-        off = slide_offset(t, a, b, 170)
-        y0 = 528 + off
-        panel(dr, 14, y0, 346, y0 + 84)
-        texts.append(('FLASH = SNARE', 26, y0 + 9, (255, 230, 120), 1))
-        texts.append(('THUNDER = KICK', 248, y0 + 9, CORAL, 1))
-        x0, x1 = 34, 326
-        yl = y0 + 42
-        dr.line([x0, yl, x1, yl], fill=(90, 104, 150), width=1)
-        for bt in range(5):
-            x = x0 + (x1 - x0) * bt / 4
-            dr.line([x, yl - (7 if bt in (0, 4) else 4), x, yl + (7 if bt in (0, 4) else 4)], fill=(150, 164, 210))
-        k = T.last_strike(t)
-        if k is not None and k >= T.BACK_HALF[0]:
-            d = T.STRIKES[k][1]
-            dprev = T.STRIKES[k - 1][1] if k - 1 >= T.BACK_HALF[0] else d
-            u = ease((t - T.STRIKES[k][0]) / 0.35)
-            dd = dprev + (d - dprev) * u
-            tb = (t - T.STRIKES[k][0])
-            px = x0 + (x1 - x0) * min(1.0, tb / T.BAR)
-            dr.line([px, yl - 12, px, yl + 12], fill=(240, 240, 255), width=1)
-            bolt_icon(dr, x0 - 7, yl - 26, 14, (255, 230, 120))
-            kx = x0 + (x1 - x0) * dd / T.BAR
-            hit = math.exp(-max(0.0, t - T.thunder_t(k)) / 0.15) if t >= T.thunder_t(k) else 0.0
-            r = 6 + 4 * hit
-            dr.ellipse([kx - r, yl - r, kx + r, yl + r], fill=(255, int(118 + 100 * hit), int(96 + 100 * hit)), outline=(30, 20, 20))
-            label = f'{T.fmt_sec(d)} S LATE' if d > 0 else 'TOGETHER!'
-            texts.append((label, 180, y0 + 62, CREAM if d > 0 else AMBER, 2, 'c'))
+    for (a, b), fn in ((T.HUD_COUNT, _count_panel), (T.HUD_GRID, _grid_panel), (T.HUD_NEXT, _next_panel)):
+        if a - 0.4 <= t < b + 0.4:
+            off = slide_offset(t, a, b, 170)
+            y0 = 528 + off
+            panel(dr, 14, y0, 346, y0 + 84)
+            fn(dr, texts, t, y0)
     out = np.asarray(pil).copy()
     for tx in texts:
         if len(tx) == 6:
@@ -956,7 +1041,7 @@ def draw_hud(out, t):
     return out
 
 
-def world_labels(out, cam, depth):
+def world_labels(out, cam, depth, t):
     for txt, P, D in S.MARKER_POS:
         zc = cam.depth(P)[0]
         if zc < 0.5:
@@ -967,8 +1052,57 @@ def world_labels(out, cam, depth):
             continue
         if depth[y, x] < zc * 0.95:
             continue
-        sc = 1
-        center_text(out, txt, x, y - 3, CREAM, sc)
+        center_text(out, txt, x, y - 3, CREAM, 1)
+    # the counted flashes get a tag where they hit the ground: "this one" -> its ring is amber
+    for i in T.COUNTED:
+        u = t - T.STRIKES[i][0]
+        if not (0 <= u < 2.4) or T.ring_k(t) <= 0:
+            continue
+        P = S.STRIKE_P[i] + np.array([0, 0.6, 0])
+        if cam.depth(P)[0] < 0.5:
+            continue
+        s = cam.wp(P)
+        x, y = int(s[0]), int(s[1]) - 8
+        if not (10 <= x < W - 10 and 20 <= y < H - 20):
+            continue
+        a = ss(0, 0.12, u) * (1 - ss(2.0, 2.4, u))
+        if a < 0.05:
+            continue
+        col = tuple(int(c * a + 30 * (1 - a)) for c in AMBER)
+        pil = Image.fromarray(out)
+        ImageDraw.Draw(pil).polygon([(x - 4, y - 6), (x + 4, y - 6), (x, y)], fill=col, outline=(20, 16, 10))
+        out[:] = np.asarray(pil)
+        center_text(out, 'THIS ONE', x, y - 16, col, 1)
+
+
+def rewind_fx(out, t):
+    """VHS-style rewind: cool desaturated tint, two tracking bands running down, scanlines, REW tag"""
+    k = ss(T.T_CO, T.T_CO + 0.2, t) * (1 - ss(T.T_REW - 0.16, T.T_REW, t))
+    if k <= 0.01:
+        return out
+    img = out.astype(np.float32)
+    g = img.mean(2, keepdims=True)
+    img = img * (1 - 0.35 * k) + g * 0.35 * k + np.array([-8.0, 0.0, 16.0])[None, None] * k
+    img[1::2] *= 1 - 0.07 * k
+    for j in range(2):
+        yb = int((t * 640 + j * 330) % 720) - 40
+        hb = 12 + 6 * j
+        for y in range(max(0, yb), min(H, yb + hb)):
+            sh = int(round(k * (5 + 4 * math.sin(y * 0.9 + t * 40))))
+            img[y] = np.roll(img[y], sh, axis=0)
+            noise = (hash2(np.arange(W, dtype=np.float32), y + math.floor(t * 30)) > 0.55) * 34 * k
+            img[y] += noise[:, None]
+    out = np.clip(img, 0, 255).astype(np.uint8)
+    a = min(1.0, k * 1.2)
+    col = tuple(int(c * a) for c in CREAM)
+    pil = Image.fromarray(out)
+    dr = ImageDraw.Draw(pil)
+    for dx in (0, 11):
+        dr.polygon([(28 + dx, 14), (28 + dx, 26), (18 + dx, 20)], fill=col, outline=(10, 14, 24))
+    out = np.asarray(pil).copy()
+    m = text_mask('REW', 2)
+    stamp(out, m, 46, 14, col, outline=(10, 14, 24))
+    return out
 
 
 # ---------------------------------------------------------------- render
@@ -999,10 +1133,10 @@ def render(f):
     fr, ms = draw_sky(cam, t, flashes)
     draw_far(fr, cam, t, h_hor)
     ground_pass(fr, cam, t, Lx, flashes, z_hor, h_hor)
-    # storm cells: the main one, and a fresh distant one fading in for the loop
-    a_main = 1 - ss(52.6, 55.4, t)
-    a_loop = ss(53.5, 59.2, t)
-    cells = [(S.cell_ground(t), a_main), (S.START_CELL, a_loop)]
+    # storm cells: the main one, the two far flanks (chaos), the second cell racing in for the loop
+    cells = [(S.cell_ground(t), S.main_cell_alpha(t))] + S.flank_cells(t)
+    if t >= 51.8:
+        cells.append((S.cell2_ground(t), S.cell2_alpha(t)))
     cells.sort(key=lambda c: -np.linalg.norm(c[0] - cam.pos))
     for base, al in cells:
         draw_rain_curtain(fr, cam, t, base, al, max(rk, 0.25 * al))
@@ -1049,7 +1183,7 @@ def render(f):
                 em = 0.25 * fk
             draw_obj(fr, cam, Li, o, True, emit=em)
         elif kind == 'chair':
-            draw_obj(fr, cam, Li, Obj(S.rocking_chair(t), (120, 76, 46), 'chair', grp=S.RC_G), True)
+            draw_obj(fr, cam, Li, Obj(S.rocking_chair(T.phase(t)), (120, 76, 46), 'chair', grp=S.RC_G), True)
         elif kind == 'cat':
             draw_obj(fr, cam, Li, Obj(cf, (206, 124, 62), 'cat', grp=-11), True)
         elif kind == 'fire':
@@ -1079,8 +1213,8 @@ def render(f):
     img = apply_glows(img, fr.glows + glows)
     img = grade(bloom(np.clip(img, 0, 255), thr=210, k=0.35))
     img = np.clip(img * vignette(0.7, 0.62, 0.35) * top_scrim(), 0, 255)
-    out = img.astype(np.uint8)
-    world_labels(out, cam, depth)
+    out = rewind_fx(img.astype(np.uint8), t)
+    world_labels(out, cam, depth, t)
     out = draw_hud(out, t)
     draw_captions(out, t, T.CAPTIONS)
     if os.environ.get('COC_CHECK'):
