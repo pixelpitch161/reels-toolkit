@@ -26,6 +26,10 @@ How to make a new instrument-history reel. One session = one instrument.
 `SHOW_BARS, SCENE_BARS, OUTRO_BARS = 4, 2, 1`. At 112–120 BPM that gives an 8 s showcase, about 11 history scenes
 of 4 s each, a 1-bar outro and a final chord. Slower tempos (96–100 BPM) need fewer scenes.
 
+**Rule: every video runs 60 s (±1 s), final chord included.** Count the closing modern row as a scene:
+total ≈ (4 + 2 × scene rows + 1) bars × 240/BPM s + the final chord (~2.6 s). Pick the BPM and scene count in the
+draft so this lands on 60 s; if the render misses, nudge the BPM or the final-chord length rather than dropping scenes.
+
 ## Making one
 
 1. Copy the closest existing script (brass → `tuba60` / `trombone60`; strings → `cello60`; plucked → `harp60`;
