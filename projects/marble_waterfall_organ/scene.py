@@ -19,8 +19,8 @@ GRAD_TOP = np.array([40, 28, 104.0])
 GRAD_MID = np.array([150, 56, 158.0])
 GRAD_LOW = np.array([26, 118, 140.0])
 # nebula cloud colours per harmony state: -1 (chaos, no chord), Bm, G, D, A
-NEB_A = {-1: (255, 112, 186), 0: (255, 86, 206), 1: (86, 255, 176), 2: (255, 166, 92), 3: (96, 182, 255)}
-NEB_B = {-1: (74, 210, 255), 0: (130, 118, 255), 1: (60, 206, 255), 2: (255, 96, 164), 3: (176, 112, 255)}
+NEB_A = {-1: (255, 112, 186), 0: (255, 92, 210), 1: (40, 204, 172), 2: (255, 146, 84), 3: (92, 168, 255)}   # similar luminance
+NEB_B = {-1: (74, 196, 255), 0: (136, 120, 255), 1: (56, 178, 236), 2: (255, 100, 168), 3: (172, 116, 255)}
 
 _rng = np.random.default_rng(31)
 
@@ -52,7 +52,7 @@ def harmony_mix(t):
         c_prev = T.chord_idx(28)
         u = min(1.0, (t - T.T_LEVER) / 1.5)
     else:
-        u = min(1.0, (t - bar * T.BAR) / 0.35)
+        u = min(1.0, (t - bar * T.BAR) / 0.7)
     A = np.array(NEB_A[c_prev], float) * (1 - u) + np.array(NEB_A[c_now], float) * u
     Bc = np.array(NEB_B[c_prev], float) * (1 - u) + np.array(NEB_B[c_now], float) * u
     return A, Bc

@@ -114,9 +114,9 @@ KEYS = [  # (t, target, dist, yaw, pitch, fov, sy)
     (34.6, np.array([0, 3.2, 0.2]), 4.2, 14, 5, 42, 352),
     (35.4, G8H, 2.3, 14, 17, 44, 340),
     (39.8, G8H, 1.9, 10, 15, 44, 340),
-    (40.0, G8H + [0, -0.1, -0.05], 2.45, 8, 12, 46, 350),
-    (44.0, np.array([0, 2.2, 0.3]), 3.2, -24, 6, 46, 362),
-    (48.0, np.array([0, 0.75, 0.4]), 3.4, -40, 14, 46, 372),
+    (40.0, G8H + [0, -0.06, -0.03], 2.2, 9, 13, 46, 345),
+    (44.0, np.array([0, 2.55, 0.3]), 3.1, -6, 8, 46, 360),
+    (48.0, np.array([0, 0.85, 0.4]), 3.4, -26, 14, 46, 372),
     (52.0, WIDE, 13.6, 20, 6, 40, 376),
     (56.6, WIDE, 13.0, -10, 9, 40, 376),
     (57.2, WIDE, 12.6, -12, 9, 40, 376),
@@ -180,7 +180,7 @@ def void_bg(cam, t):
     iy = np.clip(((el / math.pi + 0.5) * (S.NEB_H - 1)).astype(np.int32), 0, S.NEB_H - 1)
     ix = (((az / (2 * math.pi) + 0.5) % 1.0) * (S.NEB_W - 1)).astype(np.int32)     # seam behind the camera
     A, B = S.harmony_mix(t)
-    pulse = 1 + 0.08 * T.beat_env(t, 0.16) + 0.12 * T.bar_env(t, 0.35)
+    pulse = 1 + 0.035 * T.beat_env(t, 0.16) + 0.05 * T.bar_env(t, 0.35)
     n1, n2, du = S.NEB1[iy, ix][..., None], S.NEB2[iy, ix][..., None], S.DUST[iy, ix][..., None]
     n1 = np.clip((n1 - 0.18) * 1.7, 0, 1); n2 = np.clip((n2 - 0.15) * 1.7, 0, 1)
     col = col * (1 - 0.35 * n1 - 0.3 * n2) + (n1 * A * 0.62 + n2 * B * 0.55) * pulse + du * np.array([36, 24, 46.0]) * 0.5
@@ -193,9 +193,10 @@ def void_bg(cam, t):
             ca = np.clip((d * S.ORB_DIR[None, None]).sum(-1), -1, 1)
             ang = np.arccos(ca)
             rho = 0.04 + 0.85 * age
-            big = 1.6 if abs(tb - T.T_DROP) < 1e-6 else 1.0
+            big = 1.25 if abs(tb - T.T_DROP) < 1e-6 else 1.0
             ring = np.exp(-((ang - rho) / (0.05 + 0.08 * age)) ** 2) * math.exp(-age / 0.55) * big
-            col = col + ring[..., None] * A[None, None] * 0.55 + (np.exp(-ang / 0.25) * math.exp(-age / 0.3) * 0.4 * big)[..., None] * 255
+            rise = min(1.0, age / 0.1)                          # 3-frame rise: a bloom, not a strobe
+            col = col + ring[..., None] * A[None, None] * 0.26 * rise + (np.exp(-ang / 0.18) * math.exp(-age / 0.3) * 0.12 * big * rise)[..., None] * A[None, None]
     col = np.floor(col / 7 + BAYER_FULL[..., None]) * 7
     return np.clip(col, 0, 255)
 
