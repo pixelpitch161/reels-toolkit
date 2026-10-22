@@ -40,6 +40,7 @@ below, and marks it `approved` when the user signs off. A production session the
 | P3 | Accordion | review | [session](https://claude.ai/code/session_01RyAkaahcXy7gH8qpoCRfUF) · 2026-10-21 | Rendered 2026-10-21 (`accordion60_lowpoly.py` → `accordion60_lowpoly.mp4`, 62.6 s, lit, −11.7 dB mean). Stills contact sheet, video and captions sent to the user for review. Follows the draft; the 2020s Morino+ V row plays as the 10th scene, so the cut runs 62.6 s rather than the ≈55 s + chord estimate. Models from Chrome reference photos (Hohner Morino+ V, Zeng tomb sheng, Demian 1829, 142-tone bandoneons, Dallapè/Deiro-era piano accordion, Joe Falcon's accordion, 1930 French chromatic musette, 1950s pearloid, Corona III, Roland FR-7). One change from the model notes: the Cajun accordion has four stop knobs, as on Falcon's own instrument (draft said two). Musette reeds ±18 cents, phase-locked for an obvious ~7 Hz wobble. Next: user review, then post. |
 | P4 | Ukulele | review | [session](https://claude.ai/code/session_01FmQrsdwGhdezdxp3sm8YPa) · 2026-10-21 | 2026-10-21: `ukulele60_lowpoly.py` rendered to `ukulele60_lowpoly.mp4` (55.7 s, lit, wave-barrel backdrop); stills sheet, video and captions sent. Models built from Chrome reference photos (Kamaka site, NMM Kumalae, Horniman machete, Nunes, Islander, Vega baritone). Modern fact shown in the showcase via the new optional `INTRO_STEPS`; outro returns to the soprano (`OUTRO_NAME`). Awaiting user review. |
 | P5 | Bagpipes | in production | [session](https://claude.ai/code/session_01Qm7rGbs5v6N1NmF33f4ZdM) · 2026-10-22 | Claimed 2026-10-22. Building `bagpipes60_lowpoly.py` from the approved draft; reference photos via Chrome next. |
+| P6 | Turntables | approved | — | Approved 2026-10-22. Must run 60 s. Ready for a production session (prompt under Drafts → P6). |
 
 ## Drafts
 
@@ -343,3 +344,65 @@ below, and marks it `approved` when the user signs off. A production session the
 > Reference photos: before modelling each instrument (the modern one and all 9 historical ones), use my open Chrome browser (Claude in Chrome) to find real reference photos yourself: image searches, museum collection pages, makers' sites. Use the "Reference photos to find" list and model notes in the draft. Check drone count and direction, bellows vs blowpipe, one chanter or two, the uilleann regulators and stock, and the musette's shuttle drone. For the Roman scene, copy an actual ancient depiction. Don't ask me for images.
 >
 > Before the full render, send me `--still` frames taken mid-scene for every scene (contact sheet is fine) so I can review them, but don't wait for my OK: carry straight on and render with pp_parallel.py, watch it through, send the video, update STATUS.md, commit, git pull --rebase and push.
+
+### P6. Turntables — APPROVED (2026-10-22)
+- **Hook (showcase lines):** "OVER 3 MILLION" / "SOLD SINCE 1972"   then   "BUT HOW DID WE" / "GET HERE?"
+- **Headline:** "149 YEARS" (1877 → 2026). `HEAD_INTRO = "THE TURNTABLE"`, `START_YEAR = 1870`
+- **Modern showcase:** Technics SL-1200MK7 (matte black), scratch riff over the beat; the record's spin and scratches tie into the music. Credit UK GARAGE + SCRATCH.
+- **Length: the finished video must run 60 s (±1 s), final chord included.** Timeline: 130 BPM, `SHOW_BARS, SCENE_BARS, OUTRO_BARS = 4, 2, 1`, 13 scene rows (12 history + the closing modern row) = 31 bars ≈ 57.2 s + final chord ≈ 60 s. If the render lands outside 59–61 s, nudge the BPM (128–132) or the final-chord length; don't drop scenes.
+- **Scenes (oldest → newest):**
+
+| Year (ys) | Name | Credit | Fact | Model notes |
+|---|---|---|---|---|
+| 1877 | EDISON PHONOGRAPH | MARY HAD A LITTLE LAMB | RECORDS AND PLAYS / BACK ON TINFOIL | Hand crank turning a horizontal tinfoil cylinder on a threaded shaft; mouthpiece/diaphragm; no disc, no big horn |
+| 1887 | BERLINER GRAMOPHONE | SOUSA-STYLE MARCH | PATENTED: FLAT / DISCS, NOT TUBES | Small hand-rotated turntable (no spring motor until 1896), small horn |
+| 1906 | VICTROLA | RAGTIME | THE HORN HIDES / IN THE CABINET | 1906 "VTLA" tall upright cabinet with doors where the horn would be; NO external horn |
+| 1948 | LP RECORD PLAYER | LATE-40s BIG BAND | THE LP ARRIVES, / SPINNING AT 33 1/3 | 1948 Columbia/Philco LP player; check shape from photos |
+| 1950s (1955) | JAMAICAN SOUND SYSTEM | JAMAICAN R&B SHUFFLE | WARDROBE-SIZED / SPEAKER BOXES | Turntable on or beside giant homemade speaker boxes ("House of Joy") |
+| 1972 | TECHNICS SL-1200 | PHILLY SOUL | MAGNET UNDER THE / PLATTER DRIVES IT | Silver, direct drive; original has a ROTARY pitch knob (no slider); check strobe dots and tonearm |
+| 1973 | KOOL HERC'S TWIN DECKS | FUNK BREAKBEAT | TWO DECKS STRETCH / THE BREAKBEAT | Two turntables + Shure "Vocal Master" PA columns |
+| 1975 | THE FIRST SCRATCH | BRONX B-BOY BREAK | A 12-YEAR-OLD / INVENTS SCRATCHING | Deck with slipmat; a stylised hand on the record is optional |
+| 1976 | 12-INCH SINGLE | DISCO | WIDER GROOVES, / LOUDER DISCO | Disco-booth deck playing a 12-inch record, its big plain sleeve leaning beside it; must read differently from the SL-1200 scenes |
+| 1979 | TECHNICS SL-1200MK2 | ELECTRO-FUNK | PITCH SLIDER: / THE DJ STANDARD | Silver; pitch slider on the right |
+| 1994 | PIONEER CDJ-500 | 90s TRANCE | CDS GET A JOG / DIAL FOR CUEING | Top-loading CD player with a jog dial; clearly not a turntable |
+| 2001 | FINAL SCRATCH | MINIMAL TECHNO | TIMECODE RECORDS / PLAY DIGITAL FILES | Two turntables with timecode records, round aluminium "ScratchAmp" box, a laptop |
+| 2020s | TECHNICS SL-1200MK7 | UK GARAGE + SCRATCH | DISCONTINUED 2010, / BACK BY 2016 | Matte black |
+
+- **Riff tones:** each riff sounds as if played through that machine: tinny and crackly phonograph; horn-filtered gramophone and Victrola; heavy bass through the 1950s speaker boxes; real scratch sounds layered from 1975 on.
+- **Outro:** "149 YEARS FROM" / "EDISON'S TINFOIL", credit UK GARAGE + SCRATCH
+- **Look:** "On a giant spinning record": the pedestal sits on the label of a huge spinning record; the grooves glint as rings around it; a giant tonearm sweeps overhead; a mirror ball throws light spots on each beat; the label art changes per era.
+  Era palettes (record + accent): modern black vinyl + gold · 1877 tinfoil silver + brass · 1887 hard-rubber brown + cream · 1906 mahogany + gold leaf · 1948 red label + cream · 1950s Jamaican green and gold + sunset · 1972 orange + brown · 1973 Bronx brick + graffiti teal · 1975 purple + yellow · 1976 disco silver + hot orange · 1979 chrome + red · 1994 rave lime + UV purple · 2001 aluminium + blue LEDs. No pink/cyan neon (keeps clear of the electric guitar's synthwave).
+  Groove: **UK garage 2-step**, 130 BPM: skippy kick, shuffled hats, a snare that lands late, sub bass, chopped stabs, a scratch fill at every scene change. `LIGHTING = True`. No brand logos or wordmarks on models.
+- **Reference photos to find:**
+  - Edison tinfoil phonograph: Smithsonian; Thomas Edison National Historical Park
+  - Berliner gramophone: Smithsonian music.si.edu; Library of Congress Emile Berliner collection
+  - Victrola: victor-victrola.com (1906 VTLA Pooley cabinet)
+  - 1948 LP player: "1948 Columbia LP record player Philco"
+  - Sound system: 1950s Kingston photos (Duke Reid, Coxsone Dodd, "House of Joy" speakers)
+  - SL-1200 / MK2 / MK7: Technics product pages and archive photos
+  - Herc's twin decks: 1970s Bronx party photos; Shure Vocal Master PA
+  - First scratch: Grand Wizzard Theodore photos
+  - 12-inch single: 1970s disco DJ booth photos; Salsoul 12-inch sleeves (plain, no logos)
+  - CDJ-500: Pioneer archive / vintage listings
+  - Final Scratch: ScratchAmp and timecode-vinyl photos
+- **Sources:**
+  - SL-1200 (Oct 1972, direct drive; MK2 1979 pitch slider, DJ standard; 3 million+ sold; discontinued 2010, revived 2016; MK7 2019): https://en.wikipedia.org/wiki/Technics_SL-1200
+  - Edison 1877 tinfoil phonograph: https://en.wikipedia.org/wiki/Phonograph
+  - Berliner patent Nov 1887; hand-rotated until 1896: https://en.wikipedia.org/wiki/Berliner_Gramophone
+  - First Victrola, internal horn, Aug 1906 (VTLA): https://victor-victrola.com/timeline.htm
+  - Columbia LP, 21 June 1948: https://en.wikipedia.org/wiki/Gramophone_record
+  - Jamaican sound systems, "House of Joy" speakers: https://en.wikipedia.org/wiki/Sound_system_(Jamaican)
+  - Kool Herc, 11 Aug 1973, two turntables, breakbeat DJing: https://en.wikipedia.org/wiki/DJ_Kool_Herc
+  - Grand Wizzard Theodore, scratch 1975, aged about 12: https://en.wikipedia.org/wiki/Grand_Wizzard_Theodore
+  - 12-inch single (wider grooves, louder cut; first commercial 1976): https://en.wikipedia.org/wiki/12-inch_single
+  - CDJ-500 (1994, jog dial for cueing): https://en.wikipedia.org/wiki/CDJ
+  - Final Scratch (2001, first DVS sold publicly; timecode records): https://en.wikipedia.org/wiki/Digital_vinyl_system · https://en.wikipedia.org/wiki/Final_Scratch
+- **Production prompt:**
+
+> Make Pixel Pitch P6: the turntables. Use the pixel-pitch-history skill and the repo pixelpitch161/reels-toolkit (series/instrument-history/). The approved draft is in STATUS.md under Drafts → "P6. Turntables": follow it exactly (hook, headline, all 13 scene rows with their years, names, credits and facts, outro, giant-spinning-record background, era palettes, 130 BPM UK garage 2-step groove). First claim the P6 row on the ideas board (in production, this session's link, today's date), commit and push.
+>
+> Must-haves: the finished video must run 60 s (±1 s), final chord included; if it doesn't, nudge the BPM (128–132) or the final-chord length rather than dropping scenes. New script `turntables60_lowpoly.py` (OUT "turntables60_lowpoly.mp4", TAG "tt"); modern Technics SL-1200MK7 first, then history oldest to newest, outro back to TODAY; `LIGHTING = True`; no brand logos on the models or record labels; each riff sounds as if played through that era's machine, with real scratch sounds from 1975 on and a scratch fill at every scene change.
+>
+> Reference photos: before modelling each machine (the modern one and all 12 historical ones), use my open Chrome browser (Claude in Chrome) to find real reference photos yourself: image searches, museum collection pages, makers' sites. Use the "Reference photos to find" list and model notes in the draft. Check: the Edison phonograph is a tinfoil cylinder (no disc); the Victrola hides its horn in the cabinet; the 1972 SL-1200 has a rotary pitch knob while the MK2 has the slider; the CDJ-500 is clearly a CD player; the SL-1200 scenes must each look distinct. Don't ask me for images.
+>
+> Before the full render, send me `--still` frames taken mid-scene for every scene (contact sheet is fine) so I can review them, but don't wait for my OK: carry straight on and render with pp_parallel.py, check the runtime is 60 s, watch it through, send the video, update STATUS.md, commit, git pull --rebase and push.
