@@ -15,7 +15,7 @@ import numpy as np
 from PIL import Image
 from .config import W, H, FPS, DUR, SAFE
 from . import ui
-from .video import _load
+from .video import _load, project_nf
 
 
 def overlay(arr):
@@ -89,7 +89,7 @@ if __name__ == '__main__':
     ap.add_argument('--sheet', default=None, help='also save the worst frames with the safe box drawn on')
     a = ap.parse_args()
     mod = _load(a.render_py)
-    times = list(np.arange(0.0, DUR, a.step))
+    times = list(np.arange(0.0, project_nf(a.render_py) / FPS, a.step))
     outside, overlaps, tracked = check(mod, times)
     code = report(outside, overlaps, tracked, times)
     if a.sheet:

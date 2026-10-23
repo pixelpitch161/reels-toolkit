@@ -24,7 +24,7 @@ import sys
 import tempfile
 import numpy as np
 from multiprocessing import Pool
-from .config import W, H, FPS, NF
+from .config import W, H, FPS
 
 TAIL_S, HEAD_S = 5.0, 1.0
 
@@ -82,16 +82,26 @@ def check_picture(tail, head, t_tail0, end=60.0):
     ok = r <= 2.5
     fails += not ok
     res.append(f"  {'OK  ' if ok else 'FAIL'} seam: last frame -> frame 0 changes {seam:.2f} vs normal step {normal:.2f} ({r:.1f}x, limit 2.5x)")
-    jumps = [(i, s / normal) for i, s in enumerate(steps[:len(tail) - 1]) if s / normal > 4]
+    big = [(i, s / normal) for i, s in enumerate(steps) if s / normal > 4]          # tail and head
+    ntail = len(tail) - 1
+    jumps = [(i, q) for i, q in big if i < ntail]
+    # a reset is a one-off; jumps that recur at a similar size (beat pulses, flashes on every bar) are rhythm
+    recurring = lambda q: sum(1 for _, q2 in big if q / 1.6 <= q2 <= q * 1.6) >= 3
+    n_pulse = 0
     for i, q in jumps:
         t = t_tail0 + (i + 1) / FPS
+        if recurring(q):
+            n_pulse += 1
+            continue
         bad = q > 6
         fails += bad
-        res.append(f"  {'FAIL' if bad else 'warn'} restart: a {q:.0f}x jump at {t:.2f} s ({end - t:.2f} s before the end). "
+        res.append(f"  {'FAIL' if bad else 'warn'} restart: a one-off {q:.0f}x jump at {t:.2f} s ({end - t:.2f} s before the end). "
                    "If this is the reset / restart, move it onto frame 0 (the file boundary)")
+    if n_pulse:
+        res.append(f'  OK   restart: {n_pulse} recurring jumps in the last 5 s look like beat pulses, not a reset')
     if not jumps:
         res.append('  OK   restart: no big jump in the last 5 s (the reset sits at the seam)')
-    d0 = [mad(f, head[0]) for f in tail[:-3]]
+    d0 = [mad(f, head[0]) for f in tail[:-FPS]]          # ignore the final second (a held end pose is fine)
     if d0:
         i = int(np.argmin(d0))
         if r > 1.5 and d0[i] < 0.5 * seam and d0[i] < 3.0:     # a smooth seam is fine even if the scene repeats
@@ -133,6 +143,8 @@ def main():
     a = ap.parse_args()
     fails, lines = 0, []
     if a.src.endswith('.py'):
+        from .video import project_nf
+        NF = project_nf(a.src)
         nt, nh = int(TAIL_S * FPS), int(HEAD_S * FPS)
         idx = list(range(NF - nt, NF)) + list(range(nh))
         fr = frames_from_render(a.src, idx, a.procs)

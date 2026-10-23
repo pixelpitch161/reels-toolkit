@@ -31,6 +31,30 @@ def _load(path):
     return mod
 
 
+def project_nf(render_py, fps=FPS):
+    """frame count of the project that render_py belongs to: NF (or DUR * fps) from the timeline.py next to it,
+    else the toolkit default (config.NF, 61 s)"""
+    tl = os.path.join(os.path.dirname(os.path.abspath(render_py)), 'timeline.py')
+    if os.path.exists(tl):
+        try:
+            src = open(tl).read()
+            ns = {}
+            for line in src.splitlines():                      # only the plain constants: no imports, no side effects
+                s = line.split('#')[0].strip()
+                if s.startswith(('FPS', 'DUR', 'NF')) and '=' in s and '(' not in s.split('=', 1)[1].replace('int(', ''):
+                    try:
+                        exec(s, {'int': int, 'round': round}, ns)
+                    except Exception:
+                        pass
+            if 'NF' in ns:
+                return int(ns['NF'])
+            if 'DUR' in ns:
+                return int(round(float(ns['DUR']) * ns.get('FPS', fps)))
+        except OSError:
+            pass
+    return NF
+
+
 def _worker(path, raw, k, nproc, nf, cwd, f0=0, f1=None):
     os.chdir(cwd)
     mod = _load(path)
@@ -44,10 +68,12 @@ def _worker(path, raw, k, nproc, nf, cwd, f0=0, f1=None):
     mm.flush()
 
 
-def render_video(render_py, audio, out, nproc=None, nf=NF, fps=FPS, raw='frames_raw.rgb', crf=18,
+def render_video(render_py, audio, out, nproc=None, nf=None, fps=FPS, raw='frames_raw.rgb', crf=18,
                  frames=None, only_mux=False, keep_raw=True):
     """frames=(f0, f1): re-render only frames f0..f1-1 into the existing raw, then re-mux.
-    only_mux: skip rendering (e.g. new audio). keep_raw: keep the lossless raw for later patches."""
+    only_mux: skip rendering (e.g. new audio). keep_raw: keep the lossless raw for later patches.
+    nf: frame count; default = the project's own length from its timeline.py (project_nf)."""
+    nf = nf or project_nf(render_py, fps)
     nproc = nproc or os.cpu_count() or 2
     cwd = os.getcwd()
     size = nf * H * W * 3

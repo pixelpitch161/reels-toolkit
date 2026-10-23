@@ -4,7 +4,10 @@ import numpy as np
 W, H = 360, 640          # internal render size (portrait 9:16)
 UP = 3                   # nearest-neighbour upscale -> 1080 x 1920
 FPS = 30
-DUR = 60.0
+# Default length for NEW videos: 61.0 s (user, Oct 23: TikTok monetisation needs at least 1 minute; the extra
+# second is a safety net). Each project sets its own DUR / NF in timeline.py, and the tools (video, loopcheck,
+# safezone) read the project's length from there, so videos designed at 60 s keep their 60 s.
+DUR = 61.0
 NF = int(DUR * FPS)
 
 # Safe zone: the part of the frame TikTok, Instagram Reels and YouTube Shorts leave visible (strictest edge
@@ -25,6 +28,13 @@ def whole_period(period, dur=DUR):
     Use it for every periodic motion: sin(2*pi*t / whole_period(7.3))."""
     n = max(1, round(dur / period))
     return dur / n
+
+
+def loop_bpm(bpm, dur=DUR, beats_per_bar=4):
+    """nearest tempo at which the video holds a whole number of bars, so the groove (and anything pulsing on the
+    beat) is exactly in phase at the loop point. 61 s: 96 -> 94.43 (24 bars), 120 -> 118.03 (30 bars)."""
+    bars = max(1, round(dur * bpm / 60.0 / beats_per_bar))
+    return bars * beats_per_bar * 60.0 / dur
 
 
 def ss(a, b, x):
