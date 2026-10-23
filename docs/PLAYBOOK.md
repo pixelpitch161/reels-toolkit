@@ -16,6 +16,13 @@
   - a new visual payoff every 2–4 s;
   - a music payoff in the back half;
   - an ending that loops back to the opening image.
+- **Loop point = the file boundary.** The last frame flows straight into frame 0, and the moment the video
+  "starts over" (reset, crack, rewind, new run, everything snapping back) lands ON frame 0, never seconds
+  before the end. The last seconds are the run-up into the reset; frame 0 is the reset itself, with chaos
+  following within a second. (User feedback on #20 v1: the next run started at 58.6 s, so the video visibly
+  started over ~1.5 s before the file ended and looped.) Every periodic motion (drift, twinkle, orbits, flags,
+  searchlights) completes whole cycles in 60 s: use `reelkit.config.whole_period(p)`. Check with
+  `python -m reelkit.loopcheck render.py audio.wav` before the full render and on the mp4 after.
 - **Lighting:** a visible key light (sun or moon) plus warm local lights (fire, lanterns). Use real
   shadows: ground masks plus box occlusion. Brightness should sit roughly at the "lit" level:
   - avoid crushed blacks and heavy vignettes;
@@ -42,6 +49,29 @@
   - the science sound (chirp, tone, tick) sits clearly on top of the music, so check its band level;
   - incidental textures (e.g. sand rattle) stay very low or are left out.
 
+## Working efficiently (same quality, less waiting)
+
+Only 2 cores here, so time goes into wasted work, not hardware. #20 took ~2 h 10 min: ~36 min was two full
+renders (the second only because the loop seam was found after rendering), ~20 min an 800-run seed search,
+and much of the rest writing code other videos already had. Target: a new concept in ~60–75 min, a new episode
+of an existing series (e.g. Battle of the Bands) in ~30–40 min.
+- **One full render.** Everything checkable on stills is checked before it: contact sheets, safe zone, loop
+  check, focus audit, audio levels. A full render is ~18 min; a second one is the biggest single waste.
+- **Patch, don't redo.** The full render keeps its lossless raw frames (`frames_raw.rgb`), so a fix that
+  touches only some frames re-renders just those: `python -m reelkit.video render.py audio.wav out.mp4
+  --frames 41.5:44`. New audio only: `--only-mux`. Same for feedback rounds. Delete the raw (`--discard-raw`
+  or by hand) once the video is approved.
+- **Searches stop early.** Seed / parameter searches run in parallel and stop once ~5 candidates fit
+  (`seed_search.py A B --stop 5`), instead of scanning hundreds; keep the ranked list in `check/` so the next
+  episode can reuse it.
+- **Reuse before writing.** Use the shared tools instead of copying a project's script: `reelkit.flashcheck`,
+  `reelkit.loopcheck`, `reelkit.levels`, `reelkit.safezone`, `reelkit.sheet`, and shared scenery such as
+  `reelkit.backdrops.VibrantVoid` (the vibrant void-of-space sky). Before building scenery or an engine, look
+  in `projects/` for one to reuse (e.g. the cat in `count_the_thunder`, the stage in `battle_of_the_bands`,
+  the battle engine `battle_of_the_bands/battle.py`).
+  When you build something clearly reusable, move it into `reelkit/` in its own small commit.
+- **Send stills early** (as now), so redirections happen before the expensive steps.
+
 ## Process
 
 0. **Claim the video on the board:** in `docs/IDEAS.md`, set its row to `in production`, note the
@@ -66,12 +96,16 @@
    - fix things, then repeat.
 7. **Audio:**
    - `python audio.py`;
-   - print the section levels;
-   - check that the science sound's frequency band sits above the music (`reelkit.audio.band_level`).
-8. **Full render:** `python -m reelkit.video render.py audio.wav out.mp4`. Run it in the background and
-   wait for it. Don't poll with sleeps.
+   - print the section levels; `python -m reelkit.levels audio.wav` (opening >= -20 dBFS, builds >= +3 dB,
+     no quiet windows);
+   - check that the key sound's frequency band sits above the music (`reelkit.audio.band_level`).
+8. **Loop check, then the one full render:** `python -m reelkit.loopcheck render.py audio.wav` must PASS
+   (seam, no reset in the last 5 s, no early copy of the opening, no audio click). Then
+   `python -m reelkit.video render.py audio.wav out.mp4`. Run it in the background and wait for it. Don't
+   poll with sleeps. Fixes after this: `--frames A:B` patches, not a second full render.
 9. **Verify:**
    - run `ffprobe` (expect 1080×1920, 60.0 s, h264 + aac);
+   - `python -m reelkit.loopcheck out.mp4` and `python -m reelkit.flashcheck out.mp4` must PASS;
    - make a contact sheet from the mp4 (`reelkit.video.frames_sheet`) at about 9–14 times;
    - look at it, including that no text or readout sits outside the safe box.
 10. **Deliver:** the mp4, plus a short caption and tags for Instagram Reels, TikTok and YouTube Shorts.
@@ -93,6 +127,8 @@
 - HUD panels stay clear of the subject and inside the safe box; slide them in from the side or fade them,
   not up from the bottom of the frame.
 - Keep backups of each approved version (`*_backup.py`) before a big relight, so you can blend or roll back.
+- The loop point is the file boundary (user, Oct 23, on #20 v1: the restart came ~1.5 s before the file
+  ended). See the loop rule in the brief; `reelkit.loopcheck` flags any big jump in the last 5 s.
 
 ## Captions and tags
 
