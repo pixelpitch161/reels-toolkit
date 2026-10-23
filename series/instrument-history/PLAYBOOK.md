@@ -26,9 +26,11 @@ How to make a new instrument-history reel. One session = one instrument.
 `SHOW_BARS, SCENE_BARS, OUTRO_BARS = 4, 2, 1`. At 112–120 BPM that gives an 8 s showcase, about 11 history scenes
 of 4 s each, a 1-bar outro and a final chord. Slower tempos (96–100 BPM) need fewer scenes.
 
-**Rule: every video runs 60 s (±1 s), final chord included.** Count the closing modern row as a scene:
+**Rule: every video runs 61 s (60.5–61.5 s), final chord included.** TikTok only monetizes videos of at least 1 minute;
+the extra second is a safety net. Count the closing modern row as a scene:
 total ≈ (4 + 2 × scene rows + 1) bars × 240/BPM s + the final chord (~2.6 s). Pick the BPM and scene count in the
-draft so this lands on 60 s; if the render misses, nudge the BPM or the final-chord length rather than dropping scenes.
+draft so this lands on 61 s; if the render misses, nudge the BPM or the final-chord length rather than dropping scenes.
+The file must loop cleanly: the end of the file is where the loop restarts (no dead air or fade before the file ends).
 
 ## Making one
 

@@ -42,6 +42,7 @@ below, and marks it `approved` when the user signs off. A production session the
 | P5 | Bagpipes | review | [session](https://claude.ai/code/session_01Qm7rGbs5v6N1NmF33f4ZdM) · 2026-10-22 | Rendered 2026-10-22 (`bagpipes60_lowpoly.py` → `bagpipes60_lowpoly.mp4`, 62.6 s, lit, ≈ −11 dB per-second RMS throughout). Stills contact sheet, video and captions sent to the user for review. Follows the draft (10 rows, standing-stones storm, 100 BPM big beat); the closing modern row makes it 62.6 s rather than ≈ 60 s. Models from Chrome reference photos: Highland maker shots (Hardie/Wallace-type sets), a WWI piper set with a faded tartan cover, Campbeltown Pipe Band 1977 photos (red tartan, ribbons), the Alexandrian terracotta + Gloucester altar (Roman: bag in the crook of the arm, drone pipe + syrinx), Cantigas miniatures (Commons "Cantiga bagpipes"), Bruegel's Peasant Wedding, Met/MIM musettes (shuttle drone, two chalumeaux, bellows), union pipes + modern full sets (3 drones + 3 regulators in one stock), Northumbrian smallpipes (4 drones, 7-key closed chanter), Hevia product + live photos. One change from the model notes: on Hevia's instrument the long black pipe is a blowpipe (he plays through it in live photos), so its drones are synthesised, not a separate drone tube. A drone sounds under every scene (measured ~100% coverage); the Northumbrian chanter is silent 55% of its scene (staccato), all others continuous. Lightning (thunder + flash + bolt) on the first downbeat and on every pipe-band roll. Next: user review, then post. |
 | P6 | Turntables | review | [session](https://claude.ai/code/session_01WFWhjRQP978z5jeTn6ZbEc) · 2026-10-22 | Rendered 2026-10-22 (`turntables60_lowpoly.py` → `turntables60_lowpoly.mp4`, 59.8 s incl. final chord at 130 BPM, lit). Stills contact sheet + video sent to the user for review. Follows the draft (all 13 scene rows, giant-record backdrop, era palettes, UK garage 2-step, scratch fill at every scene change). Models from Chrome reference photos (NMAH/Edison NHP tinfoil phonograph, Berliner hand-wind, victor-victrola.com VTLA, Philco M-15, 1950s Kingston sound systems, Technics SL-1200 / MK2 / MK7, Christie's Kool Herc lot + Shure Vocal Master, NMAAHC Grand Wizzard Theodore decks, CDJ-500, Final Scratch). Scratches are a sample pushed back and forth under the needle with fader cuts; the same motion drives the records and the gloved hand on screen. Record labels plain, no logos. Next: user review, then post. |
 | P7 | Pipe organ | review | [session](https://claude.ai/code/session_01WEpQaZGXfpGprqXDV96RT4) · 2026-10-22 | Rendered 2026-10-22 (`organ60_lowpoly.py` → `organ60_lowpoly.mp4`, 60.6 s incl. final chord, lit, −11.9 LUFS). Stills contact sheet, video and captions sent to the user for review. Follows the draft at 120 BPM with all 12 scene rows; no BPM or chord nudge needed. Models from Chrome reference photos (Cage organ: Pipe Organ Map, 99% Invisible and Universes in Universe photos; Aquincum/Dion hydraulis; Wikipedia/Duke portatives; Praetorius, Syntagma Musicum plate XXV; Valère; Arnstadt; Saint-Sulpice; Riviera Wurlitzer; Boardwalk 7-manual console; Hammond Model A; Sydney Grand Organ; Elbphilharmonie). The four big organs read differently: Saint-Sulpice case façade with statues; Boardwalk console in its round booth; Sydney timber pipe-tower façade; Elbphilharmonie pipes rising between the seating terraces. The Wurlitzer riff has a car horn on beat 4 of each bar. Next: user review, then post. |
+| P8 | Mellophone | approved | — | Approved 2026-10-23. Must run 61 s. Ready for a production session (prompt under Drafts → P8). |
 
 ## Drafts
 
@@ -469,3 +470,59 @@ below, and marks it `approved` when the user signs off. A production session the
 > Reference photos: before modelling each instrument (the showcase and all 11 historical ones), use my open Chrome browser (Claude in Chrome) to find real reference photos yourself: image searches, museum collection pages, makers' sites. Use the "Reference photos to find" list and model notes in the draft. Check: the hydraulis's water cistern and pumps; the portative's bellows; copy Praetorius's woodcut for 1361; the Hammond has no pipes; the Cage organ sits in an acrylic box with sandbags on the pedals. The big organs (Saint-Sulpice, Boardwalk, Sydney, Elbphilharmonie) must each read differently, e.g. façade vs console. Don't ask me for images.
 >
 > Before the full render, send me `--still` frames taken mid-scene for every scene (contact sheet is fine) so I can review them, but don't wait for my OK: carry straight on and render with pp_parallel.py, check the runtime is 60 s, watch it through, send the video, update STATUS.md, commit, git pull --rebase and push.
+
+### P8. Mellophone — APPROVED (2026-10-23)
+- **Hook (showcase lines):** "HALF THE TUBING" / "OF A FRENCH HORN"   then   "BUT HOW DID WE" / "GET HERE?"
+- **Headline:** "181 YEARS" (1845 → 2026). `HEAD_INTRO = "THE MELLOPHONE"`, `START_YEAR = 1840`
+- **Modern showcase:** Yamaha YMP-204M marching mellophone in F, dark drumline riff. Credit DARK DRUMLINE.
+- **Length: the finished video must run 61 s (60.5–61.5 s), final chord included, and loop cleanly.** Timeline: 111 BPM, `SHOW_BARS, SCENE_BARS, OUTRO_BARS = 4, 2, 1`, 11 scene rows (10 history + the closing modern row) = 27 bars ≈ 58.4 s + final chord ≈ 61 s. If the render misses, nudge the BPM or the final-chord length; don't drop scenes.
+- **Scenes (oldest → newest):**
+
+| Year (ys) | Name | Credit | Fact | Model notes |
+|---|---|---|---|---|
+| 1845 | ALTO SAXHORN | PARISIAN POLKA | SAX PATENTS 7 / SAXHORN SIZES | Sax-made E♭ alto: bell UP, three valves |
+| 1855 | KOENIG HORN | SECOND EMPIRE WALTZ | 1855 PARIS EXPO: / FIRST-CLASS MEDAL | Courtois (MIMEd 15365): circular, bell DOWN, three Périnet valves |
+| 1860s (1862) | OVER-THE-SHOULDER HORN | CIVIL WAR QUICKSTEP | BELL POINTS BACK / FOR TROOPS BEHIND | Bell points backward over the left shoulder; check rotary vs piston valves from photos |
+| 1880s (1885) | E-FLAT TENOR HORN | BRASS BAND HYMN | IN BRITAIN IT'S / THE 'TENOR HORN' | Upright bell, three pistons (Besson-style) |
+| 1925 | CONCERT MELLOPHONE | 1920s DANCE BAND | 4 SWAP SLIDES: / F, E-FLAT, D OR C | Conn 4-E Wonder (NMM 12013): double-loop circular wrap, 12-inch bell pointing back-left, front-action pistons, swap slides |
+| 1960 | CONN MELLOPHONIUM | KENTON BIG BAND | KENTON'S SECTION / WINS 2 GRAMMYS | Conn 16E: bell forward with a horn-like flare |
+| 1968 | PISTON-ROTOR BUGLE | SCOUT CORPS FANFARE | KANSTUL'S G-F / PISTON-ROTOR BUGLE | G mellophone bugle with one piston + one rotor |
+| 1969 | MARCHING MELLOPHONE | 60s MARCHING BAND | FIRST BELL-FRONT / MARCHING BRASS | Olds bell-front marching mellophone |
+| 1977 | TWO-VALVE G BUGLE | 70s DRUM CORPS JAZZ-ROCK | DRUM CORPS SWITCH / TO TWO VALVES | G mellophone bugle with two upright valves |
+| 2000 | F MELLOPHONE | DRUM CORPS OPENER | DCI DROPS ITS / G-ONLY RULE | Three-valve F marching mellophone (drum-corps era) |
+| 2020s | YAMAHA YMP-204M | DARK DRUMLINE | SAME FINGERINGS / AS A TRUMPET | Bell-front, 10-inch bell, three pistons |
+
+- **Bell direction tells the story:** up (saxhorn, tenor horn), down (Koenig), backward over the shoulder (Civil War), back-left (concert mellophone), forward (1960 onward). The bell-front horns (1960, 1968, 1969, 1977, 2000, modern) must be easy to tell apart: valve count (piston + rotor, two upright, three), finish, and era palette.
+- **Outro:** "181 YEARS FROM" / "SAX'S ALTO HORN", credit DARK DRUMLINE
+- **Look:** "Inside a giant brass clockwork": huge brass gears turn on the beat, pistons pump in time with the notes, steam vents hiss on the snare hits; low, coppery light.
+  Era palettes (metal + glow): modern gunmetal + amber · 1845 brass + oxblood · 1855 Second Empire green + gold · 1860s Union blue + gunsmoke grey · 1880s colliery soot + band-uniform red · 1925 silver + champagne · 1960 midnight blue + spotlight white · 1968 scout khaki + orange · 1969 field green + white · 1977 burnt orange + chrome · 2000 silver + electric blue.
+  Groove: **dark drumline**, 111 BPM, brooding and tense (not upbeat): snare-line cadence with rimshots, tenor-drum runs, split bass drums, halftime 808 sub, minor-key pad. `LIGHTING = True`. No brand logos or wordmarks on models.
+- **Reference photos to find:**
+  - Alto saxhorn: Sax E♭ altos (Met, MIM Brussels, MIMEd)
+  - Koenig horn: MIMEd record 15365; robbstewart.com Courtois page
+  - Over-the-shoulder horn: Civil War band saxhorns (Smithsonian, National Music Museum)
+  - Tenor horn: Besson E♭ tenor horn
+  - Concert mellophone: NMM Conn 4-E (emuseum.nmmusd.org/objects/12013), Conn 7-E (objects/9029)
+  - Mellophonium: Conn 16E photos; Stan Kenton band photos
+  - Bugles: "G mellophone bugle piston rotor", "two valve G mellophone bugle"
+  - Marching mellophone: "Olds marching mellophone 1969"
+  - YMP-204M: Yamaha product page
+- **Sources:**
+  - F mellophone ≈ half a French horn's tubing; trumpet fingerings; Koenig horn as earliest version; Conn mellophonium 1957; Kenton section 1960–63, 11 albums, 2 Grammy winners: https://en.wikipedia.org/wiki/Mellophone · https://en.wikipedia.org/wiki/Mellophonium
+  - Saxhorn family patented 1845, seven sizes; over-the-shoulder bells for the troops behind: https://en.wikipedia.org/wiki/Saxhorn
+  - Koenig horn (Courtois; 1855 Paris Expo first-class medal): https://collections.ed.ac.uk/mimed/record/15365 · https://www.robbstewart.com/courtois-melody-horn
+  - E♭ "tenor horn" in British brass bands: https://en.wikipedia.org/wiki/Tenor_horn
+  - Conn 4-E concert mellophone, 1925, F/E♭/D/C slides: https://emuseum.nmmusd.org/objects/12013/mellophone-f-eflat-d-c-low-pitch
+  - Kanstul G-F piston-rotor bugle (1968); two-valve bugles (1976 vote, 1977 switch): https://www.dci.org/?p=37817 · https://legacy.kanstul.com/wp-content/uploads/2017/08/marching-brass-history-brochure.pdf
+  - Olds first bell-front Marching Brass incl. mellophone (1969): https://legacy.kanstul.com/wp-content/uploads/2017/08/marching-brass-history-brochure.pdf
+  - DCI G-only rule ended 1999, World Class adopted 2000: https://en.wikipedia.org/wiki/Drum_and_bugle_corps_(modern)
+  - YMP-204M specs: https://usa.yamaha.com/products/musical_instruments/winds/marching_brass/ymp-204m/specs.html
+- **Production prompt:**
+
+> Make Pixel Pitch P8: the mellophone. Use the pixel-pitch-history skill and the repo pixelpitch161/reels-toolkit (series/instrument-history/). The approved draft is in STATUS.md under Drafts → "P8. Mellophone": follow it exactly (hook, headline, all 11 scene rows with their years, names, credits and facts, outro, brass-clockwork background, era palettes, 111 BPM dark-drumline groove). First claim the P8 row on the ideas board (in production, this session's link, today's date), commit and push.
+>
+> Must-haves: the finished video must run 61 s (60.5–61.5 s), final chord included, and loop cleanly (the loop restarts at the end of the file, no dead air); if the length misses, nudge the BPM or the final-chord length rather than dropping scenes. New script `mellophone60_lowpoly.py` (OUT "mellophone60_lowpoly.mp4", TAG "mp"); modern Yamaha YMP-204M first, then history oldest to newest, outro back to TODAY; `LIGHTING = True`; no brand logos on the models; the music mood is dark and tense, not upbeat; each scene's riff in its credited style.
+>
+> Reference photos: before modelling each instrument (the modern one and all 10 historical ones), use my open Chrome browser (Claude in Chrome) to find real reference photos yourself: image searches, museum collection pages, makers' sites. Use the "Reference photos to find" list and model notes in the draft. Check the bell direction in every era (up, down, backward over the shoulder, back-left, forward), and make the bell-front horns distinct by valve count (piston + rotor, two upright, three) and finish. Don't ask me for images.
+>
+> Before the full render, send me `--still` frames taken mid-scene for every scene (contact sheet is fine) so I can review them, but don't wait for my OK: carry straight on and render with pp_parallel.py, check the runtime is 61 s and the loop point is clean, watch it through, send the video, update STATUS.md, commit, git pull --rebase and push.
