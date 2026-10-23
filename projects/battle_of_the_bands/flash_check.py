@@ -69,6 +69,6 @@ if __name__ == '__main__':
     area, flashes, worst = analyse(Y)
     print(f'frames: {len(Y)}  general flashes (>=25% area): {len(flashes)}  worst in any 1 s: {worst}  (limit 3)')
     print(f'largest share of frame changing by >=0.1 anywhere: {area.max() * 100:.1f} % at {area.argmax() / FPS:.2f} s')
-    for tb in [T.T_BELL] + [t for t, q in T.OUTS] + ([T.T_WIN] if T.T_WIN else []) + [T.T_CRACK, T.T_RESTART]:
+    for tb in [T.T_BELL] + [t for t, q in T.OUTS] + ([T.T_WIN] if T.T_WIN else []) + [T.T_CRACK, 0.0]:
         f0 = int(tb * FPS)
         print(f'  {tb:5.1f}s  max share changing: {area[f0:f0 + 15].max() * 100:5.1f} %')

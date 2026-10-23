@@ -411,4 +411,11 @@
   -16.9 (the breath before the bell); first render's loop seam jumped 4.6 (nebula drift, twinkle, pennants, spot pools,
   a searchlight term not whole cycles over 60 s) -> every periodic motion made whole-cycle, seam 2.1 vs 1.1 normal step.
 - Render ~0.6 s/frame/core (18 min on 2 cores); seed search ~3 s per run.
-- Feedback: (pending)
+- Feedback (v1): start the video when the stage is empty, so the loop starts and ends where the video does.
+- v2: same run (seed 82), video time = run time: frame 0 is the empty stage as the four seeds drop and the crack ends at
+  exactly 60 s. Kept the run by keeping its bell (21.4 s) and ring phase and moving the music grid to bar lines at 1.4 + 2k s
+  (so the bell is still a bar line); every event moved 1.4 s later. Seam lessons: the stage was still lit (and reflected) by
+  the full winner wall during the crack (fade glow + reflection with the tiles that have fallen); the 7 s hopper swing isn't a
+  divisor of 60 (slide it home during the crack, when no sand falls); the win push-in and crowd pose must release before
+  60; a bar sliding out crosses the safe-box edge (fade it in, cut it on the crack).
+- Feedback (v2): (pending)

@@ -4,8 +4,8 @@ note sparkles on the wall), so picture and sound use one note list.
 
 Every move = a note: a part's note on the 16th grid only plays if its team claimed at least one tile since
 the part's previous note slot (busy team = full part, stalled team = gaps). The note's sparkle is drawn on
-the last tile that team claimed. Opening burst (and the next run's burst at 58.6 s): the parts are not yet
-on the grid, every few claims ring a random chord tone at once (chaos, in key); they lock to the grid by 4 s.
+the last tile that team claimed. Opening burst (frame 0 = the empty stage, the four seeds drop): the parts are not yet on the grid,
+every few claims ring a random chord tone at once (chaos, in key); they lock to the grid at 5.4 s.
 
 Parts:  SAND = drums (kick / snare / hats + tom fills), BALL = lead melody (8 bars), RIPPLE = bass (8ths),
         VINE = keys (16th arpeggio). After the win, the winner plays its part ungated plus the melody."""
@@ -16,8 +16,8 @@ import timeline as T
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 CHORDS = [(57, 'Am', [57, 60, 64]), (53, 'F', [53, 57, 60]), (48, 'C', [48, 52, 55]), (55, 'G', [55, 59, 62])]
-LOCK0, LOCK1 = 2.0, 4.0          # free -> grid crossfade (seconds)
-NBARS = int(T.DUR / T.BAR)        # 30
+LOCK0, LOCK1 = T.GRID0 + T.BAR, T.GRID0 + 2 * T.BAR   # free -> grid crossfade: 3.4 -> 5.4 s (bar lines)
+NBARS = int(T.DUR / T.BAR)        # 30 bars; bar k starts at GRID0 + k * BAR (bar -1 is the pickup before 1.4 s)
 
 # melody: per bar of the 8-bar tune, (16th step, midi, length in 16ths)
 MELODY = [
@@ -103,9 +103,9 @@ def build():
         ts, ii, jj = C[q]
         ats, aii, ajj = AT[q]
         last_slot = None
-        for bar in range(NBARS):
+        for bar in range(-1, NBARS):
             for s, m, L, kind in part_notes(q, bar):
-                t = bar * T.BAR + s * T.S16
+                t = T.GRID0 + bar * T.BAR + s * T.S16
                 dur = L * T.S16
                 solo = T.T_WIN is not None and t >= T.T_WIN and t < T.T_RESTART and q == win
                 if not T.alive(q, t) and not solo:
@@ -130,9 +130,9 @@ def build():
         # the melody in the winner's own voice (the solo)
         if T.T_WIN is not None and q == win and q != 1:
             t0 = T.T_WIN
-            for bar in range(NBARS):
+            for bar in range(-1, NBARS):
                 for s, m, L in MELODY[bar % 8]:
-                    t = bar * T.BAR + s * T.S16
+                    t = T.GRID0 + bar * T.BAR + s * T.S16
                     if t0 <= t < T.T_RESTART:
                         rows.append((t, q, m, L * T.S16, 0.95, 'solo', -1, -1, 'solo'))
         # free (unquantised) layer: the opening burst and the next run's burst
@@ -146,7 +146,7 @@ def build():
                     g = 1.0 if t < LOCK0 else 1 - (t - LOCK0) / (LOCK1 - LOCK0)
                 else:
                     g = min(1.0, (t - T.T_RESTART) / 0.5)
-                bar = int(t // T.BAR)
+                bar = int((t - T.GRID0) // T.BAR)
                 root, name, tri = chord(bar)
                 if q == 0:
                     kind, m = ['kick', 'snare', 'hat', 'tom'][rng.integers(4)], TOMS[rng.integers(4)] + 12

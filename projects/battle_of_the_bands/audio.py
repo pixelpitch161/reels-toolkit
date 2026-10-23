@@ -272,8 +272,8 @@ def crowd_bed(B):
 
 def fx(B):
     # lock-in riser 2.5 -> 4.0 and a hit when the parts land on the grid
-    B.place('fx', A.whoosh(1.5, 400, 7000), 2.5, 0.35)
-    B.place('fx', v_kick(1.0), 4.0, 0.5)
+    B.place('fx', A.whoosh(1.5, 400, 7000), MU.LOCK1 - 1.5, 0.35)
+    B.place('fx', v_kick(1.0), MU.LOCK1, 0.5)
     # the bell (two dings) + crowd at 20 s
     B.place('fx', bell(), T.T_BELL, 0.45)
     B.place('fx', bell(), T.T_BELL + 0.22, 0.38)
@@ -308,8 +308,8 @@ def fx(B):
         mm = int(0.06 * SR)
         tick = np.sin(2 * math.pi * RNG.uniform(1800, 4200) * tt(mm)) * np.exp(-tt(mm) / 0.01)
         B.place('fx', tick, tk, 0.12, pan=RNG.uniform(-0.7, 0.7))
-    B.place('fx', A.whoosh(2.4, 200, 9000) * np.linspace(0.3, 1.0, int(2.4 * SR)) ** 2, T.T_CRACK - 0.2, 0.5)
-    B.place('fx', boom(0.9), T.T_RESTART, 0.45)
+    B.place('fx', A.whoosh(2.1, 200, 9000) * np.linspace(0.3, 1.0, int(2.1 * SR)) ** 2, T.T_RESTART - 2.0, 0.5)
+    B.place('fx', boom(0.9), T.T_RESTART, 0.45)        # wraps to 0.0: the seeds drop on the boom
 
 
 REVERB = {'ball': 0.5, 'vine': 0.6, 'ripple': 0.1, 'sand': 0.15, 'fx': 0.5, 'crowd': 0.3}
@@ -321,7 +321,7 @@ def level_band(B, max_db=3.5, win=1.5):
     band = sum(B.b[k] * BUS_GAIN[k] for k in BUSN if k in B.b).mean(1)
     hop = SR // 50
     e = np.sqrt(uniform_filter1d(band ** 2, int(win * SR), mode='wrap')[::hop] + 1e-12)
-    ref = np.sqrt((band[int(22 * SR):int(50 * SR)] ** 2).mean())
+    ref = np.sqrt((band[int((T.T_BELL + 2) * SR):int((T.T_WIN or 50) * SR)] ** 2).mean())
     g = np.clip(0.8 * ref / e, 1.0, 10 ** (max_db / 20))
     g = uniform_filter1d(g, 25, mode='wrap')
     gs = np.interp(np.arange(NS), np.arange(len(g)) * hop, g)
@@ -336,7 +336,8 @@ def master(B):
     wet = A.reverb(np.concatenate([send, send]), dur=2.2, decay=0.55)[NS:]
     x = dry + wet * 0.2
     # the build: fill a little under the fight, the duel and the solo on top
-    pts = [(0, -0.5), (2.0, -1.0), (4.0, -2.0), (19.8, -1.5), (20.0, -0.4), (T.OUTS[0][0] if T.OUTS else 31, 0.0),
+    pts = [(0, -0.5), (MU.LOCK0, -1.0), (MU.LOCK1, -2.0), (T.T_BELL - 0.2, -1.5), (T.T_BELL, -0.4),
+           (T.OUTS[0][0] if T.OUTS else 31, 0.0),
            ((T.T_WIN or 50) - 0.1, 0.6), (T.T_WIN or 50, 1.2), (T.T_CRACK, 1.2), (60.0, -0.5)]
     g = np.interp(tt(NS), [p[0] for p in pts], [p[1] for p in pts])
     x = x * (10 ** (g / 20))[:, None]
@@ -387,9 +388,10 @@ def main():
     A.write(os.path.join(HERE, 'audio.wav'), out)
     # report
     print('section levels (dBFS rms / peak):')
-    spans = [(0, 2), (2, 8), (8, 14), (14, 20), (20, 22), (22, 30), (30, 41), (41, 50), (50, 58), (58, 60)]
+    spans = [(0, 2.4), (2.4, 9.4), (9.4, 15.4), (15.4, 21.4), (21.4, 23.4), (23.4, 31.1), (31.1, 42.5), (42.5, 51.6),
+             (51.6, 59.4), (59.4, 60)]
     for a, b, rms, pk in A.section_levels(os.path.join(HERE, 'audio.wav'), spans):
-        print(f'  {a:4.0f}-{b:4.0f}s  rms {rms:6.1f}  peak {pk:5.1f}')
+        print(f'  {a:4.1f}-{b:4.1f}s  rms {rms:6.1f}  peak {pk:5.1f}')
     x = out.mean(1)
     w = int(0.5 * SR)
     r = np.array([np.sqrt((x[i:i + w] ** 2).mean()) for i in range(0, NS - w, w)])
@@ -397,9 +399,9 @@ def main():
     # band vs crowd/fx bed (the band is the "science sound": it must sit on top)
     bandsum = sum(stems[k] * BUS_GAIN[k] for k in BUSN if k in stems).mean(1)
     bed = (stems['crowd'] * BUS_GAIN['crowd'] + stems['fx'] * BUS_GAIN['fx']).mean(1)
-    for a, b in [(2, 20), (22, 30), (30, 41), (41, 50), (50, 58)]:
+    for a, b in [(2.4, 21.4), (23.4, 31.1), (31.1, 42.5), (42.5, 51.6), (51.6, 59.4)]:
         sa, sb = int(a * SR), int(b * SR)
-        print(f'  band over crowd+fx {a:2d}-{b:2d}s: {20 * np.log10(np.sqrt((bandsum[sa:sb] ** 2).mean()) / np.sqrt((bed[sa:sb] ** 2).mean() + 1e-12)):+.1f} dB')
+        print(f'  band over crowd+fx {a:4.1f}-{b:4.1f}s: {20 * np.log10(np.sqrt((bandsum[sa:sb] ** 2).mean()) / np.sqrt((bed[sa:sb] ** 2).mean() + 1e-12)):+.1f} dB')
 
 
 if __name__ == '__main__':

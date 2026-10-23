@@ -6,10 +6,11 @@ from battle import Arena, Battle, SandTeam, BallTeam, RippleTeam, VineTeam
 
 N = 72
 SHAPE = 'circle'
-OFFSET = 1.4             # video time t shows sim time t + OFFSET (the run starts 1.4 s before frame 0; see timeline)
-T_FIGHT = 20.0 + OFFSET  # the bell (video 20.0 s)
+OFFSET = 0.0             # video time = sim time: frame 0 is the empty stage as the four seeds drop (user, Oct 23)
 BEAT = 0.5               # 120 BPM; ripple rings fire on the beat
-RING_PHASE = OFFSET % BEAT
+GRID0 = 1.4              # video time of a bar line (bar k starts at GRID0 + 2k s); the run was searched on this grid
+T_FIGHT = GRID0 + 20.0   # the bell: 21.4 s, on bar 10
+RING_PHASE = GRID0 % BEAT
 SEED = 82                # picked by seed_search.py over 800 seeds (honest run, never edited)
 
 TEAMS = dict(

@@ -1,23 +1,23 @@
-"""ONE timeline for picture and sound. Video time t (0-60 s) vs battle (sim) time:
-
-    sim time = t + OFFSET            for t < T_RESTART      (frame 0 is 1.4 s into the run: chaos from frame 0)
-    sim time = t - T_RESTART         for t >= T_RESTART     (the next run's opening burst, looping into frame 0)
+"""ONE timeline for picture and sound. Video time = battle (sim) time: frame 0 is the empty stage as the four
+seeds drop, and at the end the wall cracks back to empty exactly at 60.0 s, so the loop point is the video's own
+start/end (user, Oct 23). The music grid's bar lines sit at GRID0 + 2k s (GRID0 = 1.4: the grid the run was
+searched on), so the bell at 21.4 s is a bar line.
 
 The knockouts, the winner and every claim come from the cached run (sim.npz, picked by seed_search.py);
 nothing here is hand-placed except the bell, the crack and the captions' wording.
 
-Beat sheet (target; the real run decides who and when):
-    0-2    four bursts at once                          4 BANDS / 1 STAGE
-    2-8    legend pinned to each team's base            (labels)
-    8-14   FILL race, territory bar slides in          EVERY MOVE / = A NOTE
-    14-20  a leader emerges                             MORE STAGE / = LOUDER
-    20     the bell: gaps snap, flash                   FULL. / NOW THEY FIGHT
-    22-    borders churn                                WHO'S WINNING? / LISTEN
-    ~31    first knockout, its stack goes dark          <TEAM> IS OUT!
-    ~41    second knockout                              2 LEFT / <A> VS <B>
-    ~50    winner floods the stage                      <TEAM> WINS!
-    50-58  winner's solo, wall pulses                   WHICH BAND / WOULD YOU PICK?
-    58-60  wall cracks to empty, four new seeds -> loop"""
+Beat sheet (seed 82):
+    0-2.4    empty stage, four seeds burst              4 BANDS / 1 STAGE
+    2.5-9.3  legend pinned to each team's base          (labels)
+    9.4-15   FILL race, territory bar slides in         EVERY MOVE / = A NOTE
+    15-21    a leader emerges                           MORE STAGE / = LOUDER
+    21.4     the bell: gaps snap                        FULL. / NOW THEY FIGHT
+    24-      borders churn                              WHO'S WINNING? / LISTEN
+    31.1     first knockout, its stack goes dark        <TEAM> IS OUT!
+    42.5     second knockout                            2 LEFT / <A> VS <B>
+    51.6     winner floods the stage                    <TEAM> WINS!
+    51.6-59  winner's solo, wall pulses                 WHICH BAND / WOULD YOU PICK?
+    59.4-60  wall cracks to empty -> loops to frame 0 (empty, four seeds)"""
 import math
 import os
 import sys
@@ -35,11 +35,13 @@ BEAT = 60.0 / BPM
 BAR = 4 * BEAT
 S16 = BEAT / 4
 
-OFFSET = E.OFFSET
-T_BELL = 20.0
-T_CRACK = 58.0
-T_RESTART = 58.6
-OFF_FRAMES = int(round(OFFSET * FPS))       # 42
+OFFSET = E.OFFSET                            # 0: video time = sim time
+GRID0 = E.GRID0                              # video time of a bar line
+T_BELL = E.T_FIGHT                           # 21.4
+T_CRACK = 59.4
+T_RESTART = 60.0                             # the wall is empty again: = frame 0
+T_REVIVE = T_CRACK + 0.35                    # knocked-out stacks power back up for the next run
+OFF_FRAMES = int(round(OFFSET * FPS))
 
 D = SIM.load()
 NAMES = list(D['names'])                     # SAND BALL RIPPLE VINE
@@ -48,13 +50,12 @@ NT = int(D['ntiles'])
 
 
 def sim_time(t):
-    t = t % DUR
-    return t + OFFSET if t < T_RESTART else t - T_RESTART
+    return t % DUR
 
 
 def video_time(ts):
-    """sim time -> video time (inverse of sim_time)"""
-    return ts - OFFSET if ts >= OFFSET else ts + T_RESTART
+    """sim time -> video time (the same clock)"""
+    return ts
 
 
 def sim_frame(f):
@@ -69,7 +70,7 @@ OUT_T = {q: t for t, q in OUTS}
 
 def alive(q, t):
     """is team q still in the battle at video time t (the restart brings everyone back)"""
-    if t >= T_RESTART:
+    if t >= T_REVIVE:
         return True
     return not (q in OUT_T and t >= OUT_T[q])
 
@@ -83,12 +84,12 @@ def share(t):
 
 # ------------------------------------------------------------------ captions
 def _caps():
-    caps = [(-0.5, 2.0, ['4 BANDS', '1 STAGE'])]
-    caps += [(8.0, 13.9, ['EVERY *MOVE*', '= A *NOTE*'])]
-    caps += [(14.0, 19.9, ['MORE *STAGE*', '= *LOUDER*'])]
-    caps += [(20.0, 22.4, ['*FULL.*', 'NOW THEY *FIGHT*'])]
+    caps = [(-0.5, 2.4, ['4 BANDS', '1 STAGE'])]
+    caps += [(9.4, 15.3, ['EVERY *MOVE*', '= A *NOTE*'])]
+    caps += [(15.4, T_BELL - 0.1, ['MORE *STAGE*', '= *LOUDER*'])]
+    caps += [(T_BELL, T_BELL + 2.4, ['*FULL.*', 'NOW THEY *FIGHT*'])]
     e1 = OUTS[0][0] if OUTS else 31.0
-    caps += [(22.5, e1 - 0.05, ["WHO'S *WINNING?*", 'LISTEN @'])]
+    caps += [(T_BELL + 2.5, e1 - 0.05, ["WHO'S *WINNING?*", 'LISTEN @'])]
     if OUTS:
         t, q = OUTS[0]
         caps += [(t, t + 2.8, [f'*{NAMES[q]}* IS OUT!', f'NO MORE {INSTR[q]}'])]
@@ -105,18 +106,22 @@ def _caps():
 
 CAPTIONS = _caps()
 # legend: each team's label pops on at its base, one after another, then fades at 8 s
-LEGEND_T = [2.0, 3.2, 4.4, 5.6]
-LEGEND_END = 8.0
-BAR_IN = 8.0                     # territory bar slides in from the left
+LEGEND_T = [2.5, 3.6, 4.7, 5.8]
+LEGEND_END = 9.3
+BAR_IN = 9.4                     # territory bar slides in from the left (a bar line)
+
+
+def beat_phase(t):
+    """0..1 position inside the current beat of the music grid"""
+    return ((t - GRID0) % BEAT) / BEAT
 
 
 def beat_env(t, decay=0.12):
-    ph = t % BEAT
-    return math.exp(-ph / decay)
+    return math.exp(-((t - GRID0) % BEAT) / decay)
 
 
 def bar_env(t, decay=0.3):
-    return math.exp(-(t % BAR) / decay)
+    return math.exp(-((t - GRID0) % BAR) / decay)
 
 
 def ease(x):

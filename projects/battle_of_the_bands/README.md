@@ -33,9 +33,11 @@ New episode: copy `episode.py`, change the arena / line-up / parameters, run `se
 
 `seed_search.py 0 800` ranked 800 runs of episode 1; 18 fit the beat-sheet shape, and every team wins some runs
 (SAND 155, BALL 47, RIPPLE 245, VINE 81, undecided 272). Seed 82 has the best story and is played exactly as
-simulated: VINE leads at the bell (37 %), BALL takes the lead (25.1 s), VINE retakes it (25.9 s), RIPPLE is out
-(29.8 s), SAND overtakes (38.1 s), BALL is out (41.1 s), VINE is out (50.2 s): SAND, tied last at the bell (17 %),
-wins. Top of the ranking:
+simulated: VINE leads at the bell (37 %), BALL takes the lead (26.5 s), VINE retakes it (27.3 s), RIPPLE is out
+(31.1 s), SAND overtakes (39.5 s), BALL is out (42.5 s), VINE is out (51.6 s): SAND, tied last at the bell (17 %),
+wins. Video time = run time: frame 0 is the empty stage as the four seeds drop, the bell is at 21.4 s, and the wall
+cracks back to empty exactly at 60 s (the search's times below were measured 1.4 s earlier, on the v1 clock). Top of
+the ranking:
 
 ```
 seed   82 score  19.6  bell SA 17 BA 29 RI 17 VI 37  outs RI@29.8 BA@41.1 VI@50.2  win SA  lead changes 3 (VI>BA>VI>SA)  duel 21%  linger 2.7s
@@ -66,7 +68,7 @@ python flash_check.py battle_of_the_bands.mp4
 | `episode.py` | episode 1 config: line-up, balance, rules, chosen seed |
 | `seed_search.py` | runs seeds in parallel and ranks their stories (nothing is ever hand-edited) |
 | `sim.py` | runs the chosen seed and caches it |
-| `timeline.py` | video time <-> sim time (frame 0 is 1.4 s into the run; the next run starts at 58.6 s), knockouts, captions |
+| `timeline.py` | video time = sim time (frame 0 = empty stage, crack ends at 60 s), music grid phase (bar lines at 1.4 + 2k s), knockouts, captions |
 | `music.py` | the original arrangement (A minor, 120 BPM) + move gating -> one note list for sound and picture |
 | `scene.py` | the stage: slab, LED wall + bezel + truss, four speaker stacks, team props on the rim, crowd, searchlights |
 | `render.py` | void -> searchlights -> per-pixel boards (moon shadows, wall glow, pools, glossy wall reflection) -> rig, stacks, props, the per-pixel LED wall, crowd -> locked DOF -> glows, fireworks -> grade -> bar, legend, captions |

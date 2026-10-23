@@ -66,8 +66,8 @@ def camera(t):
             dist -= 0.35 * math.sin(math.pi * min(1, u / 0.25)) * math.exp(-u / 0.6)
     if T.T_WIN is not None:
         u = tt - T.T_WIN
-        if 0 <= u < T.T_CRACK - T.T_WIN + 2.0:
-            a = T.ease(u / 4.0) * (1 - T.ease((tt - T.T_CRACK) / 2.0))
+        if 0 <= u < T.T_CRACK - T.T_WIN:
+            a = T.ease(u / 4.0) * (1 - T.ease((tt - (T.T_CRACK - 1.6)) / 1.6))     # back to the base framing by the crack
             dist -= 0.35 * a
     return Cam(TGT, dist, yaw, pitch, 52.0, 262.0)
 
@@ -233,7 +233,7 @@ def _led_texture(t):
     if T.T_WIN is not None and T.T_WIN <= t < T.T_CRACK:
         yy, xx = np.mgrid[0:N, 0:N]
         rr = np.hypot(yy - N / 2 + 0.5, xx - N / 2 + 0.5) / (N / 2)
-        ph = (t % T.BEAT) / T.BEAT
+        ph = T.beat_phase(t)
         wave = np.exp(-((rr - ph * 1.3) / 0.12) ** 2) * (1 - ph)
         on = min(1.0, (t - T.T_WIN) / 0.6)
         col = col * (1 + 0.35 * on * wave[..., None]) + on * wave[..., None] * 40
@@ -296,7 +296,7 @@ for k in range(9):
         a += _cr.uniform(-0.35, 0.35)
         pts.append((r * math.cos(a), r * math.sin(a)))
     CRACKS.append(pts)
-DROP_T = T.T_CRACK + 0.12 + _cr.uniform(0, 0.38, (N, N))
+DROP_T = T.T_CRACK + 0.1 + _cr.uniform(0, 0.28, (N, N))      # every tile gone by ~59.96 s: the wall is empty at 60
 
 
 def led_wall(fr, cam, t, f):
@@ -342,7 +342,7 @@ def _crack_colors(t, fi, fj, tex):
     ti, tj = fi.astype(int), fj.astype(int)
     ok = (ti >= 0) & (ti < N) & (tj >= 0) & (tj < N)
     # tiles still on the wall, and tiles falling: a tile at (i, j) falling for s seconds sits at i + 0.5 * g * s^2
-    g = 260.0
+    g = 320.0
     # inverse lookup: for each pixel row fi, which source tile row is drawn here? search falling offsets
     best = np.full(len(fi), -1.0)
     for src_off in range(0, 40):
@@ -356,7 +356,7 @@ def _crack_colors(t, fi, fj, tex):
         if hit.any():
             texi = np.clip(((fi[hit] - fall[hit]) * TEX).astype(int), 0, N * TEX - 1)
             texj = np.clip((fj[hit] * TEX).astype(int), 0, N * TEX - 1)
-            fade = np.clip(1 - np.where(s[hit] > 0, s[hit], 0) / 0.45, 0, 1)
+            fade = np.clip(1 - np.where(s[hit] > 0, s[hit], 0) / 0.18, 0, 1)
             out[hit] = EMPTY_COL + (tex[texi, texj] - EMPTY_COL) * fade[:, None]
             best[hit] = 1
     # crack lines (bright) during the first 0.25 s
@@ -377,6 +377,13 @@ def _crack_colors(t, fi, fj, tex):
                 lit |= dd < 0.018
         out[lit] = np.array([255, 255, 255.0]) * max(0.0, 1 - max(0.0, u - 1.0) / 0.6)
     return out
+
+
+def crack_gone(t):
+    """0..1: share of the wall that has fallen off during the crack (0 outside it)"""
+    if not (T.T_CRACK <= t < T.T_RESTART):
+        return 0.0
+    return float(np.mean(t - DROP_T > 0.09))
 
 
 def wall_mean_color(tex):
@@ -409,6 +416,8 @@ def lead_flare(q, t):
 
 def stack_light(q, t):
     """0..1 brightness of team q's stack LEDs (dark once knocked out)"""
+    if q in T.OUT_T and T.T_REVIVE <= t < T.T_REVIVE + 0.25:
+        return 0.6 * (0.5 + 0.5 * math.sin((t - T.T_REVIVE) * 70))
     if not T.alive(q, t):
         te = T.OUT_T[q]
         return max(0.0, 1 - (t - te) / 0.35) * (0.5 + 0.5 * math.sin((t - te) * 60))
@@ -419,7 +428,7 @@ def stack_light(q, t):
 def crowd_objs(t, cam):
     objs = []
     be = T.beat_env(t, 0.18)
-    win = T.T_WIN is not None and T.T_WIN <= t < T.T_CRACK + 1.0
+    win = T.T_WIN is not None and T.T_WIN <= t < T.T_CRACK + 0.3
     lights = []
     for k, (x, z, h, ph, fan, phone, sc) in enumerate(S.CROWD):
         bob = 0.06 * abs(math.sin(math.pi * ((t / T.BEAT) + ph * 0.3)))
@@ -447,8 +456,15 @@ def crowd_objs(t, cam):
 
 
 def hopper_x(t):
+    """the hopper's rail position from the run; during the crack (no sand falls) it slides back to where the next
+    run starts, so the loop seam doesn't jump"""
     st = STATE[sim_index(t)][0]
-    return S.col_to_x(st.get('hopper', S.N / 2 - 7))
+    x = S.col_to_x(st.get('hopper', S.N / 2 - 7))
+    if T.T_CRACK <= t < T.T_RESTART:
+        x0 = S.col_to_x(STATE[sim_index(T.T_CRACK)][0].get('hopper', S.N / 2 - 7))
+        x1 = S.col_to_x(STATE[0][0].get('hopper', S.N / 2 - 7))
+        x = x0 + (x1 - x0) * T.ease((t - T.T_CRACK) / (T.T_RESTART - T.T_CRACK - 0.08))
+    return x
 
 
 # ================================================================== lights
@@ -500,7 +516,8 @@ def render(f):
         fr.disc((ms[0] + 5, ms[1] - 3), 0.03 * cam.f, (222, 222, 248), n=16)
         fr.glow(ms[0], ms[1], 0.14 * cam.f, (180, 180, 240), 0.45)
     tex_prev = led_texture(min(t, T.T_CRACK - 0.01) if t < T.T_RESTART else t, f)
-    wall_col = wall_mean_color(tex_prev)
+    gone = crack_gone(t)
+    wall_col = wall_mean_color(tex_prev) * (1 - gone) + wall_mean_color(np.where(ARENA[..., None], EMPTY_COL, 0.0)) * gone
     L = lights(t, cam, wall_col)
 
     # ---- painter list: static objects, dynamic props, the LED wall, crowd
@@ -636,7 +653,7 @@ def _boards(fr, cam, t, L, wall_col):
         tex = led_texture(min(t, T.T_CRACK - 0.01) if t < T.T_RESTART else t, 0)
         ti = np.clip(((1 - v[inw]) / 2 * N * TEX).astype(int), 0, N * TEX - 1)
         tj = np.clip(((u[inw] + 1) / 2 * N * TEX).astype(int), 0, N * TEX - 1)
-        fade = np.exp(-(Z[inw] - 0.2) / 2.2) * 0.32
+        fade = np.exp(-(Z[inw] - 0.2) / 2.2) * 0.32 * (1 - crack_gone(t))
         col[inw] += tex[ti, tj] * fade[:, None]
     arr[ys, xs] = np.floor(col / 5 + BAYER_FULL[ys, xs, None]) * 5
     depth[ys, xs] = d
@@ -696,7 +713,7 @@ def _props_fx(fr, cam, t, hx):
             if 0 <= s[0] < W and 0 <= s[1] < H:
                 fr.draw.point((s[0], s[1]), fill=(255, 236, 190))
     if T.alive(2, t):
-        ph = (t % T.BEAT) / T.BEAT
+        ph = T.beat_phase(t)
         s = cam.wp(S.RIPPLE_EMIT)
         fr.glow(s[0], s[1], 6 + 6 * ph, (120, 255, 240), 0.5 * (1 - ph))
     if T.alive(1, t):
@@ -763,9 +780,10 @@ def _ui(out, cam, t):
             label(out, name, bx + (max(w1, w2) - w1) // 2, by, tuple(int(c) for c in S.TEAM_COL[q]), 2)
             label(out, instr, bx + (max(w1, w2) - w2) // 2, by + 17, CREAM, 1)
     # territory bar
-    if t >= T.BAR_IN and t < T.T_CRACK + 0.3:
-        off = slide_offset(t, T.BAR_IN, T.T_CRACK, dist=280, dur=0.45)
-        bx0, bx1, by0, by1 = 50 - off, 286 - off, 389, 409
+    if t >= T.BAR_IN and t < T.T_CRACK:                     # fades in at 9.4 s (stays in the safe box), cut by the crack
+        fade_a = min(1.0, (t - T.BAR_IN) / 0.3)
+        under = out.copy()
+        bx0, bx1, by0, by1 = 50, 286, 389, 409
         pil = Image.fromarray(out)
         d = ImageDraw.Draw(pil)
         panel(d, bx0 - 4, by0 - 4, bx1 + 4, by1 + 2)
@@ -787,6 +805,8 @@ def _ui(out, cam, t):
                     hop = int(round(5 * lead_flare(q, t) * abs(math.sin((t * 9)))))
                     _crown(out, x + w // 2, by0 - 8 - hop)
             x += w
+        if fade_a < 1:
+            out[:] = (under * (1 - fade_a) + out * fade_a).astype(np.uint8)
     draw_captions(out, t, T.CAPTIONS)
 
 

@@ -3,7 +3,7 @@ Nothing is edited: the chosen seed is played exactly as simulated.
 
     python seed_search.py 0 300            # seeds 0..299 on all cores -> ranked list + check/seeds.txt
 
-Shape  : knockouts near the beat sheet's 31 / 41 / 50 s (video time), spaced >= 6 s.
+Shape  : knockouts ~11 / 21 / 30 s after the bell (31 / 41 / 50 s in a 20 s-bell beat sheet), spaced >= 6 s.
 Story  : the bell leader falls (early leader out first or second), the winner was an underdog at the bell,
          lead changes in the fight, every team visible at the bell (>= 12 %)."""
 import os
@@ -14,7 +14,7 @@ from multiprocessing import Pool
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import episode as E
 
-TARGET = (31.0, 41.0, 50.0)
+TARGET = (E.T_FIGHT + 11.0, E.T_FIGHT + 21.0, E.T_FIGHT + 30.0)     # knockouts ~11 / 21 / 30 s after the bell
 
 
 def story(rec):
@@ -41,7 +41,8 @@ def story(rec):
             break
     win = rec['winner']
     ts = [t for t, q in outs]
-    shape = len(ts) == 3 and 27 <= ts[0] <= 35 and 37 <= ts[1] <= 45 and 46 <= ts[2] <= 53 and \
+    b0 = E.T_FIGHT - E.OFFSET                       # the bell in video time
+    shape = len(ts) == 3 and b0 + 7 <= ts[0] <= b0 + 15 and b0 + 17 <= ts[1] <= b0 + 25 and b0 + 26 <= ts[2] <= b0 + 33 and \
         ts[1] - ts[0] >= 6 and ts[2] - ts[1] >= 5
     s = 0.0
     if shape:
