@@ -2,10 +2,10 @@
 
 A transition counts when relative luminance changes by >= 0.1 (darker state < 0.8) over >= 25 % of the
 frame, comparing each frame with the previous 1-5 frames. A flash is a pair of opposing transitions;
-the rule is <= 3 flashes in any 1 s window. Also reports the largest share of the frame changing at the
-drop and on the bar-line bursts.
+the rule is <= 3 flashes in any 1 s window. Also reports the largest share of the frame changing on each
+ring break.
 
-    python flash_check.py marble_waterfall_organ.mp4"""
+    python flash_check.py mountain_king_escape.mp4"""
 import subprocess
 import sys
 import numpy as np
@@ -69,6 +69,6 @@ if __name__ == '__main__':
     area, flashes, worst = analyse(Y)
     print(f'frames: {len(Y)}  general flashes (>=25% area): {len(flashes)}  worst in any 1 s: {worst}  (limit 3)')
     print(f'largest share of frame changing by >=0.1 anywhere: {area.max() * 100:.1f} % at {area.argmax() / FPS:.2f} s')
-    for tb in [T.T_DROP + 2 * k for k in range(8)] + [T.T_LEVER]:
+    for k, tb in sorted(T.RING_BREAK.items()):
         f0 = int(tb * FPS)
-        print(f'  {tb:5.1f}s  max share changing: {area[f0:f0 + 15].max() * 100:5.1f} %')
+        print(f'  ring {k:2d} break {tb:5.2f}s  max share changing: {area[f0:f0 + 15].max() * 100:5.1f} %')
