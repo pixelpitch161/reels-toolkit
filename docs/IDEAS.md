@@ -28,6 +28,7 @@ a draft, when it gets feedback, and when it delivers.
 | 16 | The Metronome Choir (100 Metronomes, part 2) | review | session_01EvbHha (2026-10-22) | v1 delivered with caption + tags (early sheet sent first). Beat sheet followed; one change: the 3-6 s sweep became a roll call (each section lights up in turn) because the fast sweep over the bright/dark tiers tripped the flash test. Sim locks: bass 9.6, tenor 15.9, alto+soprano 20.0, high 23.5, choir 33.1, soloist 37.8 s (drop tick 1-3 ms off the grid). Checks: focus CoC 0 on all frames; flash test worst 1/s (7 isolated, camera moves/cuts); bells 7-26 dB over the music; -13.6 LUFS, opening -18.5 dBFS -> drop -13.3; loop seam 4.2 vs 2.3-3.3. Waiting for feedback | `metronome_choir.mp4` |
 | 17 | Domino Symphony | review | session_01H2FWd5 (2026-10-22) | v1 delivered with caption + tags (early sheet sent first). Exactly 10,000 dominoes on the 120 BPM grid (last pair lands on the final bar at 52.0 s), 0 standing overlaps; field cream until each domino tips so the note truly appears in the chevron sweep; red holdout on a plank ledge (wobble, settle, wobble, teeter); 1.5x staircase booms D..D into the drop; 3+3-lane frame plays the song on chime bars. Checks: subject CoC 0 on all 1800 frames; domino band 2-6 kHz +8..+43 dB over the music wherever clicks play; no 2 s window >12 dB under the peak; loop seam 1.9 vs 0.7-1.2 normal step. Waiting for feedback | `domino_symphony.mp4` |
 | 18 | Marble Waterfall Organ | review | session_01TqVLeD (2026-10-22) | v1 delivered with caption + tags (early sheet sent first). Floating brass machine in a vibrant void; ~120 hits/s spray chaos -> gates shut on downbeats 6/10/14/18/20/24/32 s -> melody gate sticks 35-40 s (2 failed tries, half-beat silent gap) -> drop 40 s -> lever 57 s springs gates open into frame 0. Every note = a marble hit from one cached list (~33 hits/s in the full song). Checks: subject CoC 0 on all frames; audio -15.6 -> -10 dBFS build, marbles 13-30 dB over the bed; flash check 1 general flash (camera move), worst 1/s; seamless audio seam. Waiting for feedback | `marble_waterfall_organ.mp4` |
+| 19 | The Mountain King Escape | approved | ideas chat | Fully developed (beat sheet + source in backlog). From the Oct 22 trend research: escape-countdown + melody-from-bounces formats, on Grieg's public-domain theme | - |
 
 ## Backlog (idea details)
 
@@ -871,6 +872,65 @@ machine is the main modelling job (tiers of bars, bowls, drum skins, pipes, the 
 repeated parts. Lock focus on the machine; let the void and nearby crystals go soft. Audio: one synth voice per
 instrument type (mallet bars, glass bowls, drum skins, pipe bloops, cymbals); one event list drives marbles,
 void pulses and sound.
+
+### 19. The Mountain King Escape — APPROVED
+**Direction (user, Oct 22):** satisfying-first; engagement brief: chaos and sound from frame 0, never quiet,
+build to a satisfying payoff, exaggerate.
+**Trend basis (TikTok / Instagram research, Oct 22):** "can the ball escape within N seconds?" countdown sims and
+"melody played by bounces" videos are everywhere; recognisable tunes drive comments ("Do you know this song?").
+This combines both on a public-domain piece that accelerates by itself.
+- **Hook:** "CAN IT ESCAPE" / "BEFORE IT ENDS?" (13 + 15 chars, in the first 2 s).
+- **What you see:** a glowing ball trapped inside 12 concentric rings floating in a vast low-poly crystal cavern
+  (the Mountain King's hall). Each ring spins opposite to its neighbour and has one gap. When the ball slips
+  through a gap, that ring shatters into pixel shards and the ball is loose in the next, bigger ring. HUD:
+  countdown timer + "RINGS LEFT" counter.
+- **How it plays:** every bounce off a ring wall plays the next note of Grieg's *In the Hall of the Mountain King*
+  (1875). The ball's speed follows the tempo, so the visible acceleration IS the music's acceleration. The
+  instrument climbs as the piece builds: low pizzicato bass → bassoon → strings → brass → full orchestra synth for
+  the last rings. Each ring shatter lands a timpani + cymbal hit on a phrase ending; near-misses (the ball
+  skimming a gap's edge) get a little sting. The last three rings break in quick succession in the prestissimo;
+  the final ring shatters on the last chord. Our own synthesised arrangement of the public-domain score.
+- **Scene:** crystal cavern: glowing crystal clusters pulse on each note; torches on the ledges (warm local
+  lights); a shaft of light from a crack in the cavern roof (key light) catching dust and drifting cave moths;
+  static troll statues watching from the ledges. Ring and ball shadows land on the cavern floor below; ring
+  colours shift with each ring broken.
+- **Payoff / ending (loop):** the ball bursts out of ring 12 on the final chord and flies up the light shaft; the
+  camera zooms out to show the whole cavern is itself inside a giant ring with a gap; the ball lands in a new
+  innermost ring identical to the opening: "trapped again", loop.
+
+**Beat sheet (60 s; the arrangement skips the near-silent opening: frame 0 is already mid-build at a lively tempo
+with accompaniment):**
+| Time | Visual | Caption | Sound |
+|---|---|---|---|
+| 0–3 | Ball pinging inside 12 spinning rings, crystals flashing; countdown starts at 60 | CAN IT ESCAPE / BEFORE IT ENDS? | Theme as bouncy pizzicato at a lively tempo, bass under it |
+| 3–8 | Camera eases back: the cavern and all 12 rings | 12 RINGS / 60 SECONDS | Theme repeats; bassoon joins |
+| 8–12 | Near-miss on the ring 1 gap, then through; ring 1 shatters | 11 LEFT | Sting, then cymbal on the phrase ending |
+| 12–20 | Rings 2–3 break; ball faster; crystals pulse brighter | EVERY BOUNCE / = 1 NOTE | Theme up a fifth; strings join; tempo climbing |
+| 20–28 | Rings 4–5 break; ball trail leaves light streaks | 7 LEFT | Louder; octave doubling; timpani on breaks |
+| 28–36 | Rings 6–7; ball rattles fast; troll statues' eyes glow | IT'S SPEEDING UP… | Brass enters, tempo racing |
+| 36–44 | Rings 8–9; two near-misses in a row | 3 LEFT / 16 SECONDS | Full orchestra synth, frantic |
+| 44–52 | Prestissimo: rings 10 → 11 shatter back to back; cavern shakes, shards everywhere | 1 LEFT… | Fastest bounces; snare rolls |
+| 52–55 | Climax: ring 12 shatters on the final chord; ball rockets up the light shaft | ESCAPED! | Final chords + crash |
+| 55–60 | Zoom out: cavern inside a giant ring; ball drops into a new innermost ring; loop | TRAPPED AGAIN? | Low theme restarts into the opening |
+
+**Flags:**
+- Copyright: the composition is public domain (Grieg, 1875; died 1907). Recordings and modern arrangements are
+  not: transcribe from a public-domain score (e.g. IMSLP) and synthesise our own arrangement.
+- The ending is scripted (bounce times are planned to hit the melody notes, standard for this format). The hook is
+  a tease, not a fair contest; never claim it's a real physics simulation.
+- Pacing: the real piece runs ~2½ min. Condense to 60 s by cutting repeats and starting mid-build; frame 0 must
+  already be lively (never quiet).
+- Note density at the prestissimo ≈ 8–9 bounces/s (calc), fine for the ear; keep bounce notes crisp and short.
+- Troll statues stay generic (no likeness to any film or game trolls); the "trapped again" zoom-out is ours.
+  Source: [Wikipedia: In the Hall of the Mountain King](https://en.wikipedia.org/wiki/In_the_Hall_of_the_Mountain_King).
+
+**Feasibility:** no physics engine: the ball moves in straight segments between planned wall hits, each timed to
+a melody note; segment speed comes from the gap between notes, so acceleration is automatic; gaps rotate so they
+line up exactly when an escape is due. Rings = extruded low-poly tori with a gap; shatter = pre-computed shard
+particles; crystals and torches = simple glow meshes. One note list (from the transcribed score) drives bounces,
+crystal pulses, ring breaks and audio. The cavern (walls, ledges, crystal clusters, statues) is moderate work;
+portrait suits the tall cavern and light shaft; lock focus on the rings. The zoom-out loop needs one extra wide
+set of the cavern inside the giant ring; the last frame must match frame 0.
 
 ## Adding a new idea
 
