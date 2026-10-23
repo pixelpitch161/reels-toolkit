@@ -36,7 +36,7 @@ KEYS = [  # (t, target, dist, yaw, pitch, fov, sy)  -- gentle 2.5D moves, few cu
     (12.0, S.SUBJECT, 5.0, -20, 28, 44, 330),
     (35.0, S.SUBJECT, 5.0, 25, 30, 44, 330),
     (52.0, S.SUBJECT, 4.2, 0, 60, 40, 320),
-    (60.0, S.SUBJECT, 4.0, 0, 70, 40, 320),
+    (61.0, S.SUBJECT, 4.0, 0, 70, 40, 320),
 ]
 
 
@@ -114,10 +114,10 @@ def render(f):
     pil = Image.fromarray(img)
     d = ImageDraw.Draw(pil)
     x0, _, x1, y1 = SAFE
-    if t >= T.T_SONG:
+    if T.T_SONG <= t < T.T_END:
         panel(d, x0, y1 - 48, x1 - 4, y1 - 4)
     out = np.asarray(pil).copy()
-    if t >= T.T_SONG:
+    if T.T_SONG <= t < T.T_END:
         label(out, f"{T.BPM} BPM", x0 + 12, y1 - 37, MINT, 3)
     draw_captions(out, t, T.CAPTIONS)
     return out

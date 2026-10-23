@@ -31,9 +31,9 @@ def main():
         bar += 1
     mix.place('music', A.pad([57, 64, 69, 76], 6.0), T.T_END, 0.12)
     out = mix.master(reverb_buses={'music': 1.0, 'fx': 0.5},
-                     gain_db_pts=[(0, 0), (T.T_SONG - 0.5, 0), (T.T_SONG, 3), (T.T_END, 3), (60, 0)])
+                     gain_db_pts=[(0, 0), (T.T_SONG - 0.5, 0), (T.T_SONG, 3), (T.T_END, 3), (T.DUR, 0)])
     A.write('audio.wav', out)
-    for a, b, rms, pk in A.section_levels('audio.wav', [(0, 4), (4, 35), (35, 52), (52, 60)]):
+    for a, b, rms, pk in A.section_levels('audio.wav', [(0, 4), (4, 35), (35, 52), (52, T.DUR)]):
         print(f'{a:4.0f}-{b:4.0f}s  rms {rms:6.1f} dBFS  peak {pk:5.1f}')
 
 
