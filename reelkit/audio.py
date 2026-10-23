@@ -118,6 +118,18 @@ def whoosh(dur, lo=300, hi=5000, rise=True, seed=6):
     return out * np.sin(np.linspace(0, np.pi, n)) ** 2
 
 
+def thud(dur=0.32, f0=120.0, f1=48.0, seed=7):
+    """soft low thud: the sound of an 'impact' caption landing (reelkit.ui draw_captions(style='impact')).
+    A short pitched-down sine with a puff of low noise; place it at each time from ui.impact_landings()."""
+    n = int(dur * SR)
+    t = tt(n)
+    f = f1 + (f0 - f1) * np.exp(-t / 0.03)
+    body = np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-t / (dur * 0.28))
+    puff = lp(np.random.default_rng(seed).normal(0, 1, n), 700) * np.exp(-t / 0.035) * 0.5
+    x = body + puff
+    return x * np.clip(t / 0.002, 0, 1)
+
+
 # ------------------------------------------------------------------ tonal
 def pluck(m, dur=1.2):
     n = int(dur * SR)

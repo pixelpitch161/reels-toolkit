@@ -1,7 +1,12 @@
 """On-screen text and panels.
 
 Captions: list of (t0, t1, [lines]). In a line, *word* = highlight colour, ~word~ = alt colour.
-They type on (55 chars/s), slide in, and fade out.
+Two styles:
+    style='type'    (default) they type on (55 chars/s), slide in, and fade out.
+    style='impact'  each line drops a few px and lands with weight: a tiny scale punch (110 % -> 100 % over
+                    0.1 s), a 1-2 px shake of the TEXT only, and a small puff of pixel sand under the letters.
+                    Lines land one after another (IMPACT_STAGGER). impact_landings(caps) lists the landing
+                    times, so the soundtrack can put a soft thud on each (reelkit.audio.thud()).
 
 Safe zone (config.SAFE): captions start at the top of the safe box and are centred on it. Lines of up to
 14 chars use the big size, up to 21 chars the small size; longer lines overflow the box (the safe-zone
@@ -10,9 +15,10 @@ or under the right-hand button column.
 
 Everything drawn here is recorded in DRAWN (reset each frame by the checker), so
 `python -m reelkit.safezone render.py` can verify placement."""
+import math
 import numpy as np
-from .config import W, SAFE, SAFE_CX, ease, ss
-from .font import ADV, text_mask, stamp, rich_line
+from .config import W, H, SAFE, SAFE_CX, ease, ss
+from .font import ADV, text_mask, stamp, rich_line, dilate
 
 CREAM = (252, 240, 214)
 AMBER = (255, 198, 92)
@@ -48,10 +54,15 @@ def caption_scale(lines):
     return 3 if max(len(_plain(l)) for l in lines) <= CAP_BIG_MAX else 2
 
 
-def draw_captions(img, t, caps, y0=None, cx=None, base=CREAM, hi=AMBER, alt=SKYB, cps=55):
-    """y0 / cx default to the top centre of the safe box; override only with a reason"""
+def draw_captions(img, t, caps, y0=None, cx=None, base=CREAM, hi=AMBER, alt=SKYB, cps=55, style='type',
+                  puff=(236, 204, 150)):
+    """y0 / cx default to the top centre of the safe box; override only with a reason.
+    style='impact': lines drop in and land with a punch, a text-only shake and a sand puff (see module doc);
+    puff: colour of the pixel-sand puff (None = no puff)."""
     y0 = CAP_Y0 if y0 is None else y0
     cx = SAFE_CX if cx is None else cx
+    if style == 'impact':
+        return _draw_impact(img, t, caps, y0, cx, base, hi, alt, puff)
     for t0, t1, lines in caps:
         if t0 <= t < t1:
             u = t - t0
@@ -69,6 +80,153 @@ def draw_captions(img, t, caps, y0=None, cx=None, base=CREAM, hi=AMBER, alt=SKYB
                 _note(x0, y, x0 + width, y + 7 * scale, 'caption', _plain(ln))
                 used += pl
                 y += 7 * scale + 7
+
+
+# ------------------------------------------------------------------ impact captions
+IMPACT_DROP = 4          # px each line falls before it lands (the first line starts at the top of the safe box)
+IMPACT_FALL = 0.10       # s of the fall (accelerating, like a dropped weight)
+IMPACT_STAGGER = 0.22    # s between one line landing and the next
+IMPACT_PUNCH = 1.10      # scale on landing, settling to 1.0 over IMPACT_PUNCH_T
+IMPACT_PUNCH_T = 0.10
+IMPACT_SHAKE = 2.0       # px of text-only shake on landing, decaying over IMPACT_SHAKE_T
+IMPACT_SHAKE_T = 0.18
+PUFF_T = 0.45            # s a sand puff lives
+
+
+def impact_landings(caps, stagger=IMPACT_STAGGER, fall=IMPACT_FALL):
+    """[(t_land, line_index, n_chars)] for every caption line in caps drawn with style='impact'. Put a soft thud
+    (reelkit.audio.thud) at each t_land, a little quieter for later lines."""
+    out = []
+    for t0, t1, lines in caps:
+        for k, ln in enumerate(lines):
+            tl = t0 + k * stagger + fall
+            if tl < t1:
+                out.append((tl, k, len(_plain(ln))))
+    return out
+
+
+def _line_ink(line, scale, base, hi, alt):
+    """mask + per-pixel colour for a rich caption line at an integer scale"""
+    plain, cols = [], []
+    mode = 0
+    for ch in line:
+        if ch == '*':
+            mode = 0 if mode == 1 else 1
+            continue
+        if ch == '~':
+            mode = 0 if mode == 2 else 2
+            continue
+        plain.append(ch)
+        cols.append(mode)
+    m = text_mask(''.join(plain), scale)
+    pal = np.array([base, hi, alt], float)
+    ci = np.repeat(np.array(cols, int), ADV * scale)[:m.shape[1]]
+    if len(ci) < m.shape[1]:
+        ci = np.concatenate([ci, np.full(m.shape[1] - len(ci), ci[-1] if len(ci) else 0)])
+    rgb = pal[ci][None, :, :].repeat(m.shape[0], 0)
+    return m, rgb
+
+
+def _resample(a, h, w):
+    """nearest-neighbour resize of a 2D/3D array to (h, w)"""
+    ys = np.minimum((np.arange(h) * a.shape[0] / h).astype(int), a.shape[0] - 1)
+    xs = np.minimum((np.arange(w) * a.shape[1] / w).astype(int), a.shape[1] - 1)
+    return a[ys][:, xs]
+
+
+def _stamp_rgb(frame, mask, rgb, x, y, outline=(10, 20, 26), alpha=1.0):
+    """like font.stamp but each ink pixel has its own colour; 1 px outline + drop shadow"""
+    Hh, Ww = frame.shape[:2]
+    o = dilate(mask, 1)
+    layers = [(o, None, x - 1, y + 1), (o, None, x - 1, y - 1), (mask, rgb, x, y)]
+    for m, col, mx, my in layers:
+        h, w = m.shape
+        x0, y0 = max(0, mx), max(0, my)
+        x1, y1 = min(Ww, mx + w), min(Hh, my + h)
+        if x1 <= x0 or y1 <= y0:
+            continue
+        sub = m[y0 - my:y1 - my, x0 - mx:x1 - mx]
+        reg = frame[y0:y1, x0:x1]
+        c = np.array(outline, float)[None] if col is None else col[y0 - my:y1 - my, x0 - mx:x1 - mx][sub]
+        if alpha >= 0.999:
+            reg[sub] = np.clip(c, 0, 255).astype(np.uint8)
+        else:
+            reg[sub] = np.clip(reg[sub] * (1 - alpha) + c * alpha, 0, 255).astype(np.uint8)
+
+
+def _hash01(*xs):
+    v = math.sin(sum(x * k for x, k in zip(xs, (12.9898, 78.233, 37.719, 4.581))) + 0.5) * 43758.5453
+    return v - math.floor(v)
+
+
+def _sand_puff(img, t, tl, x0, x1, ybot, col, key):
+    """a small puff of pixel sand kicked out from under a line that just landed (deterministic per line)"""
+    u = t - tl
+    if not (0 <= u < PUFF_T) or col is None:
+        return
+    n = 12 + int((x1 - x0) / 7)
+    fade = 1 - u / PUFF_T
+    for k in range(n):
+        r1, r2, r3, r4 = (_hash01(key, k, j) for j in (1, 2, 3, 4))
+        px0 = x0 + (x1 - x0) * r1
+        side = -1 if px0 < (x0 + x1) / 2 else 1
+        vx = side * (14 + 46 * r2)
+        vy = -(10 + 34 * r3)
+        px = px0 + vx * u
+        py = ybot + 1 + vy * u + 150 * u * u
+        xi, yi = int(round(px)), int(round(py))
+        if not (SAFE[0] <= xi < SAFE[2] - 1 and SAFE[1] <= yi < SAFE[3] - 1):
+            continue
+        a = min(1.0, fade * (0.75 + 0.45 * r4))
+        c = np.array(col, float) * (0.85 + 0.25 * r4)
+        sz = 2 if r4 > 0.55 and u < 0.25 else 1
+        reg = img[yi:yi + sz, xi:xi + sz]
+        reg[:] = np.clip(reg * (1 - a) + c * a, 0, 255).astype(np.uint8)
+
+
+def _draw_impact(img, t, caps, y0, cx, base, hi, alt, puff):
+    for t0, t1, lines in caps:
+        if not (t0 <= t < t1):
+            continue
+        fade = 1 - ss(t1 - 0.12, t1, t)
+        scale = caption_scale(lines)
+        y = y0
+        for k, ln in enumerate(lines):
+            pl = _plain(ln)
+            ts = t0 + k * IMPACT_STAGGER              # this line starts falling
+            tl = ts + IMPACT_FALL                     # ... and lands
+            lh = 7 * scale
+            if t >= ts:
+                m, rgb = _line_ink(ln, scale, base, hi, alt)
+                h, w = m.shape
+                if t < tl:                            # falling: accelerating drop, fading in
+                    u = (t - ts) / IMPACT_FALL
+                    dy = -IMPACT_DROP * (1 - u * u)
+                    a = min(1.0, 0.25 + u) * fade
+                    p, sx, sy = 1.0, 0, 0
+                else:
+                    u = t - tl
+                    dy, a = 0.0, fade
+                    p = 1 + (IMPACT_PUNCH - 1) * max(0.0, 1 - u / IMPACT_PUNCH_T) ** 2
+                    p = min(p, (SAFE[2] - SAFE[0] - 4) / max(w, 1))       # the punch never leaves the safe box
+                    p = max(1.0, p)
+                    amp = IMPACT_SHAKE * max(0.0, 1 - u / IMPACT_SHAKE_T)
+                    sx = int(round(amp * math.sin(u * 2 * math.pi * 31 + k)))
+                    sy = int(round(amp * 0.6 * math.sin(u * 2 * math.pi * 23 + 1.7 + k)))
+                if p > 1.0:
+                    hh, ww = int(round(h * p)), int(round(w * p))
+                    m, rgb = _resample(m, hh, ww), _resample(rgb, hh, ww)
+                else:
+                    hh, ww = h, w
+                x = int(round(cx - ww / 2)) + sx
+                yy = int(round(y + lh / 2 - hh / 2 + dy)) + sy
+                yy = max(yy, SAFE[1])
+                _stamp_rgb(img, m, rgb, x, yy, alpha=a)
+                _note(x, yy, x + ww, yy + hh, 'caption', pl)
+                w0 = len(pl) * ADV * scale - scale
+                xl = int(round(cx - w0 / 2))
+                _sand_puff(img, t, tl, xl, xl + w0, y + lh, puff, hash(pl) % 997 + 13 * k + int(t0 * 10))
+            y += lh + 7
 
 
 def panel(draw, x0, y0, x1, y1, fill=(16, 20, 38), edge=(62, 74, 112)):
@@ -91,3 +249,4 @@ def label(img, text, x, y, col, scale=2, outline=(10, 20, 26)):
     stamp(img, m, int(x), int(y), col, outline=outline)
     _note(int(x), int(y), int(x) + m.shape[1], int(y) + m.shape[0], 'label', text)
     return m.shape[1]
+
