@@ -19,6 +19,14 @@ BAYER_FULL = np.tile(BAYER, (H // 4, W // 4))
 YY, XX = np.mgrid[0:H, 0:W].astype(np.float32)
 
 
+def whole_period(period, dur=DUR):
+    """nearest period that completes a whole number of cycles in the video, so anything moving with it
+    (drift, twinkle, pennants, searchlights, orbits) is back where it started at the loop point.
+    Use it for every periodic motion: sin(2*pi*t / whole_period(7.3))."""
+    n = max(1, round(dur / period))
+    return dur / n
+
+
 def ss(a, b, x):
     """smoothstep from a to b (scalar)"""
     x = min(1.0, max(0.0, (x - a) / (b - a)))

@@ -19,5 +19,9 @@ Modules
     video      parallel frame rendering into a memmap + ffmpeg mux
     sheet      contact sheets for quick visual checks (safe zone drawn on)
     safezone   checks captions/labels/panels sit inside the TikTok / Reels / Shorts safe zone
+    loopcheck  checks the loop point is the file boundary (seam, no early reset, no audio click)
+    flashcheck photosensitivity (general-flash) test on a finished mp4
+    levels     soundtrack engagement check: opening level, build, quiet windows
+    backdrops  reusable loop-safe backdrops (VibrantVoid: the vibrant void-of-space sky + stars)
 """
 __version__ = '0.1.0'
