@@ -7,6 +7,13 @@ FPS = 30
 DUR = 60.0
 NF = int(DUR * FPS)
 
+# Safe zone: the part of the frame TikTok, Instagram Reels and YouTube Shorts leave visible (strictest edge
+# of the three, from their published margins). Captions, labels, HUD panels and key action stay inside it;
+# scenery can fill the whole frame. At 1080x1920 output: x 120-888, y 288-1248 (top 15%, bottom 35%,
+# left 120 px, right 192 px for the right-hand button column). Check with `python -m reelkit.safezone`.
+SAFE = (40, 96, 296, 416)                 # internal px: x0, y0, x1, y1
+SAFE_CX = (SAFE[0] + SAFE[2]) // 2        # 168: centre text on the safe box, not the frame (right margin is wider)
+
 BAYER = np.array([[0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]]) / 16.0
 BAYER_FULL = np.tile(BAYER, (H // 4, W // 4))
 YY, XX = np.mgrid[0:H, 0:W].astype(np.float32)

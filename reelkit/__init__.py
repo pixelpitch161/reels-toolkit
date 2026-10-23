@@ -5,7 +5,7 @@ with PIL polygons in painter's order, post-processed in numpy (shadows, lens blu
 bloom, god rays, grade), then upscaled 3x nearest-neighbour to 1080x1920.
 
 Modules
-    config     frame size, fps, Bayer matrix, pixel grids
+    config     frame size, fps, Bayer matrix, pixel grids, SAFE (platform safe zone for text/HUD)
     camera     Cam (look-at perspective camera), near-plane clipping
     raster     Frame: colour + float depth buffer, poly/line/disc, glows
     geometry   face/box/prism/lathe/icosa/mound/catenary builders
@@ -17,6 +17,7 @@ Modules
     ui         captions with typewriter reveal, HUD panels
     audio      synth helpers, drums, reverb, mastering
     video      parallel frame rendering into a memmap + ffmpeg mux
-    sheet      contact sheets for quick visual checks
+    sheet      contact sheets for quick visual checks (safe zone drawn on)
+    safezone   checks captions/labels/panels sit inside the TikTok / Reels / Shorts safe zone
 """
 __version__ = '0.1.0'

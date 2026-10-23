@@ -11,7 +11,7 @@ import numpy as np
 from PIL import Image, ImageDraw
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))   # repo root on the path
-from reelkit.config import W, H, FPS, BAYER_FULL, ss, ease, dirv, mixc
+from reelkit.config import W, H, FPS, BAYER_FULL, SAFE, ss, ease, dirv, mixc
 from reelkit.camera import Cam, interp_keys
 from reelkit.raster import Frame, painter, apply_glows
 from reelkit.lighting import Lights, shade, fog, sky_gradient
@@ -109,13 +109,15 @@ def render(f):
         img = god_rays(img, depth, ms, (150, 175, 235), 0.35)
     img = grade(bloom(np.clip(img, 0, 255)))
     img = np.clip(img * vignette() * top_scrim(), 0, 255).astype(np.uint8)
-    # UI on top (never blurred)
+    # UI on top (never blurred). Keep panels and labels inside SAFE (reelkit.config): the bottom 35 % of the
+    # frame and the right-hand strip are covered by app overlays on TikTok / Reels / Shorts.
     pil = Image.fromarray(img)
     d = ImageDraw.Draw(pil)
+    x0, _, x1, y1 = SAFE
     if t >= T.T_SONG:
-        panel(d, 14, 520, 346, 600)
+        panel(d, x0, y1 - 48, x1 - 4, y1 - 4)
     out = np.asarray(pil).copy()
     if t >= T.T_SONG:
-        label(out, f"{T.BPM} BPM", 28, 540, MINT, 3)
+        label(out, f"{T.BPM} BPM", x0 + 12, y1 - 37, MINT, 3)
     draw_captions(out, t, T.CAPTIONS)
     return out

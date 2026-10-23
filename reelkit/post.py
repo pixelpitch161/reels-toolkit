@@ -80,8 +80,9 @@ def vignette(strength=0.9, start=0.55, cap=0.5, cy=0.47):
 _SCRIM = {}
 
 
-def top_scrim(amount=0.58, top=40, span=150):
-    """darken the top of frame so captions always read"""
+def top_scrim(amount=0.58, top=110, span=120):
+    """darken the top of frame so captions always read (full amount above `top`, fading out over `span`;
+    the defaults sit behind captions at the top of the safe box, see config.SAFE)"""
     key = (amount, top, span)
     if key not in _SCRIM:
         v = np.clip(1 - (YY - top) / span, 0, 1) * amount
