@@ -250,3 +250,101 @@ def label(img, text, x, y, col, scale=2, outline=(10, 20, 26)):
     _note(int(x), int(y), int(x) + m.shape[1], int(y) + m.shape[0], 'label', text)
     return m.shape[1]
 
+
+# ------------------------------------------------------------------ share bar with named leader lines
+def share_layout(names, x0, x1, scale=2):
+    """fixed name slots under a share bar: each name gets its own width, spread evenly across x0..x1.
+    Returns (scale, [(slot_x0, slot_x1, centre)]); drops to scale 1 if the names don't fit at `scale`."""
+    for sc in (scale, 1):
+        ws = [len(n) * ADV * sc - sc for n in names]
+        free = (x1 - x0) - sum(ws)
+        if free >= 4 * (len(names) - 1) or sc == 1:
+            gap = free / max(1, len(names) - 1) if len(names) > 1 else 0
+            x, out = float(x0), []
+            if len(names) == 1:
+                x = (x0 + x1 - ws[0]) / 2
+            for w in ws:
+                out.append((int(round(x)), int(round(x)) + w, x + w / 2))
+                x += w + gap
+            return sc, out
+    raise ValueError('names do not fit')
+
+
+def _line(img, a, b, col, alpha=1.0):
+    """1 px line (Bresenham-ish) between two points"""
+    (xa, ya), (xb, yb) = a, b
+    n = int(max(abs(xb - xa), abs(yb - ya))) + 1
+    xs = np.round(np.linspace(xa, xb, n)).astype(int)
+    ys = np.round(np.linspace(ya, yb, n)).astype(int)
+    ok = (xs >= 0) & (xs < img.shape[1]) & (ys >= 0) & (ys < img.shape[0])
+    xs, ys = xs[ok], ys[ok]
+    img[ys, xs] = np.clip(img[ys, xs] * (1 - alpha) + np.array(col, float) * alpha, 0, 255).astype(np.uint8)
+
+
+def share_bar(img, shares, names, colors, x0=None, x1=None, y=None, h=6, out=None, alpha=1.0, name_scale=2,
+              backing=True, show_pct=True, ink=INK, lead=15):
+    """A battle scoreboard: a thin bar of coloured segments sized by each team's share, with every team's name in
+    a FIXED slot under it and a thin leader line from the name up to the centre of its colour segment.
+    The lines slide as segments grow and shrink, but the names never move or collide. A team that's out
+    (out[q] True): its segment closes, its line disappears, its name dims with a small "OUT".
+
+        shares  per-team share (any positive scale; normalised here). Pass smoothed values for gliding segments.
+        names, colors  per team, in bar order (left to right)
+        x0, x1, y   bar extent and top (default: the width of the safe box, near its bottom edge)
+        lead        px between the bar and the names (room for the leader lines to slant readably)
+        alpha       fade the whole piece in/out (fade, don't slide: sliding crosses the safe-box edge)
+    Text sits inside config.SAFE by default; everything is recorded for `python -m reelkit.safezone`.
+    Returns {'segments': [(xa, xb, xc)], 'slots': [...], 'bottom': y} so a project can add a crown etc."""
+    n = len(names)
+    x0 = SAFE[0] + 4 if x0 is None else x0
+    x1 = SAFE[2] - 4 if x1 is None else x1
+    sc, slots = share_layout(names, x0, x1, name_scale)
+    name_h = 7 * sc
+    y = (SAFE[3] - 4 - (h + lead + name_h + (9 if show_pct else 0))) if y is None else y
+    out = [False] * n if out is None else list(out)
+    under = img.copy() if alpha < 0.999 else None
+    sh = np.array([0.0 if out[q] else max(0.0, float(shares[q])) for q in range(n)])
+    tot = sh.sum()
+    frac = sh / tot if tot > 0 else np.full(n, 1.0 / n)
+    yb = y + h
+    ny = yb + lead                                 # top of the names
+    bottom = ny + name_h + (9 if show_pct else 0)
+    if backing:
+        bx0, by0, bx1, by1 = x0 - 4, y - 4, x1 + 4, bottom + 2
+        reg = img[by0:by1, bx0:bx1].astype(np.float32)
+        img[by0:by1, bx0:bx1] = (reg * 0.45 + np.array(ink, float) * 0.25).astype(np.uint8)
+        edge = np.array([62, 74, 112], float)
+        img[by0, bx0:bx1] = (img[by0, bx0:bx1] * 0.4 + edge * 0.6).astype(np.uint8)
+        img[by1 - 1, bx0:bx1] = (img[by1 - 1, bx0:bx1] * 0.6 + edge * 0.4).astype(np.uint8)
+        _note(bx0, by0, bx1, by1, 'panel', 'share bar')
+    # segments
+    segs, x = [], float(x0)
+    img[y - 1:yb + 1, x0 - 1:x1 + 1] = np.array(ink, np.uint8)
+    for q in range(n):
+        w = (x1 - x0) * frac[q]
+        xa, xb = x, x + w
+        ia, ib = int(round(xa)), int(round(xb)) if q < n - 1 else x1
+        if ib > ia:
+            c = np.array(colors[q], float)
+            img[y:yb, ia:ib] = np.clip(c, 0, 255).astype(np.uint8)
+            img[y:y + 1, ia:ib] = np.clip(c * 0.6 + 100, 0, 255).astype(np.uint8)
+            img[yb - 1:yb, ia:ib] = np.clip(c * 0.7, 0, 255).astype(np.uint8)
+        segs.append((xa, xb, (xa + xb) / 2))
+        x = xb
+    # leader lines (team order on both ends, so they never cross), then names + shares
+    for q in range(n):
+        sx0, sx1, scx = slots[q]
+        c = np.array(colors[q], float)
+        if not out[q] and frac[q] > 0:
+            _line(img, (segs[q][2], yb + 1), (scx, ny - 2), c * 0.85 + 20, 0.9)
+            img[yb:yb + 2, int(round(segs[q][2]))] = np.clip(c * 0.6 + 100, 0, 255).astype(np.uint8)
+        col = tuple(int(v) for v in np.clip(c * 0.32 + 38, 0, 255)) if out[q] else tuple(int(v) for v in np.clip(c, 0, 255))
+        label(img, names[q], sx0, ny, col, sc)
+        if show_pct:
+            s = 'OUT' if out[q] else f'{int(round(100 * frac[q]))}%'
+            w = len(s) * ADV - 1
+            label(img, s, int(round(scx - w / 2)), ny + name_h + 2, (150, 150, 170) if out[q] else CREAM, 1)
+    _note(x0 - 1, y - 1, x1 + 1, yb + 1, 'panel', 'bar')
+    if under is not None:
+        img[:] = (under * (1 - alpha) + img * alpha).astype(np.uint8)
+    return {'segments': segs, 'slots': slots, 'bottom': bottom, 'scale': sc}
