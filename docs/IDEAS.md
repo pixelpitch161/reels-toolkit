@@ -30,7 +30,7 @@ a draft, when it gets feedback, and when it delivers.
 | 18 | Marble Waterfall Organ | review | session_01TqVLeD (2026-10-22) | v1 delivered with caption + tags (early sheet sent first). Floating brass machine in a vibrant void; ~120 hits/s spray chaos -> gates shut on downbeats 6/10/14/18/20/24/32 s -> melody gate sticks 35-40 s (2 failed tries, half-beat silent gap) -> drop 40 s -> lever 57 s springs gates open into frame 0. Every note = a marble hit from one cached list (~33 hits/s in the full song). Checks: subject CoC 0 on all frames; audio -15.6 -> -10 dBFS build, marbles 13-30 dB over the bed; flash check 1 general flash (camera move), worst 1/s; seamless audio seam. Waiting for feedback | `marble_waterfall_organ.mp4` |
 | 19 | The Mountain King Escape | review | session_01NxecfC (2026-10-22) | v1 delivered with caption + tags (early sheet sent first). Theme transcribed from the CC0 Mutopia engraving of Grieg's own piano arrangement (verify_score.py diffs it bar by bar). Beat sheet followed: 267 notes = 267 bounces, 152 -> 265 BPM (8.8 bounces/s at the end), rings break at 8.8 / 15.0 / 18.2 / 23.7 / 26.0 / 31.0 / 33.7 / 38.3 / 42.6 / 46.7 / 48.4, ring 12 on the final chord (52.1). One change: the "two near-misses in a row" skim on bounces i and i+2 (consecutive skims are geometrically impossible with long chords). Checks: rings + ball CoC 0 on all frames; flash test 1 isolated general flash (ring-1 break, 28 %), worst 1/s; bounce voice 10-26 dB over the accompaniment; -9.9 LUFS, never below -17 dBFS; loop seam 4.8 vs 5.6 normal step. Waiting for feedback | `mountain_king_escape.mp4` |
 | 20 | Battle of the Bands | review (v2) | session_01CSbeCD (2026-10-23) | v1 delivered with caption + tags (early sheet sent first). v1 feedback: start the video on the empty stage so the loop point is the video's start/end. v2 delivered: same honest run (seed 82), video time = run time: frame 0 = empty stage as the four seeds drop, bell 21.4 s, RIPPLE out 31.1, BALL 42.5, VINE 51.6, SAND wins and solos, wall cracks back to empty exactly at 60 s (bar fades in, cut by the crack; hopper slides home during the crack). Engine: reusable `battle.py` + `seed_search.py` (800 seeds, every team wins some). Changes vs backlog: knockout below 2.5 % of the stage, volume = power, round-based heat, capture, 4 s close-up before the bell; failed moves play ghost notes. Checks: safe zone OK (0.25 s steps); wall CoC 0 on all frames; 0 general flashes (max 14.5 %); -13.5 dBFS fill -> -10.9 solo; seam = the seed pop. v1 kept in check/. Waiting for feedback | `battle_of_the_bands.mp4` (v2) |
-| 21 | Falling Sand Wars | approved | ideas chat | Fully developed (beat sheet in backlog). Four sand physics in a glass box with one hole; mood A (dark, hypnotic, D Phrygian, 96 BPM; user: not every video upbeat); share bar with named leader lines + "impact" captions as reusable reelkit pieces | - |
+| 21 | Falling Sand Wars | approved | ideas chat | Fully developed (beat sheet in backlog). Four sand physics in a glass box with one hole; 61 s; mood A (dark, hypnotic, D Phrygian, ~94.4 BPM; user: not every video upbeat); share bar with named leader lines + "impact" captions as reusable reelkit pieces | - |
 
 ## Backlog (idea details)
 
@@ -1046,10 +1046,11 @@ wins.
   braziers (warm local lights); wind-blown dust drifts through (small life). Drained sand falls onto the dune below
   and builds four coloured "graveyard" piles, so the losers' sand stays visible.
 - **Ending (loop at the file boundary):** the winner's sand sits alone in the box on a stark final chord. In the
-  last 3 s the box rolls fully over and its sand pours out, so the box is empty exactly at 60.0 s. Frame 0 = the
+  last 4 s the box rolls fully over and its sand pours out, so the box is empty exactly at 61.0 s. Frame 0 = the
   empty box as the four streams start again.
 
-**Music, mood A (dark and hypnotic):** slow minimal techno at 96 BPM in D Phrygian (dark, uneasy flavour). Opens
+**Music, mood A (dark and hypnotic):** slow minimal techno at ~94.4 BPM (`loop_bpm(96)`: 24 bars in 61 s, so the
+groove is in phase at the loop point) in D Phrygian (dark, uneasy flavour). Opens
 sparse but tense: a low drone + heartbeat kick from frame 0, first sand ticks; builds from there. Sand landing =
 metallic ticks stepping each team's part (grouped per beat, as #20); turns = deep impact hits; avalanches = low tom
 rolls; each draining stream = a held tone in its team's pitch, scaled by flow. Volume follows how much sand a team
@@ -1070,7 +1071,8 @@ too small, enlarge it, staying inside the safe zone.
 readable), a small puff of pixel sand under the letters, and a soft thud in the mix. Weighty but subtle. Build it as
 a reusable caption style in `reelkit.ui` (e.g. `draw_captions(..., style='impact')`) so later videos can use it.
 
-**Beat sheet (60 s; events after 20 s are targets: the real run decides, so choose seed + balance whose run fits):**
+**Beat sheet (61 s, user Oct 23: TikTok monetisation needs >= 1 min; events after 20 s are targets: the real run
+decides, so choose seed + balance whose run fits):**
 | Time | Visual | Caption (with impact) | Sound (mood A) |
 |---|---|---|---|
 | 0–3 | Empty box turning slowly under the moon; four thin streams start | 4 SANDS / 1 HOLE | Low drone, heartbeat kick, first ticks |
@@ -1084,7 +1086,7 @@ a reusable caption style in `reelkit.ui` (e.g. `draw_captions(..., style='impact
 | 44–52 | Duel: the loser's last grains trickle toward the hole | (no caption) | Only two instruments + the heartbeat |
 | ~52 | Last grain of the loser drops; the box stops | (TEAM) WINS | Stark final chord |
 | 52–57 | Winner's sand alone in the box, moonlight; its motif plays | WHICH SAND / WOULD YOU PICK? | Winner's motif, unresolved |
-| 57–60 | Box rolls over, the winner pours out; empty at 60.0; loop to the new pour | (no caption) | Long stream tone into the opening drone |
+| 57–61 | Box rolls over, the winner pours out; empty at 61.0; loop to the new pour | (no caption) | Long stream tone into the opening drone |
 
 **Flags:**
 - The physics is stylised (falling-sand rules with per-material weight, stickiness and flow). Captions only describe
@@ -1094,7 +1096,8 @@ a reusable caption style in `reelkit.ui` (e.g. `draw_captions(..., style='impact
 - Turns land on the beat: a stylisation (45° steps, each animated over ~0.4 s).
 - Different from #20 (materials instead of processes, gravity and drainage instead of border fights, dark mood, new
   setting) but can share the battle look (share bar, eliminations) as a family.
-- Loop point = file boundary: the box is empty at 60.0 = frame 0, no reset earlier; `reelkit.loopcheck` must pass.
+- Length 61.0 s (`DUR = 61.0` in timeline.py). Loop point = file boundary: the box is empty at 61.0 = frame 0, no
+  reset earlier; `reelkit.loopcheck` must pass.
 
 **Feasibility:** sim: a falling-sand grid of ~160 × 160 cells inside the box with rules for heavy, light, sticky and
 slippery grains; gravity in 8 directions (45° steps); hole cells remove grains; run offline and cache; reuse the
