@@ -29,6 +29,7 @@ a draft, when it gets feedback, and when it delivers.
 | 17 | Domino Symphony | review | session_01H2FWd5 (2026-10-22) | v1 delivered with caption + tags (early sheet sent first). Exactly 10,000 dominoes on the 120 BPM grid (last pair lands on the final bar at 52.0 s), 0 standing overlaps; field cream until each domino tips so the note truly appears in the chevron sweep; red holdout on a plank ledge (wobble, settle, wobble, teeter); 1.5x staircase booms D..D into the drop; 3+3-lane frame plays the song on chime bars. Checks: subject CoC 0 on all 1800 frames; domino band 2-6 kHz +8..+43 dB over the music wherever clicks play; no 2 s window >12 dB under the peak; loop seam 1.9 vs 0.7-1.2 normal step. Waiting for feedback | `domino_symphony.mp4` |
 | 18 | Marble Waterfall Organ | review | session_01TqVLeD (2026-10-22) | v1 delivered with caption + tags (early sheet sent first). Floating brass machine in a vibrant void; ~120 hits/s spray chaos -> gates shut on downbeats 6/10/14/18/20/24/32 s -> melody gate sticks 35-40 s (2 failed tries, half-beat silent gap) -> drop 40 s -> lever 57 s springs gates open into frame 0. Every note = a marble hit from one cached list (~33 hits/s in the full song). Checks: subject CoC 0 on all frames; audio -15.6 -> -10 dBFS build, marbles 13-30 dB over the bed; flash check 1 general flash (camera move), worst 1/s; seamless audio seam. Waiting for feedback | `marble_waterfall_organ.mp4` |
 | 19 | The Mountain King Escape | review | session_01NxecfC (2026-10-22) | v1 delivered with caption + tags (early sheet sent first). Theme transcribed from the CC0 Mutopia engraving of Grieg's own piano arrangement (verify_score.py diffs it bar by bar). Beat sheet followed: 267 notes = 267 bounces, 152 -> 265 BPM (8.8 bounces/s at the end), rings break at 8.8 / 15.0 / 18.2 / 23.7 / 26.0 / 31.0 / 33.7 / 38.3 / 42.6 / 46.7 / 48.4, ring 12 on the final chord (52.1). One change: the "two near-misses in a row" skim on bounces i and i+2 (consecutive skims are geometrically impossible with long chords). Checks: rings + ball CoC 0 on all frames; flash test 1 isolated general flash (ring-1 break, 28 %), worst 1/s; bounce voice 10-26 dB over the accompaniment; -9.9 LUFS, never below -17 dBFS; loop seam 4.8 vs 5.6 normal step. Waiting for feedback | `mountain_king_escape.mp4` |
+| 20 | Battle of the Bands | approved | ideas chat | Fully developed (beat sheet in backlog). Inspired by @algorithmbattles (4-team territory battles, 0.4–2.9M views): physics teams, territory = volume, eliminations drop parts; 60 s (user) | - |
 
 ## Backlog (idea details)
 
@@ -931,6 +932,87 @@ particles; crystals and torches = simple glow meshes. One note list (from the tr
 crystal pulses, ring breaks and audio. The cavern (walls, ledges, crystal clusters, statues) is moderate work;
 portrait suits the tall cavern and light shaft; lock focus on the rings. The zoom-out loop needs one extra wide
 set of the cavern inside the giant ring; the last frame must match frame 0.
+
+### 20. Battle of the Bands — APPROVED
+**Direction (user, Oct 22–23):** satisfying-first; engagement brief (chaos and sound from frame 0, never quiet,
+build to a payoff). Keep it 60 s (user, Oct 23), even though the reference account's reels run 23–34 s.
+**Reference (studied Oct 23):** [@algorithmbattles](https://www.instagram.com/algorithmbattles/reels/): 17 posts,
+1.7K followers, reels at 2.9M / 1.5M / 1.2M / 845K views. Four named strategies, each a colour, fill an arena,
+then fight over territory until one wins. Static camera, no hook text, 23–34 s loops, muted autoplay with a song
+behind. Four-team battles do far better than two-team (26–42K) or odd arenas (113K). The engine is comments:
+post caption "Which strategy would you pick?" + one line per strategy; viewers turn colours into characters
+("Red was FIGHTING for its right to live", 13.9K likes); confusion about the rules drives comments too (18.6K
+likes). Sound plays no part in their battles: that's our gap.
+**Core idea:** every team is a band member. Every move a team makes plays that member's next note; the more of
+the stage a team owns, the louder its instrument (the mix is the scoreboard); eliminated teams drop out of the
+song; the winner plays the last bars solo. The strategies are physical processes.
+- **Hook:** "4 BANDS" / "1 STAGE" (7 + 7 chars, in the first 2 s). Post caption: "Which band would you pick? 🎧" +
+  one line per team.
+- **The four teams:**
+
+| Team | Strategy (physics) | Plays |
+|---|---|---|
+| SAND (amber) | Grains pour from a hopper at the top, fall and pile under gravity, slide down slopes | Drums |
+| BALL (purple) | A ball bounces around under gravity, painting every tile it crosses | Lead melody |
+| RIPPLE (teal) | Rings spread out from its base, one ring per beat | Bass |
+| VINE (green) | A tip grows, branches and backtracks through open space | Keys / arpeggio |
+
+- **Rules (two acts):** FILL: teams claim only empty tiles. FIGHT: once the stage is full, each team attacks its
+  borders using its own move (sand avalanches into neighbours, the ball ricochets through enemy land, ripples push
+  the front line out, vines burrow in). A team with no tiles left is out.
+- **Music:** an original 4-part arrangement at 120 BPM in one key, so the band always sounds in tune. Each team's
+  claims step its part forward on a sixteenth-note grid (busy team = full part, stalled team = stutters). Volume
+  follows territory share. When a team is out, its part drops out with a filter sweep and its speaker stack goes
+  dark ("THE DRUMMER'S OUT!"); the others get louder to compensate, so the mix never thins into quiet.
+- **Scene:** a floating festival stage in the vibrant void: the arena is a giant round LED wall at centre stage,
+  four team-coloured speaker stacks around it, sweeping stage spotlights (key light), warm footlights (local light),
+  the stage floor catching the shadows; a small speaker cone on each stack pumps with its instrument.
+- **Payoff / ending:** the winner floods the last tiles on a big hit, then plays the full tune solo while the wall
+  pulses in its colour. At 58 s the wall cracks back to empty with four new starting seeds, looping to the opening
+  burst.
+
+**Beat sheet (60 s; event times are a target: the real run decides who wins and when, so choose a seed whose run
+matches this shape):**
+| Time | Visual | Caption | Sound |
+|---|---|---|---|
+| 0–2 | All four burst from their bases at once: sand pouring, ball bouncing, rings, vine | 4 BANDS / 1 STAGE | All four parts at once, chaotic but in key |
+| 2–8 | Legend inside the safe zone: SAND · DRUMS, BALL · LEAD, RIPPLE · BASS, VINE · KEYS | (hook, then legend) | Parts lock onto the grid |
+| 8–14 | FILL race; territory bar fills under the wall | EVERY MOVE / = A NOTE | Band thickening |
+| 14–20 | Stage nearly full; a leader emerges | MORE STAGE / = LOUDER | Leader's instrument swells |
+| 20–22 | Wall full: flash, rule card | FULL. / NOW THEY FIGHT | Drum fill + crash |
+| 22–31 | Borders churn; a ricochet rips through enemy land; lead changes | WHO'S WINNING? / LISTEN 🎧 | Mix swinging between parts |
+| ~31 | First elimination: its stack goes dark | (TEAM) IS OUT! | Its part sweeps out; others swell |
+| 31–41 | Three-way fight; underdog comeback if the seed gives one | (no caption) | Tension builds |
+| ~41 | Second elimination | 2 LEFT | Duel: two instruments trading phrases |
+| 41–50 | Final duel; last tiles flipping | (no caption) | Riser + snare roll |
+| ~50 | Winner takes the stage; wall floods one colour | (TEAM) WINS | Big hit |
+| 50–58 | Winner's solo: full tune; wall pulses; its stack blazes | WHICH BAND / WOULD YOU PICK? | Winner's part, full arrangement |
+| 58–60 | Wall cracks back to empty; four new seeds; loop | (no caption) | Riser into the opening burst |
+
+**Flags:**
+- Make it ours, not a copy: @algorithmbattles' team names (Ricochet, Explorer, Lightning, Dragon, Prism, Arcs)
+  and look (flat black background, circle, 2×2 colour key) stay theirs. Ours: physical-process teams, music at the
+  centre, a low-poly stage diorama, the legend inside the safe zone.
+- Real simulation, honestly curated: run many seeds and pick one with a good story (early leader falls, underdog
+  wins), but never hand-edit who wins.
+- Keep the rules readable: one short rule card at 20 s keeps the confusion fun rather than frustrating.
+- "Every move = a note" is gating: moves trigger the next step of each part, quantised to the beat (not one note
+  per tile, which would be noise with thousands of tiles).
+- Holding 60 s: three acts (fill, fight, solo), an elimination roughly every 10 s, never-quiet mix.
+- Safe zone: the arena wall is the key action, so it fits inside the safe box with the legend just under it;
+  speaker stacks and stage scenery fill the rest of the frame. (Expect the wall at ~230 internal px across,
+  between the caption band and the legend.)
+- Series potential: once the engine exists, each new episode is a new seed, arena shape or team line-up. Build the
+  engine reusable (team rules, seed and arena shape as parameters).
+
+**Feasibility:** sim: a ~100 × 100 tile grid run offline from a fixed seed, per-frame results cached. Sand =
+simple falling-sand rules; ball = gravity + elastic bounces off the round wall; ripple = ring-by-ring spread; vine
+= random growth with backtracking. Fight rules = border attacks using each team's move; tune the balance across
+many seeds so any team can win. Render: the grid is a texture on the round LED wall inside a low-poly stage set
+(stacks, lights, floor) in the void; the camera holds almost still so the battle stays readable. Audio: four
+synthesised parts; cached claim events gate each part's next step; per-team volume from territory share,
+smoothed; drop-outs with a filter sweep. One event list drives the wall, stacks, meters and mix. Checks: safe zone
+(captions, legend, territory bar) and flash check (full-wall flash at 20 s, winner flood).
 
 ## Adding a new idea
 
