@@ -78,10 +78,25 @@ def one(seed):
 
 
 if __name__ == '__main__':
-    a = int(sys.argv[1]) if len(sys.argv) > 1 else 0
-    b = int(sys.argv[2]) if len(sys.argv) > 2 else 100
+    # python seed_search.py A B            -> rank seeds A..B-1
+    # python seed_search.py A B --stop 5   -> stop as soon as 5 seeds fit the beat-sheet shape (saves most of the time:
+    #                                         ~1 run in 45 fits, so 5 candidates take ~200 runs, not 800)
+    import argparse
+    ap = argparse.ArgumentParser()
+    ap.add_argument('a', type=int, nargs='?', default=0)
+    ap.add_argument('b', type=int, nargs='?', default=100)
+    ap.add_argument('--stop', type=int, default=None, help='stop once this many seeds fit the shape')
+    opt = ap.parse_args()
+    a, b, stop = opt.a, opt.b, opt.stop
+    res = []
     with Pool(os.cpu_count() or 2) as P:
-        res = P.map(one, range(a, b), chunksize=2)
+        chunk = 8 * (os.cpu_count() or 2)
+        for s0 in range(a, b, chunk):
+            res += P.map(one, range(s0, min(b, s0 + chunk)), chunksize=2)
+            if stop is not None and sum(r['shape'] for r in res) >= stop:
+                print(f'stopped after {len(res)} runs: {stop} seeds fit the shape')
+                b = s0 + chunk
+                break
     names = [n[:2] for n in ('SAND', 'BALL', 'RIPPLE', 'VINE')]
     wins = np.bincount([r['win'] for r in res if r['win'] is not None], minlength=4)
     lines = []
