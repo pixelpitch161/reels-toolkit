@@ -2,7 +2,14 @@
 
 ## The brief (fixed for every video)
 
-- **Format:** 60.0 s, 1080×1920, 30 fps. Internal render 360×640, 3× nearest-neighbour upscale.
+- **Format:** 61.0 s, 1080×1920, 30 fps. Internal render 360×640, 3× nearest-neighbour upscale. 61 s because TikTok
+  monetisation only applies to videos of at least 1 minute; the extra second is a safety net (user, Oct 23). Set
+  `DUR = 61.0` in the project's `timeline.py` (the template does); the toolkit reads each project's own length, so
+  videos made at 60 s before this stay 60 s. Design beat sheets on 61 s: the extra second usually goes to the
+  ending's run-up into the loop point.
+- **Tempo fits the loop:** pick tempos with a whole number of bars in 61 s, so the groove and anything pulsing on
+  the beat are in phase at the loop point: `reelkit.config.loop_bpm(96)` -> 94.43 (24 bars), `loop_bpm(120)` ->
+  118.03 (30 bars).
 - **Topic:** music + science. The science must *drive* the sound: tempo, pitch, rhythm or
   timbre comes from the phenomenon. Examples: chirp rate → BPM, plate resonance → notes,
   metronome sync → beat.
@@ -21,7 +28,7 @@
   before the end. The last seconds are the run-up into the reset; frame 0 is the reset itself, with chaos
   following within a second. (User feedback on #20 v1: the next run started at 58.6 s, so the video visibly
   started over ~1.5 s before the file ended and looped.) Every periodic motion (drift, twinkle, orbits, flags,
-  searchlights) completes whole cycles in 60 s: use `reelkit.config.whole_period(p)`. Check with
+  searchlights) completes whole cycles in the video (61 s): use `reelkit.config.whole_period(p)`. Check with
   `python -m reelkit.loopcheck render.py audio.wav` before the full render and on the mp4 after.
 - **Lighting:** a visible key light (sun or moon) plus warm local lights (fire, lanterns). Use real
   shadows: ground masks plus box occlusion. Brightness should sit roughly at the "lit" level:
@@ -77,7 +84,7 @@ of an existing series (e.g. Battle of the Bands) in ~30–40 min.
 0. **Claim the video on the board:** in `docs/IDEAS.md`, set its row to `in production`, note the
    session, then commit and push that one-line change straight away. Ideas are drafted in the
    separate ideas chat, not in production sessions.
-1. **Pick the idea:** the phenomenon, the hook line, how it makes music, and a 60 s beat sheet (see
+1. **Pick the idea:** the phenomenon, the hook line, how it makes music, and a 61 s beat sheet (see
    `templates/new_video/timeline.py` for the proven shape).
 2. **Simulate first** if the visual depends on physics (sand, metronomes). Cache the results per
    frame (`.npz` or memmap) so rendering is fast and deterministic.
@@ -104,7 +111,7 @@ of an existing series (e.g. Battle of the Bands) in ~30–40 min.
    `python -m reelkit.video render.py audio.wav out.mp4`. Run it in the background and wait for it. Don't
    poll with sleeps. Fixes after this: `--frames A:B` patches, not a second full render.
 9. **Verify:**
-   - run `ffprobe` (expect 1080×1920, 60.0 s, h264 + aac);
+   - run `ffprobe` (expect 1080×1920, 61.0 s, h264 + aac);
    - `python -m reelkit.loopcheck out.mp4` and `python -m reelkit.flashcheck out.mp4` must PASS;
    - make a contact sheet from the mp4 (`reelkit.video.frames_sheet`) at about 9–14 times;
    - look at it, including that no text or readout sits outside the safe box.
