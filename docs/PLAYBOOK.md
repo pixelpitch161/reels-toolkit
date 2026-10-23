@@ -25,6 +25,17 @@
   - never rack the focus away from it;
   - use a `sharp` band wide enough that the whole subject and its readout (thermometer, plate) stay crisp;
   - verify the subject's CoC is 0 for every frame.
+- **Safe zone (text and HUD):** TikTok, Instagram Reels and YouTube Shorts cover the top, the bottom and
+  the right edge with their own buttons and text. Captions, labels, counters, HUD panels and key action
+  stay inside the safe box `reelkit.config.SAFE`: x 40–296, y 96–416 internal (x 120–888, y 288–1248 at
+  1080×1920; the strictest edge of the three apps). Scenery can fill the whole frame.
+  - captions: `draw_captions` defaults put them at the top of the box, centred on it (x 168, not the frame
+    centre); big size only for lines up to 14 chars, small size up to 21; longer lines don't fit;
+  - HUD panels and labels: inside the box, never in the bottom 35 % or under the right-hand button column;
+  - the top scrim (`top_scrim()` defaults) sits behind the caption band; projects passing their own scrim
+    numbers must move them to match;
+  - contact sheets draw the box (area outside tinted red); `python -m reelkit.safezone render.py` must pass
+    before the full render.
 - **Sound:**
   - everything is synthesised;
   - music is original or public domain (pre-1929, e.g. Grieg);
@@ -50,6 +61,8 @@
 6. **Look before rendering:**
    - make contact sheets at about 6–8 key times (`python -m reelkit.sheet`);
    - check brightness, readability of text and readouts, the focus, and that nothing occludes the subject;
+   - check every caption, label and panel sits inside the safe box drawn on the sheet, then run
+     `python -m reelkit.safezone render.py` (add `--sheet check/safezone.png` to see the worst frames);
    - fix things, then repeat.
 7. **Audio:**
    - `python audio.py`;
@@ -60,7 +73,7 @@
 9. **Verify:**
    - run `ffprobe` (expect 1080×1920, 60.0 s, h264 + aac);
    - make a contact sheet from the mp4 (`reelkit.video.frames_sheet`) at about 9–14 times;
-   - look at it.
+   - look at it, including that no text or readout sits outside the safe box.
 10. **Deliver:** the mp4, plus a short caption and tags for Instagram Reels, TikTok and YouTube Shorts.
 11. **Update the board:**
    - set the row in `docs/IDEAS.md` to `review` or `done`, with the last feedback and the output file name;
@@ -73,8 +86,12 @@
 - Shadows only read on surfaces the camera can see. Low cameras see little ground, so put shadow
   drama where it shows: floors seen from above, grass banding, light shafts through silhouettes.
 - Bloom must exclude fine detail that has to stay crisp (sand grains).
-- Captions sit in the top 150 px over a darkening scrim, with max 18 chars per line at the large size.
-- HUD panels slide in from the bottom and stay clear of the subject.
+- Captions and HUD were being covered by the apps' own interface (user's TikTok screenshot, Oct 22: the hook
+  sat under "LIVE / Following / For You / search", the timer and counter under the username and
+  description). The old rules (captions in the top 150 px, up to 18 chars at the big size, HUD sliding in
+  from the bottom) are replaced by the safe-zone rule in the brief.
+- HUD panels stay clear of the subject and inside the safe box; slide them in from the side or fade them,
+  not up from the bottom of the frame.
 - Keep backups of each approved version (`*_backup.py`) before a big relight, so you can blend or roll back.
 
 ## Captions and tags
