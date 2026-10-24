@@ -584,6 +584,84 @@ class Fight:
                         B.blade_len = min(w['max_len'], B.blade_len + w['grow'])
         B.punches = live
 
+    # ------------------------------------------------------------------ #29 v3: strap flail (opt-in weapon kind 'flail')
+    def flail_setup(self, k):
+        B = self.balls[k]
+        B.wrap = None
+        B.spin = B.w.get('spin0', 3.0)
+
+    def flail_step(self, k, dt):
+        """flail: a heavy head on a strap (centre distance R + `blade_len`) swings round the ball, spinning up by
+        `spin_acc` toward `spin_max` (haste: x mult; `haste_snap` jumps straight to it). The head hits once on contact
+        (damage grows with momentum, from `dmg_min` x up), then the strap WRAPS the enemy: until a beat `wrap_beats` on,
+        the enemy is leashed and reeled in to `reel` (centre distance), then yanked (`yank`) and the swing restarts.
+        A landed hit lengthens the strap (`grow`). The balls themselves keep the shared constant speed."""
+        B, O = self.balls[k], self.balls[1 - k]
+        w = B.w
+        R = self.R.R
+        if B.wrap is not None:
+            Wr = B.wrap
+            rel = O.p - B.p
+            dist = float(np.hypot(*rel))
+            B.th = math.atan2(rel[1], rel[0]) % (2 * math.pi)
+            if self.t + 1e-9 >= Wr['t_end']:
+                B.wrap = None
+                self.ev('unwrap', k, float(O.p[0]), float(O.p[1]))
+                self.knock(1 - k, -rel, w.get('yank', 1.0))
+                B.spin = w.get('spin0', 3.0)
+                B.cool = w.get('cooldown', 0.3)
+                return
+            u = min(1.0, (self.t - Wr['t0']) / max(1e-6, Wr['t_end'] - Wr['t0']))
+            L = Wr['L0'] + (Wr['L1'] - Wr['L0']) * u
+            if dist > L and dist > 1e-6:
+                n = rel / dist
+                O.p = B.p + n * L
+                vr = float(O.v @ n)
+                if vr > 0:
+                    sp = float(np.linalg.norm(O.v))
+                    v = O.v - n * vr
+                    if float(np.hypot(*v)) < 1e-6:
+                        v = np.array([-n[1], n[0]])
+                    O.v = v / float(np.hypot(*v)) * sp
+            return
+        mult = self.ab_mult(k)
+        smax = w['spin_max'] * mult
+        if B.haste > 0 and w.get('haste_snap'):
+            B.spin = smax
+        elif B.spin < smax:
+            B.spin = min(smax, B.spin + w['spin_acc'] * mult * dt)
+        else:
+            B.spin = max(smax, B.spin - w['spin_acc'] * dt)
+        B.th = (B.th + B.spin_dir * B.spin * dt) % (2 * math.pi)
+        B.cool = max(0.0, B.cool - dt)
+        if B.cool > 0:
+            return
+        hd = np.array([math.cos(B.th), math.sin(B.th)])
+        head = B.p + (R + B.blade_len) * hd
+        rel = O.p - head
+        dist = float(np.hypot(*rel))
+        if dist < R + w['head_r']:
+            hx, hy = (O.p - rel / max(dist, 1e-6) * R).tolist()
+            B.cool = w.get('cooldown', 0.3)
+            if O.shield > 0:
+                self.ev('block', 1 - k, k, hx, hy, 'flail')
+                B.spin_dir *= -1.0                                  # it bounces off the shield and swings back
+                B.spin *= 0.5
+                return
+            mom = min(1.0, B.spin / w['spin_max'])
+            m0 = w.get('dmg_min', 0.4)
+            landed = self.damage(k, 1 - k, w['dmg'] * (m0 + (1 - m0) * mom), 'flail', hx, hy, int(round(10 * mom)))
+            tang = np.array([-hd[1], hd[0]]) * B.spin_dir
+            self.knock(1 - k, tang + 0.5 * hd, w.get('knock', 0.8) * (0.5 + 0.5 * mom))
+            if landed:
+                B.blade_len = min(w['max_len'], B.blade_len + w['grow'])
+                nb = math.ceil(self.t / self.R.beat - 1e-6) + w.get('wrap_beats', 2) - 1
+                t_end = max(self.t + 0.5 * self.R.beat, nb * self.R.beat)
+                d0 = float(np.hypot(*(O.p - B.p)))
+                B.wrap = dict(t0=self.t, t_end=t_end, L0=d0, L1=max(2 * R + 0.05, min(d0, w.get('reel', 1.6))))
+                B.spin = 0.0
+                self.ev('wrap', k, t_end, d0, float(B.wrap['L1']))
+
     def key_r(self):
         """every projectile's hit radius (Rules.KEY_R unless its weapon set `hit_r`)"""
         if not self.khr:
@@ -1209,6 +1287,8 @@ class Fight:
         for k, B in enumerate(self.balls):                       # #29 v3 (opt-in weapon kinds)
             if B.w['kind'] == 'combo':
                 self.combo_setup(k)
+            elif B.w['kind'] == 'flail':
+                self.flail_setup(k)
         thrusters = [k for k, B in enumerate(self.balls) if B.w.get('mode') == 'thrust']      # #34
         next16t = k16_0
         if rec is not None and self.uses_ext:
@@ -1288,6 +1368,8 @@ class Fight:
                     self.orbit_step(k, dt)
                 elif B.w['kind'] == 'combo':                     # #29 v3
                     self.combo_step(k, dt)
+                elif B.w['kind'] == 'flail':                     # #29 v3
+                    self.flail_step(k, dt)
             if self.beams or any(B.w['kind'] == 'beam' for B in self.balls):
                 self.beams_step(dt)
             if self.lines or self.strings:
