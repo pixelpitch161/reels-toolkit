@@ -343,3 +343,239 @@ def fringe(img, cx, cy, r, px=2.0, k=1.0):
     reg[..., 2][m] = img[by[m], bx[m], 2]
     img[y0:y1, x0:x1] = reg
     return img
+
+
+# ---------------------------------------------------------------- 6. particles with trails
+# preset fields: n (per emit), speed (lo, hi) m/s, up (vertical bias added to the direction), spread (deg around the
+# direction; 180 = all round), g (gravity, + down, - buoyant), drag (1/s), life (lo, hi) s, size (lo, hi) world units,
+# grow (size x per s), trail (samples, s between), shape, cols, alpha, wobble (amp m, Hz), twinkle (Hz), ground (settle
+# on y = 0), glow (draw a soft halo), spin (rad/s for shards)
+PRESETS = {
+    # #35
+    'dust': dict(n=8, speed=(0.3, 0.9), up=0.8, spread=70, g=-0.25, drag=2.2, life=(0.9, 1.6), size=(0.06, 0.12),
+                 grow=1.2, trail=(3, 0.05), shape='blob', cols=[(176, 160, 150), (150, 132, 124), (206, 192, 178)],
+                 alpha=0.55, wobble=(0.08, 1.3)),
+    'motes': dict(n=6, speed=(0.2, 0.7), up=1.0, spread=80, g=-0.35, drag=1.6, life=(1.0, 1.8), size=(0.018, 0.03),
+                  grow=0.0, trail=(5, 0.04), shape='dot', cols=[(255, 246, 222), (255, 230, 170), (230, 236, 255)],
+                  alpha=0.95, wobble=(0.12, 1.8), twinkle=7.0, glow=True),
+    # #29-#34
+    'steam': dict(n=7, speed=(0.8, 1.8), up=1.2, spread=30, g=-0.6, drag=2.6, life=(0.6, 1.2), size=(0.06, 0.1),
+                  grow=1.8, trail=(3, 0.05), shape='blob', cols=[(236, 240, 246), (210, 218, 230)], alpha=0.5,
+                  wobble=(0.06, 2.0)),
+    'smoke': dict(n=6, speed=(0.2, 0.6), up=0.6, spread=90, g=-0.2, drag=1.8, life=(1.4, 2.4), size=(0.08, 0.14),
+                  grow=1.0, trail=(3, 0.08), shape='blob', cols=[(110, 116, 126), (140, 146, 152), (90, 94, 104)],
+                  alpha=0.45, wobble=(0.1, 0.9)),
+    'shreds': dict(n=10, speed=(1.5, 3.5), up=0.8, spread=180, g=6.0, drag=1.2, life=(0.8, 1.4), size=(0.05, 0.09),
+                   trail=(3, 0.03), shape='shard', cols=[(64, 196, 88), (190, 40, 50), (240, 230, 210), (30, 60, 120)],
+                   alpha=1.0, ground=True, spin=12.0),
+    'puffs': dict(n=6, speed=(1.2, 2.4), up=0.2, spread=50, g=0.0, drag=3.5, life=(0.4, 0.8), size=(0.05, 0.08),
+                  grow=2.2, trail=(4, 0.03), shape='blob', cols=[(240, 244, 250)], alpha=0.4),
+    'shards': dict(n=8, speed=(1.8, 3.6), up=0.9, spread=180, g=7.0, drag=0.8, life=(0.8, 1.3), size=(0.05, 0.1),
+                   trail=(3, 0.03), shape='shard', cols=[(24, 22, 30), (50, 46, 60), (190, 245, 60)], alpha=1.0,
+                   ground=True, spin=14.0),
+    'sparks': dict(n=10, speed=(2.0, 4.5), up=0.6, spread=180, g=6.5, drag=1.0, life=(0.25, 0.55), size=(0.015, 0.025),
+                   trail=(5, 0.02), shape='streak', cols=[(255, 236, 160), (255, 200, 90)], alpha=1.0, glow=True,
+                   ground=True),
+    'glitch': dict(n=6, speed=(0.4, 1.2), up=0.4, spread=180, g=0.0, drag=3.0, life=(0.2, 0.5), size=(0.06, 0.14),
+                   trail=(0, 0.0), shape='square', cols=[(70, 228, 255), (255, 60, 200), (240, 255, 255)],
+                   alpha=0.9, twinkle=15.0),
+    'streaks': dict(n=8, speed=(2.5, 4.0), up=0.0, spread=15, g=0.0, drag=0.6, life=(0.3, 0.6), size=(0.012, 0.02),
+                    trail=(6, 0.025), shape='streak', cols=[(220, 228, 255), (170, 180, 230)], alpha=0.6),
+    'scales': dict(n=8, speed=(1.0, 2.2), up=1.0, spread=120, g=5.0, drag=1.4, life=(0.7, 1.2), size=(0.03, 0.05),
+                   trail=(2, 0.03), shape='shard', cols=[(222, 232, 246), (180, 196, 220)], alpha=1.0, spin=10.0,
+                   twinkle=9.0),
+    'glass': dict(n=12, speed=(1.0, 3.0), up=0.8, spread=180, g=6.0, drag=1.2, life=(0.6, 1.1), size=(0.015, 0.03),
+                  trail=(3, 0.02), shape='dot', cols=[(230, 244, 255), (200, 220, 255)], alpha=1.0, twinkle=12.0,
+                  glow=True, ground=True),
+    'foam': dict(n=10, speed=(0.8, 2.0), up=1.2, spread=90, g=4.0, drag=1.8, life=(0.6, 1.2), size=(0.03, 0.06),
+                 grow=0.6, trail=(3, 0.03), shape='blob', cols=[(250, 252, 255), (210, 236, 250)], alpha=0.85,
+                 ground=True),
+    'chips': dict(n=8, speed=(1.5, 3.0), up=0.9, spread=150, g=7.0, drag=1.0, life=(0.6, 1.1), size=(0.03, 0.06),
+                  trail=(2, 0.03), shape='shard', cols=[(214, 160, 100), (170, 116, 64), (236, 196, 140)], alpha=1.0,
+                  ground=True, spin=15.0),
+    'embers': dict(n=8, speed=(0.5, 1.5), up=1.2, spread=100, g=-0.4, drag=1.5, life=(0.8, 1.5), size=(0.015, 0.025),
+                   trail=(5, 0.04), shape='dot', cols=[(255, 150, 70), (220, 110, 50), (255, 200, 120)], alpha=1.0,
+                   wobble=(0.08, 2.5), twinkle=6.0, glow=True),
+    'brass': dict(n=10, speed=(2.0, 4.0), up=0.7, spread=160, g=6.5, drag=1.0, life=(0.3, 0.6), size=(0.015, 0.025),
+                  trail=(4, 0.02), shape='streak', cols=[(255, 214, 120), (230, 176, 70)], alpha=1.0, glow=True,
+                  ground=True),
+    # crossovers (#27 / #28 fighters; their uploaded videos are not re-rendered)
+    'smear': dict(n=4, speed=(0.1, 0.3), up=0.0, spread=180, g=0.0, drag=4.0, life=(0.15, 0.3), size=(0.04, 0.07),
+                  trail=(6, 0.02), shape='streak', cols=[(255, 140, 120)], alpha=0.6),
+    'keyshards': dict(n=6, speed=(1.5, 3.0), up=0.8, spread=180, g=7.0, drag=1.0, life=(0.6, 1.0), size=(0.05, 0.08),
+                      trail=(2, 0.03), shape='shard', cols=[(246, 244, 236), (24, 22, 30)], alpha=1.0, ground=True,
+                      spin=12.0),
+    'ripples': dict(n=1, speed=(0.0, 0.0), up=0.0, spread=0, g=0.0, drag=0.0, life=(0.5, 0.6), size=(0.2, 0.2),
+                    grow=6.0, trail=(0, 0.0), shape='ring', cols=[(246, 238, 216)], alpha=0.8),
+    'rosin': dict(n=8, speed=(0.3, 0.9), up=0.5, spread=120, g=-0.1, drag=2.0, life=(0.6, 1.2), size=(0.012, 0.02),
+                  trail=(6, 0.03), shape='dot', cols=[(250, 240, 210), (230, 210, 170)], alpha=0.8, wobble=(0.1, 2.0)),
+}
+_SHAPES = ('blob', 'dot', 'shard', 'square', 'streak', 'ring')
+
+
+class Particles:
+    """deterministic particles: emit() appends particles drawn from the preset with this system's seeded RNG (so emit
+    in the same order every time, e.g. from the run's event list at load), state at t is analytic (linear drag +
+    gravity + a wobble), trails are the same particle sampled a little earlier. draw() projects and paints them."""
+
+    def __init__(self, seed=0, max_alive=600):
+        self.rng = np.random.default_rng(seed)
+        self.cols = {k: [] for k in ('t0', 'p', 'v', 'life', 'size', 'grow', 'col', 'g', 'drag', 'wa', 'wf', 'ph',
+                                      'tw', 'shape', 'alpha', 'ground', 'spin', 'glow', 'tn', 'tdt')}
+        self.max_alive = max_alive
+        self._arr = None
+
+    def emit(self, t0, pos, kind, n=None, dir=(0.0, 1.0, 0.0), vel=(0.0, 0.0, 0.0), col=None, scale=1.0, speed=None,
+             spread=None, life=None):
+        """n particles of preset `kind` at world `pos`, sprayed around `dir` (+ the preset's up bias), carried by `vel`
+        (e.g. the attacker's motion); col overrides the preset's colours (one rgb or a list)"""
+        P = PRESETS[kind]
+        n = P['n'] if n is None else int(n)
+        if n <= 0:
+            return
+        r = self.rng
+        d0 = np.asarray(dir, float)
+        d0 = d0 / (np.linalg.norm(d0) + 1e-9)
+        sp = math.radians(P['spread'] if spread is None else spread)
+        lo, hi = P['speed'] if speed is None else speed
+        cols = P['cols'] if col is None else ([col] if np.ndim(col) == 1 else list(col))
+        lf = P['life'] if life is None else life
+        for _ in range(n):
+            # a random direction within `sp` of d0 (uniform on the cap)
+            cz = math.cos(sp) + (1 - math.cos(sp)) * r.uniform()
+            phi = r.uniform(0, 2 * math.pi)
+            a = np.array([1.0, 0, 0]) if abs(d0[0]) < 0.9 else np.array([0, 0, 1.0])
+            e1 = np.cross(d0, a)
+            e1 /= np.linalg.norm(e1)
+            e2 = np.cross(d0, e1)
+            sz = math.sqrt(max(0.0, 1 - cz * cz))
+            dv = d0 * cz + (e1 * math.cos(phi) + e2 * math.sin(phi)) * sz
+            dv = dv + np.array([0, P['up'], 0]) * r.uniform(0.5, 1.0)
+            dv /= np.linalg.norm(dv) + 1e-9
+            c = self.cols
+            c['t0'].append(float(t0))
+            c['p'].append(np.asarray(pos, float) + r.normal(0, 0.03, 3))
+            c['v'].append(dv * r.uniform(lo, hi) * scale + np.asarray(vel, float))
+            c['life'].append(r.uniform(*lf))
+            c['size'].append(r.uniform(*P['size']) * scale)
+            c['grow'].append(P.get('grow', 0.0))
+            c['col'].append(np.asarray(cols[r.integers(len(cols))], float))
+            c['g'].append(P['g'])
+            c['drag'].append(max(1e-3, P['drag']))
+            wa, wf = P.get('wobble', (0.0, 1.0))
+            c['wa'].append(wa)
+            c['wf'].append(wf * r.uniform(0.7, 1.3))
+            c['ph'].append(r.uniform(0, 2 * math.pi))
+            c['tw'].append(P.get('twinkle', 0.0))
+            c['shape'].append(_SHAPES.index(P['shape']))
+            c['alpha'].append(P['alpha'])
+            c['ground'].append(bool(P.get('ground', False)))
+            c['spin'].append(P.get('spin', 0.0) * r.uniform(-1, 1))
+            c['glow'].append(bool(P.get('glow', False)))
+            c['tn'].append(P['trail'][0])
+            c['tdt'].append(P['trail'][1])
+        self._arr = None
+
+    def _arrays(self):
+        if self._arr is None:
+            self._arr = {k: np.array(v) for k, v in self.cols.items()}
+            o = np.argsort(self._arr['t0'], kind='stable')
+            self._arr = {k: v[o] for k, v in self._arr.items()}
+            self._lmax = float(self._arr['life'].max()) if len(o) else 0.0
+        return self._arr
+
+    @staticmethod
+    def _pos(A, idx, u):
+        """analytic position of particles idx at age u (array): drag + gravity + wobble + ground settle"""
+        k = A['drag'][idx]
+        g = np.stack([np.zeros_like(k), -A['g'][idx], np.zeros_like(k)], 1)
+        vinf = g / k[:, None]
+        e = (1 - np.exp(-k * u))[:, None] / k[:, None]
+        p = A['p'][idx] + vinf * u[:, None] + (A['v'][idx] - vinf) * e
+        wa = A['wa'][idx]
+        if np.any(wa > 0):
+            w = 2 * np.pi * A['wf'][idx] * u + A['ph'][idx]
+            p = p + np.stack([np.sin(w), 0.5 * np.sin(1.7 * w + 1), np.cos(1.3 * w)], 1) * (wa * np.minimum(1, u * 3))[:, None]
+        gr = A['ground'][idx]
+        p[:, 1] = np.where(gr, np.maximum(p[:, 1], 0.01), p[:, 1])
+        return p
+
+    def alive(self, t):
+        A = self._arrays()
+        if not len(A['t0']):
+            return A, np.zeros(0, int)
+        i0 = np.searchsorted(A['t0'], t - self._lmax - 1e-6)
+        i1 = np.searchsorted(A['t0'], t, 'right')
+        idx = np.arange(i0, i1)
+        u = t - A['t0'][idx]
+        idx = idx[(u >= 0) & (u < A['life'][idx])]
+        return A, idx[-self.max_alive:]
+
+    def draw(self, img, cam, t, light=None):
+        """paint the live particles (trails first, then heads) onto img; light: optional (N, 3) multiplier function
+        P -> RGB gain (e.g. lambda P: 1 + flares.tint(P, t)) so attack lights colour the particles too"""
+        A, idx = self.alive(t)
+        if not len(idx):
+            return img
+        u = t - A['t0'][idx]
+        f = u / A['life'][idx]
+        fade = np.clip(np.minimum(f / 0.12, (1 - f) / 0.35), 0, 1)
+        tw = A['tw'][idx]
+        fade = fade * np.where(tw > 0, 0.55 + 0.45 * np.sin(2 * np.pi * tw * u + A['ph'][idx] * 3), 1.0)
+        P0 = self._pos(A, idx, u)
+        Pc = cam.to_cam(P0)
+        ok = Pc[:, 2] > cam.near
+        if not ok.any():
+            return img
+        idx, u, fade, P0, Pc = idx[ok], u[ok], fade[ok], P0[ok], Pc[ok]
+        s0 = cam.proj(Pc)
+        size = A['size'][idx] * (1 + A['grow'][idx] * u)
+        rpx = np.maximum(0.5, size * cam.f / Pc[:, 2])
+        col = A['col'][idx]
+        if light is not None:
+            col = np.clip(col * light(P0), 0, 255)
+        alpha = A['alpha'][idx] * fade
+        base = Image.fromarray(np.clip(img, 0, 255).astype(np.uint8))
+        d = ImageDraw.Draw(base, 'RGBA')
+        tn = A['tn'][idx]
+        # trails
+        for j in np.nonzero(tn > 0)[0]:
+            K = int(tn[j])
+            us = np.maximum(0.0, u[j] - A['tdt'][idx[j]] * np.arange(K + 1))
+            pts = cam.wp(self._pos(A, np.full(K + 1, idx[j]), us))
+            for q in range(K):
+                a = alpha[j] * (1 - (q + 1) / (K + 1)) * 0.7
+                wd = max(1, int(round(min(rpx[j], 2.0) * (1 - q / (K + 1)))))
+                d.line([tuple(pts[q]), tuple(pts[q + 1])], fill=tuple(int(v) for v in col[j]) + (int(255 * a),), width=wd)
+        # heads
+        for j in range(len(idx)):
+            x, y = float(s0[j, 0]), float(s0[j, 1])
+            if not (-8 < x < W + 8 and -8 < y < H + 8):
+                continue
+            c = tuple(int(v) for v in col[j])
+            a = int(255 * alpha[j])
+            r = float(rpx[j])
+            sh = _SHAPES[int(A['shape'][idx[j]])]
+            if A['glow'][idx[j]] and a > 40:
+                gr = max(1.5, r * 2.6)
+                d.ellipse([x - gr, y - gr, x + gr, y + gr], fill=c + (int(a * 0.25),))
+            if sh == 'dot':
+                if r < 1.0:
+                    d.point((x, y), fill=c + (a,))
+                else:
+                    d.ellipse([x - r, y - r, x + r, y + r], fill=c + (a,))
+            elif sh == 'blob':
+                d.ellipse([x - r, y - r * 0.85, x + r, y + r * 0.85], fill=c + (int(a * 0.8),))
+                if r > 2:
+                    d.ellipse([x - r * 0.5, y - r * 0.6, x + r * 0.3, y], fill=tuple(min(255, v + 25) for v in c) + (int(a * 0.5),))
+            elif sh == 'shard':
+                ang = A['spin'][idx[j]] * u[j] + A['ph'][idx[j]]
+                pts = [(x + r * 1.4 * math.cos(ang + q * 2.3), y + r * 0.9 * math.sin(ang + q * 2.3)) for q in range(3)]
+                d.polygon(pts, fill=c + (a,))
+            elif sh == 'square':
+                d.rectangle([x - r, y - r * 0.6, x + r, y + r * 0.6], fill=c + (a,))
+            elif sh == 'streak':
+                d.point((x, y), fill=(255, 255, 240, a))
+            elif sh == 'ring':
+                d.ellipse([x - r, y - r * 0.55, x + r, y + r * 0.55], outline=c + (a,))
+        return np.asarray(base).astype(np.float32)
