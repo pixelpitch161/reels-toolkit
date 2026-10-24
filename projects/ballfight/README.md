@@ -59,3 +59,25 @@ python -m reelkit.video render.py audio.wav ballfight_tmp.mp4 && python mux.py  
 - After the K.O.: a 0.35 s hit-stop, the loser shatters in slow motion, the winner takes the centre under the spot and
   plays its solo (bars 29-31); at 58.0 s the loser's pieces fly home, both glide to their corners at 59.15 s (HP refills,
   weapons reset) and rev; the "3" flies in during the last beat and lands on frame 0.
+
+## Effects (reelkit.fx, BALLFIGHT v2) - wiring them into an episode renderer
+
+Worked example: `projects/ballfight_organ_vs_harp/render.py` (search `reelkit.fx`). Build every effect once at import,
+from the run's events in time order (so frames render in any order and patch renders match), then:
+
+| Stage of the #27 / #28 renderer | Add |
+|---|---|
+| module level | `FL = fx.Flares(max_n=6)`, `BU = fx.Bursts()`, `PA = fx.Particles(seed)`, `MK = fx.Marks()`, `MO = fx.Moments()`, `SHK = fx.Shake(cap=2.5)`; loop over `EV` adding hits (`BU.add`, `FL.add`, `PA.emit`, `MK.add`), heavy hits to `SHK`, captioned abilities (`sim.story(RUN)['caps']`) to `MO` |
+| `camera(t)` | `dx, dy = SHK.offset(t)` instead of the old `shake(t)` |
+| `lights(t, cam)` | `FL.apply(L, t)`: the canvas / floor per-pixel passes and every `shade()` (ropes, posts, stands) pick the attack lights up |
+| `arena()` crowd | multiply each person's colour by `1 + 0.9 * FL.tint(heads, t)[j]` |
+| canvas pass | `alb = MK.apply(alb, sxp, szp, t, BAYER_FULL[ys, xs])` right after `S.canvas_albedo` (marks in the ring frame) |
+| after `sparks()` | `arr = PA.draw(arr, cam, t, light=lambda P: 1 + 0.6 * FL.tint(P, t))` |
+| after `dof()` | `fx.shimmer_world(img, cam, centre_world, radius, width, amp_px, t, k)` on shockwave / wave / blast fronts |
+| after grade + vignette (float, before the uint8 cast and the UI) | `fx.fringe` on big hits; `img = MO.apply_dim(img, t, keep=[(x, y, rp * 1.7) for both balls])`; `MO.speed_lines(img, t, k, x, y, rp, screen_velocity)`; `img = BU.draw(img, cam, t)` |
+
+Levels that worked for #35 (pearl / wine): row / string lights peak 0.4-0.6, landed hits 0.6-0.9, slams and waves
+1.1-1.2 (a pearl or other near-white fighter colour whitens the canvas fast: scale its colour by ~0.9 and keep peaks
+low); halve the old per-hit `fr.glow` once the bursts are in. Before the full render, run the flash test on the busiest
+stretch (render ~5 s of frames and `reelkit.flashcheck.analyse` the luminance): #35 peaked at 18.6 % of the frame.
+
