@@ -57,6 +57,17 @@ PULSE = [k for k in (0, 1) if CFG[k]['weapon']['kind'] == 'pulse']
 CORNER0 = [np.array(c) for c in RUN['corner']]
 STORY = sim.story(RUN)
 
+# ---------------------------------------------------------------- the fighters' own colours on the shared ring (series
+# rule, user Oct 23: every instrument has its own colour; the corners are just left / right). Runtime patches of the
+# imported scene, so projects/ballfight/scene.py stays as #27 uses it.
+S.CORNER_COL['red'] = np.clip(COL[0] * 0.9, 0, 255)
+S.CORNER_COL['blue'] = np.clip(COL[1] * 0.9, 0, 255)
+S.POSTS = {k: S.post_faces(k) for k in S.CORNERS}
+S.SKIRT_BAND = np.array([150, 140, 184])                 # a neutral band on the skirt
+S.SKIRT_FACES = S.platform_faces()
+LIGHT_RGB = [COL[k] / COL[k].max() for k in (0, 1)]     # corner light colour (max channel 1)
+CROWD_TINT = [0.78 + 0.42 * LIGHT_RGB[k] for k in (0, 1)]
+
 # ---------------------------------------------------------------- music-locked times shared with audio.py
 T_SOLO = T.next_bar(T_KO + 1.6)                       # the winner's solo starts on the first bar line after the K.O. moment
 SOLO_T = [T_SOLO + bt * T.BEAT for bt, m, d in T.SOLO[NAMES[WIN]]]
@@ -261,8 +272,8 @@ def lights(t, cam):
     d = S.SPOT - spot_aim(t)
     L.key('spot', d / np.linalg.norm(d), (1.05, 1.0, 0.96))
     rk = 1.0 + 0.25 * T.beat_pulse(t, 0.2)
-    L.point(S.RED_LIGHT, np.array([1.0, 0.22, 0.20]) * 1.1 * rk, 2.6)
-    L.point(S.BLUE_LIGHT, np.array([0.20, 0.42, 1.0]) * 1.1 * rk, 2.6)
+    L.point(S.RED_LIGHT, LIGHT_RGB[0] * 1.1 * rk, 2.6)
+    L.point(S.BLUE_LIGHT, LIGHT_RGB[1] * 1.1 * rk, 2.6)
     return L
 
 
@@ -615,10 +626,12 @@ FLASH_T = np.array(sorted(FLASH_EV))
 
 
 def led_colour(am, t, wk):
-    """LED boards: a magenta / cyan chase that steps on the beat (whole bars: loop-safe), gold for the champion"""
+    """LED boards: each fighter's colour on its own side, a chase that steps on the beat (whole bars: loop-safe), gold
+    for the champion"""
     beat = t / T.BEAT
     u = (am / (2 * math.pi) * 16 + beat) % 4
-    base = np.array([255, 70, 190]) if u < 2 else np.array([60, 220, 255])
+    side = COL[0] if math.sin(am) < 0 else COL[1]
+    base = side if u < 2 else side * 0.42 + 40
     k = 0.55 + 0.45 * T.beat_pulse(t, 0.18)
     gold = np.array([255, 200, 90])
     return (base * (1 - wk) + gold * wk) * k
@@ -667,7 +680,7 @@ def arena(fr, cam, L, t):
             if not (-6 < x < W + 6 and -6 < y < H + 10):
                 continue
             side = CROWD_P[j, 0]
-            tint = np.array([1.15, 0.78, 0.82]) if side < -1.5 else (np.array([0.78, 0.88, 1.2]) if side > 1.5 else np.array([1.0, 0.92, 1.0]))
+            tint = CROWD_TINT[0] if side < -1.5 else (CROWD_TINT[1] if side > 1.5 else np.array([1.0, 0.92, 1.0]))
             body = S.CROWD_COLS[CROWD_CI[j]] * tint * spill
             draw.ellipse([x - 1.9 * rh, y + 0.6 * rh, x + 1.9 * rh, y + 3.4 * rh], fill=tuple(int(v) for v in body * 0.8))
             draw.ellipse([x - rh, y - rh, x + rh, y + rh], fill=tuple(int(v) for v in body * 0.62))
@@ -884,7 +897,8 @@ def render(f):
     def draw_rope_side(s):
         for j, y in enumerate(S.ROPE_Y):
             P = rope_points(s, y, t)
-            c = shade(L, np.array([[0, 1.0, 0.3]]) / np.linalg.norm([0, 1, 0.3]), P.mean(0)[None], S.ROPE_COL[j], rimk=0.5)[0]
+            base = S.ROPE_COL[j] if j != 1 else COL[0 if s in (0, 3) else 1] * 0.92    # middle rope: the fighter's side
+            c = shade(L, np.array([[0, 1.0, 0.3]]) / np.linalg.norm([0, 1, 0.3]), P.mean(0)[None], base, rimk=0.5)[0]
             fr.line(cam, P, c, 2)
 
     def draw_post(name):
@@ -937,7 +951,7 @@ def render(f):
             arr, depth = fr.array(), fr.depth()
             for pts, u in ST.bow_trail_polys(cam, st, dth):
                 if st['haste'] > 0:
-                    layer_blend(arr, [pts], (200 + 40 * (1 - u), 228, 255), 0.40 * (1 - u))
+                    layer_blend(arr, [pts], COL[obj] * 0.55 + 115 * (1 - 0.3 * u), 0.40 * (1 - u))
                 else:
                     layer_blend(arr, [pts], (236, 232, 222), min(0.30, 0.04 + 0.02 * st['om']) * (1 - u))
             fr.set_array(arr, depth)
@@ -1008,7 +1022,7 @@ def render(f):
     img = dof(img, coc_map(depth, zf, 26.0, sharp=0.17))
     for name, lp in (('red', S.RED_LIGHT), ('blue', S.BLUE_LIGHT)):
         s_ = cam.wp(lp[None])[0]
-        fr.glow(s_[0], s_[1], 16, (255, 70, 60) if name == 'red' else (70, 120, 255), 0.35 + 0.15 * T.beat_pulse(t, 0.2))
+        fr.glow(s_[0], s_[1], 16, tuple(COL[0] if name == 'red' else COL[1]), 0.35 + 0.15 * T.beat_pulse(t, 0.2))
     for k, (s_, rp) in drawn.items():
         st = fs[k]
         if st['glow'] > 0.05:

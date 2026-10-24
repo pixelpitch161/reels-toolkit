@@ -143,7 +143,7 @@ def dart_quads(x, z, ang, y=0.48, L_=0.34, Wd=0.07):
 def draw_dart(fr, cam, L, shade, x, z, ang, col):
     head, body = dart_quads(x, z, ang)
     fr.poly(cam, body, np.clip(np.array(col) * 0.5 + 120, 0, 255))
-    c = shade(L, np.array([[0, 1.0, 0]]), head.mean(0)[None], DART_COL, rimk=0.4)[0]
+    c = shade(L, np.array([[0, 1.0, 0]]), head.mean(0)[None], np.array(col) * 0.45 + DART_COL * 0.55, rimk=0.4)[0]
     fr.poly(cam, head, c + 20)
 
 

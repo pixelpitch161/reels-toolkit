@@ -8,6 +8,9 @@ become frantic spiccato, and the bow's quarter turns play the melody. Abilities:
 16ths for a bar) / CRASH CYMBAL (shield; the bow bounces off) / DOUBLE KICK (slam: the beater taps an 8th early, then
 stomps); PIZZICATO (arc of 5 darts on the 16ths) / TREMOLO (haste x2.5) / SCREECH (wave). Mood B, dark Balkan fire:
 D harmonic minor at 141.64 BPM, a drum-less bed (upright-bass oom-pah, musette accordion, cimbalom shimmer).
+Colours (series table, user Oct 23): DRUMS orange, VIOLIN violet; `render.py` patches the imported ring at runtime
+(corner cushions, the middle rope per side, a neutral skirt band, corner lights, LED barrier sides, crowd tints), so
+`projects/ballfight/scene.py` stays as #27 uses it. `render_backup.py` / `styles_backup.py` = v1 (red / blue).
 
 Honest run, seed 568 (6 fits in 932; rules frozen after tune.py): Drums edge the opening, the speeding bow takes over at
 18 s and builds a 62-26 lead, DOUBLE KICK (37.7 s) starts the comeback, SCREECH answers (43.6 s), and DRUMS win on the
