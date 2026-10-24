@@ -7,3 +7,5 @@
 - `reelkit.audio.section_levels(wav, spans)` / `band_level(wav, lo, hi, spans)`: loudness checks
 - `python tools/ballfight_replay_hash.py`: hashes of the finished BALLFIGHT episodes' honest runs (events + recorded
   arrays); run before and after an engine change and `diff` them: every line must match (parallel-production rule)
+- `python -m reelkit.fx out.png`: self-test sheet of the shared effects kit (`reelkit/fx.py`: attack lights, impact
+  bursts, camera shake, heat shimmer, chromatic fringing, particles with trails, canvas marks, ability dim + speed lines)

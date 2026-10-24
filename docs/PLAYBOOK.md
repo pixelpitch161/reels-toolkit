@@ -81,6 +81,10 @@ of an existing series (e.g. Battle of the Bands) in ~30–40 min.
   in `projects/` for one to reuse (e.g. the cat in `count_the_thunder`, the stage in `battle_of_the_bands`,
   the battle engine `battle_of_the_bands/battle.py`).
   When you build something clearly reusable, move it into `reelkit/` in its own small commit.
+- **Effects: use `reelkit.fx`** (BALLFIGHT v2, user Oct 24): attack lights in the fighter's colour (`Flares` -> the
+  scene's `Lights`), 1-2 frame ink-starburst impacts (`Bursts`, bright ones capped at 3 / s), a little `Shake`, heat
+  `shimmer` and local chromatic `fringe`, `Particles` with trails (per-instrument presets), fading canvas `Marks`, and
+  ability `Moments` (<= 30 % eased dim + speed lines). No full-screen flashes (user rule); `reelkit.flashcheck` must pass.
 - **Send stills early** (as now), so redirections happen before the expensive steps.
 
 ## Process
