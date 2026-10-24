@@ -276,27 +276,30 @@ FIGHTERS = {
             low=dict(name='HONK', kind='slam', tele=2, radius=1.35, dmg=11.0, knock=1.6)),
         pp='SAX', register=(49, 77), idiom='flail'),
 
-    # ---- #31 BALLFIGHT #5: DJ vs producer (numbers tuned once with ballfight_turntables_vs_synth/tune.py, frozen)
+    # ---- #31 BALLFIGHT #5 (v2 redesign, user Oct 24): THE RING IS THE RECORD vs PATCH CABLES (tuned once with
+    # ballfight_turntables_vs_synth/tune.py, frozen)
     'TURNTABLES': dict(
         color=(190, 245, 60), dark=(96, 140, 20), corner='red',      # lime (series colour table, IDEAS)
         view=(20, 22, 0), pitch=45,                        # pitch: the deck tipped toward the camera (platter + label)
-        weapon=dict(kind='volley', style='vinyl',          # vinyl frisbees that ricochet off the ropes
-                    n0=1, grow=0.5, n_max=8, every=2, on16=True, bounce=2, speed=4.6, dmg=0.33,
-                    spread=9.0, max_fan=60.0),
+        weapon=dict(kind='scratch_floor', style='record',  # the ring is the DJ's record: every bar a scratch jerks the
+                    every=4, dur_beats=1, base=1.3, grow=0.06, max=2.2,     # floor and flings the opponent into the ropes
+                    out=0.4, window=0.8, dmg=1.6, cap=1.6),
         abilities=dict(
-            unlock1=dict(name='SCRATCH', kind='haste', mult=4.0, dur_beats=4, every_bars=4),   # discs on the 8ths, a bar
+            unlock1=dict(name='SCRATCH', kind='haste', mult=2.0, dur_beats=8, every_bars=6),   # scratches twice as often
             unlock2=dict(name='REWIND', kind='rewind', window=2.0, zip_beats=1, min_undo=5.0, every_bars=6),
             low=dict(name='BASS DROP', kind='slam', tele=2, radius=1.35, dmg=11.0, knock=1.6)),
         pp='TURNTABLES', register=(50, 74), idiom='scratch'),
     'SYNTH': dict(
         color=(70, 228, 255), dark=(20, 120, 150), corner='blue',    # cyan (series colour table, IDEAS)
         view=(10, 20, 0), pitch=28,
-        weapon=dict(kind='orbit', style='arp',             # arpeggiator satellites: glowing notes orbiting the ball
-                    n0=2, base=0.90, spin=3.2, size=0.14, dmg=4.0, knock=0.3, cooldown=0.45, grow=0.5, n_max=8,
-                    parry=True, parry_cool=0.5, wobble=0.45, wobble_beats=1),
+        weapon=dict(kind='tether', style='cables',         # patch cables: plugs leash the opponent, a voltage pulse per
+                    every=2, n0=1, grow=0.5, n_max=4,      # arpeggio note runs down every cable
+                    plug_speed=6.0, plug_r=0.14, plug_dmg=1.0, life_beats=8,
+                    volt16=2, volt_speed=9.0, volt_dmg=0.17, length=2.4, snap=0.15),
         abilities=dict(
-            unlock1=dict(name='LFO', kind='haste', mult=2.0, dur=3.0, every_bars=6),           # faster, wobbling orbit
-            unlock2=dict(name='SAWTOOTH', kind='arc', n=9, sweep=120.0, beats=1, speed=5.6, dmg=0.9, every_bars=4),
+            unlock1=dict(name='LFO', kind='haste', mult=2.0, dur=3.0, every_bars=6),           # pulses at double rate
+            unlock2=dict(name='SAWTOOTH', kind='lash', beats=4, n_min=2, len=2.2, spread=24, sweep=70, period_beats=0.5,
+                         lag=0.15, dmg=1.6, knock=0.5, cool=0.3, every_bars=5),
             low=dict(name='WHITE NOISE', kind='wave', speed=4.5, radius=9.0, dmg=8.0, knock=1.5)),
         pp='SYNTH', register=(57, 81), idiom='arp'),
 }
