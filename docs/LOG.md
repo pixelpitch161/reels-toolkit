@@ -768,3 +768,33 @@
   opening -19.0 dBFS, build +3.8 dB. Render 0.27 s/frame/core (4.1 min) + mux; ~8.5 min total.
 - Feedback: (pending)
 
+## BALLFIGHT #5: Turntables vs Synth (`projects/ballfight_turntables_vs_synth`)
+- #31, produced in parallel with #29-#35 on the shared engine. TURNTABLES throw vinyl frisbees that ricochet off the
+  ropes (new volley option `bounce`, up to 2; `on16` so SCRATCH's haste x4 fires them on the 8ths); SYNTH is an
+  arpeggiator: note gems orbit the ball and hit what they touch (new weapon kind `orbit`, 2 -> 8 satellites on fixed
+  seats, they also swat records). REWIND is a new ability kind: the ball keeps its own 2 s record, HP goes back to its
+  value 2 s ago (`heal` event) while it zips back along that path in one beat, intangible. Mood: dark breakbeat,
+  F minor, 137.70 BPM (35 bars).
+- Honest run, seed 129 (5 fits in 666; TURNTABLES 47 % / SYNTH 53 % over 631 decided): satellites edge the opening, the
+  records take over at 21.2 s, two REWINDs (7.2 / 8.8 HP undone), 8 satellites take the decks from 51 to 4 HP in four
+  seconds, WHITE NOISE and BASS DROP both fire, TURNTABLES win at 49.72 s with 1.5 HP. All six abilities get captions.
+- Parallel-production lessons: seven sessions edited fight.py / fighters.py at once; every engine commit hit a merge
+  conflict in the same spots (new methods before the abilities section, the roster's closing brace). Both sides were
+  pure insertions, so keeping both and re-running tools/ballfight_replay_hash.py before the push was enough. Reusing
+  recorded fields (`orbit`: TH = angle, NV = satellites, BL = radius) kept the recorder and every renderer untouched.
+- Bridge: appending to pp_bridge.ENTRANTS changes #26's 16-entrant roster (its run, roster grid and sprites iterate
+  NAMES); later instruments now go in EXTRA (entrant() searches both; ACOUSTIC moved there). The organ / synth /
+  turntables modules cache notes by event index, so voice() clears that cache (otherwise every note = the first one).
+- Rules lessons: the first orbit (0.4 beyond the surface) barely reached the decks (12 hits vs 200 records); at 0.9 it
+  balances. +1 satellite per landed hit snowballed, so +1 per two. Lead changes ~0.6 per run, fit rate ~0.75 %.
+- Look lessons: flat instruments need tipping toward the 3/4 camera; the episode renders sprites with an extra pitch
+  (deck 45 deg, synth 28) and lifts the black deck (+30) so it reads through the lime glass. Satellites at 0.15 were
+  specks; at 0.24 with a facet, a core and an orbit line they read.
+- Sound lessons: the satellites crossing the top of the orbit = the arpeggio gives a figure that densifies by itself
+  (1 note/s with 2 satellites, ~8/s with 8 under LFO). Scratches use the Pixel Pitch deck's own motion curves on a
+  vocal-free F-minor stab (the deck's own 'fresh' source imitates a voice). The synth's voice has a built-in echo at
+  its own tempo: notes are cut at 0.34 s before it.
+- Checks: safe zone OK (0.25 s steps); subject CoC 0 on all 1830 frames; loopcheck PASS render + mp4 (seam 2.4x);
+  flash 0 general (max 8.6 %); opening -16.4 dBFS, build +3.4 dB; leads 2-12 dB over the bed in 400-4000 Hz. Render
+  9.9 min + mux.
+- Feedback: (pending)
