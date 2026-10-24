@@ -823,7 +823,12 @@
   needed +6.4 dB (trumpet) / +3.2 dB (sax) to sit 3-12 dB over the band in 300-5000 Hz.
 - Checks: safe zone OK (0.25 s steps); subject CoC 0 on all 1830 frames; loopcheck PASS render + mp4 (seam 1.9x); flash
   0 general; opening -17.5 dBFS, build +3.5 dB. Render ~0.19 s/frame/core (~6 min) + 3.5 min mux.
-- Feedback: (pending)
+- Feedback v1 (Oct 24): the trumpet model was inaccurate (made before the series used Chrome references), and the
+  laser had a hard cutoff at the ball. v2: the Pixel Pitch modern trumpet rebuilt from a Yamaha YTR-8335LA side view +
+  top view (the old one had the leadpipe on top and a small low bell; a real trumpet has the bell pipe on top, the
+  leadpipe in front of the valves, the main slide looping down at the bell end, the bell bow at the mouthpiece end).
+  Lesson: a light effect should start at its source inside the subject (the bell, inside the glass) with blurred
+  halos, not at a hard polygon edge on the ball's rim. Full re-render (the model is in every frame) - feedback v2: (pending)
 
 ## BALLFIGHT #9: Organ vs Harp (`projects/ballfight_organ_vs_harp`)
 - Ninth BALLFIGHT episode (#35), produced in parallel with #29-#34 on the shared engine. ORGAN erupts rows of organ pipes
