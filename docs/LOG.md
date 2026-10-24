@@ -737,3 +737,34 @@
   bridge's `voice()` adds the whole drone to every note); accordion chords via `reed()` with the 'golden' tone (the
   showcase 'morino' scene adds a dotted-8th echo).
 - Feedback: (pending)
+
+## BALLFIGHT #8: Trombone vs French Horn (`projects/ballfight_trombone_vs_horn`)
+- Episode #34 on #27's engine, ring, HUD and count-in (imported; renderer copied from #28). TROMBONE (left, mint) aims its
+  slide and shoots it out like a lance on every beat (new blade `mode='thrust'`: reach 0.95 -> 2.5, +0.08 per landed hit,
+  swats arrows it passes through); HORN (right, copper) fires curving hunting-call arrows every 2 beats (#29's `curve` +
+  new `curve_grow`: 52 -> 137 deg/s; +half an arrow per landed volley). Abilities: SAD TROMBONE (shockwave + new `slow`:
+  0.6x for 1 s) / POWER SLIDE (thrusts on 8ths) / PEDAL TONE (a giant flat-shaded brass bell drops in and stomps);
+  STOPPED HORN (copper bell-rim shield) / HORN RIP (arc of 7 curving arrows, new arc `curve=True`) / TALLY-HO (chevron
+  wave). Mood: cinematic brass trailer, D minor at 121.97 BPM; the bed has no brass (strings, braams, taiko).
+- Honest run, seed 1261 (8 fits in 2,848; TROMBONE 51 % / HORN 49 % over 2,776 decided): lance leads early, arrows drag
+  it level by 32 s, 4 lead changes, PEDAL TONE lands 45.3, TROMBONE wins at 50.21 s with 4.8 HP.
+- Parallel-production lessons: six other sessions pushed engine additions while this one was tuning; two rebases with
+  conflicts (keep both sides, then verify with tools/ballfight_replay_hash.py against the upstream file before pushing).
+  #29 had already added a `curve` volley (homing with a lifetime), so this episode dropped its own homing arrays and only
+  added growth + curving arcs on top: check the latest engine for an existing option before adding a parallel one. New
+  recorded arrays (EXT, SLW, CRV) only exist when a fighter uses the options, so the shared hash guard stays identical.
+- Rules lessons: homing vs a lance is touchy both ways (strong homing won every run by ~20 s; slow arrows + a parrying
+  lance lost every run); the lance's parry is the counterplay that balances them. Desperation moves are damage-scaled too:
+  at dmg_scale 0.47 they needed raw 24 / 20 to swing anything. 80 seeds read 49 % but 812 read 61 %: check balance on a
+  few hundred seeds (tune.py now uses seeds 1.. like the search; it runs at scale 1.0 unless `scale=` is passed).
+- Look lessons: the giant bell as stacked translucent discs read as a mushroom; a flat-shaded surface of revolution
+  (painter-sorted quads) reads as a bell, but brass under the spot needs a base ~0.5x BRASS or bloom turns it white.
+- Loop lesson: this fight changes little per frame (median step 1.15-1.4), so the downbeat on frame 0 (corner lights,
+  LEDs, ropes) stood out at 2.6x; a 120 ms pre-beat ramp in timeline.beat_pulse (was 70 ms) -> 1.5x (render), 1.9x (mp4).
+- Sound: thrusts = the ostinato (glissando into each stab via a time-warp), landed lances = accents with a 5-semitone
+  glide, volleys = the horn's call (horn fifths when leading); fighters 8-13 dB over the bed after giving the trombone
+  bus 1.5x (its voice is quieter in 300-5000 Hz than the horn's).
+- Checks: safe zone OK; subject CoC 0 on all 1830 frames; loopcheck PASS render + mp4; flash 0 general (max 8 %);
+  opening -19.0 dBFS, build +3.8 dB. Render 0.27 s/frame/core (4.1 min) + mux; ~8.5 min total.
+- Feedback: (pending)
+
