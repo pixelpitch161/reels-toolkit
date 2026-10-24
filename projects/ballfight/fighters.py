@@ -10,6 +10,13 @@ A fighter is a glass ball with a low-poly Pixel Pitch instrument inside. Every f
                 'pulse'   a ring blasting out from the ball every `every` beats (on the 16th grid, so haste can roll it);
                           reach `base` beyond the surface, +`grow` per landed pulse up to `max_reach`; haste pulses hit
                           for `sub_dmg` x and don't grow it; `clears`: it swats enemy projectiles in its path
+                'beam'    charges for `charge_beats` (aim locked at the opponent's spot predicted `lead` x the charge
+                          ahead; the bell tracks the opponent at `track` rad/s between shots), then fires a straight
+                          blast every `every` beats: length `base` beyond the surface, width `width`, live for `hold` s,
+                          hits once; +`grow` length / +`grow_w` width per landed beam up to `max_len` / `max_w`; pierces
+                          (clears) enemy projectiles in its path
+              volley option `curve` (deg/s): projectiles home in on the opponent at that turn rate and fade after
+                          `life` s; `hit_r`: their hit radius (default Rules.KEY_R)
   abilities   unlock1 (at LV2), unlock2 (at LV3), low (once, when HP drops below Rules.LOW_HP). Kinds:
                 'shockwave'  expanding ring: knocks back + damages what it passes, clears enemy projectiles
                 'shield'     blocks all damage for `dur` s (a blade hitting it bounces and reverses)

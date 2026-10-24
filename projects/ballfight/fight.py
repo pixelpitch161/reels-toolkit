@@ -8,7 +8,8 @@ Rules (the same for both fighters; nothing is scripted or edited):
   - balls move at one constant speed and bounce off the ropes (the ring is |x|, |y| <= A in the ring's own frame); the
     ropes "give" a little (a seeded +-ROPE_GIVE deg on every bounce, so no run settles into a fixed orbit); ball vs ball
     is an elastic clash, after which both go back to the shared speed;
-  - weapons and abilities come from fighters.py (blade / volley / pulse; shockwave, shield, haste, arc, wave, slam);
+  - weapons and abilities come from fighters.py (blade / volley / pulse / beam; shockwave, shield, haste, arc, wave,
+    slam); a volley may `curve` (homing projectiles with a turn-rate limit and a lifetime);
   - every landed hit grows the attacker's weapon (a blade gets longer and / or spins faster, a volley gets one more
     projectile, a pulse reaches further), so the fight escalates by itself; levels come from damage dealt (LV2 / LV3 unlock abilities), and the 'low' ability fires once
     when HP drops below LOW_HP;
@@ -49,6 +50,11 @@ def _wrap(a):
     return (a + math.pi) % (2 * math.pi) - math.pi
 
 
+def _clears(w):
+    """does this weapon destroy enemy projectiles it passes? (beams: `clears`, default True)"""
+    return w.get('clears', True)
+
+
 def _swept(th0, dth, phi, half):
     """does a blade sweeping from th0 by dth (signed) cross the angular interval phi +- half?"""
     if dth < 0:
@@ -79,6 +85,9 @@ class Ball:
         # volley
         self.n_vol = float(self.w.get('n0', 0))   # a float: `grow` may add a fraction of a key per landed volley
         self.haste_mult = 1.0
+        # beam (opt-in: only fighters whose weapon kind is 'beam' use these)
+        self.beam_w = self.w.get('width', 0.0)      # beam width; `blade_len` holds the beam's length beyond the surface
+        self.charge = None                          # dict(aim, kb_fire, t0) while the bell charges
         # ability state
         self.shield = 0.0
         self.haste = 0.0
@@ -117,6 +126,9 @@ class Fight:
         self.waves = []                   # dict(owner, c, r, speed, rmax, dmg, knock, kind, hit=False, name)
         self.slams = []                   # dict(owner, c, t_slam, radius, dmg, knock, done)
         self.arcs = []                    # dict(owner, t0, t1, aim, sweep, n, emitted, speed, dmg)
+        self.beams = []                   # dict(owner, o, d, len, w, t1, hit, dmg, knock): active beam blasts
+        self.kcurve = {}                  # projectile id -> (turn rate rad/s, time it fades): curving volleys only
+        self.khr = {}                     # projectile id -> hit radius (when it isn't Rules.KEY_R)
         self.events = []
         self.t = 0.0
         self.winner = None
@@ -183,6 +195,10 @@ class Fight:
             a = aim + (j - (n - 1) / 2) * spread
             pos = B.p + (self.R.R + 0.06) * np.array([math.cos(a), math.sin(a)])
             self.spawn_key(k, pos, a, w['speed'], w['dmg'], vol, j)
+            if w.get('curve'):
+                self.kcurve[self.next_id - 1] = (math.radians(w['curve']), self.t + w.get('life', 3.0))
+            if w.get('hit_r'):
+                self.khr[self.next_id - 1] = w['hit_r']
         self.ev('fire', k, n, vol)
 
     def fire_pulse(self, k, main):
@@ -246,6 +262,110 @@ class Fight:
                                 B.frets += 1
                             if w.get('spin_grow'):
                                 B.spin = min(w['spin_max'], B.spin + w['spin_grow'])
+
+    def beam_beat(self, k, kb):
+        """beam weapons, on the beat grid: fire a charged beam when its beat comes, then start the next charge every
+        `every` beats (haste divides the interval). The aim locks when the charge starts, at the opponent's predicted
+        spot `lead` x the charge time ahead (a straight line: walls, clashes and knockbacks make it miss)"""
+        B, O = self.balls[k], self.balls[1 - k]
+        w = B.w
+        if B.charge is not None and kb >= B.charge['kb_fire']:
+            self.beam_fire(k)
+        ev = max(1, int(round(w['every'] / self.ab_mult(k))))
+        if B.charge is None and kb % ev == 0:
+            nb = max(1, min(int(w.get('charge_beats', 1)), ev))
+            tc = nb * self.R.beat
+            tgt = O.p + O.v * tc * w.get('lead', 1.0)
+            src = B.p + B.v * tc
+            d = tgt - src
+            aim = math.atan2(d[1], d[0])
+            B.charge = dict(aim=aim, kb_fire=kb + nb, t0=self.t)
+            self.ev('charge', k, aim, tc, float(B.blade_len), float(B.beam_w))
+
+    def beam_fire(self, k):
+        B = self.balls[k]
+        w = B.w
+        a = B.charge['aim']
+        d = np.array([math.cos(a), math.sin(a)])
+        o = B.p + d * (self.R.R + 0.04)
+        self.beams.append(dict(owner=k, o=o, d=d, len=float(B.blade_len), w=float(B.beam_w), t1=self.t + w.get('hold', 0.12),
+                               hit=False, dmg=w['dmg'], knock=w.get('knock', 0.9)))
+        self.ev('beam', k, float(o[0]), float(o[1]), a, float(B.blade_len), float(B.beam_w))
+        B.charge = None
+
+    def beams_step(self, dt):
+        """beam fighters' bells track the opponent (locked while charging); active beams hit once each (a capsule test,
+        so a growing width matters) and pierce enemy projectiles in their path; a landed beam grows length + width"""
+        R = self.R.R
+        for k, B in enumerate(self.balls):
+            if B.w['kind'] != 'beam':
+                continue
+            if B.charge is not None:
+                B.th = B.charge['aim'] % (2 * math.pi)
+            else:
+                rel = self.balls[1 - k].p - B.p
+                want = math.atan2(rel[1], rel[0])
+                dth = _wrap(want - B.th)
+                step = B.w.get('track', 5.0) * dt
+                B.th = (B.th + max(-step, min(step, dth))) % (2 * math.pi)
+        for Bm in self.beams:
+            k = Bm['owner']
+            o = 1 - k
+            O = self.balls[o]
+            rel = O.p - Bm['o']
+            s_ = min(Bm['len'], max(0.0, float(rel @ Bm['d'])))
+            off = rel - Bm['d'] * s_
+            dist = float(np.hypot(*off))
+            if not Bm['hit'] and dist < R + Bm['w'] / 2:
+                Bm['hit'] = True
+                n = off / dist if dist > 1e-6 else -Bm['d']
+                hx, hy = (O.p - n * R).tolist()
+                landed = self.damage(k, o, Bm['dmg'], 'beam', hx, hy)
+                self.knock(o, Bm['d'] + 0.3 * n, Bm['knock'])
+                if landed:
+                    A_ = self.balls[k]
+                    A_.blade_len = min(A_.w['max_len'], A_.blade_len + A_.w['grow'])
+                    A_.beam_w = min(A_.w['max_w'], A_.beam_w + A_.w.get('grow_w', 0.0))
+            if len(self.kp) and _clears(self.balls[k].w):
+                rk = self.key_r()
+                relk = self.kp - Bm['o'][None]
+                sk = np.clip(relk @ Bm['d'], 0.0, Bm['len'])
+                dk = np.hypot(*(relk - sk[:, None] * Bm['d'][None]).T)
+                self.kill_keys((self.kown == o) & (dk < Bm['w'] / 2 + rk), 'cleared', k)
+        self.beams = [Bm for Bm in self.beams if self.t < Bm['t1'] - 1e-9]
+
+    def key_r(self):
+        """every projectile's hit radius (Rules.KEY_R unless its weapon set `hit_r`)"""
+        if not self.khr:
+            return self.R.KEY_R
+        return np.array([self.khr.get(int(i), self.R.KEY_R) for i in self.kid])
+
+    def steer(self, dt):
+        """curving volleys: each homing projectile turns toward its target at a limited rate; it fades after its life"""
+        if not len(self.kp):
+            return
+        live = set(int(i) for i in self.kid)
+        for i in [i for i in self.kcurve if i not in live]:
+            del self.kcurve[i]
+            self.khr.pop(i, None)
+        fade = np.zeros(len(self.kp), bool)
+        for j in range(len(self.kp)):
+            c = self.kcurve.get(int(self.kid[j]))
+            if c is None:
+                continue
+            rate, t_die = c
+            if self.t >= t_die:
+                fade[j] = True
+                continue
+            tgt = self.balls[1 - int(self.kown[j])].p
+            rel = tgt - self.kp[j]
+            want = math.atan2(rel[1], rel[0])
+            cur = math.atan2(self.kv[j, 1], self.kv[j, 0])
+            dth = _wrap(want - cur)
+            a = cur + max(-rate * dt, min(rate * dt, dth))
+            sp = float(np.hypot(*self.kv[j]))
+            self.kv[j] = [sp * math.cos(a), sp * math.sin(a)]
+        self.kill_keys(fade, 'fade')
 
     # ------------------------------------------------------------------ abilities
     def ab_dur(self, ab):
@@ -392,6 +512,8 @@ class Fight:
             mx, my = ((P.p + Q.p) / 2).tolist()
             self.ev('clash', -1, mx, my)
         # projectiles
+        if self.kcurve:
+            self.steer(dt)
         if len(self.kp):
             self.kp = self.kp + self.kv * dt
             out = (np.abs(self.kp) > A).any(1)
@@ -402,7 +524,7 @@ class Fight:
                 if not enemy.any():
                     continue
                 dd = np.hypot(*(self.kp - B.p[None]).T)
-                m = enemy & (dd < R + self.R.KEY_R)
+                m = enemy & (dd < R + (self.key_r() if self.khr else self.R.KEY_R))
                 if m.any():
                     for i in np.nonzero(m)[0]:
                         att = int(self.kown[i])
@@ -486,6 +608,8 @@ class Fight:
                         ev = max(1, int(round(B.w['every'] / (self.ab_mult(k)))))
                         if kb % ev == 0:
                             self.fire_volley(k)
+                    elif B.w['kind'] == 'beam':
+                        self.beam_beat(k, kb)
             if pulse and self.t + 1e-9 >= next16 * s16:
                 k16 = next16 - k16_0
                 next16 += 1
@@ -502,6 +626,8 @@ class Fight:
             for k, B in enumerate(self.balls):
                 if B.w['kind'] == 'blade':
                     self.blade_step(k, dt)
+            if self.beams or any(B.w['kind'] == 'beam' for B in self.balls):
+                self.beams_step(dt)
             self.effects_step(dt)
             self.abilities_step(on_beat)
             step += 1
