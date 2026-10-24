@@ -48,6 +48,7 @@ EXTRA = [
     ('ACOUSTIC', 'acoustic_lowpoly', 'steel', (40, 76), 0, 1.0),       # #33 BALLFIGHT: the modern steel-string
     ('TURNTABLES', 'turntables60_lowpoly', None, (50, 74), 0, 1.0),    # #31 BALLFIGHT: the modern deck (organ stabs; midi < 12 = scratches)
     ('SYNTH', 'synth60_lowpoly', None, (57, 81), 0, 1.0),              # #31 BALLFIGHT: the modern poly synth
+    ('ORGAN', 'organ60_lowpoly', 'sulp', (36, 84), 0, 1.0),            # #35 BALLFIGHT: Saint-Sulpice case + reeds
 ]
 DRUM_KEYS = (36, 38, 41, 45, 48, 49)    # kick, snare, floor / low / high tom, crash
 _MODS = {}
