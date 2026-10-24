@@ -44,7 +44,7 @@ T_FIGHT = BAR                   # FIGHT! lands on the bar-1 downbeat: the drop, 
 COUNT = [(0.0, '3'), (BEAT, '2'), (2 * BEAT, '1'), (BAR, 'FIGHT!')]
 
 # ---------------------------------------------------------------- frozen rules (tune.py; the same for every seed)
-DMG_SCALE = 0.68                # tuned once (tune.py, 160 seeds a cell: UKULELE ~half, median K.O. ~52 s), then frozen
+DMG_SCALE = 0.72                # v2 re-tuned once (tune.py, 160 seeds a cell), then frozen
 
 # ---------------------------------------------------------------- story targets (seed_search.py scores runs against these)
 T_KO = (49.0, 53.0)
