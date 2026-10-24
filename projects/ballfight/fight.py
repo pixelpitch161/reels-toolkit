@@ -352,7 +352,7 @@ class Fight:
         dist = float(np.hypot(*d))
         lead = 0.5 * dist / (self.R.V * (1 + power))
         dd = O.p + O.v * lead - B.p
-        ang = math.atan2(dd[1], dd[0])
+        ang = self.aim_blend(B, dd, w.get('aim_k', 1.0))
         u = np.array([math.cos(ang), math.sin(ang)])
         B.boost = max(B.boost, power)
         B.v = u * self.R.V * (1 + B.boost)
@@ -369,8 +369,7 @@ class Fight:
         enemy along the stroke"""
         B, O = self.balls[k], self.balls[1 - k]
         w = B.w
-        d = O.p - B.p
-        aim = math.atan2(d[1], d[0])
+        aim = self.aim_blend(B, O.p - B.p, w.get('aim_k', 1.0))
         B.rake_dir = -B.rake_dir
         S = w['sweep']
         self.rakes.append(dict(owner=k, c=B.p.copy(), aim=aim, u=np.array([math.cos(aim), math.sin(aim)]),
@@ -380,6 +379,17 @@ class Fight:
                                knock=w['knock'] * (1.0 if main else 0.6), hit=False, grow=bool(main), s_prev=-B.rake_dir * S))
         self.ev('rake', k, int(main), float(B.blade_len), float(B.p[0]), float(B.p[1]), float(aim), float(B.rake_dir),
                 float(S), float(w['stroke']))
+
+    @staticmethod
+    def aim_blend(B, d, k_aim):
+        """the attack's direction: toward d (the enemy) blended with where the ball is already heading (`aim_k` 1 = dead
+        on target, less = it goes 'in front of it', so it can miss)"""
+        if k_aim >= 1.0:
+            return math.atan2(d[1], d[0])
+        dh = d / (np.hypot(*d) + 1e-9)
+        vh = B.v / (np.hypot(*B.v) + 1e-9)
+        m = k_aim * dh + (1 - k_aim) * vh
+        return math.atan2(m[1], m[0])
 
     @staticmethod
     def rake_lateral(tau, dur, S, direction):
