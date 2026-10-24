@@ -866,6 +866,88 @@ class Fight:
                 B.spin = 0.0
                 self.ev('wrap', k, t_end, d0, float(B.wrap['L1']))
 
+    # ------------------------------------------------------------------ #32 v2: oom-pah swallow (opt-in weapon kind 'swallow')
+    def swallow_setup(self, k):
+        B, O = self.balls[k], self.balls[1 - k]
+        B.sw = None                                   # the current oom-pah: dict(t_in, t_pah, caught, ev_i) or None
+        B.cannon = None                               # after a spit: dict(t_end, ev_i) until the enemy hits a rope
+        d = O.p - B.p
+        B.th = math.atan2(d[1], d[0]) % (2 * math.pi)            # the bell starts facing the enemy
+
+    def swallow_beat(self, k, kb):
+        """swallow: every `every` beats (haste divides it) the bell goes "oom": it inhales for `inhale` beats; "pah"
+        comes `pah` beats after the oom (both scale with haste)"""
+        B = self.balls[k]
+        w = B.w
+        m = self.ab_mult(k)
+        if kb % max(1, int(round(w['every'] / m))) == 0 and (B.sw is None or B.sw['done']):
+            B.sw = dict(t0=self.t, t_in=self.t + w['inhale'] * self.R.beat / m, t_pah=self.t + w['pah'] * self.R.beat / m,
+                        caught=False, done=False)
+            self.ev('oom', k, B.sw['t_in'], B.sw['t_pah'], float(B.blade_len))
+
+    def swallow_step(self, k, dt):
+        """swallow: the bell turns toward the enemy (`aim_rate`). While it inhales, an enemy whose surface is within the
+        suction reach (`blade_len`) is steered hard toward the bell (`suck`, units/s^2; its speed is kept); touching the
+        bell (`catch` margin) it is SWALLOWED (`dmg`): it rides inside the tuba, held, until "pah" spits it out like a
+        cannonball (`dmg_spit`, speed boost `spit_boost`) toward the open ring (seeded `jitter` deg); if it hits a rope
+        within `spit_t` s it takes `dmg_rope`. A swallow that lands lengthens the reach (`grow`, up to `max_reach`)."""
+        B, O = self.balls[k], self.balls[1 - k]
+        w = B.w
+        R = self.R.R
+        rel = O.p - B.p
+        lim = w.get('aim_rate', 6.0) * dt
+        B.th = (B.th + max(-lim, min(lim, _wrap(math.atan2(rel[1], rel[0]) - B.th)))) % (2 * math.pi)
+        if B.cannon is not None:                         # the spat enemy: a rope hit while it flies is the cannonball
+            for e in self.events[B.cannon['ev_i']:]:
+                if e[1] == 'rope' and e[2] == 1 - k:
+                    self.damage(k, 1 - k, w['dmg_rope'], 'cannon', e[5], e[6])
+                    B.cannon = None
+                    break
+            else:
+                B.cannon['ev_i'] = len(self.events)
+                if self.t > B.cannon['t_end']:
+                    B.cannon = None
+        S = B.sw
+        if S is None or S['done']:
+            return
+        if S['caught']:
+            O.p = B.p.copy()                             # inside the tuba
+        elif self.t < S['t_in']:
+            dist = float(np.hypot(*rel))
+            if dist - 2 * R < B.blade_len and dist > 1e-6:
+                sp = float(np.linalg.norm(O.v))
+                v = O.v - rel / dist * w['suck'] * dt
+                O.v = v / (np.linalg.norm(v) + 1e-12) * sp
+            if dist < 2 * R + w.get('catch', 0.12):
+                hx, hy = (B.p + rel / max(dist, 1e-6) * R).tolist()
+                if O.shield > 0:
+                    self.ev('block', 1 - k, k, hx, hy, 'swallow')
+                    S['t_in'] = self.t
+                else:
+                    landed = self.damage(k, 1 - k, w['dmg'], 'gulp', hx, hy)
+                    if landed:
+                        S['caught'] = True
+                        O.held = True
+                        O.p = B.p.copy()
+                        B.blade_len = min(w['max_reach'], B.blade_len + w['grow'])
+                        self.ev('gulp', k, hx, hy, float(B.blade_len))
+        if self.t + 1e-9 >= S['t_pah']:
+            S['done'] = True
+            if not S['caught']:
+                self.ev('pah', k, 0, float(B.th))
+                return
+            to_open = -B.p if float(np.hypot(*B.p)) > 0.3 else np.array([math.cos(B.th), math.sin(B.th)])
+            a = math.atan2(to_open[1], to_open[0]) + math.radians(self.rng.uniform(-1, 1) * w.get('jitter', 25.0))
+            d = np.array([math.cos(a), math.sin(a)])
+            lim_ = self.R.A - R - 1e-3
+            O.p = np.clip(B.p + d * (2 * R + 0.02), -lim_, lim_)
+            O.v = d * self.R.V
+            O.boost = max(O.boost, w['spit_boost'])
+            O.held = False
+            self.ev('pah', k, 1, a)
+            self.damage(k, 1 - k, w['dmg_spit'], 'spit', float(O.p[0]), float(O.p[1]))
+            B.cannon = dict(t_end=self.t + w.get('spit_t', 0.9), ev_i=len(self.events))
+
     def key_r(self):
         """every projectile's hit radius (Rules.KEY_R unless its weapon set `hit_r`)"""
         if not self.khr:
@@ -1962,6 +2044,8 @@ class Fight:
         for k, B in enumerate(self.balls):
             if getattr(B, 'rw_left', 0.0) > 0:                  # rewinding: rewind_step drives it along its path
                 continue
+            if getattr(B, 'held', False):                       # #32 v2: swallowed, it rides inside the swallower
+                continue
             B.boost *= math.exp(-dt / self.R.KNOCK_T)
             s = self.R.V * (1 + B.boost)
             if B.slow > 0:                                  # #34: slowed (e.g. SAD TROMBONE)
@@ -1987,7 +2071,8 @@ class Fight:
         d = Q.p - P.p
         dist = float(np.hypot(*d))
         rP, rQ = getattr(P, 'rad', R), getattr(Q, 'rad', R)    # #30 v2: per-ball radius (R + R == 2 * R exactly)
-        if dist < rP + rQ and getattr(P, 'rw_left', 0.0) <= 0 and getattr(Q, 'rw_left', 0.0) <= 0:
+        if dist < rP + rQ and getattr(P, 'rw_left', 0.0) <= 0 and getattr(Q, 'rw_left', 0.0) <= 0 \
+                and not getattr(P, 'held', False) and not getattr(Q, 'held', False):   # #32 v2: no clash while swallowed
             n = d / max(dist, 1e-9)
             over = rP + rQ - dist
             if hasattr(P, 'mass') or hasattr(Q, 'mass'):        # #30 v2: unequal masses (inflate): the light ball gives
@@ -2130,6 +2215,9 @@ class Fight:
                 self.inflate_setup(k)
         if rec is not None and any(B.w['kind'] == 'inflate' for B in self.balls):
             rec['RAD'] = []
+        for k, B in enumerate(self.balls):                       # #32 v2 (opt-in weapon kinds)
+            if B.w['kind'] == 'swallow':
+                self.swallow_setup(k)
         thrusters = [k for k, B in enumerate(self.balls) if B.w.get('mode') == 'thrust']      # #34
         next16t = k16_0
         tethers = [k for k, B in enumerate(self.balls) if B.w['kind'] == 'tether']              # #31 v2
@@ -2164,6 +2252,8 @@ class Fight:
                         self.beam_beat(k, kb)
                     elif B.w['kind'] == 'combo':                 # #29 v3
                         self.combo_beat(k, kb)
+                    elif B.w['kind'] == 'swallow':               # #32 v2
+                        self.swallow_beat(k, kb)
                     elif B.w['kind'] in ('line', 'trap'):
                         self.hazard_beat(k, kb)
                     elif B.w['kind'] == 'scratch_floor':         # #31 v2
@@ -2242,6 +2332,8 @@ class Fight:
                     self.tether_step(k, dt)
                 elif B.w['kind'] == 'inflate':                   # #30 v2
                     self.inflate_step(k, dt)
+                elif B.w['kind'] == 'swallow':                   # #32 v2
+                    self.swallow_step(k, dt)
             if getattr(self, 'lashes', None):                     # #31 v2 SAWTOOTH
                 self.lash_step(dt)
             if self.beams or any(B.w['kind'] == 'beam' for B in self.balls):
