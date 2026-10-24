@@ -1597,14 +1597,35 @@ no instrument in two fights), "so that way I can render many at once without con
 decide new matchups with existing instruments since we'll know exactly how they fight". User approved all seven
 (#29–#35) with the moods listed. Each fighter gets a fighting style no one else has: after these, 18 fighters with 18
 styles, ready for crossovers and a tournament bracket.
-- **Everything from #27 holds** (see #27 / #28 and `projects/ballfight/README.md`, "Making the next episode"): the 3 · 2 ·
-  1 · FIGHT! count-in at frame 0 (one bar of the episode's tempo, so FIGHT lands at 1 bar; the count is the band's
-  count-in); top caption "A / VS B"; mid-fight captions = **ability names only** (first use of each, never two within
+- **VS title card intro (series standard from Oct 24; user on the #30 test: "That turned out great, add it to the
+  rules").** Every episode opens with a fighting-game versus screen on bar 0, then the 3 · 2 · 1 on bar 1, FIGHT! on
+  the bar-2 downbeat. Reference build: #30's `projects/ballfight_bagpipes_vs_accordion/title.py` (move it into
+  `projects/ballfight/` in its own small commit the first time another episode needs it, so all episodes share one).
+  - Bar 0: the frame splits diagonally into two panels in the fighters' colours (left fighter top-left, right fighter
+    bottom-right) over the dimmed arena, each ball big and close; small "BALLFIGHT #N" tag at the top. Name A slams in
+    on beat 1 (frame 0), VS on beat 2 (cracks the divider), name B on beat 3: each from huge to size with overshoot,
+    motion streaks, camera shake, dust burst, local light, and its own hit (A's instrument blast / a thunder crack /
+    B's instrument blast) over big unison band hits; beat 4 holds (only VS pulses), the panels slide apart like doors
+    along the crack, with a pickup fill.
+  - Words at the biggest pixel-font scales that fit the safe zone (names in fighter colours with a thick dark
+    outline, VS largest in white-gold; long names keep left of the button column); panels and effects fill the screen.
+  - No top caption "A / VS B" any more (the card replaces it). The HUD stays hidden while the card is shut.
+  - Loop: the title slam is the frame-0 reset. The doors slide shut over the last ~0.30 s in small steps, a ghost of
+    name A lands exactly on frame 0's word (snap to frame 0's exact size), the slam's light / streaks / shake start the
+    frame after frame 0, and a riser + whoosh ramps to full into the seam (#30: seam 0.9x render / 1.5x mp4, audio
+    step 3.9 dB).
+  - Flash: panels are never white; one doors-shut / doors-open pair; `reelkit.flashcheck` must pass.
+  - The fight starts at 2 bars. Search seeds with `t_fight` = 2 bars from the start: moving an existing seed's fight a
+    bar later does **not** replay the same run (float drift, chaos from ~30 s; #30 lesson), so re-run the search.
+- **Everything from #27 holds** (see #27 / #28 and `projects/ballfight/README.md`, "Making the next episode"): the
+  count-in (the 3 · 2 · 1 is the band's count-in, one bar of the episode's tempo, now on bar 1 after the title card);
+  mid-fight captions = **ability names only** (first use of each, never two within
   4 s; repeats and close calls go in the HUD status line), then "K.O." → "(WINNER) WINS" and "COMMENT THE / NEXT
   MATCH-UP"; status in small text inside the safe zone (`reelkit.ui.fight_hud`, HP numbers in the balls); post caption
   "Comment the next match-up 👇" + the two instruments' emojis; honest fight, never hand-edited; 61.0 s; loop point =
-  file boundary (loser reassembles, both glide to corners, "3" lands at 61.0 = frame 0).
-- **Beat sheet** (all seven; the real fight decides after 2 s): 0 → 1 bar count-in · launch, first clashes · 8–30 s
+  file boundary (loser reassembles, both glide to corners, the doors shut and the title slam lands at 61.0 = frame 0).
+- **Beat sheet** (every episode; the real fight decides after the count-in): bar 0 VS title card · bar 1 count-in ·
+  FIGHT! on bar 2 · launch, first clashes · 8–30 s
   the four unlocks (each named once) · 32–44 s one fighter below 25 HP fires its desperation move · 44–52 s final
   exchange · K.O. ~49–53 s (hit-stop, slow-mo shatter into the instrument's parts) · winner's solo under the spot +
   "COMMENT THE / NEXT MATCH-UP" · 58–61 s reassembly into frame 0.
