@@ -1,0 +1,5 @@
+# generated (regenerate, never commit)
+sim.pkl
+check_audio.txt
+render.log
+__pycache__/
