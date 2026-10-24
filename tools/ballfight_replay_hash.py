@@ -15,6 +15,7 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 EPISODES = [
     ('projects/ballfight', [88, 1, 2, 3, 500]),                    # #27, seed 88
     ('projects/ballfight_drums_vs_violin', [568, 1, 2, 3, 500]),   # #28, seed 568
+    ('projects/ballfight_tuba_vs_flute', [1097, 1, 2, 3, 500]),    # #32, seed 1097
     ('projects/ballfight_trumpet_vs_sax', [337, 1, 2, 3, 500]),    # #29, seed 337
 ]
 CODE = r'''

@@ -682,3 +682,29 @@
 - Checks: safe zone OK (0.25 s steps); subject CoC 0 on all 1830 frames; loopcheck PASS render + mp4 (seam 1.8x);
   flash 0 general; opening -17.8 dBFS, build +3.2 dB. Render 0.23 s/frame/core (7 min) + 3 min mux.
 - Feedback: (pending)
+
+## BALLFIGHT #6: Tuba vs Flute (`projects/ballfight_tuba_vs_flute`)
+- Sixth BALLFIGHT episode (#32), produced in parallel with #29-#35 on the shared engine. TUBA (indigo, left) blasts a
+  slow, huge brass wave every bar (#28's `pulse`, every=4) and pulls the flute in all the time (new weapon option
+  `pull`: gravity that only steers, speed stays shared; +0.08 per landed wave); FLUTE (silver, right) fires tiny fast
+  darts every beat (volley with the new option `on16`, so FLUTTER TONGUE's haste can double it). Abilities: OOMPAH /
+  BRASS WALL / SUBSONIC (a giant tuba bell hovers, then slams); FLUTTER TONGUE / TRILL / PICCOLO. Villain march: C
+  minor, 125.90 BPM (32 bars), i-VI-N6-V with the B natural over Db as the villain's augmented-sixth snarl.
+- Honest run, seed 1097 (6 fits in 1099; TUBA 49 % / FLUTE 51 % over 1057 decided): neck and neck, the flute's chip
+  damage leads until 44.9 s, flute back ahead at 48.6, both desperation moves on the same beat (48.1), the bell lands
+  at 49.1, TUBA wins at 51.54 s with 4.5 HP. Captions: FLUTTER TONGUE 14.3, OOMPAH 19.5, TRILL 24.8, BRASS WALL 29.5,
+  SUBSONIC 48.1 (PICCOLO in the status line, same beat).
+- Engine (shared, additive, two small commits): weapon option `pull` (+ `pull_grow` / `pull_max`, grows with a landed
+  main pulse) and volley option `on16`. #27 (seed 88) and #28 (seed 568) replay identically
+  (`tools/ballfight_replay_hash.py`), re-checked after every rebase onto the other sessions' engine commits (beam,
+  orbit, rewind, aura, bellows). Roster commit conflicted with #30's (both appended at the dict's end): keep both.
+- Rules lessons: without the pull the tuba landed ~5-8 waves a fight and never won (a once-a-bar weapon needs reach
+  or help getting there); reach 1.8 + pull 1.2 balanced it in one grid (`tune.py`, 20 seeds per cell).
+- Look lessons: the flute's Pixel Pitch model is a 1 px line at ball size; a pixel-art flute (silver tube, lip plate,
+  keys, ink outline) in `styles.flute_sprite` reads, and a light (silver) fighter needs a cooler, darker glass tint.
+- Sound: the tuba fighter IS the march's bass (main waves = root "oom", OOMPAH's beat-3 waves = the fifth, landed waves
+  = a walk-up), the flute's volleys are runs up the chord (n darts = n notes); bed kick turned down and the pad's low
+  note dropped so the tuba sits +7-9 dB over the bed in 40-260 Hz; flute +7-13 dB in 0.9-6 kHz.
+- Checks: safe zone OK (0.25 s steps); subject CoC 0 on all 1830 frames; loopcheck PASS render + mp4 (seam 2.2x);
+  flash 0 general (max 6.6 % at the bell slam); opening -18.9 dBFS, build +3.1 dB. Render 0.19 s/frame/core (6 min) + mux.
+- Feedback: (pending)
