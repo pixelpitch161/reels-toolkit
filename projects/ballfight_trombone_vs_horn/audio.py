@@ -1,4 +1,7 @@
-"""#34 BALLFIGHT #8: Trombone vs French Horn - soundtrack (mood: cinematic brass trailer), all synthesised, original.
+"""#34 BALLFIGHT #8: Trombone vs French Horn - soundtrack, v2 (mood: cinematic brass trailer), all synthesised, original.
+v2 (BALLFIGHT v2 redesign): the HORN hunts: every horn call is a note of its theme (a full call per hound released, a
+short echo while the pack is full), every bite on the 8th grid a horn stab + jaws, a knocked-out hound a falling yelp,
+TALLY-HO's charge a gallop of taiko under the fanfare. v1 (arrows) is kept as audio_v1_backup.py.
 
 The two fighters ARE the brass section; the bed is strings, braams and taiko with no brass of its own. Both parts come
 from the honest run, in each fighter's own Pixel Pitch voice, registers kept apart (trombone low, horn mid):
@@ -143,6 +146,14 @@ def wah(x, opens, seed=0):
         c = float(fc[(a + b) // 2])
         out[a:b] = A.bp(x[max(0, a - 4096):b], c * 0.55, min(c * 1.8, SR / 2 - 200))[-(b - a):]
     return out * 1.6
+
+
+def snap(seed=0):
+    """a hound's jaws snapping shut: a dry click with a little low body"""
+    n = int(0.06 * SR)
+    t = A.tt(n)
+    x = A.bp(np.random.default_rng(seed).normal(0, 1, n), 900, 4500) * np.exp(-t / 0.008)
+    return x + 0.5 * np.sin(2 * np.pi * 180 * t) * np.exp(-t / 0.015)
 
 
 def stopped(x):
@@ -340,32 +351,47 @@ def main():
             mix.place('fx', A.thud(0.25, 140, 60, seed=int(t * 7)), tq, 0.10)
         elif kind == 'hit' and e[2] == KT and e[7] == 'shockwave':
             mix.place('fx', A.thud(0.4, 120, 45), q16(t), 0.25)
-        elif kind == 'parry':                                         # the lance swats an arrow
-            mix.place('fx', A.hp(clank(96 + int(h01(t, 2) * 6), int(t * 13)), 1500), t, 0.025)
     # ------------------------------------------------ HORN: the volleys are the hunting-call theme
     for e in EV:
         t, kind = e[0], e[1]
         if t > T_KO + 0.01:
             break
-        if kind == 'fire' and e[2] == KH:
+        if kind == 'call' and e[2] == KH:                             # v2 THE HUNT: the call (a full call per hound released)
             tq = q16(t)
             hp = hp_at(KH, t) / 100.0
             if h01(round(tq / S16), 3) < 0.5 * (1 - hp) ** 1.6:
                 continue
             m = T.horn_at(tq)
-            sig, g, lead = colour(horn(m, T.BEAT * 1.6, 0.85), KH, t)
-            mix.place('horn', sig, tq, 0.30 * g, pan=0.2)
-            if lead > 0.04:                                           # the leader: horn fifths (the hunting call's own harmony)
+            released = bool(e[4])
+            dur = T.BEAT * (1.6 if released else 0.5)
+            sig, g, lead = colour(horn(m, dur, 0.85 if released else 0.6), KH, t)
+            mix.place('horn', sig, tq, (0.30 if released else 0.13) * g, pan=0.2)
+            if released and lead > 0.04:                              # the leader: horn fifths (the hunting call's own harmony)
                 under = [x for x in T.scale_notes(m - 8, m - 6, T.chord_at(tq))]
                 if under:
-                    mix.place('horn', colour(horn(under[-1], T.BEAT * 1.6, 0.7), KH, t)[0], tq, 0.15 * g, pan=0.25)
-        elif kind == 'hit' and e[2] == KH and e[7] == 'key':          # an arrow lands: a short call up the chord
+                    mix.place('horn', colour(horn(under[-1], dur, 0.7), KH, t)[0], tq, 0.15 * g, pan=0.25)
+            if released:                                              # the hound bursting out of the bell
+                mix.place('fx', A.whoosh(0.25, 600, 4000), tq, 0.04, pan=0.25)
+        elif kind == 'hit' and e[2] == KH and e[7] == 'bite':         # a bite on the 8th grid: a horn stab + the jaws
             tq = q16(t)
             ct = T.chord_tones(62, 77, T.chord_at(tq))
             m = ct[int(e[8]) % len(ct)]
-            mix.place('horn', colour(horn(m, 0.1, 0.75), KH, t)[0], tq, 0.12, pan=float(np.clip(e[5] / 3.5, -0.6, 0.6)))
-        elif kind == 'hit' and e[2] == KH and e[7] == 'wave':
-            mix.place('fx', A.thud(0.45, 110, 40), q16(t), 0.36)
+            pan = float(np.clip(e[5] / 3.5, -0.6, 0.6))
+            mix.place('horn', colour(horn(m, 0.09, 0.8), KH, t)[0], tq, 0.13, pan=pan)
+            mix.place('fx', snap(int(t * 17)), tq, 0.06, pan=pan)
+        elif kind == 'hit' and e[2] == KH and e[7] == 'charge':       # TALLY-HO lands
+            mix.place('fx', A.thud(0.6, 110, 36), q16(t), 0.45)
+            mix.place('taiko', taiko(1.0, True, 77), q16(t), 0.5)
+        elif kind == 'pack_charge':                                   # the pack's gallop across the ring
+            for j in range(8):
+                mix.place('taiko', taiko(0.45 + 0.07 * j, False, 120 + j), q16(t) + j * S16, 0.26)
+            mix.place('fx', A.whoosh(0.9, 250, 3000), q16(t), 0.12)
+        elif kind == 'hound_down':                                    # knocked out: a falling yelp + an ember fizz
+            x = horn(T.horn_at(t) + 7, 0.12, 0.6, 0.4)
+            mix.place('horn', gliss(x, -5, 0.12), t, 0.05, pan=float(np.clip(e[4] / 3.5, -0.6, 0.6)))
+            mix.place('fx', A.hp(A.whoosh(0.18, 2000, 8000, rise=False), 1500), t, 0.03)
+            if e[6] == 'blade':
+                mix.place('fx', A.hp(clank(96 + int(h01(t, 2) * 6), int(t * 13)), 1500), t, 0.03)
         elif kind == 'block':                                         # the lance bangs off the stopped bell
             mix.place('fx', clank(84, int(t * 5)), q16(t), 0.05)
             mix.place('fx', A.thud(0.2, 160, 80), q16(t), 0.05)
@@ -400,8 +426,8 @@ def main():
                 n = int(dur * SR)
                 buzz = A.bp(np.random.default_rng(4).normal(0, 1, n), 3000, 9000) * A.adsr(n, 0.05, 0.2, 0.5, 0.4)
                 mix.place('fx', buzz, tq, 0.02)
-            elif name == 'HORN RIP':                                  # 7 arrows over a beat: a rip up the scale
-                n = RD.CFG[who]['abilities']['unlock2']['n']
+            elif name == 'HORN RIP':                                  # the pack sprints: a rip up the scale
+                n = 7
                 ms = T.scale_notes(60, 79, T.chord_at(tq))[-n:]
                 for j, m in enumerate(ms):
                     last = j == n - 1
@@ -495,7 +521,7 @@ def main():
         print(f'{a:5.1f}-{b:5.1f}s  rms {rms:6.1f} dBFS  peak {pk:5.1f}')
 
 
-BUS_GAIN = {'trombone': 1.5, 'horn': 1.05, 'solo': 1.6, 'fx': 1.4, 'strings': 0.85, 'taiko': 1.2, 'braam': 1.0,
+BUS_GAIN = {'trombone': 1.5, 'horn': 1.25, 'solo': 1.6, 'fx': 1.4, 'strings': 0.85, 'taiko': 1.2, 'braam': 1.0,
             'tremolo': 1.0}
 # section automation (dB), applied AFTER the compressor so the limiter can't flatten the build: the count-in at full,
 # the early fight pulled back, rising through the final exchange, the victory section loud, the end close to the start

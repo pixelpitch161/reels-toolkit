@@ -1,5 +1,25 @@
 # #34 BALLFIGHT #8: Trombone vs French Horn (`projects/ballfight_trombone_vs_horn`)
 
+## v2 (BALLFIGHT v2 redesign, user Oct 24): THE HUNT
+The HORN no longer shoots: its signature is **THE HUNT** (engine weapon kind `pack`). A horn call every 2 beats brands
+the trombone with a copper target mark and releases a ghost hound from the bell while the pack is under its size
+(2 -> 5, +0.34 per landed bite). Hounds fan out of the bell, circle to a flank (out of the lance's line) and bite on the
+8th grid (horn stab + jaws), heel when the mark fades, circle the horn while it is shielded. STOPPED HORN = shield +
+hounds guard; HORN RIP = haste, the pack sprints; TALLY-HO = new ability kind `charge`: the pack, filled to 5, charges
+across the ring in one line. The TROMBONE is unchanged; its lance, SAD TROMBONE's shockwave and PEDAL TONE's bell knock
+hounds out (embers; the next call releases a new one). Rules re-tuned once (damage scale 0.60, HORN bite 2.8; balance
+over 873 decided runs: 50 % / 50 %), new honest seed **894**: the pack leads 83-58 at 26 s, the fully grown lance
+levels it by 35 s, TALLY-HO retakes the lead at 42.8 s, PEDAL TONE answers at 43.3 / 44.3 s, TROMBONE wins at 50.72 s
+with 4.0 HP (the horn hangs on at 2.2 HP for the last 3.5 s). Hounds are drawn as side-profile 2.5D sprites (long and
+low, drop ears, sabre tail, galloping legs, one faint afterimage, a copper aura, no shadow: a copper glow); a top-down
+hound silhouette read as a rat at this size. Effects from `reelkit.fx`: brass sparks on lance hits, copper embers on
+bites / releases / knock-outs and behind every running hound, attack lights in the fighters' colours, ink-starburst
+impacts, bite claw marks + PEDAL TONE's crack and scorch on the canvas, heat shimmer on SAD TROMBONE / the charge front /
+the stomp, ability moments (dim + speed lines) on the five captions. v1 kept: `*_v1_backup.py`,
+`ballfight_trombone_vs_horn_v1.mp4` (the v1 sources ran on the v1 HORN roster entry, now replaced).
+
+## v1
+
 The brass section's pecking order on #27's engine, ring, HUD and count-in (`projects/ballfight`: `fight.py`,
 `fighters.py`, `scene.py`, imported, plus `reelkit.ui.fight_hud`). TROMBONE (left corner, mint) aims its slide at the
 enemy and shoots it out like a lance on every beat (new blade option `mode='thrust'`: reach 0.95 -> 2.5, +0.08 per
@@ -40,7 +60,7 @@ python ../../tools/ballfight_replay_hash.py                # engine changes: fin
 | `sim.py` | Runs + caches the honest fight on the shared engine; story analysis + score (#27's windows) |
 | `tune.py` | Generic rule grid: `T.<weapon key>`, `H.<weapon key>`, `T.u1.<ability key>`, `scale` (pass `scale=` or it runs at 1.0) |
 | `seed_search.py` | #27's early-stopping search (copied; names from the timeline) |
-| `styles.py` | Draw functions for the new styles: the `slide` lance (+ thrust streak), `arrow` (+ curving trail), the STOPPED HORN `bellrim`, PEDAL TONE's giant bell (flat-shaded surface of revolution) |
+| `styles.py` | v2: ghost hounds (2.5D side-profile sprites), the target mark + sigil, the charge wake. Draw functions for the styles: the `slide` lance (+ thrust streak), `arrow` (+ curving trail), the STOPPED HORN `bellrim`, PEDAL TONE's giant bell (flat-shaded surface of revolution) |
 | `render.py` | #28's renderer, copied, with this pair's weapons, abilities, the slowed ball's wobble, the lance's lit line of attack, brass shards and the solo played on the slide (lower note = longer slide) |
 | `audio.py` | Brass-less trailer bed; thrusts = the trombone ostinato (glissando into each stab), volleys = the horn's hunting call (horn fifths when it leads) |
 | `mux.py` | Loop-clean encode via `projects/maze_race/mux.py` |

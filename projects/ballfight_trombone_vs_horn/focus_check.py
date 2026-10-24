@@ -30,6 +30,11 @@ for f in range(T.NF):
             if not np.isnan(row[0]):
                 pts.append(S.to_world(row[0], row[1], 0.45))
                 names.append('key')
+    for k in R.PACK:                                       # v2: the hounds (feet and head height)
+        for hd in R.hounds_at(k, t):
+            for dy in (0.0, 0.7):
+                pts.append(S.to_world(hd[1], hd[2], dy))
+                names.append('hound')
     for kind, p, rot, size, curl, a in R.parts_at(t):
         pts.append(S.to_world(p[0], p[2], p[1]))
         names.append('shard')

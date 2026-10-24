@@ -1,7 +1,7 @@
 """Loop-clean mux for #34: reuses projects/maze_race/mux.py (keyframe on the last frame, x264 mbtree off, the
 soundtrack muxed untrimmed as whole AAC frames) on this project's kept raw frames. No re-render.
 
-    python mux.py            # frames_raw.rgb + audio.wav -> ballfight_trombone_vs_horn.mp4"""
+    python mux.py            # frames_raw.rgb + audio.wav -> ballfight_trombone_vs_horn_v2.mp4"""
 import importlib.util
 import os
 import sys
@@ -13,4 +13,4 @@ spec.loader.exec_module(M)
 
 if __name__ == '__main__':
     os.chdir(HERE)
-    M.main(raw='frames_raw.rgb', audio='audio.wav', out=sys.argv[1] if len(sys.argv) > 1 else 'ballfight_trombone_vs_horn.mp4')
+    M.main(raw='frames_raw.rgb', audio='audio.wav', out=sys.argv[1] if len(sys.argv) > 1 else 'ballfight_trombone_vs_horn_v2.mp4')
