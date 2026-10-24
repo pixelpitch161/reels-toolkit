@@ -1353,6 +1353,215 @@ class Fight:
             B.rw_hist.append((self.t, B.p.copy(), B.v.copy(), B.hp))
 
     # ------------------------------------------------------------------ abilities
+    # ------------------------------------------------------------------ #34 v2: weapon kind 'pack' (THE HUNT)
+    # A horn call every `every` beats brands the enemy (a mark lasting `mark_beats`) and releases one hound from the bell
+    # while the pack is under its size (`n0`, + `grow` per landed bite, up to `n_max`). Hounds (radius `r`) chase the
+    # marked enemy (speed `speed`, turn rate `turn`; haste speeds them up), keep apart, and bite on the 8th grid when in
+    # reach (`dmg`, `knock`), then recoil and wait `cool_beats`. Unmarked, they heel behind the horn; while the horn is
+    # shielded they circle it at `guard_r` (and still bite whatever comes close). The enemy's blade (spinning, or a live
+    # thrust lance), its clearing waves and its slams knock hounds out; the next call releases a new one. Ability kind
+    # 'charge' (TALLY-HO): the pack, filled to `n_max` for the charge, lines up at the bell and charges across the ring as
+    # one front (`speed`, `width`; one hit: `dmg`, `knock`); the extra hounds go back into the bell afterwards.
+    HOUND_MODES = {'hunt': 0, 'heel': 1, 'guard': 2, 'charge': 3}
+    HMAX = 8
+
+    def pack_setup(self, k):
+        B = self.balls[k]
+        B.hounds, B.hound_id, B.calls = [], 0, 0
+        B.n_pack = float(B.w.get('n0', 1))
+        for b in self.balls:
+            b.mark = 0.0
+        self.pack_charges = []
+
+    def _spawn_hound(self, k, mode='hunt'):
+        """a hound pours out of the bell, out to one side of the line to the enemy (alternating sides), so the pack fans out"""
+        B, O = self.balls[k], self.balls[1 - k]
+        d = O.p - B.p
+        a = math.atan2(d[1], d[0]) + (1 if B.hound_id % 2 == 0 else -1) * math.radians(B.w.get('fan', 70.0))
+        p = B.p + (self.R.R + B.w['r']) * np.array([math.cos(a), math.sin(a)])
+        h = dict(id=B.hound_id, p=p, a=a, mode=mode, cool=0.0, recoil=0.0)
+        B.hounds.append(h)
+        self.ev('hound', k, B.hound_id, float(p[0]), float(p[1]))
+        B.hound_id += 1
+        return h
+
+    def pack_call(self, k):
+        """the horn call: brand the enemy, release a hound if the pack is under its size"""
+        B, O = self.balls[k], self.balls[1 - k]
+        if any(C['owner'] == k for C in self.pack_charges):
+            return
+        O.mark = B.w['mark_beats'] * self.R.beat
+        B.calls += 1
+        rel = 0
+        if len(B.hounds) < int(B.n_pack + 1e-9):
+            self._spawn_hound(k)
+            rel = 1
+        self.ev('call', k, B.calls, rel, len(B.hounds))
+
+    def _hound_down(self, k, h, why):
+        self.balls[k].hounds.remove(h)
+        self.ev('hound_down', k, h['id'], float(h['p'][0]), float(h['p'][1]), why)
+
+    def pack_hazards(self, k, dt):
+        """the enemy's weapons knock hounds out: its blade (spinning, or a thrust lance while it is going out / held), its
+        clearing waves passing over them, its slams landing on them"""
+        B, O = self.balls[k], self.balls[1 - k]
+        o, R, rh = 1 - k, self.R.R, B.w['r']
+        seg = None
+        if O.w['kind'] == 'blade':
+            d = np.array([math.cos(O.th), math.sin(O.th)])
+            if O.w.get('mode') == 'thrust':
+                if O.thr is not None and (self.t - O.thr) / O.thr_k < O.w['t_out'] + O.w['t_hold']:
+                    seg = (O.p + d * R * 0.9, d, R * 0.1 + O.ext)
+            else:
+                seg = (O.p + d * R * 0.9, d, R * 0.1 + O.blade_len)
+        for h in list(B.hounds):
+            if h['mode'] == 'charge':
+                continue
+            if seg is not None:
+                a, d, L_ = seg
+                rel = h['p'] - a
+                s_ = min(max(float(rel @ d), 0.0), L_)
+                if float(np.hypot(*(rel - d * s_))) < rh + 0.05:
+                    self._hound_down(k, h, 'blade')
+                    continue
+            gone = False
+            for W in self.waves:
+                if W['owner'] == o and W.get('clears', True) and abs(float(np.hypot(*(h['p'] - W['c']))) - W['r']) < rh + 0.1:
+                    self._hound_down(k, h, W['kind'])
+                    gone = True
+                    break
+            if gone:
+                continue
+            for S in self.slams:
+                if S['owner'] == o and S['done'] and self.t - S['t_slam'] < dt * 1.01 and \
+                        float(np.hypot(*(h['p'] - S['c']))) < S['radius'] + rh:
+                    self._hound_down(k, h, 'slam')
+                    break
+
+    def pack_step(self, k, dt, bite):
+        B, O = self.balls[k], self.balls[1 - k]
+        w = B.w
+        R, rh, A = self.R.R, w['r'], self.R.A
+        O.mark = max(0.0, O.mark - dt)
+        mult = self.ab_mult(k)
+        guard = B.shield > 0
+        live = [h for h in B.hounds if h['mode'] != 'charge']
+        for i, h in enumerate(live):
+            h['cool'] = max(0.0, h['cool'] - dt)
+            h['recoil'] = max(0.0, h['recoil'] - dt)
+            if guard:
+                ang = self.t * w.get('guard_w', 3.2) + 2 * math.pi * i / len(live)
+                tgt, mode = B.p + w['guard_r'] * np.array([math.cos(ang), math.sin(ang)]), 'guard'
+            elif O.mark > 0:                                         # hunt: circle to a flank, then go in for the bite
+                dist = float(np.hypot(*(O.p - h['p'])))
+                pred = O.p + O.v * min(0.5, dist / (w['speed'] * mult)) * 0.6
+                ph0 = math.atan2(B.p[1] - O.p[1], B.p[0] - O.p[0])
+                ph = ph0 + (1 if h['id'] % 2 == 0 else -1) * (w.get('flank', 1.9) + 0.3 * (i // 2))
+                fl = pred + (R + 0.8) * np.array([math.cos(ph), math.sin(ph)])
+                tgt, mode = (pred if dist < R + 0.9 or float(np.hypot(*(fl - h['p']))) < 0.6 else fl), 'hunt'
+            else:
+                back = -B.v / (np.linalg.norm(B.v) + 1e-9)
+                side = np.array([-back[1], back[0]]) * (0.32 * (i - (len(live) - 1) / 2))
+                tgt, mode = B.p + back * (R + 0.45 + 0.2 * i) + side, 'heel'
+            h['mode'] = mode
+            rel = tgt - h['p']
+            dist = float(np.hypot(*rel))
+            if h['recoil'] <= 0:
+                da = _wrap(math.atan2(rel[1], rel[0]) - h['a'])
+                lim = w['turn'] * (1.8 if mode == 'guard' else 1.0) * min(2.0, mult) * dt
+                h['a'] += max(-lim, min(lim, da))
+            sp = w['speed'] * mult * (1.3 if h['recoil'] > 0 else 1.0)
+            if mode != 'hunt':
+                sp *= min(1.0, 0.25 + dist / 0.8)                  # ease in to the heel / guard spot
+            v = sp * np.array([math.cos(h['a']), math.sin(h['a'])])
+            for g in live:                                          # keep apart (a pack, not a pile)
+                if g is not h:
+                    d_ = h['p'] - g['p']
+                    dd = float(np.hypot(*d_))
+                    if 1e-9 < dd < 2.3 * rh:
+                        v = v + d_ / dd * (2.3 * rh - dd) * 7.0
+            h['p'] = h['p'] + v * dt
+            for ax in (0, 1):                                       # the ropes
+                lim_ = A - rh
+                if abs(h['p'][ax]) > lim_:
+                    h['p'][ax] = math.copysign(lim_, h['p'][ax])
+                    c = np.array([math.cos(h['a']), math.sin(h['a'])])
+                    c[ax] = -c[ax]
+                    h['a'] = math.atan2(c[1], c[0])
+            for ball in (O, B):                                     # never inside a ball
+                d_ = h['p'] - ball.p
+                dd = float(np.hypot(*d_))
+                if dd < R + rh * 0.8:
+                    h['p'] = ball.p + d_ / max(dd, 1e-9) * (R + rh * 0.8)
+        if bite:                                                    # bites on the 8th grid
+            for h in live:
+                if h['cool'] > 0:
+                    continue
+                rel = O.p - h['p']
+                dist = float(np.hypot(*rel))
+                if dist < R + rh + 0.08:
+                    hx, hy = (h['p'] + rel / max(dist, 1e-9) * rh).tolist()
+                    if O.shield > 0:
+                        self.ev('block', 1 - k, k, hx, hy, 'bite')
+                    else:
+                        landed = self.damage(k, 1 - k, w['dmg'], 'bite', hx, hy, h['id'])
+                        self.knock(1 - k, rel, w['knock'])
+                        if landed:
+                            B.n_pack = min(w['n_max'], B.n_pack + w['grow'])
+                    h['cool'] = w['cool_beats'] * self.R.beat
+                    h['recoil'] = 0.22
+                    h['a'] = math.atan2(-rel[1], -rel[0])
+        self.pack_charge_step(k, dt)
+        self.pack_hazards(k, dt)
+
+    def start_charge(self, k, ab):
+        """ability kind 'charge' (TALLY-HO): fill the pack to `n_max`, line it up at the bell, charge as one front"""
+        B, O = self.balls[k], self.balls[1 - k]
+        d = O.p - B.p
+        u = d / (np.linalg.norm(d) + 1e-9)
+        nrm = np.array([-u[1], u[0]])
+        keep = [h['id'] for h in B.hounds]
+        while len(B.hounds) < B.w['n_max']:
+            self._spawn_hound(k, 'charge')
+        n = len(B.hounds)
+        for i, h in enumerate(B.hounds):
+            h['mode'] = 'charge'
+            h['slot'] = (i - (n - 1) / 2) * ab['width'] / max(1, n - 1)
+        o = B.p.copy()
+        self.pack_charges.append(dict(owner=k, o=o, u=u, nrm=nrm, s=self.R.R, speed=ab['speed'], width=ab['width'],
+                                      hit=False, dmg=ab['dmg'], knock=ab['knock'], keep=keep, t0=self.t))
+        self.ev('pack_charge', k, float(o[0]), float(o[1]), float(u[0]), float(u[1]), float(ab['width']))
+
+    def pack_charge_step(self, k, dt):
+        B, O = self.balls[k], self.balls[1 - k]
+        R, A = self.R.R, self.R.A
+        for C in [C for C in self.pack_charges if C['owner'] == k]:
+            s0 = C['s']
+            C['s'] = s0 + C['speed'] * dt
+            for h in B.hounds:
+                if h['mode'] == 'charge':
+                    h['p'] = C['o'] + C['u'] * C['s'] + C['nrm'] * h['slot']
+                    h['a'] = math.atan2(C['u'][1], C['u'][0])
+            rel = O.p - C['o']
+            along, lat = float(rel @ C['u']), abs(float(rel @ C['nrm']))
+            if not C['hit'] and s0 < along - R * 0.5 <= C['s'] and lat < C['width'] / 2 + R:
+                C['hit'] = True
+                hx, hy = (O.p - C['u'] * R).tolist()
+                self.damage(k, 1 - k, C['dmg'], 'charge', hx, hy)
+                self.knock(1 - k, C['u'], C['knock'])
+            front = C['o'] + C['u'] * C['s']
+            if np.abs(front).max() > A + 0.3 or C['s'] > 4 * A:            # past the far ropes: the pack breaks up
+                for h in list(B.hounds):
+                    if h['mode'] != 'charge':
+                        continue
+                    h['p'] = np.clip(h['p'], -(A - B.w['r']), A - B.w['r'])
+                    h['mode'], h['recoil'], h['cool'] = 'hunt', 0.0, 0.0
+                    if h['id'] not in C['keep'] and len([g for g in B.hounds if g['id'] in C['keep'] or g is h]) > int(B.n_pack + 1e-9):
+                        self._hound_down(k, h, 'home')
+                self.pack_charges.remove(C)
+                self.ev('pack_charge_end', k)
+
     def ab_dur(self, ab):
         """an ability's duration in s: `dur` (s) or `dur_beats` (beats at this episode's tempo)"""
         return ab['dur'] if 'dur' in ab else ab['dur_beats'] * self.R.beat
@@ -1396,6 +1605,8 @@ class Fight:
             self.ab_beam_charge(k, ab)
         elif kind in ('whip', 'sweep', 'spout'):                # #33 v2: FINGERPICK / BIG STRUM / UKE-NADO
             self.ab_x33(k, ab, kind)
+        elif kind == 'charge':                                  # #34 v2 (TALLY-HO): the pack charges as one front
+            self.start_charge(k, ab)
 
     def ab_beam_charge(self, k, ab):
         """ability kind 'beam' (#29 v3): charge for `charge_beats` with the aim locked on the enemy's spot predicted
@@ -1645,6 +1856,16 @@ class Fight:
             rec['EXT'].append([B0.ext, B1.ext])
             rec['SLW'].append([B0.slow, B1.slow])
             rec['CRV'].append([B0.curve_now, B1.curve_now])
+        if 'HOUNDS' in rec:                                 # #34 v2, only recorded when a fighter uses the 'pack' kind
+            Hs = np.full((2, self.HMAX, 6), np.nan)
+            for j, Bj in enumerate((B0, B1)):
+                for i, h in enumerate(getattr(Bj, 'hounds', [])[:self.HMAX]):
+                    Hs[j, i] = (h['p'][0], h['p'][1], h['a'], self.HOUND_MODES[h['mode']], h['id'], h['cool'])
+            rec['HOUNDS'].append(Hs)
+            rec['MARK'].append([getattr(B0, 'mark', 0.0), getattr(B1, 'mark', 0.0)])
+            rec['PACKN'].append([getattr(B0, 'n_pack', 0.0), getattr(B1, 'n_pack', 0.0)])
+            rec['CHG'].append([(C['owner'], float(C['o'][0]), float(C['o'][1]), float(C['u'][0]), float(C['u'][1]), C['s'],
+                                C['width'], C['t0']) for C in self.pack_charges])
 
     # ------------------------------------------------------------------ run
     def run(self):
@@ -1679,6 +1900,12 @@ class Fight:
         next16c = k16_0
         if rec is not None and self.uses_ext:
             rec['EXT'], rec['SLW'], rec['CRV'] = [], [], []
+        packers = [k for k, B in enumerate(self.balls) if B.w['kind'] == 'pack']      # #34 v2 (opt-in)
+        for k in packers:
+            self.pack_setup(k)
+        n16p = k16_0
+        if rec is not None and packers:
+            rec['HOUNDS'], rec['MARK'], rec['PACKN'], rec['CHG'] = [], [], [], []
         self.t = R.t_fight
         f0 = int(round(R.t_fight * R.FPS))
         step = 0
@@ -1747,6 +1974,14 @@ class Fight:
                     main16 = int(round(4 * self.balls[k].w['every']))
                     if k16t % max(1, int(round(main16 / self.ab_mult(k)))) == 0:
                         self.start_thrust(k)
+            pack_bite = False
+            if packers and self.t + 1e-9 >= n16p * s16:           # #34 v2: calls on the weapon's grid, bites on the 8ths
+                k16p = n16p - k16_0
+                n16p += 1
+                pack_bite = k16p % 2 == 0
+                for k in packers:
+                    if k16p % max(1, int(round(4 * self.balls[k].w['every']))) == 0:
+                        self.pack_call(k)
             for k, B in enumerate(self.balls):
                 B.shield = max(0.0, B.shield - dt)
                 B.haste = max(0.0, B.haste - dt)
@@ -1774,6 +2009,8 @@ class Fight:
             if self.lines or self.strings:
                 self.hazards_step(dt)
             self.effects_step(dt)
+            for k in packers:                                    # #34 v2: the hounds
+                self.pack_step(k, dt, pack_bite)
             if dc:
                 self.dash_cone_step(dt)                          # (#33)
             if dc or self.whips or self.sweeps or self.spouts:
