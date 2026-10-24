@@ -579,3 +579,112 @@ class Particles:
             elif sh == 'ring':
                 d.ellipse([x - r, y - r * 0.55, x + r, y + r * 0.55], outline=c + (a,))
         return np.asarray(base).astype(np.float32)
+
+
+# ---------------------------------------------------------------- 7. marks that fade on a floor
+MARK_KINDS = ('scorch', 'claw', 'crack', 'water', 'smoke_ring', 'dust', 'glass')
+
+
+class Marks:
+    """marks on a floor plane, evaluated per pixel in the caller's floor coordinates (u, v) (e.g. the ring frame):
+    a mark fades in over 0.06 s, holds, and fades out over the last 40 % of its `life`.
+        scorch      a dark, jagged blot with a warm rim (col)
+        claw        n parallel gouges along `angle` (length 2 x size), dark with a light lip
+        crack       n jagged rays from the centre
+        water       a wet, darker blot with a pale rim
+        smoke_ring  a soft dark ring
+        dust        a pale powdery blot (col)
+        glass       sparkly specks (col)
+    apply(alb, U, V, t, dither=None) returns the albedo (N, 3) with the live marks blended in; `dither` (N,) in 0..1
+    (e.g. BAYER_FULL at the pixels) quantises the strengths into pixel-art steps."""
+
+    def __init__(self, span=12.0, max_live=40):
+        self.tl = _Timeline(span)
+        self.max_live = max_live
+
+    def add(self, t0, kind, u, v, size=0.5, angle=0.0, col=(40, 30, 34), life=5.0, n=3, seed=0, strength=1.0):
+        assert kind in MARK_KINDS, kind
+        self.tl.add(t0, dict(kind=kind, u=float(u), v=float(v), size=float(size), angle=float(angle),
+                             col=np.asarray(col, float), life=float(life), n=int(n), seed=int(seed), k=float(strength)))
+
+    def live(self, t):
+        out = []
+        for t0, m in self.tl.alive(t):
+            age = t - t0
+            if age < 0 or age >= m['life']:
+                continue
+            fade = _smooth(age / 0.06) * (1 - _smooth((age - 0.6 * m['life']) / (0.4 * m['life'])))
+            if fade > 0.01:
+                out.append((m, fade * m['k'], age))
+        return out[-self.max_live:]
+
+    def apply(self, alb, U, V, t, dither=None):
+        live = self.live(t)
+        if not live:
+            return alb
+        alb = alb.copy()
+        for m, k, age in live:
+            s = m['size']
+            ext = s * 1.25
+            sel = np.nonzero((np.abs(U - m['u']) < ext) & (np.abs(V - m['v']) < ext))[0]
+            if not len(sel):
+                continue
+            ca, sa = math.cos(m['angle']), math.sin(m['angle'])
+            du, dv = U[sel] - m['u'], V[sel] - m['v']
+            x = (du * ca + dv * sa) / s
+            y = (-du * sa + dv * ca) / s
+            r = np.sqrt(x * x + y * y) + 1e-6
+            th = np.arctan2(y, x)
+            kind = m['kind']
+            rng = np.random.default_rng(m['seed'])
+            dark = np.zeros(len(sel))
+            lite = np.zeros(len(sel))
+            if kind == 'scorch':
+                rr = r * (1 + 0.2 * np.sin(7 * th + m['seed']) + 0.1 * np.sin(13 * th + 2 * m['seed']))
+                dark = np.clip(1 - rr, 0, 1) ** 0.8 * 0.7
+                lite = np.clip(1 - np.abs(rr - 1.0) / 0.18, 0, 1) * 0.35
+            elif kind == 'claw':
+                n = max(1, m['n'])
+                sp = 0.9 / max(1, n - 1) if n > 1 else 0
+                taper = np.clip(1 - np.abs(x), 0, 1) ** 0.5
+                for i in range(n):
+                    yi = -0.45 + i * sp if n > 1 else 0.0
+                    dd = np.abs(y - yi - 0.06 * np.sin(x * 3 + i))
+                    dark = np.maximum(dark, np.clip(1 - dd / 0.07, 0, 1) * taper * 0.75)
+                    lite = np.maximum(lite, np.clip(1 - np.abs(dd - 0.1) / 0.035, 0, 1) * taper * 0.4)
+            elif kind == 'crack':
+                n = max(3, m['n'])
+                for i in range(n):
+                    a0 = rng.uniform(0, 2 * math.pi)
+                    L_ = rng.uniform(0.6, 1.0)
+                    ai = a0 + 0.22 * np.sin(r * 11 + i * 3.1)
+                    dth = np.abs((th - ai + math.pi) % (2 * math.pi) - math.pi)
+                    w = 0.03 / np.maximum(r, 0.05) * (1.2 - r)
+                    dark = np.maximum(dark, np.clip(1 - dth / np.maximum(w, 1e-3), 0, 1) * (r < L_) * 0.85)
+                dark = np.maximum(dark, np.clip(1 - r / 0.15, 0, 1) * 0.6)
+            elif kind == 'water':
+                rr = r * (1 + 0.12 * np.sin(5 * th + m['seed']))
+                dark = np.clip(1 - rr, 0, 1) ** 0.4 * 0.35
+                lite = np.clip(1 - np.abs(rr - 0.92) / 0.08, 0, 1) * 0.45
+            elif kind == 'smoke_ring':
+                dark = np.clip(1 - np.abs(r - 0.75) / 0.2, 0, 1) ** 1.5 * 0.5
+            elif kind == 'dust':
+                rr = r * (1 + 0.25 * np.sin(6 * th + m['seed']))
+                lite = np.clip(1 - rr, 0, 1) ** 0.7 * 0.5
+            elif kind == 'glass':
+                h = np.sin(x * 91.7 + y * 47.3 + m['seed']) * 43758.5453
+                h = h - np.floor(h)
+                lite = ((h > 0.965) & (r < 1)).astype(float) * 0.9
+            if dither is not None:
+                dq = dither[sel]
+                dark = np.floor(dark * 3 + dq * 0.9) / 3
+                lite = np.floor(lite * 3 + dq * 0.9) / 3
+            a = alb[sel]
+            if kind in ('scorch', 'dust', 'glass'):
+                a = a * (1 - dark[:, None] * k) + (m['col'][None] - a) * (lite[:, None] * k)
+            else:
+                a = a * (1 - dark[:, None] * k) + (255.0 - a) * (lite[:, None] * k * 0.6)
+            if kind == 'water':
+                a = a * (1 - 0.2 * k * (dark[:, None] > 0)) + np.array([60, 90, 140])[None] * 0.2 * k * (dark[:, None] > 0)
+            alb[sel] = a
+        return alb
