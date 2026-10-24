@@ -44,9 +44,19 @@ python -m reelkit.sheet render.py test/sheet.png 1.6 9.5 24 35.5 44.6 54.5 60
 python -m reelkit.safezone render.py
 python focus_check.py
 python -m reelkit.loopcheck render.py audio.wav
-python -m reelkit.video render.py audio.wav maze_race.mp4
+python -m reelkit.video render.py audio.wav maze_race.mp4    # the one full render (keeps frames_raw.rgb)
+python mux.py                                                # re-encode the raw seam-safe -> maze_race.mp4
+python -m reelkit.loopcheck maze_race.mp4
 python -m reelkit.flashcheck maze_race.mp4
 ```
+
+Why `mux.py`: the toolkit's mux failed `loopcheck` on the mp4 (the renderer passed). Frame 0 is a keyframe and the last
+frame the end of a GOP; x264's macroblock tree also gives frame 0 a finer quantiser. On this dense dithered board that
+read as a 3.4x seam jump. `mux.py` turns mbtree off and keyframes the last frame too (1.5x on the seam frames; the file
+is ~1.7x bigger). And AAC pads its last 1024-sample frame with zeros (61.0 s isn't a whole number of them): a 13 ms
+dropout before the loop. `audio.py` builds the soundtrack as a loop exactly 2860 AAC frames long (61.013 s) and
+`mux.py` muxes it untrimmed, so the decoded audio wraps sample-perfectly; the file reads 61.01 s.
+`python mux.py --patch A:B` re-renders A-B seconds into the kept raw before muxing.
 
 | file | what |
 |---|---|
@@ -58,6 +68,7 @@ python -m reelkit.flashcheck maze_race.mp4
 | `render.py` | back wall -> per-pixel desk -> props -> per-pixel board floor (texture: wood, baked wall shadows, paint) -> walls, rim, heads -> DOF -> glows -> HUD |
 | `audio.py` | the race-driven soundtrack, mixed as a loop (tails wrap onto the start) |
 | `focus_check.py` | board CoC = 0 on every frame |
+| `mux.py` | seam-safe re-encode of the kept raw frames (+ `--patch A:B`) |
 
 New reelkit piece: `reelkit.ui.race_lanes` (a race legend: one slim lane per racer, live rank with sliding lanes,
 NAME + instrument, progress bar, 1ST/2ND badges, LOST).

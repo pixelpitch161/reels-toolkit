@@ -3,3 +3,4 @@ sim.pkl
 check_audio.txt
 render.log
 __pycache__/
+mux.log

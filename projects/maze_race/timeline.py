@@ -239,7 +239,7 @@ def _caps():
     changes, SEEKER's dead end near the centre, FLOOD the tortoise), the winner, the route, the question"""
     c = []                                          # (t0, t1, lines, hi, alt)
     gold = (255, 206, 120)
-    c.append((0.0, 3.85, ['WHO SOLVES IT', '*FIRST?*'], gold, None))
+    c.append((1 / 30, 3.85, ['WHO SOLVES IT', '*FIRST?*'], gold, None))     # starts falling on frame 1: frame 0 = GO, clean seam
     c.append((3.95, 7.85, ['SAME MAZE', '4 *STRATEGIES*'], gold, None))
     # the early race: every lead change in 7.5-13.5 s (the first says LEADS), then the fairness rule
     lc = LEADERS + [(T_STOP, None)]

@@ -12,7 +12,7 @@ in the final stretch):
             bed that starts when its gate opens
 Finishers land a chord in their instrument (the winner with a crash and a boom); bars 26-28 play the winning route as a
 melody (one note per route cell, rising toward the centre, all four instruments in); bar 29 resolves; bar 30 is the
-pickup into GO. The file is mixed as a loop: tails past 61.0 s wrap onto the start."""
+pickup into GO. The file is mixed as a loop (2860 AAC frames = 61.013 s, see NA): tails past the end wrap onto the start."""
 import math
 import os
 import sys
@@ -158,8 +158,15 @@ def chord_stab(ms, kind):
 
 
 # ------------------------------------------------------------------ the mix
+# AAC codes 1024-sample frames and 61.0 s isn't a whole number of them, so the encoder would pad the last one with
+# zeros (a 13 ms dropout before the loop). The soundtrack is therefore built as a loop exactly 2860 AAC frames long
+# (61.0133 s): tails wrap at that length, the mp4 carries it untrimmed (mux.py) and it restarts sample-perfectly.
+NA = -(-int(round(T.DUR * SR)) // 1024) * 1024
+
+
 def main():
     mix = A.Mix(T.DUR)
+    mix.NS = NA
     fins = [f if f is not None else 1e9 for f in T.FIN]
 
     # FLOOD: strings ostinato, every 4th ring surges
@@ -355,7 +362,7 @@ def master_loop(mix):
     m = min(len(tail), NS)
     out[:m] += tail[:m]
     g = np.interp(A.tt(NS), [0, 26.0, T.T_FINAL, T.T_WIN or 44.0, T.T_ROUTE0, T.T_ROUTE1, 59.0, T.DUR],
-                  [0, 0, 2.0, 3.5, 4.0, 5.0, 3.5, 0])
+                  [0, 0, 2.2, 3.9, 4.5, 5.5, 4.2, 0])
     out = out * (10 ** (g / 20))[:, None]
     for k in ('flood', 'diver', 'seeker', 'drums', 'bed', 'pad'):
         b = mix.buses[k][:NS]

@@ -803,7 +803,7 @@ def hud(img, t, cam, R):
         x = lx + (tx - lx) * u
         y = ly + (ty - ly) * u
         pop = 1.0 + 0.6 * max(0.0, 1 - (t - tl) / 0.12) ** 2
-        a_in = min(1.0, 0.2 + (t - tl) / 0.12)                    # fades in over ~4 frames (GO lands on frame 0)
+        a_in = min(1.0, (t - tl) / 0.12)                          # fades in over ~4 frames (GO lands on frame 0)
         keep = out.copy() if a_in < 1.0 else None
         # backing pill
         x0, y0b, x1, y1b = int(x - 3), int(y - 3), int(x + w + 3), int(y + 10)
