@@ -126,6 +126,92 @@ def build_valved(g, t, ev, fx, nval, col, cap):
     tube(g, (xs[0], .33, 0), (xs[-1], .33, 0), .014, col=col)
     brass_fx(fx, ev, mouth)
 
+# ---------------------------------------------------------------- the modern Bb trumpet (rebuilt from reference photos)
+# Measured from a side view of a Yamaha YTR-8335LA (Wikimedia Commons, CC BY-SA 4.0), checked against a top view and a
+# labelled parts diagram. Seen from the player's right, bell right: the BELL PIPE runs along the top (behind the valve
+# row) into the big flare; the LEADPIPE runs from the mouthpiece at mid height, in front of the valves, to the MAIN
+# TUNING SLIDE, which loops down at the bell end and comes back into the 3rd valve; the BELL BOW loops down at the
+# mouthpiece end into the bottom of the valve block. 1st valve slide (thumb saddle) on the mouthpiece side, 3rd valve
+# slide (finger ring) on the bell side, finger hook on the leadpipe just after valve 3, water key on the main slide.
+# Depth (top view): leadpipe + slides on the near side (+z), valves in the middle, bell pipe + bow on the far side.
+PEARL, FELT = (252, 248, 238), (34, 26, 22)
+def ring_tube(g, c, R, r, col, n=10, plane="xy"):
+    pts = []
+    for k in range(n + 1):
+        a = 2*math.pi*k/n
+        if plane == "xy": pts.append((c[0] + R*math.cos(a), c[1] + R*math.sin(a), c[2]))
+        else: pts.append((c[0] + R*math.cos(a), c[1], c[2] + R*math.sin(a)))
+    for p, q in zip(pts, pts[1:]): tube(g, p, q, r, col=col, n=6)
+def flare(g, prof, y, z, col):
+    """the bell: (x, radius) stations along the axis, rim bead, dark throat"""
+    for (x0, r0), (x1, r1) in zip(prof, prof[1:]):
+        tube(g, (x0, y, z), (x1, y, z), r0, r1, col=col, n=12, two=True)
+    xe, re = prof[-1]
+    tube(g, (xe - .006, y, z), (xe + .006, y, z), re*1.03, re*1.03, col=GOLDB, n=12, two=True)
+    throat = [(xe - .09, y + re*.62*math.cos(a), z + re*.62*math.sin(a)) for a in np.linspace(0, 2*math.pi, 13)[:-1]]
+    g.face(throat, (30, 20, 10), ref=(xe - .3, y, z), emit=True, two=True)
+    return (xe, y, z)
+def build_modern(g, t, ev, fx, col=BRASS, cap=GOLDB):
+    ZL, ZB = .055, -.055                      # leadpipe / slides plane (near side), bell pipe / bow plane (far side)
+    r = .015                                  # tubing (a touch over real scale so it reads at pixel size)
+    trumpet_stand(g, .43, .15)                # cradles the main slide's lower leg
+    VX = (-.2225, -.1445, -.066)              # valve 1 (mouthpiece side), 2, 3
+    YL, YB0, YB1 = .633, .681, .70            # leadpipe height; bell pipe height at the bow / at the bell
+    # mouthpiece (silver) + receiver
+    tube(g, (-.899, YL, ZL), (-.885, YL, ZL), .042, .042, col=SILVER)
+    tube(g, (-.885, YL, ZL), (-.845, YL, ZL), .04, .024, col=SILVER)
+    tube(g, (-.845, YL, ZL), (-.825, YL, ZL), .016, .014, col=SILVER)
+    tube(g, (-.825, YL, ZL), (-.70, YL, ZL), .013, .0125, col=SILVER)
+    tube(g, (-.70, YL, ZL), (-.556, YL, ZL), .016, .015, col=col)
+    # leadpipe -> main tuning slide (loops down at the bell end) -> lower leg into valve 3
+    tube(g, (-.556, YL, ZL), (.25, YL, ZL), .0135, .0145, col=col)
+    tube(g, (.25, YL, ZL), (.395, YL, ZL), .017, col=col)
+    bend(g, (.395, .5385, ZL), .0945, .017, 90, -90, col=col, segs=8)
+    tube(g, (.395, .444, ZL), (.25, .444, ZL), .017, col=col)
+    tube(g, (.25, .444, ZL), (VX[2] + .03, .444, .03), r, col=col)
+    tube(g, (.366, YL, ZL), (.366, .444, ZL), .004, col=SILVER)               # brace
+    tube(g, (.44, .455, ZL + .012), (.49, .43, ZL + .012), .006, col=SILVER)   # water key
+    # finger hook on the leadpipe, just after valve 3
+    hook = [(.0, YL + .012, ZL), (.0, .69, ZL), (.012, .715, ZL), (.03, .72, ZL)]
+    for p, q in zip(hook, hook[1:]): tube(g, p, q, .006, col=SILVER, n=6)
+    # 3rd valve slide (bell side) with its finger ring
+    tube(g, (VX[2] + .03, .515, .035), (.34, .515, .035), r, col=col)
+    bend(g, (.34, .4975, .035), .0175, r, 90, -90, col=col)
+    tube(g, (.34, .48, .035), (VX[2] + .03, .48, .035), r, col=col)
+    ring_tube(g, (.071, .562, .035), .03, .005, col)
+    # 1st valve slide (mouthpiece side) with its thumb saddle
+    tube(g, (VX[0] - .03, .476, .03), (-.448, .476, .03), .016, col=col)
+    bend(g, (-.448, .4515, .03), .0245, .016, 90, 270, col=col)
+    tube(g, (-.448, .427, .03), (VX[0] - .03, .427, .03), .016, col=col)
+    for sx in (-.315, -.285): tube(g, (sx, .49, .03), (sx, .60, .03), .005, col=SILVER, n=6)
+    tube(g, (-.315, .49, .03), (-.285, .49, .03), .005, col=SILVER, n=6)
+    # 2nd valve slide: the small knuckle between valves 1 and 2, toward the viewer
+    tube(g, (VX[0] + .02, .455, .02), (-.183, .438, .07), r, col=col)
+    tube(g, (-.183, .438, .07), (VX[1] - .02, .455, .02), r, col=col)
+    # bell section: bow at the mouthpiece end, bell pipe along the top, the flare
+    tube(g, (VX[0] - .03, .447, -.02), (-.30, .447, ZB), r, col=col)
+    tube(g, (-.30, .447, ZB), (-.549, .447, ZB), r, col=col)
+    bend(g, (-.549, .564, ZB), .117, r, 270, 90, col=col, segs=10)
+    bp = [(-.549, YB0, .015), (-.2, .69, .017), (.2, YB1, .022), (.36, YB1, .03)]
+    for (x0, y0, r0), (x1, y1, r1) in zip(bp, bp[1:]):
+        tube(g, (x0, y0, ZB), (x1, y1, ZB), r0, r1, col=col, n=10)
+    mouth = flare(g, [(.36, .03), (.45, .038), (.52, .047), (.60, .064), (.67, .088), (.737, .115), (.79, .142),
+                      (.83, .168), (.862, .19), (.879, .199)], YB1, ZB, col)
+    for x, yb, yl in ((-.42, .684, YL), (.30, YB1, YL)):                       # bell-to-leadpipe braces
+        tube(g, (x, yb - .012, ZB + .01), (x, yl + .01, ZL - .01), .004, col=SILVER, n=6)
+    # the valves: casings, felt-ringed top caps, bottom caps, stems and pearl buttons (pressed by the fingering)
+    cur = sounding(ev); fing = fingering(cur[1]) if cur else ""
+    for i, x in enumerate(VX):
+        tube(g, (x, .376, 0), (x, .695, 0), .034, col=col, n=10)
+        tube(g, (x, .34, 0), (x, .376, 0), .036, col=cap, n=10)
+        tube(g, (x, .695, 0), (x, .712, 0), .037, col=cap, n=10)
+        tube(g, (x, .712, 0), (x, .716, 0), .022, col=FELT, n=8, spec=.1)
+        down = str(i + 1) in fing
+        top = .74 - (.03 if down else 0)
+        tube(g, (x, .712, 0), (x, top, 0), .008, col=SILVER, n=6)
+        tube(g, (x, top, 0), (x, top + .018, 0), .029, col=HOT if down else PEARL, spec=.4, n=10)
+    brass_fx(fx, ev, mouth)
+
 def build_natural(g, t, ev, fx, keyed=False):
     col = BRASS
     trumpet_stand(g, .4, -.05)
@@ -182,7 +268,7 @@ def build_tut(g, t, ev, fx):
 
 def build(g, t, ev, fx, s):
     k = s["key"]
-    if k == "modern": build_valved(g, t, ev, fx, 3, BRASS, SILVER)
+    if k == "modern": build_modern(g, t, ev, fx)
     elif k == "valve": build_valved(g, t, ev, fx, 2, (220, 168, 76), (200, 150, 70))
     elif k == "natural": build_natural(g, t, ev, fx)
     elif k == "keyed": build_natural(g, t, ev, fx, keyed=True)

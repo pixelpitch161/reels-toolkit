@@ -12,7 +12,7 @@ Each session updates its own row.
 | Acoustic guitar | done | `acoustic_lowpoly.py` | |
 | Electric guitar (short) | done | `electric_lowpoly.py` | |
 | Electric guitar (60 s) | done | `electric60_lowpoly.py` | |
-| Trumpet | done | `trumpet_lowpoly.py` | |
+| Trumpet | done | `trumpet_lowpoly.py` | modern trumpet corrected from reference photos (2026-10-24: Yamaha YTR-8335LA side + top views; bell pipe on top, leadpipe in front of the valves, main slide at the bell end, bell bow at the mouthpiece end, 1st / 3rd slides, hook, water key); the posted video is unchanged |
 | Viola | done | — | script not in repo yet |
 | Drum kit | done | `drums60_lowpoly.py` | |
 | Double bass | done | — | script not in repo yet |
