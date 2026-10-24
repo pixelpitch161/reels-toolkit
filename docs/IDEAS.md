@@ -34,6 +34,8 @@ a draft, when it gets feedback, and when it delivers.
 | 22 | Rock Paper Scissors Orchestra | in production | session_01Kd27hS (2026-10-23; took over from session_018AnKYU, which pushed nothing) | Fully developed (beat sheet in backlog). 3 sections chase and convert on a round opera stage; the twist: the team that wipes another out dooms itself. 61 s; mood A (ominous cinematic orchestra, ~110.2 BPM). In production: sim + seed search first; reuses reelkit.ui share_bar + impact captions (added by #21) | - |
 | 23 | Maze Race | in production | session_01ABcE9a (2026-10-23) | Fully developed (beat sheet in backlog). 4 explorers race one symmetric maze, same squares per beat; names + instruments on screen all video (user); 61 s; mood B (heist chase, ~122 BPM; user: not always super uplifting); live race story (lesson from #21). In production: maze + race sim and seed search first; impact captions from reelkit.ui; new race-legend lanes | - |
 | 24 | Bounce Royale | in production | session_013tp84a (2026-10-23) | Fully developed (beat sheet in backlog). 4 balls repaint a shrinking ring's wall, 0 segments = pop; names + instruments on screen; 61 s; mood A (dark synthwave, ~118 BPM). In production: billiards sim + early-stopping seed search first; share_bar + impact captions from reelkit.ui | - |
+| 25 | Battle of the Bands: Genre Wars | approved | ideas chat | Fully developed (beat sheet in backlog). BotB episode (user: BotB doing well, make more): ROCK / JAZZ / EDM / ORCHESTRA on the existing engine; the song morphs toward the leader's genre; 61 s, ~118 BPM, dramatic minor | - |
+| 26 | Which Instrument Wins? | approved | ideas chat | Fully developed (beat sheet in backlog). Trend format ("Who Will Win?" 16 entrants): 16 instrument balls in a rotating ring with a gap; reuses Pixel Pitch instrument models + voices; 61 s; mood A (dark tango, ~118 BPM) | - |
 
 ## Backlog (idea details)
 
@@ -1344,6 +1346,114 @@ particles; reflections = a simple mirrored glow on the wet roof. UI: impact capt
 (added by #21), with a second small line under each name for the instrument. Audio: bounce events play each colour's
 instrument (pitch from hit angle, quantised); repaint accents; pop crashes; shrink riser; volume from wall share. One
 event list drives picture, bar and mix.
+
+### Trend research (Oct 23, TikTok + Instagram via the user's Chrome) — basis for #25 and #26
+- "Who Will Win?" with 16 named entrants (balls named after characters / teams, "Satisfying fight at the end",
+  numbered parts; e.g. Chef Bounce posts almost daily). Viewers pick before it starts.
+- Weapon-ball battles (Earclacks' 2025 format, many copycats): weapons + HP bars, run as tournaments / seasons with
+  brackets and lore. Instrument versions already exist ("Brass Knuckles VS Soul Guitar"; instrument 1v1s asking
+  "which instrument should we battle next?").
+- Pick-a-colour marble races posting daily ("Race #38 · first and second 0.03 s apart", "100 marbles enter, only one
+  survives", audience entry: "Comment 'mymarble' and you become a marble in an upcoming race").
+- Territory wars with a clock ("Most land after 60 seconds wins"); merge games ("Will the Jelly Gems merge into a
+  Diamond?"); recurring named characters (Kinetiq's "SawllyBally VS RopeyDopey").
+- @algorithmbattles: still 17 posts; top reel 1.5M -> 1.7M views. Two-team battles remain their weakest (26–42K).
+- Shared levers: pick a side before it starts, numbered series, recurring characters, tournaments, audience entry,
+  photo finishes. Avoid the trend's anime / NFL entrants (someone else's IP): use instruments, genres, colours or fan
+  names.
+- Not yet developed from this batch (BotB iterations): A2 tournament (8 bands, bracket, weekly series), A3 seasons +
+  rematches with an all-time win tally, A4 arena twists (shrinking stage, portals, centre wall, 60 s clock, spotlight
+  tile), A5 fan-entry episodes ("comment your name to join"). New: B2 1,000 Piccolos vs 1 Tuba, B3 Merge to the Top
+  (jelly-gem merge with rising pitch), B4 Instrument Weapon Balls, B5 Pick-a-Colour Photo Finish marble race.
+
+### 25. Battle of the Bands: Genre Wars — APPROVED
+**Direction (user, Oct 23):** Battle of the Bands is doing well, so make more episodes. Standing notes: 61.0 s; names +
+instruments on screen; music not always super uplifting; can open sparse; impact captions; something changes every
+4–5 s (lesson from #21).
+**Concept:** a Battle of the Bands episode on the existing engine (`projects/battle_of_the_bands/battle.py`). The four
+teams are genres, and the song itself shifts toward whoever is winning, ending fully in the winner's style.
+- **Hook:** "4 GENRES" / "1 STAGE" (8 + 7 chars, impact style, in the first 2 s). Post caption: "Comment your genre 👇🎧"
+- **Series look:** keep the round LED wall, speaker stacks and floating festival stage so it reads as Battle of the
+  Bands, with a title tag ("BATTLE OF THE BANDS · GENRE WARS"). Optional: start an all-time win tally (A3) that
+  carries into later episodes.
+- **The four genres (each reuses one existing engine team, so no new simulation code):**
+
+| Genre | Strategy (engine team) | Its sound | Stage lights when it leads |
+|---|---|---|---|
+| ROCK (red) | Smashing ricochets (BALL) | Distorted guitar + kit | Pyro flashes, red wash |
+| JAZZ (blue) | Improvised wandering lines (VINE) | Sax, upright bass, ride, piano comping | Smoky blue spots |
+| EDM (cyan) | Pulses on the beat (RIPPLE) | Saw lead, sub bass, four-on-the-floor | Lasers |
+| ORCHESTRA (gold) | A cascading wall of sound (SAND) | Strings, brass, timpani | Warm gold glow |
+
+- **Music:** all four genres play the same original progression and tempo, each arranged in its own style, so the
+  stems blend: dramatic minor (Am–F–Dm–E), ~118 BPM (`loop_bpm(118)` = 118.03: 30 bars in 61 s), tense rather than
+  sugary. Every move steps that genre's part on the beat; each stem's volume follows its share of the stage, so the
+  song audibly morphs as the lead changes; an eliminated genre drops out; the winner's style takes over the final
+  bars. Original and synthesised.
+- **Instruments on screen:** `reelkit.ui.share_bar` under the wall with each genre name + its lead instrument in small
+  text ("ROCK · GUITAR", "JAZZ · SAX", "EDM · SYNTH", "ORCHESTRA · STRINGS"); labels pop up at each base in the
+  first 2 s (impact style).
+- **Beat sheet (61 s):** #20's proven shape: burst at frame 0, the stage fills by ~21 s, eliminations ~31 / 42 / 51 s,
+  the winner's genre solo, the wall cracks back to empty exactly at 61.0 s. Captions: "4 GENRES / 1 STAGE" (0–2),
+  "THE SONG FOLLOWS / THE LEADER" (8–14), "(GENRE) TAKES OVER" on lead changes, "(GENRE) IS OUT", "(GENRE) WINS",
+  "WHICH GENRE / ARE YOU?" (winner solo). Something must change every 4–5 s.
+- **Flags:** honest seed (existing `seed_search.py --stop 5`; re-tune the search's story shape for 61 s), never
+  hand-edited. Genre stereotypes played as fun, not mockery. Each stem must sound good alone (the winner's solo is
+  that stem). Loop point = file boundary; safe-zone, flash (pyro / lasers) and loop checks must pass.
+- **Effort:** mostly new audio (four genre arrangements of one progression) + lighting moods; engine, stage and UI
+  reused: roughly an episode-sized job plus the music. Work in a new project folder (e.g. `projects/botb_genre_wars/`)
+  that imports the engine; don't edit #20's files.
+
+### 26. Which Instrument Wins? — APPROVED
+**Direction (user, Oct 23):** new idea from the trend research above; standing notes as in #25. Mood A (dark tango)
+by default (user approved without picking).
+**Concept:** the trending "Who Will Win? 16 entrants" format with 16 instruments. Each ball plays its own instrument
+whenever it bounces: the arena starts as a wall of 16 instruments and clears down to a duel, then a solo (chaos thinning
+to clarity).
+- **Hook:** "16 INSTRUMENTS" / "1 SURVIVOR" (14 + 10 chars, impact style, in the first 2 s). Post caption: "Pick yours
+  before it starts 👇🎧"
+- **The 16 entrants** (all already modelled and voiced in Pixel Pitch, `series/instrument-history/`): piano, violin,
+  cello, harp, flute, clarinet, sax, trumpet, trombone, tuba, French horn, electric guitar, drums, accordion, bagpipes,
+  ukulele. Ukulele and bagpipes are natural underdogs for comments. Each ball = a glass sphere with the instrument's
+  low-poly model inside; its name rides along under it in small text.
+- **Rules:** the balls drop into a big rotating ring with one gap (gravity, real bouncing and collisions). Fall out
+  through the gap = out (drop into the pit below with one last dull note). The gap slowly widens, so eliminations
+  speed up: 15 eliminations in ~45 s (one every ~3 s). The last two duel until one falls. Equal size and weight for
+  everyone (fairness).
+- **On-screen roster:** a 4×4 grid of the 16 names inside the safe zone: survivors lit, the eliminated dimmed with
+  their place ("16TH"…). Build it as a reusable `reelkit.ui` piece.
+- **Music, mood A (dark tango):** habanera bass + staccato strings in a minor key at ~118 BPM (`loop_bpm(118)`: 30
+  bars): dramatic, duel-like, and it gives the bounces a rhythm to fall into. Every bounce plays that ball's
+  instrument (pitch quantised to the key, timing to the grid). The winner's solo is an original motif in its own
+  idiom. (Alternatives offered, not chosen: B game-show suspense; C epic royale.)
+- **Scene:** a low-poly colosseum at sunset, the ring floating over the arena floor; low sun (key light), torches on
+  the walls (local lights); pennants flutter, pigeons circle (small life). Time-saving fallback: the shared
+  `reelkit.backdrops.VibrantVoid`.
+
+**Beat sheet (61 s; events after 2 s are targets: the real run decides, so choose a seed whose run fits):**
+| Time | Visual | Caption (impact) | Sound |
+|---|---|---|---|
+| 0–2 | 16 balls drop into the ring; names under each | 16 INSTRUMENTS / 1 SURVIVOR | Every instrument at once over the tango pulse |
+| 2–8 | Ring turns, the gap sweeps past; first falls | FALL OUT = / YOU'RE OUT | First drop-outs; the bed tightens |
+| 8–20 | Eliminations every ~3 s; the roster dims | (INSTRUMENT) IS OUT (for upsets) | The arrangement thins; individual instruments emerge |
+| 20–32 | Gap widens; an underdog survives a near-miss | STILL ALIVE?! | Faster pulse |
+| 32–44 | Down to 4, then 3 | FINAL 3 | Three instruments trading phrases |
+| 44–50 | Final duel: two balls, close calls at the gap | (no caption) | Call and response, tension rising |
+| ~50 | Last fall | (INSTRUMENT) WINS | Big hit |
+| 50–58 | Winner plays a solo motif alone; the colosseum lights up | WHO DID YOU / PICK? | Winner's solo |
+| 58–61 | The ring closes; at 61.0, 16 balls drop in again = frame 0 | (no caption) | Pickup into the opening |
+
+- **Cross-promo:** every entrant has (or will have) a Pixel Pitch history video; an end caption like "ITS STORY: / ON
+  OUR PAGE" can send the winner's fans to the matching episode.
+- **Series:** "WHICH INSTRUMENT WINS? #1" with an all-time win tally across episodes; later themes (brass only,
+  strings only, "weird instruments").
+- **Flags:** honest simulation: pick seeds for pacing (no long gaps without an elimination, an upset, a close final,
+  varied winners across seeds), never hand-edit; early-stopping search. Generic instruments only (no brand models or
+  logos). 16 voices at the start: keep each bounce note short so it reads as an exciting mess, not mush. Loop point =
+  file boundary (balls drop in at frame 0); safe-zone, flash and loop checks must pass.
+- **Effort:** low–moderate: cheap 2D physics; instrument models + synth voices reused from Pixel Pitch (import or copy
+  into the project; don't edit the Pixel Pitch series files); roster grid = small new UI piece; the colosseum is the
+  main new build (or use the void).
 
 ## Adding a new idea
 
