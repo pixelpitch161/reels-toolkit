@@ -13,7 +13,7 @@ import argparse
 import os
 import numpy as np
 from PIL import Image
-from .config import W, H, FPS, DUR, SAFE
+from .config import W, H, FPS, DUR, SAFE, SAFE_BUTTONS, safe_overshoot
 from . import ui
 from .video import _load, project_nf
 
@@ -24,6 +24,8 @@ def overlay(arr):
     x0, y0, x1, y1 = SAFE
     out = np.ones((H, W), bool)
     out[y0:y1, x0:x1] = False
+    bx0, by0, bx1, by1 = SAFE_BUTTONS
+    out[by0:by1, bx0:bx1] = True                     # the app's right-hand button column
     img[out] = img[out] * 0.62 + np.array([255, 40, 40]) * 0.38
     img = img.astype(np.uint8)
     dash = (np.arange(max(W, H)) // 3) % 2 == 0
@@ -35,7 +37,10 @@ def overlay(arr):
     for y in range(y0, y1):
         if dash[y]:
             img[y, x0] = col
-            img[y, x1 - 1] = col
+            img[y, (x1 - 1) if y < by0 else (bx0 - 1)] = col
+    for x in range(bx0, x1):
+        if dash[x]:
+            img[by0, x] = col
     return img
 
 
@@ -49,7 +54,7 @@ def check(mod, times):
         for x0, y0, x1, y1, kind, info in boxes:
             if kind != 'caption' and (x0 < 0 or y0 < 0 or x1 > W or y1 > H):
                 continue                                    # panel/label partly off-frame: sliding in or out
-            over = max(SAFE[0] - x0, SAFE[1] - y0, x1 - SAFE[2], y1 - SAFE[3], 0)
+            over = safe_overshoot(x0, y0, x1, y1)
             if over > 0:
                 d = outside.setdefault((kind, info), dict(n=0, worst=0, t_first=t, t_last=t, box=None, t_worst=t))
                 d['n'] += 1
@@ -67,7 +72,7 @@ def check(mod, times):
 
 
 def report(outside, overlaps, tracked, times):
-    print(f'safe box (internal px) x {SAFE[0]}-{SAFE[2]}, y {SAFE[1]}-{SAFE[3]}; '
+    print(f'safe box (internal px) x {SAFE[0]}-{SAFE[2]}, y {SAFE[1]}-{SAFE[3]}, minus the button column x >= {SAFE_BUTTONS[0]} below y {SAFE_BUTTONS[1]}; '
           f'{len(times)} frames checked, {tracked} tracked items')
     if tracked == 0:
         print('  WARNING: nothing was drawn through reelkit.ui - check text and HUD by eye on contact sheets')

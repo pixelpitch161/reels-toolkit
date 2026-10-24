@@ -8,16 +8,16 @@ Two styles:
                     Lines land one after another (IMPACT_STAGGER). impact_landings(caps) lists the landing
                     times, so the soundtrack can put a soft thud on each (reelkit.audio.thud()).
 
-Safe zone (config.SAFE): captions start at the top of the safe box and are centred on it. Lines of up to
-14 chars use the big size, up to 21 chars the small size; longer lines overflow the box (the safe-zone
-check flags them). Keep HUD panels and labels inside the box too: never in the bottom 35 % of the frame
-or under the right-hand button column.
+Safe zone (config.SAFE, config.SAFE_BUTTONS): captions start at the top of the safe box, centred on the frame.
+Lines of up to 14 chars use the big size, up to 21 chars the small size. Keep HUD panels and labels inside the
+box too (above y 500 internal, x 20-340) and out of the app's right-hand button column (x >= 300 below y 290).
+share_bar / race_lanes / roster_grid default to the bottom of the box, left of the button column.
 
 Everything drawn here is recorded in DRAWN (reset each frame by the checker), so
 `python -m reelkit.safezone render.py` can verify placement."""
 import math
 import numpy as np
-from .config import W, H, SAFE, SAFE_CX, ease, ss
+from .config import W, H, SAFE, SAFE_CX, SAFE_BUTTONS, safe_x1, ease, ss
 from .font import ADV, text_mask, stamp, rich_line, dilate
 
 CREAM = (252, 240, 214)
@@ -297,10 +297,12 @@ def share_bar(img, shares, names, colors, x0=None, x1=None, y=None, h=6, out=Non
     Returns {'segments': [(xa, xb, xc)], 'slots': [...], 'bottom': y} so a project can add a crown etc."""
     n = len(names)
     x0 = SAFE[0] + 4 if x0 is None else x0
-    x1 = SAFE[2] - 4 if x1 is None else x1
+    name_h0 = 7 * name_scale
+    tot_h = h + lead + name_h0 + (9 if show_pct else 0)
+    y = (SAFE[3] - 4 - tot_h) if y is None else y
+    x1 = safe_x1(y, y + tot_h) - 4 if x1 is None else x1     # stays left of the app's button column
     sc, slots = share_layout(names, x0, x1, name_scale)
     name_h = 7 * sc
-    y = (SAFE[3] - 4 - (h + lead + name_h + (9 if show_pct else 0))) if y is None else y
     out = [False] * n if out is None else list(out)
     under = img.copy() if alpha < 0.999 else None
     sh = np.array([0.0 if out[q] else max(0.0, float(shares[q])) for q in range(n)])
@@ -374,10 +376,10 @@ def race_lanes(img, lanes, x0=None, x1=None, y1=None, lane_h=11, alpha=1.0, ink=
     `python -m reelkit.safezone`. Returns [(lane_x0, lane_y0, lane_x1, lane_y1)] per racer, in input order."""
     n = len(lanes)
     x0 = SAFE[0] + 4 if x0 is None else x0
-    x1 = SAFE[2] - 4 if x1 is None else x1
     y1 = SAFE[3] - 5 if y1 is None else y1
     pad = 3
     y0 = y1 - n * lane_h - 2 * pad
+    x1 = safe_x1(y0, y1) - 4 if x1 is None else x1           # stays left of the app's button column
     under = img.copy() if alpha < 0.999 else None
     if backing:
         reg = img[y0:y1, x0 - 3:x1 + 3].astype(np.float32)
@@ -471,10 +473,10 @@ def roster_grid(img, names, colors, place=None, x0=None, x1=None, y0=None, cols=
     `python -m reelkit.safezone` checks it. Fade with alpha, don't slide. Returns the panel's top y."""
     n = len(names)
     x0 = SAFE[0] + 4 if x0 is None else x0
-    x1 = SAFE[2] - 4 if x1 is None else x1
     nrows = (n + cols - 1) // cols
     h = nrows * row_h - (row_h - 7)
     y0 = (SAFE[3] - 4 - h - 3) if y0 is None else y0
+    x1 = safe_x1(y0, y0 + h + 4) - 8 if x1 is None else x1   # stays left of the app's button column
     place = [None] * n if place is None else list(place)
     flash = [0.0] * n if flash is None else list(flash)
     under = img.copy() if alpha < 0.999 else None

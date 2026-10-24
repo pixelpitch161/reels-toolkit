@@ -10,12 +10,35 @@ FPS = 30
 DUR = 61.0
 NF = int(DUR * FPS)
 
-# Safe zone: the part of the frame TikTok, Instagram Reels and YouTube Shorts leave visible (strictest edge
-# of the three, from their published margins). Captions, labels, HUD panels and key action stay inside it;
-# scenery can fill the whole frame. At 1080x1920 output: x 120-888, y 288-1248 (top 15%, bottom 35%,
-# left 120 px, right 192 px for the right-hand button column). Check with `python -m reelkit.safezone`.
-SAFE = (40, 96, 296, 416)                 # internal px: x0, y0, x1, y1
-SAFE_CX = (SAFE[0] + SAFE[2]) // 2        # 168: centre text on the safe box, not the frame (right margin is wider)
+# Safe zone: the part of the frame the TikTok / Instagram apps leave visible on a normal (organic) post.
+# Measured from the user's own TikTok + Instagram screenshots of a posted reel on a tall phone (Oct 23; the
+# first version used the platforms' ad margins and was far too strict: the share bar ended up covering the
+# battle). On a tall phone the apps crop ~50 px off each side and cover:
+#   top     the tabs / search / camera icons, down to y ~250 (output px)
+#   bottom  username, caption, creator avatar from y ~1500-1700
+#   right   the like / comment / share column, x > ~900, but only from y ~900 down
+# So: captions, labels, counters, HUD panels and key action stay inside SAFE and out of SAFE_BUTTONS;
+# scenery can fill the whole frame. At 1080x1920 output: x 60-1020, y 288-1500, minus x > 900 below y 870.
+# Check with `python -m reelkit.safezone`.
+SAFE = (20, 96, 340, 500)                 # internal px: x0, y0, x1, y1 (the outer box)
+SAFE_BUTTONS = (300, 290, W, H)           # internal px: the right-hand button column, covered (x >= 300, y >= 290)
+SAFE_CX = W // 2                          # 180: captions sit above the button column, so centre them on the frame
+
+
+def safe_x1(y0, y1):
+    """right-hand limit for something spanning rows y0..y1: the safe box edge, or the button column's edge if it
+    reaches down into the column"""
+    return SAFE_BUTTONS[0] if y1 > SAFE_BUTTONS[1] else SAFE[2]
+
+
+def safe_overshoot(x0, y0, x1, y1):
+    """px by which a box sticks out of the safe zone (0 = fully inside): outside the outer box, or into the
+    button column"""
+    over = max(SAFE[0] - x0, SAFE[1] - y0, x1 - SAFE[2], y1 - SAFE[3], 0)
+    bx0, by0, bx1, by1 = SAFE_BUTTONS
+    if x1 > bx0 and y1 > by0 and x0 < bx1 and y0 < by1:
+        over = max(over, min(x1 - bx0, y1 - by0))
+    return over
 
 BAYER = np.array([[0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]]) / 16.0
 BAYER_FULL = np.tile(BAYER, (H // 4, W // 4))

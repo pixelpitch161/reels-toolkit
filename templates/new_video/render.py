@@ -11,7 +11,7 @@ import numpy as np
 from PIL import Image, ImageDraw
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))   # repo root on the path
-from reelkit.config import W, H, FPS, BAYER_FULL, SAFE, ss, ease, dirv, mixc
+from reelkit.config import W, H, FPS, BAYER_FULL, SAFE, safe_x1, ss, ease, dirv, mixc
 from reelkit.camera import Cam, interp_keys
 from reelkit.raster import Frame, painter, apply_glows
 from reelkit.lighting import Lights, shade, fog, sky_gradient
@@ -109,11 +109,12 @@ def render(f):
         img = god_rays(img, depth, ms, (150, 175, 235), 0.35)
     img = grade(bloom(np.clip(img, 0, 255)))
     img = np.clip(img * vignette() * top_scrim(), 0, 255).astype(np.uint8)
-    # UI on top (never blurred). Keep panels and labels inside SAFE (reelkit.config): the bottom 35 % of the
-    # frame and the right-hand strip are covered by app overlays on TikTok / Reels / Shorts.
+    # UI on top (never blurred). Keep panels and labels inside SAFE and out of SAFE_BUTTONS (reelkit.config):
+    # the apps cover the bottom ~22 % and the lower right-hand button column.
     pil = Image.fromarray(img)
     d = ImageDraw.Draw(pil)
-    x0, _, x1, y1 = SAFE
+    x0, _, _, y1 = SAFE
+    x1 = safe_x1(y1 - 48, y1)                     # left of the app's right-hand button column
     if T.T_SONG <= t < T.T_END:
         panel(d, x0, y1 - 48, x1 - 4, y1 - 4)
     out = np.asarray(pil).copy()
