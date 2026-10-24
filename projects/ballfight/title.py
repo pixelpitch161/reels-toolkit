@@ -173,7 +173,23 @@ def _harp_strings(base):                                             # HARP: fin
     return np.where(line[..., None], base * 0.78 + np.array([255, 246, 222]) * 0.22, base * 0.94)
 
 
-PATTERNS = {'BAGPIPES': _tartan, 'ACCORDION': _pleats, 'ORGAN': _organ_pipes, 'HARP': _harp_strings}
+def _slide_tubes(base):                                              # TROMBONE: pairs of slide tubes along the divider
+    q = (SIDE / 34.0) % 1
+    tube = (np.abs(q - 0.40) < 0.045) | (np.abs(q - 0.60) < 0.045)
+    gap = np.abs(q - 0.5) < 0.06
+    return base * np.where(tube[..., None], 1.16, np.where(gap[..., None], 0.86, 1.0))
+
+
+def _horn_coils(base):                                               # HORN: tubing coiled round the panel's big ball
+    b = np.where(SIDE > 0, 0, 1)                                     # (works on either side of the divider)
+    cx = np.where(b == 0, BALLS[0]['cx'], BALLS[1]['cx'])
+    cy = np.where(b == 0, BALLS[0]['cy'], BALLS[1]['cy'])
+    q = (np.hypot(XX - cx, YY - cy) / 16.0) % 1
+    return base * np.where((q < 0.22)[..., None], 1.14, np.where((q > 0.88)[..., None], 0.86, 1.0))
+
+
+PATTERNS = {'BAGPIPES': _tartan, 'ACCORDION': _pleats, 'ORGAN': _organ_pipes, 'HARP': _harp_strings,
+            'TROMBONE': _slide_tubes, 'HORN': _horn_coils}
 
 
 def _panel_rgb(colour, dark, side, name=None):
