@@ -8,7 +8,7 @@ Rules (the same for both fighters; nothing is scripted or edited):
   - balls move at one constant speed and bounce off the ropes (the ring is |x|, |y| <= A in the ring's own frame); the
     ropes "give" a little (a seeded +-ROPE_GIVE deg on every bounce, so no run settles into a fixed orbit); ball vs ball
     is an elastic clash, after which both go back to the shared speed;
-  - weapons and abilities come from fighters.py (blade / volley / pulse / beam; shockwave, shield, haste, arc, wave,
+  - weapons and abilities come from fighters.py (blade / volley / pulse / beam / orbit; shockwave, shield, haste, arc, wave,
     slam); a volley may `curve` (homing projectiles with a turn-rate limit and a lifetime) or `bounce` (ricochet off
     the ropes up to N times);
   - every landed hit grows the attacker's weapon (a blade gets longer and / or spins faster, a volley gets one more
@@ -582,6 +582,58 @@ class Fight:
             if sd != 0.0:
                 S['last'] = sd
 
+    ORBIT_SEATS = (0, 4, 2, 6, 1, 5, 3, 7)   # orbit satellites take these seats (of 8, 45 deg apart): spread evenly,
+                                             # and a new satellite never moves the others
+
+    def orbit_sats(self, k):
+        """an orbit weapon's satellites: [(j, ring-frame position)], j = 0.. in the order they were added (its sub index)"""
+        B = self.balls[k]
+        r = self.R.R + B.blade_len
+        out = []
+        for j in range(int(B.n_vol + 1e-9)):
+            a = B.th + self.ORBIT_SEATS[j] * math.pi / 4
+            out.append((j, B.p + r * np.array([math.cos(a), math.sin(a)])))
+        return out
+
+    def orbit_step(self, k, dt):
+        """weapon kind 'orbit' (#31's arpeggiator): `n0` satellites circle the ball at `base` beyond its surface, `spin`
+        rad/s (haste multiplies it; with `wobble` the orbit radius also swings by that fraction, `wobble_beats` per cycle,
+        while haste lasts); a satellite that touches the opponent hits it (`dmg`, `knock`) and rests `cooldown` s; every
+        landed hit adds `grow` satellites up to `n_max` (8 seats); with `parry` a satellite destroys enemy projectiles it
+        touches and rests `parry_cool` s. `th` = the orbit's angle, `n_vol` = satellites, `blade_len` = the live radius"""
+        B, O = self.balls[k], self.balls[1 - k]
+        w = B.w
+        if not hasattr(B, 'sat_cool'):
+            B.sat_cool = np.zeros(len(self.ORBIT_SEATS))
+            B.orb_base = B.blade_len
+        B.th = (B.th + B.spin_dir * B.spin * self.ab_mult(k) * dt) % (2 * math.pi)
+        B.sat_cool = np.maximum(0.0, B.sat_cool - dt)
+        wob = w.get('wobble', 0.0) * min(1.0, B.haste / 0.25) if B.haste > 0 else 0.0
+        B.blade_len = B.orb_base * (1 + wob * math.sin(2 * math.pi * self.t / (w.get('wobble_beats', 1.0) * self.R.beat)))
+        R, rs = self.R.R, w['size']
+        sats = self.orbit_sats(k)
+        if getattr(O, 'rw_left', 0.0) <= 0:                      # (a rewinding opponent is intangible)
+            for j, q in sats:
+                if B.sat_cool[j] > 0:
+                    continue
+                rel = O.p - q
+                dist = float(np.hypot(*rel))
+                if dist < R + rs:
+                    hx, hy = (O.p - rel / max(dist, 1e-6) * R).tolist()
+                    B.sat_cool[j] = w['cooldown']
+                    landed = self.damage(k, 1 - k, w['dmg'], 'orbit', hx, hy, j)
+                    self.knock(1 - k, rel, w.get('knock', 0.3))
+                    if landed:
+                        B.n_vol = min(w['n_max'], B.n_vol + w['grow'])
+        if w.get('parry') and len(self.kp):
+            for j, q in sats:
+                if B.sat_cool[j] > 0 or not len(self.kp):
+                    continue
+                m = (self.kown != k) & (np.hypot(*(self.kp - q[None]).T) < rs + self.R.KEY_R)
+                if m.any():
+                    self.kill_keys(m, 'parry', k)
+                    B.sat_cool[j] = w.get('parry_cool', w['cooldown'])
+
     # ------------------------------------------------------------------ abilities
     def ab_dur(self, ab):
         """an ability's duration in s: `dur` (s) or `dur_beats` (beats at this episode's tempo)"""
@@ -881,6 +933,8 @@ class Fight:
             for k, B in enumerate(self.balls):
                 if B.w['kind'] == 'blade':
                     self.blade_step(k, dt)
+                elif B.w['kind'] == 'orbit':
+                    self.orbit_step(k, dt)
             if self.beams or any(B.w['kind'] == 'beam' for B in self.balls):
                 self.beams_step(dt)
             if self.lines or self.strings:

@@ -15,6 +15,11 @@ A fighter is a glass ball with a low-poly Pixel Pitch instrument inside. Every f
                           blast every `every` beats: length `base` beyond the surface, width `width`, live for `hold` s,
                           hits once; +`grow` length / +`grow_w` width per landed beam up to `max_len` / `max_w`; pierces
                           (clears) enemy projectiles in its path
+                'orbit'   `n0` satellites circling the ball (`base` beyond its surface, `spin` rad/s, hit radius `size`)
+                          that hit what they touch (`dmg`, `knock`; each rests `cooldown` s after a hit); +`grow`
+                          satellites per landed hit up to `n_max` (<= 8); `parry`: they destroy enemy projectiles they
+                          touch (rest `parry_cool` s); haste speeds the orbit, `wobble` (fraction, `wobble_beats` per
+                          cycle) also swings its radius while haste lasts
               volley option `curve` (deg/s): projectiles home in on the opponent at that turn rate and fade after
                           `life` s; `hit_r`: their hit radius (default Rules.KEY_R)
               volley option `bounce` (N): projectiles ricochet off the ropes up to N times before they leave
