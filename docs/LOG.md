@@ -1020,3 +1020,24 @@
 - Checks: safe zone OK; CoC 0 on all frames; loopcheck PASS render + mp4; flash peak 14.8 % (BASS DROP); opening
   -16.7 dBFS, build +3.0 dB; leads 4-11 dB over the bed in 400-4000 Hz. Render 8.8 min + mux.
 - Feedback: (pending)
+
+## BALLFIGHT #4 v3: the VS title card intro test (#30 only)
+- User direction (Oct 24): a better hook than the bare 3-2-1. Bar 0 is now a fighting-game VS card (`title.py`):
+  diagonal panels in the fighters' colours with each ball big and close, BAGPIPES / VS / ACCORDION slamming in on
+  beats 1-3 (overshoot, streaks, shake, dust, local light; drone blast / thunder crack as VS splits the divider /
+  accordion chord), doors sliding apart along the crack on beat 4; bar 1 = the 3-2-1, FIGHT! at 3.94 s; the old top
+  caption is gone. Words at the biggest pixel scales that fit the safe zone (6 / 12 / 5; ACCORDION left of the button
+  column); only VS pulses on beat 4 (a name pulsing by 5 % went 1 px out of the zone).
+- Seed: 1442 did not replay identically with the fight one bar later (positions drift ~1e-7 from float rounding of
+  the absolute substep times, and the chaos amplifies it from ~31 s: K.O. 51.41 instead of ~52.4). Re-ran the honest
+  search at 2 bars (rules unchanged): 1442's new run ranked first anyway (same first 30 s, a closer ending: ACCORDION
+  wins on 0.24 HP). Lesson: shifting t_fight is not a pure time shift for this engine; test, don't assume.
+- Loop: the title slam is the frame-0 reset. The doors slide shut over the last 0.30 s (each step ~1/9 of the change, so
+  loopcheck reads them as rhythm, not a reset) and BAGPIPES falls in as a ghost that lands exactly on frame 0's word.
+  Two seam traps: the slam's light / streaks / ball glow / shake started ON frame 0 (seam 5.2x) - they now rise from the
+  next frame; and a size factor of 2.2500000000000044 vs 2.25 rounded the word one pixel taller (banker's rounding of
+  94.5) - snap the ghost to the exact frame-0 value. Seam 0.9x render, 1.5x mp4; audio: the first 20 ms (the slam) was
+  7.7 dB over the last 20 ms until the doors' whoosh ramps to full into the seam (3.9 dB).
+- Flash: one up/down pair (doors shut / doors open), worst 1 per second; the panels are never white.
+- The HUD is skipped while the card is shut (its notes overlapped the caption in reelkit.safezone even though hidden).
+- Feedback: (pending)
