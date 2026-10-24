@@ -624,8 +624,8 @@ def countdown(img, t, cs):
     t_in = T.DUR - T.BEAT                                 # the '3' flies in during the last beat
     if t >= t_in:
         u = (t - t_in) / T.BEAT
-        e_ = 1 - (1 - u) ** 2.5                           # eases out: nearly landed on the last frame, lands on frame 0
-        big_text(img, '3', cx, cy, 78 * (0.15 + 1.1 * e_), (255, 244, 220), alpha=min(1.0, u * 1.6))
+        e_ = 1 - (1 - min(1.0, u * 1.08)) ** 2.5          # eases out and lands on the last frame at exactly frame 0's
+        big_text(img, '3', cx, cy, 78 * (0.15 + 1.1 * e_), (255, 244, 220), alpha=min(1.0, u * 1.6))   # size (78 x 1.25)
 
 
 # ---------------------------------------------------------------- static draw lists

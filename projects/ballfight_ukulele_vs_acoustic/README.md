@@ -30,6 +30,7 @@ python bandcheck.py                                           # fighters vs bed,
 python zoom.py test/zoom.png 2.85 4.08 22.3 27.6 44.1 45.25   # 2x crops of the ring at given times (detail check)
 python -m reelkit.loopcheck render.py audio.wav
 python -m reelkit.video render.py audio.wav ballfight_tmp.mp4 && python mux.py   # render, then the loop-clean encode
+python patch_frames.py 60.4 61.0 && python mux.py                               # a fix that touches only some frames: patch the kept raw, re-encode
 ```
 
 ## Files
@@ -44,6 +45,7 @@ python -m reelkit.video render.py audio.wav ballfight_tmp.mp4 && python mux.py  
 | `render.py` | #28's renderer, copied, with this pair's weapons, abilities and shards (strings, spruce / koa chips, frets) |
 | `audio.py` | The western bed; dashes = the uke's strums, cones = the acoustic's strums (boom-chick when leading, thinning with HP) |
 | `mux.py` | Loop-clean encode via `projects/maze_race/mux.py` |
+| `patch_frames.py` | Re-renders a time span into the kept raw frames (this project's renderer), for `mux.py` |
 
 ## Rules worth knowing
 
