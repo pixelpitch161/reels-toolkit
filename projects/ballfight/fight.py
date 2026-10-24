@@ -956,6 +956,55 @@ class Fight:
                     B.blade_len = min(B.w['max_reach'], B.blade_len + B.w['grow'])
         self.sucks = [W for W in self.sucks if W['r'] > R + 1e-9]
 
+    # ------------------------------------------------------------------ weapon kind 'scratch_floor' (#31 v2: THE RING IS THE RECORD)
+    def scratch_beat(self, k, kb):
+        """every `every` beats (haste divides it) the DJ scratches the record the ring sits on: over `dur_beats` the floor
+        jerks forward, then back (directions alternate scratch to scratch). The DJ's own ball is anchored by its needle;
+        the opponent is flung by each jerk (scratch_step). `blade_len` holds the scratch strength (so it is recorded)"""
+        B = self.balls[k]
+        w = B.w
+        if not hasattr(B, 'sf'):
+            B.sf = dict(n=0, pending=[], live=-1.0, hit=True, seen=len(self.events))
+            B.blade_len = w['base']
+        ev = max(1, int(round(w['every'] / self.ab_mult(k))))
+        if kb % ev:
+            return
+        d = w['dur_beats'] * self.R.beat
+        sgn = 1.0 if B.sf['n'] % 2 == 0 else -1.0
+        B.sf['n'] += 1
+        B.sf['pending'] = [(self.t, sgn), (self.t + d / 2, -sgn)]
+        self.ev('scratch', k, d, float(B.blade_len), sgn)
+
+    def scratch_step(self, k, dt):
+        """each jerk flings the opponent around the ring centre (tangent in the jerk's direction + `out` x outward), with
+        a knock of the current strength; the first rope it hits within `window` s is a rope slam: `dmg` x impact speed /
+        the shared speed (capped at `cap`); a landed slam adds `grow` strength up to `max`"""
+        B, O = self.balls[k], self.balls[1 - k]
+        w = B.w
+        sf = getattr(B, 'sf', None)
+        if sf is None:
+            return
+        while sf['pending'] and self.t + 1e-9 >= sf['pending'][0][0]:
+            t0, sgn = sf['pending'].pop(0)
+            if getattr(O, 'rw_left', 0.0) > 0:                 # a rewinding opponent is intangible
+                continue
+            rn = float(np.hypot(*O.p))
+            outw = O.p / rn if rn > 1e-6 else O.v / (np.linalg.norm(O.v) + 1e-12)
+            tang = np.array([-outw[1], outw[0]]) * sgn
+            self.knock(1 - k, tang + w.get('out', 0.4) * outw, B.blade_len)
+            sf['live'] = self.t + w['window']
+            sf['hit'] = False
+            self.ev('jerk', k, sgn, float(O.p[0]), float(O.p[1]), float(B.blade_len))
+        if not sf['hit'] and self.t <= sf['live']:
+            for e in self.events[sf['seen']:]:
+                if e[1] == 'rope' and e[2] == 1 - k:
+                    sf['hit'] = True
+                    dmg = w['dmg'] * min(w.get('cap', 1.6), e[7] / self.R.V)
+                    if self.damage(k, 1 - k, dmg, 'scratch', e[5], e[6]):
+                        B.blade_len = min(w['max'], B.blade_len + w['grow'])
+                    break
+        sf['seen'] = len(self.events)
+
     # ------------------------------------------------------------------ ability kind 'rewind' (#31 REWIND)
     def _rewind_ab(self, B):
         return next(a for a in B.cfg['abilities'].values() if a['kind'] == 'rewind')
@@ -1363,6 +1412,8 @@ class Fight:
                         self.combo_beat(k, kb)
                     elif B.w['kind'] in ('line', 'trap'):
                         self.hazard_beat(k, kb)
+                    elif B.w['kind'] == 'scratch_floor':         # #31 v2
+                        self.scratch_beat(k, kb)
             if (pulse or v16) and self.t + 1e-9 >= next16 * s16:
                 k16 = next16 - k16_0
                 next16 += 1
@@ -1416,6 +1467,8 @@ class Fight:
                     self.combo_step(k, dt)
                 elif B.w['kind'] == 'flail':                     # #29 v3
                     self.flail_step(k, dt)
+                elif B.w['kind'] == 'scratch_floor':             # #31 v2
+                    self.scratch_step(k, dt)
             if self.beams or any(B.w['kind'] == 'beam' for B in self.balls):
                 self.beams_step(dt)
             if self.lines or self.strings:

@@ -20,6 +20,11 @@ A fighter is a glass ball with a low-poly Pixel Pitch instrument inside. Every f
                           satellites per landed hit up to `n_max` (<= 8); `parry`: they destroy enemy projectiles they
                           touch (rest `parry_cool` s); haste speeds the orbit, `wobble` (fraction, `wobble_beats` per
                           cycle) also swings its radius while haste lasts
+                'scratch_floor'  (#31 v2) the ring is the DJ's record: every `every` beats (haste divides it) the floor
+                          jerks forward then back over `dur_beats`; each jerk flings the opponent around the ring centre
+                          (tangent + `out` x outward, knock = the strength, `base` .. `max`), the DJ's own ball stays
+                          anchored; the first rope the opponent hits within `window` s is a slam: `dmg` x impact speed /
+                          the shared speed (capped at `cap`); +`grow` strength per landed slam
               volley option `curve` (deg/s): projectiles home in on the opponent at that turn rate and fade after
                           `life` s; `hit_r`: their hit radius (default Rules.KEY_R)
               volley option `bounce` (N): projectiles ricochet off the ropes up to N times before they leave
