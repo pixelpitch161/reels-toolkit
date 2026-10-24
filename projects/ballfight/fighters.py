@@ -52,7 +52,7 @@ FIGHTERS = {
 
     # ---- #28 BALLFIGHT #2: brute force vs finesse (numbers tuned once with ballfight_drums_vs_violin/tune.py, frozen)
     'DRUMS': dict(
-        color=(255, 96, 60), dark=(150, 42, 30), corner='red',
+        color=(255, 146, 40), dark=(160, 84, 16), corner='red',      # orange (series colour table, IDEAS)
         view=(12, 30, 0),
         weapon=dict(kind='pulse', style='drumhead',        # a drumhead ring blasts out on every beat: the fight's groove
                     every=1, base=0.9, grow=0.07, max_reach=2.3, speed=9.0, dmg=2.5, sub_dmg=0.45, knock=0.75,
@@ -63,7 +63,7 @@ FIGHTERS = {
             low=dict(name='DOUBLE KICK', kind='slam', tele=2, radius=1.35, dmg=11.0, knock=1.6)),
         pp='DRUMS', register=(36, 50), idiom='kit'),
     'VIOLIN': dict(
-        color=(104, 150, 255), dark=(36, 56, 150), corner='blue',
+        color=(176, 98, 255), dark=(96, 48, 168), corner='blue',     # violet (series colour table, IDEAS)
         view=(12, 26, 28),
         weapon=dict(kind='blade', style='bow',             # the bow, spun like a rapier: long, thin, light; faster per hit
                     base=1.8, grow=0.0, max_len=1.8, frets0=0, spin=2.4, spin_grow=0.7, spin_max=14.0,
