@@ -54,7 +54,9 @@ def one(args):
         if e[0] <= 15.0:
             lead15 = np.sign(hp[0] - hp[1])
     caps = len(sim.captions(r['events']))
-    return (cell, seed, r['winner'], r['t_ko'] or 99, lc, max(hp), lead15, caps, n_hits)
+    ht = [T.T_FIGHT] + [e[0] for e in r['events'] if e[1] == 'hit']
+    gap = max(b - a for a, b in zip(ht, ht[1:])) if len(ht) > 1 else 99
+    return (cell, seed, r['winner'], r['t_ko'] or 99, lc, max(hp), lead15, caps, n_hits, gap)
 
 
 if __name__ == '__main__':
@@ -69,7 +71,7 @@ if __name__ == '__main__':
         res = P.map(one, jobs, chunksize=4)
     for cell in cells:
         r = [x for x in res if x[0] == cell]
-        g = np.mean([x[2] == 0 for x in r])
+        g = np.mean([x[2] == 0 for x in r if x[2] is not None]) if any(x[2] is not None for x in r) else 0.0   # of decided
         tko = np.array([x[3] for x in r])
         lc = np.mean([x[4] for x in r])
         whp = np.median([x[5] for x in r])
@@ -81,4 +83,5 @@ if __name__ == '__main__':
         undec = np.mean([x[3] >= 99 for x in r])
         print(f'{lab}: tuba wins {100 * g:3.0f}%  KO med {np.median(tko):5.1f} ({np.percentile(tko, 10):4.1f}-'
               f'{np.percentile(tko, 90):4.1f}) no-KO {100 * undec:2.0f}%  lc {lc:.1f}  whp {whp:3.0f}  fit {100 * fit:2.0f}%  '
-              f'T@15 {100 * d15:3.0f}%  F-comeback {100 * claw:3.0f}%  hits T/F {hits[0]:.0f}/{hits[1]:.0f}', flush=True)
+              f'T@15 {100 * d15:3.0f}%  F-comeback {100 * claw:3.0f}%  hits T/F {hits[0]:.0f}/{hits[1]:.0f}  '
+              f'max gap med {np.median([x[9] for x in r]):.1f} s', flush=True)

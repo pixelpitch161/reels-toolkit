@@ -44,14 +44,15 @@ T_FIGHT = BAR                   # FIGHT! lands on the bar-1 downbeat: the drop, 
 COUNT = [(0.0, '3'), (BEAT, '2'), (2 * BEAT, '1'), (BAR, 'FIGHT!')]
 
 # ---------------------------------------------------------------- frozen rules (tune.py; the same for every seed)
-DMG_SCALE = 1.0                 # tuned once (tune.py) so the median K.O. sits near 50 s with each side winning about half
+DMG_SCALE = 1.06                # tuned once (tune.py) so the median K.O. sits near 50 s with each side winning about half
 
 # ---------------------------------------------------------------- story targets (seed_search.py scores runs against these)
 T_KO = (49.0, 53.0)
 MIN_LEAD_CHANGES = 2
 MAX_WINNER_HP = 30.0
 CAP_GAP = 4.0                   # never two ability captions within 4 s
-CAP_TARGETS = {'OOMPAH': 10, 'FLUTTER TONGUE': 15, 'BRASS WALL': 22, 'TRILL': 28, 'SUBSONIC': 40, 'PICCOLO': 40}
+MAX_GAP = 4.0                   # v2: no stretch over 4 s without a hit (a hard window: the fight must keep moving)
+CAP_TARGETS = {'OOMPAH': 10, 'FLUTTER TONGUE': 15, 'BRASS WALL': 22, 'SNAKE DANCE': 28, 'SUBSONIC': 40, 'PICCOLO': 40}
 
 # ---------------------------------------------------------------- the scripted tail (after the honest K.O.)
 SLOWMO = 0.7                    # s of picture time the last instant of the fight is stretched over (the K.O. hit)

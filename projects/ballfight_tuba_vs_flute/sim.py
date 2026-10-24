@@ -66,7 +66,8 @@ def score(st):
     """(fits, score): #27's hard windows from the beat sheet, then a soft story score"""
     tko = st['t_ko'] or 99
     fits = (T.T_KO[0] <= tko <= T.T_KO[1] and st['lead_changes'] >= T.MIN_LEAD_CHANGES
-            and st['winner_hp'] <= T.MAX_WINNER_HP and len(st['caps']) >= 5)
+            and st['winner_hp'] <= T.MAX_WINNER_HP and len(st['caps']) >= 5
+            and st['max_gap'] <= getattr(T, 'MAX_GAP', 99))
     s = 0.0
     s += (T.MAX_WINNER_HP - st['winner_hp']) / 3.0                       # a close finish
     s += 2.0 * min(4, st['lead_changes'] - 2)
