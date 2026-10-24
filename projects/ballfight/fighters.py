@@ -127,4 +127,26 @@ FIGHTERS = {
             unlock2=dict(name='SQUEEZEBOX', kind='shield', dur_beats=6, every_bars=6),
             low=dict(name='FULL BELLOWS', kind='slam', tele=2, radius=1.35, dmg=11.0, knock=1.6)),
         pp='ACCORDION', register=(55, 79), idiom='reeds'),
+    # ---- #32 BALLFIGHT #6: biggest vs smallest, lowest vs highest (numbers tuned once with ballfight_tuba_vs_flute/tune.py)
+    'TUBA': dict(
+        color=(104, 92, 236), dark=(52, 44, 140), corner='red',      # indigo (series colour table, IDEAS)
+        view=(0, 32, 0),
+        weapon=dict(kind='pulse', style='bell_wave',       # a slow, huge brass shockwave every bar + a constant gravity pull
+                    every=4, base=1.8, grow=0.08, max_reach=3.0, speed=4.0, dmg=6.0, sub_dmg=0.45, knock=1.0,
+                    clears=True, pull=1.2, pull_grow=0.08, pull_max=2.4),
+        abilities=dict(
+            unlock1=dict(name='OOMPAH', kind='haste', mult=2.0, dur_beats=8, every_bars=4),
+            unlock2=dict(name='BRASS WALL', kind='shield', dur_beats=6, every_bars=6),
+            low=dict(name='SUBSONIC', kind='slam', tele=2, radius=1.35, dmg=11.0, knock=1.6)),
+        pp='TUBA', register=(33, 55), idiom='oompah'),
+    'FLUTE': dict(
+        color=(222, 232, 246), dark=(120, 134, 162), corner='blue',  # silver (series colour table, IDEAS)
+        view=(0, 18, 32),
+        weapon=dict(kind='volley', style='darts', on16=True,   # rapid tiny fast darts on every beat (16th grid: haste)
+                    n0=1, grow=0.5, n_max=9, every=1, speed=7.5, dmg=0.32, spread=9.0, max_fan=70.0, size=(0.22, 0.06)),
+        abilities=dict(
+            unlock1=dict(name='FLUTTER TONGUE', kind='haste', mult=2.0, dur_beats=8, every_bars=4),
+            unlock2=dict(name='TRILL', kind='arc', n=12, sweep=120.0, beats=1, speed=7.0, dmg=0.5, every_bars=4),
+            low=dict(name='PICCOLO', kind='wave', speed=6.0, radius=9.0, dmg=8.0, knock=1.5)),
+        pp='FLUTE', register=(72, 93), idiom='flutter'),
 }
