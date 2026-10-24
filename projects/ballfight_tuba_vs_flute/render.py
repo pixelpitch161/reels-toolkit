@@ -29,6 +29,7 @@ from reelkit.shadows import MaskGrid, proj_point
 from reelkit.lens import coc_map, dof
 from reelkit.post import bloom, grade, vignette, top_scrim
 from reelkit import ui
+from reelkit import fx
 from reelkit.ui import draw_captions, label, fight_hud, CREAM, AMBER, INK
 from reelkit.font import ADV, text_mask, dilate
 import timeline as T
@@ -168,6 +169,144 @@ BASE_LEN = [CFG[k]['weapon'].get('base', 0.0) for k in (0, 1)]
 FRETS0 = [CFG[k]['weapon'].get('frets0', 0) for k in (0, 1)]
 
 
+# ---------------------------------------------------------------- v2: OOM-PAH SWALLOW + SNAKE CHARMER, from the run's events
+SWAL = [k for k in (0, 1) if CFG[k]['weapon']['kind'] == 'swallow']
+STRK = [k for k in (0, 1) if CFG[k]['weapon']['kind'] == 'striker']
+OOMS = [(e[0], e[2], e[3], e[4], e[5]) for e in EV if e[1] == 'oom']          # (t0, k, t_inhale_end, t_pah, reach)
+OOM_T = np.array([o[0] for o in OOMS]) if OOMS else np.zeros(0)
+PAHS = [(e[0], e[2], e[3], e[4]) for e in EV if e[1] == 'pah']                # (t, k, caught, angle)
+GULPS = [(e[0], e[2], e[3], e[4]) for e in EV if e[1] == 'gulp']              # (t, k, x, y)
+HELD = []                                                                       # (t_gulp, t_spit, swallower)
+for _g in GULPS:
+    _n = [q for q in PAHS if q[1] == _g[1] and q[0] >= _g[0] - 1e-6 and q[2] == 1]
+    HELD.append((_g[0], _n[0][0] if _n else 99.0, _g[1]))
+STRIKES = {}                                                                    # basket id -> [(t0, t_hit, t_end, aim, len)]
+for e in EV:
+    if e[1] == 'strike':
+        STRIKES.setdefault(e[3], []).append((e[0], e[0] + e[6], e[0] + e[6] * 2.6, e[4], e[5]))
+BASKETS = {}                                                                    # id -> dict(t_drop, home, t_gone, owner)
+for e in EV:
+    if e[1] == 'basket':
+        BASKETS[e[3]] = dict(t_drop=e[0], home=np.array([e[4], e[5]]), t_gone=99.0, owner=e[2])
+        if e[6] >= 0 and e[6] in BASKETS:
+            BASKETS[e[6]]['t_gone'] = e[0]
+DANCES = [(e[0], e[0] + FIGHTERS[NAMES[e[2]]]['abilities']['unlock2'].get('dur_beats', 4) * T.BEAT)
+          for e in EV if e[1] == 'ability' and e[4] == 'dance']
+SUBS = []                                                                       # SUBSONIC: (t0, t_slam, cx, cz, rad, owner)
+for e in EV:
+    if e[1] == 'ability' and e[4] == 'slam':
+        _sl = [q for q in EV if q[1] == 'slam' and q[2] == e[2] and q[0] >= e[0]]
+        if _sl:
+            SUBS.append((e[0], _sl[0][0], _sl[0][3], _sl[0][4], CFG[e[2]]['abilities']['low']['radius'], e[2]))
+
+
+def held_phase(k, t):
+    """('in', u, swallower) while k is gulped into the bell (0.14 s), ('held', u, swallower) inside, ('out', u, ..)
+    for 0.12 s after it is spat out; None otherwise"""
+    for tg, tsp, sw in HELD:
+        if sw == k:
+            continue
+        if tg <= t < tg + 0.14:
+            return 'in', (t - tg) / 0.14, sw
+        if tg + 0.14 <= t < tsp:
+            return 'held', (t - tg) / max(1e-6, tsp - tg), sw
+        if tsp <= t < tsp + 0.12:
+            return 'out', (t - tsp) / 0.12, sw
+    return None
+
+
+def holding(k, t):
+    """how full the swallower's ball looks (0..1): it bulges while the enemy is inside"""
+    for tg, tsp, sw in HELD:
+        if sw == k and tg <= t < tsp + 0.1:
+            return ss(tg, tg + 0.12, t) * (1 - ss(tsp, tsp + 0.1, t))
+    return 0.0
+
+
+def bell_state(k, t):
+    """(open_k, flare, glow) of the tuba's bell: it opens while it inhales (oom), flares on pah (bigger with a spit)"""
+    open_k = flare = 0.0
+    if len(OOM_T):
+        j = int(np.searchsorted(OOM_T, t, 'right')) - 1
+        while j >= 0 and OOMS[j][1] != k:
+            j -= 1
+        if j >= 0:
+            t0, _, t_in, t_pah, reach = OOMS[j]
+            open_k = ss(t0 - 0.02, t0 + 0.08, t) * (1 - ss(t_in, t_in + 0.15, t))
+    for tp, kk, caught, a in PAHS:
+        if kk == k and 0 <= t - tp < 0.3:
+            flare = max(flare, (1 - (t - tp) / 0.3) ** 1.5 * (1.0 if caught else 0.55))
+    return open_k, flare, 0.6 * open_k + 0.8 * flare
+
+
+def inhaling(k, t):
+    """(reach, strength) while the bell inhales, else None"""
+    if not len(OOM_T):
+        return None
+    j = int(np.searchsorted(OOM_T, t, 'right')) - 1
+    while j >= 0 and OOMS[j][1] != k:
+        j -= 1
+    if j < 0:
+        return None
+    t0, _, t_in, t_pah, reach = OOMS[j]
+    if t0 <= t < t_in + 0.12:
+        return reach, ss(t0, t0 + 0.1, t) * (1 - ss(t_in, t_in + 0.12, t))
+    return None
+
+
+def strike_at(bid, t):
+    for q in STRIKES.get(bid, ()):
+        if q[0] <= t < q[2]:
+            return q
+    return None
+
+
+def basket_k(b, t):
+    """a basket pops in when dropped (a little bounce) and shrinks away when the flute takes it back"""
+    u = t - b['t_drop']
+    if u < 0:
+        return 0.0
+    k = min(1.0, u / 0.12) * (1 + 0.18 * math.sin(min(1.0, u / 0.3) * math.pi)) if u < 0.3 else 1.0
+    return k * (1 - ss(b['t_gone'], b['t_gone'] + 0.2, t))
+
+
+def dancing_k(t):
+    return max([ss(a, a + 0.2, t) * (1 - ss(b, b + 0.3, t)) for a, b in DANCES] + [0.0])
+
+
+SOLO_BK = [np.array([-0.85, 0.85]), np.array([0.85, -0.85])]   # the flute's victory: two baskets beside the champion
+
+
+def cobras_at(t, fs):
+    """[(basket centre, basket k, cobra cp, t_drop for the rise, strike, aim, seed)] of every basket on screen"""
+    out = []
+    if not STRK:
+        return out
+    k = STRK[0]
+    enemy = fs[1 - k]['p']
+    if T.T_FIGHT <= t < T_HS + 0.6:
+        i = sim_i(min(t, T_KO))
+        cob = {c[0]: c for c in RUN['COB'][i][k]} if 'COB' in RUN else {}
+        fade = 1 - ss(T_HS, T_HS + 0.6, t)
+        for bid, b in BASKETS.items():
+            bk = basket_k(b, min(t, T_KO)) * fade
+            if bk <= 0.01:
+                continue
+            c = cob.get(bid)
+            cp = np.array([c[3], c[4]]) if c is not None else b['home']
+            S_ = strike_at(bid, min(t, T_KO)) if t < T_KO else None
+            aim = math.atan2(enemy[1] - cp[1], enemy[0] - cp[0])
+            out.append((b['home'], bk, cp, b['t_drop'], S_, aim, bid))
+    if NAMES[WIN] == 'FLUTE' and T_SOLO - 0.8 <= t < T.T_GLIDE:
+        ctr = fs[WIN]['p']
+        k_in = ss(T_SOLO - 0.8, T_SOLO - 0.5, t) * (1 - ss(T.T_REASSEMBLE + 0.6, T.T_GLIDE, t))
+        for j, off in enumerate(SOLO_BK):
+            hb = ctr + off
+            aim = math.atan2(ctr[1] - hb[1], ctr[0] - hb[0]) + math.pi              # they face out, to the crowd
+            out.append((hb, k_in, hb, T_SOLO - 0.5 + 0.12 * j, None, aim, 100 + j))
+    return out
+
+
 def fighter(k, t):
     """picture state of fighter k at time t: dict(p (ring frame), vis, th, blen, frets, shield, haste, glow, scale)"""
     st = dict(vis=True, shield=0.0, haste=0.0, glow=0.0, scale=1.0, th=0.0, blen=BASE_LEN[k], frets=FRETS0[k],
@@ -192,6 +331,24 @@ def fighter(k, t):
             j = np.searchsorted(PULSE_T, min(t, T_KO), 'right') - 1
             if j >= 0:
                 st['glow'] = 0.45 * math.exp(-(min(t, T_KO) - PULSE_T[j]) / 0.09)
+        hv = held_phase(k, t)                                     # v2: swallowed by the tuba's bell
+        if hv is not None:
+            ph, u, sw = hv
+            if ph == 'held':
+                st['vis'] = False
+            elif ph == 'in':
+                pre = RUN['P'][sim_i(t - u * 0.14 - 1.0 / FPS), k]
+                th_sw = float(RUN['TH'][i, sw])
+                mouth = RUN['P'][i, sw] + (R * 0.85 + 0.5) * np.array([math.cos(th_sw), math.sin(th_sw)])
+                st['p'] = pre + (mouth - pre) * (u * u)
+                st['scale'] = 1 - 0.75 * u
+            else:
+                st['scale'] = 0.6 + 0.4 * u
+        if k in SWAL:
+            hb = holding(k, t)
+            if hb > 0:
+                st['scale'] = 1 + hb * (0.10 + 0.04 * math.sin(2 * math.pi * t * 7))
+                st['glow'] = max(st['glow'], 0.55 * hb)
         if t >= T_KO and k == LOSE:
             st['glow'] = 1.0
         return st
@@ -238,28 +395,18 @@ KEYS = [  # (t, target, dist, yaw, pitch, fov, sy): gentle drift, a slight push-
     (58.0, AIM, 27.4, 0.2, 58.2, 36, SY),
     (61.0, AIM, 27.5, 0.0, 58.0, 36, SY),
 ]
-BIG = []                                             # (t, strength) camera shakes
+SHK = fx.Shake(cap=2.5)                              # a little camera shake on heavy hits (reelkit.fx)
 for e in EV:
-    if e[1] == 'hit' and e[7] in ('blade', 'pulse', 'slam', 'wave', 'shockwave'):
-        BIG.append((e[0], {'blade': 0.45, 'pulse': 1.3, 'slam': 3.5, 'wave': 2.5, 'shockwave': 1.6}[e[7]]))
+    if e[1] == 'hit' and e[7] in ('cannon', 'spit', 'gulp', 'slam', 'wave', 'fang'):
+        SHK.add(e[0], {'cannon': 2.0, 'spit': 1.2, 'gulp': 0.8, 'slam': 2.5, 'wave': 2.0, 'fang': 0.35}[e[7]])
     if e[1] == 'slam':
-        BIG.append((e[0], 2.5))
-BIG.append((T_KO, 5.0))
-BIG_T = np.array([b[0] for b in BIG])
-BIG_S = np.array([b[1] for b in BIG])
-
-
-def shake(t):
-    m = (BIG_T <= t) & (BIG_T > t - 0.4)
-    if not m.any():
-        return 0.0, 0.0
-    a = float(np.max(BIG_S[m] * np.exp(-(t - BIG_T[m]) / 0.09)))
-    return a * math.sin(t * 2 * math.pi * 23), a * 0.7 * math.cos(t * 2 * math.pi * 29)
+        SHK.add(e[0], 2.5)
+SHK.add(T_KO, 2.5)
 
 
 def camera(t):
     cam = interp_keys(KEYS, t)
-    dx, dy = shake(t)
+    dx, dy = SHK.offset(t)
     cam.cx += dx
     cam.cy += dy
     return cam
@@ -291,6 +438,7 @@ def lights(t, cam):
     rk = 1.0 + 0.25 * T.beat_pulse(t, 0.2)
     L.point(S.RED_LIGHT, LIGHT_RGB[0] * 1.1 * rk, 2.6)
     L.point(S.BLUE_LIGHT, LIGHT_RGB[1] * 1.1 * rk, 2.6)
+    FL.apply(L, t)                                            # attacks light the scene in the fighter's colour (reelkit.fx)
     return L
 
 
@@ -575,6 +723,133 @@ CAPTIONS = CAP_TITLE + CAP_ABIL[0] + CAP_ABIL[1] + CAP_KO + CAP_WINS + CAP_COMME
 STATUS = [(e[0], e[2], e[3]) for e in EV if e[1] == 'ability']
 
 
+# ---------------------------------------------------------------- effects (reelkit.fx, BALLFIGHT v2): built once from the run
+FL = fx.Flares(max_n=6)
+BU = fx.Bursts()
+PA = fx.Particles(seed=32)
+MK = fx.Marks()
+MO = fx.Moments()
+SILV = np.array([226, 234, 248])
+WICKER_DUST = [(196, 150, 92), (150, 112, 64), (226, 196, 140)]
+FL_COL = [COL[k] * (0.85 if COL[k].mean() > 200 else 1.0) for k in (0, 1)]     # near-white silver: keep it from whitening
+
+
+def _mouth(k, t):
+    i = sim_i(t)
+    p, th = RUN['P'][i, k], float(RUN['TH'][i, k])
+    return p, th, p + (R * 0.85 + 0.5) * np.array([math.cos(th), math.sin(th)])
+
+
+def _fx_build():
+    for t0, k, t_in, t_pah, reach in OOMS:                     # oom: the bell inhales, air streaks pour into it
+        if t0 > T_KO:
+            break
+        p, th, m = _mouth(k, t0)
+        FL.add(t0, S.to_world(m[0], m[1], 0.8), FL_COL[k], radius=1.8, peak=0.45, decay=0.45)
+        d = np.array([math.cos(th), math.sin(th)])
+        nrm = np.array([-d[1], d[0]])
+        rng = np.random.default_rng(int(t0 * 100))
+        for j in range(4):
+            tj = t0 + (t_in - t0) * j / 4
+            if tj > T_KO:
+                break
+            p, th, m = _mouth(k, tj)
+            d = np.array([math.cos(th), math.sin(th)])
+            nrm = np.array([-d[1], d[0]])
+            for q in range(6):
+                src = p + d * (R + reach * rng.uniform(0.5, 1.0)) + nrm * rng.uniform(-1, 1) * reach * 0.6
+                to = m - src
+                PA.emit(tj, S.to_world(src[0], src[1], R * rng.uniform(0.5, 1.4)), 'streaks', n=1,
+                        dir=S.to_world(to[0], to[1], 0.0) - S.to_world(0, 0, 0), col=[(200, 196, 255), (170, 160, 240)])
+    for tp, k, caught, a in PAHS:                               # pah: a blast of air (and the spat enemy)
+        if tp > T_KO:
+            break
+        p, th, m = _mouth(k, tp)
+        pos = S.to_world(m[0], m[1], R)
+        d3 = S.to_world(math.cos(th), math.sin(th), 0.0) - S.to_world(0, 0, 0)
+        if caught:
+            BU.add(tp, pos, (255, 214, 120), 1.4)
+            FL.add(tp, pos, (255, 214, 120), radius=2.0, peak=0.9, decay=0.3)
+            PA.emit(tp, pos, 'puffs', n=12, dir=d3)
+            MK.add(tp, 'smoke_ring', m[0], m[1], size=0.7, life=2.5, seed=int(tp * 10), strength=0.6)
+            vic = 1 - k
+            for j in range(15):                                 # the cannonball's trail
+                tj = tp + j / FPS
+                if tj > T_KO:
+                    break
+                q = RUN['P'][sim_i(tj), vic]
+                PA.emit(tj, S.to_world(q[0], q[1], R), 'streaks', n=1, dir=-d3, speed=(0.3, 0.6), col=[tuple(SILV)])
+        else:
+            PA.emit(tp, pos, 'puffs', n=5, dir=d3)
+            FL.add(tp, pos, (255, 214, 120), radius=1.4, peak=0.35, decay=0.25)
+    for bid, b in BASKETS.items():                              # a basket lands: a puff of wicker dust
+        if b['t_drop'] < T_KO:
+            PA.emit(b['t_drop'] + 0.05, S.to_world(b['home'][0], b['home'][1], 0.05), 'dust', n=5, col=WICKER_DUST,
+                    speed=(0.3, 0.8))
+            MK.add(b['t_drop'] + 0.05, 'dust', b['home'][0], b['home'][1], size=0.35, col=(176, 140, 96), life=2.0,
+                   seed=bid, strength=0.5)
+    for e in EV:                                                # hits: bursts, lights, particles, marks
+        if e[0] > T_KO + 1e-6:
+            break
+        if e[1] == 'hit':
+            att, x, z, how = e[2], e[5], e[6], e[7]
+            pos = S.to_world(x, z, R)
+            if how == 'fang':
+                BU.add(e[0], pos, SILV, 0.55, bright=False)
+                FL.add(e[0], pos, FL_COL[att], radius=1.2, peak=0.4, decay=0.2)
+                PA.emit(e[0], pos, 'scales', n=5)
+                MK.add(e[0], 'claw', x, z, size=0.18, angle=float(np.arctan2(z, x)), n=2, col=(60, 54, 84), life=2.5,
+                       seed=int(e[0] * 100), strength=0.7)
+            elif how == 'gulp':
+                BU.add(e[0], pos, COL[att], 0.9)
+                FL.add(e[0], pos, FL_COL[att], radius=1.6, peak=0.7, decay=0.3)
+                PA.emit(e[0], pos, 'streaks', n=8, col=[(200, 196, 255)])
+            elif how == 'spit':
+                PA.emit(e[0], pos, 'brass', n=6)
+            elif how == 'cannon':
+                BU.add(e[0], pos, (255, 236, 200), 1.8)
+                FL.add(e[0], pos, (255, 214, 140), radius=2.2, peak=1.1, decay=0.35)
+                PA.emit(e[0], pos, 'brass', n=14)
+                PA.emit(e[0], pos, 'scales' if NAMES[e[3]] == 'FLUTE' else 'brass', n=8)
+                MK.add(e[0], 'crack', x, z, size=0.6, n=5, life=4.0, seed=int(e[0] * 100))
+            elif how == 'slam':
+                BU.add(e[0], pos, COL[att], 1.6)
+            elif how == 'wave':
+                BU.add(e[0], pos, SILV, 1.4)
+                PA.emit(e[0], pos, 'glass', n=12)
+        elif e[1] == 'block':
+            BU.add(e[0], S.to_world(e[4], e[5], R), (255, 226, 150), 0.6, bright=False)
+            PA.emit(e[0], S.to_world(e[4], e[5], R), 'brass', n=5)
+        elif e[1] == 'ability' and e[3] == 'PICCOLO':           # glass-crack marks where the shrill ring passes
+            k = e[2]
+            p = RUN['P'][sim_i(e[0]), k]
+            ab = CFG[k]['abilities']['low']
+            FL.add(e[0], S.to_world(p[0], p[1], 1.0), SILV * 0.85, radius=3.0, peak=0.8, decay=0.6)
+            rng = np.random.default_rng(int(e[0] * 10))
+            for j in range(9):
+                r_ = rng.uniform(1.0, 4.0)
+                a_ = rng.uniform(0, 2 * math.pi)
+                q = p + r_ * np.array([math.cos(a_), math.sin(a_)])
+                if np.abs(q).max() > S.AP - 0.1:
+                    continue
+                tq = e[0] + (r_ - R) / ab['speed']
+                MK.add(tq, 'glass', q[0], q[1], size=0.45, angle=a_, n=6, life=5.0, seed=int(tq * 100) + j)
+                PA.emit(tq, S.to_world(q[0], q[1], 0.05), 'glass', n=4)
+    for t0, t_slam, cx, cz, rad, owner in SUBS:                 # SUBSONIC: the floor ripples like water
+        FL.add(t_slam, S.to_world(cx, cz, 1.0), FL_COL[owner], radius=2.6, peak=1.0, decay=0.6)
+        MK.add(t_slam, 'water', cx, cz, size=1.8, life=5.0, seed=int(t_slam * 10), strength=0.8)
+        PA.emit(t_slam, S.to_world(cx, cz, 0.05), 'foam', n=16, spread=180, col=[(200, 196, 255), (236, 236, 255)])
+    for t, who, name in STORY['caps']:
+        MO.add(t, who, COL[who])
+    pos = S.to_world(P_KO[LOSE][0], P_KO[LOSE][1], R)
+    BU.add(T_KO, pos, COL[LOSE], 2.0)
+    FL.add(T_KO, pos, FL_COL[LOSE], radius=2.4, peak=1.1, decay=0.6)
+    PA.emit(T_KO, pos, 'brass' if NAMES[LOSE] == 'TUBA' else 'scales', n=30, spread=180, speed=(0.8, 2.2))
+
+
+_fx_build()
+
+
 def status(k, t):
     s = [(te, nm) for te, who, nm in STATUS if who == k and te <= t < te + 1.6]
     if not s:
@@ -672,6 +947,7 @@ def arena(fr, cam, L, t):
     for j, d in zip(np.nonzero(bvis)[0], cam.depth(BAR_C[bvis])):
         items.append((d, 2, j, None))
     heads = CROWD_P + np.stack([np.zeros(len(CROWD_P)), 0.55 * CROWD_HT, np.zeros(len(CROWD_P))], 1)
+    crowd_lit = 1.0 + 0.9 * FL.tint(heads, t)                 # attack lights reach the crowd (reelkit.fx)
     dh = cam.depth(heads)
     sp = cam.wp(heads)
     for j in range(len(CROWD_P)):
@@ -703,7 +979,7 @@ def arena(fr, cam, L, t):
                 continue
             side = CROWD_P[j, 0]
             tint = CROWD_TINT[0] if side < -1.5 else (CROWD_TINT[1] if side > 1.5 else np.array([1.0, 0.92, 1.0]))
-            body = S.CROWD_COLS[CROWD_CI[j]] * tint * spill
+            body = np.clip(S.CROWD_COLS[CROWD_CI[j]] * tint * spill * crowd_lit[j], 0, 255)
             draw.ellipse([x - 1.9 * rh, y + 0.6 * rh, x + 1.9 * rh, y + 3.4 * rh], fill=tuple(int(v) for v in body * 0.8))
             draw.ellipse([x - rh, y - rh, x + rh, y + rh], fill=tuple(int(v) for v in body * 0.62))
             # rim light from the ring on the heads (they face it)
@@ -727,7 +1003,7 @@ for name in S.CORNERS:
     STATIC_CASTERS.append(np.array([w + [-0.09, 0, 0], w + [0.09, 0, 0], w + [0.09, S.POST_H, 0], w + [-0.09, S.POST_H, 0]]))
 
 
-def canvas_shadows(cam, t, fs, keys, spot):
+def canvas_shadows(cam, t, fs, keys, spot, cobs=()):
     polys = []
     for Q in STATIC_CASTERS:
         polys.append(proj_point(Q, spot))
@@ -747,6 +1023,17 @@ def canvas_shadows(cam, t, fs, keys, spot):
     for row in keys:
         head, body = ST.dart_quads(row[0], row[1], row[2])
         polys.append(proj_point(head, spot))
+    a = np.linspace(0, 2 * math.pi, 11)[:-1]
+    for home, bk, cp, t_drop, S_, aim, bid in cobs:             # v2: baskets + the cobras' raised hoods
+        if bk < 0.05:
+            continue
+        w = S.to_world(home[0], home[1], ST.BASKET_H * bk)
+        rb = ST.BASKET_R * bk
+        polys.append(proj_point(np.array([[w[0] + rb * math.cos(u), w[1], w[2] + rb * math.sin(u)] for u in a]), spot))
+        e_ = min(1.0, max(0.0, (t - t_drop) / (T.BEAT * 1.0)))
+        if e_ > 0.1:
+            c = S.to_world(cp[0], cp[1], 0.2 + 0.6 * e_)
+            polys.append(proj_point(np.array([[c[0] + 0.1 * math.cos(u), c[1], c[2] + 0.1 * math.sin(u)] for u in a]), spot))
     return CANVAS_GRID.raster(polys, blur=0.7)
 
 
@@ -851,7 +1138,9 @@ def render(f):
         Xp, Zp = Xc[ys, xs], Zc[ys, xs]
         sxp, szp = sx[ys, xs], sz[ys, xs]
         alb = S.canvas_albedo(sxp, szp)
-        sh = CANVAS_GRID.sample(canvas_shadows(cam, t, fs, keys, spot), Xp, Zp)
+        alb = MK.apply(alb, sxp, szp, t, BAYER_FULL[ys, xs])           # fading marks (reelkit.fx)
+        cobs = cobras_at(t, fs)
+        sh = CANVAS_GRID.sample(canvas_shadows(cam, t, fs, keys, spot, cobs), Xp, Zp)
         v = np.stack([Xp - spot[0], -spot[1] * np.ones_like(Xp), Zp - spot[2]], 1)
         dist = np.linalg.norm(v, axis=1)
         cosang = (v @ axis) / dist
@@ -863,20 +1152,14 @@ def render(f):
             dl = np.sqrt((lp[0] - Xp) ** 2 + lp[1] ** 2 + (lp[2] - Zp) ** 2)
             Ic += (lp[1] / dl / (1 + (dl / R_) ** 2))[:, None] * lc[None] * 0.8
         # decals: shockwave light rings, the slam's shadow
-        for k in PULLER:                                              # the tuba's gravity: rings sliding in toward it
+        for k in SWAL:                                                # v2: the suction cone while the bell inhales
             st = fs[k]
-            if in_fight and st['vis']:
-                pl = ST.pull_light(sxp, szp, st['p'][0], st['p'][1], float(PULL[i, k]), CFG[k]['weapon']['pull_max'], t,
-                                   period=2 * T.BEAT)
-                Ic += pl[:, None] * (COL[k] / 255.0 * 0.9 + 0.15)[None]
-        for k in PULSE:                                               # the tuba's reach: a faint ring that grows
-            st = fs[k]
-            if in_fight and st['vis']:
-                reach = float(RUN['BL'][i, k])
-                rd = np.hypot(sxp - st['p'][0], szp - st['p'][1])
-                ring = np.clip(1 - np.abs(rd - (R + reach)) / 0.05, 0, 1)
-                dash = (np.floor((np.arctan2(szp - st['p'][1], sxp - st['p'][0]) + math.pi) * 9) % 2) == 0
-                Ic += (ring * dash * 0.20)[:, None] * (COL[k] / 255.0 + 0.2)[None]
+            inh = inhaling(k, t) if (in_fight and st['vis'] and t < T_KO) else None
+            if inh is not None:
+                reach, kk = inh
+                br_, dk_ = ST.inhale_light(sxp, szp, st['p'], st['th'], reach, kk, t, ys, xs)
+                Ic *= (1 - 0.45 * dk_)[:, None]
+                Ic += (br_ * 1.1)[:, None] * (np.array([0.85, 0.85, 1.2]))[None]
         for t0, k, main, reach, cx, cz, spd in pulse_list:            # each brass wave lights the canvas under it
             ps = ST.pulse_state(t_rings if t0 < T_KO else t, t0, reach, spd)
             if ps is None:
@@ -896,19 +1179,11 @@ def render(f):
             band = np.clip(1 - np.abs(rd - r) / wdt, 0, 1)
             band = np.floor(band * 3 + BAYER_FULL[ys, xs] * 0.9) / 3
             Ic += (band * k_ * 0.9)[:, None] * (COL[owner] / 255.0 * 1.4 + (0.35 if kind == 'wave' else 0.15))[None]
-        sl = RUN['SLAMS'][i] if in_fight else []
-        for owner, cx, cz, t0, t_slam, rad in sl:
-            rd = np.hypot(sxp - cx, szp - cz)
-            if t < t_slam:
-                u = (t - t0) / (t_slam - t0)
-                m = rd < rad
-                Ic[m] *= 1 - 0.55 * u
-                ring = np.abs(rd - rad) < 0.05
-                Ic[ring] += (COL[owner] / 255.0) * (0.4 + 0.5 * (math.sin(t * 40) > 0))
-            else:
-                u = (t - t_slam) / 0.6
-                band = np.clip(1 - np.abs(rd - (rad + 1.6 * u)) / 0.2, 0, 1) * (1 - u)
-                Ic += band[:, None] * np.array([0.9, 0.9, 1.0])[None]
+        for t0, t_slam, cx, cz, rad, owner in SUBS:                   # v2 SUBSONIC: the floor ripples like water
+            if t0 <= t < t_slam + 1.6 and t0 < T_HS:
+                add_, dark_ = ST.ripple_light(sxp, szp, cx, cz, t, t0, t_slam, rad, ys, xs)
+                Ic *= (1 - dark_ * 0.6)[:, None]
+                Ic += add_[:, None] * (COL[owner] / 255.0 * 0.9 + 0.25)[None]
         col = alb * Ic
         arr[ys, xs] = np.floor(col / 5 + BAYER_FULL[ys, xs, None]) * 5
         depth[ys, xs] = dc[ys, xs]
@@ -947,8 +1222,16 @@ def render(f):
         dz = cam.depth(pw)[0]
         items.append((dz, 'ball', k))
         if st['shield'] > 0:
-            items.append((dz + 0.03, 'wall_back', k))
-            items.append((dz - 0.03, 'wall_front', k))
+            items.append((dz - 0.05, 'dome', k))
+        if k in SWAL and not st['shattered'] and st['scale'] > 0.5:   # the bell (OOM-PAH SWALLOW)
+            rings, _ = ST.bell_rings(st['p'], st['th'])
+            items.append((cam.depth(rings[-1][0][None])[0], 'bell', k))
+    for c in cobs:
+        home, bk, cp, t_drop, S_, c_aim, bid = c
+        dzb = cam.depth(S.to_world(home[0], home[1], 0.12)[None])[0]
+        items.append((dzb, 'basket', c))
+        dzc = min(dzb - 0.01, cam.depth(S.to_world(cp[0], cp[1], 0.5)[None])[0])
+        items.append((dzc, 'cobra', c))
     for row in keys:
         items.append((cam.depth(S.to_world(row[0], row[1], 0.45))[0], 'key', row))
     items.sort(key=lambda it: -it[0])
@@ -961,13 +1244,36 @@ def render(f):
             arr, depth = fr.array(), fr.depth()
             drawn[obj] = draw_ball(arr, depth, cam, obj, st, t)
             fr.set_array(arr, depth)
-        elif kind in ('wall_back', 'wall_front'):
+        elif kind == 'dome':                                       # BRASS WALL: the bell becomes a brass dome
             st = fs[obj]
             dur = CFG[obj]['abilities']['unlock2']['dur_beats'] * T.BEAT
             k_ = min(1.0, st['shield'] / 0.2, (dur - st['shield']) / 0.12 + 0.2)
             arr, depth = fr.array(), fr.depth()
-            ST.draw_brass_wall(arr, cam, st['p'][0], st['p'][1], t, k_, 1 if kind == 'wall_front' else 0)
+            ST.draw_dome(arr, cam, st['p'][0], st['p'][1], k_, t, COL[obj])
             fr.set_array(arr, depth)
+        elif kind == 'bell':
+            st = fs[obj]
+            ok, fl, gl = bell_state(obj, t) if t < T_KO else (0.0, 0.0, 0.0)
+            if obj == WIN and t >= T_HS:                              # the champion's solo: a pah on every solo note
+                fl = max([max(0.0, 1 - (t - ts) / 0.25) * 0.7 for ts in SOLO_T if 0 <= t - ts] + [0.0])
+            ST.draw_tuba_bell(fr, cam, L, shade, st['p'], st['th'], ok, fl, COL[obj], gl)
+        elif kind == 'basket':
+            home, bk, cp, t_drop, S_, c_aim, bid = obj
+            ST.draw_basket(fr, cam, L, shade, home[0], home[1], bk)
+        elif kind == 'cobra':
+            home, bk, cp, t_drop, S_, c_aim, bid = obj
+            kf = STRK[0] if STRK else 1
+            dk = dancing_k(t) if t < T_KO else 0.0
+            rise_t = T.BEAT * CFG[kf]['weapon']['rise']
+            if bk < 0.98 and t > t_drop + rise_t:                      # a basket being taken back: the cobra sinks in
+                t_drop = t - rise_t * max(0.0, bk)
+            pts, head, face, e_ = ST.cobra_pose(home, cp, t, t_drop, rise_t, c_aim, S_, dk,
+                                                T.BEAT, seed=bid)
+            hasted = in_fight and t < T_KO and float(RUN['HA'][i, kf]) > 0
+            gl = 0.6 if (S_ is not None and t < S_[1] + 0.05) else (0.35 if hasted else 0.0)
+            if t >= T_SOLO - 0.8:
+                gl = max(gl, 0.6 * solo_env(t))
+            ST.draw_cobra(fr, cam, L, shade, pts, head, face, e_ * min(1.0, bk), COL[kf], gl)
         elif kind == 'key':
             row = obj
             ST.draw_dart(fr, cam, L, shade, row[0], row[1], row[2], COL[int(row[3])])
@@ -977,12 +1283,6 @@ def render(f):
     draw_post('front')
     arr, depth = fr.array(), fr.depth()
     # ---------------- shields, slams, shards, sparks
-    if in_fight:
-        for owner, cx, cz, t0, t_slam, rad in RUN['SLAMS'][i]:
-            h = ST.bell_height(t, t0, t_slam)                         # SUBSONIC: the giant bell hovers, then slams
-            if h is not None:
-                a = min(1.0, (t - t0) / 0.2) * (1.0 if t < t_slam + 0.5 else max(0.0, 1 - (t - t_slam - 0.5) / 0.2))
-                ST.draw_bell(arr, cam, cx, cz, rad, h, COL[owner], a)
     for kind, p, rot, size, curl, a in parts_at(t):
         sx_, sz_ = p[0], p[2]
         d = np.array([math.cos(rot), math.sin(rot)])
@@ -1027,6 +1327,7 @@ def render(f):
             shade_k = 0.75 + 0.25 * math.cos(rot * 2)
             layer_blend(arr, [sp], np.clip(col * shade_k, 0, 255), 1.0)
     sparks(arr, cam, t)
+    arr = PA.draw(arr, cam, t, light=lambda P: 1.0 + 0.6 * FL.tint(P, t))   # wind streaks, puffs, scales, glass, sparks
     # countdown in the ring (sharp, over everything in the ring)
     cs = cam.wp(np.array([[0.0, 0.3, 0.0]]))[0]
     fr.set_array(arr, depth)
@@ -1041,15 +1342,27 @@ def render(f):
         st = fs[k]
         if st['glow'] > 0.05:
             fr.glow(s_[0], s_[1], rp * 2.2, tuple(COL[k] * 0.8 + 50), 0.45 * st['glow'])
-    for e_i, e in events_between(t - 0.15, t, ('hit',)):
-        if e[7] in ('pulse', 'slam', 'wave', 'shockwave', 'blade'):
+    for e_i, e in events_between(t - 0.15, t, ('hit',)):           # halved once the bursts are in (fx README)
+        if e[7] in ('cannon', 'gulp', 'slam', 'wave', 'fang'):
             s_ = cam.wp(S.to_world(e[5], e[6], R)[None])[0]
-            big = e[7] != 'blade'
-            fr.glow(s_[0], s_[1], 14 if big else 8, tuple(COL[e[2]] * 0.7 + 70), (0.7 if big else 0.45) * (1 - (t - e[0]) / 0.15))
+            big = e[7] != 'fang'
+            fr.glow(s_[0], s_[1], 12 if big else 7, tuple(FL_COL[e[2]] * 0.7 + 70), (0.35 if big else 0.2) * (1 - (t - e[0]) / 0.15))
     if T_KO <= t < T_HS + 0.25:
         s_ = cam.wp(S.to_world(P_KO[LOSE][0], P_KO[LOSE][1], R)[None])[0]
         fr.glow(s_[0], s_[1], 46, (255, 240, 220), 0.9 * (1 - ss(T_KO, T_HS + 0.25, t)))
     img = apply_glows(img, fr.glows)
+    for owner, cx, cz, r, rmax, kind, t0 in (RUN['WAVES'][i] if in_fight else []):    # heat shimmer on the piccolo ring
+        if kind == 'wave':
+            img = fx.shimmer_world(img, cam, S.to_world(cx, cz, 0.05), r, 0.3, 2.4, t, k=1 - r / rmax, seed=owner)
+    for t0, t_slam, cx, cz, rad, owner in SUBS:                       # ... and on the SUBSONIC ripples
+        if t_slam <= t < t_slam + 1.0:
+            u = t - t_slam
+            img = fx.shimmer_world(img, cam, S.to_world(cx, cz, 0.05), 0.2 + 3.2 * u, 0.4, 3.0, t, k=1 - u)
+    for tp, kk, caught, a in PAHS:                                     # ... and the pah blast
+        if caught and 0 <= t - tp < 0.35 and tp < T_KO:
+            p_, th_, m_ = _mouth(kk, tp)
+            img = fx.shimmer_world(img, cam, S.to_world(m_[0], m_[1], R), 0.3 + 2.0 * (t - tp), 0.25, 2.0, t,
+                                   k=1 - (t - tp) / 0.35)
     # the spot's beam: a soft wedge of light from the can down to the pool
     s0 = cam.wp(spot[None])[0]
     pool_r = spot[1] * math.tan(math.acos(S.SPOT_COS[0])) * 0.92
@@ -1067,8 +1380,23 @@ def render(f):
     if -30 < s0[1] < 60:
         img = apply_glows(img, [(s0[0], s0[1], 30, (255, 244, 220), 0.9), (s0[0], s0[1], 10, (255, 255, 255), 1.0)])
     img = grade(bloom(np.clip(img, 0, 255), thr=225, k=0.22), contrast=0.18, sat=1.18)
-    img = np.clip(img * vignette(strength=0.45) * top_scrim(0.45, 100, 90), 0, 255).astype(np.uint8)
-    img = np.ascontiguousarray(img)
+    img = np.clip(img * vignette(strength=0.45) * top_scrim(0.45, 100, 90), 0, 255)
+    # ---------------- reelkit.fx after the grade: fringe on big hits, ability moments, impact bursts
+    for e_i, e in events_between(t - 0.18, t, ('hit',)):
+        if e[7] in ('cannon', 'slam', 'wave'):
+            s_ = cam.wp(S.to_world(e[5], e[6], R)[None])[0]
+            img = fx.fringe(img, s_[0], s_[1], 24, 2.4, k=1 - (t - e[0]) / 0.18)
+    if T_KO <= t < T_HS + 0.3:
+        s_ = cam.wp(S.to_world(P_KO[LOSE][0], P_KO[LOSE][1], R)[None])[0]
+        img = fx.fringe(img, s_[0], s_[1], 32, 3.0, k=1 - ss(T_HS, T_HS + 0.3, t))
+    keep = [(s_[0], s_[1], rp * 1.7) for k, (s_, rp) in drawn.items()]
+    img = MO.apply_dim(img, t, keep=keep)
+    for k, (s_, rp) in drawn.items():
+        if T.T_FIGHT <= t < T_KO:
+            s1 = cam.wp(S.to_world(*(fs[k]['p'] - 0.05 * RUN['V'][sim_i(t), k]), R)[None])[0]
+            img = MO.speed_lines(img, t, k, s_[0], s_[1], rp, (s_[0] - s1[0], s_[1] - s1[1]))
+    img = BU.draw(img, cam, t)
+    img = np.ascontiguousarray(np.clip(img, 0, 255).astype(np.uint8))
     # ---------------- UI: countdown, HP numbers in the balls, fight HUD, captions
     countdown(img, t, cs)
     for k, (s_, rp) in drawn.items():

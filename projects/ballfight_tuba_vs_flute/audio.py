@@ -278,10 +278,10 @@ def bed(mix, b, intensity=1.0, light=False):
         mix.place('pad', horn_pad([vo[0], vo[1], vo[2]], T.BAR), t0, 0.07)            # no low note: the tuba owns the bass
     if b >= 3 and not light:                                   # the villain's lullaby on top
         lb = (b - 1) % 4
-        for j in range(8):
+        for j in range(0, 8, 2):                               # v2: quarters only, softer (the charmer line leads)
             m = T.MUSIC_BOX[lb * 8 + j]
             if m is not None:
-                mix.place('musicbox', music_box(m, 0.8 + 0.2 * (j % 2 == 0)), t0 + j * 2 * S16, 0.10, pan=0.35)
+                mix.place('musicbox', music_box(m + 12, 0.9), t0 + j * 2 * S16, 0.06, pan=0.35)
     if intensity > 1.3 and not light:                          # timpani on the downbeat + a crash every 4 bars
         mix.place('drums', timpani(T.CHORD_ROOT[ch] - 12 + 24, 0.9), t0, 0.16 * min(1.0, (intensity - 1.3) / 0.2))
         if b % 4 == 1:
@@ -310,76 +310,104 @@ def main():
     mix.place('fx', A.whoosh(3.6, 300, 6000), 44.0 - 3.6, 0.10)
     for k in ('drums', 'brass', 'pad', 'musicbox'):
         mix.buses[k] = A.tape_stop(mix.buses[k], T_KO, 0.42)
-    # ------------------------------------------------ TUBA: the waves are the bass line
+    # ------------------------------------------------ TUBA (v2, OOM-PAH SWALLOW): oom = the low inhale note, pah = the blast
     for e in EV:
         t, kind = e[0], e[1]
         if t > T_KO + 0.01:
             break
-        if kind == 'pulse' and e[2] == KT:
+        if kind == 'oom' and e[2] == KT:
+            tq = q16(t)
+            ch = T.chord_at(tq + 0.01)
+            beats = max(1.0, (q16(e[3]) - tq) / T.BEAT + 0.4)
+            sig, g, lead = colour(tuba(T.CHORD_ROOT[ch], beats, 0.9), KT, t, 0.8, low=True)
+            mix.place('tuba', sig, tq, 0.62 * g, pan=-0.12)
+            n = int((e[3] - t + 0.1) * SR)                        # the inhale: air sucked in, rising into the bell
+            if n > 400:
+                tt_ = A.tt(n)
+                air = A.bp(np.random.default_rng(int(t * 10)).normal(0, 1, n), 300, 2400) * (tt_ / tt_[-1]) ** 2
+                mix.place('fx', air, tq, 0.05, pan=-0.1)
+            if lead > 0.04:                                       # the leader: a sub-octave under the oom
+                n = int(beats * T.BEAT * 0.9 * SR)
+                tt_ = A.tt(n)
+                sub = np.sin(2 * np.pi * A.mtof(T.CHORD_ROOT[ch] - 12) * tt_) * A.adsr(n, 0.02, 0.2, 0.7, 0.1)
+                mix.place('tuba', sub, tq, 0.22 * min(1.0, lead * 4))
+        elif kind == 'pah' and e[2] == KT:
             tq = q16(t)
             hp = hp_at(KT, t)
             ch = T.chord_at(tq + 0.01)
-            main_ = bool(e[3])
-            if main_:
-                sig, g, lead = colour(tuba(T.CHORD_ROOT[ch], 1.6, 0.9), KT, t, 0.8, low=True)
-                mix.place('tuba', sig, tq, 0.62 * g, pan=-0.12)
-                if lead > 0.04:                            # the leader: a sub-octave under the oom
-                    n = int(1.4 * T.BEAT * SR)
-                    tt_ = A.tt(n)
-                    sub = np.sin(2 * np.pi * A.mtof(T.CHORD_ROOT[ch] - 12) * tt_) * A.adsr(n, 0.02, 0.2, 0.7, 0.1)
-                    mix.place('tuba', sub, tq, 0.22 * min(1.0, lead * 4))
-            else:                                          # OOMPAH's beat-3 wave: the fifth (gone below 25 HP)
-                if hp > 25:
-                    sig, g, _ = colour(tuba(T.CHORD_FIFTH[ch], 0.9, 0.75), KT, t, 0.8, low=True)
-                    mix.place('tuba', sig, tq, 0.48 * g, pan=-0.12)
-        elif kind == 'hit' and e[2] == KT and e[7] == 'pulse':
+            caught = bool(e[3])
+            if hp > 25 or caught:                                 # pah: the fifth as a short blast (gone below 25 HP)
+                sig, g, _ = colour(tuba(T.CHORD_FIFTH[ch], 0.6, 0.95 if caught else 0.75), KT, t, 0.8, low=True)
+                mix.place('tuba', sig, tq, (0.62 if caught else 0.45) * g, pan=-0.12)
+            if caught:                                            # the spit: a brass blast + the cannonball's whoosh
+                mix.place('brass', brass((43, 50, 55, 59), 0.3, bite=1.0), tq, 0.30)
+                mix.place('fx', A.whoosh(0.6, 500, 7000), tq, 0.16)
+        elif kind == 'gulp' and e[2] == KT:                       # gulp: a low bubble pop + a growl from the bell
             tq = q16(t)
-            hp = hp_at(KT, t)
-            mix.place('fx', A.thud(0.45, 110, 38, seed=int(t * 7)), tq, 0.22)
-            if hp > 45:                                    # a landed wave: the walk-up into the next bar
-                nb = T.next_bar(tq + 0.02)
-                tgt = T.CHORD_ROOT[T.chord_at(nb + 0.01)]
-                for j, m in enumerate((tgt - 2, tgt - 1)):
-                    tj = nb - (2 - j) * T.BEAT / 2
-                    if tj > tq + 0.05:
-                        sig, g, _ = colour(tuba(m, 0.45, 0.7), KT, t, 0.8, low=True)
-                        mix.place('tuba', sig, tj, 0.40 * g, pan=-0.12)
-    # ------------------------------------------------ FLUTE: every volley is a run up the chord
+            n = int(0.22 * SR)
+            tt_ = A.tt(n)
+            pop = np.sin(2 * np.pi * np.cumsum(180 * np.exp(-tt_ / 0.06) + 50) / SR) * np.exp(-tt_ / 0.08)
+            mix.place('fx', pop, tq, 0.32)
+            mix.place('tuba', colour(tuba(31, 0.5, 0.9), KT, t, 1.2, low=True)[0], tq, 0.30)
+        elif kind == 'hit' and e[2] == KT and e[7] == 'cannon':   # into the ropes
+            tq = q16(t)
+            mix.place('fx', A.thud(0.5, 120, 40, seed=int(t * 7)), tq, 0.42)
+            mix.place('drums', A.crash(1.2), tq, 0.08)
+            mix.place('drums', bass_drum(1.0), tq, 0.35)
+    # ------------------------------------------------ FLUTE (v2, SNAKE CHARMER): the charmer line while its cobras are up
+    rise = RD.CFG[KF]['weapon']['rise'] * T.BEAT
+    t_up = min([b['t_drop'] for b in RD.BASKETS.values()] + [99.0]) + rise
+    dances = RD.DANCES
+    k0, k1 = int(math.ceil(t_up / S16)), int(T_KO / S16)
+    for slot in range(k0, k1 + 1):
+        tq = slot * S16
+        cn = T.charmer_note(slot)
+        hasted = float(RUN['HA'][RD.sim_i(tq), KF]) > 0
+        if cn is None and not (hasted and T.charmer_note(slot - 1) is not None):
+            continue
+        if cn is None:                                            # FLUTTER TONGUE: an extra grace note between
+            m0, _ = T.charmer_note(slot - 1)
+            cn = (m0 + 1 if (m0 + 1) % 12 in [(T.KEY_ROOT + q) % 12 for q in T.SCALE] else m0 + 2, 1)
+        m, n16 = cn
+        ch = T.chord_at(tq + 0.01)
+        if ch == 'Db' and m % 12 == 2:
+            m -= 1
+        if any(a_ <= tq < b_ for a_, b_ in dances) and m + 12 <= 96:
+            m += 12                                               # SNAKE DANCE: the line climbs an octave
+        hp = hp_at(KF, tq) / 100.0
+        if h01(slot, 5) < 0.55 * (1 - hp) ** 1.6:                # sparse when hurt
+            continue
+        x = flute(m, min(0.5, n16 * S16 * 0.9), 0.8)
+        if hasted:
+            x = flutter(x)
+        sig, g, lead = colour(x, KF, tq, 0.9)
+        mix.place('flute', sig, tq, 0.24 * g, pan=0.22)
+        if (1 - hp) > 0.3 and n16 >= 2:
+            mix.place('flute', breath(0.1, slot), tq, 0.08 * (1 - hp), pan=0.22)
+        if lead > 0.04 and n16 >= 2:                              # the leader: a thin octave double
+            mix.place('flute', colour(flute(m - 12, min(0.5, n16 * S16 * 0.9), 0.6), KF, tq)[0], tq, 0.08 * g, pan=0.25)
     for e in EV:
         t, kind = e[0], e[1]
         if t > T_KO + 0.01:
             break
-        if kind == 'fire' and e[2] == KF:
+        if kind == 'strike' and e[2] == KF:                       # a hiss-click on every strike
             tq = q16(t)
-            hp = hp_at(KF, t) / 100.0
-            if h01(tq, 5) < 0.6 * (1 - hp) ** 1.6:        # sparse when hurt
-                continue
-            n = int(e[3])
-            ch = T.chord_at(tq + 0.01)
-            tones = T.chord_notes(74, 96, ch)
-            haste = RUN['HA'][RD.sim_i(t), KF] > 0
-            step = S16 / 2
-            start = int(h01(tq, 9) * 3)
-            for j in range(min(n, 8)):
-                m = tones[min(len(tones) - 1, start + j)]
-                x = flute(m, step * 1.1 if j < n - 1 else 0.14, 0.75 + 0.05 * j)
-                if haste:
-                    x = flutter(x)
-                sig, g, lead = colour(x, KF, t, 0.9)
-                mix.place('flute', sig, tq + j * step, (0.20 + 0.03 * j) * g, pan=0.22)
-            if (1 - hp) > 0.3:
-                mix.place('flute', breath(0.12 + 0.03 * n, int(tq * 31)), tq, 0.10 * (1 - hp), pan=0.22)
-        elif kind == 'hit' and e[2] == KF and e[7] == 'key':
+            n = int(0.09 * SR)
+            tt_ = A.tt(n)
+            hiss = A.bp(np.random.default_rng(int(t * 50)).normal(0, 1, n), 3500, 10000) * np.exp(-tt_ / 0.03)
+            click = np.sin(2 * np.pi * 2800 * tt_) * np.exp(-tt_ / 0.004)
+            mix.place('flute', hiss * 0.8 + click * 0.5, tq, 0.10, pan=float(np.clip(math.cos(e[4]) * 0.4, -0.5, 0.5)))
+        elif kind == 'hit' and e[2] == KF and e[7] == 'fang':     # a bite lands: a high accent
             tq = q16(t)
-            m = T.scale_notes(84, 98, T.chord_at(tq))[int(e[8]) % 6]
-            sig, g, _ = colour(flute(m, 0.06, 0.9), KF, t, 0.9)
-            mix.place('flute', sig, tq, 0.14 * g, pan=float(np.clip(e[5] / 3.5, -0.6, 0.6)))
+            m = T.chord_notes(84, 96, T.chord_at(tq + 0.01))[int(e[8]) % 3]
+            sig, g, _ = colour(flute(m, 0.07, 1.0), KF, t, 0.9)
+            mix.place('flute', sig, tq, 0.16 * g, pan=float(np.clip(e[5] / 3.5, -0.6, 0.6)))
+        elif kind == 'basket' and e[2] == KF:                     # a basket lands: a soft wicker thump
+            mix.place('fx', A.thud(0.18, 220, 120, seed=int(t * 9)), t + 0.05, 0.08)
         elif kind == 'hit' and e[2] == KF and e[7] == 'wave':
             mix.place('fx', A.thud(0.45, 140, 60), q16(t), 0.30)
-        elif kind == 'cleared' and e[2] == KF:             # a dart blown away by a tuba wave
-            mix.place('flute', A.hp(flute(93, 0.05, 0.5), 1500), q16(t), 0.04)
-        elif kind == 'block':                              # a dart pings off the brass wall
-            mix.place('fx', A.chime(96, 0.4) * 0.6 + A.chime(91, 0.4) * 0.4, q16(t), 0.05)
+        elif kind == 'block':                                     # a fang pings off the brass dome
+            mix.place('fx', A.chime(96, 0.4) * 0.6 + A.chime(91, 0.4) * 0.4, q16(t), 0.06)
         elif kind == 'rope':
             mix.place('fx', A.thud(0.22, 95, 55, seed=int(t * 10)), t, 0.05 * min(1.5, e[7] / 2.6),
                       pan=float(np.clip(e[5] / 3.5, -0.6, 0.6)))
@@ -396,24 +424,24 @@ def main():
                 mix.place('drums', A.crash(1.2), tq, 0.08)
             elif name == 'FLUTTER TONGUE':
                 mix.place('flute', flutter(flute(91, 0.5, 0.9), 26), tq, 0.20, pan=0.22)
-            elif name == 'TRILL':
-                n = RD.CFG[who]['abilities']['unlock2']['n']
-                a_, b_ = T.scale_notes(84, 96, T.chord_at(tq))[1:3]
-                for j in range(n):                         # the arc's darts launch as a trill across the beat
-                    mix.place('flute', colour(flute(a_ if j % 2 == 0 else b_, T.BEAT / n * 1.1, 0.8), KF, t)[0],
-                              tq + j * T.BEAT / n, 0.22, pan=0.22)
+            elif name == 'SNAKE DANCE':                           # a rattle of hisses as the cobras leave the baskets
+                for j in range(4):
+                    n = int(0.12 * SR)
+                    tt_ = A.tt(n)
+                    hs = A.bp(np.random.default_rng(70 + j).normal(0, 1, n), 4000, 11000) * np.exp(-tt_ / 0.05)
+                    mix.place('flute', hs, tq + j * S16, 0.09, pan=0.3 * (j % 2 * 2 - 1))
             elif name == 'PICCOLO':
                 mix.place('flute', shriek(1.7), tq, 0.15, pan=0.2)
                 mix.place('flute', colour(flute(93, 0.9, 1.0), KF, t, 2.0)[0], tq, 0.18)
             elif name == 'SUBSONIC':
                 tele = RD.CFG[who]['abilities']['low']['tele'] * T.BEAT
                 mix.place('tuba', sub_drone(tele + 0.05), tq, 0.40)
-        elif kind == 'slam':                               # SUBSONIC: the giant bell lands
+        elif kind == 'slam':                                      # SUBSONIC lands: a ring-shaking low note
             ts = e[0]
-            mix.place('tuba', tuba(31, 2.0, 1.0), ts, 0.70)
+            mix.place('tuba', tuba(29, 2.5, 1.0), ts, 0.70)
+            mix.place('tuba', sub_drone(1.2, 26, 30), ts, 0.30)
             mix.place('fx', A.thud(0.9, 90, 28), ts, 0.65)
             mix.place('drums', bass_drum(1.0), ts, 0.6)
-            mix.place('drums', A.crash(1.4), ts, 0.10)
     # ------------------------------------------------ the K.O. moment
     mix.place('drums', A.crash(2.4), T_KO, 0.16)
     mix.place('tuba', tuba(31, 2.5, 1.0), T_KO, 0.5)
@@ -454,7 +482,7 @@ def main():
         if wname == 'TUBA':
             mix.place('solo', tuba(m, d, 0.9), ts, 0.62)
         else:
-            mix.place('solo', flute(m, d * T.BEAT * 0.9, 0.9), ts, 0.40)
+            mix.place('solo', flute(m, d * T.BEAT * 0.9, 0.9), ts, 0.62)
     # the loser reassembles: its pieces fly home as a rising run, a glass "pop" when it's whole
     run = [60, 63, 67, 72, 75, 79, 84, 87]
     for j, m in enumerate(run):
@@ -490,7 +518,7 @@ def main():
 BUS_GAIN = {'drums': 0.9, 'tuba': 1.9, 'flute': 1.8, 'solo': 1.6, 'fx': 1.5, 'brass': 3.0, 'pad': 2.0, 'musicbox': 1.2}
 # section automation (dB), applied AFTER the compressor so the limiter can't flatten the build: the count-in at full,
 # the early fight pulled back, rising through the final exchange, the victory section loud, the end close to the start
-GAIN_PTS = [(0, 0.0), (1.75, 0.0), (2.3, -0.9), (20, -0.9), (30, -0.6), (40, 1.3), (44, 2.3), (50.8, 3.3), (52.3, 2.8),
+GAIN_PTS = [(0, 0.0), (1.75, 0.0), (2.3, -1.9), (20, -1.7), (30, -0.6), (40, 1.3), (44, 2.3), (50.8, 3.3), (52.3, 2.8),
             (53.4, 3.3), (58.0, 3.3), (60.0, 1.6), (61.02, 0.6)]
 
 

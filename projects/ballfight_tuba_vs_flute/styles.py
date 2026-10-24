@@ -238,3 +238,275 @@ def flute_sprite(r, yaw, roll):
     img[edge, :3] = INK
     img[edge, 3] = 255
     return img
+
+
+# =================================================================================================== v2 (BALLFIGHT v2)
+# OOM-PAH SWALLOW (tuba) and SNAKE CHARMER (flute): the instrument's body / the way it's played is the weapon.
+WICKER = np.array([196, 150, 92])
+WICKER_DK = np.array([120, 84, 46])
+WICKER_HI = np.array([232, 196, 132])
+SCALE_DK = np.array([96, 104, 128])
+HOOD_MARK = np.array([40, 34, 62])
+
+
+# ---------------------------------------------------------------- the tuba's bell (OOM-PAH SWALLOW)
+def bell_rings(p, th, open_k=0.0, flare=0.0, y=R * 1.05):
+    """the bell growing out of the tuba ball toward its aim: [(centre world, radius)] from the throat to the mouth, plus
+    the mouth's axis. open_k (0..1) widens the mouth while it inhales, flare (0..1) is the "pah" punch"""
+    d = np.array([math.cos(th), math.sin(th)])
+    L = 0.50 + 0.12 * open_k + 0.18 * flare
+    rm = 0.36 + 0.22 * open_k + 0.16 * flare
+    out = []
+    for u, rr in ((0.0, 0.13), (0.45, 0.15), (0.75, 0.2), (0.92, rm * 0.78), (1.0, rm)):
+        c = p + d * (R * 0.85 + L * u)
+        out.append((S.to_world(c[0], c[1], y), rr))
+    return out, S.to_world(d[0], d[1], 0.0) - S.to_world(0.0, 0.0, 0.0)
+
+
+def _ring_pts(c, axis, r, n=14):
+    """a vertical circle of radius r around world centre c, facing world direction `axis` (horizontal)"""
+    ax = axis / (np.linalg.norm(axis) + 1e-9)
+    up = np.array([0.0, 1.0, 0.0])
+    side = np.cross(up, ax)
+    side /= np.linalg.norm(side) + 1e-9
+    a = np.linspace(0, 2 * math.pi, n + 1)[:-1]
+    return c[None] + r * (np.cos(a)[:, None] * side[None] + np.sin(a)[:, None] * up[None])
+
+
+def draw_tuba_bell(fr, cam, L, shade, p, th, open_k, flare, col, glow=0.0):
+    """brass flare (banded segments throat -> mouth, lit from the spot side), a bright lip and, when the mouth faces
+    the camera, the dark throat inside (indigo-tinted while it inhales)"""
+    rings, axis = bell_rings(p, th, open_k, flare)
+    pts = [_ring_pts(c, axis, r) for c, r in rings]
+    n = len(pts[0])
+    for j in range(len(pts) - 1):
+        A_, B_ = pts[j], pts[j + 1]
+        for i in range(n):
+            q = np.array([A_[i], A_[(i + 1) % n], B_[(i + 1) % n], B_[i]])
+            nrm = np.cross(q[1] - q[0], q[3] - q[0])
+            nrm = nrm / (np.linalg.norm(nrm) + 1e-9)
+            if np.dot(nrm, cam.pos - q.mean(0)) < 0:
+                nrm = -nrm
+            base = BRASS * (0.9 + 0.1 * j / 3) + np.array(col) * 0.06
+            c = shade(L, nrm[None], q.mean(0)[None], base, rimk=0.6)[0]
+            fr.poly(cam, q, np.clip(c * (1 + 0.5 * glow) + 30 * glow, 0, 255))
+    mouth_c, rm = rings[-1]
+    facing = np.dot(axis, cam.pos - mouth_c) > 0
+    lip = _ring_pts(mouth_c, axis, rm, n=20)
+    if facing:
+        inner = _ring_pts(mouth_c - axis * 0.02, axis, rm * 0.82, n=20)
+        ink = np.array(col) * (0.18 + 0.35 * open_k) + np.array([10, 6, 16])
+        fr.poly(cam, inner, np.clip(ink, 0, 255))
+    fr.line(cam, np.vstack([lip, lip[:1]]), np.clip(BRASS_HI * (1 + 0.3 * glow), 0, 255), 1)
+    return mouth_c
+
+
+def inhale_light(sxp, szp, p, th, reach, k, t, ys, xs, half=0.8):
+    """the suction cone on the canvas: a wedge in front of the bell (half-angle `half` rad, out to the reach) with
+    streaks of air racing IN toward the mouth. Returns (bright, dark) per pixel: thin bright streaks over darker gaps"""
+    rel_x, rel_z = sxp - p[0], szp - p[1]
+    rd = np.hypot(rel_x, rel_z)
+    ang = np.arctan2(rel_z, rel_x)
+    da = (ang - th + math.pi) % (2 * math.pi) - math.pi
+    rmax = R * 2 + reach
+    inside = (np.abs(da) < half) & (rd > R * 0.95) & (rd < rmax)
+    fall = np.clip(1 - np.abs(da) / half, 0, 1) ** 0.7 * np.clip(1 - (rd - R) / (rmax - R), 0, 1) ** 0.5
+    lane = np.sin(da * 9.0) > 0.55                                   # radial lanes
+    flow = (rd * 3.2 + t * 9.0 + np.floor(da * 9.0 / math.pi) * 0.37) % 1.0   # dashes travelling inward
+    bright = (lane & (flow < 0.28)) * fall * inside
+    dark = fall * inside * 0.5
+    q = lambda v: np.floor(v * 3 + BAYER_FULL[ys, xs] * 0.9) / 3
+    return q(bright) * k, q(dark) * k
+
+
+# ---------------------------------------------------------------- BRASS WALL: the bell becomes a brass dome
+def draw_dome(arr, cam, cx, cz, k, t, col):
+    """a brass dome over the tuba ball: banded hemisphere (seen from the 3/4 camera), a gleam sweeping round, a rim
+    ring on the canvas; translucent at the edges so the tuba still reads inside"""
+    rr = R * 1.45
+    a = np.linspace(0, 2 * math.pi, 41)
+    for j, (h, f) in enumerate(((0.0, 1.0), (rr * 0.45, 0.9), (rr * 0.75, 0.68), (rr * 0.93, 0.38))):
+        P = S.to_world(cx + rr * f * np.cos(a), cz + rr * f * np.sin(a), h)
+        m = mask_of([cam.wp(P)])
+        g = 0.62 + 0.12 * j
+        col_j = BRASS * g + np.array(col) * 0.10
+        arr += (np.clip(col_j, 0, 255)[None, None] - arr) * (m * (0.30 + 0.12 * j) * k)[..., None]
+    sweep = t * 3.0
+    P = S.to_world(cx + rr * 0.7 * math.cos(sweep), cz + rr * 0.7 * math.sin(sweep), rr * 0.55)
+    s = cam.wp(P[None])[0]
+    yy, xx = int(round(s[1])), int(round(s[0]))
+    if 1 <= yy < H - 1 and 1 <= xx < W - 1:
+        arr[yy - 1:yy + 2, xx - 1:xx + 2] = arr[yy - 1:yy + 2, xx - 1:xx + 2] * (1 - k) + BRASS_HI * k
+    P = S.to_world(cx + rr * np.cos(a), cz + rr * np.sin(a), 0.02)
+    im = Image.new('L', (W, H), 0)
+    ImageDraw.Draw(im).line([tuple(q) for q in cam.wp(P)], fill=255, width=1)
+    mk = np.asarray(im, np.float32) / 255.0
+    arr += (BRASS_HI[None, None] - arr) * (mk * 0.8 * k)[..., None]
+
+
+# ---------------------------------------------------------------- SUBSONIC: the floor ripples like water
+def ripple_light(sxp, szp, cx, cz, t, t0, t_slam, rad, ys, xs):
+    """telegraph: rings sucked IN toward the predicted spot (a sub note building); the hit: water ripples racing OUT
+    across the canvas, fading over ~1.6 s. Returns (light add, albedo darken) per pixel"""
+    rd = np.hypot(sxp - cx, szp - cz)
+    add = np.zeros_like(rd)
+    dark = np.zeros_like(rd)
+    if t < t_slam:
+        u = (t - t0) / max(1e-6, t_slam - t0)
+        for j in range(3):
+            ph = (u * 3 + j / 3) % 1.0
+            r_ = rad * 1.6 * (1 - ph)
+            add += np.clip(1 - np.abs(rd - r_) / 0.05, 0, 1) * math.sin(math.pi * ph) * 0.5
+        dark += (rd < rad) * 0.45 * u
+    else:
+        u = t - t_slam
+        if u < 1.6:
+            for j in range(4):
+                r_ = 0.2 + 3.2 * max(0.0, u - j * 0.12)
+                if r_ <= 0.2:
+                    continue
+                band = np.cos(np.clip((rd - r_) / 0.16, -1.5, 1.5) * math.pi / 3) * (np.abs(rd - r_) < 0.24)
+                add += band * (1 - u / 1.6) * (0.75 - 0.12 * j)
+                dark += np.clip(1 - np.abs(rd - (r_ - 0.12)) / 0.08, 0, 1) * (1 - u / 1.6) * 0.35
+    q = lambda v: np.floor(v * 3 + BAYER_FULL[ys, xs] * 0.9) / 3
+    return q(np.clip(add, 0, 1.2)), q(np.clip(dark, 0, 0.8))
+
+
+# ---------------------------------------------------------------- SNAKE CHARMER: baskets + silver cobras
+BASKET_R, BASKET_H = 0.34, 0.30
+
+
+def draw_basket(fr, cam, L, shade, cx, cz, k=1.0, lid=0.0):
+    """a woven basket: banded wicker sides (alternating weave rows), a darker rim, the dark opening on top; k (0..1)
+    scales it in / out (drop-in pop, pick-up)"""
+    if k <= 0.02:
+        return
+    r = BASKET_R * k
+    h = BASKET_H * k
+    n = 16
+    a = np.linspace(0, 2 * math.pi, n + 1)
+    rows = 3
+    for j in range(rows):
+        y0, y1 = h * j / rows, h * (j + 1) / rows
+        r0, r1 = r * (0.86 + 0.14 * j / rows), r * (0.86 + 0.14 * (j + 1) / rows)
+        for i in range(n):
+            q = np.array([S.to_world(cx + r0 * math.cos(a[i]), cz + r0 * math.sin(a[i]), y0),
+                          S.to_world(cx + r0 * math.cos(a[i + 1]), cz + r0 * math.sin(a[i + 1]), y0),
+                          S.to_world(cx + r1 * math.cos(a[i + 1]), cz + r1 * math.sin(a[i + 1]), y1),
+                          S.to_world(cx + r1 * math.cos(a[i]), cz + r1 * math.sin(a[i]), y1)])
+            nrm = S.to_world(math.cos((a[i] + a[i + 1]) / 2), math.sin((a[i] + a[i + 1]) / 2), 0.0) - S.to_world(0, 0, 0)
+            if np.dot(nrm, cam.pos - q.mean(0)) <= 0:
+                continue
+            base = WICKER if (i + j) % 2 == 0 else WICKER_DK * 1.15
+            c = shade(L, nrm[None], q.mean(0)[None], base, rimk=0.3)[0]
+            fr.poly(cam, q, c)
+    top = S.to_world(cx + r * np.cos(a[:-1]), cz + r * np.sin(a[:-1]), h)
+    fr.poly(cam, top, WICKER_HI * 0.9)
+    inner = S.to_world(cx + r * 0.78 * np.cos(a[:-1]), cz + r * 0.78 * np.sin(a[:-1]), h + 0.002)
+    fr.poly(cam, inner, np.array([34, 24, 18]))
+
+
+def cobra_pose(home, cp, t, t_drop, rise_t, aim, strike, dancing_k, beat, seed=0):
+    """the cobra's body as world points (tail -> head) + the head point and its facing (ring-frame unit vector).
+    It rises out of the basket over `rise_t`, sways (a slow figure-eight, 2 beats), and lunges on a strike
+    (strike = (t0, t_hit, t_end, aim, len)); away from the basket (SNAKE DANCE) its body trails on the canvas"""
+    u_rise = min(1.0, max(0.0, (t - t_drop) / max(1e-6, rise_t)))
+    e = u_rise * u_rise * (3 - 2 * u_rise)
+    d_aim = np.array([math.cos(aim), math.sin(aim)])
+    side = np.array([-d_aim[1], d_aim[0]])
+    ph = 2 * math.pi * (t / (2 * beat)) + seed * 1.7
+    sway = 0.15 * math.sin(ph) * e
+    bob = 0.05 * math.sin(2 * ph) * e
+    away = float(np.hypot(*(cp - home))) > 0.05
+    base = np.array([cp[0], cp[1]])
+    y_base = BASKET_H * 0.9 if not away else 0.04
+    head_rest = base + side * sway + d_aim * 0.16 * e
+    hy = y_base + (0.25 + 0.85 * e) * (1 - 0.25 * dancing_k) + bob
+    head = np.array([head_rest[0], head_rest[1], hy])
+    if strike is not None:
+        t0, t_hit, t_end, s_aim, s_len = strike
+        d_s = np.array([math.cos(s_aim), math.sin(s_aim)])
+        if t < t_hit:
+            k = (t - t0) / max(1e-6, t_hit - t0)
+            k = 1 - (1 - k) ** 2
+        else:
+            k = max(0.0, 1 - (t - t_hit) / max(1e-6, t_end - t_hit))
+        tgt = np.array([base[0] + d_s[0] * s_len, base[1] + d_s[1] * s_len, R * 0.85])
+        head = head + (tgt - head) * k
+        d_aim = d_s if k > 0.2 else d_aim
+    # body: from the basket mouth (or the canvas trail) up to the head, an S-curve
+    pts = []
+    if away:                                                    # slithering: a wavy trail behind on the canvas
+        back = home - cp
+        bl = float(np.hypot(*back))
+        b_u = back / bl if bl > 1e-6 else -d_aim
+        b_n = np.array([-b_u[1], b_u[0]])
+        for j in range(7, 0, -1):
+            s_ = j / 7 * min(0.9, bl + 0.2)
+            q = cp + b_u * s_ + b_n * 0.08 * math.sin(6 * s_ - 9 * t)
+            pts.append(S.to_world(q[0], q[1], 0.04))
+    n = 9
+    for j in range(n + 1):
+        s_ = j / n
+        q = base + (head[:2] - base) * s_ + side * 0.07 * math.sin(math.pi * s_ * 1.5 + ph) * e
+        yq = y_base + (head[2] - y_base) * (s_ ** 0.8)
+        pts.append(S.to_world(q[0], q[1], yq))
+    return np.array(pts), S.to_world(head[0], head[1], head[2]), d_aim, e
+
+
+def draw_cobra(fr, cam, L, shade, pts, head_w, face, rise_e, col, glow=0.0, wpx=None):
+    """a silver cobra with an ink outline (the Pixel Pitch look): a thick scaled body (belly segments darker), the flared
+    hood (with the dark spectacle mark) facing its target, a wedge head and two eye pixels (red while it strikes)"""
+    if rise_e <= 0.02 or len(pts) < 2:
+        return
+    depth = cam.depth(pts)
+    f = cam.f / max(1e-3, float(depth.mean()))
+    w_body = max(3, int(round(0.16 * f * (0.5 + 0.5 * rise_e)))) if wpx is None else wpx
+    body_col = np.clip(SILVER * 0.86 + np.array([150, 190, 255]) * 0.08 + np.array(col) * 0.06, 0, 255)
+    nseg = len(pts) - 1
+    widths = [max(2, int(round(w_body * (0.55 + 0.45 * j / nseg)))) for j in range(nseg)]
+    for j in range(nseg):                                        # ink outline pass
+        fr.line(cam, pts[j:j + 2], INK, widths[j] + 2)
+    for j in range(nseg):
+        q = pts[j:j + 2].mean(0)
+        base = body_col if j % 2 == 0 else SCALE_DK * 1.45
+        c = shade(L, np.array([[0, 1.0, 0]]), q[None], base, rimk=0.5)[0]
+        fr.line(cam, pts[j:j + 2], np.clip(c * (1 + 0.4 * glow) + 25 * glow, 0, 255), widths[j])
+    # hood: a flat oval behind the head, perpendicular to the facing direction
+    fa = S.to_world(face[0], face[1], 0.0) - S.to_world(0, 0, 0)
+    fa = fa / (np.linalg.norm(fa) + 1e-9)
+    up = np.array([0.0, 1.0, 0.0])
+    to_cam = cam.pos - head_w
+    to_cam[1] = 0.0
+    to_cam /= np.linalg.norm(to_cam) + 1e-9
+    hn = 0.45 * fa - 0.55 * to_cam                               # the hood turns partly to camera so it always reads
+    hn /= np.linalg.norm(hn) + 1e-9
+    side = np.cross(up, hn)
+    side /= np.linalg.norm(side) + 1e-9
+    hc = head_w - fa * 0.05 - up * 0.09
+    a = np.linspace(0, 2 * math.pi, 13)[:-1]
+    hw, hh = 0.24 * rise_e, 0.19 * rise_e
+    hood_o = hc[None] + (hw + 0.035) * np.cos(a)[:, None] * side[None] + (hh + 0.035) * np.sin(a)[:, None] * up[None]
+    hood = hc[None] + hw * np.cos(a)[:, None] * side[None] + hh * np.sin(a)[:, None] * up[None]
+    back_seen = np.dot(-fa, cam.pos - hc) > 0
+    fr.poly(cam, hood_o - hn * 0.003, INK)
+    c = shade(L, (-hn if np.dot(-hn, cam.pos - hc) > 0 else hn)[None], hc[None], body_col, rimk=0.6)[0]
+    fr.poly(cam, hood, np.clip(c * (1 + 0.4 * glow) + 20 * glow, 0, 255))
+    if back_seen:                                                 # the hood's back: the spectacle mark
+        for sg in (-1, 1):
+            mk = hc[None] + side[None] * 0.07 * sg * rise_e + 0.04 * rise_e * np.cos(a)[:, None] * side[None] \
+                + 0.035 * rise_e * np.sin(a)[:, None] * up[None]
+            fr.poly(cam, mk + hn * 0.005, HOOD_MARK)
+    else:                                                         # the front: pale belly scales down the hood
+        belly = hc[None] + 0.06 * rise_e * np.cos(a)[:, None] * side[None] + 0.13 * rise_e * np.sin(a)[:, None] * up[None]
+        fr.poly(cam, belly + hn * 0.005, np.clip(SILVER_HI * 0.92, 0, 255))
+    head = np.array([head_w + side * 0.07 - up * 0.01, head_w + fa * 0.17, head_w - side * 0.07 - up * 0.01,
+                     head_w - fa * 0.03 + up * 0.04])
+    fr.poly(cam, head * 1.0 + (head - head.mean(0)) * 0.25, INK)
+    c = shade(L, up[None], head_w[None], SILVER_HI * 0.95, rimk=0.6)[0]
+    fr.poly(cam, head, c)
+    for sgn in (-1, 1):
+        ep = cam.wp((head_w + fa * 0.05 + side * 0.04 * sgn + up * 0.03)[None])[0]
+        xi, yi = int(round(ep[0])), int(round(ep[1]))
+        if 0 <= xi < W and 0 <= yi < H:
+            fr.draw.point([(xi, yi)], fill=(255, 70, 110) if glow > 0.3 else (120, 255, 220))

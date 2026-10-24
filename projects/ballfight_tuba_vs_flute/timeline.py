@@ -103,6 +103,27 @@ MUSIC_BOX = [
 ]
 
 
+# v2: the flute's snake-charmer line (SNAKE CHARMER): an original sinuous 4-bar line in C harmonic minor with the
+# augmented second (Ab-B), grace notes and a phrygian-dominant turn over G; NOT the cliche charmer tune. One pitch per
+# 16th slot over the chord loop (Cm . Ab . Db . G), rests in between; the cobras sway to it while they're up.
+CHARMER = {
+    0: 79, 2: 80, 3: 79, 4: 83, 6: 84, 8: 83, 10: 80, 11: 79, 12: 77, 14: 75,
+    16: 72, 18: 75, 20: 77, 21: 79, 22: 80, 24: 84, 26: 83, 28: 80, 30: 79,
+    32: 77, 34: 80, 36: 85, 38: 84, 40: 85, 41: 84, 42: 83, 44: 80, 46: 77,
+    48: 79, 49: 80, 50: 79, 52: 83, 54: 86, 56: 89, 58: 86, 60: 83, 62: 80,
+}
+CHARMER_SLOTS = sorted(CHARMER)
+
+
+def charmer_note(slot):
+    """(midi, length in 16ths) of the line at absolute 16th `slot` (bars from 1 follow the 4-bar loop), or None"""
+    j = (slot - 16) % 64
+    if j not in CHARMER:
+        return None
+    nxt = next((q for q in CHARMER_SLOTS if q > j), CHARMER_SLOTS[0] + 64)
+    return CHARMER[j], nxt - j
+
+
 # the winner's solo (beat offsets from the solo's first bar, midi, beats)
 SOLO = {
     # the tuba's victory march: oom-pah with a menacing chromatic climb, a low pedal and a final growl on the low C
@@ -127,7 +148,7 @@ def beat_env(t, decay=0.12):
     return math.exp(-((t % BEAT) / decay))
 
 
-def beat_pulse(t, decay=0.12, pre=0.07):
+def beat_pulse(t, decay=0.12, pre=0.12):
     """a pulse on every beat that ramps up over the last `pre` s before it (no one-frame snap), so the beat that lands on
     frame 0 doesn't jump at the loop seam"""
     ph = t % BEAT
