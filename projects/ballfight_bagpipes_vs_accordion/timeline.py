@@ -10,15 +10,20 @@ HIGHLAND FLING (two flights per bar), BAG BURST (the bag pops); POLKA (bites eve
 buttons glowing), FULL BELLOWS (the bellows stretch across the whole ring and clamp). Honest simulated fight
 (projects/ballfight/fight.py, rules re-tuned for v2 with tune.py, then frozen), the seed picked for pacing, never
 edited. v1 (drone aura vs bellows rings, seed 1581) is in git history and *_v1_backup.py.
-Hook: the giant 3 . 2 . 1 . FIGHT! in the ring = the band's count-in (stomp + clap + a chanter blast and an accordion
-chord per count, the drop lands on FIGHT); top caption "BAGPIPES / VS ACCORDION" with the BALLFIGHT #4 tag.
+Hook (v3 intro test, user Oct 24): bar 0 is a VS TITLE CARD (title.py): the frame splits diagonally into the two
+fighters' colours, each ball big and close; BAGPIPES, VS and ACCORDION slam in on beats 1-3 (shake, streaks, a dust
+burst, a local light; a drone blast, a thunder crack as VS splits the divider, an accordion chord), and on beat 4 the
+panels slide apart like doors to reveal the ring. Bar 1 is the usual 3 . 2 . 1, FIGHT! on the bar-2 downbeat (3.94 s);
+the fight starts one bar later than v2 and the old top caption is gone. The title slam is the frame-0 reset: the doors
+slide shut over the last T_CLOSE s with a riser and a whoosh into it.
 Music, mood: dark sea shanty. A dorian (the chanter's A, so the drone sits in it; dorian = the shanty's own minor),
 stomping, a low male-choir hum pad, foot stomps and claps, no fiddle, at loop_bpm(122) = 121.97 BPM (31 bars = 61 s;
 1 bar = the countdown). The bed has no lead: the bagpipes and the accordion are the band's two leads.
 
 Beat sheet (61 s; events after 2 s are the run's own: the seed was chosen so they land near these targets):
-    0-1.97   balls rev in corners; giant 3 . 2 . 1 in the ring          BAGPIPES / VS ACCORDION, then FIGHT!
-    1.97-8   launch; the bag swells and rockets vs the snapping jaws      -
+    0-1.97   the VS title card: BAGPIPES, VS, ACCORDION slam in; the doors open on beat 4
+    1.97-3.94 balls rev in corners; giant 3 . 2 . 1 in the ring, FIGHT! at 3.94
+    3.94-10  launch; the bag swells and rockets vs the snapping jaws      -
     8-30     the bag grows, the flights get longer, the jaws reach further; WAR CRY, POLKA, HIGHLAND FLING, SQUEEZEBOX
     32-44    one dips below 25 HP                                        BAG BURST or FULL BELLOWS
     44-52    final exchange, HP in single digits                         -
@@ -41,8 +46,13 @@ S16 = BEAT / 4                  # hits snap to the nearest 16th in the audio (<=
 
 FIGHTERS = ('BAGPIPES', 'ACCORDION')   # left corner, right corner
 SERIES = 'BALLFIGHT #4'
-T_FIGHT = BAR                   # FIGHT! lands on the bar-1 downbeat: the drop, the launch, the first push
-COUNT = [(0.0, '3'), (BEAT, '2'), (2 * BEAT, '1'), (BAR, 'FIGHT!')]
+T_FIGHT = 2 * BAR               # v3 intro test: FIGHT! lands on the bar-2 downbeat (3.94 s): the drop, the launch, the first bite
+COUNT = [(BAR, '3'), (BAR + BEAT, '2'), (BAR + 2 * BEAT, '1'), (2 * BAR, 'FIGHT!')]     # bar 1: the usual count-in
+
+# ---------------------------------------------------------------- v3 intro test (user, Oct 24): the VS title card, bar 0
+TITLE = [(0.0, 'BAGPIPES'), (BEAT, 'VS'), (2 * BEAT, 'ACCORDION')]   # one word slams in per beat (beat 1 = frame 0)
+T_DOORS = (3 * BEAT + 0.10, BAR - 0.03)  # beat 4: the two panels slide apart like doors to reveal the ring
+T_CLOSE = 0.30                  # the last 0.30 s of the file: the doors slide shut again (the run-up into the frame-0 slam)
 
 # ---------------------------------------------------------------- frozen rules (tune.py; the same for every seed)
 DMG_SCALE = 0.76  # tuned once (tune.py) so the median K.O. sits near 50 s with each side winning about half
@@ -52,7 +62,7 @@ T_KO = (49.0, 53.0)
 MIN_LEAD_CHANGES = 2
 MAX_WINNER_HP = 30.0
 CAP_GAP = 4.0                   # never two ability captions within 4 s
-CAP_TARGETS = {'WAR CRY': 10, 'POLKA': 15, 'HIGHLAND FLING': 22, 'SQUEEZEBOX': 28, 'BAG BURST': 40, 'FULL BELLOWS': 40}
+CAP_TARGETS = {'WAR CRY': 12, 'POLKA': 17, 'HIGHLAND FLING': 24, 'SQUEEZEBOX': 30, 'BAG BURST': 42, 'FULL BELLOWS': 42}   # v3: +1 bar
 
 # ---------------------------------------------------------------- the scripted tail (after the honest K.O.)
 SLOWMO = 0.7                    # s of picture time the last instant of the fight is stretched over (the K.O. hit)
@@ -65,9 +75,10 @@ T_REV = T_GLIDE + 1.05          # in the corners, revving (same motion as the op
 # ---------------------------------------------------------------- music (A dorian, dark sea shanty)
 KEY_ROOT = 45                   # A
 SCALE = (0, 2, 3, 5, 7, 9, 10)  # A dorian: A B C D E F# G (the chanter's A; the raised 6th is the shanty's colour)
-# chords per bar (31 bars): the count-in on the dominant E, then the 4-bar loop i - VII - i - v (Am . G . Am . Em),
-# ending on Am + E (bar 30) so the loop seam is two bars of E resolving on FIGHT!
-CHORDS = ['E'] + ['Am', 'G', 'Am', 'Em'] * 7 + ['Am', 'E']
+# chords per bar (31 bars), v3: the title card on the tonic (bar 0), the count-in on the dominant E (bar 1), then the
+# 4-bar loop i - VII - i - v (Am . G . Am . Em) from FIGHT! (bar 2), ending on E (bar 30): the seam resolves V -> i on
+# the title slam
+CHORDS = ['Am', 'E'] + ['Am', 'G', 'Am', 'Em'] * 7 + ['E']    # v3: bar 0 = the title card (tonic hits), bar 1 = the count-in
 CHORD_ROOT = {'Am': 45, 'G': 43, 'Em': 40, 'E': 40}
 CHORD_PCS = {'Am': (9, 0, 4), 'G': (7, 11, 2), 'Em': (4, 7, 11), 'E': (4, 8, 11, 2)}
 assert len(CHORDS) == N_BARS
@@ -106,7 +117,7 @@ for _b in range(4):
 def melody_at(t):
     """the chanter line's pitch at time t (bars 1.. follow the 4-bar loop)"""
     k = int(round(t / (2 * S16)))
-    b = (k // 8 - 1) % 4
+    b = (k // 8 - 2) % 4                                          # v3: the loop starts on FIGHT! (bar 2)
     return MELODY[b * 8 + k % 8]
 
 

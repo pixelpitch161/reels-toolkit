@@ -330,25 +330,51 @@ def main():
     mix = A.Mix(T.DUR + 4.0)
     tw = q16(T_KO + 1.3)
     solo0 = RD.T_SOLO
-    # ------------------------------------------------ count-in (bar 0, on the dominant E): stomp + clap + chanter + chord
+    # ------------------------------------------------ v3 title card (bar 0): one unison band hit per word
+    t1, t2, t3 = 0.004, T.BEAT, 2 * T.BEAT                 # BAGPIPES 4 ms in (no click at the seam), VS, ACCORDION
+    for tw in (t1, t2, t3):                                # the band on every word: stomp, boom, a choir "hey"
+        mix.place('stomp', stomp(1.0, int(tw * 100) + 7), tw, 0.58)
+        mix.place('fx', A.thud(0.9, 120, 32, seed=int(tw * 50) + 3), tw, 0.55)
+        mix.place('choir', choir((45, 52, 57, 64), 0.30, att=0.008, rel=0.25, vowel='o'), tw, 0.20)
+        mix.place('choir', bass_voice(33, 0.5), tw, 0.30)
+    # BAGPIPES: a drone blast (all three drones + the chanter's high A with its grace note)
+    blast = B._resample(np.asarray(BAG.drone_voice('ghb', 0.75), float)) * 3.2
+    mix.place('drone', np.stack([blast, blast], 1), t1, 0.55)
+    mix.place('chanter', chanter(81, 0.62, 1.0, grace=True), t1, 0.46)
+    mix.place('chanter', chanter(69, 0.62, 0.9), t1, 0.26)
+    # VS: a thunder crack where it splits the divider
+    nn = int(1.4 * SR)
+    tt = A.tt(nn)
+    crack = A.bp(np.random.default_rng(91).normal(0, 1, nn), 1500, 9000) * np.exp(-tt / 0.035)
+    rumble = A.lp(np.random.default_rng(92).normal(0, 1, nn), 160) * np.clip(tt / 0.02, 0, 1) * np.exp(-tt / 0.5) * 3.0
+    mix.place('fx', crack * 0.9 + rumble, t2, 0.42)
+    mix.place('fx', A.crash(1.6), t2, 0.10)
+    # ACCORDION: a full chord blast, every reed, the bellows wheezing
+    mix.place('acc', reeds((45, 57, 60, 64, 69, 72), 0.62, 1.0, wheeze=0.8, seed=77), t3, 0.44, pan=0.15)
+    # beat 4: the hold + a pickup fill as the doors open; a choir pad under the whole card (never quiet)
+    mix.place('choir', choir(CHOIR['Am'], 3 * T.BEAT, att=0.05, rel=0.3, vowel='m'), 0.0, 0.10)
+    for st in (12, 13, 14, 15):
+        mix.place('stomp', stomp(0.5 + 0.12 * (st - 12), 70 + st), st * S16, 0.40)
+    mix.place('fx', A.whoosh(T.T_DOORS[1] - T.T_DOORS[0] + 0.1, 300, 5000), T.T_DOORS[0] - 0.05, 0.16)
+    # ------------------------------------------------ count-in (bar 1, on the dominant E): stomp + clap + chanter + chord
     for j, (tc, txt) in enumerate(T.COUNT[:3]):
-        tc = max(tc, 0.004)                                # the "3" 4 ms into the file: no click at the seam
         mix.place('stomp', stomp(1.0, 90 + j), tc, 0.52)
         mix.place('stomp', gang_clap(1.0, 95 + j), tc, 0.30)
         mix.place('chanter', chanter((71, 74, 76)[j], 0.30, 0.9, grace=True), tc, 0.40)
         mix.place('acc', reeds(VOICING['E'], 0.22, 0.9, wheeze=0.4, seed=j), tc, 0.38, pan=0.25)
         mix.place('choir', bass_voice(40, 0.36), tc, 0.24)
-    mix.place('choir', choir(CHOIR['E'], T.BAR, att=0.2, rel=0.05, vowel='o'), 0.0, 0.10)
+    mix.place('choir', choir(CHOIR['E'], T.BAR, att=0.2, rel=0.05, vowel='o'), T.BAR, 0.10)
     for st, v in ((12, 0.5), (13, 0.65), (14, 0.8), (15, 0.95)):    # a stomp run into FIGHT!
-        mix.place('stomp', stomp(v, 80 + st), st * S16, 0.40)
-    mix.place('fx', A.whoosh(T.BEAT, 400, 6000), 3 * T.BEAT, 0.14)
-    mix.place('fx', A.thud(0.8, 110, 34), T.BAR, 0.55)
-    mix.place('choir', choir([m + 12 for m in CHOIR['Am']], 0.5, att=0.01, rel=0.25, vowel='o'), T.BAR, 0.22)
-    # ------------------------------------------------ the bed: bars 1 .. the K.O.
+        mix.place('stomp', stomp(v, 80 + st), T.BAR + st * S16, 0.40)
+    mix.place('fx', A.whoosh(T.BEAT, 400, 6000), T.BAR + 3 * T.BEAT, 0.14)
+    mix.place('fx', A.thud(0.8, 110, 34), T.T_FIGHT, 0.55)
+    mix.place('choir', choir([m + 12 for m in CHOIR['Am']], 0.5, att=0.01, rel=0.25, vowel='o'), T.T_FIGHT, 0.22)
+    # ------------------------------------------------ the bed: FIGHT! (bar 2) .. the K.O.
     bar_ko = int(T_KO // T.BAR)
-    for b in range(1, bar_ko + 1):
-        bed(mix, b, intensity=1.0 + 0.6 * (b / bar_ko))
-    mix.place('fx', A.whoosh(3.6, 300, 6000), 44.0 - 3.6, 0.10)
+    b0 = int(round(T.T_FIGHT / T.BAR))
+    for b in range(b0, bar_ko + 1):
+        bed(mix, b, intensity=1.0 + 0.6 * ((b - b0 + 1) / (bar_ko - b0 + 1)))
+    mix.place('fx', A.whoosh(3.6, 300, 6000), 46.0 - 3.6, 0.10)
     for k in ('stomp', 'choir', 'drum'):
         mix.buses[k] = A.tape_stop(mix.buses[k], T_KO, 0.42)
     # ------------------------------------------------ BAGPIPES: the drone is the bag's air; the flight squeals
@@ -517,6 +543,10 @@ def main():
     for bt in (1, 3):
         mix.place('stomp', gang_clap(1.0, 75 + bt), t30 + bt * T.BEAT, 0.30)
     mix.place('fx', riser(T.DUR - t30), t30, 0.22)
+    nc = int((T.T_CLOSE + 0.012) * SR)                              # v3: the doors sliding shut into the title slam
+    tc_ = A.tt(nc)
+    doors = A.bp(np.random.default_rng(93).normal(0, 1, nc), 400, 5000) * (tc_ / T.T_CLOSE) ** 2
+    mix.place('fx', doors, T.DUR - T.T_CLOSE, 0.55)
     mix.place('choir', choir(CHOIR['E'], T.DUR - t30 + 0.02, att=0.9, rel=0.001, vowel='o'), t30, 0.13)
     for bt in range(4):
         mix.place('choir', bass_voice((40, 44, 47, 52)[bt], 0.32), t30 + bt * T.BEAT, 0.22)
@@ -536,8 +566,8 @@ def main():
 
 
 BUS_GAIN = {'chanter': 1.0, 'acc': 1.3, 'drone': 1.0, 'solo': 1.0, 'fx': 1.5, 'stomp': 1.1, 'choir': 2.2, 'drum': 1.3}
-GAIN_PTS = [(0, 0.0), (1.55, 0.0), (2.1, -1.8), (20, -1.7), (30, -0.6), (40, 1.6), (44, 2.6), (50.4, 3.5), (52.0, 2.8),
-            (53.2, 3.3), (58.0, 3.3), (60.0, 1.6), (61.02, 0.6)]
+GAIN_PTS = [(0, 0.6), (1.9, 0.3), (3.5, 0.0), (4.1, -1.8), (20, -1.7), (30, -0.6), (40, 1.6), (44, 2.6), (51.4, 3.5),
+            (53.0, 2.8), (54.2, 3.3), (58.0, 3.3), (60.0, 1.6), (61.02, 0.6)]   # v3: the title card at full, the seam continuous
 
 
 def master(mix, thr=0.22, ceiling=0.89):
