@@ -140,6 +140,7 @@ class Fight:
         self.strings = []                 # 'trap' hazards: tripwire strings across the ring (dicts, see lay_string)
         self.next_hz = 0                  # hazard id (lines + strings), for events and the renderer
         self.cones = []                   # (#33) dict(owner, c, aim, half, r, rmax, speed, dmg, knock, hit, grow)
+        self.sucks = []                   # #30 bellows suction rings (collapsing): dict(owner, c, r, rmax, speed, dmg, knock)
         self.events = []
         self.t = 0.0
         self.winner = None
@@ -635,6 +636,83 @@ class Fight:
                 if m.any():
                     self.kill_keys(m, 'parry', k)
                     B.sat_cool[j] = w.get('parry_cool', w['cooldown'])
+    # ------------------------------------------------------------------ #30 weapon kinds on the 16th grid: aura, bellows
+    def grid16_fire(self, k, k16):
+        """called on every 16th of the fight for 'aura' / 'bellows' fighters: fires on the weapon's own grid (`every`
+        beats), `haste` divides the step (DOUBLE DRONE ticks twice as often, POLKA strokes every beat)"""
+        B = self.balls[k]
+        w = B.w
+        main = max(1, int(round(4 * w['every'])))
+        step16 = max(1, int(round(main / self.ab_mult(k))))
+        if k16 % step16:
+            return
+        if w['kind'] == 'aura':
+            self.aura_tick(k)
+        else:
+            self.fire_bellows(k, k16 % main == 0)
+
+    def aura_tick(self, k):
+        """the drone aura (#30 BAGPIPES): a ring of radius R + reach around the ball hurts the opponent on every tick
+        while it is inside (its centre within the ring + half a ball). The reach grows by `grow` on the first landed
+        tick of each contact (entering the aura), up to `max_reach`. No knock: the drone doesn't push. The hit's `sub`
+        field is 1 on a contact's first tick."""
+        B, O = self.balls[k], self.balls[1 - k]
+        w = B.w
+        R = self.R.R
+        rel = O.p - B.p
+        dist = float(np.hypot(*rel))
+        inside = dist - 0.5 * R < R + B.blade_len
+        was = getattr(B, 'aura_in', False)
+        B.aura_in = inside
+        if not inside:
+            return
+        hx, hy = (B.p + rel / max(dist, 1e-6) * max(R, dist - R)).tolist()
+        landed = self.damage(k, 1 - k, w['dmg'], 'aura', hx, hy, int(not was))
+        if landed and not was:
+            B.blade_len = min(w['max_reach'], B.blade_len + w['grow'])
+
+    def fire_bellows(self, k, main):
+        """the bellows (#30 ACCORDION): strokes alternate push / pull, starting with a push. A push is a blast ring out
+        from the ball to its reach (hits once: damage + knock away, through the shared wave code); a pull is a suction
+        ring collapsing from `pull_k` x the reach back onto the ball (hits once: damage + a yank toward the accordion).
+        Main strokes (the weapon's own grid) grow the reach when they land; the knock grows with the reach
+        (`force_grow`); haste strokes hit for `sub_dmg` x, knock at 0.6 x and don't grow it."""
+        B = self.balls[k]
+        w = B.w
+        n = getattr(B, 'bel_n', 0)
+        B.bel_n = n + 1
+        push = n % 2 == 0
+        f = 1.0 + w.get('force_grow', 0.0) * (B.blade_len - w['base'])
+        dmg = w['dmg'] * (1.0 if main else w.get('sub_dmg', 0.5))
+        knock = w['knock'] * f * (1.0 if main else 0.6)
+        if push:
+            self.waves.append(dict(owner=k, c=B.p.copy(), r=self.R.R, speed=w['speed'], rmax=self.R.R + B.blade_len,
+                                   dmg=dmg, knock=knock, kind='bellows', hit=False, name='push', t0=self.t, grow=main,
+                                   clears=False))
+        else:
+            r0 = self.R.R + B.blade_len * w.get('pull_k', 1.0)
+            self.sucks.append(dict(owner=k, c=B.p.copy(), r=r0, rmax=r0, speed=w['speed'] * w.get('pull_speed', 1.0),
+                                   dmg=dmg, knock=knock, hit=False, t0=self.t, grow=main))
+        self.ev('bellows', k, int(main), int(push), float(B.blade_len), float(B.p[0]), float(B.p[1]))
+
+    def suction_step(self, dt):
+        """#30: collapsing suction rings; the hit yanks the opponent toward the accordion's current position"""
+        R = self.R.R
+        for W in self.sucks:
+            r0 = W['r']
+            W['r'] = max(R, r0 - W['speed'] * dt)
+            o = 1 - W['owner']
+            O, B = self.balls[o], self.balls[W['owner']]
+            rel = O.p - W['c']
+            dist = float(np.hypot(*rel))
+            if not W['hit'] and W['r'] <= dist - R * 0.5 < r0:
+                W['hit'] = True
+                hx, hy = (W['c'] + rel / max(dist, 1e-6) * (dist - R)).tolist()
+                landed = self.damage(W['owner'], o, W['dmg'], 'suction', hx, hy)
+                self.knock(o, B.p - O.p, W['knock'])
+                if landed and W['grow']:
+                    B.blade_len = min(B.w['max_reach'], B.blade_len + B.w['grow'])
+        self.sucks = [W for W in self.sucks if W['r'] > R + 1e-9]
 
     # ------------------------------------------------------------------ ability kind 'rewind' (#31 REWIND)
     def _rewind_ab(self, B):
@@ -950,6 +1028,8 @@ class Fight:
         dc = [k for k, B in enumerate(self.balls) if B.w['kind'] in ('dash', 'cone')]       # (#33)
         dc_k0 = int(math.ceil(R.t_fight / s16 - 1e-6))
         dc_next = dc_k0
+        grid16 = [k for k, B in enumerate(self.balls) if B.w['kind'] in ('aura', 'bellows')]     # #30 (opt-in)
+        n16b = k16_0
         self.t = R.t_fight
         f0 = int(round(R.t_fight * R.FPS))
         step = 0
@@ -995,6 +1075,11 @@ class Fight:
                     dc_every = max(1, int(round(dc_main / self.ab_mult(k))))
                     if dc_k % dc_every == 0:
                         (self.fire_dash if B.w['kind'] == 'dash' else self.fire_cone)(k, dc_k % dc_main == 0)
+            if grid16 and self.t + 1e-9 >= n16b * s16:            # #30: aura / bellows on their own 16th counter
+                k16b = n16b - k16_0
+                n16b += 1
+                for k in grid16:
+                    self.grid16_fire(k, k16b)
             for k, B in enumerate(self.balls):
                 B.shield = max(0.0, B.shield - dt)
                 B.haste = max(0.0, B.haste - dt)
@@ -1015,6 +1100,8 @@ class Fight:
             self.effects_step(dt)
             if dc:
                 self.dash_cone_step(dt)                          # (#33)
+            if self.sucks:                                          # #30 bellows suction
+                self.suction_step(dt)
             self.abilities_step(on_beat)
             step += 1
             dead = [k for k, B in enumerate(self.balls) if B.hp <= 0]
