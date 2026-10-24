@@ -688,3 +688,123 @@ class Marks:
                 a = a * (1 - 0.2 * k * (dark[:, None] > 0)) + np.array([60, 90, 140])[None] * 0.2 * k * (dark[:, None] > 0)
             alb[sel] = a
         return alb
+
+
+# ---------------------------------------------------------------- 8. ability moments: dim + speed lines
+class Moments:
+    """ability moments: as an ability name punches in, the background dims (at most `max_dim`, 0.3 = 30 %, eased in over
+    `t_in` and out over `t_out`) except soft discs around the given fighters, and speed lines stream behind the
+    fighter. Keys identify the fighter (the caller supplies its screen position each frame)."""
+
+    def __init__(self, max_dim=0.3, hold=0.55, t_in=0.14, t_out=0.4):
+        self.tl = _Timeline(t_in + hold + t_out + 0.1)
+        self.max_dim, self.hold, self.t_in, self.t_out = min(0.3, max_dim), hold, t_in, t_out
+
+    def add(self, t0, key, rgb, k=1.0):
+        self.tl.add(t0, dict(key=key, rgb=np.asarray(rgb, float), k=float(k)))
+
+    def env(self, t, t0):
+        u = t - t0
+        if u < 0:
+            return 0.0
+        return _smooth(u / self.t_in) * (1 - _smooth((u - self.t_in - self.hold) / self.t_out))
+
+    def active(self, t):
+        return [(m, self.env(t, t0) * m['k'], t - t0) for t0, m in self.tl.alive(t) if self.env(t, t0) > 0.01]
+
+    def dim_k(self, t):
+        return min(self.max_dim, max([e for m, e, u in self.active(t)] + [0.0]) * self.max_dim)
+
+    def apply_dim(self, img, t, keep=()):
+        """darken the frame by dim_k(t), except soft discs keep = [(x, y, r)] (the fighters stay lit)"""
+        k = self.dim_k(t)
+        if k <= 0.005:
+            return img
+        yy, xx = np.mgrid[0:H, 0:W].astype(np.float32)
+        lit = np.zeros((H, W), np.float32)
+        for x, y, r in keep:
+            lit = np.maximum(lit, np.clip(1.6 - np.hypot(xx - x, yy - y) / max(r, 1.0), 0, 1))
+        return img * (1 - k * (1 - lit))[..., None]
+
+    def speed_lines(self, img, t, key, x, y, r, direction=(0.0, 1.0), n=16, length=(16, 46), seed=0):
+        """anime speed lines streaming behind the fighter `key` (screen centre x, y, radius r): lines parallel to
+        `direction` (the way it faces / moves; they stream the other way), offset across a band 3.2 r wide"""
+        act = [(m, e, u) for m, e, u in self.active(t) if m['key'] == key]
+        if not act:
+            return img
+        m, e, u = max(act, key=lambda q: q[1])
+        dx, dy = direction
+        L = math.hypot(dx, dy)
+        if L < 1e-6:
+            dx, dy, L = 0.0, 1.0, 1.0
+        dx, dy = dx / L, dy / L
+        px, py = -dy, dx
+        rng = np.random.default_rng(seed + int(key) * 101 if isinstance(key, (int, np.integer)) else seed)
+        base = Image.fromarray(np.clip(img, 0, 255).astype(np.uint8))
+        d = ImageDraw.Draw(base, 'RGBA')
+        col = np.clip(m['rgb'] * 0.6 + 110, 0, 255)
+        for i in range(n):
+            off = rng.uniform(-1.6, 1.6) * r
+            ln = rng.uniform(*length)
+            sp = rng.uniform(260, 420)                       # px/s the line streams back
+            ph = rng.uniform(0, 1)
+            s0 = r * 0.7 + ((u * sp / 60.0 + ph) % 1.0) * 30.0
+            ax, ay = x - dx * s0 + px * off, y - dy * s0 + py * off
+            bx, by = ax - dx * ln, ay - dy * ln
+            a = int(255 * e * (0.5 + 0.5 * (1 - abs(off) / (1.6 * r))))
+            wd = 2 if abs(off) < 0.6 * r and i % 3 == 0 else 1
+            d.line([(ax, ay), (bx, by)], fill=tuple(int(v) for v in col) + (a,), width=wd)
+            d.point((ax, ay), fill=(255, 255, 255, a))
+        return np.asarray(base).astype(np.float32)
+
+
+# ---------------------------------------------------------------- self-test sheet
+def _demo(out):
+    """python -m reelkit.fx out.png : every effect on a plain floor, 8 panels, to eyeball the kit"""
+    from .camera import Cam
+    from .lighting import Lights
+    cam = Cam(np.array([0, 0, 0.0]), 12.0, 0.0, 55.0, 36)
+    yy, xx = np.mgrid[0:H, 0:W].astype(np.float64)
+    X, Z, dd = cam.ground_hit(xx, yy, 0.0)
+    chk = ((np.floor(X * 1.5) + np.floor(Z * 1.5)) % 2)[..., None]
+    alb = np.array([104, 98, 142])[None, None] * (0.9 + 0.1 * chk)
+    panels = []
+    FL = Flares()
+    FL.add(0.0, (0, 0.6, 0), (196, 52, 104), radius=2.4, peak=1.4)
+    BU = Bursts()
+    PA = Particles(1)
+    PA.emit(0.0, (-1.5, 0.3, 0), 'dust', n=14)
+    PA.emit(0.0, (1.5, 0.4, 0), 'motes', n=14)
+    for j, kind in enumerate(('sparks', 'steam', 'smoke', 'shreds', 'glass', 'embers')):
+        PA.emit(0.0, (-2.5 + j, 0.4, -2.0), kind)
+    MK = Marks()
+    for j, kind in enumerate(MARK_KINDS):
+        MK.add(0.0, kind, -3 + j, 1.5, size=0.45, angle=0.4 * j, col=(230, 220, 200), life=10)
+    MO = Moments()
+    MO.add(0.0, 0, (244, 228, 190))
+    for i, t in enumerate((0.0, 0.03, 0.1, 0.3, 0.6, 0.9, 1.3, 2.0)):
+        L = Lights(amb=(0.4, 0.38, 0.48))
+        FL.apply(L, t)
+        I = np.full(X.shape + (3,), 0.0) + L.amb
+        for lp, lc, R_ in L.points:
+            dl = np.sqrt((lp[0] - X) ** 2 + lp[1] ** 2 + (lp[2] - Z) ** 2)
+            I += (lp[1] / dl / (1 + (dl / R_) ** 2))[..., None] * lc[None, None] * 0.8
+        a = MK.apply(alb.reshape(-1, 3), X.reshape(-1), Z.reshape(-1), t, BAYER_FULL.reshape(-1)).reshape(H, W, 3)
+        img = (a * I).astype(np.float32)
+        if i == 0:
+            BU.add(0.0, (0, 0.6, 0), (196, 52, 104), 1.5)
+        img = BU.draw(img, cam, t)
+        img = shimmer_world(img, cam, (0, 0, 0), 0.5 + 3.0 * t, 0.35, 3.0, t, k=max(0.0, 1 - t / 1.5))
+        img = fringe(img, *cam.wp(np.array([[0, 0.6, 0]]))[0], 26, 2.5, k=max(0.0, 1 - t / 0.3))
+        img = PA.draw(img, cam, t)
+        img = MO.apply_dim(img, t, keep=[(W / 2, H / 2, 30)])
+        img = MO.speed_lines(img, t, 0, W / 2, H / 2, 18, (0.6, -0.8))
+        panels.append(np.clip(img, 0, 255).astype(np.uint8))
+    sheet = np.concatenate([np.concatenate(panels[:4], 1), np.concatenate(panels[4:], 1)], 0)
+    Image.fromarray(sheet).save(out)
+    print(out)
+
+
+if __name__ == '__main__':
+    import sys
+    _demo(sys.argv[1] if len(sys.argv) > 1 else 'fx_demo.png')
