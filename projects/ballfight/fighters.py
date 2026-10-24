@@ -47,6 +47,10 @@ A fighter is a glass ball with a low-poly Pixel Pitch instrument inside. Every f
                 'rewind'     undo the last `window` s of damage taken: HP back to its value then and the ball zips back
                              along its own path in `zip_beats` beats (intangible meanwhile); waits until that would undo
                              >= `min_undo` HP
+                'lash'       (#31 v2) for `beats` beats the cables lash side to side in a saw-tooth: n arms (the
+                             tether's slots, >= `n_min`) of length `len`, `spread` deg apart around the aim, sweep `sweep`
+                             deg every `period_beats` then snap back (arm j lags `lag`); a forward sweep that crosses the
+                             opponent cuts (`dmg`, `knock`), each arm resting `cool` s
               durations: `dur` in s, or `dur_beats` in beats at the episode's tempo
                 'arc'        a sweeping arc of `n` projectiles across the ring over `beats` beats
                 'wave'       a big slow shockwave across the whole ring (like 'shockwave', harder, clears everything)

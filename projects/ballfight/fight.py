@@ -1243,6 +1243,58 @@ class Fight:
                         O.v = O.v - 2 * vn * n
                         self.ev('leash', k, float(O.p[0]), float(O.p[1]))
 
+    # ------------------------------------------------------------------ ability kind 'lash' (#31 v2 SAWTOOTH)
+    def start_lash(self, k, ab):
+        """SAWTOOTH: the cables go saw-wave and lash side to side, cutting. For `beats` beats, n arms (the tether's slots,
+        at least `n_min`) of length `len` reach out of the ball around the aim at the opponent (`spread` deg apart) and
+        sweep across `sweep` deg in a saw-tooth (a linear sweep every `period_beats`, then a snap back; arm j lags by
+        `lag` of a period); a forward sweep that crosses the opponent cuts (`dmg`, `knock`), each arm resting `cool` s"""
+        B, O = self.balls[k], self.balls[1 - k]
+        tc = getattr(B, 'tc', None)
+        n = max(ab.get('n_min', 1), int(tc['slots'] + 1e-9) if tc else 0)
+        d = O.p - B.p
+        aim = math.atan2(d[1], d[0])
+        L = dict(owner=k, t0=self.t, t1=self.t + ab['beats'] * self.R.beat, aim=aim, n=n, len=ab['len'],
+                 spread=math.radians(ab['spread']), sweep=math.radians(ab['sweep']),
+                 period=ab['period_beats'] * self.R.beat, lag=ab.get('lag', 0.15), dmg=ab['dmg'], knock=ab['knock'],
+                 cool=ab['cool'], rest=[-9.0] * n, prev=[None] * n)
+        if not hasattr(self, 'lashes'):
+            self.lashes = []
+        self.lashes.append(L)
+        self.ev('lash', k, aim, n, float(ab['len']), float(L['t1'] - L['t0']), float(L['period']),
+                float(L['sweep']), float(L['spread']), float(L['lag']))
+
+    @staticmethod
+    def lash_angle(L, j, t):
+        """arm j's angle at time t (the renderer uses the same function)"""
+        ph = ((t - L['t0']) / L['period'] + j * L['lag']) % 1.0
+        return L['aim'] + (j - (L['n'] - 1) / 2) * L['spread'] + L['sweep'] * (ph - 0.5), ph
+
+    def lash_step(self, dt):
+        for L in self.lashes:
+            k = L['owner']
+            B, O = self.balls[k], self.balls[1 - k]
+            rO = getattr(O, 'rad', self.R.R)
+            rel = O.p - B.p
+            dist = float(np.hypot(*rel))
+            phi = math.atan2(rel[1], rel[0])
+            for j in range(L['n']):
+                a, ph = self.lash_angle(L, j, self.t)
+                pa = L['prev'][j]
+                L['prev'][j] = (a, ph)
+                if pa is None or ph < pa[1] or self.t < L['rest'][j] + L['cool']:
+                    continue                                        # the snap back doesn't cut
+                if getattr(O, 'rw_left', 0.0) > 0 or dist - rO > L['len'] + self.R.R:
+                    continue
+                half = math.asin(min(1.0, rO / max(dist, 1e-6)))
+                if _swept(pa[0], a - pa[0], phi, half):
+                    L['rest'][j] = self.t
+                    hx, hy = (B.p + rel / max(dist, 1e-6) * (dist - rO)).tolist()
+                    self.damage(k, 1 - k, L['dmg'], 'lash', hx, hy, j)
+                    side = np.array([-math.sin(a), math.cos(a)])
+                    self.knock(1 - k, side + 0.3 * rel / max(dist, 1e-6), L['knock'])
+        self.lashes = [L for L in self.lashes if self.t < L['t1']]
+
     # ------------------------------------------------------------------ weapon kind 'scratch_floor' (#31 v2: THE RING IS THE RECORD)
     def scratch_beat(self, k, kb):
         """every `every` beats (haste divides it) the DJ scratches the record the ring sits on: over `dur_beats` the floor
@@ -1601,6 +1653,8 @@ class Fight:
                                    knock=ab['knock'], done=False, name=ab['name']))
         elif kind == 'rewind':
             self.start_rewind(k, ab)
+        elif kind == 'lash':                                      # #31 v2 SAWTOOTH
+            self.start_lash(k, ab)
         elif kind == 'beam':                                    # #29 v3 (HIGH C): a charged giant blast
             self.ab_beam_charge(k, ab)
         elif kind in ('whip', 'sweep', 'spout'):                # #33 v2: FINGERPICK / BIG STRUM / UKE-NADO
@@ -2004,6 +2058,8 @@ class Fight:
                     self.scratch_step(k, dt)
                 elif B.w['kind'] == 'tether':                    # #31 v2
                     self.tether_step(k, dt)
+            if getattr(self, 'lashes', None):                     # #31 v2 SAWTOOTH
+                self.lash_step(dt)
             if self.beams or any(B.w['kind'] == 'beam' for B in self.balls):
                 self.beams_step(dt)
             if self.lines or self.strings:
