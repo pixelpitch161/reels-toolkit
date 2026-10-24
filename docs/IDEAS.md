@@ -43,7 +43,7 @@ a draft, when it gets feedback, and when it delivers.
 | 31 | BALLFIGHT #5: Turntables vs Synth | in production | session_01JYtAwR (2026-10-24) | Started: projects/ballfight_turntables_vs_synth/; engine additions (volley `bounce`, `orbit`, `rewind`) in separate small commits; early sheet before the full render. | — |
 | 32 | BALLFIGHT #6: Tuba vs Flute | in production | session_01T3eDfB (2026-10-24) | Started Oct 24: early contact sheet first, then the full render. Mood: villain march. | — |
 | 33 | BALLFIGHT #7: Ukulele vs Acoustic Guitar | in production | session_017mWr3z (2026-10-24) | Started Oct 24 in projects/ballfight_ukulele_vs_acoustic/: early contact sheet first, then the full render. Mood: spaghetti-western standoff. | — |
-| 34 | BALLFIGHT: Trombone vs French Horn | idea (approved) | — | Approved Oct 23 (user: "All"), mood: cinematic brass trailer. All-new fighters so it can be produced in parallel with #29–#35. Ready for production. | — |
+| 34 | BALLFIGHT #8: Trombone vs French Horn | in production | session_01UHfZ2s (2026-10-24) | Started Oct 24 in projects/ballfight_trombone_vs_horn/; engine additions (blade `thrust`, volley `homing`, `slow` on shockwave) in separate small commits; early sheet before the full render. Mood: cinematic brass trailer. | — |
 | 35 | BALLFIGHT #9: Organ vs Harp | in production | session_011cXc3S (2026-10-24) | Started Oct 24: projects/ballfight_organ_vs_harp/; engine additions (`line` hazard, `trap` kind) in separate small commits; ORGAN bridge entry; early sheet before the full render. Mood: gothic horror. | — |
 
 ## Backlog (idea details)
