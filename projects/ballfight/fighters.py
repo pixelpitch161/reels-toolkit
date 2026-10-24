@@ -221,32 +221,38 @@ FIGHTERS = {
             low=dict(name='47 STRINGS', kind='wave', speed=4.5, radius=9.0, dmg=8.0, knock=1.5)),
         pp='HARP', register=(50, 84), idiom='harp'),
 
-    # ---- #33 BALLFIGHT #7: little brother vs big brother (weapon kinds 'dash' and 'cone' in fight.py)
-    #   'dash'  every `every` beats the ball throws itself at the opponent: a speed burst of `base` x the shared speed
-    #           (decays like a knockback, so it is speed + distance), contact within `window` s hits once for `dmg`;
-    #           +`grow` power per landed dash up to `max_power`; haste dashes hit for `sub_dmg` x and don't grow it
-    #   'cone'  every `every` beats a wedge of sound (half-angle `half` deg) aimed at the opponent expands to `base`
-    #           beyond the surface at `speed`; +`grow` length per landed cone up to `max_len`; haste cones (on the 16th
-    #           grid) hit for `sub_dmg` x and don't grow it
+    # ---- #33 BALLFIGHT #7: little brother vs big brother. v2 (BALLFIGHT v2 redesign, user Oct 24): the way each is
+    # played is the weapon (weapon kinds 'surf' / 'rake', ability kinds 'spout' / 'whip' / 'sweep' in fight.py);
+    # numbers tuned once with ballfight_ukulele_vs_acoustic/tune.py, frozen. (v1's 'dash' / 'cone' stay in the engine.)
+    #   'surf'  SURF'S UP: every `every` beats the strum raises a wave the ball rides at the enemy: a speed burst of
+    #           p0 + p_h x height, a front w0 + w_h x height wide that crashes into the enemy once for `dmg` and pushes it
+    #           along the wave (knock grows with the height); +`grow` height per landed wave up to `max_h`
+    #   'rake'  SIX-STRING RAKE: every `every` beats six string lines (`gap` apart, `base` long, pointing at the enemy)
+    #           sweep `sweep` to either side across the ring in front in `stroke` s, alternating down / up; one hit per
+    #           stroke flicks the enemy along the stroke; +`grow` length per landed stroke up to `max_len`
     'UKULELE': dict(
         color=(255, 138, 178), dark=(160, 62, 104), corner='red',     # pink (series colour table, IDEAS)
         view=(10, 22, 28),
-        weapon=dict(kind='dash', style='uke_dash',          # body-slam dash on every 2nd beat: the uke strums as it lands
-                    every=2, base=1.3, grow=0.08, max_power=3.0, window=0.5, dmg=4.8, sub_dmg=0.6, knock=1.0),
+        weapon=dict(kind='surf', style='surf',              # SURF'S UP: each strum raises a rolling wave it rides in on
+                    every=2, base=0.5, grow=0.03, max_h=1.6, p0=0.8, p_h=0.5, w0=0.35, w_h=0.35, life=1.1,
+                    aim_k=0.55, dmg=5.0, sub_dmg=0.6, sub_power=0.8, knock=1.0),
         abilities=dict(
             unlock1=dict(name='CHUNK', kind='shockwave', speed=7.5, radius=3.0, dmg=3.0, knock=1.2, every_bars=4),
             unlock2=dict(name='SPEED STRUM', kind='haste', mult=2.0, dur_beats=8, every_bars=6),
-            low=dict(name='UKE-NADO', kind='wave', speed=4.5, radius=9.0, dmg=8.0, knock=1.5)),
+            low=dict(name='UKE-NADO', kind='spout', speed=2.3, turn=2.6, life=3.2, radius=0.5, tick=0.28, dmg=2.4,
+                     max_ticks=4, knock=0.7)),
         pp='UKULELE', register=(60, 81), idiom='uke_strum'),
     'ACOUSTIC': dict(
         color=(214, 160, 100), dark=(128, 84, 42), corner='blue',     # wood tan (series colour table, IDEAS)
         view=(14, 22, 330),
-        weapon=dict(kind='cone', style='soundhole',         # a strummed cone of sound out of the sound hole, on the beat
-                    every=1, base=1.0, grow=0.06, max_len=2.6, half=26.0, speed=9.0, dmg=2.0, sub_dmg=0.5, knock=0.7),
+        weapon=dict(kind='rake', style='rake',              # SIX-STRING RAKE: a giant strum, alternating down / up
+                    every=1, base=1.2, grow=0.03, max_len=3.0, sweep=0.6, gap=0.085, stroke=0.16, aim_k=0.47,
+                    dmg=2.1, sub_dmg=0.5, knock=0.7),
         abilities=dict(
             unlock1=dict(name='CAPO', kind='haste', mult=2.0, dur_beats=8, every_bars=5),
-            unlock2=dict(name='FINGERPICK', kind='arc', n=6, sweep=70.0, beats=1, speed=6.0, dmg=1.4, every_bars=3),
-            low=dict(name='BIG STRUM', kind='slam', tele=2, radius=1.35, dmg=11.0, knock=1.6)),
+            unlock2=dict(name='FINGERPICK', kind='whip', n=6, beats=1, len=2.6, dmg=1.3, knock=0.35, t_ext=0.07,
+                         every_bars=3),
+            low=dict(name='BIG STRUM', kind='sweep', beats=2, reach=9.0, dmg=11.0, knock=1.6)),
         pp='ACOUSTIC', register=(40, 76), idiom='open_strum'),
 
     # ---- #29 BALLFIGHT #3: the lead-horn argument. v3 (BALLFIGHT v2 redesign, user Oct 24): the instrument's body is the
