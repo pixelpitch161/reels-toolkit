@@ -39,16 +39,20 @@
   - never rack the focus away from it;
   - use a `sharp` band wide enough that the whole subject and its readout (thermometer, plate) stay crisp;
   - verify the subject's CoC is 0 for every frame.
-- **Safe zone (text and HUD):** TikTok, Instagram Reels and YouTube Shorts cover the top, the bottom and
-  the right edge with their own buttons and text. Captions, labels, counters, HUD panels and key action
-  stay inside the safe box `reelkit.config.SAFE`: x 40–296, y 96–416 internal (x 120–888, y 288–1248 at
-  1080×1920; the strictest edge of the three apps). Scenery can fill the whole frame.
-  - captions: `draw_captions` defaults put them at the top of the box, centred on it (x 168, not the frame
-    centre); big size only for lines up to 14 chars, small size up to 21; longer lines don't fit;
-  - HUD panels and labels: inside the box, never in the bottom 35 % or under the right-hand button column;
+- **Safe zone (text and HUD):** TikTok and Instagram cover the top band, the bottom band and the lower
+  right-hand button column with their own interface. Captions, labels, counters, HUD panels and key action
+  stay inside `reelkit.config.SAFE` and out of `SAFE_BUTTONS`: internal x 20–340, y 96–500, minus x ≥ 300
+  below y 290 (output x 60–1020, y 288–1500, minus x > 900 below y 870). Measured from the user's own TikTok
+  and Instagram screenshots of a posted reel (Oct 23); the first version used the ad margins and was far too
+  strict. Scenery and the battle itself can fill the whole frame.
+  - captions: `draw_captions` defaults put them at the top of the box, centred on the frame (x 180); big size
+    only for lines up to 14 chars, small size up to 21;
+  - HUD at the bottom (share bar, race lanes, roster): `share_bar` / `race_lanes` / `roster_grid` defaults sit
+    at the bottom of the box (ending at y 500), running from x 20 to the button column (x 300), so they cover
+    as little of the action as possible. Don't push them up into the arena;
   - the top scrim (`top_scrim()` defaults) sits behind the caption band; projects passing their own scrim
     numbers must move them to match;
-  - contact sheets draw the box (area outside tinted red); `python -m reelkit.safezone render.py` must pass
+  - contact sheets draw the zone (area outside tinted red); `python -m reelkit.safezone render.py` must pass
     before the full render.
 - **Sound:**
   - everything is synthesised;
@@ -131,8 +135,11 @@ of an existing series (e.g. Battle of the Bands) in ~30–40 min.
   sat under "LIVE / Following / For You / search", the timer and counter under the username and
   description). The old rules (captions in the top 150 px, up to 18 chars at the big size, HUD sliding in
   from the bottom) are replaced by the safe-zone rule in the brief.
-- HUD panels stay clear of the subject and inside the safe box; slide them in from the side or fade them,
+- HUD panels stay clear of the subject and inside the safe zone; slide them in from the side or fade them,
   not up from the bottom of the frame.
+- Safe zone v1 was too strict (user's screenshots of #22 on TikTok and Instagram, Oct 23): the share bar sat
+  ~85 px (output) above where the app's UI starts and covered part of the battle, and both sides had unused
+  room. The zone is now measured from real screenshots (see the brief).
 - Keep backups of each approved version (`*_backup.py`) before a big relight, so you can blend or roll back.
 - The loop point is the file boundary (user, Oct 23, on #20 v1: the restart came ~1.5 s before the file
   ended). See the loop rule in the brief; `reelkit.loopcheck` flags any big jump in the last 5 s.
