@@ -268,3 +268,78 @@ class Shake:
             a = max(a, px * math.exp(-(t - t0) / self.decay))
         a = min(a, self.cap)
         return a * math.sin(t * 2 * math.pi * 23), a * 0.7 * math.cos(t * 2 * math.pi * 29)
+
+
+# ---------------------------------------------------------------- 4. heat shimmer + 5. chromatic fringing (local warps)
+def _bbox(cx, cy, rx, ry):
+    x0, x1 = max(0, int(cx - rx) - 1), min(W, int(cx + rx) + 2)
+    y0, y1 = max(0, int(cy - ry) - 1), min(H, int(cy + ry) + 2)
+    return x0, x1, y0, y1
+
+
+def shimmer(img, cx, cy, ax, ay, width, amp, t=0.0, k=1.0, seed=0):
+    """heat-shimmer ripple on an elliptical front (screen centre cx, cy; semi-axes ax, ay px): pixels within `width` px of
+    the front are pushed in / out along the radius by up to `amp` px with a wobbling, travelling profile, like air
+    over a blast. Local: only the front's bounding box is touched"""
+    if k <= 0.01 or amp * k < 0.4:
+        return img
+    x0, x1, y0, y1 = _bbox(cx, cy, ax + width + amp, ay + width + amp)
+    if x1 <= x0 or y1 <= y0:
+        return img
+    yy, xx = np.mgrid[y0:y1, x0:x1].astype(np.float32)
+    dx, dy = xx - cx, yy - cy
+    rho = np.sqrt((dx / max(ax, 1.0)) ** 2 + (dy / max(ay, 1.0)) ** 2) + 1e-6
+    dist = (rho - 1.0) * 0.5 * (ax + ay)                       # signed px from the front
+    prof = np.cos(np.clip(dist / width, -1, 1) * math.pi / 2) ** 2
+    ang = np.arctan2(dy, dx)
+    wob = 1.0 + 0.45 * np.sin(ang * 9 + t * 31 + seed) * np.sin(ang * 4 - t * 17)
+    disp = amp * k * prof * wob * np.sin(np.clip(dist / width, -1, 1) * math.pi)
+    sx = np.clip(np.round(xx - np.cos(ang) * disp), 0, W - 1).astype(int)
+    sy = np.clip(np.round(yy - np.sin(ang) * disp), 0, H - 1).astype(int)
+    m = prof > 0.02
+    reg = img[y0:y1, x0:x1].copy()
+    reg[m] = img[sy[m], sx[m]]
+    img[y0:y1, x0:x1] = reg
+    return img
+
+
+def ellipse_of(cam, c, r):
+    """screen centre + semi-axes of a horizontal world circle (centre c, radius r)"""
+    c = np.asarray(c, float)
+    P = np.array([c + [r, 0, 0], c - [r, 0, 0], c + [0, 0, r], c - [0, 0, r], c + [r * 0.7071, 0, r * 0.7071],
+                  c - [r * 0.7071, 0, r * 0.7071], c + [r * 0.7071, 0, -r * 0.7071], c - [r * 0.7071, 0, -r * 0.7071]])
+    s = cam.wp(P)
+    cx, cy = (s[:, 0].max() + s[:, 0].min()) / 2, (s[:, 1].max() + s[:, 1].min()) / 2
+    return cx, cy, (s[:, 0].max() - s[:, 0].min()) / 2, (s[:, 1].max() - s[:, 1].min()) / 2
+
+
+def shimmer_world(img, cam, c, r, width, amp, t=0.0, k=1.0, seed=0):
+    """shimmer on a world circle on the floor (a shockwave front): width in world units, amp in px"""
+    cx, cy, ax, ay = ellipse_of(cam, c, r)
+    wpx = max(2.0, width * ax / max(r, 1e-3))
+    return shimmer(img, cx, cy, ax, ay, wpx, amp, t, k, seed)
+
+
+def fringe(img, cx, cy, r, px=2.0, k=1.0):
+    """chromatic fringing around a big hit: inside a disc of radius r px, red is sampled from further out and blue from
+    further in (by up to `px` px), fading to nothing at the edge. Local"""
+    if k <= 0.01:
+        return img
+    x0, x1, y0, y1 = _bbox(cx, cy, r, r)
+    if x1 <= x0 or y1 <= y0:
+        return img
+    yy, xx = np.mgrid[y0:y1, x0:x1].astype(np.float32)
+    dx, dy = xx - cx, yy - cy
+    d = np.sqrt(dx * dx + dy * dy) + 1e-6
+    f = np.clip(1 - d / r, 0, 1) ** 0.6 * np.clip(d / 3.0, 0, 1) * px * k
+    ux, uy = dx / d, dy / d
+    rx = np.clip(np.round(xx - ux * f), 0, W - 1).astype(int)
+    ry = np.clip(np.round(yy - uy * f), 0, H - 1).astype(int)
+    bx = np.clip(np.round(xx + ux * f), 0, W - 1).astype(int)
+    by = np.clip(np.round(yy + uy * f), 0, H - 1).astype(int)
+    reg = img[y0:y1, x0:x1].copy()
+    m = f > 0.3
+    reg[..., 0][m] = img[ry[m], rx[m], 0]
+    reg[..., 2][m] = img[by[m], bx[m], 2]
+    img[y0:y1, x0:x1] = reg
+    return img
