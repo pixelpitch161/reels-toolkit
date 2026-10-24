@@ -17,6 +17,11 @@ Rules (the same for both fighters; nothing is scripted or edited):
   - volleys fire and abilities trigger on the beat grid, pulses on the 16th grid (the fight IS the music); a blade's hits are detected with a
     swept test, so nothing tunnels at any spin speed; a spinning blade destroys enemy projectiles it sweeps through;
   - the fight ends at the first K.O. (HP <= 0).
+Opt-in options (#34; nothing changes for fighters that don't use them): blade `mode='thrust'` (the blade points at the
+enemy and shoots straight out to its reach on the beat, then pulls back: a lance instead of a spin); on a `curve`
+volley, `curve_grow` / `curve_max` (deg/s: the turn rate grows per landed volley), and an 'arc' ability with
+`curve=True` fires curving projectiles at the owner's current rate; `slow` on a shockwave / wave (dict(mult, dur): the
+enemy it hits moves at `mult` x speed for `dur` s).
 The run records every frame (30 fps) for the renderer and every event (hits, blocks, parries, ropes, volleys,
 abilities, level-ups, the K.O.) for the soundtrack and the captions. Seeded: same seed, same fight."""
 import math
@@ -100,6 +105,14 @@ class Ball:
         self.dash_t = 0.0
         self.dash_hit = True
         self.dash_main = True
+        # opt-in (#34): thrust (blade mode), curve growth (volley option), slow (shockwave option)
+        self.ext = self.w.get('rest', 0.0)            # thrust: the lance's current length beyond the surface
+        self.thr = None                               # thrust: time the current thrust started (None = idle)
+        self.thr_hit = False
+        self.thr_k = 1.0                              # thrust: time scale of the current thrust (haste)
+        self.curve_now = self.w.get('curve', 0.0)     # curving volley with `curve_grow`: current turn rate (deg/s)
+        self.slow = 0.0                               # s left of a slow on this ball
+        self.slow_mult = 1.0
 
 
 class Fight:
@@ -118,6 +131,12 @@ class Fight:
             ang = math.atan2(to_c[1], to_c[0]) + math.radians(self.rng.uniform(-1, 1) * self.R.LAUNCH_SPREAD)
             bl.v = self.R.V * np.array([math.cos(ang), math.sin(ang)])
             bl.th = self.rng.uniform(0, 2 * math.pi)
+        for k, bl in enumerate(self.balls):               # thrust: the closed lance starts aimed at the enemy
+            if bl.w.get('mode') == 'thrust':
+                d = self.balls[1 - k].p - bl.p
+                bl.th = math.atan2(d[1], d[0]) % (2 * math.pi)
+        self.uses_ext = any(bl.w.get('mode') == 'thrust' or bl.w.get('curve_grow') or
+                            any(ab.get('slow') for ab in bl.cfg['abilities'].values()) for bl in self.balls)
         # projectiles: arrays (grown as needed)
         self.kp = np.zeros((0, 2))
         self.kv = np.zeros((0, 2))
@@ -213,6 +232,8 @@ class Fight:
                 self.kcurve[self.next_id - 1] = (math.radians(w['curve']), self.t + w.get('life', 3.0))
             if w.get('hit_r'):
                 self.khr[self.next_id - 1] = w['hit_r']
+            if w.get('curve_grow'):                        # #34: the turn rate grows per landed volley
+                self.kcurve[self.next_id - 1] = (math.radians(B.curve_now), self.t + w.get('life', 3.0))
         self.ev('fire', k, n, vol)
 
     def fire_pulse(self, k, main):
@@ -301,9 +322,81 @@ class Fight:
                     Bc.blade_len = min(Bc.w['max_len'], Bc.blade_len + Bc.w['grow'])
         self.cones = [C for C in self.cones if C['r'] < C['rmax'] - 1e-9]
 
+    def start_thrust(self, k):
+        """thrust (#34): lock the lance on where the enemy is now and shoot it out (haste speeds the whole thrust up)"""
+        B, O = self.balls[k], self.balls[1 - k]
+        rel = O.p - B.p
+        B.th = math.atan2(rel[1], rel[0]) % (2 * math.pi)
+        B.thr = self.t
+        B.thr_hit = False
+        B.thr_k = 1.0 / self.ab_mult(k)
+        self.ev('thrust', k, float(B.blade_len))
+
+    def thrust_step(self, k, dt):
+        """thrust (#34): idle, the closed lance tracks the enemy (turn-rate limited); a thrust shoots it out to the reach
+        (`t_out`), holds (`t_hold`) and pulls it back (`t_back`); it hits once per thrust while going out or held (the
+        enemy ball against the lance segment, swept every substep: the tip moves less than a ball per substep)"""
+        B, O = self.balls[k], self.balls[1 - k]
+        w = B.w
+        R = self.R.R
+        rest = w.get('rest', 0.25)
+        if B.thr is None:
+            rel = O.p - B.p
+            dth = _wrap(math.atan2(rel[1], rel[0]) - B.th)
+            lim = w.get('aim_rate', 8.0) * dt
+            B.th = (B.th + max(-lim, min(lim, dth))) % (2 * math.pi)
+            B.ext = rest
+            return
+        u = (self.t - B.thr) / B.thr_k
+        t_out, t_hold, t_back = w['t_out'], w['t_hold'], w['t_back']
+        if u < t_out:
+            e = u / t_out
+            B.ext = rest + (B.blade_len - rest) * (1 - (1 - e) ** 2)
+            live = True
+        elif u < t_out + t_hold:
+            B.ext = B.blade_len
+            live = True
+        elif u < t_out + t_hold + t_back:
+            e = (u - t_out - t_hold) / t_back
+            B.ext = B.blade_len + (rest - B.blade_len) * e * e * (3 - 2 * e)
+            live = False
+        else:
+            B.thr = None
+            B.ext = rest
+            return
+        d = np.array([math.cos(B.th), math.sin(B.th)])
+        a = B.p + d * R * 0.9
+        L_ = R * 0.1 + B.ext
+        if live and w.get('parry') and len(self.kp):        # the lance swats enemy projectiles it passes through
+            enemy = self.kown != k
+            if enemy.any():
+                rel = self.kp - a[None]
+                s_ = np.clip(rel @ d, 0, L_)
+                dd = np.hypot(*(rel - s_[:, None] * d[None]).T)
+                self.kill_keys(enemy & (dd < self.R.KEY_R + 0.04), 'parry', k)
+        if live and not B.thr_hit:
+            rel = O.p - a
+            s_ = min(max(float(rel @ d), 0.0), L_)
+            c = a + d * s_
+            dist = float(np.hypot(*(O.p - c)))
+            if dist < R:
+                B.thr_hit = True
+                hx, hy = (O.p + (c - O.p) / max(dist, 1e-6) * R).tolist()
+                if O.shield > 0:
+                    self.ev('block', 1 - k, k, hx, hy, 'blade')
+                    B.thr = self.t - (t_out + t_hold) * B.thr_k          # blocked: the lance pulls straight back
+                else:
+                    landed = self.damage(k, 1 - k, w['dmg'], 'blade', hx, hy, B.frets)
+                    self.knock(1 - k, d, w.get('knock', 0.8))
+                    if landed and B.blade_len + w['grow'] <= w['max_len'] + 1e-9:
+                        B.blade_len += w['grow']
+                        B.frets += 1
+
     def blade_step(self, k, dt):
         B, O = self.balls[k], self.balls[1 - k]
         w = B.w
+        if w.get('mode') == 'thrust':
+            return self.thrust_step(k, dt)
         mult = self.ab_mult(k)
         dth = B.spin_dir * B.spin * mult * dt
         th0 = B.th
@@ -791,7 +884,8 @@ class Fight:
         self.ev('ability', k, ab['name'], kind, int(first))
         if kind in ('shockwave', 'wave'):
             self.waves.append(dict(owner=k, c=B.p.copy(), r=self.R.R, speed=ab['speed'], rmax=ab['radius'], dmg=ab['dmg'],
-                                   knock=ab['knock'], kind=kind, hit=False, name=ab['name'], t0=self.t))
+                                   knock=ab['knock'], kind=kind, hit=False, name=ab['name'], t0=self.t,
+                                   slow=ab.get('slow')))
         elif kind == 'shield':
             B.shield = self.ab_dur(ab)
         elif kind == 'haste':
@@ -802,7 +896,7 @@ class Fight:
             aim = math.atan2(d[1], d[0])
             self.arcs.append(dict(owner=k, t0=self.t, t1=self.t + ab['beats'] * self.R.beat, aim=aim,
                                   sweep=math.radians(ab['sweep']), n=ab['n'], emitted=0, speed=ab['speed'], dmg=ab['dmg'],
-                                  vol=self.next_vol))
+                                  vol=self.next_vol, curve=bool(ab.get('curve'))))
             self.next_vol += 1
         elif kind == 'slam':
             lead = ab['tele'] * self.R.beat
@@ -852,6 +946,9 @@ class Fight:
                 hx, hy = (W['c'] + rel / max(dist, 1e-6) * (dist - R)).tolist()
                 landed = self.damage(W['owner'], o, W['dmg'], W['kind'], hx, hy)
                 self.knock(o, rel, W['knock'])
+                if landed and W.get('slow'):                 # #34: the enemy it hits is slowed for a moment
+                    O.slow, O.slow_mult = W['slow']['dur'], W['slow']['mult']
+                    self.ev('slow', o, W['owner'], W['slow']['dur'])
                 if landed and W.get('grow'):
                     Bw = self.balls[W['owner']]
                     Bw.blade_len = min(Bw.w['max_reach'], Bw.blade_len + Bw.w['grow'])
@@ -884,6 +981,8 @@ class Fight:
                 a = Ar['aim'] - Ar['sweep'] / 2 + Ar['sweep'] * j / max(1, n - 1)
                 pos = B.p + (R + 0.06) * np.array([math.cos(a), math.sin(a)])
                 self.spawn_key(Ar['owner'], pos, a, Ar['speed'], Ar['dmg'], Ar['vol'], j)
+                if Ar.get('curve'):                              # #34: an arc of curving projectiles (the owner's rate)
+                    self.kcurve[self.next_id - 1] = (math.radians(B.curve_now), self.t + B.w.get('life', 3.0))
                 Ar['emitted'] += 1
         self.arcs = [Ar for Ar in self.arcs if Ar['emitted'] < Ar['n']]
 
@@ -907,6 +1006,8 @@ class Fight:
                 continue
             B.boost *= math.exp(-dt / self.R.KNOCK_T)
             s = self.R.V * (1 + B.boost)
+            if B.slow > 0:                                  # #34: slowed (e.g. SAD TROMBONE)
+                s *= B.slow_mult
             v = B.v / (np.linalg.norm(B.v) + 1e-12) * s
             B.p = B.p + v * dt
             B.v = v
@@ -968,6 +1069,8 @@ class Fight:
                                 Att = self.balls[att]
                                 if Att.w['kind'] == 'volley':
                                     Att.n_vol = min(Att.w['n_max'], Att.n_vol + Att.w['grow'])
+                                    if Att.w.get('curve_grow'):        # #34: its arrows curve harder too
+                                        Att.curve_now = min(Att.w['curve_max'], Att.curve_now + Att.w['curve_grow'])
                             # a light nudge along the key's flight
                             kv = self.kv[i] / (np.linalg.norm(self.kv[i]) + 1e-9)
                             cur = B.v / (np.linalg.norm(B.v) + 1e-9)
@@ -1007,6 +1110,10 @@ class Fight:
                              for W in self.waves])
         rec['SLAMS'].append([(S['owner'], float(S['c'][0]), float(S['c'][1]), S['t0'], S['t_slam'], S['radius'])
                              for S in self.slams if self.t < S['t_slam'] + 0.6])
+        if 'EXT' in rec:                                    # #34, only recorded when a fighter uses the options
+            rec['EXT'].append([B0.ext, B1.ext])
+            rec['SLW'].append([B0.slow, B1.slow])
+            rec['CRV'].append([B0.curve_now, B1.curve_now])
 
     # ------------------------------------------------------------------ run
     def run(self):
@@ -1030,6 +1137,10 @@ class Fight:
         dc_next = dc_k0
         grid16 = [k for k, B in enumerate(self.balls) if B.w['kind'] in ('aura', 'bellows')]     # #30 (opt-in)
         n16b = k16_0
+        thrusters = [k for k, B in enumerate(self.balls) if B.w.get('mode') == 'thrust']      # #34
+        next16t = k16_0
+        if rec is not None and self.uses_ext:
+            rec['EXT'], rec['SLW'], rec['CRV'] = [], [], []
         self.t = R.t_fight
         f0 = int(round(R.t_fight * R.FPS))
         step = 0
@@ -1080,9 +1191,17 @@ class Fight:
                 n16b += 1
                 for k in grid16:
                     self.grid16_fire(k, k16b)
+            if thrusters and self.t + 1e-9 >= next16t * s16:     # #34: thrusts on the 16th grid (haste divides it)
+                k16t = next16t - k16_0
+                next16t += 1
+                for k in thrusters:
+                    main16 = int(round(4 * self.balls[k].w['every']))
+                    if k16t % max(1, int(round(main16 / self.ab_mult(k)))) == 0:
+                        self.start_thrust(k)
             for k, B in enumerate(self.balls):
                 B.shield = max(0.0, B.shield - dt)
                 B.haste = max(0.0, B.haste - dt)
+                B.slow = max(0.0, B.slow - dt)
             for k in pullers:
                 self.pull_step(k, dt)
             self.move(dt)
