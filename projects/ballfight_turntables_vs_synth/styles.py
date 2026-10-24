@@ -1,6 +1,13 @@
 """#31 draw functions for the new BALLFIGHT weapon styles and ability looks, kept in the episode's folder (series rule)
 so later episodes and crossovers can import them:
 
+    v2 (BALLFIGHT v2 redesign):
+    record_albedo() style 'record': THE RING IS THE RECORD: slate vinyl with grooves, track gaps, sheen, strobe dots
+                    on the rim and a lime label, turning with the floor angle (per pixel, in the ring frame)
+    tonearm()       the DJ's tonearm: pivot by its corner, arm + headshell down on the DJ's ball (the needle)
+    cable_points()  style 'cables': a patch cable between two points carrying its waveform (sine / square / saw)
+    jack_quad()     a patch-cable plug (in flight, and plugged into the enemy)
+    v1 (kept for crossovers):
     style 'vinyl'   the decks' frisbees: a spinning black record (grooves, a lime label, a glint), flat over the canvas
     style 'arp'     the synth's satellites: glowing note gems orbiting the ball (dim while they rest after a hit)
     'saw'           SAWTOOTH's notes: a little saw-tooth wave glyph flying along its path (arc projectiles)
@@ -219,3 +226,135 @@ def render_sprite(name, radius_px, yaw_deg, roll_deg=0.0, pitch_deg=0.0):
     P.outline(img, zb, gb)
     n = 2 * radius_px + 7
     return np.dstack([img[:n, :n], (gb[:n, :n] > 0).astype(np.uint8) * 255])
+
+
+# ================================================================ v2: THE RING IS THE RECORD
+REC_R = 2.95                                    # the record's radius (inside the ropes at 3.0)
+LABEL_R = 0.98
+VINYL2 = np.array([66, 64, 82], float)          # slate vinyl: dark enough to read as a record, lit by the spot
+STROBE = np.array([196, 200, 214], float)
+
+
+def record_albedo(alb, sx, sz, phi, label_col, t=0.0):
+    """per-pixel albedo of the record floor (ring frame sx, sz; floor angle phi): returns (alb, on-record mask)"""
+    r = np.hypot(sx, sz)
+    th = np.arctan2(sz, sx)
+    thf = (th - phi) % (2 * math.pi)                         # angle in the record's own frame (turns with it)
+    rec = r < REC_R
+    out = alb.copy()
+    # vinyl: fine grooves, track gaps, the sheen two wedges facing the spot (fixed to the light, as on a real record)
+    v = VINYL2[None] * (1 + 0.07 * np.sin(r * 2 * math.pi / 0.085))[:, None]
+    gap = np.zeros_like(r)
+    for rg in (1.42, 1.9, 2.35):
+        gap = np.maximum(gap, np.clip(1 - np.abs(r - rg) / 0.03, 0, 1))
+    v = v + gap[:, None] * 22
+    sheen = np.abs(np.cos(th - 0.6)) ** 10 * np.clip((r - LABEL_R) / 0.3, 0, 1)
+    v = v + sheen[:, None] * np.array([70, 74, 92])[None]
+    # dust specks fixed on the vinyl (they turn with it, so the spin reads)
+    sp = ((np.floor(r * 23) * 7.31 + np.floor(thf * 9 * (r + 0.5)) * 3.17) % 1.0) > 0.985
+    v[sp] += 38
+    # the rim: strobe dots every 8 deg (they turn with the floor)
+    rim = (r > REC_R - 0.2) & (r < REC_R - 0.07)
+    dots = rim & ((thf % math.radians(8)) < math.radians(3.5))
+    v[rim] *= 0.7
+    v[dots] = STROBE
+    edge = (r >= REC_R - 0.05) & rec
+    v[edge] = np.array([30, 28, 38])
+    out[rec] = v[rec]
+    # the label: the owner's colour, a printed band, a dark arc of "text", a centre ring + the spindle
+    lab = r < LABEL_R
+    lc = np.array(label_col, float)
+    L = np.tile(lc * 0.92, (len(r), 1))
+    band = (np.abs(r - 0.62) < 0.05)
+    L[band] = lc * 0.55
+    text = (np.abs(r - 0.78) < 0.06) & (thf > 0.4) & (thf < 2.3) & (np.floor(thf * 14) % 3 != 0)
+    L[text] = np.array([26, 30, 20])
+    text2 = (np.abs(r - 0.42) < 0.04) & (thf > 3.6) & (thf < 5.0)
+    L[text2] = np.array([26, 30, 20])
+    ring = np.abs(r - 0.2) < 0.025
+    L[ring] = lc * 0.5
+    spin = r < 0.07
+    L[spin] = np.array([210, 214, 226])
+    out[lab] = L[lab]
+    return out, rec
+
+
+# ---------------------------------------------------------------- the DJ's tonearm (the needle anchors the DJ)
+ARM_Y = 0.42
+
+
+def tonearm(pivot, tip, h_tip=ARM_Y):
+    """world pieces of the tonearm from the pivot (ring frame, on the apron) to the tip (ring frame): [(kind, world pts)]
+    kinds: 'base' (pivot disc), 'weight' (counterweight stub), 'arm' (tube), 'shell' (headshell quad)"""
+    p, q = np.asarray(pivot, float), np.asarray(tip, float)
+    d = q - p
+    L = float(np.hypot(*d)) + 1e-9
+    u = d / L
+    n = np.array([-u[1], u[0]])
+    out = [('base', circle_world(p[0], p[1], 0.32, 0.12, 14)),
+           ('base2', circle_world(p[0], p[1], 0.16, ARM_Y + 0.02, 10))]
+    w0, w1 = p - u * 0.55, p - u * 0.18
+    out.append(('weight', np.array([S.to_world(*(w0 - n * 0.11), ARM_Y), S.to_world(*(w1 - n * 0.11), ARM_Y),
+                                    S.to_world(*(w1 + n * 0.11), ARM_Y), S.to_world(*(w0 + n * 0.11), ARM_Y)])))
+    a0, a1 = p, q - u * 0.34
+    hw = 0.05
+    out.append(('arm', np.array([S.to_world(*(a0 - n * hw), ARM_Y), S.to_world(*(a1 - n * hw), h_tip),
+                                 S.to_world(*(a1 + n * hw), h_tip), S.to_world(*(a0 + n * hw), ARM_Y)])))
+    s0, s1 = q - u * 0.42, q + u * 0.04
+    m = n * 0.13
+    out.append(('shell', np.array([S.to_world(*(s0 - m), h_tip), S.to_world(*(s1 - m * 0.7), h_tip - 0.06),
+                                   S.to_world(*(s1 + m * 0.7), h_tip - 0.06), S.to_world(*(s0 + m), h_tip)])))
+    return out
+
+
+# ---------------------------------------------------------------- patch cables
+def wave_shape(x, kind):
+    """one period of the cable's waveform at phase x (0..1): sine, square or saw, in -1..1"""
+    x = x % 1.0
+    if kind == 'square':
+        return np.where(x < 0.5, 1.0, -1.0)
+    if kind == 'saw':
+        return 2 * x - 1
+    return np.sin(2 * math.pi * x)
+
+
+def cable_points(a, b, kind, phase, amp=0.07, wl=0.34, bow=0.0, y0=0.42, y1=0.42, n_per=10, wobble=0.0, t=0.0):
+    """world polyline of a cable from a to b (ring frame) carrying its waveform (amplitude `amp`, wavelength `wl`,
+    scrolling with `phase`), bowed sideways by `bow` at the middle; `wobble` adds an LFO swell to the amplitude"""
+    a, b = np.asarray(a, float), np.asarray(b, float)
+    d = b - a
+    L = float(np.hypot(*d)) + 1e-9
+    u = d / L
+    n = np.array([-u[1], u[0]])
+    m = max(8, int(L / wl * n_per))
+    s = np.linspace(0, 1, m)
+    env = np.sin(np.pi * s) ** 0.6                            # the wave fades out at the plugs
+    a_ = amp * (1 + wobble * math.sin(2 * math.pi * t * 4.0))
+    lat = a_ * env * wave_shape(s * L / wl - phase, kind) + bow * np.sin(np.pi * s)
+    P = a[None] + d[None] * s[:, None] + n[None] * lat[:, None]
+    y = y0 + (y1 - y0) * s
+    return S.to_world(P[:, 0], P[:, 1], y)
+
+
+def jack_quad(p, ang, y=0.46, L_=0.26, w=0.07):
+    """a patch-cable plug: barrel + tip, pointing along ang (ring frame)"""
+    d = np.array([math.cos(ang), math.sin(ang)])
+    n = np.array([-d[1], d[0]])
+    c = np.asarray(p, float)
+    barrel = [c - d * L_ * 0.5 - n * w, c + d * L_ * 0.15 - n * w, c + d * L_ * 0.15 + n * w, c - d * L_ * 0.5 + n * w]
+    tip = [c + d * L_ * 0.15 - n * w * 0.45, c + d * L_ * 0.55 - n * w * 0.3, c + d * L_ * 0.55 + n * w * 0.3,
+           c + d * L_ * 0.15 + n * w * 0.45]
+    return (np.array([S.to_world(q[0], q[1], y) for q in barrel]), np.array([S.to_world(q[0], q[1], y) for q in tip]))
+
+
+def saw_arm_points(p, ang, length, teeth=5, amp=0.12, y=0.5, r0=0.62):
+    """SAWTOOTH: a cable gone saw-wave, lashing out of the ball along ang (world polyline)"""
+    d = np.array([math.cos(ang), math.sin(ang)])
+    n = np.array([-d[1], d[0]])
+    pts = []
+    for j in range(teeth):
+        a = r0 + (length - r0) * j / teeth
+        b = r0 + (length - r0) * (j + 1) / teeth
+        pts += [p + d * a - n * amp, p + d * b + n * amp, p + d * b - n * amp]
+    P = np.array(pts)
+    return S.to_world(P[:, 0], P[:, 1], y)

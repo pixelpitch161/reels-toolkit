@@ -1,20 +1,22 @@
-"""#31 BALLFIGHT #5: Turntables vs Synth - soundtrack (mood: dark breakbeat), all synthesised, original.
+"""#31 BALLFIGHT #5: Turntables vs Synth - soundtrack v2 (BALLFIGHT v2 redesign; mood: dark breakbeat), all
+synthesised, original. v1 (frisbees vs satellites) is kept as audio_v1_backup.py.
 
 The two fighters are the leads, both from the honest run:
-  TURNTABLES  every throw is a scratch (a baby scratch on the half notes; SCRATCH's discs on the 8ths are chirps);
-              every record that lands is an organ stab in the decks' own Pixel Pitch voice, climbing the chord; a
-              ricochet is a vinyl tick; REWIND is a backspin with the tape whirring backwards; BASS DROP is a sub drop
-              that lands with the record. As its HP drops the stabs thin out and get dirtier.
-  SYNTH       the satellites ARE the arpeggiator: every satellite passing the top of its orbit plays its note of the
-              arpeggio (satellite j = the j-th note), in the synth's own Pixel Pitch voice, so 2 satellites play a
-              two-note figure and 8 play the whole climbing arp; LFO's faster orbit doubles the rate and a wobble bass
-              joins; a satellite hit is an accent an octave up; SAWTOOTH is a supersaw sweep; WHITE NOISE a noise blast.
-              As its HP drops the arp skips notes and distorts.
-Bed: F minor at 137.70 BPM (35 bars = 61 s): a chopped, crunchy original breakbeat, a reese bass (detuned saws, moving
-filter), cold detuned pads. The count-in bar (a chirp + a synth stab per count on the dominant, a snare pickup) drops
-on FIGHT!; at the K.O. the bed tape-stops with the hit-stop, the loser's part breaks apart, the crowd roars, the
-winner's stinger lands, then its solo over the bare break; bar 34 builds (roll, riser, bass climb) into the "3" on
-sample 0. Every hit is snapped to the nearest 16th. Tails past the loop fold onto the start.
+  TURNTABLES  THE RING IS THE RECORD: every scratch IS the floor's motion - the record position under the DJ's hand is
+              the same curve that jerks the floor in the picture (render.scratch_q), played through a vocal-free stab,
+              so what you see and what you hear move together; a thump under each jerk; every rope slam is an organ stab
+              in the decks' own Pixel Pitch voice (doubled when leading); REWIND is a backspin with the tape whirring
+              backwards; BASS DROP a sub drop that lands with the record. As its HP drops the stabs thin and dirty.
+  SYNTH       PATCH CABLES: every voltage pulse is an arpeggio note in the synth's own Pixel Pitch voice, one per cable
+              (the first cable plays the arp, the others the notes a third above, quieter); the tone follows the
+              waveform on the cables: sine (LV1), square (LV2), saw (LV3); a plug that lands clicks in with an accent, a
+              snapped cable cracks, the leash thrums; LFO doubles the pulse rate and a wobble bass joins; SAWTOOTH is a
+              supersaw sweep with an accent per cut; WHITE NOISE a noise blast. As its HP drops the arp skips notes.
+Bed: F minor at 137.70 BPM (35 bars = 61 s): a chopped, crunchy original breakbeat, a reese bass, cold detuned pads.
+The count-in bar drops on FIGHT!; at the K.O. the bed tape-stops with the hit-stop, the loser's part breaks apart, the
+crowd roars, the winner's stinger lands, then its solo over the bare break; bar 34 builds into the "3" on sample 0.
+Every hit is snapped to the nearest 16th except the scratches (they follow the floor, which is already on the grid).
+Tails past the loop fold onto the start.
 
     python audio.py            -> audio.wav (whole AAC frames) + stems in check/ for the band check"""
 import math
@@ -158,6 +160,70 @@ def tick(seed=0):
     n = int(0.03 * SR)
     t = A.tt(n)
     return A.bp(np.random.default_rng(seed).normal(0, 1, n), 2500, 9000) * np.exp(-t / 0.004)
+
+
+def floor_scratch(t0, d, step=1.0 / SR):
+    """the scratch the picture shows: the record position under the hand is render.scratch_q (the floor's own curve),
+    sampled at audio rate and played through the stab; backward-first scratches hold further into the record"""
+    n = int((d + 0.03) * SR)
+    tt_ = t0 + np.arange(n) * step
+    q = np.array([RD.scratch_q(x) for x in tt_])
+    s0 = 0.03 + max(0.0, -float(q.min()))
+    vel = np.gradient(q, step)
+    y = np.interp((s0 + q) * SR, np.arange(len(SRC)), SRC, left=0.0, right=0.0) * np.clip(np.abs(vel), 0, 1.6) ** 0.7
+    y = y + A.bp(np.random.default_rng(int(t0 * 100)).normal(0, 1, n), 400, 3000) * np.clip(np.abs(vel), 0, 4) * 0.05
+    fd = int(0.012 * SR)
+    y[-fd:] *= np.linspace(1, 0, fd)
+    return y
+
+
+_LV = {}
+
+
+def arp_lv(m, lvl, vel=0.8):
+    """an arp note in the synth's voice, toned like the waveform on its cables: sine (LV1), square (LV2), saw (LV3)"""
+    key = (int(m), int(lvl), round(vel, 2))
+    if key not in _LV:
+        x = arp_note(m, vel)
+        n = len(x)
+        f = A.mtof(m)
+        env = np.abs(x).max() * A.expenv(n, 0.12, 0.003)
+        if lvl <= 1:
+            y = A.lp(x, 1100) * 0.8 + np.sin(2 * np.pi * f * A.tt(n)) * env * 0.5
+        elif lvl == 2:
+            y = x * 0.85 + A.lp(A.square(f, n), 3500) * env * 0.35
+        else:
+            y = x * 0.85 + A.lp(A.saw(f, n, 0.006, 2), 5000) * env * 0.4
+        _LV[key] = y
+    return _LV[key]
+
+
+def jack_click(seed=0):
+    """a patch cable plugging in: a metallic click and a tiny hum"""
+    n = int(0.08 * SR)
+    t = A.tt(n)
+    x = A.bp(np.random.default_rng(seed).normal(0, 1, n), 2000, 9000) * np.exp(-t / 0.005)
+    x += 0.4 * np.sin(2 * np.pi * 120 * t) * np.exp(-t / 0.03)
+    return x
+
+
+def zip_out(dur=0.16, seed=0):
+    """the cable unspooling behind a plug: a short rising zip"""
+    n = int(dur * SR)
+    t = A.tt(n)
+    f = 800 + 3000 * t / dur
+    x = np.sign(np.sin(2 * np.pi * np.cumsum(f) / SR)) * 0.3 + A.bp(np.random.default_rng(seed).normal(0, 1, n), 1500, 6000)
+    return x * np.sin(np.pi * t / dur) * 0.6
+
+
+def cable_snap(seed=0):
+    """a snapped patch cable: a crack, then a falling electric zap"""
+    n = int(0.4 * SR)
+    t = A.tt(n)
+    crack = A.bp(np.random.default_rng(seed).normal(0, 1, n), 1500, 10000) * np.exp(-t / 0.02)
+    f = 1800 * np.exp(-t / 0.08) + 90
+    zap = np.sign(np.sin(2 * np.pi * np.cumsum(f) / SR)) * np.exp(-t / 0.12) * 0.5
+    return crack + A.lp(zap, 5000)
 
 
 # ---------------------------------------------------------------- bed synths (original)
@@ -332,27 +398,6 @@ def bed(mix, b, intensity=1.0, light=False):
         mix.place('pad', cold_pad(PAD[ch], T.BAR + 0.1), t0, 0.07 + 0.03 * min(1.0, intensity - 1.0))
 
 
-# ---------------------------------------------------------------- the synth's satellites: crossings -> the arpeggio
-def arp_triggers():
-    """(t, satellite j) whenever a satellite passes the top of the orbit during the fight (from the recorded angle,
-    30 fps, interpolated)"""
-    th = np.unwrap(RUN['TH'][:, KS])
-    nv = RUN['NV'][:, KS]
-    tt_ = T.T_FIGHT + np.arange(len(th)) / T.FPS
-    out = []
-    ref = math.pi / 2
-    for j in range(8):
-        ph = th + ST.SEATS[j] * math.pi / 4 - ref
-        c = np.floor(ph / (2 * math.pi))
-        for i in range(1, len(ph)):
-            if c[i] != c[i - 1] and nv[i] > j:
-                lo, hi = ph[i - 1], ph[i]
-                kc = max(c[i], c[i - 1]) * 2 * math.pi
-                u = (kc - lo) / (hi - lo) if hi != lo else 0.0
-                out.append((tt_[i - 1] + u / T.FPS, j))
-    return sorted([o for o in out if o[0] < T_KO])
-
-
 def main():
     mix = A.Mix(T.DUR + 4.0)
     # ------------------------------------------------ count-in (bar 0, on the dominant): a chirp + a synth stab per count
@@ -374,55 +419,51 @@ def main():
     mix.place('fx', A.whoosh(3.6, 300, 6000), 44.0 - 3.6, 0.10)
     for k in ('break', 'bass', 'pad'):
         mix.buses[k] = A.tape_stop(mix.buses[k], T_KO, 0.42)
-    # ------------------------------------------------ TURNTABLES: throws = scratches, landed records = stabs
-    fires = [e for e in EV if e[1] == 'fire' and e[2] == KT and e[0] <= T_KO + 0.01]
-    for j, e in enumerate(fires):
-        tq = q16(e[0])
-        nxt = q16(fires[j + 1][0]) if j + 1 < len(fires) else tq + 2 * T.BEAT
-        gap = nxt - tq
-        hp = hp_at(KT, tq) / 100.0
-        if h01(tq, 5) < 0.5 * (1 - hp) ** 1.6:                # sparse when hurt
-            continue
-        kind = 'chirp' if gap < T.BEAT * 0.75 else ('baby' if (j % 4) != 3 else 'trans')
-        d = min(gap * 0.95, T.BEAT)
-        sig, g, lead = colour(scratch(kind, round(d, 3), seed=j % 5), KT, tq, 0.8)
-        mix.place('decks', sig, tq, 0.26 * g, pan=-0.25)
+    # ------------------------------------------------ TURNTABLES: the scratch IS the floor's motion; rope slams = stabs
+    for e in EV:
+        if e[1] == 'scratch' and e[0] <= T_KO + 0.01:
+            t0, d, stg, sgn = e[0], e[3], e[4], e[5]
+            sig, g, lead = colour(floor_scratch(t0, d), KT, t0, 0.8)
+            mix.place('decks', sig, t0, 0.34 * g, pan=-0.2)
+        elif e[1] == 'jerk' and e[0] <= T_KO + 0.01:
+            mix.place('fx', A.thud(0.18, 110, 50, seed=int(e[0] * 13)), e[0], 0.07 * min(1.4, e[6] / 1.3))
     slots = set()
     for e in EV:
         if e[0] > T_KO + 0.01:
             break
-        if e[1] == 'hit' and e[2] == KT and e[7] == 'key':
+        if e[1] == 'hit' and e[2] == KT and e[7] == 'scratch':      # a rope slam: an organ stab on the chord
             tq = q16(e[0])
-            s = round(tq / S16)
-            if s in slots:
+            s_ = round(tq / S16)
+            if s_ in slots:
                 continue
-            slots.add(s)
+            slots.add(s_)
             ch = T.chord_at(tq)
-            tones = [m for m in T.scale_notes(60, 84, ch) if m % 12 in T.CHORD_PCS[ch]]
-            m = tones[int(e[8]) % len(tones)]
-            sig, g, lead = colour(stab(m, 0.9), KT, e[0], 1.0)
+            tones = [m for m in T.scale_notes(60, 79, ch) if m % 12 in T.CHORD_PCS[ch]]
             pan = float(np.clip(e[5] / 3.5, -0.6, 0.6))
-            mix.place('decks', sig, tq, 0.24 * g, pan=pan)
-            if lead > 0.04:                                    # the leader: the stab doubled an octave down
-                mix.place('decks', colour(stab(m - 12, 0.7), KT, e[0])[0], tq, 0.12 * g, pan=pan)
-        elif e[1] == 'ricochet':
-            mix.place('fx', tick(int(e[0] * 100) % 50), e[0], 0.05, pan=float(np.clip(e[3] / 3.5, -0.7, 0.7)))
-    # ------------------------------------------------ SYNTH: satellites passing the top play the arpeggio
-    trig = arp_triggers()
-    done = set()
-    for t, j in trig:
-        tq = q16(t)
-        key = (round(tq / S16), j)
-        if key in done:
-            continue
-        done.add(key)
+            for j, m in enumerate(tones[:3]):
+                sig, g, lead = colour(stab(m, 0.95), KT, e[0], 1.0)
+                mix.place('decks', sig, tq, 0.16 * g, pan=pan)
+            if lead > 0.04:                                         # the leader: the root doubled an octave down
+                mix.place('decks', colour(stab(tones[0] - 12, 0.8), KT, e[0])[0], tq, 0.12 * g, pan=pan)
+            mix.place('fx', A.thud(0.3, 130, 55, seed=int(e[0] * 7)), tq, 0.14)
+            mix.place('fx', tick(int(e[0] * 100) % 50), tq, 0.08, pan=pan)
+    # ------------------------------------------------ SYNTH: a voltage pulse per arp note, the cable waveform's tone
+    by_tick = {}
+    for e in EV:
+        if e[1] == 'volt' and e[0] <= T_KO + 0.01:
+            by_tick.setdefault(round(q16(e[0]) / S16), []).append(e)
+    for slot, evs in sorted(by_tick.items()):
+        tq = slot * S16
         hp = hp_at(KS, tq) / 100.0
-        if h01(tq, j, 3) < 0.55 * (1 - hp) ** 1.6:            # skips notes when hurt
+        if h01(tq, 3) < 0.55 * (1 - hp) ** 1.6:                    # skips notes when hurt
             continue
+        n = evs[0][4]
         ch = T.chord_at(tq)
-        m = T.ARP[ch][j]
-        sig, g, lead = colour(arp_note(m, 0.75 + 0.1 * (j == 0)), KS, tq, 1.0)
-        mix.place('synth', sig, tq, 0.22 * g, pan=0.25 * math.sin(j * 1.3))
+        lvl = int(RUN['LV'][RD.sim_i(tq), KS])
+        for j, e in enumerate(evs):
+            m = T.ARP[ch][(n + 2 * j) % 8]
+            sig, g, lead = colour(arp_lv(m, lvl, 0.8 if j == 0 else 0.6), KS, tq, 1.0)
+            mix.place('synth', sig, tq, (0.22 if j == 0 else 0.10) * g, pan=0.2 + 0.15 * math.sin(j * 1.7))
     for e in EV:
         t, kind = e[0], e[1]
         if t > T_KO + 0.01:
@@ -432,19 +473,22 @@ def main():
             how = e[7]
             pan = float(np.clip(e[5] / 3.5, -0.6, 0.6))
             ch = T.chord_at(tq)
-            if how == 'orbit':                                 # a satellite lands: its note an octave up, accented
-                m = T.ARP[ch][int(e[8])] + 12
-                sig, g, _ = colour(arp_note(m, 1.0, 0.16), KS, t)
-                mix.place('synth', sig, tq, 0.30 * g, pan=pan)
+            lvl = int(RUN['LV'][RD.sim_i(tq), KS])
+            if how == 'plug':                                      # a plug lands: a jack click + an accent
+                mix.place('fx', jack_click(int(t * 31)), t, 0.16, pan=pan)
+                mix.place('synth', colour(arp_lv(T.ARP[ch][0] + 12, lvl, 1.0), KS, t)[0], tq, 0.22, pan=pan)
+            elif how == 'lash':                                    # a SAWTOOTH cut
+                m = T.ARP[ch][int(e[8]) % 8] + 12
+                mix.place('synth', colour(arp_lv(m, 3, 1.0), KS, t)[0], tq, 0.26, pan=pan)
                 mix.place('fx', A.thud(0.2, 160, 60, seed=int(t * 7)), tq, 0.10)
-            elif how == 'key':                                 # a SAWTOOTH note lands
-                m = T.ARP[ch][int(e[8]) % 8]
-                mix.place('synth', colour(arp_note(m + 12, 0.9), KS, t)[0], tq, 0.18, pan=pan)
             elif how == 'wave':
                 mix.place('fx', A.thud(0.45, 110, 40), tq, 0.36)
-        elif kind == 'parry' and e[3] == KS:                   # a satellite swats a record
-            mix.place('synth', A.chime(96, 0.3), q16(t), 0.06, pan=float(np.clip(e[4] / 3.5, -0.6, 0.6)))
-            mix.place('fx', tick(int(t * 77) % 50), t, 0.05)
+        elif kind == 'plug_fire' and e[2] == KS:                   # the cable unspools
+            mix.place('fx', zip_out(0.16, int(t * 17)), t, 0.05, pan=0.2)
+        elif kind == 'snap':
+            mix.place('fx', cable_snap(int(t * 23)), t, 0.30, pan=float(np.clip(e[4] / 3.5, -0.6, 0.6)))
+        elif kind == 'leash':
+            mix.place('fx', A.thud(0.14, 75, 45, seed=int(t * 9)), t, 0.035, pan=float(np.clip(e[3] / 3.5, -0.6, 0.6)))
         elif kind == 'rope':
             mix.place('fx', A.thud(0.22, 95, 55, seed=int(t * 10)), t, 0.06 * min(1.5, e[7] / 2.6),
                       pan=float(np.clip(e[5] / 3.5, -0.6, 0.6)))
@@ -454,7 +498,7 @@ def main():
             who, name = e[2], e[3]
             tq = q16(t)
             if name == 'SCRATCH':
-                mix.place('decks', scratch('scrib', 0.4, seed=3), tq, 0.22, pan=-0.2)
+                mix.place('decks', scratch('scrib', 0.4, seed=3), tq, 0.20, pan=-0.2)
             elif name == 'REWIND':
                 d = T.BEAT * RD.CFG[who]['abilities']['unlock2']['zip_beats']
                 mix.place('decks', scratch('back', round(d + 0.1, 3), seed=7), t, 0.40, pan=-0.1)
@@ -469,7 +513,7 @@ def main():
             elif name == 'WHITE NOISE':
                 mix.place('fx', noise_blast(1.6), tq, 0.20)
                 mix.place('synth', colour(arp_note(89, 1.0, 0.3), KS, t, 2.0)[0], tq, 0.16)
-        elif kind == 'slam':                                    # BASS DROP: the record lands = the sub drops
+        elif kind == 'slam':
             ts = e[0]
             mix.place('bass', sub_drop(1.3), ts, 0.62)
             mix.place('fx', A.thud(0.6, 90, 32), ts, 0.50)
@@ -552,11 +596,11 @@ def main():
         print(f'{a:5.1f}-{b:5.1f}s  rms {rms:6.1f} dBFS  peak {pk:5.1f}')
 
 
-BUS_GAIN = {'break': 1.6, 'decks': 2.1, 'synth': 2.5, 'solo': 1.7, 'fx': 1.4, 'bass': 0.9, 'pad': 0.9}
+BUS_GAIN = {'break': 1.6, 'decks': 3.2, 'synth': 2.0, 'solo': 1.7, 'fx': 1.4, 'bass': 0.9, 'pad': 0.9}
 # section automation (dB), applied AFTER the compressor so the limiter can't flatten the build: the count-in at full,
 # the early fight pulled back, rising through the final exchange, the victory section loud, the end close to the start
-GAIN_PTS = [(0, 0.0), (1.55, 0.0), (2.1, -2.2), (20, -2.0), (30, -0.8), (40, 1.3), (44, 2.3), (49.6, 3.3), (51.2, 2.8),
-            (52.5, 3.3), (58.0, 3.3), (60.0, 1.6), (61.02, 0.6)]
+GAIN_PTS = [(0, 0.0), (1.55, 0.0), (2.1, -2.6), (20, -2.3), (30, -0.9), (40, 1.3), (44, 2.3), (50.6, 3.3), (52.2, 2.8),
+            (53.5, 3.3), (58.0, 3.3), (60.0, 1.6), (61.02, 0.6)]
 
 
 def master(mix, thr=0.22, ceiling=0.89):

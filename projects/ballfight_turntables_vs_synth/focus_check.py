@@ -1,5 +1,5 @@
-"""Focus audit for #31: the circle of confusion on the subject (the canvas corners, both balls, every satellite, every
-record / saw note in flight and the shards) must be 0 px on every frame (focus locked on the ring).
+"""Focus audit for #31: the circle of confusion on the subject (the canvas corners, both balls, the record's rim, the
+tonearm, the patch cables and the shards) must be 0 px on every frame (focus locked on the ring).
 
     python focus_check.py"""
 import math
@@ -21,15 +21,17 @@ for f in range(T.NF):
         for dy in (0.0, 2 * R.R):
             pts.append(S.to_world(st['p'][0], st['p'][1], dy))
             names.append(R.NAMES[k])
-        if k in R.ORBIT and not st['shattered']:
-            for j, q in R.ST.sat_positions(st['p'], st['th'], st['reach'], st['n']):
-                pts.append(S.to_world(q[0], q[1], R.R + R.ST.GEM_R))
-                names.append('satellite')
-    if T.T_FIGHT <= t < R.T_HS:
-        for row in R.RUN['K'][R.sim_i(t)]:
-            if not np.isnan(row[0]):
-                pts.append(S.to_world(row[0], row[1], 0.45))
-                names.append('record')
+    tip, h, on = R.arm_state(t)                                    # the tonearm's headshell and the record's rim
+    pts.append(S.to_world(tip[0], tip[1], h))
+    names.append('tonearm')
+    for a in np.linspace(0, 2 * math.pi, 9)[:-1]:
+        pts.append(S.to_world(R.ST.REC_R * math.cos(a), R.ST.REC_R * math.sin(a), 0.0))
+        names.append('record rim')
+    if T.T_FIGHT <= t < R.T_HS and R.live_cables(t):               # a plugged cable's middle
+        ps, pe = R.cable_ends(t)
+        m = (ps + pe) / 2
+        pts.append(S.to_world(m[0], m[1], 0.42))
+        names.append('cable')
     for kind, p, rot, size, curl, a in R.parts_at(t):
         pts.append(S.to_world(p[0], p[2], p[1]))
         names.append('shard')
