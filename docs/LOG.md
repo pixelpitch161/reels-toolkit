@@ -708,6 +708,37 @@
 - Checks: safe zone OK (0.25 s steps); subject CoC 0 on all 1830 frames; loopcheck PASS render + mp4 (seam 2.2x);
   flash 0 general (max 6.6 % at the bell slam); opening -18.9 dBFS, build +3.1 dB. Render 0.19 s/frame/core (6 min) + mux.
 - Feedback: (pending)
+- v2 (BALLFIGHT v2 redesign, user Oct 24: attacks the instrument's body / playing, more visual character, no
+  full-screen flashes). TUBA: OOM-PAH SWALLOW (new kind `swallow`: oom = the bell inhales for a beat and steers the
+  enemy in, touching it = swallowed and held inside, pah = spat out like a cannonball, a rope hit within 0.9 s = extra
+  damage; the reach grows per landed swallow); BRASS WALL = a brass dome, SUBSONIC = the floor ripples like water.
+  FLUTE: SNAKE CHARMER (new kind `striker`: a basket every bar, up to 2, a cobra per basket striking on the 16th grid;
+  new ability kind `dance`: SNAKE DANCE sends the cobras slithering after the enemy for a bar); PICCOLO adds glass-crack
+  marks. Engine commits additive and alone; the swallowed ball is skipped in `move()` via a `held` attribute.
+- Parallel production: the shared fight.py took 10+ other sessions' commits during this work; every rebase conflicted
+  in the same elif chains (setup / beat / step / trigger). Resolving by hand (and moving #32's setup into its own loop)
+  and re-checking all 45 guarded runs against upstream origin/main before each push kept #27, #28 and #29-#35
+  identical. A helper (rebase, keep-both on additive conflicts, verify vs a worktree of origin/main, push, retry on a
+  push race) saved several rounds.
+- Rules lessons: the cobra bite is the touchiest number (1.05 -> 1.25 moved the tuba 53 % -> 17 %); 32-48 seeds per cell
+  misled once (21 % in the search), 90-120 seeds got it right. The first v2 opening was slow (first hit 5-6 s, 5 s
+  stretches without a hit): a basket every bar, a longer starting reach and a hard "no 4 s without a hit" window fixed
+  the pacing. Final: TUBA 53 % / FLUTE 47 % over 515 decided, damage scale 1.06.
+- Honest run, seed 514: tuba leads to 33 s (four swallows by 26 s), flute takes over, tuba back ahead at 47.6 s,
+  FLUTE wins at 49.37 s on a double cobra strike with 5.7 HP.
+- Look lessons: thin cobras vanish on the lavender canvas; an ink outline, a 0.16-unit body and a hood turned partly
+  toward the camera made them read at ball scale. Additive canvas light doesn't show on a bright canvas: the suction
+  cone reads as darker wedge + bright dashes racing in. `reelkit.fx` wired per projects/ballfight/README.md (flash
+  probe on the busiest stretch peaked at 15.8 % of the frame).
+- Loop lesson: less motion than v1 lowered loopcheck's "normal step", so the same beat-pulse snap at frame 0 failed
+  (2.6x); a longer pre-ramp on `beat_pulse` (120 ms) brought the seam to 1.5x.
+- Sound: oom = the tuba's root held through the inhale (+ air sucked in), pah = the fifth as a blast (+ brass blast and
+  whoosh on a spit), gulp = a low bubble pop; the flute plays an original charmer line in C harmonic minor (augmented
+  2nd, grace notes, phrygian-dominant turn over G) while its cobras are up, flutter-tongued in FLUTTER TONGUE, an
+  octave up in SNAKE DANCE, with a hiss-click per strike; the music box went to quarter notes so the charmer line leads.
+- v2 checks: safe zone OK; subject CoC 0 on all 1830 frames; loopcheck PASS render (1.5x) + mp4 (1.9x); flash 0
+  general (max 15.6 %); opening -17.9 dBFS, build +3.7 dB. Full render 313 s on 2 cores + mux. Feedback: (pending)
+
 
 ## BALLFIGHT #4: Bagpipes vs Accordion (`projects/ballfight_bagpipes_vs_accordion`)
 - Fourth BALLFIGHT episode (#30), produced in parallel with #29–#35 on the shared engine. Two new weapon kinds, both on
