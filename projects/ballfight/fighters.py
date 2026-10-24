@@ -197,4 +197,32 @@ FIGHTERS = {
             unlock2=dict(name='ANGEL WINGS', kind='shield', dur_beats=6, every_bars=6),
             low=dict(name='47 STRINGS', kind='wave', speed=4.5, radius=9.0, dmg=8.0, knock=1.5)),
         pp='HARP', register=(50, 84), idiom='harp'),
+
+    # ---- #33 BALLFIGHT #7: little brother vs big brother (weapon kinds 'dash' and 'cone' in fight.py)
+    #   'dash'  every `every` beats the ball throws itself at the opponent: a speed burst of `base` x the shared speed
+    #           (decays like a knockback, so it is speed + distance), contact within `window` s hits once for `dmg`;
+    #           +`grow` power per landed dash up to `max_power`; haste dashes hit for `sub_dmg` x and don't grow it
+    #   'cone'  every `every` beats a wedge of sound (half-angle `half` deg) aimed at the opponent expands to `base`
+    #           beyond the surface at `speed`; +`grow` length per landed cone up to `max_len`; haste cones (on the 16th
+    #           grid) hit for `sub_dmg` x and don't grow it
+    'UKULELE': dict(
+        color=(255, 138, 178), dark=(160, 62, 104), corner='red',     # pink (series colour table, IDEAS)
+        view=(10, 22, 28),
+        weapon=dict(kind='dash', style='uke_dash',          # body-slam dash on every 2nd beat: the uke strums as it lands
+                    every=2, base=1.3, grow=0.08, max_power=3.0, window=0.5, dmg=4.8, sub_dmg=0.6, knock=1.0),
+        abilities=dict(
+            unlock1=dict(name='CHUNK', kind='shockwave', speed=7.5, radius=3.0, dmg=3.0, knock=1.2, every_bars=4),
+            unlock2=dict(name='SPEED STRUM', kind='haste', mult=2.0, dur_beats=8, every_bars=6),
+            low=dict(name='UKE-NADO', kind='wave', speed=4.5, radius=9.0, dmg=8.0, knock=1.5)),
+        pp='UKULELE', register=(60, 81), idiom='uke_strum'),
+    'ACOUSTIC': dict(
+        color=(214, 160, 100), dark=(128, 84, 42), corner='blue',     # wood tan (series colour table, IDEAS)
+        view=(14, 22, 330),
+        weapon=dict(kind='cone', style='soundhole',         # a strummed cone of sound out of the sound hole, on the beat
+                    every=1, base=1.0, grow=0.06, max_len=2.6, half=26.0, speed=9.0, dmg=2.0, sub_dmg=0.5, knock=0.7),
+        abilities=dict(
+            unlock1=dict(name='CAPO', kind='haste', mult=2.0, dur_beats=8, every_bars=5),
+            unlock2=dict(name='FINGERPICK', kind='arc', n=6, sweep=70.0, beats=1, speed=6.0, dmg=1.4, every_bars=3),
+            low=dict(name='BIG STRUM', kind='slam', tele=2, radius=1.35, dmg=11.0, knock=1.6)),
+        pp='ACOUSTIC', register=(40, 76), idiom='open_strum'),
 }
