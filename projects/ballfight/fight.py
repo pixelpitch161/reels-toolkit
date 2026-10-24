@@ -9,7 +9,8 @@ Rules (the same for both fighters; nothing is scripted or edited):
     ropes "give" a little (a seeded +-ROPE_GIVE deg on every bounce, so no run settles into a fixed orbit); ball vs ball
     is an elastic clash, after which both go back to the shared speed;
   - weapons and abilities come from fighters.py (blade / volley / pulse / beam; shockwave, shield, haste, arc, wave,
-    slam); a volley may `curve` (homing projectiles with a turn-rate limit and a lifetime);
+    slam); a volley may `curve` (homing projectiles with a turn-rate limit and a lifetime) or `bounce` (ricochet off
+    the ropes up to N times);
   - every landed hit grows the attacker's weapon (a blade gets longer and / or spins faster, a volley gets one more
     projectile, a pulse reaches further), so the fight escalates by itself; levels come from damage dealt (LV2 / LV3 unlock abilities), and the 'low' ability fires once
     when HP drops below LOW_HP;
@@ -130,6 +131,7 @@ class Fight:
         self.beams = []                   # dict(owner, o, d, len, w, t1, hit, dmg, knock): active beam blasts
         self.kcurve = {}                  # projectile id -> (turn rate rad/s, time it fades): curving volleys only
         self.khr = {}                     # projectile id -> hit radius (when it isn't Rules.KEY_R)
+        self.kbounce = {}                 # projectile id -> rope bounces so far: volleys with `bounce` only
         self.events = []
         self.t = 0.0
         self.winner = None
@@ -368,6 +370,24 @@ class Fight:
             self.kv[j] = [sp * math.cos(a), sp * math.sin(a)]
         self.kill_keys(fade, 'fade')
 
+    def ricochet(self):
+        """volley option `bounce` (#31's vinyl discs): a projectile that crosses a rope is mirrored back into the ring
+        instead of dying, up to its weapon's `bounce` times (counted per projectile id); then it leaves like any other"""
+        A = self.R.A
+        past = np.abs(self.kp) > A
+        for i in np.nonzero(past.any(1))[0]:
+            nb = self.balls[int(self.kown[i])].w.get('bounce', 0)
+            kid = int(self.kid[i])
+            c = self.kbounce.get(kid, 0)
+            if c >= nb:
+                continue
+            for ax in (0, 1):
+                if past[i, ax]:
+                    self.kp[i, ax] = math.copysign(A, self.kp[i, ax]) * 2 - self.kp[i, ax]
+                    self.kv[i, ax] = -self.kv[i, ax]
+            self.kbounce[kid] = c + 1
+            self.ev('ricochet', int(self.kown[i]), float(self.kp[i, 0]), float(self.kp[i, 1]), kid, c + 1)
+
     # ------------------------------------------------------------------ abilities
     def ab_dur(self, ab):
         """an ability's duration in s: `dur` (s) or `dur_beats` (beats at this episode's tempo)"""
@@ -531,6 +551,8 @@ class Fight:
             self.steer(dt)
         if len(self.kp):
             self.kp = self.kp + self.kv * dt
+            if self.balls[0].w.get('bounce') or self.balls[1].w.get('bounce'):
+                self.ricochet()
             out = (np.abs(self.kp) > A).any(1)
             self.kill_keys(out, 'wall')
         if len(self.kp):

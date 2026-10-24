@@ -17,6 +17,7 @@ A fighter is a glass ball with a low-poly Pixel Pitch instrument inside. Every f
                           (clears) enemy projectiles in its path
               volley option `curve` (deg/s): projectiles home in on the opponent at that turn rate and fade after
                           `life` s; `hit_r`: their hit radius (default Rules.KEY_R)
+              volley option `bounce` (N): projectiles ricochet off the ropes up to N times before they leave
   abilities   unlock1 (at LV2), unlock2 (at LV3), low (once, when HP drops below Rules.LOW_HP). Kinds:
                 'shockwave'  expanding ring: knocks back + damages what it passes, clears enemy projectiles
                 'shield'     blocks all damage for `dur` s (a blade hitting it bounces and reverses)
