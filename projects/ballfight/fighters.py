@@ -167,7 +167,7 @@ FIGHTERS = {
         color=(200, 112, 64), dark=(120, 58, 30), corner='blue',     # copper (series colour table, IDEAS)
         view=(0, 22, 0),
         weapon=dict(kind='volley', style='arrow',          # hunting-call arrows curving in on the enemy (#29's `curve`)
-                    n0=1, grow=0.5, n_max=6, every=2, speed=3.0, dmg=1.4, spread=16.0, max_fan=80.0,
+                    n0=1, grow=0.5, n_max=6, every=2, speed=3.0, dmg=1.5, spread=16.0, max_fan=80.0,
                     curve=52.0, curve_grow=4.3, curve_max=137.0, life=4.0),
         abilities=dict(
             unlock1=dict(name='STOPPED HORN', kind='shield', dur_beats=6, every_bars=6),
