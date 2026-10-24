@@ -253,7 +253,7 @@ FIGHTERS = {
     # ---- #31 BALLFIGHT #5: DJ vs producer (numbers tuned once with ballfight_turntables_vs_synth/tune.py, frozen)
     'TURNTABLES': dict(
         color=(190, 245, 60), dark=(96, 140, 20), corner='red',      # lime (series colour table, IDEAS)
-        view=(14, 22, 0), pitch=32,                        # pitch: the deck tipped toward the camera (platter + label)
+        view=(20, 22, 0), pitch=45,                        # pitch: the deck tipped toward the camera (platter + label)
         weapon=dict(kind='volley', style='vinyl',          # vinyl frisbees that ricochet off the ropes
                     n0=1, grow=0.5, n_max=8, every=2, on16=True, bounce=2, speed=4.6, dmg=0.33,
                     spread=9.0, max_fan=60.0),
