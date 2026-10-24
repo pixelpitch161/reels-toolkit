@@ -1,17 +1,26 @@
-"""#30 v3 intro test (user, Oct 24): the VS title card on bar 0.
+"""BALLFIGHT VS title card on bar 0 (series standard from Oct 24; built for #30's intro test, shared here so every
+episode uses one).
 
-The frame splits diagonally into two panels in the fighters' colours (tartan green top-left, magenta bottom-right),
-each with its fighter's ball big and close, like a fighting-game versus screen, with a small "BALLFIGHT #4" tag at the
-top. The words slam in one per beat: BAGPIPES (beat 1 = frame 0), VS (beat 2: it cracks the diagonal divider, sparks),
-ACCORDION (beat 3); each slam comes down from huge to size with an overshoot, motion streaks, a shake, a dust burst and a
-local light in its colour. Beat 4: everything pulses, then the panels slide apart like doors along the cracked divider
-to reveal the ring (VS splits with them). In the last T_CLOSE s of the file the doors slide shut again and BAGPIPES
-falls in as a ghost, so the slam on frame 0 is the loop's reset and the seam stays small.
+The frame splits diagonally into two panels in the fighters' colours (left fighter top-left, right fighter bottom-right),
+each with its fighter's ball big and close, like a fighting-game versus screen, with a small "BALLFIGHT #N" tag at the
+top. The words slam in one per beat: name A (beat 1 = frame 0), VS (beat 2: it cracks the diagonal divider, sparks),
+name B (beat 3); each slam comes down from huge to size with an overshoot, motion streaks, a shake, a dust burst and a
+local light in its colour. Beat 4: VS pulses, then the panels slide apart like doors along the cracked divider to reveal
+the ring (VS splits with them). In the last T_CLOSE s of the file the doors slide shut again and name A falls in as a
+ghost, so the slam on frame 0 is the loop's reset and the seam stays small.
+
+The episode supplies (in its own timeline.py / render.py, found first on sys.path):
+    timeline: TITLE = [(0.0, A), (BEAT, 'VS'), (2 * BEAT, B)], T_DOORS = (t_open, t_gone), T_CLOSE, SERIES, DUR, FPS,
+              BEAT, BAR, beat_pulse
+    render:   NAMES, COL, DARK, CFG (fighter colours, the instrument view for the big sprites)
+Names use the biggest pixel-font scale (<= 7, VS is 12) that fits the safe zone (A: x 20-340 above the divider; B: left
+of the button column); a fighter's panel pattern comes from PATTERNS (by name; a plain gradient if it has none).
 
 Everything is screen space at the internal resolution (W x H) and deterministic in t.
 
     import title as TT
-    img = TT.draw(img, t)          # float or uint8 (H, W, 3) -> same dtype; no-op when the doors are open"""
+    img = TT.draw(img, t)          # float or uint8 (H, W, 3) -> same dtype; no-op when the doors are open
+    TT.door_offset(t) == 0.0       # the card is shut (hide the HUD)"""
 import math
 import os
 import numpy as np
@@ -20,12 +29,12 @@ from reelkit.font import ADV, text_mask, dilate
 from reelkit import ui
 import timeline as T
 
-HERE = os.path.dirname(os.path.abspath(__file__))
+EP = os.path.dirname(os.path.abspath(T.__file__))      # the episode's folder (its check/ holds the sprite cache)
 INK = np.array([16, 10, 26], float)
 GOLD = np.array([255, 226, 120], float)
 WHITE = np.array([255, 250, 236], float)
 
-# the divider: bottom-left -> top-right; N points to the top-left (the BAGPIPES side)
+# the divider: bottom-left -> top-right; N points to the top-left (the left fighter's side)
 DA, DB = np.array([0.0, 470.0]), np.array([360.0, 170.0])
 DD = (DB - DA) / np.linalg.norm(DB - DA)
 N = np.array([DD[1], -DD[0]])
@@ -33,15 +42,39 @@ if (np.array([0.0, 0.0]) - DA) @ N < 0:
     N = -N
 OPEN_PX = 560.0                                       # how far each door travels to clear the frame
 YY, XX = np.mgrid[0:H, 0:W].astype(np.float64)
-SIDE = (XX - DA[0]) * N[0] + (YY - DA[1]) * N[1]      # > 0: top-left (BAGPIPES) half
+SIDE = (XX - DA[0]) * N[0] + (YY - DA[1]) * N[1]      # > 0: top-left (left fighter) half
 
 # layout (closed doors): words inside the safe zone at the biggest pixel-font scale that fits
-WORDS = {
-    'BAGPIPES': dict(scale=6, cx=180, cy=134, side=0),     # 282 px wide: fits x 20-340 above y 290
-    'VS': dict(scale=12, cx=180, cy=300, side=-1),          # the largest letters, on the divider (splits with the doors)
-    'ACCORDION': dict(scale=5, cx=160, cy=468, side=1),     # 265 px wide: fits left of the button column below y 290
-}
-BALLS = [dict(cx=78, cy=222, r=56), dict(cx=282, cy=396, r=56)]   # BAGPIPES, ACCORDION: big and close
+NAME_A, NAME_B = T.TITLE[0][1], T.TITLE[2][1]
+MAX_NAME_SCALE = 7                                    # VS (12) stays the largest word
+
+
+def _fit_scale(text, avail):
+    """the biggest scale <= MAX_NAME_SCALE whose word + outline fits `avail` px"""
+    for sc in range(MAX_NAME_SCALE, 1, -1):
+        w = text_mask(text, sc).shape[1] + 2 * max(2, int(round(sc * 0.6)))
+        if w <= avail:
+            return sc
+    return 2
+
+
+def _layout():
+    """name A centred at x 180 near the top (below the series tag), name B at the bottom, left of the button column
+    (shifted left in 10 px steps if it doesn't fit centred); VS on the divider. #30: BAGPIPES 6 @ (180, 134),
+    ACCORDION 5 @ (160, 468)"""
+    out = {'VS': dict(scale=12, cx=180, cy=300, side=-1)}             # the largest letters, on the divider
+    sa = _fit_scale(NAME_A, 320)
+    ha, ra = 7 * sa, max(2, int(round(sa * 0.6)))
+    out[NAME_A] = dict(scale=sa, cx=180, cy=int(max(134, round(109 + ha / 2 + ra))), side=0)
+    sb = _fit_scale(NAME_B, 280)
+    wb, hb, rb = text_mask(NAME_B, sb).shape[1], 7 * sb, max(2, int(round(sb * 0.6)))
+    cxb = 180 if 180 + wb / 2 + rb <= 300 else int((300 - wb / 2 - rb) // 10 * 10)
+    out[NAME_B] = dict(scale=sb, cx=cxb, cy=int(min(468, 500 - hb / 2 - rb - 3)), side=1)
+    return out
+
+
+WORDS = _layout()
+BALLS = [dict(cx=78, cy=222, r=56), dict(cx=282, cy=396, r=56)]   # left fighter, right fighter: big and close
 
 
 def _ease_in(u):
@@ -79,10 +112,10 @@ def slam_k(t, t0):
 
 
 def word_state(t, j):
-    """(size factor, alpha) of word j at t; BAGPIPES also falls in as a ghost at the end of the file"""
+    """(size factor, alpha) of word j at t; name A also falls in as a ghost at the end of the file"""
     t0 = T.TITLE[j][0]
     if t >= T.DUR - T.T_CLOSE and (j > 0 or t < T.DUR - 0.12):      # the closing doors carry only the panels, then
-        if j > 0 or t < T.DUR - 0.12:                               # BAGPIPES' ghost falls in (the frame-0 slam)
+        if j > 0 or t < T.DUR - 0.12:                               # name A's ghost falls in (the frame-0 slam)
             return None
     if j == 0 and t >= T.DUR - 0.12:                               # the ghost of the frame-0 slam
         u = (t - (T.DUR - 0.12)) / (0.12 - 1.0 / T.FPS)
@@ -109,22 +142,49 @@ def shake(t):
 
 
 # ---------------------------------------------------------------- panels
-def _panel_rgb(colour, dark, side):
-    """a panel's fill: a gradient from the fighter's deep shade at the far corner to its colour at the divider, a soft
-    pattern (tartan for the bagpipes, bellows pleats for the accordion), dithered bands"""
+def _tartan(base):                                                   # BAGPIPES: a large tartan sett, low contrast
+    u, v = (XX + YY) / 46.0, (XX - YY) / 46.0
+    chk = ((np.floor(u) + np.floor(v)) % 2)
+    line = (np.abs((u % 1) - 0.5) < 0.05) | (np.abs((v % 1) - 0.5) < 0.05)
+    base = base * (0.92 + 0.12 * chk[..., None])
+    return np.where(line[..., None], base * 0.7 + np.array([200, 50, 46]) * 0.3, base)
+
+
+def _pleats(base):                                                   # ACCORDION: pleats parallel to the divider
+    s = (SIDE / 14.0) % 2
+    return base * np.where((s < 1)[..., None], 1.06, 0.84)
+
+
+def _organ_pipes(base):                                              # ORGAN: a front of pipes, tall to short, with mouths
+    col = np.floor(XX / 16.0)
+    xc = (XX % 16.0) - 8.0
+    top = 60.0 + 70.0 * np.abs(np.sin(col * 0.9)) + 2.0 * xc * xc / 8.0
+    body = (np.abs(xc) < 6.0) & (YY > top)
+    mouth = body & (np.abs(YY - (top + 70)) < 3) & (np.abs(xc) < 3.5)
+    shade = 1.0 + 0.10 * np.where(xc < -2, 1.0, np.where(xc > 3, -1.0, 0.0))
+    base = np.where(body[..., None], base * (0.98 * shade)[..., None] + 14, base * 0.80)
+    return np.where(mouth[..., None], base * 0.45, base)
+
+
+def _harp_strings(base):                                             # HARP: fine strings fanning across, pearl glints
+    a = np.arctan2(YY - 900.0, XX - 520.0)
+    s = (a * 80.0) % 1.0
+    line = s < 0.12
+    return np.where(line[..., None], base * 0.78 + np.array([255, 246, 222]) * 0.22, base * 0.94)
+
+
+PATTERNS = {'BAGPIPES': _tartan, 'ACCORDION': _pleats, 'ORGAN': _organ_pipes, 'HARP': _harp_strings}
+
+
+def _panel_rgb(colour, dark, side, name=None):
+    """a panel's fill: a gradient from the fighter's deep shade at the far corner to its colour at the divider, its
+    fighter's pattern (PATTERNS), dithered bands"""
     d = np.abs(SIDE) / 400.0
     k = np.clip(1 - d, 0, 1) ** 1.3
     base = dark[None, None] * (1 - k[..., None]) + colour[None, None] * (0.40 + 0.25 * k[..., None]) * k[..., None] \
         + dark[None, None] * 0.6 * k[..., None]
-    if side == 0:                                                     # a large tartan sett, low contrast
-        u, v = (XX + YY) / 46.0, (XX - YY) / 46.0
-        chk = ((np.floor(u) + np.floor(v)) % 2)
-        line = (np.abs((u % 1) - 0.5) < 0.05) | (np.abs((v % 1) - 0.5) < 0.05)
-        base = base * (0.92 + 0.12 * chk[..., None])
-        base = np.where(line[..., None], base * 0.7 + np.array([200, 50, 46]) * 0.3, base)
-    else:                                                             # pleats parallel to the divider
-        s = (SIDE / 14.0) % 2
-        base = base * np.where((s < 1)[..., None], 1.06, 0.84)
+    if name in PATTERNS:
+        base = PATTERNS[name](base)
     q = np.floor((base / 255.0) * 10 + BAYER_FULL[..., None] * 0.9) / 10 * 255
     return np.clip(q, 0, 255)
 
@@ -136,13 +196,13 @@ def panels():
     if not _PANEL:
         import render as RD
         for side, k in ((0, 0), (1, 1)):
-            _PANEL[side] = _panel_rgb(RD.COL[k], RD.DARK[k], side)
+            _PANEL[side] = _panel_rgb(RD.COL[k], RD.DARK[k], side, RD.NAMES[k])
     return _PANEL
 
 
 # ---------------------------------------------------------------- big balls
 _SPR = {}
-SPR_PATH = os.path.join(HERE, 'check', 'sprites_title.npz')
+SPR_PATH = os.path.join(EP, 'check', 'sprites_title.npz')
 
 
 def big_sprite(k):
@@ -400,7 +460,7 @@ def draw(img, t):
             if st is None:
                 continue
             k, a = st
-            col = GOLD if text == 'VS' else np.clip(RD.COL[0 if text == 'BAGPIPES' else 1] * 0.85 + 50, 0, 255)
+            col = GOLD if text == 'VS' else np.clip(RD.COL[0 if text == NAME_A else 1] * 0.85 + 50, 0, 255)
             wl = np.zeros_like(layer)
             wa = np.zeros_like(alpha)
             settled = abs(k - 1) < 0.06 and a >= 1.0 and off == 0.0
@@ -430,7 +490,7 @@ def draw(img, t):
             st = word_state(t, j)
             if st is None:
                 continue
-            col = GOLD if text == 'VS' else RD.COL[0 if text == 'BAGPIPES' else 1]
+            col = GOLD if text == 'VS' else RD.COL[0 if text == NAME_A else 1]
             w_px = len(text) * ADV * spec['scale']
             h_px = 7 * spec['scale']
             light(out, t, j, spec['cx'] + sx, spec['cy'] + sy, col)

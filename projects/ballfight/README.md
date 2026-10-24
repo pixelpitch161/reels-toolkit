@@ -36,6 +36,7 @@ python -m reelkit.video render.py audio.wav ballfight_tmp.mp4 && python mux.py  
 | `render.py` | Frame renderer (per-pixel canvas with the spot's shadows, rope give, neck, keys, shields, shockwaves, the slam lid, shatter + reassembly, crowd phones / flashbulbs, countdown, HUD, captions) |
 | `audio.py` | Drift phonk bed + every hit in the voices of the two instruments (leader fuller, loser thinner and dirtier) + abilities + K.O. tape-stop + victory solo + the build into frame 0 |
 | `mux.py` | Loop-clean encode (reuses `projects/maze_race/mux.py`: last-frame keyframe, mbtree off, whole AAC frames) |
+| `title.py` | **The VS title card** on bar 0 (series standard): diagonal panels in the fighters' colours + patterns (`PATTERNS`, by fighter), big balls, name A / VS / name B slamming in on beats 1-3, doors opening on beat 4 and shutting into the frame-0 slam at the end; the episode's `timeline` (TITLE, T_DOORS, T_CLOSE) and `render` (NAMES, COL, DARK, CFG) drive it. Built for #30 |
 
 ## Making the next episode (~30-40 min)
 
