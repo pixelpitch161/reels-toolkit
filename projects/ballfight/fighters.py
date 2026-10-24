@@ -34,6 +34,9 @@ A fighter is a glass ball with a low-poly Pixel Pitch instrument inside. Every f
                 'shockwave'  expanding ring: knocks back + damages what it passes, clears enemy projectiles
                 'shield'     blocks all damage for `dur` s (a blade hitting it bounces and reverses)
                 'haste'      weapon speed x `mult` for `dur` s (blade spin / volley rate / pulse rate)
+                'rewind'     undo the last `window` s of damage taken: HP back to its value then and the ball zips back
+                             along its own path in `zip_beats` beats (intangible meanwhile); waits until that would undo
+                             >= `min_undo` HP
               durations: `dur` in s, or `dur_beats` in beats at the episode's tempo
                 'arc'        a sweeping arc of `n` projectiles across the ring over `beats` beats
                 'wave'       a big slow shockwave across the whole ring (like 'shockwave', harder, clears everything)

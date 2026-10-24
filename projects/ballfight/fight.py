@@ -152,6 +152,8 @@ class Fight:
     def damage(self, att, vic, dmg, kind, x, y, sub=0):
         """apply a hit (unless shielded); returns True if it landed"""
         V = self.balls[vic]
+        if getattr(V, 'rw_left', 0.0) > 0:                   # rewinding (ability kind 'rewind'): intangible
+            return False
         if V.shield > 0:
             self.ev('block', vic, att, x, y, kind)
             return False
@@ -634,6 +636,66 @@ class Fight:
                     self.kill_keys(m, 'parry', k)
                     B.sat_cool[j] = w.get('parry_cool', w['cooldown'])
 
+    # ------------------------------------------------------------------ ability kind 'rewind' (#31 REWIND)
+    def _rewind_ab(self, B):
+        return next(a for a in B.cfg['abilities'].values() if a['kind'] == 'rewind')
+
+    def _rewind_then(self, B, ab):
+        """the ball's recorded state `window` s ago: (t, p, v, hp), or None if the record doesn't reach back that far"""
+        H = getattr(B, 'rw_hist', None)
+        if not H or H[0][0] > self.t - ab['window'] + 1e-6:
+            return None
+        for h in H:
+            if h[0] >= self.t - ab['window'] - 1e-9:
+                return h
+        return None
+
+    def rewind_ready(self, k, ab):
+        """a rewind fires only when it would undo at least `min_undo` HP (damage taken in the last `window` s)"""
+        B = self.balls[k]
+        then = self._rewind_then(B, ab)
+        return then is not None and then[3] - B.hp >= ab.get('min_undo', 0.0)
+
+    def start_rewind(self, k, ab):
+        """REWIND: undo the last `window` s of damage taken (HP back to its recorded value then, as a 'heal' event) and
+        zip back along the ball's own recorded path to where it was then, in `zip_beats` beats; intangible while it zips,
+        then it carries on with the velocity it had then. The opponent keeps what it gained (levels, weapon growth)"""
+        B = self.balls[k]
+        then = self._rewind_then(B, ab)
+        if then is None:
+            return
+        pts = [h[1] for h in B.rw_hist if h[0] >= then[0] - 1e-9]
+        B.rw_path = np.array(pts[::-1] + [then[1]])          # now -> then
+        B.rw_dur = ab['zip_beats'] * self.R.beat
+        B.rw_left = B.rw_dur
+        heal = max(0.0, min(self.R.HP, then[3]) - B.hp)
+        B.rw_hp = (B.hp, B.hp + heal)
+        B.rw_v = then[2].copy()
+        self.ev('heal', k, heal, then[0])
+
+    def rewind_step(self, dt, ks):
+        """keep each rewinder's record (one entry per substep, `window` s deep) and drive a rewind in progress"""
+        for k in ks:
+            B = self.balls[k]
+            if not hasattr(B, 'rw_hist'):
+                from collections import deque
+                B.rw_hist = deque(maxlen=int(round(self._rewind_ab(B)['window'] / self.R.DT)) + 3)
+            if getattr(B, 'rw_left', 0.0) > 0:
+                B.rw_left = max(0.0, B.rw_left - dt)
+                u = 1.0 - B.rw_left / B.rw_dur
+                f = u * (len(B.rw_path) - 1)
+                i0 = min(int(f), len(B.rw_path) - 1)
+                i1 = min(i0 + 1, len(B.rw_path) - 1)
+                B.p = B.rw_path[i0] + (B.rw_path[i1] - B.rw_path[i0]) * (f - i0)
+                B.hp = B.rw_hp[0] + (B.rw_hp[1] - B.rw_hp[0]) * u
+                if B.rw_left <= 0:
+                    B.v = B.rw_v / (np.linalg.norm(B.rw_v) + 1e-12) * self.R.V
+                    B.boost = 0.0
+                    B.rw_hist.clear()                             # the undone stretch can't be rewound into again
+                    self.ev('rewound', k, float(B.p[0]), float(B.p[1]))
+                continue
+            B.rw_hist.append((self.t, B.p.copy(), B.v.copy(), B.hp))
+
     # ------------------------------------------------------------------ abilities
     def ab_dur(self, ab):
         """an ability's duration in s: `dur` (s) or `dur_beats` (beats at this episode's tempo)"""
@@ -671,6 +733,8 @@ class Fight:
             tgt = np.clip(tgt, -A, A)
             self.slams.append(dict(owner=k, c=tgt, t0=self.t, t_slam=self.t + lead, radius=ab['radius'], dmg=ab['dmg'],
                                    knock=ab['knock'], done=False, name=ab['name']))
+        elif kind == 'rewind':
+            self.start_rewind(k, ab)
 
     def abilities_step(self, on_beat):
         for k, B in enumerate(self.balls):
@@ -689,6 +753,8 @@ class Fight:
                 continue
             for slot in ('unlock1', 'unlock2'):
                 r = B.ready.get(slot)
+                if r is not None and B.cfg['abilities'][slot]['kind'] == 'rewind' and not self.rewind_ready(k, B.cfg['abilities'][slot]):
+                    continue                                        # a rewind waits for damage worth undoing
                 if r is not None and self.t >= r - 1e-6:
                     self.trigger(k, slot)
                     B.ready[slot] = self.t + B.cfg['abilities'][slot]['every_bars'] * 4 * self.R.beat
@@ -759,6 +825,8 @@ class Fight:
     def move(self, dt):
         A, R = self.R.A, self.R.R
         for k, B in enumerate(self.balls):
+            if getattr(B, 'rw_left', 0.0) > 0:                  # rewinding: rewind_step drives it along its path
+                continue
             B.boost *= math.exp(-dt / self.R.KNOCK_T)
             s = self.R.V * (1 + B.boost)
             v = B.v / (np.linalg.norm(B.v) + 1e-12) * s
@@ -779,7 +847,7 @@ class Fight:
         P, Q = self.balls
         d = Q.p - P.p
         dist = float(np.hypot(*d))
-        if dist < 2 * R:
+        if dist < 2 * R and getattr(P, 'rw_left', 0.0) <= 0 and getattr(Q, 'rw_left', 0.0) <= 0:
             n = d / max(dist, 1e-9)
             over = 2 * R - dist
             P.p -= n * over / 2
@@ -803,6 +871,8 @@ class Fight:
             self.kill_keys(out, 'wall')
         if len(self.kp):
             for k, B in enumerate(self.balls):
+                if getattr(B, 'rw_left', 0.0) > 0:              # projectiles pass through a rewinding ball
+                    continue
                 enemy = self.kown != k
                 if not enemy.any():
                     continue
@@ -874,6 +944,7 @@ class Fight:
         next16 = k16_0
         pulse = [k for k, B in enumerate(self.balls) if B.w['kind'] == 'pulse']
         pullers = [k for k, B in enumerate(self.balls) if B.w.get('pull')]
+        rewinders = [k for k, B in enumerate(self.balls) if any(a['kind'] == 'rewind' for a in B.cfg['abilities'].values())]
         v16 = [k for k, B in enumerate(self.balls) if B.w['kind'] == 'volley' and B.w.get('on16')]   # volleys on the 16th
         # grid (option `on16`), so haste can fire an every-beat volley on the 8ths / 16ths
         dc = [k for k, B in enumerate(self.balls) if B.w['kind'] in ('dash', 'cone')]       # (#33)
@@ -930,6 +1001,8 @@ class Fight:
             for k in pullers:
                 self.pull_step(k, dt)
             self.move(dt)
+            if rewinders:
+                self.rewind_step(dt, rewinders)
             for k, B in enumerate(self.balls):
                 if B.w['kind'] == 'blade':
                     self.blade_step(k, dt)
@@ -967,6 +1040,9 @@ def lead_changes(events, hp0=100.0, hyst=5.0, t_from=4.0):
     hp = [hp0, hp0]
     lead, n, times = 0, 0, []
     for e in events:
+        if e[1] == 'heal':                      # ability kind 'rewind' gives back damage taken
+            hp[e[2]] += e[3]
+            continue
         if e[1] == 'hit':
             hp[e[3]] -= e[4]
             d = hp[0] - hp[1]
