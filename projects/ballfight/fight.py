@@ -82,6 +82,7 @@ class Ball:
         self.blade_len = self.w.get('base', 0.0)     # blade length, or a pulse's reach beyond the ball's surface
         self.frets = self.w.get('frets0', 0)
         self.cool = 0.0
+        self.pull = self.w.get('pull', 0.0)             # gravity toward this ball (weapon option `pull`), grows per landed pulse
         # volley
         self.n_vol = float(self.w.get('n0', 0))   # a float: `grow` may add a fraction of a key per landed volley
         self.haste_mult = 1.0
@@ -444,6 +445,8 @@ class Fight:
                 if landed and W.get('grow'):
                     Bw = self.balls[W['owner']]
                     Bw.blade_len = min(Bw.w['max_reach'], Bw.blade_len + Bw.w['grow'])
+                    if Bw.w.get('pull_grow'):
+                        Bw.pull = min(Bw.w['pull_max'], Bw.pull + Bw.w['pull_grow'])
             if len(self.kp) and W.get('clears', True):
                 kr = np.hypot(*(self.kp - W['c'][None]).T)
                 m = (self.kown == o) & (kr > r0 - 0.15) & (kr <= W['r'] + 0.05)
@@ -473,6 +476,18 @@ class Fight:
                 self.spawn_key(Ar['owner'], pos, a, Ar['speed'], Ar['dmg'], Ar['vol'], j)
                 Ar['emitted'] += 1
         self.arcs = [Ar for Ar in self.arcs if Ar['emitted'] < Ar['n']]
+
+    def pull_step(self, k, dt):
+        """gravity (weapon option `pull`): the opponent's heading bends toward ball k with a constant pull (units/s^2);
+        its speed is kept (constant-speed rule), so the pull only steers"""
+        B, O = self.balls[k], self.balls[1 - k]
+        d = B.p - O.p
+        dist = float(np.hypot(*d))
+        if dist < 1e-6 or B.pull <= 0:
+            return
+        sp = float(np.linalg.norm(O.v))
+        v = O.v + d / dist * B.pull * dt
+        O.v = v / (np.linalg.norm(v) + 1e-12) * sp
 
     # ------------------------------------------------------------------ motion
     def move(self, dt):
@@ -590,6 +605,7 @@ class Fight:
         k16_0 = int(math.ceil(R.t_fight / s16 - 1e-6))       # first 16th of the fight (pulse weapons)
         next16 = k16_0
         pulse = [k for k, B in enumerate(self.balls) if B.w['kind'] == 'pulse']
+        pullers = [k for k, B in enumerate(self.balls) if B.w.get('pull')]
         self.t = R.t_fight
         f0 = int(round(R.t_fight * R.FPS))
         step = 0
@@ -622,6 +638,8 @@ class Fight:
             for k, B in enumerate(self.balls):
                 B.shield = max(0.0, B.shield - dt)
                 B.haste = max(0.0, B.haste - dt)
+            for k in pullers:
+                self.pull_step(k, dt)
             self.move(dt)
             for k, B in enumerate(self.balls):
                 if B.w['kind'] == 'blade':
