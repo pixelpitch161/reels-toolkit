@@ -149,4 +149,30 @@ FIGHTERS = {
             unlock2=dict(name='TRILL', kind='arc', n=12, sweep=120.0, beats=1, speed=7.0, dmg=0.5, every_bars=4),
             low=dict(name='PICCOLO', kind='wave', speed=6.0, radius=9.0, dmg=8.0, knock=1.5)),
         pp='FLUTE', register=(72, 93), idiom='flutter'),
+
+    # ---- #34 BALLFIGHT #8: the brass section's pecking order (tuned once with ballfight_trombone_vs_horn/tune.py, frozen)
+    'TROMBONE': dict(
+        color=(120, 240, 184), dark=(44, 150, 104), corner='red',     # mint (series colour table, IDEAS)
+        view=(205, 18, 30),
+        weapon=dict(kind='blade', mode='thrust', style='slide',  # the slide shoots out at the enemy on the beat, pulls back
+                    every=1, rest=0.30, base=0.95, grow=0.08, max_len=2.5, frets0=1,
+                    t_out=0.08, t_hold=0.06, t_back=0.18, aim_rate=7.0, dmg=3.5, knock=0.9, parry=True),
+        abilities=dict(
+            unlock1=dict(name='SAD TROMBONE', kind='shockwave', speed=6.0, radius=3.4, dmg=3.0, knock=1.0,
+                         slow=dict(mult=0.6, dur=1.0), every_bars=4),
+            unlock2=dict(name='POWER SLIDE', kind='haste', mult=2.0, dur_beats=8, every_bars=6),
+            low=dict(name='PEDAL TONE', kind='slam', tele=2, radius=1.35, dmg=24.0, knock=1.6)),
+        pp='TROMBONE', register=(40, 65), idiom='slide'),
+    'HORN': dict(
+        color=(200, 112, 64), dark=(120, 58, 30), corner='blue',     # copper (series colour table, IDEAS)
+        view=(0, 22, 0),
+        weapon=dict(kind='volley', style='arrow',          # hunting-call arrows curving in on the enemy (#29's `curve`)
+                    n0=1, grow=0.5, n_max=6, every=2, speed=3.0, dmg=1.4, spread=16.0, max_fan=80.0,
+                    curve=52.0, curve_grow=4.3, curve_max=137.0, life=4.0),
+        abilities=dict(
+            unlock1=dict(name='STOPPED HORN', kind='shield', dur_beats=6, every_bars=6),
+            unlock2=dict(name='HORN RIP', kind='arc', n=7, sweep=120.0, beats=1, speed=3.6, dmg=1.6, curve=True,
+                         every_bars=4),
+            low=dict(name='TALLY-HO', kind='wave', speed=4.5, radius=9.0, dmg=20.0, knock=1.5)),
+        pp='HORN', register=(53, 77), idiom='horn_call'),
 }
