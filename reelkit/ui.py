@@ -439,3 +439,79 @@ def race_lanes(img, lanes, x0=None, x1=None, y1=None, lane_h=11, alpha=1.0, ink=
     if under is not None:
         img[:] = (under * (1 - alpha) + img * alpha).astype(np.uint8)
     return out
+
+
+# ------------------------------------------------------------------ roster grid ("Who will win?" elimination formats)
+def roster_layout(names, x0, x1, cols=4, scale=1, chip=11, gap=2):
+    """column x positions for roster_grid: each column is as wide as its longest name (+ the chip slot), and the
+    spare width is spread between columns. Returns [(chip_x, name_x)] per column."""
+    rows = [names[i:i + cols] for i in range(0, len(names), cols)]
+    widths = []
+    for c in range(cols):
+        col = [r[c] for r in rows if c < len(r)]
+        widths.append(chip + gap + max(len(n) for n in col) * ADV * scale - scale)
+    spare = (x1 - x0) - sum(widths)
+    if spare < 0:
+        raise ValueError('roster names do not fit: shorten them or drop to fewer columns')
+    sp = spare / max(1, cols - 1)
+    out, x = [], float(x0)
+    for w in widths:
+        out.append((int(round(x)), int(round(x)) + chip + gap))
+        x += w + sp
+    return out
+
+
+def roster_grid(img, names, colors, place=None, x0=None, x1=None, y0=None, cols=4, flash=None, winner=None,
+                alpha=1.0, ink=INK, chip=11, row_h=10):
+    """Scoreboard for elimination formats: every entrant's name in a cols-wide grid (row-major, e.g. 4 x 4 for 16).
+    Survivors: a small chip in their colour + the name lit. Knocked out (place[i] = finishing place): the name dims
+    and is struck through, and the chip slot shows the place ("16", "15" ...). winner (index): gold chip "1", gold
+    name and a gold frame. flash[i] in 0..1 brightens a cell for a moment (just knocked out, crowned).
+    Defaults sit at the bottom of the safe box; every name and number goes through label() so
+    `python -m reelkit.safezone` checks it. Fade with alpha, don't slide. Returns the panel's top y."""
+    n = len(names)
+    x0 = SAFE[0] + 4 if x0 is None else x0
+    x1 = SAFE[2] - 4 if x1 is None else x1
+    nrows = (n + cols - 1) // cols
+    h = nrows * row_h - (row_h - 7)
+    y0 = (SAFE[3] - 4 - h - 3) if y0 is None else y0
+    place = [None] * n if place is None else list(place)
+    flash = [0.0] * n if flash is None else list(flash)
+    under = img.copy() if alpha < 0.999 else None
+    lay = roster_layout(names, x0, x1, cols, 1, chip)
+    bx0, by0, bx1, by1 = x0 - 4, y0 - 4, x1 + 4, y0 + h + 4
+    reg = img[by0:by1, bx0:bx1].astype(np.float32)
+    img[by0:by1, bx0:bx1] = (reg * 0.42 + np.array(ink, float) * 0.3).astype(np.uint8)
+    edge = np.array([62, 74, 112], float)
+    img[by0, bx0:bx1] = (img[by0, bx0:bx1] * 0.4 + edge * 0.6).astype(np.uint8)
+    img[by1 - 1, bx0:bx1] = (img[by1 - 1, bx0:bx1] * 0.6 + edge * 0.4).astype(np.uint8)
+    _note(bx0, by0, bx1, by1, 'panel', 'roster')
+    gold = np.array(AMBER, float)
+    for i, nm in enumerate(names):
+        r, c = divmod(i, cols)
+        cx, nx = lay[c]
+        y = y0 + r * row_h
+        f = float(np.clip(flash[i], 0, 1))
+        col = np.array(colors[i], float)
+        if winner == i:
+            w = len(nm) * ADV - 1
+            img[y - 2, cx - 2:nx + w + 2] = gold.astype(np.uint8)
+            img[y + 8, cx - 2:nx + w + 2] = gold.astype(np.uint8)
+            img[y - 2:y + 9, cx - 2] = gold.astype(np.uint8)
+            img[y - 2:y + 9, nx + w + 1] = gold.astype(np.uint8)
+            label(img, '1', cx + 3, y, tuple(int(v) for v in gold), 1)
+            label(img, nm, nx, y, tuple(int(v) for v in np.clip(gold * (1 - f) + 255 * f, 0, 255)), 1)
+        elif place[i] is None:
+            img[y:y + 7, cx + 2:cx + 9] = np.array(ink, np.uint8)
+            img[y + 1:y + 6, cx + 3:cx + 8] = np.clip(col, 0, 255).astype(np.uint8)
+            img[y + 1, cx + 3:cx + 8] = np.clip(col * 0.6 + 100, 0, 255).astype(np.uint8)
+            label(img, nm, nx, y, tuple(int(v) for v in np.clip(np.array(CREAM) * (1 - f) + 255 * f, 0, 255)), 1)
+        else:
+            dimc = np.clip(col * 0.25 + 70 + f * 150, 0, 255)
+            s = str(place[i])
+            label(img, s, cx + (chip - (len(s) * ADV - 1)) // 2, y, (150, 146, 160) if f < 0.5 else (255, 240, 220), 1)
+            w = label(img, nm, nx, y, tuple(int(v) for v in dimc), 1)
+            img[y + 3, nx - 1:nx + w + 1] = np.clip(dimc * 0.9, 0, 255).astype(np.uint8)
+    if under is not None:
+        img[:] = (under * (1 - alpha) + img * alpha).astype(np.uint8)
+    return by0
