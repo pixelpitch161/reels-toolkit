@@ -107,6 +107,7 @@ class Ball:
         self.dash_t = 0.0
         self.dash_hit = True
         self.dash_main = True
+        self.rake_dir = -1.0          # (#33 v2) rake strokes alternate down (+1) / up (-1); the first one is a down
         # opt-in (#34): thrust (blade mode), curve growth (volley option), slow (shockwave option)
         self.ext = self.w.get('rest', 0.0)            # thrust: the lance's current length beyond the surface
         self.thr = None                               # thrust: time the current thrust started (None = idle)
@@ -161,6 +162,9 @@ class Fight:
         self.strings = []                 # 'trap' hazards: tripwire strings across the ring (dicts, see lay_string)
         self.next_hz = 0                  # hazard id (lines + strings), for events and the renderer
         self.cones = []                   # (#33) dict(owner, c, aim, half, r, rmax, speed, dmg, knock, hit, grow)
+        self.surfs, self.rakes = [], []   # (#33 v2) SURF'S UP waves, SIX-STRING RAKE strokes
+        self.whips, self.sweeps, self.spouts = [], [], []    # (#33 v2) ability kinds 'whip', 'sweep', 'spout'
+        self.x33_log = []                 # (#33 v2) waterspout path (t, owner, x, z) for the renderer
         self.sucks = []                   # #30 bellows suction rings (collapsing): dict(owner, c, r, rmax, speed, dmg, knock)
         self.events = []
         self.t = 0.0
@@ -323,6 +327,200 @@ class Fight:
                     Bc = self.balls[C['owner']]
                     Bc.blade_len = min(Bc.w['max_len'], Bc.blade_len + Bc.w['grow'])
         self.cones = [C for C in self.cones if C['r'] < C['rmax'] - 1e-9]
+
+    # ---- #33 v2 (BALLFIGHT v2 redesign): weapon kinds 'surf' (SURF'S UP) and 'rake' (SIX-STRING RAKE), ability kinds
+    # 'whip' (FINGERPICK), 'sweep' (BIG STRUM), 'spout' (UKE-NADO). Weapons fire on the dash / cone 16th counter;
+    # `blade_len` = the wave height / the rake length (recorded as 'BL'). The renderer rebuilds waves, strokes, whips and
+    # the sweep from their events (closed-form motion); the waterspout's path is logged (out['X33_SPOUT']).
+    @staticmethod
+    def surf_dist(tau, V, power, kt):
+        """how far a surf wave's front has travelled tau s after the strum (the ride's speed burst decays like a knock)"""
+        return V * (tau + power * kt * (1.0 - math.exp(-tau / kt)))
+
+    def fire_surf(self, k, main):
+        """SURF'S UP: the strum raises a wave the ball rides at the opponent: a speed burst (power grows with the wave
+        height) and a wave front `hw` wide that crashes into the enemy once, pushing it along the wave into the ropes"""
+        B, O = self.balls[k], self.balls[1 - k]
+        w = B.w
+        h = B.blade_len
+        power = (w['p0'] + w['p_h'] * h) * (1.0 if main else w.get('sub_power', 1.0))
+        d = O.p - B.p
+        dist = float(np.hypot(*d))
+        lead = 0.5 * dist / (self.R.V * (1 + power))
+        dd = O.p + O.v * lead - B.p
+        ang = math.atan2(dd[1], dd[0])
+        u = np.array([math.cos(ang), math.sin(ang)])
+        B.boost = max(B.boost, power)
+        B.v = u * self.R.V * (1 + B.boost)
+        hw = w['w0'] + w['w_h'] * h
+        o = B.p + u * self.R.R * 0.3
+        self.surfs.append(dict(owner=k, o=o, u=u, n=np.array([-u[1], u[0]]), t0=self.t, power=power, hw=hw,
+                               life=w['life'], dmg=w['dmg'] * (1.0 if main else w.get('sub_dmg', 0.5)),
+                               knock=w['knock'] * (0.8 + 0.5 * h), hit=False, grow=bool(main)))
+        self.ev('surf', k, int(main), float(h), float(o[0]), float(o[1]), float(ang), float(power), float(hw))
+
+    def fire_rake(self, k, main):
+        """SIX-STRING RAKE: six parallel string lines (pointing at the opponent, `blade_len` long) sweep sideways across
+        the ring in front of the ball in `stroke` s, alternating down / up strokes; one hit per stroke, which flicks the
+        enemy along the stroke"""
+        B, O = self.balls[k], self.balls[1 - k]
+        w = B.w
+        d = O.p - B.p
+        aim = math.atan2(d[1], d[0])
+        B.rake_dir = -B.rake_dir
+        S = w['sweep']
+        self.rakes.append(dict(owner=k, c=B.p.copy(), aim=aim, u=np.array([math.cos(aim), math.sin(aim)]),
+                               n=np.array([-math.sin(aim), math.cos(aim)]), dir=B.rake_dir, L=B.blade_len, S=S,
+                               hb=2.5 * w['gap'], t0=self.t, dur=w['stroke'],
+                               dmg=w['dmg'] * (1.0 if main else w.get('sub_dmg', 0.5)),
+                               knock=w['knock'] * (1.0 if main else 0.6), hit=False, grow=bool(main), s_prev=-B.rake_dir * S))
+        self.ev('rake', k, int(main), float(B.blade_len), float(B.p[0]), float(B.p[1]), float(aim), float(B.rake_dir),
+                float(S), float(w['stroke']))
+
+    @staticmethod
+    def rake_lateral(tau, dur, S, direction):
+        x = min(1.0, max(0.0, tau / dur))
+        return -direction * S + 2 * direction * S * x * x * (3 - 2 * x)
+
+    @staticmethod
+    def sweep_front(tau, dur, reach, R):
+        x = min(1.0, max(0.0, tau / dur))
+        return R + reach * x ** 1.5
+
+    def ab_x33(self, k, ab, kind):
+        B, O = self.balls[k], self.balls[1 - k]
+        d = O.p - B.p
+        aim = math.atan2(d[1], d[0])
+        if kind == 'whip':                     # FINGERPICK: single strings flick out like whips, one per note
+            self.whips.append(dict(owner=k, t0=self.t, n=ab['n'], span=ab['beats'] * self.R.beat, emitted=0,
+                                   len=ab['len'], dmg=ab['dmg'], knock=ab['knock'], t_ext=ab.get('t_ext', 0.07), live=[]))
+        elif kind == 'sweep':                  # BIG STRUM: all six strings sweep the whole ring
+            u = np.array([math.cos(aim), math.sin(aim)])
+            self.sweeps.append(dict(owner=k, c=B.p.copy(), u=u, t0=self.t, dur=ab['beats'] * self.R.beat,
+                                    reach=ab['reach'], dmg=ab['dmg'], knock=ab['knock'], hit=False))
+            self.ev('sweep', k, float(B.p[0]), float(B.p[1]), float(aim), float(ab['reach']), float(ab['beats'] * self.R.beat))
+        elif kind == 'spout':                  # UKE-NADO: a waterspout that sweeps the ring after the enemy
+            p = B.p + np.array([math.cos(aim), math.sin(aim)]) * self.R.R * 1.2
+            self.spouts.append(dict(owner=k, p=p, ang=aim, t0=self.t, life=ab['life'], speed=ab['speed'], turn=ab['turn'],
+                                    radius=ab['radius'], tick=ab['tick'], dmg=ab['dmg'], max_ticks=ab['max_ticks'],
+                                    knock=ab['knock'], ticks=0, last=-9.0, n=0))
+            self.ev('spout', k, float(p[0]), float(p[1]), float(aim))
+
+    def surf_rake_step(self, dt):
+        R, V = self.R.R, self.R.V
+        A = self.R.A
+        for Sf in self.surfs:
+            tau = self.t - Sf['t0']
+            c = Sf['o'] + Sf['u'] * self.surf_dist(tau, V, Sf['power'], self.R.KNOCK_T)
+            if abs(c[0]) >= A - 0.05 or abs(c[1]) >= A - 0.05 or tau >= Sf['life']:
+                Sf['done'] = True
+                self.ev('surf_end', Sf['owner'], float(c[0]), float(c[1]), int(tau < Sf['life']))
+                continue
+            if Sf['hit']:
+                continue
+            o = 1 - Sf['owner']
+            O = self.balls[o]
+            rel = O.p - c
+            a, b = float(rel @ Sf['u']), float(rel @ Sf['n'])
+            if -R * 0.3 <= a <= R and abs(b) <= Sf['hw'] + R * 0.6:
+                Sf['hit'] = True
+                hx, hy = (O.p - Sf['u'] * R).tolist()
+                landed = self.damage(Sf['owner'], o, Sf['dmg'], 'surf', hx, hy, int(Sf['grow']))
+                self.knock(o, Sf['u'], Sf['knock'])
+                if landed and Sf['grow']:
+                    Bw = self.balls[Sf['owner']]
+                    Bw.blade_len = min(Bw.w['max_h'], Bw.blade_len + Bw.w['grow'])
+        self.surfs = [Sf for Sf in self.surfs if not Sf.get('done')]
+        for Rk in self.rakes:
+            tau = self.t - Rk['t0']
+            s_now = self.rake_lateral(tau, Rk['dur'], Rk['S'], Rk['dir'])
+            s_prev, Rk['s_prev'] = Rk['s_prev'], s_now
+            if Rk['hit']:
+                continue
+            o = 1 - Rk['owner']
+            O = self.balls[o]
+            rel = O.p - Rk['c']
+            a, b = float(rel @ Rk['u']), float(rel @ Rk['n'])
+            lo, hi = min(s_prev, s_now) - Rk['hb'], max(s_prev, s_now) + Rk['hb']
+            if R * 0.3 <= a <= R + Rk['L'] + R * 0.5 and hi >= b - R and lo <= b + R:
+                Rk['hit'] = True
+                hx, hy = (Rk['c'] + Rk['u'] * a + Rk['n'] * s_now).tolist()
+                landed = self.damage(Rk['owner'], o, Rk['dmg'], 'rake', hx, hy, int(Rk['dir'] > 0))
+                self.knock(o, Rk['n'] * Rk['dir'] + 0.25 * Rk['u'], Rk['knock'])
+                if landed and Rk['grow']:
+                    Bw = self.balls[Rk['owner']]
+                    Bw.blade_len = min(Bw.w['max_len'], Bw.blade_len + Bw.w['grow'])
+        self.rakes = [Rk for Rk in self.rakes if self.t - Rk['t0'] < Rk['dur'] + 1e-9]
+        for Wp in self.whips:
+            B = self.balls[Wp['owner']]
+            O = self.balls[1 - Wp['owner']]
+            while Wp['emitted'] < Wp['n']:
+                j = Wp['emitted']
+                te = Wp['t0'] + Wp['span'] * j / max(1, Wp['n'] - 1)
+                if self.t + 1e-9 < te:
+                    break
+                d = O.p - B.p
+                ang = math.atan2(d[1], d[0])
+                Wp['live'].append(dict(j=j, t0=self.t, ang=ang, hit=False))
+                self.ev('whip', Wp['owner'], j, float(ang), float(Wp['len']))
+                Wp['emitted'] += 1
+            for lw in Wp['live']:
+                tau = self.t - lw['t0']
+                if lw['hit'] or tau > Wp['t_ext']:
+                    continue
+                u = np.array([math.cos(lw['ang']), math.sin(lw['ang'])])
+                p0 = B.p + u * R
+                L = Wp['len'] * min(1.0, tau / Wp['t_ext'])
+                rel = O.p - p0
+                a = float(np.clip(rel @ u, 0.0, L))
+                if float(np.hypot(*(rel - u * a))) < R + 0.05:
+                    lw['hit'] = True
+                    hx, hy = (p0 + u * a).tolist()
+                    self.damage(Wp['owner'], 1 - Wp['owner'], Wp['dmg'], 'whip', hx, hy, lw['j'])
+                    self.knock(1 - Wp['owner'], u, Wp['knock'])
+            Wp['live'] = [lw for lw in Wp['live'] if self.t - lw['t0'] < 2 * Wp['t_ext']]
+        self.whips = [Wp for Wp in self.whips if Wp['emitted'] < Wp['n'] or Wp['live']]
+        for Sw in self.sweeps:
+            tau = self.t - Sw['t0']
+            if not Sw['hit']:
+                o = 1 - Sw['owner']
+                O = self.balls[o]
+                a = float((O.p - Sw['c']) @ Sw['u']) - self.sweep_front(tau, Sw['dur'], Sw['reach'], R)
+                if -R * 1.2 <= a <= R:
+                    Sw['hit'] = True
+                    hx, hy = (O.p - Sw['u'] * R).tolist()
+                    self.damage(Sw['owner'], o, Sw['dmg'], 'sweep', hx, hy)
+                    self.knock(o, Sw['u'], Sw['knock'])
+        self.sweeps = [Sw for Sw in self.sweeps if self.t - Sw['t0'] < Sw['dur'] + 1e-9]
+        for Sp in self.spouts:
+            O = self.balls[1 - Sp['owner']]
+            d = O.p - Sp['p']
+            want = math.atan2(d[1], d[0])
+            Sp['ang'] += float(np.clip(_wrap(want - Sp['ang']), -Sp['turn'] * dt, Sp['turn'] * dt))
+            Sp['p'] = Sp['p'] + Sp['speed'] * dt * np.array([math.cos(Sp['ang']), math.sin(Sp['ang'])])
+            lim = A - Sp['radius']
+            for ax in (0, 1):
+                if abs(Sp['p'][ax]) > lim:
+                    Sp['p'][ax] = math.copysign(lim, Sp['p'][ax]) * 2 - Sp['p'][ax]
+                    v = np.array([math.cos(Sp['ang']), math.sin(Sp['ang'])])
+                    v[ax] = -v[ax]
+                    Sp['ang'] = math.atan2(v[1], v[0])
+            Sp['n'] += 1
+            if Sp['n'] % 4 == 0:
+                self.x33_log.append((round(self.t, 5), Sp['owner'], float(Sp['p'][0]), float(Sp['p'][1])))
+            dist = float(np.hypot(*d))
+            if dist < Sp['radius'] + R and self.t - Sp['last'] >= Sp['tick'] - 1e-9 and Sp['ticks'] < Sp['max_ticks']:
+                Sp['last'] = self.t
+                Sp['ticks'] += 1
+                rel = d / max(dist, 1e-9)
+                tang = np.array([-rel[1], rel[0]])
+                hx, hy = (O.p - rel * R).tolist()
+                self.damage(Sp['owner'], 1 - Sp['owner'], Sp['dmg'], 'spout', hx, hy, Sp['ticks'])
+                self.knock(1 - Sp['owner'], tang * 0.9 + rel * 0.4, Sp['knock'])
+            if self.t - Sp['t0'] >= Sp['life'] or Sp['ticks'] >= Sp['max_ticks']:
+                Sp['done'] = True
+                self.ev('spout_end', Sp['owner'], float(Sp['p'][0]), float(Sp['p'][1]))
+        self.spouts = [Sp for Sp in self.spouts if not Sp.get('done')]
 
     def start_thrust(self, k):
         """thrust (#34): lock the lance on where the enemy is now and shoot it out (haste speeds the whole thrust up)"""
@@ -1107,6 +1305,8 @@ class Fight:
             self.start_rewind(k, ab)
         elif kind == 'beam':                                    # #29 v3 (HIGH C): a charged giant blast
             self.ab_beam_charge(k, ab)
+        elif kind in ('whip', 'sweep', 'spout'):                # #33 v2: FINGERPICK / BIG STRUM / UKE-NADO
+            self.ab_x33(k, ab, kind)
 
     def ab_beam_charge(self, k, ab):
         """ability kind 'beam' (#29 v3): charge for `charge_beats` with the aim locked on the enemy's spot predicted
@@ -1374,7 +1574,7 @@ class Fight:
         rewinders = [k for k, B in enumerate(self.balls) if any(a['kind'] == 'rewind' for a in B.cfg['abilities'].values())]
         v16 = [k for k, B in enumerate(self.balls) if B.w['kind'] == 'volley' and B.w.get('on16')]   # volleys on the 16th
         # grid (option `on16`), so haste can fire an every-beat volley on the 8ths / 16ths
-        dc = [k for k, B in enumerate(self.balls) if B.w['kind'] in ('dash', 'cone')]       # (#33)
+        dc = [k for k, B in enumerate(self.balls) if B.w['kind'] in ('dash', 'cone', 'surf', 'rake')]   # (#33, v2)
         dc_k0 = int(math.ceil(R.t_fight / s16 - 1e-6))
         dc_next = dc_k0
         grid16 = [k for k, B in enumerate(self.balls) if B.w['kind'] in ('aura', 'bellows')]     # #30 (opt-in)
@@ -1436,7 +1636,7 @@ class Fight:
                     dc_main = int(round(4 * B.w['every']))
                     dc_every = max(1, int(round(dc_main / self.ab_mult(k))))
                     if dc_k % dc_every == 0:
-                        (self.fire_dash if B.w['kind'] == 'dash' else self.fire_cone)(k, dc_k % dc_main == 0)
+                        getattr(self, 'fire_' + B.w['kind'])(k, dc_k % dc_main == 0)
             if grid16 and self.t + 1e-9 >= n16b * s16:            # #30: aura / bellows on their own 16th counter
                 k16b = n16b - k16_0
                 n16b += 1
@@ -1476,6 +1676,8 @@ class Fight:
             self.effects_step(dt)
             if dc:
                 self.dash_cone_step(dt)                          # (#33)
+            if dc or self.whips or self.sweeps or self.spouts:
+                self.surf_rake_step(dt)                          # (#33 v2)
             if self.sucks:                                          # #30 bellows suction
                 self.suction_step(dt)
             self.abilities_step(on_beat)
@@ -1495,6 +1697,8 @@ class Fight:
                    names=[B.name for B in self.balls], corner=[c.tolist() for c in self.corner])
         if rec is not None:
             out.update(rec)
+        if self.x33_log:
+            out['X33_SPOUT'] = self.x33_log                      # (#33 v2) the waterspout's path
         return out
 
 
