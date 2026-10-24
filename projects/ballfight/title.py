@@ -188,8 +188,26 @@ def _horn_coils(base):                                               # HORN: tub
     return base * np.where((q < 0.22)[..., None], 1.14, np.where((q > 0.88)[..., None], 0.86, 1.0))
 
 
+def _surf(base):                                                     # UKULELE (#33): rolling wave crests, foam lines
+    y = YY + 14.0 * np.sin(XX / 30.0) + 6.0 * np.sin(XX / 11.0 + YY / 40.0)
+    s = (y / 24.0) % 1.0
+    crest = s < 0.12
+    trough = (s > 0.55) & (s < 0.75)
+    base = np.where(trough[..., None], base * 0.88, base)
+    return np.where(crest[..., None], base * 0.72 + np.array([250, 246, 252]) * 0.28, base)
+
+
+def _woodgrain(base):                                                # ACOUSTIC (#33): spruce grain + six steel strings
+    g = np.sin((XX * 0.30 + YY * 0.95) / 5.5 + 2.2 * np.sin(XX / 37.0 + YY / 90.0))
+    base = base * (0.94 + 0.08 * (g > 0.55)[..., None] - 0.05 * (g < -0.7)[..., None])
+    for j in range(6):                                               # strings parallel to the divider
+        line = np.abs(SIDE + 70.0 + 11.0 * j) < 0.9
+        base = np.where(line[..., None], base * 0.6 + np.array([236, 226, 206]) * 0.4, base)
+    return base
+
+
 PATTERNS = {'BAGPIPES': _tartan, 'ACCORDION': _pleats, 'ORGAN': _organ_pipes, 'HARP': _harp_strings,
-            'TROMBONE': _slide_tubes, 'HORN': _horn_coils}
+            'TROMBONE': _slide_tubes, 'HORN': _horn_coils, 'UKULELE': _surf, 'ACOUSTIC': _woodgrain}
 
 
 def _panel_rgb(colour, dark, side, name=None):
