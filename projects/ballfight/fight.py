@@ -24,6 +24,9 @@ volley, `curve_grow` / `curve_max` (deg/s: the turn rate grows per landed volley
 enemy it hits moves at `mult` x speed for `dur` s).
 #29 v3 (opt-in): weapon kinds `combo` (three piston punches) and `flail` (strap flail that wraps the enemy), and an
 ability kind `beam` (a charged giant blast through the beam machinery, e.g. HIGH C).
+#30 v2 (opt-in): weapon kinds `inflate` (the ball swells: per-ball radius / mass / speed, then a zig-zag balloon flight;
+contact damage) and `bite` (jaws open on the grid and snap a 16th-grid later), and an ability kind `clamp` (a ring-wide
+bite after a telegraph).
 The run records every frame (30 fps) for the renderer and every event (hits, blocks, parries, ropes, volleys,
 abilities, level-ups, the K.O.) for the soundtrack and the captions. Seeded: same seed, same fight."""
 import math
@@ -166,6 +169,7 @@ class Fight:
         self.whips, self.sweeps, self.spouts = [], [], []    # (#33 v2) ability kinds 'whip', 'sweep', 'spout'
         self.x33_log = []                 # (#33 v2) waterspout path (t, owner, x, z) for the renderer
         self.sucks = []                   # #30 bellows suction rings (collapsing): dict(owner, c, r, rmax, speed, dmg, knock)
+        self.clamps = []                  # #30 v2 ability kind 'clamp' (FULL BELLOWS): dict(owner, t0, t_snap, axis, ...)
         self.events = []
         self.t = 0.0
         self.winner = None
@@ -1494,6 +1498,29 @@ class Fight:
                 B.blade_len = min(w['max_reach'], B.blade_len + w['grow'])
         self.ev('snap', k, int(inside), int(landed), Bt['aim'], Bt['reach'])
 
+    # ------------------------------------------------------------------ #30 v2: ability kind 'clamp' (FULL BELLOWS)
+    def clamp_start(self, k, ab):
+        """the bellows stretch across the whole ring (the halves fly to the ropes on either side of the accordion, along
+        the line to the enemy) for `tele` beats, then clamp: a ring-wide bite that lands unless the enemy is shielded"""
+        B, O = self.balls[k], self.balls[1 - k]
+        d = O.p - B.p
+        axis = math.atan2(d[1], d[0])
+        t_snap = self.t + ab['tele'] * self.R.beat
+        self.clamps.append(dict(owner=k, t0=self.t, t_snap=t_snap, axis=axis, dmg=ab['dmg'], knock=ab['knock'], done=False))
+        self.ev('clamp', k, axis, t_snap - self.t, float(B.p[0]), float(B.p[1]))
+
+    def clamps_step(self):
+        for C in self.clamps:
+            if C['done'] or self.t + 1e-9 < C['t_snap']:
+                continue
+            C['done'] = True
+            k = C['owner']
+            B, O = self.balls[k], self.balls[1 - k]
+            landed = self.damage(k, 1 - k, C['dmg'], 'clamp', float(O.p[0]), float(O.p[1]))
+            self.knock(1 - k, B.p - O.p, C['knock'])            # crushed and dragged toward the accordion
+            self.ev('clamp_snap', k, int(landed), float(O.p[0]), float(O.p[1]))
+        self.clamps = [C for C in self.clamps if not C['done']]
+
     def _rewind_ab(self, B):
         return next(a for a in B.cfg['abilities'].values() if a['kind'] == 'rewind')
 
@@ -1810,6 +1837,8 @@ class Fight:
             self.ab_x33(k, ab, kind)
         elif kind == 'charge':                                  # #34 v2 (TALLY-HO): the pack charges as one front
             self.start_charge(k, ab)
+        elif kind == 'clamp':                                   # #30 v2 (FULL BELLOWS): a ring-wide bite
+            self.clamp_start(k, ab)
 
     def ab_beam_charge(self, k, ab):
         """ability kind 'beam' (#29 v3): charge for `charge_beats` with the aim locked on the enemy's spot predicted
@@ -2228,6 +2257,8 @@ class Fight:
                 self.surf_rake_step(dt)                          # (#33 v2)
             if self.sucks:                                          # #30 bellows suction
                 self.suction_step(dt)
+            if self.clamps:                                         # #30 v2 FULL BELLOWS
+                self.clamps_step()
             self.abilities_step(on_beat)
             step += 1
             dead = [k for k, B in enumerate(self.balls) if B.hp <= 0]
