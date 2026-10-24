@@ -37,6 +37,7 @@ a draft, when it gets feedback, and when it delivers.
 | 25 | Battle of the Bands: Genre Wars | review | session_01CRdGiC (2026-10-23) | v1 delivered with caption + tags (early sheet sent first). New folder projects/botb_genre_wars/ importing #20's battle.py unchanged (ORCHESTRA=SAND, ROCK=BALL, EDM=RIPPLE, JAZZ=VINE). Honest seed 189 (61 s search, 5 fits in 192 runs): EDM leads, JAZZ takes over 18.6, bell 20.33 (bar 10), ROCK takes over 21.1, EDM retakes 28.6; ORCHESTRA out 33.7, ROCK 43.3, JAZZ 52.85; EDM (3rd at the bell) wins and solos; wall cracks to empty on 61.0 = frame 0. One original song (Am-F-Dm-E, 118.03 BPM, 8-bar melody) in four arrangements; bass/harmony follow share gently, drums and melody steeply, so the song morphs to the leader; stinger in the new leader's style + stage mood (pyro / lasers / blue haze + spot cones / gold motes) on every lead change. Series title as an impact caption at 2.65 s (in the scoreboard panel it clipped the wall). Checks: safe zone OK (0.25 s steps); wall + props CoC 0 on all 1830 frames; flash 0 general flashes (max 13.9 %); levels: opening -14.3 dBFS, build +3.1 dB, 0 quiet windows; loopcheck render.py audio.wav PASS; loopcheck mp4: picture seam 1.7x OK, click OK, audio-level line FAILs only from AAC end padding (640 samples; container says audio = 61.000 s; same open question as #22). Waiting for feedback | `botb_genre_wars.mp4` |
 | 26 | Which Instrument Wins? | review (v2) | session_01Ug3Awo (2026-10-23) | v1 feedback: drop "ITS STORY: / ON OUR PAGE" at the end; move the roster to the loosened safe-zone defaults. v2 delivered: "WHO DID YOU / PICK?" holds to 58.25 s, roster at the bottom of the new zone (x 24-292, y 452-497, left of the button column), ring recentred under the captions (x 180); full re-render (the roster is on screen throughout), safe zone OK, loopcheck + flashcheck PASS on the mp4. v1 notes: delivered with caption + tags (early sheet sent first). Honest ring run, seed 406 (2 fits in 600): DRUMS out first at 3.6 s after rattling in the gap, BAGPIPES stuck in the gap 6.5-8.9 s, PIANO + TRUMPET out together at 15.4/15.7, UKULELE 9th after three near-misses, VIOLIN survives five edge hits, final 3 at 40.3, VIOLIN vs CELLO from 43.1 (7 close calls), CELLO wins 49.41. Ring seals on the win; the cello floats out and plays an original solo in its Pixel Pitch voice while the stands light up; at 58.4 s the 15 fly back from the pit (one note each) into formation, at rest on 61.0 = frame 0. Every wall bounce = that instrument's Pixel Pitch voice (pitch by hit position in the chord, 32nd grid) over a D-minor tango (118.03 BPM). Changes vs backlog: rules tuned once on median pacing (2.06 rad/s = 20 turns in 61 s, gap 17.4 -> 27.5 deg), the ring seals on the win (so the winner can't fall during its bow), places shown as numbers in the roster chip slot; series files untouched (models/voices imported, stands skipped by runtime patches). New reelkit.ui.roster_grid. Checks: safe zone OK (0.25 s steps); subject CoC 0 on all 1830 frames; flash 0 general flashes; bounces 7-15 dB over the bed (400-4000 Hz); opening -18.7 dBFS, build +4.1 dB; loopcheck PASS on render and mp4 (audio = 2860 AAC frames, muxed with #23's mux, file 61.01 s). Waiting for feedback | `which_instrument_wins.mp4` (v2) |
 | 27 | Instrument BallFight: Guitar vs Piano | review | session_016aCf6G (2026-10-23) | v1 delivered with caption + tags (early sheet sent first). Honest seed 88 (8 fits in 336 runs; balance GUITAR 44 % / PIANO 56 %): Guitar leads from 5 s, lead changes 31.6 / 36.0 / 44.4 / 48.0 s, GRAND SLAM 44.4 then FEEDBACK 0.9 s later, PIANO wins at 51.3 s with 2.6 HP. Captions = ability names only (POWER CHORD 10.2, SUSTAIN 15.3, SHRED 20.3, GLISSANDO 27.3, GRAND SLAM 43.4; FEEDBACK named in the HUD status line, 4 s rule). Changes vs backlog: the piano's volley grows half a key per landed volley and fires every 2 beats (one key per landed volley won every run by ~14 s); levels from damage dealt (14 / 36); K.O. = 0.35 s hit-stop + slow-mo shatter; solo bars 29-31. Reusable: fight.py + fighters.py (projects/ballfight) + new reelkit.ui.fight_hud. Checks: safe zone OK (0.25 s steps); subject CoC 0 on all 1830 frames; loopcheck PASS on render + mp4 (seam 2.4x, 4.1 dB, no click); flash 0 general; opening -19.7 dBFS, build +3.4 dB. Waiting for feedback | `ballfight_guitar_vs_piano.mp4` |
+| 28 | BALLFIGHT #2: Drums vs Violin | idea (approved, mood B) | — | Approved Oct 23, mood B (dark Balkan fire). Ready for production. | — |
 
 ## Backlog (idea details)
 
@@ -1521,6 +1522,64 @@ fight escalates by itself. Episode 1: the biggest rivalry in music, guitar vs pi
 - **Effort:** moderate for episode 1: a small 2D fight engine (top-down, constant-speed balls, rope walls, weapon
   hitboxes, projectiles), ability effects, the ring, the fight HUD. Instrument models and voices reused. Later
   episodes ~30–40 min. Work in `projects/ballfight/` with the engine in its own module so episodes import it.
+
+### 28. BALLFIGHT #2: Drums vs Violin — APPROVED
+**Direction (user, Oct 23):** #27 Guitar vs Piano "turned out amazing and I think will be a winner": make the next
+episode, Drums vs Violin. Mood B (dark Balkan fire). Everything in #27's direction still holds: 3-2-1 FIGHT count-in
+at frame 0, mid-fight captions = ability names only (first use, never two within 4 s, repeats in the HUD status line),
+status in small text inside the safe zone, "Comment the next match-up" in the post caption, honest fight, 61.0 s, loop
+point = file boundary.
+**Concept:** brute force vs finesse on #27's engine, ring, HUD and countdown (`projects/ballfight`: `fight.py`,
+`fighters.py`, `reelkit.ui.fight_hud`). The two fight in completely different ways, so it isn't a reskin. **The
+drums keep the beat:** the drum ball attacks on every beat, so its attacks are the groove, and the violin plays the
+melody over it. Whoever is losing, you hear their half of the band fall apart.
+- **Hook (frame 0):** the same 3 · 2 · 1 · FIGHT! count-in (one bar = 1.69 s at this tempo). Top caption "DRUMS / VS
+  VIOLIN" (5 + 9 chars), with the "BALLFIGHT #2" tag.
+- **Post caption:** "Comment the next match-up 👇🥁🎻"
+
+| | DRUMS (red corner) | VIOLIN (blue corner) |
+|---|---|---|
+| Style | Close-range area control, heavy hits | Long reach, fast, precise |
+| Weapon | Beat pulse: a drumhead ring blasts out from the ball on every beat; reach grows per landed pulse (new weapon kind `pulse`) | The bow, spun around the ball like a rapier: long, thin, light damage; spins faster per landed hit, slow strokes -> frantic spiccato (blade with a new spin-growth option, style `bow`) |
+| Hit sound | Kick on 1 and 3, snare on 2 and 4; landed hits add tom fills | Short bowed notes climbing the scale |
+| Unlock 1 | DRUM ROLL (`haste`): pulses on every 16th for a bar | PIZZICATO (`arc`): a fan of 5 plucked-string darts |
+| Unlock 2 | CRASH CYMBAL (`shield`): spinning cymbal; the bow bounces off it | TREMOLO (`haste`): bow blurs at 2.5x for 3 s |
+| Below 25 HP | DOUBLE KICK (`slam`): a giant kick pedal stomps the predicted spot | SCREECH (`wave`): the beginner-violin squeal as a ring-wide wave |
+
+- **Natural story (only if the honest fight gives it):** drums bully early while the bow is slow; every landed bow hit
+  speeds it up, so the violin can claw back mid-fight. SCREECH and DOUBLE KICK should get comments either way.
+- **Captions (impact):** ability names only (as #27), plus the title, the countdown, "K.O." then "(WINNER) WINS", and
+  "COMMENT THE / NEXT MATCH-UP".
+- **Status:** `reelkit.ui.fight_hud` as in #27 (HP bars "DRUMS" / "VIOLIN", LV pips, status line), HP numbers in the balls.
+- **Music, mood B (dark Balkan fire):** harmonic minor, upright-bass oom-pah, an accordion-ish pad, fiery, not happy:
+  the violin's home turf. `loop_bpm(140)` = 141.64 BPM (36 bars in 61 s). The bed has **no drums of its own**: the
+  drum fighter is the kit, the violin is the lead. As the drums lose HP the beat thins (fills gone, then the snare, then
+  a lonely kick); as the violin loses HP its melody gets scratchy and sparse; the leader is fuller and louder. The
+  winner's solo: a drum solo or a violin cadenza (original). Every hit snapped to the nearest 16th in the audio. (Not
+  chosen: A drift phonk; C cinematic trailer.)
+- **Scene:** #27's ring and arena reused (red corner left, blue right), corner lights to match.
+
+**Beat sheet (61 s; #27's proven shape; events after 2 s are targets, the real fight decides):**
+| Time | Visual | Caption (impact) | Sound |
+|---|---|---|---|
+| 0–1.69 | Balls rev in corners; giant 3·2·1 | DRUMS / VS VIOLIN, then 3·2·1·FIGHT! | Count-in on the drum fighter's sticks + violin chop; drop on FIGHT |
+| 1.69–8 | Launch; pulses vs bow, HP ticking | — | The fight plays the groove: pulses = kick / snare, bow hits = melody |
+| 8–30 | Pulse reach grows, bow speeds up; unlocks | DRUM ROLL, PIZZICATO, CRASH CYMBAL, TREMOLO (first uses, >= 4 s apart) | Leader fuller |
+| 32–44 | One dips below 25 HP | DOUBLE KICK or SCREECH | Loser's half thins |
+| 44–52 | Final exchange, HP in single digits | — | Riser, call and response |
+| ~49–53 | K.O.: hit-stop, slow-mo shatter (drumheads / strings) | K.O. → (WINNER) WINS | Big hit |
+| then–58 | Winner's solo under the spot | COMMENT THE / NEXT MATCH-UP | Drum solo or violin cadenza over the bed |
+| 58–61 | Loser reassembles, both glide to corners, HP refills | — | Pickup; "3" lands at 61.0 = frame 0 |
+
+- **Flags:** honest fight, never hand-edited. Re-tune once (`tune.py`: 40–60 % wins, ~50 s median K.O.), freeze the
+  rules, then `seed_search.py --stop 5` with #27's hard windows (K.O. 49–53 s, >= 2 lead changes, winner HP <= 30,
+  >= 5 ability captions >= 4 s apart). Rules depend on the tempo (beat length, `t_fight` = 1.6945 s): pass them from
+  this episode's timeline. New engine pieces (`pulse` weapon kind, blade spin growth, render styles `drumhead` and
+  `bow`) go into the shared engine in small commits so later fighters can use them; don't break #27's run (seed 88
+  must replay identically). If the full drum kit doesn't read at ball size, show a snare + crossed sticks. Flash
+  (cymbal glints, pulse rings), safe-zone and loop checks must pass.
+- **Effort:** ~45–60 min (two new weapon types); work in `projects/ballfight_drums_vs_violin/` importing the engine
+  (see `projects/ballfight/README.md`, "Making the next episode").
 
 ## Adding a new idea
 
