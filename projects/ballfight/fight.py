@@ -948,6 +948,86 @@ class Fight:
             self.damage(k, 1 - k, w['dmg_spit'], 'spit', float(O.p[0]), float(O.p[1]))
             B.cannon = dict(t_end=self.t + w.get('spit_t', 0.9), ev_i=len(self.events))
 
+    # ------------------------------------------------------------------ #32 v2: snake charmer (opt-in weapon kind 'striker')
+    def striker_setup(self, k):
+        B = self.balls[k]
+        B.baskets = []                                # dict(id, home (2,), cp (2,), t_drop, strike or None)
+        B.next_bk = 0
+        B.dance_until = -1.0
+
+    def striker_beat(self, k, kb):
+        """striker: every `drop_every` beats the fighter drops a basket where it stands (up to `max_baskets`; the
+        oldest is taken back for a new one); its cobra rises over `rise` beats"""
+        B = self.balls[k]
+        w = B.w
+        if kb % int(w['drop_every']) == 0:
+            gone = -1
+            if len(B.baskets) >= int(w['max_baskets']):
+                gone = B.baskets.pop(0)['id']
+            bk = dict(id=B.next_bk, home=B.p.copy(), cp=B.p.copy(), t_drop=self.t, strike=None)
+            B.next_bk += 1
+            B.baskets.append(bk)
+            self.ev('basket', k, bk['id'], float(B.p[0]), float(B.p[1]), gone)
+
+    def striker_fire(self, k):
+        """on the strike grid (every `every` beats, haste divides it): every risen cobra with the enemy in range lunges
+        at it (reach `blade_len` from the cobra to the enemy's surface)"""
+        B, O = self.balls[k], self.balls[1 - k]
+        w = B.w
+        R = self.R.R
+        for bk in B.baskets:
+            if self.t < bk['t_drop'] + w['rise'] * self.R.beat - 1e-9 or bk['strike'] is not None:
+                continue
+            rel = O.p - bk['cp']
+            dist = float(np.hypot(*rel))
+            if dist - R > B.blade_len + w.get('slack', 0.25):
+                continue
+            a = math.atan2(rel[1], rel[0])
+            ln = min(B.blade_len + R * 0.4, max(0.2, dist - R * 0.6))
+            tk = B.t_strike / self.ab_mult(k)
+            bk['strike'] = dict(t0=self.t, t_hit=self.t + tk, t_end=self.t + tk * 2.6, aim=a, len=ln, done=False)
+            self.ev('strike', k, bk['id'], a, ln, tk)
+
+    def striker_step(self, k, dt):
+        """striker: a lunge reaches its length after `t_strike` s (shorter by `speed_grow` per landed bite, down to
+        `t_min`) and bites if the enemy touches the fang line (capsule, `head_r`): `dmg`, `knock`; a landed bite grows
+        the reach (`grow`, up to `max_reach`). During SNAKE DANCE (ability kind 'dance') the cobras leave their baskets
+        and slither after the enemy (`slither` units/s), then slither home."""
+        B, O = self.balls[k], self.balls[1 - k]
+        w = B.w
+        R = self.R.R
+        dancing = self.t < B.dance_until
+        for bk in B.baskets:
+            tgt = O.p if dancing else bk['home']
+            d = tgt - bk['cp']
+            dist = float(np.hypot(*d))
+            stop = (2 * R + 0.1) if dancing else 0.0
+            if dist > stop + 1e-6 and bk['strike'] is None:
+                sp = w['slither'] * (1.0 if dancing else 1.6) * dt
+                bk['cp'] = bk['cp'] + d / dist * min(sp, dist - stop)
+            S = bk['strike']
+            if S is None:
+                continue
+            if not S['done'] and self.t + 1e-9 >= S['t_hit']:
+                S['done'] = True
+                u = np.array([math.cos(S['aim']), math.sin(S['aim'])])
+                a0 = bk['cp']
+                q = O.p - a0
+                c = a0 + u * min(max(float(q @ u), 0.0), S['len'])
+                dd = float(np.hypot(*(O.p - c)))
+                if dd < R + w['head_r']:
+                    hx, hy = (O.p + (c - O.p) / max(dd, 1e-6) * R).tolist()
+                    if O.shield > 0:
+                        self.ev('block', 1 - k, k, hx, hy, 'fang')
+                    else:
+                        landed = self.damage(k, 1 - k, w['dmg'], 'fang', hx, hy, bk['id'])
+                        self.knock(1 - k, u, w['knock'])
+                        if landed:
+                            B.blade_len = min(w['max_reach'], B.blade_len + w['grow'])
+                            B.t_strike = max(w['t_min'], B.t_strike - w.get('speed_grow', 0.0))
+            if self.t >= S['t_end']:
+                bk['strike'] = None
+
     def key_r(self):
         """every projectile's hit radius (Rules.KEY_R unless its weapon set `hit_r`)"""
         if not self.khr:
@@ -1921,6 +2001,8 @@ class Fight:
             self.start_charge(k, ab)
         elif kind == 'clamp':                                   # #30 v2 (FULL BELLOWS): a ring-wide bite
             self.clamp_start(k, ab)
+        elif kind == 'dance':                                   # #32 v2 (SNAKE DANCE): cobras chase the enemy
+            B.dance_until = self.t + self.ab_dur(ab)
 
     def ab_beam_charge(self, k, ab):
         """ability kind 'beam' (#29 v3): charge for `charge_beats` with the aim locked on the enemy's spot predicted
@@ -2169,6 +2251,9 @@ class Fight:
                              for S in self.slams if self.t < S['t_slam'] + 0.6])
         if 'RAD' in rec:                                    # #30 v2, only recorded when a fighter changes size
             rec['RAD'].append([getattr(B0, 'rad', self.R.R), getattr(B1, 'rad', self.R.R)])
+        if 'COB' in rec:                                    # #32 v2: baskets + cobras (only when a fighter uses 'striker')
+            rec['COB'].append([[(bk['id'], float(bk['home'][0]), float(bk['home'][1]), float(bk['cp'][0]),
+                                 float(bk['cp'][1]), bk['t_drop']) for bk in getattr(B_, 'baskets', [])] for B_ in self.balls])
         if 'EXT' in rec:                                    # #34, only recorded when a fighter uses the options
             rec['EXT'].append([B0.ext, B1.ext])
             rec['SLW'].append([B0.slow, B1.slow])
@@ -2218,6 +2303,13 @@ class Fight:
         for k, B in enumerate(self.balls):                       # #32 v2 (opt-in weapon kinds)
             if B.w['kind'] == 'swallow':
                 self.swallow_setup(k)
+            elif B.w['kind'] == 'striker':                     # #32 v2
+                self.striker_setup(k)
+                B.t_strike = B.w['t_strike']
+        strikers = [k for k, B in enumerate(self.balls) if B.w['kind'] == 'striker']      # #32 v2: own 16th counter
+        next16k = k16_0
+        if rec is not None and strikers:
+            rec['COB'] = []
         thrusters = [k for k, B in enumerate(self.balls) if B.w.get('mode') == 'thrust']      # #34
         next16t = k16_0
         tethers = [k for k, B in enumerate(self.balls) if B.w['kind'] == 'tether']              # #31 v2
@@ -2254,6 +2346,8 @@ class Fight:
                         self.combo_beat(k, kb)
                     elif B.w['kind'] == 'swallow':               # #32 v2
                         self.swallow_beat(k, kb)
+                    elif B.w['kind'] == 'striker':               # #32 v2 (basket drops)
+                        self.striker_beat(k, kb)
                     elif B.w['kind'] in ('line', 'trap'):
                         self.hazard_beat(k, kb)
                     elif B.w['kind'] == 'scratch_floor':         # #31 v2
@@ -2293,6 +2387,13 @@ class Fight:
                 next16c += 1
                 for k in tethers:
                     self.tether_16(k, k16c)
+            if strikers and self.t + 1e-9 >= next16k * s16:      # #32 v2: cobra strikes on the 16th grid (haste divides it)
+                k16k = next16k - k16_0
+                next16k += 1
+                for k in strikers:
+                    main16 = int(round(4 * self.balls[k].w['every']))
+                    if k16k % max(1, int(round(main16 / self.ab_mult(k)))) == 0:
+                        self.striker_fire(k)
             if thrusters and self.t + 1e-9 >= next16t * s16:     # #34: thrusts on the 16th grid (haste divides it)
                 k16t = next16t - k16_0
                 next16t += 1
@@ -2334,6 +2435,8 @@ class Fight:
                     self.inflate_step(k, dt)
                 elif B.w['kind'] == 'swallow':                   # #32 v2
                     self.swallow_step(k, dt)
+                elif B.w['kind'] == 'striker':                   # #32 v2
+                    self.striker_step(k, dt)
             if getattr(self, 'lashes', None):                     # #31 v2 SAWTOOTH
                 self.lash_step(dt)
             if self.beams or any(B.w['kind'] == 'beam' for B in self.balls):
