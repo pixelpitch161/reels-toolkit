@@ -1,15 +1,21 @@
-"""#30 BALLFIGHT #4: Bagpipes vs Accordion - renderer (#28's renderer, copied, with this pair's weapons and abilities;
-the new weapon styles live in styles.py).
+"""#30 BALLFIGHT #4: Bagpipes vs Accordion v2 (BALLFIGHT v2 redesign, user Oct 24) - renderer (#28's renderer, copied, with
+this pair's v2 attacks; the new styles live in styles.py, the effects come from reelkit.fx; v1 = render_v1_backup.py).
 
-arena floor (per pixel: spill, corner lights) -> stands + crowd (phones, flashbulbs) -> ring skirt -> canvas (per pixel:
-the hard spot with real shadows of balls, posts and ropes; the corner lights; decals: the drone's tartan aura with its
-tick ripples, the bellows' light, WAR CRY / BAG BURST waves, FULL BELLOWS' target) -> back ropes + posts -> bellows
-strokes (pleated push rings, collapsing suction rings) -> fighters + the SQUEEZEBOX collar (painter) -> front ropes +
-posts -> effects (the giant bellows, sparks, shards) -> countdown -> locked DOF on the ring -> glows -> spot beam ->
-bloom -> grade -> scrim -> HP numbers, fight HUD, captions.
+BAGPIPES' BAG INFLATE: the ball swells with the bag's tartan stretched over it (heavy, slow), then lets go and rockets
+around like a released balloon, a ribbon trail + air puffs behind it. ACCORDION's BELLOWS BITE: the end boards fly
+apart with the pleats fanned between them like jaws, then snap shut. FULL BELLOWS: a giant bellows wall across the
+ring slams shut on the enemy. SQUEEZEBOX: the folded collar with its buttons glowing. WAR CRY: a tartan shockwave.
+BAG BURST: the bag pops in a tartan-shred explosion.
+
+arena floor (per pixel: spill, corner lights, attack lights) -> stands + crowd (lit by the attacks) -> ring skirt ->
+canvas (per pixel: the hard spot with real shadows of balls, posts and ropes; corner + attack lights; fading marks;
+decals: WAR CRY's tartan band, BAG BURST's gust) -> back ropes + posts -> fighters, jaws, the SQUEEZEBOX collar, the
+flight trail (painter) -> FULL BELLOWS' wall -> front ropes + posts -> shards, sparks, particles -> countdown -> locked
+DOF on the ring -> shimmer on wave fronts -> glows -> spot beam -> bloom -> grade -> fringe, ability dim + speed
+lines, impact bursts -> scrim -> HP numbers, fight HUD, captions.
 
     python render.py                                   # sprite cache (check/sprites_ballfight4.npz)
-    python -m reelkit.sheet render.py test/sheet.png 0.0 1.0 3.0 12.4 21.3 26.7 39.9 44.4 50.6 53 58.6 60.7
+    python -m reelkit.sheet render.py test/sheet.png 0.0 1.0 3.0 9.5 15.4 19.8 26.7 43.6 44.0 50.5 53 60.7
     python -m reelkit.video render.py audio.wav out.mp4"""
 import math
 import os
@@ -32,6 +38,7 @@ from reelkit.post import bloom, grade, vignette, top_scrim
 from reelkit import ui
 from reelkit.ui import draw_captions, label, fight_hud, CREAM, AMBER, INK
 from reelkit.font import ADV, text_mask, dilate
+from reelkit import fx
 import timeline as T
 import scene as S
 import sim
@@ -54,8 +61,8 @@ R = S.R_BALL
 HITSTOP = 0.35
 T_HS = T_KO + HITSTOP
 BLADE = [k for k in (0, 1) if CFG[k]['weapon']['kind'] == 'blade']
-AURA = [k for k in (0, 1) if CFG[k]['weapon']['kind'] == 'aura']
-BELL = [k for k in (0, 1) if CFG[k]['weapon']['kind'] == 'bellows']
+INFL = [k for k in (0, 1) if CFG[k]['weapon']['kind'] == 'inflate']
+BITE = [k for k in (0, 1) if CFG[k]['weapon']['kind'] == 'bite']
 CORNER0 = [np.array(c) for c in RUN['corner']]
 STORY = sim.story(RUN)
 
@@ -75,55 +82,84 @@ T_SOLO = T.next_bar(T_KO + 1.6)                       # the winner's solo starts
 SOLO_T = [T_SOLO + bt * T.BEAT for bt, m, d in T.SOLO[NAMES[WIN]]]
 
 
-# bellows strokes: (t0, owner, main, push, reach, cx, cz) from the run's 'bellows' events (the ring is centred where the
-# stroke was fired, as in the engine)
-STROKES = [(e[0], e[2], e[3], e[4], e[5], e[6], e[7]) for e in EV if e[1] == 'bellows']
-STROKE_T = np.array([s[0] for s in STROKES]) if STROKES else np.zeros(0)
-BW = {k: CFG[k]['weapon'] for k in BELL}
-# the drone's landed ticks (aura hits): times, and the first tick of each contact
-AURA_HITS = [(e[0], e[8]) for e in EV if e[1] == 'hit' and e[7] == 'aura']
-AURA_HIT_T = np.array([a[0] for a in AURA_HITS]) if AURA_HITS else np.zeros(0)
-
-
-def aura_tick(t):
-    """(time of the drone's latest tick, its step) at t: ticks on the 8ths of the fight, the 16ths while DOUBLE DRONE runs"""
-    if not AURA or t < T.T_FIGHT:
-        return None, None
-    k = AURA[0]
-    hasted = float(RUN['HA'][sim_i(min(t, T_KO)), k]) > 0
-    step = T.S16 if hasted else 2 * T.S16
-    tk = T.T_FIGHT + math.floor((t - T.T_FIGHT) / step + 1e-9) * step
-    return tk, step
-
-
-def aura_hit_near(tk):
-    """did the tick at tk land (an aura hit within 10 ms)?"""
-    if not len(AURA_HIT_T):
-        return False
-    j = np.searchsorted(AURA_HIT_T, tk - 0.012)
-    return j < len(AURA_HIT_T) and AURA_HIT_T[j] <= tk + 0.012
-
-
-def solo_strokes(t):
-    """the victory solo, seen: on every solo note the champion fires a small push ring (accordion) or a drone ripple
-    rolls out to its ring (bagpipes); [(t0, owner, main, push, reach, cx, cz)] like STROKES"""
-    if NAMES[WIN] not in T.SOLO or t < T_SOLO or t >= T.T_REASSEMBLE + 0.3:
-        return []
-    out = []
-    for bt, m, d in T.SOLO[NAMES[WIN]]:
-        t0 = T_SOLO + bt * T.BEAT
-        if t0 <= t < t0 + 0.45 and WIN in BELL:
-            p = fighter(WIN, t0)['p']
-            out.append((t0, WIN, 1, 1, 0.55 + 0.04 * (m - 64), float(p[0]), float(p[1])))
+# BAG INFLATE cycles: [dict(t0, t_rel, t_land, s, dur_i, dur_f)] from the run's 'inflate' / 'release' / 'land' events
+def _cycles():
+    out, cur = [], None
+    for e in EV:
+        if e[1] == 'inflate':
+            cur = dict(k=e[2], t0=e[0], s=e[3], dur_i=e[4], dur_f=e[5], t_rel=None, t_land=None)
+            out.append(cur)
+        elif e[1] == 'release' and cur is not None:
+            cur['t_rel'] = e[0]
+        elif e[1] == 'land' and cur is not None:
+            cur['t_land'] = e[0]
+    for c in out:                                         # a cycle the K.O. interrupted ends there
+        c['t_rel'] = c['t_rel'] if c['t_rel'] is not None else T_KO + 10
+        c['t_land'] = c['t_land'] if c['t_land'] is not None else T_KO + 10
     return out
 
 
-def solo_tick(t):
-    """the bagpipes' solo: (time of the latest solo note) for the drone ripple"""
-    if WIN not in AURA or NAMES[WIN] not in T.SOLO:
-        return None
-    past = [T_SOLO + bt * T.BEAT for bt, m, d in T.SOLO[NAMES[WIN]] if T_SOLO + bt * T.BEAT <= t]
-    return past[-1] if past and t < T.T_REASSEMBLE + 0.3 else None
+CYCLES = _cycles()
+CYC_T = np.array([c['t0'] for c in CYCLES]) if CYCLES else np.zeros(0)
+
+
+def cycle_at(t):
+    """(cycle, phase) at t: phase 'inflate' / 'fly' / None"""
+    if not len(CYC_T):
+        return None, None
+    j = np.searchsorted(CYC_T, t, 'right') - 1
+    if j < 0:
+        return None, None
+    c = CYCLES[j]
+    if t < c['t_rel']:
+        return c, 'inflate'
+    if t < c['t_land']:
+        return c, 'fly'
+    return None, None
+
+
+# BELLOWS BITE: [dict(k, t0, t_snap, aim, reach, main, inside, landed)] from 'bite' + 'snap' events
+def _bites():
+    out, open_ = [], {}
+    for e in EV:
+        if e[1] == 'bite':
+            b = dict(k=e[2], t0=e[0], main=e[3], aim=e[4], reach=e[5], t_snap=e[0] + e[6], inside=0, landed=0)
+            out.append(b)
+            open_[e[2]] = b
+        elif e[1] == 'snap' and e[2] in open_:
+            b = open_.pop(e[2])
+            b.update(t_snap=e[0], inside=e[3], landed=e[4])
+    return out
+
+
+BITES = _bites()
+BITE_T = np.array([b['t0'] for b in BITES]) if BITES else np.zeros(0)
+BITE_HALF = {k: CFG[k]['weapon']['half'] for k in BITE}
+
+
+def bites_at(t):
+    if not len(BITE_T):
+        return []
+    j1 = np.searchsorted(BITE_T, t, 'right')
+    j0 = max(0, j1 - 3)
+    return [b for b in BITES[j0:j1] if b['t0'] <= t <= b['t_snap'] + 0.25]
+
+
+# FULL BELLOWS: [dict(k, t0, t_snap, axis, c, q, landed)]
+def _clamps():
+    out = []
+    for e in EV:
+        if e[1] == 'clamp':
+            out.append(dict(k=e[2], t0=e[0], axis=e[3], t_snap=e[0] + e[4], c=(e[5], e[6]), q=None, landed=0))
+        elif e[1] == 'clamp_snap' and out:
+            out[-1].update(t_snap=e[0], q=(e[4], e[5]), landed=e[3])
+    for c in out:
+        if c['q'] is None:
+            c['q'] = c['c']
+    return out
+
+
+CLAMPS = _clamps()
 
 
 def solo_env(t):
@@ -196,17 +232,24 @@ def fighter(k, t):
         st['om'] = float(RUN['OM'][i, k])
         st['sd'] = float(RUN['SPIN'][i, k])
         tc = min(t, T_KO)
-        if k in BELL and len(STROKE_T):                           # the accordion breathes: squeezes on a push,
-            j = np.searchsorted(STROKE_T, tc, 'right') - 1        # swells on a pull
-            if j >= 0:
-                u = tc - STROKE_T[j]
-                push = STROKES[j][3]
-                st['glow'] = 0.40 * math.exp(-u / 0.10)
-                st['scale'] = 1.0 + (-0.035 if push else 0.035) * math.exp(-u / 0.18)
-        if k in AURA and len(AURA_HIT_T):                         # the bagpipes glow while the drone lands
-            j = np.searchsorted(AURA_HIT_T, tc, 'right') - 1
-            if j >= 0:
-                st['glow'] = 0.35 * math.exp(-(tc - AURA_HIT_T[j]) / 0.12)
+        if k in INFL:                                             # BAG INFLATE: the size comes from the run
+            st['scale'] = float(RUN['RAD'][i, k]) / R
+            c, ph = cycle_at(tc)
+            st['phase'] = ph
+            if ph is not None:
+                st['infl'] = (st['scale'] - 1) / max(1e-6, c['s'] - 1)
+                if ph == 'inflate':                               # a shiver just before it lets go
+                    u = (tc - c['t0']) / max(1e-6, c['t_rel'] - c['t0'])
+                    if u > 0.8:
+                        st['p'] = st['p'] + 0.025 * math.sin(tc * 2 * math.pi * 31) * np.array([1.0, -0.6])
+                    st['glow'] = 0.15 + 0.25 * u
+                else:
+                    st['glow'] = 0.55 * math.exp(-(tc - c['t_rel']) / 0.25) + 0.15
+        if k in BITE:                                             # the accordion lights up as the jaws snap
+            for b in bites_at(tc):
+                if b['k'] == k:
+                    st['glow'] = max(st['glow'], (0.6 if b['landed'] else 0.3) * math.exp(-max(0.0, tc - b['t_snap']) / 0.1)
+                                     * (tc >= b['t_snap'] - 0.06))
         if t >= T_KO and k == LOSE:
             st['glow'] = 1.0
         return st
@@ -253,28 +296,16 @@ KEYS = [  # (t, target, dist, yaw, pitch, fov, sy): gentle drift, a slight push-
     (58.0, AIM, 27.4, 0.2, 58.2, 36, SY),
     (61.0, AIM, 27.5, 0.0, 58.0, 36, SY),
 ]
-BIG = []                                             # (t, strength) camera shakes
+SHK = fx.Shake(cap=2.5)                              # a little camera shake on heavy hits (reelkit.fx)
 for e in EV:
-    if e[1] == 'hit' and (e[7] in ('bellows', 'suction', 'slam', 'wave', 'shockwave') or (e[7] == 'aura' and e[8])):
-        BIG.append((e[0], {'aura': 0.35, 'bellows': 1.0, 'suction': 0.8, 'slam': 3.5, 'wave': 2.5, 'shockwave': 1.6}[e[7]]))
-    if e[1] == 'slam':
-        BIG.append((e[0], 2.5))
-BIG.append((T_KO, 5.0))
-BIG_T = np.array([b[0] for b in BIG])
-BIG_S = np.array([b[1] for b in BIG])
-
-
-def shake(t):
-    m = (BIG_T <= t) & (BIG_T > t - 0.4)
-    if not m.any():
-        return 0.0, 0.0
-    a = float(np.max(BIG_S[m] * np.exp(-(t - BIG_T[m]) / 0.09)))
-    return a * math.sin(t * 2 * math.pi * 23), a * 0.7 * math.cos(t * 2 * math.pi * 29)
+    if e[1] == 'hit' and e[7] in ('bite', 'flight', 'bodyslam', 'clamp', 'wave', 'shockwave'):
+        SHK.add(e[0], {'bite': 0.7, 'flight': 1.3, 'bodyslam': 1.6, 'clamp': 2.5, 'wave': 2.2, 'shockwave': 1.4}[e[7]])
+SHK.add(T_KO, 2.5)
 
 
 def camera(t):
     cam = interp_keys(KEYS, t)
-    dx, dy = shake(t)
+    dx, dy = SHK.offset(t)
     cam.cx += dx
     cam.cy += dy
     return cam
@@ -306,6 +337,7 @@ def lights(t, cam):
     rk = 1.0 + 0.25 * T.beat_pulse(t, 0.2)
     L.point(S.RED_LIGHT, LIGHT_RGB[0] * 1.1 * rk, 2.6)
     L.point(S.BLUE_LIGHT, LIGHT_RGB[1] * 1.1 * rk, 2.6)
+    FL.apply(L, t)                                                   # attacks light the scene in the fighter's colour
     return L
 
 
@@ -323,7 +355,7 @@ SIDE_OF = {(1, 1): 0, (0, 1): 1, (1, -1): 2, (0, -1): 3}       # (axis, sign) ->
 ROPE_EV = [(e[0], SIDE_OF[(e[3], e[4])], e[5], e[6], e[7]) for e in EV if e[1] == 'rope']
 ROPE_T = np.array([r[0] for r in ROPE_EV])
 WAVE_EV = [(e[0], 1.0 if e[4] == 'wave' else 0.6) for e in EV if e[1] == 'ability' and e[4] in ('shockwave', 'wave')]
-WAVE_EV += [(e[0], 0.9) for e in EV if e[1] == 'slam']
+WAVE_EV += [(e[0], 0.9) for e in EV if e[1] == 'clamp_snap']
 
 
 def side_ends(s):
@@ -540,6 +572,11 @@ def draw_ball(arr, dep, cam, k, st, t):
     lam = np.clip(-0.25 * dx - 0.55 * dy + nz * 0.6, 0, 1)                   # lit from the spot above (top of the ball)
     band = np.floor(lam * 4 + BAYER_FULL[:n, :n] * 0.9) / 4
     inner = (col * 0.30 + np.array([236, 232, 226]) * 0.70)[None, None] * (0.70 + 0.36 * band[..., None])
+    infl = st.get('infl', 0.0) if st.get('phase') else 0.0
+    if infl > 0.02:                                                  # BAG INFLATE: the bag's tartan stretched over it
+        tart = ST.tartan_rgb(dx, dy, 1 + 0.5 * infl) * (0.62 + 0.42 * band[..., None])
+        w_t = np.clip(infl * 1.15, 0, 0.92) * (0.75 + 0.25 * nz)
+        inner = inner * (1 - w_t[..., None]) + tart * w_t[..., None]
     m = inside[sl]
     reg[m] = reg[m] * 0.12 + inner[sl][m] * 0.88
     # the instrument
@@ -637,7 +674,7 @@ def countdown(img, t, cs):
             big_text(img, txt, cx, cy, size * punch * (1 - 0.35 * out), col, alpha=1 - out)
     t_in = T.DUR - T.BEAT                                 # the '3' flies in during the last beat
     if t >= t_in:
-        u = (t - t_in) / T.BEAT
+        u = min(1.0, (t - t_in) / (T.BEAT - 1.0 / FPS))           # lands exactly on the last frame: frame 0 matches it
         e_ = 1 - (1 - u) ** 2.5                           # eases out: nearly landed on the last frame, lands on frame 0
         big_text(img, '3', cx, cy, 78 * (0.15 + 1.1 * e_), (255, 244, 220), alpha=min(1.0, u * 1.6))
 
@@ -652,7 +689,7 @@ CROWD_PH = np.array([c[2] for c in S.CROWD])
 CROWD_HT = np.array([c[4] for c in S.CROWD])
 BAR_N = np.array([n for Q, n, am in S.BARRIER])
 BAR_C = np.array([Q.mean(0) for Q, n, am in S.BARRIER])
-FLASH_EV = [e[0] for e in EV if (e[1] == 'hit' and e[7] in ('bellows', 'suction', 'slam', 'wave', 'shockwave')) or e[1] == 'ability'] + \
+FLASH_EV = [e[0] for e in EV if (e[1] == 'hit' and e[7] in ('flight', 'bodyslam', 'clamp', 'wave', 'shockwave')) or e[1] == 'ability'] + \
            [T_KO + 0.03 * j for j in range(16)]
 FLASH_T = np.array(sorted(FLASH_EV))
 
@@ -683,6 +720,7 @@ def arena(fr, cam, L, t):
         items.append((d, 2, j, None))
     heads = CROWD_P + np.stack([np.zeros(len(CROWD_P)), 0.55 * CROWD_HT, np.zeros(len(CROWD_P))], 1)
     dh = cam.depth(heads)
+    crowd_lit = 1.0 + 0.9 * FL.tint(heads, t)                    # attack lights reach the crowd (reelkit.fx)
     sp = cam.wp(heads)
     for j in range(len(CROWD_P)):
         items.append((dh[j] - 0.3, 1, j, None))
@@ -713,7 +751,7 @@ def arena(fr, cam, L, t):
                 continue
             side = CROWD_P[j, 0]
             tint = CROWD_TINT[0] if side < -1.5 else (CROWD_TINT[1] if side > 1.5 else np.array([1.0, 0.92, 1.0]))
-            body = S.CROWD_COLS[CROWD_CI[j]] * tint * spill
+            body = np.clip(S.CROWD_COLS[CROWD_CI[j]] * tint * spill * crowd_lit[j], 0, 255)
             draw.ellipse([x - 1.9 * rh, y + 0.6 * rh, x + 1.9 * rh, y + 3.4 * rh], fill=tuple(int(v) for v in body * 0.8))
             draw.ellipse([x - rh, y - rh, x + rh, y + rh], fill=tuple(int(v) for v in body * 0.62))
             # rim light from the ring on the heads (they face it)
@@ -765,8 +803,8 @@ def sparks(arr, cam, t):
         if kind == 'hit':
             att, x, z, how = e[2], e[5], e[6], e[7]
             col = COL[att] * 0.6 + 100
-            n, sp, life = (16, 3.2, 0.3) if how in ('bellows', 'suction', 'slam', 'wave', 'shockwave') else \
-                ((8, 2.2, 0.22) if (how == 'aura' and e[8]) else (3, 1.4, 0.16))
+            n, sp, life = (16, 3.2, 0.3) if how in ('flight', 'bodyslam', 'clamp', 'wave', 'shockwave') else \
+                ((8, 2.2, 0.22) if how == 'bite' else (3, 1.4, 0.16))
         elif kind == 'parry':
             att, x, z = e[2], e[4], e[5]
             col, n, sp, life = np.array([230, 236, 255]), 6, 2.4, 0.2
@@ -789,9 +827,108 @@ def sparks(arr, cam, t):
             xi, yi = int(s[0]), int(s[1])
             if 0 <= xi < W - 1 and 0 <= yi < H - 1:
                 arr[yi, xi] = np.clip(arr[yi, xi] * (1 - fade) + np.clip(col + 60, 0, 255) * fade, 0, 255)
-        if kind == 'hit' and e[7] in ('bellows', 'suction', 'slam') and dt < 0.08:
+        if kind == 'hit' and e[7] in ('flight', 'bodyslam', 'clamp') and dt < 0.08:
             s = cam.wp(S.to_world(x, z, R)[None])[0]
             arr[max(0, int(s[1]) - 1):int(s[1]) + 2, max(0, int(s[0]) - 1):int(s[0]) + 2] = 255
+
+
+# ---------------------------------------------------------------- effects (reelkit.fx), built once from the run's events
+FL = fx.Flares(max_n=6)
+BU = fx.Bursts()
+PA = fx.Particles(seed=30)
+MK = fx.Marks()
+MO = fx.Moments()
+PALE = (255, 240, 248)
+BITE_AIM = {round(b['t_snap'], 4): b['aim'] for b in BITES}
+
+
+def _fx():
+    def W_(x, z, y=R):
+        return S.to_world(x, z, y)
+    for e in EV:
+        t0, kind = e[0], e[1]
+        if t0 > T_KO + 0.01:
+            break
+        if kind == 'hit':
+            att, x, z, how = e[2], e[5], e[6], e[7]
+            pos = W_(x, z)
+            c = COL[att]
+            if how == 'bite':
+                main = bool(e[8])
+                BU.add(t0, pos, c, 0.9 if main else 0.5, bright=main)
+                FL.add(t0, W_(x, z, 1.0), c * 0.9, radius=1.5, peak=0.7 if main else 0.4, decay=0.22)
+                PA.emit(t0, pos, 'puffs', n=6 if main else 3, col=(250, 236, 248))
+                ang = BITE_AIM.get(round(t0, 4), 0.0) + math.pi / 2
+                MK.add(t0, 'claw', x, z, size=0.40, angle=ang, n=2, col=PALE, life=3.0, seed=int(t0 * 100))
+            elif how in ('flight', 'bodyslam'):
+                BU.add(t0, pos, c, 1.3 if how == 'flight' else 1.5)
+                FL.add(t0, W_(x, z, 1.0), c, radius=1.8, peak=0.9, decay=0.28)
+                PA.emit(t0, pos, 'puffs', n=10, speed=(1.4, 2.8))
+                PA.emit(t0, pos, 'shreds', n=4 if how == 'flight' else 6, speed=(1.0, 2.6))
+                MK.add(t0, 'crack', x, z, size=0.45 if how == 'flight' else 0.65, n=4, life=4.0, seed=int(t0 * 100))
+            elif how == 'clamp':
+                BU.add(t0, pos, c, 2.0)
+                FL.add(t0, W_(x, z, 1.2), c, radius=2.6, peak=1.2, decay=0.5)
+                PA.emit(t0, pos, 'puffs', n=24, spread=180, speed=(1.5, 3.2), scale=1.3)
+                MK.add(t0, 'crack', x, z, size=1.3, n=7, life=6.0, seed=int(t0 * 10))
+                MK.add(t0, 'scorch', x, z, size=1.0, col=(120, 40, 100), life=6.0, seed=int(t0 * 10) + 1, strength=0.5)
+            elif how == 'wave':
+                BU.add(t0, pos, c, 1.6)
+                FL.add(t0, W_(x, z, 1.0), c, radius=2.0, peak=1.0, decay=0.35)
+            elif how == 'shockwave':
+                BU.add(t0, pos, c, 1.0)
+                FL.add(t0, W_(x, z, 1.0), c * 0.9, radius=1.6, peak=0.7, decay=0.3)
+        elif kind == 'block':
+            BU.add(t0, W_(e[4], e[5]), (255, 214, 250), 0.6, bright=False)
+            PA.emit(t0, W_(e[4], e[5]), 'puffs', n=4)
+        elif kind == 'snap':                                      # every bite: a puff from the bellows as they close
+            k = e[2]
+            i = int(min(NSIM - 1, max(0, round((t0 - T.T_FIGHT) * FPS))))
+            p = RUN['P'][i, k]
+            tip = p + (R + e[6] * 0.6) * np.array([math.cos(e[5]), math.sin(e[5])])
+            PA.emit(t0, W_(tip[0], tip[1], R * 0.9), 'puffs', n=3)
+            FL.add(t0, W_(tip[0], tip[1], 0.9), COL[k] * 0.8, radius=1.2, peak=0.35, decay=0.16)
+        elif kind == 'release':                                   # the bag lets go: a blast of air out of the nozzle
+            k = e[2]
+            PA.emit(t0, W_(e[5], e[6]), 'puffs', n=10, spread=60, speed=(1.6, 3.0))
+            FL.add(t0, W_(e[5], e[6], 1.0), COL[k] * 0.9, radius=1.6, peak=0.6, decay=0.25)
+        elif kind == 'clamp':
+            FL.add(t0, W_(e[5], e[6], 1.2), COL[e[2]] * 0.9, radius=2.2, peak=0.7, decay=0.6)
+        elif kind == 'ability':
+            who = e[2]
+            i = int(min(NSIM - 1, max(0, round((t0 - T.T_FIGHT) * FPS))))
+            p = RUN['P'][i, who]
+            if e[3] == 'BAG BURST':                               # the bag pops: a tartan-shred explosion
+                PA.emit(t0, W_(p[0], p[1]), 'shreds', n=48, spread=180, speed=(2.0, 4.8), scale=1.2)
+                PA.emit(t0, W_(p[0], p[1]), 'puffs', n=16, spread=180, speed=(1.5, 3.0), scale=1.4)
+                FL.add(t0, W_(p[0], p[1], 1.2), COL[who], radius=2.6, peak=1.1, decay=0.5)
+                MK.add(t0, 'smoke_ring', p[0], p[1], size=1.6, life=5.0, seed=47, strength=0.7)
+            elif e[4] == 'shockwave':
+                FL.add(t0, W_(p[0], p[1], 1.0), COL[who], radius=2.2, peak=0.8, decay=0.4)
+                PA.emit(t0, W_(p[0], p[1]), 'shreds', n=10, spread=180, speed=(1.5, 3.0))
+            elif e[4] == 'shield':
+                FL.add(t0, W_(p[0], p[1], 1.0), COL[who] * 0.9, radius=1.6, peak=0.6, decay=0.5)
+    for c in CYCLES:                                              # the flight's puff trail: one puff every other frame
+        if c['t_land'] > T_KO + 1:
+            continue
+        for j in range(sim_i(c['t_rel']), sim_i(c['t_land']), 2):
+            k = c['k']
+            p, v = RUN['P'][j, k], RUN['V'][j, k]
+            tj = T.T_FIGHT + j / FPS
+            back = p - v / (np.linalg.norm(v) + 1e-9) * float(RUN['RAD'][j, k]) * 0.9
+            PA.emit(tj, W_(back[0], back[1], R * 0.8), 'puffs', n=1, vel=S.to_world(*(-0.4 * v), 0.0) - S.to_world(0, 0, 0))
+    for t0, who, name in STORY['caps']:
+        MO.add(t0, who, COL[who])
+    pk = P_KO[LOSE]
+    BU.add(T_KO, W_(pk[0], pk[1]), COL[LOSE], 2.0)
+    FL.add(T_KO, W_(pk[0], pk[1], 1.2), COL[LOSE] * 0.9, radius=2.4, peak=1.1, decay=0.6)
+    if NAMES[LOSE] == 'BAGPIPES':
+        PA.emit(T_KO, W_(pk[0], pk[1]), 'shreds', n=36, spread=180, speed=(1.5, 4.0))
+    else:
+        PA.emit(T_KO, W_(pk[0], pk[1]), 'puffs', n=24, spread=180, speed=(1.2, 3.0), scale=1.3)
+
+
+_fx()
 
 
 # ---------------------------------------------------------------- frame
@@ -803,33 +940,9 @@ def render(f):
     i = sim_i(t)
     in_fight = T.T_FIGHT <= t < T_HS
     keys = []                                                       # no projectiles in this pair
-    t_rings = min(t, T_KO)                                          # strokes freeze with the hit-stop, then vanish
-    stroke_list = []
-    if T.T_FIGHT <= t < T_HS + 0.3 and len(STROKE_T):
-        j0, j1 = np.searchsorted(STROKE_T, t_rings - 1.2), np.searchsorted(STROKE_T, t_rings, 'right')
-        stroke_list = [STROKES[j] for j in range(j0, j1)]
-    stroke_list = stroke_list + solo_strokes(t)
-    # the drone aura: (centre, radius, tick time, landed?, hot, double) for the bagpipes while visible
-    aura = None
-    for k in AURA:
-        st = fs[k]
-        if st['vis'] and not st['shattered']:
-            r_a = R + st['blen']
-            if t < T.T_FIGHT or t >= T.T_GLIDE:                     # idle ripples on the 8ths: the same before
-                tk = math.floor(t / (2 * T.S16)) * 2 * T.S16             # the fight and into the seam (31 whole bars)
-                hit_, hot, dbl = False, 0.0, 0.0
-            elif t >= T_HS:
-                tk = solo_tick(t)
-                hit_ = tk is not None
-                hot = 0.6 * solo_env(t)
-                dbl = 0.0
-            else:
-                tk, step = aura_tick(t_rings)
-                hit_ = aura_hit_near(tk)
-                lastj = np.searchsorted(AURA_HIT_T, t_rings, 'right') - 1
-                hot = math.exp(-(t_rings - AURA_HIT_T[lastj]) / 0.35) if lastj >= 0 else 0.0
-                dbl = min(1.0, st['haste'] / 0.2) if st['haste'] > 0 else 0.0
-            aura = (k, st['p'][0], st['p'][1], r_a, tk, hit_, hot, dbl)
+    tc = min(t, T_KO)                                               # attacks freeze with the hit-stop
+    bites = [b for b in bites_at(tc) if fs[b['k']]['vis'] and not fs[b['k']]['shattered']] if T.T_FIGHT <= t < T_HS + 0.25 else []
+    clamps = [c for c in CLAMPS if c['t0'] <= tc <= c['t_snap'] + 0.75] if T.T_FIGHT <= t < T_HS + 0.3 else []
     spot = S.SPOT
     aim = spot_aim(t)
     axis = (aim - spot) / np.linalg.norm(aim - spot)
@@ -865,6 +978,7 @@ def render(f):
         Xp, Zp = Xc[ys, xs], Zc[ys, xs]
         sxp, szp = sx[ys, xs], sz[ys, xs]
         alb = S.canvas_albedo(sxp, szp)
+        alb = MK.apply(alb, sxp, szp, t, BAYER_FULL[ys, xs])        # fading marks (reelkit.fx)
         sh = CANVAS_GRID.sample(canvas_shadows(cam, t, fs, keys, spot), Xp, Zp)
         v = np.stack([Xp - spot[0], -spot[1] * np.ones_like(Xp), Zp - spot[2]], 1)
         dist = np.linalg.norm(v, axis=1)
@@ -876,56 +990,35 @@ def render(f):
         for lp, lc, R_ in L.points:
             dl = np.sqrt((lp[0] - Xp) ** 2 + lp[1] ** 2 + (lp[2] - Zp) ** 2)
             Ic += (lp[1] / dl / (1 + (dl / R_) ** 2))[:, None] * lc[None] * 0.8
-        # decals: the drone's tartan aura, the bellows' light, shockwave / wave light rings, the slam's target
-        drone = None
-        if aura is not None:
-            k, cx, cz, r_a, tk, hit_, hot, dbl = aura
-            dl, dpaint, dw = ST.drone_layers(sxp, szp, BAYER_FULL[ys, xs], cx, cz, r_a, t_rings if t < T_HS else t, tk,
-                                             hit_, hot, dbl, COL[k])
-            Ic += dl
-            drone = (dpaint, dw)
-        for t0, k, main, push, reach, cx, cz in stroke_list:          # each stroke lights the canvas under its ring
-            w_ = BW[k]
-            ps = ST.stroke_state(t_rings if t0 < T_KO else t, t0, reach, w_['speed'], push, w_['pull_k'], w_['pull_speed'])
-            if ps is None:
-                continue
-            r, a = ps
-            rd = np.hypot(sxp - cx, szp - cz)
-            if push:
-                band = np.clip(1 - np.abs(rd - r) / 0.24, 0, 1) * (rd < r + 0.05)
-            else:                                                     # the inhale: light gathered inside the ring
-                band = np.clip(1 - np.abs(rd - r) / 0.10, 0, 1) + 0.25 * (rd < r) * (rd > R)
-            band = np.floor(band * 3 + BAYER_FULL[ys, xs] * 0.9) / 3
-            Ic += (band * a * (0.55 if main else 0.32))[:, None] * (COL[k] / 255.0 * 0.9 + 0.25)[None]
+        # decals: WAR CRY's tartan band, BAG BURST's gust (the waves), the jaws' light, FULL BELLOWS' shadow wall
+        paint = []
         wav = RUN['WAVES'][i] if in_fight else []
         for owner, cx, cz, r, rmax, kind, t0 in wav:
-            if kind == 'bellows':                                     # drawn from the stroke events above
+            rd = np.hypot(sxp - cx, szp - cz)
+            k_ = (1 - r / rmax)
+            if kind == 'shockwave':                                   # WAR CRY: a tartan ring rolling out
+                paint.append(ST.tartan_ring(sxp, szp, BAYER_FULL[ys, xs], cx, cz, r, 0.26, 0.95 * k_ + 0.05, t))
+                band = np.clip(1 - np.abs(rd - r) / 0.3, 0, 1)
+                Ic += (band * k_ * 0.5)[:, None] * (COL[owner] / 255.0 + 0.15)[None]
                 continue
-            rd = np.hypot(sxp - cx, szp - cz)
-            wdt = 0.16 if kind == 'shockwave' else 0.36
-            k_ = (1 - r / rmax) * (1.0 if kind == 'shockwave' else 1.3)
-            if kind == 'wave':                                        # BAG BURST: a thick gust with puffs of air
-                ang_ = np.arctan2(szp - cz, sxp - cx)
-                rd = rd + 0.08 * np.sin(5 * ang_ + 9 * t) + 0.05 * np.sin(13 * ang_ - 17 * t)
-            band = np.clip(1 - np.abs(rd - r) / wdt, 0, 1)
+            ang_ = np.arctan2(szp - cz, sxp - cx)                     # BAG BURST: a thick gust with puffs of air
+            rd = rd + 0.08 * np.sin(5 * ang_ + 9 * t) + 0.05 * np.sin(13 * ang_ - 17 * t)
+            band = np.clip(1 - np.abs(rd - r) / 0.36, 0, 1)
             band = np.floor(band * 3 + BAYER_FULL[ys, xs] * 0.9) / 3
-            Ic += (band * k_ * 0.9)[:, None] * (COL[owner] / 255.0 * 1.4 + (0.35 if kind == 'wave' else 0.15))[None]
-        sl = RUN['SLAMS'][i] if in_fight else []
-        for owner, cx, cz, t0, t_slam, rad in sl:
-            rd = np.hypot(sxp - cx, szp - cz)
-            if t < t_slam:
-                u = (t - t0) / (t_slam - t0)
-                m = rd < rad
-                Ic[m] *= 1 - 0.55 * u
-                ring = np.abs(rd - rad) < 0.05
-                Ic[ring] += (COL[owner] / 255.0) * (0.4 + 0.5 * (math.sin(t * 40) > 0))
-            else:
-                u = (t - t_slam) / 0.6
-                band = np.clip(1 - np.abs(rd - (rad + 1.6 * u)) / 0.2, 0, 1) * (1 - u)
-                Ic += band[:, None] * np.array([0.9, 0.9, 1.0])[None]
+            Ic += (band * k_ * 1.2)[:, None] * (COL[owner] / 255.0 * 1.4 + 0.35)[None]
+        for b in bites:                                               # the open mouth lights the canvas under it
+            ob = ST.bite_open(tc, b['t0'], b['t_snap'])
+            if ob is None:
+                continue
+            p = fs[b['k']]['p']
+            rd = np.hypot(sxp - p[0], szp - p[1])
+            ang_ = np.arctan2(szp - p[1], sxp - p[0])
+            a_ = math.radians(BITE_HALF[b['k']]) * 1.15 * max(ob[0], 0.15)
+            inm = (np.abs((ang_ - b['aim'] + math.pi) % (2 * math.pi) - math.pi) < a_) & (rd < R + b['reach'] * ob[1]) & (rd > R)
+            snapk = math.exp(-max(0.0, tc - b['t_snap']) / 0.08) if tc >= b['t_snap'] - 0.06 else 0.35
+            Ic += (inm * 0.22 * snapk)[:, None] * (COL[b['k']] / 255.0 + 0.2)[None]
         col = alb * Ic
-        if drone is not None:                                         # the tartan band, lit by the spot like the canvas
-            dpaint, dw = drone
+        for dpaint, dw in paint:                                      # tartan bands, lit by the spot like the canvas
             lit = np.clip(Ic.mean(1), 0.45, 1.6)[:, None] * 0.82
             col = col * (1 - dw[:, None]) + dpaint * lit * dw[:, None]
         arr[ys, xs] = np.floor(col / 5 + BAYER_FULL[ys, xs, None]) * 5
@@ -947,18 +1040,12 @@ def render(f):
     draw_post('back')
     draw_rope_side(2)
     draw_rope_side(3)
-    if stroke_list:
-        arr, depth = fr.array(), fr.depth()
-        for t0, k, main, push, reach, cx, cz in stroke_list:
-            w_ = BW[k]
-            ps = ST.stroke_state(t_rings if t0 < T_KO else t, t0, reach, w_['speed'], push, w_['pull_k'], w_['pull_speed'])
-            if ps is None:
-                continue
-            if push:
-                ST.draw_push(arr, cam, cx, cz, ps[0], ps[1], COL[k], bool(main))
-            else:
-                ST.draw_pull(arr, cam, cx, cz, ps[0], ps[1], COL[k], fs[k]['p'], bool(main))
-        fr.set_array(arr, depth)
+    for c in clamps:                                                  # FULL BELLOWS: a low bellows wall across the ring
+        st_ = ST.clamp_state(tc if t < T_HS else t, c['t0'], c['t_snap'], c['c'], c['axis'], c['q'], S.A)
+        if st_ is not None:                                           # (under the fighters: they stay readable)
+            arr, depth = fr.array(), fr.depth()
+            ST.draw_clamp(arr, cam, st_[0], st_[1], c['axis'], COL[c['k']], st_[2], width=1.1, h=0.32)
+            fr.set_array(arr, depth)
     # ---------------- fighters, weapons, keys, posts (painter by depth)
     items = []
     for name in ('red', 'blue'):
@@ -972,6 +1059,14 @@ def render(f):
         if st['shield'] > 0:                                          # SQUEEZEBOX: the collar wraps the ball
             items.append((dz + 0.03, 'sq_back', k))
             items.append((dz - 0.03, 'sq_front', k))
+        if st.get('phase') == 'fly' and not st['shattered']:          # the balloon's ribbon trail (behind it)
+            items.append((dz + 0.05, 'trail', k))
+    for b in bites:                                                   # the jaws (painted by the mouth's middle)
+        ob = ST.bite_open(tc, b['t0'], b['t_snap'])
+        if ob is not None:
+            p = fs[b['k']]['p']
+            mid = p + (R + b['reach'] * 0.5 * ob[1]) * np.array([math.cos(b['aim']), math.sin(b['aim'])])
+            items.append((cam.depth(S.to_world(mid[0], mid[1], R))[0], 'jaws', (b, ob)))
     items.sort(key=lambda it: -it[0])
     drawn = {}
     for dz, kind, obj in items:
@@ -988,18 +1083,29 @@ def render(f):
             k_ = min(1.0, st['shield'] / 0.2, (dur - st['shield']) / 0.12 + 0.2)
             close = ease(min(1.0, (dur - st['shield']) / 0.28))         # folds shut as it starts
             arr, depth = fr.array(), fr.depth()
-            ST.draw_squeezebox(arr, cam, st['p'][0], st['p'][1], t, k_, 1 if kind == 'sq_front' else 0, COL[obj], close)
+            ST.draw_squeezebox(arr, cam, st['p'][0], st['p'][1], t, k_, 1 if kind == 'sq_front' else 0, COL[obj], close,
+                               T.beat_pulse(t, 0.15))
             fr.set_array(arr, depth)
+        elif kind == 'trail':
+            j1 = sim_i(tc)
+            c_, ph = cycle_at(tc)
+            j0 = max(sim_i(c_['t_rel']) if c_ else j1 - 12, j1 - 14)
+            pts = [RUN['P'][j, obj] for j in range(j0, j1 + 1)]
+            arr, depth = fr.array(), fr.depth()
+            ST.draw_trail(arr, cam, pts, COL[obj], width=7)
+            fr.set_array(arr, depth)
+        elif kind == 'jaws':
+            b, ob = obj
+            arr, depth = fr.array(), fr.depth()
+            ST.draw_jaws(arr, cam, fs[b['k']]['p'], b['aim'], BITE_HALF[b['k']], b['reach'], ob[0], ob[1], COL[b['k']])
+            fr.set_array(arr, depth)
+
     # ---------------- front ropes + posts
     draw_rope_side(0)
     draw_rope_side(1)
     draw_post('front')
     arr, depth = fr.array(), fr.depth()
     # ---------------- shields, slams, shards, sparks
-    if in_fight:
-        for owner, cx, cz, t0, t_slam, rad in RUN['SLAMS'][i]:     # FULL BELLOWS: the giant bellows squeezes shut on it
-            a = min(1.0, (t - t0) / 0.2)
-            ST.draw_giant_bellows(arr, cam, cx, cz, rad, t, t0, t_slam, COL[owner], a)
     for kind, p, rot, size, curl, a in parts_at(t):
         sx_, sz_ = p[0], p[2]
         d = np.array([math.cos(rot), math.sin(rot)])
@@ -1035,6 +1141,7 @@ def render(f):
             shade_k = 0.75 + 0.25 * math.cos(rot * 2)
             layer_blend(arr, [sp], np.clip(col * shade_k, 0, 255), 1.0)
     sparks(arr, cam, t)
+    arr = PA.draw(arr, cam, t, light=lambda P: 1.0 + 0.6 * FL.tint(P, t))   # puffs, tartan shreds (reelkit.fx)
     # countdown in the ring (sharp, over everything in the ring)
     cs = cam.wp(np.array([[0.0, 0.3, 0.0]]))[0]
     fr.set_array(arr, depth)
@@ -1042,6 +1149,14 @@ def render(f):
     img, depth = fr.array(), fr.depth()
     zf = cam.depth(S.SUBJECT)[0]
     img = dof(img, coc_map(depth, zf, 26.0, sharp=0.17))
+    if in_fight:                                                      # heat shimmer on WAR CRY / BAG BURST fronts
+        for owner, cx, cz, r, rmax, kind, t0 in RUN['WAVES'][i]:
+            img = fx.shimmer_world(img, cam, S.to_world(cx, cz, 0.05), r, 0.4 if kind == 'wave' else 0.25,
+                                   3.0 if kind == 'wave' else 2.0, t, k=1 - r / rmax, seed=owner)
+    for c in CLAMPS:                                                  # and on FULL BELLOWS' slam
+        u = (t - c['t_snap']) / 0.45
+        if 0 <= u < 1 and t < T_HS:
+            img = fx.shimmer_world(img, cam, S.to_world(c['q'][0], c['q'][1], 0.05), 0.8 + 2.2 * u, 0.35, 3.0, t, k=1 - u)
     for name, lp in (('red', S.RED_LIGHT), ('blue', S.BLUE_LIGHT)):
         s_ = cam.wp(lp[None])[0]
         fr.glow(s_[0], s_[1], 16, tuple(COL[0] if name == 'red' else COL[1]), 0.35 + 0.15 * T.beat_pulse(t, 0.2))
@@ -1049,11 +1164,11 @@ def render(f):
         st = fs[k]
         if st['glow'] > 0.05:
             fr.glow(s_[0], s_[1], rp * 2.2, tuple(COL[k] * 0.8 + 50), 0.45 * st['glow'])
-    for e_i, e in events_between(t - 0.15, t, ('hit',)):
-        if e[7] in ('bellows', 'suction', 'slam', 'wave', 'shockwave') or (e[7] == 'aura' and e[8]):
+    for e_i, e in events_between(t - 0.15, t, ('hit',)):              # halved: the bursts carry the impacts now
+        if e[7] in ('flight', 'bodyslam', 'clamp', 'wave', 'shockwave', 'bite'):
             s_ = cam.wp(S.to_world(e[5], e[6], R)[None])[0]
-            big = e[7] != 'aura'
-            fr.glow(s_[0], s_[1], 14 if big else 8, tuple(COL[e[2]] * 0.7 + 70), (0.7 if big else 0.45) * (1 - (t - e[0]) / 0.15))
+            big = e[7] != 'bite'
+            fr.glow(s_[0], s_[1], 12 if big else 7, tuple(COL[e[2]] * 0.7 + 70), (0.35 if big else 0.22) * (1 - (t - e[0]) / 0.15))
     if T_KO <= t < T_HS + 0.25:
         s_ = cam.wp(S.to_world(P_KO[LOSE][0], P_KO[LOSE][1], R)[None])[0]
         fr.glow(s_[0], s_[1], 46, (255, 240, 220), 0.9 * (1 - ss(T_KO, T_HS + 0.25, t)))
@@ -1075,8 +1190,22 @@ def render(f):
     if -30 < s0[1] < 60:
         img = apply_glows(img, [(s0[0], s0[1], 30, (255, 244, 220), 0.9), (s0[0], s0[1], 10, (255, 255, 255), 1.0)])
     img = grade(bloom(np.clip(img, 0, 255), thr=225, k=0.22), contrast=0.18, sat=1.18)
-    img = np.clip(img * vignette(strength=0.45) * top_scrim(0.45, 100, 90), 0, 255).astype(np.uint8)
-    img = np.ascontiguousarray(img)
+    img = np.clip(img * vignette(strength=0.45) * top_scrim(0.45, 100, 90), 0, 255)
+    for e_i, e in events_between(t - 0.1, t, ('hit',)):              # chromatic fringing on the big hits (local)
+        if e[7] in ('flight', 'bodyslam', 'clamp', 'wave'):
+            s_ = cam.wp(S.to_world(e[5], e[6], R)[None])[0]
+            img = fx.fringe(img, s_[0], s_[1], 30 if e[7] in ('clamp', 'wave') else 20, 2.6 if e[7] in ('clamp', 'wave') else 1.8,
+                            k=1 - (t - e[0]) / 0.1)
+    if T_KO <= t < T_HS + 0.3:
+        s_ = cam.wp(S.to_world(P_KO[LOSE][0], P_KO[LOSE][1], R)[None])[0]
+        img = fx.fringe(img, s_[0], s_[1], 34, 3.0, k=1 - ss(T_HS, T_HS + 0.3, t))
+    keep = [(s_[0], s_[1], rp * 1.7) for s_, rp in drawn.values()]
+    img = MO.apply_dim(img, t, keep=keep)                             # ability moments: dim + speed lines
+    for k, (s_, rp) in drawn.items():
+        s1 = cam.wp(S.to_world(*fighter(k, max(0.0, t - 0.1))['p'], R)[None])[0]
+        img = MO.speed_lines(img, t, k, s_[0], s_[1], rp, (s_[0] - s1[0], s_[1] - s1[1]))
+    img = BU.draw(img, cam, t)                                        # 1-2 frame ink-starburst impacts
+    img = np.ascontiguousarray(np.clip(img, 0, 255).astype(np.uint8))
     # ---------------- UI: countdown, HP numbers in the balls, fight HUD, captions
     countdown(img, t, cs)
     for k, (s_, rp) in drawn.items():

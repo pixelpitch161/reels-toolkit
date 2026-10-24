@@ -20,7 +20,7 @@ from fight import Fight, Rules, lead_changes
 from fighters import FIGHTERS
 
 LOWS = tuple(FIGHTERS[n]['abilities']['low']['name'] for n in T.FIGHTERS)
-REC_KEYS = ('P', 'V', 'TH', 'BL', 'FR', 'NV', 'HP', 'LV', 'SH', 'HA', 'SPIN', 'OM', 'K')
+REC_KEYS = ('P', 'V', 'TH', 'BL', 'FR', 'NV', 'HP', 'LV', 'SH', 'HA', 'SPIN', 'OM', 'K', 'RAD')   # RAD: v2 inflate
 
 
 def rules():
@@ -90,7 +90,8 @@ def load(seed=None):
     run = run_seed(seed)
     import numpy as np
     for k in REC_KEYS:
-        run[k] = np.array(run[k])
+        if k in run:
+            run[k] = np.array(run[k])
     os.makedirs(os.path.dirname(path), exist_ok=True)
     tmp = path + f'.{os.getpid()}.tmp'
     with open(tmp, 'wb') as f:

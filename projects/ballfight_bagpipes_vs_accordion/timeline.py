@@ -1,12 +1,15 @@
 """#30 BALLFIGHT #4: Bagpipes vs Accordion - ONE timeline for picture and sound.
 
-Idea: the "most hated instrument" final on #27's engine, ring, HUD and count-in. BAGPIPES (left corner) wears its drone
-like an aura: a ring around the ball that hurts the accordion on every 8th while it is inside (a chanter note per tick,
-the drone swells), and every contact grows the ring. ACCORDION (right corner) fights with its bellows: one bar a blast
-that shoves the bagpipes away, the next bar a suction that yanks them back in (a wheezy chord stab on each stroke).
-Pulling the bagpipes close drags the accordion into the drone, so every suction is a gamble. Levels from damage dealt
-unlock two abilities each; below 25 HP each gets one desperation move. Honest simulated fight (projects/ballfight/
-fight.py, rules re-tuned once for this pair with tune.py, then frozen), the seed picked for pacing, never edited.
+Idea: the "most hated instrument" final on #27's engine, ring, HUD and count-in. v2 (BALLFIGHT v2 redesign, user Oct 24):
+the bag and the bellows are the weapons. BAGPIPES (left corner): BAG INFLATE - every bar the bag swells over 2 beats to
+~1.6x size and mass (heavy, slow, body-slams), then lets go and rockets around the ring like a released balloon,
+zig-zagging and squealing (contact damage; every landed hit grows the inflation and the flight). ACCORDION (right
+corner): BELLOWS BITE - every 2 beats the end boards fly apart with the pleated bellows stretched between them like
+jaws and snap shut a 16th-grid later (a landed bite grows the jaw reach). Abilities: WAR CRY (tartan shockwave),
+HIGHLAND FLING (two flights per bar), BAG BURST (the bag pops); POLKA (bites every beat), SQUEEZEBOX (folds shut,
+buttons glowing), FULL BELLOWS (the bellows stretch across the whole ring and clamp). Honest simulated fight
+(projects/ballfight/fight.py, rules re-tuned for v2 with tune.py, then frozen), the seed picked for pacing, never
+edited. v1 (drone aura vs bellows rings, seed 1581) is in git history and *_v1_backup.py.
 Hook: the giant 3 . 2 . 1 . FIGHT! in the ring = the band's count-in (stomp + clap + a chanter blast and an accordion
 chord per count, the drop lands on FIGHT); top caption "BAGPIPES / VS ACCORDION" with the BALLFIGHT #4 tag.
 Music, mood: dark sea shanty. A dorian (the chanter's A, so the drone sits in it; dorian = the shanty's own minor),
@@ -15,8 +18,8 @@ stomping, a low male-choir hum pad, foot stomps and claps, no fiddle, at loop_bp
 
 Beat sheet (61 s; events after 2 s are the run's own: the seed was chosen so they land near these targets):
     0-1.97   balls rev in corners; giant 3 . 2 . 1 in the ring          BAGPIPES / VS ACCORDION, then FIGHT!
-    1.97-8   launch; the drone ring vs push / suck strokes, HP ticking   -
-    8-30     the drone ring grows, the bellows reach further; unlocks    WAR CRY, POLKA, DOUBLE DRONE, SQUEEZEBOX
+    1.97-8   launch; the bag swells and rockets vs the snapping jaws      -
+    8-30     the bag grows, the flights get longer, the jaws reach further; WAR CRY, POLKA, HIGHLAND FLING, SQUEEZEBOX
     32-44    one dips below 25 HP                                        BAG BURST or FULL BELLOWS
     44-52    final exchange, HP in single digits                         -
     ~49-53   K.O.: hit-stop, slow-mo shatter (pipes + tartan / buttons + bellows pleats)   K.O. -> (WINNER) WINS
@@ -42,14 +45,14 @@ T_FIGHT = BAR                   # FIGHT! lands on the bar-1 downbeat: the drop, 
 COUNT = [(0.0, '3'), (BEAT, '2'), (2 * BEAT, '1'), (BAR, 'FIGHT!')]
 
 # ---------------------------------------------------------------- frozen rules (tune.py; the same for every seed)
-DMG_SCALE = 1.02                # tuned once (tune.py) so the median K.O. sits near 50 s with each side winning about half
+DMG_SCALE = 0.76  # tuned once (tune.py) so the median K.O. sits near 50 s with each side winning about half
 
 # ---------------------------------------------------------------- story targets (seed_search.py scores runs against these)
 T_KO = (49.0, 53.0)
 MIN_LEAD_CHANGES = 2
 MAX_WINNER_HP = 30.0
 CAP_GAP = 4.0                   # never two ability captions within 4 s
-CAP_TARGETS = {'WAR CRY': 10, 'POLKA': 15, 'DOUBLE DRONE': 22, 'SQUEEZEBOX': 28, 'BAG BURST': 40, 'FULL BELLOWS': 40}
+CAP_TARGETS = {'WAR CRY': 10, 'POLKA': 15, 'HIGHLAND FLING': 22, 'SQUEEZEBOX': 28, 'BAG BURST': 40, 'FULL BELLOWS': 40}
 
 # ---------------------------------------------------------------- the scripted tail (after the honest K.O.)
 SLOWMO = 0.7                    # s of picture time the last instant of the fight is stretched over (the K.O. hit)

@@ -13,4 +13,4 @@ spec.loader.exec_module(M)
 
 if __name__ == '__main__':
     os.chdir(HERE)
-    M.main(raw='frames_raw.rgb', audio='audio.wav', out=sys.argv[1] if len(sys.argv) > 1 else 'ballfight_bagpipes_vs_accordion.mp4')
+    M.main(raw='frames_raw.rgb', audio='audio.wav', out=sys.argv[1] if len(sys.argv) > 1 else 'ballfight_bagpipes_vs_accordion_v2.mp4')

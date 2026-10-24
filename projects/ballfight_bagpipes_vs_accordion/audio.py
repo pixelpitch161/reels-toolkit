@@ -1,22 +1,18 @@
-"""#30 BALLFIGHT #4: Bagpipes vs Accordion - soundtrack (dark sea shanty), all synthesised, original.
-
-The bed has no lead: the bagpipes and the accordion are the band's two leads, both played by the honest run:
-  BAGPIPES   the drone (A2 + two A3 drones, in the Pixel Pitch Highland pipe's own timbre) runs under the whole video,
-             kept low, and swells every time the aura lands a tick; each landed tick plays the chanter's shanty line at
-             that 8th (16ths under DOUBLE DRONE), the first tick of a contact with the high-G grace squeal. WAR CRY is a
-             skirl up to high A, DOUBLE DRONE adds the tenor fifth, BAG BURST deflates the bag in one wheezing slide.
-             As its HP drops the chanter thins and dirties and the drones go sour.
-  ACCORDION  every stroke is a chord in the Pixel Pitch accordion's reeds on the bar's chord: a push is the "oom" (a
-             bass button + the chord, with the bellows' wheeze), a pull the "pah" (the chord swelling in, an inhale);
-             landed strokes hit harder, POLKA turns it into an every-beat oom-pah, SQUEEZEBOX folds shut with a squeal,
-             FULL BELLOWS inhales for two beats and blasts every reed at once. As its HP drops the chords lose notes and
-             wheeze.
+"""#30 BALLFIGHT #4: Bagpipes vs Accordion v2 (BALLFIGHT v2 redesign) - soundtrack (dark sea shanty), all synthesised,
+original. Same bed, count-in, tempo and mood as v1 (audio_v1_backup.py); the two leads now follow the v2 attacks:
+  BAGPIPES   BAG INFLATE: the drone (A2 + two A3 drones, the Pixel Pitch Highland pipe's own timbre, looping
+             sample-perfectly) is the bag's air: low at rest, swelling as the bag inflates, draining as it empties in the
+             flight, while the chanter squeals up an octave, wobbling at every zig-zag; a landed flight is a grace-note
+             squeal + a hit, a body slam a drone blat. WAR CRY skirls up to high A, HIGHLAND FLING throws a reel
+             flourish, BAG BURST pops and deflates. As its HP drops the chanter thins and dirties and the drones go sour.
+  ACCORDION  BELLOWS BITE: the jaws open on the beat with the bass button (oom) and snap shut on the "and" with a wheezy
+             chord stab in the Pixel Pitch accordion's reeds (pah); landed bites hit harder with a chomp; POLKA makes it an
+             every-beat oom-pah; SQUEEZEBOX folds shut with a squeal; FULL BELLOWS inhales for a beat and blasts every
+             reed at once. As its HP drops the chords lose notes and wheeze.
 Bed: A dorian at 121.97 BPM (31 bars = 61 s): foot stomps on 1 and 3, gang claps on 2 and 4, a low male-choir hum
-pad, a bass voice on the stomps, a frame drum joining for the back half. The count-in bar (stomp + clap + a chanter
-blast + an accordion chord per count, on the dominant E) drops on FIGHT!; at the K.O. the bed tape-stops with the
-hit-stop, the loser's instrument dies (the bag deflates / the bellows tear), the crowd roars, the winner's stinger
-lands, then its solo over a lighter bed; bar 30 builds (stomp roll, riser, choir climb) into the "3" on sample 0.
-The drone loops sample-perfectly (whole cycles in the file). Every hit is snapped to the nearest 16th.
+pad, a bass voice on the stomps, a frame drum joining for the back half. The count-in bar drops on FIGHT!; at the K.O.
+the bed tape-stops with the hit-stop, the loser's instrument dies, the crowd roars, the winner's stinger lands, then its
+solo over a lighter bed; bar 30 builds into the "3" on sample 0. Every hit is snapped to the nearest 16th.
 
     python audio.py            -> audio.wav (whole AAC frames) + stems in check/ for the band check"""
 import math
@@ -258,6 +254,21 @@ def deflate(dur=1.6, f0=440.0, f1=150.0, seed=21):
     return A.lp(x, 4500) + air
 
 
+def squeal(dur, f0, t0):
+    """the released balloon: the chanter's reed squealing up about an octave over the flight, wobbling hard at every
+    zig-zag (a vibrato that speeds up), the air hissing out as it empties"""
+    n = int((dur + 0.06) * SR)
+    t = A.tt(n)
+    u = np.clip(t / dur, 0, 1)
+    f = f0 * 2 ** (0.95 * u ** 0.8) * (1 + 0.035 * np.sin(2 * np.pi * (7 + 9 * u) * t))
+    tb = BAG.wt(f0, HL['tilt'], HL['form'], HL['fbw'], HL['fgain'], HL['odd'])
+    ph = np.cumsum(f) / SR
+    x = tb[(ph * 2048).astype(int) & 2047]
+    env = np.clip(t / 0.02, 0, 1) * (1 - 0.55 * u) * np.clip((dur + 0.05 - t) / 0.05, 0, 1)
+    air = A.bp(np.random.default_rng(int(t0 * 100)).normal(0, 1, n), 2000, 8000) * 0.35 * u
+    return A.lp(x * env, 5200) + air * env
+
+
 def tear(dur=1.2, seed=23):
     """the bellows tearing: a ripping burst of air and every reed sagging out of tune"""
     n = int(dur * SR)
@@ -340,132 +351,125 @@ def main():
     mix.place('fx', A.whoosh(3.6, 300, 6000), 44.0 - 3.6, 0.10)
     for k in ('stomp', 'choir', 'drum'):
         mix.buses[k] = A.tape_stop(mix.buses[k], T_KO, 0.42)
-    # ------------------------------------------------ BAGPIPES: the drone + the chanter on every landed tick
+    # ------------------------------------------------ BAGPIPES: the drone is the bag's air; the flight squeals
     n = NA
     tt_ = np.arange(n) / SR
-    drone = drone_layer(((57, 1.0, -1.5), (57, 1.0, 1.5), (45, 1.1, 0.0)), n)
-    tenor = drone_layer(((64, 0.8, 0.0),), n)                       # DOUBLE DRONE's fifth
-    hits_p = [e for e in EV if e[1] == 'hit' and e[2] == KP and e[7] == 'aura' and e[0] <= T_KO + 0.01]
-    imp = np.zeros(n)
-    for e in hits_p:
-        imp[min(n - 1, int(q16(e[0]) * SR))] += 1.0
     from scipy.signal import lfilter
-    a_rel = math.exp(-1 / (0.40 * SR))
-    swell = lfilter([1 - a_rel], [1, -a_rel], imp) * (0.40 * SR) / 6.0      # ~ number of ticks in the last 0.4 s / 6
-    swell = np.clip(swell, 0, 1)
-    swell = lfilter([0.02], [1, -0.98], swell)                      # a ~1 ms attack (no clicks)
-    alive = np.ones(n)                                              # the drone is the bagpipes' life: it stops at a
-    if LOSE == KP:                                                  # bagpipes K.O. and comes back with the reassembly
+    drone = drone_layer(((57, 1.0, -1.5), (57, 1.0, 1.5), (45, 1.1, 0.0)), n)
+    tframes = T.T_FIGHT + np.arange(len(RUN['RAD'])) / T.FPS
+    full = np.clip((RUN['RAD'][:, KP] / RD.R - 1) / 0.6, 0, 1)            # how full the bag is (0 at rest .. 1)
+    full_t = np.interp(tt_, tframes, full, left=0, right=0)
+    full_t = lfilter([0.003], [1, -0.997], full_t)
+    alive = np.ones(n)                                                   # the drone stops at a bagpipes K.O. and
+    if LOSE == KP:                                                       # comes back with the reassembly
         alive = np.where(tt_ < T_KO, 1.0, 0.0) + np.clip((tt_ - T.T_GLIDE) / 0.6, 0, 1) * (tt_ >= T.T_GLIDE)
         alive = lfilter([0.002], [1, -0.998], alive)
     hp_p = np.array([hp_at(KP, x) for x in np.linspace(0, T.DUR, 400)]) / 100.0
     hp_curve = np.interp(tt_, np.linspace(0, T.DUR, 400), hp_p)
     champ = (tt_ >= T_KO) * np.clip((T.T_REV - tt_) / (T.T_REV - T.T_GLIDE), 0, 1) * (LOSE != KP)
-    base = 0.11 + 0.10 * champ                                      # under the mix; a little louder for the champion's
-                                                                    # lap, back to the opening level before the seam
-    g = (base + 0.85 * swell) * alive
-    sour = np.sin(2 * np.pi * 0.37 * tt_) * 0.5 + 0.5               # the drones go sour as the bag weakens
+    g = (0.11 + 0.10 * champ + 0.42 * full_t) * alive                   # under the mix, up with the bag
+    sour = np.sin(2 * np.pi * 0.37 * tt_) * 0.5 + 0.5
     drone_sig = drone * g * (1 - 0.35 * (1 - hp_curve) * sour)
-    haste_p = np.interp(tt_, RD.T.T_FIGHT + np.arange(len(RUN['HA'])) / T.FPS, (RUN['HA'][:, KP] > 0).astype(float),
-                        left=0, right=0)
-    haste_p = lfilter([0.0005], [1, -0.9995], haste_p)
-    drone_sig = drone_sig + tenor * 0.8 * haste_p * g
     mix.bus('drone')[:n] += np.stack([drone_sig * 0.95, drone_sig * 1.0], 1)
-    step_ticks = {}
-    for e in hits_p:
-        tq = q16(e[0])
-        first = bool(e[8])
-        hasted = float(RUN['HA'][RD.sim_i(e[0]), KP]) > 0
-        step = S16 if hasted else 2 * S16
-        m = T.melody_at(tq)
-        if hasted and round(tq / S16) % 2:                           # the 16ths in between: a passing note up
-            ms = T.scale_notes(m + 1, m + 3)
-            m = ms[0] if ms else m
-        sig, gg, lead = colour(chanter(m, step * 0.9, 0.9, grace=first), KP, tq, 1.0)
-        pan = float(np.clip(e[5] / 3.5, -0.5, 0.5))
-        mix.place('chanter', sig, tq, 0.30 * gg * (1.25 if first else 1.0), pan=pan)
-        if lead > 0.06 and not hasted:                              # the leader: the line doubled an octave down
-            mix.place('chanter', colour(chanter(m - 12, step * 0.9, 0.7), KP, tq)[0], tq, 0.10 * gg, pan=pan)
-        step_ticks[round(tq, 3)] = True
-    # ------------------------------------------------ ACCORDION: every stroke is a chord (push = oom, pull = pah)
-    for e in EV:
-        if e[1] != 'bellows' or e[2] != KA or e[0] > T_KO + 0.01:
+    zigs = {}
+    for c in RD.CYCLES:
+        if c['t_rel'] > T_KO:
             continue
-        t0 = q16(e[0])
-        main_, push = bool(e[3]), bool(e[4])
-        hp = hp_at(KA, t0) / 100.0
-        lead = (hp_at(KA, t0) - hp_at(KP, t0)) / 100.0
-        wz = 0.25 + 0.9 * (1 - hp) ** 1.3
-        if push:
-            vo = acc_chord(t0, hp, lead)
-            sig, gg, _ = colour(reeds(vo, 0.20 if main_ else 0.13, 0.9, wheeze=wz, seed=int(t0 * 10)), KA, t0, 0.8)
-            mix.place('acc', sig, t0, (0.34 if main_ else 0.24) * gg, pan=0.2)
-            mix.place('acc', colour(reeds((OOM[T.chord_at(t0)] - 12, OOM[T.chord_at(t0)]), 0.24, 0.9, seed=3), KA, t0)[0],
-                      t0, 0.30 * gg, pan=0.1)
-        else:
-            vo = acc_chord(t0, hp, lead, high=True)
-            d = 0.34 if main_ else 0.20
-            sig, gg, _ = colour(reeds(vo, d, 0.85, swell=True, wheeze=wz, seed=int(t0 * 10) + 1), KA, t0, 0.8)
-            mix.place('acc', sig, t0, (0.28 if main_ else 0.20) * gg, pan=0.25)
+        mix.place('fx', A.whoosh(c['dur_i'], 200, 1400) * 0.6, c['t0'], 0.05)          # the bag filling
+        t1 = min(c['t_land'], T_KO)
+        d = t1 - c['t_rel']
+        if d <= 0.05:
+            continue
+        m0 = T.melody_at(q16(c['t_rel']))
+        sig = squeal(d, BAG.midi_hz(m0), c['t_rel'])
+        sg, gg, _ = colour(sig, KP, c['t_rel'], 1.0)
+        mix.place('chanter', sg, c['t_rel'], 0.24 * gg, pan=-0.15)
     for e in EV:
         t, kind = e[0], e[1]
         if t > T_KO + 0.01:
             break
-        if kind == 'hit' and e[2] == KA and e[7] in ('bellows', 'suction'):
+        if kind == 'hit' and e[2] == KP and e[7] in ('flight', 'bodyslam'):
             tq = q16(t)
+            pan = float(np.clip(e[5] / 3.5, -0.5, 0.5))
+            if e[7] == 'flight':                                   # a squealing grace note + the hit
+                m = T.melody_at(tq) + 12 if T.melody_at(tq) < 72 else T.melody_at(tq)
+                sig, gg, lead = colour(chanter(m, 0.22, 1.0, grace=True), KP, tq, 1.0)
+                mix.place('chanter', sig, tq, 0.34 * gg, pan=pan)
+                mix.place('fx', A.thud(0.32, 150, 55, seed=int(t * 7)), tq, 0.18)
+            else:                                                  # a body slam: a drone blat + a stomp
+                mix.place('chanter', A.lp(colour(chanter(57, 0.3, 1.0), KP, tq)[0], 1800), tq, 0.30, pan=pan)
+                mix.place('stomp', stomp(1.0, int(t * 3)), tq, 0.40)
+                mix.place('fx', A.thud(0.4, 110, 40, seed=int(t * 5)), tq, 0.22)
+    # ------------------------------------------------ ACCORDION: bites = oom (opening, bass button) + pah (snap, chord)
+    for e in EV:
+        if e[0] > T_KO + 0.01:
+            break
+        if e[1] == 'bite' and e[2] == KA:
+            t0 = q16(e[0])
+            hp = hp_at(KA, t0) / 100.0
+            main_ = bool(e[3])
+            ch = T.chord_at(t0)
+            oom = colour(reeds((OOM[ch] - 12, OOM[ch]), 0.20, 0.85, seed=3), KA, t0)[0]
+            mix.place('acc', oom, t0, 0.24 if main_ else 0.16, pan=0.1)
+            mix.place('acc', reeds(acc_chord(t0, hp, 0.0)[:2], 0.12, 0.6, swell=True, wheeze=0.5, seed=5), t0, 0.06, pan=0.2)
+        elif e[1] == 'snap' and e[2] == KA:
+            tq = q16(e[0])
             hp = hp_at(KA, tq) / 100.0
             lead = (hp_at(KA, tq) - hp_at(KP, tq)) / 100.0
-            pan = float(np.clip(e[5] / 3.5, -0.6, 0.6))
-            if e[7] == 'bellows':                                  # a landed push: the full chord slammed + the hit
-                sig, gg, _ = colour(reeds(acc_chord(tq, hp, lead), 0.16, 1.0, wheeze=0.5, seed=7), KA, t)
-                mix.place('acc', sig, tq, 0.30 * gg, pan=pan)
-                mix.place('fx', A.thud(0.32, 140, 50, seed=int(t * 7)), tq, 0.16)
-            else:                                                  # a landed suction: a gulp, the chord pulled down
-                vo = [m - 12 for m in acc_chord(tq, hp, lead)[:3]]
-                sig, gg, _ = colour(reeds(vo, 0.14, 1.0, wheeze=0.6, seed=8), KA, t)
-                mix.place('acc', sig, tq, 0.30 * gg, pan=pan)
-                mix.place('fx', A.whoosh(0.18, 3000, 400, rise=False), tq - 0.12, 0.08)
-                mix.place('fx', A.thud(0.28, 120, 45, seed=int(t * 9)), tq, 0.12)
-        elif kind == 'block':                                      # the drone hits the closed squeezebox: a buzz
-            mix.place('fx', A.bp(chanter(T.melody_at(q16(t)) + 12, 0.06, 0.6), 1500, 6000), q16(t), 0.08)
+            wz = 0.3 + 0.9 * (1 - hp) ** 1.3
+            landed = bool(e[4])
+            vo = acc_chord(tq, hp, lead)
+            sig, gg, _ = colour(reeds(vo, 0.16, 0.95 if landed else 0.8, wheeze=wz, seed=int(tq * 10)), KA, tq, 0.8)
+            mix.place('acc', sig, tq, (0.36 if landed else 0.24) * gg, pan=0.2)
+            if landed:                                             # the chomp
+                mix.place('fx', A.thud(0.22, 220, 70, seed=int(tq * 13)), tq, 0.16)
+                mix.place('fx', A.bp(np.random.default_rng(int(tq * 17)).normal(0, 1, int(0.05 * SR)), 900, 4000)
+                          * np.exp(-A.tt(int(0.05 * SR)) / 0.012), tq, 0.10)
+    for e in EV:
+        t, kind = e[0], e[1]
+        if t > T_KO + 0.01:
+            break
+        if kind == 'block':                                        # the bag bounces off the closed squeezebox
+            mix.place('fx', A.chime(93, 0.4) + A.chime(100, 0.4) * 0.5, q16(t), 0.07)
         elif kind == 'rope':
-            mix.place('fx', A.thud(0.22, 95, 55, seed=int(t * 10)), t, 0.06 * min(1.5, e[7] / 2.6),
+            mix.place('fx', A.thud(0.22, 95, 55, seed=int(t * 10)), t, 0.05 * min(1.5, e[7] / 2.6),
                       pan=float(np.clip(e[5] / 3.5, -0.6, 0.6)))
         elif kind == 'clash':
-            mix.place('fx', A.chime(91, 0.25), t, 0.05)
+            pass                                                   # contact is scored by the hits
         elif kind == 'hit' and e[7] in ('shockwave', 'wave'):
             mix.place('fx', A.thud(0.45, 110, 40), q16(t), 0.30)
         elif kind == 'ability':
             who, name = e[2], e[3]
             tq = q16(t)
-            if name == 'WAR CRY':                                  # the skirl: a run up to high A, held, the drone roars
+            if name == 'WAR CRY':                                  # the skirl: a run up to high A, held
                 for j, m in enumerate((69, 71, 72, 74, 76, 79)):
                     mix.place('chanter', colour(chanter(m, S16 * 0.9, 1.0, grace=(j == 0)), KP, t)[0], tq + j * S16 / 2, 0.26)
                 mix.place('chanter', colour(chanter(81, 2 * T.BEAT, 1.0, grace=True), KP, t)[0], tq + 3 * S16, 0.34)
-            elif name == 'DOUBLE DRONE':
-                mix.place('fx', A.whoosh(0.6, 200, 3000), tq - 0.3, 0.08)
-            elif name == 'BAG BURST':                              # the bag deflates in one blast
-                mix.place('chanter', deflate(1.8, BAG.midi_hz(81), 160.0), tq, 0.34)
+            elif name == 'HIGHLAND FLING':                         # a reel flourish
+                for j, m in enumerate((76, 74, 72, 74, 76, 79, 81, 79)):
+                    mix.place('chanter', colour(chanter(m, S16 * 0.85, 0.95, grace=(j % 4 == 0)), KP, t)[0], tq + j * S16, 0.22)
+                mix.place('choir', choir((57, 60, 64), 0.18, att=0.01, rel=0.12, vowel='o'), tq, 0.14)
+            elif name == 'BAG BURST':                              # the bag pops, then deflates
+                pop = A.bp(np.random.default_rng(29).normal(0, 1, int(0.12 * SR)), 300, 9000) * np.exp(-A.tt(int(0.12 * SR)) / 0.02)
+                mix.place('fx', pop, tq, 0.55)
+                mix.place('chanter', deflate(1.8, BAG.midi_hz(81), 160.0), tq + 0.03, 0.34)
                 mix.place('fx', A.thud(0.7, 100, 32), tq, 0.45)
-                mix.place('fx', A.bp(np.random.default_rng(31).normal(0, 1, int(0.9 * SR)), 1200, 8000) *
-                          np.exp(-A.tt(int(0.9 * SR)) / 0.25), tq, 0.12)
-            elif name == 'POLKA':                                  # a little "hup" from the choir as the oom-pah starts
+            elif name == 'POLKA':
                 mix.place('choir', choir((57, 60, 64), 0.18, att=0.01, rel=0.12, vowel='o'), tq, 0.16)
-            elif name == 'SQUEEZEBOX':                             # folds shut: a cluster squeal cut off, a clunk
+            elif name == 'SQUEEZEBOX':
                 sq = reeds((69, 70, 71, 76), 0.26, 0.9, wheeze=0.9, seed=41)
                 mix.place('acc', sq, tq, 0.22, pan=0.2)
                 mix.place('fx', A.thud(0.25, 180, 80), tq + 0.26, 0.20)
-            elif name == 'FULL BELLOWS':                           # a two-beat inhale (the slam's telegraph)
-                d = 2 * T.BEAT
-                mix.place('acc', reeds((45, 57, 60, 64), d, 0.9, swell=True, wheeze=1.2, seed=43), tq, 0.30, pan=0.1)
-                mix.place('fx', A.whoosh(d, 3000, 300, rise=False), tq, 0.10)
-        elif kind == 'slam':                                       # the giant bellows squeezed shut: every reed at once
-            ts = e[0]
-            landed = bool(e[5])
+        elif kind == 'clamp':                                      # FULL BELLOWS: a beat-long inhale ...
+            d = e[4]
+            mix.place('acc', reeds((45, 57, 60, 64), d, 0.9, swell=True, wheeze=1.2, seed=43), q16(t), 0.30, pan=0.1)
+            mix.place('fx', A.whoosh(d, 3000, 300, rise=False), q16(t), 0.12)
+        elif kind == 'clamp_snap':                                 # ... then every reed at once
+            landed = bool(e[3])
             vo = (33, 45, 52, 57, 60, 64, 69, 72, 76)
-            mix.place('acc', reeds(vo, 0.55, 1.0, wheeze=1.4, seed=45), ts, 0.42 if landed else 0.30)
-            mix.place('fx', A.thud(0.7, 90, 30), ts, 0.55 if landed else 0.32)
-            mix.place('stomp', stomp(1.0, 51), ts, 0.5)
+            mix.place('acc', reeds(vo, 0.55, 1.0, wheeze=1.4, seed=45), t, 0.42 if landed else 0.30)
+            mix.place('fx', A.thud(0.7, 90, 30), t, 0.55 if landed else 0.32)
+            mix.place('stomp', stomp(1.0, 51), t, 0.5)
     # ------------------------------------------------ the K.O. moment
     mix.place('fx', A.thud(0.9, 120, 30), T_KO, 0.7)
     mix.place('stomp', stomp(1.0, 61), T_KO, 0.6)
@@ -531,7 +535,7 @@ def main():
         print(f'{a:5.1f}-{b:5.1f}s  rms {rms:6.1f} dBFS  peak {pk:5.1f}')
 
 
-BUS_GAIN = {'chanter': 1.0, 'acc': 1.0, 'drone': 1.0, 'solo': 1.0, 'fx': 1.5, 'stomp': 1.1, 'choir': 2.2, 'drum': 1.3}
+BUS_GAIN = {'chanter': 1.0, 'acc': 1.3, 'drone': 1.0, 'solo': 1.0, 'fx': 1.5, 'stomp': 1.1, 'choir': 2.2, 'drum': 1.3}
 GAIN_PTS = [(0, 0.0), (1.55, 0.0), (2.1, -1.8), (20, -1.7), (30, -0.6), (40, 1.6), (44, 2.6), (50.4, 3.5), (52.0, 2.8),
             (53.2, 3.3), (58.0, 3.3), (60.0, 1.6), (61.02, 0.6)]
 

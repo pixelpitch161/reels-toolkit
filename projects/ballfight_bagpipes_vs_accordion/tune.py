@@ -5,8 +5,8 @@ rate over seeds, for a grid of roster / rule overrides.
         P.<key> / A.<key>      BAGPIPES / ACCORDION weapon fields;  P.u1.<key>, A.low.<key> ...  ability fields
         scale                  the damage scale (timeline.DMG_SCALE)
 
-Also reports how the damage splits (aura ticks vs bellows push / suction) and how often the accordion's suction drags
-it into the drone (aura contacts that start within 0.5 s after a suction hit)."""
+Also reports how the damage splits by hit kind (v2: bodyslam / flight vs bite / clamp, plus the abilities), how many
+flights land, and how big the bag gets (mean inflated size at the K.O.)."""
 import itertools
 import os
 import sys
@@ -47,18 +47,20 @@ def one(args):
     lc, _ = lead_changes(r['events'])
     hp = [100.0, 100.0]
     by = {}
-    contacts, dragged, last_suck = 0, 0, -9.0
+    flights, landed_f = 0, 0
+    size = 1.0
     for e in r['events']:
         if e[1] == 'hit':
             hp[e[3]] -= e[4]
             by[e[7]] = by.get(e[7], 0.0) + e[4]
-            if e[7] == 'suction':
-                last_suck = e[0]
-            if e[7] == 'aura' and e[8]:
-                contacts += 1
-                dragged += e[0] - last_suck < 0.5
+            landed_f += e[7] == 'flight'
+        elif e[1] == 'release':
+            flights += 1
+        elif e[1] == 'inflate':
+            size = e[3]
+    contacts, dragged = flights, landed_f / max(1, flights)
     caps = len(sim.captions(r['events']))
-    return (cell, seed, r['winner'], r['t_ko'] or 99, lc, max(hp), caps, by, contacts, dragged)
+    return (cell, seed, r['winner'], r['t_ko'] or 99, lc, max(hp), caps, by, contacts, dragged, size)
 
 
 if __name__ == '__main__':
@@ -89,4 +91,4 @@ if __name__ == '__main__':
         print(f'{lab}: bagpipes win {100 * g:3.0f}%  KO med {np.median(tko):5.1f} ({np.percentile(tko, 10):4.1f}-'
               f'{np.percentile(tko, 90):4.1f})  lc {lc:.2f}  whp {whp:3.0f}  fit {100 * fit:3.1f}% (ko {100 * w_ko:.0f} lc2 '
               f'{100 * w_lc:.0f} caps5 {100 * w_cap:.0f})  '
-              f'contacts {con:.0f} (dragged {drag:.1f})  dmg: {split}', flush=True)
+              f'flights {con:.0f} (land {100 * drag:.0f}%) size {np.mean([x[10] for x in r]):.2f}  dmg: {split}', flush=True)

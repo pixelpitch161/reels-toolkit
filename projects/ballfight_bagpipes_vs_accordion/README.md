@@ -1,55 +1,72 @@
 # #30 BALLFIGHT #4: Bagpipes vs Accordion (`projects/ballfight_bagpipes_vs_accordion`)
 
 The "most hated instrument" final on #27's engine, ring, HUD and count-in (`projects/ballfight`: `fight.py`,
-`fighters.py`, `scene.py`, imported, plus `reelkit.ui.fight_hud`). Two new weapon kinds, both on the 16th grid:
-BAGPIPES (left, tartan green) wears its drone as an **aura** (`aura`: a ring of radius R + reach around the ball that
-hurts the opponent on every 8th while it is inside; +0.12 reach on the first landed tick of each contact, 0.9 -> 1.9),
-ACCORDION (right, magenta) fights with its **bellows** (`bellows`: a stroke every 2 beats alternating a push ring that
-shoves and a collapsing suction ring that yanks the bagpipes back in; +0.09 reach per landed main stroke, 0.9 -> 2.2,
-knock grows with it). Pulling the bagpipes in drags the accordion into the drone, so every suck is a gamble (~6 times a
-fight). Abilities: WAR CRY (shockwave) / DOUBLE DRONE (haste x2: ticks on the 16ths, a second tartan band) / BAG BURST
-(wave); POLKA (haste x2: a stroke every beat) / SQUEEZEBOX (shield: a pleated collar folds shut) / FULL BELLOWS (slam: a
-giant accordion, keyboard on top, squeezed shut on the predicted spot). Mood: dark sea shanty, A dorian at 121.97 BPM
-(31 bars), stomps + gang claps + a low male-choir hum; the drone (seamless: whole cycles in the file) swells only while
-the aura lands, every landed tick plays the chanter's shanty line, every stroke is an oom (push) or pah (pull) chord.
+`fighters.py`, `scene.py`, imported, plus `reelkit.ui.fight_hud` and the shared effects kit `reelkit.fx`).
 
-Honest run, seed 1581 (6 fits in 1854; rules frozen after tune.py): the accordion takes the lead at 16.9 s, the bagpipes
-retake it at 28.8 s, FULL BELLOWS misses at 39.9 s, BAG BURST at 44.3 s, 8-7 at 48 s, and BAGPIPES win on the last tick
-at 50.55 s with 2.1 HP. Balance over 1637 decided runs: BAGPIPES 51 %, ACCORDION 49 %.
+**v2 (BALLFIGHT v2 redesign, user Oct 24): the bag and the bellows are the weapons.**
+- BAGPIPES (left, tartan green): **BAG INFLATE** (weapon kind `inflate`). Every bar the bag swells over 2 beats to
+  ~1.6x size and mass (per-ball radius / mass / speed in `move()`; heavy, slow, body slams), then lets go and rockets
+  around like a released balloon for up to 1.75 beats at 2.6x speed, zig-zagging (seeded turns every 0.10-0.17 s,
+  alternating sides, a little homing) as it deflates. Landed hits grow the inflation (1.4 -> 1.65x) and the flight.
+  WAR CRY (`shockwave`: a tartan ring), HIGHLAND FLING (`haste` x2: two flights per bar), BAG BURST (`wave`: the bag
+  pops in a tartan-shred explosion).
+- ACCORDION (right, magenta): **BELLOWS BITE** (weapon kind `bite`). Every 2 beats the end boards fly apart with the
+  pleats fanned between them like jaws, aimed at the enemy's spot an 8th ahead, and snap shut 2 sixteenths later: a hit
+  if the enemy is within R + reach and 38 deg of the aim. Landed bites grow the reach (0.9 -> 2.0). POLKA (`haste` x2:
+  bites every beat), SQUEEZEBOX (`shield`: folds shut, buttons glowing), FULL BELLOWS (ability kind `clamp`: a low
+  bellows wall stretches across the ring for a beat, then both boards slam together on the enemy: a ring-wide bite).
+- Effects (`reelkit.fx`): attack lights in the fighters' colours on the canvas, ropes and crowd; ink-starburst impacts
+  (budgeted); air puffs on every snap and along every flight, tartan shreds on flight hits / BAG BURST / a bagpipes
+  K.O.; claw marks where bites land, cracks under flights / body slams / the clamp; shimmer on the waves and the clamp;
+  fringing on big hits; ability moments (dim + speed lines) on the five captions. No full-screen flashes.
+- Sound: the drone is the bag's air (low at rest, swelling as it inflates, draining in the flight while the chanter
+  squeals up an octave); bites are oom (opening, bass button) + pah (the snap's chord stab).
+
+Honest run, seed 1442 (6 fits in 1466; rules frozen after tune.py): the bagpipes build a 20-HP lead by 24 s, FULL
+BELLOWS lands at 43.8 s and BAG BURST answers a moment later, the lead flips at 43.8 / 44.5 / 48.0 s, and ACCORDION wins
+at 50.43 s with 1.8 HP. Balance over 1358 decided runs: BAGPIPES 52 %, ACCORDION 48 %.
+
+v1 (drone aura vs bellows rings, seed 1581, `ballfight_bagpipes_vs_accordion_v1.mp4`): `*_v1_backup.py` (kept for
+reference; the roster has moved to v2, so they no longer reproduce v1; the kinds `aura` / `bellows` are still in the
+engine).
 
 ## Commands (from this folder)
 
 ```bash
-python tune.py 48 P.max_reach=1.9 A.pull_k=1.7 P.dmg=0.8,0.85 scale=1.0,1.1   # rule tuning (done once, frozen)
-python seed_search.py 1 8000 --stop 6                       # honest runs ranked against the beat sheet -> check/seeds.txt
-python sim.py 1581                                          # one run's story (cached in check/run_1581.pkl)
-python render.py                                            # sprite cache (check/sprites_ballfight4.npz, ~17 s)
-python -m reelkit.sheet render.py test/sheet.png 0.0 1.0 3.1 12.4 21.4 27.2 39.6 44.5 50.6 53.5 56.5 60.7
+python tune.py 80 P.fly_dmg=6.4,6.8 scale=0.72               # rule tuning (done once, frozen in fighters.py + timeline.py)
+python seed_search.py 1 10000 --stop 6                       # honest runs ranked against the beat sheet -> check/seeds.txt
+python sim.py 1442                                           # one run's story (cached in check/run_1442.pkl)
+python render.py                                             # sprite cache (check/sprites_ballfight4.npz, ~17 s)
+python -m reelkit.sheet render.py test/sheet.png 0.0 2.6 3.4 7.1 9.5 15.6 20.3 27.0 43.6 43.95 50.6 53.5
 python -m reelkit.safezone render.py --step 0.25
-python focus_check.py                                       # subject CoC must be 0 px on every frame
-python audio.py                                             # audio.wav (2860 AAC frames) + check/stem_*.wav
+python focus_check.py                                        # subject CoC must be 0 px on every frame
+python audio.py                                              # audio.wav (2860 AAC frames) + check/stem_*.wav
 python -m reelkit.loopcheck render.py audio.wav
-python -m reelkit.video render.py audio.wav ballfight_tmp.mp4 && python mux.py   # render, then the loop-clean encode
+python -m reelkit.video render.py audio.wav ballfight_tmp.mp4 && python mux.py   # -> ballfight_bagpipes_vs_accordion_v2.mp4
 ```
 
 ## Files
 
 | File | What it is |
 |---|---|
-| `timeline.py` | The episode: fighters, tempo, count-in, frozen damage scale, story targets, scripted tail, chords, the chanter's 4-bar shanty line, both solos |
-| `sim.py` | Runs + caches the honest fight on the shared engine; story analysis + score (same windows as #27) |
-| `tune.py` | Rule grid: `P.<weapon key>`, `A.<weapon key>`, `P.u1.<ability key>`, `scale`; balance, K.O., lead changes, fit rate split by window, damage by kind, how often the suction drags the accordion into the drone |
-| `seed_search.py` | #27's early-stopping search (copied; names from the timeline) |
-| `styles.py` | Draw functions for the new styles: the `drone` tartan aura + tick ripples, `bellows` push / pull rings, the `squeezebox` collar, the `giant_bellows` |
-| `render.py` | #28's renderer, copied, with this pair's weapons, abilities and shards (pipes, tartan, reeds / buttons, pleats, keys) |
-| `audio.py` | Dark sea shanty bed; the drone + chanter = the bagpipes' part, push / pull chords = the accordion's |
+| `timeline.py` | The episode: fighters, tempo, count-in, frozen damage scale, story targets, scripted tail, chords, the chanter's shanty line, both solos |
+| `sim.py` | Runs + caches the honest fight on the shared engine (records RAD: the bagpipes' radius per frame); story analysis + score |
+| `tune.py` | Rule grid: `P.<weapon key>`, `A.<weapon key>`, `P.u1.<ability key>`, `scale`; balance, K.O., lead changes, fit rate by window, damage by hit kind, flights + landing rate, bag size |
+| `seed_search.py` | #27's early-stopping search |
+| `styles.py` | v2 draw functions: the tartan bag (`tartan_rgb`), the flight ribbon, the jaws, the FULL BELLOWS wall, the SQUEEZEBOX collar, WAR CRY's tartan ring |
+| `render.py` | #28's renderer, copied, with the v2 attacks and `reelkit.fx` wired in (see projects/ballfight/README.md, "Effects") |
+| `audio.py` | Dark sea shanty bed; the bag's drone + the flight squeal, bites as oom-pah chords |
 | `mux.py` | Loop-clean encode via `projects/maze_race/mux.py` |
 
 ## Rules worth knowing
 
-- The aura only bites when the balls are close, so contacts (~18 a fight) come in bursts of ticks; growing the reach per
-  contact (not per tick) keeps it from snowballing. A small base aura (0.35) gave almost no contacts.
-- The bellows were first tried as the brief's literal "alternate bars" (a stroke per bar): the accordion went idle for
-  ~2 s at a time; a stroke every 2 beats (push on 1, suck on 3) reads as breathing and keeps it in the fight.
-- A bigger suction range (`pull_k` 1.3 -> 1.7) and a bigger max aura raised lead changes (0.5 -> 0.8 a run): every suck
-  can backfire. Captions are the tight window here (first uses cluster): ~27 % of runs have 5 captions >= 4 s apart.
+- Size changes go through guarded attributes (`rad`, `mass`, `vmul`) read by `move()` with getattr defaults, so no other
+  fighter's physics changes (R + R == 2 * R exactly; equal masses keep the original clash branch).
+- Clash events fire every substep while an inflating ball keeps pushing into the enemy; contact damage has its own
+  cooldown (`cool`), and the soundtrack scores contact from the hits, not the clashes.
+- The bite's snap resolves on its 16th with a one-substep tolerance (the fire time is up to a substep late).
+- The first tune had the accordion winning every run (bites ~60 % on target); the bag needed ~7 damage per landed
+  flight. The inflated size reached its cap by mid-fight at +0.02 per hit; +0.015 up to 1.65x keeps it near the
+  brief's ~1.6x.
+- The seam: the flying "3" now reaches its landing size on the last frame, so frame 0 repeats it (seam 2.97 -> 2.49,
+  the calmer v2 fight lowered the median step the check compares against).
