@@ -1,8 +1,8 @@
 # #28 BALLFIGHT #2: Drums vs Violin (`projects/ballfight_drums_vs_violin`)
 
 Brute force vs finesse on #27's engine, ring, HUD and count-in (`projects/ballfight`: `fight.py`, `fighters.py`,
-`scene.py`, imported, plus `reelkit.ui.fight_hud`). DRUMS (red corner) blasts a drumhead ring out of its ball on every
-beat (new weapon kind `pulse`; reach +0.07 per landed pulse), so its attacks are the groove. VIOLIN (blue corner) spins
+`scene.py`, imported, plus `reelkit.ui.fight_hud`). DRUMS (left corner) blasts a drumhead ring out of its ball on every
+beat (new weapon kind `pulse`; reach +0.07 per landed pulse), so its attacks are the groove. VIOLIN (right corner) spins
 its bow like a rapier (blade with the new `spin_grow` option: 2.4 -> 14 rad/s, +0.7 per landed hit), so slow strokes
 become frantic spiccato, and the bow's quarter turns play the melody. Abilities: DRUM ROLL (haste x4 = pulses on the
 16ths for a bar) / CRASH CYMBAL (shield; the bow bounces off) / DOUBLE KICK (slam: the beater taps an 8th early, then
