@@ -226,29 +226,32 @@ FIGHTERS = {
             low=dict(name='BIG STRUM', kind='slam', tele=2, radius=1.35, dmg=11.0, knock=1.6)),
         pp='ACOUSTIC', register=(40, 76), idiom='open_strum'),
 
-    # ---- #29 BALLFIGHT #3: the lead-horn argument (numbers tuned once with ballfight_trumpet_vs_sax/tune.py, frozen)
+    # ---- #29 BALLFIGHT #3: the lead-horn argument. v3 (BALLFIGHT v2 redesign, user Oct 24): the instrument's body is the
+    # weapon (VALVE COMBO, STRAP FLAIL); numbers tuned once with ballfight_trumpet_vs_sax/tune.py, frozen
     'TRUMPET': dict(
         color=(255, 214, 60), dark=(168, 124, 18), corner='red',     # yellow (series colour table, IDEAS)
-        view=(0, 16, 0),                                   # side-on, bell right (#29's renderer rolls it to the aim)
-        weapon=dict(kind='beam', style='beam',             # the bell charges for a beat, then a straight piercing blast
-                    every=2, charge_beats=1, lead=0.7, track=5.0, hold=0.12,
-                    base=2.2, grow=0.25, max_len=6.5, width=0.16, grow_w=0.03, max_w=0.5, dmg=2.05, knock=0.9),
+        view=(0, 16, 0),                                   # side-on, bell right (#29's renderer turns the valves to the aim)
+        weapon=dict(kind='combo', style='pistons',         # VALVE COMBO: three brass pistons punch out 1-2-3, steam
+                    every=2, punches=3, gap=0.5, spread=0.15, aim_rate=8.0, head_r=0.1,
+                    base=0.6, grow=0.05, max_len=1.7, t_out=0.05, t_hold=0.04, t_back=0.09,
+                    dmg=1.2, dmg3=2.0, knock=0.35, knock3=1.0),
         abilities=dict(
             unlock1=dict(name='FANFARE', kind='shockwave', speed=7.5, radius=3.4, dmg=3.0, knock=1.2, every_bars=4),
             unlock2=dict(name='DOUBLE TONGUE', kind='haste', mult=2.0, dur_beats=8, every_bars=6),
-            low=dict(name='HIGH C', kind='wave', speed=4.5, radius=9.0, dmg=8.0, knock=1.5)),
-        pp='TRUMPET', register=(60, 84), idiom='stab'),
+            low=dict(name='HIGH C', kind='beam', charge_beats=1, lead=1.0, len=7.0, width=1.1, dmg=9.0, knock=1.6,
+                     hold=0.3)),
+        pp='TRUMPET', register=(60, 84), idiom='combo'),
     'SAX': dict(
         color=(36, 200, 176), dark=(14, 108, 94), corner='blue',     # teal (series colour table, IDEAS)
         view=(180, 20, 0),
-        weapon=dict(kind='volley', style='smoke',          # wobbly smoke rings that curve toward the enemy
-                    n0=1, grow=0.5, n_max=8, every=2, speed=3.6, dmg=0.6, spread=14.0, max_fan=90.0,
-                    curve=110.0, life=2.6, hit_r=0.2),
+        weapon=dict(kind='flail', style='strap',           # STRAP FLAIL: swings on its neck strap, wraps the enemy
+                    base=1.2, grow=0.07, max_len=2.2, spin0=3.0, spin_acc=3.5, spin_max=9.0, head_r=0.2,
+                    dmg=7.4, dmg_min=0.4, knock=0.8, cooldown=0.3, wrap_beats=2, reel=2.3, yank=1.0, haste_snap=True),
         abilities=dict(
             unlock1=dict(name='SMOKE SCREEN', kind='shield', dur_beats=6, every_bars=6),
-            unlock2=dict(name='BEBOP RUN', kind='arc', n=8, sweep=120.0, beats=1, speed=5.0, dmg=0.4, every_bars=4),
+            unlock2=dict(name='BEBOP RUN', kind='haste', mult=1.6, dur=4.0, every_bars=5),
             low=dict(name='HONK', kind='slam', tele=2, radius=1.35, dmg=11.0, knock=1.6)),
-        pp='SAX', register=(49, 77), idiom='growl'),
+        pp='SAX', register=(49, 77), idiom='flail'),
 
     # ---- #31 BALLFIGHT #5: DJ vs producer (numbers tuned once with ballfight_turntables_vs_synth/tune.py, frozen)
     'TURNTABLES': dict(
