@@ -515,6 +515,75 @@ class Fight:
                 self.kill_keys((self.kown == o) & (dk < Bm['w'] / 2 + rk), 'cleared', k)
         self.beams = [Bm for Bm in self.beams if self.t < Bm['t1'] - 1e-9]
 
+    # ------------------------------------------------------------------ #29 v3: valve combo (opt-in weapon kind 'combo')
+    def combo_setup(self, k):
+        B, O = self.balls[k], self.balls[1 - k]
+        B.punch_q, B.punch_i, B.punches, B.combo_n = [], 0, [], 0
+        d = O.p - B.p
+        B.th = math.atan2(d[1], d[0]) % (2 * math.pi)            # the valves start facing the enemy
+
+    def combo_beat(self, k, kb):
+        """combo: every `every` beats (haste divides it) `punches` pistons punch out of the ball one after another, `gap`
+        beats apart (1-2-3 on the 8ths; haste halves the gap too); each aims at the enemy as it starts"""
+        B = self.balls[k]
+        w = B.w
+        if kb % max(1, int(round(w['every'] / self.ab_mult(k)))) == 0:
+            g = w.get('gap', 0.5) * self.R.beat / self.ab_mult(k)
+            n = int(w.get('punches', 3))
+            B.punch_q = [self.t + j * g for j in range(n)]
+            B.punch_i = 0
+            B.combo_n += 1
+            self.ev('combo', k, B.combo_n, n, g)
+
+    def combo_step(self, k, dt):
+        """combo: between punches the valves turn toward the enemy (`aim_rate`); a piston shoots out to the reach
+        (`t_out`), holds (`t_hold`), pulls back (`t_back`); it hits once (the enemy against the piston, head radius
+        `head_r`), the last punch of a combo harder (`dmg3`, `knock3`); a landed punch lengthens the reach (`grow`)"""
+        B, O = self.balls[k], self.balls[1 - k]
+        w = B.w
+        R = self.R.R
+        rel = O.p - B.p
+        want = math.atan2(rel[1], rel[0])
+        lim = w.get('aim_rate', 8.0) * dt
+        B.th = (B.th + max(-lim, min(lim, _wrap(want - B.th)))) % (2 * math.pi)
+        n = int(w.get('punches', 3))
+        while B.punch_q and self.t + 1e-9 >= B.punch_q[0]:
+            B.punch_q.pop(0)
+            i = B.punch_i
+            B.punch_i += 1
+            B.punches.append(dict(i=i, t0=self.t, th=want, off=(i - (n - 1) / 2) * w.get('spread', 0.15), hit=False,
+                                  k=1.0 / self.ab_mult(k)))
+            self.ev('punch', k, i, want, float(B.blade_len), B.combo_n)
+        t_out, t_hold, t_back = w['t_out'], w['t_hold'], w['t_back']
+        live = []
+        for P in B.punches:
+            u = (self.t - P['t0']) / P['k']
+            if u >= t_out + t_hold + t_back:
+                continue
+            live.append(P)
+            if P['hit'] or u >= t_out + t_hold:
+                continue
+            e = min(1.0, u / t_out)
+            ext = B.blade_len * (1 - (1 - e) ** 2)
+            d = np.array([math.cos(P['th']), math.sin(P['th'])])
+            a0 = B.p + d * R * 0.8 + np.array([-d[1], d[0]]) * P['off']
+            relp = O.p - a0
+            c = a0 + d * min(max(float(relp @ d), 0.0), R * 0.2 + ext)
+            dist = float(np.hypot(*(O.p - c)))
+            if dist < R + w['head_r']:
+                P['hit'] = True
+                hx, hy = (O.p + (c - O.p) / max(dist, 1e-6) * R).tolist()
+                if O.shield > 0:
+                    self.ev('block', 1 - k, k, hx, hy, 'piston')
+                    P['t0'] = self.t - (t_out + t_hold) * P['k']          # blocked: it pulls straight back
+                else:
+                    last = P['i'] == n - 1
+                    landed = self.damage(k, 1 - k, w['dmg3'] if last else w['dmg'], 'piston', hx, hy, P['i'])
+                    self.knock(1 - k, d, w['knock3'] if last else w['knock'])
+                    if landed:
+                        B.blade_len = min(w['max_len'], B.blade_len + w['grow'])
+        B.punches = live
+
     def key_r(self):
         """every projectile's hit radius (Rules.KEY_R unless its weapon set `hit_r`)"""
         if not self.khr:
@@ -1137,6 +1206,9 @@ class Fight:
         dc_next = dc_k0
         grid16 = [k for k, B in enumerate(self.balls) if B.w['kind'] in ('aura', 'bellows')]     # #30 (opt-in)
         n16b = k16_0
+        for k, B in enumerate(self.balls):                       # #29 v3 (opt-in weapon kinds)
+            if B.w['kind'] == 'combo':
+                self.combo_setup(k)
         thrusters = [k for k, B in enumerate(self.balls) if B.w.get('mode') == 'thrust']      # #34
         next16t = k16_0
         if rec is not None and self.uses_ext:
@@ -1161,6 +1233,8 @@ class Fight:
                             self.fire_volley(k)
                     elif B.w['kind'] == 'beam':
                         self.beam_beat(k, kb)
+                    elif B.w['kind'] == 'combo':                 # #29 v3
+                        self.combo_beat(k, kb)
                     elif B.w['kind'] in ('line', 'trap'):
                         self.hazard_beat(k, kb)
             if (pulse or v16) and self.t + 1e-9 >= next16 * s16:
@@ -1212,6 +1286,8 @@ class Fight:
                     self.blade_step(k, dt)
                 elif B.w['kind'] == 'orbit':
                     self.orbit_step(k, dt)
+                elif B.w['kind'] == 'combo':                     # #29 v3
+                    self.combo_step(k, dt)
             if self.beams or any(B.w['kind'] == 'beam' for B in self.balls):
                 self.beams_step(dt)
             if self.lines or self.strings:
