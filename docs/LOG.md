@@ -824,3 +824,32 @@
 - Checks: safe zone OK (0.25 s steps); subject CoC 0 on all 1830 frames; loopcheck PASS render + mp4 (seam 1.9x); flash
   0 general; opening -17.5 dBFS, build +3.5 dB. Render ~0.19 s/frame/core (~6 min) + 3.5 min mux.
 - Feedback: (pending)
+
+## BALLFIGHT #9: Organ vs Harp (`projects/ballfight_organ_vs_harp`)
+- Ninth BALLFIGHT episode (#35), produced in parallel with #29-#34 on the shared engine. ORGAN erupts rows of organ pipes
+  out of the canvas toward the harp on every second beat (new weapon kind `line`: the row runs out at 6 u/s, each pipe up
+  0.55 s, one hit per row, grows its length); HARP stretches tripwire strings rope to rope across the ring (new kind
+  `trap`: crossing an enemy string cuts, the owner passes freely, 1 -> 7 strings, the oldest fades). Abilities: CATHEDRAL
+  (dome shield) / PULL ALL STOPS (haste) / TOCCATA (slam: a pipe forest); PLUCK (arc) / ANGEL WINGS (wings + halo shield)
+  / 47 STRINGS (wave). Mood: gothic horror, D minor, 125.90 BPM (32 bars). ORGAN bridge entry = organ60_lowpoly's
+  Saint-Sulpice case + reed voice (the modern "cage" organ reads as a frame in an acrylic box at ball size).
+- Honest run, seed 1181 (10 fits in 1,179 runs; ORGAN 52 % / HARP 48 % over 1,042 decided): organ leads early, the harp's
+  web takes over at 33.4 s, lead flips at 38.1 / 43.9 s, the organ wins on its last hits at 51.66 s with 4.5 HP.
+- Engine lessons: hazards reported as events (`line`, `string`, `string_off`; hits carry the hazard id) need no new
+  recorded arrays, so the change stays tiny and replays of #27 / #28 are untouched (tools/ballfight_replay_hash.py before
+  and after every commit, and again after merging the other sessions' engine commits: rebases conflict in the same
+  places - Fight.__init__ state, the on-beat branch, the per-substep calls, the roster tail - keep both sides).
+- Rules lessons: fast, wide rows landed ~80 % and won by ~28 s; slower, thinner rows with a short start make the organ an
+  early, close-range bully, and a one-string harp that grows per landed crossing makes the natural "bully vs web" story
+  (~0.6-0.8 lead changes per run). Fit rate ~1 % with #27's hard windows: an early-stopping search is ~2 min.
+- Loop lesson: the pearl corner light is bright, so its beat pulse moved enough of the frame to fail the seam (2.7x with
+  #27's 70 ms pre-ramp); a 0.16 s pre-ramp in this episode's `beat_pulse` -> 1.3x. The balls' sprite yaw ignores the
+  corner rev shake (no 6-degree yaw-step flicker at the seam).
+- Sound: first balance had the organ stabs only +2-5 dB over the bed (short stabs every 2 beats read low on average);
+  organ bus x2 -> +8-11 dB, harp +8-14 dB. The organ synth caches notes by (scene t0, event index): the bridge clears
+  that cache per voice() call (added by #31's session), or every organ note comes back as the first one.
+- Checks: safe zone OK (0.25 s steps); subject CoC 0 on all 1830 frames (pipe tops and strings included); loopcheck PASS
+  render + mp4 (seam 1.7x); flash 0 general (max 7.6 % at the TOCCATA); opening -18.5 dBFS, build +3.8 dB. Render 716 s
+  on 2 cores + mux (19 min total).
+- Feedback: (pending)
+
