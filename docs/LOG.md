@@ -930,6 +930,24 @@
   no click); flash 0 general; opening -19.7 dBFS, build +3.5 dB, no quiet windows. Render 16.5 min + 5 min mux.
 - Feedback: (pending)
 
+### v2 (BALLFIGHT v2 redesign, user Oct 24): SURF'S UP vs SIX-STRING RAKE
+- New signatures on new engine kinds (additive, small commits; #27 / #28 replay identically; replay guard moved to the
+  new seed): `surf` (a speed burst + a wave front that crashes once and pushes the enemy along it; height grows), `rake`
+  (six string lines sweeping sideways across the front, alternating down / up; one hit per stroke flicks the enemy
+  along the stroke; length grows), abilities `whip` (FINGERPICK), `sweep` (BIG STRUM, ring-wide), `spout` (UKE-NADO, a
+  homing waterspout, 4 ticks; its path is logged in out['X33_SPOUT'] for the renderer).
+- Rules lessons: aimed dead on, both signatures landed ~100 % (uke 71 hits, acoustic 129): a deterministic damage race
+  with no variance and no lead changes. Option `aim_k` (the attack goes partly where the ball is heading) brought hit
+  rates to ~55 % / ~64 %; slower growth (0.07 -> 0.03 both) raised lead changes from ~0.3 to ~0.5-0.7 per run. The
+  tuner now prints the share of decided runs (timeouts had been counted as acoustic wins).
+- Look lessons: from the 3/4 top-down camera a wave reads by its white foam crest, a bowed front and a turquoise body;
+  dark blue flat faces read as a box. Strings need one wide warm glow under the bundle to read on the lilac canvas.
+  Claw marks from every stroke (life 2.6 s) keep the canvas busy without noise.
+- Honest run, seed 1248 (6 fits in 1248; UKULELE 54 % / ACOUSTIC 46 % over 1104 decided): UKULELE wins at 52.33 s with
+  4.2 HP after BIG STRUM flips the lead at 41.9 s. Checks: flash 0 (max 16.4 %); loopcheck PASS render 1.8x, mp4 2.1x;
+  CoC 0; safe zone OK; opening -19.4 dBFS, build +3.4 dB. Render 23 min CPU (~12 min wall) + 4 min mux.
+- Feedback: (pending)
+
 ## BALLFIGHT #4 v2: Bagpipes vs Accordion (BALLFIGHT v2 redesign)
 - v2 of #30 on the user's approved redesign: BAG INFLATE (the bag swells to ~1.6x size and mass over 2 beats, then
   rockets around like a released balloon, zig-zagging and squealing) vs BELLOWS BITE (the end boards fly apart with the

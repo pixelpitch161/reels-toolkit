@@ -56,6 +56,9 @@ python patch_frames.py 60.4 61.0 && python mux.py                               
 
 ## Rules worth knowing
 
+- v2: aimed dead on, surf and rake both landed nearly every time (a deterministic damage race); `aim_k` (0.55 surf, 0.47
+  rake) and slower growth (0.03 both) gave misses, variance and lead changes. Tune on decided runs only (tune.py prints it).
+- v1 notes below (dash vs cone).
 - Engine kinds (shared, additive, #27 / #28 replay identically): `dash` and `cone` fire on their own 16th-grid counter
   (`every` beats; haste divides it, so SPEED STRUM = every beat, CAPO = 8ths); haste shots hit for `sub_dmg` x and don't
   grow the weapon. A dash hits on contact once within `window` s; a cone hits once when its front crosses the enemy
