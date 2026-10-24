@@ -8,11 +8,11 @@ Rules (the same for both fighters; nothing is scripted or edited):
   - balls move at one constant speed and bounce off the ropes (the ring is |x|, |y| <= A in the ring's own frame); the
     ropes "give" a little (a seeded +-ROPE_GIVE deg on every bounce, so no run settles into a fixed orbit); ball vs ball
     is an elastic clash, after which both go back to the shared speed;
-  - weapons and abilities come from fighters.py (blade / volley; shockwave, shield, haste, arc, wave, slam);
-  - every landed hit grows the attacker's weapon (a blade gets longer, a volley gets one more projectile), so the fight
-    escalates by itself; levels come from damage dealt (LV2 / LV3 unlock abilities), and the 'low' ability fires once
+  - weapons and abilities come from fighters.py (blade / volley / pulse; shockwave, shield, haste, arc, wave, slam);
+  - every landed hit grows the attacker's weapon (a blade gets longer and / or spins faster, a volley gets one more
+    projectile, a pulse reaches further), so the fight escalates by itself; levels come from damage dealt (LV2 / LV3 unlock abilities), and the 'low' ability fires once
     when HP drops below LOW_HP;
-  - volleys fire and abilities trigger on the beat grid (the fight IS the music); a blade's hits are detected with a
+  - volleys fire and abilities trigger on the beat grid, pulses on the 16th grid (the fight IS the music); a blade's hits are detected with a
     swept test, so nothing tunnels at any spin speed; a spinning blade destroys enemy projectiles it sweeps through;
   - the fight ends at the first K.O. (HP <= 0).
 The run records every frame (30 fps) for the renderer and every event (hits, blocks, parries, ropes, volleys,
@@ -72,7 +72,8 @@ class Ball:
         # blade
         self.th = 0.0
         self.spin_dir = 1.0 if side == 0 else -1.0
-        self.blade_len = self.w.get('base', 0.0)
+        self.spin = self.w.get('spin', 0.0)            # rad/s; grows by `spin_grow` per landed hit (blade option)
+        self.blade_len = self.w.get('base', 0.0)     # blade length, or a pulse's reach beyond the ball's surface
         self.frets = self.w.get('frets0', 0)
         self.cool = 0.0
         # volley
@@ -184,11 +185,23 @@ class Fight:
             self.spawn_key(k, pos, a, w['speed'], w['dmg'], vol, j)
         self.ev('fire', k, n, vol)
 
+    def fire_pulse(self, k, main):
+        """a pulse: a ring blasts out from the ball to its reach (`blade_len` beyond the surface). Pulses on the weapon's
+        own grid (`main`) grow the reach when they land; extra pulses from haste (e.g. a drum roll on the 16ths) hit for
+        `sub_dmg` x and don't grow it"""
+        B = self.balls[k]
+        w = B.w
+        dmg = w['dmg'] * (1.0 if main else w.get('sub_dmg', 0.5))
+        self.waves.append(dict(owner=k, c=B.p.copy(), r=self.R.R, speed=w['speed'], rmax=self.R.R + B.blade_len, dmg=dmg,
+                               knock=w['knock'] * (1.0 if main else 0.5), kind='pulse', hit=False, name='pulse',
+                               t0=self.t, grow=main, clears=w.get('clears', False)))
+        self.ev('pulse', k, int(main), float(B.blade_len))
+
     def blade_step(self, k, dt):
         B, O = self.balls[k], self.balls[1 - k]
         w = B.w
         mult = self.ab_mult(k)
-        dth = B.spin_dir * w['spin'] * mult * dt
+        dth = B.spin_dir * B.spin * mult * dt
         th0 = B.th
         B.th = (B.th + dth) % (2 * math.pi)
         B.cool = max(0.0, B.cool - dt)
@@ -231,8 +244,14 @@ class Fight:
                             if B.blade_len + w['grow'] <= w['max_len'] + 1e-9:
                                 B.blade_len += w['grow']
                                 B.frets += 1
+                            if w.get('spin_grow'):
+                                B.spin = min(w['spin_max'], B.spin + w['spin_grow'])
 
     # ------------------------------------------------------------------ abilities
+    def ab_dur(self, ab):
+        """an ability's duration in s: `dur` (s) or `dur_beats` (beats at this episode's tempo)"""
+        return ab['dur'] if 'dur' in ab else ab['dur_beats'] * self.R.beat
+
     def ab_mult(self, k):
         return self.balls[k].haste_mult if self.balls[k].haste > 0 else 1.0
 
@@ -247,9 +266,9 @@ class Fight:
             self.waves.append(dict(owner=k, c=B.p.copy(), r=self.R.R, speed=ab['speed'], rmax=ab['radius'], dmg=ab['dmg'],
                                    knock=ab['knock'], kind=kind, hit=False, name=ab['name'], t0=self.t))
         elif kind == 'shield':
-            B.shield = ab['dur']
+            B.shield = self.ab_dur(ab)
         elif kind == 'haste':
-            B.haste = ab['dur']
+            B.haste = self.ab_dur(ab)
             B.haste_mult = ab['mult']
         elif kind == 'arc':
             d = O.p - B.p
@@ -300,9 +319,12 @@ class Fight:
             if not W['hit'] and r0 < dist - R * 0.5 <= W['r'] + 1e-9:
                 W['hit'] = True
                 hx, hy = (W['c'] + rel / max(dist, 1e-6) * (dist - R)).tolist()
-                self.damage(W['owner'], o, W['dmg'], W['kind'], hx, hy)
+                landed = self.damage(W['owner'], o, W['dmg'], W['kind'], hx, hy)
                 self.knock(o, rel, W['knock'])
-            if len(self.kp):
+                if landed and W.get('grow'):
+                    Bw = self.balls[W['owner']]
+                    Bw.blade_len = min(Bw.w['max_reach'], Bw.blade_len + Bw.w['grow'])
+            if len(self.kp) and W.get('clears', True):
                 kr = np.hypot(*(self.kp - W['c'][None]).T)
                 m = (self.kown == o) & (kr > r0 - 0.15) & (kr <= W['r'] + 0.05)
                 self.kill_keys(m, 'cleared', W['owner'])
@@ -420,6 +442,7 @@ class Fight:
         rec['SH'].append([B0.shield, B1.shield])
         rec['HA'].append([B0.haste, B1.haste])
         rec['SPIN'].append([B0.spin_dir, B1.spin_dir])
+        rec['OM'].append([B0.spin, B1.spin])
         K = np.full((self.KMAX, 7), np.nan)
         n = min(self.KMAX, len(self.kp))
         if n:
@@ -435,12 +458,16 @@ class Fight:
     # ------------------------------------------------------------------ run
     def run(self):
         R = self.R
-        rec = {k: [] for k in ('P', 'V', 'TH', 'BL', 'FR', 'NV', 'HP', 'LV', 'SH', 'HA', 'SPIN', 'K', 'WAVES', 'SLAMS')} \
+        rec = {k: [] for k in ('P', 'V', 'TH', 'BL', 'FR', 'NV', 'HP', 'LV', 'SH', 'HA', 'SPIN', 'OM', 'K', 'WAVES', 'SLAMS')} \
             if self.record else None
         dt = R.DT
         steps_per_frame = int(round(1.0 / (R.FPS * dt)))
         k0 = int(math.ceil(R.t_fight / R.beat - 1e-6))           # first beat of the fight
         next_beat = k0
+        s16 = R.beat / 4.0
+        k16_0 = int(math.ceil(R.t_fight / s16 - 1e-6))       # first 16th of the fight (pulse weapons)
+        next16 = k16_0
+        pulse = [k for k, B in enumerate(self.balls) if B.w['kind'] == 'pulse']
         self.t = R.t_fight
         f0 = int(round(R.t_fight * R.FPS))
         step = 0
@@ -459,6 +486,15 @@ class Fight:
                         ev = max(1, int(round(B.w['every'] / (self.ab_mult(k)))))
                         if kb % ev == 0:
                             self.fire_volley(k)
+            if pulse and self.t + 1e-9 >= next16 * s16:
+                k16 = next16 - k16_0
+                next16 += 1
+                for k in pulse:
+                    B = self.balls[k]
+                    main = 4 * B.w['every']                          # the weapon's own grid, in 16ths
+                    every16 = max(1, int(round(main / self.ab_mult(k))))
+                    if k16 % every16 == 0:
+                        self.fire_pulse(k, k16 % main == 0)
             for k, B in enumerate(self.balls):
                 B.shield = max(0.0, B.shield - dt)
                 B.haste = max(0.0, B.haste - dt)
