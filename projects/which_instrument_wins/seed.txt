@@ -1,0 +1,1 @@
+406  # seed search 1-600: 2 fits (406 CELLO vs VIOLIN duel 43.1-49.4 with 7 edge hits; 588 PIANO vs HARP)
