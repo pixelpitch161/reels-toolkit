@@ -1,4 +1,4 @@
-"""Focus audit for #29: the circle of confusion on the subject (the canvas corners, both balls, the bell, every beam
+"""Focus audit for #29 (v3: pistons, flail head): the circle of confusion on the subject (the canvas corners, both balls, the bell, every beam
 tip, smoke ring and note in flight, the honk bell and the shards) must be 0 px on every frame (focus locked on the ring).
 
     python focus_check.py"""
@@ -28,6 +28,15 @@ for f in range(T.NF):
     for k, ox, oz, a_, ln, wd, ext, al, bst in R.beams_live(t):
         pts.append(S.to_world(ox + ln * ext * math.cos(a_), oz + ln * ext * math.sin(a_), R.R))
         names.append('beam tip')
+    for pk, pi, pa, poff, pext, pstr in R.punches_live(t):               # v3: piston heads
+        a0, tip, d_ = R.ST.piston_geom(R.fighter(pk, t)['p'], pa, poff, pext)
+        pts.append(S.to_world(tip[0], tip[1], R.R))
+        names.append('piston')
+    for k in R.FLAIL:                                                      # v3: the flail's bell head
+        st = R.fighter(k, t)
+        hp = st['p'] + (R.R + st['blen']) * np.array([math.cos(st['th']), math.sin(st['th'])])
+        pts.append(S.to_world(hp[0], hp[1], R.R + 0.1))
+        names.append('flail head')
     if T.T_FIGHT <= t < R.T_HS:
         for owner, cx, cz, t0, t_slam, rad in R.RUN['SLAMS'][R.sim_i(t)]:
             h = R.ST.honk_height(t, t0, t_slam)

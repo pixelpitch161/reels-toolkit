@@ -1,12 +1,14 @@
-"""#29 BALLFIGHT #3: Trumpet vs Sax - renderer (#28's renderer, copied, with this pair's weapons and abilities; the
-new weapon styles live in styles.py).
+"""#29 BALLFIGHT #3: Trumpet vs Sax - renderer, v3 (BALLFIGHT v2 redesign: VALVE COMBO vs STRAP FLAIL, reelkit.fx).
+#28's renderer, copied, with this pair's weapons and abilities; the weapon looks live in styles.py. v2 (beam vs smoke
+rings) is kept as render_v2_backup.py / styles_v2_backup.py / audio_v2_backup.py (its seed 337 ran on the old roster).
 
-arena floor (per pixel: spill, corner lights) -> stands + crowd (phones, flashbulbs) -> ring skirt -> canvas (per pixel:
-the hard spot with real shadows of balls, smoke rings, notes, posts, ropes and the honk bell; corner lights in the
-fighters' colours; decals: the beam's light streak, the fanfare / high C rings, the honk's target) -> back ropes + posts
--> fighters, the trumpet's bell, smoke rings, notes, smoke screen (painter) -> front ropes + posts -> effects (charge
-sights, beams, the honk bell, sparks, puffs, shards, solo notes) -> countdown -> locked DOF on the ring -> glows -> spot
-beam -> bloom -> grade -> scrim -> HP numbers, fight HUD, captions.
+arena floor (per pixel: spill, corner lights, attack lights) -> stands + crowd (phones, flashbulbs, attack light) ->
+ring skirt -> canvas (per pixel: the spot with real shadows of balls, pistons, strap + bell, posts, ropes and the honk
+bell; corner + attack lights; fading marks; decals: the HIGH C streak, the fanfare ring, the honk's target) -> back ropes
++ posts -> fighters, pistons, strap flail, smoke screen (painter) -> front ropes + posts -> effects (wrap coils, the
+HIGH C sight + blast, fanfare banners, the honk bell, sparks, steam / smoke / brass particles, shards, solo notes) ->
+countdown -> locked DOF on the ring -> heat shimmer -> glows -> spot beam -> bloom -> grade -> scrim -> fringe,
+ability dim + speed lines, impact bursts -> HP numbers, fight HUD, captions.
 
     python render.py                                   # sprite cache (check/sprites_ballfight3.npz)
     python -m reelkit.sheet render.py test/sheet.png 0.0 1.0 10.4 17.1 24.0 29.7 42.7 43.9 49.4 53 58.6 60.7
@@ -30,6 +32,7 @@ from reelkit.shadows import MaskGrid, proj_point
 from reelkit.lens import coc_map, dof
 from reelkit.post import bloom, grade, vignette, top_scrim
 from reelkit import ui
+from reelkit import fx
 from reelkit.ui import draw_captions, label, fight_hud, CREAM, AMBER, INK
 from reelkit.font import ADV, text_mask, dilate
 import timeline as T
@@ -53,8 +56,10 @@ EV_T = np.array([e[0] for e in EV])
 R = S.R_BALL
 HITSTOP = 0.35
 T_HS = T_KO + HITSTOP
-BEAM = [k for k in (0, 1) if CFG[k]['weapon']['kind'] == 'beam']
-SMOKE = [k for k in (0, 1) if CFG[k]['weapon'].get('style') == 'smoke']
+COMBO = [k for k in (0, 1) if CFG[k]['weapon']['kind'] == 'combo']       # TRUMPET: VALVE COMBO (pistons)
+FLAIL = [k for k in (0, 1) if CFG[k]['weapon']['kind'] == 'flail']       # SAX: STRAP FLAIL
+BEAM = COMBO                                                            # the trumpet's bell (HIGH C, solo glow)
+SMOKE = FLAIL                                                           # the sax's smoke
 CORNER0 = [np.array(c) for c in RUN['corner']]
 STORY = sim.story(RUN)
 
@@ -78,8 +83,71 @@ SOLO_T = [T_SOLO + bt * T.BEAT for bt, m, d in T.SOLO[NAMES[WIN]]]
 CHARGES = [(e[0], e[2], e[3], e[0] + e[4], e[5], e[6]) for e in EV if e[1] == 'charge']
 BEAMS = [(e[0], e[2], e[3], e[4], e[5], e[6], e[7]) for e in EV if e[1] == 'beam']
 BEAM_T = np.array([b_[0] for b_ in BEAMS]) if BEAMS else np.zeros(0)
-HOLD = [CFG[k]['weapon'].get('hold', 0.12) for k in (0, 1)]
-VOLLEY_IDS = set(e[4] for e in EV if e[1] == 'fire')          # volley ids (smoke rings); others are BEBOP RUN notes
+HOLD = [CFG[k]['abilities']['low'].get('hold', 0.12) for k in (0, 1)]   # HIGH C (an ability beam) holds longer
+VOLLEY_IDS = set(e[4] for e in EV if e[1] == 'fire')
+# VALVE COMBO: every punch (t0, owner, index, aim, reach, combo no., haste time scale)
+PUNCHES = [(e[0], e[2], e[3], e[4], e[5], e[6], 1.0 / (CFG[e[2]]['abilities']['unlock2']['mult']
+           if float(RUN['HA'][min(len(RUN['HA']) - 1, max(0, int(round((e[0] - T.T_FIGHT) * FPS)))), e[2]]) > 0 else 1.0))
+           for e in EV if e[1] == 'punch']
+PUNCH_T = np.array([q[0] for q in PUNCHES]) if PUNCHES else np.zeros(0)
+# STRAP FLAIL: wraps (t0, owner, t_end) - the strap holds the enemy until t_end (or the K.O.)
+WRAPS = [(e[0], e[2], e[3]) for e in EV if e[1] == 'wrap']
+
+
+def punches_live(t):
+    """pistons out at t: [(owner, index, aim, ext, stretch)] (they freeze with the hit-stop)"""
+    if not len(PUNCH_T) or t < T.T_FIGHT:
+        return []
+    tt = min(t, T_KO)
+    j0, j1 = np.searchsorted(PUNCH_T, tt - 0.6), np.searchsorted(PUNCH_T, tt, 'right')
+    out = []
+    for j in range(j0, j1):
+        t0, k, i, a, reach, cn, ks = PUNCHES[j]
+        w = CFG[k]['weapon']
+        u = (tt - t0) / ks
+        ext = ST.piston_ext(u, w, reach)
+        if ext is not None:
+            stretch = max(0.0, 1 - u / w['t_out']) if u < w['t_out'] else 0.0
+            off = (i - (w['punches'] - 1) / 2) * w['spread']
+            out.append((k, i, a, off, ext, stretch))
+    if T_KO <= t < T_HS + 0.2 and t >= T_HS:                              # ... then they pull home after the hit-stop
+        out = [(k, i, a, off, ext * max(0.0, 1 - (t - T_HS) / 0.2), 0.0) for k, i, a, off, ext, stretch in out]
+    return out
+
+
+def hc_mode(k, t):
+    """0..1: how far the trumpet has turned from 'valves at the enemy' to 'bell down the HIGH C line' (eased in as the
+    charge starts, out after the blast)"""
+    for t0, who, aim, t_fire, ln, wd in CHARGES:
+        if who != k:
+            continue
+        t_end = t_fire + HOLD[k] + ST.FADE
+        if t0 - 0.02 <= t < t_end + 0.2:
+            return ss(t0 - 0.02, t0 + 0.13, t) * (1 - ss(t_end, t_end + 0.2, t))
+    return 0.0
+
+
+def hc_aim(k, t):
+    """the HIGH C line's aim (the latest charge at or before t)"""
+    a = None
+    for t0, who, aim, t_fire, ln, wd in CHARGES:
+        if who == k and t0 - 0.02 <= t:
+            a = aim
+    return a
+
+
+def wrap_at(k, t):
+    """(k_in 0..1, t0, t_end) if fighter k's strap is wrapped round the enemy at t, else None"""
+    if t >= T_HS + 0.25:
+        return None
+    tt = min(t, T_KO)
+    for t0, who, t_end in WRAPS:
+        if who == k and t0 <= tt < min(t_end, T_KO + 1e-6):
+            k_in = min(1.0, (tt - t0) / 0.15) * min(1.0, (t_end - tt) / 0.12 if t_end <= T_KO else 1.0)
+            if t >= T_HS:                                               # the K.O.: the strap lets go
+                k_in *= 1 - (t - T_HS) / 0.25
+            return max(0.0, k_in), t0, t_end
+    return None
 
 
 def charge_at(k, t):
@@ -101,8 +169,18 @@ def beams_live(t):
         tt = min(t, T_KO) if t < T_HS else t - HITSTOP
         st = ST.beam_state(tt, tf, HOLD[k])
         if st is not None:
-            out.append((k, ox, oz, a, ln, wd, st[0], st[1], st))
+            out.append((k, ox, oz, a, clip_len(ox, oz, a, ln), wd, st[0], st[1], st))
     return out
+
+
+def clip_len(ox, oz, a, ln, lim=3.25):
+    """the visible blast ends at the ropes (it stays inside the ring, and inside the lens's sharp band)"""
+    d = (math.cos(a), math.sin(a))
+    s_max = ln
+    for o, dv in ((ox, d[0]), (oz, d[1])):
+        if abs(dv) > 1e-9:
+            s_max = min(s_max, ((lim if dv > 0 else -lim) - o) / dv)
+    return max(0.2, s_max)
 
 
 def fire_centre(ox, oz, a):
@@ -146,7 +224,7 @@ def rev_offset(k, t):
     return np.array([a * math.sin(2 * math.pi * t / p1 + k), a * math.cos(2 * math.pi * t / p2 + 2 * k)])
 
 
-OMEGA = [CFG[k]['weapon'].get('spin', 0.0) for k in (0, 1)]          # base spin (the rev and the tail use it)
+OMEGA = [CFG[k]['weapon'].get('spin', CFG[k]['weapon'].get('spin0', 0.0)) for k in (0, 1)]   # base spin (rev + tail)
 TH0 = [float(RUN['TH'][0, k]) for k in (0, 1)]
 SD0 = [float(RUN['SPIN'][0, k]) for k in (0, 1)]
 
@@ -172,7 +250,7 @@ FRETS0 = [CFG[k]['weapon'].get('frets0', 0) for k in (0, 1)]
 def fighter(k, t):
     """picture state of fighter k at time t: dict(p (ring frame), vis, th, blen, frets, shield, haste, glow, scale)"""
     st = dict(vis=True, shield=0.0, haste=0.0, glow=0.0, scale=1.0, th=0.0, blen=BASE_LEN[k], frets=FRETS0[k],
-              level=1, shattered=False, om=OMEGA[k], sd=SD0[k], charge=0.0)
+              level=1, shattered=False, om=OMEGA[k], sd=SD0[k], charge=0.0, hc=0.0)
     if t < T.T_FIGHT:
         st['p'] = CORNER0[k] + rev_offset(k, t)
         st['th'] = theta_open(k, t)
@@ -189,15 +267,23 @@ def fighter(k, t):
         st['level'] = int(RUN['LV'][i, k])
         st['om'] = float(RUN['OM'][i, k])
         st['sd'] = float(RUN['SPIN'][i, k])
-        if k in BEAM:                                             # the bell glows as it charges, flares as it fires
-            tt = min(t, T_KO)
+        if k in COMBO:                                            # HIGH C: the bell glows as it charges, flares as it fires;
+            tt = min(t, T_KO)                                     # every punch thumps the ball
+            st['hc'] = hc_mode(k, tt)
             ch = charge_at(k, tt)
             if ch is not None:
                 st['charge'] = (tt - ch[0]) / max(1e-3, ch[2] - ch[0])
             j = np.searchsorted(BEAM_T, tt, 'right') - 1
-            fire = math.exp(-(tt - BEAM_T[j]) / 0.10) if j >= 0 else 0.0
-            st['glow'] = max(0.5 * st['charge'] ** 2, 0.75 * fire)
+            fire = math.exp(-(tt - BEAM_T[j]) / 0.18) if j >= 0 else 0.0
+            jp = np.searchsorted(PUNCH_T, tt, 'right') - 1
+            thump = math.exp(-(tt - PUNCH_T[jp]) / 0.08) if jp >= 0 else 0.0
+            st['glow'] = max(0.5 * st['charge'] ** 2, 0.8 * fire, 0.3 * thump)
             st['charge'] = max(st['charge'] ** 1.5, fire)
+        if k in FLAIL:                                            # the sax glows as its swing builds momentum
+            w = CFG[k]['weapon']
+            st['glow'] = 0.08 + 0.3 * min(1.0, st['om'] / w['spin_max']) ** 2
+            if wrap_at(k, t) is not None:
+                st['glow'] = 0.45
         if t >= T_KO and k == LOSE:
             st['glow'] = 1.0
         return st
@@ -266,7 +352,7 @@ def shake(t):
 
 def camera(t):
     cam = interp_keys(KEYS, t)
-    dx, dy = shake(t)
+    dx, dy = SHK.offset(t)                                # reelkit.fx camera shake on heavy hits
     cam.cx += dx
     cam.cy += dy
     return cam
@@ -298,6 +384,7 @@ def lights(t, cam):
     rk = 1.0 + 0.25 * T.beat_pulse(t, 0.2)
     L.point(S.RED_LIGHT, LIGHT_RGB[0] * 1.1 * rk, 2.6)
     L.point(S.BLUE_LIGHT, LIGHT_RGB[1] * 1.1 * rk, 2.6)
+    FL.apply(L, t)                                        # attacks light the scene in the fighter's colour (reelkit.fx)
     return L
 
 
@@ -460,10 +547,9 @@ def sprite_jobs():
         nm = CFG[k]['pp']
         yc, sw, roll = CFG[k]['view']
         for r in SPR_RADII:
-            if k in BEAM:
-                for base in (yc, yc + 180):
-                    for rl in range(-90, 91, ROLL_STEP):
-                        jobs.add((nm, r, int(round(base / 6.0)) * 6 % 360, rl))
+            if k in COMBO:                                       # every roll: the trumpet turns all the way round
+                for rl in range(-180, 180, ROLL_STEP):
+                    jobs.add((nm, r, int(round(yc / 6.0)) * 6 % 360, rl))
             else:
                 for yk in range(int((yc - sw - 6) // 6) * 6, int(yc + sw + 12), 6):
                     jobs.add((nm, r, yk % 360, int(roll)))
@@ -525,6 +611,24 @@ def screen(cam, P):
 
 
 # ---------------------------------------------------------------- glass balls
+def screen_angle(cam, p, th):
+    s0 = cam.wp(S.to_world(p[0], p[1], R)[None])[0]
+    q = p + np.array([math.cos(th), math.sin(th)])
+    s1 = cam.wp(S.to_world(q[0], q[1], R)[None])[0]
+    return math.degrees(math.atan2(s1[1] - s0[1], s1[0] - s0[0]))
+
+
+def trumpet_alpha(cam, k, st, t):
+    """the side-on trumpet's screen rotation (deg, y down): valves up (-90 deg) turned to the punch aim, blended toward
+    'bell (0 deg) down the HIGH C line' by the HIGH C mode"""
+    a_valves = screen_angle(cam, st['p'], st['th']) + 90.0
+    hc = st.get('hc', 0.0)
+    if hc <= 0:
+        return a_valves
+    a_bell = screen_angle(cam, st['p'], hc_aim(k, t))
+    return a_valves + ((a_bell - a_valves + 180) % 360 - 180) * hc
+
+
 def aim_roll(cam, p, th, yc):
     """(sprite roll, base yaw) so a side-on instrument (bell right at yaw yc) points along th on screen with its valves up"""
     s0 = cam.wp(S.to_world(p[0], p[1], R)[None])[0]
@@ -569,10 +673,10 @@ def draw_ball(arr, dep, cam, k, st, t):
     # the instrument
     name = CFG[k]['pp']
     yc, sw, roll = CFG[k]['view']
-    if k in BEAM:                                    # the trumpet turns inside its ball to point its bell along the aim
-        rl, base = aim_roll(cam, st['p'], st['th'], yc)
-        yaw = base                                   # no yaw swing: the aim's roll is the motion
-        roll = int(round(rl / ROLL_STEP)) * ROLL_STEP
+    if k in COMBO:                                   # v3: the trumpet turns its valves toward the punches (the pistons
+        yaw = yc                                     # come out of them); for HIGH C it swings its bell down the line
+        roll = int(round(-trumpet_alpha(cam, k, st, t) / ROLL_STEP)) * ROLL_STEP
+        roll = (roll + 180) % 360 - 180
     else:
         yaw = yc + sw * math.sin(1.25 * st['p'][0] + 0.45 * st['p'][1])
     spr = sprite(name, rp * 0.80, yaw, roll)
@@ -711,6 +815,7 @@ def arena(fr, cam, L, t):
     for j, d in zip(np.nonzero(bvis)[0], cam.depth(BAR_C[bvis])):
         items.append((d, 2, j, None))
     heads = CROWD_P + np.stack([np.zeros(len(CROWD_P)), 0.55 * CROWD_HT, np.zeros(len(CROWD_P))], 1)
+    crowd_lit = 1.0 + 0.9 * FL.tint(heads, t)                    # attack lights reach the crowd (reelkit.fx)
     dh = cam.depth(heads)
     sp = cam.wp(heads)
     for j in range(len(CROWD_P)):
@@ -742,7 +847,7 @@ def arena(fr, cam, L, t):
                 continue
             side = CROWD_P[j, 0]
             tint = CROWD_TINT[0] if side < -1.5 else (CROWD_TINT[1] if side > 1.5 else np.array([1.0, 0.92, 1.0]))
-            body = S.CROWD_COLS[CROWD_CI[j]] * tint * spill
+            body = np.clip(S.CROWD_COLS[CROWD_CI[j]] * tint * spill * crowd_lit[j], 0, 255)
             draw.ellipse([x - 1.9 * rh, y + 0.6 * rh, x + 1.9 * rh, y + 3.4 * rh], fill=tuple(int(v) for v in body * 0.8))
             draw.ellipse([x - rh, y - rh, x + rh, y + rh], fill=tuple(int(v) for v in body * 0.62))
             # rim light from the ring on the heads (they face it)
@@ -783,6 +888,30 @@ def canvas_shadows(cam, t, fs, keys, spot, slams=()):
         pw = S.to_world(st['p'][0], st['p'][1], R)
         circ = np.array([[pw[0] + R * st['scale'] * math.cos(u), R, pw[2] + R * st['scale'] * math.sin(u)] for u in a])
         polys.append(proj_point(circ, spot))
+    for pk, pi, pa, poff, pext, pstr in punches_live(t):    # the pistons
+        if fs[pk]['vis'] and not fs[pk]['shattered']:
+            a0, tip, d_ = ST.piston_geom(fs[pk]['p'], pa, poff, pext)
+            n_ = np.array([-d_[1], d_[0]]) * 0.05
+            polys.append(proj_point(np.array([S.to_world(q[0], q[1], R) for q in (a0 - n_, tip - n_, tip + n_, a0 + n_)]), spot))
+    for k in FLAIL:                                    # the strap + the bell head (or the wrap)
+        st = fs[k]
+        if st['shattered'] or not st['vis']:
+            continue
+        if wrap_at(k, t) is None:
+            L_ = R + st['blen']
+            pts = ST.strap_curve(st['p'], st['th'], L_, st['om'], CFG[k]['weapon']['spin_max'], st['sd'], n=6)
+            hp = pts[-1]
+        else:
+            pts = [st['p'], fs[1 - k]['p']]
+            hp = None
+        for a_, b_ in zip(pts[:-1], pts[1:]):
+            q = np.array([S.to_world(a_[0], a_[1], R * 0.95) + [0, -0.02, 0], S.to_world(b_[0], b_[1], R * 0.95) + [0, -0.02, 0],
+                          S.to_world(b_[0], b_[1], R * 0.95) + [0, 0.02, 0], S.to_world(a_[0], a_[1], R * 0.95) + [0, 0.02, 0]])
+            polys.append(proj_point(q, spot))
+        if hp is not None:
+            w_ = S.to_world(hp[0], hp[1])
+            polys.append(proj_point(np.array([[w_[0] + 0.18 * math.cos(u), R, w_[2] + 0.18 * math.sin(u)]
+                                              for u in np.linspace(0, 2 * math.pi, 9)[:-1]]), spot))
     a8 = np.linspace(0, 2 * math.pi, 9)[:-1]
     for row in keys:                                  # smoke rings / notes: small soft blobs
         rr = 0.16 if int(row[6]) in VOLLEY_IDS else 0.07
@@ -828,8 +957,8 @@ def sparks(arr, cam, t):
         if kind == 'hit':
             att, x, z, how = e[2], e[5], e[6], e[7]
             col = COL[att] * 0.6 + 100
-            n, sp, life = (16, 3.2, 0.3) if how in ('slam', 'wave', 'shockwave') else \
-                ((12, 3.0, 0.26) if how == 'beam' else (5, 1.8, 0.18))
+            n, sp, life = (16, 3.2, 0.3) if how in ('slam', 'wave', 'shockwave', 'beam') else \
+                ((9, 2.6, 0.22) if how in ('piston', 'flail') else (5, 1.8, 0.18))
         elif kind == 'parry':
             att, x, z = e[2], e[4], e[5]
             col, n, sp, life = np.array([230, 236, 255]), 6, 2.4, 0.2
@@ -852,9 +981,174 @@ def sparks(arr, cam, t):
             xi, yi = int(s[0]), int(s[1])
             if 0 <= xi < W - 1 and 0 <= yi < H - 1:
                 arr[yi, xi] = np.clip(arr[yi, xi] * (1 - fade) + np.clip(col + 60, 0, 255) * fade, 0, 255)
-        if kind == 'hit' and e[7] in ('beam', 'slam') and dt < 0.08:
+        if kind == 'hit' and e[7] in ('beam', 'slam', 'flail') and dt < 0.08:
             s = cam.wp(S.to_world(x, z, R)[None])[0]
             arr[max(0, int(s[1]) - 1):int(s[1]) + 2, max(0, int(s[0]) - 1):int(s[0]) + 2] = 255
+
+
+# ---------------------------------------------------------------- effects (reelkit.fx, BALLFIGHT v2): built once from the run
+FL = fx.Flares(max_n=6)
+BU = fx.Bursts()
+PA = fx.Particles(seed=29)
+MK = fx.Marks()
+MO = fx.Moments()
+SHK = fx.Shake(cap=2.5)
+SMOKE_COLS = [(110, 132, 132), (140, 160, 158), (92, 108, 112)]          # sax smoke, a touch of teal
+
+
+def fx_t(t):
+    """effects clock: real time in the fight, held through the hit-stop, then running on"""
+    return t if t < T_KO else (T_KO if t < T_HS else t - HITSTOP)
+
+
+def _wdir(d):
+    return tuple(S.to_world(d[0], d[1], 0.0))
+
+
+def _fx_build():
+    kt, ks = (COMBO[0] if COMBO else 0), (FLAIL[0] if FLAIL else 1)
+    wt = CFG[kt]['weapon']
+    wrapped = [(t0, min(t_end, T_KO)) for t0, who, t_end in WRAPS]
+    # VALVE COMBO: steam bursts from the valve as each piston fires
+    for t0, k, i, a, reach, cn, ks_ in PUNCHES:
+        p = RUN['P'][sim_i(t0), k]
+        a0, tip, d = ST.piston_geom(p, a, (i - (wt['punches'] - 1) / 2) * wt['spread'], 0.0)
+        PA.emit(t0, S.to_world(a0[0], a0[1], R * 1.15), 'steam', n=3, dir=(0.0, 1.0, 0.0), vel=_wdir(d * 0.6))
+    # STRAP FLAIL: smoke streams off the bell head along its path (thicker as it speeds up; a spiral in BEBOP RUN)
+    tb = T.T_FIGHT
+    while tb < T_KO:
+        if not any(a <= tb < b for a, b in wrapped):
+            i = sim_i(tb)
+            p, th, om = RUN['P'][i, ks], float(RUN['TH'][i, ks]), float(RUN['OM'][i, ks])
+            hp = p + (R + float(RUN['BL'][i, ks])) * np.array([math.cos(th), math.sin(th)])
+            n = int(om > 6.0) + 2 * int(float(RUN['HA'][i, ks]) > 0) + int(int(tb / 0.07) % 2 == 0)
+            PA.emit(tb, S.to_world(hp[0], hp[1], R), 'smoke', n=n, col=SMOKE_COLS, speed=(0.05, 0.25), scale=0.7,
+                    life=(0.6, 1.0))
+        tb += 0.07
+    # hits, blocks, wraps
+    for e in EV:
+        if e[0] > T_KO + 1e-6:
+            break
+        if e[1] == 'hit':
+            att, x, z, how, sub = e[2], e[5], e[6], e[7], e[8]
+            pos = S.to_world(x, z, R)
+            if how == 'piston':
+                big = sub == wt['punches'] - 1
+                BU.add(e[0], pos, COL[att], 1.2 if big else 0.7, bright=big)
+                FL.add(e[0], pos, COL[att], radius=1.4, peak=0.85 if big else 0.55, decay=0.2)
+                PA.emit(e[0], pos, 'brass', n=8 if big else 4)
+                PA.emit(e[0], pos, 'steam', n=2)
+                MK.add(e[0], 'scorch', x, z, size=0.22 if big else 0.14, col=(150, 110, 30), life=2.5,
+                       seed=int(e[0] * 100), strength=0.6)
+                if big:
+                    SHK.add(e[0], 0.9)
+            elif how == 'flail':
+                mom = sub / 10.0
+                BU.add(e[0], pos, COL[att], 0.8 + 0.8 * mom, bright=mom > 0.5)
+                FL.add(e[0], pos, COL[att], radius=1.6, peak=0.55 + 0.45 * mom, decay=0.26)
+                PA.emit(e[0], pos, 'smoke', n=6, col=SMOKE_COLS, speed=(0.3, 0.9))
+                p_s = RUN['P'][sim_i(e[0]), att]
+                tang = math.atan2(z - p_s[1], x - p_s[0]) + math.pi / 2
+                MK.add(e[0], 'claw', x, z, size=0.42, angle=tang, n=2, col=(40, 70, 66), life=3.5, seed=int(e[0] * 100))
+                SHK.add(e[0], 0.5 + 1.2 * mom)
+            elif how == 'beam':                                          # HIGH C lands
+                BU.add(e[0], pos, COL[att], 2.0)
+                FL.add(e[0], pos, COL[att], radius=2.4, peak=1.2, decay=0.4)
+                PA.emit(e[0], pos, 'brass', n=18, speed=(2.0, 4.5))
+                SHK.add(e[0], 2.5)
+            elif how == 'slam':
+                BU.add(e[0], pos, COL[att], 2.0)
+                SHK.add(e[0], 2.5)
+            elif how in ('shockwave', 'wave'):
+                BU.add(e[0], pos, COL[att], 1.4)
+                SHK.add(e[0], 1.5)
+        elif e[1] == 'block':
+            BU.add(e[0], S.to_world(e[4], e[5], R), (200, 230, 226), 0.6, bright=False)
+            PA.emit(e[0], S.to_world(e[4], e[5], R), 'smoke', n=4, col=SMOKE_COLS)
+        elif e[1] == 'wrap':                                            # the strap snaps round the enemy
+            pe = RUN['P'][sim_i(e[0]), 1 - e[2]]
+            PA.emit(e[0], S.to_world(pe[0], pe[1], R), 'smoke', n=8, col=SMOKE_COLS, spread=180, speed=(0.3, 0.8))
+        elif e[1] == 'beam':                                            # HIGH C fires: the bell flares, the line scorches
+            tf, k, ox, oz, a, ln, wd = e[0], e[2], e[3], e[4], e[5], e[6], e[7]
+            d = np.array([math.cos(a), math.sin(a)])
+            for u in (0.15, 0.45, 0.75):
+                q = np.array([ox, oz]) + d * ln * u
+                FL.add(tf, S.to_world(q[0], q[1], R), COL[k], radius=2.2, peak=0.7, decay=0.35, hold=0.15)
+                MK.add(tf, 'scorch', q[0], q[1], size=0.5 * wd + 0.2, angle=a, col=(170, 120, 30), life=6.0,
+                       seed=int(tf * 10 + u * 7), strength=0.8)
+            PA.emit(tf, S.to_world(ox, oz, R), 'brass', n=14, dir=_wdir(d), spread=40, speed=(2.0, 4.0))
+            SHK.add(tf, 1.2)
+        elif e[1] == 'slam':                                            # HONK: the bell slams down: a smoke-ring crater
+            cx, cz = e[3], e[4]
+            FL.add(e[0], S.to_world(cx, cz, 1.0), COL[e[2]], radius=2.4, peak=1.1, decay=0.5)
+            MK.add(e[0], 'smoke_ring', cx, cz, size=1.4, life=7.0, seed=int(e[0] * 10), strength=0.9)
+            MK.add(e[0], 'scorch', cx, cz, size=0.9, col=(30, 60, 58), life=7.0, seed=int(e[0] * 10) + 1, strength=0.5)
+            PA.emit(e[0], S.to_world(cx, cz, 0.1), 'smoke', n=24, col=SMOKE_COLS, spread=180, speed=(0.6, 1.6), scale=1.3)
+            SHK.add(e[0], 2.0)
+        elif e[1] == 'ability' and e[3] == 'FANFARE':
+            p = RUN['P'][sim_i(e[0]), e[2]]
+            FL.add(e[0], S.to_world(p[0], p[1], 1.0), COL[e[2]], radius=2.6, peak=0.9, decay=0.45)
+    for t, who, name in STORY['caps']:
+        MO.add(t, who, COL[who])
+    # the K.O.
+    p = P_KO[LOSE]
+    pos = S.to_world(p[0], p[1], R)
+    BU.add(T_KO, pos, COL[LOSE], 2.0)
+    FL.add(T_KO, pos, COL[LOSE] * 0.9, radius=2.4, peak=1.1, decay=0.6)
+    PA.emit(T_KO, pos, 'brass', n=26, spread=180, speed=(1.0, 3.0))
+    PA.emit(T_KO, pos, 'smoke' if NAMES[LOSE] == 'SAX' else 'steam', n=14, col=SMOKE_COLS if NAMES[LOSE] == 'SAX' else None,
+            spread=180, speed=(0.4, 1.2))
+    SHK.add(T_KO, 2.5)
+    # the champion's solo: a puff from the horn on every note (effects clock)
+    for t0 in SOLO_T:
+        if t0 < T.T_REASSEMBLE:
+            c = fighter(WIN, t0)['p']
+            PA.emit(t0 - HITSTOP, S.to_world(c[0], c[1], R * 1.6), 'steam' if NAMES[WIN] == 'TRUMPET' else 'smoke', n=2,
+                    col=None if NAMES[WIN] == 'TRUMPET' else SMOKE_COLS)
+            FL.add(t0 - HITSTOP, S.to_world(c[0], c[1], 1.0), COL[WIN], radius=1.6, peak=0.5, decay=0.2)
+
+
+_fx_build()
+
+
+def shimmers(img, cam, t, fs):
+    """heat shimmer: the fanfare ring, the honk shock ring, and the air over the HIGH C blast"""
+    if T.T_FIGHT <= t < T_HS:
+        for owner, cx, cz, r_, rmax, kind_, t0 in RUN['WAVES'][sim_i(t)]:
+            img = fx.shimmer_world(img, cam, S.to_world(cx, cz, 0.05), r_, 0.35, 2.6, t, k=1 - r_ / rmax, seed=owner)
+    tc = fx_t(t)
+    for e in EV:
+        if e[1] == 'slam':
+            u = (tc - e[0]) / 0.6
+            if 0 <= u < 1:
+                img = fx.shimmer_world(img, cam, S.to_world(e[3], e[4], 0.05), 1.35 + 1.6 * u, 0.35, 3.0, t, k=1 - u)
+    for k, ox, oz, a_, ln, wd, ext, al, bst in beams_live(t):           # HIGH C: the air shivers along the blast
+        d = np.array([math.cos(a_), math.sin(a_)])
+        for u in (0.25, 0.55, 0.85):
+            q = np.array([ox, oz]) + d * ln * ext * u
+            img = fx.shimmer_world(img, cam, S.to_world(q[0], q[1], R), 0.35 + 0.6 * wd * (1 + bst[3]), 0.3, 2.4, t,
+                                   k=al, seed=int(u * 10))
+    return img
+
+
+def post_fx(img, cam, t, fs, drawn):
+    """after the grade: chromatic fringing on big hits, the ability moments (dim + speed lines), the impact bursts"""
+    for _, e in events_between(t - 0.12, t, ('hit',)):
+        if e[7] in ('beam', 'slam', 'shockwave', 'wave') or (e[7] == 'flail' and e[8] >= 7):
+            s_ = cam.wp(S.to_world(e[5], e[6], R)[None])[0]
+            img = fx.fringe(img, s_[0], s_[1], 26 if e[7] != 'flail' else 18, 2.5 if e[7] != 'flail' else 1.6,
+                            k=1 - (t - e[0]) / 0.12)
+    if T_KO <= t < T_HS + 0.3:
+        s_ = cam.wp(S.to_world(P_KO[LOSE][0], P_KO[LOSE][1], R)[None])[0]
+        img = fx.fringe(img, s_[0], s_[1], 34, 3.0, k=1 - ss(T_HS, T_HS + 0.3, t))
+    keep = [(s_[0], s_[1], rp * 1.7) for k, (s_, rp) in drawn.items()]
+    img = MO.apply_dim(img, t, keep=keep)
+    for k, (s_, rp) in drawn.items():
+        p1 = fighter(k, max(0.0, t - 0.06))['p']
+        s1 = cam.wp(S.to_world(p1[0], p1[1], R)[None])[0]
+        img = MO.speed_lines(img, t, k, s_[0], s_[1], rp, (s_[0] - s1[0], s_[1] - s1[1]))
+    img = BU.draw(img, cam, t)
+    return img
 
 
 # ---------------------------------------------------------------- frame
@@ -881,6 +1175,7 @@ def render(f):
         if ch is not None:
             sights.append((k, ch[1], ch[3], fs[k]['charge']))
     slams = RUN['SLAMS'][i] if in_fight else []
+    pun = punches_live(t)
     spot = S.SPOT
     aim = spot_aim(t)
     axis = (aim - spot) / np.linalg.norm(aim - spot)
@@ -916,6 +1211,7 @@ def render(f):
         Xp, Zp = Xc[ys, xs], Zc[ys, xs]
         sxp, szp = sx[ys, xs], sz[ys, xs]
         alb = S.canvas_albedo(sxp, szp)
+        alb = MK.apply(alb, sxp, szp, min(t, T_KO) if t < T_HS else t - HITSTOP, BAYER_FULL[ys, xs])   # fading marks
         sh = CANVAS_GRID.sample(canvas_shadows(cam, t, fs, keys, spot, slams), Xp, Zp)
         v = np.stack([Xp - spot[0], -spot[1] * np.ones_like(Xp), Zp - spot[2]], 1)
         dist = np.linalg.norm(v, axis=1)
@@ -1004,11 +1300,20 @@ def render(f):
         if st['shield'] > 0:
             items.append((dz + 0.03, 'smoke_back', k))
             items.append((dz - 0.03, 'smoke_front', k))
+        if k in FLAIL and not st['shattered'] and wrap_at(k, t) is None:     # the strap flail (unless it's wrapped)
+            hp = st['p'] + (R + st['blen']) * np.array([math.cos(st['th']), math.sin(st['th'])])
+            items.append((cam.depth(S.to_world(hp[0], hp[1], R))[0], 'flail', k))
+    for pk, pi, pa, poff, pext, pstr in pun:                          # VALVE COMBO: the pistons out right now
+        if fs[pk]['vis'] and not fs[pk]['shattered']:
+            a0, tip, d_ = ST.piston_geom(fs[pk]['p'], pa, poff, pext)
+            mid = (a0 + tip) / 2
+            items.append((cam.depth(S.to_world(mid[0], mid[1], R))[0], 'piston', (pk, pi, pa, poff, pext, pstr)))
     for row in keys:
         items.append((cam.depth(S.to_world(row[0], row[1], 0.5))[0], 'key', row))
     items.sort(key=lambda it: -it[0])
     drawn = {}
-    drawn_bell = {k: cam.wp(S.to_world(*ST.bell_mouth(fs[k]['p'], fs[k]['th']), R)[None])[0]
+    drawn_bell = {k: cam.wp(S.to_world(*ST.bell_mouth(fs[k]['p'], hc_aim(k, t) if fs[k]['hc'] > 0.5 else fs[k]['th']),
+                                       R)[None])[0]
                   for k in BEAM if fs[k]['vis'] and not fs[k]['shattered']}
     for dz, kind, obj in items:
         if kind == 'post':
@@ -1017,6 +1322,23 @@ def render(f):
             st = fs[obj]
             arr, depth = fr.array(), fr.depth()
             drawn[obj] = draw_ball(arr, depth, cam, obj, st, t)
+            fr.set_array(arr, depth)
+        elif kind == 'flail':
+            st = fs[obj]
+            w = CFG[obj]['weapon']
+            L_ = R + st['blen']
+            arr, depth = fr.array(), fr.depth()
+            if st['om'] > 4.0:                                       # the swept arc behind a fast head
+                ST.draw_swing_trail(arr, cam, st['p'], st['th'], L_, min(2.2, st['om'] * 0.07) * st['sd'], COL[obj],
+                                    k=min(1.0, (st['om'] - 4.0) / 5.0))
+            ST.draw_strap(arr, cam, ST.strap_curve(st['p'], st['th'], L_, st['om'], w['spin_max'], st['sd']), COL[obj])
+            ST.draw_flail_head(arr, cam, st['p'] + L_ * np.array([math.cos(st['th']), math.sin(st['th'])]), st['th'],
+                               COL[obj])
+            fr.set_array(arr, depth)
+        elif kind == 'piston':
+            pk, pi, pa, poff, pext, pstr = obj
+            arr, depth = fr.array(), fr.depth()
+            ST.draw_piston(arr, cam, fs[pk]['p'], pa, poff, pext, pstr, COL[pk])
             fr.set_array(arr, depth)
         elif kind in ('smoke_back', 'smoke_front'):
             st = fs[obj]
@@ -1040,7 +1362,18 @@ def render(f):
     draw_rope_side(1)
     draw_post('front')
     arr, depth = fr.array(), fr.depth()
-    # ---------------- shields, slams, shards, sparks
+    # ---------------- wraps, the HIGH C sight + blast, banners, the honk bell, shards, sparks
+    for k in FLAIL:                                                      # STRAP FLAIL: the strap coiled round the enemy
+        wr = wrap_at(k, t)
+        if wr is not None and fs[k]['vis'] and fs[1 - k]['vis']:
+            pe, ps_ = fs[1 - k]['p'], fs[k]['p']
+            ST.draw_wrap(arr, cam, ps_, pe, wr[0], COL[k], t, side=fs[k]['sd'])
+            d_ = (pe - ps_) / max(1e-6, float(np.hypot(*(pe - ps_))))
+            ST.draw_flail_head(arr, cam, pe + d_ * (R + 0.1), math.atan2(d_[1], d_[0]), COL[k])
+    if in_fight:                                                         # FANFARE: golden banners on the ring
+        for owner, cx, cz, r_, rmax, kind_, t0 in RUN['WAVES'][i]:
+            if kind_ == 'shockwave':
+                ST.draw_banners(arr, cam, np.array([cx, cz]), r_, min(1.0, (1 - r_ / rmax) * 1.6), t)
     for k, a_, ln, ck in sights:                                        # the locked aim while the bell charges
         ST.draw_sight(arr, cam, fs[k]['p'], a_, ln, ck, t, COL[k])
     for k, ox, oz, a_, ln, wd, ext, al, bst in blasts:                 # the blasts, out of the trumpet's bell
@@ -1052,7 +1385,6 @@ def render(f):
         if h is not None:
             a = min(1.0, (t - t0) / 0.15) * (1.0 if t < t_slam + 0.35 else max(0.0, 1 - (t - t_slam - 0.35) / 0.25))
             ST.draw_honk_bell(arr, cam, cx, cz, rad, h, a, blast=max(0.0, 1 - abs(t - t_slam) / 0.12), col=COL[int(owner)])
-    puffs(arr, cam, t)
     for kind, p, rot, size, curl, a in parts_at(t):
         sx_, sz_ = p[0], p[2]
         d = np.array([math.cos(rot), math.sin(rot)])
@@ -1105,6 +1437,8 @@ def render(f):
         side = 0.25 * math.sin(m * 1.7)
         ST.draw_note_rise(arr, cam, org[0] + side * u, org[1] - side * u, R + 0.4 + 1.3 * u, COL[WIN], 1 - u / 1.4)
     sparks(arr, cam, t)
+    tc = fx_t(t)
+    arr = PA.draw(arr, cam, tc, light=lambda P: 1.0 + 0.6 * FL.tint(P, tc))   # steam, smoke, brass sparks (reelkit.fx)
     # countdown in the ring (sharp, over everything in the ring)
     cs = cam.wp(np.array([[0.0, 0.3, 0.0]]))[0]
     fr.set_array(arr, depth)
@@ -1112,6 +1446,7 @@ def render(f):
     img, depth = fr.array(), fr.depth()
     zf = cam.depth(S.SUBJECT)[0]
     img = dof(img, coc_map(depth, zf, 26.0, sharp=0.17))
+    img = shimmers(img, cam, t, fs)                                # heat shimmer (reelkit.fx)
     for name, lp in (('red', S.RED_LIGHT), ('blue', S.BLUE_LIGHT)):
         s_ = cam.wp(lp[None])[0]
         fr.glow(s_[0], s_[1], 16, tuple(COL[0] if name == 'red' else COL[1]), 0.35 + 0.15 * T.beat_pulse(t, 0.2))
@@ -1127,12 +1462,12 @@ def render(f):
         for u in (0.15, 0.5, 0.85):
             q = np.array([ox, oz]) + u * ln * ext * np.array([math.cos(a_), math.sin(a_)])
             s_ = cam.wp(S.to_world(q[0], q[1], R)[None])[0]
-            fr.glow(s_[0], s_[1], 10 + 18 * wd, tuple(COL[k] * 0.7 + 70), 0.35 * al)
+            fr.glow(s_[0], s_[1], 10 + 8 * wd, tuple(COL[k] * 0.7 + 70), (0.35 if wd < 0.6 else 0.22) * al)
     for e_i, e in events_between(t - 0.15, t, ('hit',)):
         if e[7] in ('beam', 'slam', 'wave', 'shockwave'):
             s_ = cam.wp(S.to_world(e[5], e[6], R)[None])[0]
             big = e[7] != 'beam'
-            fr.glow(s_[0], s_[1], 14 if big else 8, tuple(COL[e[2]] * 0.7 + 70), (0.7 if big else 0.45) * (1 - (t - e[0]) / 0.15))
+            fr.glow(s_[0], s_[1], 14 if big else 8, tuple(COL[e[2]] * 0.7 + 70), (0.35 if big else 0.22) * (1 - (t - e[0]) / 0.15))
     if T_KO <= t < T_HS + 0.25:
         s_ = cam.wp(S.to_world(P_KO[LOSE][0], P_KO[LOSE][1], R)[None])[0]
         fr.glow(s_[0], s_[1], 46, (255, 240, 220), 0.9 * (1 - ss(T_KO, T_HS + 0.25, t)))
@@ -1154,7 +1489,8 @@ def render(f):
     if -30 < s0[1] < 60:
         img = apply_glows(img, [(s0[0], s0[1], 30, (255, 244, 220), 0.9), (s0[0], s0[1], 10, (255, 255, 255), 1.0)])
     img = grade(bloom(np.clip(img, 0, 255), thr=225, k=0.22), contrast=0.18, sat=1.18)
-    img = np.clip(img * vignette(strength=0.45) * top_scrim(0.45, 100, 90), 0, 255).astype(np.uint8)
+    img = np.clip(img * vignette(strength=0.45) * top_scrim(0.45, 100, 90), 0, 255)
+    img = np.clip(post_fx(img, cam, t, fs, drawn), 0, 255).astype(np.uint8)   # fringe, ability dim + lines, bursts
     img = np.ascontiguousarray(img)
     # ---------------- UI: countdown, HP numbers in the balls, fight HUD, captions
     countdown(img, t, cs)

@@ -134,7 +134,10 @@ def draw_beam(arr, cam, p, a, length, width, st, col, t, y=R):
     thin = 1 - 0.55 * tail
     for wk, c, ak, sig in ((3.2, col * 0.7 + 60, 0.42, 2.4), (1.25, col * 0.85 + 45, 0.9, 0.9),
                            (0.42, np.array([255, 252, 236]), 1.0, 0.5)):
-        P = _beam_outline(p, a, s0, s1, max(0.03, width * wk * thin), y)
+        ww = width * wk if wk < 3 else width + min(width * (wk - 1), 0.5)     # a wide blast keeps a narrow halo
+        if wk > 3 and width > 0.6:
+            ak *= 0.6
+        P = _beam_outline(p, a, s0, s1, max(0.03, ww * thin), y)
         if P is None:
             return
         m = gaussian_filter(mask_of([cam.wp(P)]), sig)
@@ -326,3 +329,155 @@ def draw_note_rise(arr, cam, x, z, y, col, a):
     sx, sy = s[0] + hr * 1.1, s[1]
     top = sy - 0.28 * k
     blend(arr, mask_of([[(sx, sy), (sx, top)], [(sx, top), (sx + 0.09 * k, top + 0.09 * k)]], width=1), c, a)
+
+
+# ================================================================ v3 (BALLFIGHT v2 redesign): VALVE COMBO + STRAP FLAIL
+# ---------------------------------------------------------------- VALVE COMBO: three pistons punching out of the ball
+PISTON = np.array([212, 218, 230])          # nickel-silver piston
+COLLAR = np.array([214, 168, 62])           # brass valve-casing collar
+
+
+def piston_ext(u, w, reach):
+    """a piston's length beyond the ball's surface at age u (s, already divided by the haste time scale): out
+    (ease-out), hold, back (smoothstep); None once it's home"""
+    t_out, t_hold, t_back = w['t_out'], w['t_hold'], w['t_back']
+    if u < 0:
+        return None
+    if u < t_out:
+        e = u / t_out
+        return reach * (1 - (1 - e) ** 2)
+    if u < t_out + t_hold:
+        return reach
+    if u < t_out + t_hold + t_back:
+        e = (u - t_out - t_hold) / t_back
+        return reach * (1 - e * e * (3 - 2 * e))
+    return None
+
+
+def piston_geom(p, th, off, ext):
+    """(base, tip) in the ring frame: the piston leaves the glass at its valve's lateral offset"""
+    d = np.array([math.cos(th), math.sin(th)])
+    a0 = p + d * R * 0.8 + np.array([-d[1], d[0]]) * off
+    return a0, a0 + d * (R * 0.2 + ext), d
+
+
+def draw_piston(arr, cam, p, th, off, ext, stretch, col, y=R):
+    """a brass collar at the glass, the silver piston rod, a pearl finger button on the end (its brass rim in the
+    fighter's colour); `stretch` 0..1 adds a motion streak while it shoots out"""
+    a0, tip, d = piston_geom(p, th, off, ext)
+    n = np.array([-d[1], d[0]])
+    W_ = lambda Q: cam.wp(np.array([S.to_world(q[0], q[1], y) for q in Q]))
+    if stretch > 0.05:
+        streak = [a0 - n * 0.12, tip - n * 0.15, tip + n * 0.15, a0 + n * 0.12]
+        blend(arr, mask_of([W_(streak)]), np.clip(np.asarray(col) * 0.5 + 120, 0, 255), 0.35 * stretch)
+    rod = [a0 - n * 0.05, tip - n * 0.05, tip + n * 0.05, a0 + n * 0.05]
+    blend(arr, mask_of([W_(rod)]), PISTON * 0.82, 1.0)
+    blend(arr, mask_of([W_([a0 + n * 0.018, tip + n * 0.018])], width=1), np.array([250, 252, 255]), 0.9)
+    for c, rr, colr in ((a0, 0.095, COLLAR), (tip, 0.16, np.clip(np.asarray(col) * 0.8 + 30, 0, 255)),
+                        (tip + d * 0.015, 0.125, PEARL)):
+        P = np.array([S.to_world(c[0] + rr * math.cos(q), c[1] + rr * math.sin(q), y + 0.01) for q in np.linspace(0, 6.28, 13)[:-1]])
+        blend(arr, mask_of([cam.wp(P)]), colr, 1.0)
+
+
+# ---------------------------------------------------------------- STRAP FLAIL
+STRAP = np.array([58, 40, 36])
+BELL_BRASS = np.array([226, 180, 76])
+
+
+def strap_curve(p, th, L, spin, spin_max, sd, n=12):
+    """the neck strap from the glass to the head: a quadratic curve that trails behind the swing (it straightens as the
+    swing speeds up)"""
+    d = np.array([math.cos(th), math.sin(th)])
+    nrm = np.array([-d[1], d[0]]) * sd
+    a = p + d * R * 0.92
+    b = p + d * L
+    bow = 0.24 * (L - R) * (1 - 0.8 * min(1.0, spin / max(1e-6, spin_max)))
+    c = (a + b) / 2 - nrm * bow
+    u = np.linspace(0, 1, n)[:, None]
+    return (1 - u) ** 2 * a + 2 * (1 - u) * u * c + u * u * b
+
+
+def draw_strap(arr, cam, pts, col, y=R * 0.95):
+    P = cam.wp(np.array([S.to_world(q[0], q[1], y) for q in pts]))
+    blend(arr, mask_of([P], width=3), STRAP, 1.0)
+    blend(arr, mask_of([P], width=1), np.clip(np.asarray(col) * 0.75 + 30, 0, 255), 0.8)
+
+
+def draw_flail_head(arr, cam, hp, ang, col, y=R):
+    """the head: a brass sax bell seen from above, flaring outward along the strap, its dark mouth outward and a rim in
+    the fighter's colour"""
+    d = np.array([math.cos(ang), math.sin(ang)])
+    n = np.array([-d[1], d[0]])
+    W_ = lambda Q, yy=y: cam.wp(np.array([S.to_world(q[0], q[1], yy) for q in Q]))
+    flare = [hp - d * 0.16 - n * 0.05, hp + d * 0.06 - n * 0.2, hp + d * 0.06 + n * 0.2, hp - d * 0.16 + n * 0.05]
+    blend(arr, mask_of([W_(flare)]), BELL_BRASS, 1.0)
+    rim_c = hp + d * 0.07
+    rim = [rim_c + n * 0.21 * math.cos(q) + d * 0.07 * math.sin(q) for q in np.linspace(0, 6.28, 15)[:-1]]
+    blend(arr, mask_of([W_(rim, y + 0.02)]), np.clip(np.asarray(col) * 0.85 + 40, 0, 255), 1.0)
+    mouth = [rim_c + n * 0.15 * math.cos(q) + d * 0.045 * math.sin(q) for q in np.linspace(0, 6.28, 13)[:-1]]
+    blend(arr, mask_of([W_(mouth, y + 0.03)]), np.array([40, 30, 26]), 1.0)
+    blend(arr, mask_of([W_([hp - d * 0.15 - n * 0.03, hp + d * 0.03 - n * 0.16], y + 0.03)], width=1),
+          np.array([255, 236, 170]), 0.9)
+
+
+def draw_swing_trail(arr, cam, p, th, L, dth, col, k=1.0, nseg=7, y=R):
+    """the swept arc behind a fast head (motion blur), fading toward the back"""
+    for j in range(nseg):
+        a0 = th - dth * j / nseg
+        a1 = th - dth * (j + 1) / nseg
+        pts = []
+        for a, r in ((a0, L - 0.16), (a0, L + 0.16), (a1, L + 0.12), (a1, L - 0.12)):
+            pts.append(S.to_world(p[0] + r * math.cos(a), p[1] + r * math.sin(a), y))
+        blend(arr, mask_of([cam.wp(np.array(pts))]), np.clip(np.asarray(col) * 0.6 + 90, 0, 255), 0.28 * k * (1 - j / nseg))
+
+
+def draw_wrap(arr, cam, p_sax, p_en, k_in, col, t, side=1.0):
+    """the strap pulled tight from the sax to the enemy and coiled round it (the coils grow in with k_in); only the
+    coils' front halves show (the ball hides the rest)"""
+    d = p_en - p_sax
+    L = float(np.hypot(*d))
+    if L < 1e-6 or k_in <= 0.01:
+        return
+    d = d / L
+    a = p_sax + d * R * 0.92
+    b = p_en - d * R * 0.95
+    draw_strap(arr, cam, [a, b], col)
+    c0 = cam.depth(S.to_world(p_en[0], p_en[1], R)[None])[0]
+    for j, (yy, rr) in enumerate(((R * 0.55, R * 1.03), (R * 0.95, R * 1.06), (R * 1.35, R * 0.92))):
+        if k_in < j / 3:
+            continue
+        span = min(1.0, (k_in - j / 3) * 3) * 2 * math.pi
+        qs = np.linspace(0, span, 25) * side + math.atan2(-d[1], -d[0])
+        P = np.array([S.to_world(p_en[0] + rr * math.cos(q), p_en[1] + rr * math.sin(q), yy) for q in qs])
+        front = cam.depth(P) < c0
+        s = cam.wp(P)
+        segs = [[tuple(s[i]), tuple(s[i + 1])] for i in range(len(s) - 1) if front[i] and front[i + 1]]
+        if segs:
+            blend(arr, mask_of(segs, width=3), STRAP, 1.0)
+            blend(arr, mask_of(segs, width=1), np.clip(np.asarray(col) * 0.75 + 30, 0, 255), 0.8)
+
+
+# ---------------------------------------------------------------- FANFARE: a ring of golden banners snapping outward
+BANNER = np.array([255, 214, 72])
+BANNER_TRIM = np.array([196, 40, 52])
+
+
+def draw_banners(arr, cam, c, r, k, t, n=10, y0=0.04, h=0.7):
+    """n banners on the expanding ring: a pole, a pennant streaming outward that snaps (flutters) as it goes"""
+    if k <= 0.02:
+        return
+    poles, flags, trims = [], [], []
+    for j in range(n):
+        a = 2 * math.pi * j / n + 0.3
+        d = np.array([math.cos(a), math.sin(a)])
+        b = c + d * r
+        top = S.to_world(b[0], b[1], y0 + h)
+        poles.append(cam.wp(np.array([S.to_world(b[0], b[1], y0), top])))
+        fl = 0.06 * math.sin(t * 34 + j * 1.7)
+        tipp = b + d * 0.34
+        Q = [top, S.to_world(tipp[0], tipp[1], y0 + h - 0.08 + fl), S.to_world(b[0], b[1], y0 + h - 0.2)]
+        flags.append(cam.wp(np.array(Q)))
+        trims.append(cam.wp(np.array([top, S.to_world(tipp[0], tipp[1], y0 + h - 0.08 + fl)])))
+    blend(arr, mask_of(poles, width=1), np.array([240, 230, 200]), k)
+    blend(arr, mask_of(flags), BANNER, k)
+    blend(arr, mask_of(trims, width=1), BANNER_TRIM, k)
