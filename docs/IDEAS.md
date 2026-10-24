@@ -38,6 +38,13 @@ a draft, when it gets feedback, and when it delivers.
 | 26 | Which Instrument Wins? | review (v2) | session_01Ug3Awo (2026-10-23) | v1 feedback: drop "ITS STORY: / ON OUR PAGE" at the end; move the roster to the loosened safe-zone defaults. v2 delivered: "WHO DID YOU / PICK?" holds to 58.25 s, roster at the bottom of the new zone (x 24-292, y 452-497, left of the button column), ring recentred under the captions (x 180); full re-render (the roster is on screen throughout), safe zone OK, loopcheck + flashcheck PASS on the mp4. v1 notes: delivered with caption + tags (early sheet sent first). Honest ring run, seed 406 (2 fits in 600): DRUMS out first at 3.6 s after rattling in the gap, BAGPIPES stuck in the gap 6.5-8.9 s, PIANO + TRUMPET out together at 15.4/15.7, UKULELE 9th after three near-misses, VIOLIN survives five edge hits, final 3 at 40.3, VIOLIN vs CELLO from 43.1 (7 close calls), CELLO wins 49.41. Ring seals on the win; the cello floats out and plays an original solo in its Pixel Pitch voice while the stands light up; at 58.4 s the 15 fly back from the pit (one note each) into formation, at rest on 61.0 = frame 0. Every wall bounce = that instrument's Pixel Pitch voice (pitch by hit position in the chord, 32nd grid) over a D-minor tango (118.03 BPM). Changes vs backlog: rules tuned once on median pacing (2.06 rad/s = 20 turns in 61 s, gap 17.4 -> 27.5 deg), the ring seals on the win (so the winner can't fall during its bow), places shown as numbers in the roster chip slot; series files untouched (models/voices imported, stands skipped by runtime patches). New reelkit.ui.roster_grid. Checks: safe zone OK (0.25 s steps); subject CoC 0 on all 1830 frames; flash 0 general flashes; bounces 7-15 dB over the bed (400-4000 Hz); opening -18.7 dBFS, build +4.1 dB; loopcheck PASS on render and mp4 (audio = 2860 AAC frames, muxed with #23's mux, file 61.01 s). Waiting for feedback | `which_instrument_wins.mp4` (v2) |
 | 27 | Instrument BallFight: Guitar vs Piano | review | session_016aCf6G (2026-10-23) | v1 delivered with caption + tags (early sheet sent first). Honest seed 88 (8 fits in 336 runs; balance GUITAR 44 % / PIANO 56 %): Guitar leads from 5 s, lead changes 31.6 / 36.0 / 44.4 / 48.0 s, GRAND SLAM 44.4 then FEEDBACK 0.9 s later, PIANO wins at 51.3 s with 2.6 HP. Captions = ability names only (POWER CHORD 10.2, SUSTAIN 15.3, SHRED 20.3, GLISSANDO 27.3, GRAND SLAM 43.4; FEEDBACK named in the HUD status line, 4 s rule). Changes vs backlog: the piano's volley grows half a key per landed volley and fires every 2 beats (one key per landed volley won every run by ~14 s); levels from damage dealt (14 / 36); K.O. = 0.35 s hit-stop + slow-mo shatter; solo bars 29-31. Reusable: fight.py + fighters.py (projects/ballfight) + new reelkit.ui.fight_hud. Checks: safe zone OK (0.25 s steps); subject CoC 0 on all 1830 frames; loopcheck PASS on render + mp4 (seam 2.4x, 4.1 dB, no click); flash 0 general; opening -19.7 dBFS, build +3.4 dB. Waiting for feedback | `ballfight_guitar_vs_piano.mp4` |
 | 28 | BALLFIGHT #2: Drums vs Violin | in production | session_01KeEL7s (2026-10-23) | Approved Oct 23, mood B (dark Balkan fire). In production: engine pieces (pulse weapon, bow spin growth) first, then re-tune + seed search; early sheet before the full render. | — |
+| 29 | BALLFIGHT: Trumpet vs Sax | idea (approved) | — | Approved Oct 23 (user: "All"), mood: noir jazz. All-new fighters so it can be produced in parallel with #29–#35. Ready for production. | — |
+| 30 | BALLFIGHT: Bagpipes vs Accordion | idea (approved) | — | Approved Oct 23 (user: "All"), mood: dark sea shanty. All-new fighters so it can be produced in parallel with #29–#35. Ready for production. | — |
+| 31 | BALLFIGHT: Turntables vs Synth | idea (approved) | — | Approved Oct 23 (user: "All"), mood: dark breakbeat. All-new fighters so it can be produced in parallel with #29–#35. Ready for production. | — |
+| 32 | BALLFIGHT: Tuba vs Flute | idea (approved) | — | Approved Oct 23 (user: "All"), mood: villain march. All-new fighters so it can be produced in parallel with #29–#35. Ready for production. | — |
+| 33 | BALLFIGHT: Ukulele vs Acoustic Guitar | idea (approved) | — | Approved Oct 23 (user: "All"), mood: spaghetti-western standoff. All-new fighters so it can be produced in parallel with #29–#35. Ready for production. | — |
+| 34 | BALLFIGHT: Trombone vs French Horn | idea (approved) | — | Approved Oct 23 (user: "All"), mood: cinematic brass trailer. All-new fighters so it can be produced in parallel with #29–#35. Ready for production. | — |
+| 35 | BALLFIGHT: Organ vs Harp | idea (approved) | — | Approved Oct 23 (user: "All"), mood: gothic horror. All-new fighters so it can be produced in parallel with #29–#35. Ready for production. | — |
 
 ## Backlog (idea details)
 
@@ -1580,6 +1587,153 @@ melody over it. Whoever is losing, you hear their half of the band fall apart.
   (cymbal glints, pulse rings), safe-zone and loop checks must pass.
 - **Effort:** ~45–60 min (two new weapon types); work in `projects/ballfight_drums_vs_violin/` importing the engine
   (see `projects/ballfight/README.md`, "Making the next episode").
+
+### BALLFIGHT series rules (for #29–#35, produced in parallel)
+**Direction (user, Oct 23):** #27 Guitar vs Piano "turned out amazing and I think will be a winner". Develop match-ups in
+advance in case comments are slow, **with only new instruments in each fight** (no Guitar, Piano, Drums or Violin, and
+no instrument in two fights), "so that way I can render many at once without confusion. Then, it will be easier to
+decide new matchups with existing instruments since we'll know exactly how they fight". User approved all seven
+(#29–#35) with the moods listed. Each fighter gets a fighting style no one else has: after these, 18 fighters with 18
+styles, ready for crossovers and a tournament bracket.
+- **Everything from #27 holds** (see #27 / #28 and `projects/ballfight/README.md`, "Making the next episode"): the 3 · 2 ·
+  1 · FIGHT! count-in at frame 0 (one bar of the episode's tempo, so FIGHT lands at 1 bar; the count is the band's
+  count-in); top caption "A / VS B"; mid-fight captions = **ability names only** (first use of each, never two within
+  4 s; repeats and close calls go in the HUD status line), then "K.O." → "(WINNER) WINS" and "COMMENT THE / NEXT
+  MATCH-UP"; status in small text inside the safe zone (`reelkit.ui.fight_hud`, HP numbers in the balls); post caption
+  "Comment the next match-up 👇" + the two instruments' emojis; honest fight, never hand-edited; 61.0 s; loop point =
+  file boundary (loser reassembles, both glide to corners, "3" lands at 61.0 = frame 0).
+- **Beat sheet** (all seven; the real fight decides after 2 s): 0 → 1 bar count-in · launch, first clashes · 8–30 s
+  the four unlocks (each named once) · 32–44 s one fighter below 25 HP fires its desperation move · 44–52 s final
+  exchange · K.O. ~49–53 s (hit-stop, slow-mo shatter into the instrument's parts) · winner's solo under the spot +
+  "COMMENT THE / NEXT MATCH-UP" · 58–61 s reassembly into frame 0.
+- **Music:** every hit plays the attacker's instrument in key, snapped to the nearest 16th in the audio; the leader's
+  part gets fuller and louder, the loser's thins and dirties as its HP drops; the winner's solo is an original motif in
+  its own idiom. Tempos via `loop_bpm` (whole bars in 61 s). Each episode has its own mood; none sugary.
+- **Fighters:** first named = red corner (screen left), second = blue (right). Weapon scaling: every landed hit grows the
+  signature weapon (the column "grows"). Abilities: unlock1 at LV2, unlock2 at LV3, `low` once below 25 HP; existing
+  ability kinds (`shockwave`, `shield`, `haste`, `arc`, `wave`, `slam`) are reused wherever they fit.
+- **Tuning:** re-tune each pair once (`tune.py`: 40–60 % wins, ~50 s median K.O.), freeze the rules, then the
+  early-stopping seed search with #27's hard windows (K.O. 49–53 s, >= 2 lead changes, winner HP <= 30, >= 5 ability
+  captions >= 4 s apart). Rules take the episode's tempo (beat, `t_fight` = 1 bar).
+- **Parallel-production rule (important):** all seven add new weapon / ability kinds to the shared engine
+  (`projects/ballfight/fight.py`, `fighters.py`) at the same time. Keep engine changes **additive** (new kinds as new
+  functions / branches, new roster entries; no rewrites of shared code), commit them **alone and small**, `git pull
+  --rebase` right before and push right after, and confirm #27 (seed 88) and #28's chosen seed still replay
+  identically. Draw functions for new weapon styles live in the episode's own folder where possible. Work in
+  `projects/ballfight_<a>_vs_<b>/`. If #28's engine additions (`pulse`, blade spin growth) aren't pushed yet, pull
+  them first.
+- **Voices:** Pixel Pitch voices + models via `projects/which_instrument_wins/pp_bridge.py` (read-only use of the series).
+  Already in the bridge: TRUMPET, SAX, BAGPIPES, ACCORDION, TUBA, FLUTE, UKULELE, TROMBONE, HORN, HARP. Not yet (models
+  exist in `series/instrument-history/`): TURNTABLES (`turntables60_lowpoly`), SYNTH (`synth60_lowpoly`), ACOUSTIC
+  (`acoustic_lowpoly`), ORGAN (`organ60_lowpoly`): add a bridge entry in its own small commit (don't edit the series).
+- **Episode number:** the on-screen tag "BALLFIGHT #N" is one constant in the episode's `timeline.py`; numbers below
+  assume posting in board order (#29 = BALLFIGHT #3 … #35 = #9). Renumber if posted in another order.
+- **Effort:** ~45–60 min each (one or two new weapon kinds each; ring, HUD, count-in, audio pipeline reused).
+
+### 29. BALLFIGHT #3: Trumpet vs Sax — APPROVED
+**Rivalry:** jazz's oldest argument: who's the lead horn. Hook "TRUMPET / VS SAX" (7 + 6). Post caption emojis 🎺🎷.
+| | TRUMPET (red) | SAX (blue) |
+|---|---|---|
+| Weapon (new kind) | **Beam**: charges for a beat (bell glows), then fires a straight piercing blast | **Smoke rings**: wobbly rings that curve toward the enemy (volley with a `curve` option) |
+| Grows per landed hit | Beam length + width | +1 ring per landed volley (half a ring, as #27's keys, if it snowballs) |
+| Hit sound | Bright stab, higher with each hit | Breathy growl notes, bluesy bends |
+| Unlock 1 | FANFARE (`shockwave`) | SMOKE SCREEN (`shield`) |
+| Unlock 2 | DOUBLE TONGUE (`haste`: fires twice as often) | BEBOP RUN (`arc`) |
+| Below 25 HP | HIGH C (`wave`: a piercing ring-wide blast) | HONK (`slam`: a bell blast at the predicted spot) |
+- **Mood: noir jazz**, fast and smoky: minor, walking bass, brushed drums, muted piano comping. `loop_bpm(132)` =
+  133.77 BPM (34 bars; count-in 1.79 s).
+
+### 30. BALLFIGHT #4: Bagpipes vs Accordion — APPROVED
+**Rivalry:** the "most hated instrument" final, pure comedy bait. Hook "BAGPIPES / VS ACCORDION" (8 + 12). Emojis 🏴󠁧󠁢󠁳󠁣󠁴󠁿🪗.
+| | BAGPIPES (red) | ACCORDION (blue) |
+|---|---|---|
+| Weapon (new kind) | **Drone aura**: a ring around the ball that hurts while the enemy is inside it | **Bellows**: on alternate bars a blast that pushes the enemy away, then a suction that pulls it in |
+| Grows per landed hit | Aura radius | Bellows reach + force |
+| Hit sound | The drone swells; chanter grace-note squeals | Wheezy chord stabs on push and pull |
+| Unlock 1 | WAR CRY (`shockwave`) | POLKA (`haste`: push/pull every beat) |
+| Unlock 2 | DOUBLE DRONE (`haste`: aura damage x2) | SQUEEZEBOX (`shield`: folds shut) |
+| Below 25 HP | BAG BURST (`wave`: the bag deflates in one blast) | FULL BELLOWS (`wave` or `slam`; differ from BAG BURST on screen) |
+- **Mood: dark sea shanty**: stomping minor shanty, low male-choir "hum" pad, fiddle-less, foot stomps and claps.
+  Pitch the key to the bagpipe chanter (A mixolydian / A minor) so the drone sits in it. `loop_bpm(122)` = 121.97 BPM
+  (31 bars; count-in 1.97 s).
+- **Flag:** the bagpipe drone is a constant tone: keep it under the mix except when the aura lands hits.
+
+### 31. BALLFIGHT #5: Turntables vs Synth — APPROVED
+**Rivalry:** DJ vs producer, electronic civil war. Hook "TURNTABLES / VS SYNTH" (10 + 8). Emojis 🎧🎹.
+| | TURNTABLES (red) | SYNTH (blue) |
+|---|---|---|
+| Weapon (new kind) | **Vinyl frisbees** that ricochet off the ropes (volley with a `bounce` option: up to 2 rope bounces) | **Arpeggiator satellites**: glowing notes orbiting the ball that hit what they touch (new `orbit` kind) |
+| Grows per landed hit | +1 disc per landed volley (half-step, as #27) | +1 satellite (max 8) |
+| Hit sound | Scratch + a chopped vocal-free stab | Arpeggio notes, one per satellite hit |
+| Unlock 1 | SCRATCH (`haste`: discs every 8th for a bar) | LFO (`haste`: the orbit wobbles and speeds up) |
+| Unlock 2 | REWIND (**new kind**: undoes its last 2 s of damage taken; the ball zips back along its path, VHS wobble) | SAWTOOTH (`arc`: flings the satellites outward, they return) |
+| Below 25 HP | BASS DROP (`slam`) | WHITE NOISE (`wave`) |
+- **Mood: dark breakbeat**: chopped breaks, a reese bass, cold pads, minor. `loop_bpm(138)` = 137.70 BPM (35 bars;
+  count-in 1.74 s).
+- **Flags:** REWIND must stay honest: it is a rule in the simulation (recorded damage log), never an edit. Bridge
+  entries needed for TURNTABLES and SYNTH. No vocal samples (all synthesised).
+
+### 32. BALLFIGHT #6: Tuba vs Flute — APPROVED
+**Rivalry:** biggest vs smallest, lowest vs highest. Hook "TUBA / VS FLUTE" (4 + 8). Emojis 📯🪈.
+| | TUBA (red) | FLUTE (blue) |
+|---|---|---|
+| Weapon (new kind) | **Big pulse + gravity**: a slow, huge shockwave every bar (#28's `pulse` with `every` in bars), and a constant gentle **pull** toward the tuba (new `pull` kind) | **Darts**: rapid tiny fast projectiles every beat, low damage (volley tuned fast and light) |
+| Grows per landed hit | Pulse radius + pull strength | +1 dart per landed volley (half-step) |
+| Hit sound | Deep oom notes (the bass line) | Quick flutter notes, high register |
+| Unlock 1 | OOMPAH (`haste`: pulses every 2 beats) | FLUTTER TONGUE (`haste`) |
+| Unlock 2 | BRASS WALL (`shield`) | TRILL (`arc`) |
+| Below 25 HP | SUBSONIC (`slam`) | PICCOLO (`wave`: a piercing high ring-wide blast) |
+- **Mood: villain march**: heavy minor march, snare ostinato, low brass bed (the tuba fighter supplies the bass), a
+  sinister music-box counter-line. `loop_bpm(126)` = 125.90 BPM (32 bars; count-in 1.91 s).
+- **Flag:** same ball size and speed for both (fairness, as #27); "biggest vs smallest" lives in the weapons and the
+  sound, not in the physics.
+
+### 33. BALLFIGHT #7: Ukulele vs Acoustic Guitar — APPROVED
+**Rivalry:** little brother vs big brother. Hook "UKULELE / VS ACOUSTIC" (7 + 11). Emojis 🪕🎸. Call the second
+fighter ACOUSTIC everywhere (HUD, captions) so it never reads as #27's GUITAR.
+| | UKULELE (red) | ACOUSTIC (blue) |
+|---|---|---|
+| Weapon (new kind) | **Body-slam dash**: every 2 beats it dashes at the enemy, damage on contact (new `dash` kind) | **Sound-hole blast**: a strummed cone of sound in front of it, aimed at the enemy, on the beat (new `cone` kind) |
+| Grows per landed hit | Dash speed + distance | Cone length |
+| Hit sound | Bright uke strums | Big open-chord strums |
+| Unlock 1 | CHUNK (`shockwave`: the percussive chunk strum) | CAPO (`haste`: cone fires twice as often) |
+| Unlock 2 | SPEED STRUM (`haste`: dashes every beat) | FINGERPICK (`arc`: a fan of string darts) |
+| Below 25 HP | UKE-NADO (`wave`: spins into a tornado) | BIG STRUM (`slam`) |
+- **Mood: spaghetti-western standoff**: galloping rhythm, whistled-style lead (synth), twangy baritone guitar bed
+  kept below both fighters, minor. `loop_bpm(130)` = 129.84 BPM (33 bars; count-in 1.85 s).
+- **Flags:** ACOUSTIC needs a bridge entry (`acoustic_lowpoly`). The bed's guitar must not mask the two fighters
+  (band-level check).
+
+### 34. BALLFIGHT #8: Trombone vs French Horn — APPROVED
+**Rivalry:** the brass section's pecking order (a real orchestra joke). Hook "TROMBONE / VS FRENCH HORN" (8 + 14). Emojis
+🎺📯. HUD name: "HORN" if "FRENCH HORN" doesn't fit.
+| | TROMBONE (red) | HORN (blue) |
+|---|---|---|
+| Weapon (new kind) | **Slide lance**: the slide shoots straight out at the enemy on the beat and pulls back (blade with a `thrust` mode instead of spinning) | **Hunting-call arrows**: slow arrows that **home** in on the enemy (volley with a `homing` option) |
+| Grows per landed hit | Lance reach | Homing strength / +1 arrow per landed volley (half-step) |
+| Hit sound | Punchy slide stabs (glissando into the note) | Noble horn calls |
+| Unlock 1 | SAD TROMBONE (`shockwave` + a short **slow** on the enemy: "wah wah wah waaah") | STOPPED HORN (`shield`) |
+| Unlock 2 | POWER SLIDE (`haste`) | HORN RIP (`arc`: a fan of homing arrows) |
+| Below 25 HP | PEDAL TONE (`slam`: the lowest note, a floor-shaking stomp) | TALLY-HO (`wave`) |
+- **Mood: cinematic brass trailer**: low-string ostinato, big braams, taiko-style hits, minor and heroic-dark (the
+  fighters are the brass section). `loop_bpm(122)` = 121.97 BPM (31 bars; count-in 1.97 s).
+- **Flag:** SAD TROMBONE's slow is a rule in the simulation (enemy speed x0.6 for 1 s), not an edit. Two brass
+  voices: keep their registers apart (trombone low, horn mid) so hits read.
+
+### 35. BALLFIGHT #9: Organ vs Harp — APPROVED
+**Rivalry:** cathedral vs angels: heaven's instruments fight. Hook "ORGAN / VS HARP" (5 + 7). Emojis ⛪😇 (or 🎹🪉).
+| | ORGAN (red) | HARP (blue) |
+|---|---|---|
+| Weapon (new kind) | **Erupting pipes**: on the beat a line of organ pipes bursts up from the floor from the organ toward the enemy (new `line` hazard) | **Tripwire strings**: glowing strings stretched across the ring that hurt whoever crosses them; the harp is immune (new `trap` kind; older strings fade) |
+| Grows per landed hit | Line length | +1 string (max 7) |
+| Hit sound | Big organ chords | Plucked arpeggios |
+| Unlock 1 | CATHEDRAL (`shield`: an echoing dome) | PLUCK (`arc`: a fan of darts) |
+| Unlock 2 | PULL ALL STOPS (`haste`) | ANGEL WINGS (`shield`) |
+| Below 25 HP | TOCCATA (`slam`: a forest of pipes erupts) | 47 STRINGS (`wave`: every string on a concert harp snaps across the ring) |
+- **Mood: gothic horror**: minor, choir "aah" pad, tolling bell, slow-burn tension into a pounding back half.
+  `loop_bpm(126)` = 125.90 BPM (32 bars; count-in 1.91 s).
+- **Flags:** ORGAN needs a bridge entry (`organ60_lowpoly`). Organ chords are sustained: keep its hits short stabs,
+  not held chords, so the bed doesn't turn to mush.
 
 ## Adding a new idea
 
