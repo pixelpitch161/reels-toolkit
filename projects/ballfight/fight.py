@@ -96,6 +96,10 @@ class Ball:
         self.ready = {}               # ability slot -> time it may fire next (None = locked)
         self.used = set()
         self.low_done = False
+        # dash (#33): contact window of the current dash, whether it already hit, whether it's on the weapon's own grid
+        self.dash_t = 0.0
+        self.dash_hit = True
+        self.dash_main = True
 
 
 class Fight:
@@ -135,6 +139,7 @@ class Fight:
         self.lines = []                   # 'line' hazards: rows of pipes erupting from the floor (dicts, see fire_line)
         self.strings = []                 # 'trap' hazards: tripwire strings across the ring (dicts, see lay_string)
         self.next_hz = 0                  # hazard id (lines + strings), for events and the renderer
+        self.cones = []                   # (#33) dict(owner, c, aim, half, r, rmax, speed, dmg, knock, hit, grow)
         self.events = []
         self.t = 0.0
         self.winner = None
@@ -218,6 +223,80 @@ class Fight:
                                knock=w['knock'] * (1.0 if main else 0.5), kind='pulse', hit=False, name='pulse',
                                t0=self.t, grow=main, clears=w.get('clears', False)))
         self.ev('pulse', k, int(main), float(B.blade_len))
+
+    # ---- #33 weapon kinds: 'dash' (body-slam dash, contact damage) and 'cone' (a strummed cone of sound). Both fire on
+    # their own 16th-grid counter in run(); `blade_len` holds the dash power / the cone's length (recorded as 'BL').
+    def fire_dash(self, k, main):
+        """the ball throws itself at the opponent (aimed a little ahead of it): a speed burst of `blade_len` x the shared
+        speed that decays like a knockback, so power = speed + distance. Contact during the next `window` s hits once."""
+        B, O = self.balls[k], self.balls[1 - k]
+        w = B.w
+        power = B.blade_len * (1.0 if main else w.get('sub_power', 1.0))
+        d = O.p - B.p
+        dist = float(np.hypot(*d))
+        lead = 0.5 * dist / (self.R.V * (1 + power))
+        tgt = O.p + O.v * lead
+        dd = tgt - B.p
+        ang = math.atan2(dd[1], dd[0])
+        B.boost = max(B.boost, power)
+        B.v = np.array([math.cos(ang), math.sin(ang)]) * self.R.V * (1 + B.boost)
+        B.dash_t = w['window']
+        B.dash_hit = False
+        B.dash_main = bool(main)
+        self.ev('dash', k, int(main), float(power), float(B.p[0]), float(B.p[1]), float(ang))
+
+    def fire_cone(self, k, main):
+        """a wedge of sound (half-angle `half` deg) aimed at the opponent, expanding from the ball to `blade_len` beyond
+        its surface; it hits once, knocks back, and a landed cone on the weapon's own grid grows the length"""
+        B, O = self.balls[k], self.balls[1 - k]
+        w = B.w
+        d = O.p - B.p
+        aim = math.atan2(d[1], d[0])
+        self.cones.append(dict(owner=k, c=B.p.copy(), aim=aim, half=math.radians(w['half']), r=self.R.R,
+                               rmax=self.R.R + B.blade_len, speed=w['speed'],
+                               dmg=w['dmg'] * (1.0 if main else w.get('sub_dmg', 0.5)),
+                               knock=w['knock'] * (1.0 if main else 0.6), hit=False, grow=bool(main)))
+        self.ev('cone', k, int(main), float(B.blade_len), float(B.p[0]), float(B.p[1]), float(aim))
+
+    def dash_cone_step(self, dt):
+        R = self.R.R
+        for k, B in enumerate(self.balls):
+            if B.w['kind'] != 'dash' or B.dash_t <= 0:
+                continue
+            B.dash_t = max(0.0, B.dash_t - dt)
+            if B.dash_hit:
+                continue
+            O = self.balls[1 - k]
+            rel = O.p - B.p
+            dist = float(np.hypot(*rel))
+            if dist <= 2 * R + 1e-6:
+                B.dash_hit = True
+                hx, hy = (B.p + rel / max(dist, 1e-9) * R).tolist()
+                w = B.w
+                landed = self.damage(k, 1 - k, w['dmg'] * (1.0 if B.dash_main else w.get('sub_dmg', 0.5)), 'dash',
+                                     hx, hy, int(B.dash_main))
+                self.knock(1 - k, rel, w['knock'])
+                if landed and B.dash_main:
+                    B.blade_len = min(w['max_power'], B.blade_len + w['grow'])
+        for C in self.cones:
+            r0 = C['r']
+            C['r'] = min(C['rmax'], r0 + C['speed'] * dt)
+            if C['hit']:
+                continue
+            o = 1 - C['owner']
+            O = self.balls[o]
+            rel = O.p - C['c']
+            dist = float(np.hypot(*rel))
+            off = abs(_wrap(math.atan2(rel[1], rel[0]) - C['aim']))
+            if off <= C['half'] + math.asin(min(1.0, R / max(dist, 1e-6))) and r0 < dist - R * 0.5 <= C['r'] + 1e-9:
+                C['hit'] = True
+                hx, hy = (C['c'] + rel / max(dist, 1e-6) * (dist - R)).tolist()
+                landed = self.damage(C['owner'], o, C['dmg'], 'cone', hx, hy)
+                self.knock(o, rel, C['knock'])
+                if landed and C['grow']:
+                    Bc = self.balls[C['owner']]
+                    Bc.blade_len = min(Bc.w['max_len'], Bc.blade_len + Bc.w['grow'])
+        self.cones = [C for C in self.cones if C['r'] < C['rmax'] - 1e-9]
 
     def blade_step(self, k, dt):
         B, O = self.balls[k], self.balls[1 - k]
@@ -745,6 +824,9 @@ class Fight:
         pullers = [k for k, B in enumerate(self.balls) if B.w.get('pull')]
         v16 = [k for k, B in enumerate(self.balls) if B.w['kind'] == 'volley' and B.w.get('on16')]   # volleys on the 16th
         # grid (option `on16`), so haste can fire an every-beat volley on the 8ths / 16ths
+        dc = [k for k, B in enumerate(self.balls) if B.w['kind'] in ('dash', 'cone')]       # (#33)
+        dc_k0 = int(math.ceil(R.t_fight / s16 - 1e-6))
+        dc_next = dc_k0
         self.t = R.t_fight
         f0 = int(round(R.t_fight * R.FPS))
         step = 0
@@ -781,6 +863,15 @@ class Fight:
                     every16 = max(1, int(round(4 * B.w['every'] / self.ab_mult(k))))
                     if k16 % every16 == 0:
                         self.fire_volley(k)
+            if dc and self.t + 1e-9 >= dc_next * s16:          # (#33) dash / cone weapons: their own 16th counter
+                dc_k = dc_next - dc_k0
+                dc_next += 1
+                for k in dc:
+                    B = self.balls[k]
+                    dc_main = int(round(4 * B.w['every']))
+                    dc_every = max(1, int(round(dc_main / self.ab_mult(k))))
+                    if dc_k % dc_every == 0:
+                        (self.fire_dash if B.w['kind'] == 'dash' else self.fire_cone)(k, dc_k % dc_main == 0)
             for k, B in enumerate(self.balls):
                 B.shield = max(0.0, B.shield - dt)
                 B.haste = max(0.0, B.haste - dt)
@@ -795,6 +886,8 @@ class Fight:
             if self.lines or self.strings:
                 self.hazards_step(dt)
             self.effects_step(dt)
+            if dc:
+                self.dash_cone_step(dt)                          # (#33)
             self.abilities_step(on_beat)
             step += 1
             dead = [k for k, B in enumerate(self.balls) if B.hp <= 0]
