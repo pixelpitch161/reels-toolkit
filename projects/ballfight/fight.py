@@ -1082,6 +1082,8 @@ class Fight:
         beats), `haste` divides the step (DOUBLE DRONE ticks twice as often, POLKA strokes every beat)"""
         B = self.balls[k]
         w = B.w
+        if w['kind'] == 'bite' and getattr(B, 'bite', None) is not None and self.t + self.R.DT >= B.bite['t_snap']:
+            self.bite_snap(k)                                  # #30 v2: the jaws close on a 16th
         main = max(1, int(round(4 * w['every'])))
         step16 = max(1, int(round(main / self.ab_mult(k))))
         if k16 % step16:
@@ -1090,6 +1092,9 @@ class Fight:
             self.aura_tick(k)
         elif w['kind'] == 'inflate':                          # #30 v2
             self.inflate_start(k)
+        elif w['kind'] == 'bite':                             # #30 v2
+            if getattr(B, 'bite', None) is None:
+                self.bite_fire(k, k16 % main == 0)
         else:
             self.fire_bellows(k, k16 % main == 0)
 
@@ -1451,6 +1456,43 @@ class Fight:
             B.inf_scale = min(w['scale_max'], B.inf_scale + w['grow'])
             B.inf_fly = min(w['fly_max'], B.inf_fly + w['fly_grow'])
             B.blade_len = B.inf_scale
+
+    # ------------------------------------------------------------------ #30 v2: weapon kind 'bite' (BELLOWS BITE)
+    def bite_fire(self, k, main):
+        """the two halves fly apart with the bellows stretched between them like jaws, aimed (and locked) at where the
+        enemy will be when they snap shut `open16` 16ths later"""
+        B, O = self.balls[k], self.balls[1 - k]
+        w = B.w
+        t_open = w.get('open16', 2) * self.R.beat / 4.0
+        tgt = O.p + O.v * t_open * w.get('lead', 0.6)
+        d = tgt - B.p
+        aim = math.atan2(d[1], d[0])
+        B.bite = dict(t0=self.t, t_snap=self.t + t_open, aim=aim, reach=float(B.blade_len), main=main)
+        self.ev('bite', k, int(main), aim, float(B.blade_len), t_open)
+
+    def bite_snap(self, k):
+        """the jaws snap shut: a hit if the enemy is inside the mouth (within the reach and the jaws' half-angle of the
+        locked aim, measured from where the accordion is now); main bites that land grow the reach"""
+        B, O = self.balls[k], self.balls[1 - k]
+        w = B.w
+        Bt = B.bite
+        B.bite = None
+        R = self.R.R
+        ro = getattr(O, 'rad', R)
+        rel = O.p - B.p
+        dist = float(np.hypot(*rel))
+        phi = math.atan2(rel[1], rel[0])
+        half = math.radians(w['half']) + math.asin(min(1.0, ro / max(dist, 1e-6)))
+        inside = dist - ro <= R + Bt['reach'] and abs(_wrap(phi - Bt['aim'])) <= half
+        landed = False
+        if inside:
+            hx, hy = (B.p + rel / max(dist, 1e-6) * (dist - ro)).tolist()
+            landed = self.damage(k, 1 - k, w['dmg'] * (1.0 if Bt['main'] else w.get('sub_dmg', 0.5)), 'bite', hx, hy,
+                                 int(Bt['main']))
+            self.knock(1 - k, rel, w['knock'] * (1.0 if Bt['main'] else 0.6))
+            if landed and Bt['main']:
+                B.blade_len = min(w['max_reach'], B.blade_len + w['grow'])
+        self.ev('snap', k, int(inside), int(landed), Bt['aim'], Bt['reach'])
 
     def _rewind_ab(self, B):
         return next(a for a in B.cfg['abilities'].values() if a['kind'] == 'rewind')
@@ -2048,7 +2090,7 @@ class Fight:
         dc = [k for k, B in enumerate(self.balls) if B.w['kind'] in ('dash', 'cone', 'surf', 'rake')]   # (#33, v2)
         dc_k0 = int(math.ceil(R.t_fight / s16 - 1e-6))
         dc_next = dc_k0
-        grid16 = [k for k, B in enumerate(self.balls) if B.w['kind'] in ('aura', 'bellows', 'inflate')]   # #30 (opt-in)
+        grid16 = [k for k, B in enumerate(self.balls) if B.w['kind'] in ('aura', 'bellows', 'inflate', 'bite')]   # #30
         n16b = k16_0
         for k, B in enumerate(self.balls):                       # #29 v3 (opt-in weapon kinds)
             if B.w['kind'] == 'combo':
