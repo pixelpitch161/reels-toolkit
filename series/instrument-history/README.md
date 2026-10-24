@@ -35,6 +35,16 @@ python3 tuba60_lowpoly.py tuba60.mp4                  # full render, single proc
   uses it to show the modern instrument's own fact between the hook and the question.
 - `OUTRO_NAME = "..."` shows a different instrument name during the outro (the ukulele returns to the modern soprano there).
 
+## Optional length + loop hooks (61 s rule)
+
+- `FINAL_LEN = 2.6` sets the final-chord length (default 2.6 s). Use it to land the runtime: the mellophone computes
+  `FINAL_LEN = 61.0 - bars*BAR_S + 1e-6`, so the file is exactly 61.000 s (1,830 frames).
+- `END_FADE = .8` is the fade at the very end (default .8 s). Loopers use a few milliseconds (declick only).
+- `LOOP_END = dict(spin=.4, gap=.1, dissolve=.42)` runs the end back into frame 0: the outro instrument spins away
+  (`spin` seconds, finishing `gap` seconds before the end) and the picture dithers into the opening frame over the
+  last `dissolve` seconds. Pair it with a run-up in the music (the mellophone's snare roll lands on the downbeat at 0 s).
+  Check the finished file with `python -m reelkit.loopcheck out.mp4` (run from the repo root).
+
 ## Lighting
 
 Add one line to a video script:

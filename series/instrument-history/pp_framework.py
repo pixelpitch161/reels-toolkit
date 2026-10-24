@@ -67,7 +67,7 @@ def setup(c):
         if not c.ONSETS or o - c.ONSETS[-1] >= .2: c.ONSETS.append(o)
     c.OUTRO_T = c.SCENES[-1]["t0"] + c.SCENES[-1]["len"]
     c.FINAL_T = c.OUTRO_T + c.OUTRO_BARS*c.BAR
-    c.TOTAL = c.FINAL_T + 2.6
+    c.TOTAL = c.FINAL_T + getattr(c, "FINAL_LEN", 2.6)     # optional: final-chord length (61 s rule: tune it to land the runtime)
     c.DRUMS = sorted(c.drum_events(c))
     c.KICKS = [t for t, k, v in c.DRUMS if k in c.KICK_KINDS]
     c.ACCENTS = [t for t, k, v in c.DRUMS if k in c.ACCENT_KINDS]
@@ -86,7 +86,7 @@ def render_audio(c, path):
             if isinstance(ch, tuple):
                 for k, cc in enumerate(ch): add(padb, b*c.BAR + k*c.BEAT, c.pad_voice(c.CH[cc][1], c.BEAT + .05, .5))
             else:
-                add(padb, b*c.BAR, c.pad_voice(c.CH[ch][1], 2.6 if b == len(c.BARS) - 1 else c.BAR + .05, .5 if b else .35))
+                add(padb, b*c.BAR, c.pad_voice(c.CH[ch][1], getattr(c, "FINAL_LEN", 2.6) if b == len(c.BARS) - 1 else c.BAR + .05, .5 if b else .35))
     def rms(x):
         x = x[np.abs(x) > 1e-6]; return np.sqrt((x**2).mean()) if len(x) else 1.
     def at(x, db): return x*(10**(db/20))/rms(x) if np.abs(x).max() > 0 else x
@@ -112,7 +112,7 @@ def render_audio(c, path):
     wet = np.fft.irfft(np.fft.rfft(wet_in, Lf)*np.fft.rfft(ir, Lf), Lf)[:n]
     out = drums + bassb + padb + inst + at(wet, mx.get("verb", -23))
     out = out[:int(c.TOTAL*SR)]
-    fade = int(.8*SR); out[-fade:] *= np.linspace(1, 0, fade)
+    fade = max(1, int(getattr(c, "END_FADE", .8)*SR)); out[-fade:] *= np.linspace(1, 0, fade)   # optional: short END_FADE for loopers
     base = out/np.abs(out).max(); tgt = getattr(c, "TARGET_LOUD", -11.0)
     for k in np.linspace(1, 9, 161):      # master every video to the same perceived loudness
         out = np.tanh(k*base)/np.tanh(k)*.94
@@ -156,6 +156,10 @@ def frame(c, T, fi=0):
     if si < nlast:
         pout = (t - (s["len"] - .35*c.BEAT))/(.35*c.BEAT)
         if pout > 0: scale *= 1 - ease(pout); spin += 100*pout*pout
+    loop = getattr(c, "LOOP_END", None)                  # optional: dict(spin=s, gap=s, dissolve=s) - run the end back into frame 0
+    if loop and si == nlast and loop.get("spin"):
+        pout = (T - (c.TOTAL - loop.get("gap", 0.) - loop["spin"]))/loop["spin"]
+        if pout > 0: scale *= 1 - ease(pout); spin += 100*min(pout, 1.)**2
     fx = []
     if getattr(c, "render3d", None) is not None:          # optional: the video renders its own lit 3D scene
         img, cam = c.render3d(c, ctx, s, t, scale, spin, fx)
@@ -259,6 +263,11 @@ def frame(c, T, fi=0):
             elif i == cur:
                 d.rectangle([x-3, 389-bob, x+3, 395-bob], fill=GOLD); d.rectangle([x-4, 388-bob, x+4, 396-bob], outline=(255, 230, 150))
             else: d.rectangle([x-2, 390, x+2, 394], fill=off)
+    if loop and loop.get("dissolve") and T > c.TOTAL - loop["dissolve"] and T > 0:
+        f0 = getattr(c, "_FRAME0", None)
+        if f0 is None: f0 = c._FRAME0 = np.asarray(frame(c, 0.0, 0))
+        a = (T - (c.TOTAL - loop["dissolve"]))/loop["dissolve"]   # ordered-dither dissolve into the opening frame
+        arr = np.asarray(im).copy(); m = BAY < a*16/17; arr[m] = f0[m]; im = Image.fromarray(arr)
     return im
 
 def run(c):
