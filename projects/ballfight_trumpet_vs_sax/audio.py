@@ -1,14 +1,16 @@
-"""#29 BALLFIGHT #3: Trumpet vs Sax - soundtrack (noir jazz), all synthesised, original.
+"""#29 BALLFIGHT #3: Trumpet vs Sax - soundtrack (noir jazz), all synthesised, original. v3: VALVE COMBO vs STRAP FLAIL
+(the horn parts below; the band, mix and master as in v2, kept in audio_v2_backup.py).
 
 The two horns are the leads, both played by the honest run (Pixel Pitch voices):
-  TRUMPET  every charge is a muted note swelling open over its beat; every blast is a bright stab on the beat after it:
-           a landed blast climbs one step up the chord (so the trumpet's line rises as its beam grows), a miss falls off.
-           DOUBLE TONGUE doubles the stabs (ta-ka), FANFARE is a rising call, HIGH C a screaming shake on top.
-  SAX      every smoke-ring volley is a growled bluesy lick on the beat, one note per ring (up to four, the lower octave
-           joins at five): the more rings, the longer the lick. Rings that land are breathy puffs; SMOKE SCREEN is a
-           subtone held under it, BEBOP RUN a 32nd-note run, HONK a huge low honk on the slam.
-  Volleys fire on beats 1 and 3 and the blasts on 2 and 4, so the fight plays itself as call and response. The leader's
-  horn gets fuller (octave / third doubles) and louder; the loser's thins and dirties as its HP drops.
+  TRUMPET  VALVE COMBO: every combo's three punches play three notes of ONE valve fingering (the trumpet's own harmonic
+           series lowered by the valves, chosen to fit the chord: partials 4-6-8 or 3-4-6), a valve hiss on each; landed
+           punches ring out, misses are ghosts; DOUBLE TONGUE adds ta-ka graces; FANFARE is a rising call; HIGH C swells
+           through its charge and screams with a shake when the blast fires.
+  SAX      STRAP FLAIL: every half turn of the swinging flail plays the next note of an original blues line, so a slow
+           swing growls a few long notes and a flat-out swing (BEBOP RUN) plays the line as a bebop run; every hit is a
+           growled accent with the strap's crack, every wrap a two-note "wah", the yank a quick smear; SMOKE SCREEN is a
+           subtone held under it, HONK a huge low honk on the slam.
+  The leader's horn gets fuller (octave / third doubles) and louder; the loser's thins and dirties as its HP drops.
 Bed: C minor at 133.77 BPM (34 bars = 61 s), i - bVI7 - iv - V7: walking upright bass, brushes (swirl, taps on 2 and 4,
 swung ride) that switch to sticks for the final third, muted piano comping (Charleston, rootless voicings), a dark pad.
 The count-in bar (brush taps + a G7 horn stab per count, a snare pickup) drops on FIGHT!; at the K.O. the bed
@@ -308,108 +310,123 @@ def bed(mix, b, intensity=1.0, light=False, sticks=False):
         mix.place('pad', dark_pad(PAD[ch], T.BAR + 0.05), t0, 0.05)
 
 
-# ---------------------------------------------------------------- the trumpet: charges + blasts
-def climb_pitch(t, n):
-    ms = T.scale_notes(67, 86, T.chord_at(t))
-    return ms[n % min(8, len(ms))]
+# ---------------------------------------------------------------- v3 TRUMPET: VALVE COMBO (three notes of one fingering)
+def hiss(dur=0.07, seed=0):
+    """steam escaping a valve"""
+    n = int(dur * SR)
+    x = np.random.default_rng(300 + seed).normal(0, 1, n)
+    return A.bp(x, 3500, 11000) * A.expenv(n, dur * 0.4, 0.003)
 
 
 def trumpet_part(mix):
-    landed = {}
+    hits = {}
     for e in EV:
-        if e[1] == 'hit' and e[2] == KT and e[7] == 'beam':
-            landed[round(e[0], 3)] = True
-    hit_t = np.array(sorted(landed)) if landed else np.zeros(0)
-    n_landed = 0
+        if e[1] == 'hit' and e[2] == KT and e[7] == 'piston':
+            hits.setdefault(int(e[8]), []).append(e[0])
+    hit_t = {i: np.array(v) for i, v in hits.items()}
+    combo_start = {}
+    for e in EV:
+        if e[1] == 'combo' and e[2] == KT:
+            combo_start[e[3]] = e[0]
     for e in EV:
         t, kind = e[0], e[1]
         if t > T_KO + 0.01:
             break
-        if kind == 'charge' and e[2] == KT:
-            tq, tc = q16(t), e[4]
-            m = climb_pitch(tq, n_landed) - 5
-            m = max(60, m)
-            x = swell(tpt(m, tc * 0.95, 0.6, tc + 0.1), tc)
-            sig, g, lead = colour(x, KT, t, 0.6)
-            mix.place('trumpet', sig, tq, 0.13 * g, pan=-0.25)
-        elif kind == 'beam' and e[2] == KT:
+        if kind == 'punch' and e[2] == KT:
+            i, cn = int(e[3]), int(e[6])
+            notes, fing = T.combo_notes(combo_start.get(cn, t), cn)
+            m = notes[min(i, 2)]
             tq = q16(t)
-            hit = len(hit_t) and np.any((hit_t >= t - 1e-6) & (hit_t <= t + 0.16))
-            m = climb_pitch(tq, n_landed)
+            ht = hit_t.get(i, np.zeros(0))
+            landed = bool(len(ht) and np.any((ht >= t - 1e-6) & (ht <= t + 0.2)))
             hp = hp_at(KT, t) / 100.0
-            if hp < 0.5 and h01(t, 4) < 0.5 * (1 - hp) ** 1.5:          # thinning when hurt: some stabs crack
-                mix.place('trumpet', A.hp(breath(0.06, 1500, 6000, int(t * 10)), 900), tq, 0.08, pan=-0.25)
+            if not landed and hp < 0.5 and h01(t, 4) < 0.5 * (1 - hp) ** 1.5:      # thinning when hurt: ghosts drop out
                 continue
-            if hit:
-                n_landed += 1
-                x = tpt(m, 0.14, 1.0)
-                sig, g, lead = colour(x, KT, t, 0.8)
-                mix.place('trumpet', sig, tq, 0.40 * g, pan=-0.25)
-                if lead > 0.04:                                          # the leader: the octave below joins
-                    mix.place('trumpet', colour(tpt(m - 12, 0.14, 0.8), KT, t)[0], tq, 0.16 * g, pan=-0.25)
-                mix.place('fx', A.thud(0.25, 140, 60, seed=int(t * 9)), tq, 0.10, pan=0.2)
-            else:                                                        # a miss: the stab falls off
-                sig, g, _ = colour(tpt(m, 0.10, 0.85), KT, t, 0.8)
-                mix.place('trumpet', sig, tq, 0.26 * g, pan=-0.25)
-                ms = T.scale_notes(m - 7, m - 1, T.chord_at(tq))
-                for j, mm in enumerate(reversed(ms[-2:])):
-                    mix.place('trumpet', colour(tpt(mm, 0.05, 0.6), KT, t)[0], tq + (j + 1) * S16 / 2 + S16 / 2, 0.12 * g,
-                              pan=-0.25)
-            if float(RUN['HA'][RD.sim_i(t), KT]) > 0:                      # DOUBLE TONGUE: ta-ka
-                mix.place('trumpet', colour(tpt(m, 0.07, 0.8), KT, t)[0], tq + S16, 0.24, pan=-0.25)
+            last = i == 2
+            vel = 1.0 if landed else 0.7
+            sig, g, lead = colour(tpt(m, 0.12 if not last else 0.2, vel), KT, t, 0.8)
+            mix.place('trumpet', sig, tq, (0.38 if landed else 0.17) * (1.15 if last else 1.0) * g, pan=-0.25)
+            mix.place('fx', hiss(0.07, int(t * 50) % 97), tq, 0.035, pan=-0.3)
+            if landed:
+                if lead > 0.04:                                               # the leader: the octave below joins
+                    mix.place('trumpet', colour(tpt(m - 12, 0.12, 0.8), KT, t)[0], tq, 0.14 * g, pan=-0.25)
+                mix.place('fx', A.thud(0.22 if not last else 0.32, 150, 60, seed=int(t * 9)), tq, 0.09 if not last else 0.16,
+                          pan=0.2)
+            if float(RUN['HA'][RD.sim_i(t), KT]) > 0 and not last:            # DOUBLE TONGUE: a ta-ka grace on each punch
+                mix.place('trumpet', colour(tpt(m, 0.05, 0.7), KT, t)[0], tq + S16 / 2, 0.12, pan=-0.25)
 
 
-# ---------------------------------------------------------------- the sax: volleys of smoke rings
-BLUES_SET = set((T.KEY_ROOT + p) % 12 for p in T.BLUES)
-BLUES = [m for m in range(55, 80) if m % 12 in BLUES_SET]
+# ---------------------------------------------------------------- v3 SAX: STRAP FLAIL (the swing plays the line)
+def swing_triggers():
+    """times the flail head passes a half turn while swinging (not while wrapped), from the recorded angle"""
+    th = RUN['TH'][:, KS]
+    d = (np.diff(th) + np.pi) % (2 * np.pi) - np.pi
+    tt = T.T_FIGHT + np.arange(len(th)) / T.FPS
+    wraps = [(e[0], e[3]) for e in EV if e[1] == 'wrap' and e[2] == KS]
+    out, acc = [], 0.0
+    for i in range(1, len(th)):
+        tm = tt[i]
+        if any(a - 0.02 <= tm < b for a, b in wraps):
+            acc = 0.0
+            continue
+        acc += abs(d[i - 1])
+        if acc >= math.pi:
+            acc -= math.pi
+            out.append(tm)
+    return [t for t in out if t < T_KO]
 
 
-def sax_lick(v, n, t):
-    """n notes (<= 4) from the blues scale on the 16ths, starting near a chord tone, alternately falling / rising"""
-    ch = T.chord_at(t)
-    start_pool = [m for m in T.scale_notes(62, 74, ch)]
-    s = start_pool[int(h01(v, 7) * len(start_pool))]
-    i0 = min(range(len(BLUES)), key=lambda i: abs(BLUES[i] - s))
-    step = -1 if v % 2 == 0 else 1
-    out = []
-    for j in range(min(4, n)):
-        i = int(np.clip(i0 + step * j, 0, len(BLUES) - 1))
-        out.append(BLUES[i])
-    return out
+def whip(dur=0.05, seed=0):
+    """the strap cracking taut"""
+    n = int(dur * SR)
+    x = np.random.default_rng(400 + seed).normal(0, 1, n)
+    return A.bp(x, 1500, 9000) * A.expenv(n, dur * 0.25, 0.001)
 
 
 def sax_part(mix):
+    trig = sorted(set(round(q16(t) / S16) for t in swing_triggers()))
+    for j, slot in enumerate(trig):
+        tq = slot * S16
+        nxt = trig[j + 1] * S16 if j + 1 < len(trig) else tq + 4 * S16
+        n16 = int(np.clip(round((nxt - tq) / S16), 1, 8))
+        hp = hp_at(KS, tq) / 100.0
+        if h01(slot, 3) < 0.55 * (1 - hp) ** 1.6:                             # sparse when hurt
+            continue
+        m = T.sax_line_at(tq)
+        d = max(0.07, n16 * S16 * 0.9)
+        x = growl(sax(m, round(d, 2), 0.8, round(d + 0.25, 2)), 0.2 + 0.25 * (1 - hp))
+        sig, g, lead = colour(x, KS, tq, 1.0)
+        mix.place('sax', sig, tq, 0.28 * g, pan=0.25)
+        if n16 >= 3:                                                           # long notes scoop in from below
+            mix.place('sax', colour(sax(m - 1, 0.03, 0.6), KS, tq)[0], tq - S16 / 4, 0.10, pan=0.25)
+        if lead > 0.04:                                                        # the leader: a third below
+            under = T.scale_notes(m - 4, m - 3, T.chord_at(tq))
+            if under:
+                mix.place('sax', colour(sax(under[0], round(d, 2), 0.65), KS, tq)[0], tq, 0.11 * g, pan=0.25)
     for e in EV:
         t, kind = e[0], e[1]
         if t > T_KO + 0.01:
             break
-        if kind == 'fire' and e[2] == KS:
-            n, v = e[3], e[4]
+        if kind == 'hit' and e[2] == KS and e[7] == 'flail':                  # a hit: a growled blues accent + the strap crack
             tq = q16(t)
-            hp = hp_at(KS, t) / 100.0
-            lick = sax_lick(v, n, tq)
-            for j, m in enumerate(lick):
-                if j and h01(v, j) < 0.6 * (1 - hp) ** 1.6:                # sparse when hurt
-                    continue
-                d = 0.10 if j < len(lick) - 1 else 0.22
-                x = growl(sax(m, d, 0.85), 0.25 + 0.25 * (1 - hp))
-                if j == 0:                                              # a bluesy scoop into the first note
-                    mix.place('sax', colour(sax(m - 1, 0.03, 0.6), KS, t)[0], tq - S16 / 4, 0.12, pan=0.25)
-                sig, g, lead = colour(x, KS, t, 1.0)
-                mix.place('sax', sig, tq + j * S16, 0.30 * g, pan=0.25)
-                if lead > 0.04:                                         # the leader: a third below
-                    under = T.scale_notes(m - 4, m - 3, T.chord_at(tq))
-                    if under:
-                        mix.place('sax', colour(sax(under[0], d, 0.7), KS, t)[0], tq + j * S16, 0.12 * g, pan=0.25)
-            if n >= 5:                                                  # five rings and up: the low octave growls under
-                mix.place('sax', colour(growl(sax(lick[0] - 12, 0.3, 0.9), 0.4), KS, t)[0], tq, 0.18, pan=0.25)
-            mix.place('sax', breath(0.07, 400, 2400, v), tq, 0.05, pan=0.25)
-        elif kind == 'hit' and e[2] == KS and e[7] == 'key':            # a ring (or a bebop note) lands: a breathy puff
+            mom = e[8] / 10.0
+            ms = T.scale_notes(60, 77, T.chord_at(tq))
+            m = ms[int(h01(t, 9) * len(ms))]
+            mix.place('sax', colour(sax(m - 1, 0.04, 0.8), KS, t)[0], tq - S16 / 4, 0.14, pan=0.25)
+            mix.place('sax', colour(growl(sax(m, 0.22, 1.0), 0.45, 29, 2.2), KS, t, 1.2)[0], tq, 0.30 + 0.12 * mom, pan=0.25)
+            mix.place('fx', whip(0.05, int(t * 31) % 50), tq, 0.10 + 0.08 * mom, pan=float(np.clip(e[5] / 3.5, -0.6, 0.6)))
+            mix.place('fx', A.thud(0.3, 120, 50, seed=int(t * 7)), tq, 0.10 + 0.08 * mom)
+        elif kind == 'wrap' and e[2] == KS:                                    # the wrap: a two-note "wah" as it coils
+            tq = q16(t) + S16
+            lo = T.scale_notes(55, 62, T.chord_at(tq))
+            if lo:
+                mix.place('sax', colour(growl(sax(lo[0], 0.18, 0.85), 0.35), KS, t)[0], tq, 0.18, pan=0.25)
+                mix.place('sax', colour(growl(sax(lo[0] + 3, 0.25, 0.85), 0.35), KS, t)[0], tq + 2 * S16, 0.16, pan=0.25)
+        elif kind == 'unwrap' and e[2] == KS:                                  # the yank: a quick smear up
             tq = q16(t)
-            mix.place('fx', breath(0.10, 300, 1800, int(t * 13)), tq, 0.10, pan=float(np.clip(e[5] / 3.5, -0.6, 0.6)))
-            mix.place('fx', A.thud(0.18, 110, 70, seed=int(t * 5)), tq, 0.05)
-        elif kind == 'cleared' and e[2] == KS:                          # a ring pierced by a blast
-            mix.place('fx', breath(0.06, 2500, 7000, int(t * 17)), t, 0.04)
+            for j, m in enumerate((60, 63, 67)):
+                mix.place('sax', colour(sax(m, 0.04, 0.7), KS, t)[0], tq + j * S16 / 2, 0.10, pan=0.25)
+            mix.place('fx', whip(0.04, int(t * 13) % 50), tq, 0.06)
 
 
 # ---------------------------------------------------------------- abilities, ropes, clashes
@@ -438,30 +455,36 @@ def extras(mix):
                 for j in range(8):
                     mix.place('trumpet', colour(tpt(79, 0.05, 0.7 + 0.3 * (j % 2 == 0)), KT, t)[0], tq + j * S16 / 2,
                               0.22, pan=-0.25)
-            elif name == 'HIGH C':                                      # a screaming C6 with a shake
-                dur = 1.6
-                mix.place('trumpet', colour(tpt(84, dur, 1.0, dur + 0.3), KT, t, 1.5)[0], tq, 0.30, pan=-0.25)
-                k = 0
-                while k * S16 / 2 < dur:
-                    if k % 2:
-                        mix.place('trumpet', tpt(87, 0.05, 0.7), tq + k * S16 / 2, 0.10 * min(1.0, k / 6), pan=-0.25)
-                    k += 1
-                mix.place('fx', A.thud(0.6, 110, 38), tq + 0.3, 0.30)
+            elif name == 'HIGH C':                                      # the charge: the high C swelling open
+                tc = T.BEAT
+                x = swell(tpt(84, tc * 0.95, 0.8, tc + 0.1), tc)
+                mix.place('trumpet', colour(x, KT, t, 1.2)[0], tq, 0.26, pan=-0.25)
             elif name == 'SMOKE SCREEN':                                # a subtone held under the smoke
                 dur = RD.CFG[who]['abilities']['unlock1']['dur_beats'] * T.BEAT
                 x = A.lp(sax(60, dur * 0.95, 0.5, dur + 0.2), 1400)
                 n = len(x)
                 air = A.bp(np.random.default_rng(6).normal(0, 1, n), 300, 2400) * A.adsr(n, 0.2, 0.2, 0.7, 0.3)
                 mix.place('sax', colour(x, KS, t)[0] + 0.15 * air, tq, 0.16, pan=0.25)
-            elif name == 'BEBOP RUN':                                   # the 8 notes fly out as a 32nd-note run
+            elif name == 'BEBOP RUN':                                   # flat out: a 32nd-note bebop run up to the swing
                 run = [60, 62, 63, 64, 65, 67, 69, 70]
                 for j, m in enumerate(run):
                     mix.place('sax', colour(sax(m + 12 if m + 12 <= 80 else m, 0.05, 0.85), KS, t)[0],
-                              tq + j * T.BEAT / 7, 0.24, pan=0.25)
+                              tq + j * S16 / 2, 0.24, pan=0.25)
             elif name == 'HONK':                                        # the breath in, two beats before the honk
                 n = int(2 * T.BEAT * SR)
                 inhale = A.bp(np.random.default_rng(8).normal(0, 1, n), 500, 3000) * np.linspace(0, 1, n) ** 2
                 mix.place('fx', inhale, tq, 0.06)
+        elif kind == 'beam' and e[2] == KT:                             # HIGH C fires: the scream with a shake + the boom
+            tq = q16(t)
+            dur = 1.4
+            mix.place('trumpet', colour(tpt(84, dur, 1.0, dur + 0.3), KT, t, 1.5)[0], tq, 0.32, pan=-0.25)
+            k = 0
+            while k * S16 / 2 < dur:
+                if k % 2:
+                    mix.place('trumpet', tpt(87, 0.05, 0.7), tq + k * S16 / 2, 0.10 * min(1.0, k / 6), pan=-0.25)
+                k += 1
+            mix.place('fx', A.thud(0.7, 120, 34), tq, 0.40)
+            mix.place('drums', A.crash(2.0), tq, 0.14, pan=0.3)
         elif kind == 'slam':                                            # HONK: the giant low honk on the slam
             ts = q16(e[0])
             x = growl(sax(56, 0.7, 1.0, 1.0), 0.6, 29, 3.0)
@@ -573,7 +596,7 @@ def main():
         print(f'{a:5.1f}-{b:5.1f}s  rms {rms:6.1f} dBFS  peak {pk:5.1f}')
 
 
-BUS_GAIN = {'trumpet': 2.1, 'sax': 1.45, 'solo': 1.6, 'fx': 1.4, 'bass': 0.8, 'drums': 1.8, 'piano': 1.4, 'pad': 1.2}
+BUS_GAIN = {'trumpet': 1.8, 'sax': 1.45, 'solo': 1.6, 'fx': 1.4, 'bass': 0.8, 'drums': 1.8, 'piano': 1.4, 'pad': 1.2}
 # section automation (dB), applied AFTER the compressor so the limiter can't flatten the build: the count-in at full,
 # the early fight pulled back, rising through the final exchange, the victory section loud, the end close to the start
 GAIN_PTS = [(0, 0.0), (1.6, 0.0), (2.1, -1.6), (20, -1.5), (30, -0.6), (40, 1.3), (44, 2.3), (49.0, 3.3), (50.5, 2.8),

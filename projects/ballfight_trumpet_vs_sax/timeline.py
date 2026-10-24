@@ -121,3 +121,40 @@ SOLO = {
             (9.5, 75, .5), (10, 72, .25), (10.25, 70, .25), (10.5, 68, .5), (11, 67, .5), (11.5, 66, .5),
             (12, 67, 1.25)],
 }
+
+
+# v3: the sax's swing line. Each half turn of the strap flail plays the line's note at that moment (snapped to the 16th),
+# so a slow swing plays a few long, growled blues notes and a flat-out swing (BEBOP RUN) plays the line as a bebop run.
+# An original C minor blues line, one pitch per 16th over the 4-bar loop (64 slots); slots in between hold the last note.
+_SX = {
+    (0, 0): 67, (0, 3): 70, (0, 4): 72, (0, 6): 70, (0, 8): 67, (0, 10): 66, (0, 11): 65, (0, 12): 63, (0, 14): 60,
+    (1, 0): 68, (1, 2): 72, (1, 4): 75, (1, 6): 72, (1, 8): 70, (1, 10): 68, (1, 12): 66, (1, 14): 63,
+    (2, 0): 65, (2, 2): 68, (2, 4): 72, (2, 6): 75, (2, 8): 77, (2, 10): 75, (2, 12): 72, (2, 14): 68,
+    (3, 0): 67, (3, 2): 71, (3, 4): 74, (3, 6): 77, (3, 8): 75, (3, 10): 74, (3, 11): 72, (3, 12): 71, (3, 14): 67,
+}
+SAX_LINE = []
+_last = 67
+for _b in range(4):
+    for _s in range(16):
+        _last = _SX.get((_b, _s), _last)
+        SAX_LINE.append(_last)
+
+
+def sax_line_at(t):
+    """the swing line's pitch at time t (bars 1.. follow the 4-bar loop, in step with the chords)"""
+    k = int(round(t / S16))
+    b = (k // 16 - 1) % 4
+    return SAX_LINE[b * 16 + k % 16]
+
+
+# v3: VALVE COMBO. A combo's three punches play three notes of ONE valve fingering (the trumpet's own harmonic series,
+# lowered by the valves): partials 4-6-8 (or 3-4-6 on alternate combos) of the fingering whose root fits the chord.
+OPEN_PARTIALS = {3: 65, 4: 70, 6: 77, 8: 82}            # concert pitch of the open Bb trumpet's partials
+VALVE_SHIFT = {'Cm': (3, '12'), 'Ab7': (2, '1'), 'Fm': (5, '13'), 'G7': (3, '12')}   # semitones down, valves pressed
+
+
+def combo_notes(t, combo_no):
+    """(three midi notes, fingering) for the combo that starts at t"""
+    s, fing = VALVE_SHIFT[chord_at(t)]
+    parts = (4, 6, 8) if combo_no % 2 else (3, 4, 6)
+    return [OPEN_PARTIALS[p] - s for p in parts], fing
