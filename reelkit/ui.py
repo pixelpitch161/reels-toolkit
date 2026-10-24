@@ -11,7 +11,7 @@ Two styles:
 Safe zone (config.SAFE, config.SAFE_BUTTONS): captions start at the top of the safe box, centred on the frame.
 Lines of up to 14 chars use the big size, up to 21 chars the small size. Keep HUD panels and labels inside the
 box too (above y 500 internal, x 20-340) and out of the app's right-hand button column (x >= 300 below y 290).
-share_bar / race_lanes / roster_grid default to the bottom of the box, left of the button column.
+share_bar / race_lanes / roster_grid / fight_hud default to the bottom of the box, left of the button column.
 
 Everything drawn here is recorded in DRAWN (reset each frame by the checker), so
 `python -m reelkit.safezone render.py` can verify placement."""
@@ -441,6 +441,120 @@ def race_lanes(img, lanes, x0=None, x1=None, y1=None, lane_h=11, alpha=1.0, ink=
     if under is not None:
         img[:] = (under * (1 - alpha) + img * alpha).astype(np.uint8)
     return out
+
+
+# ------------------------------------------------------------------ fight HUD (two fighters: fighting-game HP bars)
+def fight_hud(img, left, right, x0=None, x1=None, y1=None, alpha=1.0, ink=INK, bar_h=6, center='VS'):
+    """Two fighting-game HP bars at the bottom of the safe box (built for #27 BALLFIGHT): the left fighter's bar is
+    anchored at the left edge and the right fighter's at the right edge, so damage eats each bar from the middle (like
+    the classics), with a pale damage trail that catches up. Small text only: NAME + HP number over each bar, level
+    pips (LV1..max) and a short status line (e.g. the ability just used) under it; `center` (e.g. 'VS') between.
+
+        left / right  dict(name, color, hp, hp_max=100, trail=None (HP the pale trail shows, >= hp), level=1,
+                           max_level=3, status='', status_k=0..1 (status fade), flash=0..1 (bar flash on a hit),
+                           ko=False (dims, 'K.O.' instead of the number), win=False (gold edge))
+        x0, x1, y1    extent (default: the safe box width, left of the button column, on the box's bottom edge)
+    The names say which instrument is which. Low HP (<= 25 %) turns the bar red-orange and pulses it.
+    Everything goes through label()/panel notes, so `python -m reelkit.safezone` checks it. Fade with alpha.
+    Returns dict(top, bars=[(xa, xb, y0, y1)] for left, right) so a project can hang extras on it."""
+    x0 = SAFE[0] + 4 if x0 is None else x0
+    y1 = SAFE[3] - 4 if y1 is None else y1
+    row = 7                                     # scale-1 text height
+    h = row + 3 + bar_h + 3 + row
+    y0 = y1 - h
+    x1 = safe_x1(y0, y1) - 4 if x1 is None else x1           # stays left of the app's button column
+    under = img.copy() if alpha < 0.999 else None
+    # backing
+    bx0, by0, bx1, by1 = x0 - 4, y0 - 4, x1 + 4, y1 + 3
+    reg = img[by0:by1, bx0:bx1].astype(np.float32)
+    img[by0:by1, bx0:bx1] = (reg * 0.40 + np.array(ink, float) * 0.32).astype(np.uint8)
+    edge = np.array([62, 74, 112], float)
+    img[by0, bx0:bx1] = (img[by0, bx0:bx1] * 0.4 + edge * 0.6).astype(np.uint8)
+    img[by1 - 1, bx0:bx1] = (img[by1 - 1, bx0:bx1] * 0.6 + edge * 0.4).astype(np.uint8)
+    _note(bx0, by0, bx1, by1, 'panel', 'fight hud')
+    cw = len(center) * ADV - 1 if center else 0
+    mid = (x0 + x1) / 2
+    gap = cw + 8 if center else 6
+    bars = []
+    yb0 = y0 + row + 3
+    yb1 = yb0 + bar_h
+    for side, F in ((0, left), (1, right)):
+        col = np.array(F['color'], float)
+        hp_max = float(F.get('hp_max', 100.0))
+        hp = max(0.0, min(hp_max, float(F['hp'])))
+        trail = max(hp, float(F.get('trail', hp) if F.get('trail') is not None else hp))
+        ko = bool(F.get('ko', False))
+        xa, xb = (x0, int(round(mid - gap / 2))) if side == 0 else (int(round(mid + gap / 2)), x1)
+        w = xb - xa
+        # bar frame + empty well
+        img[yb0 - 1:yb1 + 1, xa - 1:xb + 1] = np.array(ink, np.uint8)
+        img[yb0:yb1, xa:xb] = np.array([40, 30, 52], np.uint8)
+        fh, ft = w * hp / hp_max, w * trail / hp_max
+        low = hp <= 0.25 * hp_max and not ko
+        bc = col.copy()
+        if low:
+            pulse = 0.5 + 0.5 * math.sin(float(F.get('t', 0.0)) * 2 * math.pi * 2.0)
+            bc = np.array([255, 96, 52], float) * (0.8 + 0.2 * pulse)
+        fl = float(F.get('flash', 0.0))
+        bc = np.clip(bc * (1 - 0.6 * fl) + 255 * 0.6 * fl, 0, 255)
+        if side == 0:                                 # anchored at the outer edge: damage eats from the middle
+            seg_t = (xa, xa + int(round(ft)))
+            seg_h = (xa, xa + int(round(fh)))
+        else:
+            seg_t = (xb - int(round(ft)), xb)
+            seg_h = (xb - int(round(fh)), xb)
+        if seg_t[1] > seg_t[0]:
+            img[yb0:yb1, seg_t[0]:seg_t[1]] = np.array([255, 236, 200], np.uint8)
+        if seg_h[1] > seg_h[0]:
+            img[yb0:yb1, seg_h[0]:seg_h[1]] = np.clip(bc, 0, 255).astype(np.uint8)
+            img[yb0:yb0 + 1, seg_h[0]:seg_h[1]] = np.clip(bc * 0.55 + 115, 0, 255).astype(np.uint8)
+            img[yb1 - 1:yb1, seg_h[0]:seg_h[1]] = np.clip(bc * 0.65, 0, 255).astype(np.uint8)
+        for k in range(1, 4):                         # quarter ticks
+            xt = xa + int(round(w * k / 4))
+            img[yb1 - 2:yb1, xt] = np.array(ink, np.uint8)
+        if F.get('win'):
+            gold = np.array(AMBER, np.uint8)
+            img[yb0 - 2, xa - 2:xb + 2] = gold
+            img[yb1 + 1, xa - 2:xb + 2] = gold
+            img[yb0 - 2:yb1 + 2, xa - 2] = gold
+            img[yb0 - 2:yb1 + 2, xb + 1] = gold
+        _note(xa - 1, yb0 - 1, xb + 1, yb1 + 1, 'panel', 'hp bar ' + F['name'])
+        # name + number above
+        tcol = tuple(int(v) for v in (np.clip(col * 0.35 + 60, 0, 255) if ko else np.clip(col * 0.85 + 38, 0, 255)))
+        num = 'K.O.' if ko else str(int(math.ceil(hp - 1e-6)))
+        nw = len(num) * ADV - 1
+        if side == 0:
+            label(img, F['name'], xa, y0, tcol, 1)
+            label(img, num, xb - nw, y0, (255, 240, 214) if not ko else (255, 120, 96), 1)
+        else:
+            label(img, num, xa, y0, (255, 240, 214) if not ko else (255, 120, 96), 1)
+            label(img, F['name'], xb - (len(F['name']) * ADV - 1), y0, tcol, 1)
+        # level pips + status under the bar
+        lv, mx = int(F.get('level', 1)), int(F.get('max_level', 3))
+        yp = yb1 + 3
+        pw = 2 * ADV + 1 + mx * 5
+        px = xa if side == 0 else xb - pw
+        label(img, 'LV', px, yp, (176, 176, 200), 1)
+        for k in range(mx):
+            cx_ = px + 2 * ADV + 1 + k * 5
+            on = k < lv
+            img[yp + 1:yp + 6, cx_:cx_ + 4] = np.array(ink, np.uint8)
+            img[yp + 2:yp + 5, cx_ + 1:cx_ + 3] = (np.clip(col * 0.9 + 30, 0, 255) if on else np.array([70, 64, 88])).astype(np.uint8)
+        st, sk = F.get('status', ''), float(F.get('status_k', 0.0))
+        if st and sk > 0.01:
+            sw = len(st) * ADV - 1
+            sx = (px + pw + 4) if side == 0 else (px - 4 - sw)
+            if (side == 0 and sx + sw <= xb) or (side == 1 and sx >= xa):
+                before = img.copy() if sk < 0.999 else None
+                label(img, st, sx, yp, tuple(int(v) for v in np.clip(col * 0.6 + 110, 0, 255)), 1)
+                if before is not None:
+                    img[:] = (before * (1 - sk) + img * sk).astype(np.uint8)
+        bars.append((xa, xb, yb0, yb1))
+    if center:
+        label(img, center, int(round(mid - cw / 2)), yb0 - 1, (232, 220, 180), 1)
+    if under is not None:
+        img[:] = (under * (1 - alpha) + img * alpha).astype(np.uint8)
+    return dict(top=by0, bars=bars)
 
 
 # ------------------------------------------------------------------ roster grid ("Who will win?" elimination formats)
