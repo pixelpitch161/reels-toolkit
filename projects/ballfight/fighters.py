@@ -119,7 +119,7 @@ FIGHTERS = {
     'ACCORDION': dict(
         color=(236, 82, 214), dark=(140, 34, 124), corner='blue',    # magenta (series colour table, IDEAS)
         view=(72, 22, 0),
-        weapon=dict(kind='bellows', style='bellows',       # push on one bar, suck on the next: wheezy chord stabs
+        weapon=dict(kind='bellows', style='bellows',       # push on beat 1, suck on beat 3: wheezy chord stabs
                     every=2, base=0.9, grow=0.09, max_reach=2.2, speed=9.0, pull_k=1.7, pull_speed=0.45, dmg=3.0,
                     sub_dmg=0.5, knock=1.0, force_grow=0.5),
         abilities=dict(
