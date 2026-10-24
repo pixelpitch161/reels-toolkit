@@ -1,4 +1,4 @@
-"""Rule tuning for #29 (once, then frozen in timeline.py / fighters.py): win share, median K.O., lead changes and fit
+"""Rule tuning for #29 (v3: combo vs flail) (once, then frozen in timeline.py / fighters.py): win share, median K.O., lead changes and fit
 rate over seeds, for a grid of roster / rule overrides.
 
     python tune.py 40 T.dmg=3.5,4 S.dmg=1.2 S.curve=90,110 scale=0.8
@@ -52,9 +52,11 @@ def one(args):
         if e[0] <= 15.0:
             lead15 = np.sign(hp[0] - hp[1])
     caps = len(sim.captions(r['events']))
-    shots = sum(1 for e in r['events'] if e[1] == 'beam')
-    landed = sum(1 for e in r['events'] if e[1] == 'hit' and e[7] == 'beam')
-    return (cell, seed, r['winner'], r['t_ko'] or 99, lc, max(hp), lead15, caps, n_hits, landed / max(1, shots))
+    shots = sum(1 for e in r['events'] if e[1] == 'punch')
+    landed = sum(1 for e in r['events'] if e[1] == 'hit' and e[7] == 'piston')
+    wraps = sum(1 for e in r['events'] if e[1] == 'wrap')
+    hc = sum(1 for e in r['events'] if e[1] == 'hit' and e[7] == 'beam')
+    return (cell, seed, r['winner'], r['t_ko'] or 99, lc, max(hp), lead15, caps, n_hits, landed / max(1, shots), wraps, hc)
 
 
 if __name__ == '__main__':
@@ -78,7 +80,9 @@ if __name__ == '__main__':
         hits = np.mean([x[8] for x in r], 0)
         acc = np.mean([x[9] for x in r])
         t15 = np.mean([x[6] > 0 for x in r])
+        wr = np.mean([x[10] for x in r])
+        hc = np.mean([x[11] for x in r])
         lab = ' '.join(f'{k}={v:g}' for k, v in cell)
         print(f'{lab}: trumpet win {100 * g:3.0f}%  KO med {np.median(tko):5.1f} ({np.percentile(tko, 10):4.1f}-'
               f'{np.percentile(tko, 90):4.1f})  lc {lc:.2f}  whp {whp:3.0f}  caps {caps:.1f}  fit {100 * fit:3.1f}%  '
-              f'hits T/S {hits[0]:.0f}/{hits[1]:.0f}  beam acc {100 * acc:.0f}%  T@15 {100 * t15:.0f}%', flush=True)
+              f'hits T/S {hits[0]:.0f}/{hits[1]:.0f}  punch acc {100 * acc:.0f}%  wraps {wr:.1f}  HIGH C hit {100 * hc:.0f}%  T@15 {100 * t15:.0f}%', flush=True)

@@ -16,7 +16,7 @@ EPISODES = [
     ('projects/ballfight', [88, 1, 2, 3, 500]),                    # #27, seed 88
     ('projects/ballfight_drums_vs_violin', [568, 1, 2, 3, 500]),   # #28, seed 568
     ('projects/ballfight_tuba_vs_flute', [1097, 1, 2, 3, 500]),    # #32, seed 1097
-    ('projects/ballfight_trumpet_vs_sax', [337, 1, 2, 3, 500]),    # #29, seed 337
+    ('projects/ballfight_trumpet_vs_sax', [191, 1, 2, 3, 500]),    # #29 v3, seed 191
     ('projects/ballfight_bagpipes_vs_accordion', [1581, 1, 2, 3, 500]),   # #30, seed 1581
     ('projects/ballfight_trombone_vs_horn', [1261, 1, 2, 3, 500]),   # #34, seed 1261
     ('projects/ballfight_turntables_vs_synth', [129, 1, 2, 3, 500]),   # #31, seed 129
