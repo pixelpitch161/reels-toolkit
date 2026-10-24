@@ -40,6 +40,7 @@ ENTRANTS = [
     ('ACCORDION', 'accordion60_lowpoly', None, (55, 79), 0, 1.0),
     ('BAGPIPES', 'bagpipes60_lowpoly', None, (67, 81), 0, 1.0),
     ('UKULELE', 'ukulele60_lowpoly', None, (60, 81), 0, 1.0),
+    ('ACOUSTIC', 'acoustic_lowpoly', 'steel', (40, 76), 0, 1.0),       # #33 BALLFIGHT: the modern steel-string
 ]
 NAMES = [e[0] for e in ENTRANTS]
 DRUM_KEYS = (36, 38, 41, 45, 48, 49)    # kick, snare, floor / low / high tom, crash
