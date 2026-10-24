@@ -22,6 +22,8 @@ enemy and shoots straight out to its reach on the beat, then pulls back: a lance
 volley, `curve_grow` / `curve_max` (deg/s: the turn rate grows per landed volley), and an 'arc' ability with
 `curve=True` fires curving projectiles at the owner's current rate; `slow` on a shockwave / wave (dict(mult, dur): the
 enemy it hits moves at `mult` x speed for `dur` s).
+#29 v3 (opt-in): weapon kinds `combo` (three piston punches) and `flail` (strap flail that wraps the enemy), and an
+ability kind `beam` (a charged giant blast through the beam machinery, e.g. HIGH C).
 The run records every frame (30 fps) for the renderer and every event (hits, blocks, parries, ropes, volleys,
 abilities, level-ups, the K.O.) for the soundtrack and the captions. Seeded: same seed, same fight."""
 import math
@@ -503,7 +505,7 @@ class Fight:
                 hx, hy = (O.p - n * R).tolist()
                 landed = self.damage(k, o, Bm['dmg'], 'beam', hx, hy)
                 self.knock(o, Bm['d'] + 0.3 * n, Bm['knock'])
-                if landed:
+                if landed and Bm.get('grow', True):          # an ability's beam (#29 v3) grows no weapon
                     A_ = self.balls[k]
                     A_.blade_len = min(A_.w['max_len'], A_.blade_len + A_.w['grow'])
                     A_.beam_w = min(A_.w['max_w'], A_.beam_w + A_.w.get('grow_w', 0.0))
@@ -1054,8 +1056,36 @@ class Fight:
                                    knock=ab['knock'], done=False, name=ab['name']))
         elif kind == 'rewind':
             self.start_rewind(k, ab)
+        elif kind == 'beam':                                    # #29 v3 (HIGH C): a charged giant blast
+            self.ab_beam_charge(k, ab)
+
+    def ab_beam_charge(self, k, ab):
+        """ability kind 'beam' (#29 v3): charge for `charge_beats` with the aim locked on the enemy's spot predicted
+        `lead` x the charge ahead, then one giant blast (`len`, `width`, `dmg`, `knock`, live `hold` s) through the beam
+        machinery; it pierces projectiles and grows no weapon"""
+        B, O = self.balls[k], self.balls[1 - k]
+        tc = ab.get('charge_beats', 1) * self.R.beat
+        d = (O.p + O.v * tc * ab.get('lead', 0.7)) - (B.p + B.v * tc)
+        aim = math.atan2(d[1], d[0])
+        B.ab_charge = dict(aim=aim, t_fire=self.t + tc, ab=ab)
+        self.ev('charge', k, aim, tc, float(ab['len']), float(ab['width']))
+
+    def ab_beam_fire(self, k):
+        B = self.balls[k]
+        ch = B.ab_charge
+        ab, a = ch['ab'], ch['aim']
+        d = np.array([math.cos(a), math.sin(a)])
+        o = B.p + d * (self.R.R + 0.04)
+        self.beams.append(dict(owner=k, o=o, d=d, len=float(ab['len']), w=float(ab['width']), t1=self.t + ab.get('hold', 0.3),
+                               hit=False, dmg=ab['dmg'], knock=ab.get('knock', 1.5), grow=False))
+        self.ev('beam', k, float(o[0]), float(o[1]), a, float(ab['len']), float(ab['width']))
+        B.ab_charge = None
 
     def abilities_step(self, on_beat):
+        for k, B in enumerate(self.balls):                      # #29 v3: a charged ability beam fires when its beat comes
+            ch = getattr(B, 'ab_charge', None)
+            if ch is not None and self.t + 1e-9 >= ch['t_fire']:
+                self.ab_beam_fire(k)
         for k, B in enumerate(self.balls):
             # unlocks by damage dealt
             lv = 1 + sum(B.dealt >= x for x in self.R.LV_DMG)
