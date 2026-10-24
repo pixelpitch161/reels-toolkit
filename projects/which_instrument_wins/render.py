@@ -16,7 +16,7 @@ from PIL import Image, ImageDraw
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, '..', '..'))
 sys.path.insert(0, HERE)
-from reelkit.config import W, H, FPS, BAYER_FULL, SAFE, SAFE_CX, ss, ease, mixc
+from reelkit.config import W, H, FPS, BAYER_FULL, SAFE, SAFE_CX, safe_overshoot, ss, ease, mixc
 from reelkit.camera import Cam, interp_keys
 from reelkit.raster import Frame, painter, apply_glows
 from reelkit.lighting import Lights, shade, fog, sky_gradient
@@ -53,7 +53,7 @@ VIEW = {'PIANO': (225, 22, 0), 'VIOLIN': (12, 26, 28), 'CELLO': (-12, 26, -26), 
         'DRUMS': (12, 30, 0), 'ACCORDION': (72, 22, 0), 'BAGPIPES': (42, 22, 0), 'UKULELE': (12, 28, -30)}
 
 # ---------------------------------------------------------------- camera
-AIM = S.RING_C + np.array([0.26, 0.0, 0.0])          # ring centre lands on the safe box's centre column (x 168)
+AIM = S.RING_C.copy()                                # ring centre on the frame's centre column (x 180), under the captions
 SY = 258
 KEYS = [  # (t, target, dist, yaw, pitch, fov, sy) - gentle 2.5D drift, one push-in for the duel, pull back for the win
     (0.0, AIM, 14.6, 0.0, 2.0, 50, SY),
@@ -322,8 +322,7 @@ def _cap_times():
             (40.3, 43.0, ['*FINAL 3*']),
             (43.2, 45.4, ['*VIOLIN*', 'VS *CELLO*']),
             (T_WIN + 0.05, 51.6, ['*CELLO*', 'WINS!']),
-            (51.7, 55.5, ['WHO DID YOU', '*PICK?*']),
-            (55.6, 58.25, ['ITS STORY:', '*ON OUR PAGE*']),
+            (51.7, 58.25, ['WHO DID YOU', '*PICK?*']),
             (58.35, 61.0, ['*RUN IT BACK*'])]
     return caps
 
@@ -616,7 +615,13 @@ def render(f):
     if ss_ is not None:
         sun_over(img, depth, ss_, cam)
     pigeons(img, cam, t)
-    # ---------------- UI: ball names, roster, captions
+    # ---------------- UI: roster (reelkit defaults: bottom of the safe zone, left of the button column), ball names, captions
+    place = [PLACE[b] if (T_OUT[b] >= 0 and t >= T_OUT[b] and t < T.T_RESET + 0.06 * PLACE[b] + 1.0) else None for b in range(16)]
+    flash = [max(0.0, 1 - (t - T_OUT[b]) / 0.6) if T_OUT[b] >= 0 and 0 <= t - T_OUT[b] < 0.6 else 0.0 for b in range(16)]
+    win = WINNER if T_WIN <= t < T.T_RESET + 1.6 else None
+    if win is not None:
+        flash[WINNER] = max(0.0, 1 - (t - T_WIN) / 0.8)
+    roster_top = roster_grid(img, NAMES, COLORS, place=place, flash=flash, winner=win)
     boxes = []
     for b in range(16):
         if b not in drawn:
@@ -634,16 +639,10 @@ def render(f):
                 break
         else:
             continue
-        if bx[0] < SAFE[0] or bx[2] > SAFE[2] or bx[1] < SAFE[1] + 52 or bx[3] > SAFE[3] - 48:
-            continue
+        if safe_overshoot(*bx) > 0 or bx[1] < SAFE[1] + 52 or bx[3] > roster_top - 2:
+            continue                                     # stay out of the caption band, the roster and the button column
         boxes.append(bx)
         col = AMBER if b == WINNER and t >= T_WIN else CREAM
         label(img, nm, bx[0], bx[1], col, 1)
-    place = [PLACE[b] if (T_OUT[b] >= 0 and t >= T_OUT[b] and t < T.T_RESET + 0.06 * PLACE[b] + 1.0) else None for b in range(16)]
-    flash = [max(0.0, 1 - (t - T_OUT[b]) / 0.6) if T_OUT[b] >= 0 and 0 <= t - T_OUT[b] < 0.6 else 0.0 for b in range(16)]
-    win = WINNER if T_WIN <= t < T.T_RESET + 1.6 else None
-    if win is not None:
-        flash[WINNER] = max(0.0, 1 - (t - T_WIN) / 0.8)
-    roster_grid(img, NAMES, COLORS, place=place, flash=flash, winner=win)
     draw_captions(img, t, CAPTIONS, style='impact')
     return img
