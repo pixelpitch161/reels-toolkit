@@ -1185,11 +1185,13 @@ class Fight:
             s = self.R.V * (1 + B.boost)
             if B.slow > 0:                                  # #34: slowed (e.g. SAD TROMBONE)
                 s *= B.slow_mult
+            if getattr(B, 'vmul', None) is not None:        # #30 v2: per-ball speed factor (inflate: heavy / rocketing)
+                s *= B.vmul
             v = B.v / (np.linalg.norm(B.v) + 1e-12) * s
             B.p = B.p + v * dt
             B.v = v
             for ax in (0, 1):
-                lim = A - R
+                lim = A - getattr(B, 'rad', R)              # #30 v2: per-ball radius (default: the shared R)
                 if abs(B.p[ax]) > lim:
                     B.p[ax] = math.copysign(lim, B.p[ax]) * 2 - B.p[ax]
                     B.v[ax] = -B.v[ax]
@@ -1203,19 +1205,31 @@ class Fight:
         P, Q = self.balls
         d = Q.p - P.p
         dist = float(np.hypot(*d))
-        if dist < 2 * R and getattr(P, 'rw_left', 0.0) <= 0 and getattr(Q, 'rw_left', 0.0) <= 0:
+        rP, rQ = getattr(P, 'rad', R), getattr(Q, 'rad', R)    # #30 v2: per-ball radius (R + R == 2 * R exactly)
+        if dist < rP + rQ and getattr(P, 'rw_left', 0.0) <= 0 and getattr(Q, 'rw_left', 0.0) <= 0:
             n = d / max(dist, 1e-9)
-            over = 2 * R - dist
-            P.p -= n * over / 2
-            Q.p += n * over / 2
-            vp, vq = float(P.v @ n), float(Q.v @ n)
-            if vp - vq > 0:
-                P.v += (vq - vp) * n
-                Q.v += (vp - vq) * n
+            over = rP + rQ - dist
+            if hasattr(P, 'mass') or hasattr(Q, 'mass'):        # #30 v2: unequal masses (inflate): the light ball gives
+                mP, mQ = getattr(P, 'mass', 1.0), getattr(Q, 'mass', 1.0)
+                P.p -= n * over * mQ / (mP + mQ)
+                Q.p += n * over * mP / (mP + mQ)
+                vp, vq = float(P.v @ n), float(Q.v @ n)
+                if vp - vq > 0:
+                    P.v += 2 * mQ / (mP + mQ) * (vq - vp) * n
+                    Q.v += 2 * mP / (mP + mQ) * (vp - vq) * n
+            else:
+                P.p -= n * over / 2
+                Q.p += n * over / 2
+                vp, vq = float(P.v @ n), float(Q.v @ n)
+                if vp - vq > 0:
+                    P.v += (vq - vp) * n
+                    Q.v += (vp - vq) * n
             for B in (P, Q):
                 B.v = B.v / (np.linalg.norm(B.v) + 1e-12) * self.R.V * (1 + B.boost)
             mx, my = ((P.p + Q.p) / 2).tolist()
             self.ev('clash', -1, mx, my)
+            for hk in getattr(self, 'clash_hooks', ()):         # #30 v2: contact damage (inflate body slam / flight)
+                hk()
         # projectiles
         if self.kcurve:
             self.steer(dt)
@@ -1233,7 +1247,7 @@ class Fight:
                 if not enemy.any():
                     continue
                 dd = np.hypot(*(self.kp - B.p[None]).T)
-                m = enemy & (dd < R + (self.key_r() if self.khr else self.R.KEY_R))
+                m = enemy & (dd < getattr(B, 'rad', R) + (self.key_r() if self.khr else self.R.KEY_R))
                 if m.any():
                     for i in np.nonzero(m)[0]:
                         att = int(self.kown[i])
@@ -1287,6 +1301,8 @@ class Fight:
                              for W in self.waves])
         rec['SLAMS'].append([(S['owner'], float(S['c'][0]), float(S['c'][1]), S['t0'], S['t_slam'], S['radius'])
                              for S in self.slams if self.t < S['t_slam'] + 0.6])
+        if 'RAD' in rec:                                    # #30 v2, only recorded when a fighter changes size
+            rec['RAD'].append([getattr(B0, 'rad', self.R.R), getattr(B1, 'rad', self.R.R)])
         if 'EXT' in rec:                                    # #34, only recorded when a fighter uses the options
             rec['EXT'].append([B0.ext, B1.ext])
             rec['SLW'].append([B0.slow, B1.slow])
