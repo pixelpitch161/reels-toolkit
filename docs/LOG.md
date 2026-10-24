@@ -708,3 +708,32 @@
 - Checks: safe zone OK (0.25 s steps); subject CoC 0 on all 1830 frames; loopcheck PASS render + mp4 (seam 2.2x);
   flash 0 general (max 6.6 % at the bell slam); opening -18.9 dBFS, build +3.1 dB. Render 0.19 s/frame/core (6 min) + mux.
 - Feedback: (pending)
+
+## BALLFIGHT #4: Bagpipes vs Accordion (`projects/ballfight_bagpipes_vs_accordion`)
+- Fourth BALLFIGHT episode (#30), produced in parallel with #29–#35 on the shared engine. Two new weapon kinds, both on
+  their own 16th counter (additive: `grid16_fire`, `aura_tick`, `fire_bellows`, `suction_step`): BAGPIPES' `aura` (a
+  drone ring that hurts on every 8th while the opponent is inside; +reach per contact) and ACCORDION's `bellows` (a
+  stroke every 2 beats alternating a push ring and a collapsing suction ring that yanks the opponent in). Abilities: WAR
+  CRY / DOUBLE DRONE (ticks on the 16ths) / BAG BURST; POLKA (a stroke every beat) / SQUEEZEBOX / FULL BELLOWS (a giant
+  accordion with its keyboard on top, squeezed shut on the predicted spot). Mood: dark sea shanty, A dorian, 121.97 BPM.
+- Honest run, seed 1581 (6 fits in 1854; BAGPIPES 51 % / ACCORDION 49 % over 1637 decided): the accordion leads from
+  16.9 s, the bagpipes retake it at 28.8 s, FULL BELLOWS misses at 39.9 s, BAG BURST at 44.3, 8-7 at 48 s, BAGPIPES
+  win on the last tick at 50.55 s with 2.1 HP.
+- Parallel-production lessons: added `tools/ballfight_replay_hash.py` (hash every finished episode's honest runs before
+  and after an engine change; other sessions picked it up). Engine commits rebased onto five other sessions' engine
+  commits; every conflict was "keep both" (new kinds side by side in `__init__`, `run()`'s grid blocks and step calls).
+  Give each new grid weapon its own counter instead of widening the shared pulse condition: no existing line changes.
+- Rules lessons: a small aura (0.35 beyond the ball) almost never bit; base 0.9, growth per contact (not per tick) and a
+  1.9 cap keep it from snowballing. The brief's "push one bar, suck the next" left the accordion idle ~2 s at a time;
+  every 2 beats reads as breathing (flagged to the user with the early sheet). A longer suction (pull_k 1.7) raised lead
+  changes 0.5 -> 0.8 a run, because every suck can drag the accordion into the drone. Captions are the tight window
+  (first uses cluster): ~27 % of runs have 5 captions >= 4 s apart.
+- Look lessons: the aura as added canvas light read as a pale white ring; painting it as a tartan band (albedo blend, lit
+  like the canvas) reads as the bagpipes at a glance. A round stacked-disc "bellows" read as a cake; a square pleated box
+  with the keyboard on top reads as an accordion instantly.
+- Sound lessons: the drone is synthesised at frequencies nudged (< 0.01 Hz) to whole cycles in the file, so it loops
+  sample-perfectly, and its level is automated: under the mix, swelling only while the aura lands (a leaky integrator of
+  the landed ticks), back to the opening level before the seam. Chanter via the Highland module's own `chanter()` (the
+  bridge's `voice()` adds the whole drone to every note); accordion chords via `reed()` with the 'golden' tone (the
+  showcase 'morino' scene adds a dotted-8th echo).
+- Feedback: (pending)
