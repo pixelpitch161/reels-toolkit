@@ -348,3 +348,94 @@ def share_bar(img, shares, names, colors, x0=None, x1=None, y=None, h=6, out=Non
     if under is not None:
         img[:] = (under * (1 - alpha) + img * alpha).astype(np.uint8)
     return {'segments': segs, 'slots': slots, 'bottom': bottom, 'scale': sc}
+
+
+# ------------------------------------------------------------------ race legend: one slim lane per racer, live rank
+PLACE_TXT = ['1ST', '2ND', '3RD', '4TH', '5TH', '6TH']
+
+
+def race_lanes(img, lanes, x0=None, x1=None, y1=None, lane_h=11, alpha=1.0, ink=INK, backing=True, ranks=True,
+               name_w=6, sub_w=7):
+    """A race legend (built for #23 Maze Race): one slim lane per racer, stacked by live rank, each with the racer's
+    colour chip, NAME (in its colour), a sub-label (e.g. its instrument), a progress bar and a finishing place.
+
+        lanes  one dict per racer (any fixed order):
+               name, sub, color          text + colour
+               progress                  0..1 (bar fill)
+               slot                      float row position, 0 = top; ease it between ranks so lanes SLIDE when
+                                         the ranking changes (the rank numbers on the left stay put)
+               place                     None, or 1.. once finished: a '1ST' / '2ND' badge replaces the bar's end
+               flash                     0..1 lane highlight in the racer's colour (e.g. on finishing)
+               lost                      True: dimmed, 'LOST' badge
+               lead                      True: a small arrow by the name (current leader)
+               alpha                     optional per-lane fade (e.g. a lane appearing as a label lands in it)
+        x0, x1, y1  extent (default: the safe box width, sitting on the safe box's bottom edge)
+    Text is scale 1 (7 px); the default 4 lanes x 11 px fit in ~50 px. Everything is recorded for
+    `python -m reelkit.safezone`. Returns [(lane_x0, lane_y0, lane_x1, lane_y1)] per racer, in input order."""
+    n = len(lanes)
+    x0 = SAFE[0] + 4 if x0 is None else x0
+    x1 = SAFE[2] - 4 if x1 is None else x1
+    y1 = SAFE[3] - 5 if y1 is None else y1
+    pad = 3
+    y0 = y1 - n * lane_h - 2 * pad
+    under = img.copy() if alpha < 0.999 else None
+    if backing:
+        reg = img[y0:y1, x0 - 3:x1 + 3].astype(np.float32)
+        img[y0:y1, x0 - 3:x1 + 3] = (reg * 0.42 + np.array(ink, float) * 0.3).astype(np.uint8)
+        edge = np.array([62, 74, 112], float)
+        img[y0, x0 - 3:x1 + 3] = (img[y0, x0 - 3:x1 + 3] * 0.4 + edge * 0.6).astype(np.uint8)
+        img[y1 - 1, x0 - 3:x1 + 3] = (img[y1 - 1, x0 - 3:x1 + 3] * 0.6 + edge * 0.4).astype(np.uint8)
+        _note(x0 - 3, y0, x1 + 3, y1, 'panel', 'race lanes')
+    if ranks:
+        for k in range(n):
+            label(img, str(k + 1), x0, y0 + pad + k * lane_h + 2, (150, 160, 190), 1)
+    xc = x0 + 9 if ranks else x0
+    xn = xc + 6
+    xs = xn + name_w * ADV + 2
+    xb0 = xs + sub_w * ADV + 2
+    xb1 = x1 - 27
+    out = [None] * n
+    for i in sorted(range(n), key=lambda i: -lanes[i]['slot']):            # bottom lanes first, top lanes on top
+        L = lanes[i]
+        a_l = float(L.get('alpha', 1.0))
+        if a_l <= 0.01:
+            continue
+        ly = int(round(y0 + pad + L['slot'] * lane_h))
+        col = np.array(L['color'], float)
+        lost = bool(L.get('lost', False))
+        tc = col * 0.4 + 40 if lost else col
+        before = img.copy() if a_l < 0.999 else None
+        fl = float(L.get('flash', 0.0))
+        if fl > 0:
+            reg = img[ly:ly + lane_h - 1, x0 - 2:x1 + 2].astype(np.float32)
+            img[ly:ly + lane_h - 1, x0 - 2:x1 + 2] = np.clip(reg * (1 - 0.55 * fl) + col * 0.55 * fl, 0, 255).astype(np.uint8)
+        img[ly + 2:ly + 9, xc:xc + 4] = np.clip(tc, 0, 255).astype(np.uint8)
+        img[ly + 2, xc:xc + 4] = np.clip(tc * 0.6 + 100, 0, 255).astype(np.uint8)
+        label(img, L['name'], xn, ly + 2, tuple(int(v) for v in np.clip(tc, 0, 255)), 1)
+        label(img, L.get('sub', ''), xs, ly + 2, (120, 120, 136) if lost else (196, 190, 176), 1)
+        # progress bar
+        by0, by1 = ly + 3, ly + 8
+        img[by0 - 1:by1 + 1, xb0 - 1:xb1 + 1] = np.array(ink, np.uint8)
+        img[by0:by1, xb0:xb1] = np.array([34, 38, 58], np.uint8)
+        pw = int(round((xb1 - xb0) * min(1.0, max(0.0, float(L.get('progress', 0.0))))))
+        if pw > 0:
+            img[by0:by1, xb0:xb0 + pw] = np.clip(tc, 0, 255).astype(np.uint8)
+            img[by0:by0 + 1, xb0:xb0 + pw] = np.clip(tc * 0.6 + 100, 0, 255).astype(np.uint8)
+            img[by0:by1, xb0 + pw - 1:xb0 + pw] = np.clip(tc * 0.5 + 128, 0, 255).astype(np.uint8)
+        img[by0 - 1:by1 + 1, xb1:xb1 + 1] = np.array([230, 200, 120], np.uint8)        # the goal post
+        _note(xb0 - 1, by0 - 1, xb1 + 1, by1 + 1, 'panel', 'lane ' + L['name'])
+        if L.get('place'):
+            s = PLACE_TXT[int(L['place']) - 1]
+            label(img, s, x1 - 20, ly + 2, (255, 226, 140) if int(L['place']) == 1 else (232, 226, 210), 1)
+        elif lost:
+            label(img, 'LOST', x1 - 23, ly + 2, (150, 150, 170), 1)
+        if L.get('lead') and not lost:
+            m = np.array([[1, 0, 0], [1, 1, 0], [1, 1, 1], [1, 1, 0], [1, 0, 0]], bool)       # a small arrow
+            yy, xx = np.nonzero(m)
+            img[ly + 3 + yy, xn - 5 + xx] = np.array([255, 236, 170], np.uint8)
+        if before is not None:
+            img[:] = (before * (1 - a_l) + img * a_l).astype(np.uint8)
+        out[i] = (x0, ly, x1, ly + lane_h)
+    if under is not None:
+        img[:] = (under * (1 - alpha) + img * alpha).astype(np.uint8)
+    return out
