@@ -766,7 +766,23 @@
   bus 1.5x (its voice is quieter in 300-5000 Hz than the horn's).
 - Checks: safe zone OK; subject CoC 0 on all 1830 frames; loopcheck PASS render + mp4; flash 0 general (max 8 %);
   opening -19.0 dBFS, build +3.8 dB. Render 0.27 s/frame/core (4.1 min) + mux; ~8.5 min total.
-- Feedback: (pending)
+- Feedback (v1): the BALLFIGHT v2 redesign (user, Oct 24): attacks more unique, more visual character; the trombone's
+  lance is kept, the horn gets THE HUNT.
+- v2: HORN = THE HUNT (engine `pack` + ability `charge`): a horn call every 2 beats brands the trombone (copper target
+  mark) and releases a ghost hound (pack 2 -> 5); hounds flank, bite on the 8ths, heel, guard (STOPPED HORN), sprint
+  (HORN RIP), charge in one line (TALLY-HO). Re-tuned (damage scale 0.60, bite 2.8; 50 / 50 over 873 decided runs), new
+  seed 894: the pack leads 83-58 at 26 s, the lance levels by 35 s, TALLY-HO 42.8, PEDAL TONE answers, TROMBONE wins
+  50.72 s with 4.0 HP. Effects from reelkit.fx (brass sparks, copper embers, lights, bursts, marks, shimmer, moments).
+- v2 lessons: hounds spawned toward the enemy ran straight into the lance's line (50 knocked out a fight, pack never
+  grew); fanning them out of the bell and flanking (approach from 110 deg off the lance line) fixed it (~2.5 hounds
+  alive). Engine pushes raced six other sessions: a script (rebase with --autostash, keep-both on adjacent insertions,
+  replay guard vs the upstream files, push, retry) - a plain `git pull --rebase` silently fails on an unstaged file and
+  every push then looks like a race. Hounds as top-down silhouettes read as rats; 2.5D side-profile sprites (long and
+  low, drop ears, sabre tail, gallop) read as hounds. The new attack lights blew PEDAL TONE's brass bell out again:
+  base 0.42x BRASS and the stomp's flare at canvas height. The flash test needs `rel_lum` on 0..255 frames.
+- Checks (v2): safe zone OK; CoC 0 (hounds included); loopcheck PASS render 1.5x / mp4 1.8x; flash 0 general (max
+  15.5 %); opening -19.3 dBFS, build +4.3 dB. Render 10.8 min on 2 cores (fx ~2.6x v1).
+- Feedback (v2): (pending)
 
 ## BALLFIGHT #5: Turntables vs Synth (`projects/ballfight_turntables_vs_synth`)
 - #31, produced in parallel with #29-#35 on the shared engine. TURNTABLES throw vinyl frisbees that ricochet off the
