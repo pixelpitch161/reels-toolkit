@@ -999,3 +999,24 @@
 - Seam: v2's calmer fight lowered the median frame step (1.56 -> 1.18), so the same count-in seam failed (2.5x); the
   flying "3" now reaches its landing size on the last frame (frame 0 repeats it): 2.1x render, 2.4x mp4.
 - Feedback: (pending)
+
+## BALLFIGHT #5 v2: Turntables vs Synth (THE RING IS THE RECORD vs PATCH CABLES)
+- BALLFIGHT v2 redesign (user, Oct 24): new attacks for both fighters, same hook, captions, colours, mood and tempo.
+  Engine (additive, three small commits): `scratch_floor` (the floor jerks forward then back every bar; each jerk is a
+  knock around the ring centre; the first rope hit within 0.8 s is a slam scaled by impact speed, detected from the
+  engine's own 'rope' events so move() is untouched), `tether` (plugs -> cables -> pulses on their own 16th counter; a
+  leash that bounces the enemy off its end or snaps under a hard fling) and `lash` (SAWTOOTH's saw-tooth sweep; the name
+  `whip` was already taken by #33's straight flicks, and no two fighters share an attack kind). All three are rebuilt
+  from events in the renderer, so the recorder is unchanged.
+- Tuning lessons: v2 slams at 4.0 ended fights by 15 s. At slam 1.6 / pulse 0.2 the balance flipped from 55 % decks to
+  0 % as the damage scale dropped: longer fights let the synth reach 4 cables, a full leash never snapped (the knock has
+  decayed by the time the ball reaches the leash) and it also stopped the decks' rope slams. snap 0.15 x cables + pulse
+  0.17 + scale 0.6 = 50 / 50 with ~1.1 lead changes per run (v1 ~0.6).
+- Picture: the floor angle (a slow spin, 7 whole turns per loop, + each scratch's baby-scratch curve) drives the record's
+  label, strobe dots and dust specks (grooves alone are rotation-invariant, so the spin needs marks that turn); the same
+  curve is the record position the scratch audio plays, so picture and sound move together. Effects from reelkit.fx as in
+  the ballfight README recipe; a landed BASS DROP record must go under the balls (it painted over them at first); jerk
+  streak particles need a direction (the default is straight up, which read as rain).
+- Checks: safe zone OK; CoC 0 on all frames; loopcheck PASS render + mp4; flash peak 14.8 % (BASS DROP); opening
+  -16.7 dBFS, build +3.0 dB; leads 4-11 dB over the bed in 400-4000 Hz. Render 8.8 min + mux.
+- Feedback: (pending)
