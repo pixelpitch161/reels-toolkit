@@ -203,11 +203,16 @@ def panels():
 # ---------------------------------------------------------------- big balls
 _SPR = {}
 SPR_PATH = os.path.join(EP, 'check', 'sprites_title.npz')
+CLOSEUP = {}       # fighter name -> fn(radius_px) -> RGBA: its own close-up sprite (e.g. #32's flute: the model is a line)
+GLASS = {}         # fighter name -> rgb: its glass tint at close-up (e.g. #32's silver flute: cool, darker glass)
 
 
 def big_sprite(k):
     if k not in _SPR:
         import render as RD
+        if RD.NAMES[k] in CLOSEUP:                                    # opt-in: the episode draws this one itself
+            _SPR[k] = CLOSEUP[RD.NAMES[k]](int(BALLS[k]['r'] * 0.8))
+            return _SPR[k]
         nm = RD.CFG[k]['pp']
         key = f'{nm}_title'
         if os.path.exists(SPR_PATH):
@@ -236,7 +241,9 @@ def draw_big_ball(layer, alpha, k, cx, cy, rp, glow, col):
     nz = np.sqrt(np.clip(1 - d2, 0, 1))
     lam = np.clip(-0.25 * dx - 0.55 * dy + nz * 0.6, 0, 1)
     band = np.floor(lam * 4 + BAYER_FULL[:n, :n] * 0.9) / 4
-    inner = (col * 0.30 + np.array([236, 232, 226]) * 0.70)[None, None] * (0.70 + 0.36 * band[..., None])
+    import render as RD
+    glass = np.asarray(GLASS.get(RD.NAMES[k], (236, 232, 226)), float)   # opt-in tint (default: #30's cream glass)
+    inner = (col * 0.30 + glass * 0.70)[None, None] * (0.70 + 0.36 * band[..., None])
     xa, ya, xb, yb = max(0, x0), max(0, y0), min(W, x0 + n), min(H, y0 + n)
     if xb <= xa or yb <= ya:
         return
