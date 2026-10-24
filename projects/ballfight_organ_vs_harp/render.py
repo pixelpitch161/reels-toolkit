@@ -30,6 +30,7 @@ from reelkit.shadows import MaskGrid, proj_point
 from reelkit.lens import coc_map, dof
 from reelkit.post import bloom, grade, vignette, top_scrim
 from reelkit import ui
+from reelkit import fx
 from reelkit.ui import draw_captions, label, fight_hud, CREAM, AMBER, INK
 from reelkit.font import ADV, text_mask, dilate
 import timeline as T
@@ -228,28 +229,18 @@ KEYS = [  # (t, target, dist, yaw, pitch, fov, sy): gentle drift, a slight push-
     (58.0, AIM, 27.4, 0.2, 58.2, 36, SY),
     (61.0, AIM, 27.5, 0.0, 58.0, 36, SY),
 ]
-BIG = []                                             # (t, strength) camera shakes
+SHK = fx.Shake(cap=2.5)                              # a little camera shake on heavy hits (reelkit.fx)
 for e in EV:
-    if e[1] == 'hit' and e[7] in ('pipe', 'string', 'slam', 'wave', 'shockwave'):
-        BIG.append((e[0], {'pipe': 1.0, 'string': 0.3, 'slam': 3.5, 'wave': 2.5, 'shockwave': 1.6}[e[7]]))
+    if e[1] == 'hit' and e[7] in ('pipe', 'slam', 'wave'):
+        SHK.add(e[0], {'pipe': 1.1, 'slam': 2.5, 'wave': 2.0}[e[7]])
     if e[1] == 'slam':
-        BIG.append((e[0], 2.5))
-BIG.append((T_KO, 5.0))
-BIG_T = np.array([b[0] for b in BIG])
-BIG_S = np.array([b[1] for b in BIG])
-
-
-def shake(t):
-    m = (BIG_T <= t) & (BIG_T > t - 0.4)
-    if not m.any():
-        return 0.0, 0.0
-    a = float(np.max(BIG_S[m] * np.exp(-(t - BIG_T[m]) / 0.09)))
-    return a * math.sin(t * 2 * math.pi * 23), a * 0.7 * math.cos(t * 2 * math.pi * 29)
+        SHK.add(e[0], 1.6)
+SHK.add(T_KO, 2.5)
 
 
 def camera(t):
     cam = interp_keys(KEYS, t)
-    dx, dy = shake(t)
+    dx, dy = SHK.offset(t)
     cam.cx += dx
     cam.cy += dy
     return cam
@@ -281,6 +272,14 @@ def lights(t, cam):
     rk = 1.0 + 0.25 * T.beat_pulse(t, 0.2)
     L.point(S.RED_LIGHT, LIGHT_RGB[0] * 1.1 * rk, 2.6)
     L.point(S.BLUE_LIGHT, LIGHT_RGB[1] * 1.1 * rk, 2.6)
+    FL.apply(L, hz_clock(t))                                  # attacks light the scene in the fighter's colour
+    for k in SHIELD:                                          # a shield glows from inside: wine dome / warm angel light
+        st = fighter(k, t)
+        sk = shield_k(k, st, t) if T.T_FIGHT <= t < T_HS else 0.0
+        if sk > 0:
+            pw = S.to_world(st['p'][0], st['p'][1], R * 1.6)
+            c = COL[k] / 255.0 if SHIELD[k][0] == 'CATHEDRAL' else np.array([1.0, 0.86, 0.55])
+            L.point(pw, c * 0.9 * sk, 2.0)
     return L
 
 
@@ -660,6 +659,7 @@ def arena(fr, cam, L, t):
     heads = CROWD_P + np.stack([np.zeros(len(CROWD_P)), 0.55 * CROWD_HT, np.zeros(len(CROWD_P))], 1)
     dh = cam.depth(heads)
     sp = cam.wp(heads)
+    crowd_lit = 1.0 + 0.9 * FL.tint(heads, hz_clock(t))       # attack lights reach the crowd
     for j in range(len(CROWD_P)):
         items.append((dh[j] - 0.3, 1, j, None))
     items.sort(key=lambda it: -it[0])
@@ -689,7 +689,7 @@ def arena(fr, cam, L, t):
                 continue
             side = CROWD_P[j, 0]
             tint = CROWD_TINT[0] if side < -1.5 else (CROWD_TINT[1] if side > 1.5 else np.array([1.0, 0.92, 1.0]))
-            body = S.CROWD_COLS[CROWD_CI[j]] * tint * spill
+            body = np.clip(S.CROWD_COLS[CROWD_CI[j]] * tint * spill * crowd_lit[j], 0, 255)
             draw.ellipse([x - 1.9 * rh, y + 0.6 * rh, x + 1.9 * rh, y + 3.4 * rh], fill=tuple(int(v) for v in body * 0.8))
             draw.ellipse([x - rh, y - rh, x + rh, y + rh], fill=tuple(int(v) for v in body * 0.62))
             # rim light from the ring on the heads (they face it)
@@ -770,6 +770,159 @@ def strings_at(t):
 
 for _sid, _q in STRINGS.items():
     _q['harp_p'] = HARP_AT_LAY[_sid]
+
+
+# ---------------------------------------------------------------- effects (reelkit.fx, BALLFIGHT v2): built once from the run
+ORG, HRP = LINE_K[0], TRAP_K[0]
+DUST_COL = [(178, 160, 150), (150, 128, 126), (208, 190, 176), (176, 120, 136)]     # stone dust with a hint of wine
+FL = fx.Flares(max_n=6)
+BU = fx.Bursts()
+PA = fx.Particles(seed=35)
+MK = fx.Marks()
+MO = fx.Moments()
+
+
+def _fx_build():
+    # the organ's rows: each pipe kicks up dust as it bursts out; light runs along the row; the floor stays dusty a while
+    for l in LINES:
+        n = max(1, int(l['L'] / ST.PIPE_DX))
+        for j in range(n):
+            x = (j + 0.5) * l['L'] / n
+            te = l['t0'] + x / l['speed']
+            p = l['p0'] + l['u'] * x
+            PA.emit(te, S.to_world(p[0], p[1], 0.06), 'dust', n=2, col=DUST_COL, vel=S.to_world(*(l['u'] * 0.3), 0.0))
+            if j % 3 == 1:
+                FL.add(te, S.to_world(p[0], p[1], 1.0), COL[ORG], radius=1.2, peak=0.6, decay=0.18)
+            if j % 3 == 0:
+                MK.add(te, 'dust', p[0], p[1], size=0.24, col=(196, 180, 172), life=2.4, seed=l['id'] * 31 + j,
+                       strength=0.7)
+    # the harp's strings: a pearl light along the new string, motes sprinkled down it as it's drawn across
+    for sid, q in STRINGS.items():
+        a, b = q['a'], q['b']
+        if np.linalg.norm(q['harp_p'] - b) < np.linalg.norm(q['harp_p'] - a):
+            a, b = b, a
+        mid = (a + b) / 2
+        FL.add(q['t0'] + ST.DRAW_IN * 0.5, S.to_world(mid[0], mid[1], ST.STR_Y + 0.5), COL[HRP] * 0.9, radius=1.6, peak=0.4,
+               decay=0.3)
+        for j in range(6):
+            u = (j + 0.5) / 6
+            p = a + (b - a) * u
+            PA.emit(q['t0'] + ST.DRAW_IN * u, S.to_world(p[0], p[1], ST.STR_Y), 'motes', n=1)
+    # a thin trail of motes off the harp ball on every beat of the fight
+    tb = T.T_FIGHT
+    while tb < T_KO:
+        i = sim_i(tb)
+        p, v = RUN['P'][i, HRP], RUN['V'][i, HRP]
+        PA.emit(tb, S.to_world(p[0], p[1], R * 1.2), 'motes', n=1, vel=S.to_world(*(-0.25 * v), 0.0))
+        tb += T.BEAT
+    # hits: bursts, lights, particles, marks
+    for e in EV:
+        if e[0] > T_KO + 1e-6:
+            break
+        if e[1] == 'hit':
+            att, x, z, how, sub = e[2], e[5], e[6], e[7], e[8]
+            pos = S.to_world(x, z, R)
+            if how == 'pipe':
+                BU.add(e[0], pos, COL[att], 1.3)
+                FL.add(e[0], pos, COL[att], radius=1.6, peak=0.9, decay=0.28)
+                PA.emit(e[0], S.to_world(x, z, 0.1), 'dust', n=10, col=DUST_COL, speed=(0.6, 1.6))
+                MK.add(e[0], 'crack', x, z, size=0.55, n=5, life=4.0, seed=int(e[0] * 100))
+            elif how == 'string':
+                q = STRINGS.get(sub)
+                ang = math.atan2(*(q['b'] - q['a'])[::-1]) if q is not None else 0.0
+                BU.add(e[0], pos, COL[att], 0.7)
+                FL.add(e[0], pos, COL[att] * 0.9, radius=1.4, peak=0.6, decay=0.24)
+                PA.emit(e[0], pos, 'motes', n=8, speed=(0.5, 1.4))
+                MK.add(e[0], 'claw', x, z, size=0.42, angle=ang, n=1, col=(255, 246, 222), life=3.0, seed=int(e[0] * 100))
+            elif how == 'key':
+                BU.add(e[0], pos, COL[att], 0.35, bright=False)
+                PA.emit(e[0], pos, 'motes', n=3)
+            elif how == 'slam':
+                BU.add(e[0], pos, COL[att], 2.0)
+            elif how == 'wave':
+                BU.add(e[0], pos, COL[att], 1.6)
+                PA.emit(e[0], pos, 'motes', n=12, speed=(1.0, 2.2))
+        elif e[1] == 'block':
+            BU.add(e[0], S.to_world(e[4], e[5], R), (220, 230, 255), 0.6, bright=False)
+            PA.emit(e[0], S.to_world(e[4], e[5], R), 'motes' if e[2] == HRP else 'dust', n=5,
+                    col=None if e[2] == HRP else DUST_COL)
+    # TOCCATA's forest: dust everywhere, a cracked crater, a big wine light
+    for ts, owner, cx, cz in SLAM_EV:
+        c = S.to_world(cx, cz, 0.1)
+        FL.add(ts, S.to_world(cx, cz, 1.2), COL[owner], radius=2.4, peak=1.2, decay=0.5)
+        PA.emit(ts, c, 'dust', n=30, col=DUST_COL, spread=180, speed=(0.6, 1.8), scale=1.3)
+        MK.add(ts, 'crack', cx, cz, size=1.6, n=8, life=7.0, seed=int(ts * 10))
+        MK.add(ts, 'scorch', cx, cz, size=1.2, col=(120, 40, 70), life=7.0, seed=int(ts * 10) + 1, strength=0.6)
+    # abilities: 47 STRINGS lights the ring pearl and scars it; every captioned ability gets its moment
+    for e in EV:
+        if e[1] == 'ability' and e[3] == '47 STRINGS':
+            p = RUN['P'][sim_i(e[0]), e[2]]
+            FL.add(e[0], S.to_world(p[0], p[1], 1.0), COL[e[2]] * 0.9, radius=2.6, peak=0.75, decay=0.5)
+            MK.add(e[0], 'smoke_ring', p[0], p[1], size=1.5, life=5.0, seed=47, strength=0.7)
+    for t, who, name in STORY['caps']:
+        MO.add(t, who, COL[who])
+    # the K.O.
+    p = P_KO[LOSE]
+    pos = S.to_world(p[0], p[1], R)
+    BU.add(T_KO, pos, COL[LOSE], 2.0)
+    FL.add(T_KO, pos, COL[LOSE] * 0.9, radius=2.4, peak=1.1, decay=0.6)
+    PA.emit(T_KO, pos, 'motes' if NAMES[LOSE] == 'HARP' else 'dust', n=30, spread=180, speed=(0.8, 2.2),
+            col=None if NAMES[LOSE] == 'HARP' else DUST_COL)
+    # the organ's solo: every solo pipe kicks up a little dust
+    if NAMES[WIN] == 'ORGAN':
+        for j, (bt, m, d) in enumerate(T.SOLO['ORGAN']):
+            t0 = T_SOLO + bt * T.BEAT
+            if t0 < T.T_REASSEMBLE:
+                c = fighter(WIN, t0)['p']
+                a = 2 * math.pi * j / 8.0 + 0.4
+                PA.emit(t0 - HITSTOP, S.to_world(c[0] + 1.25 * math.cos(a), c[1] + 1.25 * math.sin(a), 0.06), 'dust',
+                        n=3, col=DUST_COL)
+                FL.add(t0 - HITSTOP, S.to_world(c[0] + 1.25 * math.cos(a), c[1] + 1.25 * math.sin(a), 1.2), COL[WIN],
+                       radius=1.4, peak=0.7, decay=0.25)
+
+
+_fx_build()
+
+
+def shimmers(img, cam, t, fs):
+    """heat-shimmer ripples: the 47 STRINGS wave front, TOCCATA's shock ring, the dome's echo rings"""
+    if T.T_FIGHT <= t < T_HS:
+        for owner, cx, cz, r, rmax, kind, t0 in RUN['WAVES'][sim_i(t)]:
+            img = fx.shimmer_world(img, cam, S.to_world(cx, cz, 0.05), r, 0.4, 3.0, t, k=1 - r / rmax, seed=owner)
+    tc = hz_clock(t)
+    rad = CFG[ORG]['abilities']['low']['radius']
+    for ts, owner, cx, cz in SLAM_EV:
+        u = (tc - ts) / 0.6
+        if 0 <= u < 1:
+            img = fx.shimmer_world(img, cam, S.to_world(cx, cz, 0.05), rad + 1.6 * u, 0.35, 3.0, t, k=1 - u)
+    for k in SHIELD:
+        if SHIELD[k][0] == 'CATHEDRAL' and fs[k]['shield'] > 0 and T.T_FIGHT <= t < T_HS:
+            past = [x for x in SHIELD_ON[k] if x <= t]
+            if past:
+                for rr_, a_ in ST.echo_rings(t, past[-1], 2 * T.BEAT):
+                    img = fx.shimmer_world(img, cam, S.to_world(fs[k]['p'][0], fs[k]['p'][1], 0.05), rr_, 0.2, 1.6, t,
+                                           k=a_ / 0.6)
+    return img
+
+
+def post_fx(img, cam, t, fs, drawn):
+    """after the grade: chromatic fringing on big hits, the ability moments (dim + speed lines), the impact bursts"""
+    for _, e in events_between(t - 0.12, t, ('hit',)):
+        if e[7] in ('pipe', 'slam', 'wave'):
+            s_ = cam.wp(S.to_world(e[5], e[6], R)[None])[0]
+            img = fx.fringe(img, s_[0], s_[1], 26 if e[7] != 'pipe' else 18, 2.5 if e[7] != 'pipe' else 1.6,
+                            k=1 - (t - e[0]) / 0.12)
+    if T_KO <= t < T_HS + 0.3:
+        s_ = cam.wp(S.to_world(P_KO[LOSE][0], P_KO[LOSE][1], R)[None])[0]
+        img = fx.fringe(img, s_[0], s_[1], 34, 3.0, k=1 - ss(T_HS, T_HS + 0.3, t))
+    keep = [(s_[0], s_[1], rp * 1.7) for k, (s_, rp) in drawn.items()]
+    img = MO.apply_dim(img, t, keep=keep)
+    for k, (s_, rp) in drawn.items():
+        p1 = fighter(k, max(0.0, t - 0.06))['p']
+        s1 = cam.wp(S.to_world(p1[0], p1[1], R)[None])[0]
+        img = MO.speed_lines(img, t, k, s_[0], s_[1], rp, (s_[0] - s1[0], s_[1] - s1[1]))
+    img = BU.draw(img, cam, t)
+    return img
 
 
 # ---------------------------------------------------------------- shadows on the canvas (from the spot)
@@ -907,6 +1060,7 @@ def render(f):
         Xp, Zp = Xc[ys, xs], Zc[ys, xs]
         sxp, szp = sx[ys, xs], sz[ys, xs]
         alb = S.canvas_albedo(sxp, szp)
+        alb = MK.apply(alb, sxp, szp, hz_clock(t), BAYER_FULL[ys, xs])      # fading marks (reelkit.fx)
         sh = CANVAS_GRID.sample(canvas_shadows(cam, t, fs, keys, spot, pipes, strs), Xp, Zp)
         v = np.stack([Xp - spot[0], -spot[1] * np.ones_like(Xp), Zp - spot[2]], 1)
         dist = np.linalg.norm(v, axis=1)
@@ -933,7 +1087,7 @@ def render(f):
                 m_ = (np.abs(sxp - psx) < 0.5) & (np.abs(szp - psz) < 0.5)
                 if m_.any():
                     dd_ = np.hypot(sxp[m_] - psx, szp[m_] - psz)
-                    Ic[m_] += (np.clip(1 - dd_ / 0.45, 0, 1) * g * 0.5)[:, None] * (COL[owner] / 255.0 + 0.15)[None]
+                    Ic[m_] += (np.clip(1 - dd_ / 0.45, 0, 1) * g * 0.35)[:, None] * (COL[owner] / 255.0 + 0.15)[None]
         # the dome's echo rings
         for k in SHIELD:
             if SHIELD[k][0] == 'CATHEDRAL' and fs[k]['shield'] > 0 and in_fight:
@@ -1102,12 +1256,15 @@ def render(f):
             shade_k = 0.75 + 0.25 * math.cos(rot * 2)
             layer_blend(arr, [sp], np.clip(col * shade_k, 0, 255), 1.0)
     sparks(arr, cam, t)
+    tc = hz_clock(t)
+    arr = PA.draw(arr, cam, tc, light=lambda P: 1.0 + 0.6 * FL.tint(P, tc))   # organ dust + harp shimmer motes
     cs = cam.wp(np.array([[0.0, 0.3, 0.0]]))[0]
     fr.set_array(arr, depth)
     # ---------------- lens (focus locked on the ring), glows, the spot beam, bloom, grade
     img, depth = fr.array(), fr.depth()
     zf = cam.depth(S.SUBJECT)[0]
     img = dof(img, coc_map(depth, zf, 26.0, sharp=0.17))
+    img = shimmers(img, cam, t, fs)                                # heat-shimmer ripples on shockwave fronts (reelkit.fx)
     for name, lp in (('red', S.RED_LIGHT), ('blue', S.BLUE_LIGHT)):
         s_ = cam.wp(lp[None])[0]
         fr.glow(s_[0], s_[1], 16, tuple(COL[0] if name == 'red' else COL[1]), 0.35 + 0.15 * T.beat_pulse(t, 0.2))
@@ -1123,7 +1280,7 @@ def render(f):
         if e[7] in BIG_HITS or e[7] == 'string':
             s_ = cam.wp(S.to_world(e[5], e[6], R)[None])[0]
             big = e[7] != 'string'
-            fr.glow(s_[0], s_[1], 14 if big else 8, tuple(COL[e[2]] * 0.7 + 70), (0.7 if big else 0.5) * (1 - (t - e[0]) / 0.15))
+            fr.glow(s_[0], s_[1], 12 if big else 7, tuple(COL[e[2]] * 0.7 + 70), (0.4 if big else 0.25) * (1 - (t - e[0]) / 0.15))
     if T_KO <= t < T_HS + 0.25:
         s_ = cam.wp(S.to_world(P_KO[LOSE][0], P_KO[LOSE][1], R)[None])[0]
         fr.glow(s_[0], s_[1], 46, (255, 240, 220), 0.9 * (1 - ss(T_KO, T_HS + 0.25, t)))
@@ -1144,8 +1301,9 @@ def render(f):
     if -30 < s0[1] < 60:
         img = apply_glows(img, [(s0[0], s0[1], 30, (255, 244, 220), 0.9), (s0[0], s0[1], 10, (255, 255, 255), 1.0)])
     img = grade(bloom(np.clip(img, 0, 255), thr=225, k=0.22), contrast=0.18, sat=1.18)
-    img = np.clip(img * vignette(strength=0.45) * top_scrim(0.45, 100, 90), 0, 255).astype(np.uint8)
-    img = np.ascontiguousarray(img)
+    img = np.clip(img * vignette(strength=0.45) * top_scrim(0.45, 100, 90), 0, 255)
+    img = post_fx(img, cam, t, fs, drawn)                          # fringe, ability dim + speed lines, impact bursts
+    img = np.ascontiguousarray(np.clip(img, 0, 255).astype(np.uint8))
     # ---------------- UI: countdown, HP numbers in the balls, fight HUD, captions
     countdown(img, t, cs)
     for k, (s_, rp) in drawn.items():
