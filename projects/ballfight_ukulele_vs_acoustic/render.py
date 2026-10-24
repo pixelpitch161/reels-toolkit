@@ -1,15 +1,16 @@
-"""#33 BALLFIGHT #7: Ukulele vs Acoustic Guitar - renderer (#28's renderer, copied, with this pair's weapons and
-abilities; the new weapon styles live in styles.py).
+"""#33 BALLFIGHT #7: Ukulele vs Acoustic Guitar - renderer, v2 (BALLFIGHT v2 redesign, user Oct 24): SURF'S UP vs
+SIX-STRING RAKE on reelkit.fx (#28's renderer, copied; the weapon styles live in styles.py; v1 = render_v1_backup.py).
 
-arena floor (per pixel: spill, corner lights) -> stands + crowd (phones, flashbulbs) -> ring skirt -> canvas (per pixel:
-the hard spot with real shadows of balls, darts, posts and ropes; the corner lights in the fighters' colours; decals:
-the cone's light, CHUNK's ring, UKE-NADO's whirl, BIG STRUM's target) -> back ropes + posts -> the acoustic's sound
-cones -> fighters (dash afterimages, the capo, the whirl), darts (painter) -> front ropes + posts -> effects (the giant
-pick, sparks, shards) -> countdown -> locked DOF on the ring -> glows -> spot beam -> bloom -> grade -> scrim -> HP
-numbers, fight HUD, captions.
+arena floor (per pixel: spill, corner lights, attack lights) -> stands + crowd (phones, flashbulbs, lit by attacks) ->
+ring skirt -> canvas (per pixel: the hard spot with real shadows of balls, waves, posts and ropes; the corner lights in
+the fighters' colours; attack lights (reelkit.fx flares); fading marks (claw marks from every rake stroke, water from
+waves and the spout); decals: the rake's light, CHUNK's splash ring, BIG STRUM's sweep) -> back ropes + posts -> waves,
+fighters (the capo), rake strings, whips, the waterspout (painter) -> BIG STRUM's six strings -> front ropes + posts ->
+effects (sparks, shards, foam + wood-chip particles) -> countdown -> locked DOF on the ring -> heat shimmer -> glows ->
+spot beam -> bloom -> grade -> scrim -> fringing, ability moments, impact bursts -> HP numbers, fight HUD, captions.
 
     python render.py                                   # sprite cache (check/sprites_ballfight7.npz)
-    python -m reelkit.sheet render.py test/sheet.png 0.0 1.0 7.9 13.9 21.7 27.4 44.0 51.9 54 58.6
+    python -m reelkit.sheet render.py test/sheet.png 0.0 1.0 4.1 9.3 13.5 20.0 25.1 41.7 42.6 52.3 55 59.6
     python -m reelkit.video render.py audio.wav out.mp4"""
 import math
 import os
@@ -30,6 +31,7 @@ from reelkit.shadows import MaskGrid, proj_point
 from reelkit.lens import coc_map, dof
 from reelkit.post import bloom, grade, vignette, top_scrim
 from reelkit import ui
+from reelkit import fx
 from reelkit.ui import draw_captions, label, fight_hud, CREAM, AMBER, INK
 from reelkit.font import ADV, text_mask, dilate
 import timeline as T
@@ -54,8 +56,9 @@ R = S.R_BALL
 HITSTOP = 0.35
 T_HS = T_KO + HITSTOP
 BLADE = [k for k in (0, 1) if CFG[k]['weapon']['kind'] == 'blade']        # none in this pair (kept for focus_check)
-DASHER = [k for k in (0, 1) if CFG[k]['weapon']['kind'] == 'dash']
-CONER = [k for k in (0, 1) if CFG[k]['weapon']['kind'] == 'cone']
+SURFER = [k for k in (0, 1) if CFG[k]['weapon']['kind'] == 'surf']
+RAKER = [k for k in (0, 1) if CFG[k]['weapon']['kind'] == 'rake']
+CONER = RAKER                                                               # the capo is drawn on the raker's ball
 CORNER0 = [np.array(c) for c in RUN['corner']]
 STORY = sim.story(RUN)
 
@@ -75,23 +78,131 @@ T_SOLO = T.next_bar(T_KO + 1.6)                       # the winner's solo starts
 SOLO_T = [T_SOLO + bt * T.BEAT for bt, m, d in T.SOLO[NAMES[WIN]]]
 
 
-# the acoustic's cones: (t0, owner, main, length, cx, cz, aim, half, speed) straight from the 'cone' events (the engine
-# fires them from the ball's centre at that instant); the uke's dashes: (t0, owner, main, power, x, z, angle)
-CONE_EV = [(e[0], e[2], e[3], e[4], e[5], e[6], e[7], math.radians(CFG[e[2]]['weapon']['half']),
-            CFG[e[2]]['weapon']['speed']) for e in EV if e[1] == 'cone']
-CONE_T = np.array([c[0] for c in CONE_EV]) if CONE_EV else np.zeros(0)
-DASH_EV = [(e[0], e[2], e[3], e[4], e[5], e[6], e[7]) for e in EV if e[1] == 'dash']
-DASH_T = np.array([d[0] for d in DASH_EV]) if DASH_EV else np.zeros(0)
-DASH_HIT_T = np.array([e[0] for e in EV if e[1] == 'hit' and e[7] == 'dash'])
-LOW_NAME = [CFG[k]['abilities']['low']['name'] for k in (0, 1)]
-WHIRL = {e[2]: e[0] for e in EV if e[1] == 'ability' and e[3] == 'UKE-NADO'}      # the uke's tornado (if it fires)
+# ---------------------------------------------------------------- v2 attacks, rebuilt from the run's events (closed-form
+# motion, the same formulas as the engine, so frames render in any order)
+RULES = sim.rules()
+DT = RULES.DT
 
 
-def whirl_k(k, t):
-    if k not in WHIRL:
+def _surfs():
+    """SURF'S UP waves: dict(t0, owner, main, h, o, u, power, hw, t_end, crashed); the end replays the engine's rule on
+    its substep grid (the front reaches the ropes, or the wave's life runs out)"""
+    out = []
+    A = RULES.A
+    for e in EV:
+        if e[1] != 'surf':
+            continue
+        k = e[2]
+        o = np.array([e[5], e[6]])
+        u = np.array([math.cos(e[7]), math.sin(e[7])])
+        power, hw = e[8], e[9]
+        life = CFG[k]['weapon']['life']
+        m = 0
+        while True:
+            tau = m * DT
+            c = o + u * fight_surf_dist(tau, power)
+            if abs(c[0]) >= A - 0.05 or abs(c[1]) >= A - 0.05 or tau >= life:
+                break
+            m += 1
+        out.append(dict(t0=e[0], owner=k, main=bool(e[3]), h=e[4], o=o, u=u, power=power, hw=hw,
+                        t_end=min(e[0] + m * DT, T_KO), crashed=tau < life and e[0] + m * DT <= T_KO))
+    return out
+
+
+def fight_surf_dist(tau, power):
+    from fight import Fight
+    return Fight.surf_dist(tau, RULES.V, power, RULES.KNOCK_T)
+
+
+SURFS = _surfs()
+SURF_HIT = {}                                          # t0 of the wave -> time it crashed into the enemy
+for e in EV:
+    if e[1] == 'hit' and e[7] == 'surf':
+        past = [w for w in SURFS if w['owner'] == e[2] and w['t0'] <= e[0] <= w['t_end'] + 1e-6]
+        if past:
+            SURF_HIT[past[-1]['t0']] = e[0]
+RAKES = [dict(t0=e[0], owner=e[2], main=bool(e[3]), L=e[4], c=np.array([e[5], e[6]]), aim=e[7],
+              u=np.array([math.cos(e[7]), math.sin(e[7])]), n=np.array([-math.sin(e[7]), math.cos(e[7])]), dir=e[8],
+              S=e[9], dur=e[10]) for e in EV if e[1] == 'rake']
+RAKE_T = np.array([r_['t0'] for r_ in RAKES]) if RAKES else np.zeros(0)
+RAKE_HIT = set()
+for e in EV:
+    if e[1] == 'hit' and e[7] == 'rake':
+        j = int(np.searchsorted(RAKE_T, e[0], 'right')) - 1
+        if j >= 0:
+            RAKE_HIT.add(j)
+GAP = [CFG[k]['weapon'].get('gap', 0.085) for k in (0, 1)]
+WHIPS = [dict(t0=e[0], owner=e[2], j=e[3], ang=e[4], len=e[5]) for e in EV if e[1] == 'whip']
+T_EXT = [CFG[k]['abilities']['unlock2'].get('t_ext', 0.07) for k in (0, 1)]
+SWEEPS = [dict(t0=e[0], owner=e[2], c=np.array([e[3], e[4]]), u=np.array([math.cos(e[5]), math.sin(e[5])]), aim=e[5],
+               reach=e[6], dur=e[7]) for e in EV if e[1] == 'sweep']
+SPOUT_PATH = RUN.get('X33_SPOUT', [])
+SPOUT_T = np.array([q[0] for q in SPOUT_PATH]) if SPOUT_PATH else np.zeros(0)
+SPOUTS = []
+for e in EV:
+    if e[1] == 'spout':
+        ends = [x[0] for x in EV if x[1] == 'spout_end' and x[2] == e[2] and x[0] >= e[0]]
+        SPOUTS.append(dict(t0=e[0], owner=e[2], p0=np.array([e[3], e[4]]), t_end=min(ends[0] if ends else T_KO, T_KO)))
+
+
+def surf_height(w, t):
+    """the wave's height at t: rises over 0.12 s, rolls, collapses over 0.25 s after it ends"""
+    Hh = 0.32 + 0.45 * w['h']
+    if t < w['t0']:
         return 0.0
-    t0 = WHIRL[k]
-    return ss(t0, t0 + 0.08, t) * (1 - ss(t0 + 1.2, t0 + 1.6, t))
+    rise = ss(w['t0'], w['t0'] + 0.12, t)
+    fall = 1 - ss(w['t_end'], w['t_end'] + 0.25, t)
+    return Hh * rise * fall
+
+
+def surf_front(w, t):
+    tau = min(t, w['t_end']) - w['t0']
+    c = w['o'] + w['u'] * fight_surf_dist(max(0.0, tau), w['power'])
+    if t > w['t_end']:                                  # collapsing: the foam slides on a little
+        c = c + w['u'] * 0.6 * ss(w['t_end'], w['t_end'] + 0.25, t)
+    return c
+
+
+def waves_at(t):
+    return [w for w in SURFS if w['t0'] <= t < w['t_end'] + 0.25]
+
+
+def rakes_at(t):
+    """(rake, s_now, s_prev, k) for strokes still showing (the stroke + a 0.14 s fade)"""
+    if not len(RAKE_T):
+        return []
+    from fight import Fight
+    out = []
+    j0, j1 = np.searchsorted(RAKE_T, t - 0.4), np.searchsorted(RAKE_T, t, 'right')
+    for j in range(j0, j1):
+        r_ = RAKES[j]
+        tau = t - r_['t0']
+        if tau > r_['dur'] + 0.2:
+            continue
+        sn = Fight.rake_lateral(tau, r_['dur'], r_['S'], r_['dir'])
+        sp = Fight.rake_lateral(max(0.0, tau - 1.0 / FPS), r_['dur'], r_['S'], r_['dir'])
+        k = 1.0 if tau <= r_['dur'] else 1 - (tau - r_['dur']) / 0.2
+        out.append((j, r_, sn, sp, k))
+    return out
+
+
+def spout_at(t):
+    """(owner, position, strength) of a live waterspout"""
+    for sp in SPOUTS:
+        if sp['t0'] <= t < sp['t_end'] + 0.4 and len(SPOUT_T):
+            tt = min(t, sp['t_end'])
+            i = int(np.searchsorted(SPOUT_T, tt))
+            if i <= 0:
+                p = sp['p0']
+            elif i >= len(SPOUT_T):
+                p = np.array(SPOUT_PATH[-1][2:4])
+            else:
+                a, b = SPOUT_PATH[i - 1], SPOUT_PATH[i]
+                u = (tt - a[0]) / max(1e-9, b[0] - a[0])
+                p = np.array(a[2:4]) * (1 - u) + np.array(b[2:4]) * u
+            k = ss(sp['t0'], sp['t0'] + 0.25, t) * (1 - ss(sp['t_end'], sp['t_end'] + 0.4, t))
+            return sp['owner'], p, k
+    return None
 
 
 SOLO_STRUMS = [T_SOLO + bt * T.BEAT for bt, m, d in T.SOLO[NAMES[WIN]] if isinstance(m, tuple)]
@@ -158,7 +269,7 @@ FRETS0 = [CFG[k]['weapon'].get('frets0', 0) for k in (0, 1)]
 def fighter(k, t):
     """picture state of fighter k at time t: dict(p (ring frame), vis, th, blen, frets, shield, haste, glow, scale)"""
     st = dict(vis=True, shield=0.0, haste=0.0, glow=0.0, scale=1.0, th=0.0, blen=BASE_LEN[k], frets=FRETS0[k],
-              level=1, shattered=False, om=OMEGA[k], sd=SD0[k], dash=0.0)
+              level=1, shattered=False, om=OMEGA[k], sd=SD0[k], lift=0.0)
     if t < T.T_FIGHT:
         st['p'] = CORNER0[k] + rev_offset(k, t)
         st['th'] = theta_open(k, t)
@@ -176,17 +287,17 @@ def fighter(k, t):
         st['om'] = float(RUN['OM'][i, k])
         st['sd'] = float(RUN['SPIN'][i, k])
         tc = min(t, T_KO)
-        if k in CONER and len(CONE_T):                            # the acoustic flashes on every strum
-            j = np.searchsorted(CONE_T, tc, 'right') - 1
+        if k in RAKER and len(RAKE_T):                            # the acoustic flashes on every stroke
+            j = np.searchsorted(RAKE_T, tc, 'right') - 1
             if j >= 0:
-                st['glow'] = 0.40 * math.exp(-(tc - CONE_T[j]) / 0.09)
-        if k in DASHER and len(DASH_T):                           # the uke glows as it launches, speed sets the trail
-            j = np.searchsorted(DASH_T, tc, 'right') - 1
-            if j >= 0:
-                st['glow'] = 0.45 * math.exp(-(tc - DASH_T[j]) / 0.12)
-                spd = float(np.hypot(*RUN['V'][i, k]))
-                st['dash'] = float(np.clip((spd / 2.6 - 1.25) / 1.2, 0, 1)) * (tc - DASH_T[j] < 0.6)
-        st['whirl'] = whirl_k(k, tc)
+                st['glow'] = 0.35 * math.exp(-(tc - RAKE_T[j]) / 0.09)
+        if k in SURFER:                                           # the uke rides its wave: lifted on the crest, glowing
+            for w in SURFS:
+                if w['owner'] == k and w['t0'] <= tc < w['t_end'] + 0.25:
+                    hgt = surf_height(w, tc)
+                    ride = 1 - ss(w['t0'] + 0.55, w['t0'] + 0.9, tc)
+                    st['lift'] = max(st['lift'], 0.45 * hgt * ride)
+                    st['glow'] = max(st['glow'], 0.45 * math.exp(-(tc - w['t0']) / 0.14))
         if t >= T_KO and k == LOSE:
             st['glow'] = 1.0
         return st
@@ -233,28 +344,16 @@ KEYS = [  # (t, target, dist, yaw, pitch, fov, sy): gentle drift, a slight push-
     (58.0, AIM, 27.4, 0.2, 58.2, 36, SY),
     (61.0, AIM, 27.5, 0.0, 58.0, 36, SY),
 ]
-BIG = []                                             # (t, strength) camera shakes
+SHK = fx.Shake(cap=2.5)                              # a little camera shake on heavy hits (reelkit.fx)
 for e in EV:
-    if e[1] == 'hit' and e[7] in ('dash', 'cone', 'slam', 'wave', 'shockwave'):
-        BIG.append((e[0], {'dash': 1.1, 'cone': 0.5, 'slam': 3.5, 'wave': 2.5, 'shockwave': 1.6}[e[7]]))
-    if e[1] == 'slam':
-        BIG.append((e[0], 2.5))
-BIG.append((T_KO, 5.0))
-BIG_T = np.array([b[0] for b in BIG])
-BIG_S = np.array([b[1] for b in BIG])
-
-
-def shake(t):
-    m = (BIG_T <= t) & (BIG_T > t - 0.4)
-    if not m.any():
-        return 0.0, 0.0
-    a = float(np.max(BIG_S[m] * np.exp(-(t - BIG_T[m]) / 0.09)))
-    return a * math.sin(t * 2 * math.pi * 23), a * 0.7 * math.cos(t * 2 * math.pi * 29)
+    if e[1] == 'hit' and e[7] in ('surf', 'rake', 'sweep', 'spout', 'shockwave'):
+        SHK.add(e[0], {'surf': 1.2, 'rake': 0.5, 'sweep': 2.5, 'spout': 1.0, 'shockwave': 1.4}[e[7]])
+SHK.add(T_KO, 2.5)
 
 
 def camera(t):
     cam = interp_keys(KEYS, t)
-    dx, dy = shake(t)
+    dx, dy = SHK.offset(t)
     cam.cx += dx
     cam.cy += dy
     return cam
@@ -286,6 +385,7 @@ def lights(t, cam):
     rk = 1.0 + 0.25 * T.beat_pulse(t, 0.2)
     L.point(S.RED_LIGHT, LIGHT_RGB[0] * 1.1 * rk, 2.6)
     L.point(S.BLUE_LIGHT, LIGHT_RGB[1] * 1.1 * rk, 2.6)
+    FL.apply(L, t)                                          # attacks light the scene in the fighter's colour (fx)
     return L
 
 
@@ -497,7 +597,7 @@ def screen(cam, P):
 
 # ---------------------------------------------------------------- glass balls
 def draw_ball(arr, dep, cam, k, st, t):
-    pw = S.to_world(st['p'][0], st['p'][1], R)
+    pw = S.to_world(st['p'][0], st['p'][1], R + st.get('lift', 0.0))
     Pc = cam.to_cam(pw[None])[0]
     s = cam.proj(Pc[None])[0]
     rp = R * cam.f / Pc[2] * st['scale']
@@ -670,6 +770,7 @@ def arena(fr, cam, L, t):
     heads = CROWD_P + np.stack([np.zeros(len(CROWD_P)), 0.55 * CROWD_HT, np.zeros(len(CROWD_P))], 1)
     dh = cam.depth(heads)
     sp = cam.wp(heads)
+    crowd_lit = 1.0 + 0.9 * FL.tint(heads, t)               # attack lights reach the crowd (fx)
     for j in range(len(CROWD_P)):
         items.append((dh[j] - 0.3, 1, j, None))
     items.sort(key=lambda it: -it[0])
@@ -699,7 +800,7 @@ def arena(fr, cam, L, t):
                 continue
             side = CROWD_P[j, 0]
             tint = CROWD_TINT[0] if side < -1.5 else (CROWD_TINT[1] if side > 1.5 else np.array([1.0, 0.92, 1.0]))
-            body = S.CROWD_COLS[CROWD_CI[j]] * tint * spill
+            body = np.clip(S.CROWD_COLS[CROWD_CI[j]] * tint * spill * crowd_lit[j], 0, 255)
             draw.ellipse([x - 1.9 * rh, y + 0.6 * rh, x + 1.9 * rh, y + 3.4 * rh], fill=tuple(int(v) for v in body * 0.8))
             draw.ellipse([x - rh, y - rh, x + rh, y + rh], fill=tuple(int(v) for v in body * 0.62))
             # rim light from the ring on the heads (they face it)
@@ -713,6 +814,175 @@ def arena(fr, cam, L, t):
                 draw.rectangle([x + rh * 0.3, py - max(1, rh * 0.7), x + rh * 0.3 + max(1, rh * 0.5), py], fill=c2)
             if nflash and (int(ph * 997) + int(recent[-1] * 100)) % 47 < 1 + nflash:
                 draw.ellipse([x - 1.6, y - 2.6 * rh - 1.6, x + 1.6, y - 2.6 * rh + 1.6], fill=(255, 255, 255))
+
+
+# ---------------------------------------------------------------- effects (reelkit.fx, BALLFIGHT v2): built once from the run
+def hz_clock(t):
+    """marks' clock: real time in the fight, held through the hit-stop, then running on"""
+    if t < T_KO:
+        return t
+    if t < T_HS:
+        return T_KO
+    return t - HITSTOP
+
+
+def sweep_front_at(sw, t):
+    from fight import Fight
+    return Fight.sweep_front(t - sw['t0'], sw['dur'], sw['reach'], R)
+
+
+FL = fx.Flares(max_n=6)
+BU = fx.Bursts()
+PA = fx.Particles(seed=33)
+MK = fx.Marks(max_live=40)
+MO = fx.Moments()
+CLAW_COL = (70, 44, 30)
+
+
+def _fx_build():
+    # SURF'S UP: the crest lights the ring as it rolls, foam flies off the lip, the crash leaves water on the canvas
+    for w in SURFS:
+        k = w['owner']
+        dur = w['t_end'] - w['t0']
+        Hh = 0.32 + 0.45 * w['h']
+        tau = 0.0
+        while tau <= dur:
+            c = w['o'] + w['u'] * fight_surf_dist(tau, w['power'])
+            n = np.array([-w['u'][1], w['u'][0]])
+            for side in (-0.8, 0.0, 0.8):
+                q = c + n * side * w['hw']
+                PA.emit(w['t0'] + tau, S.to_world(q[0], q[1], Hh * 0.9), 'foam', n=1, dir=(w['u'][0], 0.6, w['u'][1]),
+                        vel=S.to_world(*(w['u'] * 1.2), 0.0), speed=(0.4, 1.0))
+            if tau in (0.0,) or abs(tau - 0.3) < 0.05:
+                FL.add(w['t0'] + tau, S.to_world(c[0], c[1], 0.8), COL[k], radius=1.6, peak=0.45, decay=0.22)
+            tau += 0.08
+        cend = w['o'] + w['u'] * fight_surf_dist(dur, w['power'])
+        if w['crashed']:
+            PA.emit(w['t_end'], S.to_world(cend[0], cend[1], Hh * 0.7), 'foam', n=14, dir=(w['u'][0], 1.0, w['u'][1]),
+                    speed=(0.8, 2.2), spread=80)
+        if w['t_end'] < T_KO:
+            MK.add(w['t_end'], 'water', cend[0], cend[1], size=0.3 + 0.3 * w['hw'], life=2.5, seed=int(w['t0'] * 97),
+                   strength=0.6)
+    # SIX-STRING RAKE: every stroke lights the strings and leaves six-line claw marks where it ends
+    for j, r_ in enumerate(RAKES):
+        k = r_['owner']
+        from fight import Fight
+        s_end = Fight.rake_lateral(r_['dur'], r_['dur'], r_['S'], r_['dir'])
+        mid = r_['c'] + r_['u'] * (R + r_['L'] * 0.5) + r_['n'] * s_end
+        FL.add(r_['t0'] + r_['dur'] * 0.5, S.to_world(mid[0], mid[1], 0.7), COL[k] * 0.9, radius=1.3,
+               peak=0.35 if r_['main'] else 0.22, decay=0.14)
+        if r_['t0'] + r_['dur'] < T_KO:
+            MK.add(r_['t0'] + r_['dur'], 'claw', mid[0], mid[1], size=r_['L'] * 0.5, angle=r_['aim'], n=6,
+                   col=CLAW_COL, life=2.6, seed=j, strength=0.95 if j in RAKE_HIT else 0.5)
+    # hits
+    for e in EV:
+        if e[1] != 'hit':
+            continue
+        att, x, z, how = e[2], e[5], e[6], e[7]
+        pos = S.to_world(x, z, R)
+        if how == 'surf':
+            BU.add(e[0], pos, COL[att], 1.0 + 0.5 * min(1.0, e[8] if len(e) > 8 else 1))
+            FL.add(e[0], pos, COL[att], radius=1.8, peak=0.85, decay=0.28)
+            PA.emit(e[0], pos, 'foam', n=14, speed=(1.0, 2.4), spread=110)
+            MK.add(e[0], 'water', x, z, size=0.45, life=2.5, seed=int(e[0] * 100), strength=0.7)
+        elif how == 'rake':
+            BU.add(e[0], pos, COL[att], 0.8)
+            FL.add(e[0], pos, COL[att] * 0.95, radius=1.5, peak=0.65, decay=0.22)
+            PA.emit(e[0], pos, 'chips', n=8)
+        elif how == 'whip':
+            BU.add(e[0], pos, COL[att], 0.4, bright=False)
+            PA.emit(e[0], pos, 'chips', n=3, speed=(1.0, 2.0))
+        elif how == 'sweep':
+            BU.add(e[0], pos, COL[att], 2.0)
+            FL.add(e[0], pos, COL[att], radius=2.4, peak=1.1, decay=0.5)
+            PA.emit(e[0], pos, 'chips', n=24, speed=(1.5, 3.2), scale=1.2)
+            MK.add(e[0], 'claw', x, z, size=1.2, angle=math.atan2(*(SWEEPS[0]['u'][::-1])) + math.pi / 2 if SWEEPS else 0.0,
+                   n=6, col=CLAW_COL, life=6.0, seed=77)
+        elif how == 'spout':
+            BU.add(e[0], pos, COL[att], 1.1)
+            FL.add(e[0], pos, COL[att], radius=1.8, peak=0.8, decay=0.3)
+            PA.emit(e[0], pos, 'foam', n=12, speed=(1.0, 2.6), spread=150)
+        elif how == 'shockwave':
+            BU.add(e[0], pos, COL[att], 1.2)
+            FL.add(e[0], pos, COL[att], radius=1.8, peak=0.8, decay=0.3)
+    # BIG STRUM: the sweep lights the ring as it crosses
+    for sw in SWEEPS:
+        for u_ in (0.2, 0.5, 0.8):
+            f = sweep_front_at(sw, sw['t0'] + sw['dur'] * u_)
+            c = sw['c'] + sw['u'] * f
+            FL.add(sw['t0'] + sw['dur'] * u_, S.to_world(c[0], c[1], 0.9), COL[sw['owner']], radius=2.6, peak=0.6, decay=0.25)
+    # UKE-NADO: foam spins off the base, water trails on the canvas
+    for sp in SPOUTS:
+        tt_ = sp['t0']
+        n = 0
+        while tt_ < sp['t_end']:
+            pr = spout_at(tt_)
+            if pr is not None:
+                p_ = pr[1]
+                PA.emit(tt_, S.to_world(p_[0], p_[1], 0.1), 'foam', n=2, spread=180, speed=(0.6, 1.6))
+                if n % 4 == 0:
+                    MK.add(tt_, 'water', p_[0], p_[1], size=0.4, life=2.5, seed=n + 500, strength=0.6)
+                if n % 5 == 0:
+                    FL.add(tt_, S.to_world(p_[0], p_[1], 1.2), COL[sp['owner']], radius=1.6, peak=0.4, decay=0.3)
+            tt_ += 0.06
+            n += 1
+    # CHUNK: a splash ring of foam
+    for e in EV:
+        if e[1] == 'ability' and e[3] == 'CHUNK':
+            i_ = int(min(NSIM - 1, max(0, round((e[0] - T.T_FIGHT) * FPS))))
+            p_ = RUN['P'][i_, e[2]]
+            for a in np.linspace(0, 2 * math.pi, 12, endpoint=False):
+                q = p_ + 0.7 * np.array([math.cos(a), math.sin(a)])
+                PA.emit(e[0], S.to_world(q[0], q[1], 0.1), 'foam', n=1, dir=(math.cos(a), 0.8, math.sin(a)), speed=(1.0, 2.0))
+            MK.add(e[0], 'water', p_[0], p_[1], size=0.9, life=3.0, seed=int(e[0] * 10))
+    # ability moments on the captioned first uses
+    for t, who, name in STORY['caps']:
+        MO.add(t, who, COL[who])
+    # the K.O.
+    pos = S.to_world(P_KO[LOSE][0], P_KO[LOSE][1], R)
+    BU.add(T_KO, pos, COL[LOSE], 2.0)
+    FL.add(T_KO, pos, COL[LOSE] * 0.9, radius=2.4, peak=1.1, decay=0.6)
+    PA.emit(T_KO, pos, 'chips' if NAMES[LOSE] == 'ACOUSTIC' else 'foam', n=30, spread=180, speed=(0.8, 2.4), scale=1.2)
+
+
+_fx_build()
+
+
+def shimmers(img, cam, t, ta, sweeps_now, spout_now):
+    """heat-shimmer ripples: CHUNK's splash front, BIG STRUM's sweep front, round the waterspout"""
+    if T.T_FIGHT <= t < T_HS:
+        for owner, cx, cz, r, rmax, kind, t0 in RUN['WAVES'][sim_i(t)]:
+            img = fx.shimmer_world(img, cam, S.to_world(cx, cz, 0.05), r, 0.35, 2.4, t, k=1 - r / rmax, seed=owner)
+    for sw in sweeps_now:
+        tau = ta - sw['t0']
+        if tau <= sw['dur']:
+            f = sweep_front_at(sw, ta)
+            c = sw['c'] + sw['u'] * f
+            img = fx.shimmer_world(img, cam, S.to_world(c[0], c[1], 0.05), 1.6, 0.5, 2.6, t, k=0.8)
+    if spout_now is not None:
+        owner, p_, k_ = spout_now
+        img = fx.shimmer_world(img, cam, S.to_world(p_[0], p_[1], 0.05), 0.9, 0.3, 1.8, t, k=k_)
+    return img
+
+
+def post_fx(img, cam, t, fs, drawn):
+    """after the grade: chromatic fringing on big hits, the ability moments (dim + speed lines), the impact bursts"""
+    for _, e in events_between(t - 0.12, t, ('hit',)):
+        if e[7] in ('surf', 'sweep', 'spout'):
+            s_ = cam.wp(S.to_world(e[5], e[6], R)[None])[0]
+            big = e[7] == 'sweep'
+            img = fx.fringe(img, s_[0], s_[1], 30 if big else 20, 2.8 if big else 1.8, k=1 - (t - e[0]) / 0.12)
+    if T_KO <= t < T_HS + 0.3:
+        s_ = cam.wp(S.to_world(P_KO[LOSE][0], P_KO[LOSE][1], R)[None])[0]
+        img = fx.fringe(img, s_[0], s_[1], 34, 3.0, k=1 - ss(T_HS, T_HS + 0.3, t))
+    keep = [(s_[0], s_[1], rp * 1.7) for k, (s_, rp) in drawn.items()]
+    img = MO.apply_dim(img, t, keep=keep)
+    for k, (s_, rp) in drawn.items():
+        p1 = fighter(k, max(0.0, t - 0.06))['p']
+        s1 = cam.wp(S.to_world(p1[0], p1[1], R)[None])[0]
+        img = MO.speed_lines(img, t, k, s_[0], s_[1], rp, (s_[0] - s1[0], s_[1] - s1[1]))
+    img = BU.draw(img, cam, t)
+    return img
 
 
 # ---------------------------------------------------------------- shadows on the canvas (from the spot)
@@ -737,9 +1007,15 @@ def canvas_shadows(cam, t, fs, keys, spot):
         if not st['vis']:
             continue
         a = np.linspace(0, 2 * math.pi, 13)[:-1]
-        pw = S.to_world(st['p'][0], st['p'][1], R)
-        circ = np.array([[pw[0] + R * st['scale'] * math.cos(u), R, pw[2] + R * st['scale'] * math.sin(u)] for u in a])
+        yb = R + st.get('lift', 0.0)
+        pw = S.to_world(st['p'][0], st['p'][1], yb)
+        circ = np.array([[pw[0] + R * st['scale'] * math.cos(u), yb, pw[2] + R * st['scale'] * math.sin(u)] for u in a])
         polys.append(proj_point(circ, spot))
+    for w in waves_at(t):                                           # the waves' crests cast the spot's shadow too
+        Hh = surf_height(w, t)
+        if Hh > 0.05:
+            for Q in ST.wave_shadow_quads(surf_front(w, t), w['u'], w['hw'], Hh):
+                polys.append(proj_point(Q, spot))
     for row in keys:
         head, body = ST.dart_quads(row[0], row[1], row[2])
         polys.append(proj_point(head, spot))
@@ -800,11 +1076,13 @@ def render(f):
         K = RUN['K'][-1]
         keys = [row for row in K if not np.isnan(row[0])]
         ko_fall = (t - T_HS) / (T_KO + 0.9 - T_HS)
-    t_rings = min(t, T_KO)                                          # cones freeze with the hit-stop, then vanish
-    cone_list = []
-    if T.T_FIGHT <= t < T_HS + 0.3 and len(CONE_T):
-        j0, j1 = np.searchsorted(CONE_T, t_rings - 0.6), np.searchsorted(CONE_T, t_rings, 'right')
-        cone_list = [CONE_EV[j] for j in range(j0, j1)]
+    ta = min(t, T_KO)                                               # attacks freeze with the hit-stop, then go
+    show_att = T.T_FIGHT <= t < T_HS + 0.12
+    rakes_now = rakes_at(ta) if show_att else []
+    waves_now = [w for w in waves_at(ta)] if show_att else []
+    whips_now = [w_ for w_ in WHIPS if 0 <= ta - w_['t0'] <= 2 * T_EXT[w_['owner']]] if show_att else []
+    sweeps_now = [sw for sw in SWEEPS if 0 <= ta - sw['t0'] <= sw['dur'] + 0.2] if show_att else []
+    spout_now = spout_at(ta) if show_att else None
     spot = S.SPOT
     aim = spot_aim(t)
     axis = (aim - spot) / np.linalg.norm(aim - spot)
@@ -840,6 +1118,7 @@ def render(f):
         Xp, Zp = Xc[ys, xs], Zc[ys, xs]
         sxp, szp = sx[ys, xs], sz[ys, xs]
         alb = S.canvas_albedo(sxp, szp)
+        alb = MK.apply(alb, sxp, szp, hz_clock(t), BAYER_FULL[ys, xs])      # fading marks: claws, water (reelkit.fx)
         sh = CANVAS_GRID.sample(canvas_shadows(cam, t, fs, keys, spot), Xp, Zp)
         v = np.stack([Xp - spot[0], -spot[1] * np.ones_like(Xp), Zp - spot[2]], 1)
         dist = np.linalg.norm(v, axis=1)
@@ -852,17 +1131,19 @@ def render(f):
             dl = np.sqrt((lp[0] - Xp) ** 2 + lp[1] ** 2 + (lp[2] - Zp) ** 2)
             Ic += (lp[1] / dl / (1 + (dl / R_) ** 2))[:, None] * lc[None] * 0.8
         # decals: shockwave light rings, the slam's shadow
-        for t0, k, main, ln, cx, cz, c_aim, half, spd in cone_list:     # each strum lights the canvas under its wedge
-            cs_ = ST.cone_state(t_rings, t0, ln, spd)
-            if cs_ is None:
-                continue
-            r, a, grow = cs_
-            rd = np.hypot(sxp - cx, szp - cz)
-            off = np.abs((np.arctan2(szp - cz, sxp - cx) - c_aim + math.pi) % (2 * math.pi) - math.pi)
-            inw = np.clip((half * 1.05 - off) / 0.08, 0, 1)
-            band = np.clip(1 - np.abs(rd - r) / 0.30, 0, 1) * (rd < r + 0.05) * (rd > R * 0.9)
+        for j, r_, sn, sp_, k_ in rakes_now:                         # light under each stroke's six strings
+            ra = (sxp - r_['c'][0]) * r_['u'][0] + (szp - r_['c'][1]) * r_['u'][1]
+            rb = (sxp - r_['c'][0]) * r_['n'][0] + (szp - r_['c'][1]) * r_['n'][1]
+            inl = np.clip(1 - np.maximum(R * 0.9 - ra, ra - (R + r_['L'])) / 0.15, 0, 1)
+            band = np.clip(1 - np.abs(rb - sn) / 0.34, 0, 1) * inl
             band = np.floor(band * 3 + BAYER_FULL[ys, xs] * 0.9) / 3
-            Ic += (band * inw * a * (0.5 if main else 0.3))[:, None] * (COL[k] / 255.0 * 0.9 + 0.25)[None]
+            Ic += (band * k_ * (0.45 if r_['main'] else 0.3))[:, None] * (COL[r_['owner']] / 255.0 * 0.9 + 0.25)[None]
+        for sw in sweeps_now:                                        # BIG STRUM: a bright band under the sweeping strings
+            fpos = sweep_front_at(sw, ta)
+            ra = (sxp - sw['c'][0]) * sw['u'][0] + (szp - sw['c'][1]) * sw['u'][1] - fpos
+            band = np.clip(1 - np.abs(ra + 0.35) / 0.55, 0, 1) * (1 - ss(sw['dur'], sw['dur'] + 0.2, ta - sw['t0']))
+            band = np.floor(band * 3 + BAYER_FULL[ys, xs] * 0.9) / 3
+            Ic += (band * 0.7)[:, None] * (COL[sw['owner']] / 255.0 + 0.3)[None]
         wav = RUN['WAVES'][i] if in_fight else []
         for owner, cx, cz, r, rmax, kind, t0 in wav:
             if kind == 'pulse':
@@ -875,7 +1156,8 @@ def render(f):
                 rd = rd + 0.34 * (((3 * ang_ / (2 * math.pi)) + 2.5 * t) % 1.0 - 0.5)
             band = np.clip(1 - np.abs(rd - r) / wdt, 0, 1)
             band = np.floor(band * 3 + BAYER_FULL[ys, xs] * 0.9) / 3
-            Ic += (band * k_ * 0.9)[:, None] * (COL[owner] / 255.0 * 1.4 + (0.35 if kind == 'wave' else 0.15))[None]
+            tint = COL[owner] / 255.0 * 0.6 + np.array([0.35, 0.65, 0.85])          # CHUNK: a watery splash ring
+            Ic += (band * k_ * 0.9)[:, None] * (tint + (0.35 if kind == 'wave' else 0.15))[None]
         sl = RUN['SLAMS'][i] if in_fight else []
         for owner, cx, cz, t0, t_slam, rad in sl:
             rd = np.hypot(sxp - cx, szp - cz)
@@ -910,12 +1192,8 @@ def render(f):
     draw_rope_side(2)
     draw_rope_side(3)
     rings = solo_rings(t) if t >= T_HS else []
-    if cone_list or rings:
+    if rings:
         arr, depth = fr.array(), fr.depth()
-        for t0, k, main, ln, cx, cz, c_aim, half, spd in cone_list:
-            cs_ = ST.cone_state(t_rings, t0, ln, spd)
-            if cs_ is not None:
-                ST.draw_cone(arr, cam, cx, cz, c_aim, half, cs_[0], cs_[1], COL[k], bool(main))
         pc = fs[WIN]['p']
         for t0, u in rings:                                           # the champion's strums ripple out of its ball
             a_ = np.linspace(0, 2 * math.pi, 33)
@@ -933,10 +1211,17 @@ def render(f):
         pw = S.to_world(st['p'][0], st['p'][1], R)
         dz = cam.depth(pw)[0]
         items.append((dz, 'ball', k))
-        if k in DASHER and st['dash'] > 0.02 and in_fight:
-            items.append((dz + 0.05, 'trail', k))
-        if st.get('whirl', 0) > 0.02:
-            items.append((dz - 0.04, 'whirl', k))
+    for w in waves_now:                                                 # SURF'S UP waves (by the front's centre)
+        c_ = surf_front(w, ta)
+        items.append((cam.depth(S.to_world(c_[0] - w['u'][0] * 0.3, c_[1] - w['u'][1] * 0.3, 0.3))[0], 'wave', w))
+    for j, r_, sn, sp_, k_ in rakes_now:
+        mid = r_['c'] + r_['u'] * (R + r_['L'] * 0.5) + r_['n'] * sn
+        items.append((cam.depth(S.to_world(mid[0], mid[1], 0.5))[0], 'rake', (r_, sn, sp_, k_)))
+    for w_ in whips_now:
+        p_ = fs[w_['owner']]['p']
+        items.append((cam.depth(S.to_world(p_[0], p_[1], 0.5))[0] - 0.02, 'whip', w_))
+    if spout_now is not None:
+        items.append((cam.depth(S.to_world(spout_now[1][0], spout_now[1][1], 0.6))[0], 'spout', spout_now))
     for row in keys:
         items.append((cam.depth(S.to_world(row[0], row[1], 0.45))[0], 'key', row))
     items.sort(key=lambda it: -it[0])
@@ -953,21 +1238,47 @@ def render(f):
                 k_ = min(1.0, st['haste'] / 0.15, (dur - st['haste']) / 0.12)
                 ST.draw_capo(arr, drawn[obj][0], drawn[obj][1], max(0.0, k_), COL[obj], t)
             fr.set_array(arr, depth)
-        elif kind == 'trail':
-            st = fs[obj]
-            j0 = max(0, i - 8)
-            trail = [RUN['P'][j, obj] for j in range(j0, i, 2)] + [st['p']]
+        elif kind == 'wave':
+            w = obj
+            Hh = surf_height(w, ta if t < T_HS else T_KO)
+            if Hh > 0.03:
+                ST.draw_wave(fr, cam, L, shade, surf_front(w, ta), w['u'], w['hw'] + 0.3 * R, Hh, ta, COL[w['owner']],
+                             lip=ss(w['t_end'], w['t_end'] + 0.25, ta))
+        elif kind == 'rake':
+            r_, sn, sp_, k_ = obj
+            gp = GAP[r_['owner']]
+            segs = ST.rake_segments(r_['c'], r_['u'], r_['n'], sn, r_['L'], gp)
+            prev = ST.rake_segments(r_['c'], r_['u'], r_['n'], sp_, r_['L'], gp) if abs(sn - sp_) > 0.01 else None
             arr, depth = fr.array(), fr.depth()
-            ST.draw_dash_trail(arr, cam, trail, COL[obj], st['dash'] * (1.0 if st['haste'] <= 0 else 1.25))
+            arr = ST.draw_strings(arr, cam, segs, COL[r_['owner']], k_ * (1.0 if r_['main'] else 0.75), 0.5, prev)
             fr.set_array(arr, depth)
-        elif kind == 'whirl':
-            st = fs[obj]
+        elif kind == 'whip':
+            w_ = obj
             arr, depth = fr.array(), fr.depth()
-            ST.draw_tornado(arr, cam, st['p'], t, st['whirl'], COL[obj])
+            arr = ST.draw_whip(arr, cam, fs[w_['owner']]['p'], w_['ang'], w_['len'], ta - w_['t0'], T_EXT[w_['owner']],
+                               COL[w_['owner']], j=w_['j'])
+            fr.set_array(arr, depth)
+        elif kind == 'spout':
+            owner, p_, k_ = obj
+            arr, depth = fr.array(), fr.depth()
+            arr = ST.draw_spout(arr, cam, p_, t, k_, COL[owner])
             fr.set_array(arr, depth)
         elif kind == 'key':
             row = obj
             ST.draw_dart(fr, cam, L, shade, row[0], row[1], row[2], COL[int(row[3])])
+    if sweeps_now:                                                      # BIG STRUM: six strings across the whole ring
+        arr, depth = fr.array(), fr.depth()
+        for sw in sweeps_now:
+            tau = ta - sw['t0']
+            kk = 1 - ss(sw['dur'], sw['dur'] + 0.2, tau)
+            f1 = sweep_front_at(sw, ta)
+            f0 = sweep_front_at(sw, ta - 1.0 / FPS)
+            segs = ST.sweep_segments(sw['c'], sw['u'], f1, S.AP)
+            prev = ST.sweep_segments(sw['c'], sw['u'], f0, S.AP) if f1 - f0 > 0.02 and len(segs) else None
+            if prev is not None and len(prev) != len(segs):
+                prev = None
+            arr = ST.draw_strings(arr, cam, segs, COL[sw['owner']], kk, 0.55, prev, thick=(3, 3, 3, 2, 2, 2)[:len(segs)])
+        fr.set_array(arr, depth)
     # ---------------- front ropes + posts
     draw_rope_side(0)
     draw_rope_side(1)
@@ -1016,6 +1327,7 @@ def render(f):
             shade_k = 0.75 + 0.25 * math.cos(rot * 2)
             layer_blend(arr, [sp], np.clip(col * shade_k, 0, 255), 1.0)
     sparks(arr, cam, t)
+    arr = PA.draw(arr, cam, t, light=lambda P: 1.0 + 0.6 * FL.tint(P, t))     # sea foam + wood chips (reelkit.fx)
     # countdown in the ring (sharp, over everything in the ring)
     cs = cam.wp(np.array([[0.0, 0.3, 0.0]]))[0]
     fr.set_array(arr, depth)
@@ -1023,6 +1335,7 @@ def render(f):
     img, depth = fr.array(), fr.depth()
     zf = cam.depth(S.SUBJECT)[0]
     img = dof(img, coc_map(depth, zf, 26.0, sharp=0.17))
+    img = shimmers(img, cam, t, ta, sweeps_now, spout_now)
     for name, lp in (('red', S.RED_LIGHT), ('blue', S.BLUE_LIGHT)):
         s_ = cam.wp(lp[None])[0]
         fr.glow(s_[0], s_[1], 16, tuple(COL[0] if name == 'red' else COL[1]), 0.35 + 0.15 * T.beat_pulse(t, 0.2))
@@ -1030,11 +1343,11 @@ def render(f):
         st = fs[k]
         if st['glow'] > 0.05:
             fr.glow(s_[0], s_[1], rp * 2.2, tuple(COL[k] * 0.8 + 50), 0.45 * st['glow'])
-    for e_i, e in events_between(t - 0.15, t, ('hit',)):
-        if e[7] in ('dash', 'slam', 'wave', 'shockwave', 'cone'):
+    for e_i, e in events_between(t - 0.15, t, ('hit',)):                 # (halved: the fx bursts carry the impacts)
+        if e[7] in ('surf', 'sweep', 'spout', 'shockwave', 'rake'):
             s_ = cam.wp(S.to_world(e[5], e[6], R)[None])[0]
-            big = e[7] != 'cone'
-            fr.glow(s_[0], s_[1], 14 if big else 8, tuple(COL[e[2]] * 0.7 + 70), (0.7 if big else 0.45) * (1 - (t - e[0]) / 0.15))
+            big = e[7] != 'rake'
+            fr.glow(s_[0], s_[1], 12 if big else 7, tuple(COL[e[2]] * 0.7 + 70), (0.35 if big else 0.22) * (1 - (t - e[0]) / 0.15))
     if T_KO <= t < T_HS + 0.25:
         s_ = cam.wp(S.to_world(P_KO[LOSE][0], P_KO[LOSE][1], R)[None])[0]
         fr.glow(s_[0], s_[1], 46, (255, 240, 220), 0.9 * (1 - ss(T_KO, T_HS + 0.25, t)))
@@ -1056,8 +1369,9 @@ def render(f):
     if -30 < s0[1] < 60:
         img = apply_glows(img, [(s0[0], s0[1], 30, (255, 244, 220), 0.9), (s0[0], s0[1], 10, (255, 255, 255), 1.0)])
     img = grade(bloom(np.clip(img, 0, 255), thr=225, k=0.22), contrast=0.18, sat=1.18)
-    img = np.clip(img * vignette(strength=0.45) * top_scrim(0.45, 100, 90), 0, 255).astype(np.uint8)
-    img = np.ascontiguousarray(img)
+    img = np.clip(img * vignette(strength=0.45) * top_scrim(0.45, 100, 90), 0, 255)
+    img = post_fx(img, cam, t, fs, drawn)
+    img = np.ascontiguousarray(np.clip(img, 0, 255).astype(np.uint8))
     # ---------------- UI: countdown, HP numbers in the balls, fight HUD, captions
     countdown(img, t, cs)
     for k, (s_, rp) in drawn.items():

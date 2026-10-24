@@ -1,14 +1,15 @@
-"""#33 BALLFIGHT #7: Ukulele vs Acoustic Guitar - soundtrack (spaghetti-western standoff), all synthesised, original.
+"""#33 BALLFIGHT #7: Ukulele vs Acoustic Guitar - soundtrack v2 (spaghetti-western standoff), all synthesised, original.
+(v2 = BALLFIGHT v2 redesign: SURF'S UP vs SIX-STRING RAKE; v1 = audio_v1_backup.py.)
 
 The two fighters ARE the rhythm section, straight from the honest run:
-  UKULELE   every dash is a strum in the uke's own Pixel Pitch voice (reentrant GCEA shapes): down-strums on beats 1 and
-            3 (its dash grid), up-strums on 2 and 4 when SPEED STRUM doubles the dashes; a landed dash adds a picked
-            note climbing the scale and a percussive chunk. As its HP drops it loses strings (4 -> 3 -> 2) and gets
-            dirtier; the leader adds an up-strum on the off-beat.
-  ACOUSTIC  every sound-hole cone is a strum of the big open chord: a full down-strum on 1 and 3, a lighter "chick" on
-            the top strings on 2 and 4, CAPO's extra cones are bright up-strums on the 8ths; a landed cone adds a body
-            slap and a bass-string pop. As its HP drops it loses strings and the chicks drop out; the leader adds the
-            boom-chick alternating bass under its own strums.
+  UKULELE   every surf wave is a strum in the uke's own Pixel Pitch voice (reentrant GCEA shapes): down-strums on beats
+            1 and 3 (its wave grid), up-strums on 2 and 4 when SPEED STRUM doubles the waves; the wave crashes when it
+            breaks (a splash + a picked note climbing the scale when it hits). As its HP drops it loses strings
+            (4 -> 3 -> 2) and gets dirtier; the leader adds an up-strum on the off-beat.
+  ACOUSTIC  every rake stroke is a strum in the stroke's own direction (down = the full chord low to high, up = the top
+            strings high to low); CAPO's extra strokes are bright and short; a landed stroke adds a body slap and a
+            bass-string pop; FINGERPICK whips are single picked notes; BIG STRUM is one giant slow strum. As its HP drops
+            it loses strings and the up-strokes drop out; the leader adds the boom-chick alternating bass.
 Bed: A minor at 129.84 BPM (33 bars = 61 s), the descending Am - G - F - E cadence: a galloping clip-clop with a frame-
 drum thump, a twangy baritone guitar on the bass line (kept low and dark, under both fighters), a whistled lead playing
 an original standoff theme (bars 1-8 and 17-24) with a dotted-8th echo, a wordless choir and a tolling bell from bar
@@ -332,14 +333,43 @@ def whistle_phrase(mix, b0, octave=0, gain=0.075):
 
 
 # ---------------------------------------------------------------- the fighters' parts
+def wave_crash(dur=0.55, seed=0, big=1.0):
+    """a wave breaking: a low rush that swells and dies, with a hiss of spray on top"""
+    n = int(dur * SR)
+    t = A.tt(n)
+    x = np.random.default_rng(seed).normal(0, 1, n)
+    env = np.clip(t / 0.03, 0, 1) * np.exp(-t / (dur * 0.35))
+    rush = A.lp(x, 900) * env
+    spray = A.bp(x, 2500, 7000) * np.clip(t / 0.06, 0, 1) * np.exp(-t / (dur * 0.25))
+    return (rush * 1.0 + spray * 0.35) * big
+
+
+def water_wind(dur, seed=4):
+    """the waterspout: a swirling band of wind and water, its pitch wheeling round"""
+    n = int(dur * SR)
+    t = A.tt(n)
+    x = np.random.default_rng(seed).normal(0, 1, n)
+    out = np.zeros(n)
+    nb = 24
+    for k in range(nb):
+        a, b = int(k * n / nb), int((k + 1) * n / nb)
+        fc = 700 + 500 * math.sin(2 * math.pi * 3.0 * (a / SR))
+        out[a:b] = A.bp(x[max(0, a - 2048):b], fc * 0.6, fc * 1.6)[-(b - a):]
+    env = np.clip(t / 0.3, 0, 1) * np.clip((dur - t) / 0.4, 0, 1)
+    return (out + 0.4 * A.lp(x, 300)) * env * (1 + 0.4 * np.sin(2 * np.pi * 6.0 * t))
+
+
+# ---------------------------------------------------------------- the fighters' parts (v2: surf vs rake)
 def uke_part(mix):
+    """SURF'S UP: every wave is a strum (down on its own grid, up on SPEED STRUM's extra beats); the crash plays when it
+    breaks (into the enemy: a picked note climbing the scale + a splash; on the ropes: a softer break)"""
     climb = T.scale_notes(72, 93)
     n_landed = 0
     for e in EV:
         t, kind = e[0], e[1]
         if t > T_KO + 0.01:
             break
-        if kind == 'dash' and e[2] == KU:
+        if kind == 'surf' and e[2] == KU:
             tq = q16(t)
             hp = RD.hp_at(KU, t)
             ch = T.chord_at(tq)
@@ -348,63 +378,78 @@ def uke_part(mix):
             sig = strum('UKULELE', vo, 0.9 if main_ else 0.7, 0.010 if main_ else 0.008, up=not main_)
             y, g, lead = colour(sig, KU, t, 0.8)
             mix.place('uke', y, tq, (0.36 if main_ else 0.26) * g, pan=PAN[KU])
+            mix.place('fx', A.whoosh(0.28, 300, 2400), tq, 0.05, pan=PAN[KU])            # the swell rising
             if main_ and lead > 0.04:                          # the leader: an up-strum on the off-beat
                 y2 = colour(strum('UKULELE', vo, 0.6, 0.008, up=True), KU, t, 0.8)[0]
                 mix.place('uke', y2, tq + 2 * S16, 0.18 * g, pan=PAN[KU])
-        elif kind == 'hit' and e[2] == KU and e[7] == 'dash':
+        elif kind == 'surf_end' and e[2] == KU and e[5]:       # the wave breaks on the ropes
+            mix.place('fx', wave_crash(0.45, int(t * 31), 0.7), t, 0.07, pan=float(np.clip(e[3] / 3.5, -0.6, 0.6)))
+        elif kind == 'hit' and e[2] == KU and e[7] in ('surf', 'spout'):
             tq = q16(t)
             m = climb[n_landed % len(climb)]
             n_landed += 1
             y, g, _ = colour(note('UKULELE', m, 0.25, 0.6, 1.0), KU, t, 0.6)
             mix.place('uke', y, tq, 0.30 * g, pan=PAN[KU])
-            mix.place('fx', A.bp(np.random.default_rng(int(t * 50)).normal(0, 1, int(0.05 * SR)), 900, 4500)
-                      * np.exp(-A.tt(int(0.05 * SR)) / 0.01), tq, 0.10, pan=PAN[KU])
+            mix.place('fx', wave_crash(0.55, int(t * 37), 1.0), tq, 0.13 if e[7] == 'surf' else 0.09, pan=PAN[KA])
             mix.place('fx', A.thud(0.3, 140, 60, seed=int(t * 7)), tq, 0.12)
 
 
 def ac_part(mix):
-    n_landed = 0
+    """SIX-STRING RAKE: every stroke is a strum in the stroke's own direction: a down-stroke rakes the full chord low to
+    high, an up-stroke the top strings high to low (lighter); CAPO's extra strokes are bright and short. A landed stroke
+    adds a body slap + a bass-string pop; FINGERPICK whips are single picked notes, one per whip"""
     for e in EV:
         t, kind = e[0], e[1]
         if t > T_KO + 0.01:
             break
-        if kind == 'cone' and e[2] == KA:
+        if kind == 'rake' and e[2] == KA:
             tq = q16(t)
             hp = RD.hp_at(KA, t)
             ch = T.chord_at(tq)
             full = T.AC_CHORD[ch]
             vo = full[:max(3, ac_strings(hp) - (6 - len(full)))]              # broken strings go from the top
             main_ = bool(e[3])
-            pos = int(round(tq / T.BEAT)) % 4
-            if not main_:                                       # CAPO's 8ths: bright up-strums on the top strings
-                y, g, _ = colour(A.hp(strum('ACOUSTIC', full[-4:], 0.6, 0.007, up=True, dur=0.2), 350), KA, t, 0.6)
-                mix.place('acoustic', y, tq, 0.22 * g, pan=PAN[KA])
-                continue
+            down = e[8] > 0
             lead = (hp - RD.hp_at(KU, t)) / 100.0
-            if pos in (0, 2):
-                y, g, _ = colour(strum('ACOUSTIC', vo, 0.92, 0.013), KA, t, 0.7)
-                mix.place('acoustic', y, tq, 0.36 * g, pan=PAN[KA])
-                if lead > 0.04:                                 # the leader: boom-chick alternating bass
-                    r, f5 = BASS[ch]
-                    mix.place('acoustic', colour(note('ACOUSTIC', r if pos == 0 else f5, 0.4, 0.7, 1.0), KA, t)[0],
-                              tq, 0.26 * g, pan=PAN[KA])
+            if down:
+                sig = strum('ACOUSTIC', vo, 0.92 if main_ else 0.7, 0.013 if main_ else 0.009, up=False,
+                            dur=0.40 if main_ else 0.2, cap=1.0 if main_ else 0.6)
+                gain = 0.36 if main_ else 0.24
             else:
-                if h01(tq, 7) < 0.6 * (1 - hp / 100.0) ** 1.6:   # the chicks drop out as it gets hurt
+                if main_ and h01(tq, 7) < 0.6 * (1 - hp / 100.0) ** 1.6:   # the up-strokes drop out as it gets hurt
                     continue
                 top = vo[-min(4, len(vo)):]
-                y, g, _ = colour(strum('ACOUSTIC', top, 0.72, 0.008, dur=0.18, cap=0.6), KA, t, 0.7)
-                mix.place('acoustic', y, tq, 0.26 * g, pan=PAN[KA])
-        elif kind == 'hit' and e[2] == KA and e[7] == 'cone':
+                sig = strum('ACOUSTIC', top, 0.74 if main_ else 0.6, 0.008, up=True, dur=0.2, cap=0.6)
+                gain = 0.27 if main_ else 0.2
+            if not main_:
+                sig = A.hp(sig, 350)                                         # CAPO: bright and short
+            y, g, _ = colour(sig, KA, t, 0.7)
+            mix.place('acoustic', y, tq, gain * g, pan=PAN[KA])
+            if main_ and down and lead > 0.04:                  # the leader: boom-chick alternating bass under it
+                r, f5 = BASS[ch]
+                pos = int(round(tq / T.BEAT)) % 4
+                mix.place('acoustic', colour(note('ACOUSTIC', r if pos in (0, 1) else f5, 0.4, 0.7, 1.0), KA, t)[0],
+                          tq, 0.24 * g, pan=PAN[KA])
+        elif kind == 'hit' and e[2] == KA and e[7] == 'rake':
             tq = q16(t)
-            n_landed += 1
             r = BASS[T.chord_at(tq)][0]
             mix.place('acoustic', colour(note('ACOUSTIC', r - 12 if r - 12 >= 40 else r, 0.3, 0.6, 1.0), KA, t)[0],
                       tq, 0.18, pan=PAN[KA])
-            mix.place('fx', A.thud(0.25, 180, 80, seed=int(t * 9)), tq, 0.12, pan=PAN[KA])     # a slap on the body
-        elif kind == 'hit' and e[2] == KA and e[7] == 'key':   # a FINGERPICK dart lands: a harmonic ping
+            mix.place('fx', A.thud(0.25, 180, 80, seed=int(t * 9)), tq, 0.12, pan=PAN[KU])     # the slap of the strings
+        elif kind == 'whip' and e[2] == KA:                     # FINGERPICK: one picked note per whip, up the chord
+            tq = q16(t)
+            ch = T.chord_at(tq)
+            ms = list(T.AC_CHORD[ch][2:]) + [T.AC_CHORD[ch][-1] + 12, T.AC_CHORD[ch][-2] + 12]
+            m = ms[int(e[3]) % len(ms)]
+            mix.place('acoustic', colour(note('ACOUSTIC', m, 0.3, 0.7, 0.9), KA, t)[0], tq, 0.30,
+                      pan=PAN[KA] + 0.08 * (int(e[3]) - 2.5) / 2.5)
+            n = int(0.03 * SR)
+            mix.place('fx', A.hp(np.random.default_rng(int(t * 50)).normal(0, 1, n), 4000) * np.exp(-A.tt(n) / 0.004),
+                      tq, 0.05, pan=PAN[KA])                     # the crack of the string whip
+        elif kind == 'hit' and e[2] == KA and e[7] == 'whip':   # a whip lands: a harmonic ping
             tq = q16(t)
             m = T.scale_notes(76, 93, T.chord_at(tq))[int(e[8]) % 6]
-            mix.place('acoustic', A.chime(m, 0.6), tq, 0.10, pan=PAN[KA])
+            mix.place('acoustic', A.chime(m, 0.6), tq, 0.10, pan=PAN[KU])
 
 
 def abilities(mix):
@@ -417,48 +462,48 @@ def abilities(mix):
                       pan=float(np.clip(e[5] / 3.5, -0.6, 0.6)))
         elif kind == 'clash':
             mix.place('fx', hoof(0.6, True, int(t * 13)), t, 0.06)
-        elif kind == 'slam':                                   # BIG STRUM: the giant downstroke
-            ts = e[0]
-            mix.place('acoustic', strum('ACOUSTIC', T.AC_CHORD[T.chord_at(ts)], 1.0, 0.016, dur=0.9, cap=1.8), ts, 0.62,
+        elif kind == 'sweep':                                  # BIG STRUM: one giant slow strum across the ring
+            ts = q16(e[0])
+            dur = e[7]
+            ch = T.chord_at(ts)
+            mix.place('acoustic', strum('ACOUSTIC', T.AC_CHORD[ch], 1.0, min(0.09, dur / 7), dur=1.0, cap=2.0), ts, 0.62,
                       pan=PAN[KA])
-            mix.place('acoustic', note('ACOUSTIC', 40, 0.9, 1.6, 1.0), ts, 0.4, pan=PAN[KA])
-            mix.place('fx', A.thud(0.7, 90, 32), ts, 0.55)
-            mix.place('fx', whip(1.0, 7), ts - WHIP_PRE, 0.30)
+            mix.place('acoustic', note('ACOUSTIC', 40, 1.0, 1.8, 1.0), ts, 0.40, pan=PAN[KA])
+            mix.place('fx', A.whoosh(dur, 200, 3500), ts, 0.16)
+        elif kind == 'hit' and e[7] == 'sweep':
+            mix.place('fx', A.thud(0.7, 90, 32), e[0], 0.55)
+            mix.place('fx', whip(1.0, 7), e[0] - WHIP_PRE, 0.30)
+            mix.place('twang', twang(40, 0.9), q16(e[0]), 0.4)
+        elif kind == 'spout':                                  # UKE-NADO: the waterspout's wind for as long as it lives
+            ends = [x[0] for x in EV if x[1] == 'spout_end' and x[2] == e[2] and x[0] >= e[0]]
+            dur = (min(ends[0], T_KO) if ends else T_KO) - e[0] + 0.4
+            mix.place('fx', water_wind(dur, int(e[0] * 3)), e[0], 0.10, pan=PAN[KU])
         elif kind == 'ability':
             who, name = e[2], e[3]
             tq = q16(t)
-            if name == 'CHUNK':                                # the percussive chunk strum
+            if name == 'CHUNK':                                # the percussive chunk strum + a splash
                 vo = T.UKE_CHORD[T.chord_at(tq)]
                 mix.place('uke', A.lp(strum('UKULELE', vo, 1.0, 0.004, dur=0.05, cap=0.12), 3000), tq, 0.5, pan=PAN[KU])
                 n = int(0.07 * SR)
                 mix.place('fx', A.bp(np.random.default_rng(5).normal(0, 1, n), 600, 3500) * np.exp(-A.tt(n) / 0.012), tq, 0.22)
                 mix.place('fx', A.thud(0.4, 130, 45), tq, 0.3)
+                mix.place('fx', wave_crash(0.5, int(t * 13), 0.8), tq, 0.08)
             elif name == 'SPEED STRUM':                        # a quick tremolo-strum flourish to start it
                 vo = T.UKE_CHORD[T.chord_at(tq)]
                 for j in range(4):
                     mix.place('uke', strum('UKULELE', vo, 0.7, 0.005, up=bool(j % 2), dur=0.12, cap=0.4),
                               tq + j * S16 / 2, 0.22, pan=PAN[KU])
-            elif name == 'UKE-NADO':                           # a whirl of strums spiralling up, with the wind
+            elif name == 'UKE-NADO':                           # a whirl of strums spiralling up as the spout rises
                 for j in range(16):
                     ch = T.chord_at(tq + j * S16 / 2)
                     vo = tuple(m + 12 * (j // 8) for m in T.UKE_CHORD[ch])
                     mix.place('uke', strum('UKULELE', vo, 0.6 + 0.025 * j, 0.004, up=bool(j % 2), dur=0.1, cap=0.35),
                               tq + j * S16 / 2, 0.20, pan=0.6 * math.sin(j * 1.3))
-                mix.place('fx', A.whoosh(2 * T.BEAT, 300, 6000), tq, 0.18)
+                mix.place('fx', A.whoosh(2 * T.BEAT, 300, 6000), tq, 0.16)
             elif name == 'CAPO':                               # the clamp: a metal click and a ring
                 n = int(0.05 * SR)
                 mix.place('fx', A.hp(np.random.default_rng(8).normal(0, 1, n), 3000) * np.exp(-A.tt(n) / 0.004), tq, 0.18)
                 mix.place('fx', A.chime(96, 0.4), tq, 0.06)
-            elif name == 'FINGERPICK':                         # the darts leave as a picked arpeggio
-                ab = RD.CFG[who]['abilities']['unlock2']
-                n = ab['n']
-                ms = [m for m in T.AC_CHORD[T.chord_at(tq)][2:]] + [T.AC_CHORD[T.chord_at(tq)][-1] + 12]
-                for j in range(n):
-                    te = t + ab['beats'] * T.BEAT * j / max(1, n - 1)
-                    mix.place('acoustic', colour(note('ACOUSTIC', ms[j % len(ms)], 0.3, 0.7, 0.85), KA, te)[0], q16(te),
-                              0.30, pan=PAN[KA] + 0.1 * (j - n / 2) / n)
-            elif name == 'BIG STRUM':                          # the pick winds up across the strings
-                mix.place('fx', scrape(2 * T.BEAT), tq, 0.12)
 
 
 def main():
@@ -560,7 +605,7 @@ def main():
         print(f'{a:5.1f}-{b:5.1f}s  rms {rms:6.1f} dBFS  peak {pk:5.1f}')
 
 
-BUS_GAIN = {'uke': 1.45, 'acoustic': 1.35, 'solo': 1.2, 'fx': 1.3, 'perc': 1.0, 'twang': 0.55, 'whistle': 1.0,
+BUS_GAIN = {'uke': 1.55, 'acoustic': 1.45, 'solo': 1.2, 'fx': 1.3, 'perc': 1.0, 'twang': 0.55, 'whistle': 1.0,
             'choir': 1.0, 'bell': 0.9, 'strings': 1.0}
 # section automation (dB), applied AFTER the compressor so the limiter can't flatten the build: the count-in at full,
 # the early fight pulled back, rising through the final exchange, the victory section loud, the end close to the start

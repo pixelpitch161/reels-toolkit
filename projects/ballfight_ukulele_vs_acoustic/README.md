@@ -1,35 +1,40 @@
 # #33 BALLFIGHT #7: Ukulele vs Acoustic Guitar (`projects/ballfight_ukulele_vs_acoustic`)
 
-Little brother vs big brother on #27's engine, ring, HUD and count-in (`projects/ballfight`: `fight.py`, `fighters.py`,
-`scene.py`, imported, plus `reelkit.ui.fight_hud`). UKULELE (left corner, pink) fights up close: every 2nd beat it
-throws itself at the acoustic in a body-slam dash (new weapon kind `dash`: a speed burst that decays like a knockback,
-so power = speed + distance; +0.08 power per landed dash) and strums as it lands. ACOUSTIC (right corner, wood tan;
-called ACOUSTIC everywhere so it never reads as #27's GUITAR) keeps it at range: on every beat it strums a cone of
-sound out of its sound hole, aimed at the uke (new weapon kind `cone`: a 26 deg wedge, +0.06 length per landed strum).
-Abilities: CHUNK (shockwave) / SPEED STRUM (haste: dashes every beat) / UKE-NADO (wave, a spinning whirl); CAPO (haste:
-cones on the 8ths, a capo clamps across the ball) / FINGERPICK (arc of 6 string darts) / BIG STRUM (slam: a giant
-tortoiseshell pick's downstroke). The uke sits smaller in its ball than the acoustic (sprite scale 0.70 vs 0.86).
-Spaghetti-western standoff: A minor, Am - G - F - E, 129.84 BPM (33 bars), gallop + twang baritone + whistle + choir + bell.
+**v2 (BALLFIGHT v2 redesign, user Oct 24): SURF'S UP vs SIX-STRING RAKE, on `reelkit.fx`.** Little brother vs big
+brother on #27's engine, ring, HUD and count-in; the way each is played is the weapon. UKULELE (left, pink): every 2nd
+beat its strum raises a rolling low-poly wave it rides at the acoustic (weapon kind `surf`: a speed burst + a wave front
+that crashes into the enemy once and pushes it along the wave; the wave height grows per landed wave). ACOUSTIC (right,
+wood tan; "ACOUSTIC" everywhere, never GUITAR): on every beat six glowing string lines sweep sideways across the ring in
+front of it, alternating down / up strokes, leaving six-line claw marks on the canvas (weapon kind `rake`; the length
+grows per landed stroke). Both attacks go partly where the ball is already heading (`aim_k`), so they can miss.
+Abilities: CHUNK (shockwave, a splash ring) / SPEED STRUM (waves every beat) / UKE-NADO (ability kind `spout`: a
+waterspout that hunts the enemy across the ring, 4 ticks); CAPO (strokes on the 8ths, a capo clamps on) / FINGERPICK
+(ability kind `whip`: six single strings flick out like whips, one per note) / BIG STRUM (ability kind `sweep`: all six
+strings sweep the whole ring). Effects from `reelkit.fx`: attack lights, ink-starburst impacts, sea foam + wood-chip
+particles, claw / water marks, shimmer on the splash, sweep and spout, ability moments, capped shake.
+Spaghetti-western standoff: A minor, Am - G - F - E, 129.84 BPM (33 bars); the audio strum direction follows each stroke.
 
-Honest run, seed 874 (6 fits in 974; rules tuned once with tune.py, frozen): the uke bullies early (92-78 at 10 s),
-it stays within ~10 HP from 20 s on, BIG STRUM (43.9 s) and UKE-NADO (44.8 s) swing the lead twice (44.9, 46.5 s),
-9.4-9.4 at 50 s, and UKULELE wins at 51.87 s with 6.2 HP. Balance over 894 decided runs: UKULELE 57 %, ACOUSTIC 43 %.
+Honest run, seed 1248 (6 fits in 1248; rules re-tuned once with tune.py, frozen): the uke leads early (91-86 at 10 s),
+29-30 at 40 s, BIG STRUM flips the lead at 41.9 s, the waterspout catches the acoustic for all 4 ticks, and UKULELE wins
+at 52.33 s with 4.2 HP (the second lead change is the K.O. itself). Balance over 1104 decided runs: UKULELE 54 %,
+ACOUSTIC 46 %. v1 (dash vs cone, seed 874) is kept as `*_v1_backup.py` and `ballfight_ukulele_vs_acoustic_v1.mp4`.
 
 ## Commands (from this folder)
 
 ```bash
-python tune.py 160 U.dmg=4.8,5.2 A.grow=0.06,0.075 scale=0.68   # rule tuning (done once, frozen in fighters.py + timeline.py)
-python seed_search.py 1 4000 --stop 6                         # honest runs ranked against the beat sheet -> check/seeds.txt
-python sim.py 874                                             # one run's story (cached in check/run_874.pkl)
+python tune.py 160 scale=0.72 U.dmg=4.8 A.dmg=2.1 A.aim_k=0.47 U.grow=0.03 A.grow=0.03   # v2 rule tuning (done once, frozen)
+python seed_search.py 1 8000 --stop 6                         # honest runs ranked against the beat sheet -> check/seeds.txt
+python sim.py 1248                                            # one run's story (cached in check/run_1248.pkl)
 python render.py                                              # sprite cache (check/sprites_ballfight7.npz, ~25 s)
-python -m reelkit.sheet render.py test/sheet.png 0.0 1.0 4.1 7.95 14.0 22.3 27.6 44.1 45.25 51.9 54.6 59.6
+python -m reelkit.sheet render.py test/sheet.png 0.0 1.0 3.32 9.3 13.5 20.0 25.1 41.95 42.7 52.35 55.0 59.6
+python flash_test.py 40.5 46.0                                 # flash test on the busiest stretch before the full render
 python -m reelkit.safezone render.py --step 0.25
 python focus_check.py                                         # subject CoC must be 0 px on every frame
 python audio.py                                               # audio.wav (2860 AAC frames) + check/stem_*.wav
 python bandcheck.py                                           # fighters vs bed, 300-5000 Hz, per section and bed bus
-python zoom.py test/zoom.png 2.85 4.08 22.3 27.6 44.1 45.25   # 2x crops of the ring at given times (detail check)
+python zoom.py test/zoom.png 2.85 3.79 13.62 25.12 41.85 42.75  # 2x crops of the ring at given times (detail check)
 python -m reelkit.loopcheck render.py audio.wav
-python -m reelkit.video render.py audio.wav ballfight_tmp.mp4 && python mux.py   # render, then the loop-clean encode
+python -m reelkit.video render.py audio.wav ballfight_tmp.mp4 && python mux.py ballfight_ukulele_vs_acoustic_v2.mp4
 python patch_frames.py 60.4 61.0 && python mux.py                               # a fix that touches only some frames: patch the kept raw, re-encode
 ```
 
@@ -41,9 +46,11 @@ python patch_frames.py 60.4 61.0 && python mux.py                               
 | `sim.py` | Runs + caches the honest fight on the shared engine; story analysis + score (same windows as #27) |
 | `tune.py` | Generic rule grid: `U.<weapon key>`, `A.<weapon key>`, `U.u1.<ability key>`, `scale` |
 | `seed_search.py` | #27's early-stopping search (copied; names from the timeline) |
-| `styles.py` | Draw functions for the new styles: the `soundhole` cone, the `uke_dash` afterimages, the capo, FINGERPICK darts, the BIG STRUM pick, the UKE-NADO whirl |
-| `render.py` | #28's renderer, copied, with this pair's weapons, abilities and shards (strings, spruce / koa chips, frets) |
-| `audio.py` | The western bed; dashes = the uke's strums, cones = the acoustic's strums (boom-chick when leading, thinning with HP) |
+| `styles.py` | Draw functions: v2 the rolling low-poly `surf` wave, the six `rake` strings (+ motion fan), FINGERPICK whips, BIG STRUM's ring-wide strings, the waterspout; the capo; v1's cone / dash / pick / whirl kept |
+| `render.py` | #28's renderer, copied: v2 attacks rebuilt from the run's events (closed-form motion), reelkit.fx wiring, shards (strings, spruce / koa chips, frets) |
+| `audio.py` | The western bed; waves = the uke's strums + crashes, rake strokes = the acoustic's strums in the stroke's direction |
+| `flash_test.py` | Renders a stretch and runs reelkit.flashcheck on it (before the full render) |
+| `*_v1_backup.py` | v1 (dash vs cone) renderer, styles and audio |
 | `mux.py` | Loop-clean encode via `projects/maze_race/mux.py` |
 | `patch_frames.py` | Re-renders a time span into the kept raw frames (this project's renderer), for `mux.py` |
 
