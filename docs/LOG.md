@@ -580,3 +580,48 @@
 - Checks: safe zone OK (0.25 s steps); wall + props CoC 0 on all 1830 frames; flash 0 general flashes; opening -14.3
   dBFS, build +3.1 dB; loopcheck (render) PASS. Render 0.35 s/frame/core (10.8 min on 2 cores). Time: ~55 min to v1.
 - Feedback: (pending)
+
+## Which Instrument Wins? (`projects/which_instrument_wins`)
+- Trend-format reel (#26, "Who Will Win? 16 entrants"), mood A dark tango: 16 glass balls, each holding a Pixel Pitch
+  instrument model, drop into a crimson-and-gold ring turning over a pit in a sunset colosseum (stands collapsed on
+  the sunset side so the sun sits low behind the ring, two braziers, podium torches, a crowd of pixel dots bobbing on
+  the beat, pennants, pigeons, far ridges and an aqueduct). Fall out through the gap = out: the ball drifts toward the
+  camera, drops into the pit on one last dull note and the 4 x 4 roster dims it with its place. Seed 406 (2 fits in
+  600 honest runs): DRUMS out first at 3.6 s after rattling in the gap, BAGPIPES stuck in the gap 6.5-8.9 s, PIANO and
+  TRUMPET out together at 15.4/15.7, UKULELE 9th after three near-misses, VIOLIN survives five edge hits, final 3 at
+  40.3, VIOLIN vs CELLO from 43.1 with 7 close calls, CELLO wins at 49.41. The ring seals on the win, the cello floats
+  out to the spotlight and plays an original 4-bar solo in its own voice while the stands light up; at 58.4 s the 15
+  lift out of the pit (each plays one note of a rising cascade) and everyone eases into formation, at rest on 61.0 =
+  frame 0 (they drop again).
+- Music: every wall bounce plays the ball's own Pixel Pitch voice (pitch = chord tone by where it hit, left low ->
+  right high, in its register; loudness = impact speed; 32nd grid), gap-edge hits ring a bell (rattles), glass clinks
+  once fewer than 12 are left; bed = D-minor tango at 118.03 BPM (habanera bass, staccato strings in quarters then
+  eighths from bar 10, dominant pedal + tremolo + roll for the duel, the win resolves it with a tonic hit).
+- New: `reelkit.ui.roster_grid` (4 x 4 elimination scoreboard; columns sized to their longest name, places in the chip slot).
+- Lessons:
+  - Pixel Pitch models reuse cleanly read-only: import the video modules, run pp_framework.setup() for their events,
+    call build()/synth() with a fake scene. Their display stands must go (runtime patches during the build: the stand
+    helpers become no-ops, floor-anchored rods and floor discs are skipped); with stands the instrument filled a third
+    of the ball. Thin instruments read only with a fixed best view: per-instrument yaw centre, +-swing and a screen
+    roll (violin, guitar, flute tilted ~30 deg), never a full spin (a spinning cello read as a stick). A light glass
+    interior is what makes black models (piano, clarinet, accordion) readable.
+  - Ring pacing: with gravity, a gap barely wider than a ball still drains piles fast (a ball wedged between the two end
+    caps is squeezed outward). What paces it is how briefly the gap sits under the pile: 20 turns in 61 s (2.06 rad/s,
+    also loop-safe), gap 0.303 -> 0.48 rad, wall restitution 1.02 with a speed cap. Rules were tuned once on median
+    elimination times over 10 seeds (40 random rule sets, `check/rulesearch.py`), then frozen for the seed search.
+  - Duels with only two balls rarely end on their own (exits need the pile pushing): most runs had 10-17 s duels; the
+    window "3rd-last out 41.5-46.5 s, win 48-50.6 s" kept only ~0.3 % of runs.
+  - A white-hot sun under top_scrim() turns grey: draw the disc after the grade on sky pixels only (banded rings).
+    A low visible sun means grazing light: shadows of the ring and balls fall behind the camera, so the floor drama
+    comes from the stands' long shadows; the stands and the podium must be broken low on the sun's side or the arena
+    sits in shade.
+  - The ball names hidden during the scripted fly-back popped back on frame 0 (seam 3.0x); showing them from 60.25 s
+    (balls nearly home) -> 1.5x.
+  - Loop encode: the toolkit mux trims the soundtrack to 61.0 s, AAC pads the last frame with silence and
+    `loopcheck out.mp4` failed (7.7 dB step) although the render check passed. Building the audio as 2860 AAC frames
+    and re-muxing through projects/maze_race/mux.py (imported, not copied) -> PASS (seam 1.8x, 2.5 dB). Two projects
+    now need it: worth moving into reelkit.video.
+- Checks: safe zone OK; subject CoC 0 on all 1830 frames; flash 0 general flashes; bounces 7-15 dB over the bed in
+  400-4000 Hz; opening -18.7 dBFS, build +4.1 dB. Render ~0.26 s/frame/core (7.8 min on 2 cores) + 3 min mux.
+  Time: ~3.5 h, mostly the ring-pacing rules and the colosseum look.
+- Feedback: (pending)
