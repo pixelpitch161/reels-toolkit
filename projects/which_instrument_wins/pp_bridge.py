@@ -40,9 +40,15 @@ ENTRANTS = [
     ('ACCORDION', 'accordion60_lowpoly', None, (55, 79), 0, 1.0),
     ('BAGPIPES', 'bagpipes60_lowpoly', None, (67, 81), 0, 1.0),
     ('UKULELE', 'ukulele60_lowpoly', None, (60, 81), 0, 1.0),
-    ('ACOUSTIC', 'acoustic_lowpoly', 'steel', (40, 76), 0, 1.0),       # #33 BALLFIGHT: the modern steel-string
 ]
-NAMES = [e[0] for e in ENTRANTS]
+NAMES = [e[0] for e in ENTRANTS]        # #26's 16-entrant roster: keep it at 16 (its run, roster and sprites use it)
+# Instruments used only by later projects (BALLFIGHT episodes): same fields, reachable through entrant() / voice() /
+# model_faces(), but NOT part of #26's roster. Append new instruments here, not to ENTRANTS.
+EXTRA = [
+    ('ACOUSTIC', 'acoustic_lowpoly', 'steel', (40, 76), 0, 1.0),       # #33 BALLFIGHT: the modern steel-string
+    ('TURNTABLES', 'turntables60_lowpoly', None, (50, 74), 0, 1.0),    # #31 BALLFIGHT: the modern deck (organ stabs; midi < 12 = scratches)
+    ('SYNTH', 'synth60_lowpoly', None, (57, 81), 0, 1.0),              # #31 BALLFIGHT: the modern poly synth
+]
 DRUM_KEYS = (36, 38, 41, 45, 48, 49)    # kick, snare, floor / low / high tom, crash
 _MODS = {}
 
@@ -66,7 +72,10 @@ def module(name):
 
 
 def entrant(name):
-    return ENTRANTS[NAMES.index(name)]
+    for e in ENTRANTS + EXTRA:
+        if e[0] == name:
+            return e
+    raise KeyError(name)
 
 
 def scene(name):
@@ -169,6 +178,8 @@ def voice(name, midi, vel, dur):
             midi = min(DRUM_KEYS, key=lambda k: abs(k - midi))
         fake = dict(s)
         fake['ev'] = [(0.0, midi, vel, dur, True, 1)]
+        if isinstance(getattr(m, '_NOTE', None), dict):   # organ / synth / turntables cache notes by (scene t0, event
+            m._NOTE.clear()                               # index): with one fake event every call would return the first
         with contextlib.redirect_stdout(io.StringIO()):
             x = m.synth(fake, 0)
     return _resample(np.asarray(x, float))
