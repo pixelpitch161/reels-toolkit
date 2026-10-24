@@ -42,7 +42,7 @@ a draft, when it gets feedback, and when it delivers.
 | 30 | BALLFIGHT #4: Bagpipes vs Accordion | in production | session_011GUQnH (2026-10-24) | Started Oct 24: early contact sheet first, then the full render. Mood: dark sea shanty. | — |
 | 31 | BALLFIGHT #5: Turntables vs Synth | in production | session_01JYtAwR (2026-10-24) | Started: projects/ballfight_turntables_vs_synth/; engine additions (volley `bounce`, `orbit`, `rewind`) in separate small commits; early sheet before the full render. | — |
 | 32 | BALLFIGHT: Tuba vs Flute | idea (approved) | — | Approved Oct 23 (user: "All"), mood: villain march. All-new fighters so it can be produced in parallel with #29–#35. Ready for production. | — |
-| 33 | BALLFIGHT: Ukulele vs Acoustic Guitar | idea (approved) | — | Approved Oct 23 (user: "All"), mood: spaghetti-western standoff. All-new fighters so it can be produced in parallel with #29–#35. Ready for production. | — |
+| 33 | BALLFIGHT #7: Ukulele vs Acoustic Guitar | in production | session_017mWr3z (2026-10-24) | Started Oct 24 in projects/ballfight_ukulele_vs_acoustic/: early contact sheet first, then the full render. Mood: spaghetti-western standoff. | — |
 | 34 | BALLFIGHT: Trombone vs French Horn | idea (approved) | — | Approved Oct 23 (user: "All"), mood: cinematic brass trailer. All-new fighters so it can be produced in parallel with #29–#35. Ready for production. | — |
 | 35 | BALLFIGHT: Organ vs Harp | idea (approved) | — | Approved Oct 23 (user: "All"), mood: gothic horror. All-new fighters so it can be produced in parallel with #29–#35. Ready for production. | — |
 
