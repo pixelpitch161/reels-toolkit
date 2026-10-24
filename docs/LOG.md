@@ -913,3 +913,24 @@
 - Checks: safe zone OK (0.25 s steps); subject CoC 0 on all 1830 frames; loopcheck PASS render + mp4 (seam 2.3x, 2.7 dB,
   no click); flash 0 general; opening -19.7 dBFS, build +3.5 dB, no quiet windows. Render 16.5 min + 5 min mux.
 - Feedback: (pending)
+
+## BALLFIGHT #4 v2: Bagpipes vs Accordion (BALLFIGHT v2 redesign)
+- v2 of #30 on the user's approved redesign: BAG INFLATE (the bag swells to ~1.6x size and mass over 2 beats, then
+  rockets around like a released balloon, zig-zagging and squealing) vs BELLOWS BITE (the end boards fly apart with the
+  pleats as jaws and snap shut); WAR CRY / HIGHLAND FLING / BAG BURST; POLKA / SQUEEZEBOX / FULL BELLOWS (a ring-wide
+  clamp). Effects on reelkit.fx. Hook, captions, colours, mood and tempo unchanged.
+- Engine (small separate commits, all additive): guarded per-ball radius / mass / speed + clash hooks + a RAD record in
+  move() / snap(); weapon kinds `inflate` and `bite`; ability kind `clamp`. Proof of "no replay changes": hash every
+  guarded episode with the upstream fight.py and with mine (45 runs identical), as well as #27 / #28 vs the morning's
+  snapshot. Four rebases onto other sessions' engine commits; every conflict was keep-both, except one where the
+  keep-both landed my `elif` after another session's new `if` block (a syntax error caught by `ast.parse` before
+  committing): always parse after resolving.
+- Rules: the accordion first won every run (bites ~60 % on target, the bag rarely landed); ~7 damage per landed flight
+  balanced it; size growth +0.015 per hit up to 1.65x keeps the brief's ~1.6x. Seed 1442 (6 fits in 1466, 52 / 48 %):
+  the bagpipes lead by 20, FULL BELLOWS lands at 43.8 s, three late lead changes, ACCORDION wins on 1.8 HP.
+- Look: the tartan stretched over the swelling glass reads as "the bag" at a glance; a full-height FULL BELLOWS wall
+  along the axis hid both fighters (the axis runs through them by construction), so it is now low (0.32) and drawn
+  under the balls, with tall end boards. The flight ribbon needed width 7 (internal px) to read under the puffs.
+- Seam: v2's calmer fight lowered the median frame step (1.56 -> 1.18), so the same count-in seam failed (2.5x); the
+  flying "3" now reaches its landing size on the last frame (frame 0 repeats it): 2.1x render, 2.4x mp4.
+- Feedback: (pending)
