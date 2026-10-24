@@ -94,8 +94,13 @@ def beat_pulse(t, decay=0.12, pre=0.07):
     """a pulse on every beat that ramps up over the last `pre` s before it (no one-frame snap), so the beat that lands on
     frame 0 doesn't jump at the loop seam"""
     ph = t % BEAT
+    if t > DUR - SEAM_PRE - 1e-9:                    # the downbeat on frame 0 ramps in over 4 frames: a gentler seam
+        pre = SEAM_PRE
     up = min(1.0, max(0.0, (ph - (BEAT - pre)) / pre))
     return max(math.exp(-ph / decay), up * up * (3 - 2 * up))
+
+
+SEAM_PRE = 0.14
 
 
 def next_bar(t):
