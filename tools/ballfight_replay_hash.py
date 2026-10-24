@@ -21,6 +21,7 @@ EPISODES = [
     ('projects/ballfight_trombone_vs_horn', [1261, 1, 2, 3, 500]),   # #34, seed 1261
     ('projects/ballfight_turntables_vs_synth', [129, 1, 2, 3, 500]),   # #31, seed 129
     ('projects/ballfight_organ_vs_harp', [1181, 1, 2, 3, 500]),   # #35, seed 1181
+    ('projects/ballfight_ukulele_vs_acoustic', [874, 1, 2, 3, 500]),   # #33, seed 874
 ]
 CODE = r'''
 import hashlib, sys
