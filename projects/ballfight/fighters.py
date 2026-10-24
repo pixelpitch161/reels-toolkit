@@ -111,35 +111,44 @@ FIGHTERS = {
             low=dict(name='SCREECH', kind='wave', speed=4.5, radius=9.0, dmg=8.0, knock=1.5)),
         pp='VIOLIN', register=(62, 88), idiom='bowed'),
 
-    # ---- #30 BALLFIGHT #4: the "most hated instrument" final (numbers tuned once with
-    # ballfight_bagpipes_vs_accordion/tune.py, frozen). Two new weapon kinds, both on the 16th grid (fight.py):
-    #   'aura'     a drone ring of radius R + reach around the ball: hurts the opponent for `dmg` on every tick (every
-    #              `every` beats) while it is inside; +`grow` reach on the first landed tick of each contact, up to
-    #              `max_reach`; no knock. Haste = more ticks (damage x mult)
-    #   'bellows'  strokes every `every` beats alternating push / pull: a push blasts a ring out to the reach (knock
-    #              away), a pull collapses a ring in from `pull_k` x the reach (`pull_speed` x speed) and yanks the
-    #              opponent toward the ball; +`grow` reach per landed main stroke, knock x (1 + `force_grow` x reach
-    #              gained); haste strokes hit for `sub_dmg` x and don't grow it
+    # ---- #30 BALLFIGHT #4: the "most hated instrument" final. v2 (BALLFIGHT v2 redesign, user Oct 24): the bag and the
+    # bellows are the weapons (numbers tuned once with ballfight_bagpipes_vs_accordion/tune.py, frozen). v1 (drone aura
+    # vs bellows rings: kinds 'aura' / 'bellows', still in fight.py) is in git history (seed 1581).
+    #   'inflate'  every `every` beats the ball swells to `scale0` x R (+`grow` per landed hit, up to `scale_max`) over
+    #              `inflate_beats` (mass x size, speed x `slow`: heavy body slams for up to `slam_dmg`), then lets go and
+    #              rockets like a released balloon for `fly_beats` (+`fly_grow` per landed hit, up to `fly_max`) at
+    #              `fly_speed` x V, zig-zagging (a seeded turn of `zig_turn` deg every `zig` s, alternating sides, `home`
+    #              blend toward the enemy) while it deflates; `fly_dmg` on contact; `cool` s between contact hits.
+    #              Haste divides the cycle (HIGHLAND FLING: two flights per bar)
+    #   'bite'     every `every` beats the two halves fly apart with the bellows stretched between them like jaws (aimed
+    #              at the enemy's spot `lead` x the opening ahead), and snap shut `open16` 16ths later: a hit if the enemy
+    #              is within R + reach and `half` deg of the aim; +`grow` reach per landed main bite (haste bites hit for
+    #              `sub_dmg` x and don't grow it)
+    #   ability 'clamp' (FULL BELLOWS): the bellows stretch across the whole ring for `tele` beats, then clamp: a
+    #              ring-wide bite (lands unless shielded), knocking the enemy toward the accordion
     'BAGPIPES': dict(
         color=(64, 196, 88), dark=(26, 104, 42), corner='red',       # tartan green (series colour table, IDEAS)
         view=(42, 22, 0),
-        weapon=dict(kind='aura', style='drone',            # the drone: a ring around the ball that hurts while you're in it
-                    every=0.5, base=0.9, grow=0.12, max_reach=1.9, dmg=0.85),
+        weapon=dict(kind='inflate', style='balloon',       # BAG INFLATE: swell, then rocket around like a released balloon
+                    every=4, inflate_beats=2, scale0=1.4, grow=0.015, scale_max=1.65, mass_k=1.0, slow=0.55,
+                    fly_beats=1.25, fly_grow=0.06, fly_max=1.75, fly_speed=2.6, fly_fade=0.35, zig=(0.10, 0.17),
+                    zig_turn=(35.0, 70.0), home=0.35, aim_wobble=20.0, slam_dmg=5.0, slam_min=0.3, fly_dmg=6.8,
+                    cool=0.3, knock=1.2, rest_beats=0.25),
         abilities=dict(
             unlock1=dict(name='WAR CRY', kind='shockwave', speed=7.5, radius=3.4, dmg=3.0, knock=1.2, every_bars=4),
-            unlock2=dict(name='DOUBLE DRONE', kind='haste', mult=2.0, dur_beats=8, every_bars=6),
+            unlock2=dict(name='HIGHLAND FLING', kind='haste', mult=2.0, dur_beats=8, every_bars=6),
             low=dict(name='BAG BURST', kind='wave', speed=4.5, radius=9.0, dmg=8.0, knock=1.5)),
         pp='BAGPIPES', register=(67, 81), idiom='drone'),
     'ACCORDION': dict(
         color=(236, 82, 214), dark=(140, 34, 124), corner='blue',    # magenta (series colour table, IDEAS)
         view=(72, 22, 0),
-        weapon=dict(kind='bellows', style='bellows',       # push on beat 1, suck on beat 3: wheezy chord stabs
-                    every=2, base=0.9, grow=0.09, max_reach=2.2, speed=9.0, pull_k=1.7, pull_speed=0.45, dmg=3.0,
-                    sub_dmg=0.5, knock=1.0, force_grow=0.5),
+        weapon=dict(kind='bite', style='jaws',             # BELLOWS BITE: the halves open like jaws and snap shut
+                    every=2, base=0.9, grow=0.07, max_reach=2.0, half=38.0, open16=2, lead=0.6, dmg=2.6, sub_dmg=0.6,
+                    knock=0.9),
         abilities=dict(
             unlock1=dict(name='POLKA', kind='haste', mult=2.0, dur_beats=8, every_bars=5),
             unlock2=dict(name='SQUEEZEBOX', kind='shield', dur_beats=6, every_bars=6),
-            low=dict(name='FULL BELLOWS', kind='slam', tele=2, radius=1.35, dmg=11.0, knock=1.6)),
+            low=dict(name='FULL BELLOWS', kind='clamp', tele=1, dmg=9.0, knock=1.5)),
         pp='ACCORDION', register=(55, 79), idiom='reeds'),
     # ---- #32 BALLFIGHT #6: biggest vs smallest, lowest vs highest (numbers tuned once with ballfight_tuba_vs_flute/tune.py)
     'TUBA': dict(
