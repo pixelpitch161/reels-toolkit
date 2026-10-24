@@ -1088,6 +1088,8 @@ class Fight:
             return
         if w['kind'] == 'aura':
             self.aura_tick(k)
+        elif w['kind'] == 'inflate':                          # #30 v2
+            self.inflate_start(k)
         else:
             self.fire_bellows(k, k16 % main == 0)
 
@@ -1345,6 +1347,111 @@ class Fight:
         sf['seen'] = len(self.events)
 
     # ------------------------------------------------------------------ ability kind 'rewind' (#31 REWIND)
+    # ------------------------------------------------------------------ #30 v2: weapon kind 'inflate' (BAG INFLATE)
+    def inflate_setup(self, k):
+        """per-ball size / mass / speed for an 'inflate' fighter (read by move() through getattr defaults)"""
+        B = self.balls[k]
+        w = B.w
+        B.rad, B.mass, B.vmul = self.R.R, 1.0, 1.0
+        B.inf = None                                   # the running cycle: dict(phase, t0, t1, dur_i, dur_f, s, ...)
+        B.inf_scale = w['scale0']                      # inflated size (x R), +`grow` per landed hit
+        B.inf_fly = w['fly_beats']                     # flight length (beats), +`fly_grow` per landed hit
+        B.inf_cool = 0.0
+        B.blade_len = B.inf_scale                      # recorded in BL: the signature's current size
+        if not hasattr(self, 'clash_hooks'):
+            self.clash_hooks = []
+        self.clash_hooks.append(lambda k=k: self.inflate_clash(k))
+
+    def inflate_start(self, k):
+        """a cycle starts on the weapon's grid: the bag swells for `inflate_beats` (heavy, slow, body-slams), then lets
+        go and rockets around like a released balloon for the flight length (haste divides both); a cycle still
+        running is never cut short (the next start is skipped)"""
+        B = self.balls[k]
+        w = B.w
+        if B.inf is not None:
+            return
+        mult = self.ab_mult(k)
+        dur_i = w['inflate_beats'] * self.R.beat / mult
+        fly = min(B.inf_fly, w['every'] - w['inflate_beats'] - w.get('rest_beats', 0.25))
+        dur_f = max(0.25, fly) * self.R.beat / mult
+        B.inf = dict(phase='inflate', t0=self.t, dur_i=dur_i, dur_f=dur_f, s=B.inf_scale)
+        self.ev('inflate', k, float(B.inf_scale), dur_i, dur_f)
+
+    def inflate_step(self, k, dt):
+        """advance the cycle: swell (radius, mass up, speed down), release (aimed at the enemy, seeded wobble), the
+        zig-zag flight (sharp seeded turns, alternating sides, a little homing), deflating back to R"""
+        B, O = self.balls[k], self.balls[1 - k]
+        w = B.w
+        R = self.R.R
+        B.inf_cool = max(0.0, B.inf_cool - dt)
+        C = B.inf
+        if C is None:
+            return
+        s = C['s']
+        if C['phase'] == 'inflate':
+            u = min(1.0, (self.t - C['t0']) / C['dur_i'])
+            e = u * u * (3 - 2 * u)
+            B.rad = R * (1 + (s - 1) * e)
+            B.mass = 1 + (s - 1) * e * w.get('mass_k', 1.0)
+            B.vmul = 1 - (1 - w['slow']) * e
+            if u >= 1.0:
+                d = O.p - B.p
+                a = math.atan2(d[1], d[0]) + math.radians(self.rng.uniform(-1, 1) * w.get('aim_wobble', 20.0))
+                B.v = np.array([math.cos(a), math.sin(a)]) * self.R.V
+                B.vmul = w['fly_speed']
+                C.update(phase='fly', t1=self.t, zig_t=self.t + self.rng.uniform(*w['zig']), zig_s=1.0 if self.rng.random() < 0.5 else -1.0)
+                self.ev('release', k, float(s), C['dur_f'], float(B.p[0]), float(B.p[1]))
+            return
+        u = min(1.0, (self.t - C['t1']) / C['dur_f'])
+        f = (1 - u) ** 1.5
+        B.rad = R * (1 + (s - 1) * f)
+        B.mass = 1 + (s - 1) * f * w.get('mass_k', 1.0)
+        B.vmul = w['fly_speed'] * (1 - w.get('fly_fade', 0.35) * u)
+        if self.t >= C['zig_t'] and u < 1.0:
+            C['zig_s'] = -C['zig_s']
+            turn = math.radians(self.rng.uniform(*w['zig_turn'])) * C['zig_s']
+            c_, s_ = math.cos(turn), math.sin(turn)
+            v = B.v / (np.linalg.norm(B.v) + 1e-12)
+            v = np.array([c_ * v[0] - s_ * v[1], s_ * v[0] + c_ * v[1]])
+            d = O.p - B.p
+            d = d / (np.linalg.norm(d) + 1e-12)
+            hm = w.get('home', 0.3)
+            v = (1 - hm) * v + hm * d
+            B.v = v / (np.linalg.norm(v) + 1e-12) * self.R.V
+            C['zig_t'] = self.t + self.rng.uniform(*w['zig'])
+        if u >= 1.0:
+            B.rad, B.mass, B.vmul = R, 1.0, 1.0
+            B.inf = None
+            self.ev('land', k, float(B.p[0]), float(B.p[1]))
+
+    def inflate_clash(self, k):
+        """contact damage after a clash: a body slam while swollen (scaled by how big it is), a flight hit while it
+        rockets; landed hits grow the inflated size and the flight length"""
+        B, O = self.balls[k], self.balls[1 - k]
+        w = B.w
+        C = B.inf
+        if C is None or B.inf_cool > 0:
+            return
+        R = self.R.R
+        s = C['s']
+        if C['phase'] == 'inflate':
+            big = (B.rad / R - 1) / max(1e-6, s - 1)
+            if big < w.get('slam_min', 0.3):
+                return
+            dmg, how, kn = w['slam_dmg'] * big, 'bodyslam', w['knock'] * 0.8
+        else:
+            dmg, how, kn = w['fly_dmg'], 'flight', w['knock']
+        rel = O.p - B.p
+        dist = float(np.hypot(*rel))
+        hx, hy = (B.p + rel / max(dist, 1e-6) * B.rad).tolist()
+        landed = self.damage(k, 1 - k, dmg, how, hx, hy)
+        self.knock(1 - k, rel, kn)
+        B.inf_cool = w['cool']
+        if landed:
+            B.inf_scale = min(w['scale_max'], B.inf_scale + w['grow'])
+            B.inf_fly = min(w['fly_max'], B.inf_fly + w['fly_grow'])
+            B.blade_len = B.inf_scale
+
     def _rewind_ab(self, B):
         return next(a for a in B.cfg['abilities'].values() if a['kind'] == 'rewind')
 
@@ -1941,13 +2048,17 @@ class Fight:
         dc = [k for k, B in enumerate(self.balls) if B.w['kind'] in ('dash', 'cone', 'surf', 'rake')]   # (#33, v2)
         dc_k0 = int(math.ceil(R.t_fight / s16 - 1e-6))
         dc_next = dc_k0
-        grid16 = [k for k, B in enumerate(self.balls) if B.w['kind'] in ('aura', 'bellows')]     # #30 (opt-in)
+        grid16 = [k for k, B in enumerate(self.balls) if B.w['kind'] in ('aura', 'bellows', 'inflate')]   # #30 (opt-in)
         n16b = k16_0
         for k, B in enumerate(self.balls):                       # #29 v3 (opt-in weapon kinds)
             if B.w['kind'] == 'combo':
                 self.combo_setup(k)
             elif B.w['kind'] == 'flail':
                 self.flail_setup(k)
+            elif B.w['kind'] == 'inflate':                       # #30 v2
+                self.inflate_setup(k)
+        if rec is not None and any(B.w['kind'] == 'inflate' for B in self.balls):
+            rec['RAD'] = []
         thrusters = [k for k, B in enumerate(self.balls) if B.w.get('mode') == 'thrust']      # #34
         next16t = k16_0
         tethers = [k for k, B in enumerate(self.balls) if B.w['kind'] == 'tether']              # #31 v2
@@ -2058,6 +2169,8 @@ class Fight:
                     self.scratch_step(k, dt)
                 elif B.w['kind'] == 'tether':                    # #31 v2
                     self.tether_step(k, dt)
+                elif B.w['kind'] == 'inflate':                   # #30 v2
+                    self.inflate_step(k, dt)
             if getattr(self, 'lashes', None):                     # #31 v2 SAWTOOTH
                 self.lash_step(dt)
             if self.beams or any(B.w['kind'] == 'beam' for B in self.balls):
