@@ -132,6 +132,9 @@ class Fight:
         self.kcurve = {}                  # projectile id -> (turn rate rad/s, time it fades): curving volleys only
         self.khr = {}                     # projectile id -> hit radius (when it isn't Rules.KEY_R)
         self.kbounce = {}                 # projectile id -> rope bounces so far: volleys with `bounce` only
+        self.lines = []                   # 'line' hazards: rows of pipes erupting from the floor (dicts, see fire_line)
+        self.strings = []                 # 'trap' hazards: tripwire strings across the ring (dicts, see lay_string)
+        self.next_hz = 0                  # hazard id (lines + strings), for events and the renderer
         self.events = []
         self.t = 0.0
         self.winner = None
@@ -387,6 +390,118 @@ class Fight:
                     self.kv[i, ax] = -self.kv[i, ax]
             self.kbounce[kid] = c + 1
             self.ev('ricochet', int(self.kown[i]), float(self.kp[i, 0]), float(self.kp[i, 1]), kid, c + 1)
+
+    # ------------------------------------------------------------------ hazards: 'line' (erupting pipes), 'trap' (tripwire strings)
+    def hazard_beat(self, k, kb):
+        """'line' / 'trap' weapons act on the beat grid, every `every` beats (haste divides the interval)"""
+        B = self.balls[k]
+        if kb % max(1, int(round(B.w['every'] / self.ab_mult(k)))) == 0:
+            if B.w['kind'] == 'line':
+                self.fire_line(k)
+            else:
+                self.lay_string(k)
+
+    def _to_ropes(self, p, u):
+        """largest s >= 0 with p + s u still inside the ropes (|x|, |y| <= A); 0 if p is outside"""
+        A = self.R.A
+        s = math.inf
+        for ax in (0, 1):
+            if u[ax] > 1e-9:
+                s = min(s, (A - p[ax]) / u[ax])
+            elif u[ax] < -1e-9:
+                s = min(s, (-A - p[ax]) / u[ax])
+        return max(0.0, s)
+
+    def fire_line(self, k):
+        """'line': a row of pipes erupts from the floor, from the ball's surface toward the opponent (aimed where it is
+        now; it moves, so long lines can miss). The eruption front runs out at `speed`; each pipe stays up `linger` s
+        and then sinks; the row stops at the ropes. One hit per row (capsule test, half-width `width` / 2); a landed row
+        grows the row's length (`blade_len`) by `grow` up to `max_len`"""
+        B, O = self.balls[k], self.balls[1 - k]
+        w = B.w
+        d = O.p - B.p
+        n = float(np.hypot(*d))
+        u = d / n if n > 1e-9 else B.v / (np.linalg.norm(B.v) + 1e-12)
+        p0 = B.p + u * (self.R.R + w.get('gap', 0.05))
+        L = min(float(B.blade_len), self._to_ropes(p0, u))
+        hid = self.next_hz
+        self.next_hz += 1
+        self.lines.append(dict(owner=k, id=hid, p0=p0, u=u, L=L, t0=self.t, speed=w['speed'], linger=w['linger'],
+                               width=w['width'], dmg=w['dmg'], knock=w.get('knock', 0.8), hit=False))
+        self.ev('line', k, hid, float(p0[0]), float(p0[1]), float(u[0]), float(u[1]), L, w['speed'], w['linger'],
+                w['width'])
+
+    def lay_string(self, k):
+        """'trap': a string is stretched rope to rope across the ring, through the point `at` of the way from this ball
+        to the opponent and square to the line between them. Whoever crosses an enemy string takes `dmg` (once per
+        `cool` s per string; `knock` = a stumble forward, no turn); its owner passes freely. A fighter keeps
+        int(n_vol) strings (`n0`, +`grow` per landed crossing up to `n_max`): laying one more drops its oldest"""
+        B, O = self.balls[k], self.balls[1 - k]
+        w = B.w
+        A = self.R.A
+        d = O.p - B.p
+        n = float(np.hypot(*d))
+        nrm = d / n if n > 1e-9 else B.v / (np.linalg.norm(B.v) + 1e-12)
+        tdir = np.array([-nrm[1], nrm[0]])
+        c = B.p + d * w.get('at', 0.5)
+        lo, hi = -math.inf, math.inf
+        for ax in (0, 1):
+            if abs(tdir[ax]) > 1e-9:
+                s1, s2 = (-A - c[ax]) / tdir[ax], (A - c[ax]) / tdir[ax]
+                lo, hi = max(lo, min(s1, s2)), min(hi, max(s1, s2))
+        a, b = c + tdir * lo, c + tdir * hi
+        hid = self.next_hz
+        self.next_hz += 1
+        self.strings.append(dict(owner=k, id=hid, a=a, nrm=nrm, tdir=tdir, len=hi - lo, t0=self.t, cool=0.0,
+                                 last=float((O.p - a) @ nrm), dmg=w['dmg'], knock=w.get('knock', 0.0)))
+        self.ev('string', k, hid, float(a[0]), float(a[1]), float(b[0]), float(b[1]))
+        mine = [S for S in self.strings if S['owner'] == k]
+        cap = max(1, int(B.n_vol + 1e-9))
+        for S in mine[:max(0, len(mine) - cap)]:
+            self.strings.remove(S)
+            self.ev('string_off', k, S['id'])
+
+    def hazards_step(self, dt):
+        R = self.R.R
+        for Ln in self.lines:
+            k = Ln['owner']
+            O = self.balls[1 - k]
+            el = self.t - Ln['t0']
+            hi = min(Ln['L'], el * Ln['speed'])
+            lo = max(0.0, (el - Ln['linger']) * Ln['speed'])
+            if Ln['hit'] or hi <= lo:
+                continue
+            rel = O.p - Ln['p0']
+            s_ = min(hi, max(lo, float(rel @ Ln['u'])))
+            off = rel - Ln['u'] * s_
+            dist = float(np.hypot(*off))
+            if dist < R + Ln['width'] / 2:
+                Ln['hit'] = True
+                nv = off / dist if dist > 1e-6 else np.array([-Ln['u'][1], Ln['u'][0]])
+                hx, hy = (O.p - nv * R).tolist()
+                landed = self.damage(k, 1 - k, Ln['dmg'], 'pipe', hx, hy, Ln['id'])
+                self.knock(1 - k, nv + 0.4 * Ln['u'], Ln['knock'])
+                if landed:
+                    B = self.balls[k]
+                    B.blade_len = min(B.w['max_len'], B.blade_len + B.w['grow'])
+        self.lines = [Ln for Ln in self.lines if (self.t - Ln['t0'] - Ln['linger']) * Ln['speed'] < Ln['L'] - 1e-9]
+        for S in self.strings:
+            k = S['owner']
+            O = self.balls[1 - k]
+            S['cool'] = max(0.0, S['cool'] - dt)
+            rel = O.p - S['a']
+            sd = float(rel @ S['nrm'])
+            if sd * S['last'] < 0 and S['cool'] <= 0 and 0.0 <= float(rel @ S['tdir']) <= S['len']:
+                hx, hy = (O.p - S['nrm'] * sd).tolist()
+                landed = self.damage(k, 1 - k, S['dmg'], 'string', hx, hy, S['id'])
+                S['cool'] = self.balls[k].w.get('cool', 0.4)
+                if S['knock'] > 0:
+                    self.knock(1 - k, O.v, S['knock'])
+                if landed:
+                    B = self.balls[k]
+                    B.n_vol = min(B.w['n_max'], B.n_vol + B.w['grow'])
+            if sd != 0.0:
+                S['last'] = sd
 
     # ------------------------------------------------------------------ abilities
     def ab_dur(self, ab):
@@ -650,6 +765,8 @@ class Fight:
                             self.fire_volley(k)
                     elif B.w['kind'] == 'beam':
                         self.beam_beat(k, kb)
+                    elif B.w['kind'] in ('line', 'trap'):
+                        self.hazard_beat(k, kb)
             if (pulse or v16) and self.t + 1e-9 >= next16 * s16:
                 k16 = next16 - k16_0
                 next16 += 1
@@ -675,6 +792,8 @@ class Fight:
                     self.blade_step(k, dt)
             if self.beams or any(B.w['kind'] == 'beam' for B in self.balls):
                 self.beams_step(dt)
+            if self.lines or self.strings:
+                self.hazards_step(dt)
             self.effects_step(dt)
             self.abilities_step(on_beat)
             step += 1

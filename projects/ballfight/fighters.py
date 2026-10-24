@@ -18,6 +18,13 @@ A fighter is a glass ball with a low-poly Pixel Pitch instrument inside. Every f
               volley option `curve` (deg/s): projectiles home in on the opponent at that turn rate and fade after
                           `life` s; `hit_r`: their hit radius (default Rules.KEY_R)
               volley option `bounce` (N): projectiles ricochet off the ropes up to N times before they leave
+                'line'    a row of pipes erupts from the floor toward the opponent every `every` beats: front speed
+                          `speed`, each pipe up `linger` s, half-width `width` / 2, stops at the ropes, hits once; length
+                          `base`, +`grow` per landed row up to `max_len`
+                'trap'    every `every` beats a string is stretched rope to rope, square to the line between the two
+                          balls at `at` of the way; crossing an enemy string costs `dmg` (per string once per `cool` s;
+                          `knock` = a stumble, no turn); the owner passes freely; keeps int(n_vol) strings (`n0`, +`grow`
+                          per landed crossing up to `n_max`; the oldest drops)
   abilities   unlock1 (at LV2), unlock2 (at LV3), low (once, when HP drops below Rules.LOW_HP). Kinds:
                 'shockwave'  expanding ring: knocks back + damages what it passes, clears enemy projectiles
                 'shield'     blocks all damage for `dur` s (a blade hitting it bounces and reverses)
