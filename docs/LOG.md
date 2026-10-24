@@ -856,6 +856,17 @@
 - Checks: safe zone OK (0.25 s steps); subject CoC 0 on all 1830 frames (pipe tops and strings included); loopcheck PASS
   render + mp4 (seam 1.7x); flash 0 general (max 7.6 % at the TOCCATA); opening -18.5 dBFS, build +3.8 dB. Render 716 s
   on 2 cores + mux (19 min total).
+- v2 (BALLFIGHT v2 redesign, user Oct 24): built the shared effects kit `reelkit/fx.py` first (five small commits, pushed
+  before the re-render so #29-#34 could start): Flares (point lights in the fighter's colour fed into the scene's
+  Lights, so the canvas / floor passes, ropes, posts and stands light up; `tint()` for the crowd), Bursts (1-2 frame ink
+  starbursts; FlashBudget keeps bright cores to 3 / s), Shake (capped 2.5 px), shimmer / fringe (local warps),
+  Particles (analytic drag + gravity + wobble, trails = the same particle sampled earlier, so any frame renders alone),
+  Marks (per-pixel floor marks in the caller's floor coords), Moments (eased <= 30 % dim with the fighters kept lit +
+  speed lines). Everything is built once from the run's events, so patch renders match the full render.
+- v2 lessons: a pearl (near-white) fighter's light whitens the canvas fast: scale its colour by ~0.9 and keep peaks
+  <= 0.75; first pass at peaks 1.0-1.8 plus the old per-hit glows blew out the hit spots. The flash test on the two
+  busiest stretches before the full render (render 5-7 s of frames, `flashcheck.analyse`) matched the final mp4
+  (18.6 % vs 18.5 % max). Same audio (the events didn't change). Render 18 min.
 - Feedback: (pending)
 
 ## BALLFIGHT #7: Ukulele vs Acoustic Guitar (`projects/ballfight_ukulele_vs_acoustic`)
