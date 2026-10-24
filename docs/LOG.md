@@ -624,4 +624,8 @@
 - Checks: safe zone OK; subject CoC 0 on all 1830 frames; flash 0 general flashes; bounces 7-15 dB over the bed in
   400-4000 Hz; opening -18.7 dBFS, build +4.1 dB. Render ~0.26 s/frame/core (7.8 min on 2 cores) + 3 min mux.
   Time: ~3.5 h, mostly the ring-pacing rules and the colosseum look.
-- Feedback: (pending)
+- Feedback (v1): no "ITS STORY: / ON OUR PAGE" at the end; move the roster to the loosened safe zone.
+- v2: the cross-promo caption is gone ("WHO DID YOU / PICK?" holds to 58.25 s); roster_grid called with its new
+  defaults (bottom of the zone, left of the button column); ball names stay above the roster and out of the button
+  column (safe_overshoot); ring recentred on x 180 so it sits under the frame-centred captions. Full re-render + mux.
+- Feedback (v2): (pending)
