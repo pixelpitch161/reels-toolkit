@@ -25,6 +25,11 @@ A fighter is a glass ball with a low-poly Pixel Pitch instrument inside. Every f
                           (tangent + `out` x outward, knock = the strength, `base` .. `max`), the DJ's own ball stays
                           anchored; the first rope the opponent hits within `window` s is a slam: `dmg` x impact speed /
                           the shared speed (capped at `cap`); +`grow` strength per landed slam
+                'tether'  (#31 v2) patch cables: every `every` beats a plug flies at the opponent (`plug_speed`,
+                          `plug_r`) while fewer than its slots (`n0` .. `n_max`, +`grow` per landed plug) are in; a plug
+                          that lands jabs (`plug_dmg`) and plugs a cable in for `life_beats`; pulses run down every
+                          cable every `volt16` 16ths (haste divides it) at `volt_speed`, `volt_dmg` each; the leash keeps
+                          the opponent within `length` (it bounces off) unless it is flung harder than `snap` x cables
               volley option `curve` (deg/s): projectiles home in on the opponent at that turn rate and fade after
                           `life` s; `hit_r`: their hit radius (default Rules.KEY_R)
               volley option `bounce` (N): projectiles ricochet off the ropes up to N times before they leave

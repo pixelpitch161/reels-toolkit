@@ -1154,6 +1154,95 @@ class Fight:
                     B.blade_len = min(B.w['max_reach'], B.blade_len + B.w['grow'])
         self.sucks = [W for W in self.sucks if W['r'] > R + 1e-9]
 
+    # ------------------------------------------------------------------ weapon kind 'tether' (#31 v2: PATCH CABLES)
+    def _tether(self, B):
+        if not hasattr(B, 'tc'):
+            B.tc = dict(plugs=[], cables=[], volts=[], next=0, slots=float(B.w['n0']), pulse=0)
+            B.n_vol = B.tc['slots']
+        return B.tc
+
+    def tether_beat(self, k, kb):
+        """every `every` beats, while fewer cables are plugged in (or flying) than its slots, the synth fires a plug at the
+        opponent (straight, `plug_speed`)"""
+        B, O = self.balls[k], self.balls[1 - k]
+        w = B.w
+        tc = self._tether(B)
+        if kb % w['every'] or len(tc['cables']) + len(tc['plugs']) >= int(tc['slots'] + 1e-9):
+            return
+        d = O.p - B.p
+        a = math.atan2(d[1], d[0])
+        u = np.array([math.cos(a), math.sin(a)])
+        pos = B.p + (self.R.R + 0.06) * u
+        tc['plugs'].append(dict(id=tc['next'], p=pos, v=w['plug_speed'] * u))
+        self.ev('plug_fire', k, tc['next'], float(pos[0]), float(pos[1]), a, float(w['plug_speed']))
+        tc['next'] += 1
+
+    def tether_16(self, k, k16):
+        """on the 16th grid, every `volt16` 16ths (haste divides it): a voltage pulse leaves the synth down every plugged
+        cable (one arpeggio note); it arrives after cable length / `volt_speed`"""
+        B, O = self.balls[k], self.balls[1 - k]
+        w = B.w
+        tc = self._tether(B)
+        if not tc['cables'] or k16 % max(1, int(round(w['volt16'] / self.ab_mult(k)))):
+            return
+        dist = float(np.hypot(*(O.p - B.p)))
+        for C in tc['cables']:
+            tc['volts'].append(dict(cid=C['id'], t_arr=self.t + dist / w['volt_speed'], n=tc['pulse']))
+            self.ev('volt', k, C['id'], tc['pulse'])
+        tc['pulse'] += 1
+
+    def tether_step(self, k, dt):
+        """plugs fly; a plug that reaches the opponent jabs it (`plug_dmg`) and plugs a cable in for `life_beats` beats
+        (+`grow` slots per landed plug, up to `n_max`); pulses that arrive while their cable is still in hit for `volt_dmg`.
+        The leash: while any cable is in, the opponent can't get farther than `length` from the synth (it bounces off the
+        end of its leash), unless it is flung harder than `snap` x the cables plugged in: then they all snap.
+        `n_vol` holds the slots (recorded)"""
+        B, O = self.balls[k], self.balls[1 - k]
+        w = B.w
+        tc = self._tether(B)
+        A = self.R.A
+        rO = getattr(O, 'rad', self.R.R)
+        ghost = getattr(O, 'rw_left', 0.0) > 0                  # a rewinding opponent is intangible
+        for P in list(tc['plugs']):
+            P['p'] = P['p'] + P['v'] * dt
+            if np.abs(P['p']).max() > A:
+                tc['plugs'].remove(P)
+                self.ev('plug_miss', k, P['id'], float(P['p'][0]), float(P['p'][1]))
+            elif not ghost and float(np.hypot(*(O.p - P['p']))) < rO + w.get('plug_r', 0.14):
+                tc['plugs'].remove(P)
+                x, y = P['p'].tolist()
+                if self.damage(k, 1 - k, w['plug_dmg'], 'plug', x, y, P['id']):
+                    tc['cables'].append(dict(id=P['id'], t1=self.t + w['life_beats'] * self.R.beat))
+                    tc['slots'] = min(w['n_max'], tc['slots'] + w['grow'])
+                    B.n_vol = tc['slots']
+                    self.ev('plug', k, P['id'], x, y)
+        for C in list(tc['cables']):
+            if self.t >= C['t1']:
+                tc['cables'].remove(C)
+                self.ev('unplug', k, C['id'], 0)
+        live = {C['id'] for C in tc['cables']}
+        for V in list(tc['volts']):
+            if self.t + 1e-9 >= V['t_arr']:
+                tc['volts'].remove(V)
+                if V['cid'] in live and not ghost:
+                    self.damage(k, 1 - k, w['volt_dmg'], 'volt', float(O.p[0]), float(O.p[1]), V['n'])
+        if tc['cables'] and not ghost:
+            rel = O.p - B.p
+            dist = float(np.hypot(*rel))
+            if dist > w['length']:
+                n = rel / dist
+                if O.boost > w['snap'] * len(tc['cables']):
+                    self.ev('snap', k, len(tc['cables']), float(O.p[0]), float(O.p[1]))
+                    for C in tc['cables']:
+                        self.ev('unplug', k, C['id'], 1)
+                    tc['cables'], tc['volts'] = [], []
+                else:
+                    O.p = B.p + n * w['length']
+                    vn = float(O.v @ n)
+                    if vn > 0:
+                        O.v = O.v - 2 * vn * n
+                        self.ev('leash', k, float(O.p[0]), float(O.p[1]))
+
     # ------------------------------------------------------------------ weapon kind 'scratch_floor' (#31 v2: THE RING IS THE RECORD)
     def scratch_beat(self, k, kb):
         """every `every` beats (haste divides it) the DJ scratches the record the ring sits on: over `dur_beats` the floor
@@ -1586,6 +1675,8 @@ class Fight:
                 self.flail_setup(k)
         thrusters = [k for k, B in enumerate(self.balls) if B.w.get('mode') == 'thrust']      # #34
         next16t = k16_0
+        tethers = [k for k, B in enumerate(self.balls) if B.w['kind'] == 'tether']              # #31 v2
+        next16c = k16_0
         if rec is not None and self.uses_ext:
             rec['EXT'], rec['SLW'], rec['CRV'] = [], [], []
         self.t = R.t_fight
@@ -1614,6 +1705,8 @@ class Fight:
                         self.hazard_beat(k, kb)
                     elif B.w['kind'] == 'scratch_floor':         # #31 v2
                         self.scratch_beat(k, kb)
+                    elif B.w['kind'] == 'tether':                # #31 v2
+                        self.tether_beat(k, kb)
             if (pulse or v16) and self.t + 1e-9 >= next16 * s16:
                 k16 = next16 - k16_0
                 next16 += 1
@@ -1642,6 +1735,11 @@ class Fight:
                 n16b += 1
                 for k in grid16:
                     self.grid16_fire(k, k16b)
+            if tethers and self.t + 1e-9 >= next16c * s16:       # #31 v2: cable pulses on their own 16th counter
+                k16c = next16c - k16_0
+                next16c += 1
+                for k in tethers:
+                    self.tether_16(k, k16c)
             if thrusters and self.t + 1e-9 >= next16t * s16:     # #34: thrusts on the 16th grid (haste divides it)
                 k16t = next16t - k16_0
                 next16t += 1
@@ -1669,6 +1767,8 @@ class Fight:
                     self.flail_step(k, dt)
                 elif B.w['kind'] == 'scratch_floor':             # #31 v2
                     self.scratch_step(k, dt)
+                elif B.w['kind'] == 'tether':                    # #31 v2
+                    self.tether_step(k, dt)
             if self.beams or any(B.w['kind'] == 'beam' for B in self.balls):
                 self.beams_step(dt)
             if self.lines or self.strings:
