@@ -1544,7 +1544,7 @@ melody over it. Whoever is losing, you hear their half of the band fall apart.
   VIOLIN" (5 + 9 chars), with the "BALLFIGHT #2" tag.
 - **Post caption:** "Comment the next match-up 👇🥁🎻"
 
-| | DRUMS (red corner) | VIOLIN (blue corner) |
+| | DRUMS (orange, left corner) | VIOLIN (violet, right corner) |
 |---|---|---|
 | Style | Close-range area control, heavy hits | Long reach, fast, precise |
 | Weapon | Beat pulse: a drumhead ring blasts out from the ball on every beat; reach grows per landed pulse (new weapon kind `pulse`) | The bow, spun around the ball like a rapier: long, thin, light damage; spins faster per landed hit, slow strokes -> frantic spiccato (blade with a new spin-growth option, style `bow`) |
@@ -1564,7 +1564,9 @@ melody over it. Whoever is losing, you hear their half of the band fall apart.
   a lonely kick); as the violin loses HP its melody gets scratchy and sparse; the leader is fuller and louder. The
   winner's solo: a drum solo or a violin cadenza (original). Every hit snapped to the nearest 16th in the audio. (Not
   chosen: A drift phonk; C cinematic trailer.)
-- **Scene:** #27's ring and arena reused (red corner left, blue right), corner lights to match.
+- **Scene:** #27's ring and arena reused (DRUMS left, VIOLIN right). **Colours (user, Oct 23): every instrument has
+  its own ball colour, not red vs blue every time:** DRUMS orange (255, 146, 40), VIOLIN violet (176, 98, 255); the
+  corner lights, LED barrier sides, HUD, captions and effects take those colours (see the series colour table below).
 
 **Beat sheet (61 s; #27's proven shape; events after 2 s are targets, the real fight decides):**
 | Time | Visual | Caption (impact) | Sound |
@@ -1609,7 +1611,27 @@ styles, ready for crossovers and a tournament bracket.
 - **Music:** every hit plays the attacker's instrument in key, snapped to the nearest 16th in the audio; the leader's
   part gets fuller and louder, the loser's thins and dirties as its HP drops; the winner's solo is an original motif in
   its own idiom. Tempos via `loop_bpm` (whole bars in 61 s). Each episode has its own mood; none sugary.
-- **Fighters:** first named = red corner (screen left), second = blue (right). Weapon scaling: every landed hit grows the
+- **Fighter colours (user, Oct 23):** every instrument has its **own unique ball colour**, "so it's not just red vs
+  blue every time" (only Guitar and Piano keep red and blue). The colour is the fighter's identity across every
+  episode and crossover: glass ball tint + rim, its corner light and the LED barrier on its side, HUD bar + name,
+  ability captions, weapon / projectile glow, shatter particles. Corners are just **left** (first named) and
+  **right** (second named); nothing in the scene stays red / blue for other fighters. Use these exact values in
+  `fighters.py` (`color`; `dark` = a deeper shade of it, as #27 did), and don't reuse a colour for a new fighter:
+
+| Fighter | Colour | RGB | | Fighter | Colour | RGB |
+|---|---|---|---|---|---|---|
+| GUITAR | red | (255, 84, 72) | | PIANO | blue | (84, 156, 255) |
+| DRUMS | orange | (255, 146, 40) | | VIOLIN | violet | (176, 98, 255) |
+| TRUMPET | yellow | (255, 214, 60) | | SAX | teal | (36, 200, 176) |
+| BAGPIPES | tartan green | (64, 196, 88) | | ACCORDION | magenta | (236, 82, 214) |
+| TURNTABLES | lime | (190, 245, 60) | | SYNTH | cyan | (70, 228, 255) |
+| TUBA | indigo | (104, 92, 236) | | FLUTE | silver (cool) | (222, 232, 246) |
+| UKULELE | pink | (255, 138, 178) | | ACOUSTIC | wood tan | (214, 160, 100) |
+| TROMBONE | mint | (120, 240, 184) | | HORN | copper | (200, 112, 64) |
+| ORGAN | wine | (196, 52, 104) | | HARP | pearl (warm ivory) | (244, 228, 190) |
+
+  Spares (Cello, Clarinet, later fighters): pick a colour clearly apart from all of these and add it here.
+- **Fighters:** first named = left corner (screen left), second = right. Weapon scaling: every landed hit grows the
   signature weapon (the column "grows"). Abilities: unlock1 at LV2, unlock2 at LV3, `low` once below 25 HP; existing
   ability kinds (`shockwave`, `shield`, `haste`, `arc`, `wave`, `slam`) are reused wherever they fit.
 - **Tuning:** re-tune each pair once (`tune.py`: 40–60 % wins, ~50 s median K.O.), freeze the rules, then the
@@ -1632,7 +1654,7 @@ styles, ready for crossovers and a tournament bracket.
 
 ### 29. BALLFIGHT #3: Trumpet vs Sax — APPROVED
 **Rivalry:** jazz's oldest argument: who's the lead horn. Hook "TRUMPET / VS SAX" (7 + 6). Post caption emojis 🎺🎷.
-| | TRUMPET (red) | SAX (blue) |
+| | TRUMPET (yellow, left) | SAX (teal, right) |
 |---|---|---|
 | Weapon (new kind) | **Beam**: charges for a beat (bell glows), then fires a straight piercing blast | **Smoke rings**: wobbly rings that curve toward the enemy (volley with a `curve` option) |
 | Grows per landed hit | Beam length + width | +1 ring per landed volley (half a ring, as #27's keys, if it snowballs) |
@@ -1645,7 +1667,7 @@ styles, ready for crossovers and a tournament bracket.
 
 ### 30. BALLFIGHT #4: Bagpipes vs Accordion — APPROVED
 **Rivalry:** the "most hated instrument" final, pure comedy bait. Hook "BAGPIPES / VS ACCORDION" (8 + 12). Emojis 🏴󠁧󠁢󠁳󠁣󠁴󠁿🪗.
-| | BAGPIPES (red) | ACCORDION (blue) |
+| | BAGPIPES (tartan green, left) | ACCORDION (magenta, right) |
 |---|---|---|
 | Weapon (new kind) | **Drone aura**: a ring around the ball that hurts while the enemy is inside it | **Bellows**: on alternate bars a blast that pushes the enemy away, then a suction that pulls it in |
 | Grows per landed hit | Aura radius | Bellows reach + force |
@@ -1660,7 +1682,7 @@ styles, ready for crossovers and a tournament bracket.
 
 ### 31. BALLFIGHT #5: Turntables vs Synth — APPROVED
 **Rivalry:** DJ vs producer, electronic civil war. Hook "TURNTABLES / VS SYNTH" (10 + 8). Emojis 🎧🎹.
-| | TURNTABLES (red) | SYNTH (blue) |
+| | TURNTABLES (lime, left) | SYNTH (cyan, right) |
 |---|---|---|
 | Weapon (new kind) | **Vinyl frisbees** that ricochet off the ropes (volley with a `bounce` option: up to 2 rope bounces) | **Arpeggiator satellites**: glowing notes orbiting the ball that hit what they touch (new `orbit` kind) |
 | Grows per landed hit | +1 disc per landed volley (half-step, as #27) | +1 satellite (max 8) |
@@ -1675,7 +1697,7 @@ styles, ready for crossovers and a tournament bracket.
 
 ### 32. BALLFIGHT #6: Tuba vs Flute — APPROVED
 **Rivalry:** biggest vs smallest, lowest vs highest. Hook "TUBA / VS FLUTE" (4 + 8). Emojis 📯🪈.
-| | TUBA (red) | FLUTE (blue) |
+| | TUBA (indigo, left) | FLUTE (silver, right) |
 |---|---|---|
 | Weapon (new kind) | **Big pulse + gravity**: a slow, huge shockwave every bar (#28's `pulse` with `every` in bars), and a constant gentle **pull** toward the tuba (new `pull` kind) | **Darts**: rapid tiny fast projectiles every beat, low damage (volley tuned fast and light) |
 | Grows per landed hit | Pulse radius + pull strength | +1 dart per landed volley (half-step) |
@@ -1691,7 +1713,7 @@ styles, ready for crossovers and a tournament bracket.
 ### 33. BALLFIGHT #7: Ukulele vs Acoustic Guitar — APPROVED
 **Rivalry:** little brother vs big brother. Hook "UKULELE / VS ACOUSTIC" (7 + 11). Emojis 🪕🎸. Call the second
 fighter ACOUSTIC everywhere (HUD, captions) so it never reads as #27's GUITAR.
-| | UKULELE (red) | ACOUSTIC (blue) |
+| | UKULELE (pink, left) | ACOUSTIC (wood tan, right) |
 |---|---|---|
 | Weapon (new kind) | **Body-slam dash**: every 2 beats it dashes at the enemy, damage on contact (new `dash` kind) | **Sound-hole blast**: a strummed cone of sound in front of it, aimed at the enemy, on the beat (new `cone` kind) |
 | Grows per landed hit | Dash speed + distance | Cone length |
@@ -1707,7 +1729,7 @@ fighter ACOUSTIC everywhere (HUD, captions) so it never reads as #27's GUITAR.
 ### 34. BALLFIGHT #8: Trombone vs French Horn — APPROVED
 **Rivalry:** the brass section's pecking order (a real orchestra joke). Hook "TROMBONE / VS FRENCH HORN" (8 + 14). Emojis
 🎺📯. HUD name: "HORN" if "FRENCH HORN" doesn't fit.
-| | TROMBONE (red) | HORN (blue) |
+| | TROMBONE (mint, left) | HORN (copper, right) |
 |---|---|---|
 | Weapon (new kind) | **Slide lance**: the slide shoots straight out at the enemy on the beat and pulls back (blade with a `thrust` mode instead of spinning) | **Hunting-call arrows**: slow arrows that **home** in on the enemy (volley with a `homing` option) |
 | Grows per landed hit | Lance reach | Homing strength / +1 arrow per landed volley (half-step) |
@@ -1722,7 +1744,7 @@ fighter ACOUSTIC everywhere (HUD, captions) so it never reads as #27's GUITAR.
 
 ### 35. BALLFIGHT #9: Organ vs Harp — APPROVED
 **Rivalry:** cathedral vs angels: heaven's instruments fight. Hook "ORGAN / VS HARP" (5 + 7). Emojis ⛪😇 (or 🎹🪉).
-| | ORGAN (red) | HARP (blue) |
+| | ORGAN (wine, left) | HARP (pearl, right) |
 |---|---|---|
 | Weapon (new kind) | **Erupting pipes**: on the beat a line of organ pipes bursts up from the floor from the organ toward the enemy (new `line` hazard) | **Tripwire strings**: glowing strings stretched across the ring that hurt whoever crosses them; the harp is immune (new `trap` kind; older strings fade) |
 | Grows per landed hit | Line length | +1 string (max 7) |
