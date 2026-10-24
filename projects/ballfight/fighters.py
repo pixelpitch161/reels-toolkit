@@ -175,4 +175,26 @@ FIGHTERS = {
                          every_bars=4),
             low=dict(name='TALLY-HO', kind='wave', speed=4.5, radius=9.0, dmg=20.0, knock=1.5)),
         pp='HORN', register=(53, 77), idiom='horn_call'),
+
+    # ---- #35 BALLFIGHT #9: cathedral vs angels (numbers tuned once with ballfight_organ_vs_harp/tune.py, frozen)
+    'ORGAN': dict(
+        color=(196, 52, 104), dark=(112, 24, 58), corner='red',      # wine (series colour table, IDEAS)
+        view=(0, 22, 0),
+        weapon=dict(kind='line', style='pipes',            # a row of organ pipes erupts from the floor toward the enemy
+                    every=2, base=1.6, grow=0.06, max_len=5.6, speed=6.0, linger=0.55, width=0.3, dmg=4.0, knock=0.8),
+        abilities=dict(
+            unlock1=dict(name='CATHEDRAL', kind='shield', dur_beats=6, every_bars=6),
+            unlock2=dict(name='PULL ALL STOPS', kind='haste', mult=2.0, dur_beats=8, every_bars=6),
+            low=dict(name='TOCCATA', kind='slam', tele=2, radius=1.5, dmg=11.0, knock=1.6)),
+        pp='ORGAN', register=(36, 84), idiom='organ'),
+    'HARP': dict(
+        color=(244, 228, 190), dark=(166, 146, 104), corner='blue',  # pearl, warm ivory (series colour table, IDEAS)
+        view=(8, 26, 0),
+        weapon=dict(kind='trap', style='strings',          # glowing strings stretched across the ring: tripwires
+                    every=2, n0=1, grow=0.5, n_max=7, dmg=1.8, cool=0.4, at=0.5, knock=0.25),
+        abilities=dict(
+            unlock1=dict(name='PLUCK', kind='arc', n=7, sweep=70.0, beats=1, speed=6.0, dmg=1.2, every_bars=3),
+            unlock2=dict(name='ANGEL WINGS', kind='shield', dur_beats=6, every_bars=6),
+            low=dict(name='47 STRINGS', kind='wave', speed=4.5, radius=9.0, dmg=8.0, knock=1.5)),
+        pp='HARP', register=(50, 84), idiom='harp'),
 }
