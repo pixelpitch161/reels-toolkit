@@ -71,7 +71,7 @@ def beam_quad(o, a, length, width, y=R, frac=1.0):
 def draw_sight(arr, cam, p, a, length, k, t, col):
     """the locked aim while the bell charges: a dashed line marching outward, brighter as the charge fills"""
     d = np.array([math.cos(a), math.sin(a)])
-    o = p + d * (R + 0.26)
+    o = p + d * (R + 0.08)
     segs = []
     n = max(2, int(length / 0.22))
     off = (t * 3.0) % 1.0
@@ -87,23 +87,91 @@ def draw_sight(arr, cam, p, a, length, k, t, col):
     blend(arr, m, np.clip(np.asarray(col) * 0.7 + 90, 0, 255), 0.25 + 0.6 * k)
 
 
+BELL_IN = 0.76                   # the trumpet sprite's bell mouth sits this far (x R) from its ball's centre, along the aim
+FADE = 0.22
+
+
 def beam_state(t, t_fire, hold=0.12):
-    """(extension 0..1, alpha) of a blast fired at t_fire: it shoots out in 40 ms, holds, then fades over 0.18 s"""
+    """(extension 0..1, alpha, tail 0..1, age) of a blast fired at t_fire: it shoots out of the bell in 50 ms, holds,
+    then fades as its back end lets go of the bell and races after the tip"""
     u = t - t_fire
-    if u < 0 or u > hold + 0.18:
+    if u < 0 or u > hold + FADE:
         return None
-    ext = min(1.0, u / 0.04)
-    a = 1.0 if u <= hold else 1 - (u - hold) / 0.18
-    return ext, a
+    ext = 1 - (1 - min(1.0, u / 0.05)) ** 2
+    if u <= hold:
+        return ext, 1.0, 0.0, u
+    k = (u - hold) / FADE
+    return ext, 1 - k, k ** 1.4, u
 
 
-def draw_beam(arr, cam, o, a, length, width, ext, alpha, col, y=R):
-    """the blast: a soft gold halo, the body in the fighter's colour, a white-hot core"""
-    for wk, c, ak in ((2.6, np.asarray(col) * 0.75 + 50, 0.35), (1.0, np.asarray(col) * 0.9 + 40, 0.9),
-                      (0.38, np.array([255, 252, 236]), 1.0)):
-        Q = beam_quad(o, a, length, max(0.03, width * wk), y, ext)
-        m = mask_of([cam.wp(Q)])
-        blend(arr, m, np.clip(c, 0, 255), ak * alpha)
+def _beam_outline(p, a, s0, s1, width, y, n=18, flare_len=0.32):
+    """a blast's outline in the ring frame: narrow at the bell mouth (s = 0), opening to full width over `flare_len`,
+    a rounded tip; s0..s1 along the aim from the ball's centre + BELL_IN R"""
+    d = np.array([math.cos(a), math.sin(a)])
+    nrm = np.array([-d[1], d[0]])
+    o = p + d * BELL_IN * R
+    if s1 - s0 < 1e-3:
+        return None
+    ss = np.linspace(s0, s1, n)
+    k = np.clip(ss / flare_len, 0, 1)
+    w = width / 2 * (0.32 + 0.68 * (k * k * (3 - 2 * k)))
+    left = [o + d * sv + nrm * wv for sv, wv in zip(ss, w)]
+    right = [o + d * sv - nrm * wv for sv, wv in zip(ss, w)]
+    tip = [o + d * s1 + w[-1] * (math.cos(q) * d + math.sin(q) * nrm) for q in np.linspace(math.pi / 2, -math.pi / 2, 7)]
+    pts = left + tip[1:-1] + right[::-1]
+    return np.array([S.to_world(q[0], q[1], y) for q in pts])
+
+
+def draw_beam(arr, cam, p, a, length, width, st, col, t, y=R):
+    """the blast as light out of the trumpet's bell: a soft wide halo, the body, a white-hot core (all with blurred,
+    not hard, edges), sound-wave ripples racing along it while it holds"""
+    from scipy.ndimage import gaussian_filter
+    ext, alpha, tail, u = st
+    lv = length + R + 0.04 - BELL_IN * R          # the engine's beam starts just outside the glass; the light, at the bell
+    s1 = lv * ext
+    s0 = (s1 - 0.05) * tail
+    col = np.asarray(col, float)
+    thin = 1 - 0.55 * tail
+    for wk, c, ak, sig in ((3.2, col * 0.7 + 60, 0.42, 2.4), (1.25, col * 0.85 + 45, 0.9, 0.9),
+                           (0.42, np.array([255, 252, 236]), 1.0, 0.5)):
+        P = _beam_outline(p, a, s0, s1, max(0.03, width * wk * thin), y)
+        if P is None:
+            return
+        m = gaussian_filter(mask_of([cam.wp(P)]), sig)
+        blend(arr, np.clip(m * 1.15, 0, 1), np.clip(c, 0, 255), ak * alpha)
+    if tail == 0 and s1 > 0.4:                    # ripples: little wavefronts bowed forward, moving out at 8 units/s
+        d = np.array([math.cos(a), math.sin(a)])
+        nrm = np.array([-d[1], d[0]])
+        o = p + d * BELL_IN * R
+        lines = []
+        for j in range(6):
+            sj = (0.35 + j * 0.62 + 8.0 * u) % max(0.5, s1 - 0.25)
+            if sj < 0.3:
+                continue
+            hw = width * 1.05
+            arc = [o + d * (sj - 0.06 * (1 - q * q)) + nrm * hw * q for q in np.linspace(-1, 1, 7)]
+            lines.append(cam.wp(np.array([S.to_world(v[0], v[1], y) for v in arc])))
+        if lines:
+            blend(arr, mask_of(lines, width=1), np.clip(col * 0.4 + 165, 0, 255), 0.55 * alpha)
+
+
+def draw_flash(arr, cam, p, a, k, col, y=R):
+    """the muzzle flash at the bell mouth as a blast leaves: a short four-point star"""
+    if k <= 0.02:
+        return
+    d = np.array([math.cos(a), math.sin(a)])
+    o = p + d * BELL_IN * R
+    s = cam.wp(S.to_world(o[0], o[1], y)[None])[0]
+    L = 5 + 7 * k
+    lines = [[(s[0] - L, s[1]), (s[0] + L, s[1])], [(s[0], s[1] - L * 0.8), (s[0], s[1] + L * 0.8)]]
+    blend(arr, mask_of(lines, width=1), np.array([255, 250, 230]), 0.85 * k)
+    blend(arr, mask_of([[(s[0] + 2.2 * math.cos(q), s[1] + 2.2 * math.sin(q)) for q in np.linspace(0, 6.28, 9)[:-1]]]),
+          np.clip(np.asarray(col) * 0.3 + 190, 0, 255), k)
+
+
+def bell_mouth(p, a):
+    """the trumpet's bell mouth in the ring frame (inside the glass, along the aim)"""
+    return p + np.array([math.cos(a), math.sin(a)]) * BELL_IN * R
 
 
 # ---------------------------------------------------------------- smoke rings (the sax's volley)

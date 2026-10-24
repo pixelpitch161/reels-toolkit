@@ -101,8 +101,13 @@ def beams_live(t):
         tt = min(t, T_KO) if t < T_HS else t - HITSTOP
         st = ST.beam_state(tt, tf, HOLD[k])
         if st is not None:
-            out.append((k, ox, oz, a, ln, wd, st[0], st[1]))
+            out.append((k, ox, oz, a, ln, wd, st[0], st[1], st))
     return out
+
+
+def fire_centre(ox, oz, a):
+    """the trumpet ball's centre when it fired (the engine's beam origin sits R + 0.04 out along the aim)"""
+    return np.array([ox, oz]) - (R + 0.04) * np.array([math.cos(a), math.sin(a)])
 
 
 # the winner's solo: one floating note per solo note, from the bell (trumpet) or the ball (sax)
@@ -778,9 +783,6 @@ def canvas_shadows(cam, t, fs, keys, spot, slams=()):
         pw = S.to_world(st['p'][0], st['p'][1], R)
         circ = np.array([[pw[0] + R * st['scale'] * math.cos(u), R, pw[2] + R * st['scale'] * math.sin(u)] for u in a])
         polys.append(proj_point(circ, spot))
-        if k in BEAM and not st['shattered']:
-            tube, flare, mouth, hw = ST.bell_quads(st['p'], st['th'])
-            polys.append(proj_point(flare, spot))
     a8 = np.linspace(0, 2 * math.pi, 9)[:-1]
     for row in keys:                                  # smoke rings / notes: small soft blobs
         rr = 0.16 if int(row[6]) in VOLLEY_IDS else 0.07
@@ -926,10 +928,12 @@ def render(f):
             dl = np.sqrt((lp[0] - Xp) ** 2 + lp[1] ** 2 + (lp[2] - Zp) ** 2)
             Ic += (lp[1] / dl / (1 + (dl / R_) ** 2))[:, None] * lc[None] * 0.8
         # decals: shockwave light rings, the slam's shadow
-        for k, ox, oz, a_, ln, wd, ext, al in blasts:                # each blast throws a streak of light on the canvas
+        for k, ox, oz, a_, ln, wd, ext, al, bst in blasts:           # each blast throws a streak of light on the canvas
             d = np.array([math.cos(a_), math.sin(a_)])
-            rx, rz = sxp - ox, szp - oz
-            along = np.clip(rx * d[0] + rz * d[1], 0, ln * ext)
+            bm = ST.bell_mouth(fire_centre(ox, oz, a_), a_)
+            lv = (ln + R + 0.04 - ST.BELL_IN * R) * ext
+            rx, rz = sxp - bm[0], szp - bm[1]
+            along = np.clip(rx * d[0] + rz * d[1], lv * bst[2], lv)
             off = np.hypot(rx - along * d[0], rz - along * d[1])
             band = np.clip(1 - off / (0.35 + wd * 1.5), 0, 1) ** 1.5
             band = np.floor(band * 4 + BAYER_FULL[ys, xs] * 0.9) / 4
@@ -997,9 +1001,6 @@ def render(f):
         pw = S.to_world(st['p'][0], st['p'][1], R)
         dz = cam.depth(pw)[0]
         items.append((dz, 'ball', k))
-        if k in BEAM and not st['shattered']:
-            tip = st['p'] + (R + 0.15) * np.array([math.cos(st['th']), math.sin(st['th'])])
-            items.append((cam.depth(S.to_world(tip[0], tip[1], R))[0] - 0.005, 'bell', k))
         if st['shield'] > 0:
             items.append((dz + 0.03, 'smoke_back', k))
             items.append((dz - 0.03, 'smoke_front', k))
@@ -1007,7 +1008,8 @@ def render(f):
         items.append((cam.depth(S.to_world(row[0], row[1], 0.5))[0], 'key', row))
     items.sort(key=lambda it: -it[0])
     drawn = {}
-    drawn_bell = {}
+    drawn_bell = {k: cam.wp(S.to_world(*ST.bell_mouth(fs[k]['p'], fs[k]['th']), R)[None])[0]
+                  for k in BEAM if fs[k]['vis'] and not fs[k]['shattered']}
     for dz, kind, obj in items:
         if kind == 'post':
             draw_post(obj)
@@ -1016,9 +1018,6 @@ def render(f):
             arr, depth = fr.array(), fr.depth()
             drawn[obj] = draw_ball(arr, depth, cam, obj, st, t)
             fr.set_array(arr, depth)
-        elif kind == 'bell':
-            st = fs[obj]
-            drawn_bell[obj] = ST.draw_bell(fr, cam, L, shade, st['p'], st['th'], st['charge'])
         elif kind in ('smoke_back', 'smoke_front'):
             st = fs[obj]
             dur = CFG[obj]['abilities']['unlock1']['dur_beats'] * T.BEAT
@@ -1044,8 +1043,10 @@ def render(f):
     # ---------------- shields, slams, shards, sparks
     for k, a_, ln, ck in sights:                                        # the locked aim while the bell charges
         ST.draw_sight(arr, cam, fs[k]['p'], a_, ln, ck, t, COL[k])
-    for k, ox, oz, a_, ln, wd, ext, al in blasts:                      # the blasts
-        ST.draw_beam(arr, cam, np.array([ox, oz]), a_, ln, wd, ext, al, COL[k])
+    for k, ox, oz, a_, ln, wd, ext, al, bst in blasts:                 # the blasts, out of the trumpet's bell
+        pc = fire_centre(ox, oz, a_)
+        ST.draw_beam(arr, cam, pc, a_, ln, wd, bst, COL[k], t)
+        ST.draw_flash(arr, cam, pc, a_, max(0.0, 1 - bst[3] / 0.10), COL[k])
     for owner, cx, cz, t0, t_slam, rad in slams:                       # HONK: the giant bell over the predicted spot
         h = ST.honk_height(t, t0, t_slam)
         if h is not None:
@@ -1098,7 +1099,7 @@ def render(f):
     for u, m, dd_ in solo_notes(t):                                   # the champion's solo: notes rising from the horn
         st = fs[WIN]
         if WIN in BEAM:
-            org = st['p'] + (R + 0.24) * np.array([math.cos(st['th']), math.sin(st['th'])])
+            org = ST.bell_mouth(st['p'], st['th'])
         else:
             org = st['p']
         side = 0.25 * math.sin(m * 1.7)
@@ -1122,7 +1123,7 @@ def render(f):
         ck = fs[k]['charge']
         if ck > 0.05:
             fr.glow(sm[0], sm[1], 6 + 8 * ck, tuple(COL[k] * 0.6 + 100), 0.35 + 0.55 * ck)
-    for k, ox, oz, a_, ln, wd, ext, al in blasts:                      # glow along the blast
+    for k, ox, oz, a_, ln, wd, ext, al, bst in blasts:                 # glow along the blast
         for u in (0.15, 0.5, 0.85):
             q = np.array([ox, oz]) + u * ln * ext * np.array([math.cos(a_), math.sin(a_)])
             s_ = cam.wp(S.to_world(q[0], q[1], R)[None])[0]

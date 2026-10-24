@@ -37,7 +37,7 @@ python -m reelkit.video render.py audio.wav ballfight_tmp.mp4 && python mux.py  
 | `sim.py` | Runs + caches the honest fight on the shared engine; story analysis + score (same windows as #27) |
 | `tune.py` | Rule grid: `T.<weapon key>`, `S.<weapon key>`, `T.u1.<ability key>`, `scale`; balance, K.O., lead changes, beam accuracy |
 | `seed_search.py` | #27's early-stopping search (copied; names from the timeline) |
-| `styles.py` | Draw functions for the new looks: the trumpet's `bell`, the beam's sight + blast, `smoke` rings, bebop `note`s, the smoke screen, the honk bell, solo notes |
+| `styles.py` | Draw functions for the new looks: the beam's sight + blast (light out of the trumpet's bell: soft halos, rounded tip, ripples, a muzzle flash; it lets go of the bell as it fades), `smoke` rings, bebop `note`s, the smoke screen, the honk bell, solo notes |
 | `render.py` | #28's renderer, copied, with this pair's weapons and abilities; the trumpet sprite rolls inside its ball to point along its aim |
 | `audio.py` | Noir-jazz band; volleys (beats 1 + 3) = sax licks, blasts (beats 2 + 4) = trumpet stabs climbing per landed hit |
 | `mux.py` | Loop-clean encode via `projects/maze_race/mux.py` |
@@ -51,3 +51,6 @@ python -m reelkit.video render.py audio.wav ballfight_tmp.mp4 && python mux.py  
   was lowered instead of the global scale so the desperation moves keep their punch (they create the late lead changes).
 - The trumpet leads at 15 s in ~97 % of runs and wins ~45 %: the rings' growth is the natural comeback.
 - The honk bell stays low (mouth <= 2.9, 1.0 tall): any higher and its throat leaves the sharp band near the front corner.
+- v2 (user, Oct 24): the Pixel Pitch trumpet model was rebuilt from reference photos (series file, own commit), and the
+  blast now starts at the trumpet's bell inside the glass (`styles.BELL_IN` = 0.76 R along the aim) instead of with a
+  hard edge at the ball's rim; the brass stub on the glass is gone (the trumpet itself turns to its aim).

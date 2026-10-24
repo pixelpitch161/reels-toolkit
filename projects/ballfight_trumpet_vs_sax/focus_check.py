@@ -22,10 +22,10 @@ for f in range(T.NF):
             pts.append(S.to_world(st['p'][0], st['p'][1], dy))
             names.append(R.NAMES[k])
         if k in R.BEAM:
-            tip = st['p'] + (R.R + 0.24) * np.array([math.cos(st['th']), math.sin(st['th'])])
+            tip = R.ST.bell_mouth(st['p'], st['th'])
             pts.append(S.to_world(tip[0], tip[1], R.R))
             names.append('bell')
-    for k, ox, oz, a_, ln, wd, ext, al in R.beams_live(t):
+    for k, ox, oz, a_, ln, wd, ext, al, bst in R.beams_live(t):
         pts.append(S.to_world(ox + ln * ext * math.cos(a_), oz + ln * ext * math.sin(a_), R.R))
         names.append('beam tip')
     if T.T_FIGHT <= t < R.T_HS:
