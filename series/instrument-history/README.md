@@ -38,7 +38,11 @@ python3 tuba60_lowpoly.py tuba60.mp4                  # full render, single proc
 ## Optional length + loop hooks (61 s rule)
 
 - `FINAL_LEN = 2.6` sets the final-chord length (default 2.6 s). Use it to land the runtime: the mellophone computes
-  `FINAL_LEN = 61.0 - bars*BAR_S + 1e-6`, so the file is exactly 61.000 s (1,830 frames).
+  `FINAL_LEN = 1840/30 - bars*BAR_S + 1e-6`, so the file is exactly 1,840 frames (61.333 s).
+- `AUDIO_RATE = 48000` makes `pp_parallel.py` encode the AAC track at that rate. AAC works in 1,024-sample frames and
+  pads the last one with silence, which leaves a gap at the loop point. At 48 kHz a runtime that is a multiple of 16
+  frames (16/30 s) fills whole AAC frames: 1,824 frames (60.8 s) and 1,840 frames (61.333 s) both sit inside the
+  60.5–61.5 s rule. 61.000 s at 44.1 kHz leaves 22 ms of padding.
 - `END_FADE = .8` is the fade at the very end (default .8 s). Loopers use a few milliseconds (declick only).
 - `LOOP_END = dict(spin=.4, gap=.1, dissolve=.42)` runs the end back into frame 0: the outro instrument spins away
   (`spin` seconds, finishing `gap` seconds before the end) and the picture dithers into the opening frame over the

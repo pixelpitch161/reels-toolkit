@@ -41,5 +41,6 @@ if __name__ == "__main__":
             if done % 240 < step: print(f"{done}/{n} frames  {time.time()-t0:.0f}s", flush=True)
     subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{RW}x{RH}",
         "-r", str(FPS), "-i", raw, "-i", wav, "-vf", f"scale={RW*UP}:{RH*UP}:flags=neighbor", "-c:v", "libx264",
-        "-pix_fmt", "yuv420p", "-crf", "16", "-preset", "medium", "-c:a", "aac", "-b:a", "192k", "-shortest", out], check=True)
+        "-pix_fmt", "yuv420p", "-crf", "16", "-preset", "medium", "-c:a", "aac", "-b:a", "192k"]
+        + (["-ar", str(c.AUDIO_RATE)] if getattr(c, "AUDIO_RATE", None) else []) + ["-shortest", out], check=True)   # optional AUDIO_RATE (gapless loops)
     os.remove(raw); print("wrote", out, f"{c.TOTAL:.1f}s in {time.time()-t0:.0f}s")

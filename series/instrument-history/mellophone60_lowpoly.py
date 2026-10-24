@@ -3,6 +3,7 @@
 Modern Yamaha YMP-204M first, then 1845 -> 2000, back to TODAY. Backdrop: inside a giant brass clockwork
 (gears tick one tooth per beat, background pistons pump on the notes, steam vents fire on the rimshots).
 Beat: dark drumline at 111 BPM (snare-line cadence with rimshots, tenor runs, split basses, halftime 808, minor pad).
+Runtime 61.333 s (1840 frames; 48 kHz audio fills whole AAC frames so the loop has no padding gap).
 The file loops: the final chord runs up (snare roll) into the downbeat at frame 0, and the picture dissolves back to frame 0.
 Models built from reference photos: Yamaha YMP-204MS product photo; Met 504629 alto saxhorn + Musee de la musique Sax alto;
 MIMEd 15365 Courtois Koenig horn; Met 503845 over-the-shoulder alto + Met 503839 Seltmann OTS; MIMEd 102850 Besson tenor horn;
@@ -24,8 +25,10 @@ BPM = 111
 BEAT_S = 60/BPM; BAR_S = 4*BEAT_S
 SHOW_BARS, SCENE_BARS, OUTRO_BARS = 4, 2, 1
 N_ROWS = 11                                                    # 10 history rows + the closing modern row
-LOOP_LEN = 61.0                                                # the 61 s rule: total runtime incl. the final chord
-FINAL_LEN = LOOP_LEN - (SHOW_BARS + SCENE_BARS*N_ROWS + OUTRO_BARS)*BAR_S + 1e-6   # -> exactly 1830 frames
+LOOP_FRAMES = 1840                                             # the 61 s rule (60.5-61.5 s): 61.333 s incl. the final chord;
+LOOP_LEN = LOOP_FRAMES/30                                      # 1840 frames at 48 kHz = exactly 2875 AAC frames, so the encoder
+AUDIO_RATE = 48000                                             # adds no silent padding at the loop point (61.000 s would)
+FINAL_LEN = LOOP_LEN - (SHOW_BARS + SCENE_BARS*N_ROWS + OUTRO_BARS)*BAR_S + 1e-6
 END_FADE = .004                                                # declick only: the loop restarts at the file end
 LOOP_END = dict(spin=.4, gap=.1, dissolve=.42)                 # outro horn spins away, picture dissolves into frame 0
 LIGHTING = True
@@ -451,7 +454,7 @@ def synth(s, idx):
 # ---------------------------------------------------------------- backing: dark drumline (snare line, tenors, split basses, halftime 808, minor pad)
 _r = np.random.default_rng(23)
 def _bp(lo, hi): return butter(2, [lo/(SR/2), hi/(SR/2)], "band")
-_SNB, _HISS = _bp(1800, 9500), _bp(2500, 9000)
+_SNB = _bp(1500, 7000)
 def snare(v, rim=False):
     """high-tension marching snare: dry crack, short wire burst; rimshots add a metallic ping"""
     n = int(.2*SR); t = _t(n)
@@ -549,7 +552,7 @@ def pad_voice(notes, dur, v):
     env = np.minimum(1, t/att)*np.clip((dur + rel - t)/rel, 0, 1)
     if not long_: env *= np.exp(-t*4)
     return out*env*v*.25
-MIX = dict(drums=-19, bass=-22, pad=-28, verb=-24, verb_len=1.3)
+MIX = dict(drums=-20, bass=-22, pad=-28, verb=-24, verb_len=1.3)
 
 # ---------------------------------------------------------------- background: inside a giant brass clockwork
 THEMES = {   # gear metal, glow (light colour)

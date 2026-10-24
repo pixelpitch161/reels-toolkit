@@ -31,6 +31,10 @@ the extra second is a safety net. Count the closing modern row as a scene:
 total ≈ (4 + 2 × scene rows + 1) bars × 240/BPM s + the final chord (~2.6 s). Pick the BPM and scene count in the
 draft so this lands on 61 s; if the render misses, nudge the BPM or the final-chord length rather than dropping scenes.
 The file must loop cleanly: the end of the file is where the loop restarts (no dead air or fade before the file ends).
+The engine has hooks for this (README → "Optional length + loop hooks"): `FINAL_LEN` lands the runtime, `END_FADE` drops the
+end fade, `LOOP_END` spins the outro instrument away and dissolves the picture into frame 0, `AUDIO_RATE = 48000` with a
+runtime of 1,824 or 1,840 frames avoids AAC padding at the seam. Build a run-up into the downbeat at 0 s (the mellophone
+rolls the snare line into it) and check the finished file with `python -m reelkit.loopcheck out.mp4` from the repo root.
 
 ## Making one
 

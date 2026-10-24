@@ -266,8 +266,8 @@ def frame(c, T, fi=0):
     if loop and loop.get("dissolve") and T > c.TOTAL - loop["dissolve"] and T > 0:
         f0 = getattr(c, "_FRAME0", None)
         if f0 is None: f0 = c._FRAME0 = np.asarray(frame(c, 0.0, 0))
-        a = (T - (c.TOTAL - loop["dissolve"]))/loop["dissolve"]   # ordered-dither dissolve into the opening frame
-        arr = np.asarray(im).copy(); m = BAY < a*16/17; arr[m] = f0[m]; im = Image.fromarray(arr)
+        a = clamp((T - (c.TOTAL - loop["dissolve"]))/(loop["dissolve"] - 1/FPS))   # ordered-dither dissolve, complete on the last frame
+        arr = np.asarray(im).copy(); m = BAY < a if a < 1 else np.ones(BAY.shape, bool); arr[m] = f0[m]; im = Image.fromarray(arr)
     return im
 
 def run(c):
