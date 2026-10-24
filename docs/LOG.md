@@ -828,7 +828,22 @@
   top view (the old one had the leadpipe on top and a small low bell; a real trumpet has the bell pipe on top, the
   leadpipe in front of the valves, the main slide looping down at the bell end, the bell bow at the mouthpiece end).
   Lesson: a light effect should start at its source inside the subject (the bell, inside the glass) with blurred
-  halos, not at a hard polygon edge on the ball's rim. Full re-render (the model is in every frame) - feedback v2: (pending)
+  halos, not at a hard polygon edge on the ball's rim. Full re-render (the model is in every frame).
+- v3 (BALLFIGHT v2 redesign, Oct 24): new signatures, the instrument's body as the weapon. TRUMPET VALVE COMBO (engine
+  kind `combo`: three pistons punch 1-2-3 on the 8ths, aimed at the enemy, out / hold / back, the third harder; reach
+  grows) and SAX STRAP FLAIL (kind `flail`: the head spins up toward `spin_max`, damage grows with momentum, a landed hit
+  wraps the enemy, reels it in to 2.3 until a beat two on, then yanks); HIGH C became an ability kind `beam` (v2's blast as
+  the finisher). Three small engine commits + a roster commit, each checked with tools/ballfight_replay_hash.py (all nine
+  episodes; #29's own entry moved to the new seed).
+- v3 rules lessons: reeling the trumpet to 1.6 put it inside its own piston reach and it won 100 % by 27 s; reeling to
+  2.3 (just outside the starting reach) makes the growing reach the trumpet's way back in. Balance flips fast on the
+  flail's damage (7 -> 8 = 83 % -> 22 %). Close fights level both fighters together, so unlocks pair up and ~1 % of runs
+  fit the hard windows; the search still took a minute. Seed 24 had a later lead change but a 4.3 s hitless opening,
+  so seed 191 (longest gap 2.6 s) won.
+- v3 look lessons: pistons need ~5 px heads to read at ball size; smoke trails need short lives or they carpet the
+  ring; a wide beam's halo must not scale with its width (cap it) or the finisher blinds the frame; the giant beam's
+  visible length ends at the ropes to stay in the sharp band. Flash test on the busiest stretch: 16.6 % peak.
+- Feedback v3: (pending)
 
 ## BALLFIGHT #9: Organ vs Harp (`projects/ballfight_organ_vs_harp`)
 - Ninth BALLFIGHT episode (#35), produced in parallel with #29-#34 on the shared engine. ORGAN erupts rows of organ pipes
