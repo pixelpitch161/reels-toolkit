@@ -3,13 +3,18 @@ new entry here (or a new ability pair) on the same engine (fight.py) and rendere
 
 A fighter is a glass ball with a low-poly Pixel Pitch instrument inside. Every fighter has:
   weapon      one of the engine's weapon kinds (fight.py):
-                'blade'   a rigid arm spinning around the ball (sword); grows by `grow` per landed hit up to `max_len`
+                'blade'   a rigid arm spinning around the ball (sword); grows by `grow` per landed hit up to `max_len`;
+                          optional `spin_grow` / `spin_max`: spins faster per landed hit instead (or as well)
                 'volley'  projectiles fired at the opponent every `every` beats; +`grow` keys per volley that lands (a
                           fraction adds up: 0.5 = one more key every second landed volley)
+                'pulse'   a ring blasting out from the ball every `every` beats (on the 16th grid, so haste can roll it);
+                          reach `base` beyond the surface, +`grow` per landed pulse up to `max_reach`; haste pulses hit
+                          for `sub_dmg` x and don't grow it; `clears`: it swats enemy projectiles in its path
   abilities   unlock1 (at LV2), unlock2 (at LV3), low (once, when HP drops below Rules.LOW_HP). Kinds:
                 'shockwave'  expanding ring: knocks back + damages what it passes, clears enemy projectiles
                 'shield'     blocks all damage for `dur` s (a blade hitting it bounces and reverses)
-                'haste'      weapon speed x `mult` for `dur` s (blade spin / volley rate)
+                'haste'      weapon speed x `mult` for `dur` s (blade spin / volley rate / pulse rate)
+              durations: `dur` in s, or `dur_beats` in beats at the episode's tempo
                 'arc'        a sweeping arc of `n` projectiles across the ring over `beats` beats
                 'wave'       a big slow shockwave across the whole ring (like 'shockwave', harder, clears everything)
                 'slam'       telegraphed area hit at the opponent's predicted spot after `tele` beats
@@ -44,4 +49,28 @@ FIGHTERS = {
             unlock2=dict(name='GLISSANDO', kind='arc', n=15, sweep=150.0, beats=1, speed=5.6, dmg=0.5, every_bars=4),
             low=dict(name='GRAND SLAM', kind='slam', tele=2, radius=1.35, dmg=11.0, knock=1.6)),
         pp='PIANO', register=(48, 84), idiom='keys'),
+
+    # ---- #28 BALLFIGHT #2: brute force vs finesse (numbers tuned once with ballfight_drums_vs_violin/tune.py, frozen)
+    'DRUMS': dict(
+        color=(255, 96, 60), dark=(150, 42, 30), corner='red',
+        view=(12, 30, 0),
+        weapon=dict(kind='pulse', style='drumhead',        # a drumhead ring blasts out on every beat: the fight's groove
+                    every=1, base=0.9, grow=0.07, max_reach=2.3, speed=9.0, dmg=2.5, sub_dmg=0.45, knock=0.75,
+                    clears=True),
+        abilities=dict(
+            unlock1=dict(name='DRUM ROLL', kind='haste', mult=4.0, dur_beats=4, every_bars=4),
+            unlock2=dict(name='CRASH CYMBAL', kind='shield', dur_beats=6, every_bars=6),
+            low=dict(name='DOUBLE KICK', kind='slam', tele=2, radius=1.35, dmg=11.0, knock=1.6)),
+        pp='DRUMS', register=(36, 50), idiom='kit'),
+    'VIOLIN': dict(
+        color=(104, 150, 255), dark=(36, 56, 150), corner='blue',
+        view=(12, 26, 28),
+        weapon=dict(kind='blade', style='bow',             # the bow, spun like a rapier: long, thin, light; faster per hit
+                    base=1.8, grow=0.0, max_len=1.8, frets0=0, spin=2.4, spin_grow=0.7, spin_max=14.0,
+                    dmg=1.8, cooldown=0.18, parry=False, knock=0.55),
+        abilities=dict(
+            unlock1=dict(name='PIZZICATO', kind='arc', n=5, sweep=64.0, beats=1, speed=6.0, dmg=1.4, every_bars=3),
+            unlock2=dict(name='TREMOLO', kind='haste', mult=2.5, dur=3.0, every_bars=6),
+            low=dict(name='SCREECH', kind='wave', speed=4.5, radius=9.0, dmg=8.0, knock=1.5)),
+        pp='VIOLIN', register=(62, 88), idiom='bowed'),
 }
