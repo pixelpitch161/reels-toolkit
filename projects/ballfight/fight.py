@@ -606,6 +606,8 @@ class Fight:
         next16 = k16_0
         pulse = [k for k, B in enumerate(self.balls) if B.w['kind'] == 'pulse']
         pullers = [k for k, B in enumerate(self.balls) if B.w.get('pull')]
+        v16 = [k for k, B in enumerate(self.balls) if B.w['kind'] == 'volley' and B.w.get('on16')]   # volleys on the 16th
+        # grid (option `on16`), so haste can fire an every-beat volley on the 8ths / 16ths
         self.t = R.t_fight
         f0 = int(round(R.t_fight * R.FPS))
         step = 0
@@ -620,13 +622,13 @@ class Fight:
                 kb = next_beat - k0
                 next_beat += 1
                 for k, B in enumerate(self.balls):
-                    if B.w['kind'] == 'volley':
+                    if B.w['kind'] == 'volley' and not B.w.get('on16'):
                         ev = max(1, int(round(B.w['every'] / (self.ab_mult(k)))))
                         if kb % ev == 0:
                             self.fire_volley(k)
                     elif B.w['kind'] == 'beam':
                         self.beam_beat(k, kb)
-            if pulse and self.t + 1e-9 >= next16 * s16:
+            if (pulse or v16) and self.t + 1e-9 >= next16 * s16:
                 k16 = next16 - k16_0
                 next16 += 1
                 for k in pulse:
@@ -635,6 +637,11 @@ class Fight:
                     every16 = max(1, int(round(main / self.ab_mult(k))))
                     if k16 % every16 == 0:
                         self.fire_pulse(k, k16 % main == 0)
+                for k in v16:
+                    B = self.balls[k]
+                    every16 = max(1, int(round(4 * B.w['every'] / self.ab_mult(k))))
+                    if k16 % every16 == 0:
+                        self.fire_volley(k)
             for k, B in enumerate(self.balls):
                 B.shield = max(0.0, B.shield - dt)
                 B.haste = max(0.0, B.haste - dt)
