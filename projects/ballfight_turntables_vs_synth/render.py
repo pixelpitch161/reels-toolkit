@@ -1,5 +1,6 @@
-"""#31 BALLFIGHT #5: Turntables vs Synth - renderer, v2 (BALLFIGHT v2 redesign: THE RING IS THE RECORD vs PATCH CABLES,
-effects from reelkit.fx). v1 (vinyl frisbees vs arp satellites) is kept as render_v1_backup.py.
+"""#31 BALLFIGHT #5: Turntables vs Synth - renderer, v3 (BALLFIGHT v2 redesign: THE RING IS THE RECORD vs PATCH CABLES,
+effects from reelkit.fx; v3: the VS title card on bar 0 from the shared projects/ballfight/title.py, the 3-2-1 on bar 1,
+FIGHT! on bar 2). v2 (no title card) is kept as render_v2_backup.py, v1 (frisbees vs satellites) as render_v1_backup.py.
 
 arena floor (per pixel: spill, corner lights, attack lights) -> stands + crowd (lit by attacks) -> ring skirt -> canvas
 (per pixel: THE RECORD - slate vinyl, grooves, sheen, strobe dots and the lime label, turning with the floor angle
@@ -9,7 +10,8 @@ attack lights; fading marks; decals: white-noise static, the bass drop's target,
 the synth's level) with voltage pulses running down them, plugs in flight, SAWTOOTH's lashing saw arms -> fighters +
 plugged jacks (painter) -> front ropes + posts -> the dropping record, shards, sparks, particles -> locked DOF ->
 glows -> spot beam -> bloom -> grade -> shimmer, fringing, ability moments, impact bursts -> REWIND tape look ->
-countdown, HP numbers in the balls, fight HUD, captions.
+countdown, HP numbers in the balls, fight HUD, captions -> the VS title card over everything (bar 0 and the last
+0.30 s: its slam on frame 0 is the loop's reset).
 
     python render.py                                   # sprite cache (check/sprites_ballfight5.npz)
     python -m reelkit.sheet render.py test/sheet.png 1.0 10.9 15.3 19.8 25.2 34.2 40.2 50.8 55.0
@@ -41,6 +43,7 @@ import sim
 import styles as ST
 from fighters import FIGHTERS
 from fight import Fight
+import title as TT                                                 # v3: the shared VS title card (projects/ballfight)
 
 YY_, XX_ = np.mgrid[0:H, 0:W].astype(np.float64)
 RUN = sim.load()
@@ -72,6 +75,36 @@ S.SKIRT_BAND = np.array([150, 140, 184])
 S.SKIRT_FACES = S.platform_faces()
 LIGHT_RGB = [COL[k] / COL[k].max() for k in (0, 1)]
 CROWD_TINT = [0.78 + 0.42 * LIGHT_RGB[k] for k in (0, 1)]
+
+
+# ---------------------------------------------------------------- v3: the VS title card's panels + big balls for this pair
+def _grooves(base):
+    """TURNTABLES' panel (top-left): record grooves around the far corner, track gaps, a lime label arc"""
+    r = np.hypot(TT.XX, TT.YY)
+    g = 0.5 + 0.5 * np.sin(r * 2 * math.pi / 6.0)
+    base = base * (0.88 + 0.14 * g[..., None])
+    gap = np.abs((r % 84.0) - 42.0) < 1.6
+    base = np.where(gap[..., None], base * 1.2, base)
+    lab = r < 46
+    return np.where(lab[..., None], base * 0.55 + np.clip(COL[DJ], 0, 255) * 0.45, base)
+
+
+def _circuit(base):
+    """SYNTH's panel (bottom-right): circuit traces (right-angle runs) and solder pads"""
+    gx, gy = np.floor(TT.XX / 24.0), np.floor(TT.YY / 24.0)
+    h = (gx * 7.13 + gy * 3.71) % 1.0
+    fx_, fy_ = TT.XX % 24.0, TT.YY % 24.0
+    trace = ((h < 0.5) & (np.abs(fy_ - 12) < 1.0)) | ((h >= 0.5) & (np.abs(fx_ - 12) < 1.0))
+    pad = (np.hypot(fx_ - 12, fy_ - 12) < 2.6) & (h > 0.72)
+    base = np.where(trace[..., None], base * 1.22, base)
+    return np.where(pad[..., None], base * 1.4, base)
+
+
+TT.PATTERNS.update({'TURNTABLES': _grooves, 'SYNTH': _circuit})
+for _k in (0, 1):                                                  # the card's big balls: the models tipped toward us
+    _yc, _sw, _roll = CFG[_k]['view']
+    TT._SPR[_k] = ST.render_sprite(CFG[_k]['pp'], int(TT.BALLS[_k]['r'] * 0.8), float(_yc), float(_roll),
+                                   float(CFG[_k].get('pitch', 0)))
 
 
 def clock(t):
@@ -625,7 +658,7 @@ def draw_ball(arr, dep, cam, k, st, t):
 
 # ---------------------------------------------------------------- captions (from the run)
 def _caps():
-    title = [(1.0 / FPS, T.T_FIGHT - 0.06, [f'*{NAMES[0]}*', f'VS ~{NAMES[1]}~'])]
+    title = []                                                      # v3: the VS title card replaces the top caption
     abil = [[], []]
     for t, who, name in STORY['caps']:
         abil[who].append((t, t + 2.4, [name]))
@@ -675,8 +708,7 @@ def big_text(img, text, cx, cy, size_px, col, alpha=1.0, outline=(16, 10, 26)):
 
 
 def countdown(img, t, cs):
-    """3 . 2 . 1 . FIGHT! in the ring, one count per beat (the band's count-in); the '3' flies in during the last
-    beat of the file and lands ON frame 0"""
+    """3 . 2 . 1 . FIGHT! in the ring, one count per beat (the band's count-in, bar 1; FIGHT! on bar 2)"""
     cx, cy = cs
     items = []
     for j, (tc, txt) in enumerate(T.COUNT):
@@ -687,14 +719,11 @@ def countdown(img, t, cs):
         col = (255, 244, 220) if txt != 'FIGHT!' else (255, 214, 96)
         if tc <= t < tn:
             u = t - tc
-            punch = 1 + 0.25 * max(0.0, 1 - u / 0.12) ** 2
+            # FIGHT!'s punch is smaller (0.12): at 0.25 it poked 7 px into the button column for one frame
+            punch = 1 + (0.25 if txt != 'FIGHT!' else 0.12) * max(0.0, 1 - u / 0.12) ** 2
             out = ss(tn - 0.1, tn, t)
             big_text(img, txt, cx, cy, size * punch * (1 - 0.35 * out), col, alpha=1 - out)
-    t_in = T.DUR - T.BEAT                                 # the '3' flies in during the last beat
-    if t >= t_in:
-        u = (t - t_in) / T.BEAT
-        e_ = 1 - (1 - u) ** 2.5                           # eases out: nearly landed on the last frame, lands on frame 0
-        big_text(img, '3', cx, cy, 78 * (0.15 + 1.1 * e_), (255, 244, 220), alpha=min(1.0, u * 1.6))
+    # v3: no '3' fly-in at the end of the file: the title card's slam on frame 0 is the loop's reset (title.py)
 
 
 
@@ -1319,9 +1348,10 @@ def render(f):
                 ui._note(gx, gy - 4, gx + 13, gy + 4, 'label', 'rewind glyph')
     # ---------------- UI: countdown, HP numbers in the balls, fight HUD, captions
     countdown(img, t, cs)
-    for k, (s_, rp) in drawn.items():
+    card_closed = TT.door_offset(t) == 0.0                            # v3: the title card covers the HUD: skip it
+    for k, (s_, rp) in (drawn.items() if not card_closed else ()):
         st = fs[k]
-        if st['scale'] < 0.95 or T.BAR - 0.05 <= t < T.BAR + 0.85:
+        if st['scale'] < 0.95 or T.T_FIGHT - 0.05 <= t < T.T_FIGHT + 0.85:
             continue
         hp = hp_at(k, t)
         txt = str(int(math.ceil(hp - 1e-6)))
@@ -1343,16 +1373,8 @@ def render(f):
         hud.append(dict(name=NAMES[k], color=COL[k], hp=hp_at(k, t), trail=max(hp_at(k, t), hp_lag[k]), level=lvl,
                         status=stt, status_k=sk, flash=fl, ko=(k == LOSE and T_KO <= t < T.T_GLIDE), t=t,
                         win=(k == WIN and T_KO + 1.3 <= t < T.T_GLIDE)))
-    fight_hud(img, hud[0], hud[1])
-    draw_captions(img, t, CAP_TITLE, style='impact', hi=tuple(int(v) for v in COL[0]), alt=tuple(int(v) for v in COL[1]))
-    tag_k = ss(0.40, 0.55, t) * (1 - ss(T.T_FIGHT - 0.2, T.T_FIGHT - 0.06, t))
-    if tag_k > 0.02:
-        w_ = len(T.SERIES) * ADV - 1
-        x_, y_ = int(round(180 - w_ / 2)), 157
-        reg = img[y_ - 2:y_ + 9, x_ - 3:x_ + w_ + 3].astype(np.float32)
-        img[y_ - 2:y_ + 9, x_ - 3:x_ + w_ + 3] = (reg * (1 - 0.6 * tag_k) + np.array(INK) * 0.6 * tag_k).astype(np.uint8)
-        if tag_k > 0.5:
-            label(img, T.SERIES, x_, y_, AMBER, 1)
+    if not card_closed:
+        fight_hud(img, hud[0], hud[1])
     for k in (0, 1):
         c = tuple(int(v) for v in np.clip(COL[k] * 0.8 + 60, 0, 255))
         draw_captions(img, t, CAP_ABIL[k], style='impact', base=c, puff=tuple(int(v) for v in COL[k]))
@@ -1360,6 +1382,7 @@ def render(f):
     wc = tuple(int(v) for v in np.clip(COL[WIN] * 0.8 + 60, 0, 255))
     draw_captions(img, t, CAP_WINS, style='impact', base=wc)
     draw_captions(img, t, CAP_COMMENT, style='impact', hi=(255, 214, 96))
+    img = TT.draw(img, t)                                           # v3: the VS title card, over everything
     return img
 
 

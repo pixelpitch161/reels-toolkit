@@ -13,8 +13,9 @@ The two fighters are the leads, both from the honest run:
               snapped cable cracks, the leash thrums; LFO doubles the pulse rate and a wobble bass joins; SAWTOOTH is a
               supersaw sweep with an accent per cut; WHITE NOISE a noise blast. As its HP drops the arp skips notes.
 Bed: F minor at 137.70 BPM (35 bars = 61 s): a chopped, crunchy original breakbeat, a reese bass, cold detuned pads.
-The count-in bar drops on FIGHT!; at the K.O. the bed tape-stops with the hit-stop, the loser's part breaks apart, the
-crowd roars, the winner's stinger lands, then its solo over the bare break; bar 34 builds into the "3" on sample 0.
+v3: bar 0 is the VS title card (a unison band hit per word: the DJ's scratch flare + organ stabs, a thunder crack for
+VS, the synth's saw-chord blast; a pickup fill as the doors open), the count-in bar 1 drops on FIGHT! (bar 2); at the K.O. the bed tape-stops with the hit-stop, the loser's part breaks apart, the
+crowd roars, the winner's stinger lands, then its solo over the bare break; bar 34 builds (roll, riser, bass climb) and the doors' whoosh ramps into the title slam on sample 0.
 Every hit is snapped to the nearest 16th except the scratches (they follow the floor, which is already on the grid).
 Tails past the loop fold onto the start.
 
@@ -400,21 +401,46 @@ def bed(mix, b, intensity=1.0, light=False):
 
 def main():
     mix = A.Mix(T.DUR + 4.0)
-    # ------------------------------------------------ count-in (bar 0, on the dominant): a chirp + a synth stab per count
+    # ------------------------------------------------ v3 title card (bar 0, on the tonic): one unison band hit per word
+    t1, t2, t3 = 0.004, T.BEAT, 2 * T.BEAT                 # TURNTABLES 4 ms in (no click at the seam), VS, SYNTH
+    for tw_ in (t1, t2, t3):                               # the band on every word: kick, a reese stab, a boom
+        mix.place('break', crunch(kick(1.0)), tw_, 0.55)
+        mix.place('bass', reese(29, 0.42, 1.0, 500, 1400), tw_, 0.42)
+        mix.place('fx', A.thud(0.9, 120, 32, seed=int(tw_ * 50) + 3), tw_, 0.50)
+    # TURNTABLES: the DJ's blast - a scratch flare over an organ-stab chord (the decks' own voice)
+    mix.place('decks', scratch('flare', 0.4, seed=11), t1, 0.40, pan=-0.2)
+    for m in (53, 60, 65, 68):
+        mix.place('decks', stab(m, 1.0, 0.35), t1, 0.22, pan=-0.15)
+    # VS: a thunder crack where it splits the divider
+    nn = int(1.4 * SR)
+    tt_ = A.tt(nn)
+    crack = A.bp(np.random.default_rng(91).normal(0, 1, nn), 1500, 9000) * np.exp(-tt_ / 0.035)
+    rumble = A.lp(np.random.default_rng(92).normal(0, 1, nn), 160) * np.clip(tt_ / 0.02, 0, 1) * np.exp(-tt_ / 0.5) * 3.0
+    mix.place('fx', crack * 0.9 + rumble, t2, 0.42)
+    mix.place('fx', A.crash(1.6), t2, 0.10)
+    # SYNTH: a saw-chord blast (the synth's voice at its saw level) + a quick sweep
+    for m in (65, 72, 77, 80):
+        mix.place('synth', arp_lv(m, 3, 1.0), t3, 0.16, pan=0.2)
+    mix.place('synth', supersaw_sweep(0.45, 65, 89), t3, 0.14, pan=0.2)
+    # beat 4: the hold + a pickup fill as the doors open; a cold pad under the whole card (never quiet)
+    mix.place('pad', cold_pad(PAD['Fm'], 3 * T.BEAT, 1400), 0.0, 0.10)
+    for st, v in ((12, 0.5), (13, 0.65), (14, 0.8), (15, 0.95)):
+        mix.place('break', crunch(snare(v)), st * S16, 0.36)
+    mix.place('fx', A.whoosh(T.T_DOORS[1] - T.T_DOORS[0] + 0.1, 300, 5000), T.T_DOORS[0] - 0.05, 0.16)
+    # ------------------------------------------------ count-in (bar 1, on the dominant): a chirp + a synth stab per count
     for j, (tc, txt) in enumerate(T.COUNT[:3]):
-        tc = max(tc, 0.004)                                # the "3" 4 ms into the file: no click at the seam
         mix.place('decks', scratch('chirp', 0.22, seed=j), tc, 0.30, pan=-0.2)
         for m in (60, 64, 67):
             mix.place('synth', arp_note(m, 0.9, 0.18), tc, 0.20, pan=0.2)
         mix.place('bass', reese(24, 0.36, 0.9), tc, 0.40)
         mix.place('break', crunch(kick(0.9)), tc, 0.45)
     for st, v in ((12, 0.45), (13, 0.6), (14, 0.75), (15, 0.9)):   # the pickup into FIGHT!
-        mix.place('break', crunch(snare(v)), st * S16, 0.36)
-    mix.place('fx', A.whoosh(T.BEAT, 400, 6000), 3 * T.BEAT, 0.14)
-    mix.place('fx', A.crash(2.0), T.BAR, 0.18)
-    # ------------------------------------------------ the bed: bars 1 .. the K.O.
+        mix.place('break', crunch(snare(v)), T.BAR + st * S16, 0.36)
+    mix.place('fx', A.whoosh(T.BEAT, 400, 6000), T.BAR + 3 * T.BEAT, 0.14)
+    mix.place('fx', A.crash(2.0), T.T_FIGHT, 0.18)
+    # ------------------------------------------------ the bed: FIGHT! (bar 2) .. the K.O.
     bar_ko = int(T_KO // T.BAR)
-    for b in range(1, bar_ko + 1):
+    for b in range(2, bar_ko + 1):
         bed(mix, b, intensity=1.0 + 0.6 * (b / bar_ko))
     mix.place('fx', A.whoosh(3.6, 300, 6000), 44.0 - 3.6, 0.10)
     for k in ('break', 'bass', 'pad'):
@@ -570,7 +596,7 @@ def main():
         else:
             mix.place('decks', stab(m - 12, 0.7), tj, 0.16)
     mix.place('fx', A.chime(95, 0.5) + A.chime(102, 0.5) * 0.5, T.T_GLIDE, 0.12)
-    # ------------------------------------------------ bar 34: build into the "3" on sample 0
+    # ------------------------------------------------ bar 34: build into the title slam on sample 0
     t34 = 34 * T.BAR
     for st in range(16):
         v = 0.3 + 0.7 * st / 15
@@ -583,6 +609,10 @@ def main():
     mix.place('pad', cold_pad((48, 52, 55, 58, 64), T.DUR - t34 + 0.02, 1600), t34, 0.08)
     for st in (0, 8, 12, 14):
         mix.place('break', crunch(kick(0.9)), t34 + st * S16, 0.45)
+    nc = int((T.T_CLOSE + 0.012) * SR)                              # v3: the doors sliding shut into the title slam
+    tc_ = A.tt(nc)
+    doors = A.bp(np.random.default_rng(93).normal(0, 1, nc), 400, 5000) * (tc_ / T.T_CLOSE) ** 2
+    mix.place('fx', doors, T.DUR - T.T_CLOSE, 0.55)
     # caption landings: soft thuds
     for tl, k, nch in impact_landings(RD.CAPTIONS):
         mix.place('fx', A.thud(), tl, 0.08 if k == 0 else 0.06)
@@ -599,7 +629,7 @@ def main():
 BUS_GAIN = {'break': 1.6, 'decks': 3.2, 'synth': 2.0, 'solo': 1.7, 'fx': 1.4, 'bass': 0.9, 'pad': 0.9}
 # section automation (dB), applied AFTER the compressor so the limiter can't flatten the build: the count-in at full,
 # the early fight pulled back, rising through the final exchange, the victory section loud, the end close to the start
-GAIN_PTS = [(0, 0.0), (1.55, 0.0), (2.1, -2.6), (20, -2.3), (30, -0.9), (40, 1.3), (44, 2.3), (50.6, 3.3), (52.2, 2.8),
+GAIN_PTS = [(0, 0.0), (3.3, 0.0), (3.9, -3.0), (20, -2.7), (30, -1.0), (40, 1.3), (44, 2.3), (50.6, 3.3), (52.2, 2.8),
             (53.5, 3.3), (58.0, 3.3), (60.0, 1.6), (61.02, 0.6)]
 
 
