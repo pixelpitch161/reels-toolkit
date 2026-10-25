@@ -738,6 +738,18 @@
   octave up in SNAKE DANCE, with a hiss-click per strike; the music box went to quarter notes so the charmer line leads.
 - v2 checks: safe zone OK; subject CoC 0 on all 1830 frames; loopcheck PASS render (1.5x) + mp4 (1.9x); flash 0
   general (max 15.6 %); opening -17.9 dBFS, build +3.7 dB. Full render 313 s on 2 cores + mux. Feedback: (pending)
+- v3 (VS title card intro, series rule Oct 24): bar 0 = the shared title card (projects/ballfight/title.py, already moved
+  there by #35; this episode added opt-in CLOSEUP / GLASS registries so the flute's close-up is the pixel-art flute in cool
+  glass; #30's card checked pixel-identical on 13 frames). Panels: indigo bell-mouth rings / steel-silver key cups (a
+  near-white silver panel read as white: scaled to ~0.7). 3-2-1 on bar 1, FIGHT! at 3.81 s, top caption + series tag
+  code dropped, HUD hidden while the card is shut; chords Cm (card) . G (count-in) . the march loop . Ab . G into the
+  slam; the charmer line and music box re-anchored to bar 2.
+- Seed search re-run at 2 bars (rules unchanged): 6 fits in 753, TUBA 53 % / FLUTE 47 %. Seed 514 ranked first again;
+  unlike #30's 1442, its run at 2 bars is bit-identical to v2's shifted by a bar (no float drift for this roster), so
+  the fight is v2's (FLUTE 51.28 s, 5.7 HP).
+- Loop: seam 0.4x render / 1.1x mp4 (the title slam as the reset beats v2's beat-pulse snap), audio step 2.0 dB; flash
+  check PASS with the single doors pair (1.9 s), max 51.9 % of the frame changing as the doors shut (one transition).
+  Full render 5.5 min + mux. Feedback: (pending)
 
 
 ## BALLFIGHT #4: Bagpipes vs Accordion (`projects/ballfight_bagpipes_vs_accordion`)
