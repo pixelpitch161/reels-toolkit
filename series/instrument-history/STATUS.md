@@ -17,7 +17,7 @@ Each session updates its own row.
 | Drum kit | done | `drums60_lowpoly.py` | |
 | Double bass | done | — | script not in repo yet |
 | Flute | done | `flute60_lowpoly.py` | |
-| Trombone | done | `trombone60_lowpoly.py` | model corrected from reference photos |
+| Trombone | done | `trombone60_lowpoly.py` | modern trombone corrected again from reference photos (2026-10-25: Yamaha YSL-891Z side view, measured; Jupiter student tenor 3/4 view): slide turned ~40 deg out of the bell plane about the shared lower line (was ~100 deg, edge-on), bell rim 31 cm ahead of the slide lock on a 78 cm slide (was 46 / 70), tuning bow 38 cm behind, Bessel bell fitted to the photo, brass outer slide with a nickel crook, stockings and bumper, two tuning-slide braces with the medallion, bell brace at the lock, a 4 cm mouthpiece, no F-attachment loop (a plain straight tenor); the modern-layout jazz / ska / salsa trombones share the proportions; the posted video is unchanged |
 | French horn | done | `horn60_lowpoly.py` | model corrected from reference photos |
 | Clarinet | done | `clarinet60_lowpoly.py` | |
 | Trubergle | done | — | script not in repo yet |

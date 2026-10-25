@@ -112,14 +112,21 @@ def track(s, t, pick, trig_ok=False, off=0):
     return pa + (pb - pa)*k*k*(3 - 2*k), tr
 
 # ---------------------------------------------------------------- instruments (built to real proportions, in metres)
-# A modern Bb tenor is ~1.15 m long with the slide closed: a 70 cm slide (tubes ~9 cm apart) and a bell section
-# (bell tube + return tube ~10 cm apart, 21.6 cm bell, tuning-slide bow ~44 cm behind the slide lock).
-# The two sections join at the slide lock and sit at roughly a right angle to each other, so the slide lies
-# almost edge-on when the bell section faces you - like a product photo of the real instrument.
+# Modern Bb tenor, measured (2026-10-25) from a side-view product photo of a straight tenor (Yamaha YSL-891Z,
+# Wikimedia Commons, scale from its 20 cm bell: ~0.41 mm/px) and checked against a 3/4 photo of a Jupiter student
+# tenor (Commons, CC0). ~1.17 m long with the slide closed. From the slide lock (the mouthpiece end of the slide):
+# the tuning-slide bow sits 38 cm behind, the bell rim only 31 cm ahead (the bell reaches ~40 % of the way along the
+# slide), the crook 78 cm ahead. Bell section: bell tube on top, return tube below, 10.7 cm apart. Slide tubes ~9 cm
+# apart. The two sections share the lower line (bell section return tube -> slide lock -> lower slide tube) and the
+# slide plane is turned ~40 degrees out of the bell plane about it, so a side view shows all four tubes with the
+# mouthpiece tube between the bell section's two (the earlier model turned the slide ~100 degrees, edge-on, and set the
+# bell too far forward on a short slide). Bell flare (Bessel fit to the photo): r(d) = 10 cm * (2.5 / (d + 2.5))^0.75,
+# d = cm back from the rim. Lacquered brass outer slide, nickel-silver crook with a rubber bumper and water key, nickel
+# sleeves, a chrome inner slide that shows as the slide extends. A plain straight tenor: no F attachment.
 BRASS, NICKEL, CHROME = (230, 182, 80), (214, 216, 226), (236, 238, 244)
-_MOD = dict(r=.0095, bell=.108, x0=.046, m=.79, rim=.46, back=.44, slen=.70, tuning=True)
+_MOD = dict(r=.0095, bell=.100, x0=.025, m=.75, rim=.31, back=.38, slen=.78, tuning=True, crook=NICKEL)
 TB = {
- "modern":   dict(_MOD, col=BRASS, slide=NICKEL, trig=True),
+ "modern":   dict(_MOD, col=BRASS, slide=BRASS, medallion=True),
  "tailgate": dict(_MOD, col=(208, 168, 90), slide=(204, 204, 212), r=.009, bell=.095, x0=.042, m=.8, wagon=True),
  "swing":    dict(_MOD, col=(234, 192, 98), slide=NICKEL, r=.009, bell=.1, x0=.044, m=.8, hat=True),
  "bebop":    dict(_MOD, col=(238, 198, 112), slide=NICKEL, r=.009, bell=.1, x0=.044, m=.8, mic=True),
@@ -132,11 +139,12 @@ TB = {
  "orch":     dict(col=(222, 176, 86), slide=(222, 176, 86), r=.0085, bell=.076, x0=.075, m=.8, rim=.44, back=.43, slen=.68, flat=True, garland=(200, 150, 62)),
  "slidetr":  dict(col=(232, 190, 92), bell=.055, x0=.08, m=.8, garland=(246, 210, 110)),
 }
-SD, STEP, HB, GDROP = .09, .085, .105, .05    # slide tube spacing, slide travel per position, bell-section spacing, gooseneck drop
+SD, STEP, HB, GDROP = .09, .085, .107, .008   # slide tube spacing, slide travel per position, bell-section spacing, gooseneck drop
 def rot_x(a): c, s_ = math.cos(a), math.sin(a); return np.array([[1, 0, 0], [0, c, -s_], [0, s_, c]])
 def rot_y(a): c, s_ = math.cos(a), math.sin(a); return np.array([[c, 0, s_], [0, 1, 0], [-s_, 0, c]])
 def rot_z(a): c, s_ = math.cos(a), math.sin(a); return np.array([[c, -s_, 0], [s_, c, 0], [0, 0, 1]])
-SLIDE_PLANE = rot_x(math.radians(100))                          # slide plane ~80-90 degrees from the bell section
+SLIDE_PLANE = rot_x(math.radians(40)) @ rot_z(math.radians(-2.5))  # slide plane ~40 deg out of the bell plane (hinged on
+# the lower line at the slide lock), angled 2.5 deg down from the bell section toward the crook, as in the photos
 POSE = rot_y(math.radians(-36)) @ rot_z(math.radians(-12))       # bell turned toward the viewer, slide end dipping
 ORIGIN = np.array([-.2, .44, 0.])
 def xform(g, f0, l0, R=None, t=(0, 0, 0)):
@@ -180,7 +188,9 @@ def slide_part(g, c, pos, fixed=False):
             T.tube(g, (0, y, 0), (xo + .01, y, 0), r*.8, col=inner, n=8)          # inner slide, shows as it extends
             T.tube(g, (xo, y, 0), (xc, y, 0), r, col=sl, n=8)                      # outer slide
             T.tube(g, (xo - .002, y, 0), (xo + .018, y, 0), r*1.3, col=col, n=8)
-    T.bend(g, (xc, R, 0), R, r, -90, 90, col=col if fixed else sl, segs=7)        # crook
+    if not fixed:                                                                 # nickel stockings at the crook end
+        for y in (0, SD): T.tube(g, (xc - .055, y, 0), (xc + .002, y, 0), r*1.18, col=c.get("crook", sl), n=8)
+    T.bend(g, (xc, R, 0), R, r, -90, 90, col=col if fixed else c.get("crook", sl), segs=7)        # crook
     g.box(xc + R + r*.4, xc + R + r*.4 + .012, R - .012, R + .012, -.008, .008, (40, 36, 40))
     g.box(xc - .075, xc - .025, -r - .006, -r, -.005, .005, col)                  # water key
     for x, grip in ((xo + .045, True), (.03, False)):
@@ -189,10 +199,11 @@ def slide_part(g, c, pos, fixed=False):
         else:
             T.tube(g, (x, 0, 0), (x, SD, 0), r*.7, col=col, n=6)
             if grip and not fixed: T.tube(g, (x, SD*.28, 0), (x, SD*.72, 0), r*1.3, col=col, n=6)
-    T.tube(g, (0, SD, 0), (-.065, SD, 0), r*.95, r*.75, col=NICKEL, n=8)          # mouthpiece
-    T.tube(g, (-.065, SD, 0), (-.084, SD, 0), r*.85, r*2.1, col=NICKEL, n=10)
-    T.tube(g, (-.084, SD, 0), (-.09, SD, 0), r*2.2, col=NICKEL, n=10)
-    T.tube(g, (-.004, 0, 0), (.022, 0, 0), r*1.75, col=col, n=8)                  # slide-lock nut
+    T.tube(g, (.004, SD, 0), (-.034, SD, 0), r*1.05, r*.8, col=NICKEL, n=8)       # mouthpiece (~4 cm out of the receiver)
+    T.tube(g, (-.034, SD, 0), (-.05, SD, 0), r*.85, r*2.0, col=NICKEL, n=10)
+    T.tube(g, (-.05, SD, 0), (-.055, SD, 0), r*2.1, col=NICKEL, n=10)
+    T.tube(g, (-.004, SD, 0), (.03, SD, 0), r*1.45, col=NICKEL if c.get("crook") else col, n=8)    # receiver / lock ring
+    T.tube(g, (-.004, 0, 0), (.022, 0, 0), r*1.75, col=NICKEL if c.get("crook") else col, n=8)    # slide-lock nut
 
 def bell_section(g, c, trig=None):
     col, r = c["col"], c["r"]; back, rim = -c["back"], c["rim"]; Rt = HB/2
@@ -200,12 +211,19 @@ def bell_section(g, c, trig=None):
     path(g, [np.array(p, float) for p in gn], r, col)                              # gooseneck
     T.tube(g, (-.085, 0, 0), (back + Rt, 0, 0), r, col=col, n=8)                  # return tube
     T.bend(g, (back + Rt, Rt, 0), Rt, r, 270, 90, col=col, segs=8)                # tuning-slide bow
-    if c.get("tuning"):
-        for y in (0, HB): T.tube(g, (back + Rt, y, 0), (back + Rt + .14, y, 0), r*1.25, col=col, n=8)
-        for x in (back + Rt + .05, back + Rt + .12): T.tube(g, (x, 0, 0), (x, HB, 0), r*.55, col=col, n=6)
-        g.face(S.ring((back - .004, Rt, .012), (0, 0, 1), .014, 8), dim(col, .85), ref=(back, Rt, 0))
+    if c.get("tuning"):                                                           # tuning slide: legs in nickel sleeves, 2 braces
+        for y in (0, HB): T.tube(g, (back + Rt, y, 0), (back + Rt + .13, y, 0), r*1.25, col=col, n=8)
+        for y in (0, HB):
+            for x0_ in (back + Rt + .005, back + Rt + .11): T.tube(g, (x0_, y, 0), (x0_ + .025, y, 0), r*1.45, col=NICKEL, n=8)
+        for x in (back + .08, back + .165): T.tube(g, (x, 0, 0), (x, HB, 0), r*.55, col=col, n=6)
+        if c.get("medallion"):                                                    # the round emblem / counterweight on brace 1
+            for zs in (1, -1):
+                g.face(S.ring((back + .08, HB/2, zs*.006), (0, 0, zs), .016, 10), dim(col, .92), ref=(back + .08, HB/2, 0))
+        else:
+            g.face(S.ring((back - .004, Rt, .012), (0, 0, 1), .014, 8), dim(col, .85), ref=(back, Rt, 0))
     mouth = bessel_bell(g, back + Rt, rim, HB, 0, c, r)
     if c.get("flat"): g.box(-.12, -.1, 0, HB, -.003, .003, dim(col, .9))
+    elif c.get("crook"): T.tube(g, (.012, 0, 0), (.012, HB, 0), r*.6, col=col, n=6)    # bell brace beside the slide lock
     else: T.tube(g, (-.11, 0, 0), (-.11, HB, 0), r*.55, col=col, n=6)
     if trig is not None:                                                           # F attachment: rotor, wrap, thumb trigger
         on = trig; rx = -.18; cx, cy, ax, ay = rx - .12, -.07, .12, .045
