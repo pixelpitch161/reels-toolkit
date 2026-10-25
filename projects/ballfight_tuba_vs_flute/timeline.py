@@ -9,15 +9,19 @@ ball size and speed for both (fairness): "biggest vs smallest" lives in the weap
 dealt unlock two abilities each; below 25 HP each gets one desperation move. Honest simulated fight
 (projects/ballfight/fight.py, rules re-tuned once for this pair with tune.py, then frozen), the seed picked for pacing,
 never edited.
-Hook: the giant 3 . 2 . 1 . FIGHT! in the ring = the band's count-in (a tuba "oom" + a flute chirp + the snare per
-count, the drop on FIGHT); top caption "TUBA / VS FLUTE" with the BALLFIGHT #6 tag.
+Hook (v3, series rule Oct 24): bar 0 is the VS TITLE CARD (projects/ballfight/title.py): the frame splits diagonally
+into indigo and silver panels, each ball big and close; TUBA, VS and FLUTE slam in on beats 1-3 (a tuba blast, a thunder
+crack as VS splits the divider, a flute shriek), the doors open on beat 4. Bar 1 is the giant 3 . 2 . 1 = the band's
+count-in (a tuba "oom" + a flute chirp + the snare per count), FIGHT! on the bar-2 downbeat (3.81 s). No top caption.
+The title slam is the frame-0 reset: the doors slide shut over the last T_CLOSE s with a riser and a whoosh into it.
 Music, villain march: C minor, a heavy march at loop_bpm(126) = 125.90 BPM (32 bars = 61 s; 1 bar = the countdown).
 Snare ostinato, low brass "pah" chords, a sinister music-box counter-line; the TUBA fighter supplies the bass (every
 pulse is its oom), the FLUTE fighter the high flurries (every volley is a run of darts = a run of notes).
 
 Beat sheet (61 s; events after 2 s are the run's own: the seed was chosen so they land near these targets):
-    0-1.91   balls rev in corners; giant 3 . 2 . 1 in the ring          TUBA / VS FLUTE, then FIGHT!
-    1.91-8   launch; brass waves vs darts, the pull, HP ticking          -
+    0-1.91   the VS title card: TUBA, VS, FLUTE slam in; the doors open on beat 4
+    1.91-3.81 balls rev in corners; giant 3 . 2 . 1 in the ring, FIGHT! at 3.81
+    3.81-8   launch; the bell inhales vs the cobras, HP ticking          -
     8-30     waves + pull grow, more darts; unlocks                      OOMPAH, FLUTTER TONGUE, BRASS WALL, TRILL
     32-44    one dips below 25 HP                                        SUBSONIC or PICCOLO
     44-52    final exchange, HP in single digits                         -
@@ -40,8 +44,12 @@ S16 = BEAT / 4                  # hits snap to the nearest 16th in the audio (<=
 
 FIGHTERS = ('TUBA', 'FLUTE')    # left corner (screen left), right corner (screen right)
 SERIES = 'BALLFIGHT #6'
-T_FIGHT = BAR                   # FIGHT! lands on the bar-1 downbeat: the drop, the launch and the first wave
-COUNT = [(0.0, '3'), (BEAT, '2'), (2 * BEAT, '1'), (BAR, 'FIGHT!')]
+T_FIGHT = 2 * BAR               # v3: FIGHT! lands on the bar-2 downbeat (3.81 s): the drop, the launch, the first oom
+COUNT = [(BAR, '3'), (BAR + BEAT, '2'), (BAR + 2 * BEAT, '1'), (2 * BAR, 'FIGHT!')]     # bar 1: the usual count-in
+# v3: the VS title card on bar 0 (projects/ballfight/title.py)
+TITLE = [(0.0, 'TUBA'), (BEAT, 'VS'), (2 * BEAT, 'FLUTE')]   # one word slams in per beat (beat 1 = frame 0)
+T_DOORS = (3 * BEAT + 0.10, BAR - 0.03)   # beat 4: the two panels slide apart like doors to reveal the ring
+T_CLOSE = 0.30                  # the last 0.30 s of the file: the doors slide shut again (the run-up into the frame-0 slam)
 
 # ---------------------------------------------------------------- frozen rules (tune.py; the same for every seed)
 DMG_SCALE = 1.06                # tuned once (tune.py) so the median K.O. sits near 50 s with each side winning about half
@@ -65,10 +73,10 @@ T_REV = T_GLIDE + 1.05          # in the corners, revving (same motion as the op
 # ---------------------------------------------------------------- music (C minor, villain march)
 KEY_ROOT = 36                   # C2: the tuba's home
 SCALE = (0, 2, 3, 5, 7, 8, 11)  # C harmonic minor: C D Eb F G Ab B
-# chords per bar (32 bars): the count-in on the dominant, then the 4-bar march loop i - VI - N6 - V (Cm . Ab . Db . G),
-# the Neapolitan Db with the B natural on top is the villain's augmented-sixth snarl into G; the last bars Cm . Ab . G
-# lead into the count-in's G on frame 0 (two bars of G across the loop seam)
-CHORDS = ['G'] + ['Cm', 'Ab', 'Db', 'G'] * 7 + ['Cm', 'Ab', 'G']
+# chords per bar (32 bars): the title card on the tonic (the villain's stinger), the count-in on the dominant, then the
+# 4-bar march loop i - VI - N6 - V (Cm . Ab . Db . G) from FIGHT!; the Neapolitan Db with the B natural on top is the
+# villain's augmented-sixth snarl into G; the last bars Ab . G resolve into the title slam's Cm on frame 0
+CHORDS = ['Cm', 'G'] + ['Cm', 'Ab', 'Db', 'G'] * 7 + ['Ab', 'G']
 CHORD_ROOT = {'Cm': 36, 'Ab': 44, 'Db': 37, 'G': 43}
 CHORD_FIFTH = {'Cm': 43, 'Ab': 39, 'Db': 44, 'G': 38}
 CHORD_PCS = {'Cm': (0, 3, 7), 'Ab': (8, 0, 3), 'Db': (1, 5, 8, 11), 'G': (7, 11, 2, 5)}
@@ -93,7 +101,7 @@ def chord_notes(lo, hi, chord):
     return [m for m in range(lo, hi + 1) if m % 12 in pcs]
 
 
-# The music box's counter-line: an original sinister 4-bar line (one pitch per 8th, None = rest), high and thin, the
+# The music box's counter-line (from bar 4, following the loop from FIGHT!): an original sinister 4-bar line (one pitch per 8th, None = rest), high and thin, the
 # villain's lullaby over the march. Bars follow the chord loop (Cm . Ab . Db . G).
 MUSIC_BOX = [
     84, None, 87, None, 86, 84, 83, None,          # Cm: C Eb D C B
@@ -116,8 +124,8 @@ CHARMER_SLOTS = sorted(CHARMER)
 
 
 def charmer_note(slot):
-    """(midi, length in 16ths) of the line at absolute 16th `slot` (bars from 1 follow the 4-bar loop), or None"""
-    j = (slot - 16) % 64
+    """(midi, length in 16ths) of the line at absolute 16th `slot` (bars from 2 follow the 4-bar loop), or None"""
+    j = (slot - 32) % 64
     if j not in CHARMER:
         return None
     nxt = next((q for q in CHARMER_SLOTS if q > j), CHARMER_SLOTS[0] + 64)

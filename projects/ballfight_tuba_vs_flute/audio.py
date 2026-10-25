@@ -274,10 +274,10 @@ def bed(mix, b, intensity=1.0, light=False):
         mix.place('brass', brass(vo, 0.22), t0 + bt * T.BEAT, 0.20 if light else 0.24)
         if intensity > 1.35 and not light:
             mix.place('brass', brass(vo, 0.12, bite=0.6), t0 + (bt + 0.5) * T.BEAT, 0.12)
-    if b >= 2 or light:
+    if b >= 3 or light:
         mix.place('pad', horn_pad([vo[0], vo[1], vo[2]], T.BAR), t0, 0.07)            # no low note: the tuba owns the bass
-    if b >= 3 and not light:                                   # the villain's lullaby on top
-        lb = (b - 1) % 4
+    if b >= 4 and not light:                                   # the villain's lullaby on top
+        lb = (b - 2) % 4
         for j in range(0, 8, 2):                               # v2: quarters only, softer (the charmer line leads)
             m = T.MUSIC_BOX[lb * 8 + j]
             if m is not None:
@@ -291,21 +291,48 @@ def bed(mix, b, intensity=1.0, light=False):
 # ---------------------------------------------------------------- the fight's own parts
 def main():
     mix = A.Mix(T.DUR + 4.0)
-    # ------------------------------------------------ count-in (bar 0, on the dominant G): tuba oom + flute chirp + snare
+    # ------------------------------------------------ v3 title card (bar 0, the villain's Cm): one unison band hit per word
+    t1, t2, t3 = 0.004, T.BEAT, 2 * T.BEAT                 # TUBA 4 ms in (no click at the seam), VS, FLUTE
+    for tw_ in (t1, t2, t3):                               # the whole band on every word: bass drum, snare, brass, timpani
+        mix.place('drums', bass_drum(1.0), tw_, 0.55)
+        mix.place('drums', march_snare(1.0), tw_, 0.30)
+        mix.place('brass', brass((48, 55, 60, 63), 0.42, bite=1.0), tw_, 0.30)
+        mix.place('drums', timpani(36, 1.0), tw_, 0.30)
+        mix.place('fx', A.thud(0.9, 120, 32, seed=int(tw_ * 50) + 3), tw_, 0.45)
+    # TUBA: the tuba's blast, low C with the low G under it
+    mix.place('tuba', tuba(36, 1.6, 1.0), t1, 0.70)
+    mix.place('tuba', tuba(31, 1.6, 1.0), t1, 0.45)
+    # VS: a thunder crack where it splits the divider
+    nn = int(1.4 * SR)
+    tt0 = A.tt(nn)
+    crack = A.bp(np.random.default_rng(91).normal(0, 1, nn), 1500, 9000) * np.exp(-tt0 / 0.035)
+    rumble = A.lp(np.random.default_rng(92).normal(0, 1, nn), 160) * np.clip(tt0 / 0.02, 0, 1) * np.exp(-tt0 / 0.5) * 3.0
+    mix.place('fx', crack * 0.9 + rumble, t2, 0.42)
+    mix.place('drums', A.crash(1.6), t2, 0.10)
+    # FLUTE: a shrieking flurry up to a flutter-tongued high G
+    for j, m in enumerate((79, 84, 87, 91)):
+        mix.place('flute', flute(m, 0.06, 1.0), t3 + j * S16 / 2, 0.32, pan=0.15)
+    mix.place('flute', flutter(flute(91, 0.5, 1.0), 26), t3 + 2 * S16, 0.36, pan=0.15)
+    mix.place('flute', breath(0.4, 81), t3, 0.10, pan=0.15)
+    # beat 4: the hold, a snare pickup as the doors open, a horn pad under the whole card (never quiet)
+    mix.place('pad', horn_pad([48, 55, 60, 63], 3 * T.BEAT), 0.0, 0.10)
+    for st, v in ((12, 0.45), (13, 0.6), (14, 0.75), (15, 0.9)):
+        mix.place('drums', march_snare(v), st * S16, 0.30)
+    mix.place('fx', A.whoosh(T.T_DOORS[1] - T.T_DOORS[0] + 0.1, 300, 5000), T.T_DOORS[0] - 0.05, 0.16)
+    # ------------------------------------------------ count-in (bar 1, on the dominant G): tuba oom + flute chirp + snare
     for j, (tc, txt) in enumerate(T.COUNT[:3]):
-        tc = max(tc, 0.004)                                # the "3" 4 ms into the file: no click at the seam
         mix.place('tuba', tuba(43, 0.9, 0.9), tc, 0.55)
         mix.place('flute', flute(79 + (0, 4, 7)[j], 0.12, 0.9), tc, 0.30, pan=0.2)
         mix.place('drums', march_snare(1.0), tc, 0.28)
         mix.place('brass', brass(VOICING['G'], 0.16), tc, 0.20)
     for st, v in ((12, 0.45), (13, 0.6), (14, 0.75), (15, 0.9)):   # the snare pickup into FIGHT!
-        mix.place('drums', march_snare(v), st * S16, 0.30)
-    mix.place('fx', A.whoosh(T.BEAT, 400, 6000), 3 * T.BEAT, 0.14)
-    mix.place('drums', A.crash(2.0), T.BAR, 0.14)
-    mix.place('drums', bass_drum(1.0), T.BAR, 0.5)
-    # ------------------------------------------------ the bed: bars 1 .. the K.O.
+        mix.place('drums', march_snare(v), T.BAR + st * S16, 0.30)
+    mix.place('fx', A.whoosh(T.BEAT, 400, 6000), T.BAR + 3 * T.BEAT, 0.14)
+    mix.place('drums', A.crash(2.0), T.T_FIGHT, 0.14)
+    mix.place('drums', bass_drum(1.0), T.T_FIGHT, 0.5)
+    # ------------------------------------------------ the bed: bars 2 (FIGHT!) .. the K.O.
     bar_ko = int(T_KO // T.BAR)
-    for b in range(1, bar_ko + 1):
+    for b in range(2, bar_ko + 1):
         bed(mix, b, intensity=1.0 + 0.6 * (b / bar_ko))
     mix.place('fx', A.whoosh(3.6, 300, 6000), 44.0 - 3.6, 0.10)
     for k in ('drums', 'brass', 'pad', 'musicbox'):
@@ -496,6 +523,10 @@ def main():
     t31 = 31 * T.BAR
     mix.place('drums', roll(T.DUR - t31 + 0.03, 0.15, S16 / 2), t31, 0.30)
     mix.place('fx', riser(T.DUR - t31), t31, 0.22)
+    nc = int((T.T_CLOSE + 0.012) * SR)                              # v3: the doors sliding shut into the title slam
+    tc_ = A.tt(nc)
+    doors = A.bp(np.random.default_rng(93).normal(0, 1, nc), 400, 5000) * (tc_ / T.T_CLOSE) ** 2
+    mix.place('fx', doors, T.DUR - T.T_CLOSE, 0.55)
     for bt in range(4):
         mix.place('tuba', tuba((31, 35, 38, 41)[bt], 0.9, 0.85), t31 + bt * T.BEAT, 0.50)
         mix.place('brass', brass(VOICING['G'], 0.18), t31 + bt * T.BEAT + T.BEAT / 2, 0.18)
@@ -518,7 +549,7 @@ def main():
 BUS_GAIN = {'drums': 0.9, 'tuba': 1.9, 'flute': 1.8, 'solo': 1.6, 'fx': 1.5, 'brass': 3.0, 'pad': 2.0, 'musicbox': 1.2}
 # section automation (dB), applied AFTER the compressor so the limiter can't flatten the build: the count-in at full,
 # the early fight pulled back, rising through the final exchange, the victory section loud, the end close to the start
-GAIN_PTS = [(0, 0.0), (1.75, 0.0), (2.3, -1.9), (20, -1.7), (30, -0.6), (40, 1.3), (44, 2.3), (50.8, 3.3), (52.3, 2.8),
+GAIN_PTS = [(0, 0.6), (1.9, 0.3), (3.6, 0.0), (4.1, -1.9), (20, -1.7), (30, -0.6), (40, 1.3), (44, 2.3), (50.8, 3.3), (52.3, 2.8),
             (53.4, 3.3), (58.0, 3.3), (60.0, 1.6), (61.02, 0.6)]
 
 
