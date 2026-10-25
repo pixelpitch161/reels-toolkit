@@ -1,5 +1,12 @@
 # #34 BALLFIGHT #8: Trombone vs French Horn (`projects/ballfight_trombone_vs_horn`)
 
+## v4 (user, Oct 25: the trombone model was inaccurate)
+The Pixel Pitch trombone (`series/instrument-history/trombone60_lowpoly.py`, used through pp_bridge) was rebuilt from
+reference photos (see that file's notes and the series STATUS): the slide shows both tubes at ~40 deg to the bell plane,
+the bell sits ~40 % of the way along a 78 cm slide, nickel crook, no F-attachment loop. Same fight (seed 2200) and
+soundtrack; the sprite caches (`check/sprites_ballfight8.npz`, `check/sprites_title.npz`) were rebuilt and the video
+re-rendered once. v3 kept as `ballfight_trombone_vs_horn_v3.mp4`.
+
 ## v3 (VS title card intro = series rule, Oct 24)
 Bar 0 is the shared VS title card (`projects/ballfight/title.py`, moved there from #30 by the #35 session; this episode
 added the TROMBONE slide-tube and HORN coil panel patterns in a separate commit, #30's card pixel-identical): TROMBONE,

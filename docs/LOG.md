@@ -151,7 +151,19 @@
   add only what's missing). With the rules unchanged the median K.O. moves ~2 s later, so fewer runs land in 49-53 s
   (8 fits took 2,200 runs vs 974 at 1 bar); the solo now stops at the reassembly if a late K.O. leaves less room. The
   title slam makes a very clean seam (0.5x render, 1.2x mp4). Render 11.1 min.
-- Feedback (v3): (pending)
+- Feedback (v3): the trombone model is inaccurate (user, Oct 25).
+- v4: the Pixel Pitch trombone rebuilt from reference photos found in Chrome (Yamaha YSL-891Z side view, measured from
+  the image's pixels at ~0.41 mm/px using its 20 cm bell; Jupiter student tenor 3/4 view): the old slide plane was
+  turned ~100 deg so the slide read as one rod, the bell sat 65 % of the way along a short slide (real: 40 %), and an
+  F-attachment ellipse hung below the instrument. Now: slide ~40 deg out of the bell plane about the shared lower line,
+  bell rim 31 cm / crook 78 cm ahead of the slide lock, bow 38 cm behind, Bessel bell fitted to the photo, nickel crook
+  + bumper + stockings, tuning-slide braces + medallion, bell brace at the lock, a 4 cm mouthpiece, plain straight
+  tenor. Every series scene still builds; the posted Pixel Pitch video is unchanged. Same fight + soundtrack; one full
+  render (the trombone is on screen in every frame, so no patch render).
+- Lessons (v4): read a reference photo's pixels in the page (canvas getImageData on the upload.wikimedia.org image
+  tab) for real measurements instead of eyeballing a screenshot; check an instrument model in a plain orthographic
+  side view next to the product photo before judging it at sprite size.
+- Feedback (v4): (pending)
 
 ## Prime-Number Cicadas (`projects/prime_cicadas`)
 - Brood XIX (13-yr) + Brood XIII (17-yr), together in 2024 for the first time since 1803 (next 2245). Golden-hour
@@ -442,7 +454,19 @@
   add only what's missing). With the rules unchanged the median K.O. moves ~2 s later, so fewer runs land in 49-53 s
   (8 fits took 2,200 runs vs 974 at 1 bar); the solo now stops at the reassembly if a late K.O. leaves less room. The
   title slam makes a very clean seam (0.5x render, 1.2x mp4). Render 11.1 min.
-- Feedback (v3): (pending)
+- Feedback (v3): the trombone model is inaccurate (user, Oct 25).
+- v4: the Pixel Pitch trombone rebuilt from reference photos found in Chrome (Yamaha YSL-891Z side view, measured from
+  the image's pixels at ~0.41 mm/px using its 20 cm bell; Jupiter student tenor 3/4 view): the old slide plane was
+  turned ~100 deg so the slide read as one rod, the bell sat 65 % of the way along a short slide (real: 40 %), and an
+  F-attachment ellipse hung below the instrument. Now: slide ~40 deg out of the bell plane about the shared lower line,
+  bell rim 31 cm / crook 78 cm ahead of the slide lock, bow 38 cm behind, Bessel bell fitted to the photo, nickel crook
+  + bumper + stockings, tuning-slide braces + medallion, bell brace at the lock, a 4 cm mouthpiece, plain straight
+  tenor. Every series scene still builds; the posted Pixel Pitch video is unchanged. Same fight + soundtrack; one full
+  render (the trombone is on screen in every frame, so no patch render).
+- Lessons (v4): read a reference photo's pixels in the page (canvas getImageData on the upload.wikimedia.org image
+  tab) for real measurements instead of eyeballing a screenshot; check an instrument model in a plain orthographic
+  side view next to the product photo before judging it at sprite size.
+- Feedback (v4): (pending)
 
 ## Falling Sand Wars (`projects/falling_sand_wars`)
 - Battle-family reel in mood A (dark, hypnotic): four sands with their own physics (IRON sinks, PUMICE floats and rolls,
@@ -664,7 +688,19 @@
   add only what's missing). With the rules unchanged the median K.O. moves ~2 s later, so fewer runs land in 49-53 s
   (8 fits took 2,200 runs vs 974 at 1 bar); the solo now stops at the reassembly if a late K.O. leaves less room. The
   title slam makes a very clean seam (0.5x render, 1.2x mp4). Render 11.1 min.
-- Feedback (v3): (pending)
+- Feedback (v3): the trombone model is inaccurate (user, Oct 25).
+- v4: the Pixel Pitch trombone rebuilt from reference photos found in Chrome (Yamaha YSL-891Z side view, measured from
+  the image's pixels at ~0.41 mm/px using its 20 cm bell; Jupiter student tenor 3/4 view): the old slide plane was
+  turned ~100 deg so the slide read as one rod, the bell sat 65 % of the way along a short slide (real: 40 %), and an
+  F-attachment ellipse hung below the instrument. Now: slide ~40 deg out of the bell plane about the shared lower line,
+  bell rim 31 cm / crook 78 cm ahead of the slide lock, bow 38 cm behind, Bessel bell fitted to the photo, nickel crook
+  + bumper + stockings, tuning-slide braces + medallion, bell brace at the lock, a 4 cm mouthpiece, plain straight
+  tenor. Every series scene still builds; the posted Pixel Pitch video is unchanged. Same fight + soundtrack; one full
+  render (the trombone is on screen in every frame, so no patch render).
+- Lessons (v4): read a reference photo's pixels in the page (canvas getImageData on the upload.wikimedia.org image
+  tab) for real measurements instead of eyeballing a screenshot; check an instrument model in a plain orthographic
+  side view next to the product photo before judging it at sprite size.
+- Feedback (v4): (pending)
 
 ## BALLFIGHT #1: Guitar vs Piano (`projects/ballfight`)
 - New series (#27), inspired by math.vsmath ability-ball fights: two glass balls with Pixel Pitch instruments inside
@@ -873,7 +909,19 @@
   add only what's missing). With the rules unchanged the median K.O. moves ~2 s later, so fewer runs land in 49-53 s
   (8 fits took 2,200 runs vs 974 at 1 bar); the solo now stops at the reassembly if a late K.O. leaves less room. The
   title slam makes a very clean seam (0.5x render, 1.2x mp4). Render 11.1 min.
-- Feedback (v3): (pending)
+- Feedback (v3): the trombone model is inaccurate (user, Oct 25).
+- v4: the Pixel Pitch trombone rebuilt from reference photos found in Chrome (Yamaha YSL-891Z side view, measured from
+  the image's pixels at ~0.41 mm/px using its 20 cm bell; Jupiter student tenor 3/4 view): the old slide plane was
+  turned ~100 deg so the slide read as one rod, the bell sat 65 % of the way along a short slide (real: 40 %), and an
+  F-attachment ellipse hung below the instrument. Now: slide ~40 deg out of the bell plane about the shared lower line,
+  bell rim 31 cm / crook 78 cm ahead of the slide lock, bow 38 cm behind, Bessel bell fitted to the photo, nickel crook
+  + bumper + stockings, tuning-slide braces + medallion, bell brace at the lock, a 4 cm mouthpiece, plain straight
+  tenor. Every series scene still builds; the posted Pixel Pitch video is unchanged. Same fight + soundtrack; one full
+  render (the trombone is on screen in every frame, so no patch render).
+- Lessons (v4): read a reference photo's pixels in the page (canvas getImageData on the upload.wikimedia.org image
+  tab) for real measurements instead of eyeballing a screenshot; check an instrument model in a plain orthographic
+  side view next to the product photo before judging it at sprite size.
+- Feedback (v4): (pending)
 
 ## BALLFIGHT #5: Turntables vs Synth (`projects/ballfight_turntables_vs_synth`)
 - #31, produced in parallel with #29-#35 on the shared engine. TURNTABLES throw vinyl frisbees that ricochet off the
