@@ -10,15 +10,20 @@ own path) / BASS DROP (slam); LFO (the orbit speeds up and wobbles) / SAWTOOTH (
 NOISE (wave). Honest simulated fight (projects/ballfight/fight.py, rules tuned once for this pair with tune.py, then
 frozen), the seed picked for pacing, never edited. REWIND is a rule in the simulation (the ball's own record), not an
 edit.
-Hook: the giant 3 . 2 . 1 . FIGHT! in the ring = the band's count-in (a scratch + a synth stab per count, the drop
-lands on FIGHT); top caption "TURNTABLES / VS SYNTH" with the BALLFIGHT #5 tag.
+Hook (v3, series rule from Oct 24): bar 0 is the VS TITLE CARD (projects/ballfight/title.py): the frame splits
+diagonally into a lime and a cyan panel (record grooves / circuit traces) with each fighter's ball big and close;
+TURNTABLES slams in on beat 1 (frame 0: a scratch + a stab), VS on beat 2 (it cracks the divider: a thunder crack),
+SYNTH on beat 3 (a saw-chord blast), the doors slide apart on beat 4. Bar 1: the giant 3 . 2 . 1 = the band's
+count-in; FIGHT! on the bar-2 downbeat (the drop, the launch). No top caption (the card replaces it). The loop: in the
+last T_CLOSE s the doors slide shut and TURNTABLES falls in as a ghost, so the title slam on frame 0 is the reset.
 Music, mood: dark breakbeat. F minor, chopped breaks, a reese bass, cold pads, at loop_bpm(138) = 137.70 BPM (35 bars
 = 61 s; 1 bar = the countdown). The two fighters are the leads: the decks scratch and stab, the synth arpeggiates.
 Whoever is losing, their half of the track falls apart.
 
 Beat sheet (61 s; events after 2 s are the run's own: the seed was chosen so they land near these targets):
-    0-1.74   balls rev in corners; giant 3 . 2 . 1 in the ring          TURNTABLES / VS SYNTH, then FIGHT!
-    1.74-8   launch; discs ricochet vs the orbit, HP ticking              -
+    0-1.74   VS title card: TURNTABLES / VS / SYNTH slam in, doors open   (the card)
+    1.74-3.49 balls rev in corners; giant 3 . 2 . 1 in the ring           FIGHT! on 3.49
+    3.49-8   launch; the floor jerks vs the cables, HP ticking            -
     8-30     discs multiply, satellites fill the orbit; unlocks           SCRATCH, LFO, REWIND, SAWTOOTH
     32-44    one dips below 25 HP                                         BASS DROP or WHITE NOISE
     44-52    final exchange, HP in single digits                          -
@@ -41,8 +46,13 @@ S16 = BEAT / 4                  # hits snap to the nearest 16th in the audio (<=
 
 FIGHTERS = ('TURNTABLES', 'SYNTH')   # left corner (screen left), right corner (screen right)
 SERIES = 'BALLFIGHT #5'
-T_FIGHT = BAR                   # FIGHT! lands on the bar-1 downbeat: the drop, the launch and the first disc
-COUNT = [(0.0, '3'), (BEAT, '2'), (2 * BEAT, '1'), (BAR, 'FIGHT!')]
+T_FIGHT = 2 * BAR               # v3: FIGHT! lands on the bar-2 downbeat (3.49 s): the drop, the launch, the first scratch
+COUNT = [(BAR, '3'), (BAR + BEAT, '2'), (BAR + 2 * BEAT, '1'), (2 * BAR, 'FIGHT!')]     # bar 1: the usual count-in
+
+# ---------------------------------------------------------------- v3: the VS title card on bar 0 (projects/ballfight/title.py)
+TITLE = [(0.0, 'TURNTABLES'), (BEAT, 'VS'), (2 * BEAT, 'SYNTH')]   # one word slams in per beat (beat 1 = frame 0)
+T_DOORS = (3 * BEAT + 0.10, BAR - 0.03)  # beat 4: the two panels slide apart like doors to reveal the ring
+T_CLOSE = 0.30                  # the last 0.30 s of the file: the doors slide shut again (the run-up into the frame-0 slam)
 
 # ---------------------------------------------------------------- frozen rules (tune.py; the same for every seed)
 DMG_SCALE = 0.6                 # v2: tuned once (tune.py) so the median K.O. sits near 50 s with each side winning about half
@@ -65,9 +75,10 @@ T_REV = T_GLIDE + 1.05          # in the corners, revving (same motion as the op
 # ---------------------------------------------------------------- music (F minor, dark breakbeat)
 KEY_ROOT = 41                   # F
 SCALE = (0, 2, 3, 5, 7, 8, 10)  # F natural minor: F G Ab Bb C Db Eb (E natural over C)
-# chords per bar (35 bars): the count-in on the dominant, then the 4-bar loop i - VI - iv - V (Fm . Db . Bbm . C),
-# ending on Fm . C so the loop seam is the dominant (two bars of C) resolving on FIGHT!
-CHORDS = ['C'] + ['Fm', 'Db', 'Bbm', 'C'] * 8 + ['Fm', 'C']
+# chords per bar (35 bars), v3: the title card on the tonic (bar 0), the count-in on the dominant (bar 1), then the 4-bar
+# loop i - VI - iv - V (Fm . Db . Bbm . C) from FIGHT! (bar 2), ending on C . C so the seam is the dominant resolving
+# on the title slam
+CHORDS = ['Fm', 'C'] + ['Fm', 'Db', 'Bbm', 'C'] * 8 + ['C']
 CHORD_ROOT = {'Fm': 41, 'Db': 37, 'Bbm': 46, 'C': 36}
 CHORD_PCS = {'Fm': (5, 8, 0), 'Db': (1, 5, 8), 'Bbm': (10, 1, 5), 'C': (0, 4, 7, 10)}
 assert len(CHORDS) == N_BARS
