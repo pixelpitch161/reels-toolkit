@@ -1000,6 +1000,20 @@
   CoC 0; safe zone OK; opening -19.4 dBFS, build +3.4 dB. Render 23 min CPU (~12 min wall) + 4 min mux.
 - Feedback: (pending)
 
+### v3 (series standard, Oct 24): the VS title card intro
+- Bar 0 = the shared VS title card (`projects/ballfight/title.py`; #35's session moved it from #30 a minute before my
+  own move, so I dropped mine and used theirs, then added UKULELE / ACOUSTIC panel patterns in a small commit; #30's card
+  stays pixel-identical). 3-2-1 on bar 1, FIGHT! on bar 2 (3.70 s); top caption, series-tag strip and the end-of-file
+  '3' fly-in removed; HP numbers + HUD hidden while the card is shut. Chords re-laid so the card sits on Am, the count-in
+  on E, and bar 32 (E) resolves into the slam.
+- Seed 1248 at 2 bars is a different fight (K.O. 54.2 s), so the honest search was re-run with the rules unchanged:
+  seed 1130 (UKULELE wins at 50.97 s with 4.3 HP, two lead changes, UKE-NADO captioned).
+- Audio: the louder card lifted the first half, so the early fight is pulled back 0.4 dB to keep the build at +3.3 dB.
+  (A comment pasted mid-line had swallowed five GAIN_PTS points; caught by the levels re-check.)
+- Checks: loopcheck render 0.9x / mp4 1.5x; flashcheck 1 doors pair (1/s); CoC 0; safe zone OK. Render ~9.5 min wall
+  + 3.5 min mux.
+- Feedback: (pending)
+
 ## BALLFIGHT #4 v2: Bagpipes vs Accordion (BALLFIGHT v2 redesign)
 - v2 of #30 on the user's approved redesign: BAG INFLATE (the bag swells to ~1.6x size and mass over 2 beats, then
   rockets around like a released balloon, zig-zagging and squealing) vs BELLOWS BITE (the end boards fly apart with the
