@@ -287,7 +287,7 @@ def bed(mix, b, light=False):
     t0 = b * T.BAR
     ch = T.CHORDS[b]
     nxt = T.CHORDS[(b + 1) % T.N_BARS]
-    sec = 0 if b <= 8 else (1 if b <= 16 else (2 if b <= 24 else 3))
+    sec = 0 if b <= 9 else (1 if b <= 17 else (2 if b <= 25 else 3))      # v3: the fight starts on bar 2
     if light:
         sec = 0
     # gallop: DUM . da-da on every beat (the hooves), a frame-drum thump on 1 and 3 (all four from bar 9)
@@ -311,11 +311,11 @@ def bed(mix, b, light=False):
     # choir from bar 9 (louder from 17), the bell tolls every 4 bars from bar 17
     if sec >= 1 or light:
         mix.place('choir', choir(CHOIR[ch], T.BAR + 0.15), t0, 0.40 if sec == 1 or light else 0.55)
-    if sec >= 2 and not light and (b - 17) % 4 == 0:
+    if sec >= 2 and not light and (b - 18) % 4 == 0:
         mix.place('bell', bell(45, 1.0), t0, 0.30)
     # the final exchange: tremolo strings + a snare ostinato
     if sec == 3 and not light:
-        k = min(1.0, (b - 24) / 4)
+        k = min(1.0, (b - 25) / 4)
         mix.place('strings', tremolo_strings(STRINGS[ch], T.BAR, 0.45 + 0.4 * k, 0.55 + 0.45 * k), t0, 0.22)
         for st in (0, 3, 6, 8, 11, 14):
             mix.place('perc', A.hp(A.snare(0.06), 400), t0 + st * S16, 0.05 + 0.03 * k)
@@ -508,25 +508,50 @@ def abilities(mix):
 
 def main():
     mix = A.Mix(T.DUR + 4.0)
-    # ------------------------------------------------ count-in (bar 0, on E): whip cracks + both fighters' strums
+    # ------------------------------------------------ v3: the VS title card (bar 0, on Am): a unison band hit per word
+    t1, t2, t3 = 0.004, T.BEAT, 2 * T.BEAT                 # UKULELE 4 ms in (no click at the seam), VS, ACOUSTIC
+    for tw_ in (t1, t2, t3):                               # the band on every word: frame drum, boom, low twang, choir
+        mix.place('perc', thump(1.0), tw_, 0.40)
+        mix.place('fx', A.thud(0.9, 120, 32, seed=int(tw_ * 50) + 3), tw_, 0.50)
+        mix.place('twang', twang(33 + 12, 0.9 * T.BEAT), tw_, 0.40)
+        mix.place('choir', choir((57, 60, 64, 69), 0.32, att=0.01, rel=0.25), tw_, 0.45)
+    # UKULELE: a bright chord blast with a quick double strum, and the whip cracking
+    mix.place('uke', strum('UKULELE', (69, 72, 76, 81), 1.0, 0.008, dur=0.6, cap=1.2), t1, 0.50, pan=PAN[KU])
+    mix.place('uke', strum('UKULELE', (69, 72, 76, 81), 0.8, 0.006, up=True, dur=0.3, cap=0.8), t1 + S16, 0.30, pan=PAN[KU])
+    mix.place('fx', whip(1.0, 1), t1 - WHIP_PRE, 0.28)
+    # VS: a thunder crack where it splits the divider
+    nn = int(1.4 * SR)
+    tt_ = A.tt(nn)
+    crack = A.bp(np.random.default_rng(91).normal(0, 1, nn), 1500, 9000) * np.exp(-tt_ / 0.035)
+    rumble = A.lp(np.random.default_rng(92).normal(0, 1, nn), 160) * np.clip(tt_ / 0.02, 0, 1) * np.exp(-tt_ / 0.5) * 3.0
+    mix.place('fx', crack * 0.9 + rumble, t2, 0.42)
+    mix.place('fx', A.crash(1.6), t2, 0.08)
+    # ACOUSTIC: the full open chord rung out, a bass A under it
+    mix.place('acoustic', strum('ACOUSTIC', (45, 52, 57, 60, 64, 69), 1.0, 0.016, dur=0.9, cap=1.8), t3, 0.55, pan=PAN[KA])
+    mix.place('acoustic', note('ACOUSTIC', 45, 0.9, 1.6, 1.0), t3, 0.30, pan=PAN[KA])
+    # beat 4: the hold + a gallop pickup as the doors open; the choir holds under the whole card (never quiet)
+    mix.place('choir', choir(CHOIR['Am'], 3 * T.BEAT + 0.2, att=0.05, rel=0.3), 0.0, 0.22)
+    for st in (12, 13, 14, 15):
+        mix.place('perc', hoof(0.55 + 0.15 * (st - 12), st % 2 == 0, 200 + st), st * S16, 0.22)
+    mix.place('fx', A.whoosh(T.T_DOORS[1] - T.T_DOORS[0] + 0.1, 300, 5000), T.T_DOORS[0] - 0.05, 0.16)
+    # ------------------------------------------------ count-in (bar 1, on E): whip cracks + both fighters' strums
     for j, (tc, txt) in enumerate(T.COUNT[:3]):
-        tc = max(tc, 0.004)                                # the "3" 4 ms into the file: no click at the seam
         mix.place('fx', whip(1.0, j), tc - WHIP_PRE, 0.30)
         mix.place('uke', strum('UKULELE', T.UKE_CHORD['E'], 0.9), tc, 0.30, pan=PAN[KU])
         mix.place('acoustic', strum('ACOUSTIC', T.AC_CHORD['E'], 0.9, 0.013), tc, 0.30, pan=PAN[KA])
         mix.place('twang', twang(40, 0.9 * T.BEAT), tc, 0.42)
         mix.place('perc', thump(1.0), tc, 0.36)
     for st, v in ((12, 0.5), (13, 0.65), (14, 0.8), (15, 1.0)):   # the gallop's pickup into FIGHT!
-        mix.place('perc', hoof(v, st % 2 == 0, st), st * S16, 0.18)
-    mix.place('fx', A.whoosh(T.BEAT, 400, 6000), 3 * T.BEAT, 0.14)
-    mix.place('bell', bell(45, 1.0), T.BAR, 0.34)
-    mix.place('fx', whip(1.0, 9), T.BAR - WHIP_PRE, 0.30)
-    # ------------------------------------------------ the bed: bars 1 .. the K.O.
+        mix.place('perc', hoof(v, st % 2 == 0, st), T.BAR + st * S16, 0.18)
+    mix.place('fx', A.whoosh(T.BEAT, 400, 6000), T.BAR + 3 * T.BEAT, 0.14)
+    mix.place('bell', bell(45, 1.0), T.T_FIGHT, 0.34)
+    mix.place('fx', whip(1.0, 9), T.T_FIGHT - WHIP_PRE, 0.30)
+    # ------------------------------------------------ the bed: bars 2 (FIGHT!) .. the K.O.
     bar_ko = int(T_KO // T.BAR)
-    for b in range(1, bar_ko + 1):
+    for b in range(2, bar_ko + 1):
         bed(mix, b)
-    whistle_phrase(mix, 1)
-    whistle_phrase(mix, 17)
+    whistle_phrase(mix, 2)
+    whistle_phrase(mix, 18)
     mix.place('fx', A.whoosh(3.6, 300, 6000), 44.0 - 3.6, 0.10)
     for k in ('perc', 'twang', 'choir', 'whistle', 'strings', 'bell'):
         if k in mix.buses:
@@ -592,6 +617,10 @@ def main():
     mix.place('fx', riser(tail), t32, 0.22)
     mix.place('choir', choir((56, 59, 64, 68), tail + 0.02, att=0.8, rel=0.001), t32, 0.5)
     mix.place('whistle', whistle(76, tail - 0.08, 1.0, 71), t32 + 0.05, 0.07)
+    nc = int((T.T_CLOSE + 0.012) * SR)                     # v3: the doors sliding shut into the title slam
+    tc_ = A.tt(nc)
+    doors = A.bp(np.random.default_rng(93).normal(0, 1, nc), 400, 5000) * (tc_ / T.T_CLOSE) ** 2
+    mix.place('fx', doors, T.DUR - T.T_CLOSE, 0.45)
     # caption landings: soft thuds
     for tl, k_, nch in impact_landings(RD.CAPTIONS):
         mix.place('fx', A.thud(), tl, 0.08 if k_ == 0 else 0.06)
@@ -609,7 +638,8 @@ BUS_GAIN = {'uke': 1.55, 'acoustic': 1.45, 'solo': 1.2, 'fx': 1.3, 'perc': 1.0, 
             'choir': 1.0, 'bell': 0.9, 'strings': 1.0}
 # section automation (dB), applied AFTER the compressor so the limiter can't flatten the build: the count-in at full,
 # the early fight pulled back, rising through the final exchange, the victory section loud, the end close to the start
-GAIN_PTS = [(0, 0.0), (1.55, 0.0), (2.1, -1.6), (20, -1.5), (30, -0.6), (40, 1.3), (44, 2.3), (50.8, 3.3), (52.3, 2.8),
+# v3: the title card + count-in (bars 0-1) at full, the early fight pulled back
+GAIN_PTS = [(0, 0.0), (3.4, 0.0), (3.95, -2.0), (20, -1.9), (30, -0.6), (40, 1.3), (44, 2.3), (50.8, 3.3), (52.3, 2.8),
             (53.4, 3.3), (58.0, 3.3), (60.0, 1.6), (61.02, 0.6)]
 
 
