@@ -10,7 +10,10 @@ count-in, FIGHT! on the bar-2 downbeat (3.94 s); the top caption and the series-
 numbers hide while the card is shut. The chords move one bar (bar 0 = Dm under the card, bar 1 = A for the count-in,
 the loop from FIGHT!, bar 30 = A resolving on the title slam). The title slam is the frame-0 reset: the doors slide
 shut over the last 0.30 s with a riser, the doors' whoosh and a swelling braam into it. The honest search was re-run
-with the fight at 2 bars (rules unchanged: v2's seed 894 doesn't even reach a K.O. a bar later). v2 kept as
+with the fight at 2 bars (rules unchanged: v2's seed 894 doesn't even reach a K.O. a bar later): new honest seed
+**2200** (8 fits in 2,200; TROMBONE 51 % / HORN 49 % over 1,829 decided): the pack leads 62-40 at 32 s, the lance levels
+it by 41 s, TALLY-HO 42.3 and PEDAL TONE 42.8 s, three lead changes in 1.5 s, a 3.7 s standoff at 4.0 vs 1.9 HP,
+TROMBONE wins at 50.72 s with 4.0 HP. v2 kept as
 `*_v2_backup.py` and `ballfight_trombone_vs_horn_v2.mp4`.
 
 ## v2 (BALLFIGHT v2 redesign, user Oct 24): THE HUNT
