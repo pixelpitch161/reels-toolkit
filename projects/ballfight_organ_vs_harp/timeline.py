@@ -8,22 +8,27 @@ the ring between the two of them (new kind `trap`); whoever crosses an enemy str
 (the harp passes freely); every landed crossing adds a string, up to 7, and the oldest fades. Levels from damage dealt
 unlock two abilities each; below 25 HP each gets one desperation move. Honest simulated fight (projects/ballfight/
 fight.py, rules re-tuned once for this pair with tune.py, then frozen), the seed picked for pacing, never edited.
-Hook: the same giant 3 . 2 . 1 . FIGHT! in the ring = the band's count-in (a tolling bell + an organ stab + a harp
-pluck per count, the drop lands on FIGHT); top caption "ORGAN / VS HARP" with the BALLFIGHT #9 tag.
+Hook (v3, series standard Oct 24): bar 0 is the VS TITLE CARD (projects/ballfight/title.py): the frame splits diagonally
+into wine (ORGAN, top-left) and pearl (HARP, bottom-right) panels with the two balls big and close; ORGAN slams in on
+beat 1 (frame 0) with a full-organ blast, VS on beat 2 with a thunder crack (it cracks the divider), HARP on beat 3 with a
+harp sweep, all over unison band hits; beat 4 holds and the doors slide apart. Bar 1 is the giant 3 . 2 . 1 (the band's
+count-in: bell + organ stab + harp pluck per count), FIGHT! on the bar-2 downbeat. No top caption (the card replaces
+it). In the last T_CLOSE s the doors slide shut again, so the title slam on frame 0 is the loop's reset.
 Music, gothic horror: D minor, choir "aah" pad, a tolling bell, a low pedal drone, slow-burn half time that builds into
 a pounding back half (toms, timpani, staccato choir), at loop_bpm(126) = 125.90 BPM (32 bars = 61 s; 1 bar = the
 count-in). The organ fighter plays the chords (short stabs, never held, so the bed doesn't turn to mush), the harp
 plays the arpeggios. Whoever is losing, their half of the band falls apart.
 
 Beat sheet (61 s; events after 2 s are the run's own: the seed was chosen so they land near these targets):
-    0-1.91   balls rev in corners; giant 3 . 2 . 1 in the ring            ORGAN / VS HARP, then FIGHT!
-    1.91-8   launch; first pipe rows and the first strings; HP ticking     -
+    0-1.91   VS title card: ORGAN . VS . HARP slam in, the doors open      (the card)
+    1.91-3.81  balls rev in corners; giant 3 . 2 . 1 in the ring           3 . 2 . 1, then FIGHT!
+    3.81-8   launch; first pipe rows and the first strings; HP ticking     -
     8-30     rows grow, the string web fills; unlocks                      CATHEDRAL, PLUCK, PULL ALL STOPS, ANGEL WINGS
     32-44    one dips below 25 HP                                          TOCCATA or 47 STRINGS
     44-52    final exchange, HP in single digits                           -
     ~49-53   K.O.: hit-stop, slow-mo shatter (pipes / strings)             K.O. -> (WINNER) WINS
     then-58  winner's solo under the spot                                  COMMENT THE / NEXT MATCH-UP
-    58-61    loser reassembles; both glide to their corners; HP refills; "3" lands at 61.0 = frame 0
+    58-61    loser reassembles; both glide to their corners; HP refills; the doors shut: the title slam = frame 0
 """
 import math
 
@@ -40,8 +45,12 @@ S16 = BEAT / 4                  # hits snap to the nearest 16th in the audio (<=
 
 FIGHTERS = ('ORGAN', 'HARP')    # left corner (screen left), right corner (screen right)
 SERIES = 'BALLFIGHT #9'
-T_FIGHT = BAR                   # FIGHT! lands on the bar-1 downbeat: the drop, the launch and the first pipe row
-COUNT = [(0.0, '3'), (BEAT, '2'), (2 * BEAT, '1'), (BAR, 'FIGHT!')]
+T_FIGHT = 2 * BAR               # v3: FIGHT! lands on the bar-2 downbeat (3.81 s): the drop, the launch, the first pipe row
+COUNT = [(BAR, '3'), (BAR + BEAT, '2'), (BAR + 2 * BEAT, '1'), (2 * BAR, 'FIGHT!')]     # bar 1: the count-in
+# ---------------------------------------------------------------- the VS title card (bar 0; projects/ballfight/title.py)
+TITLE = [(0.0, 'ORGAN'), (BEAT, 'VS'), (2 * BEAT, 'HARP')]     # one word slams in per beat (beat 1 = frame 0)
+T_DOORS = (3 * BEAT + 0.10, BAR - 0.03)  # beat 4: the two panels slide apart like doors to reveal the ring
+T_CLOSE = 0.30                  # the last 0.30 s of the file: the doors slide shut again (the run-up into the frame-0 slam)
 
 # ---------------------------------------------------------------- frozen rules (tune.py; the same for every seed)
 DMG_SCALE = 0.6                 # tuned once (tune.py) so the median K.O. sits near 50 s with each side winning about half
@@ -64,14 +73,14 @@ T_REV = T_GLIDE + 1.05          # in the corners, revving (same motion as the op
 # ---------------------------------------------------------------- music (D minor, gothic horror)
 KEY_ROOT = 38                   # D
 SCALE = (0, 2, 3, 5, 7, 8, 10)  # D natural minor; the dominant (A) borrows C#
-# chords per bar (32 bars): the count-in on the dominant; the slow burn (bars 1-12, i i VI V), the climb (13-20,
-# i iv VI V), the pounding back half (21-28, i VI iv V), then i iv V into the seam, so the loop seam is the dominant
-# (bar 31 + the count-in bar 0) resolving on FIGHT!
-CHORDS = ['A'] + ['Dm', 'Dm', 'Bb', 'A'] * 3 + ['Dm', 'Gm', 'Bb', 'A'] * 2 + ['Dm', 'Bb', 'Gm', 'A'] * 2 + ['Dm', 'Gm', 'A']
+# chords per bar (32 bars): the title card on the tonic, the count-in on the dominant, the slow burn (bars 2-13,
+# i i VI V), the climb (14-21, i iv VI V), the pounding back half (22-29, i VI iv V), then i V into the seam: bar 31's
+# dominant resolves on the title slam (frame 0), bar 1's on FIGHT!
+CHORDS = ['Dm', 'A'] + ['Dm', 'Dm', 'Bb', 'A'] * 3 + ['Dm', 'Gm', 'Bb', 'A'] * 2 + ['Dm', 'Bb', 'Gm', 'A'] * 2 + ['Dm', 'A']
 CHORD_ROOT = {'Dm': 38, 'Gm': 43, 'Bb': 46, 'A': 45}
 CHORD_PCS = {'Dm': (2, 5, 9), 'Gm': (7, 10, 2), 'Bb': (10, 2, 5), 'A': (9, 1, 4)}
 assert len(CHORDS) == N_BARS
-SECTION = [(0, 'count'), (1, 'burn'), (13, 'climb'), (21, 'pound')]      # (first bar, name); the tail is by the run
+SECTION = [(0, 'count'), (2, 'burn'), (14, 'climb'), (22, 'pound')]      # (first bar, name); the tail is by the run
 
 
 def bar_of(t):

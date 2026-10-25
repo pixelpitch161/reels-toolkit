@@ -309,23 +309,53 @@ def bed(mix, b, sec, light=False):
 
 def main():
     mix = A.Mix(T.DUR + 4.0)
-    # ------------------------------------------------ count-in (bar 0, on the dominant): bell + organ stab + harp pluck
+    # ------------------------------------------------ v3: the VS title card (bar 0, on the tonic): one band hit per word
+    t1, t2, t3 = 0.004, T.BEAT, 2 * T.BEAT                 # ORGAN 4 ms in (no click at the seam), VS, HARP
+    for tw in (t1, t2, t3):                                # the band on every word: timpani + boom + bell + a choir "hah"
+        mix.place('drums', timp(38, 1.0, 1.2), tw, 0.42)
+        mix.place('fx', A.thud(0.9, 120, 32, seed=int(tw * 50) + 3), tw, 0.50)
+        mix.place('bell', bell(50, 2.2), tw, 0.16)
+        mix.place('choir', choir([50, 57, 62, 65], 0.30, att=0.008, rel=0.25, vowel=(800, 1250, 2700), seed=int(tw * 9)),
+                  tw, 0.16)
+    # ORGAN: the full organ at once, pedal to mixture, the lowest D under it
+    mix.place('organ', organ_chord([26, 38, 50, 57, 62, 65, 69, 74], 0.5, 1.0, cap=1.2), t1, 0.40)
+    # VS: a thunder crack where it splits the divider
+    nn = int(1.4 * SR)
+    tt = A.tt(nn)
+    crack = A.bp(np.random.default_rng(91).normal(0, 1, nn), 1500, 9000) * np.exp(-tt / 0.035)
+    rumble = A.lp(np.random.default_rng(92).normal(0, 1, nn), 160) * np.clip(tt / 0.02, 0, 1) * np.exp(-tt / 0.5) * 3.0
+    mix.place('fx', crack * 0.9 + rumble, t2, 0.40)
+    mix.place('drums', A.crash(1.6), t2, 0.10)
+    # HARP: a sweep up the D-minor strings into a big rolled chord
+    sweep = T.scale_notes(50, 86, 'Dm')
+    for j, m in enumerate(sweep):
+        mix.place('harp', harp(m, 0.75, 0.8), t3 - 0.12 + 0.12 * j / len(sweep), 0.12, pan=0.5 * math.sin(j * 0.6))
+    for j, m in enumerate((50, 57, 62, 65, 69, 74, 77)):
+        mix.place('harp', harp(m, 1.0, 1.4), t3 + j * 0.012, 0.22, pan=-0.3 + 0.1 * j)
+    # beat 4: the hold + a timpani pickup as the doors open; a choir pad under the whole card (never quiet)
+    mix.place('choir', choir([50, 57, 62, 65], 3 * T.BEAT, att=0.05, rel=0.3), 0.0, 0.10)
+    mix.place('drone', drone(26, T.BAR + 0.2), 0.0, 0.10)
+    for st, v in ((12, 0.5), (13, 0.62), (14, 0.78), (15, 0.95)):
+        mix.place('drums', timp(45, v, 0.5), st * S16, 0.30)
+    mix.place('fx', A.whoosh(T.T_DOORS[1] - T.T_DOORS[0] + 0.1, 300, 5000), T.T_DOORS[0] - 0.05, 0.16)
+    # ------------------------------------------------ count-in (bar 1, on the dominant): bell + organ stab + harp pluck
     for j, (tc, txt) in enumerate(T.COUNT[:3]):
-        tc = max(tc, 0.004)                                 # the "3" 4 ms into the file: no click at the seam
         mix.place('bell', bell(45 + 12 * (j == 2), 2.0), tc, 0.20)
         mix.place('organ', organ_chord(VOICING['A'], 0.18, 0.9), tc, 0.30)
         mix.place('harp', harp(69 + 4 * j, 0.9), tc, 0.30)
         mix.place('drums', timp(45, 0.9), tc, 0.30)
-    mix.place('drums', roll(T.BEAT, 45, 0.3), 3 * T.BEAT, 0.30)
-    mix.place('fx', A.whoosh(T.BEAT, 400, 6000), 3 * T.BEAT, 0.14)
-    mix.place('drums', A.crash(2.0), T.BAR, 0.16)
-    mix.place('drums', A.kick(1.0, 0.4), T.BAR, 0.6)
-    mix.place('bell', bell(38, 5.0), T.BAR, 0.24)
-    # ------------------------------------------------ the bed: bars 1 .. the K.O.
-    for b in range(1, BAR_KO + 1):
+    mix.place('choir', choir([45, 57, 61, 64], T.BAR, att=0.2, rel=0.05), T.BAR, 0.09)
+    mix.place('drums', roll(T.BEAT, 45, 0.3), T.BAR + 3 * T.BEAT, 0.30)
+    mix.place('fx', A.whoosh(T.BEAT, 400, 6000), T.BAR + 3 * T.BEAT, 0.14)
+    mix.place('drums', A.crash(2.0), T.T_FIGHT, 0.16)
+    mix.place('drums', A.kick(1.0, 0.4), T.T_FIGHT, 0.6)
+    mix.place('bell', bell(38, 5.0), T.T_FIGHT, 0.24)
+    # ------------------------------------------------ the bed: FIGHT! (bar 2) .. the K.O.
+    for b in range(int(round(T.T_FIGHT / T.BAR)), BAR_KO + 1):
         bed(mix, b, T.section_at(b * T.BAR))
-    mix.place('drums', A.crash(2.5), 21 * T.BAR, 0.18)                  # the pound arrives
-    mix.place('fx', A.whoosh(3.6, 300, 6000), 21 * T.BAR - 3.6, 0.10)
+    b_pound = next(b0 for b0, nm in T.SECTION if nm == 'pound')
+    mix.place('drums', A.crash(2.5), b_pound * T.BAR, 0.18)            # the pound arrives
+    mix.place('fx', A.whoosh(3.6, 300, 6000), b_pound * T.BAR - 3.6, 0.10)
     for k in ('choir', 'drone', 'bell', 'perc', 'strings', 'drums'):
         mix.buses[k] = A.tape_stop(mix.buses[k], T_KO, 0.42)
     # ------------------------------------------------ the fighters, from the run
@@ -483,7 +513,7 @@ def main():
         else:
             mix.place('organ', organ_chord([m], 0.1, 0.7), tj, 0.16)
     mix.place('fx', A.chime(95, 0.5) + A.chime(102, 0.5) * 0.5, T.T_GLIDE, 0.12)
-    # ------------------------------------------------ bar 31: build into the "3" on sample 0
+    # ------------------------------------------------ bar 31: build into the title slam on sample 0
     t31 = (T.N_BARS - 1) * T.BAR
     mix.place('drums', roll(T.DUR - t31 + 0.03, 45, 0.15), t31, 0.32)
     mix.place('fx', riser(T.DUR - t31), t31, 0.20)
@@ -492,6 +522,10 @@ def main():
     for bt in range(4):
         mix.place('strings', cello(33 + (0, 4, 7, 12)[bt], 0.2), t31 + bt * T.BEAT, 0.08)
         mix.place('drums', A.kick(0.9, 0.3), t31 + bt * T.BEAT, 0.45)
+    nc = int((T.T_CLOSE + 0.012) * SR)                              # v3: the doors sliding shut into the title slam
+    tc_ = A.tt(nc)
+    doors = A.bp(np.random.default_rng(93).normal(0, 1, nc), 400, 5000) * (tc_ / T.T_CLOSE) ** 2
+    mix.place('fx', doors, T.DUR - T.T_CLOSE, 0.55)
     # caption landings: soft thuds
     for tl, k, nch in impact_landings(RD.CAPTIONS):
         mix.place('fx', A.thud(), tl, 0.08 if k == 0 else 0.06)
@@ -508,8 +542,8 @@ def main():
 BUS_GAIN = {'organ': 2.0, 'harp': 0.85, 'solo': 2.4, 'fx': 1.5, 'choir': 1.6, 'drone': 1.0, 'bell': 1.0, 'perc': 1.0,
             'strings': 1.2, 'drums': 1.6}
 # section automation (dB), applied AFTER the compressor so the limiter can't flatten the build: the count-in at full,
-# the burn pulled back, rising through the climb and the pound, the victory section loud, the end close to the start
-GAIN_PTS = [(0, 0.0), (1.55, 0.0), (2.1, -1.8), (20, -1.4), (24.8, -0.6), (40, 1.0), (44, 2.0), (50.8, 3.0), (52.3, 2.6),
+# the title card + count-in at full, the burn pulled back, rising through the climb and the pound, the victory loud
+GAIN_PTS = [(0, 0.0), (3.5, 0.0), (4.1, -1.8), (20, -1.4), (26.7, -0.6), (41.9, 1.0), (44, 2.0), (50.8, 3.0), (52.3, 2.6),
             (53.4, 3.0), (58.0, 3.0), (60.0, 1.6), (61.02, 0.6)]
 
 

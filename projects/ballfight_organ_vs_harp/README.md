@@ -11,7 +11,15 @@ fades. Abilities: CATHEDRAL (shield: an echoing gothic dome) / PULL ALL STOPS (h
 Mood: gothic horror, D minor at 125.90 BPM (32 bars): choir "aah", tolling bell, clock tick, heartbeat into a pounding
 back half; the organ fighter plays the chord stabs, the harp the arpeggios.
 
-Honest run, seed 1181 (10 fits in 1,179 runs; rules frozen after tune.py): the organ's rows bully early, the string web
+**v3 (VS title card intro, series standard Oct 24):** bar 0 is the shared VS title card (`projects/ballfight/title.py`:
+wine organ-pipe panel vs pearl harp-string panel, ORGAN / VS / HARP slamming in with a full-organ blast, a thunder crack
+and a harp sweep over unison band hits; the doors open on beat 4), the 3 . 2 . 1 on bar 1, FIGHT! on bar 2 (3.81 s); no
+top caption. The honest search was re-run with the fight at 2 bars (rules unchanged): **seed 237** (6 fits in 999 runs;
+ORGAN 52 % / HARP 48 % over 813 decided): neck and neck all the way (29-28 at 42 s, 18-19 at 46 s), four lead changes
+(33.7, 39.5, 46.5, 50.8 s), the organ takes it back at 50.8 s and wins at 51.12 s with 8.6 HP. The doors shut over the
+last 0.30 s and the title slam on frame 0 is the loop's reset. v2 (`*_v2_backup.py`) and v1 (`*_backup.py`) kept.
+
+v1 / v2 honest run, seed 1181 at 1 bar (10 fits in 1,179 runs; rules frozen after tune.py): the organ's rows bully early, the string web
 fills and the harp takes the lead at 33.4 s, the lead flips at 38.1 and 43.9 s, 47 STRINGS (40.5 s) and TOCCATA (41.9 s)
 trade blows, the organ trails 6-14 at 48 s and wins on its last hits at 51.66 s with 4.5 HP left (4 lead changes).
 Balance over 1,042 decided runs: ORGAN 52 %, HARP 48 %.
@@ -20,10 +28,10 @@ Balance over 1,042 decided runs: ORGAN 52 %, HARP 48 %.
 
 ```bash
 python tune.py 48 O.dmg=4 H.dmg=1.7,1.8 H.n0=1 H.grow=0.5 scale=0.6   # rule tuning (done once, frozen in fighters.py + timeline.py)
-python seed_search.py 1 400 --stop 6                                  # honest runs ranked against the beat sheet -> check/seeds.txt
-python sim.py 1181                                                    # one run's story (cached in check/run_1181.pkl)
+python seed_search.py 1 3000 --stop 6                                 # honest runs ranked against the beat sheet -> check/seeds.txt
+python sim.py 237                                                     # one run's story (cached in check/run_1181.pkl)
 python render.py                                                      # sprite cache (check/sprites_ballfight9.npz, ~40 s)
-python -m reelkit.sheet render.py test/sheet.png 0.0 6.0 13.2 19.0 24.0 30.0 41.0 43.15 51.75 55.0 60.7
+python -m reelkit.sheet render.py test/sheet.png 0.0 0.48 0.95 1.72 2.0 3.85 12.0 24.4 29.7 43.5 51.2 54.5 60.97
 python -m reelkit.safezone render.py --step 0.25
 python focus_check.py                                                 # subject CoC must be 0 px on every frame
 python audio.py                                                       # audio.wav (2860 AAC frames) + check/stem_*.wav

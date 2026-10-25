@@ -37,6 +37,7 @@ import timeline as T
 import scene as S
 import sim
 import styles as ST
+import title as TT                                               # v3: the shared VS title card (projects/ballfight)
 from fighters import FIGHTERS
 
 YY_, XX_ = np.mgrid[0:H, 0:W].astype(np.float64)
@@ -545,7 +546,7 @@ def draw_ball(arr, dep, cam, k, st, t):
 
 # ---------------------------------------------------------------- captions (from the run)
 def _caps():
-    title = [(1.0 / FPS, T.T_FIGHT - 0.06, [f'*{NAMES[0]}*', f'VS ~{NAMES[1]}~'])]
+    title = []                                                      # v3: the VS title card replaces the top caption
     abil = [[], []]
     for t, who, name in STORY['caps']:
         abil[who].append((t, t + 2.4, [name]))
@@ -610,11 +611,7 @@ def countdown(img, t, cs):
             punch = 1 + 0.25 * max(0.0, 1 - u / 0.12) ** 2
             out = ss(tn - 0.1, tn, t)
             big_text(img, txt, cx, cy, size * punch * (1 - 0.35 * out), col, alpha=1 - out)
-    t_in = T.DUR - T.BEAT                                 # the '3' flies in during the last beat
-    if t >= t_in:
-        u = (t - t_in) / T.BEAT
-        e_ = 1 - (1 - u) ** 2.5                           # eases out: nearly landed on the last frame, lands on frame 0
-        big_text(img, '3', cx, cy, 78 * (0.15 + 1.1 * e_), (255, 244, 220), alpha=min(1.0, u * 1.6))
+    # v3: no fly-in at the end of the file: the title card's slam on frame 0 is the loop's reset (title.py)
 
 
 # ---------------------------------------------------------------- static draw lists
@@ -1306,9 +1303,10 @@ def render(f):
     img = np.ascontiguousarray(np.clip(img, 0, 255).astype(np.uint8))
     # ---------------- UI: countdown, HP numbers in the balls, fight HUD, captions
     countdown(img, t, cs)
-    for k, (s_, rp) in drawn.items():
+    card_closed = TT.door_offset(t) == 0.0                            # v3: the title card covers the HUD: skip it
+    for k, (s_, rp) in (drawn.items() if not card_closed else ()):
         st = fs[k]
-        if st['scale'] < 0.95 or T.BAR - 0.05 <= t < T.BAR + 0.85:          # hidden while FIGHT! covers the balls
+        if st['scale'] < 0.95 or T.T_FIGHT - 0.05 <= t < T.T_FIGHT + 0.85:  # hidden while FIGHT! covers the balls
             continue
         hp = hp_at(k, t)
         txt = str(int(math.ceil(hp - 1e-6)))
@@ -1330,16 +1328,8 @@ def render(f):
         hud.append(dict(name=NAMES[k], color=COL[k], hp=hp_at(k, t), trail=max(hp_at(k, t), hp_lag[k]), level=lvl,
                         status=stt, status_k=sk, flash=fl, ko=(k == LOSE and T_KO <= t < T.T_GLIDE), t=t,
                         win=(k == WIN and T_KO + 1.3 <= t < T.T_GLIDE)))
-    fight_hud(img, hud[0], hud[1])
-    draw_captions(img, t, CAP_TITLE, style='impact', hi=tuple(int(v) for v in COL[0]), alt=tuple(int(v) for v in COL[1]))
-    tag_k = ss(0.40, 0.55, t) * (1 - ss(T.T_FIGHT - 0.2, T.T_FIGHT - 0.06, t))
-    if tag_k > 0.02:                                                   # the series tag, small, under the title
-        w_ = len(T.SERIES) * ADV - 1
-        x_, y_ = int(round(180 - w_ / 2)), 157
-        reg = img[y_ - 2:y_ + 9, x_ - 3:x_ + w_ + 3].astype(np.float32)
-        img[y_ - 2:y_ + 9, x_ - 3:x_ + w_ + 3] = (reg * (1 - 0.6 * tag_k) + np.array(INK) * 0.6 * tag_k).astype(np.uint8)
-        if tag_k > 0.5:
-            label(img, T.SERIES, x_, y_, AMBER, 1)
+    if not card_closed:
+        fight_hud(img, hud[0], hud[1])
     for k in (0, 1):
         c = tuple(int(v) for v in np.clip(COL[k] * 0.8 + 60, 0, 255))
         draw_captions(img, t, CAP_ABIL[k], style='impact', base=c, puff=tuple(int(v) for v in COL[k]))
@@ -1347,6 +1337,7 @@ def render(f):
     wc = tuple(int(v) for v in np.clip(COL[WIN] * 0.8 + 60, 0, 255))
     draw_captions(img, t, CAP_WINS, style='impact', base=wc)
     draw_captions(img, t, CAP_COMMENT, style='impact', hi=(255, 214, 96))
+    img = TT.draw(img, t)                                           # v3: the VS title card, over everything
     return img
 
 
