@@ -4,6 +4,17 @@ Biggest vs smallest, lowest vs highest, on #27's engine, ring, HUD and count-in 
 `fighters.py`, `scene.py`, imported, plus `reelkit.ui.fight_hud` and the shared effects kit `reelkit.fx`). Mood: villain
 march, C minor at 125.90 BPM (32 bars).
 
+**v3 (VS title card intro, series rule Oct 24):** bar 0 is the shared VS title card (`projects/ballfight/title.py`):
+indigo and steel-silver panels (bell-mouth rings / rows of key cups, registered in `render.py` via `title.PATTERNS`),
+the big balls (the flute's close-up is the pixel-art flute via `title.CLOSEUP`, its glass via `title.GLASS`), TUBA / VS /
+FLUTE slamming in on beats 1-3 over unison band hits (a tuba blast, a thunder crack, a shrieking flute flurry), the doors
+opening on beat 4. The 3 . 2 . 1 is on bar 1, FIGHT! on the bar-2 downbeat (3.81 s); no top caption; the HUD hides while
+the card is shut. The title slam is the frame-0 reset (the doors shut over the last 0.30 s, a riser + a doors whoosh
+into the seam). Chords: the card on Cm, the count-in on G, the march loop from FIGHT!, bars 30-31 Ab . G into the slam.
+The honest seed search was re-run with the fight at 2 bars (rules unchanged): 6 fits in 753 runs, TUBA 53 % / FLUTE 47 %
+over 586 decided; seed 514 ranked first again, and for this roster its run at 2 bars matches v2's event for event, one
+bar later (FLUTE wins at 51.28 s with 5.7 HP). v2 kept as `*_v2_backup.py`, `ballfight_tuba_vs_flute_v2.mp4`.
+
 **v2 (BALLFIGHT v2 redesign, user Oct 24): the instrument's body / the way it's played is the weapon.**
 - **TUBA (indigo, left): OOM-PAH SWALLOW** (engine kind `swallow`). Every bar the giant bell goes "oom": it inhales
   for a beat (air streaks pour into it, the suction cone steers the flute in); touching the bell, the flute is
@@ -34,7 +45,8 @@ python -m reelkit.safezone render.py --step 0.25
 python focus_check.py                                              # subject CoC must be 0 px on every frame
 python audio.py && python band_check.py                            # audio.wav + stems; fighters' bands over the bed
 python -m reelkit.loopcheck render.py audio.wav
-python -m reelkit.video render.py audio.wav ballfight_tmp.mp4 && python mux.py ballfight_tuba_vs_flute_v2.mp4
+python -m reelkit.sheet render.py test/intro.png 0.0 0.1 0.5 0.6 1.0 1.1 1.4 1.65 1.8 2.0 2.5 3.4 3.85 60.75 60.9 60.9667
+python -m reelkit.video render.py audio.wav ballfight_tmp.mp4 && python mux.py ballfight_tuba_vs_flute_v3.mp4
 ```
 
 ## Files
