@@ -4,6 +4,25 @@ DJ vs producer on #27's engine, ring, HUD and count-in (`projects/ballfight`: `f
 imported, plus `reelkit.ui.fight_hud` and the shared effects kit `reelkit.fx`). Colours from the series table: TURNTABLES
 lime (left corner), SYNTH cyan (right). Mood: dark breakbeat, F minor at 137.70 BPM (35 bars).
 
+## v3 (VS title card intro, series rule, user Oct 24)
+
+- **Bar 0 = the shared title card** (`projects/ballfight/title.py`, moved there by #35's session; used unchanged): the
+  episode registers its panel patterns (`TT.PATTERNS`: lime record grooves + label for TURNTABLES, a cyan circuit board
+  for SYNTH) and pre-fills `TT._SPR` with its own pitched sprites (the card's balls match the fight's look). TURNTABLES /
+  VS / SYNTH slam in on beats 1-3, the doors open on beat 4; bar 1 = 3-2-1 (one per beat), FIGHT! on the bar-2 downbeat
+  (3.49 s). The old top caption is dropped; HP numbers and the HUD are hidden while the card is shut.
+- **Card audio**: TURNTABLES = kick crunch + reese + scratch flare + organ stab; VS = thunder crack + crash; SYNTH = saw
+  chord blast + supersaw sweep; a cold Fm pad and pickup snares under the card, a whoosh as the doors open. Bed from bar 2.
+- **Loop**: the title slam is the frame-0 reset. The doors shut over the last 0.30 s (riser into the seam) and a ghost
+  TURNTABLES lands on the last frame, so frame 0's slam follows on.
+- **Honest seed search re-run with the fight at 2 bars** (rules unchanged): 6 fits in 1339 runs; balance TURNTABLES 617 /
+  SYNTH 665 of 1282 decided. **Seed 1339**: the decks lead for 24 s, then the lead swaps back and forth from 28 to 42 s
+  (WHITE NOISE 40.5 and BASS DROP 41.0 back to back). The decks' third REWIND (9.9 HP back, 42.3 s) puts them ahead to
+  the wire. The cables' pulses take the lead at 50.05 s, and SYNTH wins at 50.79 s with 2.8 HP (5 snaps, 3 REWINDs).
+  Captions: SCRATCH 12.6, LFO 17.0, REWIND 21.4, SAWTOOTH 26.1, WHITE NOISE 40.5.
+- FIGHT!'s punch is 0.12 (was 0.25): at the slam it poked 7 px into the button column for one frame.
+- v2 kept as `*_v2_backup.py` and `ballfight_turntables_vs_synth_v2.mp4` (seed 781, FIGHT! at 1.74 s).
+
 ## v2 (BALLFIGHT v2 redesign, user Oct 24): THE RING IS THE RECORD vs PATCH CABLES
 
 - **TURNTABLES - THE RING IS THE RECORD** (new weapon kind `scratch_floor`): the ring floor is the DJ's record (grooves,
@@ -35,14 +54,14 @@ lime (left corner), SYNTH cyan (right). Mood: dark breakbeat, F minor at 137.70 
 ```bash
 python tune.py 64 T.dmg=1.6 S.volt_dmg=0.17,0.185 S.snap=0.15 scale=0.6   # rule tuning (done once, frozen)
 python seed_search.py 1 4000 --stop 6                       # honest runs ranked against the beat sheet -> check/seeds.txt
-python sim.py 781                                           # one run's story (cached in check/run_781.pkl)
+python sim.py 1339                                          # one run's story (cached in check/run_1339.pkl)
 python render.py                                            # sprite cache (check/sprites_ballfight5.npz, ~20 s)
-python -m reelkit.sheet render.py test/sheet.png 1.95 11.0 15.4 19.8 25.2 34.17 40.0 50.85 55.0
+python -m reelkit.sheet render.py test/sheet_v3_intro.png 0.0 0.1 0.5 0.95 1.5 1.95 2.85 3.6 60.8 60.967
 python -m reelkit.safezone render.py --step 0.25
 python focus_check.py                                       # subject CoC must be 0 px on every frame
 python audio.py                                             # audio.wav (whole AAC frames) + check/stem_*.wav
 python -m reelkit.loopcheck render.py audio.wav
-python -m reelkit.video render.py audio.wav ballfight_tmp.mp4 && python mux.py ballfight_turntables_vs_synth_v2.mp4
+python -m reelkit.video render.py audio.wav ballfight_tmp.mp4 && python mux.py ballfight_turntables_vs_synth_v3.mp4
 ```
 
 ## Files
