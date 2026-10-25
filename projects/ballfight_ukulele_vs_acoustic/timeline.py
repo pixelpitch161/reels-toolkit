@@ -8,22 +8,27 @@ strum). So the fight IS the strumming: the uke's off-beat slams against the acou
 damage dealt unlock two abilities each; below 25 HP each gets one desperation move. Honest simulated fight
 (projects/ballfight/fight.py, rules re-tuned once for this pair with tune.py, then frozen), the seed picked for pacing,
 never edited.
-Hook: the same giant 3 . 2 . 1 . FIGHT! in the ring = the band's count-in (a whip crack + both fighters' strums per
-count, the drop lands on FIGHT); top caption "UKULELE / VS ACOUSTIC" with the BALLFIGHT #7 tag. The second fighter is
-called ACOUSTIC everywhere so it never reads as #27's GUITAR.
+Hook (v3, series standard from Oct 24): bar 0 is the VS TITLE CARD (projects/ballfight/title.py): the frame splits
+diagonally into a pink UKULELE panel (surf crests) and a wood-tan ACOUSTIC panel (grain + six strings), each with its
+ball big and close; UKULELE slams in on beat 1 (frame 0) with a uke chord blast, VS cracks the divider on beat 2 with a
+thunder crack, ACOUSTIC slams in on beat 3 with an open-chord blast, all over unison band hits; beat 4 the doors slide
+apart. Bar 1: the giant 3 . 2 . 1 = the band's count-in (a whip crack + both fighters' strums per count); FIGHT! on the
+bar-2 downbeat. No top caption (the card replaces it). The doors slide shut over the last T_CLOSE s with a riser and a
+whoosh, so the title slam on frame 0 is the loop's reset. The second fighter is called ACOUSTIC everywhere.
 Music, spaghetti-western standoff: A minor, the descending Am - G - F - E cadence, a galloping rhythm, a whistled-style
 lead (synth), a twangy baritone guitar bed kept below both fighters, at loop_bpm(130) = 129.84 BPM (33 bars = 61 s;
 1 bar = the countdown).
 
-Beat sheet (61 s; events after 2 s are the run's own: the seed was chosen so they land near these targets):
-    0-1.85   balls rev in corners; giant 3 . 2 . 1 in the ring          UKULELE / VS ACOUSTIC, then FIGHT!
-    1.85-8   launch; dashes vs strummed cones, HP ticking                -
+Beat sheet (61 s; events after the count-in are the run's own: the seed was chosen so they land near these targets):
+    0-1.85   VS title card: UKULELE . VS . ACOUSTIC slam in, the doors open on beat 4
+    1.85-3.7 giant 3 . 2 . 1 in the ring (the count-in)                   then FIGHT! on bar 2 (3.70 s)
+    3.7-8    launch; first waves and rake strokes, HP ticking            -
     8-30     dash gets faster and longer, cone longer; the unlocks       CHUNK, CAPO, SPEED STRUM, FINGERPICK
     32-44    one dips below 25 HP                                        UKE-NADO or BIG STRUM
     44-52    final exchange, HP in single digits                         -
     ~49-53   K.O.: hit-stop, slow-mo shatter (wood, strings, frets)      K.O. -> (WINNER) WINS
     then-58  winner's solo under the spot                                COMMENT THE / NEXT MATCH-UP
-    58-61    loser reassembles; both glide to their corners; HP refills; "3" lands at 61.0 = frame 0
+    58-61    loser reassembles; both glide to their corners; HP refills; the doors shut: the title slam = frame 0
 """
 import math
 
@@ -40,8 +45,12 @@ S16 = BEAT / 4                  # hits snap to the nearest 16th in the audio (<=
 
 FIGHTERS = ('UKULELE', 'ACOUSTIC')  # left corner (screen left), right corner (screen right)
 SERIES = 'BALLFIGHT #7'         # posting order on the board (#29 = #3 ... #33 = #7); renumber if posted out of order
-T_FIGHT = BAR                   # FIGHT! lands on the bar-1 downbeat: the drop, the launch and the first strum
-COUNT = [(0.0, '3'), (BEAT, '2'), (2 * BEAT, '1'), (BAR, 'FIGHT!')]
+T_FIGHT = 2 * BAR               # v3: FIGHT! lands on the bar-2 downbeat (3.70 s): the drop, the launch, the first strum
+COUNT = [(BAR, '3'), (BAR + BEAT, '2'), (BAR + 2 * BEAT, '1'), (2 * BAR, 'FIGHT!')]     # bar 1: the count-in
+# the VS title card (projects/ballfight/title.py) on bar 0
+TITLE = [(0.0, 'UKULELE'), (BEAT, 'VS'), (2 * BEAT, 'ACOUSTIC')]   # one word slams in per beat (beat 1 = frame 0)
+T_DOORS = (3 * BEAT + 0.10, BAR - 0.03)  # beat 4: the panels slide apart like doors to reveal the ring
+T_CLOSE = 0.30                  # the last 0.30 s of the file: the doors slide shut again (the run-up into the frame-0 slam)
 
 # ---------------------------------------------------------------- frozen rules (tune.py; the same for every seed)
 DMG_SCALE = 0.72                # v2 re-tuned once (tune.py, 160 seeds a cell), then frozen
@@ -64,9 +73,9 @@ T_REV = T_GLIDE + 1.05          # in the corners, revving (same motion as the op
 # ---------------------------------------------------------------- music (A minor, spaghetti-western standoff)
 KEY_ROOT = 45                   # A
 SCALE = (0, 2, 3, 5, 7, 8, 10)  # A natural minor; over E the G is raised to G# (A harmonic minor's dominant)
-# chords per bar (33 bars): the count-in on the dominant, then the descending cadence Am - G - F - E eight times, so
-# bar 32 (E) and the count-in bar 0 (E) make the seam the dominant resolving on FIGHT!
-CHORDS = ['E'] + ['Am', 'G', 'F', 'E'] * 8
+# chords per bar (33 bars), v3: the title card on the tonic (bar 0), the count-in on the dominant (bar 1), the descending
+# cadence Am - G - F - E seven times from FIGHT! (bar 2), then Am - F - E, so bar 32 (E) resolves into the card's slam
+CHORDS = ['Am', 'E'] + ['Am', 'G', 'F', 'E'] * 7 + ['Am', 'F', 'E']
 CHORD_ROOT = {'Am': 45, 'G': 43, 'F': 41, 'E': 40}
 CHORD_PCS = {'Am': (9, 0, 4), 'G': (7, 11, 2), 'F': (5, 9, 0), 'E': (4, 8, 11)}
 assert len(CHORDS) == N_BARS
