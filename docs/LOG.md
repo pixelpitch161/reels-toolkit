@@ -139,7 +139,19 @@
     dropping it an octave, lp 700 Hz and -4 dB took the margin from 4 to 9-10 dB (17-20 dB before the band enters).
   - The rolled last-pluck sweeps (60 - j*T_k) converge visibly in the spectrogram: the physics makes its own riser.
   - Seam diff 3.2/255 vs 3.0 for a normal frame step; subject blur 0 on all 1800 frames.
-- Feedback (v2): (pending)
+- Feedback (v2): the VS title card intro became a series rule (user, Oct 24, after #30's test).
+- v3: bar 0 = the shared VS title card (`projects/ballfight/title.py`; #35's session moved it there minutes before this one
+  would have; this episode added TROMBONE slide-tube + HORN coil panel patterns, #30's card checked pixel-identical on 12
+  frames), 3-2-1 on bar 1, FIGHT! at 3.94 s, top caption dropped, HUD hidden while the card is shut; card audio: a unison
+  band hit per word + slide blast / thunder crack / two-horn hunting call, taiko pickup as the doors open; chords moved a
+  bar (Dm under the card, A for the count-in, loop from FIGHT!, A into the seam). Honest search at 2 bars: v2's 894
+  didn't reach a K.O. (the drift the rule warns about); new seed 2200 (8 fits in 2,200, 51 / 49): TROMBONE wins at 50.72 s
+  with 4.0 HP after three lead changes in 1.5 s and a 3.7 s standoff at 4.0 vs 1.9 HP.
+- v3 lessons: check origin right before moving a shared file (another session had just moved title.py; adopt theirs,
+  add only what's missing). With the rules unchanged the median K.O. moves ~2 s later, so fewer runs land in 49-53 s
+  (8 fits took 2,200 runs vs 974 at 1 bar); the solo now stops at the reassembly if a late K.O. leaves less room. The
+  title slam makes a very clean seam (0.5x render, 1.2x mp4). Render 11.1 min.
+- Feedback (v3): (pending)
 
 ## Prime-Number Cicadas (`projects/prime_cicadas`)
 - Brood XIX (13-yr) + Brood XIII (17-yr), together in 2024 for the first time since 1803 (next 2245). Golden-hour
@@ -418,7 +430,19 @@
   the full winner wall during the crack (fade glow + reflection with the tiles that have fallen); the 7 s hopper swing isn't a
   divisor of 60 (slide it home during the crack, when no sand falls); the win push-in and crowd pose must release before
   60; a bar sliding out crosses the safe-box edge (fade it in, cut it on the crack).
-- Feedback (v2): (pending)
+- Feedback (v2): the VS title card intro became a series rule (user, Oct 24, after #30's test).
+- v3: bar 0 = the shared VS title card (`projects/ballfight/title.py`; #35's session moved it there minutes before this one
+  would have; this episode added TROMBONE slide-tube + HORN coil panel patterns, #30's card checked pixel-identical on 12
+  frames), 3-2-1 on bar 1, FIGHT! at 3.94 s, top caption dropped, HUD hidden while the card is shut; card audio: a unison
+  band hit per word + slide blast / thunder crack / two-horn hunting call, taiko pickup as the doors open; chords moved a
+  bar (Dm under the card, A for the count-in, loop from FIGHT!, A into the seam). Honest search at 2 bars: v2's 894
+  didn't reach a K.O. (the drift the rule warns about); new seed 2200 (8 fits in 2,200, 51 / 49): TROMBONE wins at 50.72 s
+  with 4.0 HP after three lead changes in 1.5 s and a 3.7 s standoff at 4.0 vs 1.9 HP.
+- v3 lessons: check origin right before moving a shared file (another session had just moved title.py; adopt theirs,
+  add only what's missing). With the rules unchanged the median K.O. moves ~2 s later, so fewer runs land in 49-53 s
+  (8 fits took 2,200 runs vs 974 at 1 bar); the solo now stops at the reassembly if a late K.O. leaves less room. The
+  title slam makes a very clean seam (0.5x render, 1.2x mp4). Render 11.1 min.
+- Feedback (v3): (pending)
 
 ## Falling Sand Wars (`projects/falling_sand_wars`)
 - Battle-family reel in mood A (dark, hypnotic): four sands with their own physics (IRON sinks, PUMICE floats and rolls,
@@ -628,7 +652,19 @@
 - v2: the cross-promo caption is gone ("WHO DID YOU / PICK?" holds to 58.25 s); roster_grid called with its new
   defaults (bottom of the zone, left of the button column); ball names stay above the roster and out of the button
   column (safe_overshoot); ring recentred on x 180 so it sits under the frame-centred captions. Full re-render + mux.
-- Feedback (v2): (pending)
+- Feedback (v2): the VS title card intro became a series rule (user, Oct 24, after #30's test).
+- v3: bar 0 = the shared VS title card (`projects/ballfight/title.py`; #35's session moved it there minutes before this one
+  would have; this episode added TROMBONE slide-tube + HORN coil panel patterns, #30's card checked pixel-identical on 12
+  frames), 3-2-1 on bar 1, FIGHT! at 3.94 s, top caption dropped, HUD hidden while the card is shut; card audio: a unison
+  band hit per word + slide blast / thunder crack / two-horn hunting call, taiko pickup as the doors open; chords moved a
+  bar (Dm under the card, A for the count-in, loop from FIGHT!, A into the seam). Honest search at 2 bars: v2's 894
+  didn't reach a K.O. (the drift the rule warns about); new seed 2200 (8 fits in 2,200, 51 / 49): TROMBONE wins at 50.72 s
+  with 4.0 HP after three lead changes in 1.5 s and a 3.7 s standoff at 4.0 vs 1.9 HP.
+- v3 lessons: check origin right before moving a shared file (another session had just moved title.py; adopt theirs,
+  add only what's missing). With the rules unchanged the median K.O. moves ~2 s later, so fewer runs land in 49-53 s
+  (8 fits took 2,200 runs vs 974 at 1 bar); the solo now stops at the reassembly if a late K.O. leaves less room. The
+  title slam makes a very clean seam (0.5x render, 1.2x mp4). Render 11.1 min.
+- Feedback (v3): (pending)
 
 ## BALLFIGHT #1: Guitar vs Piano (`projects/ballfight`)
 - New series (#27), inspired by math.vsmath ability-ball fights: two glass balls with Pixel Pitch instruments inside
@@ -825,7 +861,19 @@
   base 0.42x BRASS and the stomp's flare at canvas height. The flash test needs `rel_lum` on 0..255 frames.
 - Checks (v2): safe zone OK; CoC 0 (hounds included); loopcheck PASS render 1.5x / mp4 1.8x; flash 0 general (max
   15.5 %); opening -19.3 dBFS, build +4.3 dB. Render 10.8 min on 2 cores (fx ~2.6x v1).
-- Feedback (v2): (pending)
+- Feedback (v2): the VS title card intro became a series rule (user, Oct 24, after #30's test).
+- v3: bar 0 = the shared VS title card (`projects/ballfight/title.py`; #35's session moved it there minutes before this one
+  would have; this episode added TROMBONE slide-tube + HORN coil panel patterns, #30's card checked pixel-identical on 12
+  frames), 3-2-1 on bar 1, FIGHT! at 3.94 s, top caption dropped, HUD hidden while the card is shut; card audio: a unison
+  band hit per word + slide blast / thunder crack / two-horn hunting call, taiko pickup as the doors open; chords moved a
+  bar (Dm under the card, A for the count-in, loop from FIGHT!, A into the seam). Honest search at 2 bars: v2's 894
+  didn't reach a K.O. (the drift the rule warns about); new seed 2200 (8 fits in 2,200, 51 / 49): TROMBONE wins at 50.72 s
+  with 4.0 HP after three lead changes in 1.5 s and a 3.7 s standoff at 4.0 vs 1.9 HP.
+- v3 lessons: check origin right before moving a shared file (another session had just moved title.py; adopt theirs,
+  add only what's missing). With the rules unchanged the median K.O. moves ~2 s later, so fewer runs land in 49-53 s
+  (8 fits took 2,200 runs vs 974 at 1 bar); the solo now stops at the reassembly if a late K.O. leaves less room. The
+  title slam makes a very clean seam (0.5x render, 1.2x mp4). Render 11.1 min.
+- Feedback (v3): (pending)
 
 ## BALLFIGHT #5: Turntables vs Synth (`projects/ballfight_turntables_vs_synth`)
 - #31, produced in parallel with #29-#35 on the shared engine. TURNTABLES throw vinyl frisbees that ricochet off the
