@@ -1,4 +1,7 @@
-"""#34 BALLFIGHT #8: Trombone vs French Horn - soundtrack, v2 (mood: cinematic brass trailer), all synthesised, original.
+"""#34 BALLFIGHT #8: Trombone vs French Horn - soundtrack, v3 (mood: cinematic brass trailer), all synthesised, original.
+v3: bar 0 = the VS title card (a unison band hit per word: TROMBONE's slide blast, VS's thunder crack, FRENCH HORN's
+hunting call; a pickup as the doors open), bar 1 = the count-in, FIGHT! on bar 2; the doors' whoosh + the riser ramp
+into the title slam on sample 0. v2 kept as audio_v2_backup.py.
 v2 (BALLFIGHT v2 redesign): the HORN hunts: every horn call is a note of its theme (a full call per hound released, a
 short echo while the pack is full), every bite on the 8th grid a horn stab + jaws, a knocked-out hound a falling yelp,
 TALLY-HO's charge a gallop of taiko under the fanfare. v1 (arrows) is kept as audio_v1_backup.py.
@@ -293,9 +296,34 @@ def bed(mix, b, intensity=1.0, light=False):
 
 def main():
     mix = A.Mix(T.DUR + 4.0)
-    # ------------------------------------------------ count-in (bar 0, on the dominant): taiko + braam stab + brass chop
+    # ------------------------------------------------ v3 title card (bar 0): one unison band hit per word
+    t1, t2, t3 = 0.004, T.BEAT, 2 * T.BEAT                 # TROMBONE 4 ms in (no click at the seam), VS, FRENCH HORN
+    for tw_ in (t1, t2, t3):                               # the band on every word: taiko, a braam stab, a boom, low strings
+        mix.place('taiko', taiko(1.0, True, int(tw_ * 100) + 7), tw_, 0.55)
+        mix.place('braam', braam(26, 0.55, 1.0, 0.008), tw_, 0.22)
+        mix.place('fx', A.thud(0.9, 120, 32, seed=int(tw_ * 50) + 3), tw_, 0.45)
+        mix.place('strings', strings_low(38, 0.4, 1.0), tw_, 0.18)
+    # TROMBONE: a slide blast: a low brass chord gliding up a fifth into D (the slide shooting out)
+    for m, g in ((38, 0.30), (45, 0.26), (50, 0.24), (57, 0.16)):
+        mix.place('trombone', bone(m, 0.55, 1.0, 7.0, 0.16, cap=0.95), t1, g)
+    # VS: a thunder crack where it splits the divider
+    nn = int(1.4 * SR)
+    tt_ = A.tt(nn)
+    crack = A.bp(np.random.default_rng(91).normal(0, 1, nn), 1500, 9000) * np.exp(-tt_ / 0.035)
+    rumble = A.lp(np.random.default_rng(92).normal(0, 1, nn), 160) * np.clip(tt_ / 0.02, 0, 1) * np.exp(-tt_ / 0.5) * 3.0
+    mix.place('fx', crack * 0.9 + rumble, t2, 0.40)
+    mix.place('fx', A.crash(1.6), t2, 0.10)
+    # FRENCH HORN: a hunting call: two horns in fifths, a leap up a fifth (D4 -> A4)
+    for dt_, m, d in ((0.0, 62, 0.14), (0.15, 69, 0.42)):
+        mix.place('horn', horn(m, d, 1.0), t3 + dt_, 0.32)
+        mix.place('horn', horn(m - 7 if m - 7 >= 55 else m - 5, d, 0.85), t3 + dt_, 0.18)
+    # beat 4: the hold + a taiko pickup fill as the doors open; a string tremolo under the whole card (never quiet)
+    mix.place('tremolo', tremolo((74, 77, 81), 3 * T.BEAT + 0.1, 0.05), 0.0, 0.07)
+    for st, v in ((12, 0.5), (13, 0.62), (14, 0.74), (15, 0.86)):
+        mix.place('taiko', taiko(v, False, 40 + st), st * S16, 0.36)
+    mix.place('fx', A.whoosh(T.T_DOORS[1] - T.T_DOORS[0] + 0.1, 300, 5000), T.T_DOORS[0] - 0.05, 0.16)
+    # ------------------------------------------------ count-in (bar 1, on the dominant): taiko + braam stab + brass chop
     for j, (tc, txt) in enumerate(T.COUNT[:3]):
-        tc = max(tc, 0.004)                                # the "3" 4 ms into the file: no click at the seam
         mix.place('taiko', taiko(1.0, True, 50 + j), tc, 0.5)
         mix.place('braam', braam(33, 0.42, 0.9, 0.01), tc, 0.18)
         mix.place('trombone', bone(45, 0.2, 1.0, 3.0, 0.05), tc, 0.30)
@@ -304,14 +332,14 @@ def main():
         mix.place('horn', horn(73, 0.22, 0.9), tc, 0.14)
         mix.place('strings', strings_low(45, 0.3), tc, 0.14)
     for st, v in ((12, 0.5), (13, 0.65), (14, 0.8), (15, 0.95)):      # the taiko pickup into FIGHT!
-        mix.place('taiko', taiko(v, False, 60 + st), st * S16, 0.40)
-    mix.place('fx', A.whoosh(T.BEAT, 400, 6000), 3 * T.BEAT, 0.14)
-    mix.place('braam', braam(26, 2.2, 1.0), T.BAR, 0.30)
-    mix.place('taiko', taiko(1.0, True, 70), T.BAR, 0.55)
-    mix.place('fx', A.crash(1.6), T.BAR, 0.10)
-    # ------------------------------------------------ the bed: bars 1 .. the K.O.
+        mix.place('taiko', taiko(v, False, 60 + st), T.BAR + st * S16, 0.40)
+    mix.place('fx', A.whoosh(T.BEAT, 400, 6000), T.BAR + 3 * T.BEAT, 0.14)
+    mix.place('braam', braam(26, 2.2, 1.0), T.T_FIGHT, 0.30)
+    mix.place('taiko', taiko(1.0, True, 70), T.T_FIGHT, 0.55)
+    mix.place('fx', A.crash(1.6), T.T_FIGHT, 0.10)
+    # ------------------------------------------------ the bed: bars 2 (FIGHT!) .. the K.O.
     bar_ko = int(T_KO // T.BAR)
-    for b in range(1, bar_ko + 1):
+    for b in range(2, bar_ko + 1):
         bed(mix, b, intensity=1.0 + 0.6 * (b / bar_ko))
     mix.place('fx', A.whoosh(3.6, 300, 6000), 44.0 - 3.6, 0.10)
     for k in ('strings', 'taiko', 'braam', 'tremolo'):
@@ -480,6 +508,8 @@ def main():
     prev = None
     for bt, m, d in T.SOLO[NAMES[WIN]]:
         ts = solo0 + bt * T.BEAT
+        if ts > T.T_REASSEMBLE - 0.05:                                 # a late K.O. leaves less room: stop at the reassembly
+            break
         if NAMES[WIN] == 'TROMBONE':                                  # the slide glides from the last note to this one
             gl = float(np.clip(m - prev, -7, 7)) if prev is not None else 3.0
             mix.place('solo', bone(m, d * T.BEAT * 0.95, 0.95, gl, 0.07, cap=round(d * T.BEAT + 0.35, 2)), ts, 0.46)
@@ -495,7 +525,7 @@ def main():
         else:
             mix.place('trombone', bone(m, 0.12, 0.7), tj, 0.16)
     mix.place('fx', A.chime(95, 0.5) + A.chime(102, 0.5) * 0.5, T.T_GLIDE, 0.12)
-    # ------------------------------------------------ bar 30: build into the "3" on sample 0
+    # ------------------------------------------------ bar 30: build into the title slam on sample 0
     t30 = 30 * T.BAR
     st = 0.0
     while t30 + st < T.DUR - 1e-4:                                    # taiko roll: 8ths, then 16ths for the last beat
@@ -508,6 +538,10 @@ def main():
     sw = braam(33, T.DUR - t30 + 0.012, 0.9, T.DUR - t30)             # a braam swelling right up to the seam
     mix.place('braam', sw * np.linspace(0.3, 1.0, len(sw)), t30, 0.16)
     mix.place('tremolo', tremolo((73, 76, 81), T.DUR - t30 + 0.012, 1.2), t30, 0.06)
+    nc = int((T.T_CLOSE + 0.012) * SR)                              # v3: the doors sliding shut into the title slam
+    tcl = A.tt(nc)
+    doors = A.bp(np.random.default_rng(93).normal(0, 1, nc), 400, 5000) * (tcl / T.T_CLOSE) ** 2
+    mix.place('fx', doors, T.DUR - T.T_CLOSE, 0.45)
     # caption landings: soft thuds
     for tl, k, nch in impact_landings(RD.CAPTIONS):
         mix.place('fx', A.thud(), tl, 0.08 if k == 0 else 0.06)
@@ -516,7 +550,8 @@ def main():
     os.makedirs(os.path.join(HERE, 'check'), exist_ok=True)
     for k, s in stems.items():
         A.write(os.path.join(HERE, 'check', f'stem_{k}.wav'), s)
-    spans = [(0, T.BAR), (T.BAR, 8), (8, 20), (20, 32), (32, 44), (44, T_KO), (T_KO, solo0), (solo0, 58), (58, 61)]
+    spans = [(0, T.BAR), (T.BAR, T.T_FIGHT), (T.T_FIGHT, 10), (10, 20), (20, 32), (32, 44), (44, T_KO), (T_KO, solo0),
+             (solo0, 58), (58, 61)]          # v3: the title card, the count-in, then the fight
     for a, b, rms, pk in A.section_levels(os.path.join(HERE, 'audio.wav'), spans):
         print(f'{a:5.1f}-{b:5.1f}s  rms {rms:6.1f} dBFS  peak {pk:5.1f}')
 
@@ -525,7 +560,7 @@ BUS_GAIN = {'trombone': 1.5, 'horn': 1.25, 'solo': 1.6, 'fx': 1.4, 'strings': 0.
             'tremolo': 1.0}
 # section automation (dB), applied AFTER the compressor so the limiter can't flatten the build: the count-in at full,
 # the early fight pulled back, rising through the final exchange, the victory section loud, the end close to the start
-GAIN_PTS = [(0, 0.0), (1.8, 0.0), (2.4, -1.6), (20, -1.5), (30, -0.6), (40, 1.3), (44, 2.3), (50.0, 3.3), (51.5, 2.8),
+GAIN_PTS = [(0, 0.0), (3.8, 0.0), (4.4, -1.6), (20, -1.5), (30, -0.6), (40, 1.3), (44, 2.3), (50.0, 3.3), (51.5, 2.8),
             (52.6, 3.3), (58.0, 3.3), (60.0, 1.6), (61.02, 0.6)]
 
 

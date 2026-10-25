@@ -1,5 +1,18 @@
 # #34 BALLFIGHT #8: Trombone vs French Horn (`projects/ballfight_trombone_vs_horn`)
 
+## v3 (VS title card intro = series rule, Oct 24)
+Bar 0 is the shared VS title card (`projects/ballfight/title.py`, moved there from #30 by the #35 session; this episode
+added the TROMBONE slide-tube and HORN coil panel patterns in a separate commit, #30's card pixel-identical): TROMBONE,
+VS and FRENCH HORN slam in on beats 1-3 over unison band hits (taiko + braam stab + boom + low strings), with the
+trombone's slide blast (a low chord gliding up a fifth into D), a thunder crack as VS splits the divider, and the horn's
+hunting call (two horns in fifths, D4 -> A4); the doors open on beat 4 over a taiko pickup. Bar 1 = the 3 . 2 . 1
+count-in, FIGHT! on the bar-2 downbeat (3.94 s); the top caption and the series-tag line are gone; the HUD and HP
+numbers hide while the card is shut. The chords move one bar (bar 0 = Dm under the card, bar 1 = A for the count-in,
+the loop from FIGHT!, bar 30 = A resolving on the title slam). The title slam is the frame-0 reset: the doors slide
+shut over the last 0.30 s with a riser, the doors' whoosh and a swelling braam into it. The honest search was re-run
+with the fight at 2 bars (rules unchanged: v2's seed 894 doesn't even reach a K.O. a bar later). v2 kept as
+`*_v2_backup.py` and `ballfight_trombone_vs_horn_v2.mp4`.
+
 ## v2 (BALLFIGHT v2 redesign, user Oct 24): THE HUNT
 The HORN no longer shoots: its signature is **THE HUNT** (engine weapon kind `pack`). A horn call every 2 beats brands
 the trombone with a copper target mark and releases a ghost hound from the bell while the pack is under its size
