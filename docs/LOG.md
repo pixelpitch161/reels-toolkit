@@ -1124,3 +1124,21 @@
 - Flash: one up/down pair (doors shut / doors open), worst 1 per second; the panels are never white.
 - The HUD is skipped while the card is shut (its notes overlapped the caption in reelkit.safezone even though hidden).
 - Feedback: (pending)
+
+## BALLFIGHT #5 v3 (#31): the VS title card intro (series rule)
+- Shared card, no fork: `projects/ballfight/title.py` (#35's session moved #30's card there minutes before my own move;
+  my push conflicted, so I dropped my version and built on theirs). The episode only registers its panel patterns in
+  `TT.PATTERNS` (lime record grooves + label, a cyan circuit board) and pre-fills `TT._SPR` with its own pitched sprites,
+  so the shared module and #30 stay untouched.
+- Seed: re-ran the honest search with the fight at 2 bars (rules unchanged): 6 fits in 1339 runs, TURNTABLES 617 /
+  SYNTH 665 of 1282 decided. Seed 1339 (v2's 781 is not a time shift): the decks lead for 24 s, the lead swaps back and
+  forth from 28 to 42 s, a 9.9 HP REWIND keeps the decks ahead to the wire, and the cables' pulses take it at 50.05 s:
+  SYNTH wins at 50.79 s with 2.8 HP.
+- Git: a rebase stripped a commit subject that began with '#' (git reads it as a comment on `rebase --continue`); start
+  subjects with a word ("IDEAS 31 v3: ...").
+- Flash test before the render: decimating frames (`[::2, ::2]`) counted 3 "flashes" in the card (the grooves / circuit
+  textures shaking on the slams); `reelkit.flashcheck` area-downscales to 360x640, and with the same downscale the card
+  is 0 flashes (textures 15-18 %, the doors 79 % as one transition). Pre-render flash tests need the checker's own scaling.
+- Safe zone: FIGHT!'s slam (punch 0.25) poked 7 px into the button column for one frame; the punch is 0.12 now.
+- Checks: safe zone OK; CoC 0 on all frames; loopcheck PASS render 0.6x / mp4 1.1x (audio step 3.2 dB, no click); flashcheck PASS (one doors pair at 1.77 s, worst 1/s); opening -16.4 dBFS, build +3.1 dB. Render 11 min + 10 min mux.
+- Feedback: (pending)
