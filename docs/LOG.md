@@ -941,6 +941,15 @@
   <= 0.75; first pass at peaks 1.0-1.8 plus the old per-hit glows blew out the hit spots. The flash test on the two
   busiest stretches before the full render (render 5-7 s of frames, `flashcheck.analyse`) matched the final mp4
   (18.6 % vs 18.5 % max). Same audio (the events didn't change). Render 18 min.
+- v3 (VS title card intro, series standard Oct 24): moved #30's `title.py` into `projects/ballfight/` (its own commit)
+  and generalised it: the word layout comes from the names (biggest scale <= 7 that fits; #30 reproduces exactly),
+  panel patterns by fighter (`PATTERNS`; other sessions have since added theirs, plus opt-in CLOSEUP / GLASS
+  registries), the sprite cache in the episode's own check/. Verified by rendering 10 of #30's title frames with the
+  old and new file: pixel-identical. Bar 0 = the card, bar 1 = 3-2-1, FIGHT! on bar 2; chords and sections moved a bar
+  (title on the tonic, count-in on the dominant, bar 31's dominant resolves on the title slam).
+- v3 seed: the search re-run with the fight at 2 bars (rules frozen) ranked seed 237 first (6 fits in 999); old caches
+  (1-bar runs) moved aside first so `sim.load` couldn't return a stale run. Flash: the doors pair is the one counted
+  flash (worst 1 / s), as #30. Render 17 min.
 - Feedback: (pending)
 
 ## BALLFIGHT #7: Ukulele vs Acoustic Guitar (`projects/ballfight_ukulele_vs_acoustic`)
