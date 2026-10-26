@@ -35,7 +35,9 @@ giant glove winds up, flicks the enemy across the ring, with a rope-hit bonus; r
 #37 (opt-in): weapon kind `jump` (TWELFTH JUMP: the ball teleports past the enemy on the grid; the zip line between
 its two spots cuts) and ability kind `rhapsody` (a chain of zig-zag jumps through the enemy); events 'jump'. Ability
 kind `stun` (SQUEAK: a shrill burst ring; the fighter it hits holds still and starts no attack for `stun` s; recorded
-in WAVES as kind 'stun', events 'stun').
+in WAVES as kind 'stun', events 'stun'). Weapon kind `tune` (TUNING A: a narrow beam every bar that knocks the
+enemy OUT OF TUNE, status 'detune': weaker hits, stung by the oboe's notes; recorded DET / TUNE), ability kind
+`endless` (the beam held, tracking) and the `detune` option on shockwave / wave abilities.
 The run records every frame (30 fps) for the renderer and every event (hits, blocks, parries, ropes, volleys,
 abilities, level-ups, the K.O.) for the soundtrack and the captions. Seeded: same seed, same fight."""
 import math
@@ -200,6 +202,9 @@ class Fight:
         hc = getattr(self.R, 'dmg_side', None)     # opt-in (#36, crossovers): per-fighter damage handicap
         if hc is not None:
             d *= hc[att]
+        Ad = self.balls[att]
+        if getattr(Ad, 'detune_t', 0.0) > 0:      # #37: an out-of-tune fighter's hits land weaker
+            d *= 1.0 - Ad.detune_w * Ad.detune_d
         V.hp -= d
         A_ = self.balls[att]
         A_.dealt += d
@@ -2203,6 +2208,107 @@ class Fight:
             self._jump(k, tgt, th, w['land'], B.blade_len, w['dmg'], w['knock'], w['cut'], 0, True)
             B.jump_tgt = None
 
+    # ------------------------------------------------------------------ #37: TUNING A (opt-in weapon kind 'tune')
+    # Every `every` beats the oboe sounds its A as a narrow tuning beam. The aim locks `lock16` 16ths before the shot
+    # (at the enemy's spot then + `lead` x its motion until the shot) and the beam fires `off16` 16ths after the bar
+    # line: a capsule `len` beyond the surface, `width` wide, live `hold` s, hitting once (`dmg`, `knock`). A landed beam
+    # knocks the enemy OUT OF TUNE (status 'detune') for `dur_beats` at the oboe's depth (`depth0`, +`grow` per landed
+    # beam, up to `depth_max`): its hits deal x (1 - `weak` x depth), and each of the oboe's notes on the `sting16`
+    # grid stings it for `sting` x depth. Between shots the bell turns to the enemy at `track` rad/s (B.th = the aim).
+    # Ability kind 'endless' (ENDLESS NOTE): the beam held for `dur_beats` (normal shots pause), its aim turning to the
+    # enemy at `track` rad/s; on every 8th the enemy touches it: `dmg` + out of tune again at the oboe's depth. Option on
+    # shockwave / wave abilities: `detune` = dict(depth, dur_beats, weak): the wave puts the enemy out of tune (ILL WIND).
+    # Recorded only when a fighter uses the kind: DET (detune s left, depth) and TUNE (beam live 0/1, endless 0/1).
+    def tune_setup(self, k):
+        B, O = self.balls[k], self.balls[1 - k]
+        B.depth = float(B.w['depth0'])
+        B.tune_lock = None
+        B.tbeams = []
+        B.endless = None
+        d = O.p - B.p
+        B.th = math.atan2(d[1], d[0]) % (2 * math.pi)
+        for X in self.balls:
+            X.detune_t, X.detune_d, X.detune_w = 0.0, 0.0, 0.0
+
+    def _detune(self, vic, att, depth, dur, weak):
+        V = self.balls[vic]
+        V.detune_t, V.detune_d, V.detune_w = float(dur), float(depth), float(weak)
+        self.ev('detune', vic, att, float(depth), float(dur))
+
+    def tune_tick(self, k, k16):
+        B, O = self.balls[k], self.balls[1 - k]
+        w = B.w
+        if self._stunned(k):
+            B.tune_lock = None
+            return
+        if B.endless is not None:
+            if self.t + 1e-9 >= B.endless['until']:
+                self.ev('endless_end', k)
+                B.endless = None
+            elif k16 % 2 == 0:                                   # ENDLESS NOTE: on the 8ths, the held beam bites
+                ab = B.endless['ab']
+                u = np.array([math.cos(B.th), math.sin(B.th)])
+                o = B.p + u * (self.R.R + 0.04)
+                rel = O.p - o
+                s_ = min(ab['len'], max(0.0, float(rel @ u)))
+                off = rel - u * s_
+                if float(np.hypot(*off)) < self.R.R + ab['width'] / 2:
+                    hx, hy = (O.p - u * self.R.R).tolist()
+                    if self.damage(k, 1 - k, ab['dmg'], 'endless', hx, hy):
+                        self._detune(1 - k, k, B.depth, w['dur_beats'] * self.R.beat, w['weak'])
+            return
+        main16 = int(round(4 * w['every']))
+        ph = (k16 - int(w.get('off16', 0))) % main16
+        lock = int(w.get('lock16', 1))
+        if lock > 0 and ph == (main16 - lock) % main16:
+            tl = lock * self.R.beat / 4.0
+            d = (O.p + O.v * tl * w.get('lead', 0.0)) - (B.p + B.v * tl)
+            B.tune_lock = math.atan2(d[1], d[0]) % (2 * math.pi)
+            self.ev('tune_lock', k, B.tune_lock)
+        if ph == 0 and k16 >= int(w.get('off16', 0)):
+            if B.tune_lock is None:
+                d = O.p - B.p
+                B.tune_lock = math.atan2(d[1], d[0]) % (2 * math.pi)
+            a = B.tune_lock
+            u = np.array([math.cos(a), math.sin(a)])
+            o = B.p + u * (self.R.R + 0.04)
+            B.tbeams.append(dict(o=o, d=u, t1=self.t + w['hold'], hit=False))
+            B.th = a
+            self.ev('tune', k, float(o[0]), float(o[1]), a, float(w['len']), float(w['width']))
+            B.tune_lock = None
+        if k16 % int(w.get('sting16', 2)) == 0 and O.detune_t > 0:      # the oboe's notes sting the detuned enemy
+            self.damage(k, 1 - k, w['sting'] * O.detune_d, 'sting', float(O.p[0]), float(O.p[1]))
+
+    def tune_step(self, k, dt):
+        B, O = self.balls[k], self.balls[1 - k]
+        w = B.w
+        R = self.R.R
+        if B.tune_lock is not None:
+            B.th = B.tune_lock                                    # locked for the shot
+        else:
+            rel = O.p - B.p
+            want = math.atan2(rel[1], rel[0])
+            rate = B.endless['ab']['track'] if B.endless is not None else w.get('track', 5.0)
+            step = rate * dt
+            B.th = (B.th + max(-step, min(step, _wrap(want - B.th)))) % (2 * math.pi)
+        for Bm in B.tbeams:
+            if Bm['hit']:
+                continue
+            rel = O.p - Bm['o']
+            s_ = min(w['len'], max(0.0, float(rel @ Bm['d'])))
+            off = rel - Bm['d'] * s_
+            dist = float(np.hypot(*off))
+            if dist < R + w['width'] / 2:
+                Bm['hit'] = True
+                n = off / dist if dist > 1e-6 else -Bm['d']
+                hx, hy = (O.p - n * R).tolist()
+                landed = self.damage(k, 1 - k, w['dmg'], 'tune', hx, hy)
+                self.knock(1 - k, Bm['d'] + 0.3 * n, w['knock'])
+                if landed:
+                    self._detune(1 - k, k, B.depth, w['dur_beats'] * self.R.beat, w['weak'])
+                    B.depth = min(w.get('depth_max', 1.0), B.depth + w['grow'])
+        B.tbeams = [Bm for Bm in B.tbeams if self.t < Bm['t1'] - 1e-9]
+
     def ab_dur(self, ab):
         """an ability's duration in s: `dur` (s) or `dur_beats` (beats at this episode's tempo)"""
         return ab['dur'] if 'dur' in ab else ab['dur_beats'] * self.R.beat
@@ -2221,6 +2327,8 @@ class Fight:
             self.waves.append(dict(owner=k, c=B.p.copy(), r=self.R.R, speed=ab['speed'], rmax=ab['radius'], dmg=ab['dmg'],
                                    knock=ab['knock'], kind=kind, hit=False, name=ab['name'], t0=self.t,
                                    slow=ab.get('slow')))
+            if ab.get('detune'):                                 # #37 (ILL WIND): the wave puts the enemy out of tune
+                self.waves[-1]['detune'] = ab['detune']
         elif kind == 'shield':
             B.shield = self.ab_dur(ab)
         elif kind == 'haste':
@@ -2256,6 +2364,11 @@ class Fight:
             B.dance_until = self.t + self.ab_dur(ab)
         elif kind == 'flick':                                   # #34 v5 (FINAL FLICK): the glove flicks the enemy away
             self.start_flick(k, ab)
+        elif kind == 'endless':                                 # #37 (ENDLESS NOTE): the A beam held for a bar
+            B.tune_lock = None
+            B.tbeams = []
+            B.endless = dict(ab=ab, until=self.t + self.ab_dur(ab))
+            self.ev('endless', k, B.endless['until'])
         elif kind == 'stun':                                    # #37 (SQUEAK): a shrill burst ring that stuns
             self.waves.append(dict(owner=k, c=B.p.copy(), r=self.R.R, speed=ab['speed'], rmax=ab['radius'], dmg=ab['dmg'],
                                    knock=ab['knock'], kind='stun', hit=False, name=ab['name'], t0=self.t, slow=None,
@@ -2328,6 +2441,9 @@ class Fight:
                 hx, hy = (W['c'] + rel / max(dist, 1e-6) * (dist - R)).tolist()
                 landed = self.damage(W['owner'], o, W['dmg'], W['kind'], hx, hy)
                 self.knock(o, rel, W['knock'])
+                if landed and W.get('detune'):               # #37: out of tune (ILL WIND)
+                    dd_ = W['detune']
+                    self._detune(o, W['owner'], dd_['depth'], dd_['dur_beats'] * self.R.beat, dd_['weak'])
                 if landed and W.get('stun'):                 # #37: stunned (can't move or start an attack)
                     O.stun = max(getattr(O, 'stun', 0.0), W['stun'])
                     self.ev('stun', o, W['owner'], W['stun'])
@@ -2544,6 +2660,11 @@ class Fight:
             rec['ECHO_N'].append([getattr(B0, 'n_echo', 0.0), getattr(B1, 'n_echo', 0.0)])
             rec['ECHO_R'].append([(E['owner'], float(E['c'][0]), float(E['c'][1]), E['r'], E['rmax'], E['j'], E['t0'],
                                    E['call'], int(E['hit'])) for E in self.echoes])
+        if 'DET' in rec:                                    # #37, only recorded when a fighter uses the 'tune' kind
+            rec['DET'].append([[getattr(B0, 'detune_t', 0.0), getattr(B0, 'detune_d', 0.0)],
+                               [getattr(B1, 'detune_t', 0.0), getattr(B1, 'detune_d', 0.0)]])
+            rec['TUNE'].append([[float(bool(getattr(Bj, 'tbeams', None))), float(getattr(Bj, 'endless', None) is not None)]
+                                for Bj in (B0, B1)])
         if 'FLICK' in rec:                                  # #34 v5, only recorded when a fighter has a 'flick' ability
             Fl = np.full((2, 6), np.nan)
             for j, Bj in enumerate((B0, B1)):
@@ -2615,6 +2736,12 @@ class Fight:
         for k in jumpers:
             self.jump_setup(k)
         n16j = k16_0
+        tuners = [k for k, B in enumerate(self.balls) if B.w['kind'] == 'tune']       # #37 (opt-in)
+        for k in tuners:
+            self.tune_setup(k)
+        n16u = k16_0
+        if rec is not None and tuners:
+            rec['DET'], rec['TUNE'] = [], []
         flickers = [k for k, B in enumerate(self.balls) if any(a['kind'] == 'flick' for a in B.cfg['abilities'].values())]
         if rec is not None and flickers:                         # #34 v5 (opt-in)
             rec['FLICK'] = []
@@ -2726,12 +2853,19 @@ class Fight:
                 n16j += 1
                 for k in jumpers:
                     self.jump_tick(k, k16j)
+            if tuners and self.t + 1e-9 >= n16u * s16:            # #37: the A, its lock and the stings on the 16th grid
+                k16u = n16u - k16_0
+                n16u += 1
+                for k in tuners:
+                    self.tune_tick(k, k16u)
             for k, B in enumerate(self.balls):
                 B.shield = max(0.0, B.shield - dt)
                 B.haste = max(0.0, B.haste - dt)
                 B.slow = max(0.0, B.slow - dt)
                 if hasattr(B, 'stun'):                           # #37
                     B.stun = max(0.0, B.stun - dt)
+                if hasattr(B, 'detune_t'):                       # #37: OUT OF TUNE wears off
+                    B.detune_t = max(0.0, B.detune_t - dt)
             for k in pullers:
                 self.pull_step(k, dt)
             self.move(dt)
@@ -2769,6 +2903,8 @@ class Fight:
                 self.echo_step(k, dt)
             for k in flickers:                                   # #34 v5: FINAL FLICK
                 self.flick_step(k, dt)
+            for k in tuners:                                     # #37: the bell's aim, the beams
+                self.tune_step(k, dt)
             if dc:
                 self.dash_cone_step(dt)                          # (#33)
             if dc or self.whips or self.sweeps or self.spouts:
