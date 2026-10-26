@@ -206,8 +206,51 @@ def _woodgrain(base):                                                # ACOUSTIC 
     return base
 
 
+def _clarinet_keys(base):                                            # CLARINET (#37): ebony grain + rows of ring keys
+    g = np.sin((XX * 0.95 - YY * 0.30) / 4.5 + 1.6 * np.sin(XX / 41.0 + YY / 77.0))
+    base = base * (0.93 + 0.06 * (g > 0.6)[..., None] - 0.06 * (g < -0.75)[..., None])
+    u = SIDE + 30.0                                                  # key rows run parallel to the divider
+    for j, off in enumerate((0.0, 64.0, 128.0)):
+        along = (XX * DD[0] + YY * DD[1]) / 26.0 + 0.5 * j
+        c = (np.abs(u - off) < 8.0)
+        q = (along % 1.0 - 0.5) * 26.0
+        r = np.hypot(q, u - off)
+        ring = c & (np.abs(r - 6.0) < 1.3)
+        cup = c & (r < 3.2)
+        base = np.where(ring[..., None], base * 0.55 + np.array([236, 236, 248]) * 0.45, base)
+        base = np.where(cup[..., None], base * 0.78, base)
+        rod = np.abs(u - off - 9.5) < 0.8
+        base = np.where(rod[..., None], base * 0.7 + np.array([226, 226, 240]) * 0.3, base)
+    return base
+
+
+def _oboe_reeds(base):                                               # OBOE (#37): tuning forks + reed blades + A waves
+    along = (XX * DD[0] + YY * DD[1])
+    u = -SIDE                                                        # (works below the divider: the right fighter)
+    out = base * 1.0
+    w = np.abs(u - 40.0 - 6.0 * np.sin(along / 9.0)) < 1.2           # the A: a sine running along the divider
+    out = np.where(w[..., None], out * 0.6 + np.array([250, 240, 170]) * 0.4, out)
+    for j in range(5):                                               # tuning forks, prongs toward the divider
+        a0 = -390.0 + 120.0 * j
+        q = along - a0
+        stem = (np.abs(q) < 1.6) & (u > 96) & (u < 150)
+        prong = ((np.abs(q - 5.0) < 1.6) | (np.abs(q + 5.0) < 1.6)) & (u > 64) & (u <= 98)
+        bow = (np.abs(q) < 6.6) & (np.abs(u - 97.0) < 1.6)
+        fork = stem | prong | bow
+        out = np.where(fork[..., None], out * 0.58 + np.array([236, 236, 214]) * 0.42, out)
+    for j in range(5):                                               # double-reed blades between the forks
+        q = along - (-330.0 + 120.0 * j)
+        hw = (1 - np.clip((u - 96.0) / 46.0, 0, 1)) * 6.5 + 2.0       # wide, flat tip; narrow at the thread
+        blade = (np.abs(q) < hw) & (u > 96) & (u < 142)
+        thread = (np.abs(q) < 2.6) & (u >= 142) & (u < 160)
+        out = np.where(blade[..., None], out * 0.5 + np.array([232, 208, 150]) * 0.5, out)
+        out = np.where(thread[..., None], out * 0.5 + np.array([60, 150, 86]) * 0.5, out)
+    return out
+
+
 PATTERNS = {'BAGPIPES': _tartan, 'ACCORDION': _pleats, 'ORGAN': _organ_pipes, 'HARP': _harp_strings,
-            'TROMBONE': _slide_tubes, 'HORN': _horn_coils, 'UKULELE': _surf, 'ACOUSTIC': _woodgrain}
+            'TROMBONE': _slide_tubes, 'HORN': _horn_coils, 'UKULELE': _surf, 'ACOUSTIC': _woodgrain,
+            'CLARINET': _clarinet_keys, 'OBOE': _oboe_reeds}
 
 
 def _panel_rgb(colour, dark, side, name=None):
