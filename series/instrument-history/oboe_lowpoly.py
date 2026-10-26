@@ -276,6 +276,52 @@ def build(g, t, ev, fx, s):
             fx.append(("wave", tuple(mouth + [.02, 0, 0]), age, 0))
 
 
+# ---------------------------------------------------------------- sound: the nasal double reed
+# A conical bore sounds every harmonic (the clarinet's cylinder mostly odd ones). The oboe's colour comes from its
+# formants: a strong band around 1.1-1.4 kHz and a second one near 3 kHz, with a weak fundamental in the low register,
+# so the 2nd-4th harmonics lead (the nasal, reedy sound). A tongued attack with a short buzz of reed noise, vibrato
+# that blooms after the attack, and a quick release. Pitch may be fractional (midi 68.5 = a quarter-tone flat A).
+SR = 44100
+FORMANTS = ((1200., 420., 1.9), (2950., 650., 0.95), (4400., 900., 0.25))   # (centre Hz, width Hz, gain)
+
+
+def _midi_hz(m):
+    return 440.0 * 2 ** ((m - 69) / 12.0)
+
+
+def double_reed(f, dur, v, bright=.6, vib=.0045, vrate=5.3, att=.022, buzz=.06, breath=.012):
+    n = int((dur + .12) * SR)
+    t = np.arange(n) / SR
+    env = np.minimum(1, t / att) ** 1.2 * np.where(t < dur, 1, np.exp(-(t - dur) / .035))
+    env *= 1 + .12 * np.exp(-t / .05)                                          # the tongue's little bump
+    fr = f * (1 - .012 * np.exp(-t / .03)) * (1 + vib * np.sin(2 * np.pi * vrate * t) * np.clip((t - .16) / .22, 0, 1))
+    ph = 2 * np.pi * np.cumsum(fr) / SR
+    x = np.zeros(n)
+    tot = 0.0
+    for k in range(1, 48):
+        fk = f * k
+        if fk > 9500:
+            break
+        a = k ** -.45 * (.28 + sum(g * math.exp(-((fk - c) / w) ** 2) for c, w, g in FORMANTS))
+        a *= math.exp(-fk / (2600 + 4200 * bright * v))                         # louder = brighter
+        if k == 1:
+            a *= min(.9, max(.4, (f - 200) / 400))                               # a weak fundamental down low
+        x += a * np.sin(k * ph + .7 * k)
+        tot += a
+    x /= tot + 1e-9
+    rng = np.random.default_rng(int(f * 10) % 100003)                          # deterministic noise per pitch
+    nz = rng.standard_normal(n)
+    from scipy.signal import butter, sosfilt
+    nb = sosfilt(butter(2, [1800, 4200], 'band', fs=SR, output='sos'), nz)
+    x += nb * (buzz * np.exp(-t / .03) + breath) * .6
+    return x * env * v
+
+
+def synth(s, idx):
+    nt, m, v, dur, tp, cs = s["ev"][idx]
+    return double_reed(_midi_hz(m), dur, v)
+
+
 if __name__ == "__main__":
     import piano_lowpoly as P
     g = P.Geo()
