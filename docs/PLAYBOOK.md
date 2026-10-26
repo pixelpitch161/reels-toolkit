@@ -22,6 +22,11 @@
   - a hook in the first 2 s;
   - a new visual payoff every 2–4 s;
   - a music payoff in the back half;
+  - **consistent loudness from frame 0 to the end** (user, Oct 26: "the videos start out too quiet. The ending
+    loudness is fine, but it should be more consistent overall"): the opening sits at the ending's level (within
+    1.5 dB), every 2 s window within 3 dB of it (one deliberate dip allowed, e.g. a K.O. hit-stop), spread <= 5 dB.
+    Build energy with the arrangement (more parts, density, register, brightness), never by starting quieter: no
+    level automation that ramps sections up, master the whole track to one loudness with a limiter;
   - an ending that loops back to the opening image.
 - **Loop point = the file boundary.** The last frame flows straight into frame 0, and the moment the video
   "starts over" (reset, crack, rewind, new run, everything snapping back) lands ON frame 0, never seconds
@@ -111,8 +116,8 @@ of an existing series (e.g. Battle of the Bands) in ~30–40 min.
    - fix things, then repeat.
 7. **Audio:**
    - `python audio.py`;
-   - print the section levels; `python -m reelkit.levels audio.wav` (opening >= -20 dBFS, builds >= +3 dB,
-     no quiet windows);
+   - `python -m reelkit.levels audio.wav` must PASS (opening within 1.5 dB of the ending, no window more than 3 dB
+     below it except one deliberate dip, spread <= 5 dB, build <= +1.5 dB); the old "+3 dB build" rule is gone;
    - check that the key sound's frequency band sits above the music (`reelkit.audio.band_level`).
 8. **Loop check, then the one full render:** `python -m reelkit.loopcheck render.py audio.wav` must PASS
    (seam, no reset in the last 5 s, no early copy of the opening, no audio click). Then
@@ -145,6 +150,8 @@ of an existing series (e.g. Battle of the Bands) in ~30–40 min.
   ~85 px (output) above where the app's UI starts and covered part of the battle, and both sides had unused
   room. The zone is now measured from real screenshots (see the brief).
 - Keep backups of each approved version (`*_backup.py`) before a big relight, so you can blend or roll back.
+- Openings were too quiet (user, Oct 26): the old levels rule demanded a +3 dB build, so sessions turned the first
+  half down. Loudness is now consistent from frame 0 (see "Engaging the whole way"); `reelkit.levels` enforces it.
 - The loop point is the file boundary (user, Oct 23, on #20 v1: the restart came ~1.5 s before the file
   ended). See the loop rule in the brief; `reelkit.loopcheck` flags any big jump in the last 5 s.
 
