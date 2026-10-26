@@ -45,6 +45,7 @@ a draft, when it gets feedback, and when it delivers.
 | 33 | BALLFIGHT #7: Ukulele vs Acoustic Guitar | review (v3) | session_017mWr3z (2026-10-24) | v3 delivered (VS title card intro, series standard; early intro sheet sent first): bar 0 = the shared projects/ballfight/title.py card (taken over from #30 by the #35 session's move; added UKULELE surf-crest / ACOUSTIC wood-grain + six-string panel patterns): UKULELE slams in on frame 0 with a uke chord blast, VS cracks the divider with a thunder crack, ACOUSTIC on beat 3 with an open-chord blast, doors open on beat 4; 3-2-1 on bar 1, FIGHT! at 3.70 s, top caption dropped; chords re-laid (card on Am, count-in on E). Seed 1248 did not replay at 2 bars (K.O. 54.2 s), so the honest search was re-run (rules unchanged): new seed 1130 (6 fits in 2170; UKULELE 53 % / ACOUSTIC 47 % over 1779 decided): uke leads early, acoustic leads 35.6-48.7 s, UKE-NADO 44.4 s (captioned) and BIG STRUM 45.8 s trade, UKULELE wins at 50.97 s with 4.3 HP; replay guard on 1130. Loop: the title slam is the frame-0 reset (doors shut over the last 0.30 s + riser + whoosh). Checks: safe zone OK; CoC 0; loopcheck PASS render (0.9x) + mp4 (1.5x), audio step 2.7 dB, no click; flashcheck PASS (1 doors pair, worst 1/s); opening -19.3 dBFS, build +3.3 dB; fighters 8-14 dB over the bed. Waiting for feedback | `ballfight_ukulele_vs_acoustic_v3.mp4` (v2: `_v2.mp4`, v1: `_v1.mp4`) |
 | 34 | BALLFIGHT #8: Trombone vs French Horn | review (v4) | session_01UHfZ2s (2026-10-24) | v4 delivered (user, Oct 25: the trombone model was inaccurate): the Pixel Pitch trombone rebuilt from reference photos found in Chrome (Yamaha YSL-891Z side view on Wikimedia Commons, measured at ~0.41 mm/px from its 20 cm bell; Jupiter student tenor 3/4 view, CC0) and pushed (series/instrument-history/trombone60_lowpoly.py + STATUS): slide turned ~40 deg out of the bell plane (was ~100, edge-on), bell rim 31 cm ahead of the slide lock on a 78 cm slide (was 46 / 70), Bessel bell fitted to the photo, nickel crook + bumper + stockings, tuning-slide braces + medallion, no F-attachment loop. Same fight (seed 2200) and soundtrack; sprite caches rebuilt, one full render. Checks: loopcheck PASS render + mp4 (1.2x, audio 2.0 dB, no click); flashcheck PASS (1 = the doors opening). v3 kept (`_v3.mp4`). Waiting for feedback. Previous: v3 delivered (VS title card intro, series rule Oct 24; early intro sheet sent first): bar 0 = the shared VS title card (projects/ballfight/title.py; this episode added the TROMBONE slide-tube and HORN coil panel patterns in their own commit, #30's card pixel-identical): TROMBONE, VS, FRENCH HORN slam in over unison band hits (taiko + braam stab + boom) with a slide blast, a thunder crack and a two-horn hunting call; doors open on beat 4 over a taiko pickup; bar 1 = 3-2-1, FIGHT! at 3.94 s; top caption + series-tag line dropped; HUD hidden while the card is shut. Honest search re-run with the fight at 2 bars (rules unchanged; v2's seed 894 doesn't reach a K.O. a bar later): new seed **2200** (8 fits in 2,200; TROMBONE 51 % / HORN 49 % over 1,829 decided): the pack leads 62-40 at 32 s, the lance levels it by 41 s, TALLY-HO 42.3 + PEDAL TONE 42.8 s, three lead changes in 1.5 s, a 3.7 s standoff at 4.0 vs 1.9 HP, TROMBONE wins at 50.72 s with 4.0 HP. Captions: STOPPED HORN 11.3, SAD TROMBONE 16.2, HORN RIP 22.1, POWER SLIDE 32.0, TALLY-HO 42.3. Loop: the title slam is the frame-0 reset (doors shut over the last 0.30 s + riser + doors whoosh + swelling braam; TROMBONE's ghost lands at frame 0's size). Checks: safe zone OK; subject CoC 0 on all 1830 frames; loopcheck PASS render (0.5x) + mp4 (1.2x, audio 2.0 dB, no click); flashcheck PASS (1 = the doors opening, worst 1/s); opening -17.7 dBFS, build +3.9 dB; fighters 10-14 dB over the bed. v2 kept (`*_v2_backup.py`, `_v2.mp4`). Waiting for feedback | `ballfight_trombone_vs_horn_v4.mp4` (v3: `_v3.mp4`, v2: `_v2.mp4`, v1: `_v1.mp4`) |
 | 35 | BALLFIGHT #9: Organ vs Harp | review (v3) | session_011cXc3S (2026-10-24) | v3 delivered (VS title card intro, series standard Oct 24; early intro sheet sent first): moved #30's title.py into projects/ballfight/ as one shared file (layout from the names, PATTERNS per fighter; #30's title frames pixel-identical); bar 0 = the card (wine organ-pipe panel vs pearl harp-string panel; ORGAN / VS / HARP slam in with a full-organ blast, a thunder crack, a harp sweep over unison band hits; doors open on beat 4), 3-2-1 on bar 1, FIGHT! at 3.81 s, top caption dropped. Honest search re-run with the fight at 2 bars (rules unchanged): **seed 237** (6 fits in 999 runs; ORGAN 52 % / HARP 48 % over 813 decided): neck and neck all the way, lead changes 33.7 / 39.5 / 46.5 / 50.8 s, ORGAN wins at 51.12 s with 8.6 HP. Loop: the doors shut over the last 0.30 s and the title slam is the frame-0 reset. Checks: safe zone OK; subject CoC 0 on all 1830 frames; loopcheck PASS render (0.3x) + mp4 (0.9x), audio step 3.1 dB; flashcheck PASS (the one doors pair, worst 1 / s); opening -17.5 dBFS, build +3.3 dB. v2 kept (`*_v2_backup.py`, `_v2.mp4`). Waiting for feedback | `ballfight_organ_vs_harp_v3.mp4` (v2: `_v2.mp4`, v1: `ballfight_organ_vs_harp.mp4`) |
+| 36 | BALLFIGHT #10: Trombone vs Tuba | idea (approved, mood C) | — | Approved Oct 25, mood C (brass house). First crossover (both fighters from the roster) and first episode with the HUD ability list. Ready for production. | — |
 
 ## Backlog (idea details)
 
@@ -1885,6 +1886,57 @@ fighter ACOUSTIC everywhere (HUD, captions) so it never reads as #27's GUITAR.
   `loop_bpm(126)` = 125.90 BPM (32 bars; count-in 1.91 s).
 - **Flags:** ORGAN needs a bridge entry (`organ60_lowpoly`). Organ chords are sustained: keep its hits short stabs,
   not held chords, so the bed doesn't turn to mush.
+
+### 36. BALLFIGHT #10: Trombone vs Tuba — APPROVED
+**Direction (user, Oct 25):** "Draft a Trombone vs Tuba fight"; approved with mood C (brass house). The first crossover:
+two fighters already built in their own episodes (#34 TROMBONE, #32 TUBA v2). All BALLFIGHT series rules apply: VS
+title card on bar 0, 3·2·1 on bar 1, FIGHT! on bar 2; ability names as impact captions (first use, 4 s rule);
+"COMMENT THE / NEXT MATCH-UP"; colours from the table; honest fight; 61.0 s; loop point = file boundary.
+**Also the first episode with the HUD ability list** (series rule of Oct 25): this session builds the optional
+`abilities` argument on `reelkit.ui.fight_hud` (own small commit; without it the HUD draws exactly as before).
+**Rivalry:** who owns the low end? The two backbones of every brass band, each sure the other is "just the bass
+section". The episode shows what the roster is for: both fight **exactly as they did in their own episodes.**
+- **Post caption:** "Comment the next match-up 👇🎺📯"
+
+| | TROMBONE (mint, left), from #34 | TUBA (indigo, right), from #32 v2 |
+|---|---|---|
+| Signature | Slide lance: aims and shoots the slide out on every beat; parries | OOM-PAH SWALLOW: "oom" inhales and swallows, "pah" spits the enemy into the ropes |
+| Grows per landed hit | Lance reach (0.95 -> 2.5) | Suction reach (1.8 -> 3.0) |
+| LV2 | SAD TROMBONE (shockwave + 0.6x slow for 1 s) | OOMPAH (swallows twice as often) |
+| LV3 | POWER SLIDE (thrusts on 8ths) | BRASS WALL (brass dome shield) |
+| Below 25 HP | PEDAL TONE (a giant bell drops and stomps) | SUBSONIC (the floor ripples like water) |
+
+- **Likely shape (only if the honest fight gives it):** a reach battle. The lance must poke from outside the suction
+  range, but every landed swallow stretches that range; SAD TROMBONE's slow is the trombone's escape, BRASS WALL blocks
+  the lance completely.
+- **VS title card:** the shared `projects/ballfight/title.py` with the existing TROMBONE and TUBA panel patterns (reuse
+  #32 / #34's if present): TROMBONE slams in with a slide glissando blast, VS with the thunder crack, TUBA with a tuba
+  blast, over unison house stabs.
+- **Music, mood C (brass house):** a dark minor house beat (four-on-the-floor kick, offbeat hats, claps, a filtered
+  minor pad and chord stabs), modern and TikTok-y; the fighters' hits are the brass stabs. `loop_bpm(126)` = 125.90 BPM
+  (32 bars; bar = 1.906 s, FIGHT! at 3.81 s). Both fighters are low brass, so split the parts: **the tuba fighter is
+  the bass line** (oom = root, pah = the fifth, as in #32) and **the trombone plays the tenor lead** above it (slides
+  and smears, register kept up around 52–70); the bed has no bass synth and no brass of its own, so both sit clearly on
+  top (band-level check). The leader's part fuller and louder, the loser's thinner and dirtier, as usual; the winner's
+  solo over the house groove. Original and synthesised. (Not chosen: A dark New Orleans second line; B low-brass mambo.)
+- **Crossover rules (new; for this and every later crossover):** both fighters come straight from `fighters.py` as last
+  built (weapon, numbers, abilities, look, Pixel Pitch voice and idiom; the rebuilt trombone model from #34 v4). **The
+  only per-episode lever is a damage handicap per fighter**, tuned to 40–60 % wins (add a per-fighter damage scale to
+  the engine if it only has the shared one: additive, own commit). Mechanics, reach, timing and abilities never change
+  per episode, so "how they fight" stays true everywhere. If damage alone can't balance a pair, flag it to the user
+  instead of changing a fighter. All earlier episodes must still replay identically (`tools/ballfight_replay_hash.py`).
+- **Beat sheet (61 s; the real fight decides after the count-in):** bar 0 VS title card · bar 1 count-in · FIGHT! at
+  3.81 s · first clashes · 8–30 s the four unlocks (each named once; every use lights in the HUD list) · 32–44 s one
+  below 25 HP fires PEDAL TONE or SUBSONIC · 44–52 s final exchange · K.O. ~49–53 s (hit-stop, slow-mo shatter into
+  slide / tubing / bell parts) · winner's solo + "COMMENT THE / NEXT MATCH-UP" · 58–61 s reassembly, doors shut, title
+  slam = frame 0.
+- **Flags:** honest fight, seed search with `t_fight` = 2 bars and #27's hard windows (K.O. 49–53 s, >= 2 lead changes,
+  winner HP <= 30, >= 5 ability captions >= 4 s apart, no 4 s without a hit). Two giant-bell moments exist (PEDAL TONE's
+  dropped bell; the tuba's own bell): keep them visually distinct (PEDAL TONE's bell is mint-lit, the tuba's indigo).
+  Effects from `reelkit.fx`; no full-screen flashes; safe-zone (taller HUD), flash and loop checks must pass.
+- **Effort:** the lowest of any episode so far (~40–50 min): no new attacks and existing title patterns; the work is
+  the handicap option (if needed), the HUD ability list, tuning + seed search, and the new music. Work in
+  `projects/ballfight_trombone_vs_tuba/` importing the engine.
 
 ## Adding a new idea
 
