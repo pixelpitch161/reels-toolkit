@@ -921,7 +921,26 @@
 - Lessons (v4): read a reference photo's pixels in the page (canvas getImageData on the upload.wikimedia.org image
   tab) for real measurements instead of eyeballing a screenshot; check an instrument model in a plain orthographic
   side view next to the product photo before judging it at sprite size.
-- Feedback (v4): (pending)
+- Feedback (v4): the user replaced the HORN's attacks (Oct 25): "HORN v3" = ECHO CALL + FINAL FLICK, plus the HUD
+  ability list (series rule).
+- v5: new opt-in engine kinds, each in its own commit (replay guard identical for the other 9 episodes; THE HUNT's
+  `pack` stays): weapon `echo` (a blast ring on every beat; the ball's path is kept every substep and up to 4 ghosts sit
+  j beats back on it, each repeating the call j beats later, so the repeat lands where the call was sounded: a delay in
+  space; +1 ghost per landed blast) and ability `flick` (a glove winds up a beat tracking the enemy, flicks out up to 2.4
+  beyond the surface, flings it straight across the ring; a rope hit within 0.9 s adds damage, like the tuba's spit).
+  HORN roster v3 in its own commit; TROMBONE unchanged. Re-tuned once (damage scale 0.72, echo 4.3, start with no
+  ghosts: 400 seeds 49 / 51 % decided); honest search at 2 bars: seed 140 (8 fits in 719): TROMBONE wins at 49.22 s with
+  6.8 HP after FINAL FLICK flings it into the ropes at 47.2 s and PEDAL TONE answers at 48.7 s.
+- Lessons (v5): starting with a ghost (n0 = 1) let the echoes front-load damage (the horn led at 15 s in ~86 % of
+  runs); starting with none evened the opening (the trombone led at 15 s in 20-40 %) and gave more lead changes (1.0-1.4
+  per run vs 0.3-1.1). A ring that hits "when its front crosses the enemy" misses an enemy already inside a ghost's starting radius, so
+  the echo kind hits when the ring reaches the enemy's near surface instead. The cartoon glove reads best flat on the
+  balls' plane (back of the hand up, three stitch lines, ink outline) on a zig-zag copper spring; at 1x it looked
+  small next to the ball, so it is 1.45x (~1.9 units cuff to fingertip). Render 4.4 min on 2 cores (the effects are cheaper than v4's hounds).
+- Checks (v5): safe zone OK; CoC 0 (ghosts + glove included); loopcheck PASS render 0.5x / mp4 1.2x (audio 2.1 dB, no
+  click); flashcheck PASS (1 = the doors opening; FINAL FLICK's impact changes <= 10 % of the frame); fighters 9-15 dB
+  over the bed in 600-2500 Hz.
+- Feedback (v5): (pending)
 
 ## BALLFIGHT #5: Turntables vs Synth (`projects/ballfight_turntables_vs_synth`)
 - #31, produced in parallel with #29-#35 on the shared engine. TURNTABLES throw vinyl frisbees that ricochet off the
