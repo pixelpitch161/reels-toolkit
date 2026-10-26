@@ -1633,6 +1633,8 @@ styles, ready for crossovers and a tournament bracket.
     Hidden while the VS title card is shut (as before). `reelkit.safezone` must pass.
   - Top captions unchanged: the first use of each ability still gets its impact caption (4 s rule); the list lights on
     every use, including the ones the 4 s rule keeps out of the captions.
+  - **Applies from the next newly drafted episode** (user, Oct 25: no re-renders of #27–#35; re-renders cost too many
+    tokens). The first new episode's session builds the HUD option below as part of its production.
   - Build: an optional `abilities` argument on `reelkit.ui.fight_hud` (per fighter: tag, name, state, glow 0..1), in
     its own small commit; without it the HUD draws exactly as before, so #27 / #28 and older renders don't change.
     Rough mock (Oct 25, ideas chat): bars + names on top, the three rows under each bar.
