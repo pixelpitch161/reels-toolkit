@@ -32,6 +32,8 @@ bite after a telegraph).
 #34 v5 (opt-in): weapon kind `echo` (ECHO CALL: a blast ring on the grid, repeated by echo ghosts that trail along the
 ball's own past path, one spacing apart; recorded as ECHO_G / ECHO_N / ECHO_R) and ability kind `flick` (FINAL FLICK: a
 giant glove winds up, flicks the enemy across the ring, with a rope-hit bonus; recorded as FLICK).
+#37 (opt-in): weapon kind `jump` (TWELFTH JUMP: the ball teleports past the enemy on the grid; the zip line between
+its two spots cuts) and ability kind `rhapsody` (a chain of zig-zag jumps through the enemy); events 'jump'.
 The run records every frame (30 fps) for the renderer and every event (hits, blocks, parries, ropes, volleys,
 abilities, level-ups, the K.O.) for the soundtrack and the captions. Seeded: same seed, same fight."""
 import math
@@ -2112,6 +2114,93 @@ class Fight:
         elif self.t > F['t_out'] + ab.get('show', 0.6):
             B.flick = None
 
+    # ------------------------------------------------------------------ #37: TWELFTH JUMP (opt-in weapon kind 'jump')
+    # The register key makes the clarinet jump a twelfth, so the ball jumps too: every `every` beats (on the 16th grid,
+    # from the second beat of the fight; haste divides it) it vanishes and reappears past the enemy. The target locks
+    # `lock16` 16ths before the jump (the enemy's spot then, + `lead` x its motion until the jump); the ball lands
+    # `land` beyond it, turned a seeded +-`jitter` deg off the line, at most `reach` (blade_len: `base` .. `max_reach`,
+    # +`grow` per landed cut) from where it was. The zip line from where it was to where it lands cuts the enemy if it
+    # passes within R + `cut` of it (`dmg`, `knock`): an enemy that moved, a short jump or a wide landing misses
+    # (honest). The ball keeps the shared speed, heading along the jump; it never lands inside the enemy.
+    # Ability kind 'rhapsody' (RHAPSODY): `n` jumps `step16` 16ths apart zig-zagging +-`zig` deg through the enemy as it
+    # is (no lock), `land` past it, reach `reach`, each a cut (`dmg`, `knock`); regular jumps pause meanwhile, and it
+    # grows no reach. Events: ('jump', owner, x0, y0, x1, y1, hit, 0 = jump / 1 = rhapsody).
+    def jump_setup(self, k):
+        B = self.balls[k]
+        B.blade_len = B.w['base']
+        B.jump_tgt = None
+        B.rhap = None
+
+    def _stunned(self, k):
+        """#37: a stunned fighter can't move or start an attack (ability kind 'stun')"""
+        return getattr(self.balls[k], 'stun', 0.0) > 0
+
+    def _jump(self, k, tgt, theta, land, reach, dmg, knock, cut, kind, grow):
+        B, O = self.balls[k], self.balls[1 - k]
+        R = self.R.R
+        p0 = B.p.copy()
+        d = tgt - p0
+        dist = float(np.hypot(*d))
+        u = d / dist if dist > 1e-6 else B.v / (np.linalg.norm(B.v) + 1e-12)
+        a = math.radians(theta)
+        ur = np.array([u[0] * math.cos(a) - u[1] * math.sin(a), u[0] * math.sin(a) + u[1] * math.cos(a)])
+        J = tgt + ur * land - p0
+        Lj = float(np.hypot(*J))
+        if Lj > reach:
+            J = J * (reach / Lj)
+        lim = self.R.A - R
+        p1 = np.clip(p0 + J, -lim, lim)
+        rel = p1 - O.p
+        dr = float(np.hypot(*rel))
+        if dr < 2 * R + 0.05:                                    # never land inside the enemy: step out past it
+            p1 = np.clip(O.p + (rel / dr if dr > 1e-6 else ur) * (2 * R + 0.05), -lim, lim)
+        seg = p1 - p0
+        L2 = float(seg @ seg)
+        sc = min(1.0, max(0.0, float((O.p - p0) @ seg) / L2)) if L2 > 1e-12 else 0.0
+        off = O.p - (p0 + seg * sc)
+        dd = float(np.hypot(*off))
+        hit = dd < R + cut
+        B.p = p1
+        if L2 > 1e-12:
+            B.v = seg / math.sqrt(L2) * float(np.linalg.norm(B.v))
+        if hit:
+            n = off / dd if dd > 1e-6 else np.array([-seg[1], seg[0]]) / (math.sqrt(L2) + 1e-12)
+            hx, hy = (O.p - n * R).tolist()
+            landed = self.damage(k, 1 - k, dmg, 'cut', hx, hy, kind)
+            self.knock(1 - k, n + 0.5 * seg / (math.sqrt(L2) + 1e-12), knock)
+            if landed and grow:
+                B.blade_len = min(B.w['max_reach'], B.blade_len + B.w['grow'])
+        self.ev('jump', k, float(p0[0]), float(p0[1]), float(p1[0]), float(p1[1]), int(hit), kind)
+
+    def jump_tick(self, k, k16):
+        B, O = self.balls[k], self.balls[1 - k]
+        w = B.w
+        if self._stunned(k):
+            B.jump_tgt = None
+            return
+        Rh = B.rhap
+        if Rh is not None:                                       # RHAPSODY: the chain of zig-zag cuts
+            if Rh['next'] is None or k16 >= Rh['next']:
+                Rh['next'] = k16 + Rh['ab']['step16']
+                ab = Rh['ab']
+                self._jump(k, O.p.copy(), Rh['side'] * ab['zig'], ab['land'], ab['reach'], ab['dmg'], ab['knock'],
+                           ab.get('cut', w['cut']), 1, False)
+                Rh['side'] = -Rh['side']
+                Rh['n'] -= 1
+                if Rh['n'] <= 0:
+                    B.rhap = None
+            return
+        main16 = int(round(4 * w['every']))
+        ev16 = max(1, int(round(main16 / self.ab_mult(k))))
+        lock = min(int(w.get('lock16', 1)), ev16 - 1)
+        if lock > 0 and (k16 + lock) % ev16 == 0:
+            B.jump_tgt = O.p + O.v * (lock * self.R.beat / 4.0) * w.get('lead', 0.0)
+        if k16 >= main16 and k16 % ev16 == 0:
+            tgt = B.jump_tgt if B.jump_tgt is not None else O.p.copy()
+            th = self.rng.uniform(-1.0, 1.0) * w.get('jitter', 0.0)
+            self._jump(k, tgt, th, w['land'], B.blade_len, w['dmg'], w['knock'], w['cut'], 0, True)
+            B.jump_tgt = None
+
     def ab_dur(self, ab):
         """an ability's duration in s: `dur` (s) or `dur_beats` (beats at this episode's tempo)"""
         return ab['dur'] if 'dur' in ab else ab['dur_beats'] * self.R.beat
@@ -2165,6 +2254,9 @@ class Fight:
             B.dance_until = self.t + self.ab_dur(ab)
         elif kind == 'flick':                                   # #34 v5 (FINAL FLICK): the glove flicks the enemy away
             self.start_flick(k, ab)
+        elif kind == 'rhapsody':                                # #37 (RHAPSODY): a chain of zig-zag jumps
+            B.jump_tgt = None
+            B.rhap = dict(ab=ab, n=ab['n'], side=1.0, next=None)
 
     def ab_beam_charge(self, k, ab):
         """ability kind 'beam' (#29 v3): charge for `charge_beats` with the aim locked on the enemy's spot predicted
@@ -2508,6 +2600,10 @@ class Fight:
         n16e = k16_0
         if rec is not None and echoers:
             rec['ECHO_G'], rec['ECHO_N'], rec['ECHO_R'] = [], [], []
+        jumpers = [k for k, B in enumerate(self.balls) if B.w['kind'] == 'jump']      # #37 (opt-in)
+        for k in jumpers:
+            self.jump_setup(k)
+        n16j = k16_0
         flickers = [k for k, B in enumerate(self.balls) if any(a['kind'] == 'flick' for a in B.cfg['abilities'].values())]
         if rec is not None and flickers:                         # #34 v5 (opt-in)
             rec['FLICK'] = []
@@ -2603,6 +2699,11 @@ class Fight:
                 n16e += 1
                 for k in echoers:
                     self.echo_tick(k, k16e)
+            if jumpers and self.t + 1e-9 >= n16j * s16:           # #37: jumps (and RHAPSODY's chain) on the 16th grid
+                k16j = n16j - k16_0
+                n16j += 1
+                for k in jumpers:
+                    self.jump_tick(k, k16j)
             for k, B in enumerate(self.balls):
                 B.shield = max(0.0, B.shield - dt)
                 B.haste = max(0.0, B.haste - dt)
