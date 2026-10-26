@@ -1617,6 +1617,25 @@ styles, ready for crossovers and a tournament bracket.
   - Flash: panels are never white; one doors-shut / doors-open pair; `reelkit.flashcheck` must pass.
   - The fight starts at 2 bars. Search seeds with `t_fight` = 2 bars from the start: moving an existing seed's fight a
     bar later does **not** replay the same run (float drift, chaos from ~30 s; #30 lesson), so re-run the search.
+- **Ability list in the HUD (series standard from Oct 25; user: "It can be a little confusing to know all the abilities
+  of the instruments since only one can pop up at the top at a time … the bar with the health and lv could be extended
+  downward to list each ability. They could start grayed out and become colored once they have unlocked the ability.
+  The text could light up each time they use that ability.").**
+  - Under each fighter's HP bar, its three abilities in small scale-1 text, aligned to that fighter's outer edge:
+    "LV2 <unlock 1>", "LV3 <unlock 2>", "LOW <desperation>" (e.g. "LV3 HIGHLAND FLING").
+  - States: **locked** = grey · **unlocked** = the fighter's colour (a quick glow sweeps across the name the moment it
+    unlocks) · **in use** = the name lights up white-hot on a smooth glowing pill in the fighter's colour, then eases
+    back over ~0.5 s; abilities with a duration (shields, haste) stay lit while active. LOW stays grey until it fires,
+    then lights and stays coloured.
+  - The list replaces the LV pips and the old status line (it shows both jobs). Names, HP numbers, bars and VS stay.
+  - Size and place: the HUD grows ~18–20 px (internal) taller, upward; it still ends at the bottom of the safe zone
+    (y 500 internal) and left of the button column. Nudge the ring up slightly if the taller HUD covers the action.
+    Hidden while the VS title card is shut (as before). `reelkit.safezone` must pass.
+  - Top captions unchanged: the first use of each ability still gets its impact caption (4 s rule); the list lights on
+    every use, including the ones the 4 s rule keeps out of the captions.
+  - Build: an optional `abilities` argument on `reelkit.ui.fight_hud` (per fighter: tag, name, state, glow 0..1), in
+    its own small commit; without it the HUD draws exactly as before, so #27 / #28 and older renders don't change.
+    Rough mock (Oct 25, ideas chat): bars + names on top, the three rows under each bar.
 - **Everything from #27 holds** (see #27 / #28 and `projects/ballfight/README.md`, "Making the next episode"): the
   count-in (the 3 · 2 · 1 is the band's count-in, one bar of the episode's tempo, now on bar 1 after the title card);
   mid-fight captions = **ability names only** (first use of each, never two within
