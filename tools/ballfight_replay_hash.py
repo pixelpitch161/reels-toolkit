@@ -18,7 +18,7 @@ EPISODES = [
     ('projects/ballfight_tuba_vs_flute', [514, 1, 2, 3, 500]),     # #32 v2, seed 514
     ('projects/ballfight_trumpet_vs_sax', [191, 1, 2, 3, 500]),    # #29 v3, seed 191
     ('projects/ballfight_bagpipes_vs_accordion', [1442, 1, 2, 3, 500]),   # #30 v3 (intro test: fight at 2 bars), seed 1442
-    ('projects/ballfight_trombone_vs_horn', [2200, 1, 2, 3, 500]),   # #34 v3 (title card, fight at 2 bars), seed 2200
+    ('projects/ballfight_trombone_vs_horn', [140, 1, 2, 3, 500]),   # #34 v5 (HORN v3 ECHO CALL, fight at 2 bars), seed 140
     ('projects/ballfight_turntables_vs_synth', [1339, 1, 2, 3, 500]),   # #31 v3 (VS title card, fight at 2 bars), seed 1339
     ('projects/ballfight_organ_vs_harp', [237, 1, 2, 3, 500]),    # #35 v3, seed 237 (fight at 2 bars)
     ('projects/ballfight_ukulele_vs_acoustic', [1130, 1, 2, 3, 500]),   # #33 v3 (fight at 2 bars), seed 1130
