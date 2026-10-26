@@ -313,4 +313,35 @@ FIGHTERS = {
                          lag=0.15, dmg=1.6, knock=0.5, cool=0.3, every_bars=5),
             low=dict(name='WHITE NOISE', kind='wave', speed=4.5, radius=9.0, dmg=8.0, knock=1.5)),
         pp='SYNTH', register=(57, 81), idiom='arp'),
+
+    # ---- #37 BALLFIGHT #11: the reed war, single reed vs double reed (numbers tuned once with
+    # ballfight_clarinet_vs_oboe/tune.py at damage scale 0.55, frozen: 200 seeds CLARINET 47 % / OBOE 53 %, median K.O.
+    # 50.8 s; beams land ~64 %, cuts ~60 %). The clarinet is the only teleporter, the oboe the only debuffer.
+    'CLARINET': dict(
+        color=(190, 168, 255), dark=(98, 80, 170), corner='red',     # lavender (series colour table, IDEAS)
+        view=(0, 22, 0),
+        weapon=dict(kind='jump', style='zip',              # TWELFTH JUMP: vanishes and reappears past the enemy on the
+                    every=1, base=2.6, grow=0.06, max_reach=4.2,   # beat; the zip line between its spots cuts
+                    land=1.5, jitter=40.0, lock16=2, lead=0.0, cut=0.0, dmg=3.6, knock=0.6),
+        abilities=dict(
+            unlock1=dict(name='SQUEAK', kind='stun', speed=9.0, radius=2.4, dmg=2.0, knock=0.4, stun=0.5,
+                         every_bars=4),                                # a shrill burst: the enemy freezes for 0.5 s
+            unlock2=dict(name='CLARION', kind='haste', mult=2.0, dur_beats=8, every_bars=6),   # jumps on the 8ths
+            low=dict(name='RHAPSODY', kind='rhapsody', n=5, step16=2, zig=35.0, land=1.4, reach=5.5, dmg=3.2,
+                     knock=0.8, cut=0.25)),                            # five rising zig-zag jumps, each a cut
+        pp='CLARINET', register=(50, 74), idiom='twelfth'),
+    'OBOE': dict(
+        color=(156, 176, 52), dark=(84, 98, 22), corner='blue',      # olive (series colour table, IDEAS)
+        view=(0, 22, 0),
+        weapon=dict(kind='tune', style='a_beam',           # TUNING A: every bar a narrow beam knocks the enemy OUT OF
+                    every=4, off16=3, lock16=3, lead=0.0, len=6.0, width=0.12, hold=0.18, dmg=2.0, knock=0.35,
+                    dur_beats=8, depth0=0.4, grow=0.1, depth_max=1.0, weak=0.6, sting=0.75, sting16=2, track=4.0),
+        abilities=dict(
+            unlock1=dict(name='DOUBLE REED', kind='snip', ready=1.1, reach=1.2, half=55.0, open16=2, track=6.0,
+                         dmg=6.0, knock=1.2, every_bars=3),           # the reed's blades scissor and snip
+            unlock2=dict(name='ENDLESS NOTE', kind='endless', dur_beats=4, len=6.0, width=0.3, track=1.4, dmg=0.9,
+                         every_bars=6),                                # circular breathing: the A held for a bar
+            low=dict(name='ILL WIND', kind='wave', speed=4.5, radius=9.0, dmg=8.0, knock=1.5,
+                     detune=dict(depth=1.0, dur_beats=8, weak=0.45))),     # a sour gust: fully out of tune
+        pp='OBOE', register=(62, 86), idiom='nasal'),
 }
