@@ -33,7 +33,9 @@ bite after a telegraph).
 ball's own past path, one spacing apart; recorded as ECHO_G / ECHO_N / ECHO_R) and ability kind `flick` (FINAL FLICK: a
 giant glove winds up, flicks the enemy across the ring, with a rope-hit bonus; recorded as FLICK).
 #37 (opt-in): weapon kind `jump` (TWELFTH JUMP: the ball teleports past the enemy on the grid; the zip line between
-its two spots cuts) and ability kind `rhapsody` (a chain of zig-zag jumps through the enemy); events 'jump'.
+its two spots cuts) and ability kind `rhapsody` (a chain of zig-zag jumps through the enemy); events 'jump'. Ability
+kind `stun` (SQUEAK: a shrill burst ring; the fighter it hits holds still and starts no attack for `stun` s; recorded
+in WAVES as kind 'stun', events 'stun').
 The run records every frame (30 fps) for the renderer and every event (hits, blocks, parries, ropes, volleys,
 abilities, level-ups, the K.O.) for the soundtrack and the captions. Seeded: same seed, same fight."""
 import math
@@ -2254,6 +2256,10 @@ class Fight:
             B.dance_until = self.t + self.ab_dur(ab)
         elif kind == 'flick':                                   # #34 v5 (FINAL FLICK): the glove flicks the enemy away
             self.start_flick(k, ab)
+        elif kind == 'stun':                                    # #37 (SQUEAK): a shrill burst ring that stuns
+            self.waves.append(dict(owner=k, c=B.p.copy(), r=self.R.R, speed=ab['speed'], rmax=ab['radius'], dmg=ab['dmg'],
+                                   knock=ab['knock'], kind='stun', hit=False, name=ab['name'], t0=self.t, slow=None,
+                                   stun=ab['stun']))
         elif kind == 'rhapsody':                                # #37 (RHAPSODY): a chain of zig-zag jumps
             B.jump_tgt = None
             B.rhap = dict(ab=ab, n=ab['n'], side=1.0, next=None)
@@ -2322,6 +2328,9 @@ class Fight:
                 hx, hy = (W['c'] + rel / max(dist, 1e-6) * (dist - R)).tolist()
                 landed = self.damage(W['owner'], o, W['dmg'], W['kind'], hx, hy)
                 self.knock(o, rel, W['knock'])
+                if landed and W.get('stun'):                 # #37: stunned (can't move or start an attack)
+                    O.stun = max(getattr(O, 'stun', 0.0), W['stun'])
+                    self.ev('stun', o, W['owner'], W['stun'])
                 if landed and W.get('slow'):                 # #34: the enemy it hits is slowed for a moment
                     O.slow, O.slow_mult = W['slow']['dur'], W['slow']['mult']
                     self.ev('slow', o, W['owner'], W['slow']['dur'])
@@ -2381,6 +2390,8 @@ class Fight:
             if getattr(B, 'rw_left', 0.0) > 0:                  # rewinding: rewind_step drives it along its path
                 continue
             if getattr(B, 'held', False):                       # #32 v2: swallowed, it rides inside the swallower
+                continue
+            if getattr(B, 'stun', 0.0) > 0:                     # #37: stunned, it holds still (heading kept)
                 continue
             B.boost *= math.exp(-dt / self.R.KNOCK_T)
             s = self.R.V * (1 + B.boost)
@@ -2621,6 +2632,8 @@ class Fight:
                 kb = next_beat - k0
                 next_beat += 1
                 for k, B in enumerate(self.balls):
+                    if self._stunned(k):                         # #37: a stunned fighter starts no attack
+                        continue
                     if B.w['kind'] == 'volley' and not B.w.get('on16'):
                         ev = max(1, int(round(B.w['every'] / (self.ab_mult(k)))))
                         if kb % ev == 0:
@@ -2643,12 +2656,16 @@ class Fight:
                 k16 = next16 - k16_0
                 next16 += 1
                 for k in pulse:
+                    if self._stunned(k):
+                        continue
                     B = self.balls[k]
                     main = 4 * B.w['every']                          # the weapon's own grid, in 16ths
                     every16 = max(1, int(round(main / self.ab_mult(k))))
                     if k16 % every16 == 0:
                         self.fire_pulse(k, k16 % main == 0)
                 for k in v16:
+                    if self._stunned(k):
+                        continue
                     B = self.balls[k]
                     every16 = max(1, int(round(4 * B.w['every'] / self.ab_mult(k))))
                     if k16 % every16 == 0:
@@ -2657,6 +2674,8 @@ class Fight:
                 dc_k = dc_next - dc_k0
                 dc_next += 1
                 for k in dc:
+                    if self._stunned(k):
+                        continue
                     B = self.balls[k]
                     dc_main = int(round(4 * B.w['every']))
                     dc_every = max(1, int(round(dc_main / self.ab_mult(k))))
@@ -2666,25 +2685,27 @@ class Fight:
                 k16b = n16b - k16_0
                 n16b += 1
                 for k in grid16:
-                    self.grid16_fire(k, k16b)
+                    if not self._stunned(k):
+                        self.grid16_fire(k, k16b)
             if tethers and self.t + 1e-9 >= next16c * s16:       # #31 v2: cable pulses on their own 16th counter
                 k16c = next16c - k16_0
                 next16c += 1
                 for k in tethers:
-                    self.tether_16(k, k16c)
+                    if not self._stunned(k):
+                        self.tether_16(k, k16c)
             if strikers and self.t + 1e-9 >= next16k * s16:      # #32 v2: cobra strikes on the 16th grid (haste divides it)
                 k16k = next16k - k16_0
                 next16k += 1
                 for k in strikers:
                     main16 = int(round(4 * self.balls[k].w['every']))
-                    if k16k % max(1, int(round(main16 / self.ab_mult(k)))) == 0:
+                    if k16k % max(1, int(round(main16 / self.ab_mult(k)))) == 0 and not self._stunned(k):
                         self.striker_fire(k)
             if thrusters and self.t + 1e-9 >= next16t * s16:     # #34: thrusts on the 16th grid (haste divides it)
                 k16t = next16t - k16_0
                 next16t += 1
                 for k in thrusters:
                     main16 = int(round(4 * self.balls[k].w['every']))
-                    if k16t % max(1, int(round(main16 / self.ab_mult(k)))) == 0:
+                    if k16t % max(1, int(round(main16 / self.ab_mult(k)))) == 0 and not self._stunned(k):
                         self.start_thrust(k)
             pack_bite = False
             if packers and self.t + 1e-9 >= n16p * s16:           # #34 v2: calls on the weapon's grid, bites on the 8ths
@@ -2692,13 +2713,14 @@ class Fight:
                 n16p += 1
                 pack_bite = k16p % 2 == 0
                 for k in packers:
-                    if k16p % max(1, int(round(4 * self.balls[k].w['every']))) == 0:
+                    if k16p % max(1, int(round(4 * self.balls[k].w['every']))) == 0 and not self._stunned(k):
                         self.pack_call(k)
             if echoers and self.t + 1e-9 >= n16e * s16:           # #34 v5: calls + their repeats on the 16th grid
                 k16e = n16e - k16_0
                 n16e += 1
                 for k in echoers:
-                    self.echo_tick(k, k16e)
+                    if not self._stunned(k):
+                        self.echo_tick(k, k16e)
             if jumpers and self.t + 1e-9 >= n16j * s16:           # #37: jumps (and RHAPSODY's chain) on the 16th grid
                 k16j = n16j - k16_0
                 n16j += 1
@@ -2708,6 +2730,8 @@ class Fight:
                 B.shield = max(0.0, B.shield - dt)
                 B.haste = max(0.0, B.haste - dt)
                 B.slow = max(0.0, B.slow - dt)
+                if hasattr(B, 'stun'):                           # #37
+                    B.stun = max(0.0, B.stun - dt)
             for k in pullers:
                 self.pull_step(k, dt)
             self.move(dt)
