@@ -1,14 +1,18 @@
-"""Engagement check for a soundtrack: is it loud and busy from frame 0, does it build, does it ever go quiet?
-(The user's brief: chaos and sound from frame 0, never quiet, build to the payoff. Reference: 100 Metronomes,
-the best performer, runs about -18.5 dBFS and ~4 hits/s in its first 10 s and builds ~8 dB into the back half.)
+"""Loudness check for a soundtrack: loud and busy from frame 0, CONSISTENT loudness all the way, never quiet.
+User, Oct 26: "the videos start out too quiet. The ending loudness is fine, but it should be more consistent overall."
+(The old rule asked for a +3 dB build from the first half to the second, which pushed openings down: replaced. Build
+energy with the arrangement - density, register, brightness, more parts - not with level.)
 
     python -m reelkit.levels audio.wav            # or a finished .mp4
 
-Prints loudness (RMS dBFS) and rough hits per second in 2 s windows, then a summary:
-  opening   first 10 s average            target >= -20 dBFS
-  build     30-60 s average minus 0-30 s  target >= +3 dB
-  quiet     2 s windows more than 12 dB below the loudest window (a short deliberate breath is fine)
-Hit counts are rough (very dense plucks blur together and under-count); loudness is the reliable column."""
+Prints loudness (RMS dBFS) and rough hits per second in 2 s windows, then a summary against the ending (the user's
+reference level = the average of the last 20 s):
+  opening   first 10 s average            target: within 1.5 dB of the ending
+  spread    every 2 s window              target: none more than 3 dB below the ending (one deliberate dip allowed,
+                                          e.g. a K.O. hit-stop); loudest minus quietest window <= 5 dB
+  build     30-60 s average minus 0-30 s  target: <= +1.5 dB (more means the start is too quiet)
+Exit code 1 if any target fails. Hit counts are rough (very dense plucks blur together and under-count); loudness is
+the reliable column."""
 import argparse
 import os
 import subprocess
@@ -64,12 +68,25 @@ def main():
     r = np.array([v[1] for v in rows])
     h = np.array([v[2] for v in rows])
     half = len(r) // 2
+    ref = r[-10:].mean()                                  # the ending (last 20 s): the level the user is happy with
     opening, build = r[:5].mean(), r[half:].mean() - r[:half].mean()
-    quiet = [(t, v) for t, v, _ in rows if v < r.max() - 12]
-    print(f'opening (0-10 s): {opening:.1f} dBFS, {h[:5].mean():.1f} hits/s   {"OK" if opening >= -20 else "LOW (target >= -20)"}')
-    print(f'build (30-60 s vs 0-30 s): {build:+.1f} dB   {"OK" if build >= 3 else "FLAT (target >= +3 dB)"}')
-    print(f'quiet windows (> 12 dB below the loudest): {len(quiet)}' + ('' if not quiet else '  at ' + ', '.join(f'{t:.0f} s' for t, _ in quiet)))
-    sys.exit(0)
+    dips = [(t, v) for t, v, _ in rows if v < ref - 3.0]
+    ok_open = opening >= ref - 1.5
+    ok_dips = len(dips) <= 1
+    rest = np.delete(r, np.argmin(r)) if len(dips) == 1 else r   # the one allowed dip doesn't count toward the spread
+    spread = np.ptp(rest)
+    ok_spread = spread <= 5.0
+    ok_build = build <= 1.5
+    print(f'ending (last 20 s): {ref:.1f} dBFS  (the reference level)')
+    print(f'opening (0-10 s): {opening:.1f} dBFS ({opening - ref:+.1f} dB vs ending), {h[:5].mean():.1f} hits/s   '
+          f'{"OK" if ok_open else "TOO QUIET (target within 1.5 dB of the ending)"}')
+    print(f'build (30-60 s vs 0-30 s): {build:+.1f} dB   {"OK" if ok_build else "TOO MUCH (target <= +1.5 dB: lift the start, build with the arrangement)"}')
+    print(f'spread (loudest - quietest 2 s window, the one allowed dip excluded): {spread:.1f} dB   {"OK" if ok_spread else "UNEVEN (target <= 5 dB)"}')
+    print(f'dips (> 3 dB below the ending): {len(dips)}' + ('' if not dips else '  at ' + ', '.join(f'{t:.0f} s ({v - ref:+.1f})' for t, v in dips))
+          + ('   OK' if ok_dips else '   TOO MANY (one deliberate dip allowed)'))
+    passed = ok_open and ok_dips and ok_spread and ok_build
+    print('PASS' if passed else 'FAIL')
+    sys.exit(0 if passed else 1)
 
 
 if __name__ == '__main__':
