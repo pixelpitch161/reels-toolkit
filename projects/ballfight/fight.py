@@ -30,7 +30,8 @@ shared `dmg_scale`: the only per-episode lever when two roster fighters meet (fi
 contact damage) and `bite` (jaws open on the grid and snap a 16th-grid later), and an ability kind `clamp` (a ring-wide
 bite after a telegraph).
 #34 v5 (opt-in): weapon kind `echo` (ECHO CALL: a blast ring on the grid, repeated by echo ghosts that trail along the
-ball's own past path, one spacing apart; recorded as ECHO_G / ECHO_N / ECHO_R).
+ball's own past path, one spacing apart; recorded as ECHO_G / ECHO_N / ECHO_R) and ability kind `flick` (FINAL FLICK: a
+giant glove winds up, flicks the enemy across the ring, with a rope-hit bonus; recorded as FLICK).
 The run records every frame (30 fps) for the renderer and every event (hits, blocks, parries, ropes, volleys,
 abilities, level-ups, the K.O.) for the soundtrack and the captions. Seeded: same seed, same fight."""
 import math
@@ -2055,6 +2056,62 @@ class Fight:
                             self.ev('echo_grow', k, int(B.n_echo + 1e-9))
         self.echoes = [E for E in self.echoes if E['owner'] != k or self.t < E['t_end']]
 
+    # ------------------------------------------------------------------ #34 v5: FINAL FLICK (opt-in ability kind 'flick')
+    # A giant glove bursts out of the ball and winds up for `wind_beats`, tracking the enemy; on the beat it flicks out up
+    # to `reach` beyond the surface (a glove of radius `glove_r`). If it touches the enemy: `dmg`, and the enemy is flung
+    # straight away along the flick (speed boost `boost`, decaying like a knockback); a rope hit within `rope_t` s adds
+    # `dmg_rope` (like the tuba's spit). Out of reach, it misses (honest). Recorded as FLICK only when a fighter has it.
+    FLICK_STATES = {'wind': 1, 'out': 2}
+
+    def start_flick(self, k, ab):
+        B, O = self.balls[k], self.balls[1 - k]
+        d = O.p - B.p
+        aim = math.atan2(d[1], d[0])
+        B.flick = dict(state='wind', t0=self.t, t_hit=self.t + ab.get('wind_beats', 1) * self.R.beat, aim=aim, ab=ab,
+                       ext=0.0, hit=0)
+        self.ev('flick_wind', k, B.flick['t_hit'], aim)
+
+    def flick_step(self, k, dt):
+        B, O = self.balls[k], self.balls[1 - k]
+        R = self.R.R
+        Fr = getattr(B, 'flick_rope', None)
+        if Fr is not None:                                   # flung: a rope hit while it flies hits again
+            for e in self.events[Fr['ev_i']:]:
+                if e[1] == 'rope' and e[2] == 1 - k:
+                    self.damage(k, 1 - k, Fr['dmg'], 'flick_rope', e[5], e[6])
+                    B.flick_rope = None
+                    break
+            else:
+                Fr['ev_i'] = len(self.events)
+                if self.t > Fr['t_end']:
+                    B.flick_rope = None
+        F = getattr(B, 'flick', None)
+        if F is None:
+            return
+        ab = F['ab']
+        if F['state'] == 'wind':
+            d = O.p - B.p
+            F['aim'] = math.atan2(d[1], d[0])                # the glove tracks the enemy through the wind-up
+            if self.t + 1e-9 < F['t_hit']:
+                return
+            u = np.array([math.cos(F['aim']), math.sin(F['aim'])])
+            dist = float(np.hypot(*d))
+            reach = ab['reach']
+            F['state'], F['t_out'] = 'out', self.t
+            if dist - 2 * R <= reach + ab.get('glove_r', 0.4):
+                F['ext'], F['hit'] = max(0.0, dist - 2 * R), 1
+                hx, hy = (O.p - u * R).tolist()
+                landed = self.damage(k, 1 - k, ab['dmg'], 'flick', hx, hy)
+                O.v = u * self.R.V                            # flung straight across the ring
+                O.boost = max(O.boost, ab['boost'])
+                self.ev('flick', k, 1, F['aim'], float(F['ext']), int(landed))
+                B.flick_rope = dict(t_end=self.t + ab.get('rope_t', 0.9), ev_i=len(self.events), dmg=ab['dmg_rope'])
+            else:
+                F['ext'] = reach
+                self.ev('flick', k, 0, F['aim'], float(reach), 0)
+        elif self.t > F['t_out'] + ab.get('show', 0.6):
+            B.flick = None
+
     def ab_dur(self, ab):
         """an ability's duration in s: `dur` (s) or `dur_beats` (beats at this episode's tempo)"""
         return ab['dur'] if 'dur' in ab else ab['dur_beats'] * self.R.beat
@@ -2106,6 +2163,8 @@ class Fight:
             self.clamp_start(k, ab)
         elif kind == 'dance':                                   # #32 v2 (SNAKE DANCE): cobras chase the enemy
             B.dance_until = self.t + self.ab_dur(ab)
+        elif kind == 'flick':                                   # #34 v5 (FINAL FLICK): the glove flicks the enemy away
+            self.start_flick(k, ab)
 
     def ab_beam_charge(self, k, ab):
         """ability kind 'beam' (#29 v3): charge for `charge_beats` with the aim locked on the enemy's spot predicted
@@ -2382,6 +2441,13 @@ class Fight:
             rec['ECHO_N'].append([getattr(B0, 'n_echo', 0.0), getattr(B1, 'n_echo', 0.0)])
             rec['ECHO_R'].append([(E['owner'], float(E['c'][0]), float(E['c'][1]), E['r'], E['rmax'], E['j'], E['t0'],
                                    E['call'], int(E['hit'])) for E in self.echoes])
+        if 'FLICK' in rec:                                  # #34 v5, only recorded when a fighter has a 'flick' ability
+            Fl = np.full((2, 6), np.nan)
+            for j, Bj in enumerate((B0, B1)):
+                F = getattr(Bj, 'flick', None)
+                if F is not None:
+                    Fl[j] = (self.FLICK_STATES[F['state']], F['aim'], F['ext'], F['t0'], F['t_hit'], F['hit'])
+            rec['FLICK'].append(Fl)
 
     # ------------------------------------------------------------------ run
     def run(self):
@@ -2442,6 +2508,9 @@ class Fight:
         n16e = k16_0
         if rec is not None and echoers:
             rec['ECHO_G'], rec['ECHO_N'], rec['ECHO_R'] = [], [], []
+        flickers = [k for k, B in enumerate(self.balls) if any(a['kind'] == 'flick' for a in B.cfg['abilities'].values())]
+        if rec is not None and flickers:                         # #34 v5 (opt-in)
+            rec['FLICK'] = []
         self.t = R.t_fight
         f0 = int(round(R.t_fight * R.FPS))
         step = 0
@@ -2573,6 +2642,8 @@ class Fight:
                 self.pack_step(k, dt, pack_bite)
             for k in echoers:                                    # #34 v5: the path history, the blast rings
                 self.echo_step(k, dt)
+            for k in flickers:                                   # #34 v5: FINAL FLICK
+                self.flick_step(k, dt)
             if dc:
                 self.dash_cone_step(dt)                          # (#33)
             if dc or self.whips or self.sweeps or self.spouts:
