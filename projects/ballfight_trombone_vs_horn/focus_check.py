@@ -1,5 +1,5 @@
 """Focus audit for #34: the circle of confusion on the subject (the canvas corners, both balls, the lance tip, every arrow
-in flight and the shards) must be 0 px on every frame (focus locked on the ring).
+in flight, the echo ghosts, the glove and the shards) must be 0 px on every frame (focus locked on the ring).
 
     python focus_check.py"""
 import math
@@ -30,11 +30,19 @@ for f in range(T.NF):
             if not np.isnan(row[0]):
                 pts.append(S.to_world(row[0], row[1], 0.45))
                 names.append('key')
-    for k in R.PACK:                                       # v2: the hounds (feet and head height)
-        for hd in R.hounds_at(k, t):
-            for dy in (0.0, 0.7):
-                pts.append(S.to_world(hd[1], hd[2], dy))
-                names.append('hound')
+    for k in R.ECHO:                                       # v5: the echo ghosts (ball-sized)
+        for j, gx, gz, ga, gf in R.ghosts_at(k, t):
+            for dy in (0.0, 2 * R.R):
+                pts.append(S.to_world(gx, gz, dy))
+                names.append('echo ghost')
+    for k in R.FLICKERS:                                   # v5: FINAL FLICK's glove (cuff and fingertip)
+        g = R.glove_at(k, t)
+        if g is not None:
+            u = np.array([math.cos(g['aim']), math.sin(g['aim'])])
+            for d in (g['d'] - 0.66 * g['scale'], g['d'] + 0.62 * g['scale']):
+                q = g['p'] + u * d
+                pts.append(S.to_world(q[0], q[1], R.R))
+                names.append('glove')
     for kind, p, rot, size, curl, a in R.parts_at(t):
         pts.append(S.to_world(p[0], p[2], p[1]))
         names.append('shard')

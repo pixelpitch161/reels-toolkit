@@ -1,5 +1,31 @@
 # #34 BALLFIGHT #8: Trombone vs French Horn (`projects/ballfight_trombone_vs_horn`)
 
+## v5 (user, Oct 25: HORN v3 = ECHO CALL + FINAL FLICK; the HUD ability list)
+The HORN's attacks were replaced (IDEAS "HORN v3"; THE HUNT's `pack` kind stays in the engine). New opt-in engine
+kinds, each in its own commit, every other finished episode replaying identically: weapon kind **`echo`** (ECHO CALL: a
+round blast ring around the ball on every beat; up to 4 echo ghosts trail on the ball's own past path, ghost j where it
+was j beats ago, and each repeats the call j beats later from where it was sounded, 0.85x per repeat; +1 ghost per
+landed blast; recorded ECHO_G / ECHO_N / ECHO_R) and ability kind **`flick`** (FINAL FLICK: a glove winds up for a beat
+tracking the enemy, flicks out up to 2.4 beyond the surface, flings the enemy straight across the ring, +dmg_rope if it
+hits the ropes within 0.9 s; recorded FLICK). HORN roster v3: ECHO CALL (dmg 4.3, n0 0 -> 4 ghosts), STOPPED HORN
+(shield: a copper hand), HORN RIP (haste x2: the echoes come back on the 8ths), FINAL FLICK (dmg 14 + rope 10). The
+TROMBONE is unchanged. Re-tuned once: damage scale 0.60 -> 0.72 (400 seeds: 49 / 51 % decided, median K.O. 51.5 s).
+Honest search at 2 bars: 8 fits in 719 seeds, TROMBONE 49 % / HORN 51 % over 591 decided; new seed **140**: the horn's
+echoes lead until 38 s (67-54 at 35 s), five lead changes (37.9 / 41.4 / 46.3 / 47.2 / 49.2 s), FINAL FLICK (46.7 s)
+flings the trombone into the ropes at 47.2 s (25.7 -> 8.4 HP), PEDAL TONE's bell answers at 48.7 s (22.2 -> 5.0), and
+the lance K.O.s the horn: TROMBONE wins at 49.22 s with 6.8 HP. Captions STOPPED HORN 14.8, SAD TROMBONE 20.7, HORN RIP
+29.5, POWER SLIDE 35.9, FINAL FLICK 46.7. Look: copper echo ghosts (translucent copies of the horn's ball, newest
+brightest, flashing as they repeat) on a fading copper thread along the horn's path; the call a gold-copper ring, each
+echo a thinner copper ring (canvas light + a raised ring + heat shimmer); STOPPED HORN an open copper palm pressed into
+the bell; FINAL FLICK a giant white cartoon glove on a copper spring (real shadow, its lane lit during the wind-up),
+afterimages on the flung trombone. Sound: ECHO CALL is a delay (the call = timeline.HORN_CALL, one note per beat;
+every repeat the same note, quieter and darker, panned to its ghost); HORN RIP rips up the harmonic series; FINAL
+FLICK = horn fanfare + spring boing + slide whistle, then snap + thud + braam, and a heavy rope hit. HUD ability list
+(series rule; `fight_hud(abilities=...)`, #36's helper): LV2 / LV3 / LOW under each bar, grey -> the fighter's colour,
+lit on every use. No ring nudge: the balls never come lower than y 403, the taller HUD starts at y 448. Title card,
+mood and tempo unchanged. v4 kept as `*_v4_backup.py` and `ballfight_trombone_vs_horn_v4.mp4` (the v4 sources ran on
+the THE HUNT roster entry, now replaced).
+
 ## v4 (user, Oct 25: the trombone model was inaccurate)
 The Pixel Pitch trombone (`series/instrument-history/trombone60_lowpoly.py`, used through pp_bridge) was rebuilt from
 reference photos (see that file's notes and the series STATUS): the slide shows both tubes at ~40 deg to the bell plane,
@@ -83,9 +109,9 @@ python ../../tools/ballfight_replay_hash.py                # engine changes: fin
 | `sim.py` | Runs + caches the honest fight on the shared engine; story analysis + score (#27's windows) |
 | `tune.py` | Generic rule grid: `T.<weapon key>`, `H.<weapon key>`, `T.u1.<ability key>`, `scale` (pass `scale=` or it runs at 1.0) |
 | `seed_search.py` | #27's early-stopping search (copied; names from the timeline) |
-| `styles.py` | v2: ghost hounds (2.5D side-profile sprites), the target mark + sigil, the charge wake. Draw functions for the styles: the `slide` lance (+ thrust streak), `arrow` (+ curving trail), the STOPPED HORN `bellrim`, PEDAL TONE's giant bell (flat-shaded surface of revolution) |
+| `styles.py` | v5: echo ghosts, blast rings, the path thread, the STOPPED HORN hand, FINAL FLICK's glove + spring + lane (v2-v4 hounds: `styles_v4_backup.py`). Draw functions for the styles: the `slide` lance (+ thrust streak), `arrow` (+ curving trail), the STOPPED HORN `bellrim`, PEDAL TONE's giant bell (flat-shaded surface of revolution) |
 | `render.py` | #28's renderer, copied, with this pair's weapons, abilities, the slowed ball's wobble, the lance's lit line of attack, brass shards and the solo played on the slide (lower note = longer slide) |
-| `audio.py` | Brass-less trailer bed; thrusts = the trombone ostinato (glissando into each stab), volleys = the horn's hunting call (horn fifths when it leads) |
+| `audio.py` | Brass-less trailer bed; thrusts = the trombone ostinato (glissando into each stab); v5: the horn's calls + their echo repeats (a delay), HORN RIP's harmonic rip, FINAL FLICK's wind-up and THWACK |
 | `mux.py` | Loop-clean encode via `projects/maze_race/mux.py` |
 
 ## Rules worth knowing

@@ -3,9 +3,9 @@
 Idea: the brass section's pecking order, on #27's engine, ring, HUD and count-in. TROMBONE (left corner, mint) points
 its slide at the enemy and shoots it out like a lance on every beat (blade `mode='thrust'`; reach grows per landed
 hit), so its thrusts ARE the low-brass ostinato: every thrust is a slide stab, every landed one a glissando accent.
-HORN (right corner, copper) hunts (v2, THE HUNT): a horn call every two beats brands the trombone with a copper target
-mark and releases a ghost hound (pack 2 -> 5); the pack flanks and bites on the 8ths, so its calls are the noble horn
-theme and its bites the horn stabs. Levels from
+HORN (right corner, copper) sounds ECHO CALL (v5, HORN v3; v2-v4: THE HUNT): a round blast on every beat, repeated by
+copper echo ghosts trailing on its own past path (+1 ghost per landed blast, max 4), so its calls are the horn theme and
+the echoes its delay. Levels from
 damage dealt unlock two abilities each; below 25 HP each gets one desperation move. Honest simulated fight
 (projects/ballfight/fight.py, rules tuned once for this pair with tune.py, then frozen), seed picked for pacing, never
 edited.
@@ -22,9 +22,9 @@ strings, braams and drums but no brass of its own. Registers apart so hits read:
 Beat sheet (61 s; events after 2 s are the run's own: the seed was chosen so they land near these targets):
     0-1.97   the VS title card: TROMBONE, VS, FRENCH HORN slam in; the doors open on beat 4
     1.97-3.94 balls rev in corners; giant 3 . 2 . 1 in the ring, FIGHT! at 3.94
-    3.94-10  launch; thrusts vs the first hounds, HP ticking              -
+    3.94-10  launch; thrusts vs the first echo calls, HP ticking          -
     10-32    reach grows, the pack grows; unlocks                        STOPPED HORN, SAD TROMBONE, HORN RIP, POWER SLIDE
-    32-44    one dips below 25 HP                                        PEDAL TONE or TALLY-HO
+    32-44    one dips below 25 HP                                        PEDAL TONE or FINAL FLICK
     44-52    final exchange, HP in single digits                         -
     ~49-53   K.O.: hit-stop, slow-mo shatter (brass tubing, valves)      K.O. -> (WINNER) WINS
     then-58  winner's solo under the spot                                COMMENT THE / NEXT MATCH-UP
@@ -114,6 +114,13 @@ HORN_LINE = [62, 69,    # Dm: D4 A4
              67, 70,    # Gm: G4 Bb4
              69, 73]    # A:  A4 C#5 (-> D5 on the loop)
 
+# v5 ECHO CALL: one call per beat (16 slots over the 4-bar loop), chord tones in the horn's middle register, so the
+# delayed repeats (the same notes one beat later, quieter and darker) stack into the bar's chord
+HORN_CALL = [62, 69, 65, 69,    # Dm: D4 A4 F4 A4
+             62, 65, 70, 65,    # Bb: D4 F4 Bb4 F4
+             62, 67, 70, 67,    # Gm: D4 G4 Bb4 G4
+             61, 64, 69, 64]    # A:  C#4 E4 A4 E4
+
 
 def loop_beat(t):
     """beat index inside the 4-bar loop (bars 2.. follow it), snapped to the nearest beat"""
@@ -127,6 +134,10 @@ def trombone_at(t):
 
 def horn_at(t):
     return HORN_LINE[loop_beat(t) // 2]
+
+
+def call_at(t):
+    return HORN_CALL[loop_beat(t)]
 
 
 # the winner's solo (beat offsets from the solo's first bar, midi, beats)
