@@ -11,6 +11,14 @@ fades. Abilities: CATHEDRAL (shield: an echoing gothic dome) / PULL ALL STOPS (h
 Mood: gothic horror, D minor at 125.90 BPM (32 bars): choir "aah", tolling bell, clock tick, heartbeat into a pounding
 back half; the organ fighter plays the chord stabs, the harp the arpeggios.
 
+**v4 (HUD ability list, series rule Oct 25):** the same fight (seed 237), title card and soundtrack, with
+`fight_hud`'s `abilities` option (#36): ORGAN's and HARP's LV2 / LV3 / LOW abilities listed under their HP bars, grey
+until unlocked (a glow sweeps across the name), the fighter's colour after, lit on a pill on every use (shields / haste
+held while active, TOCCATA until it lands, else a flash easing back over 0.5 s), back to grey on the glide home; no
+level pips or status line. The taller HUD (top y 448 internal) reached the front corner post, so the ring is nudged up
+8 px (camera `SY` 288 -> 280): the fight stays >= 14 px clear of the HUD, the back post top just under the captions.
+v3 kept as `render_v3_backup.py`.
+
 **v3 (VS title card intro, series standard Oct 24):** bar 0 is the shared VS title card (`projects/ballfight/title.py`:
 wine organ-pipe panel vs pearl harp-string panel, ORGAN / VS / HARP slamming in with a full-organ blast, a thunder crack
 and a harp sweep over unison band hits; the doors open on beat 4), the 3 . 2 . 1 on bar 1, FIGHT! on bar 2 (3.81 s); no

@@ -218,7 +218,7 @@ def fighter(k, t):
 
 # ---------------------------------------------------------------- camera
 AIM = np.array([0.12, 0.25, 0.0])
-SY = 288
+SY = 280                                   # v4: the ring sits 8 px higher, clear of the taller HUD (ability list)
 KEYS = [  # (t, target, dist, yaw, pitch, fov, sy): gentle drift, a slight push-in for the final exchange, back for the win
     (0.0, AIM, 27.5, 0.0, 58.0, 36, SY),
     (8.0, AIM, 27.6, -0.8, 58.4, 36, SY),
@@ -559,6 +559,65 @@ def _caps():
 CAP_TITLE, CAP_ABIL, CAP_KO, CAP_WINS, CAP_COMMENT = _caps()
 CAPTIONS = CAP_TITLE + CAP_ABIL[0] + CAP_ABIL[1] + CAP_KO + CAP_WINS + CAP_COMMENT     # for audio (impact thuds)
 STATUS = [(e[0], e[2], e[3]) for e in EV if e[1] == 'ability']
+
+
+# ---------------------------------------------------------------- the HUD ability list (series rule, Oct 25): LV2 / LV3 / LOW
+SLOTS = (('unlock1', 'LV2'), ('unlock2', 'LV3'), ('low', 'LOW'))
+SWEEP_T = 0.45                                       # s the glow takes to sweep across a name as it unlocks
+
+
+def _hold(k, slot):
+    """how long a use stays lit (as #36): a shield / haste for as long as it lasts, a slam until it lands, else a flash"""
+    ab = CFG[k]['abilities'][slot]
+    if ab['kind'] in ('shield', 'haste'):
+        return ab['dur_beats'] * T.BEAT if 'dur_beats' in ab else ab['dur']
+    if ab['kind'] == 'slam':
+        return ab['tele'] * T.BEAT
+    return 0.08
+
+
+def _abil_build():
+    unl = [{}, {}]                                   # k -> slot -> unlock time (LOW: its first use)
+    uses = [{s_: [] for s_, _ in SLOTS} for _ in (0, 1)]
+    for e in EV:
+        if e[0] > T_KO + 1e-6:
+            break
+        if e[1] == 'level':
+            unl[e[2]]['unlock1' if e[3] == 2 else 'unlock2'] = e[0]
+        elif e[1] == 'ability':
+            for slot, _ in SLOTS:
+                if CFG[e[2]]['abilities'][slot]['name'] == e[3]:
+                    uses[e[2]][slot].append(e[0])
+                    if slot == 'low':
+                        unl[e[2]].setdefault('low', e[0])
+    return unl, uses
+
+
+ABIL_UNLOCK, ABIL_USES = _abil_build()
+ABIL_HOLD = [{slot: _hold(k, slot) for slot, _ in SLOTS} for k in (0, 1)]
+
+
+def ability_rows(k, t):
+    """fight_hud rows for fighter k: grey until unlocked (a glow sweeps across the name as it unlocks), the fighter's
+    colour after, white-hot on its pill on every use (held while CATHEDRAL / PULL ALL STOPS / ANGEL WINGS last and while
+    TOCCATA's telegraph runs, then easing back over 0.5 s). Frozen through the hit-stop (the fight clock); back to grey
+    when HP refills on the glide home."""
+    tc = hz_clock(t) if t < T.T_GLIDE else -1.0
+    rows = []
+    for slot, tag in SLOTS:
+        tu = ABIL_UNLOCK[k].get(slot)
+        on = tu is not None and T.T_FIGHT <= tc and tc >= tu
+        g, sw = 0.0, None
+        if on:
+            if tc < tu + SWEEP_T:
+                sw = (tc - tu) / SWEEP_T
+            past = [te for te in ABIL_USES[k][slot] if te <= tc]
+            if past:
+                te, hold = past[-1], ABIL_HOLD[k][slot]
+                g = 1.0 - ss(te + hold, te + hold + 0.5, tc)
+        rows.append(dict(tag=tag, name=CFG[k]['abilities'][slot]['name'], state='unlocked' if on else 'locked',
+                         glow=g, sweep=sw))
+    return rows
 
 
 def status(k, t):
@@ -1319,17 +1378,16 @@ def render(f):
     hp_lag = [hp_at(k, max(0.0, t - 0.45)) for k in (0, 1)]
     hud = []
     for k in (0, 1):
-        stt, sk = status(k, t)
         fl = 0.0
         for _, e in events_between(t - 0.12, t, ('hit',)):
             if e[3] == k and e[7] not in ('key', 'string'):
                 fl = max(fl, 1 - (t - e[0]) / 0.12)
         lvl = fs[k]['level'] if T.T_FIGHT <= t else 1
         hud.append(dict(name=NAMES[k], color=COL[k], hp=hp_at(k, t), trail=max(hp_at(k, t), hp_lag[k]), level=lvl,
-                        status=stt, status_k=sk, flash=fl, ko=(k == LOSE and T_KO <= t < T.T_GLIDE), t=t,
+                        flash=fl, ko=(k == LOSE and T_KO <= t < T.T_GLIDE), t=t,
                         win=(k == WIN and T_KO + 1.3 <= t < T.T_GLIDE)))
-    if not card_closed:
-        fight_hud(img, hud[0], hud[1])
+    if not card_closed:                                                # v4: the ability list replaces pips + status line
+        fight_hud(img, hud[0], hud[1], abilities=(ability_rows(0, t), ability_rows(1, t)))
     for k in (0, 1):
         c = tuple(int(v) for v in np.clip(COL[k] * 0.8 + 60, 0, 255))
         draw_captions(img, t, CAP_ABIL[k], style='impact', base=c, puff=tuple(int(v) for v in COL[k]))
