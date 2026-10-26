@@ -46,6 +46,7 @@ a draft, when it gets feedback, and when it delivers.
 | 34 | BALLFIGHT #8: Trombone vs French Horn | review (v5) | session_01UHfZ2s (2026-10-24) | v5 delivered (user, Oct 25: HORN v3 = ECHO CALL + FINAL FLICK replaces THE HUNT; HUD ability list; early sheet sent first). New opt-in engine kinds in their own commits (THE HUNT's `pack` stays; all 9 other finished episodes replay identically): weapon `echo` (a blast ring on every beat; up to 4 echo ghosts on the ball's own past path, ghost j j beats back, each repeating the call j beats later where it was sounded, 0.85x per repeat, +1 ghost per landed blast) and ability `flick` (a glove winds up a beat tracking the enemy, flicks out up to 2.4, flings it across the ring, +rope damage within 0.9 s). HORN roster v3 (own commit): ECHO CALL / STOPPED HORN (shield: a copper hand) / HORN RIP (haste x2: echoes on the 8ths) / FINAL FLICK; TROMBONE unchanged. Re-tuned once: damage scale 0.72 (400 seeds 49 / 51 % decided, median K.O. 51.5 s). Honest search at 2 bars: 8 fits in 719, TROMBONE 49 % / HORN 51 % over 591 decided; new seed **140**: the echoes lead to 38 s, five lead changes, FINAL FLICK flings the trombone into the ropes at 47.2 s (25.7 -> 8.4 HP), PEDAL TONE answers at 48.7 s, TROMBONE wins at 49.22 s with 6.8 HP. Captions STOPPED HORN 14.8, SAD TROMBONE 20.7, HORN RIP 29.5, POWER SLIDE 35.9, FINAL FLICK 46.7. Look: copper echo ghosts (newest brightest) on a fading copper thread, gold call ring + thinner copper echo rings with heat shimmer, an open copper palm for STOPPED HORN, a giant white glove on a copper spring for FINAL FLICK. Sound: ECHO CALL as a delay (each repeat quieter + darker), harmonic-series rip, flick boing / slide whistle / THWACK. HUD ability list (LV2 / LV3 / LOW); no ring nudge needed (balls never below y 403, HUD from y 448). Title card, mood, tempo unchanged; replay guard on 140. Checks: safe zone OK; CoC 0 on all 1830 frames; loopcheck PASS render (0.5x) + mp4 (1.2x, audio 2.1 dB, no click); flashcheck PASS (1 = the doors opening); fighters 9-15 dB over the bed (600-2500 Hz). v4 kept (`*_v4_backup.py`, `_v4.mp4`). Waiting for feedback. Previous: v4 delivered (user, Oct 25: the trombone model was inaccurate): the Pixel Pitch trombone rebuilt from reference photos found in Chrome (Yamaha YSL-891Z side view on Wikimedia Commons, measured at ~0.41 mm/px from its 20 cm bell; Jupiter student tenor 3/4 view, CC0) and pushed (series/instrument-history/trombone60_lowpoly.py + STATUS): slide turned ~40 deg out of the bell plane (was ~100, edge-on), bell rim 31 cm ahead of the slide lock on a 78 cm slide (was 46 / 70), Bessel bell fitted to the photo, nickel crook + bumper + stockings, tuning-slide braces + medallion, no F-attachment loop. Same fight (seed 2200) and soundtrack; sprite caches rebuilt, one full render. Checks: loopcheck PASS render + mp4 (1.2x, audio 2.0 dB, no click); flashcheck PASS (1 = the doors opening). v3 kept (`_v3.mp4`). Waiting for feedback. Previous: v3 delivered (VS title card intro, series rule Oct 24; early intro sheet sent first): bar 0 = the shared VS title card (projects/ballfight/title.py; this episode added the TROMBONE slide-tube and HORN coil panel patterns in their own commit, #30's card pixel-identical): TROMBONE, VS, FRENCH HORN slam in over unison band hits (taiko + braam stab + boom) with a slide blast, a thunder crack and a two-horn hunting call; doors open on beat 4 over a taiko pickup; bar 1 = 3-2-1, FIGHT! at 3.94 s; top caption + series-tag line dropped; HUD hidden while the card is shut. Honest search re-run with the fight at 2 bars (rules unchanged; v2's seed 894 doesn't reach a K.O. a bar later): new seed **2200** (8 fits in 2,200; TROMBONE 51 % / HORN 49 % over 1,829 decided): the pack leads 62-40 at 32 s, the lance levels it by 41 s, TALLY-HO 42.3 + PEDAL TONE 42.8 s, three lead changes in 1.5 s, a 3.7 s standoff at 4.0 vs 1.9 HP, TROMBONE wins at 50.72 s with 4.0 HP. Captions: STOPPED HORN 11.3, SAD TROMBONE 16.2, HORN RIP 22.1, POWER SLIDE 32.0, TALLY-HO 42.3. Loop: the title slam is the frame-0 reset (doors shut over the last 0.30 s + riser + doors whoosh + swelling braam; TROMBONE's ghost lands at frame 0's size). Checks: safe zone OK; subject CoC 0 on all 1830 frames; loopcheck PASS render (0.5x) + mp4 (1.2x, audio 2.0 dB, no click); flashcheck PASS (1 = the doors opening, worst 1/s); opening -17.7 dBFS, build +3.9 dB; fighters 10-14 dB over the bed. v2 kept (`*_v2_backup.py`, `_v2.mp4`). Waiting for feedback | `ballfight_trombone_vs_horn_v5.mp4` (v4: `_v4.mp4`, v3: `_v3.mp4`, v2: `_v2.mp4`, v1: `_v1.mp4`) |
 | 35 | BALLFIGHT #9: Organ vs Harp | review (v4) | session_011cXc3S (2026-10-24) | v4 delivered (HUD ability list, series rule Oct 25; early sheet + HUD close-ups sent first): same fight (seed 237, replays identically on the latest engine), title card and soundtrack; `fight_hud` abilities (#36) list ORGAN's and HARP's LV2 / LV3 / LOW under the bars: grey until unlocked (glow sweep), the fighter's colour after, lit on a pill on every use (CATHEDRAL / PULL ALL STOPS / ANGEL WINGS held while active, TOCCATA until it lands), back to grey on the glide home; no LV pips or status line. The taller HUD (top y 448) reached the front corner post, so the ring is nudged up 8 px (camera SY 288 -> 280): the fight stays >= 14 px clear of it. Checks: safezone OK (0.25 s steps); subject CoC 0 on all 1830 frames; loopcheck PASS render (0.3x) + mp4 (0.9x), audio step 3.1 dB; flashcheck PASS (the one doors pair, worst 1 / s). v3 kept (`render_v3_backup.py`, `_v3.mp4`). Waiting for feedback | `ballfight_organ_vs_harp_v4.mp4` (v3: `_v3.mp4`, v2: `_v2.mp4`, v1: `ballfight_organ_vs_harp.mp4`) |
 | 36 | BALLFIGHT #10: Trombone vs Tuba | review | session_01FABTpA (2026-10-25) | v1 delivered (early sheet sent first). First crossover: both fighters straight from fighters.py; the only lever is the new opt-in engine handicap `Rules(dmg_side)` (own commit; all 9 finished episodes replay identically): TROMBONE x0.35 / TUBA x1.55 damage (the lance lands ~70 hits a fight, the swallow ~12), 300 seeds 49 % / 51 %, median K.O. 50.8 s. First HUD ability list: `reelkit.ui.fight_hud(abilities=...)` (own commit; without it 353 HUD input combinations draw pixel-identically): LV2 / LV3 / LOW rows under each bar, grey -> fighter colour with a sweep on unlock -> white-hot pill on every use. Honest search at 2 bars: 6 fits in 416, balance 48 / 52; seed **358** (106 ranked first but its 52.94 s K.O. left ~1 s for COMMENT THE NEXT MATCH-UP): the lance leads early, the swallows drag it back (lead changes 19.1 / 26.7 / 45.1 s), SUBSONIC 40.0, PEDAL TONE 44.3, the tuba gulps the trombone at 48.6 s and spits it into the ropes: TUBA wins at 49.10 s with 5.9 HP. Captions SAD TROMBONE 11.4, BRASS WALL 19.5, POWER SLIDE 24.3, SUBSONIC 40.0, PEDAL TONE 44.3. Music mood C (brass house, F minor, 125.90 BPM): no bass synth / brass in the bed; tuba = the bass line (oom root / pah fifth), trombone = the tenor hook; band check tuba +6.9..+8.6 dB, trombone +7.9..+11.8 dB over the bed. Checks: safe zone OK; CoC 0 on all 1830 frames; loopcheck PASS render 0.5x / mp4 1.2x (audio 1.2 dB, no click); flashcheck PASS (1 = the doors opening); opening -16.4 dBFS, build +3.2 dB. Waiting for feedback | `ballfight_trombone_vs_tuba.mp4` |
+| 37 | BALLFIGHT #11: Clarinet vs Oboe | idea (approved, mood A) | — | Approved Oct 26, mood A (Baroque storm). Two new fighters (OBOE needs a model + voice). Ready for production. | — |
 
 ## Backlog (idea details)
 
@@ -1674,7 +1675,9 @@ styles, ready for crossovers and a tournament bracket.
 | TROMBONE | mint | (120, 240, 184) | | HORN | copper | (200, 112, 64) |
 | ORGAN | wine | (196, 52, 104) | | HARP | pearl (warm ivory) | (244, 228, 190) |
 
-  Spares (Cello, Clarinet, later fighters): pick a colour clearly apart from all of these and add it here.
+| CLARINET | lavender | (190, 168, 255) | | OBOE | olive | (156, 176, 52) |
+
+  Spares (Cello, later fighters): pick a colour clearly apart from all of these and add it here.
 - **Fighters:** first named = left corner (screen left), second = right. Weapon scaling: every landed hit grows the
   signature weapon (the column "grows"). Abilities: unlock1 at LV2, unlock2 at LV3, `low` once below 25 HP; existing
   ability kinds (`shockwave`, `shield`, `haste`, `arc`, `wave`, `slam`) are reused wherever they fit.
@@ -1955,6 +1958,51 @@ section". The episode shows what the roster is for: both fight **exactly as they
 - **Effort:** the lowest of any episode so far (~40–50 min): no new attacks and existing title patterns; the work is
   the handicap option (if needed), the HUD ability list, tuning + seed search, and the new music. Work in
   `projects/ballfight_trombone_vs_tuba/` importing the engine.
+
+### 37. BALLFIGHT #11: Clarinet vs Oboe — APPROVED
+**Direction (user, Oct 26):** "Draft Clarinet vs Oboe"; approved with mood A (Baroque storm). Same day, a project-wide
+rule: **consistent loudness from frame 0** ("the videos start out too quiet. The ending loudness is fine, but it should
+be more consistent overall"): see PLAYBOOK, `reelkit.levels` must PASS. All BALLFIGHT series rules apply (VS title card,
+3·2·1, ability-name captions, HUD ability list, colours, honest tuned fight, 61.0 s, loop point = file boundary).
+**Rivalry:** the woodwinds' reed war, single reed vs double reed. Oboists carve their own reeds and the whole
+orchestra tunes to their A; clarinettists squeak and jazz. Comment bait: in *Peter and the Wolf* the clarinet is the cat
+and the oboe is the duck. Post caption: "The cat finally gets the duck? 🐈🦆 Comment the next match-up 👇"
+
+| | CLARINET (lavender, left) | OBOE (olive, right) |
+|---|---|---|
+| Style | The only teleporter | The only debuffer |
+| Signature | **TWELFTH JUMP**: the register key makes the clarinet jump a twelfth, so the clarinet jumps too: on each beat it vanishes and reappears beside the enemy; the lavender zip line from where it was to where it lands cuts anything it crosses (new kind `jump`) | **TUNING A**: every bar it sounds its A as a narrow tuning beam; a hit knocks the enemy **OUT OF TUNE** for 2 bars: it wobbles (doubled, warped outline), its hits audibly play flat and do less damage, and each of the oboe's nasal 8th notes stings it (new weapon `tune` + status `detune`) |
+| Grows per landed hit | Jump distance | Detune depth (more sting, weaker enemy hits) |
+| LV2 | SQUEAK: the infamous squeak as a shrill burst that stuns the enemy for 0.5 s (new `stun`) | DOUBLE REED: the reed's two blades scissor out and snip anything close (new `snip`) |
+| LV3 | CLARION (`haste`: jumps twice as often) | ENDLESS NOTE (circular breathing: the A beam held for a whole bar) |
+| Below 25 HP | RHAPSODY: a chain of five rising jumps zig-zagging across the ring, each a cut | ILL WIND (`wave`: a sour gust across the ring, the enemy fully out of tune) |
+
+- **Likely shape (only if the honest fight gives it):** the oboe must land the beam before it hurts, and the clarinet
+  is the hardest thing in the ring to hit; once it's out of tune, every jump is weaker. You hear who's losing when
+  their notes go sour.
+- **OUT OF TUNE is a game rule** in the simulation; the audio follows it. Keep the detune obvious but musical (about a
+  quarter-tone at full depth), sour rather than broken.
+- **Music, mood A (Baroque storm):** harpsichord continuo + a racing minor string ostinato, stormy-presto energy, all
+  original (no quoting Vivaldi or anyone). Both fighters are woodwinds: the **clarinet plays the lower, liquid line**
+  (chalumeau register), the **oboe the higher, nasal line**; the bed has no woodwinds of its own. `loop_bpm(140)` =
+  141.64 BPM (36 bars; bar = 1.694 s, FIGHT! at 3.39 s). **Consistent loudness** from the title card to the end (the
+  new rule): the storm is already at full level on frame 0; build with density, not level. Leader fuller and louder,
+  loser thinner and sour; the winner's solo over the storm. (Not chosen: B spy caper; C dark klezmer.)
+- **VS title card:** CLARINET / VS / OBOE: a clarinet gliss blast, the thunder crack, the oboe's A as a held blast;
+  panel patterns: clarinet keys / ebony grain (lavender-lit), oboe double reed / tuning-fork motif (olive-lit).
+- **Beat sheet (61 s):** bar 0 VS card · bar 1 count-in · FIGHT! at 3.39 s · 8–30 s the four unlocks (each named once;
+  the HUD list lights on every use) · 32–44 s RHAPSODY or ILL WIND · 44–52 s final exchange · K.O. ~49–53 s (slow-mo
+  shatter into keys / reed / bell) · winner's solo + "COMMENT THE / NEXT MATCH-UP" · 58–61 s reassembly, doors shut, title
+  slam = frame 0.
+- **Flags:** the OBOE is all new: no Pixel Pitch oboe yet, so build the model from reference photos (as the rebuilt
+  trumpet / trombone were) and a nasal double-reed synth voice, each in its own commit (series folder: add, don't edit
+  other instruments); the CLARINET's model and voice exist (`clarinet60_lowpoly`, bridge entry CLARINET). New engine
+  kinds additive, own commits; all earlier episodes replay identically. Re-tune for 40–60 % wins; honest seed search
+  with `t_fight` = 2 bars and the usual hard windows. Teleports must read: a short lavender vanish / appear burst +
+  the zip line, never a hard pop that looks like a glitch. Effects from `reelkit.fx`; no full-screen flashes;
+  safe-zone, flash, loop and levels checks must pass.
+- **Effort:** ~60–75 min (the oboe model + voice and two new weapon kinds). Work in
+  `projects/ballfight_clarinet_vs_oboe/`.
 
 ## Adding a new idea
 
