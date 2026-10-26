@@ -54,7 +54,8 @@ T_DOORS = (3 * BEAT + 0.10, BAR - 0.03)  # beat 4: the two panels slide apart li
 T_CLOSE = 0.30                  # the last 0.30 s of the file: the doors slide shut again (the run-up into the frame-0 slam)
 
 # ---------------------------------------------------------------- frozen rules (tune.py; the same for every seed)
-DMG_SCALE = 0.60                # v2 (THE HUNT), tuned once (tune.py, 200 seeds): median K.O. ~51 s, each side 40-60 %
+DMG_SCALE = 0.72                # v5 (ECHO CALL), tuned once (tune.py, 400 seeds): median K.O. 51.5 s, 49 / 51 % decided
+                                # (v2 THE HUNT: 0.60)
 
 # ---------------------------------------------------------------- story targets (seed_search.py scores runs against these)
 T_KO = (49.0, 53.0)
@@ -62,7 +63,7 @@ MIN_LEAD_CHANGES = 2
 MAX_WINNER_HP = 30.0
 CAP_GAP = 4.0                   # never two ability captions within 4 s
 CAP_TARGETS = {'SAD TROMBONE': 12, 'STOPPED HORN': 17, 'POWER SLIDE': 24, 'HORN RIP': 30, 'PEDAL TONE': 42,
-               'TALLY-HO': 42}         # v3: +1 bar (the fight starts at 2 bars)
+               'FINAL FLICK': 42}      # v3: +1 bar (the fight starts at 2 bars); v5: FINAL FLICK replaces TALLY-HO
 
 # ---------------------------------------------------------------- the scripted tail (after the honest K.O.)
 SLOWMO = 0.7                    # s of picture time the last instant of the fight is stretched over (the K.O. hit)

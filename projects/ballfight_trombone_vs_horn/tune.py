@@ -70,6 +70,8 @@ if __name__ == '__main__':
     for cell in cells:
         r = [x for x in res if x[0] == cell]
         g = np.mean([x[2] == 0 for x in r])
+        dec = [x[2] for x in r if x[2] is not None]
+        gd = np.mean([x == 0 for x in dec]) if dec else 0.0
         tko = np.array([x[3] for x in r])
         lc = np.mean([x[4] for x in r])
         whp = np.median([x[5] for x in r])
@@ -78,6 +80,6 @@ if __name__ == '__main__':
         claw = np.mean([x[2] == 1 for x in r if x[6] > 0]) if any(x[6] > 0 for x in r) else 0
         hits = np.mean([x[8] for x in r], 0)
         lab = ' '.join(f'{k}={v:g}' for k, v in cell)
-        print(f'{lab}: trombone wins {100 * g:3.0f}%  KO med {np.median(tko):5.1f} ({np.percentile(tko, 10):4.1f}-'
+        print(f'{lab}: trombone wins {100 * g:3.0f}% (decided {100 * gd:3.0f}% of {len(dec)})  KO med {np.median(tko):5.1f} ({np.percentile(tko, 10):4.1f}-'
               f'{np.percentile(tko, 90):4.1f})  lc {lc:.1f}  whp {whp:3.0f}  fit {100 * fit:2.0f}%  T@15 {100 * d15:3.0f}%  '
               f'H-comeback {100 * claw:3.0f}%  hits T/H {hits[0]:.0f}/{hits[1]:.0f}', flush=True)

@@ -21,7 +21,7 @@ from fighters import FIGHTERS
 
 LOWS = tuple(FIGHTERS[n]['abilities']['low']['name'] for n in T.FIGHTERS)
 REC_KEYS = ('P', 'V', 'TH', 'BL', 'FR', 'NV', 'HP', 'LV', 'SH', 'HA', 'SPIN', 'OM', 'K', 'EXT', 'SLW', 'CRV', 'HOUNDS', 'MARK',
-            'PACKN')
+            'PACKN', 'ECHO_G', 'ECHO_N', 'FLICK')                # v5: ECHO CALL ghosts + FINAL FLICK (ECHO_R stays a list)
 
 
 def rules():
