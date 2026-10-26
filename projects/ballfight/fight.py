@@ -37,7 +37,8 @@ its two spots cuts) and ability kind `rhapsody` (a chain of zig-zag jumps throug
 kind `stun` (SQUEAK: a shrill burst ring; the fighter it hits holds still and starts no attack for `stun` s; recorded
 in WAVES as kind 'stun', events 'stun'). Weapon kind `tune` (TUNING A: a narrow beam every bar that knocks the
 enemy OUT OF TUNE, status 'detune': weaker hits, stung by the oboe's notes; recorded DET / TUNE), ability kind
-`endless` (the beam held, tracking) and the `detune` option on shockwave / wave abilities.
+`endless` (the beam held, tracking) and the `detune` option on shockwave / wave abilities. Ability kind `snip`
+(DOUBLE REED: the reed's blades scissor out at a close enemy and snap shut; recorded SNIP).
 The run records every frame (30 fps) for the renderer and every event (hits, blocks, parries, ropes, volleys,
 abilities, level-ups, the K.O.) for the soundtrack and the captions. Seeded: same seed, same fight."""
 import math
@@ -2309,6 +2310,48 @@ class Fight:
                     B.depth = min(w.get('depth_max', 1.0), B.depth + w['grow'])
         B.tbeams = [Bm for Bm in B.tbeams if self.t < Bm['t1'] - 1e-9]
 
+    # ------------------------------------------------------------------ #37: DOUBLE REED (opt-in ability kind 'snip')
+    # The reed's two blades scissor out of the ball at the enemy (turning to it at `track` rad/s while they open over
+    # `open16` 16ths) and snap shut: a hit if the enemy is within `reach` beyond the surface and `half` deg of the aim
+    # (`dmg`, `knock`). It waits for its moment: it only starts when the enemy is within `ready` beyond the surface.
+    # Events ('snip_open', owner, t_snap, aim), ('snip', owner, hit, aim, reach); recorded as SNIP (state 1 open /
+    # 2 shut, aim, t_snap) when a fighter has it.
+    def snip_ready(self, k, ab):
+        B, O = self.balls[k], self.balls[1 - k]
+        return float(np.hypot(*(O.p - B.p))) - 2 * self.R.R <= ab['ready']
+
+    def start_snip(self, k, ab):
+        B, O = self.balls[k], self.balls[1 - k]
+        d = O.p - B.p
+        aim = math.atan2(d[1], d[0])
+        B.snip = dict(ab=ab, aim=aim, t_snap=self.t + ab['open16'] * self.R.beat / 4.0, state=1, t_end=None)
+        self.ev('snip_open', k, B.snip['t_snap'], aim)
+
+    def snip_step(self, k, dt):
+        B, O = self.balls[k], self.balls[1 - k]
+        Sn = getattr(B, 'snip', None)
+        if Sn is None:
+            return
+        ab = Sn['ab']
+        rel = O.p - B.p
+        if Sn['state'] == 1:
+            want = math.atan2(rel[1], rel[0])
+            step = ab['track'] * dt
+            Sn['aim'] = _wrap(Sn['aim'] + max(-step, min(step, _wrap(want - Sn['aim']))))
+            if self.t + 1e-9 >= Sn['t_snap']:
+                dist = float(np.hypot(*rel))
+                off = abs(_wrap(math.atan2(rel[1], rel[0]) - Sn['aim']))
+                hit = dist - 2 * self.R.R <= ab['reach'] and math.degrees(off) <= ab['half']
+                if hit:
+                    n = rel / dist if dist > 1e-6 else np.array([math.cos(Sn['aim']), math.sin(Sn['aim'])])
+                    hx, hy = (O.p - n * self.R.R).tolist()
+                    self.damage(k, 1 - k, ab['dmg'], 'snip', hx, hy)
+                    self.knock(1 - k, n, ab['knock'])
+                self.ev('snip', k, int(hit), Sn['aim'], float(ab['reach']))
+                Sn['state'], Sn['t_end'] = 2, self.t + 0.25
+        elif self.t >= Sn['t_end']:
+            B.snip = None
+
     def ab_dur(self, ab):
         """an ability's duration in s: `dur` (s) or `dur_beats` (beats at this episode's tempo)"""
         return ab['dur'] if 'dur' in ab else ab['dur_beats'] * self.R.beat
@@ -2364,6 +2407,8 @@ class Fight:
             B.dance_until = self.t + self.ab_dur(ab)
         elif kind == 'flick':                                   # #34 v5 (FINAL FLICK): the glove flicks the enemy away
             self.start_flick(k, ab)
+        elif kind == 'snip':                                    # #37 (DOUBLE REED): the reed's blades scissor
+            self.start_snip(k, ab)
         elif kind == 'endless':                                 # #37 (ENDLESS NOTE): the A beam held for a bar
             B.tune_lock = None
             B.tbeams = []
@@ -2422,6 +2467,9 @@ class Fight:
                 r = B.ready.get(slot)
                 if r is not None and B.cfg['abilities'][slot]['kind'] == 'rewind' and not self.rewind_ready(k, B.cfg['abilities'][slot]):
                     continue                                        # a rewind waits for damage worth undoing
+                if r is not None and B.cfg['abilities'][slot]['kind'] == 'snip' and \
+                        not self.snip_ready(k, B.cfg['abilities'][slot]):
+                    continue                                        # #37: the reed's snip waits for the enemy to be close
                 if r is not None and self.t >= r - 1e-6:
                     self.trigger(k, slot)
                     B.ready[slot] = self.t + B.cfg['abilities'][slot]['every_bars'] * 4 * self.R.beat
@@ -2665,6 +2713,13 @@ class Fight:
                                [getattr(B1, 'detune_t', 0.0), getattr(B1, 'detune_d', 0.0)]])
             rec['TUNE'].append([[float(bool(getattr(Bj, 'tbeams', None))), float(getattr(Bj, 'endless', None) is not None)]
                                 for Bj in (B0, B1)])
+        if 'SNIP' in rec:                                   # #37, only recorded when a fighter has a 'snip' ability
+            Sp = np.full((2, 3), np.nan)
+            for j, Bj in enumerate((B0, B1)):
+                Sn = getattr(Bj, 'snip', None)
+                if Sn is not None:
+                    Sp[j] = (Sn['state'], Sn['aim'], Sn['t_snap'])
+            rec['SNIP'].append(Sp)
         if 'FLICK' in rec:                                  # #34 v5, only recorded when a fighter has a 'flick' ability
             Fl = np.full((2, 6), np.nan)
             for j, Bj in enumerate((B0, B1)):
@@ -2742,6 +2797,9 @@ class Fight:
         n16u = k16_0
         if rec is not None and tuners:
             rec['DET'], rec['TUNE'] = [], []
+        snippers = [k for k, B in enumerate(self.balls) if any(a['kind'] == 'snip' for a in B.cfg['abilities'].values())]
+        if rec is not None and snippers:                         # #37 (opt-in)
+            rec['SNIP'] = []
         flickers = [k for k, B in enumerate(self.balls) if any(a['kind'] == 'flick' for a in B.cfg['abilities'].values())]
         if rec is not None and flickers:                         # #34 v5 (opt-in)
             rec['FLICK'] = []
@@ -2905,6 +2963,8 @@ class Fight:
                 self.flick_step(k, dt)
             for k in tuners:                                     # #37: the bell's aim, the beams
                 self.tune_step(k, dt)
+            for k in snippers:                                   # #37: DOUBLE REED
+                self.snip_step(k, dt)
             if dc:
                 self.dash_cone_step(dt)                          # (#33)
             if dc or self.whips or self.sweeps or self.spouts:
