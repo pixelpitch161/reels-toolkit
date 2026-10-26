@@ -444,7 +444,97 @@ def race_lanes(img, lanes, x0=None, x1=None, y1=None, lane_h=11, alpha=1.0, ink=
 
 
 # ------------------------------------------------------------------ fight HUD (two fighters: fighting-game HP bars)
-def fight_hud(img, left, right, x0=None, x1=None, y1=None, alpha=1.0, ink=INK, bar_h=6, center='VS'):
+ABIL_ROW = 9                    # fight_hud ability list: px from one row to the next (scale-1 text + outline)
+ABIL_HOT = (255, 250, 232)      # an ability in use: white-hot text on a glowing pill in the fighter's colour
+ABIL_GREY = ((96, 94, 116), (118, 116, 138))     # a locked ability: (tag, name)
+
+
+def _ability_rows(img, rows, side, xa, xb, yp, col):
+    """fight_hud's ability list under one fighter's bar: one scale-1 row per ability ("LV2 SAD TROMBONE"), aligned to
+    the fighter's outer edge (left fighter: left edge; right fighter: right edge). Row dict:
+        tag    'LV2' / 'LV3' / 'LOW' (drawn dimmer than the name)
+        name   the ability's name
+        state  'locked' (grey) or 'unlocked' (the fighter's colour); a LOW move stays 'locked' until it first fires
+        glow   0..1: in use (the name turns white-hot on a smooth pill in the fighter's colour; ease it back over ~0.5 s,
+               hold it at 1 while a shield / haste lasts); ignored while locked
+        sweep  None, or 0..1 progress of the quick glow that sweeps across the name the moment it unlocks
+    Returns [(x0, y0, x1, y1)] per row."""
+    H_, W_ = img.shape[:2]
+    lay = []
+    for j, A in enumerate(rows):
+        y = yp + j * ABIL_ROW
+        tag, name = str(A.get('tag', '')), str(A['name'])
+        on = A.get('state', 'locked') != 'locked'
+        g = min(1.0, max(0.0, float(A.get('glow', 0.0)))) if on else 0.0
+        sw = A.get('sweep')
+        sw = float(sw) if (sw is not None and on and 0.0 <= float(sw) < 1.0) else None
+        tw = (len(tag) + 1) * ADV if tag else 0            # the tag + one space
+        nw = len(name) * ADV - 1
+        x = xa if side == 0 else xb - (tw + nw)
+        lay.append((y, tag, name, on, g, sw, x, x + tw, nw))
+    # pass 1: the pills (in use) and the unlock haze, under every row's text
+    for y, tag, name, on, g, sw, x, nx, nw in lay:
+        if g > 0.004:
+            px0, px1, py0, py1 = nx - 3, nx + nw + 3, y - 1, y + 9          # the pill: 10 px tall, rounded ends
+            cx0, cx1, cy0, cy1 = max(0, px0 - 1), min(W_, px1 + 1), max(0, py0 - 1), min(H_, py1 + 1)
+            reg = img[cy0:cy1, cx0:cx1].astype(np.float32)
+            yy, xx = np.mgrid[cy0:cy1, cx0:cx1]
+            # distance outside a rounded rectangle (corner radius 2.5): 0 inside, grows outward -> smooth edge + halo
+            qx = np.maximum(np.maximum(px0 + 2.5 - (xx + 0.5), (xx + 0.5) - (px1 - 2.5)), 0.0)
+            qy = np.maximum(np.maximum(py0 + 2.5 - (yy + 0.5), (yy + 0.5) - (py1 - 2.5)), 0.0)
+            dist = np.hypot(qx, qy) - 2.5
+            a = np.where(dist <= -0.5, 0.92, np.where(dist <= 0.5, 0.92 * (0.5 - dist), 0.0))
+            a = np.maximum(a, np.clip(0.24 * (1.2 - dist) / 1.2, 0, 0.24) * (dist > -0.5))   # soft halo
+            fill = np.empty_like(reg)
+            fill[:] = np.clip(col * 0.74 + 22, 0, 255)
+            band = (yy - py0)[..., None]
+            fill = np.where(band <= 1, np.clip(col * 0.9 + 60, 0, 255), fill)    # a lit top edge: it glows
+            fill = np.where(band >= py1 - py0 - 1, np.clip(col * 0.55 + 6, 0, 255), fill)
+            a = (a * g)[..., None]
+            img[cy0:cy1, cx0:cx1] = np.clip(reg * (1 - a) + fill * a, 0, 255).astype(np.uint8)
+            _note(cx0, cy0, cx1, cy1, 'panel', 'ability ' + name)
+        if sw is not None:                                 # unlock: a soft haze in the fighter's colour runs with it
+            bx = (nx - 5 + sw * (nw + 10)) if side == 0 else (nx + nw + 4 - sw * (nw + 10))
+            xs_ = np.arange(max(0, int(bx) - 7), min(W_, int(bx) + 8))
+            if len(xs_):
+                k_ = np.clip(1 - np.abs(xs_ + 0.5 - bx) / 7.0, 0, 1) * 0.55 * (1 - 0.5 * sw)
+                ys_ = slice(max(0, y - 2), min(H_, y + 9))
+                reg = img[ys_, xs_].astype(np.float32)
+                img[ys_, xs_] = np.clip(reg * (1 - k_[None, :, None]) + col * k_[None, :, None], 0, 255).astype(np.uint8)
+    # pass 2: the text
+    out = []
+    ink0 = np.array((10, 20, 26), float)
+    for y, tag, name, on, g, sw, x, nx, nw in lay:
+        if on:
+            tcol = np.clip(col * 0.42 + 84, 0, 255)
+            ncol = np.clip(col * 0.85 + 38, 0, 255)
+            ncol = ncol * (1 - g) + np.array(ABIL_HOT, float) * g
+            tcol = tcol * (1 - 0.5 * g) + np.array(ABIL_HOT, float) * 0.5 * g
+        else:
+            tcol, ncol = np.array(ABIL_GREY[0], float), np.array(ABIL_GREY[1], float)
+        if tag:
+            label(img, tag, x, y, tuple(int(v) for v in tcol), 1)
+        # lit: the letters' outline turns a deep shade of the fighter's colour, so the pill reads as one solid glow
+        ol = ink0 * (1 - g) + np.clip(col * 0.38, 0, 255) * g
+        m = text_mask(name, 1)
+        stamp(img, m, int(nx), int(y), tuple(int(v) for v in ncol), outline=tuple(int(v) for v in ol))
+        _note(int(nx), int(y), int(nx) + m.shape[1], int(y) + m.shape[0], 'label', name)
+        if sw is not None:                                 # the sweep's bright band over the letters themselves
+            bx = (nx - 5 + sw * (nw + 10)) if side == 0 else (nx + nw + 4 - sw * (nw + 10))
+            yy, xx = np.nonzero(m)
+            d = np.abs(nx + xx + 0.5 - bx)
+            sel = d < 5.0
+            if sel.any():
+                kk = (1 - d[sel] / 5.0)[:, None]
+                Y, X = y + yy[sel], nx + xx[sel]
+                ok = (Y >= 0) & (Y < H_) & (X >= 0) & (X < W_)
+                Y, X, kk = Y[ok], X[ok], kk[ok]
+                img[Y, X] = np.clip(img[Y, X] * (1 - kk) + np.array(ABIL_HOT, float) * kk, 0, 255).astype(np.uint8)
+        out.append((x, y, nx + nw, y + 7))
+    return out
+
+
+def fight_hud(img, left, right, x0=None, x1=None, y1=None, alpha=1.0, ink=INK, bar_h=6, center='VS', abilities=None):
     """Two fighting-game HP bars at the bottom of the safe box (built for #27 BALLFIGHT): the left fighter's bar is
     anchored at the left edge and the right fighter's at the right edge, so damage eats each bar from the middle (like
     the classics), with a pale damage trail that catches up. Small text only: NAME + HP number over each bar, level
@@ -454,13 +544,21 @@ def fight_hud(img, left, right, x0=None, x1=None, y1=None, alpha=1.0, ink=INK, b
                            max_level=3, status='', status_k=0..1 (status fade), flash=0..1 (bar flash on a hit),
                            ko=False (dims, 'K.O.' instead of the number), win=False (gold edge))
         x0, x1, y1    extent (default: the safe box width, left of the button column, on the box's bottom edge)
+        abilities     optional (#36, BALLFIGHT series rule Oct 25): (left_rows, right_rows), each a list of row dicts
+                      (tag, name, state, glow, sweep: see _ability_rows), e.g. LV2 / LV3 / LOW. The list replaces the
+                      level pips and the status line; the HUD grows upward by (rows - 1) x ABIL_ROW px (18 px for
+                      three rows) and still ends at y1. Without it the HUD draws exactly as before.
     The names say which instrument is which. Low HP (<= 25 %) turns the bar red-orange and pulses it.
     Everything goes through label()/panel notes, so `python -m reelkit.safezone` checks it. Fade with alpha.
-    Returns dict(top, bars=[(xa, xb, y0, y1)] for left, right) so a project can hang extras on it."""
+    Returns dict(top, bars=[(xa, xb, y0, y1)] for left, right) so a project can hang extras on it (plus
+    rows=[[...], [...]], each row's text box, when `abilities` is given)."""
     x0 = SAFE[0] + 4 if x0 is None else x0
     y1 = SAFE[3] - 4 if y1 is None else y1
     row = 7                                     # scale-1 text height
     h = row + 3 + bar_h + 3 + row
+    if abilities is not None:
+        n_rows = max(1, max(len(abilities[0]), len(abilities[1])))
+        h += (n_rows - 1) * ABIL_ROW
     y0 = y1 - h
     x1 = safe_x1(y0, y1) - 4 if x1 is None else x1           # stays left of the app's button column
     under = img.copy() if alpha < 0.999 else None
@@ -476,6 +574,7 @@ def fight_hud(img, left, right, x0=None, x1=None, y1=None, alpha=1.0, ink=INK, b
     mid = (x0 + x1) / 2
     gap = cw + 8 if center else 6
     bars = []
+    rows_out = []
     yb0 = y0 + row + 3
     yb1 = yb0 + bar_h
     for side, F in ((0, left), (1, right)):
@@ -529,9 +628,13 @@ def fight_hud(img, left, right, x0=None, x1=None, y1=None, alpha=1.0, ink=INK, b
         else:
             label(img, num, xa, y0, (255, 240, 214) if not ko else (255, 120, 96), 1)
             label(img, F['name'], xb - (len(F['name']) * ADV - 1), y0, tcol, 1)
+        yp = yb1 + 3
+        if abilities is not None:                     # #36: the ability list replaces the level pips + status line
+            rows_out.append(_ability_rows(img, abilities[side], side, xa, xb, yp, col))
+            bars.append((xa, xb, yb0, yb1))
+            continue
         # level pips + status under the bar
         lv, mx = int(F.get('level', 1)), int(F.get('max_level', 3))
-        yp = yb1 + 3
         pw = 2 * ADV + 1 + mx * 5
         px = xa if side == 0 else xb - pw
         label(img, 'LV', px, yp, (176, 176, 200), 1)
@@ -554,6 +657,8 @@ def fight_hud(img, left, right, x0=None, x1=None, y1=None, alpha=1.0, ink=INK, b
         label(img, center, int(round(mid - cw / 2)), yb0 - 1, (232, 220, 180), 1)
     if under is not None:
         img[:] = (under * (1 - alpha) + img * alpha).astype(np.uint8)
+    if abilities is not None:
+        return dict(top=by0, bars=bars, rows=rows_out)
     return dict(top=by0, bars=bars)
 
 
