@@ -1046,6 +1046,12 @@
 - v3 seed: the search re-run with the fight at 2 bars (rules frozen) ranked seed 237 first (6 fits in 999); old caches
   (1-bar runs) moved aside first so `sim.load` couldn't return a stale run. Flash: the doors pair is the one counted
   flash (worst 1 / s), as #30. Render 17 min.
+- v4 (HUD ability list, series rule Oct 25; the user asked for #35's re-render): #36's `fight_hud(abilities=...)` with
+  #36's row builder (same hold conventions, so the list behaves the same in every episode). Measured the overlap first
+  (screen extents of balls, pipe tops, ring corners over the whole video): the HUD top moved 466 -> 448 and cut across
+  the front corner post (444-450) while the fight itself stayed above 438, so a small 8 px camera nudge (SY 288 -> 280)
+  was enough; the back post top lands at 122, just under the one-line captions (100-121). Pearl (near-white) unlocked
+  rows still read apart from the grey locked ones. Same audio.wav (no events or captions changed). Render 21 min.
 - Feedback: (pending)
 
 ## BALLFIGHT #7: Ukulele vs Acoustic Guitar (`projects/ballfight_ukulele_vs_acoustic`)
