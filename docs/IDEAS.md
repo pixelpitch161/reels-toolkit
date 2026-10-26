@@ -1726,8 +1726,25 @@ crossovers and must not change their fights (#27 seed 88 and #28 seed 568 replay
 | FLUTE (#32) | **SNAKE CHARMER**: a silver cobra rises from a woven basket the flute drops where it stands (up to 2 baskets); the cobras sway to the melody and strike on the beat at anything in reach (strike reach + speed) | Original charmer-style melody in the episode's key (not the cliché tune); a hiss-click on each strike | FLUTTER TONGUE (`haste`: cobras strike twice as fast) | SNAKE DANCE (cobras leave the baskets and slither after the enemy for a bar) | PICCOLO (`wave`: piercing ring-wide note; glass-crack marks) |
 | UKULELE (#33) | **SURF'S UP**: each strum raises a rolling low-poly wave that the uke rides across the ring, crashing into the enemy and pushing it into the ropes (wave height) | Strum + wave crash | CHUNK (`shockwave`: a splash ring) | SPEED STRUM (`haste`: waves twice as often) | UKE-NADO (now a waterspout sweeping the ring) |
 | ACOUSTIC (#33) | **SIX-STRING RAKE**: a giant strum sweeps six glowing parallel string lines across the ring in front of it, alternating down / up strokes, leaving six-line claw marks on the canvas (rake length) | The audio strum direction matches the stroke | CAPO (`haste`: a capo clamps on, strums twice as fast) | FINGERPICK (single strings flick out like whips, one per note) | BIG STRUM (all six strings sweep the whole ring) |
-| HORN (#34) | **THE HUNT**: the horn call brands the enemy with a copper target mark; ghostly copper hounds pour out of the bell and chase it as a pack, biting on contact (+1 hound, max 5) | A horn call per hound released; bites on the beat | STOPPED HORN (`shield`: hand in the bell, hounds circle to guard) | HORN RIP (`haste`: the pack sprints) | TALLY-HO (the whole pack charges across the ring in one wave) |
+| HORN (#34) | ~~THE HUNT~~ replaced Oct 25 (see "HORN v3" below) | | | | | |
 
+- **HORN v3 (user, Oct 25; replaces THE HUNT):** "The french horn summoning dogs doesn't really make sense." From a list
+  of five, the user chose **B. ECHO CALL with C's FINAL FLICK**:
+  - **Signature ECHO CALL:** a round, mellow horn blast bursts around the ball on the beat (short-range ring hit).
+    Translucent copper **echo ghosts** trail behind along the horn's path (where it was 1, 2, 3, 4 beats ago), and each
+    ghost repeats the blast one beat after the one before, like a horn call echoing across a valley. **+1 echo ghost
+    per landed hit (max 4).** The attack is literally a delay effect: the call plus quieter, darker delayed repeats.
+  - **LV2 STOPPED HORN** (`shield`: a copper hand plugs the bell; no hounds any more) · **LV3 HORN RIP** (the echoes
+    come back faster: half-beat spacing, with a rip up the harmonic series) · **below 25 HP FINAL FLICK** (a giant white
+    glove bursts out of the bell, winds up for a beat and flicks the enemy across the ring; extra damage if it hits the
+    ropes within ~0.9 s, like the tuba's spit).
+  - Look: copper ghosts fade with age (newest brightest), each echo blast a thinner copper ring with heat shimmer
+    (`reelkit.fx`); the glove is a clean low-poly cartoon glove, copper-lit.
+  - New engine kinds (additive, own commits): `echo` weapon (position history + delayed repeats), `flick` ability.
+    THE HUNT's `pack` kind stays in the engine so #34 replays identically.
+  - **Applies at the horn's next fight.** #34 (Trombone vs Horn) is not re-rendered (the user is avoiding re-renders);
+    the roster entry is updated by the next episode's session that uses the HORN, re-tuned within that episode's
+    crossover handicap rules.
 - **Fairness:** BAG INFLATE changes the bagpipes' size and mass as part of the move; the tuning step (40–60 % wins)
   covers it. The turntables' scratch never moves its own ball. All honest simulation rules, never edits.
 - **New kinds this needs** (names are suggestions): `combo`, `flail` (strap physics + wrap), `inflate` (radius / mass
