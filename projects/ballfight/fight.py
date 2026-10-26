@@ -24,6 +24,8 @@ volley, `curve_grow` / `curve_max` (deg/s: the turn rate grows per landed volley
 enemy it hits moves at `mult` x speed for `dur` s).
 #29 v3 (opt-in): weapon kinds `combo` (three piston punches) and `flail` (strap flail that wraps the enemy), and an
 ability kind `beam` (a charged giant blast through the beam machinery, e.g. HIGH C).
+#36 (opt-in, crossovers): `Rules(dmg_side=(a, b))` scales the damage each fighter deals (left, right) on top of the
+shared `dmg_scale`: the only per-episode lever when two roster fighters meet (fighters always fight as built).
 #30 v2 (opt-in): weapon kinds `inflate` (the ball swells: per-ball radius / mass / speed, then a zig-zag balloon flight;
 contact damage) and `bite` (jaws open on the grid and snap a 16th-grid later), and an ability kind `clamp` (a ring-wide
 bite after a telegraph).
@@ -188,6 +190,9 @@ class Fight:
             self.ev('block', vic, att, x, y, kind)
             return False
         d = dmg * self.R.dmg_scale
+        hc = getattr(self.R, 'dmg_side', None)     # opt-in (#36, crossovers): per-fighter damage handicap
+        if hc is not None:
+            d *= hc[att]
         V.hp -= d
         A_ = self.balls[att]
         A_.dealt += d
