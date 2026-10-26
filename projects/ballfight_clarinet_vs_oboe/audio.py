@@ -52,11 +52,26 @@ def q16(t):
     return round(t / S16) * S16
 
 
+M64 = (1 << 64) - 1
+
+
 def h01(*xs):
-    v = 0
+    """deterministic hash in [0, 1) (thinning decisions are part of the score, not random each run): a splitmix64
+    mixer, so neighbouring slots get unrelated values (#36's linear hash crept up slowly across consecutive slots, so a
+    hurt fighter's whole run of notes fell under the thinning threshold together and the line went silent)"""
+    z = 0x9E3779B97F4A7C15
     for x in xs:
-        v = (v * 1000003 + int(x * 1000) + 7) % 2147483647
-    return ((v * 48271) % 2147483647) / 2147483647.0
+        z = (z ^ (int(round(x * 1000)) & M64)) * 0xBF58476D1CE4E5B9 & M64
+        z = (z + 0x9E3779B97F4A7C15) & M64
+        z = ((z ^ (z >> 30)) * 0xBF58476D1CE4E5B9) & M64
+        z = ((z ^ (z >> 27)) * 0x94D049BB133111EB) & M64
+        z ^= z >> 31
+    return z / float(1 << 64)
+
+
+def thin(slot, key, hp, prev_dropped):
+    """drop this note? (the hurt fighter's line thins: up to 30 % of its notes at low HP, never two in a row)"""
+    return not prev_dropped and h01(slot, key) < 0.30 * (1 - hp) ** 1.6
 
 
 # ---------------------------------------------------------------- the two fighters' voices (cached, level-matched)
@@ -376,6 +391,7 @@ def main():
     jt = [e[0] for e in jumps]
     rh_n = 0
     last_slot = None
+    dropped = False
     for j, e in enumerate(jumps):
         t, hit, kind = e[0], e[7], e[8]
         tq = q16(t)
@@ -392,7 +408,8 @@ def main():
             mix.place('fx', A.whoosh(0.18, 600, 7000), tq - 0.05, 0.06)
             continue
         hp = hp_at(KC, t) / 100.0
-        if h01(slot, 3) < 0.45 * (1 - hp) ** 1.6:            # sparse when hurt
+        dropped = thin(slot, 3, hp, dropped)                 # sparser when hurt (never two notes in a row)
+        if dropped:
             continue
         on_beat = slot % 4 == 0
         m = T.clarinet_at(tq)
@@ -410,6 +427,7 @@ def main():
         if hit:                                              # a landed cut: the twelfth above (the register key)
             mix.place('clarinet', clar_note(m + 19, 0.09, 0.85, t)[0], tq + 0.03, 0.26 * g, pan=-0.1)
             mix.place('fx', A.whoosh(0.10, 1500, 9000), tq - 0.02, 0.05)
+    o_dropped = False
     for e in EV:
         t, kind = e[0], e[1]
         if t > T_KO + 0.01:
@@ -428,7 +446,8 @@ def main():
         elif kind == 'hit' and e[2] == KO_ and e[7] == 'sting':   # each sting: one of the oboe's running 8ths
             tq = q16(t)
             hp = hp_at(KO_, t) / 100.0
-            if h01(round(tq / S16), 11) < 0.4 * (1 - hp) ** 1.6:
+            o_dropped = thin(round(tq / S16), 11, hp, o_dropped)
+            if o_dropped:
                 continue
             m = T.oboe_8th_at(tq)
             sig, g, _ = oboe_note(m, 0.13, 0.78, t)

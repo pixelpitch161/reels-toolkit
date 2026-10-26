@@ -1266,5 +1266,11 @@
   levels run passed (spread 4.8 dB); trimming the title tutti and thickening bars 34-35 brought it to 4.3 dB.
 - Checks: levels PASS; band check +7..+12 dB; safe zone OK; CoC 0; loopcheck PASS render 0.5x / mp4 1.0x; flashcheck
   PASS (the doors). Render 7 min + 4 min mux.
+- Feedback (Oct 26): "in the last couple of seconds of the fight, the clarinet stops making noise". Cause: the HP-based
+  thinning (drop some of a hurt fighter's notes) used #36's `h01`, which is linear in its input: on consecutive slots
+  its values creep up by ~0.007, so all 15 of CLARION's 8th jumps after 48.9 s (clarinet at ~10 HP) fell under the
+  threshold and the line went silent; the oboe's stings had 1 s holes too. Fix: a splitmix64 hash + never two dropped
+  notes in a row (max 30 %). Re-muxed only. Lesson: check each fighter's stem has no silent stretch while it's acting
+  (0.5 s windows), not just the mix levels; #36 and older episodes use the same hash (posted, not re-rendered).
 - Feedback: (pending)
 
