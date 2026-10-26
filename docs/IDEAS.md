@@ -1634,8 +1634,9 @@ styles, ready for crossovers and a tournament bracket.
     Hidden while the VS title card is shut (as before). `reelkit.safezone` must pass.
   - Top captions unchanged: the first use of each ability still gets its impact caption (4 s rule); the list lights on
     every use, including the ones the 4 s rule keeps out of the captions.
-  - **Applies from the next newly drafted episode** (user, Oct 25: no re-renders of #27–#35; re-renders cost too many
-    tokens). The first new episode's session builds the HUD option below as part of its production.
+  - **Applies from the next newly drafted episode** (user, Oct 25: no re-renders of #27–#35 just for this; re-renders cost
+    too many tokens). Built by #36 (`b09f547`). Exceptions the user asked for: **#34** (re-rendered anyway for the new
+    HORN) and **#35** get the list in their re-renders.
   - Build: an optional `abilities` argument on `reelkit.ui.fight_hud` (per fighter: tag, name, state, glow 0..1), in
     its own small commit; without it the HUD draws exactly as before, so #27 / #28 and older renders don't change.
     Rough mock (Oct 25, ideas chat): bars + names on top, the three rows under each bar.
@@ -1742,9 +1743,9 @@ crossovers and must not change their fights (#27 seed 88 and #28 seed 568 replay
     (`reelkit.fx`); the glove is a clean low-poly cartoon glove, copper-lit.
   - New engine kinds (additive, own commits): `echo` weapon (position history + delayed repeats), `flick` ability.
     THE HUNT's `pack` kind stays in the engine so #34 replays identically.
-  - **Applies at the horn's next fight.** #34 (Trombone vs Horn) is not re-rendered (the user is avoiding re-renders);
-    the roster entry is updated by the next episode's session that uses the HORN, re-tuned within that episode's
-    crossover handicap rules.
+  - **#34 is re-rendered with it (user, Oct 25)**: the #34 session builds ECHO CALL / FINAL FLICK, updates the HORN
+    roster entry, re-tunes #34 (TROMBONE unchanged) and runs a new honest seed search (fight at 2 bars), together with
+    the HUD ability list.
 - **Fairness:** BAG INFLATE changes the bagpipes' size and mass as part of the move; the tuning step (40–60 % wins)
   covers it. The turntables' scratch never moves its own ball. All honest simulation rules, never edits.
 - **New kinds this needs** (names are suggestions): `combo`, `flail` (strap physics + wrap), `inflate` (radius / mass
