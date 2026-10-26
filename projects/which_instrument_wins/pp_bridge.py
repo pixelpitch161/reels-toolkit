@@ -49,6 +49,7 @@ EXTRA = [
     ('TURNTABLES', 'turntables60_lowpoly', None, (50, 74), 0, 1.0),    # #31 BALLFIGHT: the modern deck (organ stabs; midi < 12 = scratches)
     ('SYNTH', 'synth60_lowpoly', None, (57, 81), 0, 1.0),              # #31 BALLFIGHT: the modern poly synth
     ('ORGAN', 'organ60_lowpoly', 'sulp', (36, 84), 0, 1.0),            # #35 BALLFIGHT: Saint-Sulpice case + reeds
+    ('OBOE', 'oboe_lowpoly', 'ball', (58, 91), 0, 1.0),                # #37 BALLFIGHT: modern oboe (radii x1.6 for sprites) + double-reed voice
 ]
 DRUM_KEYS = (36, 38, 41, 45, 48, 49)    # kick, snare, floor / low / high tom, crash
 _MODS = {}
