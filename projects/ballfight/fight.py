@@ -29,6 +29,8 @@ shared `dmg_scale`: the only per-episode lever when two roster fighters meet (fi
 #30 v2 (opt-in): weapon kinds `inflate` (the ball swells: per-ball radius / mass / speed, then a zig-zag balloon flight;
 contact damage) and `bite` (jaws open on the grid and snap a 16th-grid later), and an ability kind `clamp` (a ring-wide
 bite after a telegraph).
+#34 v5 (opt-in): weapon kind `echo` (ECHO CALL: a blast ring on the grid, repeated by echo ghosts that trail along the
+ball's own past path, one spacing apart; recorded as ECHO_G / ECHO_N / ECHO_R).
 The run records every frame (30 fps) for the renderer and every event (hits, blocks, parries, ropes, volleys,
 abilities, level-ups, the K.O.) for the soundtrack and the captions. Seeded: same seed, same fight."""
 import math
@@ -1967,6 +1969,92 @@ class Fight:
                 self.pack_charges.remove(C)
                 self.ev('pack_charge_end', k)
 
+    # ------------------------------------------------------------------ #34 v5: echo call (opt-in weapon kind 'echo')
+    # On its grid (`every` beats) the ball sounds a round blast around itself (a short-range ring: reach `blade_len`
+    # beyond the surface, from `base`). Up to `n_max` echo ghosts trail behind along the ball's own past path, ghost j
+    # where the ball was j spacings ago (spacing = one beat; haste divides it: HORN RIP's half-beat echoes), and ghost j
+    # repeats each call j spacings after it, from where it is (= where the call was sounded): a delay effect in space.
+    # Each repeat is `decay` x the one before (damage + knock) and reaches `echo_reach` x as far. Every landed blast (the
+    # call or an echo) adds `grow` ghosts (n0 -> n_max); `reach_grow` (default 0) lengthens the reach, up to `max_reach`.
+    EMAX = 4
+
+    def echo_setup(self, k):
+        B = self.balls[k]
+        B.n_echo = float(B.w.get('n0', 1))
+        B.echo_hist = [B.p.copy()]                   # the ball's position every substep (newest last), trimmed
+        B.echo_sp = self.R.beat                      # the ghosts' spacing along the path (s), eased toward beat / haste
+        B.echo_due = []                              # pending repeats: (16th index, ghost j, call id)
+        B.echo_calls = 0
+        if not hasattr(self, 'echoes'):
+            self.echoes = []                         # live blast rings: dict(owner, c, r, rmax, speed, dmg, knock, j, ...)
+
+    def echo_pos(self, B, lag):
+        """where ball B was `lag` s ago (the history holds one sample per substep; before the fight: its start)"""
+        H = B.echo_hist
+        m = max(0.0, lag) / self.R.DT
+        i = int(m)
+        if i >= len(H) - 1:
+            return H[0].copy()
+        a, b = H[-1 - i], H[-2 - i]
+        return a + (b - a) * (m - i)
+
+    def _echo_blast(self, k, c, j, call):
+        B = self.balls[k]
+        w = B.w
+        f = w.get('decay', 0.8) ** j
+        r0 = self.R.R if j == 0 else self.R.R * 0.5
+        rmax = self.R.R + B.blade_len * (w.get('echo_reach', 1.0) if j else 1.0)
+        self.echoes.append(dict(owner=k, c=c, r=r0, rmax=rmax, speed=w['speed'], dmg=w['dmg'] * f, knock=w['knock'] * f,
+                                j=j, call=call, t0=self.t, t_end=self.t + (rmax - r0) / w['speed'] + w.get('linger', 0.25),
+                                hit=False))
+        self.ev('echo', k, j, call, float(c[0]), float(c[1]), float(rmax))
+
+    def echo_tick(self, k, k16):
+        """the echo weapon's 16th tick: due repeats fire from their ghosts, and the call sounds on the weapon's grid"""
+        B = self.balls[k]
+        due = [d for d in B.echo_due if d[0] <= k16]
+        if due:
+            B.echo_due = [d for d in B.echo_due if d[0] > k16]
+            for _, j, call in due:
+                self._echo_blast(k, self.echo_pos(B, j * B.echo_sp), j, call)
+        if k16 % max(1, int(round(4 * B.w['every']))) == 0:
+            B.echo_calls += 1
+            self._echo_blast(k, B.p.copy(), 0, B.echo_calls)
+            n = int(B.n_echo + 1e-9)
+            sp16 = max(1, int(round(4 / self.ab_mult(k))))         # haste: the echoes come back faster
+            for j in range(1, n + 1):
+                B.echo_due.append((k16 + j * sp16, j, B.echo_calls))
+            self.ev('echo_call', k, B.echo_calls, n, sp16)
+
+    def echo_step(self, k, dt):
+        B, O = self.balls[k], self.balls[1 - k]
+        w = B.w
+        R = self.R.R
+        B.echo_hist.append(B.p.copy())
+        L = int(self.EMAX * self.R.beat * 1.1 / self.R.DT) + 4
+        if len(B.echo_hist) > 2 * L:
+            B.echo_hist = B.echo_hist[-L:]
+        tgt = self.R.beat / self.ab_mult(k)
+        B.echo_sp += (tgt - B.echo_sp) * min(1.0, dt / w.get('ease', 0.2))
+        for E in [E for E in self.echoes if E['owner'] == k]:
+            if E['r'] < E['rmax']:
+                E['r'] = min(E['rmax'], E['r'] + E['speed'] * dt)
+                rel = O.p - E['c']
+                dist = float(np.hypot(*rel))
+                if not E['hit'] and E['r'] >= dist - R:             # the ring reaches the enemy's near surface
+                    E['hit'] = True
+                    u = rel / dist if dist > 1e-6 else O.v / (np.linalg.norm(O.v) + 1e-12)
+                    hx, hy = (E['c'] + u * max(0.0, dist - R)).tolist()
+                    n0 = int(B.n_echo + 1e-9)
+                    landed = self.damage(k, 1 - k, E['dmg'], 'echo', hx, hy, E['j'])
+                    self.knock(1 - k, u, E['knock'])
+                    if landed:
+                        B.n_echo = min(w['n_max'], B.n_echo + w.get('grow', 1.0))
+                        B.blade_len = min(w.get('max_reach', B.blade_len), B.blade_len + w.get('reach_grow', 0.0))
+                        if int(B.n_echo + 1e-9) > n0:
+                            self.ev('echo_grow', k, int(B.n_echo + 1e-9))
+        self.echoes = [E for E in self.echoes if E['owner'] != k or self.t < E['t_end']]
+
     def ab_dur(self, ab):
         """an ability's duration in s: `dur` (s) or `dur_beats` (beats at this episode's tempo)"""
         return ab['dur'] if 'dur' in ab else ab['dur_beats'] * self.R.beat
@@ -2283,6 +2371,17 @@ class Fight:
             rec['PACKN'].append([getattr(B0, 'n_pack', 0.0), getattr(B1, 'n_pack', 0.0)])
             rec['CHG'].append([(C['owner'], float(C['o'][0]), float(C['o'][1]), float(C['u'][0]), float(C['u'][1]), C['s'],
                                 C['width'], C['t0']) for C in self.pack_charges])
+        if 'ECHO_G' in rec:                                 # #34 v5, only recorded when a fighter uses the 'echo' kind
+            G = np.full((2, self.EMAX, 3), np.nan)
+            for j, Bj in enumerate((B0, B1)):
+                if hasattr(Bj, 'echo_hist'):
+                    for i in range(self.EMAX):              # every slot (the renderer fades the inactive ones)
+                        G[j, i, :2] = self.echo_pos(Bj, (i + 1) * Bj.echo_sp)
+                        G[j, i, 2] = (i + 1) * Bj.echo_sp
+            rec['ECHO_G'].append(G)
+            rec['ECHO_N'].append([getattr(B0, 'n_echo', 0.0), getattr(B1, 'n_echo', 0.0)])
+            rec['ECHO_R'].append([(E['owner'], float(E['c'][0]), float(E['c'][1]), E['r'], E['rmax'], E['j'], E['t0'],
+                                   E['call'], int(E['hit'])) for E in self.echoes])
 
     # ------------------------------------------------------------------ run
     def run(self):
@@ -2337,6 +2436,12 @@ class Fight:
         n16p = k16_0
         if rec is not None and packers:
             rec['HOUNDS'], rec['MARK'], rec['PACKN'], rec['CHG'] = [], [], [], []
+        echoers = [k for k, B in enumerate(self.balls) if B.w['kind'] == 'echo']      # #34 v5 (opt-in)
+        for k in echoers:
+            self.echo_setup(k)
+        n16e = k16_0
+        if rec is not None and echoers:
+            rec['ECHO_G'], rec['ECHO_N'], rec['ECHO_R'] = [], [], []
         self.t = R.t_fight
         f0 = int(round(R.t_fight * R.FPS))
         step = 0
@@ -2424,6 +2529,11 @@ class Fight:
                 for k in packers:
                     if k16p % max(1, int(round(4 * self.balls[k].w['every']))) == 0:
                         self.pack_call(k)
+            if echoers and self.t + 1e-9 >= n16e * s16:           # #34 v5: calls + their repeats on the 16th grid
+                k16e = n16e - k16_0
+                n16e += 1
+                for k in echoers:
+                    self.echo_tick(k, k16e)
             for k, B in enumerate(self.balls):
                 B.shield = max(0.0, B.shield - dt)
                 B.haste = max(0.0, B.haste - dt)
@@ -2461,6 +2571,8 @@ class Fight:
             self.effects_step(dt)
             for k in packers:                                    # #34 v2: the hounds
                 self.pack_step(k, dt, pack_bite)
+            for k in echoers:                                    # #34 v5: the path history, the blast rings
+                self.echo_step(k, dt)
             if dc:
                 self.dash_cone_step(dt)                          # (#33)
             if dc or self.whips or self.sweeps or self.spouts:
