@@ -3,8 +3,12 @@ so later episodes and crossovers can import them:
 
     style 'slide'   the trombone's slide shot out like a lance: two brass tubes, braces, the crook (U-bend) at the tip
     style 'arrow'   a hunting-call arrow: copper head, pale shaft, fletching in the fighter's colour (+ a curving trail)
-    'bellrim'       the STOPPED HORN shield: a copper bell rim around the ball (the hand-stopped bell), sweeping glint
+    'bellrim'       (v1-v4) the STOPPED HORN shield: a copper bell rim around the ball (the hand-stopped bell)
     'giant bell'    PEDAL TONE: a giant brass bell, mouth down, stomping the predicted spot (the slam)
+    v5 (HORN v3)    ECHO CALL ghosts (draw_ghost), blast rings (ring_line, echo_band), the past path (path_line); the
+                    STOPPED HORN hand (draw_hand: an open copper palm); FINAL FLICK's giant white glove on a copper spring
+                    (draw_glove, glove_shadow_polys) and its wind-up lane (aim_lane). v4 (THE HUNT hounds) kept in
+                    styles_v4_backup.py.
 
 Everything works in the ring frame (sx, sz) + height, through scene.to_world, like #27's renderer."""
 import math
@@ -226,103 +230,236 @@ def draw_giant_bell(fr, cam, L, shade, cx, cz, rad, h, col, nseg=18):
     fr.poly(cam, Q, np.clip(shade(L, np.array([[0.3, 0.6, -0.7]]), Q.mean(0)[None], base, rimk=0.6)[0], 0, 255))
 
 
-# ---------------------------------------------------------------- v2 THE HUNT: ghost hounds, the target mark, the charge
-# side-profile hound (facing +x, y up, ground at y = 0; ~1.25 units nose to tail), drawn upright and facing its running
-# direction on screen (a 2.5D sprite): reads as a hound at any heading, unlike a top-down silhouette
-HOUND_OUTLINE = [(-0.50, 0.50), (-0.46, 0.60), (-0.10, 0.62), (0.20, 0.62), (0.30, 0.70), (0.40, 0.80), (0.50, 0.80),
-                 (0.70, 0.72), (0.72, 0.66), (0.52, 0.62), (0.40, 0.58), (0.32, 0.42), (0.14, 0.34), (-0.18, 0.40),
-                 (-0.40, 0.40)]                                   # long and low: deep chest, tucked belly, long snout
-HOUND_EAR = [(0.42, 0.79), (0.36, 0.60), (0.45, 0.62), (0.49, 0.76)]          # a drop ear (hounds' ears hang)
-HOUND_TAIL = [(-0.46, 0.58), (-0.62, 0.72), (-0.68, 0.85), (-0.64, 0.73), (-0.48, 0.52)]   # sabre tail, carried up
-GHOST = np.array([255, 236, 214])
+# ---------------------------------------------------------------- v5 HORN v3: ECHO CALL, the STOPPED HORN hand, FINAL FLICK
+GHOST = np.array([255, 226, 196])
+INK_ = np.array([34, 22, 34])
 
 
-def hound_parts(sx, sy, px, flip, ph, gait=1.0):
-    """screen polygons [(pts, part)] of one hound anchored at its feet (sx, sy), `px` screen pixels per unit"""
-    f = -1.0 if flip else 1.0
-    bob = 0.03 * math.sin(2 * ph) * gait
-    P = lambda pts, dy=0.0: [(sx + f * x * px, sy - (y + bob + dy) * px) for x, y in pts]
-    parts = []
-    for lx, phase, far in ((0.22, 0.0, True), (-0.34, math.pi, True), (0.26, 0.5, False), (-0.30, math.pi + 0.5, False)):
-        a = 0.6 * math.sin(ph + phase) * gait                      # gallop: front pair and back pair swing out of phase
-        top = (lx, 0.42)
-        foot = (lx + 0.38 * math.sin(a), 0.42 - 0.38 * math.cos(a))
-        w = 0.05
-        parts.append((P([(top[0] - w, top[1]), (top[0] + w, top[1]), (foot[0] + w * 0.7, foot[1]),
-                         (foot[0] - w * 0.7, foot[1])]), 'farleg' if far else 'leg'))
-    parts.sort(key=lambda q: q[1] != 'farleg')
-    wag = 0.04 * math.sin(ph * 0.5)
-    parts.insert(2, (P([(x, y + (wag if y > 0.7 else 0)) for x, y in HOUND_TAIL]), 'tail'))
-    parts.append((P(HOUND_OUTLINE), 'body'))
-    parts.append((P(HOUND_EAR), 'ear'))
-    return parts, P([(0.55, 0.73)])[0]
-
-
-def draw_hound(arr, cam, x, z, a, t, col, alpha=1.0, seed=0, gait=1.0, glow=0.0, size=0.74, y=0.05):
-    """a ghostly copper hound running in direction `a` (ring frame): glowing copper body with a bright rim, darker far
-    legs, one glowing eye; alpha < 1 for the afterimages"""
+def draw_ghost(arr, s, rp, spr, col, alpha, flash=0.0):
+    """an echo ghost: a translucent copper copy of the horn's ball (screen centre s, radius rp px) with the horn inside
+    as a copper silhouette; `flash` (0..1) when it repeats its blast. Blends into arr (float, H x W x 3)"""
+    if alpha <= 0.01:
+        return
+    ri = int(math.ceil(rp)) + 2
+    x0, y0 = int(round(s[0])) - ri, int(round(s[1])) - ri
+    xa, ya, xb, yb = max(0, x0), max(0, y0), min(W, x0 + 2 * ri + 1), min(H, y0 + 2 * ri + 1)
+    if xb <= xa or yb <= ya:
+        return
+    yy, xx = np.mgrid[ya:yb, xa:xb].astype(np.float32)
+    d = np.hypot(xx + 0.5 - s[0], yy + 0.5 - s[1]) / rp
     col = np.asarray(col, float)
-    w0 = S.to_world(x, z, y)
-    d = S.to_world(x + 0.3 * math.cos(a), z + 0.3 * math.sin(a), y)
-    s0, s1 = cam.wp(np.array([w0, d]))
-    px = size * cam.f / max(1e-3, cam.depth(w0[None])[0])
-    ph = t * 13.0 * gait + seed * 1.9
-    parts, eye = hound_parts(s0[0], s0[1], px, s1[0] < s0[0], ph, gait)
-    body = np.clip(col * 0.9 + 45 + 40 * glow, 0, 255)
-    farc = np.clip(col * 0.55 + 10, 0, 255)
-    for pts, part in parts:
-        c = farc if part == 'farleg' else body
-        k = alpha * (0.75 if part == 'farleg' else 0.92)
-        m = mask_of([pts])
-        arr += (c[None, None] - arr) * (m * k)[..., None]
-    if alpha > 0.6:                                               # bright rim + the glowing eye on the hound itself
-        im = Image.new('L', (W, H), 0)
-        dr = ImageDraw.Draw(im)
-        for pts, part in parts:
-            if part in ('body', 'tail', 'ear', 'leg'):
-                dr.line([tuple(q) for q in pts] + [tuple(pts[0])], fill=255, width=1)
-        mk = np.asarray(im, np.float32) / 255.0
-        rim = np.clip(col * 0.5 + GHOST * 0.6, 0, 255)
-        arr += (rim[None, None] - arr) * (mk * 0.75 * alpha)[..., None]
-        xi, yi = int(round(eye[0])), int(round(eye[1]))
-        if 0 <= xi < W and 0 <= yi < H:
-            arr[yi, xi] = np.array([255, 250, 210])
+    body = np.clip(1 - d, 0, 1) ** 0.35 * (d <= 1)
+    rim = np.clip(1 - np.abs(d - 0.96) / 0.09, 0, 1)
+    tint = col * 0.75 + GHOST * 0.25
+    reg = arr[ya:yb, xa:xb]
+    a_body = (0.42 + 0.25 * flash) * alpha * body
+    reg += (tint[None, None] * (1.0 + 0.4 * flash) - reg) * np.clip(a_body, 0, 1)[..., None]
+    a_rim = (0.85 + 0.15 * flash) * alpha * rim
+    reg += (np.clip(col * 1.15 + 40 + 80 * flash, 0, 255)[None, None] - reg) * np.clip(a_rim, 0, 1)[..., None]
+    if spr is not None:                                          # the horn inside, as a copper silhouette
+        sn = spr.shape[0]
+        sx0, sy0 = int(round(s[0])) - sn // 2, int(round(s[1])) - sn // 2
+        ax0, ay0, ax1, ay1 = max(0, sx0), max(0, sy0), min(W, sx0 + sn), min(H, sy0 + sn)
+        if ax1 > ax0 and ay1 > ay0:
+            sub = spr[ay0 - sy0:ay1 - sy0, ax0 - sx0:ax1 - sx0]
+            m = (sub[..., 3] > 0).astype(np.float32)
+            lum = sub[..., :3].astype(np.float32).mean(-1, keepdims=True) / 255.0
+            c = np.clip(col * (0.55 + 0.9 * lum) + 30 * flash, 0, 255)
+            rg = arr[ay0:ay1, ax0:ax1]
+            rg += (c - rg) * (m * 0.8 * alpha)[..., None]
 
 
-def target_decal(Ic, sxp, szp, cx, cz, t, k, col, brand=0.0, bayer=None):
-    """the copper target mark under the branded fighter: two rings + four ticks, slowly turning; `brand` (0..1) flares
-    it right after a horn call"""
-    rd = np.hypot(sxp - cx, szp - cz)
-    ang = np.arctan2(szp - cz, sxp - cx) - t * 0.9
-    r1, r2 = R * 1.35 + 0.12 * brand, R * 1.75 + 0.2 * brand
-    band = np.clip(1 - np.abs(rd - r1) / 0.035, 0, 1) + 0.7 * np.clip(1 - np.abs(rd - r2) / 0.03, 0, 1)
-    tick = (np.abs(((ang * 2 / math.pi) % 1) - 0.5) > 0.47) & (rd > r1) & (rd < r2 + 0.12)
-    v = (band + tick * 0.9) * k * (0.55 + 0.6 * brand)
-    if bayer is not None:
-        v = np.floor(v * 3 + bayer * 0.9) / 3
-    Ic += v[:, None] * (np.asarray(col) / 255.0 * 1.3 + 0.15)[None]
-
-
-def draw_sigil(arr, cx, cy, r, col, k=1.0):
-    """a small copper crosshair floating over the branded ball (screen space)"""
+def ring_line(arr, cam, cx, cz, r, y, col, alpha, width=1, n=48):
+    """a blast ring at height y (ring frame), drawn as a projected circle"""
+    if alpha <= 0.01 or r <= 0.02:
+        return
+    a = np.linspace(0, 2 * math.pi, n + 1)
+    P = S.to_world(cx + r * np.cos(a), cz + r * np.sin(a), y)
+    sp = cam.wp(P)
     im = Image.new('L', (W, H), 0)
-    d = ImageDraw.Draw(im)
-    d.ellipse([cx - r, cy - r, cx + r, cy + r], outline=255, width=1)
-    for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
-        d.line([cx + dx * (r - 2), cy + dy * (r - 2), cx + dx * (r + 3), cy + dy * (r + 3)], fill=255, width=1)
-    mk = np.asarray(im, np.float32) / 255.0
-    c = np.clip(np.asarray(col) * 0.8 + 70, 0, 255)
-    arr += (c[None, None] - arr) * (mk * 0.95 * k)[..., None]
-    return arr
+    ImageDraw.Draw(im).line([tuple(q) for q in sp], fill=255, width=width)
+    m = np.asarray(im, np.float32) / 255.0
+    arr += (np.clip(np.asarray(col, float), 0, 255)[None, None] - arr) * (m * min(1.0, alpha))[..., None]
 
 
-def charge_band(Ic, sxp, szp, o, u, s, width, k, col, bayer=None):
-    """TALLY-HO: the dust wake behind the charging line of hounds, a band on the canvas that thins out behind the front"""
-    rx, rz = sxp - o[0], szp - o[1]
-    along = rx * u[0] + rz * u[1]
-    lat = np.abs(-rx * u[1] + rz * u[0])
-    behind = s - along
-    v = np.clip(1 - behind / 1.6, 0, 1) * (behind > -0.1) * np.clip(1 - (lat - width / 2) / 0.3, 0, 1)
+def path_line(arr, cam, pts, col, alpha):
+    """the horn's past path on the canvas: points [(x, z, a)] (oldest first), a fading copper thread"""
+    if len(pts) < 2:
+        return
+    P = np.array([S.to_world(x, z, 0.012) for x, z, _ in pts])
+    sp = cam.wp(P)
+    im = Image.new('L', (W, H), 0)
+    dr = ImageDraw.Draw(im)
+    for j in range(len(pts) - 1):
+        v = int(255 * max(0.0, min(1.0, pts[j + 1][2])))
+        if v > 3:
+            dr.line([tuple(sp[j]), tuple(sp[j + 1])], fill=v, width=2)
+    m = np.asarray(im, np.float32) / 255.0
+    arr += (np.clip(np.asarray(col, float), 0, 255)[None, None] - arr) * (m * alpha)[..., None]
+
+
+# the STOPPED HORN hand: an open copper palm (screen space, x right, y down, 1 unit = the ball's radius), fingers up:
+# "talk to the hand", pressed into the bell
+HAND_PALM = [(-0.44, -0.10), (-0.40, 0.42), (-0.16, 0.62), (0.22, 0.60), (0.42, 0.36), (0.44, -0.12)]
+HAND_FINGERS = [(-0.33, -0.12, 0.17, 0.62), (-0.11, -0.12, 0.18, 0.78), (0.11, -0.12, 0.18, 0.72), (0.32, -0.10, 0.15, 0.52)]
+HAND_THUMB = [(-0.42, 0.34), (-0.70, 0.06), (-0.80, -0.08), (-0.68, -0.14), (-0.44, 0.08)]
+
+
+def _finger(cx, base_y, w, ln, lean=0.0):
+    """a finger as a rounded column (screen space, up = -y), leaning `lean` x its length sideways at the tip"""
+    pts = []
+    for a in np.linspace(0, math.pi, 7):
+        pts.append((cx + lean * ln - w / 2 * math.cos(a), base_y - ln - w / 2 * math.sin(a) + w / 2))
+    return [(cx - w / 2, base_y)] + pts + [(cx + w / 2, base_y)]
+
+
+def draw_hand(arr, s, rp, col, k, flash=0.0, side=1.0):
+    """STOPPED HORN: an open copper palm at screen centre s (size from the ball's radius rp px), alpha k; `flash` on a
+    block; `side` (+-1) mirrors it (thumb toward the ball)"""
+    if k <= 0.01:
+        return
+    sc = rp * 1.05
+    col = np.asarray(col, float)
+    base = COPPER * 0.65 + col * 0.35
+    parts = []
+    tf = lambda pts: [(s[0] + side * x * sc, s[1] + y * sc) for x, y in pts]
+    parts.append((tf(HAND_THUMB), base * 0.86))
+    for j, (cx, by, w, ln) in enumerate(HAND_FINGERS):
+        lean = (j - 1.5) * 0.06
+        parts.append((tf(_finger(cx, by, w, ln, lean)), base * (1.04 if j % 2 else 0.95)))
+    parts.append((tf(HAND_PALM), base * 1.0))
+    im = Image.new('RGB', (W, H), (0, 0, 0))
+    mk = Image.new('L', (W, H), 0)
+    dr, dm = ImageDraw.Draw(im), ImageDraw.Draw(mk)
+    for pts, c in parts:
+        cc = tuple(int(v) for v in np.clip(c * (1 + 0.5 * flash) + 60 * flash, 0, 255))
+        dr.polygon(pts, fill=cc, outline=tuple(int(v) for v in INK_))
+        dm.polygon(pts, fill=255, outline=255)
+    hi = tuple(int(v) for v in np.clip(base * 1.5 + 60, 0, 255))        # a metal glint down the palm and the fingers
+    pal = tf([(-0.20, 0.42), (-0.24, 0.05)])
+    dr.line(pal, fill=hi, width=1)
+    for cx, by, w, ln in HAND_FINGERS[1:3]:
+        dr.line(tf([(cx - w * 0.2, by - 0.1), (cx - w * 0.2, by - ln * 0.8)]), fill=hi, width=1)
+    rgb = np.asarray(im, np.float32)
+    m = np.asarray(mk, np.float32)[..., None] / 255.0 * k
+    arr += (rgb - arr) * m
+
+
+# FINAL FLICK: a giant white cartoon glove on a copper spring (jack-in-the-box), flat on the plane of the balls' centres,
+# local frame u forward (toward the enemy), v left; origin = the middle of the back of the hand; 1 unit = 1 ring unit
+GLOVE_CUFF = [(-0.66, -0.17), (-0.62, -0.24), (-0.44, -0.22), (-0.40, -0.15), (-0.40, 0.15), (-0.44, 0.22), (-0.62, 0.24),
+              (-0.66, 0.17)]
+GLOVE_BACK = [(-0.42, -0.17), (-0.33, -0.26), (0.04, -0.27), (0.13, -0.20), (0.13, 0.20), (0.04, 0.27), (-0.33, 0.26),
+              (-0.42, 0.17)]
+GLOVE_KNUCKLES = [(-0.19, 0.10), (-0.065, 0.12), (0.065, 0.12), (0.19, 0.11)]      # (v, width): pinky .. index
+FLICKER = 1                                                      # the middle finger (index into GLOVE_KNUCKLES)
+WHITE = np.array([248, 246, 240])
+
+
+def _bump(u0, v, w, ln, n=7):
+    """a finger seen from above: a rounded strip from u0 forward by ln (width w)"""
+    pts = [(u0, v - w / 2)]
+    for a in np.linspace(-math.pi / 2, math.pi / 2, n):
+        pts.append((u0 + ln - w / 2 + w / 2 * math.cos(a), v + w / 2 * math.sin(a)))
+    pts.append((u0, v + w / 2))
+    return pts
+
+
+def glove_parts(pose):
+    """[(local pts, shade, kind)] back to front. pose 0 = cocked (the middle finger curled under the thumb), 1 = flicked
+    (the middle finger straight out)"""
+    out = [(GLOVE_CUFF, 0.86, 'cuff')]
+    for j, (v, w) in enumerate(GLOVE_KNUCKLES):
+        if j == FLICKER and pose > 0.5:
+            out.append((_bump(0.02, v, w * 0.95, 0.62), 0.97, 'finger'))
+        else:
+            out.append((_bump(0.02, v, w * 1.05, 0.21 if j != FLICKER else 0.18), 0.92, 'knuckle'))
+    out.append((GLOVE_BACK, 1.0, 'back'))
+    if pose > 0.5:                                               # the thumb relaxed at the side
+        out.append(([(-0.20, 0.22), (-0.02, 0.34), (0.08, 0.40), (0.14, 0.36), (0.06, 0.26), (-0.10, 0.16)], 0.9, 'thumb'))
+    else:                                                        # the thumb curled forward over the middle finger
+        out.append(([(-0.20, 0.22), (0.02, 0.24), (0.20, 0.10), (0.26, 0.00), (0.20, -0.06), (0.08, 0.02), (-0.10, 0.12)],
+                    0.9, 'thumb'))
+    return out
+
+
+def glove_world(p, aim, d, scale, pose, wob=0.0, y=R):
+    """world polygons [(Q (n, 3), shade, kind)] of the glove: origin at the ball p + aim * d, scaled, wobbling by `wob` rad"""
+    a = aim + wob
+    du = np.array([math.cos(a), math.sin(a)])
+    dv = np.array([-du[1], du[0]])
+    o = p + np.array([math.cos(aim), math.sin(aim)]) * d
+    out = []
+    for pts, sh, kind in glove_parts(pose):
+        Q = np.array([S.to_world(*(o + du * u * scale + dv * v * scale), y) for u, v in pts])
+        out.append((Q, sh, kind))
+    stitches = []
+    for v in (-0.10, 0.0, 0.10):                                 # the three stitch lines on the back of a cartoon glove
+        stitches.append(np.array([S.to_world(*(o + du * u * scale + dv * v * scale), y) for u in (-0.30, -0.04)]))
+    cuff_back = S.to_world(*(o + du * (-0.66) * scale), y)
+    return out, stitches, cuff_back
+
+
+def draw_glove(arr, cam, p, aim, d, scale, pose, col, k=1.0, wob=0.0, light=1.0, y=R):
+    """the glove + its copper spring from the ball's surface to the cuff; copper-lit (the horn's colour on the edges)"""
+    if k <= 0.01 or scale <= 0.02:
+        return
+    col = np.asarray(col, float)
+    parts, stitches, cuff_back = glove_world(p, aim, d, scale, pose, wob, y)
+    im = Image.fromarray(np.clip(arr, 0, 255).astype(np.uint8))
+    dr = ImageDraw.Draw(im)
+    u = np.array([math.cos(aim), math.sin(aim)])
+    nrm = np.array([-u[1], u[0]])
+    s0 = R * 0.85
+    s1 = d - 0.66 * scale
+    if s1 > s0 + 0.02:                                           # the spring: a copper zig-zag coil
+        ncoil = 9
+        pts = []
+        for j in range(2 * ncoil + 1):
+            q = p + u * (s0 + (s1 - s0) * j / (2 * ncoil)) + nrm * (0.11 * scale * (1 if j % 2 else -1) if 0 < j < 2 * ncoil else 0)
+            pts.append(S.to_world(q[0], q[1], y))
+        sp = cam.wp(np.array(pts))
+        cdk = tuple(int(v) for v in COPPER_DK)
+        chi = tuple(int(v) for v in np.clip(COPPER * 1.25 + 30, 0, 255))
+        dr.line([tuple(q) for q in sp], fill=cdk, width=4)
+        dr.line([tuple(q) for q in sp], fill=chi, width=2)
+    tint = WHITE * 0.86 + col * 0.14
+    for Q, sh, kind in parts:
+        sp = cam.wp(Q)
+        c = np.clip(tint * sh * light, 0, 255)
+        dr.polygon([tuple(q) for q in sp], fill=tuple(int(v) for v in c), outline=tuple(int(v) for v in INK_))
+    for St in stitches:
+        sp = cam.wp(St)
+        dr.line([tuple(q) for q in sp], fill=(176, 160, 160), width=1)
+    rim = tuple(int(v) for v in np.clip(col * 1.1 + 40, 0, 255))   # copper light on the edge facing the horn
+    back = parts[-2][0] if parts[-1][2] == 'thumb' else parts[-1][0]
+    sp = cam.wp(back)
+    dr.line([tuple(q) for q in sp[:3]], fill=rim, width=1)
+    new = np.asarray(im, np.float32)
+    arr += (new - arr) * k
+
+
+def glove_shadow_polys(p, aim, d, scale, pose, wob=0.0, y=R):
+    parts, _, _ = glove_world(p, aim, d, scale, pose, wob, y)
+    return [Q for Q, sh, kind in parts]
+
+
+def echo_band(Ic, sxp, szp, cx, cz, r, width, k, col, bayer=None):
+    """a blast ring's light on the canvas"""
+    rd = np.hypot(sxp - cx, szp - cz)
+    band = np.clip(1 - np.abs(rd - r) / width, 0, 1)
     if bayer is not None:
-        v = np.floor(v * 4 + bayer * 0.9) / 4
-    Ic += (v * 0.55 * k)[:, None] * (np.asarray(col) / 255.0 + 0.2)[None]
+        band = np.floor(band * 3 + bayer * 0.9) / 3
+    Ic += (band * k)[:, None] * (np.asarray(col) / 255.0 * 1.3 + 0.12)[None]
+
+
+def aim_lane(Ic, sxp, szp, p, aim, length, k, col, bayer=None, w=0.26):
+    """FINAL FLICK's wind-up: the line the glove will flick along, lit on the canvas"""
+    d_ = np.array([math.cos(aim), math.sin(aim)])
+    rx, rz = sxp - p[0], szp - p[1]
+    along = rx * d_[0] + rz * d_[1]
+    across = np.abs(-rx * d_[1] + rz * d_[0])
+    lane = np.clip(1 - across / w, 0, 1) * (along > R) * (along < R + length)
+    if bayer is not None:
+        lane = np.floor(lane * 3 + bayer * 0.9) / 3
+    Ic += (lane * k)[:, None] * (np.asarray(col) / 255.0 * 0.9 + 0.15)[None]

@@ -1,11 +1,17 @@
-"""#34 BALLFIGHT #8: Trombone vs French Horn - renderer, v3 (v2: the HORN hunts with a pack of ghost hounds, effects from
-reelkit.fx; v3: the shared VS title card on bar 0, the count-in on bar 1, FIGHT! on bar 2; v2 kept as render_v2_backup.py). #28's renderer, copied, with this pair's weapons and abilities; the weapon styles
+"""#34 BALLFIGHT #8: Trombone vs French Horn - renderer, v5 (HORN v3: ECHO CALL + FINAL FLICK, the HUD ability list;
+v4 = THE HUNT's hounds, kept as render_v4_backup.py / styles_v4_backup.py). v3: the shared VS title card on bar 0, the
+count-in on bar 1, FIGHT! on bar 2. #28's renderer, copied, with this pair's weapons and abilities; the weapon styles
 live in styles.py. v1 (curving arrows) is kept as render_v1_backup.py / styles_v1_backup.py.
+v5: the horn's echo ghosts (translucent copper copies of its ball on its own past path, newest brightest) and a fading
+copper thread along that path; every call a round blast ring around the ball, every echo a thinner copper ring around
+its ghost (canvas light + a raised ring + heat shimmer); STOPPED HORN = an open copper palm pressed into the bell;
+FINAL FLICK = a giant white cartoon glove bursting out on a copper spring, cocked for a beat (its lane lit on the
+canvas), then flicking the trombone across the ring (afterimages, a rope-hit burst).
 
 arena floor (per pixel: spill, corner lights) -> stands + crowd (phones, flashbulbs) -> ring skirt -> canvas (per pixel:
 the hard spot with real shadows of balls, the slide, arrows, posts and ropes; the fighters' corner lights; decals: the
-shockwaves, the TALLY-HO chevron wave, the slowed ball's wobble, the pedal bell's target) -> back ropes + posts ->
-fighters, slide lance, arrows + trails, bell-rim shield (painter) -> front ropes + posts -> effects (the giant bell,
+shockwaves, the echo rings, the slowed ball's wobble, the pedal bell's target, the flick lane) -> back ropes + posts ->
+fighters, echo ghosts, the glove, slide lance, arrows + trails, the STOPPED HORN hand (painter) -> front ropes + posts -> effects (the giant bell,
 sparks, shards) -> countdown -> locked DOF on the ring -> glows -> spot beam -> bloom -> grade -> scrim -> HP numbers,
 fight HUD, captions.
 
@@ -57,11 +63,12 @@ R = S.R_BALL
 HITSTOP = 0.35
 T_HS = T_KO + HITSTOP
 BLADE = [k for k in (0, 1) if CFG[k]['weapon']['kind'] == 'blade']       # the slide lance (thrust mode)
-PACK = [k for k in (0, 1) if CFG[k]['weapon']['kind'] == 'pack']         # THE HUNT (v2)
-HOUNDS = RUN.get('HOUNDS')
-MARK = RUN.get('MARK')
-CHG = RUN.get('CHG')
-CALL_T = {k: np.array([e[0] for e in EV if e[1] == 'call' and e[2] == k]) for k in PACK}
+ECHO = [k for k in (0, 1) if CFG[k]['weapon']['kind'] == 'echo']         # v5: ECHO CALL (HORN v3)
+FLICKERS = [k for k in (0, 1) if CFG[k]['abilities']['low']['kind'] == 'flick']    # v5: FINAL FLICK
+ECHO_G = RUN.get('ECHO_G')            # (frames, 2, 4, (x, z, lag)): every ghost slot on the horn's own past path
+ECHO_N = RUN.get('ECHO_N')            # (frames, 2): ghosts earned so far
+ECHO_R = RUN.get('ECHO_R')            # per frame: the live blast rings (owner, x, z, r, rmax, j, t0, call, hit)
+FLICK = RUN.get('FLICK')              # (frames, 2, (state, aim, ext, t0, t_hit, hit))
 THR_T = np.array([e[0] for e in EV if e[1] == 'thrust'])
 REST = [CFG[k]['weapon'].get('rest', 0.0) for k in (0, 1)]
 CORNER0 = [np.array(c) for c in RUN['corner']]
@@ -230,8 +237,9 @@ KEYS = [  # (t, target, dist, yaw, pitch, fov, sy): gentle drift, a slight push-
 ]
 SHK = fx.Shake(cap=2.5)                              # a little camera shake on heavy hits (reelkit.fx)
 for e in EV:
-    if e[1] == 'hit' and e[7] in ('blade', 'slam', 'wave', 'shockwave', 'charge'):
-        SHK.add(e[0], {'blade': 0.55, 'slam': 2.5, 'wave': 2.0, 'shockwave': 1.2, 'charge': 2.2}[e[7]])
+    if e[1] == 'hit' and e[7] in ('blade', 'slam', 'wave', 'shockwave', 'echo', 'flick', 'flick_rope'):
+        SHK.add(e[0], {'blade': 0.55, 'slam': 2.5, 'wave': 2.0, 'shockwave': 1.2, 'echo': 0.35, 'flick': 2.5,
+                       'flick_rope': 2.2}[e[7]])
     if e[1] == 'slam':
         SHK.add(e[0], 1.6)
 SHK.add(T_KO, 2.5)
@@ -563,6 +571,67 @@ def under_bell(k, t):
     return False
 
 
+# ---------------------------------------------------------------- v5: the HUD ability list (series rule, Oct 25; #36's helper)
+SLOTS = (('unlock1', 'LV2'), ('unlock2', 'LV3'), ('low', 'LOW'))
+SWEEP_T = 0.45                                       # s the glow takes to sweep across a name as it unlocks
+
+
+def _hold(k, slot):
+    """how long a use stays lit: a shield / haste for as long as it lasts, a slam until it lands, the flick through its
+    wind-up, else a flash"""
+    ab = CFG[k]['abilities'][slot]
+    if ab['kind'] in ('shield', 'haste'):
+        return ab['dur_beats'] * T.BEAT if 'dur_beats' in ab else ab['dur']
+    if ab['kind'] == 'slam':
+        return ab['tele'] * T.BEAT
+    if ab['kind'] == 'flick':
+        return ab.get('wind_beats', 1) * T.BEAT
+    return 0.08
+
+
+def _abil_build():
+    unl = [{}, {}]                                   # k -> slot -> unlock time (LOW: its first use)
+    uses = [{s_: [] for s_, _ in SLOTS} for _ in (0, 1)]
+    for e in EV:
+        if e[0] > T_KO + 1e-6:
+            break
+        if e[1] == 'level':
+            unl[e[2]]['unlock1' if e[3] == 2 else 'unlock2'] = e[0]
+        elif e[1] == 'ability':
+            for slot, _ in SLOTS:
+                if CFG[e[2]]['abilities'][slot]['name'] == e[3]:
+                    uses[e[2]][slot].append(e[0])
+                    if slot == 'low':
+                        unl[e[2]].setdefault('low', e[0])
+    return unl, uses
+
+
+ABIL_UNLOCK, ABIL_USES = _abil_build()
+ABIL_HOLD = [{slot: _hold(k, slot) for slot, _ in SLOTS} for k in (0, 1)]
+
+
+def ability_rows(k, t):
+    """fight_hud rows for fighter k: grey until unlocked (a glow sweeps across the name as it unlocks), the fighter's
+    colour after, white-hot on its pill whenever it is used (held while a shield / haste lasts, then easing back over
+    0.5 s). Frozen through the hit-stop; back to grey when HP refills on the glide home (as on frame 0)."""
+    tc = fx_clock(t) if t < T.T_GLIDE else -1.0
+    rows = []
+    for slot, tag in SLOTS:
+        tu = ABIL_UNLOCK[k].get(slot)
+        on = tu is not None and T.T_FIGHT <= tc and tc >= tu
+        g, sw = 0.0, None
+        if on:
+            if tc < tu + SWEEP_T:
+                sw = (tc - tu) / SWEEP_T
+            past = [te for te in ABIL_USES[k][slot] if te <= tc]
+            if past:
+                te, hold = past[-1], ABIL_HOLD[k][slot]
+                g = 1.0 - ss(te + hold, te + hold + 0.5, tc)
+        rows.append(dict(tag=tag, name=CFG[k]['abilities'][slot]['name'], state='unlocked' if on else 'locked',
+                         glow=g, sweep=sw))
+    return rows
+
+
 def status(k, t):
     s = [(te, nm) for te, who, nm in STATUS if who == k and te <= t < te + 1.6]
     if not s:
@@ -626,7 +695,8 @@ CROWD_PH = np.array([c[2] for c in S.CROWD])
 CROWD_HT = np.array([c[4] for c in S.CROWD])
 BAR_N = np.array([n for Q, n, am in S.BARRIER])
 BAR_C = np.array([Q.mean(0) for Q, n, am in S.BARRIER])
-FLASH_EV = [e[0] for e in EV if (e[1] == 'hit' and e[7] in ('slam', 'wave', 'shockwave')) or e[1] == 'ability'] + \
+FLASH_EV = [e[0] for e in EV if (e[1] == 'hit' and e[7] in ('slam', 'wave', 'shockwave', 'flick', 'flick_rope')) or
+            e[1] == 'ability'] + \
            [T_KO + 0.03 * j for j in range(16)]
 FLASH_T = np.array(sorted(FLASH_EV))
 
@@ -734,6 +804,11 @@ def canvas_shadows(cam, t, fs, keys, spot):
             for Q, c, kind in quads:
                 if kind in ('outer', 'crook'):
                     polys.append(proj_point(Q, spot))
+    for k in FLICKERS:                                             # v5: the glove casts a real shadow
+        g = glove_at(k, t)
+        if g is not None and g['scale'] > 0.05:
+            for Q in ST.glove_shadow_polys(g['p'], g['aim'], g['d'], g['scale'], g['pose'], g['wob']):
+                polys.append(proj_point(Q, spot))
     for row in keys:
         head, shaft, fl = ST.arrow_quads(row[0], row[1], row[2])
         polys.append(proj_point(head, spot))
@@ -749,7 +824,7 @@ def sparks(arr, cam, t):
         if kind == 'hit':
             att, x, z, how = e[2], e[5], e[6], e[7]
             col = COL[att] * 0.6 + 100
-            n, sp, life = (16, 3.2, 0.3) if how in ('slam', 'wave', 'shockwave') else \
+            n, sp, life = (16, 3.2, 0.3) if how in ('slam', 'wave', 'shockwave', 'flick', 'flick_rope') else \
                 ((8, 2.4, 0.22) if how == 'blade' else (5, 1.8, 0.18))
         elif kind == 'parry':
             att, x, z = e[2], e[4], e[5]
@@ -778,7 +853,7 @@ def sparks(arr, cam, t):
             arr[max(0, int(s[1]) - 1):int(s[1]) + 2, max(0, int(s[0]) - 1):int(s[0]) + 2] = 255
 
 
-# ---------------------------------------------------------------- v2: THE HUNT (hounds, the mark) + reelkit.fx
+# ---------------------------------------------------------------- v5: ECHO CALL ghosts + rings, FINAL FLICK, reelkit.fx
 def fx_clock(t):
     """effects clock: real time in the fight, held through the hit-stop, then running on"""
     if t < T_KO:
@@ -788,67 +863,112 @@ def fx_clock(t):
     return t - HITSTOP
 
 
-MARK_FULL = {k: CFG[k]['weapon'].get('mark_beats', 3) * T.BEAT for k in PACK}
+AGE_A = (0.90, 0.70, 0.52, 0.36)                   # ghost strength by slot: the newest (one beat back) brightest
+ECHO_EV = {k: [(e[0], e[3], e[4], e[5], e[6], e[7]) for e in EV if e[1] == 'echo' and e[2] == k] for k in ECHO}
+REP_T = {(k, j): np.array([t_ for t_, jj, c, x, z, rm in ECHO_EV[k] if jj == j]) for k in ECHO for j in range(5)}
+GROW_T = {k: {e[3]: e[0] for e in EV if e[1] == 'echo_grow' and e[2] == k} for k in ECHO}   # ghost n -> earned at
+W_ECHO = {k: CFG[k]['weapon'] for k in ECHO}
+BLOCK_T = {k: np.array([e[0] for e in EV if e[1] == 'block' and e[2] == k]) for k in (0, 1)}
+FLUNG = [(e[0], e[3]) for e in EV if e[1] == 'hit' and e[7] == 'flick']           # (t, victim): afterimages
+G_SCALE = 1.45                                     # the giant glove: ~1.9 ring units cuff to fingertip (a ball: 1.2)
 
 
-def mark_k(o, t):
-    """strength of the copper target mark on fighter o (fades over its last 0.3 s; gone after the K.O.)"""
-    if MARK is None or not (T.T_FIGHT <= t < T_HS):
-        return 0.0
-    m = float(MARK[sim_i(min(t, T_KO)), o])
-    return min(1.0, m / 0.3) * (1 - ss(T_KO, T_HS, t))
+def _last(arr_, t):
+    if arr_ is None or not len(arr_):
+        return None
+    j = np.searchsorted(arr_, t, 'right') - 1
+    return float(arr_[j]) if j >= 0 else None
 
 
-def brand_k(k, t):
-    """the flare of the brand right after each horn call"""
-    ct = CALL_T.get(k)
-    if ct is None or not len(ct) or not (T.T_FIGHT <= t < T_KO):
-        return 0.0
-    j = np.searchsorted(ct, t, 'right') - 1
-    return math.exp(-(t - ct[j]) / 0.18) if j >= 0 else 0.0
-
-
-def _ko_hounds(k):
-    H_ = HOUNDS[-1, k]
-    return [(int(h[4]), float(h[0]), float(h[1]), float(h[2])) for h in H_ if not np.isnan(h[0])]
-
-
-def hounds_at(k, t):
-    """the pack of fighter k at time t: [(id, x, z, heading, mode, alpha, gait)]. In the fight: the run's hounds (frozen
-    through the hit-stop). After the K.O.: a losing pack bursts into embers; a winning pack circles its horn through the
-    solo, then runs back into the bell before the glide home (no hounds on frame 0)."""
-    if HOUNDS is None or t < T.T_FIGHT:
+def ghosts_at(k, t):
+    """the echo ghosts of fighter k at t: [(slot, x, z, alpha, flash)]. In the fight: the run's ghosts on the horn's own
+    past path (frozen through the hit-stop); each fades in when it is earned and flashes when it repeats a blast. After
+    the K.O. a winner's ghosts fade out, a loser's burst into embers: frame 0 has none."""
+    if ECHO_G is None or k not in ECHO or t < T.T_FIGHT:
         return []
-    if t < T_HS:
-        out = []
-        for h in HOUNDS[sim_i(min(t, T_KO)), k]:
-            if not np.isnan(h[0]):
-                mode = int(h[3])
-                out.append((int(h[4]), float(h[0]), float(h[1]), float(h[2]), mode, 1.0, 1.7 if mode == 3 else 1.0))
-        return out
-    if k != WIN or t >= T.T_GLIDE:
-        return []
-    ko = sorted(_ko_hounds(k))
-    n = len(ko)
-    c = fighter(k, t)['p']
-    u = ease((t - T_HS) / 1.2)
-    back = ease((t - T.T_REASSEMBLE) / (T.T_GLIDE - 0.1 - T.T_REASSEMBLE))
+    tc = fx_clock(t)
+    i = sim_i(min(t, T_KO))
+    n = int(ECHO_N[i, k] + 1e-9)
+    out_k = 1.0
+    if t >= T_HS:
+        out_k = 0.0 if k == LOSE else 1 - ss(T_HS, T_HS + 0.8, t)
+        if out_k <= 0:
+            return []
     out = []
-    for j, (hid, x, z, a) in enumerate(ko):
-        ang = (t - T_HS) * 1.7 + 2 * math.pi * j / max(1, n)
-        tgt = c + 1.3 * np.array([math.cos(ang), math.sin(ang)])
-        p = np.array([x, z]) + (tgt - np.array([x, z])) * u
-        p = p + (c - p) * back
-        head = a + _wrap(ang + math.pi / 2 - a) * min(1.0, u * 1.5)
-        out.append((hid, float(p[0]), float(p[1]), head, 0, max(0.0, 1 - back * 1.1), 1.0))
+    for j in range(n):
+        x, z = float(ECHO_G[i, k, j, 0]), float(ECHO_G[i, k, j, 1])
+        tg = GROW_T[k].get(j + 1, T.T_FIGHT)
+        a = AGE_A[j] * ss(tg, tg + 0.35, tc) * out_k
+        te = _last(REP_T[(k, j + 1)], tc)
+        fl = math.exp(-(tc - te) / 0.14) if te is not None else 0.0
+        out.append((j, x, z, a, fl))
     return out
 
 
-def hound_prev(k, hid, t, back):
-    for h in hounds_at(k, t - back / FPS):
-        if h[0] == hid:
-            return h[1], h[2], h[3]
-    return None
+def rings_at(t):
+    """the live blast rings at t: [(owner, x, z, r, j, alpha)] (j = 0: the call, 1..4: the echoes), lingering as they fade"""
+    if ECHO_R is None or not (T.T_FIGHT <= t < T_HS):
+        return []
+    i = sim_i(min(t, T_KO))
+    tc = fx_clock(t)
+    out = []
+    for owner, x, z, r, rmax, j, t0, call, hit in ECHO_R[i]:
+        w = W_ECHO[int(owner)]
+        r0 = R if j == 0 else R * 0.5
+        te = t0 + (rmax - r0) / w['speed']
+        rr = min(rmax, r0 + max(0.0, tc - t0) * w['speed'])
+        a = 1.0 if tc < te else max(0.0, 1 - (tc - te) / w.get('linger', 0.25))
+        out.append((int(owner), float(x), float(z), rr, int(j), a))
+    return out
+
+
+def _back_ease(u):
+    c1 = 1.70158
+    return 1 + (c1 + 1) * (u - 1) ** 3 + c1 * (u - 1) ** 2
+
+
+def glove_at(k, t):
+    """FINAL FLICK's glove of fighter k at t: dict(p, aim, d, scale, pose, wob, light) or None. It bursts out of the bell
+    (overshoot), creeps back with a growing tremble while it is cocked (one beat), snaps out to the enemy's surface in a
+    frame, holds, then shrinks back into the bell"""
+    if FLICK is None or k not in FLICKERS or not (T.T_FIGHT <= t < T.T_GLIDE):
+        return None
+    i = sim_i(min(t, T_KO))
+    st_, aim, ext, t0, th, hit = (float(v) for v in FLICK[i, k])
+    if math.isnan(st_):
+        return None
+    tc = fx_clock(t)
+    p = fighter(k, t)['p']
+    d_cock = R + 0.62 * G_SCALE
+    if tc < th:
+        tau = max(0.0, tc - t0)
+        f = _back_ease(min(1.0, tau / 0.16))
+        uw = min(1.0, tau / max(1e-3, th - t0))
+        d = R * 0.7 + (d_cock + 0.14 * (1 - uw) - R * 0.7) * f
+        wob = 0.09 * math.sin(2 * math.pi * 11 * tau) * uw ** 2
+        return dict(p=p, aim=aim, d=d, scale=G_SCALE * max(0.0, f), pose=0.0, wob=wob, light=1.0 + 0.25 * uw)
+    tau = tc - th
+    full = max(R + 0.55, R + ext - 0.62 * G_SCALE)
+    if tau < 0.034:
+        d, sc, pose = d_cock + (full - d_cock) * ease(tau / 0.034), G_SCALE, 1.0
+    elif tau < 0.2:
+        d, sc, pose = full, G_SCALE, 1.0
+    else:
+        u = min(1.0, (tau - 0.2) / 0.38)
+        if u >= 1.0:
+            return None
+        d, sc, pose = full + (R * 0.7 - full) * ease(u), G_SCALE * (1 - ease(u)), 1.0
+    return dict(p=p, aim=aim, d=d, scale=sc, pose=pose, wob=0.0, light=1.0 + 0.6 * math.exp(-tau / 0.08) * hit)
+
+
+def hand_k(k, t, st):
+    """STOPPED HORN: the copper hand's strength (fades in / out with the shield) and its flash on a block"""
+    if st['shield'] <= 0:
+        return 0.0, 0.0
+    dur = CFG[k]['abilities']['unlock1']['dur_beats'] * T.BEAT
+    a = min(1.0, st['shield'] / 0.2, (dur - st['shield']) / 0.1 + 0.15)
+    tb = _last(BLOCK_T[k], fx_clock(t))
+    return a, (math.exp(-(fx_clock(t) - tb) / 0.12) if tb is not None else 0.0)
 
 
 FL = fx.Flares(max_n=6)
@@ -874,21 +994,24 @@ def _fx_build():
                 FL.add(t_, pos, COL[att], radius=1.4, peak=0.6, decay=0.22)
                 d = S.to_world(math.cos(fighter(att, t_)['th']), math.sin(fighter(att, t_)['th']), 0.0)
                 PA.emit(t_, pos, 'brass', n=9, dir=d + np.array([0, 0.4, 0]))
-            elif how == 'bite':                                    # a hound bites: copper embers + bite marks
-                BU.add(t_, pos, COL[att], 0.45, bright=False)
-                FL.add(t_, pos, COL[att], radius=1.0, peak=0.4, decay=0.2)
-                PA.emit(t_, pos, 'embers', n=5)
-                MK.add(t_, 'claw', x, z, size=0.3, angle=math.atan2(z - fighter(att, t_)['p'][1], x - fighter(att, t_)['p'][0]),
-                       n=2, col=(150, 70, 40), life=3.0, seed=int(t_ * 100), strength=0.7)
+            elif how == 'echo':                                    # a blast lands: copper embers, a soft scorch ring
+                BU.add(t_, pos, COL[att], 0.5 if e[8] == 0 else 0.35, bright=False)
+                FL.add(t_, pos, COL[att], radius=1.1, peak=0.45, decay=0.2)
+                PA.emit(t_, pos, 'embers', n=6 if e[8] == 0 else 4)
             elif how == 'shockwave':
                 BU.add(t_, pos, COL[att], 1.0)
                 FL.add(t_, pos, COL[att], radius=1.6, peak=0.8, decay=0.3)
                 PA.emit(t_, pos, 'brass', n=6)
-            elif how == 'charge':                                  # TALLY-HO lands
-                BU.add(t_, pos, COL[att], 2.0)
-                FL.add(t_, pos, COL[att], radius=2.4, peak=1.2, decay=0.5)
-                PA.emit(t_, pos, 'embers', n=26, spread=180, speed=(0.8, 2.2))
-                MK.add(t_, 'claw', x, z, size=0.9, n=4, col=(150, 70, 40), life=6.0, seed=int(t_ * 100))
+            elif how == 'flick':                                   # FINAL FLICK lands: the big one
+                BU.add(t_, pos, COL[att], 2.2)
+                FL.add(t_, pos, (255, 236, 214), radius=2.4, peak=1.1, decay=0.45)
+                PA.emit(t_, pos, 'embers', n=22, spread=180, speed=(0.8, 2.4))
+                PA.emit(t_, pos, 'brass', n=10, spread=120)
+            elif how == 'flick_rope':                              # ... and the trombone slams into the ropes
+                BU.add(t_, pos, COL[att], 1.8)
+                FL.add(t_, pos, COL[att], radius=2.0, peak=0.9, decay=0.4)
+                PA.emit(t_, up(x, z, 0.1), 'dust', n=18, spread=160, speed=(0.6, 1.6))
+                PA.emit(t_, pos, 'brass', n=8, spread=140)
             elif how == 'slam':
                 BU.add(t_, pos, COL[att], 2.0)
         elif kind == 'slam':                                      # PEDAL TONE: the bell stomps
@@ -898,43 +1021,29 @@ def _fx_build():
             PA.emit(t_, up(cx, cz, 0.2), 'brass', n=14, spread=180)
             MK.add(t_, 'crack', cx, cz, size=1.5, n=8, life=7.0, seed=int(t_ * 10))
             MK.add(t_, 'scorch', cx, cz, size=1.2, col=(70, 60, 30), life=7.0, seed=int(t_ * 10) + 1, strength=0.5)
-        elif kind == 'hound':                                     # a hound pours out of the bell
-            pos = up(e[4], e[5], 0.25)
-            PA.emit(t_, pos, 'embers', n=7, speed=(0.6, 1.6))
-            FL.add(t_, pos, COL[e[2]], radius=1.0, peak=0.4, decay=0.25)
-        elif kind == 'hound_down':                                # knocked out: it bursts into embers
-            pos = up(e[4], e[5], 0.25)
-            PA.emit(t_, pos, 'embers', n=12, spread=180, speed=(0.8, 2.0))
-            BU.add(t_, pos, COL[e[2]], 0.4, bright=False)
-            if e[6] == 'blade':
-                PA.emit(t_, pos, 'brass', n=5)
-        elif kind == 'call':                                      # the call brands the enemy
-            k = e[2]
-            p_ = fighter(1 - k, t_)['p']
-            FL.add(t_, up(p_[0], p_[1], 0.8), COL[k], radius=1.4, peak=0.45, decay=0.3)
-            PA.emit(t_, up(p_[0], p_[1], 0.15), 'embers', n=3)
-        elif kind == 'pack_charge':
-            FL.add(t_, up(e[3], e[4], 1.0), COL[e[2]], radius=2.2, peak=0.9, decay=0.6)
+        elif kind == 'echo':                                      # a blast: the call (j = 0) or a ghost's repeat
+            j = e[3]
+            pos = up(e[5], e[6], 0.5)
+            FL.add(t_, pos, COL[e[2]], radius=1.3 if j == 0 else 1.0, peak=0.30 if j == 0 else 0.16 * 0.85 ** j,
+                   decay=0.2)
+            if j > 0:
+                PA.emit(t_, up(e[5], e[6], 0.35), 'embers', n=2, speed=(0.3, 0.9), life=(0.3, 0.6))
+        elif kind == 'echo_grow':                                 # a new ghost peels off the horn
+            p_ = fighter(e[2], t_)['p']
+            PA.emit(t_, up(p_[0], p_[1], 0.5), 'embers', n=8, spread=180, speed=(0.5, 1.4))
+            FL.add(t_, up(p_[0], p_[1], 0.6), COL[e[2]], radius=1.2, peak=0.35, decay=0.3)
+        elif kind == 'flick_wind':                                # the glove bursts out of the bell
+            p_ = fighter(e[2], t_)['p']
+            pos = up(p_[0] + 0.9 * math.cos(e[4]), p_[1] + 0.9 * math.sin(e[4]), R)
+            PA.emit(t_, pos, 'embers', n=10, spread=120, speed=(0.6, 1.6))
+            FL.add(t_, pos, (255, 236, 214), radius=1.6, peak=0.55, decay=0.35)
         elif kind == 'block':
             BU.add(t_, up(e[4], e[5], R), (255, 220, 190), 0.6, bright=False)
             PA.emit(t_, up(e[4], e[5], R), 'brass' if e[2] in BLADE else 'embers', n=5)
-    for k in PACK:                                                # ember trails behind running hounds
-        for f_ in range(0, NSIM, 3):
-            t_ = T.T_FIGHT + f_ / FPS
-            if t_ > T_KO:
-                break
-            for h in HOUNDS[f_, k]:
-                if not np.isnan(h[0]):
-                    d = S.to_world(-math.cos(h[2]), -math.sin(h[2]), 0.0) * (0.6 if int(h[3]) == 3 else 0.3)
-                    PA.emit(t_, up(h[0], h[1], 0.22), 'embers', n=1, vel=d, speed=(0.1, 0.4), life=(0.4, 0.8))
-        if k == LOSE:                                             # the losing pack bursts at the end of the hit-stop
-            for hid, x, z, a in _ko_hounds(k):
-                PA.emit(fx_clock(T_HS), up(x, z, 0.25), 'embers', n=14, spread=180, speed=(0.8, 2.2))
-        else:                                                     # the winning pack runs back into the bell
-            for hid, x, z, a in _ko_hounds(k):
-                tb = T.T_GLIDE - 0.25
-                c = fighter(k, tb)['p']
-                PA.emit(fx_clock(tb), up(c[0], c[1], 0.3), 'embers', n=6, speed=(0.4, 1.2))
+    for k in ECHO:                                                # the loser's ghosts burst at the end of the hit-stop
+        if k == LOSE:
+            for j, x, z, a, fl in ghosts_at(k, T_HS - 1e-3):
+                PA.emit(fx_clock(T_HS), up(x, z, R), 'embers', n=10, spread=180, speed=(0.8, 2.0))
     for t_, who, name in STORY['caps']:                           # ability moments on the captioned abilities
         MO.add(t_, who, COL[who])
     pos = S.to_world(P_KO[LOSE][0], P_KO[LOSE][1], R)
@@ -947,15 +1056,16 @@ _fx_build()
 
 
 def shimmers(img, cam, t):
-    """heat-shimmer ripples: SAD TROMBONE's shockwave, TALLY-HO's front, PEDAL TONE's stomp"""
+    """heat-shimmer ripples: SAD TROMBONE's shockwave, every echo blast ring (v5), PEDAL TONE's stomp"""
     if T.T_FIGHT <= t < T_HS:
         i = sim_i(min(t, T_KO))
         for owner, cx, cz, r, rmax, kind, t0 in RUN['WAVES'][i]:
             if kind in ('shockwave', 'wave'):
                 img = fx.shimmer_world(img, cam, S.to_world(cx, cz, 0.05), r, 0.4, 3.0, t, k=1 - r / rmax, seed=owner)
-        for owner, ox, oz, ux, uz, s_c, wd, t0c in CHG[i] if CHG is not None else []:
-            fc = np.array([ox, oz]) + np.array([ux, uz]) * s_c
-            img = fx.shimmer_world(img, cam, S.to_world(fc[0], fc[1], 0.05), wd * 0.55, 0.3, 2.2, t, k=0.8, seed=7)
+        for owner, x, z, r, j, a in rings_at(t):                  # v5: the echo rings shimmer while they expand
+            if a >= 1.0:
+                img = fx.shimmer_world(img, cam, S.to_world(x, z, 0.05), r, 0.24 if j == 0 else 0.16,
+                                       2.2 if j == 0 else 1.4, t, k=0.9 * 0.85 ** j, seed=j + 3 * owner)
     for e in EV:
         if e[1] == 'slam' and 0 <= t - e[0] < 0.6 and t < T_HS:
             u = (t - e[0]) / 0.6
@@ -965,22 +1075,14 @@ def shimmers(img, cam, t):
 
 
 def post_fx(img, cam, t, fs, drawn):
-    """after the grade: chromatic fringing on big hits, the brand sigil, the ability moments (dim + speed lines), the
-    impact bursts"""
+    """after the grade: chromatic fringing on big hits, the ability moments (dim + speed lines), the impact bursts"""
     for _, e in events_between(t - 0.12, t, ('hit',)):
-        if e[7] in ('slam', 'wave', 'shockwave', 'charge'):
+        if e[7] in ('slam', 'wave', 'shockwave', 'flick', 'flick_rope'):
             s_ = cam.wp(S.to_world(e[5], e[6], R)[None])[0]
             img = fx.fringe(img, s_[0], s_[1], 26, 2.5, k=1 - (t - e[0]) / 0.12)
     if T_KO <= t < T_HS + 0.3:
         s_ = cam.wp(S.to_world(P_KO[LOSE][0], P_KO[LOSE][1], R)[None])[0]
         img = fx.fringe(img, s_[0], s_[1], 34, 3.0, k=1 - ss(T_HS, T_HS + 0.3, t))
-    for k in PACK:                                                # the brand: a copper crosshair over the marked ball
-        o = 1 - k
-        mk_ = mark_k(o, t)
-        if mk_ > 0.01 and o in drawn:
-            s_, rp = drawn[o]
-            b = brand_k(k, t)
-            img = ST.draw_sigil(img, s_[0], s_[1] - rp - 7 - 2 * b, 4 + 2 * b, COL[k], mk_)
     keep = [(s_[0], s_[1], rp * 1.7) for k, (s_, rp) in drawn.items()]
     img = MO.apply_dim(img, t, keep=keep)
     for k, (s_, rp) in drawn.items():
@@ -1063,18 +1165,19 @@ def render(f):
             dl = np.sqrt((lp[0] - Xp) ** 2 + lp[1] ** 2 + (lp[2] - Zp) ** 2)
             Ic += (lp[1] / dl / (1 + (dl / R_) ** 2))[:, None] * lc[None] * 0.8
         # decals: shockwave light rings, the slam's shadow
-        for k in PACK:                                                # THE HUNT: the copper target mark on the branded enemy
-            o = 1 - k
-            mk_ = mark_k(o, t)
-            if mk_ > 0.01 and fs[o]['vis']:
-                ST.target_decal(Ic, sxp, szp, fs[o]['p'][0], fs[o]['p'][1], t, mk_, COL[k], brand_k(k, t),
-                                BAYER_FULL[ys, xs])
-            for hid, hx, hz, ha, hmode, ha_, hg in hounds_at(k, t):     # ghosts cast no shadow: a copper glow instead
-                rd = np.hypot(sxp - hx, szp - hz)
-                Ic += (np.clip(1 - rd / 0.5, 0, 1) ** 2 * 0.35 * ha_)[:, None] * (COL[k] / 255.0 + 0.1)[None]
-            if in_fight:
-                for owner, ox, oz, ux, uz, s_c, wd, t0c in CHG[i]:
-                    ST.charge_band(Ic, sxp, szp, (ox, oz), (ux, uz), s_c, wd, 1.0, COL[owner], BAYER_FULL[ys, xs])
+        for owner, x, z, r, j, a in rings_at(t):                     # v5: the call / echo rings light the canvas
+            ST.echo_band(Ic, sxp, szp, x, z, r, 0.11 if j == 0 else 0.06, a * (0.95 if j == 0 else 0.6 * 0.85 ** (j - 1)),
+                         COL[owner], BAYER_FULL[ys, xs])
+        for k in ECHO:                                                # ghosts cast no shadow: a copper glow instead
+            for j, gx, gz, ga, gf in ghosts_at(k, t):
+                rd = np.hypot(sxp - gx, szp - gz)
+                Ic += (np.clip(1 - rd / 0.75, 0, 1) ** 2 * (0.22 + 0.35 * gf) * ga)[:, None] * (COL[k] / 255.0 + 0.1)[None]
+        for k in FLICKERS:                                            # FINAL FLICK: the lane the glove will flick along
+            g = glove_at(k, t)
+            if g is not None and g['pose'] < 0.5:
+                pk = 0.25 + 0.2 * (0.5 + 0.5 * math.sin(t * 2 * math.pi * 8))
+                ST.aim_lane(Ic, sxp, szp, g['p'], g['aim'], CFG[k]['abilities']['low']['reach'] + R, pk * g['scale'],
+                            COL[k], BAYER_FULL[ys, xs])
         for k in (0, 1):                                              # SAD TROMBONE: the slowed ball drags a droopy wobble
             st = fs[k]
             if in_fight and st['slow'] > 0:
@@ -1102,7 +1205,7 @@ def render(f):
             rd = np.hypot(sxp - cx, szp - cz)
             wdt = 0.16 if kind == 'shockwave' else 0.32
             k_ = (1 - r / rmax) * (1.0 if kind == 'shockwave' else 1.3)
-            if kind == 'wave':                                        # TALLY-HO: a ring of chevrons charging outward
+            if kind == 'wave':                                        # (v1 TALLY-HO) a ring of chevrons charging outward
                 ang_ = np.arctan2(szp - cz, sxp - cx)
                 rd = rd + 0.16 * np.abs(((ang_ * 10 / math.pi) % 2) - 1)
             band = np.clip(1 - np.abs(rd - r) / wdt, 0, 1)
@@ -1124,6 +1227,17 @@ def render(f):
         col = alb * Ic
         arr[ys, xs] = np.floor(col / 5 + BAYER_FULL[ys, xs, None]) * 5
         depth[ys, xs] = dc[ys, xs]
+    for k in ECHO:                                                    # v5: a fading copper thread along the horn's path
+        if in_fight and ECHO_G is not None:
+            n_ = int(ECHO_N[i, k] + 1e-9)
+            if n_ > 0:
+                lag = float(ECHO_G[i, k, n_ - 1, 2]) + 0.1
+                m_ = int(lag * FPS)
+                pts = []
+                for back in range(m_, -1, -1):
+                    q = RUN['P'][max(0, i - back), k]
+                    pts.append((float(q[0]), float(q[1]), 0.55 * (1 - back / max(1, m_))))
+                ST.path_line(arr, cam, pts, np.clip(COL[k] * 0.9 + 30, 0, 255), 0.6)
     fr.set_array(arr, depth)
     # ---------------- back ropes + posts
     def draw_rope_side(s):
@@ -1141,6 +1255,16 @@ def render(f):
     draw_post('back')
     draw_rope_side(2)
     draw_rope_side(3)
+    rg = rings_at(t)
+    if rg:                                                            # v5: the blast rings, raised (a burst of sound)
+        arr, depth = fr.array(), fr.depth()
+        for owner, x, z, r, j, a in rg:
+            if j == 0:
+                ST.ring_line(arr, cam, x, z, r, 0.32, np.clip(COL[owner] * 0.7 + np.array([255, 214, 150]) * 0.45, 0, 255),
+                             0.9 * a, width=2)
+            else:
+                ST.ring_line(arr, cam, x, z, r, 0.32, np.clip(COL[owner] * 1.05 + 20, 0, 255), 0.75 * 0.85 ** (j - 1) * a)
+        fr.set_array(arr, depth)
     # ---------------- fighters, weapons, keys, posts (painter by depth)
     items = []
     for name in ('red', 'blue'):
@@ -1154,14 +1278,25 @@ def render(f):
         if k in BLADE and not st['shattered']:
             tip = st['p'] + (R + st['ext'] * 0.55) * np.array([math.cos(st['th']), math.sin(st['th'])])
             items.append((cam.depth(S.to_world(tip[0], tip[1], R))[0] + 0.01, 'slide', k))
-        if st['shield'] > 0:
-            items.append((dz + 0.03, 'rim_back', k))
-            items.append((dz - 0.03, 'rim_front', k))
+        if st['shield'] > 0 and not st['shattered']:
+            items.append((dz - 0.05, 'hand', k))
     for row in keys:
         items.append((cam.depth(S.to_world(row[0], row[1], 0.45))[0], 'key', row))
-    for k in PACK:
-        for hd in hounds_at(k, t):
-            items.append((cam.depth(S.to_world(hd[1], hd[2], 0.24))[0], 'hound', (k,) + hd))
+    for k in ECHO:                                                    # v5: the echo ghosts
+        for gh in ghosts_at(k, t):
+            items.append((cam.depth(S.to_world(gh[1], gh[2], R))[0] + 0.02, 'ghost', (k,) + gh))
+    for k in FLICKERS:                                                # v5: FINAL FLICK's glove
+        g = glove_at(k, t)
+        if g is not None and g['scale'] > 0.02:
+            c_ = g['p'] + np.array([math.cos(g['aim']), math.sin(g['aim'])]) * g['d']
+            items.append((cam.depth(S.to_world(c_[0], c_[1], R))[0] - 0.02, 'glove', (k, g)))
+    tcf = fx_clock(t)
+    for tf, vic in FLUNG:                                             # v5: the flung trombone's afterimages
+        if 0.0 <= tcf - tf < 0.5 and fs[vic]['vis']:
+            for m_, a_ in ((1, 0.34), (2, 0.22), (3, 0.12)):
+                q = fighter(vic, max(tf, min(t, T_KO) - 0.035 * m_))['p']
+                items.append((cam.depth(S.to_world(q[0], q[1], R))[0] + 0.05 * m_, 'after',
+                              (vic, q, a_ * (1 - (tcf - tf) / 0.5))))
     items.sort(key=lambda it: -it[0])
     drawn = {}
     for dz, kind, obj in items:
@@ -1182,21 +1317,44 @@ def render(f):
             fr.set_array(arr, depth)
             hk = 0.6 if st['haste'] > 0 else 0.0
             ST.draw_slide(fr, cam, L, shade, st, COL[obj], max(hk, 0.8 * st['thr_k']))
-        elif kind in ('rim_back', 'rim_front'):
+        elif kind == 'hand':                                          # STOPPED HORN: the copper palm plugs the bell
             st = fs[obj]
-            dur = CFG[obj]['abilities']['unlock1']['dur_beats'] * T.BEAT
-            k_ = min(1.0, st['shield'] / 0.2, (dur - st['shield']) / 0.12 + 0.2)
+            hk, hf = hand_k(obj, t, st)
+            if obj in drawn:
+                s_, rp = drawn[obj]
+                q = fs[1 - obj]['p']
+                so = cam.wp(S.to_world(q[0], q[1], R)[None])[0]
+                dv = np.array([so[0] - s_[0], so[1] - s_[1]])
+                dv = dv / (np.linalg.norm(dv) + 1e-9)
+                arr, depth = fr.array(), fr.depth()
+                yy_, xx_ = np.mgrid[0:H, 0:W]
+                dome = np.clip(1 - np.abs(np.hypot(xx_ - s_[0], yy_ - s_[1]) - rp * 1.22) / 1.2, 0, 1)
+                arr += (np.clip(COL[obj] * 1.1 + 50, 0, 255)[None, None] - arr) * (dome * 0.55 * hk)[..., None]
+                c_ = (s_[0] + dv[0] * rp * 0.72, s_[1] + dv[1] * rp * 0.72 + rp * 0.1)
+                ST.draw_hand(arr, c_, rp * (1.2 + 0.1 * hf), COL[obj], hk, hf, 1.0 if dv[0] >= 0 else -1.0)
+                fr.set_array(arr, depth)
+        elif kind == 'ghost':
+            k, j, gx, gz, ga, gf = obj
+            pw = S.to_world(gx, gz, R)
+            Pc = cam.to_cam(pw[None])[0]
+            s_ = cam.proj(Pc[None])[0]
+            rp = R * cam.f / Pc[2]
+            yc, sw, roll = CFG[k]['view']
+            spr = sprite(CFG[k]['pp'], rp * 0.80, yc + sw * math.sin(1.25 * gx + 0.45 * gz), roll)
             arr, depth = fr.array(), fr.depth()
-            ST.draw_bellrim(arr, cam, st['p'][0], st['p'][1], t, k_, 1 if kind == 'rim_front' else 0, COL[obj])
+            ST.draw_ghost(arr, s_, rp, spr, COL[k], ga, gf)
             fr.set_array(arr, depth)
-        elif kind == 'hound':
-            k, hid, hx, hz, ha, hmode, alpha, gait = obj
+        elif kind == 'glove':
+            k, g = obj
             arr, depth = fr.array(), fr.depth()
-            for back, a_ in ((3, 0.16),):                            # a ghostly afterimage
-                pb = hound_prev(k, hid, t, back)
-                if pb is not None:
-                    ST.draw_hound(arr, cam, pb[0], pb[1], pb[2], t - back / FPS, COL[k], a_ * alpha, hid, gait)
-            ST.draw_hound(arr, cam, hx, hz, ha, t, COL[k], alpha, hid, gait, glow=0.6 if hmode == 3 else 0.0)
+            ST.draw_glove(arr, cam, g['p'], g['aim'], g['d'], g['scale'], g['pose'], COL[k], 1.0, g['wob'], g['light'])
+            fr.set_array(arr, depth)
+        elif kind == 'after':
+            vic, q, a_ = obj
+            pw = S.to_world(q[0], q[1], R)
+            Pc = cam.to_cam(pw[None])[0]
+            arr, depth = fr.array(), fr.depth()
+            ST.draw_ghost(arr, cam.proj(Pc[None])[0], R * cam.f / Pc[2], None, COL[vic], a_, 0.3)
             fr.set_array(arr, depth)
         elif kind == 'key':
             row = obj
@@ -1281,12 +1439,12 @@ def render(f):
             tp = st['p'] + (R + st['ext'] + 0.07) * np.array([math.cos(st['th']), math.sin(st['th'])])
             s_ = cam.wp(S.to_world(tp[0], tp[1], R)[None])[0]
             fr.glow(s_[0], s_[1], 7, tuple(COL[k] * 0.6 + 90), 0.35 * st['thr_k'])
-    for k in PACK:                                                    # a faint copper aura on every ghost hound
-        for hd in hounds_at(k, t):
-            s_ = cam.wp(S.to_world(hd[1], hd[2], 0.45)[None])[0]
-            fr.glow(s_[0], s_[1], 9, tuple(COL[k] * 0.7 + 60), (0.30 if hd[4] == 3 else 0.18) * hd[5])
+    for k in ECHO:                                                    # a copper aura on every ghost, brighter as it echoes
+        for j, gx, gz, ga, gf in ghosts_at(k, t):
+            s_ = cam.wp(S.to_world(gx, gz, R)[None])[0]
+            fr.glow(s_[0], s_[1], 12, tuple(COL[k] * 0.7 + 60), (0.10 + 0.28 * gf) * ga)
     for e_i, e in events_between(t - 0.15, t, ('hit',)):
-        if e[7] in ('slam', 'wave', 'shockwave', 'blade'):
+        if e[7] in ('slam', 'wave', 'shockwave', 'blade', 'flick', 'flick_rope'):
             s_ = cam.wp(S.to_world(e[5], e[6], R)[None])[0]
             big = e[7] != 'blade'
             fr.glow(s_[0], s_[1], 14 if big else 8, tuple(COL[e[2]] * 0.7 + 70), (0.35 if big else 0.22) * (1 - (t - e[0]) / 0.15))
@@ -1344,8 +1502,8 @@ def render(f):
         hud.append(dict(name=NAMES[k], color=COL[k], hp=hp_at(k, t), trail=max(hp_at(k, t), hp_lag[k]), level=lvl,
                         status=stt, status_k=sk, flash=fl, ko=(k == LOSE and T_KO <= t < T.T_GLIDE), t=t,
                         win=(k == WIN and T_KO + 1.3 <= t < T.T_GLIDE)))
-    if not card_closed:
-        fight_hud(img, hud[0], hud[1])
+    if not card_closed:                                               # v5: the ability list under each bar
+        fight_hud(img, hud[0], hud[1], abilities=(ability_rows(0, t), ability_rows(1, t)))
     draw_captions(img, t, CAP_TITLE, style='impact', hi=tuple(int(v) for v in COL[0]), alt=tuple(int(v) for v in COL[1]))
     for k in (0, 1):
         c = tuple(int(v) for v in np.clip(COL[k] * 0.8 + 60, 0, 255))
