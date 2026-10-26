@@ -177,7 +177,8 @@ FIGHTERS = {
         pp='FLUTE', register=(72, 93), idiom='charmer'),
 
     # ---- #34 BALLFIGHT #8: the brass section's pecking order (tuned once with ballfight_trombone_vs_horn/tune.py, frozen;
-    # v2 redesign: HORN = THE HUNT, re-tuned at damage scale 0.60)
+    # v2 redesign: HORN = THE HUNT, re-tuned at damage scale 0.60; v3 HORN = ECHO CALL + FINAL FLICK (Oct 25), re-tuned
+    # at damage scale 0.72, the TROMBONE unchanged; THE HUNT's 'pack' kind stays in the engine)
     'TROMBONE': dict(
         color=(120, 240, 184), dark=(44, 150, 104), corner='red',     # mint (series colour table, IDEAS)
         view=(205, 18, 30),
@@ -193,13 +194,14 @@ FIGHTERS = {
     'HORN': dict(
         color=(200, 112, 64), dark=(120, 58, 30), corner='blue',     # copper (series colour table, IDEAS)
         view=(0, 22, 0),
-        weapon=dict(kind='pack', style='hounds',           # v2 THE HUNT: the call brands the enemy, hounds pour out and chase
-                    every=2, n0=2, grow=0.34, n_max=5, r=0.22, speed=2.3, turn=5.0, dmg=2.8, knock=0.35, cool_beats=1,
-                    mark_beats=3, guard_r=1.15),
+        weapon=dict(kind='echo', style='echo_call',        # v3 ECHO CALL: a round blast on every beat, echo ghosts repeat it
+                    every=1, base=0.9, speed=7.0, dmg=4.3, knock=0.5, n0=0, n_max=4, grow=1.0, decay=0.85,
+                    echo_reach=0.85),
         abilities=dict(
-            unlock1=dict(name='STOPPED HORN', kind='shield', dur_beats=6, every_bars=6),     # hounds circle to guard
-            unlock2=dict(name='HORN RIP', kind='haste', mult=1.7, dur_beats=8, every_bars=6),  # the pack sprints
-            low=dict(name='TALLY-HO', kind='charge', speed=7.0, width=3.2, dmg=20.0, knock=1.8)),   # the pack charges
+            unlock1=dict(name='STOPPED HORN', kind='shield', dur_beats=6, every_bars=6),     # a copper hand plugs the bell
+            unlock2=dict(name='HORN RIP', kind='haste', mult=2.0, dur_beats=8, every_bars=6),  # half-beat echoes
+            low=dict(name='FINAL FLICK', kind='flick', wind_beats=1, reach=2.4, glove_r=0.4, dmg=14.0, boost=2.6,
+                     rope_t=0.9, dmg_rope=10.0)),                     # the glove flicks the enemy into the ropes
         pp='HORN', register=(53, 77), idiom='horn_call'),
 
     # ---- #35 BALLFIGHT #9: cathedral vs angels (numbers tuned once with ballfight_organ_vs_harp/tune.py, frozen)
