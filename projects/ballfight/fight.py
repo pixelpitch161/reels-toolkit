@@ -75,6 +75,10 @@ crashes down there: shadow first, then a crater; events 'snap_aim' / 'cable_snap
 #41 (opt-in rule, `Rules(swat_cobras=True)`, `swat_beats` default 2): a live thrust lance that passes through an enemy
 cobra (striker weapon) knocks it flat: a strike still in the air misses and the cobra can't strike for `swat_beats`
 beats; no damage, no growth. Events 'swat'. Off unless an episode turns it on, so earlier fights don't change.
+#42 (opt-in): weapon kind `rests` (COUNTING RESTS: the fighter rests and counts for `every` - 1 beats, taking x `guard`
+damage while it rests, then plays one huge whole note: a hollow wheel that rolls at the enemy for `hold` beats, bouncing
+off the ropes, crushing it once and flattening its projectiles; the note grows per landed crush; events 'rest' / 'note'
+/ 'crush', recorded as REST / NOTES).
 The run records every frame (30 fps) for the renderer and every event (hits, blocks, parries, ropes, volleys,
 abilities, level-ups, the K.O.) for the soundtrack and the captions. Seeded: same seed, same fight."""
 import math
@@ -274,6 +278,8 @@ class Fight:
         hc = getattr(self.R, 'dmg_side', None)     # opt-in (#36, crossovers): per-fighter damage handicap
         if hc is not None:
             d *= hc[att]
+        if getattr(V, 'resting', False):           # #42: a resting fighter (COUNTING RESTS) takes x `guard`
+            d *= V.w.get('guard', 1.0)
         Ad = self.balls[att]
         if getattr(Ad, 'detune_t', 0.0) > 0:      # #37: an out-of-tune fighter's hits land weaker
             d *= 1.0 - Ad.detune_w * Ad.detune_d
@@ -3606,6 +3612,132 @@ class Fight:
     # ------------------------------------------------------------------ record
     KMAX = 72
 
+    # ------------------------------------------------------------------ #42: COUNTING RESTS (opt-in weapon kind 'rests')
+    # The viola rests, counts, then plays one huge note. On the beat grid from the fight's first beat, a cycle of `every`
+    # beats: the first `every` - 1 beats are rests (it counts "1 2 3"; while resting it takes x `guard` damage), and on
+    # the last beat a whole note (a hollow oval wheel of radius `base`, held in blade_len, +`grow` per landed note up to
+    # `max_reach`) appears in front of it, aimed at the enemy's spot `lead` x its motion over the note's travel ahead
+    # (+-`jitter` deg, seeded), and rolls at `roll` units/s for `hold` beats (a whole note's length), bouncing off the
+    # ropes. It crushes the enemy once on contact (`dmg`, +`dmg_grow` per landed note up to `dmg_max`; `knock` along its
+    # roll) and flattens enemy projectiles it rolls over. Notes may drop from above first (`t_land` > `t0`, used by
+    # abilities): they land on their spot, crush there, then roll on.
+    # Events ('rest', k, count, melody 0/1), ('note', k, id, x, y, aim, r, kind, t_land, t1) (kind 0 = the weapon's),
+    # ('crush', k, id, x, y). Recorded as REST [resting, count, melody] per ball and NOTES (owner, x, y, r, t0, t1,
+    # t_land, id, kind, hit).
+    def rests_setup(self, k):
+        B = self.balls[k]
+        B.blade_len = float(B.w['base'])
+        B.note_dmg = float(B.w['dmg'])
+        B.resting = False
+        B.rest_count = 0
+        B.cur_kb = -1
+        B.melody_until = -1.0
+        B.melody_k0 = 0
+        B.melody_rest = 1
+        if not hasattr(self, 'notes'):
+            self.notes, self.next_note = [], 0
+
+    def fire_note(self, k, tgt=None, kind=0, r=None, dmg=None, knock=None, t_land=None, v=None):
+        """spawn a whole note; by default the weapon's own, aimed ahead of the enemy and rolling at once"""
+        B, O = self.balls[k], self.balls[1 - k]
+        w = B.w
+        R, A = self.R.R, self.R.A
+        r = B.blade_len if r is None else r
+        lim = A - r
+        if t_land is None:
+            if tgt is None:
+                d0 = O.p - B.p
+                tl = max(0.0, float(np.hypot(*d0)) - R - r) / w['roll']
+                tgt = self.predict(1 - k, tl * w.get('lead', 0.8))
+            d = tgt - B.p
+            aim = math.atan2(d[1], d[0]) + math.radians(self.rng.uniform(-1, 1) * w.get('jitter', 0.0))
+            u = np.array([math.cos(aim), math.sin(aim)])
+            c = np.clip(B.p + u * (R + 0.6 * r), -lim, lim)
+            v = u * w['roll']
+            t_land = self.t
+        else:
+            c = np.clip(np.asarray(tgt, float), -lim, lim)
+            v = np.zeros(2) if v is None else np.asarray(v, float)
+            aim = math.atan2(v[1], v[0]) if np.hypot(*v) > 1e-9 else 0.0
+        N = dict(id=self.next_note, owner=k, c=c, v=v, r=float(r), t0=self.t, t_land=float(t_land),
+                 t1=float(t_land) + w['hold'] * self.R.beat, hit=False, landed=t_land <= self.t,
+                 dmg=B.note_dmg if dmg is None else dmg, knock=w['knock'] if knock is None else knock, kind=kind)
+        self.next_note += 1
+        self.notes.append(N)
+        self.ev('note', k, N['id'], float(c[0]), float(c[1]), aim, N['r'], kind, N['t_land'], N['t1'])
+        return N
+
+    def rests_tick(self, k, k16):
+        if k16 % 4:
+            return
+        B = self.balls[k]
+        kb = k16 // 4
+        B.cur_kb = kb
+        if self._stunned(k):
+            B.resting, B.rest_count = False, 0
+            return
+        mel = self.t < B.melody_until
+        if mel:                                                  # MELODY AT LAST: shorter rests
+            cyc = int(B.melody_rest) + 1
+            j = (kb - B.melody_k0) % cyc
+        else:
+            cyc = int(B.w['every'])
+            j = kb % cyc
+        if j < cyc - 1:
+            B.resting, B.rest_count = True, j + 1
+            self.ev('rest', k, j + 1, int(mel))
+        else:
+            B.resting, B.rest_count = False, 0
+            self.fire_note(k)
+
+    def _crush(self, N, landed_now=False):
+        k = N['owner']
+        o = 1 - k
+        B, O = self.balls[k], self.balls[o]
+        R = self.R.R
+        rel = O.p - N['c']
+        dist = float(np.hypot(*rel))
+        if dist >= N['r'] + R * 0.9:
+            return
+        N['hit'] = True
+        u = rel / max(dist, 1e-6)
+        hx, hy = (N['c'] + u * N['r']).tolist()
+        self.ev('crush', k, N['id'], hx, hy)
+        landed = self.damage(k, o, N['dmg'], 'note', hx, hy, N['kind'])
+        vn = float(np.hypot(*N['v']))
+        away = u * 0.6 + (N['v'] / vn if vn > 1e-9 else u) * 0.4
+        self.knock(o, away, N['knock'])
+        if landed and B.w['kind'] == 'rests':                    # every landed note grows the next ones
+            B.blade_len = min(B.w['max_reach'], B.blade_len + B.w['grow'])
+            B.note_dmg = min(B.w['dmg_max'], B.note_dmg + B.w['dmg_grow'])
+
+    def notes_step(self, dt):
+        if not self.notes:
+            return
+        A = self.R.A
+        for N in self.notes:
+            if not N['landed']:
+                if self.t + 1e-9 < N['t_land']:
+                    continue
+                N['landed'] = True                               # a dropped note lands: crush on the spot
+                if not N['hit']:
+                    self._crush(N, True)
+                continue
+            N['c'] = N['c'] + N['v'] * dt
+            lim = A - N['r']
+            for ax in (0, 1):
+                if abs(N['c'][ax]) > lim:
+                    N['c'][ax] = math.copysign(lim, N['c'][ax]) * 2 - N['c'][ax]
+                    N['v'][ax] = -N['v'][ax]
+            if not N['hit']:
+                self._crush(N)
+            if len(self.kp):                                     # it rolls over the enemy's projectiles
+                kr = np.hypot(*(self.kp - N['c'][None]).T)
+                m = (self.kown != N['owner']) & (kr < N['r'])
+                if m.any():
+                    self.kill_keys(m, 'crushed', N['owner'])
+        self.notes = [N for N in self.notes if self.t < N['t1']]
+
     def snap(self, rec):
         B0, B1 = self.balls
         rec['P'].append([B0.p.copy(), B1.p.copy()])
@@ -3726,6 +3858,11 @@ class Fight:
                 if H is not None:
                     Hp[j] = ((self.t - H['t0']) / max(1e-9, H['t1'] - H['t0']), H['t0'], H['t1'])
             rec['HOP'].append(Hp)
+        if 'REST' in rec:                                   # #42, only recorded when a fighter uses the 'rests' kind
+            rec['REST'].append([[float(getattr(Bj, 'resting', False)), getattr(Bj, 'rest_count', 0),
+                                 float(self.t < getattr(Bj, 'melody_until', -1.0))] for Bj in (B0, B1)])
+            rec['NOTES'].append([(N['owner'], float(N['c'][0]), float(N['c'][1]), N['r'], N['t0'], N['t1'], N['t_land'],
+                                  N['id'], N['kind'], int(N['hit'])) for N in self.notes])
         if 'FLICK' in rec:                                  # #34 v5, only recorded when a fighter has a 'flick' ability
             Fl = np.full((2, 6), np.nan)
             for j, Bj in enumerate((B0, B1)):
@@ -3854,6 +3991,12 @@ class Fight:
         hookers = [k for k, B in enumerate(self.balls) if any(a['kind'] == 'hook' for a in B.cfg['abilities'].values())]
         if rec is not None and hookers:                          # #39 (opt-in)
             rec['HOOK'] = []
+        resters = [k for k, B in enumerate(self.balls) if B.w['kind'] == 'rests']        # #42 (opt-in)
+        for k in resters:
+            self.rests_setup(k)
+        n16v = k16_0
+        if rec is not None and resters:
+            rec['REST'], rec['NOTES'] = [], []
         self.t = R.t_fight
         f0 = int(round(R.t_fight * R.FPS))
         step = 0
@@ -3987,6 +4130,11 @@ class Fight:
                 n16w += 1
                 for k in wreckers:
                     self.wreck_tick(k, k16w)
+            if resters and self.t + 1e-9 >= n16v * s16:         # #42: rests + whole notes on the beat grid
+                k16v = n16v - k16_0
+                n16v += 1
+                for k in resters:
+                    self.rests_tick(k, k16v)
             if hoppers and self.t + 1e-9 >= n16h * s16:         # #39: hops (and MOUNTAIN KING's) on the 16th grid
                 k16h = n16h - k16_0
                 n16h += 1
@@ -4063,6 +4211,8 @@ class Fight:
                 self.snap_step(k, dt)
             for k in hoppers:                                    # #39: mid-hop positions, landings + stomps
                 self.tiptoe_step(k, dt)
+            if getattr(self, 'notes', None):                     # #42: the whole notes roll (and land)
+                self.notes_step(dt)
             if dc:
                 self.dash_cone_step(dt)                          # (#33)
             if dc or self.whips or self.sweeps or self.spouts:
