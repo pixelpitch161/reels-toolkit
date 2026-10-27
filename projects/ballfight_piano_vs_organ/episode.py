@@ -51,4 +51,9 @@ TITLE_HITS = {'PIANO': (33, 45, 52, 57),                    # a hammered low A c
 
 # ---------------------------------------------------------------- the post
 CAPTION = 'Same keys, different monster 🎹⛪ Comment the next match-up 👇'
-TAGS = {}
+TAGS = {'instagram': '#ballfight #piano #organ #pipeorgan #progrock #keyboards #pianist #organist #pixelart #lowpoly '
+                     '#satisfying #music',
+        'tiktok': '#fyp #ballfight #piano #organ #progrock #pianotok #organtok #pixelart #satisfying #music',
+        'shorts': ('Piano vs Organ: the keyboard duel', 'A player-piano roll that fires its own melody vs pipes that '
+                   'erupt from the floor, every hit in key. Same keys, different monster.',
+                   '#shorts #ballfight #piano #organ #progrock #pixelart #music')}
