@@ -1,4 +1,4 @@
-"""Pixel Pitch: the modern bassoon - low-poly model. No history video yet: built for BALLFIGHT #13
+"""Pixel Pitch: the modern bassoon - low-poly model (and, below, its voice). No history video yet: built for BALLFIGHT #13
 (Bassoon vs Bari Sax) and used read-only through projects/which_instrument_wins/pp_bridge.py, the same way the oboe
 (BALLFIGHT #11) is. A later Pixel Pitch bassoon video can grow from this file (add SCENES rows, backdrop, music) without
 touching the model.
@@ -306,6 +306,57 @@ def build(g, t, ev, fx, s):
             fx.append(("note", tuple(reed + [.08, .12, 0]), age))
         if tp and age < .6:
             fx.append(("wave", tuple(reed + [.02, 0, 0]), age, 0))
+
+
+# ---------------------------------------------------------------- sound: the bassoon's double reed
+# A conical bore (every harmonic) behind a double reed. The bassoon's colour comes from fixed formants: a strong band
+# around 450-500 Hz and a second near 1150 Hz (the "dark, reedy" bassoon vowel), weaker ones near 2.5 and 3.5 kHz, with
+# a weak fundamental in the low register (the 2nd-5th harmonics carry the low notes). A tongued attack with a dry "tock"
+# of reed noise, vibrato that blooms only on held notes, and a quick release: staccato (dur < .15 s) comes out as the
+# bassoon's famous sneaky, comic dot. Pitch may be fractional.
+SR = 44100
+FORMANTS = ((480., 170., 2.3), (1150., 320., 1.25), (2500., 600., .35), (3600., 800., .15))   # (Hz, width, gain)
+
+
+def _midi_hz(m):
+    return 440.0 * 2 ** ((m - 69) / 12.0)
+
+
+def bassoon_reed(f, dur, v, bright=.55, vib=.004, vrate=5.0, att=.018, buzz=.08, breath=.010, growl=0.0):
+    n = int((dur + .14) * SR)
+    t = np.arange(n) / SR
+    rel = .028 if dur < .15 else .05
+    env = np.minimum(1, t / att) ** 1.3 * np.where(t < dur, 1, np.exp(-(t - dur) / rel))
+    env *= 1 + .18 * np.exp(-t / .035)                                         # the tongue's bump
+    held = np.clip((t - .2) / .25, 0, 1) if dur > .3 else 0.0
+    fr = f * (1 - .015 * np.exp(-t / .025)) * (1 + vib * np.sin(2 * np.pi * vrate * t) * held)
+    ph = 2 * np.pi * np.cumsum(fr) / SR
+    x = np.zeros(n)
+    tot = 0.0
+    for k in range(1, 60):
+        fk = f * k
+        if fk > 9000:
+            break
+        a = k ** -.55 * (.22 + sum(g * math.exp(-((fk - c) / w) ** 2) for c, w, g in FORMANTS))
+        a *= math.exp(-fk / (1800 + 3600 * bright * v))                         # louder = brighter
+        if k == 1:
+            a *= min(1.0, max(.3, (f - 60) / 180))                               # a weak fundamental down low
+        x += a * np.sin(k * ph + .9 * k)
+        tot += a
+    x /= tot + 1e-9
+    if growl:
+        x *= 1 + growl * np.sin(2 * np.pi * 31 * t)
+    rng = np.random.default_rng(int(f * 10) % 100003)                          # deterministic noise per pitch
+    nz = rng.standard_normal(n)
+    from scipy.signal import butter, sosfilt
+    nb = sosfilt(butter(2, [700, 2600], 'band', fs=SR, output='sos'), nz)
+    x += nb * (buzz * np.exp(-t / .02) + breath) * .7
+    return x * env * v
+
+
+def synth(s, idx):
+    nt, m, v, dur, tp, cs = s["ev"][idx]
+    return bassoon_reed(_midi_hz(m), dur, v)
 
 
 if __name__ == "__main__":
