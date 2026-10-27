@@ -85,15 +85,16 @@ FIGHTERS = {
         color=(84, 156, 255), dark=(30, 60, 150), corner='blue',
         view=(225, 20, 0),
         weapon=dict(kind='roll', style='roll', name='PIANO ROLL',   # a player-piano roll along its back side: every row
-                    n0=1, grow=0.34, n_max=4,              # of holes fires note-shots from their pitch lanes (the rows are
-                    speed=5.2, aim=0.55, dmg=1.0,          # its line in the music); +holes per landed row
+                    n0=1, grow=0.25, n_max=4,              # of holes fires note-shots from their pitch lanes (the rows are
+                    speed=5.2, aim=0.55, dmg=0.5,          # its line in the music); +holes per landed row
                     margin=0.45, reg=(48, 84)),
         abilities=dict(
             unlock1=dict(name='SUSTAIN', kind='sustain', dur_beats=4, out16=2, step16=1, hang_beats=1,
                          every_bars=6),                    # the next rows hang like mines
-            unlock2=dict(name='GLISSANDO', kind='arc', n=15, sweep=150.0, beats=1, speed=5.6, dmg=0.5, every_bars=4),
-            low=dict(name='88 KEYS', kind='runoff', n=40, speed=5.0, dmg=0.9, margin=0.25, reload_beats=4)),
-        pp='PIANO', register=(48, 84), idiom='roll'),
+            unlock2=dict(name='GLISSANDO', kind='arc', n=15, sweep=150.0, beats=1, speed=5.6, dmg=0.25, every_bars=4),
+            low=dict(name='88 KEYS', kind='runoff', n=40, speed=5.0, dmg=0.45, margin=0.25, reload_beats=4)),
+        pp='PIANO', register=(48, 84), idiom='roll'),   # numbers tuned once in #45 (tune: 300 seeds vs the #35 ORGAN at
+                                                         # handicap 0.55: 50 % / 50 %, median K.O. 51.0 s), frozen
 
     # ---- #28 BALLFIGHT #2: brute force vs finesse (numbers tuned once with ballfight_drums_vs_violin/tune.py, frozen)
     'DRUMS': dict(
