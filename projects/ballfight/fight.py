@@ -3288,7 +3288,15 @@ class Fight:
     # Events ('cable', k, t_hook), ('swing', k, x0, y0, x1, y1, bx, by, L, theta, t0, t1, kind 0 / 1 skank),
     # ('smash', k, x, y, speed). Recorded as WRECK (per ball: phase 0 none / 1 drop / 2 lift / 3 swing, height, cable
     # length, pivot x, pivot y, hook x, hook y, phase start, phase end) when a fighter uses the kind.
-    WRECK_PHASES = {None: 0, 'drop': 1, 'lift': 2, 'swing': 3}
+    # Opt-in (#40 v2, user Oct 27: "while the bari sax is being swung, it should be able to temporarily go outside / over
+    # the ropes so it can actually get a full swing without having to be in the middle of the ring"): `overhang` (ring
+    # units) lets the swing's ends reach that far beyond the in-ring limit (the bottom stays in the ring; the hoist and
+    # the far end swing out over the ropes; never past a corner post: |x| + |z| <= `corner_l1`, default 2 x the limit
+    # + 0.4), so the swing keeps its full `theta` almost anywhere. If the far end is
+    # outside, the ball drops onto the ropes and is slung back in over `back16` 16ths ('return': airborne, landing
+    # `back_in` inside the limit, then rolling on inward). Events ('wreck_out', k, x0, y0, x1, y1, t0, t1) and
+    # ('wreck_in', k, x, y). Without `overhang` everything runs exactly as before.
+    WRECK_PHASES = {None: 0, 'drop': 1, 'lift': 2, 'swing': 3, 'return': 4}
 
     def wreck_setup(self, k):
         B = self.balls[k]
@@ -3325,8 +3333,19 @@ class Fight:
         lim = self.R.A - self.R.R
         bottom = np.clip(B.p + u * min(n, reach), -lim, lim)
 
+        over = w.get('overhang', 0.0)
+
         def span(sg):                                        # how far from the bottom along sg*u before the ropes
             sp = 99.0
+            if over:                                         # #40 v2 (opt-in): out over the ropes on the sides, but
+                v_ = sg * u                                  # never past a corner post (|x| + |z| <= corner_l1)
+                cl1 = w.get('corner_l1', 2 * lim + .4)
+                for a_, c_ in (((1, 0), lim + over), ((-1, 0), lim + over), ((0, 1), lim + over), ((0, -1), lim + over),
+                               ((1, 1), cl1), ((1, -1), cl1), ((-1, 1), cl1), ((-1, -1), cl1)):
+                    av = a_[0] * v_[0] + a_[1] * v_[1]
+                    if av > 1e-9:
+                        sp = min(sp, (c_ - (a_[0] * bottom[0] + a_[1] * bottom[1])) / av)
+                return max(0.0, sp)
             for ax in (0, 1):
                 if abs(u[ax]) > 1e-9:
                     sp = min(sp, (math.copysign(lim, sg * u[ax]) - bottom[ax]) / (sg * u[ax]))
@@ -3381,6 +3400,19 @@ class Fight:
                 W_['phase'], W_['t0'], W_['t1'] = 'lift', self.t, self.t + w['lift16'] * s16
                 B.air = True
             return
+        if W_['phase'] == 'return':                          # #40 v2: dropped on the ropes, slung back into the ring
+            uu = min(1.0, (self.t - W_['t0']) / max(1e-6, W_['t1'] - W_['t0']))
+            e = uu * uu * (3 - 2 * uu)
+            B.p = W_['p_out'] + (W_['q'] - W_['p_out']) * e
+            W_['h'] = W_['h_out'] * (1 - uu) + .25 * math.sin(math.pi * uu)
+            B.v = W_['vin'] * max(.3, 6 * uu * (1 - uu))
+            if uu >= 1.0:
+                B.p = W_['q'].copy()
+                B.v = W_['vin'] * self.R.V
+                B.air = False
+                B.wreck = None
+                self.ev('wreck_in', k, float(B.p[0]), float(B.p[1]))
+            return
         if W_['phase'] == 'lift':
             uu = min(1.0, (self.t - W_['t0']) / max(1e-6, W_['t1'] - W_['t0']))
             e = uu * uu * (3 - 2 * uu)
@@ -3421,6 +3453,16 @@ class Fight:
                     B.blade_len = min(w['max_reach'], B.blade_len + w['grow'])
         if uu >= 1.0:                                            # the far end: unhook and roll on along the swing
             B.p = W_['bottom'] + u * W_['half']
+            lim = self.R.A - R
+            if w.get('overhang', 0.0) and (abs(B.p[0]) > lim or abs(B.p[1]) > lim):   # #40 v2: out over the ropes
+                back_in = w.get('back_in', .25)
+                q = np.clip(B.p, -(lim - back_in), lim - back_in)
+                d = q - B.p
+                vin = d / (float(np.hypot(*d)) + 1e-9)
+                t1 = self.t + w.get('back16', 3) * s16
+                W_.update(phase='return', t0=self.t, t1=t1, p_out=B.p.copy(), q=q, h_out=W_['h'], vin=vin)
+                self.ev('wreck_out', k, float(B.p[0]), float(B.p[1]), float(q[0]), float(q[1]), self.t, t1)
+                return
             B.v = u * self.R.V
             B.air = False
             B.wreck = None
