@@ -25,6 +25,7 @@ EPISODES = [
     ('projects/ballfight_trombone_vs_tuba', [358, 1, 2, 3, 500]),   # #36 (first crossover, dmg_side handicap), seed 358
     ('projects/ballfight_clarinet_vs_oboe', [654, 1, 2, 3, 500]),   # #37 (jump / tune + detune / stun / snip), seed 654
     ('projects/ballfight_bassclarinet_vs_euphonium', [1269, 1, 2, 3, 500]),   # #38 (anchor / mortar / barrage / twin / copy / lights_out), seed 1269
+    ('projects/ballfight_bassoon_vs_barisax', [190, 1, 2, 3, 500]),   # #39 (tiptoe / hook / mountain, rattle / offbeat / quake), seed 190
 ]
 CODE = r'''
 import hashlib, sys
