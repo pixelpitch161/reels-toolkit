@@ -10,7 +10,7 @@ chords and the bass pedals (each pipe row = a chord stab + a pedal note); the le
 
 # ---------------------------------------------------------------- the fight
 FIGHTERS = ('PIANO', 'ORGAN')            # first named = left corner (screen left)
-SEED = None                              # python -m ballfight search piano_vs_organ -> the best fit
+SEED = 638                               # search 1..8000 --stop 8: 8 fits in 1,097 runs (PIANO 49 % of 1,023), ranked first (8.99)
 DMG_SCALE = 1.0
 DMG_SIDE = (1.0, 0.55)                   # the ORGAN's handicap (its only lever; the PIANO's new numbers are
                                          # frozen in the roster): tune, 300 seeds: 50 % / 50 %, median K.O. 51.0 s
