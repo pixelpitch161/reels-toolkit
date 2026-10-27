@@ -31,6 +31,7 @@ EPISODES = [
     ('projects/ballfight_bassoon_vs_barisax', [77, 1, 2, 3, 500]),   # #39 v4 (a full swing near the corners too: 'steer'), seed 77
     ('projects/ballfight_barisax_vs_bassclarinet', [128, 1, 2, 3, 500]),   # #40 v2 (crossover, sides swapped; the bari swings out over the ropes), seed 128 (v1: 617, commit 8115d67)
     ('projects/ballfight_flute_vs_trombone', [392, 1, 2, 3, 500]),   # #41 (crossover, sides swapped; Rules(swat_cobras=True): the lance swats cobras), seed 392
+    ('projects/ballfight_viola_vs_violin', [8219, 1, 2, 3, 500]),   # #42 (rests / double_stop / melody / joke; VIOLA vs the #28 VIOLIN), seed 8219
 ]
 CODE = r'''
 import hashlib, sys
