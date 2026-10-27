@@ -54,6 +54,10 @@ event 'twin'; ANC records it.
 hit, doesn't clash or attack, and slides toward the enemy at `home` x the speed, turning at `turn` rad/s - then erupts
 where it is: `dmg` within `radius`, knocked away by `knock`). Recorded LO (shadow s left) per ball; events
 'lights_out', 'erupt'.
+#38 (opt-in): ability kind `copy` (IDENTITY CRISIS: fires the enemy's last-used ability back as its own, same kind
+and numbers, through trigger(..., ab=, quiet=True); if the enemy hasn't used one yet, one round of its signature
+(an anchor whirl or a mortar salvo); a copied snip waits for the enemy to be close, as the original does). Event
+('copy', owner, name, kind); trigger() records each fighter's last ability (Ball.last_ab).
 The run records every frame (30 fps) for the renderer and every event (hits, blocks, parries, ropes, volleys,
 abilities, level-ups, the K.O.) for the soundtrack and the captions. Seeded: same seed, same fight."""
 import math
@@ -197,6 +201,7 @@ class Fight:
         self.x33_log = []                 # (#33 v2) waterspout path (t, owner, x, z) for the renderer
         self.sucks = []                   # #30 bellows suction rings (collapsing): dict(owner, c, r, rmax, speed, dmg, knock)
         self.clamps = []                  # #30 v2 ability kind 'clamp' (FULL BELLOWS): dict(owner, t0, t_snap, axis, ...)
+        self.extra_snip = set()           # #38: fighters running a copied snip (IDENTITY CRISIS)
         self.events = []
         self.t = 0.0
         self.winner = None
@@ -2602,6 +2607,28 @@ class Fight:
         B.v = np.array([math.cos(a), math.sin(a)]) * float(np.linalg.norm(B.v))
         B.boost = max(B.boost, ab['home'] - 1.0)
 
+    # ------------------------------------------------------------------ #38: IDENTITY CRISIS (opt-in ability kind 'copy')
+    COPYABLE = ('shockwave', 'wave', 'shield', 'haste', 'arc', 'slam', 'snip', 'twin', 'lights_out', 'barrage', 'stun')
+
+    def copy_source(self, k):
+        src = getattr(self.balls[1 - k], 'last_ab', None)
+        return src if src is not None and src['kind'] in self.COPYABLE else None
+
+    def start_copy(self, k):
+        B, O = self.balls[k], self.balls[1 - k]
+        src = self.copy_source(k)
+        if src is not None:
+            self.ev('copy', k, src['name'], src['kind'])
+            if src['kind'] == 'snip':
+                self.extra_snip.add(k)
+            self.trigger(k, 'copy', ab=src, quiet=True)
+            return
+        self.ev('copy', k, O.cfg['weapon'].get('name', O.w['kind'].upper()), O.w['kind'])   # its signature, once
+        if O.w['kind'] == 'anchor' and getattr(B, 'anc', None) is None:
+            self.anchor_plant(k, O.w, O.blade_len)
+        elif O.w['kind'] == 'mortar':
+            self.mortar_fire(k, w=O.w, n=int(O.n_vol + 1e-9))
+
     def ab_dur(self, ab):
         """an ability's duration in s: `dur` (s) or `dur_beats` (beats at this episode's tempo)"""
         return ab['dur'] if 'dur' in ab else ab['dur_beats'] * self.R.beat
@@ -2609,13 +2636,17 @@ class Fight:
     def ab_mult(self, k):
         return self.balls[k].haste_mult if self.balls[k].haste > 0 else 1.0
 
-    def trigger(self, k, slot):
+    def trigger(self, k, slot, ab=None, quiet=False):
+        """fire ability `slot`; #38: `ab` fires that ability dict instead (IDENTITY CRISIS), `quiet` = no 'ability'
+        event / no bookkeeping (the copy is announced by its own 'copy' event)"""
         B, O = self.balls[k], self.balls[1 - k]
-        ab = B.cfg['abilities'][slot]
+        ab = B.cfg['abilities'][slot] if ab is None else ab
         kind = ab['kind']
-        first = slot not in B.used
-        B.used.add(slot)
-        self.ev('ability', k, ab['name'], kind, int(first))
+        if not quiet:
+            first = slot not in B.used
+            B.used.add(slot)
+            self.ev('ability', k, ab['name'], kind, int(first))
+            B.last_ab = ab                                       # #38: what IDENTITY CRISIS would copy
         if kind in ('shockwave', 'wave'):
             self.waves.append(dict(owner=k, c=B.p.copy(), r=self.R.R, speed=ab['speed'], rmax=ab['radius'], dmg=ab['dmg'],
                                    knock=ab['knock'], kind=kind, hit=False, name=ab['name'], t0=self.t,
@@ -2668,6 +2699,8 @@ class Fight:
             self.waves.append(dict(owner=k, c=B.p.copy(), r=self.R.R, speed=ab['speed'], rmax=ab['radius'], dmg=ab['dmg'],
                                    knock=ab['knock'], kind='stun', hit=False, name=ab['name'], t0=self.t, slow=None,
                                    stun=ab['stun']))
+        elif kind == 'copy':                                    # #38 (IDENTITY CRISIS): the enemy's last ability
+            self.start_copy(k)
         elif kind == 'lights_out':                              # #38 (LIGHTS OUT): sink into shadow, erupt
             self.start_lights_out(k, ab)
         elif kind == 'twin':                                    # #38 (MULTIPHONICS): a ghost twin doubles the signature
@@ -2727,6 +2760,10 @@ class Fight:
                 if r is not None and B.cfg['abilities'][slot]['kind'] == 'snip' and \
                         not self.snip_ready(k, B.cfg['abilities'][slot]):
                     continue                                        # #37: the reed's snip waits for the enemy to be close
+                if r is not None and B.cfg['abilities'][slot]['kind'] == 'copy':        # #38: a copied snip waits too
+                    src = self.copy_source(k)
+                    if src is not None and src['kind'] == 'snip' and not self.snip_ready(k, src):
+                        continue
                 if r is not None and self.t >= r - 1e-6:
                     self.trigger(k, slot)
                     B.ready[slot] = self.t + B.cfg['abilities'][slot]['every_bars'] * 4 * self.R.beat
@@ -3273,6 +3310,9 @@ class Fight:
                 self.tune_step(k, dt)
             for k in snippers:                                   # #37: DOUBLE REED
                 self.snip_step(k, dt)
+            for k in self.extra_snip:                            # #38: a snip IDENTITY CRISIS copied
+                if k not in snippers:
+                    self.snip_step(k, dt)
             if shelling:                                         # #38: shells landing
                 self.shells_step()
             if anchorers:                                        # #38: the whirl (either ball: a copied one too)
