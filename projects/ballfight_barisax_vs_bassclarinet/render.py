@@ -277,6 +277,9 @@ def air_pose(k, t):
         pose = wreck_pose(cycle_at(k, t, 0.0), t)
         if pose is not None:
             return pose[0], pose[1]
+        i = sim_i(t)
+        if T.T_FIGHT <= t < T_KO and int(RUN['WRECK'][i, k, 0]) == 4:     # v2: dropped on the ropes, slung back in
+            return RUN['P'][i, k].copy(), VERT * float(RUN['WRECK'][i, k, 1])
     return None
 
 
@@ -418,6 +421,50 @@ ROPE_T = np.array([r[0] for r in ROPE_EV])
 WAVE_EV = [(e[0], 1.0) for e in ERUPTS] + [(e[0], 0.5) for e in EV if e[1] == 'ability' and e[4] == 'shockwave']
 
 
+_OVER = {}
+
+
+def bari_over(t):
+    """[(ring-frame centre, underside height)] of the bari while it is up on the cable / slung back and its footprint
+    reaches the rope line (v2: it may swing out over the ropes): the ropes are pressed down under it"""
+    if t in _OVER:
+        return _OVER[t]
+    out = []
+    if T.T_FIGHT <= t < T_HS:
+        for k in WRECKER:
+            st = fighter(k, t)
+            if st['vis'] and st['h'] > 0.02 and max(abs(st['p'][0]), abs(st['p'][1])) > S.A - R * 1.05:
+                out.append((np.asarray(st['p'], float), float(st['h'])))
+    if len(_OVER) > 64:
+        _OVER.clear()
+    _OVER[t] = out
+    return out
+
+
+def _rope_wobbles():
+    """v2: when the bari lifts off a rope it pressed (the swing passing over, or slung back in), the rope springs back:
+    a synthetic rope event there (it wobbles like a hit rope)"""
+    out = []
+    prev = {}
+    f0, f1 = int(T.T_FIGHT * FPS), int(T_KO * FPS)
+    for f in range(f0, f1 + 1):
+        t = f / FPS
+        cur = {}
+        for c, hb in bari_over(t):
+            for s_, (ax, sg) in enumerate(((1, 1), (0, 1), (1, -1), (0, -1))):
+                if c[ax] * sg > S.A - R * 1.05 and hb < S.ROPE_Y[-1]:
+                    cur[s_] = c.copy()
+        for s_, c in prev.items():
+            if s_ not in cur:
+                out.append((t, s_, float(c[0]), float(c[1]), 3.2))
+        prev = cur
+    return out
+
+
+ROPE_EV = sorted(ROPE_EV + _rope_wobbles())
+ROPE_T = np.array([r[0] for r in ROPE_EV])
+
+
 def side_ends(s):
     a, b = S.ROPE_SIDES[s]
     return S.CORNERS[a], S.CORNERS[b]
@@ -447,8 +494,18 @@ def rope_points(s, y, t, n=15):
             disp += 0.07 * k * math.exp(-(dt - 0.15) / 0.3) * math.sin(2 * math.pi * 4.0 * (dt - 0.15)) * np.sin(np.pi * u)
     disp += 0.012 * T.beat_pulse(t, 0.1) * np.sin(np.pi * u)                 # the bass thud
     sag = 0.035 * np.sin(np.pi * u)
+    yy = y - sag
+    for c, hb in bari_over(t):                                    # v2: the bari swinging over presses the ropes down
+        dd = np.hypot(P[:, 0] - c[0], P[:, 1] - c[1])
+        under = hb + R - np.sqrt(np.clip(R * R - dd * dd, 0, None)) - 0.03    # the ball's underside above each point
+        on = dd < R
+        yy = np.where(on, np.minimum(yy, under), yy)
+        near = (dd >= R) & (dd < R * 1.7)                        # the rope eases back up either side of it
+        if near.any():
+            w = 1 - (dd - R) / (R * 0.7)
+            yy = np.where(near, np.minimum(yy, yy - np.clip(yy - (hb - 0.03), 0, None) * w * w * 0.6), yy)
     P = P + outn[None] * disp[:, None]
-    return S.to_world(P[:, 0], P[:, 1], y - sag)
+    return S.to_world(P[:, 0], P[:, 1], np.maximum(yy, 0.05))
 
 
 # ---------------------------------------------------------------- shards (the loser shatters at the K.O.)
@@ -1388,26 +1445,33 @@ def render(f):
         items.append((dz, 'ball', k))
     items.sort(key=lambda it: -it[0])
     drawn = {}
+    late = [k for k in WRECKER if in_fight and fs[k]['vis'] and fs[k]['h'] > 0.02
+            and max(fs[k]['p'][0], fs[k]['p'][1]) > S.A - R * 1.05]       # v2: up over a front rope: drawn after it
+
+    def draw_fighter(obj):
+        st = fs[obj]
+        arr, depth = fr.array(), fr.depth()
+        if obj in WRECKER and T.T_FIGHT <= t < T_HS:                # smear + trail, the harness ring's side
+            arr = draw_swing_fx(arr, cam, obj, t)
+            cs_ = cranes[obj]
+            if cs_ is not None and cs_['attached']:
+                a_ = cam.wp(S.to_world(st['p'][0], st['p'][1], R + st['h'])[None])[0]
+                b_ = cam.wp(cs_['block'][None])[0]
+                d_ = b_ - a_
+                st['ring_dir'] = d_ / (np.linalg.norm(d_) + 1e-9)
+        drawn[obj] = draw_ball(arr, depth, cam, obj, st, t)
+        fr.set_array(arr, depth)
     for dz, kind, obj in items:
         if kind == 'post':
             draw_post(obj)
-        elif kind == 'ball':
-            st = fs[obj]
-            arr, depth = fr.array(), fr.depth()
-            if obj in WRECKER and T.T_FIGHT <= t < T_HS:            # smear + trail, the harness ring's side
-                arr = draw_swing_fx(arr, cam, obj, t)
-                cs_ = cranes[obj]
-                if cs_ is not None and cs_['attached']:
-                    a_ = cam.wp(S.to_world(st['p'][0], st['p'][1], R + st['h'])[None])[0]
-                    b_ = cam.wp(cs_['block'][None])[0]
-                    d_ = b_ - a_
-                    st['ring_dir'] = d_ / (np.linalg.norm(d_) + 1e-9)
-            drawn[obj] = draw_ball(arr, depth, cam, obj, st, t)
-            fr.set_array(arr, depth)
+        elif kind == 'ball' and obj not in late:
+            draw_fighter(obj)
     # ---------------- front ropes + posts
     draw_rope_side(0)
     draw_rope_side(1)
     draw_post('front')
+    for obj in late:
+        draw_fighter(obj)
     arr, depth = fr.array(), fr.depth()
     # ---------------- the endpin + twin ghost, the slap paddle (#38), the crane (#39), GROWL's front, shards, sparks
     for k in ANCHOR:
@@ -1462,7 +1526,7 @@ def render(f):
     # ---------------- lens (focus locked on the ring), glows, the spot beam, bloom, grade
     img, depth = fr.array(), fr.depth()
     zf = cam.depth(S.SUBJECT)[0]
-    img = dof(img, coc_map(depth, zf, 26.0, sharp=0.19))       # 0.19: the bari hoisted 3 up for CABLE SNAP stays crisp
+    img = dof(img, coc_map(depth, zf, 26.0, sharp=0.26))       # 0.26: the bari hoisted 3 up near the camera (CABLE SNAP) stays crisp
     img = shimmers(img, cam, t)
     for name, lp in (('red', S.RED_LIGHT), ('blue', S.BLUE_LIGHT)):
         s_ = cam.wp(lp[None])[0]

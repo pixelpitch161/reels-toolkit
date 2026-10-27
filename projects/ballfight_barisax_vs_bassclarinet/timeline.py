@@ -61,9 +61,9 @@ T_CLOSE = 0.30                  # the last 0.30 s of the file: the doors slide s
 
 # ---------------------------------------------------------------- frozen rules (crossover: the damage handicap only)
 DMG_SCALE = 1.0                 # the shared scale stays 1.0; each fighter's damage is its own handicap below
-DMG_SIDE = (0.35, 0.68)         # BARI SAX, BASS CLARINET: tuned once (tune.py, 250 seeds: 52 % / 48 % of 242 decided,
-                                # median K.O. 49.7 s) on the engine with the crane leading a whirling enemy (8776314),
-                                # frozen. For reference: 0.32 in #39 v2 (vs the bassoon), 0.68 in #38 (vs the euphonium)
+DMG_SIDE = (0.30, 0.66)         # BARI SAX, BASS CLARINET: v2 (the bari swings out over the ropes, #40 v2 Oct 27): re-tuned
+                                # once (tune.py, 250 seeds: 48 % / 52 % of 239 decided, median K.O. 50.8 s), frozen.
+                                # v1: (0.35, 0.68). For reference: 0.32 in #39 v2, 0.68 in #38
 
 # ---------------------------------------------------------------- story targets (seed_search.py scores runs against these)
 T_KO = (49.0, 53.0)

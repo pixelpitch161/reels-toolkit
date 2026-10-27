@@ -32,7 +32,7 @@ for f in range(T.NF):
     for kind, p, rot, size, curl, a in R.parts_at(t):
         pts.append(S.to_world(p[0], p[2], p[1]))
         names.append('shard')
-    c = coc_map(cam.depth(np.array(pts)), zf, 26.0, 0.19)   # render.py's sharp band
+    c = coc_map(cam.depth(np.array(pts)), zf, 26.0, 0.26)   # render.py's sharp band
     i = int(np.argmax(c))
     if c[i] > worst[0]:
         worst = (float(c[i]), t, names[i])

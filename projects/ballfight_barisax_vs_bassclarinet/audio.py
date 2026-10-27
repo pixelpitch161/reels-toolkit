@@ -301,6 +301,20 @@ def wrench(dur=0.4, seed=0):
     return _BC[key]
 
 
+def rope_twang(m, seed=0, dur=0.45):
+    """v2: a ring rope springing back from under the bari: a low plucked tone, quickly damped, a fibrous buzz"""
+    key = ('twang', round(m, 2), seed % 3, round(dur, 2))
+    if key not in _BC:
+        n = int(dur * SR)
+        t = A.tt(n)
+        f = A.mtof(m)
+        x = sum((1.0 / k ** 1.2) * np.sin(2 * np.pi * f * k * t * (1 + .01 * np.exp(-t / .05)) + .3 * k) *
+                np.exp(-t * (6 + 4 * k)) for k in range(1, 7))
+        buzz = A.bp(np.random.default_rng(seed + 31).normal(0, 1, n), 300, 2500) * np.exp(-t / .02) * .4
+        _BC[key] = np.tanh(1.5 * (x + buzz)) * np.clip(t / .002, 0, 1)
+    return _BC[key]
+
+
 def winch(dur, seed=0, rise=1.0):
     """the crane's winch (#39): a geared whirr (a buzzy tone sweeping `rise` octaves) + chain rattle"""
     n = int(dur * SR)
@@ -410,14 +424,16 @@ def band_bar(mix, b, dense=0.0, light=False, duck=()):
         mix.place('fx', hiss(0.5, b), t0 + 3.5 * T.BEAT, 0.12, pan=0.3)
 
 
-def band_hit(mix, t, ch, g=1.0):
-    """a unison machine hit: kick + sheet metal + the anvil + a pipe chord + a grinder stab + a deep thud"""
+def band_hit(mix, t, ch, g=1.0, metal=1.0):
+    """a unison machine hit: kick + sheet metal + the anvil + a pipe chord + a grinder stab + a deep thud. `metal` scales
+    the bright parts (sheet metal, pipes, grinder, anvil): v2's lighter intro hits keep the punch and drop the clang"""
     mix.place('drums', KICK, t, 0.5 * g)
-    mix.place('drums', backbeat(int(t * 10)), t, 0.30 * g)
-    mix.place('metal', sheet(int(t * 7) % 5, 1.6), t, 1.1 * g)
+    mix.place('drums', backbeat(int(t * 10)), t, 0.30 * g * metal)
+    if metal > 0:
+        mix.place('metal', sheet(int(t * 7) % 5, 1.6), t, 1.1 * g * metal)
     for j, m in enumerate(T.chord_tones(67, 79, ch)[:3]):
-        mix.place('metal', pipe(m, j), t, 0.16 * g, pan=(j - 1) * 0.3)
-    mix.place('grind', grind(ch, 0.28, 1), t, 0.16 * g, pan=0.2)
+        mix.place('metal', pipe(m, j), t, 0.16 * g * max(metal, .5), pan=(j - 1) * 0.3)
+    mix.place('grind', grind(ch, 0.28, 1), t, 0.16 * g * max(metal, .4), pan=0.2)
     mix.place('fx', A.thud(0.6, 110, 36, seed=int(t * 50) + 3), t, 0.15 * g)
 
 
@@ -596,29 +612,34 @@ def bcl_part(mix):
 def main():
     mix = A.Mix(T.DUR + 4.0)
     bar_ko = int(T_KO // T.BAR)
-    # ------------------------------------------------ bar 0: the VS title card over the full groove
+    # ------------------------------------------------ bar 0: the VS title card over the groove
+    # v2 (user, Oct 27: "the music in the intro is a little loud"): the card's three slams each carried a full machine
+    # hit (sheet metal, pipes, grinder, anvil) and the count-in three more, so the first 4 s were the brightest, most
+    # crowded stretch of the track (K-weighted +0.7 LU over the fight, momentary peaks 2-3 LU over it) though its RMS
+    # matched. Thinned by arrangement, not level: one sheet-metal crash (on the frame-0 slam), lighter hits for VS and
+    # the second name, a sparser bar under the card, count-in hits without the clang.
     t1, t2, t3 = 0.004, T.BEAT, 2 * T.BEAT                 # BARI SAX 4 ms in (no click at the seam), VS, BASS CLARINET
-    band_bar(mix, 0, dense=0.7)
-    band_hit(mix, t1, 'Gm', 0.85)
-    band_hit(mix, t2, 'Gm', 0.8)
-    band_hit(mix, t3, 'Gm', 0.8)
+    band_bar(mix, 0, dense=0.6)
+    band_hit(mix, t1, 'Gm', 0.8, metal=0.75)
+    band_hit(mix, t2, 'Gm', 0.72, metal=0.5)
+    band_hit(mix, t3, 'Gm', 0.72, metal=0.5)
     mix.place('bari', bari(43, 0.5, 1.0, honk=1.0), t1, 0.62)  # BARI SAX: a huge honk on the root
     mix.place('bari', bari(55, 0.4, 0.8, honk=0.6), t1 + 0.02, 0.20)
-    mix.place('fx', thunder(1.4, 91), t2, 0.55)              # VS: the thunder crack where it splits the divider
+    mix.place('fx', thunder(1.4, 91), t2, 0.40)              # VS: the thunder crack where it splits the divider
     mix.place('bcl', bcl(55, 0.9 * T.BEAT, 1.0, growl=0.7), t3, 0.50, pan=-0.2)   # BASS CLARINET: a growl + slap
     mix.place('bcl', bcl(62, 0.9 * T.BEAT, 0.8, growl=0.4), t3, 0.22, pan=-0.2)
     mix.place('bcl', slap(67, 1.0), t3 + 0.004, 0.50, pan=-0.2)
     mix.place('fx', wrench(T.T_DOORS[1] - T.T_DOORS[0] + 0.1, 3), T.T_DOORS[0] - 0.05, 0.18)   # the doors open
     mix.place('fx', A.whoosh(T.T_DOORS[1] - T.T_DOORS[0] + 0.1, 300, 5000), T.T_DOORS[0] - 0.05, 0.12)
     # ------------------------------------------------ bar 1: the count-in on the dominant (D)
-    band_bar(mix, 1, dense=0.4)
+    band_bar(mix, 1, dense=0.65)
     for tc, txt in T.COUNT[:3]:
-        band_hit(mix, tc, 'D', 0.75)
+        band_hit(mix, tc, 'D', 0.8, metal=0.55)
         mix.place('bari', bari(38, 0.22, 0.9, honk=0.5), tc, 0.40, pan=0.15)      # the bari counts on D
     for j in range(4):                                       # an anvil fill into FIGHT!
-        mix.place('drums', anvil(j), T.BAR + 3 * T.BEAT + j * S16, 0.26 + 0.05 * j)
-    mix.place('fx', hiss(T.BEAT, 9), T.BAR + 3 * T.BEAT, 0.12)
-    band_hit(mix, T.T_FIGHT, 'Gm', 1.1)                      # the drop
+        mix.place('drums', anvil(j), T.BAR + 3 * T.BEAT + j * S16, 0.18 + 0.04 * j)
+    mix.place('fx', hiss(T.BEAT, 9), T.BAR + 3 * T.BEAT, 0.10)
+    band_hit(mix, T.T_FIGHT, 'Gm', 1.0, metal=0.8)           # the drop
     mix.place('fx', thunder(1.6, 7, crack=False), T.T_FIGHT, 0.35)
     # ------------------------------------------------ the bed: bar 2 (FIGHT!) .. the K.O. (thickens as it goes)
     duck = {}                                                # the beats where a swing honk bottoms out
@@ -635,6 +656,17 @@ def main():
     # ------------------------------------------------ the two fighters, from the run
     bari_part(mix)
     bcl_part(mix)
+    for te, side, x, z, spd in RD.ROPE_EV:                  # v2: a rope the bari pressed springs back: a low twang
+        if spd == 3.2 and te <= T_KO:
+            mix.place('fx', rope_twang(T.bass_root(te) + 12, seed=int(te * 10)), q16(te), 0.20, pan=0.2)
+    for e in EV:                                             # v2: dropped on the ropes, slung back in
+        if e[0] > T_KO:
+            break
+        if e[1] == 'wreck_out' and e[2] == KX:
+            mix.place('fx', rope_twang(T.bass_root(e[0]), seed=7, dur=0.6), q16(e[0] + 0.06), 0.30, pan=0.25)
+            mix.place('fx', A.whoosh(e[7] - e[6], 400, 3000, rise=False), e[0], 0.08)
+        elif e[1] == 'wreck_in' and e[2] == KX:
+            mix.place('fx', A.thud(0.35, 140, 50, seed=int(e[0] * 10)), q16(e[0]), 0.22)
     last_clash = -9.0
     for e in EV:                                             # contacts: a light thud, at most every 0.15 s
         if e[0] > T_KO:

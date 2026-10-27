@@ -9,6 +9,38 @@ The real one vs the lookalike: the bass clarinet keeps getting called "the black
 - **BASS CLARINET** ENDPIN ANCHOR: every bar it plants its floor peg and whirls round it like a hammer-thrower (orbit
   grows per landed smash). SLAP TONGUE / MULTIPHONICS / LIGHTS OUT.
 
+## v2 (user feedback, Oct 27)
+
+"The bari sax model needs more detail, as it is completely smooth right now ... While the Bari Sax is being swung, it
+should be able to temporarily go outside/over the ropes so it can actually get a full swing without having to be in the
+middle of the ring. The music in the intro is a little loud (only a problem in this one)."
+
+- **Model** (`series/instrument-history/barisax_lowpoly.py`, own commit 567ced7): in the ball-sprite scene every tube is
+  fattened x1.35, but the keys sat on the unscaled body, buried inside it; they were gold on gold; rods, guards and
+  engraving were lines, which the sprites drop. Rebuilt from the Amati low-A product shot (Commons, studied in Chrome):
+  deep cups on the real surface with dark pad rings, white pearl touches on posts, long rods on posts, guards with
+  diamond feet (side keys, low keys, bell keys), bow bands, bow guard + felt, a wide bright rim, engraving, a gold
+  ligature; all faces. Voice byte-identical. (Chrome asked for a site permission on a second Commons page mid-way; the
+  one reference was enough, so that wasn't pushed.)
+- **Over the ropes** (engine df67dcd, opt-in; roster 45c9190): the wrecking weapon's `overhang` lets the swing's ends
+  reach 1.3 beyond the in-ring limit (the bottom stays in the ring) but never past a corner post (`corner_l1`,
+  |x| + |z| <= 5.2; the left / right corners are at the frame edges); a far end outside drops onto the ropes and is
+  slung back in (`return`, 3 16ths). Full-amplitude swings 35 % -> 76 %, cramped ones (< 25 deg) 41 % -> 6 %. It is the
+  bari's standard now; #39's sim.py pins it off so #39 replays as delivered. Picture: the ropes are pressed down under
+  the ball where it passes over them and spring back with a wobble (+ a low twang) as it lifts off; over a front rope
+  it is drawn after the front ropes; the slung-back return uses the WRECK record's height.
+- **Re-tune + new honest seed**: BARI SAX x0.30 / BASS CLARINET x0.66 (250 seeds 48 / 52 %, median K.O. 50.8 s);
+  `seed_search.py 1 8000 --stop 6`: 6 fits in 189 runs (45 / 55 %). **Seed 128** (top score 10.05): the bari is
+  hoisted out over the ropes on 11 of its 15 swings (12 of them full) and slung back in at 49.2 s; LIGHTS OUT erupts
+  under it at 39.6 s, CABLE SNAP lands at 43.9 s, the lead swings back at 43.8 s and the wrecking ball K.O.s the bass
+  clarinet at 50.80 s with the bari on 0.7 HP. Captions GROWL 12.9, SLAP TONGUE 18.1, SKANK 24.3, LIGHTS OUT 37.7,
+  CABLE SNAP 42.4 (MULTIPHONICS 26.7 lights in the HUD list only: 4 s rule).
+- **Intro**: RMS matched the fight, but K-weighted (`loudness.py`, BS.1770) the title card was +0.7 LU over it with
+  momentary peaks 2-3 LU over: three full machine hits (sheet metal, pipes, grinder, anvil) on the card's slams and
+  three more in the count-in. Thinned by arrangement, not level (one sheet-metal crash, lighter VS / name-B / count
+  hits): intro -1.4 LU vs the fight, level with the ending; `reelkit.levels` PASS.
+- **Focus**: this run's CABLE SNAP hoists the bari 3 up over the front corner, near the camera: sharp band 0.26.
+
 ## Sides
 
 First named = left, the reverse of their own episodes. The engine seats fighters in the order they are passed
@@ -24,13 +56,13 @@ the fix: when the enemy is anchored the crane leads it with the engine's existin
 euphonium's mortar does). It only acts when an anchorer is in the fight, so all 14 finished episodes replay identically
 (`tools/ballfight_replay_hash.py`). With it: swings smash ~80 %, CABLE SNAP lands ~57 %.
 
-## Crossover rule: the only lever is the damage handicap
+## Crossover rule: the only lever is the damage handicap (v1 numbers; v2 above)
 
 `Rules(dmg_side)` (from #36), frozen in `timeline.DMG_SIDE`, shared scale 1.0: **BARI SAX x0.35, BASS CLARINET x0.68**
 (`tune.py`, 250 seeds: 52 % / 48 % of 242 decided, median K.O. 49.7 s; both desperation moves fire in 88 %). For
 reference the bari ran at 0.32 vs the bassoon (#39 v2), the bass clarinet at 0.68 vs the euphonium (#38).
 
-## The run: honest seed 617
+## v1's run: honest seed 617 (superseded by v2's seed 128; v1 is at commit 8115d67)
 
 Search with the fight at 2 bars and the usual hard windows (`seed_search.py 1 5000 --stop 8`): 8 fits in 617 runs,
 BARI SAX 48 % / BASS CLARINET 52 % of 602 decided. Seed 309 scored highest (8.37) but its CABLE SNAP misses and LIGHTS OUT
@@ -71,15 +103,15 @@ for the bari so the bass line keeps its fundamental. One master gain + compresso
 ## Commands (from this folder)
 
 ```bash
-python tune.py 250 hb=0.35 hc=0.68                          # handicap tuning (done once, frozen in timeline.DMG_SIDE)
-python seed_search.py 1 5000 --stop 8                      # honest runs ranked against the beat sheet -> check/seeds.txt
-python sim.py 617                                          # the run's story
+python tune.py 250 hb=0.30 hc=0.66                          # handicap tuning (v2, frozen in timeline.DMG_SIDE)
+python seed_search.py 1 8000 --stop 6                      # honest runs ranked against the beat sheet -> check/seeds.txt
+python sim.py 128                                          # the run's story
 python render.py                                           # sprite cache (check/sprites_ballfight14.npz, ~45 s)
-python -m reelkit.sheet render.py test/sheet.png 0.0 1.1 2.4 4.75 13.0 16.4 39.2 40.12 44.4 50.6 52.2 60.85
+python -m reelkit.sheet render.py test/sheet_v2.png 1.1 3.0 12.05 18.2 24.4 37.07 37.25 39.7 43.95 49.3 50.85 52.6
 python -m reelkit.safezone render.py --step 0.25
 python focus_check.py                                      # subject CoC must be 0 px on every frame
-python audio.py && python band_check.py && python -m reelkit.levels audio.wav
-python flash_test.py 38.4 51.6
+python audio.py && python band_check.py && python -m reelkit.levels audio.wav && python loudness.py
+python flash_test.py 36.5 51.2
 python -m reelkit.loopcheck render.py audio.wav
 python -m reelkit.video render.py audio.wav ballfight_tmp.mp4 && python mux.py   # render, then the loop-clean encode
 ```
@@ -95,4 +127,4 @@ python -m reelkit.video render.py audio.wav ballfight_tmp.mp4 && python mux.py  
 | `styles.py` | No new weapon styles: imports #39's and #38's; `mirrored()` for the title panels |
 | `render.py` | #39's ring / crane / HUD / title pipeline with #38's bass clarinet merged in |
 | `audio.py` | The construction site + both fighters from the run |
-| `band_check.py`, `focus_check.py`, `flash_test.py`, `mux.py` | Checks and the loop-clean encode |
+| `band_check.py`, `focus_check.py`, `flash_test.py`, `loudness.py`, `mux.py` | Checks (incl. K-weighted loudness per section) and the loop-clean encode |
