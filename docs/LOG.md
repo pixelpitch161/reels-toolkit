@@ -1388,8 +1388,8 @@
   landed 3 % (96 % in #39). Measured it, flagged it (crossover rule), the user chose the fix: lead an anchored enemy
   with the engine's existing `predict()`. Gated on an anchorer being in the fight, so the guard stayed identical.
   Lesson for crossovers: before tuning, measure each signature's hit rate against the new opponent vs its own episode.
-- Tuning was quick and sensitive (the bari's share went 0 % -> 100 % between x0.6 and x0.9 on the old engine). With the
-  fix: x0.35 / x0.68. The honest search took 617 runs for 8 fits. Picked 617 over the top score (309), whose CABLE SNAP
+- Tuning was quick and sensitive (old engine: the bari won 0 % at its #39 / #38 scales x0.32 / x0.68, 46 % at x0.6 /
+  x0.6, 95 % at x0.9 / x0.6). With the fix: x0.35 / x0.68. The honest search took 617 runs for 8 fits. Picked 617 over the top score (309), whose CABLE SNAP
   misses and LIGHTS OUT falls in the 4 s caption gap.
 - Title card on swapped sides: the shared two-line option only covered name A (added for name B, opt-in); the panel
   patterns are drawn for one side of the divider, so mirror them (`styles.mirrored`, idempotent: title.py imports the
