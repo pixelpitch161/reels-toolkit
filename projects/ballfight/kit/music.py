@@ -268,6 +268,7 @@ def master(mix, ceiling=0.89):
     levels = {}
     for s in SOUNDS:
         levels[s.bus] = (s.bus_gain, s.send)
+        levels.update(s.buses)                             # a fighter's extra buses (#42's crowd laugh)
     levels.update(BUS)
     levels.update(bed.buses)
     levels.update({k: tuple(v) for k, v in T.MIX.items()})
@@ -303,18 +304,21 @@ def score():
     mix = A.Mix(T.DUR + 4.0)
     a, b = SOUNDS
     # ------------------------------------------------ bar 0: the VS title card, one band hit per word
-    t1, t2, t3 = 0.004, T.BEAT, 2 * T.BEAT                 # A 4 ms in (no click at the seam), VS, B
-    bed.title(mix, (t1, t2, t3))
-    a.title_blast(mix, t1)
-    bed.vs(mix, t2)
-    b.title_blast(mix, t3)
-    bed.title_rest(mix)
-    mix.place('fx', A.whoosh(T.T_DOORS[1] - T.T_DOORS[0] + 0.1, 300, 5000), T.T_DOORS[0] - 0.05, 0.14)
+    if T.CARD:                                             # (legacy episodes without the card: FIGHT_BAR = 1)
+        t1, t2, t3 = 0.004, T.BEAT, 2 * T.BEAT             # A 4 ms in (no click at the seam), VS, B
+        bed.title(mix, (t1, t2, t3))
+        a.title_blast(mix, t1)
+        bed.vs(mix, t2)
+        b.title_blast(mix, t3)
+        bed.title_rest(mix)
+        mix.place('fx', A.whoosh(T.T_DOORS[1] - T.T_DOORS[0] + 0.1, 300, 5000), T.T_DOORS[0] - 0.05,
+                  getattr(bed, 'doors_open_gain', 0.14))
     # ------------------------------------------------ bar 1: the count-in on the second chord, FIGHT!
     bed.count_in(mix)
     for s in SOUNDS:
         s.count_in(mix)
-    mix.place('fx', A.whoosh(T.BEAT, 400, 6000), T.BAR + 3 * T.BEAT, 0.12)
+    mix.place('fx', A.whoosh(T.BEAT, 400, 6000), T.BAR + 3 * T.BEAT if T.CARD else T.T_FIGHT - T.BEAT,
+              getattr(bed, 'count_whoosh_gain', 0.12))
     bed.fight_start(mix)
     # ------------------------------------------------ the fight: the bed to the K.O. (tape-stopped there), the fighters
     bar_ko = int(T_KO // T.BAR)
@@ -324,6 +328,8 @@ def score():
     shared_events(mix)
     # ------------------------------------------------ the K.O.
     bed.ko(mix)
+    for s in SOUNDS:
+        s.ko(mix)
     SOUNDS[LOSE].fall_apart(mix)
     mix.place('fx', roar(5.5), T_KO + 0.2, bed.roar_gain)
     tw = q16(T_KO + 1.3)                                   # the winner's stinger on "(WINNER) WINS"
@@ -341,10 +347,11 @@ def score():
     bed.last_bars(mix)
     for s in SOUNDS:
         s.last_bar(mix)
-    nc = int((T.T_CLOSE + 0.012) * SR)                     # the doors sliding shut into the title slam
-    tcl = A.tt(nc)
-    doors = A.bp(np.random.default_rng(93).normal(0, 1, nc), 400, 5000) * (tcl / T.T_CLOSE) ** 2
-    mix.place('fx', doors, T.DUR - T.T_CLOSE, bed.doors_gain)
+    if T.CARD:
+        nc = int((T.T_CLOSE + 0.012) * SR)                 # the doors sliding shut into the title slam
+        tcl = A.tt(nc)
+        doors = A.bp(np.random.default_rng(93).normal(0, 1, nc), 400, 5000) * (tcl / T.T_CLOSE) ** 2
+        mix.place('fx', doors, T.DUR - T.T_CLOSE, bed.doors_gain)
     g0, g1 = bed.landing
     for tl, k, nch in impact_landings(P.CAPTIONS):        # caption landings: soft thuds
         mix.place('fx', A.thud(), tl, g0 if k == 0 else g1)

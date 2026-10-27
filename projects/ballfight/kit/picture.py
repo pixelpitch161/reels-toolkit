@@ -306,9 +306,26 @@ def events_between(t0, t1, kinds=None):
 SIDE_OF = {(1, 1): 0, (0, 1): 1, (1, -1): 2, (0, -1): 3}       # (axis, sign) -> rope side (ROPE_SIDES order)
 ROPE_EV = [(e[0], SIDE_OF[(e[3], e[4])], e[5], e[6], e[7]) for e in EV if e[1] == 'rope']
 ROPE_T = np.array([r[0] for r in ROPE_EV])
-WAVE_EV = [(e[0], LOOKS[e[2]].rope(e)) for e in EV if e[1] == 'ability' and LOOKS[e[2]].rope(e) is not None]
-WAVE_EV += [(e[0], LOOKS[owner(e)].rope(e)) for e in EV
-            if e[1] != 'ability' and owner(e) is not None and LOOKS[owner(e)].rope(e) is not None]
+
+
+def _wave_ev():
+    """rope wobbles from the fighters' events: abilities first, then the rest (#41's order); a look's rope() may give
+    (t, strength) to wobble them at another time (#42: when the joke's note lands)"""
+    out = []
+    for abil in (True, False):
+        for e in EV:
+            if (e[1] == 'ability') != abil:
+                continue
+            k = e[2] if abil else owner(e)
+            if k is None:
+                continue
+            r_ = LOOKS[k].rope(e)
+            if r_ is not None:
+                out.append(tuple(r_) if isinstance(r_, tuple) else (e[0], r_))
+    return out
+
+
+WAVE_EV = _wave_ev()
 
 
 def side_ends(s):
@@ -524,6 +541,8 @@ def draw_ball(arr, dep, cam, k, st, t):
     reg = arr[ya:yb, xa:xb]
     dreg = dep[ya:yb, xa:xb]
     col = COL[k]
+    for L in LOOKS:                                                          # a status on it (#42: frozen grey)
+        col = L.ball_tint(k, st, t, col)
     glow = st['glow']
     nz = np.sqrt(np.clip(1 - d2, 0, 1))
     lam = np.clip(-0.25 * dx - 0.55 * dy + nz * 0.6, 0, 1)                   # lit from the spot above (top of the ball)
@@ -547,6 +566,8 @@ def draw_ball(arr, dep, cam, k, st, t):
         ms = sub[..., 3] > 0
         rg = arr[ay0:ay1, ax0:ax1]
         lit = sub[..., :3].astype(np.float32) * (1.06 + 0.3 * glow)
+        for L in LOOKS:
+            lit = L.sprite_lit(k, st, t, lit)
         rg[ms] = np.clip(lit[ms], 0, 255)
     rc = np.clip(col * (0.9 + 0.5 * glow) + 50 * glow, 0, 255)
     mr = rim[sl]
@@ -718,7 +739,7 @@ CROWD_PH = np.array([c[2] for c in S.CROWD])
 CROWD_HT = np.array([c[4] for c in S.CROWD])
 BAR_N = np.array([n for Q, n, am in S.BARRIER])
 BAR_C = np.array([Q.mean(0) for Q, n, am in S.BARRIER])
-FLASH_EV = [e[0] for e in EV if (e[1] == 'hit' and e[7] in LOOKS[e[2]].flash_hits) or e[1] == 'ability'] + \
+FLASH_EV = [e[0] for e in EV if (e[1] == 'hit' and LOOKS[e[2]].flashes(e)) or e[1] == 'ability'] + \
            [T_KO + 0.03 * j for j in range(16)]
 FLASH_T = np.array(sorted(FLASH_EV))
 
@@ -736,8 +757,10 @@ def led_colour(am, t, wk):
 
 
 def arena(fr, cam, L, t):
-    """tiers, people and LED boards in one painter pass (far to near)"""
+    """tiers, people and LED boards in one painter pass (far to near); a fighter's joke can make the crowd laugh
+    (#42's VIOLA JOKE: heads bob, bodies rock and lean back, arms go up)"""
     wk = win_k(t)
+    lk = max(Lk.laugh(t) for Lk in LOOKS)
     items = []
     vis = np.einsum('ij,ij->i', STAND_N, cam.pos[None] - STAND_C) > 0
     idx = np.nonzero(vis)[0]
@@ -776,16 +799,26 @@ def arena(fr, cam, L, t):
             hop = 1 if ((beat_j + CROWD_CI[j]) % 2 == 0 and on_b) or (wk > 0.3 and CROWD_PH[j] < wk and on_b) else 0
             y -= hop
             rh = 0.15 * cam.f / dh[j]
+            sway = 0.0
+            if lk > 0:                                          # the laugh: heads bob "ha-ha-ha", bodies rock and
+                ph = CROWD_PH[j] * 6.28                         # lean back (each at its own phase) (#42)
+                y -= lk * (1.2 + 1.2 * abs(math.sin(2 * math.pi * 5.2 * t + ph))) * max(1.0, rh * 0.8)
+                sway = lk * 1.3 * math.sin(2 * math.pi * 1.7 * t + ph) * max(1.0, rh * 0.6)
             if not (-6 < x < W + 6 and -6 < y < H + 10):
                 continue
             side = CROWD_P[j, 0]
             tint = CROWD_TINT[0] if side < -1.5 else (CROWD_TINT[1] if side > 1.5 else np.array([1.0, 0.92, 1.0]))
-            body = np.clip(S.CROWD_COLS[CROWD_CI[j]] * tint * spill * crowd_lit[j], 0, 255)
+            body = np.clip(S.CROWD_COLS[CROWD_CI[j]] * tint * spill * crowd_lit[j] * (1 + 0.25 * lk), 0, 255)
             draw.ellipse([x - 1.9 * rh, y + 0.6 * rh, x + 1.9 * rh, y + 3.4 * rh], fill=tuple(int(v) for v in body * 0.8))
-            draw.ellipse([x - rh, y - rh, x + rh, y + rh], fill=tuple(int(v) for v in body * 0.62))
+            draw.ellipse([x - rh + sway, y - rh, x + rh + sway, y + rh], fill=tuple(int(v) for v in body * 0.62))
             # rim light from the ring on the heads (they face it)
             if rh >= 1.5:
-                draw.line([x - rh * 0.6, y - rh * 0.8, x + rh * 0.6, y - rh * 0.8], fill=tuple(int(v) for v in np.clip(body * 1.5 + 30, 0, 255)))
+                draw.line([x - rh * 0.6 + sway, y - rh * 0.8, x + rh * 0.6 + sway, y - rh * 0.8],
+                          fill=tuple(int(v) for v in np.clip(body * 1.5 + 30, 0, 255)))
+            if lk > 0.3 and rh >= 1.2 and (j % 3 == 0):         # arms thrown up / clutching (laughing)
+                ya_ = y + 0.9 * rh
+                draw.line([x - 1.6 * rh, ya_, x - 2.1 * rh + sway, ya_ - 1.6 * rh * lk], fill=tuple(int(v) for v in body * 0.8))
+                draw.line([x + 1.6 * rh, ya_, x + 2.1 * rh + sway, ya_ - 1.6 * rh * lk], fill=tuple(int(v) for v in body * 0.8))
             ph = CROWD_PH[j]
             if ph < 0.07 + 0.45 * wk:                                    # phones up (lots more for the champion)
                 tw = 0.65 + 0.35 * math.sin(2 * math.pi * (t / WP + ph * 11))
@@ -829,10 +862,12 @@ def canvas_shadows(F, spot):
 
 # ---------------------------------------------------------------- sparks
 SPARK_OTHER = {'parry': (np.array([230, 236, 255]), 6, 2.4, 0.2), 'block': (np.array([160, 220, 255]), 12, 2.6, 0.3)}
+SPARK_KINDS = ('hit', 'parry', 'block', 'wall', 'cleared', 'fade')
+SPARK_KINDS += tuple(sorted({k for L_ in LOOKS for k in L_.spark_kinds} - set(SPARK_KINDS)))
 
 
 def sparks(arr, cam, t):
-    for i, e in events_between(t - 0.32, t, ('hit', 'parry', 'block', 'wall', 'cleared', 'fade')):
+    for i, e in events_between(t - 0.32, t, SPARK_KINDS):
         dt = t - e[0]
         kind = e[1]
         if kind == 'hit':
@@ -1129,9 +1164,12 @@ def render(f):
     img = post_fx(img, cam, t, fs, drawn)
     img = np.clip(img, 0, 255).astype(np.uint8)
     img = np.ascontiguousarray(img)
+    card_closed = T.CARD and TT.door_offset(t) == 0.0                 # the title card covers the HUD: skip it
+    F.card_closed = card_closed
+    for Lk in LOOKS:                                                  # crisp overlays on the scene (#42's rests)
+        Lk.overlay(img, F, drawn)
     # ---------------- UI: countdown, HP numbers in the balls, fight HUD, captions
     countdown(img, t, cs)
-    card_closed = TT.door_offset(t) == 0.0                            # the title card covers the HUD: skip it
     for k, (s_, rp) in (drawn.items() if not card_closed else ()):
         st = fs[k]
         if st['scale'] < 0.95 or T.T_FIGHT - 0.05 <= t < T.T_FIGHT + 0.85:  # hidden while FIGHT! covers the balls
@@ -1168,5 +1206,6 @@ def render(f):
     wc = tuple(int(v) for v in np.clip(COL[WIN] * 0.8 + 60, 0, 255))
     draw_captions(img, t, CAP_WINS, style='impact', base=wc)
     draw_captions(img, t, CAP_COMMENT, style='impact', hi=(255, 214, 96))
-    img = TT.draw(img, t)                                             # the VS title card, over everything
+    if T.CARD:
+        img = TT.draw(img, t)                                         # the VS title card, over everything
     return img
