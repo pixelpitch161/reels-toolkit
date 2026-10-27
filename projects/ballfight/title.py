@@ -310,9 +310,62 @@ def _euphonium(base):                                                # EUPHONIUM
     return out
 
 
+def _bassoon(base):                                                  # BASSOON (#39): flamed maple, twin bores, the crook
+    g = np.sin((XX * 0.25 + YY * 0.97) / 3.2 + 2.0 * np.sin(XX / 23.0 + YY / 61.0))   # maple flame, across the grain
+    out = base * (0.92 + 0.10 * (g > 0.5)[..., None] - 0.07 * (g < -0.6)[..., None])
+    u = SIDE                                                         # (works above the divider: the left fighter)
+    along = (XX * DD[0] + YY * DD[1])
+    for off in (54.0, 92.0):                                         # the twin bores (long joint + wing) along the divider
+        edge = np.abs(np.abs(u - off) - 16.0) < 1.2
+        out = np.where(edge[..., None], out * 0.72, out)
+        hl = np.abs(u - off + 9.0) < 1.0
+        out = np.where(hl[..., None], out * 0.75 + np.array([255, 236, 220]) * 0.25, out)
+    for j in range(7):                                               # silver key rods + touches on the bores
+        a0 = -330.0 + 95.0 * j
+        rod = (np.abs(u - 73.0) < 0.9) & (np.abs(along - a0) < 36.0)
+        dot = np.hypot(along - a0, u - 54.0) < 4.2
+        out = np.where((rod | dot)[..., None], out * 0.5 + np.array([226, 228, 240]) * 0.5, out)
+    cx, cy = 248.0, 96.0                                             # the bocal: a silver crook arcing over the top corner
+    r = np.hypot(XX - cx, YY - cy)
+    arc = (np.abs(r - 44.0) < 4.5) & (YY < cy + 8.0)
+    tail = np.abs((YY - cy) - (XX - cx - 44.0) * 0.55) < 4.5
+    tail &= (XX > cx + 40.0) & (XX < cx + 110.0) & (YY > cy - 2.0)
+    stem = (np.abs(XX - (cx - 44.0)) < 4.5) & (YY > cy) & (YY < cy + 70.0)
+    crook = arc | tail | stem
+    out = np.where(crook[..., None], out * 0.4 + np.array([216, 220, 232]) * 0.6, out)
+    reed = (np.abs((YY - cy) - (XX - cx - 44.0) * 0.55) < 6.0) & (XX >= cx + 110.0) & (XX < cx + 128.0)
+    return np.where(reed[..., None], out * 0.4 + np.array([232, 208, 150]) * 0.6, out)
+
+
+def _barisax(base):                                                  # BARI SAX (#39): pearl key touches + the pigtail loop
+    out = base * 1.0
+    along = (XX * DD[0] + YY * DD[1])
+    u = -SIDE                                                        # (works below the divider: the right fighter)
+    for j in range(6):                                               # the main stack: cups + pearl touches along the divider
+        a0 = -250.0 + 62.0 * j
+        r = np.hypot(along - a0, u - 58.0)
+        cup = r < 15.0
+        ring = np.abs(r - 15.0) < 1.6
+        pearl = np.hypot(along - a0, u - 96.0) < 7.0
+        out = np.where(cup[..., None], out * 0.72 + np.array([255, 214, 150]) * 0.28, out)
+        out = np.where(ring[..., None], out * 0.45 + np.array([255, 226, 170]) * 0.55, out)
+        out = np.where(pearl[..., None], out * 0.35 + np.array([250, 244, 232]) * 0.65, out)
+        arm = (np.abs(along - a0) < 1.4) & (u > 73.0) & (u < 90.0)
+        out = np.where(arm[..., None], out * 0.6 + np.array([255, 226, 170]) * 0.4, out)
+    cx, cy = 92.0, 560.0                                             # the pigtail: the tube coiling once in the far corner
+    r = np.hypot(XX - cx, YY - cy)
+    loop = np.abs(r - 34.0) < 6.0
+    neck = (np.abs(YY - (cy - 34.0) + (XX - cx) * 0.18) < 5.0) & (XX < cx) & (XX > cx - 92.0)
+    tube = loop | neck
+    out = np.where(tube[..., None], out * 0.45 + np.array([255, 206, 120]) * 0.55, out)
+    hl = (np.abs(r - 31.0) < 1.2) & (YY < cy)
+    return np.where(hl[..., None], out * 0.3 + np.array([255, 250, 230]) * 0.7, out)
+
+
 PATTERNS = {'BAGPIPES': _tartan, 'ACCORDION': _pleats, 'ORGAN': _organ_pipes, 'HARP': _harp_strings,
             'TROMBONE': _slide_tubes, 'HORN': _horn_coils, 'UKULELE': _surf, 'ACOUSTIC': _woodgrain,
-            'CLARINET': _clarinet_keys, 'OBOE': _oboe_reeds, 'BASS CLARINET': _bassclarinet, 'EUPHONIUM': _euphonium}
+            'CLARINET': _clarinet_keys, 'OBOE': _oboe_reeds, 'BASS CLARINET': _bassclarinet, 'EUPHONIUM': _euphonium,
+            'BASSOON': _bassoon, 'BARI SAX': _barisax}
 
 
 def _panel_rgb(colour, dark, side, name=None):
