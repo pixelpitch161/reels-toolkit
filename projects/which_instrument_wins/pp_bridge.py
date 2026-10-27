@@ -50,6 +50,8 @@ EXTRA = [
     ('SYNTH', 'synth60_lowpoly', None, (57, 81), 0, 1.0),              # #31 BALLFIGHT: the modern poly synth
     ('ORGAN', 'organ60_lowpoly', 'sulp', (36, 84), 0, 1.0),            # #35 BALLFIGHT: Saint-Sulpice case + reeds
     ('OBOE', 'oboe_lowpoly', 'ball', (58, 91), 0, 1.0),                # #37 BALLFIGHT: modern oboe (radii x1.6 for sprites) + double-reed voice
+    ('BASS CLARINET', 'bassclarinet_lowpoly', 'ball', (34, 70), 0, 1.0),   # #38 BALLFIGHT: modern low-C bass clarinet (radii x2 for sprites) + chalumeau voice
+    ('EUPHONIUM', 'euphonium_lowpoly', 'ball', (46, 77), 0, 1.0),          # #38 BALLFIGHT: modern 4-valve euphonium (tubing x1.35 for sprites) + warm voice
 ]
 DRUM_KEYS = (36, 38, 41, 45, 48, 49)    # kick, snare, floor / low / high tom, crash
 _MODS = {}
