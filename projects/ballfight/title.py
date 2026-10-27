@@ -15,6 +15,10 @@ The episode supplies (in its own timeline.py / render.py, found first on sys.pat
     render:   NAMES, COL, DARK, CFG (fighter colours, the instrument view for the big sprites)
 Names use the biggest pixel-font scale (<= 7, VS is 12) that fits the safe zone (A: x 20-340 above the divider; B: left
 of the button column); a fighter's panel pattern comes from PATTERNS (by name; a plain gradient if it has none).
+Opt-in (#38): `timeline.TITLE_LINES = {name: (line 1, line 2)}` stacks a long name on two lines (each line at the
+scale that fits the longest; e.g. BASS / CLARINET at 6 instead of BASS CLARINET at 4), and
+`timeline.TITLE_BALLS = [(cx, cy, r), (cx, cy, r)]` moves the big balls to make room. Without them the card draws as
+before.
 
 Everything is screen space at the internal resolution (W x H) and deterministic in t.
 
@@ -63,9 +67,18 @@ def _layout():
     (shifted left in 10 px steps if it doesn't fit centred); VS on the divider. #30: BAGPIPES 6 @ (180, 134),
     ACCORDION 5 @ (160, 468)"""
     out = {'VS': dict(scale=12, cx=180, cy=300, side=-1)}             # the largest letters, on the divider
-    sa = _fit_scale(NAME_A, 320)
-    ha, ra = 7 * sa, max(2, int(round(sa * 0.6)))
-    out[NAME_A] = dict(scale=sa, cx=180, cy=int(max(134, round(109 + ha / 2 + ra))), side=0)
+    lines = getattr(T, 'TITLE_LINES', {}).get(NAME_A)
+    if lines:                                                        # #38 (opt-in): a long name on two lines
+        sa = min(_fit_scale(ln, 320) for ln in lines)
+        ha, ra = 7 * sa, max(2, int(round(sa * 0.6)))
+        gap = ha + 2 * ra - 2                                        # line pitch: outlines just touching
+        cy0 = int(max(134, round(109 + ha / 2 + ra)))
+        out[NAME_A] = dict(scale=sa, cx=180, cy=cy0 + gap / 2, side=0, lines=tuple(lines), dy=(-gap / 2, gap / 2),
+                           h=ha + gap, w=max(text_mask(ln, sa).shape[1] for ln in lines))
+    else:
+        sa = _fit_scale(NAME_A, 320)
+        ha, ra = 7 * sa, max(2, int(round(sa * 0.6)))
+        out[NAME_A] = dict(scale=sa, cx=180, cy=int(max(134, round(109 + ha / 2 + ra))), side=0)
     sb = _fit_scale(NAME_B, 280)
     wb, hb, rb = text_mask(NAME_B, sb).shape[1], 7 * sb, max(2, int(round(sb * 0.6)))
     cxb = 180 if 180 + wb / 2 + rb <= 300 else int((300 - wb / 2 - rb) // 10 * 10)
@@ -75,6 +88,8 @@ def _layout():
 
 WORDS = _layout()
 BALLS = [dict(cx=78, cy=222, r=56), dict(cx=282, cy=396, r=56)]   # left fighter, right fighter: big and close
+if getattr(T, 'TITLE_BALLS', None):                                 # #38 (opt-in): room for a two-line name
+    BALLS = [dict(cx=c[0], cy=c[1], r=c[2]) for c in T.TITLE_BALLS]
 
 
 def _ease_in(u):
@@ -548,8 +563,13 @@ def draw(img, t):
             wl = np.zeros_like(layer)
             wa = np.zeros_like(alpha)
             settled = abs(k - 1) < 0.06 and a >= 1.0 and off == 0.0
-            x0, y0, wm, hm = stamp_word(wl, wa, text, spec['scale'], k, spec['cx'], spec['cy'], col, a,
-                                        note=settled and (spec['side'] == side or side == 0))
+            if 'lines' in spec:                                      # #38: one stamp per line, scaled about the block
+                for ln, dy in zip(spec['lines'], spec['dy']):
+                    stamp_word(wl, wa, ln, spec['scale'], k, spec['cx'], spec['cy'] + dy * k, col, a,
+                               note=settled and (spec['side'] == side or side == 0))
+            else:
+                x0, y0, wm, hm = stamp_word(wl, wa, text, spec['scale'], k, spec['cx'], spec['cy'], col, a,
+                                            note=settled and (spec['side'] == side or side == 0))
             if spec['side'] == -1:                                   # VS: keep only this side's half
                 wa = wa * ((SIDE > 0) if side == 0 else (SIDE <= 0))
             m = wa > 0
@@ -575,8 +595,8 @@ def draw(img, t):
             if st is None:
                 continue
             col = GOLD if text == 'VS' else RD.COL[0 if text == NAME_A else 1]
-            w_px = len(text) * ADV * spec['scale']
-            h_px = 7 * spec['scale']
+            w_px = spec.get('w', len(text) * ADV * spec['scale'])
+            h_px = spec.get('h', 7 * spec['scale'])
             light(out, t, j, spec['cx'] + sx, spec['cy'] + sy, col)
             streaks(out, t, j, spec['cx'] + sx, spec['cy'] + sy, w_px, h_px, col)
             dust(out, t, j, spec['cx'] + sx, spec['cy'] + sy, w_px, h_px)
