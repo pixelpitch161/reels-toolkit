@@ -39,7 +39,9 @@ def _find_seed(name, partner, folder, tries=80):
         from . import story
         for seed in range(1, tries + 1):
             r = story.run_seed(seed, record=False)
-            t_ko = r['t_ko'] or 61.0
+            if r['t_ko'] is None:                             # the renderer needs a K.O. (#44: a timeout passed)
+                continue
+            t_ko = r['t_ko']
             fired = [e[0] for e in r['events'] if e[1] == 'ability' and e[2] == 0 and e[3] == low]
             if fired and fired[0] > 12 and fired[0] + 3.0 < t_ko:
                 return seed, side, fired[0], t_ko
