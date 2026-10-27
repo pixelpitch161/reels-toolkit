@@ -58,6 +58,9 @@ where it is: `dmg` within `radius`, knocked away by `knock`). Recorded LO (shado
 and numbers, through trigger(..., ab=, quiet=True); if the enemy hasn't used one yet, one round of its signature
 (an anchor whirl or a mortar salvo); a copied snip waits for the enemy to be close, as the original does). Event
 ('copy', owner, name, kind); trigger() records each fighter's last ability (Ball.last_ab).
+#39 (opt-in): weapon kind `tiptoe` (TIPTOE: no gliding; staccato hops on the grid to a spot behind the enemy, each landing
+a stomp, x `back` from behind: the backstab; a knocked hopper slides and can't hop while tumbling; events 'hop' /
+'stomp', recorded as HOP) and ability kind `mountain` (MOUNTAIN KING: accelerating hops circling the enemy, each a stomp).
 The run records every frame (30 fps) for the renderer and every event (hits, blocks, parries, ropes, volleys,
 abilities, level-ups, the K.O.) for the soundtrack and the captions. Seeded: same seed, same fight."""
 import math
@@ -2708,6 +2711,8 @@ class Fight:
             self.ev('twin', k, B.twin_until)
         elif kind == 'barrage':                                 # #38 (NOT A TUBA): shells rain across the ring
             self.start_barrage(k, ab)
+        elif kind == 'mountain':                                # #39 (MOUNTAIN KING): accelerating hops round the enemy
+            self.start_mountain(k, ab)
         elif kind == 'rhapsody':                                # #37 (RHAPSODY): a chain of zig-zag jumps
             B.jump_tgt = None
             B.rhap = dict(ab=ab, n=ab['n'], side=1.0, next=None)
@@ -2853,8 +2858,12 @@ class Fight:
                 continue
             if getattr(B, 'anc', None) is not None:              # #38: anchored, anchor_step drives it round the peg
                 continue
+            if getattr(B, 'air', False):                        # #39: mid-hop, tiptoe_step drives it
+                continue
             B.boost *= math.exp(-dt / self.R.KNOCK_T)
             s = self.R.V * (1 + B.boost)
+            if getattr(B, 'hopper', False):                     # #39: a hopper stands still; it only slides when knocked
+                s = self.R.V * B.boost
             if B.slow > 0:                                  # #34: slowed (e.g. SAD TROMBONE)
                 s *= B.slow_mult
             if getattr(B, 'vmul', None) is not None:        # #30 v2: per-ball speed factor (inflate: heavy / rocketing)
@@ -2880,7 +2889,8 @@ class Fight:
         rP, rQ = getattr(P, 'rad', R), getattr(Q, 'rad', R)    # #30 v2: per-ball radius (R + R == 2 * R exactly)
         if dist < rP + rQ and getattr(P, 'rw_left', 0.0) <= 0 and getattr(Q, 'rw_left', 0.0) <= 0 \
                 and not getattr(P, 'held', False) and not getattr(Q, 'held', False) \
-                and getattr(P, 'shadow', 0.0) <= 0 and getattr(Q, 'shadow', 0.0) <= 0:   # #32 v2 swallowed, #38 shadow
+                and getattr(P, 'shadow', 0.0) <= 0 and getattr(Q, 'shadow', 0.0) <= 0 \
+                and not getattr(P, 'air', False) and not getattr(Q, 'air', False):   # #32 v2 swallowed, #38 shadow, #39 hop
             n = d / max(dist, 1e-9)
             over = rP + rQ - dist
             if hasattr(P, 'mass') or hasattr(Q, 'mass'):        # #30 v2: unequal masses (inflate): the light ball gives
@@ -2946,6 +2956,156 @@ class Fight:
                     self.kvol, self.kidx, self.kdmg = self.kvol[keep], self.kidx[keep], self.kdmg[keep]
                     if not len(self.kp):
                         break
+
+    # ------------------------------------------------------------------ #39: TIPTOE (opt-in weapon kind 'tiptoe')
+    # The bassoon doesn't glide: it stands still between exaggerated staccato hops. Every `every` beats (haste divides
+    # it) it hops for `air16` 16ths (haste divides that too, at least 1) to a spot `gap` beyond contact behind the enemy
+    # (behind = against the enemy's direction of travel), aimed where the enemy will be at the landing (`lead` x its
+    # motion over the air time) +-`jitter` deg (seeded), at most `base` away (+`grow` per landed stomp, up to
+    # `max_reach`; held in blade_len). Airborne it can't clash (it hops over). Each landing is a stomp: an enemy within
+    # `stomp` beyond contact (+`stomp_grow` per landed stomp, up to `stomp_max`) takes `dmg` (x `back` if the bassoon
+    # landed within `back_half` deg of straight behind it: the backstab) and `knock`. A hopper only moves when knocked:
+    # it slides at the shared speed x its knock boost and can't hop while that boost is above `stagger` (tumbling).
+    # Ability kind 'mountain' (MOUNTAIN KING): hops launched `seq16` 16ths apart (accelerating), circling the enemy
+    # `step` deg per hop from straight behind at `gap`, at most `reach` away, each landing a stomp (`dmg`, x the
+    # weapon's `back` when behind, `knock`); normal hops pause meanwhile; it ignores tumbling.
+    # Events ('hop', k, x0, y0, x1, y1, t_land, kind 0 hop / 1 follow-up / 2 mountain), ('stomp', k, x, y, hit, back,
+    # radius, kind). Recorded as HOP (progress 0..1 while airborne else -1, hop start, landing) when a fighter has it.
+    def tiptoe_setup(self, k):
+        B = self.balls[k]
+        B.hopper = True
+        B.blade_len = B.w['base']
+        B.stomp_r = B.w['stomp']
+        B.hop = None
+        B.air = False
+        B.mk = None
+        B.hop_bonus = False
+
+    def _behind(self, k):
+        """unit vector from the enemy to the spot straight behind it (against its direction of travel)"""
+        B, O = self.balls[k], self.balls[1 - k]
+        sp = float(np.hypot(*O.v))
+        if sp > 1e-6:
+            return -O.v / sp
+        d = B.p - O.p
+        n = float(np.hypot(*d))
+        return d / n if n > 1e-6 else np.array([1.0, 0.0])
+
+    def _hop_launch(self, k, air16, kind, tgt, reach):
+        B = self.balls[k]
+        R = self.R.R
+        air = air16 * self.R.beat / 4.0
+        p0 = B.p.copy()
+        J = tgt - p0
+        L = float(np.hypot(*J))
+        if L > reach:
+            J = J * (reach / L)
+        lim = self.R.A - R
+        p1 = np.clip(p0 + J, -lim, lim)
+        if L > 1e-6:
+            B.v = J / L * self.R.V                          # the hopper's heading
+        B.hop = dict(p0=p0, p1=p1, t0=self.t, t1=self.t + air, kind=kind)
+        B.air = True
+        self.ev('hop', k, float(p0[0]), float(p0[1]), float(p1[0]), float(p1[1]), self.t + air, kind)
+
+    def _hop_land(self, k):
+        B, O = self.balls[k], self.balls[1 - k]
+        R = self.R.R
+        H = B.hop
+        B.p = H['p1'].copy()
+        B.hop, B.air = None, False
+        rel = B.p - O.p
+        dr = float(np.hypot(*rel))
+        if dr < 2 * R + 0.02:                                   # never land inside the enemy: step out past it
+            lim = self.R.A - R
+            B.p = np.clip(O.p + (rel / dr if dr > 1e-6 else self._behind(k)) * (2 * R + 0.02), -lim, lim)
+        w = B.w
+        if H['kind'] == 2:
+            ab = B.mk_ab
+            dmg, knock = ab['dmg'], ab['knock']
+        else:
+            dmg, knock = w['dmg'], w['knock']
+        rel = O.p - B.p
+        dist = float(np.hypot(*rel))
+        hit = dist - 2 * R <= B.stomp_r
+        back = False
+        if hit:
+            n = rel / dist if dist > 1e-6 else -self._behind(k)
+            sp = float(np.hypot(*O.v))
+            if sp > 1e-6:
+                back = float(n @ (O.v / sp)) >= math.cos(math.radians(w['back_half']))
+            hx, hy = (O.p - n * R).tolist()
+            landed = self.damage(k, 1 - k, dmg * (w['back'] if back else 1.0), 'stomp', hx, hy, int(back))
+            self.knock(1 - k, n, knock)
+            if landed and H['kind'] != 2:
+                B.blade_len = min(w['max_reach'], B.blade_len + w['grow'])
+                B.stomp_r = min(w['stomp_max'], B.stomp_r + w['stomp_grow'])
+        self.ev('stomp', k, float(B.p[0]), float(B.p[1]), int(hit), int(back), float(B.stomp_r), H['kind'])
+
+    def tiptoe_tick(self, k, k16):
+        B, O = self.balls[k], self.balls[1 - k]
+        w = B.w
+        R = self.R.R
+        if B.hop is not None and self.t + 1e-9 >= B.hop['t1']:
+            self._hop_land(k)
+        if B.hop is not None or self._stunned(k):
+            return
+        Mk = B.mk
+        if Mk is not None:                                       # MOUNTAIN KING: the accelerating dance
+            if Mk['next'] is None or k16 >= Mk['next']:
+                ab = Mk['ab']
+                if Mk['i'] >= len(ab['seq16']):
+                    B.mk = None
+                    self.ev('mountain_end', k)
+                    return
+                iv = int(ab['seq16'][Mk['i']])
+                Mk['next'] = k16 + iv
+                air16 = min(int(w['air16']), iv)
+                air = air16 * self.R.beat / 4.0
+                if Mk['ang'] is None:
+                    u = self._behind(k)
+                    Mk['ang'] = math.atan2(u[1], u[0])
+                a = Mk['ang'] + math.radians(ab['step']) * Mk['i']
+                tgt = O.p + O.v * air * w.get('lead', 1.0) + np.array([math.cos(a), math.sin(a)]) * (2 * R + ab['gap'])
+                Mk['i'] += 1
+                self._hop_launch(k, air16, 2, tgt, ab['reach'])
+            return
+        if B.boost > w.get('stagger', 99.0):                     # tumbling from a knock: no hop
+            return
+        if B.hop_bonus:                                          # (BOCAL HOOK) the follow-up hop, right away
+            B.hop_bonus = False
+            air = self.R.beat / 4.0
+            tgt = O.p + O.v * air * w.get('lead', 1.0) + self._behind(k) * (2 * R + w['gap'])
+            self._hop_launch(k, 1, 1, tgt, w['max_reach'])
+            return
+        main16 = int(round(4 * w['every']))
+        ev16 = max(1, int(round(main16 / self.ab_mult(k))))
+        if k16 % ev16 == 0:
+            air16 = max(1, int(round(w['air16'] / self.ab_mult(k))))
+            air = air16 * self.R.beat / 4.0
+            u = self._behind(k)
+            j = math.radians(self.rng.uniform(-1.0, 1.0) * w.get('jitter', 0.0))
+            ub = np.array([u[0] * math.cos(j) - u[1] * math.sin(j), u[0] * math.sin(j) + u[1] * math.cos(j)])
+            tgt = O.p + O.v * air * w.get('lead', 1.0) + ub * (2 * R + w['gap'])
+            self._hop_launch(k, air16, 0, tgt, B.blade_len)
+
+    def tiptoe_step(self, k, dt):
+        B = self.balls[k]
+        H = B.hop
+        if H is None:
+            return
+        if self.t + 1e-9 >= H['t1']:
+            self._hop_land(k)
+            return
+        u = (self.t - H['t0']) / max(1e-9, H['t1'] - H['t0'])
+        B.p = H['p0'] + (H['p1'] - H['p0']) * u
+
+    def start_mountain(self, k, ab):
+        B = self.balls[k]
+        B.mk = dict(ab=ab, i=0, next=None, ang=None)
+        B.mk_ab = ab
+        B.hop_bonus = False
+        self.ev('mountain', k, len(ab['seq16']))
 
     # ------------------------------------------------------------------ record
     KMAX = 72
@@ -3031,6 +3191,13 @@ class Fight:
                     Ac[j] = (1.0, An['c'][0], An['c'][1], An['th'], float(np.hypot(*(Bj.p - An['c']))),
                              float(getattr(Bj, 'twin_until', -1.0) > self.t))
             rec['ANC'].append(Ac)
+        if 'HOP' in rec:                                    # #39, only recorded when a fighter uses the 'tiptoe' kind
+            Hp = np.full((2, 3), -1.0)
+            for j, Bj in enumerate((B0, B1)):
+                H = getattr(Bj, 'hop', None)
+                if H is not None:
+                    Hp[j] = ((self.t - H['t0']) / max(1e-9, H['t1'] - H['t0']), H['t0'], H['t1'])
+            rec['HOP'].append(Hp)
         if 'FLICK' in rec:                                  # #34 v5, only recorded when a fighter has a 'flick' ability
             Fl = np.full((2, 6), np.nan)
             for j, Bj in enumerate((B0, B1)):
@@ -3135,6 +3302,12 @@ class Fight:
         flickers = [k for k, B in enumerate(self.balls) if any(a['kind'] == 'flick' for a in B.cfg['abilities'].values())]
         if rec is not None and flickers:                         # #34 v5 (opt-in)
             rec['FLICK'] = []
+        hoppers = [k for k, B in enumerate(self.balls) if B.w['kind'] == 'tiptoe']     # #39 (opt-in)
+        for k in hoppers:
+            self.tiptoe_setup(k)
+        n16h = k16_0
+        if rec is not None and hoppers:
+            rec['HOP'] = []
         self.t = R.t_fight
         f0 = int(round(R.t_fight * R.FPS))
         step = 0
@@ -3258,6 +3431,11 @@ class Fight:
                 n16a += 1
                 for k in anchorers:
                     self.anchor_tick(k, k16a)
+            if hoppers and self.t + 1e-9 >= n16h * s16:         # #39: hops (and MOUNTAIN KING's) on the 16th grid
+                k16h = n16h - k16_0
+                n16h += 1
+                for k in hoppers:
+                    self.tiptoe_tick(k, k16h)
             for k, B in enumerate(self.balls):
                 B.shield = max(0.0, B.shield - dt)
                 B.haste = max(0.0, B.haste - dt)
@@ -3319,6 +3497,8 @@ class Fight:
                 for k in (0, 1):
                     if self.balls[k].anc is not None:
                         self.anchor_step(k, dt)
+            for k in hoppers:                                    # #39: mid-hop positions, landings + stomps
+                self.tiptoe_step(k, dt)
             if dc:
                 self.dash_cone_step(dt)                          # (#33)
             if dc or self.whips or self.sweeps or self.spouts:
