@@ -42,6 +42,7 @@ KIT_EPISODES = [
     ('projects/ballfight/examples/viola_vs_violin', [8219, 1, 2, 3, 500]),   # #42 rebuilt (VIOLA, VIOLIN, orchestral_drill)
     ('projects/ballfight/examples/drums_vs_violin', [568, 1, 2, 3, 500]),    # #28 rebuilt (DRUMS, balkan_fire; FIGHT_BAR 1)
     ('projects/ballfight_electric_vs_acoustic', [418, 1, 2, 3, 500]),   # #44 (ELECTRIC lightning / smash vs the #33 ACOUSTIC), seed 418
+    ('projects/ballfight_piano_vs_organ', [638, 1, 2, 3, 500]),   # #45 (PIANO v2 roll / sustain / runoff vs the #35 ORGAN), seed 638
 ]
 CODE = r'''
 import hashlib, sys
