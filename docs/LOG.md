@@ -1377,3 +1377,31 @@
   flashcheck PASS; flash test 0 on 41.5-52 s; loopcheck PASS render 0.4x / mp4 1.0x. Render 7 min, then patch renders for the leaps
   (67 frames, the crane drawn under a leaping ball), mux. Guard: 65 runs identical + v2's seed 27 added (70).
 - Feedback: (pending)
+
+
+## #40 BALLFIGHT #14: Bari Sax vs Bass Clarinet (session_01CzTfqe, Oct 26)
+- Second crossover after #36: both fighters straight from the roster, sides reversed vs their own episodes. No engine
+  option was needed for the sides: `Fight(a, b)` seats a on the left, b on the right, and nothing reads the roster's
+  `corner`. Spin is mirrored by side (`spin_dir`), so a right-corner anchor whirls clockwise.
+- New pairings can expose engine assumptions: the crane (#39 v2) predicted its target along the enemy's velocity, which
+  was fine against a hopper but, against an anchored whirler, meant extrapolating the spin (~10 units/s). CABLE SNAP
+  landed 3 % (96 % in #39). Measured it, flagged it (crossover rule), the user chose the fix: lead an anchored enemy
+  with the engine's existing `predict()`. Gated on an anchorer being in the fight, so the guard stayed identical.
+  Lesson for crossovers: before tuning, measure each signature's hit rate against the new opponent vs its own episode.
+- Tuning was quick and sensitive (the bari's share went 0 % -> 100 % between x0.6 and x0.9 on the old engine). With the
+  fix: x0.35 / x0.68. The honest search took 617 runs for 8 fits. Picked 617 over the top score (309), whose CABLE SNAP
+  misses and LIGHTS OUT falls in the 4 s caption gap.
+- Title card on swapped sides: the shared two-line option only covered name A (added for name B, opt-in); the panel
+  patterns are drawn for one side of the divider, so mirror them (`styles.mirrored`, idempotent: title.py imports the
+  renderer by name, so the episode's module-level patch ran twice and un-mirrored itself the first time).
+- Renderer = #39's + #38's bass clarinet (styles imported, not copied). LIGHTS OUT's dim keeps a band along the crane
+  line. Focus: the bari hoisted 3 up for CABLE SNAP needed sharp 0.19 (0.17 gave 0.10 px).
+- Music: the bari as the whole bass line needed two things: a pump between swings (swing honks alone leave a bar in
+  every two without bass), and capping the "loser thins" high-pass for a bass fighter (~110 Hz, not ~240): while the
+  bari trailed 17-50 s the rule was removing its fundamental. The bed's every-beat kick (late density) sat on the pump:
+  replaced by a high anvil ghost. The tail was 2-3 dB under the fight: thickened (hold bar, solo bars at density 0.85,
+  bigger pump honks into the seam) rather than raised. Levels spread 4.7 -> 3.3 dB; bari over the bed +1..+4 -> +5..+7.
+- Checks: levels PASS (wav + mp4); band check bari +5..+7, bass clarinet +4..+7 dB while sounding; safe zone OK; CoC 0;
+  flash test 0 on 38.4-51.6 s, flashcheck PASS; loopcheck PASS render 0.4x / mp4 1.1x. Render 5.7 min + mux. Guard: 70
+  runs identical + #40 added (75).
+- Feedback: (pending)
