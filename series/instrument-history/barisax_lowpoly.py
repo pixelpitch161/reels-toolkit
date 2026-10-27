@@ -1,6 +1,6 @@
-"""Pixel Pitch: the modern baritone saxophone (low A) - low-poly model. No history video yet:
+"""Pixel Pitch: the modern baritone saxophone (low A) - low-poly model (and, below, its voice). No history video yet:
 built for BALLFIGHT #13 (Bassoon vs Bari Sax), adapted from the alto (altosax60_lowpoly.py, used read-only as a
-library: its swept tubes, key cups and pearl touches) and used through projects/which_instrument_wins/
+library: its swept tubes, key cups, pearl touches and sax tone) and used through projects/which_instrument_wins/
 pp_bridge.py. A later Pixel Pitch bari video can grow from this file without touching the model.
 
     python3 barisax_lowpoly.py               # face count + extent
@@ -239,6 +239,58 @@ def build(g, t, ev, fx, s):
         if tp and age < .6:
             fx.append(("wave", tuple(rim + [.02, .02, 0]), age, 0))
 
+
+# ---------------------------------------------------------------- sound: the bari's honk
+# The alto's recipe (altosax60_lowpoly.sax_tone: harmonic stack + formant, breath, scoop, growl, slap) rebuilt for the
+# bari's range (concert C2 = written low A up to about A4): the alto rolls its harmonics off by number, which at 65 Hz
+# leaves only a dull hum, so here they roll off by frequency, through the bari's own colour: a low, wide formant near
+# 560 Hz and a second bump near 1.35 kHz (the alto's 1.1 kHz moved down), a strong low end (the big conical bore), a
+# heavier breath and a bite on the attack. `honk` (0..1) adds the growl, the scoop and the slap of a hard-blown low
+# note: the window-rattling honk.
+SR = AS.SR
+FORMANTS = ((560., 300., 1.7), (1350., 520., .8), (2600., 800., .2))          # (Hz, width, gain)
+
+
+def _midi_hz(m):
+    return 440.0 * 2 ** ((m - 69) / 12.0)
+
+
+def bari_tone(f, dur, v, honk=0.0, bright=.6):
+    n = int((dur + .16) * SR)
+    t = np.arange(n) / SR
+    rel = .035 if dur < .15 else .06
+    env = np.minimum(1, t / .016) ** 1.3 * np.where(t < dur, 1, np.exp(-(t - dur) / rel)) * (1 + .2 * np.exp(-t / .04))
+    fr = f * (1 - (.035 + .04 * honk) * np.exp(-t / .045)) * (1 + .003 * (1 - honk) * np.sin(2 * np.pi * 4.8 * t) *
+                                                             np.clip((t - .2) / .3, 0, 1))
+    ph = 2 * np.pi * np.cumsum(fr) / SR
+    x = np.zeros(n)
+    tot = 0.0
+    br = bright + .25 * honk
+    for k in range(1, 90):
+        fk = f * k
+        if fk > 8000:
+            break
+        a = k ** -.7 * (.3 + sum(g * math.exp(-((fk - c) / w) ** 2) for c, w, g in FORMANTS))
+        a *= math.exp(-fk / (1300 + 3200 * br * v))
+        x += a * np.sin(k * ph + .4 * k)
+        tot += a
+    x /= tot + 1e-9
+    gr = .05 + .22 * honk                                                       # growl: a rough flutter on the honk
+    x *= 1 + gr * np.sin(2 * np.pi * 29 * t + 3 * np.sin(2 * np.pi * 7 * t))
+    rng = np.random.default_rng(int(f * 10) % 100003)
+    from scipy.signal import butter, sosfilt
+    nz = sosfilt(butter(2, [500, 3200], 'band', fs=SR, output='sos'), rng.standard_normal(n))
+    x += nz * (.05 + .05 * honk) * (.5 + 1.6 * np.exp(-t * 18))
+    if honk:                                                                   # the slap of the reed on a hard attack
+        k = int(.03 * SR)
+        tt = t[:k]
+        x[:k] += .5 * honk * (np.sin(2 * np.pi * 150 * tt) * np.exp(-tt * 100) + nz[:k] * np.exp(-tt * 260) * 2)
+    return x * env * v
+
+
+def synth(s, idx):
+    nt, m, v, dur, tp, cs = s["ev"][idx]
+    return bari_tone(_midi_hz(m), dur, v)
 
 if __name__ == "__main__":
     import piano_lowpoly as P
