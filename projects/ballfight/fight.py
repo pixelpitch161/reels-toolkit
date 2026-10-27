@@ -72,6 +72,9 @@ across the ring as a wrecking ball in a pendulum arc, smashing what it passes; t
 (`offbeat`) swings it on the off-beats every bar instead; events 'cable' / 'swing' / 'smash', recorded as WRECK);
 ability kind `snap` (CABLE SNAP: the crane hoists the ball high over the enemy's predicted spot, the cable snaps and it
 crashes down there: shadow first, then a crater; events 'snap_aim' / 'cable_snap' / 'crater', recorded as SNAP).
+#41 (opt-in rule, `Rules(swat_cobras=True)`, `swat_beats` default 2): a live thrust lance that passes through an enemy
+cobra (striker weapon) knocks it flat: a strike still in the air misses and the cobra can't strike for `swat_beats`
+beats; no damage, no growth. Events 'swat'. Off unless an episode turns it on, so earlier fights don't change.
 The run records every frame (30 fps) for the renderer and every event (hits, blocks, parries, ropes, volleys,
 abilities, level-ups, the K.O.) for the soundtrack and the captions. Seeded: same seed, same fight."""
 import math
@@ -117,6 +120,38 @@ def _swept(th0, dth, phi, half):
         th0, dth = th0 + dth, -dth
     d = (phi - half - th0) % (2 * math.pi)
     return d <= dth or d >= 2 * math.pi - 2 * half
+
+
+def _seg_pt(p, a, b):
+    """closest point to p on the segment a-b"""
+    ab = b - a
+    n = float(ab @ ab)
+    s = 0.0 if n < 1e-12 else min(1.0, max(0.0, float((p - a) @ ab) / n))
+    return a + ab * s
+
+
+def _seg_seg(p0, p1, q0, q1):
+    """(distance, point on p0-p1 nearest q0-q1) between two 2D segments: 0 where they cross, else the closest of the
+    four endpoint-to-segment distances (exact in 2D)"""
+    r, s = p1 - p0, q1 - q0
+    den = float(r[0] * s[1] - r[1] * s[0])
+    if abs(den) > 1e-12:
+        qp = q0 - p0
+        u = float(qp[0] * s[1] - qp[1] * s[0]) / den
+        v = float(qp[0] * r[1] - qp[1] * r[0]) / den
+        if 0.0 <= u <= 1.0 and 0.0 <= v <= 1.0:
+            return 0.0, p0 + r * u
+    best = None
+    for p, on_p in ((p0, True), (p1, True), (q0, False), (q1, False)):
+        if on_p:
+            c = _seg_pt(p, q0, q1)
+            dd, cp = float(np.hypot(*(p - c))), p
+        else:
+            c = _seg_pt(p, p0, p1)
+            dd, cp = float(np.hypot(*(p - c))), c
+        if best is None or dd < best[0]:
+            best = (dd, cp)
+    return best
 
 
 class Ball:
@@ -642,6 +677,8 @@ class Fight:
                 s_ = np.clip(rel @ d, 0, L_)
                 dd = np.hypot(*(rel - s_[:, None] * d[None]).T)
                 self.kill_keys(enemy & (dd < self.R.KEY_R + 0.04), 'parry', k)
+        if live and getattr(self.R, 'swat_cobras', False):  # opt-in rule (#41): the lance swats enemy cobras too
+            self.swat_cobras(k, a, d, L_)
         if live and not B.thr_hit:
             rel = O.p - a
             s_ = min(max(float(rel @ d), 0.0), L_)
@@ -1042,6 +1079,8 @@ class Fight:
         for bk in B.baskets:
             if self.t < bk['t_drop'] + w['rise'] * self.R.beat - 1e-9 or bk['strike'] is not None:
                 continue
+            if 'down' in bk and self.t < bk['down']:      # swatted flat (opt-in rule, #41): still curling back up
+                continue
             rel = O.p - bk['cp']
             dist = float(np.hypot(*rel))
             if dist - R > B.blade_len + w.get('slack', 0.25):
@@ -1091,6 +1130,36 @@ class Fight:
                             B.t_strike = max(w['t_min'], B.t_strike - w.get('speed_grow', 0.0))
             if self.t >= S['t_end']:
                 bk['strike'] = None
+
+    def swat_cobras(self, k, a, d, L_):
+        """opt-in rule (#41, `Rules(swat_cobras=True)`; off by default, so no earlier fight changes): a live thrust lance
+        (going out or held; `a` its base, `d` its direction, `L_` its length) that passes through a risen enemy cobra -
+        its body over the basket, or its head while a strike is still in the air - knocks it flat. A strike in the air
+        misses, and the cobra can't strike again for `Rules.swat_beats` beats (default 2) while it curls back up. No
+        damage and no growth for either side: it only costs the cobra its strikes. Event ('swat', lance owner, cobra
+        owner, basket id, x, y)."""
+        O = self.balls[1 - k]
+        bks = getattr(O, 'baskets', None)
+        if not bks:
+            return
+        w = O.w
+        beat = self.R.beat
+        q0, q1 = a, a + d * L_
+        for bk in bks:
+            if self.t < bk['t_drop'] + w['rise'] * beat - 1e-9 or self.t < bk.get('down', -1.0):
+                continue                                  # still rising out of its basket, or already knocked flat
+            p0 = bk['cp']
+            p1 = p0
+            S = bk['strike']
+            if S is not None and not S['done']:           # the head lunging out along the strike
+                u = min(1.0, max(0.0, (self.t - S['t0']) / max(1e-6, S['t_hit'] - S['t0'])))
+                p1 = p0 + np.array([math.cos(S['aim']), math.sin(S['aim'])]) * S['len'] * u
+            dist, c = _seg_seg(p0, p1, q0, q1)
+            if dist < w['head_r'] + 0.05:
+                bk['down'] = self.t + getattr(self.R, 'swat_beats', 2) * beat
+                if S is not None and not S['done']:
+                    S['done'] = True                      # the strike in the air misses
+                self.ev('swat', k, 1 - k, bk['id'], float(c[0]), float(c[1]))
 
     def key_r(self):
         """every projectile's hit radius (Rules.KEY_R unless its weapon set `hit_r`)"""
