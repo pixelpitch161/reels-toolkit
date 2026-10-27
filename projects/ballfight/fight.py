@@ -83,6 +83,10 @@ where it is heading; event 'double') and `melody` (MELODY AT LAST: from the next
 rests shrink to `rest` beats, so a note comes every `rest` + 1 beats; event 'melody') and `joke` (VIOLA JOKE: the enemy
 freezes for `stun_beats` in #37's stun state while the biggest note drops onto its spot `tele` beats later, then rolls
 on; events 'stun', 'joke').
+#44 (opt-in): weapon kind `lightning` (LIGHTNING RIFF: a riff every bar, each note an instant bolt from the headstock,
+or from the nearest corner post (lightning rods) when the enemy is near one; +notes per landed riff) and its ability kinds
+`fork` (DISTORTION: the bolts fork and reach further for a while) and `tapping` (TAPPING: a bolt on every 8th for a
+bar); events 'riff', 'bolt', 'fork', 'tapping'.
 The run records every frame (30 fps) for the renderer and every event (hits, blocks, parries, ropes, volleys,
 abilities, level-ups, the K.O.) for the soundtrack and the captions. Seeded: same seed, same fight."""
 import math
@@ -2832,6 +2836,12 @@ class Fight:
         elif kind == 'rhapsody':                                # #37 (RHAPSODY): a chain of zig-zag jumps
             B.jump_tgt = None
             B.rhap = dict(ab=ab, n=ab['n'], side=1.0, next=None)
+        elif kind == 'fork':                                    # #44 (DISTORTION): the bolts fork, reaching further
+            B.fork_until, B.fork_ab = self.t + self.ab_dur(ab), ab
+            self.ev('fork', k, B.fork_until)
+        elif kind == 'tapping':                                 # #44 (TAPPING): a bolt on every 8th for a while
+            B.tap_until, B.tap_ab = self.t + ab['beats'] * self.R.beat, ab
+            self.ev('tapping', k, B.tap_until)
 
     def ab_beam_charge(self, k, ab):
         """ability kind 'beam' (#29 v3): charge for `charge_beats` with the aim locked on the enemy's spot predicted
@@ -3641,6 +3651,85 @@ class Fight:
         B.air = False
         B.wsnap = None
 
+    # ------------------------------------------------------------------ #44: LIGHTNING RIFF (opt-in weapon kind 'lightning')
+    # Every `every` beats the electric plays a riff: int(n_vol) notes (`n0`, +`grow` per riff that lands, up to `n_max`) on
+    # the 16th slots `slots` (taken in that order, played in time order). Every note is a lightning bolt, instant: from the
+    # headstock when the enemy is within `reach` of the ball (surface to surface), else from the nearest corner post (the
+    # lightning rods) when the enemy is within `post_r` of it, else it misses (it still crackles out `reach` toward the
+    # enemy). A bolt hits for `dmg`, knocked `knock` away from where it came from. Ability kinds: `fork` (DISTORTION: for a
+    # while every bolt forks; reach and post_r x `reach_k`) and `tapping` (TAPPING: for `beats` beats a bolt on every 8th,
+    # x `dmg_k` each, extra to the riff; taps don't grow it). Events 'riff' (k, id, n), 'bolt' (k, note, src (-1 =
+    # headstock, 0..3 = post), x0, y0, x1, y1, hit, riff id, fork, tap), 'fork', 'tapping'; hits of kind 'bolt' (sub =
+    # src + 1). A stunned / smashed fighter plays no notes.
+    POSTS = ((-1, 1), (1, 1), (1, -1), (-1, -1))           # x, y signs of the four corner posts (ring frame), in order
+
+    def lightning_setup(self, k):
+        B = self.balls[k]
+        B.n_vol = float(B.w.get('n0', 2))
+        B.riff_id, B.riff_n, B.riff_slots = -1, 0, ()
+        B.riff_landed = set()
+        B.fork_until, B.fork_ab = -1.0, None
+        B.tap_until, B.tap_ab = -1.0, None
+
+    def lightning_tick(self, k, k16):
+        B = self.balls[k]
+        if self._stunned(k) or getattr(B, 'smashed', 0.0) > 0:
+            return
+        w = B.w
+        main16 = int(round(4 * w['every']))
+        pos = k16 % main16
+        if pos == 0:                                            # a new riff: its note count is fixed for the bar
+            B.riff_id += 1
+            B.riff_n = int(B.n_vol + 1e-9)
+            B.riff_slots = tuple(sorted(w['slots'][:B.riff_n]))
+            self.ev('riff', k, B.riff_id, B.riff_n)
+        tapping = self.t < B.tap_until + 1e-9 and k16 % 2 == 0
+        if pos in B.riff_slots:
+            self.bolt(k, B.riff_slots.index(pos), tap=False)
+        elif tapping:
+            self.bolt(k, -1, tap=True)
+
+    def bolt_source(self, k, fork):
+        """(src, x0, y0): where this bolt strikes from (-1 = the headstock, 0..3 = a post, None = out of range)"""
+        B, O = self.balls[k], self.balls[1 - k]
+        A, R = self.R.A, self.R.R
+        rk = B.fork_ab.get('reach_k', 1.0) if fork else 1.0
+        gap = float(np.hypot(*(O.p - B.p))) - 2 * R
+        if gap <= B.w['reach'] * rk:
+            return -1, float(B.p[0]), float(B.p[1])
+        dp = [float(np.hypot(O.p[0] - sx * A, O.p[1] - sy * A)) for sx, sy in self.POSTS]
+        j = int(np.argmin(dp))
+        if dp[j] <= B.w['post_r'] * rk:
+            return j, self.POSTS[j][0] * A, self.POSTS[j][1] * A
+        return None, float(B.p[0]), float(B.p[1])
+
+    def bolt(self, k, note, tap):
+        B, O = self.balls[k], self.balls[1 - k]
+        R = self.R.R
+        w = B.w
+        fork = self.t < B.fork_until + 1e-9
+        src, x0, y0 = self.bolt_source(k, fork)
+        o = np.array([x0, y0])
+        d = O.p - o
+        dist = float(np.hypot(*d))
+        u = d / max(dist, 1e-9)
+        hit = src is not None
+        if hit:
+            x1, y1 = (O.p - u * R).tolist()                    # where it strikes the enemy's glass
+        else:                                                   # a miss crackles out its reach toward the enemy
+            rk = B.fork_ab.get('reach_k', 1.0) if fork else 1.0
+            x1, y1 = (o + u * (R + w['reach'] * rk)).tolist()
+        self.ev('bolt', k, int(note), -1 if src is None else int(src), x0, y0, float(x1), float(y1), int(hit),
+                int(B.riff_id), int(fork), int(tap))
+        if not hit:
+            return
+        dmg = w['dmg'] * (B.tap_ab.get('dmg_k', 1.0) if tap else 1.0)
+        landed = self.damage(k, 1 - k, dmg, 'bolt', x1, y1, int(src) + 1)
+        self.knock(1 - k, u, w['knock'])
+        if landed and not tap and B.riff_id not in B.riff_landed:
+            B.riff_landed.add(B.riff_id)                        # a riff that lands counts once: one more note next riff
+            B.n_vol = min(float(w['n_max']), B.n_vol + w['grow'])
+
     # ------------------------------------------------------------------ record
     KMAX = 72
 
@@ -4052,6 +4141,10 @@ class Fight:
         hookers = [k for k, B in enumerate(self.balls) if any(a['kind'] == 'hook' for a in B.cfg['abilities'].values())]
         if rec is not None and hookers:                          # #39 (opt-in)
             rec['HOOK'] = []
+        lightnings = [k for k, B in enumerate(self.balls) if B.w['kind'] == 'lightning']   # #44 (opt-in)
+        for k in lightnings:
+            self.lightning_setup(k)
+        n16l = k16_0
         resters = [k for k, B in enumerate(self.balls) if B.w['kind'] == 'rests']        # #42 (opt-in)
         for k in resters:
             self.rests_setup(k)
@@ -4196,6 +4289,11 @@ class Fight:
                 n16v += 1
                 for k in resters:
                     self.rests_tick(k, k16v)
+            if lightnings and self.t + 1e-9 >= n16l * s16:      # #44: riff notes (bolts) and taps on the 16th grid
+                k16l = n16l - k16_0
+                n16l += 1
+                for k in lightnings:
+                    self.lightning_tick(k, k16l)
             if hoppers and self.t + 1e-9 >= n16h * s16:         # #39: hops (and MOUNTAIN KING's) on the 16th grid
                 k16h = n16h - k16_0
                 n16h += 1
