@@ -31,6 +31,8 @@ styles, ready for crossovers and a tournament bracket.
   - Flash: panels are never white; one doors-shut / doors-open pair; `reelkit.flashcheck` must pass.
   - The fight starts at 2 bars. Search seeds with `t_fight` = 2 bars from the start: moving an existing seed's fight a
     bar later does **not** replay the same run (float drift, chaos from ~30 s; #30 lesson), so re-run the search.
+- **Fighter versions:** PIANO v2 = PIANO ROLL (user, Oct 27), from the next piano episode; #27 keeps v1. Details and
+  other redesigns: `docs/ballfight/redesign-2026-10-24.md`.
 - **Retired fighters (user, Oct 27): GUITAR and SAX** are scrapped for new episodes, "since we will be using more specific
   versions moving forwards". Draft future match-ups with specific instruments instead: guitars = ACOUSTIC (exists),
   ELECTRIC GUITAR, BASS GUITAR; saxes = BARI SAX (exists), ALTO SAX, TENOR SAX, SOPRANO SAX. Each specific version is a
