@@ -6,7 +6,7 @@ engine change can be checked for bit-identical replays before it is pushed.
     python tools/ballfight_replay_hash.py | diff before.txt -
 
 Each episode runs in its own interpreter (the episodes' modules share names: timeline, sim). Add an episode to
-EPISODES once it is delivered: (folder, [its chosen seed + a few others])."""
+EPISODES once it is delivered: (folder, [its chosen seed + a few others]); episode-kit episodes go in KIT_EPISODES."""
 import os
 import subprocess
 import sys
@@ -32,6 +32,12 @@ EPISODES = [
     ('projects/ballfight_barisax_vs_bassclarinet', [128, 1, 2, 3, 500]),   # #40 v2 (crossover, sides swapped; the bari swings out over the ropes), seed 128 (v1: 617, commit 8115d67)
     ('projects/ballfight_flute_vs_trombone', [392, 1, 2, 3, 500]),   # #41 (crossover, sides swapped; Rules(swat_cobras=True): the lance swats cobras), seed 392
     ('projects/ballfight_viola_vs_violin', [8219, 1, 2, 3, 500]),   # #42 (rests / double_stop / melody / joke; VIOLA vs the #28 VIOLIN), seed 8219
+]
+# Episode-kit configs (python -m ballfight hash): a config that rebuilds a delivered episode prints that episode's lines.
+# Add every new kit episode once it is delivered: (its folder, [its SEED + a few others]).
+KIT_EPISODES = [
+    ('projects/ballfight/examples/flute_vs_trombone', [392, 1, 2, 3, 500]),   # #41 rebuilt as a kit config
+    ('projects/ballfight/examples/clarinet_vs_oboe', [654, 1, 2, 3, 500]),    # #37 rebuilt as a kit config
 ]
 CODE = r'''
 import hashlib, sys
@@ -62,3 +68,13 @@ if __name__ == '__main__':
             continue
         for line in out.stdout.strip().split('\n'):
             print(folder, line)
+    for folder, seeds in KIT_EPISODES:
+        d = os.path.join(ROOT, folder)
+        out = subprocess.run([sys.executable, '-m', 'ballfight', 'hash', d] + [str(s) for s in seeds],
+                             cwd=os.path.join(ROOT, 'projects'), capture_output=True, text=True)
+        if out.returncode:
+            print(folder, 'FAILED\n', out.stderr)
+            continue
+        for line in out.stdout.strip().split('\n'):
+            if line.startswith(d + ' '):
+                print(folder, line[len(d) + 1:])
