@@ -600,6 +600,10 @@ def _hold(k, slot):
         return ab['open16'] * T.BEAT / 4
     if ab['kind'] == 'stun':
         return ab['stun']
+    if ab['kind'] == 'sustain':                      # #45 SUSTAIN: while the pedal is down
+        return ab['dur_beats'] * T.BEAT
+    if ab['kind'] == 'runoff':                       # #45 88 KEYS: until the new roll is threaded
+        return max(0.08, ab.get('reload_beats', 0) * T.BEAT)
     return 0.08
 
 

@@ -11,7 +11,7 @@ from .episode import current
 
 # every per-frame array the engine records (any fighter); converted to numpy when they're rectangular
 REC_KEYS = ('P', 'V', 'TH', 'BL', 'FR', 'NV', 'HP', 'LV', 'SH', 'HA', 'SPIN', 'OM', 'K', 'EXT', 'SLW', 'CRV', 'DET',
-            'TUNE', 'SNIP')
+            'TUNE', 'SNIP', 'ROLL')
 
 
 def _T():
@@ -27,9 +27,50 @@ def rules(dmg_side=None, dmg_scale=None, **over):
     side = T.DMG_SIDE if dmg_side is None else dmg_side
     if side is not None:
         kw['dmg_side'] = tuple(side)
+    from fighters import FIGHTERS
+    rows = {j: roll_rows(n) for j, n in enumerate(T.FIGHTERS) if FIGHTERS[n]['weapon']['kind'] == 'roll'}
+    if rows:                                              # #45 PIANO ROLL: the roll's rows are the fighter's line
+        kw['roll_rows'], kw['roll_start8'] = rows, 8 * T.LOOP_START
     kw.update(over)
     return Rules(bpm=T.BPM, t_fight=T.T_FIGHT, fps=T.FPS, dmg_scale=T.DMG_SCALE if dmg_scale is None else dmg_scale,
                  **kw)
+
+
+def roll_rows(name):
+    """#45: a 'roll' fighter's rows, one per 8th of the LOOP (the loop starts on bar LOOP_START): its line (config
+    LINES: 8 a bar, or 4 = beats with an 8th's rest after each; None = a rest; else the kit's sketch line) with the
+    harmony a denser row adds, in order: the melody, its octave below, then the chord's tones under it (the nearest
+    first), all inside the fighter's register. The engine fires the first n holes of each row (n grows per landed row)"""
+    from fighters import FIGHTERS
+    T = _T()
+    lo, hi = FIGHTERS[name]['weapon'].get('reg', FIGHTERS[name]['register'])
+    line = list(T.LINES[name]) if name in T.LINES else T.default_line(name)
+    per_bar = len(line) // len(T.LOOP)
+    if per_bar == 4:
+        line = [x for m in line for x in (m, None)]
+        per_bar = 8
+    assert per_bar == 8, f'LINES[{name!r}]: 8 (or 4) notes a bar over the {len(T.LOOP)}-bar LOOP'
+    out = []
+    for i, m in enumerate(line):
+        if m is None:
+            out.append(())
+            continue
+        m = int(m)
+        while m > hi:
+            m -= 12
+        while m < lo:
+            m += 12
+        ch = T.LOOP[i // 8]
+        row = [m]
+        if m - 12 >= lo:
+            row.append(m - 12)
+        for c in sorted((c for c in T.chord_tones(lo, m - 3, ch) if c not in row and c != m - 12), reverse=True):
+            if len(row) >= 4:
+                break
+            if all(abs(c - r) >= 3 for r in row):
+                row.append(c)
+        out.append(tuple(row))
+    return out
 
 
 def run_seed(seed, record=True, **kw):
