@@ -372,10 +372,64 @@ def _barisax(base):                                                  # BARI SAX 
     return np.where(hl[..., None], out * 0.3 + np.array([255, 250, 230]) * 0.7, out)
 
 
+_GLYPHS = {   # pixel glyphs for the string fighters' panels (#42), stamped upright at 2x
+    'alto': ["##.#..####.", "##.#.##..##", "##.#.#....#", "##.#......#", "##.#.....##", "##.#..###..",
+             "##.#.##....", "##.###.....", "##.#.##....", "##.#..###..", "##.#.....##", "##.#......#",
+             "##.#.#....#", "##.#.##..##", "##.#..####."],
+    'fhole': ["....##.", "...#..#", "....##.", "....#..", "....#..", "...#...", "...#...", ".####..", "..#....",
+              "..#....", ".#.....", ".#.....", "##.....", "#..#...", ".##...."],
+    'scroll': ["..######..", ".#......#.", "#..####..#", "#.#....#.#", "#.#.##.#.#", "#.#.#..#.#", "#.#..##..#",
+               "#..#....#.", ".#..####..", "..#.......", "..#.......", "..#......."],
+}
+
+
+def _glyph_mask(name, spots, scale=2):
+    """a full-frame mask with the glyph stamped (upright) centred on each screen spot"""
+    rows = _GLYPHS[name]
+    g = np.array([[c == '#' for c in r] for r in rows], bool).repeat(scale, 0).repeat(scale, 1)
+    gh, gw = g.shape
+    m = np.zeros((H, W), bool)
+    for cx, cy in spots:
+        x0, y0 = int(round(cx - gw / 2)), int(round(cy - gh / 2))
+        xa, ya, xb, yb = max(0, x0), max(0, y0), min(W, x0 + gw), min(H, y0 + gh)
+        if xb > xa and yb > ya:
+            m[ya:yb, xa:xb] |= g[ya - y0:yb - y0, xa - x0:xb - x0]
+    return m
+
+
+def _spots_along(off, step, phase=0.0):
+    """screen spots on both sides of the divider, |SIDE| = off, every `step` px along it (symmetric: either panel)"""
+    out = []
+    for sgn in (1, -1):
+        for j in range(-2, 16):
+            p = DA + DD * (step * (j + phase)) + N * off * sgn
+            if -20 < p[0] < W + 20 and -20 < p[1] < H + 20:
+                out.append(tuple(p))
+    return out
+
+
+def _viola(base):                                                    # VIOLA (#42): alto clefs + f-holes, varnish grain
+    g = np.sin((XX * 0.35 + YY * 0.94) / 6.0 + 1.8 * np.sin(XX / 33.0 + YY / 81.0))
+    base = base * (0.95 + 0.06 * (g > 0.6)[..., None] - 0.05 * (g < -0.7)[..., None])
+    clef = _glyph_mask('alto', _spots_along(52.0, 46.0))
+    fh = _glyph_mask('fhole', _spots_along(118.0, 70.0, 0.5), scale=3)
+    base = np.where(clef[..., None], base * 0.45 + np.array([236, 255, 246]) * 0.55, base)
+    return np.where(fh[..., None], base * 0.42, base)
+
+
+def _violin(base):                                                   # VIOLIN (#42): scrolls + f-holes, flamed maple
+    g = np.sin((XX * 0.94 - YY * 0.34) / 3.2 + 1.2 * np.sin(XX / 29.0 - YY / 61.0))
+    base = base * (0.94 + 0.08 * (g > 0.55)[..., None] - 0.05 * (g < -0.7)[..., None])
+    scr = _glyph_mask('scroll', _spots_along(52.0, 44.0, 0.3))
+    fh = _glyph_mask('fhole', _spots_along(118.0, 70.0), scale=3)
+    base = np.where(scr[..., None], base * 0.45 + np.array([246, 236, 255]) * 0.55, base)
+    return np.where(fh[..., None], base * 0.42, base)
+
+
 PATTERNS = {'BAGPIPES': _tartan, 'ACCORDION': _pleats, 'ORGAN': _organ_pipes, 'HARP': _harp_strings,
             'TROMBONE': _slide_tubes, 'HORN': _horn_coils, 'UKULELE': _surf, 'ACOUSTIC': _woodgrain,
             'CLARINET': _clarinet_keys, 'OBOE': _oboe_reeds, 'BASS CLARINET': _bassclarinet, 'EUPHONIUM': _euphonium,
-            'BASSOON': _bassoon, 'BARI SAX': _barisax}
+            'BASSOON': _bassoon, 'BARI SAX': _barisax, 'VIOLA': _viola, 'VIOLIN': _violin}
 
 
 def _panel_rgb(colour, dark, side, name=None):
