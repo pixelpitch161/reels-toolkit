@@ -1309,3 +1309,41 @@
 - Checks: levels PASS (wav + mp4); band check +7..+12 dB; safe zone OK; CoC 0; loopcheck PASS render 0.3x / mp4 0.9x;
   flashcheck PASS (the doors). Render 7.7 min + mux.
 - Feedback: (pending)
+
+
+## BALLFIGHT #13 (#39): Bassoon vs Bari Sax, the sneak vs the ring rattler
+- Reference photos in the user's Chrome (Claude in Chrome): Commons' search API from a Commons page (same origin) for the
+  file lists, then the candidates drawn into a canvas (`crossOrigin`) and measured per row (red-wood spans, silver /
+  ivory bands). Bassoon: the Yamaha YFG-812 II front product shot, scaled to the usual 134 cm (0.815 mm/px): boot 425 mm
+  (an oval 73 -> 63 mm), long joint to 1012 mm, bell 47 mm with a bulge and a 62 mm pale cap ring, wing joint 34 mm with
+  its crown at 849-894 mm; "Bassoon parts.jpg" for the bocal's shape. Bari: the Amati baritone product shot, for what
+  changes from the alto (long straight bell with the rim at ~80 % of the height, the pigtail loop, big mouthpiece,
+  low-A key). At ball size a 1.34 m bassoon is a 3-px stick: the `ball` scene widens it x2.3 about its centre line and
+  thickens the crook x3.4, so the hooked bocal is what reads (it vanished into dots at 16 px until then).
+- The bari is a new file adapted from the alto (`altosax60_lowpoly` imported read-only for its swept tubes, cups,
+  touches, palette); its voice reuses the alto's recipe, but the alto rolls harmonics off by number (`exp(-k/3)`), which
+  at 65 Hz left a dull hum: the bari rolls them off by frequency through its own formants (~560 Hz / ~1.35 kHz).
+- Engine (4 small commits, then a timing fix; all finished episodes bit-identical each time, 12 once #38 landed):
+  `tiptoe` + `mountain`, `hook`, `rattle` + `offbeat`, `quake`. A hopper is a new kind of mover: `move()` skips it
+  mid-hop (`air`) and moves it only by its knock boost on the ground (`hopper`), the clash skips airborne balls. The
+  rattle reads new 'rope' events from the event list to find slings (no change to `move()`'s bounce).
+- Timing bug: a hop landing a fraction of a substep after its 16th tick was missed at the tick, so the next launch
+  slipped a 16th: MOUNTAIN KING's accelerating schedule came out as eight 3-16th hops then a ragged mix. Landing a hop
+  due within one substep at the tick fixed it, and the on-time dance became decisive (82 % wins): re-tuned once
+  (MOUNTAIN KING 1.6 -> 0.4 a stomp) and re-searched (the first pick, seed 668, no longer replays).
+- Tuning: smooth damage streams (a stomp every beat landing ~95 %) gave ~0.2 lead changes a run. What helped: a
+  small, growing stomp radius with an imperfect lead (about half the stomps land early, ~95 % late), backstabs x2.5, and a rattle
+  that needs ~10 landed hits to reach all four ropes, so the bari's slings ramp up mid-fight while the bassoon ramps up
+  later: lead changes ~0.7 a run, fits ~1-2 %, the search is cheap (275 runs for 8 fits). A random search over the
+  grid (`tune_search.py`) was a waste here: the caption rule (>= 5 first uses 4 s apart) and the lead changes are
+  structural, not numeric.
+- Picture: the ropes ringing only read once they were tinted coral with a single standing-wave mode per side (three
+  ropes in different modes looked like a glitch). Squash and stretch about the ball's bottom point; the hop's shadow
+  stays on the canvas, which sells the height.
+- Music: the honk sat under the bed in its own band until the downbeat kick stepped back under it (the honk IS the
+  downbeat) and the incidental thuds were thinned; more ringing ropes = a fuller bass chord scaled by 1/sqrt(n), not a
+  louder one (levels: 6.2 -> 3.6 dB spread). The bassoon's thinning only drops notes when its line is dense (a tumbling
+  bassoon was going silent for 1.75 s).
+- Checks: levels PASS (wav + mp4); band check +5..+17 dB; safe zone OK; CoC 0; flash 0 on the busiest stretch; loopcheck
+  PASS render 0.4x / mp4 1.0x. Render 10 min + 3.5 min mux.
+- Feedback: (pending)
