@@ -61,6 +61,8 @@ and numbers, through trigger(..., ab=, quiet=True); if the enemy hasn't used one
 #39 (opt-in): weapon kind `tiptoe` (TIPTOE: no gliding; staccato hops on the grid to a spot behind the enemy, each landing
 a stomp, x `back` from behind: the backstab; a knocked hopper slides and can't hop while tumbling; events 'hop' /
 'stomp', recorded as HOP) and ability kind `mountain` (MOUNTAIN KING: accelerating hops circling the enemy, each a stomp).
+Ability kind `hook` (BOCAL HOOK: the crook hooks a close enemy and spins it to face away; a hopper follows up with a
+hop straight behind it; recorded as HOOK).
 The run records every frame (30 fps) for the renderer and every event (hits, blocks, parries, ropes, volleys,
 abilities, level-ups, the K.O.) for the soundtrack and the captions. Seeded: same seed, same fight."""
 import math
@@ -2711,6 +2713,8 @@ class Fight:
             self.ev('twin', k, B.twin_until)
         elif kind == 'barrage':                                 # #38 (NOT A TUBA): shells rain across the ring
             self.start_barrage(k, ab)
+        elif kind == 'hook':                                    # #39 (BOCAL HOOK): the crook hooks and spins the enemy
+            self.start_hook(k, ab)
         elif kind == 'mountain':                                # #39 (MOUNTAIN KING): accelerating hops round the enemy
             self.start_mountain(k, ab)
         elif kind == 'rhapsody':                                # #37 (RHAPSODY): a chain of zig-zag jumps
@@ -2765,6 +2769,9 @@ class Fight:
                 if r is not None and B.cfg['abilities'][slot]['kind'] == 'snip' and \
                         not self.snip_ready(k, B.cfg['abilities'][slot]):
                     continue                                        # #37: the reed's snip waits for the enemy to be close
+                if r is not None and B.cfg['abilities'][slot]['kind'] == 'hook' and \
+                        not self.hook_ready(k, B.cfg['abilities'][slot]):
+                    continue                                        # #39: the hook waits for the enemy to be close
                 if r is not None and B.cfg['abilities'][slot]['kind'] == 'copy':        # #38: a copied snip waits too
                     src = self.copy_source(k)
                     if src is not None and src['kind'] == 'snip' and not self.snip_ready(k, src):
@@ -3107,6 +3114,53 @@ class Fight:
         B.hop_bonus = False
         self.ev('mountain', k, len(ab['seq16']))
 
+    # ------------------------------------------------------------------ #39: BOCAL HOOK (opt-in ability kind 'hook')
+    # The bassoon's crook swings out at a close enemy (turning to it at `track` rad/s while it winds up over `open16`
+    # 16ths) and hooks: if the enemy is within `reach` beyond contact and `half` deg of the aim, it takes `dmg`, is
+    # spun round to face away from the bassoon (its heading turned, speed kept) and nudged (`knock`), and a hopper
+    # gets a follow-up hop straight behind it on the next 16th (the backstab set-up). It waits for its moment: it only
+    # starts when the enemy is within `ready` beyond contact and the bassoon is on the ground. Events ('hook_open',
+    # owner, t_hook, aim), ('hook', owner, hit, aim, reach); recorded as HOOK (state 1 out / 2 hooked, aim, t_hook).
+    def hook_ready(self, k, ab):
+        B, O = self.balls[k], self.balls[1 - k]
+        return not getattr(B, 'air', False) and float(np.hypot(*(O.p - B.p))) - 2 * self.R.R <= ab['ready']
+
+    def start_hook(self, k, ab):
+        B, O = self.balls[k], self.balls[1 - k]
+        d = O.p - B.p
+        aim = math.atan2(d[1], d[0])
+        B.hook = dict(ab=ab, aim=aim, t_hook=self.t + ab['open16'] * self.R.beat / 4.0, state=1, t_end=None)
+        self.ev('hook_open', k, B.hook['t_hook'], aim)
+
+    def hook_step(self, k, dt):
+        B, O = self.balls[k], self.balls[1 - k]
+        Hk = getattr(B, 'hook', None)
+        if Hk is None:
+            return
+        ab = Hk['ab']
+        rel = O.p - B.p
+        if Hk['state'] == 1:
+            want = math.atan2(rel[1], rel[0])
+            step = ab['track'] * dt
+            Hk['aim'] = _wrap(Hk['aim'] + max(-step, min(step, _wrap(want - Hk['aim']))))
+            if self.t + 1e-9 >= Hk['t_hook']:
+                dist = float(np.hypot(*rel))
+                off = abs(_wrap(math.atan2(rel[1], rel[0]) - Hk['aim']))
+                hit = dist - 2 * self.R.R <= ab['reach'] and math.degrees(off) <= ab['half']
+                if hit:
+                    n = rel / dist if dist > 1e-6 else np.array([math.cos(Hk['aim']), math.sin(Hk['aim'])])
+                    hx, hy = (O.p - n * self.R.R).tolist()
+                    if self.damage(k, 1 - k, ab['dmg'], 'hook', hx, hy):
+                        sp = float(np.hypot(*O.v))
+                        O.v = n * max(sp, 1e-6)                  # spun round: it now faces away from the bassoon
+                        O.boost = max(O.boost, ab['knock'])
+                        if B.w['kind'] == 'tiptoe':
+                            B.hop_bonus = True                   # the follow-up hop: straight behind it
+                self.ev('hook', k, int(hit), Hk['aim'], float(ab['reach']))
+                Hk['state'], Hk['t_end'] = 2, self.t + 0.3
+        elif self.t >= Hk['t_end']:
+            B.hook = None
+
     # ------------------------------------------------------------------ record
     KMAX = 72
 
@@ -3191,6 +3245,13 @@ class Fight:
                     Ac[j] = (1.0, An['c'][0], An['c'][1], An['th'], float(np.hypot(*(Bj.p - An['c']))),
                              float(getattr(Bj, 'twin_until', -1.0) > self.t))
             rec['ANC'].append(Ac)
+        if 'HOOK' in rec:                                   # #39, only recorded when a fighter has a 'hook' ability
+            Hq = np.full((2, 3), np.nan)
+            for j, Bj in enumerate((B0, B1)):
+                Hk = getattr(Bj, 'hook', None)
+                if Hk is not None:
+                    Hq[j] = (Hk['state'], Hk['aim'], Hk['t_hook'])
+            rec['HOOK'].append(Hq)
         if 'HOP' in rec:                                    # #39, only recorded when a fighter uses the 'tiptoe' kind
             Hp = np.full((2, 3), -1.0)
             for j, Bj in enumerate((B0, B1)):
@@ -3308,6 +3369,9 @@ class Fight:
         n16h = k16_0
         if rec is not None and hoppers:
             rec['HOP'] = []
+        hookers = [k for k, B in enumerate(self.balls) if any(a['kind'] == 'hook' for a in B.cfg['abilities'].values())]
+        if rec is not None and hookers:                          # #39 (opt-in)
+            rec['HOOK'] = []
         self.t = R.t_fight
         f0 = int(round(R.t_fight * R.FPS))
         step = 0
@@ -3497,6 +3561,8 @@ class Fight:
                 for k in (0, 1):
                     if self.balls[k].anc is not None:
                         self.anchor_step(k, dt)
+            for k in hookers:                                    # #39: BOCAL HOOK
+                self.hook_step(k, dt)
             for k in hoppers:                                    # #39: mid-hop positions, landings + stomps
                 self.tiptoe_step(k, dt)
             if dc:
