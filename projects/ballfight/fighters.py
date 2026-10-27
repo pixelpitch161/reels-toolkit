@@ -40,6 +40,9 @@ A fighter is a glass ball with a low-poly Pixel Pitch instrument inside. Every f
                           balls at `at` of the way; crossing an enemy string costs `dmg` (per string once per `cool` s;
                           `knock` = a stumble, no turn); the owner passes freely; keeps int(n_vol) strings (`n0`, +`grow`
                           per landed crossing up to `n_max`; the oldest drops)
+                'lightning'  (#44) a riff every `every` beats: int(n_vol) notes (`n0`, +`grow` per landed riff, up
+                          to `n_max`) on the 16th `slots` (taken in order); each note an instant bolt from the headstock
+                          (enemy within `reach`) or the nearest corner post (within `post_r`), else a miss; `dmg`, `knock`
   abilities   unlock1 (at LV2), unlock2 (at LV3), low (once, when HP drops below Rules.LOW_HP). Kinds:
                 'shockwave'  expanding ring: knocks back + damages what it passes, clears enemy projectiles
                 'shield'     blocks all damage for `dur` s (a blade hitting it bounces and reverses)
@@ -55,6 +58,9 @@ A fighter is a glass ball with a low-poly Pixel Pitch instrument inside. Every f
                 'arc'        a sweeping arc of `n` projectiles across the ring over `beats` beats
                 'wave'       a big slow shockwave across the whole ring (like 'shockwave', harder, clears everything)
                 'slam'       telegraphed area hit at the opponent's predicted spot after `tele` beats
+                'fork'       (#44) DISTORTION: for `dur` / `dur_beats` the lightning bolts fork (reach x `reach_k`)
+                'tapping'    (#44) TAPPING: for `beats` beats a lightning bolt on every 8th (x `dmg_k`)
+                'smash'      (#44) GUITAR SMASH: a shockwave + `n` splinters; in pieces for `rebuild_beats`, then on
               unlock abilities recur every `every_bars` bars after they unlock (only the first use gets a caption)
   look        colour (rim, HUD, captions), corner, the instrument's best view inside the ball (yaw centre, swing, roll),
               weapon style for the renderer
@@ -427,4 +433,21 @@ FIGHTERS = {
             unlock2=dict(name='MELODY AT LAST', kind='melody', dur_beats=8, rest=1, every_bars=8),   # a note every other beat
             low=dict(name='VIOLA JOKE', kind='joke', stun_beats=1.0, tele=1, size=1.6, dmg=12.0, knock=1.8)),
         pp='VIOLA', register=(48, 79), idiom='bowed'),
+
+    # ---- #44 BALLFIGHT: the guitar family feud, plugged vs unplugged. The ELECTRIC (a specific guitar replacing the
+    # retired GUITAR, its own design; the same Pixel Pitch electric60 model and voice) is the only fighter that weaponises
+    # the ring's corner posts: every riff note is a bolt from its headstock, or from the post nearest the enemy (the
+    # lightning rods), so the enemy is safe only away from both.
+    'ELECTRIC': dict(
+        color=(100, 255, 120), dark=(40, 150, 60), corner='red',     # neon green (series colour table, IDEAS)
+        view=(12, 24, 30),
+        weapon=dict(kind='lightning', style='bolt', name='LIGHTNING RIFF',   # a riff every bar, every note a bolt
+                    every=4, n0=2, grow=0.5, n_max=8, slots=(0, 6, 12, 3, 10, 8, 14, 4),   # 3-3-2 first, then fills
+                    reach=1.1, post_r=1.7, dmg=1.5, knock=0.15),   # the posts reach further than the headstock
+        abilities=dict(
+            unlock1=dict(name='DISTORTION', kind='fork', dur_beats=8, reach_k=1.4, every_bars=5),   # bolts fork
+            unlock2=dict(name='TAPPING', kind='tapping', beats=4, dmg_k=0.7, every_bars=6),   # a bolt every 8th
+            low=dict(name='GUITAR SMASH', kind='smash', speed=7.5, radius=3.6, dmg=8.0, knock=1.6, n=10,
+                     splinter_speed=5.0, splinter_dmg=1.2, splinter_knock=0.4, rebuild_beats=1)),
+        pp='GUITAR', register=(52, 76), idiom='riff'),
 }
