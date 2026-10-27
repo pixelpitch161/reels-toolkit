@@ -79,7 +79,8 @@ beats; no damage, no growth. Events 'swat'. Off unless an episode turns it on, s
 damage while it rests, then plays one huge whole note: a hollow wheel that rolls at the enemy for `hold` beats, bouncing
 off the ropes, crushing it once and flattening its projectiles; the note grows per landed crush; events 'rest' / 'note'
 / 'crush', recorded as REST / NOTES). Ability kind `double_stop` (DOUBLE STOP: two notes at once, at the enemy and
-where it is heading; event 'double').
+where it is heading; event 'double') and `melody` (MELODY AT LAST: from the next beat, for `dur_beats` / `dur`, the
+rests shrink to `rest` beats, so a note comes every `rest` + 1 beats; event 'melody').
 The run records every frame (30 fps) for the renderer and every event (hits, blocks, parries, ropes, volleys,
 abilities, level-ups, the K.O.) for the soundtrack and the captions. Seeded: same seed, same fight."""
 import math
@@ -2817,6 +2818,11 @@ class Fight:
             self.start_mountain(k, ab)
         elif kind == 'snap':                                    # #39 v2 (CABLE SNAP): hoisted high, the cable snaps
             self.start_snap(k, ab)
+        elif kind == 'melody':                                  # #42 (MELODY AT LAST): shorter rests for a while
+            B.melody_until = self.t + self.ab_dur(ab) + 0.5 * self.R.beat
+            B.melody_k0 = getattr(B, 'cur_kb', -1) + 1
+            B.melody_rest = int(ab.get('rest', 1))
+            self.ev('melody', k, B.melody_until)
         elif kind == 'double_stop':                             # #42 (DOUBLE STOP): two whole notes at once
             self.start_double_stop(k, ab)
         elif kind == 'rhapsody':                                # #37 (RHAPSODY): a chain of zig-zag jumps
