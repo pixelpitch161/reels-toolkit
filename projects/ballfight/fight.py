@@ -3070,8 +3070,8 @@ class Fight:
         B, O = self.balls[k], self.balls[1 - k]
         w = B.w
         R = self.R.R
-        if B.hop is not None and self.t + 1e-9 >= B.hop['t1']:
-            self._hop_land(k)
+        if B.hop is not None and self.t + self.R.DT + 1e-9 >= B.hop['t1']:   # due within a substep: land on the
+            self._hop_land(k)                                    # grid (MOUNTAIN KING's hops keep their schedule)
         if B.hop is not None or self._stunned(k):
             return
         Mk = B.mk
