@@ -392,15 +392,17 @@ FIGHTERS = {
             low=dict(name='MOUNTAIN KING', kind='mountain', seq16=[3, 3, 3, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
                      step=75.0, gap=0.1, reach=3.5, dmg=0.4, knock=0.3)),   # 20 accelerating hops round the enemy
         pp='BASSOON', register=(40, 76), idiom='staccato'),
-    'BARI SAX': dict(
+    'BARI SAX': dict(                                             # v2 (Oct 26): WRECKING BALL; v1 is frozen in #39's v1/sim.py
         color=(255, 118, 92), dark=(150, 56, 40), corner='blue',     # coral (series colour table, IDEAS)
         view=(0, 22, 0),
-        weapon=dict(kind='rattle', style='honk', name='WINDOW RATTLER',    # every bar a huge honk; the ropes ring + sling
-                    every=4, off16=0, push=1.4, speed=10.0, dmg=4.0, knock=1.8, base=1.0, grow=0.06, max_reach=1.6,
-                    side_step=0.2, ring=0.9, sling=3.0, sling_knock=1.6, sling_min=0.2, sling_cool=0.3),
+        weapon=dict(kind='wrecking', style='swing', name='WRECKING BALL',   # every other bar: hooked, swung as a pendulum
+                    every=8, off16=0, drop16=4, lift16=1, swing16=6, base=2.1, grow=0.16, max_reach=2.66, theta=43.0,
+                    lead=1.0, short=1.28, skank_off16=2, skank_short=1.33, jitter=20.0, hit_r=0.1, air_edge=0.1,
+                    dmg=16.0, dmg_min=0.28, len_pow=2.5, knock=1.6),     # tuned once (#39 v2 tune.py), frozen
         abilities=dict(
             unlock1=dict(name='GROWL', kind='shockwave', speed=9.0, radius=2.4, dmg=7.0, knock=1.2, every_bars=5),
-            unlock2=dict(name='SKANK', kind='offbeat', dur_beats=8, sub=1.0, every_bars=6),     # honks on the off-beats
-            low=dict(name='LOW A', kind='quake', speed=9.0, radius=9.0, dmg=10.0, knock=1.5, dur_beats=8)),   # all 4 ropes
+            unlock2=dict(name='SKANK', kind='offbeat', dur_beats=8, every_bars=6),     # a swing every bar, on the off-beats
+            low=dict(name='CABLE SNAP', kind='snap', tele16=12, hoist=0.6, height=3.0, radius=0.5, dmg=22.0, knock=2.5,
+                     lead=1.0)),                                      # hoisted over the enemy's spot, crashes down
         pp='BARI SAX', register=(36, 60), idiom='honk'),
 }
