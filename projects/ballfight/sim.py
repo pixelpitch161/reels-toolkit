@@ -15,6 +15,22 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import timeline as T
 from fight import Fight, Rules, lead_changes
+from fighters import FIGHTERS
+
+# v1's PIANO (key volleys, as #27 was tuned and delivered), frozen: the roster's PIANO became v2 PIANO ROLL on Oct 27
+# (#45). Patched in at import, so this folder's sim / render / audio / tune replay #27 exactly (the engine keeps
+# 'volley').
+FIGHTERS['PIANO'] = dict(
+    color=(84, 156, 255), dark=(30, 60, 150), corner='blue',
+    view=(225, 20, 0),
+    weapon=dict(kind='volley', style='keys',           # piano keys fired on the beat, each one a note up the scale
+                n0=1, grow=0.5, n_max=14, every=2, speed=5.4, dmg=0.5,
+                spread=7.0, max_fan=64.0, size=(0.30, 0.13)),
+    abilities=dict(
+        unlock1=dict(name='SUSTAIN', kind='shield', dur=2 * 1.8485, every_bars=6),
+        unlock2=dict(name='GLISSANDO', kind='arc', n=15, sweep=150.0, beats=1, speed=5.6, dmg=0.5, every_bars=4),
+        low=dict(name='GRAND SLAM', kind='slam', tele=2, radius=1.35, dmg=11.0, knock=1.6)),
+    pp='PIANO', register=(48, 84), idiom='keys')
 
 
 def rules():

@@ -75,17 +75,18 @@ FIGHTERS = {
             unlock2=dict(name='SHRED', kind='haste', mult=2.0, dur=4.0, every_bars=6),
             low=dict(name='FEEDBACK', kind='wave', speed=4.5, radius=9.0, dmg=8.0, knock=1.5)),
         pp='GUITAR', register=(52, 76), idiom='power_chord'),
-    'PIANO': dict(
+    'PIANO': dict(                                    # v2 (Oct 27, #45): PIANO ROLL; v1 (key volleys) is frozen in #27's sim.py
         color=(84, 156, 255), dark=(30, 60, 150), corner='blue',
         view=(225, 20, 0),
-        weapon=dict(kind='volley', style='keys',           # piano keys fired on the beat, each one a note up the scale
-                    n0=1, grow=0.5, n_max=14, every=2, speed=5.4, dmg=0.5,
-                    spread=7.0, max_fan=64.0, size=(0.30, 0.13)),
+        weapon=dict(kind='roll', style='roll', name='PIANO ROLL',   # a player-piano roll along its back side: every row
+                    n0=1, grow=0.34, n_max=4,              # of holes fires note-shots from their pitch lanes (the rows are
+                    speed=5.2, aim=0.55, dmg=1.0,          # its line in the music); +holes per landed row
+                    margin=0.45, reg=(48, 84)),
         abilities=dict(
-            unlock1=dict(name='SUSTAIN', kind='shield', dur=2 * 1.8485, every_bars=6),
+            unlock1=dict(name='SUSTAIN', kind='sustain', dur_beats=4, out16=2, hang_beats=1, every_bars=6),  # mines
             unlock2=dict(name='GLISSANDO', kind='arc', n=15, sweep=150.0, beats=1, speed=5.6, dmg=0.5, every_bars=4),
-            low=dict(name='GRAND SLAM', kind='slam', tele=2, radius=1.35, dmg=11.0, knock=1.6)),
-        pp='PIANO', register=(48, 84), idiom='keys'),
+            low=dict(name='88 KEYS', kind='runoff', n=40, speed=5.0, dmg=0.9, margin=0.25, reload_beats=4)),
+        pp='PIANO', register=(48, 84), idiom='roll'),
 
     # ---- #28 BALLFIGHT #2: brute force vs finesse (numbers tuned once with ballfight_drums_vs_violin/tune.py, frozen)
     'DRUMS': dict(

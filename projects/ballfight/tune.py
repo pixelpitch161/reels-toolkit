@@ -3,6 +3,7 @@ import sys, itertools, numpy as np
 sys.path.insert(0, __import__('os').path.dirname(__import__('os').path.abspath(__file__)))
 from multiprocessing import Pool
 import fighters as FT
+import sim  # noqa: F401,E402  (freezes #27's PIANO v1 in the roster before the grid runs)
 
 def one(args):
     kd, bd, sc, seed = args
