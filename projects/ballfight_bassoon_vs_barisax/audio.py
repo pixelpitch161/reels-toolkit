@@ -146,6 +146,21 @@ def doppler(x, t_bot, up=1.6, down=2.6, width=0.10):
     return y * (0.5 + 0.5 * np.exp(-((t - t_bot) / (2.2 * width)) ** 2))
 
 
+def rope_twang(m, seed=0, dur=0.45):
+    """v3 (as #40 v2): a ring rope springing back from under the bari: a low plucked tone, quickly damped, a fibrous
+    buzz"""
+    key = ('twang', round(m, 2), seed % 3, round(dur, 2))
+    if key not in _BC:
+        n = int(dur * SR)
+        t = A.tt(n)
+        f = A.mtof(m)
+        x = sum((1.0 / k ** 1.2) * np.sin(2 * np.pi * f * k * t * (1 + .01 * np.exp(-t / .05)) + .3 * k) *
+                np.exp(-t * (6 + 4 * k)) for k in range(1, 7))
+        buzz = A.bp(np.random.default_rng(seed + 31).normal(0, 1, n), 300, 2500) * np.exp(-t / .02) * .4
+        _BC[key] = np.tanh(1.5 * (x + buzz)) * np.clip(t / .002, 0, 1)
+    return _BC[key]
+
+
 def winch(dur, seed=0, rise=1.0):
     """the crane's winch: a geared whirr (a buzzy tone sweeping up `rise` octaves) + chain rattle"""
     n = int(dur * SR)
@@ -514,7 +529,7 @@ def main():
             dur = ts1 - t_on + 0.06
             sig, g, lead = colour(bari(m, dur, 0.95, honk=0.85 if not sk else 0.55), KX, t, 0.6)
             sig = doppler(sig, tb - t_on, up=1.6 if not sk else 1.0, down=2.6 if not sk else 1.6, width=0.09)
-            mix.place('bari', sig, t_on, (1.15 if not sk else 0.80) * g, pan=0.2)
+            mix.place('bari', sig, t_on, (1.35 if not sk else 0.90) * g, pan=0.2)
             if lead > 0.05 and not sk:                       # the leader: the octave honked on top (fuller)
                 up8 = doppler(colour(bari(m + 12, dur, 0.7, honk=0.4), KX, t)[0], tb - t_on, 1.6, 2.6, 0.09)
                 mix.place('bari', up8, t_on, 0.20 * g, pan=0.25)
@@ -583,6 +598,18 @@ def main():
                 mix.place('fx', thunder(2.6, 33, crack=False), tq, 0.45)
             elif name == 'MOUNTAIN KING':
                 mix.place('drums', A.crash(1.6), tq, 0.08)
+    # ------------------------------------------------ v3: the bari out over the ropes (as #40 v2)
+    for te, side, x, z, spd in RD.ROPE_EV:                  # a rope the bari pressed springs back: a low twang
+        if spd == 3.2 and te <= T_KO:
+            mix.place('fx', rope_twang(T.bass_root(te) + 12, seed=int(te * 10)), q16(te), 0.20, pan=0.2)
+    for e in EV:                                             # dropped on the ropes, slung back in
+        if e[0] > T_KO:
+            break
+        if e[1] == 'wreck_out' and e[2] == KX:
+            mix.place('fx', rope_twang(T.bass_root(e[0]), seed=7, dur=0.6), q16(e[0] + 0.06), 0.30, pan=0.25)
+            mix.place('fx', A.whoosh(e[8] - e[7], 400, 3000, rise=False), e[0], 0.08)   # the slung-back return
+        elif e[1] == 'wreck_in' and e[2] == KX:
+            mix.place('fx', A.thud(0.35, 140, 50, seed=int(e[0] * 10)), q16(e[0]), 0.22)
     # ------------------------------------------------ the K.O. moment
     band_hit(mix, T_KO, 'Em', 1.0)
     mix.place('fx', thunder(2.4, 51), T_KO, 0.55)

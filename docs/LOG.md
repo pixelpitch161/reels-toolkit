@@ -1376,6 +1376,25 @@
 - Checks: levels PASS (wav + mp4); band check bari +3.6..+7.0 dB over the bed while sounding; safe zone OK; CoC 0;
   flashcheck PASS; flash test 0 on 41.5-52 s; loopcheck PASS render 0.4x / mp4 1.0x. Render 7 min, then patch renders for the leaps
   (67 frames, the crane drawn under a leaping ball), mux. Guard: 65 runs identical + v2's seed 27 added (70).
+- Feedback (user, Oct 27): "Changes have been made to the Bari Sax's model and attack. Re-render this video": v3.
+
+### #39 v3: the detailed bari, swinging out over the ropes
+- What changed came from #40 v2 (session_01CzTfqe): the Pixel Pitch bari's detail pass and the wrecking kind's opt-in
+  `overhang` (made the roster's BARI SAX standard, with #39's sim pinning it off). v2 first went to `v2/` with its
+  BARI SAX frozen in full (the #39 v1 pattern) and its sprite caches: its frames re-render byte-identical to the
+  delivered raw, the guard runs seed 27 there.
+- Balance: with full swings almost anywhere the bari won 83 %. The roster's numbers now serve #40 too, so the re-tune
+  used the episode's own knobs, as #40 did: a per-fighter damage handicap (`Rules.dmg_side`, the bari x0.8) and the
+  shared scale (0.34). Fits 2 %, lead changes ~0.6 a run; 262 honest runs for 8 fits.
+- Sprite caches (`check/sprites_ballfight13.npz`, `check/sprites_title.npz`) must be deleted when a model changes; the
+  title card builds its big sprites lazily, so render a frame with both balls on the card once in one process before the
+  parallel render (otherwise the workers race to write the cache).
+- Ported #40 v2's picture for the swing over the ropes (pressed ropes, spring-back wobbles as synthetic rope events,
+  drawn after the front ropes) and its sounds. Its slung-back whoosh read its length from the wrong event fields
+  (`e[7] - e[6]` is t0 minus a position, so whooshes seconds long, growing through the fight); here it is
+  `e[8] - e[7]` (0.27 s). #40's audio.py still has the old line.
+- Checks: levels PASS (wav + mp4, spread 4.3 dB); band check bari +3.4..+7.0 dB while sounding; safe zone OK; CoC 0;
+  flashcheck PASS; flash test 0 on 41.5-52 s; loopcheck PASS render 0.4x / mp4 1.1x. Render 7.2 min + mux.
 - Feedback: (pending)
 
 

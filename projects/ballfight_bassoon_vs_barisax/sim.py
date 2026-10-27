@@ -19,19 +19,20 @@ import timeline as T
 from fight import Fight, Rules, lead_changes
 from fighters import FIGHTERS
 
-# #39 v2 was made before the roster's BARI SAX could swing out over the ropes (#40 v2, Oct 27: weapon options
-# overhang / back16 / back_in): pinned off here, so this folder's sim / render / audio replay v2 exactly
-FIGHTERS['BARI SAX']['weapon'] = {k: v for k, v in FIGHTERS['BARI SAX']['weapon'].items()
-                                  if k not in ('overhang', 'back16', 'back_in', 'corner_l1')}
-
 LOWS = tuple(FIGHTERS[n]['abilities']['low']['name'] for n in T.FIGHTERS)
 REC_KEYS = ('P', 'V', 'TH', 'BL', 'FR', 'NV', 'HP', 'LV', 'SH', 'HA', 'SPIN', 'OM', 'K', 'HOP', 'HOOK', 'RATTLE', 'WRECK', 'SNAP')
 
 
-def rules(dmg_scale=None):
-    """the engine's rules at this episode's tempo (beat length, the fight's first beat) and the shared damage scale
-    (tuned once with tune.py, then frozen; the fighters' own numbers live in fighters.py)"""
-    return Rules(bpm=T.BPM, t_fight=T.T_FIGHT, fps=T.FPS, dmg_scale=T.DMG_SCALE if dmg_scale is None else dmg_scale)
+def rules(dmg_scale=None, side=None):
+    """the engine's rules at this episode's tempo (beat length, the fight's first beat), the shared damage scale and
+    (v3) the per-fighter damage handicap (both tuned once with tune.py, then frozen; the fighters' own numbers live in
+    fighters.py and are shared with other episodes)"""
+    kw = {}
+    side = getattr(T, 'DMG_SIDE', None) if side is None else side
+    if side is not None:
+        kw['dmg_side'] = tuple(side)
+    return Rules(bpm=T.BPM, t_fight=T.T_FIGHT, fps=T.FPS, dmg_scale=T.DMG_SCALE if dmg_scale is None else dmg_scale,
+                 **kw)
 
 
 def run_seed(seed, record=True):

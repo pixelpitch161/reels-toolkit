@@ -11,7 +11,8 @@ frozen since v1: these only for checks); v2 BARI SAX: wd = WRECKING BALL damage,
 knock, wb = cable length, wg = cable growth, wx = its max, wt = swing angle, wj = aim jitter, ws = aim short (x 2R),
 wq = SKANK's aim short, we = hop edge (still hittable), wh = hit margin, wl = lead, ww = swing 16ths, wf = lift 16ths,
 wr = drop 16ths, gd = GROWL damage, gs = GROWL speed, cd = CABLE SNAP damage, cr = its radius, ct = its 16ths; sc = the
-shared damage scale. Seeds 1000.. (the honest search later uses 1..), so the tuning never picks the episode's run."""
+shared damage scale; v3: hn / hb = the per-fighter damage handicap (BASSOON / BARI SAX, the episode's own: the
+roster is shared). Seeds 1000.. (the honest search later uses 1..), so the tuning never picks the episode's run."""
 import itertools
 import os
 import sys
@@ -53,7 +54,8 @@ def one(args):
     cell, seed = args
     apply(cell)
     c = dict(cell)
-    r = Fight(T.FIGHTERS[0], T.FIGHTERS[1], seed=seed, rules=sim.rules(c.get('sc')), record=False).run()
+    side = (c.get('hn', 1.0), c.get('hb', 1.0)) if ('hb' in c or 'hn' in c) else None
+    r = Fight(T.FIGHTERS[0], T.FIGHTERS[1], seed=seed, rules=sim.rules(c.get('sc'), side), record=False).run()
     st = sim.story(r)
     fits, _ = sim.score(st)
     lc, _ = lead_changes(r['events'])

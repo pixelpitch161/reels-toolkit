@@ -11,7 +11,9 @@ VS title card (as #36 / #37), with the two new fighters' styles from styles.py:
     of it (burst, dust, a skid mark, shake), then unhooks; the block flies back up. GROWL = a gravelly ring + grit; SKANK
     = a swing every bar on the off-beats; CABLE SNAP = hoisted high over the enemy's spot (its shadow and a pulsing ring
     on the canvas), the cable snaps (sparks, the line whips away), the ball falls and craters the canvas (the mark
-    fades). v1's WINDOW RATTLER code stays (it draws nothing without the 'rattle' kind).
+    fades). v1's WINDOW RATTLER code stays (it draws nothing without the 'rattle' kind). v3 (Oct 27, as #40 v2): the
+    swing may carry it out over the ropes (they are pressed down under it and spring back when it lifts off; drawn after
+    the front ropes when over them), and a far end outside drops onto the ropes and is slung back in.
 Effects from reelkit.fx (attack lights, bursts, particles, marks, ability moments); no full-screen flash.
 
     python render.py                                   # sprite cache (check/sprites_ballfight13.npz)
@@ -277,6 +279,9 @@ def air_pose(k, t):
         pose = wreck_pose(cycle_at(k, t, 0.0), t)
         if pose is not None:
             return pose[0], pose[1]
+        i = sim_i(t)
+        if T.T_FIGHT <= t < T_KO and int(RUN['WRECK'][i, k, 0]) == 4:     # v3: dropped on the ropes, slung back in
+            return RUN['P'][i, k].copy(), VERT * float(RUN['WRECK'][i, k, 1])
     return None
 
 
@@ -458,6 +463,48 @@ def events_between(t0, t1, kinds=None):
 SIDE_OF = {(1, 1): 0, (0, 1): 1, (1, -1): 2, (0, -1): 3}       # (axis, sign) -> rope side (ROPE_SIDES order)
 ROPE_EV = [(e[0], SIDE_OF[(e[3], e[4])], e[5], e[6], e[7]) for e in EV if e[1] == 'rope']
 ROPE_T = np.array([r[0] for r in ROPE_EV])
+_OVER = {}
+
+
+def bari_over(t):
+    """[(ring-frame centre, underside height)] of the bari while it is up on the cable / slung back and its footprint
+    reaches the rope line (v3, as #40 v2: it may swing out over the ropes): the ropes are pressed down under it"""
+    if t in _OVER:
+        return _OVER[t]
+    out = []
+    if T.T_FIGHT <= t < T_HS:
+        for k in WRECKER:
+            st = fighter(k, t)
+            if st['vis'] and st['h'] > 0.02 and max(abs(st['p'][0]), abs(st['p'][1])) > S.A - R * 1.05:
+                out.append((np.asarray(st['p'], float), float(st['h'])))
+    if len(_OVER) > 64:
+        _OVER.clear()
+    _OVER[t] = out
+    return out
+
+
+def _rope_wobbles():
+    """v3: when the bari lifts off a rope it pressed (the swing passing over, or slung back in), the rope springs back:
+    a synthetic rope event there (it wobbles like a hit rope; speed 3.2 marks it for the audio's twang)"""
+    out = []
+    prev = {}
+    f0, f1 = int(T.T_FIGHT * FPS), int(T_KO * FPS)
+    for f in range(f0, f1 + 1):
+        t = f / FPS
+        cur = {}
+        for c, hb in bari_over(t):
+            for s_, (ax, sg) in enumerate(((1, 1), (0, 1), (1, -1), (0, -1))):
+                if c[ax] * sg > S.A - R * 1.05 and hb < S.ROPE_Y[-1]:
+                    cur[s_] = c.copy()
+        for s_, c in prev.items():
+            if s_ not in cur:
+                out.append((t, s_, float(c[0]), float(c[1]), 3.2))
+        prev = cur
+    return out
+
+
+ROPE_EV = sorted(ROPE_EV + _rope_wobbles())
+ROPE_T = np.array([r[0] for r in ROPE_EV])
 WAVE_EV = [(e[0], 1.0 if e[4] == 'quake' else 0.5) for e in EV if e[1] == 'ability' and e[4] in ('shockwave', 'quake')]
 RK = RATTLER[0] if RATTLER else None
 
@@ -505,8 +552,18 @@ def rope_points(s, y, t, n=15):
         disp += ST.rope_wave(u, t + 0.03 * j + 0.05 * s, a_r, 0.0, mode=3, f=6.5) * (1 - 0.15 * j)
     disp += 0.012 * T.beat_pulse(t, 0.1) * np.sin(np.pi * u)                 # the bass thud
     sag = 0.035 * np.sin(np.pi * u)
+    yy = y - sag
+    for c, hb in bari_over(t):                                    # v3: the bari swinging over presses the ropes down
+        dd = np.hypot(P[:, 0] - c[0], P[:, 1] - c[1])
+        under = hb + R - np.sqrt(np.clip(R * R - dd * dd, 0, None)) - 0.03    # the ball's underside above each point
+        on = dd < R
+        yy = np.where(on, np.minimum(yy, under), yy)
+        near = (dd >= R) & (dd < R * 1.7)                        # the rope eases back up either side of it
+        if near.any():
+            w = 1 - (dd - R) / (R * 0.7)
+            yy = np.where(near, np.minimum(yy, yy - np.clip(yy - (hb - 0.03), 0, None) * w * w * 0.6), yy)
     P = P + outn[None] * disp[:, None]
-    return S.to_world(P[:, 0], P[:, 1], y - sag)
+    return S.to_world(P[:, 0], P[:, 1], np.maximum(yy, 0.05))
 
 
 # ---------------------------------------------------------------- shards (the loser shatters at the K.O.)
@@ -1498,9 +1555,27 @@ def render(f):
             items.append((-1e9, 'crook', k))
     items.sort(key=lambda it: -it[0])
     drawn = {}
+    late = [k_ for k_ in WRECKER if in_fight and fs[k_]['vis'] and fs[k_]['h'] > 0.02
+            and max(fs[k_]['p'][0], fs[k_]['p'][1]) > S.A - R * 1.05]      # v3: up over a front rope: drawn after it
+
+    def draw_fighter(obj):
+        st = fs[obj]
+        arr, depth = fr.array(), fr.depth()
+        if obj in WRECKER and T.T_FIGHT <= t < T_HS:            # v2: smear + trail, the harness ring's side
+            arr = draw_swing_fx(arr, cam, obj, t)
+            cs_ = cranes[obj]
+            if cs_ is not None and cs_['attached']:
+                a_ = cam.wp(S.to_world(st['p'][0], st['p'][1], R + st['h'])[None])[0]
+                b_ = cam.wp(cs_['block'][None])[0]
+                d_ = b_ - a_
+                st['ring_dir'] = d_ / (np.linalg.norm(d_) + 1e-9)
+        drawn[obj] = draw_ball(arr, depth, cam, obj, st, t)
+        fr.set_array(arr, depth)
     for dz, kind, obj in items:
         if kind == 'post':
             draw_post(obj)
+        elif kind == 'ball' and obj in late:
+            continue
         elif kind == 'ball':
             st = fs[obj]
             arr, depth = fr.array(), fr.depth()
@@ -1524,6 +1599,8 @@ def render(f):
     draw_rope_side(0)
     draw_rope_side(1)
     draw_post('front')
+    for obj in late:
+        draw_fighter(obj)
     arr, depth = fr.array(), fr.depth()
     for k_ in (WRECKER if not crane_first else ()):                 # v2: the crane, over the ring
         arr = draw_crane(arr, cam, cranes[k_], COL[k_])
