@@ -1306,3 +1306,6 @@
   riser (first 20 ms -8.7 vs last -13.1 dBFS). #37's lesson checked: no 0.5 s silent windows in either fighter's stem
   while it's fighting (a thinned note on the 2-beat salvo grid is now clipped, not dropped; the bass clarinet growls
   from FIGHT! to its first plant).
+- Checks: levels PASS (wav + mp4); band check +7..+12 dB; safe zone OK; CoC 0; loopcheck PASS render 0.3x / mp4 0.9x;
+  flashcheck PASS (the doors). Render 7.7 min + mux.
+- Feedback: (pending)
