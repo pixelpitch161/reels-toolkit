@@ -53,6 +53,7 @@ EXTRA = [
     ('BASS CLARINET', 'bassclarinet_lowpoly', 'ball', (34, 70), 0, 1.0),   # #38 BALLFIGHT: modern low-C bass clarinet (radii x2 for sprites) + chalumeau voice
     ('EUPHONIUM', 'euphonium_lowpoly', 'ball', (46, 77), 0, 1.0),          # #38 BALLFIGHT: modern 4-valve euphonium (tubing x1.35 for sprites) + warm voice
     ('BASSOON', 'bassoon_lowpoly', 'ball', (34, 75), 0, 1.0),          # #39 BALLFIGHT: modern Heckel bassoon (x2.3 wide, crook x3.4 for sprites) + double-reed voice
+    ('BARI SAX', 'barisax_lowpoly', 'ball', (36, 69), 0, 1.0),        # #39 BALLFIGHT: modern low-A bari, adapted from the alto (radii x1.35 for sprites) + honking voice
 ]
 DRUM_KEYS = (36, 38, 41, 45, 48, 49)    # kick, snare, floor / low / high tom, crash
 _MODS = {}
