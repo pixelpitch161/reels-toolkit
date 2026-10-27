@@ -87,6 +87,9 @@ on; events 'stun', 'joke').
 or from the nearest corner post (lightning rods) when the enemy is near one; +notes per landed riff) and its ability kinds
 `fork` (DISTORTION: the bolts fork and reach further for a while) and `tapping` (TAPPING: a bolt on every 8th for a
 bar); events 'riff', 'bolt', 'fork', 'tapping'.
+#44 (opt-in): ability kind `smash` (GUITAR SMASH: the fighter smashes itself on the floor, a shockwave of kind 'smash' +
+splinters flying out; it lies in pieces for `rebuild_beats` (still, intangible, silent), then snaps back together and
+fights on); events 'smash', 'splinter', 'splinter_end', 'rebuild'.
 The run records every frame (30 fps) for the renderer and every event (hits, blocks, parries, ropes, volleys,
 abilities, level-ups, the K.O.) for the soundtrack and the captions. Seeded: same seed, same fight."""
 import math
@@ -278,6 +281,8 @@ class Fight:
         if getattr(V, 'rw_left', 0.0) > 0:                   # rewinding (ability kind 'rewind'): intangible
             return False
         if getattr(V, 'shadow', 0.0) > 0:                   # #38: sunk into shadow (LIGHTS OUT): intangible
+            return False
+        if getattr(V, 'smashed', 0.0) > 0:                  # #44: in pieces (GUITAR SMASH): intangible
             return False
         if V.shield > 0:
             self.ev('block', vic, att, x, y, kind)
@@ -2842,6 +2847,8 @@ class Fight:
         elif kind == 'tapping':                                 # #44 (TAPPING): a bolt on every 8th for a while
             B.tap_until, B.tap_ab = self.t + ab['beats'] * self.R.beat, ab
             self.ev('tapping', k, B.tap_until)
+        elif kind == 'smash':                                   # #44 (GUITAR SMASH): smashed on the floor, rebuilt
+            self.start_smash(k, ab)
 
     def ab_beam_charge(self, k, ab):
         """ability kind 'beam' (#29 v3): charge for `charge_beats` with the aim locked on the enemy's spot predicted
@@ -2879,6 +2886,8 @@ class Fight:
                 B.ready[slot] = self.t
                 self.ev('level', k, B.level)
             if not on_beat:
+                continue
+            if getattr(B, 'smashed', 0.0) > 0:                   # #44: in pieces, it starts nothing
                 continue
             if not B.low_done and B.hp < self.R.LOW_HP:
                 B.low_done = True
@@ -2989,6 +2998,8 @@ class Fight:
                 continue
             if getattr(B, 'air', False):                        # #39: mid-hop, tiptoe_step drives it
                 continue
+            if getattr(B, 'smashed', 0.0) > 0:                  # #44: in pieces (GUITAR SMASH), it lies still
+                continue
             B.boost *= math.exp(-dt / self.R.KNOCK_T)
             s = self.R.V * (1 + B.boost)
             if getattr(B, 'hopper', False):                     # #39: a hopper stands still; it only slides when knocked
@@ -3019,7 +3030,8 @@ class Fight:
         if dist < rP + rQ and getattr(P, 'rw_left', 0.0) <= 0 and getattr(Q, 'rw_left', 0.0) <= 0 \
                 and not getattr(P, 'held', False) and not getattr(Q, 'held', False) \
                 and getattr(P, 'shadow', 0.0) <= 0 and getattr(Q, 'shadow', 0.0) <= 0 \
-                and not getattr(P, 'air', False) and not getattr(Q, 'air', False):   # #32 v2 swallowed, #38 shadow, #39 hop
+                and not getattr(P, 'air', False) and not getattr(Q, 'air', False) \
+                and getattr(P, 'smashed', 0.0) <= 0 and getattr(Q, 'smashed', 0.0) <= 0:   # #32 v2 swallowed, #38 shadow, #39 hop, #44 smash
             n = d / max(dist, 1e-9)
             over = rP + rQ - dist
             if hasattr(P, 'mass') or hasattr(Q, 'mass'):        # #30 v2: unequal masses (inflate): the light ball gives
@@ -3730,6 +3742,48 @@ class Fight:
             B.riff_landed.add(B.riff_id)                        # a riff that lands counts once: one more note next riff
             B.n_vol = min(float(w['n_max']), B.n_vol + w['grow'])
 
+    # ------------------------------------------------------------------ #44: GUITAR SMASH (opt-in ability kind 'smash')
+    # The fighter smashes itself on the floor: a shockwave of kind 'smash' (`speed`, `radius`, `dmg`, `knock`, through the
+    # shared waves) and `n` splinters flying out from it (one aimed at the enemy, the rest spread round, `splinter_speed`,
+    # each hits once for `splinter_dmg`, knock `splinter_knock`, until the ropes). It lies in pieces for `rebuild_beats`
+    # (holds still, can't be hit, doesn't clash, plays nothing), then snaps back together and fights on. Events 'smash'
+    # (k, x, y, radius, rebuild s, n), 'splinter' (k, j, angle, speed), 'splinter_end' (k, j, x, y, hit), 'rebuild'.
+    def start_smash(self, k, ab):
+        B, O = self.balls[k], self.balls[1 - k]
+        d = O.p - B.p
+        aim = math.atan2(d[1], d[0])
+        B.smashed = ab['rebuild_beats'] * self.R.beat
+        self.ev('smash', k, float(B.p[0]), float(B.p[1]), float(ab['radius']), float(B.smashed), int(ab['n']))
+        self.waves.append(dict(owner=k, c=B.p.copy(), r=self.R.R, speed=ab['speed'], rmax=ab['radius'], dmg=ab['dmg'],
+                               knock=ab['knock'], kind='smash', hit=False, name=ab['name'], t0=self.t, slow=None))
+        if not hasattr(self, 'splinters'):
+            self.splinters = []
+        rng = np.random.default_rng([int(self.seed), 44, int(round(self.t * 1000))])   # not the fight's own stream
+        n = int(ab['n'])
+        for j in range(n):
+            a = aim + 2 * math.pi * j / n + (rng.uniform(-0.25, 0.25) if j else 0.0)
+            u = np.array([math.cos(a), math.sin(a)])
+            self.splinters.append(dict(owner=k, j=j, o=B.p.copy(), u=u, t0=self.t, speed=ab['splinter_speed'],
+                                       dmg=ab['splinter_dmg'], knock=ab.get('splinter_knock', 0.4)))
+            self.ev('splinter', k, j, float(a), float(ab['splinter_speed']))
+
+    def splinters_step(self, dt):
+        A, R = self.R.A, self.R.R
+        for Sp in self.splinters:
+            p = Sp['o'] + Sp['u'] * Sp['speed'] * (self.t - Sp['t0'])
+            o = 1 - Sp['owner']
+            O = self.balls[o]
+            if float(np.hypot(*(O.p - p))) < R + 0.08:
+                hx, hy = (O.p - Sp['u'] * R).tolist()
+                self.damage(Sp['owner'], o, Sp['dmg'], 'splinter', hx, hy, Sp['j'])
+                self.knock(o, Sp['u'], Sp['knock'])
+                Sp['done'] = True
+                self.ev('splinter_end', Sp['owner'], Sp['j'], hx, hy, 1)
+            elif abs(p[0]) >= A or abs(p[1]) >= A:
+                Sp['done'] = True
+                self.ev('splinter_end', Sp['owner'], Sp['j'], float(p[0]), float(p[1]), 0)
+        self.splinters = [Sp for Sp in self.splinters if not Sp.get('done')]
+
     # ------------------------------------------------------------------ record
     KMAX = 72
 
@@ -4307,6 +4361,10 @@ class Fight:
                     B.stun = max(0.0, B.stun - dt)
                 if hasattr(B, 'detune_t'):                       # #37: OUT OF TUNE wears off
                     B.detune_t = max(0.0, B.detune_t - dt)
+                if getattr(B, 'smashed', 0.0) > 0:               # #44: the pieces snap back together
+                    B.smashed = max(0.0, B.smashed - dt)
+                    if B.smashed == 0.0:
+                        self.ev('rebuild', k)
             for k in pullers:
                 self.pull_step(k, dt)
             if dimmers:                                          # #38: LIGHTS OUT (either ball: a copied one too)
@@ -4372,6 +4430,8 @@ class Fight:
                 self.tiptoe_step(k, dt)
             if getattr(self, 'notes', None):                     # #42: the whole notes roll (and land)
                 self.notes_step(dt)
+            if getattr(self, 'splinters', None):                 # #44: GUITAR SMASH's splinters
+                self.splinters_step(dt)
             if dc:
                 self.dash_cone_step(dt)                          # (#33)
             if dc or self.whips or self.sweeps or self.spouts:
