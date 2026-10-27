@@ -1405,3 +1405,25 @@
   flash test 0 on 38.4-51.6 s, flashcheck PASS; loopcheck PASS render 0.4x / mp4 1.1x. Render 5.7 min + mux. Guard: 70
   runs identical + #40 added (75).
 - Feedback: (pending)
+
+### #40 v2: a detailed bari, swings over the ropes, a quieter intro
+- "Completely smooth" was a sprite-scale bug as much as a lack of detail: the `ball` scene fattens every tube x1.35 for
+  small sprites, but the keys were placed on the unscaled body, so they sat inside it; gold keys on gold also gave no
+  contrast, and rods / guards / engraving were lines, which `pp_bridge.model_faces` drops. Lesson for new Pixel Pitch
+  models used in BALLFIGHT: place details on the scaled surface, make them faces, and build contrast in value (dark
+  pad rings, white pearls, deeper-gold rods), not hue. Checked by rendering the sprite at 20 / 44 / 120 px.
+- Swing over the ropes: an engine opt-in (`overhang`, a corner-post cap, a slung-back `return`), made the bari's roster
+  standard, with #39's sim pinning it off (the #39 v1 pattern). The swing's ends were clipped to the ring, which cut 41 %
+  of swings below 25 deg; now 6 %. Frame limit: the ring's left / right corners sit at the frame edges, hence the
+  |x| + |z| cap. The stronger swing needed a re-tune (bari 75 % at the v1 handicap -> x0.30).
+- Picture: ropes pressed down under the ball's underside where it passes over them, a spring-back wobble (synthetic
+  rope events) + a low twang when it lifts off; drawn after the front ropes when over them.
+- Intro loudness: RMS (reelkit.levels) can't see brightness. The card measured +0.7 LU K-weighted over the fight (peaks
+  2-3 LU over) with three stacked sheet-metal crashes; thinning by arrangement first overshot to -3.5 LU (the old "too
+  quiet" problem), settled at -1.4 LU, level with the ending. `loudness.py` (BS.1770 K-weighting) is worth reusing for
+  any bright, percussive bed.
+- Focus: this run's CABLE SNAP hoists the bari 3 up near the camera: sharp band 0.26.
+- Checks: levels PASS (wav + mp4, spread 3.3 dB); band bari +5..+7, bass clarinet +4..+7 dB; safe zone OK; CoC 0; flash
+  test 0 on 36.5-51.2 s, flashcheck PASS; loopcheck PASS render 0.4x / mp4 1.1x. Render 10.7 min (the guard ran
+  alongside) + mux.
+- Feedback: (pending)
