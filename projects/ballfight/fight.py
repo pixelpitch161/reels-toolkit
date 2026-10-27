@@ -47,6 +47,9 @@ ball sweeps everything in the circle), then pulls the peg and is flung off along
 `flight_beats` later on the enemy's predicted spot (a ring of `spread` around it), splash damage; +`grow` shells per
 landed salvo) and ability kind `barrage` (NOT A TUBA: a rain of shells across the whole ring, a few aimed). Recorded as
 SHELLS; events 'mortar', 'shell', 'barrage'.
+#38 (opt-in): ability kind `twin` (MULTIPHONICS, two notes at once: for `dur_beats` a ghost twin doubles the
+signature - an anchor whirl gets a second arm on the far side of the peg (x `twin_dmg`), a mortar salvo doubles);
+event 'twin'; ANC records it.
 The run records every frame (30 fps) for the renderer and every event (hits, blocks, parries, ropes, volleys,
 abilities, level-ups, the K.O.) for the soundtrack and the captions. Seeded: same seed, same fight."""
 import math
@@ -2625,6 +2628,9 @@ class Fight:
             self.waves.append(dict(owner=k, c=B.p.copy(), r=self.R.R, speed=ab['speed'], rmax=ab['radius'], dmg=ab['dmg'],
                                    knock=ab['knock'], kind='stun', hit=False, name=ab['name'], t0=self.t, slow=None,
                                    stun=ab['stun']))
+        elif kind == 'twin':                                    # #38 (MULTIPHONICS): a ghost twin doubles the signature
+            B.twin_until = self.t + self.ab_dur(ab)
+            self.ev('twin', k, B.twin_until)
         elif kind == 'barrage':                                 # #38 (NOT A TUBA): shells rain across the ring
             self.start_barrage(k, ab)
         elif kind == 'rhapsody':                                # #37 (RHAPSODY): a chain of zig-zag jumps
