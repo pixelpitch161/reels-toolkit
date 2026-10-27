@@ -3280,9 +3280,9 @@ class Fight:
     # ends stay inside the ring); then it swings through the bottom and up the other side in `swing16` 16ths (a
     # pendulum's half period: fastest at the bottom). Airborne all the while (no clash, no rolling). The first time the
     # swinging ball comes within `hit_r` beyond contact of an enemy in front of it (3D: its height counts; an enemy
-    # mid-hop sails over it, as with the clash, except in the first and last `air_edge` of the hop) it smashes it: `dmg` x
-    # (`dmg_min` + the rest x its speed, 0..1) and `knock` x (0.5 + 0.5 x speed) along the swing. At the far end it
-    # unhooks and rolls on along the swing. While SKANK (ability kind 'offbeat') lasts, a cycle starts every bar on the
+    # mid-hop sails over it, as with the clash, except in the first and last `air_edge` of the hop) it smashes it:
+    # `dmg` x (`dmg_min` + the rest x its speed, 0..1) x (cable length / `base`) ^ `len_pow` (a longer cable hits
+    # harder) and `knock` x (0.5 + 0.5 x speed) along the swing. At the far end it unhooks and rolls on along the swing. While SKANK (ability kind 'offbeat') lasts, a cycle starts every bar on the
     # '&' of beat 1 instead (`skank_off16`), so the swings land on the off-beats, twice as often (aimed `skank_short`).
     # Events ('cable', k, t_hook), ('swing', k, x0, y0, x1, y1, bx, by, L, theta, t0, t1, kind 0 / 1 skank),
     # ('smash', k, x, y, speed). Recorded as WRECK (per ball: phase 0 none / 1 drop / 2 lift / 3 swing, height, cable
@@ -3410,7 +3410,8 @@ class Fight:
                 dist = float(np.hypot(*rel))
                 n = rel / dist if dist > 1e-6 else u
                 hx, hy = (O.p - n * R).tolist()
-                landed = self.damage(k, 1 - k, w['dmg'] * (w['dmg_min'] + (1 - w['dmg_min']) * sp), 'wreck', hx, hy)
+                dmg = w['dmg'] * (w['dmg_min'] + (1 - w['dmg_min']) * sp) * (L / w['base']) ** w.get('len_pow', 0.0)
+                landed = self.damage(k, 1 - k, dmg, 'wreck', hx, hy)
                 self.knock(1 - k, u + 0.6 * n, w['knock'] * (0.5 + 0.5 * sp))
                 self.ev('smash', k, hx, hy, sp)
                 if landed:
