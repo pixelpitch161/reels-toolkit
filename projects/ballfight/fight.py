@@ -62,7 +62,10 @@ and numbers, through trigger(..., ab=, quiet=True); if the enemy hasn't used one
 a stomp, x `back` from behind: the backstab; a knocked hopper slides and can't hop while tumbling; events 'hop' /
 'stomp', recorded as HOP) and ability kind `mountain` (MOUNTAIN KING: accelerating hops circling the enemy, each a stomp).
 Ability kind `hook` (BOCAL HOOK: the crook hooks a close enemy and spins it to face away; a hopper follows up with a
-hop straight behind it; recorded as HOOK).
+hop straight behind it; recorded as HOOK). Weapon kind `rattle` (WINDOW RATTLER: a huge low honk every bar shoves a close
+enemy away and makes the ropes ring, spreading from the nearest side to all four as it grows; an enemy bouncing off a
+ringing rope is slung back and hurt; events 'honk' / 'rattle' / 'sling', recorded as RATTLE) and ability kind
+`offbeat` (SKANK: extra honks on every off-beat 8th for a while).
 The run records every frame (30 fps) for the renderer and every event (hits, blocks, parries, ropes, volleys,
 abilities, level-ups, the K.O.) for the soundtrack and the captions. Seeded: same seed, same fight."""
 import math
@@ -2713,6 +2716,10 @@ class Fight:
             self.ev('twin', k, B.twin_until)
         elif kind == 'barrage':                                 # #38 (NOT A TUBA): shells rain across the ring
             self.start_barrage(k, ab)
+        elif kind == 'offbeat':                                 # #39 (SKANK): honks on every off-beat 8th
+            B.skank_until = self.t + self.ab_dur(ab)
+            B.skank_ab = ab
+            self.ev('skank', k, B.skank_until)
         elif kind == 'hook':                                    # #39 (BOCAL HOOK): the crook hooks and spins the enemy
             self.start_hook(k, ab)
         elif kind == 'mountain':                                # #39 (MOUNTAIN KING): accelerating hops round the enemy
@@ -3161,6 +3168,89 @@ class Fight:
         elif self.t >= Hk['t_end']:
             B.hook = None
 
+    # ------------------------------------------------------------------ #39: WINDOW RATTLER (opt-in weapon kind 'rattle')
+    # Every `every` beats (`off16` 16ths after the bar line) a huge low honk: a ring blasting `push` beyond the ball's
+    # surface at `speed` (a wave of kind 'rattle': `dmg`, `knock`; it grows the rattle when it lands) and the ropes
+    # ring like plucked strings: the side nearest the enemy at first, one more side per `side_step` of rattle strength
+    # (strength = blade_len: `base`, +`grow` per landed honk / sling, up to `max_reach`), nearest sides first, each at
+    # full amplitude decaying over `ring` s. An enemy bouncing off a ringing rope (amplitude a >= `sling_min`) is slung
+    # back and hurt: `sling` x a x strength / `base` damage, knock `sling_knock` x a, at most once per `sling_cool` s.
+    # Ability kind 'offbeat' (SKANK): for `dur_beats` an extra honk on every off-beat 8th, its damage x `sub`.
+    # Events ('honk', owner, x, y, kind 0 bar / 1 skank), ('rattle', owner, sides...), ('sling', owner, side, a, x, y).
+    # Recorded as RATTLE (per ball: the four ropes' amplitudes + the strength) when a fighter uses the kind.
+    ROPE_SIDE = {(1, 1): 0, (0, 1): 1, (1, -1): 2, (0, -1): 3}     # (axis, sign) -> side (the renderers' ROPE_SIDES order)
+
+    def rattle_setup(self, k):
+        B = self.balls[k]
+        B.blade_len = float(B.w['base'])
+        B.rope_a0 = [0.0] * 4
+        B.rope_t0 = [-99.0] * 4
+        B.rope_hold = [-99.0] * 4                                 # (LOW A) full amplitude held until
+        B.rat_i = 0
+        B.skank_until = -1.0
+        B.skank_ab = None
+        for X in self.balls:
+            X.last_sling = -99.0
+
+    def rope_amp(self, k, side):
+        B = self.balls[k]
+        if self.t < B.rope_hold[side]:
+            return 1.0
+        t0 = max(B.rope_t0[side], B.rope_hold[side])
+        return B.rope_a0[side] * math.exp(-max(0.0, self.t - t0) / B.w['ring'])
+
+    def _ring_ropes(self, k, sides, a0=1.0):
+        B = self.balls[k]
+        for sd in sides:
+            B.rope_a0[sd] = max(a0, self.rope_amp(k, sd))
+            B.rope_t0[sd] = self.t
+        self.ev('rattle', k, *[int(sd) for sd in sides])
+
+    def _honk(self, k, kind, mult=1.0):
+        B, O = self.balls[k], self.balls[1 - k]
+        w = B.w
+        self.waves.append(dict(owner=k, c=B.p.copy(), r=self.R.R, speed=w['speed'], rmax=self.R.R + w['push'],
+                               dmg=w['dmg'] * mult, knock=w['knock'], kind='rattle', hit=False, name='WINDOW RATTLER',
+                               t0=self.t, slow=None, grow=True, clears=False))
+        n_sides = min(4, 1 + int((B.blade_len - w['base']) / w['side_step'] + 1e-9))
+        A = self.R.A
+        dists = sorted((A - sg * float(O.p[ax]), sd) for (ax, sg), sd in self.ROPE_SIDE.items())
+        self.ev('honk', k, float(B.p[0]), float(B.p[1]), kind)
+        self._ring_ropes(k, [sd for _, sd in dists[:n_sides]])
+
+    def rattle_tick(self, k, k16):
+        B = self.balls[k]
+        w = B.w
+        if self._stunned(k):
+            return
+        main16 = int(round(4 * w['every']))
+        off = int(w.get('off16', 0))
+        if k16 >= off and (k16 - off) % main16 == 0:
+            self._honk(k, 0)
+        elif self.t < B.skank_until and k16 % 4 == 2:            # SKANK: the ska upbeat
+            self._honk(k, 1, B.skank_ab['sub'])
+
+    def rattle_step(self, k, dt):
+        B, O = self.balls[k], self.balls[1 - k]
+        w = B.w
+        ev = self.events
+        new = ev[B.rat_i:]
+        B.rat_i = len(ev)
+        for e in new:
+            if e[1] != 'rope' or e[2] != 1 - k:
+                continue
+            sd = self.ROPE_SIDE[(e[3], e[4])]
+            a = self.rope_amp(k, sd)
+            if a < w['sling_min'] or self.t - O.last_sling < w['sling_cool']:
+                continue
+            O.last_sling = self.t
+            landed = self.damage(k, 1 - k, w['sling'] * a * B.blade_len / w['base'], 'sling', e[5], e[6], sd)
+            self.knock(1 - k, O.v, w['sling_knock'] * a)
+            self.ev('sling', k, sd, a, e[5], e[6])
+            if landed:
+                B.blade_len = min(w['max_reach'], B.blade_len + w['grow'])
+        B.rat_i = len(ev)
+
     # ------------------------------------------------------------------ record
     KMAX = 72
 
@@ -3245,6 +3335,13 @@ class Fight:
                     Ac[j] = (1.0, An['c'][0], An['c'][1], An['th'], float(np.hypot(*(Bj.p - An['c']))),
                              float(getattr(Bj, 'twin_until', -1.0) > self.t))
             rec['ANC'].append(Ac)
+        if 'RATTLE' in rec:                                 # #39, only recorded when a fighter uses the 'rattle' kind
+            Ra = np.zeros((2, 5))
+            for j, Bj in enumerate((B0, B1)):
+                if hasattr(Bj, 'rope_a0'):
+                    Ra[j, :4] = [self.rope_amp(j, sd) for sd in range(4)]
+                    Ra[j, 4] = Bj.blade_len
+            rec['RATTLE'].append(Ra)
         if 'HOOK' in rec:                                   # #39, only recorded when a fighter has a 'hook' ability
             Hq = np.full((2, 3), np.nan)
             for j, Bj in enumerate((B0, B1)):
@@ -3369,6 +3466,12 @@ class Fight:
         n16h = k16_0
         if rec is not None and hoppers:
             rec['HOP'] = []
+        rattlers = [k for k, B in enumerate(self.balls) if B.w['kind'] == 'rattle']    # #39 (opt-in)
+        for k in rattlers:
+            self.rattle_setup(k)
+        n16r = k16_0
+        if rec is not None and rattlers:
+            rec['RATTLE'] = []
         hookers = [k for k, B in enumerate(self.balls) if any(a['kind'] == 'hook' for a in B.cfg['abilities'].values())]
         if rec is not None and hookers:                          # #39 (opt-in)
             rec['HOOK'] = []
@@ -3495,6 +3598,11 @@ class Fight:
                 n16a += 1
                 for k in anchorers:
                     self.anchor_tick(k, k16a)
+            if rattlers and self.t + 1e-9 >= n16r * s16:        # #39: honks (and SKANK's) on the 16th grid
+                k16r = n16r - k16_0
+                n16r += 1
+                for k in rattlers:
+                    self.rattle_tick(k, k16r)
             if hoppers and self.t + 1e-9 >= n16h * s16:         # #39: hops (and MOUNTAIN KING's) on the 16th grid
                 k16h = n16h - k16_0
                 n16h += 1
@@ -3563,6 +3671,8 @@ class Fight:
                         self.anchor_step(k, dt)
             for k in hookers:                                    # #39: BOCAL HOOK
                 self.hook_step(k, dt)
+            for k in rattlers:                                   # #39: slings off the ringing ropes
+                self.rattle_step(k, dt)
             for k in hoppers:                                    # #39: mid-hop positions, landings + stomps
                 self.tiptoe_step(k, dt)
             if dc:
