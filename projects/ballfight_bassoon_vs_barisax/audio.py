@@ -9,10 +9,13 @@ fighters are low reeds, played from the honest run in their own voices (the new 
             landings take the passing note), a missed stomp ghosted, a backstab accented with a grace up the chord;
             BOCAL HOOK a comic blat sliding up + the crook's clank; MOUNTAIN KING = Grieg's theme in E minor, one note
             per hop, accelerating with the hops.
-  BARI SAX  the honking bass: its honk on every bar's downbeat (the bass root), SKANK's honks right on the off-beats;
-            the ropes it rattles ring as the band's bass strings (each ringing side a plucked low chord tone that
-            decays with it, so the bass fills out as the rattle spreads to all four ropes); a sling = a rope slap +
-            a growled honk; GROWL a gravelly growl; LOW A the lowest note (concert C2) held with all four ropes.
+  BARI SAX  v2 (WRECKING BALL, Oct 26): the bass line rides the swings. Every swing is one huge honk on the bass root
+            of the bar it bottoms out in (SKANK's swings: up the octave, on the off-beats), swelling to the bottom and
+            bent like a doppler pass (sharp coming in, sliding flat as it goes by), over a rush of air; the crane's
+            winch whirrs as the cable drops and the hook clanks home; a smash = a heavy steel-and-wood impact.
+            GROWL a gravelly growl (unchanged). CABLE SNAP: the winch strains up, the cable parts with a twang, a
+            falling whistle, then the crash (thunder, a band hit and the biggest honk). v1's honk-per-bar + ringing
+            ropes live in v1/audio.py.
 As HP drops a fighter's part thins and dirties; the leader's part is fuller and louder. At 169 BPM every hit note stays
 short so the mix doesn't smear.
 Consistent loudness from frame 0 (project rule, Oct 26): the band is at full level on the title card; it builds with
@@ -128,6 +131,32 @@ def bend(x, semis, t0, t1):
     rate = 2 ** (off / 12)
     pos = np.cumsum(rate) - rate[0]
     return np.interp(pos, np.arange(n), x, right=0.0)
+
+
+def doppler(x, t_bot, up=1.6, down=2.6, width=0.10):
+    """a pass: sharp (+up semitones) coming in, through the pitch at t_bot (s into x), sliding flat (-down) going away,
+    and swelling to the pass (a time warp + an envelope)"""
+    n = len(x)
+    t = A.tt(n)
+    z = (t - t_bot) / width
+    off = np.where(z < 0, up, down) * -np.tanh(z)
+    rate = 2 ** (off / 12)
+    pos = np.cumsum(rate) - rate[0]
+    y = np.interp(pos, np.arange(n), x, right=0.0)
+    return y * (0.5 + 0.5 * np.exp(-((t - t_bot) / (2.2 * width)) ** 2))
+
+
+def winch(dur, seed=0, rise=1.0):
+    """the crane's winch: a geared whirr (a buzzy tone sweeping up `rise` octaves) + chain rattle"""
+    n = int(dur * SR)
+    t = A.tt(n)
+    f = 110 * 2 ** (rise * t / dur)
+    ph = 2 * np.pi * np.cumsum(f) / SR
+    buzz = np.sign(np.sin(ph)) * 0.3 + np.sin(2 * ph) * 0.2
+    r = np.random.default_rng(seed)
+    rattle = A.bp(r.normal(0, 1, n), 2500, 8000) * (0.5 + 0.5 * np.sign(np.sin(2 * np.pi * 34 * t)))
+    env = np.clip(t / 0.03, 0, 1) * np.clip((dur - t) / 0.03, 0, 1)
+    return A.bp(buzz, 150, 3000) * env * 0.7 + rattle * env * 0.25
 
 
 def hp_at(k, t):
@@ -292,16 +321,17 @@ def grit(dur=0.5, seed=0):
 ORG_V = {'Em': (52, 55, 59), 'C': (52, 55, 60), 'D': (54, 57, 62), 'B': (54, 59, 63)}    # the organ's mid voicings
 
 
-def band_bar(mix, b, dense=0.0, light=False, honk_down=False):
+def band_bar(mix, b, dense=0.0, light=False, honk_down=False, duck=()):
     """one bar of the band (bar index b). dense 0..1: the arrangement thickens (open hats, organ 16th bounce, ride,
     double-time snare, crash every 2 bars), never the level. honk_down: the bari honks on this bar's downbeat, so the
-    kick steps back there (the honk IS the downbeat)"""
+    kick steps back there (the honk IS the downbeat); v2: duck = the beats where a swing honk bottoms out (same)"""
     t0 = b * T.BAR
     ch = T.CHORDS[b % T.N_BARS]
     for bt in range(4):
         tb = t0 + bt * T.BEAT
         if bt in (0, 2) or (dense > 0.75 and not light):                 # kick 1 + 3 (every beat later: punk drive)
-            mix.place('drums', KICK, tb, (0.18 if (bt == 0 and honk_down) else 0.42) if bt in (0, 2) else 0.20)
+            mix.place('drums', KICK, tb, (0.18 if ((bt == 0 and honk_down) or bt in duck) else 0.42) if bt in (0, 2)
+                      else 0.20)
         if bt in (1, 3):
             mix.place('drums', SNARE, tb, 0.36)
         elif dense > 0.55 and not light:                                  # double-time: a lighter snare on 1 + 3 '&'
@@ -366,8 +396,13 @@ def main():
     mix.place('fx', thunder(1.6, 7, crack=False), T.T_FIGHT, 0.35)
     # ------------------------------------------------ the band: bar 2 (FIGHT!) .. the K.O. (thickens as it goes)
     honk_bars = {int(round(e[0] / T.BAR)) for e in EV if e[1] == 'honk' and e[5] == 0 and e[0] <= T_KO}
+    duck = {}                                                # v2: the beats where a swing honk bottoms out
+    for e in EV:
+        if e[1] == 'swing' and e[2] == KX and e[13] == 0 and e[0] <= T_KO:
+            tb = q16((e[11] + e[12]) / 2)
+            duck.setdefault(int(tb // T.BAR), set()).add(int(round((tb % T.BAR) / T.BEAT)) % 4)
     for b in range(2, bar_ko + 1):
-        band_bar(mix, b, dense=min(1.0, (b - 2) / 22.0), honk_down=b in honk_bars)
+        band_bar(mix, b, dense=min(1.0, (b - 2) / 22.0), honk_down=b in honk_bars, duck=duck.get(b, ()))
     for t_, who, name in RD.STORY['caps']:                   # a band hit under every captioned ability
         band_hit(mix, q16(t_), T.chord_at(t_), 0.55)
     for k in ('drums', 'guitar', 'organ'):
@@ -461,6 +496,58 @@ def main():
             mix.place('fx', A.hp(A.thud(0.25, 180, 70, seed=int(t * 10)), 150), tq, 0.2)
             sig, g, _ = colour(bari(T.HONK_NOTE[T.chord_at(tq)] + 7, 0.16, 1.0, honk=1.0), KX, t, 0.6)
             mix.place('bari', gliss(sig, -2.0, 0.05), tq + S16, 0.34 * g, pan=0.2)
+        elif kind == 'cable' and e[2] == KX:                 # v2: the cable drops (the winch), the hook clanks home
+            tq = q16(t)
+            mix.place('fx', winch(e[3] - t, int(t * 10), rise=-0.8), tq, 0.10, pan=0.15)
+            mix.place('fx', clank(79, int(t * 13)), q16(e[3]), 0.12, pan=0.15)
+        elif kind == 'swing' and e[2] == KX:                 # v2: the swing honk: the bass on the swings
+            ts0, ts1, sk = e[11], e[12], e[13]
+            tb = q16((ts0 + ts1) / 2)                        # the bottom: on the beat (SKANK's: the off-beat)
+            ch = T.chord_at(tb + 0.01)
+            hp = hp_at(KX, t) / 100.0
+            if sk:
+                x_dropped = thin(round(tb / S16), 11, hp, x_dropped)
+                if x_dropped:
+                    continue
+            m = T.HONK_NOTE[ch] + (12 if sk else 0)
+            t_on = q16(ts0 - S16)                            # it honks as it's let go, swelling to the bottom
+            dur = ts1 - t_on + 0.06
+            sig, g, lead = colour(bari(m, dur, 0.95, honk=0.85 if not sk else 0.55), KX, t, 0.6)
+            sig = doppler(sig, tb - t_on, up=1.6 if not sk else 1.0, down=2.6 if not sk else 1.6, width=0.09)
+            mix.place('bari', sig, t_on, (1.15 if not sk else 0.80) * g, pan=0.2)
+            if lead > 0.05 and not sk:                       # the leader: the octave honked on top (fuller)
+                up8 = doppler(colour(bari(m + 12, dur, 0.7, honk=0.4), KX, t)[0], tb - t_on, 1.6, 2.6, 0.09)
+                mix.place('bari', up8, t_on, 0.20 * g, pan=0.25)
+            mix.place('fx', A.whoosh(ts1 - ts0, 250, 3500), ts0, 0.10 if not sk else 0.07, pan=0.1)
+        elif kind == 'smash' and e[2] == KX:                 # v2: the wrecking ball connects
+            tq = q16(t)
+            sp = e[5]
+            mix.place('fx', A.thud(0.45, 120, 38, seed=int(t * 10)), tq, 0.22 + 0.22 * sp)
+            mix.place('fx', clank(67, int(t * 11)), tq, 0.10 + 0.08 * sp, pan=0.1)
+            mix.place('fx', grit(0.25, int(t * 7)), tq, 0.12 + 0.12 * sp)
+            if sp > 0.6:
+                mix.place('drums', A.crash(1.0), tq, 0.06)
+        elif kind == 'snap_aim' and e[2] == KX:              # v2: CABLE SNAP: the winch strains it up high
+            mix.place('fx', winch(e[5] - t, 41, rise=1.3), q16(t), 0.16, pan=0.1)
+        elif kind == 'cable_snap' and e[2] == KX:            # the cable parts: a twang, the whip, a falling whistle
+            tq = q16(t)
+            mix.place('fx', clank(98, 5) + clank(86, 6) * 0.6, tq, 0.22)
+            mix.place('fx', A.whoosh(0.25, 3000, 9000), tq, 0.12)
+            fall = [q for q in EV if q[1] == 'crater' and q[2] == KX and q[0] >= t]
+            tf_ = (fall[0][0] - t) if fall else 0.4
+            nf = int(tf_ * SR)
+            tt_ = A.tt(nf)
+            whistle = np.sin(2 * np.pi * np.cumsum(1800 * 2 ** (-1.6 * tt_ / tf_)) / SR) * (tt_ / tf_) ** 1.5 * 0.5
+            mix.place('fx', whistle, tq, 0.10)
+        elif kind == 'crater' and e[2] == KX:                # the crash
+            tq = q16(t)
+            mix.place('fx', thunder(2.0, 77), tq, 0.55)
+            mix.place('fx', A.thud(0.7, 100, 32, seed=17), tq, 0.40)
+            band_hit(mix, tq, T.chord_at(tq + 0.01), 0.9)
+            sig, g, _ = colour(bari(T.HONK_NOTE[T.chord_at(tq + 0.01)], 0.7, 1.0, honk=1.0), KX, t, 0.5)
+            mix.place('bari', bend(sig, -1.5, 0.3, 0.7), tq, 0.70 * g, pan=0.0)
+            mix.place('bari', colour(bari(T.HONK_NOTE[T.chord_at(tq + 0.01)] + 12, 0.5, 0.7, honk=0.5), KX, t)[0], tq,
+                      0.18 * g)
         elif kind == 'hit' and e[2] == KX and e[7] == 'rattle':   # the shove lands: a low thump
             mix.place('fx', A.hp(A.thud(0.3, 140, 45, seed=int(t * 10)), 150), q16(t), 0.12)
         elif kind == 'hook_open' and e[2] == KB:             # BOCAL HOOK: a comic blat sliding up as it swings out

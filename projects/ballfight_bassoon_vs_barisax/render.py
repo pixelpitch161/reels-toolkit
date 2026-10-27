@@ -5,10 +5,13 @@ VS title card (as #36 / #37), with the two new fighters' styles from styles.py:
     fading on the canvas; a backstab adds crossed green slashes and a bigger double ring. BOCAL HOOK = the silver crook
     swinging out and hooking the enemy, which whips round (swirl); STACCATO = hops twice as fast; MOUNTAIN KING = the
     accelerating dance round the enemy, its landing spots lit on the canvas.
-  BARI SAX (WINDOW RATTLER): every bar a honk: coral sound rings ripple out, the ropes it rattles ring with standing
-    waves (lit coral, more sides as it grows), the floor shakes; a sling off a ringing rope = a coral burst on the rope
-    + streaks; GROWL = a gravelly ring + grit; SKANK = off-beat honks; LOW A = all four ropes ringing, the floor tiles
-    jumping, a broad rumbling wave.
+  BARI SAX v2 (WRECKING BALL, Oct 26): the ball wears a leather harness; every other bar a crane line drops from the
+    spot's rig, its hook block stops over the swing's bottom, the hook bites the harness ring, the ball is hoisted back
+    and swings through in a pendulum arc (motion smear + a coral trail, a light at the bottom), smashing what's in front
+    of it (burst, dust, a skid mark, shake), then unhooks; the block flies back up. GROWL = a gravelly ring + grit; SKANK
+    = a swing every bar on the off-beats; CABLE SNAP = hoisted high over the enemy's spot (its shadow and a pulsing ring
+    on the canvas), the cable snaps (sparks, the line whips away), the ball falls and craters the canvas (the mark
+    fades). v1's WINDOW RATTLER code stays (it draws nothing without the 'rattle' kind).
 Effects from reelkit.fx (attack lights, bursts, particles, marks, ability moments); no full-screen flash.
 
     python render.py                                   # sprite cache (check/sprites_ballfight13.npz)
@@ -59,7 +62,9 @@ R = S.R_BALL
 HITSTOP = 0.35
 T_HS = T_KO + HITSTOP
 HOPPER = [k for k in (0, 1) if CFG[k]['weapon']['kind'] == 'tiptoe']   # TIPTOE
-RATTLER = [k for k in (0, 1) if CFG[k]['weapon']['kind'] == 'rattle']   # WINDOW RATTLER
+RATTLER = [k for k in (0, 1) if CFG[k]['weapon']['kind'] == 'rattle']   # WINDOW RATTLER (v1)
+WRECKER = [k for k in (0, 1) if CFG[k]['weapon']['kind'] == 'wrecking']  # WRECKING BALL (v2)
+SNAPPER = [k for k in (0, 1) if any(a['kind'] == 'snap' for a in CFG[k]['abilities'].values())]   # CABLE SNAP
 CORNER0 = [np.array(c) for c in RUN['corner']]
 STORY = sim.story(RUN)
 
@@ -122,6 +127,10 @@ HOOKS = [(e[0], e[2], e[3], e[4], e[5]) for e in EV if e[1] == 'hook']          
 HONKS = [(e[0], e[2], e[3], e[4], e[5]) for e in EV if e[1] == 'honk']                        # t, k, x, z, 0 bar / 1 skank
 SLINGS = [(e[0], e[2], e[3], e[4], e[5], e[6]) for e in EV if e[1] == 'sling']                # t, k, side, a, x, z
 QUAKES = [(e[0], e[2], e[3]) for e in EV if e[1] == 'quake']                                  # t, k, until
+SWINGS = [e for e in EV if e[1] == 'swing']          # (t, 'swing', k, x0, z0, x1, z1, bx, bz, L, theta, t0, t1, skank)
+SMASHES = [(e[0], e[2], e[3], e[4], e[5]) for e in EV if e[1] == 'smash']                    # t, k, x, z, speed
+SNAPS = [(e[0], e[2], np.array([e[3], e[4]]), e[5], e[6], e[7]) for e in EV if e[1] == 'snap_aim']   # t, k, spot, ts, t1, r
+CRATERS = [(e[0], e[2], e[3], e[4], e[5], e[6]) for e in EV if e[1] == 'crater']             # t, k, x, z, radius, hit
 MKS = []                                                                                     # (t0, t1, k)
 for e in EV:
     if e[1] == 'mountain':
@@ -183,6 +192,97 @@ def crook_state(k, t):
     return None
 
 
+def _cycles():
+    """every WRECKING BALL cycle: the cable drop, the hook, the hoist, the swing (from the run's events + the WRECK
+    record), cut short where CABLE SNAP takes over"""
+    out = []
+    lift = CFG[WRECKER[0]]['weapon']['lift16'] * T.S16 if WRECKER else 0.0
+    for e in EV:
+        if e[1] != 'cable' or e[0] > T_KO:
+            continue
+        k, t0, t_hook = e[2], e[0], e[3]
+        sw = [q for q in SWINGS if q[2] == k and t_hook - 1e-6 <= q[0] <= t_hook + lift + 0.05]
+        nxt = [q[0] for q in EV if q[1] in ('cable', 'snap_aim') and q[2] == k and q[0] > t0]
+        cut = min(nxt + [T_KO + 1e-3])
+        c = dict(k=k, t0=t0, t_hook=t_hook, sw=None, cut=cut, smash=None)
+        if sw and sw[0][0] < cut:
+            q = sw[0]
+            ps, p1, bot = np.array([q[3], q[4]]), np.array([q[5], q[6]]), np.array([q[7], q[8]])
+            d = p1 - ps
+            u = d / (np.linalg.norm(d) + 1e-9)
+            i = sim_i(q[0] - 0.5 / FPS)
+            row = RUN['WRECK'][i, k]
+            p0 = row[5:7].copy() if row[0] in (2, 3) else ps.copy()
+            c.update(sw=q, ps=ps, p1=p1, bot=bot, u=u, L=q[9], th=q[10], ts0=q[11], ts1=q[12], tl0=q[11] - lift, p0=p0,
+                     skank=q[13])
+            hits = [m for m in SMASHES if m[1] == k and q[11] - 1e-6 <= m[0] <= q[12] + 1e-6]
+            c['smash'] = hits[0] if hits else None
+            c['end'] = min(q[12], cut)
+        else:
+            c['end'] = min(t_hook, cut)
+        out.append(c)
+    return out
+
+
+CYCLES = _cycles()
+VERT = 1.6        # the crane's pendulum drawn 1.6x taller (the view looks down at 58 deg: heights read short): the pivot
+                  # and the ball's height stretch together (a vertical stretch of the whole pendulum; ground positions exact)
+
+
+def cycle_at(k, t, tail=0.55):
+    """the wrecking cycle on screen at t (from its cable drop until the block is back up), or None"""
+    for c in CYCLES:
+        if c['k'] == k and c['t0'] <= t < c['end'] + tail:
+            return c
+    return None
+
+
+def wreck_pose(c, t):
+    """(p, h, phase) of the wrecking ball in cycle c at t: 'drop' (rolling, the record), 'lift' (hoisted back),
+    'swing' (the pendulum, exact between frames), or None after it"""
+    if c is None or t < c['t0'] or t >= c['end'] or c['sw'] is None:
+        return None
+    if t < c['tl0']:
+        return None
+    L, th, u = c['L'], c['th'], c['u']
+    if t < c['ts0']:
+        uu = (t - c['tl0']) / max(1e-6, c['ts0'] - c['tl0'])
+        e = uu * uu * (3 - 2 * uu)
+        return c['p0'] + (c['ps'] - c['p0']) * e, VERT * L * (1 - math.cos(th)) * e, 'lift'
+    uu = min(1.0, (t - c['ts0']) / max(1e-6, c['ts1'] - c['ts0']))
+    phi = -th * math.cos(math.pi * uu)
+    return c['bot'] + u * (L * math.sin(phi)), VERT * L * (1 - math.cos(phi)), 'swing'
+
+
+def snap_at(k, t):
+    """CABLE SNAP on at t: (snap, phase 'hoist' / 'fall', u 0..1) or (None, None, None)"""
+    for q in SNAPS:
+        t0, kk, spot, ts, t1, rad = q
+        if kk == k and t0 <= t < t1 and t0 <= T_KO:
+            if t < ts:
+                return q, 'hoist', (t - t0) / max(1e-6, ts - t0)
+            return q, 'fall', (t - ts) / max(1e-6, t1 - ts)
+    return None, None, None
+
+
+def air_pose(k, t):
+    """(p, h) of the bari off the canvas at t (fight time), or None: the swing / hoist (exact), CABLE SNAP (record)"""
+    if k not in WRECKER and k not in SNAPPER:
+        return None
+    sn, ph, u = snap_at(k, t)
+    if sn is not None:
+        i = sim_i(t)
+        return RUN['P'][i, k].copy(), float(RUN['SNAP'][i, k, 1])
+    if k in WRECKER:
+        pose = wreck_pose(cycle_at(k, t, 0.0), t)
+        if pose is not None:
+            return pose[0], pose[1]
+    return None
+
+
+H_KO = [(air_pose(k, T_KO - 1e-4) or (None, 0.0))[1] for k in (0, 1)]     # height at the K.O. (caught mid-swing)
+
+
 def fighter(k, t):
     """picture state of fighter k at time t: dict(p (ring frame), h (height), sx / sy (squash), vis, th, scale, shield,
     haste, glow, level, shattered, swirl)"""
@@ -212,6 +312,9 @@ def fighter(k, t):
                 st['glow'] = 0.15 + 0.25 * (hop[5] == 2)
             else:
                 st['sx'], st['sy'] = ST.land_squash(last_stomp(k, t))
+        ap = air_pose(k, min(t, T_KO - 1e-4))                    # v2: swung on the cable / hoisted for CABLE SNAP
+        if ap is not None:
+            st['p'], st['h'] = ap[0], ap[1]
         if t >= T_KO and k == LOSE:
             st['glow'] = 1.0
         return st
@@ -231,6 +334,7 @@ def fighter(k, t):
         st['p'] = p + (corner - p) * gl
         st['glow'] = max(rev_glow, (0.35 + 0.5 * solo_env(t)) * ss(T_HS, T_HS + 0.6, t) * (1 - gl))
         st['level'] = 3 if t < T.T_GLIDE else 1
+        st['h'] = H_KO[k] * (1 - ss(T_HS, T_HS + 0.4, t))           # v2: caught in the air at the K.O.: it drops
         if k in HOPPER and T_SOLO <= t < T.T_REASSEMBLE:          # the champion tiptoes a little hop on every solo note
             e = solo_env(t)
             st['h'] = 0.35 * (1 - e) * e * 4
@@ -265,6 +369,13 @@ for e in EV:
 for t_, k_, x_, z_, kind_ in HONKS:                    # every honk shakes the floor a little (the window rattler)
     if t_ <= T_KO:
         SHK.add(t_, 0.9 if kind_ == 0 else 0.5)
+for t_, k_, x_, z_, sp_ in SMASHES:                    # v2: a WRECKING BALL smash (harder the faster the swing)
+    if t_ <= T_KO:
+        SHK.add(t_, 1.0 + 1.2 * sp_)
+for t_, k_, x_, z_, r_, hit_ in CRATERS:               # CABLE SNAP: the crash
+    if t_ <= T_KO:
+        SHK.add(t_, 2.5)
+        SHK.add(t_ + 0.09, 1.2)
 for t_, k_, until_ in QUAKES:                          # LOW A: the ring rumbles for as long as the ropes are held
     tt = t_
     while tt < min(until_, T_KO):
@@ -577,6 +688,8 @@ def draw_ball(arr, dep, cam, k, st, t):
         rg = arr[ay0:ay1, ax0:ax1]
         lit = sub[..., :3].astype(np.float32) * (1.06 + 0.3 * glow)
         rg[ms] = np.clip(lit[ms], 0, 255)
+    if k in WRECKER and st['scale'] > 0.5:                                  # v2: the bari's harness (straps + ring)
+        arr[:] = ST.harness(arr, s, rp, sx_, sy_, st.get('ring_dir'), col)
     rc = np.clip(col * (0.9 + 0.5 * glow) + 50 * glow, 0, 255)
     mr = rim[sl]
     reg[mr] = rc
@@ -588,6 +701,155 @@ def draw_ball(arr, dep, cam, k, st, t):
     reg[spec[sl]] = np.array([255, 252, 244])
     dreg[m | me] = Pc[2]
     return s, rp
+
+
+# ---------------------------------------------------------------- v2: the crane (WRECKING BALL / CABLE SNAP)
+def _w(p, y):
+    return S.to_world(p[0], p[1], y)
+
+
+def crane_state(k, t):
+    """world geometry of the bari's crane at t: dict(top, block, end, attached, pieces=[(points, alpha)]) or None.
+    Frozen through the hit-stop; after it any live crane flies back up to the rig."""
+    if (k not in WRECKER and k not in SNAPPER) or t < T.T_FIGHT:
+        return None
+    if t >= T_HS:
+        st = crane_state(k, T_KO - 1e-4)
+        if st is None:
+            return None
+        v = (t - T_HS) / 0.6
+        if v >= 1.0:
+            return None
+        b = st['block'].copy()
+        b[1] += (ST.Y_RIG - b[1]) * v * v
+        st.update(block=b, end=b - np.array([0.0, 0.42, 0.0]), attached=False,
+                  pieces=[(P, a * (1 - v)) for P, a in st['pieces']])
+        return st
+    tf = min(t, T_KO - 1e-4)
+    sn, ph, u = snap_at(k, tf)
+    if sn is None:                                       # the snapped cable's ends, just after the crash
+        for q in SNAPS:
+            if q[1] == k and q[4] <= tf < q[4] + 0.6:
+                sn, ph, u = q, 'after', (tf - q[4]) / 0.6
+    if sn is not None:
+        t0, _, spot, ts, t1, rad = sn
+        i = sim_i(tf)
+        p = RUN['P'][i, k]
+        h = float(RUN['SNAP'][i, k, 1]) if ph != 'after' else 0.0
+        C = _w(p, R + h)
+        ring = C + np.array([0.0, R, 0.0])
+        if ph == 'hoist':
+            tgt = ring + np.array([0.0, 1.1, 0.0])
+            prev = [c for c in CYCLES if c['k'] == k and c['sw'] is not None and abs(c['cut'] - t0) < 1e-3]
+            if prev and u < 0.3:                          # out of a swing: the block slides over from its pivot
+                pv = _w(prev[0]['bot'], R + VERT * prev[0]['L'])
+                tgt = pv + (tgt - pv) * ss(0.0, 0.3, u)
+            return dict(top=np.array([tgt[0], ST.Y_RIG, tgt[2]]), block=tgt, end=ring, attached=True, pieces=[])
+        # snapped: the upper cable whips up and away, a stub flops on the falling ball
+        tsn = tf - ts
+        i_s = sim_i(ts)
+        ps_ = RUN['P'][i_s, k]
+        b0 = _w(ps_, R + float(RUN['SNAP'][i_s, k, 1]) + R + 1.1)
+        blk = b0 + np.array([0.35 * tsn, 7.0 * tsn + 6.0 * tsn * tsn, 0.0])
+        brk = blk - np.array([0.0, 0.55, 0.0])
+        up_piece = ST.cable(blk, brk + np.array([0.2 * math.sin(tsn * 30), 0.0, 0.0]), 6, wig=0.12 * math.exp(-tsn / 0.3),
+                            ph=tsn * 40)
+        stub_top = ring + np.array([0.15 * math.sin(tsn * 22), 0.5 * math.exp(-tsn / 0.4) + 0.08, 0.1])
+        stub = ST.cable(ring, stub_top, 5, wig=0.06, ph=tsn * 25)
+        fade = 1.0 - (u if ph == 'after' else 0.0)
+        return dict(top=np.array([blk[0], ST.Y_RIG, blk[2]]), block=blk, end=None, attached=False,
+                    pieces=[(up_piece, max(0.0, 1 - tsn / 0.7)), (stub, fade)])
+    c = cycle_at(k, tf)
+    if c is None:
+        return None
+    if c['sw'] is not None:
+        Pv = _w(c['bot'], R + VERT * c['L'])
+    else:
+        Pv = _w(RUN['P'][sim_i(c['t0']), k], R + VERT * CFG[k]['weapon']['base'])
+    i = sim_i(tf)
+    pose = wreck_pose(c, tf)
+    p = pose[0] if pose is not None else RUN['P'][i, k]
+    h = pose[1] if pose is not None else 0.0
+    C = _w(p, R + h)
+    if tf < c['t_hook'] and tf < c['end']:                   # the drop: the block comes down, the hook reaches
+        u = (tf - c['t0']) / max(1e-6, c['t_hook'] - c['t0'])
+        y = ST.Y_RIG + (Pv[1] - ST.Y_RIG) * (1 - (1 - u) ** 3)
+        blk = np.array([Pv[0], y, Pv[2]])
+        ring = C + np.array([0.0, R, 0.0])
+        dang = blk - np.array([0.0, 0.42, 0.0])
+        end = dang + (ring - dang) * ss(0.55, 1.0, u)
+        return dict(top=np.array([Pv[0], ST.Y_RIG, Pv[2]]), block=blk, end=end, attached=False, pieces=[])
+    if tf < c['end']:                                        # hooked: hoisted back, the swing
+        d = Pv - C
+        ring = C + d / (np.linalg.norm(d) + 1e-9) * R
+        return dict(top=np.array([Pv[0], ST.Y_RIG, Pv[2]]), block=Pv, end=ring, attached=True, pieces=[])
+    v = (tf - c['end']) / 0.55                               # unhooked: the block flies back up
+    blk = Pv + np.array([0.0, (ST.Y_RIG - Pv[1]) * v * v, 0.0])
+    end_c = cycle_end_ring(c, k)
+    dang = blk - np.array([0.0, 0.42, 0.0]) + np.array([0.18 * math.sin(v * 9) * (1 - v), 0.0, 0.0])
+    end = end_c + (dang - end_c) * ss(0.0, 0.3, v)
+    return dict(top=np.array([Pv[0], ST.Y_RIG, Pv[2]]), block=blk, end=end, attached=False, pieces=[])
+
+
+def cycle_end_ring(c, k):
+    """where the hook let go at the end of cycle c (the harness ring at the far end of the swing)"""
+    pose = wreck_pose(c, c['end'] - 1e-4)
+    if pose is None:
+        p = RUN['P'][sim_i(c['end']), k]
+        return _w(p, 2 * R)
+    Pv = _w(c['bot'], R + VERT * c['L']) if c['sw'] is not None else _w(pose[0], 2 * R + 1)
+    C = _w(pose[0], R + pose[1])
+    d = Pv - C
+    return C + d / (np.linalg.norm(d) + 1e-9) * R
+
+
+def draw_crane(arr, cam, cs, col):
+    """the crane line from the rig, the hook block, the swing cable and its hook, the snapped pieces"""
+    if cs is None:
+        return arr
+    blk = cs['block']
+    arr = ST.line3(arr, cam, ST.cable(cs['top'], blk + np.array([0.0, 0.17, 0.0]), 6), ST.STEEL * 0.75, 2, hi=0.3)
+    arr = ST.hook_block(arr, cam, blk)
+    if cs['end'] is not None:
+        bot = blk - np.array([0.0, 0.2, 0.0])
+        slack = 0.0 if cs['attached'] else 0.02
+        arr = ST.line3(arr, cam, ST.cable(bot, cs['end'], 8, sag=slack), ST.STEEL, 2)
+        tw = blk - cs['end']
+        arr = ST.hook_shape(arr, cam, cs['end'], tw / (np.linalg.norm(tw) + 1e-9))
+    for P, a in cs['pieces']:
+        if a > 0.02:
+            arr = ST.line3(arr, cam, P, ST.STEEL, 2, alpha=a)
+    return arr
+
+
+def draw_swing_fx(arr, cam, k, t):
+    """the swing's motion smear (ghost balls a few ms back) and its coral trail, under the ball"""
+    tf = min(t, T_KO - 1e-4)
+    c = cycle_at(k, tf, 0.0)
+    if c is None or c['sw'] is None or not (c['ts0'] <= tf < c['ts1'] + 0.12):
+        return arr
+    pts, spd = [], 0.0
+    for j in range(12, -1, -1):
+        tt = tf - j * 0.018
+        pose = wreck_pose(c, tt)
+        if pose is None or pose[2] != 'swing':
+            continue
+        pts.append(cam.wp(_w(pose[0], R + pose[1])[None])[0])
+    uu = min(1.0, max(0.0, (tf - c['ts0']) / max(1e-6, c['ts1'] - c['ts0'])))
+    spd = math.sin(math.pi * uu)
+    if len(pts) >= 2:
+        arr = ST.swing_trail(arr, pts, COL[k], k=0.35 + 0.65 * spd)
+    for j in (4, 3, 2, 1):                                   # ghosts, oldest first
+        pose = wreck_pose(c, tf - j * 0.014)
+        if pose is None or pose[2] != 'swing':
+            continue
+        Pc = cam.to_cam(_w(pose[0], R + pose[1])[None])[0]
+        s_ = cam.proj(Pc[None])[0]
+        rp = R * cam.f / Pc[2]
+        a = np.linspace(0, 2 * math.pi, 19)[:-1]
+        circ = np.column_stack([s_[0] + rp * np.cos(a), s_[1] + rp * np.sin(a)])
+        layer_blend(arr, [circ], np.clip(COL[k] * 0.7 + 70, 0, 255), 0.24 * (1 - j / 5) * (0.3 + 0.7 * spd))
+    return arr
 
 
 # ---------------------------------------------------------------- captions (from the run)
@@ -621,6 +883,8 @@ def _hold(k, slot):
         return sum(ab['seq16']) * T.BEAT / 4
     if ab['kind'] == 'hook':
         return ab['open16'] * T.BEAT / 4 + 0.3
+    if ab['kind'] == 'snap':                         # v2: CABLE SNAP, until the crash
+        return ab['tele16'] * T.BEAT / 4
     return 0.08
 
 
@@ -722,7 +986,8 @@ CROWD_PH = np.array([c[2] for c in S.CROWD])
 CROWD_HT = np.array([c[4] for c in S.CROWD])
 BAR_N = np.array([n for Q, n, am in S.BARRIER])
 BAR_C = np.array([Q.mean(0) for Q, n, am in S.BARRIER])
-FLASH_EV = [e[0] for e in EV if (e[1] == 'hit' and e[7] in ('quake', 'sling', 'hook')) or e[1] == 'ability'] + \
+FLASH_EV = [e[0] for e in EV if (e[1] == 'hit' and e[7] in ('quake', 'sling', 'hook', 'wreck', 'crash')) or
+            e[1] == 'ability'] + \
            [T_KO + 0.03 * j for j in range(16)]
 FLASH_T = np.array(sorted(FLASH_EV))
 
@@ -840,7 +1105,8 @@ def sparks(arr, cam, t):
             if how == 'stomp':
                 n, sp, life = (12, 2.8, 0.26) if e[8] else (5, 1.6, 0.18)       # a backstab throws more
             else:
-                n, sp, life = (16, 3.2, 0.3) if how in ('quake', 'sling', 'shockwave', 'hook') else (8, 2.4, 0.22)
+                n, sp, life = (16, 3.2, 0.3) if how in ('quake', 'sling', 'shockwave', 'hook', 'wreck', 'crash') \
+                    else (8, 2.4, 0.22)
         else:
             att, x, z = e[2], e[4], e[5]
             col, n, sp, life = np.array([160, 220, 255]), 12, 2.6, 0.3
@@ -925,12 +1191,44 @@ def _fx_build():
             elif how == 'quake':                                   # LOW A lands
                 BU.add(t_, pos, COL[att], 1.5)
                 FL.add(t_, pos, COL[att], radius=2.2, peak=1.0, decay=0.4)
+            elif how == 'wreck':                                   # v2: WRECKING BALL smash: burst, dust, a skid mark
+                sp_ = [m[4] for m in SMASHES if abs(m[0] - t_) < 1e-4]
+                sp_ = sp_[0] if sp_ else 0.7
+                BU.add(t_, pos, COL[att], 1.0 + 0.7 * sp_)
+                FL.add(t_, pos, COL[att], radius=2.0, peak=0.6 + 0.5 * sp_, decay=0.32)
+                PA.emit(t_, up(x, z, 0.06), 'dust', n=6 + int(8 * sp_), col=MAPLE_DUST, scale=1.1)
+                PA.emit(t_, pos, 'sparks', n=10, col=CORAL_SP)
+                PA.emit(t_, pos, 'chips', n=5, col=GRIT + MAPLE_DUST[:1])
+                v = RUN['V'][sim_i(t_), e[3]]
+                MK.add(t_, 'scorch', x, z, size=0.32 + 0.2 * sp_, col=(46, 30, 30), life=3.0, seed=int(t_ * 100),
+                       strength=0.45)
+            elif how == 'crash':                                   # CABLE SNAP lands on its target
+                BU.add(t_, pos, COL[att], 1.8)
+                FL.add(t_, pos, COL[att], radius=2.6, peak=1.1, decay=0.45)
         elif kind == 'honk':                                       # every honk: a coral light at the bell, a puff
             k, x, z = e[2], e[3], e[4]
             FL.add(t_, up(x, z, R), COL[k], radius=2.2, peak=0.7 if e[5] == 0 else 0.45, decay=0.3)
             PA.emit(t_, up(x, z, R * 1.4), 'puffs', n=4, col=CORAL_SP, scale=1.2)
         elif kind == 'sling':
             pass
+        elif kind == 'swing':                                      # v2: the swing's bottom: a coral light, a honk puff
+            k, tb = e[2], (e[11] + e[12]) / 2
+            if tb <= T_KO:
+                FL.add(tb, up(e[7], e[8], R), COL[k], radius=2.0, peak=0.45, decay=0.25)
+        elif kind == 'cable_snap':                                 # CABLE SNAP: the cable parts: steel sparks up high
+            k = e[2]
+            i_ = sim_i(t_)
+            p_ = RUN['P'][i_, k]
+            top = up(p_[0], p_[1], R + float(RUN['SNAP'][i_, k, 1]) + 2 * R + 0.5)
+            BU.add(t_, top, (230, 234, 245), 0.9, bright=False)
+            PA.emit(t_, top, 'sparks', n=14, spread=180, col=[(255, 250, 230), (226, 230, 242), (255, 196, 120)])
+            FL.add(t_, top, (255, 240, 220), radius=1.8, peak=0.6, decay=0.25)
+        elif kind == 'crater':                                     # the crash: a ring of dust, grit, the crater mark
+            k, x, z = e[2], e[3], e[4]
+            PA.emit(t_, up(x, z, 0.05), 'dust', n=26, spread=180, col=MAPLE_DUST, scale=1.4, speed=(1.2, 3.0))
+            PA.emit(t_, up(x, z, R * 0.5), 'chips', n=14, spread=180, col=GRIT, speed=(1.5, 3.4))
+            MK.add(t_, 'crack', x, z, size=1.5, life=6.0, n=7, seed=int(t_ * 10), strength=0.75)
+            MK.add(t_, 'scorch', x, z, size=0.95, col=(34, 22, 24), life=6.0, seed=int(t_ * 10) + 1, strength=0.7)
         elif kind == 'ability' and e[4] == 'quake':                # LOW A: dust from every tile, cracks in the canvas
             p = RUN['P'][sim_i(t_), e[2]]
             rng = np.random.default_rng(int(t_ * 100))
@@ -976,7 +1274,7 @@ def shimmers(img, cam, t):
 def post_fx(img, cam, t, fs, drawn):
     """after the grade: chromatic fringing on big hits, the ability moments (dim + speed lines), the impact bursts"""
     for _, e in events_between(t - 0.12, t, ('hit',)):
-        if e[7] in ('quake', 'sling', 'hook', 'shockwave') or (e[7] == 'stomp' and e[8] == 1):
+        if e[7] in ('quake', 'sling', 'hook', 'shockwave', 'wreck', 'crash') or (e[7] == 'stomp' and e[8] == 1):
             s_ = cam.wp(S.to_world(e[5], e[6], R)[None])[0]
             img = fx.fringe(img, s_[0], s_[1], 26, 2.5, k=1 - (t - e[0]) / 0.12)
     if T_KO <= t < T_HS + 0.3:
@@ -1057,6 +1355,7 @@ def render(f):
     axis = (aim - spot) / np.linalg.norm(aim - spot)
     wk = win_k(t)
     stomps = live_stomps(t)
+    cranes = {k_: crane_state(k_, t) for k_ in WRECKER}
 
     fr = Frame((10, 8, 18))
     # ---------------- arena floor: per pixel (spill under the ring, corner lights)
@@ -1111,6 +1410,14 @@ def render(f):
             band = ST.honk_light(sxp, szp, cx, cz, r, rmax, t, kind)
             band = np.floor(band * 3 + BAYER_FULL[ys, xs] * 0.9) / 3
             Ic += (band * (1.3 if kind == 'quake' else 1.0))[:, None] * (COL[owner] / 255.0 * 1.3 + 0.2)[None]
+        tcn = min(t, T_KO)
+        for t0_, k_s, spot_, ts_, t1_, rad_ in SNAPS:                 # v2: CABLE SNAP's target: shadow + danger ring
+            if t0_ <= tcn < t1_ and t < T_HS:
+                u_ = (tcn - t0_) / max(1e-6, t1_ - t0_)
+                shd, rng_ = ST.snap_target(sxp, szp, spot_[0], spot_[1], R, rad_, u_, t)
+                Ic *= (1 - 0.8 * shd)[:, None]
+                rng_ = np.floor(rng_ * 3 + BAYER_FULL[ys, xs] * 0.9) / 3
+                Ic += (1.1 * rng_)[:, None] * (COL[k_s] / 255.0 * 1.3 + 0.2)[None]
         for t_q, k_q, until in QUAKES:                                 # LOW A: the floor tiles jump
             if t_q <= t < min(until, T_KO) + 0.3:
                 kq = min(1.0, (t - t_q) / 0.1) * (1 - ss(min(until, T_KO), min(until, T_KO) + 0.3, t))
@@ -1168,6 +1475,14 @@ def render(f):
         elif kind == 'ball':
             st = fs[obj]
             arr, depth = fr.array(), fr.depth()
+            if obj in WRECKER and T.T_FIGHT <= t < T_HS:            # v2: smear + trail, the harness ring's side
+                arr = draw_swing_fx(arr, cam, obj, t)
+                cs_ = cranes[obj]
+                if cs_ is not None and cs_['attached']:
+                    a_ = cam.wp(S.to_world(st['p'][0], st['p'][1], R + st['h'])[None])[0]
+                    b_ = cam.wp(cs_['block'][None])[0]
+                    d_ = b_ - a_
+                    st['ring_dir'] = d_ / (np.linalg.norm(d_) + 1e-9)
             drawn[obj] = draw_ball(arr, depth, cam, obj, st, t)
             fr.set_array(arr, depth)
         elif kind == 'crook':
@@ -1181,6 +1496,8 @@ def render(f):
     draw_rope_side(1)
     draw_post('front')
     arr, depth = fr.array(), fr.depth()
+    for k_ in WRECKER:                                              # v2: the crane, over the ring
+        arr = draw_crane(arr, cam, cranes[k_], COL[k_])
     # ---------------- hop arcs, the honks' fronts, backstab slashes, MOUNTAIN KING's dance, shards, sparks
     for k_, p0, p1, fade, peak in live_hops(t):
         arr = ST.draw_hop_arc(arr, cam, p0, p1, fade, COL[k_], R, peak)
@@ -1243,9 +1560,9 @@ def render(f):
         if st['glow'] > 0.05:
             fr.glow(s_[0], s_[1], rp * 2.2, tuple(COL[k] * 0.8 + 50), 0.45 * st['glow'])
     for e_i, e in events_between(t - 0.15, t, ('hit',)):
-        if e[7] in ('quake', 'sling', 'hook', 'shockwave', 'rattle') or (e[7] == 'stomp' and e[8] == 1):
+        if e[7] in ('quake', 'sling', 'hook', 'shockwave', 'rattle', 'wreck', 'crash') or (e[7] == 'stomp' and e[8] == 1):
             s_ = cam.wp(S.to_world(e[5], e[6], R)[None])[0]
-            big = e[7] in ('quake', 'sling', 'shockwave')
+            big = e[7] in ('quake', 'sling', 'shockwave', 'wreck', 'crash')
             fr.glow(s_[0], s_[1], 14 if big else 8, tuple(COL[e[2]] * 0.7 + 70), (0.35 if big else 0.2) * (1 - (t - e[0]) / 0.15))
     if T_KO <= t < T_HS + 0.25:
         s_ = cam.wp(S.to_world(P_KO[LOSE][0], P_KO[LOSE][1], R)[None])[0]

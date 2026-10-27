@@ -12,10 +12,12 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import tune  # noqa: E402
 
-RANGES = dict(bd=(0.9, 1.6), bb=(2.0, 3.0), bs=(0.18, 0.30), bg=(0.004, 0.015), bj=(20, 60), bt=(0.30, 0.60),
-              rd=(4.0, 7.0), rk=(1.4, 2.2), sl=(2.0, 4.0), sk=(1.2, 2.0), rs=(0.30, 0.60), rx=(1.6, 2.4), gd=(5, 9),
-              kd=(3, 6), bm=(0.8, 1.6), qd=(8, 14), sc=(0.38, 0.50))
-FIXED = dict(bl=0.6, gs=9.0, qs=9.0, ks=1.0)
+# v2 (Oct 26): the BASSOON is frozen since v1; only the new BARI SAX (WRECKING BALL, GROWL, CABLE SNAP) and the shared
+# damage scale are searched
+RANGES = dict(wd=(8.0, 20.0), wp=(0.0, 2.5), wb=(1.5, 2.4), wg=(0.05, 0.20), wx=(2.6, 3.4), wt=(35.0, 60.0),
+              wj=(0.0, 35.0), ws=(0.8, 1.3), wq=(1.2, 1.8), we=(0.0, 0.3), wm=(0.2, 0.6), wk=(1.5, 3.0), gd=(5.0, 9.0),
+              cd=(16.0, 36.0), cr=(0.3, 0.9), sc=(0.32, 0.48))
+FIXED = dict(wl=1.0, gs=9.0)
 
 
 def evaluate(cell, n):

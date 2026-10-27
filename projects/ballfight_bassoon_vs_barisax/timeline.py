@@ -4,11 +4,12 @@ Idea: the low reeds. The orchestra's clown vs the band's chaos agent: both hold 
 get no respect. BASSOON (left corner, forest green) is the only sneak, where position matters: TIPTOE - it doesn't
 glide, it tiptoes: exaggerated staccato hops on the beat (stop-and-go, squash and stretch), each to a spot BEHIND the
 enemy (against its direction of travel), each landing a small stomp that does double damage from behind (the
-backstab). BARI SAX (right corner, coral) is the only fighter that weaponises the ring: WINDOW RATTLER - every bar a
-huge low honk shoves anything close away and makes the ropes ring like plucked strings (the side nearest the enemy
-first, spreading to all four ropes as it grows); anything bouncing off a ringing rope is slung back and hurt. Both are
-game rules in the engine (projects/ballfight/fight.py: 'tiptoe', 'hook', 'mountain', 'rattle', 'offbeat', 'quake');
-the audio follows them. Honest simulated fight (the rules tuned once with tune.py, then frozen), seed picked for
+backstab). BARI SAX (right corner, coral) v2 (Oct 26: "the bari sax is really boring"): so heavy it wears a harness:
+WRECKING BALL - every other bar a crane cable drops from the spot's rig, hooks the harness, hoists it back and swings it
+across the ring as a wrecking ball in a pendulum arc, smashing what's in front of it (harder the faster it's going),
+then unhooks and rolls on; the cable grows per landed smash (a wider swing that hits harder). Both are game rules in
+the engine (projects/ballfight/fight.py: 'tiptoe', 'hook', 'mountain', 'wrecking', 'offbeat', 'snap'); the audio
+follows them. v1 (WINDOW RATTLER, LOW A) is frozen in v1/. Honest simulated fight (the rules tuned once with tune.py, then frozen), seed picked for
 pacing, never edited.
 Hook: bar 0 is the VS title card (projects/ballfight/title.py): forest-green / coral panels split diagonally, both
 balls big and close; BASSOON (a bassoon blat), VS (the thunder crack) and BARI SAX (a bari honk) slam in on beats 1-3
@@ -18,9 +19,8 @@ HUD: each fighter's ability list under its HP bar (grey until unlocked, lit on e
 Music, mood A: dark ska-punk. Fast minor ska-punk at loop_bpm(170) = 169.18 BPM (43 bars = 61 s, the fastest in the
 series), E minor: driving punk drums, upstroke guitar skanks on every off-beat, an organ bubble; no horns of its own.
 The BASSOON plays sneaky staccato lines up high (one dot per hop landing, an accent on a backstab); the BARI SAX is
-the honking bass: its honk on every bar's downbeat, and the ropes it rattles ring as the bass strings (each ringing
-side a plucked low chord tone, so the bass fills out as the rattle spreads); SKANK's honks land right on the
-off-beats. MOUNTAIN KING: Grieg's In the Hall of the Mountain King theme (1875, public domain) arranged in E minor,
+the honking bass, riding the swings: every swing one huge honk on the bar's bass root, swelling to the bottom of the
+arc and bent like a doppler pass; SKANK's swings honk up the octave, their bottoms on the off-beats; GROWL growls. MOUNTAIN KING: Grieg's In the Hall of the Mountain King theme (1875, public domain) arranged in E minor,
 one note per hop, accelerating with the hops; nothing else quoted. Consistent loudness from frame 0 (project rule,
 Oct 26): the band is at full level on the title card; it builds with density, not level. Leader fuller and louder,
 loser thinner and dirtier; at 169 BPM every hit note stays short so the mix doesn't smear; the winner's solo over the
@@ -29,9 +29,9 @@ skank.
 Beat sheet (61 s; events after 2.84 s are the run's own: the seed was chosen so they land near these targets):
     0-1.42    the VS title card: BASSOON, VS, BARI SAX slam in; the doors open on beat 4
     1.42-2.84 balls rev in corners; giant 3 . 2 . 1 in the ring, FIGHT! at 2.84
-    2.84-8    launch; the first tiptoes vs the first honks                     -
-    8-30      hop reach / rattle grow; the four unlocks                        STACCATO, GROWL, BOCAL HOOK, SKANK
-    32-44     one dips below 25 HP                                             MOUNTAIN KING or LOW A
+    2.84-8    launch; the first tiptoes vs the first swings                    -
+    8-30      hop reach / cable length grow; the four unlocks                  STACCATO, GROWL, BOCAL HOOK, SKANK
+    32-44     one dips below 25 HP                                             MOUNTAIN KING or CABLE SNAP
     44-52     final exchange, HP in single digits                              -
     ~49-53    K.O.: hit-stop, slow-mo shatter (maple joints / reed / keys / bell)   K.O. -> (WINNER) WINS
     then-57.45 winner's solo under the spot                                     COMMENT THE / NEXT MATCH-UP
@@ -61,7 +61,8 @@ T_DOORS = (3 * BEAT + 0.08, BAR - 0.03)   # beat 4: the two panels slide apart l
 T_CLOSE = 0.30                  # the last 0.30 s of the file: the doors slide shut again (the run-up into the frame-0 slam)
 
 # ---------------------------------------------------------------- frozen rules (tuned once with tune.py)
-DMG_SCALE = 0.45              # tuned once (tune.py, 200 seeds: BASSOON 53 % / BARI SAX 47 %, median K.O. 50.0 s), frozen
+DMG_SCALE = 0.32              # v2 (BARI SAX WRECKING BALL): tuned once (tune_search.py + tune.py, 400 seeds: BASSOON 53 % /
+                              # BARI SAX 47 %, median K.O. 49.3 s), frozen; v1 was 0.45 (v1/timeline.py)
 
 # ---------------------------------------------------------------- story targets (seed_search.py scores runs against these)
 T_KO = (49.0, 53.0)
@@ -69,7 +70,7 @@ MIN_LEAD_CHANGES = 2
 MAX_WINNER_HP = 30.0
 CAP_GAP = 4.0                   # never two ability captions within 4 s
 MAX_GAP = 4.0                   # no stretch over 4 s without a hit (hard window)
-CAP_TARGETS = {'STACCATO': 12, 'GROWL': 12, 'BOCAL HOOK': 24, 'SKANK': 24, 'MOUNTAIN KING': 40, 'LOW A': 40}
+CAP_TARGETS = {'STACCATO': 12, 'GROWL': 12, 'BOCAL HOOK': 24, 'SKANK': 24, 'MOUNTAIN KING': 40, 'CABLE SNAP': 40}
 
 # ---------------------------------------------------------------- the scripted tail (after the honest K.O.)
 SLOWMO = 0.7                    # s of picture time the last instant of the fight is stretched over (the K.O. hit)

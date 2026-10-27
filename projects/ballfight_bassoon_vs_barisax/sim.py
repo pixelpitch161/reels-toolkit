@@ -20,7 +20,7 @@ from fight import Fight, Rules, lead_changes
 from fighters import FIGHTERS
 
 LOWS = tuple(FIGHTERS[n]['abilities']['low']['name'] for n in T.FIGHTERS)
-REC_KEYS = ('P', 'V', 'TH', 'BL', 'FR', 'NV', 'HP', 'LV', 'SH', 'HA', 'SPIN', 'OM', 'K', 'HOP', 'HOOK', 'RATTLE')
+REC_KEYS = ('P', 'V', 'TH', 'BL', 'FR', 'NV', 'HP', 'LV', 'SH', 'HA', 'SPIN', 'OM', 'K', 'HOP', 'HOOK', 'RATTLE', 'WRECK', 'SNAP')
 
 
 def rules(dmg_scale=None):

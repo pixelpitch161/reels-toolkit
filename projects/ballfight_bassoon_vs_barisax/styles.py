@@ -1,7 +1,9 @@
 """#39 weapon styles (new): the BASSOON's TIPTOE (hop arcs, squash and stretch, the stomp ring, backstab slashes,
 tiptoe prints, MOUNTAIN KING's dance trail) and BOCAL HOOK (the silver crook swinging out and hooking), the BARI SAX's
-WINDOW RATTLER (the honk's sound rings, the ropes' standing waves, slings), GROWL's gravelly ring, SKANK's off-beat
-stabs and LOW A's ring-wide rumble with jumping floor tiles. Styles live in the episode's folder so later crossovers
+WINDOW RATTLER (v1: the honk's sound rings, the ropes' standing waves, slings), GROWL's gravelly ring, SKANK's off-beat
+stabs and LOW A's ring-wide rumble with jumping floor tiles; v2 (Oct 26): WRECKING BALL (the crane line from the
+spot's rig, the hook block, the swing cable and hook, the ball's harness straps, the swing's coral trail) and CABLE
+SNAP (the hoist, the snapped cable whipping away, the target shadow and ring on the canvas). Styles live in the episode's folder so later crossovers
 can import them (series rule).
 
 All functions draw on a float (H, W, 3) image at the internal resolution with a reelkit camera; positions are in the
@@ -232,3 +234,120 @@ def mk_trail(cam, centre, ang0, step, n_done, R, gap, y=0.06):
     a = ang0 + math.radians(step) * np.arange(n_done)
     P = np.column_stack([centre[0] + rr * np.cos(a), centre[1] + rr * np.sin(a)])
     return cam.wp(S.to_world(P[:, 0], P[:, 1], np.full(len(P), y)))
+
+
+# ---------------------------------------------------------------- v2: WRECKING BALL, CABLE SNAP
+STEEL = np.array([132, 138, 156], float)
+STEEL_HI = np.array([226, 230, 242], float)
+LEATHER = np.array([62, 36, 32], float)
+Y_RIG = 9.5                                       # the spot's truss (scene.SPOT): the crane line hangs from it
+
+
+def line3(img, cam, P, col, width=2, ink=0.8, hi=0.5, alpha=1.0):
+    """a world polyline as an inked steel line with a 1-px highlight"""
+    sp = cam.wp(np.atleast_2d(P))
+    if ink > 0:
+        img = blend(img, _mask([], [sp], width + 2), INK, ink * alpha)
+    img = blend(img, _mask([], [sp], width), col, alpha)
+    if hi > 0 and width >= 2:
+        img = blend(img, _mask([], [sp], 1), STEEL_HI, hi * alpha)
+    return img
+
+
+def cable(a, b, n=10, sag=0.0, wig=0.0, ph=0.0):
+    """world points from a to b: a straight cable (sag > 0: slack, hanging down in the middle; wig: a travelling
+    wiggle, e.g. a snapped end whipping)"""
+    u = np.linspace(0.0, 1.0, n)
+    P = a[None] + (b - a)[None] * u[:, None]
+    P[:, 1] -= sag * np.sin(np.pi * u)
+    if wig:
+        d = b - a
+        side = np.array([-d[2], 0.0, d[0]])
+        side = side / (np.linalg.norm(side) + 1e-9)
+        P += side[None] * (wig * np.sin(np.pi * u * 3 + ph) * u)[:, None]
+    return P
+
+
+def hook_block(img, cam, c, size=0.24, col=None):
+    """the crane's hook block at world point c: a small inked steel box (a lit face and a dark side)"""
+    col = STEEL if col is None else np.asarray(col, float)
+    Q = [c + np.array([dx, dy, 0.0]) for dx, dy in ((-size, -size * 1.2), (size, -size * 1.2), (size * 0.8, size),
+                                                     (-size * 0.8, size))]
+    sp = cam.wp(np.array(Q))
+    img = blend(img, _mask([sp]), INK, 0.9)
+    inner = sp.mean(0) + (sp - sp.mean(0)) * 0.7
+    img = blend(img, _mask([inner]), col * 0.85, 1.0)
+    top = inner[2:4]
+    img = blend(img, _mask([], [top], 1), STEEL_HI, 0.7)
+    return img
+
+
+def hook_shape(img, cam, end, toward, size=0.14):
+    """a steel hook at world point end (the harness ring), opening away from the cable direction `toward`"""
+    s0 = cam.wp(end[None])[0]
+    s1 = cam.wp((end + toward * 0.2)[None])[0]
+    d = s1 - s0
+    d = d / (np.linalg.norm(d) + 1e-9)
+    n = np.array([-d[1], d[0]])
+    r = max(2.0, size * 18)
+    a = np.linspace(0.2 * math.pi, 1.6 * math.pi, 9)
+    pts = s0[None] + (np.cos(a)[:, None] * n[None] - np.sin(a)[:, None] * d[None]) * r * 0.6 - d[None] * r * 0.3
+    pts = np.vstack([s0[None] + d[None] * r * 0.8, pts])
+    img = blend(img, _mask([], [pts], 4), INK, 0.85)
+    img = blend(img, _mask([], [pts], 2), STEEL * 1.1, 1.0)
+    return img
+
+
+def harness(img, s, rp, sx, sy, ring_dir, col):
+    """the bari's harness on its ball (screen space, centre s, radius rp, squash sx / sy): two leather straps over the
+    top crossing at a steel ring on the side facing the cable (ring_dir: screen unit vector, None = straight up)"""
+    ring_dir = np.array([0.0, -1.0]) if ring_dir is None else np.asarray(ring_dir, float)
+    top = np.array([s[0], s[1]]) + ring_dir * rp * np.array([sx, sy]) * 0.92
+    straps = []
+    for sgn in (-1.0, 1.0):
+        b = np.linspace(0.0, math.pi * 0.92, 12)
+        perp = np.array([-ring_dir[1], ring_dir[0]]) * sgn
+        pts = top[None] + (perp[None] * np.sin(b)[:, None] * 0.62 - ring_dir[None] * (1 - np.cos(b))[:, None] * 0.9) * \
+            rp * np.array([sx, sy])[None]
+        straps.append(pts)
+    belt_a = np.linspace(0.15 * math.pi, 0.85 * math.pi, 12)
+    belt = np.column_stack([s[0] + np.cos(belt_a) * rp * sx * 0.96, s[1] + np.sin(belt_a) * rp * sy * 0.30 + rp * 0.08])
+    straps.append(belt)
+    img = blend(img, _mask([], straps, 5), INK, 0.6)
+    img = blend(img, _mask([], straps, 3), LEATHER * 0.7 + np.asarray(col) * 0.3, 1.0)
+    img = blend(img, _mask([], [st[::3] for st in straps], 1), np.asarray(col) * 0.6 + 90, 0.5)
+    xi, yi = int(round(top[0])), int(round(top[1]))
+    if 2 <= xi < W - 2 and 2 <= yi < H - 2:
+        img[yi - 2:yi + 3, xi - 2:xi + 3] = INK
+        img[yi - 1:yi + 2, xi - 1:xi + 2] = STEEL_HI
+        img[yi, xi] = STEEL
+    return img
+
+
+def swing_trail(img, pts, col, k=1.0):
+    """the swing's coral trail behind the ball: a tapering band through the recent screen positions (oldest first)"""
+    n = len(pts)
+    if n < 2 or k <= 0.02:
+        return img
+    c = np.clip(np.asarray(col) * 0.8 + 70, 0, 255)
+    for j in range(n - 1):
+        u = (j + 1) / (n - 1)
+        w = max(1, int(round(2 + 14 * u)))
+        seg = [pts[j], pts[j + 1]]
+        img = blend(img, _mask([], [seg], w), c, 0.65 * k * u)
+        if w >= 4:
+            img = add(img, _mask([], [seg], max(1, w // 3)), WHITE * 0.5, 0.35 * k * u)
+    return img
+
+
+def snap_target(sxp, szp, x, z, R, radius, u, t):
+    """(shade, ring) on the canvas for CABLE SNAP's target: the falling ball's shadow (grows and darkens as it comes
+    down, u 0..1) and a pulsing danger ring at the crater's reach"""
+    rd = np.hypot(sxp - x, szp - z)
+    r_sh = R * (0.45 + 0.6 * u)
+    shade = np.clip(1 - (rd - r_sh) / 0.10, 0, 1) * (0.25 + 0.6 * u)
+    rr = R + radius
+    pulse = 0.55 + 0.45 * math.cos(2 * math.pi * 6.0 * t)
+    ring = np.clip(1 - np.abs(rd - rr) / 0.05, 0, 1) * pulse * (0.5 + 0.5 * u)
+    tick = np.clip(1 - np.abs(rd - rr * 0.55) / 0.035, 0, 1) * (np.abs(np.sin(np.arctan2(szp - z, sxp - x) * 2)) > 0.92)
+    return shade, np.maximum(ring, tick * 0.8)

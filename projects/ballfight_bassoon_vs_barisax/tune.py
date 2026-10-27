@@ -5,10 +5,13 @@ caption count, both lows, the hit mix and how the bassoon's stomps land (backsta
     python tune.py 80 bd=1.0,1.2 bb=2.0 rk=1.5,2.0 sl=3,4 sc=0.4,0.5
 
 Grid keys: bd = BASSOON stomp damage, bb = its backstab multiplier, bh = its backstab half-angle, br = its hop reach,
-bs = its stomp radius, bj = its jitter, bt = its stagger, bl = its lead, bg = its stomp growth, kd = BOCAL HOOK damage, sd = STACCATO beats, ba = its air time (16ths), be = beats between hops, bm = MOUNTAIN KING's damage;
-rd = BARI honk damage, rk = honk knock, rp = honk push, sl = sling damage, sk = sling knock, rs = side step, rr = ring
-decay, gd = GROWL damage, qd = LOW A damage, ks = SKANK sub, rg = rattle growth, rx = its max, gs / qs = GROWL / LOW A speed; sc = the shared damage scale. Seeds 1000.. (the honest
-search later uses 1..), so the tuning never picks the episode's run."""
+bs = its stomp radius, bj = its jitter, bt = its stagger, bl = its lead, bg = its stomp growth, kd = BOCAL HOOK damage,
+sd = STACCATO beats, ba = its air time (16ths), be = beats between hops, bm = MOUNTAIN KING's damage (the BASSOON is
+frozen since v1: these only for checks); v2 BARI SAX: wd = WRECKING BALL damage, wp = its cable-length power, wm = its slow-swing share, wk = its
+knock, wb = cable length, wg = cable growth, wx = its max, wt = swing angle, wj = aim jitter, ws = aim short (x 2R),
+wq = SKANK's aim short, we = hop edge (still hittable), wh = hit margin, wl = lead, ww = swing 16ths, wf = lift 16ths,
+wr = drop 16ths, gd = GROWL damage, gs = GROWL speed, cd = CABLE SNAP damage, cr = its radius, ct = its 16ths; sc = the
+shared damage scale. Seeds 1000.. (the honest search later uses 1..), so the tuning never picks the episode's run."""
 import itertools
 import os
 import sys
@@ -24,12 +27,18 @@ from fighters import FIGHTERS  # noqa: E402
 
 KEYS = {'bd': ('BASSOON', 'weapon', 'dmg'), 'bb': ('BASSOON', 'weapon', 'back'), 'bh': ('BASSOON', 'weapon', 'back_half'),
         'br': ('BASSOON', 'weapon', 'base'), 'bs': ('BASSOON', 'weapon', 'stomp'), 'bj': ('BASSOON', 'weapon', 'jitter'),
-        'bt': ('BASSOON', 'weapon', 'stagger'), 'bl': ('BASSOON', 'weapon', 'lead'), 'bg': ('BASSOON', 'weapon', 'stomp_grow'), 'rg': ('BARI SAX', 'weapon', 'grow'), 'rx': ('BARI SAX', 'weapon', 'max_reach'), 'gs': ('BARI SAX', 'unlock1', 'speed'), 'qs': ('BARI SAX', 'low', 'speed'), 'kd': ('BASSOON', 'unlock2', 'dmg'), 'sd': ('BASSOON', 'unlock1', 'dur_beats'), 'ba': ('BASSOON', 'weapon', 'air16'), 'be': ('BASSOON', 'weapon', 'every'), 'bm': ('BASSOON', 'low', 'dmg'),
-        'rd': ('BARI SAX', 'weapon', 'dmg'), 'rk': ('BARI SAX', 'weapon', 'knock'), 'rp': ('BARI SAX', 'weapon', 'push'),
-        'sl': ('BARI SAX', 'weapon', 'sling'), 'sk': ('BARI SAX', 'weapon', 'sling_knock'),
-        'rs': ('BARI SAX', 'weapon', 'side_step'), 'rr': ('BARI SAX', 'weapon', 'ring'),
-        'gd': ('BARI SAX', 'unlock1', 'dmg'), 'qd': ('BARI SAX', 'low', 'dmg'), 'ks': ('BARI SAX', 'unlock2', 'sub')}
-INTS = ('air16', 'every')
+        'bt': ('BASSOON', 'weapon', 'stagger'), 'bl': ('BASSOON', 'weapon', 'lead'), 'bg': ('BASSOON', 'weapon', 'stomp_grow'),
+        'kd': ('BASSOON', 'unlock2', 'dmg'), 'sd': ('BASSOON', 'unlock1', 'dur_beats'), 'ba': ('BASSOON', 'weapon', 'air16'),
+        'be': ('BASSOON', 'weapon', 'every'), 'bm': ('BASSOON', 'low', 'dmg'),
+        'wd': ('BARI SAX', 'weapon', 'dmg'), 'wm': ('BARI SAX', 'weapon', 'dmg_min'), 'wk': ('BARI SAX', 'weapon', 'knock'),
+        'wb': ('BARI SAX', 'weapon', 'base'), 'wg': ('BARI SAX', 'weapon', 'grow'), 'wx': ('BARI SAX', 'weapon', 'max_reach'),
+        'wt': ('BARI SAX', 'weapon', 'theta'), 'wj': ('BARI SAX', 'weapon', 'jitter'), 'ws': ('BARI SAX', 'weapon', 'short'),
+        'wq': ('BARI SAX', 'weapon', 'skank_short'), 'we': ('BARI SAX', 'weapon', 'air_edge'),
+        'wh': ('BARI SAX', 'weapon', 'hit_r'), 'wl': ('BARI SAX', 'weapon', 'lead'), 'ww': ('BARI SAX', 'weapon', 'swing16'),
+        'wp': ('BARI SAX', 'weapon', 'len_pow'), 'wf': ('BARI SAX', 'weapon', 'lift16'), 'wr': ('BARI SAX', 'weapon', 'drop16'),
+        'gd': ('BARI SAX', 'unlock1', 'dmg'), 'gs': ('BARI SAX', 'unlock1', 'speed'),
+        'cd': ('BARI SAX', 'low', 'dmg'), 'cr': ('BARI SAX', 'low', 'radius'), 'ct': ('BARI SAX', 'low', 'tele16')}
+INTS = ('air16', 'every', 'swing16', 'lift16', 'drop16', 'tele16')
 
 
 def apply(cell):
@@ -58,9 +67,11 @@ def one(args):
     stomps = [e for e in r['events'] if e[1] == 'stomp']
     land = sum(e[5] for e in stomps)
     back = sum(e[6] for e in stomps)
-    slings = sum(e[1] == 'sling' for e in r['events'])
+    swings = [e for e in r['events'] if e[1] == 'swing']
+    smashes = [e for e in r['events'] if e[1] == 'smash']
+    craters = [e for e in r['events'] if e[1] == 'crater']
     return (cell, seed, r['winner'], r['t_ko'] or 99, lc, max(hp), len(st['caps']), dmg, st['max_gap'], fits,
-            len(st['lows']), len(stomps), land, back, slings)
+            len(st['lows']), len(stomps), land, back, (len(swings), len(smashes), len(craters), sum(e[6] for e in craters)))
 
 
 if __name__ == '__main__':
@@ -88,4 +99,5 @@ if __name__ == '__main__':
               f'fit {100 * np.mean([x[9] for x in r]):.1f}%  stomps {np.mean([x[11] for x in r]):.0f} '
               f'land {100 * np.sum([x[12] for x in r]) / max(1, np.sum([x[11] for x in r])):.0f}% '
               f'back {100 * np.sum([x[13] for x in r]) / max(1, np.sum([x[12] for x in r])):.0f}%  '
-              f'slings {np.mean([x[14] for x in r]):.1f}  dmg {mix}', flush=True)
+              f'swings {np.mean([x[14][0] for x in r]):.1f} smash {100 * np.sum([x[14][1] for x in r]) / max(1, np.sum([x[14][0] for x in r])):.0f}% '
+              f'crater {np.sum([x[14][3] for x in r])}/{np.sum([x[14][2] for x in r])}  dmg {mix}', flush=True)
