@@ -90,6 +90,11 @@ bar); events 'riff', 'bolt', 'fork', 'tapping'.
 #44 (opt-in): ability kind `smash` (GUITAR SMASH: the fighter smashes itself on the floor, a shockwave of kind 'smash' +
 splinters flying out; it lies in pieces for `rebuild_beats` (still, intangible, silent), then snaps back together and
 fights on); events 'smash', 'splinter', 'splinter_end', 'rebuild'.
+#45 (opt-in): weapon kind `roll` (PIANO ROLL: a player-piano roll along one side of the ring; on the 8th grid each row's
+holes fire note-shots from their pitch lanes across the ring, the rows being the fighter's line in the music, given as
+Rules(roll_rows=, roll_start8=); +holes per landed row; events 'roll', recorded as ROLL / HOLD), ability kinds `sustain`
+(SUSTAIN: the next rows' shots hang like mines for a beat, then re-aim and fly; event 'sustain') and `runoff` (88 KEYS:
+every hole fires at once straight across the ring, then the roll is re-threaded; event 'runoff').
 The run records every frame (30 fps) for the renderer and every event (hits, blocks, parries, ropes, volleys,
 abilities, level-ups, the K.O.) for the soundtrack and the captions. Seeded: same seed, same fight."""
 import math
@@ -2849,6 +2854,11 @@ class Fight:
             self.ev('tapping', k, B.tap_until)
         elif kind == 'smash':                                   # #44 (GUITAR SMASH): smashed on the floor, rebuilt
             self.start_smash(k, ab)
+        elif kind == 'sustain':                                 # #45 (SUSTAIN): the roll's next rows hang like mines
+            B.sustain_until = self.t + self.ab_dur(ab)
+            self.ev('sustain', k, B.sustain_until)
+        elif kind == 'runoff':                                  # #45 (88 KEYS): the roll runs off its spool
+            self.start_runoff(k, ab)
 
     def ab_beam_charge(self, k, ab):
         """ability kind 'beam' (#29 v3): charge for `charge_beats` with the aim locked on the enemy's spot predicted
@@ -3087,6 +3097,8 @@ class Fight:
                                     Att.n_vol = min(Att.w['n_max'], Att.n_vol + Att.w['grow'])
                                     if Att.w.get('curve_grow'):        # #34: its arrows curve harder too
                                         Att.curve_now = min(Att.w['curve_max'], Att.curve_now + Att.w['curve_grow'])
+                                elif Att.w['kind'] == 'roll':          # #45: a landed row punches more holes per row
+                                    Att.n_vol = min(Att.w['n_max'], Att.n_vol + Att.w['grow'])
                             # a light nudge along the key's flight
                             kv = self.kv[i] / (np.linalg.norm(self.kv[i]) + 1e-9)
                             cur = B.v / (np.linalg.norm(B.v) + 1e-9)
@@ -3942,6 +3954,126 @@ class Fight:
                     self.kill_keys(m, 'crushed', N['owner'])
         self.notes = [N for N in self.notes if self.t < N['t1']]
 
+    # ------------------------------------------------------------------ #45: PIANO ROLL (opt-in weapon kind 'roll')
+    # A player-piano roll lies along one side of the ring: the side through the fighter's own corner and the back
+    # corner (side 0: sx = -A, side 1: sz = -A). Positions along it are pitches (`reg` = (lo, hi): low notes at its own
+    # corner's end, high notes at the back corner's end, `margin` in from the posts). On the 8th grid every row of the
+    # roll passes the read bar; every hole in that row fires a note-shot from its lane into the ring: straight across
+    # blended toward the enemy by `aim` (0 = straight across, 1 = all at the enemy), at `speed`, `dmg` each. The rows
+    # ARE the fighter's line in the episode's music: Rules(roll_rows={side: [row, ...]}, roll_start8=n) give, per 8th
+    # of the loop (the loop starts on absolute 8th n), the row's pitches in priority order (melody first, then harmony)
+    # or () for a rest; without them the weapon plays ROLL_DEFAULT. A row fires its first int(n_vol) holes (`n0`,
+    # +`grow` per landed row up to `n_max`). Ability kinds: 'sustain' (SUSTAIN: for `dur_beats` the rows' shots fly
+    # `out16` 16ths, hang still for `hang_beats` beats like mines (they still hit what touches them), then re-aim at
+    # the enemy and fly at the weapon's speed) and 'runoff' (88 KEYS: the roll runs off its spool: `n` shots from lanes
+    # spread over the whole side fire at once straight across the ring (a full-ring barrage, `speed`, `dmg` each), then
+    # no rows for `reload_beats` while a new roll is threaded). Events ('roll', k, vol, abs8, sustained 0/1, pitches),
+    # ('runoff', k, vol, n, pitches); shots carry their pitch as the volley index (hits of kind 'key', sub = pitch).
+    # Recorded as ROLL (n_vol, sustain s left, reload s left) per ball and HOLD [(id, t_stop, t_release), ...].
+    ROLL_DEFAULT = ((0, -12), (), (7,), (3,), (12, 0), (), (10,), (7,), (3, -9), (), (5,), (7,), (15, 3), (), (12,), (10,))
+
+    def roll_setup(self, k):
+        B = self.balls[k]
+        if not hasattr(self, 'khold'):
+            self.khold = {}
+        B.roll_ax = 0 if self.corner[k][0] < 0 else 1           # the axis whose -A side holds the roll
+        B.sustain_until = -1.0
+        B.reload_until = -1.0
+        rows = getattr(self.R, 'roll_rows', None)
+        if rows is not None and k in rows:
+            B.roll_rows = [tuple(int(m) for m in r) for r in rows[k]]
+            B.roll_start8 = int(getattr(self.R, 'roll_start8', 0))
+        else:
+            lo, hi = B.w.get('reg', B.cfg.get('register', (48, 84)))
+            mid = (lo + hi) // 2
+            B.roll_rows = [tuple(mid + d for d in r) for r in self.ROLL_DEFAULT]
+            B.roll_start8 = 0
+
+    def roll_lane(self, B, m, margin=None):
+        """the spawn point of pitch m on the roll (ring frame) and the straight-across direction"""
+        A = self.R.A
+        lo, hi = B.w.get('reg', B.cfg.get('register', (48, 84)))
+        mg = B.w.get('margin', 0.45) if margin is None else margin
+        u = (float(m) - lo) / max(1.0, float(hi - lo))
+        lat = (A - mg) - 2 * (A - mg) * min(1.0, max(0.0, u))   # low notes at the own corner's end (+), high at the back
+        p = np.zeros(2)
+        p[B.roll_ax] = -A + 0.1
+        p[1 - B.roll_ax] = lat
+        d0 = np.zeros(2)
+        d0[B.roll_ax] = 1.0
+        return p, d0
+
+    def roll_tick(self, k, n16):
+        """on every 8th (absolute 16th n16 even): the row under the read bar fires (unless reloading)"""
+        if n16 % 2:
+            return
+        B = self.balls[k]
+        if self.t + 1e-9 < B.reload_until:
+            return
+        abs8 = n16 // 2
+        row = B.roll_rows[(abs8 - B.roll_start8) % len(B.roll_rows)]
+        if not row:
+            return
+        self.fire_row(k, row[:max(1, int(B.n_vol + 1e-9))], abs8)
+
+    def fire_row(self, k, pitches, abs8):
+        B, O = self.balls[k], self.balls[1 - k]
+        w = B.w
+        vol = self.next_vol
+        self.next_vol += 1
+        sus = self.t < B.sustain_until
+        ab = B.cfg['abilities']['unlock1'] if sus else None
+        for m in pitches:
+            pos, d0 = self.roll_lane(B, m)
+            de = O.p - pos
+            de = de / (np.linalg.norm(de) + 1e-9)
+            d = (1 - w['aim']) * d0 + w['aim'] * de
+            a = math.atan2(d[1], d[0])
+            self.spawn_key(k, pos, a, w['speed'], w['dmg'], vol, int(m))
+            if sus:
+                t_stop = self.t + ab.get('out16', 2) * self.R.beat / 4
+                self.khold[self.next_id - 1] = [t_stop, t_stop + ab.get('hang_beats', 1) * self.R.beat, w['speed'], 0]
+        self.ev('roll', k, vol, int(abs8), int(sus), tuple(int(m) for m in pitches))
+
+    def start_runoff(self, k, ab):
+        """88 KEYS: every hole of the roll fires at once, straight across the ring, then the roll is re-threaded"""
+        B = self.balls[k]
+        lo, hi = B.w.get('reg', B.cfg.get('register', (48, 84)))
+        n = int(ab['n'])
+        vol = self.next_vol
+        self.next_vol += 1
+        ms = []
+        for j in range(n):
+            m = lo + (hi - lo) * j / max(1, n - 1)
+            pos, d0 = self.roll_lane(B, m, ab.get('margin', 0.25))
+            mi = int(round(m))
+            self.spawn_key(k, pos, 0.0 if B.roll_ax == 0 else math.pi / 2, ab['speed'], ab['dmg'], vol, mi)
+            ms.append(mi)
+        B.reload_until = self.t + ab.get('reload_beats', 0) * self.R.beat
+        self.ev('runoff', k, vol, n, tuple(ms))
+
+    def hold_step(self):
+        """SUSTAIN's mines: stop after their short flight, hang, then re-aim at the enemy and fly"""
+        if not self.khold:
+            return
+        live = {int(i): j for j, i in enumerate(self.kid)}
+        for i in list(self.khold):
+            j = live.get(i)
+            if j is None:
+                del self.khold[i]
+                continue
+            t_stop, t_rel, sp, state = self.khold[i]
+            if state == 0 and self.t + 1e-9 >= t_stop:
+                self.kv[j] = 0.0
+                self.khold[i][3] = 1
+            elif state == 1 and self.t + 1e-9 >= t_rel:
+                O = self.balls[1 - int(self.kown[j])]
+                d = O.p - self.kp[j]
+                n = float(np.hypot(*d))
+                d = d / n if n > 1e-9 else np.array([1.0, 0.0])
+                self.kv[j] = d * sp
+                del self.khold[i]
+
     def snap(self, rec):
         B0, B1 = self.balls
         rec['P'].append([B0.p.copy(), B1.p.copy()])
@@ -4067,6 +4199,10 @@ class Fight:
                                  float(self.t < getattr(Bj, 'melody_until', -1.0))] for Bj in (B0, B1)])
             rec['NOTES'].append([(N['owner'], float(N['c'][0]), float(N['c'][1]), N['r'], N['t0'], N['t1'], N['t_land'],
                                   N['id'], N['kind'], int(N['hit'])) for N in self.notes])
+        if 'ROLL' in rec:                                   # #45, only recorded when a fighter uses the 'roll' kind
+            rec['ROLL'].append([[float(getattr(Bj, 'n_vol', 0.0)), max(0.0, getattr(Bj, 'sustain_until', -1.0) - self.t),
+                                 max(0.0, getattr(Bj, 'reload_until', -1.0) - self.t)] for Bj in (B0, B1)])
+            rec['HOLD'].append([(int(i), h[0], h[1]) for i, h in sorted(getattr(self, 'khold', {}).items())])
         if 'FLICK' in rec:                                  # #34 v5, only recorded when a fighter has a 'flick' ability
             Fl = np.full((2, 6), np.nan)
             for j, Bj in enumerate((B0, B1)):
@@ -4205,6 +4341,12 @@ class Fight:
         n16v = k16_0
         if rec is not None and resters:
             rec['REST'], rec['NOTES'] = [], []
+        rollers = [k for k, B in enumerate(self.balls) if B.w['kind'] == 'roll']          # #45 (opt-in)
+        for k in rollers:
+            self.roll_setup(k)
+        n16o = k16_0
+        if rec is not None and rollers:
+            rec['ROLL'], rec['HOLD'] = [], []
         self.t = R.t_fight
         f0 = int(round(R.t_fight * R.FPS))
         step = 0
@@ -4353,6 +4495,12 @@ class Fight:
                 n16h += 1
                 for k in hoppers:
                     self.tiptoe_tick(k, k16h)
+            if rollers and self.t + 1e-9 >= n16o * s16:         # #45: the roll's rows on the 8th grid (absolute)
+                n16a_ = n16o
+                n16o += 1
+                for k in rollers:
+                    if not self._stunned(k):
+                        self.roll_tick(k, n16a_)
             for k, B in enumerate(self.balls):
                 B.shield = max(0.0, B.shield - dt)
                 B.haste = max(0.0, B.haste - dt)
@@ -4370,6 +4518,8 @@ class Fight:
             if dimmers:                                          # #38: LIGHTS OUT (either ball: a copied one too)
                 for k in (0, 1):
                     self.lights_out_step(k, dt)
+            if rollers:                                          # #45: SUSTAIN's mines stop, hang, re-aim
+                self.hold_step()
             self.move(dt)
             if rewinders:
                 self.rewind_step(dt, rewinders)
