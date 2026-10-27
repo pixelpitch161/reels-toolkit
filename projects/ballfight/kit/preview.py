@@ -81,9 +81,7 @@ def main(name, vs=None, seconds=7.0, sound=True, procs=2):
         f.write('*\n')
     seed, side, t_low, t_ko = _find_seed(name, partner, folder)
     ep = E.load(folder, _config(name, partner, side, seed))
-    from . import picture as P
-    if not os.path.exists(P.SPR_PATH):
-        P.build_sprites()
+    from . import picture as P                                 # sprites render on demand (only the clip's)
     wins = _windows(P, 0, t_low, seconds)
     low = FIGHTERS[name]['abilities']['low']['name']
     style = FIGHTERS[name]['weapon'].get('style', FIGHTERS[name]['weapon']['kind'])
@@ -97,8 +95,8 @@ def main(name, vs=None, seconds=7.0, sound=True, procs=2):
         for (f, lab), img in zip(frames, imgs):
             img = img.copy()
             txt = f'{name} {"SIGNATURE: " + style.upper() if lab == "SIGNATURE" else "DESPERATION: " + low}'
-            img[100:112, 20:20 + 6 * len(txt) + 4] = (img[100:112, 20:20 + 6 * len(txt) + 4] * 0.3).astype(np.uint8)
-            label(img, txt, 22, 102, (255, 236, 160), 1)
+            img[6:18, 8:8 + 6 * len(txt) + 4] = (img[6:18, 8:8 + 6 * len(txt) + 4] * 0.3).astype(np.uint8)
+            label(img, txt, 10, 8, (255, 236, 160), 1)               # the top band: a preview is never posted
             fo.write(np.ascontiguousarray(img).tobytes())
     out = os.path.join(folder, f'{FM.slug(name)}_preview.mp4')
     from reelkit.config import W, H
