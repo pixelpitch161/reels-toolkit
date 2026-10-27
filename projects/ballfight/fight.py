@@ -65,7 +65,8 @@ Ability kind `hook` (BOCAL HOOK: the crook hooks a close enemy and spins it to f
 hop straight behind it; recorded as HOOK). Weapon kind `rattle` (WINDOW RATTLER: a huge low honk every bar shoves a close
 enemy away and makes the ropes ring, spreading from the nearest side to all four as it grows; an enemy bouncing off a
 ringing rope is slung back and hurt; events 'honk' / 'rattle' / 'sling', recorded as RATTLE) and ability kind
-`offbeat` (SKANK: extra honks on every off-beat 8th for a while).
+`offbeat` (SKANK: extra honks on every off-beat 8th for a while). Ability kind `quake` (LOW A: a ring-wide wave of kind
+'quake' and, through the rattle system, all four ropes held at full ring for a while: nowhere is safe).
 The run records every frame (30 fps) for the renderer and every event (hits, blocks, parries, ropes, volleys,
 abilities, level-ups, the K.O.) for the soundtrack and the captions. Seeded: same seed, same fight."""
 import math
@@ -2716,6 +2717,15 @@ class Fight:
             self.ev('twin', k, B.twin_until)
         elif kind == 'barrage':                                 # #38 (NOT A TUBA): shells rain across the ring
             self.start_barrage(k, ab)
+        elif kind == 'quake':                                   # #39 (LOW A): the whole ring rattles
+            self.waves.append(dict(owner=k, c=B.p.copy(), r=self.R.R, speed=ab['speed'], rmax=ab['radius'], dmg=ab['dmg'],
+                                   knock=ab['knock'], kind='quake', hit=False, name=ab['name'], t0=self.t, slow=None))
+            until = self.t + self.ab_dur(ab)
+            if hasattr(B, 'rope_hold'):
+                for sd in range(4):
+                    B.rope_a0[sd], B.rope_t0[sd], B.rope_hold[sd] = 1.0, self.t, until
+                self.ev('rattle', k, 0, 1, 2, 3)
+            self.ev('quake', k, until)
         elif kind == 'offbeat':                                 # #39 (SKANK): honks on every off-beat 8th
             B.skank_until = self.t + self.ab_dur(ab)
             B.skank_ab = ab
@@ -3176,6 +3186,9 @@ class Fight:
     # full amplitude decaying over `ring` s. An enemy bouncing off a ringing rope (amplitude a >= `sling_min`) is slung
     # back and hurt: `sling` x a x strength / `base` damage, knock `sling_knock` x a, at most once per `sling_cool` s.
     # Ability kind 'offbeat' (SKANK): for `dur_beats` an extra honk on every off-beat 8th, its damage x `sub`.
+    # Ability kind 'quake' (LOW A): a big wave across the whole ring (kind 'quake': `speed`, `radius`, `dmg`, `knock`)
+    # and all four ropes held at full amplitude for `dur_beats` (then they ring down as usual); event ('quake', owner,
+    # until).
     # Events ('honk', owner, x, y, kind 0 bar / 1 skank), ('rattle', owner, sides...), ('sling', owner, side, a, x, y).
     # Recorded as RATTLE (per ball: the four ropes' amplitudes + the strength) when a fighter uses the kind.
     ROPE_SIDE = {(1, 1): 0, (0, 1): 1, (1, -1): 2, (0, -1): 3}     # (axis, sign) -> side (the renderers' ROPE_SIDES order)
