@@ -69,7 +69,9 @@ ringing rope is slung back and hurt; events 'honk' / 'rattle' / 'sling', recorde
 'quake' and, through the rattle system, all four ropes held at full ring for a while: nowhere is safe).
 #39 v2 (opt-in): weapon kind `wrecking` (WRECKING BALL: every other bar a crane cable drops, hooks the ball and swings it
 across the ring as a wrecking ball in a pendulum arc, smashing what it passes; the cable grows per landed smash; SKANK
-(`offbeat`) swings it on the off-beats every bar instead; events 'cable' / 'swing' / 'smash', recorded as WRECK).
+(`offbeat`) swings it on the off-beats every bar instead; events 'cable' / 'swing' / 'smash', recorded as WRECK);
+ability kind `snap` (CABLE SNAP: the crane hoists the ball high over the enemy's predicted spot, the cable snaps and it
+crashes down there: shadow first, then a crater; events 'snap_aim' / 'cable_snap' / 'crater', recorded as SNAP).
 The run records every frame (30 fps) for the renderer and every event (hits, blocks, parries, ropes, volleys,
 abilities, level-ups, the K.O.) for the soundtrack and the captions. Seeded: same seed, same fight."""
 import math
@@ -2737,6 +2739,8 @@ class Fight:
             self.start_hook(k, ab)
         elif kind == 'mountain':                                # #39 (MOUNTAIN KING): accelerating hops round the enemy
             self.start_mountain(k, ab)
+        elif kind == 'snap':                                    # #39 v2 (CABLE SNAP): hoisted high, the cable snaps
+            self.start_snap(k, ab)
         elif kind == 'rhapsody':                                # #37 (RHAPSODY): a chain of zig-zag jumps
             B.jump_tgt = None
             B.rhap = dict(ab=ab, n=ab['n'], side=1.0, next=None)
@@ -3417,6 +3421,70 @@ class Fight:
             B.air = False
             B.wreck = None
 
+    # ------------------------------------------------------------------ #39 v2: CABLE SNAP (opt-in ability kind 'snap')
+    # The crane hoists the ball (out of a swing, if one is on: the cable lets go of that) up to `height` and carries it
+    # over the spot where the enemy will be in `tele16` 16ths (where a hop lands; else `lead` x its motion; fixed then:
+    # its shadow marks it) for the first `hoist` of that time; then the cable snaps and the ball falls straight down
+    # (free fall) and crashes there: an enemy within `radius` beyond contact takes `dmg` and `knock` away from the
+    # crater (unless it is up in the air, as with the swing: `air_edge`). Then it rolls on at the enemy. Events
+    # ('snap_aim', k, x, y, t_snap, t_crash, radius), ('cable_snap', k), ('crater', k, x, y, radius, hit). Recorded as SNAP
+    # (per ball: on, height, spot x, spot y, start, snap, crash, radius) when a fighter has the ability.
+    def start_snap(self, k, ab):
+        B, O = self.balls[k], self.balls[1 - k]
+        s16 = self.R.beat / 4.0
+        T_ = ab['tele16'] * s16
+        W_ = getattr(B, 'wreck', None)
+        h0 = W_.get('h', 0.0) if W_ is not None else 0.0
+        B.wreck = None
+        if getattr(O, 'hop', None) is not None:
+            tgt = O.hop['p1'].copy()
+        else:
+            tgt = O.p + O.v * T_ * ab.get('lead', 1.0)
+        lim = self.R.A - self.R.R
+        tgt = np.clip(tgt, -lim, lim)
+        ts = self.t + T_ * ab.get('hoist', 0.6)
+        B.wsnap = dict(p0=B.p.copy(), tgt=tgt, t0=self.t, ts=ts, t1=self.t + T_, h0=h0, h=h0, ab=ab, snapped=False)
+        B.air = True
+        self.ev('snap_aim', k, float(tgt[0]), float(tgt[1]), ts, self.t + T_, float(ab['radius']))
+
+    def snap_step(self, k, dt):
+        B, O = self.balls[k], self.balls[1 - k]
+        Sn = getattr(B, 'wsnap', None)
+        if Sn is None:
+            return
+        ab = Sn['ab']
+        if self.t < Sn['ts']:                                    # hoisted up and over the spot
+            uu = (self.t - Sn['t0']) / max(1e-6, Sn['ts'] - Sn['t0'])
+            e = uu * uu * (3 - 2 * uu)
+            d = Sn['tgt'] - Sn['p0']
+            B.p = Sn['p0'] + d * e
+            Sn['h'] = Sn['h0'] + (ab['height'] - Sn['h0']) * e
+            n = float(np.hypot(*d))
+            B.v = d / n * 0.3 if n > 1e-6 else B.v
+            return
+        if not Sn['snapped']:
+            Sn['snapped'] = True
+            self.ev('cable_snap', k)
+        ss = min(1.0, (self.t - Sn['ts']) / max(1e-6, Sn['t1'] - Sn['ts']))
+        Sn['h'] = ab['height'] * (1 - ss * ss)                   # free fall
+        B.p = Sn['tgt'].copy()
+        if ss < 1.0:
+            return
+        R = self.R.R
+        rel = O.p - B.p
+        dist = float(np.hypot(*rel))
+        n = rel / dist if dist > 1e-6 else np.array([1.0, 0.0])
+        hit = dist - 2 * R <= ab['radius'] and not self._sails_over(1 - k, ab.get('air_edge', B.w.get('air_edge', 0.0)))
+        if hit:
+            hx, hy = (O.p - n * R).tolist()
+            self.damage(k, 1 - k, ab['dmg'], 'crash', hx, hy)
+            self.knock(1 - k, n, ab['knock'])
+        self.ev('crater', k, float(B.p[0]), float(B.p[1]), float(ab['radius']), int(hit))
+        Sn['h'] = 0.0
+        B.v = n * self.R.V
+        B.air = False
+        B.wsnap = None
+
     # ------------------------------------------------------------------ record
     KMAX = 72
 
@@ -3512,6 +3580,13 @@ class Fight:
                     Wr[j] = (self.WRECK_PHASES[W_['phase']], W_.get('h', 0.0), W_.get('L', Wr[j, 2]), bx, by, sx, sy,
                              W_['t0'], W_['t1'])
             rec['WRECK'].append(Wr)
+        if 'SNAP' in rec:                                   # #39 v2, only recorded when a fighter has a 'snap' ability
+            Sp = np.zeros((2, 8))
+            for j, Bj in enumerate((B0, B1)):
+                Sn = getattr(Bj, 'wsnap', None)
+                if Sn is not None:
+                    Sp[j] = (1, Sn['h'], Sn['tgt'][0], Sn['tgt'][1], Sn['t0'], Sn['ts'], Sn['t1'], Sn['ab']['radius'])
+            rec['SNAP'].append(Sp)
         if 'RATTLE' in rec:                                 # #39, only recorded when a fighter uses the 'rattle' kind
             Ra = np.zeros((2, 5))
             for j, Bj in enumerate((B0, B1)):
@@ -3655,6 +3730,9 @@ class Fight:
         n16w = k16_0
         if rec is not None and wreckers:
             rec['WRECK'] = []
+        snappers = [k for k, B in enumerate(self.balls) if any(a['kind'] == 'snap' for a in B.cfg['abilities'].values())]
+        if rec is not None and snappers:                         # #39 v2 (opt-in)
+            rec['SNAP'] = []
         hookers = [k for k, B in enumerate(self.balls) if any(a['kind'] == 'hook' for a in B.cfg['abilities'].values())]
         if rec is not None and hookers:                          # #39 (opt-in)
             rec['HOOK'] = []
@@ -3863,6 +3941,8 @@ class Fight:
                 self.rattle_step(k, dt)
             for k in wreckers:                                   # #39 v2: the cable, the lift, the swing
                 self.wreck_step(k, dt)
+            for k in snappers:                                   # #39 v2: CABLE SNAP's hoist, fall and crash
+                self.snap_step(k, dt)
             for k in hoppers:                                    # #39: mid-hop positions, landings + stomps
                 self.tiptoe_step(k, dt)
             if dc:
