@@ -372,4 +372,34 @@ FIGHTERS = {
             low=dict(name='NOT A TUBA', kind='barrage', n=14, beats=2, flight_beats=2, aimed=3, lead=0.8, splash=0.55,
                      dmg=4.0, knock=0.9)),                            # a full barrage across the ring
         pp='EUPHONIUM', register=(50, 74), idiom='tenor'),
+
+    # ---- #39 BALLFIGHT #13: the low reeds, the orchestra's clown vs the band's chaos agent (numbers tuned once with
+    # ballfight_bassoon_vs_barisax/tune.py at damage scale 0.45, frozen: 200 seeds BASSOON 44 % / BARI SAX 56 %, median
+    # K.O. 50.3 s; stomps land ~76 %, ~63 % of those from behind; ~26 slings a fight). The bassoon is the only sneak
+    # (position matters: it tiptoes behind the enemy, where its stomps hit x2.5); the bari sax the only fighter that
+    # weaponises the ring (its honk makes the ropes ring and sling).
+    'BASSOON': dict(
+        color=(30, 130, 76), dark=(14, 70, 40), corner='red',        # forest green (series colour table, IDEAS)
+        view=(8, 20, 0),
+        weapon=dict(kind='tiptoe', style='hop', name='TIPTOE',      # staccato hops behind the enemy, a stomp each
+                    every=1, air16=2, base=1.6, grow=0.04, max_reach=3.0, stomp=0.20, stomp_grow=0.008, stomp_max=0.5,
+                    gap=0.12, lead=0.6, jitter=30.0, dmg=1.2, back=2.5, back_half=55.0, knock=0.45, stagger=0.45),
+        abilities=dict(
+            unlock1=dict(name='STACCATO', kind='haste', mult=2.0, dur_beats=8, every_bars=6),   # hops on the 8ths
+            unlock2=dict(name='BOCAL HOOK', kind='hook', ready=1.0, reach=1.1, half=60.0, open16=2, track=6.0, dmg=4.0,
+                         knock=0.4, every_bars=4),                    # hooks, spins it to face away, hops behind
+            low=dict(name='MOUNTAIN KING', kind='mountain', seq16=[3, 3, 3, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                     step=75.0, gap=0.1, reach=3.5, dmg=1.6, knock=0.3)),   # 20 accelerating hops round the enemy
+        pp='BASSOON', register=(40, 76), idiom='staccato'),
+    'BARI SAX': dict(
+        color=(255, 118, 92), dark=(150, 56, 40), corner='blue',     # coral (series colour table, IDEAS)
+        view=(0, 22, 0),
+        weapon=dict(kind='rattle', style='honk', name='WINDOW RATTLER',    # every bar a huge honk; the ropes ring + sling
+                    every=4, off16=0, push=1.4, speed=10.0, dmg=4.0, knock=1.8, base=1.0, grow=0.06, max_reach=1.6,
+                    side_step=0.2, ring=0.9, sling=3.0, sling_knock=1.6, sling_min=0.2, sling_cool=0.3),
+        abilities=dict(
+            unlock1=dict(name='GROWL', kind='shockwave', speed=9.0, radius=2.4, dmg=7.0, knock=1.2, every_bars=5),
+            unlock2=dict(name='SKANK', kind='offbeat', dur_beats=8, sub=1.0, every_bars=6),     # honks on the off-beats
+            low=dict(name='LOW A', kind='quake', speed=9.0, radius=9.0, dmg=10.0, knock=1.5, dur_beats=8)),   # all 4 ropes
+        pp='BARI SAX', register=(36, 60), idiom='honk'),
 }
