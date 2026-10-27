@@ -3274,7 +3274,8 @@ class Fight:
     # ------------------------------------------------------------------ #39 v2: WRECKING BALL (opt-in weapon kind 'wrecking')
     # Every `every` beats (`off16` 16ths after the bar line) a crane cable drops from the rafters over `drop16` 16ths
     # (the ball keeps rolling) and hooks the harness. The swing is aimed then: the bottom of the arc goes `short` x 2R
-    # short of where the enemy will be when the ball gets there (where a hop lands; else `lead` x its motion), at most
+    # short of where the enemy will be when the ball gets there (where a hop lands; round its whirl if it is anchored
+    # (#40, predict()); else `lead` x its motion), at most
     # the swing's reach ahead, the aim off by up to `jitter` deg (seeded); the pivot hangs over that point, the cable is `base` long (+`grow` per landed smash, up to `max_reach`; held in blade_len). Over `lift16`
     # 16ths the crane hoists the ball off the canvas and back to `theta` deg out (less when the ropes are closer: both
     # ends stay inside the ring); then it swings through the bottom and up the other side in `swing16` 16ths (a
@@ -3306,7 +3307,9 @@ class Fight:
         if getattr(O, 'hop', None) is not None:              # a hopper mid-hop: it will stand where it lands
             tgt = O.hop['p1']
         else:
-            tgt = O.p + O.v * (t_bot - self.t) * w.get('lead', 1.0)
+            tgt = (self.predict(1 - k, (t_bot - self.t) * w.get('lead', 1.0))
+                   if getattr(O, 'anc', None) is not None      # #40: a whirling (anchored) enemy: lead it round its
+                   else O.p + O.v * (t_bot - self.t) * w.get('lead', 1.0))   # whirl, as the mortar does (predict())
         d = tgt - B.p
         n = float(np.hypot(*d))
         u = d / n if n > 1e-6 else (B.v / (np.linalg.norm(B.v) + 1e-12))
@@ -3424,7 +3427,8 @@ class Fight:
 
     # ------------------------------------------------------------------ #39 v2: CABLE SNAP (opt-in ability kind 'snap')
     # The crane hoists the ball (out of a swing, if one is on: the cable lets go of that) up to `height` and carries it
-    # over the spot where the enemy will be in `tele16` 16ths (where a hop lands; else `lead` x its motion; fixed then:
+    # over the spot where the enemy will be in `tele16` 16ths (where a hop lands; round its whirl if it is anchored
+    # (#40); else `lead` x its motion; fixed then:
     # its shadow marks it) for the first `hoist` of that time; then the cable snaps and the ball falls straight down
     # (free fall) and crashes there: an enemy within `radius` beyond contact takes `dmg` and `knock` away from the
     # crater (unless it is up in the air, as with the swing: `air_edge`). Then it rolls on at the enemy. Events
@@ -3440,7 +3444,9 @@ class Fight:
         if getattr(O, 'hop', None) is not None:
             tgt = O.hop['p1'].copy()
         else:
-            tgt = O.p + O.v * T_ * ab.get('lead', 1.0)
+            tgt = (self.predict(1 - k, T_ * ab.get('lead', 1.0))
+                   if getattr(O, 'anc', None) is not None      # #40: a whirling (anchored) enemy: lead it round its
+                   else O.p + O.v * T_ * ab.get('lead', 1.0))   # whirl (predict()), not along its spin velocity
         lim = self.R.A - self.R.R
         tgt = np.clip(tgt, -lim, lim)
         ts = self.t + T_ * ab.get('hoist', 0.6)
