@@ -89,7 +89,8 @@ FIGHTERS = {
                     speed=5.2, aim=0.55, dmg=1.0,          # its line in the music); +holes per landed row
                     margin=0.45, reg=(48, 84)),
         abilities=dict(
-            unlock1=dict(name='SUSTAIN', kind='sustain', dur_beats=4, out16=2, hang_beats=1, every_bars=6),  # mines
+            unlock1=dict(name='SUSTAIN', kind='sustain', dur_beats=4, out16=2, step16=1, hang_beats=1,
+                         every_bars=6),                    # the next rows hang like mines
             unlock2=dict(name='GLISSANDO', kind='arc', n=15, sweep=150.0, beats=1, speed=5.6, dmg=0.5, every_bars=4),
             low=dict(name='88 KEYS', kind='runoff', n=40, speed=5.0, dmg=0.9, margin=0.25, reload_beats=4)),
         pp='PIANO', register=(48, 84), idiom='roll'),
