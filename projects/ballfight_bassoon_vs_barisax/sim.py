@@ -19,6 +19,11 @@ import timeline as T
 from fight import Fight, Rules, lead_changes
 from fighters import FIGHTERS
 
+# #39 v2 was made before the roster's BARI SAX could swing out over the ropes (#40 v2, Oct 27: weapon options
+# overhang / back16 / back_in): pinned off here, so this folder's sim / render / audio replay v2 exactly
+FIGHTERS['BARI SAX']['weapon'] = {k: v for k, v in FIGHTERS['BARI SAX']['weapon'].items()
+                                  if k not in ('overhang', 'back16', 'back_in', 'corner_l1')}
+
 LOWS = tuple(FIGHTERS[n]['abilities']['low']['name'] for n in T.FIGHTERS)
 REC_KEYS = ('P', 'V', 'TH', 'BL', 'FR', 'NV', 'HP', 'LV', 'SH', 'HA', 'SPIN', 'OM', 'K', 'HOP', 'HOOK', 'RATTLE', 'WRECK', 'SNAP')
 
