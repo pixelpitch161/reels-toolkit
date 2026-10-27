@@ -17,8 +17,8 @@ Names use the biggest pixel-font scale (<= 7, VS is 12) that fits the safe zone 
 of the button column); a fighter's panel pattern comes from PATTERNS (by name; a plain gradient if it has none).
 Opt-in (#38): `timeline.TITLE_LINES = {name: (line 1, line 2)}` stacks a long name on two lines (each line at the
 scale that fits the longest; e.g. BASS / CLARINET at 6 instead of BASS CLARINET at 4), and
-`timeline.TITLE_BALLS = [(cx, cy, r), (cx, cy, r)]` moves the big balls to make room. Without them the card draws as
-before.
+`timeline.TITLE_BALLS = [(cx, cy, r), (cx, cy, r)]` moves the big balls to make room. #40: TITLE_LINES may also name
+fighter B (two lines at the bottom, the lower one where a one-line name sits). Without them the card draws as before.
 
 Everything is screen space at the internal resolution (W x H) and deterministic in t.
 
@@ -79,6 +79,16 @@ def _layout():
         sa = _fit_scale(NAME_A, 320)
         ha, ra = 7 * sa, max(2, int(round(sa * 0.6)))
         out[NAME_A] = dict(scale=sa, cx=180, cy=int(max(134, round(109 + ha / 2 + ra))), side=0)
+    lines_b = getattr(T, 'TITLE_LINES', {}).get(NAME_B)
+    if lines_b:                                                      # #40 (opt-in): name B on two lines too; the lower
+        sb = min(_fit_scale(ln, 280) for ln in lines_b)              # line sits where a one-line name would
+        wb, hb, rb = max(text_mask(ln, sb).shape[1] for ln in lines_b), 7 * sb, max(2, int(round(sb * 0.6)))
+        gap = hb + 2 * rb - 2
+        cxb = 180 if 180 + wb / 2 + rb <= 300 else int((300 - wb / 2 - rb) // 10 * 10)
+        cyb = int(min(468, 500 - hb / 2 - rb - 3)) - gap / 2
+        out[NAME_B] = dict(scale=sb, cx=cxb, cy=cyb, side=1, lines=tuple(lines_b), dy=(-gap / 2, gap / 2),
+                           h=hb + gap, w=wb)
+        return out
     sb = _fit_scale(NAME_B, 280)
     wb, hb, rb = text_mask(NAME_B, sb).shape[1], 7 * sb, max(2, int(round(sb * 0.6)))
     cxb = 180 if 180 + wb / 2 + rb <= 300 else int((300 - wb / 2 - rb) // 10 * 10)
