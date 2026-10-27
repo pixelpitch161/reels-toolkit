@@ -51,6 +51,7 @@ a draft, when it gets feedback, and when it delivers.
 | 39 | BALLFIGHT #13: Bassoon vs Bari Sax | in production (v3) | session_01VsaBnp (2026-10-26) | v3 started (user, Oct 27: "Changes have been made to the Bari Sax's model and attack. Re-render this video": #40 v2's detailed bari model + the swing out over the ropes; v2 kept in `v2/`, `_v2.mp4`). Previous: v2 delivered (user, Oct 26: "The bari sax is really boring"; early sheet sent first). BARI SAX v2: WRECKING BALL (new engine kind `wrecking`, own commit, + a small follow-up `len_pow`: every other bar a crane cable drops from the spot's rig, hooks the harness, hoists the ball back and swings it across the ring as a pendulum, smashing the first enemy in front of it, harder the faster it swings; an enemy mid-hop sails over it; the cable grows per landed smash and a longer cable hits harder), LV2 GROWL unchanged, LV3 SKANK (`offbeat`: a swing every bar, bottoming out on the off-beats, for 2 bars), below 25 HP CABLE SNAP (new ability kind `snap`, own commit: hoisted over the enemy's predicted spot, shadow + ring, the cable snaps, crater). `rattle` / `quake` stay, every finished episode + v1 replay identically (guard: all 65 runs; v2's seed 27 added, 70). BASSOON unchanged. Re-tuned once (random search + `tune.py`, the bari's numbers + the shared scale; GROWL kept): damage scale 0.32, 400 seeds BASSOON 53 % / BARI SAX 47 %, median K.O. 49.3 s, 61 % of swings smash (normal 84 %, SKANK's off-beat swings 23 %). Honest search at 2 bars: 8 fits in 166 runs (49 / 51); seed **27**: five early smashes put the bari 98-82 up at 10 s, GROWL 9.2, SKANK 17.7, STACCATO 22.0, BOCAL HOOK 34.8 bring the bassoon back, CABLE SNAP 41.9 s craters it at 42.9 s and MOUNTAIN KING answers at once; lead changes 41.4 / 48.9 / 51.0 s; BASSOON wins at 50.99 s with 5.3 HP (20 swings, 12 smashes). Picture: the crane line, hook block, cable + hook, a leather harness, the pendulum exact between frames (drawn 1.6x taller), motion smear + coral trail, smash bursts / dust / skid marks / shake, a hop over a swing drawn as a leap; CABLE SNAP's target shadow + pulsing ring, the snapped cable whipping away, the crater mark fading. Audio: the bass line rides the swings (one doppler-bent honk per swing on the bar's root, SKANK's up the octave on the off-beats) + growls; winch, hook clank, smash impacts; CABLE SNAP twang, falling whistle, crash. Checks: `reelkit.levels` PASS on wav + mp4 (opening -0.5 dB vs ending, spread 4.3 dB); band check bari +3.6..+7.0 dB over the bed while sounding; safe zone OK; CoC 0; flashcheck PASS (1 = the doors); flash test 0 on 41.5-52 s; loopcheck PASS render 0.4x / mp4 1.0x. Render 7 min + patch renders for the leaps over the swings (67 frames), mux. v1 (WINDOW RATTLER, delivered Oct 26, `_v1.mp4`, sources + seed 190 in `v1/`): Two new Pixel Pitch instruments, each model + voice in its own commit: BASSOON (`bassoon_lowpoly.py`) from reference photos found in Claude in Chrome (Commons: Yamaha YFG-812 II front shot measured at 134 cm; a parts layout for the bocal), `ball` scene x2.3 wide + crook x3.4; double-reed voice (~480 / ~1150 Hz formants, staccato dot); BARI SAX (`barisax_lowpoly.py`, new file adapted from the alto, checked against the Amati bari shot: long straight bell, pigtail loop, low-A key); honking voice. Bridge entries BASSOON, BARI SAX. Engine kinds in small opt-in commits (every finished episode replays identically, 12 with #38): weapon `tiptoe` + ability `mountain`, ability `hook`, weapon `rattle` + ability `offbeat`, ability `quake`, plus a hop-timing fix (MOUNTAIN KING keeps its accelerating schedule). Tuned at damage scale 0.45 (MOUNTAIN KING re-tuned to 0.4 after the fix): 200 seeds BASSOON 53 % / BARI SAX 47 %, median K.O. 50.0 s. Honest search at 2 bars: 8 fits in 275 (56 / 44); seed **190**: the bari slings the bassoon round its ringing ropes (65-48 at 31 s), BOCAL HOOK 33.3 s starts the comeback, LOW A 42.2 s / MOUNTAIN KING 42.6 s (Grieg, accelerating, one note per hop), lead changes 42.1 / 46.3 / 50.8 s, BASSOON wins at 51.16 s with 4.8 HP. Captions GROWL 17.4, STACCATO 22.0, SKANK 27.3, BOCAL HOOK 33.3, LOW A 42.2 (MOUNTAIN KING in the HUD list: 4 s rule). Title panels BASSOON (maple, twin bores, the crook) / BARI SAX (keys, the pigtail loop) in the shared title.py. Music mood A (dark ska-punk, E minor, 169.18 BPM): bassoon = a staccato dot per hop landing up high, bari = the honking bass on every downbeat, SKANK on the off-beats, the ringing ropes = the bass strings. Checks: `reelkit.levels` PASS on wav + mp4 (opening -0.7 dB vs ending, spread 4.3 dB, no dips); band check bassoon +7..+17 dB, bari (+ropes) +5..+9 dB over the bed while sounding; safe zone OK; CoC 0 on all 1830 frames; flash test 0 on 41.5-52 s, flashcheck PASS (1 = the doors); loopcheck PASS render 0.4x / mp4 1.0x (audio 0.8 dB, no click). Render 10 min + 3.5 min mux. | `ballfight_bassoon_vs_barisax_v2.mp4` (v1: `_v1.mp4`) |
 | 40 | BALLFIGHT #14: Bari Sax vs Bass Clarinet | review (v2) | session_01CzTfqe (2026-10-26/27) | v2 delivered (user, Oct 27: bari model completely smooth; let it swing out over the ropes for a full swing; intro a little loud; stills sent first). Model v2 (567ced7, Pixel Pitch folder, from the Amati reference in Chrome): the keys had been buried inside the fattened sprite body; now cups with dark pad rings, pearls, rods, guards with diamond feet, bands, bow guard, engraving (all faces; voice identical). Engine opt-in `overhang` + `return` (df67dcd), the bari's roster standard (45c9190; #39 pinned off, all 70 earlier runs identical): ends may go 1.3 past the ring, never past a corner post; full swings 35 -> 76 %. Re-tuned x0.30 / x0.66 (48/52 %), new honest seed 128: hoisted out over the ropes on 11 of 15 swings, slung back in at 49.2 s, LIGHTS OUT + CABLE SNAP both land, bari wins at 50.80 s on 0.7 HP. Ropes pressed under the passing ball, springing back. Intro thinned by arrangement: K-weighted -1.4 LU vs the fight (card was +0.7). Checks: levels PASS (wav + mp4), band OK, safe zone OK, CoC 0 (sharp 0.26), flash PASS, loopcheck PASS (mp4 1.1x). Next: user feedback | `ballfight_barisax_vs_bassclarinet.mp4` (v1: `_v1.mp4`, commit 8115d67) |
 | 41 | BALLFIGHT #15: Flute vs Trombone | in production | session_01CzTfqb (2026-10-27) | Started Oct 27: crossover (FLUTE #32 v2 left, TROMBONE #34 right), mood A (sinister big top, loop_bpm(132)); early sheet next. | — |
+| 42 | BALLFIGHT #16: Viola vs Violin | idea (approved, mood A) | — | Approved Oct 27, mood A (orchestral drill). New VIOLA (model from reference photos via Chrome) vs the #28 VIOLIN. Ready for production. | — |
 
 ## Backlog (idea details)
 
@@ -1677,7 +1678,7 @@ styles, ready for crossovers and a tournament bracket.
 |---|---|---|---|---|---|---|
 | GUITAR | red | (255, 84, 72) | | PIANO | blue | (84, 156, 255) |
 | DRUMS | orange | (255, 146, 40) | | VIOLIN | violet | (176, 98, 255) |
-| TRUMPET | yellow | (255, 214, 60) | | SAX | teal | (36, 200, 176) |
+| TRUMPET | yellow | (255, 214, 60) | | SAX (retired Oct 27) | teal, now VIOLA's | (36, 200, 176) |
 | BAGPIPES | tartan green | (64, 196, 88) | | ACCORDION | magenta | (236, 82, 214) |
 | TURNTABLES | lime | (190, 245, 60) | | SYNTH | cyan | (70, 228, 255) |
 | TUBA | indigo | (104, 92, 236) | | FLUTE | silver (cool) | (222, 232, 246) |
@@ -1688,6 +1689,7 @@ styles, ready for crossovers and a tournament bracket.
 | CLARINET | lavender | (190, 168, 255) | | OBOE | olive | (156, 176, 52) |
 | BASS CLARINET | slate blue | (110, 132, 170) | | EUPHONIUM | amber | (240, 172, 32) |
 | BASSOON | forest green | (30, 130, 76) | | BARI SAX | coral | (255, 118, 92) |
+| VIOLA | teal (from the retired SAX) | (36, 200, 176) | | | | |
 
   Spares (Cello, later fighters): pick a colour clearly apart from all of these and add it here.
 - **Fighters:** first named = left corner (screen left), second = right. Weapon scaling: every landed hit grows the
@@ -2220,6 +2222,61 @@ match-up 👇"
   full-screen flashes; safe-zone, flash, loop and levels checks must pass.
 - **Effort:** low (~40–50 min): no new attacks, models or voices; the side swap, tuning + seed search, the new music.
   Work in `projects/ballfight_flute_vs_trombone/`.
+
+### 42. BALLFIGHT #16: Viola vs Violin — APPROVED
+**Direction (user, Oct 27):** from the Viola ideas list the user chose **A. COUNTING RESTS**; "Draft Viola vs Violin";
+approved with mood A (orchestral drill); "make sure the session uses chrome to make the model for Viola". All
+BALLFIGHT series rules (VS title card, 3·2·1, ability-name captions, HUD ability list, colours, honest tuned fight,
+61.0 s, loop point = file boundary), the crossover rules for the VIOLIN side (exactly as built in #28; the only
+per-episode lever is a per-fighter damage handicap) and the PLAYBOOK's consistent loudness from frame 0
+(`reelkit.levels` must PASS).
+**Rivalry:** the orchestra's oldest joke: the violin gets every melody, the viola gets the rests and the punchlines.
+The viola's revenge. Post caption: "Violists, this one's for you 🎻 Comment the next match-up 👇"
+
+| | VIOLA (teal, left), new | VIOLIN (violet, right), from #28 |
+|---|---|---|
+| Style | The only charger: slow, huge hits | Fast and precise; the bow speeds up with every hit |
+| Signature | **COUNTING RESTS**: for 3 beats it rests (a giant quarter-rest symbol over it, small "1 2 3" counting above, half damage taken); on beat 4 a giant **whole note** (the hollow oval) appears and rolls forward like a heavy wheel, sustaining for the whole bar and crushing anything in its path (new kind `rests`: a rest-and-charge weapon + a rolling sustained note) | The bow, spun around the ball like a rapier, faster per landed hit (unchanged) |
+| Grows per landed hit | Whole-note size + power | Bow spin speed |
+| LV2 | DOUBLE STOP: two whole notes at once (at the violin and where it's heading) | PIZZICATO (fan of 5 plucked darts) |
+| LV3 | MELODY AT LAST: rests shrink to 1 beat (a whole note every other beat) for 2 bars, and the music hands the viola the melody | TREMOLO (bow blurs at 2.5x for 3 s) |
+| Below 25 HP | VIOLA JOKE: a rimshot and the whole crowd bursts out laughing; the violin freezes for a beat (new `stun`-style rule, or reuse #37's `stun` if it fits), then the biggest whole note lands. No joke text on screen, just the laugh (crowd silhouettes rocking) | SCREECH (ring-wide squeal wave) |
+
+- **Likely shape (only if the honest fight gives it):** speed vs patience. The violin's chip damage is halved while the
+  viola rests, but the violin keeps getting faster; every whole note is slow, telegraphed and huge. MELODY AT LAST is
+  the story beat: the viola finally gets the melody, in the music and in the fight.
+- **Colours:** VIOLA teal (36, 200, 176) (freed by the retired SAX) vs VIOLIN violet.
+- **Sides:** first named = left: VIOLA left, VIOLIN right (the violin's usual side).
+- **Music, mood A (orchestral drill):** a UK drill beat (sliding 808s, skittering hi-hat rolls, half-time snare) under a
+  dark staccato string bed (cellos + basses only; no violin or viola in the bed). The **violin plays the melody**, the
+  **viola the inner harmony** (warm, a fifth lower), **until MELODY AT LAST, when the arrangement flips and the viola
+  leads** for its 2 bars. Whole notes = long sustained viola notes over the beat; the counting rests are audible as a
+  soft muted pluck on 1-2-3. `loop_bpm(140)` = 141.64 BPM (36 bars; bar = 1.694 s, FIGHT! at 3.39 s). Consistent loudness
+  from frame 0 (the drill beat full on the title card; build with density). VIOLA JOKE: a rimshot (ba-dum-tss) + crowd
+  laugh, then the big note. Leader fuller and louder, loser thinner and dirtier; the winner's solo over the drill beat.
+  (Not chosen: B tango noir; C dark synthwave.)
+- **VS title card:** VIOLA / VS / VIOLIN: a dark viola chord, the thunder crack, a violin flourish; panel patterns: alto
+  clef + f-holes (teal-lit) vs violin scroll + f-holes (violet-lit; reuse #28's).
+- **Beat sheet (61 s):** bar 0 VS card · bar 1 count-in · FIGHT! at 3.39 s · 8–30 s the four unlocks (each named once;
+  the HUD list lights on every use) · 32–44 s VIOLA JOKE or SCREECH · 44–52 s final exchange · K.O. ~49–53 s (slow-mo
+  shatter into scroll / strings / bridge) · winner's solo + "COMMENT THE / NEXT MATCH-UP" · 58–61 s reassembly, doors
+  shut, title slam = frame 0.
+- **Flags:**
+  - **The VIOLA model is built from reference photos found with Claude in Chrome** (user's instruction), as the trumpet,
+    trombone, oboe and bassoon were: look up front / side / 3/4 photos of a real viola (e.g. Wikimedia Commons), measure
+    proportions (body ~40–42 cm vs the violin's 35.5 cm, deeper ribs, wider bouts, darker varnish), and build a new file
+    in `series/instrument-history/` (own commit). The violin model's structure can be a starting point, but the shape
+    comes from the photos, and the size difference must show on screen. Voice: a darker bowed voice a fifth below the
+    violin (C string), own commit; bridge entry.
+  - The VIOLIN comes exactly as built in #28; only the optional visual upgrade (rosin-dust ribbon behind the bow,
+    BALLFIGHT v2 effects kit) is allowed; #28 must replay identically. Balance: tune with the per-fighter handicap
+    (40–60 % wins).
+  - New engine kinds additive, own commits; all earlier episodes replay identically. Honest seed search with
+    `t_fight` = 2 bars and the usual hard windows (keep "no 4 s without a hit": the viola's rests must not stall the
+    fight). Counting numbers are small and inside the ring (not captions). Effects from `reelkit.fx`; no full-screen
+    flashes; safe-zone, flash, loop and levels checks must pass.
+- **Effort:** ~55–70 min (one new model from photos + voice, a new weapon type). Work in
+  `projects/ballfight_viola_vs_violin/`.
 
 ## Adding a new idea
 
