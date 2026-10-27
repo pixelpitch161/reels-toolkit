@@ -24,6 +24,8 @@ class Look:
     rope_kinds = {'wave': 1.0, 'shockwave': 0.6}         # its ability kinds that shake the ropes (strength)
     sprite_k = 0.80                  # its instrument's size in the ball (x the ball's radius; #33's acoustic: 0.86)
     spark_kinds = ()                 # extra event kinds of its that throw the small grey spark spray (#42: 'crushed')
+    block_burst = (255, 226, 150)    # the ink burst where a hit lands on its shield (a 'block' it took)
+    block_spark = ((160, 220, 255), 12, 2.6, 0.3)        # (colour, n, speed, life) of that block's spark spray
 
     def __init__(self, P, k):
         self.P, self.k, self.T = P, k, P.T
@@ -118,6 +120,13 @@ class Look:
         """its K.O. spray (it lost): particles from where it shattered"""
         self.P.PA.emit(self.P.T_KO, pos, 'sparks', n=30, spread=180, speed=(0.8, 2.2))
 
+    def fx_end(self):
+        """effects after the K.O.'s (the champion's solo look, e.g. #35's solo pipes kicking up dust)"""
+
+    def light(self, L, t):
+        """its own point lights in the scene's Lights at t (e.g. #35's CATHEDRAL dome glowing from inside), after the
+        attack flares"""
+
     # ---------------------------------------------------------------- the canvas (per pixel)
     def shadows(self, st, spot):
         """extra casters right after its ball (its weapon): [polys in the canvas grid frame]"""
@@ -172,6 +181,10 @@ class Look:
 
     def fringe(self, e):
         return e[7] in self.fringe_hits
+
+    def fringe_size(self, e):
+        """(radius px, shift px) of the chromatic fringe on one of its fringed hits"""
+        return 26, 2.5
 
     def after_grade(self, img, F, drawn):
         """crisp overlays after the grade (status outlines on the enemy): returns img"""

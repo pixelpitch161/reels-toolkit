@@ -290,6 +290,8 @@ def lights(t, cam):
     L.point(S.RED_LIGHT, LIGHT_RGB[0] * 1.1 * rk, 2.6)
     L.point(S.BLUE_LIGHT, LIGHT_RGB[1] * 1.1 * rk, 2.6)
     FL.apply(L, fx_clock(t))                                  # attacks light the scene in the fighter's colour
+    for Lk in LOOKS:                                          # the fighters' own lights (a shield glowing from inside)
+        Lk.light(L, t)
     return L
 
 
@@ -880,6 +882,9 @@ def sparks(arr, cam, t):
         else:
             att, x, z = e[2], e[4], e[5]
             col, n, sp, life = SPARK_OTHER.get(kind, (np.array([200, 196, 210]), 3, 1.0, 0.15))
+            if kind == 'block' and owner(e) is not None:                     # the blocker's own block spray
+                col, n, sp, life = LOOKS[owner(e)].block_spark
+                col = np.array(col, float)
         if dt > life:
             continue
         rng = np.random.default_rng(i)
@@ -928,7 +933,8 @@ def _fx_build():
         if t_ > T_KO + 1e-6:
             break
         if e[1] == 'block':
-            BU.add(t_, up(e[4], e[5], R), (255, 226, 150), 0.6, bright=False)
+            BU.add(t_, up(e[4], e[5], R), LOOKS[owner(e)].block_burst if owner(e) is not None else (255, 226, 150),
+                   0.6, bright=False)
         k = owner(e)
         if k is not None:
             LOOKS[k].fx_event(e)
@@ -940,6 +946,8 @@ def _fx_build():
     BU.add(T_KO, pos, COL[LOSE], 2.0)
     FL.add(T_KO, pos, FL_COL[LOSE] * 0.9, radius=2.4, peak=1.1, decay=0.6)
     LOOKS[LOSE].ko_fx(pos)
+    for L in LOOKS:
+        L.fx_end()
 
 
 _fx_build()
@@ -961,7 +969,8 @@ def post_fx(img, cam, t, fs, drawn):
     for _, e in events_between(t - 0.12, t, ('hit',)):
         if LOOKS[e[2]].fringe(e):
             s_ = cam.wp(S.to_world(e[5], e[6], R)[None])[0]
-            img = fx.fringe(img, s_[0], s_[1], 26, 2.5, k=1 - (t - e[0]) / 0.12)
+            fr_r, fr_px = LOOKS[e[2]].fringe_size(e)
+            img = fx.fringe(img, s_[0], s_[1], fr_r, fr_px, k=1 - (t - e[0]) / 0.12)
     if T_KO <= t < T_HS + 0.3:
         s_ = cam.wp(S.to_world(P_KO[LOSE][0], P_KO[LOSE][1], R)[None])[0]
         img = fx.fringe(img, s_[0], s_[1], 34, 3.0, k=1 - ss(T_HS, T_HS + 0.3, t))
