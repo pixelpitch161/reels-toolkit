@@ -78,7 +78,8 @@ beats; no damage, no growth. Events 'swat'. Off unless an episode turns it on, s
 #42 (opt-in): weapon kind `rests` (COUNTING RESTS: the fighter rests and counts for `every` - 1 beats, taking x `guard`
 damage while it rests, then plays one huge whole note: a hollow wheel that rolls at the enemy for `hold` beats, bouncing
 off the ropes, crushing it once and flattening its projectiles; the note grows per landed crush; events 'rest' / 'note'
-/ 'crush', recorded as REST / NOTES).
+/ 'crush', recorded as REST / NOTES). Ability kind `double_stop` (DOUBLE STOP: two notes at once, at the enemy and
+where it is heading; event 'double').
 The run records every frame (30 fps) for the renderer and every event (hits, blocks, parries, ropes, volleys,
 abilities, level-ups, the K.O.) for the soundtrack and the captions. Seeded: same seed, same fight."""
 import math
@@ -2816,6 +2817,8 @@ class Fight:
             self.start_mountain(k, ab)
         elif kind == 'snap':                                    # #39 v2 (CABLE SNAP): hoisted high, the cable snaps
             self.start_snap(k, ab)
+        elif kind == 'double_stop':                             # #42 (DOUBLE STOP): two whole notes at once
+            self.start_double_stop(k, ab)
         elif kind == 'rhapsody':                                # #37 (RHAPSODY): a chain of zig-zag jumps
             B.jump_tgt = None
             B.rhap = dict(ab=ab, n=ab['n'], side=1.0, next=None)
@@ -3710,6 +3713,16 @@ class Fight:
         if landed and B.w['kind'] == 'rests':                    # every landed note grows the next ones
             B.blade_len = min(B.w['max_reach'], B.blade_len + B.w['grow'])
             B.note_dmg = min(B.w['dmg_max'], B.note_dmg + B.w['dmg_grow'])
+
+    def start_double_stop(self, k, ab):
+        """ability kind 'double_stop' (#42 DOUBLE STOP): two whole notes at once, one at the enemy, one where it is
+        heading (`lead2` x its motion over the note's travel ahead); it plays instead of resting this beat"""
+        B, O = self.balls[k], self.balls[1 - k]
+        B.resting, B.rest_count = False, 0
+        tl = max(0.0, float(np.hypot(*(O.p - B.p))) - self.R.R - B.blade_len) / B.w['roll']
+        self.fire_note(k, tgt=O.p.copy(), kind=1)
+        self.fire_note(k, tgt=O.p + O.v * tl * ab.get('lead2', 1.6), kind=1)
+        self.ev('double', k)
 
     def notes_step(self, dt):
         if not self.notes:
