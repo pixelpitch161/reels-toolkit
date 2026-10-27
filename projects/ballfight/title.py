@@ -263,9 +263,56 @@ def _oboe_reeds(base):                                               # OBOE (#37
     return out
 
 
+def _bassclarinet(base):                                             # BASS CLARINET (#38): grenadilla + pad cups + the neck
+    g = np.sin((XX * 0.95 - YY * 0.30) / 5.0 + 1.4 * np.sin(XX / 47.0 + YY / 83.0))
+    out = base * (0.93 + 0.06 * (g > 0.6)[..., None] - 0.06 * (g < -0.75)[..., None])
+    u = SIDE + 36.0                                                  # two rows of big pad cups along the divider
+    for j, off in enumerate((0.0, 78.0)):
+        along = (XX * DD[0] + YY * DD[1]) / 34.0 + 0.5 * j
+        q = (along % 1.0 - 0.5) * 34.0
+        r = np.hypot(q, u - off)
+        ring = (np.abs(r - 9.5) < 1.6)
+        cup = r < 7.0
+        out = np.where(cup[..., None], out * 0.62 + np.array([214, 218, 232]) * 0.38, out)
+        out = np.where(ring[..., None], out * 0.5 + np.array([236, 238, 248]) * 0.5, out)
+        rod = np.abs(u - off - 13.0) < 0.9
+        out = np.where(rod[..., None], out * 0.65 + np.array([226, 228, 240]) * 0.35, out)
+    r = np.hypot(XX - 268.0, YY - 66.0)                              # the silver gooseneck looping over the top
+    neck = (np.abs(r - 50.0) < 6.5) & ((YY < 66.0) | (XX > 268.0))
+    hl = (np.abs(r - 47.0) < 1.5) & neck
+    out = np.where(neck[..., None], out * 0.45 + np.array([212, 216, 228]) * 0.55, out)
+    return np.where(hl[..., None], out * 0.3 + np.array([255, 255, 255]) * 0.7, out)
+
+
+def _euphonium(base):                                                # EUPHONIUM (#38): a big upright bell + four valves
+    out = base * 1.0
+    cx, cy = 300.0, 560.0                                            # the bell's mouth, seen from just above (far corner)
+    e = ((XX - cx) / 120.0) ** 2 + ((YY - cy) / 46.0) ** 2
+    rim = np.abs(e - 1.0) < 0.10
+    inner = e < 0.9
+    out = np.where(inner[..., None], out * (0.80 + 0.12 * np.clip(1 - e, 0, 1))[..., None], out)
+    out = np.where(rim[..., None], out * 0.45 + np.array([255, 222, 140]) * 0.55, out)
+    flare = (np.abs(XX - cx) < 26.0 + 90.0 * np.clip((YY - 330.0) / 230.0, 0, 1) ** 3) & (YY > 330.0) & (YY < cy) & ~inner
+    out = np.where(flare[..., None], out * 1.10 + 6, out)
+    along = (XX * DD[0] + YY * DD[1])                                # four valve caps in a row along the divider
+    u = -SIDE
+    for j in range(4):
+        a0 = -150.0 + 46.0 * j
+        r = np.hypot(along - a0, u - 64.0)
+        cap = r < 13.0
+        ring = np.abs(r - 13.0) < 1.6
+        btn = r < 6.0
+        out = np.where(cap[..., None], out * 0.7 + np.array([255, 214, 120]) * 0.3, out)
+        out = np.where(ring[..., None], out * 0.45 + np.array([255, 236, 170]) * 0.55, out)
+        out = np.where(btn[..., None], out * 0.4 + np.array([250, 244, 226]) * 0.6, out)
+        stem = (np.abs(along - a0) < 2.0) & (u > 77.0) & (u < 112.0)
+        out = np.where(stem[..., None], out * 0.6 + np.array([255, 214, 120]) * 0.4, out)
+    return out
+
+
 PATTERNS = {'BAGPIPES': _tartan, 'ACCORDION': _pleats, 'ORGAN': _organ_pipes, 'HARP': _harp_strings,
             'TROMBONE': _slide_tubes, 'HORN': _horn_coils, 'UKULELE': _surf, 'ACOUSTIC': _woodgrain,
-            'CLARINET': _clarinet_keys, 'OBOE': _oboe_reeds}
+            'CLARINET': _clarinet_keys, 'OBOE': _oboe_reeds, 'BASS CLARINET': _bassclarinet, 'EUPHONIUM': _euphonium}
 
 
 def _panel_rgb(colour, dark, side, name=None):
