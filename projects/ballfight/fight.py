@@ -50,6 +50,10 @@ SHELLS; events 'mortar', 'shell', 'barrage'.
 #38 (opt-in): ability kind `twin` (MULTIPHONICS, two notes at once: for `dur_beats` a ghost twin doubles the
 signature - an anchor whirl gets a second arm on the far side of the peg (x `twin_dmg`), a mortar salvo doubles);
 event 'twin'; ANC records it.
+#38 (opt-in): ability kind `lights_out` (LIGHTS OUT: for `dur_beats` the fighter sinks into shadow - it can't be
+hit, doesn't clash or attack, and slides toward the enemy at `home` x the speed, turning at `turn` rad/s - then erupts
+where it is: `dmg` within `radius`, knocked away by `knock`). Recorded LO (shadow s left) per ball; events
+'lights_out', 'erupt'.
 The run records every frame (30 fps) for the renderer and every event (hits, blocks, parries, ropes, volleys,
 abilities, level-ups, the K.O.) for the soundtrack and the captions. Seeded: same seed, same fight."""
 import math
@@ -206,6 +210,8 @@ class Fight:
         """apply a hit (unless shielded); returns True if it landed"""
         V = self.balls[vic]
         if getattr(V, 'rw_left', 0.0) > 0:                   # rewinding (ability kind 'rewind'): intangible
+            return False
+        if getattr(V, 'shadow', 0.0) > 0:                   # #38: sunk into shadow (LIGHTS OUT): intangible
             return False
         if V.shield > 0:
             self.ev('block', vic, att, x, y, kind)
@@ -2152,7 +2158,7 @@ class Fight:
 
     def _stunned(self, k):
         """#37: a stunned fighter can't move or start an attack (ability kind 'stun')"""
-        return getattr(self.balls[k], 'stun', 0.0) > 0
+        return getattr(self.balls[k], 'stun', 0.0) > 0 or getattr(self.balls[k], 'shadow', 0.0) > 0   # #38: or in shadow
 
     def _jump(self, k, tgt, theta, land, reach, dmg, knock, cut, kind, grow):
         B, O = self.balls[k], self.balls[1 - k]
@@ -2562,6 +2568,40 @@ class Fight:
                     Bw.n_vol = min(Bw.w['n_max'], Bw.n_vol + Bw.w['grow'])
         self.shells = [Sh for Sh in self.shells if self.t < Sh['t1'] + 0.6]
 
+    # ------------------------------------------------------------------ #38: LIGHTS OUT (opt-in ability kind 'lights_out')
+    def start_lights_out(self, k, ab):
+        B = self.balls[k]
+        if getattr(B, 'anc', None) is not None:                          # a whirl in progress: pull the peg first
+            self.anchor_release(k)
+        B.lo = dict(ab=ab, t0=self.t, t_end=self.t + self.ab_dur(ab))
+        B.shadow = B.lo['t_end'] - self.t
+        self.ev('lights_out', k, B.lo['t_end'])
+
+    def lights_out_step(self, k, dt):
+        """before move(): steer the shadow toward the enemy; at the end, erupt"""
+        B, O = self.balls[k], self.balls[1 - k]
+        L = getattr(B, 'lo', None)
+        if L is None:
+            return
+        ab = L['ab']
+        B.shadow = max(1e-6, L['t_end'] - self.t)
+        if self.t + 1e-9 >= L['t_end']:
+            B.lo, B.shadow = None, 0.0
+            rel = O.p - B.p
+            dist = float(np.hypot(*rel))
+            hit = dist < ab['radius'] + self.R.R * 0.6
+            if hit:
+                self.damage(k, 1 - k, ab['dmg'], 'erupt', float(O.p[0]), float(O.p[1]))
+                self.knock(1 - k, rel if dist > 1e-3 else O.v, ab['knock'])
+            self.ev('erupt', k, float(B.p[0]), float(B.p[1]), int(hit))
+            return
+        rel = O.p - B.p
+        want = math.atan2(rel[1], rel[0])
+        cur = math.atan2(B.v[1], B.v[0])
+        a = cur + max(-ab['turn'] * dt, min(ab['turn'] * dt, _wrap(want - cur)))
+        B.v = np.array([math.cos(a), math.sin(a)]) * float(np.linalg.norm(B.v))
+        B.boost = max(B.boost, ab['home'] - 1.0)
+
     def ab_dur(self, ab):
         """an ability's duration in s: `dur` (s) or `dur_beats` (beats at this episode's tempo)"""
         return ab['dur'] if 'dur' in ab else ab['dur_beats'] * self.R.beat
@@ -2628,6 +2668,8 @@ class Fight:
             self.waves.append(dict(owner=k, c=B.p.copy(), r=self.R.R, speed=ab['speed'], rmax=ab['radius'], dmg=ab['dmg'],
                                    knock=ab['knock'], kind='stun', hit=False, name=ab['name'], t0=self.t, slow=None,
                                    stun=ab['stun']))
+        elif kind == 'lights_out':                              # #38 (LIGHTS OUT): sink into shadow, erupt
+            self.start_lights_out(k, ab)
         elif kind == 'twin':                                    # #38 (MULTIPHONICS): a ghost twin doubles the signature
             B.twin_until = self.t + self.ab_dur(ab)
             self.ev('twin', k, B.twin_until)
@@ -2800,7 +2842,8 @@ class Fight:
         dist = float(np.hypot(*d))
         rP, rQ = getattr(P, 'rad', R), getattr(Q, 'rad', R)    # #30 v2: per-ball radius (R + R == 2 * R exactly)
         if dist < rP + rQ and getattr(P, 'rw_left', 0.0) <= 0 and getattr(Q, 'rw_left', 0.0) <= 0 \
-                and not getattr(P, 'held', False) and not getattr(Q, 'held', False):   # #32 v2: no clash while swallowed
+                and not getattr(P, 'held', False) and not getattr(Q, 'held', False) \
+                and getattr(P, 'shadow', 0.0) <= 0 and getattr(Q, 'shadow', 0.0) <= 0:   # #32 v2 swallowed, #38 shadow
             n = d / max(dist, 1e-9)
             over = rP + rQ - dist
             if hasattr(P, 'mass') or hasattr(Q, 'mass'):        # #30 v2: unequal masses (inflate): the light ball gives
@@ -2937,6 +2980,8 @@ class Fight:
                 if Sn is not None:
                     Sp[j] = (Sn['state'], Sn['aim'], Sn['t_snap'])
             rec['SNIP'].append(Sp)
+        if 'LO' in rec:                                     # #38, only recorded when a fighter has 'lights_out'
+            rec['LO'].append([getattr(B0, 'shadow', 0.0), getattr(B1, 'shadow', 0.0)])
         if 'SHELLS' in rec:                                 # #38, only recorded when a fighter uses 'mortar' / 'barrage'
             rec['SHELLS'].append([(Sh['owner'], float(Sh['p0'][0]), float(Sh['p0'][1]), float(Sh['p1'][0]),
                                    float(Sh['p1'][1]), Sh['t0'], Sh['t1'], Sh['salvo'], Sh['j'], Sh['landed'])
@@ -3029,6 +3074,9 @@ class Fight:
         snippers = [k for k, B in enumerate(self.balls) if any(a['kind'] == 'snip' for a in B.cfg['abilities'].values())]
         if rec is not None and snippers:                         # #37 (opt-in)
             rec['SNIP'] = []
+        dimmers = any(a['kind'] == 'lights_out' for B in self.balls for a in B.cfg['abilities'].values())   # #38
+        if rec is not None and dimmers:
+            rec['LO'] = []
         mortars = [k for k, B in enumerate(self.balls) if B.w['kind'] == 'mortar']     # #38 (opt-in)
         shelling = mortars or any(a['kind'] == 'barrage' for B in self.balls for a in B.cfg['abilities'].values())
         if shelling:
@@ -3183,6 +3231,9 @@ class Fight:
                     B.detune_t = max(0.0, B.detune_t - dt)
             for k in pullers:
                 self.pull_step(k, dt)
+            if dimmers:                                          # #38: LIGHTS OUT (either ball: a copied one too)
+                for k in (0, 1):
+                    self.lights_out_step(k, dt)
             self.move(dt)
             if rewinders:
                 self.rewind_step(dt, rewinders)
