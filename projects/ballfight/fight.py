@@ -3384,6 +3384,10 @@ class Fight:
     # outside, the ball drops onto the ropes and is slung back in over `back16` 16ths ('return': airborne, landing
     # `back_in` inside the limit, then rolling on inward). Events ('wreck_out', k, x0, y0, x1, y1, t0, t1) and
     # ('wreck_in', k, x, y). Without `overhang` everything runs exactly as before.
+    # Opt-in (#39 v4, user Oct 27: "the Bari Sax is supposed to be able to swing over the ropes so it can get a full
+    # swing even if it's not in the middle of the ring"): `steer` (deg). Near a corner the corner-post cap still cuts the
+    # swing short when it runs into the corner; then the swing's plane turns (10-deg steps, up to `steer` each way) to the
+    # direction with the most room (the full swing if any fits), its bottom still just short of the target.
     WRECK_PHASES = {None: 0, 'drop': 1, 'lift': 2, 'swing': 3, 'return': 4}
 
     def wreck_setup(self, k):
@@ -3439,6 +3443,21 @@ class Fight:
                     sp = min(sp, (math.copysign(lim, sg * u[ax]) - bottom[ax]) / (sg * u[ax]))
             return max(0.0, sp)
         half = max(0.15, min(reach, span(1), span(-1)))
+        steer = w.get('steer', 0.0)
+        if steer and half < reach - 1e-6:                    # #39 v4 (opt-in): no room for a full swing (a corner):
+            s2 = short * 2 * self.R.R                        # turn the swing's plane (up to `steer` deg) to where it
+            aim = bottom + u * s2                            # has room, still bottoming out just short of the target
+            u0, b0 = u, bottom
+            best = (half, 0.0, u0, b0)
+            for j in range(1, int(steer // 10) + 1):
+                for sg in (1.0, -1.0):
+                    a = math.radians(10.0 * j * sg)
+                    u = np.array([u0[0] * math.cos(a) - u0[1] * math.sin(a), u0[0] * math.sin(a) + u0[1] * math.cos(a)])
+                    bottom = np.clip(aim - u * s2, -lim, lim)
+                    hv = max(0.15, min(reach, span(1), span(-1)))
+                    if hv > best[0] + 0.05:
+                        best = (hv, a, u, bottom)
+            half, _, u, bottom = best
         th = math.asin(min(1.0, half / L))
         W_.update(u=u, L=L, th=th, half=half, p0=B.p.copy(), bottom=bottom, ps=bottom - u * half,
                   h0=L * (1 - math.cos(th)))
