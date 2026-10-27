@@ -66,7 +66,7 @@ Each production session updates **its own row**: when it starts, sends a draft, 
 | 42 | [BALLFIGHT #16: Viola vs Violin](ideas/42-ballfight-viola-vs-violin.md) | review | session_01CzTfqcW39D (2026-10-27) | Delivered Oct 27 for review: new VIOLA (model from Chrome reference photos, x1.12 + deeper ribs … | ballfight_viola_vs_violin.mp4 |
 | 43 | [BALLFIGHT: Kazoo vs Harmonica](ideas/43-ballfight-kazoo-vs-harmonica.md) | idea (approved, mood A) | — | Production cancelled by the user, Oct 27 (session_01CzTfqcRKd19SvcVTdGzjbd) … | — |
 | 44 | [BALLFIGHT: Electric vs Acoustic](ideas/44-ballfight-electric-vs-acoustic.md) | review | session_01CzTfqcUYqS (2026-10-27) | v1 delivered with caption + tags (preview + sheet sent first); first kit episode with a new fighter. | `ballfight_electric_vs_acoustic.mp4` |
-| 45 | [BALLFIGHT: Piano vs Organ](ideas/45-ballfight-piano-vs-organ.md) | in production | session_01CzTfqdN2i3 (2026-10-27) | Kit episode: building PIANO v2 (roll), porting ORGAN; preview clip next. | — |
+| 45 | [BALLFIGHT: Piano vs Organ](ideas/45-ballfight-piano-vs-organ.md) | review | session_01CzTfqdN2i3 (2026-10-27) | v1 delivered with caption + tags (preview clip + early sheet sent first); PIANO v2 debut, ORGAN ported. | `ballfight_piano_vs_organ.mp4` |
 
 ## Other notes
 

@@ -39,3 +39,7 @@ Append new entries at the end (newest last).
   intro -1.1 LU vs the fight, flash 0 general (max 14.0 % at the 88 KEYS / TOCCATA beat), loop PASS (seam 0.4x).
 - Note: `python -m ballfight render` in a background shell started from another folder failed with "No module named
   ballfight"; `python /path/to/projects/ballfight render <episode>` works from anywhere.
+- Render: the one full render 307 s on 2 cores + loop-clean encode 164 s; verify: ffprobe 1080x1920, 61.0 s, h264 + aac,
+  loopcheck + flashcheck PASS on the mp4, mp4 sheet looked at. Replay guard: #45 added to KIT_EPISODES (638 -> ORGAN at
+  50.20 s, 992 events); every earlier episode's lines identical after each engine / roster commit.
+- Delivered for review (v1). Feedback: (pending)

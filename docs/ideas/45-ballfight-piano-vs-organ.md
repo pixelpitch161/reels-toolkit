@@ -67,3 +67,5 @@ next match-up 👇"
   (8 fits in 1,097 runs, all ORGAN wins): the organ leads behind CATHEDRAL, the piano takes over at 19.3 s, 88 KEYS and
   TOCCATA fire on the same beat at 40.8 s, the organ retakes the lead at 44.1 s and wins at 50.2 s with 5 HP. Early
   sheet sent; all checks pass.
+- Oct 27: v1 delivered for review (`ballfight_piano_vs_organ.mp4`, one full render 472 s incl. the encode; verify: 1080x1920,
+  61.0 s, h264 + aac, loop + flash PASS on the mp4), with caption + tags.
