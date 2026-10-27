@@ -4,4 +4,7 @@ clash, ko, stinger, after_ko, victory, last_bars) and its own buses, reverb and 
 
     big_top          #41 Flute vs Trombone: a sinister circus (calliope, bass drum, choked cymbal, snare, glock)
     baroque_storm    #37 Clarinet vs Oboe: harpsichord continuo, racing strings, timpani, thunder
+    stadium_rock     #44 Electric vs Acoustic: minor arena rock in two arrangements that follow the leader (plugged:
+                     fuzz rhythm guitar, pick bass, stadium kit; unplugged: strum shimmer, upright bass, hand percussion),
+                     loudness-matched, crossfaded over a beat at each lead change; config PLUGGED names the plugged side
 A new mood: copy one, keep its section methods, change the instruments and parts (or port an older episode's bed)."""
