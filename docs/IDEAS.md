@@ -1623,6 +1623,12 @@ styles, ready for crossovers and a tournament bracket.
   - Flash: panels are never white; one doors-shut / doors-open pair; `reelkit.flashcheck` must pass.
   - The fight starts at 2 bars. Search seeds with `t_fight` = 2 bars from the start: moving an existing seed's fight a
     bar later does **not** replay the same run (float drift, chaos from ~30 s; #30 lesson), so re-run the search.
+- **Retired fighters (user, Oct 27): GUITAR and SAX** are scrapped for new episodes, "since we will be using more specific
+  versions moving forwards". Draft future match-ups with specific instruments instead: guitars = ACOUSTIC (exists),
+  ELECTRIC GUITAR, BASS GUITAR; saxes = BARI SAX (exists), ALTO SAX, TENOR SAX, SOPRANO SAX. Each specific version is a
+  new fighter with its own design (it doesn't inherit the old one's attacks). Their roster entries stay in
+  `fighters.py` untouched (#27 and #29 must keep replaying; the replay guard covers them), but no new episode uses them.
+  Their colours (GUITAR red, SAX teal) are free for the specific versions.
 - **Ability list in the HUD (series standard from Oct 25; user: "It can be a little confusing to know all the abilities
   of the instruments since only one can pop up at the top at a time … the bar with the health and lv could be extended
   downward to list each ability. They could start grayed out and become colored once they have unlocked the ability.
