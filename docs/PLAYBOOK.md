@@ -1,5 +1,9 @@
 # Reel playbook
 
+**What to read before starting (keep it to this):** this playbook, your row on the board (`docs/IDEAS.md`), your
+idea file (`docs/ideas/NN-*.md`), your series' rules if any (`docs/ballfight/RULES.md` for BALLFIGHT), and your own
+project's log (`docs/log/<project>.md`). Read another project's code or log only when you reuse it.
+
 ## The brief (fixed for every video)
 
 - **Format:** 61.0 s, 1080×1920, 30 fps. Internal render 360×640, 3× nearest-neighbour upscale. 61 s because TikTok
@@ -130,8 +134,9 @@ of an existing series (e.g. Battle of the Bands) in ~30–40 min.
    - look at it, including that no text or readout sits outside the safe box.
 10. **Deliver:** the mp4, plus a short caption and tags for Instagram Reels, TikTok and YouTube Shorts.
 11. **Update the board:**
-   - set the row in `docs/IDEAS.md` to `review` or `done`, with the last feedback and the output file name;
-   - add the lessons to `docs/LOG.md`;
+   - set the row in `docs/IDEAS.md` to `review` or `done` with a one-line note and the output file name; details go in
+     the idea file's history (`docs/ideas/NN-*.md`);
+   - add the lessons to your project's log, `docs/log/<project>.md` (create it if new; `docs/LOG.md` is only the index);
    - commit and push (run `git pull --rebase` first, because other sessions edit the board too).
 
 ## Lessons from feedback

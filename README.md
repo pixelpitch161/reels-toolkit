@@ -33,13 +33,15 @@ Two series share this repo: the **science reels** (root `projects/`, `templates/
 | `templates/new_video/` | a minimal working video using the whole pipeline. Copy it to start. |
 | `projects/` | the finished videos' source, for reference and reuse (see each folder's README) |
 | `docs/PLAYBOOK.md` | the style rules and the step-by-step process for every video. **Read it first.** |
-| `docs/IDEAS.md` | **ideas backlog + status board**: one row per video, updated by every session |
-| `docs/LOG.md` | what each video taught us (feedback received, fixes that worked) |
+| `docs/IDEAS.md` | **status board**: one short row per video, updated by every session; links to each idea file |
+| `docs/ideas/` | one file per idea: the approved entry, beat sheet, flags, design changes, history |
+| `docs/ballfight/RULES.md` | BALLFIGHT series rules (title card, HUD, colours, crossovers, retired fighters) |
+| `docs/log/<project>.md` | what each video taught us (feedback, fixes that worked); `docs/LOG.md` is the index |
 | `series/instrument-history/` | **Pixel Pitch**: the instrument-history series, with its own engine, playbook and status board. It uses `reelkit` lighting through `pp_light.py`. |
 
 ## Working in parallel
 
-- **Ideas chat:** one long-running chat for drafting ideas. Approved ideas go into `docs/IDEAS.md`.
+- **Ideas chat:** one long-running chat for drafting ideas. Approved ideas go into `docs/ideas/` with a row on the board in `docs/IDEAS.md`.
 - **Production sessions:** one per video ("Make IDEAS #4 using the reels toolkit"). Each session claims its row
   on the status board, then keeps it updated.
 
