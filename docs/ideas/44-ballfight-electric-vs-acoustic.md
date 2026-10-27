@@ -55,6 +55,20 @@ ELECTRIC's debut (a new fighter replacing the retired generic GUITAR). Post capt
 - **Effort:** ~50–65 min (no new model; the lightning system, tuning + seed search, the plugged / unplugged music).
   Work in `projects/ballfight_electric_vs_acoustic/`.
 
+## Make it with the episode kit (Oct 27)
+
+The BALLFIGHT episode kit landed after this entry was approved (`projects/ballfight/README.md`, "Making an episode").
+Make #44 as a kit episode: `python -m ballfight new electric_vs_acoustic ELECTRIC ACOUSTIC ...` -> one `episode.py`.
+- **Port ACOUSTIC** into `kit/fighters/acoustic.py` from #33 (`projects/ballfight_ukulele_vs_acoustic`: its styles,
+  render layers and audio part), as the README's porting steps say; check against #33 with the hash and a few frames.
+- **New ELECTRIC**: roster entry in `fighters.py` + the `lightning` / `smash` kinds in `fight.py` (additive, own commits,
+  replay guard), then `kit/fighters/electric.py` (look: bolts, forks, sparks on the ropes and posts, the smash +
+  reassembly; sound: riffs, the electric voice from the bridge's `GUITAR` entry).
+- **Then `python -m ballfight preview ELECTRIC --vs ACOUSTIC` and send the clip to the user before tuning.**
+- **New mood** `kit/moods/stadium_rock.py`: one bed with a plugged and an unplugged arrangement that crossfade with the
+  leader (both mastered to the same loudness).
+- Then tune -> search -> sheet (send) -> audio -> check -> render -> verify -> post.
+
 ## Board history (moved here from the status board, Oct 27)
 
 - Status: idea (approved, mood B) · Session: — · Output: —
