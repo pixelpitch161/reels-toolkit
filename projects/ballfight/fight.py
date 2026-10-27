@@ -80,7 +80,9 @@ damage while it rests, then plays one huge whole note: a hollow wheel that rolls
 off the ropes, crushing it once and flattening its projectiles; the note grows per landed crush; events 'rest' / 'note'
 / 'crush', recorded as REST / NOTES). Ability kind `double_stop` (DOUBLE STOP: two notes at once, at the enemy and
 where it is heading; event 'double') and `melody` (MELODY AT LAST: from the next beat, for `dur_beats` / `dur`, the
-rests shrink to `rest` beats, so a note comes every `rest` + 1 beats; event 'melody').
+rests shrink to `rest` beats, so a note comes every `rest` + 1 beats; event 'melody') and `joke` (VIOLA JOKE: the enemy
+freezes for `stun_beats` in #37's stun state while the biggest note drops onto its spot `tele` beats later, then rolls
+on; events 'stun', 'joke').
 The run records every frame (30 fps) for the renderer and every event (hits, blocks, parries, ropes, volleys,
 abilities, level-ups, the K.O.) for the soundtrack and the captions. Seeded: same seed, same fight."""
 import math
@@ -2818,6 +2820,8 @@ class Fight:
             self.start_mountain(k, ab)
         elif kind == 'snap':                                    # #39 v2 (CABLE SNAP): hoisted high, the cable snaps
             self.start_snap(k, ab)
+        elif kind == 'joke':                                    # #42 (VIOLA JOKE): the enemy freezes, the big note drops
+            self.start_joke(k, ab)
         elif kind == 'melody':                                  # #42 (MELODY AT LAST): shorter rests for a while
             B.melody_until = self.t + self.ab_dur(ab) + 0.5 * self.R.beat
             B.melody_k0 = getattr(B, 'cur_kb', -1) + 1
@@ -3729,6 +3733,25 @@ class Fight:
         self.fire_note(k, tgt=O.p.copy(), kind=1)
         self.fire_note(k, tgt=O.p + O.v * tl * ab.get('lead2', 1.6), kind=1)
         self.ev('double', k)
+
+    def start_joke(self, k, ab):
+        """ability kind 'joke' (#42 VIOLA JOKE): a rimshot and the crowd laughs; the enemy freezes for `stun_beats`
+        (#37's stun state: it holds still and starts no attack; not while shielded or intangible), while the biggest whole
+        note (`size` x the current note radius, `dmg`, `knock`) drops from above onto its spot, landing `tele` beats
+        later, then rolls on along the enemy's old heading for a whole note"""
+        B, O = self.balls[k], self.balls[1 - k]
+        o = 1 - k
+        beat = self.R.beat
+        if O.shield <= 0 and getattr(O, 'rw_left', 0.0) <= 0 and getattr(O, 'shadow', 0.0) <= 0:
+            st = ab['stun_beats'] * beat
+            O.stun = max(getattr(O, 'stun', 0.0), st)
+            self.ev('stun', o, k, st)
+        vn = float(np.hypot(*O.v))
+        v = O.v / vn * B.w['roll'] if vn > 1e-9 else np.zeros(2)
+        r = max(B.blade_len, B.w['base']) * ab['size']
+        N = self.fire_note(k, tgt=O.p.copy(), kind=2, r=r, dmg=ab['dmg'], knock=ab['knock'],
+                           t_land=self.t + ab['tele'] * beat, v=v)
+        self.ev('joke', k, o, N['t_land'], float(N['c'][0]), float(N['c'][1]))
 
     def notes_step(self, dt):
         if not self.notes:
