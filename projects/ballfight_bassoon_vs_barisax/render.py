@@ -281,6 +281,27 @@ def air_pose(k, t):
 
 
 H_KO = [(air_pose(k, T_KO - 1e-4) or (None, 0.0))[1] for k in (0, 1)]     # height at the K.O. (caught mid-swing)
+LEAP_H = 1.45     # a hop that sails over the swinging wrecking ball (the engine's rule) is drawn this high, so it clears
+_LEAP = {}
+
+
+def leap_k(k, hop):
+    """height factor for one of fighter k's hops: > 1 when it passes over the enemy's swinging wrecking ball"""
+    key = (k, hop[0])
+    if key not in _LEAP:
+        f = 1.0
+        o = 1 - k
+        if o in WRECKER:
+            for u in np.linspace(0.1, 0.9, 9):
+                tt = hop[0] + (hop[4] - hop[0]) * u
+                pose = wreck_pose(cycle_at(o, tt, 0.0), tt)
+                if pose is not None and pose[2] == 'swing':
+                    p = hop[2] + (hop[3] - hop[2]) * u
+                    if np.hypot(*(p - pose[0])) < 2 * R * 1.1:
+                        f = max(1.0, LEAP_H / ST.hop_height(float(np.hypot(*(hop[3] - hop[2])))))
+                        break
+        _LEAP[key] = f
+    return _LEAP[key]
 
 
 def fighter(k, t):
@@ -309,6 +330,8 @@ def fighter(k, t):
                 st['p'] = hop[2] + (hop[3] - hop[2]) * u
                 L = float(np.hypot(*(hop[3] - hop[2])))
                 st['h'], st['sx'], st['sy'] = ST.hop_state(u, L)
+                st['h'] *= leap_k(k, hop)                       # v2: a leap over the swinging wrecking ball
+                st['leap'] = leap_k(k, hop) > 1.0
                 st['glow'] = 0.15 + 0.25 * (hop[5] == 2)
             else:
                 st['sx'], st['sy'] = ST.land_squash(last_stomp(k, t))
@@ -1455,6 +1478,12 @@ def render(f):
     draw_post('back')
     draw_rope_side(2)
     draw_rope_side(3)
+    crane_first = any(fs[k_].get('leap') for k_ in HOPPER)          # v2: a leap over the swing passes in front of
+    if crane_first:                                                 # the cable: the crane goes under the balls
+        arr, depth = fr.array(), fr.depth()
+        for k_ in WRECKER:
+            arr = draw_crane(arr, cam, cranes[k_], COL[k_])
+        fr.set_array(arr, depth)
     # ---------------- fighters, reeds, posts (painter by depth)
     items = []
     for name in ('red', 'blue'):
@@ -1496,7 +1525,7 @@ def render(f):
     draw_rope_side(1)
     draw_post('front')
     arr, depth = fr.array(), fr.depth()
-    for k_ in WRECKER:                                              # v2: the crane, over the ring
+    for k_ in (WRECKER if not crane_first else ()):                 # v2: the crane, over the ring
         arr = draw_crane(arr, cam, cranes[k_], COL[k_])
     # ---------------- hop arcs, the honks' fronts, backstab slashes, MOUNTAIN KING's dance, shards, sparks
     for k_, p0, p1, fade, peak in live_hops(t):

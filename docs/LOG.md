@@ -1346,4 +1346,34 @@
   bassoon was going silent for 1.75 s).
 - Checks: levels PASS (wav + mp4); band check +5..+17 dB; safe zone OK; CoC 0; flash 0 on the busiest stretch; loopcheck
   PASS render 0.4x / mp4 1.0x. Render 10 min + 3.5 min mux.
+- Feedback (user, Oct 26): "The bari sax is really boring." From four attack sets the user picked WRECKING BALL: v2.
+
+### #39 v2: the bari sax as a wrecking ball
+- v1 kept first: its sources copied to `v1/` (paths one level deeper; `v1/sim.py` patches the frozen v1 BARI SAX into
+  the roster at import), the guard repointed at `v1/` (seed 190 replays bit-identically), the mp4 renamed `_v1.mp4`.
+- Engine (additive, one commit each, the guard identical on all 65 runs every time): weapon `wrecking`, ability
+  `snap`, then `len_pow` (a longer cable hits harder). The pendulum is a real half period (phi = -theta cos(pi u)), the
+  ball airborne all the way (the clash and `move()` already skip `air`), hoisted back first so it swings *through* the
+  enemy instead of starting on top of it.
+- The first wrecking ball hit 100 % of its swings: the bassoon hops behind the bari every beat, so it is always within
+  reach of anything that sweeps the bari's surroundings. What made dodges possible: hits only on what is in front of
+  the swing, an enemy mid-hop sails over it (the clash's rule; except the first / last tenth of the hop), the aim reads
+  where a hop will land, and the bottom of the arc aimed a little short of the enemy so the contact comes at full
+  speed. The hit rate then hangs on the beat grid (the bassoon is airborne on 16ths 0-2 of every beat): normal swings
+  bottom out on beat 3 and land 84 % (200 seeds), SKANK's off-beat swings 23 % (they meet the bassoon in mid-hop; they
+  aim further short to catch it landing). So SKANK reads as a flurry the bassoon mostly hops over.
+- Tuning: lead changes were the hard part again (the bari leads early, the bassoon's growing stomps take over). A
+  random search (`tune_search.py`, 120 x 60 seeds) did find the shape this time: a lower damage scale (0.32) for a
+  longer back-and-forth, a cable that grows fast and hits harder with length (`len_pow` 2.5), a big CABLE SNAP as the
+  bari's comeback. Fits 3.5 % over the tuning seeds; the honest search took 166 runs for 8.
+- Picture: at the 58 deg view the pendulum's real height (0.7 units) read flat, so the crane system is drawn 1.6x
+  taller (pivot and ball together; ground positions exact). The cycle is rebuilt from the run's events (cable, swing,
+  smash) and the WRECK record, so the ball is placed exactly between frames (smear ghosts, trail). Hops that sail over a
+  swing are drawn as leaps (1.45 units) with the crane drawn under them: at the normal hop height the bassoon sat on
+  top of the bari and the cable seemed to hook the bassoon.
+- Music: no honk on every bar any more; the bass line is one long honk per swing, swelling to the bottom and bent like
+  a doppler pass, the kick stepping back on the beat where it bottoms out. Levels PASS without changes (spread 4.3 dB).
+- Checks: levels PASS (wav + mp4); band check bari +3.6..+7.0 dB over the bed while sounding; safe zone OK; CoC 0;
+  flashcheck PASS; flash test 0 on 41.5-52 s; loopcheck PASS render 0.4x / mp4 1.0x. Render 7 min, then patch renders for the leaps
+  (67 frames, the crane drawn under a leaping ball), mux. Guard: 65 runs identical + v2's seed 27 added (70).
 - Feedback: (pending)
