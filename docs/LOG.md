@@ -1446,3 +1446,24 @@
   test 0 on 36.5-51.2 s, flashcheck PASS; loopcheck PASS render 0.4x / mp4 1.1x. Render 10.7 min (the guard ran
   alongside) + mux.
 - Feedback: (pending)
+
+### #41 BALLFIGHT #15: Flute vs Trombone (crossover, session_01CzTfqb, Oct 27)
+- Crossover with an undefined interaction: the lance's `parry` only knew projectiles, and cobras are basket state the
+  enemy never checked. Made it an opt-in rule on `Rules` (`swat_cobras`, own commit, off by default) rather than a
+  roster change, so neither fighter changes and every earlier fight replays identically; told the user. It matters:
+  15-23 swats a fight. Lesson for future crossovers: check every pair of "summoned things" (cobras, hounds, strings,
+  shells) against the other fighter's weapon before tuning, and add the interaction as a rule.
+- Balance: this pair is "whoever's ahead stays ahead" (0.6 lead changes per fight), so fits were ~1 % (8 in 968) even
+  at 49 / 51 %. Damage alone balanced it (FLUTE x2.0 / TROMBONE x0.40); no need to flag.
+- Sides swapped from both fighters' own episodes: the shared title patterns (slide tubes, key cups) run parallel to the
+  divider, so no mirroring was needed (unlike #40's).
+- Scripted tail: when the loser falls on the winner's side, the straight glides home cross and the balls pass through
+  each other (caught on the tail sheet at 59.6 s). Bowed both glides sideways (sin(pi gl): ends unchanged, so the loop
+  seam doesn't move). Worth checking on every episode's tail sheet.
+- Music: with the trombone as the bass (thrusts every beat), the circus groove holds itself up; the bed only needed the
+  off-beat calliope. The first mix dipped 3-5 dB after the 2-bar solo (the band was "light" and nothing played the
+  bass): fixed by arrangement (a 3-bar solo over the normal bed, then the champion back on the bass line), not level.
+- Checks: levels PASS (wav + mp4, spread 3.6 dB); band trombone +6.6..+7.8, flute +12..+16 dB; intro -1.5 LU vs the fight;
+  safe zone OK; CoC 0; flash test 0 on 40.5-51.5 s, flashcheck PASS; loopcheck PASS render 0.4x / mp4 1.1x. Render
+  10.8 min + mux. Guard: #41 added; seed 392 re-verified after pulling #42's engine kinds.
+- Feedback: (pending)
