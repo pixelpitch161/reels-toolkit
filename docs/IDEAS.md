@@ -2077,6 +2077,22 @@ hilarious and get no respect. Post caption: "Which low reed carries harder? 🎷
 | LV3 | BOCAL HOOK: the curved crook hooks the enemy and spins it to face away, setting up a backstab (new `hook`) | SKANK: honks on every off-beat (the ska upbeat) for 2 bars (new `offbeat` haste) |
 | Below 25 HP | MOUNTAIN KING: hops accelerate over 2 bars, tiptoeing faster and faster around the enemy, stomping on every landing; the music plays Grieg's public-domain theme speeding up | LOW A: the lowest note: the whole ring rattles, all four ropes, floor tiles jump (`wave`-like, through the rattle system) |
 
+- **BARI SAX v2 (user, Oct 26, after v1): "The bari sax is really boring."** From a list of four the user chose **A.
+  WRECKING BALL**, replacing WINDOW RATTLER, GROWL stays, SKANK changes, LOW A is replaced:
+  - **Signature WRECKING BALL:** the bari is so heavy players need a harness. Every other bar a crane cable drops from
+    the rafters (from the spot's rig, in 3D), hooks the harness, and the bari swings across the ring as a wrecking ball
+    in a huge pendulum arc, smashing anything in its path, then unhooks and rolls on. Each swing is a huge honk that
+    rises and falls as it passes (a doppler-style bend). **Grows per landed hit:** cable length (a wider swing). New
+    kind `wrecking` (pendulum from an overhead pivot placed near the bari; additive, own commit; the old `rattle` kind
+    stays in the engine so v1 replays).
+  - **LV2 GROWL** (unchanged: gravelly shockwave) · **LV3 SKANK** (now: swings on the off-beats, twice as often, for 2
+    bars) · **below 25 HP CABLE SNAP** (replaces LOW A: the cable snaps at the top of a swing and the bari crashes down
+    from the rafters onto the enemy's predicted spot: a telegraphed shadow, then a crater).
+  - Look: a real 3D cable + hook + harness straps from above, the ball's swing with a motion smear and a coral trail;
+    impact bursts, dust, small camera shake on smashes (`reelkit.fx`); the crater mark fades on the canvas. HUD list and
+    title-card hits: "WRECKING BALL" isn't a caption (signature), CABLE SNAP is.
+  - **#39 is redone:** re-tune for 40–60 % wins (BASSOON unchanged), new honest seed search (fight at 2 bars), re-render;
+    the bari's audio idiom becomes the swing honks (bass line on the swings) + growls; everything else stays.
 - **Likely shape (only if the honest fight gives it):** the bari wants the bassoon near the ropes; the bassoon wants to
   sneak behind and stay off them. BOCAL HOOK + backstab is the bassoon's big combo; LOW A means nowhere is safe.
 - **Colours (new, in the table):** BASSOON forest green (30, 130, 76) (the darker cousin of the Bagpipes' green),
