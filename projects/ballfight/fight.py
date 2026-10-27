@@ -3681,8 +3681,8 @@ class Fight:
     # headstock when the enemy is within `reach` of the ball (surface to surface), else from the nearest corner post (the
     # lightning rods) when the enemy is within `post_r` of it, else it misses (it still crackles out `reach` toward the
     # enemy). A bolt hits for `dmg`, knocked `knock` away from where it came from. Ability kinds: `fork` (DISTORTION: for a
-    # while every bolt forks; reach and post_r x `reach_k`) and `tapping` (TAPPING: for `beats` beats a bolt on every 8th,
-    # x `dmg_k` each, extra to the riff; taps don't grow it). Events 'riff' (k, id, n), 'bolt' (k, note, src (-1 =
+    # while every bolt forks; reach and post_r x `reach_k`) and `tapping` (TAPPING: for `beats` beats the second hand taps
+    # a bolt on every 8th on top of the riff, x `dmg_k` each; taps don't grow it). Events 'riff' (k, id, n), 'bolt' (k, note, src (-1 =
     # headstock, 0..3 = post), x0, y0, x1, y1, hit, riff id, fork, tap), 'fork', 'tapping'; hits of kind 'bolt' (sub =
     # src + 1). A stunned / smashed fighter plays no notes.
     POSTS = ((-1, 1), (1, 1), (1, -1), (-1, -1))           # x, y signs of the four corner posts (ring frame), in order
@@ -3707,10 +3707,9 @@ class Fight:
             B.riff_n = int(B.n_vol + 1e-9)
             B.riff_slots = tuple(sorted(w['slots'][:B.riff_n]))
             self.ev('riff', k, B.riff_id, B.riff_n)
-        tapping = self.t < B.tap_until + 1e-9 and k16 % 2 == 0
         if pos in B.riff_slots:
             self.bolt(k, B.riff_slots.index(pos), tap=False)
-        elif tapping:
+        if self.t < B.tap_until + 1e-9 and k16 % 2 == 0:       # TAPPING: the second hand, a bolt on every 8th
             self.bolt(k, -1, tap=True)
 
     def bolt_source(self, k, fork):
