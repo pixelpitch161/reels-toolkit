@@ -3963,7 +3963,7 @@ class Fight:
     # of the loop (the loop starts on absolute 8th n), the row's pitches in priority order (melody first, then harmony)
     # or () for a rest; without them the weapon plays ROLL_DEFAULT. A row fires its first int(n_vol) holes (`n0`,
     # +`grow` per landed row up to `n_max`). Ability kinds: 'sustain' (SUSTAIN: for `dur_beats` the rows' shots fly
-    # `out16` 16ths, hang still for `hang_beats` beats like mines (they still hit what touches them), then re-aim at
+    # `out16` (+ `step16` x the hole's index) 16ths, hang still for `hang_beats` beats like mines (they still hit what touches them), then re-aim at
     # the enemy and fly at the weapon's speed) and 'runoff' (88 KEYS: the roll runs off its spool: `n` shots from lanes
     # spread over the whole side fire at once straight across the ring (a full-ring barrage, `speed`, `dmg` each), then
     # no rows for `reload_beats` while a new roll is threaded). Events ('roll', k, vol, abs8, sustained 0/1, pitches),
@@ -4022,7 +4022,7 @@ class Fight:
         self.next_vol += 1
         sus = self.t < B.sustain_until
         ab = B.cfg['abilities']['unlock1'] if sus else None
-        for m in pitches:
+        for j, m in enumerate(pitches):
             pos, d0 = self.roll_lane(B, m)
             de = O.p - pos
             de = de / (np.linalg.norm(de) + 1e-9)
@@ -4030,7 +4030,7 @@ class Fight:
             a = math.atan2(d[1], d[0])
             self.spawn_key(k, pos, a, w['speed'], w['dmg'], vol, int(m))
             if sus:
-                t_stop = self.t + ab.get('out16', 2) * self.R.beat / 4
+                t_stop = self.t + (ab.get('out16', 2) + j * ab.get('step16', 0)) * self.R.beat / 4   # a staggered field
                 self.khold[self.next_id - 1] = [t_stop, t_stop + ab.get('hang_beats', 1) * self.R.beat, w['speed'], 0]
         self.ev('roll', k, vol, int(abs8), int(sus), tuple(int(m) for m in pitches))
 
