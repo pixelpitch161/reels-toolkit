@@ -47,6 +47,7 @@ a draft, when it gets feedback, and when it delivers.
 | 35 | BALLFIGHT #9: Organ vs Harp | review (v4) | session_011cXc3S (2026-10-24) | v4 delivered (HUD ability list, series rule Oct 25; early sheet + HUD close-ups sent first): same fight (seed 237, replays identically on the latest engine), title card and soundtrack; `fight_hud` abilities (#36) list ORGAN's and HARP's LV2 / LV3 / LOW under the bars: grey until unlocked (glow sweep), the fighter's colour after, lit on a pill on every use (CATHEDRAL / PULL ALL STOPS / ANGEL WINGS held while active, TOCCATA until it lands), back to grey on the glide home; no LV pips or status line. The taller HUD (top y 448) reached the front corner post, so the ring is nudged up 8 px (camera SY 288 -> 280): the fight stays >= 14 px clear of it. Checks: safezone OK (0.25 s steps); subject CoC 0 on all 1830 frames; loopcheck PASS render (0.3x) + mp4 (0.9x), audio step 3.1 dB; flashcheck PASS (the one doors pair, worst 1 / s). v3 kept (`render_v3_backup.py`, `_v3.mp4`). Waiting for feedback | `ballfight_organ_vs_harp_v4.mp4` (v3: `_v3.mp4`, v2: `_v2.mp4`, v1: `ballfight_organ_vs_harp.mp4`) |
 | 36 | BALLFIGHT #10: Trombone vs Tuba | review | session_01FABTpA (2026-10-25) | v1 delivered (early sheet sent first). First crossover: both fighters straight from fighters.py; the only lever is the new opt-in engine handicap `Rules(dmg_side)` (own commit; all 9 finished episodes replay identically): TROMBONE x0.35 / TUBA x1.55 damage (the lance lands ~70 hits a fight, the swallow ~12), 300 seeds 49 % / 51 %, median K.O. 50.8 s. First HUD ability list: `reelkit.ui.fight_hud(abilities=...)` (own commit; without it 353 HUD input combinations draw pixel-identically): LV2 / LV3 / LOW rows under each bar, grey -> fighter colour with a sweep on unlock -> white-hot pill on every use. Honest search at 2 bars: 6 fits in 416, balance 48 / 52; seed **358** (106 ranked first but its 52.94 s K.O. left ~1 s for COMMENT THE NEXT MATCH-UP): the lance leads early, the swallows drag it back (lead changes 19.1 / 26.7 / 45.1 s), SUBSONIC 40.0, PEDAL TONE 44.3, the tuba gulps the trombone at 48.6 s and spits it into the ropes: TUBA wins at 49.10 s with 5.9 HP. Captions SAD TROMBONE 11.4, BRASS WALL 19.5, POWER SLIDE 24.3, SUBSONIC 40.0, PEDAL TONE 44.3. Music mood C (brass house, F minor, 125.90 BPM): no bass synth / brass in the bed; tuba = the bass line (oom root / pah fifth), trombone = the tenor hook; band check tuba +6.9..+8.6 dB, trombone +7.9..+11.8 dB over the bed. Checks: safe zone OK; CoC 0 on all 1830 frames; loopcheck PASS render 0.5x / mp4 1.2x (audio 1.2 dB, no click); flashcheck PASS (1 = the doors opening); opening -16.4 dBFS, build +3.2 dB. Waiting for feedback | `ballfight_trombone_vs_tuba.mp4` |
 | 37 | BALLFIGHT #11: Clarinet vs Oboe | review (v1 audio fix) | session_019oLg15 (2026-10-26) | Audio fix delivered (user, Oct 26: "in the last couple of seconds of the fight, the clarinet stops making noise"): the HP thinning's hash (from #36) was linear, so on CLARION's consecutive 8th jumps every value fell under the threshold and the clarinet's last ~3 s went silent (the oboe's stings had 1 s holes at 41 and 50 s too). New splitmix hash + never two dropped notes in a row, max 30 %: both lines play to the K.O.; remaining oboe gaps are honest (clarinet in tune, between A beams). Re-muxed only (same frames); levels PASS (opening -0.1 dB vs ending, spread 4.3 dB), loopcheck PASS mp4 1.0x. Waiting for feedback. Previous: v1 delivered (early sheet sent first). OBOE built new in the Pixel Pitch folder, own commits: model from Commons reference photos (Yamaha YOB-831 front shot measured at 590 mm, Lorée with reed, a reed against a ruler; Chrome unreachable, built-in browser used), `ball` scene = radii x1.6 for sprites; nasal double-reed voice (formants ~1.2 / ~3 kHz); bridge entry OBOE. New engine kinds in 4 small commits + roster commit (all 10 finished episodes replay identically; guard entry #37 -> seed 654): weapon `jump` (TWELFTH JUMP teleport + zip-line cut) + ability `rhapsody`, ability `stun` (SQUEAK; every weapon dispatch checks it), weapon `tune` + status `detune` (OUT OF TUNE: hits x (1 - 0.6 x depth), stings on the 8ths) + ability `endless` + wave option `detune` (ILL WIND), ability `snip` (DOUBLE REED). Tuned once at damage scale 0.55 (200 seeds CLARINET 47 % / OBOE 53 %, median K.O. 50.8 s). Honest search at 2 bars: 8 fits in 654 (51 / 49); seed **654**: even to 20 s, the oboe's detune grinds a lead from 22 s, RHAPSODY 42.8 / ILL WIND 43.6 trade, 18-18 at 46 s, the clarinet retakes the lead 0.2 s before its K.O. at 51.90 s with 6.5 HP. Captions SQUEAK 12.3, DOUBLE REED 17.0, ENDLESS NOTE 23.7, CLARION 28.4, RHAPSODY 42.8 (ILL WIND in the HUD list only: 4 s rule). Title panels: CLARINET ebony grain + ring keys, OBOE tuning forks + double reeds + the A's sine (shared title.py, own commit). Music mood A (Baroque storm, D minor, 141.64 BPM, no woodwinds in the bed): clarinet = chalumeau note per jump + the twelfth on landed cuts, flat by up to a quarter-tone while OUT OF TUNE; oboe = the A per beam, running 8ths = the stings. Checks: `reelkit.levels` PASS on wav + mp4 (opening +0.3 dB vs ending, spread 4.3 dB, no dips; one master gain, no automation); band check clarinet +7.3..+9.2 dB, oboe +9.5..+12.1 dB over the bed; safe zone OK; CoC 0 on all 1830 frames; loopcheck PASS render 0.5x / mp4 1.0x (audio 3.1 dB, no click); flashcheck PASS (1 = the doors). Waiting for feedback | `ballfight_clarinet_vs_oboe.mp4` |
+| 38 | BALLFIGHT #12: Bass Clarinet vs Euphonium | idea (approved, mood A) | — | Approved Oct 26, mood A (dark drumline). Two new fighters (both need a model + voice). Ready for production. | — |
 
 ## Backlog (idea details)
 
@@ -1676,6 +1677,7 @@ styles, ready for crossovers and a tournament bracket.
 | ORGAN | wine | (196, 52, 104) | | HARP | pearl (warm ivory) | (244, 228, 190) |
 
 | CLARINET | lavender | (190, 168, 255) | | OBOE | olive | (156, 176, 52) |
+| BASS CLARINET | slate blue | (110, 132, 170) | | EUPHONIUM | amber | (240, 172, 32) |
 
   Spares (Cello, later fighters): pick a colour clearly apart from all of these and add it here.
 - **Fighters:** first named = left corner (screen left), second = right. Weapon scaling: every landed hit grows the
@@ -2003,6 +2005,58 @@ and the oboe is the duck. Post caption: "The cat finally gets the duck? 🐈🦆
   safe-zone, flash, loop and levels checks must pass.
 - **Effort:** ~60–75 min (the oboe model + voice and two new weapon kinds). Work in
   `projects/ballfight_clarinet_vs_oboe/`.
+
+### 38. BALLFIGHT #12: Bass Clarinet vs Euphonium — APPROVED
+**Direction (user, Oct 26):** "Draft Bass Clarinet vs Euphonium"; approved with mood A (dark drumline), colours as
+proposed. All BALLFIGHT series rules apply (VS title card, 3·2·1, ability-name captions, HUD ability list, colours,
+honest tuned fight, 61.0 s, loop point = file boundary) plus the PLAYBOOK's **consistent loudness from frame 0**
+(`reelkit.levels` must PASS).
+**Rivalry:** the two instruments nobody can name: "a black saxophone" vs "a small tuba". Unsung heroes of their
+sections; every band kid who played one shows up in the comments. Post caption: "Name both without googling 😤
+Comment the next match-up 👇"
+
+| | BASS CLARINET (slate blue, left) | EUPHONIUM (amber, right) |
+|---|---|---|
+| Style | The only anchor-and-pivot fighter | The only artillery |
+| Signature | **ENDPIN ANCHOR**: every bar it drives its floor peg into the canvas and whirls around it like a hammer-thrower, its long body smashing anything in the circle, then pulls the peg and rolls on (new kind `anchor`) | **BELL MORTAR**: the upright bell fires brass shells that arc high on the beat (every 2 beats) and land on the enemy's predicted spot; growing shadow circles show where they'll hit; splash damage (new kind `mortar`) |
+| Grows per landed hit | Orbit radius | +1 shell per salvo (half a shell per hit if it snowballs, as #27's keys) |
+| LV2 | SLAP TONGUE: a short, heavy knockback smack in front | MARCHING ORDERS (`haste`: shells every beat) |
+| LV3 | MULTIPHONICS: two notes at once: a ghost twin orbits the opposite side of the peg (new `twin`) | IDENTITY CRISIS: copies the enemy's last-used ability (same kind and numbers) and fires it back in amber (new `copy`) |
+| Below 25 HP | LIGHTS OUT: the arena lights dim around it (eased, never a flash), it sinks into shadow for a bar, then erupts with a crushing slam (new `lights_out`) | NOT A TUBA: a full barrage of shells rains across the ring |
+
+- **Likely shape (only if the honest fight gives it):** the euphonium wants distance so shells have time to land; the
+  bass clarinet wants to get close, plant and whirl; every shell telegraphs its spot, so the anchor's question is when
+  it's safe to plant. IDENTITY CRISIS adds surprises (a copied SLAP TONGUE, MULTIPHONICS or even LIGHTS OUT).
+- **Colours (new, in the table):** BASS CLARINET slate blue (110, 132, 170), EUPHONIUM amber (240, 172, 32). Amber sits
+  between Drums' orange and Trumpet's yellow; keep it reading as brass amber (a touch deeper if it looks orange).
+- **Music, mood A (dark drumline):** a minor marching-band battle cadence (snare line, quads/tenors, pitched bass
+  drums, cymbal line) with low brass hits; intense, the euphonium's home turf. Both fighters are low voices: the **bass
+  clarinet takes the rumbling bottom** (chalumeau growl, slap-tongue pops), the **euphonium the warm tenor melody**; the
+  bed has no low brass or woodwinds of its own. `loop_bpm(126)` = 125.90 BPM (32 bars; bar = 1.906 s, FIGHT! at 3.81 s).
+  Consistent loudness: the drumline is at full level on frame 0; build with density (more drums, rolls, cymbals).
+  Leader fuller and louder, loser thinner and dirtier; the winner's solo over the cadence. (Not chosen: B horror
+  suspense trap; C low-end funk.)
+- **VS title card:** BASS CLARINET / VS / EUPHONIUM. "BASS CLARINET" (13 letters) is the longest name yet: split it
+  over two lines on the card if one line would be too small, staying inside the safe zone. Hits: a bass-clarinet growl
+  + slap, the thunder crack, a euphonium blast; panel patterns: keys + curved metal neck (slate-lit), upright bell +
+  four valves (amber-lit).
+- **Captions:** IDENTITY CRISIS (15 chars) and MULTIPHONICS (12) use the small size where needed. NOT A TUBA is the
+  desperation caption. HUD names: "BASS CLARINET" may need "BASS CL." if it doesn't fit beside the bar; the list shows
+  the full ability names.
+- **Beat sheet (61 s):** bar 0 VS card · bar 1 count-in · FIGHT! at 3.81 s · 8–30 s the four unlocks (each named once;
+  the HUD list lights on every use) · 32–44 s LIGHTS OUT or NOT A TUBA · 44–52 s final exchange · K.O. ~49–53 s (slow-mo
+  shatter into keys / neck / bell / valves) · winner's solo + "COMMENT THE / NEXT MATCH-UP" · 58–61 s reassembly, doors
+  shut, title slam = frame 0.
+- **Flags:** both instruments are all new: no Pixel Pitch model or voice for either, so build both from reference
+  photos (as the oboe was: `series/instrument-history/`, one new file each, own commits; don't edit other instruments)
+  plus their synth voices and bridge entries. New engine kinds additive, own commits; all earlier episodes replay
+  identically. IDENTITY CRISIS copies the real last-used ability as a rule (if the enemy hasn't used one yet, it copies
+  the enemy's signature attack once). LIGHTS OUT dims slowly (eased over ~0.3 s, the arena never goes black, both balls
+  and the HUD stay readable); flashcheck must pass. Mortar shells read in 3D: real arc height + a growing ground shadow.
+  Re-tune for 40–60 % wins; honest seed search with `t_fight` = 2 bars and the usual hard windows. Effects from
+  `reelkit.fx`; no full-screen flashes; safe-zone, flash, loop and levels checks must pass.
+- **Effort:** ~75–90 min (two new models + voices, four new mechanics). Work in
+  `projects/ballfight_bassclarinet_vs_euphonium/`.
 
 ## Adding a new idea
 
