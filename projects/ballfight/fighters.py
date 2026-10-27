@@ -374,8 +374,9 @@ FIGHTERS = {
         pp='EUPHONIUM', register=(50, 74), idiom='tenor'),
 
     # ---- #39 BALLFIGHT #13: the low reeds, the orchestra's clown vs the band's chaos agent (numbers tuned once with
-    # ballfight_bassoon_vs_barisax/tune.py at damage scale 0.45, frozen: 200 seeds BASSOON 44 % / BARI SAX 56 %, median
-    # K.O. 50.3 s; stomps land ~76 %, ~63 % of those from behind; ~26 slings a fight). The bassoon is the only sneak
+    # ballfight_bassoon_vs_barisax/tune.py at damage scale 0.45, frozen; MOUNTAIN KING's stomp damage re-tuned 1.6 -> 0.4
+    # once its hops kept their accelerating schedule (engine fix 5f554d9): 200 seeds BASSOON 53 % / BARI SAX 47 %, median
+    # K.O. 50.0 s; stomps land ~79 %, ~65 % of those from behind; ~27 slings a fight). The bassoon is the only sneak
     # (position matters: it tiptoes behind the enemy, where its stomps hit x2.5); the bari sax the only fighter that
     # weaponises the ring (its honk makes the ropes ring and sling).
     'BASSOON': dict(
@@ -389,7 +390,7 @@ FIGHTERS = {
             unlock2=dict(name='BOCAL HOOK', kind='hook', ready=1.0, reach=1.1, half=60.0, open16=2, track=6.0, dmg=4.0,
                          knock=0.4, every_bars=4),                    # hooks, spins it to face away, hops behind
             low=dict(name='MOUNTAIN KING', kind='mountain', seq16=[3, 3, 3, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-                     step=75.0, gap=0.1, reach=3.5, dmg=1.6, knock=0.3)),   # 20 accelerating hops round the enemy
+                     step=75.0, gap=0.1, reach=3.5, dmg=0.4, knock=0.3)),   # 20 accelerating hops round the enemy
         pp='BASSOON', register=(40, 76), idiom='staccato'),
     'BARI SAX': dict(
         color=(255, 118, 92), dark=(150, 56, 40), corner='blue',     # coral (series colour table, IDEAS)
