@@ -17,3 +17,25 @@ Append new entries at the end (newest last).
   apron's albedo), so the ropes, shadows and attack lights sit on it; upcoming rows are visible before they fire (the
   melody coming), holes flash blue at the brass read bar; key-shaped shots (sharps black) with trails; mines pulse over
   blue rings; 88 KEYS fires a wall of keys and the paper runs off in shreds, the new roll slides in from the spool.
+- ORGAN port (`kit/fighters/organ.py`, done by a helper agent in parallel): #35's draw code copied unchanged, layers and
+  sound moved into Look / Sound, side-agnostic (the organ is on the right here), role 'bass' = a pedal note under every
+  pipe row and a pedal climb in the last bar (any other role = #35's part, bit-identical). New optional Look hooks
+  `light()` (the CATHEDRAL dome lights the scene), `fx_end()`, `fringe_size()`, `block_burst` / `block_spark` (defaults =
+  the old constants; kit example sheets byte-identical). Check against #35 (scratch kit config of #35, seed 237): replay
+  hash identical; with a matched harness (the harp's drawn layers off in #35, a stub harp carrying only its effects in
+  the kit, #35's SY 280 / beat-pulse ramp / reassembly time) 19 frames pixel-identical (rows, landed rows, CATHEDRAL,
+  PULL ALL STOPS, TOCCATA, the K.O., the solo pipes, seed 2's organ shatter, the rev / seam); the organ + solo buses
+  bit-identical. The plain kit render differs from #35 only through kit series rules (camera SY 288, 0.12 s beat ramp,
+  the reassembly bar), which also drops #35's last solo note.
+- Preview clip sent before tuning (65 s to make on 2 cores).
+- Tuning (300 seeds each cell; the PIANO's own numbers are new, so they are frozen in the roster; the ORGAN's only lever
+  is its handicap): at full damage both sides finished in ~29 s; the piano lands ~190 hits a fight to the organ's ~40,
+  so the piano is steady chip damage and the organ bursts. Growth rate barely moves lead changes (~0.6 / run at every
+  cell); frozen PIANO dmg 0.5 (GLISSANDO 0.25, 88 KEYS 0.45), grow 0.25, ORGAN x0.55: 50 % / 50 %, median K.O. 51.0 s,
+  fit rate 1.0 % (the >= 2 lead changes and >= 5 captions windows do the filtering). Search 1..8000 --stop 8: 8 fits in
+  1,097 runs (2 min), all ORGAN wins; seed 638 ranked first.
+- Checks (`python -m ballfight check`, 191 s): safe zone PASS, focus 0 px (read bar + spool are focus points), levels
+  PASS (opening +0.2 dB vs the ending, spread 2.4 dB), band PIANO +9.4..+13.3 dB / ORGAN +3.7..+7.5 dB over the bed,
+  intro -1.1 LU vs the fight, flash 0 general (max 14.0 % at the 88 KEYS / TOCCATA beat), loop PASS (seam 0.4x).
+- Note: `python -m ballfight render` in a background shell started from another folder failed with "No module named
+  ballfight"; `python /path/to/projects/ballfight render <episode>` works from anywhere.

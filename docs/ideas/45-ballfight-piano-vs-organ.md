@@ -59,3 +59,11 @@ next match-up 👇"
 ## Board history
 
 - Approved Oct 27 (ideas chat).
+- Oct 27 (session_01CzTfqdN2i3): production. PIANO v2 built (engine `roll` / `sustain` / `runoff`, roster v2 with #27's
+  v1 frozen in its own sim.py, `kit/fighters/piano.py`); ORGAN ported from #35 v4 into the kit and checked against #35
+  (hash identical, frames pixel-identical in a matched harness, organ buses bit-identical); mood `prog_duel`. Preview
+  clip (`python -m ballfight preview PIANO --vs ORGAN`) sent before tuning. Tuned once: PIANO v2's numbers frozen in the
+  roster (dmg 0.5 / 0.25 / 0.45, grow 0.25), ORGAN handicap 0.55 (50 % / 50 %, median K.O. 51.0 s). Honest seed 638
+  (8 fits in 1,097 runs, all ORGAN wins): the organ leads behind CATHEDRAL, the piano takes over at 19.3 s, 88 KEYS and
+  TOCCATA fire on the same beat at 40.8 s, the organ retakes the lead at 44.1 s and wins at 50.2 s with 5 HP. Early
+  sheet sent; all checks pass.
