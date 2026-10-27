@@ -631,6 +631,10 @@ def _hold(k, slot):
         return ab['beats'] * T.BEAT
     if ab['kind'] == 'smash':                        # #44 GUITAR SMASH: while it lies in pieces
         return ab['rebuild_beats'] * T.BEAT
+    if ab['kind'] == 'melody':                       # #42 MELODY AT LAST: while the rests are short
+        return ab['dur_beats'] * T.BEAT if 'dur_beats' in ab else ab['dur']
+    if ab['kind'] == 'joke':                         # #42 VIOLA JOKE: until its note lands
+        return ab['tele'] * T.BEAT
     return 0.08
 
 

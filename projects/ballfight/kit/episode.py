@@ -183,8 +183,13 @@ def _helpers(T):
         return out
 
     def default_solo(name):
-        """a 2-bar victory motif on the tonic chord in the fighter's register (a sketch to replace)"""
+        """the fighter module's own DEFAULT_SOLO if it has one (#28's drum solo is drum pieces, not notes), else a
+        2-bar victory motif on the tonic chord in the fighter's register (a sketch to replace)"""
         from fighters import FIGHTERS as ROSTER
+        from . import fighters as FM
+        mod = FM.module(name)
+        if mod is not None and getattr(mod, 'DEFAULT_SOLO', None):
+            return list(mod.DEFAULT_SOLO)
         lo, hi = ROSTER[name]['register']
         ch = T.CHORDS[0]
         tones = chord_tones(lo + (hi - lo) // 4, hi, ch)

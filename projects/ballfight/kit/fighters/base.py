@@ -193,6 +193,10 @@ class Sound:
     band = (200, 4000)               # its band for the band check (it must sit above the bed there)
     colour_args = dict(cut0=90, cut_span=520, drive=4.5)   # how it thins + dirties as its HP drops (music.colour)
     buses = {}                       # extra buses of its own: {bus: (gain, reverb send)} (#42's crowd laugh)
+    own_block = False                # it plays its own sound when something bounces off its shield (no shared clank)
+    play_first = False               # score its part before the other's: the Pixel Pitch bowed voices (violin, viola,
+                                     # cello) share one vibrato RNG, so the order notes are first made decides their
+                                     # vibrato phase (#42 scored the violin, on the right, first)
 
     def __init__(self, M, k):
         self.M, self.k, self.T = M, k, M.T

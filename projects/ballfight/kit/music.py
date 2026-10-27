@@ -256,7 +256,7 @@ def shared_events(mix):
                       pan=float(np.clip(e[5] / 3.5, -0.6, 0.6)))
         elif kind == 'clash':
             bed.clash(mix, t)
-        elif kind == 'block':
+        elif kind == 'block' and not SOUNDS[e[2]].own_block:          # (#28's cymbal rings its own)
             mix.place('fx', clank(84, int(t * 5)), q16(t), 0.06)
         elif kind == 'parry':
             mix.place('fx', clank(88, int(t * 9)), t, 0.04)
@@ -323,7 +323,7 @@ def score():
     # ------------------------------------------------ the fight: the bed to the K.O. (tape-stopped there), the fighters
     bar_ko = int(T_KO // T.BAR)
     bed.fight(mix, bar_ko)
-    for s in SOUNDS:
+    for s in sorted(SOUNDS, key=lambda s_: not s_.play_first):    # (stable: left, right unless one plays first)
         s.play(mix)
     shared_events(mix)
     # ------------------------------------------------ the K.O.
