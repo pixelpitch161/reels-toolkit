@@ -408,4 +408,20 @@ FIGHTERS = {
             low=dict(name='CABLE SNAP', kind='snap', tele16=12, hoist=0.6, height=3.0, radius=0.5, dmg=22.0, knock=2.5,
                      lead=1.0)),                                      # hoisted over the enemy's spot, crashes down
         pp='BARI SAX', register=(36, 60), idiom='honk'),
+
+    # ---- #42 BALLFIGHT #16: the viola's revenge (the violin gets the melodies, the viola the rests and the punchlines).
+    # The only charger: it rests and counts, then plays one huge whole note that rolls like a heavy wheel. Numbers tuned
+    # once with ballfight_viola_vs_violin/tune.py against the #28 VIOLIN (handicaps there: VIOLA x0.75, VIOLIN x2.1;
+    # 148 decided runs 49 % / 51 %, median K.O. 49.5 s; notes land ~84 %), frozen.
+    'VIOLA': dict(
+        color=(36, 200, 176), dark=(14, 108, 94), corner='red',      # teal (the retired SAX's; series colour table, IDEAS)
+        view=(34, 16, 24),                                           # three-quarter on: the deep ribs show
+        weapon=dict(kind='rests', style='wholenote', name='COUNTING RESTS',   # 3 beats of rests (x guard damage taken),
+                    every=4, guard=0.5, base=0.45, grow=0.04, max_reach=0.8,  # then a whole note rolls for a bar
+                    roll=2.0, hold=4, lead=0.5, jitter=12.0, dmg=3.0, dmg_grow=0.04, dmg_max=3.4, knock=1.4),
+        abilities=dict(
+            unlock1=dict(name='DOUBLE STOP', kind='double_stop', lead2=1.6, every_bars=4),   # two notes at once
+            unlock2=dict(name='MELODY AT LAST', kind='melody', dur_beats=8, rest=1, every_bars=8),   # a note every other beat
+            low=dict(name='VIOLA JOKE', kind='joke', stun_beats=1.0, tele=1, size=1.6, dmg=12.0, knock=1.8)),
+        pp='VIOLA', register=(48, 79), idiom='bowed'),
 }
