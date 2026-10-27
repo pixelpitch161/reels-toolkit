@@ -28,3 +28,26 @@ Append new entries at the end (newest last).
   frame-0 count hit 4 ms in -> 4.2 dB step, no click (was 7.8 dB + click).
 - Sound: section automation after the compressor (build +3.4 dB); every hit snapped to the nearest 16th in the
   attacker's own voice; a fighter's part high-passes and saturates as its HP drops, the leader gets an octave double.
+
+## The episode kit (Oct 27): one config per episode (`projects/ballfight/kit/`)
+- Task (user): turn BALLFIGHT into a reusable kit so new episodes need far less code. Read #41 (crossover) and #37 (new
+  fighters) only. Built `projects/ballfight/kit/` + `python -m ballfight <step> <episode>` (new, preview, tune, search,
+  sim, sheet, audio, check, render, verify, post, hash). An episode is one `episode.py` (fighters, sides, SEED, handicap,
+  rules, BPM, mood, key, chords, lines, solos, title hits, caption); `kit/episode.py` derives the timeline from it.
+- Each fighter's look + sound moved to `kit/fighters/<name>.py` (Look / Sound hooks at fixed points of #41's pipeline,
+  listed in `kit/fighters/base.py`): FLUTE, TROMBONE (from #32 / #34 / #41), CLARINET, OBOE (#37). Moods: `big_top`
+  (#41), `baroque_storm` (#37), ported as they were. The finished episode folders are untouched.
+- Proof, #41 as `examples/flute_vs_trombone/episode.py` (61 lines vs 2,799 in #41's folder): seeds 392/1/2/3/500 hash
+  the same as #41's sim; 33 frames pixel-identical to #41's render.py; audio.wav bit-identical (5,857,280 samples); every
+  check passes with #41's numbers (band trombone +6.5..+7.8 dB, flute +12..+16; intro -1.5 LU; seam 0.4x). #37 as
+  `examples/clarinet_vs_oboe/episode.py` (39 lines): same hashes, bit-identical audio, 22/25 frames identical (a few px
+  where the zip and the beam overlap; the glide home bows 0.1-0.2 units: #41's fix, now in every episode).
+- Lesson: `reelkit.ui`'s caption puff seeds from Python's salted `hash(str)`, so the same frame differed between runs
+  (100-185 px under captions, #41's own renderer too) and `--frames` patches could not match a full render. The kit
+  pins PYTHONHASHSEED=0 (a one-line `zlib.crc32` fix in reelkit.ui would remove it for every project: needs the
+  user's OK, reelkit is shared).
+- Timings on 2 cores (#41): tune 300 seeds 52 s, search 1..6000 --stop 8 165 s (the same 8 fits by seed 968, 392 first
+  at 7.78), audio 9 s, render 431 s + one loop-clean encode 227 s (the kit skips reelkit.video's own encode), check
+  4.5 min, verify 46 s; tune + search + render ~15 min. A fighter preview (7 s, 360x640, with sound) takes ~75 s.
+- Replay guard: all 95 lines unchanged; `tools/ballfight_replay_hash.py` now also runs the kit configs (KIT_EPISODES),
+  which print the same lines as #41 and #37.
