@@ -604,6 +604,12 @@ def _hold(k, slot):
         return ab['dur_beats'] * T.BEAT
     if ab['kind'] == 'runoff':                       # #45 88 KEYS: until the new roll is threaded
         return max(0.08, ab.get('reload_beats', 0) * T.BEAT)
+    if ab['kind'] == 'fork':                         # #44 DISTORTION: while the bolts fork
+        return ab['dur_beats'] * T.BEAT if 'dur_beats' in ab else ab['dur']
+    if ab['kind'] == 'tapping':                      # #44 TAPPING: while the second hand taps
+        return ab['beats'] * T.BEAT
+    if ab['kind'] == 'smash':                        # #44 GUITAR SMASH: while it lies in pieces
+        return ab['rebuild_beats'] * T.BEAT
     return 0.08
 
 
