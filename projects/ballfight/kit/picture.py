@@ -537,7 +537,7 @@ def draw_ball(arr, dep, cam, k, st, t):
     reg[m] = reg[m] * 0.12 + inner[sl][m] * 0.88
     # the instrument
     yaw = yc + sw * math.sin(1.25 * st['p'][0] + 0.45 * st['p'][1])
-    spr = sprite(k, rp * 0.80, yaw, roll)
+    spr = sprite(k, rp * LOOKS[k].sprite_k, yaw, roll)
     sn = spr.shape[0]
     sx0, sy0 = int(round(s[0])) - sn // 2, int(round(s[1])) - sn // 2
     ax0, ay0 = max(0, sx0), max(0, sy0)

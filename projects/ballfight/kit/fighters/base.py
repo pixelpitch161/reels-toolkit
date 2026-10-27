@@ -22,6 +22,7 @@ class Look:
     teleports = False                # its ball can jump: no speed lines across a teleport
     title_pattern = None             # fn(base) -> base: its VS-card panel pattern (else title.PATTERNS has it, or plain)
     rope_kinds = {'wave': 1.0, 'shockwave': 0.6}         # its ability kinds that shake the ropes (strength)
+    sprite_k = 0.80                  # its instrument's size in the ball (x the ball's radius; #33's acoustic: 0.86)
 
     def __init__(self, P, k):
         self.P, self.k, self.T = P, k, P.T
