@@ -1,4 +1,4 @@
-"""Pixel Pitch: the modern viola - low-poly model. No history video yet: built for BALLFIGHT #16
+"""Pixel Pitch: the modern viola - low-poly model (and, below, its voice). No history video yet: built for BALLFIGHT #16
 (Viola vs Violin) and used read-only through projects/which_instrument_wins/pp_bridge.py, the same way the other
 instruments' modern showcase models are. A later Pixel Pitch viola video can grow from this file (add SCENES rows,
 backdrop, music) without touching the model.
@@ -266,6 +266,51 @@ def build(g, t, ev, fx, s):
     for age, mm, v, dur, tp, cs in ev:
         if tp and age < .9:
             fx.append(("note", (.3, yb + .5, surf(0, U_BRIDGE)), age))
+
+
+# ---------------------------------------------------------------- sound: the darker bowed voice, a fifth below
+# Tuned C3 G3 D4 A4, a fifth under the violin. The body is too small for its range (an ideal viola would be ~53 cm),
+# so its main air and wood resonances sit low (~300 / ~600 Hz) and its bright band near 1.6 kHz, where the violin's is
+# near 3 kHz: fewer high partials, a steeper roll-off, a husky, nasal, darker tone. A slightly slower bow attack, a
+# little more bow noise, and a wider, slower vibrato than the violin's.
+SR = 44100
+FORM = [(300, .7, .45), (620, 1.0, .40), (1650, .55, .40)]     # (centre Hz, gain, log-width)
+
+
+def _midi_hz(m):
+    return 440.0 * 2 ** ((m - 69) / 12.0)
+
+
+def bowed(f, dur, vel, att=.045, vib=.0055, vrate=5.2, vdel=.14, tilt=1.12, noise=.035):
+    from scipy.signal import lfilter, butter, sosfilt
+    rel = .16
+    n = int((dur + rel) * SR)
+    t = np.arange(n) / SR
+    ph0 = (f * 7.13) % (2 * math.pi)                                 # deterministic vibrato phase per pitch
+    fm = 1 + vib * np.clip((t - vdel) / .25, 0, 1) * np.sin(2 * np.pi * vrate * t + ph0)
+    ph = 2 * np.pi * np.cumsum(f * fm) / SR
+    sig = np.zeros(n)
+    tot = 0.0
+    for k in range(1, 40):
+        fk = f * k
+        if fk > 5000:
+            break
+        gk = (.22 + sum(a * math.exp(-(math.log(fk / fc) / w) ** 2) for fc, a, w in FORM)) / k ** tilt
+        sig += gk * np.sin(k * ph)
+        tot += gk
+    sig /= tot
+    rng = np.random.default_rng(int(f * 10) % 100003)               # bow hair noise, deterministic per pitch
+    nz = sosfilt(butter(2, [700, 2600], 'band', fs=SR, output='sos'), rng.standard_normal(n))
+    sig += nz * noise * (.6 + .8 * np.exp(-t / .06))
+    env = np.minimum(1, t / att) ** 1.3 * np.where(t < dur, 1.0, np.exp(-(t - dur) / (rel / 4)))
+    env = env * (.86 + .14 * np.minimum(1, t / max(dur, .05)))
+    sig = lfilter([.30], [1, -.70], sig)                            # a warmer low-pass than the violin's (.35 / .65)
+    return sig * env * vel
+
+
+def synth(s, idx):
+    nt, m, v, dur, tp, cs = s["ev"][idx]
+    return bowed(_midi_hz(m), dur, v)
 
 
 if __name__ == "__main__":
