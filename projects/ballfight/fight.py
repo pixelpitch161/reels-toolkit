@@ -43,6 +43,10 @@ enemy OUT OF TUNE, status 'detune': weaker hits, stung by the oboe's notes; reco
 `orbit` ahead toward the enemy, whirls round it like a hammer-thrower for `whirl_beats` (the arm from the peg to the
 ball sweeps everything in the circle), then pulls the peg and is flung off along the tangent; recorded ANC; events
 'anchor', 'pull').
+#38 (opt-in): weapon kind `mortar` (BELL MORTAR: on the grid the upright bell lobs `n` brass shells that land
+`flight_beats` later on the enemy's predicted spot (a ring of `spread` around it), splash damage; +`grow` shells per
+landed salvo) and ability kind `barrage` (NOT A TUBA: a rain of shells across the whole ring, a few aimed). Recorded as
+SHELLS; events 'mortar', 'shell', 'barrage'.
 The run records every frame (30 fps) for the renderer and every event (hits, blocks, parries, ropes, volleys,
 abilities, level-ups, the K.O.) for the soundtrack and the captions. Seeded: same seed, same fight."""
 import math
@@ -2447,6 +2451,114 @@ class Fight:
         if self.t + 1e-9 >= An['t_end']:
             self.anchor_release(k)
 
+    # ------------------------------------------------------------------ #38: BELL MORTAR (opt-in weapon kind 'mortar')
+    # Every `every` beats (haste divides it) the bell fires a salvo of int(n) shells (`n0`, +`grow` per salvo that lands,
+    # up to `n_max`; a twin doubles the salvo). They arc high and land `flight_beats` later: shell 0 on the enemy's
+    # predicted spot then (its motion x `lead`; an anchored enemy is predicted round its whirl), the rest on a ring of
+    # `spread` around it (seeded rotation). A landing splashes `splash` (+ R x 0.6 to the ball's centre): `dmg`, knocked
+    # away from the impact by `knock`. Shells can't be stopped once fired. Ability kind 'barrage' (NOT A TUBA): `n`
+    # shells at once, landing over `beats` beats on the 8ths, `aimed` of them at the enemy, the rest on a jittered grid
+    # over the whole ring. Recorded as SHELLS: (owner, x0, y0, x1, y1, t0, t1, salvo, j, landed) for every shell in the
+    # air or landed less than 0.6 s ago.
+    def mortar_setup(self, k):
+        B = self.balls[k]
+        B.n_vol = float(B.w['n0'])
+
+    def predict(self, o, tl):
+        """where ball o will be in tl s: straight-line motion, or round its whirl while it is anchored"""
+        O = self.balls[o]
+        An = getattr(O, 'anc', None)
+        if An is None:
+            return O.p + O.v * tl
+        t_in = min(tl, max(0.0, An['t_end'] - self.t))
+        th = An['th'] + An['om'] * t_in
+        p = An['c'] + An['orbit'] * np.array([math.cos(th), math.sin(th)])
+        if tl > t_in:
+            tang = np.array([-math.sin(th), math.cos(th)]) * (1.0 if An['om'] >= 0 else -1.0)
+            p = p + tang * self.R.V * (tl - t_in)
+        return p
+
+    def _shell(self, k, land, t1, salvo, j, dmg, splash, knock, kind):
+        lim = self.R.A - 0.2
+        self.shells.append(dict(owner=k, p0=self.balls[k].p.copy(), p1=np.clip(land, -lim, lim), t0=self.t, t1=t1,
+                                salvo=salvo, j=j, dmg=dmg, splash=splash, knock=knock, kind=kind, done=False, landed=0))
+
+    def mortar_fire(self, k, w=None, n=None):
+        B, O = self.balls[k], self.balls[1 - k]
+        w = w or B.w
+        n = int(B.n_vol + 1e-9) if n is None else n
+        if getattr(B, 'twin_until', -1.0) > self.t:                      # MULTIPHONICS: two notes at once
+            n *= 2
+        tl = w['flight_beats'] * self.R.beat
+        tgt = self.predict(1 - k, tl * w.get('lead', 1.0)) if getattr(O, 'anc', None) is not None \
+            else O.p + O.v * tl * w.get('lead', 1.0)
+        salvo = self.next_salvo
+        self.next_salvo += 1
+        rot = self.rng.uniform(0, 2 * math.pi)
+        for j in range(n):
+            if j == 0:
+                land = tgt
+            else:
+                a = rot + 2 * math.pi * (j - 1) / max(1, n - 1)
+                land = tgt + w['spread'] * np.array([math.cos(a), math.sin(a)])
+            self._shell(k, land, self.t + tl, salvo, j, w['dmg'], w['splash'], w['knock'], 'mortar')
+        self.ev('mortar', k, n, salvo, float(tgt[0]), float(tgt[1]))
+
+    def mortar_tick(self, k, k16):
+        B = self.balls[k]
+        if self._stunned(k):
+            return
+        main16 = int(round(4 * B.w['every']))
+        ev16 = max(1, int(round(main16 / self.ab_mult(k))))
+        if k16 % ev16 == 0:
+            self.mortar_fire(k)
+
+    def start_barrage(self, k, ab):
+        B, O = self.balls[k], self.balls[1 - k]
+        n, steps = int(ab['n']), max(1, int(round(2 * ab['beats'])))
+        tl = ab['flight_beats'] * self.R.beat
+        lim = self.R.A - 0.45
+        g = int(math.ceil(math.sqrt(n)))
+        cells = self.rng.permutation(g * g)
+        salvo = self.next_salvo
+        self.next_salvo += 1
+        for j in range(n):
+            t1 = self.t + tl + (j % steps) * self.R.beat / 2
+            if j < ab.get('aimed', 0):
+                land = self.predict(1 - k, (t1 - self.t) * ab.get('lead', 1.0)) + self.rng.normal(0, 0.25, 2)
+            else:
+                cx, cy = divmod(int(cells[j % (g * g)]), g)
+                land = np.array([-lim + (cx + self.rng.uniform(.15, .85)) * 2 * lim / g,
+                                 -lim + (cy + self.rng.uniform(.15, .85)) * 2 * lim / g])
+            self._shell(k, land, t1, salvo, j, ab['dmg'], ab['splash'], ab['knock'], 'barrage')
+        self.ev('barrage', k, n, salvo)
+
+    def shells_step(self):
+        R = self.R.R
+        for Sh in self.shells:
+            if Sh['done'] or self.t + 1e-9 < Sh['t1']:
+                continue
+            Sh['done'] = True
+            o = 1 - Sh['owner']
+            O = self.balls[o]
+            rel = O.p - Sh['p1']
+            dist = float(np.hypot(*rel))
+            hit = dist < Sh['splash'] + R * 0.6
+            landed = False
+            if hit:
+                landed = self.damage(Sh['owner'], o, Sh['dmg'], 'shell', float(O.p[0]), float(O.p[1]), Sh['j'])
+                if getattr(O, 'anc', None) is None:
+                    self.knock(o, rel if dist > 1e-3 else O.v, Sh['knock'])
+            Sh['landed'] = 1 + int(landed)
+            self.ev('shell', Sh['owner'], float(Sh['p1'][0]), float(Sh['p1'][1]), int(landed), Sh['salvo'], Sh['j'],
+                    Sh['kind'])
+            if landed and Sh['kind'] == 'mortar' and Sh['salvo'] not in self.salvo_landed:
+                self.salvo_landed.add(Sh['salvo'])
+                Bw = self.balls[Sh['owner']]
+                if Bw.w['kind'] == 'mortar':
+                    Bw.n_vol = min(Bw.w['n_max'], Bw.n_vol + Bw.w['grow'])
+        self.shells = [Sh for Sh in self.shells if self.t < Sh['t1'] + 0.6]
+
     def ab_dur(self, ab):
         """an ability's duration in s: `dur` (s) or `dur_beats` (beats at this episode's tempo)"""
         return ab['dur'] if 'dur' in ab else ab['dur_beats'] * self.R.beat
@@ -2513,6 +2625,8 @@ class Fight:
             self.waves.append(dict(owner=k, c=B.p.copy(), r=self.R.R, speed=ab['speed'], rmax=ab['radius'], dmg=ab['dmg'],
                                    knock=ab['knock'], kind='stun', hit=False, name=ab['name'], t0=self.t, slow=None,
                                    stun=ab['stun']))
+        elif kind == 'barrage':                                 # #38 (NOT A TUBA): shells rain across the ring
+            self.start_barrage(k, ab)
         elif kind == 'rhapsody':                                # #37 (RHAPSODY): a chain of zig-zag jumps
             B.jump_tgt = None
             B.rhap = dict(ab=ab, n=ab['n'], side=1.0, next=None)
@@ -2817,6 +2931,10 @@ class Fight:
                 if Sn is not None:
                     Sp[j] = (Sn['state'], Sn['aim'], Sn['t_snap'])
             rec['SNIP'].append(Sp)
+        if 'SHELLS' in rec:                                 # #38, only recorded when a fighter uses 'mortar' / 'barrage'
+            rec['SHELLS'].append([(Sh['owner'], float(Sh['p0'][0]), float(Sh['p0'][1]), float(Sh['p1'][0]),
+                                   float(Sh['p1'][1]), Sh['t0'], Sh['t1'], Sh['salvo'], Sh['j'], Sh['landed'])
+                                  for Sh in self.shells])
         if 'ANC' in rec:                                    # #38, only recorded when a fighter uses the 'anchor' kind
             Ac = np.full((2, 6), np.nan)
             for j, Bj in enumerate((B0, B1)):
@@ -2905,6 +3023,15 @@ class Fight:
         snippers = [k for k, B in enumerate(self.balls) if any(a['kind'] == 'snip' for a in B.cfg['abilities'].values())]
         if rec is not None and snippers:                         # #37 (opt-in)
             rec['SNIP'] = []
+        mortars = [k for k, B in enumerate(self.balls) if B.w['kind'] == 'mortar']     # #38 (opt-in)
+        shelling = mortars or any(a['kind'] == 'barrage' for B in self.balls for a in B.cfg['abilities'].values())
+        if shelling:
+            self.shells, self.next_salvo, self.salvo_landed = [], 0, set()
+        for k in mortars:
+            self.mortar_setup(k)
+        n16m = k16_0
+        if rec is not None and shelling:
+            rec['SHELLS'] = []
         anchorers = [k for k, B in enumerate(self.balls) if B.w['kind'] == 'anchor']   # #38 (opt-in)
         for k in anchorers:
             self.anchor_setup(k)
@@ -3030,6 +3157,11 @@ class Fight:
                 n16u += 1
                 for k in tuners:
                     self.tune_tick(k, k16u)
+            if mortars and self.t + 1e-9 >= n16m * s16:        # #38: salvos on the 16th grid (haste divides it)
+                k16m = n16m - k16_0
+                n16m += 1
+                for k in mortars:
+                    self.mortar_tick(k, k16m)
             if anchorers and self.t + 1e-9 >= n16a * s16:      # #38: pegs planted on the 16th grid
                 k16a = n16a - k16_0
                 n16a += 1
@@ -3084,6 +3216,8 @@ class Fight:
                 self.tune_step(k, dt)
             for k in snippers:                                   # #37: DOUBLE REED
                 self.snip_step(k, dt)
+            if shelling:                                         # #38: shells landing
+                self.shells_step()
             if anchorers:                                        # #38: the whirl (either ball: a copied one too)
                 for k in (0, 1):
                     if self.balls[k].anc is not None:
