@@ -1609,7 +1609,7 @@ styles, ready for crossovers and a tournament bracket.
   the bar-2 downbeat. Reference build: #30's `projects/ballfight_bagpipes_vs_accordion/title.py` (move it into
   `projects/ballfight/` in its own small commit the first time another episode needs it, so all episodes share one).
   - Bar 0: the frame splits diagonally into two panels in the fighters' colours (left fighter top-left, right fighter
-    bottom-right) over the dimmed arena, each ball big and close; small "BALLFIGHT #N" tag at the top. Name A slams in
+    bottom-right) over the dimmed arena, each ball big and close; no episode tag (user, Oct 27). Name A slams in
     on beat 1 (frame 0), VS on beat 2 (cracks the divider), name B on beat 3: each from huge to size with overshoot,
     motion streaks, camera shake, dust burst, local light, and its own hit (A's instrument blast / a thunder crack /
     B's instrument blast) over big unison band hits; beat 4 holds (only VS pulses), the panels slide apart like doors
@@ -1709,8 +1709,9 @@ styles, ready for crossovers and a tournament bracket.
   Already in the bridge: TRUMPET, SAX, BAGPIPES, ACCORDION, TUBA, FLUTE, UKULELE, TROMBONE, HORN, HARP. Not yet (models
   exist in `series/instrument-history/`): TURNTABLES (`turntables60_lowpoly`), SYNTH (`synth60_lowpoly`), ACOUSTIC
   (`acoustic_lowpoly`), ORGAN (`organ60_lowpoly`): add a bridge entry in its own small commit (don't edit the series).
-- **Episode number:** the on-screen tag "BALLFIGHT #N" is one constant in the episode's `timeline.py`; numbers below
-  assume posting in board order (#29 = BALLFIGHT #3 … #35 = #9). Renumber if posted in another order.
+- **No episode number on screen (user, Oct 27: "From now on, don't have the Ballfight # in the video").** New episodes
+  show no "BALLFIGHT #N" tag anywhere in the video (title card, HUD or captions); the number may stay in post captions
+  and on this board for tracking. Videos already delivered keep theirs (no re-renders for this).
 - **Effort:** ~45–60 min each (one or two new weapon kinds each; ring, HUD, count-in, audio pipeline reused).
 
 ### BALLFIGHT v2 redesign (user, Oct 24; approved) — attacks + effects for #29–#35
