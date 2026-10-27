@@ -399,9 +399,11 @@ FIGHTERS = {
                     every=8, off16=0, drop16=4, lift16=1, swing16=6, base=2.1, grow=0.16, max_reach=2.66, theta=43.0,
                     lead=1.0, short=1.28, skank_off16=2, skank_short=1.33, jitter=20.0, hit_r=0.1, air_edge=0.1,
                     dmg=16.0, dmg_min=0.28, len_pow=2.5, knock=1.6,      # tuned once (#39 v2 tune.py), frozen
-                    overhang=1.3, back16=3, back_in=.25),   # #40 v2 (user, Oct 27): the swing may go out over the ropes
-                                                            # (never past a corner post) for a full swing anywhere;
-                                                            # #39 pins it off (its sim.py) and replays as delivered
+                    overhang=1.3, back16=3, back_in=.25,    # #40 v2 (user, Oct 27): the swing may go out over the ropes
+                    steer=90.0),                            # (never past a corner post); #39 v4: near a corner a cramped
+                                                            # swing turns its plane to where the full swing fits; #39 v2 /
+                                                            # v3 and #40 v2 pin these off in their sim.py and replay as
+                                                            # delivered
         abilities=dict(
             unlock1=dict(name='GROWL', kind='shockwave', speed=9.0, radius=2.4, dmg=7.0, knock=1.2, every_bars=5),
             unlock2=dict(name='SKANK', kind='offbeat', dur_beats=8, every_bars=6),     # a swing every bar, on the off-beats

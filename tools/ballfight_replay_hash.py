@@ -27,7 +27,7 @@ EPISODES = [
     ('projects/ballfight_bassclarinet_vs_euphonium', [1269, 1, 2, 3, 500]),   # #38 (anchor / mortar / barrage / twin / copy / lights_out), seed 1269
     ('projects/ballfight_bassoon_vs_barisax/v1', [190, 1, 2, 3, 500]),   # #39 v1 snapshot (tiptoe / hook / mountain, rattle / offbeat / quake), seed 190
     ('projects/ballfight_bassoon_vs_barisax/v2', [27, 1, 2, 3, 500]),   # #39 v2 snapshot (wrecking / snap, offbeat swings; no swing over the ropes), seed 27
-    ('projects/ballfight_bassoon_vs_barisax', [95, 1, 2, 3, 500]),   # #39 v3 (the swing out over the ropes; the bari's hits x0.8), seed 95
+    ('projects/ballfight_bassoon_vs_barisax/v3', [95, 1, 2, 3, 500]),   # #39 v3 snapshot (the swing out over the ropes, no 'steer'; the bari's hits x0.8), seed 95
     ('projects/ballfight_barisax_vs_bassclarinet', [128, 1, 2, 3, 500]),   # #40 v2 (crossover, sides swapped; the bari swings out over the ropes), seed 128 (v1: 617, commit 8115d67)
     ('projects/ballfight_flute_vs_trombone', [392, 1, 2, 3, 500]),   # #41 (crossover, sides swapped; Rules(swat_cobras=True): the lance swats cobras), seed 392
 ]

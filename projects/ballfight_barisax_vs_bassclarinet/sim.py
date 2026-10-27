@@ -19,6 +19,10 @@ import timeline as T
 from fight import Fight, Rules, lead_changes
 from fighters import FIGHTERS
 
+# #40 v2 was made before the roster's BARI SAX could turn a cramped swing's plane near a corner (weapon option 'steer',
+# #39 v4, Oct 27): pinned off here, so this folder's sim / render / audio replay v2 exactly
+FIGHTERS['BARI SAX']['weapon'] = {k: v for k, v in FIGHTERS['BARI SAX']['weapon'].items() if k != 'steer'}
+
 LOWS = tuple(FIGHTERS[n]['abilities']['low']['name'] for n in T.FIGHTERS)
 REC_KEYS = ('P', 'V', 'TH', 'BL', 'FR', 'NV', 'HP', 'LV', 'SH', 'HA', 'SPIN', 'OM', 'K', 'SNIP', 'ANC', 'LO', 'WRECK',
             'SNAP')
