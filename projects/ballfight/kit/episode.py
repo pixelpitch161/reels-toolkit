@@ -152,30 +152,59 @@ def _helpers(T):
         return (int(round(t / (T.BAR / per_bar))) - per_bar * T.LOOP_START) % n
 
     def line_at(name, t):
-        """the note of fighter `name`'s line (config LINES) at t: 8 notes a bar = 8ths, 4 = beats, 16 = 16ths"""
-        line = T.LINES[name]
+        """the note of fighter `name`'s line (config LINES, else a default) at t: 8 notes a bar = 8ths, 4 = beats"""
+        line = T.LINES[name] if name in T.LINES else default_line(name)
         per_bar = len(line) // len(T.LOOP)
         return line[loop_index(t, per_bar)]
 
+    def default_line(name, per_bar=8):
+        """a line for a fighter the config wrote none for: each loop bar's chord tones up and back down in the upper
+        two thirds of its register, one per 8th (a sketch to replace with a real line)"""
+        from fighters import FIGHTERS as ROSTER
+        lo, hi = ROSTER[name]['register']
+        out = []
+        for ch in T.LOOP:
+            tones = chord_tones(lo + (hi - lo) // 3, hi, ch)[:4] or chord_tones(lo, hi, ch)[:4]
+            shape = tones + tones[-2:0:-1]
+            out += [shape[i % len(shape)] for i in range(per_bar)]
+        return out
+
+    def default_solo(name):
+        """a 2-bar victory motif on the tonic chord in the fighter's register (a sketch to replace)"""
+        from fighters import FIGHTERS as ROSTER
+        lo, hi = ROSTER[name]['register']
+        ch = T.CHORDS[0]
+        tones = chord_tones(lo + (hi - lo) // 4, hi, ch)
+        up = tones[:4] if len(tones) >= 4 else (tones * 4)[:4]
+        return [(0, up[0], .5), (.5, up[1], .5), (1, up[2], .5), (1.5, up[3], .5), (2, up[2], .5), (2.5, up[1], .5),
+                (3, up[3], 1.0), (4, up[2], .5), (4.5, up[1], .5), (5, up[0], 1.0), (6, up[0], 2.0)]
+
     for f in (bar_t, beat_env, beat_pulse, next_bar, chord_at, chord_tones, scale_notes, root_above, loop_index,
-              line_at):
+              line_at, default_line, default_solo):
         setattr(T, f.__name__, f)
+    T.SOLO = dict(T.SOLO)
+    for n in T.FIGHTERS:
+        if n not in T.SOLO:
+            T.SOLO[n] = default_solo(n)
 
 
 # ---------------------------------------------------------------- loading
 class Episode:
-    def __init__(self, folder):
+    def __init__(self, folder, cfg=None):
         self.dir = os.path.abspath(folder)
         self.name = os.path.basename(self.dir.rstrip('/'))
-        path = os.path.join(self.dir, 'episode.py')
-        spec = importlib.util.spec_from_file_location('ballfight_episode_config', path)
-        self.cfg = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(self.cfg)
+        if cfg is None:
+            path = os.path.join(self.dir, 'episode.py')
+            spec = importlib.util.spec_from_file_location('ballfight_episode_config', path)
+            cfg = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(cfg)
+        self.cfg = cfg
         self.check = os.path.join(self.dir, 'check')
         os.makedirs(self.check, exist_ok=True)
         self.T = build_timeline(self.cfg, self.dir)
-        self.seed = int(getattr(self.cfg, 'SEED', 0) or 0)
-        self.out = os.path.join(self.dir, self.name.replace('ballfight_', 'ballfight_') + '.mp4')
+        self.seed = getattr(self.cfg, 'SEED', None)
+        self.out = os.path.join(self.dir, (self.name if self.name.startswith('ballfight') else 'ballfight_' + self.name)
+                                + '.mp4')
 
     def path(self, *p):
         return os.path.join(self.dir, *p)
@@ -199,14 +228,15 @@ def find(name):
                      f'projects/ballfight/examples/{name})')
 
 
-def load(name):
-    """load an episode and make it the current one: its timeline becomes `timeline` for the shared modules"""
+def load(name, cfg=None):
+    """load an episode and make it the current one: its timeline becomes `timeline` for the shared modules. With
+    `cfg` (a config object), `name` is just the folder for its caches and outputs (previews)"""
     global _CURRENT
     activate_paths()
-    folder = find(name)
+    folder = os.path.abspath(name) if cfg is not None else find(name)
     sys.modules.pop('timeline', None)
     from fighters import FIGHTERS                       # noqa: F401  (the roster, before the timeline needs it)
-    ep = Episode(folder)
+    ep = Episode(folder, cfg)
     sys.modules['timeline'] = ep.T
     os.environ['BALLFIGHT_EPISODE'] = ep.dir             # render workers (reelkit.video) load the same episode
     _CURRENT = ep

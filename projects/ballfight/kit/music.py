@@ -73,6 +73,26 @@ class Thinner:
         return not drop
 
 
+M64 = (1 << 64) - 1
+
+
+def h01_37(*xs):
+    """#37's splitmix64 mixer (the reed fighters' thinning, as #37 built it)"""
+    z = 0x9E3779B97F4A7C15
+    for x in xs:
+        z = (z ^ (int(round(x * 1000)) & M64)) * 0xBF58476D1CE4E5B9 & M64
+        z = (z + 0x9E3779B97F4A7C15) & M64
+        z = ((z ^ (z >> 30)) * 0xBF58476D1CE4E5B9) & M64
+        z = ((z ^ (z >> 27)) * 0x94D049BB133111EB) & M64
+        z ^= z >> 31
+    return z / float(1 << 64)
+
+
+def thin_37(slot, key, hp, prev_dropped):
+    """drop this note? (#37: up to 30 % of a hurt fighter's notes, never two in a row)"""
+    return not prev_dropped and h01_37(slot, key) < 0.30 * (1 - hp) ** 1.6
+
+
 # ---------------------------------------------------------------- the Pixel Pitch voices (cached, level-matched)
 _VC, _GAIN = {}, {}
 
@@ -186,6 +206,19 @@ def roar(dur, seed=3):
     t = A.tt(n)
     env = np.clip(t / 0.25, 0, 1) * np.exp(-np.maximum(t - 0.6, 0) / (dur * 0.45))
     return x * env
+
+
+def thunder(dur=1.6, seed=0, crack=True):
+    """a rolling thunder rumble (+ a crack on top) (#37)"""
+    n = int(dur * SR)
+    t = A.tt(n)
+    r = np.random.default_rng(seed)
+    rumble = A.lp(r.normal(0, 1, n), 140) * 3.0 * np.clip(t / 0.03, 0, 1) * np.exp(-t / (dur * 0.35))
+    rumble *= 0.7 + 0.3 * np.sin(2 * np.pi * 3.1 * t + seed)
+    x = rumble
+    if crack:
+        x = x + A.bp(r.normal(0, 1, n), 1500, 9000) * np.exp(-t / 0.03) * 0.9
+    return x
 
 
 def riser(dur, over=0.012, seed=11):

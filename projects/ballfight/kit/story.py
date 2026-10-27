@@ -101,6 +101,8 @@ def load(seed=None):
     import numpy as np
     ep = current()
     seed = ep.seed if seed is None else seed
+    if seed is None:
+        raise SystemExit('no SEED in episode.py yet: run `python -m ballfight search <episode>`, then set SEED')
     path = os.path.join(ep.check, f'run_{seed}.pkl')
     if os.path.exists(path):
         with open(path, 'rb') as f:

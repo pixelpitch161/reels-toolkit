@@ -177,6 +177,18 @@ class Sound:
         self.role = M.T.ROLES.get(self.name, 'melody')
         self.enemy = 1 - k
 
+    def voice(self, m, dur, vel=0.85):
+        """one note in its voice (a debuff on it can play a sour twin in it); default: its Pixel Pitch voice"""
+        return self.M.note(self.M.CFG[self.k]['pp'], m, round(dur, 3), round(dur + 0.2, 2), round(vel, 1))
+
+    def detune(self, t):
+        """the OUT OF TUNE depth on it at t (0..1): the engine's recorded status"""
+        M = self.M
+        if 'DET' not in M.RUN or not (self.T.T_FIGHT <= t < M.T_KO):
+            return 0.0
+        left, dep = M.RUN['DET'][M.P.sim_i(t), self.k]
+        return float(dep) if left > 0 else 0.0
+
     def colour(self, x, t, drive_k=1.0, **kw):
         a = dict(self.colour_args)
         a.update(kw)

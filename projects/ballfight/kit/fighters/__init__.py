@@ -45,4 +45,4 @@ def ported():
     import os
     here = os.path.dirname(os.path.abspath(__file__))
     return sorted(f[:-3].replace('_', ' ').upper() for f in os.listdir(here)
-                  if f.endswith('.py') and f not in ('__init__.py', 'base.py'))
+                  if f.endswith('.py') and not f.startswith('_') and f != 'base.py')
