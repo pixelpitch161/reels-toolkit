@@ -67,6 +67,9 @@ enemy away and makes the ropes ring, spreading from the nearest side to all four
 ringing rope is slung back and hurt; events 'honk' / 'rattle' / 'sling', recorded as RATTLE) and ability kind
 `offbeat` (SKANK: extra honks on every off-beat 8th for a while). Ability kind `quake` (LOW A: a ring-wide wave of kind
 'quake' and, through the rattle system, all four ropes held at full ring for a while: nowhere is safe).
+#39 v2 (opt-in): weapon kind `wrecking` (WRECKING BALL: every other bar a crane cable drops, hooks the ball and swings it
+across the ring as a wrecking ball in a pendulum arc, smashing what it passes; the cable grows per landed smash; SKANK
+(`offbeat`) swings it on the off-beats every bar instead; events 'cable' / 'swing' / 'smash', recorded as WRECK).
 The run records every frame (30 fps) for the renderer and every event (hits, blocks, parries, ropes, volleys,
 abilities, level-ups, the K.O.) for the soundtrack and the captions. Seeded: same seed, same fight."""
 import math
@@ -3264,6 +3267,156 @@ class Fight:
                 B.blade_len = min(w['max_reach'], B.blade_len + w['grow'])
         B.rat_i = len(ev)
 
+    # ------------------------------------------------------------------ #39 v2: WRECKING BALL (opt-in weapon kind 'wrecking')
+    # Every `every` beats (`off16` 16ths after the bar line) a crane cable drops from the rafters over `drop16` 16ths
+    # (the ball keeps rolling) and hooks the harness. The swing is aimed then: the bottom of the arc goes `short` x 2R
+    # short of where the enemy will be when the ball gets there (where a hop lands; else `lead` x its motion), at most
+    # the swing's reach ahead, the aim off by up to `jitter` deg (seeded); the pivot hangs over that point, the cable is `base` long (+`grow` per landed smash, up to `max_reach`; held in blade_len). Over `lift16`
+    # 16ths the crane hoists the ball off the canvas and back to `theta` deg out (less when the ropes are closer: both
+    # ends stay inside the ring); then it swings through the bottom and up the other side in `swing16` 16ths (a
+    # pendulum's half period: fastest at the bottom). Airborne all the while (no clash, no rolling). The first time the
+    # swinging ball comes within `hit_r` beyond contact of an enemy in front of it (3D: its height counts; an enemy
+    # mid-hop sails over it, as with the clash, except in the first and last `air_edge` of the hop) it smashes it: `dmg` x
+    # (`dmg_min` + the rest x its speed, 0..1) and `knock` x (0.5 + 0.5 x speed) along the swing. At the far end it
+    # unhooks and rolls on along the swing. While SKANK (ability kind 'offbeat') lasts, a cycle starts every bar on the
+    # '&' of beat 1 instead (`skank_off16`), so the swings land on the off-beats, twice as often (aimed `skank_short`).
+    # Events ('cable', k, t_hook), ('swing', k, x0, y0, x1, y1, bx, by, L, theta, t0, t1, kind 0 / 1 skank),
+    # ('smash', k, x, y, speed). Recorded as WRECK (per ball: phase 0 none / 1 drop / 2 lift / 3 swing, height, cable
+    # length, pivot x, pivot y, hook x, hook y, phase start, phase end) when a fighter uses the kind.
+    WRECK_PHASES = {None: 0, 'drop': 1, 'lift': 2, 'swing': 3}
+
+    def wreck_setup(self, k):
+        B = self.balls[k]
+        B.blade_len = float(B.w['base'])
+        B.wreck = None                                       # dict(phase, t0, t1, ...): the current cycle
+        B.skank_until = getattr(B, 'skank_until', -1.0)
+        B.air = False
+
+    def _wreck_aim(self, k):
+        """fix the swing when the hook bites: aim, the bottom point (under the pivot), the angle that fits the ring"""
+        B, O = self.balls[k], self.balls[1 - k]
+        w = B.w
+        W_ = B.wreck
+        s16 = self.R.beat / 4.0
+        t_bot = self.t + (w['lift16'] + w['swing16'] / 2) * s16
+        if getattr(O, 'hop', None) is not None:              # a hopper mid-hop: it will stand where it lands
+            tgt = O.hop['p1']
+        else:
+            tgt = O.p + O.v * (t_bot - self.t) * w.get('lead', 1.0)
+        d = tgt - B.p
+        n = float(np.hypot(*d))
+        u = d / n if n > 1e-6 else (B.v / (np.linalg.norm(B.v) + 1e-12))
+        short = w.get('short', 0.0)
+        if W_['kind'] == 1:                                  # a SKANK swing (its bottom on the off-beat) may aim apart
+            short = w.get('skank_short', short)
+        n = max(0.0, n - short * 2 * self.R.R)
+        if w.get('jitter', 0.0) > 0:                         # the crane operator's aim: seeded, +- `jitter` deg
+            j = math.radians(self.rng.uniform(-1.0, 1.0) * w['jitter'])
+            u = np.array([u[0] * math.cos(j) - u[1] * math.sin(j), u[0] * math.sin(j) + u[1] * math.cos(j)])
+        L = B.blade_len
+        reach = L * math.sin(math.radians(w['theta']))
+        lim = self.R.A - self.R.R
+        bottom = np.clip(B.p + u * min(n, reach), -lim, lim)
+
+        def span(sg):                                        # how far from the bottom along sg*u before the ropes
+            sp = 99.0
+            for ax in (0, 1):
+                if abs(u[ax]) > 1e-9:
+                    sp = min(sp, (math.copysign(lim, sg * u[ax]) - bottom[ax]) / (sg * u[ax]))
+            return max(0.0, sp)
+        half = max(0.15, min(reach, span(1), span(-1)))
+        th = math.asin(min(1.0, half / L))
+        W_.update(u=u, L=L, th=th, half=half, p0=B.p.copy(), bottom=bottom, ps=bottom - u * half,
+                  h0=L * (1 - math.cos(th)))
+
+    def wreck_tick(self, k, k16):
+        B = self.balls[k]
+        w = B.w
+        if B.wreck is not None or getattr(B, 'wsnap', None) is not None or self._stunned(k):
+            return
+        s16 = self.R.beat / 4.0
+        skank = self.t < getattr(B, 'skank_until', -1.0)
+        if skank:
+            start = k16 % 16 == int(w.get('skank_off16', 2))
+        else:
+            main16 = int(round(4 * w['every']))
+            off = int(w.get('off16', 0))
+            start = k16 >= off and (k16 - off) % main16 == 0
+        if not start:
+            return
+        t_hook = self.t + w['drop16'] * s16
+        B.wreck = dict(phase='drop', t0=self.t, t1=t_hook, kind=int(skank), hit=False)
+        self.ev('cable', k, t_hook)
+
+    def _sails_over(self, k, edge):
+        """is ball k up in the air, clear of a swinging wrecking ball? (mid-hop, past the first and before the last
+        `edge` of the hop, where it is still low)"""
+        B = self.balls[k]
+        if not getattr(B, 'air', False):
+            return False
+        H = getattr(B, 'hop', None)
+        if H is None or edge <= 0:
+            return True
+        u = (self.t - H['t0']) / max(1e-6, H['t1'] - H['t0'])
+        return edge < u < 1 - edge
+
+    def wreck_step(self, k, dt):
+        B, O = self.balls[k], self.balls[1 - k]
+        W_ = B.wreck
+        if W_ is None:
+            return
+        w = B.w
+        R = self.R.R
+        s16 = self.R.beat / 4.0
+        if W_['phase'] == 'drop':
+            if self.t + 1e-9 >= W_['t1']:                       # hooked: aim the swing, hoist it back
+                self._wreck_aim(k)
+                W_['phase'], W_['t0'], W_['t1'] = 'lift', self.t, self.t + w['lift16'] * s16
+                B.air = True
+            return
+        if W_['phase'] == 'lift':
+            uu = min(1.0, (self.t - W_['t0']) / max(1e-6, W_['t1'] - W_['t0']))
+            e = uu * uu * (3 - 2 * uu)
+            B.p = W_['p0'] + (W_['ps'] - W_['p0']) * e
+            W_['h'] = W_['h0'] * e
+            B.v = W_['u'] * 0.3                                  # hoisted: barely moving (what the enemy reads)
+            if uu >= 1.0:
+                T_ = w['swing16'] * s16
+                W_['phase'], W_['t0'], W_['t1'] = 'swing', self.t, self.t + T_
+                p1 = W_['bottom'] + W_['u'] * W_['half']
+                self.ev('swing', k, float(W_['ps'][0]), float(W_['ps'][1]), float(p1[0]), float(p1[1]),
+                        float(W_['bottom'][0]), float(W_['bottom'][1]), float(W_['L']), float(W_['th']), W_['t0'],
+                        W_['t1'], W_['kind'])
+            return
+        # the swing: a pendulum's half period, fastest at the bottom
+        T_ = W_['t1'] - W_['t0']
+        uu = min(1.0, (self.t - W_['t0']) / T_)
+        L, th, u = W_['L'], W_['th'], W_['u']
+        phi = -th * math.cos(math.pi * uu)
+        B.p = W_['bottom'] + u * (L * math.sin(phi))
+        W_['h'] = L * (1 - math.cos(phi))
+        sp = math.sin(math.pi * uu)                              # 0..1: the swing's speed
+        gv = L * math.cos(phi) * th * math.pi / T_ * sp          # ground speed
+        B.v = u * max(0.3, gv)
+        if not W_['hit'] and not self._sails_over(1 - k, w.get('air_edge', 0.0)):
+            rel = O.p - B.p
+            d3 = math.sqrt(float(rel @ rel) + W_['h'] ** 2)
+            if d3 < 2 * R + w['hit_r'] and float(rel @ u) > 0:      # only what is in front of the swing
+                W_['hit'] = True
+                dist = float(np.hypot(*rel))
+                n = rel / dist if dist > 1e-6 else u
+                hx, hy = (O.p - n * R).tolist()
+                landed = self.damage(k, 1 - k, w['dmg'] * (w['dmg_min'] + (1 - w['dmg_min']) * sp), 'wreck', hx, hy)
+                self.knock(1 - k, u + 0.6 * n, w['knock'] * (0.5 + 0.5 * sp))
+                self.ev('smash', k, hx, hy, sp)
+                if landed:
+                    B.blade_len = min(w['max_reach'], B.blade_len + w['grow'])
+        if uu >= 1.0:                                            # the far end: unhook and roll on along the swing
+            B.p = W_['bottom'] + u * W_['half']
+            B.v = u * self.R.V
+            B.air = False
+            B.wreck = None
+
     # ------------------------------------------------------------------ record
     KMAX = 72
 
@@ -3348,6 +3501,17 @@ class Fight:
                     Ac[j] = (1.0, An['c'][0], An['c'][1], An['th'], float(np.hypot(*(Bj.p - An['c']))),
                              float(getattr(Bj, 'twin_until', -1.0) > self.t))
             rec['ANC'].append(Ac)
+        if 'WRECK' in rec:                                  # #39 v2, only recorded when a fighter uses the 'wrecking' kind
+            Wr = np.zeros((2, 9))
+            for j, Bj in enumerate((B0, B1)):
+                W_ = getattr(Bj, 'wreck', None)
+                Wr[j, 2] = getattr(Bj, 'blade_len', 0.0)
+                if W_ is not None:
+                    bx, by = W_.get('bottom', Bj.p)
+                    sx, sy = W_.get('p0', Bj.p)                  # where the hook bit
+                    Wr[j] = (self.WRECK_PHASES[W_['phase']], W_.get('h', 0.0), W_.get('L', Wr[j, 2]), bx, by, sx, sy,
+                             W_['t0'], W_['t1'])
+            rec['WRECK'].append(Wr)
         if 'RATTLE' in rec:                                 # #39, only recorded when a fighter uses the 'rattle' kind
             Ra = np.zeros((2, 5))
             for j, Bj in enumerate((B0, B1)):
@@ -3485,6 +3649,12 @@ class Fight:
         n16r = k16_0
         if rec is not None and rattlers:
             rec['RATTLE'] = []
+        wreckers = [k for k, B in enumerate(self.balls) if B.w['kind'] == 'wrecking']     # #39 v2 (opt-in)
+        for k in wreckers:
+            self.wreck_setup(k)
+        n16w = k16_0
+        if rec is not None and wreckers:
+            rec['WRECK'] = []
         hookers = [k for k, B in enumerate(self.balls) if any(a['kind'] == 'hook' for a in B.cfg['abilities'].values())]
         if rec is not None and hookers:                          # #39 (opt-in)
             rec['HOOK'] = []
@@ -3616,6 +3786,11 @@ class Fight:
                 n16r += 1
                 for k in rattlers:
                     self.rattle_tick(k, k16r)
+            if wreckers and self.t + 1e-9 >= n16w * s16:        # #39 v2: cable drops on the 16th grid
+                k16w = n16w - k16_0
+                n16w += 1
+                for k in wreckers:
+                    self.wreck_tick(k, k16w)
             if hoppers and self.t + 1e-9 >= n16h * s16:         # #39: hops (and MOUNTAIN KING's) on the 16th grid
                 k16h = n16h - k16_0
                 n16h += 1
@@ -3686,6 +3861,8 @@ class Fight:
                 self.hook_step(k, dt)
             for k in rattlers:                                   # #39: slings off the ringing ropes
                 self.rattle_step(k, dt)
+            for k in wreckers:                                   # #39 v2: the cable, the lift, the swing
+                self.wreck_step(k, dt)
             for k in hoppers:                                    # #39: mid-hop positions, landings + stomps
                 self.tiptoe_step(k, dt)
             if dc:
