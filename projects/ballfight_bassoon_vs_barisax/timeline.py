@@ -10,7 +10,8 @@ across the ring as a wrecking ball in a pendulum arc, smashing what's in front o
 then unhooks and rolls on; the cable grows per landed smash (a wider swing that hits harder). Both are game rules in
 the engine (projects/ballfight/fight.py: 'tiptoe', 'hook', 'mountain', 'wrecking', 'offbeat', 'snap'); the audio
 follows them. v1 (WINDOW RATTLER, LOW A) is frozen in v1/. v3 (Oct 27): the detailed bari model and the swing out
-over the ropes (the roster's, from #40 v2); v2 (the swing kept inside the ring) is frozen in v2/. Honest simulated
+over the ropes (the roster's, from #40 v2); v2 (the swing kept inside the ring) is frozen in v2/. v4 (Oct 27): a full
+swing near the corners too (the roster's 'steer'); v3 is frozen in v3/. Honest simulated
 fight (the rules tuned once with tune.py, then frozen), seed picked for pacing, never edited.
 Hook: bar 0 is the VS title card (projects/ballfight/title.py): forest-green / coral panels split diagonally, both
 balls big and close; BASSOON (a bassoon blat), VS (the thunder crack) and BARI SAX (a bari honk) slam in on beats 1-3
@@ -65,7 +66,9 @@ T_CLOSE = 0.30                  # the last 0.30 s of the file: the doors slide s
 DMG_SCALE = 0.34              # v3 (Oct 27: the bari's swing may go out over the ropes): re-tuned once with tune.py, frozen;
 DMG_SIDE = (1.0, 0.8)         # the BARI SAX's hits x0.8 (the roster's numbers are shared with #40, so the handicap is the
                               # episode's own): 400 seeds BASSOON 53 % / BARI SAX 47 %, median K.O. 50.8 s (without it the
-                              # full swings won the bari 83 %). v2 was 0.32 with no handicap (v2/), v1 0.45 (v1/)
+                              # full swings won the bari 83 %). v2 was 0.32 with no handicap (v2/), v1 0.45 (v1/).
+                              # v4 (the roster's 'steer': full swings near the corners too) kept these: 400 seeds
+                              # BASSOON 56 % / BARI SAX 44 %, median K.O. 50.9 s
 
 # ---------------------------------------------------------------- story targets (seed_search.py scores runs against these)
 T_KO = (49.0, 53.0)

@@ -1395,6 +1395,28 @@
   `e[8] - e[7]` (0.27 s). #40's audio.py still has the old line.
 - Checks: levels PASS (wav + mp4, spread 4.3 dB); band check bari +3.4..+7.0 dB while sounding; safe zone OK; CoC 0;
   flashcheck PASS; flash test 0 on 41.5-52 s; loopcheck PASS render 0.4x / mp4 1.1x. Render 7.2 min + mux.
+- Feedback (user, Oct 27): "The Bari Sax is supposed to be able to swing over the ropes so it can get a full swing
+  even if its not in the middle of the ring." -> v4.
+
+### #39 v4: a full swing near the corners too
+- Why v3 still had short swings: `overhang` lets the ends go out over the sides, but the corner-post cap (|x| + |z|,
+  because the ring's left / right corners sit at the frame edges) cuts any swing that runs into a corner. The swing ran
+  along the bari -> target line, so a fight near a corner (the bassoon backs into them) got 9-20 deg swings: 25 % of
+  swings below full, 9 % under 25 deg.
+- Fix (engine opt-in `steer`, own commit): when the cap would cut the swing short, try turning its plane in 10-deg steps
+  each way and take the direction with the most room (the full swing if any fits), with the bottom moved so it is still
+  just short of the target along the new direction (so the smash still comes at full speed). No randomness added, so
+  the jitter stream is unchanged. 98 % full swings, none under 25 deg; the smash rate is unchanged (59 %).
+- Made it the roster's standard for the bari (steer 90) and pinned it off in #40 v2's sim.py (the convention #40 used on
+  #39); #39 v3 to `v3/`. Balance stayed inside the window with v3's knobs (56 / 44), so no re-tune.
+- A turned swing can hoist the ball up to ~2.9 units in one 16th: the motion smear now also covers a long hoist.
+- Every swing honks now (the thinning used to drop up to 30 % of SKANK's honks on a losing bari, but a swing on screen
+  without its honk reads as a dropout); with it the bari sits +3.7..+6.9 dB over the bed while sounding.
+- Toolkit note: caption puffs (`reelkit.ui._sand_puff`) are seeded with Python's `hash()` of the caption text, which
+  is randomised per process, so the two render workers draw different puff dots on alternate frames and a patch or
+  snapshot re-render of a caption frame differs there. A stable hash (e.g. `zlib.crc32`) would fix it.
+- Checks: levels PASS (wav + mp4, spread 4.7 dB); band check bari +3.7..+6.9 dB; safe zone OK; CoC 0; flashcheck PASS;
+  flash test 0 on 41.5-52 s; loopcheck PASS render 0.4x / mp4 1.0x. Render 7 min + mux.
 - Feedback: (pending)
 
 

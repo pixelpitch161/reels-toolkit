@@ -906,22 +906,26 @@ def draw_swing_fx(arr, cam, k, t):
     """the swing's motion smear (ghost balls a few ms back) and its coral trail, under the ball"""
     tf = min(t, T_KO - 1e-4)
     c = cycle_at(k, tf, 0.0)
-    if c is None or c['sw'] is None or not (c['ts0'] <= tf < c['ts1'] + 0.12):
+    if c is None or c['sw'] is None or not (c['tl0'] <= tf < c['ts1'] + 0.12):
         return arr
+    long_hoist = float(np.hypot(*(c['ps'] - c['p0']))) > 1.2         # v4: a long, fast yank (a turned swing) smears too
+    phases = ('swing', 'lift') if long_hoist else ('swing',)
     pts, spd = [], 0.0
     for j in range(12, -1, -1):
         tt = tf - j * 0.018
         pose = wreck_pose(c, tt)
-        if pose is None or pose[2] != 'swing':
+        if pose is None or pose[2] not in phases:
             continue
         pts.append(cam.wp(_w(pose[0], R + pose[1])[None])[0])
     uu = min(1.0, max(0.0, (tf - c['ts0']) / max(1e-6, c['ts1'] - c['ts0'])))
-    spd = math.sin(math.pi * uu)
+    spd = math.sin(math.pi * uu) if tf >= c['ts0'] else 0.8
+    if tf < c['ts0'] and not long_hoist:
+        return arr
     if len(pts) >= 2:
         arr = ST.swing_trail(arr, pts, COL[k], k=0.35 + 0.65 * spd)
     for j in (4, 3, 2, 1):                                   # ghosts, oldest first
         pose = wreck_pose(c, tf - j * 0.014)
-        if pose is None or pose[2] != 'swing':
+        if pose is None or pose[2] not in phases:
             continue
         Pc = cam.to_cam(_w(pose[0], R + pose[1])[None])[0]
         s_ = cam.proj(Pc[None])[0]

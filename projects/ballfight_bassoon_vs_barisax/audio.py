@@ -519,17 +519,12 @@ def main():
             ts0, ts1, sk = e[11], e[12], e[13]
             tb = q16((ts0 + ts1) / 2)                        # the bottom: on the beat (SKANK's: the off-beat)
             ch = T.chord_at(tb + 0.01)
-            hp = hp_at(KX, t) / 100.0
-            if sk:
-                x_dropped = thin(round(tb / S16), 11, hp, x_dropped)
-                if x_dropped:
-                    continue
-            m = T.HONK_NOTE[ch] + (12 if sk else 0)
+            m = T.HONK_NOTE[ch] + (12 if sk else 0)        # v4: never thinned (every swing on screen honks)
             t_on = q16(ts0 - S16)                            # it honks as it's let go, swelling to the bottom
             dur = ts1 - t_on + 0.06
             sig, g, lead = colour(bari(m, dur, 0.95, honk=0.85 if not sk else 0.55), KX, t, 0.6)
             sig = doppler(sig, tb - t_on, up=1.6 if not sk else 1.0, down=2.6 if not sk else 1.6, width=0.09)
-            mix.place('bari', sig, t_on, (1.35 if not sk else 0.90) * g, pan=0.2)
+            mix.place('bari', sig, t_on, (1.35 if not sk else 1.15) * g, pan=0.2)
             if lead > 0.05 and not sk:                       # the leader: the octave honked on top (fuller)
                 up8 = doppler(colour(bari(m + 12, dur, 0.7, honk=0.4), KX, t)[0], tb - t_on, 1.6, 2.6, 0.09)
                 mix.place('bari', up8, t_on, 0.20 * g, pan=0.25)

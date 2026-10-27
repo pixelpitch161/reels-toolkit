@@ -14,6 +14,10 @@ The low reeds: the orchestra's clown vs the band's chaos agent. Two new fighters
   detailed Pixel Pitch bari (#40's detail pass) and the roster's swing out over the ropes (#40 v2: the swing's ends may
   reach past the ropes, never past a corner post; a far end outside drops onto the ropes and is slung back in). v2 is
   frozen in `v2/` (seed 27, `_v2.mp4`).
+  **v4** (Oct 27, the user: "The Bari Sax is supposed to be able to swing over the ropes so it can get a full swing
+  even if its not in the middle of the ring"): near a corner the corner-post cap still cut a quarter of v3's swings
+  short (9 % under 25 deg); the roster's new `steer` turns such a swing's plane to where the full swing fits (98 % full
+  swings, none under 25 deg). v3 is frozen in `v3/` (seed 95, `_v3.mp4`).
 
 Both are game rules in the shared engine (`projects/ballfight/fight.py`), added in their own small commits (every
 finished episode replays identically, `tools/ballfight_replay_hash.py`):
@@ -26,6 +30,7 @@ finished episode replays identically, `tools/ballfight_replay_hash.py`):
 | weapon `rattle` | WINDOW RATTLER: a honk ring every bar (`push`, `dmg`, `knock`) + the ropes ring (1 side, one more per `side_step` of strength, decaying over `ring` s); a bounce off a ringing rope = a sling (`sling` x amplitude x strength, `sling_knock`) |
 | ability `offbeat` | SKANK: an extra honk on every off-beat 8th for `dur_beats` |
 | ability `quake` | LOW A: a ring-wide wave + all four ropes held at full ring for `dur_beats` |
+| wrecking option `steer` (v4) | a swing the ropes / corner-post cap would cut short turns its plane in 10-deg steps, up to `steer` deg each way, to the direction with the most room, its bottom still just short of the target |
 | weapon `wrecking` (v2) | WRECKING BALL: every `every` beats a cable drops over `drop16` 16ths; when it bites, the swing is aimed (the bottom `short` x 2R short of where the enemy will stand: where a hop lands, else `lead` x its motion; +-`jitter` deg); the pivot hangs over that point, the cable `base` long (+`grow` per landed smash, up to `max_reach`); hoisted back `theta` deg (less near the ropes) over `lift16`, it swings through in `swing16` 16ths (a pendulum's half period); airborne all the while; the first enemy in front within `hit_r` beyond contact (3D; one mid-hop sails over it, except in its first / last `air_edge`) takes `dmg` x (`dmg_min` + the rest x speed) x (cable / `base`) ^ `len_pow`, knocked along the swing; under SKANK (`offbeat`) a cycle starts every bar on the '&' (`skank_off16`, aimed `skank_short`) so the swings bottom out on the off-beats |
 | ability `snap` (v2) | CABLE SNAP: hoisted to `height` and carried over the enemy's predicted spot (fixed when it fires) for `hoist` of `tele16` 16ths; the cable snaps, it falls and craters the spot: `dmg` + `knock` within `radius` beyond contact |
 
@@ -48,7 +53,17 @@ LOW LOW A).
   pigtail loop, the big mouthpiece, the low-A cup + rod. Voice: the alto's recipe with frequency-based rolloff, formants
   ~560 Hz / ~1.35 kHz, `honk` adds growl, scoop and the reed slap.
 
-## Tuning and the run (v3)
+## Tuning and the run (v4)
+
+v3's knobs kept (the bari's hits x0.8 at damage scale 0.34): with `steer`, 400 seeds BASSOON 56 % / BARI SAX 44 %,
+median K.O. 50.9 s, every swing full (98 %). Honest search at 2 bars: 8 fits in 637 runs (56 / 44); seed **77** (the
+top score): five full-speed smashes put the bari 99-82 up at 10 s, GROWL 9.2, SKANK 17.7, STACCATO 22.0, BOCAL HOOK
+31.9 bring the bassoon back, CABLE SNAP at 42.6 s craters it at 43.6 s and MOUNTAIN KING answers at once; lead changes
+43.1, 46.4 and 49.7 s; BASSOON wins at 51.34 s with 13.8 HP. 19 swings (8 of them SKANK's), all at 42-43 deg; 8 turned
+10-60 deg away from a corner (two would have been 9 and 16 deg), 6 times out over the ropes and slung back; 11
+smashes.
+
+## Tuning and the run (v3, frozen in `v3/`)
 
 The roster's BARI SAX is now shared with #40, so its numbers stay as they are; with the swing over the ropes it won
 83 % of 400 seeds here. Re-tuned once with the episode's own knobs (`tune.py` keys `hb` / `sc`): the bari's hits x0.8
@@ -90,10 +105,10 @@ gain + compressor + soft limiter: `reelkit.levels` PASS.
 
 ```bash
 python tune.py 200                                         # the frozen rules' balance (done once)
-python seed_search.py 1 2000 --stop 8                      # honest runs ranked against the beat sheet -> check/seeds.txt
-python sim.py 95                                           # the run's story
+python seed_search.py 1 4000 --stop 8                      # honest runs ranked against the beat sheet -> check/seeds.txt
+python sim.py 77                                           # the run's story
 python render.py                                           # sprite cache (check/sprites_ballfight13.npz, ~1 min)
-python -m reelkit.sheet render.py test/sheet_v3.png 0.0 1.0 6.35 6.75 9.6 12.45 17.75 19.32 26.6 29.6 34.8 42.4 42.9 43.3 50.85 54.0
+python -m reelkit.sheet render.py test/sheet_v4.png 1.0 6.35 9.3 14.55 14.85 17.75 31.9 34.6 40.25 40.36 42.8 43.65 51.4 54.0
 python -m reelkit.safezone render.py --step 0.25
 python focus_check.py                                      # subject CoC must be 0 px on every frame
 python audio.py && python band_check.py && python -m reelkit.levels audio.wav
@@ -115,4 +130,5 @@ python -m reelkit.video render.py audio.wav ballfight_tmp.mp4 && python mux.py  
 | `audio.py` | The ska-punk band + both fighters from the run (v2: the swing honks) |
 | `v1/` | v1 as delivered (WINDOW RATTLER, seed 190): re-renderable, replay-guarded |
 | `v2/` | v2 as delivered (WRECKING BALL in the ring, seed 27): re-renderable, replay-guarded |
+| `v3/` | v3 as delivered (the swing out over the ropes, no `steer`, seed 95): re-renderable, replay-guarded |
 | `band_check.py`, `focus_check.py`, `flash_test.py`, `mux.py` | Checks and the loop-clean encode |
