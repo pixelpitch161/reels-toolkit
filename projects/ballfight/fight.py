@@ -2414,7 +2414,7 @@ class Fight:
         r0 = float(np.hypot(*rel))
         th = math.atan2(rel[1], rel[0]) if r0 > 1e-6 else math.atan2(-u[1], -u[0])
         om = B.spin_dir * w['turns'] * 2 * math.pi / tw
-        B.anc = dict(c=c, th=th, r0=r0, orbit=float(orbit), om=om, t0=self.t, t_end=self.t + tw, cool=0.0, w=w)
+        B.anc = dict(c=c, th=th, r0=r0, orbit=float(orbit), om=om, t0=self.t, t_end=self.t + tw, cool=[0.0, 0.0], w=w)
         self.ev('anchor', k, float(c[0]), float(c[1]), float(orbit), B.anc['t_end'])
 
     def anchor_release(self, k):
@@ -2449,8 +2449,8 @@ class Fight:
         r = An['r0'] + (An['orbit'] - An['r0']) * (u_ * u_ * (3 - 2 * u_))
         B.p = np.clip(An['c'] + r * np.array([math.cos(An['th']), math.sin(An['th'])]), -(A - R), A - R)
         B.v = np.array([-math.sin(An['th']), math.cos(An['th'])]) * An['om'] * max(r, 0.05)
-        An['cool'] = max(0.0, An['cool'] - dt)
-        if An['cool'] <= 0:
+        An['cool'] = [max(0.0, c_ - dt) for c_ in An['cool']]
+        if min(An['cool']) <= 0:
             rel = O.p - An['c']
             dist = float(np.hypot(*rel))
             if dist <= r + 2 * R and getattr(O, 'shadow', 0.0) <= 0:
@@ -2460,14 +2460,14 @@ class Fight:
                 if getattr(B, 'twin_until', -1.0) > self.t:            # MULTIPHONICS: the ghost twin's arm
                     arms.append((th0 + math.pi, 1))
                 for a0, ghost in arms:
-                    if _swept(a0 % (2 * math.pi), dth, phi, half):
+                    if An['cool'][ghost] <= 0 and _swept(a0 % (2 * math.pi), dth, phi, half):
                         n = rel / dist if dist > 1e-6 else np.array([math.cos(a0), math.sin(a0)])
                         hx, hy = (O.p - n * R).tolist()
                         dmg = w['dmg'] * (w.get('twin_dmg', 0.6) if ghost else 1.0)
                         landed = self.damage(k, 1 - k, dmg, 'anchor', hx, hy, ghost)
                         sw = np.array([-math.sin(a0 + dth), math.cos(a0 + dth)]) * (1.0 if dth >= 0 else -1.0)
                         self.knock(1 - k, sw + 0.7 * n, w['knock'])
-                        An['cool'] = w.get('cool', 0.3)
+                        An['cool'][ghost] = w.get('cool', 0.3)                # each arm rests on its own
                         if landed and w is B.w:
                             B.blade_len = min(w['max_orbit'], B.blade_len + w['grow'])
                         break
