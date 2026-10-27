@@ -344,4 +344,32 @@ FIGHTERS = {
             low=dict(name='ILL WIND', kind='wave', speed=4.5, radius=9.0, dmg=8.0, knock=1.5,
                      detune=dict(depth=1.0, dur_beats=8, weak=0.45))),     # a sour gust: fully out of tune
         pp='OBOE', register=(62, 86), idiom='nasal'),
+
+    # ---- #38 BALLFIGHT #12: the two instruments nobody can name ("a black saxophone" vs "a small tuba"). The bass
+    # clarinet is the only anchor-and-pivot fighter, the euphonium the only artillery.
+    'BASS CLARINET': dict(
+        color=(110, 132, 170), dark=(52, 66, 100), corner='red',     # slate blue (series colour table, IDEAS)
+        view=(0, 22, 0),
+        weapon=dict(kind='anchor', style='endpin', name='ENDPIN ANCHOR',   # plants its floor peg every bar and whirls
+                    every=4, whirl_beats=2, turns=1.5, base=0.95, grow=0.06, max_orbit=1.8, lead=0.5, settle=0.12,
+                    dmg=4.5, knock=1.1, cool=0.8, release=0.8, twin_dmg=0.6),
+        abilities=dict(
+            unlock1=dict(name='SLAP TONGUE', kind='snip', ready=0.5, reach=0.9, half=60.0, open16=1, track=8.0,
+                         dmg=6.5, knock=1.8, every_bars=3),                # a heavy knockback smack in front
+            unlock2=dict(name='MULTIPHONICS', kind='twin', dur_beats=8, every_bars=6),   # a ghost twin's arm
+            low=dict(name='LIGHTS OUT', kind='lights_out', dur_beats=4, home=1.25, turn=2.5, radius=1.5, dmg=12.0,
+                     knock=1.8)),                                     # sinks into shadow for a bar, then erupts
+        pp='BASS CLARINET', register=(34, 62), idiom='chalumeau'),
+    'EUPHONIUM': dict(
+        color=(240, 172, 32), dark=(150, 96, 10), corner='blue',     # amber (series colour table, IDEAS)
+        view=(0, 24, 0),
+        weapon=dict(kind='mortar', style='shells', name='BELL MORTAR',     # the upright bell lobs brass shells
+                    every=2, flight_beats=2, n0=1, grow=0.5, n_max=6, spread=0.75, lead=1.0, splash=0.6, dmg=2.6,
+                    knock=0.7),
+        abilities=dict(
+            unlock1=dict(name='MARCHING ORDERS', kind='haste', mult=2.0, dur_beats=8, every_bars=5),   # every beat
+            unlock2=dict(name='IDENTITY CRISIS', kind='copy', every_bars=5),     # the enemy's last ability, in amber
+            low=dict(name='NOT A TUBA', kind='barrage', n=14, beats=2, flight_beats=2, aimed=3, lead=0.8, splash=0.55,
+                     dmg=4.0, knock=0.9)),                            # a full barrage across the ring
+        pp='EUPHONIUM', register=(50, 74), idiom='tenor'),
 }
