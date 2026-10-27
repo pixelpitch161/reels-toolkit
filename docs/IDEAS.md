@@ -52,6 +52,7 @@ a draft, when it gets feedback, and when it delivers.
 | 40 | BALLFIGHT #14: Bari Sax vs Bass Clarinet | review (v2) | session_01CzTfqe (2026-10-26/27) | v2 delivered (user, Oct 27: bari model completely smooth; let it swing out over the ropes for a full swing; intro a little loud; stills sent first). Model v2 (567ced7, Pixel Pitch folder, from the Amati reference in Chrome): the keys had been buried inside the fattened sprite body; now cups with dark pad rings, pearls, rods, guards with diamond feet, bands, bow guard, engraving (all faces; voice identical). Engine opt-in `overhang` + `return` (df67dcd), the bari's roster standard (45c9190; #39 pinned off, all 70 earlier runs identical): ends may go 1.3 past the ring, never past a corner post; full swings 35 -> 76 %. Re-tuned x0.30 / x0.66 (48/52 %), new honest seed 128: hoisted out over the ropes on 11 of 15 swings, slung back in at 49.2 s, LIGHTS OUT + CABLE SNAP both land, bari wins at 50.80 s on 0.7 HP. Ropes pressed under the passing ball, springing back. Intro thinned by arrangement: K-weighted -1.4 LU vs the fight (card was +0.7). Checks: levels PASS (wav + mp4), band OK, safe zone OK, CoC 0 (sharp 0.26), flash PASS, loopcheck PASS (mp4 1.1x). Next: user feedback | `ballfight_barisax_vs_bassclarinet.mp4` (v1: `_v1.mp4`, commit 8115d67) |
 | 41 | BALLFIGHT #15: Flute vs Trombone | review | session_01CzTfqb (2026-10-27) | v1 delivered with caption + tags (early sheet sent first). Crossover: FLUTE #32 v2 (left) vs TROMBONE #34 (right), sides set in the timeline only. Lance vs cobras was undefined: new opt-in rule `Rules(swat_cobras=True)` (own commit b346575; told the user): a live lance passing through a risen cobra knocks it flat (a strike in the air misses, no strikes for 2 beats; no damage, no growth); all 15 finished episodes replay identically. Handicap FLUTE x2.0 / TROMBONE x0.40 (300 seeds 47 / 53 %, median K.O. 49.6 s). Silver vs mint read apart on the early sheet (cool steel glass vs green): no edge glow. Honest search at 2 bars: 8 fits in 968 (49 / 51 %); seed **392**: even to 35 s, lead changes 22.5 / 42.9 s, PICCOLO 42.6 s answered by PEDAL TONE 43.1 s (misses), 23 swats, TROMBONE wins at 50.02 s on 4.1 HP. Captions FLUTTER TONGUE 11.2, SAD TROMBONE 16.2, POWER SLIDE 26.0, SNAKE DANCE 30.1, PICCOLO 42.6 (PEDAL TONE in the HUD list: 4 s rule). Tail: the glides home crossed (the flute fell on the trombone's side), so both bow apart (1.41 at the closest). Music mood A (E harmonic minor, 133.77 BPM; calliope off-beats, bass drum, choked cymbal, no brass / flute in the bed): trombone = the circus bass + smears, flute = the high melody; 3-bar trombone solo. Checks: `reelkit.levels` PASS on wav + mp4 (opening +0.1 dB vs ending, spread 3.6 dB, no dips; one master gain); band trombone +6.6..+7.8 dB, flute +12..+16 dB over the bed; intro -1.5 LU vs the fight; safe zone OK; CoC 0 on all 1830 frames; flash test 0 on 40.5-51.5 s, flashcheck PASS (1 = the doors); loopcheck PASS render 0.4x / mp4 1.1x. Render 10.8 min + mux. Guard entry #41 -> seed 392. Waiting for feedback | `ballfight_flute_vs_trombone.mp4` |
 | 42 | BALLFIGHT #16: Viola vs Violin | review | session_01CzTfqcW39D (2026-10-27) | Delivered Oct 27 for review: new VIOLA (model from Chrome reference photos, x1.12 + deeper ribs; voice a fifth below) left vs #28 VIOLIN right, engine kinds rests / double_stop / melody / joke, handicap 0.75 / 2.1, honest seed 8219 (VIOLA wins on 0.9 HP at 50.41 s, VIOLA JOKE at 41.5 s), mood A orchestral drill. Feedback: (pending) | ballfight_viola_vs_violin.mp4 |
+| 43 | BALLFIGHT: Kazoo vs Harmonica | idea (approved, mood A) | — | Approved Oct 27, mood A (swamp blues stomp). Two new fighters (models from reference photos via Chrome). No episode number on screen. Ready for production. | — |
 
 ## Backlog (idea details)
 
@@ -1676,7 +1677,7 @@ styles, ready for crossovers and a tournament bracket.
 
 | Fighter | Colour | RGB | | Fighter | Colour | RGB |
 |---|---|---|---|---|---|---|
-| GUITAR | red | (255, 84, 72) | | PIANO | blue | (84, 156, 255) |
+| GUITAR (retired Oct 27) | red, now KAZOO's | (255, 84, 72) | | PIANO | blue | (84, 156, 255) |
 | DRUMS | orange | (255, 146, 40) | | VIOLIN | violet | (176, 98, 255) |
 | TRUMPET | yellow | (255, 214, 60) | | SAX (retired Oct 27) | teal, now VIOLA's | (36, 200, 176) |
 | BAGPIPES | tartan green | (64, 196, 88) | | ACCORDION | magenta | (236, 82, 214) |
@@ -1689,7 +1690,8 @@ styles, ready for crossovers and a tournament bracket.
 | CLARINET | lavender | (190, 168, 255) | | OBOE | olive | (156, 176, 52) |
 | BASS CLARINET | slate blue | (110, 132, 170) | | EUPHONIUM | amber | (240, 172, 32) |
 | BASSOON | forest green | (30, 130, 76) | | BARI SAX | coral | (255, 118, 92) |
-| VIOLA | teal (from the retired SAX) | (36, 200, 176) | | | | |
+| VIOLA | teal (from the retired SAX) | (36, 200, 176) | | HARMONICA | sky blue | (128, 204, 255) |
+| KAZOO | red (from the retired GUITAR) | (255, 84, 72) | | | | |
 
   Spares (Cello, later fighters): pick a colour clearly apart from all of these and add it here.
 - **Fighters:** first named = left corner (screen left), second = right. Weapon scaling: every landed hit grows the
@@ -2278,6 +2280,52 @@ The viola's revenge. Post caption: "Violists, this one's for you 🎻 Comment th
     flashes; safe-zone, flash, loop and levels checks must pass.
 - **Effort:** ~55–70 min (one new model from photos + voice, a new weapon type). Work in
   `projects/ballfight_viola_vs_violin/`.
+
+### 43. BALLFIGHT: Kazoo vs Harmonica — APPROVED
+**Direction (user, Oct 27):** "Draft Kazoo vs Harmonica. From now on, don't have the Ballfight # in the video";
+approved with mood A (swamp blues stomp). All BALLFIGHT series rules (VS title card **without an episode tag**, 3·2·1,
+ability-name captions, HUD ability list, colours, honest tuned fight, 61.0 s, loop point = file boundary) plus the
+PLAYBOOK's consistent loudness from frame 0 (`reelkit.levels` must PASS).
+**Rivalry:** the pocket instruments: the two anyone can "play" and everyone has an opinion about; a joke match-up
+with a real fight. Post caption: "Which one belongs in the junk drawer? 😂 Comment the next match-up 👇"
+
+| | KAZOO (red, left) | HARMONICA (sky blue, right) |
+|---|---|---|
+| Style | The only multi-body fighter | The only fighter that rides rails |
+| Signature | **KAZOO ARMY**: kazoos are cheap and come in packs: every bar it splits into mini-kazoos that zip at the enemy buzzing, then regroup. Only the main ball can be hurt; the minis are attackers the enemy can swat away (destroyed, no HP lost) (new kind `army`) | **FREIGHT TRAIN**: the classic harmonica train: a glowing track lays itself across the ring toward the enemy (telegraphed, ~1 beat), then the harmonica barrels down it like a locomotive, chugging, whistle on impact (new kind `rails`) |
+| Grows per landed hit | +1 mini-kazoo (max 5) | Train speed + track length |
+| LV2 | BUZZ: a buzzing shockwave; the enemy shakes, its aim wobbling for 1 s (new `jitter`) | BLUES BEND: the tracks bend, curving to follow the enemy |
+| LV3 | PARTY MODE (`haste`: minis twice as fast, confetti) | CROSS HARP: two trains on crossing tracks |
+| Below 25 HP | KAZOO ORCHESTRA: 12 mini-kazoos burst out at once and swarm the ring | RUNAWAY TRAIN: the track loops the whole ring and the train circles nonstop for 2 bars |
+
+- **Likely shape (only if the honest fight gives it):** the harmonica's charges are telegraphed by its tracks, so the
+  minis can swarm it from the side while it's locked on the rails; a train can plough through a whole swarm. KAZOO
+  ORCHESTRA vs RUNAWAY TRAIN is a chaos finish either way.
+- **Colours (in the table):** KAZOO red (255, 84, 72) (freed by the retired GUITAR; classic kazoo plastic), HARMONICA sky
+  blue (128, 204, 255) (new; close-ish to the Piano's blue, which isn't in this fight).
+- **Music, mood A (swamp blues stomp):** a dirty minor blues-rock groove: foot stomps, a heavy kick, a fuzz slide-guitar
+  riff, a low organ drone; gritty, not happy. The **harmonica plays the bluesy lead** (bends, train chugs on its
+  charges, the whistle on impact), the **kazoo the buzzing counter-line and squawks** (the minis buzz in a chord); the
+  bed has no harmonica or kazoo of its own. `loop_bpm(122)` = 121.97 BPM (31 bars; bar = 1.968 s, FIGHT! at 3.94 s).
+  Consistent loudness from frame 0 (full stomp on the title card; build with density). Leader fuller and louder, loser
+  thinner and dirtier; the winner's solo over the stomp. (Not chosen: B dark bluegrass hoedown; C hyperpop chaos.)
+- **VS title card:** KAZOO / VS / HARMONICA (no episode tag): a kazoo squawk, the thunder crack, a harmonica train
+  whistle; panel patterns: kazoo body + membrane cap (red-lit) vs harmonica comb holes 1–10 (sky-lit).
+- **Beat sheet (61 s):** bar 0 VS card · bar 1 count-in · FIGHT! at 3.94 s · 8–30 s the four unlocks (each named once;
+  the HUD list lights on every use) · 32–44 s KAZOO ORCHESTRA or RUNAWAY TRAIN · 44–52 s final exchange · K.O. ~49–53 s
+  (slow-mo shatter into plastic shells / reed plates / comb) · winner's solo + "COMMENT THE / NEXT MATCH-UP" · 58–61 s
+  reassembly, doors shut, title slam = frame 0.
+- **Flags:**
+  - **Both instruments are new: build both models from reference photos found with Claude in Chrome** (as the user asked
+    for the Viola), each a new file in `series/instrument-history/` in its own commit; voices: a buzzy hummed kazoo tone
+    and a reedy harmonica with blow / draw and bends, own commits; bridge entries. Small instruments: scale them up
+    inside the balls so they read (as the flute needed a pixel-art sprite).
+  - The minis must read as part of the kazoo: smaller, red, linked to the main ball by a faint buzz line; the HUD and
+    damage only follow the main ball.
+  - New engine kinds additive, own commits; all earlier episodes replay identically. Re-tune for 40–60 % wins; honest
+    seed search with `t_fight` = 2 bars and the usual hard windows. Effects from `reelkit.fx`; no full-screen flashes;
+    safe-zone, flash, loop and levels checks must pass.
+- **Effort:** ~75–90 min (two new models + voices, four new mechanics). Work in `projects/ballfight_kazoo_vs_harmonica/`.
 
 ## Adding a new idea
 
