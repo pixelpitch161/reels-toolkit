@@ -39,6 +39,10 @@ in WAVES as kind 'stun', events 'stun'). Weapon kind `tune` (TUNING A: a narrow 
 enemy OUT OF TUNE, status 'detune': weaker hits, stung by the oboe's notes; recorded DET / TUNE), ability kind
 `endless` (the beam held, tracking) and the `detune` option on shockwave / wave abilities. Ability kind `snip`
 (DOUBLE REED: the reed's blades scissor out at a close enemy and snap shut; recorded SNIP).
+#38 (opt-in): weapon kind `anchor` (ENDPIN ANCHOR: on the grid the fighter drives its floor peg into the canvas
+`orbit` ahead toward the enemy, whirls round it like a hammer-thrower for `whirl_beats` (the arm from the peg to the
+ball sweeps everything in the circle), then pulls the peg and is flung off along the tangent; recorded ANC; events
+'anchor', 'pull').
 The run records every frame (30 fps) for the renderer and every event (hits, blocks, parries, ropes, volleys,
 abilities, level-ups, the K.O.) for the soundtrack and the captions. Seeded: same seed, same fight."""
 import math
@@ -2352,6 +2356,97 @@ class Fight:
         elif self.t >= Sn['t_end']:
             B.snip = None
 
+    # ------------------------------------------------------------------ #38: ENDPIN ANCHOR (opt-in weapon kind 'anchor')
+    # Every `every` beats (haste divides it) the fighter drives its floor peg into the canvas `orbit` ahead of it, toward
+    # the enemy's spot `lead` x the whirl's first half ahead (the peg clipped so the circle stays inside the ropes), and
+    # whirls round it like a hammer-thrower: `turns` turns in `whirl_beats` beats (the radius eases from where it was to
+    # `orbit` over `settle` s). The arm from the peg to the far side of the ball sweeps the whole circle: anything it
+    # crosses within the reach is smashed (`dmg`, knocked along the swing and outward by `knock`; then `cool` s of rest).
+    # Then it pulls the peg and is flung off along the tangent at the shared speed + a `release` boost. +`grow` orbit per
+    # landed smash (up to `max_orbit`; `blade_len` holds the orbit, recorded as BL). While anchored the ball skips the
+    # normal motion (move()). Optional: a twin (ability kind 'twin') adds a ghost arm on the opposite side of the peg.
+    # Events ('anchor', owner, cx, cy, orbit, t_end), ('pull', owner, x, y, vx, vy); recorded as ANC (state, cx, cy, th, r,
+    # twin) per ball when a fighter uses the kind.
+    def anchor_setup(self, k):
+        B = self.balls[k]
+        B.blade_len = B.w['base']
+        B.anc = None
+
+    def anchor_plant(self, k, w, orbit):
+        """drive the peg in and start a whirl with weapon config `w` at radius `orbit` (also used by IDENTITY CRISIS)"""
+        B, O = self.balls[k], self.balls[1 - k]
+        R, A = self.R.R, self.R.A
+        tw = w['whirl_beats'] * self.R.beat
+        tgt = O.p + O.v * tw * 0.5 * w.get('lead', 0.0)
+        d = tgt - B.p
+        dist = float(np.hypot(*d))
+        u = d / dist if dist > 1e-6 else B.v / (np.linalg.norm(B.v) + 1e-12)
+        lim = max(0.15, A - R - orbit - 0.02)
+        c = np.clip(B.p + u * orbit, -lim, lim)
+        rel = B.p - c
+        r0 = float(np.hypot(*rel))
+        th = math.atan2(rel[1], rel[0]) if r0 > 1e-6 else math.atan2(-u[1], -u[0])
+        om = B.spin_dir * w['turns'] * 2 * math.pi / tw
+        B.anc = dict(c=c, th=th, r0=r0, orbit=float(orbit), om=om, t0=self.t, t_end=self.t + tw, cool=0.0, w=w)
+        self.ev('anchor', k, float(c[0]), float(c[1]), float(orbit), B.anc['t_end'])
+
+    def anchor_release(self, k):
+        B = self.balls[k]
+        An = B.anc
+        tang = np.array([-math.sin(An['th']), math.cos(An['th'])]) * (1.0 if An['om'] >= 0 else -1.0)
+        B.v = tang * self.R.V
+        B.boost = max(B.boost, An['w'].get('release', 0.0))
+        B.anc = None
+        self.ev('pull', k, float(B.p[0]), float(B.p[1]), float(B.v[0]), float(B.v[1]))
+
+    def anchor_tick(self, k, k16):
+        B = self.balls[k]
+        if self._stunned(k) or B.anc is not None:
+            return
+        main16 = int(round(4 * B.w['every']))
+        ev16 = max(1, int(round(main16 / self.ab_mult(k))))
+        if k16 > 0 and k16 % ev16 == 0:
+            self.anchor_plant(k, B.w, B.blade_len)
+
+    def anchor_step(self, k, dt):
+        B, O = self.balls[k], self.balls[1 - k]
+        An = B.anc
+        if An is None:
+            return
+        w = An['w']
+        R, A = self.R.R, self.R.A
+        th0 = An['th']
+        dth = An['om'] * dt
+        An['th'] = th0 + dth
+        u_ = min(1.0, (self.t - An['t0']) / w.get('settle', 0.12))
+        r = An['r0'] + (An['orbit'] - An['r0']) * (u_ * u_ * (3 - 2 * u_))
+        B.p = np.clip(An['c'] + r * np.array([math.cos(An['th']), math.sin(An['th'])]), -(A - R), A - R)
+        B.v = np.array([-math.sin(An['th']), math.cos(An['th'])]) * An['om'] * max(r, 0.05)
+        An['cool'] = max(0.0, An['cool'] - dt)
+        if An['cool'] <= 0:
+            rel = O.p - An['c']
+            dist = float(np.hypot(*rel))
+            if dist <= r + 2 * R and getattr(O, 'shadow', 0.0) <= 0:
+                phi = math.atan2(rel[1], rel[0])
+                half = math.asin(min(1.0, R / max(dist, 1e-6)))
+                arms = [(th0, 0)]
+                if getattr(B, 'twin_until', -1.0) > self.t:            # MULTIPHONICS: the ghost twin's arm
+                    arms.append((th0 + math.pi, 1))
+                for a0, ghost in arms:
+                    if _swept(a0 % (2 * math.pi), dth, phi, half):
+                        n = rel / dist if dist > 1e-6 else np.array([math.cos(a0), math.sin(a0)])
+                        hx, hy = (O.p - n * R).tolist()
+                        dmg = w['dmg'] * (w.get('twin_dmg', 0.6) if ghost else 1.0)
+                        landed = self.damage(k, 1 - k, dmg, 'anchor', hx, hy, ghost)
+                        sw = np.array([-math.sin(a0 + dth), math.cos(a0 + dth)]) * (1.0 if dth >= 0 else -1.0)
+                        self.knock(1 - k, sw + 0.7 * n, w['knock'])
+                        An['cool'] = w.get('cool', 0.3)
+                        if landed and w is B.w:
+                            B.blade_len = min(w['max_orbit'], B.blade_len + w['grow'])
+                        break
+        if self.t + 1e-9 >= An['t_end']:
+            self.anchor_release(k)
+
     def ab_dur(self, ab):
         """an ability's duration in s: `dur` (s) or `dur_beats` (beats at this episode's tempo)"""
         return ab['dur'] if 'dur' in ab else ab['dur_beats'] * self.R.beat
@@ -2557,6 +2652,8 @@ class Fight:
                 continue
             if getattr(B, 'stun', 0.0) > 0:                     # #37: stunned, it holds still (heading kept)
                 continue
+            if getattr(B, 'anc', None) is not None:              # #38: anchored, anchor_step drives it round the peg
+                continue
             B.boost *= math.exp(-dt / self.R.KNOCK_T)
             s = self.R.V * (1 + B.boost)
             if B.slow > 0:                                  # #34: slowed (e.g. SAD TROMBONE)
@@ -2720,6 +2817,14 @@ class Fight:
                 if Sn is not None:
                     Sp[j] = (Sn['state'], Sn['aim'], Sn['t_snap'])
             rec['SNIP'].append(Sp)
+        if 'ANC' in rec:                                    # #38, only recorded when a fighter uses the 'anchor' kind
+            Ac = np.full((2, 6), np.nan)
+            for j, Bj in enumerate((B0, B1)):
+                An = getattr(Bj, 'anc', None)
+                if An is not None:
+                    Ac[j] = (1.0, An['c'][0], An['c'][1], An['th'], float(np.hypot(*(Bj.p - An['c']))),
+                             float(getattr(Bj, 'twin_until', -1.0) > self.t))
+            rec['ANC'].append(Ac)
         if 'FLICK' in rec:                                  # #34 v5, only recorded when a fighter has a 'flick' ability
             Fl = np.full((2, 6), np.nan)
             for j, Bj in enumerate((B0, B1)):
@@ -2800,6 +2905,15 @@ class Fight:
         snippers = [k for k, B in enumerate(self.balls) if any(a['kind'] == 'snip' for a in B.cfg['abilities'].values())]
         if rec is not None and snippers:                         # #37 (opt-in)
             rec['SNIP'] = []
+        anchorers = [k for k, B in enumerate(self.balls) if B.w['kind'] == 'anchor']   # #38 (opt-in)
+        for k in anchorers:
+            self.anchor_setup(k)
+        for B in self.balls:
+            if anchorers and not hasattr(B, 'anc'):
+                B.anc = None                                     # (IDENTITY CRISIS may copy a whirl)
+        n16a = k16_0
+        if rec is not None and anchorers:
+            rec['ANC'] = []
         flickers = [k for k, B in enumerate(self.balls) if any(a['kind'] == 'flick' for a in B.cfg['abilities'].values())]
         if rec is not None and flickers:                         # #34 v5 (opt-in)
             rec['FLICK'] = []
@@ -2916,6 +3030,11 @@ class Fight:
                 n16u += 1
                 for k in tuners:
                     self.tune_tick(k, k16u)
+            if anchorers and self.t + 1e-9 >= n16a * s16:      # #38: pegs planted on the 16th grid
+                k16a = n16a - k16_0
+                n16a += 1
+                for k in anchorers:
+                    self.anchor_tick(k, k16a)
             for k, B in enumerate(self.balls):
                 B.shield = max(0.0, B.shield - dt)
                 B.haste = max(0.0, B.haste - dt)
@@ -2965,6 +3084,10 @@ class Fight:
                 self.tune_step(k, dt)
             for k in snippers:                                   # #37: DOUBLE REED
                 self.snip_step(k, dt)
+            if anchorers:                                        # #38: the whirl (either ball: a copied one too)
+                for k in (0, 1):
+                    if self.balls[k].anc is not None:
+                        self.anchor_step(k, dt)
             if dc:
                 self.dash_cone_step(dt)                          # (#33)
             if dc or self.whips or self.sweeps or self.spouts:
