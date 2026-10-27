@@ -65,7 +65,7 @@ Each production session updates **its own row**: when it starts, sends a draft, 
 | 41 | [BALLFIGHT #15: Flute vs Trombone](ideas/41-ballfight-flute-vs-trombone.md) | review | session_01CzTfqb (2026-10-27) | v1 delivered with caption + tags (early sheet sent first). | `ballfight_flute_vs_trombone.mp4` |
 | 42 | [BALLFIGHT #16: Viola vs Violin](ideas/42-ballfight-viola-vs-violin.md) | review | session_01CzTfqcW39D (2026-10-27) | Delivered Oct 27 for review: new VIOLA (model from Chrome reference photos, x1.12 + deeper ribs … | ballfight_viola_vs_violin.mp4 |
 | 43 | [BALLFIGHT: Kazoo vs Harmonica](ideas/43-ballfight-kazoo-vs-harmonica.md) | idea (approved, mood A) | — | Production cancelled by the user, Oct 27 (session_01CzTfqcRKd19SvcVTdGzjbd) … | — |
-| 44 | [BALLFIGHT: Electric vs Acoustic](ideas/44-ballfight-electric-vs-acoustic.md) | idea (approved, mood B) | — | Approved Oct 27, mood B (minor stadium rock, plugged / unplugged). | — |
+| 44 | [BALLFIGHT: Electric vs Acoustic](ideas/44-ballfight-electric-vs-acoustic.md) | in production | session_01CzTfqcUYqS (2026-10-27) | Kit episode: porting ACOUSTIC, building ELECTRIC; preview clip next. | — |
 
 ## Other notes
 
