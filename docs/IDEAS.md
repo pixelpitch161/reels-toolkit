@@ -48,6 +48,7 @@ a draft, when it gets feedback, and when it delivers.
 | 36 | BALLFIGHT #10: Trombone vs Tuba | review | session_01FABTpA (2026-10-25) | v1 delivered (early sheet sent first). First crossover: both fighters straight from fighters.py; the only lever is the new opt-in engine handicap `Rules(dmg_side)` (own commit; all 9 finished episodes replay identically): TROMBONE x0.35 / TUBA x1.55 damage (the lance lands ~70 hits a fight, the swallow ~12), 300 seeds 49 % / 51 %, median K.O. 50.8 s. First HUD ability list: `reelkit.ui.fight_hud(abilities=...)` (own commit; without it 353 HUD input combinations draw pixel-identically): LV2 / LV3 / LOW rows under each bar, grey -> fighter colour with a sweep on unlock -> white-hot pill on every use. Honest search at 2 bars: 6 fits in 416, balance 48 / 52; seed **358** (106 ranked first but its 52.94 s K.O. left ~1 s for COMMENT THE NEXT MATCH-UP): the lance leads early, the swallows drag it back (lead changes 19.1 / 26.7 / 45.1 s), SUBSONIC 40.0, PEDAL TONE 44.3, the tuba gulps the trombone at 48.6 s and spits it into the ropes: TUBA wins at 49.10 s with 5.9 HP. Captions SAD TROMBONE 11.4, BRASS WALL 19.5, POWER SLIDE 24.3, SUBSONIC 40.0, PEDAL TONE 44.3. Music mood C (brass house, F minor, 125.90 BPM): no bass synth / brass in the bed; tuba = the bass line (oom root / pah fifth), trombone = the tenor hook; band check tuba +6.9..+8.6 dB, trombone +7.9..+11.8 dB over the bed. Checks: safe zone OK; CoC 0 on all 1830 frames; loopcheck PASS render 0.5x / mp4 1.2x (audio 1.2 dB, no click); flashcheck PASS (1 = the doors opening); opening -16.4 dBFS, build +3.2 dB. Waiting for feedback | `ballfight_trombone_vs_tuba.mp4` |
 | 37 | BALLFIGHT #11: Clarinet vs Oboe | review (v1 audio fix) | session_019oLg15 (2026-10-26) | Audio fix delivered (user, Oct 26: "in the last couple of seconds of the fight, the clarinet stops making noise"): the HP thinning's hash (from #36) was linear, so on CLARION's consecutive 8th jumps every value fell under the threshold and the clarinet's last ~3 s went silent (the oboe's stings had 1 s holes at 41 and 50 s too). New splitmix hash + never two dropped notes in a row, max 30 %: both lines play to the K.O.; remaining oboe gaps are honest (clarinet in tune, between A beams). Re-muxed only (same frames); levels PASS (opening -0.1 dB vs ending, spread 4.3 dB), loopcheck PASS mp4 1.0x. Waiting for feedback. Previous: v1 delivered (early sheet sent first). OBOE built new in the Pixel Pitch folder, own commits: model from Commons reference photos (Yamaha YOB-831 front shot measured at 590 mm, Lorée with reed, a reed against a ruler; Chrome unreachable, built-in browser used), `ball` scene = radii x1.6 for sprites; nasal double-reed voice (formants ~1.2 / ~3 kHz); bridge entry OBOE. New engine kinds in 4 small commits + roster commit (all 10 finished episodes replay identically; guard entry #37 -> seed 654): weapon `jump` (TWELFTH JUMP teleport + zip-line cut) + ability `rhapsody`, ability `stun` (SQUEAK; every weapon dispatch checks it), weapon `tune` + status `detune` (OUT OF TUNE: hits x (1 - 0.6 x depth), stings on the 8ths) + ability `endless` + wave option `detune` (ILL WIND), ability `snip` (DOUBLE REED). Tuned once at damage scale 0.55 (200 seeds CLARINET 47 % / OBOE 53 %, median K.O. 50.8 s). Honest search at 2 bars: 8 fits in 654 (51 / 49); seed **654**: even to 20 s, the oboe's detune grinds a lead from 22 s, RHAPSODY 42.8 / ILL WIND 43.6 trade, 18-18 at 46 s, the clarinet retakes the lead 0.2 s before its K.O. at 51.90 s with 6.5 HP. Captions SQUEAK 12.3, DOUBLE REED 17.0, ENDLESS NOTE 23.7, CLARION 28.4, RHAPSODY 42.8 (ILL WIND in the HUD list only: 4 s rule). Title panels: CLARINET ebony grain + ring keys, OBOE tuning forks + double reeds + the A's sine (shared title.py, own commit). Music mood A (Baroque storm, D minor, 141.64 BPM, no woodwinds in the bed): clarinet = chalumeau note per jump + the twelfth on landed cuts, flat by up to a quarter-tone while OUT OF TUNE; oboe = the A per beam, running 8ths = the stings. Checks: `reelkit.levels` PASS on wav + mp4 (opening +0.3 dB vs ending, spread 4.3 dB, no dips; one master gain, no automation); band check clarinet +7.3..+9.2 dB, oboe +9.5..+12.1 dB over the bed; safe zone OK; CoC 0 on all 1830 frames; loopcheck PASS render 0.5x / mp4 1.0x (audio 3.1 dB, no click); flashcheck PASS (1 = the doors). Waiting for feedback | `ballfight_clarinet_vs_oboe.mp4` |
 | 38 | BALLFIGHT #12: Bass Clarinet vs Euphonium | in production | session_01RYTMVg (2026-10-26) | Approved Oct 26, mood A (dark drumline). Two new fighters (both need a model + voice). Started: models + voices from reference photos, engine kinds `anchor` / `mortar` / `twin` / `copy` / `lights_out`. | — |
+| 39 | BALLFIGHT #13: Bassoon vs Bari Sax | idea (approved, mood A) | — | Approved Oct 26, mood A (dark ska-punk). Two new fighters (bassoon model + voice; bari adapted from the alto sax). Ready for production. | — |
 
 ## Backlog (idea details)
 
@@ -1678,6 +1679,7 @@ styles, ready for crossovers and a tournament bracket.
 
 | CLARINET | lavender | (190, 168, 255) | | OBOE | olive | (156, 176, 52) |
 | BASS CLARINET | slate blue | (110, 132, 170) | | EUPHONIUM | amber | (240, 172, 32) |
+| BASSOON | forest green | (30, 130, 76) | | BARI SAX | coral | (255, 118, 92) |
 
   Spares (Cello, later fighters): pick a colour clearly apart from all of these and add it here.
 - **Fighters:** first named = left corner (screen left), second = right. Weapon scaling: every landed hit grows the
@@ -2057,6 +2059,51 @@ Comment the next match-up 👇"
   `reelkit.fx`; no full-screen flashes; safe-zone, flash, loop and levels checks must pass.
 - **Effort:** ~75–90 min (two new models + voices, four new mechanics). Work in
   `projects/ballfight_bassclarinet_vs_euphonium/`.
+
+### 39. BALLFIGHT #13: Bassoon vs Bari Sax — APPROVED
+**Direction (user, Oct 26):** "Draft Bassoon vs Baritone Saxophone"; approved with mood A (dark ska-punk), colours as
+proposed. All BALLFIGHT series rules apply (VS title card, 3·2·1, ability-name captions, HUD ability list, colours,
+honest tuned fight, 61.0 s, loop point = file boundary) plus the PLAYBOOK's consistent loudness from frame 0
+(`reelkit.levels` must PASS).
+**Rivalry:** the low reeds: the orchestra's clown vs the band's chaos agent; both hold down the bottom, sound
+hilarious and get no respect. Post caption: "Which low reed carries harder? 🎷 Comment the next match-up 👇"
+
+| | BASSOON (forest green, left) | BARI SAX (coral, right) |
+|---|---|---|
+| Style | The only sneak: position matters | The only fighter that weaponises the ring |
+| Signature | **TIPTOE**: exaggerated staccato tiptoe hops (stop-and-go, squash and stretch), each landing a small stomp; it hops to get **behind** the enemy, where its hits do **double damage** (backstab; "behind" = relative to the enemy's direction of travel) (new kind `tiptoe`) | **WINDOW RATTLER**: every bar a huge low honk shoves anything close away and makes the **ropes ring like plucked strings** and the floor shake; anything bouncing off a shaking rope is slung back and hurt (new kind `rattle`) |
+| Grows per landed hit | Hop distance + stomp size | Rattle strength, spreading from the nearest side to all four ropes |
+| LV2 | STACCATO (`haste`: hops twice as fast) | GROWL (`shockwave`, gravelly) |
+| LV3 | BOCAL HOOK: the curved crook hooks the enemy and spins it to face away, setting up a backstab (new `hook`) | SKANK: honks on every off-beat (the ska upbeat) for 2 bars (new `offbeat` haste) |
+| Below 25 HP | MOUNTAIN KING: hops accelerate over 2 bars, tiptoeing faster and faster around the enemy, stomping on every landing; the music plays Grieg's public-domain theme speeding up | LOW A: the lowest note: the whole ring rattles, all four ropes, floor tiles jump (`wave`-like, through the rattle system) |
+
+- **Likely shape (only if the honest fight gives it):** the bari wants the bassoon near the ropes; the bassoon wants to
+  sneak behind and stay off them. BOCAL HOOK + backstab is the bassoon's big combo; LOW A means nowhere is safe.
+- **Colours (new, in the table):** BASSOON forest green (30, 130, 76) (the darker cousin of the Bagpipes' green),
+  BARI SAX coral (255, 118, 92) (pinkish orange-red near the Guitar's red); strongly distinct from each other.
+- **Music, mood A (dark ska-punk):** fast minor ska-punk: upstroke guitar skanks on the off-beats, driving drums, an
+  organ bubble, no horns of its own. The **bassoon plays sneaky staccato lines up high**, the **bari the honking bass**;
+  SKANK lands right on the off-beats. `loop_bpm(170)` = 169.18 BPM (43 bars; bar = 1.418 s, FIGHT! at 2.84 s), the
+  fastest in the series. MOUNTAIN KING: an arrangement of Grieg's *In the Hall of the Mountain King* theme (1875, public
+  domain) in the episode's key, accelerating over the 2 bars; nothing else quoted. Consistent loudness from frame 0
+  (full band on the title card; build with density). Leader fuller and louder, loser thinner and dirtier; the winner's
+  solo over the skank. (Not chosen: B sneaky heist caper; C sludge metal.)
+- **VS title card:** BASSOON / VS / BARI SAX: a bassoon blat, the thunder crack, a bari honk; panel patterns: folded
+  maple body + curved bocal (green-lit), sax keys + the bari's neck loop (coral-lit).
+- **Beat sheet (61 s):** bar 0 VS card · bar 1 count-in · FIGHT! at 2.84 s · 8–30 s the four unlocks (each named once;
+  the HUD list lights on every use) · 32–44 s MOUNTAIN KING or LOW A · 44–52 s final exchange · K.O. ~49–53 s (slow-mo
+  shatter into maple joints / reed / sax keys / bell) · winner's solo + "COMMENT THE / NEXT MATCH-UP" · 58–61 s
+  reassembly, doors shut, title slam = frame 0.
+- **Flags:** both instruments are new. The BASSOON is built from reference photos (`series/instrument-history/`, one
+  new file, own commit) with a double-reed voice; the BARI SAX can start from `altosax60_lowpoly` (scaled up, longer
+  body, the signature loop in the neck, low-A bell) as a new file, plus a low honking voice; bridge entries for both.
+  Don't edit other instruments. New engine kinds additive, own commits; all earlier episodes replay identically.
+  Backstab and hook are simulation rules. The rattling ropes must read: visible standing-wave ripples on the ropes
+  in coral + the floor shake (camera shake small; no full-screen flashes). At 169 BPM keep hit notes short so the mix
+  doesn't smear. Re-tune for 40–60 % wins; honest seed search with `t_fight` = 2 bars and the usual hard windows.
+  Effects from `reelkit.fx`; safe-zone, flash, loop and levels checks must pass.
+- **Effort:** ~75–90 min (one new model, one adapted, two voices, four new mechanics). Work in
+  `projects/ballfight_bassoon_vs_barisax/`.
 
 ## Adding a new idea
 
