@@ -37,18 +37,70 @@ python -m reelkit.video render.py audio.wav ballfight_tmp.mp4 && python mux.py  
 | `audio.py` | Drift phonk bed + every hit in the voices of the two instruments (leader fuller, loser thinner and dirtier) + abilities + K.O. tape-stop + victory solo + the build into frame 0 |
 | `mux.py` | Loop-clean encode (reuses `projects/maze_race/mux.py`: last-frame keyframe, mbtree off, whole AAC frames) |
 | `title.py` | **The VS title card** on bar 0 (series standard): diagonal panels in the fighters' colours + patterns (`PATTERNS`, by fighter), big balls, name A / VS / name B slamming in on beats 1-3, doors opening on beat 4 and shutting into the frame-0 slam at the end; the episode's `timeline` (TITLE, T_DOORS, T_CLOSE) and `render` (NAMES, COL, DARK, CFG) drive it. Built for #30 |
+| `kit/`, `__main__.py` | **The episode kit** (from Oct 27): `python -m ballfight <step> <episode>` runs any episode from its one config file; the fighters' looks and sounds (`kit/fighters/`), the moods (`kit/moods/`). See "Making an episode" |
+| `examples/` | Kit configs that rebuild #41 (crossover) and #37 (new fighters) exactly: the worked examples |
 
-## Making the next episode (~30-40 min)
+## Making an episode (the episode kit, from Oct 27)
 
-1. Add the two fighters to `fighters.py` if they're new: a weapon (`blade` or `volley`, or a new kind in `fight.py`),
-   `unlock1` / `unlock2` / `low` abilities from the existing kinds, colour, corner, `view` (the instrument's readable yaw /
-   swing / roll inside the ball) and `pp` (its Pixel Pitch voice in `which_instrument_wins/pp_bridge.py`).
-2. New folder `projects/ballfight_<a>_vs_<b>/` with its own `timeline.py` (`FIGHTERS = ('A', 'B')`, solos, chords),
-   importing this folder's engine (append `projects/ballfight` to `sys.path`, as `botb_genre_wars` does with #20).
-3. Re-tune once if the new pair is lopsided (`tune.py`: aim for 40-60 % wins and a ~50 s median K.O.), freeze the
-   rules, then `seed_search.py --stop 5`.
-4. `render.py` draws weapons by `style` (`neck`, `keys`); a new weapon style needs one draw function.
-5. The HUD is `reelkit.ui.fight_hud` (two fighting-game HP bars, LV pips, status line), already safe-zone placed.
+An episode is now **one config file**, `projects/ballfight_<a>_vs_<b>/episode.py`: fighters and sides, SEED, the
+handicap, opt-in rules, tempo, mood, key and chords, the fighters' lines and solo motifs, the title-card hits, the post
+caption. Everything else is shared and lives in `kit/`: the sim, tuning, seed search, renderer, title card, HUD, audio
+framework, checks and the loop-clean mux. Each fighter's look (draw style, effects, shatter parts, VS-card panel) and
+sound (voice, idiom) live with that fighter in `kit/fighters/<name>.py`; moods are reusable beds in `kit/moods/`. So a
+crossover of ported fighters needs only its config, and its music is part of the config.
+
+Worked examples (both rebuild a delivered episode exactly; their own folders stay as delivered):
+`examples/flute_vs_trombone/episode.py` (#41, a crossover: 61 lines vs 2,799 lines of Python in #41's folder; same
+fight, same seed, pixel-identical frames, bit-identical audio.wav) and `examples/clarinet_vs_oboe/episode.py` (#37, two
+new fighters: 39 lines; same fight, bit-identical audio, 22 of 25 test frames pixel-identical).
+
+**One command per step**, from `projects/` (or `python projects/ballfight <step> ...` from anywhere):
+
+```bash
+python -m ballfight new harp_vs_tuba HARP TUBA --mood big_top --bpm 120   # -> projects/ballfight_harp_vs_tuba/episode.py
+python -m ballfight preview HARP [--vs TUBA]          # a new fighter: 7 s low-res clip (signature + desperation) -> send it
+python -m ballfight tune harp_vs_tuba 300 HARP=1.0,1.2 TUBA=0.8    # balance grid (or scale=..., HARP.weapon.dmg=...)
+python -m ballfight search harp_vs_tuba 1 6000 --stop 8            # ranked fits -> check/seeds.txt; set SEED
+python -m ballfight sheet harp_vs_tuba [t ...]        # test/sheet.png (default: the run's key moments) -> send early
+python -m ballfight audio harp_vs_tuba                # audio.wav + check/stem_*.wav
+python -m ballfight check harp_vs_tuba                # safe zone, focus, levels, band, loudness, flash, loop
+python -m ballfight render harp_vs_tuba [--frames A:B | --only-mux]   # the ONE full render + loop-clean encode
+python -m ballfight verify harp_vs_tuba               # ffprobe, loop + flash on the mp4, test/mp4_sheet.png
+python -m ballfight post harp_vs_tuba                 # caption + tags      (also: sim, hash)
+```
+
+Measured on #41 (2 cores): tune 300 seeds 52 s, search (968 runs to 8 fits) 2 min 45 s, audio 9 s, full render 7 min
+11 s + loop-clean encode 3 min 47 s (one encode: reelkit.video's own is skipped); check (all pre-render checks) 4.5 min,
+verify 46 s, a preview clip 75 s. Tune + search + render: about 15 min. Every step pins `PYTHONHASHSEED=0`: `reelkit.ui`'s
+caption puff uses Python's salted string hash, so without it the same frame differed run to run (even with #41's own
+renderer) and a `--frames` patch would not match the full render.
+
+**What goes where**
+
+| Where | What |
+|---|---|
+| `<episode>/episode.py` | FIGHTERS (first named = left), SEED, DMG_SCALE / DMG_SIDE (a crossover's only lever), RULES, BPM, MOOD, KEY / SCALE, CHORDS (one per bar; LOOP = the cycle from FIGHT!), ROLES, LINES (a fighter's line over the LOOP: 8 notes a bar = 8ths, 4 = beats), SOLO, TITLE_HITS, CAPTION / TAGS, MIX overrides. A fighter without a line or solo gets a sketch from the chords |
+| `fighters.py` | How a fighter fights (the engine's numbers): unchanged, as before |
+| `kit/fighters/<name>.py` | `Look` (its layers at fixed points of the pipeline: state, shadows, canvas decals and rings, painter items, effects over the ring, shards, shimmer, glows, crisp overlays, VS-card panel) and `Sound` (voice, title blast, count-in, its part from the run, fall apart, stinger, solo, reassembly, its role in the last bar). The hooks are listed in pipeline order in `kit/fighters/base.py` |
+| `kit/moods/<mood>.py` | A bed: tempo and chords in, its sections (title hits, VS, count-in, fight bars + tape stop, K.O., stinger, victory, the build into the seam), its buses, reverb and compressor. `big_top` (#41), `baroque_storm` (#37) |
+| `kit/picture.py`, `kit/music.py` | The renderer and the audio framework (the series rules: card, count-in, beat sheet, tail, HUD list, captions, one master) |
+| `fight.py` | The engine: new weapon / ability kinds stay additive, own commit, replay guard |
+
+**A new fighter**: its roster entry in `fighters.py` (own commit, replay guard), then its module in `kit/fighters/`
+(start from the closest existing one), then `preview` and send the clip to the user **before** tuning and rendering.
+
+**Ported so far: FLUTE, TROMBONE (as #41 drew and played them), CLARINET, OBOE (#37).** Any other fighter draws as a
+bare ball until it is ported. To port one: copy its draw functions from its latest episode's `styles.py` and its layers
+from that episode's `render.py` into the Look hooks, its part of `audio.py` into Sound (the bed into `kit/moods/` if
+it's new), then make a kit config of that episode under `examples/` and compare: `python -m ballfight hash` against
+`tools/ballfight_replay_hash.py`, a few frames and `audio.wav` against the episode's own (`PYTHONHASHSEED=0` on both).
+Port a fighter when a crossover first needs it.
+
+Kit behaviour worth knowing: no "BALLFIGHT #N" tag unless the config sets SERIES (old episodes only); #41's bowed glide
+home applies whenever the two straight glides would touch (zero otherwise); the HUD flash ignores a fighter's
+`quiet_hits` (the oboe's stings); `check/` holds the caches (`run_<seed>.pkl`, `sprites_ring.npz`, `sprites_title.npz`).
+
+Before the kit (#27-#42) each episode had its own copies of these scripts; those folders stay as delivered.
 
 ## Rules worth knowing
 
