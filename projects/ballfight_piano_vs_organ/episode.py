@@ -10,9 +10,10 @@ chords and the bass pedals (each pipe row = a chord stab + a pedal note); the le
 
 # ---------------------------------------------------------------- the fight
 FIGHTERS = ('PIANO', 'ORGAN')            # first named = left corner (screen left)
-SEED = 2                                 # python -m ballfight search piano_vs_organ -> the best fit
-DMG_SCALE = 0.55
-DMG_SIDE = None                          # the crossover's only lever (left, right), from `tune`
+SEED = None                              # python -m ballfight search piano_vs_organ -> the best fit
+DMG_SCALE = 1.0
+DMG_SIDE = (1.0, 0.55)                   # the ORGAN's handicap (its only lever; the PIANO's new numbers are
+                                         # frozen in the roster): tune, 300 seeds: 50 % / 50 %, median K.O. 51.0 s
 RULES = dict()
 
 # ---------------------------------------------------------------- tempo + music
