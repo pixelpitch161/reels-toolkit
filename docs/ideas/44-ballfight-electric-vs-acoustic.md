@@ -73,3 +73,9 @@ Make #44 as a kit episode: `python -m ballfight new electric_vs_acoustic ELECTRI
 
 - Status: idea (approved, mood B) · Session: — · Output: —
 - Approved Oct 27, mood B (minor stadium rock, plugged / unplugged). New ELECTRIC (LIGHTNING RIFF) vs the #33 ACOUSTIC. No episode number on screen. Ready for production.
+- Oct 27, session_01CzTfqcUYqS: in production as a kit episode. ACOUSTIC ported from #33 (check: `examples/ukulele_vs_acoustic`,
+  same hashes, matching layers, identical sound part). New ELECTRIC: engine kinds `lightning` (+ `fork`, `tapping`) and
+  `smash`, roster entry, `kit/fighters/electric.py`; preview clip sent before tuning. New mood `stadium_rock` (plugged /
+  unplugged following the leader, loudness-matched). Handicap ELECTRIC x0.92 / ACOUSTIC x1.33 (51 % / median K.O. 51.0 s);
+  seed 418: ACOUSTIC wins at 51.5 s with 7 HP after BIG STRUM (38.6) and GUITAR SMASH (42.9). Sheet sent; all checks pass.
+- Oct 27: v1 delivered for review: `ballfight_electric_vs_acoustic.mp4` (log: `docs/log/ballfight_electric_vs_acoustic.md`).

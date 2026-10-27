@@ -39,6 +39,7 @@ KIT_EPISODES = [
     ('projects/ballfight/examples/flute_vs_trombone', [392, 1, 2, 3, 500]),   # #41 rebuilt as a kit config
     ('projects/ballfight/examples/clarinet_vs_oboe', [654, 1, 2, 3, 500]),    # #37 rebuilt as a kit config
     ('projects/ballfight/examples/ukulele_vs_acoustic', [1130, 1, 2, 3, 500]),   # #33 v3 (the ACOUSTIC port's check)
+    ('projects/ballfight_electric_vs_acoustic', [418, 1, 2, 3, 500]),   # #44 (ELECTRIC lightning / smash vs the #33 ACOUSTIC), seed 418
 ]
 CODE = r'''
 import hashlib, sys

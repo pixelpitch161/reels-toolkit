@@ -41,3 +41,4 @@ What each video taught us, one file per project in `docs/log/`. **Append your en
 | [`ballfight_bassoon_vs_barisax`](log/ballfight_bassoon_vs_barisax.md) | BALLFIGHT #13 (#39): Bassoon vs Bari Sax, the sneak vs the ring rattler |
 | [`ballfight_barisax_vs_bassclarinet`](log/ballfight_barisax_vs_bassclarinet.md) | #40 BALLFIGHT #14: Bari Sax vs Bass Clarinet (session_01CzTfqe, Oct 26) |
 | [`ballfight_viola_vs_violin`](log/ballfight_viola_vs_violin.md) | #42 BALLFIGHT #16: Viola vs Violin (session_01CzTfqcW39D, Oct 27) |
+| [`ballfight_electric_vs_acoustic`](log/ballfight_electric_vs_acoustic.md) | #44 BALLFIGHT: Electric vs Acoustic (session_01CzTfqcUYqS, Oct 27) |
