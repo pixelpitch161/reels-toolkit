@@ -89,7 +89,8 @@ renderer) and a `--frames` patch would not match the full render.
 **A new fighter**: its roster entry in `fighters.py` (own commit, replay guard), then its module in `kit/fighters/`
 (start from the closest existing one), then `preview` and send the clip to the user **before** tuning and rendering.
 
-**Ported so far: FLUTE, TROMBONE (as #41 drew and played them), CLARINET, OBOE (#37), ACOUSTIC (#33 v3; check: `examples/ukulele_vs_acoustic`).** Any other fighter draws as a
+**Ported so far: FLUTE, TROMBONE (as #41 drew and played them), CLARINET, OBOE (#37), ACOUSTIC (#33 v3; check: `examples/ukulele_vs_acoustic`), ELECTRIC (new in #44).** Moods: `big_top` (#41), `baroque_storm`
+(#37), `stadium_rock` (#44: plugged / unplugged, follows the leader; config `PLUGGED`). Any other fighter draws as a
 bare ball until it is ported. To port one: copy its draw functions from its latest episode's `styles.py` and its layers
 from that episode's `render.py` into the Look hooks, its part of `audio.py` into Sound (the bed into `kit/moods/` if
 it's new), then make a kit config of that episode under `examples/` and compare: `python -m ballfight hash` against
