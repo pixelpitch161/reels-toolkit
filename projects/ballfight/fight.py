@@ -95,6 +95,11 @@ holes fire note-shots from their pitch lanes across the ring, the rows being the
 Rules(roll_rows=, roll_start8=); +holes per landed row; events 'roll', recorded as ROLL / HOLD), ability kinds `sustain`
 (SUSTAIN: the next rows' shots hang like mines for a beat, then re-aim and fly; event 'sustain') and `runoff` (88 KEYS:
 every hole fires at once straight across the ring, then the roll is re-threaded; event 'runoff').
+#48 (opt-in rule, `Rules(swat_shells=True)`, `swat_shell_h` default 0.85, `swat_shell_r` default 0.2): a live thrust lance
+swats enemy mortar / barrage shells (#38) out of the air: a shell coming down through the lance's height band (its arc,
+the renderer's styles.shell_pos, below `swat_shell_h`) within `swat_shell_r` of the lance (in plan) is knocked away and
+never lands; no damage, no growth for either side. Events 'swat_shell'; a swatted shell is recorded with landed = 3 and
+its swat time as an 11th field. Off unless an episode turns it on, so earlier fights don't change.
 The run records every frame (30 fps) for the renderer and every event (hits, blocks, parries, ropes, volleys,
 abilities, level-ups, the K.O.) for the soundtrack and the captions. Seeded: same seed, same fight."""
 import math
@@ -703,6 +708,8 @@ class Fight:
                 self.kill_keys(enemy & (dd < self.R.KEY_R + 0.04), 'parry', k)
         if live and getattr(self.R, 'swat_cobras', False):  # opt-in rule (#41): the lance swats enemy cobras too
             self.swat_cobras(k, a, d, L_)
+        if live and getattr(self.R, 'swat_shells', False) and getattr(self, 'shells', None):   # opt-in rule (#48)
+            self.swat_shells(k, a, d, L_)
         if live and not B.thr_hit:
             rel = O.p - a
             s_ = min(max(float(rel @ d), 0.0), L_)
@@ -1184,6 +1191,35 @@ class Fight:
                 if S is not None and not S['done']:
                     S['done'] = True                      # the strike in the air misses
                 self.ev('swat', k, 1 - k, bk['id'], float(c[0]), float(c[1]))
+
+    def shell_height(self, Sh, t):
+        """#48: a shell's height at t on its arc, the same parabola the renderer draws (styles.shell_pos, #38): launched
+        from the top of the bell (R x 1.7), the apex growing with the range, down to the canvas at t1"""
+        s_ = min(1.0, max(0.0, (t - Sh['t0']) / max(1e-6, Sh['t1'] - Sh['t0'])))
+        rng_ = float(np.hypot(*(Sh['p1'] - Sh['p0'])))
+        apex = 2.2 + 0.35 * rng_
+        return self.R.R * 1.7 * (1 - s_) + 0.05 * s_ + 4 * apex * s_ * (1 - s_), s_
+
+    def swat_shells(self, k, a, d, L_):
+        """opt-in rule (#48, `Rules(swat_shells=True)`; off by default, so no earlier fight changes): a live thrust lance
+        (going out or held; `a` its base, `d` its direction, `L_` its length) swats an enemy shell out of the air when the
+        shell is coming down through the lance's height band (below `Rules.swat_shell_h`, default 0.85; the lance rides
+        at R) within `Rules.swat_shell_r` (default 0.2) of it in plan. The shell never lands; no damage and no growth for
+        either side. Event ('swat_shell', lance owner, shell owner, salvo, j, x, y)."""
+        h_max = getattr(self.R, 'swat_shell_h', 0.85)
+        r_max = getattr(self.R, 'swat_shell_r', 0.2)
+        for Sh in self.shells:
+            if Sh['owner'] == k or Sh['done'] or self.t + 1e-9 >= Sh['t1']:
+                continue
+            h, s_ = self.shell_height(Sh, self.t)
+            if s_ < 0.5 or h > h_max:                     # only on the way down, low enough to meet the lance
+                continue
+            p = Sh['p0'] + (Sh['p1'] - Sh['p0']) * s_
+            rel = p - a
+            c = a + d * min(max(float(rel @ d), 0.0), L_)
+            if float(np.hypot(*(p - c))) < r_max:
+                Sh['done'], Sh['landed'], Sh['ts'] = True, 3, self.t
+                self.ev('swat_shell', k, Sh['owner'], Sh['salvo'], Sh['j'], float(p[0]), float(p[1]))
 
     def key_r(self):
         """every projectile's hit radius (Rules.KEY_R unless its weapon set `hit_r`)"""
@@ -4145,6 +4181,7 @@ class Fight:
         if 'SHELLS' in rec:                                 # #38, only recorded when a fighter uses 'mortar' / 'barrage'
             rec['SHELLS'].append([(Sh['owner'], float(Sh['p0'][0]), float(Sh['p0'][1]), float(Sh['p1'][0]),
                                    float(Sh['p1'][1]), Sh['t0'], Sh['t1'], Sh['salvo'], Sh['j'], Sh['landed'])
+                                  + ((Sh['ts'],) if 'ts' in Sh else ())       # #48: a swatted shell's swat time
                                   for Sh in self.shells])
         if 'ANC' in rec:                                    # #38, only recorded when a fighter uses the 'anchor' kind
             Ac = np.full((2, 6), np.nan)
