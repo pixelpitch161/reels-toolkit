@@ -473,9 +473,9 @@ FIGHTERS = {
         color=(196, 84, 40), dark=(112, 44, 18), corner='red',        # rust (series colour table, RULES)
         view=(20, 16, 22),
         weapon=dict(kind='grapple', style='embrace', name='THE EMBRACE',   # every bar: rush, grab, swing, throw
-                    every=4, off16=2, rush16=2, rush_speed=2.6, track=6.0, lead=0.5,   # the rush comes between the beats
+                    every=4, off16=0, rush16=2, rush_speed=2.6, track=6.0, lead=0.5,   # the rush comes right after a footfall
                     base=0.22, grow=0.03, max_reach=0.65, hold_beats=1.0, turns=0.6, jitter=15.0,
-                    dmg=1.2, dmg_throw=1.2, dmg_rope=3.0, rope_t=0.9, power=1.6, power_grow=0.06, power_max=2.4),
+                    dmg=1.0, dmg_throw=1.0, dmg_rope=2.2, rope_t=0.9, power=1.6, power_grow=0.06, power_max=2.4),
         abilities=dict(
             unlock1=dict(name='VIBRATO', kind='vibrato', dur_beats=8, dmg=0.5, every_bars=5),   # a held enemy shakes
             unlock2=dict(name='PRELUDE', kind='prelude', beats=4, speed=6.0,      # Bach's rocking 16ths as note-waves
@@ -488,7 +488,7 @@ FIGHTERS = {
         view=(16, 14, 14),
         weapon=dict(kind='walk', style='steps', name='WALKING BASS',     # one heavy step a beat, a quake each footfall
                     every=1, step16=2, stride=0.75, gap=0.04, lead=0.6, jitter=8.0, stagger=0.6,
-                    base=0.6, grow=0.05, max_reach=1.5, speed=9.0, dmg=2.4, knock=0.5),
+                    base=0.6, grow=0.05, max_reach=1.5, speed=9.0, dmg=3.2, knock=0.5),
         abilities=dict(
             unlock1=dict(name='SLAP BASS', kind='slap', ready=0.5, speed=10.0, radius=2.0, dmg=3.0, knock=1.6,
                          every_bars=4),                                   # a percussive burst; breaks a grab
