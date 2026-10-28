@@ -18,9 +18,7 @@ Config names (UPPER_CASE in episode.py; everything else has a series default):
     TITLE_HITS  {fighter: notes it plays as its name slams in}         ROLES {fighter: 'bass' / 'melody' / ...}
     CAPTION     the post caption; TAGS {'instagram': ..., 'tiktok': ..., 'shorts': ...}
     MIX         bus gain / reverb send overrides {bus: (gain, send)}
-    Only to reproduce an older episode exactly: SERIES (the old "BALLFIGHT #N" tag), SHARD_SEED, FX_SEED; for the
-    episodes from before the VS title card (#28, #29 v3) FIGHT_BAR = 1 (count-in on bar 0, FIGHT! on bar 1, no card;
-    LOOP_START follows it) and REASSEMBLE_AT = (bars, beats) of their reassembly."""
+    Only to reproduce an older episode exactly: SERIES (the old "BALLFIGHT #N" tag), SHARD_SEED, FX_SEED."""
 import importlib.util
 import math
 import os
@@ -75,16 +73,8 @@ def build_timeline(cfg, folder):
     T.BAR = 4 * T.BEAT
     T.N_BARS = int(round(T.DUR / T.BAR))
     T.S16 = T.BEAT / 4
-    T.FIGHT_BAR = getattr(cfg, 'FIGHT_BAR', 2)
-    if T.FIGHT_BAR == 2:
-        T.T_FIGHT = 2 * T.BAR                           # VS card on bar 0, count-in on bar 1, FIGHT! on the bar-2 downbeat
-        T.COUNT = [(T.BAR, '3'), (T.BAR + T.BEAT, '2'), (T.BAR + 2 * T.BEAT, '1'), (2 * T.BAR, 'FIGHT!')]
-    else:                                               # legacy (#28, #29 v3: only to replay them): count-in on bar 0
-        T.T_FIGHT = T.FIGHT_BAR * T.BAR                 # (FIGHT_BAR = 1), FIGHT! on the bar-1 downbeat, no VS card
-        c0 = T.T_FIGHT - T.BAR
-        T.COUNT = [(c0, '3'), (c0 + T.BEAT, '2'), (c0 + 2 * T.BEAT, '1'), (T.T_FIGHT, 'FIGHT!')]
-    T.CARD = T.FIGHT_BAR >= 2                           # the VS title card on bar 0 (series standard from Oct 24)
-    T.T_PICKUP = T.BAR + 3 * T.BEAT if T.CARD else T.T_FIGHT - T.BEAT    # beat 4 of the count-in: the pickup
+    T.T_FIGHT = 2 * T.BAR                               # VS card on bar 0, count-in on bar 1, FIGHT! on the bar-2 downbeat
+    T.COUNT = [(T.BAR, '3'), (T.BAR + T.BEAT, '2'), (T.BAR + 2 * T.BEAT, '1'), (2 * T.BAR, 'FIGHT!')]
     a, b = cfg.FIGHTERS
     T.TITLE = [(0.0, a), (T.BEAT, 'VS'), (2 * T.BEAT, b)]
     T.T_DOORS = (3 * T.BEAT + 0.10, T.BAR - 0.03)
@@ -92,16 +82,13 @@ def build_timeline(cfg, folder):
     T.SERIES = getattr(cfg, 'SERIES', None) or ''      # no episode tag on new episodes (user, Oct 27)
     for k, v in dict(DMG_SCALE=1.0, DMG_SIDE=None, RULES={}, T_KO=(49.0, 53.0), MIN_LEAD_CHANGES=2,
                      MAX_WINNER_HP=30.0, CAP_GAP=4.0, MAX_GAP=4.0, SLOWMO=0.7, SLOWMO_RATE=0.25, LINES={}, SOLO={},
-                     TITLE_HITS={}, ROLES={}, MIX={}, LOOP_START=T.FIGHT_BAR, SHARD_SEED=271, FX_SEED=None, CAPTION='',
+                     TITLE_HITS={}, ROLES={}, MIX={}, LOOP_START=2, SHARD_SEED=271, FX_SEED=None, CAPTION='',
                      TAGS={}).items():
         if not hasattr(T, k):
             setattr(T, k, v)
     if T.FX_SEED is None:
         T.FX_SEED = sum(map(ord, a + b)) % 1000
-    if hasattr(cfg, 'REASSEMBLE_AT'):                  # legacy (#28): (bars, beats) of an older episode's reassembly
-        T.T_REASSEMBLE = cfg.REASSEMBLE_AT[0] * T.BAR + cfg.REASSEMBLE_AT[1] * T.BEAT
-    else:
-        T.T_REASSEMBLE = (T.N_BARS - 2) * T.BAR        # the loser's pieces fly back together
+    T.T_REASSEMBLE = (T.N_BARS - 2) * T.BAR            # the loser's pieces fly back together
     T.T_GLIDE = (T.N_BARS - 1) * T.BAR                 # last bar: both glide to their corners, HP refills
     T.T_REV = T.T_GLIDE + 1.05
     # harmony
@@ -183,13 +170,8 @@ def _helpers(T):
         return out
 
     def default_solo(name):
-        """the fighter module's own DEFAULT_SOLO if it has one (#28's drum solo is drum pieces, not notes), else a
-        2-bar victory motif on the tonic chord in the fighter's register (a sketch to replace)"""
+        """a 2-bar victory motif on the tonic chord in the fighter's register (a sketch to replace)"""
         from fighters import FIGHTERS as ROSTER
-        from . import fighters as FM
-        mod = FM.module(name)
-        if mod is not None and getattr(mod, 'DEFAULT_SOLO', None):
-            return list(mod.DEFAULT_SOLO)
         lo, hi = ROSTER[name]['register']
         ch = T.CHORDS[0]
         tones = chord_tones(lo + (hi - lo) // 4, hi, ch)

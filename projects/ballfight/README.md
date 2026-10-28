@@ -89,13 +89,8 @@ renderer) and a `--frames` patch would not match the full render.
 **A new fighter**: its roster entry in `fighters.py` (own commit, replay guard), then its module in `kit/fighters/`
 (start from the closest existing one), then `preview` and send the clip to the user **before** tuning and rendering.
 
-**Ported so far: FLUTE, TROMBONE (as #41 drew and played them), CLARINET, OBOE (#37), ACOUSTIC (#33 v3; check: `examples/ukulele_vs_acoustic`), ELECTRIC (new in #44), ORGAN (#35 v4; checked against #35: replay hash identical, frames pixel-identical in a matched harness, organ buses bit-identical; role 'bass' = a pedal under every pipe row), PIANO v2 (PIANO ROLL, new in #45; #27's v1 is not ported), DRUMS (#28; check: `examples/drums_vs_violin`), VIOLIN (as
-last delivered in #42, built in #28) and VIOLA (#42; check: `examples/viola_vs_violin`), TUBA (as last delivered in
-#36, built in #32; check: `examples/trombone_vs_tuba`).** Moods: `prog_duel` (#45), `big_top` (#41), `baroque_storm`
-(#37), `stadium_rock` (#44: plugged / unplugged, follows the leader; config `PLUGGED`), `balkan_fire` (#28: drum-less
-oom-pah, accordion, cimbalom), `orchestral_drill` (#42: UK drill beat + cellos and basses), `brass_house` (#36: dark
-minor house, no bass synth or brass). Still to port, in order, with the method and the check harness
-(`tools/ballfight_port/`): `docs/studio/PORT_HANDOFF.md`. Any other fighter draws as a
+**Ported so far: FLUTE, TROMBONE (as #41 drew and played them), CLARINET, OBOE (#37), ACOUSTIC (#33 v3; check: `examples/ukulele_vs_acoustic`), ELECTRIC (new in #44), ORGAN (#35 v4; checked against #35: replay hash identical, frames pixel-identical in a matched harness, organ buses bit-identical; role 'bass' = a pedal under every pipe row), PIANO v2 (PIANO ROLL, new in #45; #27's v1 is not ported).** Moods: `prog_duel` (#45), `big_top` (#41), `baroque_storm`
+(#37), `stadium_rock` (#44: plugged / unplugged, follows the leader; config `PLUGGED`). Any other fighter draws as a
 bare ball until it is ported. To port one: copy its draw functions from its latest episode's `styles.py` and its layers
 from that episode's `render.py` into the Look hooks, its part of `audio.py` into Sound (the bed into `kit/moods/` if
 it's new), then make a kit config of that episode under `examples/` and compare: `python -m ballfight hash` against

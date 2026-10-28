@@ -23,7 +23,6 @@ class Look:
     title_pattern = None             # fn(base) -> base: its VS-card panel pattern (else title.PATTERNS has it, or plain)
     rope_kinds = {'wave': 1.0, 'shockwave': 0.6}         # its ability kinds that shake the ropes (strength)
     sprite_k = 0.80                  # its instrument's size in the ball (x the ball's radius; #33's acoustic: 0.86)
-    spark_kinds = ()                 # extra event kinds of its that throw the small grey spark spray (#42: 'crushed')
     block_burst = (255, 226, 150)    # the ink burst where a hit lands on its shield (a 'block' it took)
     block_spark = ((160, 220, 255), 12, 2.6, 0.3)        # (colour, n, speed, life) of that block's spark spray
 
@@ -55,14 +54,6 @@ class Look:
         """modify ball kk's glass tint / sprite roll at t (its debuffs on the enemy): returns (glass, roll)"""
         return glass, roll
 
-    def ball_tint(self, kk, st, t, col):
-        """ball kk's colour in its glass and rim at t (a status of its on the enemy, e.g. #42's freeze): returns col"""
-        return col
-
-    def sprite_lit(self, kk, st, t, lit):
-        """ball kk's lit sprite pixels at t (float RGB, after the glow): returns lit"""
-        return lit
-
     def state(self, kk, st, t, phase, gl=0.0):
         """add to ball kk's picture state (its own weapon fields, or its status effects on the enemy); phase is
         'rev' (corners, before FIGHT!), 'fight' or 'tail' (after the K.O.; gl = the glide home, 0..1)"""
@@ -79,8 +70,7 @@ class Look:
         return None
 
     def rope(self, e):
-        """rope wobble strength for one of its events (abilities first, then others: #41's order); a (t, strength)
-        pair wobbles them at another time than the event's (#42: the joke's note lands later)"""
+        """rope wobble strength for one of its events (abilities first, then others: #41's order)"""
         if e[1] == 'ability':
             return self.rope_kinds.get(e[4])
         if e[1] == 'slam':
@@ -97,14 +87,6 @@ class Look:
     def hit_glow(self, e):
         """(radius px, alpha) of the glow on one of its fresh hits, or None"""
         return None
-
-    def flashes(self, e):
-        """does this hit of its set off the crowd's flashbulbs?"""
-        return e[7] in self.flash_hits
-
-    def laugh(self, t):
-        """the crowd laughing at something of its (0..1; #42's VIOLA JOKE): heads bob, bodies rock, arms go up"""
-        return 0.0
 
     # ---------------------------------------------------------------- effects (reelkit.fx), built once in time order
     def fx_setup(self):
@@ -135,11 +117,6 @@ class Look:
     def shadows_free(self, F, spot):
         """extra casters after both balls (things it left on the canvas)"""
         return []
-
-    def canvas_before(self, Ic, C):
-        """canvas light decals before every fighter's canvas() (one that dims the bare light, e.g. #36's suction cone,
-        which #36 drew before the other fighter's decals); returns Ic"""
-        return Ic
 
     def canvas(self, Ic, C):
         """canvas light decals (C: the canvas context, see picture.render); returns Ic"""
@@ -195,10 +172,6 @@ class Look:
         """crisp overlays after the grade (status outlines on the enemy): returns img"""
         return img
 
-    def overlay(self, img, F, drawn):
-        """crisp overlays on the finished uint8 frame, before the countdown and the UI (#42's rests and counts);
-        F.card_closed: the VS title card is shut over the ring. Draws in place"""
-
     # ---------------------------------------------------------------- checks
     def focus_points(self, t, st):
         """[(world point, label)] of its subject parts that must stay in focus at t"""
@@ -210,11 +183,6 @@ class Sound:
     send = 0.35                      # its reverb send
     band = (200, 4000)               # its band for the band check (it must sit above the bed there)
     colour_args = dict(cut0=90, cut_span=520, drive=4.5)   # how it thins + dirties as its HP drops (music.colour)
-    buses = {}                       # extra buses of its own: {bus: (gain, reverb send)} (#42's crowd laugh)
-    own_block = False                # it plays its own sound when something bounces off its shield (no shared clank)
-    play_first = False               # score its part before the other's: the Pixel Pitch bowed voices (violin, viola,
-                                     # cello) share one vibrato RNG, so the order notes are first made decides their
-                                     # vibrato phase (#42 scored the violin, on the right, first)
 
     def __init__(self, M, k):
         self.M, self.k, self.T = M, k, M.T
@@ -249,9 +217,6 @@ class Sound:
 
     def play(self, mix):
         """its part in the fight, from the run's events"""
-
-    def ko(self, mix):
-        """the K.O. moment (either side; #28: the drummer's crash)"""
 
     def fall_apart(self, mix):
         """it lost: the sound of it shattering (from P.T_HS)"""

@@ -8,9 +8,7 @@ brass sparks and embers, the solo played on the slide (lower note = longer slide
 Sound: the circus bass and the smears (role 'bass'): every thrust is the bass line (root on 1 + 3, the fifth on 2 + 4)
 with a smear up into it, POWER SLIDE walks 8ths, a landed lance smears up the chord, SAD TROMBONE is the clown's
 plunger wah-wah down to the tonic, PEDAL TONE the pedal tone under the hovering bell.
-Draw code from projects/ballfight_trombone_vs_horn/styles.py (#34), copied here unchanged; sound from #41's audio.py.
-#41 wrote its motifs in E minor (PEDAL TONE E1 + E2, the wah G -> E, POWER SLIDE's rip to E4, the stomp's E2 + clank, the
-fall, the stinger, the reassembly run, the default title blast): they move with key_shift (unchanged in E)."""
+Draw code from projects/ballfight_trombone_vs_horn/styles.py (#34), copied here unchanged; sound from #41's audio.py."""
 import math
 
 import numpy as np
@@ -143,11 +141,6 @@ def draw_giant_bell(fr, cam, L, shade, cx, cz, rad, h, col, nseg=18):
     side = np.array([pw, 0.0, pw]) * 0.7
     Q = np.array([top - side, top + side, up + side, up - side])
     fr.poly(cam, Q, np.clip(shade(L, np.array([[0.3, 0.6, -0.7]]), Q.mean(0)[None], base_, rimk=0.6)[0], 0, 255))
-
-
-def key_shift(T):
-    """semitones from E to the episode's key (nearest: -6..+5): #41's motifs were written in E minor"""
-    return (T.KEY_PC - 4 + 6) % 12 - 6
 
 
 class Look(base.Look):
@@ -468,8 +461,7 @@ class Sound(base.Sound):
         return max(lo, min(hi, table[i]))
 
     def title_blast(self, mix, t):
-        sh = key_shift(self.T)
-        hits = self.T.TITLE_HITS.get(self.name, (40 + sh, 52 + sh))
+        hits = self.T.TITLE_HITS.get(self.name, (40, 52))
         mix.place(self.bus, self.bone(hits[0], 0.7, 1.0, 0, cap=1.0), t, 0.42)       # the low note + a big smear up
         mix.place(self.bus, self.bone(hits[-1], 0.6, 1.0, 12.0, 0.26, cap=0.95), t, 0.34)
 
@@ -484,7 +476,6 @@ class Sound(base.Sound):
     def play(self, mix):
         M, T, k = self.M, self.T, self.k
         A, RUN, EV, q16 = M.A, M.RUN, M.EV, M.q16
-        sh = key_shift(T)
         thin = M.Thinner(7)
         last_slot = None
         for e in EV:                                               # the bass line: a smear into every thrust
@@ -526,7 +517,7 @@ class Sound(base.Sound):
                 name, tq = e[3], q16(t)
                 ab = self.M.CFG[k]['abilities']
                 if name == ab['unlock1']['name']:                  # SAD TROMBONE: wah wah wah waaah, down to the tonic
-                    for j, m in enumerate((55 + sh, 54 + sh, 53 + sh, 52 + sh)):
+                    for j, m in enumerate((55, 54, 53, 52)):
                         d = 0.5 * T.BEAT if j < 3 else 1.6 * T.BEAT
                         x = self.bone(m, d, 0.9, 1.0 if j else 0.0, 0.04, cap=round(d + 0.35, 2))
                         if j == 3:
@@ -535,32 +526,30 @@ class Sound(base.Sound):
                         mix.place(self.bus, self.colour(x, t)[0], tq + j * 0.5 * T.BEAT, 0.42, pan=0.1)
                     mix.place('fx', A.whoosh(0.6, 200, 1500, rise=False), tq, 0.08)
                 elif name == ab['unlock2']['name']:                # POWER SLIDE: a long rip up two octaves into the walk
-                    mix.place(self.bus, self.colour(self.bone(64 + sh, 0.45, 1.0, 24.0, 0.32), t)[0], tq, 0.30)
-                elif name == ab['low']['name']:                    # PEDAL TONE: the pedal tonic under the hovering bell
-                    mix.place(self.bus, self.bone(28 + sh, 2 * T.BEAT, 1.0, 2.0, 0.1, cap=round(2 * T.BEAT + 0.3, 2)), tq,
-                              0.40)
-                    mix.place(self.bus, self.bone(40 + sh, 2 * T.BEAT, 0.9, 0.0, cap=round(2 * T.BEAT + 0.3, 2)), tq, 0.30)
+                    mix.place(self.bus, self.colour(self.bone(64, 0.45, 1.0, 24.0, 0.32), t)[0], tq, 0.30)
+                elif name == ab['low']['name']:                    # PEDAL TONE: the pedal E under the hovering bell
+                    mix.place(self.bus, self.bone(28, 2 * T.BEAT, 1.0, 2.0, 0.1, cap=round(2 * T.BEAT + 0.3, 2)), tq, 0.40)
+                    mix.place(self.bus, self.bone(40, 2 * T.BEAT, 0.9, 0.0, cap=round(2 * T.BEAT + 0.3, 2)), tq, 0.30)
                     mix.place('fx', A.whoosh(2 * T.BEAT, 150, 1800), tq, 0.10)
             elif kind == 'slam' and e[2] == k:                     # PEDAL TONE: the bell stomps
                 ts = e[0]
                 M.bed.boom(mix, ts, 0.8)
                 mix.place('fx', A.thud(0.8, 90, 30), ts, 0.5)
-                mix.place('fx', M.clank(64 + sh, 9), ts, 0.10)     # (#34's in D minor: 62; #41's in E: 64)
-                mix.place(self.bus, self.bone(40 + sh, 0.5, 1.0, 0), ts, 0.36)
+                mix.place('fx', M.clank(64, 9), ts, 0.10)
+                mix.place(self.bus, self.bone(40, 0.5, 1.0, 0), ts, 0.36)
                 mix.place('drums', A.crash(1.6), ts, 0.10)
 
     def fall_apart(self, mix):                                     # the slide falls apart: a falling wail, clattering tubing
         M = self.M
-        x = self.bone(52 + key_shift(self.T), 0.9, 1.0, 0, cap=1.3)
+        x = self.bone(52, 0.9, 1.0, 0, cap=1.3)
         mix.place(self.bus, M.gliss(x, -10, 0.9), M.P.T_HS, 0.26)
         for j, m in enumerate((80, 75, 85, 71)):
             mix.place('fx', M.clank(m, 30 + j), M.P.T_HS + 0.1 * j, 0.08, pan=(j - 1.5) / 4)
 
     def stinger(self, mix, tw):
-        sh = key_shift(self.T)
-        mix.place('solo', self.bone(40 + sh, 1.0, 1.0, 0, cap=1.5), tw, 0.40)
+        mix.place('solo', self.bone(40, 1.0, 1.0, 0, cap=1.5), tw, 0.40)
         for m, g in ((52, 0.30), (55, 0.24), (59, 0.20)):
-            mix.place('solo', self.bone(m + sh, 1.0, 1.0, 5.0, 0.12, cap=1.5), tw, g)
+            mix.place('solo', self.bone(m, 1.0, 1.0, 5.0, 0.12, cap=1.5), tw, g)
 
     def solo(self, mix, t0):
         """the solo on the slide (each note glides from the last), then back to the bass line for the reassembly"""
@@ -581,10 +570,9 @@ class Sound(base.Sound):
 
     def reassemble(self, mix):
         T, M = self.T, self.M
-        sh = key_shift(T)
         for j, m in enumerate((40, 45, 47, 52, 55, 59)):
             tj = M.q16(T.T_REASSEMBLE + (T.T_GLIDE - T.T_REASSEMBLE) * j / 6)
-            mix.place(self.bus, self.bone(m + sh, 0.12, 0.7), tj, 0.20)
+            mix.place(self.bus, self.bone(m, 0.12, 0.7), tj, 0.20)
 
     def last_bar(self, mix):
         """the bass climbs the last chord (the dominant) into the title slam"""
