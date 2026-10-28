@@ -46,3 +46,7 @@ Valves or slide? Comment the next match-up 👇"
 
 - Approved Oct 28 (ideas chat).
 - Oct 28: in production (session_01CzTfqaiKkq).
+- Oct 28: delivered for review (session_01CzTfqaiKkq): EUPHONIUM ported from #38 (checked: hash, 10 frames, bus), the lance's
+  shell swat undefined -> opt-in rule `swat_shells` (own commit, on here), mood `second_line`, trombone role 'riff';
+  DMG_SIDE (0.44, 0.35), seed 4604: IDENTITY CRISIS copies SAD TROMBONE on its caption, 3 swats, TROMBONE wins at
+  51.19 s on 7.2 HP. Early sheet sent first. Details: `docs/log/ballfight_euphonium_vs_trombone.md`.

@@ -45,3 +45,4 @@ What each video taught us, one file per project in `docs/log/`. **Append your en
 | [`ballfight_studio`](log/ballfight_studio.md) | BALLFIGHT Studio: porting log (`docs/studio/PLAN.md`) |
 | [`ballfight_trumpet_vs_clarinet`](log/ballfight_trumpet_vs_clarinet.md) | #46 BALLFIGHT: Trumpet vs Clarinet (session_01CzTfqa, Oct 28) |
 | [`ballfight_cello_vs_contrabass`](log/ballfight_cello_vs_contrabass.md) | #47 BALLFIGHT: Cello vs Contrabass (session_01CzTfqb, Oct 28) |
+| [`ballfight_euphonium_vs_trombone`](log/ballfight_euphonium_vs_trombone.md) | #48 BALLFIGHT: Euphonium vs Trombone (session_01CzTfqaiKkq, Oct 28) |
