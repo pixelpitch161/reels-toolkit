@@ -139,6 +139,34 @@ def swat_pos(sh, t, R):
     return p[0], p[1], y + 2.2 * u - 9.0 * u * u
 
 
+def draw_swatted(img, cam, sh, t, R, col):
+    """a swatted shell spinning away off its arc: the brass slug tumbling end over end (its long axis turning), a
+    bright glint each half turn, a short spark trail back to where the lance met it"""
+    u = t - sh[10]
+    x, z, y = swat_pos(sh, t, R)
+    if y <= 0.02:
+        return img
+    pts = [swat_pos(sh, max(sh[10], t - dt), R) for dt in (0.0, 0.04, 0.08)]
+    sp = wp(cam, [q[0] for q in pts], [q[1] for q in pts], [q[2] for q in pts])
+    img = blend(img, _mask([], [sp], width=1), BRASS_HI, 0.6 * (1 - u / SWAT_T))
+    c = sp[0]
+    rp = max(1.6, 0.11 * cam.f / max(1e-6, cam.depth(S.to_world(x, z, y)[None])[0]))
+    a = u * 38.0                                                  # tumbling: ~6 turns a second
+    ca, sa = math.cos(a), math.sin(a)
+    glint = math.cos(2 * a) > 0.6
+    for yi in range(max(0, int(c[1] - rp - 2)), min(H, int(c[1] + rp + 3))):
+        for xi in range(max(0, int(c[0] - rp - 2)), min(W, int(c[0] + rp + 3))):
+            dx, dy = xi + 0.5 - c[0], yi + 0.5 - c[1]
+            ex, ey = dx * ca + dy * sa, -dx * sa + dy * ca
+            dd = (ex / (rp * 1.35)) ** 2 + (ey / (rp * 0.8)) ** 2
+            if dd <= 1.0:
+                img[yi, xi] = WHITE if glint and ex < 0 else (BRASS_HI if ex < -0.3 * rp else
+                                                              np.clip(BRASS * 0.85 + col * 0.15, 0, 255))
+            elif dd <= 1.7:
+                img[yi, xi] = img[yi, xi] * 0.4 + INK * 0.6
+    return img
+
+
 class Look(base.Look):
     shards = ['brass'] * 8 + ['valve'] * 4 + ['bell'] * 2
     spark_big = ()
@@ -286,9 +314,9 @@ class Look(base.Look):
             if e[0] > P.T_KO:
                 break
             pos = up(e[6], e[7], R)
-            P.BU.add(e[0], pos, P.COL[e[2]] * 0.5 + 120, 0.6)
-            P.FL.add(e[0], pos, P.FL_COL[e[2]], radius=1.2, peak=0.45, decay=0.18)
-            P.PA.emit(e[0], pos, 'sparks', n=7, col=BRASS_SPARK)
+            P.BU.add(e[0], pos, P.COL[e[2]] * 0.5 + 120, 1.0)
+            P.FL.add(e[0], pos, P.FL_COL[e[2]], radius=1.4, peak=0.6, decay=0.2)
+            P.PA.emit(e[0], pos, 'sparks', n=12, col=BRASS_SPARK)
 
     def fx_setup(self):
         self.fx_salvos()
@@ -367,13 +395,7 @@ class Look(base.Look):
             if len(sh) > 10 and tt >= sh[10]:                     # #48: swatted: it tumbles away and is gone
                 u = tt - sh[10]
                 if u < SWAT_T:
-                    x, z, y = swat_pos(sh, tt, R)
-                    if y > 0.02:
-                        s_ = F.cam.wp(S.to_world(x, z, y)[None])[0]
-                        xi, yi = int(s_[0]), int(s_[1])
-                        for dx, dy in ((0, 0), (1, 0), (0, 1), (1, 1)):
-                            if 0 <= xi + dx < W and 0 <= yi + dy < H:
-                                arr[yi + dy, xi + dx] = BRASS_HI if (dx + dy + int(u * 40)) % 2 == 0 else BRASS * 0.7
+                    arr = draw_swatted(arr, F.cam, sh, tt, R, P.COL[sh[0]])
                 continue
             arr = draw_shell(arr, F.cam, sh, tt, R, P.COL[sh[0]])
         return arr, depth

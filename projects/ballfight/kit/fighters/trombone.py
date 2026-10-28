@@ -427,6 +427,11 @@ class Sound(base.Sound):
     bus_gain, send = 1.8, 0.2
     band = (70, 700)                                               # the bass line E2-C3 + its brass harmonics and smears
 
+    def __init__(self, M, k):
+        super().__init__(M, k)
+        if self.role == 'riff':                                    # #48: the riff stabs E3-E4 + their brass harmonics
+            self.band = (120, 1500)
+
     def bone(self, m, dur=0.16, vel=0.8, gl=2.0, gl_t=0.035, cap=None):
         """a trombone note gliding up `gl` semitones into the pitch (the slide) (#34)"""
         M = self.M
