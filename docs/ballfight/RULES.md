@@ -100,6 +100,7 @@ styles, ready for crossovers and a tournament bracket.
 | BASSOON | forest green | (30, 130, 76) | | BARI SAX | coral | (255, 118, 92) |
 | VIOLA | teal (from the retired SAX) | (36, 200, 176) | | HARMONICA | sky blue | (128, 204, 255) |
 | KAZOO | red (from the retired GUITAR) | (255, 84, 72) | | ELECTRIC | neon green | (100, 255, 120) |
+| CELLO | rust | (196, 84, 40) | | CONTRABASS | steel blue | (70, 110, 200) |
 
   Spares (Cello, later fighters): pick a colour clearly apart from all of these and add it here.
 - **Fighters:** first named = left corner (screen left), second = right. Weapon scaling: every landed hit grows the
