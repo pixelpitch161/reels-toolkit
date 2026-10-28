@@ -55,6 +55,7 @@ EXTRA = [
     ('BASSOON', 'bassoon_lowpoly', 'ball', (34, 75), 0, 1.0),          # #39 BALLFIGHT: modern Heckel bassoon (x2.3 wide, crook x3.4 for sprites) + double-reed voice
     ('BARI SAX', 'barisax_lowpoly', 'ball', (36, 69), 0, 1.0),        # #39 BALLFIGHT: modern low-A bari, adapted from the alto (radii x1.35 for sprites) + honking voice
     ('VIOLA', 'viola_lowpoly', 'ball', (48, 79), 0, 1.12),            # #42 BALLFIGHT: modern 16.5in viola (no bow on the model; x1.12 so it reads bigger than the VIOLIN, whose sprite includes its bow) + darker bowed voice a fifth below
+    ('CONTRABASS', 'contrabass_lowpoly', 'ball', (28, 60), 0, 1.2),   # #47 BALLFIGHT: modern 3/4 double bass (no bow; x1.2 so it reads bigger than the CELLO, whose sprite includes its bow) + arco / pizz / slap voice (voice(): pizz < 0.5 s, else arco)
 ]
 DRUM_KEYS = (36, 38, 41, 45, 48, 49)    # kick, snare, floor / low / high tom, crash
 _MODS = {}
