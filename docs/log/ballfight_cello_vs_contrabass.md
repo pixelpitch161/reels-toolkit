@@ -64,3 +64,9 @@ Append new entries at the end (newest last).
 - Checks (`python -m ballfight check`): safe zone PASS, focus CoC 0 px on 1,830 frames, levels PASS, band CELLO
   +9.5..+12.5 / CONTRABASS +9.9..+15.4 dB over the bed, flash 0 (max 12.0 % of the frame), loop PASS (seam 0.4x, audio
   1.0 dB; the usual reassembly warn at 56.9 s).
+- Render: the one full render 344 s on 2 cores + loop-clean encode 210 s. Verify: ffprobe 1080x1920 h264 + aac, 61.013 s
+  (2860 AAC frames), reelkit.loopcheck PASS and reelkit.flashcheck PASS on the mp4, levels PASS on the mp4's audio, the
+  mp4 sheet matches the stills. Replay guard: #47 added to KIT_EPISODES (2455 -> CONTRABASS at 50.875 s, 572 events);
+  all 135 earlier lines identical after every engine / roster commit. Claim to delivery ~1 h 35 min (11:25-13:00: a new
+  model from photos, a voice, six engine kinds, two fighters' looks and sounds, a new mood).
+- Delivered for review (v1). Feedback: (pending)

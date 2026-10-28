@@ -56,3 +56,4 @@ desperation move quotes its theme. Post caption: "The swan vs the elephant ðŸ¦¢ð
   50.88 s with 0.1 HP, three lead changes; SWAN SONG then THE ELEPHANT 2 s apart, the latter in the HUD only by the 4 s
   rule). Sheet sent. Flagged to the user: The Swan's rhythm and The Elephant's tune are written without a score source.
   Details: `docs/log/ballfight_cello_vs_contrabass.md`.
+- Oct 28: v1 delivered for review (`ballfight_cello_vs_contrabass.mp4`) with caption + tags; all checks PASS.
