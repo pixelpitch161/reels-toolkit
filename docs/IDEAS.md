@@ -68,7 +68,7 @@ Each production session updates **its own row**: when it starts, sends a draft, 
 | 44 | [BALLFIGHT: Electric vs Acoustic](ideas/44-ballfight-electric-vs-acoustic.md) | review | session_01CzTfqcUYqS (2026-10-27) | v1 delivered with caption + tags (preview + sheet sent first); first kit episode with a new fighter. | `ballfight_electric_vs_acoustic.mp4` |
 | 45 | [BALLFIGHT: Piano vs Organ](ideas/45-ballfight-piano-vs-organ.md) | review | session_01CzTfqdN2i3 (2026-10-27) | v1 delivered with caption + tags (preview clip + early sheet sent first); PIANO v2 debut, ORGAN ported. | `ballfight_piano_vs_organ.mp4` |
 | 46 | [BALLFIGHT: Trumpet vs Clarinet](ideas/46-ballfight-trumpet-vs-clarinet.md) | review | session_01CzTfqa (2026-10-28) | Delivered: kit crossover, TRUMPET ported from #29 v3, new mood `hot_jazz`; seed 8410, CLARINET wins 49.99 s. | `ballfight_trumpet_vs_clarinet.mp4` |
-| 47 | [BALLFIGHT: Cello vs Contrabass](ideas/47-ballfight-cello-vs-contrabass.md) | idea (approved, mood A) | — | Approved Oct 28, mood A (dark tango). Two new fighters (contrabass model via Chrome). | — |
+| 47 | [BALLFIGHT: Cello vs Contrabass](ideas/47-ballfight-cello-vs-contrabass.md) | in production | session_01CzTfqb (2026-10-28) | Started Oct 28: kit episode, two new fighters (contrabass model via Chrome), mood `dark_tango`. | — |
 
 ## Other notes
 
