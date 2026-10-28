@@ -36,6 +36,7 @@ What each video taught us, one file per project in `docs/log/`. **Append your en
 | [`ballfight_organ_vs_harp`](log/ballfight_organ_vs_harp.md) | BALLFIGHT #9: Organ vs Harp (`projects/ballfight_organ_vs_harp`) |
 | [`ballfight_ukulele_vs_acoustic`](log/ballfight_ukulele_vs_acoustic.md) | BALLFIGHT #7: Ukulele vs Acoustic Guitar (`projects/ballfight_ukulele_vs_acoustic`) |
 | [`ballfight_trombone_vs_tuba`](log/ballfight_trombone_vs_tuba.md) | BALLFIGHT #10 (#36): Trombone vs Tuba, the first crossover + the HUD ability list |
+| [`ballfight_studio`](log/ballfight_studio.md) | BALLFIGHT Studio: porting the fighters + moods into the kit (`docs/studio/PLAN.md`) |
 | [`ballfight_clarinet_vs_oboe`](log/ballfight_clarinet_vs_oboe.md) | BALLFIGHT #11 (#37): Clarinet vs Oboe, two new fighters + the first levels rule episode |
 | [`ballfight_bassclarinet_vs_euphonium`](log/ballfight_bassclarinet_vs_euphonium.md) | BALLFIGHT #12 (#38): Bass Clarinet vs Euphonium, two new fighters on the levels rule |
 | [`ballfight_bassoon_vs_barisax`](log/ballfight_bassoon_vs_barisax.md) | BALLFIGHT #13 (#39): Bassoon vs Bari Sax, the sneak vs the ring rattler |
