@@ -3,7 +3,8 @@ last built in its own episode. The numbers that decide how it fights stay in the
 the engine's table); everything that decides how it looks and sounds lives here, so a crossover needs no drawing or
 sound code of its own.
 
-Ported so far: FLUTE (#32 v2, as #41 drew it), TROMBONE (#34, as #41), CLARINET and OBOE (#37), ACOUSTIC (#33 v3), ELECTRIC (new in #44). Porting another
+Ported so far: FLUTE (#32 v2, as #41 drew it), TROMBONE (#34, as #41), CLARINET and OBOE (#37), ACOUSTIC (#33 v3), ELECTRIC (new in #44), ORGAN (#35 v4), PIANO v2 (#45),
+TRUMPET (#29 v3, for #46). Porting another
 fighter = moving its draw / sound code from its latest episode folder into its module here (the episode folder stays as
 delivered), then checking a few frames against that episode's own renderer (README, "Making an episode")."""
 import importlib
