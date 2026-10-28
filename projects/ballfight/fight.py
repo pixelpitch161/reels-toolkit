@@ -111,6 +111,11 @@ while a held enemy shakes and takes a hit every 16th; event 'vibrato').
 fires at once to break a grab when the fighter is held; event 'slap') and `prelude` (PRELUDE: Bach's rocking cello
 prelude: a ring of note-waves on every 16th for a bar, their reaches rocking with the pattern; events 'prelude',
 'prelude_note').
+#47 (opt-in): ability kinds `swan` (SWAN SONG: the fighter rises, glides across the ring on a curve - airborne, it can't
+be hit, knocked or clashed with - and dives onto the enemy's predicted spot; events 'swan', 'swan_land') and `stampede`
+(THE ELEPHANT: a walker charges after the enemy for a while, unstoppable (WALKING the whole time), trampling it on
+contact and shaking the floor with a quake ring every 8th; events 'stampede', 'trample', 'stampede_stomp',
+'stampede_end').
 The run records every frame (30 fps) for the renderer and every event (hits, blocks, parries, ropes, volleys,
 abilities, level-ups, the K.O.) for the soundtrack and the captions. Seeded: same seed, same fight."""
 import math
@@ -305,6 +310,8 @@ class Fight:
             return False
         if getattr(V, 'smashed', 0.0) > 0:                  # #44: in pieces (GUITAR SMASH): intangible
             return False
+        if getattr(V, 'swan', None) is not None:            # #47: airborne (SWAN SONG): out of reach
+            return False
         if V.shield > 0:
             self.ev('block', vic, att, x, y, kind)
             return False
@@ -326,6 +333,8 @@ class Fight:
     def knock(self, vic, away, k):
         V = self.balls[vic]
         if getattr(V, 'walking', False):                  # #47: a walking bass can't be knocked back (WALKING BASS)
+            return
+        if getattr(V, 'swan', None) is not None:          # #47: nor an airborne swan (SWAN SONG)
             return
         n = np.linalg.norm(away)
         if n < 1e-9:
@@ -2913,6 +2922,10 @@ class Fight:
         elif kind == 'prelude':                                 # #47 (PRELUDE): rocking note-waves on the 16ths
             B.prel = dict(ab=ab, t0=self.t, j=0, n=int(round(ab['beats'] * 4)))
             self.ev('prelude', k, self.t + ab['beats'] * self.R.beat)
+        elif kind == 'swan':                                    # #47 (SWAN SONG): rise, glide, dive
+            self.start_swan(k, ab)
+        elif kind == 'stampede':                                # #47 (THE ELEPHANT): an unstoppable charge
+            self.start_stampede(k, ab)
         elif kind == 'vibrato':                                 # #47 (VIBRATO): a held enemy shakes and is hurt
             B.vib_until, B.vib_ab = self.t + self.ab_dur(ab), ab
             self.ev('vibrato', k, B.vib_until)
@@ -3074,6 +3087,8 @@ class Fight:
                 continue
             if getattr(B, 'grabbed', False) or getattr(B, 'pinned', False):   # #47: held / holding (THE EMBRACE)
                 continue
+            if getattr(B, 'swan', None) is not None:            # #47: airborne (SWAN SONG), swan_step drives it
+                continue
             B.boost *= math.exp(-dt / self.R.KNOCK_T)
             s = self.R.V * (1 + B.boost)
             if getattr(B, 'hopper', False):                     # #39: a hopper stands still; it only slides when knocked
@@ -3108,14 +3123,23 @@ class Fight:
                 and getattr(P, 'shadow', 0.0) <= 0 and getattr(Q, 'shadow', 0.0) <= 0 \
                 and not getattr(P, 'air', False) and not getattr(Q, 'air', False) \
                 and getattr(P, 'smashed', 0.0) <= 0 and getattr(Q, 'smashed', 0.0) <= 0 \
-                and not getattr(P, 'grabbed', False) and not getattr(Q, 'grabbed', False):   # #32 v2 swallowed, #38 shadow, #39 hop, #44 smash, #47 held
+                and not getattr(P, 'grabbed', False) and not getattr(Q, 'grabbed', False) \
+                and getattr(P, 'swan', None) is None and getattr(Q, 'swan', None) is None:   # #32 v2 swallowed, #38 shadow, #39 hop, #44 smash, #47 held / airborne
             n = d / max(dist, 1e-9)
             over = rP + rQ - dist
             wP, wQ = getattr(P, 'walker', False), getattr(Q, 'walker', False)
             if wP != wQ:                                        # #47: a walking bass doesn't give way (planted or mid-
-                O_, sg_ = (Q, 1.0) if wP else (P, -1.0)         # step): the other ball takes the whole overlap and
-                                                                # bounces off it
-                O_.p = O_.p + sg_ * n * over
+                W_, O_, sg_ = (P, Q, 1.0) if wP else (Q, P, -1.0)   # step): the other ball takes the whole overlap and
+                O_.p = O_.p + sg_ * n * over                    # bounces off it; pinned against the ropes, the walker
+                lim_ = A - getattr(O_, 'rad', R)                # stops short instead (no squeezing through them)
+                cl_ = np.clip(O_.p, -lim_, lim_)
+                back_ = O_.p - cl_
+                if back_.any():
+                    O_.p = cl_
+                    W_.p = W_.p - back_
+                    S_ = getattr(W_, 'wstep', None)
+                    if S_ is not None:
+                        S_['p0'], S_['p1'] = W_.p.copy(), W_.p.copy()
                 vo = float(O_.v @ n) * sg_
                 if vo < 0:
                     O_.v = O_.v - 2 * vo * sg_ * n
@@ -3896,7 +3920,8 @@ class Fight:
     def walk_blocked(self, k):
         """can't take a step now: held, stunned, in pieces or busy with something else (hook for later kinds)"""
         B = self.balls[k]
-        return self._stunned(k) or getattr(B, 'grabbed', False) or getattr(B, 'smashed', 0.0) > 0
+        return self._stunned(k) or getattr(B, 'grabbed', False) or getattr(B, 'smashed', 0.0) > 0 or \
+            getattr(B, 'stamp', None) is not None
 
     def walk_tick(self, k, k16):
         B, O = self.balls[k], self.balls[1 - k]
@@ -3955,7 +3980,8 @@ class Fight:
     # x its motion over the rush ahead. If the enemy comes within its reach (`blade_len` beyond contact: `base`, +`grow`
     # per landed throw up to `max_reach`) it GRABS (`dmg`; a shield blocks it; a WALKING enemy slips it): the cello plants
     # itself and HOLDS the enemy at arm's length for `hold_beats`, swinging it round (at least `turns` of a turn, its spin
-    # accelerating) to face the rope nearest the cello (+-`jitter` deg, seeded), then THROWS it that way: `dmg_throw`, the
+    # accelerating; over the first third it shuffles in to at least 3 R from the ropes, so the swing and the release
+    # have room) to face the rope nearest it (+-`jitter` deg, seeded), then THROWS it that way: `dmg_throw`, the
     # enemy launched at the shared speed with a knock boost of `power` (+`power_grow` per landed throw up to `power_max`;
     # set directly, not a knock). If the thrown enemy hits a rope within `rope_t` s it takes `dmg_rope` (the rope slam).
     # A held enemy doesn't move, clash or step; its abilities still fire. Ability kind 'vibrato' (VIBRATO): for `dur_beats`
@@ -3975,7 +4001,7 @@ class Fight:
     def grapple_busy(self, k):
         """can't start a rush now (hook for later kinds)"""
         B = self.balls[k]
-        return self._stunned(k) or getattr(B, 'smashed', 0.0) > 0
+        return self._stunned(k) or getattr(B, 'smashed', 0.0) > 0 or getattr(B, 'swan', None) is not None
 
     def grapple_tick(self, k, k16):
         B, O = self.balls[k], self.balls[1 - k]
@@ -4065,7 +4091,9 @@ class Fight:
                     self._end_rush(k, 0, hx, hy)
                     return
                 a0 = math.atan2(n[1], n[0])
-                a1 = self._nearest_rope_angle(B.p) + math.radians(self.rng.uniform(-1, 1) * w.get('jitter', 0.0))
+                m_ = self.R.A - 3 * R - 0.05
+                a1 = self._nearest_rope_angle(np.clip(B.p, -m_, m_)) + \
+                    math.radians(self.rng.uniform(-1, 1) * w.get('jitter', 0.0))
                 sd = B.spin_dir
                 delta = ((a1 - a0) * sd) % (2 * math.pi)
                 if delta < w.get('turns', 0.5) * 2 * math.pi:
@@ -4073,8 +4101,9 @@ class Fight:
                 B.vmul = None
                 B.pinned = True
                 O.grabbed = True
+                m_ = self.R.A - 3 * R - 0.05                     # room for the swing and the release on every side
                 B.gr = dict(state='hold', t0=self.t, t1=self.t + w['hold_beats'] * self.R.beat, a0=a0, a1=a1,
-                            sweep=delta * sd, a=a0)
+                            sweep=delta * sd, a=a0, c0=B.p.copy(), c1=np.clip(B.p, -m_, m_))
                 self.ev('grab', k, 1, hx, hy, float(B.blade_len))
                 self.ev('hold', k, a0, a1, B.gr['t1'], delta * sd)
             elif self.t >= G['t1']:
@@ -4085,6 +4114,7 @@ class Fight:
         if self.t + 1e-9 >= G['t1']:
             a = G['a1']
             d = np.array([math.cos(a), math.sin(a)])
+            B.p = G['c1'].copy()
             O.grabbed = False
             B.pinned = False
             B.gr = None
@@ -4099,6 +4129,8 @@ class Fight:
             B.toss = dict(t_end=self.t + w['rope_t'], ev_i=len(self.events))
             return
         u = (self.t - G['t0']) / max(1e-9, G['t1'] - G['t0'])
+        v_ = min(1.0, u / 0.35)
+        B.p = G['c0'] + (G['c1'] - G['c0']) * (v_ * v_ * (3 - 2 * v_))   # it shuffles in off the ropes as it swings
         a = G['a0'] + G['sweep'] * u ** 1.6                    # the swing accelerates into the throw
         G['a'] = a
         O.p = np.clip(B.p + np.array([math.cos(a), math.sin(a)]) * (2 * R + 0.02), -lim, lim)
@@ -4144,6 +4176,131 @@ class Fight:
             Pr['j'] += 1
         if Pr['j'] >= Pr['n']:
             B.prel = None
+
+    # ------------------------------------------------------------------ #47: SWAN SONG (opt-in ability kind 'swan')
+    # The fighter rises for `rise_beats` (letting go of anything it holds), glides for `glide_beats` along a curve from
+    # where it rose to the enemy's spot predicted `lead` x its motion to the landing (0.6 of that, as a slam aims; the
+    # curve bows `bow` toward the ring's centre), then dives for `dive_beats` and crashes there: an enemy within `radius`
+    # (+0.6 R) takes `dmg` and is knocked away (`knock`). From the rise to the landing it is airborne: it can't be hit or
+    # knocked and doesn't clash; its weapon rests. Events ('swan', k, t0, t_glide, t_dive, t_land, x0, y0, cx, cy, x1,
+    # y1, height) (the curve: a quadratic Bezier p0 -> c -> p1, eased), ('swan_land', k, x, y, hit).
+    def start_swan(self, k, ab):
+        B, O = self.balls[k], self.balls[1 - k]
+        if getattr(B, 'gr', None) is not None:
+            self.grapple_release(k, 'swan')
+        bt = self.R.beat
+        tg = self.t + ab['rise_beats'] * bt
+        td = tg + ab['glide_beats'] * bt
+        tl = td + ab['dive_beats'] * bt
+        lim = self.R.A - self.R.R
+        p0 = B.p.copy()
+        p1 = np.clip(O.p + O.v * (tl - self.t) * ab.get('lead', 1.0) * 0.6, -lim, lim)
+        d = p1 - p0
+        nd = float(np.hypot(*d))
+        nrm = np.array([-d[1], d[0]]) / nd if nd > 1e-6 else np.array([0.0, 1.0])
+        mid = (p0 + p1) / 2
+        if float(nrm @ (-mid)) < 0:                              # bow toward the centre (the curve stays inside)
+            nrm = -nrm
+        c = np.clip(mid + nrm * ab['bow'], -lim, lim)
+        B.vmul = None
+        B.swan = dict(ab=ab, t0=self.t, tg=tg, td=td, tl=tl, p0=p0, c=c, p1=p1)
+        self.ev('swan', k, self.t, tg, td, tl, float(p0[0]), float(p0[1]), float(c[0]), float(c[1]), float(p1[0]),
+                float(p1[1]), float(ab.get('height', 1.5)))
+
+    def swan_step(self, k):
+        B, O = self.balls[k], self.balls[1 - k]
+        Sw = getattr(B, 'swan', None)
+        if Sw is None:
+            return
+        if self.t < Sw['tg']:
+            B.p = Sw['p0'].copy()
+        elif self.t < Sw['td']:
+            u = (self.t - Sw['tg']) / max(1e-9, Sw['td'] - Sw['tg'])
+            u = u * u * (3 - 2 * u)
+            B.p = (1 - u) ** 2 * Sw['p0'] + 2 * u * (1 - u) * Sw['c'] + u * u * Sw['p1']
+            dv = 2 * (1 - u) * (Sw['c'] - Sw['p0']) + 2 * u * (Sw['p1'] - Sw['c'])
+            if float(np.hypot(*dv)) > 1e-9:
+                B.v = dv / float(np.hypot(*dv)) * self.R.V        # its heading along the glide
+        elif self.t < Sw['tl']:
+            B.p = Sw['p1'].copy()
+        else:
+            ab = Sw['ab']
+            B.p = Sw['p1'].copy()
+            B.swan = None
+            rel = O.p - B.p
+            dist = float(np.hypot(*rel))
+            hit = int(dist < ab['radius'] + self.R.R * 0.6)
+            if hit:
+                self.damage(k, 1 - k, ab['dmg'], 'swan', float(O.p[0]), float(O.p[1]))
+                self.knock(1 - k, rel if dist > 1e-3 else O.v, ab['knock'])
+            self.ev('swan_land', k, float(B.p[0]), float(B.p[1]), hit)
+
+    # ------------------------------------------------------------------ #47: THE ELEPHANT (opt-in ability kind 'stampede')
+    # For `beats` beats a walker stops stepping and charges after the enemy at `speed` x the shared speed (turning at
+    # `turn` rad/s, bouncing off the ropes), WALKING the whole time (no knockback, no grab, it doesn't give way). On
+    # contact it tramples (`dmg`, `knock`, at most every `cool` s) and charges on past (its heading reflected off the
+    # contact, then turning back for another pass), and every `stomp16` 16ths its feet shake the floor: a
+    # ring of kind 'stampede' (`stomp_r` beyond its surface, `stomp_dmg`, `stomp_knock`). A held fighter breaks free
+    # first. Events ('stampede', k, t_end), ('trample', k, x, y), ('stampede_stomp', k, x, y, rmax), ('stampede_end', k).
+    def start_stampede(self, k, ab):
+        B, O = self.balls[k], self.balls[1 - k]
+        if getattr(B, 'grabbed', False):
+            self.grapple_release(1 - k, 'stampede')
+        if getattr(B, 'wstep', None) is not None:              # a step under way stops where it is
+            B.wstep = None
+        d = O.p - B.p
+        n = float(np.hypot(*d))
+        B.v = (d / n if n > 1e-6 else np.array([1.0, 0.0])) * self.R.V
+        B.walking = True
+        B.boost = 0.0
+        B.stamp = dict(ab=ab, t1=self.t + ab['beats'] * self.R.beat, next=self.t, last=-9.0)
+        self.ev('stampede', k, B.stamp['t1'])
+
+    def stampede_step(self, k, dt):
+        B, O = self.balls[k], self.balls[1 - k]
+        St = getattr(B, 'stamp', None)
+        if St is None:
+            return
+        ab = St['ab']
+        R = self.R.R
+        if self.t >= St['t1']:
+            B.stamp = None
+            B.walking = False
+            self.ev('stampede_end', k)
+            return
+        d = O.p - B.p
+        want = math.atan2(d[1], d[0])
+        cur = math.atan2(B.v[1], B.v[0])
+        st = ab['turn'] * dt
+        a = cur + max(-st, min(st, _wrap(want - cur)))
+        sp = self.R.V * ab['speed']
+        B.v = np.array([math.cos(a), math.sin(a)]) * sp
+        B.p = B.p + B.v * dt
+        lim = self.R.A - R
+        for ax in (0, 1):
+            if abs(B.p[ax]) > lim:
+                B.p[ax] = math.copysign(lim, B.p[ax]) * 2 - B.p[ax]
+                B.v[ax] = -B.v[ax]
+                self.ev('rope', k, ax, int(math.copysign(1, B.p[ax])), float(B.p[0]), float(B.p[1]), float(sp))
+        rel = O.p - B.p
+        dist = float(np.hypot(*rel))
+        if dist < 2 * R + 0.04 and self.t - St['last'] >= ab['cool']:
+            n = rel / dist if dist > 1e-6 else B.v / sp
+            hx, hy = (B.p + n * R).tolist()
+            if self.damage(k, 1 - k, ab['dmg'], 'trample', hx, hy):
+                self.knock(1 - k, n, ab['knock'])
+                St['last'] = self.t
+                self.ev('trample', k, hx, hy)
+                vn = float(B.v @ n)                              # it charges on past (no grinding against it)
+                if vn > 0:
+                    B.v = B.v - 2 * vn * n
+        if self.t + 1e-9 >= St['next']:
+            rmax = R + ab['stomp_r']
+            self.waves.append(dict(owner=k, c=B.p.copy(), r=R, speed=ab.get('stomp_speed', 9.0), rmax=rmax,
+                                   dmg=ab['stomp_dmg'], knock=ab['stomp_knock'], kind='stampede', hit=False,
+                                   name=ab['name'], t0=self.t, slow=None, clears=False))
+            self.ev('stampede_stomp', k, float(B.p[0]), float(B.p[1]), rmax)
+            St['next'] += ab['stomp16'] * self.R.beat / 4.0
 
     # ------------------------------------------------------------------ record
     KMAX = 72
@@ -4715,6 +4872,10 @@ class Fight:
         n16g = k16_0
         if rec is not None and grapplers:
             rec['GRAB'] = []
+        swans = [k for k, B in enumerate(self.balls)                                        # #47 (opt-in)
+                 if any(a['kind'] == 'swan' for a in B.cfg['abilities'].values())]
+        stampeders = [k for k, B in enumerate(self.balls)                                   # #47 (opt-in)
+                      if any(a['kind'] == 'stampede' for a in B.cfg['abilities'].values())]
         preluders = [k for k, B in enumerate(self.balls)                                    # #47 (opt-in)
                      if any(a['kind'] == 'prelude' for a in B.cfg['abilities'].values())]
         walkers = [k for k, B in enumerate(self.balls) if B.w['kind'] == 'walk']          # #47 (opt-in)
@@ -4976,6 +5137,10 @@ class Fight:
                 self.grapple_step(k, dt)
             for k in preluders:                                  # #47: PRELUDE's note-waves on the 16ths
                 self.prelude_step(k)
+            for k in swans:                                      # #47: SWAN SONG's rise, glide and dive
+                self.swan_step(k)
+            for k in stampeders:                                 # #47: THE ELEPHANT's charge, trampling, stomps
+                self.stampede_step(k, dt)
             if getattr(self, 'notes', None):                     # #42: the whole notes roll (and land)
                 self.notes_step(dt)
             if getattr(self, 'splinters', None):                 # #44: GUITAR SMASH's splinters
