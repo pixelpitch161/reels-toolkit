@@ -41,3 +41,11 @@ band? 🎺 Comment the next match-up 👇"
 ## Board history
 
 - Approved Oct 28 (ideas chat).
+- In production Oct 28 (session_01CzTfqa). TRUMPET ported into the kit from #29 v3 (`kit/fighters/trumpet.py`; check
+  `examples/trumpet_vs_sax`: replay hash identical, 12 frames pixel-identical in a matched harness, trumpet bus to
+  1e-16; noted in `docs/log/ballfight_studio.md`). New kit option `FIGHT_BAR` (for #29's check config only).
+- New mood `kit/moods/hot_jazz.py` (D minor two-beat, Dm Dm Gm Gm Bb7 A7 Dm A7, 141.64 BPM): the trumpet's punches
+  play the melody (LINES, 8ths), the clarinet's jumps the counter-line (LINES, beats). Handicap DMG_SIDE (0.34, 0.41):
+  300 seeds 43 % / 57 %, median K.O. 49.6 s. Seed 8410 (8 fits in 9,267 runs): 3 lead changes, RHAPSODY 41.1 then
+  HIGH C 41.9, CLARINET wins at 49.99 s with 3.4 HP. Sheet sent first; all checks pass; one full render (273 s +
+  164 s encode); verify PASS. Delivered as review: `ballfight_trumpet_vs_clarinet.mp4`.

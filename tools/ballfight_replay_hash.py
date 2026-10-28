@@ -42,6 +42,7 @@ KIT_EPISODES = [
     ('projects/ballfight/examples/trumpet_vs_sax', [191, 1, 2, 3, 500]),   # #29 v3 (the TRUMPET port's check)
     ('projects/ballfight_electric_vs_acoustic', [418, 1, 2, 3, 500]),   # #44 (ELECTRIC lightning / smash vs the #33 ACOUSTIC), seed 418
     ('projects/ballfight_piano_vs_organ', [638, 1, 2, 3, 500]),   # #45 (PIANO v2 roll / sustain / runoff vs the #35 ORGAN), seed 638
+    ('projects/ballfight_trumpet_vs_clarinet', [8410, 1, 2, 3, 500]),   # #46 (the #29 TRUMPET vs the #37 CLARINET, crossover), seed 8410
 ]
 CODE = r'''
 import hashlib, sys

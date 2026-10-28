@@ -40,3 +40,7 @@ Append new entries at the end (newest last).
   clarinet's chalumeau shares 140-700 Hz with the tuba and the chop: MIX clarinet x1.9 (+2 dB).
 - Checks (`python -m ballfight check`, 164 s): safe zone PASS, focus 0 px, levels PASS, band TRUMPET +10.0..+14.1 dB /
   CLARINET +4.3..+10.0 dB over the bed, flash 0 general (max 16.4 % at 41.3 s), loop PASS.
+- Render: 1830 frames in 273 s on 2 cores + the loop-clean encode 164 s (one full render, no patches). Verify: ffprobe
+  1080x1920, h264 + aac, 61.013 s; loopcheck + flashcheck PASS on the mp4; mp4 sheet matches the stills. Replay guard:
+  every earlier line unchanged; #46 added to KIT_EPISODES.
+- Feedback: (pending)
