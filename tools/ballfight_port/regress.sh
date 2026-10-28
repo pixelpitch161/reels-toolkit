@@ -8,8 +8,8 @@ HERE=$(cd "$(dirname "$0")" && pwd)
 export PYTHONHASHSEED=0
 cd "$HERE/../../projects"
 MODE=$1; BASE=$2; OUT=${3:-$BASE}
-EPS="flute_vs_trombone clarinet_vs_oboe ukulele_vs_acoustic viola_vs_violin drums_vs_violin ballfight_electric_vs_acoustic"
-FR="0 20 60 150 700 1200 1510 1550 1600 1720 1800 1829"
+EPS="flute_vs_trombone clarinet_vs_oboe ukulele_vs_acoustic viola_vs_violin drums_vs_violin trombone_vs_tuba ballfight_electric_vs_acoustic ballfight_piano_vs_organ"
+FR="0 60 700 1200 1510 1600 1800 1829"
 mkdir -p "$OUT"
 for ep in $EPS; do
   python "$HERE/kitshot.py" $ep "$OUT/$ep" $FR > "$OUT/$ep.log" 2>&1 &
