@@ -43,6 +43,13 @@ A fighter is a glass ball with a low-poly Pixel Pitch instrument inside. Every f
                 'lightning'  (#44) a riff every `every` beats: int(n_vol) notes (`n0`, +`grow` per landed riff, up
                           to `n_max`) on the 16th `slots` (taken in order); each note an instant bolt from the headstock
                           (enemy within `reach`) or the nearest corner post (within `post_r`), else a miss; `dmg`, `knock`
+                'grapple' (#47) every `every` beats (`off16` later) a rush (`rush16` 16ths at `rush_speed` x V); within
+                          reach (`base`, +`grow` per landed throw up to `max_reach`) it grabs (`dmg`), holds and swings the
+                          enemy for `hold_beats`, throws it at the nearest ropes (`dmg_throw`, knock boost `power`, +
+                          `power_grow` up to `power_max`); a rope hit within `rope_t` = `dmg_rope`; a WALKING enemy slips it
+                'walk'    (#47) no gliding: a heavy step (`step16` 16ths, `stride` at most, toward the enemy) every `every`
+                          beats, a floor-quake ring at each footfall (`base` reach, +`grow` per landed quake up to
+                          `max_reach`; `dmg`, `knock`); WALKING (mid-step) = no knockback, no grab; never gives way
   abilities   unlock1 (at LV2), unlock2 (at LV3), low (once, when HP drops below Rules.LOW_HP). Kinds:
                 'shockwave'  expanding ring: knocks back + damages what it passes, clears enemy projectiles
                 'shield'     blocks all damage for `dur` s (a blade hitting it bounces and reverses)
@@ -61,6 +68,11 @@ A fighter is a glass ball with a low-poly Pixel Pitch instrument inside. Every f
                 'fork'       (#44) DISTORTION: for `dur` / `dur_beats` the lightning bolts fork (reach x `reach_k`)
                 'tapping'    (#44) TAPPING: for `beats` beats a lightning bolt on every 8th (x `dmg_k`)
                 'smash'      (#44) GUITAR SMASH: a shockwave + `n` splinters; in pieces for `rebuild_beats`, then on
+                'vibrato'    (#47) VIBRATO: for `dur_beats` a grappled enemy takes `dmg` every 16th of the hold
+                'prelude'    (#47) PRELUDE: a note-wave ring every 16th for `beats`, reaches from `pattern`
+                'swan'       (#47) SWAN SONG: rise, glide on a curve (airborne), dive onto the enemy (`radius`, `dmg`)
+                'slap'       (#47) SLAP BASS: a short knockback ring; waits for the enemy (`ready`) or breaks a grab
+                'stampede'   (#47) THE ELEPHANT: an unstoppable charge for `beats` (trample `dmg`, stomps every 8th)
               unlock abilities recur every `every_bars` bars after they unlock (only the first use gets a caption)
   look        colour (rim, HUD, captions), corner, the instrument's best view inside the ball (yaw centre, swing, roll),
               weapon style for the renderer
@@ -452,4 +464,36 @@ FIGHTERS = {
             low=dict(name='GUITAR SMASH', kind='smash', speed=7.5, radius=3.6, dmg=8.0, knock=1.6, n=10,
                      splinter_speed=5.0, splinter_dmg=1.2, splinter_knock=0.4, rebuild_beats=1)),
         pp='GUITAR', register=(52, 76), idiom='riff'),
+
+    # ---- #47 BALLFIGHT: the low strings, the swan vs the elephant (Saint-Saens' Carnival of the Animals). The cello is
+    # the only grappler (it rushes in, embraces, swings and throws the enemy into the ropes); the double bass the only
+    # juggernaut (it walks one heavy step a beat and can't be knocked back while walking, so a grab must come between
+    # its steps; SLAP BASS breaks a grab).
+    'CELLO': dict(
+        color=(196, 84, 40), dark=(112, 44, 18), corner='red',        # rust (series colour table, RULES)
+        view=(20, 16, 22),
+        weapon=dict(kind='grapple', style='embrace', name='THE EMBRACE',   # every bar: rush, grab, swing, throw
+                    every=4, off16=2, rush16=2, rush_speed=2.6, track=6.0, lead=0.5,   # the rush comes between the beats
+                    base=0.22, grow=0.03, max_reach=0.65, hold_beats=1.0, turns=0.6, jitter=15.0,
+                    dmg=1.2, dmg_throw=1.2, dmg_rope=3.0, rope_t=0.9, power=1.6, power_grow=0.06, power_max=2.4),
+        abilities=dict(
+            unlock1=dict(name='VIBRATO', kind='vibrato', dur_beats=8, dmg=0.5, every_bars=5),   # a held enemy shakes
+            unlock2=dict(name='PRELUDE', kind='prelude', beats=4, speed=6.0,      # Bach's rocking 16ths as note-waves
+                         pattern=(1.7, 1.0, 0.55, 0.7, 0.55, 1.0, 0.55, 1.0), dmg=0.7, knock=0.25, every_bars=5),
+            low=dict(name='SWAN SONG', kind='swan', rise_beats=1, glide_beats=2, dive_beats=0.5, bow=1.4, lead=1.0,
+                     height=1.6, radius=1.4, dmg=11.0, knock=1.6)),               # rises, glides like a swan, dives
+        pp='CELLO', register=(36, 69), idiom='embrace'),
+    'CONTRABASS': dict(
+        color=(70, 110, 200), dark=(30, 52, 120), corner='blue',      # steel blue (series colour table, RULES)
+        view=(16, 14, 14),
+        weapon=dict(kind='walk', style='steps', name='WALKING BASS',     # one heavy step a beat, a quake each footfall
+                    every=1, step16=2, stride=0.75, gap=0.04, lead=0.6, jitter=8.0, stagger=0.6,
+                    base=0.6, grow=0.05, max_reach=1.5, speed=9.0, dmg=2.4, knock=0.5),
+        abilities=dict(
+            unlock1=dict(name='SLAP BASS', kind='slap', ready=0.5, speed=10.0, radius=2.0, dmg=3.0, knock=1.6,
+                         every_bars=4),                                   # a percussive burst; breaks a grab
+            unlock2=dict(name='DOUBLE TIME', kind='haste', mult=2.0, dur_beats=8, every_bars=6),   # walks on the 8ths
+            low=dict(name='THE ELEPHANT', kind='stampede', beats=6, speed=1.5, turn=2.2, dmg=4.0, knock=1.8, cool=0.5,
+                     stomp16=2, stomp_r=1.1, stomp_dmg=0.8, stomp_knock=0.4)),   # an unstoppable stampede
+        pp='CONTRABASS', register=(28, 60), idiom='walking'),
 }
