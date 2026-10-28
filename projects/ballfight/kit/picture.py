@@ -961,7 +961,7 @@ def post_fx(img, cam, t, fs, drawn):
     img = MO.apply_dim(img, t, keep=keep)
     for k, (s_, rp) in drawn.items():
         p1 = fighter(k, max(0.0, t - 0.06))['p']
-        s1 = cam.wp(S.to_world(p1[0], p1[1], R)[None])[0]
+        s1 = cam.wp(S.to_world(p1[0], p1[1], R + fs[k]['lift'])[None])[0]     # #47: a lift alone draws no speed lines
         v = (s_[0] - s1[0], s_[1] - s1[1])
         if LOOKS[k].teleports and math.hypot(*v) > 25:                  # a teleport is not a dash: no speed lines
             v = (0.0, 0.0)
