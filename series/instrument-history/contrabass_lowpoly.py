@@ -310,6 +310,103 @@ def build(g, t, ev, fx, s):
             fx.append(("note", (.6, yb + .8, surf(0, U_BRIDGE)), age))
 
 
+# ---------------------------------------------------------------- sound: arco (bowed), pizz (plucked) and slap
+# Tuned E1 A1 D2 G2 (midi 28 33 38 43), sounding an octave below the written note. The body's air resonance sits near
+# 60 Hz and its main wood resonances near 110 / 220 Hz, with a nasal band near 500 Hz and a rosin-bright band near
+# 1.1 kHz; on the low strings the fundamental is weaker than the 2nd and 3rd harmonics (the ear fills it in). Three
+# articulations, all deterministic per pitch:
+#   bowed  arco: a slow, rosiny bow attack (the "chuff" of the hair catching the thick string), a steady formant-
+#          filtered saw with a little slow vibrato, the bow noise riding on top
+#   pizz   jazz pizzicato: the finger's thump, a fast-decaying bright attack and the round "boom" ringing under it
+#          (high partials die first)
+#   slap   rockabilly slap: the string pulled hard and let go so it snaps onto the fingerboard (a bright click and a
+#          wooden clack) over a pizz note; slap(None) is the unpitched ghost slap of the off-beats
+SR = 44100
+FORM = [(62, .9, .35), (112, 1.0, .35), (220, .85, .40), (500, .55, .45), (1100, .35, .45)]   # (Hz, gain, log-width)
+
+
+def _midi_hz(m):
+    return 440.0 * 2 ** ((m - 69) / 12.0)
+
+
+def _form_gain(fk):
+    return .12 + sum(a * math.exp(-(math.log(fk / fc) / w) ** 2) for fc, a, w in FORM)
+
+
+def bowed(f, dur, vel, att=.07, vib=.004, vrate=4.6, vdel=.22, noise=.06):
+    from scipy.signal import lfilter, butter, sosfilt
+    rel = .22
+    n = int((dur + rel) * SR)
+    t = np.arange(n) / SR
+    ph0 = (f * 5.31) % (2 * math.pi)                                 # deterministic vibrato phase per pitch
+    fm = 1 + vib * np.clip((t - vdel) / .3, 0, 1) * np.sin(2 * np.pi * vrate * t + ph0)
+    ph = 2 * np.pi * np.cumsum(f * fm) / SR
+    sig = np.zeros(n)
+    tot = 0.0
+    for k in range(1, 60):
+        fk = f * k
+        if fk > 4200:
+            break
+        gk = _form_gain(fk) / k ** .95 * (.45 if k == 1 and f < 60 else 1.0)
+        sig += gk * np.sin(k * ph + .37 * k)
+        tot += gk
+    sig /= tot
+    rng = np.random.default_rng(int(f * 10) % 100003)               # bow hair + rosin, deterministic per pitch
+    nz = sosfilt(butter(2, [300, 2200], 'band', fs=SR, output='sos'), rng.standard_normal(n))
+    chuff = np.exp(-t / .05) * 2.2                                   # the hair catching the string
+    sig += nz * noise * (.7 + chuff)
+    env = np.minimum(1, t / att) ** 1.5 * np.where(t < dur, 1.0, np.exp(-(t - dur) / (rel / 4)))
+    env = env * (.84 + .16 * np.minimum(1, t / max(dur, .05)))
+    sig = lfilter([.22], [1, -.78], sig)                            # dark: the bass's heavy top filters the highs
+    return sig * env * vel * 1.6
+
+
+def pizz(f, dur, vel, bright=1.0):
+    from scipy.signal import lfilter, butter, sosfilt
+    ring = max(dur, .35) + .5
+    n = int(ring * SR)
+    t = np.arange(n) / SR
+    sig = np.zeros(n)
+    tot = 0.0
+    for k in range(1, 40):
+        fk = f * k * (1 + .0007 * k * k)                             # a thick string: slightly sharp upper partials
+        if fk > 5000:
+            break
+        gk = _form_gain(fk) / k ** (1.25 - .25 * bright) * (.55 if k == 1 and f < 60 else 1.0)
+        dec = .9 / (1 + .55 * (k - 1)) * (1.0 if f < 80 else 80 / f)
+        sig += gk * np.sin(2 * np.pi * fk * t + .5 * k) * np.exp(-t / dec)
+        tot += gk
+    sig /= tot
+    rng = np.random.default_rng(int(f * 7) % 100003)
+    thump = sosfilt(butter(2, 180, 'low', fs=SR, output='sos'), rng.standard_normal(n)) * np.exp(-t / .018) * 2.5
+    sig += thump
+    env = np.minimum(1, t / .003) * np.where(t < dur + .15, 1.0, np.exp(-(t - dur - .15) / .06))
+    return lfilter([.5], [1, -.5], sig) * env * vel * 1.7
+
+
+def slap(f, dur, vel):
+    """a slap note (f in Hz) or, with f None, the unpitched ghost slap"""
+    from scipy.signal import butter, sosfilt
+    n = int((max(dur, .12) + .4) * SR)
+    t = np.arange(n) / SR
+    rng = np.random.default_rng(4711 if f is None else int(f * 13) % 100003)
+    click = sosfilt(butter(2, [1800, 6500], 'band', fs=SR, output='sos'), rng.standard_normal(n)) * np.exp(-t / .006)
+    clack = sosfilt(butter(2, [500, 1600], 'band', fs=SR, output='sos'), rng.standard_normal(n)) * np.exp(-t / .014)
+    out = click * 1.4 + clack * 1.1
+    if f is not None:
+        x = pizz(f, dur, 1.0, bright=1.6)
+        out[:len(x)] += x[:n] * .9
+    return out * vel
+
+
+def synth(s, idx):
+    """the bridge's voice: pizz for short notes (the walking line), arco for long ones; the BALLFIGHT sound module
+    calls bowed / pizz / slap directly for the articulation it wants"""
+    nt, m, v, dur, tp, cs = s["ev"][idx]
+    f = _midi_hz(m)
+    return bowed(f, dur, v) if dur >= .5 else pizz(f, dur, v)
+
+
 if __name__ == "__main__":
     import piano_lowpoly as P
     g = P.Geo()
