@@ -313,16 +313,40 @@ class Bed:
         for b in range(b0, int(round(t_solo / self.T.BAR))):
             self.bar(mix, b, intensity=1.0, light=True)
 
+    def theme(self):
+        """the tango's theme: the line of the fighter whose role is 'melody' (config LINES), or None"""
+        for n in self.T.FIGHTERS:
+            if self.T.ROLES.get(n) == 'melody' and n in self.T.LINES:
+                return n
+        return None
+
     def victory(self, mix, b_solo):
-        """the band plays on under the solo at full tilt (a victory, never a quiet stretch), up to the build; the
-        bandoneon's left hand doubles the bass line's roots (the double bass may be in pieces)"""
+        """the band plays on under the solo at full tilt (a victory, never a quiet stretch), up to the build: the
+        bandoneon takes up the theme an octave up (legato, under the solo), its left hand on the roots, the chop on
+        every 8th in the second half of each bar"""
         T = self.T
+        th = self.theme()
         for b in range(b_solo, T.N_BARS - 1):
             self.bar(mix, b, intensity=1.4)
             ch = T.CHORDS[b % T.N_BARS]
             for bt in (0, 2):
                 mix.place('bandoneon', self.reed(self.root(ch, 38) + (0 if bt == 0 else 7), 0.5 * T.BEAT, 1.0, bark=0.5),
-                          b * T.BAR + bt * T.BEAT, 0.10, pan=-0.12)
+                          b * T.BAR + bt * T.BEAT, 0.16, pan=-0.12)
+            for bt in (2.5, 3.5):
+                mix.place('guitar', self.chop(ch, 0.8), b * T.BAR + bt * T.BEAT, 0.30, pan=0.2)
+            if th is None:
+                continue
+            for bt in range(4):
+                tb = b * T.BAR + bt * T.BEAT
+                m = T.line_at(th, tb)
+                while m < 62:
+                    m += 12
+                while m > 81:
+                    m -= 12
+                g = 0.13 if b < T.N_BARS - 2 else 0.22                 # fuller as the loser's pieces fly home
+                mix.place('bandoneon', self.reed(m, T.BEAT * 0.95, 1.0, att=0.03, bark=0.4), tb, g, pan=0.1)
+                if b == T.N_BARS - 2:
+                    mix.place('bandoneon', self.reed(m - 12, T.BEAT * 0.95, 1.0, att=0.03, bark=0.4), tb, 0.12, pan=-0.1)
 
     def last_bars(self, mix):
         """the last bar builds into the title slam on sample 0: stabs on every 8th, the bandoneon's top line climbing
@@ -332,12 +356,13 @@ class Bed:
         ch = T.CHORDS[-1]
         for j in range(8):
             tj = t_last + j * T.BEAT / 2
-            mix.place('bandoneon', self.stab(ch, 0.12, 1.0, low=(j % 2 == 0)), tj, 0.26 + 0.02 * j, pan=-0.12)
-            if j % 2 == 0:
-                mix.place('perc', self.golpe(1.0, 300 + j), tj, 0.32)
-                mix.place('guitar', self.chop(ch, 1.0), tj + T.BEAT / 2, 0.40, pan=0.2)
+            mix.place('bandoneon', self.stab(ch, 0.14, 1.0, low=True), tj, 0.34 + 0.02 * j, pan=-0.12)
+            mix.place('guitar', self.chop(ch, 1.0), tj, 0.40, pan=0.2)
+            mix.place('perc', self.golpe(1.0, 300 + j), tj, 0.30 if j % 2 == 0 else 0.18)
+            if j % 2 == 1:
+                mix.place('perc', self.chicharra(1.0, 400 + j), tj, 0.12, pan=0.3)
         top = max(self.voicing(T.CHORDS[0])) + 12
         for j in range(4):
-            mix.place('bandoneon', self.reed(top - 4 + j, T.BEAT * 0.9, 1.0, att=0.02), t_last + j * T.BEAT, 0.14,
+            mix.place('bandoneon', self.reed(top - 4 + j, T.BEAT * 0.9, 1.0, att=0.02), t_last + j * T.BEAT, 0.20,
                       pan=-0.12)
         mix.place('fx', M.riser(T.DUR - t_last), t_last, 0.18)

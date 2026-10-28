@@ -285,13 +285,13 @@ class Look(base.Look):
         else:                                                  # the trunk swinging ahead, curling up at the end
             v = P.RUN['V'][P.sim_i(min(t, P.T_KO)), self.k]
             hd = math.atan2(v[1], v[0])
-            swing = 0.35 * math.sin(2 * math.pi * t * 1.6)
+            swing = 0.5 * math.sin(2 * math.pi * t * 1.6)
             pts = []
-            for j in range(10):
-                u = j / 9
-                a = hd + swing * u
-                d = R * 0.85 + 0.75 * u
-                pts.append([p[0] + d * math.cos(a), p[1] + d * math.sin(a), h - 0.15 * u + 0.35 * u ** 3])
+            for j in range(12):                                # out low in front, then curling up and back at the tip
+                u = j / 11
+                a = hd + swing * u + 1.4 * u ** 3 * (1 if swing >= 0 else -1)
+                d = R * 0.8 + 0.7 * u - 0.25 * u ** 4
+                pts.append([p[0] + d * math.cos(a), p[1] + d * math.sin(a), h - 0.25 * u + 0.6 * u ** 3])
             sp = cam.wp(S.to_world(*np.array(pts).T))
             arr = blend(arr, _mask([], [sp], 9), INK, 0.85)
             arr = blend(arr, _mask([], [sp], 6), EAR, 1.0)
@@ -517,7 +517,10 @@ class Sound(base.Sound):
             if ts > T.T_REASSEMBLE - 0.05:
                 break
             how = 'arco' if d >= 1.5 else ('slap' if (bt * 2) % 2 == 1 else 'pizz')
-            mix.place('solo', self.art(how, m, max(0.1, d * T.BEAT * 0.95), 0.95), ts, 0.5)
+            mix.place('solo', self.art(how, m, max(0.1, d * T.BEAT * 0.95), 0.95), ts, 0.62)
+            if how != 'arco':                                      # the octave ringing under the plucked line
+                mix.place('solo', self.art('pizz', m - 12 if m - 12 >= self.lo else m, max(0.1, d * T.BEAT), 0.8),
+                          ts, 0.26)
 
     def reassemble(self, mix):
         T, M = self.T, self.M

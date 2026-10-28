@@ -654,7 +654,7 @@ class Sound(base.Sound):
         run = [r - 12, r - 5, r, r + 3, r + 7, r + 12, r + 15, r + 19]
         for j, m in enumerate(run):
             tj = M.q16(T.T_REASSEMBLE + (T.T_GLIDE - T.T_REASSEMBLE) * j / len(run))
-            mix.place('solo', self.bow(self.fit_reg(m, self.lo - 12), 0.09, 0.8), tj, 0.20)
+            mix.place('solo', self.bow(self.fit_reg(m, self.lo - 12), 0.12, 0.85), tj, 0.32)
 
     def last_bar(self, mix):
         """into the title slam: a tremolo swell on the dominant's fifth"""
