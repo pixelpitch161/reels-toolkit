@@ -48,3 +48,11 @@ desperation move quotes its theme. Post caption: "The swan vs the elephant ðŸ¦¢ð
 ## Board history
 
 - Approved Oct 28 (ideas chat).
+- Oct 28 (session_01CzTfqb): in production; kit episode `projects/ballfight_cello_vs_contrabass/`. CONTRABASS model from
+  Commons reference photos (AGK front + side view, the Met's CC0 bass), voice (arco / pizz / slap) and bridge entry in
+  their own commits; engine kinds `walk`, `grapple` + `vibrato`, `slap` + `prelude`, `swan` + `stampede` additive, own
+  commits, replay guard identical each time; previews of both fighters sent before tuning; mood `dark_tango` (new).
+  Tuned (quake reach 0.66, knock 0.2, scale 0.85: CELLO 46 %, median K.O. 49.3 s), seed 2455 (CONTRABASS wins at
+  50.88 s with 0.1 HP, three lead changes; SWAN SONG then THE ELEPHANT 2 s apart, the latter in the HUD only by the 4 s
+  rule). Sheet sent. Flagged to the user: The Swan's rhythm and The Elephant's tune are written without a score source.
+  Details: `docs/log/ballfight_cello_vs_contrabass.md`.
