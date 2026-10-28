@@ -178,7 +178,7 @@ def fighter(k, t):
     """picture state of fighter k at time t: dict(p (ring frame), vis, th, blen, frets, shield, haste, glow, scale, ...);
     each fighter's look adds its own fields (state hooks)"""
     st = dict(vis=True, shield=0.0, haste=0.0, glow=0.0, scale=1.0, th=0.0, blen=BASE_LEN[k], frets=FRETS0[k],
-              level=1, shattered=False, om=OMEGA[k], sd=SD0[k], ext=REST[k], slow=0.0, thr_k=0.0)
+              level=1, shattered=False, om=OMEGA[k], sd=SD0[k], ext=REST[k], slow=0.0, thr_k=0.0, lift=0.0)
     if t < T.T_FIGHT:
         st['p'] = CORNER0[k] + rev_offset(k, t)
         st['th'] = theta_open(k, t)
@@ -512,7 +512,7 @@ def screen(cam, P):
 
 # ---------------------------------------------------------------- glass balls
 def draw_ball(arr, dep, cam, k, st, t):
-    pw = S.to_world(st['p'][0], st['p'][1], R)
+    pw = S.to_world(st['p'][0], st['p'][1], R + st['lift'])         # #47: a look may lift the ball (SWAN SONG)
     Pc = cam.to_cam(pw[None])[0]
     s = cam.proj(Pc[None])[0]
     rp = R * cam.f / Pc[2] * st['scale']
@@ -627,6 +627,12 @@ def _hold(k, slot):
         return ab['flight_beats'] * T.BEAT + ab['beats'] * T.BEAT
     if ab['kind'] == 'copy':                         # #38 IDENTITY CRISIS: for its bar
         return T.BAR
+    if ab['kind'] in ('vibrato',):                   # #47 VIBRATO: while a held enemy would shake
+        return ab['dur_beats'] * T.BEAT
+    if ab['kind'] in ('prelude', 'stampede'):        # #47 PRELUDE's bar of note-waves, THE ELEPHANT's charge
+        return ab['beats'] * T.BEAT
+    if ab['kind'] == 'swan':                         # #47 SWAN SONG: from the rise to the landing
+        return (ab['rise_beats'] + ab['glide_beats'] + ab['dive_beats']) * T.BEAT
     return 0.08
 
 
@@ -836,7 +842,8 @@ def canvas_shadows(F, spot):
             continue
         a = np.linspace(0, 2 * math.pi, 13)[:-1]
         pw = S.to_world(st['p'][0], st['p'][1], R)
-        circ = np.array([[pw[0] + R * st['scale'] * math.cos(u), R, pw[2] + R * st['scale'] * math.sin(u)] for u in a])
+        hy = R + st['lift']                                          # #47: a lifted ball's shadow falls further off
+        circ = np.array([[pw[0] + R * st['scale'] * math.cos(u), hy, pw[2] + R * st['scale'] * math.sin(u)] for u in a])
         polys.append(proj_point(circ, spot))
         polys += LOOKS[k].shadows(st, spot)
     for L in LOOKS:
@@ -1061,7 +1068,7 @@ def render(f):
     for k, st in enumerate(fs):
         if not st['vis'] or st['scale'] < 0.05:
             continue
-        pw = S.to_world(st['p'][0], st['p'][1], R)
+        pw = S.to_world(st['p'][0], st['p'][1], R + st['lift'])
         dz = cam.depth(pw)[0]
         items.append((dz, 'ball', k))
         for dz_, pay in LOOKS[k].items_ball(F, st):
