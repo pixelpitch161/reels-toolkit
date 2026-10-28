@@ -468,7 +468,9 @@ FIGHTERS = {
     # ---- #47 BALLFIGHT: the low strings, the swan vs the elephant (Saint-Saens' Carnival of the Animals). The cello is
     # the only grappler (it rushes in, embraces, swings and throws the enemy into the ropes); the double bass the only
     # juggernaut (it walks one heavy step a beat and can't be knocked back while walking, so a grab must come between
-    # its steps; SLAP BASS breaks a grab).
+    # its steps; SLAP BASS breaks a grab). Numbers tuned once with the kit (#47: python -m ballfight tune, 200 seeds at
+    # the episode's damage scale 0.85: CELLO 46 % / CONTRABASS 54 %, median K.O. 49.3 s, both desperation moves in 78 %
+    # of fights), frozen.
     'CELLO': dict(
         color=(196, 84, 40), dark=(112, 44, 18), corner='red',        # rust (series colour table, RULES)
         view=(20, 16, 22),
@@ -488,7 +490,7 @@ FIGHTERS = {
         view=(16, 14, 14),
         weapon=dict(kind='walk', style='steps', name='WALKING BASS',     # one heavy step a beat, a quake each footfall
                     every=1, step16=2, stride=0.75, gap=0.04, lead=0.6, jitter=8.0, stagger=0.6,
-                    base=0.6, grow=0.05, max_reach=1.5, speed=9.0, dmg=3.2, knock=0.5),
+                    base=0.66, grow=0.05, max_reach=1.5, speed=9.0, dmg=3.2, knock=0.2),   # tuned once (#47), frozen
         abilities=dict(
             unlock1=dict(name='SLAP BASS', kind='slap', ready=0.5, speed=10.0, radius=2.0, dmg=3.0, knock=1.6,
                          every_bars=4),                                   # a percussive burst; breaks a grab
