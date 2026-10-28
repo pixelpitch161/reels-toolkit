@@ -102,7 +102,11 @@ never lands; no damage, no growth for either side. Events 'swat_shell'; a swatte
 its swat time as an 11th field. Off unless an episode turns it on, so earlier fights don't change.
 #47 (opt-in): weapon kind `walk` (WALKING BASS: no gliding; one heavy step toward the enemy on the grid, a floor-quake
 ring at every footfall; WALKING = knockback doesn't move it, a grapple can't hold it and it doesn't give way in a clash;
-events 'step', 'step_land', recorded as WALK).
+events 'step', 'step_land', recorded as WALK); a walker never gives way in a clash.
+#47 (opt-in): weapon kind `grapple` (THE EMBRACE: every bar the fighter rushes in, grabs the enemy, swings it round
+for a beat and throws it into the nearest ropes; a rope hit right after the throw costs extra; a walking enemy slips the
+grab; events 'rush', 'grab', 'hold', 'throw', 'ropeslam', recorded as GRAB) and ability kind `vibrato` (VIBRATO: for a
+while a held enemy shakes and takes a hit every 16th; event 'vibrato').
 The run records every frame (30 fps) for the renderer and every event (hits, blocks, parries, ropes, volleys,
 abilities, level-ups, the K.O.) for the soundtrack and the captions. Seeded: same seed, same fight."""
 import math
@@ -2900,6 +2904,9 @@ class Fight:
             self.ev('sustain', k, B.sustain_until)
         elif kind == 'runoff':                                  # #45 (88 KEYS): the roll runs off its spool
             self.start_runoff(k, ab)
+        elif kind == 'vibrato':                                 # #47 (VIBRATO): a held enemy shakes and is hurt
+            B.vib_until, B.vib_ab = self.t + self.ab_dur(ab), ab
+            self.ev('vibrato', k, B.vib_until)
 
     def ab_beam_charge(self, k, ab):
         """ability kind 'beam' (#29 v3): charge for `charge_beats` with the aim locked on the enemy's spot predicted
@@ -3053,6 +3060,8 @@ class Fight:
                 continue
             if getattr(B, 'walking', False):                    # #47: mid-step (WALKING BASS), walk_step drives it
                 continue
+            if getattr(B, 'grabbed', False) or getattr(B, 'pinned', False):   # #47: held / holding (THE EMBRACE)
+                continue
             B.boost *= math.exp(-dt / self.R.KNOCK_T)
             s = self.R.V * (1 + B.boost)
             if getattr(B, 'hopper', False):                     # #39: a hopper stands still; it only slides when knocked
@@ -3086,12 +3095,14 @@ class Fight:
                 and not getattr(P, 'held', False) and not getattr(Q, 'held', False) \
                 and getattr(P, 'shadow', 0.0) <= 0 and getattr(Q, 'shadow', 0.0) <= 0 \
                 and not getattr(P, 'air', False) and not getattr(Q, 'air', False) \
-                and getattr(P, 'smashed', 0.0) <= 0 and getattr(Q, 'smashed', 0.0) <= 0:   # #32 v2 swallowed, #38 shadow, #39 hop, #44 smash
+                and getattr(P, 'smashed', 0.0) <= 0 and getattr(Q, 'smashed', 0.0) <= 0 \
+                and not getattr(P, 'grabbed', False) and not getattr(Q, 'grabbed', False):   # #32 v2 swallowed, #38 shadow, #39 hop, #44 smash, #47 held
             n = d / max(dist, 1e-9)
             over = rP + rQ - dist
-            wP, wQ = getattr(P, 'walking', False), getattr(Q, 'walking', False)
-            if wP != wQ:                                        # #47: a walking bass doesn't give way: the other ball
-                O_, sg_ = (Q, 1.0) if wP else (P, -1.0)         # takes the whole overlap and bounces off it
+            wP, wQ = getattr(P, 'walker', False), getattr(Q, 'walker', False)
+            if wP != wQ:                                        # #47: a walking bass doesn't give way (planted or mid-
+                O_, sg_ = (Q, 1.0) if wP else (P, -1.0)         # step): the other ball takes the whole overlap and
+                                                                # bounces off it
                 O_.p = O_.p + sg_ * n * over
                 vo = float(O_.v @ n) * sg_
                 if vo < 0:
@@ -3857,7 +3868,7 @@ class Fight:
     # takes one heavy step of `step16` 16ths (haste divides that too, at least 1) toward the enemy's spot `lead` x its
     # motion over the step ahead (+-`jitter` deg, seeded), `stride` long at most and never past contact (`gap`). While a
     # step is under way the bass is WALKING: knockback doesn't move it (knock() ignores it), a grapple can't hold it and
-    # in a clash it doesn't give way. Each footfall is a small floor-quake: a ring of kind 'step' from the landing spot
+    # in a clash it doesn't give way (planted, it doesn't either: the other ball bounces off it). Each footfall is a small floor-quake: a ring of kind 'step' from the landing spot
     # out to `blade_len` beyond its surface (`base`, +`grow` per landed quake up to `max_reach`; `speed`, `dmg`, `knock`).
     # Between steps it stands planted and only slides when knocked (at the shared speed x its knock boost); it can't
     # step while that boost is above `stagger` (still sliding from a throw), while held or stunned.
@@ -3925,6 +3936,160 @@ class Fight:
                                dmg=w['dmg'], knock=w['knock'], kind='step', hit=False, name=w.get('name', 'WALK'),
                                t0=self.t, slow=None, grow=True, clears=False))
         self.ev('step_land', k, float(B.p[0]), float(B.p[1]), float(B.blade_len), S['kind'])
+
+    # ------------------------------------------------------------------ #47: THE EMBRACE (opt-in weapon kind 'grapple')
+    # The cello is a grappler. Every `every` beats (`off16` 16ths after the bar line; haste divides it) it RUSHES: for
+    # `rush16` 16ths it charges at `rush_speed` x the shared speed, steering (at `track` rad/s) for the enemy's spot `lead`
+    # x its motion over the rush ahead. If the enemy comes within its reach (`blade_len` beyond contact: `base`, +`grow`
+    # per landed throw up to `max_reach`) it GRABS (`dmg`; a shield blocks it; a WALKING enemy slips it): the cello plants
+    # itself and HOLDS the enemy at arm's length for `hold_beats`, swinging it round (at least `turns` of a turn, its spin
+    # accelerating) to face the rope nearest the cello (+-`jitter` deg, seeded), then THROWS it that way: `dmg_throw`, the
+    # enemy launched at the shared speed with a knock boost of `power` (+`power_grow` per landed throw up to `power_max`;
+    # set directly, not a knock). If the thrown enemy hits a rope within `rope_t` s it takes `dmg_rope` (the rope slam).
+    # A held enemy doesn't move, clash or step; its abilities still fire. Ability kind 'vibrato' (VIBRATO): for `dur_beats`
+    # a held enemy shakes and takes `dmg` on every 16th of the hold.
+    # Events ('rush', k, aim, t_end), ('grab', k, how 1 grabbed / 0 missed / 2 slipped (walking) / 3 blocked, x, y, reach),
+    # ('hold', k, a0, a1, t_throw, sweep), ('throw', k, angle, power, x, y), ('ropeslam', k, x, y), ('release', k, why).
+    # Recorded as GRAB (per ball: state 0 idle / 1 rush / 2 hold, the arm's angle, state start, state end, reach, power).
+    GRAB_STATES = {'rush': 1, 'hold': 2}
+
+    def grapple_setup(self, k):
+        B = self.balls[k]
+        B.gr = None
+        B.toss = None
+        B.blade_len = B.w['base']
+        B.power = B.w['power']
+
+    def grapple_busy(self, k):
+        """can't start a rush now (hook for later kinds)"""
+        B = self.balls[k]
+        return self._stunned(k) or getattr(B, 'smashed', 0.0) > 0
+
+    def grapple_tick(self, k, k16):
+        B, O = self.balls[k], self.balls[1 - k]
+        w = B.w
+        G = B.gr
+        if G is not None and G['state'] == 'hold' and self.t < getattr(B, 'vib_until', -1.0):   # VIBRATO: every 16th
+            ab = B.vib_ab
+            self.damage(k, 1 - k, ab['dmg'], 'vibrato', float(O.p[0]), float(O.p[1]))
+        if G is not None or self.grapple_busy(k):
+            return
+        m = self.ab_mult(k)
+        main16 = int(round(4 * w['every']))
+        if (k16 - int(w.get('off16', 0))) % max(1, int(round(main16 / m))):
+            return
+        rush = w['rush16'] * self.R.beat / 4.0
+        d = O.p + O.v * rush * w.get('lead', 0.0) - B.p
+        aim = math.atan2(d[1], d[0])
+        B.v = np.array([math.cos(aim), math.sin(aim)]) * self.R.V
+        B.vmul = w['rush_speed']
+        B.gr = dict(state='rush', t0=self.t, t1=self.t + rush, a=aim)
+        self.ev('rush', k, aim, B.gr['t1'])
+
+    def _end_rush(self, k, how, x, y):
+        B = self.balls[k]
+        B.vmul = None
+        B.gr = None
+        self.ev('grab', k, how, x, y, float(B.blade_len))
+
+    def _nearest_rope_angle(self, p):
+        A = self.R.A
+        sides = [(A - p[0], 0.0), (A + p[0], math.pi), (A - p[1], math.pi / 2), (A + p[1], -math.pi / 2)]
+        return min(sides)[1]
+
+    def grapple_release(self, k, why):
+        """let go without a throw (a broken grab, a swan taking off): both free, the hold ends"""
+        B, O = self.balls[k], self.balls[1 - k]
+        if B.gr is not None and B.gr['state'] == 'hold':
+            O.grabbed = False
+            B.pinned = False
+            self.ev('release', k, why)
+        elif B.gr is not None:
+            B.vmul = None
+        B.gr = None
+
+    def grapple_step(self, k, dt):
+        B, O = self.balls[k], self.balls[1 - k]
+        w = B.w
+        R = self.R.R
+        if B.toss is not None:                               # the thrown enemy: a rope hit while it flies is the slam
+            for e in self.events[B.toss['ev_i']:]:
+                if e[1] == 'rope' and e[2] == 1 - k:
+                    self.damage(k, 1 - k, w['dmg_rope'], 'ropeslam', e[5], e[6])
+                    self.ev('ropeslam', k, e[5], e[6])
+                    B.toss = None
+                    break
+            else:
+                B.toss['ev_i'] = len(self.events)
+                if self.t > B.toss['t_end']:
+                    B.toss = None
+        G = B.gr
+        if G is None:
+            return
+        rel = O.p - B.p
+        dist = float(np.hypot(*rel))
+        if G['state'] == 'rush':
+            tl = w.get('lead', 0.0) * max(0.0, G['t1'] - self.t)
+            dd = O.p + O.v * tl - B.p
+            want = math.atan2(dd[1], dd[0])
+            cur = math.atan2(B.v[1], B.v[0])
+            st = w.get('track', 6.0) * dt
+            a = cur + max(-st, min(st, _wrap(want - cur)))
+            B.v = np.array([math.cos(a), math.sin(a)]) * float(np.hypot(*B.v))
+            G['a'] = a
+            free = getattr(O, 'rw_left', 0.0) <= 0 and getattr(O, 'shadow', 0.0) <= 0 and \
+                getattr(O, 'smashed', 0.0) <= 0 and not getattr(O, 'air', False) and getattr(O, 'swan', None) is None
+            if free and dist - 2 * R <= B.blade_len:
+                n = rel / dist if dist > 1e-6 else np.array([math.cos(a), math.sin(a)])
+                hx, hy = (B.p + n * R).tolist()
+                if getattr(O, 'walking', False):             # a walking bass slips the grab
+                    self._end_rush(k, 2, hx, hy)
+                    return
+                if O.shield > 0:
+                    self.ev('block', 1 - k, k, hx, hy, 'grab')
+                    self._end_rush(k, 3, hx, hy)
+                    return
+                if not self.damage(k, 1 - k, w['dmg'], 'grab', hx, hy):
+                    self._end_rush(k, 0, hx, hy)
+                    return
+                a0 = math.atan2(n[1], n[0])
+                a1 = self._nearest_rope_angle(B.p) + math.radians(self.rng.uniform(-1, 1) * w.get('jitter', 0.0))
+                sd = B.spin_dir
+                delta = ((a1 - a0) * sd) % (2 * math.pi)
+                if delta < w.get('turns', 0.5) * 2 * math.pi:
+                    delta += 2 * math.pi
+                B.vmul = None
+                B.pinned = True
+                O.grabbed = True
+                B.gr = dict(state='hold', t0=self.t, t1=self.t + w['hold_beats'] * self.R.beat, a0=a0, a1=a1,
+                            sweep=delta * sd, a=a0)
+                self.ev('grab', k, 1, hx, hy, float(B.blade_len))
+                self.ev('hold', k, a0, a1, B.gr['t1'], delta * sd)
+            elif self.t >= G['t1']:
+                self._end_rush(k, 0, float(B.p[0]), float(B.p[1]))
+            return
+        # the hold: swing the enemy round at arm's length, faster and faster, then throw
+        lim = self.R.A - R
+        if self.t + 1e-9 >= G['t1']:
+            a = G['a1']
+            d = np.array([math.cos(a), math.sin(a)])
+            O.grabbed = False
+            B.pinned = False
+            B.gr = None
+            O.p = np.clip(B.p + d * (2 * R + 0.03), -lim, lim)
+            O.v = d * self.R.V
+            O.boost = max(O.boost, B.power)
+            hx, hy = O.p.tolist()
+            if self.damage(k, 1 - k, w['dmg_throw'], 'throw', hx, hy):
+                B.blade_len = min(w['max_reach'], B.blade_len + w['grow'])
+                B.power = min(w['power_max'], B.power + w['power_grow'])
+            self.ev('throw', k, a, float(B.power), hx, hy)
+            B.toss = dict(t_end=self.t + w['rope_t'], ev_i=len(self.events))
+            return
+        u = (self.t - G['t0']) / max(1e-9, G['t1'] - G['t0'])
+        a = G['a0'] + G['sweep'] * u ** 1.6                    # the swing accelerates into the throw
+        G['a'] = a
+        O.p = np.clip(B.p + np.array([math.cos(a), math.sin(a)]) * (2 * R + 0.02), -lim, lim)
 
     # ------------------------------------------------------------------ record
     KMAX = 72
@@ -4334,6 +4499,15 @@ class Fight:
             rec['ROLL'].append([[float(getattr(Bj, 'n_vol', 0.0)), max(0.0, getattr(Bj, 'sustain_until', -1.0) - self.t),
                                  max(0.0, getattr(Bj, 'reload_until', -1.0) - self.t)] for Bj in (B0, B1)])
             rec['HOLD'].append([(int(i), h[0], h[1]) for i, h in sorted(getattr(self, 'khold', {}).items())])
+        if 'GRAB' in rec:                                   # #47, only recorded when a fighter uses the 'grapple' kind
+            Gb = np.zeros((2, 6))
+            for j, Bj in enumerate((B0, B1)):
+                G_ = getattr(Bj, 'gr', None)
+                if G_ is not None:
+                    Gb[j, :4] = (self.GRAB_STATES[G_['state']], G_['a'], G_['t0'], G_['t1'])
+                if hasattr(Bj, 'power'):
+                    Gb[j, 4:] = (Bj.blade_len, Bj.power)
+            rec['GRAB'].append(Gb)
         if 'WALK' in rec:                                   # #47, only recorded when a fighter uses the 'walk' kind
             Wk = np.full((2, 4), -1.0)
             for j, Bj in enumerate((B0, B1)):
@@ -4481,6 +4655,12 @@ class Fight:
         n16v = k16_0
         if rec is not None and resters:
             rec['REST'], rec['NOTES'] = [], []
+        grapplers = [k for k, B in enumerate(self.balls) if B.w['kind'] == 'grapple']     # #47 (opt-in)
+        for k in grapplers:
+            self.grapple_setup(k)
+        n16g = k16_0
+        if rec is not None and grapplers:
+            rec['GRAB'] = []
         walkers = [k for k, B in enumerate(self.balls) if B.w['kind'] == 'walk']          # #47 (opt-in)
         for k in walkers:
             self.walk_setup(k)
@@ -4641,6 +4821,11 @@ class Fight:
                 n16h += 1
                 for k in hoppers:
                     self.tiptoe_tick(k, k16h)
+            if grapplers and self.t + 1e-9 >= n16g * s16:       # #47: rushes (and VIBRATO's shakes) on the 16th grid
+                k16g_ = n16g - k16_0
+                n16g += 1
+                for k in grapplers:
+                    self.grapple_tick(k, k16g_)
             if walkers and self.t + 1e-9 >= n16k * s16:         # #47: steps on the 16th grid (haste divides it)
                 k16w_ = n16k - k16_0
                 n16k += 1
@@ -4731,6 +4916,8 @@ class Fight:
                 self.tiptoe_step(k, dt)
             for k in walkers:                                    # #47: mid-step positions, footfalls + quakes
                 self.walk_step(k, dt)
+            for k in grapplers:                                  # #47: the rush, the hold's swing, the throw, rope slams
+                self.grapple_step(k, dt)
             if getattr(self, 'notes', None):                     # #42: the whole notes roll (and land)
                 self.notes_step(dt)
             if getattr(self, 'splinters', None):                 # #44: GUITAR SMASH's splinters
