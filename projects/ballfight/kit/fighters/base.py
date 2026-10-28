@@ -54,6 +54,15 @@ class Look:
         """modify ball kk's glass tint / sprite roll at t (its debuffs on the enemy): returns (glass, roll)"""
         return glass, roll
 
+    def ball_sprite(self, kk, st, t, rp, yaw):
+        """its own ball's instrument at t instead of the usual one (#38 IDENTITY CRISIS: the enemy's model, tinted):
+        (RGBA sprite, fn(lit) -> lit or None), or None for the usual sprite"""
+        return None
+
+    def extra_sprites(self):
+        """[(side, yaw centre, yaw swing, roll)] more Pixel Pitch views for the sprite cache (that side's model)"""
+        return []
+
     def state(self, kk, st, t, phase, gl=0.0):
         """add to ball kk's picture state (its own weapon fields, or its status effects on the enemy); phase is
         'rev' (corners, before FIGHT!), 'fight' or 'tail' (after the K.O.; gl = the glide home, 0..1)"""

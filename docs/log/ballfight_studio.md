@@ -12,3 +12,16 @@ Episode sessions port a fighter when a crossover first needs it; those below are
   (#29 with the sax's drawn layers and the UI off; the kit with a stub sax carrying only #29's sax effects, #29's beat
   pulse and #29's real-time flare clock): combos, FANFARE, DOUBLE TONGUE, the HIGH C charge + blast, the shatter; the
   trumpet bus matches #29's to 1e-16. Not ported: #29's noir-jazz bed (a mood still to port) and the retired SAX.
+- **EUPHONIUM (#38): ported by #48 Euphonium vs Trombone** (session_01CzTfqaiKkq, Oct 28) into `kit/fighters/euphonium.py`
+  (#38's BELL MORTAR styles + render layers + its audio part, unchanged; the key-bound calls follow the config's KEY, C
+  minor = #38's notes). Check config `examples/bassclarinet_vs_euphonium` (seed 1269, #38's DMG_SCALE / SERIES /
+  SHARD_SEED / FX_SEED / TITLE_LINES, LINES = #38's MELODY + BASS_8THS): replay hash identical to #38's own sim for
+  1269/1/2/3/500 (now in `tools/ballfight_replay_hash.py`); 10 frames pixel-identical in a matched harness (#38 with the
+  bass clarinet's drawn layers and the UI off; the kit with a stub bass clarinet carrying only #38's bass-clarinet effects,
+  run in #38's particle / flare order): shells + landing circles, MARCHING ORDERS, both IDENTITY CRISIS bars (the amber
+  bass clarinet in its ball), the NOT A TUBA rain, the shatter; the euphonium bus bit-identical to #38's (max diff 0).
+  Kit additions (additive, defaults unchanged): the HUD holds for `barrage` / `copy`, a Look hook `ball_sprite` (the
+  enemy's model in its ball) and `extra_sprites` (those views in the sprite cache). New with the port: what IDENTITY
+  CRISIS copies is drawn by the enemy's own look module bound to the euphonium's side (so in amber), copied kinds only;
+  #38's copies of the bass clarinet (slap, twin, shadow) still sound as #38 played them, their pictures wait for the
+  BASS CLARINET port. Not ported: #38's dark-drumline bed (a mood still to port) and the BASS CLARINET.

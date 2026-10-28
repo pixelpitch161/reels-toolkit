@@ -462,6 +462,14 @@ def build_sprites():
             for r in range(12, 31):
                 for yk in range(int((yc - sw - 6) // 6) * 6, int(yc + sw + 12), 6):
                     out[f'{nm}_{r}_{yk % 360}_{int(roll)}'] = SP.render_sprite(nm, r, float(yk), float(roll))
+    for L in LOOKS:                                                   # extra views a look needs (#38: the enemy's model
+        for k, yc, sw, roll in L.extra_sprites():                     # at its own yaw window, for IDENTITY CRISIS)
+            nm = CFG[k]['pp']
+            for r in range(12, 31):
+                for yk in range(int((yc - sw - 6) // 6) * 6, int(yc + sw + 12), 6):
+                    key = f'{nm}_{r}_{yk % 360}_{int(roll)}'
+                    if key not in out:
+                        out[key] = SP.render_sprite(nm, r, float(yk), float(roll))
     np.savez_compressed(SPR_PATH, **out)
     _SPR.clear()
     print(len(out), 'sprites ->', SPR_PATH)
@@ -539,7 +547,8 @@ def draw_ball(arr, dep, cam, k, st, t):
     reg[m] = reg[m] * 0.12 + inner[sl][m] * 0.88
     # the instrument
     yaw = yc + sw * math.sin(1.25 * st['p'][0] + 0.45 * st['p'][1])
-    spr = sprite(k, rp * LOOKS[k].sprite_k, yaw, roll)
+    over = LOOKS[k].ball_sprite(k, st, t, rp, yaw)                           # e.g. #38 IDENTITY CRISIS: the enemy's model
+    spr = over[0] if over is not None else sprite(k, rp * LOOKS[k].sprite_k, yaw, roll)
     sn = spr.shape[0]
     sx0, sy0 = int(round(s[0])) - sn // 2, int(round(s[1])) - sn // 2
     ax0, ay0 = max(0, sx0), max(0, sy0)
@@ -549,6 +558,8 @@ def draw_ball(arr, dep, cam, k, st, t):
         ms = sub[..., 3] > 0
         rg = arr[ay0:ay1, ax0:ax1]
         lit = sub[..., :3].astype(np.float32) * (1.06 + 0.3 * glow)
+        if over is not None and over[1] is not None:                         # (its tint, e.g. an amber stranger)
+            lit = over[1](lit)
         rg[ms] = np.clip(lit[ms], 0, 255)
     rc = np.clip(col * (0.9 + 0.5 * glow) + 50 * glow, 0, 255)
     mr = rim[sl]
@@ -612,6 +623,10 @@ def _hold(k, slot):
         return ab['beats'] * T.BEAT
     if ab['kind'] == 'smash':                        # #44 GUITAR SMASH: while it lies in pieces
         return ab['rebuild_beats'] * T.BEAT
+    if ab['kind'] == 'barrage':                      # #38 NOT A TUBA: for its rain
+        return ab['flight_beats'] * T.BEAT + ab['beats'] * T.BEAT
+    if ab['kind'] == 'copy':                         # #38 IDENTITY CRISIS: for its bar
+        return T.BAR
     return 0.08
 
 
