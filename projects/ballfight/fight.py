@@ -100,6 +100,9 @@ swats enemy mortar / barrage shells (#38) out of the air: a shell coming down th
 the renderer's styles.shell_pos, below `swat_shell_h`) within `swat_shell_r` of the lance (in plan) is knocked away and
 never lands; no damage, no growth for either side. Events 'swat_shell'; a swatted shell is recorded with landed = 3 and
 its swat time as an 11th field. Off unless an episode turns it on, so earlier fights don't change.
+#47 (opt-in): weapon kind `walk` (WALKING BASS: no gliding; one heavy step toward the enemy on the grid, a floor-quake
+ring at every footfall; WALKING = knockback doesn't move it, a grapple can't hold it and it doesn't give way in a clash;
+events 'step', 'step_land', recorded as WALK).
 The run records every frame (30 fps) for the renderer and every event (hits, blocks, parries, ropes, volleys,
 abilities, level-ups, the K.O.) for the soundtrack and the captions. Seeded: same seed, same fight."""
 import math
@@ -314,6 +317,8 @@ class Fight:
 
     def knock(self, vic, away, k):
         V = self.balls[vic]
+        if getattr(V, 'walking', False):                  # #47: a walking bass can't be knocked back (WALKING BASS)
+            return
         n = np.linalg.norm(away)
         if n < 1e-9:
             return
@@ -3046,9 +3051,13 @@ class Fight:
                 continue
             if getattr(B, 'smashed', 0.0) > 0:                  # #44: in pieces (GUITAR SMASH), it lies still
                 continue
+            if getattr(B, 'walking', False):                    # #47: mid-step (WALKING BASS), walk_step drives it
+                continue
             B.boost *= math.exp(-dt / self.R.KNOCK_T)
             s = self.R.V * (1 + B.boost)
             if getattr(B, 'hopper', False):                     # #39: a hopper stands still; it only slides when knocked
+                s = self.R.V * B.boost
+            if getattr(B, 'walker', False):                     # #47: a planted walker too (between steps)
                 s = self.R.V * B.boost
             if B.slow > 0:                                  # #34: slowed (e.g. SAD TROMBONE)
                 s *= B.slow_mult
@@ -3080,7 +3089,14 @@ class Fight:
                 and getattr(P, 'smashed', 0.0) <= 0 and getattr(Q, 'smashed', 0.0) <= 0:   # #32 v2 swallowed, #38 shadow, #39 hop, #44 smash
             n = d / max(dist, 1e-9)
             over = rP + rQ - dist
-            if hasattr(P, 'mass') or hasattr(Q, 'mass'):        # #30 v2: unequal masses (inflate): the light ball gives
+            wP, wQ = getattr(P, 'walking', False), getattr(Q, 'walking', False)
+            if wP != wQ:                                        # #47: a walking bass doesn't give way: the other ball
+                O_, sg_ = (Q, 1.0) if wP else (P, -1.0)         # takes the whole overlap and bounces off it
+                O_.p = O_.p + sg_ * n * over
+                vo = float(O_.v @ n) * sg_
+                if vo < 0:
+                    O_.v = O_.v - 2 * vo * sg_ * n
+            elif hasattr(P, 'mass') or hasattr(Q, 'mass'):      # #30 v2: unequal masses (inflate): the light ball gives
                 mP, mQ = getattr(P, 'mass', 1.0), getattr(Q, 'mass', 1.0)
                 P.p -= n * over * mQ / (mP + mQ)
                 Q.p += n * over * mP / (mP + mQ)
@@ -3098,7 +3114,12 @@ class Fight:
             for B in (P, Q):
                 B.v = B.v / (np.linalg.norm(B.v) + 1e-12) * self.R.V * (1 + B.boost)
             mx, my = ((P.p + Q.p) / 2).tolist()
-            self.ev('clash', -1, mx, my)
+            if wP != wQ and self.t - getattr(self, 'wclash_t', -9.0) < 0.2:   # #47: one clash per push, not one
+                pass                                                          # per substep while it walks on
+            else:
+                if wP != wQ:
+                    self.wclash_t = self.t
+                self.ev('clash', -1, mx, my)
             for hk in getattr(self, 'clash_hooks', ()):         # #30 v2: contact damage (inflate body slam / flight)
                 hk()
         # projectiles
@@ -3831,6 +3852,80 @@ class Fight:
                 self.ev('splinter_end', Sp['owner'], Sp['j'], float(p[0]), float(p[1]), 0)
         self.splinters = [Sp for Sp in self.splinters if not Sp.get('done')]
 
+    # ------------------------------------------------------------------ #47: WALKING BASS (opt-in weapon kind 'walk')
+    # The double bass doesn't glide: it walks. Every `every` beats (haste divides it: DOUBLE TIME walks on the 8ths) it
+    # takes one heavy step of `step16` 16ths (haste divides that too, at least 1) toward the enemy's spot `lead` x its
+    # motion over the step ahead (+-`jitter` deg, seeded), `stride` long at most and never past contact (`gap`). While a
+    # step is under way the bass is WALKING: knockback doesn't move it (knock() ignores it), a grapple can't hold it and
+    # in a clash it doesn't give way. Each footfall is a small floor-quake: a ring of kind 'step' from the landing spot
+    # out to `blade_len` beyond its surface (`base`, +`grow` per landed quake up to `max_reach`; `speed`, `dmg`, `knock`).
+    # Between steps it stands planted and only slides when knocked (at the shared speed x its knock boost); it can't
+    # step while that boost is above `stagger` (still sliding from a throw), while held or stunned.
+    # Events ('step', k, x0, y0, x1, y1, t_land, kind 0 walk / 1 hasted), ('step_land', k, x, y, reach, kind).
+    # Recorded as WALK (per ball: step progress 0..1 while stepping else -1, step start, landing, quake reach).
+    def walk_setup(self, k):
+        B = self.balls[k]
+        B.walker = True
+        B.walking = False
+        B.wstep = None
+        B.blade_len = B.w['base']
+
+    def walk_blocked(self, k):
+        """can't take a step now: held, stunned, in pieces or busy with something else (hook for later kinds)"""
+        B = self.balls[k]
+        return self._stunned(k) or getattr(B, 'grabbed', False) or getattr(B, 'smashed', 0.0) > 0
+
+    def walk_tick(self, k, k16):
+        B, O = self.balls[k], self.balls[1 - k]
+        w = B.w
+        R = self.R.R
+        if B.wstep is not None and self.t + self.R.DT + 1e-9 >= B.wstep['t1']:   # due within a substep: land on the grid
+            self._step_land(k)
+        if B.wstep is not None or self.walk_blocked(k) or B.boost > w.get('stagger', 99.0):
+            return
+        m = self.ab_mult(k)
+        main16 = int(round(4 * w['every']))
+        if k16 % max(1, int(round(main16 / m))):
+            return
+        st16 = max(1, int(round(w['step16'] / m)))
+        dur = st16 * self.R.beat / 4.0
+        tgt = O.p + O.v * dur * w.get('lead', 0.0)
+        d = tgt - B.p
+        dist = float(np.hypot(*d))
+        u = d / dist if dist > 1e-6 else np.array([1.0, 0.0])
+        j = math.radians(self.rng.uniform(-1.0, 1.0) * w.get('jitter', 0.0))
+        u = np.array([u[0] * math.cos(j) - u[1] * math.sin(j), u[0] * math.sin(j) + u[1] * math.cos(j)])
+        ln = min(w['stride'], max(0.0, dist - 2 * R - w.get('gap', 0.04)))
+        lim = self.R.A - R
+        p1 = np.clip(B.p + u * ln, -lim, lim)
+        B.v = u * self.R.V                                       # its heading
+        B.wstep = dict(p0=B.p.copy(), p1=p1, t0=self.t, t1=self.t + dur, kind=int(m > 1.0))
+        B.walking = True
+        self.ev('step', k, float(B.p[0]), float(B.p[1]), float(p1[0]), float(p1[1]), self.t + dur, B.wstep['kind'])
+
+    def walk_step(self, k, dt):
+        B = self.balls[k]
+        S = B.wstep
+        if S is None:
+            return
+        if self.t + 1e-9 >= S['t1']:
+            self._step_land(k)
+            return
+        u = (self.t - S['t0']) / max(1e-9, S['t1'] - S['t0'])
+        B.p = S['p0'] + (S['p1'] - S['p0']) * (u * u * (3 - 2 * u))     # a heavy step: lift, swing, plant
+
+    def _step_land(self, k):
+        B = self.balls[k]
+        S = B.wstep
+        w = B.w
+        B.p = S['p1'].copy()
+        B.wstep = None
+        B.walking = False
+        self.waves.append(dict(owner=k, c=B.p.copy(), r=self.R.R, speed=w['speed'], rmax=self.R.R + B.blade_len,
+                               dmg=w['dmg'], knock=w['knock'], kind='step', hit=False, name=w.get('name', 'WALK'),
+                               t0=self.t, slow=None, grow=True, clears=False))
+        self.ev('step_land', k, float(B.p[0]), float(B.p[1]), float(B.blade_len), S['kind'])
+
     # ------------------------------------------------------------------ record
     KMAX = 72
 
@@ -4239,6 +4334,15 @@ class Fight:
             rec['ROLL'].append([[float(getattr(Bj, 'n_vol', 0.0)), max(0.0, getattr(Bj, 'sustain_until', -1.0) - self.t),
                                  max(0.0, getattr(Bj, 'reload_until', -1.0) - self.t)] for Bj in (B0, B1)])
             rec['HOLD'].append([(int(i), h[0], h[1]) for i, h in sorted(getattr(self, 'khold', {}).items())])
+        if 'WALK' in rec:                                   # #47, only recorded when a fighter uses the 'walk' kind
+            Wk = np.full((2, 4), -1.0)
+            for j, Bj in enumerate((B0, B1)):
+                S_ = getattr(Bj, 'wstep', None)
+                if S_ is not None:
+                    Wk[j, :3] = ((self.t - S_['t0']) / max(1e-9, S_['t1'] - S_['t0']), S_['t0'], S_['t1'])
+                if getattr(Bj, 'walker', False):
+                    Wk[j, 3] = Bj.blade_len
+            rec['WALK'].append(Wk)
         if 'FLICK' in rec:                                  # #34 v5, only recorded when a fighter has a 'flick' ability
             Fl = np.full((2, 6), np.nan)
             for j, Bj in enumerate((B0, B1)):
@@ -4377,6 +4481,12 @@ class Fight:
         n16v = k16_0
         if rec is not None and resters:
             rec['REST'], rec['NOTES'] = [], []
+        walkers = [k for k, B in enumerate(self.balls) if B.w['kind'] == 'walk']          # #47 (opt-in)
+        for k in walkers:
+            self.walk_setup(k)
+        n16k = k16_0
+        if rec is not None and walkers:
+            rec['WALK'] = []
         rollers = [k for k, B in enumerate(self.balls) if B.w['kind'] == 'roll']          # #45 (opt-in)
         for k in rollers:
             self.roll_setup(k)
@@ -4531,6 +4641,11 @@ class Fight:
                 n16h += 1
                 for k in hoppers:
                     self.tiptoe_tick(k, k16h)
+            if walkers and self.t + 1e-9 >= n16k * s16:         # #47: steps on the 16th grid (haste divides it)
+                k16w_ = n16k - k16_0
+                n16k += 1
+                for k in walkers:
+                    self.walk_tick(k, k16w_)
             if rollers and self.t + 1e-9 >= n16o * s16:         # #45: the roll's rows on the 8th grid (absolute)
                 n16a_ = n16o
                 n16o += 1
@@ -4614,6 +4729,8 @@ class Fight:
                 self.snap_step(k, dt)
             for k in hoppers:                                    # #39: mid-hop positions, landings + stomps
                 self.tiptoe_step(k, dt)
+            for k in walkers:                                    # #47: mid-step positions, footfalls + quakes
+                self.walk_step(k, dt)
             if getattr(self, 'notes', None):                     # #42: the whole notes roll (and land)
                 self.notes_step(dt)
             if getattr(self, 'splinters', None):                 # #44: GUITAR SMASH's splinters
