@@ -67,7 +67,7 @@ Each production session updates **its own row**: when it starts, sends a draft, 
 | 43 | [BALLFIGHT: Kazoo vs Harmonica](ideas/43-ballfight-kazoo-vs-harmonica.md) | idea (approved, mood A) | — | Production cancelled by the user, Oct 27 (session_01CzTfqcRKd19SvcVTdGzjbd) … | — |
 | 44 | [BALLFIGHT: Electric vs Acoustic](ideas/44-ballfight-electric-vs-acoustic.md) | review | session_01CzTfqcUYqS (2026-10-27) | v1 delivered with caption + tags (preview + sheet sent first); first kit episode with a new fighter. | `ballfight_electric_vs_acoustic.mp4` |
 | 45 | [BALLFIGHT: Piano vs Organ](ideas/45-ballfight-piano-vs-organ.md) | review | session_01CzTfqdN2i3 (2026-10-27) | v1 delivered with caption + tags (preview clip + early sheet sent first); PIANO v2 debut, ORGAN ported. | `ballfight_piano_vs_organ.mp4` |
-| 46 | [BALLFIGHT: Trumpet vs Clarinet](ideas/46-ballfight-trumpet-vs-clarinet.md) | idea (approved, mood A) | — | Approved Oct 28, mood A (dark hot jazz). Kit crossover. | — |
+| 46 | [BALLFIGHT: Trumpet vs Clarinet](ideas/46-ballfight-trumpet-vs-clarinet.md) | in production | session_01CzTfqa (2026-10-28) | Kit crossover; porting TRUMPET (#29 v3) + new mood `hot_jazz`. | — |
 
 ## Other notes
 
