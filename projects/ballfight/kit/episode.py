@@ -18,7 +18,8 @@ Config names (UPPER_CASE in episode.py; everything else has a series default):
     TITLE_HITS  {fighter: notes it plays as its name slams in}         ROLES {fighter: 'bass' / 'melody' / ...}
     CAPTION     the post caption; TAGS {'instagram': ..., 'tiktok': ..., 'shorts': ...}
     MIX         bus gain / reverb send overrides {bus: (gain, send)}
-    Only to reproduce an older episode exactly: SERIES (the old "BALLFIGHT #N" tag), SHARD_SEED, FX_SEED."""
+    Only to reproduce an older episode exactly: SERIES (the old "BALLFIGHT #N" tag), SHARD_SEED, FX_SEED, FIGHT_BAR
+    (the bar FIGHT! lands on: 2, or 1 for an episode from before the VS card, e.g. #29; the card then overlaps it)."""
 import importlib.util
 import math
 import os
@@ -73,8 +74,10 @@ def build_timeline(cfg, folder):
     T.BAR = 4 * T.BEAT
     T.N_BARS = int(round(T.DUR / T.BAR))
     T.S16 = T.BEAT / 4
-    T.T_FIGHT = 2 * T.BAR                               # VS card on bar 0, count-in on bar 1, FIGHT! on the bar-2 downbeat
-    T.COUNT = [(T.BAR, '3'), (T.BAR + T.BEAT, '2'), (T.BAR + 2 * T.BEAT, '1'), (2 * T.BAR, 'FIGHT!')]
+    fb = getattr(cfg, 'FIGHT_BAR', 2)                   # (only a pre-card episode's check config sets it: #29 fought from bar 1)
+    T.T_FIGHT = fb * T.BAR                              # VS card on bar 0, count-in on bar 1, FIGHT! on the bar-2 downbeat
+    c0 = (fb - 1) * T.BAR
+    T.COUNT = [(c0, '3'), (c0 + T.BEAT, '2'), (c0 + 2 * T.BEAT, '1'), (fb * T.BAR, 'FIGHT!')]
     a, b = cfg.FIGHTERS
     T.TITLE = [(0.0, a), (T.BEAT, 'VS'), (2 * T.BEAT, b)]
     T.T_DOORS = (3 * T.BEAT + 0.10, T.BAR - 0.03)
