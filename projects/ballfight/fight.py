@@ -3901,7 +3901,8 @@ class Fight:
 
     # ------------------------------------------------------------------ #47: WALKING BASS (opt-in weapon kind 'walk')
     # The double bass doesn't glide: it walks. Every `every` beats (haste divides it: DOUBLE TIME walks on the 8ths) it
-    # takes one heavy step of `step16` 16ths (haste divides that too, at least 1) toward the enemy's spot `lead` x its
+    # takes one heavy step of `step16` 16ths (haste divides that too, at least 1), timed so the footfall lands ON the
+    # grid (the walking line is on the beat; it's planted right after each footfall), toward the enemy's spot `lead` x its
     # motion over the step ahead (+-`jitter` deg, seeded), `stride` long at most and never past contact (`gap`). While a
     # step is under way the bass is WALKING: knockback doesn't move it (knock() ignores it), a grapple can't hold it and
     # in a clash it doesn't give way (planted, it doesn't either: the other ball bounces off it). Each footfall is a small floor-quake: a ring of kind 'step' from the landing spot
@@ -3933,9 +3934,9 @@ class Fight:
             return
         m = self.ab_mult(k)
         main16 = int(round(4 * w['every']))
-        if k16 % max(1, int(round(main16 / m))):
-            return
         st16 = max(1, int(round(w['step16'] / m)))
+        if (k16 + st16) % max(1, int(round(main16 / m))):      # the footfall lands ON the grid (it leaves st16 before)
+            return
         dur = st16 * self.R.beat / 4.0
         tgt = O.p + O.v * dur * w.get('lead', 0.0)
         d = tgt - B.p
