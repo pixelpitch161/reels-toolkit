@@ -5,7 +5,7 @@ Append new entries at the end (newest last).
 ## Step 1, session 1: porting fighters + moods into the kit (session_01CzTfqdSsfsbYNYgocwEbMx, Oct 27, stopped after TUBA)
 - Ported, each checked with a kit example that rebuilds its episode (`projects/ballfight/examples/`, in the replay
   guard's KIT_EPISODES): **DRUMS** + mood **balkan_fire** (#28, `drums_vs_violin`), **VIOLIN** (as last delivered in
-  #42) + **VIOLA** + mood **orchestral_drill** (#42, `viola_vs_violin`), and TUBA + mood brass_house were being verified at the stop (see the hand-off). ORGAN and PIANO v2 came from the
+  #42) + **VIOLA** + mood **orchestral_drill** (#42, `viola_vs_violin`), **TUBA** (as last delivered in #36, built in #32) + mood **brass_house** (#36, `trombone_vs_tuba`). ORGAN and PIANO v2 came from the
   #45 session in parallel. The rest, with the method, the harness and the order: `docs/studio/PORT_HANDOFF.md`.
 - #42 (kit-lineage): hashes identical on all five guard seeds; 17 test frames pixel-identical once two gaps were closed
   (the HUD list's hold for MELODY AT LAST / VIOLA JOKE; VIOLA JOKE's rope wobble, which #42 keyed to the victim's index
@@ -16,6 +16,10 @@ Append new entries at the end (newest last).
   timeline option `FIGHT_BAR = 1` (+ `REASSEMBLE_AT`), hashes identical; the DRUMS' 'kit' and 'solo' buses and the
   bed's bass / accordion / pad / cimbalom buses sample-identical; the DRUMS layers (rings, cymbal, beater, reach ring)
   match by eye. balkan_fire got new VS-card sections (#28 had no card). DRUMS has no v2 effects of its own yet.
+- #36 (kit-lineage): hashes identical; 17 of 18 frames pixel-identical (at 44.03 s the kit skips the shadow of a
+  ball shrunk below 0.3, #37's rule, which #36 drew for one frame); the tuba bus and the bed's pad / stabs / solo
+  buses sample-identical; the TROMBONE is #41's, so its part and fx differ by design. New hook `canvas_before` (#36
+  drew the suction cone before the trombone's decals). Found: `trombone.py`'s motifs are fixed in E minor.
 - Lesson: the Pixel Pitch violin / viola / cello (and accordion, drums, organ, piano) synths draw from a module-level
   RNG, so a note's samples depend on how many notes of that synth were made before it: the order the fighters'
   parts are scored matters (`Sound.play_first`; #42 scored the violin first).

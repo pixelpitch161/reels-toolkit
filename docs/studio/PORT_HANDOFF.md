@@ -12,7 +12,7 @@ TUBA at the user's request; this file is everything the next session needs. Its 
 | DRUMS, mood `balkan_fire` | #28 (`examples/drums_vs_violin`, FIGHT_BAR 1) | hash identical; the DRUMS' 'kit' + 'solo' buses and the bed's bass / accordion / pad / cimbalom buses sample-identical; frames: DRUMS layers match by eye (whole frames differ by design: #28 predates the card, v2 effects, HUD list, fx.Shake) |
 | VIOLIN (as #42), VIOLA, mood `orchestral_drill` | #42 (`examples/viola_vs_violin`) | hash identical; 17 frames pixel-identical except the rope fix below; audio.wav identical 3.0-59.5 s (the last bar: 4 bowed notes' vibrato phase) |
 | ORGAN (by the #45 session), PIANO v2 (#45) | #35 v4 / new | see `docs/log/ballfight_piano_vs_organ.md` |
-| (in progress) TUBA, mood `brass_house` | #36 (`examples/trombone_vs_tuba`) | drafted (`kit/fighters/tuba.py`, `kit/moods/brass_house.py`, a `canvas_before` hook), being verified; if they are not on main yet, the last backup is on the branch `wip/kit-port` |
+| TUBA (as #36; built in #32), mood `brass_house`, kit hook `canvas_before` | #36 (`examples/trombone_vs_tuba`) | hash identical; 17 of 18 frames pixel-identical (44.03 s: the kit skips the shadow of a ball shrunk below 0.3, #37's rule; #36 drew the gulped trombone's for one frame); the tuba bus and the bed's pad / stabs / solo buses sample-identical; the TROMBONE is #41's, so its part, its fx and the master differ by design |
 
 Not started (suggested order, most reused first; each line = one session-sized job):
 
@@ -38,6 +38,15 @@ Not started (suggested order, most reused first; each line = one session-sized j
    HUD list).
 9. UKULELE + mood `spaghetti_western`: #33 v3 (`projects/ballfight_ukulele_vs_acoustic`, seed 1130). ACOUSTIC is
    ported; update `examples/ukulele_vs_acoustic` (today it uses big_top as a stand-in bed) to the real mood.
+
+Follow-ups found on the way (small, own commits):
+- `trombone.py` hard-codes E-minor notes (PEDAL TONE E1 + E2, the wah G->E, the fall, stinger, reassembly): in another
+  key its PEDAL TONE clashes with the bed. Move them with a key shift like `violin.key_shift` (E minor unchanged).
+- The TUBA has never lost in a delivered episode: its shatter (drawn as #32's renderer would: a straight pipe, a valve
+  disc), fall and reassembly are unverified. DRUMS has no v2 effects of its own (it was never redrawn after #28).
+- What #36 changed in the TUBA vs #32 v3 (ported as #36): the spat enemy's trail in the enemy's colour, 22 brass
+  particles from the cannon, SUBSONIC shake 1.6, hit glows 14 px, the cannon sets off flashbulbs, the pah a fifth
+  above the root, the spit's octave blast and OOMPAH / BRASS WALL on the tuba bus, the gulp growl on F1.
 
 Never port GUITAR or SAX (retired; their roster entries stay only so #27 and #29 replay).
 
