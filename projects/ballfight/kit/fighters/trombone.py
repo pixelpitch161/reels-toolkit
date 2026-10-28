@@ -7,7 +7,9 @@ crook's flare, SAD TROMBONE's ring and the slowed enemy's droopy wobble, PEDAL T
 brass sparks and embers, the solo played on the slide (lower note = longer slide), brass shards.
 Sound: the circus bass and the smears (role 'bass'): every thrust is the bass line (root on 1 + 3, the fifth on 2 + 4)
 with a smear up into it, POWER SLIDE walks 8ths, a landed lance smears up the chord, SAD TROMBONE is the clown's
-plunger wah-wah down to the tonic, PEDAL TONE the pedal tone under the hovering bell.
+plunger wah-wah down to the tonic, PEDAL TONE the pedal tone under the hovering bell. Opt-in (#48), role 'riff': over
+someone else's bass, every thrust is a punchy stab of its riff line (config LINES['TROMBONE'], 8ths: a thrust a beat
+plays the beat's note, POWER SLIDE every 8th), smeared up into it; the rest as before.
 Draw code from projects/ballfight_trombone_vs_horn/styles.py (#34), copied here unchanged; sound from #41's audio.py."""
 import math
 
@@ -493,6 +495,16 @@ class Sound(base.Sound):
                     continue
                 hasted = float(RUN['HA'][M.P.sim_i(t), k]) > 0
                 on_beat = slot % 4 == 0
+                if self.role == 'riff':                            # #48 (opt-in): a riff stab, smeared up into it
+                    m = T.line_at(self.name, tq)
+                    dur = 0.15 if hasted else 0.24
+                    sig, g, lead = self.colour(self.bone(m, dur, 0.9 if on_beat else 0.75, 3.0 if on_beat else 1.5,
+                                                         0.05), t, 0.8)
+                    mix.place(self.bus, sig, tq, (0.42 if on_beat else 0.34) * g, pan=0.15)
+                    if lead > 0.04 and on_beat:                    # the leader: doubled an octave down, fuller
+                        mix.place(self.bus, self.colour(self.bone(m - 12, dur, 0.6, 2.0, 0.05), t, low=True)[0], tq,
+                                  0.14 * g, pan=0.2)
+                    continue
                 m = self.walk_note(tq) if hasted else self.bass_note(tq)
                 dur = 0.17 if hasted else 0.30
                 sig, g, lead = self.colour(self.bone(m, dur, 0.85 if on_beat else 0.7, 3.0 if on_beat else 1.5, 0.05), t,
@@ -558,7 +570,8 @@ class Sound(base.Sound):
         t_end = t0 + max(bt + d for bt, m, d in notes) * T.BEAT
         for j in range(int(math.ceil(t_end / T.BEAT)), int((T.N_BARS - 1) * T.BAR / T.BEAT + 0.5)):
             tb = j * T.BEAT
-            mix.place('solo', self.bone(self.bass_note(tb), 0.3, 0.85, 3.0, 0.05), tb, 0.40)
+            m = T.line_at(self.name, tb) if self.role == 'riff' else self.bass_note(tb)     # #48: back to its riff
+            mix.place('solo', self.bone(m, 0.3, 0.85, 3.0, 0.05), tb, 0.40)
         prev = None
         for bt, m, d in notes:
             ts = t0 + bt * T.BEAT
