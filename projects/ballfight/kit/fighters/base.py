@@ -136,6 +136,11 @@ class Look:
         """extra casters after both balls (things it left on the canvas)"""
         return []
 
+    def canvas_before(self, Ic, C):
+        """canvas light decals before every fighter's canvas() (one that dims the bare light, e.g. #36's suction cone,
+        which #36 drew before the other fighter's decals); returns Ic"""
+        return Ic
+
     def canvas(self, Ic, C):
         """canvas light decals (C: the canvas context, see picture.render); returns Ic"""
         return Ic

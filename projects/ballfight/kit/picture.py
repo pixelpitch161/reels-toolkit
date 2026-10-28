@@ -1052,6 +1052,8 @@ def render(f):
         # decals: each fighter's canvas light, the rings (in the run's order), then after-decals (darkening)
         C = Ctx(t=t, i=i, in_fight=in_fight, fs=fs, sxp=sxp, szp=szp, ys=ys, xs=xs)
         for Lk in LOOKS:
+            Ic = Lk.canvas_before(Ic, C)
+        for Lk in LOOKS:
             Ic = Lk.canvas(Ic, C)
         for w in (RUN['WAVES'][i] if in_fight else []):
             Ic = LOOKS[w[0]].canvas_wave(Ic, C, w)
