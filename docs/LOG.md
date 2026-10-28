@@ -43,3 +43,4 @@ What each video taught us, one file per project in `docs/log/`. **Append your en
 | [`ballfight_viola_vs_violin`](log/ballfight_viola_vs_violin.md) | #42 BALLFIGHT #16: Viola vs Violin (session_01CzTfqcW39D, Oct 27) |
 | [`ballfight_electric_vs_acoustic`](log/ballfight_electric_vs_acoustic.md) | #44 BALLFIGHT: Electric vs Acoustic (session_01CzTfqcUYqS, Oct 27) |
 | [`ballfight_studio`](log/ballfight_studio.md) | BALLFIGHT Studio: porting log (`docs/studio/PLAN.md`) |
+| [`ballfight_trumpet_vs_clarinet`](log/ballfight_trumpet_vs_clarinet.md) | #46 BALLFIGHT: Trumpet vs Clarinet (session_01CzTfqa, Oct 28) |
