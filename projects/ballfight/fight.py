@@ -107,6 +107,10 @@ events 'step', 'step_land', recorded as WALK); a walker never gives way in a cla
 for a beat and throws it into the nearest ropes; a rope hit right after the throw costs extra; a walking enemy slips the
 grab; events 'rush', 'grab', 'hold', 'throw', 'ropeslam', recorded as GRAB) and ability kind `vibrato` (VIBRATO: for a
 while a held enemy shakes and takes a hit every 16th; event 'vibrato').
+#47 (opt-in): ability kinds `slap` (SLAP BASS: a sharp short knockback ring; it waits for the enemy to be close, and
+fires at once to break a grab when the fighter is held; event 'slap') and `prelude` (PRELUDE: Bach's rocking cello
+prelude: a ring of note-waves on every 16th for a bar, their reaches rocking with the pattern; events 'prelude',
+'prelude_note').
 The run records every frame (30 fps) for the renderer and every event (hits, blocks, parries, ropes, volleys,
 abilities, level-ups, the K.O.) for the soundtrack and the captions. Seeded: same seed, same fight."""
 import math
@@ -2904,6 +2908,11 @@ class Fight:
             self.ev('sustain', k, B.sustain_until)
         elif kind == 'runoff':                                  # #45 (88 KEYS): the roll runs off its spool
             self.start_runoff(k, ab)
+        elif kind == 'slap':                                    # #47 (SLAP BASS): a knockback ring; breaks a grab
+            self.start_slap(k, ab)
+        elif kind == 'prelude':                                 # #47 (PRELUDE): rocking note-waves on the 16ths
+            B.prel = dict(ab=ab, t0=self.t, j=0, n=int(round(ab['beats'] * 4)))
+            self.ev('prelude', k, self.t + ab['beats'] * self.R.beat)
         elif kind == 'vibrato':                                 # #47 (VIBRATO): a held enemy shakes and is hurt
             B.vib_until, B.vib_ab = self.t + self.ab_dur(ab), ab
             self.ev('vibrato', k, B.vib_until)
@@ -2961,6 +2970,9 @@ class Fight:
                 if r is not None and B.cfg['abilities'][slot]['kind'] == 'hook' and \
                         not self.hook_ready(k, B.cfg['abilities'][slot]):
                     continue                                        # #39: the hook waits for the enemy to be close
+                if r is not None and B.cfg['abilities'][slot]['kind'] == 'slap' and \
+                        not self.slap_ready(k, B.cfg['abilities'][slot]):
+                    continue                                        # #47: the slap waits for the enemy (or a grab)
                 if r is not None and B.cfg['abilities'][slot]['kind'] == 'copy':        # #38: a copied snip waits too
                     src = self.copy_source(k)
                     if src is not None and src['kind'] == 'snip' and not self.snip_ready(k, src):
@@ -4091,6 +4103,48 @@ class Fight:
         G['a'] = a
         O.p = np.clip(B.p + np.array([math.cos(a), math.sin(a)]) * (2 * R + 0.02), -lim, lim)
 
+    # ------------------------------------------------------------------ #47: SLAP BASS (opt-in ability kind 'slap')
+    # The string is pulled and let go so it snaps onto the fingerboard: a sharp ring of kind 'slap' (`speed`, `radius`,
+    # `dmg`, `knock`) that clears enemy projectiles. It waits for its moment: the enemy within `ready` beyond contact, or
+    # the fighter held in a grapple - then it fires at once and breaks the grab (the holder lets go before the ring
+    # knocks it away). Event ('slap', k, broke 0/1).
+    def slap_ready(self, k, ab):
+        B, O = self.balls[k], self.balls[1 - k]
+        return getattr(B, 'grabbed', False) or float(np.hypot(*(O.p - B.p))) - 2 * self.R.R <= ab['ready']
+
+    def start_slap(self, k, ab):
+        B = self.balls[k]
+        broke = int(getattr(B, 'grabbed', False))
+        if broke:
+            self.grapple_release(1 - k, 'slap')
+        self.waves.append(dict(owner=k, c=B.p.copy(), r=self.R.R, speed=ab['speed'], rmax=ab['radius'], dmg=ab['dmg'],
+                               knock=ab['knock'], kind='slap', hit=False, name=ab['name'], t0=self.t, slow=None))
+        self.ev('slap', k, broke)
+
+    # ------------------------------------------------------------------ #47: PRELUDE (opt-in ability kind 'prelude')
+    # Bach's Cello Suite No. 1 Prelude: the bow rocks across the strings in 16ths. For `beats` beats from the trigger,
+    # on every 16th a note-wave ring of kind 'prelude' leaves the fighter (`speed`, `dmg`, `knock`, clearing enemy
+    # projectiles), out to `pattern`[j % len] beyond its surface: the low string's notes reach far, the high ones short,
+    # so the rings rock in and out with the figure. Each ring hits once. Events ('prelude', k, t_end),
+    # ('prelude_note', k, j, x, y, rmax).
+    def prelude_step(self, k):
+        B = self.balls[k]
+        Pr = getattr(B, 'prel', None)
+        if Pr is None:
+            return
+        ab = Pr['ab']
+        s16 = self.R.beat / 4.0
+        while Pr['j'] < Pr['n'] and self.t + 1e-9 >= Pr['t0'] + Pr['j'] * s16:
+            j = Pr['j']
+            pat = ab['pattern']
+            rmax = self.R.R + pat[j % len(pat)]
+            self.waves.append(dict(owner=k, c=B.p.copy(), r=self.R.R, speed=ab['speed'], rmax=rmax, dmg=ab['dmg'],
+                                   knock=ab['knock'], kind='prelude', hit=False, name=ab['name'], t0=self.t, slow=None))
+            self.ev('prelude_note', k, j, float(B.p[0]), float(B.p[1]), rmax)
+            Pr['j'] += 1
+        if Pr['j'] >= Pr['n']:
+            B.prel = None
+
     # ------------------------------------------------------------------ record
     KMAX = 72
 
@@ -4661,6 +4715,8 @@ class Fight:
         n16g = k16_0
         if rec is not None and grapplers:
             rec['GRAB'] = []
+        preluders = [k for k, B in enumerate(self.balls)                                    # #47 (opt-in)
+                     if any(a['kind'] == 'prelude' for a in B.cfg['abilities'].values())]
         walkers = [k for k, B in enumerate(self.balls) if B.w['kind'] == 'walk']          # #47 (opt-in)
         for k in walkers:
             self.walk_setup(k)
@@ -4918,6 +4974,8 @@ class Fight:
                 self.walk_step(k, dt)
             for k in grapplers:                                  # #47: the rush, the hold's swing, the throw, rope slams
                 self.grapple_step(k, dt)
+            for k in preluders:                                  # #47: PRELUDE's note-waves on the 16ths
+                self.prelude_step(k)
             if getattr(self, 'notes', None):                     # #42: the whole notes roll (and land)
                 self.notes_step(dt)
             if getattr(self, 'splinters', None):                 # #44: GUITAR SMASH's splinters
