@@ -436,6 +436,11 @@ class Sound(base.Sound):
             mix.place(self.bus, self.art('pizz', m, 0.12, 0.9), t + 0.08 + 0.07 * j, 0.32, pan=self.pan)
         for j in (1, 2):
             mix.place(self.bus, self.art('slap', None, 0.08, 0.8), t + j * self.T.S16, 0.22, pan=self.pan)
+        T = self.T
+        if t + T.BEAT < T.BAR - 0.05:                            # it keeps walking under the card's last beat
+            r = hits[0]
+            mix.place(self.bus, self.art('pizz', r + 7, T.BEAT * 0.45, 0.9), t + T.BEAT, 0.42, pan=self.pan)
+            mix.place(self.bus, self.art('pizz', r + 11, T.BEAT * 0.45, 0.9), t + 1.5 * T.BEAT, 0.42, pan=self.pan)
 
     def count_in(self, mix):
         """it walks the count-in bar (the groove from bar 1): root, third, fifth, then a chromatic step to FIGHT!'s root"""

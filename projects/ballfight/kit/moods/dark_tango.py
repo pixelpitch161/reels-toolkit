@@ -264,9 +264,10 @@ class Bed:
         arrastre on beat 4 as the doors open"""
         T = self.T
         ch = T.CHORDS[0]
-        mix.place('bandoneon', self.bellows_shake(ch, 3 * T.BEAT - 0.1), 0.08, 0.36, pan=-0.12)
+        mix.place('bandoneon', self.bellows_shake(ch, 3 * T.BEAT - 0.1), 0.08, 0.46, pan=-0.12)
         for bt in range(1, 4):
-            mix.place('perc', self.golpe(0.9, bt), bt * T.BEAT, 0.26)
+            mix.place('perc', self.golpe(0.9, bt), bt * T.BEAT, 0.30)
+            mix.place('guitar', self.chop(ch, 1.0), bt * T.BEAT + T.BEAT / 2, 0.36, pan=0.2)
         mix.place('perc', self.latigo(1.0), 3.5 * T.BEAT, 0.10)
         for m in self.voicing(T.CHORDS[1]):
             mix.place('bandoneon', self.reed(m - 1, T.BEAT * 0.45, 1.0, att=0.08), 3.5 * T.BEAT, 0.08, pan=-0.12)
@@ -274,7 +275,7 @@ class Bed:
     def count_in(self, mix):
         """bar 1: the marcato on the count-in chord (the groove from the card on), a band hit on each count"""
         T = self.T
-        self.bar(mix, 1, intensity=1.0)
+        self.bar(mix, 1, intensity=1.4)                          # the full marcato (sincopa, chicharra, ghosts)
         ch = T.CHORDS[1]
         for j, (tc, txt) in enumerate(T.COUNT[:3]):
             self.hit(mix, tc, ch, 0.5, 0.2)

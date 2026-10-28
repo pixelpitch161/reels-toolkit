@@ -516,7 +516,7 @@ class Sound(base.Sound):
         """a cello swell: a bowed double stop crescendo (config TITLE_HITS: its notes, else root + fifth)"""
         M = self.M
         hits = self.T.TITLE_HITS.get(self.name) or (self.root_of(0.0), self.root_of(0.0) + 7)
-        dur = self.T.BEAT * 0.95
+        dur = self.T.BEAT * (1.95 if t < self.T.BEAT * 0.5 else 0.95)   # first named: the swell holds through VS
         for j, m in enumerate(hits[:2]):
             x = self.bow(m, dur, 1.0, 0.25)
             n = len(x)
@@ -528,6 +528,9 @@ class Sound(base.Sound):
     def count_in(self, mix):
         T = self.T
         r = self.root_of(T.BAR)
+        hold = self.fit_reg(T.root_above(T.CHORDS[1], 48) + 7)       # a long bow on the dominant's fifth under the count
+        x = self.bow(hold, 3 * T.BEAT * 0.97, 0.85, 0.25)
+        mix.place(self.bus, x * np.clip(np.linspace(0.7, 1.05, len(x)), 0, 1.05), T.BAR, 0.24, pan=self.pan)
         for j, (tc, txt) in enumerate(T.COUNT[:3]):
             mix.place(self.bus, self.bow(r + (0, 7, 12)[j], 0.2, 0.9), tc, 0.34, pan=self.pan)
         m = self.fit_reg(T.line_at(self.name, T.T_FIGHT))
