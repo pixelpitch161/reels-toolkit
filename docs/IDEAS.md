@@ -70,6 +70,7 @@ Each production session updates **its own row**: when it starts, sends a draft, 
 | 46 | [BALLFIGHT: Trumpet vs Clarinet](ideas/46-ballfight-trumpet-vs-clarinet.md) | review | session_01CzTfqa (2026-10-28) | Delivered: kit crossover, TRUMPET ported from #29 v3, new mood `hot_jazz`; seed 8410, CLARINET wins 49.99 s. | `ballfight_trumpet_vs_clarinet.mp4` |
 | 47 | [BALLFIGHT: Cello vs Contrabass](ideas/47-ballfight-cello-vs-contrabass.md) | review | session_01CzTfqb (2026-10-28) | v1 delivered with caption + tags (previews + sheet sent first); seed 2455, CONTRABASS wins 50.88 s with 0.1 HP. | `ballfight_cello_vs_contrabass.mp4` |
 | 48 | [BALLFIGHT: Euphonium vs Trombone](ideas/48-ballfight-euphonium-vs-trombone.md) | review | session_01CzTfqaiKkq (2026-10-28) | Delivered: kit crossover, EUPHONIUM ported from #38, opt-in swat_shells, mood `second_line`; seed 4604, TROMBONE wins 51.19 s. | `ballfight_euphonium_vs_trombone.mp4` |
+| 49 | [BALLFIGHT: Flute vs Clarinet](ideas/49-ballfight-flute-vs-clarinet.md) | idea (approved, mood A) | — | Approved Oct 29, mood A (minor bossa noir). Kit crossover, both fighters already ported. | — |
 
 ## Other notes
 
