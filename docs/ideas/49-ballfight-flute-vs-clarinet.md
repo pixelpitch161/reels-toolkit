@@ -44,3 +44,7 @@ melody. Post caption: "Flutes or clarinets? Band kids, choose 😤 Comment the n
 ## Board history
 
 - Approved Oct 29 (ideas chat).
+- Oct 29 (session_01CzTfqd): in production; tuned DMG_SIDE (5.3, 0.36) (300 seeds 50/50, median K.O. 49.4 s), seed 3864;
+  early sheet sent (silver vs lavender read apart: steel-blue glass + silver flute vs milky lilac + black clarinet; no
+  edge glow added). The engine has no special rule for a jump landing inside a cobra's reach: cobras strike anything in
+  range on their next strike tick (used as is). Delivered `ballfight_flute_vs_clarinet.mp4` -> review.
