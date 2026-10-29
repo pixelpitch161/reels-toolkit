@@ -26,7 +26,7 @@ CLAVE = ((0, 3, 6), (2, 5))                        # the bossa's 2-bar "3-2" fig
 
 
 class Bed:
-    buses = {'drums': (1.55, 0.14), 'bass': (1.9, 0.10), 'guitar': (1.85, 0.26), 'keys': (1.35, 0.34)}  # (gain, send)
+    buses = {'drums': (1.70, 0.14), 'bass': (1.9, 0.10), 'guitar': (1.35, 0.26), 'keys': (0.95, 0.34)}  # (gain, send)
     reverb = (1.7, 0.5, 0.18)                      # a small smoky club, a little velvet: (dur, decay, wet)
     comp = (0.16, 0.55)                            # master compressor: threshold, exponent
     roar_gain, doors_gain = 0.16, 0.40
@@ -114,7 +114,7 @@ class Bed:
             t = A.tt(n)
             cut = 0.07 if ghost else dur
             env = np.where(t < cut, 1.0, np.exp(-(t - cut) / 0.03))
-            y = A.lp(x / len(vo), 3200) * env
+            y = A.lp(A.lp(x / len(vo), 2200), 2600) * env                 # dark nylon, under the flute's band
             return y * (0.42 if ghost else 1.0)
         return self._cache(('cc', ch, ghost, round(dur, 3), roll), make) * v
 
@@ -163,12 +163,12 @@ class Bed:
             n = int((dur + 0.10) * SR)
             t = A.tt(n)
             f = A.mtof(m)
-            body = (np.sin(2 * np.pi * f * t) + 0.35 * np.sin(4 * np.pi * f * t) + 0.12 * np.sin(6 * np.pi * f * t))
+            body = (np.sin(2 * np.pi * f * t) + 0.22 * np.sin(4 * np.pi * f * t) + 0.05 * np.sin(6 * np.pi * f * t))
             body *= np.exp(-t / 0.55)
-            st = self.pluck(m + 12, dur + 0.10, seed=3, bright=0.12, ring=0.993)[:n]
+            st = self.pluck(m, dur + 0.10, seed=3, bright=0.10, ring=0.993)[:n]
             thump = A.lp(np.random.default_rng(int(m)).normal(0, 1, n), 300) * np.exp(-t / 0.015) * 0.6
             env = np.clip(t / 0.006, 0, 1) * np.where(t < dur, 1.0, np.exp(-(t - dur) / 0.05))
-            y = A.lp(body * 0.8 + st * 0.5 + thump, 1100) * env
+            y = A.lp(A.lp(body * 0.9 + st * 0.25 + thump, 520), 520) * env     # warm: under the clarinet's band
             return y
         return self._cache(('ub', int(m), round(dur, 3)), make) * v
 
