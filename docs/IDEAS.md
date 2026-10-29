@@ -72,7 +72,7 @@ Each production session updates **its own row**: when it starts, sends a draft, 
 | 48 | [BALLFIGHT: Euphonium vs Trombone](ideas/48-ballfight-euphonium-vs-trombone.md) | review | session_01CzTfqaiKkq (2026-10-28) | Delivered: kit crossover, EUPHONIUM ported from #38, opt-in swat_shells, mood `second_line`; seed 4604, TROMBONE wins 51.19 s. | `ballfight_euphonium_vs_trombone.mp4` |
 | 49 | [BALLFIGHT: Flute vs Clarinet](ideas/49-ballfight-flute-vs-clarinet.md) | in production | session_01CzTfqd (2026-10-29) | Started: kit crossover, new mood `bossa_noir`. | — |
 | 50 | [BALLFIGHT: Trumpet vs Trombone](ideas/50-ballfight-trumpet-vs-trombone.md) | in production | session_01CzTfqd (2026-10-29) | Kit crossover, new mood `mambo`; tuning. | — |
-| 51 | [BALLFIGHT: Alto Sax vs Tenor Sax](ideas/51-ballfight-alto-sax-vs-tenor-sax.md) | idea (approved, mood C) | — | Approved Oct 29, mood C (dark disco). Two new fighters (both models checked / built from Chrome photos). | — |
+| 51 | [BALLFIGHT: Alto Sax vs Tenor Sax](ideas/51-ballfight-alto-sax-vs-tenor-sax.md) | in production | session_01CzTfqcfepqv4wWSk4ryE2g (2026-10-29) | Started Oct 29: alto model check + tenor model from Chrome photos, kinds spotlight/crowd, mood `dark_disco`. | — |
 
 ## Other notes
 
