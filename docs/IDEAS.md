@@ -71,7 +71,7 @@ Each production session updates **its own row**: when it starts, sends a draft, 
 | 47 | [BALLFIGHT: Cello vs Contrabass](ideas/47-ballfight-cello-vs-contrabass.md) | review | session_01CzTfqb (2026-10-28) | v1 delivered with caption + tags (previews + sheet sent first); seed 2455, CONTRABASS wins 50.88 s with 0.1 HP. | `ballfight_cello_vs_contrabass.mp4` |
 | 48 | [BALLFIGHT: Euphonium vs Trombone](ideas/48-ballfight-euphonium-vs-trombone.md) | review | session_01CzTfqaiKkq (2026-10-28) | Delivered: kit crossover, EUPHONIUM ported from #38, opt-in swat_shells, mood `second_line`; seed 4604, TROMBONE wins 51.19 s. | `ballfight_euphonium_vs_trombone.mp4` |
 | 49 | [BALLFIGHT: Flute vs Clarinet](ideas/49-ballfight-flute-vs-clarinet.md) | in production | session_01CzTfqd (2026-10-29) | Started: kit crossover, new mood `bossa_noir`. | — |
-| 50 | [BALLFIGHT: Trumpet vs Trombone](ideas/50-ballfight-trumpet-vs-trombone.md) | in production | session_01CzTfqd (2026-10-29) | Kit crossover, new mood `mambo`; tuning. | — |
+| 50 | [BALLFIGHT: Trumpet vs Trombone](ideas/50-ballfight-trumpet-vs-trombone.md) | review | session_01CzTfqd (2026-10-29) | v1 delivered with caption + tags (sheet sent first); seed 1001, TRUMPET wins 50.28 s with 1 HP; new mood `mambo`. | `ballfight_trumpet_vs_trombone.mp4` |
 | 51 | [BALLFIGHT: Alto Sax vs Tenor Sax](ideas/51-ballfight-alto-sax-vs-tenor-sax.md) | in production | session_01CzTfqcfepqv4wWSk4ryE2g (2026-10-29) | Started Oct 29: alto model check + tenor model from Chrome photos, kinds spotlight/crowd, mood `dark_disco`. | — |
 
 ## Other notes

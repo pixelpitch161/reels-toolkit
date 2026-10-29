@@ -41,3 +41,10 @@ match-up 👇"
 ## Board history
 
 - Approved Oct 29 (ideas chat).
+- Oct 29 (session_01CzTfqd): v1 delivered. Kit crossover, both fighters straight from the roster; only lever DMG_SIDE
+  = (2.8, 0.40) (tune 200 seeds: TRUMPET 51 %, median K.O. 51.2 s; the lance outreaches the pistons, ~16 trumpet hits
+  land vs ~63 thrusts, hence the big gap; damage alone balanced it). Search 1..30000 --stop 8: 8 fits in 1,096 runs;
+  seed 1001: FANFARE 8.5 s, SAD TROMBONE 13.5, POWER SLIDE 25.6, DOUBLE TONGUE 31.9, HIGH C 42.6 vs PEDAL TONE, TRUMPET
+  wins 50.28 s on 1 HP, 2 lead changes. New mood `kit/moods/mambo.py` (G minor, 133.77 BPM). MIX: trombone 2.4, bass
+  1.5, sax 0.7 so the trombone's band clears the tumbao. All checks + verify pass; earlier episodes' replay hashes
+  identical (145 lines).
