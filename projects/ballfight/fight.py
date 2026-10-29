@@ -116,6 +116,13 @@ be hit, knocked or clashed with - and dives onto the enemy's predicted spot; eve
 (THE ELEPHANT: a walker charges after the enemy for a while, unstoppable (WALKING the whole time), trampling it on
 contact and shaking the floor with a quake ring every 8th; events 'stampede', 'trample', 'stampede_stomp',
 'stampede_end').
+#51 (opt-in): weapon kind `spotlight` (SPOTLIGHT SOLO: every bar a light from the rafters sweeps the floor across the
+enemy's path, burning on the 16ths; the light and the burn grow per landed sweep) with ability kinds `octave` (a second
+light, square, twice as fast), `altissimo` (narrow, white-hot) and `encore` (the light chases nonstop, phone lights from
+the stands); weapon kind `crowd` (CROWD PLEASER: every bar a pose + honk and the crowd throws from the stands beyond the
+nearest rope, reaching only so far into the ring; hype grows per landed volley) with ability kinds `runway` (WALK THE
+BAR: a strut across the ring, honking), `subtone` (a hush, then one volley twice as hard) and `stagedive` (STAGE DIVE:
+into the crowd, then fired back as a cannonball). Recorded as SPOT / CROWD / THROWS (see the sections).
 The run records every frame (30 fps) for the renderer and every event (hits, blocks, parries, ropes, volleys,
 abilities, level-ups, the K.O.) for the soundtrack and the captions. Seeded: same seed, same fight."""
 import math
@@ -312,6 +319,8 @@ class Fight:
             return False
         if getattr(V, 'swan', None) is not None:            # #47: airborne (SWAN SONG): out of reach
             return False
+        if getattr(V, 'dive', None) is not None:            # #51: airborne (STAGE DIVE): out of reach
+            return False
         if V.shield > 0:
             self.ev('block', vic, att, x, y, kind)
             return False
@@ -335,6 +344,8 @@ class Fight:
         if getattr(V, 'walking', False):                  # #47: a walking bass can't be knocked back (WALKING BASS)
             return
         if getattr(V, 'swan', None) is not None:          # #47: nor an airborne swan (SWAN SONG)
+            return
+        if getattr(V, 'strut', None) is not None or getattr(V, 'dive', None) is not None:   # #51: WALK THE BAR / STAGE DIVE
             return
         n = np.linalg.norm(away)
         if n < 1e-9:
@@ -2929,6 +2940,25 @@ class Fight:
         elif kind == 'vibrato':                                 # #47 (VIBRATO): a held enemy shakes and is hurt
             B.vib_until, B.vib_ab = self.t + self.ab_dur(ab), ab
             self.ev('vibrato', k, B.vib_until)
+        elif kind == 'octave':                                  # #51 (OCTAVE KEY): a second light, an octave up
+            B.oct_until = self.t + self.ab_dur(ab)
+            self.ev('octave', k, B.oct_until)
+        elif kind == 'altissimo':                               # #51 (ALTISSIMO): a narrow white-hot light
+            B.alt_until, B.alt_ab = self.t + self.ab_dur(ab), ab
+            self.ev('altissimo', k, B.alt_until)
+        elif kind == 'encore':                                  # #51 (ENCORE): the light chases, the phones join in
+            self.start_encore(k, ab)
+        elif kind == 'runway':                                  # #51 (WALK THE BAR): a strut down a spotlit runway
+            if getattr(B, 'dive', None) is None:
+                self.start_runway(k, ab)
+        elif kind == 'subtone':                                 # #51 (SUBTONE): the crowd hushes, then throws hard
+            B.hush = dict(ab=ab, t_throw=self.t + ab['hush_beats'] * self.R.beat)
+            self.pend_throws = [P_ for P_ in self.pend_throws if P_['owner'] != k]
+            self.ev('hush', k, B.hush['t_throw'])
+        elif kind == 'stagedive':                               # #51 (STAGE DIVE): into the crowd, fired back
+            B.strut = None
+            B.hush = None
+            self.start_dive(k, ab)
 
     def ab_beam_charge(self, k, ab):
         """ability kind 'beam' (#29 v3): charge for `charge_beats` with the aim locked on the enemy's spot predicted
@@ -3089,6 +3119,8 @@ class Fight:
                 continue
             if getattr(B, 'swan', None) is not None:            # #47: airborne (SWAN SONG), swan_step drives it
                 continue
+            if getattr(B, 'strut', None) is not None or getattr(B, 'dive', None) is not None:   # #51: crowd_step drives it
+                continue
             B.boost *= math.exp(-dt / self.R.KNOCK_T)
             s = self.R.V * (1 + B.boost)
             if getattr(B, 'hopper', False):                     # #39: a hopper stands still; it only slides when knocked
@@ -3124,10 +3156,14 @@ class Fight:
                 and not getattr(P, 'air', False) and not getattr(Q, 'air', False) \
                 and getattr(P, 'smashed', 0.0) <= 0 and getattr(Q, 'smashed', 0.0) <= 0 \
                 and not getattr(P, 'grabbed', False) and not getattr(Q, 'grabbed', False) \
-                and getattr(P, 'swan', None) is None and getattr(Q, 'swan', None) is None:   # #32 v2 swallowed, #38 shadow, #39 hop, #44 smash, #47 held / airborne
+                and getattr(P, 'swan', None) is None and getattr(Q, 'swan', None) is None \
+                and getattr(P, 'dive', None) is None and getattr(Q, 'dive', None) is None:   # #32 v2 swallowed, #38 shadow, #39 hop, #44 smash, #47 held / airborne, #51 stage dive
             n = d / max(dist, 1e-9)
             over = rP + rQ - dist
             wP, wQ = getattr(P, 'walker', False), getattr(Q, 'walker', False)
+            if getattr(P, 'strut', None) is not None or getattr(Q, 'strut', None) is not None:   # #51: a strutting tenor
+                wP = wP or getattr(P, 'strut', None) is not None                                 # (WALK THE BAR) doesn't
+                wQ = wQ or getattr(Q, 'strut', None) is not None                                 # give way either
             if wP != wQ:                                        # #47: a walking bass doesn't give way (planted or mid-
                 W_, O_, sg_ = (P, Q, 1.0) if wP else (Q, P, -1.0)   # step): the other ball takes the whole overlap and
                 O_.p = O_.p + sg_ * n * over                    # bounces off it; pinned against the ropes, the walker
@@ -4303,6 +4339,395 @@ class Fight:
             self.ev('stampede_stomp', k, float(B.p[0]), float(B.p[1]), rmax)
             St['next'] += ab['stomp16'] * self.R.beat / 4.0
 
+    # ------------------------------------------------------------------ #51: SPOTLIGHT SOLO (opt-in weapon kind 'spotlight')
+    # The alto is the only light-wielder. Every `every` beats (`off16` 16ths after the bar line; haste divides it) a
+    # spotlight swings down from the rafters and sweeps the floor for `sweep16` 16ths: a disc of light (radius
+    # `blade_len`: `base`, +`grow` per landed sweep up to `max_r`) gliding along a straight line `span` long through the
+    # enemy's spot predicted `lead` x its motion to mid-sweep, square to the enemy's heading (+-`jitter` deg, seeded), so
+    # it cuts across the enemy's path; the line is kept inside the ropes. On every 16th of the sweep an enemy inside the
+    # light (within its radius + 0.6 R) burns: `dmg` (+`dmg_grow` per landed sweep up to `dmg_max`; held in B.burn) and a
+    # small `knock`. A sweep that burns at least once grows the light and the burn when it ends.
+    # Ability kinds: 'octave' (OCTAVE KEY): for `dur_beats` every sweep brings a second light an octave up - square to
+    # the first through the same point, at twice the speed (there and back); 'altissimo' (ALTISSIMO): for `dur_beats`
+    # the light narrows to x`narrow` and burns x`hot`, its line x`span_k` (a white-hot line); 'encore' (ENCORE): for
+    # `beats` beats the light chases the enemy nonstop (at `speed` x the shared speed, burning every 16th) and on every
+    # 8th `n_phone` phone lights in the stands pick spots within `spread` of the enemy (seeded); an enemy within
+    # `phone_r` of one takes `phone_dmg`.
+    # Events ('spot', k, id, x0, y0, x1, y1, t0, t1, r, kind 0 main / 1 octave), ('burn', k, id, x, y),
+    # ('spot_end', k, id, landed), ('octave', k, t_end), ('altissimo', k, t_end), ('encore', k, t_end),
+    # ('phones', k, n), ('phone_burn', k, x, y). Recorded as SPOT (owner, x, y, r, kind 0 main / 1 octave / 2 encore /
+    # 3 phone, t0, t1, hot 0/1, id).
+    def spot_setup(self, k):
+        B = self.balls[k]
+        B.blade_len = float(B.w['base'])
+        B.burn = float(B.w['dmg'])
+        if not hasattr(self, 'spots'):
+            self.spots, self.next_spot, self.phones = [], 0, []
+
+    def _spot_line(self, k, mid, u, span):
+        lim = self.R.A - 0.25
+        a, b = mid - u * span / 2, mid + u * span / 2
+        return np.clip(a, -lim, lim), np.clip(b, -lim, lim)
+
+    def spot_tick(self, k, k16):
+        B, O = self.balls[k], self.balls[1 - k]
+        w = B.w
+        R = self.R.R
+        s16 = self.R.beat / 4.0
+        hot = self.t < getattr(B, 'alt_until', -1.0)
+        En = getattr(B, 'encore', None)
+        # burns on the 16th grid (every live light, once per 16th)
+        for Sp in self.spots:
+            if Sp['owner'] != k or self.t > Sp['t1'] + 1e-9 or self.t + 1e-9 < Sp['t0']:
+                continue
+            c = self.spot_pos(Sp, self.t)
+            rel = O.p - c
+            dist = float(np.hypot(*rel))
+            if dist < Sp['r'] + 0.6 * R:
+                dmg = Sp['dmg']
+                if self.damage(k, 1 - k, dmg, 'burn', float(O.p[0]), float(O.p[1])):
+                    Sp['hit'] = True
+                    self.knock(1 - k, rel if dist > 1e-3 else O.v, w.get('knock', 0.1))
+                self.ev('burn', k, Sp['id'], float(c[0]), float(c[1]))
+        if En is not None and k16 % 2 == 0:                       # ENCORE: the phone lights on every 8th
+            ab = En['ab']
+            n = int(ab['n_phone'])
+            self.phones = [(self.t, O.p + self.rng.uniform(-1, 1, 2) * ab['spread']) for _ in range(n)]
+            self.ev('phones', k, n)
+            for _, q in self.phones:
+                if float(np.hypot(*(O.p - q))) < ab['phone_r']:
+                    if self.damage(k, 1 - k, ab['phone_dmg'], 'phone', float(q[0]), float(q[1])):
+                        self.ev('phone_burn', k, float(q[0]), float(q[1]))
+        # a new sweep on the weapon's grid
+        if En is not None or self._stunned(k) or getattr(B, 'smashed', 0.0) > 0:
+            return
+        m = self.ab_mult(k)
+        main16 = int(round(4 * w['every']))
+        if (k16 - int(w.get('off16', 0))) % max(1, int(round(main16 / m))):
+            return
+        dur = w['sweep16'] * s16
+        mid = O.p + O.v * (dur / 2) * w.get('lead', 1.0)
+        hv = O.v / (float(np.hypot(*O.v)) + 1e-9)
+        u = np.array([-hv[1], hv[0]])
+        j = math.radians(self.rng.uniform(-1.0, 1.0) * w.get('jitter', 0.0))
+        u = np.array([u[0] * math.cos(j) - u[1] * math.sin(j), u[0] * math.sin(j) + u[1] * math.cos(j)])
+        if float(u @ (B.p - mid)) > 0:                           # the light comes in from the alto's side
+            u = -u
+        ab_alt = getattr(B, 'alt_ab', None) if hot else None
+        span = w['span'] * (ab_alt['span_k'] if ab_alt else 1.0)
+        r = B.blade_len * (ab_alt['narrow'] if ab_alt else 1.0)
+        dmg = B.burn * (ab_alt['hot'] if ab_alt else 1.0)
+        a, b = self._spot_line(k, mid, u, span)
+        sid = self.next_spot
+        self.next_spot += 1
+        self.spots.append(dict(owner=k, id=sid, a=a, b=b, t0=self.t, t1=self.t + dur, r=r, dmg=dmg, hit=False,
+                               kind=0, hot=int(hot), passes=1, grow=True))
+        self.ev('spot', k, sid, float(a[0]), float(a[1]), float(b[0]), float(b[1]), self.t, self.t + dur, r, 0)
+        if self.t < getattr(B, 'oct_until', -1.0):               # OCTAVE KEY: a second light, square, twice as fast
+            a2, b2 = self._spot_line(k, mid, np.array([-u[1], u[0]]), span)
+            sid = self.next_spot
+            self.next_spot += 1
+            self.spots.append(dict(owner=k, id=sid, a=a2, b=b2, t0=self.t, t1=self.t + dur, r=r, dmg=dmg, hit=False,
+                                   kind=1, hot=int(hot), passes=2, grow=False))
+            self.ev('spot', k, sid, float(a2[0]), float(a2[1]), float(b2[0]), float(b2[1]), self.t, self.t + dur, r, 1)
+
+    def spot_pos(self, Sp, t):
+        """where light Sp is at t: eased along its line (`passes` 2 = there and back)"""
+        if Sp['kind'] == 2:
+            return Sp['c']
+        u = min(1.0, max(0.0, (t - Sp['t0']) / max(1e-9, Sp['t1'] - Sp['t0'])))
+        if Sp['passes'] == 2:
+            u = 2 * u if u < 0.5 else 2 - 2 * u
+        u = u * u * (3 - 2 * u)
+        return Sp['a'] + (Sp['b'] - Sp['a']) * u
+
+    def spot_step(self, k, dt):
+        B, O = self.balls[k], self.balls[1 - k]
+        w = B.w
+        En = getattr(B, 'encore', None)
+        if En is not None:
+            Sp = En['spot']
+            if self.t >= En['t1']:
+                Sp['t1'] = self.t
+                B.encore = None
+                self.phones = []
+                self.ev('spot_end', k, Sp['id'], int(Sp['hit']))
+            else:
+                d = O.p - Sp['c']
+                n = float(np.hypot(*d))
+                st = En['ab']['speed'] * self.R.V * dt
+                if n > 1e-9:
+                    Sp['c'] = Sp['c'] + d / n * min(st, n)
+        keep = []
+        for Sp in self.spots:
+            if Sp['owner'] == k and Sp['kind'] != 2 and self.t > Sp['t1'] + 1e-9:
+                if Sp['grow'] and Sp['hit']:
+                    B.blade_len = min(w['max_r'], B.blade_len + w['grow'])
+                    B.burn = min(w['dmg_max'], B.burn + w.get('dmg_grow', 0.0))
+                self.ev('spot_end', k, Sp['id'], int(Sp['hit']))
+                continue
+            if Sp['owner'] == k and Sp['kind'] == 2 and B.encore is None and self.t > Sp['t1'] + 1e-9:
+                continue
+            keep.append(Sp)
+        self.spots = keep
+
+    def start_encore(self, k, ab):
+        B = self.balls[k]
+        sid = self.next_spot
+        self.next_spot += 1
+        t1 = self.t + ab['beats'] * self.R.beat
+        Sp = dict(owner=k, id=sid, c=B.p.copy(), t0=self.t, t1=t1, r=B.w['max_r'] * ab.get('r_k', 1.0),
+                  dmg=ab['dmg'], hit=False, kind=2, hot=0, passes=1, grow=False)
+        self.spots = [S_ for S_ in self.spots if S_['owner'] != k]   # the sweeping lights give way to the chase light
+        self.spots.append(Sp)
+        B.encore = dict(ab=ab, t1=t1, spot=Sp)
+        self.ev('encore', k, t1)
+
+    # ------------------------------------------------------------------ #51: CROWD PLEASER (opt-in weapon kind 'crowd')
+    # The tenor is the only fighter that uses the crowd. Every `every` beats (`off16` later; haste divides it) it strikes
+    # a pose for `pose16` 16ths (it all but stops: x`pose_v` speed) and honks; the hype meter fills and the crowd hurls
+    # int(hype) things at the enemy from the stands (`n0`, +`grow` per landed volley up to `n_max`), one every
+    # `stagger16` 16ths from a 16th after the honk. Each throw leaves the stands beyond the rope nearest the enemy
+    # (`stand` outside it, spread along it), flies `flight16` 16ths and lands on the enemy's spot predicted `lead` x its
+    # motion (+- `scatter`, seeded) - but no further than `blade_len` into the ring from that rope (the reach: `reach`,
+    # +`reach_grow` per landed volley up to `reach_max`): the middle of the ring is out of the crowd's range. A landing
+    # within `splash` (+0.6 R) of the enemy hits it (`dmg`, +`dmg_grow` per landed volley up to `dmg_max`; held in
+    # B.throw_dmg) and knocks it along the throw. Items cycle tomato / rose / foam finger (cosmetic).
+    # Ability kinds: 'runway' (WALK THE BAR): a spotlit runway from the tenor through the enemy to the far ropes; it
+    # struts down it for `beats` beats (no knockback, it doesn't give way), honking on every beat (a ring of kind 'honk':
+    # `honk_r` beyond its surface, `honk_dmg`, `honk_knock`) and bumping the enemy aside on contact (`dmg`, `knock`, once
+    # per `cool` s); 'subtone' (SUBTONE): the crowd hushes for `hush_beats` (no throws), leaning in, then throws twice as
+    # hard: one volley of x`n_k` throws at x`mult` damage with x`reach_k` reach; 'stagedive' (STAGE DIVE): it leaps into
+    # the crowd beyond the nearest rope (`leap_beats`), crowd-surfs along the stands (`surf_beats`) to the spot nearest
+    # the enemy, and the crowd launches it back like a cannonball (`speed` x the shared speed) at the enemy's predicted
+    # spot: passing within 2 R + `hit_r` of it hits (`dmg`, `knock`); where it lands a ring of kind 'dive' (`radius`,
+    # `ring_dmg`, `ring_knock`). From the leap to the landing it is airborne (no hits, no knockback, no clash).
+    # Events ('pose', k, t_end, hype), ('throw', k, id, x0, y0, x1, y1, t0, t1, item, vol), ('splat', k, id, x, y, hit),
+    # ('runway', k, x0, y0, x1, y1, t0, t1), ('strut_bump', k, x, y), ('strut_end', k), ('hush', k, t_throw),
+    # ('subtone', k), ('dive', k, x_out, y_out, t_surf, t_launch), ('dive_launch', k, x0, y0, x1, y1, t_land),
+    # ('dive_hit', k, x, y), ('dive_land', k, x, y). Recorded as CROWD per ball (hype, pose 0..1 or -1, hush 0/1,
+    # strut 0..1 or -1, dive phase 0 none / 1 leap / 2 surf / 3 launch, phase start, phase end) and THROWS (owner, x0,
+    # y0, x1, y1, t0, t1, item, landed 0 flying / 1 hit / 2 miss, id).
+    def crowd_setup(self, k):
+        B = self.balls[k]
+        B.n_vol = float(B.w['n0'])
+        B.blade_len = float(B.w['reach'])
+        B.throw_dmg = float(B.w['dmg'])
+        B.pose_until = -1.0
+        B.pose_t0 = -1.0
+        B.hush = None
+        B.strut = None
+        B.dive = None
+        if not hasattr(self, 'throws'):
+            self.throws, self.next_throw, self.next_cvol, self.cvol_landed = [], 0, 0, set()
+            self.pend_throws = []
+
+    def _crowd_volley(self, k, n, dmg_k=1.0, reach_k=1.0):
+        B, O = self.balls[k], self.balls[1 - k]
+        w = B.w
+        s16 = self.R.beat / 4.0
+        vol = self.next_cvol
+        self.next_cvol += 1
+        for j in range(n):
+            tl = self.t + (1 + j * w.get('stagger16', 1)) * s16
+            self.pend_throws.append(dict(owner=k, t_launch=tl, vol=vol, j=j, dmg=B.throw_dmg * dmg_k,
+                                         reach=B.blade_len * reach_k))
+
+    def _launch_throw(self, P_):
+        k = P_['owner']
+        B, O = self.balls[k], self.balls[1 - k]
+        w = B.w
+        A = self.R.A
+        lim = A - self.R.R
+        fl = w['flight16'] * self.R.beat / 4.0
+        tgt = O.p + O.v * fl * w.get('lead', 0.7) + self.rng.uniform(-1, 1, 2) * w.get('scatter', 0.0)
+        tgt = np.clip(tgt, -lim, lim)
+        dists = [(A - tgt[0], 0, 1.0), (A + tgt[0], 0, -1.0), (A - tgt[1], 1, 1.0), (A + tgt[1], 1, -1.0)]
+        dd, ax, sg = min(dists)
+        o = tgt.copy()
+        o[ax] = sg * (A + w.get('stand', 0.9))
+        o[1 - ax] = float(np.clip(tgt[1 - ax] + self.rng.uniform(-1, 1) * w.get('stand_spread', 0.8), -A, A))
+        if dd > P_['reach']:                                    # out of range: it falls short, `reach` into the ring
+            tgt = tgt.copy()
+            tgt[ax] = sg * (A - P_['reach'])
+        tid = self.next_throw
+        self.next_throw += 1
+        item = (P_['vol'] + P_['j']) % 3
+        self.throws.append(dict(owner=k, id=tid, p0=o, p1=tgt, t0=self.t, t1=self.t + fl, item=item, landed=0,
+                                dmg=P_['dmg'], vol=P_['vol']))
+        self.ev('throw', k, tid, float(o[0]), float(o[1]), float(tgt[0]), float(tgt[1]), self.t, self.t + fl, item,
+                P_['vol'])
+
+    def crowd_tick(self, k, k16):
+        B = self.balls[k]
+        w = B.w
+        Hs = B.hush
+        if Hs is not None and self.t + 1e-9 >= Hs['t_throw']:     # SUBTONE: the hush ends in one huge volley
+            ab = Hs['ab']
+            B.hush = None
+            self._crowd_volley(k, max(1, int(round(int(B.n_vol + 1e-9) * ab['n_k']))), ab['mult'], ab['reach_k'])
+            self.ev('subtone', k)
+        if Hs is not None or B.dive is not None or B.strut is not None or self._stunned(k) or \
+                getattr(B, 'smashed', 0.0) > 0:
+            return
+        m = self.ab_mult(k)
+        main16 = int(round(4 * w['every']))
+        if (k16 - int(w.get('off16', 0))) % max(1, int(round(main16 / m))):
+            return
+        B.pose_t0 = self.t
+        B.pose_until = self.t + w['pose16'] * self.R.beat / 4.0
+        B.vmul = w.get('pose_v', 0.15)
+        self.ev('pose', k, B.pose_until, float(B.n_vol))
+        self._crowd_volley(k, int(B.n_vol + 1e-9))
+
+    def crowd_step(self, k, dt):
+        B, O = self.balls[k], self.balls[1 - k]
+        w = B.w
+        R = self.R.R
+        if B.pose_until >= 0 and self.t >= B.pose_until:
+            B.pose_until = -1.0
+            B.vmul = None
+        due = [P_ for P_ in self.pend_throws if P_['owner'] == k and self.t + 1e-9 >= P_['t_launch']]
+        if due:
+            self.pend_throws = [P_ for P_ in self.pend_throws if not (P_['owner'] == k and self.t + 1e-9 >= P_['t_launch'])]
+            for P_ in due:
+                self._launch_throw(P_)
+        for Th in self.throws:
+            if Th['owner'] != k or Th['landed'] or self.t + 1e-9 < Th['t1']:
+                continue
+            rel = O.p - Th['p1']
+            dist = float(np.hypot(*rel))
+            hit = dist < w['splash'] + 0.6 * R
+            landed = False
+            if hit:
+                landed = self.damage(k, 1 - k, Th['dmg'], 'throw', float(Th['p1'][0]), float(Th['p1'][1]))
+                if landed:
+                    fly = Th['p1'] - Th['p0']
+                    self.knock(1 - k, fly if dist < 1e-3 else 0.5 * fly / (np.hypot(*fly) + 1e-9) + rel / dist,
+                               w.get('knock', 0.5))
+                    if Th['vol'] not in self.cvol_landed:
+                        self.cvol_landed.add(Th['vol'])
+                        B.n_vol = min(w['n_max'], B.n_vol + w['grow'])
+                        B.blade_len = min(w['reach_max'], B.blade_len + w.get('reach_grow', 0.0))
+                        B.throw_dmg = min(w['dmg_max'], B.throw_dmg + w.get('dmg_grow', 0.0))
+            Th['landed'] = 1 if landed else 2
+            self.ev('splat', k, Th['id'], float(Th['p1'][0]), float(Th['p1'][1]), int(landed))
+        self.throws = [Th for Th in self.throws if not (Th['landed'] and self.t > Th['t1'] + 0.7)]
+        if B.strut is not None:
+            self.strut_step(k, dt)
+        if B.dive is not None:
+            self.dive_step(k, dt)
+
+    def start_runway(self, k, ab):
+        B, O = self.balls[k], self.balls[1 - k]
+        lim = self.R.A - self.R.R
+        d = O.p - B.p
+        n = float(np.hypot(*d))
+        u = d / n if n > 1e-6 else np.array([1.0, 0.0])
+        ts = [(lim - B.p[ax] * math.copysign(1, u[ax])) / abs(u[ax]) for ax in (0, 1) if abs(u[ax]) > 1e-6]
+        L = max(0.5, min(ts))
+        p1 = np.clip(B.p + u * L, -lim, lim)
+        t1 = self.t + ab['beats'] * self.R.beat
+        B.pose_until = -1.0
+        B.vmul = None
+        B.strut = dict(ab=ab, p0=B.p.copy(), p1=p1, t0=self.t, t1=t1, next=self.t, last=-9.0)
+        B.v = u * self.R.V
+        B.boost = 0.0
+        self.ev('runway', k, float(B.p[0]), float(B.p[1]), float(p1[0]), float(p1[1]), self.t, t1)
+
+    def strut_step(self, k, dt):
+        B, O = self.balls[k], self.balls[1 - k]
+        St = B.strut
+        ab = St['ab']
+        R = self.R.R
+        if self.t >= St['t1']:
+            B.p = St['p1'].copy()
+            B.strut = None
+            self.ev('strut_end', k)
+            return
+        u = (self.t - St['t0']) / max(1e-9, St['t1'] - St['t0'])
+        B.p = St['p0'] + (St['p1'] - St['p0']) * u
+        rel = O.p - B.p
+        dist = float(np.hypot(*rel))
+        if dist < 2 * R + 0.04 and self.t - St['last'] >= ab['cool']:
+            n = rel / dist if dist > 1e-6 else B.v / (np.hypot(*B.v) + 1e-9)
+            hx, hy = (B.p + n * R).tolist()
+            St['last'] = self.t
+            if self.damage(k, 1 - k, ab['dmg'], 'strut', hx, hy):
+                self.knock(1 - k, n, ab['knock'])
+            self.ev('strut_bump', k, hx, hy)
+        if self.t + 1e-9 >= St['next']:
+            self.waves.append(dict(owner=k, c=B.p.copy(), r=R, speed=ab.get('honk_speed', 8.0), rmax=R + ab['honk_r'],
+                                   dmg=ab['honk_dmg'], knock=ab['honk_knock'], kind='honk', hit=False, name=ab['name'],
+                                   t0=self.t, slow=None, clears=False))
+            St['next'] += self.R.beat
+
+    def start_dive(self, k, ab):
+        B, O = self.balls[k], self.balls[1 - k]
+        A = self.R.A
+        bt = self.R.beat
+        p = B.p
+        dists = [(A - p[0], 0, 1.0), (A + p[0], 0, -1.0), (A - p[1], 1, 1.0), (A + p[1], 1, -1.0)]
+        _, ax, sg = min(dists)
+        out = p.copy()
+        out[ax] = sg * (A + ab.get('stand', 0.9))
+        t_surf = self.t + ab['leap_beats'] * bt
+        t_launch = t_surf + ab['surf_beats'] * bt
+        B.pose_until = -1.0
+        B.vmul = None
+        B.boost = 0.0
+        B.dive = dict(ab=ab, phase=1, p0=p.copy(), out=out, ax=ax, sg=sg, t0=self.t, t_surf=t_surf, t_launch=t_launch,
+                      t_land=None, hit=False, air=True)
+        self.ev('dive', k, float(out[0]), float(out[1]), t_surf, t_launch)
+
+    def dive_step(self, k, dt):
+        B, O = self.balls[k], self.balls[1 - k]
+        Dv = B.dive
+        ab = Dv['ab']
+        A = self.R.A
+        R = self.R.R
+        lim = A - R
+        if Dv['phase'] == 1:                                     # the leap over the ropes into the crowd
+            u = min(1.0, (self.t - Dv['t0']) / max(1e-9, Dv['t_surf'] - Dv['t0']))
+            B.p = Dv['p0'] + (Dv['out'] - Dv['p0']) * (u * u * (3 - 2 * u))
+            if self.t >= Dv['t_surf']:
+                Dv['phase'] = 2
+                Dv['s0'] = B.p.copy()
+        elif Dv['phase'] == 2:                                   # crowd-surfing along the stands toward the enemy
+            ax = Dv['ax']
+            goal = Dv['out'].copy()
+            goal[1 - ax] = float(np.clip(O.p[1 - ax], -A + 0.4, A - 0.4))
+            u = min(1.0, (self.t - Dv['t_surf']) / max(1e-9, Dv['t_launch'] - Dv['t_surf']))
+            B.p = Dv['s0'] + (goal - Dv['s0']) * (u * u * (3 - 2 * u))
+            if self.t >= Dv['t_launch']:
+                Dv['phase'] = 3
+                fl_guess = float(np.hypot(*(O.p - B.p))) / (ab['speed'] * self.R.V)
+                tgt = np.clip(O.p + O.v * fl_guess * ab.get('lead', 0.6), -lim, lim)
+                Dv['l0'] = B.p.copy()
+                Dv['l1'] = tgt
+                Dv['t_launch'] = self.t
+                Dv['t_land'] = self.t + float(np.hypot(*(tgt - B.p))) / (ab['speed'] * self.R.V)
+                self.ev('dive_launch', k, float(B.p[0]), float(B.p[1]), float(tgt[0]), float(tgt[1]), Dv['t_land'])
+        else:                                                    # the cannonball
+            u = min(1.0, (self.t - Dv['t_launch']) / max(1e-9, Dv['t_land'] - Dv['t_launch']))
+            B.p = Dv['l0'] + (Dv['l1'] - Dv['l0']) * u
+            rel = O.p - B.p
+            dist = float(np.hypot(*rel))
+            if not Dv['hit'] and dist < 2 * R + ab.get('hit_r', 0.1):
+                Dv['hit'] = True
+                if self.damage(k, 1 - k, ab['dmg'], 'dive', float(O.p[0]), float(O.p[1])):
+                    fly = Dv['l1'] - Dv['l0']
+                    self.knock(1 - k, 0.6 * fly / (np.hypot(*fly) + 1e-9) + 0.4 * rel / max(dist, 1e-6), ab['knock'])
+                self.ev('dive_hit', k, float(O.p[0]), float(O.p[1]))
+            if u >= 1.0:
+                fly = Dv['l1'] - Dv['l0']
+                B.v = fly / (np.hypot(*fly) + 1e-9) * self.R.V
+                B.dive = None
+                self.waves.append(dict(owner=k, c=B.p.copy(), r=R, speed=ab.get('ring_speed', 9.0),
+                                       rmax=R + ab['radius'], dmg=ab['ring_dmg'], knock=ab['ring_knock'], kind='dive',
+                                       hit=False, name=ab['name'], t0=self.t, slow=None))
+                self.ev('dive_land', k, float(B.p[0]), float(B.p[1]))
+
     # ------------------------------------------------------------------ record
     KMAX = 72
 
@@ -4729,6 +5154,40 @@ class Fight:
                 if getattr(Bj, 'walker', False):
                     Wk[j, 3] = Bj.blade_len
             rec['WALK'].append(Wk)
+        if 'SPOT' in rec:                                   # #51, only recorded when a fighter uses the 'spotlight' kind
+            row = []
+            for Sp in self.spots:
+                if Sp['t0'] - 1e-9 <= self.t <= Sp['t1'] + 1e-9:
+                    c = self.spot_pos(Sp, self.t)
+                    row.append((Sp['owner'], float(c[0]), float(c[1]), Sp['r'], Sp['kind'], Sp['t0'], Sp['t1'], Sp['hot'],
+                                Sp['id']))
+            for t_, q in self.phones:
+                row.append((int(next((j for j, Bj in enumerate((B0, B1)) if Bj.w['kind'] == 'spotlight'), 0)),
+                            float(q[0]), float(q[1]), 0.0, 3, t_, t_ + self.R.beat / 2, 0, -1))
+            rec['SPOT'].append(row)
+        if 'CROWD' in rec:                                  # #51, only recorded when a fighter uses the 'crowd' kind
+            Cr = np.full((2, 7), -1.0)
+            for j, Bj in enumerate((B0, B1)):
+                if not hasattr(Bj, 'throw_dmg'):
+                    continue
+                Cr[j, 0] = Bj.n_vol
+                if Bj.pose_until >= 0:
+                    Cr[j, 1] = (self.t - Bj.pose_t0) / max(1e-9, Bj.pose_until - Bj.pose_t0)
+                Cr[j, 2] = float(Bj.hush is not None)
+                if Bj.strut is not None:
+                    St = Bj.strut
+                    Cr[j, 3] = (self.t - St['t0']) / max(1e-9, St['t1'] - St['t0'])
+                Cr[j, 4:] = 0.0
+                if Bj.dive is not None:
+                    Dv = Bj.dive
+                    ph = Dv['phase']
+                    a_, b_ = ((Dv['t0'], Dv['t_surf']) if ph == 1 else (Dv['t_surf'], Dv['t_launch']) if ph == 2
+                              else (Dv['t_launch'], Dv['t_land']))
+                    Cr[j, 4:] = (ph, a_, b_)
+            rec['CROWD'].append(Cr)
+            rec['THROWS'].append([(Th['owner'], float(Th['p0'][0]), float(Th['p0'][1]), float(Th['p1'][0]),
+                                   float(Th['p1'][1]), Th['t0'], Th['t1'], Th['item'], Th['landed'], Th['id'])
+                                  for Th in self.throws])
         if 'FLICK' in rec:                                  # #34 v5, only recorded when a fighter has a 'flick' ability
             Fl = np.full((2, 6), np.nan)
             for j, Bj in enumerate((B0, B1)):
@@ -4891,6 +5350,18 @@ class Fight:
         n16o = k16_0
         if rec is not None and rollers:
             rec['ROLL'], rec['HOLD'] = [], []
+        spotters = [k for k, B in enumerate(self.balls) if B.w['kind'] == 'spotlight']      # #51 (opt-in)
+        for k in spotters:
+            self.spot_setup(k)
+        n16s = k16_0
+        if rec is not None and spotters:
+            rec['SPOT'] = []
+        crowders = [k for k, B in enumerate(self.balls) if B.w['kind'] == 'crowd']         # #51 (opt-in)
+        for k in crowders:
+            self.crowd_setup(k)
+        n16c = k16_0
+        if rec is not None and crowders:
+            rec['CROWD'], rec['THROWS'] = [], []
         self.t = R.t_fight
         f0 = int(round(R.t_fight * R.FPS))
         step = 0
@@ -5055,6 +5526,16 @@ class Fight:
                 for k in rollers:
                     if not self._stunned(k):
                         self.roll_tick(k, n16a_)
+            if spotters and self.t + 1e-9 >= n16s * s16:        # #51: sweeps and burns on the 16th grid
+                k16s_ = n16s - k16_0
+                n16s += 1
+                for k in spotters:
+                    self.spot_tick(k, k16s_)
+            if crowders and self.t + 1e-9 >= n16c * s16:        # #51: poses + volleys on the 16th grid
+                k16c_ = n16c - k16_0
+                n16c += 1
+                for k in crowders:
+                    self.crowd_tick(k, k16c_)
             for k, B in enumerate(self.balls):
                 B.shield = max(0.0, B.shield - dt)
                 B.haste = max(0.0, B.haste - dt)
@@ -5142,6 +5623,10 @@ class Fight:
                 self.swan_step(k)
             for k in stampeders:                                 # #47: THE ELEPHANT's charge, trampling, stomps
                 self.stampede_step(k, dt)
+            for k in spotters:                                   # #51: the lights' ends + growth, ENCORE's chase
+                self.spot_step(k, dt)
+            for k in crowders:                                   # #51: pose ends, throws flying + landing, strut, dive
+                self.crowd_step(k, dt)
             if getattr(self, 'notes', None):                     # #42: the whole notes roll (and land)
                 self.notes_step(dt)
             if getattr(self, 'splinters', None):                 # #44: GUITAR SMASH's splinters
