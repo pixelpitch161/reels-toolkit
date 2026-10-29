@@ -171,7 +171,7 @@ class Bed:
         for t_ in ((1.5, 3.0) + ((0.5, 2.5) if big else ())):
             mix.place('strings', self.stab(ch, 1.0), t0 + t_ * T.BEAT, 0.20 if t_ in (1.5, 3.0) else 0.14, pan=0.15)
         # the pad over the bar
-        mix.place('pad', self.pad(ch, T.BAR * 0.98), t0, 0.16)
+        mix.place('pad', self.pad(ch, T.BAR * 0.98), t0, 0.12)
         # the mirror ball: a few glints on hashed 16ths
         ng = 2 + (2 if big else 0)
         for g in range(ng):
