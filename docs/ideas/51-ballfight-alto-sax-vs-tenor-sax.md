@@ -54,3 +54,4 @@ the original rock 'n' roll honker). Post caption: "Alto or tenor? Sax players, s
 
 - Approved Oct 29 (ideas chat).
 - Oct 29: in production (session_01CzTfqcfepqv4wWSk4ryE2g).
+- Oct 29: delivered for review (`ballfight_altosax_vs_tenorsax.mp4`). Alto model checked in Chrome against Commons' Amati family shot and a Selmer Series III alto: off (bell too small / high, neck too tall, keys as lines that vanish at ball size) -> rebuilt as `altosax_lowpoly.py` (altosax60 untouched); tenor built from the YTS-62 + Amati shots (`tenorsax_lowpoly.py`) with a husky voice. Previews sent before tuning. Tuned 53 % / 47 %, median K.O. 50.2 s (scale 0.75); seed 621 (ranked 2nd of 8 fits, picked for STAGE DIVE 41.2 s then ENCORE 45.2 s both captioned); ALTO SAX wins at 49.18 s on 2 HP. All checks + verify pass; every earlier episode replays identically.

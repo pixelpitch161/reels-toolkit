@@ -72,7 +72,7 @@ Each production session updates **its own row**: when it starts, sends a draft, 
 | 48 | [BALLFIGHT: Euphonium vs Trombone](ideas/48-ballfight-euphonium-vs-trombone.md) | review | session_01CzTfqaiKkq (2026-10-28) | Delivered: kit crossover, EUPHONIUM ported from #38, opt-in swat_shells, mood `second_line`; seed 4604, TROMBONE wins 51.19 s. | `ballfight_euphonium_vs_trombone.mp4` |
 | 49 | [BALLFIGHT: Flute vs Clarinet](ideas/49-ballfight-flute-vs-clarinet.md) | review | session_01CzTfqd (2026-10-29) | Delivered: kit crossover, new mood `bossa_noir`; DMG_SIDE 5.3/0.36, seed 3864, FLUTE wins 49.16 s. | `ballfight_flute_vs_clarinet.mp4` |
 | 50 | [BALLFIGHT: Trumpet vs Trombone](ideas/50-ballfight-trumpet-vs-trombone.md) | review | session_01CzTfqd (2026-10-29) | v1 delivered with caption + tags (sheet sent first); seed 1001, TRUMPET wins 50.28 s with 1 HP; new mood `mambo`. | `ballfight_trumpet_vs_trombone.mp4` |
-| 51 | [BALLFIGHT: Alto Sax vs Tenor Sax](ideas/51-ballfight-alto-sax-vs-tenor-sax.md) | in production | session_01CzTfqcfepqv4wWSk4ryE2g (2026-10-29) | Started Oct 29: alto model check + tenor model from Chrome photos, kinds spotlight/crowd, mood `dark_disco`. | — |
+| 51 | [BALLFIGHT: Alto Sax vs Tenor Sax](ideas/51-ballfight-alto-sax-vs-tenor-sax.md) | review | session_01CzTfqcfepqv4wWSk4ryE2g (2026-10-29) | Delivered: alto model rebuilt (`altosax_lowpoly`), tenor new (`tenorsax_lowpoly`), kinds spotlight / crowd, mood `dark_disco`; seed 621, ALTO SAX wins 49.18 s on 2 HP. | `ballfight_altosax_vs_tenorsax.mp4` |
 
 ## Other notes
 

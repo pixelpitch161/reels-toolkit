@@ -46,6 +46,7 @@ KIT_EPISODES = [
     ('projects/ballfight_trumpet_vs_clarinet', [8410, 1, 2, 3, 500]),   # #46 (the #29 TRUMPET vs the #37 CLARINET, crossover), seed 8410
     ('projects/ballfight_cello_vs_contrabass', [2455, 1, 2, 3, 500]),   # #47 (CELLO grapple / vibrato / prelude / swan vs CONTRABASS walk / slap / stampede), seed 2455
     ('projects/ballfight_euphonium_vs_trombone', [4604, 1, 2, 3, 500]),   # #48 (the #38 EUPHONIUM vs the #34 TROMBONE, crossover; Rules(swat_shells=True)), seed 4604
+    ('projects/ballfight_altosax_vs_tenorsax', [621, 1, 2, 3, 500]),   # #51 (ALTO SAX spotlight / octave / altissimo / encore vs TENOR SAX crowd / runway / subtone / stagedive), seed 621
     ('projects/ballfight_flute_vs_clarinet', [3864, 1, 2, 3, 500]),   # #49 (the #32 v2 FLUTE vs the #37 CLARINET, crossover), seed 3864
 ]
 CODE = r'''
