@@ -85,6 +85,8 @@ class Look(base.Look):
         self.SPLAT = {e[3]: (e[0], e[4], e[5], e[6]) for e in EV if e[1] == 'splat' and e[2] == k}
         self.RUNWAY = [(e[0], np.array([e[3], e[4]]), np.array([e[5], e[6]]), e[8]) for e in EV
                        if e[1] == 'runway' and e[2] == k]
+        ends = [e[0] for e in EV if e[2] == k and e[1] in ('strut_end', 'dive')]
+        self.RUNWAY = [(t0, a, b, min([t1] + [x for x in ends if x >= t0 - 1e-6])) for t0, a, b, t1 in self.RUNWAY]
         self.HUSH = [(e[0], e[3]) for e in EV if e[1] == 'hush' and e[2] == k]
         dv = [e for e in EV if e[1] == 'dive' and e[2] == k]
         self.DIVES = []
@@ -415,7 +417,7 @@ class Look(base.Look):
 
 # ===================================================================================================== sound
 class Sound(base.Sound):
-    bus_gain, send = 1.7, 0.22
+    bus_gain, send = 2.0, 0.22
     band = (160, 700)                                     # the honking low line's fundamentals + husk
     colour_args = dict(cut0=60, cut_span=200, drive=5.0)
 
@@ -526,7 +528,8 @@ class Sound(base.Sound):
                 mix.place(self.bus, self.tone(m + 12, T.BEAT * 0.8, 0.9, honk=0.8), tq, 0.25, pan=self.pan)
                 mix.place('fx', M.roar(1.4, seed=int(t * 3)), tq, 0.06)
             elif kind == 'runway':                             # WALK THE BAR: honks up the line on every beat
-                t0, t1 = tq, e[8]
+                t0 = tq
+                t1 = min([e[8]] + [x[0] for x in M.EV if x[2] == k and x[1] in ('strut_end', 'dive') and x[0] >= t])
                 nb = int(round((t1 - t0) / T.BEAT))
                 for j in range(nb):
                     tj = t0 + j * T.BEAT
