@@ -67,6 +67,62 @@ def build(g, t, ev, fx, s):
             fx.append(("wave", tuple(rim + [.02, .02, 0]), age, 0))
 
 
+# ---------------------------------------------------------------- sound: the tenor's husky honk
+# Between the alto's singing tone and the bari's window-rattler: harmonics rolled off by frequency (as the bari's, so the
+# low notes keep their body) through the tenor's own colour - a broad low formant near 620 Hz (the husk), a second bump
+# near 1.5 kHz (the bark) - over a breathy, airy noise band that never quite goes away (the husky part: the air around
+# the reed, louder on soft notes). `honk` (0..1): the rock 'n' roll honk - a scoop up into the note, a growl, the reed's
+# slap and more bark. `sub` (0..1): subtone - the Ben Webster hush: fewer harmonics, the breath up, a slower attack.
+SR = AX.SR
+FORMANTS = ((620., 340., 1.6), (1500., 560., .85), (2800., 850., .25))          # (Hz, width, gain)
+
+
+def _midi_hz(m):
+    return 440.0 * 2 ** ((m - 69) / 12.0)
+
+
+def tenor_tone(f, dur, v, honk=0.0, sub=0.0, bright=.42):
+    from scipy.signal import butter, sosfilt
+    n = int((dur + .18) * SR)
+    t = np.arange(n) / SR
+    att = .014 + .05 * sub
+    rel = .04 if dur < .15 else .07
+    env = np.minimum(1, t / att) ** 1.3 * np.where(t < dur, 1, np.exp(-(t - dur) / rel)) * (1 + (.18 + .2 * honk) *
+                                                                                          np.exp(-t / .05))
+    fr = f * (1 - (.03 + .06 * honk) * np.exp(-t / (.05 + .03 * honk)))                 # the scoop up into the note
+    fr = fr * (1 + .0045 * np.sin(2 * np.pi * 5.1 * t) * np.clip((t - .22) / .3, 0, 1))  # a lazy vibrato on long notes
+    ph = 2 * np.pi * np.cumsum(fr) / SR
+    x = np.zeros(n)
+    tot = 0.0
+    br = bright + .3 * honk - .35 * sub
+    for k in range(1, 70):
+        fk = f * k
+        if fk > 9000:
+            break
+        a = k ** -.75 * (.3 + sum(g * math.exp(-((fk - c) / w) ** 2) for c, w, g in FORMANTS))
+        a *= math.exp(-fk / max(500.0, 1100 + 3600 * br * v))
+        x += a * np.sin(k * ph + .37 * k)
+        tot += a
+    x /= tot + 1e-9
+    gr = .04 + .26 * honk
+    x *= 1 + gr * np.sin(2 * np.pi * 31 * t + 2.6 * np.sin(2 * np.pi * 6.5 * t))       # growl
+    rng = np.random.default_rng(int(f * 10 + dur * 1000) % 100003)
+    nz = sosfilt(butter(2, [380, 2600], 'band', fs=SR, output='sos'), rng.standard_normal(n))
+    air = sosfilt(butter(2, [2200, 7000], 'band', fs=SR, output='sos'), rng.standard_normal(n))
+    husk = .05 + .06 * sub + .03 * (1 - v)
+    x += nz * husk * (.65 + 1.4 * np.exp(-t * 16)) + air * (.012 + .012 * sub)
+    if honk:                                                                         # the reed's slap on a hard attack
+        k = int(.028 * SR)
+        tt = t[:k]
+        x[:k] += .45 * honk * (np.sin(2 * np.pi * 190 * tt) * np.exp(-tt * 110) + nz[:k] * np.exp(-tt * 240) * 2)
+    return x * env * v
+
+
+def synth(s, idx):
+    nt, m, v, dur, tp, cs = s["ev"][idx]
+    return tenor_tone(_midi_hz(m), dur, v, honk=.35)
+
+
 if __name__ == "__main__":
     import piano_lowpoly as P
     for sc in SCENES:
