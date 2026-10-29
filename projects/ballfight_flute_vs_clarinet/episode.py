@@ -11,7 +11,7 @@ ii half-dim - V7."""
 
 # ---------------------------------------------------------------- the fight
 FIGHTERS = ('FLUTE', 'CLARINET')         # first named = left corner (screen left)
-SEED = 1                                 # (set after the search)
+SEED = 3864                              # search 1..40000 --stop 8: 8 fits in 6,454 runs (FLUTE 53 %), ranked first
 DMG_SCALE = 1.0
 DMG_SIDE = (5.3, 0.36)                   # the crossover's only lever (tune, 300 seeds: FLUTE 50 % / CLARINET 50 %,
                                          # median K.O. 49.4 s; ~11 heavy bites vs ~68 cuts a run: the jumps dodge most strikes)
@@ -58,7 +58,9 @@ SOLO = {
                  (9.5, 77, .5), (10, 76, .25), (10.25, 73, .25), (10.5, 69, .5), (11, 74, 1.0)]}
 TITLE_HITS = {'FLUTE': (74, 77, 81, 84, 86, 88, 89),          # a flute flurry up the D minor arpeggio to a high F
               'CLARINET': (50, 53, 57, 62, 65, 69, 74)}       # the clarinet's glissando up through the registers
-MIX = {}
+MIX = {'clarinet': (2.4, 0.35),          # +4 dB over its #37 level: its chalumeau line shares 140-700 Hz with the
+                                         # upright, the nylon comping and the Rhodes
+       'flute': (2.1, 0.45)}             # +1.8 dB: the high melody clear over the nylon guitar's top
 
 # ---------------------------------------------------------------- the post
 CAPTION = 'Flutes or clarinets? Band kids, choose 😤 Comment the next match-up 👇'
