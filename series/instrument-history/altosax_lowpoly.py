@@ -194,7 +194,7 @@ def sax(g, D, ch=1.0, neck_fn=None):
     ki = len(neck_ax) - 3
     tg_ = unit(neck_ax[ki + 1] - neck_ax[ki - 1])
     up_n = unit(np.array([0, 1., 0]) - tg_ * (tg_ @ np.array([0, 1., 0])))
-    keycup(g, neck_ax[ki] + up_n * nr[ki], up_n, .0085 * kc_ * ks, .006 * kg)
+    keycup(g, neck_ax[ki] + up_n * nr[ki], up_n, .0085 * kc_ * ks, .006 * kg, top=kc)
     th_, thn = surf(.83, 180, .003)
     lv0 = neck_ax[ki] + up_n * (nr[ki] + .004)
     lv1 = neck_ax[1] + np.array([0, 0, -nr[1] - .007])
@@ -217,7 +217,7 @@ def sax(g, D, ch=1.0, neck_fn=None):
     MAIN = [(.86, .0118), (.795, .0124), (.73, .013), (.53, .0145), (.465, .015), (.40, .0156)]
     for f, cr in MAIN:
         pt, nrm = surf(f, -30)
-        cen = keycup(g, pt, nrm, cr * kc_ * ks, .010 * kg * ks)
+        cen = keycup(g, pt, nrm, cr * kc_ * ks, .010 * kg * ks, top=kc)
         hinge, _ = surf(f + .012, -84, .008 * kg * ks)
         bar(g, cen + (hinge - cen) * .15, hinge, .0026 * kg * ks, kc)
         tp_, tn_ = surf(f - .016, 24, .016 * kg * ks)
@@ -227,7 +227,7 @@ def sax(g, D, ch=1.0, neck_fn=None):
         S.prism(g, tp_ - tn_ * .0015, tn_, .0152 * kg * ks, .003, 10, kc, dim(kc, .7))
     for pf in (.90, .935, .97):                                                 # palm keys + their bright touches
         pt, nrm = surf(pf, 108)
-        keycup(g, pt, nrm, .0088 * kc_ * ks, .007 * kg * ks)
+        keycup(g, pt, nrm, .0088 * kc_ * ks, .007 * kg * ks, top=kc)
         tp_, tn_ = surf(pf - .02, 62, .010 * kg * ks)
         S.prism(g, tp_, tn_, .0068 * kg * ks, .005, 6, kc, dim(kc, .75))
     p_, n_ = surf(.86, 16, .009 * kg * ks)                                      # front F (a small pearl)
@@ -235,7 +235,7 @@ def sax(g, D, ch=1.0, neck_fn=None):
     # ---- side keys facing the bell, under their own guards
     for f, cr in ((.66, .0118), (.60, .0124), (.36, .0142), (.30, .0148)):
         pt, nrm = surf(f, 58)
-        keycup(g, pt, nrm, cr * kc_ * ks, .009 * kg * ks)
+        keycup(g, pt, nrm, cr * kc_ * ks, .009 * kg * ks, top=kc)
     for f0, f1 in ((.57, .69), (.27, .39)):
         a_, an = surf(f0, 40, .016 * kg * ks)
         b_, bn = surf(f1, 40, .016 * kg * ks)
@@ -250,7 +250,7 @@ def sax(g, D, ch=1.0, neck_fn=None):
     # ---- low Eb + C cups low on the front under a big wire guard with diamond feet
     for f, phi, r in ((.215, -4, .0175), (.12, -28, .019)):
         pt, nrm = surf(f, phi)
-        keycup(g, pt, nrm, r * kc_ * ks, .010 * kg * ks)
+        keycup(g, pt, nrm, r * kc_ * ks, .010 * kg * ks, top=kc)
     gp = [surf(.27, -46, .017 * kg * ks), surf(.07, -46, .019 * kg * ks), surf(.04, -12, .021 * kg * ks),
           surf(.07, 22, .019 * kg * ks), surf(.27, 22, .017 * kg * ks)]
     for (a_, _), (b_, _) in zip(gp, gp[1:]):
@@ -259,7 +259,7 @@ def sax(g, D, ch=1.0, neck_fn=None):
         diamond(g, q - qn * .012 * kg * ks, qn, .010 * kg * ks, kc)
     # ---- low C# on the bow (front of the U)
     q_ = AS.rsurf(bow_r, bow_ax, 5.4, AS.k_facing(bow_r, bow_ax, 5, (-.3, -.2, 1)), 1.0)
-    keycup(g, q_, unit(q_ - bow_ax[5]), .016 * kc_ * ks, .010 * kg * ks)
+    keycup(g, q_, unit(q_ - bow_ax[5]), .016 * kc_ * ks, .010 * kg * ks, top=kc)
     # ---- the bell keys: low B / Bb cups on the bell's front, each under a guard with diamond feet
     bkd = unit((-.55, 0, .83))
     for j in range(2):
@@ -267,7 +267,7 @@ def sax(g, D, ch=1.0, neck_fn=None):
         ax_ = bell_ax[0] * (1 - fi / 5) + bell_ax[5] * (fi / 5)
         r_ = lerp(RBELL0, D['r_run'], fi / 5) * ch
         pt = ax_ + bkd * r_
-        keycup(g, pt, bkd, (.019 - .0015 * j) * kc_ * ks, .010 * kg * ks)
+        keycup(g, pt, bkd, (.019 - .0015 * j) * kc_ * ks, .010 * kg * ks, top=kc)
         side = unit(np.cross(bkd, [0, 1, 0]))
         feet = [pt + side * .028 * kg * ks * s_ + np.array([0, .03 * kg * ks * u_, 0])
                 for s_, u_ in ((-1, -1), (-1, 1), (1, 1), (1, -1))]
