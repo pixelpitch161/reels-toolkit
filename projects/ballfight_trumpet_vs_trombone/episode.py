@@ -11,7 +11,8 @@ bVI7 - V7. All original."""
 
 # ---------------------------------------------------------------- the fight
 FIGHTERS = ('TRUMPET', 'TROMBONE')       # first named = left corner (screen left)
-SEED = None                              # python -m ballfight search trumpet_vs_trombone -> the best fit
+SEED = 1001                              # search 1..30000 --stop 8: 8 fits in 1,096 runs (TRUMPET 51 %), ranked first:
+                                         # TRUMPET wins 50.28 s on 1 HP, both lows fire (HIGH C vs PEDAL TONE)
 DMG_SCALE = 1.0
 DMG_SIDE = (2.8, 0.40)                  # the crossover's only lever (tune, 200 seeds: TRUMPET 51 % / TROMBONE 49 %,
                                          # median K.O. 51.2 s; 2.4 / 0.40 = 32 %, 3.2 / 0.40 = 66 %). Big gap because
@@ -58,7 +59,8 @@ SOLO = {
                  (3.5, 50, .5), (4, 51, .75), (4.75, 50, .25), (5, 48, .5), (5.5, 51, .5), (6, 54, .5), (6.5, 57, .5),
                  (7, 55, 1.0), (8, 58, .5), (8.5, 62, .5), (9, 61, .5), (9.5, 58, .5), (10, 57, .5), (10.5, 54, .5),
                  (11, 55, 1.0)]}
-MIX = {}
+MIX = {'trombone': (2.4, 0.2),            # the trombone's low riff over the band: it shares 120-1500 Hz with
+       'bass': (1.5, 0.08), 'sax': (0.7, 0.35)}   # the tumbao, the sax pad and the montuno's low octaves
 TITLE_HITS = {'TRUMPET': (67, 74, 79, 82),          # a lead trumpet's rip up the G minor triad to a shaken high Bb
               'TROMBONE': (46, 58)}                 # the low Bb + a big smear up an octave
 
