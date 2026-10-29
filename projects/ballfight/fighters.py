@@ -502,13 +502,15 @@ FIGHTERS = {
     # specific sax replacing the retired SAX, its own design; the alto model rebuilt from Commons photos) is the only
     # light-wielder: every bar a spotlight sweeps the floor across the enemy's path and burns it. The TENOR SAX the only
     # fighter that uses the crowd: every bar it poses and honks and the crowd throws from the stands, which only reach so
-    # far in, so the middle of the ring is safe from them.
+    # far in, so the middle of the ring is safe from them. Numbers tuned once with the kit (#51: python -m ballfight
+    # tune, 150 seeds at the episode's damage scale 0.75: ALTO SAX 54 % / TENOR SAX 46 %, median K.O. 50.3 s, both
+    # desperation moves in 93 % of fights), frozen.
     'ALTO SAX': dict(
         color=(200, 80, 240), dark=(110, 36, 140), corner='red',      # orchid (series colour table, RULES)
         view=(10, 18, 0),
         weapon=dict(kind='spotlight', style='spotlight', name='SPOTLIGHT SOLO',   # every bar a light sweeps + burns
                     every=4, off16=0, sweep16=6, span=2.6, lead=1.0, jitter=15.0,
-                    base=0.42, grow=0.03, max_r=0.75, dmg=1.0, dmg_grow=0.04, dmg_max=1.5, knock=0.12),
+                    base=0.42, grow=0.03, max_r=0.75, dmg=1.3, dmg_grow=0.06, dmg_max=2.1, knock=0.12),   # tuned once (#51), frozen
         abilities=dict(
             unlock1=dict(name='OCTAVE KEY', kind='octave', dur_beats=8, every_bars=5),      # two lights, an octave apart
             unlock2=dict(name='ALTISSIMO', kind='altissimo', dur_beats=8, narrow=0.5, hot=2.5, span_k=0.75,
@@ -520,9 +522,9 @@ FIGHTERS = {
         color=(230, 110, 30), dark=(130, 56, 12), corner='blue',      # burnt orange (series colour table, RULES)
         view=(10, 18, 0),
         weapon=dict(kind='crowd', style='crowd', name='CROWD PLEASER',   # every bar: pose, honk, the crowd throws
-                    every=4, off16=0, pose16=2, pose_v=0.15, n0=2, grow=0.5, n_max=6, stagger16=1, flight16=6,
+                    every=4, off16=0, pose16=2, pose_v=0.15, n0=3, grow=0.34, n_max=5, stagger16=1, flight16=6,
                     lead=0.8, scatter=0.25, stand=0.9, stand_spread=0.8, reach=1.9, reach_grow=0.06, reach_max=2.7,
-                    splash=0.32, dmg=2.4, dmg_grow=0.1, dmg_max=3.4, knock=0.5),
+                    splash=0.32, dmg=1.9, dmg_grow=0.1, dmg_max=2.4, knock=0.5),   # tuned once (#51), frozen
         abilities=dict(
             unlock1=dict(name='WALK THE BAR', kind='runway', beats=4, dmg=4.0, knock=1.4, cool=0.4,
                          honk_r=0.9, honk_dmg=1.0, honk_knock=0.5, every_bars=5),   # struts a spotlit runway, honking
