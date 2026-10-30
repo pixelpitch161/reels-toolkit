@@ -308,29 +308,48 @@ class Look(base.Look):
     def over_ring(self, F, arr, depth):
         P, cam, k = self.P, F.cam, self.k
         t = F.t
+        col = P.COL[k]
+        tc = self.ta(t)
+        if self.T.T_FIGHT <= t:                                 # the bell blasts: a filled cone + sound-wave arcs
+            for t0, ox, oy, a_, ln, w0, w1 in self.BLASTS:
+                age = tc - t0
+                if not (0 <= age < 0.45):
+                    continue
+                kk = 1 - age / 0.45
+                reach = ln * min(1.0, 0.35 + age / 0.08)
+                hw0, hw1 = 0.5 * w0, 0.5 * (w0 + (w1 - w0) * reach / max(ln, 1e-6))
+                d = np.array([math.cos(a_), math.sin(a_)])
+                nn = np.array([-d[1], d[0]])
+                o = np.array([ox, oy])
+                quad = [o + nn * hw0, o + d * reach + nn * hw1, o + d * reach - nn * hw1, o - nn * hw0]
+                sp = cam.wp(S.to_world(np.array([q[0] for q in quad]), np.array([q[1] for q in quad]),
+                                       np.full(4, R * 0.9)))
+                arr = blend(arr, _mask([sp]), np.clip(col * 0.55 + 140, 0, 255), 0.42 * kk)
+                core = [o + nn * hw0 * 0.4, o + d * reach * 0.8 + nn * hw1 * 0.3, o + d * reach * 0.8 - nn * hw1 * 0.3,
+                        o - nn * hw0 * 0.4]
+                sp2 = cam.wp(S.to_world(np.array([q[0] for q in core]), np.array([q[1] for q in core]),
+                                        np.full(4, R * 0.9)))
+                arr = blend(arr, _mask([sp2]), WHITE, 0.45 * kk)
+                for j in range(3):                              # arcs rolling out along the cone
+                    s_ = ((age / 0.45 * 1.6 + j / 3.0) % 1.0) * reach
+                    hw = hw0 + (hw1 - hw0) * s_ / max(reach, 1e-6)
+                    ang = math.atan2(hw, max(s_, 0.05))
+                    th = np.linspace(-ang, ang, 9)
+                    rr = math.hypot(s_, hw)
+                    Z = np.stack([o[0] + rr * np.cos(a_ + th), o[1] + rr * np.sin(a_ + th), np.full(9, R)], 1)
+                    spa = cam.wp(S.to_world(Z[:, 0], Z[:, 1], Z[:, 2]))
+                    arr = blend(arr, _mask([], [spa], 3), INK, 0.4 * kk)
+                    arr = blend(arr, _mask([], [spa], 1), WHITE, 0.95 * kk)
         rw = self.row(t)
+        fade = 1.0
+        if rw is None and P.T_KO <= t < P.T_KO + 0.6 and 'DRILL' in P.RUN:   # the wall holds at the K.O., fading
+            rw = P.RUN['DRILL'][P.sim_i(P.T_KO - 1e-3), k]
+            fade = 1 - (t - P.T_KO) / 0.6
         if rw is None:
             return arr, depth
-        col = P.COL[k]
-        lc = np.clip(col * 0.5 + 130, 0, 255)
-        if not np.isnan(rw[4]):                                 # sound-wave arcs rolling out along the cone
-            o = np.array([rw[12], rw[13]])
-            a_ = rw[2]
-            ln, w0 = rw[5], rw[6]
-            for j in range(3):
-                s_ = ((rw[4] * 1.4 + j / 3.0) % 1.0) * ln
-                hw = 0.5 * (w0 + (self.spread - w0) * s_ / max(ln, 1e-6))
-                ang = math.atan2(hw, max(s_, 0.05))
-                th = np.linspace(-ang, ang, 9)
-                rr = math.hypot(s_, hw)
-                Z = np.stack([o[0] + rr * np.cos(a_ + th), o[1] + rr * np.sin(a_ + th), np.full(9, R)], 1)
-                sp = cam.wp(S.to_world(Z[:, 0], Z[:, 1], Z[:, 2]))
-                kk = (1 - rw[4]) * (1 - s_ / max(ln, 1e-6) * 0.5)
-                arr = blend(arr, _mask([], [sp], 3), INK, 0.45 * kk)
-                arr = blend(arr, _mask([], [sp], 1), WHITE, 0.9 * kk)
         if not np.isnan(rw[9]):                                 # the ghost sousaphones, a step a beat
             ax, sg, pos = int(rw[10]), rw[11], rw[9]
-            bob = abs(math.sin(math.pi * ((t - self.T.T_FIGHT) / self.T.BEAT)))
+            bob = abs(math.sin(math.pi * ((min(t, P.T_KO) - self.T.T_FIGHT) / self.T.BEAT)))
             n = 7
             items = []
             for j in range(n):
@@ -341,8 +360,8 @@ class Look(base.Look):
             for dz, w_ in sorted(items, key=lambda q: -q[0]):
                 c = cam.wp(w_[None])[0]
                 rp = R * cam.f / dz
-                rgb, a = _ghost(self.ghost_sprite(rp * 1.9), col, 0.72 * min(1.0, rw[15] * 8) *
-                                min(1.0, (1 - rw[15]) * 8))
+                al = 0.72 * min(1.0, rw[15] * 8) * min(1.0, (1 - rw[15]) * 8) * fade
+                rgb, a = _ghost(self.ghost_sprite(rp * 1.9), col, al)
                 arr = _paste(arr, rgb, a, c[0], c[1])
         return arr, depth
 

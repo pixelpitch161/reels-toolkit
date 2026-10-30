@@ -16,7 +16,10 @@ shriek over it (no obbligato: user, Oct 30). Original otherwise. C minor."""
 
 # ---------------------------------------------------------------- the fight
 FIGHTERS = ('FLUTE', 'SOUSAPHONE')       # first named = left corner (screen left)
-SEED = None                              # python -m ballfight search flute_vs_sousaphone -> the best fit
+SEED = 146                               # search 1..511 (8 fits, 46 % / 54 % decided): ranked 2nd (511 first), picked for
+                                         # the finish the idea hoped for: PICCOLO 48.1 s, COMPANY FRONT answers at 48.6 s
+                                         # and the ghost wall's hit is the K.O. (51.3 s; SOUSAPHONE on 11 HP, 4 lead
+                                         # changes; COMPANY FRONT lights in the HUD only: the 4 s caption rule)
 DMG_SCALE = 0.7                          # tuned (200 seeds: 52 % / 48 %, median K.O. 48.7 s); the SOUSAPHONE's own
                                          # numbers frozen in the roster
 DMG_SIDE = None                          # the FLUTE comes as built; a per-fighter handicap only if needed
