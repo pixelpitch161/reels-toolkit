@@ -2967,6 +2967,9 @@ class Fight:
         elif kind == 'flash_spin':                              # #53 (HORN FLASH): the horn spins, the blast sweeps
             if hasattr(B, 'march'):
                 self.start_flash(k, ab)
+        elif kind == 'company_front':                           # #53 (COMPANY FRONT): a wall of ghost sousaphones
+            if hasattr(B, 'march'):
+                self.start_front(k, ab)
 
     def ab_beam_charge(self, k, ab):
         """ability kind 'beam' (#29 v3): charge for `charge_beats` with the aim locked on the enemy's spot predicted
@@ -4766,6 +4769,7 @@ class Fight:
         B.march = None
         B.blast = None
         B.flash = None
+        B.front = None
         B.blade_len = float(B.w['base'])
 
     def drill_blocked(self, k):
@@ -4925,6 +4929,42 @@ class Fight:
                     self.ev('flash_hit', k, hx, hy)
             if u >= 1.0:
                 B.flash = None
+        Fr = B.front
+        if Fr is not None:
+            bt = self.R.beat
+            f = min(float(Fr['n']), max(0.0, (self.t - Fr['t0']) / bt))
+            i = min(Fr['n'] - 1, int(f))
+            fr = f - i
+            fr = fr * fr * (3 - 2 * fr)
+            pos = Fr['a'] + (Fr['b'] - Fr['a']) * ((i + fr) / Fr['n'])
+            if int(f) > Fr['i']:
+                Fr['i'] = int(f)
+                self.ev('front_step', k, Fr['i'], float(pos))
+            Fr['pos'] = pos
+            ax, sg = Fr['ax'], Fr['sg']
+            ab = Fr['ab']
+            if not Fr['hit'] and abs(O.p[ax] - pos) < R + ab.get('thick', 0.35) / 2:
+                Fr['hit'] = True
+                hx, hy = float(O.p[0]), float(O.p[1])
+                if self.damage(k, 1 - k, ab['dmg'], 'front', hx, hy):
+                    nn = np.zeros(2)
+                    nn[ax] = sg
+                    self.knock(1 - k, nn, ab['knock'])
+                self.ev('front_hit', k, hx, hy)
+            c_ = np.zeros(2)
+            c_[ax] = pos
+            bks = getattr(O, 'baskets', None)
+            if bks:
+                keep = []
+                for bk in bks:
+                    if abs(bk['cp'][ax] - pos) < R + ab.get('thick', 0.35) / 2:
+                        self.ev('trample_basket', k, bk['id'], float(bk['cp'][0]), float(bk['cp'][1]))
+                    else:
+                        keep.append(bk)
+                O.baskets[:] = keep
+            if self.t >= Fr['t1']:
+                B.front = None
+                self.ev('front_end', k)
 
     def start_flash(self, k, ab):
         B, O = self.balls[k], self.balls[1 - k]
@@ -4935,6 +4975,17 @@ class Fight:
                        len=float(B.blade_len) * ab.get('len_k', 1.0), w=float(ab['width']), dmg=ab['dmg'],
                        knock=ab['knock'], hit=False)
         self.ev('horn_flash', k, a0, t1, B.flash['len'])
+
+    def start_front(self, k, ab):
+        B, O = self.balls[k], self.balls[1 - k]
+        A = self.R.A
+        rel = O.p - B.p
+        ax = 0 if abs(rel[0]) >= abs(rel[1]) else 1
+        sg = 1.0 if rel[ax] >= 0 else -1.0
+        n = int(ab['beats'])
+        t1 = self.t + n * self.R.beat
+        B.front = dict(ab=ab, ax=ax, sg=sg, a=-sg * A, b=sg * A, t0=self.t, t1=t1, n=n, i=0, pos=-sg * A, hit=False)
+        self.ev('company_front', k, ax, sg, self.t, t1)
 
     # ------------------------------------------------------------------ record
     KMAX = 72
@@ -5385,6 +5436,10 @@ class Fight:
                     u_ = min(1.0, (self.t - Fl['t0']) / max(1e-9, Fl['t1'] - Fl['t0']))
                     Dr[j, 7] = Fl['a0'] + 2 * math.pi * u_ * Fl['dir']
                     Dr[j, 8] = Fl['len']
+                Fr = Bj.front
+                if Fr is not None:
+                    Dr[j, 9], Dr[j, 10], Dr[j, 11] = Fr['pos'], Fr['ax'], Fr['sg']
+                    Dr[j, 15] = (self.t - Fr['t0']) / max(1e-9, Fr['t1'] - Fr['t0'])
             rec['DRILL'].append(Dr)
         if 'SPOT' in rec:                                   # #51, only recorded when a fighter uses the 'spotlight' kind
             row = []
