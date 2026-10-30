@@ -96,6 +96,7 @@ def build_timeline(cfg, folder):
     T.T_REV = T.T_GLIDE + 1.05
     # harmony
     T.KEY_PC = pitch_class(cfg.KEY)
+    T.LINE_OVERRIDE = {}                                # #53: music.line_override windows (none unless a fighter asks)
     T.KEY_ROOT = 36 + T.KEY_PC                         # the key's root in the C2 octave (E -> 40, D -> 38)
     sc = getattr(cfg, 'SCALE', 'minor')
     T.SCALE = SCALES[sc] if isinstance(sc, str) else tuple(sc)
@@ -155,7 +156,16 @@ def _helpers(T):
         return (int(round(t / (T.BAR / per_bar))) - per_bar * T.LOOP_START) % n
 
     def line_at(name, t):
-        """the note of fighter `name`'s line (config LINES, else a default) at t: 8 notes a bar = 8ths, 4 = beats"""
+        """the note of fighter `name`'s line (config LINES, else a default) at t: 8 notes a bar = 8ths, 4 = beats;
+        inside a window registered with music.line_override (#53, opt-in) the override line's note instead"""
+        for t0, t1, tz, notes in T.LINE_OVERRIDE.get(name, ()):
+            if t0 - 1e-6 <= t < t1:
+                cur = None
+                for bt, m, d in notes:
+                    if tz + bt * T.BEAT <= t + 1e-6:
+                        cur = m
+                if cur is not None:
+                    return cur
         line = T.LINES[name] if name in T.LINES else default_line(name)
         per_bar = len(line) // len(T.LOOP)
         return line[loop_index(t, per_bar)]

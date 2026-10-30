@@ -245,6 +245,11 @@ bed = importlib.import_module(f'{__package__}.moods.{T.MOOD}').Bed(M)
 SOUNDS = [FIGHTER_MODULES.sound(NAMES[k], M, k) for k in (0, 1)]
 
 
+def line_override(k, t0, t1, tz, notes):
+    """#53 (opt-in): from t0 to t1, fighter k's line (T.line_at) plays `notes` instead: [(beat from tz, midi, beats)]"""
+    T.LINE_OVERRIDE.setdefault(NAMES[k], []).append((t0, t1, tz, list(notes)))
+
+
 def shared_events(mix):
     """the ring's own sounds from the run: ropes, ball clashes (the mood's), shield blocks, parries"""
     for e in EV:
@@ -319,6 +324,8 @@ def score():
     # ------------------------------------------------ the fight: the bed to the K.O. (tape-stopped there), the fighters
     bar_ko = int(T_KO // T.BAR)
     bed.fight(mix, bar_ko)
+    for s in SOUNDS:                                       # #53: a fighter can set up cross-fighter music first
+        s.prepare()                                        # (base: nothing), e.g. a line override for the other one
     for s in SOUNDS:
         s.play(mix)
     shared_events(mix)

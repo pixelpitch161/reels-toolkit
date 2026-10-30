@@ -219,6 +219,9 @@ class Sound:
         return self.M.colour(x, self.k, t, drive_k, **a)
 
     # the score, in the order kit.music calls it
+    def prepare(self):
+        """before any fighter's part: cross-fighter set-up (#53: a line override for the enemy); default: nothing"""
+
     def title_blast(self, mix, t):
         """its hit as its name slams in on the VS card (config TITLE_HITS)"""
 
