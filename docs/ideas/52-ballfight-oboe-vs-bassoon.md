@@ -47,3 +47,11 @@ settle it 🪈 Comment the next match-up 👇"
 ## Board history
 
 - Approved Oct 29 (ideas chat).
+- In production Oct 29 (session_01CzTfqc). BASSOON ported into the kit from #39 v4 (`kit/fighters/bassoon.py`; check
+  config `examples/bassoon_vs_barisax`: replay hash identical for 77/1/2/3/500, its layers pixel-identical in a matched
+  harness; noted in `docs/log/ballfight_studio.md`). New kit mood `heist`. Handicap tuned once and frozen: OBOE x0.6,
+  BASSOON x0.85 (300 seeds: 50 / 50, median K.O. 49.8 s). Seed 954 (8 fits in 1,787 runs, ranked first): BASSOON
+  wins at 51.6 s, 3 lead changes; ILL WIND at 41.7 s, MOUNTAIN KING at 42.2 s, so the Grieg quote plays a quarter-tone
+  flat against a sour twin. Olive vs forest read apart on the early sheet (cream-yellow vs mint glass, olive vs deep
+  green rims): no edge glow. All checks pass. Delivered `ballfight_oboe_vs_bassoon.mp4` for review.
+

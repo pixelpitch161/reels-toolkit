@@ -49,6 +49,7 @@ KIT_EPISODES = [
     ('projects/ballfight_euphonium_vs_trombone', [4604, 1, 2, 3, 500]),   # #48 (the #38 EUPHONIUM vs the #34 TROMBONE, crossover; Rules(swat_shells=True)), seed 4604
     ('projects/ballfight_altosax_vs_tenorsax', [621, 1, 2, 3, 500]),   # #51 (ALTO SAX spotlight / octave / altissimo / encore vs TENOR SAX crowd / runway / subtone / stagedive), seed 621
     ('projects/ballfight_flute_vs_clarinet', [3864, 1, 2, 3, 500]),   # #49 (the #32 v2 FLUTE vs the #37 CLARINET, crossover), seed 3864
+    ('projects/ballfight_oboe_vs_bassoon', [954, 1, 2, 3, 500]),   # #52 (the #37 OBOE vs the #39 BASSOON, crossover; sides swapped), seed 954
 ]
 CODE = r'''
 import hashlib, sys
