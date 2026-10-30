@@ -123,6 +123,11 @@ the stands); weapon kind `crowd` (CROWD PLEASER: every bar a pose + honk and the
 nearest rope, reaching only so far into the ring; hype grows per landed volley) with ability kinds `runway` (WALK THE
 BAR: a strut across the ring, honking), `subtone` (a hush, then one volley twice as hard) and `stagedive` (STAGE DIVE:
 into the crowd, then fired back as a cannonball). Recorded as SPOT / CROWD / THROWS (see the sections).
+#53 (opt-in): weapon kind `drill` (DRILL SET: the only marcher - every 2 bars a crisp straight drill path across the ring,
+one step on the grid each, trampling the enemy and its baskets on the way, then a halt and a huge bell blast straight
+ahead; the blast grows per landed hit) with ability kinds `flash_spin` (HORN FLASH: the horn spins 360 deg, its blast
+sweeping all round) and `company_front` (COMPANY FRONT: a wall of ghost sousaphones marches rope to rope across the whole
+ring, a step a beat). Recorded as DRILL (see the section).
 The run records every frame (30 fps) for the renderer and every event (hits, blocks, parries, ropes, volleys,
 abilities, level-ups, the K.O.) for the soundtrack and the captions. Seeded: same seed, same fight."""
 import math
@@ -4728,6 +4733,178 @@ class Fight:
                                        hit=False, name=ab['name'], t0=self.t, slow=None))
                 self.ev('dive_land', k, float(B.p[0]), float(B.p[1]))
 
+    # ------------------------------------------------------------------ #53: DRILL SET (opt-in weapon kind 'drill')
+    # The sousaphone is the only marcher: it never glides. Every `every` beats (`off16` 16ths after the bar line; haste
+    # divides it) it marches a drill set: `steps` crisp steps of `step16` 16ths each (haste divides that too, at least 1),
+    # every footfall ON the grid, along one straight line toward the enemy's spot predicted `lead` x its motion to the
+    # blast (+-`jitter` deg, seeded) - `span` long at most, stopping a radius short of the ropes and, with `stop` set,
+    # `stop` short of that spot (but marching at least `min_len`), so the halt faces the enemy for the blast. Whatever is
+    # in the line is trampled: the set is MARCHING the whole way (knockback doesn't move it, it doesn't give way in a clash) and tramples
+    # what it meets: the enemy on contact (`trample_dmg`, knocked with `trample_knock`: `trample_fwd` of it on ahead along
+    # the line, the rest out of it sideways; at most once every `cool` s) and every enemy basket within `basket_r` of its rim (gone: the striker drops new ones as usual).
+    # `halt16` 16ths after the last footfall it fires the bell blast straight ahead along the line: a cone from the bell
+    # `blade_len` long (`base`, +`grow` per landed hit - trample or blast - up to `max_len`), `width` wide at the bell and
+    # `spread` at its far end, live for `hold` s, hitting once (`dmg`, `knock`). Between sets it stands planted (a walker: it only slides when knocked); a set is
+    # called off if the marcher is stunned, held or in pieces (no blast).
+    # Ability kinds: 'flash_spin' (HORN FLASH): the whole horn spins 360 deg over `beats` beats, its bell blast (x`len_k`
+    # the blast length, `width`) sweeping all round; it hits once (`dmg`, `knock`, outward). 'company_front' (COMPANY
+    # FRONT): a full-width wall of ghost sousaphones marches across the whole ring from the marcher's side toward the
+    # enemy (along whichever axis parts them most), one step a beat for `beats` beats, rope to rope; the enemy it meets
+    # takes `dmg` and is knocked on ahead of it (`knock`); a shield blocks it; it tramples baskets as it goes.
+    # Events ('drill', k, x0, y0, x1, y1, t0, t_end, n_steps, kind 0 / 1 hasted), ('drill_step', k, i, x, y),
+    # ('drill_trample', k, x, y), ('trample_basket', k, basket id, x, y), ('drill_halt', k, x, y),
+    # ('blast', k, x, y, angle, len, width, spread), ('blast_hit', k, x, y), ('drill_off', k), ('horn_flash', k, a0, t_end, len),
+    # ('flash_hit', k, x, y), ('company_front', k, axis, sign, t0, t_end), ('front_step', k, i, pos),
+    # ('front_hit', k, x, y), ('front_end', k). Recorded as DRILL (see snap()).
+    def drill_setup(self, k):
+        B = self.balls[k]
+        B.walker = True
+        B.walking = False
+        B.march = None
+        B.blast = None
+        B.blade_len = float(B.w['base'])
+
+    def drill_blocked(self, k):
+        B = self.balls[k]
+        return self._stunned(k) or getattr(B, 'grabbed', False) or getattr(B, 'smashed', 0.0) > 0
+
+    def _drill_grow(self, k):
+        B = self.balls[k]
+        B.blade_len = min(B.w['max_len'], B.blade_len + B.w['grow'])
+
+    def drill_tick(self, k, k16):
+        B, O = self.balls[k], self.balls[1 - k]
+        w = B.w
+        R = self.R.R
+        s16 = self.R.beat / 4.0
+        M = B.march
+        if M is not None:
+            if self.drill_blocked(k):
+                B.march, B.walking = None, False
+                self.ev('drill_off', k)
+                return
+            if M['phase'] == 'march':
+                while M['i'] < M['n'] and self.t + self.R.DT + 1e-9 >= M['t_steps'][M['i']]:   # footfalls on the grid
+                    q = M['p0'] + (M['p1'] - M['p0']) * (M['i'] + 1) / M['n']
+                    M['i'] += 1
+                    self.ev('drill_step', k, M['i'], float(q[0]), float(q[1]))
+                if M['i'] >= M['n']:
+                    B.p = M['p1'].copy()
+                    M['phase'] = 'halt'
+                    B.walking = False
+                    self.ev('drill_halt', k, float(B.p[0]), float(B.p[1]))
+            if M['phase'] == 'halt' and self.t + self.R.DT + 1e-9 >= M['t_blast']:
+                self._drill_blast(k, M['u'])
+                B.march = None
+            return
+        if self.drill_blocked(k):
+            return
+        m = self.ab_mult(k)
+        main16 = int(round(4 * w['every']))
+        if (k16 - int(w.get('off16', 0))) % max(1, int(round(main16 / m))):
+            return
+        st16 = max(1, int(round(w['step16'] / m)))
+        n = int(w['steps'])
+        dur = n * st16 * s16
+        t_bl = dur + max(1, int(round(w.get('halt16', 2) / m))) * s16
+        lim = self.R.A - R
+        tgt = np.clip(O.p + O.v * t_bl * w.get('lead', 0.0), -lim, lim)    # the prediction stays inside the ropes
+        d = tgt - B.p
+        dist = float(np.hypot(*d))
+        u = d / dist if dist > 1e-6 else (B.v / (np.hypot(*B.v) + 1e-9))
+        j = math.radians(self.rng.uniform(-1.0, 1.0) * w.get('jitter', 0.0))
+        u = np.array([u[0] * math.cos(j) - u[1] * math.sin(j), u[0] * math.sin(j) + u[1] * math.cos(j)])
+        lim = self.R.A - R
+        ln = float(w['span'])                                   # stop a radius short of the ropes
+        if w.get('stop') is not None:                           # halt `stop` short of the enemy's spot at the blast
+            ln = min(ln, max(w.get('min_len', 0.0), dist - w['stop']))
+        for ax in (0, 1):
+            if abs(u[ax]) > 1e-9:
+                room = ((lim if u[ax] > 0 else -lim) - B.p[ax]) / u[ax]
+                ln = min(ln, max(0.0, room))
+        p1 = B.p + u * ln
+        B.v = u * self.R.V                                      # its heading
+        t_steps = [self.t + (i + 1) * st16 * s16 for i in range(n)]
+        t_blast = t_steps[-1] + max(1, int(round(w.get('halt16', 2) / m))) * s16
+        B.march = dict(phase='march', p0=B.p.copy(), p1=p1, u=u, n=n, i=0, t0=self.t, t1=t_steps[-1],
+                       t_steps=t_steps, t_blast=t_blast, last=-9.0, kind=int(m > 1.0))
+        B.walking = True
+        self.ev('drill', k, float(B.p[0]), float(B.p[1]), float(p1[0]), float(p1[1]), self.t, t_steps[-1], n,
+                B.march['kind'])
+
+    def _drill_blast(self, k, u):
+        B = self.balls[k]
+        w = B.w
+        o = B.p + u * (self.R.R + 0.04)
+        a = math.atan2(u[1], u[0])
+        B.blast = dict(o=o, d=u.copy(), len=float(B.blade_len), w=float(w['width']), w1=float(w.get('spread', w['width'])),
+                       t0=self.t, t1=self.t + w.get('hold', 0.2), hit=False)
+        self.ev('blast', k, float(o[0]), float(o[1]), a, float(B.blade_len), float(w['width']), B.blast['w1'])
+
+    def _capsule_hit(self, o, d, ln, wd, p, wd1=None):
+        """a beam from o along d, `ln` long, `wd` wide at o widening to `wd1` at its far end (a cone; None = `wd`)"""
+        rel = p - o
+        s_ = min(ln, max(0.0, float(rel @ d)))
+        off = rel - d * s_
+        w_ = wd if wd1 is None else wd + (wd1 - wd) * s_ / max(ln, 1e-9)
+        return float(np.hypot(*off)) < self.R.R + w_ / 2, off
+
+    def _trample_baskets(self, k, c, r):
+        O = self.balls[1 - k]
+        bks = getattr(O, 'baskets', None)
+        if not bks:
+            return
+        keep = []
+        for bk in bks:
+            if float(np.hypot(*(bk['cp'] - c))) < r:
+                self.ev('trample_basket', k, bk['id'], float(bk['cp'][0]), float(bk['cp'][1]))
+            else:
+                keep.append(bk)
+        O.baskets[:] = keep
+
+    def drill_step(self, k, dt):
+        B, O = self.balls[k], self.balls[1 - k]
+        w = B.w
+        R = self.R.R
+        M = B.march
+        if M is not None and M['phase'] == 'march':
+            # position: one eased step per footfall (lift, swing, plant), all along the one line
+            s16 = (M['t1'] - M['t0']) / M['n']
+            f = min(float(M['n']), max(0.0, (self.t - M['t0']) / max(1e-9, s16)))
+            i = min(M['n'] - 1, int(f))
+            fr = f - i
+            fr = fr * fr * (3 - 2 * fr)
+            B.p = M['p0'] + (M['p1'] - M['p0']) * ((i + fr) / M['n'])
+            rel = O.p - B.p
+            dist = float(np.hypot(*rel))
+            if dist < 2 * R + 0.04 and self.t - M['last'] >= w['cool']:
+                M['last'] = self.t
+                side = np.array([-M['u'][1], M['u'][0]])
+                if float(side @ rel) < 0:
+                    side = -side
+                hx, hy = (B.p + rel / max(dist, 1e-6) * R).tolist()
+                if self.damage(k, 1 - k, w['trample_dmg'], 'trample', hx, hy):
+                    fw = w.get('trample_fwd', 0.3)                # bulldozed on ahead (fw) / out of the line
+                    self.knock(1 - k, fw * M['u'] + (1 - fw) * side, w['trample_knock'])
+                    self._drill_grow(k)
+                self.ev('drill_trample', k, hx, hy)
+            self._trample_baskets(k, B.p, R + w.get('basket_r', 0.2))
+        Bl = B.blast
+        if Bl is not None:
+            if not Bl['hit']:
+                hit, off = self._capsule_hit(Bl['o'], Bl['d'], Bl['len'], Bl['w'], O.p, Bl['w1'])
+                if hit:
+                    Bl['hit'] = True
+                    dist = float(np.hypot(*off))
+                    n = off / dist if dist > 1e-6 else -Bl['d']
+                    hx, hy = (O.p - n * R).tolist()
+                    if self.damage(k, 1 - k, w['dmg'], 'blast', hx, hy):
+                        self.knock(1 - k, Bl['d'] + 0.3 * n, w['knock'])
+                        self._drill_grow(k)
+                    self.ev('blast_hit', k, hx, hy)
+            if self.t >= Bl['t1']:
+                B.blast = None
+
     # ------------------------------------------------------------------ record
     KMAX = 72
 
@@ -5154,6 +5331,25 @@ class Fight:
                 if getattr(Bj, 'walker', False):
                     Wk[j, 3] = Bj.blade_len
             rec['WALK'].append(Wk)
+        if 'DRILL' in rec:                                  # #53, only recorded when a fighter uses the 'drill' kind
+            Dr = np.full((2, 16), np.nan)
+            for j, Bj in enumerate((B0, B1)):
+                if not hasattr(Bj, 'march'):
+                    continue
+                M = Bj.march
+                Dr[j, 0] = 0.0 if M is None else (1.0 if M['phase'] == 'march' else 2.0)
+                if M is not None:
+                    Dr[j, 1] = (self.t - M['t0']) / max(1e-9, M['t1'] - M['t0'])
+                    Dr[j, 2] = math.atan2(M['u'][1], M['u'][0])
+                    Dr[j, 14] = M['i']
+                Dr[j, 3] = Bj.blade_len
+                Bl = Bj.blast
+                if Bl is not None:
+                    Dr[j, 4] = (self.t - Bl['t0']) / max(1e-9, Bl['t1'] - Bl['t0'])
+                    Dr[j, 5], Dr[j, 6] = Bl['len'], Bl['w']
+                    Dr[j, 12], Dr[j, 13] = Bl['o']
+                    Dr[j, 2] = math.atan2(Bl['d'][1], Bl['d'][0])
+            rec['DRILL'].append(Dr)
         if 'SPOT' in rec:                                   # #51, only recorded when a fighter uses the 'spotlight' kind
             row = []
             for Sp in self.spots:
@@ -5362,6 +5558,12 @@ class Fight:
         n16c = k16_0
         if rec is not None and crowders:
             rec['CROWD'], rec['THROWS'] = [], []
+        drillers = [k for k, B in enumerate(self.balls) if B.w['kind'] == 'drill']        # #53 (opt-in)
+        for k in drillers:
+            self.drill_setup(k)
+        n16d = k16_0
+        if rec is not None and drillers:
+            rec['DRILL'] = []
         self.t = R.t_fight
         f0 = int(round(R.t_fight * R.FPS))
         step = 0
@@ -5536,6 +5738,11 @@ class Fight:
                 n16c += 1
                 for k in crowders:
                     self.crowd_tick(k, k16c_)
+            if drillers and self.t + 1e-9 >= n16d * s16:        # #53: drill sets on the 16th grid (haste divides it)
+                k16d_ = n16d - k16_0
+                n16d += 1
+                for k in drillers:
+                    self.drill_tick(k, k16d_)
             for k, B in enumerate(self.balls):
                 B.shield = max(0.0, B.shield - dt)
                 B.haste = max(0.0, B.haste - dt)
@@ -5627,6 +5834,8 @@ class Fight:
                 self.spot_step(k, dt)
             for k in crowders:                                   # #51: pose ends, throws flying + landing, strut, dive
                 self.crowd_step(k, dt)
+            for k in drillers:                                   # #53: the march, tramples, the blast, HORN FLASH, COMPANY FRONT
+                self.drill_step(k, dt)
             if getattr(self, 'notes', None):                     # #42: the whole notes roll (and land)
                 self.notes_step(dt)
             if getattr(self, 'splinters', None):                 # #44: GUITAR SMASH's splinters
