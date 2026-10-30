@@ -58,6 +58,7 @@ EXTRA = [
     ('CONTRABASS', 'contrabass_lowpoly', 'ball', (28, 60), 0, 1.2),   # #47 BALLFIGHT: modern 3/4 double bass (no bow; x1.2 so it reads bigger than the CELLO, whose sprite includes its bow) + arco / pizz / slap voice (voice(): pizz < 0.5 s, else arco)
     ('ALTO SAX', 'altosax_lowpoly', 'ball', (49, 81), 0, 0.94),     # #51 BALLFIGHT: the alto rebuilt from Commons photos (tubes x1.45 for sprites; x0.94 so the TENOR reads bigger) + the alto's bright voice
     ('TENOR SAX', 'tenorsax_lowpoly', 'ball', (44, 76), 0, 1.06),   # #51 BALLFIGHT: modern tenor from Commons photos (the neck's hump; tubes x1.4) + husky honking voice
+    ('SOUSAPHONE', 'sousaphone_lowpoly', 'ball', (28, 58), 20, 1.12),   # #53 BALLFIGHT: marching sousaphone from Commons photos (wrap, gooseneck, white fiberglass bell; tubes x1.45; yaw 20 so the bell shows its throat and the wrap; x1.12: the biggest in the band) + punchy marching voice
 ]
 DRUM_KEYS = (36, 38, 41, 45, 48, 49)    # kick, snare, floor / low / high tom, crash
 _MODS = {}
