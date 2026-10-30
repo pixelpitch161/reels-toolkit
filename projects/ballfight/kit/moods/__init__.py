@@ -7,5 +7,7 @@ clash, ko, stinger, after_ko, victory, last_bars) and its own buses, reverb and 
     stadium_rock     #44 Electric vs Acoustic: minor arena rock in two arrangements that follow the leader (plugged:
                      fuzz rhythm guitar, pick bass, stadium kit; unplugged: strum shimmer, upright bass, hand percussion),
                      loudness-matched, crossfaded over a beat at each lead change; config PLUGGED names the plugged side
+    heist            #52 Oboe vs Bassoon: a sneaky minor heist caper (brushes, rim clicks, walking upright, pizzicato,
+                     muted vibes, tremolo tension; no woodwinds of its own)
     mambo            #50 Trumpet vs Trombone: minor big-band mambo (montuno, tumbao, congas, timbales, cowbell, low sax pad)
 A new mood: copy one, keep its section methods, change the instruments and parts (or port an older episode's bed)."""
