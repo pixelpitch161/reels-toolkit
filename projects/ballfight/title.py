@@ -19,6 +19,11 @@ Opt-in (#38): `timeline.TITLE_LINES = {name: (line 1, line 2)}` stacks a long na
 scale that fits the longest; e.g. BASS / CLARINET at 6 instead of BASS CLARINET at 4), and
 `timeline.TITLE_BALLS = [(cx, cy, r), (cx, cy, r)]` moves the big balls to make room. #40: TITLE_LINES may also name
 fighter B (two lines at the bottom, the lower one where a one-line name sits). Without them the card draws as before.
+Opt-in (#54): `timeline.MIDDLE = (word, angle)` replaces VS with another word (e.g. 'REMATCH') turned `angle` degrees
+anticlockwise ('divider': along the diagonal crack), gold, at the biggest scale whose turned letters (nearest-neighbour,
+so the pixels stay crisp) fit the safe zone, out of the button column and clear of both names (centred on the crack,
+slid along it a little if that lets it grow); it slams in, cracks the
+divider, streaks and dusts along its own direction. Without MIDDLE every card draws exactly as before.
 
 Everything is screen space at the internal resolution (W x H) and deterministic in t.
 
@@ -67,6 +72,8 @@ def _layout():
     (shifted left in 10 px steps if it doesn't fit centred); VS on the divider. #30: BAGPIPES 6 @ (180, 134),
     ACCORDION 5 @ (160, 468)"""
     out = {'VS': dict(scale=12, cx=180, cy=300, side=-1)}             # the largest letters, on the divider
+    if getattr(T, 'MIDDLE', None):                                   # #54 (opt-in): another word, turned
+        out['VS'] = None                                             # (fitted below, once the names are placed)
     lines = getattr(T, 'TITLE_LINES', {}).get(NAME_A)
     if lines:                                                        # #38 (opt-in): a long name on two lines
         sa = min(_fit_scale(ln, 320) for ln in lines)
@@ -94,6 +101,68 @@ def _layout():
     cxb = 180 if 180 + wb / 2 + rb <= 300 else int((300 - wb / 2 - rb) // 10 * 10)
     out[NAME_B] = dict(scale=sb, cx=cxb, cy=int(min(468, 500 - hb / 2 - rb - 3)), side=1)
     return out
+
+
+# ---------------------------------------------------------------- #54 (opt-in): a turned middle word
+DIVIDER_DEG = math.degrees(math.atan2(470.0 - 170.0, 360.0))        # the crack's own angle (39.8 deg anticlockwise)
+
+
+def rotate_mask(m, deg, size=None):
+    """a bool mask turned `deg` anticlockwise about its centre, nearest-neighbour (crisp pixel letters); `size`
+    (h, w) fixes the output frame so masks of one word line up"""
+    a = math.radians(deg)
+    ca, sa = math.cos(a), math.sin(a)
+    h, w = m.shape
+    if size is None:
+        size = (int(math.ceil(abs(h * ca) + abs(w * sa))) + 2, int(math.ceil(abs(w * ca) + abs(h * sa))) + 2)
+    ho, wo = size
+    yy, xx = np.mgrid[0:ho, 0:wo].astype(np.float64)
+    dx, dy = xx - (wo - 1) / 2, yy - (ho - 1) / 2
+    u = dx * ca - dy * sa + (w - 1) / 2                              # back into the word's own frame
+    v = dx * sa + dy * ca + (h - 1) / 2
+    ui_, vi = np.round(u).astype(int), np.round(v).astype(int)
+    ok = (ui_ >= 0) & (ui_ < w) & (vi >= 0) & (vi < h)
+    out = np.zeros((ho, wo), bool)
+    out[ok] = m[vi[ok], ui_[ok]]
+    return out
+
+
+def _fit_middle(words):
+    """the middle word's layout: centred on the crack's centre, the biggest scale (<= 12) whose turned letters, outline
+    and drop shadow stay inside the safe zone, out of the button column and clear of both names"""
+    from reelkit.config import SAFE_BUTTONS
+    word, deg = T.MIDDLE
+    deg = DIVIDER_DEG if deg in (None, 'divider') else float(deg)
+    cx, cy = 180.0, 320.0                                            # the crack's centre (crack_pts)
+    keep = np.zeros((H, W), bool)                                    # allowed pixels
+    x0, y0, x1, y1 = SAFE
+    keep[y0:y1, x0:x1] = True
+    keep[SAFE_BUTTONS[1]:, SAFE_BUTTONS[0]:] = False
+    for nm in (NAME_A, NAME_B):                                      # the names' boxes (+ outline, + a little air)
+        sp = words[nm]
+        wn = sp.get('w', text_mask(nm, sp['scale']).shape[1])
+        hn = sp.get('h', 7 * sp['scale'])
+        rn = max(2, int(round(sp['scale'] * 0.6))) + 4
+        keep[max(0, int(sp['cy'] - hn / 2 - rn)):int(sp['cy'] + hn / 2 + rn),
+             max(0, int(sp['cx'] - wn / 2 - rn)):int(sp['cx'] + wn / 2 + rn)] = False
+    a = math.radians(deg)
+    for sc in range(12, 1, -1):
+        m, o, hi, r = word_masks(word, sc, 1.0, deg)
+        hm, wm = o.shape
+        ys, xs = np.nonzero(o)
+        for sl in sorted(range(-40, 41, 4), key=abs):                # slide along the word's direction if that helps
+            px, py = cx + sl * math.cos(a), cy - sl * math.sin(a)
+            X0, Y0 = int(round(px - wm / 2)), int(round(py - hm / 2))
+            ok = True
+            for ddx, ddy in ((0, 0), (3, 4)):                        # the outline and its drop shadow
+                X, Y = xs + X0 + ddx, ys + Y0 + ddy
+                if X.min() < 0 or Y.min() < 0 or X.max() >= W or Y.max() >= H or not keep[Y, X].all():
+                    ok = False
+                    break
+            if ok:
+                return dict(scale=sc, cx=px, cy=py, side=-1, word=word, ang=deg, w=text_mask(word, sc).shape[1],
+                            h=7 * sc)
+    raise ValueError(f'MIDDLE {word!r} does not fit the diagonal')
 
 
 WORDS = _layout()
@@ -524,8 +593,9 @@ def draw_big_ball(layer, alpha, k, cx, cy, rp, glow, col):
 
 
 # ---------------------------------------------------------------- words
-def word_masks(text, scale, k):
-    """(fill, outline, highlight) bool masks of a pixel-font word at integer scale, resized by k (nearest)"""
+def word_masks(text, scale, k, ang=0.0):
+    """(fill, outline, highlight) bool masks of a pixel-font word at integer scale, resized by k (nearest); #54: turned
+    `ang` degrees anticlockwise (nearest, before the outline, so the outline stays even)"""
     base = text_mask(text, scale)
     if abs(k - 1) > 1e-3:
         h0, w0 = base.shape
@@ -536,15 +606,22 @@ def word_masks(text, scale, k):
     else:
         m = base
     r = max(2, int(round(scale * 0.6 * k)))
-    o = dilate(m, r)
     gh = max(1, m.shape[0] // 7 * 2)                                 # the top two font rows: a highlight
     hi = np.zeros_like(m)
     hi[:gh] = m[:gh]
+    if ang:
+        pad = 2 * r + 2
+        mr = rotate_mask(m, ang)
+        size = (mr.shape[0] + 2 * pad, mr.shape[1] + 2 * pad)
+        m, hi = rotate_mask(m, ang, size), rotate_mask(hi, ang, size)
+        o = dilate(m, r)
+        return m, o, hi, 0                                           # (outline already inside the frame)
+    o = dilate(m, r)
     return m, o, hi, r
 
 
-def stamp_word(layer, alpha, text, scale, k, cx, cy, col, a=1.0, note=False):
-    m, o, hi, r = word_masks(text, scale, k)
+def stamp_word(layer, alpha, text, scale, k, cx, cy, col, a=1.0, note=False, ang=0.0):
+    m, o, hi, r = word_masks(text, scale, k, ang) if ang else word_masks(text, scale, k)
     hm, wm = m.shape
     x0, y0 = int(round(cx - wm / 2)), int(round(cy - hm / 2))
     for mask, c, ox, oy, rr in ((o, INK * 0.5, 3, 4, r), (o, INK, 0, 0, r), (m, col, 0, 0, 0),
@@ -558,7 +635,13 @@ def stamp_word(layer, alpha, text, scale, k, cx, cy, col, a=1.0, note=False):
         reg, ar = layer[ya:yb, xa:xb], alpha[ya:yb, xa:xb]
         reg[sub] = reg[sub] * (1 - a) + c * a
         ar[sub] = np.maximum(ar[sub], a)
-    if note:                                                         # the settled word, for reelkit.safezone
+    if note and ang:                                                 # #54: the turned word as narrow strips
+        cols = np.nonzero(o.any(0))[0]
+        for c0 in range(cols.min(), cols.max() + 1, 12):
+            ys = np.nonzero(o[:, c0:c0 + 12].any(1))[0]
+            if len(ys):
+                ui._note(x0 + c0, y0 + ys.min(), x0 + min(c0 + 12, wm), y0 + ys.max() + 1, 'caption', text)
+    elif note:                                                       # the settled word, for reelkit.safezone
         ui._note(x0 - r, y0 - r, x0 + wm + r, y0 + hm + r, 'caption', text)
     return x0, y0, wm, hm
 
@@ -568,11 +651,31 @@ def _rng(j):
     return np.random.default_rng(3000 + j)
 
 
-def streaks(img, t, j, cx, cy, w, h, col):
+def _streaks_turned(img, u, j, cx, cy, w, h, col, ang):
+    """#54: streaks shooting out of both ends of a turned word, along its direction"""
+    a = math.radians(ang)
+    D, Nn = np.array([math.cos(a), -math.sin(a)]), np.array([math.sin(a), math.cos(a)])
+    rg = _rng(j)
+    c = np.array([cx, cy])
+    hot = np.clip(col * 0.5 + 140, 0, 255)
+    for i in range(14):
+        off = rg.uniform(-0.6, 0.6) * h
+        side = 1 if i % 2 else -1
+        s_in = w / 2 + 4 + 40 * u
+        L = rg.uniform(30, 80) * (1 - u)
+        for s_ in np.arange(s_in, s_in + L, 0.7):
+            x, y = (c + D * side * s_ + Nn * off).astype(int)
+            if 0 <= x < W and 0 <= y < H:
+                img[y, x] = img[y, x] * (0.35 + 0.65 * u) + hot * (0.65 * (1 - u))
+
+
+def streaks(img, t, j, cx, cy, w, h, col, ang=0.0):
     """motion streaks either side of a slamming word, shooting outward and fading over 0.25 s"""
     u = (t - T.TITLE[j][0] - 1.0 / T.FPS) / 0.25                 # from the frame after the slam (a clean seam)
     if not 0 <= u < 1:
         return
+    if ang:
+        return _streaks_turned(img, u, j, cx, cy, w, h, col, ang)
     rg = _rng(j)
     for i in range(14):
         y = int(cy + rg.uniform(-0.6, 0.6) * h)
@@ -585,17 +688,22 @@ def streaks(img, t, j, cx, cy, w, h, col):
             img[y, xa:xb] = img[y, xa:xb] * (0.35 + 0.65 * u) + np.clip(col * 0.5 + 140, 0, 255) * (0.65 * (1 - u))
 
 
-def dust(img, t, j, cx, cy, w, h):
-    """a dust burst along the word's base: puffs rolling outward, growing, fading over 0.6 s"""
+def dust(img, t, j, cx, cy, w, h, ang=0.0):
+    """a dust burst along the word's base: puffs rolling outward, growing, fading over 0.6 s (#54: along a turned
+    word's own base line)"""
     u = (t - T.TITLE[j][0] - 1.0 / T.FPS) / 0.6
     if not 0 <= u < 1:
         return
     rg = _rng(j + 10)
+    a_ = math.radians(ang)
+    D, Nn = np.array([math.cos(a_), -math.sin(a_)]), np.array([math.sin(a_), math.cos(a_)])
     for i in range(12):
         x0 = cx + rg.uniform(-0.55, 0.55) * w
         vx = (x0 - cx) / (w / 2 + 1e-6) * rg.uniform(40, 90)
         x = x0 + vx * (1 - (1 - u) ** 2) * 0.8
         y = cy + h * 0.5 + rg.uniform(-4, 4) - 18 * u
+        if ang:                                                      # the same puff in the word's turned frame
+            x, y = np.array([cx, cy]) + D * (x - cx) + Nn * (y - cy)
         rad = 3 + 12 * u * rg.uniform(0.7, 1.2)
         a = 0.55 * (1 - u) ** 1.5
         x0i, x1i = int(max(0, x - rad)), int(min(W, x + rad + 1))
@@ -676,7 +784,7 @@ def sparks(img, t):
     for i in range(20):
         a = rg.uniform(0, 2 * math.pi)
         v = rg.uniform(90, 220)
-        p0 = np.array([180.0, 300.0])
+        p0 = np.array([180.0, 300.0]) if not WORDS['VS'].get('ang') else np.array([WORDS['VS']['cx'], WORDS['VS']['cy']])
         p = p0 + v * u * np.array([math.cos(a), math.sin(a)]) + np.array([0, 160 * u * u])
         q = p - v * 0.03 * np.array([math.cos(a), math.sin(a)])
         k = 1 - u / 0.45
@@ -731,6 +839,9 @@ def draw(img, t):
                 for ln, dy in zip(spec['lines'], spec['dy']):
                     stamp_word(wl, wa, ln, spec['scale'], k, spec['cx'], spec['cy'] + dy * k, col, a,
                                note=settled and (spec['side'] == side or side == 0))
+            elif 'word' in spec:                                     # #54: the turned middle word
+                stamp_word(wl, wa, spec['word'], spec['scale'], k, spec['cx'], spec['cy'], col, a,
+                           note=settled and side == 0, ang=spec['ang'])
             else:
                 x0, y0, wm, hm = stamp_word(wl, wa, text, spec['scale'], k, spec['cx'], spec['cy'], col, a,
                                             note=settled and (spec['side'] == side or side == 0))
@@ -762,8 +873,12 @@ def draw(img, t):
             w_px = spec.get('w', len(text) * ADV * spec['scale'])
             h_px = spec.get('h', 7 * spec['scale'])
             light(out, t, j, spec['cx'] + sx, spec['cy'] + sy, col)
-            streaks(out, t, j, spec['cx'] + sx, spec['cy'] + sy, w_px, h_px, col)
-            dust(out, t, j, spec['cx'] + sx, spec['cy'] + sy, w_px, h_px)
+            if spec.get('ang'):                                      # #54: along the turned word
+                streaks(out, t, j, spec['cx'] + sx, spec['cy'] + sy, w_px, h_px, col, spec['ang'])
+                dust(out, t, j, spec['cx'] + sx, spec['cy'] + sy, w_px, h_px, spec['ang'])
+            else:
+                streaks(out, t, j, spec['cx'] + sx, spec['cy'] + sy, w_px, h_px, col)
+                dust(out, t, j, spec['cx'] + sx, spec['cy'] + sy, w_px, h_px)
         sparks(out, t)
     out = np.clip(out, 0, 255)
     return out.astype(np.uint8) if u8 else out
@@ -781,3 +896,7 @@ def ui_tag(layer, alpha):
         sub = layer[y0 - rr:y0 - rr + mh, x0 - rr:x0 - rr + mw]
         sub[mask] = c
         alpha[y0 - rr:y0 - rr + mh, x0 - rr:x0 - rr + mw][mask] = 1.0
+
+
+if WORDS['VS'] is None:                                              # #54: fitted once word_masks exists
+    WORDS['VS'] = _fit_middle(WORDS)
