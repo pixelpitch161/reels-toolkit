@@ -134,16 +134,52 @@ def build(g, t, ev, fx, s):
             fx.append(("wave", tuple(rim + [.04, .02, .05]), age, 0))
 
 
-# ---------------------------------------------------------------- sound: see the voice commit
+# ---------------------------------------------------------------- sound: the marching sousaphone's punch
+# Starts from the tuba video's voice (trumpet_lowpoly.brass + the extra fundamental, as the TUBA's bridge voice), made
+# for the street: brighter (the fiberglass bell throws the upper harmonics forward), a marcato attack - fast (12 ms),
+# a short accent bump that settles to ~80 %, and a tongued "tah" (a noisy upper-harmonic burst in the first 30 ms) -
+# and short notes cut off clean so the line stays tight with the drumline. `blat` (0..1): the bell-blast accent - a
+# bigger scoop and bump, a lip buzz (a fast rasp on the upper partials) and more top; 0 = a plain marching bass note.
 from pp_framework import midi_hz, SR                 # noqa: E402
+
+
+def sousa_tone(f, dur, v, blat=0.0, bright=.9):
+    n = int((dur + .14) * SR)
+    t = np.arange(n) / SR
+    fr = f * (1 - (.018 + .05 * blat) * np.exp(-t / (.02 + .02 * blat)))         # the drop into the note
+    ph = 2 * np.pi * np.cumsum(fr) / SR
+    x = np.zeros(n)
+    tot = 0.0
+    br = bright + .5 * blat
+    for k in range(1, 40):
+        fk = f * k
+        if fk > 8000:
+            break
+        a = k ** -.8 * math.exp(-k / (4.0 + 7.0 * br * v))
+        x += a * np.sin(k * ph + .21 * k)
+        tot += a
+    x /= tot + 1e-9
+    buzz = np.zeros(n)
+    if blat:                                                                     # lip buzz on the upper partials
+        for k in range(5, 14):
+            buzz += np.sin(k * ph) / k
+        buzz *= (1 + np.sin(2 * np.pi * 38 * t)) * .5 * blat * .55
+    x = np.tanh((x + buzz) * (1.2 + 1.3 * blat)) / np.tanh(1.2 + 1.3 * blat)       # a little edge, more on a blat
+    body = np.sin(2 * np.pi * np.cumsum(fr) / SR)                                # the round low end (as the TUBA)
+    x = x + .38 * body
+    rel = .025 if dur < .3 else .05
+    env = np.minimum(1, t / .012) ** 1.2 * np.where(t < dur, 1, np.exp(-(t - dur) / rel))
+    env *= .8 + (.35 + .3 * blat) * np.exp(-t / .07)                               # the accent bump, settling
+    rng = np.random.default_rng(int(f * 7 + dur * 997) % 100003)
+    tah = np.convolve(rng.standard_normal(n), np.ones(6) / 6, 'same') - np.convolve(rng.standard_normal(n),
+                                                                                  np.ones(40) / 40, 'same')
+    x = x + tah * .16 * (1 + blat) * np.exp(-t / .012)                             # the tongued "tah"
+    return x * env * v * .8
 
 
 def synth(s, idx):
     nt, m, v, dur, tp, cs = s["ev"][idx]
-    x = T.brass(midi_hz(m), dur, v, **TU.TONE["fiberglass"])
-    t = np.arange(len(x)) / SR
-    body = np.sin(2 * np.pi * midi_hz(m) * t) * np.minimum(1, t / .03) * np.where(t < dur, 1, np.exp(-(t - dur) / .03))
-    return x + .35 * body * v
+    return sousa_tone(midi_hz(m), dur, v, blat=.25)
 
 
 if __name__ == "__main__":
