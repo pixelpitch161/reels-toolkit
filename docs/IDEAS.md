@@ -74,7 +74,7 @@ Each production session updates **its own row**: when it starts, sends a draft, 
 | 50 | [BALLFIGHT: Trumpet vs Trombone](ideas/50-ballfight-trumpet-vs-trombone.md) | review | session_01CzTfqd (2026-10-29) | v1 delivered with caption + tags (sheet sent first); seed 1001, TRUMPET wins 50.28 s with 1 HP; new mood `mambo`. | `ballfight_trumpet_vs_trombone.mp4` |
 | 51 | [BALLFIGHT: Alto Sax vs Tenor Sax](ideas/51-ballfight-alto-sax-vs-tenor-sax.md) | review | session_01CzTfqcfepqv4wWSk4ryE2g (2026-10-29) | Delivered: alto model rebuilt (`altosax_lowpoly`), tenor new (`tenorsax_lowpoly`), kinds spotlight / crowd, mood `dark_disco`; seed 621, ALTO SAX wins 49.18 s on 2 HP. | `ballfight_altosax_vs_tenorsax.mp4` |
 | 52 | [BALLFIGHT: Oboe vs Bassoon](ideas/52-ballfight-oboe-vs-bassoon.md) | review | session_01CzTfqc (2026-10-29) | Delivered Oct 29 for review: BASSOON ported from #39, new mood heist, seed 954 (bassoon wins 51.6 s, Grieg out of tune). | `ballfight_oboe_vs_bassoon.mp4` |
-| 53 | [BALLFIGHT: Flute vs Sousaphone](ideas/53-ballfight-flute-vs-sousaphone.md) | idea (approved, mood A) | — | Approved Oct 30, mood A (dark marching-band fight song). Viewer request; new SOUSAPHONE (model from Chrome photos). | — |
+| 53 | [BALLFIGHT: Flute vs Sousaphone](ideas/53-ballfight-flute-vs-sousaphone.md) | in production | session_01CzTfqa (2026-10-30) | Started: sousaphone model from Chrome photos, new kinds, dark_drumline port. | — |
 
 ## Other notes
 
