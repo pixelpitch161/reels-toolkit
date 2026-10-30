@@ -31,10 +31,10 @@ Episode sessions port a fighter when a crossover first needs it; those below are
   Grieg quote included, silent in #39 where nothing detunes). Check config `examples/bassoon_vs_barisax` (seed 77,
   #39's DMG_SCALE / DMG_SIDE / SERIES / SHARD_SEED / FX_SEED, LINES = #39's BASSOON_8THS): replay hash identical to
   #39's own sim for 77/1/2/3/500 (now in `tools/ballfight_replay_hash.py`); matched harness (#39 with the bari's drawn
-  layers, effects and the UI off; the kit with a stub bari, #39's beat pulse): 7 of 10 frames pixel-identical (corner
-  bob, mid-hop stretch, backstab slashes, STACCATO, landing squash, MOUNTAIN KING's dance, the champion's solo hop
-  region), the bassoon's own layers identical in all 10; the rest differ only in the bari's GROWL rope shake, its brass
-  shatter and faint canvas light on old claw marks at 47.0 s (marks themselves identical). Kit additions (additive,
+  layers, effects and the UI off; the kit with a stub bari, #39's beat pulse): 6 of 10 frames pixel-identical (corner
+  bob, mid-hop stretch, backstab slashes, STACCATO, landing squash, MOUNTAIN KING's dance), the bassoon's own layers
+  identical in all 10 (crook + swirl, the champion's solo hop); the other 4 differ only in the bari's GROWL rope shake
+  (2), its brass shatter (1) and faint canvas light on old claw marks at 47.0 s (the marks themselves identical). Kit additions (additive,
   defaults unchanged, replay guard identical): draw_ball squash / stretch via optional state keys `sx` / `sy`, an
   airborne depth bias `air_bias` and painter height `paint_h`, Look attribute `speed_lift`, HUD holds for `hook` /
   `mountain`. Not ported: #39 v2's leap over a swinging WRECKING BALL (waits for the BARI SAX port), #39's ska-punk bed.
