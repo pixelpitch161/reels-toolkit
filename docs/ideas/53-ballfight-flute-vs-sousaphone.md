@@ -4,7 +4,7 @@ Board row: `docs/IDEAS.md` (#53). Series rules: `docs/ballfight/RULES.md`. Make 
 (`projects/ballfight/README.md`, "Making an episode").
 
 ## 53. BALLFIGHT: Flute vs Sousaphone — APPROVED
-**Direction (user, Oct 30):** a viewer request from the TikTok comments (`docs/ideas/requests-2026-10-30-tiktok.md`:
+**Direction (user, Oct 30):** a viewer request from the TikTok comments (`docs/ideas/requests.md`:
 "Now put flute vs a sousaphone"). "Draft Flute vs Sousaphone. Make sure it uses chrome to get images for the
 Sousaphone"; approved with mood A (dark marching-band fight song). All BALLFIGHT series rules (VS title card without an
 episode tag, 3·2·1, ability-name captions, HUD ability list, colours, honest tuned fight, 61.0 s, loop point = file
