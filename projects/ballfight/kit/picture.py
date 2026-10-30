@@ -516,12 +516,18 @@ def draw_ball(arr, dep, cam, k, st, t):
     Pc = cam.to_cam(pw[None])[0]
     s = cam.proj(Pc[None])[0]
     rp = R * cam.f / Pc[2] * st['scale']
-    ri = int(round(rp))
+    sq = 'sx' in st or 'sy' in st                                    # #52: a look may squash / stretch it (#39 TIPTOE)
+    if sq:
+        sx_, sy_ = st.get('sx', 1.0), st.get('sy', 1.0)
+        s = np.array([s[0], s[1] + rp * (1 - sy_)])                          # squash about the bottom of the ball
+        ri = int(round(rp * max(sx_, sy_)))
+    else:
+        ri = int(round(rp))
     x0, y0 = int(round(s[0])) - ri - 2, int(round(s[1])) - ri - 2
     n = 2 * ri + 5
     yy, xx = np.mgrid[0:n, 0:n]
-    dx = (xx + x0 + 0.5 - s[0]) / rp
-    dy = (yy + y0 + 0.5 - s[1]) / rp
+    dx = (xx + x0 + 0.5 - s[0]) / (rp * sx_ if sq else rp)
+    dy = (yy + y0 + 0.5 - s[1]) / (rp * sy_ if sq else rp)
     d2 = dx * dx + dy * dy
     inside = d2 <= 1.0
     rim = inside & (d2 > (1 - 2.0 / rp) ** 2)
@@ -567,6 +573,8 @@ def draw_ball(arr, dep, cam, k, st, t):
     me = edge[sl]
     reg[me] = reg[me] * 0.2 + np.array([22, 14, 30]) * 0.8
     spec = inside & ((dx + 0.38) ** 2 + (dy + 0.5) ** 2 < (2.0 / rp) ** 2 + 0.014)
+    if st.get('air_bias'):                                                   # #52: airborne: over what it hops past (#39)
+        Pc = Pc - np.array([0, 0, st['air_bias']])
     reg[spec[sl]] = np.array([255, 252, 244])
     dreg[m | me] = Pc[2]
     return s, rp
@@ -631,6 +639,10 @@ def _hold(k, slot):
         return ab['dur_beats'] * T.BEAT
     if ab['kind'] in ('prelude', 'stampede'):        # #47 PRELUDE's bar of note-waves, THE ELEPHANT's charge
         return ab['beats'] * T.BEAT
+    if ab['kind'] == 'mountain':                     # #39 MOUNTAIN KING: for its dance
+        return sum(ab['seq16']) * T.BEAT / 4
+    if ab['kind'] == 'hook':                         # #39 BOCAL HOOK: until it hooks
+        return ab['open16'] * T.BEAT / 4 + 0.3
     if ab['kind'] == 'swan':                         # #47 SWAN SONG: from the rise to the landing
         return (ab['rise_beats'] + ab['glide_beats'] + ab['dive_beats']) * T.BEAT
     return 0.08
@@ -960,8 +972,9 @@ def post_fx(img, cam, t, fs, drawn):
     keep = [(s_[0], s_[1], rp * 1.7) for k, (s_, rp) in drawn.items()]
     img = MO.apply_dim(img, t, keep=keep)
     for k, (s_, rp) in drawn.items():
-        p1 = fighter(k, max(0.0, t - 0.06))['p']
-        s1 = cam.wp(S.to_world(p1[0], p1[1], R)[None])[0]
+        f1 = fighter(k, max(0.0, t - 0.06))
+        p1 = f1['p']
+        s1 = cam.wp(S.to_world(p1[0], p1[1], R + (f1['lift'] if LOOKS[k].speed_lift else 0.0))[None])[0]
         v = (s_[0] - s1[0], s_[1] - s1[1])
         if LOOKS[k].teleports and math.hypot(*v) > 25:                  # a teleport is not a dash: no speed lines
             v = (0.0, 0.0)
@@ -1068,8 +1081,8 @@ def render(f):
     for k, st in enumerate(fs):
         if not st['vis'] or st['scale'] < 0.05:
             continue
-        pw = S.to_world(st['p'][0], st['p'][1], R + st['lift'])
-        dz = cam.depth(pw)[0]
+        pw = S.to_world(st['p'][0], st['p'][1], st.get('paint_h', R + st['lift']))   # #52: (#39's hop: at rest height)
+        dz = cam.depth(pw)[0] - st.get('air_bias', 0.0)
         items.append((dz, 'ball', k))
         for dz_, pay in LOOKS[k].items_ball(F, st):
             items.append((dz_, 'look', (k, pay)))
