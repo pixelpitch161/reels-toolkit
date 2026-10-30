@@ -124,7 +124,7 @@ styles, ready for crossovers and a tournament bracket.
   `projects/ballfight_<a>_vs_<b>/`. If #28's engine additions (`pulse`, blade spin growth) aren't pushed yet, pull
   them first.
 - **Voices:** Pixel Pitch voices + models via `projects/which_instrument_wins/pp_bridge.py` (read-only use of the series).
-  Already in the bridge: TRUMPET, SAX, BAGPIPES, ACCORDION, TUBA, FLUTE, UKULELE, TROMBONE, HORN, HARP. Not yet (models
+  Already in the bridge: TRUMPET, SAX, BAGPIPES, ACCORDION, TUBA, FLUTE, UKULELE, TROMBONE, HORN, HARP, SOUSAPHONE (#53, `sousaphone_lowpoly`). Not yet (models
   exist in `series/instrument-history/`): TURNTABLES (`turntables60_lowpoly`), SYNTH (`synth60_lowpoly`), ACOUSTIC
   (`acoustic_lowpoly`), ORGAN (`organ60_lowpoly`): add a bridge entry in its own small commit (don't edit the series).
 - **No episode number on screen (user, Oct 27: "From now on, don't have the Ballfight # in the video").** New episodes
