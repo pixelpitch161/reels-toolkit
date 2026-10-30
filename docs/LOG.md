@@ -48,4 +48,5 @@ What each video taught us, one file per project in `docs/log/`. **Append your en
 | [`ballfight_euphonium_vs_trombone`](log/ballfight_euphonium_vs_trombone.md) | #48 BALLFIGHT: Euphonium vs Trombone (session_01CzTfqaiKkq, Oct 28) |
 | [`ballfight_altosax_vs_tenorsax`](log/ballfight_altosax_vs_tenorsax.md) | #51 BALLFIGHT: Alto Sax vs Tenor Sax (session_01CzTfqcfepqv4wWSk4ryE2g, Oct 29) |
 | [`ballfight_flute_vs_clarinet`](log/ballfight_flute_vs_clarinet.md) | #49 BALLFIGHT: Flute vs Clarinet (session_01CzTfqd, Oct 29) |
+| [`ballfight_oboe_vs_bassoon`](log/ballfight_oboe_vs_bassoon.md) | #52 BALLFIGHT: Oboe vs Bassoon (session_01CzTfqc, Oct 29) |
 - [#50 BALLFIGHT: Trumpet vs Trombone](log/ballfight_trumpet_vs_trombone.md)
