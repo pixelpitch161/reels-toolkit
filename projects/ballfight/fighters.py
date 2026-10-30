@@ -533,4 +533,21 @@ FIGHTERS = {
             low=dict(name='STAGE DIVE', kind='stagedive', leap_beats=1, surf_beats=1, speed=3.0, lead=0.6, hit_r=0.15,
                      dmg=10.0, knock=2.0, radius=1.4, ring_dmg=5.0, ring_knock=1.4)),   # into the crowd, fired back
         pp='TENOR SAX', register=(44, 76), idiom='honk'),
+    # ---- #53 BALLFIGHT: the smallest vs the biggest in the marching band (a viewer request). The SOUSAPHONE is the only
+    # marcher: it never glides; every 2 bars it marches a crisp straight drill path across the ring (8 steps on the grid),
+    # trampling whatever is in the way (the flute's baskets included), halts and fires a huge bell blast straight ahead.
+    # Model from Commons photos (series/instrument-history/sousaphone_lowpoly.py). Numbers before tuning.
+    'SOUSAPHONE': dict(
+        color=(210, 30, 60), dark=(120, 14, 32), corner='blue',       # marching crimson (series colour table, RULES)
+        view=(20, 14, 0),
+        weapon=dict(kind='drill', style='drill', name='DRILL SET',   # every 2 bars: 8 steps on a line, halt, bell blast
+                    every=8, off16=0, steps=8, step16=2, halt16=2, lead=0.6, jitter=6.0, span=5.0, stop=1.3, min_len=1.6,
+                    trample_dmg=3.0, trample_knock=1.3, trample_fwd=0.85, cool=0.5, basket_r=0.2,
+                    base=2.0, grow=0.12, max_len=3.6, width=0.5, spread=1.6, hold=0.25, dmg=10.0, knock=1.3),
+        abilities=dict(
+            unlock1=dict(name='HORN FLASH', kind='flash_spin', beats=1, len_k=1.0, width=0.5, dmg=5.0, knock=1.2,
+                         every_bars=5),                                   # the horn spins 360 deg, the blast sweeps round
+            unlock2=dict(name='DOUBLE TIME', kind='haste', mult=2.0, dur_beats=8, every_bars=6),   # marches twice as fast
+            low=dict(name='COMPANY FRONT', kind='company_front', beats=8, thick=0.35, dmg=14.0, knock=1.8)),   # a wall of
+        pp='SOUSAPHONE', register=(28, 58), idiom='march'),                # ghost sousaphones, rope to rope
 }
