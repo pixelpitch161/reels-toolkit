@@ -11,7 +11,7 @@ from .episode import current
 
 # every per-frame array the engine records (any fighter); converted to numpy when they're rectangular
 REC_KEYS = ('P', 'V', 'TH', 'BL', 'FR', 'NV', 'HP', 'LV', 'SH', 'HA', 'SPIN', 'OM', 'K', 'EXT', 'SLW', 'CRV', 'DET',
-            'TUNE', 'SNIP', 'ROLL', 'GRAB', 'WALK', 'DRILL')
+            'TUNE', 'SNIP', 'ROLL', 'GRAB', 'WALK', 'DRILL', 'ECHO_G', 'ECHO_N', 'FLICK')   # #54: HORN v3 (#34 v5)
 
 
 def _T():

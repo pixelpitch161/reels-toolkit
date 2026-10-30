@@ -140,6 +140,10 @@ class Look:
         """decals after the rings (e.g. a slam's darkening); returns Ic"""
         return Ic
 
+    def canvas_overlay(self, F, arr):
+        """lines drawn on the lit canvas before the back ropes (#54: the horn's fading copper thread); returns arr"""
+        return arr
+
     # ---------------------------------------------------------------- the painter pass, effects over the ring
     def items_ball(self, F, st):
         """[(depth, payload)] drawn in the painter pass, queued right after its ball (its weapon)"""

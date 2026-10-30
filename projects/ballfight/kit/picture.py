@@ -645,6 +645,8 @@ def _hold(k, slot):
         return ab['open16'] * T.BEAT / 4 + 0.3
     if ab['kind'] == 'swan':                         # #47 SWAN SONG: from the rise to the landing
         return (ab['rise_beats'] + ab['glide_beats'] + ab['dive_beats']) * T.BEAT
+    if ab['kind'] == 'flick':                        # #34 FINAL FLICK: through its wind-up (#54's HORN port)
+        return ab.get('wind_beats', 1) * T.BEAT
     return 0.08
 
 
@@ -1056,6 +1058,8 @@ def render(f):
         col = alb * Ic
         arr[ys, xs] = np.floor(col / 5 + BAYER_FULL[ys, xs, None]) * 5
         depth[ys, xs] = dc[ys, xs]
+    for Lk in LOOKS:                                                  # #54: lines on the canvas (the horn's thread)
+        arr = Lk.canvas_overlay(F, arr)
     fr.set_array(arr, depth)
 
     # ---------------- back ropes + posts
