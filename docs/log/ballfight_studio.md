@@ -25,3 +25,16 @@ Episode sessions port a fighter when a crossover first needs it; those below are
   CRISIS copies is drawn by the enemy's own look module bound to the euphonium's side (so in amber), copied kinds only;
   #38's copies of the bass clarinet (slap, twin, shadow) still sound as #38 played them, their pictures wait for the
   BASS CLARINET port. Not ported: #38's dark-drumline bed (a mood still to port) and the BASS CLARINET.
+- **BASSOON (#39 v4): ported by #52 Oboe vs Bassoon** (session_01CzTfqc, Oct 29) into `kit/fighters/bassoon.py`
+  (#39's TIPTOE / BOCAL HOOK / MOUNTAIN KING styles + render layers + its audio part, unchanged; the key-bound calls
+  follow the config's KEY, E minor = #39's notes; new: while OUT OF TUNE its notes play flat against a sour twin, the
+  Grieg quote included, silent in #39 where nothing detunes). Check config `examples/bassoon_vs_barisax` (seed 77,
+  #39's DMG_SCALE / DMG_SIDE / SERIES / SHARD_SEED / FX_SEED, LINES = #39's BASSOON_8THS): replay hash identical to
+  #39's own sim for 77/1/2/3/500 (now in `tools/ballfight_replay_hash.py`); matched harness (#39 with the bari's drawn
+  layers, effects and the UI off; the kit with a stub bari, #39's beat pulse): 7 of 10 frames pixel-identical (corner
+  bob, mid-hop stretch, backstab slashes, STACCATO, landing squash, MOUNTAIN KING's dance, the champion's solo hop
+  region), the bassoon's own layers identical in all 10; the rest differ only in the bari's GROWL rope shake, its brass
+  shatter and faint canvas light on old claw marks at 47.0 s (marks themselves identical). Kit additions (additive,
+  defaults unchanged, replay guard identical): draw_ball squash / stretch via optional state keys `sx` / `sy`, an
+  airborne depth bias `air_bias` and painter height `paint_h`, Look attribute `speed_lift`, HUD holds for `hook` /
+  `mountain`. Not ported: #39 v2's leap over a swinging WRECKING BALL (waits for the BARI SAX port), #39's ska-punk bed.
