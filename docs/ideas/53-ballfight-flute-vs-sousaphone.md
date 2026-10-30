@@ -48,7 +48,7 @@ bring up the rear. Post caption: "You asked for it 👀 Flute vs Sousaphone. Com
     brighter and punchier for marching, own commit; bridge entry.
   - New roster entry + `kit/fighters/sousaphone.py`; new kinds additive, own commits; every earlier episode replays
     identically. **Send `python -m ballfight preview SOUSAPHONE --vs FLUTE` before tuning.** Re-tune for 40–60 % wins
-    (handicaps only on the FLUTE side's numbers); honest seed search with `t_fight` = 2 bars. Kit `check` must pass.
+   ; honest seed search with `t_fight` = 2 bars. Kit `check` must pass.
 - **Effort:** ~50–65 min. Folder: `projects/ballfight_flute_vs_sousaphone/`.
 
 ## Board history
