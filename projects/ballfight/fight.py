@@ -2964,6 +2964,9 @@ class Fight:
             B.strut = None
             B.hush = None
             self.start_dive(k, ab)
+        elif kind == 'flash_spin':                              # #53 (HORN FLASH): the horn spins, the blast sweeps
+            if hasattr(B, 'march'):
+                self.start_flash(k, ab)
 
     def ab_beam_charge(self, k, ab):
         """ability kind 'beam' (#29 v3): charge for `charge_beats` with the aim locked on the enemy's spot predicted
@@ -4762,6 +4765,7 @@ class Fight:
         B.walking = False
         B.march = None
         B.blast = None
+        B.flash = None
         B.blade_len = float(B.w['base'])
 
     def drill_blocked(self, k):
@@ -4904,6 +4908,33 @@ class Fight:
                     self.ev('blast_hit', k, hx, hy)
             if self.t >= Bl['t1']:
                 B.blast = None
+        Fl = B.flash
+        if Fl is not None:
+            u = min(1.0, (self.t - Fl['t0']) / max(1e-9, Fl['t1'] - Fl['t0']))
+            a = Fl['a0'] + 2 * math.pi * u * Fl['dir']
+            d = np.array([math.cos(a), math.sin(a)])
+            o = B.p + d * (R + 0.04)
+            if not Fl['hit']:
+                hit, off = self._capsule_hit(o, d, Fl['len'], Fl['w'], O.p)
+                if hit:
+                    Fl['hit'] = True
+                    rel = O.p - B.p
+                    hx, hy = (O.p - rel / max(float(np.hypot(*rel)), 1e-6) * R).tolist()
+                    if self.damage(k, 1 - k, Fl['dmg'], 'flash', hx, hy):
+                        self.knock(1 - k, rel, Fl['knock'])
+                    self.ev('flash_hit', k, hx, hy)
+            if u >= 1.0:
+                B.flash = None
+
+    def start_flash(self, k, ab):
+        B, O = self.balls[k], self.balls[1 - k]
+        rel = O.p - B.p
+        a0 = math.atan2(rel[1], rel[0]) + math.pi              # starts facing away, so the sweep comes round
+        t1 = self.t + ab['beats'] * self.R.beat
+        B.flash = dict(t0=self.t, t1=t1, a0=a0, dir=1.0 if self.rng.uniform() < 0.5 else -1.0,
+                       len=float(B.blade_len) * ab.get('len_k', 1.0), w=float(ab['width']), dmg=ab['dmg'],
+                       knock=ab['knock'], hit=False)
+        self.ev('horn_flash', k, a0, t1, B.flash['len'])
 
     # ------------------------------------------------------------------ record
     KMAX = 72
@@ -5349,6 +5380,11 @@ class Fight:
                     Dr[j, 5], Dr[j, 6] = Bl['len'], Bl['w']
                     Dr[j, 12], Dr[j, 13] = Bl['o']
                     Dr[j, 2] = math.atan2(Bl['d'][1], Bl['d'][0])
+                Fl = Bj.flash
+                if Fl is not None:
+                    u_ = min(1.0, (self.t - Fl['t0']) / max(1e-9, Fl['t1'] - Fl['t0']))
+                    Dr[j, 7] = Fl['a0'] + 2 * math.pi * u_ * Fl['dir']
+                    Dr[j, 8] = Fl['len']
             rec['DRILL'].append(Dr)
         if 'SPOT' in rec:                                   # #51, only recorded when a fighter uses the 'spotlight' kind
             row = []
