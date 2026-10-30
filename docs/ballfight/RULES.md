@@ -2,7 +2,7 @@
 
 Read this for every BALLFIGHT episode, together with the episode's own file in `docs/ideas/` and `docs/PLAYBOOK.md`. Rules added later override earlier ones where they differ (each says when and why). Design history of the v2 attack redesign: `docs/ballfight/redesign-2026-10-24.md`.
 
-**Making an episode (Oct 27): use the episode kit.** A new episode is one config file (`episode.py`) run step by step with `python -m ballfight <step> <episode>`; fighters' looks and sounds live in `projects/ballfight/kit/fighters/`, moods in `kit/moods/`. A new fighter gets a `preview` clip sent to the user before tuning and rendering. How-to, commands and what goes where: `projects/ballfight/README.md`, "Making an episode". The rules below still hold; the kit applies the shared ones (card, count-in, beat sheet, HUD list, captions, loudness, loop).
+**Making an episode (Oct 27): use the episode kit.** A new episode is one config file (`episode.py`) run step by step with `python -m ballfight <step> <episode>`; fighters' looks and sounds live in `projects/ballfight/kit/fighters/`, moods in `kit/moods/`. No approval waits: see "No approval waits" below. How-to, commands and what goes where: `projects/ballfight/README.md`, "Making an episode". The rules below still hold; the kit applies the shared ones (card, count-in, beat sheet, HUD list, captions, loudness, loop).
 
 ## Series rules (first written for #29–#35; standing rules since)
 **Direction (user, Oct 23):** #27 Guitar vs Piano "turned out amazing and I think will be a winner". Develop match-ups in
