@@ -46,7 +46,7 @@ the original rock 'n' roll honker). Post caption: "Alto or tenor? Sax players, s
     characteristic hump, a bigger bell), as a new file, own commit; a husky, honking voice, own commit; bridge entry.
   - New kinds `spotlight`, `crowd` (+ the runway, the stage-dive launch) additive, own commits; every earlier episode
     replays identically. The crowd's throws must clearly come from the stands; the spotlight dims the arena only
-    locally. **Send `python -m ballfight preview` clips of both fighters before tuning.** Re-tune for 40–60 % wins; honest
+    locally. (No preview approval: the user dropped that step on Oct 30; see RULES.) Re-tune for 40–60 % wins; honest
     seed search with `t_fight` = 2 bars. Kit `check` must pass.
 - **Effort:** ~60–75 min (+ the alto model check / rebuild). Folder: `projects/ballfight_altosax_vs_tenorsax/`.
 
