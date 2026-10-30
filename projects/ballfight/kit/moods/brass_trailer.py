@@ -9,8 +9,8 @@ Strings, braams and taiko with NO brass of its own: the two brass fighters are t
 
 Config (opt-in, #54): `TRAILER = dict(sequel=True)` plays it darker and bigger, still with no brass: a contrabass octave
 under the ostinato's 8ths, a dark cello pad under every bar, braams on every second bar (longer, with a sub under them),
-the taiko ensemble from the start (big hits on 1 + 3, the roll every bar later), a war-drum fill into each loop, a
-double braam swell into the seam. Without it the bed is #34's, note for note (checked against #34's audio.py with the
+the taiko ensemble from the start (big hits on 1 + 3, the roll every bar later), a war-drum fill into each loop, the
+full trailer under the winner's solo, big taiko on every beat and a double braam swell into the seam. Without it the bed is #34's, note for note (checked against #34's audio.py with the
 kit config examples/trombone_vs_horn: the strings, taiko, braam and tremolo buses bit-identical). Built for D minor (Dm
 Bb Gm A); any chords work (roots and voicings by rule; #34's tables are what the rule gives for its chords)."""
 import math
@@ -286,11 +286,27 @@ class Bed:
         mix.place('taiko', self.taiko(1.0, True, 101), tw, 0.45)
 
     def after_ko(self, mix, bar_ko, tw, t_solo):
+        T = self.T
         mix.place('fx', self.A.whoosh(t_solo - tw - 0.1, 300, 5000), tw + 0.1, 0.10)
+        if self.seq:                                                      # the sequel: no gap before the solo: the
+            ch = T.CHORDS[0]                                              # ostinato restarts under the stinger on the
+            r0 = self.root(ch)                                            # tonic, a pad and a tremolo hold it
+            r = r0 + 12 if r0 < 36 else r0
+            n16 = int(round((t_solo - tw) / T.S16))
+            for st in range(n16):
+                acc = 1.0 if st % 4 == 0 else 0.7
+                mix.place('strings', self.strings_low(r + OST[st % 16], T.S16 * 0.9, acc), tw + st * T.S16, 0.11)
+            mix.place('pad', self.pad(self.pad_notes(ch), t_solo - tw), tw, 0.08)
+            mix.place('tremolo', self.tremolo(self.trem(ch), t_solo - tw + 0.05, 0.2), tw, 0.06)
+            for st in range(0, n16, 4):
+                mix.place('taiko', self.taiko(0.8, st == 0, seed=500 + st), tw + st * T.S16, 0.36)
 
     def victory(self, mix, b_solo):
         for b in range(b_solo, self.T.N_BARS - 1):
-            self.bar(mix, b, light=True)
+            if self.seq:                                                  # the sequel: the trailer plays on, full,
+                self.bar(mix, b, intensity=1.45)                          # under the winner's solo
+            else:
+                self.bar(mix, b, light=True)
 
     def last_bars(self, mix):
         """the last bar builds into the title slam on sample 0: a taiko roll (8ths, then 16ths), a riser, the dominant
@@ -313,7 +329,9 @@ class Bed:
         sw = self.braam(self.root(ch), T.DUR - t30 + 0.012, 0.9, T.DUR - t30)     # a braam swelling right up to the seam
         mix.place('braam', sw * np.linspace(0.3, 1.0, len(sw)), t30, 0.16)
         mix.place('tremolo', self.tremolo(self.trem(ch), T.DUR - t30 + 0.012, 1.2), t30, 0.06)
-        if self.seq:                                                      # the sequel: a second, higher braam swell
+        if self.seq:                                                      # the sequel: a second, higher braam swell,
+            for bt in range(4):                                           # big taiko on every beat
+                mix.place('taiko', self.taiko(1.0, True, 400 + bt), t30 + bt * T.BEAT, 0.40)
             sw2 = self.braam(self.root(ch) + 12, T.DUR - t30 + 0.012, 0.9, T.DUR - t30)
             mix.place('braam', sw2 * np.linspace(0.2, 1.0, len(sw2)), t30, 0.10)
             mix.place('pad', self.pad(self.pad_notes(ch), T.DUR - t30 + 0.012), t30, 0.08)
