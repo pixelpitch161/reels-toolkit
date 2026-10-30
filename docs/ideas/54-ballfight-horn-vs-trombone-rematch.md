@@ -52,3 +52,7 @@ lever is a per-fighter damage handicap, 40–60 % wins) and consistent loudness 
 ## Board history
 
 - Approved Oct 30 (ideas chat).
+- Delivered Oct 30 (session_01CzTfqd) for review: `ballfight_horn_vs_trombone_rematch.mp4`. REMATCH card (title.py
+  `MIDDLE`, scale 7 along the crack), HORN v3 ported (checked against #34), brass_trailer ported + sequel option,
+  DMG_SIDE (1.04, 1.08), seed 630: FINAL FLICK 45.8 s, PEDAL TONE lands 47.2 s, HORN wins 50.28 s with 2.8 HP. Details:
+  `docs/log/ballfight_horn_vs_trombone_rematch.md`.
