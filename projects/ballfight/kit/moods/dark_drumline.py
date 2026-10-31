@@ -16,7 +16,11 @@ the title slam (bass drums on every beat, a roll and a riser into the seam).
 Port check (#53): cadence() / unison() / roll() here against #38's own (projects/ballfight_bassclarinet_vs_euphonium/
 audio.py) on #38's C minor chords: every bar 0-31 at #38's densities, light bars and unison hits, rendered into two
 mixes - the drums and pit buses are bit-identical. #38's bass-drum tunings (BD_ROOTS) are kept for its four chords;
-other chords get the same shape by rule (the four highest chord tones up to E-flat 4, then the root in G2..F#3)."""
+other chords get the same shape by rule (the four highest chord tones up to E-flat 4, then the root in G2..F#3).
+
+Config (opt-in, #56): `DRUMLINE = dict(bass_drums=False)` drops the bed's own five bass drums everywhere (the cadence's
+unison hits and splits, the unison hits, the last bar's beats) for an episode whose fighter IS the bass drum; snares,
+quads, cymbals and the pit stay as they are. Without it the bed is unchanged."""
 import numpy as np
 
 # the cadence (16 16ths per bar). Snare: A accent, t tap, g ghost, f flam, r diddle roll, . rest (#38, unchanged)
@@ -38,6 +42,7 @@ class Bed:
     def __init__(self, M):
         self.M, self.T, self.A, self.SR = M, M.T, M.A, M.SR
         self._c = {}
+        self.bd_on = getattr(self.T, 'DRUMLINE', {}).get('bass_drums', True)   # #56: opt-out of the bass drums
 
     def _cache(self, key, fn):
         if key not in self._c:
@@ -163,7 +168,7 @@ class Bed:
                 if c != '.':
                     mix.place('drums', self.tenor(int(c) - 1), t0 + i * S16, 0.10, pan=-0.25 + 0.15 * int(c))
         bd = self.bd_notes(ch)
-        bp = BASS['hi' if dense > 0.4 and not light else 'lo']
+        bp = BASS['hi' if dense > 0.4 and not light else 'lo'] if self.bd_on else ''
         for i, c in enumerate(bp):
             ts = t0 + i * S16
             if c == 'U':
@@ -188,7 +193,7 @@ class Bed:
     def unison(self, mix, t, ch, g=1.0):
         """a drumline unison hit: all bass drums + accent snare + the quads + crash + timpani + a low thud"""
         A = self.A
-        for m in self.bd_notes(ch):
+        for m in (self.bd_notes(ch) if self.bd_on else ()):
             mix.place('drums', self.bassdrum(m), t, 0.14 * g)
         mix.place('drums', self.msnare('A'), t, 0.34 * g)
         for i in range(4):
@@ -281,7 +286,7 @@ class Bed:
             self.cadence(mix, b, dense=1.0)
         tl = (T.N_BARS - 1) * T.BAR
         for bt in range(4):
-            for m in self.bd_notes(T.CHORDS[-1]):
+            for m in (self.bd_notes(T.CHORDS[-1]) if self.bd_on else ()):
                 mix.place('drums', self.bassdrum(m), tl + bt * T.BEAT, 0.09)
         self.roll(mix, tl + 2 * T.BEAT, T.DUR - 1e-3, 0.16, 0.48)
         mix.place('fx', M.riser(T.DUR - tl), tl, 0.30)
