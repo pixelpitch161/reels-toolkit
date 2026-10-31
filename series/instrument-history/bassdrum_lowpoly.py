@@ -210,7 +210,7 @@ def bd_roll(f, dur, v, bpm=BPM, seed=0):
     for i in range(k):
         u = i / max(1, k - 1)
         last = i == k - 1
-        ts = i * s32 + (.004 if i % 2 else 0.0) + rng.uniform(-.002, .002)
+        ts = max(0.0, i * s32 + (.004 if i % 2 else 0.0) + rng.uniform(-.002, .002))
         vel = v * ((.38 + .42 * u) * (1.0 if i % 2 == 0 else .9) if not last else 1.05)
         x = bd_hit(f, vel, boom=last, seed=i + seed, dur=None if last else s32)
         a = int(ts * SR)
