@@ -5265,6 +5265,154 @@ class Fight:
                 self.kv[j] = d * sp
                 del self.khold[i]
 
+    # ------------------------------------------------------------------ #56 (opt-in): STEAMROLLER (weapon kind 'roll_charge')
+    # The only roller. Every `every` beats (on the 16th grid, `off16` later) the drum tips onto its side for `tip16`
+    # 16ths - it holds still and the line is set (telegraphed): aimed at the enemy's spot `lead` x the roll ahead, seeded
+    # `jitter` deg off - then rolls along it like a wheel at `speed` x the shared speed (+`speed_grow` per landed hit up
+    # to `speed_max`), up to `span`, stopping a radius short of the ropes. ROLLING (from the tip on) it drives itself:
+    # no knockback, and in a clash it doesn't give way (a walker while it rolls). The first contact in a roll (centres
+    # within 2 R + its size) is a BOOM: `dmg`, knock `knock` (`fwd` of it forward along the line, the rest out to the
+    # side), and a landed boom grows the roll's speed and the drum's size (`size_grow` up to `size_max`, from `size0`;
+    # held in blade_len). After a roll it glides on along its line. A held, stunned, grabbed or smashed drum starts no
+    # roll, and a roll in progress ends (event 'roll_off').
+    def rollc_setup(self, k):
+        B = self.balls[k]
+        B.roller = True
+        B.rolling = False
+        B.rl = None                                   # the current roll: dict(phase 'tip' / 'roll', p0, p1, u, ...)
+        B.roll_v = float(B.w['speed'])
+        B.blade_len = float(B.w.get('size0', 0.0))
+        B.roll_ang = 0.0                              # how far the wheel has turned (rad), for the picture
+        B.droll = None                                # DRUM ROLL in progress: dict(t1, side, ab)
+        B.thumps = []                                 # HEARTBEAT's second thump still to come: [(t, ab)]
+        B.cannons = None                              # 1812 OVERTURE in progress: dict(ab, i, t_next)
+
+    def rollc_blocked(self, k):
+        B = self.balls[k]
+        return self._stunned(k) or getattr(B, 'held', False) or getattr(B, 'grabbed', False) or \
+            getattr(B, 'smashed', 0.0) > 0
+
+    def _roll_line(self, k, t_ahead, jitter_deg, extra_deg, span):
+        """the roll's direction and length: at the enemy's spot `lead` x t_ahead ahead, turned (seeded jitter + extra)
+        deg, `span` long at most, stopping a radius short of the ropes"""
+        B, O = self.balls[k], self.balls[1 - k]
+        lim = self.R.A - self.R.R
+        tgt = np.clip(O.p + O.v * t_ahead * B.w.get('lead', 0.0), -lim, lim)
+        d = tgt - B.p
+        dist = float(np.hypot(*d))
+        u = d / dist if dist > 1e-6 else (B.v / (np.hypot(*B.v) + 1e-9))
+        j = math.radians(self.rng.uniform(-1.0, 1.0) * jitter_deg + extra_deg)
+        u = np.array([u[0] * math.cos(j) - u[1] * math.sin(j), u[0] * math.sin(j) + u[1] * math.cos(j)])
+        ln = float(span)
+        for ax in (0, 1):
+            if abs(u[ax]) > 1e-9:
+                room = ((lim if u[ax] > 0 else -lim) - B.p[ax]) / u[ax]
+                ln = min(ln, max(0.0, room))
+        return u, ln
+
+    def _start_roll(self, k, kind, t_tip, u, ln, speed):
+        B = self.balls[k]
+        V = speed * self.R.V
+        t0 = self.t + t_tip
+        p1 = B.p + u * ln
+        B.rl = dict(phase='tip' if t_tip > 0 else 'roll', p0=B.p.copy(), p1=p1, u=u, t_tip=self.t, t0=t0,
+                    t1=t0 + ln / max(V, 1e-9), hit=False, kind=kind, last=-9.0)
+        B.rolling = B.walking = B.walker = True
+        B.v = u * self.R.V
+        B.th = math.atan2(u[1], u[0]) % (2 * math.pi)
+        self.ev('roll', k, float(B.p[0]), float(B.p[1]), float(p1[0]), float(p1[1]), self.t, t0, B.rl['t1'], kind)
+
+    def _end_roll(self, k, off=None):
+        B = self.balls[k]
+        L = B.rl
+        B.rl = None
+        if off is not None:
+            self.ev('roll_off', k, off)
+        else:
+            self.ev('roll_end', k, float(B.p[0]), float(B.p[1]))
+        Dr = B.droll
+        if Dr is not None and off is None and self.t < Dr['t1'] and self._next_leg(k):
+            return
+        if Dr is not None and (off is not None or self.t >= Dr['t1']):
+            B.droll = None
+            self.ev('drum_roll_end', k)
+        if B.droll is None:
+            B.rolling = B.walking = B.walker = False
+            if L is not None and not getattr(B, 'held', False):
+                B.v = L['u'] * self.R.V                   # it glides on along its line
+
+    def rollc_tick(self, k, k16):
+        B = self.balls[k]
+        w = B.w
+        if B.rl is not None or B.droll is not None or self.rollc_blocked(k):
+            return
+        if (k16 - int(w.get('off16', 0))) % max(1, int(round(4 * w['every']))):
+            return
+        tip = int(w.get('tip16', 2)) * self.R.beat / 4.0
+        u, ln = self._roll_line(k, tip + 0.5 * w['span'] / (B.roll_v * self.R.V), w.get('jitter', 0.0), 0.0, w['span'])
+        if ln < w.get('min_len', 0.6):                   # boxed in against the ropes: no room to roll this time
+            return
+        self._start_roll(k, 0, tip, u, ln, B.roll_v)
+
+    def rollc_step(self, k, dt):
+        B, O = self.balls[k], self.balls[1 - k]
+        w = B.w
+        R = self.R.R
+        for item in list(B.thumps):                      # HEARTBEAT's "dub"
+            if self.t + 1e-9 >= item[0]:
+                B.thumps.remove(item)
+                self._thump(k, item[1], 1)
+        C = B.cannons
+        if C is not None and self.t + 1e-9 >= C['t_next']:
+            self._cannon(k)
+        L = B.rl
+        if L is None:
+            Dr = B.droll
+            if Dr is not None:                           # DRUM ROLL waiting (blocked) or between legs
+                if self.t >= Dr['t1']:
+                    B.droll = None
+                    B.rolling = B.walking = B.walker = False
+                    self.ev('drum_roll_end', k)
+                elif not self.rollc_blocked(k) and not self._next_leg(k):
+                    B.droll = None
+                    B.rolling = B.walking = B.walker = False
+                    self.ev('drum_roll_end', k)
+            return
+        if self.rollc_blocked(k):
+            self._end_roll(k, 'held' if getattr(B, 'held', False) else 'blocked')
+            return
+        if L['phase'] == 'tip':
+            B.p = L['p0'].copy()
+            if self.t + 1e-9 < L['t0']:
+                return
+            L['phase'] = 'roll'
+        f = min(1.0, (self.t - L['t0']) / max(1e-9, L['t1'] - L['t0']))
+        q = L['p0'] + (L['p1'] - L['p0']) * f
+        B.roll_ang += float(np.hypot(*(q - B.p))) / R
+        B.p = q
+        rel = O.p - B.p
+        dist = float(np.hypot(*rel))
+        if dist < 2 * R + B.blade_len and not getattr(O, 'held', False):
+            ab = B.droll['ab'] if L['kind'] == 1 else None
+            ready = (not L['hit']) if ab is None else (self.t - L['last'] >= ab.get('cool', 0.25))
+            if ready:
+                L['hit'] = True
+                L['last'] = self.t
+                side = np.array([-L['u'][1], L['u'][0]])
+                if float(side @ rel) < 0:
+                    side = -side
+                hx, hy = (B.p + rel / max(dist, 1e-6) * R).tolist()
+                dmg, kn, fw = (w['dmg'], w['knock'], w.get('fwd', 0.4)) if ab is None else \
+                    (ab['dmg'], ab['knock'], ab.get('fwd', w.get('fwd', 0.4)))
+                if self.damage(k, 1 - k, dmg, 'roll' if ab is None else 'drumroll', hx, hy):
+                    self.knock(1 - k, fw * L['u'] + (1 - fw) * side, kn)
+                    if ab is None:
+                        B.roll_v = min(w.get('speed_max', B.roll_v), B.roll_v + w.get('speed_grow', 0.0))
+                        B.blade_len = min(w.get('size_max', B.blade_len), B.blade_len + w.get('size_grow', 0.0))
+                self.ev('roll_boom', k, hx, hy, L['kind'])
+        if f >= 1.0:
+            self._end_roll(k)
+
     def snap(self, rec):
         B0, B1 = self.balls
         rec['P'].append([B0.p.copy(), B1.p.copy()])
@@ -5483,6 +5631,27 @@ class Fight:
                     Fl[j] = (self.FLICK_STATES[F['state']], F['aim'], F['ext'], F['t0'], F['t_hit'], F['hit'])
             rec['FLICK'].append(Fl)
 
+        if 'RCHG' in rec:                                   # #56, only recorded when a fighter uses the 'roll_charge' kind
+            Ro = np.full((2, 9), np.nan)
+            for j, Bj in enumerate((B0, B1)):
+                if not getattr(Bj, 'roller', False):
+                    continue
+                L = Bj.rl
+                Ro[j, 0] = 0.0 if L is None else (1.0 if L['phase'] == 'tip' else 2.0)
+                if L is not None:
+                    if L['phase'] == 'tip':
+                        Ro[j, 1] = (self.t - L['t_tip']) / max(1e-9, L['t0'] - L['t_tip'])
+                    else:
+                        Ro[j, 1] = (self.t - L['t0']) / max(1e-9, L['t1'] - L['t0'])
+                    Ro[j, 2] = math.atan2(L['u'][1], L['u'][0])
+                    Ro[j, 8] = L['kind']
+                Ro[j, 3] = Bj.roll_ang
+                Ro[j, 4] = Bj.blade_len
+                Ro[j, 5] = Bj.roll_v
+                Ro[j, 6] = float(Bj.droll is not None)
+                Ro[j, 7] = float(Bj.rolling)
+            rec['RCHG'].append(Ro)
+
     # ------------------------------------------------------------------ run
     def run(self):
         R = self.R
@@ -5655,6 +5824,12 @@ class Fight:
         n16d = k16_0
         if rec is not None and drillers:
             rec['DRILL'] = []
+        rollcs = [k for k, B in enumerate(self.balls) if B.w['kind'] == 'roll_charge']    # #56 (opt-in)
+        for k in rollcs:
+            self.rollc_setup(k)
+        n16r = k16_0
+        if rec is not None and rollcs:
+            rec['RCHG'] = []
         self.t = R.t_fight
         f0 = int(round(R.t_fight * R.FPS))
         step = 0
@@ -5834,6 +6009,11 @@ class Fight:
                 n16d += 1
                 for k in drillers:
                     self.drill_tick(k, k16d_)
+            if rollcs and self.t + 1e-9 >= n16r * s16:          # #56: rolls on the 16th grid
+                k16r_ = n16r - k16_0
+                n16r += 1
+                for k in rollcs:
+                    self.rollc_tick(k, k16r_)
             for k, B in enumerate(self.balls):
                 B.shield = max(0.0, B.shield - dt)
                 B.haste = max(0.0, B.haste - dt)
@@ -5927,6 +6107,8 @@ class Fight:
                 self.crowd_step(k, dt)
             for k in drillers:                                   # #53: the march, tramples, the blast, HORN FLASH, COMPANY FRONT
                 self.drill_step(k, dt)
+            for k in rollcs:                                     # #56: the tip, the roll, its boom; HEARTBEAT, 1812 OVERTURE
+                self.rollc_step(k, dt)
             if getattr(self, 'notes', None):                     # #42: the whole notes roll (and land)
                 self.notes_step(dt)
             if getattr(self, 'splinters', None):                 # #44: GUITAR SMASH's splinters
