@@ -46,3 +46,7 @@ their players sit side by side. Post caption: "The low woodwinds settle it 🖤 
 ## Board history
 
 - Approved Oct 31 (ideas chat).
+- Oct 31: made (session_01CzTfqb): `ballfight_bassclarinet_vs_bassoon.mp4`. BASS CLARINET ported into the kit from #40
+  (hash, picture state, layers and bus all identical to #40's); new mood `horror_trap`; DMG_SIDE (0.58, 0.70) (300 seeds
+  51 / 49 %, median K.O. 49.5 s); SEED 4: BASSOON wins at 50.2 s on 8.8 HP, 5 lead changes, LIGHTS OUT 38.6 s, MOUNTAIN
+  KING 42.8 s. Slate vs forest green read apart on the first sheet, LIGHTS OUT included: no edge glow. Feedback: (pending)

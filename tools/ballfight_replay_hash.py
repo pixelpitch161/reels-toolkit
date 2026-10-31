@@ -53,6 +53,7 @@ KIT_EPISODES = [
     ('projects/ballfight_flute_vs_clarinet', [3864, 1, 2, 3, 500]),   # #49 (the #32 v2 FLUTE vs the #37 CLARINET, crossover), seed 3864
     ('projects/ballfight_oboe_vs_bassoon', [954, 1, 2, 3, 500]),   # #52 (the #37 OBOE vs the #39 BASSOON, crossover; sides swapped), seed 954
     ('projects/ballfight_flute_vs_sousaphone', [146, 1, 2, 3, 500]),   # #53 (the #32 v2 FLUTE vs SOUSAPHONE drill / flash_spin / company_front), seed 146
+    ('projects/ballfight_bassclarinet_vs_bassoon', [4, 1, 2, 3, 500]),   # #55 (the #38 BASS CLARINET vs the #39 BASSOON, crossover), seed 4
 ]
 CODE = r'''
 import hashlib, sys
