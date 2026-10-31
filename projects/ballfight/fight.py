@@ -2970,6 +2970,12 @@ class Fight:
         elif kind == 'company_front':                           # #53 (COMPANY FRONT): a wall of ghost sousaphones
             if hasattr(B, 'march'):
                 self.start_front(k, ab)
+        elif kind == 'heartbeat':                               # #56 (HEARTBEAT): two shockwaves, lub-dub
+            self.start_heartbeat(k, ab)
+        elif kind == 'drum_roll':                               # #56 (DRUM ROLL): rolls nonstop, zig-zagging
+            self.start_drum_roll(k, ab)
+        elif kind == 'cannons':                                 # #56 (1812 OVERTURE): five cannon booms
+            self.start_cannons(k, ab)
 
     def ab_beam_charge(self, k, ab):
         """ability kind 'beam' (#29 v3): charge for `charge_beats` with the aim locked on the enemy's spot predicted
@@ -3078,7 +3084,7 @@ class Fight:
                 dist = float(np.hypot(*rel))
                 self.ev('slam', S['owner'], float(S['c'][0]), float(S['c'][1]), int(dist < S['radius'] + R * 0.6))
                 if dist < S['radius'] + R * 0.6:
-                    self.damage(S['owner'], o, S['dmg'], 'slam', float(O.p[0]), float(O.p[1]))
+                    self.damage(S['owner'], o, S['dmg'], S.get('how', 'slam'), float(O.p[0]), float(O.p[1]))   # #56: 'cannon'
                     self.knock(o, rel if dist > 1e-3 else O.v, S['knock'])
         for Ar in self.arcs:
             n = Ar['n']
@@ -5412,6 +5418,69 @@ class Fight:
                 self.ev('roll_boom', k, hx, hy, L['kind'])
         if f >= 1.0:
             self._end_roll(k)
+
+    # ------------------------------------------------------------------ #56 (opt-in): the bass drum's ability kinds
+    # 'heartbeat' (HEARTBEAT: two shockwaves `gap16` 16ths apart, lub-dub, each `radius`, `speed`, `dmg`, `knock`; events
+    # ('heartbeat', k, i 0 lub / 1 dub, x, y)); 'drum_roll' (DRUM ROLL: for `beats` beats it rolls nonstop - legs of
+    # `leg16` 16ths with no tipping, each re-aimed at the enemy `zig` deg off to alternate sides, at `speed_k` x its roll
+    # speed, a contact every `cool` s at most (`dmg`, `knock`); events ('drum_roll', k, t1), a 'roll' per leg (kind 1),
+    # ('drum_roll_end', k)); 'cannons' (1812 OVERTURE: `n` cannon booms, one every `gap_beats` beats, each aimed at the
+    # enemy's spot `tele` beats ahead and landing then like a slam (`radius`, `dmg`, `knock`; hit kind 'cannon');
+    # events ('cannon', k, i, x, y, t_land) at each shot, then the usual 'slam' at the landing).
+    def _thump(self, k, ab, i):
+        B = self.balls[k]
+        self.waves.append(dict(owner=k, c=B.p.copy(), r=self.R.R, speed=ab['speed'], rmax=ab['radius'], dmg=ab['dmg'],
+                               knock=ab['knock'], kind='shockwave', hit=False, name=ab['name'], t0=self.t, slow=None))
+        self.ev('heartbeat', k, i, float(B.p[0]), float(B.p[1]))
+
+    def start_heartbeat(self, k, ab):
+        B = self.balls[k]
+        self._thump(k, ab, 0)
+        B.thumps.append((self.t + int(ab.get('gap16', 2)) * self.R.beat / 4.0, ab))
+
+    def _next_leg(self, k):
+        """DRUM ROLL: the next leg, straight away; False if there's no room to roll anywhere"""
+        B = self.balls[k]
+        Dr = B.droll
+        ab = Dr['ab']
+        V = ab.get('speed_k', 1.0) * B.roll_v
+        span = V * self.R.V * int(ab.get('leg16', 3)) * self.R.beat / 4.0
+        for side in (Dr['side'], -Dr['side']):
+            u, ln = self._roll_line(k, 0.5 * span / (V * self.R.V), 0.0, side * ab.get('zig', 30.0), span)
+            if ln >= 0.25:
+                Dr['side'] = -side
+                self._start_roll(k, 1, 0.0, u, ln, V)
+                return True
+        return False
+
+    def start_drum_roll(self, k, ab):
+        B = self.balls[k]
+        if B.rl is not None:
+            B.rl = None                                   # the weapon's roll gives way to the drum roll
+            self.ev('roll_off', k, 'drum_roll')
+        B.droll = dict(t1=self.t + ab['beats'] * self.R.beat, side=1.0 if self.rng.uniform() < 0.5 else -1.0, ab=ab)
+        B.rolling = B.walking = B.walker = True
+        self.ev('drum_roll', k, B.droll['t1'])
+        if not self.rollc_blocked(k):
+            self._next_leg(k)
+
+    def start_cannons(self, k, ab):
+        self.balls[k].cannons = dict(ab=ab, i=0, t_next=self.t)
+
+    def _cannon(self, k):
+        B, O = self.balls[k], self.balls[1 - k]
+        C = B.cannons
+        ab = C['ab']
+        lead = ab['tele'] * self.R.beat
+        lim = self.R.A - self.R.R
+        tgt = np.clip(O.p + O.v * lead * 0.6, -lim, lim)
+        self.slams.append(dict(owner=k, c=tgt, t0=self.t, t_slam=self.t + lead, radius=ab['radius'], dmg=ab['dmg'],
+                               knock=ab['knock'], done=False, name=ab['name'], how='cannon'))
+        self.ev('cannon', k, C['i'], float(tgt[0]), float(tgt[1]), self.t + lead)
+        C['i'] += 1
+        C['t_next'] += ab.get('gap_beats', 1) * self.R.beat
+        if C['i'] >= int(ab['n']):
+            B.cannons = None
 
     def snap(self, rec):
         B0, B1 = self.balls
