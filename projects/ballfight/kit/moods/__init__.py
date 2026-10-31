@@ -9,5 +9,7 @@ clash, ko, stinger, after_ko, victory, last_bars) and its own buses, reverb and 
                      loudness-matched, crossfaded over a beat at each lead change; config PLUGGED names the plugged side
     heist            #52 Oboe vs Bassoon: a sneaky minor heist caper (brushes, rim clicks, walking upright, pizzicato,
                      muted vibes, tremolo tension; no woodwinds of its own)
+    horror_trap      #55 Bass Clarinet vs Bassoon: half-time minor horror trap (sliding 808, skittering hats, a detuned
+                     music box, creeping low strings, reversed swells; LIGHTS OUT drops it to the box + 808; no woodwinds)
     mambo            #50 Trumpet vs Trombone: minor big-band mambo (montuno, tumbao, congas, timbales, cowbell, low sax pad)
 A new mood: copy one, keep its section methods, change the instruments and parts (or port an older episode's bed)."""
