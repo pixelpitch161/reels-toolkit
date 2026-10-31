@@ -28,7 +28,8 @@ RULES = dict(swallow_rollers=True)       # #56 opt-in: the bell can gulp a rolli
 # ---------------------------------------------------------------- tempo + music
 BPM = 126                                # loop_bpm -> 125.90: 32 bars in 61 s, bar 1.906 s, FIGHT! at 3.81 s
 MOOD = 'dark_drumline'
-DRUMLINE = dict(bass_drums=False)        # the fighter IS the bass drum: the bed's own bass drums are off
+DRUMLINE = dict(bass_drums=False, after_ko=True)   # the fighter IS the bass drum: the bed's own bass drums are
+                                                   # off in the fight, back from the K.O. on (it lies in pieces)
 KEY, SCALE = 'C', 'minor'
 LOOP = ['Cm', 'Ab', 'Fm', 'G']
 CHORDS = ['Cm', 'G'] + LOOP * 7 + ['Ab', 'G']   # the card on the tonic, the count-in on the dominant; the last bars turn
@@ -44,10 +45,15 @@ SOLO = {
     # the bass drum's victory cadence: booms on the beats, mallet taps between, rolls into the big ones
     # (beat, midi, beats); midi < 24 = a roll on midi + 24; a beat or longer = a boom
     'BASS DRUM': [(0, 36, 1), (1, 36, .5), (1.5, 36, .5), (2, 12, 1), (3, 36, 1), (4, 36, .5), (4.5, 36, .25),
-                  (4.75, 36, .25), (5, 36, 1), (6, 12, 1.5), (7.5, 36, 1)],
+                  (4.75, 36, .25), (5, 36, 1), (6, 12, 1.5), (7.5, 36, 1), (8.5, 36, .5), (9, 36, 1), (10, 12, 1),
+                  (11, 36, .5), (11.5, 36, .5), (12, 36, 2)],
     # the tuba's strut: oom-pah up the C minor arpeggio, down through Bb and Ab, the dominant's B up to the C
     'TUBA': [(0, 36, .5), (.5, 43, .5), (1, 48, .5), (1.5, 43, .5), (2, 46, .5), (2.5, 44, .5), (3, 43, 1.0),
-             (4, 41, .5), (4.5, 44, .5), (5, 47, .5), (5.5, 50, .5), (6, 48, 2.0)]}
+             (4, 41, .5), (4.5, 44, .5), (5, 47, .5), (5.5, 50, .5), (6, 48, 1.5), (7.5, 43, .5),
+             (8, 36, .5), (8.5, 43, .5), (9, 44, .5), (9.5, 43, .5), (10, 41, .5), (10.5, 43, .5), (11, 47, .5),
+             (11.5, 50, .5), (12, 48, 2.0)]}         # (a second bar of oom-pah to the reassembly)
+MIX = {'solo': (2.7, 0.4)}               # the winner's solo + stinger +5 dB (kit 1.5): the fight's kick-every-beat and booms
+                                         # make a loud floor, and the solo has the stage alone after the K.O. (levels check)
 TITLE_HITS = {'BASS DRUM': (36,),                 # a huge boom on the low C
               'TUBA': (36, 43, 36, 43)}           # a tuba blast, then oom-pah
 
