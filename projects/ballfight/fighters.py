@@ -552,4 +552,23 @@ FIGHTERS = {
             unlock2=dict(name='DOUBLE TIME', kind='haste', mult=2.0, dur_beats=8, every_bars=6),   # marches twice as fast
             low=dict(name='COMPANY FRONT', kind='company_front', beats=8, thick=0.35, dmg=14.0, knock=1.8)),   # a wall of
         pp='SOUSAPHONE', register=(28, 58), idiom='march'),                # ghost sousaphones, rope to rope
+    # ---- #56 BALLFIGHT: who owns the BOOM - the marching band's two biggest low sounds (a viewer request). The BASS DRUM is
+    # the only roller: every bar it tips onto its side and rolls across the ring like a wheel at the enemy (STEAMROLLER),
+    # a dust trail telegraphing the line; every impact is a huge BOOM; speed and size grow per landed boom. Model from
+    # Commons photos (series/instrument-history/bassdrum_lowpoly.py). Numbers tuned once with the kit (#56), frozen.
+    'BASS DRUM': dict(
+        color=(128, 128, 140), dark=(64, 64, 76), corner='red',       # gunmetal (series colour table, RULES)
+        view=(0, 16, 0),
+        weapon=dict(kind='roll_charge', style='roll', name='STEAMROLLER',   # every bar: tip, roll at the enemy, BOOM
+                    every=4, off16=0, tip16=2, lead=0.5, jitter=8.0, span=5.2, min_len=0.6,
+                    speed=2.4, speed_grow=0.06, speed_max=3.4, size0=0.0, size_grow=0.025, size_max=0.25,
+                    dmg=7.0, knock=1.8, fwd=0.35),
+        abilities=dict(
+            unlock1=dict(name='HEARTBEAT', kind='heartbeat', gap16=2, radius=2.0, speed=7.0, dmg=4.0, knock=1.2,
+                         every_bars=4),                                   # two quick booms, back-to-back shockwaves
+            unlock2=dict(name='DRUM ROLL', kind='drum_roll', beats=4, leg16=3, zig=35.0, speed_k=1.1, cool=0.3,
+                         dmg=3.0, knock=1.0, every_bars=6),               # rolls nonstop for a bar, zig-zagging
+            low=dict(name='1812 OVERTURE', kind='cannons', n=5, gap_beats=1, tele=1, radius=1.0, dmg=4.0,
+                     knock=1.4)),                                         # five cannon booms across the ring
+        pp='BASS DRUM', register=(28, 50), idiom='drum'),
 }
