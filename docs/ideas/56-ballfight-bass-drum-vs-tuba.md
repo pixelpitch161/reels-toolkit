@@ -52,3 +52,16 @@ Comment the next match-up 👇"
 ## Board history
 
 - Approved Oct 31 (ideas chat).
+- Status: done · Session: session_01CzTfqd (2026-10-31) · Output: `ballfight_bassdrum_vs_tuba.mp4`
+- v1 delivered straight through (no approval waits; early sheet sent for information). New BASS DRUM: model from Commons
+  photos found in Chrome (`bassdrum_lowpoly`, no logos), voice (boom / mallet / roll) and bridge entry, each its own
+  commit; engine kinds `roll_charge`, `heartbeat`, `drum_roll`, `cannons` (additive, own commits, replay guard
+  identical); swallowing a rolling fighter wasn't defined: opt-in `Rules(swallow_rollers=True)` (own commit, on here: the
+  gulp ends the roll). TUBA exactly as built, ported into the kit from #36 (`examples/trombone_vs_tuba`: hash identical,
+  frames pixel-identical, bus bit-identical). Tuned: DMG_SCALE 0.66, DMG_SIDE (0.86, 1.0): 58 % / 42 %, median K.O.
+  53.7 s. Search at 2 bars: 8 fits in 341; seed 132: 1812 OVERTURE 42.4 s, SUBSONIC 44.3 s, lead changes 43.2 / 48.1 s,
+  TUBA wins at 49.84 s on 0.1 HP. Music: dark_drumline without its own bass drums (`DRUMLINE`, back after the K.O.),
+  the drum = kick + booms, the tuba = oom-pah bass; 1812's cannons play the opening of "God Save the Tsar!" (Lvov 1833)
+  in E-flat. Checks: safe zone, focus (CoC 0), levels (after a fix: solo bus +5 dB, `after_ko`), band (drum +11.6..+14.8
+  dB, tuba +7.7..+10.5 dB over the bed), flash, loop all PASS; mp4 1080x1920 61.0 s h264 + aac, loopcheck + flashcheck PASS.
+

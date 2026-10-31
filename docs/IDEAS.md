@@ -77,7 +77,7 @@ Each production session updates **its own row**: when it starts, sends a draft, 
 | 53 | [BALLFIGHT: Flute vs Sousaphone](ideas/53-ballfight-flute-vs-sousaphone.md) | review | session_01CzTfqa (2026-10-30) | v1 delivered: seed 146, COMPANY FRONT answers PICCOLO for the K.O.; no obbligato (user). | `ballfight_flute_vs_sousaphone.mp4` |
 | 54 | [BALLFIGHT: Horn vs Trombone, THE REMATCH](ideas/54-ballfight-horn-vs-trombone-rematch.md) | review | session_01CzTfqd (2026-10-30) | Delivered Oct 30: REMATCH card, HORN v3 + brass_trailer ported, seed 630 (horn wins 50.3 s, the bell lands first). | `ballfight_horn_vs_trombone_rematch.mp4` |
 | 55 | [BALLFIGHT: Bass Clarinet vs Bassoon](ideas/55-ballfight-bass-clarinet-vs-bassoon.md) | review | session_01CzTfqbjYxnZBhp9dzj3xYv (2026-10-31) | Delivered Oct 31: BASSOON wins 50.2 s (seed 4); BASS CLARINET ported; mood horror_trap. | `ballfight_bassclarinet_vs_bassoon.mp4` |
-| 56 | [BALLFIGHT: Bass Drum vs Tuba](ideas/56-ballfight-bass-drum-vs-tuba.md) | in production (session Oct 31 12:40) | — | Approved Oct 31, mood A (dark drumline, kit). Viewer request; new BASS DRUM (model from Chrome photos); Tuba as built. | — |
+| 56 | [BALLFIGHT: Bass Drum vs Tuba](ideas/56-ballfight-bass-drum-vs-tuba.md) | done | — | Delivered Oct 31: seed 132, TUBA wins at 49.8 s on 0.1 HP; TUBA ported to the kit; swallow_rollers opt-in. | `ballfight_bassdrum_vs_tuba.mp4` |
 
 ## Other notes
 
