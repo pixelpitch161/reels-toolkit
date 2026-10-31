@@ -3,7 +3,7 @@
 way the other instruments' modern showcase models are. A later Pixel Pitch drum video can grow from this file (add SCENES
 rows, backdrop, music) without touching the model.
 
-    python3 bassdrum_lowpoly.py             # face count + extent per scene
+    python3 bassdrum_lowpoly.py             # face count + extent per scene, and a test note of each voice
 
 Reference photos (Claude in Chrome, 2026-10-31, Wikimedia Commons): "Camden Muster bass drum.jpg" (a rope-tensioned
 field bass drum standing on its rim on grass: how a bass drum reads as a WHEEL - a short wide cylinder, the white head
@@ -159,6 +159,73 @@ def build(g, t, ev, fx, s):
             fx.append(("wave", tuple(hd + [0, 0, .05]), age, 0))
 
 
+# ---------------------------------------------------------------- sound: the boom, the mallet, the roll
+# A tuned membrane struck with a felt mallet: the circular membrane's partials (1, 1.59, 2.14, 2.30, 2.65, 2.92 x the
+# fundamental), the higher ones dying fast; a pitch drop as the head relaxes after the strike; the felt's soft thump; the
+# shell ringing a fifth over. Three ways to play it, picked by the note (so the shared bridge voice(midi, vel, dur) can
+# reach all three):
+#   midi >= 24, vel <  0.9   a mallet hit: tight and short (the drumline's "tap")
+#   midi >= 24, vel >= 0.9   the BOOM: a big open hit - a deeper drop, a sub an octave under, a long ring and air
+#   midi <  24               a ROLL on midi + 24 for `dur` s: single strokes on 32nds at the bridge's tempo (two mallets
+#                            alternating, slightly uneven), swelling to an accent on the last stroke
+from pp_framework import midi_hz, SR                 # noqa: E402
+
+MODES = ((1.0, 1.0, 1.0), (1.59, .55, .45), (2.14, .38, .3), (2.30, .30, .26), (2.65, .2, .2), (2.92, .14, .16))
+
+
+def bd_hit(f, v, boom=False, seed=0, dur=None):
+    """one stroke on a drum tuned to f. boom = the big open hit"""
+    ring = 1.25 if boom else .42
+    n = int((ring * 1.6 + .05) * SR)
+    t = np.arange(n) / SR
+    drop = (.42 if boom else .22) * np.exp(-t / (.028 if boom else .018))
+    x = np.zeros(n)
+    for ratio, amp, dk in MODES:
+        fr = f * ratio * (1 + drop)
+        ph = 2 * np.pi * np.cumsum(fr) / SR
+        x += amp * np.sin(ph + ratio) * np.exp(-t / (ring * dk))
+    if boom:                                                                       # the sub under it, and air
+        ph = 2 * np.pi * np.cumsum(f * .5 * (1 + drop * 1.3)) / SR
+        x += .65 * np.sin(ph) * np.exp(-t / (ring * .8))
+    rng = np.random.default_rng(int(f * 13 + seed * 977 + (7 if boom else 0)) % 100003)
+    noise = rng.standard_normal(n)
+    felt = np.convolve(noise, np.ones(48) / 48, 'same') * np.exp(-t / .006) * (2.2 if boom else 1.6)
+    air = (np.convolve(noise, np.ones(6) / 6, 'same') - np.convolve(noise, np.ones(60) / 60, 'same')) * \
+        np.exp(-t / (.09 if boom else .03)) * (.10 if boom else .05)
+    shell = .12 * np.sin(2 * np.pi * f * 1.5 * 2.1 * t) * np.exp(-t / .05)
+    x = x + felt + air + shell
+    x = np.tanh(x * (1.25 if boom else 1.0)) / np.tanh(1.25 if boom else 1.0)
+    x *= np.minimum(1.0, t / .0015)
+    if dur is not None and not boom:                                               # damped (a short tap)
+        x *= np.where(t < dur + .06, 1.0, np.exp(-(t - dur - .06) / .05))
+    return x * v * .9
+
+
+def bd_roll(f, dur, v, bpm=BPM, seed=0):
+    """single strokes on 32nds for `dur` s, two mallets slightly uneven, a swell, an accent on the last stroke"""
+    s32 = 60.0 / bpm / 8
+    k = max(2, int(round(dur / s32)))
+    out = np.zeros(int((dur + 1.4) * SR))
+    rng = np.random.default_rng(int(f * 31 + dur * 101 + seed) % 100003)
+    for i in range(k):
+        u = i / max(1, k - 1)
+        last = i == k - 1
+        ts = i * s32 + (.004 if i % 2 else 0.0) + rng.uniform(-.002, .002)
+        vel = v * ((.38 + .42 * u) * (1.0 if i % 2 == 0 else .9) if not last else 1.05)
+        x = bd_hit(f, vel, boom=last, seed=i + seed, dur=None if last else s32)
+        a = int(ts * SR)
+        m = min(len(x), len(out) - a)
+        out[a:a + m] += x[:m]
+    return out
+
+
+def synth(s, idx):
+    nt, m, v, dur, tp, cs = s["ev"][idx]
+    if m < 24:
+        return bd_roll(midi_hz(m + 24), dur, v)
+    return bd_hit(midi_hz(m), v, boom=v >= .9, dur=dur)
+
+
 if __name__ == "__main__":
     import piano_lowpoly as P
     for sc in SCENES:
@@ -166,3 +233,6 @@ if __name__ == "__main__":
         build(g, 0.0, [], [], dict(sc, ev=[(0.0, 38, .9, .5, True, 1)]))
         V = np.concatenate([f[0] for f in g.F])
         print(sc["key"], len(g.F), "faces", len(g.L), "lines, extent (m):", np.round(V.max(0) - V.min(0), 3))
+    for name, m, v, d in (("tap", 38, .7, .2), ("boom", 38, .95, 1.0), ("roll", 14, .8, 1.0)):
+        x = synth(dict(ev=[(0.0, m, v, d, True, 1)]), 0)
+        print(f"{name:5s} {len(x) / SR:4.2f} s peak {np.abs(x).max():.3f} rms {np.sqrt((x ** 2).mean()):.3f}")
