@@ -52,3 +52,13 @@ Episode sessions port a fighter when a crossover first needs it; those below are
   identical): draw_ball's optional state key `sink` (#38 LIGHTS OUT: lowered, shrunk, darkened), HUD holds for `twin` /
   `lights_out`, `ANC` / `LO` in story.REC_KEYS; a Look may expose `dim_keep(F)` to stay lit under LIGHTS OUT's dim.
   Not ported: #40's construction-site bed (and the BARI SAX).
+- **TUBA (#32 v3, as #36 fought it): ported by #56 Bass Drum vs Tuba** (session_01CzTfqd, Oct 31) into
+  `kit/fighters/tuba.py` (#32's bell / suction cone / BRASS WALL dome / SUBSONIC ripple styles and #28's `mask_of`
+  copied unchanged, #36's render layers as Look hooks - the enemy gulped, held inside the bell with its HP number hidden,
+  spat into the ropes; the bulge - and #36's audio part as Sound: oom = the root, pah = the fifth, OOMPAH doubling). Check
+  config `examples/trombone_vs_tuba` (seed 358, #36's DMG_SIDE / SERIES / key / chords / solos / shard + fx seeds; on
+  `big_top`, since #36's brass house isn't a kit mood): replay hash identical to #36's own sim for 358/1/2/3/500; 10
+  fight frames (inhale, gulp, held, spit, the cannonball into the ropes, BRASS WALL, SUBSONIC, the final gulp, the
+  shards) and the VS card pixel-identical to #36's renderer with the UI on and off; the tuba and solo buses
+  bit-identical. Kit addition (additive, replay guard identical): opt-in Look hook `canvas_first` (light under both
+  fighters' decals: #36's suction cone was lit before the trombone's). Added to the replay guard's KIT_EPISODES.

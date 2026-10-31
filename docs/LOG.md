@@ -52,4 +52,5 @@ What each video taught us, one file per project in `docs/log/`. **Append your en
 | [`ballfight_flute_vs_sousaphone`](log/ballfight_flute_vs_sousaphone.md) | #53 BALLFIGHT: Flute vs Sousaphone (session_01CzTfqa, Oct 30) |
 | [`ballfight_bassclarinet_vs_bassoon`](log/ballfight_bassclarinet_vs_bassoon.md) | #55 BALLFIGHT: Bass Clarinet vs Bassoon (session_01CzTfqb, Oct 31) |
 | [`ballfight_horn_vs_trombone_rematch`](log/ballfight_horn_vs_trombone_rematch.md) | #54 BALLFIGHT: Horn vs Trombone, THE REMATCH (session_01CzTfqd, Oct 30) |
+| [`ballfight_bassdrum_vs_tuba`](log/ballfight_bassdrum_vs_tuba.md) | #56 BALLFIGHT: Bass Drum vs Tuba (session_01CzTfqd, Oct 31) |
 - [#50 BALLFIGHT: Trumpet vs Trombone](log/ballfight_trumpet_vs_trombone.md)
