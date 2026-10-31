@@ -128,6 +128,12 @@ one step on the grid each, trampling the enemy and its baskets on the way, then 
 ahead; the blast grows per landed hit) with ability kinds `flash_spin` (HORN FLASH: the horn spins 360 deg, its blast
 sweeping all round) and `company_front` (COMPANY FRONT: a wall of ghost sousaphones marches rope to rope across the whole
 ring, a step a beat). Recorded as DRILL (see the section).
+#56 (opt-in): weapon kind `roll_charge` (STEAMROLLER: the only roller - every bar the drum tips onto its side, then rolls
+like a wheel along a telegraphed line at the enemy, unstoppable while it rolls; the first contact is a BOOM; speed and
+size grow per landed boom) with ability kinds `heartbeat` (HEARTBEAT: two shockwaves, lub-dub), `drum_roll` (DRUM ROLL:
+nonstop zig-zag rolling for a while) and `cannons` (1812 OVERTURE: five cannon booms landing on the enemy's spot, one a
+beat). Rules(swallow_rollers=True) (opt-in): the 'swallow' bell can gulp a rolling drum, ending its roll (without it a
+rolling drum can't be caught). Recorded as RCHG (see the section).
 The run records every frame (30 fps) for the renderer and every event (hits, blocks, parries, ropes, volleys,
 abilities, level-ups, the K.O.) for the soundtrack and the captions. Seeded: same seed, same fight."""
 import math
@@ -1060,7 +1066,10 @@ class Fight:
         suction reach (`blade_len`) is steered hard toward the bell (`suck`, units/s^2; its speed is kept); touching the
         bell (`catch` margin) it is SWALLOWED (`dmg`): it rides inside the tuba, held, until "pah" spits it out like a
         cannonball (`dmg_spit`, speed boost `spit_boost`) toward the open ring (seeded `jitter` deg); if it hits a rope
-        within `spit_t` s it takes `dmg_rope`. A swallow that lands lengthens the reach (`grow`, up to `max_reach`)."""
+        within `spit_t` s it takes `dmg_rope`. A swallow that lands lengthens the reach (`grow`, up to `max_reach`).
+        #56: a ROLLING enemy (weapon kind 'roll_charge', from its tip to the end of its roll / DRUM ROLL) wasn't defined
+        before; by default the bell can't catch it (the drum rolls on through the suction, too heavy to lift);
+        opt-in Rules(swallow_rollers=True): it can, and the gulp ends the roll (event ('roll_off', k, 'held'))."""
         B, O = self.balls[k], self.balls[1 - k]
         w = B.w
         R = self.R.R
@@ -1088,7 +1097,8 @@ class Fight:
                 sp = float(np.linalg.norm(O.v))
                 v = O.v - rel / dist * w['suck'] * dt
                 O.v = v / (np.linalg.norm(v) + 1e-12) * sp
-            if dist < 2 * R + w.get('catch', 0.12):
+            rolling_ = getattr(O, 'rolling', False) and not getattr(self.R, 'swallow_rollers', False)   # #56 (see below)
+            if dist < 2 * R + w.get('catch', 0.12) and not rolling_:
                 hx, hy = (B.p + rel / max(dist, 1e-6) * R).tolist()
                 if O.shield > 0:
                     self.ev('block', 1 - k, k, hx, hy, 'swallow')
