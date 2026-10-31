@@ -1060,6 +1060,9 @@ def render(f):
             Ic += (lp[1] / dl / (1 + (dl / R_) ** 2))[:, None] * lc[None] * 0.8
         # decals: each fighter's canvas light, the rings (in the run's order), then after-decals (darkening)
         C = Ctx(t=t, i=i, in_fight=in_fight, fs=fs, sxp=sxp, szp=szp, ys=ys, xs=xs)
+        for Lk in LOOKS:                                              # (opt-in) light under both fighters' decals, e.g.
+            if hasattr(Lk, 'canvas_first'):                           # #36's suction cone (the tuba port)
+                Ic = Lk.canvas_first(Ic, C)
         for Lk in LOOKS:
             Ic = Lk.canvas(Ic, C)
         for w in (RUN['WAVES'][i] if in_fight else []):
