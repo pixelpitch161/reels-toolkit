@@ -12,7 +12,8 @@ public-domain theme in E minor over the trap beat, one note per hop, speeding up
 
 # ---------------------------------------------------------------- the fight
 FIGHTERS = ('BASS CLARINET', 'BASSOON')       # first named = left corner (screen left)
-SEED = None                      # python -m ballfight search bassclarinet_vs_bassoon -> the best fit
+SEED = 4                         # search 1.. --stop 6: 6 fits in 692 runs, ranked first (12.06): BASSOON wins at 50.2 s on
+                                 # 8.8 HP, 5 lead changes; LIGHTS OUT 38.6 s, then MOUNTAIN KING 42.8 s
 DMG_SCALE = 1.0
 DMG_SIDE = (0.58, 0.70)          # the only lever, tuned once and frozen (300 seeds: BASS CLARINET 51 % / BASSOON 49 % of
                                  # 296 decided, median K.O. 49.5 s, both lows 74 %; grid 0.5-1.0 x 0.5-1.2, then 0.56-0.64 x 0.62-0.70)
@@ -48,6 +49,8 @@ SOLO = {
                 (3.5, 71, .25), (4, 76, .25), (4.5, 74, .25), (5, 71, .25), (5.5, 67, .25), (6, 64, .5),
                 (7, 40, .75)]}
 TITLE_HITS = {'BASSOON': (40, 52)}                         # the bassoon's blat on low E (the bass clarinet: its growl)
+MIX = {'bass clarinet': (1.95, 0.25)}                   # the growl on top of the 808 + kick in 60-500 Hz (band check;
+                                                         # #40 played it at 1.5 over a mid-heavy bed)
 
 # ---------------------------------------------------------------- the post
 CAPTION = 'The low woodwinds settle it 🖤 Comment the next match-up 👇'
