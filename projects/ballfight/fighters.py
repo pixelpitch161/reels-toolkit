@@ -555,7 +555,9 @@ FIGHTERS = {
     # ---- #56 BALLFIGHT: who owns the BOOM - the marching band's two biggest low sounds (a viewer request). The BASS DRUM is
     # the only roller: every bar it tips onto its side and rolls across the ring like a wheel at the enemy (STEAMROLLER),
     # a dust trail telegraphing the line; every impact is a huge BOOM; speed and size grow per landed boom. Model from
-    # Commons photos (series/instrument-history/bassdrum_lowpoly.py). Numbers tuned once with the kit (#56), frozen.
+    # Commons photos (series/instrument-history/bassdrum_lowpoly.py). Numbers as first set, checked once with the kit (#56:
+    # python -m ballfight tune, 300 seeds vs the TUBA at the episode's damage scale 0.66 and handicap 0.86: BASS DRUM 58 % /
+    # TUBA 42 %, median K.O. 53.7 s, both desperation moves in 73 % of fights; the tuba gulps it mid-roll ~9x a fight), frozen.
     'BASS DRUM': dict(
         color=(128, 128, 140), dark=(64, 64, 76), corner='red',       # gunmetal (series colour table, RULES)
         view=(0, 16, 0),
