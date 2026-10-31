@@ -76,7 +76,7 @@ Each production session updates **its own row**: when it starts, sends a draft, 
 | 52 | [BALLFIGHT: Oboe vs Bassoon](ideas/52-ballfight-oboe-vs-bassoon.md) | review | session_01CzTfqc (2026-10-29) | Delivered Oct 29 for review: BASSOON ported from #39, new mood heist, seed 954 (bassoon wins 51.6 s, Grieg out of tune). | `ballfight_oboe_vs_bassoon.mp4` |
 | 53 | [BALLFIGHT: Flute vs Sousaphone](ideas/53-ballfight-flute-vs-sousaphone.md) | review | session_01CzTfqa (2026-10-30) | v1 delivered: seed 146, COMPANY FRONT answers PICCOLO for the K.O.; no obbligato (user). | `ballfight_flute_vs_sousaphone.mp4` |
 | 54 | [BALLFIGHT: Horn vs Trombone, THE REMATCH](ideas/54-ballfight-horn-vs-trombone-rematch.md) | review | session_01CzTfqd (2026-10-30) | Delivered Oct 30: REMATCH card, HORN v3 + brass_trailer ported, seed 630 (horn wins 50.3 s, the bell lands first). | `ballfight_horn_vs_trombone_rematch.mp4` |
-| 55 | [BALLFIGHT: Bass Clarinet vs Bassoon](ideas/55-ballfight-bass-clarinet-vs-bassoon.md) | idea (approved, mood A) | — | Approved Oct 31, mood A (horror suspense trap). Viewer request; kit crossover. | — |
+| 55 | [BALLFIGHT: Bass Clarinet vs Bassoon](ideas/55-ballfight-bass-clarinet-vs-bassoon.md) | in production | session_01CzTfqbjYxnZBhp9dzj3xYv (2026-10-31) | Kit crossover; porting BASS CLARINET from #40; new mood horror_trap. | — |
 
 ## Other notes
 
