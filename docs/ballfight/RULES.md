@@ -107,7 +107,7 @@ styles, ready for crossovers and a tournament bracket.
 | KAZOO | red (from the retired GUITAR) | (255, 84, 72) | | ELECTRIC | neon green | (100, 255, 120) |
 | CELLO | rust | (196, 84, 40) | | CONTRABASS | steel blue | (70, 110, 200) |
 | ALTO SAX | orchid | (200, 80, 240) | | TENOR SAX | burnt orange | (230, 110, 30) |
-| SOUSAPHONE | marching crimson | (210, 30, 60) | | | | |
+| SOUSAPHONE | marching crimson | (210, 30, 60) | | BASS DRUM | gunmetal | (128, 128, 140) |
 
   Spares (Cello, later fighters): pick a colour clearly apart from all of these and add it here.
 - **Fighters:** first named = left corner (screen left), second = right. Weapon scaling: every landed hit grows the
