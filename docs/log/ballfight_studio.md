@@ -38,3 +38,17 @@ Episode sessions port a fighter when a crossover first needs it; those below are
   defaults unchanged, replay guard identical): draw_ball squash / stretch via optional state keys `sx` / `sy`, an
   airborne depth bias `air_bias` and painter height `paint_h`, Look attribute `speed_lift`, HUD holds for `hook` /
   `mountain`. Not ported: #39 v2's leap over a swinging WRECKING BALL (waits for the BARI SAX port), #39's ska-punk bed.
+- **BASS CLARINET (#38, as #40 v2 fought it): ported by #55 Bass Clarinet vs Bassoon** (session_01CzTfqb, Oct 31) into
+  `kit/fighters/bass_clarinet.py` (#38's ENDPIN ANCHOR / SLAP TONGUE / MULTIPHONICS / LIGHTS OUT styles copied unchanged,
+  #40's render layers as Look hooks, #40's audio part as Sound; key-bound notes follow the config's CHORDS, octave by role:
+  'bass' = the line down at the bass, keeps its fundamental, pumps the root into the slam; any other role = #40's counter-line
+  an octave up). Check config `examples/barisax_vs_bassclarinet` (seed 128, #40's DMG_SIDE / SERIES / SHARD_SEED / FX_SEED,
+  LINES = #40's COUNTER_8THS, the bari's later `steer` pinned off in the config as #40's sim.py does): replay hash identical
+  to #40's own sim for 128/1/2/3/500; the bass clarinet's picture state (whirl, sink, twin, slap paddle, dim, glow)
+  identical to #40's on all 1,411 fight frames; 6 frames (whirl, SLAP TONGUE, MULTIPHONICS, LIGHTS OUT sunk + dim, the
+  eruption, a late slap) compared with #40's renderer: its own layers pixel-identical, the differences all on the bare
+  bari (sprite, harness, crane, smash dust, its HUD hold, crowd flashes) plus faint canvas dither from its missing coral
+  flare; its raw bus bit-identical to #40's `bcl` bus. Kit additions (additive, defaults unchanged, replay guard
+  identical): draw_ball's optional state key `sink` (#38 LIGHTS OUT: lowered, shrunk, darkened), HUD holds for `twin` /
+  `lights_out`, `ANC` / `LO` in story.REC_KEYS; a Look may expose `dim_keep(F)` to stay lit under LIGHTS OUT's dim.
+  Not ported: #40's construction-site bed (and the BARI SAX).

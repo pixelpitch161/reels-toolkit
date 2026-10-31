@@ -512,10 +512,13 @@ def screen(cam, P):
 
 # ---------------------------------------------------------------- glass balls
 def draw_ball(arr, dep, cam, k, st, t):
-    pw = S.to_world(st['p'][0], st['p'][1], R + st['lift'])         # #47: a look may lift the ball (SWAN SONG)
+    sink = st.get('sink', 0.0)                                       # #55: a look may sink it into shadow (#38 LIGHTS OUT)
+    pw = S.to_world(st['p'][0], st['p'][1], (R * (1 - 0.75 * sink) if sink else R) + st['lift'])   # #47: lift (SWAN SONG)
     Pc = cam.to_cam(pw[None])[0]
     s = cam.proj(Pc[None])[0]
     rp = R * cam.f / Pc[2] * st['scale']
+    if sink:
+        rp = rp * (1 - 0.35 * sink)
     sq = 'sx' in st or 'sy' in st                                    # #52: a look may squash / stretch it (#39 TIPTOE)
     if sq:
         sx_, sy_ = st.get('sx', 1.0), st.get('sy', 1.0)
@@ -549,6 +552,8 @@ def draw_ball(arr, dep, cam, k, st, t):
     for L in LOOKS:                                                          # debuffs: a soured glass, a seasick tilt
         glass, roll = L.ball(k, st, t, glass, roll)
     inner = (col * 0.30 + glass * 0.70)[None, None] * (0.70 + 0.36 * band[..., None])
+    if sink:                                                                 # in shadow: the glass goes dark (#38)
+        inner = inner * (1 - 0.72 * sink)
     m = inside[sl]
     reg[m] = reg[m] * 0.12 + inner[sl][m] * 0.88
     # the instrument
@@ -566,8 +571,12 @@ def draw_ball(arr, dep, cam, k, st, t):
         lit = sub[..., :3].astype(np.float32) * (1.06 + 0.3 * glow)
         if over is not None and over[1] is not None:                         # (its tint, e.g. an amber stranger)
             lit = over[1](lit)
+        if sink:
+            lit = lit * (1 - 0.72 * sink)
         rg[ms] = np.clip(lit[ms], 0, 255)
     rc = np.clip(col * (0.9 + 0.5 * glow) + 50 * glow, 0, 255)
+    if sink:
+        rc = np.clip((col * (0.9 + 0.5 * glow) + 50 * glow) * (1 - 0.5 * sink), 0, 255)
     mr = rim[sl]
     reg[mr] = rc
     me = edge[sl]
@@ -647,6 +656,8 @@ def _hold(k, slot):
         return (ab['rise_beats'] + ab['glide_beats'] + ab['dive_beats']) * T.BEAT
     if ab['kind'] == 'flick':                        # #34 FINAL FLICK: through its wind-up (#54's HORN port)
         return ab.get('wind_beats', 1) * T.BEAT
+    if ab['kind'] in ('twin', 'lights_out'):         # #38 MULTIPHONICS while the twin lasts, LIGHTS OUT until it erupts
+        return ab['dur_beats'] * T.BEAT              # (#55's BASS CLARINET port)
     return 0.08
 
 
