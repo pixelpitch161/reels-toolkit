@@ -20,7 +20,9 @@ other chords get the same shape by rule (the four highest chord tones up to E-fl
 
 Config (opt-in, #56): `DRUMLINE = dict(bass_drums=False)` drops the bed's own five bass drums everywhere (the cadence's
 unison hits and splits, the unison hits, the last bar's beats) for an episode whose fighter IS the bass drum; snares,
-quads, cymbals and the pit stay as they are. Without it the bed is unchanged."""
+quads, cymbals and the pit stay as they are; with `after_ko=True` as well, the bed's bass drums come back from the
+K.O. on (the fighter lies in pieces: the drumline covers the low end under the winner's solo and the build into the
+seam). Without it the bed is unchanged."""
 import numpy as np
 
 # the cadence (16 16ths per bar). Snare: A accent, t tap, g ghost, f flam, r diddle roll, . rest (#38, unchanged)
@@ -42,7 +44,9 @@ class Bed:
     def __init__(self, M):
         self.M, self.T, self.A, self.SR = M, M.T, M.A, M.SR
         self._c = {}
-        self.bd_on = getattr(self.T, 'DRUMLINE', {}).get('bass_drums', True)   # #56: opt-out of the bass drums
+        dl = getattr(self.T, 'DRUMLINE', {})
+        self.bd_on = dl.get('bass_drums', True)                     # #56: opt-out of the bass drums
+        self.bd_tail = bool(dl.get('after_ko', False))              # #56: ... back from the K.O. on
 
     def _cache(self, key, fn):
         if key not in self._c:
@@ -271,6 +275,8 @@ class Bed:
 
     def after_ko(self, mix, bar_ko, tw, t_solo):
         """the drumline holds its breath (never quiet) until the solo"""
+        if self.bd_tail:
+            self.bd_on = True
         for b in range(bar_ko + 1, int(round(t_solo / self.T.BAR))):
             self.cadence(mix, b, dense=0.6)
 
