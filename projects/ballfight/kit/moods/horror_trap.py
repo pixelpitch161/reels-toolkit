@@ -2,7 +2,7 @@
 and NO woodwinds of its own (the two low reeds are the leads: the bass clarinet growls the bass line, the bassoon plays
 the comic staccato line above it):
 
-    808         a long sub 808 on each bar's root (the octave under the bass clarinet's line), sliding into the next root
+    808         a long pure sub 808 on each bar's root (C1..B1, under the bass clarinet's growl), sliding into the next root
                 at the end of a phrase (the trap slide), a ghost hit on the "and of 3"
     drums       half-time trap kit: a tight kick on 1 and a syncopated pickup, a clap + snare on 3, closed hats on the 8ths
                 that skitter into 16th / triplet rolls at phrase ends, an open hat choked on the "and of 4" later
@@ -27,7 +27,7 @@ import numpy as np
 
 
 class Bed:
-    buses = {'808': (1.30, 0.04), 'drums': (1.20, 0.10), 'musicbox': (0.90, 0.50), 'strings': (0.60, 0.40),
+    buses = {'808': (0.95, 0.04), 'drums': (1.20, 0.10), 'musicbox': (0.90, 0.50), 'strings': (0.60, 0.40),
              'swell': (0.80, 0.35)}                     # bus: (gain, reverb send)
     reverb = (2.4, 0.6, 0.18)                          # a big, cold room: (dur, decay, wet)
     comp = (0.17, 0.58)                                # master compressor: threshold, exponent
@@ -64,7 +64,7 @@ class Bed:
 
     # ---------------------------------------------------------------- harmony
     def root(self, ch):
-        return self.T.root_above(ch, 28)                       # the 808's root, E1..D#2
+        return self.T.root_above(ch, 24)                       # the 808's root, C1..B1: a sub under the growl
 
     def box_motif(self, ch, ch2):
         """the music box's 2-bar lullaby over chords ch, ch2: 8 notes a bar, high (E6..), the chord's tones with a
@@ -88,19 +88,19 @@ class Bed:
             n = int((dur + 0.06) * SR)
             t = A.tt(n)
             f0 = A.mtof(m)
-            semis = 7.0 * np.exp(-t / 0.018)                   # the click-drop into pitch
+            semis = 4.0 * np.exp(-t / 0.014)                   # the click-drop into pitch
             if to is not None:
                 semis = semis + (to - m) * np.clip((t - (dur - slide)) / slide, 0, 1) ** 1.5
             ph = 2 * np.pi * np.cumsum(f0 * 2 ** (semis / 12)) / SR
-            x = np.sin(ph) + 0.12 * np.sin(2 * ph)
+            x = np.sin(ph)                                     # a pure sub: the band above it is the bass clarinet's
             env = np.clip(t / 0.003, 0, 1) * np.exp(-t / max(0.25, dur * 0.9)) * \
                 np.where(t < dur, 1.0, np.exp(-(t - dur) / 0.02))
-            return np.tanh(1.6 * x * env) / np.tanh(1.6)
+            return A.lp(np.tanh(1.1 * x * env) / np.tanh(1.1), 90)
         return self._cache(('808', round(m, 2), round(dur, 3), to, round(slide, 3)), make) * v
 
     def kick(self, v=1.0):
         A = self.A
-        return self._cache('kick', lambda: A.hp(A.kick(1.0, 0.09, 180, 60)[:int(0.16 * self.SR)], 45)) * v
+        return self._cache('kick', lambda: A.hp(A.kick(1.0, 0.06, 170, 48)[:int(0.12 * self.SR)], 40)) * v
 
     def clap(self, v=1.0, seed=0):
         """a trap clap layered with a tight snare: three quick noise bursts + a short tail"""
@@ -114,7 +114,7 @@ class Bed:
             for j, dt in enumerate((0.0, 0.009, 0.019)):
                 i0 = int(dt * SR)
                 x[i0:] += A.bp(rng.normal(0, 1, n - i0), 900, 5000) * np.exp(-A.tt(n - i0) / (0.006 if j < 2 else 0.09))
-            sn = A.snare(0.10)[:n]
+            sn = A.hp(A.snare(0.10), 450)[:n]                # (no body: 60-500 Hz is the growl's)
             return x * 0.9 + np.pad(sn, (0, n - len(sn))) * 0.5
         return self._cache(('clap', seed % 2), make) * v
 
@@ -200,7 +200,7 @@ class Bed:
         for bt in range(4):
             tb = t0 + bt * T.BEAT
             if bt == 0 and not dark(tb):
-                mix.place('drums', self.kick(1.0), tb, 0.62)
+                mix.place('drums', self.kick(1.0), tb, 0.55)
             if bt == 2 and not dark(tb):
                 mix.place('drums', self.clap(1.0, seed=b), tb, 0.50, pan=0.05)
         if not dark(t0 + 1.75 * T.BEAT):                       # the syncopated pickup kick
@@ -242,7 +242,7 @@ class Bed:
         # ---- creeping low strings, swelling over 2 bars
         if b % 2 == 0 and not (dark(t0) or dark(t0 + T.BAR)):
             sr = T.root_above(ch, 40)
-            mix.place('strings', self.strings((sr, sr + 7, sr + 13), 2 * T.BAR * 0.97, trem=dense), t0, 0.16)
+            mix.place('strings', self.strings((sr, sr + 7, sr + 13), 2 * T.BAR * 0.97, trem=dense), t0, 0.42)
 
     def clash(self, mix, t):
         mix.place('fx', self.hat(1.0, seed=1), t, 0.10)
@@ -288,7 +288,7 @@ class Bed:
         for j in range(8):
             mix.place('drums', self.hat(1.0, seed=j), j * T.BEAT / 2 + 0.004, 0.16 if j % 2 == 0 else 0.12, pan=0.25)
         sr = T.root_above(ch, 40)
-        mix.place('strings', self.strings((sr, sr + 7, sr + 13), T.BAR * 0.97), 0.0, 0.16)
+        mix.place('strings', self.strings((sr, sr + 7, sr + 13), T.BAR * 0.97), 0.0, 0.42)
         mix.place('808', self.b808(self.root(ch), T.BEAT * 0.9, to=self.root(T.CHORDS[1]) + 12, slide=0.2), 3 * T.BEAT,
                   0.42)
 
@@ -367,7 +367,7 @@ class Bed:
             m = top[j % len(top)] + 12 * (j // len(top))
             mix.place('musicbox', self.tine(min(m, 103), T.BEAT * 0.5), t_last + j * T.BEAT / 2, 0.15, pan=-0.3)
         sr = T.root_above(ch, 40)
-        mix.place('strings', self.strings((sr, sr + 7, sr + 13), T.BAR, trem=True), t_last, 0.16)
+        mix.place('strings', self.strings((sr, sr + 7, sr + 13), T.BAR, trem=True), t_last, 0.42)
         sw = T.BAR - 0.02
         mix.place('swell', self.rev_swell(sw), T.DUR - sw, 0.20)
         mix.place('fx', M.riser(T.DUR - t_last), t_last, 0.16)
