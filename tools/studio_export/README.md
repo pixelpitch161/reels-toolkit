@@ -140,6 +140,7 @@ EXPORTS = {'thing': run}                         # python -m tools.studio_export
 
 | Name | Module | Files |
 | --- | --- | --- |
+| `dsp` | `dsp_vectors.py` | `studio/reference/dsp/{butter,filters,resample,fftconvolve,numpy,ufuncs,generators}.npz`, each with its sidecar `.json` (order 40) |
 | `fights` | `fights.py` | `studio/reference/fights/flute_vs_trombone/{ep392,seed1,seed2,seed3,seed500}.bfrec` |
 | `py` | `py_vectors.py` | `studio/reference/py/vectors.json` |
 | `pyhash` | `pyhash_vectors.py` | `studio/reference/pyhash/vectors.json` |
@@ -239,3 +240,34 @@ JSON integers.
 | `mod`, `floordiv` | `a % b`, `a // b` on floats | f64 |
 | `wrap_pi` | `(a + math.pi) % (2 * math.pi) - math.pi` (`fight.py` `_wrap`) | f64 |
 | `imod`, `ifloordiv` | `a % b`, `a // b` on ints | int |
+
+### `dsp`: signal-processing vectors
+
+For `bf-sound`'s DSP layer (filters, resampling, convolution, the `reelkit.audio` generators). What the episode asks
+for is learned by wrapping `scipy.signal.butter` and the `reelkit.audio` generators at run time while
+`kit.music.main()` builds the `flute_vs_trombone` soundtrack and the band and loudness checks run; the vectors are
+then made by calling the real functions. The export runs in its own interpreter (`dsp_vectors.fresh`), because
+building the soundtrack advances the Pixel Pitch voices' shared noise generator. Every array is `float64`; a scalar
+result is a 1-element array and also a `float.hex()` string in the case's `result`. Floats in `args` are
+`float.hex()` strings; `call` shows the same call with decimal numbers for a reader.
+
+| File | Cases |
+| --- | --- |
+| `butter` | Every distinct `scipy.signal.butter` design asked for (311 for this episode): `output="sos"` from `reelkit.audio.sos` (`hp`, `lp`, `bp`, order 2, `fs=48000`) and from the band check (order 4 band-pass), and one `output="ba"` design, the series' own `lp(x, 2500)` at 44,100 Hz (the flute's chiff). `args`: `N`, `Wn` (one or two cutoffs), `btype` as the caller wrote it, `fs` (null: `Wn` is a fraction of Nyquist), `output`. `requests` counts the calls, `used_by` names the kit functions |
+| `filters` | `sosfilt(sos, noise, axis=0)` for 14 of those designs on the fixed input `noise` (`default_rng(4800).normal(0, 1, 4800)`), one on the stereo `noise2`; `lfilter` for the series' low-pass, the master's envelope follower `([0.002], [1, -0.998])` and the two K-weighting stages of the loudness check |
+| `resample` | `resample_poly(x, 160, 147)` on noise, a spike, a real 44,100 Hz trombone note and a 100-sample input; `firwin` (the 3,201-tap low-pass scipy designs) and `h` (what it hands to `upfirdn`) are stored with them |
+| `fftconvolve` | Two pairs: 1,000 against 300 samples, and 12,000 against a 48,000-sample tail shaped like the reverb's |
+| `numpy` | `np.interp` (the glide warp with `right=0.0`, the tape stop, sparse points), `np.percentile(x, 99.97)`, `np.convolve(f ** 2, ones(w) / w, "same")`, `np.cumsum`, `np.linspace`, the sums and means the sound code takes (numpy adds a long 1-D array pairwise), the peak, and the 16-bit conversion of `reelkit.audio.write` |
+| `ufuncs` | `np.sin`, `np.cos`, `np.exp`, `np.tanh`, `np.sqrt`, `np.log10` and the powers the sound code takes, on 2,048 fixed inputs each; cases whose `call` starts with `python:` are the Python-scalar maths (`math.cos`, `math.sin`, `math.exp`, `float ** float`) one value at a time |
+| `generators` | Each `reelkit.audio` generator at its default arguments (`stand_in` gives the values used for arguments without a default) and at each argument set the soundtrack uses. `signatures` holds every generator's parameters and defaults; `episode_calls` lists every argument set used, with its count, callers and the ids of its cases |
+
+Two things `generators` does to stay small. `thud` is called with 229 argument sets that differ mostly in `seed`:
+for each `(dur, f0, f1)` only the first two seeds used have vectors (`episode_calls` still lists all of them). And
+`reverb` and `tape_stop` take a whole bus, so their parameter sets are applied to stand-in buffers stored in the
+file: `impulse` (the output is then the first second of the impulse response) and `burst` for `reverb`, `tape`
+with `t0 = 0.05` for `tape_stop`.
+
+`dsp_vectors.check()` reads the files back and recomputes the scipy and numpy results from the stored inputs; the
+export runs it before it lists anything in the manifest. `dsp_vectors.py` also holds what the other sound exports
+share: `Cases` (one vector file and its sidecar, written and read back) and `fresh` (run an export in its own
+interpreter).

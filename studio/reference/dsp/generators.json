@@ -1,0 +1,4425 @@
+{
+ "about": "reelkit.audio generators (48,000 Hz, float64): each at its default arguments and at each argument set the flute_vs_trombone soundtrack uses",
+ "cases": [
+  {
+   "args": {
+    "dec": "0x1.47ae147ae147bp-2",
+    "f0": 150,
+    "f1": 46,
+    "punch": "0x1.0000000000000p+0"
+   },
+   "arrays": {
+    "out": "c000__out"
+   },
+   "call": "reelkit.audio.kick(punch=1.0, dec=0.32, f0=150, f1=46)",
+   "generator": "kick",
+   "id": "c000",
+   "nested": 0,
+   "used_by": [],
+   "uses": 0,
+   "why": "default"
+  },
+  {
+   "args": {
+    "dec": "0x1.999999999999ap-3",
+    "f0": 105,
+    "f1": 50,
+    "punch": "0x1.6666666666666p-1"
+   },
+   "arrays": {
+    "out": "c001__out"
+   },
+   "call": "reelkit.audio.kick(punch=0.7, dec=0.2, f0=105, f1=50)",
+   "generator": "kick",
+   "id": "c001",
+   "nested": 0,
+   "used_by": ["ballfight.kit.moods.big_top Bed.bass_drum"],
+   "uses": 73,
+   "why": "episode"
+  },
+  {
+   "args": {
+    "dec": "0x1.1eb851eb851ecp-3"
+   },
+   "arrays": {
+    "out": "c002__out"
+   },
+   "call": "reelkit.audio.snare(dec=0.14)",
+   "generator": "snare",
+   "id": "c002",
+   "nested": 0,
+   "used_by": [],
+   "uses": 0,
+   "why": "default"
+  },
+  {
+   "args": {
+    "dec": "0x1.0a3d70a3d70a4p-3"
+   },
+   "arrays": {
+    "out": "c003__out"
+   },
+   "call": "reelkit.audio.snare(dec=0.13)",
+   "generator": "snare",
+   "id": "c003",
+   "nested": 0,
+   "used_by": ["ballfight.kit.moods.big_top Bed.snare"],
+   "uses": 221,
+   "why": "episode"
+  },
+  {
+   "args": {},
+   "arrays": {
+    "out": "c004__out"
+   },
+   "call": "reelkit.audio.clap()",
+   "generator": "clap",
+   "id": "c004",
+   "nested": 0,
+   "used_by": [],
+   "uses": 0,
+   "why": "default"
+  },
+  {
+   "args": {
+    "dec": "0x1.1eb851eb851ecp-5",
+    "open_": false
+   },
+   "arrays": {
+    "out": "c005__out"
+   },
+   "call": "reelkit.audio.hat(dec=0.035, open_=False)",
+   "generator": "hat",
+   "id": "c005",
+   "nested": 0,
+   "used_by": [],
+   "uses": 0,
+   "why": "default"
+  },
+  {
+   "args": {
+    "dur": "0x1.0000000000000p+1"
+   },
+   "arrays": {
+    "out": "c006__out"
+   },
+   "call": "reelkit.audio.crash(dur=2.0)",
+   "generator": "crash",
+   "id": "c006",
+   "nested": 0,
+   "used_by": ["ballfight.kit.moods.big_top Bed.fight"],
+   "uses": 1,
+   "why": "default"
+  },
+  {
+   "args": {
+    "dur": "0x1.0000000000000p+0"
+   },
+   "arrays": {
+    "out": "c007__out"
+   },
+   "call": "reelkit.audio.crash(dur=1.0)",
+   "generator": "crash",
+   "id": "c007",
+   "nested": 0,
+   "used_by": ["ballfight.kit.moods.big_top Bed.title"],
+   "uses": 3,
+   "why": "episode"
+  },
+  {
+   "args": {
+    "dur": "0x1.ccccccccccccdp+0"
+   },
+   "arrays": {
+    "out": "c008__out"
+   },
+   "call": "reelkit.audio.crash(dur=1.8)",
+   "generator": "crash",
+   "id": "c008",
+   "nested": 0,
+   "used_by": ["ballfight.kit.moods.big_top Bed.fight_start", "ballfight.kit.moods.big_top Bed.stinger"],
+   "uses": 2,
+   "why": "episode"
+  },
+  {
+   "args": {
+    "dur": "0x1.999999999999ap+0"
+   },
+   "arrays": {
+    "out": "c009__out"
+   },
+   "call": "reelkit.audio.crash(dur=1.6)",
+   "generator": "crash",
+   "id": "c009",
+   "nested": 0,
+   "used_by": ["ballfight.kit.fighters.trombone Sound.play", "ballfight.kit.moods.big_top Bed.fight"],
+   "uses": 5,
+   "why": "episode"
+  },
+  {
+   "args": {
+    "dur": "0x1.3333333333333p+1"
+   },
+   "arrays": {
+    "out": "c010__out"
+   },
+   "call": "reelkit.audio.crash(dur=2.4)",
+   "generator": "crash",
+   "id": "c010",
+   "nested": 0,
+   "used_by": ["ballfight.kit.moods.big_top Bed.ko"],
+   "uses": 1,
+   "why": "episode"
+  },
+  {
+   "args": {
+    "dur": "0x1.3333333333333p-1",
+    "hi": 5000,
+    "lo": 300,
+    "rise": true,
+    "seed": 6
+   },
+   "arrays": {
+    "out": "c011__out"
+   },
+   "call": "reelkit.audio.whoosh(dur=0.6, lo=300, hi=5000, rise=True, seed=6)",
+   "generator": "whoosh",
+   "id": "c011",
+   "nested": 0,
+   "used_by": [],
+   "uses": 0,
+   "why": "default"
+  },
+  {
+   "args": {
+    "dur": "0x1.ac92f95fc62c6p-2",
+    "hi": 5000,
+    "lo": 300,
+    "rise": true,
+    "seed": 6
+   },
+   "arrays": {
+    "out": "c012__out"
+   },
+   "call": "reelkit.audio.whoosh(dur=0.4185294117647057, lo=300, hi=5000, rise=True, seed=6)",
+   "generator": "whoosh",
+   "id": "c012",
+   "nested": 0,
+   "used_by": ["ballfight.kit.music score"],
+   "uses": 1,
+   "why": "episode"
+  },
+  {
+   "args": {
+    "dur": "0x1.cb4b4b4b4b4b4p-2",
+    "hi": 6000,
+    "lo": 400,
+    "rise": true,
+    "seed": 6
+   },
+   "arrays": {
+    "out": "c013__out"
+   },
+   "call": "reelkit.audio.whoosh(dur=0.44852941176470584, lo=400, hi=6000, rise=True, seed=6)",
+   "generator": "whoosh",
+   "id": "c013",
+   "nested": 0,
+   "used_by": ["ballfight.kit.music score"],
+   "uses": 1,
+   "why": "episode"
+  },
+  {
+   "args": {
+    "dur": "0x1.3333333333333p-1",
+    "hi": 1500,
+    "lo": 200,
+    "rise": false,
+    "seed": 6
+   },
+   "arrays": {
+    "out": "c014__out"
+   },
+   "call": "reelkit.audio.whoosh(dur=0.6, lo=200, hi=1500, rise=False, seed=6)",
+   "generator": "whoosh",
+   "id": "c014",
+   "nested": 0,
+   "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+   "uses": 5,
+   "why": "episode"
+  },
+  {
+   "args": {
+    "dur": "0x1.cb4b4b4b4b4b4p-1",
+    "hi": 1800,
+    "lo": 150,
+    "rise": true,
+    "seed": 6
+   },
+   "arrays": {
+    "out": "c015__out"
+   },
+   "call": "reelkit.audio.whoosh(dur=0.8970588235294117, lo=150, hi=1800, rise=True, seed=6)",
+   "generator": "whoosh",
+   "id": "c015",
+   "nested": 0,
+   "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+   "uses": 1,
+   "why": "episode"
+  },
+  {
+   "args": {
+    "dur": "0x1.254545454544dp-1",
+    "hi": 5000,
+    "lo": 300,
+    "rise": true,
+    "seed": 6
+   },
+   "arrays": {
+    "out": "c016__out"
+   },
+   "call": "reelkit.audio.whoosh(dur=0.572794117647058, lo=300, hi=5000, rise=True, seed=6)",
+   "generator": "whoosh",
+   "id": "c016",
+   "nested": 0,
+   "used_by": ["ballfight.kit.moods.big_top Bed.after_ko"],
+   "uses": 1,
+   "why": "episode"
+  },
+  {
+   "args": {
+    "dur": "0x1.47ae147ae147bp-2",
+    "f0": "0x1.e000000000000p+6",
+    "f1": "0x1.8000000000000p+5",
+    "seed": 7
+   },
+   "arrays": {
+    "out": "c017__out"
+   },
+   "call": "reelkit.audio.thud(dur=0.32, f0=120.0, f1=48.0, seed=7)",
+   "generator": "thud",
+   "id": "c017",
+   "nested": 0,
+   "used_by": ["ballfight.kit.music score"],
+   "uses": 10,
+   "why": "default"
+  },
+  {
+   "args": {
+    "dur": "0x1.999999999999ap-1",
+    "f0": 120,
+    "f1": 34,
+    "seed": 3
+   },
+   "arrays": {
+    "out": "c018__out"
+   },
+   "call": "reelkit.audio.thud(dur=0.8, f0=120, f1=34, seed=3)",
+   "generator": "thud",
+   "id": "c018",
+   "nested": 0,
+   "used_by": ["ballfight.kit.moods.big_top Bed.title"],
+   "uses": 1,
+   "why": "episode"
+  },
+  {
+   "args": {
+    "dur": "0x1.999999999999ap-1",
+    "f0": 120,
+    "f1": 34,
+    "seed": 25
+   },
+   "arrays": {
+    "out": "c019__out"
+   },
+   "call": "reelkit.audio.thud(dur=0.8, f0=120, f1=34, seed=25)",
+   "generator": "thud",
+   "id": "c019",
+   "nested": 0,
+   "used_by": ["ballfight.kit.moods.big_top Bed.title"],
+   "uses": 1,
+   "why": "episode"
+  },
+  {
+   "args": {
+    "dur": "0x1.6666666666666p-1",
+    "f0": 110,
+    "f1": 34,
+    "seed": 7
+   },
+   "arrays": {
+    "out": "c020__out"
+   },
+   "call": "reelkit.audio.thud(dur=0.7, f0=110, f1=34, seed=7)",
+   "generator": "thud",
+   "id": "c020",
+   "nested": 0,
+   "used_by": ["ballfight.kit.moods.big_top Bed.fight_start"],
+   "uses": 1,
+   "why": "episode"
+  },
+  {
+   "args": {
+    "dur": "0x1.70a3d70a3d70ap-3",
+    "f0": 220,
+    "f1": 120,
+    "seed": 32
+   },
+   "arrays": {
+    "out": "c021__out"
+   },
+   "call": "reelkit.audio.thud(dur=0.18, f0=220, f1=120, seed=32)",
+   "generator": "thud",
+   "id": "c021",
+   "nested": 0,
+   "used_by": ["ballfight.kit.fighters.flute Sound.play"],
+   "uses": 1,
+   "why": "episode"
+  },
+  {
+   "args": {
+    "dur": "0x1.70a3d70a3d70ap-3",
+    "f0": 220,
+    "f1": 120,
+    "seed": 48
+   },
+   "arrays": {
+    "out": "c022__out"
+   },
+   "call": "reelkit.audio.thud(dur=0.18, f0=220, f1=120, seed=48)",
+   "generator": "thud",
+   "id": "c022",
+   "nested": 0,
+   "used_by": ["ballfight.kit.fighters.flute Sound.play"],
+   "uses": 1,
+   "why": "episode"
+  },
+  {
+   "args": {
+    "dur": "0x1.ccccccccccccdp-2",
+    "f0": 140,
+    "f1": 60,
+    "seed": 7
+   },
+   "arrays": {
+    "out": "c023__out"
+   },
+   "call": "reelkit.audio.thud(dur=0.45, f0=140, f1=60, seed=7)",
+   "generator": "thud",
+   "id": "c023",
+   "nested": 0,
+   "used_by": ["ballfight.kit.fighters.flute Sound.play"],
+   "uses": 1,
+   "why": "episode"
+  },
+  {
+   "args": {
+    "dur": "0x1.c28f5c28f5c29p-3",
+    "f0": 150,
+    "f1": 70,
+    "seed": 31
+   },
+   "arrays": {
+    "out": "c024__out"
+   },
+   "call": "reelkit.audio.thud(dur=0.22, f0=150, f1=70, seed=31)",
+   "generator": "thud",
+   "id": "c024",
+   "nested": 0,
+   "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+   "uses": 1,
+   "why": "episode"
+  },
+  {
+   "args": {
+    "dur": "0x1.c28f5c28f5c29p-3",
+    "f0": 150,
+    "f1": 70,
+    "seed": 40
+   },
+   "arrays": {
+    "out": "c025__out"
+   },
+   "call": "reelkit.audio.thud(dur=0.22, f0=150, f1=70, seed=40)",
+   "generator": "thud",
+   "id": "c025",
+   "nested": 0,
+   "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+   "uses": 1,
+   "why": "episode"
+  },
+  {
+   "args": {
+    "dur": "0x1.999999999999ap-2",
+    "f0": 120,
+    "f1": 45,
+    "seed": 7
+   },
+   "arrays": {
+    "out": "c026__out"
+   },
+   "call": "reelkit.audio.thud(dur=0.4, f0=120, f1=45, seed=7)",
+   "generator": "thud",
+   "id": "c026",
+   "nested": 0,
+   "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+   "uses": 2,
+   "why": "episode"
+  },
+  {
+   "args": {
+    "dur": "0x1.999999999999ap-1",
+    "f0": 90,
+    "f1": 30,
+    "seed": 7
+   },
+   "arrays": {
+    "out": "c027__out"
+   },
+   "call": "reelkit.audio.thud(dur=0.8, f0=90, f1=30, seed=7)",
+   "generator": "thud",
+   "id": "c027",
+   "nested": 0,
+   "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+   "uses": 1,
+   "why": "episode"
+  },
+  {
+   "args": {
+    "dur": "0x1.c28f5c28f5c29p-3",
+    "f0": 95,
+    "f1": 55,
+    "seed": 49
+   },
+   "arrays": {
+    "out": "c028__out"
+   },
+   "call": "reelkit.audio.thud(dur=0.22, f0=95, f1=55, seed=49)",
+   "generator": "thud",
+   "id": "c028",
+   "nested": 0,
+   "used_by": ["ballfight.kit.music shared_events"],
+   "uses": 1,
+   "why": "episode"
+  },
+  {
+   "args": {
+    "dur": "0x1.c28f5c28f5c29p-3",
+    "f0": 95,
+    "f1": 55,
+    "seed": 52
+   },
+   "arrays": {
+    "out": "c029__out"
+   },
+   "call": "reelkit.audio.thud(dur=0.22, f0=95, f1=55, seed=52)",
+   "generator": "thud",
+   "id": "c029",
+   "nested": 0,
+   "used_by": ["ballfight.kit.music shared_events"],
+   "uses": 1,
+   "why": "episode"
+  },
+  {
+   "args": {
+    "dur": "0x1.ccccccccccccdp-1",
+    "f0": 120,
+    "f1": 30,
+    "seed": 7
+   },
+   "arrays": {
+    "out": "c030__out"
+   },
+   "call": "reelkit.audio.thud(dur=0.9, f0=120, f1=30, seed=7)",
+   "generator": "thud",
+   "id": "c030",
+   "nested": 0,
+   "used_by": ["ballfight.kit.moods.big_top Bed.ko"],
+   "uses": 1,
+   "why": "episode"
+  },
+  {
+   "args": {
+    "dur": "0x1.3333333333333p+0",
+    "m": 60
+   },
+   "arrays": {
+    "out": "c031__out"
+   },
+   "call": "reelkit.audio.pluck(m=60, dur=1.2)",
+   "generator": "pluck",
+   "id": "c031",
+   "nested": 0,
+   "used_by": [],
+   "uses": 0,
+   "why": "default"
+  },
+  {
+   "args": {
+    "att": "0x1.3333333333333p-2",
+    "cut": 1600,
+    "dur": "0x1.0000000000000p+0",
+    "ms": [60, 64, 67]
+   },
+   "arrays": {
+    "out": "c032__out"
+   },
+   "call": "reelkit.audio.pad(ms=(60, 64, 67), dur=1.0, cut=1600, att=0.3)",
+   "generator": "pad",
+   "id": "c032",
+   "nested": 0,
+   "used_by": [],
+   "uses": 0,
+   "why": "default"
+  },
+  {
+   "args": {
+    "dur": "0x1.0000000000000p-1",
+    "m": 40
+   },
+   "arrays": {
+    "out": "c033__out"
+   },
+   "call": "reelkit.audio.bass(m=40, dur=0.5)",
+   "generator": "bass",
+   "id": "c033",
+   "nested": 0,
+   "used_by": [],
+   "uses": 0,
+   "why": "default"
+  },
+  {
+   "args": {
+    "dur": "0x1.3333333333333p+0",
+    "m": 84
+   },
+   "arrays": {
+    "out": "c034__out"
+   },
+   "call": "reelkit.audio.chime(m=84, dur=1.2)",
+   "generator": "chime",
+   "id": "c034",
+   "nested": 0,
+   "used_by": [],
+   "uses": 0,
+   "why": "default"
+  },
+  {
+   "args": {
+    "dur": "0x1.999999999999ap-1",
+    "m": 107
+   },
+   "arrays": {
+    "out": "c035__out"
+   },
+   "call": "reelkit.audio.chime(m=107, dur=0.8)",
+   "generator": "chime",
+   "id": "c035",
+   "nested": 0,
+   "used_by": ["ballfight.kit.moods.big_top Bed.bar"],
+   "uses": 2,
+   "why": "episode"
+  },
+  {
+   "args": {
+    "dur": "0x1.999999999999ap-1",
+    "m": 104
+   },
+   "arrays": {
+    "out": "c036__out"
+   },
+   "call": "reelkit.audio.chime(m=104, dur=0.8)",
+   "generator": "chime",
+   "id": "c036",
+   "nested": 0,
+   "used_by": ["ballfight.kit.moods.big_top Bed.bar"],
+   "uses": 2,
+   "why": "episode"
+  },
+  {
+   "args": {
+    "dur": "0x1.999999999999ap-1",
+    "m": 100
+   },
+   "arrays": {
+    "out": "c037__out"
+   },
+   "call": "reelkit.audio.chime(m=100, dur=0.8)",
+   "generator": "chime",
+   "id": "c037",
+   "nested": 0,
+   "used_by": ["ballfight.kit.moods.big_top Bed.bar"],
+   "uses": 2,
+   "why": "episode"
+  },
+  {
+   "args": {
+    "dur": "0x1.999999999999ap-1",
+    "m": 105
+   },
+   "arrays": {
+    "out": "c038__out"
+   },
+   "call": "reelkit.audio.chime(m=105, dur=0.8)",
+   "generator": "chime",
+   "id": "c038",
+   "nested": 0,
+   "used_by": ["ballfight.kit.moods.big_top Bed.bar"],
+   "uses": 2,
+   "why": "episode"
+  },
+  {
+   "args": {
+    "dur": "0x1.0000000000000p-1",
+    "m": 95
+   },
+   "arrays": {
+    "out": "c039__out"
+   },
+   "call": "reelkit.audio.chime(m=95, dur=0.5)",
+   "generator": "chime",
+   "id": "c039",
+   "nested": 0,
+   "used_by": ["ballfight.kit.music score"],
+   "uses": 1,
+   "why": "episode"
+  },
+  {
+   "args": {
+    "dur": "0x1.0000000000000p-1",
+    "m": 100
+   },
+   "arrays": {
+    "out": "c040__out"
+   },
+   "call": "reelkit.audio.chime(m=100, dur=0.5)",
+   "generator": "chime",
+   "id": "c040",
+   "nested": 0,
+   "used_by": ["ballfight.kit.music score"],
+   "uses": 1,
+   "why": "episode"
+  },
+  {
+   "args": {
+    "decay": "0x1.3333333333333p-1",
+    "dur": "0x1.3333333333333p+1",
+    "seed": 3,
+    "x": {
+     "array": [48000, 2]
+    }
+   },
+   "arrays": {
+    "out": "c041__out",
+    "x": "impulse"
+   },
+   "call": "reelkit.audio.reverb(x=<array (48000, 2)>, dur=2.4, decay=0.6, seed=3)",
+   "generator": "reverb",
+   "id": "c041",
+   "input": "impulse",
+   "nested": 0,
+   "used_by": [],
+   "uses": 0,
+   "why": "default"
+  },
+  {
+   "args": {
+    "decay": "0x1.3333333333333p-1",
+    "dur": "0x1.3333333333333p+1",
+    "seed": 3,
+    "x": {
+     "array": [12000, 2]
+    }
+   },
+   "arrays": {
+    "out": "c042__out",
+    "x": "burst"
+   },
+   "call": "reelkit.audio.reverb(x=<array (12000, 2)>, dur=2.4, decay=0.6, seed=3)",
+   "generator": "reverb",
+   "id": "c042",
+   "input": "burst",
+   "nested": 0,
+   "used_by": [],
+   "uses": 0,
+   "why": "default"
+  },
+  {
+   "args": {
+    "decay": "0x1.199999999999ap-1",
+    "dur": "0x1.0000000000000p+1",
+    "seed": 3,
+    "x": {
+     "array": [48000, 2]
+    }
+   },
+   "arrays": {
+    "out": "c043__out",
+    "x": "impulse"
+   },
+   "call": "reelkit.audio.reverb(x=<array (48000, 2)>, dur=2.0, decay=0.55, seed=3)",
+   "generator": "reverb",
+   "id": "c043",
+   "input": "impulse",
+   "nested": 0,
+   "used_by": ["ballfight.kit.music master"],
+   "uses": 1,
+   "why": "episode"
+  },
+  {
+   "args": {
+    "decay": "0x1.199999999999ap-1",
+    "dur": "0x1.0000000000000p+1",
+    "seed": 3,
+    "x": {
+     "array": [12000, 2]
+    }
+   },
+   "arrays": {
+    "out": "c044__out",
+    "x": "burst"
+   },
+   "call": "reelkit.audio.reverb(x=<array (12000, 2)>, dur=2.0, decay=0.55, seed=3)",
+   "generator": "reverb",
+   "id": "c044",
+   "input": "burst",
+   "nested": 0,
+   "used_by": ["ballfight.kit.music master"],
+   "uses": 1,
+   "why": "episode"
+  },
+  {
+   "args": {
+    "length": "0x1.8000000000000p+0",
+    "t0": "0x1.999999999999ap-5",
+    "x": {
+     "array": [74400, 2]
+    }
+   },
+   "arrays": {
+    "out": "c045__out",
+    "x": "tape"
+   },
+   "call": "reelkit.audio.tape_stop(x=<array (74400, 2)>, t0=0.05, length=1.5)",
+   "episode_t0": null,
+   "generator": "tape_stop",
+   "id": "c045",
+   "input": "tape",
+   "nested": 0,
+   "used_by": [],
+   "uses": 0,
+   "why": "default"
+  },
+  {
+   "args": {
+    "length": "0x1.ae147ae147ae1p-2",
+    "t0": "0x1.999999999999ap-5",
+    "x": {
+     "array": [74400, 2]
+    }
+   },
+   "arrays": {
+    "out": "c046__out",
+    "x": "tape"
+   },
+   "call": "reelkit.audio.tape_stop(x=<array (74400, 2)>, t0=0.05, length=0.42)",
+   "episode_t0": "0x1.902c2c2c2c2c2p+5",
+   "generator": "tape_stop",
+   "id": "c046",
+   "input": "tape",
+   "nested": 0,
+   "used_by": ["ballfight.kit.moods.big_top Bed.fight"],
+   "uses": 3,
+   "why": "episode"
+  },
+  {
+   "args": {
+    "det": "0x0.0p+0",
+    "f": "0x1.b800000000000p+7",
+    "n": 4800,
+    "voices": 1
+   },
+   "arrays": {
+    "out": "c047__out"
+   },
+   "call": "reelkit.audio.saw(f=220.0, n=4800, det=0.0, voices=1)",
+   "generator": "saw",
+   "id": "c047",
+   "nested": 0,
+   "used_by": [],
+   "uses": 0,
+   "why": "default"
+  },
+  {
+   "args": {
+    "duty": "0x1.0000000000000p-1",
+    "f": "0x1.b800000000000p+7",
+    "n": 4800
+   },
+   "arrays": {
+    "out": "c048__out"
+   },
+   "call": "reelkit.audio.square(f=220.0, n=4800, duty=0.5)",
+   "generator": "square",
+   "id": "c048",
+   "nested": 0,
+   "used_by": [],
+   "uses": 0,
+   "why": "default"
+  },
+  {
+   "args": {
+    "f": "0x1.b800000000000p+7",
+    "n": 4800
+   },
+   "arrays": {
+    "out": "c049__out"
+   },
+   "call": "reelkit.audio.tri(f=220.0, n=4800)",
+   "generator": "tri",
+   "id": "c049",
+   "nested": 0,
+   "used_by": [],
+   "uses": 0,
+   "why": "default"
+  },
+  {
+   "args": {
+    "a": "0x1.47ae147ae147bp-8",
+    "d": "0x1.999999999999ap-4",
+    "n": 4800,
+    "r": "0x1.999999999999ap-5",
+    "s": "0x1.3333333333333p-1"
+   },
+   "arrays": {
+    "out": "c050__out"
+   },
+   "call": "reelkit.audio.adsr(n=4800, a=0.005, d=0.1, s=0.6, r=0.05)",
+   "generator": "adsr",
+   "id": "c050",
+   "nested": 0,
+   "used_by": [],
+   "uses": 0,
+   "why": "default"
+  },
+  {
+   "args": {
+    "attack": "0x1.0624dd2f1a9fcp-9",
+    "decay": "0x1.999999999999ap-4",
+    "n": 4800
+   },
+   "arrays": {
+    "out": "c051__out"
+   },
+   "call": "reelkit.audio.expenv(n=4800, decay=0.1, attack=0.002)",
+   "generator": "expenv",
+   "id": "c051",
+   "nested": 0,
+   "used_by": [],
+   "uses": 0,
+   "why": "default"
+  },
+  {
+   "args": {
+    "attack": "0x1.47ae147ae147bp-7",
+    "decay": "0x1.999999999999ap-3",
+    "n": 19200
+   },
+   "arrays": {
+    "out": "c052__out"
+   },
+   "call": "reelkit.audio.expenv(n=19200, decay=0.2, attack=0.01)",
+   "generator": "expenv",
+   "id": "c052",
+   "nested": 0,
+   "used_by": ["ballfight.kit.fighters.flute Sound.breath"],
+   "uses": 1,
+   "why": "episode"
+  },
+  {
+   "args": {
+    "attack": "0x1.0624dd2f1a9fcp-9",
+    "decay": "0x1.1eb851eb851ebp-2",
+    "n": 38400
+   },
+   "arrays": {
+    "out": "c053__out"
+   },
+   "call": "reelkit.audio.expenv(n=38400, decay=0.27999999999999997, attack=0.002)",
+   "generator": "expenv",
+   "id": "c053",
+   "nested": 8,
+   "used_by": ["reelkit.audio chime"],
+   "uses": 8,
+   "why": "episode"
+  },
+  {
+   "args": {
+    "attack": "0x1.47ae147ae147bp-7",
+    "decay": "0x1.999999999999ap-5",
+    "n": 4800
+   },
+   "arrays": {
+    "out": "c054__out"
+   },
+   "call": "reelkit.audio.expenv(n=4800, decay=0.05, attack=0.01)",
+   "generator": "expenv",
+   "id": "c054",
+   "nested": 0,
+   "used_by": ["ballfight.kit.fighters.flute Sound.breath"],
+   "uses": 103,
+   "why": "episode"
+  },
+  {
+   "args": {
+    "attack": "0x1.47ae147ae147bp-7",
+    "decay": "0x1.b333333333333p-1",
+    "n": 81600
+   },
+   "arrays": {
+    "out": "c055__out"
+   },
+   "call": "reelkit.audio.expenv(n=81600, decay=0.85, attack=0.01)",
+   "generator": "expenv",
+   "id": "c055",
+   "nested": 0,
+   "used_by": ["ballfight.kit.fighters.flute Sound.breath"],
+   "uses": 1,
+   "why": "episode"
+  },
+  {
+   "args": {
+    "attack": "0x1.47ae147ae147bp-7",
+    "decay": "0x1.47ae147ae147bp-5",
+    "n": 3840
+   },
+   "arrays": {
+    "out": "c056__out"
+   },
+   "call": "reelkit.audio.expenv(n=3840, decay=0.04, attack=0.01)",
+   "generator": "expenv",
+   "id": "c056",
+   "nested": 0,
+   "used_by": ["ballfight.kit.fighters.flute Sound.breath"],
+   "uses": 6,
+   "why": "episode"
+  },
+  {
+   "args": {
+    "attack": "0x1.0624dd2f1a9fcp-9",
+    "decay": "0x1.6666666666666p-3",
+    "n": 24000
+   },
+   "arrays": {
+    "out": "c057__out"
+   },
+   "call": "reelkit.audio.expenv(n=24000, decay=0.175, attack=0.002)",
+   "generator": "expenv",
+   "id": "c057",
+   "nested": 2,
+   "used_by": ["reelkit.audio chime"],
+   "uses": 2,
+   "why": "episode"
+  }
+ ],
+ "episode_calls": {
+  "adsr": [],
+  "bass": [],
+  "chime": [
+   {
+    "args": {
+     "dur": "0x1.999999999999ap-1",
+     "m": 107
+    },
+    "cases": ["c035"],
+    "nested": 0,
+    "used_by": ["ballfight.kit.moods.big_top Bed.bar"],
+    "uses": 2
+   },
+   {
+    "args": {
+     "dur": "0x1.999999999999ap-1",
+     "m": 104
+    },
+    "cases": ["c036"],
+    "nested": 0,
+    "used_by": ["ballfight.kit.moods.big_top Bed.bar"],
+    "uses": 2
+   },
+   {
+    "args": {
+     "dur": "0x1.999999999999ap-1",
+     "m": 100
+    },
+    "cases": ["c037"],
+    "nested": 0,
+    "used_by": ["ballfight.kit.moods.big_top Bed.bar"],
+    "uses": 2
+   },
+   {
+    "args": {
+     "dur": "0x1.999999999999ap-1",
+     "m": 105
+    },
+    "cases": ["c038"],
+    "nested": 0,
+    "used_by": ["ballfight.kit.moods.big_top Bed.bar"],
+    "uses": 2
+   },
+   {
+    "args": {
+     "dur": "0x1.0000000000000p-1",
+     "m": 95
+    },
+    "cases": ["c039"],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music score"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.0000000000000p-1",
+     "m": 100
+    },
+    "cases": ["c040"],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music score"],
+    "uses": 1
+   }
+  ],
+  "clap": [],
+  "crash": [
+   {
+    "args": {
+     "dur": "0x1.0000000000000p+0"
+    },
+    "cases": ["c007"],
+    "nested": 0,
+    "used_by": ["ballfight.kit.moods.big_top Bed.title"],
+    "uses": 3
+   },
+   {
+    "args": {
+     "dur": "0x1.ccccccccccccdp+0"
+    },
+    "cases": ["c008"],
+    "nested": 0,
+    "used_by": ["ballfight.kit.moods.big_top Bed.fight_start", "ballfight.kit.moods.big_top Bed.stinger"],
+    "uses": 2
+   },
+   {
+    "args": {
+     "dur": "0x1.999999999999ap+0"
+    },
+    "cases": ["c009"],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.trombone Sound.play", "ballfight.kit.moods.big_top Bed.fight"],
+    "uses": 5
+   },
+   {
+    "args": {
+     "dur": "0x1.0000000000000p+1"
+    },
+    "cases": ["c006"],
+    "nested": 0,
+    "used_by": ["ballfight.kit.moods.big_top Bed.fight"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.3333333333333p+1"
+    },
+    "cases": ["c010"],
+    "nested": 0,
+    "used_by": ["ballfight.kit.moods.big_top Bed.ko"],
+    "uses": 1
+   }
+  ],
+  "expenv": [
+   {
+    "args": {
+     "attack": "0x1.47ae147ae147bp-7",
+     "decay": "0x1.999999999999ap-3",
+     "n": 19200
+    },
+    "cases": ["c052"],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.flute Sound.breath"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "attack": "0x1.0624dd2f1a9fcp-9",
+     "decay": "0x1.1eb851eb851ebp-2",
+     "n": 38400
+    },
+    "cases": ["c053"],
+    "nested": 8,
+    "used_by": ["reelkit.audio chime"],
+    "uses": 8
+   },
+   {
+    "args": {
+     "attack": "0x1.47ae147ae147bp-7",
+     "decay": "0x1.999999999999ap-5",
+     "n": 4800
+    },
+    "cases": ["c054"],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.flute Sound.breath"],
+    "uses": 103
+   },
+   {
+    "args": {
+     "attack": "0x1.47ae147ae147bp-7",
+     "decay": "0x1.b333333333333p-1",
+     "n": 81600
+    },
+    "cases": ["c055"],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.flute Sound.breath"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "attack": "0x1.47ae147ae147bp-7",
+     "decay": "0x1.47ae147ae147bp-5",
+     "n": 3840
+    },
+    "cases": ["c056"],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.flute Sound.breath"],
+    "uses": 6
+   },
+   {
+    "args": {
+     "attack": "0x1.0624dd2f1a9fcp-9",
+     "decay": "0x1.6666666666666p-3",
+     "n": 24000
+    },
+    "cases": ["c057"],
+    "nested": 2,
+    "used_by": ["reelkit.audio chime"],
+    "uses": 2
+   }
+  ],
+  "hat": [],
+  "kick": [
+   {
+    "args": {
+     "dec": "0x1.999999999999ap-3",
+     "f0": 105,
+     "f1": 50,
+     "punch": "0x1.6666666666666p-1"
+    },
+    "cases": ["c001"],
+    "nested": 0,
+    "used_by": ["ballfight.kit.moods.big_top Bed.bass_drum"],
+    "uses": 73
+   }
+  ],
+  "pad": [],
+  "pluck": [],
+  "reverb": [
+   {
+    "args": {
+     "decay": "0x1.199999999999ap-1",
+     "dur": "0x1.0000000000000p+1",
+     "seed": 3,
+     "x": {
+      "array": [3408000, 2]
+     }
+    },
+    "cases": ["c043", "c044"],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music master"],
+    "uses": 1
+   }
+  ],
+  "saw": [],
+  "snare": [
+   {
+    "args": {
+     "dec": "0x1.0a3d70a3d70a4p-3"
+    },
+    "cases": ["c003"],
+    "nested": 0,
+    "used_by": ["ballfight.kit.moods.big_top Bed.snare"],
+    "uses": 221
+   }
+  ],
+  "square": [],
+  "tape_stop": [
+   {
+    "args": {
+     "length": "0x1.ae147ae147ae1p-2",
+     "t0": "0x1.902c2c2c2c2c2p+5",
+     "x": {
+      "array": [3408000, 2]
+     }
+    },
+    "cases": ["c046"],
+    "nested": 0,
+    "used_by": ["ballfight.kit.moods.big_top Bed.fight"],
+    "uses": 3
+   }
+  ],
+  "thud": [
+   {
+    "args": {
+     "dur": "0x1.999999999999ap-1",
+     "f0": 120,
+     "f1": 34,
+     "seed": 3
+    },
+    "cases": ["c018"],
+    "nested": 0,
+    "used_by": ["ballfight.kit.moods.big_top Bed.title"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.999999999999ap-1",
+     "f0": 120,
+     "f1": 34,
+     "seed": 25
+    },
+    "cases": ["c019"],
+    "nested": 0,
+    "used_by": ["ballfight.kit.moods.big_top Bed.title"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.999999999999ap-1",
+     "f0": 120,
+     "f1": 34,
+     "seed": 47
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.moods.big_top Bed.title"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.6666666666666p-1",
+     "f0": 110,
+     "f1": 34,
+     "seed": 7
+    },
+    "cases": ["c020"],
+    "nested": 0,
+    "used_by": ["ballfight.kit.moods.big_top Bed.fight_start"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.70a3d70a3d70ap-3",
+     "f0": 220,
+     "f1": 120,
+     "seed": 32
+    },
+    "cases": ["c021"],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.flute Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.70a3d70a3d70ap-3",
+     "f0": 220,
+     "f1": 120,
+     "seed": 48
+    },
+    "cases": ["c022"],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.flute Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.70a3d70a3d70ap-3",
+     "f0": 220,
+     "f1": 120,
+     "seed": 64
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.flute Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.70a3d70a3d70ap-3",
+     "f0": 220,
+     "f1": 120,
+     "seed": 80
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.flute Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.70a3d70a3d70ap-3",
+     "f0": 220,
+     "f1": 120,
+     "seed": 96
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.flute Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.70a3d70a3d70ap-3",
+     "f0": 220,
+     "f1": 120,
+     "seed": 113
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.flute Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.70a3d70a3d70ap-3",
+     "f0": 220,
+     "f1": 120,
+     "seed": 129
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.flute Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.70a3d70a3d70ap-3",
+     "f0": 220,
+     "f1": 120,
+     "seed": 145
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.flute Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.70a3d70a3d70ap-3",
+     "f0": 220,
+     "f1": 120,
+     "seed": 161
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.flute Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.70a3d70a3d70ap-3",
+     "f0": 220,
+     "f1": 120,
+     "seed": 177
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.flute Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.70a3d70a3d70ap-3",
+     "f0": 220,
+     "f1": 120,
+     "seed": 193
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.flute Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.70a3d70a3d70ap-3",
+     "f0": 220,
+     "f1": 120,
+     "seed": 209
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.flute Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.70a3d70a3d70ap-3",
+     "f0": 220,
+     "f1": 120,
+     "seed": 226
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.flute Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.70a3d70a3d70ap-3",
+     "f0": 220,
+     "f1": 120,
+     "seed": 242
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.flute Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.70a3d70a3d70ap-3",
+     "f0": 220,
+     "f1": 120,
+     "seed": 258
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.flute Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.70a3d70a3d70ap-3",
+     "f0": 220,
+     "f1": 120,
+     "seed": 274
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.flute Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.70a3d70a3d70ap-3",
+     "f0": 220,
+     "f1": 120,
+     "seed": 290
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.flute Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.70a3d70a3d70ap-3",
+     "f0": 220,
+     "f1": 120,
+     "seed": 306
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.flute Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.70a3d70a3d70ap-3",
+     "f0": 220,
+     "f1": 120,
+     "seed": 322
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.flute Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.70a3d70a3d70ap-3",
+     "f0": 220,
+     "f1": 120,
+     "seed": 339
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.flute Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.70a3d70a3d70ap-3",
+     "f0": 220,
+     "f1": 120,
+     "seed": 355
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.flute Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.70a3d70a3d70ap-3",
+     "f0": 220,
+     "f1": 120,
+     "seed": 371
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.flute Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.ccccccccccccdp-2",
+     "f0": 140,
+     "f1": 60,
+     "seed": 7
+    },
+    "cases": ["c023"],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.flute Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.70a3d70a3d70ap-3",
+     "f0": 220,
+     "f1": 120,
+     "seed": 387
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.flute Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.70a3d70a3d70ap-3",
+     "f0": 220,
+     "f1": 120,
+     "seed": 403
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.flute Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.70a3d70a3d70ap-3",
+     "f0": 220,
+     "f1": 120,
+     "seed": 419
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.flute Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.70a3d70a3d70ap-3",
+     "f0": 220,
+     "f1": 120,
+     "seed": 436
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.flute Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 150,
+     "f1": 70,
+     "seed": 31
+    },
+    "cases": ["c024"],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 150,
+     "f1": 70,
+     "seed": 40
+    },
+    "cases": ["c025"],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 150,
+     "f1": 70,
+     "seed": 50
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 150,
+     "f1": 70,
+     "seed": 59
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 150,
+     "f1": 70,
+     "seed": 69
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 150,
+     "f1": 70,
+     "seed": 75
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 150,
+     "f1": 70,
+     "seed": 85
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 150,
+     "f1": 70,
+     "seed": 94
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 150,
+     "f1": 70,
+     "seed": 103
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 150,
+     "f1": 70,
+     "seed": 110
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 150,
+     "f1": 70,
+     "seed": 113
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.999999999999ap-2",
+     "f0": 120,
+     "f1": 45,
+     "seed": 7
+    },
+    "cases": ["c026"],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+    "uses": 2
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 150,
+     "f1": 70,
+     "seed": 116
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 150,
+     "f1": 70,
+     "seed": 122
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 150,
+     "f1": 70,
+     "seed": 126
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 150,
+     "f1": 70,
+     "seed": 128
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 150,
+     "f1": 70,
+     "seed": 135
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 150,
+     "f1": 70,
+     "seed": 144
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 150,
+     "f1": 70,
+     "seed": 154
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 150,
+     "f1": 70,
+     "seed": 157
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 150,
+     "f1": 70,
+     "seed": 160
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 150,
+     "f1": 70,
+     "seed": 163
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 150,
+     "f1": 70,
+     "seed": 166
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 150,
+     "f1": 70,
+     "seed": 169
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 150,
+     "f1": 70,
+     "seed": 175
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 150,
+     "f1": 70,
+     "seed": 179
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 150,
+     "f1": 70,
+     "seed": 182
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 150,
+     "f1": 70,
+     "seed": 196
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 150,
+     "f1": 70,
+     "seed": 204
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 150,
+     "f1": 70,
+     "seed": 205
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 150,
+     "f1": 70,
+     "seed": 213
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 150,
+     "f1": 70,
+     "seed": 220
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 150,
+     "f1": 70,
+     "seed": 226
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 150,
+     "f1": 70,
+     "seed": 229
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 150,
+     "f1": 70,
+     "seed": 232
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 150,
+     "f1": 70,
+     "seed": 242
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 150,
+     "f1": 70,
+     "seed": 248
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 150,
+     "f1": 70,
+     "seed": 251
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 150,
+     "f1": 70,
+     "seed": 254
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 150,
+     "f1": 70,
+     "seed": 257
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 150,
+     "f1": 70,
+     "seed": 260
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 150,
+     "f1": 70,
+     "seed": 262
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 150,
+     "f1": 70,
+     "seed": 263
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 150,
+     "f1": 70,
+     "seed": 265
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 150,
+     "f1": 70,
+     "seed": 266
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 150,
+     "f1": 70,
+     "seed": 268
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 150,
+     "f1": 70,
+     "seed": 279
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 150,
+     "f1": 70,
+     "seed": 281
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 150,
+     "f1": 70,
+     "seed": 282
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 150,
+     "f1": 70,
+     "seed": 284
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 150,
+     "f1": 70,
+     "seed": 285
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 150,
+     "f1": 70,
+     "seed": 289
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 150,
+     "f1": 70,
+     "seed": 292
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 150,
+     "f1": 70,
+     "seed": 295
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 150,
+     "f1": 70,
+     "seed": 298
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 150,
+     "f1": 70,
+     "seed": 301
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 150,
+     "f1": 70,
+     "seed": 304
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.999999999999ap-1",
+     "f0": 90,
+     "f1": 30,
+     "seed": 7
+    },
+    "cases": ["c027"],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 150,
+     "f1": 70,
+     "seed": 307
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 150,
+     "f1": 70,
+     "seed": 311
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 150,
+     "f1": 70,
+     "seed": 314
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 150,
+     "f1": 70,
+     "seed": 317
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 150,
+     "f1": 70,
+     "seed": 320
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 150,
+     "f1": 70,
+     "seed": 323
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 150,
+     "f1": 70,
+     "seed": 333
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 150,
+     "f1": 70,
+     "seed": 339
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 150,
+     "f1": 70,
+     "seed": 342
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 150,
+     "f1": 70,
+     "seed": 344
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 150,
+     "f1": 70,
+     "seed": 345
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 150,
+     "f1": 70,
+     "seed": 347
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 150,
+     "f1": 70,
+     "seed": 348
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 150,
+     "f1": 70,
+     "seed": 350
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 49
+    },
+    "cases": ["c028"],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 52
+    },
+    "cases": ["c029"],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 58
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 63
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 68
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 79
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 83
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 86
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 89
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 90
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 98
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 103
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 105
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 111
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 116
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 117
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 127
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 2
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 132
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 140
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 146
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 147
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 148
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 154
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 158
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 159
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 163
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 164
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 2
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 167
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 169
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 173
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 180
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 2
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 185
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 188
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 196
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 198
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 200
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 204
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 211
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 214
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 218
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 223
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 225
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 232
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 233
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 2
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 234
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 236
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 238
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 243
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 246
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 2
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 254
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 256
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 264
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 265
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 270
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 271
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 273
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 2
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 277
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 279
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 282
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 285
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 286
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 288
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 298
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 2
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 299
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 310
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 3
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 317
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 2
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 318
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 319
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 327
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 328
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 329
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 335
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 2
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 338
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 345
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 350
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 357
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 360
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 361
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 367
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 2
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 368
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 2
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 374
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 2
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 376
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 2
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 377
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 2
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 384
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 385
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 387
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 388
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 396
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 399
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 402
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 405
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 406
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 410
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 411
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 414
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 415
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 419
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 2
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 421
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 424
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 427
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 3
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 432
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 433
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 436
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 440
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 442
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 443
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 446
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 450
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 454
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 455
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 456
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 2
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 458
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 466
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 469
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 477
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 480
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 483
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 488
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 489
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 490
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 492
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 494
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 497
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.c28f5c28f5c29p-3",
+     "f0": 95,
+     "f1": 55,
+     "seed": 498
+    },
+    "cases": [],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music shared_events"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.ccccccccccccdp-1",
+     "f0": 120,
+     "f1": 30,
+     "seed": 7
+    },
+    "cases": ["c030"],
+    "nested": 0,
+    "used_by": ["ballfight.kit.moods.big_top Bed.ko"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.47ae147ae147bp-2",
+     "f0": "0x1.e000000000000p+6",
+     "f1": "0x1.8000000000000p+5",
+     "seed": 7
+    },
+    "cases": ["c017"],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music score"],
+    "uses": 10
+   }
+  ],
+  "tri": [],
+  "whoosh": [
+   {
+    "args": {
+     "dur": "0x1.ac92f95fc62c6p-2",
+     "hi": 5000,
+     "lo": 300,
+     "rise": true,
+     "seed": 6
+    },
+    "cases": ["c012"],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music score"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.cb4b4b4b4b4b4p-2",
+     "hi": 6000,
+     "lo": 400,
+     "rise": true,
+     "seed": 6
+    },
+    "cases": ["c013"],
+    "nested": 0,
+    "used_by": ["ballfight.kit.music score"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.3333333333333p-1",
+     "hi": 1500,
+     "lo": 200,
+     "rise": false,
+     "seed": 6
+    },
+    "cases": ["c014"],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+    "uses": 5
+   },
+   {
+    "args": {
+     "dur": "0x1.cb4b4b4b4b4b4p-1",
+     "hi": 1800,
+     "lo": 150,
+     "rise": true,
+     "seed": 6
+    },
+    "cases": ["c015"],
+    "nested": 0,
+    "used_by": ["ballfight.kit.fighters.trombone Sound.play"],
+    "uses": 1
+   },
+   {
+    "args": {
+     "dur": "0x1.254545454544dp-1",
+     "hi": 5000,
+     "lo": 300,
+     "rise": true,
+     "seed": 6
+    },
+    "cases": ["c016"],
+    "nested": 0,
+    "used_by": ["ballfight.kit.moods.big_top Bed.after_ko"],
+    "uses": 1
+   }
+  ]
+ },
+ "notes": {
+  "args": "the call's arguments with the defaults filled in; floats as float.hex()",
+  "nested": "how many of those calls came from inside another generator (chime calls expenv)",
+  "reverb": "reverb(x, ...) on stand-in buffers: `impulse` (a 1 s stereo buffer whose first row is 1, 1: the output is the first second of the impulse response itself, as fftconvolve returns it) and `burst` (0.25 s of stereo noise). The episode calls it once, on the whole send",
+  "seeds": "thud is called with 229 argument sets that differ mostly in `seed`: for each (dur, f0, f1) the first 2 seeds used have vectors, and episode_calls lists them all",
+  "tape_stop": "tape_stop(x, t0, length) on the stand-in buffer `tape` with t0 = 0.05 s (the episode stops three buses at the K.O. time; only int(t0 * 48000) depends on it)",
+  "uses": "how many times the soundtrack build made the call (0 for a default the episode never uses)",
+  "why": "\"default\": the signature's defaults (stand_in lists the values given to arguments that have none); \"episode\": an argument set kit.music.main() used"
+ },
+ "signatures": {
+  "adsr": [
+   {
+    "default": null,
+    "name": "n",
+    "required": true
+   },
+   {
+    "default": "0x1.47ae147ae147bp-8",
+    "name": "a",
+    "required": false
+   },
+   {
+    "default": "0x1.999999999999ap-4",
+    "name": "d",
+    "required": false
+   },
+   {
+    "default": "0x1.3333333333333p-1",
+    "name": "s",
+    "required": false
+   },
+   {
+    "default": "0x1.999999999999ap-5",
+    "name": "r",
+    "required": false
+   }
+  ],
+  "bass": [
+   {
+    "default": null,
+    "name": "m",
+    "required": true
+   },
+   {
+    "default": null,
+    "name": "dur",
+    "required": true
+   }
+  ],
+  "chime": [
+   {
+    "default": null,
+    "name": "m",
+    "required": true
+   },
+   {
+    "default": "0x1.3333333333333p+0",
+    "name": "dur",
+    "required": false
+   }
+  ],
+  "clap": [],
+  "crash": [
+   {
+    "default": "0x1.0000000000000p+1",
+    "name": "dur",
+    "required": false
+   }
+  ],
+  "expenv": [
+   {
+    "default": null,
+    "name": "n",
+    "required": true
+   },
+   {
+    "default": null,
+    "name": "decay",
+    "required": true
+   },
+   {
+    "default": "0x1.0624dd2f1a9fcp-9",
+    "name": "attack",
+    "required": false
+   }
+  ],
+  "hat": [
+   {
+    "default": "0x1.1eb851eb851ecp-5",
+    "name": "dec",
+    "required": false
+   },
+   {
+    "default": false,
+    "name": "open_",
+    "required": false
+   }
+  ],
+  "kick": [
+   {
+    "default": "0x1.0000000000000p+0",
+    "name": "punch",
+    "required": false
+   },
+   {
+    "default": "0x1.47ae147ae147bp-2",
+    "name": "dec",
+    "required": false
+   },
+   {
+    "default": 150,
+    "name": "f0",
+    "required": false
+   },
+   {
+    "default": 46,
+    "name": "f1",
+    "required": false
+   }
+  ],
+  "pad": [
+   {
+    "default": null,
+    "name": "ms",
+    "required": true
+   },
+   {
+    "default": null,
+    "name": "dur",
+    "required": true
+   },
+   {
+    "default": 1600,
+    "name": "cut",
+    "required": false
+   },
+   {
+    "default": "0x1.3333333333333p-2",
+    "name": "att",
+    "required": false
+   }
+  ],
+  "pluck": [
+   {
+    "default": null,
+    "name": "m",
+    "required": true
+   },
+   {
+    "default": "0x1.3333333333333p+0",
+    "name": "dur",
+    "required": false
+   }
+  ],
+  "reverb": [
+   {
+    "default": null,
+    "name": "x",
+    "required": true
+   },
+   {
+    "default": "0x1.3333333333333p+1",
+    "name": "dur",
+    "required": false
+   },
+   {
+    "default": "0x1.3333333333333p-1",
+    "name": "decay",
+    "required": false
+   },
+   {
+    "default": 3,
+    "name": "seed",
+    "required": false
+   }
+  ],
+  "saw": [
+   {
+    "default": null,
+    "name": "f",
+    "required": true
+   },
+   {
+    "default": null,
+    "name": "n",
+    "required": true
+   },
+   {
+    "default": "0x0.0p+0",
+    "name": "det",
+    "required": false
+   },
+   {
+    "default": 1,
+    "name": "voices",
+    "required": false
+   }
+  ],
+  "snare": [
+   {
+    "default": "0x1.1eb851eb851ecp-3",
+    "name": "dec",
+    "required": false
+   }
+  ],
+  "square": [
+   {
+    "default": null,
+    "name": "f",
+    "required": true
+   },
+   {
+    "default": null,
+    "name": "n",
+    "required": true
+   },
+   {
+    "default": "0x1.0000000000000p-1",
+    "name": "duty",
+    "required": false
+   }
+  ],
+  "tape_stop": [
+   {
+    "default": null,
+    "name": "x",
+    "required": true
+   },
+   {
+    "default": null,
+    "name": "t0",
+    "required": true
+   },
+   {
+    "default": "0x1.8000000000000p+0",
+    "name": "length",
+    "required": false
+   }
+  ],
+  "thud": [
+   {
+    "default": "0x1.47ae147ae147bp-2",
+    "name": "dur",
+    "required": false
+   },
+   {
+    "default": "0x1.e000000000000p+6",
+    "name": "f0",
+    "required": false
+   },
+   {
+    "default": "0x1.8000000000000p+5",
+    "name": "f1",
+    "required": false
+   },
+   {
+    "default": 7,
+    "name": "seed",
+    "required": false
+   }
+  ],
+  "tri": [
+   {
+    "default": null,
+    "name": "f",
+    "required": true
+   },
+   {
+    "default": null,
+    "name": "n",
+    "required": true
+   }
+  ],
+  "whoosh": [
+   {
+    "default": null,
+    "name": "dur",
+    "required": true
+   },
+   {
+    "default": 300,
+    "name": "lo",
+    "required": false
+   },
+   {
+    "default": 5000,
+    "name": "hi",
+    "required": false
+   },
+   {
+    "default": true,
+    "name": "rise",
+    "required": false
+   },
+   {
+    "default": 6,
+    "name": "seed",
+    "required": false
+   }
+  ]
+ },
+ "stand_in": {
+  "adsr": {
+   "n": 4800
+  },
+  "bass": {
+   "dur": "0x1.0000000000000p-1",
+   "m": 40
+  },
+  "chime": {
+   "m": 84
+  },
+  "expenv": {
+   "decay": "0x1.999999999999ap-4",
+   "n": 4800
+  },
+  "pad": {
+   "dur": "0x1.0000000000000p+0",
+   "ms": [60, 64, 67]
+  },
+  "pluck": {
+   "m": 60
+  },
+  "saw": {
+   "f": "0x1.b800000000000p+7",
+   "n": 4800
+  },
+  "square": {
+   "f": "0x1.b800000000000p+7",
+   "n": 4800
+  },
+  "tri": {
+   "f": "0x1.b800000000000p+7",
+   "n": 4800
+  },
+  "whoosh": {
+   "dur": "0x1.3333333333333p-1"
+  }
+ },
+ "tool": "dsp"
+}
