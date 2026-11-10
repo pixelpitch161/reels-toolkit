@@ -1,0 +1,13 @@
+[package]
+name = "bf-testdata"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+# Dev support only: engine crates take this under [dev-dependencies] to read studio/reference.
+[dependencies]
+bf-core.workspace = true
+png.workspace = true
+serde_json.workspace = true
+zip.workspace = true

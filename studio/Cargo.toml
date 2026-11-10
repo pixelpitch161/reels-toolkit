@@ -9,6 +9,7 @@ members = [
     "crates/bf-content",
     "crates/bf-export",
     "crates/bf-cli",
+    "crates/bf-testdata",
 ]
 
 [workspace.package]
