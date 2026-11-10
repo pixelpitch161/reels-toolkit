@@ -1,0 +1,10 @@
+[package]
+name = "bf-story"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dependencies]
+bf-core.workspace = true
+bf-sim.workspace = true

@@ -1,0 +1,54 @@
+[workspace]
+resolver = "3"
+members = [
+    "crates/bf-core",
+    "crates/bf-sim",
+    "crates/bf-story",
+    "crates/bf-picture",
+    "crates/bf-sound",
+    "crates/bf-content",
+    "crates/bf-export",
+    "crates/bf-cli",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.99.1"
+publish = false
+
+[workspace.dependencies]
+# The Studio's own crates.
+bf-core = { path = "crates/bf-core" }
+bf-sim = { path = "crates/bf-sim" }
+bf-story = { path = "crates/bf-story" }
+bf-picture = { path = "crates/bf-picture" }
+bf-sound = { path = "crates/bf-sound" }
+bf-content = { path = "crates/bf-content" }
+bf-export = { path = "crates/bf-export" }
+
+# The tech stack. Crates opt in with `name.workspace = true`; all of these are pure Rust.
+clap = { version = "4.6.7", features = ["derive"] }
+hound = "3.5.1"
+# Software floats only: no `arch` intrinsics, so every PC gets the same bits.
+libm = { version = "=0.2.16", default-features = false, features = ["force-soft-floats"] }
+png = "0.18.1"
+rayon = "1.12.0"
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = { version = "1.0.154", features = ["float_roundtrip"] }
+sha2 = "0.11.1"
+toml = "1.2.1"
+# Deflate only (flate2 on zlib-rs, plus zopfli for writing): no C libraries.
+zip = { version = "9.5.0", default-features = false, features = ["deflate"] }
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 16
+debug = 1
+
+[profile.dev]
+opt-level = 1
+
+[profile.test]
+opt-level = 2

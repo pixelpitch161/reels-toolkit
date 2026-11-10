@@ -1,0 +1,12 @@
+[package]
+name = "bf-export"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dependencies]
+bf-story.workspace = true
+bf-picture.workspace = true
+bf-sound.workspace = true
+bf-content.workspace = true
