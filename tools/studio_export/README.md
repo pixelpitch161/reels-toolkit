@@ -104,6 +104,52 @@ EXPORTS = {'thing': run}                         # python -m tools.studio_export
 | Name | Module | Files |
 | --- | --- | --- |
 | `py` | `py_vectors.py` | `studio/reference/py/vectors.json` |
+| `pyhash` | `pyhash_vectors.py` | `studio/reference/pyhash/vectors.json` |
+| `rng` | `rng_vectors.py` | `studio/reference/rng/vectors.json` |
+
+### `rng`: numpy's `default_rng`
+
+For `bf_core::rng`. `{"about", "format": 1, "numbers", "seeds": [{"seed", "init", "streams"}], "resume"}`.
+
+- `seed` is a JSON integer (`default_rng(seed)`: 0, 1, 2, 392, 2**40 + 7) or a list (`default_rng([392, 44, 3588])`,
+  `default_rng([1, 2, 3])`: the list seeds the engine makes mid-fight).
+- `init` shows how the seed becomes a generator: `seed_sequence_u64` (the four 64-bit words
+  `SeedSequence(seed).generate_state(4, np.uint64)` hands PCG64), the fresh generator's `state` and `inc`, and its
+  first eight raw 64-bit outputs `raw_u64`. All decimal strings.
+- `streams` maps a name to `{"call", "op", "args", "calls", "values", "end"}` (and `"size"` for one array call).
+  **Every stream starts from a fresh `default_rng(seed)`.** `call` is the Python call as text; `op` and `args` say
+  the same for a program; `calls` is how many times it was made; `end` is the bit generator afterwards: `state`,
+  `inc`, and the buffered half of a 64-bit output (`has_uint32`, `uinteger`) that 32-bit draws leave behind.
+
+| Stream | Call | Values |
+| --- | --- | --- |
+| `random` | 64 x `rng.random()` | f64 |
+| `uniform_m1_1`, `uniform_5_9` | 64 x `rng.uniform(-1, 1)`, `rng.uniform(5, 9)` | f64 |
+| `normal_0_1`, `normal_2_0p5` | 256 x `rng.normal(0, 1)`, 64 x `rng.normal(2, 0.5)` | f64 |
+| `normal_0_1_size1000`, `uniform_0_1_size1000` | one call with size 1000 | f64 |
+| `integers_7`, `integers_1000`, `integers_2p40` | 64 x `rng.integers(high)` | int |
+| `integers_1`, `integers_2p31_plus_1`, `integers_2p32`, `integers_2p32_plus_1` | corners of the bounded-integer code | int |
+| `integers_3x2p61` | 64 x `rng.integers(3 * 2**61)` | decimal strings (so is its `args`) |
+| `permutation_2`, `_5`, `_16`, `_100` | one `rng.permutation(n)` | int |
+| `choice_m1_1`, `choice_5` | 64 x `rng.choice(list)` | the picked values, and their positions in `indices` |
+| `interleaved` | 32 rounds of `uniform(-1, 1)`, `normal(0, 1)`, `random()`, `integers(5)`, `permutation(4)` on ONE generator | a row per round: three f64, the integer, then the 4 permutation values |
+
+The corners: a bound of 1 draws nothing (the state does not move); up to 2**32 the draws are 32-bit, and numpy
+keeps the unused half of each 64-bit output for the next 32-bit draw (low half first); 2**32 takes the raw 32
+bits; 2**31 + 1 rejects about half its draws and 3 * 2**61 about a quarter, so the rejection loops run.
+
+`resume`: after 1,000 x `rng.normal(0, 1)` from seed 77, the generator's `state` and `inc` (decimal strings),
+`has_uint32` (0) and `uinteger`, and under `next` the 64 normals that follow.
+
+### `pyhash`: Python's string hash
+
+For `bf_core::pyhash`. `{"about", "format": 1, "numbers", "rows", "non_ascii"}`. A row is `[string, hash,
+hash % 997]`: the hash is `hash(string)` under `PYTHONHASHSEED=0` as a decimal string (signed 64-bit), and
+`hash % 997` is Python's (0 to 996), which is what `reelkit/ui.py` uses. `rows` has 500 ASCII strings: the empty
+string, every fighter, ability and weapon name in `fighters.py` except the two retired fighters, the caption lines
+with and without their `*` marks, and seeded random printable ASCII of length 1 to 40. `non_ascii` has 12 more
+strings beyond ASCII: CPython hashes the string's internal storage (one byte per character below U+0100, else two
+bytes little-endian below U+10000, else four), not its UTF-8 bytes.
 
 ### `py`: Python number semantics
 
