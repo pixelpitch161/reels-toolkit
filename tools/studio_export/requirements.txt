@@ -1,0 +1,5 @@
+# The reference export runs on exactly these versions, with CPython 3.13.18 (see README.md).
+# The entry point compares the installed versions with this file and refuses to run on anything else.
+numpy==2.5.3
+scipy==1.18.1
+pillow==12.3.0

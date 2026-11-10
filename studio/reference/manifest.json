@@ -1,0 +1,6 @@
+{
+ "format": 1,
+ "entries": [
+  {"path": "studio/reference/py/vectors.json", "sha256": "5d7fa3d6be85124242ba73fe000aa44df822714b100c99f00ca4512153bfa28f", "bytes": 1251081, "tool": "tools.studio_export.py_vectors", "commit": "cf4274021d2de8da46b6c766a4811bb906077a6b", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"}
+ ]
+}
