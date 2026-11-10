@@ -22,9 +22,9 @@ Don't read the other ~55 idea files, logs or old episode folders unless a task n
 - **Engine:** `projects/ballfight/fight.py` (honest, deterministic 2D sim), `fighters.py` (the roster: numbers per
   fighter), `projects/ballfight/kit/` (picture, sound, HUD, title card, tune, search, check, encode), `reelkit/` (the
   shared renderer, effects, UI, checks).
-- **In the kit (usable in the app now), 22 fighters:** ACOUSTIC, ALTO SAX, BASS CLARINET, BASS DRUM, BASSOON, CELLO,
+- **In the kit (usable in the app now), 20 fighters:** ACOUSTIC, ALTO SAX, BASS CLARINET, BASS DRUM, BASSOON, CELLO,
   CLARINET, CONTRABASS, ELECTRIC, EUPHONIUM, FLUTE, HORN, OBOE, ORGAN, PIANO, SOUSAPHONE, TENOR SAX, TROMBONE, TRUMPET,
-  TUBA (+ the base / shared reed helpers). **14 moods:** baroque_storm, big_top, bossa_noir, brass_trailer, dark_disco,
+  TUBA. **14 moods:** baroque_storm, big_top, bossa_noir, brass_trailer, dark_disco,
   dark_drumline, dark_tango, heist, horror_trap, hot_jazz, mambo, prog_duel, second_line, stadium_rock.
 - **Not in the kit yet (in old episode folders only):** fighters ACCORDION, BAGPIPES, BARI SAX, DRUMS, HARP, SYNTH,
   TURNTABLES, UKULELE, VIOLA, VIOLIN; their moods (drift phonk, Balkan fire, noir jazz, sea shanty, dark breakbeat,
