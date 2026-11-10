@@ -144,6 +144,7 @@ EXPORTS = {'thing': run}                         # python -m tools.studio_export
 
 | Name | Module | Files |
 | --- | --- | --- |
+| `checks` | `checks.py` | `studio/reference/checks/flute_vs_trombone.json` (its own interpreter; compares its soundtrack with the `audio.wav` of `stems`; draws 673 frames in 5 processes; order 60) |
 | `dsp` | `dsp_vectors.py` | `studio/reference/dsp/{butter,filters,resample,fftconvolve,numpy,ufuncs,generators}.npz`, each with its sidecar `.json` (order 40) |
 | `fights` | `fights.py` | `studio/reference/fights/flute_vs_trombone/{ep392,seed1,seed2,seed3,seed500}.bfrec` |
 | `frames` | `frames.py` | `studio/reference/frames/flute_vs_trombone/{f<frame>.png,frames.json}` (43 frames), and `studio/reference/frames/exceptions.toml` if it does not exist yet |
@@ -536,3 +537,34 @@ logs equal `note_calls.json`; with the note cache emptied and the generator put 
 `score()` gives every bus again bit for bit, and without putting it back the FLUTE's bus differs; `audio.wav` is the
 16-bit form of the master it holds. The numbers inside the master come from a copy of `master()`'s lines in
 `stems.py`, which must reproduce the kit's master and stems bit for bit or the export stops.
+
+### `checks`: what the kit's checks say about the episode
+
+For the check ports of `bf-export`. One file, `studio/reference/checks/flute_vs_trombone.json`:
+`checks.<name>` for each of `focus`, `safezone`, `levels`, `band`, `loudness`, `flash` and `loop` has `pass` (the
+kit's verdict; `loudness` has none, the kit only reports it), `printed` (the lines the kit prints, as they are),
+`needs_frames` (how many drawn frames the check needs), `how` (what the numbers are), and the values behind the
+printed lines as plain JSON numbers (the kit's `float64` values; times in seconds, levels in dB).
+
+| Check | Drawn frames | Values |
+| --- | --- | --- |
+| `focus` | 0 (camera maths for all 1,830 frames) | `worst_coc`, `frames`, `points` |
+| `safezone` | 244 (every 0.25 s: frame `int(round(t * 30))`) | `tracked`, `outside`, `overlaps`, and `boxes`: for each checked time every box `reelkit.ui` drew, `[x0, y0, x1, y1, kind, info]` |
+| `levels` | 0 | `rows` (the 31 two-second windows: dBFS and hits/s), `ending`, `opening`, `build`, `spread`, `dips`, `targets`, and `module_output`, everything `python -m reelkit.levels` prints |
+| `band` | 0 | per fighter its `band` and, for each of the five `spans`, `section` and `while_it_sounds` in dB over the bed; `bed_buses` |
+| `loudness` | 0 | `intro_lufs`, `fight_lufs`, `intro_minus_fight` (what the kit returns), the sample `spans` |
+| `flash` | 315 (frames 1230 to 1544 for this fight) | `t0`, `t1`, `f0`, `f1`, `general_flashes`, `flash_frames`, `worst_in_1s`, `largest_area` with its frame and time, and `area` for every frame |
+| `loop` | 180 (the last 150 and the first 30) | `picture`: `seam`, `normal`, `ratio`, `steps` (the 178 frame-to-frame differences), `big_jumps`, `nearest_to_frame_0`; `audio`: the two 20 ms levels, their step, the typical sample step and the jump at the seam |
+
+How the kit's checks are run without editing them: `focus`, `levels`, `band` and `loudness` are called as they are.
+`flash` uses a `fork` pool, which Windows does not have, so the `multiprocessing` name inside `kit.checks` is swapped
+for the call with a stand-in that hands the same frames' luminance from this module's `spawn` pool; `loop` gets its
+frames the same way through `reelkit.loopcheck.frames_from_render`; `safezone` runs on a stand-in for the picture
+module that replays the boxes `reelkit.ui` logged when the pool drew each frame. The verdicts and the printed lines
+are the kit's own.
+
+Several checks only print their numbers, rounded. For those the export computes the same formulas from the same
+inputs and stops unless its values format to exactly the line the kit printed, so the unrounded values in the file
+are the kit's numbers and not a second opinion. The soundtrack is built first, in the export's own interpreter and
+cache folder, and must be byte for byte the committed `audio.wav`; `band` reads the 16-bit stem wavs that
+`kit.music.main()` writes beside it.
