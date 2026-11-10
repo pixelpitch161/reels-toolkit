@@ -1,0 +1,556 @@
+{
+ "about": "flute_vs_trombone: the show timings and caption windows kit/picture.py derives at import from each reference recording's run",
+ "episode": "flute_vs_trombone",
+ "format": 1,
+ "notes": {
+  "caps": "_caps() windows {t0, t1, lines} in order: cap_title (always empty), cap_ability[0] and [1], cap_ko, cap_wins, cap_comment; all = CAPTIONS = CAP_TITLE + CAP_ABIL[0] + CAP_ABIL[1] + CAP_KO + CAP_WINS + CAP_COMMENT",
+  "captions": "STORY[\"caps\"] = story.captions(events) with gap CAP_GAP: [t, who, ability name]",
+  "key": "the recording's path relative to studio/reference/fights/flute_vs_trombone/",
+  "no_ko": "no K.O.: importing kit.picture raises (error); captions is story.captions of that run",
+  "values": "picture.py module values: win = WIN = int(RUN[\"winner\"]), lose = LOSE = 1 - WIN, t_ko = T_KO = float(RUN[\"t_ko\"]), hitstop = HITSTOP, t_hs = T_HS = T_KO + HITSTOP, t_solo = T_SOLO = T.next_bar(T_KO + 1.6), solo_t = SOLO_T = [T_SOLO + bt * T.BEAT for bt, m, d in T.SOLO[NAMES[WIN]]], names = NAMES = RUN[\"names\"]; cap_gap and t_reassemble are the timeline's"
+ },
+ "recordings": {
+  "ep392.bfrec": {
+   "all": [
+    {
+     "lines": ["FLUTTER TONGUE"],
+     "t0": "0x1.66d2dcb1465e9p+3",
+     "t1": "0x1.b39fa97e132b6p+3"
+    },
+    {
+     "lines": ["SNAKE DANCE"],
+     "t0": "0x1.e0e0ded288ce7p+4",
+     "t1": "0x1.03a3a29c779a7p+5"
+    },
+    {
+     "lines": ["PICCOLO"],
+     "t0": "0x1.54e7ea5f84cadp+5",
+     "t1": "0x1.681b1d92b7fe0p+5"
+    },
+    {
+     "lines": ["SAD TROMBONE"],
+     "t0": "0x1.027a786c22681p+4",
+     "t1": "0x1.28e0ded288ce7p+4"
+    },
+    {
+     "lines": ["POWER SLIDE"],
+     "t0": "0x1.a05859c8c9321p+4",
+     "t1": "0x1.c6bec02f2f987p+4"
+    },
+    {
+     "lines": ["*K.O.*"],
+     "t0": "0x1.902c2c2c2c2c2p+5",
+     "t1": "0x1.9a2c2c2c2c2c2p+5"
+    },
+    {
+     "lines": ["TROMBONE", "WINS!"],
+     "t0": "0x1.9a92929292928p+5",
+     "t1": "0x1.ac92929292928p+5"
+    },
+    {
+     "lines": ["COMMENT THE", "*NEXT MATCH-UP*"],
+     "t0": "0x1.ad5f5f5f5f5f5p+5",
+     "t1": "0x1.cb4b4b4b4b4b4p+5"
+    }
+   ],
+   "cap_ability": [
+    [
+     {
+      "lines": ["FLUTTER TONGUE"],
+      "t0": "0x1.66d2dcb1465e9p+3",
+      "t1": "0x1.b39fa97e132b6p+3"
+     },
+     {
+      "lines": ["SNAKE DANCE"],
+      "t0": "0x1.e0e0ded288ce7p+4",
+      "t1": "0x1.03a3a29c779a7p+5"
+     },
+     {
+      "lines": ["PICCOLO"],
+      "t0": "0x1.54e7ea5f84cadp+5",
+      "t1": "0x1.681b1d92b7fe0p+5"
+     }
+    ],
+    [
+     {
+      "lines": ["SAD TROMBONE"],
+      "t0": "0x1.027a786c22681p+4",
+      "t1": "0x1.28e0ded288ce7p+4"
+     },
+     {
+      "lines": ["POWER SLIDE"],
+      "t0": "0x1.a05859c8c9321p+4",
+      "t1": "0x1.c6bec02f2f987p+4"
+     }
+    ]
+   ],
+   "cap_comment": [
+    {
+     "lines": ["COMMENT THE", "*NEXT MATCH-UP*"],
+     "t0": "0x1.ad5f5f5f5f5f5p+5",
+     "t1": "0x1.cb4b4b4b4b4b4p+5"
+    }
+   ],
+   "cap_gap": "0x1.0000000000000p+2",
+   "cap_ko": [
+    {
+     "lines": ["*K.O.*"],
+     "t0": "0x1.902c2c2c2c2c2p+5",
+     "t1": "0x1.9a2c2c2c2c2c2p+5"
+    }
+   ],
+   "cap_title": [],
+   "cap_wins": [
+    {
+     "lines": ["TROMBONE", "WINS!"],
+     "t0": "0x1.9a92929292928p+5",
+     "t1": "0x1.ac92929292928p+5"
+    }
+   ],
+   "captions": [
+    ["0x1.66d2dcb1465e9p+3", 0, "FLUTTER TONGUE"],
+    ["0x1.027a786c22681p+4", 1, "SAD TROMBONE"],
+    ["0x1.a05859c8c9321p+4", 1, "POWER SLIDE"],
+    ["0x1.e0e0ded288ce7p+4", 0, "SNAKE DANCE"],
+    ["0x1.54e7ea5f84cadp+5", 0, "PICCOLO"]
+   ],
+   "hitstop": "0x1.6666666666666p-2",
+   "lose": 0,
+   "names": ["FLUTE", "TROMBONE"],
+   "seed": 392,
+   "solo_t": ["0x1.a03c3c3c3c3c3p+5", "0x1.a207878787878p+5", "0x1.a3d2d2d2d2d2cp+5", "0x1.a769696969696p+5", "0x1.a934b4b4b4b4ap+5", "0x1.aafffffffffffp+5", "0x1.accb4b4b4b4b4p+5", "0x1.ae96969696969p+5", "0x1.b061e1e1e1e1dp+5", "0x1.b22d2d2d2d2d2p+5", "0x1.b4de1e1e1e1e1p+5", "0x1.b5c3c3c3c3c3bp+5", "0x1.b78f0f0f0f0f0p+5", "0x1.b95a5a5a5a5a5p+5", "0x1.bb25a5a5a5a5ap+5", "0x1.bcf0f0f0f0f0ep+5", "0x1.bebc3c3c3c3c3p+5", "0x1.c087878787878p+5", "0x1.c338787878787p+5", "0x1.c41e1e1e1e1e1p+5", "0x1.c5e9696969696p+5", "0x1.c7b4b4b4b4b4ap+5"],
+   "t_hs": "0x1.92f8f8f8f8f8fp+5",
+   "t_ko": "0x1.902c2c2c2c2c2p+5",
+   "t_reassemble": "0x1.cb4b4b4b4b4b4p+5",
+   "t_solo": "0x1.a03c3c3c3c3c3p+5",
+   "win": 1,
+   "winner": 1
+  },
+  "no_ko.bfrec": {
+   "captions": [
+    ["0x1.8abec02f2f987p+4", 1, "SAD TROMBONE"],
+    ["0x1.4692934acaff7p+5", 1, "POWER SLIDE"],
+    ["0x1.9cb4b72c5197ap+5", 0, "FLUTTER TONGUE"]
+   ],
+   "error": "TypeError: float() argument must be a string or a real number, not 'NoneType'",
+   "names": ["FLUTE", "TROMBONE"],
+   "seed": 4,
+   "t_ko": null,
+   "winner": null
+  },
+  "seed1.bfrec": {
+   "all": [
+    {
+     "lines": ["FLUTTER TONGUE"],
+     "t0": "0x1.cb5b573eab368p+3",
+     "t1": "0x1.0c141205bc01ap+4"
+    },
+    {
+     "lines": ["SNAKE DANCE"],
+     "t0": "0x1.4a363b256ffc1p+4",
+     "t1": "0x1.709ca18bd6627p+4"
+    },
+    {
+     "lines": ["PEDAL TONE"],
+     "t0": "0x1.fd8b8cfbfc654p+4",
+     "t1": "0x1.11f8f9b13165dp+5"
+    },
+    {
+     "lines": ["*K.O.*"],
+     "t0": "0x1.451b1b1b1b1b1p+5",
+     "t1": "0x1.4f1b1b1b1b1b1p+5"
+    },
+    {
+     "lines": ["FLUTE", "WINS!"],
+     "t0": "0x1.4f81818181817p+5",
+     "t1": "0x1.6181818181817p+5"
+    },
+    {
+     "lines": ["COMMENT THE", "*NEXT MATCH-UP*"],
+     "t0": "0x1.624e4e4e4e4e4p+5",
+     "t1": "0x1.cb4b4b4b4b4b4p+5"
+    }
+   ],
+   "cap_ability": [
+    [
+     {
+      "lines": ["FLUTTER TONGUE"],
+      "t0": "0x1.cb5b573eab368p+3",
+      "t1": "0x1.0c141205bc01ap+4"
+     },
+     {
+      "lines": ["SNAKE DANCE"],
+      "t0": "0x1.4a363b256ffc1p+4",
+      "t1": "0x1.709ca18bd6627p+4"
+     }
+    ],
+    [
+     {
+      "lines": ["PEDAL TONE"],
+      "t0": "0x1.fd8b8cfbfc654p+4",
+      "t1": "0x1.11f8f9b13165dp+5"
+     }
+    ]
+   ],
+   "cap_comment": [
+    {
+     "lines": ["COMMENT THE", "*NEXT MATCH-UP*"],
+     "t0": "0x1.624e4e4e4e4e4p+5",
+     "t1": "0x1.cb4b4b4b4b4b4p+5"
+    }
+   ],
+   "cap_gap": "0x1.0000000000000p+2",
+   "cap_ko": [
+    {
+     "lines": ["*K.O.*"],
+     "t0": "0x1.451b1b1b1b1b1p+5",
+     "t1": "0x1.4f1b1b1b1b1b1p+5"
+    }
+   ],
+   "cap_title": [],
+   "cap_wins": [
+    {
+     "lines": ["FLUTE", "WINS!"],
+     "t0": "0x1.4f81818181817p+5",
+     "t1": "0x1.6181818181817p+5"
+    }
+   ],
+   "captions": [
+    ["0x1.cb5b573eab368p+3", 0, "FLUTTER TONGUE"],
+    ["0x1.4a363b256ffc1p+4", 0, "SNAKE DANCE"],
+    ["0x1.fd8b8cfbfc654p+4", 1, "PEDAL TONE"]
+   ],
+   "hitstop": "0x1.6666666666666p-2",
+   "lose": 1,
+   "names": ["FLUTE", "TROMBONE"],
+   "seed": 1,
+   "solo_t": ["0x1.5878787878787p+5", "0x1.5a43c3c3c3c3cp+5", "0x1.5b29696969696p+5", "0x1.5c0f0f0f0f0f0p+5", "0x1.5dda5a5a5a5a5p+5", "0x1.5fa5a5a5a5a5ap+5", "0x1.6170f0f0f0f0ep+5", "0x1.6256969696969p+5", "0x1.633c3c3c3c3c3p+5", "0x1.6507878787878p+5", "0x1.66d2d2d2d2d2dp+5", "0x1.6983c3c3c3c3cp+5", "0x1.6a69696969696p+5", "0x1.6c34b4b4b4b4bp+5", "0x1.6dfffffffffffp+5"],
+   "t_hs": "0x1.47e7e7e7e7e7ep+5",
+   "t_ko": "0x1.451b1b1b1b1b1p+5",
+   "t_reassemble": "0x1.cb4b4b4b4b4b4p+5",
+   "t_solo": "0x1.5878787878787p+5",
+   "win": 0,
+   "winner": 0
+  },
+  "seed2.bfrec": {
+   "all": [
+    {
+     "lines": ["SNAKE DANCE"],
+     "t0": "0x1.3bc5c67dfe32ap+5",
+     "t1": "0x1.4ef8f9b13165dp+5"
+    },
+    {
+     "lines": ["SAD TROMBONE"],
+     "t0": "0x1.cb5b573eab368p+3",
+     "t1": "0x1.0c141205bc01ap+4"
+    },
+    {
+     "lines": ["POWER SLIDE"],
+     "t0": "0x1.838b8cfbfc654p+4",
+     "t1": "0x1.a9f1f36262cbap+4"
+    },
+    {
+     "lines": ["PEDAL TONE"],
+     "t0": "0x1.8e4e50c5eb314p+5",
+     "t1": "0x1.a18183f91e647p+5"
+    },
+    {
+     "lines": ["*K.O.*"],
+     "t0": "0x1.a6f8f8f8f8f8fp+5",
+     "t1": "0x1.b0f8f8f8f8f8fp+5"
+    },
+    {
+     "lines": ["TROMBONE", "WINS!"],
+     "t0": "0x1.b15f5f5f5f5f5p+5",
+     "t1": "0x1.c35f5f5f5f5f5p+5"
+    },
+    {
+     "lines": ["COMMENT THE", "*NEXT MATCH-UP*"],
+     "t0": "0x1.c42c2c2c2c2c2p+5",
+     "t1": "0x1.cb4b4b4b4b4b4p+5"
+    }
+   ],
+   "cap_ability": [
+    [
+     {
+      "lines": ["SNAKE DANCE"],
+      "t0": "0x1.3bc5c67dfe32ap+5",
+      "t1": "0x1.4ef8f9b13165dp+5"
+     }
+    ],
+    [
+     {
+      "lines": ["SAD TROMBONE"],
+      "t0": "0x1.cb5b573eab368p+3",
+      "t1": "0x1.0c141205bc01ap+4"
+     },
+     {
+      "lines": ["POWER SLIDE"],
+      "t0": "0x1.838b8cfbfc654p+4",
+      "t1": "0x1.a9f1f36262cbap+4"
+     },
+     {
+      "lines": ["PEDAL TONE"],
+      "t0": "0x1.8e4e50c5eb314p+5",
+      "t1": "0x1.a18183f91e647p+5"
+     }
+    ]
+   ],
+   "cap_comment": [
+    {
+     "lines": ["COMMENT THE", "*NEXT MATCH-UP*"],
+     "t0": "0x1.c42c2c2c2c2c2p+5",
+     "t1": "0x1.cb4b4b4b4b4b4p+5"
+    }
+   ],
+   "cap_gap": "0x1.0000000000000p+2",
+   "cap_ko": [
+    {
+     "lines": ["*K.O.*"],
+     "t0": "0x1.a6f8f8f8f8f8fp+5",
+     "t1": "0x1.b0f8f8f8f8f8fp+5"
+    }
+   ],
+   "cap_title": [],
+   "cap_wins": [
+    {
+     "lines": ["TROMBONE", "WINS!"],
+     "t0": "0x1.b15f5f5f5f5f5p+5",
+     "t1": "0x1.c35f5f5f5f5f5p+5"
+    }
+   ],
+   "captions": [
+    ["0x1.cb5b573eab368p+3", 1, "SAD TROMBONE"],
+    ["0x1.838b8cfbfc654p+4", 1, "POWER SLIDE"],
+    ["0x1.3bc5c67dfe32ap+5", 0, "SNAKE DANCE"],
+    ["0x1.8e4e50c5eb314p+5", 1, "PEDAL TONE"]
+   ],
+   "hitstop": "0x1.6666666666666p-2",
+   "lose": 0,
+   "names": ["FLUTE", "TROMBONE"],
+   "seed": 2,
+   "solo_t": ["0x1.bcf0f0f0f0f0ep+5", "0x1.bebc3c3c3c3c3p+5", "0x1.c087878787877p+5", "0x1.c41e1e1e1e1e1p+5", "0x1.c5e9696969696p+5", "0x1.c7b4b4b4b4b4ap+5", "0x1.c97ffffffffffp+5", "0x1.cb4b4b4b4b4b4p+5", "0x1.cd16969696968p+5", "0x1.cee1e1e1e1e1dp+5", "0x1.d192d2d2d2d2cp+5", "0x1.d278787878786p+5", "0x1.d443c3c3c3c3bp+5", "0x1.d60f0f0f0f0f0p+5", "0x1.d7da5a5a5a5a5p+5", "0x1.d9a5a5a5a5a59p+5", "0x1.db70f0f0f0f0ep+5", "0x1.dd3c3c3c3c3c3p+5", "0x1.dfed2d2d2d2d2p+5", "0x1.e0d2d2d2d2d2cp+5", "0x1.e29e1e1e1e1e1p+5", "0x1.e469696969696p+5"],
+   "t_hs": "0x1.a9c5c5c5c5c5cp+5",
+   "t_ko": "0x1.a6f8f8f8f8f8fp+5",
+   "t_reassemble": "0x1.cb4b4b4b4b4b4p+5",
+   "t_solo": "0x1.bcf0f0f0f0f0ep+5",
+   "win": 1,
+   "winner": 1
+  },
+  "seed3.bfrec": {
+   "all": [
+    {
+     "lines": ["SNAKE DANCE"],
+     "t0": "0x1.ae9ca18bd6627p+4",
+     "t1": "0x1.d50307f23cc8dp+4"
+    },
+    {
+     "lines": ["PICCOLO"],
+     "t0": "0x1.54e7ea5f84cadp+5",
+     "t1": "0x1.681b1d92b7fe0p+5"
+    },
+    {
+     "lines": ["SAD TROMBONE"],
+     "t0": "0x1.027a786c22681p+4",
+     "t1": "0x1.28e0ded288ce7p+4"
+    },
+    {
+     "lines": ["*K.O.*"],
+     "t0": "0x1.97a3a3a3a3a3ap+5",
+     "t1": "0x1.a1a3a3a3a3a3ap+5"
+    },
+    {
+     "lines": ["FLUTE", "WINS!"],
+     "t0": "0x1.a20a0a0a0a0a0p+5",
+     "t1": "0x1.b40a0a0a0a0a0p+5"
+    },
+    {
+     "lines": ["COMMENT THE", "*NEXT MATCH-UP*"],
+     "t0": "0x1.b4d6d6d6d6d6dp+5",
+     "t1": "0x1.cb4b4b4b4b4b4p+5"
+    }
+   ],
+   "cap_ability": [
+    [
+     {
+      "lines": ["SNAKE DANCE"],
+      "t0": "0x1.ae9ca18bd6627p+4",
+      "t1": "0x1.d50307f23cc8dp+4"
+     },
+     {
+      "lines": ["PICCOLO"],
+      "t0": "0x1.54e7ea5f84cadp+5",
+      "t1": "0x1.681b1d92b7fe0p+5"
+     }
+    ],
+    [
+     {
+      "lines": ["SAD TROMBONE"],
+      "t0": "0x1.027a786c22681p+4",
+      "t1": "0x1.28e0ded288ce7p+4"
+     }
+    ]
+   ],
+   "cap_comment": [
+    {
+     "lines": ["COMMENT THE", "*NEXT MATCH-UP*"],
+     "t0": "0x1.b4d6d6d6d6d6dp+5",
+     "t1": "0x1.cb4b4b4b4b4b4p+5"
+    }
+   ],
+   "cap_gap": "0x1.0000000000000p+2",
+   "cap_ko": [
+    {
+     "lines": ["*K.O.*"],
+     "t0": "0x1.97a3a3a3a3a3ap+5",
+     "t1": "0x1.a1a3a3a3a3a3ap+5"
+    }
+   ],
+   "cap_title": [],
+   "cap_wins": [
+    {
+     "lines": ["FLUTE", "WINS!"],
+     "t0": "0x1.a20a0a0a0a0a0p+5",
+     "t1": "0x1.b40a0a0a0a0a0p+5"
+    }
+   ],
+   "captions": [
+    ["0x1.027a786c22681p+4", 1, "SAD TROMBONE"],
+    ["0x1.ae9ca18bd6627p+4", 0, "SNAKE DANCE"],
+    ["0x1.54e7ea5f84cadp+5", 0, "PICCOLO"]
+   ],
+   "hitstop": "0x1.6666666666666p-2",
+   "lose": 1,
+   "names": ["FLUTE", "TROMBONE"],
+   "seed": 3,
+   "solo_t": ["0x1.ae96969696969p+5", "0x1.b061e1e1e1e1ep+5", "0x1.b147878787878p+5", "0x1.b22d2d2d2d2d2p+5", "0x1.b3f8787878787p+5", "0x1.b5c3c3c3c3c3cp+5", "0x1.b78f0f0f0f0f0p+5", "0x1.b874b4b4b4b4bp+5", "0x1.b95a5a5a5a5a5p+5", "0x1.bb25a5a5a5a5ap+5", "0x1.bcf0f0f0f0f0fp+5", "0x1.bfa1e1e1e1e1ep+5", "0x1.c087878787878p+5", "0x1.c252d2d2d2d2dp+5", "0x1.c41e1e1e1e1e1p+5"],
+   "t_hs": "0x1.9a70707070707p+5",
+   "t_ko": "0x1.97a3a3a3a3a3ap+5",
+   "t_reassemble": "0x1.cb4b4b4b4b4b4p+5",
+   "t_solo": "0x1.ae96969696969p+5",
+   "win": 0,
+   "winner": 0
+  },
+  "seed500.bfrec": {
+   "all": [
+    {
+     "lines": ["FLUTTER TONGUE"],
+     "t0": "0x1.027a786c22681p+4",
+     "t1": "0x1.28e0ded288ce7p+4"
+    },
+    {
+     "lines": ["SNAKE DANCE"],
+     "t0": "0x1.ae9ca18bd6627p+4",
+     "t1": "0x1.d50307f23cc8dp+4"
+    },
+    {
+     "lines": ["PICCOLO"],
+     "t0": "0x1.b5c5c67dfe32ap+5",
+     "t1": "0x1.c8f8f9b13165dp+5"
+    },
+    {
+     "lines": ["POWER SLIDE"],
+     "t0": "0x1.fd8b8cfbfc654p+4",
+     "t1": "0x1.11f8f9b13165dp+5"
+    },
+    {
+     "lines": ["PEDAL TONE"],
+     "t0": "0x1.7c5f601797cc4p+5",
+     "t1": "0x1.8f92934acaff7p+5"
+    },
+    {
+     "lines": ["*K.O.*"],
+     "t0": "0x1.bf1b1b1b1b1b1p+5",
+     "t1": "0x1.c91b1b1b1b1b1p+5"
+    },
+    {
+     "lines": ["FLUTE", "WINS!"],
+     "t0": "0x1.c981818181817p+5",
+     "t1": "0x1.db81818181817p+5"
+    },
+    {
+     "lines": ["COMMENT THE", "*NEXT MATCH-UP*"],
+     "t0": "0x1.dc4e4e4e4e4e4p+5",
+     "t1": "0x1.cb4b4b4b4b4b4p+5"
+    }
+   ],
+   "cap_ability": [
+    [
+     {
+      "lines": ["FLUTTER TONGUE"],
+      "t0": "0x1.027a786c22681p+4",
+      "t1": "0x1.28e0ded288ce7p+4"
+     },
+     {
+      "lines": ["SNAKE DANCE"],
+      "t0": "0x1.ae9ca18bd6627p+4",
+      "t1": "0x1.d50307f23cc8dp+4"
+     },
+     {
+      "lines": ["PICCOLO"],
+      "t0": "0x1.b5c5c67dfe32ap+5",
+      "t1": "0x1.c8f8f9b13165dp+5"
+     }
+    ],
+    [
+     {
+      "lines": ["POWER SLIDE"],
+      "t0": "0x1.fd8b8cfbfc654p+4",
+      "t1": "0x1.11f8f9b13165dp+5"
+     },
+     {
+      "lines": ["PEDAL TONE"],
+      "t0": "0x1.7c5f601797cc4p+5",
+      "t1": "0x1.8f92934acaff7p+5"
+     }
+    ]
+   ],
+   "cap_comment": [
+    {
+     "lines": ["COMMENT THE", "*NEXT MATCH-UP*"],
+     "t0": "0x1.dc4e4e4e4e4e4p+5",
+     "t1": "0x1.cb4b4b4b4b4b4p+5"
+    }
+   ],
+   "cap_gap": "0x1.0000000000000p+2",
+   "cap_ko": [
+    {
+     "lines": ["*K.O.*"],
+     "t0": "0x1.bf1b1b1b1b1b1p+5",
+     "t1": "0x1.c91b1b1b1b1b1p+5"
+    }
+   ],
+   "cap_title": [],
+   "cap_wins": [
+    {
+     "lines": ["FLUTE", "WINS!"],
+     "t0": "0x1.c981818181817p+5",
+     "t1": "0x1.db81818181817p+5"
+    }
+   ],
+   "captions": [
+    ["0x1.027a786c22681p+4", 0, "FLUTTER TONGUE"],
+    ["0x1.ae9ca18bd6627p+4", 0, "SNAKE DANCE"],
+    ["0x1.fd8b8cfbfc654p+4", 1, "POWER SLIDE"],
+    ["0x1.7c5f601797cc4p+5", 1, "PEDAL TONE"],
+    ["0x1.b5c5c67dfe32ap+5", 0, "PICCOLO"]
+   ],
+   "hitstop": "0x1.6666666666666p-2",
+   "lose": 1,
+   "names": ["FLUTE", "TROMBONE"],
+   "seed": 500,
+   "solo_t": ["0x1.d9a5a5a5a5a5ap+5", "0x1.db70f0f0f0f0fp+5", "0x1.dc56969696969p+5", "0x1.dd3c3c3c3c3c3p+5", "0x1.df07878787878p+5", "0x1.e0d2d2d2d2d2dp+5", "0x1.e29e1e1e1e1e2p+5", "0x1.e383c3c3c3c3cp+5", "0x1.e469696969696p+5", "0x1.e634b4b4b4b4bp+5", "0x1.e800000000000p+5", "0x1.eab0f0f0f0f0fp+5", "0x1.eb96969696969p+5", "0x1.ed61e1e1e1e1ep+5", "0x1.ef2d2d2d2d2d2p+5"],
+   "t_hs": "0x1.c1e7e7e7e7e7ep+5",
+   "t_ko": "0x1.bf1b1b1b1b1b1p+5",
+   "t_reassemble": "0x1.cb4b4b4b4b4b4p+5",
+   "t_solo": "0x1.d9a5a5a5a5a5ap+5",
+   "win": 0,
+   "winner": 0
+  }
+ },
+ "source": {
+  "commit": "88a51b9f99b4a8367ab5087da92b1fc79aa595c4",
+  "kind": "python"
+ },
+ "tool": "show"
+}

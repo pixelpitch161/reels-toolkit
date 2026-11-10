@@ -10,4 +10,5 @@ pub mod py;
 pub mod pyhash;
 pub mod recording;
 pub mod rng;
+pub mod show;
 pub mod ziggurat;
