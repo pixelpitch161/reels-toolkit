@@ -359,8 +359,14 @@
  "mode": "RGB",
  "nf": 1830,
  "recording": {
+  "checked": "before any frame was drawn the export read this file and found it equal to the run the kit drew from: seed, names, corners, first fight frame, winner, K.O. time, rules, every event and every per-frame array. The frames were chosen from its events. hash is its content hash (Recording::hash in the Studio, recording.rec_hash here)",
+  "events": 522,
   "file": "studio/reference/fights/flute_vs_trombone/ep392.bfrec",
-  "note": "the same fight: story.run_seed(392)"
+  "frames": 1394,
+  "hash": "038e1f40fc3373eb",
+  "seed": 392,
+  "t_ko": "0x1.902c2c2c2c2c2p+5",
+  "winner": 1
  },
  "rule_notes": {
   "extra": "rules named extra_* are picks beyond the brief's list (it asks for at least 40 frames)",
