@@ -72,6 +72,8 @@ name = "bf-sound"
 version = "0.1.0"
 dependencies = [
  "bf-core",
+ "bf-testdata",
+ "serde_json",
 ]
 
 [[package]]
