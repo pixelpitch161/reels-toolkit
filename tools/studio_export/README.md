@@ -107,6 +107,19 @@ EXPORTS = {'thing': run}                         # python -m tools.studio_export
 | `py` | `py_vectors.py` | `studio/reference/py/vectors.json` |
 | `pyhash` | `pyhash_vectors.py` | `studio/reference/pyhash/vectors.json` |
 | `rng` | `rng_vectors.py` | `studio/reference/rng/vectors.json` |
+| `roster` | `roster.py` | `studio/crates/bf-content/data/roster.json` |
+
+### `roster`: the fighters' numbers
+
+`{"about", "format": 1, "fighters": [...]}`: the 20 fighters the kit has ported, in the order of
+`projects/ballfight/fighters.py`. Each is an object with `name` first, then the entry's own keys in their own order
+(`color`, `dark`, `corner`, `view`, `weapon`, `abilities` with `unlock1`, `unlock2` and `low`, `pp`, `register`,
+`idiom`; `pitch` where an entry has one). Every number is kept exactly: an int stays an int, a float reads back to
+the same bits, a tuple becomes a list. The file is read back and compared with the table before it is listed in the
+manifest. This is the one file here whose key order means something, so its keys are not sorted.
+
+The two retired fighters are never written and the export stops if one would be. One string equal to a retired
+name is expected and is not a fighter: ELECTRIC's `pp`, the name of the Pixel Pitch voice and model it uses.
 
 `recording.py` has no export of its own: it is the Python side of the recording container (`write_bfrec`,
 `read_bfrec`, `rec_hash`), used by `fights` and by later exports.

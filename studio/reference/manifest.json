@@ -1,6 +1,7 @@
 {
  "format": 1,
  "entries": [
+  {"path": "studio/crates/bf-content/data/roster.json", "sha256": "dd1433707ed9a2f49b46ec5da98d8937b3ae4526763983bf69c99b7dde955227", "bytes": 21758, "tool": "tools.studio_export.roster", "commit": "fd5db2d972c1bb754f6b60d029ab6d1838532a68", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"},
   {"path": "studio/reference/fights/flute_vs_trombone/ep392.bfrec", "sha256": "b1e72cf7c5c45e301c36216aa872a4c1c9d14294f193ae2bbf1e9a49de98e650", "bytes": 127322, "tool": "tools.studio_export.fights", "commit": "1529070c7e9edd0c90b2a7d2009b23a2f411c1cb", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"},
   {"path": "studio/reference/fights/flute_vs_trombone/seed1.bfrec", "sha256": "aa904a6208c7e04ee6957ad0034a3f3c4fb74260aa1a0fd55d069d7db49283be", "bytes": 106122, "tool": "tools.studio_export.fights", "commit": "1529070c7e9edd0c90b2a7d2009b23a2f411c1cb", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"},
   {"path": "studio/reference/fights/flute_vs_trombone/seed2.bfrec", "sha256": "61aadc9755735db90507bf93cb11a95cd239bb517388f35de65a84c9271eecca", "bytes": 132302, "tool": "tools.studio_export.fights", "commit": "1529070c7e9edd0c90b2a7d2009b23a2f411c1cb", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"},

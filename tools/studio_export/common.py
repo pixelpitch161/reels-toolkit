@@ -93,6 +93,24 @@ def plain(x, where='value'):
     raise TypeError(f'{where}: {type(x).__name__} has no JSON form')
 
 
+def same(a, b, where='value', ordered=False):
+    """assert that b (read back from a file) is the JSON form of a, with the same types all the way down: 1 is not
+    1.0, 0.0 is not -0.0, a tuple or list must come back as a list. `ordered` also wants dict keys in the same
+    order"""
+    if isinstance(a, (list, tuple)):
+        assert isinstance(b, list) and len(a) == len(b), where
+        for i, (x, y) in enumerate(zip(a, b)):
+            same(x, y, f'{where}[{i}]', ordered)
+    elif isinstance(a, dict):
+        assert isinstance(b, dict) and (list(a) == list(b) if ordered else sorted(a) == sorted(b)), where
+        for k in a:
+            same(a[k], b[k], f'{where}.{k}', ordered)
+    elif isinstance(a, float):
+        assert type(b) is float and a.hex() == b.hex(), (where, a, b)
+    else:
+        assert type(a) is type(b) and a == b, (where, a, b)
+
+
 # ---------------------------------------------------------------- deterministic text
 def _scalar(x):
     return x is None or isinstance(x, (bool, int, float, str))

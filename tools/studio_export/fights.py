@@ -45,24 +45,9 @@ def as_kit_run(rec):
     return r
 
 
-def same(a, b, where):
-    """a and b are the same value with the same types all the way down (1 is not 1.0, 0.0 is not -0.0)"""
-    if isinstance(a, (list, tuple)):
-        assert isinstance(b, list) and len(a) == len(b), where
-        for i, (x, y) in enumerate(zip(a, b)):
-            same(x, y, f'{where}[{i}]')
-    elif isinstance(a, dict):
-        assert isinstance(b, dict) and sorted(a) == sorted(b), where
-        for k in a:
-            same(a[k], b[k], f'{where}.{k}')
-    elif isinstance(a, float):
-        assert type(b) is float and a.hex() == b.hex(), (where, a, b)
-    else:
-        assert type(a) is type(b) and a == b, (where, a, b)
-
-
 def check(run, rules, rec, rect_keys):
     """the recording read back from disk says exactly what the run said"""
+    same = common.same
     for k in ('seed', 'winner', 't_ko', 'f0', 'names', 'corner'):
         same(run[k], rec[k], k)
     same([list(e) for e in run['events']], rec['events'], 'events')
