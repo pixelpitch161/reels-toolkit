@@ -5,7 +5,8 @@ Python kit writes recordings with `tools/studio_export/recording.py` (`write_bfr
 with `bf_core::recording`. This document is the contract between the two. If it and a file disagree, fix one of them.
 
 The five reference recordings are in `studio/reference/fights/flute_vs_trombone/`: `ep392.bfrec` (the example
-episode's own seed) and `seed1`, `seed2`, `seed3`, `seed500`.
+episode's own seed) and `seed1`, `seed2`, `seed3`, `seed500`. The scenario recordings and the fight with no K.O.
+(`no_ko.bfrec`) are listed in section 7.
 
 ## 1. The container
 
@@ -25,7 +26,8 @@ Zip details:
   descriptors, no comments, no folders.
 - A reader finds members by name through the central directory. Their order means nothing.
 - Python writes the members in ascending name order (byte order, so `meta.json` is last), deflated at level 9, with
-  the timestamp 1980-01-01 00:00:00 on every member, so the same fight always gives the same file bytes. A Studio
+  the timestamp 1980-01-01 00:00:00 on every member, `create_system = 0` and `external_attr = 0o600 << 16` (the
+  last two matter only to reproduce Python's bytes), so the same fight always gives the same file bytes. A Studio
   writer should do the same (sorted names, one fixed timestamp, one compression setting). The bytes of the zip are
   not part of the content hash (section 7), so a different deflate implementation does not change a recording's
   identity.
@@ -34,7 +36,8 @@ A reader must refuse, with an error that names the file and the problem and with
 
 - a file that is not a complete zip (a truncated file has no central directory),
 - a zip without `meta.json`, or whose `meta.json` is not the JSON described below,
-- `format` greater than the reader knows (the Studio says: `format 2 ... this app reads 1`),
+- `format` greater than the reader knows (the Studio says: `format 2 ... this app reads 1`), or below 1,
+- a `meta.json` with a key this document does not list, or with the same key twice in one object,
 - an array named in `meta.json` whose member is missing, or a member that `meta.json` does not name,
 - a `.npy` whose header is not as in section 4, or whose data is shorter or longer than its shape says,
 - arrays that disagree on the number of frames (section 3), or a recording without `HP`.
@@ -93,10 +96,18 @@ Rules that keep this exact in both directions:
 - **Int or Float is decided by the text of the number.** No `.`, `e` or `E`: an integer. Otherwise a float. A writer
   must write a float whose value is whole with a fraction (`100.0`, never `100`), and an integer without one. The
   kit's lists mix the two (a `hit` event has integer fighter indices and float damage), and the content hash tells
-  them apart.
-- **Floats are written with the shortest text that reads back to the same bits** (Python's `repr`; Rust's default
-  `f64` formatting and `serde_json` do the same). A reader must convert the text to the nearest `f64` (in
-  `serde_json` this needs the `float_roundtrip` feature). Minus zero is written `-0.0` and stays minus zero.
+  them apart. A reader must classify each number by its text itself: a fraction part or an exponent means `Float`,
+  anything else `Int`. A stock JSON parser is not enough for this: `serde_json`, for example, reads `-0` as a float
+  and an integer beyond 64 bits as a float. (Python never writes `-0` as an integer, so the reference files are not
+  affected; an integer that does not fit a signed 64-bit integer is an error.)
+- **Floats are written with the shortest text that reads back to the same bits** (Python's `repr`; in Rust that is
+  the `Debug` formatting `{:?}`, which gives `100.0`, `1e-5`, `1e300`. Rust's `Display` `{}` does not: it writes
+  `100.0` as `100`, an integer by the rule above, and `1e300` as 301 digits). A reader must convert the text to the
+  nearest `f64` (in `serde_json` this needs the `float_roundtrip` feature). Minus zero is written `-0.0` and stays
+  minus zero. The digits are the shortest round-trip digits in both languages, and both switch to the exponent form
+  at the same points, but the exponent's spelling may differ between writers: Python writes `1e-05` and `1e+16`,
+  Rust's `{:?}` writes `1e-5` and `1e16`. Both spellings are valid for a reader and give the same value and the same
+  content hash; a file's bytes are therefore only guaranteed identical between writers of the same language.
 - **Every float in JSON is finite.** The exporter refuses NaN and infinities there. (`.npy` data may hold NaN: see
   `K` in section 6.3.)
 - A Python `dict` inside a value has no JSON form in format 1 and the exporter refuses it. The only objects are
@@ -144,8 +155,10 @@ followed by spaces and a newline up to `HEADER_LEN` = 118, so the data starts at
   frame count.
 
 A writer pads the header with spaces so that `10 + HEADER_LEN` is a multiple of 64 and ends it with `\n` (NumPy then
-reads the file). A reader should find the three keys without depending on their order, spacing or the padding. The
-data length must be exactly `8 * product(shape)` bytes.
+reads the file). To match NumPy's bytes exactly (not needed for a valid file): NumPy first puts
+`21 - len(str(shape[0]))` spare spaces after the dict, then pads with 1 to 64 spaces (64 when the length is already
+aligned, never 0), then the `\n`. A reader should find the three keys without depending on their order, spacing or
+the padding. The data length must be exactly `8 * product(shape)` bytes.
 
 A key is `<i8` when every value the kit recorded for it is an integer (`FR`, `NV`, `LV`), otherwise `<f8`.
 
@@ -153,7 +166,8 @@ A key is `<i8` when every value the kit recorded for it is an integer (`FR`, `NV
 
 A JSON list with one entry per frame (`frames()` entries). What a frame's entry holds depends on the key (section
 6.3): typically a list of things that exist in that frame, each a short list of numbers and strings. The value rules
-of section 2 apply. Python writes one frame per line; a reader must not depend on that. In Rust the whole list is
+of section 2 apply. Python writes one frame per line, in ASCII with any non-ASCII character as a `\u` escape; a
+reader must not depend on either and must accept any valid UTF-8 JSON. In Rust the whole list is
 `Array::Nested(Value::List(...))`.
 
 `WAVES`, `SLAMS` and `COB` are always JSON, in every recording, even when every frame happens to hold the same
@@ -365,6 +379,37 @@ SHA-256: `e95b0e26c6a45d73475a5887a4f34d67871d5c09da11383e1f858d9dc5c17891`. The
 | `seed2.bfrec` | 2 | 1 (TROMBONE) | 52.871568627450976 | 505 | 1,480 | `ec9e2ac0d1ca33fc` |
 | `seed3.bfrec` | 3 | 0 (FLUTE) | 50.95490196078431 | 510 | 1,422 | `9bff0f539177070e` |
 | `seed500.bfrec` | 500 | 0 (FLUTE) | 55.88823529411764 | 528 | 1,570 | `5a00a0b08c4d1bac` |
+
+### The scenario recordings and the fight with no K.O.
+
+Written by the `scenarios` export (`tools/studio_export/scenarios.py`), in the same folder. The scenario fights are
+honest fights under rule overrides, so that every event kind, hit sub-kind and ability fires early;
+`coverage.json` beside them says where each first fires. The overrides appear in `rules` with the value used:
+`early_levels` has `LV_DMG` `[2.0, 5.0]`; `early_low` has `LV_DMG` `[2.0, 5.0]` and `LOW_HP` `92.0`; `early_ko`
+has `dmg_scale` `3.0`; `plain` has none. `swapped` has no overrides but TROMBONE in the left corner: `names` is
+`["TROMBONE", "FLUTE"]` and `dmg_side` `[0.4, 2.0]`, so every per-fighter array is in that order too (the FLUTE's
+baskets are `COB[i][1]`). `no_ko.bfrec` is the lowest seed with no K.O. before `t_max` under the episode's own rules:
+`winner` and `t_ko` are `null` and the last frame is the last regular one before 58 s. They hold the same 12 event
+kinds and the same 19 keys as the reference recordings.
+
+| File | Seed | Winner | `t_ko` | Events | Frames | Hash |
+| --- | --- | --- | --- | --- | --- | --- |
+| `no_ko.bfrec` | 4 | null | null | 456 | 1,633 | `52869b4b4b535bd2` |
+| `scenarios/early_levels_s1.bfrec` | 1 | 0 (FLUTE) | 39.28823529411765 | 426 | 1,072 | `73aab95a6c47339c` |
+| `scenarios/early_levels_s2.bfrec` | 2 | 1 (TROMBONE) | 42.17990196078431 | 455 | 1,159 | `571c237e79e7ec1f` |
+| `scenarios/early_levels_s3.bfrec` | 3 | 1 (TROMBONE) | 50.688235294117646 | 517 | 1,414 | `ebdb789f58d7c5ea` |
+| `scenarios/early_low_s1.bfrec` | 1 | 0 (FLUTE) | 45.79656862745098 | 450 | 1,268 | `1a6f45574fccfb4e` |
+| `scenarios/early_low_s2.bfrec` | 2 | 0 (FLUTE) | 45.34656862745098 | 474 | 1,254 | `5b59ad32b43116c5` |
+| `scenarios/early_low_s3.bfrec` | 3 | 1 (TROMBONE) | 45.41323529411765 | 452 | 1,256 | `066bebdb17ee8245` |
+| `scenarios/early_ko_s1.bfrec` | 1 | 0 (FLUTE) | 14.879901960784313 | 117 | 340 | `7dae15373cdcb2ea` |
+| `scenarios/early_ko_s2.bfrec` | 2 | 0 (FLUTE) | 17.99656862745098 | 147 | 434 | `bb5db53bd0ab1ba6` |
+| `scenarios/early_ko_s3.bfrec` | 3 | 0 (FLUTE) | 22.47990196078431 | 191 | 568 | `1c2c47b34c0270df` |
+| `scenarios/plain_s7.bfrec` | 7 | 0 (FLUTE) | 57.03823529411764 | 513 | 1,605 | `8d4aab40227ce763` |
+| `scenarios/plain_s8.bfrec` | 8 | null | null | 428 | 1,633 | `8b768308801dd33a` |
+| `scenarios/plain_s9.bfrec` | 9 | 1 (TROMBONE) | 47.213235294117645 | 422 | 1,310 | `6e0a9423fd198493` |
+| `scenarios/swapped_s1.bfrec` | 1 | 1 (FLUTE) | 44.47990196078431 | 453 | 1,228 | `5e305859c8c761c6` |
+| `scenarios/swapped_s2.bfrec` | 2 | 0 (TROMBONE) | 51.38823529411764 | 492 | 1,435 | `de3d586f83f4a4c9` |
+| `scenarios/swapped_s3.bfrec` | 3 | 1 (FLUTE) | 44.588235294117645 | 433 | 1,231 | `319c0f76b52bc029` |
 
 This hash is the Studio's own. It is not the kit's replay-guard hash (`tools/ballfight_replay_hash.py` prints
 `a4235ac9d8e6286b` for seed 392), which is taken over Python `repr` text. The exporter checks that each file holds
