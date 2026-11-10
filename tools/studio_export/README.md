@@ -149,6 +149,7 @@ EXPORTS = {'thing': run}                         # python -m tools.studio_export
 | `stats` | `stats.py` | `studio/reference/fights/flute_vs_trombone/stats.json` (seeds 1 to 4,000, pooled figures; order 55) |
 | `scenarios` | `scenarios.py` | `studio/reference/fights/flute_vs_trombone/{scenarios/*.bfrec,no_ko.bfrec,coverage.json}` (reads `stats.json`; order 60) |
 | `stories` | `stories.py` | `studio/reference/fights/flute_vs_trombone/stories.json` (the kit's story and score of every recording there; order 70) |
+| `stems` | `stems.py` | `studio/reference/sound/flute_vs_trombone/{audio.wav,stems.npz,premaster.npz,rms.json,master_case.npz}` (its own interpreter; reads what `voices` wrote; order 55) |
 | `voices` | `voices.py` | `studio/reference/sound/{pp_noise_start.json,flute_vs_trombone/{note_calls.json,first_notes.npz},voices/{FLUTE,TROMBONE,helpers}.npz,voices/scalars.json}` (its own interpreter) |
 
 ### `roster`: the fighters' numbers
@@ -302,3 +303,27 @@ order and compares each with its SHA-256 and recorded states (the first three wi
 shows that the same note made from another state differs, and reproduces every voice vector from the state stored
 with it. The export runs it before it lists anything in the manifest. `voices.py` also holds what `stems` and
 `checks` share: the noise-state helpers and `NoteLog`.
+
+### `stems`: the episode's soundtrack, bus by bus
+
+For the stem parity tests of `bf-content` and the master of `bf-sound`. `kit.music.main()` for `flute_vs_trombone`
+in its own interpreter; everything is in `studio/reference/sound/flute_vs_trombone/`.
+
+| File | What |
+| --- | --- |
+| `audio.wav` | The mastered soundtrack exactly as the kit writes it: 16 bit, 48,000 Hz, stereo, 2,928,640 samples (61.013 s) |
+| `stems.npz` | Every bus after the master (`master()`'s stems: the folded bus times its gain, the compressor's gain and the two limiter scales; no reverb), as `float32` `(96000, 2)` windows of 2.0 s from 0.0, 3.4, 12.0, 30.0, 43.0, T_KO - 1.0, T_KO + 3.0 and 59.0 s, plus `seam`, the last 0.25 s before the loop point. One case per window; its `arrays` map each bus to its samples `[i0, i0 + n)`. The sidecar's `master` holds the bus levels and sends, the order the buses are summed in, the reverb and compressor settings and the master's two scales `s1`, `s2` |
+| `premaster.npz` | Every bus as `score()` leaves it (`mix.buses`, before the bus gains, the reverb, the fold and the master), the same windows, plus `tail`, the 0.25 s past the loop point that the master folds onto the start |
+| `rms.json` | The RMS of every 100 ms block in dB (`20 * log10(sqrt(mean(x ** 2)) + 1e-12)` over both channels; the last block is shorter): `stems.db` for each stem and `master` (611 blocks), `premaster.db` for each bus (710 blocks: the whole 71 s buffer), `master_chain` (the reverb's wet part, the compressor's gain at the start of each block and its minimum inside it), and `sections`, the levels `kit.music.main()` prints |
+| `master_case.npz` | A sparse synthetic mix on three buses (`drums`, `flute`, `fx`): the mono signals and where `Mix.place` puts them (`placements`), and `float64` windows of `kit.music.master()`'s result (`master` and each stem) at the start, the middle and the seam. Something crosses the loop point, so the fold is in it |
+
+The brief's seven start times never hear the `glock` bus (it only plays in the back half's even bars), so the
+window at 43.0 s was added; `stems.check()` fails if a bus is silent in every window. `silent` in each sidecar
+lists the all-zero `[case, bus]` pairs. The windows are `float32` (the kit computes in `float64`): the comparison
+bar is -120 dBFS and `float32` keeps 24 bits.
+
+What the export proves before it lists anything: the noise generator starts at `pp_noise_start.json`; the notes it
+logs equal `note_calls.json`; with the note cache emptied and the generator put back at the start state a second
+`score()` gives every bus again bit for bit, and without putting it back the FLUTE's bus differs; `audio.wav` is the
+16-bit form of the master it holds. The numbers inside the master come from a copy of `master()`'s lines in
+`stems.py`, which must reproduce the kit's master and stems bit for bit or the export stops.
