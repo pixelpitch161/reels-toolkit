@@ -9,7 +9,14 @@
 //!
 //! numpy takes `tan`, `sin`, `cos`, `hypot` and `pow` from the platform here and the Studio takes them from
 //! `dmath`, so a coefficient can differ from scipy's in its last bits; the reference designs agree to a relative
-//! 1e-12 or better. Exact zeros (a band-pass section's middle `b`) come out exact.
+//! 1e-15. What is exact in scipy's sections is exact here: `a0 = 1`, and the numerators `(1, 2, 1)`, `(1, -2, 1)`
+//! of zeros at -1 and +1 (times the gain in the first section).
+//!
+//! Two things no port through another maths library can pin down. A band-pass whose edges mirror about a quarter
+//! of the sample rate (`lo + hi = fs / 2`) has two pole pairs equally close to the unit circle; which one scipy
+//! calls the worst hangs on the last bit of `hypot`, so the same sections can come out in another order (the
+//! filter is the same). And a coefficient that is zero in exact arithmetic (`a1` of a low- or high-pass exactly at
+//! `fs / 4`) is rounding noise in scipy and here.
 
 use std::ops::{Add, Div, Mul, Neg, Sub};
 
