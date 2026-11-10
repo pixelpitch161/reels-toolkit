@@ -103,9 +103,28 @@ EXPORTS = {'thing': run}                         # python -m tools.studio_export
 
 | Name | Module | Files |
 | --- | --- | --- |
+| `fights` | `fights.py` | `studio/reference/fights/flute_vs_trombone/{ep392,seed1,seed2,seed3,seed500}.bfrec` |
 | `py` | `py_vectors.py` | `studio/reference/py/vectors.json` |
 | `pyhash` | `pyhash_vectors.py` | `studio/reference/pyhash/vectors.json` |
 | `rng` | `rng_vectors.py` | `studio/reference/rng/vectors.json` |
+
+`recording.py` has no export of its own: it is the Python side of the recording container (`write_bfrec`,
+`read_bfrec`, `rec_hash`), used by `fights` and by later exports.
+
+### `fights`: reference recordings
+
+The example episode `flute_vs_trombone` fought by the kit (`story.run_seed`) for its own seed 392 and for seeds 1,
+2, 3 and 500, each stored with the episode's rules as a `.bfrec` file. The container, every field, every event kind
+and the content hash are specified in `studio/docs/recording-format.md`; that document is the contract the Rust
+reader is written from, and it states each file's hash. The export stops with a message if the document no longer
+states the hashes it computes.
+
+After writing a file the export reads it back and checks it against the run value for value and type for type,
+and it recomputes the kit's replay-guard hash from the file alone: for seed 392 that is `a4235ac9d8e6286b`, the
+same line `python projects/ballfight hash flute_vs_trombone 392` prints.
+
+The zip bytes also depend on the zlib that Python carries (1.3.2 in the reference environment). The content hash
+does not.
 
 ### `rng`: numpy's `default_rng`
 
