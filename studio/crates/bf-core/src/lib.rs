@@ -2,6 +2,7 @@
 
 pub mod dmath;
 pub mod event;
+pub mod fightfile;
 pub mod grid;
 pub mod harmony;
 pub mod npy;

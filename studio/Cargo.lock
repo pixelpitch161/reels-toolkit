@@ -25,6 +25,7 @@ dependencies = [
 name = "bf-content"
 version = "0.1.0"
 dependencies = [
+ "bf-core",
  "bf-picture",
  "bf-sim",
  "bf-sound",
@@ -63,6 +64,7 @@ name = "bf-sim"
 version = "0.1.0"
 dependencies = [
  "bf-core",
+ "serde_json",
 ]
 
 [[package]]
