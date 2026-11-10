@@ -46,6 +46,10 @@ $env:PYTHONPATH = (Get-Location).Path
 - `verify` re-hashes every file in the manifest and exits 1 if one is missing or changed. It only reads files, so
   it runs on any Python. Files under `studio/reference/` that the manifest does not list are printed as notes.
 - `adopt <path>...` records reference files that a Rust test blessed (see "The manifest").
+- `stages <frame>...` is no reference export: it dumps one frame's buffers after each stage of the renderer into
+  the git-ignored cache folder, for finding where a frame first differs (see "`stages`" below). `all` leaves it
+  out, and so it does every export a module names in `TAKES_ARGS`: such an export is run alone and gets the rest
+  of the command line as a list.
 
 The environment guard: every export, and `list` and `adopt` too, refuses to run unless
 
@@ -405,6 +409,48 @@ with `t`, `title.door_offset(t)` and `title.shake(t)` as `float.hex()` strings.
 | `closing_0` .. `closing_3` | 1824, 1826, 1827, 1829 of the doors closing (1822 to 1829; the last is shut again, with name A as on frame 0) |
 
 That is 18 cards where the brief counts 16: its own list (three per word, the hold, four and four) adds up to 18.
+
+### `stages`: one frame, stage by stage (not committed)
+
+```
+.studio-tools\py313\Scripts\python.exe -m tools.studio_export stages 150 600 1500
+```
+
+writes `studio/reference/.cache/stages/flute_vs_trombone/f<frame>.npz` and `f<frame>.json` for each frame named
+(about 7 MB and 5 s a frame). The folder is git-ignored and nothing in it is listed in the manifest. The files
+follow the vector convention: the sidecar's `stages` lists the stage names in pipeline order and each case is one
+stage (`id` is its name, `call` the hook that captured it, `what` says what the buffer is, `dtype` its arrays'
+dtypes). `rgb` arrays are (640, 360, 3), `depth` and `map` arrays (640, 360), each in the dtype the renderer holds
+it in at that point.
+
+| Stage | The buffer | Arrays |
+| --- | --- | --- |
+| `floor` | the arena floor, lit per pixel and dithered | `rgb` float32, `depth` float32 |
+| `arena` | after the stands, the crowd and the LED boards | `rgb` uint8, `depth` |
+| `skirt` | after the ring platform's skirt | `rgb` uint8, `depth` |
+| `canvas` | the canvas, lit per pixel with its shadows and the looks' decals, dithered | `rgb` float32, `depth` |
+| `painter` | after the back post and ropes, the balls, the looks' items, the side posts, the front ropes and post | `rgb` float32 (whole numbers), `depth` |
+| `over_ring` | after the looks' over-ring effects and the K.O. shards | `rgb` float32 |
+| `sparks` | after the hit sparks | `rgb` float32 |
+| `particles` | after the particles: what the lens gets (once clipped and cut to bytes) | `rgb` float32, `depth` |
+| `coc` | the circle of confusion per pixel | `map` float64 |
+| `lens` | after the depth of field | `rgb` float64 |
+| `shimmer` | after the looks' heat shimmers | `rgb` float64 |
+| `glows` | after the glow sprites | `rgb` float64 |
+| `beam` | after the spot's beam and the can, clipped to 0..255 (the bloom's input) | `rgb` float64 |
+| `bloom`, `grade` | after each | `rgb` float64 |
+| `scrim` | after the vignette and the top scrim, clipped | `rgb` float64 |
+| `post_fx` | after the looks' crisp overlays, the fringe, the ability moments and the bursts | `rgb` float64 |
+| `countdown` | cut to uint8, with the count-in drawn | `rgb` uint8 |
+| `hud` | after the HP numbers, the fight HUD and the captions | `rgb` uint8 |
+| `title` | after the VS title card: the frame | `rgb` uint8 |
+
+The dtypes above are what frames 150, 600 and 1500 give; each sidecar states its own dump's.
+`Frame.set_array` clips to 0..255 and truncates to uint8 for the PIL canvas, so `floor`, `canvas` and `particles`
+are the floats handed to it and the stage after each starts from whole numbers. Nothing in the kit is edited:
+`stages.tap` wraps the functions `render` calls (and `Frame.set_array` and `Frame.array`) for one render and puts
+them back. Every dump is checked before it is kept: each stage fired, in this order; the last stage is the frame
+`render` returned; the same frame drawn without the taps is identical; every array reads back without pickle.
 
 ### `dsp`: signal-processing vectors
 

@@ -7,7 +7,9 @@
     adopt     record files that a Rust test blessed (repo-relative paths) in the manifest, as tool "rust-bless"
 
 A module registers exports with a module-level `EXPORTS = {"name": function}` (and, if one must run before or after
-others under `all`, `ORDER = {"name": number}`). Everything but `verify` refuses to run unless the interpreter is
+others under `all`, `ORDER = {"name": number}`). An export named in a module's `TAKES_ARGS` is not a reference export:
+it is run alone as `<name> <argument>...`, gets the arguments as a list, and `all` leaves it out (`stages <frame>...`).
+Everything but `verify` refuses to run unless the interpreter is
 CPython 3.13.18 without -O, PYTHONHASHSEED is 0 and really in effect (not switched off by -E, -I or -R), and numpy,
 scipy and pillow are exactly the versions in requirements.txt; `verify` only reads files and runs anywhere."""
 import importlib
@@ -117,7 +119,13 @@ def main(argv):
         for name in in_order(found):
             print(f'{name:12s} order {found[name][0]:3d}  {found[name][2]}')
         return 0
-    names = in_order(found) if argv == ['all'] else argv
+    takes = {n for n in found if n in getattr(sys.modules[found[n][2]], 'TAKES_ARGS', ())}
+    if argv[0] in takes:              # an export with arguments of its own, e.g. `stages 150 600 1500`
+        t0 = time.time()
+        found[argv[0]][1](argv[1:])
+        print(f'[{argv[0]}: {time.time() - t0:.1f} s]')
+        return 0
+    names = [n for n in in_order(found) if n not in takes] if argv == ['all'] else argv
     unknown = [n for n in names if n not in found]
     if unknown:
         raise SystemExit(f"no export named {', '.join(unknown)} (there are: {', '.join(in_order(found))}; "
