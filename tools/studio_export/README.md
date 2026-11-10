@@ -148,6 +148,7 @@ EXPORTS = {'thing': run}                         # python -m tools.studio_export
 | `dsp` | `dsp_vectors.py` | `studio/reference/dsp/{butter,filters,resample,fftconvolve,numpy,ufuncs,generators}.npz`, each with its sidecar `.json` (order 40) |
 | `fights` | `fights.py` | `studio/reference/fights/flute_vs_trombone/{ep392,seed1,seed2,seed3,seed500}.bfrec` |
 | `frames` | `frames.py` | `studio/reference/frames/flute_vs_trombone/{f<frame>.png,frames.json}` (43 frames), and `studio/reference/frames/exceptions.toml` if it does not exist yet |
+| `kit` | `kit_vectors.py` | `studio/reference/picture_kit/{config,font,np}.npz`, each with its sidecar `.json` (under a second) |
 | `models` | `models.py` | `studio/crates/bf-content/data/models/{FLUTE,TROMBONE}.json` |
 | `pillow` | `pillow_vectors.py` | `studio/reference/pillow/calls.json` and 16 vector files, each `.npz` with its sidecar `.json` (about 3 minutes: it draws all 1,830 frames in 8 worker processes) |
 | `py` | `py_vectors.py` | `studio/reference/py/vectors.json` |
@@ -302,6 +303,32 @@ What the cases pin down, from Pillow's source (`_imaging.c`, `Draw.c`, `Resample
   a point given twice, the two sides of a flattened outline) blend again where they overlap.
 - `resize` works on premultiplied colour for `RGBA` (every filter but `NEAREST`).
 - `GaussianBlur` is three passes of an extended box blur, and reads its radius as a C float.
+
+### `kit`: the renderer kit's own helpers
+
+For `bf-picture`'s ports of the `reelkit` picture modules. One file per group in `studio/reference/picture_kit/`;
+a case is one Python expression (`call`), its scalar arguments (`args`) and its arrays. The later picture tasks add
+their groups to the same module.
+
+| File | Cases |
+| --- | --- |
+| `config` | 12, from `reelkit.config`: `BAYER`, `BAYER_FULL`, `XX` and `YY` as they are (the last three are (640, 360): height, width), and `ss`, `ease`, `lerp`, `mixc`, `whole_period`, `loop_bpm`, `safe_x1` and `safe_overshoot` on fixed inputs. A scalar helper's case holds one input array per argument (named as the argument) and `out`: row `k` of `out` is one Python call on row `k` of the inputs, with Python floats (ints for the two safe-zone helpers). The sidecar's `constants` holds `W`, `H`, `UP`, `FPS`, `DUR` (a `float.hex()` string), `NF`, `SAFE`, `SAFE_BUTTONS` and `SAFE_CX` |
+| `font` | 265, from `reelkit.font`: all 58 glyphs as one (58, 7, 5) bool array, in the order of the sidecar's `glyphs` string; `text_mask(s, scale)` for 119 strings and scales (the whole table, lower case, the kit's own words, the empty string, characters the font does not have, and characters whose upper case is two characters or a letter of the table); `dilate(m, r)` for radii 0 to 4 on 13 masks; `stamp` 80 times on a 64 x 40 noise frame, inside it, across every edge and outside, with each of `outline`, `shadow` and `alpha` passed and left out. The sidecar also holds `ADV` |
+| `np` | 85 numpy calls the renderer leans on: `np.clip` with two bounds (float64 and float32) and with one, `np.maximum` and `np.minimum`, `astype` from floats to `uint8`, `int32` and `int64`, `np.clip(x, 0, 255).astype(np.uint8)`, the kit's two floor dithers with its own constants and the Bayer table, `np.roll` on 1-D, 2-D and 3-D arrays, and `np.nonzero` |
+
+In `font`, masks are bool arrays (height, width). A `stamp` case has `in` (the frame before), `mask` and `out`; its
+`args` hold `x`, `y`, `color` and the keywords exactly as passed (an absent keyword was not passed; `outline` null is
+`outline=None`; `alpha` is a `float.hex()` string), and its `call` names the keywords too.
+
+What the `np` cases pin down that a port would not guess:
+
+- `np.clip(x, lo, hi)` keeps a NaN, and keeps an `x` that equals a bound as it is (`np.clip(-0.0, 0, 1)` is `-0.0`).
+- A float cast to `uint8` drops the fraction and keeps the low 8 bits of the whole number: it wraps, it does not
+  clamp (`-1.5` is 255, `256.7` is 0). NaN, the infinities and values beyond 32 bits become 0; cast to `int32` or
+  `int64` they become the type's lowest value. numpy leaves such casts to the processor, so these are the reference
+  PC's answers; the kit only relies on casts of values that fit.
+- `np.clip(x, lo, None)` is `np.maximum(x, lo)`. For `-0.0` against `0.0` its answer depends on where the element
+  sits in the array (the vectorised part of the loop and its tail differ), so the one-bound cases hold no zero.
 
 ### `models`: the instrument meshes
 
