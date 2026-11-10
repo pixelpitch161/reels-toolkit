@@ -88,6 +88,27 @@ pub struct StrikerCfg {
     pub slither: f64,
 }
 
+/// The keys a striker entry may hold: `kind`, `style` and [`StrikerCfg`]'s fields.
+const STRIKER_KEYS: [&str; 17] = [
+    "kind",
+    "style",
+    "every",
+    "drop_every",
+    "max_baskets",
+    "rise",
+    "base",
+    "grow",
+    "max_reach",
+    "slack",
+    "t_strike",
+    "t_min",
+    "speed_grow",
+    "head_r",
+    "dmg",
+    "knock",
+    "slither",
+];
+
 /// A blade's mode. Only the thrust lance is ported so far.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum BladeMode {
@@ -132,6 +153,12 @@ pub struct BladeCfg {
     /// Whether the live lance swats enemy projectiles (`.get('parry')`, falsy when absent).
     pub parry: bool,
 }
+
+/// The keys a thrust-blade entry may hold: `kind`, `mode`, `style` and [`BladeCfg`]'s fields.
+const BLADE_KEYS: [&str; 16] = [
+    "kind", "mode", "style", "every", "rest", "base", "grow", "max_len", "frets0", "t_out", "t_hold", "t_back",
+    "aim_rate", "dmg", "knock", "parry",
+];
 
 impl BladeCfg {
     /// `thrust_step`'s `w.get('rest', 0.25)`: the closed lance's length while idle and the end of every pull-back.
@@ -188,7 +215,8 @@ pub enum AbilityKind {
     Shockwave,
     /// `slam`: a telegraphed strike where the enemy is heading.
     Slam,
-    /// A kind the engine has not ported yet.
+    /// A kind the engine has not ported yet, or a ported kind with an option it has not ported, written
+    /// `kind+option` (OBOE's `"wave+detune"`).
     Unsupported(String),
 }
 
@@ -212,6 +240,20 @@ impl AbilityKind {
             AbilityKind::Dance => &[&["dur", "dur_beats"]],
             AbilityKind::Wave | AbilityKind::Shockwave => &[&["speed"], &["radius"], &["dmg"], &["knock"]],
             AbilityKind::Slam => &[&["tele"], &["radius"], &["dmg"], &["knock"]],
+            AbilityKind::Unsupported(_) => &[],
+        }
+    }
+
+    /// Every key `fight.py` reads from an ability of this kind: `name`, `kind`, `every_bars` (the timer of an
+    /// unlock), then the kind's own. An entry holding anything else is not this kind yet (`Unsupported`).
+    fn allowed(&self) -> &'static [&'static str] {
+        match self {
+            AbilityKind::Haste => &["name", "kind", "every_bars", "mult", "dur", "dur_beats"],
+            AbilityKind::Dance => &["name", "kind", "every_bars", "dur", "dur_beats"],
+            AbilityKind::Wave | AbilityKind::Shockwave => {
+                &["name", "kind", "every_bars", "speed", "radius", "dmg", "knock", "slow"]
+            }
+            AbilityKind::Slam => &["name", "kind", "every_bars", "tele", "radius", "dmg", "knock"],
             AbilityKind::Unsupported(_) => &[],
         }
     }
@@ -248,14 +290,10 @@ pub fn parse_roster(text: &str) -> Result<Vec<FighterCfg>, RosterError> {
         message,
     };
     let doc: Json = serde_json::from_str(text).map_err(|e| top("roster.json", format!("not JSON: {e}")))?;
-    match doc.get("format").and_then(Json::as_u64) {
-        Some(1) => {}
-        other => {
-            return Err(top(
-                "format",
-                format!("this app reads roster format 1, found {other:?}"),
-            ));
-        }
+    match doc.get("format") {
+        Some(f) if f.as_u64() == Some(1) => {}
+        Some(f) => return Err(top("roster.json", format!("format {f}, this app reads 1"))),
+        None => return Err(top("roster.json", "no format, this app reads 1".to_string())),
     }
     let fighters = doc
         .get("fighters")
@@ -305,6 +343,21 @@ impl Entry<'_> {
         }
     }
 
+    /// Refuses any key of a ported kind's entry that the typed settings do not carry: `fight.py` would read it
+    /// (some options, such as `pull` or `guard`, on any weapon) and the engine would silently ignore it.
+    fn only(&self, obj: &Json, prefix: &str, what: &str, allowed: &[&str]) -> Result<(), RosterError> {
+        let unknown = obj
+            .as_object()
+            .and_then(|m| m.keys().find(|k| !allowed.contains(&k.as_str())));
+        match unknown {
+            Some(k) => Err(self.err(
+                &join(prefix, k),
+                format!("not a setting of {what} (the engine would ignore it)"),
+            )),
+            None => Ok(()),
+        }
+    }
+
     fn int(&self, v: &Json, field: &str) -> Result<i64, RosterError> {
         v.as_i64().ok_or_else(|| self.err(field, "must be a whole number"))
     }
@@ -330,48 +383,54 @@ impl Entry<'_> {
             None => kind.clone(),
         };
         match kind.as_str() {
-            "striker" => Ok(WeaponCfg::Striker(StrikerCfg {
-                style,
-                every: self.f64(w, p, "every")?,
-                drop_every: self.f64(w, p, "drop_every")?,
-                max_baskets: self.f64(w, p, "max_baskets")?,
-                rise: self.f64(w, p, "rise")?,
-                base: self.f64_or(w, p, "base", 0.0)?,
-                grow: self.f64(w, p, "grow")?,
-                max_reach: self.f64(w, p, "max_reach")?,
-                slack: self.f64_or(w, p, "slack", 0.25)?,
-                t_strike: self.f64(w, p, "t_strike")?,
-                t_min: self.f64(w, p, "t_min")?,
-                speed_grow: self.f64_or(w, p, "speed_grow", 0.0)?,
-                head_r: self.f64(w, p, "head_r")?,
-                dmg: self.f64(w, p, "dmg")?,
-                knock: self.f64(w, p, "knock")?,
-                slither: self.f64(w, p, "slither")?,
-            })),
-            "blade" if w.get("mode").and_then(Json::as_str) == Some("thrust") => Ok(WeaponCfg::Blade(BladeCfg {
-                style,
-                mode: BladeMode::Thrust,
-                every: self.f64(w, p, "every")?,
-                rest: w.get("rest").map(|v| self.number(v, "weapon.rest")).transpose()?,
-                base: self.f64_or(w, p, "base", 0.0)?,
-                grow: self.f64(w, p, "grow")?,
-                max_len: self.f64(w, p, "max_len")?,
-                frets0: match w.get("frets0") {
-                    Some(v) => self.int(v, "weapon.frets0")?,
-                    None => 0,
-                },
-                t_out: self.f64(w, p, "t_out")?,
-                t_hold: self.f64(w, p, "t_hold")?,
-                t_back: self.f64(w, p, "t_back")?,
-                aim_rate: self.f64_or(w, p, "aim_rate", 8.0)?,
-                dmg: self.f64(w, p, "dmg")?,
-                knock: self.f64_or(w, p, "knock", 0.8)?,
-                parry: match w.get("parry") {
-                    None | Some(Json::Null) => false,
-                    Some(Json::Bool(b)) => *b,
-                    Some(_) => return Err(self.err("weapon.parry", "must be true or false")),
-                },
-            })),
+            "striker" => {
+                self.only(w, p, "a striker weapon", &STRIKER_KEYS)?;
+                Ok(WeaponCfg::Striker(StrikerCfg {
+                    style,
+                    every: self.f64(w, p, "every")?,
+                    drop_every: self.f64(w, p, "drop_every")?,
+                    max_baskets: self.f64(w, p, "max_baskets")?,
+                    rise: self.f64(w, p, "rise")?,
+                    base: self.f64_or(w, p, "base", 0.0)?,
+                    grow: self.f64(w, p, "grow")?,
+                    max_reach: self.f64(w, p, "max_reach")?,
+                    slack: self.f64_or(w, p, "slack", 0.25)?,
+                    t_strike: self.f64(w, p, "t_strike")?,
+                    t_min: self.f64(w, p, "t_min")?,
+                    speed_grow: self.f64_or(w, p, "speed_grow", 0.0)?,
+                    head_r: self.f64(w, p, "head_r")?,
+                    dmg: self.f64(w, p, "dmg")?,
+                    knock: self.f64(w, p, "knock")?,
+                    slither: self.f64(w, p, "slither")?,
+                }))
+            }
+            "blade" if w.get("mode").and_then(Json::as_str) == Some("thrust") => {
+                self.only(w, p, "a thrust blade", &BLADE_KEYS)?;
+                Ok(WeaponCfg::Blade(BladeCfg {
+                    style,
+                    mode: BladeMode::Thrust,
+                    every: self.f64(w, p, "every")?,
+                    rest: w.get("rest").map(|v| self.number(v, "weapon.rest")).transpose()?,
+                    base: self.f64_or(w, p, "base", 0.0)?,
+                    grow: self.f64(w, p, "grow")?,
+                    max_len: self.f64(w, p, "max_len")?,
+                    frets0: match w.get("frets0") {
+                        Some(v) => self.int(v, "weapon.frets0")?,
+                        None => 0,
+                    },
+                    t_out: self.f64(w, p, "t_out")?,
+                    t_hold: self.f64(w, p, "t_hold")?,
+                    t_back: self.f64(w, p, "t_back")?,
+                    aim_rate: self.f64_or(w, p, "aim_rate", 8.0)?,
+                    dmg: self.f64(w, p, "dmg")?,
+                    knock: self.f64_or(w, p, "knock", 0.8)?,
+                    parry: match w.get("parry") {
+                        None | Some(Json::Null) => false,
+                        Some(Json::Bool(b)) => *b,
+                        Some(_) => return Err(self.err("weapon.parry", "must be true or false")),
+                    },
+                }))
+            }
             _ => Ok(WeaponCfg::Unsupported(kind)),
         }
     }
@@ -383,7 +442,13 @@ impl Entry<'_> {
             return Err(self.err(&prefix, "must be a table"));
         }
         let name = self.string(ab, &prefix, "name")?;
-        let kind = AbilityKind::from_name(&self.string(ab, &prefix, "kind")?);
+        let kind_name = self.string(ab, &prefix, "kind")?;
+        let mut kind = AbilityKind::from_name(&kind_name);
+        // A ported kind carrying an option the engine has not ported (OBOE's wave has `detune`) is not that kind:
+        // it loads as `Unsupported("wave+detune")`, so it is never typed with the option silently dropped.
+        if let Some(extra) = unported_option(ab, kind.allowed()) {
+            kind = AbilityKind::Unsupported(format!("{kind_name}+{extra}"));
+        }
         let mut params = BTreeMap::new();
         if let Some(obj) = ab.as_object() {
             for (k, v) in obj {
@@ -424,6 +489,22 @@ impl Entry<'_> {
             slow,
         })
     }
+}
+
+/// The first key of a ported ability kind's entry outside `allowed` (or inside its `slow`, outside `mult` and
+/// `dur`), as `key` or `slow.key`. `None` for an unported kind (its `allowed` is empty and nothing is checked).
+fn unported_option(ab: &Json, allowed: &[&str]) -> Option<String> {
+    if allowed.is_empty() {
+        return None;
+    }
+    let obj = ab.as_object()?;
+    if let Some(k) = obj.keys().find(|k| !allowed.contains(&k.as_str())) {
+        return Some(k.clone());
+    }
+    let slow = obj.get("slow").and_then(Json::as_object)?;
+    slow.keys()
+        .find(|k| !["mult", "dur"].contains(&k.as_str()))
+        .map(|k| format!("slow.{k}"))
 }
 
 fn join(prefix: &str, key: &str) -> String {
@@ -671,7 +752,55 @@ mod tests {
             parse_roster(r#"{"format": 2, "fighters": []}"#)
                 .unwrap_err()
                 .to_string(),
-            "roster: format: this app reads roster format 1, found Some(2)"
+            "roster: roster.json: format 2, this app reads 1"
         );
+        assert_eq!(
+            parse_roster(r#"{"fighters": []}"#).unwrap_err().to_string(),
+            "roster: roster.json: no format, this app reads 1"
+        );
+    }
+
+    #[test]
+    fn a_ported_kind_refuses_keys_the_engine_would_ignore() {
+        // fight.py reads `pull` and `guard` on any weapon: a striker that gained one must not load silently
+        let raw = weapon_with("FLUTE", "pull", Some(Json::from(0.5)));
+        assert_eq!(
+            FighterCfg::from_json(&raw).unwrap_err().to_string(),
+            "roster: FLUTE: weapon.pull: not a setting of a striker weapon (the engine would ignore it)"
+        );
+        let raw = weapon_with("TROMBONE", "guard", Some(Json::from(0.5)));
+        assert_eq!(
+            FighterCfg::from_json(&raw).unwrap_err().to_string(),
+            "roster: TROMBONE: weapon.guard: not a setting of a thrust blade (the engine would ignore it)"
+        );
+        // a ported ability kind with an option the engine has not ported is not that kind yet: it loads as
+        // Unsupported naming the option, never typed with the option dropped (OBOE's real wave has `detune`)
+        let mut raw = fighter("FLUTE").raw;
+        raw["abilities"]["low"]["detune"] = serde_json::json!({"w": 0.3, "dur": 2.0});
+        let f = FighterCfg::from_json(&raw).unwrap();
+        assert_eq!(f.low.kind, AbilityKind::Unsupported("wave+detune".into()));
+        let mut raw = fighter("TROMBONE").raw;
+        raw["abilities"]["unlock1"]["slow"]["ramp"] = Json::from(1);
+        let f = FighterCfg::from_json(&raw).unwrap();
+        assert_eq!(f.unlock1.kind, AbilityKind::Unsupported("shockwave+slow.ramp".into()));
+        assert_eq!(fighter("OBOE").low.kind, AbilityKind::Unsupported("wave+detune".into()));
+        // a kind not ported yet still loads, whatever it holds
+        let mut raw = fighter("PIANO").raw;
+        raw["weapon"]["pull"] = Json::from(0.5);
+        raw["abilities"]["unlock1"]["odd"] = Json::from(true);
+        assert!(FighterCfg::from_json(&raw).is_ok());
+    }
+
+    #[test]
+    fn flute_and_trombone_hold_only_typed_keys() {
+        // the real roster loads (all 20), and the two ported fighters pass the unknown-key check
+        assert_eq!(parse_roster(ROSTER).expect("loads").len(), 20);
+        for name in ["FLUTE", "TROMBONE"] {
+            let f = fighter(name);
+            assert!(!matches!(f.weapon, WeaponCfg::Unsupported(_)), "{name}");
+            for ab in [&f.unlock1, &f.unlock2, &f.low] {
+                assert!(!matches!(ab.kind, AbilityKind::Unsupported(_)), "{name} {}", ab.name);
+            }
+        }
     }
 }
