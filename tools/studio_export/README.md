@@ -47,8 +47,15 @@ $env:PYTHONPATH = (Get-Location).Path
   it runs on any Python. Files under `studio/reference/` that the manifest does not list are printed as notes.
 - `adopt <path>...` records reference files that a Rust test blessed (see "The manifest").
 
-Everything but `verify` refuses to run unless `PYTHONHASHSEED` is `0` and numpy, scipy and pillow are exactly the
-versions in `requirements.txt`.
+The environment guard: every export, and `list` and `adopt` too, refuses to run unless
+
+- the interpreter is CPython 3.13.18 and was not started with `-O` (the exports check their files with `assert`),
+- `PYTHONHASHSEED` is `0` **and really in effect**: the guard looks at the interpreter's own state
+  (`sys.flags.hash_randomization`, and `hash('FLUTE')` against its reference value), because under `python -E`,
+  `-I` or `-R` the variable still reads `0` while string hashes are random,
+- numpy, scipy and pillow are exactly the versions in `requirements.txt`.
+
+Only `verify` is exempt: it computes nothing, it only re-hashes files.
 
 Running an export twice gives byte-identical files. To check: run it, run `git status --short studio`, and nothing
 is modified.

@@ -7,9 +7,9 @@
     adopt     record files that a Rust test blessed (repo-relative paths) in the manifest, as tool "rust-bless"
 
 A module registers exports with a module-level `EXPORTS = {"name": function}` (and, if one must run before or after
-others under `all`, `ORDER = {"name": number}`). Everything but `verify` refuses to run unless PYTHONHASHSEED is 0
-and numpy, scipy and pillow are exactly the versions in requirements.txt; `verify` only reads files and runs
-anywhere."""
+others under `all`, `ORDER = {"name": number}`). Everything but `verify` refuses to run unless the interpreter is
+CPython 3.13.18 without -O, PYTHONHASHSEED is 0 and really in effect (not switched off by -E, -I or -R), and numpy,
+scipy and pillow are exactly the versions in requirements.txt; `verify` only reads files and runs anywhere."""
 import importlib
 import importlib.metadata
 import os
@@ -19,6 +19,8 @@ import time
 
 RESERVED = ('all', 'verify', 'list', 'adopt')
 DEFAULT_ORDER = 50
+PYTHON = (3, 13, 18)                                   # the CPython the reference numbers come from (README.md)
+HASH_PROBE = ('FLUTE', -3109979385477651667)           # hash('FLUTE') under seed 0: a row of pyhash/vectors.json
 
 
 def pins():
@@ -34,10 +36,25 @@ def pins():
 
 
 def check_environment():
+    """refuse unless this interpreter is the reference one in the state the reference numbers need. The hash seed is
+    judged by what the interpreter really does, not by the variable alone: under -E, -I or -R the variable can say 0
+    while string hashes are random"""
     problems = []
     if os.environ.get('PYTHONHASHSEED') != '0':
         problems.append(f"PYTHONHASHSEED is {os.environ.get('PYTHONHASHSEED')!r}; it must be '0' before Python "
                         f"starts")
+    elif sys.flags.hash_randomization:
+        problems.append('PYTHONHASHSEED=0 is set but not in effect: string hashes are random in this interpreter '
+                        '(start Python without -E, -I or -R)')
+    elif hash(HASH_PROBE[0]) != HASH_PROBE[1]:
+        problems.append(f'hash({HASH_PROBE[0]!r}) is {hash(HASH_PROBE[0])}, not {HASH_PROBE[1]}: this Python does '
+                        f'not hash strings as the reference one does')
+    if sys.version_info[:3] != PYTHON:
+        problems.append(f"Python {'.'.join(map(str, sys.version_info[:3]))}; the reference numbers come from "
+                        f"CPython {'.'.join(map(str, PYTHON))}")
+    if sys.flags.optimize:
+        problems.append('Python runs with -O (or PYTHONOPTIMIZE): the exports check their files with assert '
+                        'statements, which -O skips')
     for name, want in pins().items():
         try:
             have = importlib.metadata.version(name)
