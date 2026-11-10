@@ -145,6 +145,9 @@ EXPORTS = {'thing': run}                         # python -m tools.studio_export
 | `pyhash` | `pyhash_vectors.py` | `studio/reference/pyhash/vectors.json` |
 | `rng` | `rng_vectors.py` | `studio/reference/rng/vectors.json` |
 | `roster` | `roster.py` | `studio/crates/bf-content/data/roster.json` |
+| `stats` | `stats.py` | `studio/reference/fights/flute_vs_trombone/stats.json` (seeds 1 to 4,000, pooled figures; order 55) |
+| `scenarios` | `scenarios.py` | `studio/reference/fights/flute_vs_trombone/{scenarios/*.bfrec,no_ko.bfrec,coverage.json}` (reads `stats.json`; order 60) |
+| `stories` | `stories.py` | `studio/reference/fights/flute_vs_trombone/stories.json` (the kit's story and score of every recording there; order 70) |
 
 ### `roster`: the fighters' numbers
 
