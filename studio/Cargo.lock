@@ -57,6 +57,8 @@ name = "bf-picture"
 version = "0.1.0"
 dependencies = [
  "bf-core",
+ "bf-testdata",
+ "serde_json",
 ]
 
 [[package]]

@@ -7,3 +7,7 @@ publish.workspace = true
 
 [dependencies]
 bf-core.workspace = true
+
+[dev-dependencies]
+bf-testdata = { path = "../bf-testdata" }
+serde_json.workspace = true
