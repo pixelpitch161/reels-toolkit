@@ -142,6 +142,7 @@ EXPORTS = {'thing': run}                         # python -m tools.studio_export
 | --- | --- | --- |
 | `dsp` | `dsp_vectors.py` | `studio/reference/dsp/{butter,filters,resample,fftconvolve,numpy,ufuncs,generators}.npz`, each with its sidecar `.json` (order 40) |
 | `fights` | `fights.py` | `studio/reference/fights/flute_vs_trombone/{ep392,seed1,seed2,seed3,seed500}.bfrec` |
+| `pillow` | `pillow_vectors.py` | `studio/reference/pillow/calls.json` and 16 vector files, each `.npz` with its sidecar `.json` (about 3 minutes: it draws all 1,830 frames in 8 worker processes) |
 | `py` | `py_vectors.py` | `studio/reference/py/vectors.json` |
 | `pyhash` | `pyhash_vectors.py` | `studio/reference/pyhash/vectors.json` |
 | `rng` | `rng_vectors.py` | `studio/reference/rng/vectors.json` |
@@ -242,6 +243,56 @@ JSON integers.
 | `mod`, `floordiv` | `a % b`, `a // b` on floats | f64 |
 | `wrap_pi` | `(a + math.pi) % (2 * math.pi) - math.pi` (`fight.py` `_wrap`) | f64 |
 | `imod`, `ifloordiv` | `a % b`, `a // b` on ints | int |
+
+### `pillow`: what Pillow draws
+
+For the Pillow-exact primitives of `bf-picture`. The renderer draws its polygons, lines, crowd, shadow masks and
+bloom with Pillow 12.3.0, so the Studio has to give the same pixels.
+
+`calls.json` is the survey that decides what must be covered: every `ImageDraw` and `Image` call the kit makes
+while it draws all 1,830 frames of the example episode, one row per call, image mode, drawing mode and call site
+(`site`; `via` names the caller when the site is a method of `reelkit.raster.Frame`), with the count, the form and
+Python types of the coordinates, the smallest and largest point count and coordinate, whether any coordinate had a
+fraction or lay outside the image, every (fill kind, outline kind, width) combination seen, the alpha range, and
+`cases`: the vector files that reproduce the row. The export stops if the renderer makes a call that no case
+reproduces. The survey starts after both balls' sprites and the title close-ups are built, because the Pixel Pitch
+modules the bridge imports for the models paint posters for their own videos as they load; no frame shows those.
+
+| File | Cases |
+| --- | --- |
+| `polygon` | 208: `ImageDraw.Draw(im).polygon(xy, fill=...)` on `L`, `RGB`, `F` (the depth buffer, float32) and `RGBA` images |
+| `polygon_outline` | 200: `polygon(xy, fill=..., outline=...)` and the outline alone (the ink stars of `reelkit.fx.starburst`, on `RGBA`) |
+| `line` | 396: `line(xy, fill=..., width=...)` on `RGB`, `F` and `L`: no width given, and widths 1 to 10 (the cobras' bodies go up to 8); polylines of up to 19 points |
+| `ellipse` | 208: `ellipse(xy, fill=...)`, `ellipse(xy, outline=...)` and both, on `RGB`, `L` and `RGBA` |
+| `rectangle` | 204: `rectangle(xy, fill=...)`, a few outlined, on `RGB` and `L` |
+| `point` | 200: `point(xy, fill=...)` on `RGB`, `L` and `F` |
+| `blend_polygon`, `blend_line`, `blend_ellipse`, `blend_rectangle`, `blend_point` | 200 or more each: the same calls through `ImageDraw.Draw(rgb_image, 'RGBA')`, which blends the ink into the picture by its alpha (particles, speed lines) |
+| `gaussian_blur` | 202: `im.filter(ImageFilter.GaussianBlur(radius))` on `L` (0.7: the shadow masks) and `RGB` (3.0: the bloom), and other radii |
+| `resize_nearest`, `resize_bilinear`, `resize_bicubic` | 200 each: `im.resize(size, filter)` on `L`, `RGB` and `RGBA`. The renderer itself only resizes `RGB` with `BILINEAR` (the bloom: down by 4, up by 4) |
+| `as_used` | 23 whole calls captured from `kit.picture.render` at full size: four canvas shadow masks (63 to 70 polygons, then the 0.7 blur), four blooms (the source, the quarter-size picture, its blur, the result), four spot-beam hulls, nine ink starbursts, two title-card cracks |
+
+The seeded cases draw on canvases of at most 96 x 96. A case's `args` hold the image `mode` and `size` (width,
+height), its `background` (the one colour it starts with) or the array `in`, `xy` exactly as passed (`xy_form` is
+`pairs` for a list of `(x, y)` or `flat` for `x0, y0, x1, y1, ...`), and the call's keyword arguments exactly as
+passed: a keyword that is absent was not passed. Floats are `float.hex()` strings. `kind` names what the case is
+about: `quad`, `circle`, `star`, `int` (whole-number vertices), `outside_partly`, `outside_far`, `outside_all`,
+`two_points`, `collinear`, `same_point`, `bowtie`, `pentagram`, `staircase`, `horizontal_runs`, `flat_top`,
+`sliver_subpixel`, `sliver_thin`, `negative_fraction`, `half_pixel` and so on. Arrays are (height, width) for `L`
+and `F`, (height, width, 3) for `RGB`, (height, width, 4) for `RGBA`.
+
+What the cases pin down, from Pillow's source (`_imaging.c`, `Draw.c`, `Resample.c`, `BoxBlur.c`):
+
+- Every coordinate becomes a C `int` by truncation toward zero before anything is drawn (`-0.7` is column 0, not
+  -1; `10.99` is 10), for every drawing call.
+- A line of width 1 (or with no width given) is a Bresenham line through the truncated vertices; a wider line is
+  one filled quadrilateral per segment, with no joints. A filled polygon is an edge-list scan fill with Pillow's
+  own rounding at each edge; its outline is 1 px lines from vertex to vertex, drawn after the fill.
+- An `F` image takes a Python float as its ink and stores it as float32.
+- Through `Draw(image, 'RGBA')` the ink is blended into every pixel it lands on by its alpha. A filled polygon
+  blends each pixel once even where its edges cross; the separate pieces of one call (the segments of a wide line,
+  a point given twice, the two sides of a flattened outline) blend again where they overlap.
+- `resize` works on premultiplied colour for `RGBA` (every filter but `NEAREST`).
+- `GaussianBlur` is three passes of an extended box blur, and reads its radius as a C float.
 
 ### `dsp`: signal-processing vectors
 

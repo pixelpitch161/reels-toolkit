@@ -1,0 +1,1408 @@
+{
+ "about": "every Pillow call the kit makes while it draws the example episode, counted by call site",
+ "draw": [
+  {
+   "alpha": null,
+   "call": "ImageDraw.ellipse",
+   "calls": 928114,
+   "cases": ["ellipse"],
+   "coords": [-19.581, 674.369],
+   "draw_mode": "RGB",
+   "fractional": true,
+   "image_mode": "RGB",
+   "image_sizes": [
+    [360, 640]
+   ],
+   "ink": [
+    {
+     "fill": "rgb",
+     "outline": "none",
+     "width": "default"
+    }
+   ],
+   "outside_the_image": true,
+   "points": [2, 2],
+   "site": "projects/ballfight/kit/picture.py:arena",
+   "via": "",
+   "xy_form": ["flat"],
+   "xy_types": ["float64"]
+  },
+  {
+   "alpha": [0, 254],
+   "call": "ImageDraw.ellipse",
+   "calls": 21915,
+   "cases": ["blend_ellipse"],
+   "coords": [38.382, 408.96],
+   "draw_mode": "RGBA",
+   "fractional": true,
+   "image_mode": "RGB",
+   "image_sizes": [
+    [360, 640]
+   ],
+   "ink": [
+    {
+     "fill": "rgba",
+     "outline": "none",
+     "width": "default"
+    }
+   ],
+   "outside_the_image": false,
+   "points": [2, 2],
+   "site": "reelkit/fx.py:Particles.draw",
+   "via": "",
+   "xy_form": ["flat"],
+   "xy_types": ["float"]
+  },
+  {
+   "alpha": null,
+   "call": "ImageDraw.line",
+   "calls": 56630,
+   "cases": ["line"],
+   "coords": [65.309, 393.294],
+   "draw_mode": "F",
+   "fractional": true,
+   "image_mode": "F",
+   "image_sizes": [
+    [360, 640]
+   ],
+   "ink": [
+    {
+     "fill": "float",
+     "outline": "none",
+     "width": 2
+    },
+    {
+     "fill": "float",
+     "outline": "none",
+     "width": 3
+    },
+    {
+     "fill": "float",
+     "outline": "none",
+     "width": 4
+    },
+    {
+     "fill": "float",
+     "outline": "none",
+     "width": 5
+    },
+    {
+     "fill": "float",
+     "outline": "none",
+     "width": 6
+    },
+    {
+     "fill": "float",
+     "outline": "none",
+     "width": 7
+    },
+    {
+     "fill": "float",
+     "outline": "none",
+     "width": 8
+    }
+   ],
+   "outside_the_image": false,
+   "points": [2, 2],
+   "site": "reelkit/raster.py:Frame.line",
+   "via": "projects/ballfight/kit/fighters/flute.py:draw_cobra",
+   "xy_form": ["pairs"],
+   "xy_types": ["float64"]
+  },
+  {
+   "alpha": null,
+   "call": "ImageDraw.line",
+   "calls": 21960,
+   "cases": ["line"],
+   "coords": [-0.809, 444.413],
+   "draw_mode": "F",
+   "fractional": true,
+   "image_mode": "F",
+   "image_sizes": [
+    [360, 640]
+   ],
+   "ink": [
+    {
+     "fill": "float",
+     "outline": "none",
+     "width": 2
+    }
+   ],
+   "outside_the_image": true,
+   "points": [15, 15],
+   "site": "reelkit/raster.py:Frame.line",
+   "via": "projects/ballfight/kit/picture.py:render.<locals>.draw_rope_side",
+   "xy_form": ["pairs"],
+   "xy_types": ["float64"]
+  },
+  {
+   "alpha": null,
+   "call": "ImageDraw.line",
+   "calls": 780,
+   "cases": ["line"],
+   "coords": [-1.751, 461.695],
+   "draw_mode": "L",
+   "fractional": true,
+   "image_mode": "L",
+   "image_sizes": [
+    [360, 640]
+   ],
+   "ink": [
+    {
+     "fill": "int",
+     "outline": "none",
+     "width": 2
+    }
+   ],
+   "outside_the_image": true,
+   "points": [2, 18],
+   "site": "projects/ballfight/title.py:draw_crack",
+   "via": "",
+   "xy_form": ["pairs"],
+   "xy_types": ["float64"]
+  },
+  {
+   "alpha": null,
+   "call": "ImageDraw.line",
+   "calls": 1590,
+   "cases": ["line"],
+   "coords": [168.248, 411.463],
+   "draw_mode": "RGB",
+   "fractional": true,
+   "image_mode": "RGB",
+   "image_sizes": [
+    [360, 640]
+   ],
+   "ink": [
+    {
+     "fill": "rgb",
+     "outline": "none",
+     "width": "default"
+    }
+   ],
+   "outside_the_image": false,
+   "points": [2, 2],
+   "site": "projects/ballfight/kit/fighters/flute.py:Look.draw_shard",
+   "via": "",
+   "xy_form": ["pairs"],
+   "xy_types": ["float64"]
+  },
+  {
+   "alpha": null,
+   "call": "ImageDraw.line",
+   "calls": 45,
+   "cases": ["line"],
+   "coords": [11.219, 293.491],
+   "draw_mode": "RGB",
+   "fractional": true,
+   "image_mode": "RGB",
+   "image_sizes": [
+    [360, 640]
+   ],
+   "ink": [
+    {
+     "fill": "rgb",
+     "outline": "none",
+     "width": 1
+    }
+   ],
+   "outside_the_image": false,
+   "points": [19, 19],
+   "site": "projects/ballfight/kit/fighters/trombone.py:draw_giant_bell",
+   "via": "",
+   "xy_form": ["pairs"],
+   "xy_types": ["float64"]
+  },
+  {
+   "alpha": null,
+   "call": "ImageDraw.line",
+   "calls": 3660,
+   "cases": ["line"],
+   "coords": [50.418, 415.506],
+   "draw_mode": "RGB",
+   "fractional": true,
+   "image_mode": "RGB",
+   "image_sizes": [
+    [360, 640]
+   ],
+   "ink": [
+    {
+     "fill": "rgb",
+     "outline": "none",
+     "width": 1
+    }
+   ],
+   "outside_the_image": false,
+   "points": [2, 2],
+   "site": "projects/ballfight/kit/fighters/trombone.py:draw_slide",
+   "via": "",
+   "xy_form": ["pairs"],
+   "xy_types": ["float64"]
+  },
+  {
+   "alpha": null,
+   "call": "ImageDraw.line",
+   "calls": 580679,
+   "cases": ["line"],
+   "coords": [-23.544, 644.415],
+   "draw_mode": "RGB",
+   "fractional": true,
+   "image_mode": "RGB",
+   "image_sizes": [
+    [360, 640]
+   ],
+   "ink": [
+    {
+     "fill": "rgb",
+     "outline": "none",
+     "width": "default"
+    },
+    {
+     "fill": "rgb",
+     "outline": "none",
+     "width": 1
+    }
+   ],
+   "outside_the_image": true,
+   "points": [2, 2],
+   "site": "projects/ballfight/kit/picture.py:arena",
+   "via": "",
+   "xy_form": ["flat", "pairs"],
+   "xy_types": ["float64"]
+  },
+  {
+   "alpha": null,
+   "call": "ImageDraw.line",
+   "calls": 56630,
+   "cases": ["line"],
+   "coords": [65.309, 393.294],
+   "draw_mode": "RGB",
+   "fractional": true,
+   "image_mode": "RGB",
+   "image_sizes": [
+    [360, 640]
+   ],
+   "ink": [
+    {
+     "fill": "rgb",
+     "outline": "none",
+     "width": 2
+    },
+    {
+     "fill": "rgb",
+     "outline": "none",
+     "width": 3
+    },
+    {
+     "fill": "rgb",
+     "outline": "none",
+     "width": 4
+    },
+    {
+     "fill": "rgb",
+     "outline": "none",
+     "width": 5
+    },
+    {
+     "fill": "rgb",
+     "outline": "none",
+     "width": 6
+    },
+    {
+     "fill": "rgb",
+     "outline": "none",
+     "width": 7
+    },
+    {
+     "fill": "rgb",
+     "outline": "none",
+     "width": 8
+    }
+   ],
+   "outside_the_image": false,
+   "points": [2, 2],
+   "site": "reelkit/raster.py:Frame.line",
+   "via": "projects/ballfight/kit/fighters/flute.py:draw_cobra",
+   "xy_form": ["pairs"],
+   "xy_types": ["float64"]
+  },
+  {
+   "alpha": null,
+   "call": "ImageDraw.line",
+   "calls": 21960,
+   "cases": ["line"],
+   "coords": [-0.809, 444.413],
+   "draw_mode": "RGB",
+   "fractional": true,
+   "image_mode": "RGB",
+   "image_sizes": [
+    [360, 640]
+   ],
+   "ink": [
+    {
+     "fill": "rgb",
+     "outline": "none",
+     "width": 2
+    }
+   ],
+   "outside_the_image": true,
+   "points": [15, 15],
+   "site": "reelkit/raster.py:Frame.line",
+   "via": "projects/ballfight/kit/picture.py:render.<locals>.draw_rope_side",
+   "xy_form": ["pairs"],
+   "xy_types": ["float64"]
+  },
+  {
+   "alpha": [2, 253],
+   "call": "ImageDraw.line",
+   "calls": 2560,
+   "cases": ["blend_line"],
+   "coords": [-31.495, 398.707],
+   "draw_mode": "RGBA",
+   "fractional": true,
+   "image_mode": "RGB",
+   "image_sizes": [
+    [360, 640]
+   ],
+   "ink": [
+    {
+     "fill": "rgba",
+     "outline": "none",
+     "width": 1
+    },
+    {
+     "fill": "rgba",
+     "outline": "none",
+     "width": 2
+    }
+   ],
+   "outside_the_image": true,
+   "points": [2, 2],
+   "site": "reelkit/fx.py:Moments.speed_lines",
+   "via": "",
+   "xy_form": ["pairs"],
+   "xy_types": ["float64"]
+  },
+  {
+   "alpha": [0, 142],
+   "call": "ImageDraw.line",
+   "calls": 80746,
+   "cases": ["blend_line"],
+   "coords": [38.373, 411.023],
+   "draw_mode": "RGBA",
+   "fractional": true,
+   "image_mode": "RGB",
+   "image_sizes": [
+    [360, 640]
+   ],
+   "ink": [
+    {
+     "fill": "rgba",
+     "outline": "none",
+     "width": 1
+    },
+    {
+     "fill": "rgba",
+     "outline": "none",
+     "width": 2
+    }
+   ],
+   "outside_the_image": false,
+   "points": [2, 2],
+   "site": "reelkit/fx.py:Particles.draw",
+   "via": "",
+   "xy_form": ["pairs"],
+   "xy_types": ["float64"]
+  },
+  {
+   "alpha": null,
+   "call": "ImageDraw.point",
+   "calls": 5670,
+   "cases": ["point"],
+   "coords": [66.0, 384.0],
+   "draw_mode": "RGB",
+   "fractional": false,
+   "image_mode": "RGB",
+   "image_sizes": [
+    [360, 640]
+   ],
+   "ink": [
+    {
+     "fill": "rgb",
+     "outline": "none",
+     "width": "default"
+    }
+   ],
+   "outside_the_image": false,
+   "points": [1, 1],
+   "site": "projects/ballfight/kit/fighters/flute.py:draw_cobra",
+   "via": "",
+   "xy_form": ["pairs"],
+   "xy_types": ["int"]
+  },
+  {
+   "alpha": [2, 253],
+   "call": "ImageDraw.point",
+   "calls": 2560,
+   "cases": ["blend_point"],
+   "coords": [8.882, 398.707],
+   "draw_mode": "RGBA",
+   "fractional": true,
+   "image_mode": "RGB",
+   "image_sizes": [
+    [360, 640]
+   ],
+   "ink": [
+    {
+     "fill": "rgba",
+     "outline": "none",
+     "width": "default"
+    }
+   ],
+   "outside_the_image": false,
+   "points": [1, 1],
+   "site": "reelkit/fx.py:Moments.speed_lines",
+   "via": "",
+   "xy_form": ["flat"],
+   "xy_types": ["float64"]
+  },
+  {
+   "alpha": [0, 255],
+   "call": "ImageDraw.point",
+   "calls": 10504,
+   "cases": ["blend_point"],
+   "coords": [38.373, 411.023],
+   "draw_mode": "RGBA",
+   "fractional": true,
+   "image_mode": "RGB",
+   "image_sizes": [
+    [360, 640]
+   ],
+   "ink": [
+    {
+     "fill": "rgba",
+     "outline": "none",
+     "width": "default"
+    }
+   ],
+   "outside_the_image": false,
+   "points": [1, 1],
+   "site": "reelkit/fx.py:Particles.draw",
+   "via": "",
+   "xy_form": ["flat"],
+   "xy_types": ["float"]
+  },
+  {
+   "alpha": null,
+   "call": "ImageDraw.polygon",
+   "calls": 72531,
+   "cases": ["polygon"],
+   "coords": [60.207, 408.13],
+   "draw_mode": "F",
+   "fractional": true,
+   "image_mode": "F",
+   "image_sizes": [
+    [360, 640]
+   ],
+   "ink": [
+    {
+     "fill": "float",
+     "outline": "none",
+     "width": "default"
+    }
+   ],
+   "outside_the_image": false,
+   "points": [4, 16],
+   "site": "reelkit/raster.py:Frame.poly",
+   "via": "projects/ballfight/kit/fighters/flute.py:draw_basket",
+   "xy_form": ["pairs"],
+   "xy_types": ["float64"]
+  },
+  {
+   "alpha": null,
+   "call": "ImageDraw.polygon",
+   "calls": 15729,
+   "cases": ["polygon"],
+   "coords": [61.819, 390.57],
+   "draw_mode": "F",
+   "fractional": true,
+   "image_mode": "F",
+   "image_sizes": [
+    [360, 640]
+   ],
+   "ink": [
+    {
+     "fill": "float",
+     "outline": "none",
+     "width": "default"
+    }
+   ],
+   "outside_the_image": false,
+   "points": [4, 12],
+   "site": "reelkit/raster.py:Frame.poly",
+   "via": "projects/ballfight/kit/fighters/flute.py:draw_cobra",
+   "xy_form": ["pairs"],
+   "xy_types": ["float64"]
+  },
+  {
+   "alpha": null,
+   "call": "ImageDraw.polygon",
+   "calls": 4754,
+   "cases": ["polygon"],
+   "coords": [-203.604, 303.335],
+   "draw_mode": "F",
+   "fractional": true,
+   "image_mode": "F",
+   "image_sizes": [
+    [360, 640]
+   ],
+   "ink": [
+    {
+     "fill": "float",
+     "outline": "none",
+     "width": "default"
+    }
+   ],
+   "outside_the_image": true,
+   "points": [4, 4],
+   "site": "reelkit/raster.py:Frame.poly",
+   "via": "projects/ballfight/kit/fighters/trombone.py:draw_giant_bell",
+   "xy_form": ["pairs"],
+   "xy_types": ["float64"]
+  },
+  {
+   "alpha": null,
+   "call": "ImageDraw.polygon",
+   "calls": 25620,
+   "cases": ["polygon"],
+   "coords": [47.013, 417.395],
+   "draw_mode": "F",
+   "fractional": true,
+   "image_mode": "F",
+   "image_sizes": [
+    [360, 640]
+   ],
+   "ink": [
+    {
+     "fill": "float",
+     "outline": "none",
+     "width": "default"
+    }
+   ],
+   "outside_the_image": false,
+   "points": [4, 4],
+   "site": "reelkit/raster.py:Frame.poly",
+   "via": "projects/ballfight/kit/fighters/trombone.py:draw_slide",
+   "xy_form": ["pairs"],
+   "xy_types": ["float64"]
+  },
+  {
+   "alpha": null,
+   "call": "ImageDraw.polygon",
+   "calls": 1911509,
+   "cases": ["polygon"],
+   "coords": [-436.761, 922.148],
+   "draw_mode": "F",
+   "fractional": true,
+   "image_mode": "F",
+   "image_sizes": [
+    [360, 640]
+   ],
+   "ink": [
+    {
+     "fill": "float",
+     "outline": "none",
+     "width": "default"
+    }
+   ],
+   "outside_the_image": true,
+   "points": [4, 4],
+   "site": "reelkit/raster.py:Frame.poly",
+   "via": "projects/ballfight/kit/picture.py:arena",
+   "xy_form": ["pairs"],
+   "xy_types": ["float64"]
+  },
+  {
+   "alpha": null,
+   "call": "ImageDraw.polygon",
+   "calls": 10980,
+   "cases": ["polygon"],
+   "coords": [-13.816, 488.347],
+   "draw_mode": "F",
+   "fractional": true,
+   "image_mode": "F",
+   "image_sizes": [
+    [360, 640]
+   ],
+   "ink": [
+    {
+     "fill": "float",
+     "outline": "none",
+     "width": "default"
+    }
+   ],
+   "outside_the_image": true,
+   "points": [4, 4],
+   "site": "reelkit/raster.py:Frame.poly",
+   "via": "projects/ballfight/kit/picture.py:render",
+   "xy_form": ["pairs"],
+   "xy_types": ["float64"]
+  },
+  {
+   "alpha": null,
+   "call": "ImageDraw.polygon",
+   "calls": 146400,
+   "cases": ["polygon"],
+   "coords": [-7.551, 453.892],
+   "draw_mode": "F",
+   "fractional": true,
+   "image_mode": "F",
+   "image_sizes": [
+    [360, 640]
+   ],
+   "ink": [
+    {
+     "fill": "float",
+     "outline": "none",
+     "width": "default"
+    }
+   ],
+   "outside_the_image": true,
+   "points": [4, 6],
+   "site": "reelkit/raster.py:Frame.poly",
+   "via": "projects/ballfight/kit/picture.py:render.<locals>.draw_post",
+   "xy_form": ["pairs"],
+   "xy_types": ["float64"]
+  },
+  {
+   "alpha": null,
+   "call": "ImageDraw.polygon",
+   "calls": 10107,
+   "cases": ["polygon"],
+   "coords": [50.05, 413.93],
+   "draw_mode": "L",
+   "fractional": true,
+   "image_mode": "L",
+   "image_sizes": [
+    [360, 640]
+   ],
+   "ink": [
+    {
+     "fill": "int",
+     "outline": "none",
+     "width": "default"
+    }
+   ],
+   "outside_the_image": false,
+   "points": [3, 8],
+   "site": "projects/ballfight/kit/picture.py:layer_blend",
+   "via": "",
+   "xy_form": ["pairs"],
+   "xy_types": ["float64"]
+  },
+  {
+   "alpha": null,
+   "call": "ImageDraw.polygon",
+   "calls": 1830,
+   "cases": ["polygon"],
+   "coords": [-18.239, 450.358],
+   "draw_mode": "L",
+   "fractional": true,
+   "image_mode": "L",
+   "image_sizes": [
+    [360, 640]
+   ],
+   "ink": [
+    {
+     "fill": "int",
+     "outline": "none",
+     "width": "default"
+    }
+   ],
+   "outside_the_image": true,
+   "points": [22, 22],
+   "site": "projects/ballfight/kit/picture.py:render",
+   "via": "",
+   "xy_form": ["pairs"],
+   "xy_types": ["float64"]
+  },
+  {
+   "alpha": null,
+   "call": "ImageDraw.polygon",
+   "calls": 122639,
+   "cases": ["polygon"],
+   "coords": [-3.104, 367.778],
+   "draw_mode": "L",
+   "fractional": true,
+   "image_mode": "L",
+   "image_sizes": [
+    [360, 360]
+   ],
+   "ink": [
+    {
+     "fill": "int",
+     "outline": "none",
+     "width": "default"
+    }
+   ],
+   "outside_the_image": true,
+   "points": [4, 12],
+   "site": "reelkit/shadows.py:MaskGrid.raster",
+   "via": "",
+   "xy_form": ["pairs"],
+   "xy_types": ["float64"]
+  },
+  {
+   "alpha": null,
+   "call": "ImageDraw.polygon",
+   "calls": 72531,
+   "cases": ["polygon"],
+   "coords": [60.207, 408.13],
+   "draw_mode": "RGB",
+   "fractional": true,
+   "image_mode": "RGB",
+   "image_sizes": [
+    [360, 640]
+   ],
+   "ink": [
+    {
+     "fill": "rgb",
+     "outline": "none",
+     "width": "default"
+    }
+   ],
+   "outside_the_image": false,
+   "points": [4, 16],
+   "site": "reelkit/raster.py:Frame.poly",
+   "via": "projects/ballfight/kit/fighters/flute.py:draw_basket",
+   "xy_form": ["pairs"],
+   "xy_types": ["float64"]
+  },
+  {
+   "alpha": null,
+   "call": "ImageDraw.polygon",
+   "calls": 15729,
+   "cases": ["polygon"],
+   "coords": [61.819, 390.57],
+   "draw_mode": "RGB",
+   "fractional": true,
+   "image_mode": "RGB",
+   "image_sizes": [
+    [360, 640]
+   ],
+   "ink": [
+    {
+     "fill": "rgb",
+     "outline": "none",
+     "width": "default"
+    }
+   ],
+   "outside_the_image": false,
+   "points": [4, 12],
+   "site": "reelkit/raster.py:Frame.poly",
+   "via": "projects/ballfight/kit/fighters/flute.py:draw_cobra",
+   "xy_form": ["pairs"],
+   "xy_types": ["float64"]
+  },
+  {
+   "alpha": null,
+   "call": "ImageDraw.polygon",
+   "calls": 4754,
+   "cases": ["polygon"],
+   "coords": [-203.604, 303.335],
+   "draw_mode": "RGB",
+   "fractional": true,
+   "image_mode": "RGB",
+   "image_sizes": [
+    [360, 640]
+   ],
+   "ink": [
+    {
+     "fill": "rgb",
+     "outline": "none",
+     "width": "default"
+    }
+   ],
+   "outside_the_image": true,
+   "points": [4, 4],
+   "site": "reelkit/raster.py:Frame.poly",
+   "via": "projects/ballfight/kit/fighters/trombone.py:draw_giant_bell",
+   "xy_form": ["pairs"],
+   "xy_types": ["float64"]
+  },
+  {
+   "alpha": null,
+   "call": "ImageDraw.polygon",
+   "calls": 25620,
+   "cases": ["polygon"],
+   "coords": [47.013, 417.395],
+   "draw_mode": "RGB",
+   "fractional": true,
+   "image_mode": "RGB",
+   "image_sizes": [
+    [360, 640]
+   ],
+   "ink": [
+    {
+     "fill": "rgb",
+     "outline": "none",
+     "width": "default"
+    }
+   ],
+   "outside_the_image": false,
+   "points": [4, 4],
+   "site": "reelkit/raster.py:Frame.poly",
+   "via": "projects/ballfight/kit/fighters/trombone.py:draw_slide",
+   "xy_form": ["pairs"],
+   "xy_types": ["float64"]
+  },
+  {
+   "alpha": null,
+   "call": "ImageDraw.polygon",
+   "calls": 1911509,
+   "cases": ["polygon"],
+   "coords": [-436.761, 922.148],
+   "draw_mode": "RGB",
+   "fractional": true,
+   "image_mode": "RGB",
+   "image_sizes": [
+    [360, 640]
+   ],
+   "ink": [
+    {
+     "fill": "rgb",
+     "outline": "none",
+     "width": "default"
+    }
+   ],
+   "outside_the_image": true,
+   "points": [4, 4],
+   "site": "reelkit/raster.py:Frame.poly",
+   "via": "projects/ballfight/kit/picture.py:arena",
+   "xy_form": ["pairs"],
+   "xy_types": ["float64"]
+  },
+  {
+   "alpha": null,
+   "call": "ImageDraw.polygon",
+   "calls": 10980,
+   "cases": ["polygon"],
+   "coords": [-13.816, 488.347],
+   "draw_mode": "RGB",
+   "fractional": true,
+   "image_mode": "RGB",
+   "image_sizes": [
+    [360, 640]
+   ],
+   "ink": [
+    {
+     "fill": "rgb",
+     "outline": "none",
+     "width": "default"
+    }
+   ],
+   "outside_the_image": true,
+   "points": [4, 4],
+   "site": "reelkit/raster.py:Frame.poly",
+   "via": "projects/ballfight/kit/picture.py:render",
+   "xy_form": ["pairs"],
+   "xy_types": ["float64"]
+  },
+  {
+   "alpha": null,
+   "call": "ImageDraw.polygon",
+   "calls": 146400,
+   "cases": ["polygon"],
+   "coords": [-7.551, 453.892],
+   "draw_mode": "RGB",
+   "fractional": true,
+   "image_mode": "RGB",
+   "image_sizes": [
+    [360, 640]
+   ],
+   "ink": [
+    {
+     "fill": "rgb",
+     "outline": "none",
+     "width": "default"
+    }
+   ],
+   "outside_the_image": true,
+   "points": [4, 6],
+   "site": "reelkit/raster.py:Frame.poly",
+   "via": "projects/ballfight/kit/picture.py:render.<locals>.draw_post",
+   "xy_form": ["pairs"],
+   "xy_types": ["float64"]
+  },
+  {
+   "alpha": [0, 254],
+   "call": "ImageDraw.polygon",
+   "calls": 10372,
+   "cases": ["blend_polygon"],
+   "coords": [71.649, 404.265],
+   "draw_mode": "RGBA",
+   "fractional": true,
+   "image_mode": "RGB",
+   "image_sizes": [
+    [360, 640]
+   ],
+   "ink": [
+    {
+     "fill": "rgba",
+     "outline": "none",
+     "width": "default"
+    }
+   ],
+   "outside_the_image": false,
+   "points": [3, 3],
+   "site": "reelkit/fx.py:Particles.draw",
+   "via": "",
+   "xy_form": ["pairs"],
+   "xy_types": ["float"]
+  },
+  {
+   "alpha": [191, 255],
+   "call": "ImageDraw.polygon",
+   "calls": 399,
+   "cases": ["polygon", "polygon_outline"],
+   "coords": [3.08, 65.637],
+   "draw_mode": "RGBA",
+   "fractional": true,
+   "image_mode": "RGBA",
+   "image_sizes": [
+    [31, 31],
+    [37, 37],
+    [39, 39],
+    [45, 45],
+    [47, 47],
+    [49, 49],
+    [57, 57],
+    [59, 59],
+    [73, 73]
+   ],
+   "ink": [
+    {
+     "fill": "none",
+     "outline": "rgba",
+     "width": "default"
+    },
+    {
+     "fill": "rgba",
+     "outline": "none",
+     "width": "default"
+    },
+    {
+     "fill": "rgba",
+     "outline": "rgba",
+     "width": "default"
+    }
+   ],
+   "outside_the_image": false,
+   "points": [18, 18],
+   "site": "reelkit/fx.py:starburst",
+   "via": "",
+   "xy_form": ["pairs"],
+   "xy_types": ["float"]
+  },
+  {
+   "alpha": null,
+   "call": "ImageDraw.rectangle",
+   "calls": 71004,
+   "cases": ["rectangle"],
+   "coords": [-19.795, 634.654],
+   "draw_mode": "RGB",
+   "fractional": true,
+   "image_mode": "RGB",
+   "image_sizes": [
+    [360, 640]
+   ],
+   "ink": [
+    {
+     "fill": "rgb",
+     "outline": "none",
+     "width": "default"
+    }
+   ],
+   "outside_the_image": true,
+   "points": [2, 2],
+   "site": "projects/ballfight/kit/picture.py:arena",
+   "via": "",
+   "xy_form": ["flat"],
+   "xy_types": ["float64"]
+  }
+ ],
+ "episode": "flute_vs_trombone",
+ "frames": 1830,
+ "image": [
+  {
+   "call": "Image.Image.filter",
+   "calls": 1830,
+   "cases": ["gaussian_blur"],
+   "details": ["GaussianBlur(0.7)"],
+   "image_mode": "L",
+   "image_sizes": [
+    [360, 360]
+   ],
+   "site": "reelkit/shadows.py:MaskGrid.raster",
+   "via": ""
+  },
+  {
+   "call": "Image.Image.filter",
+   "calls": 1830,
+   "cases": ["gaussian_blur"],
+   "details": ["GaussianBlur(3.0)"],
+   "image_mode": "RGB",
+   "image_sizes": [
+    [90, 160]
+   ],
+   "site": "reelkit/post.py:bloom",
+   "via": ""
+  },
+  {
+   "call": "Image.Image.resize",
+   "calls": 3660,
+   "cases": ["resize_bilinear"],
+   "details": ["to (360, 640), BILINEAR", "to (90, 160), BILINEAR"],
+   "image_mode": "RGB",
+   "image_sizes": [
+    [90, 160],
+    [360, 640]
+   ],
+   "site": "reelkit/post.py:bloom",
+   "via": ""
+  },
+  {
+   "call": "ImageDraw.Draw",
+   "calls": 1830,
+   "cases": [],
+   "details": ["mode of the image"],
+   "image_mode": "F",
+   "image_sizes": [],
+   "site": "reelkit/raster.py:Frame.__init__",
+   "via": "projects/ballfight/kit/picture.py:render"
+  },
+  {
+   "call": "ImageDraw.Draw",
+   "calls": 1830,
+   "cases": [],
+   "details": ["mode of the image"],
+   "image_mode": "F",
+   "image_sizes": [],
+   "site": "reelkit/raster.py:Frame.set_array",
+   "via": "projects/ballfight/kit/fighters/trombone.py:Look.draw_item"
+  },
+  {
+   "call": "ImageDraw.Draw",
+   "calls": 45,
+   "cases": [],
+   "details": ["mode of the image"],
+   "image_mode": "F",
+   "image_sizes": [],
+   "site": "reelkit/raster.py:Frame.set_array",
+   "via": "projects/ballfight/kit/fighters/trombone.py:Look.over_ring"
+  },
+  {
+   "call": "ImageDraw.Draw",
+   "calls": 8889,
+   "cases": [],
+   "details": ["mode of the image"],
+   "image_mode": "F",
+   "image_sizes": [],
+   "site": "reelkit/raster.py:Frame.set_array",
+   "via": "projects/ballfight/kit/picture.py:render"
+  },
+  {
+   "call": "ImageDraw.Draw",
+   "calls": 10107,
+   "cases": [],
+   "details": ["mode of the image"],
+   "image_mode": "L",
+   "image_sizes": [],
+   "site": "projects/ballfight/kit/picture.py:layer_blend",
+   "via": ""
+  },
+  {
+   "call": "ImageDraw.Draw",
+   "calls": 1830,
+   "cases": [],
+   "details": ["mode of the image"],
+   "image_mode": "L",
+   "image_sizes": [],
+   "site": "projects/ballfight/kit/picture.py:render",
+   "via": ""
+  },
+  {
+   "call": "ImageDraw.Draw",
+   "calls": 78,
+   "cases": [],
+   "details": ["mode of the image"],
+   "image_mode": "L",
+   "image_sizes": [],
+   "site": "projects/ballfight/title.py:draw_crack",
+   "via": ""
+  },
+  {
+   "call": "ImageDraw.Draw",
+   "calls": 1830,
+   "cases": [],
+   "details": ["mode of the image"],
+   "image_mode": "L",
+   "image_sizes": [],
+   "site": "reelkit/shadows.py:MaskGrid.raster",
+   "via": ""
+  },
+  {
+   "call": "ImageDraw.Draw",
+   "calls": 1590,
+   "cases": [],
+   "details": ["mode of the image"],
+   "image_mode": "RGB",
+   "image_sizes": [],
+   "site": "projects/ballfight/kit/fighters/flute.py:Look.draw_shard",
+   "via": ""
+  },
+  {
+   "call": "ImageDraw.Draw",
+   "calls": 160,
+   "cases": [],
+   "details": ["mode RGBA"],
+   "image_mode": "RGB",
+   "image_sizes": [],
+   "site": "reelkit/fx.py:Moments.speed_lines",
+   "via": ""
+  },
+  {
+   "call": "ImageDraw.Draw",
+   "calls": 1402,
+   "cases": [],
+   "details": ["mode RGBA"],
+   "image_mode": "RGB",
+   "image_sizes": [],
+   "site": "reelkit/fx.py:Particles.draw",
+   "via": ""
+  },
+  {
+   "call": "ImageDraw.Draw",
+   "calls": 1830,
+   "cases": [],
+   "details": ["mode of the image"],
+   "image_mode": "RGB",
+   "image_sizes": [],
+   "site": "reelkit/raster.py:Frame.__init__",
+   "via": "projects/ballfight/kit/picture.py:render"
+  },
+  {
+   "call": "ImageDraw.Draw",
+   "calls": 1830,
+   "cases": [],
+   "details": ["mode of the image"],
+   "image_mode": "RGB",
+   "image_sizes": [],
+   "site": "reelkit/raster.py:Frame.set_array",
+   "via": "projects/ballfight/kit/fighters/trombone.py:Look.draw_item"
+  },
+  {
+   "call": "ImageDraw.Draw",
+   "calls": 45,
+   "cases": [],
+   "details": ["mode of the image"],
+   "image_mode": "RGB",
+   "image_sizes": [],
+   "site": "reelkit/raster.py:Frame.set_array",
+   "via": "projects/ballfight/kit/fighters/trombone.py:Look.over_ring"
+  },
+  {
+   "call": "ImageDraw.Draw",
+   "calls": 8889,
+   "cases": [],
+   "details": ["mode of the image"],
+   "image_mode": "RGB",
+   "image_sizes": [],
+   "site": "reelkit/raster.py:Frame.set_array",
+   "via": "projects/ballfight/kit/picture.py:render"
+  },
+  {
+   "call": "ImageDraw.Draw",
+   "calls": 266,
+   "cases": [],
+   "details": ["mode of the image"],
+   "image_mode": "RGBA",
+   "image_sizes": [],
+   "site": "reelkit/fx.py:starburst",
+   "via": ""
+  },
+  {
+   "call": "Image.fromarray",
+   "calls": 1830,
+   "cases": [],
+   "details": ["float32 array (640, 360), mode='F'"],
+   "image_mode": "F",
+   "image_sizes": [],
+   "site": "reelkit/raster.py:Frame.set_array",
+   "via": "projects/ballfight/kit/fighters/trombone.py:Look.draw_item"
+  },
+  {
+   "call": "Image.fromarray",
+   "calls": 45,
+   "cases": [],
+   "details": ["float32 array (640, 360), mode='F'"],
+   "image_mode": "F",
+   "image_sizes": [],
+   "site": "reelkit/raster.py:Frame.set_array",
+   "via": "projects/ballfight/kit/fighters/trombone.py:Look.over_ring"
+  },
+  {
+   "call": "Image.fromarray",
+   "calls": 8889,
+   "cases": [],
+   "details": ["float32 array (640, 360), mode='F'"],
+   "image_mode": "F",
+   "image_sizes": [],
+   "site": "reelkit/raster.py:Frame.set_array",
+   "via": "projects/ballfight/kit/picture.py:render"
+  },
+  {
+   "call": "Image.fromarray",
+   "calls": 1590,
+   "cases": [],
+   "details": ["uint8 array (640, 360, 3)"],
+   "image_mode": "RGB",
+   "image_sizes": [],
+   "site": "projects/ballfight/kit/fighters/flute.py:Look.draw_shard",
+   "via": ""
+  },
+  {
+   "call": "Image.fromarray",
+   "calls": 160,
+   "cases": [],
+   "details": ["uint8 array (640, 360, 3)"],
+   "image_mode": "RGB",
+   "image_sizes": [],
+   "site": "reelkit/fx.py:Moments.speed_lines",
+   "via": ""
+  },
+  {
+   "call": "Image.fromarray",
+   "calls": 1402,
+   "cases": [],
+   "details": ["uint8 array (640, 360, 3)"],
+   "image_mode": "RGB",
+   "image_sizes": [],
+   "site": "reelkit/fx.py:Particles.draw",
+   "via": ""
+  },
+  {
+   "call": "Image.fromarray",
+   "calls": 1830,
+   "cases": [],
+   "details": ["uint8 array (640, 360, 3)"],
+   "image_mode": "RGB",
+   "image_sizes": [],
+   "site": "reelkit/post.py:bloom",
+   "via": ""
+  },
+  {
+   "call": "Image.fromarray",
+   "calls": 1830,
+   "cases": [],
+   "details": ["uint8 array (640, 360, 3)"],
+   "image_mode": "RGB",
+   "image_sizes": [],
+   "site": "reelkit/raster.py:Frame.set_array",
+   "via": "projects/ballfight/kit/fighters/trombone.py:Look.draw_item"
+  },
+  {
+   "call": "Image.fromarray",
+   "calls": 45,
+   "cases": [],
+   "details": ["uint8 array (640, 360, 3)"],
+   "image_mode": "RGB",
+   "image_sizes": [],
+   "site": "reelkit/raster.py:Frame.set_array",
+   "via": "projects/ballfight/kit/fighters/trombone.py:Look.over_ring"
+  },
+  {
+   "call": "Image.fromarray",
+   "calls": 8889,
+   "cases": [],
+   "details": ["uint8 array (640, 360, 3)"],
+   "image_mode": "RGB",
+   "image_sizes": [],
+   "site": "reelkit/raster.py:Frame.set_array",
+   "via": "projects/ballfight/kit/picture.py:render"
+  },
+  {
+   "call": "Image.new",
+   "calls": 1830,
+   "cases": [],
+   "details": ["size (360, 640), color float"],
+   "image_mode": "F",
+   "image_sizes": [],
+   "site": "reelkit/raster.py:Frame.__init__",
+   "via": "projects/ballfight/kit/picture.py:render"
+  },
+  {
+   "call": "Image.new",
+   "calls": 10107,
+   "cases": [],
+   "details": ["size (360, 640), color int"],
+   "image_mode": "L",
+   "image_sizes": [],
+   "site": "projects/ballfight/kit/picture.py:layer_blend",
+   "via": ""
+  },
+  {
+   "call": "Image.new",
+   "calls": 1830,
+   "cases": [],
+   "details": ["size (360, 640), color int"],
+   "image_mode": "L",
+   "image_sizes": [],
+   "site": "projects/ballfight/kit/picture.py:render",
+   "via": ""
+  },
+  {
+   "call": "Image.new",
+   "calls": 78,
+   "cases": [],
+   "details": ["size (360, 640), color int"],
+   "image_mode": "L",
+   "image_sizes": [],
+   "site": "projects/ballfight/title.py:draw_crack",
+   "via": ""
+  },
+  {
+   "call": "Image.new",
+   "calls": 1830,
+   "cases": [],
+   "details": ["size (360, 360), color int"],
+   "image_mode": "L",
+   "image_sizes": [],
+   "site": "reelkit/shadows.py:MaskGrid.raster",
+   "via": ""
+  },
+  {
+   "call": "Image.new",
+   "calls": 1830,
+   "cases": [],
+   "details": ["size (360, 640), color rgb"],
+   "image_mode": "RGB",
+   "image_sizes": [],
+   "site": "reelkit/raster.py:Frame.__init__",
+   "via": "projects/ballfight/kit/picture.py:render"
+  },
+  {
+   "call": "Image.new",
+   "calls": 266,
+   "cases": [],
+   "details": ["size (31, 31), color rgba", "size (37, 37), color rgba", "size (39, 39), color rgba", "size (45, 45), color rgba", "size (47, 47), color rgba", "size (49, 49), color rgba", "size (57, 57), color rgba", "size (59, 59), color rgba", "size (73, 73), color rgba"],
+   "image_mode": "RGBA",
+   "image_sizes": [],
+   "site": "reelkit/fx.py:starburst",
+   "via": ""
+  }
+ ],
+ "note": "site is the kit function that calls Pillow; via is who called it when the site is a method of reelkit.raster.Frame. xy_types are the Python types of the coordinates (float64 is numpy's, a subclass of float). points and coords are the smallest and largest count and value seen. width \"default\" means the call passed none (ImageDraw.line then draws width 1). Pillow turns every coordinate into a C int by truncation toward zero before it draws. cases names the vector files in this folder whose cases reproduce the row (as_used has whole calls at full size besides); an empty list is a call that makes or wraps an image and draws nothing. np.asarray(image) is not a Pillow call and is not listed. The survey starts after the sprites and title close-ups are built: the Pixel Pitch modules the bridge imports for the models paint posters of their own as they load, which no frame shows.",
+ "pillow": "12.3.0",
+ "tool": "pillow"
+}
