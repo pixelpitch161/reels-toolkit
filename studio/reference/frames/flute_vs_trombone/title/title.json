@@ -281,6 +281,16 @@
   "seed": 20261110
  },
  "note": "t is frame / 30. title.draw returns uint8 for a uint8 image. expect.door_offset and expect.shake are title.door_offset(t) and title.shake(t) at that time.",
+ "recording": {
+  "checked": "the export read this file and found it equal to the run the kit drew from. The card takes only the two names from the fight (and with them the roster's colours and views); its times, words and series tag come from the episode's config, and nothing on it depends on who wins",
+  "events": 522,
+  "file": "studio/reference/fights/flute_vs_trombone/ep392.bfrec",
+  "frames": 1394,
+  "hash": "038e1f40fc3373eb",
+  "seed": 392,
+  "t_ko": "0x1.902c2c2c2c2c2p+5",
+  "winner": 1
+ },
  "seed": 392,
  "size": [360, 640],
  "tool": "title"

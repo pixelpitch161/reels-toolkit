@@ -320,14 +320,14 @@ from the file alone that must equal `sprites.render_sprite`'s.
 
 ### `sprites`: the instrument inside each ball
 
-For `bf-picture`'s sprite renderer and the looks' own sprites. One case per sprite, RGBA `(size, size, 4)`, each
-the call on an empty sprite cache. `args.group` says which call:
+For `bf-picture`'s sprite renderer and the looks' own sprites. One case per sprite, RGBA `(size, size, 4)`.
+`args.group` says which call:
 
 | Group | Call | Cases |
 | --- | --- | --- |
 | `picture` | `kit.picture.sprite(k, radius, yaw, roll)` | radius 12, 16, 22, 30; yaw 0, 6, ... 354; roll 0 and the roll of the fighter's view (32 for FLUTE, 30 for TROMBONE): 480 per fighter |
 | `episode` | the same call | every (radius, yaw, roll) the 1,830 frames ask for that `picture` lacks: 23 for FLUTE, 17 for TROMBONE. The frames use radii 13 to 19 only |
-| `title` | `title.big_sprite(k)` | the VS card's close-up (radius 44) |
+| `title` | `title.big_sprite(k)` | the VS card's close-up (radius 44). `args.drawn_by` says how it is made: `closeup` for FLUTE (its look's own close-up function, called with the radius alone, so the case has no yaw or roll), `model` for TROMBONE (`sprites.render_sprite` at its view's yaw and roll) |
 | `model` | `sprites.render_sprite(name, radius, yaw, roll)` | FLUTE only (480): its look draws its own pixel-art flute, so `picture` never shows its mesh; these give the sprite renderer something to test that mesh against |
 
 For TROMBONE `kit.picture.sprite` is the model renderer (`sprites.render_sprite` with `piano_lowpoly.render_geo`,
@@ -341,15 +341,31 @@ between -18 and 18, and `flute_sprite` at -6 is not the same picture as at 354 (
 `cos(1.6 * yaw)`), so the `episode` cases for FLUTE have negative yaws and the `picture` cases at 342 to 354 are
 sprites the frames never show.
 
-The export works out what the frames ask for from the kit's state functions (`sprites.asked`) and proves it
+Every `picture`, `episode` and `model` case is the call on an empty sprite cache. A `title` case is
+`title.big_sprite(k)` with the title module's in-memory cache emptied first; for a model close-up `big_sprite` may
+still read its own file cache, so the export compares every close-up with a fresh draw.
+
+Which sprites the frames ask for depends on where the balls are, so the export first proves the committed
+recording is the fight the kit draws (as `frames` does; the sidecar's `recording` has the file and its content
+hash). It then works out what the frames ask for from the kit's state functions (`sprites.asked`) and proves it
 against real renders of 72 frames with `kit.picture.sprite` wrapped; it clears the kit's sprite cache when it is
 done, so a later export in the same process cannot meet a sprite of another yaw.
 
 ### `frames`: golden frames
 
-`kit.picture.render(frame)` for 43 frames of the example episode (seed 392, the fight of `fights/.../ep392.bfrec`),
-each an RGB PNG at the internal 360 x 640, written by Pillow with its default settings. The frames are picked from
-the recording by fixed rules (`frames.select`), and `frames.json` lists them:
+`kit.picture.render(frame)` for 43 frames of the example episode (seed 392), each an RGB PNG at the internal
+360 x 640, written by Pillow with its default settings.
+
+The Studio draws its frames from the committed recording `studio/reference/fights/flute_vs_trombone/ep392.bfrec`,
+while the kit draws from a run of its own. So before anything else the export reads that file
+(`frames.check_recording`) and stops unless it is the kit's run: the same seed, names, corners, first fight frame,
+winner, K.O. time and rules, every event value for value and type for type, every per-frame array bit for bit. If
+the recording is ever exported again under other rules, `frames` fails with the first difference instead of
+leaving golden frames of another fight. `frames.json`'s `recording` names the file, its content hash (`hash`: what
+`Recording::hash` gives in the Studio), the seed, the winner, the K.O. time and the event and frame counts. `title`
+and `sprites` make the same check and carry the same entry.
+
+The frames are picked from the recording's events by fixed rules (`frames.select`), and `frames.json` lists them:
 
 `{"about", "tool", "episode", "seed", "fighters", "winner", "call", "fps", "size", "mode", "nf", "recording",
 "timeline", "rule_notes", "absent", "tag_notes", "tags", "frames"}`. A frame is `{"frame", "t", "file", "rules",
@@ -372,8 +388,10 @@ reason in words, and its tags. `timeline` holds the times the rules read (`t_fig
 | `extra_*` | seven frames beyond the brief's list: an ability caption and the K.O. caption on the frame they land (the scale punch), the WINS caption's second line landing, each fighter's unlock sweep, the bell on the canvas, the doors closing |
 
 `absent` names what this fight cannot show: there is no `parry` frame, because a parry is the lance cutting a
-projectile and neither of these fighters shoots one (the recording has no `parry` event). The export stops if any
-other required frame is missing, if there are fewer than 40, or if a PNG does not read back as the array drawn.
+projectile and neither of these fighters shoots one (the recording has no `parry` event). What is absent is judged
+on the recording's events by code of its own (`frames.cannot_have`), not by the selection: the export stops if the
+two disagree, if any other required frame is missing, if there are fewer than 40, or if a PNG does not read back
+as the array drawn.
 
 `tags` (each explained under the top-level `tags`) say what a frame shows, read off the kit's own state
 functions: the phase (`rev`, `fight`, `hitstop`, `tail`, `solo`, `reassembly`, `glide`), the card (`card`,
@@ -400,7 +418,9 @@ The card is 94 % opaque over a dimmed arena, so the full frames cannot test the 
 its own. `title/noise.png` is one fixed image (`np.random.default_rng(20261110).integers(0, 256, size=(640, 360,
 3), dtype=np.uint8)`) and each `title/f<frame>.png` is `title.draw(noise, frame / 30)`. `title.json` lists the 18
 cases: `{"id", "call", "args": {"frame", "t"}, "file", "rule", "reason", "expect": {"door_offset", "shake"}}`,
-with `t`, `title.door_offset(t)` and `title.shake(t)` as `float.hex()` strings.
+with `t`, `title.door_offset(t)` and `title.shake(t)` as `float.hex()` strings. The card takes only the two
+fighters' names from the fight (nothing on it depends on who wins); `title.json` still carries the `recording`
+entry of the checked file.
 
 | Rules | Frames |
 | --- | --- |
@@ -452,6 +472,8 @@ are the floats handed to it and the stage after each starts from whole numbers. 
 `stages.tap` wraps the functions `render` calls (and `Frame.set_array` and `Frame.array`) for one render and puts
 them back. Every dump is checked before it is kept: each stage fired, in this order; the last stage is the frame
 `render` returned; the same frame drawn without the taps is identical; every array reads back without pickle.
+Like `frames`, the command first proves the committed recording is the kit's run, and each sidecar's `recording`
+names it with its content hash.
 
 ### `dsp`: signal-processing vectors
 

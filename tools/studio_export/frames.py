@@ -8,8 +8,10 @@
     title    .../title/f<frame>.png + noise.png + title.json: title.draw(noise, t) over one fixed seeded-noise image.
              The card is 94 % opaque over a dimmed arena, so the full frames alone cannot test it.
 
-Both exports check what they are about to write before any file is listed (the required reasons are all present, at
-least 40 frames, every PNG reads back as the array that was drawn) and stop with a message if a check fails.
+Both exports first read the committed recording (fights/flute_vs_trombone/ep392.bfrec) and stop unless it is, value
+for value, the fight the kit's renderer was built from; its content hash goes into both indexes. They then check
+what they are about to write before any file is listed (the required reasons are all present, at least 40 frames,
+every PNG reads back as the array that was drawn) and stop with a message if a check fails.
 
 `picture(tag)` and `first_at(t)` are shared with the other picture exports (pillow_vectors, sprites, stages)."""
 import io
@@ -19,7 +21,7 @@ import sys
 
 import numpy as np
 
-from . import common, manifest
+from . import common, manifest, recording
 
 EPISODE = 'flute_vs_trombone'
 W, H, FPS, NF = 360, 640, 30, 1830
@@ -114,6 +116,52 @@ def forget_stale(folder, keep, prefix='f'):
     print(f"{__name__}: removed {len(stale)} PNGs of an earlier selection: {', '.join(stale)}")
 
 
+# ---------------------------------------------------------------- the fight the frames are of
+def check_recording(P, path=None):
+    """read the committed recording and prove it is the fight the kit's renderer drew its effects from
+    (P.RUN): the same seed, names, corners, first fight frame, winner and K.O. time, the same rules, every event
+    value for value and type for type, every per-frame array bit for bit. The Studio draws its frames from this
+    file, so the golden frames are only worth something if it is the same fight. Returns the recording, with its
+    content hash under 'hash'"""
+    path = RECORDING if path is None else path
+    where = common.rel(path)
+    if not os.path.isfile(path):
+        raise SystemExit(f'{where} is missing: run `python -m tools.studio_export fights` first')
+    rec = recording.read_bfrec(path)
+    run = P.RUN
+    from ballfight.kit import story
+    try:
+        for k in ('seed', 'winner', 't_ko', 'f0', 'names', 'corner'):
+            common.same(run[k], rec[k], k)
+        assert rec['fps'] == FPS, 'fps'
+        common.same(common.plain(dict(vars(story.rules()))), rec['rules'], 'rules')
+        common.same([list(e) for e in run['events']], rec['events'], 'events')
+        keys = sorted(k for k in run if k not in recording.META_KEYS)
+        assert keys == sorted(rec['arrays']), f"arrays: {keys} != {sorted(rec['arrays'])}"
+        for k in keys:
+            a = rec['arrays'][k]
+            if isinstance(a, np.ndarray):
+                src = np.array(run[k])
+                assert src.dtype.str == a.dtype.str and src.shape == a.shape and src.tobytes() == a.tobytes(), k
+            else:
+                common.same(common.plain(run[k]), a, k)
+        # what the renderer itself took from the run
+        assert rec['events'] == [list(e) for e in P.EV] and rec['t_ko'] == P.T_KO and rec['winner'] == P.WIN
+        assert rec['names'] == list(P.NAMES) and len(rec['arrays']['HP']) == P.NSIM
+    except AssertionError as ex:
+        raise SystemExit(f'{where} is not the fight the kit draws (differs at: {ex}). Export the recording again '
+                         f'(`python -m tools.studio_export fights`), then the frames') from None
+    rec['hash'] = recording.rec_hash(rec)
+    return rec
+
+
+def recording_note(rec, what):
+    """the index's `recording` entry: which file, which fight, and what was compared"""
+    return dict(file=common.rel(RECORDING), hash=rec['hash'], seed=rec['seed'], winner=rec['winner'],
+                t_ko=common.hexf(rec['t_ko']), events=len(rec['events']), frames=len(rec['arrays']['HP']),
+                checked=what)
+
+
 # ---------------------------------------------------------------- which frames
 def doors_moving(TT, frames):
     """the frames of `frames` on which the title card is drawn with its doors part-way (neither shut nor gone)"""
@@ -125,11 +173,12 @@ def doors_moving(TT, frames):
     return out
 
 
-def select(P):
-    """(frames, absent): the golden frames, chosen from the recording by fixed rules. `frames` is a list of
-    dict(frame, rules, reasons) in frame order (a frame two rules pick is listed once, with both); `absent` lists the
-    brief's rules that this fight cannot satisfy, with the reason"""
-    T, TT, EV, names = P.T, P.TT, P.EV, P.NAMES
+def select(P, events):
+    """(frames, absent): the golden frames, chosen by fixed rules from `events`, the event list of the committed
+    recording (check_recording has shown it is the kit's own). `frames` is a list of dict(frame, rules, reasons) in
+    frame order (a frame two rules pick is listed once, with both); `absent` lists the brief's rules that this fight
+    cannot satisfy, with the reason"""
+    T, TT, EV, names = P.T, P.TT, events, P.NAMES
     picks, absent = [], []
 
     def add(f, rule, reason):
@@ -214,17 +263,31 @@ def required_rules(P):
     return out
 
 
-def check_selection(P, frames, absent):
-    """the selection has what the brief asks for; what it lacks is exactly what this fight cannot have"""
+def cannot_have(P, events):
+    """the brief's rules that the recorded fight has no event for, worked out from the recording's events alone
+    (not through `select`): an event kind that never occurs, an ability that is never used"""
+    kinds = {e[1] for e in events}
+    used = {(e[2], e[3]) for e in events if e[1] == 'ability'}
+    out = [kind for kind in ('parry', 'swat') if kind not in kinds]
+    for k in (0, 1):
+        for slot in SLOTS:
+            if (k, P.CFG[k]['abilities'][slot]['name']) not in used:
+                out += [f'{P.NAMES[k]}_{slot}_{d}s' for d in (0.2, 0.6)]
+    return sorted(out)
+
+
+def check_selection(P, frames, absent, events):
+    """the selection has what the brief asks for; what it lacks is exactly what the recorded fight (`events`:
+    the recording's event list) cannot have"""
     have = {r for fr in frames for r in fr['rules']}
     missing = [r for r in required_rules(P) if r not in have]
     gone = sorted(a['rule'] for a in absent)
     assert sorted(missing) == gone, f'required frames missing without a reason: {sorted(set(missing) - set(gone))}'
+    assert gone == cannot_have(P, events), \
+        f'absent rules {gone}, but the recording lacks the events of exactly {cannot_have(P, events)}'
     # A parry is the lance cutting a projectile (fight.py kill_keys); neither of these two fighters shoots any, so
     # the engine cannot log one for this pair. Any other absence is a mistake.
     assert set(gone) <= {'parry'}, f'frames this fight should have: {gone}'
-    if 'parry' in gone:
-        assert not any(e[1] == 'parry' for e in P.EV)
     assert len(frames) >= MIN_FRAMES, f'{len(frames)} frames, the brief asks for at least {MIN_FRAMES}'
     assert [fr['frame'] for fr in frames] == sorted({fr['frame'] for fr in frames})
 
@@ -409,8 +472,11 @@ def timeline(P):
 
 def run():
     P = picture('frames')
-    frames, absent = select(P)
-    check_selection(P, frames, absent)
+    rec = check_recording(P)
+    print(f"frames: {common.rel(RECORDING)} (hash {rec['hash']}) is the fight the kit draws: seed, winner, K.O. "
+          f"time, rules, {len(rec['events'])} events and {len(rec['arrays'])} per-frame arrays are the same")
+    frames, absent = select(P, rec['events'])
+    check_selection(P, frames, absent, rec['events'])
     names = {f'f{fr["frame"]:04d}.png' for fr in frames}
     forget_stale(OUT, names)
     rows, shots = [], {}
@@ -432,7 +498,11 @@ def run():
               'internal size, RGB',
         tool='frames', episode=EPISODE, seed=P.EP.seed, fighters=list(P.NAMES), winner=P.NAMES[P.WIN],
         call='kit.picture.render(frame)', fps=FPS, size=[W, H], mode='RGB', nf=NF,
-        recording=dict(file=common.rel(RECORDING), note='the same fight: story.run_seed(392)'),
+        recording=recording_note(rec, 'before any frame was drawn the export read this file and found it equal to '
+                                      'the run the kit drew from: seed, names, corners, first fight frame, winner, '
+                                      'K.O. time, rules, every event and every per-frame array. The frames were '
+                                      'chosen from its events. hash is its content hash (Recording::hash in the '
+                                      'Studio, recording.rec_hash here)'),
         timeline=timeline(P),
         rule_notes=dict(
             first_at='a frame "at" or "after" a time t is the first frame whose time frame / 30 is at or after t',
@@ -489,6 +559,7 @@ def check_title(cases):
 def run_title():
     P = picture('title')
     TT = P.TT
+    rec = check_recording(P)                              # (the card takes the fighters' names from the run)
     cases = title_cases(P)
     check_title(cases)
     noise = np.random.default_rng(NOISE_SEED).integers(0, 256, size=(H, W, 3), dtype=np.uint8)
@@ -514,6 +585,10 @@ def run_title():
               'show each word slamming in, the hold, and the doors opening and closing',
         tool='title', episode=EPISODE, seed=P.EP.seed, fps=FPS, size=[W, H], mode='RGB',
         noise=dict(file='noise.png', seed=NOISE_SEED, call=NOISE_CALL),
+        recording=recording_note(rec, 'the export read this file and found it equal to the run the kit drew from. '
+                                      'The card takes only the two names from the fight (and with them the '
+                                      'roster\'s colours and views); its times, words and series tag come from '
+                                      'the episode\'s config, and nothing on it depends on who wins'),
         note='t is frame / 30. title.draw returns uint8 for a uint8 image. expect.door_offset and expect.shake are '
              'title.door_offset(t) and title.shake(t) at that time.',
         cases=rows)
