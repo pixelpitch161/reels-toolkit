@@ -19,7 +19,8 @@
     "state": "289533129354323354318955456298181112347"
    },
    "noise_after": "289533129354323354318955456298181112347",
-   "samples": 12480
+   "samples": 12480,
+   "sha256": "258ca9ad7a9f716220e20450d7765f0aebcf0142321c6df27208f1aee8a99773"
   },
   {
    "args": {
@@ -39,7 +40,8 @@
     "state": "289533129354323354318955456298181112347"
    },
    "noise_after": "289533129354323354318955456298181112347",
-   "samples": 18720
+   "samples": 18720,
+   "sha256": "34ccbd9727a3743e88657aa92a25e45bcbba00db96922eac107c28c2b53f1fdb"
   },
   {
    "args": {
@@ -59,7 +61,8 @@
     "state": "289533129354323354318955456298181112347"
    },
    "noise_after": "289533129354323354318955456298181112347",
-   "samples": 54720
+   "samples": 54720,
+   "sha256": "2236fff2266e1d4dbceb99d57f5d5e3403e7ace9b0a051c063ad330d7fb94577"
   },
   {
    "args": {
@@ -80,7 +83,8 @@
     "state": "289533129354323354318955456298181112347"
    },
    "noise_after": "289533129354323354318955456298181112347",
-   "samples": 12480
+   "samples": 12480,
+   "sha256": "f9d7e73b8ab919ba824343ba7e6e29bd4843026124b48836c71ef4bbc8f354f4"
   },
   {
    "args": {
@@ -101,7 +105,8 @@
     "state": "289533129354323354318955456298181112347"
    },
    "noise_after": "289533129354323354318955456298181112347",
-   "samples": 18720
+   "samples": 18720,
+   "sha256": "1e72b8153e17bb1be2ea3680018ad3e3623ef98d9d28b37ae86df7c54ff4ccb1"
   },
   {
    "args": {
@@ -121,7 +126,8 @@
     "state": "289533129354323354318955456298181112347"
    },
    "noise_after": "289533129354323354318955456298181112347",
-   "samples": 54720
+   "samples": 54720,
+   "sha256": "89f78ba34ba205f64f275b2b94a93a35d265f7a01b6c289ed8f34b010d54af43"
   },
   {
    "args": {
@@ -141,7 +147,8 @@
     "state": "289533129354323354318955456298181112347"
    },
    "noise_after": "289533129354323354318955456298181112347",
-   "samples": 12480
+   "samples": 12480,
+   "sha256": "eceae6ffff38b21f87d50109571e4fd8d0aefbfa2ea75a363e19ed09cd6d8187"
   },
   {
    "args": {
@@ -161,7 +168,8 @@
     "state": "289533129354323354318955456298181112347"
    },
    "noise_after": "289533129354323354318955456298181112347",
-   "samples": 18720
+   "samples": 18720,
+   "sha256": "215e586f2aea3df0d4bf2a890e211632dcc64c17dbdce5b78dc48db9b911da62"
   },
   {
    "args": {
@@ -181,7 +189,8 @@
     "state": "289533129354323354318955456298181112347"
    },
    "noise_after": "289533129354323354318955456298181112347",
-   "samples": 54720
+   "samples": 54720,
+   "sha256": "ea8f88dd7e65d22f2f5ae4fc0366e6513532a663aceb20182b2c3be11c3e5c1e"
   },
   {
    "args": {
@@ -201,7 +210,8 @@
     "state": "289533129354323354318955456298181112347"
    },
    "noise_after": "289533129354323354318955456298181112347",
-   "samples": 12480
+   "samples": 12480,
+   "sha256": "8ab954a0edbd5f03827c11b80dd9d47ac2fb5877e5f477aa698e3f13a9a55f93"
   },
   {
    "args": {
@@ -221,7 +231,8 @@
     "state": "289533129354323354318955456298181112347"
    },
    "noise_after": "289533129354323354318955456298181112347",
-   "samples": 18720
+   "samples": 18720,
+   "sha256": "9ddc2260a14a3236eb7622de1d847423fa88bb3f31a1f1da6dd9b60da36ee9a3"
   },
   {
    "args": {
@@ -241,7 +252,8 @@
     "state": "289533129354323354318955456298181112347"
    },
    "noise_after": "289533129354323354318955456298181112347",
-   "samples": 54720
+   "samples": 54720,
+   "sha256": "136d3d244ec89e247954e083bb1bc0c862e8fb6d3539c6c235844fc575a4d322"
   },
   {
    "args": {
@@ -261,7 +273,8 @@
     "state": "289533129354323354318955456298181112347"
    },
    "noise_after": "289533129354323354318955456298181112347",
-   "samples": 12480
+   "samples": 12480,
+   "sha256": "3fe5069798deb964090d25e0a703245f73618e6298b5172b8b9e7848795cf8bd"
   },
   {
    "args": {
@@ -281,7 +294,8 @@
     "state": "289533129354323354318955456298181112347"
    },
    "noise_after": "289533129354323354318955456298181112347",
-   "samples": 18720
+   "samples": 18720,
+   "sha256": "ce5d7186a6f73bb659395601b0fa504e3482e4bc6c01c668f7c6a210933d0585"
   },
   {
    "args": {
@@ -301,7 +315,8 @@
     "state": "289533129354323354318955456298181112347"
    },
    "noise_after": "289533129354323354318955456298181112347",
-   "samples": 54720
+   "samples": 54720,
+   "sha256": "e223dc5eeae5590506ea36168e95bec4b38773f6688ab673736aba14d33f940b"
   },
   {
    "args": {
@@ -321,7 +336,8 @@
     "state": "289533129354323354318955456298181112347"
    },
    "noise_after": "289533129354323354318955456298181112347",
-   "samples": 12480
+   "samples": 12480,
+   "sha256": "ddc4e685dd5f837a6852ef9420a93e062cabaa02888cd83ba65b5008bc22d9c8"
   },
   {
    "args": {
@@ -341,7 +357,8 @@
     "state": "289533129354323354318955456298181112347"
    },
    "noise_after": "289533129354323354318955456298181112347",
-   "samples": 18720
+   "samples": 18720,
+   "sha256": "bda48177d6255c546736285967ba2a96d754c5272d7181dce87dfea8c7d3605f"
   },
   {
    "args": {
@@ -361,7 +378,8 @@
     "state": "289533129354323354318955456298181112347"
    },
    "noise_after": "289533129354323354318955456298181112347",
-   "samples": 54720
+   "samples": 54720,
+   "sha256": "0c679752484d6563060edf4cf84f5fbb591372585dda99791d5238d91446a3ac"
   },
   {
    "args": {
@@ -381,7 +399,8 @@
     "state": "289533129354323354318955456298181112347"
    },
    "noise_after": "289533129354323354318955456298181112347",
-   "samples": 12480
+   "samples": 12480,
+   "sha256": "c1ed15a61ddb434916d5a6fdd25be911d6b340b189c08beb87434cc4b36f9cc8"
   },
   {
    "args": {
@@ -401,7 +420,8 @@
     "state": "289533129354323354318955456298181112347"
    },
    "noise_after": "289533129354323354318955456298181112347",
-   "samples": 18720
+   "samples": 18720,
+   "sha256": "2fdb008059902b605aaff56952524bf954c02941d48a073352a7eb0c674805b3"
   },
   {
    "args": {
@@ -421,7 +441,8 @@
     "state": "289533129354323354318955456298181112347"
    },
    "noise_after": "289533129354323354318955456298181112347",
-   "samples": 54720
+   "samples": 54720,
+   "sha256": "150857184643d7f95c338f72724c60af6ebab5ca0f2b69faffaca8ecd8018c03"
   },
   {
    "args": {
@@ -441,7 +462,8 @@
     "state": "289533129354323354318955456298181112347"
    },
    "noise_after": "289533129354323354318955456298181112347",
-   "samples": 12480
+   "samples": 12480,
+   "sha256": "c3d473b90d78f7fe18668d990fecdb2328744eab978d9ddd458154eb31bf7d75"
   },
   {
    "args": {
@@ -461,7 +483,8 @@
     "state": "289533129354323354318955456298181112347"
    },
    "noise_after": "289533129354323354318955456298181112347",
-   "samples": 18720
+   "samples": 18720,
+   "sha256": "26ff201c1b39223eae7bd26f5e13a80f4a3a7e7ca3e3177dffe365164c05c0e0"
   },
   {
    "args": {
@@ -481,13 +504,14 @@
     "state": "289533129354323354318955456298181112347"
    },
    "noise_after": "289533129354323354318955456298181112347",
-   "samples": 54720
+   "samples": 54720,
+   "sha256": "e2c3cd59cfe0d9cd6f004c9869e04a846e81871db6e5f6c384db113d24d3baf0"
   }
  ],
  "notes": {
   "draws": "the n of each nz(n) the call made (none for a voice without noise)",
   "noise": "the shared generator's `state` and `inc` (decimal strings) just before the call: restore them, call, compare. noise_after is the `state` the call left (the same when the voice has no noise)",
-  "out": "float64, 48,000 Hz",
+  "out": "48,000 Hz, float32: converted from the float64 the kit makes, to keep the reference set inside its size budget (the comparison bar is -120 dBFS; float32 rounds near -156 dBFS). `sha256` is of the float64 samples (little-endian). first_notes.npz and helpers.npz hold float64 notes of both voices",
   "raw44k": "(two cases) the note at 44,100 Hz as the synth made it, before resampling"
  },
  "register": [45, 67],

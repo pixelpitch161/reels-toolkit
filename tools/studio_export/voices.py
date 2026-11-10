@@ -15,8 +15,8 @@ records the generator's state with everything it stores:
     studio/reference/sound/flute_vs_trombone/first_notes.npz
         the first three of those notes as arrays: the note, the voice output behind it, the inst_gain note
     studio/reference/sound/voices/FLUTE.npz, TROMBONE.npz
-        pp_bridge.voice(name, midi, vel, dur) at 4 pitches x 2 velocities x 3 durations, each with the generator
-        state just before the call
+        pp_bridge.voice(name, midi, vel, dur) at 4 pitches x 2 velocities x 3 durations (stored as float32), each
+        with the generator state just before the call and a SHA-256 of its float64 samples
     studio/reference/sound/voices/helpers.npz
         kit.music's helpers: inst_gain, note, fit, gliss, bend, vibrato, wah, colour, clank, hiss, roar, thunder,
         riser
@@ -190,11 +190,12 @@ class NoteLog:
         return out
 
 
-def record_score(M, B, D, keep=0):
-    """kit.music.score() with a NoteLog in place: (the mix, the log)"""
+def record_score(M, B, D, keep=0, score=None):
+    """kit.music.score() (or `score`, when the caller has wrapped the kit's) with a NoteLog in place: (the mix, the
+    log)"""
     log = NoteLog(M, B, D, keep).install()
     try:
-        mix = M.score()
+        mix = (score or M.score)()
     finally:
         log.remove()
     assert not log.stray and not log.loose, (log.stray, log.loose)   # every draw belongs to a note of the score
@@ -287,7 +288,10 @@ def voice_file(M, B, D, name, start):
               voice=name, synth=f'{modname}.synth', scene=scene['key'], register=list(register), sample_rate=48000,
               voice_sample_rate=B.PP_SR,
               notes=dict(
-                  out='float64, 48,000 Hz',
+                  out='48,000 Hz, float32: converted from the float64 the kit makes, to keep the reference set '
+                      'inside its size budget (the comparison bar is -120 dBFS; float32 rounds near -156 dBFS). '
+                      '`sha256` is of the float64 samples (little-endian). first_notes.npz and helpers.npz hold '
+                      'float64 notes of both voices',
                   raw44k='(two cases) the note at 44,100 Hz as the synth made it, before resampling',
                   noise='the shared generator\'s `state` and `inc` (decimal strings) just before the call: restore '
                         'them, call, compare. noise_after is the `state` the call left (the same when the voice '
@@ -313,14 +317,14 @@ def voice_file(M, B, D, name, start):
                     log.remove()
                 rec, = log.loose
                 assert not log.stray and x.dtype == np.float64 and x.ndim == 1
-                arrays = dict(out=x)
+                arrays = dict(out=x.astype(np.float32))
                 if want_raw:
                     arrays['raw44k'] = raw['x']
                     assert len(x) == -(-len(raw['x']) * 160 // 147)
                 args = dict(name=name, midi=midi, vel=vel, dur=dur)
                 c.add(call_text('pp_bridge.voice', args), {k: jarg(v) for k, v in args.items()}, arrays,
                       noise=dict(state=rec['before'], inc=start['inc']), noise_after=rec['after'],
-                      draws=rec['draws'], samples=len(x))
+                      draws=rec['draws'], samples=len(x), sha256=rec['sha256'])
     return c.write()
 
 
@@ -565,8 +569,9 @@ def check(M=None, B=None):
             set_noise_state(case['noise'])
             x = B.voice(a['name'], a['midi'], vel, dur)
             out = varr[case['arrays']['out']]
-            assert out.dtype.str == '<f8' and len(out) == case['samples'], case['id']
-            assert np.array_equal(out, x), f"{name} {case['id']}: not reproduced from its stored state"
+            assert out.dtype.str == '<f4' and len(out) == case['samples'], case['id']
+            again = sha(x) == case['sha256'] and np.array_equal(out, x.astype(np.float32))
+            assert again, f"{name} {case['id']}: not reproduced from its stored state"
             assert noise_state()['state'] == case['noise_after'], case['id']
             if 'raw44k' in case['arrays']:
                 assert len(out) == -(-len(varr[case['arrays']['raw44k']]) * 160 // 147)
