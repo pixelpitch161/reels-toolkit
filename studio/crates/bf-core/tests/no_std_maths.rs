@@ -2,7 +2,9 @@
 //!
 //! Every transcendental goes through `bf_core::dmath` (software floats, the same bits on every PC), and fused
 //! multiply-add is forbidden, so frames and sound stay bit-identical everywhere. This test walks the engine crates'
-//! sources, strips comments and string/char literals, and fails listing `file:line` for each forbidden method call.
+//! sources, strips comments and string/char literals, and fails listing `file:line` for each forbidden use: a method
+//! call such as `.sin(`, a path such as `f64::sin(` or `f32::powi` (called or passed as a function), and any `libm::`
+//! path (only `dmath.rs` may call `libm`). `sqrt` is allowed in both forms.
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -172,13 +174,59 @@ fn strip(src: &str) -> String {
     out
 }
 
-/// Scans one source text and returns every forbidden `.name(` call (whitespace allowed around the name).
+/// Skips whitespace from `j`; returns the first index that is not whitespace.
+fn skip_ws(chars: &[char], mut j: usize) -> usize {
+    while j < chars.len() && chars[j].is_whitespace() {
+        j += 1;
+    }
+    j
+}
+
+/// Index just past `::` at `j` (after optional whitespace), if it is there.
+fn path_sep(chars: &[char], j: usize) -> Option<usize> {
+    let j = skip_ws(chars, j);
+    (chars.get(j) == Some(&':') && chars.get(j + 1) == Some(&':')).then_some(j + 2)
+}
+
+/// Scans one source text and returns every forbidden use: a `.name(` method call (whitespace allowed around the
+/// name), an `f64::name` or `f32::name` path (called or passed as a function), and any `libm::` path. A method hit
+/// is named `name`, a path hit `f64::name` or `f32::name`, a `libm` hit `libm`.
 fn scan_source(src: &str) -> Vec<Hit> {
     let stripped = strip(src);
     let mut hits = Vec::new();
     for (idx, line) in stripped.lines().enumerate() {
         let chars: Vec<char> = line.chars().collect();
         for (pos, &c) in chars.iter().enumerate() {
+            // Paths: an identifier that starts here (not inside a longer one).
+            if is_ident_char(c) && (pos == 0 || !is_ident_char(chars[pos - 1])) {
+                let mut end = pos;
+                while end < chars.len() && is_ident_char(chars[end]) {
+                    end += 1;
+                }
+                let ident: String = chars[pos..end].iter().collect();
+                if ident == "libm" && path_sep(&chars, end).is_some() {
+                    hits.push(Hit {
+                        line: idx + 1,
+                        name: ident,
+                    });
+                } else if (ident == "f64" || ident == "f32")
+                    && let Some(after) = path_sep(&chars, end)
+                {
+                    let start = skip_ws(&chars, after);
+                    let mut j = start;
+                    while j < chars.len() && is_ident_char(chars[j]) {
+                        j += 1;
+                    }
+                    let name: String = chars[start..j].iter().collect();
+                    if FORBIDDEN.contains(&name.as_str()) {
+                        hits.push(Hit {
+                            line: idx + 1,
+                            name: format!("{ident}::{name}"),
+                        });
+                    }
+                }
+                continue;
+            }
             if c != '.' {
                 continue;
             }
@@ -243,9 +291,16 @@ fn engine_crates_use_no_std_maths() {
             let text = fs::read_to_string(&file).unwrap_or_else(|e| panic!("cannot read {rel}: {e}"));
             scanned += 1;
             for hit in scan_source(&text) {
+                let what = if hit.name == "libm" {
+                    "libm::".to_string()
+                } else if hit.name.contains("::") {
+                    hit.name.clone()
+                } else {
+                    format!(".{}(", hit.name)
+                };
                 problems.push(format!(
-                    "crates/{rel}:{}: .{}( is not allowed here (use bf_core::dmath)",
-                    hit.line, hit.name
+                    "crates/{rel}:{}: {what} is not allowed here (use bf_core::dmath)",
+                    hit.line
                 ));
             }
         }
@@ -297,6 +352,58 @@ let g = c"x.atan2(y)";
 let h = '"'; let i = '\''; let j = '\\'; let k = '\u{1F600}'; let l = b'"';
 "####;
     assert_eq!(scan_source(src), vec![]);
+}
+
+#[test]
+fn self_check_flags_path_calls() {
+    let src = "let a = f64::sin(x);\nlet b = f64::mul_add(a, b, c);\nlet c = f32::powi(x, 2);\n\
+               let d = f64 :: atan2 (y, x);\nlet e = xs.iter().map(f64::exp);\nlet f = core::f32::tanh(x);\n";
+    let got: Vec<(usize, String)> = scan_source(src).into_iter().map(|h| (h.line, h.name)).collect();
+    assert_eq!(
+        got,
+        vec![
+            (1, "f64::sin".to_string()),
+            (2, "f64::mul_add".to_string()),
+            (3, "f32::powi".to_string()),
+            (4, "f64::atan2".to_string()),
+            (5, "f64::exp".to_string()),
+            (6, "f32::tanh".to_string()),
+        ]
+    );
+}
+
+#[test]
+fn self_check_flags_every_forbidden_path() {
+    for ty in ["f64", "f32"] {
+        for name in FORBIDDEN {
+            let src = format!("let y = {ty}::{name}(a);\n");
+            let got: Vec<(usize, String)> = scan_source(&src).into_iter().map(|h| (h.line, h.name)).collect();
+            assert_eq!(got, vec![(1, format!("{ty}::{name}"))], "{ty}::{name}");
+        }
+    }
+}
+
+#[test]
+fn self_check_allows_dmath_sqrt_and_other_paths() {
+    let src = "let a = dmath::sin(x) + bf_core::dmath::pow(x, y);\nlet b = f64::sqrt(x) + x.sqrt();\n\
+               let c = f64::consts::PI + f64::from_bits(1) + f64::MAX;\nlet d = myf64::sin(x) + f64_sin(x);\n\
+               // f64::sin(x) in a comment\nlet e = \"f64::cos(x) libm::sin(x)\";\n";
+    assert_eq!(scan_source(src), vec![]);
+}
+
+#[test]
+fn self_check_flags_libm_outside_dmath() {
+    let src =
+        "use libm::sin;\nlet a = libm::sin(x);\nlet b = ::libm::cos(x);\nlet ok = mylibm::sin(x) + libm_sin(x);\n";
+    let got: Vec<(usize, String)> = scan_source(src).into_iter().map(|h| (h.line, h.name)).collect();
+    assert_eq!(
+        got,
+        vec![
+            (1, "libm".to_string()),
+            (2, "libm".to_string()),
+            (3, "libm".to_string())
+        ]
+    );
 }
 
 #[test]
