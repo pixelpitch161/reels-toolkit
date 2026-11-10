@@ -8,3 +8,6 @@ publish.workspace = true
 [dependencies]
 bf-core.workspace = true
 bf-sim.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true

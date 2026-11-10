@@ -103,18 +103,6 @@ impl fmt::Display for ShowError {
 
 impl std::error::Error for ShowError {}
 
-/// Python's truth value of an event element (`if e[5]:`).
-fn truthy(v: &Value) -> bool {
-    match v {
-        Value::Null => false,
-        Value::Bool(b) => *b,
-        Value::Int(n) => *n != 0,
-        Value::Float(x) => *x != 0.0,
-        Value::Str(s) => !s.is_empty(),
-        Value::List(l) => !l.is_empty(),
-    }
-}
-
 /// `kit/story.py` `captions(events, gap)`, reporting a malformed event instead of panicking.
 fn try_captions(events: &[Event], gap: f64) -> Result<Vec<(f64, usize, String)>, ShowError> {
     let mut out: Vec<(f64, usize, String)> = Vec::new();
@@ -128,7 +116,7 @@ fn try_captions(events: &[Event], gap: f64) -> Result<Vec<(f64, usize, String)>,
             .fields
             .get(3)
             .ok_or_else(|| bad(format!("no element 5 (it has {})", 2 + e.fields.len())))?;
-        if !truthy(first) {
+        if !first.truthy() {
             continue;
         }
         let keep = match out.last() {
