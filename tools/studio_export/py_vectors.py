@@ -14,7 +14,7 @@ import random
 
 import numpy as np
 
-from . import common, manifest
+from . import common
 
 OUT = common.ref('py', 'vectors.json')
 N = 2000
@@ -215,8 +215,7 @@ def run():
                 'is 0, where np.rint(-0.3) is -0.0. imod and ifloordiv take and give ints'),
         rows_per_case=N,
         cases=cases())
-    common.write_json(OUT, doc)
-    manifest.add(OUT)
+    common.write_json(OUT, doc)                           # written and listed in the manifest
     print(f"py: {common.rel(OUT)}  {len(doc['cases'])} cases x {N} rows")
 
 

@@ -1,6 +1,7 @@
 """The recording container (.bfrec), Python side: write a kit run, read one back, and its content hash.
 
-    write_bfrec(run, rules, path)     run = kit story.run_seed(seed); rules = the Rules it was fought under
+    write_bfrec(run, rules, path)     run = kit story.run_seed(seed); rules = the Rules it was fought under;
+                                      the file is listed in the manifest (register=False: written only)
     read_bfrec(path)                  -> dict(format, source, names, seed, winner, t_ko, f0, fps, corner, rules,
                                               events, arrays)
     rec_hash(rec)                     the 16 hex digits Recording::hash() gives in the Studio
@@ -13,27 +14,20 @@ import hashlib
 import io
 import json
 import struct
+import sys
 import zipfile
 
 import numpy as np
 from numpy.lib import format as npy_format
 
-from . import common
+from . import common, manifest
 
 FORMAT = 1
 HASH_TAG = b'BFREC-HASH-1\n'
 META_KEYS = ('seed', 'winner', 't_ko', 'events', 'names', 'corner', 'f0')     # the run's keys that are not per-frame
-ZIP_DATE = (1980, 1, 1, 0, 0, 0)
-ZIP_LEVEL = 9
 
 
 # ---------------------------------------------------------------- write
-def _npy_bytes(a):
-    buf = io.BytesIO()
-    npy_format.write_array(buf, np.ascontiguousarray(a), version=(1, 0), allow_pickle=False)
-    return buf.getvalue()
-
-
 def _array(key, v, frames, rect_keys):
     """one per-frame key as ('npy', bytes) or ('json', bytes). A key the kit itself turns into an array
     (story.REC_KEYS) is stored as .npy when it is rectangular and numeric; every other key (WAVES, SLAMS, COB, ...)
@@ -47,26 +41,17 @@ def _array(key, v, frames, rect_keys):
         except ValueError:                                # ragged for this pair: the kit keeps the list, so do we
             a = None
         if a is not None and a.dtype in (np.float64, np.int64):
-            return 'npy', _npy_bytes(a.astype('<f8' if a.dtype == np.float64 else '<i8'))
+            return 'npy', common.npy_bytes(a.astype('<f8' if a.dtype == np.float64 else '<i8'))
     return 'json', common.dumps_rows(common.plain(list(v), key)).encode('ascii')
 
 
-def _zip(members):
-    """{name: bytes} as zip bytes that depend on nothing but the names and the contents"""
-    buf = io.BytesIO()
-    with zipfile.ZipFile(buf, 'w', compression=zipfile.ZIP_DEFLATED, compresslevel=ZIP_LEVEL) as z:
-        for name in sorted(members):
-            zi = zipfile.ZipInfo(name, date_time=ZIP_DATE)
-            zi.create_system = 0                          # the default differs between Windows and Unix
-            zi.external_attr = 0o600 << 16                # what writestr would put there itself; said outright
-            z.writestr(zi, members[name], compress_type=zipfile.ZIP_DEFLATED, compresslevel=ZIP_LEVEL)
-    return buf.getvalue()
-
-
-def write_bfrec(run, rules, path, source=None, rect_keys=None):
+def write_bfrec(run, rules, path, source=None, rect_keys=None, register=True):
     """write the kit run `run` (the dict story.run_seed returns, recorded) and the rules it was fought under (a
-    fight.Rules object or a dict of its attributes) to `path`. `source` defaults to this Python kit at its current
-    commit; `rect_keys` to the kit's own list of array keys (story.REC_KEYS). Returns the path"""
+    fight.Rules object or a dict of its attributes) to `path`, and list the file in the manifest under the calling
+    module's name (`register=False`: write only, for a caller that checks the file before it calls manifest.add).
+    `source` defaults to this Python kit at its current commit; `rect_keys` to the kit's own list of array keys
+    (story.REC_KEYS). Returns the path"""
+    tool = sys._getframe(1).f_globals.get('__name__', '?')
     if rect_keys is None:
         _, story = common.kit()
         rect_keys = story.REC_KEYS
@@ -91,11 +76,14 @@ def write_bfrec(run, rules, path, source=None, rect_keys=None):
         arrays=kinds)
     _check_meta(common.plain(meta, 'meta'))
     members['meta.json'] = common.dumps(meta).encode('ascii')
-    return common.write_bytes(path, _zip(members))
+    path = common.write_bytes(path, common.zip_bytes(members))
+    if register:
+        manifest.add(path, tool=tool)
+    return path
 
 
 def _check_meta(m):
-    """the types the format promises (docs/recording-format.md), checked on what is about to be written"""
+    """the types the format promises (studio/docs/recording-format.md), checked on what is about to be written"""
     def is_int(x):
         return isinstance(x, int) and not isinstance(x, bool)
     assert is_int(m['seed']) and 0 <= m['seed'] < 2 ** 63, m['seed']

@@ -76,7 +76,8 @@ is modified.
 `tool` (the module that wrote it), `commit` (`git rev-parse HEAD` at export time), `dirty` (whether `projects/`,
 `reelkit/` or `series/` had uncommitted changes then), `python`, `numpy`, `scipy`, `pillow` and `platform`.
 
-`manifest.add(path)` updates it under a lock file and replaces it in one step, so exports may run at the same time.
+`manifest.add(path)` (which the write helpers below call) updates it under a lock file and replaces it in one step,
+so exports may run at the same time.
 When an export reproduces a file bit for bit with the same tools, its entry is left as it is (only `commit` would
 change), so re-running the export on an unchanged kit leaves the working tree clean. Files an export writes outside
 `studio/reference/` are listed too, by their repo-relative path.
@@ -85,19 +86,43 @@ A reference file that a Rust test blesses (`studio/reference/dmath/bits.json`) i
 `python -m tools.studio_export adopt studio/reference/dmath/bits.json`: the same fields, with `tool` set to
 `rust-bless`. Run it again whenever the file is blessed again; `verify` checks it like any other entry.
 
+## Writing reference files
+
+Three helpers write a reference file reproducibly **and list it in the manifest** under the calling module's name:
+
+```python
+common.write_json(path, obj, sort_keys=True, register=True)
+common.write_npz(path, arrays, register=True)             # arrays: {member name: numpy array}
+recording.write_bfrec(run, rules, path, source=None, rect_keys=None, register=True)
+```
+
+- `write_json` writes `obj` in the fixed JSON layout. Tuples and numpy values are converted exactly; a float that
+  is not finite, an int outside 64 bits and any other type are refused.
+- `write_npz` writes a zip of `<name>.npy` members (`.npy` version 1.0, C order, names sorted, the timestamp
+  1980-01-01 on every member, deflate level 9: the same settings as a `.bfrec`), so two runs give the same bytes,
+  which `np.savez` does not. `np.load(path, allow_pickle=False)` reads it. It takes numpy arrays of dtype `|u1`,
+  `|b1`, `<i4`, `<i8`, `<f4` or `<f8` and stores them as they are; lists, object arrays, strings and every other
+  dtype are refused, so the dtype in the file is always one the caller chose.
+- `register=False` writes without listing: for a scratch file, or when the export checks the file first and then
+  calls `manifest.add(path)` itself.
+
+A file written any other way (a PNG saved by Pillow, `common.write_bytes`) needs `manifest.add(path)` afterwards.
+
 ## Adding an export
 
 Add a module to this folder. Nothing else changes: the entry point scans the package.
 
 ```python
-from . import common, manifest
+import numpy as np
+
+from . import common
 
 OUT = common.ref('thing', 'data.json')          # studio/reference/thing/data.json
 
 
 def run():
-    common.write_json(OUT, {'format': 1, 'values': [common.hexf(0.1)]})
-    manifest.add(OUT)
+    common.write_json(OUT, {'about': 'an example', 'values': [common.hexf(0.1)]})          # written and listed
+    common.write_npz(common.ref('thing', 'data.npz'), {'c000__out': np.zeros((4, 3), np.float32)})
 
 
 EXPORTS = {'thing': run}                         # python -m tools.studio_export thing

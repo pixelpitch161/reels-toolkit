@@ -22,7 +22,8 @@ def replay_hash(r):
     h = hashlib.sha256(repr(r['events']).encode())
     for k in sorted(r):
         v = r[k]
-        if isinstance(v, list) and v and isinstance(v[0], (list, np.ndarray)) and k not in ('events', 'names', 'corner'):
+        per_frame = isinstance(v, list) and v and isinstance(v[0], (list, np.ndarray))
+        if per_frame and k not in ('events', 'names', 'corner'):
             try:
                 h.update(np.ascontiguousarray(np.array(v, float)).tobytes())
             except (ValueError, TypeError):
@@ -76,7 +77,7 @@ def run():
         name = f'ep{seed}' if seed == ep.seed else f'seed{seed}'
         out = common.ref('fights', EPISODE, f'{name}.bfrec')
         r = story.run_seed(seed)
-        recording.write_bfrec(r, rules, out, rect_keys=story.REC_KEYS)
+        recording.write_bfrec(r, rules, out, rect_keys=story.REC_KEYS, register=False)   # listed once it checks out
         rec = recording.read_bfrec(out)
         check(r, rules, rec, story.REC_KEYS)
         guard, guard_file = replay_hash(r), replay_hash(as_kit_run(rec))

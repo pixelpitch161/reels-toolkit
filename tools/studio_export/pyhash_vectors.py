@@ -11,7 +11,7 @@ Layout: {"about", "format": 1, "numbers", "rows": [[string, hash, hash % 997], .
 The hash is a signed 64-bit integer as a decimal string; hash % 997 is Python's (0 to 996) as a JSON integer."""
 import random
 
-from . import common, manifest
+from . import common
 
 OUT = common.ref('pyhash', 'vectors.json')
 N = 500
@@ -78,8 +78,7 @@ def run():
                     'hashes to 0. "rows" are all ASCII; "non_ascii" has strings of each of the three widths'),
         rows=[row(s) for s in ss],
         non_ascii=[row(s) for s in NON_ASCII])
-    common.write_json(OUT, doc)
-    manifest.add(OUT)
+    common.write_json(OUT, doc)                           # written and listed in the manifest
     print(f"pyhash: {common.rel(OUT)}  {len(doc['rows'])} ASCII strings, {len(doc['non_ascii'])} beyond ASCII")
 
 

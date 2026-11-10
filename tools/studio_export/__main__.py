@@ -75,6 +75,8 @@ def main(argv):
     if not argv or argv[0] in ('-h', '--help', 'help'):
         print(__doc__)
         return 0
+    if argv[0] != 'adopt' and len(argv) > 1 and any(a in RESERVED for a in argv):
+        raise SystemExit('all, verify and list stand alone; adopt comes first, then its paths')
     if argv == ['verify']:
         from . import manifest
         n, problems, unlisted = manifest.verify()

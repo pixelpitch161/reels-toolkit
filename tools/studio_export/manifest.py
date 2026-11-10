@@ -116,6 +116,8 @@ def add(path, tool=None):
     if tool is None:
         tool = sys._getframe(1).f_globals.get('__name__', '?')
     path = path if os.path.isabs(path) else os.path.join(common.REPO, path)
+    if common.rel(path) == common.rel(MANIFEST) or common.rel(path).startswith(common.rel(common.CACHE) + '/'):
+        raise ValueError(f'{common.rel(path)} is not a reference file (write a scratch file with register=False)')
     entry = dict(path=common.rel(path), sha256=sha256(path), bytes=os.path.getsize(path), tool=tool,
                  commit=common.git('rev-parse', 'HEAD'), dirty=common.kit_dirty(), **environment())
     with _Lock():

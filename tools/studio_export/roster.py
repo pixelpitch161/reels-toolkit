@@ -61,7 +61,7 @@ def run():
               'tools/studio_export/roster.py; do not edit by hand.',
         format=1,
         fighters=fighters)
-    common.write_json(OUT, doc, sort_keys=False)
+    common.write_json(OUT, doc, sort_keys=False, register=False)
     with open(OUT, encoding='utf-8') as f:                # read it back: the same values, types and key order
         back = json.load(f)
     common.same(doc, back, 'roster', ordered=True)

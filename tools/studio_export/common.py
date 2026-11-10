@@ -1,11 +1,20 @@
-"""Shared helpers for the reference export: repo paths, exact number formats, deterministic JSON and file writers,
-and the one way an export loads a kit episode. Nothing here imports numpy, so `verify` runs on a bare Python."""
+"""Shared helpers for the reference export: repo paths, exact number formats, deterministic JSON, zip and file
+writers, and the one way an export loads a kit episode.
+
+    write_json(path, obj, sort_keys=True, register=True)      a reference JSON file in the fixed layout
+    write_npz(path, arrays, register=True)                    a reproducible .npz of plain numeric arrays
+
+Both list the file in the manifest themselves (as recording.write_bfrec does); a file written any other way needs
+manifest.add(path). Nothing here imports numpy at module level, so `verify` runs on a bare Python."""
+import io
 import json
 import math
 import numbers
 import os
+import re
 import subprocess
 import sys
+import zipfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(os.path.dirname(HERE))
@@ -13,6 +22,10 @@ REFERENCE = os.path.join(REPO, 'studio', 'reference')
 CACHE = os.path.join(REFERENCE, '.cache')              # git-ignored: episode copies, the kit's own caches, the lock
 KIT_DIRS = ('projects', 'reelkit', 'series')           # what the reference is made from; never edited
 I64_MIN, I64_MAX = -2 ** 63, 2 ** 63 - 1
+ZIP_DATE = (1980, 1, 1, 0, 0, 0)                       # every zip member's timestamp
+ZIP_LEVEL = 9                                          # deflate level of every zip member
+NPZ_DTYPES = ('|u1', '|b1', '<i4', '<i8', '<f4', '<f8')
+NPZ_NAME = re.compile(r'[A-Za-z0-9_][A-Za-z0-9_.-]*\Z')
 
 
 # ---------------------------------------------------------------- paths
@@ -171,8 +184,75 @@ def write_text(path, text):
     return write_bytes(path, text.encode('utf-8'))
 
 
-def write_json(path, obj, sort_keys=True):
-    return write_text(path, dumps(obj, sort_keys))
+def _caller():
+    """the module that called the write helper: the `tool` its file is listed under"""
+    return sys._getframe(2).f_globals.get('__name__', '?')
+
+
+def _register(path, tool):
+    from . import manifest                               # here, not at the top: manifest imports this module
+    manifest.add(path, tool=tool)
+    return path
+
+
+def write_json(path, obj, sort_keys=True, register=True):
+    """write `obj` as a reference JSON file in the fixed layout (see dumps) and list it in the manifest under the
+    calling module's name. `register=False` writes only (a scratch file, or a file its export checks before it
+    calls manifest.add itself). Returns the path"""
+    tool = _caller()
+    path = write_text(path, dumps(obj, sort_keys))
+    return _register(path, tool) if register else path
+
+
+def zip_bytes(members):
+    """{member name: bytes} as the bytes of a zip that depend on nothing but the names and the contents: members
+    in ascending name order, deflate at ZIP_LEVEL, ZIP_DATE on every member, no platform fields"""
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, 'w', compression=zipfile.ZIP_DEFLATED, compresslevel=ZIP_LEVEL) as z:
+        for name in sorted(members):
+            zi = zipfile.ZipInfo(name, date_time=ZIP_DATE)
+            zi.create_system = 0                          # the default differs between Windows and Unix
+            zi.external_attr = 0o600 << 16                # what writestr would put there itself; said outright
+            z.writestr(zi, members[name], compress_type=zipfile.ZIP_DEFLATED, compresslevel=ZIP_LEVEL)
+    return buf.getvalue()
+
+
+def npy_bytes(a):
+    """a numpy array as the bytes of a .npy file: format version 1.0, C order, no pickle"""
+    import numpy as np
+    from numpy.lib import format as npy_format
+    if not a.flags.c_contiguous:                         # (ascontiguousarray would also turn a 0-d array into 1-d)
+        a = np.ascontiguousarray(a)
+    buf = io.BytesIO()
+    npy_format.write_array(buf, a, version=(1, 0), allow_pickle=False)
+    return buf.getvalue()
+
+
+def write_npz(path, arrays, register=True):
+    """write {name: numpy array} as a reproducible .npz (np.savez stamps the time, so its bytes change on every
+    run): a zip of <name>.npy members made by zip_bytes and npy_bytes, readable with
+    np.load(path, allow_pickle=False). Only plain numeric arrays in the dtypes of NPZ_DTYPES (uint8, bool, int32,
+    int64, float32, float64, little-endian) are taken, as they are: nothing is converted, so the dtype the kit
+    produced is the dtype Rust reads. Lists, object arrays, strings and other dtypes are refused. The file is
+    listed in the manifest under the calling module's name unless `register=False`. Returns the path"""
+    import numpy as np
+    tool = _caller()
+    if not str(path).endswith('.npz'):
+        raise ValueError(f'{path}: an .npz file must be named .npz')
+    if not arrays:
+        raise ValueError(f'{path}: no arrays')
+    members = {}
+    for name, a in arrays.items():
+        if not isinstance(name, str) or not NPZ_NAME.match(name):
+            raise ValueError(f'{path}: {name!r} cannot name a member (letters, digits, _ . - only)')
+        if not isinstance(a, np.ndarray):
+            raise TypeError(f'{path}: {name} is a {type(a).__name__}, not a numpy array (convert it yourself, so '
+                            f'the dtype is a choice)')
+        if a.dtype.str not in NPZ_DTYPES:
+            raise TypeError(f"{path}: {name} has dtype {a.dtype.str!r} ({a.dtype}); allowed: {', '.join(NPZ_DTYPES)}")
+        members[f'{name}.npy'] = npy_bytes(a)
+    path = write_bytes(path, zip_bytes(members))
+    return _register(path, tool) if register else path
 
 
 # ---------------------------------------------------------------- the kit

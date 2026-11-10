@@ -11,7 +11,7 @@ one array call), "values", "end" (the bit generator's state after the last call)
 128-bit state and anything else that can pass 2**53 are decimal strings."""
 import numpy as np
 
-from . import common, manifest
+from . import common
 
 OUT = common.ref('rng', 'vectors.json')
 SEEDS = [0, 1, 2, 392, 2 ** 40 + 7, [392, 44, 3588], [1, 2, 3]]
@@ -167,8 +167,7 @@ def run():
                 'the half in "uinteger")'),
         seeds=[dict(seed=seed, init=init(seed), streams=streams(seed)) for seed in SEEDS],
         resume=resume())
-    common.write_json(OUT, doc)
-    manifest.add(OUT)
+    common.write_json(OUT, doc)                           # written and listed in the manifest
     n = len(doc['seeds'][0]['streams'])
     print(f'rng: {common.rel(OUT)}  {len(SEEDS)} seeds x {n} streams, 1 resume case')
 

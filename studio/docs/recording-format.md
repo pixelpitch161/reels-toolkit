@@ -267,6 +267,10 @@ are 100 minus the running sum of element 4 of the `hit` events whose element 3 i
 Because `K` holds NaN, two recordings must be compared by the bits of their floats, not with `==` on `f64`
 (`NaN != NaN`). The same goes for telling `0.0` from `-0.0`.
 
+The first 15 keys and `WAVES` and `SLAMS` are in every recording. The kit adds `EXT`, `SLW` and `CRV` (always the
+three together) only when a fighter thrusts, slows or curves its shots, as the TROMBONE does, and `COB` only when a
+fighter is a `striker`, as the FLUTE is.
+
 Other fighters add other keys (the kit's `story.REC_KEYS` and `fight.py` list them); a reader keeps every key it
 finds and needs no list of known names.
 
