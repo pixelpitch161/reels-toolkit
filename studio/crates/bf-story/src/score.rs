@@ -30,25 +30,14 @@ pub struct BeatSheet {
     pub cap_targets: BTreeMap<String, f64>,
 }
 
-impl Default for BeatSheet {
-    /// The series windows (`kit/episode.py` defaults) with no caption targets.
-    fn default() -> BeatSheet {
-        BeatSheet {
-            t_ko: (49.0, 53.0),
-            min_lead_changes: 2,
-            max_winner_hp: 30.0,
-            cap_gap: 4.0,
-            max_gap: 4.0,
-            min_caps: 5,
-            cap_targets: BTreeMap::new(),
-        }
-    }
-}
-
 impl BeatSheet {
-    /// The series beat sheet for two fighters (left first): the default windows and `kit/episode.py`'s default
+    /// The series beat sheet for two fighters (left first): the `kit/episode.py` default windows (`T_KO` 49 to 53,
+    /// `MIN_LEAD_CHANGES` 2, `MAX_WINNER_HP` 30, `CAP_GAP` 4.0, `MAX_GAP` 4.0, 5 captions) and its default
     /// `CAP_TARGETS`, `{ROSTER[n]['abilities'][s]['name']: v for n in FIGHTERS for s, v in (('unlock1', 12),
     /// ('unlock2', 24), ('low', 40))}` (a name met twice keeps the later value, as the dict does).
+    ///
+    /// There is deliberately no `Default`: a sheet without the fighters' caption targets would drop the score's
+    /// caption terms without a word and mis-rank fights.
     pub fn series(fighters: [&FighterCfg; 2]) -> BeatSheet {
         let mut cap_targets = BTreeMap::new();
         for f in fighters {
@@ -57,10 +46,28 @@ impl BeatSheet {
             }
         }
         BeatSheet {
+            t_ko: (49.0, 53.0),
+            min_lead_changes: 2,
+            max_winner_hp: 30.0,
+            cap_gap: 4.0,
+            max_gap: 4.0,
+            min_caps: 5,
             cap_targets,
-            ..BeatSheet::default()
         }
     }
+}
+
+/// `x` written with two decimals, or more when two would round it onto the right side of its limit: the shown
+/// value always still fails (`above`: it must show greater than `limit`; else less than it).
+fn past(x: f64, limit: f64, above: bool) -> String {
+    for digits in 2..=17 {
+        let text = format!("{x:.digits$}");
+        let shown: f64 = text.parse().unwrap_or(x);
+        if (above && shown > limit) || (!above && shown < limit) {
+            return text;
+        }
+    }
+    format!("{x:?}")
 }
 
 /// Whether a fight fits the beat sheet, its score, and why it does not fit.
@@ -107,9 +114,14 @@ pub fn score(st: &Story, sheet: &BeatSheet) -> Verdict {
         misses.push("no K.O.".to_string());
     } else {
         if !ko_ok {
+            let shown = if tko < sheet.t_ko.0 {
+                past(tko, sheet.t_ko.0, false)
+            } else {
+                past(tko, sheet.t_ko.1, true)
+            };
             misses.push(format!(
-                "K.O. at {:.1} s (needs {} to {} s)",
-                tko, sheet.t_ko.0, sheet.t_ko.1
+                "K.O. at {shown} s (needs {} to {} s)",
+                sheet.t_ko.0, sheet.t_ko.1
             ));
         }
         if !lc_ok {
@@ -121,8 +133,9 @@ pub fn score(st: &Story, sheet: &BeatSheet) -> Verdict {
         }
         if !hp_ok {
             misses.push(format!(
-                "winner HP {:.1} (needs {} or less)",
-                st.winner_hp, sheet.max_winner_hp
+                "winner HP {} (needs {} or less)",
+                past(st.winner_hp, sheet.max_winner_hp, true),
+                sheet.max_winner_hp
             ));
         }
         if !caps_ok {
@@ -135,8 +148,9 @@ pub fn score(st: &Story, sheet: &BeatSheet) -> Verdict {
         }
         if !gap_ok {
             misses.push(format!(
-                "{:.1} s without a hit (needs {} s or less)",
-                st.max_gap, sheet.max_gap
+                "{} s without a hit (needs {} s or less)",
+                past(st.max_gap, sheet.max_gap, true),
+                sheet.max_gap
             ));
         }
     }
@@ -174,19 +188,27 @@ mod tests {
         }
     }
 
+    /// The example episode's sheet, written out (the parity test builds it with `series` from the roster).
     fn sheet() -> BeatSheet {
-        let mut s = BeatSheet::default();
-        for (n, v) in [
-            ("FLUTTER TONGUE", 12.0),
-            ("SAD TROMBONE", 12.0),
-            ("POWER SLIDE", 24.0),
-            ("SNAKE DANCE", 24.0),
-            ("PICCOLO", 40.0),
-            ("PEDAL TONE", 40.0),
-        ] {
-            s.cap_targets.insert(n.into(), v);
+        BeatSheet {
+            t_ko: (49.0, 53.0),
+            min_lead_changes: 2,
+            max_winner_hp: 30.0,
+            cap_gap: 4.0,
+            max_gap: 4.0,
+            min_caps: 5,
+            cap_targets: [
+                ("FLUTTER TONGUE", 12.0),
+                ("SAD TROMBONE", 12.0),
+                ("POWER SLIDE", 24.0),
+                ("SNAKE DANCE", 24.0),
+                ("PICCOLO", 40.0),
+                ("PEDAL TONE", 40.0),
+            ]
+            .into_iter()
+            .map(|(n, v)| (n.to_string(), v))
+            .collect(),
         }
-        s
     }
 
     #[test]
@@ -210,11 +232,11 @@ mod tests {
         assert_eq!(
             v.misses,
             [
-                "K.O. at 47.2 s (needs 49 to 53 s)",
+                "K.O. at 47.20 s (needs 49 to 53 s)",
                 "1 lead change (needs 2)",
-                "winner HP 46.6 (needs 30 or less)",
+                "winner HP 46.60 (needs 30 or less)",
                 "3 ability captions (needs 5)",
-                "4.3 s without a hit (needs 4 s or less)",
+                "4.26 s without a hit (needs 4 s or less)",
             ]
         );
         for one in 0..5 {
@@ -267,12 +289,46 @@ mod tests {
         assert!((without - with - 0.65331).abs() < 0.0051, "{with} -> {without}");
     }
 
+    /// The one miss of `st` under the example sheet.
+    fn only_miss(st: &Story) -> String {
+        let v = score(st, &sheet());
+        assert!(!v.fits);
+        assert_eq!(v.misses.len(), 1, "{:?}", v.misses);
+        v.misses[0].clone()
+    }
+
     #[test]
-    fn the_default_is_the_series_windows_without_targets() {
-        let s = BeatSheet::default();
-        assert_eq!(s.t_ko, (49.0, 53.0));
-        assert_eq!((s.min_lead_changes, s.min_caps), (2, 5));
-        assert_eq!((s.max_winner_hp, s.cap_gap, s.max_gap), (30.0, 4.0, 4.0));
-        assert!(s.cap_targets.is_empty());
+    fn a_miss_never_shows_a_value_that_meets_its_limit() {
+        let mut st = fit();
+        st.winner_hp = 30.04;
+        assert_eq!(only_miss(&st), "winner HP 30.04 (needs 30 or less)");
+        st.winner_hp = 30.001;
+        assert_eq!(only_miss(&st), "winner HP 30.001 (needs 30 or less)");
+
+        let mut st = fit();
+        st.max_gap = 4.02;
+        assert_eq!(only_miss(&st), "4.02 s without a hit (needs 4 s or less)");
+        st.max_gap = 4.000_000_7;
+        assert_eq!(only_miss(&st), "4.000001 s without a hit (needs 4 s or less)");
+
+        let mut st = fit();
+        st.t_ko = Some(48.97);
+        assert_eq!(only_miss(&st), "K.O. at 48.97 s (needs 49 to 53 s)");
+        st.t_ko = Some(48.998);
+        assert_eq!(only_miss(&st), "K.O. at 48.998 s (needs 49 to 53 s)");
+        st.t_ko = Some(53.004);
+        assert_eq!(only_miss(&st), "K.O. at 53.004 s (needs 49 to 53 s)");
+    }
+
+    #[test]
+    fn past_shows_the_least_digits_that_stay_past_the_limit() {
+        assert_eq!(past(30.04, 30.0, true), "30.04");
+        assert_eq!(past(30.0001, 30.0, true), "30.0001");
+        assert_eq!(past(48.9999, 49.0, false), "48.9999");
+        assert_eq!(past(46.6, 30.0, true), "46.60");
+        // the next float above 4.0 needs every digit
+        let next = f64::from_bits(4.0f64.to_bits() + 1);
+        let text = past(next, 4.0, true);
+        assert!(text.parse::<f64>().unwrap() > 4.0, "{text}");
     }
 }

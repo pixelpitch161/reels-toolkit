@@ -6,7 +6,7 @@
 
 use std::collections::BTreeSet;
 
-use bf_core::event::{Event, Value};
+use bf_core::event::Event;
 use bf_core::grid::Grid;
 use bf_core::recording::Recording;
 use bf_core::show::captions;
@@ -54,18 +54,6 @@ pub struct Story {
 /// Python's `max(a, b)`: `a` unless `b` is greater.
 pub(crate) fn py_max(a: f64, b: f64) -> f64 {
     if b > a { b } else { a }
-}
-
-/// Python's truth value of an event element (`if e[5]:`).
-fn truthy(v: &Value) -> bool {
-    match v {
-        Value::Null => false,
-        Value::Bool(b) => *b,
-        Value::Int(n) => *n != 0,
-        Value::Float(x) => *x != 0.0,
-        Value::Str(s) => !s.is_empty(),
-        Value::List(l) => !l.is_empty(),
-    }
 }
 
 /// A fighter index element (`hp[e[3]]`); Python's negative indices never occur for a fighter.
@@ -130,7 +118,7 @@ pub fn story(rec: &Recording, grid: &Grid, sheet: &BeatSheet, low_names: [&str; 
     let (lead_changes, lc_t, lead) = lead_changes(ev);
     let firsts = ev
         .iter()
-        .filter(|e| e.kind == "ability" && truthy(e.at(5)))
+        .filter(|e| e.kind == "ability" && e.at(5).truthy())
         .map(|e| (e.t, fighter(e, 2), e.s(3).to_string()))
         .collect();
     let caps = captions(ev, sheet.cap_gap);

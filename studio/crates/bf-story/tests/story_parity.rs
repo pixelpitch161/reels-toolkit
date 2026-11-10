@@ -213,15 +213,8 @@ fn the_beat_sheet_defaults_are_the_kits() {
     for (n, low) in b["LOWS"].as_object().unwrap() {
         assert_eq!(fighter(&r, n).low.name, low.as_str().unwrap(), "LOWS[{n}]");
     }
-    // An empty default holds the same windows with no caption targets.
-    let d = BeatSheet::default();
-    assert_eq!(
-        BeatSheet {
-            cap_targets: Default::default(),
-            ..s
-        },
-        d
-    );
+    // The swapped scenario's episode builds CAP_TARGETS in the other fighter order: the same sheet.
+    assert_eq!(BeatSheet::series([fighter(&r, "TROMBONE"), fighter(&r, "FLUTE")]), s);
 }
 
 #[test]
@@ -349,10 +342,11 @@ fn hp_row(rec: &Recording, i: usize) -> (f64, f64) {
 #[test]
 fn the_lead_follows_the_recorded_hp() {
     // A hit at time t shows in the first recorded frame at or after t (frame i is the state at t_fight + i / 30;
-    // the last frame of a K.O. fight is the K.O.). Where a second hit lands before that frame, the frame shows
-    // both and that hit is skipped.
+    // the last frame of a K.O. fight is the K.O.). Where the next hit shows in the same frame, the frame holds
+    // both: that hit is skipped (only the last hit of each frame is compared), and the skips are counted.
     let g = grid();
     let mut checked = 0;
+    let mut skipped = 0;
     let mut hits = 0;
     for name in all_names() {
         let rec = recording(&name);
@@ -361,15 +355,21 @@ fn the_lead_follows_the_recorded_hp() {
         assert_eq!(st.lead.len(), hit_t.len(), "{name}: one lead point per hit");
         let last = rec.frames() - 1;
         let frame_t = |i: usize| g.t_fight + i as f64 * 4.0 / 120.0;
-        for (k, &(t, lead)) in st.lead.iter().enumerate() {
-            assert_eq!(t.to_bits(), hit_t[k].to_bits(), "{name}: lead[{k}] time");
-            hits += 1;
+        let frame_of = |t: f64| {
             let mut i = 0;
             while i < last && frame_t(i) < t - 1e-4 {
                 i += 1;
             }
-            let shown = if i == last { f64::INFINITY } else { frame_t(i) + 1e-4 };
-            if hit_t.get(k + 1).is_some_and(|&n| n <= shown) {
+            i
+        };
+        let frames: Vec<usize> = hit_t.iter().map(|&t| frame_of(t)).collect();
+        for (k, &(t, lead)) in st.lead.iter().enumerate() {
+            assert_eq!(t.to_bits(), hit_t[k].to_bits(), "{name}: lead[{k}] time");
+            hits += 1;
+            let i = frames[k];
+            if frames.get(k + 1) == Some(&i) {
+                assert!(hit_t[k + 1] >= t, "{name}: hits out of time order at {k}");
+                skipped += 1;
                 continue;
             }
             let (a, b) = hp_row(&rec, i);
@@ -382,10 +382,9 @@ fn the_lead_follows_the_recorded_hp() {
             checked += 1;
         }
     }
-    assert!(
-        checked * 10 >= hits * 9,
-        "only {checked} of {hits} hits could be checked"
-    );
+    // Pinned for the 21 committed recordings: every hit is either compared or shares its frame with the next one.
+    assert!(hits > 0);
+    assert_eq!((hits, checked, skipped), (1775, 1656, 119));
 }
 
 #[test]
