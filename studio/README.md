@@ -26,6 +26,22 @@ cargo clippy --workspace --all-targets -- -D warnings
 cargo test --workspace
 ```
 
+### Running the tests
+
+- `cargo test --workspace` runs every crate's unit tests and the parity tests. The parity tests read `reference/`
+  through the dev-only crate `bf-testdata` and need nothing else: no Python, no network. `cargo test -p <crate>` runs
+  one crate, `cargo test -p bf-core --test rng_vectors` one test file. CI
+  (`.github/workflows/studio.yml`) runs `cargo test --workspace --release --locked` on Linux.
+- `cargo test -p bf-testdata --test reads_reference -- --nocapture` opens every `.npz` under `reference/` with its
+  sidecar and lists what it found: the quick check that a newly exported vector file is readable from Rust.
+- Before a commit, `cargo fmt --check` and `cargo clippy --workspace --all-targets -- -D warnings` are clean and the
+  test output has no warnings.
+- The Python side checks itself: every export reads its files back and checks them before it lists them in the
+  manifest (the sound exports replay the recorded noise states and compare every note), and
+  `python -m tools.studio_export verify` re-hashes the whole set. `python tools/ballfight_replay_hash.py` is the
+  kit's own replay guard: its output must not change, because nothing in `projects/`, `reelkit/` or `series/` is
+  ever edited from here.
+
 ## Determinism
 
 Results must be bit-identical on every PC. The engine crates use `f64` in the Python operation order, never fused
@@ -35,5 +51,43 @@ order or on the number of threads.
 
 ## Reference data
 
-`reference/` holds the vectors exported from the Python kit by `tools/studio_export/`, each listed in
-`reference/manifest.json` with its SHA-256.
+`reference/` holds what the Rust code is checked against: vectors, recordings, frames, stems and check numbers
+exported from the Python kit by `tools/studio_export/` (and a few files the Rust tests bless themselves). Each file
+is listed in `reference/manifest.json` with its SHA-256, the commit, and the Python and library versions that made
+it; `tools/studio_export/README.md` describes every file. A vector file is an `.npz` of plain numeric arrays with a
+sidecar `.json` of the same name that lists its cases (`id`, `call`, `args`, `arrays`); numbers that must be matched
+bit for bit are `float.hex()` strings.
+
+### Regenerating the reference set
+
+The reference numbers are whatever the kit gives on the reference PC (the manifest's `platform` field) with CPython
+3.13.18, numpy 2.5.3, scipy 1.18.1 and pillow 12.3.0; `tools/studio_export/README.md` says how that environment is
+made. From the repo root, with that Python (PowerShell shown; in Git Bash use `export NAME=value`):
+
+```
+$env:PYTHONHASHSEED = "0"
+$env:PYTHONPATH = (Get-Location).Path
+.studio-tools\py313\Scripts\python.exe -m tools.studio_export list       # the exports, in the order `all` runs them
+.studio-tools\py313\Scripts\python.exe -m tools.studio_export all        # every export
+.studio-tools\py313\Scripts\python.exe -m tools.studio_export dsp voices stems checks    # or some, in this order
+.studio-tools\py313\Scripts\python.exe -m tools.studio_export verify     # re-hash every file in the manifest
+git status --short studio/reference projects reelkit series
+```
+
+- An export reads the kit and never writes to it, so `git status --short projects reelkit series` stays empty. The
+  kit's own caches (run pickles, sprites, `audio.wav`, stem wavs) land in `reference/.cache/`, which is git-ignored
+  and can be deleted at any time.
+- Running an export again on an unchanged kit gives byte-identical files: `git status --short studio/reference`
+  shows nothing. A file that does change means the kit, a library or the exporter changed. Read the difference
+  before committing it, and expect the Rust parity test that reads the file to need the same change.
+- The sound exports (`dsp`, `voices`, `stems`, `checks`) each run in an interpreter of their own, because the Pixel
+  Pitch voices share one noise generator that every noisy note advances. `stems` reads what `voices` wrote and
+  `checks` compares its soundtrack with the `audio.wav` that `stems` wrote: keep that order (`all` does). On the
+  reference PC they take about 15 s, 12 s, 45 s and 3 minutes (`checks` draws 673 frames in 5 worker
+  processes).
+- `verify` only reads files and runs on any Python. It exits 1 if a listed file is missing or changed, and prints
+  a note for a file under `reference/` that the manifest does not list.
+- A reference file written by a Rust test (for example `reference/dmath/bits.json`) is listed with
+  `python -m tools.studio_export adopt <path>` after it is blessed.
+- The set stays under 150 MB (`du -sh studio/reference`, with `.cache/` deleted or left out). Past that it moves to
+  Git LFS (design, section 12).
