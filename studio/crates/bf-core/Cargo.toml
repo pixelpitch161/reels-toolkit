@@ -7,6 +7,8 @@ publish.workspace = true
 
 [dependencies]
 libm.workspace = true
+sha2.workspace = true
+zip.workspace = true
 
 [dev-dependencies]
 serde_json.workspace = true
