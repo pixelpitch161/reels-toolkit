@@ -45,9 +45,10 @@ $env:PYTHONPATH = (Get-Location).Path
 - `all` runs every export, sorted by its `ORDER` number (50 unless the module sets one), then by name.
 - `verify` re-hashes every file in the manifest and exits 1 if one is missing or changed. It only reads files, so
   it runs on any Python. Files under `studio/reference/` that the manifest does not list are printed as notes.
+- `adopt <path>...` records reference files that a Rust test blessed (see "The manifest").
 
-An export refuses to run unless `PYTHONHASHSEED` is `0` and numpy, scipy and pillow are exactly the versions in
-`requirements.txt`.
+Everything but `verify` refuses to run unless `PYTHONHASHSEED` is `0` and numpy, scipy and pillow are exactly the
+versions in `requirements.txt`.
 
 Running an export twice gives byte-identical files. To check: run it, run `git status --short studio`, and nothing
 is modified.
@@ -79,6 +80,10 @@ is modified.
 When an export reproduces a file bit for bit with the same tools, its entry is left as it is (only `commit` would
 change), so re-running the export on an unchanged kit leaves the working tree clean. Files an export writes outside
 `studio/reference/` are listed too, by their repo-relative path.
+
+A reference file that a Rust test blesses (`studio/reference/dmath/bits.json`) is recorded with
+`python -m tools.studio_export adopt studio/reference/dmath/bits.json`: the same fields, with `tool` set to
+`rust-bless`. Run it again whenever the file is blessed again; `verify` checks it like any other entry.
 
 ## Adding an export
 

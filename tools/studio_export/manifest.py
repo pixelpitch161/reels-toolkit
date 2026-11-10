@@ -1,6 +1,7 @@
 """studio/reference/manifest.json: one entry per reference file, with its SHA-256 and what made it.
 
     manifest.add(path)        record (or replace) the entry of a file an export just wrote
+    manifest.adopt(path)      record a reference file that a Rust test blessed instead (tool "rust-bless")
     manifest.verify()         re-hash every entry; the problems found (missing or changed files)
 
 An entry: path (repo-relative, forward slashes), sha256, bytes, tool (the module that wrote the file), commit
@@ -25,6 +26,7 @@ MANIFEST = common.ref('manifest.json')
 LOCK = os.path.join(common.CACHE, 'manifest.lock')
 FORMAT = 1
 KEYS = ('path', 'sha256', 'bytes', 'tool', 'commit', 'dirty', 'python', 'numpy', 'scipy', 'pillow', 'platform')
+ADOPTED = 'rust-bless'        # the `tool` of a file a Rust test wrote and `adopt` recorded
 LOCK_WAIT = 120.0             # s to wait for another export's update before giving up
 LOCK_STALE = 60.0             # s after which a lock file is taken for a crashed run's (an update takes milliseconds)
 
@@ -125,10 +127,27 @@ def add(path, tool=None):
     return entry
 
 
+def adopt(path):
+    """record a reference file that no export writes: one a Rust test blessed (for example
+    studio/reference/dmath/bits.json). The entry has the same fields as any other, with `tool` = "rust-bless"; the
+    version fields describe the environment at adoption. Adopt it again after the file is blessed again. A file an
+    export owns is refused: its export records it"""
+    p = path if os.path.isabs(path) else os.path.join(common.REPO, path)
+    if not os.path.isfile(p):
+        raise SystemExit(f'adopt: {path}: no such file (give a path relative to the repo root)')
+    r = common.rel(p)
+    if r == common.rel(MANIFEST) or r.startswith(common.rel(common.CACHE) + '/'):
+        raise SystemExit(f'adopt: {r} is not a reference file')
+    old = next((e for e in load() if e['path'] == r), None)
+    if old is not None and old['tool'] != ADOPTED:
+        raise SystemExit(f"adopt: {r} is written by {old['tool']}; run that export instead")
+    return add(p, tool=ADOPTED)
+
+
 def verify():
     """(entries checked, problems, unlisted): every entry's file re-hashed. A problem is a line naming a missing or
-    changed file. `unlisted` are files under studio/reference/ that no entry names (the cache folder aside): the
-    export did not write them, so they are reported but are not this tool's to judge"""
+    changed file. `unlisted` are files under studio/reference/ that no entry names (the cache folder aside): no
+    export wrote them, so they are reported for someone to `adopt` (a file a Rust test blessed) or remove"""
     entries = load()
     problems = []
     for e in entries:

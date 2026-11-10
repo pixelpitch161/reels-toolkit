@@ -1,13 +1,15 @@
-"""python -m tools.studio_export <name>... | all | verify | list          (from the repo root, PYTHONHASHSEED=0)
+"""python -m tools.studio_export <name>... | all | verify | list | adopt <path>...   (repo root, PYTHONHASHSEED=0)
 
     list      the exports the package's modules register, in the order `all` runs them
     <name>... run those exports, in the order given
     all       run every export: by each one's ORDER number (50 unless its module says otherwise), then by name
     verify    re-hash every file in studio/reference/manifest.json; exit 1 if one is missing or changed
+    adopt     record files that a Rust test blessed (repo-relative paths) in the manifest, as tool "rust-bless"
 
 A module registers exports with a module-level `EXPORTS = {"name": function}` (and, if one must run before or after
-others under `all`, `ORDER = {"name": number}`). Exports refuse to run unless PYTHONHASHSEED is 0 and numpy, scipy
-and pillow are exactly the versions in requirements.txt; `verify` only reads files and runs anywhere."""
+others under `all`, `ORDER = {"name": number}`). Everything but `verify` refuses to run unless PYTHONHASHSEED is 0
+and numpy, scipy and pillow are exactly the versions in requirements.txt; `verify` only reads files and runs
+anywhere."""
 import importlib
 import importlib.metadata
 import os
@@ -15,7 +17,7 @@ import pkgutil
 import sys
 import time
 
-RESERVED = ('all', 'verify', 'list')
+RESERVED = ('all', 'verify', 'list', 'adopt')
 DEFAULT_ORDER = 50
 
 
@@ -83,6 +85,14 @@ def main(argv):
         print(f'verify: {n} files, {len(problems)} missing or changed')
         return 1 if problems else 0
     check_environment()
+    if argv[0] == 'adopt':
+        from . import manifest
+        if len(argv) < 2:
+            raise SystemExit('adopt: name at least one file, by its path from the repo root')
+        for path in argv[1:]:
+            e = manifest.adopt(path)
+            print(f"adopted {e['path']}  {e['bytes']} bytes  sha256 {e['sha256']}")
+        return 0
     found = exports()
     if argv == ['list']:
         for name in in_order(found):
@@ -92,7 +102,7 @@ def main(argv):
     unknown = [n for n in names if n not in found]
     if unknown:
         raise SystemExit(f"no export named {', '.join(unknown)} (there are: {', '.join(in_order(found))}; "
-                         f"or all, verify, list)")
+                         f"or all, verify, list, adopt <path>)")
     for name in names:
         t0 = time.time()
         found[name][1]()
