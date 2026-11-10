@@ -465,7 +465,8 @@ def title_cases(P):
         for d in (0, 2, 5):
             out.append((f0 + d, f'slam_{j}_{d}', f'{word} slams in on frame {f0}: {d} frames after'))
     end_open = first_at(T.T_DOORS[1])
-    still = [f for f in range(first_at(T.TITLE[-1][0]), end_open)
+    # the hold: the last word has settled (title.slam_k is 1 from 0.26 s after its slam) and its shake has died
+    still = [f for f in range(first_at(T.TITLE[-1][0] + 0.26), end_open)
              if TT.door_offset(f / FPS) == 0.0 and TT.shake(f / FPS) == (0.0, 0.0)]
     out.append((still[len(still) // 2], 'hold', 'the hold: every word landed, no shake, the doors shut'))
     opening = doors_moving(TT, range(end_open))
