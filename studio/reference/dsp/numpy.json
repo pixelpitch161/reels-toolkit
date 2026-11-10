@@ -1,5 +1,5 @@
 {
- "about": "the numpy calls of the sound code whose result is more than one rounding: interp, percentile, convolve, cumsum, linspace, and sums and means (numpy adds a long 1-D array pairwise)",
+ "about": "the numpy calls of the sound code whose result is more than one rounding: interp, percentile, convolve, cumsum, linspace, and sums and means (numpy adds a long 1-D array pairwise); and scipy.signal.find_peaks as the levels check uses it",
  "cases": [
   {
    "args": {
@@ -312,6 +312,36 @@
    "call": "(np.clip(x, -1, 1) * 32767).astype(np.int16)",
    "id": "c023",
    "what": "reelkit.audio.write: clip, scale, cut toward zero. The int16 values are stored as float64 (exact); some inputs are beyond +-1"
+  },
+  {
+   "args": {
+    "distance": 4,
+    "height": "0x1.8000000000000p+2"
+   },
+   "arrays": {
+    "heights": "c024__heights",
+    "out": "c024__out",
+    "x": "c024__x"
+   },
+   "call": "scipy.signal.find_peaks(x, height=6.0, distance=4)",
+   "id": "c024",
+   "note": "out: the peak indices, stored as float64 (exact); heights: x at each peak",
+   "what": "the real input: reelkit.levels.profile on the episode's audio.wav hands it the level of each 10 ms frame minus the lowest of the five before it (dB)"
+  },
+  {
+   "args": {
+    "distance": 4,
+    "height": "0x1.8000000000000p+2"
+   },
+   "arrays": {
+    "heights": "c025__heights",
+    "out": "c025__out",
+    "x": "c025__x"
+   },
+   "call": "scipy.signal.find_peaks(x, height=6.0, distance=4)",
+   "id": "c025",
+   "note": "out: the peak indices, stored as float64 (exact); heights: x at each peak",
+   "what": "np.round(default_rng(6100).normal(0, 5, 2000)): whole numbers, so there are flat tops and equal peaks closer than 4 samples"
   }
  ],
  "notes": {

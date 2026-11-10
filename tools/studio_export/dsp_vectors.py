@@ -10,8 +10,9 @@ studio/reference/dsp/ (every .npz has a sidecar .json: vectors-convention.md):
                       kit's other lfilter uses (the master's envelope follower, the K-weighting of the loudness check)
     resample.npz      scipy.signal.resample_poly(x, 160, 147) (44.1 kHz -> 48 kHz), and the FIR it designs
     fftconvolve.npz   scipy.signal.fftconvolve on two input pairs
-    numpy.npz         np.interp, np.percentile(x, 99.97), np.convolve(..., 'same'), np.cumsum, np.linspace and the
-                      sums and means the sound code takes (numpy adds a long 1-D array pairwise)
+    numpy.npz         np.interp, np.percentile(x, 99.97), np.convolve(..., 'same'), np.cumsum, np.linspace, the
+                      sums and means the sound code takes (numpy adds a long 1-D array pairwise), the 16-bit
+                      conversion, and scipy.signal.find_peaks as the levels check calls it
     ufuncs.npz        np.sin, np.cos, np.exp, np.tanh, np.log10, np.sqrt and the powers the sound code takes, and
                       the Python-scalar maths it uses (math.cos, math.sin, math.exp, float ** float), on fixed inputs
     generators.npz    every reelkit.audio generator at its default arguments and at each argument set the episode
@@ -554,11 +555,12 @@ def fftconvolve_file(A):
     return c.write()
 
 
-def numpy_file(A):
+def numpy_file(A, wav):
     import numpy as np
     c = Cases(os.path.join(DIR, 'numpy.npz'), tool='dsp', module=__name__,
               about='the numpy calls of the sound code whose result is more than one rounding: interp, percentile, '
-                    'convolve, cumsum, linspace, and sums and means (numpy adds a long 1-D array pairwise)',
+                    'convolve, cumsum, linspace, and sums and means (numpy adds a long 1-D array pairwise); and '
+                    'scipy.signal.find_peaks as the levels check uses it',
               notes=dict(out='a scalar result is stored as a 1-element float64 array, and as float.hex() in '
                              '`result`'))
 
@@ -635,6 +637,30 @@ def numpy_file(A):
           dict(x=w, out=i16.astype(np.float64)),
           what='reelkit.audio.write: clip, scale, cut toward zero. The int16 values are stored as float64 (exact); '
                'some inputs are beyond +-1')
+    # ---- scipy.signal.find_peaks, as reelkit.levels.profile calls it (the hits-per-second column of the levels check)
+    from scipy.signal import find_peaks as peaks0
+    from reelkit import levels as LV
+    seen = {}
+
+    def find_peaks(x, **k):
+        seen['x'], seen['k'] = np.array(x, copy=True), k
+        return peaks0(x, **k)
+    LV.find_peaks = find_peaks
+    try:
+        sr, mono = LV.load(wav)
+        LV.profile(sr, mono, dur=round(len(mono) / sr / LV.WIN) * LV.WIN)
+    finally:
+        LV.find_peaks = peaks0
+    assert seen['k'] == dict(height=6.0, distance=4), seen['k']
+    steps = np.round(_rng(6100).normal(0, 5, 2000))
+    for x, what in ((seen['x'], 'the real input: reelkit.levels.profile on the episode\'s audio.wav hands it the '
+                                'level of each 10 ms frame minus the lowest of the five before it (dB)'),
+                    (steps, 'np.round(default_rng(6100).normal(0, 5, 2000)): whole numbers, so there are flat tops '
+                            'and equal peaks closer than 4 samples')):
+        pk, props = peaks0(x, height=6.0, distance=4)
+        c.add('scipy.signal.find_peaks(x, height=6.0, distance=4)', dict(height=jarg(6.0), distance=4),
+              dict(x=x, out=pk.astype(np.float64), heights=props['peak_heights']), what=what,
+              note='out: the peak indices, stored as float64 (exact); heights: x at each peak')
     return c.write()
 
 
@@ -890,9 +916,14 @@ def check():
         elif call == 'np.cumsum(f)':
             same(np.cumsum(m['f']), m['out'], c['id'])
             seen.add('cumsum')
+        elif call.startswith('scipy.signal.find_peaks'):
+            pk, props = sg.find_peaks(m['x'], height=float.fromhex(c['args']['height']), distance=c['args']['distance'])
+            same(pk.astype(np.float64), m['out'], c['id'])
+            same(props['peak_heights'], m['heights'], c['id'])
+            seen.add('find_peaks')
         if 'result' in c:
             assert m['out'].shape == (1,) and m['out'][0] == float.fromhex(c['result']), c['id']
-    assert seen == {'interp', 'percentile', 'convolve', 'cumsum'}, seen
+    assert seen == {'interp', 'percentile', 'convolve', 'cumsum', 'find_peaks'}, seen
     # generators: each one at its defaults; every set the episode used is listed, and has vectors unless it is one
     # of many seeds
     doc, arr = got['generators']
@@ -921,7 +952,8 @@ def child():
     print(f'dsp: the soundtrack and its checks asked for {len(col.designs)} filter designs ({n_sos} as second-order '
           f"sections) in {sum(d['count'] for d in col.designs.values())} calls, and called "
           f"{sum(bool(v) for v in col.calls.values())} of reelkit.audio's {len(GENERATORS)} generators")
-    files = [butter_file(col), filters_file(col, M), resample_file(), fftconvolve_file(A), numpy_file(A),
+    files = [butter_file(col), filters_file(col, M), resample_file(), fftconvolve_file(A),
+             numpy_file(A, M.EP.path('audio.wav')),
              ufuncs_file(), generators_file(col, A)]
     counts = check()
     for f in files:                                        # listed only now that the checks passed
