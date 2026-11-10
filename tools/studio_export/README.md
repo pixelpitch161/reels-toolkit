@@ -149,6 +149,7 @@ EXPORTS = {'thing': run}                         # python -m tools.studio_export
 | `stats` | `stats.py` | `studio/reference/fights/flute_vs_trombone/stats.json` (seeds 1 to 4,000, pooled figures; order 55) |
 | `scenarios` | `scenarios.py` | `studio/reference/fights/flute_vs_trombone/{scenarios/*.bfrec,no_ko.bfrec,coverage.json}` (reads `stats.json`; order 60) |
 | `stories` | `stories.py` | `studio/reference/fights/flute_vs_trombone/stories.json` (the kit's story and score of every recording there; order 70) |
+| `voices` | `voices.py` | `studio/reference/sound/{pp_noise_start.json,flute_vs_trombone/{note_calls.json,first_notes.npz},voices/{FLUTE,TROMBONE,helpers}.npz,voices/scalars.json}` (its own interpreter) |
 
 ### `roster`: the fighters' numbers
 
@@ -271,3 +272,33 @@ with `t0 = 0.05` for `tape_stop`.
 export runs it before it lists anything in the manifest. `dsp_vectors.py` also holds what the other sound exports
 share: `Cases` (one vector file and its sidecar, written and read back) and `fresh` (run an export in its own
 interpreter).
+
+### `voices`: the Pixel Pitch voices, the `kit.music` helpers and the shared noise stream
+
+For `bf-sound`'s voices and music helpers. **Every Pixel Pitch voice takes its noise from one generator**,
+`drums60_lowpoly._rng = np.random.default_rng(77)`, which every `nz(n)` call advances (the FLUTE's breath is
+`lp(nz(n), 2500)`; the TROMBONE draws none). So a note's samples depend on every noisy note made before it in the
+same interpreter. The export therefore runs in its own interpreter and stores the generator's state (PCG64 `state`
+and `inc`, decimal strings) with everything.
+
+| File | What |
+| --- | --- |
+| `sound/pp_noise_start.json` | The generator after all imports and before the first note. It is the state of a fresh `default_rng(77)`: importing the kit and the two voices' modules draws nothing |
+| `sound/flute_vs_trombone/note_calls.json` | Every first-time `kit.music.note(name, midi, dur, cap, vel)` call while `kit.music.score()` runs, in order (174 of 674 calls; the rest hit the cache): the arguments (`hex` has the exact floats), `noise_before` / `noise_after`, the `pp_bridge.voice` calls inside with the `n` of each `nz(n)`, the instrument's gain, the sample count and a SHA-256 of the samples |
+| `sound/flute_vs_trombone/first_notes.npz` | The first three of those notes as arrays: `out` (the note), `voice` (before `fit` and gain) and, for the first, `gain_voice` |
+| `sound/voices/FLUTE.npz`, `TROMBONE.npz` | `pp_bridge.voice(name, midi, vel, dur)` at 4 pitches x velocities 0.6, 0.9 x durations 0.12, 0.25, 1.0 (float64, 48 kHz), each case with `noise` (state and inc before the call), `noise_after` and `draws`; two cases per file also have `raw44k`, the note before resampling |
+| `sound/voices/helpers.npz` | `inst_gain`, `note`, `fit`, `gliss`, `bend`, `vibrato`, `wah`, `colour`, `clank`, `hiss`, `roar`, `thunder`, `riser`, in the order they ran from the start state with an empty note cache. A shaping helper's `x` is the `out` member of an earlier `note` case. `colour` reads the fight, so its cases carry the two HP values it saw (`hp`) and `gl` = (gain, lead) |
+| `sound/voices/scalars.json` | `h01`, `Thinner`, `h01_37`, `thin_37`, `q16` on fixed inputs |
+
+Two things a port must copy from `note_calls.json`. The order of first-time notes is the order `score()` first asks
+for them, bed and fighters interleaved as it calls them. And the first note of an instrument makes two voice calls:
+its own, then the level-matching note of `kit.music.inst_gain` (`voice(name, (lo + hi) // 2, 0.8, 0.2)`), because
+Python evaluates `fit(voice(...))` before `inst_gain(name)`. The FLUTE's gain therefore depends on where the noise
+stream is when it is measured (`helpers.npz` measures it from the start state and gets a slightly different gain
+than the episode does).
+
+`voices.check()` proves the files from disk: it restores the start state, synthesises all 174 logged notes again in
+order and compares each with its SHA-256 and recorded states (the first three with their arrays, bit for bit),
+shows that the same note made from another state differs, and reproduces every voice vector from the state stored
+with it. The export runs it before it lists anything in the manifest. `voices.py` also holds what `stems` and
+`checks` share: the noise-state helpers and `NoteLog`.

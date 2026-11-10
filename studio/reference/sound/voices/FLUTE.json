@@ -1,0 +1,500 @@
+{
+ "about": "pp_bridge.voice('FLUTE', midi, vel, dur): one note in the FLUTE's Pixel Pitch voice (flute60_lowpoly.synth, scene 'modern'), made at 44,100 Hz and resampled to 48,000 Hz with scipy.signal.resample_poly(x, 160, 147)",
+ "cases": [
+  {
+   "args": {
+    "dur": "0x1.eb851eb851eb8p-4",
+    "midi": 72,
+    "name": "FLUTE",
+    "vel": "0x1.3333333333333p-1"
+   },
+   "arrays": {
+    "out": "c000__out"
+   },
+   "call": "pp_bridge.voice(name='FLUTE', midi=72, vel=0.6, dur=0.12)",
+   "draws": [13230],
+   "id": "c000",
+   "noise": {
+    "inc": "336983293413220778415499640756163231851",
+    "state": "289533129354323354318955456298181112347"
+   },
+   "noise_after": "319497390064081003097580410719444455987",
+   "samples": 52970
+  },
+  {
+   "args": {
+    "dur": "0x1.0000000000000p-2",
+    "midi": 72,
+    "name": "FLUTE",
+    "vel": "0x1.3333333333333p-1"
+   },
+   "arrays": {
+    "out": "c001__out"
+   },
+   "call": "pp_bridge.voice(name='FLUTE', midi=72, vel=0.6, dur=0.25)",
+   "draws": [18963],
+   "id": "c001",
+   "noise": {
+    "inc": "336983293413220778415499640756163231851",
+    "state": "319497390064081003097580410719444455987"
+   },
+   "noise_after": "182599673781353829075362921114750666796",
+   "samples": 59210
+  },
+  {
+   "args": {
+    "dur": "0x1.0000000000000p+0",
+    "midi": 72,
+    "name": "FLUTE",
+    "vel": "0x1.3333333333333p-1"
+   },
+   "arrays": {
+    "out": "c002__out"
+   },
+   "call": "pp_bridge.voice(name='FLUTE', midi=72, vel=0.6, dur=1.0)",
+   "draws": [52038],
+   "id": "c002",
+   "noise": {
+    "inc": "336983293413220778415499640756163231851",
+    "state": "182599673781353829075362921114750666796"
+   },
+   "noise_after": "122714108191241439776723194090694425970",
+   "samples": 95210
+  },
+  {
+   "args": {
+    "dur": "0x1.eb851eb851eb8p-4",
+    "midi": 72,
+    "name": "FLUTE",
+    "vel": "0x1.ccccccccccccdp-1"
+   },
+   "arrays": {
+    "out": "c003__out",
+    "raw44k": "c003__raw44k"
+   },
+   "call": "pp_bridge.voice(name='FLUTE', midi=72, vel=0.9, dur=0.12)",
+   "draws": [13230],
+   "id": "c003",
+   "noise": {
+    "inc": "336983293413220778415499640756163231851",
+    "state": "122714108191241439776723194090694425970"
+   },
+   "noise_after": "189184310672227871344002507745107815982",
+   "samples": 52970
+  },
+  {
+   "args": {
+    "dur": "0x1.0000000000000p-2",
+    "midi": 72,
+    "name": "FLUTE",
+    "vel": "0x1.ccccccccccccdp-1"
+   },
+   "arrays": {
+    "out": "c004__out",
+    "raw44k": "c004__raw44k"
+   },
+   "call": "pp_bridge.voice(name='FLUTE', midi=72, vel=0.9, dur=0.25)",
+   "draws": [18963],
+   "id": "c004",
+   "noise": {
+    "inc": "336983293413220778415499640756163231851",
+    "state": "189184310672227871344002507745107815982"
+   },
+   "noise_after": "7488564317745865220832375608032616318",
+   "samples": 59210
+  },
+  {
+   "args": {
+    "dur": "0x1.0000000000000p+0",
+    "midi": 72,
+    "name": "FLUTE",
+    "vel": "0x1.ccccccccccccdp-1"
+   },
+   "arrays": {
+    "out": "c005__out"
+   },
+   "call": "pp_bridge.voice(name='FLUTE', midi=72, vel=0.9, dur=1.0)",
+   "draws": [52038],
+   "id": "c005",
+   "noise": {
+    "inc": "336983293413220778415499640756163231851",
+    "state": "7488564317745865220832375608032616318"
+   },
+   "noise_after": "139542485721666823496105812788384394684",
+   "samples": 95210
+  },
+  {
+   "args": {
+    "dur": "0x1.eb851eb851eb8p-4",
+    "midi": 76,
+    "name": "FLUTE",
+    "vel": "0x1.3333333333333p-1"
+   },
+   "arrays": {
+    "out": "c006__out"
+   },
+   "call": "pp_bridge.voice(name='FLUTE', midi=76, vel=0.6, dur=0.12)",
+   "draws": [13230],
+   "id": "c006",
+   "noise": {
+    "inc": "336983293413220778415499640756163231851",
+    "state": "139542485721666823496105812788384394684"
+   },
+   "noise_after": "78444640401298469627669516376023667096",
+   "samples": 52970
+  },
+  {
+   "args": {
+    "dur": "0x1.0000000000000p-2",
+    "midi": 76,
+    "name": "FLUTE",
+    "vel": "0x1.3333333333333p-1"
+   },
+   "arrays": {
+    "out": "c007__out"
+   },
+   "call": "pp_bridge.voice(name='FLUTE', midi=76, vel=0.6, dur=0.25)",
+   "draws": [18963],
+   "id": "c007",
+   "noise": {
+    "inc": "336983293413220778415499640756163231851",
+    "state": "78444640401298469627669516376023667096"
+   },
+   "noise_after": "300366258077732085348749845748226815716",
+   "samples": 59210
+  },
+  {
+   "args": {
+    "dur": "0x1.0000000000000p+0",
+    "midi": 76,
+    "name": "FLUTE",
+    "vel": "0x1.3333333333333p-1"
+   },
+   "arrays": {
+    "out": "c008__out"
+   },
+   "call": "pp_bridge.voice(name='FLUTE', midi=76, vel=0.6, dur=1.0)",
+   "draws": [52038],
+   "id": "c008",
+   "noise": {
+    "inc": "336983293413220778415499640756163231851",
+    "state": "300366258077732085348749845748226815716"
+   },
+   "noise_after": "338806835166625647418118234236775096129",
+   "samples": 95210
+  },
+  {
+   "args": {
+    "dur": "0x1.eb851eb851eb8p-4",
+    "midi": 76,
+    "name": "FLUTE",
+    "vel": "0x1.ccccccccccccdp-1"
+   },
+   "arrays": {
+    "out": "c009__out"
+   },
+   "call": "pp_bridge.voice(name='FLUTE', midi=76, vel=0.9, dur=0.12)",
+   "draws": [13230],
+   "id": "c009",
+   "noise": {
+    "inc": "336983293413220778415499640756163231851",
+    "state": "338806835166625647418118234236775096129"
+   },
+   "noise_after": "28531139625333119901973131346920217195",
+   "samples": 52970
+  },
+  {
+   "args": {
+    "dur": "0x1.0000000000000p-2",
+    "midi": 76,
+    "name": "FLUTE",
+    "vel": "0x1.ccccccccccccdp-1"
+   },
+   "arrays": {
+    "out": "c010__out"
+   },
+   "call": "pp_bridge.voice(name='FLUTE', midi=76, vel=0.9, dur=0.25)",
+   "draws": [18963],
+   "id": "c010",
+   "noise": {
+    "inc": "336983293413220778415499640756163231851",
+    "state": "28531139625333119901973131346920217195"
+   },
+   "noise_after": "17345094472246878207730559018946745250",
+   "samples": 59210
+  },
+  {
+   "args": {
+    "dur": "0x1.0000000000000p+0",
+    "midi": 76,
+    "name": "FLUTE",
+    "vel": "0x1.ccccccccccccdp-1"
+   },
+   "arrays": {
+    "out": "c011__out"
+   },
+   "call": "pp_bridge.voice(name='FLUTE', midi=76, vel=0.9, dur=1.0)",
+   "draws": [52038],
+   "id": "c011",
+   "noise": {
+    "inc": "336983293413220778415499640756163231851",
+    "state": "17345094472246878207730559018946745250"
+   },
+   "noise_after": "298435724498975760782730901510838286039",
+   "samples": 95210
+  },
+  {
+   "args": {
+    "dur": "0x1.eb851eb851eb8p-4",
+    "midi": 84,
+    "name": "FLUTE",
+    "vel": "0x1.3333333333333p-1"
+   },
+   "arrays": {
+    "out": "c012__out"
+   },
+   "call": "pp_bridge.voice(name='FLUTE', midi=84, vel=0.6, dur=0.12)",
+   "draws": [13230],
+   "id": "c012",
+   "noise": {
+    "inc": "336983293413220778415499640756163231851",
+    "state": "298435724498975760782730901510838286039"
+   },
+   "noise_after": "75352318897559079727746325018825498596",
+   "samples": 52970
+  },
+  {
+   "args": {
+    "dur": "0x1.0000000000000p-2",
+    "midi": 84,
+    "name": "FLUTE",
+    "vel": "0x1.3333333333333p-1"
+   },
+   "arrays": {
+    "out": "c013__out"
+   },
+   "call": "pp_bridge.voice(name='FLUTE', midi=84, vel=0.6, dur=0.25)",
+   "draws": [18963],
+   "id": "c013",
+   "noise": {
+    "inc": "336983293413220778415499640756163231851",
+    "state": "75352318897559079727746325018825498596"
+   },
+   "noise_after": "82890382837716502541360452320276578045",
+   "samples": 59210
+  },
+  {
+   "args": {
+    "dur": "0x1.0000000000000p+0",
+    "midi": 84,
+    "name": "FLUTE",
+    "vel": "0x1.3333333333333p-1"
+   },
+   "arrays": {
+    "out": "c014__out"
+   },
+   "call": "pp_bridge.voice(name='FLUTE', midi=84, vel=0.6, dur=1.0)",
+   "draws": [52038],
+   "id": "c014",
+   "noise": {
+    "inc": "336983293413220778415499640756163231851",
+    "state": "82890382837716502541360452320276578045"
+   },
+   "noise_after": "252550895390106211596257981494002868060",
+   "samples": 95210
+  },
+  {
+   "args": {
+    "dur": "0x1.eb851eb851eb8p-4",
+    "midi": 84,
+    "name": "FLUTE",
+    "vel": "0x1.ccccccccccccdp-1"
+   },
+   "arrays": {
+    "out": "c015__out"
+   },
+   "call": "pp_bridge.voice(name='FLUTE', midi=84, vel=0.9, dur=0.12)",
+   "draws": [13230],
+   "id": "c015",
+   "noise": {
+    "inc": "336983293413220778415499640756163231851",
+    "state": "252550895390106211596257981494002868060"
+   },
+   "noise_after": "112901243447298916494533780958084591636",
+   "samples": 52970
+  },
+  {
+   "args": {
+    "dur": "0x1.0000000000000p-2",
+    "midi": 84,
+    "name": "FLUTE",
+    "vel": "0x1.ccccccccccccdp-1"
+   },
+   "arrays": {
+    "out": "c016__out"
+   },
+   "call": "pp_bridge.voice(name='FLUTE', midi=84, vel=0.9, dur=0.25)",
+   "draws": [18963],
+   "id": "c016",
+   "noise": {
+    "inc": "336983293413220778415499640756163231851",
+    "state": "112901243447298916494533780958084591636"
+   },
+   "noise_after": "194143104033975575899410227097786795821",
+   "samples": 59210
+  },
+  {
+   "args": {
+    "dur": "0x1.0000000000000p+0",
+    "midi": 84,
+    "name": "FLUTE",
+    "vel": "0x1.ccccccccccccdp-1"
+   },
+   "arrays": {
+    "out": "c017__out"
+   },
+   "call": "pp_bridge.voice(name='FLUTE', midi=84, vel=0.9, dur=1.0)",
+   "draws": [52038],
+   "id": "c017",
+   "noise": {
+    "inc": "336983293413220778415499640756163231851",
+    "state": "194143104033975575899410227097786795821"
+   },
+   "noise_after": "289400508501130320874442983991324251949",
+   "samples": 95210
+  },
+  {
+   "args": {
+    "dur": "0x1.eb851eb851eb8p-4",
+    "midi": 93,
+    "name": "FLUTE",
+    "vel": "0x1.3333333333333p-1"
+   },
+   "arrays": {
+    "out": "c018__out"
+   },
+   "call": "pp_bridge.voice(name='FLUTE', midi=93, vel=0.6, dur=0.12)",
+   "draws": [13230],
+   "id": "c018",
+   "noise": {
+    "inc": "336983293413220778415499640756163231851",
+    "state": "289400508501130320874442983991324251949"
+   },
+   "noise_after": "281554082776754054567237310114307091361",
+   "samples": 52970
+  },
+  {
+   "args": {
+    "dur": "0x1.0000000000000p-2",
+    "midi": 93,
+    "name": "FLUTE",
+    "vel": "0x1.3333333333333p-1"
+   },
+   "arrays": {
+    "out": "c019__out"
+   },
+   "call": "pp_bridge.voice(name='FLUTE', midi=93, vel=0.6, dur=0.25)",
+   "draws": [18963],
+   "id": "c019",
+   "noise": {
+    "inc": "336983293413220778415499640756163231851",
+    "state": "281554082776754054567237310114307091361"
+   },
+   "noise_after": "123094507431732301689017462222630503265",
+   "samples": 59210
+  },
+  {
+   "args": {
+    "dur": "0x1.0000000000000p+0",
+    "midi": 93,
+    "name": "FLUTE",
+    "vel": "0x1.3333333333333p-1"
+   },
+   "arrays": {
+    "out": "c020__out"
+   },
+   "call": "pp_bridge.voice(name='FLUTE', midi=93, vel=0.6, dur=1.0)",
+   "draws": [52038],
+   "id": "c020",
+   "noise": {
+    "inc": "336983293413220778415499640756163231851",
+    "state": "123094507431732301689017462222630503265"
+   },
+   "noise_after": "155167891267350319483466337535243798867",
+   "samples": 95210
+  },
+  {
+   "args": {
+    "dur": "0x1.eb851eb851eb8p-4",
+    "midi": 93,
+    "name": "FLUTE",
+    "vel": "0x1.ccccccccccccdp-1"
+   },
+   "arrays": {
+    "out": "c021__out"
+   },
+   "call": "pp_bridge.voice(name='FLUTE', midi=93, vel=0.9, dur=0.12)",
+   "draws": [13230],
+   "id": "c021",
+   "noise": {
+    "inc": "336983293413220778415499640756163231851",
+    "state": "155167891267350319483466337535243798867"
+   },
+   "noise_after": "44367574915996317753036938474144518562",
+   "samples": 52970
+  },
+  {
+   "args": {
+    "dur": "0x1.0000000000000p-2",
+    "midi": 93,
+    "name": "FLUTE",
+    "vel": "0x1.ccccccccccccdp-1"
+   },
+   "arrays": {
+    "out": "c022__out"
+   },
+   "call": "pp_bridge.voice(name='FLUTE', midi=93, vel=0.9, dur=0.25)",
+   "draws": [18963],
+   "id": "c022",
+   "noise": {
+    "inc": "336983293413220778415499640756163231851",
+    "state": "44367574915996317753036938474144518562"
+   },
+   "noise_after": "307095189071523933179859224520859306531",
+   "samples": 59210
+  },
+  {
+   "args": {
+    "dur": "0x1.0000000000000p+0",
+    "midi": 93,
+    "name": "FLUTE",
+    "vel": "0x1.ccccccccccccdp-1"
+   },
+   "arrays": {
+    "out": "c023__out"
+   },
+   "call": "pp_bridge.voice(name='FLUTE', midi=93, vel=0.9, dur=1.0)",
+   "draws": [52038],
+   "id": "c023",
+   "noise": {
+    "inc": "336983293413220778415499640756163231851",
+    "state": "307095189071523933179859224520859306531"
+   },
+   "noise_after": "122050132539540502606354809984199368310",
+   "samples": 95210
+  }
+ ],
+ "notes": {
+  "draws": "the n of each nz(n) the call made (none for a voice without noise)",
+  "noise": "the shared generator's `state` and `inc` (decimal strings) just before the call: restore them, call, compare. noise_after is the `state` the call left (the same when the voice has no noise)",
+  "out": "float64, 48,000 Hz",
+  "raw44k": "(two cases) the note at 44,100 Hz as the synth made it, before resampling"
+ },
+ "register": [72, 93],
+ "sample_rate": 48000,
+ "scene": "modern",
+ "synth": "flute60_lowpoly.synth",
+ "tool": "voices",
+ "voice": "FLUTE",
+ "voice_sample_rate": 44100
+}

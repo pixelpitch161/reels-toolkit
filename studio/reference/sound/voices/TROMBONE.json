@@ -1,0 +1,500 @@
+{
+ "about": "pp_bridge.voice('TROMBONE', midi, vel, dur): one note in the TROMBONE's Pixel Pitch voice (trombone60_lowpoly.synth, scene 'modern'), made at 44,100 Hz and resampled to 48,000 Hz with scipy.signal.resample_poly(x, 160, 147)",
+ "cases": [
+  {
+   "args": {
+    "dur": "0x1.eb851eb851eb8p-4",
+    "midi": 40,
+    "name": "TROMBONE",
+    "vel": "0x1.3333333333333p-1"
+   },
+   "arrays": {
+    "out": "c000__out"
+   },
+   "call": "pp_bridge.voice(name='TROMBONE', midi=40, vel=0.6, dur=0.12)",
+   "draws": [],
+   "id": "c000",
+   "noise": {
+    "inc": "336983293413220778415499640756163231851",
+    "state": "289533129354323354318955456298181112347"
+   },
+   "noise_after": "289533129354323354318955456298181112347",
+   "samples": 12480
+  },
+  {
+   "args": {
+    "dur": "0x1.0000000000000p-2",
+    "midi": 40,
+    "name": "TROMBONE",
+    "vel": "0x1.3333333333333p-1"
+   },
+   "arrays": {
+    "out": "c001__out"
+   },
+   "call": "pp_bridge.voice(name='TROMBONE', midi=40, vel=0.6, dur=0.25)",
+   "draws": [],
+   "id": "c001",
+   "noise": {
+    "inc": "336983293413220778415499640756163231851",
+    "state": "289533129354323354318955456298181112347"
+   },
+   "noise_after": "289533129354323354318955456298181112347",
+   "samples": 18720
+  },
+  {
+   "args": {
+    "dur": "0x1.0000000000000p+0",
+    "midi": 40,
+    "name": "TROMBONE",
+    "vel": "0x1.3333333333333p-1"
+   },
+   "arrays": {
+    "out": "c002__out"
+   },
+   "call": "pp_bridge.voice(name='TROMBONE', midi=40, vel=0.6, dur=1.0)",
+   "draws": [],
+   "id": "c002",
+   "noise": {
+    "inc": "336983293413220778415499640756163231851",
+    "state": "289533129354323354318955456298181112347"
+   },
+   "noise_after": "289533129354323354318955456298181112347",
+   "samples": 54720
+  },
+  {
+   "args": {
+    "dur": "0x1.eb851eb851eb8p-4",
+    "midi": 40,
+    "name": "TROMBONE",
+    "vel": "0x1.ccccccccccccdp-1"
+   },
+   "arrays": {
+    "out": "c003__out",
+    "raw44k": "c003__raw44k"
+   },
+   "call": "pp_bridge.voice(name='TROMBONE', midi=40, vel=0.9, dur=0.12)",
+   "draws": [],
+   "id": "c003",
+   "noise": {
+    "inc": "336983293413220778415499640756163231851",
+    "state": "289533129354323354318955456298181112347"
+   },
+   "noise_after": "289533129354323354318955456298181112347",
+   "samples": 12480
+  },
+  {
+   "args": {
+    "dur": "0x1.0000000000000p-2",
+    "midi": 40,
+    "name": "TROMBONE",
+    "vel": "0x1.ccccccccccccdp-1"
+   },
+   "arrays": {
+    "out": "c004__out",
+    "raw44k": "c004__raw44k"
+   },
+   "call": "pp_bridge.voice(name='TROMBONE', midi=40, vel=0.9, dur=0.25)",
+   "draws": [],
+   "id": "c004",
+   "noise": {
+    "inc": "336983293413220778415499640756163231851",
+    "state": "289533129354323354318955456298181112347"
+   },
+   "noise_after": "289533129354323354318955456298181112347",
+   "samples": 18720
+  },
+  {
+   "args": {
+    "dur": "0x1.0000000000000p+0",
+    "midi": 40,
+    "name": "TROMBONE",
+    "vel": "0x1.ccccccccccccdp-1"
+   },
+   "arrays": {
+    "out": "c005__out"
+   },
+   "call": "pp_bridge.voice(name='TROMBONE', midi=40, vel=0.9, dur=1.0)",
+   "draws": [],
+   "id": "c005",
+   "noise": {
+    "inc": "336983293413220778415499640756163231851",
+    "state": "289533129354323354318955456298181112347"
+   },
+   "noise_after": "289533129354323354318955456298181112347",
+   "samples": 54720
+  },
+  {
+   "args": {
+    "dur": "0x1.eb851eb851eb8p-4",
+    "midi": 47,
+    "name": "TROMBONE",
+    "vel": "0x1.3333333333333p-1"
+   },
+   "arrays": {
+    "out": "c006__out"
+   },
+   "call": "pp_bridge.voice(name='TROMBONE', midi=47, vel=0.6, dur=0.12)",
+   "draws": [],
+   "id": "c006",
+   "noise": {
+    "inc": "336983293413220778415499640756163231851",
+    "state": "289533129354323354318955456298181112347"
+   },
+   "noise_after": "289533129354323354318955456298181112347",
+   "samples": 12480
+  },
+  {
+   "args": {
+    "dur": "0x1.0000000000000p-2",
+    "midi": 47,
+    "name": "TROMBONE",
+    "vel": "0x1.3333333333333p-1"
+   },
+   "arrays": {
+    "out": "c007__out"
+   },
+   "call": "pp_bridge.voice(name='TROMBONE', midi=47, vel=0.6, dur=0.25)",
+   "draws": [],
+   "id": "c007",
+   "noise": {
+    "inc": "336983293413220778415499640756163231851",
+    "state": "289533129354323354318955456298181112347"
+   },
+   "noise_after": "289533129354323354318955456298181112347",
+   "samples": 18720
+  },
+  {
+   "args": {
+    "dur": "0x1.0000000000000p+0",
+    "midi": 47,
+    "name": "TROMBONE",
+    "vel": "0x1.3333333333333p-1"
+   },
+   "arrays": {
+    "out": "c008__out"
+   },
+   "call": "pp_bridge.voice(name='TROMBONE', midi=47, vel=0.6, dur=1.0)",
+   "draws": [],
+   "id": "c008",
+   "noise": {
+    "inc": "336983293413220778415499640756163231851",
+    "state": "289533129354323354318955456298181112347"
+   },
+   "noise_after": "289533129354323354318955456298181112347",
+   "samples": 54720
+  },
+  {
+   "args": {
+    "dur": "0x1.eb851eb851eb8p-4",
+    "midi": 47,
+    "name": "TROMBONE",
+    "vel": "0x1.ccccccccccccdp-1"
+   },
+   "arrays": {
+    "out": "c009__out"
+   },
+   "call": "pp_bridge.voice(name='TROMBONE', midi=47, vel=0.9, dur=0.12)",
+   "draws": [],
+   "id": "c009",
+   "noise": {
+    "inc": "336983293413220778415499640756163231851",
+    "state": "289533129354323354318955456298181112347"
+   },
+   "noise_after": "289533129354323354318955456298181112347",
+   "samples": 12480
+  },
+  {
+   "args": {
+    "dur": "0x1.0000000000000p-2",
+    "midi": 47,
+    "name": "TROMBONE",
+    "vel": "0x1.ccccccccccccdp-1"
+   },
+   "arrays": {
+    "out": "c010__out"
+   },
+   "call": "pp_bridge.voice(name='TROMBONE', midi=47, vel=0.9, dur=0.25)",
+   "draws": [],
+   "id": "c010",
+   "noise": {
+    "inc": "336983293413220778415499640756163231851",
+    "state": "289533129354323354318955456298181112347"
+   },
+   "noise_after": "289533129354323354318955456298181112347",
+   "samples": 18720
+  },
+  {
+   "args": {
+    "dur": "0x1.0000000000000p+0",
+    "midi": 47,
+    "name": "TROMBONE",
+    "vel": "0x1.ccccccccccccdp-1"
+   },
+   "arrays": {
+    "out": "c011__out"
+   },
+   "call": "pp_bridge.voice(name='TROMBONE', midi=47, vel=0.9, dur=1.0)",
+   "draws": [],
+   "id": "c011",
+   "noise": {
+    "inc": "336983293413220778415499640756163231851",
+    "state": "289533129354323354318955456298181112347"
+   },
+   "noise_after": "289533129354323354318955456298181112347",
+   "samples": 54720
+  },
+  {
+   "args": {
+    "dur": "0x1.eb851eb851eb8p-4",
+    "midi": 52,
+    "name": "TROMBONE",
+    "vel": "0x1.3333333333333p-1"
+   },
+   "arrays": {
+    "out": "c012__out"
+   },
+   "call": "pp_bridge.voice(name='TROMBONE', midi=52, vel=0.6, dur=0.12)",
+   "draws": [],
+   "id": "c012",
+   "noise": {
+    "inc": "336983293413220778415499640756163231851",
+    "state": "289533129354323354318955456298181112347"
+   },
+   "noise_after": "289533129354323354318955456298181112347",
+   "samples": 12480
+  },
+  {
+   "args": {
+    "dur": "0x1.0000000000000p-2",
+    "midi": 52,
+    "name": "TROMBONE",
+    "vel": "0x1.3333333333333p-1"
+   },
+   "arrays": {
+    "out": "c013__out"
+   },
+   "call": "pp_bridge.voice(name='TROMBONE', midi=52, vel=0.6, dur=0.25)",
+   "draws": [],
+   "id": "c013",
+   "noise": {
+    "inc": "336983293413220778415499640756163231851",
+    "state": "289533129354323354318955456298181112347"
+   },
+   "noise_after": "289533129354323354318955456298181112347",
+   "samples": 18720
+  },
+  {
+   "args": {
+    "dur": "0x1.0000000000000p+0",
+    "midi": 52,
+    "name": "TROMBONE",
+    "vel": "0x1.3333333333333p-1"
+   },
+   "arrays": {
+    "out": "c014__out"
+   },
+   "call": "pp_bridge.voice(name='TROMBONE', midi=52, vel=0.6, dur=1.0)",
+   "draws": [],
+   "id": "c014",
+   "noise": {
+    "inc": "336983293413220778415499640756163231851",
+    "state": "289533129354323354318955456298181112347"
+   },
+   "noise_after": "289533129354323354318955456298181112347",
+   "samples": 54720
+  },
+  {
+   "args": {
+    "dur": "0x1.eb851eb851eb8p-4",
+    "midi": 52,
+    "name": "TROMBONE",
+    "vel": "0x1.ccccccccccccdp-1"
+   },
+   "arrays": {
+    "out": "c015__out"
+   },
+   "call": "pp_bridge.voice(name='TROMBONE', midi=52, vel=0.9, dur=0.12)",
+   "draws": [],
+   "id": "c015",
+   "noise": {
+    "inc": "336983293413220778415499640756163231851",
+    "state": "289533129354323354318955456298181112347"
+   },
+   "noise_after": "289533129354323354318955456298181112347",
+   "samples": 12480
+  },
+  {
+   "args": {
+    "dur": "0x1.0000000000000p-2",
+    "midi": 52,
+    "name": "TROMBONE",
+    "vel": "0x1.ccccccccccccdp-1"
+   },
+   "arrays": {
+    "out": "c016__out"
+   },
+   "call": "pp_bridge.voice(name='TROMBONE', midi=52, vel=0.9, dur=0.25)",
+   "draws": [],
+   "id": "c016",
+   "noise": {
+    "inc": "336983293413220778415499640756163231851",
+    "state": "289533129354323354318955456298181112347"
+   },
+   "noise_after": "289533129354323354318955456298181112347",
+   "samples": 18720
+  },
+  {
+   "args": {
+    "dur": "0x1.0000000000000p+0",
+    "midi": 52,
+    "name": "TROMBONE",
+    "vel": "0x1.ccccccccccccdp-1"
+   },
+   "arrays": {
+    "out": "c017__out"
+   },
+   "call": "pp_bridge.voice(name='TROMBONE', midi=52, vel=0.9, dur=1.0)",
+   "draws": [],
+   "id": "c017",
+   "noise": {
+    "inc": "336983293413220778415499640756163231851",
+    "state": "289533129354323354318955456298181112347"
+   },
+   "noise_after": "289533129354323354318955456298181112347",
+   "samples": 54720
+  },
+  {
+   "args": {
+    "dur": "0x1.eb851eb851eb8p-4",
+    "midi": 64,
+    "name": "TROMBONE",
+    "vel": "0x1.3333333333333p-1"
+   },
+   "arrays": {
+    "out": "c018__out"
+   },
+   "call": "pp_bridge.voice(name='TROMBONE', midi=64, vel=0.6, dur=0.12)",
+   "draws": [],
+   "id": "c018",
+   "noise": {
+    "inc": "336983293413220778415499640756163231851",
+    "state": "289533129354323354318955456298181112347"
+   },
+   "noise_after": "289533129354323354318955456298181112347",
+   "samples": 12480
+  },
+  {
+   "args": {
+    "dur": "0x1.0000000000000p-2",
+    "midi": 64,
+    "name": "TROMBONE",
+    "vel": "0x1.3333333333333p-1"
+   },
+   "arrays": {
+    "out": "c019__out"
+   },
+   "call": "pp_bridge.voice(name='TROMBONE', midi=64, vel=0.6, dur=0.25)",
+   "draws": [],
+   "id": "c019",
+   "noise": {
+    "inc": "336983293413220778415499640756163231851",
+    "state": "289533129354323354318955456298181112347"
+   },
+   "noise_after": "289533129354323354318955456298181112347",
+   "samples": 18720
+  },
+  {
+   "args": {
+    "dur": "0x1.0000000000000p+0",
+    "midi": 64,
+    "name": "TROMBONE",
+    "vel": "0x1.3333333333333p-1"
+   },
+   "arrays": {
+    "out": "c020__out"
+   },
+   "call": "pp_bridge.voice(name='TROMBONE', midi=64, vel=0.6, dur=1.0)",
+   "draws": [],
+   "id": "c020",
+   "noise": {
+    "inc": "336983293413220778415499640756163231851",
+    "state": "289533129354323354318955456298181112347"
+   },
+   "noise_after": "289533129354323354318955456298181112347",
+   "samples": 54720
+  },
+  {
+   "args": {
+    "dur": "0x1.eb851eb851eb8p-4",
+    "midi": 64,
+    "name": "TROMBONE",
+    "vel": "0x1.ccccccccccccdp-1"
+   },
+   "arrays": {
+    "out": "c021__out"
+   },
+   "call": "pp_bridge.voice(name='TROMBONE', midi=64, vel=0.9, dur=0.12)",
+   "draws": [],
+   "id": "c021",
+   "noise": {
+    "inc": "336983293413220778415499640756163231851",
+    "state": "289533129354323354318955456298181112347"
+   },
+   "noise_after": "289533129354323354318955456298181112347",
+   "samples": 12480
+  },
+  {
+   "args": {
+    "dur": "0x1.0000000000000p-2",
+    "midi": 64,
+    "name": "TROMBONE",
+    "vel": "0x1.ccccccccccccdp-1"
+   },
+   "arrays": {
+    "out": "c022__out"
+   },
+   "call": "pp_bridge.voice(name='TROMBONE', midi=64, vel=0.9, dur=0.25)",
+   "draws": [],
+   "id": "c022",
+   "noise": {
+    "inc": "336983293413220778415499640756163231851",
+    "state": "289533129354323354318955456298181112347"
+   },
+   "noise_after": "289533129354323354318955456298181112347",
+   "samples": 18720
+  },
+  {
+   "args": {
+    "dur": "0x1.0000000000000p+0",
+    "midi": 64,
+    "name": "TROMBONE",
+    "vel": "0x1.ccccccccccccdp-1"
+   },
+   "arrays": {
+    "out": "c023__out"
+   },
+   "call": "pp_bridge.voice(name='TROMBONE', midi=64, vel=0.9, dur=1.0)",
+   "draws": [],
+   "id": "c023",
+   "noise": {
+    "inc": "336983293413220778415499640756163231851",
+    "state": "289533129354323354318955456298181112347"
+   },
+   "noise_after": "289533129354323354318955456298181112347",
+   "samples": 54720
+  }
+ ],
+ "notes": {
+  "draws": "the n of each nz(n) the call made (none for a voice without noise)",
+  "noise": "the shared generator's `state` and `inc` (decimal strings) just before the call: restore them, call, compare. noise_after is the `state` the call left (the same when the voice has no noise)",
+  "out": "float64, 48,000 Hz",
+  "raw44k": "(two cases) the note at 44,100 Hz as the synth made it, before resampling"
+ },
+ "register": [45, 67],
+ "sample_rate": 48000,
+ "scene": "modern",
+ "synth": "trombone60_lowpoly.synth",
+ "tool": "voices",
+ "voice": "TROMBONE",
+ "voice_sample_rate": 44100
+}
