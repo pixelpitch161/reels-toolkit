@@ -142,11 +142,13 @@ EXPORTS = {'thing': run}                         # python -m tools.studio_export
 | --- | --- | --- |
 | `dsp` | `dsp_vectors.py` | `studio/reference/dsp/{butter,filters,resample,fftconvolve,numpy,ufuncs,generators}.npz`, each with its sidecar `.json` (order 40) |
 | `fights` | `fights.py` | `studio/reference/fights/flute_vs_trombone/{ep392,seed1,seed2,seed3,seed500}.bfrec` |
+| `models` | `models.py` | `studio/crates/bf-content/data/models/{FLUTE,TROMBONE}.json` |
 | `pillow` | `pillow_vectors.py` | `studio/reference/pillow/calls.json` and 16 vector files, each `.npz` with its sidecar `.json` (about 3 minutes: it draws all 1,830 frames in 8 worker processes) |
 | `py` | `py_vectors.py` | `studio/reference/py/vectors.json` |
 | `pyhash` | `pyhash_vectors.py` | `studio/reference/pyhash/vectors.json` |
 | `rng` | `rng_vectors.py` | `studio/reference/rng/vectors.json` |
 | `roster` | `roster.py` | `studio/crates/bf-content/data/roster.json` |
+| `sprites` | `sprites.py` | `studio/reference/sprites/{FLUTE,TROMBONE}.npz`, each with its sidecar `.json` (about 2 minutes) |
 | `stats` | `stats.py` | `studio/reference/fights/flute_vs_trombone/stats.json` (seeds 1 to 4,000, pooled figures; order 55) |
 | `scenarios` | `scenarios.py` | `studio/reference/fights/flute_vs_trombone/{scenarios/*.bfrec,no_ko.bfrec,coverage.json}` (reads `stats.json`; order 60) |
 | `stories` | `stories.py` | `studio/reference/fights/flute_vs_trombone/stories.json` (the kit's story and score of every recording there; order 70) |
@@ -293,6 +295,48 @@ What the cases pin down, from Pillow's source (`_imaging.c`, `Draw.c`, `Resample
   a point given twice, the two sides of a flattened outline) blend again where they overlap.
 - `resize` works on premultiplied colour for `RGBA` (every filter but `NEAREST`).
 - `GaussianBlur` is three passes of an extended box blur, and reads its radius as a C float.
+
+### `models`: the instrument meshes
+
+`studio/crates/bf-content/data/models/{FLUTE,TROMBONE}.json` are data the Studio ships with, not test vectors:
+`pp_bridge.model_faces(name)`, the Pixel Pitch model centred on its bounding box and scaled to fit a unit sphere
+(112 faces for FLUTE, 573 for TROMBONE). `{"about", "format": 1, "name", "source", "fields", "note", "faces"}`; a
+face is `{"P": [[x, y, z], ...], "n": [x, y, z], "rgb": [r, g, b], "two", "emit", "gid", "spec"}`: 4 to 12
+vertices (y up), its unit normal, its colour (floats 0..255, as the bridge gives them), whether it is drawn from
+both sides, whether its colour is used unshaded, the group id (the sprite renderer treats 1 as ground and
+everything else as the instrument) and the specular strength. Floats are written by their shortest round-trip repr
+and read back to the same bits. The faces stay in the order the model was built in: the sprite renderer draws them
+in that order and a later face wins only where it is strictly nearer.
+
+The export reads each file back, compares it with the bridge's output value for value, and draws three sprites
+from the file alone that must equal `sprites.render_sprite`'s.
+
+### `sprites`: the instrument inside each ball
+
+For `bf-picture`'s sprite renderer and the looks' own sprites. One case per sprite, RGBA `(size, size, 4)`, each
+the call on an empty sprite cache. `args.group` says which call:
+
+| Group | Call | Cases |
+| --- | --- | --- |
+| `picture` | `kit.picture.sprite(k, radius, yaw, roll)` | radius 12, 16, 22, 30; yaw 0, 6, ... 354; roll 0 and the roll of the fighter's view (32 for FLUTE, 30 for TROMBONE): 480 per fighter |
+| `episode` | the same call | every (radius, yaw, roll) the 1,830 frames ask for that `picture` lacks: 23 for FLUTE, 17 for TROMBONE. The frames use radii 13 to 19 only |
+| `title` | `title.big_sprite(k)` | the VS card's close-up (radius 44) |
+| `model` | `sprites.render_sprite(name, radius, yaw, roll)` | FLUTE only (480): its look draws its own pixel-art flute, so `picture` never shows its mesh; these give the sprite renderer something to test that mesh against |
+
+For TROMBONE `kit.picture.sprite` is the model renderer (`sprites.render_sprite` with `piano_lowpoly.render_geo`,
+`tri` and `outline`), size `2 * radius + 7`. For FLUTE it is `flute_sprite` of `kit/fighters/flute.py`, size
+`2 * radius + 5`. The sidecar's top level has `drawn_by` (`look` or `model`), `view`, `sprite_k`, `rolls` and
+`episode_keys`, the (radius, yaw key, roll) triples the frames ask for.
+
+A trap the port must copy: `kit.picture.sprite` rounds the yaw to a multiple of 6 (`yk`) and caches under
+`<pp>_<r>_<yk % 360>_<roll>`, but calls the look's sprite with the unwrapped `float(yk)`. FLUTE's yaw swings
+between -18 and 18, and `flute_sprite` at -6 is not the same picture as at 354 (its length goes with
+`cos(1.6 * yaw)`), so the `episode` cases for FLUTE have negative yaws and the `picture` cases at 342 to 354 are
+sprites the frames never show.
+
+The export works out what the frames ask for from the kit's state functions (`sprites.asked`) and proves it
+against real renders of 72 frames with `kit.picture.sprite` wrapped; it clears the kit's sprite cache when it is
+done, so a later export in the same process cannot meet a sprite of another yaw.
 
 ### `dsp`: signal-processing vectors
 
