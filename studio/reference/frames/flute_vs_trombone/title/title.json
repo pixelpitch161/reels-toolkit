@@ -1,0 +1,287 @@
+{
+ "about": "the VS title card alone: title.draw(noise, t) over one fixed seeded-noise image, at the times that show each word slamming in, the hold, and the doors opening and closing",
+ "cases": [
+  {
+   "args": {
+    "frame": 0,
+    "t": "0x0.0p+0"
+   },
+   "call": "title.draw(noise, t)",
+   "expect": {
+    "door_offset": "0x0.0p+0",
+    "shake": ["0x0.0p+0", "0x0.0p+0"]
+   },
+   "file": "f0000.png",
+   "id": "c000",
+   "reason": "FLUTE slams in on frame 0: 0 frames after",
+   "rule": "slam_0_0"
+  },
+  {
+   "args": {
+    "frame": 2,
+    "t": "0x1.1111111111111p-4"
+   },
+   "call": "title.draw(noise, t)",
+   "expect": {
+    "door_offset": "0x0.0p+0",
+    "shake": ["-0x1.b77c475623502p+1", "0x1.b7b7a6bbbc314p+0"]
+   },
+   "file": "f0002.png",
+   "id": "c001",
+   "reason": "FLUTE slams in on frame 0: 2 frames after",
+   "rule": "slam_0_2"
+  },
+  {
+   "args": {
+    "frame": 5,
+    "t": "0x1.5555555555555p-3"
+   },
+   "call": "title.draw(noise, t)",
+   "expect": {
+    "door_offset": "0x0.0p+0",
+    "shake": ["0x1.d95a0f3ee47f5p-2", "0x1.072e681f7f8b9p-3"]
+   },
+   "file": "f0005.png",
+   "id": "c002",
+   "reason": "FLUTE slams in on frame 0: 5 frames after",
+   "rule": "slam_0_5"
+  },
+  {
+   "args": {
+    "frame": 14,
+    "t": "0x1.ddddddddddddep-2"
+   },
+   "call": "title.draw(noise, t)",
+   "expect": {
+    "door_offset": "0x0.0p+0",
+    "shake": ["0x0.0p+0", "0x0.0p+0"]
+   },
+   "file": "f0014.png",
+   "id": "c003",
+   "reason": "VS slams in on frame 14: 0 frames after",
+   "rule": "slam_1_0"
+  },
+  {
+   "args": {
+    "frame": 16,
+    "t": "0x1.1111111111111p-1"
+   },
+   "call": "title.draw(noise, t)",
+   "expect": {
+    "door_offset": "0x0.0p+0",
+    "shake": ["0x1.cea87d410b174p+1", "-0x1.20c029050b70fp+1"]
+   },
+   "file": "f0016.png",
+   "id": "c004",
+   "reason": "VS slams in on frame 14: 2 frames after",
+   "rule": "slam_1_2"
+  },
+  {
+   "args": {
+    "frame": 19,
+    "t": "0x1.4444444444444p-1"
+   },
+   "call": "title.draw(noise, t)",
+   "expect": {
+    "door_offset": "0x0.0p+0",
+    "shake": ["0x1.0e4927a25f8c5p-3", "-0x1.2a21742793efdp-2"]
+   },
+   "file": "f0019.png",
+   "id": "c005",
+   "reason": "VS slams in on frame 14: 5 frames after",
+   "rule": "slam_1_5"
+  },
+  {
+   "args": {
+    "frame": 27,
+    "t": "0x1.ccccccccccccdp-1"
+   },
+   "call": "title.draw(noise, t)",
+   "expect": {
+    "door_offset": "0x0.0p+0",
+    "shake": ["0x0.0p+0", "0x0.0p+0"]
+   },
+   "file": "f0027.png",
+   "id": "c006",
+   "reason": "TROMBONE slams in on frame 27: 0 frames after",
+   "rule": "slam_2_0"
+  },
+  {
+   "args": {
+    "frame": 29,
+    "t": "0x1.eeeeeeeeeeeefp-1"
+   },
+   "call": "title.draw(noise, t)",
+   "expect": {
+    "door_offset": "0x0.0p+0",
+    "shake": ["-0x1.7112c239584b1p+1", "0x1.227f6f40d6988p+1"]
+   },
+   "file": "f0029.png",
+   "id": "c007",
+   "reason": "TROMBONE slams in on frame 27: 2 frames after",
+   "rule": "slam_2_2"
+  },
+  {
+   "args": {
+    "frame": 32,
+    "t": "0x1.1111111111111p+0"
+   },
+   "call": "title.draw(noise, t)",
+   "expect": {
+    "door_offset": "0x0.0p+0",
+    "shake": ["0x1.a4d6aa34564cbp-1", "0x1.fad3627487bdap-2"]
+   },
+   "file": "f0032.png",
+   "id": "c008",
+   "reason": "TROMBONE slams in on frame 27: 5 frames after",
+   "rule": "slam_2_5"
+  },
+  {
+   "args": {
+    "frame": 41,
+    "t": "0x1.5dddddddddddep+0"
+   },
+   "call": "title.draw(noise, t)",
+   "expect": {
+    "door_offset": "0x0.0p+0",
+    "shake": ["0x0.0p+0", "0x0.0p+0"]
+   },
+   "file": "f0041.png",
+   "id": "c009",
+   "reason": "the hold: every word landed, no shake, the doors shut",
+   "rule": "hold"
+  },
+  {
+   "args": {
+    "frame": 46,
+    "t": "0x1.8888888888889p+0"
+   },
+   "call": "title.draw(noise, t)",
+   "expect": {
+    "door_offset": "0x1.76976fde99d2bp+3",
+    "shake": ["0x0.0p+0", "0x0.0p+0"]
+   },
+   "file": "f0046.png",
+   "id": "c010",
+   "reason": "the doors opening: frame 46 of 44..52",
+   "rule": "opening_0"
+  },
+  {
+   "args": {
+    "frame": 48,
+    "t": "0x1.999999999999ap+0"
+   },
+   "call": "title.draw(noise, t)",
+   "expect": {
+    "door_offset": "0x1.fe5a55251ed09p+5",
+    "shake": ["0x0.0p+0", "0x0.0p+0"]
+   },
+   "file": "f0048.png",
+   "id": "c011",
+   "reason": "the doors opening: frame 48 of 44..52",
+   "rule": "opening_1"
+  },
+  {
+   "args": {
+    "frame": 50,
+    "t": "0x1.aaaaaaaaaaaabp+0"
+   },
+   "call": "title.draw(noise, t)",
+   "expect": {
+    "door_offset": "0x1.76767169143c6p+7",
+    "shake": ["0x0.0p+0", "0x0.0p+0"]
+   },
+   "file": "f0050.png",
+   "id": "c012",
+   "reason": "the doors opening: frame 50 of 44..52",
+   "rule": "opening_2"
+  },
+  {
+   "args": {
+    "frame": 52,
+    "t": "0x1.bbbbbbbbbbbbcp+0"
+   },
+   "call": "title.draw(noise, t)",
+   "expect": {
+    "door_offset": "0x1.9cd28606c5f29p+8",
+    "shake": ["0x0.0p+0", "0x0.0p+0"]
+   },
+   "file": "f0052.png",
+   "id": "c013",
+   "reason": "the doors opening: frame 52 of 44..52",
+   "rule": "opening_3"
+  },
+  {
+   "args": {
+    "frame": 1824,
+    "t": "0x1.e666666666666p+5"
+   },
+   "call": "title.draw(noise, t)",
+   "expect": {
+    "door_offset": "0x1.11700000001ecp+7",
+    "shake": ["0x0.0p+0", "0x0.0p+0"]
+   },
+   "file": "f1824.png",
+   "id": "c014",
+   "reason": "the doors closing: frame 1824 of 1822..1829",
+   "rule": "closing_0"
+  },
+  {
+   "args": {
+    "frame": 1826,
+    "t": "0x1.e6eeeeeeeeeefp+5"
+   },
+   "call": "title.draw(noise, t)",
+   "expect": {
+    "door_offset": "0x1.d880000000253p+4",
+    "shake": ["0x0.0p+0", "0x0.0p+0"]
+   },
+   "file": "f1826.png",
+   "id": "c015",
+   "reason": "the doors closing: frame 1826 of 1822..1829",
+   "rule": "closing_1"
+  },
+  {
+   "args": {
+    "frame": 1827,
+    "t": "0x1.e733333333333p+5"
+   },
+   "call": "title.draw(noise, t)",
+   "expect": {
+    "door_offset": "0x1.18000000003b1p+3",
+    "shake": ["0x0.0p+0", "0x0.0p+0"]
+   },
+   "file": "f1827.png",
+   "id": "c016",
+   "reason": "the doors closing: frame 1827 of 1822..1829",
+   "rule": "closing_2"
+  },
+  {
+   "args": {
+    "frame": 1829,
+    "t": "0x1.e7bbbbbbbbbbcp+5"
+   },
+   "call": "title.draw(noise, t)",
+   "expect": {
+    "door_offset": "0x0.0p+0",
+    "shake": ["0x0.0p+0", "0x0.0p+0"]
+   },
+   "file": "f1829.png",
+   "id": "c017",
+   "reason": "the doors closing: frame 1829 of 1822..1829",
+   "rule": "closing_3"
+  }
+ ],
+ "episode": "flute_vs_trombone",
+ "fps": 30,
+ "mode": "RGB",
+ "noise": {
+  "call": "np.random.default_rng(seed).integers(0, 256, size=(640, 360, 3), dtype=np.uint8)",
+  "file": "noise.png",
+  "seed": 20261110
+ },
+ "note": "t is frame / 30. title.draw returns uint8 for a uint8 image. expect.door_offset and expect.shake are title.door_offset(t) and title.shake(t) at that time.",
+ "seed": 392,
+ "size": [360, 640],
+ "tool": "title"
+}

@@ -142,6 +142,7 @@ EXPORTS = {'thing': run}                         # python -m tools.studio_export
 | --- | --- | --- |
 | `dsp` | `dsp_vectors.py` | `studio/reference/dsp/{butter,filters,resample,fftconvolve,numpy,ufuncs,generators}.npz`, each with its sidecar `.json` (order 40) |
 | `fights` | `fights.py` | `studio/reference/fights/flute_vs_trombone/{ep392,seed1,seed2,seed3,seed500}.bfrec` |
+| `frames` | `frames.py` | `studio/reference/frames/flute_vs_trombone/{f<frame>.png,frames.json}` (43 frames), and `studio/reference/frames/exceptions.toml` if it does not exist yet |
 | `models` | `models.py` | `studio/crates/bf-content/data/models/{FLUTE,TROMBONE}.json` |
 | `pillow` | `pillow_vectors.py` | `studio/reference/pillow/calls.json` and 16 vector files, each `.npz` with its sidecar `.json` (about 3 minutes: it draws all 1,830 frames in 8 worker processes) |
 | `py` | `py_vectors.py` | `studio/reference/py/vectors.json` |
@@ -152,6 +153,7 @@ EXPORTS = {'thing': run}                         # python -m tools.studio_export
 | `stats` | `stats.py` | `studio/reference/fights/flute_vs_trombone/stats.json` (seeds 1 to 4,000, pooled figures; order 55) |
 | `scenarios` | `scenarios.py` | `studio/reference/fights/flute_vs_trombone/{scenarios/*.bfrec,no_ko.bfrec,coverage.json}` (reads `stats.json`; order 60) |
 | `stories` | `stories.py` | `studio/reference/fights/flute_vs_trombone/stories.json` (the kit's story and score of every recording there; order 70) |
+| `title` | `frames.py` | `studio/reference/frames/flute_vs_trombone/title/{f<frame>.png,noise.png,title.json}` (18 cards) |
 | `stems` | `stems.py` | `studio/reference/sound/flute_vs_trombone/{audio.wav,stems.npz,premaster.npz,rms.json,master_case.npz}` (its own interpreter; reads what `voices` wrote; order 55) |
 | `voices` | `voices.py` | `studio/reference/sound/{pp_noise_start.json,flute_vs_trombone/{note_calls.json,first_notes.npz},voices/{FLUTE,TROMBONE,helpers}.npz,voices/scalars.json}` (its own interpreter) |
 
@@ -337,6 +339,72 @@ sprites the frames never show.
 The export works out what the frames ask for from the kit's state functions (`sprites.asked`) and proves it
 against real renders of 72 frames with `kit.picture.sprite` wrapped; it clears the kit's sprite cache when it is
 done, so a later export in the same process cannot meet a sprite of another yaw.
+
+### `frames`: golden frames
+
+`kit.picture.render(frame)` for 43 frames of the example episode (seed 392, the fight of `fights/.../ep392.bfrec`),
+each an RGB PNG at the internal 360 x 640, written by Pillow with its default settings. The frames are picked from
+the recording by fixed rules (`frames.select`), and `frames.json` lists them:
+
+`{"about", "tool", "episode", "seed", "fighters", "winner", "call", "fps", "size", "mode", "nf", "recording",
+"timeline", "rule_notes", "absent", "tag_notes", "tags", "frames"}`. A frame is `{"frame", "t", "file", "rules",
+"reason", "tags"}`: its number, its time `frame / 30`, the PNG's name, the ids of the rules that picked it, the
+reason in words, and its tags. `timeline` holds the times the rules read (`t_fight`, `t_ko`, `t_solo`, ...) as
+`float.hex()` strings. A frame "at" or "after" a time is the first frame whose time is at or after it.
+
+| Rules | Frames |
+| --- | --- |
+| `frame_0`, `frame_13`, `frame_27` | the title card: name A slamming in, the frame before VS slams in (it does on 14), name B slamming in |
+| `doors_last_closed`, `doors_mid` | 43, the last frame with the card shut, and 48, the doors half open |
+| `count_3`, `count_2`, `count_1`, `count_fight` | the first frame of each count-in word: 54, 68, 81, 108 |
+| `<FIGHTER>_unlock1_0.2s`, `_0.6s`, `_unlock2_...`, `_low_...` | 0.2 s and 0.6 s after the first use of each of the fighter's three abilities (12 frames) |
+| `<FIGHTER>_weapon_hit` | on its first weapon hit (`fang`: 179, `blade`: 135) |
+| `<FIGHTER>_low_hp` | the first frame with its HP below 25 (1269, 1287) |
+| `swat` | on the first cobra swat (229) |
+| `ko`, `ko_0.2s`, `ko_0.6s`, `ko_1.5s` | the K.O. frame 1501 and 0.2, 0.6 and 1.5 s after (1.5 s: the WINS caption) |
+| `solo_mid`, `comment`, `reassembly_mid`, `glide_mid` | the scripted tail: 1642, 1629, 1750, 1792 |
+| `frame_1828`, `frame_1829` | the last two frames (the doors shutting; the loop seam) |
+| `extra_*` | seven frames beyond the brief's list: an ability caption and the K.O. caption on the frame they land (the scale punch), the WINS caption's second line landing, each fighter's unlock sweep, the bell on the canvas, the doors closing |
+
+`absent` names what this fight cannot show: there is no `parry` frame, because a parry is the lance cutting a
+projectile and neither of these fighters shoots one (the recording has no `parry` event). The export stops if any
+other required frame is missing, if there are fewer than 40, or if a PNG does not read back as the array drawn.
+
+`tags` (each explained under the top-level `tags`) say what a frame shows, read off the kit's own state
+functions: the phase (`rev`, `fight`, `hitstop`, `tail`, `solo`, `reassembly`, `glide`), the card (`card`,
+`card_closed`, `doors`), the shared layers (`hud`, `hud:low_hp`, `hud:sweep`, `hud:pill`, `hud:flash`,
+`hp_numbers`, `countdown`, `caption:*`, `burst`, `fringe`, `moment`, `particles`, `marks`, `flares`, `sparks`,
+`shimmer`, `glass_shards`, `flashbulbs`) and each fighter's own layers (`FLUTE:basket`, `FLUTE:cobra`,
+`FLUTE:strike`, `FLUTE:swatted`, `FLUTE:dance`, `FLUTE:haste`, `FLUTE:wave`, `FLUTE:shards`, `TROMBONE:thrust`,
+`TROMBONE:trail`, `TROMBONE:wave`, `TROMBONE:slow`, `TROMBONE:haste`, `TROMBONE:slam_decal`, `TROMBONE:bell`,
+`TROMBONE:solo`). The plain tags `FLUTE` and `TROMBONE` mean "an action layer of that look is drawn". Every frame
+also shows something only each look draws while its ball is whole (`FLUTE:sprite`, the look's own pixel-art flute
+and glass; `TROMBONE:slide`, the lance at rest), so no golden frame can be drawn with a default look for either
+fighter.
+
+A frame is a pure function of its number: the export draws three of them a second time, last to first, and
+compares.
+
+`studio/reference/frames/exceptions.toml` is the list of golden frames the Studio may miss by the documented bar.
+The export writes it once, with an empty list, and records it with `adopt`; it never overwrites it. After an edit
+run `python -m tools.studio_export adopt studio/reference/frames/exceptions.toml`.
+
+### `title`: the VS title card alone
+
+The card is 94 % opaque over a dimmed arena, so the full frames cannot test the arena under it or the card on
+its own. `title/noise.png` is one fixed image (`np.random.default_rng(20261110).integers(0, 256, size=(640, 360,
+3), dtype=np.uint8)`) and each `title/f<frame>.png` is `title.draw(noise, frame / 30)`. `title.json` lists the 18
+cases: `{"id", "call", "args": {"frame", "t"}, "file", "rule", "reason", "expect": {"door_offset", "shake"}}`,
+with `t`, `title.door_offset(t)` and `title.shake(t)` as `float.hex()` strings.
+
+| Rules | Frames |
+| --- | --- |
+| `slam_<word>_<n>` | each word's first frame and 2 and 5 frames after: 0, 2, 5 (FLUTE), 14, 16, 19 (VS), 27, 29, 32 (TROMBONE) |
+| `hold` | 41: every word landed, no shake, the doors shut |
+| `opening_0` .. `opening_3` | 46, 48, 50, 52 of the doors opening (44 to 52) |
+| `closing_0` .. `closing_3` | 1824, 1826, 1827, 1829 of the doors closing (1822 to 1829; the last is shut again, with name A as on frame 0) |
+
+That is 18 cards where the brief counts 16: its own list (three per word, the hold, four and four) adds up to 18.
 
 ### `dsp`: signal-processing vectors
 

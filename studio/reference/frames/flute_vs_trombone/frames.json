@@ -1,0 +1,455 @@
+{
+ "about": "golden frames of the example episode as the Python kit draws them: kit.picture.render(frame), internal size, RGB",
+ "absent": [
+  {
+   "rule": "parry",
+   "why": "the recording has no 'parry' event"
+  }
+ ],
+ "call": "kit.picture.render(frame)",
+ "episode": "flute_vs_trombone",
+ "fighters": ["FLUTE", "TROMBONE"],
+ "fps": 30,
+ "frames": [
+  {
+   "file": "f0000.png",
+   "frame": 0,
+   "reason": "frame 0: the title card as FLUTE slams in (the loop point)",
+   "rules": ["frame_0"],
+   "t": 0.0,
+   "tags": ["FLUTE:ball", "FLUTE:sprite", "TROMBONE:ball", "TROMBONE:slide", "card", "card_closed", "rev"]
+  },
+  {
+   "file": "f0013.png",
+   "frame": 13,
+   "reason": "frame 13: the title card with FLUTE landed, before VS slams in on frame 14",
+   "rules": ["frame_13"],
+   "t": 0.43333333333333335,
+   "tags": ["FLUTE:ball", "FLUTE:sprite", "TROMBONE:ball", "TROMBONE:slide", "card", "card_closed", "rev"]
+  },
+  {
+   "file": "f0027.png",
+   "frame": 27,
+   "reason": "frame 27: the title card as TROMBONE slams in",
+   "rules": ["frame_27"],
+   "t": 0.9,
+   "tags": ["FLUTE:ball", "FLUTE:sprite", "TROMBONE:ball", "TROMBONE:slide", "card", "card_closed", "rev"]
+  },
+  {
+   "file": "f0043.png",
+   "frame": 43,
+   "reason": "the last frame with the title card shut (the VS pulse on beat 4)",
+   "rules": ["doors_last_closed"],
+   "t": 1.4333333333333333,
+   "tags": ["FLUTE:ball", "FLUTE:sprite", "TROMBONE:ball", "TROMBONE:slide", "card", "card_closed", "rev"]
+  },
+  {
+   "file": "f0048.png",
+   "frame": 48,
+   "reason": "the doors half-way through sliding open",
+   "rules": ["doors_mid"],
+   "t": 1.6,
+   "tags": ["FLUTE:ball", "FLUTE:sprite", "TROMBONE:ball", "TROMBONE:slide", "card", "doors", "hp_numbers", "hud", "rev"]
+  },
+  {
+   "file": "f0054.png",
+   "frame": 54,
+   "reason": "the first frame of the count-in's \"3\"",
+   "rules": ["count_3"],
+   "t": 1.8,
+   "tags": ["FLUTE:ball", "FLUTE:sprite", "TROMBONE:ball", "TROMBONE:slide", "countdown", "hp_numbers", "hud", "rev"]
+  },
+  {
+   "file": "f0068.png",
+   "frame": 68,
+   "reason": "the first frame of the count-in's \"2\"",
+   "rules": ["count_2"],
+   "t": 2.2666666666666666,
+   "tags": ["FLUTE:ball", "FLUTE:sprite", "TROMBONE:ball", "TROMBONE:slide", "countdown", "hp_numbers", "hud", "rev"]
+  },
+  {
+   "file": "f0081.png",
+   "frame": 81,
+   "reason": "the first frame of the count-in's \"1\"",
+   "rules": ["count_1"],
+   "t": 2.7,
+   "tags": ["FLUTE:ball", "FLUTE:sprite", "TROMBONE:ball", "TROMBONE:slide", "countdown", "hp_numbers", "hud", "rev"]
+  },
+  {
+   "file": "f0108.png",
+   "frame": 108,
+   "reason": "the first frame of the count-in's \"FIGHT!\"",
+   "rules": ["count_fight"],
+   "t": 3.6,
+   "tags": ["FLUTE", "FLUTE:ball", "FLUTE:basket", "FLUTE:cobra", "FLUTE:sprite", "TROMBONE", "TROMBONE:ball", "TROMBONE:slide", "TROMBONE:thrust", "countdown", "fight", "hud"]
+  },
+  {
+   "file": "f0135.png",
+   "frame": 135,
+   "reason": "on TROMBONE's first weapon hit ('blade', at 4.48824 s)",
+   "rules": ["TROMBONE_weapon_hit"],
+   "t": 4.5,
+   "tags": ["FLUTE", "FLUTE:ball", "FLUTE:basket", "FLUTE:cobra", "FLUTE:sprite", "TROMBONE", "TROMBONE:ball", "TROMBONE:slide", "TROMBONE:thrust", "burst", "fight", "flares", "hp_numbers", "hud", "hud:flash", "marks", "particles", "sparks"]
+  },
+  {
+   "file": "f0179.png",
+   "frame": 179,
+   "reason": "on FLUTE's first weapon hit ('fang', at 5.96324 s)",
+   "rules": ["FLUTE_weapon_hit"],
+   "t": 5.966666666666667,
+   "tags": ["FLUTE", "FLUTE:ball", "FLUTE:basket", "FLUTE:cobra", "FLUTE:sprite", "FLUTE:strike", "TROMBONE", "TROMBONE:ball", "TROMBONE:slide", "TROMBONE:thrust", "burst", "fight", "flares", "hp_numbers", "hud", "hud:flash", "marks", "particles", "sparks"]
+  },
+  {
+   "file": "f0229.png",
+   "frame": 229,
+   "reason": "on the first cobra swat (at 7.6299 s)",
+   "rules": ["swat"],
+   "t": 7.633333333333334,
+   "tags": ["FLUTE", "FLUTE:ball", "FLUTE:basket", "FLUTE:cobra", "FLUTE:sprite", "FLUTE:swatted", "TROMBONE", "TROMBONE:ball", "TROMBONE:slide", "TROMBONE:thrust", "burst", "fight", "flares", "hp_numbers", "hud", "marks", "particles"]
+  },
+  {
+   "file": "f0330.png",
+   "frame": 330,
+   "reason": "extra: 0.1 s after FLUTE reaches level 2 (the unlock glow sweeping its ability's name)",
+   "rules": ["extra_level_FLUTE"],
+   "t": 11.0,
+   "tags": ["FLUTE", "FLUTE:ball", "FLUTE:basket", "FLUTE:cobra", "FLUTE:sprite", "FLUTE:strike", "TROMBONE", "TROMBONE:ball", "TROMBONE:slide", "TROMBONE:thrust", "fight", "flares", "hp_numbers", "hud", "hud:sweep", "marks", "particles", "sparks"]
+  },
+  {
+   "file": "f0340.png",
+   "frame": 340,
+   "reason": "extra: the first ability caption on the frame it lands (FLUTTER TONGUE: the scale punch, the shake, the sand puff)",
+   "rules": ["extra_caption_punch"],
+   "t": 11.333333333333334,
+   "tags": ["FLUTE", "FLUTE:ball", "FLUTE:basket", "FLUTE:cobra", "FLUTE:haste", "FLUTE:sprite", "TROMBONE", "TROMBONE:ball", "TROMBONE:slide", "TROMBONE:thrust", "caption:ability", "fight", "flares", "hp_numbers", "hud", "hud:pill", "marks", "moment", "particles"]
+  },
+  {
+   "file": "f0343.png",
+   "frame": 343,
+   "reason": "0.2 s after FLUTE's first FLUTTER TONGUE (at 11.21324 s)",
+   "rules": ["FLUTE_unlock1_0.2s"],
+   "t": 11.433333333333334,
+   "tags": ["FLUTE", "FLUTE:ball", "FLUTE:basket", "FLUTE:cobra", "FLUTE:haste", "FLUTE:sprite", "TROMBONE", "TROMBONE:ball", "TROMBONE:slide", "TROMBONE:thrust", "caption:ability", "fight", "flares", "hp_numbers", "hud", "hud:pill", "marks", "moment", "particles"]
+  },
+  {
+   "file": "f0355.png",
+   "frame": 355,
+   "reason": "0.6 s after FLUTE's first FLUTTER TONGUE (at 11.21324 s)",
+   "rules": ["FLUTE_unlock1_0.6s"],
+   "t": 11.833333333333334,
+   "tags": ["FLUTE", "FLUTE:ball", "FLUTE:basket", "FLUTE:cobra", "FLUTE:haste", "FLUTE:sprite", "TROMBONE", "TROMBONE:ball", "TROMBONE:slide", "TROMBONE:thrust", "caption:ability", "fight", "hp_numbers", "hud", "hud:pill", "marks", "moment", "particles"]
+  },
+  {
+   "file": "f0475.png",
+   "frame": 475,
+   "reason": "extra: 0.1 s after TROMBONE reaches level 2 (the unlock glow sweeping its ability's name)",
+   "rules": ["extra_level_TROMBONE"],
+   "t": 15.833333333333334,
+   "tags": ["FLUTE", "FLUTE:ball", "FLUTE:basket", "FLUTE:cobra", "FLUTE:sprite", "FLUTE:swatted", "TROMBONE", "TROMBONE:ball", "TROMBONE:slide", "TROMBONE:thrust", "fight", "flares", "hp_numbers", "hud", "hud:flash", "hud:sweep", "marks", "particles", "sparks"]
+  },
+  {
+   "file": "f0491.png",
+   "frame": 491,
+   "reason": "0.2 s after TROMBONE's first SAD TROMBONE (at 16.1549 s)",
+   "rules": ["TROMBONE_unlock1_0.2s"],
+   "t": 16.366666666666667,
+   "tags": ["FLUTE", "FLUTE:ball", "FLUTE:basket", "FLUTE:cobra", "FLUTE:sprite", "TROMBONE", "TROMBONE:ball", "TROMBONE:slide", "TROMBONE:thrust", "TROMBONE:wave", "caption:ability", "fight", "flares", "hp_numbers", "hud", "hud:pill", "marks", "moment", "particles", "shimmer", "sparks"]
+  },
+  {
+   "file": "f0503.png",
+   "frame": 503,
+   "reason": "0.6 s after TROMBONE's first SAD TROMBONE (at 16.1549 s)",
+   "rules": ["TROMBONE_unlock1_0.6s"],
+   "t": 16.766666666666666,
+   "tags": ["FLUTE", "FLUTE:ball", "FLUTE:basket", "FLUTE:cobra", "FLUTE:sprite", "FLUTE:strike", "TROMBONE", "TROMBONE:ball", "TROMBONE:slide", "TROMBONE:slow", "TROMBONE:thrust", "caption:ability", "fight", "flares", "hp_numbers", "hud", "hud:flash", "marks", "moment", "particles", "sparks"]
+  },
+  {
+   "file": "f0787.png",
+   "frame": 787,
+   "reason": "0.2 s after TROMBONE's first POWER SLIDE (at 26.02157 s)",
+   "rules": ["TROMBONE_unlock2_0.2s"],
+   "t": 26.233333333333334,
+   "tags": ["FLUTE", "FLUTE:ball", "FLUTE:basket", "FLUTE:cobra", "FLUTE:haste", "FLUTE:sprite", "FLUTE:swatted", "TROMBONE", "TROMBONE:ball", "TROMBONE:haste", "TROMBONE:slide", "TROMBONE:thrust", "caption:ability", "fight", "flares", "hp_numbers", "hud", "hud:pill", "marks", "moment", "particles", "sparks"]
+  },
+  {
+   "file": "f0799.png",
+   "frame": 799,
+   "reason": "0.6 s after TROMBONE's first POWER SLIDE (at 26.02157 s)",
+   "rules": ["TROMBONE_unlock2_0.6s"],
+   "t": 26.633333333333333,
+   "tags": ["FLUTE", "FLUTE:ball", "FLUTE:basket", "FLUTE:cobra", "FLUTE:haste", "FLUTE:sprite", "TROMBONE", "TROMBONE:ball", "TROMBONE:haste", "TROMBONE:slide", "TROMBONE:thrust", "caption:ability", "fight", "flares", "hp_numbers", "hud", "hud:pill", "marks", "moment", "particles"]
+  },
+  {
+   "file": "f0908.png",
+   "frame": 908,
+   "reason": "0.2 s after FLUTE's first SNAKE DANCE (at 30.0549 s)",
+   "rules": ["FLUTE_unlock2_0.2s"],
+   "t": 30.266666666666666,
+   "tags": ["FLUTE", "FLUTE:ball", "FLUTE:basket", "FLUTE:cobra", "FLUTE:dance", "FLUTE:sprite", "TROMBONE", "TROMBONE:ball", "TROMBONE:slide", "TROMBONE:thrust", "caption:ability", "fight", "flares", "hp_numbers", "hud", "hud:pill", "marks", "moment", "particles"]
+  },
+  {
+   "file": "f0920.png",
+   "frame": 920,
+   "reason": "0.6 s after FLUTE's first SNAKE DANCE (at 30.0549 s)",
+   "rules": ["FLUTE_unlock2_0.6s"],
+   "t": 30.666666666666668,
+   "tags": ["FLUTE", "FLUTE:ball", "FLUTE:basket", "FLUTE:cobra", "FLUTE:dance", "FLUTE:sprite", "FLUTE:strike", "TROMBONE", "TROMBONE:ball", "TROMBONE:slide", "TROMBONE:thrust", "caption:ability", "fight", "flares", "hp_numbers", "hud", "hud:flash", "hud:pill", "marks", "moment", "particles", "sparks"]
+  },
+  {
+   "file": "f1269.png",
+   "frame": 1269,
+   "reason": "the first frame with FLUTE's HP below 25 (24.60)",
+   "rules": ["FLUTE_low_hp"],
+   "t": 42.3,
+   "tags": ["FLUTE", "FLUTE:ball", "FLUTE:basket", "FLUTE:cobra", "FLUTE:haste", "FLUTE:sprite", "TROMBONE", "TROMBONE:ball", "TROMBONE:slide", "TROMBONE:thrust", "burst", "fight", "flares", "hp_numbers", "hud", "hud:flash", "hud:low_hp", "hud:pill", "marks", "particles", "sparks"]
+  },
+  {
+   "file": "f1285.png",
+   "frame": 1285,
+   "reason": "0.2 s after FLUTE's first PICCOLO (at 42.61324 s)",
+   "rules": ["FLUTE_low_0.2s"],
+   "t": 42.833333333333336,
+   "tags": ["FLUTE", "FLUTE:ball", "FLUTE:basket", "FLUTE:cobra", "FLUTE:haste", "FLUTE:sprite", "FLUTE:wave", "TROMBONE", "TROMBONE:ball", "TROMBONE:slide", "TROMBONE:thrust", "caption:ability", "fight", "flares", "hp_numbers", "hud", "hud:low_hp", "hud:pill", "hud:sweep", "marks", "moment", "particles", "shimmer", "sparks"]
+  },
+  {
+   "file": "f1287.png",
+   "frame": 1287,
+   "reason": "the first frame with TROMBONE's HP below 25 (8.40)",
+   "rules": ["TROMBONE_low_hp"],
+   "t": 42.9,
+   "tags": ["FLUTE", "FLUTE:ball", "FLUTE:basket", "FLUTE:cobra", "FLUTE:haste", "FLUTE:sprite", "FLUTE:strike", "FLUTE:wave", "TROMBONE", "TROMBONE:ball", "TROMBONE:slide", "TROMBONE:thrust", "burst", "caption:ability", "fight", "flares", "flashbulbs", "fringe", "hp_numbers", "hud", "hud:flash", "hud:low_hp", "hud:pill", "hud:sweep", "marks", "moment", "particles", "shimmer", "sparks"]
+  },
+  {
+   "file": "f1297.png",
+   "frame": 1297,
+   "reason": "0.6 s after FLUTE's first PICCOLO (at 42.61324 s)",
+   "rules": ["FLUTE_low_0.6s"],
+   "t": 43.233333333333334,
+   "tags": ["FLUTE", "FLUTE:ball", "FLUTE:basket", "FLUTE:cobra", "FLUTE:haste", "FLUTE:sprite", "FLUTE:wave", "TROMBONE", "TROMBONE:ball", "TROMBONE:bell", "TROMBONE:slam_decal", "TROMBONE:slide", "TROMBONE:thrust", "caption:ability", "fight", "flares", "hp_numbers", "hud", "hud:low_hp", "hud:pill", "hud:sweep", "marks", "moment", "particles", "shimmer", "sparks"]
+  },
+  {
+   "file": "f1298.png",
+   "frame": 1298,
+   "reason": "0.2 s after TROMBONE's first PEDAL TONE (at 43.06324 s)",
+   "rules": ["TROMBONE_low_0.2s"],
+   "t": 43.266666666666666,
+   "tags": ["FLUTE", "FLUTE:ball", "FLUTE:basket", "FLUTE:cobra", "FLUTE:haste", "FLUTE:sprite", "FLUTE:wave", "TROMBONE", "TROMBONE:ball", "TROMBONE:bell", "TROMBONE:slam_decal", "TROMBONE:slide", "TROMBONE:thrust", "caption:ability", "fight", "flares", "hp_numbers", "hud", "hud:low_hp", "hud:pill", "hud:sweep", "marks", "moment", "particles", "shimmer", "sparks"]
+  },
+  {
+   "file": "f1310.png",
+   "frame": 1310,
+   "reason": "0.6 s after TROMBONE's first PEDAL TONE (at 43.06324 s)",
+   "rules": ["TROMBONE_low_0.6s"],
+   "t": 43.666666666666664,
+   "tags": ["FLUTE", "FLUTE:ball", "FLUTE:basket", "FLUTE:cobra", "FLUTE:haste", "FLUTE:sprite", "FLUTE:swatted", "FLUTE:wave", "TROMBONE", "TROMBONE:ball", "TROMBONE:bell", "TROMBONE:slam_decal", "TROMBONE:slide", "TROMBONE:thrust", "caption:ability", "fight", "flares", "hp_numbers", "hud", "hud:flash", "hud:low_hp", "hud:pill", "marks", "moment", "particles", "shimmer", "sparks"]
+  },
+  {
+   "file": "f1319.png",
+   "frame": 1319,
+   "reason": "extra: on the slam of TROMBONE (at 43.96324 s): the bell on the canvas",
+   "rules": ["extra_slam"],
+   "t": 43.96666666666667,
+   "tags": ["FLUTE", "FLUTE:ball", "FLUTE:basket", "FLUTE:cobra", "FLUTE:haste", "FLUTE:sprite", "FLUTE:strike", "FLUTE:swatted", "FLUTE:wave", "TROMBONE", "TROMBONE:ball", "TROMBONE:bell", "TROMBONE:slam_decal", "TROMBONE:slide", "TROMBONE:thrust", "caption:ability", "fight", "flares", "hp_numbers", "hud", "hud:low_hp", "hud:pill", "marks", "particles", "shimmer", "sparks"]
+  },
+  {
+   "file": "f1501.png",
+   "frame": 1501,
+   "reason": "the K.O. frame (the first frame of the hit-stop)",
+   "rules": ["ko"],
+   "t": 50.03333333333333,
+   "tags": ["FLUTE", "FLUTE:ball", "FLUTE:basket", "FLUTE:cobra", "FLUTE:sprite", "FLUTE:swatted", "TROMBONE", "TROMBONE:ball", "TROMBONE:slide", "TROMBONE:thrust", "TROMBONE:trail", "burst", "caption:ko", "flares", "flashbulbs", "fringe", "hitstop", "hp_numbers", "hud", "hud:flash", "hud:low_hp", "hud:pill", "marks", "particles", "sparks"]
+  },
+  {
+   "file": "f1504.png",
+   "frame": 1504,
+   "reason": "extra: the K.O. caption on the frame it lands",
+   "rules": ["extra_ko_caption_punch"],
+   "t": 50.13333333333333,
+   "tags": ["FLUTE", "FLUTE:ball", "FLUTE:basket", "FLUTE:cobra", "FLUTE:sprite", "FLUTE:swatted", "TROMBONE", "TROMBONE:ball", "TROMBONE:slide", "TROMBONE:thrust", "caption:ko", "flares", "flashbulbs", "fringe", "hitstop", "hp_numbers", "hud", "hud:flash", "hud:low_hp", "hud:pill", "marks", "particles", "sparks"]
+  },
+  {
+   "file": "f1507.png",
+   "frame": 1507,
+   "reason": "0.2 s after the K.O.",
+   "rules": ["ko_0.2s"],
+   "t": 50.233333333333334,
+   "tags": ["FLUTE", "FLUTE:ball", "FLUTE:basket", "FLUTE:cobra", "FLUTE:sprite", "FLUTE:swatted", "TROMBONE", "TROMBONE:ball", "TROMBONE:slide", "TROMBONE:thrust", "caption:ko", "flares", "flashbulbs", "fringe", "hitstop", "hp_numbers", "hud", "hud:low_hp", "hud:pill", "marks", "particles", "sparks"]
+  },
+  {
+   "file": "f1519.png",
+   "frame": 1519,
+   "reason": "0.6 s after the K.O.",
+   "rules": ["ko_0.6s"],
+   "t": 50.63333333333333,
+   "tags": ["FLUTE", "FLUTE:basket", "FLUTE:cobra", "FLUTE:shards", "FLUTE:swatted", "TROMBONE:ball", "TROMBONE:slide", "caption:ko", "flares", "fringe", "glass_shards", "hp_numbers", "hud", "hud:low_hp", "hud:pill", "marks", "particles", "tail"]
+  },
+  {
+   "file": "f1546.png",
+   "frame": 1546,
+   "reason": "1.5 s after the K.O. (the WINS caption)",
+   "rules": ["ko_1.5s"],
+   "t": 51.53333333333333,
+   "tags": ["FLUTE", "FLUTE:shards", "TROMBONE:ball", "TROMBONE:slide", "caption:wins", "flares", "glass_shards", "hp_numbers", "hud", "hud:low_hp", "hud:pill", "tail"]
+  },
+  {
+   "file": "f1550.png",
+   "frame": 1550,
+   "reason": "extra: the WINS caption's second line on the frame it lands",
+   "rules": ["extra_wins_second_line"],
+   "t": 51.666666666666664,
+   "tags": ["FLUTE", "FLUTE:shards", "TROMBONE:ball", "TROMBONE:slide", "caption:wins", "flares", "glass_shards", "hp_numbers", "hud", "hud:low_hp", "hud:pill", "tail"]
+  },
+  {
+   "file": "f1629.png",
+   "frame": 1629,
+   "reason": "0.6 s into the COMMENT caption (both lines landed)",
+   "rules": ["comment"],
+   "t": 54.3,
+   "tags": ["FLUTE", "FLUTE:shards", "TROMBONE", "TROMBONE:ball", "TROMBONE:slide", "TROMBONE:solo", "caption:comment", "glass_shards", "hp_numbers", "hud", "hud:low_hp", "solo", "tail"]
+  },
+  {
+   "file": "f1642.png",
+   "frame": 1642,
+   "reason": "the middle of the winner's solo",
+   "rules": ["solo_mid"],
+   "t": 54.733333333333334,
+   "tags": ["FLUTE", "FLUTE:shards", "TROMBONE", "TROMBONE:ball", "TROMBONE:slide", "TROMBONE:solo", "caption:comment", "glass_shards", "hp_numbers", "hud", "hud:low_hp", "solo", "tail"]
+  },
+  {
+   "file": "f1750.png",
+   "frame": 1750,
+   "reason": "the loser's pieces half-way home",
+   "rules": ["reassembly_mid"],
+   "t": 58.333333333333336,
+   "tags": ["FLUTE", "FLUTE:shards", "TROMBONE:ball", "TROMBONE:slide", "glass_shards", "hp_numbers", "hud", "hud:low_hp", "reassembly", "tail"]
+  },
+  {
+   "file": "f1792.png",
+   "frame": 1792,
+   "reason": "both balls half-way through the glide to their corners",
+   "rules": ["glide_mid"],
+   "t": 59.733333333333334,
+   "tags": ["FLUTE:ball", "FLUTE:sprite", "TROMBONE:ball", "TROMBONE:slide", "glide", "hp_numbers", "hud", "tail"]
+  },
+  {
+   "file": "f1824.png",
+   "frame": 1824,
+   "reason": "extra: the doors sliding shut over the last bar",
+   "rules": ["extra_doors_closing"],
+   "t": 60.8,
+   "tags": ["FLUTE:ball", "FLUTE:sprite", "TROMBONE:ball", "TROMBONE:slide", "card", "doors", "glide", "hp_numbers", "hud", "tail"]
+  },
+  {
+   "file": "f1828.png",
+   "frame": 1828,
+   "reason": "frame 1828: the doors almost shut, name A falling in as a ghost",
+   "rules": ["frame_1828"],
+   "t": 60.93333333333333,
+   "tags": ["FLUTE:ball", "FLUTE:sprite", "TROMBONE:ball", "TROMBONE:slide", "card", "doors", "glide", "hp_numbers", "hud", "tail"]
+  },
+  {
+   "file": "f1829.png",
+   "frame": 1829,
+   "reason": "frame 1829: the last frame, the card shut (the loop seam)",
+   "rules": ["frame_1829"],
+   "t": 60.96666666666667,
+   "tags": ["FLUTE:ball", "FLUTE:sprite", "TROMBONE:ball", "TROMBONE:slide", "card", "card_closed", "glide", "tail"]
+  }
+ ],
+ "mode": "RGB",
+ "nf": 1830,
+ "recording": {
+  "file": "studio/reference/fights/flute_vs_trombone/ep392.bfrec",
+  "note": "the same fight: story.run_seed(392)"
+ },
+ "rule_notes": {
+  "extra": "rules named extra_* are picks beyond the brief's list (it asks for at least 40 frames)",
+  "first_at": "a frame \"at\" or \"after\" a time t is the first frame whose time frame / 30 is at or after t"
+ },
+ "seed": 392,
+ "size": [360, 640],
+ "tag_notes": "Every frame shows something only FLUTE's look and something only TROMBONE's look draw (its pixel-art sprite and glass, the slide lance at rest; on the title card its panel and close-up), so no frame here is drawable with a default look for either fighter. The plain tags FLUTE and TROMBONE therefore mark action layers only; the always-on layers have tags of their own.",
+ "tags": {
+  "FLUTE": "an action layer of FLUTE's look is drawn (any FLUTE:* tag but FLUTE:ball and FLUTE:sprite)",
+  "FLUTE:ball": "its glass ball is drawn (its own cool glass tint)",
+  "FLUTE:basket": "at least one basket is on the canvas",
+  "FLUTE:cobra": "at least one cobra is up",
+  "FLUTE:dance": "SNAKE DANCE is running (the cobras leave their baskets)",
+  "FLUTE:haste": "FLUTTER TONGUE is running",
+  "FLUTE:shards": "its silver shards are flying (it lost)",
+  "FLUTE:sprite": "its look's own pixel-art flute is drawn in the ball (not the Pixel Pitch model)",
+  "FLUTE:strike": "a cobra is lunging or recoiling",
+  "FLUTE:swatted": "a cobra was slapped flat by the lance and is still down or curling back up",
+  "FLUTE:wave": "PICCOLO's ring is crossing the canvas",
+  "TROMBONE": "an action layer of TROMBONE's look is drawn (any TROMBONE:* tag but TROMBONE:ball and TROMBONE:slide)",
+  "TROMBONE:ball": "its glass ball is drawn",
+  "TROMBONE:bell": "PEDAL TONE's giant bell is in the frame",
+  "TROMBONE:haste": "POWER SLIDE is running",
+  "TROMBONE:shards": "its brass shards are flying (it lost)",
+  "TROMBONE:slam_decal": "PEDAL TONE's target or stomp ring is on the canvas",
+  "TROMBONE:slide": "its slide lance is drawn (always, while its ball is whole: at rest it still shows)",
+  "TROMBONE:slow": "the slowed enemy drags its droopy wobble",
+  "TROMBONE:solo": "it plays its victory solo on the slide",
+  "TROMBONE:thrust": "the lance is thrusting: the lit lane on the canvas, the thumping ball, the flaring crook",
+  "TROMBONE:trail": "the streak a fast thrust leaves",
+  "TROMBONE:wave": "SAD TROMBONE's ring is crossing the canvas",
+  "burst": "an ink starburst is drawn",
+  "caption:ability": "an ability caption is up",
+  "caption:comment": "the COMMENT caption is up",
+  "caption:ko": "the K.O. caption is up",
+  "caption:wins": "the WINS caption is up",
+  "card": "the VS title card is drawn",
+  "card_closed": "the card is shut (no HUD under it)",
+  "countdown": "a count-in number or FIGHT! is on screen",
+  "doors": "the card is sliding open or shut",
+  "fight": "the fight, up to the K.O.",
+  "flares": "an attack light is lit",
+  "flashbulbs": "the crowd may fire flashbulbs",
+  "fringe": "chromatic fringing on a big hit or the K.O.",
+  "glass_shards": "the K.O. shatter is on screen",
+  "glide": "the last bar: both balls glide to their corners",
+  "hitstop": "the 0.35 s hit-stop on the K.O.",
+  "hp_numbers": "at least one HP number is drawn on a ball",
+  "hud": "the fight HUD and the ability lists are drawn",
+  "hud:flash": "an HP bar flashes on a fresh hit",
+  "hud:low_hp": "an HP bar is in its low-HP pulse",
+  "hud:pill": "an ability in use glows on its pill",
+  "hud:sweep": "an unlock glow sweeps an ability name",
+  "marks": "fading marks are on the canvas",
+  "moment": "an ability moment dims the frame (and draws speed lines)",
+  "particles": "reelkit.fx particles are alive",
+  "reassembly": "the loser's pieces fly home",
+  "rev": "before FIGHT!: both balls rev in their corners",
+  "shimmer": "a heat shimmer warps the frame",
+  "solo": "the winner's solo",
+  "sparks": "hit sparks are flying",
+  "tail": "after the hit-stop"
+ },
+ "timeline": {
+  "bar": "0x1.cb4b4b4b4b4b4p+0",
+  "beat": "0x1.cb4b4b4b4b4b4p-2",
+  "count": [
+   ["0x1.cb4b4b4b4b4b4p+0", "3"],
+   ["0x1.1f0f0f0f0f0f0p+1", "2"],
+   ["0x1.5878787878787p+1", "1"],
+   ["0x1.cb4b4b4b4b4b4p+1", "FIGHT!"]
+  ],
+  "dur": "0x1.e800000000000p+5",
+  "t_close": "0x1.3333333333333p-2",
+  "t_doors": ["0x1.7212121212121p+0", "0x1.c39d36d06a039p+0"],
+  "t_fight": "0x1.cb4b4b4b4b4b4p+1",
+  "t_glide": "0x1.d9a5a5a5a5a5ap+5",
+  "t_hitstop_end": "0x1.92f8f8f8f8f8fp+5",
+  "t_ko": "0x1.902c2c2c2c2c2p+5",
+  "t_reassemble": "0x1.cb4b4b4b4b4b4p+5",
+  "t_rev": "0x1.e20c0c0c0c0c0p+5",
+  "t_solo": "0x1.a03c3c3c3c3c3p+5",
+  "title": [
+   ["0x0.0p+0", "FLUTE"],
+   ["0x1.cb4b4b4b4b4b4p-2", "VS"],
+   ["0x1.cb4b4b4b4b4b4p-1", "TROMBONE"]
+  ]
+ },
+ "tool": "frames",
+ "winner": "TROMBONE"
+}

@@ -1,0 +1,12 @@
+# Golden frames the Studio does not reproduce bit for bit (spec section 7, "Proving the look").
+# The bar: a listed frame differs by at most 2 levels on at most 0.5 % of its pixels, and every entry has a reason.
+# An entry is one table per frame, replacing the empty list below:
+#
+#   [[exceptions]]
+#   episode = "flute_vs_trombone"
+#   frame = 1234
+#   reason = "why this frame cannot be made identical"
+#
+# Written once by `python -m tools.studio_export frames` and never overwritten. After an edit, record the new bytes
+# with `python -m tools.studio_export adopt studio/reference/frames/exceptions.toml`.
+exceptions = []

@@ -254,6 +254,7 @@ TAG_MEANINGS = {
     'TROMBONE:slam_decal': "PEDAL TONE's target or stomp ring is on the canvas",
     'TROMBONE:bell': "PEDAL TONE's giant bell is in the frame",
     'TROMBONE:solo': 'it plays its victory solo on the slide',
+    'TROMBONE:shards': 'its brass shards are flying (it lost)',
     'card': 'the VS title card is drawn', 'card_closed': 'the card is shut (no HUD under it)',
     'doors': 'the card is sliding open or shut',
     'rev': 'before FIGHT!: both balls rev in their corners', 'fight': 'the fight, up to the K.O.',
@@ -344,7 +345,7 @@ def tags(P, f):
     from ballfight.kit.fighters import trombone
     if any(s[0] == k and trombone.bell_height(t, s[3], s[4]) is not None for s in slams):
         out.add('TROMBONE:bell')
-    if P.WIN == k and t >= P.T_SOLO and st['ext'] != P.REST[k]:
+    if P.WIN == k and P.T_SOLO <= t < T.T_REASSEMBLE:
         out.add('TROMBONE:solo')
     for n, rest in (('FLUTE', ('FLUTE:ball', 'FLUTE:sprite')), ('TROMBONE', ('TROMBONE:ball', 'TROMBONE:slide'))):
         if any(x.startswith(n + ':') and x not in rest for x in out):
@@ -507,7 +508,6 @@ def run_title():
                          file=f'f{f:04d}.png', rule=rule, reason=why,
                          expect=dict(door_offset=common.hexf(off), shake=[common.hexf(sx), common.hexf(sy)])))
         print(f'title: f{f:04d}  {why}')
-    # the last frame's card is frame 0's card (the loop seam): the same words at the same size, no effects yet
     doc = dict(
         about='the VS title card alone: title.draw(noise, t) over one fixed seeded-noise image, at the times that '
               'show each word slamming in, the hold, and the doors opening and closing',
