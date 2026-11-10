@@ -376,12 +376,62 @@ fn bit_exact_equality_tells_nan_and_minus_zero_apart() {
     assert_eq!(a, a.clone());
     assert_ne!(Value::Float(0.0), Value::Float(-0.0));
     assert_ne!(Value::Float(1.0), Value::Int(1));
-    let mut rec = worked_example();
-    let before = rec.hash();
-    rec.t_ko = Some(-0.0);
-    rec.winner = Some(1);
-    assert_ne!(rec, worked_example());
-    assert_ne!(rec.hash(), before);
+    // Two recordings that differ only in the sign of a zero are different recordings.
+    let mut plus = worked_example();
+    plus.t_ko = Some(0.0);
+    let mut minus = worked_example();
+    minus.t_ko = Some(-0.0);
+    assert_ne!(plus, minus);
+    assert_ne!(plus.hash(), minus.hash());
+}
+
+#[test]
+fn a_python_recording_written_by_rust_stays_python() {
+    let rec = Recording::read(&ep392()).unwrap();
+    let dir = temp_dir("provenance");
+    let path = dir.join("again.bfrec");
+    rec.write(&path).unwrap();
+    let back = Recording::read(&path).unwrap();
+    assert_eq!(
+        back.source,
+        Source::Python {
+            commit: "88a51b9f99b4a8367ab5087da92b1fc79aa595c4".into()
+        }
+    );
+}
+
+/// The offsets of every zip header with this 4-byte signature.
+fn signatures(bytes: &[u8], sig: &[u8; 4]) -> Vec<usize> {
+    bytes
+        .windows(4)
+        .enumerate()
+        .filter(|(_, w)| *w == sig)
+        .map(|(i, _)| i)
+        .collect()
+}
+
+#[test]
+fn a_member_declaring_a_huge_size_is_an_error() {
+    // A stored zip of ep392 whose HP.npy claims 4,026,531,840 unpacked bytes in both its local header and its
+    // central directory entry. Nothing that large may be read into memory.
+    let members = unzip(&fs::read(ep392()).unwrap());
+    let mut bytes = rezip(&members);
+    let huge = 0xF000_0000u32.to_le_bytes();
+    let name = b"HP.npy";
+    for (sig, size_at, name_at) in [(b"PK\x03\x04", 22, 30), (b"PK\x01\x02", 24, 46)] {
+        let at = signatures(&bytes, sig)
+            .into_iter()
+            .find(|&i| bytes[i + name_at..].starts_with(name))
+            .unwrap();
+        bytes[at + size_at..at + size_at + 4].copy_from_slice(&huge);
+    }
+    let dir = temp_dir("huge-member");
+    let path = dir.join("huge.bfrec");
+    fs::write(&path, &bytes).unwrap();
+    let err = Recording::read(&path).unwrap_err().to_string();
+    eprintln!("huge member: {err}");
+    assert!(err.contains("huge.bfrec") && err.contains("HP.npy"), "{err}");
+    assert!(err.contains("4026531840"), "{err}");
 }
 
 // ---------------------------------------------------------------- refusals (Review Focus 4 and the document)
