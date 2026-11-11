@@ -4,7 +4,7 @@
 #
 # Run it from the repo root with the pinned interpreter (tools/studio_export/README.md), in Git Bash:
 #   export PYTHONHASHSEED=0 PYTHONPATH="$PWD"
-#   .studio-tools/py313/Scripts/python.exe tools/studio_export/checks/striker_grid_vectors.py .
+#   .studio-tools/py313/Scripts/python.exe tools/studio_export/unit_checks/striker_grid_vectors.py .
 # The argument is the repo root: the kit is imported from its projects/ballfight. This is a check script, not
 # an export: the tool's export discovery does not look in this folder.
 """Python checks of the striker tests that drive the fight loop: both balls held in place (set at the end of every

@@ -4,7 +4,7 @@
 #
 # Run it from the repo root with the pinned interpreter (tools/studio_export/README.md), in Git Bash:
 #   export PYTHONHASHSEED=0 PYTHONPATH="$PWD"
-#   .studio-tools/py313/Scripts/python.exe tools/studio_export/checks/blade_unit_vectors.py .
+#   .studio-tools/py313/Scripts/python.exe tools/studio_export/unit_checks/blade_unit_vectors.py .
 # The argument is the repo root: the kit is imported from its projects/ballfight. This is a check script, not
 # an export: the tool's export discovery does not look in this folder.
 """Python vectors for the thrust blade's unit tests: hand-built state, the same calls, what fight.py gave.
