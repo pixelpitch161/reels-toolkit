@@ -157,8 +157,9 @@ pub fn score(ctx: &MusicCtx, bed: &dyn Bed, sounds: [&dyn Sound; 2]) -> Result<M
     if !landings.is_empty() {
         // A.thud() is the same sound every time.
         let thud = Sig::Mono(synth::thud(THUD_DUR, THUD_F0, THUD_F1, THUD_SEED));
-        for (tl, k, _) in landings {
-            mix.place("fx", &thud, tl, if k == 0 { g0 } else { g1 }, 0.0);
+        for landing in landings {
+            let gain = if landing.line == 0 { g0 } else { g1 };
+            mix.place("fx", &thud, landing.t, gain, 0.0);
         }
     }
     Ok(mix)

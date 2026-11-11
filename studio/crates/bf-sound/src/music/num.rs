@@ -1,32 +1,13 @@
-//! Python's number rules and the checks the music helpers share: `min` and `max` as Python orders them, numpy's
-//! `clip` and `maximum`, `int()` for a length, what the filters take, seeded noise.
-
-use bf_core::rng::Generator;
+//! The checks the music helpers share: numpy's `maximum`, `int()` for a length, what the filters take, the bands of
+//! a sweep. (Python's `min` and `max` are `bf_core::py::{py_min, py_max}`; numpy's `clip` and the seeded noise are
+//! `crate::synth::{clip, noise}`; the sample rate as a float is `crate::SRF`.)
 
 use super::error::MusicError;
-use crate::SR;
-
-/// The sample rate as a float.
-pub(super) const SRF: f64 = SR as f64;
+use crate::SRF;
 
 /// The longest note or effect a helper makes, in seconds (ten minutes, about ten soundtracks). Python has no such
 /// bound: it tries to allocate whatever is asked and raises `MemoryError` when the PC cannot hold it.
 pub const MAX_SECONDS: f64 = 600.0;
-
-/// Python's `min(a, b)` on floats: `a` unless `b` is smaller.
-pub(super) fn py_min(a: f64, b: f64) -> f64 {
-    if b < a { b } else { a }
-}
-
-/// Python's `max(a, b)` on floats: `a` unless `b` is greater.
-pub(super) fn py_max(a: f64, b: f64) -> f64 {
-    if b > a { b } else { a }
-}
-
-/// `np.clip(x, lo, hi)` (a NaN stays a NaN).
-pub(super) fn clip(x: f64, lo: f64, hi: f64) -> f64 {
-    x.clamp(lo, hi)
-}
 
 /// `np.maximum(a, b)`: the greater, or NaN if either is.
 pub(super) fn np_maximum(a: f64, b: f64) -> f64 {
@@ -101,13 +82,6 @@ pub(super) fn check_some(helper: &'static str, n: usize, seconds: f64) -> Result
             format!("{seconds} s is under one sample: there is nothing to filter"),
         ))
     }
-}
-
-/// `np.random.default_rng(seed).normal(0, 1, n)`.
-pub(super) fn noise(seed: u64, n: usize) -> Vec<f64> {
-    let mut x = vec![0.0; n];
-    Generator::new(seed).fill_normal(0.0, 1.0, &mut x);
-    x
 }
 
 /// The edges of band `k` of `bands` over `n` samples: `int(k * n / bands)`, `int((k + 1) * n / bands)`.

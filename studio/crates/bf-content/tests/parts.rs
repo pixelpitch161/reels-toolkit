@@ -9,15 +9,18 @@
 //! sounding frame, the energy (the sum of the squared samples) and one frame from the middle, as `float.hex()`.
 //! The whole buses were compared once, by hand, when this was written: below -230 dBFS everywhere.
 
+mod common;
+
 use bf_content::SoundBuild;
 use bf_content::fighters::flute::sound as flute;
 use bf_content::themes::big_top::{self, BigTopClassic, CALLIOPE_ATT, CALLIOPE_VIB};
 use bf_core::fightfile::FightFile;
-use bf_core::recording::Recording;
 use bf_core::show::Show;
 use bf_sound::mix::Mix;
 use bf_sound::traits::Bed;
-use bf_testdata::{parse_hex_f64, reference, repo_root};
+use bf_testdata::parse_hex_f64;
+
+use common::episode;
 
 /// A bus the kit left: its first and last sounding frame, its energy, and the frame `mid` (left, right).
 type Bus = (&'static str, usize, usize, &'static str, usize, [&'static str; 2]);
@@ -26,21 +29,6 @@ type Bus = (&'static str, usize, usize, &'static str, usize, [&'static str; 2]);
 const ENERGY_REL: f64 = 1e-9;
 /// One frame against the kit's: the largest difference allowed (-180 dBFS).
 const FRAME_ABS: f64 = 1e-9;
-
-struct Episode {
-    rec: Recording,
-    ff: FightFile,
-}
-
-fn episode() -> Episode {
-    let rec = Recording::read(&reference("fights/flute_vs_trombone/ep392.bfrec")).expect("the recording reads");
-    let path = repo_root().join("studio/fights/flute_vs_trombone.toml");
-    let text = std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("{}: {e}", path.display()));
-    Episode {
-        rec,
-        ff: FightFile::parse(&text).expect("the fight file parses"),
-    }
-}
 
 /// The mix has exactly the buses of `want`, each as the kit left it.
 #[track_caller]
@@ -183,7 +171,7 @@ fn the_beds_bars() {
     let show = Show::new(&ep.rec, &ep.ff).unwrap();
     let b = SoundBuild::new(&show, &ep.rec, &ep.ff).unwrap();
     let mut mix = Mix::new(show.grid.dur + 4.0);
-    let bed = BigTopClassic;
+    let bed = BigTopClassic::new();
     bed.bar(&b.ctx, &mut mix, 5, 1.0, true).unwrap();
     bed.bar(&b.ctx, &mut mix, 8, 1.3, false).unwrap();
     bed.bar(&b.ctx, &mut mix, 11, 1.26, false).unwrap();
@@ -390,4 +378,35 @@ fn a_fight_file_the_parts_cannot_play_is_an_error() {
         e.starts_with("note: TROMBONE gives samples that are not numbers for MIDI note 127"),
         "{e}"
     );
+}
+
+/// A chord too small for the TROMBONE's bass would be an error in words, not a panic (`walk_note` needs a second
+/// note above the root, the climb in `last_bar` at least one note): every chord type the kit names has three
+/// notes or more, so through the public hooks each one walks and climbs.
+#[test]
+fn every_chord_type_walks_and_climbs() {
+    use bf_content::fighters::trombone::TromboneSound;
+    use bf_core::harmony::QUALITY;
+    let ep = episode();
+    for (quality, intervals) in QUALITY {
+        let chord = format!("E{quality}");
+        let mut ff = ep.ff.clone();
+        ff.music.chords_intro.iter_mut().for_each(|c| *c = chord.clone());
+        ff.music.chord_loop.iter_mut().for_each(|c| *c = chord.clone());
+        let show = Show::new(&ep.rec, &ff).unwrap();
+        let b = SoundBuild::new(&show, &ep.rec, &ff).unwrap_or_else(|e| panic!("{chord}: {e}"));
+        let grid = &show.grid;
+        // The third 8th of bar 4: `table[2]`, the root (E2, the register's bottom) plus the chord's second note.
+        let t = grid.bar_t(4.0) + grid.beat;
+        let walk = TromboneSound::new(1, "bass").walk_note(&b.ctx, t);
+        assert_eq!(walk, Ok(40 + intervals[1]), "{chord}");
+        let mut mix = Mix::new(grid.dur + 4.0);
+        b.sounds[1]
+            .last_bar(&b.ctx, b.bed.as_ref(), &mut mix)
+            .unwrap_or_else(|e| panic!("{chord}: {e}"));
+        let bus = mix
+            .bus("trombone")
+            .unwrap_or_else(|| panic!("{chord}: the climb played nothing"));
+        assert!(bus.iter().any(|f| *f != [0.0, 0.0]), "{chord}: the climb is silent");
+    }
 }

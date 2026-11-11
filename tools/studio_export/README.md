@@ -148,7 +148,7 @@ EXPORTS = {'thing': run}                         # python -m tools.studio_export
 | `dsp` | `dsp_vectors.py` | `studio/reference/dsp/{butter,filters,resample,fftconvolve,numpy,ufuncs,generators}.npz`, each with its sidecar `.json` (order 40) |
 | `fights` | `fights.py` | `studio/reference/fights/flute_vs_trombone/{ep392,seed1,seed2,seed3,seed500}.bfrec` |
 | `frames` | `frames.py` | `studio/reference/frames/flute_vs_trombone/{f<frame>.png,frames.json}` (43 frames), and `studio/reference/frames/exceptions.toml` if it does not exist yet |
-| `kit` | `kit_vectors.py` | `studio/reference/picture_kit/{config,font,np}.npz`, each with its sidecar `.json` (under a second) |
+| `kit` | `kit_vectors.py`, `kit_renderer_vectors.py` | `studio/reference/picture_kit/{config,font,np,camera,geometry,raster,lighting,shadows,lens,fftconv,post,hull}.npz`, each with its sidecar `.json` (about 10 seconds) |
 | `knife_edge` | `knife_edge.py` | `studio/reference/fights/knife_edge/{core_s<seed>.bfrec,index.json}`: one core-only fight (the two bags of `striker_bag` against each other, the first 13 s) in which the balls travel side by side exactly R + R apart, so `clash` events are made or not on the last bit of a distance: the real sample of a knife-edge for `bf_sim::parity`; `crates/bf-sim/tests/prefix.rs` reads it (under a second) |
 | `rules_map` | `rules_map.py` | `studio/reference/fights/rules_map/{no_handicap,swat_off}.bfrec,index.json`: the example episode with no `DMG_SIDE`, and with `RULES = dict(swat_cobras=False)`, each fought for its first 3 s (seed 1): the recorded `rules` (`vars(rules)`) of a fight file with no handicap and of one with the pair rule `swat_cobras = false`; `crates/bf-sim/tests/rules_map.rs` reads them (under a second) |
 | `lance_bag` | `lance_bag.py` | `studio/reference/fights/lance_vs_bag/{<kind>_<corner>_s<seed>.bfrec,index.json}`: 9 fights of the TROMBONE's lance against a bag (the two bags of `striker_bag`, and a LANCER: the TROMBONE with POWER SLIDE as its only ability; all added to the kit's roster table for the run only), the first 16 s of each, so that only the engine core and the lance act; `index.json` lists them, the three added entries and what the set covers (about 2 s) |
@@ -321,8 +321,10 @@ What the cases pin down, from Pillow's source (`_imaging.c`, `Draw.c`, `Resample
 ### `kit`: the renderer kit's own helpers
 
 For `bf-picture`'s ports of the `reelkit` picture modules. One file per group in `studio/reference/picture_kit/`;
-a case is one Python expression (`call`), its scalar arguments (`args`) and its arrays. The later picture tasks add
-their groups to the same module.
+a case is one Python expression (`call`), its scalar arguments (`args`) and its arrays. `kit_vectors.py` holds the
+three groups of the table below and the export itself; the renderer kit's nine groups (`camera`, `geometry`,
+`raster`, `lighting`, `shadows`, `lens`, `fftconv`, `post`, `hull`) are in `kit_renderer_vectors.py`, whose
+docstring lists them.
 
 | File | Cases |
 | --- | --- |

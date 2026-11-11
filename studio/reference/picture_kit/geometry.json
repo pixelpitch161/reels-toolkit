@@ -1,0 +1,861 @@
+{
+ "about": "reelkit.geometry: face, box, prism, lathe, catenary and thin_quad on seeded inputs",
+ "cases": [
+  {
+   "args": {
+    "center": null,
+    "up": false
+   },
+   "arrays": {
+    "Q": "c000__Q",
+    "n": "c000__n",
+    "pts": "c000__pts"
+   },
+   "call": "reelkit.geometry.face(pts, center, up)",
+   "id": "c000"
+  },
+  {
+   "args": {
+    "center": ["0x1.4dee3c8673666p+0", "0x1.e1c3d39a67adfp+0", "-0x1.49a6bc6355dfap+1"],
+    "up": true
+   },
+   "arrays": {
+    "Q": "c001__Q",
+    "n": "c001__n",
+    "pts": "c001__pts"
+   },
+   "call": "reelkit.geometry.face(pts, center, up)",
+   "id": "c001"
+  },
+  {
+   "args": {
+    "center": ["-0x1.de57ec422baa3p+1", "0x1.56a1202a16e69p+1", "-0x1.35d4f91cd1cc8p+1"],
+    "up": false
+   },
+   "arrays": {
+    "Q": "c002__Q",
+    "n": "c002__n",
+    "pts": "c002__pts"
+   },
+   "call": "reelkit.geometry.face(pts, center, up)",
+   "id": "c002"
+  },
+  {
+   "args": {
+    "center": null,
+    "up": true
+   },
+   "arrays": {
+    "Q": "c003__Q",
+    "n": "c003__n",
+    "pts": "c003__pts"
+   },
+   "call": "reelkit.geometry.face(pts, center, up)",
+   "id": "c003"
+  },
+  {
+   "args": {
+    "center": ["0x1.1a63b9ebe10f5p+1", "0x1.0e8afd9d7eecap-1", "-0x1.5d76523629680p-2"],
+    "up": false
+   },
+   "arrays": {
+    "Q": "c004__Q",
+    "n": "c004__n",
+    "pts": "c004__pts"
+   },
+   "call": "reelkit.geometry.face(pts, center, up)",
+   "id": "c004"
+  },
+  {
+   "args": {
+    "center": ["0x1.4f0cdf5459018p+2", "0x1.37a4ba3d31a80p-5", "-0x1.20ff102656067p+0"],
+    "up": true
+   },
+   "arrays": {
+    "Q": "c005__Q",
+    "n": "c005__n",
+    "pts": "c005__pts"
+   },
+   "call": "reelkit.geometry.face(pts, center, up)",
+   "id": "c005"
+  },
+  {
+   "args": {
+    "center": null,
+    "up": false
+   },
+   "arrays": {
+    "Q": "c006__Q",
+    "n": "c006__n",
+    "pts": "c006__pts"
+   },
+   "call": "reelkit.geometry.face(pts, center, up)",
+   "id": "c006"
+  },
+  {
+   "args": {
+    "center": ["0x1.f6f210c029071p-2", "-0x1.3659b007c081cp-3", "-0x1.7eddb6c371e94p+1"],
+    "up": true
+   },
+   "arrays": {
+    "Q": "c007__Q",
+    "n": "c007__n",
+    "pts": "c007__pts"
+   },
+   "call": "reelkit.geometry.face(pts, center, up)",
+   "id": "c007"
+  },
+  {
+   "args": {
+    "center": ["-0x1.14ee81ee77f98p+0", "-0x1.2c0f142f6122dp+0", "-0x1.c625f890a6ab9p-1"],
+    "up": false
+   },
+   "arrays": {
+    "Q": "c008__Q",
+    "n": "c008__n",
+    "pts": "c008__pts"
+   },
+   "call": "reelkit.geometry.face(pts, center, up)",
+   "id": "c008"
+  },
+  {
+   "args": {
+    "center": null,
+    "up": true
+   },
+   "arrays": {
+    "Q": "c009__Q",
+    "n": "c009__n",
+    "pts": "c009__pts"
+   },
+   "call": "reelkit.geometry.face(pts, center, up)",
+   "id": "c009"
+  },
+  {
+   "args": {
+    "center": ["-0x1.f7a1248f835fcp-1", "0x1.2753b3cac93cdp+1", "-0x1.df0c902618684p+0"],
+    "up": false
+   },
+   "arrays": {
+    "Q": "c010__Q",
+    "n": "c010__n",
+    "pts": "c010__pts"
+   },
+   "call": "reelkit.geometry.face(pts, center, up)",
+   "id": "c010"
+  },
+  {
+   "args": {
+    "center": ["-0x1.158d3d377e900p-1", "0x1.02ebb3273ad3bp-1", "-0x1.32eba9d692ea1p+0"],
+    "up": true
+   },
+   "arrays": {
+    "Q": "c011__Q",
+    "n": "c011__n",
+    "pts": "c011__pts"
+   },
+   "call": "reelkit.geometry.face(pts, center, up)",
+   "id": "c011"
+  },
+  {
+   "args": {
+    "center": null,
+    "up": false
+   },
+   "arrays": {
+    "Q": "c012__Q",
+    "n": "c012__n",
+    "pts": "c012__pts"
+   },
+   "call": "reelkit.geometry.face(pts, center, up)",
+   "id": "c012"
+  },
+  {
+   "args": {
+    "center": ["-0x1.63637f21d6014p+0", "-0x1.20b416eee4e6ep-1", "0x1.7061b2563486bp+1"],
+    "up": true
+   },
+   "arrays": {
+    "Q": "c013__Q",
+    "n": "c013__n",
+    "pts": "c013__pts"
+   },
+   "call": "reelkit.geometry.face(pts, center, up)",
+   "id": "c013"
+  },
+  {
+   "args": {
+    "center": ["-0x1.33a4a167fa9d1p+0", "-0x1.62aa7e607b175p+1", "0x1.11be7896be6a7p+0"],
+    "up": false
+   },
+   "arrays": {
+    "Q": "c014__Q",
+    "n": "c014__n",
+    "pts": "c014__pts"
+   },
+   "call": "reelkit.geometry.face(pts, center, up)",
+   "id": "c014"
+  },
+  {
+   "args": {
+    "center": null,
+    "up": true
+   },
+   "arrays": {
+    "Q": "c015__Q",
+    "n": "c015__n",
+    "pts": "c015__pts"
+   },
+   "call": "reelkit.geometry.face(pts, center, up)",
+   "id": "c015"
+  },
+  {
+   "args": {
+    "center": ["-0x1.5feddae136399p+0", "0x1.7ed42d0390fa4p+0", "0x1.b17cb04551b28p+0"],
+    "up": false
+   },
+   "arrays": {
+    "Q": "c016__Q",
+    "n": "c016__n",
+    "pts": "c016__pts"
+   },
+   "call": "reelkit.geometry.face(pts, center, up)",
+   "id": "c016"
+  },
+  {
+   "args": {
+    "center": ["-0x1.d7be8db22d47ep+0", "-0x1.b82d8ded78b8cp-3", "-0x1.47e8d602f8042p+1"],
+    "up": true
+   },
+   "arrays": {
+    "Q": "c017__Q",
+    "n": "c017__n",
+    "pts": "c017__pts"
+   },
+   "call": "reelkit.geometry.face(pts, center, up)",
+   "id": "c017"
+  },
+  {
+   "args": {
+    "cx": "-0x1.e992812b2fbb0p-2",
+    "cy": "-0x1.84a0e7ec06fa4p-1",
+    "cz": "0x1.1a3e23c437398p+1",
+    "hx": "0x1.936d9d1e9d9e3p-2",
+    "hy": "0x1.3c79a1d8d2196p-1",
+    "hz": "0x1.8bd4b89da0aa7p+0",
+    "rot": "0x0.0p+0"
+   },
+   "arrays": {
+    "Q": "c018__Q",
+    "counts": "c018__counts",
+    "n": "c018__n"
+   },
+   "call": "reelkit.geometry.box(cx, cy, cz, hx, hy, hz, rot)",
+   "id": "c018"
+  },
+  {
+   "args": {
+    "cx": "0x1.6230bd3892674p+0",
+    "cy": "-0x1.7a4de6f691fd8p+1",
+    "cz": "-0x1.62cfcc342e16cp-1",
+    "hx": "0x1.c42fc3883c03fp-1",
+    "hy": "0x1.94bfaf325848fp-2",
+    "hz": "0x1.a530047744ae2p-5",
+    "rot": "0x0.0p+0"
+   },
+   "arrays": {
+    "Q": "c019__Q",
+    "counts": "c019__counts",
+    "n": "c019__n"
+   },
+   "call": "reelkit.geometry.box(cx, cy, cz, hx, hy, hz, rot)",
+   "id": "c019"
+  },
+  {
+   "args": {
+    "cx": "0x1.6719df0d364e8p+0",
+    "cy": "0x1.5a9616c6d35a4p+0",
+    "cz": "-0x1.1ff09f924b330p-1",
+    "hx": "0x1.334be5ae64eb3p+0",
+    "hy": "0x1.eed7dcc619f3dp-1",
+    "hz": "0x1.88c0716d35379p+0",
+    "rot": "0x1.921fb54442d18p-1"
+   },
+   "arrays": {
+    "Q": "c020__Q",
+    "counts": "c020__counts",
+    "n": "c020__n"
+   },
+   "call": "reelkit.geometry.box(cx, cy, cz, hx, hy, hz, rot)",
+   "id": "c020"
+  },
+  {
+   "args": {
+    "cx": "0x1.64a1bb4567088p-1",
+    "cy": "-0x1.0d0e3d404af46p+0",
+    "cz": "0x1.4be2ee08c2938p+1",
+    "hx": "0x1.50679cac3c191p+0",
+    "hy": "0x1.62327511b55b7p+0",
+    "hz": "0x1.08cd285264447p-2",
+    "rot": "0x1.3333333333333p-2"
+   },
+   "arrays": {
+    "Q": "c021__Q",
+    "counts": "c021__counts",
+    "n": "c021__n"
+   },
+   "call": "reelkit.geometry.box(cx, cy, cz, hx, hy, hz, rot)",
+   "id": "c021"
+  },
+  {
+   "args": {
+    "cx": "0x1.833dac6660050p-1",
+    "cy": "0x1.5839fcfcf9350p+0",
+    "cz": "-0x1.cc2a5bc2f3190p-2",
+    "hx": "0x1.1379986d3c899p+0",
+    "hy": "0x1.ae66a32fdc354p-1",
+    "hz": "0x1.0998dd64053e1p-1",
+    "rot": "-0x1.3333333333333p+0"
+   },
+   "arrays": {
+    "Q": "c022__Q",
+    "counts": "c022__counts",
+    "n": "c022__n"
+   },
+   "call": "reelkit.geometry.box(cx, cy, cz, hx, hy, hz, rot)",
+   "id": "c022"
+  },
+  {
+   "args": {
+    "cx": "0x1.2a73bf9b1fc6cp+1",
+    "cy": "0x1.5beede2fab8d4p-1",
+    "cz": "-0x1.3464f01136b65p+1",
+    "hx": "0x1.9eeafacd10e8bp+0",
+    "hy": "0x1.381f8e3d10b3ep+0",
+    "hz": "0x1.c60cbef6ff668p-4",
+    "rot": "0x1.921fb54442d18p+0"
+   },
+   "arrays": {
+    "Q": "c023__Q",
+    "counts": "c023__counts",
+    "n": "c023__n"
+   },
+   "call": "reelkit.geometry.box(cx, cy, cz, hx, hy, hz, rot)",
+   "id": "c023"
+  },
+  {
+   "args": {
+    "cx": "-0x1.341b3c7274974p+1",
+    "cy": "0x1.2163f822e7340p-3",
+    "cz": "0x1.6ba124dff73c0p+0",
+    "hx": "0x1.0bb79084426f4p-2",
+    "hy": "0x1.becb14f420746p+0",
+    "hz": "0x1.20ef768743ee3p-1",
+    "rot": "0x1.0000000000000p+1"
+   },
+   "arrays": {
+    "Q": "c024__Q",
+    "counts": "c024__counts",
+    "n": "c024__n"
+   },
+   "call": "reelkit.geometry.box(cx, cy, cz, hx, hy, hz, rot)",
+   "id": "c024"
+  },
+  {
+   "args": {
+    "cx": "-0x1.b0c87704a2efbp+0",
+    "cy": "0x1.0e1176b35a8a2p+1",
+    "cz": "0x1.a2f56c94aa1b8p+0",
+    "hx": "0x1.1c0c866e7e362p-3",
+    "hy": "0x1.f99bbc23227e6p-1",
+    "hz": "0x1.97ff0639f4955p+0",
+    "rot": "0x1.47ae147ae147bp-7"
+   },
+   "arrays": {
+    "Q": "c025__Q",
+    "counts": "c025__counts",
+    "n": "c025__n"
+   },
+   "call": "reelkit.geometry.box(cx, cy, cz, hx, hy, hz, rot)",
+   "id": "c025"
+  },
+  {
+   "args": {
+    "cx": "-0x1.254056c9f6114p+2",
+    "cz": "0x0.0p+0",
+    "n": 6,
+    "r": "0x1.5c28f5c28f5c3p-4",
+    "r1": null,
+    "rot": "0x0.0p+0",
+    "tilt": ["0x0.0p+0", "0x0.0p+0"],
+    "y0": "0x0.0p+0",
+    "y1": "0x1.6b851eb851eb8p+0"
+   },
+   "arrays": {
+    "Q": "c026__Q",
+    "counts": "c026__counts",
+    "n": "c026__n"
+   },
+   "call": "reelkit.geometry.prism(cx, cz, r, y0, y1, n, r1, rot, tilt)",
+   "id": "c026"
+  },
+  {
+   "args": {
+    "cx": "-0x1.254056c9f6114p+2",
+    "cz": "0x0.0p+0",
+    "n": 6,
+    "r": "0x1.47ae147ae147bp-3",
+    "r1": null,
+    "rot": "0x0.0p+0",
+    "tilt": ["0x0.0p+0", "0x0.0p+0"],
+    "y0": "0x1.3d70a3d70a3d7p-2",
+    "y1": "0x1.0f5c28f5c28f6p-1"
+   },
+   "arrays": {
+    "Q": "c027__Q",
+    "counts": "c027__counts",
+    "n": "c027__n"
+   },
+   "call": "reelkit.geometry.prism(cx, cz, r, y0, y1, n, r1, rot, tilt)",
+   "id": "c027"
+  },
+  {
+   "args": {
+    "cx": "-0x1.254056c9f6114p+2",
+    "cz": "0x0.0p+0",
+    "n": 6,
+    "r": "0x1.c28f5c28f5c29p-4",
+    "r1": null,
+    "rot": "0x0.0p+0",
+    "tilt": ["0x0.0p+0", "0x0.0p+0"],
+    "y0": "0x1.6b851eb851eb8p+0",
+    "y1": "0x1.7ae147ae147aep+0"
+   },
+   "arrays": {
+    "Q": "c028__Q",
+    "counts": "c028__counts",
+    "n": "c028__n"
+   },
+   "call": "reelkit.geometry.prism(cx, cz, r, y0, y1, n, r1, rot, tilt)",
+   "id": "c028"
+  },
+  {
+   "args": {
+    "cx": "0x0.0p+0",
+    "cz": "0x0.0p+0",
+    "n": 8,
+    "r": "0x1.0000000000000p+0",
+    "r1": null,
+    "rot": "0x0.0p+0",
+    "tilt": ["0x0.0p+0", "0x0.0p+0"],
+    "y0": "0x0.0p+0",
+    "y1": "0x1.0000000000000p+1"
+   },
+   "arrays": {
+    "Q": "c029__Q",
+    "counts": "c029__counts",
+    "n": "c029__n"
+   },
+   "call": "reelkit.geometry.prism(cx, cz, r, y0, y1, n, r1, rot, tilt)",
+   "id": "c029"
+  },
+  {
+   "args": {
+    "cx": "0x1.0000000000000p+0",
+    "cz": "-0x1.0000000000000p+1",
+    "n": 8,
+    "r": "0x1.999999999999ap-1",
+    "r1": "0x1.999999999999ap-2",
+    "rot": "0x1.999999999999ap-3",
+    "tilt": ["0x0.0p+0", "0x0.0p+0"],
+    "y0": "-0x1.0000000000000p-1",
+    "y1": "0x1.8000000000000p+0"
+   },
+   "arrays": {
+    "Q": "c030__Q",
+    "counts": "c030__counts",
+    "n": "c030__n"
+   },
+   "call": "reelkit.geometry.prism(cx, cz, r, y0, y1, n, r1, rot, tilt)",
+   "id": "c030"
+  },
+  {
+   "args": {
+    "cx": "-0x1.8000000000000p+0",
+    "cz": "0x1.0000000000000p-1",
+    "n": 10,
+    "r": "0x1.0000000000000p-1",
+    "r1": null,
+    "rot": "-0x1.6666666666666p-1",
+    "tilt": ["0x1.3333333333333p-2", "-0x1.999999999999ap-3"],
+    "y0": "0x0.0p+0",
+    "y1": "0x1.8000000000000p+1"
+   },
+   "arrays": {
+    "Q": "c031__Q",
+    "counts": "c031__counts",
+    "n": "c031__n"
+   },
+   "call": "reelkit.geometry.prism(cx, cz, r, y0, y1, n, r1, rot, tilt)",
+   "id": "c031"
+  },
+  {
+   "args": {
+    "cx": "0x1.0000000000000p-2",
+    "cz": "0x1.8000000000000p-1",
+    "n": 3,
+    "r": "0x1.3333333333333p+0",
+    "r1": "0x0.0p+0",
+    "rot": "0x1.0000000000000p+0",
+    "tilt": ["0x0.0p+0", "0x0.0p+0"],
+    "y0": "0x1.999999999999ap-4",
+    "y1": "0x1.999999999999ap-3"
+   },
+   "arrays": {
+    "Q": "c032__Q",
+    "counts": "c032__counts",
+    "n": "c032__n"
+   },
+   "call": "reelkit.geometry.prism(cx, cz, r, y0, y1, n, r1, rot, tilt)",
+   "id": "c032"
+  },
+  {
+   "args": {
+    "cx": "0x0.0p+0",
+    "cz": "0x0.0p+0",
+    "n": 4,
+    "r": "0x1.0000000000000p+1",
+    "r1": null,
+    "rot": "0x1.921fb54442d18p-1",
+    "tilt": ["0x0.0p+0", "0x0.0p+0"],
+    "y0": "0x0.0p+0",
+    "y1": "0x1.0000000000000p+0"
+   },
+   "arrays": {
+    "Q": "c033__Q",
+    "counts": "c033__counts",
+    "n": "c033__n"
+   },
+   "call": "reelkit.geometry.prism(cx, cz, r, y0, y1, n, r1, rot, tilt)",
+   "id": "c033"
+  },
+  {
+   "args": {
+    "cx": "0x1.0000000000000p+1",
+    "cz": "0x1.0000000000000p+1",
+    "n": 12,
+    "r": "0x1.3333333333333p-2",
+    "r1": "0x1.3333333333333p-1",
+    "rot": "0x0.0p+0",
+    "tilt": ["-0x1.999999999999ap-4", "0x1.999999999999ap-5"],
+    "y0": "0x1.0000000000000p+0",
+    "y1": "0x1.199999999999ap+0"
+   },
+   "arrays": {
+    "Q": "c034__Q",
+    "counts": "c034__counts",
+    "n": "c034__n"
+   },
+   "call": "reelkit.geometry.prism(cx, cz, r, y0, y1, n, r1, rot, tilt)",
+   "id": "c034"
+  },
+  {
+   "args": {
+    "cx": "0x0.0p+0",
+    "cz": "0x0.0p+0",
+    "n": 5,
+    "r": "0x1.0000000000000p+0",
+    "r1": null,
+    "rot": "0x1.8000000000000p+1",
+    "tilt": ["0x0.0p+0", "0x0.0p+0"],
+    "y0": "0x0.0p+0",
+    "y1": "0x1.0000000000000p+0"
+   },
+   "arrays": {
+    "Q": "c035__Q",
+    "counts": "c035__counts",
+    "n": "c035__n"
+   },
+   "call": "reelkit.geometry.prism(cx, cz, r, y0, y1, n, r1, rot, tilt)",
+   "id": "c035"
+  },
+  {
+   "args": {
+    "cx": "0x0.0p+0",
+    "cy": "0x0.0p+0",
+    "cz": "0x0.0p+0",
+    "n": 8,
+    "rot": "0x0.0p+0"
+   },
+   "arrays": {
+    "Q": "c036__Q",
+    "counts": "c036__counts",
+    "n": "c036__n",
+    "prof": "c036__prof"
+   },
+   "call": "reelkit.geometry.lathe(cx, cz, prof, n, rot, cy)",
+   "id": "c036"
+  },
+  {
+   "args": {
+    "cx": "0x1.8000000000000p+0",
+    "cy": "0x1.0000000000000p-2",
+    "cz": "-0x1.0000000000000p+1",
+    "n": 6,
+    "rot": "0x1.3333333333333p-2"
+   },
+   "arrays": {
+    "Q": "c037__Q",
+    "counts": "c037__counts",
+    "n": "c037__n",
+    "prof": "c037__prof"
+   },
+   "call": "reelkit.geometry.lathe(cx, cz, prof, n, rot, cy)",
+   "id": "c037"
+  },
+  {
+   "args": {
+    "cx": "0x0.0p+0",
+    "cy": "0x0.0p+0",
+    "cz": "0x1.0000000000000p+0",
+    "n": 5,
+    "rot": "0x0.0p+0"
+   },
+   "arrays": {
+    "Q": "c038__Q",
+    "counts": "c038__counts",
+    "n": "c038__n",
+    "prof": "c038__prof"
+   },
+   "call": "reelkit.geometry.lathe(cx, cz, prof, n, rot, cy)",
+   "id": "c038"
+  },
+  {
+   "args": {
+    "cx": "-0x1.0000000000000p+0",
+    "cy": "-0x1.0000000000000p-1",
+    "cz": "0x0.0p+0",
+    "n": 12,
+    "rot": "-0x1.0000000000000p+0"
+   },
+   "arrays": {
+    "Q": "c039__Q",
+    "counts": "c039__counts",
+    "n": "c039__n",
+    "prof": "c039__prof"
+   },
+   "call": "reelkit.geometry.lathe(cx, cz, prof, n, rot, cy)",
+   "id": "c039"
+  },
+  {
+   "args": {
+    "cx": "0x1.0000000000000p-1",
+    "cy": "0x1.0000000000000p+0",
+    "cz": "0x1.0000000000000p-1",
+    "n": 7,
+    "rot": "0x1.4000000000000p+1"
+   },
+   "arrays": {
+    "Q": "c040__Q",
+    "counts": "c040__counts",
+    "n": "c040__n",
+    "prof": "c040__prof"
+   },
+   "call": "reelkit.geometry.lathe(cx, cz, prof, n, rot, cy)",
+   "id": "c040"
+  },
+  {
+   "args": {
+    "cx": "0x0.0p+0",
+    "cy": "0x0.0p+0",
+    "cz": "0x0.0p+0",
+    "n": 3,
+    "rot": "0x1.999999999999ap-4"
+   },
+   "arrays": {
+    "Q": "c041__Q",
+    "counts": "c041__counts",
+    "n": "c041__n",
+    "prof": "c041__prof"
+   },
+   "call": "reelkit.geometry.lathe(cx, cz, prof, n, rot, cy)",
+   "id": "c041"
+  },
+  {
+   "args": {
+    "a": ["-0x1.cf20b430e4ee4p+0", "-0x1.26a45ab6c5794p+0", "-0x1.38e8ece970050p+1"],
+    "b": ["-0x1.9380c33ebebd8p-1", "-0x1.6ffe3e15ddf0cp+1", "-0x1.6221717536c40p-1"],
+    "n": 2,
+    "sag": "0x0.0p+0"
+   },
+   "arrays": {
+    "out": "c042__out"
+   },
+   "call": "reelkit.geometry.catenary(a, b, sag, n)",
+   "id": "c042"
+  },
+  {
+   "args": {
+    "a": ["-0x1.2962d6907d4b4p+1", "-0x1.96894edd3a560p+0", "-0x1.ce9fbda316b90p-2"],
+    "b": ["0x1.ad2032e519424p+1", "-0x1.4896e90189bd6p+1", "-0x1.a57f80c764c70p+0"],
+    "n": 5,
+    "sag": "0x1.3333333333333p-2"
+   },
+   "arrays": {
+    "out": "c043__out"
+   },
+   "call": "reelkit.geometry.catenary(a, b, sag, n)",
+   "id": "c043"
+  },
+  {
+   "args": {
+    "a": ["-0x1.7d9c1ea664d40p-1", "-0x1.d7405322b9598p+0", "-0x1.32abe02a2b916p+1"],
+    "b": ["0x1.26a2cb9fe0c50p+0", "0x1.1657eb9871d66p+1", "0x1.c615c9eb031acp+1"],
+    "n": 15,
+    "sag": "0x1.eb851eb851eb8p-4"
+   },
+   "arrays": {
+    "out": "c044__out"
+   },
+   "call": "reelkit.geometry.catenary(a, b, sag, n)",
+   "id": "c044"
+  },
+  {
+   "args": {
+    "a": ["0x1.4afd144aebd80p-1", "0x1.ea67b14f9c940p-2", "0x1.f795818b185eep+1"],
+    "b": ["0x1.3941c32081990p-2", "-0x1.197f5528aba52p+1", "-0x1.9e09cf9e59f00p-5"],
+    "n": 3,
+    "sag": "-0x1.999999999999ap-3"
+   },
+   "arrays": {
+    "out": "c045__out"
+   },
+   "call": "reelkit.geometry.catenary(a, b, sag, n)",
+   "id": "c045"
+  },
+  {
+   "args": {
+    "a": ["0x1.e9d956d968f2ep+1", "-0x1.094a648dfd9a4p+1", "0x1.334461644deccp+1"],
+    "b": ["-0x1.819a657b4b250p+0", "0x1.e694d6e078c34p+1", "-0x1.7bf13093d9f2ep+1"],
+    "n": 9,
+    "sag": "0x1.8000000000000p+0"
+   },
+   "arrays": {
+    "out": "c046__out"
+   },
+   "call": "reelkit.geometry.catenary(a, b, sag, n)",
+   "id": "c046"
+  },
+  {
+   "args": {
+    "a": ["-0x1.967e6f34ed0e0p-1", "0x1.e148169e875d0p-1", "0x1.9143e9dc7184ep+1"],
+    "b": ["-0x1.47d6271ad337ap+1", "-0x1.87987ac4cf838p+1", "0x1.0c187cecfc23ap+1"],
+    "n": 33,
+    "sag": "0x1.999999999999ap-5"
+   },
+   "arrays": {
+    "out": "c047__out"
+   },
+   "call": "reelkit.geometry.catenary(a, b, sag, n)",
+   "id": "c047"
+  },
+  {
+   "args": {
+    "a": ["-0x1.54cd5ac43efa0p-1", "-0x1.e133105c46f80p-4", "-0x1.969971bbb90e2p+1"],
+    "b": ["-0x1.e067c69afc194p+0", "0x1.194b8e2527b14p+0", "-0x1.0bf3a8b3c9a28p-1"],
+    "w": "0x1.2d21b63025029p-2"
+   },
+   "arrays": {
+    "out": "c048__out"
+   },
+   "call": "reelkit.geometry.thin_quad(a, b, w)",
+   "id": "c048"
+  },
+  {
+   "args": {
+    "a": ["0x1.b26d312e67e78p+1", "0x1.9a069d4b5a03cp+0", "0x1.e40e497efcc50p+1"],
+    "b": ["-0x1.62a54bc1f26d0p-1", "-0x1.1122f4a3a3b80p-4", "0x1.7eb5168debaf0p-2"],
+    "w": "0x1.0be406f211a12p-2"
+   },
+   "arrays": {
+    "out": "c049__out"
+   },
+   "call": "reelkit.geometry.thin_quad(a, b, w)",
+   "id": "c049"
+  },
+  {
+   "args": {
+    "a": ["-0x1.00562836e6ca0p-3", "-0x1.b45ad15fa3b90p-1", "0x1.76c40d4a11d02p+1"],
+    "b": ["-0x1.722fdbabf4800p+1", "0x1.315a361761b44p+1", "0x1.25dcd18bfa928p+1"],
+    "w": "0x1.6813406ee592bp-2"
+   },
+   "arrays": {
+    "out": "c050__out"
+   },
+   "call": "reelkit.geometry.thin_quad(a, b, w)",
+   "id": "c050"
+  },
+  {
+   "args": {
+    "a": ["-0x1.d29dd7ad967e8p-1", "0x1.e1ac164279f10p+0", "0x1.10cafc6b70a60p-3"],
+    "b": ["-0x1.894afd65ea28ep+1", "0x1.2e70e389b6760p+0", "0x1.d29e8a1a0b68ep+1"],
+    "w": "0x1.d42943caef6cfp-3"
+   },
+   "arrays": {
+    "out": "c051__out"
+   },
+   "call": "reelkit.geometry.thin_quad(a, b, w)",
+   "id": "c051"
+  },
+  {
+   "args": {
+    "a": ["-0x1.2531b2ab7a610p+1", "-0x1.edf19f30c345ap+1", "-0x1.c8e43d45a98f0p-1"],
+    "b": ["0x1.e287e7298ccd6p+1", "0x1.6d35547abb8eap+1", "0x1.1626acc586426p+1"],
+    "w": "0x1.1fc70c06f71b1p-4"
+   },
+   "arrays": {
+    "out": "c052__out"
+   },
+   "call": "reelkit.geometry.thin_quad(a, b, w)",
+   "id": "c052"
+  },
+  {
+   "args": {
+    "a": ["-0x1.76d66d254f0a0p-2", "0x1.ff979bd6c8e0cp+0", "0x1.cc273c95171d8p-1"],
+    "b": ["-0x1.76d66d254f0a0p-2", "0x1.ff979bd6c8e0cp+0", "0x1.7309cf2545c76p+1"],
+    "w": "0x1.84873420abdadp-2"
+   },
+   "arrays": {
+    "out": "c053__out"
+   },
+   "call": "reelkit.geometry.thin_quad(a, b, w)",
+   "id": "c053"
+  },
+  {
+   "args": {
+    "a": ["0x1.78d049951d7d4p+0", "0x1.438788cc52d00p+0", "-0x1.32880302f6a88p+1"],
+    "b": ["-0x1.a0474a4eb7570p-2", "0x1.905f3024743f2p+1", "-0x1.482c0ce425370p+0"],
+    "w": "0x1.6c8310bfa6660p-3"
+   },
+   "arrays": {
+    "out": "c054__out"
+   },
+   "call": "reelkit.geometry.thin_quad(a, b, w)",
+   "id": "c054"
+  },
+  {
+   "args": {
+    "a": ["0x1.6ae8d0581f25ap+1", "-0x1.a9afe63549c90p+1", "0x1.744a75a722bf0p+0"],
+    "b": ["0x1.0330826703900p-6", "0x1.b9c0347366400p-3", "0x1.6aaf2b788caf6p+1"],
+    "w": "0x1.d26255c97c90bp-3"
+   },
+   "arrays": {
+    "out": "c055__out"
+   },
+   "call": "reelkit.geometry.thin_quad(a, b, w)",
+   "id": "c055"
+  }
+ ],
+ "note": "A list of faces is three arrays: Q (the corners of all faces, one face after another), counts (corners per face) and n (one unit normal per face). Scalar arguments are in args by their Python names (floats as float.hex() strings, None as null).",
+ "tool": "kit"
+}

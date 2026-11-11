@@ -16,7 +16,8 @@
 
 use bf_core::dmath::{self, PI};
 use bf_sound::dsp;
-use bf_sound::voice::{PpNoise, Voice, pp};
+use bf_sound::voice::pp::{self, SRF};
+use bf_sound::voice::{PpNoise, Voice};
 
 /// The FLUTE's register in `pp_bridge`'s roster (`('FLUTE', 'flute60_lowpoly', None, (72, 93), ...)`).
 pub const REGISTER: (i32, i32) = (72, 93);
@@ -31,9 +32,6 @@ const VIB: f64 = 0.0055;
 const CHIFF: f64 = 0.3;
 /// `flute_tone`'s default `attack`, in seconds.
 const ATTACK: f64 = 0.04;
-
-/// The sample rate of the series, as a float.
-const SRF: f64 = pp::SR as f64;
 
 /// The FLUTE's Pixel Pitch voice.
 #[derive(Clone, Copy, Debug, Default)]

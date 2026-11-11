@@ -40,5 +40,10 @@ pub use self::wav::write_wav16;
 /// The sample rate of everything the Studio synthesises, in Hz.
 pub const SR: usize = 48_000;
 
+/// [`SR`] as a float, for the sample arithmetic (`t * SR`, `n / SR`). The one home of this constant: the music
+/// helpers, the fighters' parts and the themes use it. (The Pixel Pitch voices' own rate is
+/// [`voice::pp::SRF`].)
+pub const SRF: f64 = SR as f64;
+
 /// The length of a soundtrack in samples: 2,860 AAC frames of 1,024 samples, 61.013 s.
 pub const NA: usize = 2_928_640;
