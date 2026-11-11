@@ -136,7 +136,10 @@ pub type Payload = Box<dyn Any + Send>;
 pub type Spark = (V3, usize, f64, f64);
 
 /// The tint of [`BallSprite`]: `fn(lit) -> lit` on the lit sprite, a `float32` RGB picture of the sprite's part
-/// on the frame.
+/// on the frame. It changes the picture in place, so the result is `float32`: a Python tint that returns a
+/// `float64` array (a product with a numpy array of colours, say) cannot be written as it is, and its port must
+/// round each sample to `f32` last, which is what storing into the frame does to it in Python anyway (the
+/// renderer only clips the result and stores it).
 pub type Tint<'a> = Box<dyn Fn(&mut Img<f32>) + 'a>;
 
 /// What [`Look::ball_sprite`] returns: the sprite to draw in the ball instead of the usual one, and its tint.
@@ -338,7 +341,7 @@ pub trait Look: Send + Sync {
             (5, 1.8, 0.18)
         };
         // P.COL[e[2]] * 0.6 + 100
-        let col = p.col[e.who().filter(|&k| k < 2).unwrap_or(0)];
+        let col = p.col[crate::ring::checked_owner(e)];
         (col.map(|c| c * 0.6 + 100.0), n, sp, life)
     }
 
