@@ -1,7 +1,5 @@
 //! `Flares`: attacks light the scene. Short point lights in a fighter's colour.
 
-use std::cmp::Ordering;
-
 use crate::camera::V3;
 use crate::lighting::Lights;
 use crate::np;
@@ -89,7 +87,9 @@ impl Flares {
             }
         }
         // out.sort(key=lambda q: -float(q[1].max())): a stable sort
-        out.sort_by(|a, b| (-top(a.1)).partial_cmp(&-top(b.1)).unwrap_or(Ordering::Equal));
+        // (`total_cmp` is a total order, so the sort cannot panic on a NaN; `+ 0.0` makes a minus zero a plain
+        // zero first, so any two numbers compare as Python's `<` has them)
+        out.sort_by(|a, b| (-top(a.1) + 0.0).total_cmp(&(-top(b.1) + 0.0)));
         out.truncate(self.max_n);
         out
     }

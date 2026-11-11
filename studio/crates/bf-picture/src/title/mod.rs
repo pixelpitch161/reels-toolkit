@@ -76,35 +76,9 @@ pub const GLASS: [f64; 3] = [236.0, 232.0, 226.0];
 const TAG: [f64; 3] = [255.0, 214.0, 96.0];
 
 /// What the card asks of a fighter's look: the three hooks of `kit/fighters/base.py` `Look` that `kit.picture`
-/// hands to `title.py` (`PATTERNS`, `CLOSEUP` and `GLASS`), with the base class's defaults.
-///
-/// This is the minimal form of the look's trait: the ring renderer's task adds the other hooks to it.
-pub trait Look {
-    /// `title_pattern`: the fighter's panel pattern on the card. `base` is the panel's gradient, an `(H, W, 3)`
-    /// `float64` picture not yet dithered; a look with a pattern changes it in place. The default
-    /// (`title_pattern = None`) leaves it alone: the panel stays plain.
-    ///
-    /// A pattern reads the card's geometry from [`layout`]: [`layout::side`] is `title.SIDE`, [`layout::dd`] is
-    /// `title.DD`, and `title.XX`, `title.YY` are the pixel's column and row.
-    ///
-    /// As in Python (`PATTERNS.setdefault(name, look.title_pattern)`), a pattern the card itself has for the
-    /// fighter's name ([`panels::builtin_pattern`]) is used instead, and this hook is then not called.
-    fn title_pattern(&self, base: &mut RgbF) {
-        let _ = base;
-    }
-
-    /// `title_closeup(r)`: the look's own close-up sprite for the card, RGBA and square, for a ball of radius `r`
-    /// pixels; `None` (the default) for the fighter's Pixel Pitch model.
-    fn title_closeup(&self, r: u32) -> Option<Img<u8>> {
-        let _ = r;
-        None
-    }
-
-    /// `glass`: the tint of the fighter's glass ball. The default is [`GLASS`].
-    fn glass(&self) -> [f64; 3] {
-        GLASS
-    }
-}
+/// hands to `title.py` (`title_pattern` into `PATTERNS`, `title_closeup` into `CLOSEUP` and `glass` into `GLASS`).
+/// They are three methods of the look's trait, [`crate::look::Look`].
+pub use crate::look::Look;
 
 /// One fighter as the card takes it besides its colours: its look, and the model its close-up is drawn from
 /// when the look has no close-up of its own (`sprites.render_sprite(CFG[k]['pp'], r, yc, roll)` with

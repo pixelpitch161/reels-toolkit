@@ -119,6 +119,12 @@ impl Moments {
     /// The picture is the `float64` one the ring has after the grade, and the discs' centres are `float64` too
     /// (`cam.wp`), which is what makes numpy compute the discs in `float64`. Without discs the factor is a
     /// `float32` value, as numpy has it then.
+    ///
+    /// A caller whose picture is `float32` (a look's overlay after the grade may leave one) does as
+    /// `kit/picture.py` does through numpy: when [`Moments::dim_k`] is 0.005 or less the picture stays as it is,
+    /// `float32`; with discs the factor is `float64`, so the picture is widened first and is `float64` from then
+    /// on (this function); without discs the factor is the `float32` value `1 - float32(k)` and the product is a
+    /// `float32` product, so the picture stays `float32` and must be multiplied in `f32`, not widened.
     pub fn apply_dim(&self, img: &mut Img<f64>, t: f64, keep: &[(f64, f64, f64)]) -> bool {
         let k = self.dim_k(t);
         if k <= 0.005 {
