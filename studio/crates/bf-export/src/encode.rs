@@ -107,8 +107,21 @@ fn on_path(file: &str, path: Option<&OsStr>) -> Option<PathBuf> {
         .find(|p| p.is_file())
 }
 
-/// [`find_ffmpeg`] with the variable, the app's own `ffmpeg` folder and the `PATH` given.
-pub(crate) fn find_with(
+/// What every sentence about a broken copy of the app's own ffmpeg ends with (then a full stop).
+pub const REINSTALL: &str = "install the app again";
+
+/// Whether `sentence` (an [`ExportError::Ffmpeg`]'s text) is about the app's own copy of ffmpeg: it then ends in
+/// [`REINSTALL`], and saying "ffmpeg was not found" instead would be wrong.
+pub fn is_about_the_apps_own(sentence: &str) -> bool {
+    sentence.strip_suffix('.').is_some_and(|s| s.ends_with(REINSTALL))
+}
+
+/// [`find_ffmpeg`] with the variable (`BALLFIGHT_FFMPEG`'s value), the app's own `ffmpeg` folder and the `PATH`
+/// given, so a test can pass its own folders without changing the process's environment or the program's folder.
+///
+/// # Errors
+/// As [`find_ffmpeg`].
+pub fn find_with(
     var: Option<OsString>,
     beside: Option<PathBuf>,
     path: Option<OsString>,
@@ -229,7 +242,7 @@ pub fn ffmpeg_at(ffmpeg: PathBuf) -> Result<Ffmpeg, ExportError> {
 /// the app's own copy, "install the app again".
 fn remedy(source: FfmpegSource, today: &str) -> String {
     match source {
-        FfmpegSource::WithTheApp => "install the app again".to_string(),
+        FfmpegSource::WithTheApp => REINSTALL.to_string(),
         FfmpegSource::Setting | FfmpegSource::Path => today.to_string(),
     }
 }
@@ -924,6 +937,30 @@ mod tests {
             text.contains(&own.0.join(exe("ffmpeg")).display().to_string()) && text.contains("install the app again"),
             "{text}"
         );
+    }
+
+    #[test]
+    fn sentences_about_the_apps_own_copy_can_be_told_apart() {
+        let own = Temp::new("own told apart");
+        let none = Temp::new("path told apart");
+        let no_path = Some(none.0.clone().into_os_string());
+        let missing = find_with(None, None, no_path.clone()).unwrap_err().to_string();
+        assert!(!is_about_the_apps_own(&missing), "{missing}");
+        let setting = find_with(
+            Some("C:\\nowhere\\ffmpeg.exe".into()),
+            Some(own.0.clone()),
+            no_path.clone(),
+        );
+        assert!(!is_about_the_apps_own(&setting.unwrap_err().to_string()));
+        // only ffmpeg; then a file that is no program as both
+        std::fs::write(own.0.join(exe("ffmpeg")), b"not a program").unwrap();
+        let e = find_with(None, Some(own.0.clone()), no_path.clone())
+            .unwrap_err()
+            .to_string();
+        assert!(is_about_the_apps_own(&e), "{e}");
+        std::fs::write(own.0.join(exe("ffprobe")), b"not a program").unwrap();
+        let e = find_with(None, Some(own.0.clone()), no_path).unwrap_err().to_string();
+        assert!(is_about_the_apps_own(&e), "{e}");
     }
 
     #[test]

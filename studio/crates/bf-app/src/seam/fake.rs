@@ -25,7 +25,7 @@
 //! - `ScanLibrary`: the six sample videos, placed under the asked-for folder, then a `LibraryCover` for each.
 //! - `OpenFight`, `OpenFightText`: `FightOpened` with the starting draft on seed 18433, titled
 //!   "Flute vs Trombone, seed 18433".
-//! - `CheckTools`: `Ok("ffmpeg (sample)")`. `CheckFolder` and `CreateFolder`: the folder can be written and the name
+//! - `CheckTools`: `Ok("ffmpeg (sample), found on this PC")`. `CheckFolder` and `CreateFolder`: the folder can be written and the name
 //!   is free, with the command's root and name (empty for `CreateFolder`). `PickFolder`: no folder picked.
 //! - `StopBalance`, `StopSearch`: the run stops and sends nothing more. `SetWorkers`: the searches' "cores" from then
 //!   on (7, the mock-up's, until told). `PreviewBusy`, `RevealFolder`: nothing. `Shutdown`: the thread ends.
@@ -359,7 +359,7 @@ impl Engine {
             }
             Command::SetWorkers(n) => self.workers = n.max(1),
             Command::CheckTools => self.side.emit(Event::Tools {
-                ffmpeg: Ok("ffmpeg (sample)".to_string()),
+                ffmpeg: Ok("ffmpeg (sample), found on this PC".to_string()),
             }),
             Command::CheckFolder { root, name } => self.side.emit(Event::Folder {
                 root,
@@ -1482,7 +1482,7 @@ mod tests {
         handle.send(Command::CheckTools);
         let events = drain(&handle);
         assert!(
-            matches!(&events[..], [Event::Tools { ffmpeg: Ok(t) }] if t == "ffmpeg (sample)"),
+            matches!(&events[..], [Event::Tools { ffmpeg: Ok(t) }] if t == "ffmpeg (sample), found on this PC"),
             "{events:?}"
         );
 
@@ -1739,7 +1739,7 @@ mod tests {
         assert_eq!(s.vm.roster, Some(sample::roster()));
         assert_eq!(s.vm.pair_rules, [PAIR_RULE.to_string()]);
         assert_eq!(s.vm.folder, FolderState::Ok { taken: false });
-        assert_eq!(s.vm.ffmpeg, Some(Ok("ffmpeg (sample)".to_string())));
+        assert_eq!(s.vm.ffmpeg, Some(Ok("ffmpeg (sample), found on this PC".to_string())));
 
         let fx = s.dispatch(Action::Go(View::Step(Step::Balance)));
         pump(&handle, &mut s, fx);
