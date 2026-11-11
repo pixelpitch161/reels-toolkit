@@ -30,8 +30,12 @@ The interface tests draw on a software graphics adapter (Microsoft Basic Render 
 `mesa-vulkan-drivers`). Two such devices drawing at once crash the test process on Windows, so every test that draws
 takes the lock `common::gpu()` before anything else. They never open a window, a sound device or a dialog.
 
+The rule for every new test: a test that builds a harness or reads pixels takes `common::gpu()` first and keeps the
+guard to its end; `app_harness`, `widget_harness` and `pixels` refuse to run (they panic) without it.
+
 Reference pictures live in `tests/snapshots/` and are blessed on Windows. To bless a changed picture, run the test
 with `UPDATE_SNAPSHOTS=1` and look at the new picture before you commit it. A failing comparison leaves
-`*.new.png` and `*.diff.png` beside the reference; git ignores them.
+`*.new.png` and `*.diff.png` beside the reference, and a bless leaves the previous reference behind as `*.old.png`;
+git ignores all three.
 
 On Linux the sound crate needs `libasound2-dev` and `pkg-config` to build.
