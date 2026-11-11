@@ -71,7 +71,7 @@ pub fn streaks(img: &mut RgbF, grid: &Grid, t: f64, j: usize, cx: f64, cy: f64, 
 /// `start + step`, then `start + i * delta` with `delta` the difference of those two (numpy's `fill`).
 pub(crate) fn arange(start: f64, stop: f64, step: f64) -> Vec<f64> {
     let len = ((stop - start) / step).ceil();
-    if !(len > 0.0) {
+    if len.is_nan() || len <= 0.0 {
         return Vec::new();
     }
     let n = np::f64_to_i64(len).max(0) as usize;

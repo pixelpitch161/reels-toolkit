@@ -277,7 +277,7 @@ fn draw_case(case: &Value, trombone: &Mesh, noise: &Img<u8>) -> (usize, usize, V
         }
         let text = drawn_text(&log);
         let want = &case["drawn"][n];
-        if Value::from(log.boxes.len()) == want[0] && hex(&Sha256::digest(text.as_bytes())) == want[1] {
+        if want[0] == log.boxes.len() && hex(&Sha256::digest(text.as_bytes())) == want[1] {
             logs += 1;
         } else {
             failures.push(format!("  {id} frame {frame}: another draw log:\n{text}"));

@@ -46,7 +46,7 @@ fn py_repr(s: &str) -> String {
     if s.contains('\'') && !s.contains('"') {
         format!("\"{s}\"")
     } else {
-        format!("'{}'", s.replace('\'', "\'"))
+        format!("'{}'", s.replace('\'', "\\'"))
     }
 }
 
