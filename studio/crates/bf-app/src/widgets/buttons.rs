@@ -14,8 +14,10 @@
 //!   itself `FAINT` at full strength, on a painter egui's disabled fade does not touch.
 //! - A label too long for its control ends in an ellipsis and is never drawn past the control. A button is as wide
 //!   as its label, but never wider than the room its `Ui` has left.
-//! - Ids come from the allocation order (`Ui::unique_id`, egui's automatic ids), never from the name alone, so two
-//!   controls with the same name in one `Ui` do not clash.
+//! - A control that keeps state by its id (the focus of a segment, a dropdown's open list) takes a persistent id from
+//!   its name and the number of earlier controls of that name in the same `Ui` this pass ([`named_id`]), so it
+//!   neither loses that state when controls above it come and go nor clashes with a second control of its name.
+//!   The buttons, the switch and the icon button take egui's automatic ids, as egui's own buttons do.
 
 use std::ops::Range;
 
@@ -24,8 +26,8 @@ use egui::scroll_area::{ScrollAreaOutput, ScrollBarVisibility};
 use egui::style::{ScrollFadeStyle, ScrollStyle};
 use egui::text::{LayoutJob, TextWrapping};
 use egui::{
-    Color32, ComboBox, CornerRadius, IdSalt, Painter, Rect, Response, RichText, ScrollArea, Sense, Stroke, StrokeKind,
-    Style, Ui, UiBuilder, Visuals, WidgetInfo, pos2, vec2,
+    Color32, ComboBox, CornerRadius, Id, IdSalt, Painter, Rect, Response, RichText, ScrollArea, Sense, Stroke,
+    StrokeKind, Style, Ui, UiBuilder, Visuals, WidgetInfo, pos2, vec2,
 };
 
 use super::icons::{self, Icon};
@@ -90,6 +92,24 @@ fn ring_with(painter: &Painter, rect: Rect, corner: f32) {
 pub(crate) fn widget_ring(ui: &Ui, rect: Rect, corner: f32) {
     let painter = Painter::new(ui.ctx().clone(), ui.layer_id(), ui.clip_rect().expand(RING_ROOM));
     ring_with(&painter, rect, corner);
+}
+
+/// A persistent id for a control of `kind` named `name` in `ui`: made from `ui`'s scope id, the kind, the name and
+/// how many controls of that kind and name `ui` has already placed in this pass (0 for the first). The count is kept
+/// in egui's temporary data and starts again at 0 each pass, so the id stays the same from frame to frame while
+/// controls of other names come and go around it.
+pub(crate) fn named_id(ui: &Ui, kind: &str, name: &str) -> Id {
+    let base = ui.make_persistent_id((kind, name));
+    let pass = ui.ctx().cumulative_pass_nr();
+    let count = ui.ctx().data_mut(|data| {
+        let seen = data.get_temp_mut_or_insert_with(base.with("seen this pass"), || (pass, 0_usize));
+        if seen.0 != pass {
+            *seen = (pass, 0);
+        }
+        seen.1 += 1;
+        seen.1 - 1
+    });
+    base.with(count)
 }
 
 /// A painter on `ui`'s layer and clip rectangle that egui's disabled fade does not touch: a disabled control draws
@@ -250,9 +270,9 @@ pub fn segmented(
     let group = UiBuilder::new()
         .accessibility_role(Role::RadioGroup)
         .accessibility_label(name);
+    // The segments' ids come from the name, kept over time; a second group of the same name in this `Ui` counts on.
+    let base = named_id(ui, "segmented", name);
     ui.scope_builder(group, |ui| {
-        // The segments' ids follow the group's place in its parent, so two groups of one name do not clash.
-        let base = ui.unique_id();
         let parent_enabled = ui.is_enabled();
         let (_, outer) = ui.allocate_space(vec2(width, SEGMENT_H));
         let count = options.len().max(1);
@@ -403,8 +423,9 @@ fn menu_list_style(style: &mut Style) {
 /// [`dropdown_disabled`] and picks nothing.
 ///
 /// It is an `egui::ComboBox` named through its response, so the accessibility tree has a combo box called `name`
-/// whose value is the chosen option, and each item is a list option named by its label. Its id follows its place in
-/// its parent, so two dropdowns of one name do not clash.
+/// whose value is the chosen option, and each item is a list option named by its label. Its id comes from its name
+/// (see [`named_id`]), so its open list and the keyboard stay with it when controls above it come and go, and two
+/// dropdowns of one name do not clash.
 pub fn dropdown(ui: &mut Ui, name: &str, options: &[String], chosen: usize, width: f32) -> Option<usize> {
     let value = options.get(chosen).map_or("", String::as_str);
     if !ui.is_enabled() {
@@ -412,9 +433,9 @@ pub fn dropdown(ui: &mut Ui, name: &str, options: &[String], chosen: usize, widt
         return None;
     }
     let mut picked = None;
+    let salt = named_id(ui, "dropdown", name);
     let response = ui
         .scope(|ui| {
-            let salt = ui.unique_id().with("dropdown");
             let open = ComboBox::is_open(ui.ctx(), ui.make_persistent_id(IdSalt::new(salt)));
             let style = ui.style_mut();
             style.spacing.button_padding = vec2(MENU_PAD_X, 0.0);
@@ -547,13 +568,13 @@ pub fn progress(ui: &mut Ui, name: &str, share: f32, width: f32) -> Response {
 /// Shows `area` in `ui` with the app's scroll look (widget rule 21): no fade at a scrolled edge (egui's fade would
 /// cover a focus ring there, and the look has no gradients), and a solid bar whenever the content overflows, hovered
 /// or not: 6 wide, 4 from the content and 4 from the area's edge, a `GROUND` track with a `FAINT` handle (`MUTED`
-/// when hovered, `TEXT` while dragged). The content keeps the visuals `ui` had.
+/// when hovered, `TEXT` while dragged). The content keeps the visuals and the scroll style `ui` had.
 pub fn scrolled<R>(ui: &mut Ui, area: ScrollArea, add: impl FnOnce(&mut Ui) -> R) -> ScrollAreaOutput<R> {
     ui.scope(|ui| {
         let content = scroll_look(ui);
         area.scroll_bar_visibility(ScrollBarVisibility::VisibleWhenNeeded)
             .show(ui, |ui| {
-                *ui.visuals_mut() = content;
+                restore(ui, content);
                 add(ui)
             })
     })
@@ -573,16 +594,22 @@ pub fn scrolled_rows<R>(
         let content = scroll_look(ui);
         area.scroll_bar_visibility(ScrollBarVisibility::VisibleWhenNeeded)
             .show_rows(ui, row_h, count, |ui, rows| {
-                *ui.visuals_mut() = content;
+                restore(ui, content);
                 add(ui, rows)
             })
     })
     .inner
 }
 
-/// Gives `ui` the scroll look of [`scrolled`]; returns the visuals it had, for the content.
-fn scroll_look(ui: &mut Ui) -> Visuals {
-    let content = ui.visuals().clone();
+/// Gives the content of a scroll area back the visuals and the scroll style its `Ui` had.
+fn restore(ui: &mut Ui, (visuals, scroll): (Visuals, ScrollStyle)) {
+    *ui.visuals_mut() = visuals;
+    ui.spacing_mut().scroll = scroll;
+}
+
+/// Gives `ui` the scroll look of [`scrolled`]; returns the visuals and the scroll style it had, for the content.
+fn scroll_look(ui: &mut Ui) -> (Visuals, ScrollStyle) {
+    let content = (ui.visuals().clone(), ui.spacing().scroll);
     let style = ui.style_mut();
     style.spacing.scroll = ScrollStyle {
         bar_width: SCROLL_BAR_W,

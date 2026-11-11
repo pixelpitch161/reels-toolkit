@@ -922,3 +922,75 @@ fn every_roster_chip_shows_its_ring_and_one_not_built_takes_no_focus() {
         }
     }
 }
+
+#[test]
+fn a_column_scrolled_to_a_chosen_chip_does_not_fade_it_and_shows_its_bar() {
+    let _gpu = gpu();
+    // At the minimum size the roster overflows. Find a chip below its view that is not in the last row, so that
+    // once it is scrolled into view it sits at the lower edge with more of the roster below it.
+    let mut harness = showing(MIN, matchup::vm());
+    harness.run();
+    let strip_top = control(&harness, "Theme", Role::ComboBox).rect().min.y - 12.0 - 1.0;
+    let rects: Vec<(String, Rect)> = sample::roster()
+        .fighters
+        .iter()
+        .map(|f| (f.name.clone(), chip(&harness, &chip_name(&f.display)).rect()))
+        .collect();
+    let last_row = rects.iter().map(|r| r.1.min.y).fold(f32::NEG_INFINITY, f32::max);
+    let name = rects
+        .iter()
+        .find(|(n, r)| r.min.y > strip_top && r.min.y < last_row && n != "FLUTE" && n != "TROMBONE")
+        .map(|(n, _)| n.clone())
+        .expect("a chip below the view, not in the last row");
+    let display = sample::roster()
+        .fighters
+        .iter()
+        .find(|f| f.name == name)
+        .unwrap()
+        .display
+        .clone();
+    drop(harness);
+
+    let mut vm = matchup::vm();
+    vm.draft.fighters[1] = name.clone();
+    let mut harness = showing(MIN, vm);
+    harness.run();
+    let label = format!("{display}, right corner");
+    // scroll_to_me brings it to the middle of the view; the wheel then moves it down to the lower edge.
+    chip(&harness, &label).scroll_to_me();
+    harness.run();
+    let middle = chip(&harness, &label).rect();
+    harness.hover_at(middle.center());
+    harness.event(egui::Event::MouseWheel {
+        unit: egui::MouseWheelUnit::Point,
+        delta: egui::vec2(0.0, (strip_top - 2.0 - middle.max.y).round()),
+        phase: egui::TouchPhase::Move,
+        source: egui::MouseWheelSource::Unknown,
+        modifiers: egui::Modifiers::NONE,
+    });
+    harness.hover_at(egui::pos2(middle.center().x, workspace(&harness).min.y + 4.0));
+    harness.run();
+    let rect = chip(&harness, &label).rect();
+    assert!(rect.max.y <= strip_top + 1.0, "{label} is scrolled into view: {rect:?}");
+    assert!(
+        rect.max.y >= strip_top - 30.0,
+        "{label} sits at the lower edge: {rect:?} {strip_top}"
+    );
+    let selected = [0x38, 0x38, 0x38];
+    for dy in [4.0, 8.0, 12.0] {
+        let at = (rect.min.x as u32 + 7, (rect.max.y - dy) as u32);
+        assert_eq!(
+            pixels(&mut harness, &[at])[0],
+            selected,
+            "{dy} above its lower edge the fill is not faded"
+        );
+    }
+    // The bar: 4 from the roster's right edge (the right card is 250 wide), 6 wide, its handle FAINT without hovering.
+    let x = (workspace(&harness).max.x - 250.0 - 4.0 - 3.0) as u32;
+    let top = workspace(&harness).min.y as u32;
+    let column: Vec<(u32, u32)> = (top + 2..strip_top as u32).map(|y| (x, y)).collect();
+    assert!(
+        pixels(&mut harness, &column).contains(&[0x77, 0x77, 0x77]),
+        "the roster's bar shows while it overflows"
+    );
+}

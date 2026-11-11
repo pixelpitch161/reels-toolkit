@@ -4,8 +4,8 @@
 use std::cell::Cell;
 
 use bf_app::theme::{self, FAINT, LINE, ON_LIGHT, PANEL, RAISED, TEXT, TEXT_STRONG};
-use bf_app::widgets::buttons;
 use bf_app::widgets::icons::{self, Icon};
+use bf_app::widgets::{buttons, chips};
 use egui::accesskit::{Role, Toggled};
 use egui::{Rect, Ui};
 use egui_kittest::Harness;
@@ -675,21 +675,29 @@ fn a_progress_share_that_is_not_a_number_shows_as_zero() {
 /// a switch and a dropdown.
 fn clipped_region(ui: &mut Ui) {
     on_panel(ui);
-    let region = Rect::from_min_max(egui::pos2(20.0, 20.0), egui::pos2(300.0, 200.0));
+    let region = Rect::from_min_max(egui::pos2(20.0, 20.0), egui::pos2(300.0, 280.0));
     let mut child = ui.new_child(egui::UiBuilder::new().max_rect(region));
     child.set_clip_rect(region);
     buttons::boxed(&mut child, "Swap sides");
     winner(&mut child, None, Some(0));
     buttons::switch(&mut child, "Loop the fight", true);
     theme_dropdown(&mut child);
+    icons::icon_button(&mut child, Icon::Play, "Play", true);
+    // A chip at the top and left edges of a scroll area.
+    let area = egui::ScrollArea::vertical().id_salt("chip area").max_height(60.0);
+    buttons::scrolled(&mut child, area, |ui| {
+        for display in ["Oboe", "Tuba", "Harp"] {
+            chips::roster_chip(ui, display, [0xde, 0xe8, 0xf6], None, true, 120.0);
+        }
+    });
 }
 
 #[test]
 fn rings_are_not_cut_off_at_a_clipped_edge() {
     let _gpu = common::gpu();
-    let mut harness = common::widget_harness((320.0, 220.0), clipped_region);
+    let mut harness = common::widget_harness((320.0, 300.0), clipped_region);
     harness.run();
-    for name in ["Swap sides", "Any", "Loop the fight", "Theme"] {
+    for name in ["Swap sides", "Any", "Loop the fight", "Theme", "Play", "Oboe"] {
         harness.get_by_label(name).focus();
         harness.run();
         assert!(harness.get_by_label(name).is_focused(), "{name} takes the focus");
@@ -922,4 +930,79 @@ fn a_wrapped_switch_is_one_control_over_its_words() {
     harness.run();
     drop(harness);
     assert_eq!(clicked.get(), 1);
+}
+
+/// A box button that shows above the controls only while `extra` is set, then a segmented control and a dropdown.
+fn with_extra_above(ui: &mut Ui, extra: bool) {
+    on_panel(ui);
+    if extra {
+        buttons::boxed(ui, "Extra");
+    }
+    winner(ui, None, Some(0));
+    theme_dropdown(ui);
+}
+
+#[test]
+fn focus_and_an_open_list_stay_when_a_control_appears_above() {
+    let _gpu = common::gpu();
+    let extra = Cell::new(false);
+    let mut harness = common::widget_harness((300.0, 220.0), |ui| with_extra_above(ui, extra.get()));
+    harness.run();
+    for name in ["Trombone", "Theme"] {
+        extra.set(false);
+        harness.run();
+        harness.get_by_label(name).focus();
+        harness.run();
+        assert!(harness.get_by_label(name).is_focused(), "{name} has the keyboard");
+        extra.set(true);
+        harness.run();
+        assert!(harness.query_by_label("Extra").is_some());
+        assert!(
+            harness.get_by_label(name).is_focused(),
+            "{name} keeps the keyboard when a control appears above it"
+        );
+        extra.set(false);
+        harness.run();
+        assert!(
+            harness.get_by_label(name).is_focused(),
+            "{name} keeps the keyboard when it goes again"
+        );
+    }
+    harness.get_by_label("Theme").click();
+    harness.run();
+    assert!(harness.query_by_label("Dark disco").is_some(), "the list is open");
+    extra.set(true);
+    harness.run();
+    harness.run();
+    assert!(
+        harness.query_by_label("Dark disco").is_some(),
+        "the list stays open when a control appears above the dropdown"
+    );
+}
+
+#[test]
+fn a_button_in_a_right_to_left_row_is_cut_short_not_drawn_past_its_room() {
+    let _gpu = common::gpu();
+    let mut harness = common::widget_harness((420.0, 80.0), |ui| {
+        on_panel(ui);
+        ui.horizontal(|ui| {
+            ui.add_space(150.0);
+            ui.allocate_ui_with_layout(
+                egui::vec2(120.0, 26.0),
+                egui::Layout::right_to_left(egui::Align::Center),
+                |ui| buttons::boxed(ui, LONG),
+            );
+        });
+    });
+    harness.run();
+    let rect = harness.get_by_label(LONG).rect();
+    assert!(rect.width() <= 120.0, "the button keeps to its room: {rect:?}");
+    let before = row_of(&mut harness, rect.center().y, 0.0, rect.min.x - 1.0);
+    assert!(before.iter().all(|p| *p == rgb(PANEL)), "nothing is drawn left of it");
+    let label = Rect::from_min_max(rect.min + egui::vec2(2.0, 2.0), rect.max - egui::vec2(2.0, 2.0));
+    assert_eq!(
+        brightest(&mut harness, label),
+        rgb(TEXT),
+        "its label is drawn, cut short"
+    );
 }
