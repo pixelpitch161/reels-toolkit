@@ -586,7 +586,7 @@ mod tests {
         match bf_export::find_ffmpeg() {
             Ok(_) => true,
             Err(e) => {
-                eprintln!("notice: ffmpeg cannot be used here, so this test checks only what it can: {e}");
+                eprintln!("not run here: ffmpeg cannot be used ({e}), so this test checks only what it can without it");
                 false
             }
         }

@@ -1109,7 +1109,7 @@ mod tests {
         };
         assert_eq!(
             text,
-            "This fight cannot be used: the left fighter's handicap must be above 0, found 0.0."
+            "This fight cannot be used: The left fighter's handicap must be above 0, found 0.0."
         );
         let list = list_of(wait_for(&engine, 5.0, |e| is_list(e, |_| true)));
         assert_eq!(

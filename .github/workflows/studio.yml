@@ -112,5 +112,28 @@ jobs:
       - name: Build the app
         run: cargo build --release --locked -p bf-app
 
+      # The output is kept as well as shown, so a failure can be read without the log (the step after this one);
+      # pipefail keeps cargo's own exit code, so the step fails exactly as before.
       - name: Test the app (no window)
-        run: cargo test --release --locked -p bf-app --lib --bins --test compat
+        run: |
+          set -o pipefail
+          cargo test --release --locked -p bf-app --lib --bins --test compat 2>&1 | tee "$RUNNER_TEMP/app-tests.txt"
+
+      # Only when something failed: the failed tests, each panic with the two lines after it, compile errors and
+      # the last 30 lines, as annotations (each cut to about 300 characters, 40 at most).
+      - name: Name what failed in the app's tests
+        if: failure()
+        run: |
+          out="$RUNNER_TEMP/app-tests.txt"
+          test -f "$out" || { echo "::error title=app tests::no test output was captured"; exit 0; }
+          {
+            grep -E 'test .* FAILED|^failures:$|^    [A-Za-z0-9_:]+$' "$out" | sed 's/^/failed: /'
+            grep -E -A2 'panicked at' "$out" | grep -v '^--$' | paste -d ' ' - - - | sed 's/^/panic: /'
+            grep -E '^error(\[E[0-9]+\])?:' "$out" | sed 's/^/compile: /'
+            tail -n 30 "$out" | grep -v '^\s*$' | sed 's/^/tail: /'
+          } | head -n 40 | while IFS= read -r line; do
+            line="${line:0:300}"
+            line="${line//'%'/'%25'}"
+            line="${line//$'\r'/}"
+            echo "::error title=app tests::${line}"
+          done

@@ -333,7 +333,17 @@ fn probe(root: &Path) -> Result<(), String> {
                     Err(_) => Err(left_behind(root, &path)),
                 };
             }
-            Err(err) if err.kind() == io::ErrorKind::AlreadyExists => continue,
+            // A name already taken is skipped. On Windows a name whose file is still being deleted (or that is a
+            // folder) answers "access denied" instead: a clash too, so the next name is tried (a folder that
+            // truly cannot be written refuses every name, and the tries are bounded).
+            Err(err)
+                if matches!(
+                    err.kind(),
+                    io::ErrorKind::AlreadyExists | io::ErrorKind::PermissionDenied
+                ) =>
+            {
+                continue;
+            }
             Err(err) => return Err(cannot_write(Some(&err))),
         }
     }
@@ -833,6 +843,29 @@ mod tests {
         fs::write(&theirs, b"theirs").unwrap();
         assert_eq!(folder_state(&root.0, "x"), FolderState::Ok { taken: false });
         assert_eq!(fs::read(&theirs).unwrap(), b"theirs");
+        assert_eq!(files_in(&root.0).len(), 1);
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn a_name_that_answers_access_denied_is_skipped() {
+        let root = TempRoot::new("a_name_that_answers_access_denied_is_skipped");
+        // A folder where the first probe file would go: Windows refuses to create the file with "access denied",
+        // as it does for a file still being deleted.
+        let blocked = probe_path(&root.0, 0);
+        fs::create_dir(&blocked).unwrap();
+        let err = fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&blocked)
+            .unwrap_err();
+        assert_eq!(
+            err.kind(),
+            io::ErrorKind::PermissionDenied,
+            "the case this test stands for"
+        );
+        assert_eq!(folder_state(&root.0, "x"), FolderState::Ok { taken: false });
+        assert!(blocked.is_dir(), "what was there is left alone");
         assert_eq!(files_in(&root.0).len(), 1);
     }
 

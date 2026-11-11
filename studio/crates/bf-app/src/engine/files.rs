@@ -808,7 +808,7 @@ mod tests {
         assert_eq!(entries.len(), 1);
         let problem = entries[0].problem.clone().expect("a problem");
         assert!(
-            problem.contains("this app reads fight files up to format 2"),
+            problem.contains("cannot be used: This app reads fight files up to format 2"),
             "{problem}"
         );
         assert!(
@@ -888,7 +888,9 @@ mod tests {
         let retired = bf_core::fightfile::RETIRED[0];
         let gone = open("retired", toml.replace("FLUTE", retired).as_bytes());
         assert!(gone.starts_with("retired.toml cannot be opened: "), "{gone}");
-        assert!(gone.contains(retired) && gone.contains("is retired"), "{gone}");
+        // the name as the screen writes it
+        let shown = crate::wording::display_name(retired);
+        assert!(gone.contains(&shown) && gone.contains("is retired"), "{gone}");
         let not_toml = open("not toml ! é", b"this is [not toml");
         assert!(
             not_toml.starts_with("not toml ! é.toml cannot be opened: ") && not_toml.ends_with('.'),

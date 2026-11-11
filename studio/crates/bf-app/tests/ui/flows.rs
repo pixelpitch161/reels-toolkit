@@ -398,8 +398,9 @@ fn the_queue_survives_a_restart() {
         .count();
     assert_eq!(runs, 1, "the first video started rendering");
     harness.state_mut().shutdown();
-    drop(harness);
+    // The engine's side goes first, so dropping the app finds its engine stopped and does not wait for it.
     drop(side);
+    drop(harness);
 
     let (settings, notice) = load_settings(&paths.settings(), CORES);
     assert_eq!((settings.clone(), notice), (temp.settings(), None));
@@ -497,4 +498,36 @@ fn the_sample_app_says_so_in_the_status_bar() {
         "the status line is still there"
     );
     harness.state_mut().shutdown();
+}
+
+#[test]
+fn dropping_the_app_stops_its_engine() {
+    let _gpu = gpu();
+    let temp = Temp::new("drop");
+    // An engine that answers `Shutdown` by ending (dropping its side), as the real one does.
+    let (handle, side) = channel(Arc::new(|| {}));
+    let (said, heard) = std::sync::mpsc::channel();
+    let engine = std::thread::spawn(move || {
+        // The whole side, not only its commands: dropping it is how the engine says it has stopped.
+        let side = side;
+        while let Ok(c) = side.commands.recv() {
+            if c == Command::Shutdown {
+                _ = said.send(());
+                return;
+            }
+        }
+    });
+    let harness = app_harness(REF, |cc| BfApp::new(cc, boot(handle, &temp)));
+    let began = Instant::now();
+    // No `on_exit` and no `shutdown`: the window simply goes, as after a panic on the interface thread.
+    drop(harness);
+    assert!(
+        heard.recv_timeout(Duration::from_secs(5)).is_ok(),
+        "dropping the app told the engine to stop"
+    );
+    assert!(
+        began.elapsed() < Duration::from_secs(3),
+        "and it waited only until the engine had gone"
+    );
+    engine.join().unwrap();
 }
