@@ -235,6 +235,8 @@ pub struct AppState {
     /// The generation the current fighters were described for (`DescribeFight`): a description for it or any
     /// later generation is of these fighters.
     described: Gen,
+    /// What the queue, folder and library rules remember (`queue_run.rs`).
+    run: queue_run::QueueRun,
 }
 
 impl AppState {
@@ -278,7 +280,10 @@ impl AppState {
             notices,
             status: String::new(),
         };
-        (AppState::bare(vm), effects)
+        let mut state = AppState::bare(vm);
+        state.after_restart();
+        state.folder_checked_as_shown();
+        (state, effects)
     }
 
     /// A state that shows `vm` as it is, for fixtures and screen tests. Its fight is generation 1 (0 without a
@@ -295,6 +300,8 @@ impl AppState {
             state.last_take = 1;
             state.wanted = Some(1);
         }
+        // What `vm.folder` says is taken to be about the folder and pair shown.
+        state.folder_checked_as_shown();
         state
     }
 
@@ -310,6 +317,7 @@ impl AppState {
             measuring: false,
             balance_stopped: false,
             described: 0,
+            run: queue_run::QueueRun::default(),
         }
     }
 
@@ -341,19 +349,20 @@ impl AppState {
             Action::SetCaptionTab(platform) => self.vm.caption_tab = platform,
             Action::SetCaption { platform, text } => self.set_caption(platform, text),
             Action::Transport(a) => fx.push(Effect::Player(PlayerCmd::Transport(a))),
-            // The output folder, the queue, the library and the settings: Task 12 fills these arms.
-            Action::ChangeFolder => {}
-            Action::CreateFolder => {}
-            Action::AddToQueue => {}
-            Action::Queue(_) => {}
-            Action::RefreshLibrary => {}
-            Action::SelectVideo(_) => {}
-            Action::Reopen(_) => {}
-            Action::OpenVideoFolder(_) => {}
-            Action::SetWorkers(_) => {}
-            Action::Dismiss(_) => {}
+            // The output folder, the queue, the library and the settings (`queue_run.rs`).
+            a @ Action::ChangeFolder => self.queue_action(a, &mut fx),
+            a @ Action::CreateFolder => self.queue_action(a, &mut fx),
+            a @ Action::AddToQueue => self.queue_action(a, &mut fx),
+            a @ Action::Queue(_) => self.queue_action(a, &mut fx),
+            a @ Action::RefreshLibrary => self.queue_action(a, &mut fx),
+            a @ Action::SelectVideo(_) => self.queue_action(a, &mut fx),
+            a @ Action::Reopen(_) => self.queue_action(a, &mut fx),
+            a @ Action::OpenVideoFolder(_) => self.queue_action(a, &mut fx),
+            a @ Action::SetWorkers(_) => self.queue_action(a, &mut fx),
+            a @ Action::Dismiss(_) => self.queue_action(a, &mut fx),
         }
         self.settle(&mut fx);
+        self.after_queue_run(&mut fx);
         self.vm.status = self.status();
         fx
     }
@@ -363,6 +372,7 @@ impl AppState {
         let mut fx = Vec::new();
         self.on_event(event, &mut fx);
         self.settle(&mut fx);
+        self.after_queue_run(&mut fx);
         self.vm.status = self.status();
         fx
     }
@@ -380,8 +390,8 @@ impl AppState {
                     _ => {}
                 }
             }
-            // Task 12 adds the library scan here.
-            View::Library => {}
+            // The library is scanned each time it opens.
+            View::Library => self.scan_library(fx),
             View::Settings => {}
         }
     }
@@ -389,11 +399,14 @@ impl AppState {
     /// The status line, worked out from the state after every action and event (ruling M2-R17). The first of
     /// these that holds:
     /// 1. a problem: why the pair cannot fight, else why the take cannot be made;
-    /// 2. a search is running: "Searching on {workers} cores";
-    /// 3. a take is loaded: "Seed {n} is ready";
-    /// 4. there are balance numbers: "Balanced on {n} fights in {s} s" (without the time when it is not a real one,
+    /// 2. a video is rendering: "Rendering {title}, about {n} s left", or "Rendering {title}" until its frame count
+    ///    gives a time (a render is the longer, costlier wait, so it comes before the search);
+    /// 3. a search is running: "Searching on {workers} cores";
+    /// 4. a fight file was opened: "Opened {title}", until the draft or the view changes;
+    /// 5. a take is loaded: "Seed {n} is ready";
+    /// 6. there are balance numbers: "Balanced on {n} fights in {s} s" (without the time when it is not a real one,
     ///    widget rule 9);
-    /// 5. "{Left} vs {Right}, not balanced yet".
+    /// 7. "{Left} vs {Right}, not balanced yet".
     ///
     /// Before the roster arrives it is empty.
     pub(crate) fn status(&self) -> String {
@@ -404,11 +417,17 @@ impl AppState {
         if let Some(problem) = vm.fight_problem.as_ref().or(vm.take.problem.as_ref()) {
             return problem.clone();
         }
+        if let Some(rendering) = self.rendering_status() {
+            return rendering;
+        }
         if vm.shortlist.state == SearchState::Searching {
             return format!(
                 "Searching on {}",
                 wording::plural(vm.shortlist.workers as u64, "core", "cores")
             );
+        }
+        if let Some(opened) = self.opened_status() {
+            return opened;
         }
         if let Some(story) = &vm.take.story {
             return format!("Seed {} is ready", story.seed);

@@ -110,18 +110,18 @@ impl AppState {
                 self.vm.take.problem = Some(problem);
                 fx.push(self.card_or_clear());
             }
-            // The queue, the output folder, the library and opened fights: Task 12 fills these arms
-            // (`FightOpened` through `open_draft` in `fight.rs`, then `ask_take` when the draft has a seed).
-            Event::Enqueued { .. } => {}
-            Event::EnqueueFailed { .. } => {}
-            Event::Job { .. } => {}
-            Event::Library { .. } => {}
-            Event::LibraryCover { .. } => {}
-            Event::FightOpened { .. } => {}
-            Event::Tools { .. } => {}
-            Event::Folder { .. } => {}
-            Event::FolderPicked { .. } => {}
-            Event::Problem { .. } => {}
+            // The queue, the output folder, the library and opened fights (`queue_run.rs`; `FightOpened` goes
+            // through `open_draft` in `fight.rs`, then `ask_take` when the draft has a seed).
+            e @ Event::Enqueued { .. } => self.queue_event(e, fx),
+            e @ Event::EnqueueFailed { .. } => self.queue_event(e, fx),
+            e @ Event::Job { .. } => self.queue_event(e, fx),
+            e @ Event::Library { .. } => self.queue_event(e, fx),
+            e @ Event::LibraryCover { .. } => self.queue_event(e, fx),
+            e @ Event::FightOpened { .. } => self.queue_event(e, fx),
+            e @ Event::Tools { .. } => self.queue_event(e, fx),
+            e @ Event::Folder { .. } => self.queue_event(e, fx),
+            e @ Event::FolderPicked { .. } => self.queue_event(e, fx),
+            e @ Event::Problem { .. } => self.queue_event(e, fx),
         }
     }
 
