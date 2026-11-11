@@ -500,6 +500,7 @@ name = "bf-sim"
 version = "0.1.0"
 dependencies = [
  "bf-core",
+ "bf-sim",
  "serde_json",
 ]
 

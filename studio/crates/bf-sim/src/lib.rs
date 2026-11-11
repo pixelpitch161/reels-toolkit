@@ -28,6 +28,8 @@ pub mod roster;
 pub mod rules;
 pub mod schedule;
 
+#[cfg(any(test, feature = "testing"))]
+pub use fight::run_with_unported;
 pub use fight::{Fight, Setup, lead_changes, run, setup_from};
 pub use rules::{Rules, SimError};
 
@@ -40,9 +42,16 @@ pub(crate) mod testing {
     use bf_core::fightfile::FightFile;
     use bf_core::recording::{Array, Recording};
 
-    use crate::fight::Setup;
+    use crate::fight::{Fight, Setup};
     use crate::roster::{AbilityCfg, AbilityKind, FighterCfg, WeaponCfg, parse_roster};
     use crate::rules::Rules;
+
+    /// A fight of a setup, through the test entry `Fight::with_unported`: the bare fighters below have no weapon
+    /// and abilities of a kind not ported, which `Fight::new` refuses. The setup's rules and every ported kind are
+    /// still checked.
+    pub(crate) fn fight<'a>(setup: &Setup<'a>, record: bool) -> Fight<'a> {
+        Fight::with_unported(setup, record).unwrap_or_else(|e| panic!("the engine cannot run this setup: {e}"))
+    }
 
     /// Every committed Python recording of FLUTE against TROMBONE, relative to the reference fights folder: the five
     /// reference fights, the fight with no K.O. and the scenarios.

@@ -827,6 +827,25 @@ mod tests {
         assert_eq!(p.failed_frame(), None);
     }
 
+    /// A test source that remembers which frames it drew, so a kept frame can be told apart from another take's
+    /// (both draw the same bytes for the same frame).
+    struct Recording {
+        inner: Arc<TestSource>,
+        drawn: Mutex<Vec<u32>>,
+    }
+
+    impl FrameSource for Recording {
+        fn frames(&self) -> u32 {
+            self.inner.frames()
+        }
+
+        fn draw(&self, f: u32) -> Frame {
+            let frame = self.inner.draw(f);
+            self.drawn.lock().unwrap().push(f);
+            frame
+        }
+    }
+
     #[test]
     fn two_loads_use_one_scheduler() {
         // Every draw of this scheduler counts as 1,000 ms, and so do the 30 recorded here before any draw: a new
@@ -839,27 +858,41 @@ mod tests {
         let _open = Opens(old.clone());
         load(&mut p, 1, old.clone(), 10, false);
         wait_for("the old take's draw to start", || old.calls() == 1);
-        // Loading another take while a draw of the old one is held returns at once.
-        let new = TestSource::new();
+        // Loading another take while a draw of the old one is held does not wait for that draw: the old draw stays
+        // held (its gate opens only below), so a load that waited for it would never return. The load runs on
+        // another thread and the test waits for it on a condition, whatever the machine's load.
+        let new = Arc::new(Recording {
+            inner: TestSource::new(),
+            drawn: Mutex::new(Vec::new()),
+        });
         let (tx, rx) = mpsc::channel();
         let new2: Arc<dyn FrameSource> = new.clone();
         std::thread::spawn(move || {
             load(&mut p, 2, new2, 20, false);
             _ = tx.send(p);
         });
-        let mut p = rx
-            .recv_timeout(Duration::from_secs(2))
-            .expect("the second load returned");
+        let mut returned = None;
+        wait_for("the second load to return while the old draw is held", || {
+            returned = returned.take().or_else(|| rx.try_recv().ok());
+            returned.is_some()
+        });
+        let mut p = returned.expect("the second load returned");
         let _open_again = Opens(old.clone());
         assert_eq!(p.scheduler.frame_ms(), 1_000.0);
         assert_eq!(p.view().frame, 20);
         wait_for("frame 20 of the new take", || p.scheduler.get(20).is_some());
         assert_eq!(p.tick(), Some(TestSource::frame(20)));
-        assert!(new.calls() >= 1);
-        // The old take's frame, finished after the switch, is thrown away.
+        assert!(new.inner.calls() >= 1);
+        // The old take's frame, finished after the switch, is thrown away. (A frame 10 may still be kept: between
+        // the second load's new source and its new playhead, a free worker can draw frame 10 of the NEW take, which
+        // is then rightly kept. Any kept frame 10 must be the new take's.)
         old.open();
         wait_for("the old draw to end", || p.scheduler.idle());
-        assert!(p.scheduler.get(10).is_none());
+        let new_drew_10 = new.drawn.lock().unwrap().contains(&10);
+        assert!(
+            p.scheduler.get(10).is_none() || new_drew_10,
+            "the old take's frame 10 was kept"
+        );
         assert_eq!(p.tick(), None);
     }
 

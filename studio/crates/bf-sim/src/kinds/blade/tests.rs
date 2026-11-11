@@ -36,7 +36,7 @@ fn s(x: &str) -> Value {
 
 /// FLUTE (0) against TROMBONE (1) under the episode's rules, the FLUTE set up as a striker.
 fn duel(roster: &[FighterCfg]) -> Fight<'_> {
-    let mut fight = Fight::new(&testing::episode_setup(roster, 392), false);
+    let mut fight = testing::fight(&testing::episode_setup(roster, 392), false);
     striker::setup(&mut fight, 0);
     fight
 }
@@ -220,13 +220,13 @@ fn the_closed_lance_starts_aimed_at_the_enemy() {
         fighters: [ep.fighters[1], ep.fighters[0]],
         ..ep
     };
-    let fight = Fight::new(&swapped, false);
+    let fight = testing::fight(&swapped, false);
     assert!(is_blade(&fight, 0) && !is_blade(&fight, 1));
     close(fight.balls[0].th, 5.497787143782138);
     assert_eq!(fight.balls[0].ext, 0.3);
     // a bare fighter has no blade
     let bare = testing::bare_pair();
-    let fight = Fight::new(&testing::bare_setup(&bare, 1), false);
+    let fight = testing::fight(&testing::bare_setup(&bare, 1), false);
     assert!(!is_blade(&fight, 0) && !is_blade(&fight, 1));
 }
 
@@ -365,7 +365,7 @@ fn an_idle_lance_turns_toward_the_enemy_at_aim_rate() {
 fn an_unhasted_thrust_takes_0_32_s() {
     let roster = testing::roster();
     let mut fight = duel(&roster);
-    fight.rules.swat_cobras = false;
+    fight.rules.swat_cobras = None;
     place(&mut fight, [2.0, -2.0], [-2.0, 2.0]);
     thrust(&mut fight);
     for (i, want) in EXT_PLAIN.into_iter().enumerate() {
@@ -388,7 +388,7 @@ fn an_unhasted_thrust_takes_0_32_s() {
     assert!(EXT_PLAIN[16..40].windows(2).all(|w| w[0] > w[1]));
     // a grown lance goes further in the same time
     let mut fight = duel(&roster);
-    fight.rules.swat_cobras = false;
+    fight.rules.swat_cobras = None;
     place(&mut fight, [2.0, -2.0], [-2.0, 2.0]);
     fight.balls[K].blade_len = 2.47;
     thrust(&mut fight);
@@ -409,7 +409,7 @@ fn an_unhasted_thrust_takes_0_32_s() {
 fn a_hasted_thrust_takes_half_the_time() {
     let roster = testing::roster();
     let mut fight = duel(&roster);
-    fight.rules.swat_cobras = false;
+    fight.rules.swat_cobras = None;
     place(&mut fight, [2.0, -2.0], [-2.0, 2.0]);
     (fight.balls[K].haste, fight.balls[K].haste_mult) = (1.0, 2.0);
     thrust(&mut fight);
@@ -640,7 +640,7 @@ fn the_lance_grows_a_fret_a_hit_up_to_max_len() {
     let mut setup = testing::episode_setup(&roster, 392);
     // so that 24 hits do not knock the FLUTE out
     setup.rules.dmg_side = Some([1.0, 0.01]);
-    let mut fight = Fight::new(&setup, false);
+    let mut fight = testing::fight(&setup, false);
     let want = [
         (1.03, 2),
         (1.11, 3),
@@ -750,7 +750,7 @@ fn a_live_lance_through_a_risen_cobra_swats_it() {
     ];
     for (rule, at, t_drop, swat) in cases {
         let mut fight = duel(&roster);
-        fight.rules.swat_cobras = rule;
+        fight.rules.swat_cobras = Some(rule);
         place(&mut fight, [1.0, -0.5], [-2.5, -0.5]);
         let bk = basket(&mut fight, at, t_drop);
         thrust(&mut fight);
@@ -990,7 +990,7 @@ fn a_live_lance_parries_enemy_projectiles() {
     w.parry = false;
     let mut setup = testing::episode_setup(&roster, 392);
     setup.fighters[1] = &plain;
-    let mut fight = Fight::new(&setup, false);
+    let mut fight = testing::fight(&setup, false);
     place(&mut fight, [1.0, -0.5], [-2.0, 2.0]);
     thrust(&mut fight);
     for i in 0..5 {
@@ -1035,8 +1035,8 @@ fn a_lance_without_rest_closes_to_a_quarter() {
     let no_rest = trombone_with(&roster, |w| w.rest = None);
     let mut setup = testing::episode_setup(&roster, 392);
     setup.fighters[1] = &no_rest;
-    setup.rules.swat_cobras = false;
-    let mut fight = Fight::new(&setup, false);
+    setup.rules.swat_cobras = None;
+    let mut fight = testing::fight(&setup, false);
     assert_eq!(fight.balls[K].ext, 0.0, "before its first step");
     place(&mut fight, [2.0, -2.0], [-2.0, 2.0]);
     lance_step(&mut fight, 0);
@@ -1091,8 +1091,8 @@ fn a_step_on_a_phase_boundary_belongs_to_the_later_phase() {
     });
     let mut setup = testing::episode_setup(&roster, 392);
     setup.fighters[1] = &quick;
-    setup.rules.swat_cobras = false;
-    let mut fight = Fight::new(&setup, false);
+    setup.rules.swat_cobras = None;
+    let mut fight = testing::fight(&setup, false);
     place(&mut fight, [2.0, -2.0], [-2.0, 2.0]);
     fight.t = 0.0;
     start_thrust(&mut fight, K);
@@ -1130,7 +1130,7 @@ fn a_step_on_a_phase_boundary_belongs_to_the_later_phase() {
 /// the enemy is put at `enemy`. Returns the fight after the thrust, and the steps on which an event was made.
 fn thrust_along_x(roster: &[FighterCfg], at: usize, enemy: V2) -> (Fight<'_>, Vec<usize>) {
     let mut fight = duel(roster);
-    fight.rules.swat_cobras = false;
+    fight.rules.swat_cobras = None;
     place(&mut fight, [1.0, -0.5], [-2.5, -0.5]);
     fight.balls[0].v = [1.0, 2.4];
     thrust(&mut fight);
@@ -1242,7 +1242,7 @@ fn thrust_steps(trombone_side: usize, steps: usize, haste: Option<(usize, usize)
         rules: testing::episode_rules(),
         seed: 392,
     };
-    let mut fight = Fight::new(&setup, false);
+    let mut fight = testing::fight(&setup, false);
     let mut sched = Schedule::new(&mut fight);
     let hold = |fight: &mut Fight, n: usize| {
         fight.balls[0].p = [-1.85, 1.85];
@@ -1303,7 +1303,7 @@ fn the_fight_loop_steps_the_lance() {
         rules: testing::episode_rules(),
         seed: 392,
     };
-    let mut fight = Fight::new(&setup, false);
+    let mut fight = testing::fight(&setup, false);
     let mut sched = Schedule::new(&mut fight);
     assert_eq!(
         sched.next16t, sched.k16_0,
@@ -1321,7 +1321,7 @@ fn the_fight_loop_steps_the_lance() {
     // 2.5 s of 16ths (0.1121 s each) have gone by: numbers 0 to 22
     assert_eq!(sched.next16t - sched.k16_0, 23);
     // a fight without a thruster leaves the counter alone
-    let mut fight = Fight::new(&testing::bare_setup(&bare, 1), false);
+    let mut fight = testing::fight(&testing::bare_setup(&bare, 1), false);
     let mut sched = Schedule::new(&mut fight);
     for _ in 0..60 {
         sched.step(&mut fight);

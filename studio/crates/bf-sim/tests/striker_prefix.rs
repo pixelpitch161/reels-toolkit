@@ -202,7 +202,7 @@ struct Span {
 /// ability.
 fn compare(name: &str, roster: &[FighterCfg]) -> Span {
     let py = python_recording(name);
-    let rs = run(&setup_like(&py, roster), true);
+    let rs = run(&setup_like(&py, roster), true).expect("the engine runs this fight");
 
     let stop = py
         .events
@@ -324,7 +324,7 @@ fn cob_rows_have_the_python_layout() {
     let roster = roster();
     for name in ["ep392.bfrec", "scenarios/swapped_s1.bfrec"] {
         let py = python_recording(name);
-        let rs = run(&setup_like(&py, &roster), true);
+        let rs = run(&setup_like(&py, &roster), true).expect("the engine runs this fight");
         let flute = py.names.iter().position(|n| n == "FLUTE").expect("the FLUTE fights");
         let rows = cob(name, "Rust", &rs);
         assert_eq!(rows.len(), rs.frames());

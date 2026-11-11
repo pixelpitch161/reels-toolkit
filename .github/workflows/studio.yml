@@ -67,3 +67,51 @@ jobs:
 
       - name: Test
         run: cargo test --workspace --release --locked
+
+  # The reference PC is Windows with the GNU host toolchain (x86_64-pc-windows-gnu, whose MinGW linker ships with
+  # rustup). This job builds the command line there and runs the engine's two crates in release: the `dmath` bits, the
+  # random vectors, the parity suites and the self-replay hashes (studio/replay/hashes.txt, blessed on that PC). The
+  # Linux job runs the same tests, so the two together show the same bits on both systems.
+  windows:
+    name: build bf-cli, test bf-core and bf-sim (Windows)
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: studio
+        shell: bash
+    steps:
+      # The reference files are compared byte for byte: no line-ending conversion on checkout.
+      - name: Keep line endings as committed
+        working-directory: ${{ github.workspace }}
+        run: git config --global core.autocrlf false
+
+      - uses: actions/checkout@v4
+
+      # The channel comes from studio/rust-toolchain.toml, as in the Linux job; the default host makes rustup resolve
+      # it to the GNU toolchain of the reference PC rather than the runner's MSVC default.
+      - name: Install the pinned toolchain (GNU host, as on the reference PC)
+        run: |
+          channel="$(sed -n 's/^channel *= *"\(.*\)"/\1/p' rust-toolchain.toml)"
+          test -n "$channel"
+          rustup set default-host x86_64-pc-windows-gnu
+          rustup toolchain install "$channel" --profile minimal --component clippy,rustfmt
+          rustc -vV
+          cargo -V
+
+      - name: Cache cargo registry and build
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+            studio/target
+          key: studio-${{ runner.os }}-gnu-${{ hashFiles('studio/rust-toolchain.toml', 'studio/Cargo.lock') }}
+          restore-keys: |
+            studio-${{ runner.os }}-gnu-
+
+      - name: Build bf-cli
+        run: cargo build --release --locked -p bf-cli
+
+      - name: Test bf-core and bf-sim
+        run: cargo test --release --locked -p bf-core -p bf-sim
