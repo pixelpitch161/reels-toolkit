@@ -13,7 +13,8 @@
 //! // colours and deep shades as floats (COL, DARK), each fighter's look, model and view (yaw and roll)
 //! let looks = [0, 1].map(|k| CardLook { look: look[k], mesh: mesh[k], yaw: 205.0, roll: 30.0 });
 //! let card = TitleCard::new(show, [[222.0, 232.0, 246.0], [120.0, 240.0, 184.0]],
-//!                           [[120.0, 134.0, 162.0], [44.0, 150.0, 104.0]], looks, Some("BALLFIGHT #15"));
+//!                           [[120.0, 134.0, 162.0], [44.0, 150.0, 104.0]], looks, Some("BALLFIGHT #15"))
+//!     .expect("both fighters' panel patterns are ported");
 //! card.draw(img, t);                       // img = TT.draw(img, t): nothing while the doors are open
 //! let shut = card.door_offset(t) == 0.0;   // the card covers the HUD: the renderer skips it
 //! # }
@@ -29,7 +30,8 @@
 //! carry, `TITLE_LINES` (a long name on two lines), `TITLE_BALLS` (other places for the balls) and `MIDDLE`
 //! (another word than `VS`, turned), with `rotate_mask`, `_fit_middle` and `_streaks_turned`. Without them the
 //! Python card is exactly this one. Of the sixteen panel patterns in `PATTERNS` only the TROMBONE's is here: each
-//! of the other fifteen comes with its fighter ([`panels::builtin_pattern`] is where it goes).
+//! of the other fifteen comes with its fighter ([`panels::builtin_pattern`] is where it goes), and until then a
+//! card for one of those fighters is an error ([`TitleError`]), not a plain panel.
 //!
 //! # Numbers
 //!
@@ -62,6 +64,7 @@ use crate::sprite::{self, Mesh};
 use crate::ui::{DrawLog, Kind, round_i32};
 
 pub use self::layout::OPEN_PX;
+pub use self::panels::TitleError;
 
 /// `INK`: the card's dark ink, `np.array([16, 10, 26], float)`.
 pub const INK: [f64; 3] = [16.0, 10.0, 26.0];
@@ -78,17 +81,16 @@ const TAG: [f64; 3] = [255.0, 214.0, 96.0];
 /// This is the minimal form of the look's trait: the ring renderer's task adds the other hooks to it.
 pub trait Look {
     /// `title_pattern`: the fighter's panel pattern on the card. `base` is the panel's gradient, an `(H, W, 3)`
-    /// `float64` picture not yet dithered; a look with a pattern changes it in place and returns `true`. The
-    /// default (`title_pattern = None`) leaves it alone and returns `false`: the panel stays plain.
+    /// `float64` picture not yet dithered; a look with a pattern changes it in place. The default
+    /// (`title_pattern = None`) leaves it alone: the panel stays plain.
     ///
     /// A pattern reads the card's geometry from [`layout`]: [`layout::side`] is `title.SIDE`, [`layout::dd`] is
     /// `title.DD`, and `title.XX`, `title.YY` are the pixel's column and row.
     ///
     /// As in Python (`PATTERNS.setdefault(name, look.title_pattern)`), a pattern the card itself has for the
     /// fighter's name ([`panels::builtin_pattern`]) is used instead, and this hook is then not called.
-    fn title_pattern(&self, base: &mut RgbF) -> bool {
+    fn title_pattern(&self, base: &mut RgbF) {
         let _ = base;
-        false
     }
 
     /// `title_closeup(r)`: the look's own close-up sprite for the card, RGBA and square, for a ball of radius `r`
@@ -263,13 +265,12 @@ fn build_side(
     colour: [f64; 3],
     dark: [f64; 3],
     look: &CardLook<'_>,
-) -> (RgbF, Img<f64>, Img<u8>) {
+) -> Result<(RgbF, Img<f64>, Img<u8>), TitleError> {
     // _panel_rgb(RD.COL[k], RD.DARK[k], side, RD.NAMES[k]): PATTERNS[name], if the card or the look has one
-    let mut panel = panels::panel_rgb(colour, dark, |base| match panels::builtin_pattern(name) {
+    let builtin = panels::builtin_pattern(name)?;
+    let mut panel = panels::panel_rgb(colour, dark, |base| match builtin {
         Some(pattern) => pattern(base),
-        None => {
-            look.look.title_pattern(base);
-        }
+        None => look.look.title_pattern(base),
     });
     // What every frame does to a fresh copy of the panel before anything else, done once:
     //   alpha = ((SIDE > 0) if side == 0 else (SIDE <= 0)).astype(np.float64) * 0.94
@@ -297,7 +298,7 @@ fn build_side(
         spr.h,
         spr.c
     );
-    (panel, alpha, spr)
+    Ok((panel, alpha, spr))
 }
 
 /// A door laid over the picture, moved by `(dx, dy)` whole pixels:
@@ -328,6 +329,10 @@ impl TitleCard {
     /// Everything Python builds on first use is built here: the layout, both panels, both close-up sprites and
     /// the crack.
     ///
+    /// # Errors
+    /// [`TitleError::PatternNotPorted`] when the card's own pattern table has a panel pattern for a fighter that
+    /// is not ported yet ([`panels::UNPORTED_PATTERNS`]).
+    ///
     /// # Panics
     /// When a look's close-up sprite is not RGBA and square.
     pub fn new(
@@ -336,10 +341,10 @@ impl TitleCard {
         darks: [[f64; 3]; 2],
         looks: [CardLook<'_>; 2],
         series_tag: Option<&str>,
-    ) -> TitleCard {
-        let [(p0, a0, s0), (p1, a1, s1)] =
-            [0, 1].map(|k| build_side(k, &show.names[k], colors[k], darks[k], &looks[k]));
-        TitleCard {
+    ) -> Result<TitleCard, TitleError> {
+        let (p0, a0, s0) = build_side(0, &show.names[0], colors[0], darks[0], &looks[0])?;
+        let (p1, a1, s1) = build_side(1, &show.names[1], colors[1], darks[1], &looks[1])?;
+        Ok(TitleCard {
             grid: show.grid.clone(),
             colors,
             glass: [looks[0].look.glass(), looks[1].look.glass()],
@@ -349,7 +354,7 @@ impl TitleCard {
             alpha: [a0, a1],
             sprites: [s0, s1],
             crack: fx::crack_pts(),
-        }
+        })
     }
 
     /// `WORDS`: where the three words rest, in the order they slam in.

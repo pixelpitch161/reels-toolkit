@@ -56,6 +56,7 @@ fn card(a: &str, b: &str, bpm: f64, tag: Option<&str>) -> TitleCard {
         looks,
         tag,
     )
+    .expect("a card of these names")
 }
 
 fn grey() -> Rgb8 {
@@ -331,7 +332,11 @@ fn the_plain_panel_and_the_slide_tubes_are_pythons() {
     // Python: title._panel_rgb(COL[0], DARK[0], 0, None) with the FLUTE's colours (no pattern), and
     // title._panel_rgb(COL[1], DARK[1], 1, 'TROMBONE'): [y, x] values, the sum of all values, the bands used.
     let plain = panels::panel_rgb(FLUTE.0, FLUTE.1, |_| {});
-    let tubes = panels::panel_rgb(TROMBONE.0, TROMBONE.1, panels::builtin_pattern("TROMBONE").unwrap());
+    let tubes = panels::panel_rgb(
+        TROMBONE.0,
+        TROMBONE.1,
+        panels::builtin_pattern("TROMBONE").unwrap().unwrap(),
+    );
     for (x, y, p, t) in [
         (0, 0, [102.0, 127.5, 153.0], [51.0, 153.0, 102.0]),
         (1, 1, [127.5, 127.5, 153.0], [51.0, 178.5, 127.5]),
@@ -358,9 +363,8 @@ fn the_plain_panel_and_the_slide_tubes_are_pythons() {
 struct Blackout;
 
 impl Look for Blackout {
-    fn title_pattern(&self, base: &mut RgbF) -> bool {
+    fn title_pattern(&self, base: &mut RgbF) {
         base.data.fill(0.0);
-        true
     }
 }
 
@@ -381,6 +385,7 @@ fn the_cards_own_pattern_wins_over_the_looks() {
             looks,
             None,
         )
+        .expect("both patterns are ported or absent")
     };
     // PATTERNS.setdefault(name, look.title_pattern): TROMBONE is in the card's table already, TUBA is not.
     let c = both("TUBA", "TROMBONE");
@@ -388,8 +393,10 @@ fn the_cards_own_pattern_wins_over_the_looks() {
     // far from the divider's bright edge the panels are as built
     assert_eq!(c.panels[0].px(10, 10), &[0.0, 0.0, 0.0]);
     assert_eq!(c.panels[1].px(350, 630), tubes.px(350, 630));
-    assert!(panels::builtin_pattern("TROMBONE").is_some());
-    assert!(panels::builtin_pattern("TUBA").is_none() && panels::builtin_pattern("FLUTE").is_none());
+    assert!(matches!(panels::builtin_pattern("TROMBONE"), Ok(Some(_))));
+    assert!(
+        matches!(panels::builtin_pattern("TUBA"), Ok(None)) && matches!(panels::builtin_pattern("FLUTE"), Ok(None))
+    );
     // the divider's edge is bright on both panels (np.clip(COL * 0.5 + 150, 0, 255)) and opaque; each panel is
     // 94 % opaque on its own half only
     assert_eq!(c.panels[0].px(180, 320), &[255.0, 255.0, 255.0]);
@@ -402,7 +409,7 @@ fn the_cards_own_pattern_wins_over_the_looks() {
 #[test]
 fn the_defaults_of_a_look() {
     let mut base: RgbF = Img::filled(2, 2, &[1.0, 2.0, 3.0]);
-    assert!(!Plain.title_pattern(&mut base));
+    Plain.title_pattern(&mut base);
     assert_eq!(base, Img::filled(2, 2, &[1.0, 2.0, 3.0]));
     assert!(Plain.title_closeup(44).is_none());
     assert_eq!((Plain.glass(), GLASS), ([236.0, 232.0, 226.0], [236.0, 232.0, 226.0]));
@@ -427,13 +434,67 @@ fn a_close_up_must_be_square() {
         yaw: 0.0,
         roll: 0.0,
     });
-    TitleCard::new(
+    let _ = TitleCard::new(
         &show("A", "B", 132.0),
         [FLUTE.0, TROMBONE.0],
         [FLUTE.1, TROMBONE.1],
         looks,
         None,
     );
+}
+
+#[test]
+fn a_pattern_not_ported_yet_is_an_error() {
+    // Python: sorted(title.PATTERNS): the card's own sixteen; only the TROMBONE's is ported
+    let python = [
+        "ACCORDION",
+        "ACOUSTIC",
+        "BAGPIPES",
+        "BARI SAX",
+        "BASS CLARINET",
+        "BASSOON",
+        "CLARINET",
+        "EUPHONIUM",
+        "HARP",
+        "HORN",
+        "OBOE",
+        "ORGAN",
+        "TROMBONE",
+        "UKULELE",
+        "VIOLA",
+        "VIOLIN",
+    ];
+    let mut ours: Vec<&str> = panels::UNPORTED_PATTERNS.iter().copied().chain(["TROMBONE"]).collect();
+    ours.sort_unstable();
+    assert_eq!(ours, python);
+    for name in panels::UNPORTED_PATTERNS {
+        let err = panels::builtin_pattern(name).err().expect("an error");
+        assert_eq!(err.to_string(), format!("the title pattern {name} is not ported yet"));
+    }
+    // the card's constructor says so, on either side, whatever the look offers
+    let mesh = Mesh { faces: Vec::new() };
+    let looks = [0, 1].map(|_| CardLook {
+        look: &Blackout,
+        mesh: &mesh,
+        yaw: 0.0,
+        roll: 0.0,
+    });
+    let new = |a: &str, b: &str| {
+        TitleCard::new(
+            &show(a, b, 132.0),
+            [FLUTE.0, TROMBONE.0],
+            [FLUTE.1, TROMBONE.1],
+            looks,
+            None,
+        )
+    };
+    let err = new("HORN", "TROMBONE").err().expect("HORN is not ported");
+    assert_eq!(err, super::TitleError::PatternNotPorted("HORN".into()));
+    assert_eq!(err.to_string(), "the title pattern HORN is not ported yet");
+    let err = new("FLUTE", "BARI SAX").err().expect("BARI SAX is not ported");
+    assert_eq!(err.to_string(), "the title pattern BARI SAX is not ported yet");
+    // names the table does not hold are fine: the look's pattern, or a plain panel
+    assert!(new("TUBA", "ALTO SAX").is_ok());
 }
 
 #[test]

@@ -55,7 +55,7 @@ struct FluteStandIn {
 
 impl Look for FluteStandIn {
     /// `title_pattern = staticmethod(flute_keys)`: rows of key cups along the divider.
-    fn title_pattern(&self, base: &mut RgbF) -> bool {
+    fn title_pattern(&self, base: &mut RgbF) {
         let dd = title::layout::dd();
         let side = title::layout::side();
         for y in 0..base.h {
@@ -76,7 +76,6 @@ impl Look for FluteStandIn {
                 }
             }
         }
-        true
     }
 
     /// `title_closeup(r)`: `flute_sprite(r, 0.0, view roll)`.
@@ -188,6 +187,7 @@ fn card_of(show: &Show, series_tag: Option<&str>) -> TitleCard {
         }),
         series_tag,
     )
+    .expect("both fighters' panel patterns are ported")
 }
 
 /// The seeded-noise image every card is drawn over.
