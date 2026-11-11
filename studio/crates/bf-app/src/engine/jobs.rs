@@ -56,12 +56,30 @@ const NO_FFMPEG: &str = "ffmpeg was not found on this PC.";
 /// The headline of a job that stopped for a reason that is not a check, ffmpeg or the folder.
 const NOT_MADE: &str = "The video could not be made";
 
-/// One job that renders: its id, its cancel flag, and whether a newer job replaced it (then it sends nothing
-/// more).
+/// One job that renders: its id, its cancel flag, and whether its one last word (`Done`, `Failed` or
+/// `Cancelled`) has been sent; after it, nothing more is sent for the job.
 struct Running {
     id: JobId,
     cancel: Arc<AtomicBool>,
-    quiet: Arc<AtomicBool>,
+    answered: Arc<AtomicBool>,
+}
+
+/// Sends `update` for job `id` unless the job has already had its last word. A last word (`Done`, `Failed`,
+/// `Cancelled`) claims `answered` first, so each started job gets exactly one, whoever sends it (its thread, the
+/// panic answer, or a newer `RunJob` that replaces it).
+fn send_update(ctx: &Ctx, id: JobId, answered: &AtomicBool, update: JobUpdate) {
+    let last = matches!(
+        update,
+        JobUpdate::Done { .. } | JobUpdate::Failed { .. } | JobUpdate::Cancelled
+    );
+    let may = if last {
+        !answered.swap(true, Ordering::SeqCst)
+    } else {
+        !answered.load(Ordering::SeqCst)
+    };
+    if may && !ctx.stopping() {
+        ctx.emit(Event::Job { id, update });
+    }
 }
 
 /// What this handler keeps between commands: the jobs still running (normally one; a replaced job stays listed
@@ -139,28 +157,36 @@ fn enqueue(draft: &Draft, out_root: PathBuf) -> Event {
     }
 }
 
-/// Starts job `id` on a thread of its own; a job still running is cancelled and says nothing more.
+/// Starts job `id` on a thread of its own. A job still running is cancelled and answered `Cancelled` here, at
+/// once (as the sample engine does); its thread then sends nothing more.
 fn run(state: &mut State, ctx: &Ctx, id: JobId, fight_toml: String, out_root: PathBuf) {
     let cancel = ctx.cancel_flag();
-    let quiet = Arc::new(AtomicBool::new(false));
-    let (c, q) = (cancel.clone(), quiet.clone());
+    let answered = Arc::new(AtomicBool::new(false));
+    let (c, a, p) = (cancel.clone(), answered.clone(), answered.clone());
     let started = ctx.spawn(
         "engine: render",
         "rendering the video",
-        move |ctx| render(&ctx, id, &fight_toml, out_root, &c, &q),
-        move |text| Event::Job {
-            id,
-            update: not_made(&text),
+        move |ctx| render(&ctx, id, &fight_toml, out_root, &c, &a),
+        move |text| {
+            if p.swap(true, Ordering::SeqCst) {
+                // The job had its last word already: the panic is told as a problem only.
+                super::problem(text)
+            } else {
+                Event::Job {
+                    id,
+                    update: not_made(&text),
+                }
+            }
         },
     );
     if !started {
         return;
     }
     for older in state.running.drain(..) {
-        older.quiet.store(true, Ordering::SeqCst);
         older.cancel.store(true, Ordering::SeqCst);
+        send_update(ctx, older.id, &older.answered, JobUpdate::Cancelled);
     }
-    state.running.push(Running { id, cancel, quiet });
+    state.running.push(Running { id, cancel, answered });
 }
 
 /// "The video could not be made", with `why` and "Nothing was saved.".
@@ -173,14 +199,10 @@ fn not_made(why: &str) -> JobUpdate {
 }
 
 /// The job's thread: the fight again, then the render with its events as updates, then its end.
-fn render(ctx: &Ctx, id: JobId, fight_toml: &str, out_root: PathBuf, cancel: &AtomicBool, quiet: &AtomicBool) {
+fn render(ctx: &Ctx, id: JobId, fight_toml: &str, out_root: PathBuf, cancel: &AtomicBool, answered: &AtomicBool) {
     let t0 = Instant::now();
-    // Not once a newer job replaced it, nor once the engine is ending.
-    let send = |update: JobUpdate| {
-        if !quiet.load(Ordering::SeqCst) && !ctx.stopping() {
-            ctx.emit(Event::Job { id, update });
-        }
-    };
+    // Nothing after its last word (one a newer job may have sent for it), nor once the engine is ending.
+    let send = |update: JobUpdate| send_update(ctx, id, answered, update);
     let (ff, rec) = match fight(fight_toml) {
         Ok(fought) if !cancel.load(Ordering::SeqCst) => fought,
         Ok(_) => return send(JobUpdate::Cancelled),
@@ -201,27 +223,43 @@ fn render(ctx: &Ctx, id: JobId, fight_toml: &str, out_root: PathBuf, cancel: &At
         }
     };
     let result = run_job(&ff, Arc::new(rec), &opts, &on, cancel);
-    let mut steps = super::lock(&steps);
-    let ends = match result {
-        Ok(folder) => {
-            // Saved, even if a cancel came in the last moment: the answer says what is on disk.
-            let mut ends = steps.all_done();
-            ends.push(JobUpdate::Done {
-                folder,
-                seconds: t0.elapsed().as_secs_f64(),
-            });
-            ends
-        }
-        // A cancel whose clean-up said more (a temporary folder left) is still a cancel.
-        Err(ExportError::Cancelled(_)) => vec![JobUpdate::Cancelled],
-        Err(_) if cancel.load(Ordering::SeqCst) => vec![JobUpdate::Cancelled],
-        Err(e) => {
-            let mut ends = steps.failed_at(&e);
-            ends.push(failure(&e, None));
-            ends
+    let (ends, problem) = {
+        let mut steps = super::lock(&steps);
+        match result {
+            Ok(folder) => {
+                // Saved, even if a cancel came in the last moment: the answer says what is on disk.
+                let mut ends = steps.all_done();
+                ends.push(JobUpdate::Done {
+                    folder,
+                    seconds: t0.elapsed().as_secs_f64(),
+                });
+                (ends, None)
+            }
+            Err(e) if matches!(e, ExportError::Cancelled(_)) || cancel.load(Ordering::SeqCst) => {
+                (vec![JobUpdate::Cancelled], cancel_problem(&e))
+            }
+            Err(e) => {
+                let mut ends = steps.failed_at(&e);
+                ends.push(failure(&e, None));
+                (ends, None)
+            }
         }
     };
+    // The guard is gone: nothing is sent under a lock.
+    if let Some(text) = problem
+        && !answered.load(Ordering::SeqCst)
+        && !ctx.stopping()
+    {
+        ctx.emit(super::problem(text));
+    }
     ends.into_iter().for_each(send);
+}
+
+/// What a cancelled job must still tell the owner: nothing when it ended as a plain cancel; otherwise the export's
+/// own sentence (a temporary folder that could not be removed, say, or a failure that came with the cancel), so a
+/// folder left behind is never hidden behind `Cancelled`.
+fn cancel_problem(e: &ExportError) -> Option<String> {
+    (*e != ExportError::cancelled()).then(|| plain(e))
 }
 
 /// The fight of the job's fight file with its recording, or why there is none (as the job's failure).
@@ -326,12 +364,22 @@ pub fn failure(error: &ExportError, failed: Option<&CheckResult>) -> JobUpdate {
                 .to_string(),
             hint: FailHint::InstallFfmpeg,
         },
+        // The export's sentence already says whether anything was saved (or where a finished video was left)
+        // and what to do: it is the whole detail.
         ExportError::Folder(_) => JobUpdate::Failed {
             headline: "The output folder cannot be used".to_string(),
-            detail: format!("{text} Nothing was saved. Choose another folder, then queue it again."),
+            detail: text,
             hint: FailHint::CheckFolder,
         },
-        _ => not_made(&text),
+        ExportError::Encode(_) | ExportError::Frame(_) | ExportError::Clip(_) | ExportError::Cancelled(_) => {
+            JobUpdate::Failed {
+                headline: NOT_MADE.to_string(),
+                detail: text,
+                hint: FailHint::None,
+            }
+        }
+        // "This fight cannot be rendered: ...": it does not say so itself.
+        ExportError::Content(_) | ExportError::Check(_) => not_made(&text),
     }
 }
 
@@ -679,18 +727,68 @@ mod tests {
                 FailHint::InstallFfmpeg
             )
         );
-        let JobUpdate::Failed { headline, detail, hint } = failure(&ExportError::Encode("ffmpeg stopped".into()), None)
-        else {
-            panic!("not a failure")
+        // The export's own sentence is the whole detail where it already says what was saved: once, and true.
+        let said = |e: ExportError| match failure(&e, None) {
+            JobUpdate::Failed { headline, detail, hint } => (headline, detail, hint),
+            other => panic!("{other:?}"),
         };
+        let encode = "ffmpeg stopped while it encoded the video (x), so nothing was saved; check that the drive has \
+                      free space, then try again.";
+        assert_eq!(
+            said(ExportError::Encode(encode.into())),
+            (NOT_MADE.to_string(), plain(&encode), FailHint::None)
+        );
+        let frame = "Frame 17 (at 0.57 s) could not be drawn (x), so nothing was saved; this is a fault in the app, \
+                     not in your fight.";
+        assert_eq!(said(ExportError::Frame(frame.into())).1, frame);
+        let clip = "The frames 5 to 2 are not a stretch of the video's 1830 frames (0 to 1829), so nothing was made; \
+                    ask for frames inside it.";
+        assert_eq!(said(ExportError::Clip(clip.into())).1, clip);
+        // a finished video left behind is never called "nothing was saved"
+        let left = "A folder named X appeared in the output folder while the video was made, so the finished video \
+                    was left in Y; move it out of there yourself.";
+        let (headline, detail, hint) = said(ExportError::Folder(left.into()));
         assert_eq!(
             (headline.as_str(), detail.as_str(), hint),
-            (
-                "The video could not be made",
-                "Ffmpeg stopped. Nothing was saved.",
-                FailHint::None
+            ("The output folder cannot be used", left, FailHint::CheckFolder)
+        );
+        let taken = "Both A and B are already taken in the output folder, so nothing was made; move or rename one of \
+                     them, or choose another folder.";
+        assert_eq!(said(ExportError::Folder(taken.into())).1, taken);
+        // the content's sentence does not say it, so the detail adds it
+        let content = "This fight cannot be rendered: no theme polka.";
+        assert_eq!(
+            said(ExportError::Content(content.into())).1,
+            format!("{content} Nothing was saved.")
+        );
+        for e in [
+            ExportError::Encode(encode.into()),
+            ExportError::Frame(frame.into()),
+            ExportError::Clip(clip.into()),
+            ExportError::Folder(left.into()),
+            ExportError::Folder(taken.into()),
+            ExportError::Content(content.into()),
+        ] {
+            let detail = said(e).1.to_lowercase();
+            let saying = detail.matches("nothing was saved").count() + detail.matches("nothing was made").count();
+            assert!(saying <= 1, "{detail}");
+        }
+    }
+
+    #[test]
+    fn a_cancel_that_left_a_folder_says_so() {
+        assert_eq!(cancel_problem(&ExportError::cancelled()), None);
+        let left =
+            ExportError::cancelled().with_clause("the temporary folder X could not be removed, so delete it yourself");
+        assert_eq!(
+            cancel_problem(&left).as_deref(),
+            Some(
+                "The render was cancelled, so nothing was saved, and the temporary folder X could not be removed, so \
+                 delete it yourself."
             )
         );
+        // a failure that came with the cancel is told too
+        assert!(cancel_problem(&ExportError::Encode("ffmpeg stopped.".into())).is_some());
     }
 
     #[test]
@@ -894,10 +992,15 @@ mod tests {
         };
         if have_ffmpeg() {
             assert_eq!(headline, "The output folder cannot be used");
-            assert!(
-                detail.ends_with("Nothing was saved. Choose another folder, then queue it again."),
+            // the export's sentence, which says once that nothing was saved and what to do
+            assert!(detail.starts_with("The output folder "), "{detail}");
+            assert_eq!(
+                detail.to_lowercase().matches("nothing was saved").count(),
+                1,
                 "{detail}"
             );
+            assert!(detail.contains("choose another folder"), "{detail}");
+            eprintln!("folder failure: {detail}");
             assert_eq!(hint, FailHint::CheckFolder);
         } else {
             assert_eq!(hint, FailHint::InstallFfmpeg);
@@ -917,7 +1020,7 @@ mod tests {
     #[test]
     fn missing_ffmpeg_fails_in_words() {
         let exe = std::env::current_exe().expect("this test program");
-        let out = Process::new(exe)
+        let mut child = Process::new(exe)
             .args([
                 "engine::jobs::tests::missing_ffmpeg_child",
                 "--exact",
@@ -927,14 +1030,51 @@ mod tests {
             ])
             .env("BALLFIGHT_FFMPEG", "/nonexistent")
             .env(CHILD, "1")
-            .output()
-            .expect("the child test ran");
+            .stdin(std::process::Stdio::null())
+            .stdout(std::process::Stdio::piped())
+            .stderr(std::process::Stdio::piped())
+            .spawn()
+            .expect("the child test started");
+        // Its output is read on threads of their own, so a full pipe can never stall it.
+        let read = |pipe: Option<Box<dyn std::io::Read + Send>>| {
+            std::thread::spawn(move || {
+                let mut text = String::new();
+                if let Some(mut p) = pipe {
+                    let _ = p.read_to_string(&mut text);
+                }
+                text
+            })
+        };
+        let stdout = read(
+            child
+                .stdout
+                .take()
+                .map(|p| Box::new(p) as Box<dyn std::io::Read + Send>),
+        );
+        let stderr = read(
+            child
+                .stderr
+                .take()
+                .map(|p| Box::new(p) as Box<dyn std::io::Read + Send>),
+        );
+        let deadline = Instant::now() + Duration::from_secs(180);
+        let status = loop {
+            if let Some(status) = child.try_wait().expect("the child can be waited for") {
+                break status;
+            }
+            if Instant::now() >= deadline {
+                let _ = child.kill();
+                let _ = child.wait();
+                panic!("the child test did not end within 180 s, so it was stopped");
+            }
+            std::thread::sleep(Duration::from_millis(50));
+        };
         let said = format!(
             "{}\n{}",
-            String::from_utf8_lossy(&out.stdout),
-            String::from_utf8_lossy(&out.stderr)
+            stdout.join().unwrap_or_default(),
+            stderr.join().unwrap_or_default()
         );
-        assert!(out.status.success(), "{said}");
+        assert!(status.success(), "{said}");
         assert!(said.contains("1 passed"), "{said}");
         assert!(said.contains(&format!("{CHILD}: every check ran")), "{said}");
     }
@@ -1070,10 +1210,11 @@ mod tests {
     }
 
     #[test]
-    fn a_newer_job_quiets_the_older_one() {
+    fn a_replaced_job_gets_one_last_word() {
         // Without a coordinator: the handler and a context of its own.
         let (engine, side) = crate::seam::channel(Arc::new(|| {}));
-        let root = std::env::temp_dir().join(format!("bf-app-jobs-quiet-{}", std::process::id()));
+        let root = std::env::temp_dir().join(format!("bf-app-jobs-replaced-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&root);
         let config = EngineConfig {
             workers: 1,
             paths: Paths::under(&root),
@@ -1083,16 +1224,42 @@ mod tests {
         let ctx = Ctx::new(side.events.clone(), config);
         let mut state = State::default();
         let toml = fight_file(&episode_draft()).expect("the episode").to_toml();
+        let mut flags = Vec::new();
         for id in [1, 2] {
             handle_job(&mut state, &ctx, id, &toml, &root.join("out"));
+            flags.push(state.running.last().expect("a running job").cancel.clone());
         }
-        // the first one was replaced: its flags are set, and only the second is running
+        // the first one was replaced: its flag is set, and only the second is running
+        assert!(flags[0].load(Ordering::SeqCst));
         assert_eq!(state.running.len(), 1);
         assert_eq!(state.running[0].id, 2);
         handle(&mut state, &ctx, Command::CancelJob { id: 2 });
-        let updates = job_until_end_handle(&engine, 2);
-        assert_eq!(updates.last(), Some(&JobUpdate::Cancelled), "{updates:?}");
-        // nothing came for job 1, and no video folder was left
+        // wait until both jobs' threads have let go of their flags (they have ended); the test then holds the only
+        // clones
+        drop(state);
+        let deadline = Instant::now() + Duration::from_secs(60);
+        while flags.iter().any(|f| Arc::strong_count(f) > 1) {
+            assert!(Instant::now() < deadline, "a job's thread did not end");
+            std::thread::sleep(Duration::from_millis(10));
+        }
+        let mut last_words: BTreeMap<JobId, Vec<JobUpdate>> = BTreeMap::new();
+        while let Some(e) = engine.poll() {
+            if let Event::Job { id, update } = e
+                && matches!(
+                    update,
+                    JobUpdate::Done { .. } | JobUpdate::Failed { .. } | JobUpdate::Cancelled
+                )
+            {
+                last_words.entry(id).or_default().push(update);
+            }
+        }
+        // exactly one each: the replaced job's `Cancelled`, sent when it was replaced, and the second's own
+        assert_eq!(last_words.get(&1), Some(&vec![JobUpdate::Cancelled]), "{last_words:?}");
+        assert_eq!(last_words.get(&2).map(Vec::len), Some(1), "{last_words:?}");
+        if have_ffmpeg() {
+            assert_eq!(last_words[&2], [JobUpdate::Cancelled]);
+        }
+        // no video folder was left
         assert_eq!(entries(&root.join("out")), Vec::<String>::new());
         ctx.shutdown();
         let _ = std::fs::remove_dir_all(&root);
@@ -1108,22 +1275,5 @@ mod tests {
                 out_root: out.to_path_buf(),
             },
         );
-    }
-
-    /// The updates for job `id` until it ends; fails on any update for another job.
-    fn job_until_end_handle(handle: &EngineHandle, id: JobId) -> Vec<JobUpdate> {
-        let seen = std::cell::RefCell::new(Vec::new());
-        wait_for(handle, 60.0, |e| match e {
-            Event::Job { id: j, update } => {
-                assert_eq!(*j, id, "an update for a replaced job: {update:?}");
-                seen.borrow_mut().push(update.clone());
-                matches!(
-                    update,
-                    JobUpdate::Done { .. } | JobUpdate::Failed { .. } | JobUpdate::Cancelled
-                )
-            }
-            _ => false,
-        });
-        seen.into_inner()
     }
 }
