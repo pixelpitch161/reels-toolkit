@@ -6,6 +6,7 @@ pub mod event;
 pub mod fightfile;
 pub mod grid;
 pub mod harmony;
+pub mod lines;
 pub mod npy;
 pub mod py;
 pub mod pyhash;

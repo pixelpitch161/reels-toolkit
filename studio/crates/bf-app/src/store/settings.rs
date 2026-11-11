@@ -81,7 +81,8 @@ fn parse(bytes: &[u8], cores: usize) -> Read {
 /// Reads the settings file. A missing file gives the defaults and no notice. A file that cannot be understood or was
 /// written by a newer app gives the defaults and a notice in words, and is moved aside as `settings.corrupt-N.toml`
 /// or `settings.newer-N.toml` rather than deleted (or, if another program holds it, copied there). A file that
-/// cannot be opened at all gives the defaults and a notice, and is left where it is; the writer moves it aside as
+/// cannot be opened at all, or one that could be neither moved nor copied, gives the defaults and a notice, and is
+/// left where it is; the writer moves it aside as
 /// `settings.unread-N.toml` before it saves settings over it (or refuses to save). `workers` is kept between 1 and
 /// `cores`. The output folder is not looked at: a missing one is reported where videos are saved.
 pub fn load_settings(path: &Path, cores: usize) -> (Settings, Option<Notice>) {
@@ -123,10 +124,16 @@ pub fn load_settings(path: &Path, cores: usize) -> (Settings, Option<Notice>) {
             "{lead} {kept_as} {}.",
             kept.file_name().unwrap_or_default().to_string_lossy()
         ),
-        Err(_) => format!(
-            "{lead} It could not be moved aside, so copy {} somewhere safe before you change a setting.",
-            path.display()
-        ),
+        Err(_) => {
+            // Ruling M2-R10: the writer keeps it aside (or refuses to save) before it saves settings over it.
+            mark_unread(path);
+            format!(
+                "{lead} The old file could not be moved aside, so it stays where it is for now. Before any settings \
+                 are saved over it, it is kept as {}; if that cannot be done, your settings are not saved and the app \
+                 says so.",
+                next_aside_name(path, "unread")
+            )
+        }
     };
     (defaults, Some(Notice { text }))
 }
@@ -290,6 +297,107 @@ mod tests {
         );
         assert_eq!(fs::read_to_string(config.join("settings.newer-1.toml")).unwrap(), newer);
         assert!(!path.exists());
+    }
+
+    /// Loads `path` while no set-aside name can be claimed, so the bad file can be neither moved nor copied.
+    fn load_while_nothing_can_be_kept(path: &Path) -> (Settings, Option<Notice>) {
+        crate::store::CLAIMS_FAIL.with(|fail| fail.set(true));
+        let loaded = load_settings(path, 8);
+        crate::store::CLAIMS_FAIL.with(|fail| fail.set(false));
+        loaded
+    }
+
+    // M2-R10
+    #[test]
+    fn a_corrupt_file_that_cannot_be_kept_says_what_happens_next() {
+        let root = TempRoot::new("a_corrupt_file_that_cannot_be_kept_says_what_happens_next");
+        let config = root.paths().config;
+        let path = root.paths().settings();
+        fs::create_dir_all(&config).unwrap();
+        fs::write(&path, "workers = [").unwrap();
+        assert_eq!(
+            load_while_nothing_can_be_kept(&path),
+            (
+                default_settings(8),
+                notice(
+                    "Your settings file could not be read, so the app is using its defaults. The old file could not \
+                     be moved aside, so it stays where it is for now. Before any settings are saved over it, it is \
+                     kept as settings.unread-1.toml; if that cannot be done, your settings are not saved and the app \
+                     says so."
+                )
+            )
+        );
+        assert_eq!(fs::read(&path).unwrap(), b"workers = [");
+        assert_eq!(files_in(&config), vec!["settings.toml"]);
+        // Once the obstacle is gone, the first save keeps the old bytes aside before it writes.
+        let writer = Writer::start(root.paths());
+        writer.settings(&mine());
+        writer.flush();
+        assert!(writer.problems().is_empty());
+        assert_eq!(fs::read(config.join("settings.unread-1.toml")).unwrap(), b"workers = [");
+        assert_eq!(load_settings(&path, 8), (mine(), None));
+    }
+
+    // M2-R10
+    #[test]
+    fn a_newer_file_that_cannot_be_kept_says_what_happens_next() {
+        let root = TempRoot::new("a_newer_file_that_cannot_be_kept_says_what_happens_next");
+        let path = root.paths().settings();
+        fs::create_dir_all(root.paths().config).unwrap();
+        fs::write(&path, "format = 2\n").unwrap();
+        let (settings, said) = load_while_nothing_can_be_kept(&path);
+        assert_eq!(settings, default_settings(8));
+        assert_eq!(
+            said.unwrap().text,
+            "Your settings were saved by a newer version of BALLFIGHT Studio, so the app is using its defaults. The \
+             old file could not be moved aside, so it stays where it is for now. Before any settings are saved over \
+             it, it is kept as settings.unread-1.toml; if that cannot be done, your settings are not saved and the \
+             app says so."
+        );
+        let writer = Writer::start(root.paths());
+        writer.settings(&mine());
+        writer.flush();
+        assert!(writer.problems().is_empty());
+        assert_eq!(
+            fs::read(root.paths().config.join("settings.unread-1.toml")).unwrap(),
+            b"format = 2\n"
+        );
+    }
+
+    // M2-R10 (a) then (b)
+    #[cfg(windows)]
+    #[test]
+    fn a_corrupt_file_that_cannot_be_kept_is_protected_from_the_next_save() {
+        let root = TempRoot::new("a_corrupt_file_that_cannot_be_kept_is_protected_from_the_next_save");
+        let paths = root.paths();
+        let path = paths.settings();
+        fs::create_dir_all(&paths.config).unwrap();
+        fs::write(&path, "workers = [[").unwrap();
+        assert!(load_while_nothing_can_be_kept(&path).1.is_some());
+        // (a) Another program now holds the file, so it still cannot be kept: the save is refused.
+        let writer = Writer::start(paths.clone());
+        let held = open_shared(&path, 0);
+        writer.settings(&default_settings(8));
+        writer.flush();
+        let problems = writer.problems();
+        drop(held);
+        assert_eq!(problems.len(), 1, "{problems:?}");
+        assert!(
+            problems[0].starts_with(&format!("Your settings were not saved to {}", path.display())),
+            "{}",
+            problems[0]
+        );
+        assert_eq!(fs::read(&path).unwrap(), b"workers = [[");
+        assert_eq!(files_in(&paths.config), vec!["settings.toml"]);
+        // (b) The program lets go: the next save keeps the old bytes aside and writes the new file.
+        writer.settings(&mine());
+        writer.flush();
+        assert!(writer.problems().is_empty());
+        assert_eq!(
+            fs::read(paths.config.join("settings.unread-1.toml")).unwrap(),
+            b"workers = [["
+        );
+        assert_eq!(load_settings(&path, 8), (mine(), None));
     }
 
     #[cfg(windows)]
