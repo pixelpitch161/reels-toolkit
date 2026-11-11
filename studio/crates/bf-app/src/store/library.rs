@@ -56,6 +56,10 @@ pub struct FightSummary {
 /// each give the entry a problem in words; the title then falls back to the folder's name. A folder name that is not
 /// valid Unicode is shown with its invalid parts replaced.
 ///
+/// Links are never followed, so no entry's path leads outside the output folder (later steps delete and reopen
+/// through these paths): a subfolder that is a link or junction is not listed, and a `cover.png` or fight file that
+/// is a link counts as missing.
+///
 /// The errors are about `root` itself: missing (or a file in its place), "The output folder {path} is missing.";
 /// there but impossible to list, "The output folder {path} could not be read. {plain reason}". Anything inside it
 /// that cannot be read is skipped or becomes that video's problem, so one bad video folder never hides the others.
@@ -81,6 +85,8 @@ pub fn scan(root: &Path, read: &dyn Fn(&str) -> Result<FightSummary, String>) ->
     };
     let mut entries: Vec<LibraryEntry> = dir
         .filter_map(Result::ok)
+        // A `DirEntry`'s file type does not follow links: a link or junction is not a folder here.
+        .filter(|entry| entry.file_type().is_ok_and(|kind| kind.is_dir()))
         .filter_map(|entry| video(entry.path(), &entry.file_name().to_string_lossy(), read))
         .collect();
     entries.sort_by(|a, b| b.modified.cmp(&a.modified).then_with(|| a.folder.cmp(&b.folder)));
@@ -90,18 +96,21 @@ pub fn scan(root: &Path, read: &dyn Fn(&str) -> Result<FightSummary, String>) ->
 /// Why the output folder could not be listed, in words the owner can act on.
 fn unreadable_reason(err: &io::Error) -> &'static str {
     if err.kind() == io::ErrorKind::PermissionDenied {
-        "Your Windows account is not allowed to open it. Check its permissions, or choose another folder."
+        "Your Windows account is not allowed to open it. Choose another folder, or ask for access to it."
     } else {
         "Check that its drive is connected, or choose another folder."
     }
 }
 
-/// The entry for the folder `folder` called `name`, or None when it is not a video.
+/// The entry for the subfolder `folder` (not a link) called `name`, or None when it is not a video.
 fn video(folder: PathBuf, name: &str, read: &dyn Fn(&str) -> Result<FightSummary, String>) -> Option<LibraryEntry> {
-    if name.starts_with('.') || !folder.is_dir() {
+    if name.starts_with('.') {
         return None;
     }
-    let cover = fs::metadata(folder.join(COVER)).ok().filter(fs::Metadata::is_file)?;
+    // `symlink_metadata` does not follow a link: a linked cover is not a file.
+    let cover = fs::symlink_metadata(folder.join(COVER))
+        .ok()
+        .filter(fs::Metadata::is_file)?;
     let modified = cover
         .modified()
         .ok()
@@ -142,7 +151,8 @@ fn video(folder: PathBuf, name: &str, read: &dyn Fn(&str) -> Result<FightSummary
     Some(entry)
 }
 
-/// The `.toml` files in `folder` (any letter case; not names starting with "."), or None if it cannot be listed.
+/// The `.toml` files in `folder` (any letter case; not names starting with "."; plain files only, never a link), or
+/// None if it cannot be listed.
 fn fight_files(folder: &Path) -> Option<Vec<PathBuf>> {
     let files = fs::read_dir(folder)
         .ok()?
@@ -151,8 +161,8 @@ fn fight_files(folder: &Path) -> Option<Vec<PathBuf>> {
             let name = entry.file_name().to_string_lossy().to_lowercase();
             !name.starts_with('.') && name.ends_with(".toml")
         })
+        .filter(|entry| entry.file_type().is_ok_and(|kind| kind.is_file()))
         .map(|entry| entry.path())
-        .filter(|path| path.is_file())
         .collect();
     Some(files)
 }
@@ -259,6 +269,22 @@ fn probe_path(root: &Path, n: u32) -> PathBuf {
     root.join(format!(".bf-write-check-{}-{n}.tmp", std::process::id()))
 }
 
+#[cfg(test)]
+thread_local! {
+    /// Tests only: while set, the probe on this thread acts as if its file could not be deleted (and leaves it).
+    static PROBE_DELETE_FAILS: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+}
+
+/// Said when the probe file at `path` could not be deleted.
+fn left_behind(root: &Path, path: &Path) -> String {
+    format!(
+        "The output folder {} let the app make a test file but not delete it. Delete {} yourself, or choose another \
+         folder.",
+        root.display(),
+        path.display()
+    )
+}
+
 /// Creates a probe file of its own in `root` and deletes it at once. A name already taken (by anyone) is skipped,
 /// never written over or deleted. Deleting is tried again for a moment if another program (an antivirus scan) holds
 /// the new file; if it still cannot be deleted, says so and names the file left behind.
@@ -282,15 +308,14 @@ fn probe(root: &Path) -> Result<(), String> {
         match fs::OpenOptions::new().write(true).create_new(true).open(&path) {
             Ok(file) => {
                 drop(file);
+                #[cfg(test)]
+                if PROBE_DELETE_FAILS.with(std::cell::Cell::get) {
+                    return Err(left_behind(root, &path));
+                }
                 return match retry_busy(|| fs::remove_file(&path), &mut pause_before_retry) {
                     Ok(()) => Ok(()),
                     Err(err) if err.kind() == io::ErrorKind::NotFound => Ok(()),
-                    Err(_) => Err(format!(
-                        "The output folder {} let the app make a test file but not delete it. Delete {} yourself, \
-                         or choose another folder.",
-                        root.display(),
-                        path.display()
-                    )),
+                    Err(_) => Err(left_behind(root, &path)),
                 };
             }
             Err(err) if err.kind() == io::ErrorKind::AlreadyExists => continue,
@@ -425,12 +450,92 @@ mod tests {
     #[cfg(windows)]
     impl Drop for Denied {
         fn drop(&mut self) {
-            let _ = std::process::Command::new("icacls")
+            let out = std::process::Command::new("icacls")
                 .arg(&self.path)
                 .arg("/remove:d")
                 .arg(&self.user)
                 .output();
+            // A folder left denied cannot be removed by the test: say so where it shows.
+            match out {
+                Ok(out) if out.status.success() => {}
+                Ok(out) => eprintln!(
+                    "could not give back the rights on {}: {}{}",
+                    self.path.display(),
+                    String::from_utf8_lossy(&out.stdout),
+                    String::from_utf8_lossy(&out.stderr)
+                ),
+                Err(err) => eprintln!("could not run icacls for {}: {err}", self.path.display()),
+            }
         }
+    }
+
+    /// Windows only: a junction at `link` pointing at the folder `target` (no admin rights needed).
+    #[cfg(windows)]
+    fn junction(link: &Path, target: &Path) {
+        let made = std::process::Command::new("cmd")
+            .args(["/C", "mklink", "/J"])
+            .arg(link)
+            .arg(target)
+            .output()
+            .unwrap();
+        assert!(made.status.success(), "{made:?}");
+    }
+
+    /// A raw Adam7-interlaced 8-bit RGB PNG, written by hand (the `png` crate does not write interlaced pictures):
+    /// unfiltered rows in stored (uncompressed) deflate blocks.
+    fn interlaced_png(w: u32, h: u32, pixel: impl Fn(u32, u32) -> [u8; 3]) -> Vec<u8> {
+        const PASSES: [(u32, u32, u32, u32); 7] = [
+            (0, 0, 8, 8),
+            (4, 0, 8, 8),
+            (0, 4, 4, 8),
+            (2, 0, 4, 4),
+            (0, 2, 2, 4),
+            (1, 0, 2, 2),
+            (0, 1, 1, 2),
+        ];
+        let mut raw = Vec::new();
+        for (x0, y0, dx, dy) in PASSES {
+            for y in (y0..h).step_by(dy as usize) {
+                if x0 >= w {
+                    continue;
+                }
+                raw.push(0);
+                for x in (x0..w).step_by(dx as usize) {
+                    raw.extend(pixel(x, y));
+                }
+            }
+        }
+        let mut zlib = vec![0x78, 0x01];
+        let chunks: Vec<&[u8]> = raw.chunks(65_535).collect();
+        for (i, chunk) in chunks.iter().enumerate() {
+            zlib.push(u8::from(i + 1 == chunks.len()));
+            let len = chunk.len() as u16;
+            zlib.extend(len.to_le_bytes());
+            zlib.extend((!len).to_le_bytes());
+            zlib.extend(*chunk);
+        }
+        let (mut a, mut b) = (1u32, 0u32);
+        for &byte in &raw {
+            a = (a + u32::from(byte)) % 65_521;
+            b = (b + a) % 65_521;
+        }
+        zlib.extend(((b << 16) | a).to_be_bytes());
+        let mut file = vec![0x89, b'P', b'N', b'G', 0x0d, 0x0a, 0x1a, 0x0a];
+        let mut chunk = |kind: &[u8; 4], data: &[u8]| {
+            file.extend((data.len() as u32).to_be_bytes());
+            let mut body = kind.to_vec();
+            body.extend(data);
+            file.extend(&body);
+            file.extend(crc32(&body).to_be_bytes());
+        };
+        let mut header = Vec::new();
+        header.extend(w.to_be_bytes());
+        header.extend(h.to_be_bytes());
+        header.extend([8, 2, 0, 0, 1]);
+        chunk(b"IHDR", &header);
+        chunk(b"IDAT", &zlib);
+        chunk(b"IEND", &[]);
+        file
     }
 
     #[test]
@@ -600,6 +705,38 @@ mod tests {
 
     #[cfg(windows)]
     #[test]
+    fn links_never_lead_out_of_the_output_folder() {
+        let root = TempRoot::new("links_never_lead_out_of_the_output_folder");
+        let videos = root.0.join("videos");
+        fs::create_dir(&videos).unwrap();
+        // A video folder outside the output folder, reached through a junction inside it: not listed.
+        let outside = video(&root.0, "outside", &[("outside.toml", b"Outside")], 1_794_000_000);
+        junction(&videos.join("linked video"), &outside);
+        // A real video folder whose cover and fight file are junctions to folders outside: they count as missing.
+        let real = videos.join("real");
+        fs::create_dir(&real).unwrap();
+        junction(&real.join("cover.png"), &outside);
+        let inner = video(&videos, "inner", &[], 1_794_000_001);
+        junction(&inner.join("inner.toml"), &outside);
+        let entries = scan(&videos, &read_title).unwrap();
+        assert_eq!(entries.len(), 1, "{entries:?}");
+        assert_eq!(entries[0].folder, inner);
+        assert_eq!(entries[0].fight_path, None);
+        assert_eq!(entries[0].problem.as_deref(), Some(FIGHT_FILE_MISSING));
+        // Links to files need rights a plain account may not have; when this PC allows them, they count as missing.
+        let file_link = inner.join("file link.toml");
+        match std::os::windows::fs::symlink_file(outside.join("outside.toml"), &file_link) {
+            Ok(()) => {
+                let entries = scan(&videos, &read_title).unwrap();
+                assert_eq!(entries[0].problem.as_deref(), Some(FIGHT_FILE_MISSING));
+            }
+            Err(err) => eprintln!("file links are not allowed here ({err}); that part was not run"),
+        }
+        assert_eq!(fs::read(outside.join("outside.toml")).unwrap(), b"Outside");
+    }
+
+    #[cfg(windows)]
+    #[test]
     fn an_output_folder_that_cannot_be_read_is_named() {
         let root = TempRoot::new("an_output_folder_that_cannot_be_read_is_named");
         let videos = root.0.join("videos");
@@ -619,8 +756,8 @@ mod tests {
         assert_eq!(
             text,
             format!(
-                "The output folder {} could not be read. Your Windows account is not allowed to open it. Check its \
-                 permissions, or choose another folder.",
+                "The output folder {} could not be read. Your Windows account is not allowed to open it. Choose \
+                 another folder, or ask for access to it.",
                 videos.display()
             )
         );
@@ -744,6 +881,58 @@ mod tests {
             vec![200, 0, 0, 0, 100, 0]
         });
         assert_eq!(rgb_at(&thumbnail(&deep).unwrap(), 5, 5), [200, 0, 100]);
+    }
+
+    #[test]
+    fn a_palette_cover_is_read() {
+        let mut bytes = Vec::new();
+        let mut encoder = png::Encoder::new(&mut bytes, 1080, 1920);
+        encoder.set_color(png::ColorType::Indexed);
+        encoder.set_depth(png::BitDepth::Eight);
+        encoder.set_palette(vec![200, 0, 0, 0, 0, 200]);
+        let indices: Vec<u8> = (0..1920 * 1080).map(|i| u8::from(i % 1080 >= 540)).collect();
+        let mut writer = encoder.write_header().unwrap();
+        writer.write_image_data(&indices).unwrap();
+        writer.finish().unwrap();
+        let frame = thumbnail(&bytes).unwrap();
+        assert_eq!(rgb_at(&frame, 0, 0), [200, 0, 0]);
+        assert_eq!(rgb_at(&frame, 179, 319), [0, 0, 200]);
+    }
+
+    #[test]
+    fn an_interlaced_cover_is_read_whole() {
+        let cover = interlaced_png(1080, 1920, |x, y| {
+            [((y % 6) * 6 + x % 6) as u8, (x / 6) as u8, ((y / 6) % 256) as u8]
+        });
+        // The hand-made file really is interlaced.
+        assert_eq!(cover[28], 1);
+        let frame = thumbnail(&cover).unwrap();
+        for (tx, ty) in [(0, 0), (1, 1), (7, 3), (90, 200), (179, 319)] {
+            assert_eq!(rgb_at(&frame, tx, ty), [18, tx as u8, (ty % 256) as u8], "({tx}, {ty})");
+        }
+    }
+
+    #[test]
+    fn a_probe_file_that_cannot_be_deleted_is_named() {
+        let root = TempRoot::new("a_probe_file_that_cannot_be_deleted_is_named");
+        PROBE_DELETE_FAILS.with(|fails| fails.set(true));
+        let state = folder_state(&root.0, "x");
+        PROBE_DELETE_FAILS.with(|fails| fails.set(false));
+        let left = probe_path(&root.0, 0);
+        assert_eq!(
+            state,
+            FolderState::NotWritable(format!(
+                "The output folder {} let the app make a test file but not delete it. Delete {} yourself, or choose \
+                 another folder.",
+                root.0.display(),
+                left.display()
+            ))
+        );
+        // The file named is the one left behind, and nothing else is there.
+        assert_eq!(
+            files_in(&root.0),
+            vec![left.file_name().unwrap().to_string_lossy().into_owned()]
+        );
     }
 
     #[test]

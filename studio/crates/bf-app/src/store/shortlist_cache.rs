@@ -6,6 +6,7 @@
 
 use std::ffi::OsString;
 use std::fs;
+use std::io::Read as _;
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -48,11 +49,24 @@ pub fn cache_file(dir: &Path, app_version: &str, search_key: &str) -> PathBuf {
     dir.join(format!("{name}.json"))
 }
 
-/// The search's cached progress, or None when there is none to use: no file, a file that cannot be read or does not
-/// parse, or one whose format, app version or search key is not this one's. Never an error, and never waits on a
-/// file another program holds open (that is a miss too).
+/// The largest cache file read: 16 MiB. A seed is written in at most 21 bytes (20 digits and a comma), so this holds
+/// about 800,000 seeds, thousands of times a real shortlist (200 fits and the others checked beside them); a larger
+/// file can only be damaged or made by hand, and is a miss.
+const MAX_CACHE_FILE: u64 = 16 << 20;
+
+/// The search's cached progress, or None when there is none to use: no file, a file that cannot be read, is over
+/// `MAX_CACHE_FILE` or does not parse, or one whose format, app version or search key is not this one's. Never an
+/// error, and never waits on a file another program holds open (that is a miss too).
 pub fn load_shortlist(dir: &Path, app_version: &str, search_key: &str) -> Option<CachedShortlist> {
-    let bytes = fs::read(cache_file(dir, app_version, search_key)).ok()?;
+    let mut bytes = Vec::new();
+    fs::File::open(cache_file(dir, app_version, search_key))
+        .ok()?
+        .take(MAX_CACHE_FILE + 1)
+        .read_to_end(&mut bytes)
+        .ok()?;
+    if bytes.len() as u64 > MAX_CACHE_FILE {
+        return None;
+    }
     let file: CacheFile = serde_json::from_slice(&bytes).ok()?;
     let matches = file.format == CACHE_FORMAT && file.app_version == app_version && file.search_key == search_key;
     matches.then_some(CachedShortlist {
@@ -228,6 +242,22 @@ mod tests {
         save_shortlist(&dir, VERSION, KEY, &sample()).unwrap();
         assert_eq!(load_shortlist(&dir, VERSION, KEY), Some(sample()));
         assert_eq!(files_in(&dir), vec!["c0235a4f5c3232d6.json"]);
+    }
+
+    #[test]
+    fn an_oversized_cache_is_a_miss() {
+        let root = TempRoot::new("an_oversized_cache_is_a_miss");
+        let dir = root.0.join("shortlists");
+        save_shortlist(&dir, VERSION, KEY, &sample()).unwrap();
+        let path = cache_file(&dir, VERSION, KEY);
+        let mut bytes = fs::read(&path).unwrap();
+        // Trailing spaces keep it valid JSON: exactly the limit is read, one byte more is a miss.
+        bytes.resize(MAX_CACHE_FILE as usize, b' ');
+        fs::write(&path, &bytes).unwrap();
+        assert_eq!(load_shortlist(&dir, VERSION, KEY), Some(sample()));
+        bytes.push(b' ');
+        fs::write(&path, &bytes).unwrap();
+        assert_eq!(load_shortlist(&dir, VERSION, KEY), None);
     }
 
     #[test]
