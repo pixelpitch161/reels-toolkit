@@ -10,11 +10,15 @@
 //! sprites), [`lighting`] (lights and flat shading), [`shadows`] (planar shadow masks), [`lens`] (depth of
 //! field, on the FFT convolution of [`fft`]), [`post`] (bloom, grade, vignette, top scrim) and [`hull`] (the
 //! convex hull in scipy's order). Each module's documentation says how close to Python it is and why.
+//!
+//! [`fx`] is the effects kit (`reelkit/fx.py`): attack lights, impact bursts, camera shake, heat shimmer,
+//! chromatic fringing, particles, marks on the floor and the ability moments.
 
 pub mod camera;
 pub mod config;
 pub mod fft;
 pub mod font;
+pub mod fx;
 pub mod geometry;
 pub mod hull;
 pub mod img;

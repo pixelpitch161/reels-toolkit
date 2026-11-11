@@ -102,6 +102,15 @@ fn lead_changes(events: &[Event]) -> (u32, Vec<f64>, Vec<(f64, f64)>) {
 /// On a malformed `hit`, `heal` or `ability` event (an element missing or of the wrong type), as the kit raises
 /// there. Recordings made by the engine or read from a file never have one.
 pub fn story(rec: &Recording, grid: &Grid, sheet: &BeatSheet, low_names: [&str; 2]) -> Story {
+    story_at(rec, grid.t_fight, sheet, low_names)
+}
+
+/// [`story`] for a caller that has the rules of the fight and no grid (the seed search): `t_fight` is `T.T_FIGHT`,
+/// which the rules hold as `rules.t_fight`.
+///
+/// # Panics
+/// As [`story`].
+pub fn story_at(rec: &Recording, t_fight: f64, sheet: &BeatSheet, low_names: [&str; 2]) -> Story {
     let ev = &rec.events;
     let mut hp = [HP0, HP0];
     let mut hits_t = Vec::new();
@@ -124,7 +133,7 @@ pub fn story(rec: &Recording, grid: &Grid, sheet: &BeatSheet, low_names: [&str; 
     };
     // gaps = [b - a for a, b in zip([T.T_FIGHT] + hits_t, hits_t)]
     let mut max_gap: Option<f64> = None;
-    let mut a = grid.t_fight;
+    let mut a = t_fight;
     for &b in &hits_t {
         let g = b - a;
         max_gap = Some(max_gap.map_or(g, |m| py_max(m, g)));

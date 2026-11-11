@@ -167,6 +167,7 @@ EXPORTS = {'thing': run}                         # python -m tools.studio_export
 | `title` | `frames.py` | `studio/reference/frames/flute_vs_trombone/title/{f<frame>.png,noise.png,title.json}` (18 cards) and `title/hashes.{npz,json}` (the SHA-256 of every card frame of four timelines) |
 | `stems` | `stems.py` | `studio/reference/sound/flute_vs_trombone/{audio.wav,stems.npz,premaster.npz,rms.json,master_case.npz}` (its own interpreter; reads what `voices` wrote; order 55) |
 | `voices` | `voices.py` | `studio/reference/sound/{pp_noise_start.json,flute_vs_trombone/{note_calls.json,first_notes.npz},voices/{FLUTE,TROMBONE,helpers}.npz,voices/scalars.json}` (its own interpreter) |
+| `kit_fx` | `kit_fx_vectors.py` | `studio/reference/picture_kit/fx_{timing,bursts,warp,particles,marks,moments}.npz`, each with its sidecar `.json`: the effects kit, `reelkit.fx` (about 40 s: it renders some 50 frames to record the real calls; see its docstring for the cases) |
 
 ### `roster`: the fighters' numbers
 
