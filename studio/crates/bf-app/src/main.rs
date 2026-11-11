@@ -47,7 +47,10 @@ fn parse(args: impl IntoIterator<Item = OsString>) -> Result<Args, String> {
             Some("--smoke") => parsed.smoke = true,
             Some("--fixtures") => parsed.fixtures = true,
             Some("--data-dir") => match args.next() {
-                Some(dir) if !dir.is_empty() => parsed.data_dir = Some(PathBuf::from(dir)),
+                // An option in its place ("--data-dir --fixtures") is not a folder.
+                Some(dir) if !dir.is_empty() && !dir.to_string_lossy().starts_with("--") => {
+                    parsed.data_dir = Some(PathBuf::from(dir));
+                }
                 _ => return Err("--data-dir needs a folder after it.".to_string()),
             },
             _ => {
@@ -235,6 +238,10 @@ mod tests {
         );
         assert_eq!(
             parse(words(&["--data-dir"])),
+            Err("--data-dir needs a folder after it.".to_string())
+        );
+        assert_eq!(
+            parse(words(&["--data-dir", "--fixtures"])),
             Err("--data-dir needs a folder after it.".to_string())
         );
         assert_eq!(
