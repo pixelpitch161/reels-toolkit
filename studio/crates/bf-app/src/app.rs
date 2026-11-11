@@ -121,6 +121,8 @@ pub struct BfApp {
     ctx: egui::Context,
     /// `shutdown` has run.
     closed: bool,
+    /// `close` has run: whether the engine stopped in time.
+    engine_stopped: Option<bool>,
 }
 
 /// Which engine the app runs on.
@@ -326,6 +328,7 @@ impl BfApp {
             texture: None,
             ctx: cc.egui_ctx.clone(),
             closed: false,
+            engine_stopped: None,
         }
     }
 
@@ -366,13 +369,18 @@ impl BfApp {
 
     /// The app's exit (`on_exit`): [`BfApp::shutdown`], then a wait of up to [`ENGINE_STOP`] for the engine to
     /// stop, so a render, and the ffmpeg it started, never outlives the window. Returns whether the engine stopped
-    /// in time (always true when the app has no engine).
+    /// in time (always true when the app has no engine). It does its work once; `Drop` calls it too.
     pub fn close(&mut self) -> bool {
+        if let Some(stopped) = self.engine_stopped {
+            return stopped;
+        }
         self.shutdown();
-        match &self.link {
+        let stopped = match &self.link {
             Link::Live(live) => live.engine.stop(ENGINE_STOP),
             _ => true,
-        }
+        };
+        self.engine_stopped = Some(stopped);
+        stopped
     }
 
     /// Tells the engine the app is closing and waits until everything asked to be saved is on disk. `close` calls
@@ -533,6 +541,15 @@ fn panels(
         stage,
         timeline,
         status,
+    }
+}
+
+impl Drop for BfApp {
+    /// A dropped app closes as its window would (`close`, which does its work once): also when the interface thread
+    /// panicked or the window ended without `on_exit`, the engine is stopped, and waited for, before the process
+    /// exits.
+    fn drop(&mut self) {
+        self.close();
     }
 }
 
