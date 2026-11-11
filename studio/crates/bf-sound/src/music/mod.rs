@@ -52,8 +52,8 @@ use bf_core::fightfile::{FightFile, INTRO_BARS};
 use bf_core::harmony::{self, Harmony};
 use bf_core::py::{ifloor_div, round_half_even, round_nd};
 use bf_core::recording::{Array, Recording};
+use bf_core::roster::FighterCfg;
 use bf_core::show::Show;
-use bf_sim::roster::FighterCfg;
 
 pub use self::error::{MusicError, Samples};
 pub use self::events::{event_at, event_int, event_is, event_is_str, event_number, noise_seed, shared_events};
@@ -62,16 +62,18 @@ pub use self::fx::{
     ROAR_SEED, THUNDER_CRACK, THUNDER_DUR, THUNDER_SEED, clank, hiss, riser, roar, thunder,
 };
 pub use self::num::MAX_SECONDS;
-use self::num::{SRF, int, py_max, py_min};
+use self::num::int;
 use self::shape::no_room;
 pub use self::shape::{
     COLOUR_CUT_SPAN, COLOUR_CUT0, COLOUR_DRIVE, COLOUR_DRIVE_K, COLOUR_LOW, COLOUR_LOW_CUT, ColourArgs, FIT_FADE,
     VIBRATO_DELAY, VIBRATO_DEPTH, VIBRATO_RATE, bend, colour_hp, fit, gliss, vibrato, wah,
 };
 pub use self::thin::{Thinner, h01, h01_37, q16, thin_37};
+use crate::SRF;
 use crate::dsp;
 use crate::synth::{self, FILTER_O};
 use crate::voice::{PpNoise, Voice};
+use bf_core::py::{py_max, py_min};
 
 /// `note`'s default held length, in seconds.
 pub const NOTE_DUR: f64 = 0.18;

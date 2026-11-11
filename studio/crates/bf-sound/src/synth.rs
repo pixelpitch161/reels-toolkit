@@ -17,11 +17,8 @@ use bf_core::dmath::{self, PI};
 use bf_core::py::fmod_py;
 use bf_core::rng::Generator;
 
-use crate::SR;
+use crate::SRF;
 use crate::dsp::{self, FilterKind, Sos};
-
-/// The sample rate as a float.
-const SRF: f64 = SR as f64;
 
 /// The filters' default order: `o=2` of `sos`, `hp`, `lp` and `bp`.
 pub const FILTER_O: usize = 2;
@@ -99,16 +96,22 @@ fn length(x: f64) -> usize {
     x as usize
 }
 
-/// `np.random.default_rng(seed).normal(0, 1, n)`.
-fn noise(seed: u64, n: usize) -> Vec<f64> {
+/// `np.random.default_rng(seed).normal(0, 1, n)`: `n` standard normals from a new generator of `seed`. The one
+/// home of this helper for the sound code (the music helpers, the fighters' parts and the themes use it).
+pub fn noise(seed: u64, n: usize) -> Vec<f64> {
     let mut x = vec![0.0; n];
     Generator::new(seed).fill_normal(0.0, 1.0, &mut x);
     x
 }
 
-/// `np.clip(x, 0, 1)`.
-fn clip01(x: f64) -> f64 {
-    x.clamp(0.0, 1.0)
+/// numpy's `np.clip(x, lo, hi)` on one value (elementwise it is the same rule): `lo` when `x < lo`, `hi` when
+/// `x > hi`, otherwise `x` itself. So a NaN stays a NaN, and an `x` equal to a bound is kept with its own sign
+/// (`np.clip(-0.0, 0, 1)` is `-0.0`, as here). Not Python's `max(lo, min(hi, x))`, which differs on NaN.
+///
+/// # Panics
+/// When `lo > hi` or a bound is NaN (`f64::clamp`); no caller passes such bounds.
+pub fn clip(x: f64, lo: f64, hi: f64) -> f64 {
+    x.clamp(lo, hi)
 }
 
 // ---------------------------------------------------------------- time, pitch, filters
@@ -178,7 +181,7 @@ pub fn expenv(n: usize, decay: f64, attack: f64) -> Vec<f64> {
     let attack = if 1e-4 > attack { 1e-4 } else { attack };
     tt(n)
         .iter()
-        .map(|&t| clip01(t / attack) * dmath::exp(-t / decay))
+        .map(|&t| clip(t / attack, 0.0, 1.0) * dmath::exp(-t / decay))
         .collect()
 }
 
@@ -342,7 +345,7 @@ pub fn thud(dur: f64, f0: f64, f1: f64, seed: u64) -> Vec<f64> {
         .map(|i| {
             let body = dmath::sin(ph[i]) * dmath::exp(-t[i] / (dur * 0.28));
             let puff = low[i] * dmath::exp(-t[i] / 0.035) * 0.5;
-            (body + puff) * clip01(t[i] / 0.002)
+            (body + puff) * clip(t[i] / 0.002, 0.0, 1.0)
         })
         .collect()
 }
@@ -617,5 +620,26 @@ mod tests {
     #[should_panic(expected = "tape_stop: the buffer has 100 samples, the stop ends at sample 1440")]
     fn tape_stop_needs_room() {
         tape_stop(&[[0.0; 2]; 100], 0.01, 0.02);
+    }
+
+    #[test]
+    fn clip_is_numpys() {
+        // np.clip(x, lo, hi) as numpy 2.5.3 prints it, signs of zero included.
+        let bits = |x: f64| x.to_bits();
+        assert_eq!(bits(clip(-0.0, 0.0, 1.0)), bits(-0.0));
+        assert_eq!(bits(clip(0.0, -0.0, 1.0)), bits(0.0));
+        assert_eq!(bits(clip(-0.0, -0.6, 0.6)), bits(-0.0));
+        assert_eq!(bits(clip(0.0, -1.0, -0.0)), bits(0.0));
+        assert_eq!(clip(2.0, 0.0, 1.0), 1.0);
+        assert_eq!(clip(-2.0, -0.6, 0.6), -0.6);
+        assert!(clip(f64::NAN, 0.0, 1.0).is_nan());
+    }
+
+    #[test]
+    fn noise_is_a_new_generators_normals() {
+        let mut want = vec![0.0; 5];
+        Generator::new(7).fill_normal(0.0, 1.0, &mut want);
+        assert_eq!(noise(7, 5), want);
+        assert!(noise(7, 0).is_empty());
     }
 }

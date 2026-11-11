@@ -12,6 +12,7 @@ use std::fmt;
 use crate::event::{Event, Value};
 use crate::fightfile::FightFile;
 use crate::grid::Grid;
+use crate::py::round_half_even;
 use crate::recording::Recording;
 
 /// The timeline's `CAP_GAP`: the least time between two kept ability captions (the series default, 4.0 s).
@@ -93,6 +94,9 @@ pub enum ShowError {
     },
     /// An `ability` event the captions read is malformed (`index` counts from 0 in the event list).
     Event { index: usize, problem: String },
+    /// The recording was not fought on the fight file's grid (its tempo, its beat, the time the fight starts or
+    /// the video frame of its first frame differ), or does not say what it was fought at: the whole sentence.
+    Tempo(String),
 }
 
 impl fmt::Display for ShowError {
@@ -105,6 +109,7 @@ impl fmt::Display for ShowError {
                 "the recording's fighters {recording:?} are not the fight file's {fight_file:?}"
             ),
             ShowError::Event { index, problem } => write!(f, "event {index} (ability): {problem}"),
+            ShowError::Tempo(problem) => f.write_str(problem),
         }
     }
 }
@@ -157,28 +162,116 @@ pub fn captions(events: &[Event], gap: f64) -> Vec<(f64, usize, String)> {
     try_captions(events, gap).unwrap_or_else(|e| panic!("captions: {e}"))
 }
 
+/// One row of `impact_landings`, Python's `(t_land, k, len(_plain(line)))`: when a caption line lands, which line
+/// of its caption it is (from 0) and how many characters it has without its `*` and `~` marks (Python's
+/// characters: Unicode code points).
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Landing {
+    /// When the line lands, in seconds.
+    pub t: f64,
+    /// Which line of its caption it is, from 0.
+    pub line: usize,
+    /// Its characters without the marks.
+    pub chars: usize,
+}
+
 /// `reelkit/ui.py` `impact_landings(caps, stagger, fall)`: when each line of the caption windows `caps` lands in
-/// the `impact` style, as `(t_land, line index, characters)`: line `k` of a window lands at
-/// `t0 + k * stagger + fall`, and a line that would land at or after the window's end is left out. The characters
-/// are counted without the `*` and `~` marks (`len(_plain(line))`). Python's defaults are [`IMPACT_STAGGER`] and
+/// the `impact` style, in the order of `caps`: line `k` of a window lands at `t0 + k * stagger + fall`, and a
+/// line that would land at or after the window's end is left out. Python's defaults are [`IMPACT_STAGGER`] and
 /// [`IMPACT_FALL`]. The picture drops the lines at these times; the sound puts a soft thud on each.
-pub fn impact_landings(caps: &[Cap], stagger: f64, fall: f64) -> Vec<(f64, usize, usize)> {
+pub fn impact_landings(caps: &[Cap], stagger: f64, fall: f64) -> Vec<Landing> {
     let mut out = Vec::new();
     for cap in caps {
         for (k, line) in cap.lines.iter().enumerate() {
-            let t_land = cap.t0 + k as f64 * stagger + fall;
-            if t_land < cap.t1 {
-                let plain = line.chars().filter(|c| !matches!(c, '*' | '~')).count();
-                out.push((t_land, k, plain));
+            let t = cap.t0 + k as f64 * stagger + fall;
+            if t < cap.t1 {
+                let chars = line.chars().filter(|c| !matches!(c, '*' | '~')).count();
+                out.push(Landing { t, line: k, chars });
             }
         }
     }
     out
 }
 
+/// Two numbers as text: with `short` decimals, or in full where that would make them look the same.
+fn two(a: f64, b: f64, short: usize) -> (String, String) {
+    let (x, y) = (format!("{a:.short$}"), format!("{b:.short$}"));
+    if x == y {
+        (format!("{a:?}"), format!("{b:?}"))
+    } else {
+        (x, y)
+    }
+}
+
+/// A rule's value in words, for an error.
+fn describe(v: &Value) -> String {
+    match v {
+        Value::Null => "empty (null)".into(),
+        Value::Bool(b) => format!("{b}"),
+        Value::Int(n) => format!("the integer {n}"),
+        Value::Float(x) => format!("the float {x:?}"),
+        Value::Str(s) => format!("the text {s:?}"),
+        Value::List(_) => "a list".into(),
+    }
+}
+
+/// That the recording `rec` was fought on `grid`, the grid of the fight file whose tempo is `tempo_bpm`.
+///
+/// The recording's `rules.bpm`, `rules.beat` and `rules.t_fight` are `T.BPM`, `T.BEAT` and `T.T_FIGHT` of the
+/// tempo it was fought at, the same expressions in the same order as [`Grid`]'s (the kit's `build_timeline`, and
+/// the Studio's fight engine writes the grid's own values), and `f0` is `round(t_fight * fps)`. So the values
+/// of the same tempo are equal to the bit, and they are compared exactly: there is no tolerance to choose. Two
+/// tempos that fit 61 s in the same number of bars give the same grid, and are the same fight.
+fn check_grid(rec: &Recording, grid: &Grid, tempo_bpm: f64) -> Result<(), ShowError> {
+    // A whole number stored as an integer (`120` for `120.0`) is that number; a writer of format 1 writes these
+    // as floats, but the value is still plain.
+    let rule = |key: &str| match rec.rules.get(key) {
+        Some(Value::Float(x)) => Ok(*x),
+        Some(Value::Int(n)) => Ok(*n as f64),
+        Some(other) => Err(ShowError::Tempo(format!(
+            "the recording does not say its tempo: rules.{key} is {}, not a number",
+            describe(other)
+        ))),
+        None => Err(ShowError::Tempo(format!(
+            "the recording does not say its tempo: rules.{key} is missing"
+        ))),
+    };
+    let (bpm, beat, t_fight) = (rule("bpm")?, rule("beat")?, rule("t_fight")?);
+    if bpm != grid.bpm {
+        let (a, b) = two(bpm, grid.bpm, 2);
+        return Err(ShowError::Tempo(format!(
+            "the recording was fought at {a} bpm; the fight file's grid is {b} bpm (tempo_bpm = {tempo_bpm}, \
+             fitted to whole bars in 61 s): fight this fight file again, or set its tempo back"
+        )));
+    }
+    if beat != grid.beat {
+        return Err(ShowError::Tempo(format!(
+            "the recording's beat is {beat:?} s; the fight file's grid has {:?} s",
+            grid.beat
+        )));
+    }
+    if t_fight != grid.t_fight {
+        let (a, b) = two(t_fight, grid.t_fight, 3);
+        return Err(ShowError::Tempo(format!(
+            "the recording's fight starts at {a} s; the fight file's grid starts it at {b} s (bar {})",
+            grid.fight_bar
+        )));
+    }
+    // f0 = round(rules.t_fight * fps)
+    let f0 = round_half_even(grid.t_fight * f64::from(rec.fps));
+    if rec.f0 as f64 != f0 {
+        return Err(ShowError::Tempo(format!(
+            "the recording's first frame is video frame {}; the fight file's grid starts the fight on frame {f0}",
+            rec.f0
+        )));
+    }
+    Ok(())
+}
+
 impl Show {
     /// The show of a fight: picture.py's module-level values and `_caps()` for this recording, on the fight file's
-    /// grid, with the caption gap [`CAP_GAP`]. A fight without a K.O. is [`ShowError::NoKo`].
+    /// grid, with the caption gap [`CAP_GAP`]. A fight without a K.O. is [`ShowError::NoKo`]; a recording fought
+    /// on another grid than the fight file's (another tempo) is [`ShowError::Tempo`].
     pub fn new(rec: &Recording, ff: &FightFile) -> Result<Show, ShowError> {
         // T_KO = float(RUN['t_ko']) and WIN = int(RUN['winner']): Python raises on None
         let (Some(t_ko), Some(win)) = (rec.t_ko, rec.winner) else {
@@ -198,6 +291,7 @@ impl Show {
         };
         let lose = 1 - win;
         let grid = ff.grid();
+        check_grid(rec, &grid, ff.tempo_bpm)?;
         let t_hs = t_ko + HITSTOP;
         let t_solo = grid.next_bar(t_ko + 1.6);
 
