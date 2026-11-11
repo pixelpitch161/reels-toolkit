@@ -178,7 +178,7 @@ mod tests {
         // A line with rests gives them; one shorter than the loop is refused.
         let mut ff = ep.ff.clone();
         ff.music.lines.insert("TROMBONE".into(), vec![Some(40), None, Some(43)]);
-        let ctx = MusicCtx::new(&ep.show, &ep.rec, &ff, cfg, voices.clone()).unwrap();
+        let ctx = MusicCtx::new(&ep.show, &ep.rec, &ff, cfg, voices.clone(), Vec::new()).unwrap();
         assert_eq!(
             ctx.line_at("TROMBONE", 4.0).unwrap_err().to_string(),
             "line_at: TROMBONE's line: a line of 3 note(s) is shorter than the loop's 8 bars (it needs at least \
@@ -188,7 +188,7 @@ mod tests {
         ff.music
             .lines
             .insert("TROMBONE".into(), (0..8).map(|i| (i != 1).then_some(40 + i)).collect());
-        let ctx = MusicCtx::new(&ep.show, &ep.rec, &ff, cfg, voices).unwrap();
+        let ctx = MusicCtx::new(&ep.show, &ep.rec, &ff, cfg, voices, Vec::new()).unwrap();
         let bar = ep.show.grid.bar;
         assert_eq!(ctx.line_at("TROMBONE", 2.0 * bar), Ok(Some(40)));
         assert_eq!(ctx.line_at("TROMBONE", 3.0 * bar), Ok(None));
@@ -209,7 +209,7 @@ mod tests {
         // Without one in the fight file: `T.default_solo(name)`, as the kit printed it for the episode.
         let mut ff = ep.ff.clone();
         ff.music.solos.clear();
-        let ctx = MusicCtx::new(&ep.show, &ep.rec, &ff, cfg, voices).unwrap();
+        let ctx = MusicCtx::new(&ep.show, &ep.rec, &ff, cfg, voices, Vec::new()).unwrap();
         let notes = |solo: Vec<(f64, i32, f64)>| solo.iter().map(|n| n.1).collect::<Vec<_>>();
         assert_eq!(
             notes(ctx.solo("FLUTE").unwrap()),
@@ -254,7 +254,7 @@ mod tests {
             },
         );
         rec.arrays.insert("X".into(), Array::Nested(Value::List(Vec::new())));
-        let ctx = MusicCtx::new(&ep.show, &rec, &ep.ff, cfg, voices).unwrap();
+        let ctx = MusicCtx::new(&ep.show, &rec, &ep.ff, cfg, voices, Vec::new()).unwrap();
         let t_fight = ep.show.grid.t_fight;
         assert_eq!(ctx.run_at("HA", t_fight + 2.0 / 30.0, 1), Ok(5.0));
         assert!(ctx.run_at("HA", t_fight + 0.1, 1).is_err());

@@ -9,7 +9,12 @@ impl FightFile {
     pub fn parse(text: &str) -> Result<FightFile, FightFileError> {
         let top: toml::Table = text.parse().map_err(|e: toml::de::Error| not_toml(text, &e))?;
         let format = match top.get("format") {
-            None => return Err(err("format", "missing (a fight file starts with format = 1)")),
+            None => {
+                return Err(err(
+                    "format",
+                    format!("missing (a fight file starts with format = {FIGHT_FORMAT})"),
+                ));
+            }
             Some(v) => as_u64(v, "format")?,
         };
         if format == 0 {
@@ -21,7 +26,9 @@ impl FightFile {
                 format!("this app reads fight files up to format {FIGHT_FORMAT} (this file is format {format})"),
             ));
         }
-        check_keys(&top, "", &TOP_KEYS)?;
+        // 1 or 2 here.
+        let v = Version(format as u32);
+        check_keys(&top, "", &TOP_KEYS, v)?;
         let fighters = str_list(required(&top, "", "fighters")?, "fighters")?;
         let handicap = match top.get("handicap") {
             Some(v) => f64_list(v, "handicap")?,
@@ -35,7 +42,8 @@ impl FightFile {
             }
         }
         let ff = FightFile {
-            format: format as u32,
+            // A format 1 file reads as the format 2 fight it is (and is written as format 2).
+            format: FIGHT_FORMAT,
             app_version: as_str(required(&top, "", "app_version")?, "app_version")?.to_string(),
             fighters,
             arena: opt_str(&top, "", "arena")?.unwrap_or_else(|| ARENAS[0].to_string()),
@@ -44,9 +52,9 @@ impl FightFile {
             pair_rules,
             tempo_bpm: as_f64(required(&top, "", "tempo_bpm")?, "tempo_bpm")?,
             seed: opt_u64(&top, "", "seed")?,
-            music: Music::read(as_table(required(&top, "", "music")?, "music")?)?,
-            picture: PictureSeeds::read(top.get("picture"))?,
-            captions: Captions::read(top.get("captions"))?,
+            music: Music::read(as_table(required(&top, "", "music")?, "music")?, v)?,
+            picture: PictureSeeds::read(top.get("picture"), v)?,
+            captions: Captions::read(top.get("captions"), v)?,
             series_tag: opt_str(&top, "", "series_tag")?,
         };
         ff.check(None)?;
@@ -54,42 +62,61 @@ impl FightFile {
     }
 }
 
-/// The top-level keys, in the canonical order.
-const TOP_KEYS: [&str; 13] = [
-    "format",
-    "app_version",
-    "fighters",
-    "arena",
-    "handicap",
-    "dmg_scale",
-    "tempo_bpm",
-    "seed",
-    "series_tag",
-    "pair_rules",
-    "music",
-    "picture",
-    "captions",
+/// The format of the file being read (1 or 2): which settings it may hold.
+#[derive(Clone, Copy)]
+struct Version(u32);
+
+/// The top-level keys, in the canonical order, each with the format it came in.
+const TOP_KEYS: [(&str, u32); 13] = [
+    ("format", 1),
+    ("app_version", 1),
+    ("fighters", 1),
+    ("arena", 1),
+    ("handicap", 1),
+    ("dmg_scale", 1),
+    ("tempo_bpm", 1),
+    ("seed", 1),
+    ("series_tag", 1),
+    ("pair_rules", 1),
+    ("music", 1),
+    ("picture", 1),
+    ("captions", 1),
 ];
 
-/// The `[music]` keys, in the canonical order.
-const MUSIC_KEYS: [&str; 11] = [
-    "theme",
-    "arrangement",
-    "key",
-    "scale",
-    "chords_intro",
-    "chord_loop",
-    "music_seed",
-    "roles",
-    "lines",
-    "solos",
-    "title_hits",
+/// The `[music]` keys, in the canonical order, each with the format it came in.
+const MUSIC_KEYS: [(&str, u32); 14] = [
+    ("theme", 1),
+    ("arrangement", 1),
+    ("key", 1),
+    ("scale", 1),
+    ("chords_intro", 1),
+    ("chord_loop", 1),
+    ("chords_tail", 2),
+    ("music_seed", 1),
+    ("roles", 1),
+    ("lines", 1),
+    ("solos", 1),
+    ("title_hits", 1),
+    ("mix", 2),
+    ("theme_options", 2),
 ];
+
+/// The `[picture]` keys, in the canonical order, each with the format it came in.
+const PICTURE_KEYS: [(&str, u32); 5] = [
+    ("shard_seed", 1),
+    ("fx_seed", 1),
+    ("title_balls", 2),
+    ("middle", 2),
+    ("title_lines", 2),
+];
+
+/// The `[captions]` keys, each with the format it came in.
+const CAPTION_KEYS: [(&str, u32); 4] = [("caption", 1), ("instagram", 1), ("tiktok", 1), ("shorts", 1)];
 
 impl Music {
-    fn read(t: &toml::Table) -> Result<Music, FightFileError> {
+    fn read(t: &toml::Table, v: Version) -> Result<Music, FightFileError> {
         let p = "music";
-        check_keys(t, p, &MUSIC_KEYS)?;
+        check_keys(t, p, &MUSIC_KEYS, v)?;
         let mut roles = BTreeMap::new();
         for (k, v) in opt_table(t, p, "roles")? {
             let field = path("music.roles", k);
@@ -148,6 +175,35 @@ impl Music {
             }
             title_hits.insert(k.clone(), hits);
         }
+        let mut mix = BTreeMap::new();
+        for (k, v) in opt_table(t, p, "mix")? {
+            let field = path("music.mix", k);
+            let shape = || err(field.clone(), "must be [gain, reverb send]");
+            let pair = match v {
+                toml::Value::Array(a) if a.len() == 2 => a,
+                _ => return Err(shape()),
+            };
+            let gain = number(&pair[0]).ok_or_else(shape)?;
+            let send = number(&pair[1]).ok_or_else(shape)?;
+            mix.insert(k.clone(), (gain, send));
+        }
+        let mut theme_options = BTreeMap::new();
+        for (k, v) in opt_table(t, p, "theme_options")? {
+            let field = path("music.theme_options", k);
+            let value = match v {
+                toml::Value::Boolean(b) => OptionValue::Bool(*b),
+                toml::Value::Integer(i) => OptionValue::Int(*i),
+                toml::Value::Float(x) => OptionValue::Float(*x),
+                toml::Value::String(s) => OptionValue::Str(s.clone()),
+                other => {
+                    return Err(err(
+                        field,
+                        format!("must be true or false, a number or a text, found {}", kind(other)),
+                    ));
+                }
+            };
+            theme_options.insert(k.clone(), value);
+        }
         Ok(Music {
             theme: as_str(required(t, p, "theme")?, "music.theme")?.to_string(),
             arrangement: opt_str(t, p, "arrangement")?.unwrap_or_else(|| ARRANGEMENTS[0].to_string()),
@@ -155,39 +211,105 @@ impl Music {
             scale: opt_str(t, p, "scale")?.unwrap_or_else(|| "minor".to_string()),
             chords_intro: str_list(required(t, p, "chords_intro")?, "music.chords_intro")?,
             chord_loop: str_list(required(t, p, "chord_loop")?, "music.chord_loop")?,
+            chords_tail: match t.get("chords_tail") {
+                Some(v) => str_list(v, "music.chords_tail")?,
+                None => Vec::new(),
+            },
             music_seed: as_u64(required(t, p, "music_seed")?, "music.music_seed")?,
             roles,
             lines,
             solos,
             title_hits,
+            mix,
+            theme_options,
         })
     }
 }
 
 impl PictureSeeds {
-    fn read(v: Option<&toml::Value>) -> Result<PictureSeeds, FightFileError> {
+    fn read(v: Option<&toml::Value>, version: Version) -> Result<PictureSeeds, FightFileError> {
+        let p = "picture";
         let empty = toml::Table::new();
         let t = match v {
-            Some(v) => as_table(v, "picture")?,
+            Some(v) => as_table(v, p)?,
             None => &empty,
         };
-        check_keys(t, "picture", &["shard_seed", "fx_seed"])?;
+        check_keys(t, p, &PICTURE_KEYS, version)?;
+        let mut title_lines = BTreeMap::new();
+        for (k, v) in opt_table(t, p, "title_lines")? {
+            let field = path("picture.title_lines", k);
+            let lines = str_list(v, &field)?;
+            match <[String; 2]>::try_from(lines) {
+                Ok([a, b]) => title_lines.insert(k.clone(), (a, b)),
+                Err(_) => return Err(err(field, "must be two texts (the first line and the second)")),
+            };
+        }
+        let title_balls = match t.get("title_balls") {
+            None => None,
+            Some(v) => {
+                let field = "picture.title_balls";
+                let shape = || err(field, "must be two balls, each [cx, cy, r]");
+                let balls = as_list(v, field)?;
+                if balls.len() != 2 {
+                    return Err(shape());
+                }
+                let mut out = [[0.0; 3]; 2];
+                for (ball, b) in out.iter_mut().zip(balls) {
+                    let nums = match b {
+                        toml::Value::Array(a) if a.len() == 3 => a,
+                        _ => return Err(shape()),
+                    };
+                    for (x, n) in ball.iter_mut().zip(nums) {
+                        *x = number(n).ok_or_else(shape)?;
+                    }
+                }
+                Some(out)
+            }
+        };
+        let middle = match t.get("middle") {
+            None => None,
+            Some(v) => {
+                let field = "picture.middle";
+                let shape = || {
+                    err(
+                        field,
+                        format!("must be [word, {MIDDLE_DIVIDER:?}] or [word, an angle in degrees]"),
+                    )
+                };
+                let pair = match v {
+                    toml::Value::Array(a) if a.len() == 2 => a,
+                    _ => return Err(shape()),
+                };
+                let word = match &pair[0] {
+                    toml::Value::String(s) => s.clone(),
+                    _ => return Err(shape()),
+                };
+                let turn = match &pair[1] {
+                    toml::Value::String(s) if s == MIDDLE_DIVIDER => Middle::Divider,
+                    n => Middle::Degrees(number(n).ok_or_else(shape)?),
+                };
+                Some((word, turn))
+            }
+        };
         Ok(PictureSeeds {
-            shard_seed: opt_u64(t, "picture", "shard_seed")?.unwrap_or(SHARD_SEED),
-            fx_seed: opt_u64(t, "picture", "fx_seed")?,
+            shard_seed: opt_u64(t, p, "shard_seed")?.unwrap_or(SHARD_SEED),
+            fx_seed: opt_u64(t, p, "fx_seed")?,
+            title_lines,
+            title_balls,
+            middle,
         })
     }
 }
 
 impl Captions {
-    fn read(v: Option<&toml::Value>) -> Result<Captions, FightFileError> {
+    fn read(v: Option<&toml::Value>, version: Version) -> Result<Captions, FightFileError> {
         let p = "captions";
         let empty = toml::Table::new();
         let t = match v {
             Some(v) => as_table(v, p)?,
             None => &empty,
         };
-        check_keys(t, p, &["caption", "instagram", "tiktok", "shorts"])?;
+        check_keys(t, p, &CAPTION_KEYS, version)?;
         Ok(Captions {
             caption: opt_str(t, p, "caption")?.unwrap_or_default(),
             instagram: opt_str(t, p, "instagram")?.unwrap_or_default(),
@@ -226,11 +348,25 @@ fn kind(v: &toml::Value) -> &'static str {
     }
 }
 
-fn check_keys(t: &toml::Table, prefix: &str, allowed: &[&str]) -> Result<(), FightFileError> {
-    match t.keys().find(|k| !allowed.contains(&k.as_str())) {
-        Some(k) => Err(err(path(prefix, k), "unknown setting (check the spelling)")),
-        None => Ok(()),
+/// Every key of `t` is one of `allowed` and came in the file's format or before it.
+fn check_keys(t: &toml::Table, prefix: &str, allowed: &[(&str, u32)], v: Version) -> Result<(), FightFileError> {
+    for k in t.keys() {
+        match allowed.iter().find(|(name, _)| name == k) {
+            None => return Err(err(path(prefix, k), "unknown setting (check the spelling)")),
+            Some(&(_, since)) if since > v.0 => {
+                return Err(err(
+                    path(prefix, k),
+                    format!(
+                        "not a setting of format {} fight files (it came in format {since}: a file with it says \
+                         format = {since})",
+                        v.0
+                    ),
+                ));
+            }
+            Some(_) => {}
+        }
     }
+    Ok(())
 }
 
 fn required<'a>(t: &'a toml::Table, prefix: &str, key: &str) -> Result<&'a toml::Value, FightFileError> {

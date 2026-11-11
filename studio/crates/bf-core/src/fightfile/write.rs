@@ -10,7 +10,8 @@ impl FightFile {
     /// (`validate` refuses it).
     pub fn to_toml(&self) -> String {
         let mut o = String::new();
-        let _ = writeln!(o, "format = {}", self.format);
+        // Always the newest format: the text holds format 2's settings whatever the value says.
+        let _ = writeln!(o, "format = {FIGHT_FORMAT}");
         let _ = writeln!(o, "app_version = {}", w_str(&self.app_version));
         let _ = writeln!(o, "fighters = {}", w_strs(&self.fighters));
         let _ = writeln!(o, "arena = {}", w_str(&self.arena));
@@ -38,6 +39,7 @@ impl FightFile {
         let _ = writeln!(o, "scale = {}", w_str(&m.scale));
         let _ = writeln!(o, "chords_intro = {}", w_strs(&m.chords_intro));
         let _ = writeln!(o, "chord_loop = {}", w_strs(&m.chord_loop));
+        let _ = writeln!(o, "chords_tail = {}", w_strs(&m.chords_tail));
         let _ = writeln!(o, "music_seed = {}", m.music_seed);
         o.push_str("\n[music.roles]\n");
         for (k, v) in &m.roles {
@@ -67,10 +69,40 @@ impl FightFile {
             let notes: Vec<String> = hits.iter().map(i32::to_string).collect();
             let _ = writeln!(o, "{} = [{}]", w_key(k), notes.join(", "));
         }
+        o.push_str("\n[music.mix]\n");
+        for (k, &(gain, send)) in &m.mix {
+            let _ = writeln!(o, "{} = [{}, {}]", w_key(k), w_f64(gain), w_f64(send));
+        }
+        o.push_str("\n[music.theme_options]\n");
+        for (k, v) in &m.theme_options {
+            let v = match v {
+                OptionValue::Bool(b) => b.to_string(),
+                OptionValue::Int(i) => i.to_string(),
+                OptionValue::Float(x) => w_f64(*x),
+                OptionValue::Str(s) => w_str(s),
+            };
+            let _ = writeln!(o, "{} = {v}", w_key(k));
+        }
+        let p = &self.picture;
         o.push_str("\n[picture]\n");
-        let _ = writeln!(o, "shard_seed = {}", self.picture.shard_seed);
-        if let Some(fx) = self.picture.fx_seed {
+        let _ = writeln!(o, "shard_seed = {}", p.shard_seed);
+        if let Some(fx) = p.fx_seed {
             let _ = writeln!(o, "fx_seed = {fx}");
+        }
+        if let Some(balls) = &p.title_balls {
+            let balls: Vec<String> = balls.iter().map(|b| format!("[{}]", b.map(w_f64).join(", "))).collect();
+            let _ = writeln!(o, "title_balls = [{}]", balls.join(", "));
+        }
+        if let Some((word, turn)) = &p.middle {
+            let turn = match turn {
+                Middle::Divider => w_str(MIDDLE_DIVIDER),
+                Middle::Degrees(d) => w_f64(*d),
+            };
+            let _ = writeln!(o, "middle = [{}, {turn}]", w_str(word));
+        }
+        o.push_str("\n[picture.title_lines]\n");
+        for (k, (a, b)) in &p.title_lines {
+            let _ = writeln!(o, "{} = [{}, {}]", w_key(k), w_str(a), w_str(b));
         }
         let c = &self.captions;
         o.push_str("\n[captions]\n");

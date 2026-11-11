@@ -159,15 +159,22 @@ pub fn scale(name: &str) -> Result<&'static [i32], HarmonyError> {
         .ok_or_else(|| HarmonyError::UnknownScale(name.to_string()))
 }
 
-/// One chord per bar for `n_bars` bars: the intro, then the loop repeated (cut off where the bars end), as the
-/// example's `['Em', 'B7'] + LOOP * 4` is for 34 bars, but for any bar count. With no loop the intro repeats; with
-/// no chords at all the list is empty.
-pub fn chords_for(intro: &[String], loop_: &[String], n_bars: usize) -> Vec<String> {
+/// One chord per bar for `n_bars` bars: the intro, then the loop repeated (the last repeat may stop part-way), then
+/// the tail on the last bars, as the kit's configs write `CHORDS = [intro 2] + LOOP * n + tail` (the example's
+/// `['Em', 'B7'] + LOOP * 4` for 34 bars, the rematch's `['Dm', 'A'] + LOOP * 3 + ['Dm', 'Bb', 'Gm', 'A', 'A']`
+/// for 31), but for any bar count. A fight file of format 1 has no tail. When the bars run out first, the intro
+/// comes first, then the tail (cut where the bars end), and the loop gets what is left. With no loop the intro
+/// repeats in its place; with no intro and no loop only the tail is there (the list is then shorter than
+/// `n_bars`, and empty when there are no chords at all).
+pub fn chords_for(intro: &[String], loop_: &[String], tail: &[String], n_bars: usize) -> Vec<String> {
     let cycle = if loop_.is_empty() { intro } else { loop_ };
     let mut out: Vec<String> = intro.iter().take(n_bars).cloned().collect();
+    let looped = (n_bars - out.len()).saturating_sub(tail.len());
     if !cycle.is_empty() {
-        out.extend(cycle.iter().cycle().take(n_bars - out.len()).cloned());
+        out.extend(cycle.iter().cycle().take(looped).cloned());
     }
+    let room = n_bars - out.len();
+    out.extend(tail.iter().take(room).cloned());
     out
 }
 
@@ -311,7 +318,7 @@ mod tests {
     /// flute_vs_trombone's harmony: E harmonic minor, CHORDS = ['Em', 'B7'] + LOOP * 4, the LOOP given.
     fn flute_vs_trombone() -> Harmony {
         let g = Grid::new(132.0);
-        let chords = chords_for(&v(["Em", "B7"]), &loop8(), g.n_bars);
+        let chords = chords_for(&v(["Em", "B7"]), &loop8(), &[], g.n_bars);
         Harmony::new(&g, "E", scale("harmonic minor").unwrap(), chords, Some(loop8()), 2).unwrap()
     }
 
@@ -357,12 +364,12 @@ mod tests {
         let g = Grid::new(132.0);
         let short = Harmony::new(&g, "E", scale("minor").unwrap(), loop8(), None, 2);
         assert_eq!(short, Err(HarmonyError::ChordCount { got: 8, want: 34 }));
-        let chords = chords_for(&v(["Em"]), &v(["Em", "Zz"]), 34);
+        let chords = chords_for(&v(["Em"]), &v(["Em", "Zz"]), &[], 34);
         assert_eq!(
             Harmony::new(&g, "E", scale("minor").unwrap(), chords, None, 2),
             Err(HarmonyError::BadChord("Zz".into()))
         );
-        let chords = chords_for(&v(["Em"]), &loop8(), 34);
+        let chords = chords_for(&v(["Em"]), &loop8(), &[], 34);
         assert_eq!(
             Harmony::new(&g, "X", scale("minor").unwrap(), chords, None, 2),
             Err(HarmonyError::BadNote("X".into()))
@@ -383,27 +390,71 @@ mod tests {
 
     #[test]
     fn chords_for_any_bar_count() {
-        assert_eq!(chords_for(&v(["Em", "B7"]), &loop8(), 34).len(), 34);
-        assert_eq!(chords_for(&v(["Em", "B7"]), &loop8(), 30).len(), 30); // Review Focus 5: any bar count
+        assert_eq!(chords_for(&v(["Em", "B7"]), &loop8(), &[], 34).len(), 34);
+        assert_eq!(chords_for(&v(["Em", "B7"]), &loop8(), &[], 30).len(), 30); // Review Focus 5: any bar count
         let mut want = v(["Em", "B7"]);
         for _ in 0..4 {
             want.extend(loop8());
         }
-        assert_eq!(chords_for(&v(["Em", "B7"]), &loop8(), 34), want);
-        assert_eq!(chords_for(&v(["Em", "B7"]), &loop8(), 1), v(["Em"]));
-        assert_eq!(chords_for(&v(["Em", "B7"]), &loop8(), 0), Vec::<String>::new());
-        assert_eq!(chords_for(&[], &v(["A", "D"]), 3), v(["A", "D", "A"]));
+        assert_eq!(chords_for(&v(["Em", "B7"]), &loop8(), &[], 34), want);
+        assert_eq!(chords_for(&v(["Em", "B7"]), &loop8(), &[], 1), v(["Em"]));
+        assert_eq!(chords_for(&v(["Em", "B7"]), &loop8(), &[], 0), Vec::<String>::new());
+        assert_eq!(chords_for(&[], &v(["A", "D"]), &[], 3), v(["A", "D", "A"]));
         // no loop: the intro cycles; nothing at all: an empty list (never a panic)
-        assert_eq!(chords_for(&v(["A", "D"]), &[], 3), v(["A", "D", "A"]));
-        assert_eq!(chords_for(&[], &[], 3), Vec::<String>::new());
+        assert_eq!(chords_for(&v(["A", "D"]), &[], &[], 3), v(["A", "D", "A"]));
+        assert_eq!(chords_for(&[], &[], &[], 3), Vec::<String>::new());
         for bpm in 60..=200 {
             let g = Grid::new(f64::from(bpm));
-            let chords = chords_for(&v(["Em", "B7"]), &loop8(), g.n_bars);
+            let chords = chords_for(&v(["Em", "B7"]), &loop8(), &[], g.n_bars);
             assert_eq!(chords.len(), g.n_bars, "bpm {bpm}");
             assert!(
                 Harmony::new(&g, "E", scale("minor").unwrap(), chords, Some(loop8()), 2).is_ok(),
                 "bpm {bpm}"
             );
+        }
+    }
+
+    /// The kit's configs are `[intro 2] + LOOP * n + tail`; the rematch (31 bars, an 8-chord loop and 5 bars
+    /// after the third repeat) and `examples/trombone_vs_horn` (31 bars, a 4-chord loop and one bar). The 17 kit
+    /// configs themselves are checked against the export in `bf-content/tests/theme_big_top.rs`.
+    #[test]
+    fn chords_for_with_a_tail() {
+        let rematch = v(["Dm", "Bb", "Gm", "A", "Dm", "Bb", "Eb", "A"]);
+        let tail = v(["Dm", "Bb", "Gm", "A", "A"]);
+        let mut want = v(["Dm", "A"]);
+        for _ in 0..3 {
+            want.extend(rematch.clone());
+        }
+        want.extend(tail.clone());
+        assert_eq!(chords_for(&v(["Dm", "A"]), &rematch, &tail, 31), want);
+        let four = v(["Dm", "Bb", "Gm", "A"]);
+        let mut want = v(["Dm", "A"]);
+        for _ in 0..7 {
+            want.extend(four.clone());
+        }
+        want.push("A".into());
+        assert_eq!(chords_for(&v(["Dm", "A"]), &four, &v(["A"]), 31), want);
+        // At another bar count the loop's last repeat stops part-way and the tail still ends the song.
+        let got = chords_for(&v(["Dm", "A"]), &rematch, &tail, 34);
+        assert_eq!(got.len(), 34);
+        assert_eq!(&got[29..], &tail[..]);
+        assert_eq!(&got[26..29], &rematch[..3]);
+        // Too few bars: the intro, then the tail cut where the bars end; the loop gets none.
+        assert_eq!(
+            chords_for(&v(["Dm", "A"]), &rematch, &tail, 5),
+            v(["Dm", "A", "Dm", "Bb", "Gm"])
+        );
+        assert_eq!(
+            chords_for(&v(["Dm", "A"]), &rematch, &tail, 7),
+            v(["Dm", "A", "Dm", "Bb", "Gm", "A", "A"])
+        );
+        assert_eq!(chords_for(&v(["Dm", "A"]), &rematch, &tail, 8)[2..3], v(["Dm"])[..]);
+        assert_eq!(chords_for(&v(["Dm", "A"]), &rematch, &tail, 1), v(["Dm"]));
+        // Only a tail: it is all there is.
+        assert_eq!(chords_for(&[], &[], &tail, 31), tail);
+        // An empty tail is a format 1 fight's chords exactly.
+        for n in 0..40 {
+            assert_eq!(chords_for(&v(["Em", "B7"]), &loop8(), &[], n).len(), n, "{n} bars");
         }
     }
 
@@ -460,7 +511,7 @@ mod tests {
             &g,
             "D",
             scale("minor").unwrap(),
-            chords_for(&v(["Dm"]), &v(["A"]), 34),
+            chords_for(&v(["Dm"]), &v(["A"]), &[], 34),
             None,
             2,
         )

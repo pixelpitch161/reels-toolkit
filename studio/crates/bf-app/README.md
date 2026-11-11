@@ -12,24 +12,47 @@ the engine crates.
 From `studio/`:
 
 ```sh
-cargo run --release -p bf-app -- --fixtures
+cargo build --release -p bf-app
 ```
 
-The program is `target/release/ballfight-studio.exe`. Until the real engine is behind the seam (Task 35), the whole
-interface runs on sample data:
+The program is `target/release/ballfight-studio.exe`. Started with no option it is the real app on the real engine
+(`engine::spawn`), today for FLUTE against TROMBONE:
+
+- Its settings and queue are in `%APPDATA%\BALLFIGHT Studio\config` and its shortlist cache in
+  `%LOCALAPPDATA%\BALLFIGHT Studio\cache` (`store::Paths::system`). They are read once, before the first frame;
+  a file that could not be read becomes a notice and is kept aside, never written over. Videos go to the output
+  folder in Settings (`Videos\BALLFIGHT` at first).
+- The engine runs with the settings' worker threads (the PC's threads minus one at first), every frame of a video
+  and no limit on a search. The PC's sound device plays the preview; without one the app says so and plays silently.
+- At start the app asks the engine for the fighters, for ffmpeg (shown in Settings, with where it was found) and
+  about the output folder.
+- The interface's thread runs above the app's other threads on Windows (`app::interface_first`), so the preview's
+  drawing threads and a render, which together can keep every core busy, do not keep the window waiting for a core.
+- Closing the window stops the engine first and waits for it, a few seconds at most (`BfApp::close`,
+  `app::ENGINE_STOP`): a video being rendered is cancelled, its ffmpeg is ended and its temporary folder removed,
+  and it starts again from the beginning next time (it is back in the queue, which is paused and says so).
+
+The options:
 
 - `--fixtures` runs the app on the sample engine (`seam::fake`, answering at a real engine's pace) with real sound
   out. Its settings, queue and cache go in a folder of its own under the system temp folder, removed when the window
   closes, and the status bar's right side reads "Sample data, not a real fight". Nothing it shows is a real fight
   and no video is saved.
-- Without `--fixtures` the window says "The engine is not connected in this build. Start it with --fixtures to see
-  the interface."
 - `--data-dir <folder>` keeps the settings, the queue and the cache in `<folder>` (`config` and `cache` under it)
-  instead of the temp folder or the PC's own app folders. The folder is created if missing; a folder that cannot be
-  used stops the app with one sentence on stderr and exit code 2.
+  instead of the temp folder or the PC's own app folders, with the real engine or with `--fixtures`. The folder is
+  created if missing; a folder that cannot be used stops the app with one sentence on stderr and exit code 2. Videos
+  still go to the output folder named in that folder's settings.
 - `--smoke` opens the window, paints 30 frames, closes it and exits with code 0, with no sound and its files in a
-  temp folder of its own. `ballfight-studio.exe --fixtures --smoke` is the quick check that the interface starts on
-  this PC.
+  temp folder of its own. `ballfight-studio.exe --smoke` is the quick check that the real app starts on this PC (it
+  opens on Match-up with the title card); `--fixtures --smoke` does the same for the sample interface.
+
+### Known limits
+
+- **The folder dialog has no parent window.** "Change folder" opens the PC's folder dialog on an engine thread
+  (`engine/files.rs`, `rfd`) without naming the app's window as its owner, so it may open behind the app or show as
+  a separate item on the taskbar. While it is open a second "Change folder" does nothing. Giving it the window as
+  its owner needs the window's handle on the engine thread, which eframe 0.37 and rfd only allow through unsafe
+  code (`WindowHandle::borrow_raw`), so it was left as it is.
 
 At start the app writes one line to stderr naming the graphics adapter its window draws with, for example
 `BALLFIGHT Studio draws with AMD Radeon ... (Dx12, DiscreteGpu)`. A release build has no console, so redirect stderr
@@ -74,9 +97,25 @@ takes the lock `common::gpu()` before anything else. They never open a window, a
 The rule for every new test: a test that builds a harness or reads pixels takes `common::gpu()` first and keeps the
 guard to its end; `app_harness`, `widget_harness` and `pixels` refuse to run (they panic) without it.
 
-Tests that build the whole app (`tests/ui/flows.rs`) keep its files in a temp folder of their own and use a
-`NoAudio` output, so they never touch the real `%APPDATA%`, `%LOCALAPPDATA%` or Videos folders or open a sound
-device. They wait for the engine on a condition, bounded in time, and never assert anything through timing.
+Tests that build the whole app (`tests/ui/flows.rs` on the sample engine, `tests/ui/real.rs` on the real one) keep
+its files in a temp folder of their own and use a `NoAudio` output, so they never touch the real `%APPDATA%`,
+`%LOCALAPPDATA%` or Videos folders or open a sound device. They wait for the engine on a condition, bounded in
+time, and never assert anything through timing. The real-engine tests pass every command through a relay of their
+own (`real::Watched`), which holds back and fails the test on `PickFolder` or `RevealFolder`, so no test opens the
+folder dialog or Explorer.
+
+### Which tests run where
+
+| Group | Command | On CI | Why |
+|---|---|---|---|
+| Unit tests inside each file, the engine's among them | `cargo test --release -p bf-app --lib` | yes | no window, no graphics adapter; the render tests use the ffmpeg CI installs |
+| The command line | `cargo test --release -p bf-app --bins` | yes | parsing only |
+| Saved files of older versions | `cargo test --release -p bf-app --test compat` | yes | files only |
+| Everything that draws (`tests/ui`) | `cargo test --release -p bf-app --test ui` | no: the owner's PC | DirectX 12 only (ruling M2-R27), and a hosted runner is not known to offer a DirectX 12 adapter |
+| Ignored, run by name: the whole video on the real engine, the preview budgets, the silent sound device | see `studio/README.md` | no: the owner's PC | minutes long, need ffmpeg, a sound device or a quiet PC |
+
+The slow engine tests are ignored in a debug run only (`cfg_attr(debug_assertions, ignore)`); in release they run
+with the rest of `--lib`.
 
 ### Blessing pictures
 

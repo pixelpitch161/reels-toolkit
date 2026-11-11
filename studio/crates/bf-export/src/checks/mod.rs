@@ -240,7 +240,7 @@ impl BandPlan {
         // validate() has checked all of these; the errors below cannot happen after it
         let missing = |what: &str| ContentError::Sound(format!("the fight file's {what} has no sound in this app"));
         let theme = bf_content::themes::theme(&ff.music.theme).ok_or_else(|| missing("theme"))?;
-        let bed = theme.bed(&ff.music.arrangement).ok_or_else(|| missing("arrangement"))?;
+        let bed = theme.bed(&ff.music.arrangement, &theme.options_of(ff)?)?;
         let part = |k: usize| -> Result<(String, (f64, f64)), ContentError> {
             let name = ff.fighters.get(k).ok_or_else(|| missing("fighter list"))?;
             let sound = bf_content::fighters::sound(name, k, ff).ok_or_else(|| missing("fighter"))?;

@@ -123,13 +123,14 @@ fn key_bits(x: f64) -> u64 {
 }
 
 /// What a soundtrack build changes as it goes: Python's `drums60_lowpoly._rng`, `_VC`, `_GAIN` and
-/// `T.LINE_OVERRIDE`.
+/// `T.LINE_OVERRIDE`, and the fighters' stops the score hands the bed.
 struct State {
     noise: PpNoise,
     notes: BTreeMap<NoteKey, Arc<[f64]>>,
     gains: BTreeMap<String, f64>,
     first: Vec<NoteCall>,
     line_overrides: BTreeMap<String, Vec<LineOverride>>,
+    fighter_stops: Vec<f64>,
 }
 
 impl State {
@@ -140,6 +141,7 @@ impl State {
             gains: BTreeMap::new(),
             first: Vec::new(),
             line_overrides: BTreeMap::new(),
+            fighter_stops: Vec::new(),
         }
     }
 }
@@ -163,6 +165,11 @@ pub struct MusicCtx<'a> {
     pub cfg: [&'a FighterCfg; 2],
     /// The two fighters' voices, in the same order. `note` finds a voice by its fighter's `pp` name.
     pub voices: [Arc<dyn Voice>; 2],
+    /// The voices the theme's bed plays itself (`hot_jazz` and `second_line` play the TUBA's), by their `pp` name:
+    /// `note` looks here after the fighters' voices. They share the build's one noise stream, note cache and gains
+    /// with the fighters' voices, as the kit's `note` has one `_VC` and one `_GAIN` keyed by the voice's name: a
+    /// theme voice that is also a fighter's is that fighter's voice, one cache and one gain.
+    pub theme_voices: Vec<Arc<dyn Voice>>,
     /// `RUN['HP']`: both fighters' HP at every recorded frame, frame after frame.
     hp: &'a [f64],
     state: Mutex<State>,
@@ -175,6 +182,10 @@ impl fmt::Debug for MusicCtx<'_> {
         f.debug_struct("MusicCtx")
             .field("names", &self.show.names)
             .field("voices", &[self.voices[0].name(), self.voices[1].name()])
+            .field(
+                "theme_voices",
+                &self.theme_voices.iter().map(|v| v.name()).collect::<Vec<_>>(),
+            )
             .finish_non_exhaustive()
     }
 }
@@ -187,24 +198,26 @@ fn ease(x: f64) -> f64 {
 
 impl<'a> MusicCtx<'a> {
     /// The context of one soundtrack build: the harmony of the fight file (its key and scale, the intro chords,
-    /// then the chord loop to the last bar), the noise stream at its start, nothing cached. `cfg` and `voices`
-    /// are the two fighters' roster entries and voices, left corner first.
+    /// then the chord loop, then its tail on the last bars), the noise stream at its start, nothing cached, no
+    /// fighter stops yet (the score gathers them). `cfg` and `voices` are the two fighters' roster entries and
+    /// voices, left corner first; `theme_voices` the voices the theme's bed plays itself (none for most themes).
     ///
     /// # Errors
     /// The fight file's key, scale or chords do not parse; the recording has no `HP` array of two fighters with
-    /// at least one frame; or `voices[k]` is not the voice fighter `k`'s roster entry names (its `pp`): swapped
-    /// voices would play each part on the other's instrument.
+    /// at least one frame; `voices[k]` is not the voice fighter `k`'s roster entry names (its `pp`): swapped
+    /// voices would play each part on the other's instrument; or two theme voices have the same name.
     pub fn new(
         show: &'a Show,
         rec: &'a Recording,
         ff: &'a FightFile,
         cfg: [&'a FighterCfg; 2],
         voices: [Arc<dyn Voice>; 2],
+        theme_voices: Vec<Arc<dyn Voice>>,
     ) -> Result<MusicCtx<'a>, MusicError> {
         const H: &str = "music";
         let m = &ff.music;
         let bad = |e: harmony::HarmonyError| MusicError::new(H, e.to_string());
-        let chords = harmony::chords_for(&m.chords_intro, &m.chord_loop, show.grid.n_bars);
+        let chords = harmony::chords_for(&m.chords_intro, &m.chord_loop, &m.chords_tail, show.grid.n_bars);
         let harmony = Harmony::new(
             &show.grid,
             &m.key,
@@ -239,6 +252,11 @@ impl<'a> MusicCtx<'a> {
                 ));
             }
         }
+        for (i, v) in theme_voices.iter().enumerate() {
+            if theme_voices[..i].iter().any(|w| w.name() == v.name()) {
+                return Err(MusicError::new(H, "the theme lists one of its voices twice"));
+            }
+        }
         Ok(MusicCtx {
             show,
             rec,
@@ -246,6 +264,7 @@ impl<'a> MusicCtx<'a> {
             harmony,
             cfg,
             voices,
+            theme_voices,
             hp,
             state: Mutex::new(State::new(PpNoise::start())),
         })
@@ -276,6 +295,25 @@ impl<'a> MusicCtx<'a> {
         let line_overrides = std::mem::take(&mut st.line_overrides);
         *st = State::new(noise);
         st.line_overrides = line_overrides;
+        Ok(())
+    }
+
+    /// The fighters' stops: every time each part's `stops()` gave (the kit's `stop_times` before it sorts and
+    /// filters them: the left corner's first, each in its own order), which the score gathers before the bed's
+    /// `fight` (`dark_tango`'s tango stops). Empty before the score gets there, and for parts without stops.
+    ///
+    /// # Errors
+    /// A voice panicked earlier (as every method that reads or changes the build's state).
+    pub fn fighter_stops(&self) -> Result<Vec<f64>, MusicError> {
+        Ok(self.lock()?.fighter_stops.clone())
+    }
+
+    /// Sets [`MusicCtx::fighter_stops`] (the score does, from both parts).
+    ///
+    /// # Errors
+    /// A voice panicked earlier.
+    pub fn set_fighter_stops(&self, stops: Vec<f64>) -> Result<(), MusicError> {
+        self.lock()?.fighter_stops = stops;
         Ok(())
     }
 
@@ -333,14 +371,20 @@ impl<'a> MusicCtx<'a> {
         end + (100.0 - end) * ease((t - grid.t_glide) / (grid.t_rev - grid.t_glide))
     }
 
-    /// The fighter whose voice has the roster name `name` (`CFG[k]['pp']`).
-    fn voice_of(&self, helper: &'static str, name: &str) -> Result<usize, MusicError> {
-        (0..2).find(|&k| self.cfg[k].pp == name).ok_or_else(|| {
+    /// The voice with the Pixel Pitch name `name`: a fighter's (`CFG[k]['pp']`, the left corner's first), else
+    /// one the theme's bed plays.
+    fn voice_of(&self, helper: &'static str, name: &str) -> Result<&Arc<dyn Voice>, MusicError> {
+        if let Some(k) = (0..2).find(|&k| self.cfg[k].pp == name) {
+            return Ok(&self.voices[k]);
+        }
+        self.theme_voices.iter().find(|v| v.name() == name).ok_or_else(|| {
             MusicError::new(
                 helper,
                 format!(
-                    "{name:?} is not the voice of a fighter of this fight ({:?} and {:?} are)",
-                    self.cfg[0].pp, self.cfg[1].pp
+                    "{name:?} is not a voice of this fight (the fighters play {:?} and {:?}, the theme {})",
+                    self.cfg[0].pp,
+                    self.cfg[1].pp,
+                    if self.theme_voices.is_empty() { "none" } else { "others" }
                 ),
             )
         })
@@ -363,10 +407,10 @@ impl<'a> MusicCtx<'a> {
         if let Some(&g) = st.gains.get(name) {
             return Ok(g);
         }
-        let k = self.voice_of(helper, name)?;
-        let (lo, hi) = self.voices[k].register();
+        let voice = self.voice_of(helper, name)?;
+        let (lo, hi) = voice.register();
         let middle = ifloor_div(i64::from(lo) + i64::from(hi), 2) as f64;
-        let x = self.voices[k].note(&mut st.noise, middle, 0.8, 0.2);
+        let x = voice.note(&mut st.noise, middle, 0.8, 0.2);
         let x = &x[..x.len().min((0.3 * SRF) as usize)];
         if x.is_empty() || !x.iter().all(|v| v.is_finite()) {
             return Err(MusicError::new(
@@ -425,20 +469,20 @@ impl<'a> MusicCtx<'a> {
         if let Some(x) = st.notes.get(&key) {
             return Ok(Arc::clone(x));
         }
-        let k = self.voice_of(H, name)?;
+        let voice = Arc::clone(self.voice_of(H, name)?);
         // What fit refuses for a cap from zero up depends on the cap alone (the note is then `int(cap * SR)`
         // samples long whatever the voice gives): find out before the voice draws any noise.
         let n = int(H, "cap", cap * SRF)?;
         if n == 1 || n == 2 {
             return Err(MusicError::new(H, no_room(n as usize, FIT_FADE)));
         }
-        if !self.voices[k].can_hold(dur) {
+        if !voice.can_hold(dur) {
             return Err(MusicError::new(
                 H,
                 format!("{name} has no note for a held length (dur) of {dur} s: it would end before it starts"),
             ));
         }
-        let x = self.voices[k].note(&mut st.noise, midi, vel, dur);
+        let x = voice.note(&mut st.noise, midi, vel, dur);
         if !x.iter().all(|v| v.is_finite()) {
             return Err(MusicError::new(
                 H,

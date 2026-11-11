@@ -8,16 +8,27 @@ impl FightFile {
     /// The search key: a string made only of what changes the fight, so the seed shortlist can be kept while it
     /// stays the same (spec section 4, "What feeds the fight"). Fighters in side order, arena, handicap, damage
     /// scale, pair rules and tempo always count; music counts only when `feeds_fight[i]` is true for some fighter
-    /// `i` (a fighter whose notes are its weapon; a missing entry counts as false), and then the key, scale, chords,
-    /// chord loop, music seed and that fighter's hand-written line count (never the theme, roles, solos or title
-    /// hits). Seed, picture seeds, captions and series tag never count. The app version is not part of it either:
-    /// whoever caches the shortlist across app versions adds that.
+    /// `i` (a fighter whose notes are its weapon; a missing entry counts as false), and then the key, scale, intro
+    /// chords, chord loop, chord tail, music seed and that fighter's hand-written line count (never the theme, its
+    /// options, the mix, roles, solos or title hits: the kit's `story.roll_rows` reads `LINES`, `LOOP` and the chord
+    /// tones, never `ROLES`). Seed, picture seeds, the title card's opt-ins, captions and series tag never count.
+    /// The app version is not part of it either: whoever caches the shortlist across app versions adds that.
+    ///
+    /// The key is a conservative superset of what the fight reads: when music feeds the fight it holds the intro
+    /// chords and the chord tail too, though `roll_rows` reads only `LINES`, `LOOP` and the loop's chord tones. Two
+    /// fights with the same key always have the same fight; two fights whose keys differ only there have the same
+    /// fight too, and only cost a search that a finer key would have saved.
     ///
     /// The string is defined by its construction alone (no hashing, no map iteration other than sorted maps, no
     /// pointers): texts are written as `<byte length>:<text>`, floats as the hex of their bits, so the same inputs
     /// give the same key on any PC and any run.
+    ///
+    /// Version 2 of the key (fight-file format 2) starts `fight-key 2` and, when music feeds the fight, writes
+    /// `;chords_tail=[...]` after the chord loop; everything else is written as version 1 wrote it. So two fights
+    /// have the same key exactly when they had before, and a shortlist cached under a version 1 key is looked for
+    /// under another key once (it is searched again, never read under the wrong fight).
     pub fn search_key(&self, feeds_fight: &[bool]) -> String {
-        let mut o = String::from("fight-key 1;fighters=");
+        let mut o = String::from("fight-key 2;fighters=");
         k_list(&mut o, &self.fighters, |o, s| k_str(o, s));
         o.push_str(";arena=");
         k_str(&mut o, &self.arena);
@@ -54,6 +65,8 @@ impl FightFile {
         k_list(&mut o, &m.chords_intro, |o, s| k_str(o, s));
         o.push_str(";chord_loop=");
         k_list(&mut o, &m.chord_loop, |o, s| k_str(o, s));
+        o.push_str(";chords_tail=");
+        k_list(&mut o, &m.chords_tail, |o, s| k_str(o, s));
         let _ = write!(o, ";music_seed={};lines=", m.music_seed);
         let lines: Vec<(&String, &Vec<Option<i32>>)> =
             fed.iter().filter_map(|n| m.lines.get(*n).map(|l| (*n, l))).collect();

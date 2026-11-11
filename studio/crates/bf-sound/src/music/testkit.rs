@@ -98,6 +98,8 @@ impl Voice for TestVoice {
 pub(crate) struct TestBed {
     pub(crate) reverb: (f64, f64, f64),
     pub(crate) clashes: Mutex<Vec<f64>>,
+    /// The optional hooks it has (`Boom` unless a test says otherwise).
+    pub(crate) hooks: &'static [crate::traits::BedHook],
 }
 
 impl TestBed {
@@ -105,11 +107,15 @@ impl TestBed {
         TestBed {
             reverb,
             clashes: Mutex::new(Vec::new()),
+            hooks: &[crate::traits::BedHook::Boom],
         }
     }
 }
 
 impl Bed for TestBed {
+    fn hooks(&self) -> &'static [crate::traits::BedHook] {
+        self.hooks
+    }
     fn buses(&self) -> &[(&'static str, (f64, f64))] {
         &[("drums", (1.0, 0.15)), ("fx", (0.5, 0.1))]
     }
@@ -132,7 +138,11 @@ impl Bed for TestBed {
         (95.0, 100.0, 0.1)
     }
     fn boom(&self, _: &MusicCtx, _: &mut Mix, _: f64, _: f64) -> Played {
-        Ok(())
+        if self.has(crate::traits::BedHook::Boom) {
+            Ok(())
+        } else {
+            crate::traits::no_hook(crate::traits::BedHook::Boom)
+        }
     }
     fn clash(&self, _: &MusicCtx, mix: &mut Mix, t: f64) -> Played {
         if t < 0.0 {
@@ -186,6 +196,7 @@ pub(crate) fn context(ep: &Episode) -> (MusicCtx<'_>, [Arc<TestVoice>; 2]) {
         &ep.ff,
         [&ep.cfg[0], &ep.cfg[1]],
         [voices[0].clone(), voices[1].clone()],
+        Vec::new(),
     )
     .expect("the context builds");
     (ctx, voices)

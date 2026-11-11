@@ -12,6 +12,13 @@
 //! [`crate::music`]), and the build stops there.
 //!
 //! Both traits are object-safe and `Send + Sync`: the score takes `&dyn Bed` and `[&dyn Sound; 2]`.
+//!
+//! **Optional bed hooks.** A mood class has the sections every bed has, and some have more methods that a fighter's
+//! part may call (`bed.boom`, `bed.press_roll`, ...): the [`BedHook`]s. [`Bed::hooks`] lists the ones a bed has;
+//! a hook it does not have answers [`no_hook`] (Python raises `AttributeError`). A part that calls a hook only
+//! after `hasattr(M.bed, ...)` asks [`Bed::has`] first; a part that calls one without asking lists it in
+//! [`Sound::bed_calls`], and the content registry refuses a fight whose theme lacks it (ruling M3-R2: the kit
+//! itself would crash on that pair under that theme).
 
 use std::sync::Arc;
 
@@ -28,6 +35,68 @@ pub type Played = Result<(), MusicError>;
 pub const SOUND_VOICE_VEL: f64 = 0.85;
 /// `Sound.colour`'s default `drive_k`.
 pub const SOUND_COLOUR_DRIVE_K: f64 = 1.0;
+
+/// A bed method that only some moods have, and that a fighter's part may call (see the module's notes).
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum BedHook {
+    /// `boom(mix, t, g)`: a big drum hit (a slam landing). Every mood of the kit has it but `dark_disco` and
+    /// `heist`.
+    Boom,
+    /// `hit(mix, t, ch, g, ring)`: a band hit on a chord.
+    Hit,
+    /// `press_roll(mix, t0, t1, g0, g1)`: a snare press roll from `t0` to `t1`, growing from `g0` to `g1`.
+    PressRoll,
+    /// `erupt(mix, t)`: the bed's own crash (`horror_trap`'s sheet metal).
+    Erupt,
+    /// `trailer_hit(mix, t, taiko_g, seed, braam_dur, braam_g)`: a trailer hit (`brass_trailer`'s taiko and
+    /// braam).
+    TrailerHit,
+}
+
+impl BedHook {
+    /// Every hook, in this order.
+    pub const ALL: [BedHook; 5] = [
+        BedHook::Boom,
+        BedHook::Hit,
+        BedHook::PressRoll,
+        BedHook::Erupt,
+        BedHook::TrailerHit,
+    ];
+
+    /// The method's name in the kit's mood classes (`boom`, `press_roll`, ...).
+    pub fn name(self) -> &'static str {
+        match self {
+            BedHook::Boom => "boom",
+            BedHook::Hit => "hit",
+            BedHook::PressRoll => "press_roll",
+            BedHook::Erupt => "erupt",
+            BedHook::TrailerHit => "trailer_hit",
+        }
+    }
+
+    /// What it plays, in a few words, for messages.
+    pub fn what(self) -> &'static str {
+        match self {
+            BedHook::Boom => "a big drum hit",
+            BedHook::Hit => "a band hit",
+            BedHook::PressRoll => "a snare press roll",
+            BedHook::Erupt => "a crash",
+            BedHook::TrailerHit => "a trailer hit",
+        }
+    }
+}
+
+/// What a bed answers for a hook it does not have (Python's `AttributeError` on `bed.<hook>`): an error naming it.
+pub fn no_hook(hook: BedHook) -> Played {
+    Err(MusicError::new(
+        hook.name(),
+        format!(
+            "this theme's bed has no {} ({}); a part that plays it needs another theme",
+            hook.name(),
+            hook.what()
+        ),
+    ))
+}
 
 /// A fighter's part in the score: `kit/fighters/base.py` `Sound(M, k)`. A fighter implements [`Sound::k`] and
 /// overrides what it plays; every hook is optional, and the defaults play nothing.
@@ -133,6 +202,28 @@ pub trait Sound: Send + Sync {
         ctx.colour(x, self.k(), t, drive_k, args)
     }
 
+    /// The optional bed hooks its part calls without asking whether the bed has them (a plain `M.bed.boom(...)`
+    /// in the kit): a theme whose bed lacks one cannot play this fighter (ruling M3-R2). Hooks it calls only after
+    /// `hasattr(M.bed, ...)` are not listed. Default: none.
+    fn bed_calls(&self) -> &'static [BedHook] {
+        &[]
+    }
+
+    /// The extra lines its part reads from the fight file besides its own (the HORN's `HORN THEME`): each is its
+    /// name, a space and a word. A `music.lines` key that is neither a fighter nor an extra line one of the fighters
+    /// declares is refused. Default: none.
+    fn extra_lines(&self) -> &'static [&'static str] {
+        &[]
+    }
+
+    /// `stops()`: the times the band stops for it (the CELLO's rope slams under `dark_tango`), which the score
+    /// gathers from both parts into [`MusicCtx::fighter_stops`] before the bed's fight. Not a method of the kit's
+    /// base class: a part without it gives none. Default: none.
+    fn stops(&self, ctx: &MusicCtx) -> Vec<f64> {
+        let _ = ctx;
+        Vec::new()
+    }
+
     // The score, in the order kit.music calls it.
 
     /// `prepare()`: before any fighter's part: cross-fighter set-up (#53: a line override for the enemy, see
@@ -158,6 +249,14 @@ pub trait Sound: Send + Sync {
     fn play(&self, ctx: &MusicCtx, bed: &dyn Bed, mix: &mut Mix) -> Played {
         let _ = (ctx, bed, mix);
         Ok(())
+    }
+
+    /// `play(mix)` with the other side's part at hand (the kit's `M.SOUNDS[self.enemy]`: the OBOE's sour notes
+    /// in its victim's own voice, the EUPHONIUM's ghost of the enemy; ruling M3-R15). The score calls this; the
+    /// default is [`Sound::play`], for a part that never reads the other one.
+    fn play_with(&self, ctx: &MusicCtx, bed: &dyn Bed, mix: &mut Mix, enemy: &dyn Sound) -> Played {
+        let _ = enemy;
+        self.play(ctx, bed, mix)
     }
 
     /// `fall_apart(mix)`: it lost: the sound of it shattering (from the end of the hit-stop, `P.T_HS`).
@@ -192,12 +291,35 @@ pub trait Sound: Send + Sync {
     }
 }
 
+/// `kit/fighters/base.py` `Sound(M, k)` itself: the part of a fighter whose sound module is not written, which
+/// plays nothing (its bus, gain, send and band are the base class's, its voice the roster's). The opponent in a
+/// fighter's sound gate, and both sides in a theme's bed-alone gate.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct BaseSound {
+    /// Its side, 0 (the left corner) or 1.
+    pub k: usize,
+}
+
+impl Sound for BaseSound {
+    fn k(&self) -> usize {
+        self.k
+    }
+}
+
 /// A theme's classic arrangement: the `Bed(M)` class of a mood module (`kit/moods/big_top.py` and its siblings).
-/// The kit has no base class for it: every mood provides all of this, so nothing here has a default.
+/// The kit has no base class for it: every mood provides the sections, so they have no default here. The optional
+/// hooks ([`BedHook`]) default to [`no_hook`]; a bed lists the ones it has in [`Bed::hooks`].
 ///
 /// The first seven methods are the class attributes the master and the score read; the rest are the sections,
-/// which `kit.music` calls in order (and [`Bed::boom`], which the fighters call).
+/// which `kit.music` calls in order (and the hooks, which the fighters call).
 pub trait Bed: Send + Sync {
+    /// The optional hooks this mood's class defines (`dark_disco`: `[Hit]`, no `Boom`).
+    fn hooks(&self) -> &'static [BedHook];
+
+    /// `hasattr(bed, hook)`: whether it has `hook`.
+    fn has(&self, hook: BedHook) -> bool {
+        self.hooks().contains(&hook)
+    }
     /// `buses`: the bed's own buses, each with its `(gain, reverb send)`, in the order the mood lists them (the
     /// master adds the reverb sends up in that order).
     fn buses(&self) -> &[(&'static str, (f64, f64))];
@@ -222,8 +344,47 @@ pub trait Bed: Send + Sync {
     /// `(low, high, gain)`.
     fn pop(&self) -> (f64, f64, f64);
 
-    /// `boom(mix, t, g)`: a big drum hit at `t` with gain `g` (a slam landing). Fighters call it.
+    /// `boom(mix, t, g)`: a big drum hit at `t` with gain `g` (a slam landing). Fighters call it. Every bed
+    /// implements it; one without it (`dark_disco`, `heist`) answers `no_hook(BedHook::Boom)` and leaves `Boom` out
+    /// of [`Bed::hooks`].
     fn boom(&self, ctx: &MusicCtx, mix: &mut Mix, t: f64, g: f64) -> Played;
+
+    /// `hit(mix, t, ch, g, ring)`: a band hit on the chord `chord` at `t` with gain `g` (and how long it rings,
+    /// where the mood's own method has that argument). Default: [`no_hook`].
+    fn hit(&self, ctx: &MusicCtx, mix: &mut Mix, t: f64, chord: &str, g: f64, ring: f64) -> Played {
+        let _ = (ctx, mix, t, chord, g, ring);
+        no_hook(BedHook::Hit)
+    }
+
+    /// `press_roll(mix, t0, t1, g0, g1)`: a snare press roll from `t0` to `t1`, its gain from `g0` to `g1`.
+    /// Default: [`no_hook`].
+    fn press_roll(&self, ctx: &MusicCtx, mix: &mut Mix, t0: f64, t1: f64, g0: f64, g1: f64) -> Played {
+        let _ = (ctx, mix, t0, t1, g0, g1);
+        no_hook(BedHook::PressRoll)
+    }
+
+    /// `erupt(mix, t)`: the bed's own crash at `t`. Default: [`no_hook`].
+    fn erupt(&self, ctx: &MusicCtx, mix: &mut Mix, t: f64) -> Played {
+        let _ = (ctx, mix, t);
+        no_hook(BedHook::Erupt)
+    }
+
+    /// `trailer_hit(mix, t, taiko_g, seed, braam_dur=None, braam_g=0.0)`: a trailer hit at `t`. Default:
+    /// [`no_hook`].
+    #[allow(clippy::too_many_arguments)]
+    fn trailer_hit(
+        &self,
+        ctx: &MusicCtx,
+        mix: &mut Mix,
+        t: f64,
+        taiko_g: f64,
+        seed: i64,
+        braam: Option<f64>,
+        braam_g: f64,
+    ) -> Played {
+        let _ = (ctx, mix, t, taiko_g, seed, braam, braam_g);
+        no_hook(BedHook::TrailerHit)
+    }
 
     /// `clash(mix, t)`: the two balls clashing at `t` (`kit.music.shared_events` calls it for every `clash`
     /// event).
@@ -301,7 +462,7 @@ mod tests {
         assert_eq!((a.role(&ctx), b.role(&ctx)), ("melody", "bass"));
         let mut ff = ep.ff.clone();
         ff.music.roles.clear();
-        let other = MusicCtx::new(&ep.show, &ep.rec, &ff, ctx.cfg, ctx.voices.clone()).unwrap();
+        let other = MusicCtx::new(&ep.show, &ep.rec, &ff, ctx.cfg, ctx.voices.clone(), Vec::new()).unwrap();
         assert_eq!(b.role(&other), "melody");
 
         // voice: its Pixel Pitch voice, the held length to 3 places, the cap 0.2 s longer to 2, the velocity
@@ -343,6 +504,58 @@ mod tests {
     }
 
     #[test]
+    fn a_bed_without_a_hook_refuses_it() {
+        let ep = episode();
+        let (ctx, _) = context(&ep);
+        let mut mix = Mix::new(1.0);
+        let mut bed = TestBed::new((2.0, 0.5, 0.2));
+        assert!(bed.has(BedHook::Boom) && !bed.has(BedHook::Hit));
+        bed.boom(&ctx, &mut mix, 0.5, 0.8).unwrap();
+        // dark disco and heist have no boom: the call is refused, naming it, and nothing is placed
+        bed.hooks = &[];
+        let b: &dyn Bed = &bed;
+        assert!(!b.has(BedHook::Boom));
+        let e = b.boom(&ctx, &mut mix, 0.5, 0.8).unwrap_err().to_string();
+        assert_eq!(
+            e,
+            "boom: this theme's bed has no boom (a big drum hit); a part that plays it needs another theme"
+        );
+        assert_eq!(b.boom(&ctx, &mut mix, 0.5, 0.8), no_hook(BedHook::Boom));
+        // the other optional hooks are refused by default
+        assert_eq!(b.hit(&ctx, &mut mix, 0.5, "Em", 1.0, 0.9), no_hook(BedHook::Hit));
+        assert_eq!(
+            b.press_roll(&ctx, &mut mix, 0.5, 1.0, 0.12, 0.32),
+            no_hook(BedHook::PressRoll)
+        );
+        assert_eq!(b.erupt(&ctx, &mut mix, 0.5), no_hook(BedHook::Erupt));
+        assert_eq!(
+            b.trailer_hit(&ctx, &mut mix, 0.5, 1.0, 7, None, 0.0),
+            no_hook(BedHook::TrailerHit)
+        );
+        assert!(mix.bus_names().is_empty());
+        let names: Vec<&str> = BedHook::ALL.iter().map(|h| h.name()).collect();
+        assert_eq!(names, ["boom", "hit", "press_roll", "erupt", "trailer_hit"]);
+    }
+
+    #[test]
+    fn the_base_sound_is_silent_and_calls_no_hook() {
+        let ep = episode();
+        let (ctx, voices) = context(&ep);
+        let bed = TestBed::new((2.0, 0.5, 0.2));
+        let base = BaseSound { k: 1 };
+        let s: &dyn Sound = &base;
+        assert_eq!(
+            (s.k(), s.bus(&ctx), s.bus_gain(), s.send()),
+            (1, "trombone".to_string(), 1.5, 0.35)
+        );
+        assert!(s.bed_calls().is_empty() && s.extra_lines().is_empty() && s.stops(&ctx).is_empty());
+        let mut mix = Mix::new(1.0);
+        s.play_with(&ctx, &bed, &mut mix, &Plain(0)).unwrap();
+        s.title_blast(&ctx, &bed, &mut mix, 0.0).unwrap();
+        assert!(mix.bus_names().is_empty() && voices[1].calls().is_empty());
+    }
+
+    #[test]
     fn detune_reads_the_recorded_status() {
         let ep = episode();
         // The episode's fighters record no DET: never out of tune.
@@ -365,7 +578,7 @@ mod tests {
         data[((frames - 1) * 2 + 1) * 2..][..2].copy_from_slice(&[1.0, 0.4]);
         let mut with = |det: Array, k: usize, t: f64| {
             rec.arrays.insert("DET".into(), det);
-            let ctx = MusicCtx::new(&ep.show, &rec, &ep.ff, cfg, voices.clone()).unwrap();
+            let ctx = MusicCtx::new(&ep.show, &rec, &ep.ff, cfg, voices.clone(), Vec::new()).unwrap();
             assert_eq!(ctx.sim_i(12.0), frame);
             Plain(k).detune(&ctx, t)
         };
