@@ -19,6 +19,7 @@ use std::any::Any;
 use std::sync::{Arc, OnceLock};
 
 use bf_core::event::Event;
+use bf_core::roster::FighterCfg;
 
 use crate::camera::{Cam, V3};
 use crate::fx::{Bursts, Emit, Flares, Marks, Moments, Particles};
@@ -28,6 +29,7 @@ use crate::raster::Frame;
 use crate::ring::PictureCtx;
 use crate::ring::state::{BallState, Wave};
 use crate::title::GLASS;
+use crate::title::layout::Layout;
 
 /// The phase `fighter(k, t)` is in when it calls [`Look::state`]: Python's `'rev'`, `'fight'` and `'tail'`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -248,15 +250,43 @@ pub trait Look: Send + Sync {
     /// `title.DD`, and `title.XX`, `title.YY` are the pixel's column and row.
     ///
     /// As in Python (`PATTERNS.setdefault(name, look.title_pattern)`), a pattern the card itself has for the
-    /// fighter's name ([`crate::title::panels::builtin_pattern`]) is used instead, and this hook is then not
-    /// called.
+    /// fighter's name ([`crate::title::patterns::builtin`]) is used instead, and this hook is then not called.
+    ///
+    /// The card calls [`Look::title_pattern_with`], whose default calls this. A pattern that reads the card's
+    /// balls or words (TUBA's rings round its ball read `title.BALLS[k]`, which the fight file's `title_balls`
+    /// can move) implements that one instead.
     fn title_pattern(&self, base: &mut RgbF) {}
+
+    /// `title_pattern(base)` with the card's layout: the words and the balls of this card (Python's
+    /// `title.WORDS` and `title.BALLS`, which the fight file's opt-ins change). This is what the card calls; the
+    /// default is [`Look::title_pattern`], which does not need them.
+    fn title_pattern_with(&self, base: &mut RgbF, card: &Layout) {
+        self.title_pattern(base)
+    }
 
     // ------------------------------------------------------------ setup (once, from the run)
     /// `setup()`: precompute its state from the run's events. Called once, before every other hook, with the
     /// look's side `k` (Python's `Look(P, k)` and `setup()` in one). The other fighter's look is not in `p` yet
     /// (`p.looks` is empty), so `p.fighter` cannot be called here.
+    ///
+    /// The ring renderer calls this for each fighter's own look. A look whose hooks read its own roster numbers
+    /// (Python's `self.cfg`) should take them from [`Look::setup_as`] and implement `setup` as
+    /// `self.setup_as(p, k, &p.cfg[k])`, so that it can also be made for another side.
     fn setup(&mut self, p: &PictureCtx, k: usize) {}
+
+    /// `Look(P, k)` with `cfg` for `self.cfg`, then `setup()`: the look made for side `k` with another fighter's
+    /// roster numbers (EUPHONIUM's IDENTITY CRISIS: `dup = module(enemy).Look(P, k)`, `dup.cfg = CFG[enemy]`,
+    /// `dup.setup()`, `euphonium.py` 192-201). Everything else a Python look takes from its side stays the side's:
+    /// `self.k`, `self.enemy`, `self.name` and `self.col` are side `k`'s (`p.names[k]`, `p.col[k]`), only
+    /// `self.cfg` is `cfg`. The ring renderer never calls it; another look does, and then calls the copy's hooks
+    /// itself.
+    ///
+    /// The default is [`Look::setup`], which is right for a look that reads no roster numbers of its own after
+    /// `p.cfg[k]` (there `cfg` and `p.cfg[k]` are the same thing for the ring's own looks). A look that reads its
+    /// numbers implements this one and makes `setup` call it with `&p.cfg[k]` (FLUTE and TROMBONE do).
+    fn setup_as(&mut self, p: &PictureCtx, k: usize, cfg: &FighterCfg) {
+        self.setup(p, k)
+    }
 
     /// `title_closeup(r)`: the look's own close-up sprite for the VS card, RGBA and square, for a ball of radius
     /// `r` pixels; `None` (the default) for the fighter's model.

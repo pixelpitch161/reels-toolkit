@@ -51,6 +51,7 @@ use crate::pil;
 use crate::scene::{self, Scene};
 use crate::shadows::MaskGrid;
 use crate::sprite::{Mesh, SpriteCache};
+use crate::title::layout::Layout;
 use crate::title::{CardLook, TitleCard, TitleError};
 use crate::ui::DrawLog;
 
@@ -70,7 +71,8 @@ pub enum PictureError {
     Mesh(String),
     /// The fight file's music does not give the winner a solo.
     Music(String),
-    /// The VS title card cannot be built (an unported panel pattern).
+    /// The VS title card cannot be built (an unported panel pattern, a middle word that does not fit, a ball too
+    /// big for its close-up).
     Title(TitleError),
 }
 
@@ -187,6 +189,9 @@ pub struct PictureCtx {
     pub static_casters: Vec<[V3; 4]>,
     /// `CANVAS_GRID`.
     pub canvas_grid: MaskGrid,
+    /// The VS title card's `WORDS` and `BALLS` (`title.py`, imported before the looks are made): the fight
+    /// file's opt-ins applied. A look that reads `TT.BALLS` in its `setup` (TUBA's panel rings) reads it here.
+    pub title: Layout,
 }
 
 /// One fight's video: the frames of `kit.picture.render`.
@@ -458,6 +463,8 @@ impl Picture {
         let crowd_tint = light_rgb.map(|c| c.map(|v| 0.78 + 0.42 * v));
         let scene = Scene::new(col);
         let fx_seed = ff.fx_seed();
+        // `import title as TT` comes before the looks: WORDS (with MIDDLE fitted) and BALLS
+        let title = Layout::new(&show.names[0], &show.names[1], &ff.picture).map_err(PictureError::Title)?;
         let mut p = PictureCtx {
             run,
             names: show.names.clone(),
@@ -503,6 +510,7 @@ impl Picture {
             sprites: SpriteCache::new(),
             static_casters: canvas::static_casters(),
             canvas_grid: canvas::canvas_grid(),
+            title,
             cfg,
             show,
             rec,
@@ -523,7 +531,7 @@ impl Picture {
         let mut fx = std::mem::replace(&mut p.fx, Fx::new(fx_seed));
         effects::fx_build(&p, &mut fx);
         p.fx = fx;
-        let card = TitleCard::new(
+        let card = TitleCard::with_layout(
             &p.show,
             p.col,
             p.dark,
@@ -534,6 +542,7 @@ impl Picture {
                 roll: p.view[k].2,
             }),
             ff.series_tag.as_deref(),
+            p.title.clone(),
         )
         .map_err(PictureError::Title)?;
         Ok(Picture { p, card })
@@ -574,9 +583,18 @@ impl Picture {
     }
 
     /// Frame `f` with its draw log and its report (the hulls not drawn in scipy's order).
+    ///
+    /// `hull_fallbacks` counts every hull of the frame that fell back for a Qhull merge: the beam's and those the
+    /// looks ask for in their hooks ([`crate::hull::convex_hull`] counts them on the drawing thread), so a merge
+    /// in a look's hull is counted too, never silently drawn another way.
     pub fn frame_reported(&self, f: usize) -> (Rgb8, DrawLog, FrameReport) {
+        let merges = crate::hull::merges();
         match self.render(f.min(self.nf() - 1), None) {
-            Rendered::Frame(img, log, report) => (img, log, report),
+            Rendered::Frame(img, log, mut report) => {
+                // the render counted the beam's merge; this thread's count since holds the beam's and the looks'
+                report.hull_fallbacks = (crate::hull::merges() - merges) as usize;
+                (img, log, report)
+            }
             Rendered::Stage(_) => unreachable!("render without a stop returns the frame"),
         }
     }

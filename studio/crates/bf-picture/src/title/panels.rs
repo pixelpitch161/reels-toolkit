@@ -1,8 +1,8 @@
 //! The two panels of the card and what sits on them: the fill (a gradient in the fighter's colours, its pattern,
 //! dithered bands) and the fighter's glass ball, big and close.
 //!
-//! The port of `_panel_rgb`, of the pattern table `PATTERNS` as far as the Studio's fighters need it
-//! (`_slide_tubes`, the TROMBONE's) and of `draw_big_ball`. Everything is `float64`, pixel by pixel in the order
+//! The port of `_panel_rgb`, of `_slide_tubes` (the TROMBONE's pattern; the table `PATTERNS` and the other
+//! fighters' patterns are [`super::patterns`]) and of `draw_big_ball`. Everything is `float64`, pixel by pixel in the order
 //! numpy's whole-array expressions run.
 //!
 //! One number is not Python's to the bit. The gradient's `** 1.3` is numpy's `power`, which calls the C runtime's
@@ -16,34 +16,15 @@
 use bf_core::{dmath, py};
 
 use super::INK;
-use super::layout;
+use super::layout::{self, Layout};
 use crate::config::{self, H, W};
 use crate::img::{Img, RgbF};
 use crate::np;
 
 /// A panel pattern: `fn(base) -> base` in Python, working on the panel's `(H, W, 3)` `float64` gradient before it
-/// is dithered. Here it changes the picture in place.
-pub type Pattern = fn(&mut RgbF);
-
-/// The fighters `title.PATTERNS` has a panel pattern for that is not ported yet: the kit's sixteen but the
-/// TROMBONE's. Each comes with its fighter, in [`builtin_pattern`].
-pub const UNPORTED_PATTERNS: [&str; 15] = [
-    "BAGPIPES",
-    "ACCORDION",
-    "ORGAN",
-    "HARP",
-    "HORN",
-    "UKULELE",
-    "ACOUSTIC",
-    "CLARINET",
-    "OBOE",
-    "BASS CLARINET",
-    "EUPHONIUM",
-    "BASSOON",
-    "BARI SAX",
-    "VIOLA",
-    "VIOLIN",
-];
+/// is dithered. Here it changes the picture in place, and it is handed the card's layout, where a Python pattern
+/// reads the module's `BALLS` (and `WORDS`): `_horn_coils` rings the balls, which `TITLE_BALLS` can move.
+pub type Pattern = fn(&mut RgbF, &Layout);
 
 /// What can keep a title card from being built.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -51,12 +32,33 @@ pub enum TitleError {
     /// The card's own pattern table has a panel pattern for this fighter, and it is not ported yet: without it
     /// the card would quietly show a plain panel where Python shows the pattern.
     PatternNotPorted(String),
+    /// The fight file's middle word (the kit's `MIDDLE`) fits the diagonal at no scale: Python's `ValueError`
+    /// from `_fit_middle`.
+    MiddleDoesNotFit(String),
+    /// A big ball so large that its close-up (radius `int(r * 0.8)`, here the second value) cannot be drawn
+    /// from the fighter's model: the kit's sprite canvas holds a radius of at most 131.
+    CloseupTooBig(String, i64),
+}
+
+/// Python's `repr` of a text, as the kit's messages show it: single quotes, or double quotes when the text holds
+/// a single quote and no double one.
+fn py_repr(s: &str) -> String {
+    if s.contains('\'') && !s.contains('"') {
+        format!("\"{s}\"")
+    } else {
+        format!("'{}'", s.replace('\'', "\'"))
+    }
 }
 
 impl std::fmt::Display for TitleError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             TitleError::PatternNotPorted(name) => write!(f, "the title pattern {name} is not ported yet"),
+            TitleError::MiddleDoesNotFit(word) => write!(f, "MIDDLE {} does not fit the diagonal", py_repr(word)),
+            TitleError::CloseupTooBig(name, r) => write!(
+                f,
+                "the title card's ball of {name} is too big: its close-up of radius {r} cannot be drawn (at most 131)"
+            ),
         }
     }
 }
@@ -64,19 +66,15 @@ impl std::fmt::Display for TitleError {
 impl std::error::Error for TitleError {}
 
 /// `PATTERNS.get(name)`: the pattern the card itself has for a fighter, by name, or `None` when it has none (the
-/// fighter then gets its look's pattern, or the plain gradient). Of the kit's sixteen only the TROMBONE's is
-/// ported: for the other fifteen ([`UNPORTED_PATTERNS`]) this is an error rather than a plain panel.
+/// fighter then gets its look's pattern, or the plain gradient). This is [`super::patterns::builtin`]: for a
+/// pattern not ported yet it is an error rather than a plain panel.
 pub fn builtin_pattern(name: &str) -> Result<Option<Pattern>, TitleError> {
-    match name {
-        "TROMBONE" => Ok(Some(slide_tubes)),
-        _ if UNPORTED_PATTERNS.contains(&name) => Err(TitleError::PatternNotPorted(name.to_string())),
-        _ => Ok(None),
-    }
+    super::patterns::builtin(name)
 }
 
 /// `_slide_tubes(base)`, the TROMBONE's panel: pairs of slide tubes along the divider, every 34 px, each pair a
 /// lighter tube either side of a darker gap.
-pub fn slide_tubes(base: &mut RgbF) {
+pub fn slide_tubes(base: &mut RgbF, _card: &Layout) {
     let side = layout::side();
     for (px, &s) in base.data.as_chunks_mut::<3>().0.iter_mut().zip(&side.data) {
         // q = (SIDE / 34.0) % 1
@@ -133,14 +131,15 @@ const SPECULAR: [f64; 3] = [255.0, 252.0, 244.0];
 /// fighter's colour `col`, an ink edge and a small highlight. `layer` is the panel's `(H, W, 3)` picture, `alpha`
 /// its `(H, W)` opacity, set to 1 over the ball and its edge.
 ///
-/// `cx` is a whole number (the Python passes the int of `BALLS`), `cy` and the radius `rp` are floats.
+/// `cx` is `BALLS[k]['cx']` (an int in the kit, a float from the fight file: the arithmetic is the same for a
+/// whole number), `cy` and the radius `rp` are floats.
 #[allow(clippy::too_many_arguments)] // the Python signature, with the sprite and the glass tint it looks up
 pub fn draw_big_ball(
     layer: &mut RgbF,
     alpha: &mut Img<f64>,
     spr: &Img<u8>,
     glass: [f64; 3],
-    cx: i32,
+    cx: f64,
     cy: f64,
     rp: f64,
     glow: f64,
@@ -149,14 +148,14 @@ pub fn draw_big_ball(
     let (w, h) = (layer.w as i32, layer.h as i32);
     // ri = int(rp) + 3;  x0, y0 = int(cx) - ri, int(cy) - ri;  n = 2 * ri + 1
     let ri = np::f64_to_i32(rp) + 3;
-    let (x0, y0) = (cx - ri, np::f64_to_i32(cy) - ri);
+    let (x0, y0) = (np::f64_to_i32(cx) - ri, np::f64_to_i32(cy) - ri);
     let n = 2 * ri + 1;
     let (xa, ya) = (x0.max(0), y0.max(0));
     let (xb, yb) = (w.min(x0 + n), h.min(y0 + n));
     if xb <= xa || yb <= ya {
         return;
     }
-    let fcx = f64::from(cx);
+    let fcx = cx;
     // dx = (xx + x0 + 0.5 - cx) / rp;  dy = (yy + y0 + 0.5 - cy) / rp;  d2 = dx * dx + dy * dy
     let at = |x: i32, y: i32| {
         let dx = (f64::from(x) + 0.5 - fcx) / rp;
@@ -194,7 +193,11 @@ pub fn draw_big_ball(
 
     // the instrument: rg[ms] = np.clip(sub[..., :3].astype(float)[ms] * (1.06 + 0.3 * glow), 0, 255)
     let sn = spr.h as i32;
-    let (sx0, sy0) = (cx - sn / 2, py::round_half_even(cy) as i32 - sn / 2);
+    // sx0, sy0 = int(round(cx)) - sn // 2, int(round(cy)) - sn // 2
+    let (sx0, sy0) = (
+        py::round_half_even(cx) as i32 - sn / 2,
+        py::round_half_even(cy) as i32 - sn / 2,
+    );
     let (ax0, ay0) = (sx0.max(0), sy0.max(0));
     let (ax1, ay1) = (w.min(sx0 + sn), h.min(sy0 + sn));
     let lit = 1.06 + 0.3 * glow;

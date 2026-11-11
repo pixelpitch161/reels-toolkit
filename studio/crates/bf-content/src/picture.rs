@@ -20,6 +20,7 @@ use bf_picture::Rgb8;
 use bf_picture::config::{H, W};
 use bf_picture::ring::{Picture, PictureError};
 use bf_picture::sprite::Mesh;
+use bf_picture::title::layout::Layout;
 use bf_picture::title::{CardLook, TitleCard};
 
 use crate::error::ContentError;
@@ -27,21 +28,17 @@ use crate::fighters::look_for;
 use crate::registry::{name_status, roster};
 use crate::soundtrack::validate;
 
-/// The model file of the instrument `pp` (a roster entry's `pp`), as the export tool's `models` wrote it, for
-/// the fighters whose look is ported.
-fn model_json(pp: &str) -> Option<&'static str> {
-    match pp {
-        "FLUTE" => Some(include_str!("../data/models/FLUTE.json")),
-        "TROMBONE" => Some(include_str!("../data/models/TROMBONE.json")),
-        _ => None,
-    }
+/// The model file of the fighter `name`, as the export tool's `models` wrote it (`data/models/<NAME>.json`), for
+/// the fighters whose look is ported: its folder's `MESH`.
+fn model_json(name: &str) -> Option<&'static str> {
+    crate::fighters::mesh_json(name)
 }
 
 /// The roster entry and the model of the fighter `name` on side `k`, or the error that this app has none.
 fn fighter(name: &str, k: usize) -> Result<(&'static FighterCfg, Mesh), ContentError> {
     let missing = || ContentError::field(format!("fighters[{k}]"), format!("{name} has no look yet"));
     let cfg = roster().iter().find(|f| f.name == name).ok_or_else(missing)?;
-    let json = model_json(&cfg.pp).ok_or_else(missing)?;
+    let json = model_json(&cfg.name).ok_or_else(missing)?;
     let mesh = Mesh::from_json(json)
         .map_err(|e| ContentError::Picture(PictureError::Mesh(format!("{name}'s model cannot be read: {e}"))))?;
     Ok((cfg, mesh))
@@ -51,7 +48,7 @@ fn fighter(name: &str, k: usize) -> Result<(&'static FighterCfg, Mesh), ContentE
 /// model is not in this app or a name that is not in the roster. The app draws its corner-card portraits from it.
 pub fn mesh(name: &str) -> Option<Mesh> {
     let cfg = roster().iter().find(|f| f.name == name)?;
-    Mesh::from_json(model_json(&cfg.pp)?).ok()
+    Mesh::from_json(model_json(&cfg.name)?).ok()
 }
 
 /// What a caught panic said.
@@ -112,8 +109,8 @@ fn view(cfg: &FighterCfg) -> Result<(f64, f64), ContentError> {
 
 /// The VS title card of the fight file `ff` before any fight exists: the card on its cover frame
 /// ([`TitleCard::cover_frame`]) over a black 360 x 640 picture, built from [`Show::placeholder`] with the fighters'
-/// roster colours, models and looks ([`look_for`], whose title hooks need nothing from a fight) and the file's
-/// series tag. The card reads only the grid, the names and the tag, so this is the card the picture of any fight
+/// roster colours, models and looks ([`look_for`], whose title hooks need nothing from a fight), the file's
+/// series tag and its title opt-ins (`picture.title_lines`, `title_balls`, `middle`). The card reads only the grid, the names and the tag, so this is the card the picture of any fight
 /// of this file draws on that frame (there over the dimmed arena instead of over black).
 ///
 /// A pure function of the fight file: the same file gives the same bytes on every call and every PC, on any
@@ -124,7 +121,8 @@ fn view(cfg: &FighterCfg) -> Result<(f64, f64), ContentError> {
 /// - [`ContentError::FightFile`]: what `FightFile::validate` refuses (with this app's fighter names), or a fighter
 ///   whose look is not in this app. The theme and the music are not read: [`validate`] checks those.
 /// - [`ContentError::Picture`]: a fighter's model or roster view cannot be read, the card's panel pattern for a
-///   fighter is not ported ([`PictureError::Title`]), or the card code panicked (caught here).
+///   fighter is not ported, the middle word does not fit or a ball is too big for its close-up
+///   ([`PictureError::Title`]), or the card code panicked (caught here).
 pub fn title_preview(ff: &FightFile) -> Result<Rgb8, ContentError> {
     ff.validate(&name_status)?;
     let show = Show::placeholder(ff);
@@ -133,7 +131,9 @@ pub fn title_preview(ff: &FightFile) -> Result<Rgb8, ContentError> {
     let looks = [look_for(&show.names[0]), look_for(&show.names[1])];
     let (cfg, meshes) = ([cfg0, cfg1], [mesh0, mesh1]);
     let drawn = catch_unwind(AssertUnwindSafe(|| {
-        let card = TitleCard::new(
+        // the fight file's title opt-ins (two-line names, moved balls, a middle word), as the picture's card has
+        let layout = Layout::new(&show.names[0], &show.names[1], &ff.picture)?;
+        let card = TitleCard::with_layout(
             &show,
             cfg.map(|c| c.color.map(f64::from)),
             cfg.map(|c| c.dark.map(f64::from)),
@@ -144,6 +144,7 @@ pub fn title_preview(ff: &FightFile) -> Result<Rgb8, ContentError> {
                 roll: views[k].1,
             }),
             ff.series_tag.as_deref(),
+            layout,
         )?;
         let mut img = Rgb8::new(W, H, 3);
         card.draw(&mut img, card.cover_frame() as f64 / f64::from(show.grid.fps));

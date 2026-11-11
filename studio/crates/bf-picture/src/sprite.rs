@@ -329,16 +329,29 @@ fn outline(cv: &mut Canvas) {
 /// Panics if the sprite would not fit the kit's 270 x 480 canvas (a radius above 131), where the Python cannot
 /// make a square sprite either.
 pub fn render_sprite(mesh: &Mesh, radius_px: u32, yaw_deg: f64, roll_deg: f64) -> Img<u8> {
+    render_sprite_padded(mesh, radius_px, yaw_deg, roll_deg, radius_px)
+}
+
+/// The largest radius (and half crop) [`render_sprite`] can draw: `(270 - 7) / 2 = 131`.
+pub const MAX_RADIUS: u32 = (RW as u32 - 7) / 2;
+
+/// The model drawn as [`render_sprite`] draws it at `radius_px`, but cropped round a larger square: the centre at
+/// `half + 3.5` and the side `2 * half + 7`. This is `_render(geo, r, yaw, roll, pad)` of
+/// `kit/fighters/contrabass.py` (`padded_sprite`) and `bass_drum.py` with `half = int(round(r * pad))`: their
+/// instruments reach past the ball's crop. `half == radius_px` is [`render_sprite`].
+///
+/// Panics if the crop would not fit the kit's 270 x 480 canvas (`half` above [`MAX_RADIUS`]).
+pub fn render_sprite_padded(mesh: &Mesh, radius_px: u32, yaw_deg: f64, roll_deg: f64, half: u32) -> Img<u8> {
     assert!(
-        radius_px <= (RW as u32 - 7) / 2,
-        "a sprite of radius {radius_px} does not fit the {RW} x {RH} canvas"
+        half <= MAX_RADIUS,
+        "a sprite of radius {half} does not fit the {RW} x {RH} canvas"
     );
-    let c = f64::from(radius_px + 3) + 0.5;
+    let c = f64::from(half + 3) + 0.5;
     let cam = Cam::new(yaw_deg, radius_px, c, c, roll_deg);
     let mut cv = Canvas::new();
     render_geo(mesh, &cam, &mut cv);
     outline(&mut cv);
-    let n = 2 * radius_px as usize + 7;
+    let n = 2 * half as usize + 7;
     let mut data = Vec::with_capacity(n * n * 4);
     for y in 0..n {
         for x in 0..n {

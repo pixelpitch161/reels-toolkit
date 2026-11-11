@@ -44,6 +44,9 @@
 //! number of edges where Qhull follows a pointer. That is nothing for the beam's 33 points; a hull of thousands
 //! of corners would want a linked list.
 
+use std::cell::{Cell, RefCell};
+use std::sync::atomic::{AtomicUsize, Ordering};
+
 /// Why [`qhull_order`] did not follow Qhull: the input is one Qhull itself treats specially.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Unusual {
@@ -85,8 +88,12 @@ pub struct Hull {
 /// - fewer than three points, a line, or all points equal: the distinct end points (two, one or none);
 /// - a NaN or an infinite coordinate: that point is dropped and the rest scanned. (scipy rejects a NaN itself,
 ///   and an infinite coordinate fails inside Qhull.)
+///
+/// A call that falls back for a [`Unusual::Merge`] is counted (the ring's frame report adds them up,
+/// [`crate::ring::FrameReport::hull_fallbacks`]), and every call is noted in this thread's log while the log is on
+/// ([`log_calls`]).
 pub fn convex_hull(pts: &[(f64, f64)]) -> Hull {
-    match qhull_order(pts) {
+    let hull = match qhull_order(pts) {
         Ok(vertices) => Hull {
             vertices,
             fallback: None,
@@ -95,7 +102,95 @@ pub fn convex_hull(pts: &[(f64, f64)]) -> Hull {
             vertices: scan_hull(pts),
             fallback: Some(why),
         },
+    };
+    if hull.fallback == Some(Unusual::Merge) {
+        MERGES.with(|m| m.set(m.get() + 1));
     }
+    if LOGGING.load(Ordering::Relaxed) > 0 {
+        LOG.with(|log| {
+            if let Some(calls) = log.borrow_mut().as_mut() {
+                calls.push((pts.to_vec(), hull.clone()));
+            }
+        });
+    }
+    hull
+}
+
+/// One call of [`convex_hull`] as the log keeps it: the points it was asked for and its answer.
+pub type HullCall = (Vec<(f64, f64)>, Hull);
+
+/// How many threads have their log on. While none has, a hull call reads this once (a relaxed atomic load: no
+/// lock, no allocation, no thread-local) and skips the log.
+static LOGGING: AtomicUsize = AtomicUsize::new(0);
+
+thread_local! {
+    /// This thread's log: `None` while it is off.
+    static LOG: RefCell<Option<Vec<HullCall>>> = const { RefCell::new(None) };
+    /// The calls on this thread that fell back for a merge, ever.
+    static MERGES: Cell<u64> = const { Cell::new(0) };
+}
+
+/// Turns this thread's hull log on (an empty log) or off (the log is dropped). While it is on, every call of
+/// [`convex_hull`] on this thread, from the ring renderer or from a look's hook, is noted with its points and
+/// its answer, in call order ([`take_log`]). The log is the calling thread's own: a frame is drawn on the thread
+/// that asks for it ([`crate::ring::Picture::frame`] never spreads one frame over threads), so frames drawn on
+/// other threads at the same time never mix into it, logged or not. Turning it on again empties it.
+///
+/// It costs nothing when off: while no thread has it on, a hull call reads one shared counter (a relaxed atomic
+/// load) and skips the log. A look test turns it on round the frames it compares with the kit's log (Template F:
+/// "the hull log has no fallback and equals the kit's call for call").
+pub fn log_calls(on: bool) {
+    LOG.with(|log| {
+        let mut log = log.borrow_mut();
+        match (on, log.is_some()) {
+            (true, false) => {
+                LOGGING.fetch_add(1, Ordering::Relaxed);
+                *log = Some(Vec::new());
+            }
+            (true, true) => {
+                if let Some(calls) = log.as_mut() {
+                    calls.clear();
+                }
+            }
+            (false, true) => {
+                LOGGING.fetch_sub(1, Ordering::Relaxed);
+                *log = None;
+            }
+            (false, false) => {}
+        }
+    });
+}
+
+/// The calls this thread's log holds (since [`log_calls`] turned it on, or since the last `take_log`), in call
+/// order; the log stays on, emptied. Empty when the log is off.
+pub fn take_log() -> Vec<HullCall> {
+    LOG.with(|log| log.borrow_mut().as_mut().map(std::mem::take).unwrap_or_default())
+}
+
+/// `f()` with this thread's hull log on, and the calls it made; afterwards the log is off again if it was off.
+pub fn logged<R>(f: impl FnOnce() -> R) -> (R, Vec<HullCall>) {
+    let was_on = LOG.with(|log| log.borrow().is_some());
+    if !was_on {
+        log_calls(true);
+    }
+    let before = LOG.with(|log| log.borrow().as_ref().map_or(0, Vec::len));
+    let out = f();
+    let calls = LOG.with(|log| {
+        log.borrow_mut()
+            .as_mut()
+            .map(|c| c.split_off(before))
+            .unwrap_or_default()
+    });
+    if !was_on {
+        log_calls(false);
+    }
+    (out, calls)
+}
+
+/// How many calls on this thread have fallen back for a [`Unusual::Merge`] so far: the ring takes the difference
+/// round a frame.
+pub(crate) fn merges() -> u64 {
+    MERGES.with(Cell::get)
 }
 
 /// The hull's corners in the order `scipy.spatial.ConvexHull(pts).vertices` has, where the port follows Qhull

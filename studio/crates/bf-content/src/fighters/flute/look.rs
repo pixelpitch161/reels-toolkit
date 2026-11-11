@@ -21,7 +21,7 @@ use bf_core::dmath;
 use bf_core::event::{Event, Value};
 use bf_core::py::{self, py_max, py_min};
 use bf_core::rng::Generator;
-use bf_core::roster::WeaponCfg;
+use bf_core::roster::{FighterCfg, WeaponCfg};
 use bf_picture::camera::{Cam, V3};
 use bf_picture::config::{H, W, bayer_full, ss};
 use bf_picture::fx::{Emit, Mark, MarkKind};
@@ -882,9 +882,21 @@ impl Look for FluteLook {
     }
 
     fn setup(&mut self, p: &PictureCtx, k: usize) {
-        let cfg = &p.cfg[k];
+        self.setup_as(p, k, &p.cfg[k]);
+    }
+
+    /// `Look(P, k)` with `self.cfg = cfg`, then `setup()`: everything `flute.py` reads from `self.cfg` (the view's
+    /// roll, the striker's `rise`, SNAKE DANCE's `dur_beats`, PICCOLO's name and speed) comes from `cfg`, the rest
+    /// from side `k`. For its own side `cfg` is `p.cfg[k]`, and this is `setup`.
+    fn setup_as(&mut self, p: &PictureCtx, k: usize, cfg: &FighterCfg) {
         self.k = k;
-        self.roll = p.view[k].2;
+        // self.cfg['view'][2] (p.view[k] is p.cfg[k]'s view, read the same way)
+        self.roll = cfg
+            .raw
+            .get("view")
+            .and_then(|v| v.get(2))
+            .and_then(|r| r.as_f64())
+            .unwrap_or(p.view[k].2);
         self.beat = p.show.grid.beat;
         self.rise = match &cfg.weapon {
             WeaponCfg::Striker(s) => s.rise,

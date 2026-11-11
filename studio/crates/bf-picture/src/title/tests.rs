@@ -124,13 +124,21 @@ fn names_take_the_biggest_scale_that_fits() {
     for (a, b, left, right) in cases {
         let w = layout::words(a, b);
         assert_eq!((w[0].text.as_str(), w[0].panel), (a, Panel::Left));
-        assert_eq!((w[0].scale, w[0].cx, w[0].cy), left, "{a}");
+        assert_eq!(
+            (w[0].scale, w[0].cx, w[0].cy),
+            (left.0, f64::from(left.1), f64::from(left.2)),
+            "{a}"
+        );
         assert_eq!(
             (w[1].text.as_str(), w[1].scale, w[1].cx, w[1].cy, w[1].panel),
-            ("VS", 12, 180, 300, Panel::Both)
+            ("VS", 12, 180.0, 300.0, Panel::Both)
         );
         assert_eq!((w[2].text.as_str(), w[2].panel), (b, Panel::Right));
-        assert_eq!((w[2].scale, w[2].cx, w[2].cy), right, "{b}");
+        assert_eq!(
+            (w[2].scale, w[2].cx, w[2].cy),
+            (right.0, f64::from(right.1), f64::from(right.2)),
+            "{b}"
+        );
     }
     assert_eq!(layout::fit_scale("TROMBONE", 280), 5);
     assert_eq!(layout::fit_scale("TROMBONE", 320), 6);
@@ -332,11 +340,9 @@ fn the_plain_panel_and_the_slide_tubes_are_pythons() {
     // Python: title._panel_rgb(COL[0], DARK[0], 0, None) with the FLUTE's colours (no pattern), and
     // title._panel_rgb(COL[1], DARK[1], 1, 'TROMBONE'): [y, x] values, the sum of all values, the bands used.
     let plain = panels::panel_rgb(FLUTE.0, FLUTE.1, |_| {});
-    let tubes = panels::panel_rgb(
-        TROMBONE.0,
-        TROMBONE.1,
-        panels::builtin_pattern("TROMBONE").unwrap().unwrap(),
-    );
+    let tubes = panels::panel_rgb(TROMBONE.0, TROMBONE.1, |base| {
+        panels::builtin_pattern("TROMBONE").unwrap().unwrap()(base, &layout::Layout::plain("A", "B"))
+    });
     for (x, y, p, t) in [
         (0, 0, [102.0, 127.5, 153.0], [51.0, 153.0, 102.0]),
         (1, 1, [127.5, 127.5, 153.0], [51.0, 178.5, 127.5]),
@@ -389,7 +395,7 @@ fn the_cards_own_pattern_wins_over_the_looks() {
     };
     // PATTERNS.setdefault(name, look.title_pattern): TROMBONE is in the card's table already, TUBA is not.
     let c = both("TUBA", "TROMBONE");
-    let tubes = panels::panel_rgb(TROMBONE.0, TROMBONE.1, panels::slide_tubes);
+    let tubes = panels::panel_rgb(TROMBONE.0, TROMBONE.1, |b| panels::slide_tubes(b, &c.layout));
     // far from the divider's bright edge the panels are as built
     assert_eq!(c.panels[0].px(10, 10), &[0.0, 0.0, 0.0]);
     assert_eq!(c.panels[1].px(350, 630), tubes.px(350, 630));
@@ -413,6 +419,43 @@ fn the_defaults_of_a_look() {
     assert_eq!(base, Img::filled(2, 2, &[1.0, 2.0, 3.0]));
     assert!(Plain.title_closeup(44).is_none());
     assert_eq!((Plain.glass(), GLASS), ([236.0, 232.0, 226.0], [236.0, 232.0, 226.0]));
+    // the card calls title_pattern_with, whose default is the look's title_pattern
+    let mut black: RgbF = Img::filled(2, 2, &[1.0, 2.0, 3.0]);
+    Blackout.title_pattern_with(&mut black, &layout::Layout::plain("A", "B"));
+    assert_eq!(black, Img::filled(2, 2, &[0.0, 0.0, 0.0]));
+}
+
+/// A look whose pattern reads the card's balls, as TUBA's does (`title.BALLS[k]`): it blacks out the left ball's
+/// centre.
+struct BallMark;
+
+impl Look for BallMark {
+    fn title_pattern_with(&self, base: &mut RgbF, card: &layout::Layout) {
+        let b = card.balls[0];
+        base.px_mut(b.cx as usize, b.cy as usize)
+            .copy_from_slice(&[0.0, 0.0, 0.0]);
+    }
+}
+
+#[test]
+fn a_looks_pattern_sees_the_cards_balls() {
+    let mesh = Mesh { faces: Vec::new() };
+    let looks = [0, 1].map(|_| CardLook {
+        look: &BallMark,
+        mesh: &mesh,
+        yaw: 0.0,
+        roll: 0.0,
+    });
+    let mut lay = layout::Layout::plain("TUBA", "PIANO");
+    lay.balls[0].cx = 100.0;
+    lay.balls[0].cy = 120.0;
+    let s = show("TUBA", "PIANO", 132.0);
+    let c = TitleCard::with_layout(&s, [FLUTE.0, TROMBONE.0], [FLUTE.1, TROMBONE.1], looks, None, lay)
+        .expect("no card patterns for these names");
+    assert_eq!(c.layout().balls[0].cx, 100.0);
+    // the black mark survives the dither (the lowest band), unlike the gradient around it
+    assert_eq!(c.panels[0].px(100, 120), &[0.0, 0.0, 0.0]);
+    assert_ne!(c.panels[0].px(101, 120), &[0.0, 0.0, 0.0]);
 }
 
 /// A look whose close-up is not square.
@@ -464,10 +507,13 @@ fn a_pattern_not_ported_yet_is_an_error() {
         "VIOLA",
         "VIOLIN",
     ];
-    let mut ours: Vec<&str> = panels::UNPORTED_PATTERNS.iter().copied().chain(["TROMBONE"]).collect();
+    let mut ours: Vec<&str> = super::patterns::unported().into_iter().chain(["TROMBONE"]).collect();
     ours.sort_unstable();
     assert_eq!(ours, python);
-    for name in panels::UNPORTED_PATTERNS {
+    let mut all = super::patterns::names().to_vec();
+    all.sort_unstable();
+    assert_eq!(all, python);
+    for name in super::patterns::unported() {
         let err = panels::builtin_pattern(name).expect_err("an error");
         assert_eq!(err.to_string(), format!("the title pattern {name} is not ported yet"));
     }
@@ -502,7 +548,7 @@ fn a_ball_is_opaque_to_its_ink_edge_and_stays_in_its_box() {
     let spr: Img<u8> = Img::new(95, 95, 4);
     let mut layer: RgbF = Img::filled(W, H, &[7.0, 7.0, 7.0]);
     let mut alpha: Img<f64> = Img::new(W, H, 1);
-    panels::draw_big_ball(&mut layer, &mut alpha, &spr, GLASS, 78, 222.5, 56.0, 0.25, FLUTE.0);
+    panels::draw_big_ball(&mut layer, &mut alpha, &spr, GLASS, 78.0, 222.5, 56.0, 0.25, FLUTE.0);
     for y in 0..H {
         for x in 0..W {
             let (ex, ey) = (x as f64 + 0.5 - 78.0, y as f64 + 0.5 - 222.5);
@@ -522,8 +568,8 @@ fn a_ball_is_opaque_to_its_ink_edge_and_stays_in_its_box() {
     assert_eq!(layer.px(78 - 21, 222 - 28), &[255.0, 252.0, 244.0]);
     // a ball off the frame draws nothing
     let (mut l2, mut a2) = (layer.clone(), alpha.clone());
-    panels::draw_big_ball(&mut l2, &mut a2, &spr, GLASS, -200, 222.5, 56.0, 0.25, FLUTE.0);
-    panels::draw_big_ball(&mut l2, &mut a2, &spr, GLASS, 78, 900.0, 56.0, 0.25, FLUTE.0);
+    panels::draw_big_ball(&mut l2, &mut a2, &spr, GLASS, -200.0, 222.5, 56.0, 0.25, FLUTE.0);
+    panels::draw_big_ball(&mut l2, &mut a2, &spr, GLASS, 78.0, 900.0, 56.0, 0.25, FLUTE.0);
     assert!(l2 == layer && a2 == alpha);
 }
 
@@ -557,7 +603,7 @@ fn word_masks_are_pythons() {
 fn a_stamped_word_is_centred_and_files_its_outline_box() {
     // The settled FLUTE of the example episode; the kit's safe-zone check recorded this box for it.
     let s = words::stamp_word(W, H, "FLUTE", 7, 1.0, 180.0, 138.0, [255.0, 0.0, 0.0], 1.0);
-    assert_eq!(s.noted, (74, 110, 285, 167));
+    assert_eq!(s.noted, [(74, 110, 285, 167)]);
     // the layer reaches from the outline's corner to its drop shadow's, 3 px right and 4 px down
     let l = &s.layer;
     assert_eq!((l.x, l.y, l.w, l.h), (74, 110, 211 + 3, 57 + 4));

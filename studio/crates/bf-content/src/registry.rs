@@ -38,8 +38,7 @@ pub fn available() -> Vec<&'static str> {
 /// Whether a fighter's music settings (key, chord loop, music seed, its line) feed its fight: true for a fighter
 /// whose notes are its weapon (PIANO's roll, once it is ported). False for every fighter in Milestone 1.
 pub fn music_feeds_fight(name: &str) -> bool {
-    let _ = name;
-    false
+    crate::fighters::music_feeds_fight(name)
 }
 
 /// What the registry says about a fighter name, for `FightFile::validate`: `Retired` for [`RETIRED`], `Known` for a

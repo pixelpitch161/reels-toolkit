@@ -86,7 +86,7 @@ const SCORE: [(&str, Section); 20] = [
 /// The tags both ported fighters carry.
 const BAND_TAGS: [&str; 2] = ["#bandkids", "#marchingband"];
 
-static FLUTE: FighterCard = FighterCard {
+pub(crate) static FLUTE: FighterCard = FighterCard {
     weapon: "Snake charmer",
     text: "Cobras rise from dropped baskets and strike on the beat. Every hit that lands lets them reach further.",
     abilities: [
@@ -103,7 +103,7 @@ static FLUTE: FighterCard = FighterCard {
     tags: &BAND_TAGS,
 };
 
-static TROMBONE: FighterCard = FighterCard {
+pub(crate) static TROMBONE: FighterCard = FighterCard {
     weapon: "Slide lance",
     text: "The slide shoots out at the enemy on the beat, then pulls back. Every hit that lands makes it longer. It \
            can parry.",
@@ -132,13 +132,10 @@ pub fn shown_order() -> Vec<&'static str> {
     SCORE.iter().map(|(n, _)| *n).collect()
 }
 
-/// The card of a ported fighter, or `None` for any other name.
+/// The card of a fighter whose card is written (each in its own folder: `fighters/<slug>/card.rs`, the two
+/// milestone 1 fighters' here), or `None` for any other name.
 pub fn card(name: &str) -> Option<&'static FighterCard> {
-    match name {
-        "FLUTE" => Some(&FLUTE),
-        "TROMBONE" => Some(&TROMBONE),
-        _ => None,
-    }
+    crate::fighters::card(name)
 }
 
 /// The card of a theme the app offers (by its name in a fight file, one of [`crate::theme_names`]), or `None` for
@@ -154,6 +151,8 @@ pub fn theme_card(name: &str) -> Option<&'static ThemeCard> {
 pub fn pair_rule_text(key: &str) -> Option<&'static str> {
     match key {
         "swat_cobras" => Some("A live lance knocks a risen cobra flat."),
+        "swat_shells" => Some("A live lance knocks a falling shell out of the air."),
+        "swallow_rollers" => Some("The bell can swallow a rolling drum."),
         _ => None,
     }
 }
@@ -346,9 +345,21 @@ mod tests {
         );
         assert_eq!(pair_rule_text(""), None);
         assert_eq!(pair_rule_text("swat cobras"), None);
+        assert_eq!(
+            pair_rule_text("swat_shells"),
+            Some("A live lance knocks a falling shell out of the air.")
+        );
+        assert_eq!(
+            pair_rule_text("swallow_rollers"),
+            Some("The bell can swallow a rolling drum.")
+        );
         // every rule the table switches on has words
-        for key in crate::pair_rules("FLUTE", "TROMBONE").keys() {
-            assert!(pair_rule_text(key).is_some(), "{key}");
+        for (a, b) in [("FLUTE", "TROMBONE"), ("EUPHONIUM", "TROMBONE"), ("BASS DRUM", "TUBA")] {
+            let keys = crate::pair_rules(a, b);
+            assert_eq!(keys.len(), 1, "{a} vs {b}");
+            for key in keys.keys() {
+                assert!(pair_rule_text(key).is_some(), "{key}");
+            }
         }
     }
 
