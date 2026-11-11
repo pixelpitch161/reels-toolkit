@@ -9,7 +9,7 @@ use crate::model::take::{AudioTake, Frame, PlayerCmd, SoundState, TransportActio
 use crate::model::{NA, NF, SR, TakeId};
 use crate::preview::audio::AudioOut;
 use crate::preview::clock::{advance, frame_of, pos_of, step};
-use crate::preview::scheduler::Scheduler;
+use crate::preview::scheduler::{Lookup, Scheduler};
 use crate::seam::Waker;
 
 /// The wall clock: any steadily rising time (the app passes the time since it started).
@@ -22,6 +22,8 @@ const STALL: Duration = Duration::from_millis(500);
 /// How long playback waits at most, after a `Load` with autoplay, for the take's first picture before its clock
 /// starts anyway (ruling M2-R30). A first frame whose draw fails ends the wait at once.
 pub const FIRST_PICTURE_WAIT: Duration = Duration::from_secs(3);
+/// How long a look at the scheduler is tried again while a worker holds its lock (then the next tick looks again).
+const ASK_TRIES: Duration = Duration::from_millis(1);
 
 /// What the player counts about the frames it gives.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -88,6 +90,8 @@ pub struct Player {
     shown: Option<u32>,
     /// The last frame counted late, so it is counted once.
     late_at: Option<u32>,
+    /// The playhead's frame when the last lookup found it failed (used while the scheduler is busy).
+    failed_at: Option<u32>,
     /// Whether `tick` has given a picture that belongs to what is loaded now (a still, or a frame of this take).
     picture: bool,
     /// While sounding: the last position the audio reported, and when (by `now`) it last moved or the audio started.
@@ -131,6 +135,7 @@ impl Player {
             scrub: None,
             shown: None,
             late_at: None,
+            failed_at: None,
             picture: false,
             heard: 0,
             heard_at: Duration::ZERO,
@@ -266,24 +271,30 @@ impl Player {
         }
         self.take?;
         self.settle();
+        let f = frame_of(self.pos);
+        // One call that never waits (ruling M2-R31): while a drawing thread holds the scheduler, the picture on
+        // screen stays and the next tick looks again (the window repaints while playing or waiting).
+        let mut found = self.look(f, self.waiting.is_some())?;
+        self.failed_at = found.failed.then_some(f);
         if let Some(since) = self.waiting {
-            let f = frame_of(self.pos);
             let given_up = (self.now)().saturating_sub(since) >= FIRST_PICTURE_WAIT;
-            if self.scheduler.get(f).is_some() || self.scheduler.failed(f) || given_up {
+            if found.exact(f) || found.failed || given_up {
                 // The clock starts now, from the start frame (and the sound with it, if it has arrived).
                 self.waiting = None;
                 self.play();
+                // Playback's own wanted frames from now on.
+                if let Some(again) = self.look(f, false) {
+                    found = again;
+                }
             } else {
-                self.ask();
                 return None;
             }
         }
-        self.ask();
-        let f = frame_of(self.pos);
         if self.shown == Some(f) {
             return None;
         }
-        if let Some(frame) = self.scheduler.get(f) {
+        if found.exact(f) {
+            let (_, frame) = found.frame?;
             self.shown = Some(f);
             self.late_at = None;
             self.picture = true;
@@ -294,7 +305,7 @@ impl Player {
             self.late_at = Some(f);
             self.stats.late += 1;
         }
-        let (n, frame) = self.scheduler.latest_at_or_before(f)?;
+        let (n, frame) = found.frame?;
         // What is on screen is still the best picture if it is at or before the playhead and no older than `n`.
         if self.shown.is_some_and(|s| s <= f && s >= n) {
             return None;
@@ -328,14 +339,20 @@ impl Player {
             return true;
         }
         let f = frame_of(self.pos);
-        self.take.is_some() && self.shown != Some(f) && !self.scheduler.failed(f)
+        self.take.is_some() && self.shown != Some(f) && !self.failed_now(f)
     }
 
     /// The playhead's frame when it could not be drawn (widget rule 11), else `None`.
     pub fn failed_frame(&self) -> Option<u32> {
         self.take?;
         let f = frame_of(self.read().pos);
-        self.scheduler.failed(f).then_some(f)
+        self.failed_now(f).then_some(f)
+    }
+
+    /// Whether frame `f` could not be drawn, without waiting on the scheduler: when its lock is busy, what the last
+    /// tick found.
+    fn failed_now(&self, f: u32) -> bool {
+        self.scheduler.try_failed(f).unwrap_or(self.failed_at == Some(f))
     }
 
     /// Clears the take and shows `still`, if any.
@@ -453,14 +470,27 @@ impl Player {
         }
     }
 
-    /// Tells the scheduler which frames are wanted now.
+    /// Tells the scheduler which frames are wanted now, after a command. It never waits on the scheduler's lock
+    /// (ruling M2-R31): a worker holds it for microseconds, so the ask is tried again for at most `ASK_TRIES`; if it
+    /// is still busy, the next `tick` asks.
     fn ask(&self) {
         if self.take.is_some() {
-            if self.waiting.is_some() {
-                self.scheduler.want_start(frame_of(self.pos), self.looping);
-            } else {
-                self.scheduler.want(frame_of(self.pos), self.playing, self.looping);
+            self.look(frame_of(self.pos), self.waiting.is_some());
+        }
+    }
+
+    /// [`Scheduler::lookup`] for `f`, tried again for at most `ASK_TRIES` while a worker holds the lock (it holds
+    /// it for microseconds); `None` when it is still busy then, and the next tick looks again.
+    fn look(&self, f: u32, starting: bool) -> Option<Lookup> {
+        let started = std::time::Instant::now();
+        loop {
+            if let Some(found) = self.scheduler.lookup(f, self.playing, self.looping, starting) {
+                return Some(found);
             }
+            if started.elapsed() >= ASK_TRIES {
+                return None;
+            }
+            std::thread::yield_now();
         }
     }
 }
@@ -810,6 +840,25 @@ mod tests {
         assert_eq!(p.tick(), None);
         assert_eq!(p.stats(), PlayerStats { shown: 1, late: 1 });
         assert!(!p.wants_repaint());
+    }
+
+    #[test]
+    fn a_busy_scheduler_keeps_the_picture_on_screen() {
+        let (mut p, _hand, _log) = faked();
+        load(&mut p, 1, TestSource::new(), 3, false);
+        wait_for("frame 3", || p.scheduler.get(3).is_some());
+        assert_eq!(p.tick(), Some(TestSource::frame(3)));
+        act(&mut p, TransportAction::Step(1));
+        wait_for("frame 4", || p.scheduler.get(4).is_some());
+        // A drawing thread holds the scheduler: the tick does not wait, gives nothing new, and the picture stays.
+        let held = p.scheduler.hold_lock();
+        let began = std::time::Instant::now();
+        assert_eq!(p.tick(), None);
+        assert!(began.elapsed() < Duration::from_millis(100), "the tick did not wait");
+        assert!(p.has_picture());
+        assert!(p.wants_repaint(), "it looks again on the next tick");
+        drop(held);
+        assert_eq!(p.tick(), Some(TestSource::frame(4)));
     }
 
     #[test]
