@@ -112,7 +112,7 @@ impl PictureCtx {
             let dt = t - e.t;
             let hit = e.kind == "hit";
             let (att, x, z, (col, n, sp, life)) = if hit {
-                let att = owner(e).unwrap_or(0);
+                let att = super::checked_owner(e);
                 (att, e.f(5), e.f(6), self.looks[att].spark(self, e))
             } else {
                 let mut spark = spark_other(&e.kind);

@@ -1,22 +1,25 @@
-//! The ring renderer against the Python kit's stage dumps, and its purity.
+//! The ring renderer against the Python kit's renderer, stage by stage, and its purity.
 //!
-//! The dumps are local files, not reference files: `python -m tools.studio_export stages 150 600 1500` writes
-//! `studio/reference/.cache/stages/flute_vs_trombone/f<frame>.npz`, the buffers of `kit.picture.render` after
-//! each stage (`tools/studio_export/stages.py`). A test that needs them prints that it was skipped when the
-//! folder is absent.
+//! `bf-picture` cannot see the fighters' looks (they live in `bf-content`), so two things are compared, both
+//! against `studio/reference/picture_ring/stage_hashes.json` (export `ring`): the SHA-256 of the buffers
+//! `kit.picture.render` holds after a stage, for frames 150, 600 and 1,500.
 //!
-//! `bf-picture` cannot see the fighters' looks (they live in `bf-content`), so two things are compared:
+//! - The kit drawn with its base-class look for both fighters, against [`DefaultLook`] for both: every drawing
+//!   stage (bytes, and the `float32` buffers before the lens) and every depth buffer must be Python's to the bit.
+//! - The episode as it is, for the stages before the fighters' layers: `floor`, `arena` and `skirt`. Those stages
+//!   hold nothing a look draws, but they are not independent of the looks: the camera shakes with each look's
+//!   `shake(e)`, and the attack flares each look adds while the effects are built light the arena floor and the
+//!   crowd. So the picture for this comparison has stand-in looks that are the default look plus exactly those
+//!   hooks, written out below from `kit/fighters/flute.py` and `trombone.py` ([`FluteLights`],
+//!   [`TromboneLights`]). With the bare default look these stages differ from the episode's (a test holds that).
 //!
-//! - against the episode's own dumps, the stages before the fighters' layers must be Python's, every bit:
-//!   `floor`, `arena` and `skirt`. Those stages hold nothing a look draws, but they are not independent of the
-//!   looks: the camera shakes with each look's `shake(e)`, and the attack flares each look adds while the effects
-//!   are built light the arena floor and the crowd. So the picture for this test has stand-in looks that are the
-//!   default look plus exactly those hooks, written out below from `kit/fighters/flute.py` and `trombone.py`
-//!   ([`FluteLights`], [`TromboneLights`]). With the bare default look these stages differ from the episode's
-//!   (a test holds that too).
-//! - against dumps the kit made with its base-class look for both fighters
-//!   (`tools/studio_export/unit_checks/ring_default_looks.py` writes them beside the others, under
-//!   `stages_default`), every stage of the pipeline is compared with [`DefaultLook`] for both.
+//! The float stages between the lens and the cut to bytes pass through the FFT and cannot be hashed; they are
+//! compared by value against local stage dumps, in two tests that are ignored because the dumps are not
+//! committed (`studio/reference/.cache/`, 43 MB). Those tests also say where a buffer first differs, which a hash
+//! cannot. To make the dumps, from the repository root with the pinned interpreter:
+//! `python -m tools.studio_export stages 150 600 1500` and
+//! `python tools/studio_export/unit_checks/ring_default_looks.py . 150 600 1500`; then
+//! `cargo test -p bf-picture --test ring_stages -- --ignored dumps`.
 
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -32,6 +35,8 @@ use bf_picture::ring::effects::up;
 use bf_picture::ring::{Picture, PictureCtx, Stage, StageBuffers, StagePic};
 use bf_picture::sprite::Mesh;
 use bf_testdata::{NpArray, NpData, Npz, reference, reference_dir, repo_root};
+use serde_json::Value;
+use sha2::{Digest, Sha256};
 
 const FRAMES: [usize; 3] = [150, 600, 1500];
 /// `S.R_BALL`.
@@ -60,7 +65,8 @@ fn how(e: &Event) -> &str {
 
 /// The FLUTE's look as far as the camera and the lights go (`kit/fighters/flute.py`, class `Look`): its
 /// `flare_scale`, its `shake` and the `P.FL.add` calls of its `fx_setup` and `fx_event`. Everything it draws is
-/// left out.
+/// left out. A stand-in until the FLUTE's real look exists (Task 23), which replaces it here or is checked
+/// against it: its `shake` and its flares must be these.
 #[derive(Default)]
 struct FluteLights {
     k: usize,
@@ -115,7 +121,8 @@ impl Look for FluteLights {
 }
 
 /// The TROMBONE's look as far as the camera and the lights go (`kit/fighters/trombone.py`, class `Look`): its
-/// `shake` and the `P.FL.add` calls of its `fx_event` and `fx_after`.
+/// `shake` and the `P.FL.add` calls of its `fx_event` and `fx_after`. A stand-in until the TROMBONE's real look
+/// exists (Task 24), which replaces it here or is checked against it.
 #[derive(Default)]
 struct TromboneLights {
     k: usize,
@@ -199,18 +206,81 @@ fn picture_with_lights() -> &'static Picture {
     })
 }
 
-/// The stage dumps of `kind` (`stages` or `stages_default`), or `None` with a note when they are not there.
-fn dumps(kind: &str) -> Option<PathBuf> {
+/// The local stage dumps of `kind` (`stages` or `stages_default`). Panics when they are not there: the tests that
+/// read them are ignored, and one that is asked for must not pass without comparing anything.
+fn dumps(kind: &str) -> PathBuf {
     let dir = reference_dir().join(".cache").join(kind).join("flute_vs_trombone");
-    if FRAMES.iter().all(|f| dir.join(format!("f{f:04}.npz")).is_file()) {
-        Some(dir)
-    } else {
-        eprintln!(
-            "skipped: no stage dumps in {} (see the top of tests/ring_stages.rs for the command)",
-            dir.display()
-        );
-        None
+    assert!(
+        FRAMES.iter().all(|f| dir.join(format!("f{f:04}.npz")).is_file()),
+        "no stage dumps in {} (the top of tests/ring_stages.rs has the two commands)",
+        dir.display()
+    );
+    dir
+}
+
+/// `studio/reference/picture_ring/stage_hashes.json`.
+fn stage_hashes() -> Value {
+    let path = reference("picture_ring/stage_hashes.json");
+    let text = std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("cannot read {}: {e}", path.display()));
+    let doc: Value = serde_json::from_str(&text).unwrap_or_else(|e| panic!("{}: {e}", path.display()));
+    assert_eq!(doc["tool"], "ring");
+    assert_eq!(doc["frames"], serde_json::json!(FRAMES));
+    doc
+}
+
+fn hex(bytes: &[u8]) -> String {
+    bytes.iter().map(|b| format!("{b:02x}")).collect()
+}
+
+/// The dtype of a buffer as numpy names it, and the SHA-256 of its samples as numpy stores them (C order,
+/// little-endian).
+fn hash_rgb(pic: &StagePic) -> (&'static str, String) {
+    fn le<const N: usize, T: Copy>(data: &[T], bytes: impl Fn(T) -> [u8; N]) -> String {
+        let raw: Vec<u8> = data.iter().flat_map(|&v| bytes(v)).collect();
+        hex(&Sha256::digest(&raw))
     }
+    match pic {
+        StagePic::U8(a) => ("|u1", hex(&Sha256::digest(&a.data))),
+        StagePic::F32(a) => ("<f4", le(&a.data, f32::to_le_bytes)),
+        StagePic::F64(a) => ("<f8", le(&a.data, f64::to_le_bytes)),
+    }
+}
+
+/// The buffers of `pic` against one set of `stage_hashes.json` (`base_looks` or `episode_looks`): the number of
+/// buffers compared, and one line for each whose dtype or bytes are not Python's.
+fn hashed_stages(pic: &Picture, set: &Value) -> (usize, Vec<String>) {
+    let (mut n, mut wrong) = (0, Vec::new());
+    for (frame, stages) in set["stages"].as_object().expect("the frames") {
+        let f: usize = frame.parse().expect("a frame number");
+        for (name, roles) in stages.as_object().expect("the stages") {
+            let stage = *Stage::ALL
+                .iter()
+                .find(|s| s.name() == name)
+                .unwrap_or_else(|| panic!("stage_hashes.json names a stage {name} the renderer does not have"));
+            let got = pic.stage_buffers(f, stage);
+            for (role, want) in roles.as_object().expect("the roles") {
+                let have = match role.as_str() {
+                    "rgb" => hash_rgb(&got.rgb),
+                    "depth" => {
+                        let depth = got
+                            .depth
+                            .clone()
+                            .unwrap_or_else(|| panic!("{name} has no depth buffer"));
+                        hash_rgb(&StagePic::F32(depth))
+                    }
+                    other => panic!("stage_hashes.json has a role {other}"),
+                };
+                n += 1;
+                if (Value::from(have.0), Value::from(have.1.as_str())) != (want[0].clone(), want[1].clone()) {
+                    wrong.push(format!(
+                        "frame {f} {name} {role}: {} {}, Python has {want}",
+                        have.0, have.1
+                    ));
+                }
+            }
+        }
+    }
+    (n, wrong)
 }
 
 /// How one buffer compares with Python's.
@@ -298,11 +368,54 @@ fn early_stages(pic: &Picture, dir: &Path) -> Vec<String> {
 }
 
 /// The stages before the fighters' layers equal Python's, every bit, in the episode's own frames: the colour
-/// and the depth buffers of `floor`, `arena` and `skirt`.
+/// and the depth buffers of `floor`, `arena` and `skirt`, 18 buffers, by their hashes.
 #[test]
 fn floor_arena_and_skirt_match_python() {
-    let Some(dir) = dumps("stages") else { return };
-    let failures = early_stages(picture_with_lights(), &dir);
+    let (n, wrong) = hashed_stages(picture_with_lights(), &stage_hashes()["episode_looks"]);
+    println!(
+        "floor, arena, skirt of frames {FRAMES:?}: {} of {n} buffers differ",
+        wrong.len()
+    );
+    assert_eq!(n, 18, "the reference holds another number of buffers");
+    assert!(wrong.is_empty(), "\n{}", wrong.join("\n"));
+}
+
+/// Those stages do depend on the looks: with the bare default look for both fighters (no shake of theirs, no
+/// attack lights) the floor of every one of the three frames differs from the episode's.
+#[test]
+fn the_early_stages_need_the_looks_shake_and_lights() {
+    let (_, wrong) = hashed_stages(picture(), &stage_hashes()["episode_looks"]);
+    for f in FRAMES {
+        assert!(
+            wrong
+                .iter()
+                .any(|line| line.starts_with(&format!("frame {f} floor rgb"))),
+            "frame {f}: the floor is the episode's without the looks' lights:\n{}",
+            wrong.join("\n")
+        );
+    }
+}
+
+/// With the kit's base-class look for both fighters every drawing stage is Python's to the bit: the colour and
+/// depth buffers of `floor`, `arena`, `skirt`, `canvas`, `painter`, `over_ring`, `sparks`, `particles` and the
+/// bytes of `countdown`, `hud` and `title`, 51 buffers, by their hashes.
+#[test]
+fn the_drawing_stages_are_pythons_with_default_looks() {
+    let (n, wrong) = hashed_stages(picture(), &stage_hashes()["base_looks"]);
+    println!(
+        "the drawing stages of frames {FRAMES:?}: {} of {n} buffers differ",
+        wrong.len()
+    );
+    assert_eq!(n, 51, "the reference holds another number of buffers");
+    assert!(wrong.is_empty(), "\n{}", wrong.join("\n"));
+}
+
+/// The diagnostic behind [`floor_arena_and_skirt_match_python`]: the same 18 buffers against the episode's own
+/// dumps, sample by sample, saying where each first differs.
+#[test]
+#[ignore = "needs the local stage dumps (not committed): see the top of this file"]
+fn dumps_of_the_episode_floor_arena_and_skirt() {
+    let failures = early_stages(picture_with_lights(), &dumps("stages"));
     println!(
         "floor, arena, skirt of frames {FRAMES:?}: {} of 18 buffers differ",
         failures.len()
@@ -310,32 +423,16 @@ fn floor_arena_and_skirt_match_python() {
     assert!(failures.is_empty(), "\n{}", failures.join("\n"));
 }
 
-/// Those stages do depend on the looks: with the bare default look for both fighters (no shake of theirs, no
-/// attack lights) the floor of every one of the three frames differs from the episode's.
-#[test]
-fn the_early_stages_need_the_looks_shake_and_lights() {
-    let Some(dir) = dumps("stages") else { return };
-    let failures = early_stages(picture(), &dir);
-    for f in FRAMES {
-        assert!(
-            failures
-                .iter()
-                .any(|line| line.starts_with(&format!("frame {f} floor rgb"))),
-            "frame {f}: the floor is the episode's without the looks' lights:\n{}",
-            failures.join("\n")
-        );
-    }
-}
-
-/// Every stage against the kit drawn with its base-class look for both fighters.
+/// Every stage against the kit drawn with its base-class look for both fighters, sample by sample.
 ///
 /// The drawing stages (bytes, and the `float32` buffers before the lens) must be Python's to the bit, and so
 /// must the frame from the cut to bytes on. The float stages between the lens and the cut to bytes pass through
 /// the FFT, where Python's last bits are numpy's and the C runtime's (the renderer kit's finding): they are held
-/// to `1e-9` of a level.
+/// to `1e-9` of a level, and this is the only test of them.
 #[test]
-fn every_stage_matches_python_with_default_looks() {
-    let Some(dir) = dumps("stages_default") else { return };
+#[ignore = "needs the local stage dumps (not committed): see the top of this file"]
+fn dumps_of_every_stage_with_default_looks() {
+    let dir = dumps("stages_default");
     let pic = picture();
     let mut failures = Vec::new();
     for f in FRAMES {
