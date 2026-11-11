@@ -67,7 +67,7 @@ fn player(name: &str, k: usize, ff: &FightFile) -> Result<Player, ContentError> 
 
 /// Whether this app can make the soundtrack of the fight `ff`, before any recording is read: everything
 /// `FightFile::validate` checks (with the registry's fighter names, the themes' arrangements included), then
-/// that its theme exists and is ported, that its options fit the theme's schema, that each fighter has its roster
+/// that its theme exists and is ported, that every voice its bed plays is ported, that its options fit the theme's schema, that each fighter has its roster
 /// entry, voice and part in the score here, that the theme's bed has every hook a fighter's part calls (ruling
 /// M3-R2: the kit itself would crash on that pair under that theme), that every `music.lines` key is a fighter or
 /// an extra line one of them declares, that every `music.mix` bus is one the fight has (the theme's, a fighter's,
@@ -90,6 +90,7 @@ pub(crate) fn validate_with(ff: &FightFile, theme: &Theme) -> Result<(), Content
     if !theme.ported {
         return Err(themes::not_ported(theme.name));
     }
+    theme.bed_voices()?;
     let options = theme.options_of(ff)?;
     let bed = theme.bed(&ff.music.arrangement, &options)?;
     let mut players = Vec::new();
@@ -179,11 +180,13 @@ impl<'a> SoundBuild<'a> {
     ///
     /// # Errors
     /// The fight file names a theme or an arrangement this app does not have, or a fighter whose voice or part
-    /// is not ported; or the music context cannot be made (see [`MusicCtx::new`]).
+    /// is not ported, or a voice the theme's bed plays that is not; or the music context cannot be made (see
+    /// [`MusicCtx::new`]).
     pub fn new(show: &'a Show, rec: &'a Recording, ff: &'a FightFile) -> Result<SoundBuild<'a>, ContentError> {
-        let bed = theme_bed(theme_of(ff)?, ff)?;
+        let theme = theme_of(ff)?;
+        let bed = theme_bed(theme, ff)?;
         let [a, b] = [player(&show.names[0], 0, ff)?, player(&show.names[1], 1, ff)?];
-        let ctx = MusicCtx::new(show, rec, ff, [a.cfg, b.cfg], [a.voice, b.voice])?;
+        let ctx = MusicCtx::new(show, rec, ff, [a.cfg, b.cfg], [a.voice, b.voice], theme.bed_voices()?)?;
         Ok(SoundBuild {
             ctx,
             bed,
@@ -371,6 +374,7 @@ mod tests {
         card: &NO_BOOM_CARD,
         options: &[],
         voices: &[],
+        own_voice: crate::themes::no_own_voice,
         classic: no_boom,
     };
 
@@ -420,7 +424,7 @@ mod tests {
         let mut ff = episode();
         ff.music
             .theme_options
-            .insert("sequel".into(), bf_core::event::Value::Bool(true));
+            .insert("sequel".into(), bf_core::fightfile::OptionValue::Bool(true));
         assert_eq!(
             validate(&ff).unwrap_err().to_string(),
             r#"music.theme_options.sequel: big_top has no option "sequel" (it has none)"#

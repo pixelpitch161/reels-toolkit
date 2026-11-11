@@ -299,7 +299,15 @@ fn context(ep: &Episode) -> MusicCtx<'_> {
             .expect("the fighter is in the roster")
     };
     let voice = |k: usize| fighters::voice(&ep.show.names[k]).expect("the fighter has a voice");
-    MusicCtx::new(&ep.show, &ep.rec, &ep.ff, [cfg(0), cfg(1)], [voice(0), voice(1)]).expect("the context builds")
+    MusicCtx::new(
+        &ep.show,
+        &ep.rec,
+        &ep.ff,
+        [cfg(0), cfg(1)],
+        [voice(0), voice(1)],
+        Vec::new(),
+    )
+    .expect("the context builds")
 }
 
 // ---------------------------------------------------------------- the noise stream

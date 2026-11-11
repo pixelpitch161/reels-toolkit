@@ -383,17 +383,20 @@ fn the_context_reads_the_fight_file() {
     ff.music.scale = "wholetone".into();
     let voices = || -> [Arc<dyn Voice>; 2] { [TestVoice::new("FLUTE", 0), TestVoice::new("TROMBONE", 0)] };
     let cfg = [&ep.cfg[0], &ep.cfg[1]];
-    let e = refused(MusicCtx::new(&ep.show, &ep.rec, &ff, cfg, voices()));
+    let e = refused(MusicCtx::new(&ep.show, &ep.rec, &ff, cfg, voices(), Vec::new()));
     assert!(e.starts_with("music: ") && e.contains("wholetone"), "{e}");
     let mut rec = ep.rec.clone();
     rec.arrays.remove("HP");
     let no_hp = "music: the recording has no HP of two fighters at every frame";
-    assert_eq!(refused(MusicCtx::new(&ep.show, &rec, &ep.ff, cfg, voices())), no_hp);
+    assert_eq!(
+        refused(MusicCtx::new(&ep.show, &rec, &ep.ff, cfg, voices(), Vec::new())),
+        no_hp
+    );
     // An HP of another shape, of no frames, or shorter than it says.
     let mut with = |shape: Vec<usize>, len: usize| {
         let data = vec![50.0; len];
         rec.arrays.insert("HP".into(), Array::F64 { shape, data });
-        refused(MusicCtx::new(&ep.show, &rec, &ep.ff, cfg, voices()))
+        refused(MusicCtx::new(&ep.show, &rec, &ep.ff, cfg, voices(), Vec::new()))
     };
     assert_eq!(with(vec![4, 3], 12), no_hp);
     assert_eq!(with(vec![8], 8), no_hp);
@@ -509,9 +512,9 @@ fn a_note_refuses_what_it_cannot_play() {
     );
     assert_eq!(
         refused(ctx.note("TUBA", 40.0, 0.2, 0.3, 0.8)),
-        "note: \"TUBA\" is not the voice of a fighter of this fight (\"FLUTE\" and \"TROMBONE\" are)"
+        "note: \"TUBA\" is not a voice of this fight (the fighters play \"FLUTE\" and \"TROMBONE\", the theme none)"
     );
-    assert!(refused(ctx.inst_gain("TUBA")).starts_with("inst_gain: \"TUBA\" is not the voice"));
+    assert!(refused(ctx.inst_gain("TUBA")).starts_with("inst_gain: \"TUBA\" is not a voice of this fight"));
     // Nothing was synthesised, nothing drawn, nothing logged.
     assert!(voices[0].calls().is_empty() && ctx.first_notes().unwrap().is_empty());
     assert_eq!(ctx.noise().unwrap().0.random(), start);
@@ -552,6 +555,7 @@ fn a_voice_without_sound_has_no_gain() {
         &ep.ff,
         [&ep.cfg[0], &ep.cfg[1]],
         [Arc::new(Mute), TestVoice::new("TROMBONE", 0)],
+        Vec::new(),
     )
     .unwrap();
     // (lo + hi) // 2 floors: (-3 + 0) // 2 is -2.
@@ -731,12 +735,12 @@ fn the_voices_must_be_the_fighters() {
     let cfg = [&ep.cfg[0], &ep.cfg[1]];
     let swapped: [Arc<dyn Voice>; 2] = [TestVoice::new("TROMBONE", 0), TestVoice::new("FLUTE", 0)];
     assert_eq!(
-        refused(MusicCtx::new(&ep.show, &ep.rec, &ep.ff, cfg, swapped)),
+        refused(MusicCtx::new(&ep.show, &ep.rec, &ep.ff, cfg, swapped, Vec::new())),
         "music: voice 0 is \"TROMBONE\", but FLUTE plays \"FLUTE\""
     );
     let other: [Arc<dyn Voice>; 2] = [TestVoice::new("FLUTE", 0), TestVoice::new("TUBA", 0)];
     assert_eq!(
-        refused(MusicCtx::new(&ep.show, &ep.rec, &ep.ff, cfg, other)),
+        refused(MusicCtx::new(&ep.show, &ep.rec, &ep.ff, cfg, other, Vec::new())),
         "music: voice 1 is \"TUBA\", but TROMBONE plays \"TROMBONE\""
     );
 }
@@ -769,6 +773,7 @@ fn a_voice_that_panicked_ends_the_build() {
         &ep.ff,
         [&ep.cfg[0], &ep.cfg[1]],
         [Arc::new(Shaky), TestVoice::new("TROMBONE", 0)],
+        Vec::new(),
     )
     .unwrap();
     assert!(ctx.note("FLUTE", 76.0, 0.2, 0.3, 0.8).is_ok());
@@ -803,4 +808,75 @@ fn a_line_override_is_for_one_of_the_two() {
         "line_override: fighter 2 (there are two, 0 and 1)"
     );
     assert!(ctx.line_overrides("FLUTE").unwrap().is_empty());
+}
+
+/// The theme's own voices (`hot_jazz` plays the TUBA's): `note` finds a fighter's voice first, then the theme's,
+/// and every voice shares the build's one noise stream, note cache, gains and log, as the kit's `note` does (one
+/// `_VC` and one `_GAIN` keyed by the voice's name, one `drums60_lowpoly._rng`).
+#[test]
+fn a_themes_voices_share_the_build() {
+    let ep = episode();
+    let theme_ctx = |tuba: &Arc<TestVoice>, own_trombone: &Arc<TestVoice>, flute: &Arc<TestVoice>| {
+        let theme: Vec<Arc<dyn Voice>> = vec![tuba.clone(), own_trombone.clone()];
+        MusicCtx::new(
+            &ep.show,
+            &ep.rec,
+            &ep.ff,
+            [&ep.cfg[0], &ep.cfg[1]],
+            [flute.clone(), TestVoice::new("TROMBONE", 0)],
+            theme,
+        )
+        .unwrap()
+    };
+    let (tuba, own, flute) = (
+        TestVoice::new("TUBA", 30),
+        TestVoice::new("TROMBONE", 9),
+        TestVoice::new("FLUTE", 100),
+    );
+    let ctx = theme_ctx(&tuba, &own, &flute);
+    let f = ctx.note("FLUTE", 76.0, 0.2, 0.3, 0.8).unwrap();
+    let t = ctx.note("TUBA", 40.0, 0.2, 0.3, 0.8).unwrap();
+    // the theme's voice: its note, then its gain's middle note (after the note's own voice call, as the kit's
+    // `fit(B.voice(...)) * inst_gain(name)` evaluates)
+    assert_eq!(tuba.calls(), [(40.0, 0.8, 0.2), (66.0, 0.8, 0.2)]);
+    // the same key again: the cached samples, no call, nothing drawn
+    let noise = ctx.noise().unwrap().0.random();
+    assert!(Arc::ptr_eq(&t, &ctx.note("TUBA", 40.0, 0.2004, 0.3, 0.8).unwrap()));
+    assert_eq!(tuba.calls().len(), 2);
+    assert_eq!(ctx.noise().unwrap().0.random(), noise);
+    // a name both a fighter and the theme have is the fighter's voice (the left corner's first)
+    ctx.note("TROMBONE", 40.0, 0.2, 0.3, 0.8).unwrap();
+    assert!(own.calls().is_empty());
+    // one log of first-time notes, in the order they were made
+    let names: Vec<String> = ctx.first_notes().unwrap().into_iter().map(|n| n.name).collect();
+    assert_eq!(names, ["FLUTE", "TUBA", "TROMBONE"]);
+    // one noise stream: the TUBA's note drew after the FLUTE's, so asking for it first gives other samples
+    let (tuba2, own2, flute2) = (
+        TestVoice::new("TUBA", 30),
+        TestVoice::new("TROMBONE", 9),
+        TestVoice::new("FLUTE", 100),
+    );
+    let other = theme_ctx(&tuba2, &own2, &flute2);
+    let t2 = other.note("TUBA", 40.0, 0.2, 0.3, 0.8).unwrap();
+    assert!(t2[..] != t[..], "the theme's voice draws from the shared stream");
+    let f2 = other.note("FLUTE", 76.0, 0.2, 0.3, 0.8).unwrap();
+    assert!(f2[..] != f[..]);
+    // a voice nobody plays is refused in words, nothing drawn
+    let noise = ctx.noise().unwrap().0.random();
+    assert_eq!(
+        refused(ctx.note("PIANO", 60.0, 0.2, 0.3, 0.8)),
+        "note: \"PIANO\" is not a voice of this fight (the fighters play \"FLUTE\" and \"TROMBONE\", the theme others)"
+    );
+    assert_eq!(ctx.noise().unwrap().0.random(), noise);
+    // a theme voice listed twice is refused
+    let twice: Vec<Arc<dyn Voice>> = vec![TestVoice::new("TUBA", 0), TestVoice::new("TUBA", 0)];
+    let e = MusicCtx::new(
+        &ep.show,
+        &ep.rec,
+        &ep.ff,
+        [&ep.cfg[0], &ep.cfg[1]],
+        [TestVoice::new("FLUTE", 0), TestVoice::new("TROMBONE", 0)],
+        twice,
+    );
+    assert_eq!(refused(e), "music: the theme lists one of its voices twice");
 }

@@ -915,7 +915,8 @@ def theme_config_folder(theme, config):
 
 def read_config(config):
     """the kit config's values (episode.py executed on its own, without the kit), with the bar count the kit's
-    timeline derives from its BPM (kit/episode.py build_timeline: loop_bpm, then round(DUR / BAR))"""
+    timeline derives from its BPM (kit/episode.py build_timeline: loop_bpm, then round(DUR / BAR)) and its LINES
+    (a rest as None, in the config's order)"""
     import importlib.util
     from reelkit.config import loop_bpm
     spec = importlib.util.spec_from_file_location('m3refs_config', config_source(config))
@@ -931,7 +932,8 @@ def read_config(config):
     assert len(chords) == n_bars, (config, len(chords), n_bars)
     return dict(config=config, fighters=list(cfg.FIGHTERS), mood=cfg.MOOD, bpm=cfg.BPM, loop_bpm=common.hexf(bpm),
                 n_bars=n_bars, key=cfg.KEY, scale=getattr(cfg, 'SCALE', 'minor'), intro=chords[:start], loop=loop,
-                tail=chords[start + whole * len(loop):], chords=chords)
+                tail=chords[start + whole * len(loop):], chords=chords,
+                lines={k: [None if n is None else int(n) for n in v] for k, v in getattr(cfg, 'LINES', {}).items()})
 
 
 def chord_names():

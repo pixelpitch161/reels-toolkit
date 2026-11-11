@@ -462,7 +462,7 @@ mod tests {
         assert_eq!((a.role(&ctx), b.role(&ctx)), ("melody", "bass"));
         let mut ff = ep.ff.clone();
         ff.music.roles.clear();
-        let other = MusicCtx::new(&ep.show, &ep.rec, &ff, ctx.cfg, ctx.voices.clone()).unwrap();
+        let other = MusicCtx::new(&ep.show, &ep.rec, &ff, ctx.cfg, ctx.voices.clone(), Vec::new()).unwrap();
         assert_eq!(b.role(&other), "melody");
 
         // voice: its Pixel Pitch voice, the held length to 3 places, the cap 0.2 s longer to 2, the velocity
@@ -578,7 +578,7 @@ mod tests {
         data[((frames - 1) * 2 + 1) * 2..][..2].copy_from_slice(&[1.0, 0.4]);
         let mut with = |det: Array, k: usize, t: f64| {
             rec.arrays.insert("DET".into(), det);
-            let ctx = MusicCtx::new(&ep.show, &rec, &ep.ff, cfg, voices.clone()).unwrap();
+            let ctx = MusicCtx::new(&ep.show, &rec, &ep.ff, cfg, voices.clone(), Vec::new()).unwrap();
             assert_eq!(ctx.sim_i(12.0), frame);
             Plain(k).detune(&ctx, t)
         };

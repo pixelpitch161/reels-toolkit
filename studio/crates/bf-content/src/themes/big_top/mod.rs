@@ -42,6 +42,7 @@ pub static THEME: Theme = Theme {
     card: &CARD,
     options: &[],
     voices: &[],
+    own_voice: super::no_own_voice,
     classic: |_| Ok(Box::new(BigTopClassic::new())),
 };
 

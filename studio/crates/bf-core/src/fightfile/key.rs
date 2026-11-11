@@ -14,6 +14,11 @@ impl FightFile {
     /// tones, never `ROLES`). Seed, picture seeds, the title card's opt-ins, captions and series tag never count.
     /// The app version is not part of it either: whoever caches the shortlist across app versions adds that.
     ///
+    /// The key is a conservative superset of what the fight reads: when music feeds the fight it holds the intro
+    /// chords and the chord tail too, though `roll_rows` reads only `LINES`, `LOOP` and the loop's chord tones. Two
+    /// fights with the same key always have the same fight; two fights whose keys differ only there have the same
+    /// fight too, and only cost a search that a finer key would have saved.
+    ///
     /// The string is defined by its construction alone (no hashing, no map iteration other than sorted maps, no
     /// pointers): texts are written as `<byte length>:<text>`, floats as the hex of their bits, so the same inputs
     /// give the same key on any PC and any run.
