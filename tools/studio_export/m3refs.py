@@ -3,7 +3,9 @@ pinned cache, the per-fighter export, and the size budgets.
 
     REF = 'studio/reference'; CACHE = 'studio/reference/.cache/m3'
     fighter_refs(spec)   a fighter_<slug>.py's SPEC: writes fighters/<slug>/ (committed) and its cache files
-    theme_refs(spec)     themes/<name>/ + cache (filled by Task 2 and the theme ports)
+    theme_refs(spec)     a theme_<name>.py SPEC: themes/<name>/theme.json (each reference config's recording and its
+                         bed alone under two base Sounds), voicings.json (12 roots x 13 qualities); Task 2 wrote
+                         this part, the theme ports add the variants and their cache files (Template T)
     episode_refs(spec)   episodes/<pair>/ + cache (filled by Task 6 and the pair gates)
     pin(path)            record a cache file in its folder's staged pins (path, sha256, bytes, export)
     finish(folder)       end a folder's run: check every pin, then apply the committed writes and pins.json
@@ -868,9 +870,182 @@ def fighter_refs(spec):
         print(f'{export}:   {CACHE}/{k} = {v}')
 
 
+# ---------------------------------------------------------------- a theme's references (Task 2; Template T adds)
+THEME_SPEC_KEYS = ('name', 'voicings', 'configs', 'extra')
+# the 12 roots (the kit's spellings: a sharp or a flat, as its configs write them) and the 13 qualities of QUALITY
+ROOTS = ('C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B')
+
+
+def theme_spec(spec):
+    """a theme_<name>.py SPEC with its defaults: name (the mood), voicings (the Bed methods that voice a chord, each
+    called for the 12 roots x 13 qualities), configs (the reference kit configs, `examples/<name>` or
+    `ballfight_<pair>`: the bed alone under each one's own recording), extra (a function(folder, export, module)
+    the theme's own module runs before finish, for files only that theme writes)"""
+    unknown = sorted(set(spec) - set(THEME_SPEC_KEYS))
+    if unknown:
+        raise SystemExit(f"theme spec: unknown keys {', '.join(unknown)} (it has {', '.join(THEME_SPEC_KEYS)})")
+    out = dict(voicings=(), configs=(), extra=None)
+    out.update(spec)
+    if not out.get('name'):
+        raise SystemExit('theme spec: a name (the kit mood) is needed')
+    return out
+
+
+def config_source(config):
+    """projects/<config>/episode.py for a kit config name ('examples/x' is under projects/ballfight/)"""
+    parts = config.split('/')
+    if parts[0] == 'examples':
+        return os.path.join(common.REPO, 'projects', 'ballfight', *parts, 'episode.py')
+    return os.path.join(common.REPO, 'projects', *parts, 'episode.py')
+
+
+def config_slug(config):
+    """the pair folder name of a kit config: without `examples/` and `ballfight_` (Task 1's rule)"""
+    name = config.split('/')[-1]
+    return name[len('ballfight_'):] if name.startswith('ballfight_') else name
+
+
+def theme_config_folder(theme, config):
+    """a private copy of a kit config under studio/reference/.cache/episodes/theme_<theme>/<slug>/ (the kit's own
+    caches land there, never under projects/); returns the folder"""
+    with open(config_source(config), encoding='utf-8', newline='') as fh:
+        text = fh.read()
+    return config_folder(f'theme_{theme}', config_slug(config), text)
+
+
+def read_config(config):
+    """the kit config's values (episode.py executed on its own, without the kit), with the bar count the kit's
+    timeline derives from its BPM (kit/episode.py build_timeline: loop_bpm, then round(DUR / BAR))"""
+    import importlib.util
+    from reelkit.config import loop_bpm
+    spec = importlib.util.spec_from_file_location('m3refs_config', config_source(config))
+    cfg = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(cfg)
+    bpm = loop_bpm(cfg.BPM, 61.0)
+    n_bars = int(round(61.0 / (4 * (60.0 / bpm))))
+    chords = list(cfg.CHORDS)
+    start = getattr(cfg, 'LOOP_START', 2)
+    loop = list(getattr(cfg, 'LOOP', chords[start:start + 8]))
+    whole = (len(chords) - start) // len(loop)
+    assert start == 2 and chords[start:start + whole * len(loop)] == loop * whole, config
+    assert len(chords) == n_bars, (config, len(chords), n_bars)
+    return dict(config=config, fighters=list(cfg.FIGHTERS), mood=cfg.MOOD, bpm=cfg.BPM, loop_bpm=common.hexf(bpm),
+                n_bars=n_bars, key=cfg.KEY, scale=getattr(cfg, 'SCALE', 'minor'), intro=chords[:start], loop=loop,
+                tail=chords[start + whole * len(loop):], chords=chords)
+
+
+def chord_names():
+    """every chord the harmony parses: the 12 roots x the 13 qualities, in the kit's QUALITY order"""
+    E, _ = common.kit()
+    return [r + q for r in ROOTS for q in E.QUALITY]
+
+
+def _theme_child(folder, voicings, chords):
+    """in a fresh interpreter (a spawn worker): kit.music for the config in `folder` with both fighters replaced by
+    the kit's base Sound (silent), its score and master; then each voicing method of the bed for every chord.
+    Returns the 16-bit master's SHA-256, the buses and the voicings"""
+    import numpy as np
+    for k in THREAD_VARS:
+        os.environ.setdefault(k, '1')
+    assert 'ballfight.kit.music' not in sys.modules
+    E, _ = common.kit()
+    E.load(folder)
+    from ballfight.kit import music as M                  # noqa: N812  (the kit's own short name for it)
+    M.SOUNDS = [M.FIGHTER_MODULES.base.Sound(M, k) for k in (0, 1)]   # read at call time by score() and master()
+    mix = M.score()
+    m, stems = M.master(mix)
+    pcm = (np.clip(m, -1, 1) * 32767).astype('<i2')     # A.write's samples
+    assert pcm.shape == (M.NA, 2)
+    out = dict(seed=M.EP.seed, names=list(M.NAMES), mood=M.T.MOOD, buses=list(mix.buses),
+               stems=list(stems), master_sha256=hashlib.sha256(pcm.tobytes()).hexdigest(),
+               bed=dict(buses={k: list(v) for k, v in M.bed.buses.items()}, reverb=list(M.bed.reverb),
+                        comp=list(M.bed.comp)))
+    T = M.T
+    voiced = {}
+    for method in voicings:
+        fn = getattr(M.bed, method)
+        row = {}
+        for ch in chords:
+            if ch not in T.CHORD_PCS:                   # the chord's tones are read from the episode's chords
+                T.CHORD_PCS[ch] = E.parse_chord(ch)[1]
+            row[ch] = [int(x) for x in fn(ch)]
+        voiced[method] = row
+    out['voicings'] = voiced
+    return out
+
+
 def theme_refs(spec):
-    """themes/<name>/ + cache: Task 2 writes the big top's part (voicings, the bed alone), Template T the rest"""
-    raise SystemExit('theme_refs: not written yet (Task 2 and the theme ports fill it)')
+    """themes/<name>/ (committed) for a theme_<name>.py SPEC (theme_spec): theme.json (each reference config: its
+    recording, the bed alone under two base Sounds: the 16-bit master's SHA-256 and the buses) and voicings.json
+    (each voicing method for the 12 roots x 13 qualities, as integers). The theme ports add the variants, per-bus
+    RMS, hook vectors and their cache files (Template T)"""
+    module = sys._getframe(1).f_globals.get('__name__', __name__)
+    spec = theme_spec(spec)
+    name = spec['name']
+    folder, export = f'themes/{name}', f'theme_{name}'
+    run = run_state()
+    run.stages.pop(folder, None)
+    t_all = time.time()
+    chords = chord_names()
+    configs = []
+    voicings = None
+    for config in spec['configs']:
+        t0 = time.time()
+        facts = read_config(config)
+        if facts['mood'] != name:
+            raise SystemExit(f'{export}: {config} plays {facts["mood"]}, not {name}')
+        cfg_folder = theme_config_folder(name, config)
+        ep, story = load_config(cfg_folder)
+        seed = ep.seed
+        # the config's own fight, recorded as the reference fights are (a committed file of milestones 0 to 2, or
+        # this folder's own copy)
+        from . import fights, recording
+        r = story.run_seed(seed)
+        rules = story.rules()
+        tmp = cache_dir(folder, f'{config_slug(config)}.bfrec.tmp')
+        recording.write_bfrec(r, rules, tmp, rect_keys=story.REC_KEYS, register=False)
+        rec = recording.read_bfrec(tmp)
+        fights.check(r, rules, rec, story.REC_KEYS)
+        data = open(tmp, 'rb').read()
+        os.remove(tmp)
+        copy = existing_copy(hashlib.sha256(data).hexdigest(), folder)
+        rec_name = f'{config_slug(config)}.bfrec'
+        if copy and not copy.startswith(f'{REF}/{folder}/'):
+            rec_file = copy[len(REF) + 1:]
+            delete_committed(folder, rec_name)
+        else:
+            commit_bytes(folder, rec_name, data, module)
+            rec_file = f'{folder}/{rec_name}'
+        with mp.get_context('spawn').Pool(1) as pool:
+            got = pool.apply(_theme_child, (cfg_folder, list(spec['voicings']), chords if voicings is None else []))
+        if voicings is None:
+            voicings = got.pop('voicings')
+        else:
+            got.pop('voicings')
+        assert got['seed'] == seed and got['names'] == facts['fighters'], (got['seed'], got['names'])
+        configs.append(dict(facts, seed=seed, recording=rec_file, winner=rec['winner'], t_ko=rec['t_ko'],
+                            bed_alone=dict(master_sha256=got['master_sha256'], buses=got['buses'],
+                                           stems=got['stems'], bed=got['bed'])))
+        print(f"{export}: {config}: seed {seed} ({rec_file}), the bed alone: buses {', '.join(got['buses'])}, "
+              f"16-bit master {got['master_sha256'][:16]}..., {time.time() - t0:.1f} s")
+    if spec['voicings']:
+        commit_json(folder, 'voicings.json', dict(
+            about=f'kit/moods/{name}.py Bed: each voicing method for every chord the harmony parses (12 roots x 13 '
+                  f'qualities: the kit\'s QUALITY order), the chord added to T.CHORD_PCS first as the episode\'s chords '
+                  f'are; the notes as MIDI numbers, in the order the method gives them',
+            theme=name, roots=list(ROOTS), qualities=list(common.kit()[0].QUALITY), voicings=voicings), module)
+    if spec['extra'] is not None:
+        spec['extra'](folder, export, module)
+    commit_json(folder, 'theme.json', dict(
+        about=f'{name}: its reference configs, each with the kit\'s own recording of it and the bed alone (both '
+              f'fighters replaced at run time by kit/fighters/base.py Sound, which is silent): the SHA-256 of the '
+              f'16-bit master\'s samples (little-endian int16, interleaved: what A.write writes after its header), '
+              f'the buses in the order the score made them, and the bed\'s class levels',
+        theme=name, voicing_methods=list(spec['voicings']), configs=configs,
+        cache_files='cache files are under ' + CACHE + '/ and pinned in pins.json'), module)
+    finish(folder)
+    print(f"{export}: {folder}: {len(configs)} reference configs, {len(chords)} chords x {len(spec['voicings'])} "
+          f"voicings, {len(read_pins(folder))} pins, {time.time() - t_all:.1f} s")
 
 
 def episode_refs(spec):

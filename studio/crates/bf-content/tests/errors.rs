@@ -1,5 +1,5 @@
 //! What a fight file or a recording can do wrong, through `bf_content::validate` and `build_soundtrack`: an
-//! unknown theme or arrangement, a chord the theme has no voicing for, a fighter whose part is not here, empty
+//! unknown theme or arrangement, a chord that is no chord, a fighter whose part is not here, empty
 //! title hits, a fight with no K.O. or another fight's recording, and a panic inside the sound code. Each is an
 //! error in words, never a panic.
 
@@ -26,24 +26,25 @@ fn unknown_theme_is_an_error() {
     assert_eq!(build_soundtrack(&EPISODE.rec, &ff).unwrap_err().to_string(), want);
 }
 
+/// Every chord the harmony parses is voiced (milestone 3: the voicing rule replaces milestone 1's list of the big
+/// top's four chords, ruling R33), so a chord is only refused for not being a chord, in the fight file's words.
 #[test]
-fn unvoiced_chord_is_an_error() {
+fn every_chord_is_voiced() {
     let mut ff = EPISODE.ff.clone();
     ff.music.chord_loop[4] = "F#m".into();
-    let want = r#"music.chord_loop[4]: big_top has no voicing for "F#m""#;
-    assert_eq!(validate(&ff).unwrap_err().to_string(), want);
-    assert_eq!(build_soundtrack(&EPISODE.rec, &ff).unwrap_err().to_string(), want);
-    // The intro's chords are checked too, and before the loop's.
     ff.music.chords_intro[1] = "G7".into();
-    assert_eq!(
-        validate(&ff).unwrap_err().to_string(),
-        r#"music.chords_intro[1]: big_top has no voicing for "G7""#
-    );
+    ff.music.chords_tail = vec!["Bbm".into(), "Ebmaj7".into()];
+    assert_eq!(validate(&ff), Ok(()));
     // What the fight file's own checks refuse comes first, in their words.
     ff.music.chord_loop.pop();
     assert_eq!(
         validate(&ff).unwrap_err().to_string(),
-        "music.chord_loop: 8 chords needed, found 7"
+        "music.chord_loop: 4 or 8 chords needed, found 7"
+    );
+    ff.music.chord_loop = vec!["Em".into(), "Am".into(), "B7".into(), "H".into()];
+    assert_eq!(
+        validate(&ff).unwrap_err().to_string(),
+        r#"music.chord_loop[3]: "H" is not a chord name (a root such as E, F# or Bb, then a quality)"#
     );
 }
 

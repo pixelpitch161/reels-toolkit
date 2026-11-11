@@ -13,7 +13,7 @@ use bf_sound::music::{
     CLANK_DECAYS, CLANK_DUR, MusicCtx, MusicError, RISER_OVER, RISER_SEED, clank, noise_seed, riser,
 };
 use bf_sound::synth::{self, FILTER_O, THUD_SEED, WHOOSH_RISE, WHOOSH_SEED};
-use bf_sound::traits::{Bed, Played};
+use bf_sound::traits::{Bed, BedHook, Played};
 
 use super::{
     CALLIOPE_ATT, CALLIOPE_VIB, bass_drum_boom, calliope, choke, organ, roll, scaled, tambourine_shake, voice,
@@ -185,6 +185,11 @@ impl BigTopClassic {
 }
 
 impl Bed for BigTopClassic {
+    /// The mood's class defines `boom` and none of the other optional hooks.
+    fn hooks(&self) -> &'static [BedHook] {
+        &[BedHook::Boom]
+    }
+
     /// `buses = {'drums': (1.0, 0.15), 'calliope': (1.2, 0.45), 'glock': (1.0, 0.5)}`.
     fn buses(&self) -> &[(&'static str, (f64, f64))] {
         &[("drums", (1.0, 0.15)), ("calliope", (1.2, 0.45)), ("glock", (1.0, 0.5))]

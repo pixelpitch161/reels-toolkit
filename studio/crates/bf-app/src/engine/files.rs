@@ -799,8 +799,8 @@ mod tests {
     fn a_fight_from_a_newer_version_is_named() {
         let (_temp, videos) = output_folder("a_fight_from_a_newer_version_is_named");
         let toml = fight_toml(7, [1.0, 1.0]);
-        assert!(toml.starts_with("format = 1\n"), "{toml}");
-        let newer = toml.replacen("format = 1", "format = 2", 1);
+        assert!(toml.starts_with("format = 2\n"), "{toml}");
+        let newer = toml.replacen("format = 2", "format = 3", 1);
         let folder = video(&videos, "flute_vs_trombone", &newer);
         let (engine, root) = test_engine();
         engine.send(Command::ScanLibrary { root: videos.clone() });
@@ -808,7 +808,7 @@ mod tests {
         assert_eq!(entries.len(), 1);
         let problem = entries[0].problem.clone().expect("a problem");
         assert!(
-            problem.contains("this app reads fight files up to format 1"),
+            problem.contains("this app reads fight files up to format 2"),
             "{problem}"
         );
         assert!(
@@ -823,7 +823,7 @@ mod tests {
         });
         let text = problem_text(&engine);
         assert!(text.starts_with("flute_vs_trombone.toml cannot be opened: "), "{text}");
-        assert!(text.contains("this app reads fight files up to format 1"), "{text}");
+        assert!(text.contains("this app reads fight files up to format 2"), "{text}");
         assert_eq!(
             fs::read_to_string(folder.join("flute_vs_trombone.toml")).unwrap(),
             newer
