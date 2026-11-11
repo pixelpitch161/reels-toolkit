@@ -388,6 +388,165 @@ fn a_row_outside_the_beat_sheet_is_marked() {
     let miss = harness.get_by_label(MISS).rect();
     let row = harness.get_by_label("Seed 5627, Flute wins at 50.3 s").rect();
     assert!(row.contains_rect(miss), "inside its row");
+    // Ruling M2-R23: it spans the K.O., changes and story columns, which it replaces for this row.
+    let ko_column = row.min.x + 10.0 + 30.0 + 12.0 + 62.0 + 12.0 + 294.0 + 12.0 + 150.0 + 12.0;
+    assert_eq!(miss.min.x, ko_column, "it starts where the K.O. would");
+    assert!(!has(&harness, "50.3 s"), "the K.O. column gives way to it");
+}
+
+#[test]
+fn a_long_miss_is_cut_short_and_shown_whole_on_hover() {
+    let _gpu = gpu();
+    let long = "winner HP 46.60 (needs 30 or less), and the K.O. lands at 47.20 s (needs 49 to 53 s)";
+    let mut vm = seeds::vm();
+    vm.filters.show_outside = true;
+    vm.shortlist.rows[1].fits = false;
+    vm.shortlist.rows[1].misses = vec![long.to_string()];
+    let mut harness = showing(MIN, vm);
+    let miss = harness.get_by_label(long).rect();
+    let row = harness.get_by_label("Seed 5627, Flute wins at 50.3 s").rect();
+    // "K.O. at …" alone is about 50 wide; the three columns give it about 150 at the minimum window.
+    assert!(miss.width() > 120.0, "more than a few words show: {miss:?}");
+    assert!(miss.max.x <= row.max.x - 10.0, "cut short inside the row's padding");
+    assert_eq!(harness.query_all_by_label(long).count(), 1);
+    harness.get_by_label(long).hover();
+    harness.run();
+    assert_eq!(harness.query_all_by_label(long).count(), 2, "hovering shows all of it");
+
+    // The fixture's own miss, at the reference size: more of it shows than "K.O. at".
+    drop(harness);
+    let mut vm = seeds::vm();
+    vm.filters.show_outside = true;
+    vm.shortlist.rows[1].fits = false;
+    vm.shortlist.rows[1].misses = vec![MISS.to_string()];
+    let mut harness = showing(REF, vm);
+    assert!(harness.get_by_label(MISS).rect().width() > 120.0);
+    harness.get_by_label(MISS).hover();
+    harness.run();
+    assert_eq!(harness.query_all_by_label(MISS).count(), 2, "hovering shows all of it");
+}
+
+/// The colour of the pixel at `at`.
+fn pixel(harness: &mut Harness<'_, BfApp>, at: egui::Pos2) -> [u8; 3] {
+    pixels(harness, &[(at.x as u32, at.y as u32)])[0]
+}
+
+/// The focus ring (2 px `TEXT_STRONG`, 2 px outside) shows on each side of `rect` named in `sides`
+/// ('l', 'r', 't', 'b'), read at the middle of that side.
+fn assert_ring(harness: &mut Harness<'_, BfApp>, rect: Rect, sides: &str, what: &str) {
+    let white = [0xff, 0xff, 0xff];
+    for side in sides.chars() {
+        let at = match side {
+            'l' => egui::pos2(rect.min.x - 3.0, rect.center().y),
+            'r' => egui::pos2(rect.max.x + 2.0, rect.center().y),
+            't' => egui::pos2(rect.center().x, rect.min.y - 3.0),
+            _ => egui::pos2(rect.center().x, rect.max.y + 2.0),
+        };
+        assert_eq!(pixel(harness, at), white, "{what}: the ring on side {side} at {at:?}");
+    }
+}
+
+#[test]
+fn a_focused_row_shows_its_ring_at_the_top_and_the_bottom_of_the_list() {
+    let _gpu = gpu();
+    // The top row has the keyboard while the row under it is the chosen one (which fills itself).
+    let mut vm = seeds::vm();
+    vm.draft.seed = Some(5627);
+    let mut harness = showing(REF, vm);
+    let top = "Seed 18433, Trombone wins at 49.1 s";
+    harness.get_by_label(top).focus();
+    harness.run();
+    assert!(harness.get_by_label(top).accesskit_node().is_focused());
+    let rect = harness.get_by_label(top).rect();
+    assert_ring(&mut harness, rect, "ltb", "the top row");
+    drop(harness);
+
+    // The last of 60 rows, chosen, so the list is scrolled to its end.
+    let mut vm = seeds::vm();
+    let sample = vm.shortlist.rows.clone();
+    vm.shortlist.rows = (0..60)
+        .map(|i| {
+            let mut story = sample[i % sample.len()].clone();
+            story.seed = 1000 + i as u64;
+            story
+        })
+        .collect();
+    vm.draft.seed = Some(1059);
+    let mut harness = showing(REF, vm);
+    let (last, _) = rows(&harness)
+        .into_iter()
+        .find(|(n, _)| n.starts_with("Seed 1059,"))
+        .expect("the chosen row is scrolled into view");
+    harness.get_by_label(&last).focus();
+    harness.run();
+    let rect = harness.get_by_label(&last).rect();
+    let workspace = harness.state().layout.workspace;
+    assert!(rect.max.y <= workspace.max.y - 46.0, "above the footer: {rect:?}");
+    assert_ring(&mut harness, rect, "ltb", "the bottom row");
+}
+
+#[test]
+fn the_filters_edge_controls_and_the_watch_box_show_their_ring() {
+    let _gpu = gpu();
+    let mut harness = showing(REF, seeds::vm());
+    // The topmost segment named `label`: "Any" is the winner's, not the finish's.
+    fn radio<'t>(harness: &'t Harness<'_, BfApp>, label: &'t str) -> egui_kittest::Node<'t> {
+        harness
+            .query_all_by_label(label)
+            .filter(|n| n.accesskit_node().role() == Role::RadioButton)
+            .min_by(|a, b| a.rect().min.y.total_cmp(&b.rect().min.y))
+            .unwrap_or_else(|| panic!("a segment {label}"))
+    }
+    for (label, sides) in [("Any", "ltb"), ("Trombone", "rtb"), ("Comeback", "rtb")] {
+        radio(&harness, label).focus();
+        harness.run();
+        let rect = radio(&harness, label).rect();
+        assert_ring(&mut harness, rect, sides, label);
+    }
+    harness.get_by_label("Seed to watch").focus();
+    harness.run();
+    let rect = harness.get_by_label("Seed to watch").rect();
+    assert_ring(&mut harness, rect, "ltb", "the watch box");
+    harness.get_by_label("Seed to watch").type_text("20418");
+    harness.run();
+    harness.get_by_label("Watch").focus();
+    harness.run();
+    let rect = harness.get_by_label("Watch").rect();
+    assert_ring(&mut harness, rect, "rtb", "Watch");
+}
+
+#[test]
+fn a_clicked_row_takes_the_arrows() {
+    let _gpu = gpu();
+    let mut harness = showing(REF, seeds::vm());
+    // A real click: the pointer moves there, presses and releases.
+    harness.get_by_label("Seed 5627, Flute wins at 50.3 s").click();
+    harness.run();
+    harness.key_press(Key::ArrowDown);
+    harness.run();
+    assert_eq!(
+        harness.state().log,
+        vec![Action::SelectSeed(5627), Action::SelectSeed(8175)]
+    );
+}
+
+#[test]
+fn only_the_switch_carries_its_name() {
+    let _gpu = gpu();
+    let mut harness = showing(REF, seeds::vm());
+    let named = harness
+        .query_all_by_label(SHOW_OUTSIDE)
+        .filter(|n| !n.accesskit_node().is_hidden())
+        .count();
+    assert_eq!(named, 1, "the words beside it are hidden from screen readers");
+    // The words still turn it over when clicked.
+    let switch = by_role(&harness, SHOW_OUTSIDE, Role::Switch).rect();
+    let words = egui::pos2(switch.max.x + 40.0, switch.min.y + 13.0);
+    harness.hover_at(words);
+    harness.drag_at(words);
+    harness.drop_at(words);
+    harness.run();
+    assert!(last_filters(&harness).show_outside);
 }
 
 #[test]

@@ -12,13 +12,16 @@
 
 use egui::text::LayoutJob;
 use egui::{
-    Align, EventFilter, Id, Key, Label, Layout, Modifiers, Rect, RichText, ScrollArea, Sense, Ui, UiBuilder, vec2,
+    Align, EventFilter, Id, Key, Label, Layout, Modifiers, Painter, Rect, RichText, ScrollArea, Sense, Stroke,
+    StrokeKind, Ui, UiBuilder, vec2,
 };
 
 use crate::model::shortlist::{FilterSpec, Finish, SearchState};
 use crate::model::story::StoryView;
 use crate::state::{Action, ViewModel};
-use crate::theme::{LINE_SOFT, MUTED, TEXT, VALUE_W, body, rgb, section, small, strong, value as mono};
+use crate::theme::{
+    LINE_SOFT, MUTED, RADIUS_ROW, TEXT, TEXT_STRONG, VALUE_W, body, rgb, section, small, strong, value as mono,
+};
 use crate::widgets::buttons;
 use crate::widgets::chips::{fighter_bar, object_row};
 use crate::widgets::fields::{self, Unit};
@@ -38,8 +41,12 @@ const HEADER_H: f32 = 30.0;
 const FOOTER_H: f32 = 46.0;
 /// The side padding of the header and the footer.
 const SIDE_PAD: f32 = 14.0;
-/// The list's padding: 4 at the sides, 2 above and below.
-const LIST_PAD: (f32, f32) = (4.0, 2.0);
+/// The list's padding: 4 at the sides and 4 above and below (the reference says 2 x 4; 4 leaves room for the focus
+/// ring, 2 px wide and 2 px outside, of the top and bottom rows).
+const LIST_PAD: (f32, f32) = (4.0, 4.0);
+/// The focus ring of a row, as the object row paints it: 2 px `TEXT_STRONG`, 2 px outside, corner 8 + 2.
+const RING_W: f32 = 2.0;
+const RING_GAP: f32 = 2.0;
 /// A row's height and its side padding.
 const ROW_H: f32 = 38.0;
 const ROW_PAD: f32 = 10.0;
@@ -328,7 +335,10 @@ fn show_outside(ui: &mut Ui, vm: &ViewModel, out: &mut Vec<Action>) {
                     .wrap()
                     .selectable(false)
                     .sense(Sense::CLICK);
-                ui.add(words).clicked()
+                let words = ui.add(words);
+                // The switch carries the name; the words are not read out a second time.
+                ui.ctx().accesskit_node_builder(words.id, |node| node.set_hidden());
+                words.clicked()
             })
             .inner
                 || switch.clicked()
@@ -513,7 +523,7 @@ fn ending(story: &StoryView) -> Option<(usize, f64)> {
 fn row_name(story: &StoryView, names: &[String; 2]) -> String {
     match ending(story) {
         Some((winner, t)) => format!("Seed {}, {} wins at {}", story.seed, names[winner], wording::seconds(t)),
-        None => format!("Seed {}, no K.O. by 58 s", story.seed),
+        None => format!("Seed {}, no K.O. by {:.0} s", story.seed, KO_RANGE.1),
     }
 }
 
@@ -574,6 +584,7 @@ fn rows(ui: &mut Ui, vm: &ViewModel, rect: Rect, cols: SeedColumns, out: &mut Ve
     let mut child = ui.new_child(UiBuilder::new().id_salt("rows").max_rect(rect));
     child.spacing_mut().item_spacing.y = 0.0;
     let mut focused = None;
+    let mut ring = None;
     let output = area.show_rows(&mut child, ROW_H, list.len(), |ui, range| {
         // Ranks count only the fights that fit the beat sheet.
         let mut rank = list[..range.start].iter().filter(|s| s.fits).count();
@@ -605,12 +616,29 @@ fn rows(ui: &mut Ui, vm: &ViewModel, rect: Rect, cols: SeedColumns, out: &mut Ve
                 };
                 ui.memory_mut(|m| m.set_focus_lock_filter(response.id, filter));
                 focused = Some((response.id, story.seed));
+                ring = Some(response.rect);
             }
-            if response.clicked() && !chosen {
-                out.push(Action::SelectSeed(story.seed));
+            if response.clicked() {
+                // A clicked row takes the keyboard, so the arrows go on from it.
+                response.request_focus();
+                if !chosen {
+                    out.push(Action::SelectSeed(story.seed));
+                }
             }
         }
     });
+    // The focused row's ring once more, over the rows after it (the chosen row's fill would cover its lower edge),
+    // clipped to the list and its padding.
+    if let Some(row) = ring {
+        let clip = rect.expand(LIST_PAD.1).intersect(ui.clip_rect());
+        let painter = Painter::new(ui.ctx().clone(), child.layer_id(), clip);
+        painter.rect_stroke(
+            row.expand(RING_GAP),
+            f32::from(RADIUS_ROW) + RING_GAP,
+            Stroke::new(RING_W, TEXT_STRONG),
+            StrokeKind::Outside,
+        );
+    }
     memory.offset = output.state.clamped_offset().y;
     memory.focused = focused;
     ui.data_mut(|d| d.insert_temp(memory_id, memory));
@@ -646,20 +674,33 @@ fn row_cells(
         let font = if chosen { strong() } else { body() };
         plain(ui, RichText::new(&names[winner]).font(font));
         if cols.hp_left && story.winner_hp.is_finite() && story.winner_hp >= 0.0 {
-            let hp = format!("{:.0} HP left", story.winner_hp);
+            let hp = format!("{} HP left", wording::thousands(story.winner_hp.round() as u64));
             plain(ui, RichText::new(hp).font(small()).color(MUTED));
         }
     });
+    // A fight outside the beat sheet shows its first miss across the K.O., changes and story columns (ruling
+    // M2-R23), cut short when it does not fit; hovering it shows all of it, and a screen reader gets all of it.
+    if let Some(miss) = story.misses.first().filter(|_| !story.fits) {
+        let span = Rect::from_x_y_ranges(ko_r.min.x..=story_r.max.x, ko_r.y_range());
+        cell(ui, span, 4, false, |ui| {
+            let words = Label::new(RichText::new(miss).font(small()).color(MUTED))
+                .selectable(false)
+                .truncate()
+                .show_tooltip_when_elided(false);
+            ui.add(words).on_hover_text(miss);
+        });
+        return;
+    }
     let ko = ending.map_or_else(|| NONE.to_string(), |(_, t)| wording::seconds(t));
     cell(ui, ko_r, 4, true, |ui| plain(ui, mono_text(ko)));
     cell(ui, changes_r, 5, true, |ui| {
         plain(ui, mono_text(story.lead_changes.to_string()))
     });
     cell(ui, story_r, 6, true, |ui| {
-        match story.misses.first().filter(|_| !story.fits) {
-            Some(miss) => plain(ui, RichText::new(miss).font(small()).color(MUTED)),
-            None if story.score.is_finite() => plain(ui, mono_text(format!("{:.2}", story.score))),
-            None => plain(ui, mono_text(NONE.to_string()).color(MUTED)),
+        if story.score.is_finite() {
+            plain(ui, mono_text(format!("{:.2}", story.score)))
+        } else {
+            plain(ui, mono_text(NONE.to_string()).color(MUTED))
         }
     });
 }
