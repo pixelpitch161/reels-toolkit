@@ -924,6 +924,16 @@ mod tests {
     }
 
     #[test]
+    fn the_first_triangle_takes_the_first_good_third_corner() {
+        // scipy 1.18.1: [1, 0, 3, 2]. The leftmost point (1) and the rightmost (3) are the only extremes Qhull
+        // has a third corner to pick for, so it looks through all points and stops at point 0, the first that
+        // makes a triangle large enough, although point 2 makes a larger one. With point 2 the order would
+        // start elsewhere.
+        let pts = [(2.0, 2.0), (0.0, 1.0), (0.0, 4.0), (5.0, 5.0)];
+        assert_eq!(qhull_order(&pts), Ok(vec![1, 0, 3, 2]));
+    }
+
+    #[test]
     fn the_plain_hull_is_counter_clockwise_from_the_left() {
         let square = [
             (1.0, 1.0),

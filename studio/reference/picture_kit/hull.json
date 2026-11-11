@@ -935,6 +935,94 @@
    },
    "call": "scipy.spatial.ConvexHull(pts).vertices",
    "id": "c084"
+  },
+  {
+   "args": {
+    "kind": "two extreme points"
+   },
+   "arrays": {
+    "out": "c085__out",
+    "pts": "c085__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c085"
+  },
+  {
+   "args": {
+    "kind": "two extreme points"
+   },
+   "arrays": {
+    "out": "c086__out",
+    "pts": "c086__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c086"
+  },
+  {
+   "args": {
+    "kind": "two extreme points"
+   },
+   "arrays": {
+    "out": "c087__out",
+    "pts": "c087__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c087"
+  },
+  {
+   "args": {
+    "kind": "two extreme points"
+   },
+   "arrays": {
+    "out": "c088__out",
+    "pts": "c088__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c088"
+  },
+  {
+   "args": {
+    "kind": "two extreme points"
+   },
+   "arrays": {
+    "out": "c089__out",
+    "pts": "c089__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c089"
+  },
+  {
+   "args": {
+    "kind": "two extreme points"
+   },
+   "arrays": {
+    "out": "c090__out",
+    "pts": "c090__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c090"
+  },
+  {
+   "args": {
+    "kind": "two extreme points"
+   },
+   "arrays": {
+    "out": "c091__out",
+    "pts": "c091__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c091"
+  },
+  {
+   "args": {
+    "kind": "two extreme points"
+   },
+   "arrays": {
+    "out": "c092__out",
+    "pts": "c092__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c092"
   }
  ],
  "note": "pts is (n, 2) float64; out the indices of the hull corners in the order scipy gives them (counter-clockwise for the usual axes; int32 as scipy returns them). The first cases are the spot's beam as kit.picture.render builds it: the can's screen position, then 32 points of the pool's rim. The port follows Qhull's build up to its merging of facets and reports the inputs that need it; none of these cases does (the test fails a case the port does not follow).",

@@ -1224,6 +1224,18 @@ def group_hull():
     for n in range(12):
         half = r.uniform(0.5, 100, (int(r.integers(3, 16)), 2))
         case(np.vstack([half, half * [-1.0, 1.0]]), 'mirrored cloud')
+    # the leftmost point is also the lowest and the rightmost the highest: Qhull looks through all points for the
+    # third corner of its first triangle and stops at the first that is good enough, not at the best
+    case([[2.0, 2.0], [0.0, 1.0], [0.0, 4.0], [5.0, 5.0]], 'two extreme points')
+    case([[0.42717604299714074, -0.6911374948232389], [0.3227164644367029, -0.3463056723841018],
+          [0.7160104492788701, -0.9169147034270686], [0.47731479194666127, -0.730268616104071],
+          [0.31495193284849243, -0.32473265210769015], [0.11716190341539512, -0.15693398989070725],
+          [0.8181044010146792, -1.0852328527811017], [0.8445617849851076, -1.2324762025028602]], 'two extreme points')
+    for n in range(6):
+        count = int(r.integers(4, 12))
+        along = np.sort(r.uniform(0, 10, count))
+        case(np.stack([along, along * float(r.uniform(0.3, 3)) + r.uniform(-1.5, 1.5, count)], 1)[r.permutation(count)],
+             'two extreme points')
     return g
 
 
