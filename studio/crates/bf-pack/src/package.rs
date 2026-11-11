@@ -20,9 +20,9 @@ use std::fs;
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 
+use crate::PackError;
 use crate::ffmpeg::{self, FfmpegPin};
 use crate::sha::{is_sha256, sha256_file};
-use crate::{PackError, io_error};
 
 /// The program's file name in the package and the install.
 pub const EXE_NAME: &str = "ballfight-studio.exe";
@@ -65,11 +65,57 @@ impl Manifest {
     }
 }
 
-/// Windows' reserved device names, which no file may be called (with or without an extension).
-const DEVICES: [&str; 22] = [
-    "CON", "PRN", "AUX", "NUL", "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9", "LPT1", "LPT2",
-    "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9",
+/// Windows' reserved device names, which no file may be called (with or without an extension), including the
+/// console's own names and the superscript-digit ports Windows also treats as devices.
+const DEVICES: [&str; 30] = [
+    "CON",
+    "PRN",
+    "AUX",
+    "NUL",
+    "COM1",
+    "COM2",
+    "COM3",
+    "COM4",
+    "COM5",
+    "COM6",
+    "COM7",
+    "COM8",
+    "COM9",
+    "LPT1",
+    "LPT2",
+    "LPT3",
+    "LPT4",
+    "LPT5",
+    "LPT6",
+    "LPT7",
+    "LPT8",
+    "LPT9",
+    "CONIN$",
+    "CONOUT$",
+    "COM\u{b9}",
+    "COM\u{b2}",
+    "COM\u{b3}",
+    "LPT\u{b9}",
+    "LPT\u{b2}",
+    "LPT\u{b3}",
 ];
+
+/// A reading or writing failure as a plain sentence, "Could not {doing} {path}: {reason}.", without Windows' "(os
+/// error N)" tail when there is a reason in words.
+pub(crate) fn io_error(doing: &str, path: &Path, e: &std::io::Error) -> PackError {
+    PackError::Io(format!("Could not {doing} {}: {}.", path.display(), plain_reason(e)))
+}
+
+/// An error's reason in words: Windows' own text without its "(os error N)" tail or a closing full stop.
+pub(crate) fn plain_reason(e: &std::io::Error) -> String {
+    let text = e.to_string();
+    let words = match text.rfind(" (os error ") {
+        Some(at) if text.ends_with(')') => text[..at].to_string(),
+        _ => text,
+    };
+    let words = words.trim().trim_end_matches('.').to_string();
+    if words.is_empty() { e.to_string() } else { words }
+}
 
 /// Whether `p` is a plain relative path inside a folder: forward slashes between non-empty names, no `.` or `..`,
 /// no drive, no `\`, `:` or other character Windows refuses, no name ending in a dot or space, no device name, and
@@ -726,8 +772,17 @@ pub(crate) mod tests {
             ".previous/x",
             ".NEXT/x",
             "a\tb",
+            "conin$",
+            "CONOUT$.log",
+            "dir/CONIN$",
+            "COM\u{b9}",
+            "com\u{b2}.txt",
+            "LPT\u{b3}",
         ] {
             assert!(!safe_relative(bad), "{bad:?}");
+        }
+        for fine in ["COM10", "console.txt", "lpt", "COM\u{b9}x"] {
+            assert!(safe_relative(fine), "{fine:?}");
         }
         let sha = hex(b"x");
         let good = format!("{MANIFEST_HEADER}\nversion 0.6.0\n{sha} 1 a.txt\n");
@@ -746,6 +801,15 @@ pub(crate) mod tests {
         ] {
             assert!(parse_manifest(&bad).is_err(), "{bad}");
         }
+    }
+
+    #[test]
+    fn errors_read_without_the_os_error_number() {
+        let e = std::io::Error::from_raw_os_error(5);
+        let said = io_error("remove", Path::new(r"C:\x\a.txt"), &e).to_string();
+        assert!(!said.contains("os error"), "{said}");
+        assert!(said.starts_with(r"Could not remove C:\x\a.txt: ") && said.ends_with('.') && !said.ends_with(".."));
+        assert_eq!(plain_reason(&std::io::Error::other("refused")), "refused");
     }
 
     #[test]

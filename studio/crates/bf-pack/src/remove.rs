@@ -2,8 +2,9 @@
 //!
 //! **Only what an install wrote goes**, file by file, from the manifest the install wrote: each file `MANIFEST.txt`
 //! lists whose SHA-256 still matches, the manifest itself, the install's `update.toml`, the same inside `.previous`
-//! and `.next` by their own manifests, the two shortcuts when they open the installed exe, and then each folder
-//! that is left empty. Nothing is ever removed by deleting a folder with what is in it.
+//! and `.next` by their own manifests, what a stopped install left (its staging folder, by its own manifest, and new
+//! files already in place that match it), the shortcuts that open the installed exe, and then each folder that is
+//! left empty. Nothing is ever removed by deleting a folder with what is in it.
 //!
 //! Refused, with nothing changed: a program folder without a manifest of ours, one not named `BALLFIGHT Studio`, a
 //! relative path, a drive root, the user's own folder or anything around it, the data folder or anything around it,
@@ -17,20 +18,21 @@
 //! none of which an install's manifest lists), and every video. No registry value is written or removed: the
 //! install writes none (D2).
 //!
-//! The app cannot remove its own running exe, so `schedule_removal` starts one hidden Windows PowerShell with a
-//! fixed script (`REMOVAL_SCRIPT`, passed with `-EncodedCommand`), which waits for the app to end and then works
-//! through a list file this module wrote: it checks each file's SHA-256 again just before removing it, never
-//! follows a link, and removes a folder only when it is empty. The paths never appear in the script or on its
-//! command line; they come from the list file named in an environment variable.
+//! **In the app's own process** (ruling M6-R2): `remove_app` runs on the person's click. Windows lets a running exe
+//! be renamed but not deleted, so the app's own exe (once its SHA-256 matches the manifest) is first moved out of the
+//! program folder to a new name in the temp folder, when that is on the same drive; then everything planned is
+//! removed at once, and the words say what went, what stayed, and where the moved exe is. No other program is
+//! started.
 
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::{Component, Path, PathBuf};
 
+use crate::PackError;
 use crate::config::{CONFIG_NAME, read_config};
 use crate::install::{Layout, check_layout, opens_the_app};
-use crate::package::{MANIFEST_NAME, is_link, join_relative, read_manifest};
+use crate::package::io_error;
+use crate::package::{MANIFEST_NAME, Manifest, is_link, join_relative, read_manifest};
 use crate::sha::sha256_file;
-use crate::{PackError, io_error};
 
 /// What a removal will do: the files that go (each with the SHA-256 it must still have), the folders that go if they
 /// are empty by then (deepest first), and what stays, each with why.
@@ -52,47 +54,20 @@ impl Removal {
     }
 }
 
-/// The first line of a removal list file.
-pub const LIST_HEADER: &str = "BALLFIGHT Studio removal list 1";
-
-/// The removal program: one fixed Windows PowerShell script. It reads the after-pid and the list file's path from
-/// `BF_REMOVE_AFTER_PID` and `BF_REMOVE_LIST`, waits up to `BF_REMOVE_WAIT` seconds (60) for that process to end
-/// (if it has not, it removes only its own list file and stops), then for each `F<tab>sha256<tab>path` line
-/// removes the file only if it is a plain file (not a folder, not a link) whose SHA-256 is still that, and for each
-/// `D<tab>path` line removes the folder only if it is a real folder and empty (`Directory.Delete` without recursion
-/// fails on any other). Last it removes the list file. It writes nothing anywhere else. Exit 2: bad values; 3: the
-/// app did not end; 4: not our list.
-pub const REMOVAL_SCRIPT: &str = r#"$ErrorActionPreference = 'Stop'
-$list = $env:BF_REMOVE_LIST
-$id = 0
-$wait = 0
-if (-not [int]::TryParse($env:BF_REMOVE_AFTER_PID, [ref]$id)) { exit 2 }
-if (-not [int]::TryParse($env:BF_REMOVE_WAIT, [ref]$wait)) { exit 2 }
-try { Wait-Process -Id $id -Timeout $wait -ErrorAction SilentlyContinue } catch { }
-if (Get-Process -Id $id -ErrorAction SilentlyContinue) { [System.IO.File]::Delete($list); exit 3 }
-$lines = [System.IO.File]::ReadAllLines($list, [System.Text.Encoding]::UTF8)
-if ($lines.Length -lt 1 -or $lines[0] -cne 'BALLFIGHT Studio removal list 1') { exit 4 }
-$reparse = [System.IO.FileAttributes]::ReparsePoint
-for ($i = 1; $i -lt $lines.Length; $i++) {
-  $parts = $lines[$i].Split([char]9)
-  try {
-    if ($parts.Length -eq 3 -and $parts[0] -ceq 'F') {
-      $item = Get-Item -LiteralPath $parts[2] -Force
-      $plain = (-not $item.PSIsContainer) -and (($item.Attributes -band $reparse) -eq 0)
-      if ($plain -and ((Get-FileHash -LiteralPath $parts[2] -Algorithm SHA256).Hash -eq $parts[1])) {
-        [System.IO.File]::Delete($parts[2])
-      }
-    } elseif ($parts.Length -eq 2 -and $parts[0] -ceq 'D') {
-      $item = Get-Item -LiteralPath $parts[1] -Force
-      if ($item.PSIsContainer -and (($item.Attributes -band $reparse) -eq 0)) {
-        [System.IO.Directory]::Delete($parts[1], $false)
-      }
-    }
-  } catch { }
+/// What a removal left: what went, what stayed (each with why), and what became of the running exe.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct Removed {
+    /// The program folder that was removed from.
+    pub programs: PathBuf,
+    /// Every planned file and folder that is gone now.
+    pub went: Vec<PathBuf>,
+    /// Everything that stayed, with why.
+    pub stayed: Vec<(PathBuf, String)>,
+    /// Where the running exe was moved to, in the temp folder.
+    pub moved_exe: Option<PathBuf>,
+    /// The running exe, when it could not be moved out (so it, and its folder, stay).
+    pub exe_left: Option<PathBuf>,
 }
-[System.IO.File]::Delete($list)
-exit 0
-"#;
 
 /// What would be removed from this layout, and what would stay. Refuses (with nothing changed) a layout that is
 /// not ours; see the module notes.
@@ -127,15 +102,24 @@ pub fn removal_plan(layout: &Layout) -> Result<Removal, PackError> {
             ));
         }
     }
-    plan_folder(p, &mut r)?;
+    // A stopped install leaves its staging folder beside the program folder, and maybe some new files already in
+    // place: both are ours by the staging folder's own manifest.
+    let staging = layout.staging();
+    let staged = (!is_link(&staging) && staging.is_dir())
+        .then(|| read_manifest(&staging.join(MANIFEST_NAME)).ok())
+        .flatten();
+    if staged.is_some() {
+        plan_folder(&staging, &mut r, None)?;
+    }
+    plan_folder(p, &mut r, staged.as_ref())?;
     Ok(r)
 }
 
-/// Plans the removal of one folder that holds a manifest of ours (the program folder, `.previous`, `.next`),
-/// adding to `r`: each listed file whose SHA-256 still matches, `update.toml` when it is one of ours, the manifest,
-/// then the folders deepest first and `dir` itself. Everything else in it is added to `r.kept`, and links are never
-/// entered.
-pub(crate) fn plan_folder(dir: &Path, r: &mut Removal) -> Result<(), PackError> {
+/// Plans the removal of one folder that holds a manifest of ours (the program folder, `.previous`, `.next`, a
+/// staging folder), adding to `r`: each file its manifest (or `also`) lists whose SHA-256 still matches,
+/// `update.toml` when it is one of ours, the manifest, then the folders deepest first and `dir` itself. Everything
+/// else in it is added to `r.kept`, and links are never entered.
+pub(crate) fn plan_folder(dir: &Path, r: &mut Removal, also: Option<&Manifest>) -> Result<(), PackError> {
     use crate::package::{Kind, walk};
     let manifest_path = dir.join(MANIFEST_NAME);
     let m = read_manifest(&manifest_path)?;
@@ -152,12 +136,18 @@ pub(crate) fn plan_folder(dir: &Path, r: &mut Removal) -> Result<(), PackError> 
             Kind::Dir if nested => {
                 let mut inner = Removal::default();
                 let own = path.join(MANIFEST_NAME);
-                if !is_link(&own) && own.is_file() && plan_folder(&path, &mut inner).is_ok() {
+                if !is_link(&own) && own.is_file() && plan_folder(&path, &mut inner, None).is_ok() {
                     r.files.append(&mut inner.files);
                     r.dirs.append(&mut inner.dirs);
                     r.kept.append(&mut inner.kept);
                 } else {
-                    for (inner_rel, inner_kind) in walk(&path)? {
+                    let only_folders = walk(&path)?;
+                    if only_folders.iter().all(|(_, k)| *k == Kind::Dir) {
+                        r.dirs
+                            .extend(only_folders.iter().rev().map(|(d, _)| join_relative(&path, d)));
+                        r.dirs.push(path.clone());
+                    }
+                    for (inner_rel, inner_kind) in only_folders {
                         if inner_kind != Kind::Dir {
                             r.kept.push((
                                 join_relative(&path, &inner_rel),
@@ -171,19 +161,22 @@ pub(crate) fn plan_folder(dir: &Path, r: &mut Removal) -> Result<(), PackError> 
             Kind::File if rel == MANIFEST_NAME => {}
             Kind::File => {
                 let ours_config = rel == CONFIG_NAME && read_config(&path).is_ok();
-                let listed = m.files.iter().find(|(p, _, _)| p == &rel);
-                let got = || sha256_file(&path).map_err(|e| io_error("read", &path, &e));
-                match (ours_config, listed) {
-                    (true, _) => r.files.push((path.clone(), got()?)),
-                    (false, Some((_, _, sha))) => {
-                        let now = got()?;
-                        if &now == sha {
-                            r.files.push((path, now));
-                        } else {
-                            r.kept.push((path, "it has changed since it was installed".to_string()));
-                        }
+                let wants: Vec<&String> = std::iter::once(&m)
+                    .chain(also)
+                    .filter_map(|man| man.files.iter().find(|(p, _, _)| p == &rel).map(|(_, _, sha)| sha))
+                    .collect();
+                if ours_config {
+                    let now = sha256_file(&path).map_err(|e| io_error("read", &path, &e))?;
+                    r.files.push((path, now));
+                } else if wants.is_empty() {
+                    r.kept.push((path, "BALLFIGHT Studio did not put it there".to_string()));
+                } else {
+                    let now = sha256_file(&path).map_err(|e| io_error("read", &path, &e))?;
+                    if wants.iter().any(|w| **w == now) {
+                        r.files.push((path, now));
+                    } else {
+                        r.kept.push((path, "it has changed since it was installed".to_string()));
                     }
-                    (false, None) => r.kept.push((path, "BALLFIGHT Studio did not put it there".to_string())),
                 }
             }
         }
@@ -196,8 +189,8 @@ pub(crate) fn plan_folder(dir: &Path, r: &mut Removal) -> Result<(), PackError> 
     Ok(())
 }
 
-/// Removes what `r` plans, here and now (for folders whose files no running program holds), checking each file's
-/// SHA-256 again just before removing it. Gives what stayed, with why.
+/// Removes what `r` plans, here and now, checking each file's SHA-256 again just before removing it. Gives what
+/// stayed, with why.
 pub fn remove_now(r: &Removal) -> Vec<(PathBuf, String)> {
     let mut stayed = r.kept.clone();
     for (f, sha) in &r.files {
@@ -211,7 +204,8 @@ pub fn remove_now(r: &Removal) -> Vec<(PathBuf, String)> {
         match sha256_file(f) {
             Ok(now) if &now == sha => {
                 if let Err(e) = fs::remove_file(f) {
-                    stayed.push((f.clone(), format!("it could not be removed: {e}")));
+                    let why = crate::package::plain_reason(&e).to_lowercase();
+                    stayed.push((f.clone(), format!("it could not be removed ({why})")));
                 }
             }
             _ => stayed.push((f.clone(), "it has changed since the removal was planned".to_string())),
@@ -239,125 +233,144 @@ pub fn remove_by_manifest(dir: &Path) -> Result<Vec<(PathBuf, String)>, PackErro
         )));
     }
     let mut r = Removal::default();
-    plan_folder(dir, &mut r)?;
+    plan_folder(dir, &mut r, None)?;
     Ok(remove_now(&r))
 }
 
-/// Removes the app from this layout after the process `after_pid` (the app itself) has ended: plans the removal,
-/// writes the list file in the temp folder, and starts the removal program, which goes on by itself. The app should
-/// close right after this returns `Ok`.
-pub fn schedule_removal(layout: &Layout, after_pid: u32) -> Result<(), PackError> {
-    let r = removal_plan(layout)?;
-    // Handed off on purpose: the removal program outlives the app, which is what it waits for.
-    let child = start_removal(&r, after_pid, &std::env::temp_dir())?;
-    drop(child);
-    Ok(())
+/// The drive (or share) a full path is on, in lower case.
+fn volume(p: &Path) -> Option<String> {
+    match p.components().next()? {
+        Component::Prefix(x) => Some(x.as_os_str().to_string_lossy().to_lowercase()),
+        _ => None,
+    }
 }
 
-/// The list file's text: the header, then `F<tab>sha256<tab>path` for each file and `D<tab>path` for each folder.
-fn list_text(r: &Removal) -> Result<String, PackError> {
-    let mut s = format!("{LIST_HEADER}\r\n");
-    let text = |p: &Path| {
-        p.to_str()
-            .filter(|t| !t.chars().any(char::is_control))
-            .map(str::to_string)
-            .ok_or_else(|| PackError::Refused(format!("{} has a name the removal cannot write down.", p.display())))
-    };
-    for (f, sha) in &r.files {
-        s.push_str(&format!("F\t{sha}\t{}\r\n", text(f)?));
-    }
-    for d in &r.dirs {
-        s.push_str(&format!("D\t{}\r\n", text(d)?));
-    }
-    Ok(s)
-}
-
-/// Writes the list file for `r` in `list_dir` and starts the removal program, which waits up to `wait_secs` for
-/// `after_pid` to end. Gives the running program (not waited for by `schedule_removal`).
-pub(crate) fn start_removal_waiting(
-    r: &Removal,
-    after_pid: u32,
-    list_dir: &Path,
-    wait_secs: u32,
-) -> Result<std::process::Child, PackError> {
-    let ps = crate::install::powershell()?;
-    let text = list_text(r)?;
-    // A new file each time (create_new), named after this process and the time, so nothing is written over.
-    let stamp = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .map(|d| d.as_nanos())
-        .unwrap_or(0);
-    let list = list_dir.join(format!("BALLFIGHT Studio removal {}-{stamp}.txt", std::process::id()));
-    {
-        use std::io::Write;
-        let mut f = fs::OpenOptions::new()
-            .write(true)
-            .create_new(true)
-            .open(&list)
-            .map_err(|e| io_error("make", &list, &e))?;
-        f.write_all(text.as_bytes())
-            .and_then(|()| f.sync_all())
-            .map_err(|e| io_error("write", &list, &e))?;
-    }
-    let script = crate::install::encoded_command(REMOVAL_SCRIPT);
-    let o = std::ffi::OsStr::new;
-    let mut c = crate::run::quiet(
-        &ps,
-        &[
-            o("-NoLogo"),
-            o("-NoProfile"),
-            o("-NonInteractive"),
-            o("-EncodedCommand"),
-            o(&script),
-        ],
-    );
-    // Nothing is read from it, and it may outlive the app: no pipes to a process that is gone.
-    c.stdout(std::process::Stdio::null())
-        .stderr(std::process::Stdio::null())
-        .env("BF_REMOVE_LIST", &list)
-        .env("BF_REMOVE_AFTER_PID", after_pid.to_string())
-        .env("BF_REMOVE_WAIT", wait_secs.to_string());
-    c.spawn().map_err(|e| {
-        let _ = fs::remove_file(&list);
-        PackError::Io(format!("The removal could not be started: {e}."))
+/// Removes BALLFIGHT Studio from this layout now, from inside the running app (Task 13 calls this on the person's
+/// click with `std::env::current_exe()`, then shows `removed_words` and closes). Refusals are those of
+/// `removal_plan`, with nothing changed.
+pub fn remove_app(layout: &Layout, running_exe: &Path) -> Result<Removed, PackError> {
+    remove_app_with(layout, running_exe, &std::env::temp_dir(), &|from, to| {
+        fs::rename(from, to)
     })
 }
 
-/// `start_removal_waiting` with the 60 s wait.
-pub(crate) fn start_removal(r: &Removal, after_pid: u32, list_dir: &Path) -> Result<std::process::Child, PackError> {
-    start_removal_waiting(r, after_pid, list_dir, 60)
+/// `remove_app` with the temp folder and the rename step given, so tests can try each branch.
+pub(crate) fn remove_app_with(
+    layout: &Layout,
+    running_exe: &Path,
+    temp: &Path,
+    rename: &dyn Fn(&Path, &Path) -> std::io::Result<()>,
+) -> Result<Removed, PackError> {
+    let mut plan = removal_plan(layout)?;
+    let mut done = Removed {
+        programs: layout.programs.clone(),
+        ..Removed::default()
+    };
+    let same = |a: &Path, b: &Path| a.to_string_lossy().eq_ignore_ascii_case(&b.to_string_lossy());
+    if let Some(at) = plan.files.iter().position(|(f, _)| same(f, running_exe)) {
+        let (exe, sha) = plan.files.remove(at);
+        let matches = sha256_file(&exe).is_ok_and(|now| now == sha);
+        let same_drive = volume(&exe).is_some() && volume(&exe) == volume(temp);
+        let stamp = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_nanos())
+            .unwrap_or(0);
+        let to = temp.join(format!("BALLFIGHT Studio removed {}-{stamp}.exe", std::process::id()));
+        if !matches {
+            done.stayed
+                .push((exe, "it has changed since it was installed".to_string()));
+        } else if same_drive && fs::symlink_metadata(&to).is_err() && rename(&exe, &to).is_ok() {
+            done.went.push(exe);
+            done.moved_exe = Some(to);
+        } else {
+            done.exe_left = Some(exe);
+        }
+    }
+    let goes = plan.goes();
+    done.stayed.extend(remove_now(&plan));
+    done.went
+        .extend(goes.into_iter().filter(|p| fs::symlink_metadata(p).is_err()));
+    Ok(done)
 }
 
 /// What Settings says before a removal (Task 13): what goes, what stays, and anything of the person's that stays in
 /// the program folder. Whole plain sentences.
 pub fn removal_words(layout: &Layout, r: &Removal) -> Vec<String> {
+    let going = |link: &Path| r.files.iter().any(|(f, _)| f == link);
+    let shortcuts = match (going(&layout.start_menu_link()), going(&layout.desktop_link())) {
+        (true, true) => " and its Start menu and desktop shortcuts",
+        (true, false) => " and its Start menu shortcut",
+        (false, true) => " and its desktop shortcut",
+        (false, false) => "",
+    };
     let mut words = vec![
         format!(
-            "Removing takes away the program in {} and its two shortcuts, once BALLFIGHT Studio has closed.",
+            "Removing takes away the program in {}{shortcuts}, and BALLFIGHT Studio closes.",
             layout.programs.display()
         ),
-        "Your videos, your settings, the queue, fault reports and the app's other files in your user folder all \
-         stay on this PC."
+        "Your settings, the queue, fault reports and logs, and your videos are kept in folders of their own, and \
+         they stay on this PC."
             .to_string(),
     ];
-    if let Some(data_root) = layout.data.parent() {
+    let rebuildable: Vec<String> = ["build", "downloads"]
+        .iter()
+        .map(|n| layout.data.join(n))
+        .filter(|d| d.is_dir())
+        .map(|d| d.display().to_string())
+        .collect();
+    if !rebuildable.is_empty() {
         words.push(format!(
-            "The app's downloads and update builds in {} stay too; delete that folder yourself to free the space.",
-            data_root.display()
+            "The update builds and downloads stay too. To free that space, delete {} yourself afterwards.",
+            rebuildable.join(" and ")
         ));
     }
-    let names: Vec<String> = r
-        .kept
-        .iter()
-        .filter(|(p, _)| p.starts_with(&layout.programs))
-        .filter_map(|(p, _)| p.file_name().map(|n| n.to_string_lossy().into_owned()))
-        .collect();
+    let names = kept_names(&layout.programs, &r.kept);
     if !names.is_empty() {
         words.push(format!(
             "These files in the program folder were not put there by BALLFIGHT Studio, or have changed, so they \
              stay: {}.",
             names.join(", ")
         ));
+    }
+    words
+}
+
+/// The names of the files (not folders) that stay in the program folder.
+fn kept_names(programs: &Path, kept: &[(PathBuf, String)]) -> Vec<String> {
+    kept.iter()
+        .filter(|(p, _)| p.starts_with(programs) && !p.is_dir())
+        .filter_map(|(p, _)| p.file_name().map(|n| n.to_string_lossy().into_owned()))
+        .collect()
+}
+
+/// What the app says after `remove_app`, before it closes: what went, what stayed, and the one program file left
+/// behind, with where it is. Whole plain sentences.
+pub fn removed_words(r: &Removed) -> Vec<String> {
+    let mut words = Vec::new();
+    if fs::symlink_metadata(&r.programs).is_err() {
+        words.push(format!("BALLFIGHT Studio was removed from {}.", r.programs.display()));
+    } else {
+        words.push(format!(
+            "BALLFIGHT Studio was removed, but the folder {} stays because something is still in it.",
+            r.programs.display()
+        ));
+    }
+    if let Some(moved) = &r.moved_exe {
+        words.push(format!(
+            "The program file that was running was moved to {}. Windows clears it by itself, or delete it.",
+            moved.display()
+        ));
+    }
+    if let Some(left) = &r.exe_left {
+        words.push(format!(
+            "The program file {} could not be moved away while it runs. Delete it yourself after BALLFIGHT Studio \
+             has closed.",
+            left.display()
+        ));
+    }
+    let names = kept_names(&r.programs, &r.stayed);
+    if !names.is_empty() {
+        words.push(format!("These files stayed: {}.", names.join(", ")));
     }
     words
 }
@@ -370,7 +383,6 @@ mod tests {
     use crate::package::EXE_NAME;
     use crate::testdir::TempDir;
     use std::ffi::OsStr;
-    use std::time::{Duration, Instant};
 
     /// A PC under `root`: version 0.6.0 then 0.6.1 installed (so `.previous` holds 0.6.0), both shortcuts, a
     /// person's own file in the program folder, the app's data and settings, and a video.
@@ -637,92 +649,173 @@ mod tests {
         assert!(stayed.iter().any(|(p, _)| p == &layout.programs.join("my notes.txt")));
     }
 
-    /// The pid of a program that has already ended.
-    fn an_ended_pid() -> u32 {
-        let ping = PathBuf::from(std::env::var_os("SystemRoot").unwrap())
-            .join("System32")
-            .join("PING.EXE");
-        let mut child = crate::run::quiet(&ping, &[OsStr::new("-n"), OsStr::new("1"), OsStr::new("127.0.0.1")])
-            .spawn()
-            .unwrap();
-        let id = child.id();
-        child.wait().unwrap();
-        id
+    /// `a_pc` without the person's own file, so a removal can take the whole program folder.
+    fn a_clean_pc(root: &Path) -> Layout {
+        let layout = a_pc(root);
+        fs::remove_file(layout.programs.join("my notes.txt")).unwrap();
+        layout
+    }
+
+    fn plain_rename(from: &Path, to: &Path) -> std::io::Result<()> {
+        fs::rename(from, to)
     }
 
     #[test]
-    fn the_removal_program_takes_only_the_plan() {
-        let dir = TempDir::new("remove-script");
-        let layout = a_pc(dir.path());
-        let r = removal_plan(&layout).unwrap();
-        // Changed after the plan was made: the program checks the hash again, so this one stays.
-        fs::write(layout.programs.join("ballfight.ico"), b"changed after the plan").unwrap();
-        // Held open: it cannot be removed, the program goes on with the rest.
-        let held = hold(&layout.programs.join("guide").join("index.html"));
-        let list_dir = dir.path().join("lists");
-        fs::create_dir_all(&list_dir).unwrap();
-        let mut child = start_removal(&r, an_ended_pid(), &list_dir).unwrap();
-        let status = child.wait().unwrap();
-        drop(held);
-        assert!(status.success(), "{status}");
-        assert_eq!(names_in(&layout.programs), ["ballfight.ico", "guide", "my notes.txt"]);
-        assert_eq!(names_in(&layout.programs.join("guide")), ["index.html"]);
-        assert_eq!(
-            fs::read(layout.programs.join("ballfight.ico")).unwrap(),
-            b"changed after the plan"
-        );
+    fn the_app_removes_itself_and_its_exe_goes_to_the_temp_folder() {
+        let dir = TempDir::new("remove-app");
+        let layout = a_clean_pc(dir.path());
+        let exe_bytes = fs::read(layout.exe()).unwrap();
+        let temp = dir.path().join("temp");
+        fs::create_dir_all(&temp).unwrap();
+        let done = remove_app_with(&layout, &layout.exe(), &temp, &plain_rename).unwrap();
+        assert!(!layout.programs.exists(), "{:?}", done.stayed);
         assert!(!layout.start_menu_link().exists() && !layout.desktop_link().exists());
-        everything_else_stays(dir.path(), &layout);
-        assert!(names_in(&list_dir).is_empty(), "the list file is removed at the end");
+        let moved = done.moved_exe.clone().unwrap();
+        assert!(moved.starts_with(&temp));
+        assert_eq!(fs::read(&moved).unwrap(), exe_bytes);
+        assert_eq!(names_in(&temp).len(), 1);
+        assert!(done.exe_left.is_none());
+        assert!(done.went.contains(&layout.exe()) && done.went.contains(&layout.programs));
+        everything_else_stays_but_my_notes(dir.path(), &layout);
+        let words = removed_words(&done).join(" ");
+        assert!(words.contains("was removed from"), "{words}");
+        assert!(words.contains(&moved.display().to_string()), "{words}");
+        assert!(words.contains("Windows clears it by itself, or delete it."), "{words}");
     }
 
     #[test]
-    fn the_removal_program_waits_for_a_program_that_does_not_end() {
-        let dir = TempDir::new("remove-wait");
-        let layout = a_pc(dir.path());
-        let r = removal_plan(&layout).unwrap();
-        let list_dir = dir.path().join("lists");
-        fs::create_dir_all(&list_dir).unwrap();
-        // The list names a pid that is running (this test itself): with a 1 s wait the program gives up and
-        // removes nothing.
-        let mut child = start_removal_waiting(&r, std::process::id(), &list_dir, 1).unwrap();
-        let status = child.wait().unwrap();
-        assert_eq!(status.code(), Some(3));
+    fn on_another_drive_the_exe_stays_and_is_named() {
+        let dir = TempDir::new("remove-app-drive");
+        let layout = a_clean_pc(dir.path());
+        // A temp folder on another drive: Windows cannot rename across drives, so it is not tried.
+        let other = if layout.exe().to_string_lossy().starts_with(['Z', 'z']) {
+            r"Y:\temp"
+        } else {
+            r"Z:\temp"
+        };
+        let tried = std::cell::Cell::new(false);
+        let rename = |_: &Path, _: &Path| {
+            tried.set(true);
+            Err(std::io::Error::other("not tried"))
+        };
+        let done = remove_app_with(&layout, &layout.exe(), Path::new(other), &rename).unwrap();
+        assert!(!tried.get());
+        assert_eq!(done.exe_left.as_deref(), Some(layout.exe().as_path()));
+        assert!(layout.exe().is_file(), "the running exe stays");
+        assert_eq!(names_in(&layout.programs), [EXE_NAME]);
+        let words = removed_words(&done).join(" ");
+        assert!(words.contains("stays because something is still in it"), "{words}");
+        assert!(words.contains(&layout.exe().display().to_string()), "{words}");
         assert!(
-            names_in(&list_dir).is_empty(),
-            "the list file is removed when nothing is done"
+            words.contains("Delete it yourself after BALLFIGHT Studio has closed."),
+            "{words}"
         );
-        assert!(layout.exe().is_file() && layout.desktop_link().is_file());
     }
 
     #[test]
-    #[ignore = "starts a program that runs for about 3 s, then waits up to 10 s; run by name"]
-    fn removal_happens_after_the_app_ends() {
-        let dir = TempDir::new("remove-after");
-        let layout = a_pc(dir.path());
-        let ping = PathBuf::from(std::env::var_os("SystemRoot").unwrap())
-            .join("System32")
-            .join("PING.EXE");
-        // Stands in for the app: about 2 s.
-        let mut app = crate::run::quiet(&ping, &[OsStr::new("-n"), OsStr::new("3"), OsStr::new("127.0.0.1")])
-            .spawn()
-            .unwrap();
-        let r = removal_plan(&layout).unwrap();
-        let list_dir = dir.path().join("lists");
-        fs::create_dir_all(&list_dir).unwrap();
-        let mut removal = start_removal(&r, app.id(), &list_dir).unwrap();
-        std::thread::sleep(Duration::from_millis(1000));
-        assert!(layout.exe().is_file(), "nothing goes while the app runs");
-        app.wait().unwrap();
-        let ended = Instant::now();
-        while layout.exe().exists() && ended.elapsed() < Duration::from_secs(10) {
-            std::thread::sleep(Duration::from_millis(100));
+    fn a_failed_rename_leaves_the_exe_and_names_it() {
+        let dir = TempDir::new("remove-app-fail");
+        let layout = a_clean_pc(dir.path());
+        let temp = dir.path().join("temp");
+        fs::create_dir_all(&temp).unwrap();
+        let rename = |_: &Path, _: &Path| Err(std::io::Error::other("refused"));
+        let done = remove_app_with(&layout, &layout.exe(), &temp, &rename).unwrap();
+        assert_eq!(done.exe_left.as_deref(), Some(layout.exe().as_path()));
+        assert!(done.moved_exe.is_none() && names_in(&temp).is_empty());
+        assert_eq!(names_in(&layout.programs), [EXE_NAME]);
+        assert!(!layout.desktop_link().exists());
+    }
+
+    #[test]
+    fn a_changed_exe_or_a_held_file_stays() {
+        let dir = TempDir::new("remove-app-changed");
+        let layout = a_clean_pc(dir.path());
+        let temp = dir.path().join("temp");
+        fs::create_dir_all(&temp).unwrap();
+        fs::write(layout.exe(), b"changed since it was installed").unwrap();
+        let held = hold(&layout.programs.join("guide").join("index.html"));
+        let done = remove_app_with(&layout, &layout.exe(), &temp, &plain_rename).unwrap();
+        drop(held);
+        assert!(done.moved_exe.is_none() && done.exe_left.is_none() && names_in(&temp).is_empty());
+        assert_eq!(fs::read(layout.exe()).unwrap(), b"changed since it was installed");
+        assert!(layout.programs.join("guide").join("index.html").is_file());
+        let words = removed_words(&done).join(" ");
+        assert!(
+            words.contains("ballfight-studio.exe") && words.contains("index.html"),
+            "{words}"
+        );
+        // The refusals are those of the plan: nothing is touched.
+        let mut other = layout.clone();
+        other.programs = layout.programs.with_file_name("Something");
+        assert!(remove_app_with(&other, &other.exe(), &temp, &plain_rename).is_err());
+    }
+
+    /// What `a_pc` made, except the person's file (which `a_clean_pc` took away), is as it was.
+    fn everything_else_stays_but_my_notes(root: &Path, layout: &Layout) {
+        fs::create_dir_all(&layout.programs).unwrap();
+        fs::write(layout.programs.join("my notes.txt"), b"mine").unwrap();
+        everything_else_stays(root, layout);
+        fs::remove_file(layout.programs.join("my notes.txt")).unwrap();
+        fs::remove_dir(&layout.programs).unwrap();
+    }
+
+    /// The child side of `a_running_app_removes_itself`: runs only when that test starts this program from the
+    /// installed folder.
+    #[test]
+    #[ignore = "the child side of a_running_app_removes_itself"]
+    fn child_side_of_removing_itself() {
+        let (Some(root), Some(temp)) = (
+            std::env::var_os("BF_CHILD_REMOVE_ROOT"),
+            std::env::var_os("BF_CHILD_REMOVE_TEMP"),
+        ) else {
+            return;
+        };
+        let layout = Layout::under(Path::new(&root));
+        let me = std::env::current_exe().unwrap();
+        let done = remove_app_with(&layout, &me, Path::new(&temp), &plain_rename).unwrap();
+        for w in removed_words(&done) {
+            println!("{w}");
         }
-        assert!(!layout.exe().exists(), "the program folder's files went within 10 s");
-        assert!(removal.wait().unwrap().success());
-        assert_eq!(names_in(&layout.programs), ["my notes.txt"]);
-        everything_else_stays(dir.path(), &layout);
-        assert!(dir.path().join("pc").join("config").join("settings.toml").is_file());
+    }
+
+    #[test]
+    fn a_running_app_removes_itself() {
+        let dir = TempDir::new("remove-self");
+        // A package whose exe is a copy of this test program, so the installed exe can really run.
+        let inputs = dir.path().join("inputs");
+        let (exe, tree, checked) = crate::package::tests::fake_inputs(&inputs, "0.6.0");
+        fs::copy(std::env::current_exe().unwrap(), &exe).unwrap();
+        let pkg = dir.path().join("package");
+        crate::package::package(&exe, &tree, &checked, &pkg).unwrap();
+        let layout = Layout::under(&dir.path().join("pc"));
+        install(&pkg, &layout, &config_for(&layout)).unwrap();
+        shortcuts(&layout).unwrap();
+        let temp = dir.path().join("temp");
+        fs::create_dir_all(&temp).unwrap();
+        let mut child = crate::run::quiet(
+            &layout.exe(),
+            &[
+                OsStr::new("--exact"),
+                OsStr::new("remove::tests::child_side_of_removing_itself"),
+                OsStr::new("--ignored"),
+                OsStr::new("--nocapture"),
+                OsStr::new("--test-threads=1"),
+            ],
+        );
+        let out = child
+            .env("BF_CHILD_REMOVE_ROOT", dir.path().join("pc"))
+            .env("BF_CHILD_REMOVE_TEMP", &temp)
+            .output()
+            .unwrap();
+        let said = String::from_utf8_lossy(&out.stdout);
+        assert!(out.status.success(), "{said}\n{}", String::from_utf8_lossy(&out.stderr));
+        assert!(said.contains("BALLFIGHT Studio was removed from"), "{said}");
+        assert!(said.contains("was moved to"), "{said}");
+        assert!(!layout.programs.exists(), "the running app's whole folder went");
+        assert!(!layout.start_menu_link().exists() && !layout.desktop_link().exists());
+        let moved = names_in(&temp);
+        assert_eq!(moved.len(), 1, "{moved:?}");
+        assert!(moved[0].starts_with("BALLFIGHT Studio removed "), "{moved:?}");
     }
 
     #[test]
@@ -732,13 +825,53 @@ mod tests {
         let r = removal_plan(&layout).unwrap();
         let words = removal_words(&layout, &r);
         let all = words.join(" ");
-        assert!(all.contains("two shortcuts"), "{all}");
-        assert!(all.contains("videos") && all.contains("settings"), "{all}");
+        assert!(all.contains("its Start menu and desktop shortcuts"), "{all}");
+        assert!(
+            all.contains("videos") && all.contains("settings") && all.contains("logs"),
+            "{all}"
+        );
+        let build = layout.data.join("build").display().to_string();
+        let downloads = layout.data.join("downloads").display().to_string();
+        assert!(
+            all.contains(&format!("delete {build} and {downloads} yourself")),
+            "{all}"
+        );
         assert!(all.contains("my notes.txt"), "{all}");
         for w in &words {
             assert!(w.ends_with('.'), "{w}");
             assert!(w.chars().next().unwrap().is_uppercase(), "{w}");
         }
-        assert!(!all.contains(LINK_NAME) || all.contains("BALLFIGHT Studio"));
+        assert!(!all.contains(LINK_NAME));
+        // A shortcut that opens something else is not one of "its" shortcuts.
+        let other = crate::install::lnk::bytes(
+            Path::new(r"C:\Windows\notepad.exe"),
+            Path::new(r"C:\Windows"),
+            Path::new(r"C:\Windows\notepad.exe"),
+            "x",
+        )
+        .unwrap();
+        fs::write(layout.desktop_link(), other).unwrap();
+        let all = removal_words(&layout, &removal_plan(&layout).unwrap()).join(" ");
+        assert!(all.contains("and its Start menu shortcut,"), "{all}");
+        fs::remove_file(layout.start_menu_link()).unwrap();
+        let all = removal_words(&layout, &removal_plan(&layout).unwrap()).join(" ");
+        assert!(!all.contains("shortcut"), "{all}");
+    }
+
+    #[test]
+    fn a_stopped_install_is_still_removed_by_its_own_manifests() {
+        let dir = TempDir::new("remove-stopped");
+        let layout = Layout::under(&dir.path().join("pc"));
+        let old = package_of(dir.path(), "0.6.0");
+        let new = crate::install::tests::package_with_extra(dir.path(), "0.6.1");
+        install(&old, &layout, &config_for(&layout)).unwrap();
+        // Stopped after the earlier files moved out and some new ones moved in.
+        assert!(crate::install::tests::install_stopped_after(&new, &layout, 16).is_err());
+        assert!(layout.staging().exists());
+        let r = removal_plan(&layout).unwrap();
+        assert!(r.kept.is_empty(), "{:?}", r.kept);
+        let stayed = remove_now(&r);
+        assert!(stayed.is_empty(), "{stayed:?}");
+        assert!(!layout.programs.exists() && !layout.staging().exists());
     }
 }

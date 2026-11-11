@@ -13,7 +13,7 @@ use std::process::ExitCode;
 
 use bf_pack::PackError;
 use bf_pack::fetch::Download;
-use bf_pack::install::{Layout, find_git, install, shortcuts, source_copy};
+use bf_pack::install::{Layout, find_git, install, shortcuts_said, source_copy};
 use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
@@ -113,22 +113,20 @@ fn run_install(exe: &Path, from: &Path, root: Option<&Path>, cache: &Path) -> Re
     let done = (|| {
         let git = find_git()
             .ok_or_else(|| PackError::Refused("Git is not on this PC, so updates could not be set up.".to_string()))?;
-        let config = source_copy(&git, from, &layout.data)?;
+        let config = source_copy(&git, from, &layout.data, &|line| println!("{line}"))?;
         install(&pkg, &layout, &config)?;
-        shortcuts(&layout)?;
-        Ok(vec![
-            format!(
-                "Installed BALLFIGHT Studio {} in {}.",
-                manifest.version,
-                layout.programs.display()
-            ),
-            format!(
-                "Made the shortcuts {} and {}.",
-                layout.start_menu_link().display(),
-                layout.desktop_link().display()
-            ),
-            format!("Updates follow the copy of the source in {}.", config.source.display()),
-        ])
+        let mut lines = vec![format!(
+            "Installed BALLFIGHT Studio {} in {}.",
+            manifest.version,
+            layout.programs.display()
+        )];
+        // The install has worked by now: a shortcut that could not be made is a note, not a failure.
+        lines.push(shortcuts_said(&layout));
+        lines.push(format!(
+            "Updates follow the copy of the source in {}.",
+            config.source.display()
+        ));
+        Ok(lines)
     })();
     // The temporary package goes again, file by file, by its own manifest.
     let _ = bf_pack::remove::remove_by_manifest(&pkg);

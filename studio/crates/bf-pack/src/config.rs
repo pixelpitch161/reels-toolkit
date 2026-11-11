@@ -7,7 +7,8 @@
 
 use std::path::{Path, PathBuf};
 
-use crate::{PackError, io_error};
+use crate::PackError;
+use crate::package::io_error;
 
 /// What `update.toml` holds.
 #[derive(Clone, Debug, PartialEq, Eq)]

@@ -7,24 +7,28 @@
 //!
 //! **The install never destroys a working copy.** Files are copied into `BALLFIGHT Studio.installing` beside the
 //! program folder and checked against the package's manifest. Only then are they put in place: a fresh install is
-//! one rename of the whole folder; over an earlier install, each file the earlier manifest lists moves into
-//! `.previous` (as an update does) and each new file moves in, and if any move fails every move is undone. A file in
+//! one rename of the whole folder; over an earlier install, `.previous` gets a copy of the earlier manifest, each file
+//! the earlier manifest lists moves into `.previous` (as an update does), each new file moves in, and the last step
+//! replaces the top `MANIFEST.txt`, so the folder always has a manifest of ours. If a step fails, every step is
+//! undone; if the swap is stopped from outside (a power cut), running the same install again finishes it. A file in
 //! the program folder that the earlier manifest does not list (a person's own) is never replaced or moved: if a new
 //! file would land on it, the install stops in words before anything changes.
 //!
 //! **Shortcuts** are written by `lnk`, a small writer of Windows' shell link format (MS-SHLLINK) in this file: no
-//! shell command line, no COM, no unsafe code. Tests read every link back through Windows' own shell object.
+//! shell command line and no COM interface tables; the target's item id list comes from Windows itself (the only
+//! unsafe code, in `lnk::id_list`). Tests read every link back through Windows' own shell object.
 
 use std::ffi::OsStr;
 use std::fs;
 use std::path::{Component, Path, PathBuf};
 
+use crate::PackError;
 use crate::config::{CONFIG_NAME, TAG_PREFIX, UpdateConfig, check_remote, write_config};
+use crate::package::io_error;
 use crate::package::{
     EXE_NAME, ICON_NAME, MANIFEST_NAME, Manifest, check_package, is_link, join_relative, read_manifest,
 };
 use crate::sha::sha256_file;
-use crate::{PackError, io_error};
 
 /// The program folder's name, and the shortcuts' name.
 pub const APP_NAME: &str = "BALLFIGHT Studio";
@@ -185,8 +189,22 @@ pub(crate) fn in_use(path: &Path) -> bool {
 }
 
 /// Installs the package folder `package` (made by `package::package`) into `layout.programs`, with `config` as its
-/// `update.toml`. See the module notes for how a working copy is kept.
+/// `update.toml`. See the module notes for how a working copy is kept. An install that stopped part-way (a power
+/// cut, a closed window) is finished by running the same install again.
 pub fn install(package: &Path, layout: &Layout, config: &UpdateConfig) -> Result<(), PackError> {
+    install_stopping(package, layout, config, None)
+}
+
+/// The words of a swap stopped on purpose by a test (as a power cut would stop it: nothing undone).
+const STOPPED: &str = "The install was stopped part-way for a test.";
+
+/// `install`, which for a test stops after `stop_after` steps of the swap and leaves everything as it is then.
+fn install_stopping(
+    package: &Path,
+    layout: &Layout,
+    config: &UpdateConfig,
+    stop_after: Option<usize>,
+) -> Result<(), PackError> {
     check_layout(layout)?;
     let new = check_package(package)?;
     let target = &layout.programs;
@@ -201,17 +219,21 @@ pub fn install(package: &Path, layout: &Layout, config: &UpdateConfig) -> Result
     if let Some(old) = &old {
         refuse_running(target, old)?;
         check_conflicts(target, old, &new)?;
+        // A `.previous` that holds a copy of the manifest at the top is the one an earlier, stopped swap was
+        // filling: it is finished, not cleared.
+        let resuming = interrupted(target);
         for name in [".previous", ".next"] {
             let d = target.join(name);
-            if fs::symlink_metadata(&d).is_ok() {
-                housekeeping.push(plan_clear(&d)?);
+            if (name == ".previous" && resuming) || fs::symlink_metadata(&d).is_err() {
+                continue;
             }
+            housekeeping.push(plan_clear(&d)?);
         }
     }
     let staging = layout.staging();
-    clear_leftover_staging(&staging)?;
+    clear_leftover_staging(&staging, None)?;
     if let Err(e) = stage(package, &new, &staging, config) {
-        let _ = clear_leftover_staging(&staging);
+        let _ = clear_leftover_staging(&staging, None);
         return Err(e);
     }
 
@@ -229,21 +251,46 @@ pub fn install(package: &Path, layout: &Layout, config: &UpdateConfig) -> Result
                 let stayed = crate::remove::remove_now(r);
                 if let Some((p, why)) = stayed.first() {
                     cleared = Err(PackError::Io(format!(
-                        "An earlier version's file {} could not be cleared away ({why}), so nothing was installed; \
-                         version {} is still installed.",
+                        "A file of the copy kept from before, {}, could not be cleared away ({why}), so nothing was \
+                         installed; version {} is still installed, and the copy kept from before it may be \
+                         incomplete.",
                         p.display(),
                         old.version
                     )));
                     break;
                 }
             }
-            cleared.and_then(|()| swap_in(target, old, &new, &staging))
+            let cleared_any = !housekeeping.is_empty();
+            cleared.and_then(|()| {
+                swap_in(target, old, &new, &staging, stop_after).map_err(|e| match e {
+                    PackError::Io(text) if cleared_any && text != STOPPED => {
+                        PackError::Io(format!("{text} The copy kept from the version before it was cleared."))
+                    }
+                    other => other,
+                })
+            })
         }
     };
-    if done.is_err() {
-        let _ = clear_leftover_staging(&staging);
+    match &done {
+        Err(PackError::Io(text)) if text == STOPPED => {}
+        Err(_) => {
+            let _ = clear_leftover_staging(&staging, None);
+        }
+        Ok(()) => {}
     }
     done
+}
+
+/// Whether `.previous` is the one a stopped swap was filling: it holds a copy of the top `MANIFEST.txt`, byte for
+/// byte.
+fn interrupted(target: &Path) -> bool {
+    let kept = target.join(".previous").join(MANIFEST_NAME);
+    !is_link(&target.join(".previous"))
+        && !is_link(&kept)
+        && kept.is_file()
+        && fs::read(&kept)
+            .ok()
+            .is_some_and(|k| fs::read(target.join(MANIFEST_NAME)).ok() == Some(k))
 }
 
 /// The manifest of what is installed in `target`: `None` when the folder is missing or empty, an error when it holds
@@ -286,6 +333,12 @@ fn refuse_running(target: &Path, old: &Manifest) -> Result<(), PackError> {
     } else {
         Ok(())
     }
+}
+
+/// Whether any part of `rel` under `root` (each folder on the way, and the item itself) is a link.
+pub(crate) fn path_has_link(root: &Path, rel: &str) -> bool {
+    let parts: Vec<&str> = rel.split('/').collect();
+    (0..parts.len()).any(|i| is_link(&join_relative(root, &parts[..=i].join("/"))))
 }
 
 /// Stops when a new file would land on something in the program folder that is not ours: a file the earlier
@@ -333,14 +386,9 @@ fn check_conflicts(target: &Path, old: &Manifest, new: &Manifest) -> Result<(), 
 }
 
 /// The removal of an earlier `.previous` or `.next`: everything in it must be ours (by its own manifest), or it is
-/// left alone and the install stops in words.
+/// left alone and the install stops in words. A folder holding nothing but empty folders counts as empty.
 fn plan_clear(dir: &Path) -> Result<crate::remove::Removal, PackError> {
     let mut r = crate::remove::Removal::default();
-    let empty = dir.is_dir() && !is_link(dir) && fs::read_dir(dir).map(|mut d| d.next().is_none()).unwrap_or(false);
-    if empty {
-        r.dirs.push(dir.to_path_buf());
-        return Ok(r);
-    }
     let foreign = |what: &Path| {
         PackError::Refused(format!(
             "{} holds {}, which BALLFIGHT Studio did not put there, so nothing was installed. Move it elsewhere first.",
@@ -348,20 +396,31 @@ fn plan_clear(dir: &Path) -> Result<crate::remove::Removal, PackError> {
             what.display()
         ))
     };
-    if is_link(dir) || !dir.is_dir() || !dir.join(MANIFEST_NAME).is_file() {
+    if is_link(dir) || !dir.is_dir() {
         return Err(foreign(dir));
     }
-    crate::remove::plan_folder(dir, &mut r)?;
+    let entries = crate::package::walk(dir)?;
+    if entries.iter().all(|(_, kind)| *kind == crate::package::Kind::Dir) {
+        r.dirs
+            .extend(entries.iter().rev().map(|(rel, _)| join_relative(dir, rel)));
+        r.dirs.push(dir.to_path_buf());
+        return Ok(r);
+    }
+    if !dir.join(MANIFEST_NAME).is_file() {
+        return Err(foreign(dir));
+    }
+    crate::remove::plan_folder(dir, &mut r, None)?;
     if let Some((p, _)) = r.kept.first() {
         return Err(foreign(p));
     }
     Ok(r)
 }
 
-/// Clears what a stopped install left in the staging folder: only the names its own manifest lists (whatever their
-/// bytes, since a copy may have stopped part-way), its manifest and `update.toml`, then its empty folders. Anything
-/// else in it stops the install in words, with nothing removed.
-fn clear_leftover_staging(staging: &Path) -> Result<(), PackError> {
+/// Clears what a stopped install left in the staging folder: only the names its own manifest (or `also`, the
+/// manifest it held before that was moved into place) lists, whatever their bytes, since a copy may have stopped
+/// part-way; its manifest and `update.toml`; then its empty folders. Anything else in it stops the install in words,
+/// with nothing removed.
+fn clear_leftover_staging(staging: &Path, also: Option<&Manifest>) -> Result<(), PackError> {
     if fs::symlink_metadata(staging).is_err() {
         return Ok(());
     }
@@ -381,8 +440,9 @@ fn clear_leftover_staging(staging: &Path) -> Result<(), PackError> {
         rel == MANIFEST_NAME
             || rel == CONFIG_NAME
             || manifest
-                .as_ref()
-                .is_some_and(|m| m.files.iter().any(|(p, _, _)| p == rel))
+                .iter()
+                .chain(also)
+                .any(|m| m.files.iter().any(|(p, _, _)| p == rel))
     };
     let mut dirs = Vec::new();
     for (rel, kind) in &entries {
@@ -433,7 +493,7 @@ fn stage(package: &Path, new: &Manifest, staging: &Path, config: &UpdateConfig) 
 }
 
 /// Makes the missing folders between `root` and `path`'s folder, noting each one made.
-fn make_parents(path: &Path, root: &Path, made: &mut Vec<PathBuf>) -> Result<(), PackError> {
+fn make_parents(path: &Path, root: &Path, undo: &mut Vec<Undo>) -> Result<(), PackError> {
     let Some(dir) = path.parent() else { return Ok(()) };
     let mut missing: Vec<&Path> = dir
         .ancestors()
@@ -443,71 +503,157 @@ fn make_parents(path: &Path, root: &Path, made: &mut Vec<PathBuf>) -> Result<(),
     missing.reverse();
     for d in missing {
         fs::create_dir(d).map_err(|e| io_error("make the folder", d, &e))?;
-        made.push(d.to_path_buf());
+        undo.push(Undo::Made(d.to_path_buf()));
     }
     Ok(())
 }
 
-/// Puts the staged files in place over an earlier install: each file the earlier manifest lists (and its manifest
-/// and `update.toml`) moves into a new `.previous`, then each staged file moves in, the manifest last. If any move
-/// fails, every move is undone in reverse and the earlier version is as it was.
-fn swap_in(target: &Path, old: &Manifest, new: &Manifest, staging: &Path) -> Result<(), PackError> {
+/// One step of a swap, as it is taken back if a later step fails.
+enum Undo {
+    /// A folder made: removed again if empty.
+    Made(PathBuf),
+    /// A file copied to a place where nothing was: removed again.
+    Copied(PathBuf),
+    /// A file moved from the first place to the second: moved back.
+    Moved(PathBuf, PathBuf),
+    /// A file replaced by a newer one; the second is a copy of the one it replaced: copied back.
+    Replaced(PathBuf, PathBuf),
+}
+
+/// Counts a swap's steps, and stops after the number a test asks for.
+struct Steps {
+    taken: usize,
+    stop_after: Option<usize>,
+}
+
+impl Steps {
+    fn next(&mut self) -> Result<(), PackError> {
+        if self.stop_after.is_some_and(|n| self.taken >= n) {
+            return Err(PackError::Io(STOPPED.to_string()));
+        }
+        self.taken += 1;
+        Ok(())
+    }
+}
+
+/// Puts the staged files in place over an earlier install.
+///
+/// The top `MANIFEST.txt` stays in place until the very last step, which replaces it with the new one, so the
+/// folder is always one of ours. Before that: `.previous` gets a copy of the earlier manifest and `update.toml`;
+/// each file the earlier manifest lists moves into `.previous` (unless a stopped swap already moved it, or any part
+/// of its path is a link); each new file moves in (unless the same bytes are already there); `update.toml` is
+/// replaced. If any step fails, every step is taken back in reverse. A swap stopped from outside (a power cut) is
+/// finished by the next install: listed names are ours, new files already in place have the new bytes, and staging
+/// is cleared by its own manifest.
+fn swap_in(
+    target: &Path,
+    old: &Manifest,
+    new: &Manifest,
+    staging: &Path,
+    stop_after: Option<usize>,
+) -> Result<(), PackError> {
     let prev = target.join(".previous");
-    let mut moves: Vec<(PathBuf, PathBuf)> = Vec::new();
-    let mut made: Vec<PathBuf> = Vec::new();
-    let mut old_names: Vec<&str> = old.files.iter().map(|(p, _, _)| p.as_str()).collect();
-    old_names.extend([CONFIG_NAME, MANIFEST_NAME]);
-    let mut new_names: Vec<&str> = new.files.iter().map(|(p, _, _)| p.as_str()).collect();
-    new_names.extend([CONFIG_NAME, MANIFEST_NAME]);
+    let mut undo: Vec<Undo> = Vec::new();
+    let mut steps = Steps { taken: 0, stop_after };
 
     let moved = (|| {
-        fs::create_dir(&prev).map_err(|e| io_error("make the folder", &prev, &e))?;
-        made.push(prev.clone());
-        for rel in &old_names {
-            let from = join_relative(target, rel);
-            if is_link(&from) || !from.is_file() {
+        if fs::symlink_metadata(&prev).is_err() {
+            steps.next()?;
+            fs::create_dir(&prev).map_err(|e| io_error("make the folder", &prev, &e))?;
+            undo.push(Undo::Made(prev.clone()));
+        }
+        for name in [MANIFEST_NAME, CONFIG_NAME] {
+            let from = target.join(name);
+            let to = prev.join(name);
+            if is_link(&from) || !from.is_file() || is_link(&to) {
                 continue;
             }
-            let to = join_relative(&prev, rel);
-            make_parents(&to, &prev, &mut made)?;
-            fs::rename(&from, &to).map_err(|e| io_error("move the earlier version's", &from, &e))?;
-            moves.push((from, to));
+            let was_there = fs::symlink_metadata(&to).is_ok();
+            steps.next()?;
+            fs::copy(&from, &to).map_err(|e| io_error("copy the earlier version's", &from, &e))?;
+            if !was_there {
+                undo.push(Undo::Copied(to));
+            }
         }
-        for rel in &new_names {
+        for (rel, _, _) in &old.files {
+            let from = join_relative(target, rel);
+            let to = join_relative(&prev, rel);
+            let already_kept = fs::symlink_metadata(&to).is_ok();
+            if already_kept || path_has_link(target, rel) || path_has_link(&prev, rel) || !from.is_file() {
+                continue;
+            }
+            make_parents(&to, &prev, &mut undo)?;
+            steps.next()?;
+            fs::rename(&from, &to).map_err(|e| io_error("move the earlier version's", &from, &e))?;
+            undo.push(Undo::Moved(from, to));
+        }
+        for (rel, _, sha) in &new.files {
             let from = join_relative(staging, rel);
             let to = join_relative(target, rel);
-            make_parents(&to, target, &mut made)?;
+            let in_place = !is_link(&to) && to.is_file() && sha256_file(&to).is_ok_and(|now| &now == sha);
+            if in_place {
+                continue;
+            }
+            make_parents(&to, target, &mut undo)?;
+            steps.next()?;
             fs::rename(&from, &to).map_err(|e| io_error("put in place", &to, &e))?;
-            moves.push((from, to));
+            undo.push(Undo::Moved(from, to));
         }
+        let config = target.join(CONFIG_NAME);
+        steps.next()?;
+        let kept_config = prev.join(CONFIG_NAME);
+        fs::rename(staging.join(CONFIG_NAME), &config).map_err(|e| io_error("put in place", &config, &e))?;
+        if kept_config.is_file() {
+            undo.push(Undo::Replaced(config, kept_config));
+        } else {
+            undo.push(Undo::Moved(staging.join(CONFIG_NAME), config));
+        }
+        // The last step, and the one that makes the new version the installed one.
+        let manifest = target.join(MANIFEST_NAME);
+        steps.next()?;
+        fs::rename(staging.join(MANIFEST_NAME), &manifest).map_err(|e| io_error("put in place", &manifest, &e))?;
         Ok::<(), PackError>(())
     })();
 
     if let Err(e) = moved {
+        if matches!(&e, PackError::Io(t) if t == STOPPED) {
+            return Err(e);
+        }
         let mut not_back = Vec::new();
-        for (from, to) in moves.iter().rev() {
-            if fs::rename(to, from).is_err() {
-                not_back.push(from.display().to_string());
+        for step in undo.iter().rev() {
+            let back = match step {
+                Undo::Made(d) => {
+                    let _ = fs::remove_dir(d);
+                    Ok(())
+                }
+                Undo::Copied(f) => fs::remove_file(f).map(|_| ()),
+                Undo::Moved(from, to) => fs::rename(to, from),
+                Undo::Replaced(f, copy) => fs::copy(copy, f).map(|_| ()),
+            };
+            if back.is_err() {
+                let p = match step {
+                    Undo::Made(p) | Undo::Copied(p) | Undo::Replaced(p, _) => p,
+                    Undo::Moved(from, _) => from,
+                };
+                not_back.push(p.display().to_string());
             }
         }
-        for d in made.iter().rev() {
-            let _ = fs::remove_dir(d);
-        }
-        let mut text = format!("{e} So nothing changed: version {} is still installed.", old.version);
-        if !not_back.is_empty() {
-            text = format!(
-                "{e} Putting the earlier version back failed for {}; the rest of version {} is still installed.",
-                not_back.join(", "),
-                old.version
-            );
-        }
+        let text = if not_back.is_empty() {
+            format!("{e} So nothing changed: version {} is still installed.", old.version)
+        } else {
+            format!(
+                "{e} Putting the earlier version back failed for {}; installing again finishes the install.",
+                not_back.join(", ")
+            )
+        };
         return Err(PackError::Io(text));
     }
 
     // Folders the earlier version had and the new one does not: removed when empty, deepest first.
-    let mut old_dirs: Vec<PathBuf> = old_names
+    let mut old_dirs: Vec<PathBuf> = old
+        .files
         .iter()
-        .flat_map(|rel| {
+        .flat_map(|(rel, _, _)| {
             let parts: Vec<&str> = rel.split('/').collect();
             (1..parts.len()).map(move |n| parts[..n].join("/")).collect::<Vec<_>>()
         })
@@ -520,7 +666,7 @@ fn swap_in(target: &Path, old: &Manifest, new: &Manifest, staging: &Path) -> Res
             let _ = fs::remove_dir(&d);
         }
     }
-    let _ = clear_leftover_staging(staging);
+    let _ = clear_leftover_staging(staging, Some(new));
     Ok(())
 }
 
@@ -569,6 +715,19 @@ pub fn shortcuts(layout: &Layout) -> Result<(), PackError> {
     }
 }
 
+/// Makes the shortcuts after a finished install and says what happened, in words: never an error, since the install
+/// itself has worked by then (a shortcut of that name that opens something else is a note).
+pub fn shortcuts_said(layout: &Layout) -> String {
+    match shortcuts(layout) {
+        Ok(()) => format!(
+            "Made the shortcuts {} and {}.",
+            layout.start_menu_link().display(),
+            layout.desktop_link().display()
+        ),
+        Err(note) => note.to_string(),
+    }
+}
+
 /// Whether the file at `link` is a shortcut that opens this layout's installed exe.
 pub fn opens_the_app(link: &Path, layout: &Layout) -> bool {
     if is_link(link) || !link.is_file() {
@@ -580,44 +739,86 @@ pub fn opens_the_app(link: &Path, layout: &Layout) -> bool {
     lnk::target(&bytes).is_some_and(|t| names(&t).is_some() && names(&t) == names(&layout.exe()))
 }
 
+/// The line printed before the source is copied.
+pub const COPYING_SOURCE: &str =
+    "Copying the source from GitHub; this can take a few minutes. A GitHub sign-in window may open.";
+
+/// The longest the copy of the source may take before it is stopped.
+const CLONE_LIMIT: std::time::Duration = std::time::Duration::from_secs(30 * 60);
+
 /// The app's own copy of the repository for updates (route A), and the `update.toml` that records it. Reads the
 /// owner's clone's `origin` (`git -C <from> remote get-url origin`), refuses an address with a user name or
-/// password without repeating it, then clones it with `--no-checkout` into `<data>\source`, unless a copy of the
-/// same repository is already there (kept). A folder there that is a copy of another repository is refused. Git
-/// handles its own sign-in.
-pub fn source_copy(git: &Path, from: &Path, data: &Path) -> Result<UpdateConfig, PackError> {
+/// password without repeating it, then (after `say(COPYING_SOURCE)`) clones it with `--no-checkout` into
+/// `<data>\source` through `run::run` with a 30-minute limit, unless a finished copy of the same repository is
+/// already there (kept). A folder there that is a copy of another repository, or not a finished copy, is refused in
+/// words and never deleted. Git is only ever pointed at a folder that holds its own `.git`, so it never walks up to
+/// a repository around it. Git handles its own sign-in.
+pub fn source_copy(git: &Path, from: &Path, data: &Path, say: &dyn Fn(&str)) -> Result<UpdateConfig, PackError> {
     let o = OsStr::new;
-    let remote = git_says(
-        git,
-        &[o("-C"), from.as_os_str(), o("remote"), o("get-url"), o("origin")],
-    )
-    .map_err(|_| {
+    let no_clone = |dir: &Path| {
         PackError::Refused(format!(
             "Git could not read where the copy of the source at {} comes from, so updates could not be set up.",
-            from.display()
+            dir.display()
         ))
-    })?;
+    };
+    if !has_own_git(from) {
+        return Err(no_clone(from));
+    }
+    let remote = git_says(
+        git,
+        from,
+        &[o("-C"), from.as_os_str(), o("remote"), o("get-url"), o("origin")],
+    )
+    .map_err(|_| no_clone(from))?;
     check_remote(&remote)?;
     let source = data.join("source");
+    let unfinished = || {
+        PackError::Refused(format!(
+            "{} is not a finished copy of the source; delete it, then install again.",
+            source.display()
+        ))
+    };
     if fs::symlink_metadata(&source).is_ok() {
-        let same = !is_link(&source)
-            && source.is_dir()
-            && git_says(
-                git,
-                &[o("-C"), source.as_os_str(), o("remote"), o("get-url"), o("origin")],
-            )
-            .is_ok_and(|theirs| theirs == remote);
-        if !same {
-            return Err(PackError::Refused(format!(
-                "{} is a copy of another repository, so it was left as it is and updates were not set up. Move it \
-                 elsewhere, then install again.",
-                source.display()
-            )));
+        if is_link(&source) || !source.is_dir() || !has_own_git(&source) {
+            return Err(unfinished());
+        }
+        let theirs = git_says(
+            git,
+            &source,
+            &[o("-C"), source.as_os_str(), o("remote"), o("get-url"), o("origin")],
+        );
+        match theirs {
+            Ok(t) if t == remote => {}
+            Ok(_) => {
+                return Err(PackError::Refused(format!(
+                    "{} is a copy of another repository, so it was left as it is and updates were not set up. Move \
+                     it elsewhere, then install again.",
+                    source.display()
+                )));
+            }
+            Err(()) => return Err(unfinished()),
+        }
+        // A finished clone has the remote's branches; one stopped part-way may have none.
+        let refs = git_says(
+            git,
+            &source,
+            &[
+                o("-C"),
+                source.as_os_str(),
+                o("for-each-ref"),
+                o("--count=1"),
+                o("refs/remotes/origin"),
+            ],
+        );
+        if !refs.is_ok_and(|r| !r.is_empty()) {
+            return Err(unfinished());
         }
     } else {
         fs::create_dir_all(data).map_err(|e| io_error("make the folder", data, &e))?;
+        say(COPYING_SOURCE);
         // `--` ends the options, so the address can never be read as one.
-        let out = git_output(
+        let never = std::sync::atomic::AtomicBool::new(false);
+        let ran = crate::run::run(
             git,
             &[
                 o("clone"),
@@ -627,20 +828,25 @@ pub fn source_copy(git: &Path, from: &Path, data: &Path) -> Result<UpdateConfig,
                 o(&remote),
                 source.as_os_str(),
             ],
-        )
-        .map_err(|e| PackError::Io(format!("Git could not be started: {e}.")))?;
-        if !out.status.success() {
-            let said = String::from_utf8_lossy(&out.stderr);
-            let last = said
-                .lines()
-                .rev()
-                .find(|l| !l.trim().is_empty())
-                .unwrap_or("no reason given")
-                .trim();
-            return Err(PackError::Io(format!(
-                "Git could not copy the repository into {}, so updates could not be set up. Git said \"{last}\".",
-                source.display()
-            )));
+            CLONE_LIMIT,
+            &never,
+        );
+        let failed = match ran {
+            Ok(r) if r.status.success() => None,
+            Ok(r) => Some(r.tail.last().cloned().unwrap_or_else(|| "no reason given".to_string())),
+            Err(e) => Some(e),
+        };
+        if let Some(said) = failed {
+            let mut text = format!(
+                "Git could not copy the repository into {}, so updates could not be set up. Git said \"{}\".",
+                source.display(),
+                said.trim().trim_end_matches('.')
+            );
+            if fs::symlink_metadata(&source).is_ok() {
+                text.push(' ');
+                text.push_str(&unfinished().to_string());
+            }
+            return Err(PackError::Io(text));
         }
     }
     Ok(UpdateConfig {
@@ -652,15 +858,27 @@ pub fn source_copy(git: &Path, from: &Path, data: &Path) -> Result<UpdateConfig,
     })
 }
 
-/// Git run with its arguments through the one way to start a program and waited for, never waiting on a console
-/// prompt (git's own sign-in window may still open for the owner).
-fn git_output(git: &Path, args: &[&OsStr]) -> std::io::Result<std::process::Output> {
-    crate::run::quiet(git, args).env("GIT_TERMINAL_PROMPT", "0").output()
+/// Whether `dir` holds its own `.git` (a folder or, for a worktree, a file), not reached through a link.
+fn has_own_git(dir: &Path) -> bool {
+    let g = dir.join(".git");
+    !is_link(dir) && !is_link(&g) && fs::symlink_metadata(&g).is_ok()
+}
+
+/// Git run with its arguments in `dir` through the one way to start a program and waited for, never waiting on a
+/// console prompt (git's own sign-in window may still open for the owner), and never looking for a repository above
+/// `dir`'s parent.
+fn git_output(git: &Path, dir: &Path, args: &[&OsStr]) -> std::io::Result<std::process::Output> {
+    let mut c = crate::run::quiet(git, args);
+    c.env("GIT_TERMINAL_PROMPT", "0");
+    if let Some(parent) = dir.parent() {
+        c.env("GIT_CEILING_DIRECTORIES", parent);
+    }
+    c.output()
 }
 
 /// What git printed, trimmed, when it ended well.
-fn git_says(git: &Path, args: &[&OsStr]) -> Result<String, ()> {
-    let out = git_output(git, args).map_err(|_| ())?;
+fn git_says(git: &Path, dir: &Path, args: &[&OsStr]) -> Result<String, ()> {
+    let out = git_output(git, dir, args).map_err(|_| ())?;
     if out.status.success() {
         Ok(String::from_utf8_lossy(&out.stdout).trim().to_string())
     } else {
@@ -684,9 +902,11 @@ pub fn find_git() -> Option<PathBuf> {
     })
 }
 
-/// Windows PowerShell, `<drive>:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe`, from `SystemRoot` checked
-/// as for curl (a drive's `Windows` folder); never from `PATH`.
-pub fn powershell() -> Result<PathBuf, PackError> {
+/// Test only (reading links back through the shell object): Windows PowerShell,
+/// `<drive>:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe`, from `SystemRoot` checked as for curl (a
+/// drive's `Windows` folder); never from `PATH`.
+#[cfg(test)]
+pub(crate) fn powershell() -> Result<PathBuf, PackError> {
     let root = std::env::var_os("SystemRoot")
         .ok_or_else(|| PackError::Refused("Windows' folder is not known (SystemRoot is not set).".to_string()))?;
     let text = root.to_string_lossy();
@@ -716,6 +936,7 @@ pub fn powershell() -> Result<PathBuf, PackError> {
 
 /// `text` for PowerShell's `-EncodedCommand`: UTF-16 little-endian, in base64. A fixed script passed this way needs
 /// no quoting at all, so nothing in it can be read as another argument.
+#[cfg(test)]
 pub(crate) fn encoded_command(text: &str) -> String {
     const ABC: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
     let bytes: Vec<u8> = text.encode_utf16().flat_map(u16::to_le_bytes).collect();
@@ -1264,6 +1485,124 @@ pub(crate) mod tests {
         assert_eq!(read(&layout.exe()), b"pretend exe 0.6.1");
     }
 
+    /// A package of `version` that also holds a guide page the earlier fake versions do not have.
+    pub(crate) fn package_with_extra(root: &Path, version: &str) -> PathBuf {
+        let inputs = root.join(format!("extra-{version}-inputs"));
+        let (exe, tree, checked) = crate::package::tests::fake_inputs(&inputs, version);
+        fs::write(&exe, format!("pretend exe {version}")).unwrap();
+        fs::write(tree.join("studio/packaging/guide/extra.html"), b"a new page").unwrap();
+        let out = root.join(format!("package-extra-{version}"));
+        crate::package::package(&exe, &tree, &checked, &out).unwrap();
+        out
+    }
+
+    /// Installs `package`, stopping after `steps` steps of the swap with nothing undone, as a power cut would.
+    pub(crate) fn install_stopped_after(package: &Path, layout: &Layout, steps: usize) -> Result<(), PackError> {
+        install_stopping(package, layout, &config_for(layout), Some(steps))
+    }
+
+    #[test]
+    fn a_stopped_install_is_finished_by_installing_again() {
+        let mut stopped_ever = false;
+        let mut finished_first_time = false;
+        for n in 0..=24 {
+            let dir = TempDir::new("install-stopped");
+            let old = package_of(dir.path(), "0.6.0");
+            let new = package_with_extra(dir.path(), "0.6.1");
+            let layout = Layout::under(&dir.path().join("pc"));
+            install(&old, &layout, &config_for(&layout)).unwrap();
+            fs::write(layout.programs.join("my notes.txt"), b"mine").unwrap();
+            let stopped = match install_stopped_after(&new, &layout, n) {
+                Err(PackError::Io(t)) if t == STOPPED => {
+                    stopped_ever = true;
+                    // Stopped anywhere, the folder is still one of ours, and removal could still plan it.
+                    assert!(read_manifest(&layout.programs.join(MANIFEST_NAME)).is_ok(), "step {n}");
+                    assert!(crate::remove::removal_plan(&layout).is_ok(), "step {n}");
+                    true
+                }
+                Ok(()) => {
+                    finished_first_time = true;
+                    false
+                }
+                Err(e) => panic!("step {n}: {e}"),
+            };
+            install(&new, &layout, &config_for(&layout)).unwrap_or_else(|e| panic!("step {n}: {e}"));
+            assert_eq!(
+                read_manifest(&layout.programs.join(MANIFEST_NAME)).unwrap().version,
+                "0.6.1"
+            );
+            check_installed(&layout.programs);
+            assert_eq!(read(&layout.exe()), b"pretend exe 0.6.1", "step {n}");
+            assert_eq!(read(&layout.programs.join("guide/extra.html")), b"a new page");
+            assert_eq!(read(&layout.programs.join("my notes.txt")), b"mine", "step {n}");
+            let prev = layout.programs.join(".previous");
+            // The kept copy is a whole version: the earlier one when the first install stopped, else (installed
+            // twice) 0.6.1 itself.
+            let kept = if stopped { "0.6.0" } else { "0.6.1" };
+            assert_eq!(
+                read_manifest(&prev.join(MANIFEST_NAME)).unwrap().version,
+                kept,
+                "step {n}"
+            );
+            check_installed(&prev);
+            assert_eq!(
+                read(&prev.join(EXE_NAME)),
+                format!("pretend exe {kept}").as_bytes(),
+                "step {n}"
+            );
+            assert!(prev.join(CONFIG_NAME).is_file());
+            assert!(!layout.staging().exists(), "step {n}");
+            assert_eq!(
+                names_in(&layout.programs),
+                [
+                    ".previous",
+                    MANIFEST_NAME,
+                    EXE_NAME,
+                    ICON_NAME,
+                    "ffmpeg",
+                    "guide",
+                    "my notes.txt",
+                    "update.toml"
+                ],
+                "step {n}"
+            );
+        }
+        assert!(
+            stopped_ever && finished_first_time,
+            "the steps covered both a stop and a whole swap"
+        );
+    }
+
+    #[test]
+    fn a_folder_that_holds_only_empty_folders_counts_as_empty() {
+        let dir = TempDir::new("install-emptyprev");
+        let layout = Layout::under(&dir.path().join("pc"));
+        install(&package_of(dir.path(), "0.6.0"), &layout, &config_for(&layout)).unwrap();
+        fs::create_dir_all(layout.programs.join(".next").join("ffmpeg").join("deeper")).unwrap();
+        install(&package_of(dir.path(), "0.6.1"), &layout, &config_for(&layout)).unwrap();
+        assert!(!layout.programs.join(".next").exists());
+        // A file in it is not ours, and stops the install.
+        fs::create_dir_all(layout.programs.join(".next")).unwrap();
+        fs::write(layout.programs.join(".next").join("x.txt"), b"x").unwrap();
+        let err = install(&package_of(dir.path(), "0.6.2"), &layout, &config_for(&layout)).unwrap_err();
+        assert!(err.to_string().contains("did not put there"), "{err}");
+    }
+
+    #[test]
+    fn a_link_anywhere_on_a_path_is_seen() {
+        let dir = TempDir::new("install-pathlink");
+        let root = dir.path().join("root");
+        fs::create_dir_all(root.join("real")).unwrap();
+        fs::write(root.join("real").join("a.txt"), b"a").unwrap();
+        assert!(!path_has_link(&root, "real/a.txt"));
+        if !make_junction(&root.join("real"), &root.join("linked")) {
+            eprintln!("note: could not make a junction here, so the link case was not tried");
+            return;
+        }
+        assert!(path_has_link(&root, "linked/a.txt"));
+        assert!(path_has_link(&root, "linked"));
+    }
+
     /// Every file the installed manifest lists is there with its hash.
     fn check_installed(dir: &Path) {
         let m = read_manifest(&dir.join(MANIFEST_NAME)).unwrap();
@@ -1446,6 +1785,10 @@ pub(crate) mod tests {
         assert_eq!(fs::read(layout.desktop_link()).unwrap(), other);
         // The other shortcut was still made.
         assert!(opens_the_app(&layout.start_menu_link(), &layout));
+        // After an install this is a note, not a failure.
+        let said = shortcuts_said(&layout);
+        assert!(said.contains("opens something else") && said.ends_with('.'), "{said}");
+        assert_eq!(fs::read(layout.desktop_link()).unwrap(), other);
     }
 
     #[test]
@@ -1579,7 +1922,10 @@ pub(crate) mod tests {
         );
         git(&g, &[o("clone"), o("-q"), upstream.as_os_str(), clone.as_os_str()]);
         let data = dir.path().join("data");
-        let c = source_copy(&g, &clone, &data).unwrap();
+        let said = std::cell::RefCell::new(Vec::new());
+        let say = |l: &str| said.borrow_mut().push(l.to_string());
+        let c = source_copy(&g, &clone, &data, &say).unwrap();
+        assert_eq!(*said.borrow(), [COPYING_SOURCE]);
         assert_eq!(c.source, data.join("source"));
         assert_eq!(c.build_dir, data.join("build"));
         assert_eq!(c.downloads, data.join("downloads"));
@@ -1588,7 +1934,8 @@ pub(crate) mod tests {
         assert!(data.join("source").join(".git").is_dir());
         assert!(!data.join("source").join("a.txt").exists(), "no checkout");
         // Again: the copy is kept.
-        assert_eq!(source_copy(&g, &clone, &data).unwrap(), c);
+        assert_eq!(source_copy(&g, &clone, &data, &say).unwrap(), c);
+        assert_eq!(said.borrow().len(), 1, "nothing is copied again");
         // A copy of another repository there is refused and left alone.
         let other = dir.path().join("other");
         git(&g, &[o("init"), o("-q"), other.as_os_str()]);
@@ -1597,7 +1944,58 @@ pub(crate) mod tests {
             &g,
             &[o("clone"), o("-q"), other.as_os_str(), data2.join("source").as_os_str()],
         );
-        let err = source_copy(&g, &clone, &data2).unwrap_err().to_string();
+        let err = source_copy(&g, &clone, &data2, &say).unwrap_err().to_string();
         assert!(err.contains("another repository"), "{err}");
+
+        // A source folder without its own .git (git would walk up to the repository around it), and one with the
+        // right origin but no branches (a clone stopped part-way): not finished copies, and left as they are.
+        let data3 = dir.path().join("data3");
+        fs::create_dir_all(data3.join("source")).unwrap();
+        fs::write(data3.join("source").join("half.txt"), b"x").unwrap();
+        let err = source_copy(&g, &clone, &data3, &say).unwrap_err().to_string();
+        assert!(
+            err.contains("is not a finished copy of the source; delete it, then install again."),
+            "{err}"
+        );
+        assert!(data3.join("source").join("half.txt").is_file());
+        let data4 = dir.path().join("data4");
+        let half = data4.join("source");
+        git(&g, &[o("init"), o("-q"), half.as_os_str()]);
+        git(
+            &g,
+            &[
+                o("-C"),
+                half.as_os_str(),
+                o("remote"),
+                o("add"),
+                o("origin"),
+                upstream.as_os_str(),
+            ],
+        );
+        let err = source_copy(&g, &clone, &data4, &say).unwrap_err().to_string();
+        assert!(err.contains("is not a finished copy"), "{err}");
+        assert!(half.join(".git").is_dir());
+        // A clone that fails says why and leaves nothing it did not make.
+        let gone = dir.path().join("no such repository");
+        git(
+            &g,
+            &[
+                o("-C"),
+                clone.as_os_str(),
+                o("remote"),
+                o("set-url"),
+                o("origin"),
+                gone.as_os_str(),
+            ],
+        );
+        let data5 = dir.path().join("data5");
+        let err = source_copy(&g, &clone, &data5, &say).unwrap_err().to_string();
+        assert!(err.contains("Git could not copy the repository"), "{err}");
+        // The folder the clone was owed: no source copy.
+        assert!(!data5.join("source").join(".git").exists());
+        // The owner's clone itself must have its own .git.
+        let plain = dir.path().join("plain folder");
+        fs::create_dir_all(&plain).unwrap();
+        assert!(source_copy(&g, &plain, &dir.path().join("data6"), &say).is_err());
     }
 }
