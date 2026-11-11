@@ -6,7 +6,8 @@
 //! across as fit beside the scroll bar; it scrolls when it does not fit and then shows a solid bar without being
 //! hovered. A footer 46 tall (a 1 px `LINE_SOFT` line above it) names the chosen video and holds "Open folder" and
 //! "Reopen". With no videos the grid's place holds one centred line that says what to do, and there is no footer;
-//! when the output folder is missing or cannot be read (Review Focus 1) it holds the store's words and what to do.
+//! when the output folder is missing or cannot be read (Review Focus 1) it holds the store's words and what to do,
+//! and the header offers "Change folder" beside "Look again" (ruling M2-R26). The grid has no edge fade.
 //!
 //! A tile is an object row: the cover at 180 x 320 (a `RAISED` block until it arrives), the title, the date and, for
 //! a video that cannot be reopened, the reason, two lines at most. Only the tiles in view are laid out.
@@ -18,11 +19,11 @@
 use std::sync::{Arc, LazyLock};
 
 use egui::scroll_area::ScrollBarVisibility;
-use egui::style::ScrollStyle;
+use egui::style::{ScrollFadeStyle, ScrollStyle};
 use egui::text::{LayoutJob, TextWrapping};
 use egui::{Align, Color32, FontId, Label, Layout, Rect, RichText, ScrollArea, Ui, UiBuilder, vec2};
 
-use crate::model::library::LibraryEntry;
+use crate::model::library::{FolderState, LibraryEntry};
 use crate::model::take::Frame;
 use crate::state::{Action, ViewModel};
 use crate::store::library::local_date;
@@ -39,8 +40,11 @@ pub const TILE_H: f32 = 410.0;
 pub const COVER: (f32, f32) = (180.0, 320.0);
 /// What an output folder with no videos says.
 pub const EMPTY: &str = "No videos yet. Render one and it appears here.";
-/// What to do when the output folder is missing or cannot be read.
-pub const MISSING_ADVICE: &str = "Choose another folder in Settings, or render a video to create it.";
+/// What to do when the output folder is missing. Rendering does not make it (Render holds "Add to queue" back and
+/// offers "Create folder" there), so the advice names the place that does.
+pub const MISSING_ADVICE: &str = "Choose another folder, or go to Render to create it.";
+/// What to do when the output folder is there but cannot be read: only another folder helps.
+pub const UNREADABLE_ADVICE: &str = "Choose another folder.";
 /// The footer with no video chosen.
 pub const PICK_ONE: &str = "Pick a video to reopen it or open its folder.";
 /// Why the footer's buttons wait with no video chosen.
@@ -101,7 +105,12 @@ pub fn show(ui: &mut Ui, vm: &ViewModel, out: &mut Vec<Action>) {
     );
     header_row(ui, vm, header.shrink2(vec2(SIDE_PAD, 0.0)), out);
     if let Some(problem) = &lib.problem {
-        message(ui, list, &[(problem, TEXT), (MISSING_ADVICE, MUTED)]);
+        let advice = if vm.folder == FolderState::Missing {
+            MISSING_ADVICE
+        } else {
+            UNREADABLE_ADVICE
+        };
+        message(ui, list, &[(problem, TEXT), (advice, MUTED)]);
     } else if lib.entries.is_empty() {
         let text = if lib.scanning { LOOKING } else { EMPTY };
         message(ui, list, &[(text, MUTED)]);
@@ -136,8 +145,8 @@ fn button_w(ui: &Ui, label: &str) -> f32 {
     (text + 2.0 * BUTTON_PAD_X).ceil()
 }
 
-/// The header: "Library" (`section`), "{n} videos in {folder}" (`small` `MUTED`, cut short when it does not fit) and
-/// the box button "Look again" at the right.
+/// The header: "Library" (`section`), "{n} videos in {folder}" (`small` `MUTED`, cut short when it does not fit),
+/// then at the right the box button "Change folder" while the folder is missing or unreadable, and "Look again".
 fn header_row(ui: &mut Ui, vm: &ViewModel, inside: Rect, out: &mut Vec<Action>) {
     let mut child = ui.new_child(
         UiBuilder::new()
@@ -155,7 +164,10 @@ fn header_row(ui: &mut Ui, vm: &ViewModel, inside: Rect, out: &mut Vec<Action>) 
         vm.settings.output_folder.display()
     );
     let look = "Look again";
-    let room = (ui.available_width() - button_w(ui, look) - WORD_GAP).max(0.0);
+    // With the folder missing or unreadable (Review Focus 1, ruling M2-R26) the way forward is offered here too.
+    let change = vm.library.problem.is_some().then_some("Change folder");
+    let buttons = button_w(ui, look) + change.map_or(0.0, |c| button_w(ui, c) + ITEM_GAP);
+    let room = (ui.available_width() - buttons - WORD_GAP).max(0.0);
     ui.allocate_ui_with_layout(
         vec2(room, inside.height()),
         Layout::left_to_right(Align::Center),
@@ -165,6 +177,12 @@ fn header_row(ui: &mut Ui, vm: &ViewModel, inside: Rect, out: &mut Vec<Action>) 
         },
     );
     ui.add_space(WORD_GAP);
+    if let Some(change) = change {
+        if buttons::boxed(ui, change).clicked() {
+            out.push(Action::ChangeFolder);
+        }
+        ui.add_space(ITEM_GAP);
+    }
     if buttons::boxed(ui, look).clicked() {
         out.push(Action::RefreshLibrary);
     }
@@ -213,6 +231,11 @@ fn grid(ui: &mut Ui, vm: &ViewModel, rect: Rect, out: &mut Vec<Action>) {
         bar_width: BAR_W,
         bar_inner_margin: BAR_MARGIN,
         bar_outer_margin: BAR_MARGIN,
+        // No fade at the edges: the covers are drawn at full strength up to the grid's edge.
+        fade: ScrollFadeStyle {
+            strength: 0.0,
+            size: 0.0,
+        },
         ..ScrollStyle::solid()
     };
     style.visuals.extreme_bg_color = GROUND;

@@ -5,7 +5,8 @@ use std::path::PathBuf;
 
 use bf_app::app::BfApp;
 use bf_app::fixtures::{library, settings};
-use bf_app::screens::library::{COVER, EMPTY, MISSING_ADVICE, TILE_H, TILE_W};
+use bf_app::model::library::FolderState;
+use bf_app::screens::library::{COVER, EMPTY, MISSING_ADVICE, TILE_H, TILE_W, UNREADABLE_ADVICE};
 use bf_app::seam::Command;
 use bf_app::state::{Action, ViewModel};
 use bf_app::store::library::local_date;
@@ -318,6 +319,8 @@ fn a_missing_folder_says_what_to_do() {
     for text in [problem.as_str(), MISSING_ADVICE] {
         assert!(workspace.contains_rect(harness.get_by_label(text).rect()), "{text}");
     }
+    // Nothing here is about a video.
+    assert!(!has(&harness, "Reopen") && !has(&harness, "Open folder"));
     // Looking again asks the engine.
     harness.get_by_label("Look again").click();
     harness.run();
@@ -327,6 +330,108 @@ fn a_missing_folder_says_what_to_do() {
         sent.iter().any(|c| matches!(c, Command::ScanLibrary { .. })),
         "{sent:?}"
     );
+    // Ruling M2-R26: the way forward is offered here, beside "Look again".
+    let change = control(&harness, "Change folder", Role::Button).rect();
+    let look = control(&harness, "Look again", Role::Button).rect();
+    assert_eq!(change.center().y, look.center().y, "in the header");
+    assert_eq!(look.min.x, change.max.x + 8.0, "just before it");
+    harness.get_by_label("Change folder").click();
+    harness.run();
+    assert_eq!(harness.state().log, vec![Action::RefreshLibrary, Action::ChangeFolder]);
+    let sent = harness.state_mut().sent();
+    assert!(sent.iter().any(|c| matches!(c, Command::PickFolder { .. })), "{sent:?}");
+}
+
+#[test]
+fn an_unreadable_folder_only_says_choose_another() {
+    let _gpu = gpu();
+    let problem = "The output folder D:\\Videos could not be read. Access is denied.";
+    let mut vm = library::missing();
+    vm.library.problem = Some(problem.to_string());
+    vm.folder = FolderState::NotWritable("Access is denied.".to_string());
+    let harness = showing(REF, vm);
+    assert!(has(&harness, problem));
+    assert!(has(&harness, UNREADABLE_ADVICE));
+    assert!(!has(&harness, MISSING_ADVICE), "creating it would not help");
+    assert!(has(&harness, "Change folder"));
+    assert!(!has(&harness, "Reopen") && !has(&harness, "Open folder"));
+}
+
+#[test]
+fn the_missing_folder_controls_show_their_ring_and_take_tab_in_order() {
+    let _gpu = gpu();
+    for size in [REF, MIN] {
+        let mut harness = showing(size, library::missing());
+        for name in ["Change folder", "Look again"] {
+            let rect = control(&harness, name, Role::Button).rect();
+            assert_eq!(
+                ring_sides(&mut harness, rect),
+                [false; 4],
+                "{size:?}: {name} before focus"
+            );
+            control(&harness, name, Role::Button).focus();
+            harness.run();
+            assert_eq!(
+                ring_sides(&mut harness, rect),
+                [true; 4],
+                "{size:?}: {name}'s ring is whole"
+            );
+            harness.key_press(Key::Escape);
+            harness.run();
+        }
+        control(&harness, "Change folder", Role::Button).focus();
+        harness.run();
+        harness.key_press(Key::Tab);
+        harness.run();
+        assert!(control(&harness, "Look again", Role::Button).is_focused(), "{size:?}");
+        assert!(harness.state().log.is_empty());
+    }
+}
+
+#[test]
+fn a_bottom_row_tile_shows_its_ring_with_the_grid_scrolled() {
+    let _gpu = gpu();
+    for size in [REF, MIN] {
+        let mut harness = showing(size, library::vm());
+        let names = tile_names();
+        let last = names.last().expect("six tiles");
+        let top_before = control(&harness, &names[0], Role::Button).rect().min.y;
+        // Scroll the grid by the wheel, the way a person does, until the bottom row is all in view.
+        let grid = harness.state().layout.workspace;
+        harness.hover_at(grid.center());
+        for _ in 0..10 {
+            harness.event(egui::Event::MouseWheel {
+                unit: egui::MouseWheelUnit::Point,
+                delta: egui::vec2(0.0, -120.0),
+                modifiers: egui::Modifiers::NONE,
+                phase: egui::TouchPhase::Move,
+                source: egui::MouseWheelSource::Wheel,
+            });
+            harness.run();
+        }
+        let first = harness
+            .query_all_by_label(&names[0])
+            .find(|n| n.accesskit_node().role() == Role::Button)
+            .map(|n| n.rect().min.y);
+        assert!(
+            first.is_none_or(|y| y < top_before),
+            "{size:?}: the grid scrolled ({first:?} from {top_before})"
+        );
+        let rect = control(&harness, last, Role::Button).rect();
+        let workspace = harness.state().layout.workspace;
+        assert!(
+            rect.max.y + 4.0 <= workspace.max.y - 46.0,
+            "{size:?}: the bottom row sits above the footer with room for its ring: {rect:?}"
+        );
+        control(&harness, last, Role::Button).focus();
+        harness.run();
+        let rect = control(&harness, last, Role::Button).rect();
+        assert_eq!(
+            ring_sides(&mut harness, rect),
+            [true; 4],
+            "{size:?}: {last}'s ring is whole"
+        );
+    }
 }
 
 #[test]
