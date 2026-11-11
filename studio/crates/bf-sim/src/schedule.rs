@@ -501,7 +501,7 @@ impl Schedule {
         }
         // 6141 to 6142: `if self.lines or self.strings` (the pipes; strings are the older `trap`'s)
         fight.socket("stage9.hazards");
-        if (0..2).any(|k| line::is(fight, k)) {
+        if line::live(fight) {
             line::hazards_step(fight, dt);
         }
 

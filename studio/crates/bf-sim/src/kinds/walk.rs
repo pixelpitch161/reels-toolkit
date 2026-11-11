@@ -39,9 +39,17 @@ pub fn step(f: &mut Fight, _k: usize, _dt: f64) {
 }
 
 /// `move` 3203 to 3205: a walker pushed back off the ropes in a clash has its step (`wstep`, if any) restarted where it
-/// now is: `S_['p0'], S_['p1'] = W_.p.copy(), W_.p.copy()`
+/// now is: `S_['p0'], S_['p1'] = W_.p.copy(), W_.p.copy()`. A ball without a step (`wstep` None) is left as it is: a
+/// no-op.
 pub fn clash_pinned(f: &mut Fight, _w: usize) {
     f.socket("stub:kinds::walk::clash_pinned");
+}
+
+/// `effects_step` 3078 to 3082, a ring with `grow` (the walk's step ring, 4036 to 4038) that landed: `Bw.blade_len =
+/// min(Bw.w['max_reach'], Bw.blade_len + Bw.w['grow'])` for the ring's owner (and its `pull` when its weapon has
+/// `pull_grow`)
+pub fn ring_grow(f: &mut Fight, _owner: usize) {
+    f.socket("stub:kinds::walk::ring_grow");
 }
 
 /// The record keys this kind adds (Python's `rec` gets them at setup): `run()` 5880 to 5881: `WALK`. None until the

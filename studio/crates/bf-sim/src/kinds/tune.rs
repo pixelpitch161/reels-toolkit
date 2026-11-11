@@ -46,7 +46,8 @@ pub fn detune(f: &mut Fight, _vic: usize, _att: usize, _depth: f64, _dur: f64, _
 }
 
 /// `effects_step` 3069 to 3071, a ring with `detune` that landed on `vic`: `dd_ = W['detune']; self._detune(o,
-/// W['owner'], dd_['depth'], dd_['dur_beats'] * self.R.beat, dd_['weak'])` (it reads the option, then calls [`detune`])
+/// W['owner'], dd_['depth'], dd_['dur_beats'] * self.R.beat, dd_['weak'])` (it reads the option, then calls
+/// [`detune`]). The stub computes `dur = dur_beats * beat` here, as `effects_step` does.
 pub fn wave_detune(f: &mut Fight, _vic: usize, _att: usize, _detune: &DetuneCfg) {
     f.socket("stub:kinds::tune::wave_detune");
 }

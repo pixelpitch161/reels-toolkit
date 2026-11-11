@@ -124,6 +124,7 @@ stage9.hazards             6141-6142     step
 effects.waves              3057-3087     step
 effects.wave.detune        3069-3071     ringhit
 effects.wave.stun          3072-3074     ringhit
+effects.wave.grow          3078-3082     ringhit
 effects.slams              3088-3098     step
 effects.slam.how           3097          slamhit
 effects.arcs               3099-3113     step

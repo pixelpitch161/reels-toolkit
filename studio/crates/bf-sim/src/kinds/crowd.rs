@@ -47,7 +47,8 @@ pub fn step(f: &mut Fight, _k: usize, _dt: f64) {
     f.socket("stub:kinds::crowd::step");
 }
 
-/// `trigger`, kind `runway` (2966 to 2968): `if B.dive is None: start_runway(k, ab)` (4648 to 4664)
+/// `trigger`, kind `runway` (2966 to 2968): `if B.dive is None: start_runway(k, ab)` (4648 to 4664). Python tests
+/// `B.dive is None` at the call site (2967): the stub must too.
 pub fn start_runway(f: &mut Fight, _k: usize, _ab: &AbilityCfg) {
     f.socket("stub:kinds::crowd::start_runway");
 }
@@ -57,8 +58,8 @@ pub fn start_subtone(f: &mut Fight, _k: usize, _ab: &AbilityCfg) {
     f.socket("stub:kinds::crowd::start_subtone");
 }
 
-/// `trigger`, kind `stagedive` (2973 to 2976): `B.strut = None`, `B.hush = None`, then `start_dive(k, ab)` (4692 to
-/// 4709)
+/// `trigger`, kind `stagedive` (2973 to 2976): `B.strut = None`, `B.hush = None`, then `start_dive(k, ab)` (4692
+/// to 4709). Python clears `B.strut` and `B.hush` before it (2974 to 2975): the stub must too.
 pub fn start_dive(f: &mut Fight, _k: usize, _ab: &AbilityCfg) {
     f.socket("stub:kinds::crowd::start_dive");
 }

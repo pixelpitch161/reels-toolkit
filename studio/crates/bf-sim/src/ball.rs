@@ -162,6 +162,9 @@ pub struct Ball<'a> {
     /// Rolling (#56, STEAMROLLER; `getattr(O, 'rolling', False)`): a swallowing bell cannot gulp it unless the rule
     /// `swallow_rollers` is on (`fight.py` 1100).
     pub rolling: bool,
+    /// A speed factor on its flight (`getattr(B, 'vmul', None)`, `move` 3159 to 3160): THE EMBRACE's rush (4087),
+    /// SWAN SONG (4269), the crowd's poses, WALK THE BAR and STAGE DIVE (4606 to 4704). `None` when none.
+    pub vmul: Option<f64>,
     /// The last ability it fired (`B.last_ab`, `trigger` 2840): what IDENTITY CRISIS copies (`copy_source`).
     pub last_ab: Option<&'a AbilityCfg>,
 }
@@ -222,6 +225,7 @@ impl<'a> Ball<'a> {
             dive: None,
             march: None,
             rolling: false,
+            vmul: None,
             last_ab: None,
         }
     }
@@ -285,7 +289,7 @@ mod tests {
             );
             assert!(!(b.held || b.air || b.hopper || b.walking || b.walker || b.grabbed || b.pinned || b.rolling));
             assert!(b.anc.is_none() && b.swan.is_none() && b.strut.is_none() && b.dive.is_none());
-            assert!(b.march.is_none() && b.last_ab.is_none());
+            assert!(b.march.is_none() && b.last_ab.is_none() && b.vmul.is_none());
         }
     }
 
@@ -302,8 +306,9 @@ mod tests {
     #[test]
     fn a_kind_not_ported_starts_with_the_defaults() {
         let roster = testing::roster();
-        let piano = Ball::new(testing::fighter(&roster, "PIANO"), 0, &Rules::new(120.0, 4.0));
-        assert_eq!((piano.blade_len, piano.frets, piano.ext), (0.0, 0, 0.0));
-        assert!(!piano.thrusts());
+        let kazoo = testing::kazoo(&roster);
+        let ball = Ball::new(&kazoo, 0, &Rules::new(120.0, 4.0));
+        assert_eq!((ball.blade_len, ball.frets, ball.ext), (0.0, 0, 0.0));
+        assert!(!ball.thrusts());
     }
 }

@@ -28,7 +28,7 @@ pub fn live(_f: &Fight) -> bool {
 }
 
 /// `splinters_step(dt)` (3948 to 3964), from `run()` 6193 to 6194 (`if getattr(self, 'splinters', None)`: the stub
-/// tests that itself)
+/// tests that itself). The caller tests [`live`]; the stub walks its own list.
 pub fn splinters_step(f: &mut Fight, _dt: f64) {
     f.socket("stub:abilities::smash::splinters_step");
 }

@@ -175,6 +175,8 @@ fn trigger_announces_the_ability_and_its_kind_acts() {
                 slow: None,
                 stun: None,
                 detune: None,
+                grow: false,
+                clears: true,
             },
             Wave {
                 owner: 1,
@@ -191,6 +193,8 @@ fn trigger_announces_the_ability_and_its_kind_acts() {
                 slow: Some(SlowCfg { mult: 0.6, dur: 1.0 }),
                 stun: None,
                 detune: None,
+                grow: false,
+                clears: true,
             },
         ]
     );

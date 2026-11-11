@@ -82,6 +82,12 @@ pub struct Wave {
     pub stun: Option<f64>,
     /// The detune it puts on the enemy it hits (`W['detune']`, a wave's option: OBOE's ILL WIND), if any.
     pub detune: Option<DetuneCfg>,
+    /// Whether a hit by it grows its owner's reach (`W.get('grow')`, `fight.py` 3078 to 3082: the walk's step ring,
+    /// 4036 to 4038).
+    pub grow: bool,
+    /// Whether it clears the enemy projectiles it sweeps (`W.get('clears', True)`, 3083: false for the walk's step
+    /// ring, the stampede's stomps 4363 to 4365 and the crowd's honks 4687 to 4689).
+    pub clears: bool,
 }
 
 /// A telegraphed slam (an entry of `fight.py`'s `self.slams`, made by `trigger` for the kind `slam`).
@@ -572,7 +578,11 @@ impl<'a> Fight<'a> {
                 // #34: slowed (e.g. SAD TROMBONE)
                 s *= b.slow_mult;
             }
-            // fight.py 3159 to 3160: a per-ball speed factor `vmul` (inflate). Kind not ported.
+            // fight.py 3159 to 3160: a per-ball speed factor (`getattr(B, 'vmul', None)`: THE EMBRACE's rush and SWAN
+            // SONG, CELLO's; the crowd's poses, WALK THE BAR and STAGE DIVE, TENOR SAX's; and the older inflate)
+            if let Some(m) = b.vmul {
+                s *= m;
+            }
             // v = B.v / (np.linalg.norm(B.v) + 1e-12) * s
             let n = geom::norm(b.v) + 1e-12;
             let v = [b.v[0] / n * s, b.v[1] / n * s];
@@ -1492,7 +1502,8 @@ mod tests {
 
     #[test]
     fn setup_from_names_what_it_cannot_run() {
-        let roster = testing::roster();
+        let mut roster = testing::roster();
+        roster.push(testing::kazoo(&roster));
         let ff = testing::example_fight_file();
         let err = |change: &dyn Fn(&mut FightFile)| {
             let mut ff = ff.clone();
@@ -1504,8 +1515,8 @@ mod tests {
             r#"fighters[1]: "KAZOO" is not in the roster"#
         );
         assert_eq!(
-            err(&|f| f.fighters[0] = "PIANO".into()),
-            r#"fighters[0]: the engine has not ported PIANO's weapon kind "roll" yet"#
+            err(&|f| f.fighters[0] = "KAZOO BALL".into()),
+            r#"fighters[0]: the engine has not ported KAZOO BALL's weapon kind "kazoo" yet"#
         );
         assert_eq!(
             err(&|f| _ = f.fighters.pop()),
@@ -1534,10 +1545,10 @@ mod tests {
         // a fighter whose weapon is ported but an ability is not
         let mut odd = roster.clone();
         let flute = odd.iter_mut().find(|f| f.name == "FLUTE").expect("in the roster");
-        flute.unlock2.kind = AbilityKind::Unsupported("stun".into());
+        flute.unlock2.kind = AbilityKind::Unsupported("kazoo".into());
         assert_eq!(
             setup_from(&ff, &odd, 1).expect_err("refused").to_string(),
-            r#"fighters[0]: the engine has not ported FLUTE's ability SNAKE DANCE (kind "stun") yet"#
+            r#"fighters[0]: the engine has not ported FLUTE's ability SNAKE DANCE (kind "kazoo") yet"#
         );
     }
 }
@@ -1647,21 +1658,21 @@ mod error_tests {
     fn a_kind_not_ported_is_an_error() {
         let roster = testing::roster();
         let flute = testing::fighter(&roster, "FLUTE");
-        let piano = testing::fighter(&roster, "PIANO");
+        let kazoo = testing::kazoo(&roster);
         let mut setup = testing::episode_setup(&roster, 1);
-        setup.fighters[1] = piano;
+        setup.fighters[1] = &kazoo;
         assert_eq!(
             refused(&setup),
-            r#"fighters[1]: the engine has not ported PIANO's weapon kind "roll" yet"#
+            r#"fighters[1]: the engine has not ported KAZOO BALL's weapon kind "kazoo" yet"#
         );
         // an ability of a kind not ported, on a fighter whose weapon is ported
         let mut odd = flute.clone();
-        odd.low.kind = AbilityKind::Unsupported("stun".into());
+        odd.low.kind = AbilityKind::Unsupported("kazoo".into());
         let mut setup = testing::episode_setup(&roster, 1);
         setup.fighters[0] = &odd;
         assert_eq!(
             refused(&setup),
-            r#"fighters[0]: the engine has not ported FLUTE's ability PICCOLO (kind "stun") yet"#
+            r#"fighters[0]: the engine has not ported FLUTE's ability PICCOLO (kind "kazoo") yet"#
         );
         // the bare pair of the unit tests has no weapon, and abilities of kind `none`
         let bare = testing::bare_pair();

@@ -169,6 +169,16 @@ pub(crate) mod testing {
         }
     }
 
+    /// FLUTE's entry as `KAZOO BALL`, with a weapon of a made-up kind (`kazoo`): a fighter the engine refuses whatever
+    /// the kit's kinds ported so far.
+    pub(crate) fn kazoo(roster: &[FighterCfg]) -> FighterCfg {
+        FighterCfg {
+            name: "KAZOO BALL".into(),
+            weapon: WeaponCfg::Unsupported("kazoo".into()),
+            ..fighter(roster, "FLUTE").clone()
+        }
+    }
+
     /// Two bare fighters, `LEFT` and `RIGHT`.
     pub(crate) fn bare_pair() -> [FighterCfg; 2] {
         [bare("LEFT"), bare("RIGHT")]

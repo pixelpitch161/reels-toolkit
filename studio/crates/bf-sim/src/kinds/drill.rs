@@ -45,12 +45,14 @@ pub fn step(f: &mut Fight, _k: usize, _dt: f64) {
     f.socket("stub:kinds::drill::step");
 }
 
-/// `trigger`, kind `flash_spin` (2977 to 2979): `if hasattr(B, 'march'): start_flash(k, ab)` (4985 to 4994)
+/// `trigger`, kind `flash_spin` (2977 to 2979): `if hasattr(B, 'march'): start_flash(k, ab)` (4985 to 4994). Python
+/// tests `hasattr(B, 'march')` (2978; [`is`]): the stub must too.
 pub fn start_flash(f: &mut Fight, _k: usize, _ab: &AbilityCfg) {
     f.socket("stub:kinds::drill::start_flash");
 }
 
-/// `trigger`, kind `company_front` (2980 to 2982): `if hasattr(B, 'march'): start_front(k, ab)` (4995 to 5005)
+/// `trigger`, kind `company_front` (2980 to 2982): `if hasattr(B, 'march'): start_front(k, ab)` (4995 to 5005). Python
+/// tests `hasattr(B, 'march')` (2981; [`is`]): the stub must too.
 pub fn start_front(f: &mut Fight, _k: usize, _ab: &AbilityCfg) {
     f.socket("stub:kinds::drill::start_front");
 }

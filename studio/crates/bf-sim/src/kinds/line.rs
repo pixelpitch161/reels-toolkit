@@ -27,8 +27,15 @@ pub fn beat(f: &mut Fight, _k: usize, _kb: i64) {
     f.socket("stub:kinds::line::beat");
 }
 
-/// `hazards_step(dt)` (1393 to 1434), from `run()` 6141 to 6142 (`if self.lines or self.strings`: the stub tests that
-/// itself)
+/// Whether `self.lines` holds anything: the test before `hazards_step` (`run()` 6141; `strings` are the older `trap`
+/// kind's)
+/// A stub: false (nothing) until the port.
+pub fn live(_f: &Fight) -> bool {
+    false
+}
+
+/// `hazards_step(dt)` (1393 to 1434), from `run()` 6141 to 6142, while [`live`] (`if self.lines or self.strings`). The
+/// caller tests [`live`]; the stub walks its own lists.
 pub fn hazards_step(f: &mut Fight, _dt: f64) {
     f.socket("stub:kinds::line::hazards_step");
 }

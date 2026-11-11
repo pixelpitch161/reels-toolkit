@@ -9,7 +9,7 @@
 use crate::abilities::{self, param, shockwave};
 use crate::fight::{Fight, Wave};
 use crate::geom;
-use crate::kinds::tune;
+use crate::kinds::{self, tune};
 use crate::roster::AbilityCfg;
 
 /// `trigger`, kind `wave`: a ring of kind `wave` from where fighter `k` is.
@@ -38,6 +38,10 @@ pub fn ring(fight: &mut Fight, k: usize, ab: &AbilityCfg, kind: &str) {
         // fight.py 2845 to 2846: `if ab.get('detune'): self.waves[-1]['detune'] = ab['detune']` (ILL WIND; the roster
         // reads it only once the option is ported)
         detune: ab.detune.clone(),
+        // an ability's ring never grows its owner's reach and always clears projectiles (`W.get('grow')`,
+        // `W.get('clears', True)`); the walk's step ring and the stomps and honks of the kit set their own
+        grow: false,
+        clears: true,
     };
     fight.waves.push(wave);
 }
@@ -60,7 +64,7 @@ pub fn step(fight: &mut Fight, dt: f64) {
         let reach = dist - r * 0.5;
         if !w.hit && r0 < reach && reach <= front + 1e-9 {
             w.hit = true;
-            let (dmg, knock, slow, stun) = (w.dmg, w.knock, w.slow, w.stun);
+            let (dmg, knock, slow, stun, grow) = (w.dmg, w.knock, w.slow, w.stun, w.grow);
             let detune = w.detune.clone();
             let kind = w.kind.clone();
             // hx, hy = W['c'] + rel / max(dist, 1e-6) * (dist - R): the near side of the enemy's ball
@@ -82,11 +86,17 @@ pub fn step(fight: &mut Fight, dt: f64) {
                 // #34: the enemy it hits is slowed for a moment
                 shockwave::slow(fight, o, owner, slow);
             }
-            // fight.py 3078 to 3082: a ring with `grow` (a pulse weapon's own ring). Kind not ported.
+            fight.socket("effects.wave.grow");
+            if landed && grow {
+                // fight.py 3078 to 3082: a ring with `grow` (the walk's step ring, CONTRABASS; and the older pulse
+                // weapon's) grows its owner's reach: the walk's code
+                kinds::walk::ring_grow(fight, owner);
+            }
         }
-        // fight.py 3083 to 3086, `if len(self.kp) and W.get('clears', True)`: only a pulse weapon's ring can carry
-        // `clears`, so an ability's ring always clears.
-        if !fight.keys.is_empty() {
+        // fight.py 3083 to 3086, `if len(self.kp) and W.get('clears', True)`: the walk's step ring, the stampede's
+        // stomps and the crowd's honks carry `clears = False`
+        let clears = fight.waves[i].clears;
+        if !fight.keys.is_empty() && clears {
             let mask: Vec<bool> = fight
                 .keys
                 .iter()
@@ -99,4 +109,65 @@ pub fn step(fight: &mut Fight, dt: f64) {
         }
     }
     fight.waves.retain(|w| w.r < w.rmax - 1e-9);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::fight::Key;
+    use crate::testing;
+
+    fn ring(grow: bool, clears: bool) -> Wave {
+        Wave {
+            owner: 0,
+            c: [0.0, 0.0],
+            r: 0.6,
+            speed: 6.0,
+            rmax: 3.0,
+            dmg: 1.0,
+            knock: 0.5,
+            kind: "step".into(),
+            hit: false,
+            name: "WALK".into(),
+            t0: 0.0,
+            slow: None,
+            stun: None,
+            detune: None,
+            grow,
+            clears,
+        }
+    }
+
+    /// `effects_step` 3078 to 3086: a ring with `clears` false leaves the enemy's projectiles alone (the walk's step
+    /// ring, the stampede's stomps, the crowd's honks), and a landed ring with `grow` calls its owner's growth (the
+    /// walk's code: a stub until CONTRABASS's port, which the trace shows is reached).
+    #[test]
+    fn a_rings_clears_and_grow_follow_python() {
+        let bare = testing::bare_pair();
+        for (grow, clears) in [(false, true), (false, false), (true, true)] {
+            let mut f = testing::fight(&testing::bare_setup(&bare, 1), false);
+            f.trace_sockets = Some(std::cell::RefCell::new(Vec::new()));
+            f.t = 5.0;
+            f.balls[0].p = [0.0, 0.0];
+            f.balls[1].p = [0.95, 0.0];
+            f.keys.push(Key {
+                p: [0.0, 0.64],
+                v: [0.0, 1.0],
+                own: 1,
+                id: 7,
+                vol: 0,
+                idx: 0,
+                dmg: 0.5,
+            });
+            f.waves.push(ring(grow, clears));
+            let dt = f.rules.dt;
+            step(&mut f, dt);
+            let trace = f.trace_sockets.take().expect("on").into_inner();
+            let kinds: Vec<&str> = f.events.iter().map(|e| e.kind.as_str()).collect();
+            assert!(kinds.contains(&"hit"), "{grow} {clears}: {kinds:?}");
+            assert_eq!(f.keys.is_empty(), clears, "{grow} {clears}");
+            assert_eq!(kinds.contains(&"cleared"), clears);
+            assert_eq!(trace.contains(&"stub:kinds::walk::ring_grow"), grow, "{trace:?}");
+        }
+    }
 }

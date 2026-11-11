@@ -203,7 +203,11 @@ fn flute_against_trombone_reaches_the_sockets_in_fight_py_order() {
                 "{what}: damage once per hit"
             );
             let ring_hits = count(&rec, "hit", Some(&["wave", "shockwave"]));
-            blocks(&trace, &["effects.wave.detune", "effects.wave.stun"], &what);
+            blocks(
+                &trace,
+                &["effects.wave.detune", "effects.wave.stun", "effects.wave.grow"],
+                &what,
+            );
             assert_eq!(get("effects.wave.detune"), ring_hits, "{what}: a ring's hit");
             let slam_hits = count(&rec, "hit", Some(&["slam"]));
             for (i, t) in trace.iter().enumerate() {
@@ -252,19 +256,21 @@ fn flute_against_trombone_reaches_the_sockets_in_fight_py_order() {
     assert!(beats > 8 * 50 && steps > 8 * 2000, "{beats} beats in {steps} steps");
 }
 
-/// Every kit fighter not ported yet (18 of the 20) is refused before a fight, in words naming the fighter and the
-/// kind the engine lacks, never let into a fight where a stub would do nothing: on either side, and through
-/// `setup_from` as the app calls it.
+/// A kit fighter is refused before a fight exactly when its weapon or one of its abilities is of a kind the engine
+/// has not ported (each kind's `PORTED`), in words naming the fighter and the kind, on either side, and through
+/// `setup_from` as the app calls it: never let into a fight where a stub would do nothing. Every other fighter
+/// passes.
 #[test]
 fn every_fighter_not_ported_is_refused_in_words() {
     let roster = roster();
     let flute = roster.iter().find(|f| f.name == "FLUTE").expect("in the roster");
     let ff = &fight_files()[0];
-    let mut refused = 0;
-    for f in roster
-        .iter()
-        .filter(|f| !["FLUTE", "TROMBONE"].contains(&f.name.as_str()))
-    {
+    let (mut refused, mut passed) = (0, 0);
+    for f in &roster {
+        let weapon = matches!(f.weapon, bf_sim::roster::WeaponCfg::Unsupported(_));
+        let ability = [&f.unlock1, &f.unlock2, &f.low]
+            .into_iter()
+            .find(|ab| !ab.kind.is_ported());
         for k in 0..2 {
             let mut fighters = [flute, flute];
             fighters[k] = f;
@@ -273,17 +279,43 @@ fn every_fighter_not_ported_is_refused_in_words() {
                 rules: bf_sim::Rules::new(132.0, 3.5),
                 seed: 1,
             };
-            let err = setup.check().expect_err("refused").to_string();
-            let want = format!("fighters[{k}]: the engine has not ported {}'s weapon kind", f.name);
-            assert!(err.starts_with(&want), "{err}");
-            assert!(bf_sim::Fight::new(&setup, false).is_err(), "{}", f.name);
-            assert!(run(&setup, false).is_err(), "{}", f.name);
             let mut file = ff.clone();
             file.fighters[k] = f.name.clone();
-            let err = setup_from(&file, &roster, 1).expect_err("refused").to_string();
-            assert!(err.starts_with(&want), "{err}");
+            file.fighters[1 - k] = "FLUTE".into();
+            let want = if weapon {
+                Some(format!(
+                    "fighters[{k}]: the engine has not ported {}'s weapon kind",
+                    f.name
+                ))
+            } else {
+                ability.map(|ab| {
+                    format!(
+                        "fighters[{k}]: the engine has not ported {}'s ability {}",
+                        f.name, ab.name
+                    )
+                })
+            };
+            match want {
+                Some(want) => {
+                    let err = setup.check().expect_err("refused").to_string();
+                    assert!(err.starts_with(&want), "{err}");
+                    assert!(bf_sim::Fight::new(&setup, false).is_err(), "{}", f.name);
+                    assert!(run(&setup, false).is_err(), "{}", f.name);
+                    let err = setup_from(&file, &roster, 1).expect_err("refused").to_string();
+                    assert!(err.starts_with(&want), "{err}");
+                }
+                None => {
+                    assert_eq!(setup.check(), Ok(()), "{}", f.name);
+                    assert!(setup_from(&file, &roster, 1).is_ok(), "{}", f.name);
+                }
+            }
         }
-        refused += 1;
+        if weapon || ability.is_some() {
+            refused += 1;
+        } else {
+            passed += 1;
+        }
     }
-    assert_eq!(refused, 18);
+    assert_eq!(refused + passed, 20);
+    assert!(passed >= 2, "FLUTE and TROMBONE at least");
 }

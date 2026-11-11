@@ -111,7 +111,9 @@ Rules that keep this exact in both directions:
 - **Every float in JSON is finite.** The exporter refuses NaN and infinities there. (`.npy` data may hold NaN: see
   `K` in section 6.3.)
 - A Python `dict` inside a value has no JSON form in format 1 and the exporter refuses it. The only objects are
-  `meta.json` itself, `source`, `rules` and `arrays`.
+  `meta.json` itself, `source`, `rules` and `arrays`. One rule holds a dict in the kit, `roll_rows` (PIANO's line,
+  `{fighter index: [row, ...]}`): it is written as a list of `[fighter index, rows]` pairs in index order (6.1), so
+  no object appears inside a value. A recording without a roller has no `roll_rows` and reads exactly as before.
 
 ## 3. Frames
 
@@ -202,9 +204,14 @@ overrides of a scenario fight appear here with the value used.
 | `dmg_scale` | float | 1.0 | shared damage scale |
 | `dmg_side` | list of 2 floats | [2.0, 0.4] | per-fighter damage handicap (left, right) |
 | `swat_cobras` | bool | true | the opt-in rule: a live lance knocks a risen cobra flat |
+| `swat_shells` | bool | (absent) | the opt-in rule (#48, EUPHONIUM against TROMBONE): a live lance swats a falling shell |
+| `swat_shell_h`, `swat_shell_r` | float | (absent: 0.85, 0.2) | how low a shell must be, and how near the lance in plan, to be swatted |
+| `swallow_rollers` | bool | (absent) | the opt-in rule (#56, BASS DRUM against TUBA): a swallowing bell can gulp a rolling drum |
+| `roll_rows` | list of `[int, list of lists of ints]` | (absent) | a roll fighter's rows (PIANO, #45; `kit/story.py` 33 to 35): Python's dict `{1: [(64, 52, 60), (), (67,)]}` is `[[1, [[64, 52, 60], [], [67]]]]`, one pair per roller in fighter order, each row its MIDI notes (empty for a rest) |
+| `roll_start8` | int | (absent: 0) | the 8th of the video the roll's first row belongs to, `8 * LOOP_START` |
 
-`dmg_side` and `swat_cobras` are attributes only an episode adds, so they can be absent, as in Python's
-`vars(rules)`. A recording the Studio makes from a fight file has `dmg_side` unless the file's `handicap` is 1.0 for
+`dmg_side`, `swat_cobras` and the rows below it are attributes only an episode adds, so they can be absent, as in
+Python's `vars(rules)`; absent is the default the engine reads (`getattr(R, name, default)`). A recording the Studio makes from a fight file has `dmg_side` unless the file's `handicap` is 1.0 for
 each fighter (a file with no `handicap` line; the kit passes no `dmg_side` for an episode without `DMG_SIDE`), and
 `swat_cobras` exactly when the file's `pair_rules` set it, with the value set (`false` too: Python's `setattr` lists
 an attribute set to false). The fight is the same either way; only the content hash shows it.

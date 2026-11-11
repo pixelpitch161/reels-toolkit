@@ -30,6 +30,70 @@ pub use kinds::{
 };
 pub use striker::StrikerCfg;
 
+/// The kit's further weapon kinds, each with its module's `PORTED`: a kind loads as `WeaponCfg::Unsupported` exactly
+/// while its `PORTED` is false. (Tests derive what they expect from this, so a port flips only its own constant.)
+pub const KIT_WEAPON_KINDS: [(&str, bool); 18] = [
+    ("roll", kinds::roll::PORTED),
+    ("swallow", kinds::swallow::PORTED),
+    ("echo", kinds::echo::PORTED),
+    ("line", kinds::line::PORTED),
+    ("rake", kinds::rake::PORTED),
+    ("combo", kinds::combo::PORTED),
+    ("jump", kinds::jump::PORTED),
+    ("tune", kinds::tune::PORTED),
+    ("anchor", kinds::anchor::PORTED),
+    ("mortar", kinds::mortar::PORTED),
+    ("tiptoe", kinds::tiptoe::PORTED),
+    ("lightning", kinds::lightning::PORTED),
+    ("grapple", kinds::grapple::PORTED),
+    ("walk", kinds::walk::PORTED),
+    ("spotlight", kinds::spotlight::PORTED),
+    ("crowd", kinds::crowd::PORTED),
+    ("drill", kinds::drill::PORTED),
+    ("roll_charge", kinds::roll_charge::PORTED),
+];
+
+/// The kit's further ability kinds, each with its module's `PORTED` (`shield` and FLUTE's and TROMBONE's kinds are
+/// always ported).
+pub const KIT_ABILITY_KINDS: [(&str, bool); 36] = [
+    ("altissimo", abilities::altissimo::PORTED),
+    ("arc", abilities::arc::PORTED),
+    ("barrage", abilities::barrage::PORTED),
+    ("beam", abilities::beam::PORTED),
+    ("cannons", abilities::cannons::PORTED),
+    ("company_front", abilities::company_front::PORTED),
+    ("copy", abilities::copy::PORTED),
+    ("drum_roll", abilities::drum_roll::PORTED),
+    ("encore", abilities::encore::PORTED),
+    ("endless", abilities::endless::PORTED),
+    ("flash_spin", abilities::flash_spin::PORTED),
+    ("flick", abilities::flick::PORTED),
+    ("fork", abilities::fork::PORTED),
+    ("heartbeat", abilities::heartbeat::PORTED),
+    ("hook", abilities::hook::PORTED),
+    ("lights_out", abilities::lights_out::PORTED),
+    ("mountain", abilities::mountain::PORTED),
+    ("octave", abilities::octave::PORTED),
+    ("prelude", abilities::prelude::PORTED),
+    ("rhapsody", abilities::rhapsody::PORTED),
+    ("runoff", abilities::runoff::PORTED),
+    ("runway", abilities::runway::PORTED),
+    ("slap", abilities::slap::PORTED),
+    ("smash", abilities::smash::PORTED),
+    ("snip", abilities::snip::PORTED),
+    ("stagedive", abilities::stagedive::PORTED),
+    ("stampede", abilities::stampede::PORTED),
+    ("stun", abilities::stun::PORTED),
+    ("subtone", abilities::subtone::PORTED),
+    ("sustain", abilities::sustain::PORTED),
+    ("swan", abilities::swan::PORTED),
+    ("sweep", abilities::sweep::PORTED),
+    ("tapping", abilities::tapping::PORTED),
+    ("twin", abilities::twin::PORTED),
+    ("vibrato", abilities::vibrato::PORTED),
+    ("whip", abilities::whip::PORTED),
+];
+
 /// One fighter's roster entry.
 #[derive(Clone, Debug, PartialEq)]
 pub struct FighterCfg {
@@ -674,17 +738,38 @@ mod tests {
         assert_eq!(w.style, "blade");
     }
 
+    /// The `PORTED` of a kit kind (`KIT_WEAPON_KINDS`, `KIT_ABILITY_KINDS`); `None` for a kind that is not one.
+    fn kit_weapon(kind: &str) -> Option<bool> {
+        KIT_WEAPON_KINDS.iter().find(|(k, _)| *k == kind).map(|(_, p)| *p)
+    }
+
+    fn kit_ability(kind: &str) -> Option<bool> {
+        KIT_ABILITY_KINDS.iter().find(|(k, _)| *k == kind).map(|(_, p)| *p)
+    }
+
+    /// FLUTE's entry with its weapon's kind, or one ability's kind, changed to a made-up one.
+    fn flute_with_kind(weapon: Option<&str>, ability: Option<(&str, &str)>) -> Json {
+        let mut raw = fighter("FLUTE").raw;
+        if let Some(kind) = weapon {
+            raw["weapon"]["kind"] = Json::from(kind);
+        }
+        if let Some((slot, kind)) = ability {
+            raw["abilities"][slot]["kind"] = Json::from(kind);
+        }
+        raw
+    }
+
     #[test]
     fn kinds_not_ported_yet_load_as_unsupported() {
-        let piano = fighter("PIANO");
-        assert_eq!(piano.weapon, WeaponCfg::Unsupported("roll".into()));
-        assert_eq!(piano.unlock1.kind, AbilityKind::Unsupported("sustain".into()));
-        assert_eq!(piano.unlock2.kind, AbilityKind::Unsupported("arc".into()));
-        assert_eq!(piano.unlock2.get("sweep"), Some(150.0));
-        // TUBA's haste is a ported kind even though its swallow weapon is not
-        let tuba = fighter("TUBA");
-        assert_eq!(tuba.weapon, WeaponCfg::Unsupported("swallow".into()));
-        assert_eq!(tuba.unlock1.kind, AbilityKind::Haste);
+        // a weapon kind the engine has no module for: unsupported, whatever it holds, and its abilities still typed
+        let f = FighterCfg::from_json(&flute_with_kind(Some("kazoo"), None)).expect("loads");
+        assert_eq!(f.weapon, WeaponCfg::Unsupported("kazoo".into()));
+        assert_eq!(f.weapon.kind(), "kazoo");
+        assert_eq!(f.unlock1.kind, AbilityKind::Haste);
+        // an ability kind the engine has no module for keeps its numbers
+        let f = FighterCfg::from_json(&flute_with_kind(None, Some(("low", "kazoo")))).expect("loads");
+        assert_eq!(f.low.kind, AbilityKind::Unsupported("kazoo".into()));
+        assert_eq!((f.low.kind.name(), f.low.get("radius")), ("kazoo", Some(9.0)));
         // a spinning blade (no mode) is not the thrust lance
         let spin = weapon_with("TROMBONE", "mode", None);
         assert_eq!(
@@ -693,100 +778,70 @@ mod tests {
         );
     }
 
-    /// The 18 weapon kinds of the kit's other fighters each have their module (`roster::kinds::<kind>`), and while
-    /// it is not ported the kind loads as `Unsupported` with its name: a roster entry of every one of them, as the
-    /// kit exports it, is no fighter the engine runs.
+    /// The 18 weapon kinds of the kit's other fighters each have their module (`roster::kinds::<kind>`): a roster
+    /// entry of one loads as `Unsupported` with its name exactly while the module's `PORTED` is false, and as its
+    /// typed kind once it is true.
     #[test]
     fn every_kit_weapon_kind_loads_as_unsupported_until_ported() {
-        let ported = [
-            kinds::roll::PORTED,
-            kinds::swallow::PORTED,
-            kinds::echo::PORTED,
-            kinds::line::PORTED,
-            kinds::rake::PORTED,
-            kinds::combo::PORTED,
-            kinds::jump::PORTED,
-            kinds::tune::PORTED,
-            kinds::anchor::PORTED,
-            kinds::mortar::PORTED,
-            kinds::tiptoe::PORTED,
-            kinds::lightning::PORTED,
-            kinds::grapple::PORTED,
-            kinds::walk::PORTED,
-            kinds::spotlight::PORTED,
-            kinds::crowd::PORTED,
-            kinds::drill::PORTED,
-            kinds::roll_charge::PORTED,
-        ];
-        assert_eq!(ported, [false; 18]);
         let mut seen = Vec::new();
         for f in parse_roster(ROSTER).expect("loads") {
             let kind = f.raw["weapon"]["kind"].as_str().expect("a kind").to_string();
-            if ["striker", "blade"].contains(&kind.as_str()) {
-                assert_eq!(f.weapon.kind(), kind, "{}", f.name);
-                continue;
+            assert_eq!(f.weapon.kind(), kind, "{}", f.name);
+            match kit_weapon(&kind) {
+                Some(false) => {
+                    assert_eq!(f.weapon, WeaponCfg::Unsupported(kind.clone()), "{}", f.name);
+                    assert_eq!(f.weapon.ball_start(), BallStart::default(), "{}", f.name);
+                }
+                Some(true) => assert!(!matches!(f.weapon, WeaponCfg::Unsupported(_)), "{}", f.name),
+                None => assert!(["striker", "blade"].contains(&kind.as_str()), "{}: {kind}", f.name),
             }
-            assert_eq!(f.weapon, WeaponCfg::Unsupported(kind.clone()), "{}", f.name);
-            assert_eq!(f.weapon.kind(), kind);
-            assert_eq!(f.weapon.ball_start(), BallStart::default(), "{}", f.name);
-            seen.push(kind);
+            if kit_weapon(&kind).is_some() {
+                seen.push(kind);
+            }
         }
         seen.sort();
-        assert_eq!(
-            seen,
-            [
-                "anchor",
-                "combo",
-                "crowd",
-                "drill",
-                "echo",
-                "grapple",
-                "jump",
-                "lightning",
-                "line",
-                "mortar",
-                "rake",
-                "roll",
-                "roll_charge",
-                "spotlight",
-                "swallow",
-                "tiptoe",
-                "tune",
-                "walk"
-            ]
-        );
+        let mut table: Vec<String> = KIT_WEAPON_KINDS.iter().map(|(k, _)| k.to_string()).collect();
+        table.sort();
+        assert_eq!(seen, table, "one roster fighter for each kind of the table");
     }
 
-    /// The kit's 36 further ability kinds load as `Unsupported` with their name until their module is ported; the
-    /// `shield` (TUBA, HORN, ORGAN) is ported and typed, with `dur` or `dur_beats`.
+    /// The `shield` (TUBA, HORN, ORGAN) is ported and typed, with `dur` or `dur_beats`; each of the kit's 36 further
+    /// ability kinds loads as `Unsupported` exactly while its module's `PORTED` is false (a wave with a `detune`
+    /// while `detune::PORTED` is false).
     #[test]
     fn the_shield_is_typed_and_the_other_kit_ability_kinds_wait_for_their_ports() {
         let roster = parse_roster(ROSTER).expect("loads");
         let mut shields = Vec::new();
-        let mut waiting = Vec::new();
+        let mut kinds = Vec::new();
         for f in &roster {
             for (ab, slot) in [(&f.unlock1, "unlock1"), (&f.unlock2, "unlock2"), (&f.low, "low")] {
-                let kind = f.raw["abilities"][slot]["kind"].as_str().expect("a kind");
-                match &ab.kind {
-                    AbilityKind::Shield => {
-                        assert!(ab.get("dur_beats").is_some(), "{}", f.name);
-                        assert_eq!(ab.settings, AbilitySettings::Plain);
-                        shields.push(format!("{} {slot}", f.name));
-                    }
-                    AbilityKind::Unsupported(k) => {
-                        assert!(k == kind || k.starts_with(&format!("{kind}+")), "{} {k}", f.name);
-                        waiting.push(k.clone());
-                    }
-                    other => assert_eq!(other.name(), kind, "{}", f.name),
+                let raw = &f.raw["abilities"][slot];
+                let kind = raw["kind"].as_str().expect("a kind");
+                assert_eq!(ab.kind.name(), kind, "{} {slot}", f.name);
+                let waits = match kit_ability(kind) {
+                    Some(ported) => !ported,
+                    None => kind == "wave" && raw.get("detune").is_some() && !abilities::detune::PORTED,
+                };
+                assert_eq!(!ab.kind.is_ported(), waits, "{} {slot}: {:?}", f.name, ab.kind);
+                if waits && kind == "wave" {
+                    assert_eq!(ab.kind, AbilityKind::Unsupported("wave+detune".into()));
+                }
+                if ab.kind == AbilityKind::Shield {
+                    assert!(ab.get("dur_beats").is_some(), "{}", f.name);
+                    assert_eq!(ab.settings, AbilitySettings::Plain);
+                    shields.push(format!("{} {slot}", f.name));
+                }
+                if kit_ability(kind).is_some() {
+                    kinds.push(kind.to_string());
                 }
             }
         }
         assert_eq!(shields, ["TUBA unlock2", "HORN unlock1", "ORGAN unlock1"]);
-        waiting.sort();
-        waiting.dedup();
-        // OBOE's wave waits for its `detune` (`wave+detune`); the other 36 are the kit's further kinds
-        assert_eq!(waiting.len(), 37, "{waiting:?}");
-        assert!(waiting.contains(&"wave+detune".to_string()));
+        kinds.sort();
+        kinds.dedup();
+        let mut table: Vec<String> = KIT_ABILITY_KINDS.iter().map(|(k, _)| k.to_string()).collect();
+        table.sort();
+        assert_eq!(kinds, table, "every kind of the table is some roster fighter's");
         // a shield needs its time, and holds nothing else
         let mut raw = fighter("TUBA").raw;
         raw["abilities"]["unlock2"].as_object_mut().unwrap().remove("dur_beats");
@@ -959,8 +1014,8 @@ mod tests {
             FighterCfg::from_json(&raw).expect("loads").unlock2.get("mult"),
             Some(0.9)
         );
-        // a haste on a fighter whose weapon is not ported yet: only its own factor is checked
-        let mut raw = fighter("TUBA").raw;
+        // a haste on a fighter whose weapon is not ported (a made-up kind): only its own factor is checked
+        let mut raw = flute_with_kind(Some("kazoo"), None);
         raw["abilities"]["unlock1"]["mult"] = Json::from(1e-308);
         assert_eq!(
             FighterCfg::from_json(&raw).expect("loads").unlock1.get("mult"),
@@ -1045,18 +1100,21 @@ mod tests {
             "roster: TROMBONE: weapon.guard: not a setting of a thrust blade (the engine would ignore it)"
         );
         // a ported ability kind with an option the engine has not ported is not that kind yet: it loads as
-        // Unsupported naming the option, never typed with the option dropped (OBOE's real wave has `detune`)
+        // Unsupported naming the option, never typed with the option dropped (a made-up option here; OBOE's real
+        // wave has `detune`, which waits for `detune::PORTED`)
         let mut raw = fighter("FLUTE").raw;
-        raw["abilities"]["low"]["detune"] = serde_json::json!({"w": 0.3, "dur": 2.0});
+        raw["abilities"]["low"]["drizzle"] = serde_json::json!({"w": 0.3, "dur": 2.0});
         let f = FighterCfg::from_json(&raw).unwrap();
-        assert_eq!(f.low.kind, AbilityKind::Unsupported("wave+detune".into()));
+        assert_eq!(f.low.kind, AbilityKind::Unsupported("wave+drizzle".into()));
         let mut raw = fighter("TROMBONE").raw;
         raw["abilities"]["unlock1"]["slow"]["ramp"] = Json::from(1);
         let f = FighterCfg::from_json(&raw).unwrap();
         assert_eq!(f.unlock1.kind, AbilityKind::Unsupported("shockwave+slow.ramp".into()));
-        assert_eq!(fighter("OBOE").low.kind, AbilityKind::Unsupported("wave+detune".into()));
-        // a kind not ported yet still loads, whatever it holds
-        let mut raw = fighter("PIANO").raw;
+        if !abilities::detune::PORTED {
+            assert_eq!(fighter("OBOE").low.kind, AbilityKind::Unsupported("wave+detune".into()));
+        }
+        // a kind not ported still loads, whatever it holds
+        let mut raw = flute_with_kind(Some("kazoo"), Some(("unlock1", "kazoo")));
         raw["weapon"]["pull"] = Json::from(0.5);
         raw["abilities"]["unlock1"]["odd"] = Json::from(true);
         assert!(FighterCfg::from_json(&raw).is_ok());
@@ -1137,10 +1195,9 @@ mod tests {
             }
         }
         // a kind not ported, and a ported kind with an option that is not
-        assert_eq!(fighter("PIANO").unlock1.kind.name(), "sustain");
-        let oboe = fighter("OBOE");
-        assert_eq!(oboe.low.kind, AbilityKind::Unsupported("wave+detune".into()));
-        assert_eq!(oboe.low.kind.name(), "wave");
+        assert_eq!(AbilityKind::Unsupported("kazoo".into()).name(), "kazoo");
+        assert_eq!(AbilityKind::Unsupported("wave+drizzle".into()).name(), "wave");
+        assert_eq!(fighter("OBOE").low.kind.name(), "wave");
         // every ability of the roster: the name is the entry's own kind
         for f in parse_roster(ROSTER).expect("loads") {
             for (ab, slot) in [(&f.unlock1, "unlock1"), (&f.unlock2, "unlock2"), (&f.low, "low")] {
@@ -1233,9 +1290,9 @@ mod tests {
         );
         // a kind not ported is not looked at
         let mut f = fighter("FLUTE");
-        f.unlock1.kind = AbilityKind::Unsupported("shield".into());
+        f.unlock1.kind = AbilityKind::Unsupported("kazoo".into());
         f.unlock1.params.clear();
-        f.weapon = WeaponCfg::Unsupported("roll".into());
+        f.weapon = WeaponCfg::Unsupported("kazoo".into());
         assert_eq!(f.check(), Ok(()));
     }
 

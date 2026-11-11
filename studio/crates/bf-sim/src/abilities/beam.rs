@@ -35,7 +35,8 @@ pub fn check_charge(f: &mut Fight, _k: usize) {
 }
 
 /// `beams_step(dt)` (857 to 897), from `run()` 6139 to 6140 (`if self.beams or any(B.w['kind'] == 'beam' ...)`: the
-/// stub tests that itself; the `beam` weapon is an older kind)
+/// stub tests that itself; the `beam` weapon is an older kind). The caller tests [`live`]; the stub walks its own list,
+/// as Python does.
 pub fn beams_step(f: &mut Fight, _dt: f64) {
     f.socket("stub:abilities::beam::beams_step");
 }

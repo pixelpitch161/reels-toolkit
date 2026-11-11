@@ -559,6 +559,8 @@ mod tests {
             slow: None,
             stun: None,
             detune: None,
+            grow: false,
+            clears: true,
         });
         fight.slams.push(Slam {
             owner: 0,
