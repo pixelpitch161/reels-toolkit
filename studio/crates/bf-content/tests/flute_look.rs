@@ -22,8 +22,9 @@
 //! One test reads local files that are not reference files: `python -m tools.studio_export look_flute_stages
 //! [episode | flute_wins | flute_right] <frame>...` writes the buffers of those frames after each stage of the Python renderer
 //! (drawn the same way) into `studio/reference/.cache/stages_look_flute/<fight>/`, and
-//! `every_stage_matches_python` compares every stage of every frame dumped there. It prints that it was skipped
-//! when the folders hold none. It is the tool for finding where a frame first differs.
+//! `every_stage_matches_python` compares every stage of every frame dumped there. It is ignored in a plain run
+//! (`-- --ignored every_stage`) and fails when the folders hold no dump. It is the tool for finding where a frame
+//! first differs.
 
 use std::collections::BTreeMap;
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -138,12 +139,9 @@ fn rows(fight: &str) -> Vec<Row<'static>> {
             tags: text(&r[6]),
         })
         .collect();
-    let need = if fight == "episode" { 64 } else { 32 };
-    assert!(
-        rows.len() >= need,
-        "{fight}: the file holds {} frames, {need} are asked for",
-        rows.len()
-    );
+    // exactly the frames the export wrote (254 in all): a file cut short cannot pass
+    let need = if fight == "episode" { 124 } else { 65 };
+    assert_eq!(rows.len(), need, "{fight}: the number of frames in the file");
     rows
 }
 
@@ -792,6 +790,13 @@ fn state_is_pythons(fight: &str) -> [usize; 4] {
         t.n, t.exact, t.last_bits
     );
     assert!(t.failures.is_empty(), "{fight}:\n{}", t.failures.join("\n"));
+    // exactly the values the export wrote (1,183 in all): a file cut short cannot pass
+    let values = match fight {
+        "episode" => 501,
+        "flute_wins" => 357,
+        _ => 325,
+    };
+    assert_eq!(t.n, values, "{fight}: the number of state values compared");
     [striking, swatted, away, victory]
 }
 
@@ -1023,7 +1028,7 @@ fn every_card_frame_is_pythons_with_the_real_look() {
     }
     assert_eq!(names, ["episode", "swapped", "bpm96", "bpm200"]);
     println!("title cards: {} of {cards} equal Python's", cards - wrong.len());
-    assert!(cards >= 249 + 61);
+    assert_eq!(cards, 249 + 61, "the number of title cards");
     assert!(
         wrong.is_empty(),
         "{} cards are not Python's bytes; the first: {:?}",
@@ -1207,6 +1212,7 @@ fn diff_rgb(got: &StagePic, want: &NpArray) -> Diff {
 /// the frame from the cut to bytes on; the float stages between the lens and the cut to bytes pass through the
 /// FFT and are held to `1e-9` of a level (as in `bf-picture`'s `ring_stages.rs`).
 #[test]
+#[ignore = "needs local stage dumps: python -m tools.studio_export look_flute_stages [fight] <frame>..."]
 fn every_stage_matches_python() {
     let dir = reference_dir().join(".cache/stages_look_flute");
     let mut dumps: BTreeMap<(&str, usize), std::path::PathBuf> = BTreeMap::new();
@@ -1220,13 +1226,11 @@ fn every_stage_matches_python() {
             }
         }
     }
-    if dumps.is_empty() {
-        eprintln!(
-            "skipped: no stage dumps in {} (see the top of tests/flute_look.rs)",
-            dir.display()
-        );
-        return;
-    }
+    assert!(
+        !dumps.is_empty(),
+        "no stage dumps in {} (see the top of tests/flute_look.rs)",
+        dir.display()
+    );
     let mut failures = Vec::new();
     for (&(fight, f), path) in &dumps {
         let pic = picture(fight);
