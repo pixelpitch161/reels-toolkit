@@ -166,7 +166,7 @@ fn same_event(a: &Event, b: &Event) -> bool {
 /// Runs the Rust fight of a Python recording and compares the span before the first hit, block or ability.
 fn compare(name: &str, roster: &[FighterCfg]) -> Span {
     let py = python_recording(name);
-    let rs = run(&setup_like(&py, roster), true);
+    let rs = run(&setup_like(&py, roster), true).expect("the engine runs this fight");
 
     let first = py
         .events
@@ -265,7 +265,7 @@ fn the_other_recordings_agree_too() {
 fn the_recording_has_the_python_keys_kinds_and_shapes() {
     let roster = roster();
     let py = python_recording("ep392.bfrec");
-    let rs = run(&setup_like(&py, &roster), true);
+    let rs = run(&setup_like(&py, &roster), true).expect("the engine runs this fight");
 
     assert_eq!(rs.source, Source::studio());
     assert_eq!(rs.format, py.format);
@@ -361,7 +361,7 @@ fn a_recording_round_trips_and_repeats() {
     let roster = roster();
     let py = python_recording("seed1.bfrec");
     let setup = setup_like(&py, &roster);
-    let rs = run(&setup, true);
+    let rs = run(&setup, true).expect("the engine runs this fight");
     let path = PathBuf::from(env!("CARGO_TARGET_TMPDIR")).join("core_prefix_seed1.bfrec");
     rs.write(&path).unwrap_or_else(|e| panic!("{e}"));
     let back = Recording::read(&path).unwrap_or_else(|e| panic!("{e}"));
@@ -369,13 +369,21 @@ fn a_recording_round_trips_and_repeats() {
     assert_eq!(back.hash(), rs.hash());
     let _ = std::fs::remove_file(&path);
 
-    assert_eq!(run(&setup, true), rs, "the same setup gives the same recording");
+    assert_eq!(
+        run(&setup, true).expect("the engine runs this fight"),
+        rs,
+        "the same setup gives the same recording"
+    );
     let mut other = setup.clone();
     other.seed = 2;
-    assert_ne!(run(&other, true).hash(), rs.hash(), "another seed is another fight");
+    assert_ne!(
+        run(&other, true).expect("the engine runs this fight").hash(),
+        rs.hash(),
+        "another seed is another fight"
+    );
 
     // without recording: the same events, winner and K.O. time, and no per-frame arrays
-    let quiet = run(&setup, false);
+    let quiet = run(&setup, false).expect("the engine runs this fight");
     assert!(quiet.arrays.is_empty());
     assert_eq!(quiet.frames(), 0);
     assert_eq!(

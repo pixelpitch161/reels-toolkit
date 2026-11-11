@@ -164,7 +164,29 @@ impl<'a> Fight<'a> {
     /// `Fight(a, b, seed, rules, record)` (`fight.py` 264 to 316): both fighters in their corners, launched toward
     /// the centre within `LAUNCH_SPREAD` degrees either side, each weapon at a seeded angle. Four draws from the
     /// generator, in this order: fighter 0's launch angle, its weapon angle, then fighter 1's two.
-    pub fn new(setup: &Setup<'a>, record: bool) -> Fight<'a> {
+    ///
+    /// The setup is checked first ([`Setup::check`]): rules the engine cannot run, a fighter whose weapon or
+    /// abilities are of a kind the engine has not ported, or a roster entry whose numbers cannot run, are an error
+    /// that says what is wrong, and no fight is made. A fight this returns cannot panic on its numbers.
+    pub fn new(setup: &Setup<'a>, record: bool) -> Result<Fight<'a>, SimError> {
+        setup.check()?;
+        Ok(Fight::launch(setup, record))
+    }
+
+    /// [`Fight::new`] that also lets in a fighter whose weapon or abilities are of a kind the engine has not ported:
+    /// such a weapon does nothing, and such an ability is announced (its `ability` event, its timer) and does
+    /// nothing else, as `fight.py` does for a kind it has no branch for. That is not a fight of the series: it is
+    /// for the parity tests whose Python fights use a punching bag (a fighter with no weapon, and abilities of kind
+    /// `none`, or the shield bag's `shield`). Everything else is checked as [`Fight::new`] checks it, and an unlock of
+    /// a kind not ported must have its `every_bars` (the engine reads it when the unlock fires).
+    #[doc(hidden)]
+    pub fn with_unported(setup: &Setup<'a>, record: bool) -> Result<Fight<'a>, SimError> {
+        setup.check_with(true)?;
+        Ok(Fight::launch(setup, record))
+    }
+
+    /// The launch itself, on a checked setup.
+    fn launch(setup: &Setup<'a>, record: bool) -> Fight<'a> {
         let rules = setup.rules.clone();
         let mut rng = Generator::new(setup.seed);
         let mut balls = [
@@ -423,9 +445,8 @@ impl<'a> Fight<'a> {
     /// first of `unlock1` and `unlock2` that is ready (`t >= ready - 1e-6`), which is then ready again `every_bars`
     /// bars later.
     ///
-    /// # Panics
-    /// When an unlock that fires has no `every_bars` (Python raises `KeyError`). The roster refuses such an unlock
-    /// of a ported kind, so only an ability built by hand, or one of a kind not ported, can get here.
+    /// An unlock's `every_bars` is there: [`Fight::new`] (and the test entry [`Fight::with_unported`]) refuse an
+    /// unlock without one, where Python raises `KeyError` when it fires.
     pub fn abilities_step(&mut self, on_beat: bool) {
         // SLOT (ability kind `beam`, not one of FLUTE's or TROMBONE's): fight.py 3013 to 3016, a charged ability beam
         // fires first, for both fighters, before the loop below.
@@ -475,23 +496,97 @@ impl<'a> Fight<'a> {
 /// ([`bf_core::recording::Source::studio`]). With `record` false the recording has no per-frame arrays: only the
 /// events, the winner and the K.O. time (the fight itself is the same).
 ///
-/// # Panics
-/// When the rules cannot be run ([`Rules::check`]): [`setup_from`] and [`Rules::apply`] refuse such rules, so this
-/// needs rules whose fields were set by hand.
-pub fn run(setup: &Setup, record: bool) -> Recording {
-    if let Err(e) = setup.rules.check() {
-        panic!("the engine cannot run these rules: {e}");
-    }
-    let mut fight = Fight::new(setup, record);
+/// A setup the engine cannot run is an error in words, before anything is run ([`Setup::check`]): no rules and no
+/// roster entry can make this panic.
+pub fn run(setup: &Setup, record: bool) -> Result<Recording, SimError> {
+    let mut fight = Fight::new(setup, record)?;
     let frames = schedule::run(&mut fight);
-    record::recording(fight, frames)
+    Ok(record::recording(fight, frames))
+}
+
+/// [`run`] through the test entry [`Fight::with_unported`]: a fighter of a kind not ported is let in (and that kind
+/// does nothing). For the parity tests against Python fights with a punching bag; not a fight of the series.
+#[doc(hidden)]
+pub fn run_with_unported(setup: &Setup, record: bool) -> Result<Recording, SimError> {
+    let mut fight = Fight::with_unported(setup, record)?;
+    let frames = schedule::run(&mut fight);
+    Ok(record::recording(fight, frames))
+}
+
+impl Setup<'_> {
+    /// Whether the engine can run this fight, and if not, what is wrong in plain words (one line, naming the field):
+    ///
+    /// - the rules ([`Rules::check`]): `rules.<NAME>: ...`;
+    /// - each fighter (`fighters[0]` is the left corner): a weapon or an ability of a kind the engine has not ported
+    ///   yet; or a number of its roster entry the engine cannot run (`FighterCfg::check`, the checks the roster
+    ///   reader makes, made again for an entry built or changed in code).
+    ///
+    /// A setup that passes cannot make the engine panic or run for ever: every number a ported kind reads is there
+    /// and in range.
+    pub fn check(&self) -> Result<(), SimError> {
+        self.check_with(false)
+    }
+
+    /// [`Setup::check`], letting in kinds not ported when `unported` is true (the test entry
+    /// [`Fight::with_unported`]).
+    fn check_with(&self, unported: bool) -> Result<(), SimError> {
+        self.rules.check()?;
+        for (k, cfg) in self.fighters.iter().enumerate() {
+            check_fighter(cfg, k, unported)?;
+        }
+        Ok(())
+    }
+}
+
+/// One fighter of a setup, as [`Setup::check`] says; the error's field is `fighters[k]`.
+fn check_fighter(cfg: &FighterCfg, k: usize, unported: bool) -> Result<(), SimError> {
+    let field = format!("fighters[{k}]");
+    let name = &cfg.name;
+    if !unported {
+        if let WeaponCfg::Unsupported(kind) = &cfg.weapon {
+            return Err(SimError::new(
+                &field,
+                format!("the engine has not ported {name}'s weapon kind {kind:?} yet"),
+            ));
+        }
+        for ab in [&cfg.unlock1, &cfg.unlock2, &cfg.low] {
+            if let AbilityKind::Unsupported(kind) = &ab.kind {
+                return Err(SimError::new(
+                    &field,
+                    format!(
+                        "the engine has not ported {name}'s ability {} (kind {kind:?}) yet",
+                        ab.name
+                    ),
+                ));
+            }
+        }
+    }
+    cfg.check()
+        .map_err(|e| SimError::new(&field, format!("{}: {}: {}", e.fighter, e.field, e.message)))?;
+    // An unlock's timer reads `every_bars` whatever its kind (the roster reader asks for it only of a ported kind).
+    for (slot, ab) in [("unlock1", &cfg.unlock1), ("unlock2", &cfg.unlock2)] {
+        if ab.get("every_bars").is_none() {
+            return Err(SimError::new(
+                &field,
+                format!(
+                    "{name}: abilities.{slot}.every_bars: missing (the bars between two uses of {})",
+                    ab.name
+                ),
+            ));
+        }
+    }
+    Ok(())
 }
 
 /// The setup of a fight file's fight with this seed, as the kit builds it (`kit/story.py` `rules` and `run_seed`):
 /// the rules at the file's tempo grid, its damage scale and handicap, then its pair rules.
 ///
 /// Errors name the fight file's field: a fighter that is not in `roster`, a fighter whose weapon or abilities the
-/// engine has not ported, a pair rule the engine does not have.
+/// engine has not ported or whose roster numbers it cannot run, a pair rule the engine does not have.
+///
+/// A handicap of 1.0 for each fighter is no handicap: the rules then have no `dmg_side`, as the kit's rules have
+/// none for an episode without `DMG_SIDE` (a fight file cannot tell the two apart, and the fight is the same: a
+/// damage times 1.0 is that damage). So a recording's `rules` are the kit's for a file with no `handicap` line.
 pub fn setup_from<'a>(ff: &FightFile, roster: &'a [FighterCfg], seed: u64) -> Result<Setup<'a>, SimError> {
     if ff.fighters.len() != 2 {
         return Err(SimError::new(
@@ -512,23 +607,7 @@ pub fn setup_from<'a>(ff: &FightFile, roster: &'a [FighterCfg], seed: u64) -> Re
             .iter()
             .find(|f| &f.name == name)
             .ok_or_else(|| SimError::new(&field, format!("{name:?} is not in the roster")))?;
-        if let WeaponCfg::Unsupported(kind) = &cfg.weapon {
-            return Err(SimError::new(
-                &field,
-                format!("the engine has not ported {name}'s weapon kind {kind:?} yet"),
-            ));
-        }
-        for ab in [&cfg.unlock1, &cfg.unlock2, &cfg.low] {
-            if let AbilityKind::Unsupported(kind) = &ab.kind {
-                return Err(SimError::new(
-                    &field,
-                    format!(
-                        "the engine has not ported {name}'s ability {} (kind {kind:?}) yet",
-                        ab.name
-                    ),
-                ));
-            }
-        }
+        check_fighter(cfg, k, false)?;
         Ok(cfg)
     };
     let fighters = [find(0)?, find(1)?];
@@ -539,7 +618,9 @@ pub fn setup_from<'a>(ff: &FightFile, roster: &'a [FighterCfg], seed: u64) -> Re
     let mut rules = Rules::new(grid.bpm, grid.t_fight);
     rules.fps = grid.fps;
     rules.dmg_scale = ff.dmg_scale;
-    rules.dmg_side = Some([ff.handicap[0], ff.handicap[1]]);
+    // story.py: `if side is not None: kw['dmg_side'] = tuple(side)`; 1.0 each is the file's "no handicap"
+    let side = [ff.handicap[0], ff.handicap[1]];
+    rules.dmg_side = (side != [1.0, 1.0]).then_some(side);
     // an error names the fight file's field, not the engine's rule
     rules.check().map_err(|e| {
         let field = match e.field.as_str() {
@@ -630,7 +711,7 @@ mod tests {
     fn launch_matches_python() {
         let roster = testing::roster();
         let py = testing::python_recording("ep392.bfrec");
-        let fight = Fight::new(&testing::episode_setup(&roster, 392), true);
+        let fight = testing::fight(&testing::episode_setup(&roster, 392), true);
         let (p, v, th) = (
             testing::f64s(&py, "P"),
             testing::f64s(&py, "V"),
@@ -662,9 +743,9 @@ mod tests {
     #[test]
     fn the_launch_is_seeded() {
         let roster = testing::roster();
-        let a = Fight::new(&testing::episode_setup(&roster, 1), false);
-        let b = Fight::new(&testing::episode_setup(&roster, 1), false);
-        let c = Fight::new(&testing::episode_setup(&roster, 2), false);
+        let a = testing::fight(&testing::episode_setup(&roster, 1), false);
+        let b = testing::fight(&testing::episode_setup(&roster, 1), false);
+        let c = testing::fight(&testing::episode_setup(&roster, 2), false);
         assert_eq!(a.balls[0].v, b.balls[0].v);
         assert_eq!(a.balls[0].th.to_bits(), b.balls[0].th.to_bits());
         assert_ne!(a.balls[0].v, c.balls[0].v);
@@ -673,7 +754,7 @@ mod tests {
         assert!((ang + 0.25 * dmath::PI).abs() <= geom::radians(38.0) + 1e-12);
         // bare fighters neither thrust nor slow
         let bare = testing::bare_pair();
-        assert!(!Fight::new(&testing::bare_setup(&bare, 1), false).uses_ext);
+        assert!(!testing::fight(&testing::bare_setup(&bare, 1), false).uses_ext);
     }
 
     /// Brief, step 1: an event's time is Python's `round(t, 5)`, which rounds the exact decimal value (ties to
@@ -681,7 +762,7 @@ mod tests {
     #[test]
     fn event_times_are_rounded_to_5_places() {
         let roster = testing::roster();
-        let mut fight = Fight::new(&testing::episode_setup(&roster, 392), false);
+        let mut fight = testing::fight(&testing::episode_setup(&roster, 392), false);
         for (t, want) in [
             (3.59656862745098, 3.59657),
             (4.471568627450978, 4.47157),
@@ -720,7 +801,7 @@ mod tests {
     fn damage_scales_by_side_and_a_shield_blocks() {
         use Value::{Float as F, Int as I};
         let roster = testing::roster();
-        let mut fight = Fight::new(&testing::episode_setup(&roster, 392), false);
+        let mut fight = testing::fight(&testing::episode_setup(&roster, 392), false);
         fight.t = 5.0;
         assert!(fight.damage(0, 1, 1.08, "fang", [0.25, -0.5], 3));
         assert!(fight.damage(1, 0, 3.5, "blade", [0.1, 0.2], 1));
@@ -745,7 +826,7 @@ mod tests {
         let bare = testing::bare_pair();
         let mut setup = testing::bare_setup(&bare, 1);
         setup.rules.dmg_scale = 3.0;
-        let mut fight = Fight::new(&setup, false);
+        let mut fight = testing::fight(&setup, false);
         assert!(fight.damage(0, 1, 2.0, "wave", [0.0, 0.0], 0));
         assert_eq!((fight.balls[1].hp, fight.balls[0].dealt), (94.0, 6.0));
     }
@@ -754,7 +835,7 @@ mod tests {
     #[test]
     fn knock_bends_the_heading_and_keeps_the_larger_boost() {
         let roster = testing::roster();
-        let mut fight = Fight::new(&testing::episode_setup(&roster, 392), false);
+        let mut fight = testing::fight(&testing::episode_setup(&roster, 392), false);
         fight.balls[1].v = [1.0, -2.4];
         fight.knock(1, [0.3, 0.4], 0.9);
         let close = |got: V2, want: V2| (got[0] - want[0]).abs() <= 1e-12 && (got[1] - want[1]).abs() <= 1e-12;
@@ -783,7 +864,7 @@ mod tests {
     fn levels_follow_the_damage_dealt() {
         use Value::Int as I;
         let bare = testing::bare_pair();
-        let mut fight = Fight::new(&testing::bare_setup(&bare, 1), false);
+        let mut fight = testing::fight(&testing::bare_setup(&bare, 1), false);
         fight.t = 7.0;
         fight.balls[0].dealt = 13.999;
         fight.abilities_step(false);
@@ -813,7 +894,7 @@ mod tests {
     #[test]
     fn low_hp_is_noted_once_and_only_on_a_beat() {
         let bare = testing::bare_pair();
-        let mut fight = Fight::new(&testing::bare_setup(&bare, 1), false);
+        let mut fight = testing::fight(&testing::bare_setup(&bare, 1), false);
         fight.balls[0].hp = 25.0;
         fight.abilities_step(true);
         assert!(!fight.balls[0].low_done, "25.0 is not below LOW_HP");
@@ -829,7 +910,7 @@ mod tests {
     #[test]
     fn ab_mult_is_the_haste_factor_while_haste_lasts() {
         let bare = testing::bare_pair();
-        let mut fight = Fight::new(&testing::bare_setup(&bare, 1), false);
+        let mut fight = testing::fight(&testing::bare_setup(&bare, 1), false);
         assert_eq!((fight.ab_mult(0), fight.ab_mult(1)), (1.0, 1.0));
         fight.balls[1].haste_mult = 2.0;
         assert_eq!(fight.ab_mult(1), 1.0, "a factor without haste time left does nothing");
@@ -846,7 +927,7 @@ mod tests {
     fn kill_keys_takes_the_marked_projectiles_out_in_order() {
         use Value::{Float as F, Int as I};
         let bare = testing::bare_pair();
-        let mut fight = Fight::new(&testing::bare_setup(&bare, 1), false);
+        let mut fight = testing::fight(&testing::bare_setup(&bare, 1), false);
         assert!(fight.keys.is_empty(), "a fight starts with no projectile");
         fight.t = 7.123456;
         let key = |own: usize, id: i64, p: V2| Key {
@@ -891,7 +972,7 @@ mod tests {
     #[test]
     fn a_free_ball_flies_straight() {
         let bare = testing::bare_pair();
-        let mut fight = Fight::new(&testing::bare_setup(&bare, 5), false);
+        let mut fight = testing::fight(&testing::bare_setup(&bare, 5), false);
         let (p0, v0) = (fight.balls[0].p, fight.balls[0].v);
         let dt = fight.rules.dt;
         fight.move_step(dt);
@@ -910,7 +991,7 @@ mod tests {
     fn a_rope_bounce_mirrors_the_ball_and_draws_the_give() {
         use Value::{Float as F, Int as I};
         let bare = testing::bare_pair();
-        let mut fight = Fight::new(&testing::bare_setup(&bare, 5), false);
+        let mut fight = testing::fight(&testing::bare_setup(&bare, 5), false);
         let mut rng = fight.rng.clone();
         fight.t = 9.0;
         // far from the other ball, heading straight at the right rope (lim = A - R = 2.4)
@@ -958,7 +1039,7 @@ mod tests {
     fn overlapping_balls_clash() {
         use Value::{Float as F, Int as I};
         let bare = testing::bare_pair();
-        let mut fight = Fight::new(&testing::bare_setup(&bare, 5), false);
+        let mut fight = testing::fight(&testing::bare_setup(&bare, 5), false);
         fight.t = 6.0;
         let dt = fight.rules.dt;
         // head on along x, meeting at the origin: after the step they overlap
@@ -1138,6 +1219,164 @@ mod tests {
         assert_eq!(
             setup_from(&ff, &odd, 1).expect_err("refused").to_string(),
             r#"fighters[0]: the engine has not ported FLUTE's ability SNAKE DANCE (kind "stun") yet"#
+        );
+    }
+}
+
+#[cfg(test)]
+mod error_tests {
+    //! Task 14b: bad rules and bad roster entries are errors in words, never a panic.
+
+    use super::*;
+    use crate::roster::StrikerCfg;
+    use crate::testing;
+
+    /// The error of `run` and of `Fight::new` (the same), as one line.
+    fn refused(setup: &Setup) -> String {
+        let run_err = run(setup, false).expect_err("refused").to_string();
+        let new_err = Fight::new(setup, false).map(|_| ()).expect_err("refused").to_string();
+        assert_eq!(run_err, new_err);
+        run_err
+    }
+
+    /// A change to the rules, and the error it must give.
+    type RuleCase<'a> = (&'a dyn Fn(&mut Rules), &'a str);
+
+    #[test]
+    fn rules_the_engine_cannot_run_are_an_error() {
+        let roster = testing::roster();
+        let base = testing::episode_setup(&roster, 1);
+        let cases: [RuleCase; 8] = [
+            (&|r| r.dt = 0.0, "rules.DT: 0 is not above 0"),
+            (
+                &|r| r.dt = 1e-9,
+                "rules.DT: the fight would take 54411764706 steps (at most 1000000)",
+            ),
+            (&|r| r.fps = 0, "rules.FPS: 0 is not a frame rate"),
+            (&|r| r.t_max = f64::INFINITY, "rules.t_max: inf is not a finite number"),
+            (&|r| r.rope_give = -0.0, "rules.ROPE_GIVE: -0 is negative"),
+            (&|r| r.t_fight = -1.0, "rules.t_fight: -1 is negative"),
+            (&|r| r.beat = 0.0, "rules.beat: 0 is not above 0"),
+            (
+                &|r| r.dmg_side = Some([1.0, f64::NAN]),
+                "rules.dmg_side: NaN is not a finite number",
+            ),
+        ];
+        for (change, want) in cases {
+            let mut setup = base.clone();
+            change(&mut setup.rules);
+            assert_eq!(refused(&setup), want);
+            // the test entry checks the rules too
+            let err = Fight::with_unported(&setup, false).map(|_| ()).expect_err("refused");
+            assert_eq!(err.to_string(), want);
+        }
+        // the setup itself says so before anything runs
+        let mut setup = base.clone();
+        setup.rules.knock_t = 0.0;
+        assert_eq!(
+            setup.check().expect_err("refused").to_string(),
+            "rules.KNOCK_T: 0 is not above 0"
+        );
+        assert_eq!(base.check(), Ok(()));
+        assert!(run(&base, false).is_ok());
+    }
+
+    #[test]
+    fn a_kind_not_ported_is_an_error() {
+        let roster = testing::roster();
+        let flute = testing::fighter(&roster, "FLUTE");
+        let piano = testing::fighter(&roster, "PIANO");
+        let mut setup = testing::episode_setup(&roster, 1);
+        setup.fighters[1] = piano;
+        assert_eq!(
+            refused(&setup),
+            r#"fighters[1]: the engine has not ported PIANO's weapon kind "roll" yet"#
+        );
+        // an ability of a kind not ported, on a fighter whose weapon is ported
+        let mut odd = flute.clone();
+        odd.low.kind = AbilityKind::Unsupported("stun".into());
+        let mut setup = testing::episode_setup(&roster, 1);
+        setup.fighters[0] = &odd;
+        assert_eq!(
+            refused(&setup),
+            r#"fighters[0]: the engine has not ported FLUTE's ability PICCOLO (kind "stun") yet"#
+        );
+        // the bare pair of the unit tests has no weapon, and abilities of kind `none`
+        let bare = testing::bare_pair();
+        assert_eq!(
+            refused(&testing::bare_setup(&bare, 1)),
+            r#"fighters[0]: the engine has not ported LEFT's weapon kind "none" yet"#
+        );
+        // the test entry lets it in
+        assert!(Fight::with_unported(&testing::bare_setup(&bare, 1), false).is_ok());
+        assert!(run_with_unported(&testing::bare_setup(&bare, 1), false).is_ok());
+    }
+
+    /// A roster entry changed in code, with numbers the roster reader would refuse: the panics and endless fights
+    /// they would cause are errors, in the reader's words, with the fighter's corner.
+    #[test]
+    fn a_roster_entry_the_engine_cannot_run_is_an_error() {
+        let roster = testing::roster();
+        let flute = testing::fighter(&roster, "FLUTE");
+        let trombone = testing::fighter(&roster, "TROMBONE");
+        let striker = |change: &dyn Fn(&mut StrikerCfg)| {
+            let mut f = flute.clone();
+            match &mut f.weapon {
+                WeaponCfg::Striker(w) => change(w),
+                other => panic!("{other:?}"),
+            }
+            f
+        };
+        let with_left = |f: &FighterCfg| {
+            let mut setup = testing::episode_setup(&roster, 1);
+            setup.fighters[0] = f;
+            refused(&setup)
+        };
+        // a striker that would divide by zero on its first beat, or pop an empty list
+        assert_eq!(
+            with_left(&striker(&|w| w.drop_every = 0.5)),
+            "fighters[0]: FLUTE: weapon.drop_every: 0.5 is less than 1 (a basket drops every that many beats)"
+        );
+        assert_eq!(
+            with_left(&striker(&|w| w.max_baskets = 0.0)),
+            "fighters[0]: FLUTE: weapon.max_baskets: 0 is less than 1 (there must be room for a basket)"
+        );
+        // an ability without a number its kind reads (Python: KeyError when it fires)
+        let mut f = flute.clone();
+        f.low.params.remove("speed");
+        assert_eq!(with_left(&f), "fighters[0]: FLUTE: abilities.low.speed: missing");
+        let mut f = flute.clone();
+        f.unlock2.params.remove("every_bars");
+        assert_eq!(
+            with_left(&f),
+            "fighters[0]: FLUTE: abilities.unlock2.every_bars: missing"
+        );
+        let mut f = flute.clone();
+        f.unlock1.params.insert("mult".into(), 0.0);
+        assert_eq!(
+            with_left(&f),
+            "fighters[0]: FLUTE: abilities.unlock1.mult: 0 is not above 0 (a haste divides the weapon's grid by it)"
+        );
+        // a lance whose fret count an i64 cannot carry
+        let mut t = trombone.clone();
+        if let WeaponCfg::Blade(w) = &mut t.weapon {
+            w.frets0 = i64::MAX;
+        }
+        let mut setup = testing::episode_setup(&roster, 1);
+        setup.fighters[1] = &t;
+        assert_eq!(
+            refused(&setup),
+            "fighters[1]: TROMBONE: weapon.frets0: 9223372036854775807 is not a fret count (0 to 1000000)"
+        );
+        // the test entry: an unlock of a kind not ported still needs its timer
+        let mut bare = testing::bare_pair();
+        bare[1].unlock2.params.clear();
+        let err = Fight::with_unported(&testing::bare_setup(&bare, 1), false)
+            .map(|_| ())
+            .expect_err("refused");
+        assert_eq!(
+            err.to_string(),
+            "fighters[1]: RIGHT: abilities.unlock2.every_bars: missing (the bars between two uses of NOTHING)"
         );
     }
 }

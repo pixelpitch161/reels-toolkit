@@ -14,7 +14,9 @@
 //! `prefix_before_abilities.rs` is the tighter test of the span before the first ability (exact event totals); this
 //! one adds everything after it: the six abilities, their waves, slams, slows and hastes.
 //!
-//! No window of the 21 fights is ended by a knife-edge. The last test shows what one looks like on a real fight: a
+//! No window of the 21 fights is ended by a knife-edge or a logic break: every one that ends, ends on drift (a float
+//! passing 1e-6 where it was already past 1e-7 a frame before), and the test holds that. The last test shows what a
+//! knife-edge looks like on a real fight: a
 //! core-only Python recording (`studio/reference/fights/knife_edge/`, the `knife_edge` export) in which the balls
 //! travel side by side exactly `R + R` apart.
 
@@ -24,7 +26,7 @@ use std::collections::BTreeMap;
 
 use bf_core::recording::Recording;
 use bf_sim::parity::{BreakKind, PREFIX_FLOOR_S, PrefixReport, clash_margin, prefix_window};
-use bf_sim::run;
+use bf_sim::{run, run_with_unported};
 use support::{count_kinds, rule};
 
 /// Every committed Python recording of FLUTE against TROMBONE, with the scenario it belongs to: the five reference
@@ -72,7 +74,7 @@ struct Window {
 fn measure(name: &'static str, scenario: &str, roster: &[bf_sim::roster::FighterCfg]) -> Window {
     let py: Recording = support::python_recording(&format!("flute_vs_trombone/{name}"));
     let setup = support::setup_like(&py, roster);
-    let rs = run(&setup, true);
+    let rs = run(&setup, true).expect("the engine runs this fight");
     let report = prefix_window(&rs, &py);
     let t_fight = rule(&py, "t_fight");
     let lasts = report.agree_until_s - t_fight;
@@ -150,6 +152,18 @@ fn agrees_with_python() {
         assert!(w.lasts <= w.fight + 0.01, "{}: {} s of {} s", w.name, w.lasts, w.fight);
         assert!(w.report.worst <= 1e-6, "{}", w.name);
     }
+    // every window of these fights that ends, ends on drift: the two fights part slowly, never by a jump, a whole
+    // number or an event that one engine made (a logic break there is a bug until shown otherwise)
+    let not_drift: Vec<String> = windows
+        .iter()
+        .filter(|w| w.report.kind.is_some_and(|k| k != BreakKind::Drift))
+        .map(|w| format!("{}: {}", w.name, w.trouble))
+        .collect();
+    assert!(
+        not_drift.is_empty(),
+        "windows not ended by drift:\n{}",
+        not_drift.join("\n")
+    );
 }
 
 /// The windows are not empty of what this suite is for: inside them (so matched event for event with Python) every
@@ -217,7 +231,7 @@ fn a_knife_edge_clash_is_told_from_a_logic_break() {
     );
 
     let setup = support::setup_like(&py, &bags);
-    let rs = run(&setup, true);
+    let rs = run_with_unported(&setup, true).expect("the engine runs the bags (kinds not ported)");
     let report = prefix_window(&rs, &py);
     let words = report
         .first_break

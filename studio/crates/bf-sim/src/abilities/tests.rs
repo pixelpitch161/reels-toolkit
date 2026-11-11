@@ -42,7 +42,7 @@ fn ev(t: f64, kind: &str, fields: Vec<Value>) -> Event {
 
 /// FLUTE (0) against TROMBONE (1) under the episode's rules at `T0`, the FLUTE set up as a striker.
 fn duel(roster: &[FighterCfg]) -> Fight<'_> {
-    let mut fight = Fight::new(&testing::episode_setup(roster, 392), false);
+    let mut fight = testing::fight(&testing::episode_setup(roster, 392), false);
     striker::setup(&mut fight, 0);
     fight.t = T0;
     assert_eq!((fight.rules.beat, fight.rules.dt), (BEAT, DT));
@@ -398,7 +398,7 @@ fn a_kind_not_ported_is_announced_and_does_nothing() {
         rules: testing::episode_rules(),
         seed: 392,
     };
-    let mut fight = Fight::new(&setup, false);
+    let mut fight = testing::fight(&setup, false);
     striker::setup(&mut fight, 0);
     fight.balls[0].dealt = 40.0;
     fight.balls[0].hp = 10.0;
@@ -438,7 +438,7 @@ fn haste_lasts_its_beats_in_the_fight_loop() {
         rules,
         seed: 392,
     };
-    let mut fight = Fight::new(&setup, false);
+    let mut fight = testing::fight(&setup, false);
     let mut sched = Schedule::new(&mut fight);
     sched.step(&mut fight);
     trigger(&mut fight, 0, Slot::Unlock1);
@@ -475,7 +475,7 @@ fn haste_lasts_its_beats_in_the_fight_loop() {
 #[test]
 fn a_ring_fired_in_a_step_first_spreads_in_the_next() {
     let roster = testing::roster();
-    let mut fight = Fight::new(&testing::episode_setup(&roster, 392), false);
+    let mut fight = testing::fight(&testing::episode_setup(&roster, 392), false);
     let mut sched = Schedule::new(&mut fight);
     fight.balls[1].dealt = 14.0;
     let mut radii = Vec::new();
@@ -821,7 +821,7 @@ fn a_ring_stops_at_its_final_radius() {
             rules: testing::episode_rules(),
             seed: 392,
         };
-        let mut fight = Fight::new(&setup, false);
+        let mut fight = testing::fight(&setup, false);
         fight.t = T0;
         fight.balls[1].p = [0.0, 0.0];
         place(&mut fight, 0, [-(reach + 0.3), 0.0], [1.0, 2.4]);
@@ -1229,7 +1229,7 @@ fn a_ring_hits_before_a_slam_lands_in_the_same_step() {
 #[test]
 fn the_weapons_act_before_the_effects_in_a_step() {
     let roster = testing::roster();
-    let mut fight = Fight::new(&testing::episode_setup(&roster, 392), false);
+    let mut fight = testing::fight(&testing::episode_setup(&roster, 392), false);
     let mut sched = Schedule::new(&mut fight);
     let t_fight = fight.rules.t_fight;
     place(&mut fight, 1, [0.5, 0.0], [0.0, 2.6]);
@@ -1338,7 +1338,7 @@ fn an_empty_slow_is_no_slow() {
             rules: testing::episode_rules(),
             seed: 392,
         };
-        Fight::new(&setup, false).uses_ext
+        testing::fight(&setup, false).uses_ext
     };
     assert!(!fight_of(flute, flute));
     assert!(!fight_of(&empty, flute));
@@ -1352,7 +1352,7 @@ fn an_empty_slow_is_no_slow() {
             rules: testing::episode_rules(),
             seed: 392,
         };
-        let mut fight = Fight::new(&setup, false);
+        let mut fight = testing::fight(&setup, false);
         fight.t = T0;
         place(&mut fight, 0, [-1.0, 0.5], [1.0, 2.4]);
         place(&mut fight, 1, [1.5, 0.5], [-2.4, 1.0]);

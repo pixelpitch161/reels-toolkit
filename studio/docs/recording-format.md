@@ -203,6 +203,14 @@ overrides of a scenario fight appear here with the value used.
 | `dmg_side` | list of 2 floats | [2.0, 0.4] | per-fighter damage handicap (left, right) |
 | `swat_cobras` | bool | true | the opt-in rule: a live lance knocks a risen cobra flat |
 
+`dmg_side` and `swat_cobras` are attributes only an episode adds, so they can be absent, as in Python's
+`vars(rules)`. A recording the Studio makes from a fight file has `dmg_side` unless the file's `handicap` is 1.0 for
+each fighter (a file with no `handicap` line; the kit passes no `dmg_side` for an episode without `DMG_SIDE`), and
+`swat_cobras` exactly when the file's `pair_rules` set it, with the value set (`false` too: Python's `setattr` lists
+an attribute set to false). The fight is the same either way; only the content hash shows it.
+`studio/reference/fights/rules_map/` (export `rules_map`) holds a Python recording of each case, and
+`crates/bf-sim/tests/rules_map.rs` checks that the Studio's map equals it.
+
 ### 6.2 Events
 
 `[t, kind, who, ...]`. `t` is the step's time rounded to 5 decimals (`round(t, 5)`), so several events can share a

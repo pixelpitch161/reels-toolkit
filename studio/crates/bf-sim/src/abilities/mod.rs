@@ -27,18 +27,19 @@ use crate::roster::{AbilityCfg, AbilityKind};
 
 /// `ab[name]`: a number of an ability's roster entry that its kind cannot do without.
 ///
-/// # Panics
-/// When the entry has no such number (Python raises `KeyError`). The roster refuses an entry of a ported kind that
-/// lacks one, so only an ability built by hand can get here.
+/// In a fight the number is always there: `Fight::new` (through `FighterCfg::check`) refuses an ability of a ported
+/// kind that lacks one of its kind's numbers, and an unlock of any kind without `every_bars`, where Python raises
+/// `KeyError`. Only an entry changed by a test after the check could get to the panic.
 pub(crate) fn param(ab: &AbilityCfg, name: &str) -> f64 {
     ab.get(name)
-        .unwrap_or_else(|| panic!("the ability {} has no {name}", ab.name))
+        .unwrap_or_else(|| panic!("the ability {} has no {name} (Fight::new refuses that)", ab.name))
 }
 
 /// `ab_dur(ab)`: an ability's duration in seconds: its `dur`, else its `dur_beats` beats at this fight's tempo.
 ///
 /// # Panics
-/// When the entry has neither (Python raises `KeyError`). The roster refuses such an entry of a ported kind.
+/// When the entry has neither (Python raises `KeyError`). Never for an ability of the fight's own fighters: a haste
+/// or a dance without either is refused by `Fight::new`.
 pub fn ab_dur(fight: &Fight, ab: &AbilityCfg) -> f64 {
     match ab.get("dur") {
         Some(dur) => dur,
