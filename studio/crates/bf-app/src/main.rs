@@ -28,9 +28,11 @@ use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 
 use bf_app::app::{self, EngineKind};
+use bf_app::model::Settings;
 use bf_app::preview::audio::{NO_DEVICE, NoAudio, open_audio};
 use bf_app::preview::bench;
 use bf_app::store::Paths;
+use bf_app::store::settings::{default_settings, save_settings};
 
 /// How many painted frames `--smoke` waits for before it closes the window.
 const SMOKE_FRAMES: u32 = 30;
@@ -192,6 +194,19 @@ fn usable(dir: &Path) -> Result<(), String> {
     Ok(())
 }
 
+/// Writes the settings a smoke run starts with into its temp folder `root`: the output folder `root\Videos` and the
+/// default workers. Best effort: if it cannot be written the run starts on the defaults, as any first start does.
+fn smoke_settings(root: &Path, paths: &Paths) {
+    let cores = std::thread::available_parallelism().map_or(1, std::num::NonZero::get);
+    let settings = Settings {
+        output_folder: root.join("Videos"),
+        ..default_settings(cores)
+    };
+    if std::fs::create_dir_all(&paths.config).is_ok() {
+        let _ = save_settings(&paths.settings(), &settings);
+    }
+}
+
 /// Runs `app` and closes its window after `SMOKE_FRAMES` painted frames.
 struct Smoke {
     app: Box<dyn eframe::App>,
@@ -265,6 +280,10 @@ fn main() -> std::process::ExitCode {
         (Some(dir), _) | (None, Some(dir)) => Some(Paths::under(dir)),
         (None, None) => Paths::system(),
     };
+    // A smoke run's videos would go to its own temp folder too: it never looks at the owner's Videos folder.
+    if let (true, Some(root), Some(paths)) = (args.smoke, &temp_root, &paths) {
+        smoke_settings(root, paths);
+    }
     let Args { smoke, fixtures, .. } = args;
     let result = eframe::run_native(
         "BALLFIGHT Studio",
@@ -393,6 +412,18 @@ mod tests {
             bench(&["--preview-bench", "--fixtures"]),
             Err("--preview-bench goes only with --seed, --seconds and --threads, not with --fixtures.".to_string())
         );
+    }
+
+    #[test]
+    fn a_smoke_run_keeps_its_videos_in_its_own_folder() {
+        let root = std::env::temp_dir().join(format!("bf-app smoke settings {}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&root);
+        let paths = Paths::under(&root);
+        smoke_settings(&root, &paths);
+        let (settings, notice) = bf_app::store::settings::load_settings(&paths.settings(), 8);
+        assert_eq!(notice, None);
+        assert_eq!(settings.output_folder, root.join("Videos"));
+        let _ = std::fs::remove_dir_all(&root);
     }
 
     #[test]

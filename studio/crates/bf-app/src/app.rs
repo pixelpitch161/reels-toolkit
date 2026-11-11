@@ -142,6 +142,18 @@ fn fallback_paths() -> Paths {
     Paths::under(&std::env::temp_dir().join("BALLFIGHT Studio"))
 }
 
+/// What the real engine is started with: the settings' workers, the app's storage `paths` (or, when the PC gives the
+/// app none, a folder under the system temp folder for the shortlists), every frame of a video and no limit on a
+/// search.
+pub fn real_config(settings: &Settings, paths: Option<Paths>) -> EngineConfig {
+    EngineConfig {
+        workers: settings.workers,
+        paths: paths.unwrap_or_else(fallback_paths),
+        clip: None,
+        search_limit: None,
+    }
+}
+
 /// Builds the real app in the creator passed to `eframe::run_native`: the settings and the queue, read once
 /// through `paths` (the same `paths` the writer is started with), their notices kept to be shown, the engine
 /// `kind` names woken through the window's context (the real one with the settings' workers, the same `paths`, every
@@ -172,15 +184,7 @@ pub fn start(
         }
     };
     let engine = match kind {
-        EngineKind::Real => engine::spawn(
-            waker(&cc.egui_ctx),
-            EngineConfig {
-                workers: settings.workers,
-                paths: paths.unwrap_or_else(fallback_paths),
-                clip: None,
-                search_limit: None,
-            },
-        ),
+        EngineKind::Real => engine::spawn(waker(&cc.egui_ctx), real_config(&settings, paths)),
         EngineKind::Sample => fake::spawn(waker(&cc.egui_ctx), Pace::Live),
     };
     let boot = Boot {
@@ -405,6 +409,11 @@ impl BfApp {
         }
     }
 
+    /// Whether the stage shows a picture now (a title card, or a frame of the take).
+    pub fn has_picture(&self) -> bool {
+        self.picture().is_some()
+    }
+
     /// The picture to show: the texture once something is to be shown (the player says so; in `showing` mode once
     /// `show_frame` has given one).
     fn picture(&self) -> Option<TextureHandle> {
@@ -619,6 +628,32 @@ impl eframe::App for BfApp {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_real_engine_renders_whole_videos_with_the_settings_workers() {
+        let settings = Settings {
+            output_folder: std::path::PathBuf::from("Videos"),
+            workers: 7,
+        };
+        let paths = Paths::under(std::path::Path::new("studio data"));
+        let config = real_config(&settings, Some(paths.clone()));
+        assert_eq!(
+            config,
+            EngineConfig {
+                workers: 7,
+                paths,
+                clip: None,
+                search_limit: None,
+            }
+        );
+        // No folder from the PC: the shortlists go under the temp folder.
+        let config = real_config(&settings, None);
+        assert_eq!(
+            config.paths,
+            Paths::under(&std::env::temp_dir().join("BALLFIGHT Studio"))
+        );
+        assert_eq!((config.clip, config.search_limit, config.workers), (None, None, 7));
+    }
 
     #[cfg(windows)]
     #[test]
