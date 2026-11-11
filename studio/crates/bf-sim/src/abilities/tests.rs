@@ -323,6 +323,36 @@ fn unlocks_fire_on_the_beat_one_at_a_time() {
     assert_eq!((fight.balls[1].level, fight.balls[1].used), (1, [false; 3]));
 }
 
+/// The edge of `t >= ready - 1e-6`: an unlock fires on a beat exactly a millionth of a second before its time, and
+/// not on one a float earlier.
+#[test]
+fn an_unlock_is_ready_a_millionth_before_its_time() {
+    let roster = testing::roster();
+    let mut fight = duel(&roster);
+    fight.balls[0].dealt = 14.0;
+    // level 2 on a beat: the unlock fires at once
+    fight.t = 10.0;
+    fight.abilities_step(true);
+    let r1 = 17.176470588235293;
+    assert_eq!(fight.balls[0].ready, [Some(r1), None]);
+    assert_eq!(fight.events.len(), 2);
+    fight.t = 17.17646958823529;
+    fight.abilities_step(true);
+    assert_eq!(fight.events.len(), 2, "a float before ready - 1e-6");
+    fight.t = r1 - 1e-6;
+    bits(fight.t, 17.176469588235292);
+    fight.abilities_step(true);
+    assert_eq!(
+        fight.events,
+        vec![
+            ev(10.0, "level", vec![I(0), I(2)]),
+            ev(10.0, "ability", vec![I(0), s("FLUTTER TONGUE"), s("haste"), I(1)]),
+            ev(17.17647, "ability", vec![I(0), s("FLUTTER TONGUE"), s("haste"), I(0)]),
+        ]
+    );
+    assert_eq!(fight.balls[0].ready, [Some(24.352940176470586), None]);
+}
+
 /// In one step fighter 0 has its whole turn (level, then ability) before fighter 1.
 #[test]
 fn fighter_0_takes_its_turn_before_fighter_1() {
@@ -436,6 +466,43 @@ fn haste_lasts_its_beats_in_the_fight_loop() {
     bits(fight.balls[0].haste, 3.5882352941176467);
     let again = fight.events.iter().filter(|e| e.kind == "ability").map(|e| e.i(5));
     assert_eq!(again.collect::<Vec<_>>(), [1, 0, 0]);
+}
+
+/// In a step the effects move before the abilities fire (`Fight.run`: `effects_step`, then `abilities_step`), so a
+/// ring fired in a step is still as wide as the ball when that step is recorded and first spreads in the next one.
+/// The numbers are the `WAVES` rows of Python's own fight loop, recorded at every step, with the TROMBONE one hit
+/// from level 2 at the start: its shockwave fires in the fight's first step (the first beat).
+#[test]
+fn a_ring_fired_in_a_step_first_spreads_in_the_next() {
+    let roster = testing::roster();
+    let mut fight = Fight::new(&testing::episode_setup(&roster, 392), false);
+    let mut sched = Schedule::new(&mut fight);
+    fight.balls[1].dealt = 14.0;
+    let mut radii = Vec::new();
+    for _ in 0..4 {
+        sched.step(&mut fight);
+        assert_eq!(fight.waves.len(), 1);
+        radii.push(fight.waves[0].r);
+    }
+    for (got, want) in radii
+        .into_iter()
+        .zip([0.6, 0.65, 0.7000000000000001, 0.7500000000000001])
+    {
+        bits(got, want);
+    }
+    let w = &fight.waves[0];
+    assert_eq!((w.owner, w.kind.as_str(), w.rmax), (1, "shockwave", 3.4));
+    bits(w.t0, 3.59656862745098);
+    assert_eq!(
+        fight.events,
+        vec![
+            ev(3.59657, "basket", vec![I(0), I(0), F(-1.85), F(1.85), I(-1)]),
+            ev(3.59657, "thrust", vec![I(1), F(0.95)]),
+            ev(3.59657, "level", vec![I(1), I(2)]),
+            ev(3.59657, "ability", vec![I(1), s("SAD TROMBONE"), s("shockwave"), I(1)]),
+        ]
+    );
+    assert_eq!((fight.balls[0].level, fight.balls[1].level), (1, 2));
 }
 
 /// `dance` on a fighter that is no striker sets nothing the engine reads, and does not fail.
@@ -711,6 +778,33 @@ fn the_edges_of_the_hit_test() {
         assert_eq!(made, [(1, 2)], "an enemy at x = {x}: the hit and the slow, in step 1");
     }
     bits(0.65 + 1e-9, 0.650000001);
+}
+
+/// The lower edge is outside (`r0 < dist - R / 2`): an enemy that turns up exactly on the front as a step begins is
+/// not hit, in that step or later (the front has passed it); one a float further out is hit in that step.
+#[test]
+fn an_enemy_exactly_on_the_front_is_not_hit() {
+    let roster = testing::roster();
+    bits(1.4000000000000004 - 0.6 * 0.5, 1.1000000000000003);
+    for (x, hit) in [(1.4000000000000004, None), (1.4000000000000006, Some(11))] {
+        let mut fight = duel(&roster);
+        fight.balls[1].p = [0.0, 0.0];
+        place(&mut fight, 0, [-2.0, 2.5], [1.0, 2.4]);
+        trigger(&mut fight, 1, Slot::Unlock1);
+        assert_eq!(run_effects(&mut fight, 10), (vec![], vec![]));
+        bits(fight.waves[0].r, 1.1000000000000003);
+        fight.balls[0].p = [x, 0.0];
+        let mut made = None;
+        for i in 11..=15 {
+            fight.t = T0 + i as f64 * DT;
+            let n0 = fight.events.len();
+            effects_step(&mut fight, DT);
+            if fight.events.len() > n0 {
+                made = Some(i);
+            }
+        }
+        assert_eq!(made, hit, "the enemy at x = {x}");
+    }
 }
 
 /// A ring whose final radius is not one of its steps (0.6 + n x 0.05) stops AT the radius in its last step: a
@@ -1020,6 +1114,184 @@ fn a_slam_reaches_its_radius_and_a_bit() {
     // 2e-3 from the centre: knocked away from it
     let (fight, _) = slam_on(&roster, [C[0] + 2e-3, C[1]], 0.0, 0.0);
     bits2(fight.balls[0].v, [2.559930753388882, -0.4547026917000837]);
+}
+
+/// The slam on its exact edges. It lands in a step whose time is exactly its own (`t >= t_slam`), not in one a float
+/// earlier. Its reach is strict (`dist < radius + 0.6 R`): an enemy exactly 1.71 from the centre is missed, one a
+/// float nearer is hit.
+#[test]
+fn the_edges_of_a_slam() {
+    let roster = testing::roster();
+    let mut fight = duel(&roster);
+    place(&mut fight, 0, [0.2, -0.4], [1.5, -2.1]);
+    trigger(&mut fight, 1, Slot::Low);
+    let t_slam = fight.slams[0].t_slam;
+    bits(t_slam, 13.397058823529411);
+    fight.t = 13.39705882352941;
+    effects_step(&mut fight, DT);
+    assert!(!fight.slams[0].done);
+    assert_eq!(fight.events.len(), 1, "nothing but the ability yet");
+    fight.t = t_slam;
+    effects_step(&mut fight, DT);
+    assert!(fight.slams[0].done);
+    let kinds: Vec<&str> = fight.events.iter().map(|e| e.kind.as_str()).collect();
+    assert_eq!(kinds, ["ability", "slam", "hit"]);
+
+    bits(1.35 + 0.6 * 0.6, 1.71);
+    for (x, inside) in [(1.71, false), (1.7099999999999997, true)] {
+        // an enemy at rest on the origin: the slam is called on the origin
+        let mut fight = duel(&roster);
+        place(&mut fight, 0, [0.0, 0.0], [0.0, 0.0]);
+        trigger(&mut fight, 1, Slot::Low);
+        fight.t = fight.slams[0].t_slam;
+        fight.balls[0].p = [x, 0.0];
+        effects_step(&mut fight, DT);
+        let slam = ev(13.39706, "slam", vec![I(1), F(0.0), F(0.0), I(i64::from(inside))]);
+        if inside {
+            let hit = ev(
+                13.39706,
+                "hit",
+                vec![
+                    I(1),
+                    I(0),
+                    F(9.600000000000001),
+                    F(1.7099999999999997),
+                    F(0.0),
+                    s("slam"),
+                    I(0),
+                ],
+            );
+            assert_eq!(fight.events[1..], [slam, hit], "{x} from the centre");
+        } else {
+            assert_eq!(fight.events[1..], [slam], "{x} from the centre");
+            assert_eq!(fight.balls[0].hp, 100.0);
+        }
+    }
+}
+
+/// A ring that hits and a slam that lands in the same step: the ring first (`effects_step` walks the rings, then
+/// the slams). Here the order shows in the enemy itself: it is at rest on the slam's centre, so the slam knocks it
+/// along its own heading, which it only has once the ring has knocked it.
+#[test]
+fn a_ring_hits_before_a_slam_lands_in_the_same_step() {
+    let roster = testing::roster();
+    let mut fight = duel(&roster);
+    fight.balls[1].p = [0.0, 0.0];
+    place(&mut fight, 0, [2.28, 0.0], [0.0, 0.0]);
+    trigger(&mut fight, 1, Slot::Low);
+    assert_eq!(fight.slams[0].c, [2.28, 0.0]);
+    let mut made = Vec::new();
+    for i in 1..=110 {
+        fight.t = T0 + i as f64 * DT;
+        let n0 = fight.events.len();
+        effects_step(&mut fight, DT);
+        if fight.events.len() > n0 {
+            made.push(i);
+        }
+        if i == 80 {
+            trigger(&mut fight, 1, Slot::Unlock1);
+        }
+    }
+    assert_eq!(made, [108]);
+    assert_eq!(
+        fight.events[2..],
+        [
+            ev(
+                13.4,
+                "hit",
+                vec![
+                    I(1),
+                    I(0),
+                    F(1.2000000000000002),
+                    F(1.6799999999999997),
+                    F(0.0),
+                    s("shockwave"),
+                    I(0)
+                ]
+            ),
+            ev(13.4, "slow", vec![I(0), I(1), F(1.0)]),
+            ev(13.4, "slam", vec![I(1), F(2.28), F(0.0), I(1)]),
+            ev(
+                13.4,
+                "hit",
+                vec![I(1), I(0), F(9.600000000000001), F(2.28), F(0.0), s("slam"), I(0)]
+            ),
+        ]
+    );
+    let a = &fight.balls[0];
+    bits2(a.v, [2.5999999999974, 0.0]);
+    assert_eq!((a.boost, a.hp, a.slow, a.slow_mult), (1.6, 89.19999999999999, 1.0, 0.6));
+}
+
+/// In a step the weapons act before the effects (`Fight.run`: the weapon steps, then `effects_step`): a lance hit and
+/// a slam landing in the same step come in that order, and so do their knocks. The numbers are Python's own fight
+/// loop, one step of it, with the balls placed 1.3 apart and a slam put in by hand that is due at once.
+#[test]
+fn the_weapons_act_before_the_effects_in_a_step() {
+    let roster = testing::roster();
+    let mut fight = Fight::new(&testing::episode_setup(&roster, 392), false);
+    let mut sched = Schedule::new(&mut fight);
+    let t_fight = fight.rules.t_fight;
+    place(&mut fight, 1, [0.5, 0.0], [0.0, 2.6]);
+    place(&mut fight, 0, [-0.8, 0.0], [0.0, -2.6]);
+    fight.slams.push(Slam {
+        owner: 1,
+        c: [-0.8, 0.25],
+        t0: t_fight - 0.5,
+        t_slam: t_fight,
+        radius: 1.35,
+        dmg: 24.0,
+        knock: 1.6,
+        done: false,
+        name: "PEDAL TONE".into(),
+    });
+    sched.step(&mut fight);
+    assert_eq!(
+        fight.events,
+        vec![
+            ev(3.59657, "basket", vec![I(0), I(0), F(-0.8), F(0.0), I(-1)]),
+            ev(3.59657, "thrust", vec![I(1), F(0.95)]),
+            ev(
+                3.59657,
+                "hit",
+                vec![
+                    I(1),
+                    I(0),
+                    F(1.4000000000000001),
+                    F(-0.20349014267658294),
+                    F(0.042955234543353836),
+                    s("blade"),
+                    I(1)
+                ]
+            ),
+            ev(3.59657, "slam", vec![I(1), F(-0.8), F(0.25), I(1)]),
+            ev(
+                3.59657,
+                "hit",
+                vec![
+                    I(1),
+                    I(0),
+                    F(9.600000000000001),
+                    F(-0.8),
+                    F(-0.021666666666658334),
+                    s("slam"),
+                    I(0)
+                ]
+            ),
+        ]
+    );
+    let (a, b) = (&fight.balls[0], &fight.balls[1]);
+    bits2(a.p, [-0.8, -0.021666666666658334]);
+    bits2(a.v, [-0.5795829803330464, -2.534577591807505]);
+    assert_eq!((a.boost, a.hp), (1.6, 89.0));
+    bits2(b.p, [0.5, 0.021666666666658334]);
+    bits2(b.v, [0.0, 2.599999999999]);
+    assert_eq!(
+        (b.dealt, b.blade_len, b.frets, b.thr_hit),
+        (11.000000000000002, 1.03, 2, true)
+    );
+    bits(b.ext, 0.3);
+    bits(b.th, bf_core::dmath::PI);
 }
 
 /// A shielded enemy blocks the slam (a `block` event at its own centre, no damage) and is still knocked.

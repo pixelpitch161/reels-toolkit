@@ -150,6 +150,15 @@ step(r2 + 0.5 + 2 * dt, True, 'the next beat: unlock2')
 B.hp = 10.0
 step(r2 + 0.5 + 3 * dt, True, 'still low: nothing more')
 
+print('== abilities_step: an unlock fires on a beat exactly 1e-6 s before its time (t >= ready - 1e-6)')
+f = new_fight()
+B = f.balls[0]
+B.dealt = 14.0
+step(10.0, True, 'level 2 on a beat: the unlock at once')
+r1 = B.ready['unlock1']
+step(float(np.nextafter(r1 - 1e-6, 0.0)), True, 'a float before ready - 1e-6')
+step(r1 - 1e-6, True, 'exactly ready - 1e-6')
+
 print('== abilities_step: fighter 0 before fighter 1 in the same step')
 f = new_fight()
 f.balls[0].dealt = 14.0
@@ -279,13 +288,46 @@ def edge(what, want):
         f.effects_step(dt)
         if len(f.events) > n0:
             hit = i
-    print('   ', what, 'enemy at x =', fl(-x), 'dist - R / 2 =', fl(float(np.hypot(x, 0.0)) - R.R * 0.5), 'hit at step', hit)
+    print('   ', what, 'enemy at x =', fl(-x), 'dist - R / 2 =', fl(float(np.hypot(x, 0.0)) - R.R * 0.5),
+          'hit at step', hit)
 
 
 edge('exactly on the starting front (r0 < reach fails for ever)', 0.6)
 edge('one float past the starting front', float(np.nextafter(0.6, 1.0)))
 edge('exactly r + 1e-9 after step 1 (reach <= r + 1e-9 holds)', 0.65 + 1e-9)
 edge('one float past r + 1e-9 after step 1', float(np.nextafter(0.65 + 1e-9, 1.0)))
+
+print('== effects_step: an enemy that turns up exactly on the front (dist - R / 2 == r0) is not hit')
+for nudge in (0, 1):
+    f = new_fight()
+    f.t = T
+    f.balls[1].p = np.array([0.0, 0.0])
+    f.balls[0].p, f.balls[0].v = np.array([-2.0, 2.5]), np.array([1.0, 2.4])
+    f.trigger(1, 'unlock1')
+    for i in range(1, 11):
+        f.t = T + i * dt
+        f.effects_step(dt)
+    r0 = f.waves[0]['r']
+    x = None
+    for n in range(-4, 5):                                # a float x with x - R / 2 == r0 exactly
+        c = r0 + 0.3
+        for _ in range(abs(n)):
+            c = float(np.nextafter(c, np.inf if n > 0 else -np.inf))
+        if c - R.R * 0.5 == r0:
+            x = c
+            break
+    if nudge:
+        x = float(np.nextafter(x, 9.0))
+    f.balls[0].p = np.array([x, 0.0])
+    hit = None
+    for i in range(11, 16):
+        f.t = T + i * dt
+        n0 = len(f.events)
+        f.effects_step(dt)
+        if len(f.events) > n0:
+            hit = i
+    print('    after 10 steps r0', fl(r0), 'the enemy at x =', fl(x), 'dist - R / 2 =', fl(x - R.R * 0.5),
+          'hit at step', hit)
 
 print('== effects_step: two waves in flight, the list keeps its order')
 f = new_fight()
@@ -380,6 +422,74 @@ print('  the enemy 2e-3 from the centre: knocked away from it')
 run_slam((0.2, -0.4), (1.5, -2.1), at_landing=c + np.array([2e-3, 0.0]))
 print('  a shielded enemy: block, and the knock')
 run_slam((0.2, -0.4), (1.5, -2.1), at_landing=c + np.array([0.3, 0.4]), shield=5.0)
+
+print('== effects_step: the slam on its exact edges: the time it lands, and its reach')
+f = new_fight()
+f.t = T
+f.balls[0].p, f.balls[0].v = np.array([0.2, -0.4]), np.array([1.5, -2.1])
+f.trigger(1, 'low')
+S = f.slams[0]
+for t in (float(np.nextafter(S['t_slam'], 0.0)), S['t_slam']):
+    f.t = t
+    n0 = len(f.events)
+    f.effects_step(dt)
+    print('    t', fl(t), 't_slam', fl(S['t_slam']), 'done', S['done'], [e[1] for e in f.events[n0:]])
+reach = F.FIGHTERS['TROMBONE']['abilities']['low']['radius'] + R.R * 0.6
+print('    radius + R * 0.6 =', fl(reach))
+for x in (reach, float(np.nextafter(reach, 0.0))):
+    f = new_fight()
+    f.t = T
+    f.balls[0].p, f.balls[0].v = np.array([0.0, 0.0]), np.array([0.0, 0.0])
+    f.trigger(1, 'low')
+    S = f.slams[0]
+    f.t = S['t_slam']
+    f.balls[0].p = np.array([x, 0.0])
+    f.effects_step(dt)
+    print('    the enemy', fl(x), 'from the centre', vec(S['c']),
+          '(dist', fl(np.hypot(*(f.balls[0].p - S['c']))) + '):')
+    show_events(f, 1)
+
+print('== the fight loop: effects_step runs before abilities_step, so a ring fired in a step first spreads in the next')
+# Fight.run() itself, recording every step (FPS = 120), for 4 steps; the TROMBONE starts one hit from level 2, so
+# its shockwave fires in the first step (the fight's first beat)
+f = F.Fight('FLUTE', 'TROMBONE', seed=392, rules=episode_rules(FPS=120, t_max=R.t_fight + 3.5 * dt), record=True)
+f.balls[1].dealt = 14.0
+r = f.run()
+for i, row in enumerate(r['WAVES']):
+    print('    frame', i, [(w[0], fl(w[3]), fl(w[4]), w[5], fl(w[6])) for w in row],
+          'haste', vec(r['HA'][i]), 'level', list(r['LV'][i]))
+show_events(f)
+
+print('== effects_step: a ring that hits and a slam that lands in the same step: the ring first')
+f = new_fight()
+f.t = T
+f.balls[1].p = np.array([0.0, 0.0])
+f.balls[0].p, f.balls[0].v = np.array([2.28, 0.0]), np.array([0.0, 0.0])
+f.trigger(1, 'low')
+show_slam(f.slams[0])
+for i in range(1, 111):
+    f.t = T + i * dt
+    n0 = len(f.events)
+    f.effects_step(dt)
+    if len(f.events) > n0:
+        print('    step', i)
+        show_events(f, n0)
+        show_ball(f, 0, 'enemy')
+    if i == 80:
+        f.trigger(1, 'unlock1')
+
+print('== the fight loop: the weapons step before the effects (a lance hit, then a slam, in one step)')
+f = F.Fight('FLUTE', 'TROMBONE', seed=392, rules=episode_rules(FPS=120, t_max=R.t_fight + 0.5 * dt), record=True)
+f.balls[1].p, f.balls[1].v = np.array([0.5, 0.0]), np.array([0.0, 2.6])
+f.balls[0].p, f.balls[0].v = np.array([-0.8, 0.0]), np.array([0.0, -2.6])
+f.slams.append(dict(owner=1, c=np.array([-0.8, 0.25]), t0=R.t_fight - 0.5, t_slam=R.t_fight, radius=1.35, dmg=24.0,
+                    knock=1.6, done=False, name='PEDAL TONE'))
+r = f.run()
+show_events(f)
+for k in (0, 1):
+    show_ball(f, k)
+print('    frames', len(r['HP']), 'the lance: ext', fl(f.balls[1].ext), 'th', fl(f.balls[1].th), 'reach',
+      fl(f.balls[1].blade_len), 'frets', f.balls[1].frets, 'thr_hit', f.balls[1].thr_hit)
 
 print('== the timers: haste and slow run down in the fight loop, a step at a time')
 f = new_fight()
