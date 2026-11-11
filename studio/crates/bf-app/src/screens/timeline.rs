@@ -12,7 +12,9 @@
 //! is pushed once when the scrub ends, which is when the button is released (wherever the pointer is then, inside
 //! the window or out of it, since a drag keeps the pointer), when the window loses the keyboard focus mid-drag (no
 //! release may ever arrive then; the button must be pressed again to scrub again), or when the lanes stop being
-//! there (the take was cleared). Times are kept inside the take, 0 to 61 s (`ribbon::t_of`).
+//! there (the take was cleared). Times are kept inside the take, 0 to 61 s (`ribbon::t_of`). Only the pointer
+//! scrubs: Enter or a screen reader's click on the focused lanes does nothing. Inside a disabled parent the lanes
+//! take no input and the keys are left alone.
 //!
 //! The keys (section 7): Space pushes `PlayPause`, the left and right arrows `Step(-1)` and `Step(1)`, each taken
 //! from the widgets so nothing else acts on it too. They do nothing while the transport is not enabled, and nothing
@@ -24,8 +26,8 @@
 //! marks (a handful) and the ribbon's points are drawn.
 
 use egui::{
-    Align, Context, EventFilter, Id, Key, Label, Layout, Modifiers, Rect, Response, RichText, Sense, Stroke, Ui,
-    UiBuilder, WidgetInfo, pos2, vec2,
+    Align, Context, EventFilter, Id, Key, Label, Layout, Modifiers, PointerButton, Rect, Response, RichText, Sense,
+    Stroke, Ui, UiBuilder, WidgetInfo, pos2, vec2,
 };
 
 use crate::model::story::StoryView;
@@ -84,7 +86,9 @@ enum Scrub {
 pub fn show(ui: &mut Ui, vm: &ViewModel, out: &mut Vec<Action>) {
     let full = ui.max_rect();
     let scrub_id = ui.make_persistent_id("story timeline");
-    keys(ui.ctx(), &vm.transport, scrub_id, out);
+    if ui.is_enabled() {
+        keys(ui.ctx(), &vm.transport, scrub_id, out);
+    }
 
     let top = full.min.y + 1.0;
     let row = Rect::from_min_max(pos2(full.min.x, top), pos2(full.max.x, top + TRANSPORT_H));
@@ -201,7 +205,8 @@ fn story_lanes(ui: &mut Ui, vm: &ViewModel, story: &StoryView, rect: Rect, scrub
     };
 
     // The control first, so the words drawn over it take no input from it.
-    let enabled = vm.transport.enabled;
+    // Inside a disabled parent it takes no input and says so.
+    let enabled = vm.transport.enabled && ui.is_enabled();
     let response = scrub(ui, lanes, scrub_id, enabled, out);
     let seconds = f64::from(shown_frame(&vm.transport)) / f64::from(FPS);
     response.widget_info(|| WidgetInfo::slider(enabled, seconds, "Story timeline"));
@@ -286,7 +291,9 @@ fn scrub(ui: &mut Ui, lanes: Rect, id: Id, enabled: bool, out: &mut Vec<Action>)
     let window_lost =
         ui.input(|i| !i.focused || i.events.iter().any(|e| matches!(e, egui::Event::WindowFocused(false))));
     let down = enabled && response.is_pointer_button_down_on();
-    let released = enabled && (response.clicked() || response.drag_stopped());
+    // Only the pointer's own click or release counts: Enter (or a screen reader's click) on the focused lanes also
+    // makes `clicked()` true, at whatever stale place the pointer last was.
+    let released = enabled && (response.clicked_by(PointerButton::Primary) || response.drag_stopped());
     let at = response
         .interact_pointer_pos()
         .map(|p| ribbon::t_of(p.x, lanes.min.x, lanes.width()));

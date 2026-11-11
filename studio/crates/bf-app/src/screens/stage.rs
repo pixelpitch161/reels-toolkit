@@ -46,7 +46,7 @@ pub fn show(ui: &mut Ui, vm: &ViewModel, picture: Option<&TextureHandle>) {
 
     if let Some(texture) = picture {
         let response = ui.allocate_rect(rect, Sense::hover());
-        response.widget_info(|| WidgetInfo::labeled(Role::Image, true, "Preview"));
+        response.widget_info(|| WidgetInfo::labeled(Role::Image, ui.is_enabled(), "Preview"));
         if ui.is_rect_visible(rect) {
             let painter = ui.painter();
             let uv = Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0));

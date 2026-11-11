@@ -5,6 +5,7 @@ use std::sync::Arc;
 
 use bf_app::app::BfApp;
 use bf_app::fixtures::base;
+use bf_app::model::story::AbilityMark;
 use bf_app::model::take::{Frame, SoundState, TransportAction};
 use bf_app::model::{Step, View};
 use bf_app::screens::{stage, timeline};
@@ -602,4 +603,168 @@ fn the_timeline_matches() {
     results.extend_harness(&mut harness);
     drop(harness);
     results.unwrap();
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Follow-up: Enter, Tab, a take cleared mid-drag, unusable marks, a disabled parent
+// ---------------------------------------------------------------------------------------------------------------
+
+#[test]
+fn enter_on_the_focused_timeline_does_not_scrub() {
+    let _gpu = gpu();
+    let mut harness = showing(REF, base::with_take());
+    harness.run();
+    // A real click first, so the pointer's last place is on the lanes.
+    let at = pos2(780.0, 835.0);
+    press(&harness, at);
+    harness.run();
+    release(&harness, at);
+    harness.run();
+    let before = transport(&harness);
+    assert_eq!(before.len(), 2, "{before:?}");
+    harness.get_by_label("Story timeline").focus();
+    harness.run();
+    harness.key_press(Key::Enter);
+    harness.run();
+    assert_eq!(transport(&harness), before, "Enter is not a click of the pointer");
+}
+
+#[test]
+fn escape_after_tab_gives_space_back_to_the_transport() {
+    let _gpu = gpu();
+    let mut harness = showing(REF, base::with_take());
+    harness.run();
+    harness.key_press(Key::Tab);
+    harness.run();
+    assert!(
+        harness.ctx.memory(|m| m.focused()).is_some(),
+        "a toolbar button has the keyboard"
+    );
+    harness.key_press(Key::Escape);
+    harness.run();
+    assert!(harness.ctx.memory(|m| m.focused()).is_none());
+    harness.key_press(Key::Space);
+    harness.run();
+    assert_eq!(harness.state().log, vec![Action::Transport(TransportAction::PlayPause)]);
+}
+
+#[test]
+fn tab_reaches_play_loop_and_safe_zone() {
+    let _gpu = gpu();
+    let mut harness = showing(REF, base::with_take());
+    harness.run();
+    let mut reached = [false; 3];
+    for _ in 0..40 {
+        harness.key_press(Key::Tab);
+        harness.run();
+        for (i, label) in ["Play", "Loop", "Safe zone"].into_iter().enumerate() {
+            reached[i] |= harness.get_by_label(label).is_focused();
+        }
+    }
+    assert_eq!(reached, [true; 3], "Play, Loop and Safe zone");
+    assert!(
+        harness.state().log.iter().all(|a| !matches!(a, Action::Transport(_))),
+        "Tab presses nothing: {:?}",
+        harness.state().log
+    );
+}
+
+#[test]
+fn a_take_cleared_mid_drag_ends_the_scrub_once() {
+    let _gpu = gpu();
+    let mut harness = showing(REF, base::with_take());
+    harness.run();
+    let at = pos2(780.0, 835.0);
+    press(&harness, at);
+    harness.run();
+    harness.state_mut().state.vm.take.story = None;
+    harness.run();
+    harness.run();
+    release(&harness, at);
+    harness.run();
+    let log = transport(&harness);
+    assert!(scrub_time(log[0]).is_some(), "{log:?}");
+    assert_eq!(
+        log.iter().filter(|&&a| a == TransportAction::ScrubEnd).count(),
+        1,
+        "{log:?}"
+    );
+    assert_eq!(log.last(), Some(&TransportAction::ScrubEnd));
+    assert!(harness.query_by_label(EMPTY).is_some());
+}
+
+#[test]
+fn marks_without_a_usable_time_are_skipped() {
+    let _gpu = gpu();
+    let mut vm = base::with_take();
+    let story = vm.take.story.as_mut().expect("a story");
+    for (t, who, name) in [
+        (f32::NAN, 0, "Not a time"),
+        (-3.0, 1, "Before the start"),
+        (70.0, 0, "After the end"),
+    ] {
+        story.firsts.push(AbilityMark {
+            t,
+            who,
+            name: name.to_string(),
+        });
+    }
+    let mut harness = showing(REF, vm);
+    harness.run();
+    for name in ["Not a time", "Before the start", "After the end"] {
+        assert!(harness.query_by_label(name).is_none(), "{name} is not drawn");
+    }
+    for name in ABILITIES {
+        assert!(harness.query_by_label(name).is_some(), "{name} is still drawn");
+    }
+    // Snake dance still runs up to the lane's end: the skipped marks do not cut it short.
+    let snake = harness.get_by_label("Snake dance").rect();
+    assert!(snake.width() > 40.0, "{snake:?}");
+}
+
+#[test]
+fn inside_a_disabled_parent_nothing_takes_input() {
+    let _gpu = gpu();
+    let vm = base::with_take();
+    let mut out = Vec::new();
+    let mut texture: Option<egui::TextureHandle> = None;
+    let mut harness = widget_harness((1440.0, 900.0), |ui| {
+        let texture = texture.get_or_insert_with(|| {
+            let image = egui::ColorImage::from_rgb([360, 640], &vec![255; 360 * 640 * 3]);
+            ui.ctx()
+                .load_texture("test preview", image, egui::TextureOptions::NEAREST)
+        });
+        ui.add_enabled_ui(false, |ui| {
+            let (top, bottom) = ui.max_rect().split_top_bottom_at_y(700.0);
+            ui.scope_builder(egui::UiBuilder::new().max_rect(top), |ui| {
+                stage::show(ui, &vm, Some(texture))
+            });
+            ui.scope_builder(egui::UiBuilder::new().max_rect(bottom), |ui| {
+                timeline::show(ui, &vm, &mut out)
+            });
+        });
+    });
+    harness.run();
+    assert!(harness.get_by_label("Story timeline").accesskit_node().is_disabled());
+    assert!(harness.get_by_label("Preview").accesskit_node().is_disabled());
+    let lanes = harness.get_by_label("Story timeline").rect();
+    harness.event(Event::PointerMoved(lanes.center()));
+    harness.event(Event::PointerButton {
+        pos: lanes.center(),
+        button: PointerButton::Primary,
+        pressed: true,
+        modifiers: Modifiers::NONE,
+    });
+    harness.run();
+    harness.event(Event::PointerButton {
+        pos: lanes.center(),
+        button: PointerButton::Primary,
+        pressed: false,
+        modifiers: Modifiers::NONE,
+    });
+    harness.key_press(Key::Space);
+    harness.key_press(Key::ArrowRight);
+    harness.run();
+    drop(harness);
+    assert!(out.is_empty(), "{out:?}");
 }
