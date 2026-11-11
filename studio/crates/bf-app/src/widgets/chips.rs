@@ -58,6 +58,16 @@ fn focus_ring(ui: &Ui, rect: Rect) {
     widget_ring(ui, rect, f32::from(RADIUS_ROW));
 }
 
+/// The selected look of a chip, an object row or a chord loop, with corners `corner`: a `SELECTED` fill and a 1.5 px
+/// ring drawn inside, `TEXT` (`FAINT` when `enabled` is false). Returns the colour its text takes: `TEXT_STRONG`, or
+/// `FAINT` when disabled.
+pub(crate) fn paint_selected(painter: &Painter, rect: Rect, corner: u8, enabled: bool) -> Color32 {
+    painter.rect_filled(rect, corner, SELECTED);
+    let ring = if enabled { TEXT } else { FAINT };
+    painter.rect_stroke(rect, corner, Stroke::new(SELECTED_RING, ring), StrokeKind::Inside);
+    if enabled { TEXT_STRONG } else { FAINT }
+}
+
 /// `rect` with its corners on whole physical pixels.
 fn snap(rect: Rect, ppp: f32) -> Rect {
     let px = |p: Pos2| pos2((p.x * ppp).round() / ppp, (p.y * ppp).round() / ppp);
@@ -385,19 +395,10 @@ pub fn roster_chip(
     if ui.is_rect_visible(rect) {
         let painter = exact_painter(ui);
         let chosen = corner.is_some();
-        let fill = if chosen {
-            Some(SELECTED)
-        } else if enabled && response.hovered() {
-            Some(HOVER)
-        } else {
-            None
-        };
-        if let Some(fill) = fill {
-            painter.rect_filled(rect, RADIUS_ROW, fill);
-        }
         if chosen {
-            let ring = if enabled { TEXT } else { FAINT };
-            painter.rect_stroke(rect, RADIUS_ROW, Stroke::new(SELECTED_RING, ring), StrokeKind::Inside);
+            paint_selected(&painter, rect, RADIUS_ROW, enabled);
+        } else if enabled && response.hovered() {
+            painter.rect_filled(rect, RADIUS_ROW, HOVER);
         }
 
         let mark = if enabled { rgb(color) } else { FAINT };
@@ -487,19 +488,10 @@ pub fn object_row<R>(
     response.widget_info(|| WidgetInfo::selected(Role::Button, enabled, selected, name));
     if ui.is_rect_visible(rect) {
         let painter = exact_painter(ui);
-        let fill = if selected {
-            Some(SELECTED)
-        } else if enabled && response.hovered() {
-            Some(HOVER)
-        } else {
-            None
-        };
-        if let Some(fill) = fill {
-            painter.rect_filled(rect, RADIUS_ROW, fill);
-        }
         if selected {
-            let ring = if enabled { TEXT } else { FAINT };
-            painter.rect_stroke(rect, RADIUS_ROW, Stroke::new(SELECTED_RING, ring), StrokeKind::Inside);
+            paint_selected(&painter, rect, RADIUS_ROW, enabled);
+        } else if enabled && response.hovered() {
+            painter.rect_filled(rect, RADIUS_ROW, HOVER);
         }
     }
     let inside = rect.shrink2(vec2(PAD_X, 0.0));

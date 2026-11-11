@@ -850,3 +850,37 @@ fn two_controls_with_one_name_do_not_clash() {
         .count();
     assert_eq!(lists, 1, "only the dropdown clicked opens its list");
 }
+
+#[test]
+fn a_disabled_dropdown_is_faint_and_says_why() {
+    let _gpu = common::gpu();
+    let why = "The key follows the theme in this version.";
+    let mut harness = common::widget_harness((300.0, 120.0), |ui| {
+        on_panel(ui);
+        buttons::dropdown_disabled(ui, "Key", "E", 70.0, why);
+    });
+    harness.run();
+    let node = harness.get_by_label("Key");
+    assert_eq!(node.accesskit_node().role(), Role::ComboBox);
+    assert!(node.accesskit_node().is_disabled());
+    assert_eq!(node.value().as_deref(), Some("E"));
+    let rect = node.rect();
+    assert_eq!((rect.width(), rect.height()), (70.0, theme::VALUE_H));
+    assert_eq!(at(&mut harness, rect, 0.0, 11.0), rgb(LINE), "1 px LINE border");
+    assert_eq!(at(&mut harness, rect, 3.0, 3.0), rgb(PANEL), "no fill");
+    assert_eq!(
+        brightest(&mut harness, rect.shrink(1.0)),
+        rgb(FAINT),
+        "value and chevron FAINT"
+    );
+    harness.get_by_label("Key").click();
+    harness.run();
+    assert_eq!(
+        harness.query_all_by_role(Role::ListBoxOption).count(),
+        0,
+        "clicking it opens no list"
+    );
+    harness.get_by_label("Key").hover();
+    harness.run();
+    assert!(harness.query_by_label(why).is_some(), "hovering says why");
+}
