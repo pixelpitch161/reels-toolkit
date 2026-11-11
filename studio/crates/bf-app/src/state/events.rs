@@ -4,6 +4,7 @@
 use super::{AppState, Effect};
 use crate::model::draft::Draft;
 use crate::model::roster::Roster;
+use crate::model::shortlist::SearchState;
 use crate::model::take::PlayerCmd;
 use crate::model::{FPS, NF, Step, View};
 use crate::seam::Event;
@@ -11,7 +12,7 @@ use crate::seam::Event;
 impl AppState {
     pub(super) fn on_event(&mut self, event: Event, fx: &mut Vec<Effect>) {
         match event {
-            Event::Roster(roster) => self.on_roster(roster),
+            Event::Roster(roster) => self.on_roster(roster, fx),
             Event::FightInfo {
                 r#gen,
                 pair_rules,
@@ -19,7 +20,8 @@ impl AppState {
                 title_card,
                 problem,
             } => {
-                // The description is of the fighters, so any generation since they were last picked is theirs.
+                // The description is of the fighters and their order only (`Command::DescribeFight`, ruling
+                // M2-R15), so any generation since they were last described is theirs.
                 if r#gen < self.described || r#gen > self.generation {
                     return;
                 }
@@ -31,8 +33,9 @@ impl AppState {
                 if self.vm.take.story.is_none() {
                     fx.push(self.card_or_clear());
                 }
-                if let Some(text) = &problem {
-                    self.vm.status = text.clone();
+                if problem.is_some() {
+                    // These two cannot fight: stop what is working on the fight.
+                    self.stop_running(fx);
                 }
                 self.vm.fight_problem = problem;
             }
@@ -59,8 +62,14 @@ impl AppState {
                 }
             }
             Event::Shortlist { r#gen, list } => {
-                if r#gen == self.generation {
-                    self.vm.shortlist = list;
+                if r#gen != self.generation {
+                    return;
+                }
+                // An update already on its way when the owner stopped the search still says "searching".
+                let stopped = self.vm.shortlist.state == SearchState::Stopped;
+                self.vm.shortlist = list;
+                if stopped && self.vm.shortlist.state == SearchState::Searching {
+                    self.vm.shortlist.state = SearchState::Stopped;
                 }
             }
             Event::TakePicture { take, story, frames } => {
@@ -79,10 +88,11 @@ impl AppState {
                     start,
                     autoplay: self.vm.view == View::Step(Step::Seeds),
                 }));
-                self.say(format!("Seed {} is ready", story.seed));
                 self.vm.take.story = Some(story);
                 self.vm.take.loading = false;
             }
+            // The seam sends a take's picture before its sound; the player ignores sound for a take it has not
+            // loaded, so a sound arriving first is not held back here.
             Event::TakeSound { take, audio, music } => {
                 if self.wanted != Some(take) {
                     return;
@@ -97,11 +107,11 @@ impl AppState {
                 self.vm.take.story = None;
                 self.vm.take.music = None;
                 self.vm.take.loading = false;
-                self.say(problem.clone());
                 self.vm.take.problem = Some(problem);
                 fx.push(self.card_or_clear());
             }
-            // The queue, the output folder, the library and opened fights: Task 12 fills these arms.
+            // The queue, the output folder, the library and opened fights: Task 12 fills these arms
+            // (`FightOpened` through `open_draft` in `fight.rs`, then `ask_take` when the draft has a seed).
             Event::Enqueued { .. } => {}
             Event::EnqueueFailed { .. } => {}
             Event::Job { .. } => {}
@@ -115,8 +125,8 @@ impl AppState {
         }
     }
 
-    /// The roster arrived: the draft starts from its starting pair. `settle` then begins the generation.
-    fn on_roster(&mut self, roster: Roster) {
+    /// The roster arrived: the draft starts cleanly from its starting pair, always as a new generation.
+    fn on_roster(&mut self, roster: Roster, fx: &mut Vec<Effect>) {
         let theme = roster.themes.first();
         let bars = theme.map_or(34, |t| 34u32.max(t.bars.0).min(t.bars.1));
         self.vm.draft = Draft {
@@ -134,5 +144,6 @@ impl AppState {
         };
         self.vm.roster = Some(roster);
         self.vm.draft.bass = self.first_bass();
+        self.open_draft(self.vm.draft.clone(), fx);
     }
 }

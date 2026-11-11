@@ -4,7 +4,6 @@ use super::{AppState, Effect, TakeView};
 use crate::model::shortlist::{FilterSpec, SearchState};
 use crate::model::{Step, View};
 use crate::seam::Command;
-use crate::wording;
 
 /// The K.O. filter's bounds, in seconds.
 const KO: (f64, f64) = (30.0, 58.0);
@@ -16,13 +15,19 @@ impl AppState {
             return;
         }
         self.vm.shortlist.state = SearchState::Searching;
+        self.vm.shortlist.workers = self.vm.settings.workers;
         fx.push(Effect::Send(Command::StartSearch {
             r#gen: self.generation,
             draft: self.vm.draft.clone(),
             filters: self.vm.filters.clone(),
         }));
-        let workers = self.vm.settings.workers as u64;
-        self.say(format!("Searching on {}", wording::plural(workers, "core", "cores")));
+    }
+
+    /// "Keep searching": only when no search is running (one already asked for, or a full shortlist, stays).
+    pub(super) fn search_on(&mut self, fx: &mut Vec<Effect>) {
+        if matches!(self.vm.shortlist.state, SearchState::Stopped | SearchState::Idle) {
+            self.start_search(fx);
+        }
     }
 
     pub(super) fn stop_search(&mut self, fx: &mut Vec<Effect>) {

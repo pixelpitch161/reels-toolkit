@@ -4,11 +4,11 @@
 use super::{AppState, BalanceView, Effect, FightKey, MusicKey, TakeView, idle_shortlist};
 use crate::model::Platform;
 use crate::model::balance::BalanceStats;
+use crate::model::draft::Draft;
 use crate::model::shortlist::SearchState;
 use crate::model::take::PlayerCmd;
 use crate::model::{Step, View};
 use crate::seam::Command;
-use crate::wording;
 
 /// The lowest and highest damage multiplier.
 const HANDICAP: (f64, f64) = (0.05, 12.0);
@@ -25,7 +25,7 @@ impl AppState {
         if self.fed.as_ref() != Some(&key) {
             let fighters_changed = self.fed.as_ref().is_none_or(|fed| fed.fighters != key.fighters);
             self.fed = Some(key);
-            self.begin_generation(fighters_changed, fx);
+            self.begin_generation(fighters_changed, None, fx);
         }
         let music = self.music_key();
         if self.music.as_ref() != Some(&music) {
@@ -36,8 +36,25 @@ impl AppState {
         }
     }
 
-    /// What feeds the fight (§4): the two fighters in order, the bars and the handicap, and the chord loop and the
-    /// music seed when either fighter's notes are its weapon. `None` until the roster arrives.
+    /// A whole new draft (the roster's starting draft, or a fight file that was opened): always a new generation,
+    /// as if the fighters had changed, even when it feeds the same fight as the draft before, so the fighters are
+    /// described again and everything found or asked for before is dropped. The draft's own seed is kept; the
+    /// caller asks for its take (`ask_take`) when it has one. Task 12 calls this for `Event::FightOpened`.
+    pub(super) fn open_draft(&mut self, draft: Draft, fx: &mut Vec<Effect>) {
+        let seed = draft.seed;
+        self.vm.draft = draft;
+        self.fed = self.fight_key();
+        if self.fed.is_none() {
+            return;
+        }
+        self.begin_generation(true, seed, fx);
+        // The take, if any, is the caller's to ask for, so `settle` must not ask for one as a music change.
+        self.music = Some(self.music_key());
+    }
+
+    /// What feeds the fight (§4): the two fighters in order, the bars and the handicap; and, when either fighter's
+    /// notes are its weapon, the theme (it gives the key and the chord loops), the chord loop and the music seed
+    /// (ruling M2-R14). `None` until the roster arrives.
     pub(crate) fn fight_key(&self) -> Option<FightKey> {
         self.vm.roster.as_ref()?;
         let d = &self.vm.draft;
@@ -46,7 +63,7 @@ impl AppState {
             fighters: d.fighters.clone(),
             bars: d.bars,
             handicap: d.handicap,
-            music: notes_are_a_weapon.then_some((d.chord_loop, d.music_seed)),
+            music: notes_are_a_weapon.then(|| (d.theme.clone(), d.chord_loop, d.music_seed)),
         })
     }
 
@@ -61,19 +78,16 @@ impl AppState {
         }
     }
 
-    /// The fight changed: forget everything found for the old one and stop what is still working on it.
-    fn begin_generation(&mut self, fighters_changed: bool, fx: &mut Vec<Effect>) {
+    /// The fight changed: forget everything found for the old one and stop what is still working on it. The draft's
+    /// seed becomes `seed` (`None` unless a whole draft was opened).
+    fn begin_generation(&mut self, fighters_changed: bool, seed: Option<u64>, fx: &mut Vec<Effect>) {
         self.generation += 1;
-        if self.vm.shortlist.state == SearchState::Searching {
-            fx.push(Effect::Send(Command::StopSearch));
-        }
-        if self.vm.balance.running.is_some() {
-            fx.push(Effect::Send(Command::StopBalance));
-        }
-        self.vm.draft.seed = None;
+        self.stop_running(fx);
+        self.vm.draft.seed = seed;
         self.vm.shortlist = idle_shortlist(self.vm.settings.workers);
         self.vm.balance = BalanceView::default();
         self.measuring = false;
+        self.balance_stopped = false;
         self.vm.take = TakeView::default();
         self.wanted = None;
         if fighters_changed {
@@ -90,12 +104,22 @@ impl AppState {
                 draft: self.vm.draft.clone(),
             }));
         }
-        let [left, right] = self.vm.names();
-        self.say(format!("{left} vs {right}, not balanced yet"));
         if self.vm.view == View::Step(Step::Seeds) {
             // §4: the search restarts. On any other view it restarts when Seeds is next shown.
             self.start_search(fx);
         }
+    }
+
+    /// Stops a running search and a running balance, and marks them stopped.
+    pub(super) fn stop_running(&mut self, fx: &mut Vec<Effect>) {
+        if self.vm.shortlist.state == SearchState::Searching {
+            self.vm.shortlist.state = SearchState::Stopped;
+            fx.push(Effect::Send(Command::StopSearch));
+        }
+        if self.vm.balance.running.take().is_some() {
+            fx.push(Effect::Send(Command::StopBalance));
+        }
+        self.measuring = false;
     }
 
     /// The title card when there is one, else an empty preview.
@@ -198,10 +222,11 @@ impl AppState {
         self.measure(fx);
     }
 
-    /// The Balance step opens: with no numbers and nothing running, balance an even fight, measure any other.
+    /// The Balance step opens: with no numbers and nothing running, balance an even fight, measure any other; but
+    /// not when the owner stopped a balance run in this generation.
     pub(super) fn open_balance(&mut self, fx: &mut Vec<Effect>) {
         let b = &self.vm.balance;
-        if b.stats.is_some() || b.running.is_some() || self.measuring {
+        if b.stats.is_some() || b.running.is_some() || self.measuring || self.balance_stopped {
             return;
         }
         if self.vm.draft.handicap == [1.0, 1.0] {
@@ -233,9 +258,11 @@ impl AppState {
         }));
     }
 
-    /// Stops a balance run; its progress and result, if still on their way, are then ignored.
+    /// Stops a balance run; its progress and result, if still on their way, are then ignored. Opening Balance again
+    /// in this generation does not start another by itself (ruling M2-R16).
     pub(super) fn stop_balance(&mut self, fx: &mut Vec<Effect>) {
         if self.vm.balance.running.take().is_some() {
+            self.balance_stopped = true;
             fx.push(Effect::Send(Command::StopBalance));
         }
     }
@@ -243,15 +270,7 @@ impl AppState {
     /// A balance run or a measurement came back with numbers for the current fight.
     pub(super) fn numbers(&mut self, stats: BalanceStats) {
         self.measuring = false;
-        let n = wording::thousands(u64::from(stats.fights));
-        // Widget rule 9: the time is only written when it is a real one.
-        let text = if stats.seconds.is_finite() && stats.seconds.is_sign_positive() {
-            format!("Balanced on {n} fights in {}", wording::seconds(stats.seconds))
-        } else {
-            format!("Balanced on {n} fights")
-        };
         self.vm.balance.stats = Some(stats);
-        self.say(text);
     }
 
     pub(super) fn set_chord_loop(&mut self, i: usize) {
