@@ -212,7 +212,7 @@ mod tests {
         assert_eq!(roll(&a, -7, 1).data, roll(&a, 2, 1).data);
         assert_eq!(roll_1d(&[1, 2, 3, 4], 1), [4, 1, 2, 3]);
         assert_eq!(roll_1d(&[1, 2, 3, 4], -5), [2, 3, 4, 1]);
-        assert_eq!(roll_1d::<u8>(&[], 3), []);
+        assert!(roll_1d::<u8>(&[], 3).is_empty());
     }
 
     #[test]

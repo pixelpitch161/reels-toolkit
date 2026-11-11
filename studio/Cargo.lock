@@ -488,6 +488,7 @@ version = "0.1.0"
 dependencies = [
  "bf-core",
  "bf-testdata",
+ "serde",
  "serde_json",
 ]
 
