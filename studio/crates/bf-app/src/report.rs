@@ -8,7 +8,8 @@
 //! turns it into a sentence on screen (`engine::Ctx::spawn`), and the hook runs once per panic, before that catch,
 //! so the fault is recorded once. The hook never ends the process itself.
 //!
-//! **What a report holds:** the app's version and commit, Windows' version numbers, the time, the thread's name, the
+//! **What a report holds:** the app's version and commit, Windows' version numbers, the time (in UTC, which also
+//! names the file, with the PC's clock time beside it), the thread's name, the
 //! panic's message (at most [`MAX_MESSAGE`] characters), its file and line, and the stack. **What it never holds:**
 //! settings values, file contents, environment variables, captions or anything else typed into the app: the hook
 //! adds nothing but those seven things. A message or stack that names a path under the owner's user folder
@@ -18,8 +19,9 @@
 //! **Writing is best effort and never makes things worse.** A folder that cannot be written or a full disk only means
 //! no report, and the message box then leaves out "A report was saved as". The hook's own code is written not to
 //! panic (a panic inside a panic hook ends the process at once), waits on no lock that the panicking code could
-//! hold, never retries, and never sleeps. The message box is shown from a thread of its own, so the frozen window's
-//! messages are never handled while the hook runs.
+//! hold, never retries, and never sleeps. The stack's text is cut to [`MAX_STACK_TEXT`] while it is formatted. The
+//! message box is shown from a thread of its own, so the frozen window's messages are never handled while the hook
+//! runs; if that thread has not started within [`BOX_START_WAIT`], the hook goes on without the box.
 
 use std::fmt::Write as _;
 use std::fs;
@@ -105,11 +107,15 @@ fn on_panic(hook: &Hook, info: &std::panic::PanicHookInfo<'_>) {
         Some(at) => _ = write!(location, "{}:{}", at.file(), at.line()),
         None => location.push_str("unknown"),
     }
-    let mut backtrace = String::new();
-    _ = write!(backtrace, "{}", std::backtrace::Backtrace::force_capture());
+    let backtrace = bounded_backtrace(&std::backtrace::Backtrace::force_capture());
     let now = chrono::Local::now();
     let mut when = String::new();
-    _ = write!(when, "{}", now.format("%Y-%m-%d %H:%M:%S"));
+    _ = write!(
+        when,
+        "{} UTC ({} on this PC's clock)",
+        now.with_timezone(&chrono::Utc).format("%Y-%m-%d %H:%M:%S"),
+        now.format("%H:%M:%S")
+    );
     // Shortened before `crash_text` cuts anything, so a cut never leaves half of the user folder's name.
     let text = crash_text(
         &shorten(&message, &hook.home),
@@ -120,19 +126,70 @@ fn on_panic(hook: &Hook, info: &std::panic::PanicHookInfo<'_>) {
     );
     let saved = hook.logs.as_deref().and_then(|logs| write_crash(logs, &text, now).ok());
     if current.id() == hook.interface {
-        let words = crashed_text(saved.as_deref());
-        // On a thread of its own: the interface thread is stopped inside its window's code, and a message box on it
-        // would hand that window's messages back to the code that just failed. Shown here only if no thread starts.
-        let shown = thread::Builder::new().name("fault message".to_string()).spawn({
-            let words = words.clone();
-            move || tell("BALLFIGHT Studio", &words)
-        });
-        match shown {
-            Ok(box_thread) => _ = box_thread.join(),
-            Err(_) => tell("BALLFIGHT Studio", &words),
-        }
+        show_from_own_thread(crashed_text(saved.as_deref()));
     }
     _ = IN_HOOK.try_with(|inside| inside.set(false));
+}
+
+/// How long the hook waits for the message box's thread to start before it gives up on the box.
+const BOX_START_WAIT: std::time::Duration = std::time::Duration::from_secs(2);
+
+/// Shows the fault's message box from a thread of its own and waits until it is closed. The interface thread is
+/// stopped inside its window's code, and a message box on it would hand that window's messages back to the code
+/// that just failed. When no thread starts, or it has not started within [`BOX_START_WAIT`], the hook goes on
+/// without the box rather than wait for ever.
+fn show_from_own_thread(words: String) {
+    let (said, heard) = std::sync::mpsc::channel::<bool>();
+    let started = thread::Builder::new().name("fault message".to_string()).spawn(move || {
+        _ = said.send(true);
+        tell("BALLFIGHT Studio", &words);
+        _ = said.send(true);
+    });
+    if started.is_err() || heard.recv_timeout(BOX_START_WAIT).is_err() {
+        return;
+    }
+    // Closed by its OK (or the thread ended some other way, which also ends the wait).
+    _ = heard.recv();
+}
+
+/// The most bytes of the stack's text the hook keeps before it shortens and caps it.
+const MAX_STACK_TEXT: usize = 4 * MAX_BYTES;
+
+/// A `fmt::Write` that keeps at most `limit` bytes and then refuses more, so the formatting stops early.
+struct Bounded {
+    text: String,
+    limit: usize,
+}
+
+impl std::fmt::Write for Bounded {
+    fn write_str(&mut self, s: &str) -> std::fmt::Result {
+        let room = self.limit.saturating_sub(self.text.len());
+        if s.len() <= room {
+            self.text.push_str(s);
+            return Ok(());
+        }
+        let mut end = room;
+        while end > 0 && !s.is_char_boundary(end) {
+            end -= 1;
+        }
+        self.text.push_str(s.get(..end).unwrap_or(""));
+        Err(std::fmt::Error)
+    }
+}
+
+/// The stack's text, at most [`MAX_STACK_TEXT`] bytes and cut at the end of a line, so a deep recursion's stack
+/// never makes the hook build a huge text.
+fn bounded_backtrace(backtrace: &dyn std::fmt::Display) -> String {
+    let mut out = Bounded {
+        text: String::new(),
+        limit: MAX_STACK_TEXT,
+    };
+    if write!(out, "{backtrace}").is_err() {
+        let end = out.text.rfind('\n').map_or(0, |at| at + 1);
+        out.text.truncate(end);
+        out.text.push_str("(cut short)\n");
+    }
+    out.text
 }
 
 /// The message box's text: [`CRASHED`] naming `report`, or [`CRASHED_UNSAVED`] when there is none.
@@ -217,13 +274,19 @@ fn report_name(name: &str) -> Option<(&str, u32)> {
 /// The most reports one second may hold.
 const MAX_IN_ONE_SECOND: u32 = 99;
 
-/// Writes `text` as a new report in `logs` (made if missing), named by `now` (`crash-20261112-093005.txt`, then
-/// `-2`, `-3` for more in the same second; nothing is ever replaced), and then keeps only the newest [`KEEP`]
-/// reports. Never waits and never retries: a failed write removes what it began and gives the error.
+/// Writes `text` as a new report in `logs` (made if missing), named by `now` in UTC (`crash-20261112-093005.txt`,
+/// then `-2`, `-3` for more in the same second; nothing is ever replaced), so the clock going back an hour when
+/// summer time ends cannot reorder the names. Then keeps only the newest [`KEEP`] reports, always counting the new
+/// one among them, even when a clock that was set back made older reports' names later. Never waits and never
+/// retries: a failed write removes what it began and gives the error.
 pub fn write_crash(logs: &Path, text: &str, now: chrono::DateTime<chrono::Local>) -> io::Result<PathBuf> {
     fs::create_dir_all(logs)?;
     let mut stamp = String::new();
-    _ = write!(stamp, "{}", now.format("crash-%Y%m%d-%H%M%S"));
+    _ = write!(
+        stamp,
+        "{}",
+        now.with_timezone(&chrono::Utc).format("crash-%Y%m%d-%H%M%S")
+    );
     let mut written = None;
     for n in 1..=MAX_IN_ONE_SECOND {
         let name = if n == 1 {
@@ -248,26 +311,30 @@ pub fn write_crash(logs: &Path, text: &str, now: chrono::DateTime<chrono::Local>
         }
     }
     let path = written.ok_or_else(|| io::Error::new(io::ErrorKind::AlreadyExists, "too many reports in one second"))?;
-    prune(logs);
+    prune(logs, &path);
     Ok(path)
 }
 
-/// Removes all but the newest [`KEEP`] reports in `logs`; any other file is left alone. Best effort.
-fn prune(logs: &Path) {
+/// Removes reports in `logs`, oldest name first, until [`KEEP`] are left counting `new`, which is never removed;
+/// any other file is left alone. Best effort.
+fn prune(logs: &Path, new: &Path) {
     let Ok(entries) = fs::read_dir(logs) else { return };
+    let new_name = new.file_name();
     let mut found: Vec<(String, u32, PathBuf)> = entries
         .flatten()
+        .filter(|entry| Some(entry.file_name().as_os_str()) != new_name)
         .filter_map(|entry| {
             let name = entry.file_name().into_string().ok()?;
             let (stamp, n) = report_name(&name)?;
             Some((stamp.to_string(), n, entry.path()))
         })
         .collect();
-    if found.len() <= KEEP {
+    let others = KEEP.saturating_sub(1);
+    if found.len() <= others {
         return;
     }
     found.sort();
-    let extra = found.len() - KEEP;
+    let extra = found.len() - others;
     for (_, _, path) in found.into_iter().take(extra) {
         _ = fs::remove_file(path);
     }
@@ -289,15 +356,20 @@ pub fn write_start(logs: &Path, lines: &[String]) -> io::Result<()> {
 }
 
 /// Tells a person something went wrong: a Windows message box with the error icon, which waits for its OK;
-/// elsewhere a line on stderr.
+/// elsewhere, in this crate's tests and in the child process of a hook test, a line on stderr, so that no box ever
+/// waits for a click under test.
 pub fn tell(title: &str, text: &str) {
     #[cfg(windows)]
-    win::message_box(title, text);
-    #[cfg(not(windows))]
-    {
-        _ = writeln!(io::stderr(), "{title}: {text}");
+    if !cfg!(test) && std::env::var_os(CHILD).is_none() {
+        win::message_box(title, text);
+        return;
     }
+    _ = writeln!(io::stderr(), "{title}: {text}");
 }
+
+/// Set (to a folder) only in the child process of a hook test: where its reports go. [`tell`] never shows a box
+/// while it is set.
+const CHILD: &str = "BF_APP_REPORT_CHILD";
 
 /// The owner's user folder, as Windows names it (`%USERPROFILE%`; `HOME` elsewhere).
 fn user_folder() -> Option<PathBuf> {
@@ -307,13 +379,19 @@ fn user_folder() -> Option<PathBuf> {
 }
 
 /// The forms of the user folder `home` that [`shorten`] replaces: as written with `\` and with `/`. None for a
-/// folder with fewer than two parts below its drive (such as `C:\`), which would match too much.
+/// folder with fewer than two parts below its drive (such as `C:\`), which would match too much. A folder on a
+/// network share (`\\server\share\name`) needs one part below the share, since the share is already two.
 fn home_forms(home: Option<&Path>) -> Vec<String> {
+    use std::path::{Component, Prefix};
     let Some(home) = home else { return Vec::new() };
-    let parts = home
-        .components()
-        .filter(|c| matches!(c, std::path::Component::Normal(_)))
-        .count();
+    let mut parts = 0;
+    for part in home.components() {
+        match part {
+            Component::Normal(_) => parts += 1,
+            Component::Prefix(p) if matches!(p.kind(), Prefix::UNC(..) | Prefix::VerbatimUNC(..)) => parts += 1,
+            _ => {}
+        }
+    }
     if parts < 2 {
         return Vec::new();
     }
@@ -325,8 +403,9 @@ fn home_forms(home: Option<&Path>) -> Vec<String> {
 }
 
 /// `text` with every mention of the user folder (any form of `home`, in any mix of capitals) written as
-/// `%USERPROFILE%`. A mention counts only where the folder's name ends (the next character is not a letter, a
-/// digit, `_` or `-`): `C:\Users\al` is not found in `C:\Users\alice`.
+/// `%USERPROFILE%`. A mention counts only where the folder's name ends: before `\`, `/`, the end of the text, or a
+/// character no Windows file name can hold (`<>:"|?*` and control characters such as a line break). So
+/// `C:\Users\al` is found neither in `C:\Users\alice` nor in `C:\Users\al.old`.
 fn shorten(text: &str, home: &[String]) -> String {
     let mut out = text.to_string();
     for form in home {
@@ -337,7 +416,7 @@ fn shorten(text: &str, home: &[String]) -> String {
         while i < chars.len() {
             if let Some(used) = matches_at(&chars, i, &wanted) {
                 let next = chars.get(i + used).map(|&(_, c)| c);
-                if next.is_none_or(|c| !(c.is_alphanumeric() || c == '_' || c == '-')) {
+                if next.is_none_or(ends_a_name) {
                     result.push_str("%USERPROFILE%");
                     i += used;
                     continue;
@@ -349,6 +428,11 @@ fn shorten(text: &str, home: &[String]) -> String {
         out = result;
     }
     out
+}
+
+/// Whether `c` cannot continue a path's part: a separator, or a character no Windows file name can hold.
+fn ends_a_name(c: char) -> bool {
+    matches!(c, '\\' | '/' | '<' | '>' | ':' | '"' | '|' | '?' | '*') || c.is_control()
 }
 
 /// How many characters of `chars`, from `at`, spell `wanted` (lower-cased, `\` and `/` the same), if they do.
@@ -383,6 +467,9 @@ mod win {
         platform: u32,
         service_pack: [u16; 128],
     }
+
+    // OSVERSIONINFOW's size in Windows' headers.
+    const _: () = assert!(size_of::<OsVersionInfoW>() == 276);
 
     #[link(name = "ntdll")]
     unsafe extern "system" {
@@ -445,8 +532,13 @@ mod tests {
     use std::io::Read;
     use std::time::{Duration, Instant};
 
+    /// A moment given in UTC (the time that names reports), as the PC's clock shows it.
     fn at(y: i32, mo: u32, d: u32, h: u32, mi: u32, s: u32) -> chrono::DateTime<chrono::Local> {
-        chrono::Local.with_ymd_and_hms(y, mo, d, h, mi, s).single().unwrap()
+        chrono::Utc
+            .with_ymd_and_hms(y, mo, d, h, mi, s)
+            .single()
+            .unwrap()
+            .with_timezone(&chrono::Local)
     }
 
     fn reports(dir: &Path) -> Vec<String> {
@@ -494,18 +586,65 @@ mod tests {
         assert!(text.len() <= MAX_BYTES, "{}", text.len());
     }
 
+    /// A stack as deep as a runaway recursion's.
+    struct Deep;
+
+    impl std::fmt::Display for Deep {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            for i in 0..10_000_000u64 {
+                writeln!(
+                    f,
+                    "  {i}: bf_app::again\n             at .\\crates\\bf-app\\src\\é.rs:1:1"
+                )?;
+            }
+            Ok(())
+        }
+    }
+
+    #[test]
+    fn a_deep_stack_is_cut_while_it_is_written() {
+        let started = Instant::now();
+        let text = bounded_backtrace(&Deep);
+        assert!(text.len() <= MAX_STACK_TEXT + 20, "{}", text.len());
+        assert!(text.len() > MAX_STACK_TEXT / 2, "{}", text.len());
+        assert!(text.ends_with("(cut short)\n"), "{}", &text[text.len() - 40..]);
+        // cut at the end of a line: the line before the note is whole
+        let before = text.trim_end_matches("(cut short)\n");
+        assert!(
+            before.ends_with(":1:1\n") || before.ends_with("bf_app::again\n"),
+            "{}",
+            &before[before.len() - 40..]
+        );
+        // formatting stopped early instead of writing all ten million frames
+        assert!(started.elapsed() < Duration::from_secs(5), "{:?}", started.elapsed());
+        // a short stack is kept whole
+        assert_eq!(bounded_backtrace(&"   0: main\n"), "   0: main\n");
+    }
+
     #[test]
     fn the_user_folder_is_shortened() {
         let forms = home_forms(Some(Path::new(r"C:\Users\Zoë Ångström")));
         let text = "opened C:\\Users\\Zoë Ångström\\Videos\\a.mp4 and c:/users/zoë ångström/.cargo/x.rs, \
-                    not C:\\Users\\Zoë Ångströmer\\b; at the end C:\\Users\\Zoë Ångström";
+                    not C:\\Users\\Zoë Ångströmer\\b nor C:\\Users\\Zoë Ångström.old\\c; \
+                    \"C:\\Users\\Zoë Ångström\"|x; at the end C:\\Users\\Zoë Ångström";
         let short = shorten(text, &forms);
         assert!(short.contains(r"%USERPROFILE%\Videos\a.mp4"), "{short}");
         assert!(short.contains("%USERPROFILE%/.cargo/x.rs"), "{short}");
+        assert!(short.contains("\"%USERPROFILE%\"|x"), "{short}");
         assert!(short.ends_with("at the end %USERPROFILE%"), "{short}");
-        // another user whose name merely starts the same way is not cut in half
+        // another folder whose name merely starts the same way is not cut in half
         assert!(short.contains(r"C:\Users\Zoë Ångströmer\b"), "{short}");
-        assert_eq!(short.matches("%USERPROFILE%").count(), 3, "{short}");
+        assert!(short.contains(r"C:\Users\Zoë Ångström.old\c"), "{short}");
+        assert_eq!(short.matches("%USERPROFILE%").count(), 4, "{short}");
+        // a user folder on a network share
+        #[cfg(windows)]
+        {
+            let forms = home_forms(Some(Path::new(r"\\server\share\zoe")));
+            assert!(!forms.is_empty());
+            let short = shorten(r"at \\server\share\zoe\x and //SERVER/share/zoe/y", &forms);
+            assert_eq!(short, r"at %USERPROFILE%\x and %USERPROFILE%/y");
+            assert!(home_forms(Some(Path::new(r"\\server\share"))).is_empty());
+        }
         // a user folder that is a whole drive or nothing is not replaced everywhere
         assert!(home_forms(Some(Path::new(r"C:\"))).is_empty());
         assert!(home_forms(Some(Path::new(""))).is_empty());
@@ -549,6 +688,35 @@ mod tests {
         assert!(!kept.contains(&"crash-20261112-100600.txt".to_string()), "{kept:?}");
         assert!(kept.contains(&"crash-20261112-100700.txt".to_string()), "{kept:?}");
         assert!(logs.join("start.txt").is_file());
+    }
+
+    #[test]
+    fn a_new_report_is_never_pruned() {
+        let root = TempRoot::new("a_new_report_is_never_pruned");
+        let logs = root.0.join("logs");
+        // 20 reports with later names than now: written while the clock was set years ahead
+        for day in 1..=20 {
+            write_crash(&logs, "ahead", at(2030, 1, day, 12, 0, 0)).unwrap();
+        }
+        let new = write_crash(&logs, "now", at(2026, 11, 12, 9, 30, 5)).unwrap();
+        assert_eq!(fs::read_to_string(&new).unwrap(), "now");
+        let kept = reports(&logs);
+        assert_eq!(kept.len(), KEEP, "{kept:?}");
+        // the oldest of the others went instead
+        assert!(!kept.contains(&"crash-20300101-120000.txt".to_string()), "{kept:?}");
+        assert!(kept.contains(&"crash-20300120-120000.txt".to_string()), "{kept:?}");
+    }
+
+    #[test]
+    fn the_name_does_not_follow_summer_time() {
+        let root = TempRoot::new("the_name_does_not_follow_summer_time");
+        let logs = root.0.join("logs");
+        // one moment named once, whatever zone the PC's clock is in
+        let moment = at(2026, 10, 25, 0, 30, 0);
+        let fixed = moment.with_timezone(&chrono::FixedOffset::east_opt(2 * 3600).unwrap());
+        assert_eq!(fixed.with_timezone(&chrono::Local), moment);
+        let path = write_crash(&logs, "x", fixed.with_timezone(&chrono::Local)).unwrap();
+        assert_eq!(path, logs.join("crash-20261025-003000.txt"));
     }
 
     #[test]
@@ -650,9 +818,6 @@ mod tests {
         assert!(capitals_out_of_place("It stopped. Send it: Then go").is_empty());
     }
 
-    /// Tells the child half of a hook test (a new process of this test program) where its reports go.
-    const CHILD: &str = "BF_APP_REPORT_CHILD";
-
     /// The start of the child's panic message.
     const ON_PURPOSE: &str = "a fault on purpose";
 
@@ -749,12 +914,32 @@ mod tests {
             assert!(text.contains(wanted), "{wanted:?} is missing from:\n{text}");
         }
         if let Some(home) = home() {
+            let lower = text.to_lowercase();
             let home = home.to_string_lossy().to_lowercase();
-            assert!(
-                !text.to_lowercase().contains(&home),
-                "the user folder is named:\n{text}"
-            );
+            for form in [home.replace('/', "\\"), home.replace('\\', "/")] {
+                assert!(!lower.contains(&form), "the user folder is named ({form}):\n{text}");
+            }
         }
+        // the time is said to be UTC, which also names the file
+        assert!(text.contains(" UTC ("), "{text}");
+    }
+
+    #[test]
+    fn a_fault_on_the_interface_thread_is_told() {
+        let root = TempRoot::new("a_fault_on_the_interface_thread_is_told");
+        let logs = root.0.join("logs");
+        let (code, said) = run_child("report::tests::child_panics_on_the_interface", &logs);
+        assert_eq!(code, Some(101), "{said}");
+        let found = reports(&logs);
+        assert_eq!(found.len(), 1, "{found:?}\n{said}");
+        // under test the words go to stderr, never into a box that waits for a click
+        assert!(
+            said.contains(&format!(
+                "BALLFIGHT Studio: {}",
+                crashed_text(Some(&logs.join(&found[0])))
+            )),
+            "{said}"
+        );
     }
 
     #[test]
@@ -793,6 +978,16 @@ mod tests {
         }
         let near = home().unwrap_or_default().join("secret folder").join("notes.txt");
         panic!("{ON_PURPOSE} near {}", near.display());
+    }
+
+    /// The child half of [`a_fault_on_the_interface_thread_is_told`]: installs the hook on its own test thread, as
+    /// `main` does on the interface thread, and panics there. `tell` writes to stderr in this process.
+    #[test]
+    #[ignore = "the child half of a_fault_on_the_interface_thread_is_told"]
+    fn child_panics_on_the_interface() {
+        let Some(logs) = std::env::var_os(CHILD) else { return };
+        install_hook(Some(PathBuf::from(logs)));
+        panic!("{ON_PURPOSE} on the interface thread");
     }
 
     /// The child half of [`a_caught_panic_is_recorded_once_and_the_app_goes_on`]: a panic on an engine worker,
