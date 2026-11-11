@@ -1,0 +1,38 @@
+# The ffmpeg that BALLFIGHT Studio ships beside its exe (plan M6, decision D3). `bf-pack fetch-ffmpeg` downloads the
+# archive named here, checks every checksum and copies out the files listed below. The archive and the exes are
+# never committed. Change this file only together with the encode pin (studio/replay/encode_hashes.txt).
+#
+# Where the values come from (read on this PC on 2026-11-11, never typed from memory):
+# - version, build, source_note: the README.txt of the build that winget installed
+#   (%LOCALAPPDATA%\Microsoft\WinGet\Packages\Gyan.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe\ffmpeg-9.0.2-full_build).
+# - each file's sha256: that installed folder's bin\ffmpeg.exe, bin\ffprobe.exe and LICENSE, which are the files
+#   the PC's renders use today (WinGet\Links\ffmpeg.exe points at that bin\ffmpeg.exe and has the same hash).
+# - in_archive: the installed folder's own layout (the archive unpacks to ffmpeg-9.0.2-full_build\).
+#
+# NOT YET PINNED: the archive itself. winget keeps no record of the installer's address or checksum on this PC and
+# the archive is not on this PC, so its SHA-256 and size cannot be read without downloading it. Until they are
+# filled in, `archive_sha256` holds the words "not yet pinned" and the fetcher refuses to download anything. The url
+# below is the www.gyan.dev release archive of 9.0.2 (the plan's choice when winget names no URL); it is not
+# confirmed yet either, and is checked when the archive is first downloaded and pinned.
+version = "9.0.2"
+build = "full_build-www.gyan.dev"
+url = "https://www.gyan.dev/ffmpeg/builds/packages/ffmpeg-9.0.2-full_build.zip"
+archive_sha256 = "not yet pinned"
+archive_bytes = 0
+licence = "GPL-3.0-or-later"
+source_note = "FFmpeg's source for this build is commit 946fcce07b at https://github.com/FFmpeg/FFmpeg/commit/946fcce07b (from the build's README.txt); the build is published by www.gyan.dev, whose README lists the source of each external library it includes."
+
+[[files]]
+name = "ffmpeg.exe"
+in_archive = "ffmpeg-9.0.2-full_build/bin/ffmpeg.exe"
+sha256 = "589e50b766d251afdf181dd664d40bd94407e200b019989fd7468c7d118a28d0"
+
+[[files]]
+name = "ffprobe.exe"
+in_archive = "ffmpeg-9.0.2-full_build/bin/ffprobe.exe"
+sha256 = "02264dfa4f56baaa31e443ece8aa16d397f6b008200e7fd184d22b9009e75fd3"
+
+[[files]]
+name = "LICENSE.txt"
+in_archive = "ffmpeg-9.0.2-full_build/LICENSE"
+sha256 = "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903"
