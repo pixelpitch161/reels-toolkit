@@ -22,6 +22,7 @@ use egui::{
     StrokeKind, TextWrapMode, TextureHandle, TextureOptions, Ui, UiBuilder, Vec2, WidgetInfo, pos2, vec2,
 };
 
+use super::buttons::{exact_painter, widget_ring};
 use crate::model::roster::Sprite;
 use crate::model::take::Frame;
 use crate::theme::{
@@ -46,33 +47,15 @@ const CHIP_DISC_ALPHA: u8 = 85;
 const SELECTED_RING: f32 = 1.5;
 /// The ring around a portrait's disc.
 const PORTRAIT_RING: f32 = 3.0;
-/// The focus ring: its width and its gap from the control.
-const FOCUS_W: f32 = 2.0;
-const FOCUS_GAP: f32 = 2.0;
 /// How many picture textures the cache keeps at most.
 const MAX_TEXTURES: usize = 64;
 /// What hovering a chip that is not built says.
 const NOT_BUILT: &str = "Not built yet. It arrives in an update.";
 
-/// A painter on `ui`'s layer and clip rectangle that egui's disabled fade does not touch.
-fn exact_painter(ui: &Ui) -> Painter {
-    Painter::new(ui.ctx().clone(), ui.layer_id(), ui.clip_rect())
-}
-
 /// The keyboard focus ring around `rect` (corner 8 + 2), 2 px `TEXT_STRONG`, 2 px outside, on a painter that may
 /// paint 4 px past `ui`'s clip rectangle.
 fn focus_ring(ui: &Ui, rect: Rect) {
-    let painter = Painter::new(
-        ui.ctx().clone(),
-        ui.layer_id(),
-        ui.clip_rect().expand(FOCUS_GAP + FOCUS_W),
-    );
-    painter.rect_stroke(
-        rect.expand(FOCUS_GAP),
-        f32::from(RADIUS_ROW) + FOCUS_GAP,
-        Stroke::new(FOCUS_W, TEXT_STRONG),
-        StrokeKind::Outside,
-    );
+    widget_ring(ui, rect, f32::from(RADIUS_ROW));
 }
 
 /// `rect` with its corners on whole physical pixels.

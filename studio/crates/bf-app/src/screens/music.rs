@@ -25,7 +25,7 @@ use crate::theme::{
     BAND_CLIP, CONTROL_H, FAINT, GROUND, GROUP, HAIRLINE, HOVER, LINE, LINE_SOFT, MUTED, RADIUS, RAISED, SELECTED,
     TEXT, TEXT_STRONG, VALUE_H, VALUE_W, body, large_fill, rgb, section, small, value as mono,
 };
-use crate::widgets::buttons::{self, focus_ring};
+use crate::widgets::buttons::{self, widget_ring};
 use crate::widgets::chips::fighter_bar;
 use crate::widgets::icons::{self, Icon};
 use crate::widgets::ribbon::{DUR, x_of};
@@ -358,7 +358,7 @@ fn chord_loop(ui: &mut Ui, label: &str, chosen: bool, width: f32) -> Response {
         };
         paint_text(painter, rect, label, mono(), colour, LOOP_PAD);
         if response.has_focus() {
-            focus_ring(painter, rect);
+            widget_ring(ui, rect, f32::from(RADIUS));
         }
     }
     response

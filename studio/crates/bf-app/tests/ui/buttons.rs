@@ -666,3 +666,187 @@ fn a_progress_share_that_is_not_a_number_shows_as_zero() {
         assert_eq!(at(&mut harness, rect, 190.0, 2.0), rgb(LINE), "{share}");
     }
 }
+
+// ---------------------------------------------------------------------------------------------------------------
+// Widget rule 17: rings at a panel's edge, a disabled parent, labels too long, two controls of one name
+// ---------------------------------------------------------------------------------------------------------------
+
+/// The four controls of rule 17, at the left edge of a region clipped to itself: a box button, a segmented control,
+/// a switch and a dropdown.
+fn clipped_region(ui: &mut Ui) {
+    on_panel(ui);
+    let region = Rect::from_min_max(egui::pos2(20.0, 20.0), egui::pos2(300.0, 200.0));
+    let mut child = ui.new_child(egui::UiBuilder::new().max_rect(region));
+    child.set_clip_rect(region);
+    buttons::boxed(&mut child, "Swap sides");
+    winner(&mut child, None, Some(0));
+    buttons::switch(&mut child, "Loop the fight", true);
+    theme_dropdown(&mut child);
+}
+
+#[test]
+fn rings_are_not_cut_off_at_a_clipped_edge() {
+    let _gpu = common::gpu();
+    let mut harness = common::widget_harness((320.0, 220.0), clipped_region);
+    harness.run();
+    for name in ["Swap sides", "Any", "Loop the fight", "Theme"] {
+        harness.get_by_label(name).focus();
+        harness.run();
+        assert!(harness.get_by_label(name).is_focused(), "{name} takes the focus");
+        let rect = harness.get_by_label(name).rect();
+        assert_eq!(rect.min.x, 20.0, "{name} sits at the clipped edge");
+        // The switch's ring goes round its outline, 16 tall in the middle of its 26.
+        let left = at(&mut harness, rect, -3.0, rect.height() / 2.0);
+        assert_eq!(left, rgb(TEXT_STRONG), "{name}: the ring's left side, outside the clip");
+        if name == "Swap sides" {
+            let top = at(&mut harness, rect, rect.width() / 2.0, -3.0);
+            assert_eq!(top, rgb(TEXT_STRONG), "{name}: the ring's top side, outside the clip");
+        }
+    }
+}
+
+#[test]
+fn controls_in_a_disabled_parent_are_faint_and_take_no_input() {
+    let _gpu = common::gpu();
+    let got = Cell::new(0);
+    let mut harness = common::widget_harness((420.0, 260.0), |ui| {
+        on_panel(ui);
+        ui.disable();
+        let mut hits = 0;
+        hits += i32::from(buttons::boxed(ui, "Swap sides").clicked());
+        hits += i32::from(buttons::primary(ui, "Search seeds").clicked());
+        hits += i32::from(winner(ui, None, Some(2)).is_some());
+        hits += i32::from(buttons::switch(ui, "Loop the fight", true).clicked());
+        hits += i32::from(theme_dropdown(ui).is_some());
+        hits += i32::from(icons::icon_button(ui, Icon::Play, "Play", true).clicked());
+        got.set(got.get() + hits);
+    });
+    harness.run();
+    for name in [
+        "Swap sides",
+        "Search seeds",
+        "Any",
+        "Trombone",
+        "Loop the fight",
+        "Theme",
+        "Play",
+    ] {
+        assert!(
+            harness.get_by_label(name).accesskit_node().is_disabled(),
+            "{name} is disabled"
+        );
+    }
+    for name in ["Swap sides", "Search seeds", "Any", "Loop the fight", "Theme", "Play"] {
+        let rect = harness.get_by_label(name).rect();
+        assert_eq!(
+            brightest(&mut harness, rect),
+            rgb(FAINT),
+            "{name} is drawn FAINT, not faded"
+        );
+    }
+    let chosen = harness.get_by_label("Trombone").rect();
+    assert_eq!(
+        at(&mut harness, chosen, 3.0, 3.0),
+        rgb(FAINT),
+        "the chosen segment's fill is FAINT"
+    );
+    let switch = harness.get_by_label("Loop the fight").rect();
+    let outline = at(&mut harness, switch, 15.0, switch.height() / 2.0 - 8.0);
+    assert_eq!(outline, rgb(FAINT), "the switch's outline is FAINT though it is on");
+    for name in [
+        "Swap sides",
+        "Search seeds",
+        "Trombone",
+        "Loop the fight",
+        "Theme",
+        "Play",
+    ] {
+        harness.get_by_label(name).click();
+        harness.run();
+    }
+    assert!(
+        harness.query_by_label("Dark disco").is_none(),
+        "the dropdown does not open"
+    );
+    drop(harness);
+    assert_eq!(got.get(), 0, "nothing inside a disabled parent reports a click");
+}
+
+/// The pixels of the row `y` from `x0` to `x1` (both whole pixels, `x1` not included).
+fn row_of(harness: &mut Harness<'_>, y: f32, x0: f32, x1: f32) -> Vec<[u8; 3]> {
+    let at: Vec<(u32, u32)> = (x0 as u32..x1 as u32).map(|x| (x, y as u32)).collect();
+    common::pixels(harness, &at)
+}
+
+const LONG: &str = "A label that is far too long for the control it sits in";
+
+#[test]
+fn a_label_too_long_for_its_control_ends_in_an_ellipsis() {
+    let _gpu = common::gpu();
+    let mut harness = common::widget_harness((420.0, 200.0), |ui| {
+        on_panel(ui);
+        ui.horizontal(|ui| {
+            ui.add_space(60.0);
+            buttons::segmented(ui, "Finish", &[(LONG, None), ("Close", None)], Some(1), 160.0);
+        });
+        ui.allocate_ui(egui::vec2(120.0, 26.0), |ui| buttons::boxed(ui, LONG));
+        ui.allocate_ui(egui::vec2(120.0, 26.0), |ui| buttons::switch(ui, LONG, false));
+        buttons::dropdown(ui, "Theme", &[LONG.to_string()], 0, 120.0);
+    });
+    harness.run();
+    let panel = rgb(PANEL);
+    let long_segment = harness
+        .query_all_by_label(LONG)
+        .find(|n| n.accesskit_node().role() == Role::RadioButton)
+        .expect("the long segment")
+        .rect();
+    let left = row_of(&mut harness, long_segment.center().y, 0.0, long_segment.min.x - 1.0);
+    assert!(left.iter().all(|p| *p == panel), "the segment's label stays inside it");
+    let close = harness.get_by_label("Close").rect();
+    let past = row_of(&mut harness, close.center().y, close.max.x + 1.0, 420.0);
+    assert!(past.iter().all(|p| *p == panel), "and so does the control");
+
+    let nodes: Vec<Rect> = harness.query_all_by_label(LONG).map(|n| n.rect()).collect();
+    for rect in nodes.iter().filter(|r| r.min.y > long_segment.max.y) {
+        assert!(rect.width() <= 120.0, "the control keeps to its room: {rect:?}");
+        assert!(rect.height() <= 26.0, "on one line: {rect:?}");
+        let past = row_of(&mut harness, rect.center().y, rect.max.x + 1.0, 420.0);
+        assert!(past.iter().all(|p| *p == panel), "nothing is drawn past it: {rect:?}");
+    }
+    let theme = harness.get_by_label("Theme").rect();
+    assert_eq!(theme.height(), theme::VALUE_H, "the dropdown stays one line tall");
+}
+
+#[test]
+fn two_controls_with_one_name_do_not_clash() {
+    let _gpu = common::gpu();
+    let picked = Cell::new((None, None));
+    let mut harness = common::widget_harness((300.0, 260.0), |ui| {
+        on_panel(ui);
+        let first = winner(ui, None, Some(0));
+        let second = winner(ui, None, Some(0));
+        if first.is_some() || second.is_some() {
+            picked.set((first, second));
+        }
+        theme_dropdown(ui);
+        theme_dropdown(ui);
+    });
+    harness.run();
+    let click_lowest = |harness: &Harness<'_>, name: &str| {
+        harness
+            .query_all_by_label(name)
+            .max_by(|a, b| a.rect().min.y.total_cmp(&b.rect().min.y))
+            .expect("a control")
+            .click();
+    };
+    click_lowest(&harness, "Trombone");
+    harness.run();
+    assert_eq!(picked.get(), (None, Some(2)), "only the second group took the click");
+    click_lowest(&harness, "Theme");
+    harness.run();
+    let lists = harness
+        .query_all_by_label("Dark disco")
+        .filter(|n| n.accesskit_node().role() == Role::ListBoxOption)
+        .count();
+    assert_eq!(lists, 1, "only the dropdown clicked opens its list");
+}
