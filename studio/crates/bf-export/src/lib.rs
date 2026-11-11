@@ -21,7 +21,7 @@ pub mod probe;
 pub use self::checks::{BandPlan, CheckResult, Kept, pre_render, pre_render_keeping};
 #[cfg(feature = "test-support")]
 pub use self::encode::ffmpeg_at;
-pub use self::encode::{Encoder, Ffmpeg, find_ffmpeg};
+pub use self::encode::{APP_FFMPEG_DIR, Encoder, Ffmpeg, FfmpegSource, find_ffmpeg};
 #[cfg(feature = "test-support")]
 pub use self::job::run_job_using;
 pub use self::job::{JobEvent, JobOpts, run_job, stage};

@@ -13,10 +13,12 @@
 //! - `CancelJob` sets the running job's cancel flag; the job answers `Cancelled` once `run_job` has returned, so the
 //!   half-made video's temporary folder is already gone. `run_job` looks at the flag within about a second
 //!   everywhere except inside the soundtrack build (about 4 s), which runs to its end first.
-//! - `CheckTools` looks for ffmpeg on a thread of its own: `Tools` with its version line ("ffmpeg 9.0.2"), or
-//!   "ffmpeg was not found on this PC.".
+//! - `CheckTools` looks for ffmpeg on a thread of its own: `Tools` with its version and where it came from
+//!   ("ffmpeg 9.0.2, comes with the app" or "ffmpeg 9.0.2, found on this PC"), or "ffmpeg was not found on this
+//!   PC.".
 //!
-//! ffmpeg is found by `bf_export::find_ffmpeg` (`BALLFIGHT_FFMPEG`, then the `PATH`); `run_job` asks for it again
+//! ffmpeg is found by `bf_export::find_ffmpeg` (`BALLFIGHT_FFMPEG`, then the app's own `ffmpeg\` folder beside the
+//! program, then the `PATH`); `run_job` asks for it again
 //! before any work, so a missing ffmpeg, like a folder that cannot be used, is refused before anything is written.
 
 use std::collections::{BTreeMap, HashMap};
@@ -111,7 +113,7 @@ pub fn handle(state: &mut State, ctx: &Ctx, command: Command) {
                 "looking for ffmpeg",
                 |ctx| {
                     let ffmpeg = bf_export::find_ffmpeg()
-                        .map(|f| f.version)
+                        .map(|f| tools_line(&f))
                         .map_err(|_| NO_FFMPEG.to_string());
                     if !ctx.stopping() {
                         ctx.emit(Event::Tools { ffmpeg });
@@ -124,6 +126,17 @@ pub fn handle(state: &mut State, ctx: &Ctx, command: Command) {
         }
         // The coordinator sends this handler nothing else.
         _ => {}
+    }
+}
+
+/// What `CheckTools` answers for the ffmpeg found: its version and where it came from ("ffmpeg 9.0.2, comes with
+/// the app", or "ffmpeg 9.0.2, found on this PC" for the setting's or the `PATH`'s).
+fn tools_line(f: &bf_export::Ffmpeg) -> String {
+    match f.source {
+        bf_export::FfmpegSource::WithTheApp => format!("{}, comes with the app", f.version),
+        bf_export::FfmpegSource::Setting | bf_export::FfmpegSource::Path => {
+            format!("{}, found on this PC", f.version)
+        }
     }
 }
 
@@ -1123,12 +1136,29 @@ mod tests {
         match bf_export::find_ffmpeg() {
             Ok(f) => {
                 assert!(f.version.starts_with("ffmpeg "), "{}", f.version);
-                assert_eq!(ffmpeg, Ok(f.version));
+                assert_eq!(ffmpeg, Ok(tools_line(&f)));
             }
             Err(_) => assert_eq!(ffmpeg, Err(NO_FFMPEG.to_string())),
         }
         engine.send(Command::Shutdown);
         std::fs::remove_dir(&root).expect("nothing was written");
+    }
+
+    #[test]
+    fn tools_say_where_ffmpeg_came_from() {
+        let found = |source| bf_export::Ffmpeg {
+            ffmpeg: PathBuf::from(r"C:\x\ffmpeg.exe"),
+            ffprobe: PathBuf::from(r"C:\x\ffprobe.exe"),
+            version: "ffmpeg 9.0.2".to_string(),
+            source,
+        };
+        assert_eq!(
+            tools_line(&found(bf_export::FfmpegSource::WithTheApp)),
+            "ffmpeg 9.0.2, comes with the app"
+        );
+        for source in [bf_export::FfmpegSource::Setting, bf_export::FfmpegSource::Path] {
+            assert_eq!(tools_line(&found(source)), "ffmpeg 9.0.2, found on this PC");
+        }
     }
 
     #[test]
