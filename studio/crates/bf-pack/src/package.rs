@@ -37,10 +37,13 @@ pub const MANIFEST_HEADER: &str = "BALLFIGHT Studio package manifest 1";
 pub const FFMPEG_DIR: &str = "ffmpeg";
 /// The guide's folder in the package.
 pub const GUIDE_DIR: &str = "guide";
+/// The list a package being made holds while it is made: every name `package` may write in it, so a package that was
+/// stopped part-way (a power cut) can be cleared by `clear_unfinished`. Removed once the manifest is written.
+pub const PACKING_NAME: &str = "PACKING.txt";
 /// Names at the top of the program folder that are never package files: the manifest, the install's own
-/// `update.toml`, the update engine's `.next` and `.previous` folders (Task 12), and the names a swap uses inside
-/// `.previous` (its marker and the temp names of its two copies).
-pub const RESERVED: [&str; 7] = [
+/// `update.toml`, the update engine's `.next` and `.previous` folders (Task 12), the names a swap uses inside
+/// `.previous` (its marker and the temp names of its two copies), and the list of a package being made.
+pub const RESERVED: [&str; 8] = [
     MANIFEST_NAME,
     crate::config::CONFIG_NAME,
     ".next",
@@ -48,6 +51,7 @@ pub const RESERVED: [&str; 7] = [
     crate::install::SWAP_MARKER,
     crate::install::COPY_PARTS[0],
     crate::install::COPY_PARTS[1],
+    PACKING_NAME,
 ];
 
 /// What a package holds.
@@ -346,10 +350,37 @@ pub fn package(exe: &Path, tree: &Path, ffmpeg: &Path, out: &Path) -> Result<Man
 
     let mut w = Written::default();
     let made = fill(exe, &studio, ffmpeg, out, made_out, &pin, &version, &mut w);
-    if made.is_err() {
-        w.undo();
+    match &made {
+        Err(PackError::Io(t)) if t == STOPPED_FOR_A_TEST => {}
+        Err(_) => w.undo(),
+        Ok(_) => {}
     }
     made
+}
+
+/// The words of a package stopped on purpose by a test, as a power cut would stop it: nothing taken back.
+const STOPPED_FOR_A_TEST: &str = "The package was stopped part-way for a test.";
+
+#[cfg(test)]
+thread_local! {
+    /// For tests: stop `fill` after this many of its steps, leaving everything as it is then.
+    static STOP_AFTER: std::cell::Cell<Option<usize>> = const { std::cell::Cell::new(None) };
+    static STEPS: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
+}
+
+/// One step of `fill` is done; a test may stop it here.
+fn step_done() -> Result<(), PackError> {
+    #[cfg(test)]
+    {
+        let n = STEPS.with(|s| {
+            s.set(s.get() + 1);
+            s.get()
+        });
+        if STOP_AFTER.with(|s| s.get()).is_some_and(|stop| n >= stop) {
+            return Err(PackError::Io(STOPPED_FOR_A_TEST.to_string()));
+        }
+    }
+    Ok(())
 }
 
 /// The files and folders a package call wrote, so that a failure can take back exactly those.
@@ -388,9 +419,55 @@ fn fill(
         fs::create_dir_all(out).map_err(|e| io_error("make the folder", out, &e))?;
         w.dirs.push(out.to_path_buf());
     }
+    let guide = studio.join("packaging").join(GUIDE_DIR);
+    let guide_entries = if guide.is_dir() && !is_link(&guide) {
+        let entries = walk(&guide)?;
+        for (rel, kind) in &entries {
+            let whole = format!("{GUIDE_DIR}/{rel}");
+            if *kind == Kind::Link || !safe_relative(&whole) {
+                return Err(PackError::Refused(format!(
+                    "The guide's {rel} is a link or has a name Windows cannot keep, so no package was made."
+                )));
+            }
+        }
+        Some(entries)
+    } else {
+        None
+    };
+
+    // First the list of every name this call may write, made safe on disk before anything else is written, so a
+    // package stopped part-way is cleared by that list (`clear_unfinished`).
+    let mut list = vec![
+        format!("F {EXE_NAME}"),
+        format!("F {ICON_NAME}"),
+        format!("D {FFMPEG_DIR}"),
+    ];
+    for name in pin.files.iter().map(|f| f.name.as_str()).chain(["ABOUT.txt"]) {
+        list.push(format!("F {FFMPEG_DIR}/{name}"));
+        list.push(format!("F {FFMPEG_DIR}/.{name}.part"));
+    }
+    if let Some(entries) = &guide_entries {
+        list.push(format!("D {GUIDE_DIR}"));
+        for (rel, kind) in entries {
+            let tag = if *kind == Kind::Dir { 'D' } else { 'F' };
+            list.push(format!("{tag} {GUIDE_DIR}/{rel}"));
+        }
+    }
+    list.push(format!("F {MANIFEST_NAME}"));
+    let journal = out.join(PACKING_NAME);
+    w.files.push(journal.clone());
+    let mut text = format!("{PACKING_HEADER}\r\n");
+    for line in &list {
+        text.push_str(line);
+        text.push_str("\r\n");
+    }
+    write_new_synced(&journal, text.as_bytes())?;
+    step_done()?;
+
     let to = out.join(EXE_NAME);
     w.files.push(to.clone());
     copy_new(exe, &to)?;
+    step_done()?;
     let icon = studio
         .join("crates")
         .join("bf-app")
@@ -400,6 +477,7 @@ fn fill(
     let to = out.join(ICON_NAME);
     w.files.push(to.clone());
     copy_new(&icon, &to)?;
+    step_done()?;
 
     // The folder is new, so every name `place` may write in it is ours to take back.
     let ff = out.join(FFMPEG_DIR);
@@ -407,19 +485,14 @@ fn fill(
     w.files.extend(pin.files.iter().map(|f| ff.join(&f.name)));
     w.files.push(ff.join("ABOUT.txt"));
     ffmpeg::place(pin, ffmpeg_dir, &ff)?;
+    step_done()?;
 
-    let guide = studio.join("packaging").join(GUIDE_DIR);
-    if guide.is_dir() && !is_link(&guide) {
+    if let Some(entries) = guide_entries {
         let to = out.join(GUIDE_DIR);
         fs::create_dir(&to).map_err(|e| io_error("make the folder", &to, &e))?;
         w.dirs.push(to.clone());
-        for (rel, kind) in walk(&guide)? {
+        for (rel, kind) in entries {
             let whole = format!("{GUIDE_DIR}/{rel}");
-            if kind == Kind::Link || !safe_relative(&whole) {
-                return Err(PackError::Refused(format!(
-                    "The guide's {rel} is a link or has a name Windows cannot keep, so no package was made."
-                )));
-            }
             let dest = join_relative(out, &whole);
             if kind == Kind::Dir {
                 fs::create_dir(&dest).map_err(|e| io_error("make the folder", &dest, &e))?;
@@ -428,6 +501,7 @@ fn fill(
                 w.files.push(dest.clone());
                 copy_new(&join_relative(&guide, &rel), &dest)?;
             }
+            step_done()?;
         }
     }
 
@@ -435,6 +509,7 @@ fn fill(
     for (rel, kind) in walk(out)? {
         match kind {
             Kind::Dir => {}
+            Kind::File if rel == PACKING_NAME => {}
             Kind::Link => {
                 return Err(PackError::Refused(format!(
                     "{rel} in the package is a link, so no package was made."
@@ -465,7 +540,111 @@ fn fill(
     f.write_all(manifest.text().as_bytes())
         .and_then(|()| f.sync_all())
         .map_err(|e| io_error("write", &to, &e))?;
+    drop(f);
+    step_done()?;
+    // The package is whole: its list goes. (Stopped just before this, the folder holds a finished package and the
+    // list; `clear_unfinished` still clears it by the list, which names the manifest too.)
+    fs::remove_file(&journal).map_err(|e| io_error("remove", &journal, &e))?;
     Ok(manifest)
+}
+
+/// The first line of a package's `PACKING.txt`.
+const PACKING_HEADER: &str = "BALLFIGHT Studio package being made 1";
+
+/// Writes a new file and makes sure it is on the disk before going on.
+fn write_new_synced(path: &Path, bytes: &[u8]) -> Result<(), PackError> {
+    let mut f = fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(path)
+        .map_err(|e| io_error("make", path, &e))?;
+    f.write_all(bytes)
+        .and_then(|()| f.sync_all())
+        .map_err(|e| io_error("write", path, &e))
+}
+
+/// Clears a package folder that `package` began and did not finish (a power cut, a closed window), by its own list
+/// `PACKING.txt`: each file the list names (whatever its bytes, since a copy may have stopped part-way), then the
+/// folders it names when they are empty, the list, and `out` itself. Gives `true` when `out` is gone. Anything in
+/// `out` that the list does not name, or any link, stops it in words with nothing removed. Without a list: a missing
+/// folder, or a finished package (its manifest and no list), is left as it is (`false`); a folder that holds only
+/// empty folders is removed; anything else is an error in words.
+pub fn clear_unfinished(out: &Path) -> Result<bool, PackError> {
+    if fs::symlink_metadata(out).is_err() {
+        return Ok(false);
+    }
+    let refuse = || {
+        PackError::Refused(format!(
+            "{} holds files that BALLFIGHT Studio cannot tell are its own, so it was left as it is. Move them \
+             elsewhere, then try again.",
+            out.display()
+        ))
+    };
+    if is_link(out) || !out.is_dir() {
+        return Err(refuse());
+    }
+    let entries = walk(out)?;
+    let journal = out.join(PACKING_NAME);
+    let remove_dirs = |dirs: &[PathBuf]| -> Result<(), PackError> {
+        for d in dirs.iter().rev() {
+            fs::remove_dir(d).map_err(|e| io_error("remove the empty folder", d, &e))?;
+        }
+        fs::remove_dir(out).map_err(|e| io_error("remove the empty folder", out, &e))
+    };
+    if is_link(&journal) || !journal.is_file() {
+        if entries.iter().all(|(_, k)| *k == Kind::Dir) {
+            let dirs: Vec<PathBuf> = entries.iter().map(|(rel, _)| join_relative(out, rel)).collect();
+            remove_dirs(&dirs)?;
+            return Ok(true);
+        }
+        if out.join(MANIFEST_NAME).is_file() {
+            return Ok(false);
+        }
+        return Err(refuse());
+    }
+    let text = fs::read_to_string(&journal).map_err(|e| io_error("read", &journal, &e))?;
+    let mut lines = text.lines();
+    if lines.next() != Some(PACKING_HEADER) {
+        return Err(refuse());
+    }
+    let (mut files, mut dirs) = (Vec::new(), Vec::new());
+    // A line cut short by a power cut names nothing; nothing else was written before the list was whole.
+    for line in lines {
+        let Some((tag, rel)) = line.split_once(' ') else {
+            continue;
+        };
+        if !(safe_relative(rel) || rel == MANIFEST_NAME) {
+            continue;
+        }
+        match tag {
+            "F" => files.push(rel.to_string()),
+            "D" => dirs.push(rel.to_string()),
+            _ => {}
+        }
+    }
+    let mut found_dirs = Vec::new();
+    for (rel, kind) in &entries {
+        let listed = match kind {
+            Kind::Link => false,
+            Kind::File => rel == PACKING_NAME || files.iter().any(|f| f == rel),
+            Kind::Dir => dirs.iter().any(|d| d == rel),
+        };
+        if !listed {
+            return Err(refuse());
+        }
+        if *kind == Kind::Dir {
+            found_dirs.push(join_relative(out, rel));
+        }
+    }
+    for (rel, kind) in &entries {
+        if *kind == Kind::File && rel != PACKING_NAME {
+            let f = join_relative(out, rel);
+            fs::remove_file(&f).map_err(|e| io_error("remove", &f, &e))?;
+        }
+    }
+    fs::remove_file(&journal).map_err(|e| io_error("remove", &journal, &e))?;
+    remove_dirs(&found_dirs)?;
+    Ok(true)
 }
 
 /// `[workspace.package] version` of a checkout's `studio\Cargo.toml`, which must be a version as the Studio writes
@@ -503,6 +682,16 @@ fn inside_cargo_target(dir: &Path) -> bool {
 /// Checks a package folder: our `MANIFEST.txt`, every file it lists there with its size and SHA-256, and nothing
 /// else in the folder (no other file, no link). Gives the manifest.
 pub fn check_package(dir: &Path) -> Result<Manifest, PackError> {
+    check_package_with(dir, false)
+}
+
+/// `check_package` for a version kept in `.previous` (or brought back from there by "Go back"): it may also hold the
+/// copy of `update.toml` an install or update kept with it, when that reads as one of ours.
+pub fn check_kept_package(dir: &Path) -> Result<Manifest, PackError> {
+    check_package_with(dir, true)
+}
+
+fn check_package_with(dir: &Path, kept_config: bool) -> Result<Manifest, PackError> {
     if is_link(dir) || !dir.is_dir() {
         return Err(PackError::Refused(format!(
             "The package {} is not a folder, so nothing was installed.",
@@ -520,6 +709,11 @@ pub fn check_package(dir: &Path) -> Result<Manifest, PackError> {
                 )));
             }
             Kind::File if rel == MANIFEST_NAME => {}
+            Kind::File
+                if kept_config
+                    && rel == crate::config::CONFIG_NAME
+                    && !is_link(&dir.join(&rel))
+                    && crate::config::read_config(&dir.join(&rel)).is_ok() => {}
             Kind::File => {
                 if manifest.files.iter().all(|(p, _, _)| p != &rel) {
                     return Err(PackError::Refused(format!(
@@ -676,6 +870,83 @@ pub(crate) mod tests {
         assert!(text.contains(&format!("{} {} ballfight-studio.exe\r\n", hex(EXE), EXE.len())));
         assert_eq!(read_manifest(&out.join(MANIFEST_NAME)).unwrap(), m);
         assert_eq!(check_package(&out).unwrap(), m);
+    }
+
+    #[test]
+    fn a_package_stopped_anywhere_is_cleared_by_its_list() {
+        let dir = TempDir::new("package-stopped");
+        let (exe, tree, checked) = fake_inputs(dir.path(), "0.6.0");
+        // Steps: the list, the exe, the icon, ffmpeg, two guide entries (a folder and two files), the manifest.
+        let mut stopped_ones = 0;
+        for stop in 1..=12 {
+            let out = dir.path().join(format!("out-{stop}"));
+            STEPS.with(|s| s.set(0));
+            STOP_AFTER.with(|s| s.set(Some(stop)));
+            let made = package(&exe, &tree, &checked, &out);
+            STOP_AFTER.with(|s| s.set(None));
+            match made {
+                Err(PackError::Io(t)) if t == STOPPED_FOR_A_TEST => {
+                    stopped_ones += 1;
+                    assert!(out.join(PACKING_NAME).is_file(), "step {stop}: the list is there");
+                    assert!(
+                        check_package(&out).is_err(),
+                        "step {stop}: a stopped package never passes"
+                    );
+                    assert_eq!(clear_unfinished(&out), Ok(true), "step {stop}");
+                    assert!(!out.exists(), "step {stop}: nothing is left");
+                }
+                Ok(_) => {
+                    assert!(!out.join(PACKING_NAME).exists());
+                    check_package(&out).unwrap();
+                    // A finished package is not unfinished: it stays.
+                    assert_eq!(clear_unfinished(&out), Ok(false));
+                    assert!(out.join(MANIFEST_NAME).is_file());
+                }
+                Err(e) => panic!("step {stop}: {e}"),
+            }
+        }
+        assert!(stopped_ones >= 6, "{stopped_ones}");
+
+        // Something the list does not name stops the clearing, with nothing removed.
+        let out = dir.path().join("out-foreign");
+        STEPS.with(|s| s.set(0));
+        STOP_AFTER.with(|s| s.set(Some(3)));
+        let _ = package(&exe, &tree, &checked, &out);
+        STOP_AFTER.with(|s| s.set(None));
+        fs::write(out.join("notes.txt"), b"a person's file").unwrap();
+        let before = {
+            let mut v = Vec::new();
+            all_files(&out, "", &mut v);
+            v.sort();
+            v
+        };
+        let err = clear_unfinished(&out).unwrap_err().to_string();
+        assert!(err.contains("cannot tell are its own"), "{err}");
+        let mut after = Vec::new();
+        all_files(&out, "", &mut after);
+        after.sort();
+        assert_eq!(before, after);
+
+        // A list cut short with nothing else, and a folder of empty folders, go; a missing folder is nothing to do.
+        let cut = dir.path().join("cut");
+        fs::create_dir(&cut).unwrap();
+        fs::write(
+            cut.join(PACKING_NAME),
+            "BALLFIGHT Studio package being made 1\r\nF ballfi",
+        )
+        .unwrap();
+        assert_eq!(clear_unfinished(&cut), Ok(true));
+        let empty = dir.path().join("empty");
+        fs::create_dir_all(empty.join("ffmpeg")).unwrap();
+        assert_eq!(clear_unfinished(&empty), Ok(true));
+        assert!(!empty.exists());
+        assert_eq!(clear_unfinished(&dir.path().join("missing")), Ok(false));
+        // Without a list, files that are not a finished package are never taken.
+        let odd = dir.path().join("odd");
+        fs::create_dir(&odd).unwrap();
+        fs::write(odd.join(EXE_NAME), EXE).unwrap();
+        assert!(clear_unfinished(&odd).is_err());
+        assert!(odd.join(EXE_NAME).is_file());
     }
 
     #[test]

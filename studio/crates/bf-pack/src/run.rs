@@ -1,6 +1,7 @@
 //! The one way to start a program. Every child program is started directly with its arguments one by one (never
 //! pasted into a command line), with no console window, no input, its output piped, its error output read on a
-//! thread, and always waited for. `tests/scan.rs` fails on any other `Command` start in this crate.
+//! thread, and always waited for (`run`, `run_with_env`, `run_family`) or handed off on purpose (`start_detached`).
+//! `tests/scan.rs` fails on any other `Command` start in this crate.
 
 use std::collections::VecDeque;
 use std::ffi::OsStr;
@@ -117,18 +118,307 @@ pub fn run_with_env(
         if started.elapsed() > limit {
             let _ = child.kill();
             let _ = child.wait();
-            let took = match limit.as_secs() {
-                0 => format!("{} milliseconds", limit.as_millis()),
-                1 => "1 second".to_string(),
-                s => format!("{s} seconds"),
-            };
-            break Err(format!("{name} took longer than {took} and was stopped."));
+            break Err(format!(
+                "{name} took longer than {} and was stopped.",
+                took_words(limit)
+            ));
         }
         std::thread::sleep(Duration::from_millis(20));
     };
     let stdout = out_reader.join().unwrap_or_default();
     let tail = err_reader.join().unwrap_or_default();
     ended.map(|status| Ran { status, stdout, tail })
+}
+
+/// A time limit in words: "300 milliseconds", "1 second", "20 seconds".
+fn took_words(limit: Duration) -> String {
+    match limit.as_secs() {
+        0 => format!("{} milliseconds", limit.as_millis()),
+        1 => "1 second".to_string(),
+        s => format!("{s} seconds"),
+    }
+}
+
+/// How `run_family` starts its program.
+#[derive(Clone, Copy, Default)]
+pub struct Family<'a> {
+    /// The folder it runs in (otherwise this program's own).
+    pub dir: Option<&'a Path>,
+    /// Environment variables added for it, each a name and its value.
+    pub env: &'a [(&'a str, &'a OsStr)],
+    /// Environment variables taken away for it.
+    pub env_remove: &'a [&'a str],
+    /// Whether it, and every program it starts, runs at Windows' below-normal priority.
+    pub below_normal: bool,
+}
+
+/// Windows' `BELOW_NORMAL_PRIORITY_CLASS` process flag.
+pub const BELOW_NORMAL_PRIORITY_CLASS: u32 = 0x0000_4000;
+
+/// `run` for a program that starts programs of its own (the update build: cargo starts rustc and build scripts).
+/// On Windows the program is put in a job of its own the moment it starts, and every program it starts joins that
+/// job, so when it is stopped (by `cancel` or the time limit) the whole family is stopped at once, and so is anything
+/// of the family still running when it ends or when this program ends. Each line of its error output goes to
+/// `on_line` as it comes (on the calling thread). No shell is involved at any point.
+///
+/// If Windows does not give a job (it always does on Windows 8 and later), only the program itself can be stopped.
+pub fn run_family(
+    program: &Path,
+    args: &[&OsStr],
+    how: &Family,
+    limit: Duration,
+    cancel: &AtomicBool,
+    on_line: &mut dyn FnMut(&str),
+) -> Result<Ran, String> {
+    let name = program
+        .file_name()
+        .unwrap_or(program.as_os_str())
+        .to_string_lossy()
+        .into_owned();
+    let mut cmd = quiet(program, args);
+    for (k, v) in how.env {
+        cmd.env(k, v);
+    }
+    for k in how.env_remove {
+        cmd.env_remove(k);
+    }
+    if let Some(dir) = how.dir {
+        cmd.current_dir(dir);
+    }
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        // `creation_flags` replaces what `quiet` set, so no-window is given again.
+        let priority = if how.below_normal {
+            BELOW_NORMAL_PRIORITY_CLASS
+        } else {
+            0
+        };
+        cmd.creation_flags(CREATE_NO_WINDOW | priority);
+    }
+    let job = family::Job::new(how.below_normal);
+    let mut child = cmd.spawn().map_err(|e| format!("{name} could not be started: {e}."))?;
+    if let Some(job) = &job {
+        job.hold(&child);
+    }
+    let stdout = child.stdout.take();
+    let stderr = child.stderr.take();
+    let out_reader = std::thread::spawn(move || {
+        let mut bytes = Vec::new();
+        if let Some(mut out) = stdout {
+            let _ = out.read_to_end(&mut bytes);
+        }
+        bytes
+    });
+    let (lines_tx, lines) = std::sync::mpsc::channel::<String>();
+    let err_reader = std::thread::spawn(move || {
+        if let Some(err) = stderr {
+            let mut reader = BufReader::new(err);
+            let mut line = Vec::new();
+            loop {
+                line.clear();
+                match reader.read_until(b'\n', &mut line) {
+                    Ok(0) | Err(_) => break,
+                    Ok(_) => {}
+                }
+                let text = String::from_utf8_lossy(&line).trim_end().to_string();
+                if !text.is_empty() && lines_tx.send(text).is_err() {
+                    break;
+                }
+            }
+        }
+    });
+
+    let mut tail: VecDeque<String> = VecDeque::with_capacity(TAIL_LINES);
+    let mut take_lines = |tail: &mut VecDeque<String>| {
+        for text in lines.try_iter() {
+            on_line(&text);
+            if tail.len() == TAIL_LINES {
+                tail.pop_front();
+            }
+            tail.push_back(text);
+        }
+    };
+    let stop = |child: &mut std::process::Child| {
+        if let Some(job) = &job {
+            job.stop();
+        }
+        let _ = child.kill();
+        let _ = child.wait();
+    };
+    let started = Instant::now();
+    let ended = loop {
+        take_lines(&mut tail);
+        match child.try_wait() {
+            Ok(Some(status)) => break Ok(status),
+            Ok(None) => {}
+            Err(e) => {
+                stop(&mut child);
+                break Err(format!("{name} could not be waited for: {e}."));
+            }
+        }
+        if cancel.load(Ordering::Relaxed) {
+            stop(&mut child);
+            break Err(format!("{name} was stopped."));
+        }
+        if started.elapsed() > limit {
+            stop(&mut child);
+            break Err(format!(
+                "{name} took longer than {} and was stopped.",
+                took_words(limit)
+            ));
+        }
+        std::thread::sleep(Duration::from_millis(20));
+    };
+    // Anything of the family still running ends with the job, so its pipes close and the readers finish.
+    if let Some(job) = &job {
+        job.stop();
+    }
+    drop(job);
+    let stdout = out_reader.join().unwrap_or_default();
+    let _ = err_reader.join();
+    take_lines(&mut tail);
+    ended.map(|status| Ran {
+        status,
+        stdout,
+        tail: Vec::from(tail),
+    })
+}
+
+/// Waits up to `limit` for the program with process id `pid` to end. True when it has ended (or no such program is
+/// running); false when it still runs after `limit`.
+pub fn wait_for_exit(pid: u32, limit: Duration) -> bool {
+    family::wait_for_exit(pid, limit)
+}
+
+/// Starts `program` with `args` in the folder `dir` and hands it off on purpose: it is not waited for and keeps
+/// running after this program ends (the app's own exe, started again after an update; or `explorer.exe` opening a
+/// file). No console window, and no input or output is connected to it. Gives its process id.
+pub fn start_detached(program: &Path, args: &[&OsStr], dir: &Path) -> Result<u32, String> {
+    let name = program
+        .file_name()
+        .unwrap_or(program.as_os_str())
+        .to_string_lossy()
+        .into_owned();
+    let mut cmd = quiet(program, args);
+    cmd.stdout(Stdio::null()).stderr(Stdio::null()).current_dir(dir);
+    let child = cmd.spawn().map_err(|e| format!("{name} could not be started: {e}."))?;
+    let pid = child.id();
+    // Dropping the handle leaves the program running.
+    drop(child);
+    Ok(pid)
+}
+
+/// The Windows calls behind `run_family` and `wait_for_exit`; plain fallbacks elsewhere.
+mod family {
+    use std::time::Duration;
+
+    /// A Windows job: every program in it is stopped when it is stopped or closed.
+    #[cfg(windows)]
+    pub(super) struct Job(windows_sys::Win32::Foundation::HANDLE);
+
+    #[cfg(windows)]
+    impl Job {
+        /// A new job that stops its programs when it is closed, and holds them at below-normal priority when asked.
+        pub(super) fn new(below_normal: bool) -> Option<Job> {
+            use windows_sys::Win32::System::JobObjects::{
+                CreateJobObjectW, JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE, JOB_OBJECT_LIMIT_PRIORITY_CLASS,
+                JOBOBJECT_EXTENDED_LIMIT_INFORMATION, JobObjectExtendedLimitInformation, SetInformationJobObject,
+            };
+            // SAFETY: both arguments may be null (default security, no name); the handle is checked and owned by the
+            // `Job`, which closes it once.
+            let handle = unsafe { CreateJobObjectW(std::ptr::null(), std::ptr::null()) };
+            if handle.is_null() {
+                return None;
+            }
+            let job = Job(handle);
+            let mut info = JOBOBJECT_EXTENDED_LIMIT_INFORMATION::default();
+            info.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
+            if below_normal {
+                info.BasicLimitInformation.LimitFlags |= JOB_OBJECT_LIMIT_PRIORITY_CLASS;
+                info.BasicLimitInformation.PriorityClass = super::BELOW_NORMAL_PRIORITY_CLASS;
+            }
+            // SAFETY: the handle is a live job; `info` is a whole JOBOBJECT_EXTENDED_LIMIT_INFORMATION that lives for
+            // the call, and its size is given exactly.
+            let set = unsafe {
+                SetInformationJobObject(
+                    job.0,
+                    JobObjectExtendedLimitInformation,
+                    (&raw const info).cast(),
+                    std::mem::size_of::<JOBOBJECT_EXTENDED_LIMIT_INFORMATION>() as u32,
+                )
+            };
+            (set != 0).then_some(job)
+        }
+
+        /// Puts a started program in the job; the programs it starts from then on join it too.
+        pub(super) fn hold(&self, child: &std::process::Child) -> bool {
+            use std::os::windows::io::AsRawHandle;
+            use windows_sys::Win32::System::JobObjects::AssignProcessToJobObject;
+            // SAFETY: both handles are live: the job is owned by `self`, the process handle by `child`, which
+            // outlives the call.
+            unsafe { AssignProcessToJobObject(self.0, child.as_raw_handle().cast()) != 0 }
+        }
+
+        /// Stops every program in the job.
+        pub(super) fn stop(&self) {
+            use windows_sys::Win32::System::JobObjects::TerminateJobObject;
+            // SAFETY: the job handle is live (owned by `self`).
+            unsafe {
+                TerminateJobObject(self.0, 1);
+            }
+        }
+    }
+
+    #[cfg(windows)]
+    impl Drop for Job {
+        fn drop(&mut self) {
+            // SAFETY: the handle came from CreateJobObjectW and is closed exactly once, here.
+            unsafe {
+                windows_sys::Win32::Foundation::CloseHandle(self.0);
+            }
+        }
+    }
+
+    #[cfg(windows)]
+    pub(super) fn wait_for_exit(pid: u32, limit: Duration) -> bool {
+        use windows_sys::Win32::Foundation::{CloseHandle, WAIT_OBJECT_0};
+        use windows_sys::Win32::System::Threading::{OpenProcess, PROCESS_SYNCHRONIZE, WaitForSingleObject};
+        // SAFETY: OpenProcess takes plain values; a null result means there is no such program to wait for.
+        let handle = unsafe { OpenProcess(PROCESS_SYNCHRONIZE, 0, pid) };
+        if handle.is_null() {
+            return true;
+        }
+        let ms = u32::try_from(limit.as_millis())
+            .unwrap_or(u32::MAX - 1)
+            .min(u32::MAX - 1);
+        // SAFETY: the handle is live for the wait and is closed right after it, exactly once.
+        let waited = unsafe {
+            let waited = WaitForSingleObject(handle, ms);
+            CloseHandle(handle);
+            waited
+        };
+        waited == WAIT_OBJECT_0
+    }
+
+    #[cfg(not(windows))]
+    pub(super) struct Job;
+
+    #[cfg(not(windows))]
+    impl Job {
+        pub(super) fn new(_below_normal: bool) -> Option<Job> {
+            None
+        }
+        pub(super) fn hold(&self, _child: &std::process::Child) -> bool {
+            false
+        }
+        pub(super) fn stop(&self) {}
+    }
+
+    #[cfg(not(windows))]
+    pub(super) fn wait_for_exit(_pid: u32, _limit: Duration) -> bool {
+        true
+    }
 }
 
 #[cfg(all(test, windows))]
@@ -229,6 +519,151 @@ mod tests {
         .unwrap();
         assert!(ran.status.success());
         assert!(String::from_utf8_lossy(&ran.stdout).contains("BF_RUN_TEST_VALUE=given"));
+    }
+
+    #[test]
+    fn a_familys_error_lines_come_as_they_are_printed() {
+        let never = AtomicBool::new(false);
+        let mut seen = Vec::new();
+        let ran = run_family(
+            &system32("cmd.exe"),
+            &os(&["/d", "/c", "echo first 1>&2 && echo second 1>&2 && echo out"]),
+            &Family::default(),
+            Duration::from_secs(20),
+            &never,
+            &mut |l| seen.push(l.to_string()),
+        )
+        .unwrap();
+        assert!(ran.status.success());
+        assert_eq!(seen, ["first", "second"]);
+        assert_eq!(ran.tail, ["first", "second"]);
+        assert!(String::from_utf8_lossy(&ran.stdout).contains("out"));
+    }
+
+    #[test]
+    fn a_family_gets_its_folder_and_environment() {
+        let never = AtomicBool::new(false);
+        let dir = std::env::temp_dir();
+        // The variables change for the child only; this process's own environment is never touched.
+        let ran = run_family(
+            &system32("cmd.exe"),
+            &os(&["/d", "/c", "cd & set BF_FAMILY_ADDED & set USERNAME"]),
+            &Family {
+                dir: Some(&dir),
+                env: &[("BF_FAMILY_ADDED", OsStr::new("yes"))],
+                env_remove: &["USERNAME"],
+                below_normal: false,
+            },
+            Duration::from_secs(20),
+            &never,
+            &mut |_| {},
+        )
+        .unwrap();
+        let out = String::from_utf8_lossy(&ran.stdout).to_string();
+        assert!(out.contains("BF_FAMILY_ADDED=yes"), "{out}");
+        assert!(!out.contains("USERNAME="), "{out}");
+        let first = out.lines().next().unwrap_or("").trim().to_lowercase();
+        let want = dir.to_string_lossy().trim_end_matches('\\').to_lowercase();
+        assert_eq!(first, want);
+    }
+
+    fn powershell() -> PathBuf {
+        system32(r"WindowsPowerShell\v1.0\powershell.exe")
+    }
+
+    #[test]
+    fn a_family_runs_below_normal_priority_all_the_way_down() {
+        let never = AtomicBool::new(false);
+        let ps = powershell().to_string_lossy().into_owned();
+        // cmd starts PowerShell, which reports its own priority: the grandchild is held below normal too.
+        let line = format!("{ps} -NoProfile -NonInteractive -Command (Get-Process -Id $PID).PriorityClass");
+        let ran = run_family(
+            &system32("cmd.exe"),
+            &[OsStr::new("/d"), OsStr::new("/c"), OsStr::new(&line)],
+            &Family {
+                below_normal: true,
+                ..Family::default()
+            },
+            Duration::from_secs(60),
+            &never,
+            &mut |_| {},
+        )
+        .unwrap();
+        let out = String::from_utf8_lossy(&ran.stdout).to_string();
+        assert_eq!(out.trim(), "BelowNormal", "{out}");
+    }
+
+    #[test]
+    fn stopping_a_family_stops_the_programs_it_started() {
+        let dir = std::env::temp_dir().join(format!("bf-pack-family-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        let out = dir.join("pings.txt");
+        // cmd starts ping, which writes into pings.txt (held open) once a second for about 30 s.
+        let line = "PING.EXE -n 30 127.0.0.1 > pings.txt";
+        let cancel = Arc::new(AtomicBool::new(false));
+        let flag = cancel.clone();
+        let watched = out.clone();
+        let stopper = std::thread::spawn(move || {
+            let deadline = Instant::now() + Duration::from_secs(20);
+            while Instant::now() < deadline {
+                let lines = std::fs::read_to_string(&watched)
+                    .map(|t| t.lines().count())
+                    .unwrap_or(0);
+                if lines >= 3 {
+                    // While ping runs, the file it writes cannot be removed.
+                    let held = std::fs::remove_file(&watched).is_err();
+                    flag.store(true, Ordering::Relaxed);
+                    return held;
+                }
+                std::thread::sleep(Duration::from_millis(50));
+            }
+            flag.store(true, Ordering::Relaxed);
+            false
+        });
+        let started = Instant::now();
+        let err = run_family(
+            &system32("cmd.exe"),
+            &[OsStr::new("/d"), OsStr::new("/c"), OsStr::new(line)],
+            &Family {
+                dir: Some(&dir),
+                ..Family::default()
+            },
+            Duration::from_secs(60),
+            &cancel,
+            &mut |_| {},
+        )
+        .unwrap_err();
+        assert!(err.contains("was stopped"), "{err}");
+        assert!(stopper.join().unwrap(), "ping held its file while it ran");
+        assert!(started.elapsed() < Duration::from_secs(25));
+        // Within 2 s ping is gone too: its file can be removed.
+        let deadline = Instant::now() + Duration::from_secs(2);
+        let mut removed = false;
+        while Instant::now() < deadline {
+            if std::fs::remove_file(&out).is_ok() || !out.exists() {
+                removed = true;
+                break;
+            }
+            std::thread::sleep(Duration::from_millis(50));
+        }
+        let _ = std::fs::remove_dir_all(&dir);
+        assert!(removed, "ping was still running after its family was stopped");
+    }
+
+    #[test]
+    fn a_started_program_runs_on_and_can_be_waited_for() {
+        let dir = std::env::temp_dir();
+        let pid = start_detached(&system32("PING.EXE"), &os(&["-n", "3", "127.0.0.1"]), &dir).unwrap();
+        // About 2 s: still running after 100 ms, over within 10 s.
+        assert!(!wait_for_exit(pid, Duration::from_millis(100)));
+        let started = Instant::now();
+        assert!(wait_for_exit(pid, Duration::from_secs(10)));
+        assert!(started.elapsed() < Duration::from_secs(9));
+        // A program that is not there has nothing to wait for.
+        assert!(wait_for_exit(pid, Duration::from_millis(10)));
+        let err = start_detached(Path::new(r"C:\no\such\program.exe"), &[], &dir).unwrap_err();
+        assert!(err.contains("could not be started"), "{err}");
     }
 
     #[test]
