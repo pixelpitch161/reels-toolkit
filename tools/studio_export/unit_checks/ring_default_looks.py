@@ -1,7 +1,7 @@
 # What it writes: stage dumps of kit.picture.render with the BASE-CLASS look (kit/fighters/base.py Look) for both
 # fighters, as studio/reference/.cache/stages_default/flute_vs_trombone/f<frame>.npz + .json (git-ignored, not in
 # the manifest; the same files the `stages` export writes, see tools/studio_export/stages.py).
-# The test every_stage_matches_python_with_default_looks (studio/crates/bf-picture/tests/ring_stages.rs) compares
+# The ignored test dumps_of_every_stage_with_default_looks (studio/crates/bf-picture/tests/ring_stages.rs) compares
 # every stage of the Studio's ring renderer, drawn with DefaultLook for both fighters, against these dumps.
 #
 # Run it from the repo root with the pinned interpreter (tools/studio_export/README.md), in Git Bash:

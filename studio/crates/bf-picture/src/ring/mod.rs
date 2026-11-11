@@ -200,6 +200,19 @@ pub fn owner(e: &Event) -> Option<usize> {
     e.who().filter(|&k| k < 2)
 }
 
+/// `e[2]` of an event the renderer has checked to have a fighter there (a `hit`, an `ability`): Python's
+/// `LOOKS[e[2]]`. [`Picture::new`] refuses a recording where it is not 0 or 1, so the fallback to 0 is never
+/// taken; a debug build says so if it ever is.
+pub(crate) fn checked_owner(e: &Event) -> usize {
+    let k = owner(e);
+    debug_assert!(
+        k.is_some(),
+        "a {} event without a fighter 0 or 1 passed the check",
+        e.kind
+    );
+    k.unwrap_or(0)
+}
+
 /// `BAYER_FULL[y, x]` for any column and row (the table is a 4 x 4 tile).
 pub(crate) fn bayer(x: usize, y: usize) -> f64 {
     crate::config::BAYER[y % 4][x % 4]
@@ -232,6 +245,13 @@ fn poly_mask(polys: &[Vec<(f64, f64)>]) -> Img<u8> {
 
 /// `layer_blend(arr, polys, col, alpha, depth=None, z=None)`: alpha-blends screen polygons of one colour onto
 /// the `float32` picture; with `depth_z = Some((depth, z))` only where the depth buffer is behind `z - 0.05`.
+///
+/// The arithmetic is numpy's for the call every look makes: `alpha` a Python float (the mask times it stays
+/// `float32`) and `z` a Python float. A `z` that is a numpy `float64` scalar is the same comparison here (the
+/// `float32` depth is widened and compared with `z - 0.05` in `f64`, which is what numpy does with a `float64`
+/// scalar); a Python float `z` makes numpy compare in `float32` instead, which can differ only for a depth within
+/// one `float32` step of `z - 0.05`. An `alpha` that is a numpy `float64` scalar would make the mask `float64`
+/// in numpy; this function has no such path.
 pub fn layer_blend(
     arr: &mut Img<f32>,
     polys: &[Vec<(f64, f64)>],
@@ -535,13 +555,21 @@ impl Picture {
     }
 
     /// Frame `f`, 360 x 640: a pure function of `f`. A number at or past [`Picture::nf`] gives the last frame.
+    ///
+    /// The frame's report is dropped here (a debug build stops on a hull error). A render job, which must not
+    /// write a frame that is not the kit's, calls [`Picture::frame_reported`] and reads the report.
     pub fn frame(&self, f: usize) -> Rgb8 {
-        self.frame_reported(f).0
+        self.frame_logged(f).0
     }
 
-    /// Frame `f` with its draw log: every caption, label and panel box drawn, for the safe-zone check.
+    /// Frame `f` with its draw log: every caption, label and panel box drawn, for the safe-zone check. The
+    /// report is dropped, as in [`Picture::frame`].
     pub fn frame_logged(&self, f: usize) -> (Rgb8, DrawLog) {
-        let (img, log, _) = self.frame_reported(f);
+        let (img, log, report) = self.frame_reported(f);
+        debug_assert_eq!(
+            report.hull_errors, 0,
+            "frame {f}: a hull scipy would refuse was left out"
+        );
         (img, log)
     }
 
