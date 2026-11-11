@@ -879,3 +879,132 @@ fn a_problem_becomes_a_notice_and_can_be_dismissed() {
     s.dispatch(Action::Dismiss(0));
     assert_eq!(texts(&s), vec!["The fight file could not be made."]);
 }
+
+// Fix round 1 (ruling M2-R20): only the person can cancel an open.
+
+fn opened(s: &AppState, fighters: [&str; 2], seed: u64) -> Event {
+    let mut draft = s.vm.draft.clone();
+    draft.fighters = fighters.map(str::to_string);
+    draft.handicap = [1.0, 1.0];
+    draft.seed = Some(seed);
+    Event::FightOpened {
+        draft,
+        title: format!("{} vs {}, seed {seed}", fighters[0], fighters[1]),
+    }
+}
+
+#[test]
+fn a_background_result_does_not_cancel_an_open() {
+    let mut s = ready();
+    // A balance run is going when the owner reopens a video.
+    s.dispatch(Action::Go(View::Step(Step::Balance)));
+    assert!(s.vm.balance.running.is_some());
+    s.dispatch(Action::Go(View::Library));
+    let entries = library(&mut s);
+    s.dispatch(Action::Reopen(entries[1].folder.clone()));
+    let generation = s.generation();
+    s.apply(Event::Balanced {
+        r#gen: generation,
+        handicap: [1.3, 1.0],
+        stats: sample::stats(),
+    });
+    assert_eq!(s.generation(), generation + 1, "the balance began a generation");
+    let fx = s.apply(opened(&s, ["TUBA", "BASS DRUM"], 9120));
+    assert_eq!(s.vm.draft.fighters, ["TUBA".to_string(), "BASS DRUM".to_string()]);
+    assert_eq!(
+        s.vm.draft.handicap,
+        [1.0, 1.0],
+        "the opened fight replaces what the balance left"
+    );
+    assert_eq!(s.vm.draft.seed, Some(9120));
+    assert_eq!(s.vm.view, View::Step(Step::Matchup));
+    assert!(sent(&fx).iter().any(|c| matches!(c, Command::LoadTake { .. })));
+
+    // A second roster arriving in between does not cancel one either.
+    s.dispatch(Action::Go(View::Library));
+    let entries = library(&mut s);
+    s.dispatch(Action::Reopen(entries[0].folder.clone()));
+    s.apply(Event::Roster(sample::roster()));
+    s.apply(opened(&s, ["FLUTE", "TROMBONE"], 18433));
+    assert_eq!(s.vm.draft.seed, Some(18433));
+    assert_eq!(s.vm.status, "Opened FLUTE vs TROMBONE, seed 18433");
+}
+
+#[test]
+fn two_opens_in_a_row_land_on_the_second_ones_step() {
+    let mut s = two_jobs();
+    s.apply(job(1, failed()));
+    s.dispatch(Action::Queue(QueueAction::OpenIn {
+        id: 1,
+        step: Step::Music,
+    }));
+    s.dispatch(Action::Queue(QueueAction::OpenIn {
+        id: 1,
+        step: Step::Seeds,
+    }));
+    s.apply(opened(&s, ["TUBA", "BASS DRUM"], 9120));
+    assert_eq!(s.vm.view, View::Step(Step::Seeds));
+    // One open was waiting, so a second answer is late.
+    let generation = s.generation();
+    assert!(s.apply(opened(&s, ["TUBA", "BASS DRUM"], 9120)).is_empty());
+    assert_eq!(s.generation(), generation);
+}
+
+#[test]
+fn a_problem_answering_the_open_clears_it() {
+    let mut s = ready();
+    let entries = library(&mut s);
+    s.dispatch(Action::Reopen(entries[0].folder.clone()));
+    s.apply(Event::Problem {
+        text: "The fight file could not be read.".to_string(),
+    });
+    let generation = s.generation();
+    assert!(s.apply(opened(&s, ["TUBA", "BASS DRUM"], 9120)).is_empty());
+    assert_eq!(s.generation(), generation);
+}
+
+#[test]
+fn an_opened_fight_lands_through_its_step() {
+    let starts = |fx: &[Effect], generation| {
+        sent(fx)
+            .iter()
+            .filter(|c| matches!(c, Command::StartSearch { r#gen, .. } if *r#gen == generation))
+            .count()
+    };
+    let mut s = two_jobs();
+    s.apply(job(1, failed()));
+    for step in [Step::Seeds, Step::Music, Step::Balance] {
+        s.dispatch(Action::Go(View::Step(Step::Matchup)));
+        s.dispatch(Action::Queue(QueueAction::OpenIn { id: 1, step }));
+        let fx = s.apply(opened(&s, ["TUBA", "BASS DRUM"], 9120));
+        assert_eq!(s.vm.view, View::Step(step));
+        assert_eq!(s.vm.step, step);
+        let balances = sent(&fx)
+            .iter()
+            .filter(|c| matches!(c, Command::AutoBalance { .. }))
+            .count();
+        match step {
+            Step::Seeds => assert_eq!((starts(&fx, s.generation()), balances), (1, 0), "{fx:?}"),
+            Step::Balance => assert_eq!((starts(&fx, s.generation()), balances), (0, 1), "{fx:?}"),
+            _ => assert_eq!((starts(&fx, s.generation()), balances), (0, 0), "{fx:?}"),
+        }
+    }
+}
+
+#[test]
+fn a_folder_answer_without_a_name_keeps_the_pairs_taken() {
+    let mut s = ready();
+    s.apply(folder("flute_vs_trombone", FolderState::Ok { taken: true }));
+    s.apply(folder("", FolderState::Ok { taken: false }));
+    assert_eq!(s.vm.folder, FolderState::Ok { taken: true });
+    // A missing folder is still news.
+    s.apply(folder("", FolderState::Missing));
+    assert_eq!(s.vm.folder, FolderState::Missing);
+    // Nothing known about a new pair: the folder's own answer is taken as it is.
+    s.dispatch(Action::PickFighter {
+        side: 1,
+        name: "PIANO".to_string(),
+    });
+    s.apply(folder("", FolderState::Ok { taken: false }));
+    assert_eq!(s.vm.folder, FolderState::Ok { taken: false });
+}

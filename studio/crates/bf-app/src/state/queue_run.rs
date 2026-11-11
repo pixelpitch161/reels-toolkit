@@ -11,8 +11,10 @@
 //!   among the library's entries;
 //! - a `Job` update for a job that is not rendering (one the queue does not hold, a waiting one, or one already
 //!   finished or cancelled);
-//! - a `FightOpened` that nobody asked for, or that arrives after the fight changed since it was asked for (the
-//!   owner moved on).
+//! - a `FightOpened` when no open is pending. Only the person cancels an open (ruling M2-R20): one open is pending
+//!   at a time (a later one replaces it), an action of theirs that changes the fight drops it, and a `Problem`
+//!   (the engine's answer when the file cannot be opened) clears it. A result from the engine that begins a
+//!   generation meanwhile (a balance with a new handicap, a second roster) never does: the opened fight replaces it.
 //!
 //! An `Enqueued` is never late: the owner asked for that video, fixed when it was asked for, so it joins the queue
 //! even if the draft has changed since.
@@ -34,13 +36,32 @@ pub(crate) struct QueueRun {
     checked: Option<(PathBuf, String, Option<u64>)>,
     /// The rendering job's last frame count: id, frames done, of total, seconds since the first frame.
     frames: Option<(JobId, u32, u32, f32)>,
-    /// Fight files asked to be opened and not answered yet, and the generation they belong to.
-    opening: usize,
-    opening_gen: Gen,
-    /// The step an opened fight lands on (`None`: Match-up).
-    open_step: Option<Step>,
+    /// The one fight asked to be opened and not answered yet.
+    pending_open: Option<PendingOpen>,
     /// "Opened {title}", with the draft and view it was shown with: it stays while they do.
     opened: Option<(String, Draft, View)>,
+    /// `vm.folder` came from an answer about the current pair's folder name (not only about the folder itself).
+    folder_named: bool,
+}
+
+/// A fight asked to be opened: what was asked for, and the step it lands on.
+#[derive(Debug)]
+struct PendingOpen {
+    /// For the record; the answer (`FightOpened`) does not echo it, so the last asked-for open is the one answered.
+    _what: OpenWhat,
+    step: Step,
+}
+
+#[derive(Debug)]
+#[expect(
+    dead_code,
+    reason = "kept for the record and the state's Debug print; `FightOpened` does not echo what was opened"
+)]
+enum OpenWhat {
+    /// A library video's fight file.
+    File(PathBuf),
+    /// A queued job's fight text.
+    Text(String),
 }
 
 /// Why "Add to queue" cannot do anything now, in words; `None` when it can. The first of these that holds: a fight
@@ -146,7 +167,7 @@ impl AppState {
                     .find(|e| e.folder == folder && e.problem.is_none())
                     .and_then(|e| e.fight_path.clone());
                 if let Some(path) = path {
-                    self.ask_open(None);
+                    self.ask_open(OpenWhat::File(path.clone()), Step::Matchup);
                     fx.push(Effect::Send(Command::OpenFight { path }));
                 }
             }
@@ -220,7 +241,7 @@ impl AppState {
             QueueAction::OpenIn { id, step } => {
                 if let Some(job) = q.job(id) {
                     let toml = job.spec.fight_toml.clone();
-                    self.ask_open(Some(step));
+                    self.ask_open(OpenWhat::Text(toml.clone()), step);
                     fx.push(Effect::Send(Command::OpenFightText { toml }));
                 }
             }
@@ -263,9 +284,25 @@ impl AppState {
             Event::Tools { ffmpeg } => self.vm.ffmpeg = Some(ffmpeg),
             Event::Folder { root, name, state } => {
                 let stem = wording::folder_stem(&self.vm.draft.fighters);
-                if root == self.vm.settings.output_folder && (name.is_empty() || name == stem) {
-                    self.vm.folder = state;
+                if root != self.vm.settings.output_folder || !(name.is_empty() || name == stem) {
+                    return;
                 }
+                if !name.is_empty() {
+                    self.run.folder_named = true;
+                    self.vm.folder = state;
+                    return;
+                }
+                // An answer about the folder itself says nothing about the pair's name: a `taken` already known
+                // for the pair is kept.
+                self.vm.folder = match (state, &self.vm.folder) {
+                    (FolderState::Ok { .. }, FolderState::Ok { taken }) if self.run.folder_named => {
+                        FolderState::Ok { taken: *taken }
+                    }
+                    (state, _) => {
+                        self.run.folder_named = false;
+                        state
+                    }
+                };
             }
             Event::FolderPicked { path: Some(path) } => {
                 self.vm.settings.output_folder = path;
@@ -275,7 +312,11 @@ impl AppState {
                 self.scan_library(fx);
             }
             Event::FolderPicked { path: None } => {}
-            Event::Problem { text } => self.vm.notices.push(Notice { text }),
+            Event::Problem { text } => {
+                // The engine's answer when a fight file cannot be opened: the open waiting for it is over.
+                self.run.pending_open = None;
+                self.vm.notices.push(Notice { text });
+            }
             _ => {}
         }
     }
@@ -326,32 +367,23 @@ impl AppState {
         }
     }
 
-    /// A fight file is asked for; its answer lands on `step` (Match-up when `None`).
-    fn ask_open(&mut self, step: Option<Step>) {
-        if self.run.opening == 0 || self.run.opening_gen != self.generation {
-            self.run.opening = 0;
-        }
-        self.run.opening += 1;
-        self.run.opening_gen = self.generation;
-        self.run.open_step = step;
+    /// A fight is asked to be opened, landing on `step`; it replaces any open still waiting (the last one wins).
+    fn ask_open(&mut self, what: OpenWhat, step: Step) {
+        self.run.pending_open = Some(PendingOpen { _what: what, step });
     }
 
     fn on_fight_opened(&mut self, draft: Draft, title: String, fx: &mut Vec<Effect>) {
-        if self.run.opening == 0 || self.run.opening_gen != self.generation {
-            // Nobody asked, or the fight changed since it was asked for.
+        let Some(open) = self.run.pending_open.take() else {
+            // Nobody asked, or the person moved on since (ruling M2-R20).
             return;
-        }
-        self.run.opening -= 1;
-        let step = self.run.open_step.unwrap_or(Step::Matchup);
-        // The view first, so opening the draft restarts the search when it lands on Seeds.
-        self.vm.view = View::Step(step);
-        self.vm.step = step;
+        };
+        // The opened fight replaces whatever the engine left meanwhile; then its step opens as the person would
+        // open it (Balance balances, Seeds searches).
         self.open_draft(draft, fx);
+        self.go(View::Step(open.step), fx);
         if self.vm.draft.seed.is_some() {
             self.ask_take(fx);
         }
-        // Another open still on its way belongs to the fight just opened.
-        self.run.opening_gen = self.generation;
         self.run.opened = Some((title, self.vm.draft.clone(), self.vm.view));
     }
 
@@ -369,8 +401,12 @@ impl AppState {
 
     /// After every action and event: the output folder is checked again when it, the fighters or the seed changed
     /// (what was known is forgotten when the folder or the pair's folder name changed), and the "Opened" line is
-    /// dropped once the draft or the view moved on.
-    pub(super) fn after_queue_run(&mut self, fx: &mut Vec<Effect>) {
+    /// dropped once the draft or the view moved on. `by_person` is the generation before the person's action
+    /// (`None` for an engine event): an action of theirs that changed the fight drops a waiting open.
+    pub(super) fn after_queue_run(&mut self, by_person: Option<Gen>, fx: &mut Vec<Effect>) {
+        if by_person.is_some_and(|before| before != self.generation) {
+            self.run.pending_open = None;
+        }
         if self.vm.roster.is_some() {
             self.check_folder(fx);
         }
@@ -401,6 +437,7 @@ impl AppState {
             .is_some_and(|(r, n, _)| r != &root || n != &name)
         {
             self.vm.folder = FolderState::Unknown;
+            self.run.folder_named = false;
         }
         self.run.checked = Some(key);
         fx.push(Effect::Send(Command::CheckFolder { root, name }));

@@ -329,6 +329,7 @@ impl AppState {
     /// Takes one thing the owner did.
     pub fn dispatch(&mut self, action: Action) -> Vec<Effect> {
         let mut fx = Vec::new();
+        let generation = self.generation;
         match action {
             Action::Go(view) => self.go(view, &mut fx),
             Action::PickFighter { side, name } => self.pick_fighter(side, &name),
@@ -362,7 +363,7 @@ impl AppState {
             a @ Action::Dismiss(_) => self.queue_action(a, &mut fx),
         }
         self.settle(&mut fx);
-        self.after_queue_run(&mut fx);
+        self.after_queue_run(Some(generation), &mut fx);
         self.vm.status = self.status();
         fx
     }
@@ -372,7 +373,7 @@ impl AppState {
         let mut fx = Vec::new();
         self.on_event(event, &mut fx);
         self.settle(&mut fx);
-        self.after_queue_run(&mut fx);
+        self.after_queue_run(None, &mut fx);
         self.vm.status = self.status();
         fx
     }
