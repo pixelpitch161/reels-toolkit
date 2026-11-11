@@ -330,11 +330,92 @@ impl Show {
         })
     }
 
+    /// A show before any fight exists, for what needs only the fight file (the VS title card on Match-up and
+    /// Balance): the fight file's grid and its two names, left corner first, as [`Show::new`] has them for any
+    /// recording of this file; and in place of the fight's own values a fixed stand-in, `win` 0, `lose` 1, `t_ko`
+    /// 50.0, `t_hs` `50.0 + HITSTOP` and `t_solo` `grid.next_bar(50.0 + 1.6)`, the same expressions `Show::new`
+    /// uses, so the times are those of a fight won by the left fighter at 50 s. It has no captions at all: every
+    /// list is empty (a real show always has the K.O., wins and comment windows, and the ability captions of
+    /// its fight).
+    ///
+    /// Nothing is checked and nothing can fail or panic: a fight file with fewer than two fighters gives empty
+    /// names in their place (more than two: the first two). Not for the picture or the sound of a fight.
+    pub fn placeholder(ff: &FightFile) -> Show {
+        let grid = ff.grid();
+        let name = |k: usize| ff.fighters.get(k).cloned().unwrap_or_default();
+        let t_ko = 50.0;
+        let t_solo = grid.next_bar(t_ko + 1.6);
+        Show {
+            names: [name(0), name(1)],
+            win: 0,
+            lose: 1,
+            t_ko,
+            t_hs: t_ko + HITSTOP,
+            t_solo,
+            caps_ability: [Vec::new(), Vec::new()],
+            cap_ko: Vec::new(),
+            cap_wins: Vec::new(),
+            cap_comment: Vec::new(),
+            captions: Vec::new(),
+            grid,
+        }
+    }
+
     /// picture.py `SOLO_T`: the start of each note of a solo `[(beat, midi, beats)]` (the winner's, from the fight
     /// file or the kit's default), `T_SOLO + beat * BEAT`.
     pub fn solo_times(&self, solo: &[(f64, i32, f64)]) -> Vec<f64> {
         solo.iter()
             .map(|&(bt, _, _)| self.t_solo + bt * self.grid.beat)
             .collect()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::path::{Path, PathBuf};
+
+    use super::*;
+
+    fn studio() -> PathBuf {
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
+    }
+
+    fn fight_file() -> FightFile {
+        let text = std::fs::read_to_string(studio().join("fights/flute_vs_trombone.toml")).unwrap();
+        FightFile::parse(&text).unwrap()
+    }
+
+    #[test]
+    fn a_placeholder_show_has_the_files_grid() {
+        let ff = fight_file();
+        let show = Show::placeholder(&ff);
+        assert_eq!(show.grid, ff.grid());
+        assert_eq!(show.names[..], ff.fighters[..]);
+        assert_eq!((show.win, show.lose), (0, 1));
+        assert_eq!((show.t_ko, show.t_hs), (50.0, 50.0 + HITSTOP));
+        assert_eq!(show.t_solo, ff.grid().next_bar(51.6));
+        assert!(show.caps_ability.iter().all(Vec::is_empty));
+        assert!(show.cap_ko.is_empty() && show.cap_wins.is_empty() && show.cap_comment.is_empty());
+        assert!(show.captions.is_empty());
+        // the swapped file gives the swapped names on the same grid
+        let mut swapped = ff.clone();
+        swapped.fighters.reverse();
+        let back = Show::placeholder(&swapped);
+        assert_eq!(back.names, [show.names[1].clone(), show.names[0].clone()]);
+        assert_eq!(back.grid, show.grid);
+        // what the title card reads (the grid and the names) is the real show's of the episode
+        let rec = Recording::read(&studio().join("reference/fights/flute_vs_trombone/ep392.bfrec")).unwrap();
+        let real = Show::new(&rec, &ff).unwrap();
+        assert_eq!((&show.grid, &show.names), (&real.grid, &real.names));
+    }
+
+    #[test]
+    fn a_placeholder_never_panics_on_a_short_fighter_list() {
+        let mut ff = fight_file();
+        ff.fighters.truncate(1);
+        let show = Show::placeholder(&ff);
+        assert_eq!(show.names, [ff.fighters[0].clone(), String::new()]);
+        ff.fighters.clear();
+        assert_eq!(Show::placeholder(&ff).names, [String::new(), String::new()]);
     }
 }

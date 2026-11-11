@@ -255,6 +255,7 @@ mod tests {
             no_ko_share: 0.03,
             lead_changes_mean: 0.6,
             fit_rate: 0.01,
+            ko_hist: [0; crate::stats::KO_BINS],
         }
     }
 

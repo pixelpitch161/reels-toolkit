@@ -24,5 +24,5 @@ pub use score::{BeatSheet, Verdict, score};
 pub use search::{
     Candidate, Halt, KEEP_MISFITS, SearchEnd, SearchOpts, SearchProgress, SearchResult, fight, rank, search, shortlist,
 };
-pub use stats::{Outcome, Stats, stats, stats_until};
+pub use stats::{KO_BINS, KO_HIST_FROM, Outcome, Stats, ko_hist, stats, stats_until};
 pub use story::{Story, story, story_at};

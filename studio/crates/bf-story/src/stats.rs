@@ -19,6 +19,12 @@ use crate::search::{Candidate, End, Halt, fight_of, run_seeds};
 /// `kit/story.py` `score`).
 pub const NO_KO_T: f64 = 99.0;
 
+/// How many one-second bins [`Stats::ko_hist`] has: 28, from [`KO_HIST_FROM`] s up to 58 s.
+pub const KO_BINS: usize = 28;
+
+/// The second the first bin of [`Stats::ko_hist`] starts on: 30 s.
+pub const KO_HIST_FROM: u32 = 30;
+
 /// The pooled figures of `n` fights.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Stats {
@@ -42,6 +48,11 @@ pub struct Stats {
     /// The share of fights that fit the beat sheet, 0 to 1 (over all `n`; a fight with no K.O. never fits the
     /// series sheet).
     pub fit_rate: f64,
+    /// The K.O. times in whole seconds, 30 s (bin 0) to 58 s: bin `i` counts the decided fights whose K.O. time
+    /// `t` has `30 + i <= t < 31 + i`. A K.O. before 30 s or at or after 58 s is in no bin, nor is a fight with
+    /// no K.O., so the bins add up to at most `decided`. Not one of the kit's figures (it prints none): see
+    /// [`ko_hist`].
+    pub ko_hist: [u32; KO_BINS],
 }
 
 /// What the figures need of one fight.
@@ -98,6 +109,22 @@ fn median(sorted: &[f64]) -> f64 {
     }
 }
 
+/// The K.O. histogram of these fights, [`Stats::ko_hist`]: each fight with a winner and a K.O. time `t` where
+/// `30 <= t < 58` adds one to bin `floor(t) - 30`; every other fight (no winner, no K.O. time, a K.O. before 30 s
+/// or at or after 58 s, a time that is not a number) adds nothing. A count only: it reads no figure and draws no
+/// random number, so adding it changed none of the other figures.
+pub fn ko_hist(rows: &[Outcome]) -> [u32; KO_BINS] {
+    let mut bins = [0u32; KO_BINS];
+    let (from, to) = (f64::from(KO_HIST_FROM), f64::from(KO_HIST_FROM) + KO_BINS as f64);
+    for r in rows.iter().filter(|r| r.winner.is_some()) {
+        if let Some(t) = r.t_ko.filter(|t| (from..to).contains(t)) {
+            // t - 30 is exact for 30 <= t < 58 (Sterbenz), and the cast of that non-negative value is its floor
+            bins[(t - from) as usize] += 1;
+        }
+    }
+    bins
+}
+
 impl Stats {
     /// The pooled figures of these fights, each defined as `tools/studio_export/stats.py` `pooled` has it; `None`
     /// for no fights at all (a median of nothing is not a number).
@@ -135,6 +162,7 @@ impl Stats {
             no_ko_share: (n - decided) as f64 / n as f64,
             lead_changes_mean: lead_changes as f64 / n as f64,
             fit_rate: fits as f64 / n as f64,
+            ko_hist: ko_hist(rows),
         })
     }
 }
@@ -223,6 +251,38 @@ mod tests {
         let mut back = rows;
         back.reverse();
         assert_eq!(Stats::of(&back).unwrap(), s);
+    }
+
+    #[test]
+    fn the_histogram_counts_ko_seconds() {
+        let rows = [
+            row(Some(0), Some(50.4), 0, false),   // bin 20
+            row(Some(1), Some(30.0), 0, false),   // bin 0, its first instant
+            row(Some(0), Some(57.999), 0, false), // bin 27, the last
+            row(Some(1), Some(29.99), 0, false),  // before 30 s: not counted
+            row(Some(0), Some(58.0), 0, false),   // at 58 s: not counted
+            row(Some(1), Some(60.5), 0, false),   // later still: not counted
+            row(None, None, 2, false),            // no K.O.: not counted
+            row(None, Some(45.0), 0, false),      // a time without a winner is not decided: not counted
+            row(Some(0), Some(f64::NAN), 0, false),
+            row(Some(1), Some(50.999_999), 0, false), // bin 20 too
+            row(Some(0), Some(51.0), 0, false),       // bin 21
+        ];
+        let h = ko_hist(&rows);
+        let mut want = [0u32; KO_BINS];
+        want[0] = 1;
+        want[20] = 2;
+        want[21] = 1;
+        want[27] = 1;
+        assert_eq!(h, want);
+        let s = Stats::of(&rows).unwrap();
+        assert_eq!(s.ko_hist, want);
+        assert!(s.ko_hist.iter().sum::<u32>() <= s.decided as u32);
+        // the order of the fights does not matter
+        let mut back = rows;
+        back.reverse();
+        assert_eq!(ko_hist(&back), want);
+        assert_eq!(ko_hist(&[]), [0; KO_BINS]);
     }
 
     #[test]
