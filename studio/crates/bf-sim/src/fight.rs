@@ -1,11 +1,13 @@
 //! The fight: `fight.py`'s `class Fight`, its core. Two balls in a square ring, one generator, one event list.
 //!
 //! Ported here: `Fight.__init__` (lines 264 to 316), `ev`, `damage` and `knock` (319 to 368), `kill_keys` (380 to
-//! 387), `move` for the balls (3128 to 3234: walls, rope give, ball against ball), the level and low-HP bookkeeping
-//! of `abilities_step` (3017 to 3032) and `lead_changes` (6225 to 6242). The order of a step is in
+//! 387), `move` for the balls (3128 to 3234: walls, rope give, ball against ball), `abilities_step` (3012 to 3053:
+//! levels, the low-HP ability and the unlock timers) and `lead_changes` (6225 to 6242). The order of a step is in
 //! [`crate::schedule`], the per-frame record in `record.rs`. Weapon kinds and abilities are separate modules of free
 //! functions taking `&mut Fight`; their state hangs off [`Fight`] as `Option` fields (or is on the ball, where
-//! `Ball.__init__` puts it) and they are called only from `schedule.rs`.
+//! `Ball.__init__` puts it) and they are called from `schedule.rs`, but for one call: an ability is fired
+//! ([`crate::abilities::trigger`]) from [`Fight::abilities_step`], where Python fires it, between one fighter's
+//! levels and the next fighter's.
 //!
 //! The Python code checks, in many places, state that only kinds not ported yet can set (a rewinding, swallowed,
 //! stunned, anchored, hopping, smashed, walking, grabbed, airborne or strutting ball; a per-ball radius or mass).
@@ -19,6 +21,7 @@ use bf_core::py;
 use bf_core::recording::Recording;
 use bf_core::rng::Generator;
 
+use crate::abilities;
 use crate::ball::{Ball, Slot};
 use crate::geom::{self, V2};
 use crate::kinds::striker::Striker;
@@ -149,7 +152,9 @@ pub struct Fight<'a> {
     /// ([`crate::kinds::striker::setup`]), as the Python ball has no `baskets` before `striker_setup`.
     pub striker: [Option<Striker>; 2],
     // The thrust blade has no entry here: its state is on the ball (`th`, `ext`, `thr`, `thr_hit`, `thr_k`).
-    // SLOT (Task 14): each further kind's own state, as `pub <kind>: [Option<...>; 2]` or `Option<...>`, `None`
+    // The abilities have no entry here either: their rings and slams are `waves` and `slams` above, the rest is on
+    // the ball (`haste`, `slow`, `ready`, `used`) or the striker's (`dance_until`).
+    // SLOT (later kinds): each further kind's own state, as `pub <kind>: [Option<...>; 2]` or `Option<...>`, `None`
     // when no fighter has the kind. `fight.py` lines 286 to 312 list the Python fields (arcs, beams, hazards, ...,
     // and what `spawn_key` needs beside `keys`: `next_id`, `next_vol`, `vol_landed`); FLUTE and TROMBONE need none of
     // those.
@@ -412,9 +417,15 @@ impl<'a> Fight<'a> {
         // none.
     }
 
-    /// `abilities_step(on_beat)` (`fight.py` 3012 to 3053), the bookkeeping: levels follow the damage dealt (each
-    /// level-up makes its unlock ready from now and emits `level`), and on a beat a fighter below `LOW_HP` has its
-    /// `low` turn, once.
+    /// `abilities_step(on_beat)` (`fight.py` 3012 to 3053), for each fighter in turn: its level follows the damage it
+    /// has dealt (each level-up makes its unlock ready from now and emits `level`); then, on a beat, it fires one
+    /// ability ([`abilities::trigger`]): its `low` ability, once, when its hit points are below `LOW_HP`; else the
+    /// first of `unlock1` and `unlock2` that is ready (`t >= ready - 1e-6`), which is then ready again `every_bars`
+    /// bars later.
+    ///
+    /// # Panics
+    /// When an unlock that fires has no `every_bars` (Python raises `KeyError`). The roster refuses such an unlock
+    /// of a ported kind, so only an ability built by hand, or one of a kind not ported, can get here.
     pub fn abilities_step(&mut self, on_beat: bool) {
         // SLOT (ability kind `beam`, not one of FLUTE's or TROMBONE's): fight.py 3013 to 3016, a charged ability beam
         // fires first, for both fighters, before the loop below.
@@ -438,13 +449,24 @@ impl<'a> Fight<'a> {
             let b = &mut self.balls[k];
             if !b.low_done && b.hp < self.rules.low_hp {
                 b.low_done = true;
-                // SLOT (Task 14): `self.trigger(k, 'low')`, fight.py 3031, goes here, before the `continue`.
+                abilities::trigger(self, k, Slot::Low);
                 continue;
             }
-            // SLOT (Task 14): the unlock loop, fight.py 3033 to 3053. For `slot` in (unlock1, unlock2), in that
-            // order: `r = B.ready[slot]`; if `r` is set and `self.t >= r - 1e-6`: `trigger(k, slot)`, then
-            // `B.ready[slot] = self.t + every_bars * 4 * beat`, then stop (one ability per fighter per beat). The
-            // waits in between (3035 to 3049: rewind, snip, hook, slap, copy) belong to kinds not ported.
+            for slot in [Slot::Unlock1, Slot::Unlock2] {
+                // fight.py 3035 to 3049: an unlock of kind rewind, snip, hook, slap or copy waits for its moment.
+                // Kinds not ported.
+                let Some(r) = self.balls[k].ready[slot.index()] else {
+                    continue;
+                };
+                if self.t >= r - 1e-6 {
+                    abilities::trigger(self, k, slot);
+                    // B.ready[slot] = self.t + B.cfg['abilities'][slot]['every_bars'] * 4 * self.R.beat
+                    let every_bars = abilities::param(slot.of(self.balls[k].cfg), "every_bars");
+                    self.balls[k].ready[slot.index()] = Some(self.t + every_bars * 4.0 * self.rules.beat);
+                    // one ability per fighter per beat
+                    break;
+                }
+            }
         }
     }
 }
