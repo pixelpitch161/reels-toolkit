@@ -320,31 +320,11 @@ fn filters_column(ui: &mut Ui, vm: &ViewModel, out: &mut Vec<Action>) {
     watch_box(ui, inner, out);
 }
 
-/// The switch "Show fights outside the beat sheet". Its words take two lines in the column, so the switch is drawn
-/// without them and named by them, and the words beside it, wrapped, also turn it over when clicked.
+/// The switch "Show fights outside the beat sheet". Its words take two lines in the column, so they wrap inside it;
+/// the switch and its words are one control, and clicking the words turns it over too.
 fn show_outside(ui: &mut Ui, vm: &ViewModel, out: &mut Vec<Action>) {
     let on = vm.filters.show_outside;
-    let clicked = ui
-        .horizontal_top(|ui| {
-            ui.spacing_mut().item_spacing.x = 0.0;
-            let switch = buttons::switch(ui, "", on).accessible_name(SHOW_OUTSIDE);
-            ui.vertical(|ui| {
-                // The first line sits level with the switch, which is centred in its 26.
-                ui.add_space(4.0);
-                let words = Label::new(RichText::new(SHOW_OUTSIDE).font(body()).color(TEXT))
-                    .wrap()
-                    .selectable(false)
-                    .sense(Sense::CLICK);
-                let words = ui.add(words);
-                // The switch carries the name; the words are not read out a second time.
-                ui.ctx().accesskit_node_builder(words.id, |node| node.set_hidden());
-                words.clicked()
-            })
-            .inner
-                || switch.clicked()
-        })
-        .inner;
-    if clicked {
+    if buttons::wrapped_switch(ui, SHOW_OUTSIDE, on, ui.available_width()).clicked() {
         push_filters(
             vm,
             FilterSpec {
@@ -447,8 +427,14 @@ fn shortlist_column(ui: &mut Ui, vm: &ViewModel, out: &mut Vec<Action>) {
         LINE_SOFT,
     );
     let rows_rect = list.shrink2(vec2(LIST_PAD.0, LIST_PAD.1));
-    let cols = seed_columns(rows_rect.width());
-    header_row(ui, vm, header.shrink2(vec2(SIDE_PAD, 0.0)), cols);
+    // A list taller than its room shows its scroll bar beside the rows, which narrows them: the header narrows with
+    // them, so its words stay over their columns.
+    let overflows = vm.shortlist.rows.len() as f32 * ROW_H > rows_rect.height();
+    let bar = if overflows { buttons::SCROLL_BAR_ROOM } else { 0.0 };
+    let cols = seed_columns(rows_rect.width() - bar);
+    let header_inside = header.shrink2(vec2(SIDE_PAD, 0.0));
+    let header_inside = Rect::from_min_max(header_inside.min, header_inside.max - vec2(bar, 0.0));
+    header_row(ui, vm, header_inside, cols);
     if vm.shortlist.rows.is_empty() {
         empty_list(ui, vm, list);
     } else {
@@ -585,7 +571,7 @@ fn rows(ui: &mut Ui, vm: &ViewModel, rect: Rect, cols: SeedColumns, out: &mut Ve
     child.spacing_mut().item_spacing.y = 0.0;
     let mut focused = None;
     let mut ring = None;
-    let output = area.show_rows(&mut child, ROW_H, list.len(), |ui, range| {
+    let output = buttons::scrolled_rows(&mut child, area, ROW_H, list.len(), |ui, range| {
         // Ranks count only the fights that fit the beat sheet.
         let mut rank = list[..range.start].iter().filter(|s| s.fits).count();
         for story in &list[range] {

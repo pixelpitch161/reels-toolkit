@@ -759,3 +759,238 @@ fn tab_walks_every_control_in_reading_order() {
         }
     }
 }
+
+// ---------------------------------------------------------------------------------------------------------------
+// The ability lines, several pair rules, and the ring of every chip
+// ---------------------------------------------------------------------------------------------------------------
+
+#[test]
+fn no_ability_line_is_cut_short() {
+    let _gpu = gpu();
+    let vm = matchup::vm();
+    let abilities: Vec<String> = [0, 1]
+        .iter()
+        .filter_map(|&side| vm.fighter(side)?.card.as_ref())
+        .flat_map(|card| card.abilities.iter().map(|a| a.text.clone()))
+        .collect();
+    assert!(abilities.iter().any(|t| t == "A wave across the ring, below 25 HP"));
+    for size in [REF, MIN] {
+        let mut harness = showing(size, matchup::vm());
+        harness.run();
+        let texts = painted_texts(&harness);
+        for ability in &abilities {
+            // Two fighters may share an ability's words: each card paints its own.
+            let times = abilities.iter().filter(|a| *a == ability).count();
+            let painted: Vec<_> = texts.iter().filter(|(text, _, _)| text == ability).collect();
+            assert_eq!(painted.len(), times, "{size:?}: {ability} is painted once per card");
+            for (_, elided, drawn) in painted {
+                assert!(!elided, "{size:?}: {ability} is cut short");
+                let whole = |s: &str| s.split_whitespace().collect::<String>();
+                assert_eq!(whole(drawn), whole(ability), "{size:?}: every word of it is drawn");
+            }
+            for rect in in_workspace(&harness, ability) {
+                let card_right = workspace(&harness).min.x + 250.0;
+                let card_left = workspace(&harness).max.x - 250.0;
+                assert!(
+                    rect.max.x <= card_right || rect.min.x >= card_left,
+                    "{size:?}: {ability} stays inside its card: {rect:?}"
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn several_pair_rules_stand_one_per_line() {
+    let _gpu = gpu();
+    let long = "A rule so long that it cannot fit in the strip however wide the window is, because it goes on \
+                and on about lances, cobras, slides and rings until it has to be cut short";
+    let rules = [
+        RULE.to_string(),
+        "A low note drowns a high trill.".to_string(),
+        long.to_string(),
+    ];
+    for size in [REF, MIN] {
+        let mut vm = matchup::vm();
+        vm.pair_rules = rules.to_vec();
+        let mut harness = showing(size, vm);
+        harness.run();
+        let area = workspace(&harness);
+        let rects: Vec<Rect> = rules
+            .iter()
+            .map(|rule| {
+                let found = in_workspace(&harness, rule);
+                assert_eq!(found.len(), 1, "{size:?}: {rule} is on screen once");
+                found[0]
+            })
+            .collect();
+        for pair in rects.windows(2) {
+            assert_eq!(pair[0].min.x, pair[1].min.x, "{size:?}: the rules line up");
+            assert!(pair[1].min.y >= pair[0].max.y, "{size:?}: one rule per line: {rects:?}");
+        }
+        for rect in &rects {
+            assert!(rect.max.x <= area.max.x - 16.0, "{size:?}: inside the strip: {rect:?}");
+            assert!(area.contains_rect(*rect), "{size:?}: {rect:?}");
+        }
+        let texts = painted_texts(&harness);
+        for rule in &rules {
+            let elided = texts.iter().find(|(text, _, _)| text == rule).map(|t| t.1);
+            assert_eq!(
+                elided,
+                Some(rule.as_str() == long),
+                "{size:?}: only the long rule is cut short"
+            );
+        }
+        let label = in_workspace(&harness, "Pair rules")[0];
+        assert!(
+            (label.center().y - rects[0].center().y).abs() <= 1.0,
+            "{size:?}: the first rule is level with its label"
+        );
+        let balance = control(&harness, "Balance this match-up", Role::Button).rect();
+        assert!(balance.max.y <= rects[0].min.y, "{size:?}: the strip grew upwards");
+    }
+}
+
+/// Whether white (`TEXT_STRONG`) pixels lie on each side of `rect` (top, right, bottom, left), as `ring_sides`
+/// looks, from one render.
+fn ring_once(harness: &mut Harness<'_, BfApp>, rect: Rect) -> [bool; 4] {
+    let (cx, cy) = (rect.center().x as i32, rect.center().y as i32);
+    let (x0, x1, y0, y1) = (
+        rect.min.x as i32,
+        rect.max.x as i32,
+        rect.min.y as i32,
+        rect.max.y as i32,
+    );
+    let lines: [Vec<(i32, i32)>; 4] = [
+        (y0 - 5..y0 + 2).map(|y| (cx, y)).collect(),
+        (x1 - 2..x1 + 5).map(|x| (x, cy)).collect(),
+        (y1 - 2..y1 + 5).map(|y| (cx, y)).collect(),
+        (x0 - 5..x0 + 2).map(|x| (x, cy)).collect(),
+    ];
+    let all: Vec<(u32, u32)> = lines
+        .iter()
+        .flatten()
+        .map(|&(x, y)| (x.max(0) as u32, y.max(0) as u32))
+        .collect();
+    let px = pixels(harness, &all);
+    let mut at = 0;
+    lines.map(|line| {
+        let found = px[at..at + line.len()].contains(&[255, 255, 255]);
+        at += line.len();
+        found
+    })
+}
+
+#[test]
+fn every_roster_chip_shows_its_ring_and_one_not_built_takes_no_focus() {
+    let _gpu = gpu();
+    for size in [REF, MIN] {
+        let mut vm = matchup::vm();
+        let roster = vm.roster.as_mut().unwrap();
+        roster.fighters.iter_mut().find(|f| f.name == "OBOE").unwrap().available = false;
+        let mut harness = showing(size, vm);
+        harness.run();
+        for fighter in &sample::roster().fighters {
+            let name = chip_name(&fighter.display);
+            chip(&harness, &name).scroll_to_me();
+            harness.run();
+            // The chip before keeps no focus, so its ring cannot stand beside this one.
+            harness.key_press(Key::Escape);
+            harness.run();
+            chip(&harness, &name).focus();
+            harness.run();
+            let rect = chip(&harness, &name).rect();
+            assert!(workspace(&harness).contains_rect(rect), "{size:?}: {name} is on screen");
+            if fighter.name == "OBOE" {
+                assert!(
+                    harness.query_by(|n| n.is_focused()).is_none(),
+                    "{size:?}: nothing has the focus"
+                );
+                assert!(
+                    !chip(&harness, &name).is_focused(),
+                    "{size:?}: {name} is not built: no focus"
+                );
+                assert_eq!(ring_once(&mut harness, rect), [false; 4], "{size:?}: and no ring");
+            } else {
+                assert!(chip(&harness, &name).is_focused(), "{size:?}: {name} takes the focus");
+                assert_eq!(
+                    ring_once(&mut harness, rect),
+                    [true; 4],
+                    "{size:?}: {name}'s ring is whole"
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn a_column_scrolled_to_a_chosen_chip_does_not_fade_it_and_shows_its_bar() {
+    let _gpu = gpu();
+    // At the minimum size the roster overflows. Find a chip below its view that is not in the last row, so that
+    // once it is scrolled into view it sits at the lower edge with more of the roster below it.
+    let mut harness = showing(MIN, matchup::vm());
+    harness.run();
+    let strip_top = control(&harness, "Theme", Role::ComboBox).rect().min.y - 12.0 - 1.0;
+    let rects: Vec<(String, Rect)> = sample::roster()
+        .fighters
+        .iter()
+        .map(|f| (f.name.clone(), chip(&harness, &chip_name(&f.display)).rect()))
+        .collect();
+    let last_row = rects.iter().map(|r| r.1.min.y).fold(f32::NEG_INFINITY, f32::max);
+    let name = rects
+        .iter()
+        .find(|(n, r)| r.min.y > strip_top && r.min.y < last_row && n != "FLUTE" && n != "TROMBONE")
+        .map(|(n, _)| n.clone())
+        .expect("a chip below the view, not in the last row");
+    let display = sample::roster()
+        .fighters
+        .iter()
+        .find(|f| f.name == name)
+        .unwrap()
+        .display
+        .clone();
+    drop(harness);
+
+    let mut vm = matchup::vm();
+    vm.draft.fighters[1] = name.clone();
+    let mut harness = showing(MIN, vm);
+    harness.run();
+    let label = format!("{display}, right corner");
+    // scroll_to_me brings it to the middle of the view; the wheel then moves it down to the lower edge.
+    chip(&harness, &label).scroll_to_me();
+    harness.run();
+    let middle = chip(&harness, &label).rect();
+    harness.hover_at(middle.center());
+    harness.event(egui::Event::MouseWheel {
+        unit: egui::MouseWheelUnit::Point,
+        delta: egui::vec2(0.0, (strip_top - 2.0 - middle.max.y).round()),
+        phase: egui::TouchPhase::Move,
+        source: egui::MouseWheelSource::Unknown,
+        modifiers: egui::Modifiers::NONE,
+    });
+    harness.hover_at(egui::pos2(middle.center().x, workspace(&harness).min.y + 4.0));
+    harness.run();
+    let rect = chip(&harness, &label).rect();
+    assert!(rect.max.y <= strip_top + 1.0, "{label} is scrolled into view: {rect:?}");
+    assert!(
+        rect.max.y >= strip_top - 30.0,
+        "{label} sits at the lower edge: {rect:?} {strip_top}"
+    );
+    let selected = [0x38, 0x38, 0x38];
+    for dy in [4.0, 8.0, 12.0] {
+        let at = (rect.min.x as u32 + 7, (rect.max.y - dy) as u32);
+        assert_eq!(
+            pixels(&mut harness, &[at])[0],
+            selected,
+            "{dy} above its lower edge the fill is not faded"
+        );
+    }
+    // The bar: 4 from the roster's right edge (the right card is 250 wide), 6 wide, its handle FAINT without hovering.
+    let x = (workspace(&harness).max.x - 250.0 - 4.0 - 3.0) as u32;
+    let top = workspace(&harness).min.y as u32;
+    let column: Vec<(u32, u32)> = (top + 2..strip_top as u32).map(|y| (x, y)).collect();
+    assert!(
+        pixels(&mut harness, &column).contains(&[0x77, 0x77, 0x77]),
+        "the roster's bar shows while it overflows"
+    );
+}

@@ -534,14 +534,16 @@ fn a_clicked_row_takes_the_arrows() {
 fn only_the_switch_carries_its_name() {
     let _gpu = gpu();
     let mut harness = showing(REF, seeds::vm());
-    let named = harness
-        .query_all_by_label(SHOW_OUTSIDE)
-        .filter(|n| !n.accesskit_node().is_hidden())
-        .count();
-    assert_eq!(named, 1, "the words beside it are hidden from screen readers");
-    // The words still turn it over when clicked.
+    let named = harness.query_all_by_label(SHOW_OUTSIDE).count();
+    assert_eq!(named, 1, "one node carries the name: the switch with its words");
     let switch = by_role(&harness, SHOW_OUTSIDE, Role::Switch).rect();
-    let words = egui::pos2(switch.max.x + 40.0, switch.min.y + 13.0);
+    assert_eq!(switch.width(), 206.0, "the switch and its words fill the column");
+    assert!(
+        switch.height() > 26.0,
+        "its words wrap onto a second line inside it: {switch:?}"
+    );
+    // The words turn it over when clicked: here the second line of them.
+    let words = egui::pos2(switch.min.x + 38.0 + 10.0, switch.max.y - 8.0);
     harness.hover_at(words);
     harness.drag_at(words);
     harness.drop_at(words);
@@ -698,8 +700,17 @@ fn at_the_minimum_size() {
     let rows = rows(&harness);
     assert!(!rows.is_empty());
     let row = rows[0].1;
-    assert_eq!(row.width(), 632.0);
+    assert_eq!(
+        row.width(),
+        632.0 - 14.0,
+        "the list overflows, so its bar takes 14 beside the rows"
+    );
     assert!(seed_columns(row.width()).ribbon >= 120.0);
+    let story = harness.get_by_label("Story").rect();
+    assert!(
+        (story.max.x - (row.max.x - 10.0)).abs() <= 1.0,
+        "the header's last word stays over its column: {story:?} {row:?}"
+    );
     let footer = harness.get_by_label(FOOTER).rect();
     let stop = harness.get_by_label("Stop search").rect();
     assert!(footer.max.x <= stop.min.x, "the footer's words stop before its button");
@@ -732,4 +743,82 @@ fn seeds_matches() {
     let _gpu = gpu();
     let mut harness = showing(REF, seeds::vm());
     harness.snapshot("seeds_1440x900");
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Rule 21: no fade at a scrolled edge, and a visible bar on overflow
+// ---------------------------------------------------------------------------------------------------------------
+
+/// The fixture with 60 rows (seeds 1000 to 1059), `chosen` chosen.
+fn sixty_rows(chosen: u64) -> ViewModel {
+    let mut vm = seeds::vm();
+    let sample = vm.shortlist.rows.clone();
+    vm.shortlist.rows = (0..60)
+        .map(|i| {
+            let mut story = sample[i % sample.len()].clone();
+            story.seed = 1000 + i as u64;
+            story
+        })
+        .collect();
+    vm.draft.seed = Some(chosen);
+    vm
+}
+
+#[test]
+fn a_row_at_a_scrolled_edge_is_not_faded_and_shows_its_ring() {
+    let _gpu = gpu();
+    // Row 30 of 60 is chosen, so the list scrolls until it sits at the bottom edge, with more rows below it.
+    let mut harness = showing(REF, sixty_rows(1030));
+    let (name, rect) = rows(&harness)
+        .into_iter()
+        .find(|(n, _)| n.starts_with("Seed 1030,"))
+        .expect("the chosen row is scrolled into view");
+    let last = rows(&harness).last().map(|r| r.1).unwrap();
+    assert!(
+        rect.max.y + 1.0 >= last.min.y,
+        "the chosen row is at the list's lower edge"
+    );
+    let rgb = [SELECTED.r(), SELECTED.g(), SELECTED.b()];
+    for dy in [4.0, 8.0, 12.0] {
+        let at = egui::pos2(rect.center().x, rect.max.y - dy);
+        assert_eq!(
+            pixel(&mut harness, at),
+            rgb,
+            "{dy} above its lower edge the fill is not faded"
+        );
+    }
+    harness.get_by_label(&name).focus();
+    harness.run();
+    let rect = harness.get_by_label(&name).rect();
+    assert_ring(&mut harness, rect, "ltb", "the row at the scrolled edge");
+    let low_left = egui::pos2(rect.min.x - 3.0, rect.max.y - 6.0);
+    assert_eq!(
+        pixel(&mut harness, low_left),
+        [0xff; 3],
+        "the ring's left side near the edge"
+    );
+}
+
+#[test]
+fn the_list_shows_its_scroll_bar_when_it_overflows() {
+    let _gpu = gpu();
+    let mut harness = showing(REF, sixty_rows(1000));
+    let row = rows(&harness)[0].1;
+    let workspace = harness.state().layout.workspace;
+    // The bar: 4 past the rows, 6 wide; its handle is FAINT without hovering.
+    let x = (row.max.x + 4.0 + 3.0) as u32;
+    let column: Vec<(u32, u32)> = (row.min.y as u32..(workspace.max.y - 50.0) as u32)
+        .map(|y| (x, y))
+        .collect();
+    let px = pixels(&mut harness, &column);
+    assert!(
+        px.contains(&[0x77, 0x77, 0x77]),
+        "the handle is drawn FAINT: {:?}",
+        &px[..8]
+    );
+    drop(harness);
+    // Fourteen rows fit at the reference size: no bar.
+    let mut harness = showing(REF, seeds::vm());
+    let px = pixels(&mut harness, &column);
+    assert!(!px.contains(&[0x77, 0x77, 0x77]), "no bar where nothing overflows");
 }

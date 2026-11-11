@@ -4,7 +4,7 @@
 use egui::accesskit::Role;
 use egui::{Color32, Painter, Pos2, Rect, Response, Sense, Shape, Stroke, Ui, Vec2, WidgetInfo, vec2};
 
-use super::buttons::focus_ring;
+use super::buttons::{exact_painter, widget_ring};
 use crate::theme::{CONTROL_H, FAINT, HOVER, RADIUS, TEXT};
 
 /// The icons the app paints.
@@ -82,21 +82,22 @@ pub fn paint(painter: &Painter, rect: Rect, icon: Icon, color: Color32) {
 }
 
 /// A 24 x 26 flat button that shows only `icon`, named `name` for the accessibility tree. Transparent until hovered
-/// (`HOVER`); the icon is `TEXT`, or `FAINT` and senseless to clicks when it cannot be used. It paints its own focus
-/// ring (2 px `TEXT_STRONG`, 2 px outside).
+/// (`HOVER`); the icon is `TEXT`, or `FAINT` and senseless to clicks when it cannot be used or sits in a disabled
+/// parent. It paints its own focus ring (2 px `TEXT_STRONG`, 2 px outside).
 pub fn icon_button(ui: &mut Ui, icon: Icon, name: &str, enabled: bool) -> Response {
+    let enabled = enabled && ui.is_enabled();
     let sense = if enabled { Sense::click() } else { Sense::hover() };
     let (rect, response) = ui.allocate_exact_size(vec2(BUTTON_W, CONTROL_H), sense);
     response.widget_info(|| WidgetInfo::labeled(Role::Button, enabled, name));
     if ui.is_rect_visible(rect) {
-        let painter = ui.painter();
+        let painter = &exact_painter(ui);
         if enabled && response.hovered() {
             painter.rect_filled(rect, RADIUS, HOVER);
         }
         let icon_box = Rect::from_center_size(rect.center(), Vec2::splat(icon.side())).round();
         paint(painter, icon_box, icon, if enabled { TEXT } else { FAINT });
         if response.has_focus() {
-            focus_ring(painter, rect);
+            widget_ring(ui, rect, f32::from(RADIUS));
         }
     }
     response

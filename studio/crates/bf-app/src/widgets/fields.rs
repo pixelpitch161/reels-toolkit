@@ -5,7 +5,8 @@
 //!   for the accessibility tree by the caller's `name`.
 //! - **Text field**: a `GROUND` well, 1 px `LINE` border, 26 tall (the caption box is as many lines as asked). A
 //!   placeholder is `FAINT`. Text lines and boxes are `egui::TextEdit`s; a read field is a well painted here, whose
-//!   text is cut short with an ellipsis when it does not fit (hovering it then shows all of it).
+//!   text is cut short with an ellipsis when it does not fit (hovering it then shows all of it). A compact read
+//!   field is a value well (22 tall, mono, right-aligned) and may carry the reason it cannot be changed.
 //!
 //! Each keeps its `LINE` border whether it has the keyboard or not, and paints the theme's focus ring (2 px
 //! `TEXT_STRONG`, 2 px outside) when it has it. The ring is painted on a layer of its own just above the field's,
@@ -29,7 +30,7 @@ use egui::{LayerId, text::LayoutJob, text::TextWrapping};
 
 use super::buttons::focus_ring;
 use super::slider::{clamp, half_span, tidy_range};
-use crate::theme::{CONTROL_H, FAINT, GROUND, LINE, RADIUS, TEXT, VALUE_H, body};
+use crate::theme::{CONTROL_H, FAINT, GROUND, LINE, RADIUS, TEXT, VALUE_H, body, value as mono};
 
 /// Side padding of the text inside a well.
 const PAD_X: f32 = 6.0;
@@ -215,12 +216,31 @@ pub fn value_field(
     response
 }
 
+/// How a read field is drawn: [`ReadLook::default`] is the 26 tall text well of [`read_field`].
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct ReadLook<'a> {
+    /// A value well: 22 tall (the height of a value field and a dropdown in a row), its text in mono and
+    /// right-aligned, as a value field shows its number.
+    pub compact: bool,
+    /// Why the value cannot be changed now. With a reason the field is disabled: its text is `FAINT`, a screen reader
+    /// hears that it is disabled, and hovering it says why.
+    pub why: Option<&'a str>,
+}
+
 /// A read-only field named `name` showing `text`, `width` wide and 26 tall: a `GROUND` well with a 1 px `LINE`
 /// border that cannot be edited. Text that does not fit is cut short with an ellipsis, and hovering the field then
 /// shows all of it; a screen reader always gets all of it.
 pub fn read_field(ui: &mut Ui, name: &str, text: &str, width: f32) -> Response {
-    let (rect, mut response) = ui.allocate_exact_size(vec2(tidy_width(width), CONTROL_H), Sense::hover());
-    let enabled = ui.is_enabled();
+    read_field_with(ui, name, text, width, ReadLook::default())
+}
+
+/// [`read_field`] drawn as `look` says: compact (22 tall, mono, right-aligned) and with a reason it cannot be
+/// changed, which makes it disabled (see [`ReadLook`]). Inside a disabled parent its text is `FAINT` as well. Hovering
+/// it shows the whole text when it was cut short, then the reason.
+pub fn read_field_with(ui: &mut Ui, name: &str, text: &str, width: f32, look: ReadLook<'_>) -> Response {
+    let height = if look.compact { VALUE_H } else { CONTROL_H };
+    let (rect, mut response) = ui.allocate_exact_size(vec2(tidy_width(width), height), Sense::hover());
+    let enabled = ui.is_enabled() && look.why.is_none();
     response.widget_info(|| {
         let mut info = WidgetInfo::labeled(Role::TextInput, enabled, name);
         info.current_text_value = Some(text.to_owned());
@@ -228,25 +248,40 @@ pub fn read_field(ui: &mut Ui, name: &str, text: &str, width: f32) -> Response {
     });
     ui.ctx()
         .accesskit_node_builder(response.id, |node| node.set_read_only());
+    let mut elided = false;
     if ui.is_rect_visible(rect) {
         let mut painter = ui.painter().clone();
-        if !enabled {
+        if !ui.is_enabled() {
             painter.set_opacity(1.0);
         }
         painter.rect_filled(rect, RADIUS, GROUND);
         border(&painter, rect);
-        let colour = text_colour(ui);
-        let mut job = LayoutJob::simple_singleline(text.to_owned(), body(), colour);
+        let colour = if enabled { TEXT } else { FAINT };
+        let font = if look.compact { mono() } else { body() };
+        let mut job = LayoutJob::simple_singleline(text.to_owned(), font, colour);
         job.wrap = TextWrapping::truncate_at_width(rect.width() - 2.0 * PAD_X);
         let galley = painter.layout_job(job);
+        let left = if look.compact {
+            (rect.max.x - PAD_X - galley.size().x).max(rect.min.x + PAD_X).round()
+        } else {
+            rect.min.x + PAD_X
+        };
         let top = (rect.center().y - galley.size().y / 2.0).round();
-        let elided = galley.elided;
+        elided = galley.elided;
         painter
-            .with_clip_rect(rect.shrink(1.0))
-            .galley(egui::pos2(rect.min.x + PAD_X, top), galley, colour);
-        if elided {
-            response = response.on_hover_text(text);
-        }
+            .with_clip_rect(rect.shrink(1.0).intersect(painter.clip_rect()))
+            .galley(egui::pos2(left, top), galley, colour);
+    }
+    let hover = match (elided, look.why) {
+        (true, Some(why)) => Some(format!("{text}\n{why}")),
+        (true, None) => Some(text.to_owned()),
+        (false, Some(why)) => Some(why.to_owned()),
+        (false, None) => None,
+    };
+    if let Some(hover) = hover {
+        response = response
+            .on_hover_text(hover.as_str())
+            .on_disabled_hover_text(hover.as_str());
     }
     response
 }

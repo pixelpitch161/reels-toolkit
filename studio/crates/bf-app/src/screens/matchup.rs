@@ -5,17 +5,17 @@
 //! edges. The roster's grid has as many columns as fit with every name whole beside its "Left" or "Right" (ruling
 //! M2-R24: three at the reference window, two at the minimum). Each column scrolls by itself when its content does
 //! not fit, and then shows a solid scroll bar without being hovered (the roster does at the minimum window). The
-//! bottom strip (a 1 px `LINE_SOFT` line above it, padded 12 x 16, rows 26 tall and 8 apart) holds three rows: "Theme", "Tempo" with "Swap sides" and "Balance this match-up" at the right, and "Pair rules". When the
-//! pair cannot fight, the reason stands between the columns and the strip in `TEXT_STRONG`, and "Balance this
-//! match-up" is disabled with it.
+//! bottom strip (a 1 px `LINE_SOFT` line above it, padded 12 x 16, rows 26 tall and 8 apart) holds three rows:
+//! "Theme", "Tempo" with "Swap sides" and "Balance this match-up" at the right, and "Pair rules", one line per rule
+//! (the strip grows 18 for each rule after the first). When the pair cannot fight, the reason stands between the
+//! columns and the strip in `TEXT_STRONG`, and "Balance this match-up" is disabled with it. A corner card's ability
+//! lines wrap inside the card.
 //!
 //! The screen reads the view model and pushes actions: a chip's click picks the left corner and its right-click the
 //! right (`PickFighter`; picking the fighter in the other corner swaps, which the state does), the dropdown picks a
 //! theme (`SetTheme`), the slider and the value field set the tempo in whole bars (`SetBars`), and the two buttons
 //! push `SwapSides` and `Go(Balance)`. It keeps nothing of its own beyond egui's widget memory.
 
-use egui::scroll_area::ScrollBarVisibility;
-use egui::style::ScrollStyle;
 use egui::{Align, Frame, Label, Layout, Margin, Rect, RichText, ScrollArea, Sense, Stroke, Ui, UiBuilder, pos2, vec2};
 
 use crate::model::draft::Draft;
@@ -23,8 +23,7 @@ use crate::model::roster::{Roster, RosterEntry, Section};
 use crate::model::{Step, View};
 use crate::state::{Action, ViewModel};
 use crate::theme::{
-    CONTROL_H, FAINT, GROUND, LABEL_W, LINE_SOFT, MUTED, RADIUS, TEXT, TEXT_STRONG, body, rgb, section, small, strong,
-    value,
+    CONTROL_H, LABEL_W, LINE_SOFT, MUTED, RADIUS, TEXT, TEXT_STRONG, body, rgb, section, small, strong, value,
 };
 use crate::widgets::buttons;
 use crate::widgets::chips::{portrait, roster_chip};
@@ -72,6 +71,8 @@ const HINT: &str = "Click for the left corner, right-click for the right";
 const STRIP_PAD: (f32, f32) = (16.0, 12.0);
 const STRIP_GAP: f32 = 8.0;
 const STRIP_ROWS: f32 = 3.0;
+/// The height of each pair rule after the first.
+const RULE_H: f32 = 18.0;
 const THEME_W: f32 = 220.0;
 const SLIDER_MAX_W: f32 = 220.0;
 const SLIDER_MIN_W: f32 = 40.0;
@@ -100,9 +101,6 @@ pub const TEMPO_FIELD: &str = "Tempo in bpm";
 /// side padding `PAD_X` 10. One point more covers the label's rounding to a whole point.
 const CHIP_BEFORE_NAME: f32 = 34.0;
 const CHIP_AFTER_NAME: f32 = 8.0 + 10.0 + 1.0;
-/// The scroll bar of a column that overflows: 6 wide, 4 from the content and 4 from the column's edge.
-const BAR_W: f32 = 6.0;
-const BAR_MARGIN: f32 = 4.0;
 
 /// How many columns of chips fit in `width`: `(width + 6) / 126` rounded down, kept in 2 to 4 (2 for a width that
 /// is not a number).
@@ -134,28 +132,10 @@ fn widest_chip(ui: &Ui, roster: &Roster) -> f32 {
     (CHIP_BEFORE_NAME + name + CHIP_AFTER_NAME + side).ceil()
 }
 
-/// A vertical scroll area whose bar is drawn whenever its content overflows, not only on hover: a solid 6 wide bar
-/// on a `GROUND` track, its handle `FAINT` (`MUTED` when hovered, `TEXT` while dragged).
+/// A vertical scroll area with the app's scroll look (`buttons::scrolled`): its bar is drawn whenever its content
+/// overflows, not only on hover, and nothing fades at a scrolled edge.
 fn column_scroll(ui: &mut Ui, salt: impl egui::AsIdSalt, add: impl FnOnce(&mut Ui)) {
-    ui.scope(|ui| {
-        let style = ui.style_mut();
-        style.spacing.scroll = ScrollStyle {
-            bar_width: BAR_W,
-            bar_inner_margin: BAR_MARGIN,
-            bar_outer_margin: BAR_MARGIN,
-            ..ScrollStyle::solid()
-        };
-        style.visuals.extreme_bg_color = GROUND;
-        let widgets = &mut style.visuals.widgets;
-        widgets.inactive.bg_fill = FAINT;
-        widgets.hovered.bg_fill = MUTED;
-        widgets.active.bg_fill = TEXT;
-        ScrollArea::vertical()
-            .id_salt(salt)
-            .auto_shrink(false)
-            .scroll_bar_visibility(ScrollBarVisibility::VisibleWhenNeeded)
-            .show(ui, add);
-    });
+    buttons::scrolled(ui, ScrollArea::vertical().id_salt(salt).auto_shrink(false), add);
 }
 
 /// A section's name as the roster shows it.
@@ -186,7 +166,8 @@ pub fn show(ui: &mut Ui, vm: &ViewModel, out: &mut Vec<Action>) {
     let area = ui.max_rect();
     let line = Stroke::new(1.0, LINE_SOFT);
 
-    let strip_h = 1.0 + 2.0 * STRIP_PAD.1 + STRIP_ROWS * CONTROL_H + (STRIP_ROWS - 1.0) * STRIP_GAP;
+    let more_rules = vm.pair_rules.len().saturating_sub(1) as f32 * RULE_H;
+    let strip_h = 1.0 + 2.0 * STRIP_PAD.1 + STRIP_ROWS * CONTROL_H + (STRIP_ROWS - 1.0) * STRIP_GAP + more_rules;
     let strip = Rect::from_min_max(pos2(area.min.x, (area.max.y - strip_h).max(area.min.y)), area.max);
     let problem_h = vm.fight_problem.as_ref().map_or(0.0, |problem| {
         let wrap = (area.width() - 2.0 * PROBLEM_PAD.0).max(0.0);
@@ -301,7 +282,8 @@ fn corner_card(ui: &mut Ui, vm: &ViewModel, side: usize) {
                         ui.vertical(|ui| {
                             ui.spacing_mut().item_spacing.y = 0.0;
                             line(ui, RichText::new(&ability.name).font(body()).color(TEXT));
-                            line(ui, RichText::new(&ability.text).font(small()).color(MUTED));
+                            let text = RichText::new(&ability.text).font(small()).color(MUTED);
+                            ui.add(Label::new(text).selectable(false).wrap());
                         });
                     });
                 }
@@ -508,20 +490,38 @@ fn bottom_strip(ui: &mut Ui, vm: &ViewModel, roster: &Roster, out: &mut Vec<Acti
         }
     });
 
-    strip_row(ui, |ui| {
-        cell(
-            ui,
-            LABEL_W,
-            CONTROL_H,
-            RichText::new("Pair rules").font(body()).color(MUTED),
-        );
-        if vm.pair_rules.is_empty() {
-            line(ui, RichText::new("None for this pair").font(body()).color(MUTED));
-        }
-        for rule in &vm.pair_rules {
-            line(ui, RichText::new(rule).font(body()).color(TEXT));
-        }
-    });
+    pair_rules(ui, &vm.pair_rules);
+}
+
+/// "Pair rules" and the rules, one per line: the first level with the label in a 26 tall row, each further one 18 tall
+/// under it; each is cut short with an ellipsis on its own when it does not fit. "None for this pair" when there are
+/// none.
+fn pair_rules(ui: &mut Ui, rules: &[String]) {
+    let height = CONTROL_H + rules.len().saturating_sub(1) as f32 * RULE_H;
+    ui.allocate_ui_with_layout(
+        vec2(ui.available_width(), height),
+        Layout::left_to_right(Align::Min),
+        |ui| {
+            cell(
+                ui,
+                LABEL_W,
+                CONTROL_H,
+                RichText::new("Pair rules").font(body()).color(MUTED),
+            );
+            ui.vertical(|ui| {
+                ui.spacing_mut().item_spacing.y = 0.0;
+                let width = ui.available_width();
+                if rules.is_empty() {
+                    let none = RichText::new("None for this pair").font(body()).color(MUTED);
+                    cell(ui, width, CONTROL_H, none);
+                }
+                for (i, rule) in rules.iter().enumerate() {
+                    let row_h = if i == 0 { CONTROL_H } else { RULE_H };
+                    cell(ui, width, row_h, RichText::new(rule).font(body()).color(TEXT));
+                }
+            });
+        },
+    );
 }
 
 /// The width of `text` in `font`.

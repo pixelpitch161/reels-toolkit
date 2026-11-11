@@ -642,3 +642,25 @@ fn rings_in_the_scrolled_controls_column_at_the_minimum_size() {
         assert_ring(&mut harness, rect, "ltrb", &format!("{label}, column scrolled"));
     }
 }
+
+#[test]
+fn the_controls_column_shows_its_scroll_bar_when_it_overflows() {
+    let _gpu = gpu();
+    let mut harness = showing(MIN, music::vm());
+    let workspace = harness.state().layout.workspace;
+    // The bar: 4 from the column's right edge, 6 wide; its handle is FAINT without hovering.
+    let x = (workspace.min.x + CONTROLS_W - 1.0 - 4.0 - 3.0) as u32;
+    let column: Vec<(u32, u32)> = (workspace.min.y as u32 + 2..workspace.max.y as u32 - 2)
+        .map(|y| (x, y))
+        .collect();
+    let px = pixels(&mut harness, &column);
+    assert!(
+        px.contains(&[0x77, 0x77, 0x77]),
+        "the handle is drawn FAINT without hovering"
+    );
+    let theme = by_role(&harness, "Theme", Role::ComboBox).rect();
+    assert!(
+        theme.max.x < x as f32 - 4.0,
+        "the controls keep clear of the bar: {theme:?}"
+    );
+}

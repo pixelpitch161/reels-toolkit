@@ -22,11 +22,12 @@ use crate::model::take::{Lane, LaneGroup, MusicView};
 use crate::model::{Step, View};
 use crate::state::{Action, ViewModel};
 use crate::theme::{
-    BAND_CLIP, CONTROL_H, FAINT, GROUND, GROUP, HAIRLINE, HOVER, LINE, LINE_SOFT, MUTED, RADIUS, RAISED, SELECTED,
-    TEXT, TEXT_STRONG, VALUE_H, VALUE_W, body, large_fill, rgb, section, small, value as mono,
+    BAND_CLIP, CONTROL_H, FAINT, GROUP, HAIRLINE, HOVER, LINE, LINE_SOFT, MUTED, RADIUS, RAISED, TEXT, TEXT_STRONG,
+    VALUE_W, body, large_fill, rgb, section, small, value as mono,
 };
-use crate::widgets::buttons::{self, focus_ring};
-use crate::widgets::chips::fighter_bar;
+use crate::widgets::buttons::{self, widget_ring};
+use crate::widgets::chips::{fighter_bar, paint_selected};
+use crate::widgets::fields::{self, ReadLook};
 use crate::widgets::icons::{self, Icon};
 use crate::widgets::ribbon::{DUR, x_of};
 
@@ -48,11 +49,8 @@ const KEY_W: f32 = 70.0;
 /// A chord loop's button, and the gap between two of them.
 const LOOP_H: f32 = 28.0;
 const LOOP_GAP: f32 = 4.0;
-/// Side padding inside a chord loop's button and a dropdown.
+/// Side padding inside a chord loop's button.
 const LOOP_PAD: f32 = 10.0;
-const MENU_PAD: f32 = 8.0;
-/// The chosen chord loop's ring, drawn inside it.
-const SELECTED_RING: f32 = 1.5;
 /// A personality's fighter bar.
 const PERSONALITY_BAR: f32 = 34.0;
 
@@ -158,27 +156,20 @@ fn paint_text(painter: &Painter, rect: Rect, text: &str, font: egui::FontId, col
     );
 }
 
-/// Turns off egui's fade at a scrolled edge for the scroll areas `ui` holds: the fade would draw over the focus ring
-/// of a control at that edge, and the look has no gradients.
-fn no_fade(ui: &mut Ui) {
-    ui.spacing_mut().scroll.fade.strength = 0.0;
-}
-
 fn controls_column(ui: &mut Ui, vm: &ViewModel, out: &mut Vec<Action>) {
     let rect = ui.max_rect();
-    no_fade(ui);
-    ScrollArea::vertical()
+    let area = ScrollArea::vertical()
         .id_salt("music controls scroll")
-        .auto_shrink([false, false])
-        .show(ui, |ui| {
-            Frame::new()
-                .inner_margin(Margin::symmetric(CONTROLS_PAD.0, CONTROLS_PAD.1))
-                .show(ui, |ui| {
-                    ui.spacing_mut().item_spacing = vec2(ROW_GAP, 0.0);
-                    let inner_h = rect.height() - 2.0 * f32::from(CONTROLS_PAD.1);
-                    controls(ui, vm, inner_h, out);
-                });
-        });
+        .auto_shrink([false, false]);
+    buttons::scrolled(ui, area, |ui| {
+        Frame::new()
+            .inner_margin(Margin::symmetric(CONTROLS_PAD.0, CONTROLS_PAD.1))
+            .show(ui, |ui| {
+                ui.spacing_mut().item_spacing = vec2(ROW_GAP, 0.0);
+                let inner_h = rect.height() - 2.0 * f32::from(CONTROLS_PAD.1);
+                controls(ui, vm, inner_h, out);
+            });
+    });
 }
 
 /// The groups of the controls column, top to bottom; the tempo line sits at the bottom of `inner_h` when there is
@@ -203,7 +194,7 @@ fn controls(ui: &mut Ui, vm: &ViewModel, inner_h: f32, out: &mut Vec<Action>) {
     group_label(ui, "Key");
     ui.horizontal(|ui| {
         let key = theme.map_or(NONE, |t| t.key.as_str());
-        disabled_dropdown(ui, "Key", key, KEY_W, KEY_WHY);
+        buttons::dropdown_disabled(ui, "Key", key, KEY_W, KEY_WHY);
         if let Some(theme) = theme {
             let line = format!("{}, from the theme", theme.scale);
             plain(ui, RichText::new(line).font(body()).color(MUTED));
@@ -256,13 +247,12 @@ fn controls(ui: &mut Ui, vm: &ViewModel, inner_h: f32, out: &mut Vec<Action>) {
     group_label(ui, "This take");
     ui.horizontal(|ui| {
         plain(ui, RichText::new("Music seed").font(body()).color(MUTED));
-        disabled_value(
-            ui,
-            "Music seed",
-            &format!("{:04}", vm.draft.music_seed),
-            VALUE_W,
-            TAKES_WHY,
-        );
+        let seed = format!("{:04}", vm.draft.music_seed);
+        let look = ReadLook {
+            compact: true,
+            why: Some(TAKES_WHY),
+        };
+        fields::read_field_with(ui, "Music seed", &seed, VALUE_W, look);
         buttons::disabled(ui, "Re-roll music", TAKES_WHY);
     });
     ui.add_space(LABEL_GAP);
@@ -293,52 +283,6 @@ fn controls(ui: &mut Ui, vm: &ViewModel, inner_h: f32, out: &mut Vec<Action>) {
     hint(ui, tempo);
 }
 
-/// A dropdown that cannot be used now, named `name` and showing `value`, `width` wide and 22 tall: a 1 px `LINE`
-/// border with no fill, the value and the chevron `FAINT`. Hovering it says `why`.
-fn disabled_dropdown(ui: &mut Ui, name: &str, value: &str, width: f32, why: &str) -> Response {
-    let (rect, response) = ui.allocate_exact_size(vec2(width, VALUE_H), Sense::hover());
-    response.widget_info(|| {
-        let mut info = WidgetInfo::labeled(Role::ComboBox, false, name);
-        info.current_text_value = Some(value.to_owned());
-        info
-    });
-    if ui.is_rect_visible(rect) {
-        let painter = ui.painter();
-        painter.rect_stroke(rect, RADIUS, Stroke::new(1.0, LINE), StrokeKind::Inside);
-        let chevron_x = rect.max.x - MENU_PAD - 10.0;
-        let text = Rect::from_x_y_ranges(rect.min.x..=chevron_x, rect.y_range());
-        paint_text(painter, text, value, body(), FAINT, MENU_PAD);
-        let chevron = Rect::from_min_size(pos2(chevron_x, rect.center().y - 5.0), vec2(10.0, 10.0)).round();
-        icons::paint(painter, chevron, Icon::Chevron, FAINT);
-    }
-    response.on_hover_text(why)
-}
-
-/// A value field that cannot be used now, named `name` and showing `value`, `width` wide and 22 tall: the `GROUND`
-/// well with its 1 px `LINE` border, the mono value right-aligned in `FAINT`. Hovering it says `why`.
-fn disabled_value(ui: &mut Ui, name: &str, value: &str, width: f32, why: &str) -> Response {
-    let (rect, response) = ui.allocate_exact_size(vec2(width, VALUE_H), Sense::hover());
-    response.widget_info(|| {
-        let mut info = WidgetInfo::labeled(Role::TextInput, false, name);
-        info.current_text_value = Some(value.to_owned());
-        info
-    });
-    ui.ctx()
-        .accesskit_node_builder(response.id, |node| node.set_read_only());
-    if ui.is_rect_visible(rect) {
-        let painter = ui.painter();
-        painter.rect_filled(rect, RADIUS, GROUND);
-        painter.rect_stroke(rect, RADIUS, Stroke::new(1.0, LINE), StrokeKind::Inside);
-        let galley = painter.layout_no_wrap(value.to_owned(), mono(), FAINT);
-        let x = (rect.max.x - 6.0 - galley.size().x).max(rect.min.x + 6.0).round();
-        let y = (rect.center().y - galley.size().y / 2.0).round();
-        painter
-            .with_clip_rect(rect.shrink(1.0).intersect(painter.clip_rect()))
-            .galley(pos2(x, y), galley, FAINT);
-    }
-    response.on_hover_text(why)
-}
-
 /// One chord loop's button, `width` wide and 28 tall, its chords in mono from the left. The chosen one has the
 /// selected look (`SELECTED` fill, a 1.5 px `TEXT` ring inside, `TEXT_STRONG` text); the others are box buttons
 /// (`RAISED`, `HOVER` when hovered, a 1 px `LINE` border). It paints its own focus ring.
@@ -348,9 +292,7 @@ fn chord_loop(ui: &mut Ui, label: &str, chosen: bool, width: f32) -> Response {
     if ui.is_rect_visible(rect) {
         let painter = ui.painter();
         let colour = if chosen {
-            painter.rect_filled(rect, RADIUS, SELECTED);
-            painter.rect_stroke(rect, RADIUS, Stroke::new(SELECTED_RING, TEXT), StrokeKind::Inside);
-            TEXT_STRONG
+            paint_selected(painter, rect, RADIUS, true)
         } else {
             painter.rect_filled(rect, RADIUS, if response.hovered() { HOVER } else { RAISED });
             painter.rect_stroke(rect, RADIUS, Stroke::new(1.0, LINE), StrokeKind::Inside);
@@ -358,7 +300,7 @@ fn chord_loop(ui: &mut Ui, label: &str, chosen: bool, width: f32) -> Response {
         };
         paint_text(painter, rect, label, mono(), colour, LOOP_PAD);
         if response.has_focus() {
-            focus_ring(painter, rect);
+            widget_ring(ui, rect, f32::from(RADIUS));
         }
     }
     response
@@ -409,25 +351,24 @@ fn arrangement_column(ui: &mut Ui, vm: &ViewModel, out: &mut Vec<Action>) {
     );
 
     let mut child = ui.new_child(UiBuilder::new().id_salt("lanes").max_rect(middle));
-    no_fade(&mut child);
-    ScrollArea::vertical()
+    let lanes_area = ScrollArea::vertical()
         .id_salt("music lanes scroll")
-        .auto_shrink([false, false])
-        .show(&mut child, |ui| {
-            ui.spacing_mut().item_spacing = vec2(0.0, 0.0);
-            match &vm.take.music {
-                Some(music) => lanes(ui, music),
-                None => {
-                    Frame::new()
-                        .inner_margin(Margin::symmetric(UNDER_PAD.0, UNDER_PAD.1))
-                        .show(ui, |ui| {
-                            let text = format!("Building the sound for seed {seed}");
-                            plain(ui, RichText::new(text).font(body()).color(MUTED));
-                        });
-                }
+        .auto_shrink([false, false]);
+    buttons::scrolled(&mut child, lanes_area, |ui| {
+        ui.spacing_mut().item_spacing = vec2(0.0, 0.0);
+        match &vm.take.music {
+            Some(music) => lanes(ui, music),
+            None => {
+                Frame::new()
+                    .inner_margin(Margin::symmetric(UNDER_PAD.0, UNDER_PAD.1))
+                    .show(ui, |ui| {
+                        let text = format!("Building the sound for seed {seed}");
+                        plain(ui, RichText::new(text).font(body()).color(MUTED));
+                    });
             }
-            loudness(ui, vm.take.music.as_ref());
-        });
+        }
+        loudness(ui, vm.take.music.as_ref());
+    });
 
     ui.painter().rect_filled(
         Rect::from_x_y_ranges(area.x_range(), footer.min.y..=footer.min.y + 1.0),

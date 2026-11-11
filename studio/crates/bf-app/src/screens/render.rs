@@ -372,24 +372,24 @@ fn caption_box(ui: &mut Ui, vm: &ViewModel, well: Rect, name: &str, out: &mut Ve
         job.wrap = TextWrapping::wrap_at_width(wrap_width);
         ui.fonts_mut(|f| f.layout_job(job))
     };
-    let response = ScrollArea::vertical()
+    let area = ScrollArea::vertical()
         .id_salt("caption scroll")
         .auto_shrink([false, false])
-        .max_height(inside.height())
-        .show(&mut c, |ui| {
-            ui.add(
-                TextEdit::multiline(&mut text)
-                    .id_salt("caption text")
-                    .frame(egui::Frame::NONE)
-                    .margin(Margin::ZERO)
-                    .desired_width(f32::INFINITY)
-                    .desired_rows(BOX_LINES as usize)
-                    .text_color(TEXT)
-                    .layouter(&mut layouter),
-            )
-            .accessible_name(name)
-        })
-        .inner;
+        .max_height(inside.height());
+    let response = buttons::scrolled(&mut c, area, |ui| {
+        ui.add(
+            TextEdit::multiline(&mut text)
+                .id_salt("caption text")
+                .frame(egui::Frame::NONE)
+                .margin(Margin::ZERO)
+                .desired_width(f32::INFINITY)
+                .desired_rows(BOX_LINES as usize)
+                .text_color(TEXT)
+                .layouter(&mut layouter),
+        )
+        .accessible_name(name)
+    })
+    .inner;
     painter.rect_stroke(well, RADIUS, Stroke::new(1.0, LINE), StrokeKind::Inside);
     if response.changed() {
         out.push(Action::SetCaption { platform, text });
@@ -511,29 +511,29 @@ fn rows(ui: &mut Ui, vm: &ViewModel, list: Rect, out: &mut Vec<Action>) {
         .collect();
     let lit = shown_job(vm).map(|j| j.id);
     let mut ring = None;
-    ScrollArea::vertical()
+    let area = ScrollArea::vertical()
         .id_salt("queue scroll")
-        .auto_shrink([false, false])
-        .show(&mut c, |ui| {
-            ui.add_space(RING_ROOM);
-            for id in &shown {
-                let Some(job) = vm.queue.job(*id) else {
-                    continue;
-                };
-                let place = waiting.iter().position(|w| w == id).map(|at| (at, waiting.len()));
-                let row = ui
-                    .scope_builder(UiBuilder::new().id_salt(("job", *id)), |ui| {
-                        job_row(ui, vm, job, lit == Some(*id), place, out)
-                    })
-                    .inner;
-                if row.has_focus() {
-                    ring = Some(row.rect);
-                }
-                let (line, _) = ui.allocate_exact_size(vec2(ui.available_width(), 1.0), Sense::hover());
-                ui.painter().rect_filled(line, 0.0, HAIRLINE);
+        .auto_shrink([false, false]);
+    buttons::scrolled(&mut c, area, |ui| {
+        ui.add_space(RING_ROOM);
+        for id in &shown {
+            let Some(job) = vm.queue.job(*id) else {
+                continue;
+            };
+            let place = waiting.iter().position(|w| w == id).map(|at| (at, waiting.len()));
+            let row = ui
+                .scope_builder(UiBuilder::new().id_salt(("job", *id)), |ui| {
+                    job_row(ui, vm, job, lit == Some(*id), place, out)
+                })
+                .inner;
+            if row.has_focus() {
+                ring = Some(row.rect);
             }
-            ui.add_space(RING_ROOM);
-        });
+            let (line, _) = ui.allocate_exact_size(vec2(ui.available_width(), 1.0), Sense::hover());
+            ui.painter().rect_filled(line, 0.0, HAIRLINE);
+        }
+        ui.add_space(RING_ROOM);
+    });
     // The focused row's ring once more, over the rows after it, clipped to the list.
     if let Some(row) = ring {
         let painter = Painter::new(ui.ctx().clone(), c.layer_id(), list.intersect(ui.clip_rect()));
