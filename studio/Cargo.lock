@@ -485,7 +485,9 @@ dependencies = [
  "bf-sound",
  "bf-story",
  "bf-testdata",
+ "png",
  "serde_json",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]

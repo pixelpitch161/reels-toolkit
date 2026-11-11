@@ -11,8 +11,13 @@ bf-story.workspace = true
 bf-picture.workspace = true
 bf-sound.workspace = true
 bf-content.workspace = true
+png.workspace = true
 
 # The reader for studio/reference (dev support only) and the reference file's JSON values.
 [dev-dependencies]
 bf-testdata = { path = "../bf-testdata" }
 serde_json.workspace = true
+
+# A move that never replaces anything and the Hidden attribute of the temporary folder.
+[target.'cfg(windows)'.dependencies]
+windows-sys = { workspace = true, features = ["Win32_Storage_FileSystem"] }

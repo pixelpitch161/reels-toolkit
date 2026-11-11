@@ -23,7 +23,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::sync::Mutex;
-use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 
 use bf_content::ContentError;
 use bf_core::dmath;
@@ -274,6 +274,10 @@ struct Drawn {
 /// `plan` the fighters' bands and the bed's buses ([`BandPlan::of`]).
 ///
 /// A frame that cannot be drawn (a panic in a look) fails the checks that needed it, with the frame named.
+///
+/// `cancel` is looked at before each frame is started and between the sound checks: once it is set no new
+/// frame is drawn and `None` is returned as soon as the frames being drawn and the sound check running are done
+/// (about a second at most on the reference PC, the band check's 3 s aside).
 pub fn pre_render(
     pic: &Picture,
     st: &Soundtrack,
@@ -281,12 +285,14 @@ pub fn pre_render(
     story: &Story,
     plan: &BandPlan,
     workers: usize,
-) -> Vec<CheckResult> {
-    pre_render_with(&|f| pic.frame_logged(f), pic, st, show, story, plan, workers)
+    cancel: &AtomicBool,
+) -> Option<Vec<CheckResult>> {
+    pre_render_with(&|f| pic.frame_logged(f), pic, st, show, story, plan, workers, cancel)
 }
 
 /// [`pre_render`] with the drawing of a frame given: `draw_frame(f)` is `pic.frame_logged(f)` there, and a
 /// stand-in in the tests.
+#[allow(clippy::too_many_arguments)]
 fn pre_render_with(
     draw_frame: &(dyn Fn(usize) -> (Rgb8, DrawLog) + Sync),
     pic: &Picture,
@@ -295,7 +301,9 @@ fn pre_render_with(
     story: &Story,
     plan: &BandPlan,
     workers: usize,
-) -> Vec<CheckResult> {
+    cancel: &AtomicBool,
+) -> Option<Vec<CheckResult>> {
+    let cancelled = || cancel.load(Ordering::SeqCst);
     let nf = pic.nf();
     let fps = show.grid.fps;
     let cfg = &pic.ctx().cfg;
@@ -332,6 +340,9 @@ fn pre_render_with(
         for _ in 0..workers.max(1) {
             s.spawn(|| {
                 loop {
+                    if cancelled() {
+                        break;
+                    }
                     let i = next.fetch_add(1, Ordering::Relaxed);
                     let Some(&f) = todo.get(i) else { break };
                     let d = draw(f);
@@ -346,16 +357,27 @@ fn pre_render_with(
             (plan.sounds[1].0.as_str(), plan.sounds[1].1),
         ];
         let bed: Vec<&str> = plan.bed_buses.iter().map(String::as_str).collect();
-        [
-            focus(pic),
-            levels(&master),
-            band(st, show, sounds, &bed),
-            loudness(&master, show),
-            loop_audio(&master),
-        ]
+        let checks: [&dyn Fn() -> CheckResult; 5] = [
+            &|| focus(pic),
+            &|| levels(&master),
+            &|| band(st, show, sounds, &bed),
+            &|| loudness(&master, show),
+            &|| loop_audio(&master),
+        ];
+        let mut out = Vec::with_capacity(checks.len());
+        for check in checks {
+            if cancelled() {
+                return None;
+            }
+            out.push(check());
+        }
+        Some(out)
     });
+    if cancelled() {
+        return None;
+    }
     let mut drawn = drawn.into_inner().unwrap_or_else(|e| e.into_inner());
-    let [focus_r, levels_r, band_r, loudness_r, loop_audio_r] = sound;
+    let [focus_r, levels_r, band_r, loudness_r, loop_audio_r]: [CheckResult; 5] = sound?.try_into().ok()?;
 
     // The first frame of `frames` that could not be drawn, as the failed result of the check `name`.
     let broken = |name: &'static str, title: &str, frames: &[usize]| -> Option<CheckResult> {
@@ -413,7 +435,7 @@ fn pre_render_with(
         let (tail, head) = pics.split_at(nt.min(pics.len()));
         loop_picture(tail, head)
     });
-    vec![
+    Some(vec![
         focus_r,
         safe_r,
         levels_r,
@@ -422,7 +444,7 @@ fn pre_render_with(
         flash_r,
         loop_r,
         loop_audio_r,
-    ]
+    ])
 }
 
 #[cfg(test)]
@@ -506,7 +528,8 @@ mod tests {
             log.note(100, 100, 200, 120, bf_picture::ui::Kind::Caption, "FLUTE");
             (Rgb8::filled(36, 64, &[90, 90, 90]), log)
         };
-        let rs = pre_render_with(&stand_in, &pic, &st, &show, &story, &plan, 4);
+        let rs = pre_render_with(&stand_in, &pic, &st, &show, &story, &plan, 4, &AtomicBool::new(false))
+            .expect("not cancelled");
         let by_name = |name: &str| rs.iter().find(|r| r.name == name).unwrap();
         for (name, frame) in [
             ("safezone", "frame 0 (at 0.00 s)"),
@@ -534,7 +557,8 @@ mod tests {
         assert_eq!(rs.len(), 8);
         // with every frame drawn the stand-in's pictures pass
         let calm = |_: usize| stand_in(1);
-        let rs = pre_render_with(&calm, &pic, &st, &show, &story, &plan, 4);
+        let rs =
+            pre_render_with(&calm, &pic, &st, &show, &story, &plan, 4, &AtomicBool::new(false)).expect("not cancelled");
         assert!(rs.iter().all(|r| r.pass), "{rs:?}");
     }
 

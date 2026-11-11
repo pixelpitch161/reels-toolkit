@@ -53,6 +53,9 @@ egui = { version = "=0.37.0", default-features = false }
 egui_kittest = { version = "=0.37.0", features = ["snapshot", "wgpu", "eframe"] }
 rfd = "=0.18.0"
 
+# Windows calls the render job needs (a move that never replaces, the Hidden attribute); already in the lock file.
+windows-sys = "=0.61.2"
+
 [profile.release]
 opt-level = 3
 lto = "thin"
