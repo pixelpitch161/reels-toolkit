@@ -370,8 +370,10 @@ fn label_and_panel() {
 }
 
 // ---------------------------------------------------------------- _hash01 and the sand puff
-/// One `_hash01` case: the phase bit for bit, the result within [`HASH_TOLERANCE`] (around the wrap from 1 to 0).
-/// Returns how many results are Python's bit for bit and the largest difference.
+/// One `_hash01` case: the phase bit for bit, the result within [`HASH_TOLERANCE`] of Python's. The difference is
+/// taken as it is, not around the wrap from 1 to 0: a value whose floor flipped (0.99999 against 0.00001) is not
+/// a last bit of the sine, and fails. Returns how many results are Python's bit for bit and the largest
+/// difference.
 fn hash_rows(v: &Vectors, case: &Case) -> Result<(usize, usize, f64), String> {
     let names: Vec<&str> = case
         .call
@@ -403,7 +405,6 @@ fn hash_rows(v: &Vectors, case: &Case) -> Result<(usize, usize, f64), String> {
             return Err(format!("row {row} {xs:?}: {got} is outside 0..1"));
         }
         let d = (got - out[row]).abs();
-        let d = d.min(1.0 - d);
         if d > HASH_TOLERANCE {
             return Err(format!(
                 "row {row} {xs:?}: got {got:e}, Python {:e}: {d:e} apart, more than a last bit of the sine",
@@ -851,6 +852,25 @@ fn the_vectors_cover_the_real_calls() {
     assert!(count("ui_puff", &is_real) >= 50);
     assert!(count("ui_label", &is_real) >= 8);
     assert!(count("ui_label", &|c| c.call.starts_with("reelkit.ui.panel(")) >= 20);
+    // The exact number of cases per Python function over the four files, so that a dropped group of edge cases
+    // cannot pass on the minimums above. An export that adds or removes cases changes these with it.
+    let mut total: BTreeMap<&str, usize> = BTreeMap::new();
+    for file in ["ui_label", "ui_puff", "ui_captions", "ui_hud"] {
+        for case in &vectors(file).index.cases {
+            *total.entry(function_of(&case.call)).or_default() += 1;
+        }
+    }
+    let want = [
+        ("_hash01", 5),
+        ("_sand_puff", 110),
+        ("caption_scale", 10),
+        ("draw_captions", 194),
+        ("fight_hud", 127),
+        ("impact_landings", 6),
+        ("label", 56),
+        ("panel", 24),
+    ];
+    assert_eq!(total.into_iter().collect::<Vec<_>>(), want, "cases per function");
 }
 
 /// An unknown call, keyword or argument fails its case.

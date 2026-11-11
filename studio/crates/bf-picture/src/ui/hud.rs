@@ -12,12 +12,13 @@
 //! (`0.5 + 0.5 * sin` rounds back to 1), and so it does at the pulse's low points.
 
 use super::label::label;
-use super::{AMBER, DrawLog, INK, Kind, clip_rgb, fill, mix_over, py_index, py_max, py_min, py_slice, round_i32};
+use super::{AMBER, DrawLog, INK, Kind, clip_rgb, fill, mix_over, py_index, py_slice, round_i32};
 use crate::config::{SAFE, safe_x1};
 use crate::font::{self, ADV};
 use crate::img::Rgb8;
 use crate::np;
 use bf_core::dmath;
+use bf_core::py::{py_max, py_min};
 
 /// `ABIL_ROW`: the pixels from one ability row to the next (scale-1 text and its outline).
 pub const ABIL_ROW: i32 = 9;
