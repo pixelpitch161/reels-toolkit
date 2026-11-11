@@ -4,12 +4,13 @@
 //! `kit/checks.py` gave: its verdict and the numbers behind the lines it printed. Each check here runs on the
 //! same inputs: the kit's own `audio.wav`, the stems of the Rust soundtrack (equal to the kit's, see
 //! `bf-content/tests/stems.rs`) and the frames the Rust picture draws (equal to the kit's, see
-//! `bf-content/tests/golden_frames.rs`). The bars: every verdict equal; levels and loudness within 0.01 dB; band
-//! within 0.1 dB; the flash counts equal and the largest area within 0.1 point; the loop numbers within 1 %; the
-//! worst circle of confusion equal; the safe zone passing with the same boxes.
+//! `bf-content/tests/golden_frames.rs`). The bars, in the order `pre_render` runs the checks: every verdict
+//! equal; focus: the worst circle of confusion equal; safe zone: passing with the same boxes; levels within
+//! 0.01 dB; band within 0.1 dB; loudness within 0.01 dB; flash: the counts equal and the largest area within
+//! 0.1 point; loop: the numbers within 1 %.
 //!
-//! The counts of the reference file are asserted (31 windows, 2 x 5 band sections, 315 flash frames, 178 loop
-//! steps, 244 safe-zone frames with 5,503 boxes, 1,830 focus frames with 39,671 points), so an empty file cannot
+//! The counts of the reference file are asserted (1,830 focus frames with 39,671 points, 244 safe-zone frames
+//! with 5,503 boxes, 31 windows, 2 x 5 band sections, 315 flash frames, 178 loop steps), so an empty file cannot
 //! pass. Run with `-- --nocapture` to see each check's sentence and how long it took.
 
 use std::collections::{BTreeMap, BTreeSet};
@@ -218,6 +219,7 @@ fn one_sentence(r: &CheckResult) {
     assert!(s.chars().next().is_some_and(char::is_uppercase), "{}: {s:?}", r.name);
     assert!(s.ends_with('.') && !s.contains('\n'), "{}: {s:?}", r.name);
     assert!(!s.contains(". "), "{}: more than one sentence: {s:?}", r.name);
+    assert!(!s.contains("  "), "{}: a run of spaces: {s:?}", r.name);
     assert!(!s.contains("NaN") && !s.contains("inf"), "{}: {s:?}", r.name);
 }
 
@@ -268,7 +270,10 @@ fn levels_match_the_kit() {
 }
 
 #[test]
-fn a_quiet_opening_fails_levels() {
+fn two_quiet_seconds_are_the_allowed_dip_and_a_quiet_opening_fails_levels() {
+    // The kit's opening less its ending on the untouched file, and what half level is in dB (20 log10 2).
+    let untouched = num(&KIT["levels"]["opening_minus_ending"]);
+    const HALF_DB: f64 = 6.0206;
     // The brief's case: the first 2 s at half level. In the kit that is the one deliberate dip the rule allows
     // (the opening's 10 s mean drops by 1.2 dB, inside its 1.5 dB), so it passes there and here. What
     // `python -m reelkit.levels` printed for audio.wav changed this way (run by hand on the reference PC):
@@ -283,7 +288,13 @@ fn a_quiet_opening_fails_levels() {
     say(&r);
     assert!(r.pass, "{}", r.summary);
     assert_eq!(got(&r, "dips"), 1.0);
-    within("opening", got(&r, "opening_minus_ending"), 0.047 - 6.0206 / 5.0, 0.01);
+    // one of the opening's five windows is down by HALF_DB
+    within(
+        "opening",
+        got(&r, "opening_minus_ending"),
+        untouched - HALF_DB / 5.0,
+        0.01,
+    );
     // The first 4 s at half level are two dips, and the opening is 2.4 dB under the ending: both named.
     for f in &mut x[2 * SR..4 * SR] {
         *f = [f[0] * 0.5, f[1] * 0.5];
@@ -310,7 +321,7 @@ fn a_quiet_opening_fails_levels() {
     say(&r);
     assert!(!r.pass);
     assert!(r.summary.contains("opening"), "{}", r.summary);
-    within("opening", got(&r, "opening_minus_ending"), 0.047 - 6.0206, 0.01);
+    within("opening", got(&r, "opening_minus_ending"), untouched - HALF_DB, 0.01);
     assert_eq!(got(&r, "dips"), 5.0);
     within("build", got(&r, "build"), 2.1, 0.05);
     assert!(
@@ -676,7 +687,17 @@ fn an_early_or_a_missing_ko_does_not_panic() {
     let r = loudness(&WAV, &show);
     say(&r);
     assert!(!r.pass && r.summary.contains("cannot be compared"), "{}", r.summary);
+    assert!(r.summary.contains("no time for its start"), "{}", r.summary);
     assert!(band(&BUILT, &show, sounds, &bed).pass);
+    // and a soundtrack that ends before the fight starts: the other sentence
+    let r = loudness(&WAV[..2 * SR], &ep.show);
+    say(&r);
+    assert!(!r.pass && r.summary.contains("2.0 s long"), "{}", r.summary);
+    assert!(
+        r.summary.contains("knockout at 50.0 s") && !r.summary.contains("  "),
+        "{}",
+        r.summary
+    );
     let (f0, f1) = flash_span(&show, &ep.story, lows);
     assert!(f0 <= f1 && f1 <= 1830);
 }

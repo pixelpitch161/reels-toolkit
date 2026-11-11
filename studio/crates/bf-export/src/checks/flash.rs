@@ -174,7 +174,7 @@ pub fn flash_from(lum: &[Gray32], f0: usize) -> CheckResult {
     );
     let summary = if pass {
         format!(
-            "{TITLE}: no second of the {} frames looked at holds more than {LIMIT} full-screen flashes (the worst \
+            "{TITLE}: no second of the {} frames looked at holds more than {LIMIT} flashes over a quarter of the picture or more (the worst \
              holds {}), and {largest}.",
             lum.len(),
             a.worst
