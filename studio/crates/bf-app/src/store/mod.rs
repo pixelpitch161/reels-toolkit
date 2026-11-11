@@ -130,20 +130,32 @@ fn unread() -> MutexGuard<'static, BTreeSet<PathBuf>> {
     UNREAD.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
 }
 
+/// The record's key for `path`, so one file is one key however it was written: made absolute against the current
+/// folder (with `.` and `..` worked out and, on Windows, `/` read as `\`), and on Windows lower-cased, since its
+/// file names ignore letter case. Never touches the disk: the file may be locked or missing.
+fn unread_key(path: &Path) -> PathBuf {
+    let absolute = std::path::absolute(path).unwrap_or_else(|_| path.to_path_buf());
+    if cfg!(windows) {
+        PathBuf::from(absolute.to_string_lossy().to_lowercase())
+    } else {
+        absolute
+    }
+}
+
 /// Records that the file at `path` exists but could not be read.
 pub(crate) fn mark_unread(path: &Path) {
-    unread().insert(path.to_path_buf());
+    unread().insert(unread_key(path));
 }
 
 /// Records that the file at `path` was read (or is not there), so it may be written over.
 pub(crate) fn clear_unread(path: &Path) {
-    unread().remove(path);
+    unread().remove(&unread_key(path));
 }
 
 /// Before settings are saved to `path`: if the file there could not be read at start, moves it aside as
 /// `settings.unread-N.toml` first. An error means the old file could not be kept, and the save must not happen.
 fn keep_unread(path: &Path) -> io::Result<()> {
-    if !unread().contains(path) {
+    if !unread().contains(&unread_key(path)) {
         return Ok(());
     }
     if !path.try_exists()? {
@@ -471,15 +483,45 @@ fn run(shared: &Shared, paths: &Paths) {
     }
 }
 
+/// The values a round of writes has taken and not yet finished writing. If the round ends by a fault, each one goes
+/// back into its slot (unless a newer value has arrived there), so the next `flush` or the drop still writes it.
+struct InFlight<'a> {
+    shared: &'a Shared,
+    settings: Option<Settings>,
+    queue: Option<Queue>,
+}
+
+impl Drop for InFlight<'_> {
+    fn drop(&mut self) {
+        if !std::thread::panicking() {
+            return;
+        }
+        let mut state = self.shared.lock();
+        if state.settings.is_none() {
+            state.settings = self.settings.take();
+        }
+        if state.queue.is_none() {
+            state.queue = self.queue.take();
+        }
+    }
+}
+
 /// Takes what is pending, writes it and records how it went.
 fn write_pending(shared: &Shared, paths: &Paths) {
-    let (settings, queue, mark) = {
+    let mut in_flight = InFlight {
+        shared,
+        settings: None,
+        queue: None,
+    };
+    let mark = {
         let mut state = shared.lock();
-        (state.settings.take(), state.queue.take(), state.asked)
+        in_flight.settings = state.settings.take();
+        in_flight.queue = state.queue.take();
+        state.asked
     };
     let mut problems = Vec::new();
     let mut files = 0u64;
-    if let Some(s) = settings {
+    if let Some(s) = &in_flight.settings {
         let path = paths.settings();
         #[cfg(test)]
         if std::mem::take(&mut shared.lock().panic_next) {
@@ -492,7 +534,7 @@ fn write_pending(shared: &Shared, paths: &Paths) {
                 path.display(),
                 plain_reason(&err)
             )),
-            Ok(()) => match settings::save_settings(&path, &s) {
+            Ok(()) => match settings::save_settings(&path, s) {
                 Ok(()) => files += 1,
                 Err(err) => problems.push(format!(
                     "Your settings could not be saved to {}. {}",
@@ -501,11 +543,12 @@ fn write_pending(shared: &Shared, paths: &Paths) {
                 )),
             },
         }
+        in_flight.settings = None;
     }
-    if let Some(q) = queue {
+    if let Some(q) = &in_flight.queue {
         // Task 11 swaps in `save_queue`.
         let path = paths.queue();
-        let written = serde_json::to_vec_pretty(&q)
+        let written = serde_json::to_vec_pretty(q)
             .map_err(io::Error::other)
             .and_then(|bytes| write_atomic(&path, &bytes));
         match written {
@@ -516,6 +559,7 @@ fn write_pending(shared: &Shared, paths: &Paths) {
                 plain_reason(&err)
             )),
         }
+        in_flight.queue = None;
     }
     let mut state = shared.lock();
     for problem in problems {
@@ -782,10 +826,47 @@ mod tests {
         writer.settings(&sample_settings(2));
         writer.flush();
         assert_eq!(writer.problems(), vec![WRITER_STOPPED.to_string()]);
-        // What was pending is still written, on the caller's thread.
+        // The value the thread held when it failed went back into its slot, and the flush wrote it on this thread.
+        assert_eq!(load_settings(&paths.settings(), 8).0, sample_settings(2));
+        // Later saves are written on this thread too.
         writer.settings(&sample_settings(3));
         writer.flush();
         assert_eq!(load_settings(&paths.settings(), 8).0, sample_settings(3));
+    }
+
+    #[test]
+    fn a_value_in_flight_at_a_fault_is_written_at_drop() {
+        let root = TempRoot::new("a_value_in_flight_at_a_fault_is_written_at_drop");
+        let paths = root.paths();
+        let writer = Writer::start(paths.clone());
+        writer.shared.lock().panic_next = true;
+        writer.settings(&sample_settings(2));
+        // No flush: dropping joins the failed thread, then writes what it gave back.
+        drop(writer);
+        assert_eq!(load_settings(&paths.settings(), 8).0, sample_settings(2));
+    }
+
+    #[test]
+    fn a_relative_path_and_its_absolute_form_are_one_key() {
+        let relative = Path::new("some folder").join(".").join("config").join("settings.toml");
+        let absolute = std::env::current_dir()
+            .unwrap()
+            .join("some folder")
+            .join("other")
+            .join("..")
+            .join("config")
+            .join("settings.toml");
+        assert_eq!(unread_key(&relative), unread_key(&absolute));
+        assert_ne!(unread_key(&relative), unread_key(Path::new("config/settings.toml")));
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn letter_case_and_slashes_do_not_change_the_key() {
+        assert_eq!(
+            unread_key(Path::new(r"C:\Users\Zoë\Config\Settings.TOML")),
+            unread_key(Path::new("c:/users/ZOË/config/settings.toml"))
+        );
     }
 
     #[test]

@@ -428,6 +428,32 @@ mod tests {
         assert_eq!(load_settings(&path, 8), (changed, None));
     }
 
+    /// The same file written differently: through `..`, with `/` between names and in capitals.
+    #[cfg(windows)]
+    fn another_spelling(path: &Path) -> PathBuf {
+        let dir = path.parent().unwrap();
+        let roundabout = dir.join("..").join(dir.file_name().unwrap()).join("SETTINGS.TOML");
+        PathBuf::from(roundabout.to_string_lossy().to_uppercase().replace('\\', "/"))
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn an_unread_file_is_kept_however_its_path_was_written() {
+        let root = TempRoot::new("an_unread_file_is_kept_however_its_path_was_written");
+        let paths = root.paths();
+        let path = paths.settings();
+        save_settings(&path, &mine()).unwrap();
+        // Read through another spelling of the path; the writer saves through `paths.settings()`.
+        let other = another_spelling(&path);
+        assert_ne!(other, path);
+        let before = load_while_locked(&other);
+        let writer = Writer::start(paths.clone());
+        writer.settings(&default_settings(8));
+        writer.flush();
+        assert!(writer.problems().is_empty());
+        assert_eq!(fs::read(paths.config.join("settings.unread-1.toml")).unwrap(), before);
+    }
+
     // M2-R9 (c)
     #[test]
     fn a_file_that_loaded_is_never_moved_by_a_save() {
