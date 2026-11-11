@@ -5,14 +5,18 @@
 //!
 //! - `ScanLibrary`: `Library` (the videos under the root, with each fight file read as the engine reads it; a root
 //!   that is missing or cannot be listed gives no videos and the problem in words), then a `LibraryCover` for each
-//!   video whose `cover.png` can be read. A newer scan stops an older one: nothing more of the older is sent.
+//!   of the newest `MAX_COVERS` videos whose `cover.png` can be read. A newer scan silences an older one: nothing
+//!   more of the older is sent, and the older skips the fight files it has not read yet, but listing the folders
+//!   (inside `library::scan`) cannot be interrupted.
 //! - `OpenFight`, `OpenFightText`: the fight file read, parsed and checked against what this app has, then
 //!   `FightOpened`, or `Problem` ("{file name} cannot be opened: {reason}"). One open is pending at a time: a newer
 //!   open (the person's own request, ruling M2-R20) replaces an older one, whose answer is then never sent. Nothing
 //!   else drops an open.
 //! - `CheckFolder`: `Folder` with the root and name exactly as asked, so the state can tell a late answer.
 //! - `CreateFolder`: makes the folder asked for (never its missing parents, never anything inside it), then
-//!   `Folder` with an empty name; a folder that cannot be made is a `Problem` in words first.
+//!   `Folder` with an empty name; a folder that cannot be made is a `Problem` in words first (always sent). A path
+//!   refused before anything is tried (relative or empty) is answered `Missing` without being checked.
+//! - A newer `CheckFolder` or `CreateFolder` silences the older one still running: its `Folder` is never sent.
 //! - `PickFolder`: the folder dialog, then `FolderPicked`. One dialog at a time: a `PickFolder` while one is open
 //!   is ignored (the open one answers).
 //! - `RevealFolder`: shows the folder in the PC's file browser without waiting for it; only a folder that is there
@@ -48,6 +52,10 @@ const MAX_FIGHT_FILE: u64 = 1 << 20;
 /// The largest cover read: a real one (1080 x 1920) is a few megabytes.
 const MAX_COVER: u64 = 64 << 20;
 
+/// Covers are sent for the newest this many videos only (each is a file of a few megabytes read and made into a thumbnail); every video is still
+/// listed.
+const MAX_COVERS: usize = 500;
+
 /// A fighter this app does not know has no colour of its own: grey, since colour belongs to fighters.
 const NO_COLOR: [u8; 3] = [0x80, 0x80, 0x80];
 
@@ -61,6 +69,9 @@ pub struct State {
     open: Option<Arc<AtomicBool>>,
     /// The scan in progress: set when a newer scan replaces it.
     scan: Option<Arc<AtomicBool>>,
+    /// The newest `CheckFolder` or `CreateFolder`: set when a newer one replaces it, so its `Folder` answer is not
+    /// sent after the newer one's.
+    folder: Option<Arc<AtomicBool>>,
     /// True while a folder dialog is open.
     picking: Arc<AtomicBool>,
 }
@@ -71,45 +82,8 @@ pub fn handle(state: &mut State, ctx: &Ctx, command: Command) {
         Command::ScanLibrary { root } => scan(state, ctx, root),
         Command::OpenFight { path } => open(state, ctx, move || open_file(&path)),
         Command::OpenFightText { toml } => open(state, ctx, move || open_text(toml)),
-        Command::CheckFolder { root, name } => {
-            let (r, n) = (root.clone(), name.clone());
-            ctx.spawn(
-                "engine: folder",
-                "checking the output folder",
-                move |ctx| {
-                    let state = library::folder_state(&root, &name);
-                    ctx.emit(Event::Folder { root, name, state });
-                },
-                move |text| Event::Folder {
-                    root: r,
-                    name: n,
-                    state: FolderState::NotWritable(text),
-                },
-            );
-        }
-        Command::CreateFolder { root } => {
-            let r = root.clone();
-            ctx.spawn(
-                "engine: folder",
-                "creating the output folder",
-                move |ctx| {
-                    if let Err(text) = create_folder(&root) {
-                        ctx.emit(problem(text));
-                    }
-                    let state = library::folder_state(&root, "");
-                    ctx.emit(Event::Folder {
-                        root,
-                        name: String::new(),
-                        state,
-                    });
-                },
-                move |text| Event::Folder {
-                    root: r,
-                    name: String::new(),
-                    state: FolderState::NotWritable(text),
-                },
-            );
-        }
+        Command::CheckFolder { root, name } => folder(state, ctx, root, name, false),
+        Command::CreateFolder { root } => folder(state, ctx, root, String::new(), true),
         Command::PickFolder { start } => pick(state, ctx, start),
         Command::RevealFolder { path } => {
             ctx.spawn(
@@ -133,6 +107,61 @@ fn stopped(ctx: &Ctx, flag: &AtomicBool) -> bool {
     flag.load(Ordering::SeqCst) || ctx.stopping()
 }
 
+/// Sends `event` unless the work that holds `flag` was replaced or the engine is ending (checked right before the
+/// send).
+fn send_unless_stopped(ctx: &Ctx, flag: &AtomicBool, event: Event) {
+    if !stopped(ctx, flag) {
+        ctx.emit(event);
+    }
+}
+
+/// Checks the folder `root` and the name `name` in it, after creating `root` first when `create` (then `name` is
+/// empty). The older check or create still running is silenced: its `Folder` answer is never sent. A create's
+/// `Problem` is always sent.
+fn folder(state: &mut State, ctx: &Ctx, root: PathBuf, name: String, create: bool) {
+    if let Some(older) = &state.folder {
+        older.store(true, Ordering::SeqCst);
+    }
+    let flag = ctx.cancel_flag();
+    let mine = flag.clone();
+    let (r, n) = (root.clone(), name.clone());
+    let what = if create {
+        "creating the output folder"
+    } else {
+        "checking the output folder"
+    };
+    let started = ctx.spawn(
+        "engine: folder",
+        what,
+        move |ctx| {
+            let state = if create {
+                match create_folder(&root) {
+                    Ok(()) => library::folder_state(&root, &name),
+                    Err(refusal) => {
+                        ctx.emit(problem(refusal.text));
+                        if refusal.probe {
+                            library::folder_state(&root, &name)
+                        } else {
+                            FolderState::Missing
+                        }
+                    }
+                }
+            } else {
+                library::folder_state(&root, &name)
+            };
+            send_unless_stopped(&ctx, &mine, Event::Folder { root, name, state });
+        },
+        move |text| Event::Folder {
+            root: r,
+            name: n,
+            state: FolderState::NotWritable(text),
+        },
+    );
+    if started {
+        state.folder = Some(flag);
+    }
+}
+
 /// Starts a scan of `root`, stopping the one before.
 fn scan(state: &mut State, ctx: &Ctx, root: PathBuf) {
     if let Some(older) = &state.scan {
@@ -144,7 +173,7 @@ fn scan(state: &mut State, ctx: &Ctx, root: PathBuf) {
     let started = ctx.spawn(
         "engine: library",
         "reading the Library",
-        move |ctx| scan_library(&ctx, root, &mine),
+        move |ctx| scan_library(&ctx, root, &mine, MAX_COVERS),
         move |text| Event::Library {
             root: r,
             entries: Vec::new(),
@@ -156,9 +185,18 @@ fn scan(state: &mut State, ctx: &Ctx, root: PathBuf) {
     }
 }
 
-/// The Library of `root`: `Library`, then each video's `LibraryCover`, unless `cancel` is set meanwhile.
-fn scan_library(ctx: &Ctx, root: PathBuf, cancel: &AtomicBool) {
-    let found = library::scan(&root, &summary);
+/// The Library of `root`: `Library`, then the `LibraryCover` of each of the newest `covers` videos, unless `cancel`
+/// is set meanwhile. Once `cancel` is set, the fight files still to be read are skipped (each is answered with an
+/// empty problem that is never sent), but listing the folders cannot be stopped.
+fn scan_library(ctx: &Ctx, root: PathBuf, cancel: &AtomicBool, covers: usize) {
+    let read = |text: &str| {
+        if stopped(ctx, cancel) {
+            Err(String::new())
+        } else {
+            summary(text)
+        }
+    };
+    let found = library::scan(&root, &read);
     if stopped(ctx, cancel) {
         return;
     }
@@ -173,21 +211,22 @@ fn scan_library(ctx: &Ctx, root: PathBuf, cancel: &AtomicBool) {
             return;
         }
     };
-    let folders: Vec<PathBuf> = entries.iter().map(|e| e.folder.clone()).collect();
+    // The entries come newest first.
+    let folders: Vec<PathBuf> = entries.iter().take(covers).map(|e| e.folder.clone()).collect();
     ctx.emit(Event::Library {
         root,
         entries,
         problem: None,
     });
     for folder in folders {
+        if stopped(ctx, cancel) {
+            return;
+        }
         // The Library shows its own empty picture for a cover it does not get.
         let Some(cover) = cover_of(&folder) else {
             continue;
         };
-        if stopped(ctx, cancel) {
-            return;
-        }
-        ctx.emit(Event::LibraryCover { folder, cover });
+        send_unless_stopped(ctx, cancel, Event::LibraryCover { folder, cover });
     }
 }
 
@@ -260,9 +299,7 @@ where
                 },
                 Err(text) => problem(text),
             };
-            if !stopped(&ctx, &mine) {
-                ctx.emit(answer);
-            }
+            send_unless_stopped(&ctx, &mine, answer);
         },
         problem,
     );
@@ -301,8 +338,13 @@ fn fight_text(path: &Path) -> Result<String, &'static str> {
         io::ErrorKind::PermissionDenied => "your Windows account is not allowed to read it",
         _ => "it could not be read. Check that its drive is connected",
     };
-    if fs::metadata(path).map_err(unreadable)?.is_dir() {
+    // `symlink_metadata` does not follow a link: an open never reads through one (ruling M2-R18).
+    let kind = fs::symlink_metadata(path).map_err(unreadable)?.file_type();
+    if kind.is_dir() {
         return Err("it is a folder, not a fight file");
+    }
+    if !kind.is_file() {
+        return Err("it is a link to somewhere else, not a fight file");
     }
     let mut bytes = Vec::new();
     fs::File::open(path)
@@ -319,13 +361,15 @@ fn fight_text(path: &Path) -> Result<String, &'static str> {
 
 /// Makes the output folder `root` itself: never its missing parents (a mistyped path does not become a chain of
 /// new folders), never anything inside it. A folder already there is fine. The error says why, in words.
-fn create_folder(root: &Path) -> Result<(), String> {
+fn create_folder(root: &Path) -> Result<(), Refusal> {
     let shown = root.display();
+    // Refused before touching anything: no folder is probed for these either.
+    let at_once = |text: String| Err(Refusal { text, probe: false });
     if root.as_os_str().is_empty() {
-        return Err("No output folder is set, so none was created. Choose a folder.".to_string());
+        return at_once("No output folder is set, so none was created. Choose a folder.".to_string());
     }
     if !root.is_absolute() {
-        return Err(format!(
+        return at_once(format!(
             "The output folder {shown} does not start with its drive, so it was not created. Choose a folder."
         ));
     }
@@ -336,7 +380,7 @@ fn create_folder(root: &Path) -> Result<(), String> {
     if fs::metadata(root).is_ok_and(|m| m.is_dir()) {
         return Ok(());
     }
-    Err(match err.kind() {
+    let text = match err.kind() {
         io::ErrorKind::AlreadyExists => {
             format!("{shown} is a file, not a folder, so it cannot be the output folder. Choose another folder.")
         }
@@ -358,7 +402,15 @@ fn create_folder(root: &Path) -> Result<(), String> {
             "The output folder {shown} could not be created. Check that its drive is connected and has free space, \
              or choose another folder."
         ),
-    })
+    };
+    Err(Refusal { text, probe: true })
+}
+
+/// Why `create_folder` made no folder: the sentence, and whether the folder is worth checking afterwards (false
+/// for a path refused before anything was tried, which is answered `Missing` at once).
+struct Refusal {
+    text: String,
+    probe: bool,
 }
 
 /// Clears the "a dialog is open" flag when dropped (also when the dialog's thread panics or never starts).
@@ -963,20 +1015,21 @@ mod tests {
                 "No output folder is set, so none was created. Choose a folder.",
             ),
         ] {
+            // Refused before anything is tried, so answered `Missing` without checking the folder.
+            assert!(create_folder(&path).is_err_and(|r| !r.probe && r.text == text));
             engine.send(Command::CreateFolder { root: path.clone() });
             assert_eq!(problem_text(&engine), text);
-            folder_of(&engine, &path, "");
+            assert_eq!(folder_of(&engine, &path, ""), FolderState::Missing);
         }
         assert!(!Path::new("Videos").exists());
-        // A drive that is not connected, and that drive's root.
+        // The root of a drive that is not connected (a drive's root can never be made, so nothing can be written
+        // even if the drive is connected meanwhile).
         if let Some(drive) = missing_drive() {
-            for path in [drive.join("BALLFIGHT"), drive.clone()] {
-                engine.send(Command::CreateFolder { root: path.clone() });
-                let text = problem_text(&engine);
-                assert!(text.contains(&path.display().to_string()), "{text}");
-                assert!(text.contains("drive") && text.ends_with('.'), "{text}");
-                folder_of(&engine, &path, "");
-            }
+            engine.send(Command::CreateFolder { root: drive.clone() });
+            let text = problem_text(&engine);
+            assert!(text.contains(&drive.display().to_string()), "{text}");
+            assert!(text.contains("drive") && text.ends_with('.'), "{text}");
+            folder_of(&engine, &drive, "");
         }
         finish(engine, &root);
     }
@@ -1102,6 +1155,119 @@ mod tests {
         assert!(!shown.contains(&file) && !shown.contains(&gone));
         // A drive's root is shown as it is.
         assert_eq!(reveal_target(&drive_root()), Ok(drive_root()));
+        finish(engine, &root);
+    }
+
+    /// A context without a coordinator, and the interface's end of its seam.
+    fn bare_ctx() -> (Ctx, EngineHandle) {
+        let (handle, side) = crate::seam::channel(Arc::new(|| {}));
+        let config = super::super::EngineConfig {
+            workers: 1,
+            paths: crate::store::Paths::under(Path::new("unused")),
+            clip: None,
+            search_limit: None,
+        };
+        (Ctx::new(side.events.clone(), config), handle)
+    }
+
+    #[test]
+    fn an_older_folder_answer_is_never_sent() {
+        let (_temp, videos) = output_folder("an_older_folder_answer_is_never_sent");
+        let (ctx, events) = bare_ctx();
+        // A silenced answer is not sent; one that is not silenced is.
+        let flag = AtomicBool::new(true);
+        send_unless_stopped(&ctx, &flag, problem("late".to_string()));
+        assert!(events.poll().is_none());
+        flag.store(false, Ordering::SeqCst);
+        send_unless_stopped(&ctx, &flag, problem("on time".to_string()));
+        assert!(matches!(events.poll(), Some(Event::Problem { text }) if text == "on time"));
+        // Each check or create silences the one before it, whichever kind it was.
+        let mut state = State::default();
+        let check = || Command::CheckFolder {
+            root: videos.clone(),
+            name: "flute_vs_trombone".to_string(),
+        };
+        handle(&mut state, &ctx, check());
+        let first = state.folder.clone().expect("a flag for the check");
+        handle(&mut state, &ctx, Command::CreateFolder { root: videos.clone() });
+        let second = state.folder.clone().expect("a flag for the create");
+        assert!(first.load(Ordering::SeqCst), "the check was silenced");
+        assert!(!second.load(Ordering::SeqCst));
+        handle(&mut state, &ctx, check());
+        assert!(second.load(Ordering::SeqCst), "the create's answer was silenced");
+        // The newest is answered.
+        let state = folder_of(&events, &videos, "flute_vs_trombone");
+        assert_eq!(state, FolderState::Ok { taken: false });
+        // A create's problem is still sent when a newer check silences its answer.
+        let mut state = State::default();
+        let deep = videos.join("missing").join("BALLFIGHT");
+        handle(&mut state, &ctx, Command::CreateFolder { root: deep });
+        handle(&mut state, &ctx, check());
+        assert!(problem_text(&events).starts_with("The folder "));
+        ctx.shutdown();
+    }
+
+    #[test]
+    fn covers_stop_at_the_newest_ones() {
+        let (_temp, videos) = output_folder("covers_stop_at_the_newest_ones");
+        let older = video(&videos, "flute_vs_trombone", &fight_toml(1, [1.0, 1.0]));
+        let newer = video(&videos, "trombone_vs_flute", &fight_toml(2, [1.0, 1.0]));
+        for (folder, secs) in [(&older, 1_794_000_000), (&newer, 1_794_100_000)] {
+            let cover = fs::File::options().write(true).open(folder.join("cover.png")).unwrap();
+            cover
+                .set_modified(std::time::UNIX_EPOCH + Duration::from_secs(secs))
+                .unwrap();
+        }
+        assert_eq!(MAX_COVERS, 500);
+        let (ctx, handle) = bare_ctx();
+        let flag = AtomicBool::new(false);
+        scan_library(&ctx, videos.clone(), &flag, 1);
+        let Some(Event::Library { entries, .. }) = handle.poll() else {
+            panic!("no Library");
+        };
+        assert_eq!(entries.len(), 2, "every video is listed");
+        let Some(Event::LibraryCover { folder, .. }) = handle.poll() else {
+            panic!("no cover");
+        };
+        assert_eq!(folder, newer);
+        assert!(handle.poll().is_none(), "only the newest video's cover");
+        // A scan silenced before it answers sends nothing at all.
+        flag.store(true, Ordering::SeqCst);
+        scan_library(&ctx, videos, &flag, MAX_COVERS);
+        assert!(handle.poll().is_none());
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn an_open_never_reads_through_a_link() {
+        let (temp, videos) = output_folder("an_open_never_reads_through_a_link");
+        let outside = temp.0.join("outside");
+        fs::create_dir(&outside).unwrap();
+        let link = videos.join("linked.toml");
+        let made = std::process::Command::new("cmd")
+            .args(["/C", "mklink", "/J"])
+            .arg(&link)
+            .arg(&outside)
+            .output()
+            .unwrap();
+        assert!(made.status.success(), "{made:?}");
+        let (engine, root) = test_engine();
+        engine.send(Command::OpenFight { path: link });
+        assert_eq!(
+            problem_text(&engine),
+            "linked.toml cannot be opened: It is a link to somewhere else, not a fight file."
+        );
+        // Links to files need rights a plain account may not have; when this PC allows them, they are refused too.
+        let real = outside.join("real.toml");
+        fs::write(&real, fight_toml(7, [1.0, 1.0])).unwrap();
+        let file_link = videos.join("file link.toml");
+        match std::os::windows::fs::symlink_file(&real, &file_link) {
+            Ok(()) => {
+                engine.send(Command::OpenFight { path: file_link });
+                assert!(problem_text(&engine).contains("It is a link to somewhere else"));
+            }
+            Err(err) => eprintln!("file links are not allowed here ({err}); that part was not run"),
+        }
         finish(engine, &root);
     }
 }
