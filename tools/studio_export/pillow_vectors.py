@@ -6,6 +6,8 @@
         polygon, polygon_outline, line, ellipse, rectangle, point          plain drawing on L, RGB, F and RGBA images
         blend_polygon, blend_line, blend_ellipse, blend_rectangle, blend_point
                                            ImageDraw.Draw(rgb_image, 'RGBA'): the ink is blended by its alpha
+        polygon_rounding                   polygons with an edge at the one value where ROUND_UP's float sum shows
+        nonfinite                          the same calls with a NaN, infinite or absurdly large coordinate
         gaussian_blur                      Image.filter(ImageFilter.GaussianBlur(radius))
         resize_nearest, resize_bilinear, resize_bicubic                    Image.resize(size, filter)
         as_used                            whole calls captured from the renderer at full size (shadow masks, the
@@ -864,6 +866,168 @@ def book_blend_point():
                       point_xy, [lambda r, a: dict(fill=r.rgb() + (a,))])
 
 
+# ---------------------------------------------------------------- the rounding of an edge, and coordinates no int holds
+def half_edges(limit=400):
+    """edges (rows, dx, dy) from (0, 0) to (dx, dy) whose x on row `rows`, as Draw.c computes it in C floats
+    (rows * ((float)dx / dy) + 0), is exactly the largest float below one half. That is the one value at which
+    ROUND_UP's float sum f + 0.5F differs from a double sum (it rounds to 1.0), so the span that starts there begins
+    at column 1, not column 0. In a fixed order: by dy, then dx, then rows"""
+    target = np.float32(0.5) - np.float32(2.0 ** -25)
+    out = []
+    for dy in range(2, limit + 1):
+        for dx in range(1, dy):
+            slope = np.float32(dx) / np.float32(dy)
+            for rows in range(1, min(dy, MAX_SIDE - 2)):
+                if np.float32(rows) * slope + np.float32(0) == target:
+                    out.append((rows, dx, dy))
+    return out
+
+
+def book_polygon_rounding():
+    b = Book('polygon_rounding', 'ImageDraw.polygon(xy, fill=...) with an edge that crosses a row at 0.49999997, '
+             'the largest float below one half: ROUND_UP adds 0.5F as a C float, the sum is 1.0, and the span starts '
+             'at column 1 (a double sum would start it at column 0)', note=DRAW_NOTE +
+             ' args.row is the row on which the left edge sits at 0.49999997: the picture has that row\'s column 0 '
+             'untouched and its column 1 drawn.')
+    r = Rnd(16)
+    edges = half_edges()
+    assert len(edges) >= 12, edges
+    # (every shape lists the edge from (0, 0) downwards: Draw.c computes an edge's x from its first point, and
+    # from the far end the same edge lands on 0.5 exactly, where no rounding question arises)
+    # an edge that is built for it: 16777215 / 33554432 is that float itself, on row 1
+    edges = edges + [(1, 16777215, 33554432)]
+    modes = ('L', 'RGB', 'F', 'RGBA')
+    n = 0
+    for rows, dx, dy in edges:
+        w, h = 24 + n % 9, max(8, rows + 3)
+        right = w - 6
+        shapes = [('quad', [(0, 0), (dx, dy), (dx + right, dy), (right, 0)]),
+                  ('quad_rotated', [(right, 0), (0, 0), (dx, dy), (dx + right, dy)]),
+                  ('triangle', [(0, 0), (dx, dy), (right, 0)])]
+        for k in range(3):
+            kind, xy = shapes[(n + k) % 3]
+            blend = k == 2
+            first = len(b.cases)
+            if blend:
+                was = r.stripes(w, h, n)
+                draw_case(b, kind, 'RGB', (w, h), 'polygon', xy, was, blend=True, fill=r.rgb() + (r.i(60, 254),))
+            else:
+                mode = modes[(n + k) % 4]
+                paper = r.paper(mode)
+                was = np.array(Image_new(mode, (w, h), paper))
+                draw_case(b, kind, mode, (w, h), 'polygon', xy, paper, fill=r.ink(mode, n))
+            b.cases[first]['args']['row'] = rows
+            # the case shows the float sum: on that row column 0 is untouched and column 1 is drawn
+            out = b.arrays[f'c{first:03d}__out']
+            assert np.array_equal(out[rows, 0], was[rows, 0]) and not np.array_equal(out[rows, 1], was[rows, 1]), \
+                (rows, dx, dy, kind)
+        n += 1
+    assert len(b.cases) >= 30, len(b.cases)
+    return b
+
+
+def Image_new(mode, size, color):
+    from PIL import Image
+    return Image.new(mode, size, color)
+
+
+NONFINITE_NOTE = (DRAW_NOTE + ' Here some coordinates are NaN, infinite or beyond a C int: "nan", "inf" and "-inf" '
+                  'are float.hex() of those values. Pillow does not refuse them (its check x1 < x0 is false for a '
+                  'NaN); (int) of such a value is the lowest int on the reference PC, and the arithmetic that follows '
+                  'wraps. The C standard leaves both undefined, so these are the reference build\'s answers. Only '
+                  'calls that Pillow finishes are here: a thin line with such an end takes it 1.5 to 2.7 s (it '
+                  'walks every pixel on the way), an ellipse outline may never return.')
+
+
+def book_nonfinite():
+    """what Pillow draws when a coordinate is NaN, infinite or absurdly large. A simulation that blows up hands the
+    renderer such numbers; Python then draws these pictures (or none) and carries on"""
+    nan, inf = float('nan'), float('inf')
+    b = Book('nonfinite', 'ImageDraw calls with a NaN, infinite or absurdly large coordinate, as Pillow draws them',
+             note=NONFINITE_NOTE)
+    r = Rnd(17)
+    size = (16, 12)
+
+    def plain(kind, method, xy, mode='L', **kw):
+        ink = {'L': 255, 'RGB': (200, 90, 30), 'F': 7.25}[mode]
+        kw = {k: (ink if v is True else v) for k, v in kw.items()}
+        draw_case(b, kind, mode, size, method, xy, r.paper(mode), **kw)
+
+    def blended(kind, method, xy, **kw):
+        kw = {k: ((200, 90, 30, 128) if v is True else v) for k, v in kw.items()}
+        draw_case(b, kind, 'RGB', size, method, xy, r.stripes(size[0], size[1], len(b.cases)), blend=True, **kw)
+
+    # a box with one corner that is not a number, filled and outlined
+    boxes = [('x0_nan', [nan, 2, 5, 9]), ('x1_nan', [5, 2, nan, 9]), ('y0_nan', [5, nan, 9, 9]),
+             ('y1_nan', [5, 2, 9, nan]), ('all_nan', [nan, nan, nan, nan]), ('x1_inf', [5, 2, inf, 9]),
+             ('y1_inf', [5, 2, 9, inf]), ('x0_minus_inf', [-inf, 2, 9, 9]), ('x0_y0_nan', [nan, nan, 5, 9]),
+             ('x1_y1_nan', [5, 2, nan, nan]), ('x_nan', [nan, 2, nan, 9]), ('y_nan', [5, nan, 9, nan])]
+    for name, xy in boxes:
+        plain('rectangle_' + name, 'rectangle', xy, fill=True)
+        blended('rectangle_' + name, 'rectangle', xy, fill=True)
+        plain('ellipse_' + name, 'ellipse', xy, fill=True)
+        blended('ellipse_' + name, 'ellipse', xy, fill=True)
+    for name, xy in boxes:                                 # outlines Pillow finishes at once
+        if name in ('x0_nan', 'x1_nan', 'all_nan', 'x1_inf', 'x0_minus_inf', 'x_nan'):
+            plain('rectangle_outline_' + name, 'rectangle', xy, outline=True)
+            blended('rectangle_outline_' + name, 'rectangle', xy, outline=True)
+    for name, xy in (('x0_nan', [nan, 2, 5, 9]), ('x1_nan_left', [-5, 2, nan, 9]), ('y0_nan', [5, nan, 9, 9]),
+                     ('y1_nan_above', [5, -2, 9, nan]), ('all_nan', [nan, nan, nan, nan]), ('x_nan', [nan, 2, nan, 9]),
+                     ('y_nan', [5, nan, 9, nan]), ('x0_minus_inf', [-inf, 2, 5, 9]), ('x0_y0_nan', [nan, nan, 5, 9])):
+        plain('ellipse_outline_' + name, 'ellipse', xy, outline=True)
+    # two rectangle outlines whose side lines walk 2 ** 31 rows (5.4 s each)
+    plain('rectangle_outline_y0_nan', 'rectangle', [5, nan, 9, 9], outline=True)
+    plain('rectangle_outline_y1_nan', 'rectangle', [5, 2, 9, nan], outline=True)
+
+    # ellipses far larger than the image
+    for rad in (2e4, 6e4, 3e5):
+        for kw in (dict(fill=True), dict(outline=True)):
+            plain('ellipse_giant_centred', 'ellipse', [8 - rad, 6 - rad, 8 + rad, 6 + rad], **kw)
+            plain('ellipse_giant_corner', 'ellipse', [3, 2, 3 + 2 * rad, 2 + 2 * rad], **kw)
+    for rad in (2e4, 1e6, 1e7):
+        for kw in (dict(fill=True), dict(outline=True)):
+            plain('ellipse_giant_flat', 'ellipse', [8 - rad, 3, 8 + rad, 9], **kw)
+    for rad in (2e4, 1e6, 3e6):
+        for kw in (dict(fill=True), dict(outline=True)):
+            plain('ellipse_giant_tall', 'ellipse', [5, 6 - rad, 11, 6 + rad], **kw)
+    blended('ellipse_giant_centred', 'ellipse', [8 - 6e4, 6 - 6e4, 8 + 6e4, 6 + 6e4], fill=True)
+
+    # lines: wide ones are quadrilaterals (at once); thin ones walk every pixel on the way
+    lines = [('end_x_nan', [(5, 5), (nan, 7)]), ('start_x_nan_level', [(nan, 5), (9, 5)]),
+             ('start_x_nan', [(nan, 5), (9, 7)]), ('start_y_nan', [(5, nan), (9, 7)]),
+             ('start_nan_nan', [(nan, nan), (9, 7)]), ('end_nan_nan', [(5, 5), (nan, nan)]),
+             ('end_x_inf_level', [(5, 5), (inf, 5)]), ('end_x_minus_inf_level', [(5, 5), (-inf, 5)]),
+             ('end_1e9', [(5, 5), (1e9, 7)]), ('start_1e9', [(1e9, 5), (5, 7)]),
+             ('start_1e9_9e8', [(1e9, 9e8), (5, 7)]), ('end_1p5e9_1p2e9', [(5, 5), (1.5e9, 1.2e9)]),
+             ('end_y_nan', [(5, 5), (9, nan)]), ('end_y_nan_upright', [(5, 5), (5, nan)]),
+             ('from_column_0', [(0, 5), (nan, 7)]), ('from_column_minus_3', [(-3, 5), (nan, 7)]),
+             ('through_nan', [(2, 2), (nan, nan), (9, 9)]), ('both_nan', [(nan, nan), (nan, nan)]),
+             ('end_3e9', [(5, 5), (3e9, -3e9)])]
+    for n, (name, xy) in enumerate(lines):
+        for width in (2, 3, 6):
+            plain('wide_line_' + name, 'line', xy, mode=('L', 'RGB', 'F')[(n + width) % 3], fill=True, width=width)
+        blended('wide_line_' + name, 'line', xy, fill=True, width=3)
+    for name in ('end_x_nan', 'start_x_nan_level', 'start_x_nan', 'end_nan_nan', 'start_1e9_9e8', 'end_y_nan',
+                 'from_column_0', 'both_nan', 'end_1p5e9_1p2e9'):
+        plain('thin_line_' + name, 'line', dict(lines)[name], fill=True)
+    blended('thin_line_end_nan_nan', 'line', [(5, 5), (nan, nan)], fill=True, width=1)
+
+    # polygons and points
+    polys = [('x_nan', [(2, 2), (nan, 5), (9, 9), (3, 10)]), ('nan_nan', [(2, 2), (nan, nan), (9, 9), (3, 10)]),
+             ('x_inf', [(2, 2), (inf, 5), (9, 9), (3, 10)]), ('y_nan', [(2, 2), (12, nan), (9, 9), (3, 10)]),
+             ('x_1e9', [(2, 2), (1e9, 5), (9, 9), (3, 10)]), ('x_minus_3e9', [(2, 2), (-3e9, 5), (9, 9), (3, 10)]),
+             ('y_minus_inf', [(2, 2), (12, -inf), (9, 9), (3, 10)]),
+             ('two_nan', [(nan, 2), (12, 3), (9, nan), (3, 10)])]
+    for n, (name, xy) in enumerate(polys):
+        plain('polygon_' + name, 'polygon', xy, mode=('L', 'RGB', 'F')[n % 3], fill=True)
+        blended('polygon_' + name, 'polygon', xy, fill=True)
+    plain('polygon_outline_x_nan', 'polygon', polys[0][1], outline=True)          # (4.3 s: three thin lines)
+    plain('point_nan', 'point', [(nan, 3), (3, nan), (nan, nan), (4, 4), (inf, 4), (4, -inf), (1e10, 1), (5, 5)],
+          fill=True)
+    blended('point_nan', 'point', [(nan, 3), (4, 4), (4, 4), (-1e300, 2)], fill=True)
+    return b
+
+
 # ---------------------------------------------------------------- pictures to blur and resize
 def picture_for(kind, mode, r, w, h):
     """an (h, w) or (h, w, c) uint8 test picture"""
@@ -1175,8 +1339,8 @@ def check_books(books):
     """each seeded file has its 200 cases on canvases up to 96 x 96, with the hard kinds the brief lists"""
     by_name = {b.name: b for b in books}
     want = ('polygon', 'polygon_outline', 'line', 'ellipse', 'rectangle', 'point', 'blend_polygon', 'blend_line',
-            'blend_ellipse', 'blend_rectangle', 'blend_point', 'gaussian_blur', 'resize_nearest', 'resize_bilinear',
-            'resize_bicubic', 'as_used')
+            'blend_ellipse', 'blend_rectangle', 'blend_point', 'polygon_rounding', 'nonfinite', 'gaussian_blur',
+            'resize_nearest', 'resize_bilinear', 'resize_bicubic', 'as_used')
     assert sorted(by_name) == sorted(want), f'files: {sorted(by_name)}; wanted: {sorted(want)}'
     for b in books:
         ids = [c['id'] for c in b.cases]
@@ -1184,6 +1348,8 @@ def check_books(books):
         if b.name == 'as_used':
             kinds = b.kinds()
             assert {'shadow_mask', 'bloom', 'beam', 'starburst', 'crack'} <= kinds, kinds
+            continue
+        if b.name in SMALL_BOOKS:                         # hand-made cases for one question each, not 200 seeded
             continue
         assert len(b.cases) >= MIN_CASES, f'{b.name}: {len(b.cases)} cases, the brief asks for {MIN_CASES}'
         for c in b.cases:
@@ -1205,7 +1371,9 @@ def check_books(books):
 # ================================================================ the export
 BOOKS = (book_polygon, book_polygon_outline, book_line, book_ellipse, book_rectangle, book_point,
          book_blend_polygon, book_blend_line, book_blend_ellipse, book_blend_rectangle, book_blend_point,
+         book_polygon_rounding, book_nonfinite,
          book_gaussian_blur, book_resize_nearest, book_resize_bilinear, book_resize_bicubic)
+SMALL_BOOKS = ('polygon_rounding', 'nonfinite')
 
 
 def run():
