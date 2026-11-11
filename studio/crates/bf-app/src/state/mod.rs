@@ -23,6 +23,7 @@ use crate::model::shortlist::{FilterSpec, SearchState, Shortlist};
 use crate::model::story::StoryView;
 use crate::model::take::{Frame, MusicView, PlayerCmd, SoundState, TransportAction, TransportView};
 use crate::model::{Gen, JobId, Notice, Platform, Settings, Step, TakeId, View};
+use crate::preview::audio::NO_DEVICE;
 use crate::seam::{Command, Event};
 use crate::wording;
 
@@ -237,6 +238,8 @@ pub struct AppState {
     described: Gen,
     /// What the queue, folder and library rules remember (`queue_run.rs`).
     run: queue_run::QueueRun,
+    /// The playhead's frame when the preview could not draw it, as the player last said (`player_view`).
+    failed_frame: Option<u32>,
 }
 
 impl AppState {
@@ -318,6 +321,7 @@ impl AppState {
             balance_stopped: false,
             described: 0,
             run: queue_run::QueueRun::default(),
+            failed_frame: None,
         }
     }
 
@@ -378,6 +382,18 @@ impl AppState {
         fx
     }
 
+    /// What the preview player says, once per frame (the shell copies it): the transport as it stands and the
+    /// playhead's frame when it could not be drawn. Only the player knows these, so they come in here rather than
+    /// through an event; the status line follows them like any other change.
+    pub fn player_view(&mut self, transport: TransportView, failed_frame: Option<u32>) {
+        if self.vm.transport == transport && self.failed_frame == failed_frame {
+            return;
+        }
+        self.vm.transport = transport;
+        self.failed_frame = failed_frame;
+        self.vm.status = self.status();
+    }
+
     /// Shows a step, the Library or Settings. Opening Balance with nothing measured balances or measures; opening
     /// Seeds with no search asked for starts one.
     fn go(&mut self, view: View, fx: &mut Vec<Effect>) {
@@ -397,17 +413,21 @@ impl AppState {
         }
     }
 
-    /// The status line, worked out from the state after every action and event (ruling M2-R17). The first of
-    /// these that holds:
+    /// The status line, worked out from the state after every action and event and whenever the player's view
+    /// changes (ruling M2-R17). The first of these that holds:
     /// 1. a problem: why the pair cannot fight, else why the take cannot be made;
-    /// 2. a video is rendering: "Rendering {title}, about {n} s left", or "Rendering {title}" until its frame count
+    /// 2. the preview could not draw the playhead's frame: "Frame {n} could not be drawn. Try another seed." (`n`
+    ///    counted from 0, as the transport counts frames; widget rule 11);
+    /// 3. a video is rendering: "Rendering {title}, about {n} s left", or "Rendering {title}" until its frame count
     ///    gives a time (a render is the longer, costlier wait, so it comes before the search);
-    /// 3. a search is running: "Searching on {workers} cores";
-    /// 4. a fight file was opened: "Opened {title}", until the draft or the view changes;
-    /// 5. a take is loaded: "Seed {n} is ready";
-    /// 6. there are balance numbers: "Balanced on {n} fights in {s} s" (without the time when it is not a real one,
+    /// 4. a search is running: "Searching on {workers} cores";
+    /// 5. a fight file was opened: "Opened {title}", until the draft or the view changes;
+    /// 6. the sound device was not found or was lost: "No sound device was found, so the preview is silent."
+    ///    (widget rule 14; it stands where the take's own line would);
+    /// 7. a take is loaded: "Seed {n} is ready";
+    /// 8. there are balance numbers: "Balanced on {n} fights in {s} s" (without the time when it is not a real one,
     ///    widget rule 9);
-    /// 7. "{Left} vs {Right}, not balanced yet".
+    /// 9. "{Left} vs {Right}, not balanced yet".
     ///
     /// Before the roster arrives it is empty.
     pub(crate) fn status(&self) -> String {
@@ -417,6 +437,9 @@ impl AppState {
         let vm = &self.vm;
         if let Some(problem) = vm.fight_problem.as_ref().or(vm.take.problem.as_ref()) {
             return problem.clone();
+        }
+        if let Some(f) = self.failed_frame {
+            return format!("Frame {f} could not be drawn. Try another seed.");
         }
         if let Some(rendering) = self.rendering_status() {
             return rendering;
@@ -429,6 +452,9 @@ impl AppState {
         }
         if let Some(opened) = self.opened_status() {
             return opened;
+        }
+        if vm.transport.sound == SoundState::NoDevice {
+            return NO_DEVICE.to_string();
         }
         if let Some(story) = &vm.take.story {
             return format!("Seed {} is ready", story.seed);

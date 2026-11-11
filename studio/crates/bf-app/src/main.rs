@@ -2,7 +2,9 @@
 
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use bf_app::app::BfApp;
+use bf_app::app::{self, BfApp};
+use bf_app::preview::audio::open_audio;
+use bf_app::store::Paths;
 
 /// How many painted frames `--smoke` waits for before it closes the window.
 const SMOKE_FRAMES: u32 = 30;
@@ -14,6 +16,10 @@ struct Smoke {
 }
 
 impl eframe::App for Smoke {
+    fn logic(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
+        self.app.logic(ctx, frame);
+    }
+
     fn ui(&mut self, ui: &mut egui::Ui, frame: &mut eframe::Frame) {
         self.app.ui(ui, frame);
         self.painted += 1;
@@ -26,6 +32,10 @@ impl eframe::App for Smoke {
 
     fn clear_color(&self, visuals: &egui::Visuals) -> [f32; 4] {
         self.app.clear_color(visuals)
+    }
+
+    fn on_exit(&mut self) {
+        self.app.on_exit();
     }
 }
 
@@ -42,7 +52,8 @@ fn main() -> std::process::ExitCode {
         "BALLFIGHT Studio",
         options,
         Box::new(move |cc| {
-            let app = BfApp::blank(cc);
+            // The theme is installed, and the settings and the queue are read, here, before the first frame.
+            let app = app::start(cc, Paths::system(), open_audio);
             let app: Box<dyn eframe::App> = if smoke {
                 Box::new(Smoke { app, painted: 0 })
             } else {
