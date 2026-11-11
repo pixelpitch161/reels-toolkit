@@ -167,8 +167,10 @@ pub struct FrameReport {
     /// Hulls drawn in the plain scan's order because Qhull's order is not known for them
     /// ([`Unusual::Merge`]). Expected: none.
     pub hull_fallbacks: usize,
-    /// Hulls scipy would refuse (flat, or too few points), where the Python frame fails: the hull is not drawn.
-    /// A frame with one is not the kit's frame. Expected: none.
+    /// The spot beam's hull when scipy would refuse it (flat, or too few points), where the Python frame fails:
+    /// the beam is not drawn, and a frame with one is not the kit's frame. Expected: none. It counts the beam
+    /// only: a look's hull that comes back flat or with too few points is skipped by the look, as the kit's
+    /// `try/except` round its `ConvexHull` does (ORGAN, ALTO SAX), and is no error of the frame.
     pub hull_errors: usize,
 }
 

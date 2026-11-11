@@ -40,9 +40,11 @@ pub enum TitleError {
     CloseupTooBig(String, i64),
 }
 
-/// Python's `repr` of a text, as the kit's messages show it: single quotes, or double quotes when the text holds
-/// a single quote and no double one.
-fn py_repr(s: &str) -> String {
+/// Python's `repr` of a text, as the kit's messages show it: in single quotes, or in double quotes when the text
+/// holds a single quote and no double one; a backslash is doubled and the chosen quote escaped. (Python also
+/// escapes characters that do not print; a middle word is letters the card's font draws, so that is not ported.)
+pub(crate) fn py_repr(s: &str) -> String {
+    let s = s.replace('\\', "\\\\");
     if s.contains('\'') && !s.contains('"') {
         format!("\"{s}\"")
     } else {

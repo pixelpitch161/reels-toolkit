@@ -488,7 +488,7 @@ fn a_close_up_must_be_square() {
 
 #[test]
 fn a_pattern_not_ported_yet_is_an_error() {
-    // Python: sorted(title.PATTERNS): the card's own sixteen; only the TROMBONE's is ported
+    // Python: sorted(title.PATTERNS): the card's own sixteen
     let python = [
         "ACCORDION",
         "ACOUSTIC",
@@ -507,17 +507,30 @@ fn a_pattern_not_ported_yet_is_an_error() {
         "VIOLA",
         "VIOLIN",
     ];
-    let mut ours: Vec<&str> = super::patterns::unported().into_iter().chain(["TROMBONE"]).collect();
-    ours.sort_unstable();
-    assert_eq!(ours, python);
     let mut all = super::patterns::names().to_vec();
     all.sort_unstable();
     assert_eq!(all, python);
-    for name in super::patterns::unported() {
-        let err = panels::builtin_pattern(name).expect_err("an error");
-        assert_eq!(err.to_string(), format!("the title pattern {name} is not ported yet"));
+    // each name is refused exactly when its file says it is not ported; TROMBONE's (milestone 1) is
+    let unported = super::patterns::unported();
+    assert!(!unported.contains(&"TROMBONE"));
+    for name in super::patterns::names() {
+        let refused = unported.contains(&name);
+        match panels::builtin_pattern(name) {
+            Ok(Some(_)) => assert!(!refused, "{name}"),
+            Ok(None) => panic!("{name} is in the table and has no pattern"),
+            Err(err) => {
+                assert!(refused, "{name}");
+                assert_eq!(err.to_string(), format!("the title pattern {name} is not ported yet"));
+            }
+        }
     }
-    // the card's constructor says so, on either side, whatever the look offers
+    // the error's words, for a made-up name
+    assert_eq!(
+        super::TitleError::PatternNotPorted("KAZOO".into()).to_string(),
+        "the title pattern KAZOO is not ported yet"
+    );
+    // the card's constructor says so, on either side, whatever the look offers (for a pattern still unported,
+    // found at run time; once all sixteen are ported there is none to refuse)
     let mesh = Mesh { faces: Vec::new() };
     let looks = [0, 1].map(|_| CardLook {
         look: &Blackout,
@@ -534,13 +547,14 @@ fn a_pattern_not_ported_yet_is_an_error() {
             None,
         )
     };
-    let err = new("HORN", "TROMBONE").expect_err("HORN is not ported");
-    assert_eq!(err, super::TitleError::PatternNotPorted("HORN".into()));
-    assert_eq!(err.to_string(), "the title pattern HORN is not ported yet");
-    let err = new("FLUTE", "BARI SAX").expect_err("BARI SAX is not ported");
-    assert_eq!(err.to_string(), "the title pattern BARI SAX is not ported yet");
+    if let Some(&name) = unported.first() {
+        let err = new(name, "TROMBONE").expect_err("not ported");
+        assert_eq!(err, super::TitleError::PatternNotPorted(name.into()));
+        let err = new("FLUTE", name).expect_err("not ported");
+        assert_eq!(err.to_string(), format!("the title pattern {name} is not ported yet"));
+    }
     // names the table does not hold are fine: the look's pattern, or a plain panel
-    assert!(new("TUBA", "ALTO SAX").is_ok());
+    assert!(new("KAZOO", "NOT A FIGHTER").is_ok());
 }
 
 #[test]
@@ -991,4 +1005,16 @@ fn the_streaks_are_pythons() {
         spans[..4],
         [(256, 44, 94), (266, 35, 94), (268, 264, 324), (272, 264, 319)]
     );
+}
+
+#[test]
+fn the_kits_messages_quote_as_python_does() {
+    // Python 3.13: repr('REMATCH') 'REMATCH'; repr("IT'S ON") "IT'S ON"; repr('SAY "HI"') 'SAY "HI"';
+    // repr('IT\'S "ON"') 'IT\'S "ON"'; repr(r'A\B') 'A\\B'
+    use super::panels::py_repr;
+    assert_eq!(py_repr("REMATCH"), "'REMATCH'");
+    assert_eq!(py_repr("IT'S ON"), r#""IT'S ON""#);
+    assert_eq!(py_repr(r#"SAY "HI""#), r#"'SAY "HI"'"#);
+    assert_eq!(py_repr(r#"IT'S "ON""#), r#"'IT\'S "ON"'"#);
+    assert_eq!(py_repr(r"A\B"), r"'A\\B'");
 }

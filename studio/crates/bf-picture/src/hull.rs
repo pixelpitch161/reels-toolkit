@@ -173,6 +173,17 @@ pub fn logged<R>(f: impl FnOnce() -> R) -> (R, Vec<HullCall>) {
     if !was_on {
         log_calls(true);
     }
+    /// Turns the log off again when `logged` turned it on, also when `f` panics, so the shared count of logging
+    /// threads never stays raised.
+    struct Restore(bool);
+    impl Drop for Restore {
+        fn drop(&mut self) {
+            if self.0 {
+                log_calls(false);
+            }
+        }
+    }
+    let _restore = Restore(!was_on);
     let before = LOG.with(|log| log.borrow().as_ref().map_or(0, Vec::len));
     let out = f();
     let calls = LOG.with(|log| {
@@ -181,9 +192,6 @@ pub fn logged<R>(f: impl FnOnce() -> R) -> (R, Vec<HullCall>) {
             .map(|c| c.split_off(before))
             .unwrap_or_default()
     });
-    if !was_on {
-        log_calls(false);
-    }
     (out, calls)
 }
 
@@ -1156,5 +1164,28 @@ mod tests {
             .collect();
         let want: Vec<usize> = (8..16).chain(0..8).collect();
         assert_eq!(qhull_order(&pts), Ok(want));
+    }
+
+    #[test]
+    fn a_panic_inside_logged_turns_the_log_off_again() {
+        // on a thread of its own, so no other test's log is counted with it
+        std::thread::spawn(|| {
+            let before = LOGGING.load(Ordering::Relaxed);
+            let caught = std::panic::catch_unwind(|| {
+                logged(|| {
+                    let _ = convex_hull(&[(0.0, 0.0), (1.0, 0.0), (0.0, 1.0)]);
+                    panic!("a look's hook fails");
+                })
+            });
+            assert!(caught.is_err());
+            assert!(LOG.with(|log| log.borrow().is_none()), "the log is off again");
+            // other threads may log at the same time; this thread's own share is gone
+            assert!(LOGGING.load(Ordering::Relaxed) <= before);
+            let (_, calls) = logged(|| convex_hull(&[(0.0, 0.0), (1.0, 0.0), (0.0, 1.0)]));
+            assert_eq!(calls.len(), 1);
+            assert!(LOG.with(|log| log.borrow().is_none()));
+        })
+        .join()
+        .expect("the test's thread");
     }
 }

@@ -278,13 +278,13 @@ mod tests {
 
     #[test]
     fn nobody_else_does() {
-        for f in roster() {
-            if !PORTED.contains(&f.name.as_str()) {
-                assert!(card(&f.name).is_none(), "{} has a card", f.name);
-            }
-        }
-        for name in ["", "flute", "Flute", "KAZOO", "ALTO SAX"] {
+        // a name that is not a roster fighter has no card; a roster fighter offered has one
+        for name in ["", "flute", "Flute", "KAZOO", "BARI SAX", "NOT A FIGHTER"] {
+            assert!(roster().iter().all(|f| f.name != name), "{name:?} is in the roster");
             assert!(card(name).is_none(), "{name:?}");
+        }
+        for name in PORTED {
+            assert!(card(name).is_some(), "{name} is offered without a card");
         }
     }
 
