@@ -78,6 +78,8 @@ pub fn evict(cached: &[u32], playhead: u32, keep: usize) -> Vec<u32> {
 struct State {
     take: TakeId,
     source: Option<Arc<dyn FrameSource>>,
+    /// `source.frames()`, read once when the source is set (0 without one).
+    frames: u32,
     /// Rises whenever the take changes; a frame finished for an older one is thrown away.
     epoch: u64,
     /// The wanted frames, most urgent first; a new `want` replaces them.
@@ -87,7 +89,7 @@ struct State {
     cache: BTreeMap<u32, Frame>,
     /// Frames of the current take a worker is drawing.
     drawing: HashSet<u32>,
-    /// Frames of the current take whose draw panicked; not tried again until the take changes.
+    /// Frames of the current source whose draw panicked; not tried again until a source is set.
     failed: HashSet<u32>,
     /// Workers inside a draw, for any take.
     busy: usize,
@@ -99,9 +101,9 @@ struct State {
 impl State {
     /// The next frame a worker should draw: the first wanted frame that is neither kept, nor being drawn, nor failed.
     fn next(&self) -> Option<u32> {
-        let frames = self.source.as_ref()?.frames();
+        self.source.as_ref()?;
         self.queue.iter().copied().find(|f| {
-            *f < frames && !self.cache.contains_key(f) && !self.drawing.contains(f) && !self.failed.contains(f)
+            *f < self.frames && !self.cache.contains_key(f) && !self.drawing.contains(f) && !self.failed.contains(f)
         })
     }
 
@@ -122,6 +124,9 @@ impl State {
 struct Shared {
     state: Mutex<State>,
     work: Condvar,
+    /// When set (tests only), every draw is recorded as taking this many milliseconds instead of its measured time,
+    /// so the feedback from `frame_ms` through `pace` into `want` does not depend on the machine.
+    draw_ms: Option<f32>,
 }
 
 impl Shared {
@@ -140,12 +145,30 @@ pub struct Scheduler {
 }
 
 impl Scheduler {
-    /// Starts `threads` workers (at least one). `waker` is called after every frame that is kept.
+    /// Starts `threads` workers (at least one). `waker` is called after every frame that is kept and after every
+    /// draw that fails, outside the lock.
     pub fn new(threads: usize, waker: Waker) -> Scheduler {
+        Scheduler::start(threads, waker, None)
+    }
+
+    /// A scheduler whose draws are all recorded as taking `ms` milliseconds, whatever they really take.
+    #[cfg(test)]
+    pub(crate) fn with_draw_ms(threads: usize, waker: Waker, ms: f32) -> Scheduler {
+        Scheduler::start(threads, waker, Some(ms))
+    }
+
+    /// Records a draw time as if a draw had taken `ms` milliseconds.
+    #[cfg(test)]
+    pub(crate) fn record_draw_ms(&self, ms: f32) {
+        record(&mut self.shared.lock().times, ms);
+    }
+
+    fn start(threads: usize, waker: Waker, draw_ms: Option<f32>) -> Scheduler {
         let shared = Arc::new(Shared {
             state: Mutex::new(State {
                 take: 0,
                 source: None,
+                frames: 0,
                 epoch: 0,
                 queue: Vec::new(),
                 playhead: 0,
@@ -157,6 +180,7 @@ impl Scheduler {
                 stop: false,
             }),
             work: Condvar::new(),
+            draw_ms,
         });
         let workers = (0..threads.max(1))
             .map(|i| {
@@ -172,19 +196,26 @@ impl Scheduler {
     }
 
     /// Draws from `frames` from now on. A different `take` forgets every frame of the old one, and a frame still
-    /// being drawn for it is thrown away when it finishes. `None` draws nothing.
+    /// being drawn for it is thrown away when it finishes; the same `take` keeps its frames. `None` draws nothing
+    /// (and, for the same take, keeps what is drawn). Every call forgets which frames failed, even for the same
+    /// take: a take set again (for example when its sound arrives) gets a fresh try.
     pub fn set_source(&self, take: TakeId, frames: Option<Arc<dyn FrameSource>>) {
+        // Asked outside the lock; the workers read the cached count.
+        let count = frames.as_ref().map_or(0, |s| s.frames());
         let mut st = self.shared.lock();
         if take != st.take {
             st.take = take;
             st.epoch += 1;
             st.cache.clear();
             st.drawing.clear();
-            st.failed.clear();
         }
-        st.source = frames;
+        st.failed.clear();
+        st.frames = count;
+        let old = std::mem::replace(&mut st.source, frames);
         drop(st);
         self.shared.work.notify_all();
+        // A large old source is freed here, outside the lock.
+        drop(old);
     }
 
     /// Asks for the frames around `playhead`; replaces what was asked before, so older scrubs are skipped.
@@ -212,6 +243,17 @@ impl Scheduler {
     /// The mean of the last 30 draw times in milliseconds; 33.0 before the first.
     pub fn frame_ms(&self) -> f32 {
         mean(&self.shared.lock().times)
+    }
+
+    /// Whether frame `f` could not be drawn (its source panicked). Scoped to the current take and source: setting a
+    /// source forgets every failure. A failed frame is not tried again until then.
+    pub fn failed(&self, f: u32) -> bool {
+        self.shared.lock().failed.contains(&f)
+    }
+
+    /// How many frames of the current take and source could not be drawn.
+    pub fn failed_count(&self) -> usize {
+        self.shared.lock().failed.len()
     }
 
     /// Whether nothing is being drawn and nothing that is wanted is left to draw.
@@ -254,6 +296,14 @@ fn mean(times: &VecDeque<f32>) -> f32 {
     }
 }
 
+/// Adds a draw time, keeping the latest 30.
+fn record(times: &mut VecDeque<f32>, ms: f32) {
+    if times.len() == TIMES {
+        times.pop_front();
+    }
+    times.push_back(ms);
+}
+
 /// One worker: takes the next wanted frame, draws it outside the lock, keeps it if its take is still current.
 fn work(shared: &Shared, waker: &Waker) {
     loop {
@@ -273,31 +323,34 @@ fn work(shared: &Shared, waker: &Waker) {
 
         let started = Instant::now();
         let drawn = catch_unwind(AssertUnwindSafe(|| source.draw(f)));
-        let ms = started.elapsed().as_secs_f32() * 1000.0;
+        let ms = shared
+            .draw_ms
+            .unwrap_or_else(|| started.elapsed().as_secs_f32() * 1000.0);
         drop(source);
 
         let mut st = shared.lock();
         st.busy -= 1;
-        let mut kept = false;
+        // Whether the interface should look again: a frame was kept, or one failed.
+        let mut wake = false;
         if let Ok(frame) = &drawn {
-            if st.times.len() == TIMES {
-                st.times.pop_front();
-            }
-            st.times.push_back(ms);
+            record(&mut st.times, ms);
             if epoch == st.epoch {
                 st.cache.insert(f, frame.clone());
                 st.trim();
-                kept = true;
+                wake = true;
             }
         }
         if epoch == st.epoch {
             st.drawing.remove(&f);
             if drawn.is_err() {
                 st.failed.insert(f);
+                wake = true;
             }
         }
         drop(st);
-        if kept {
+        // A panic payload is freed outside the lock too.
+        drop(drawn);
+        if wake {
             _ = catch_unwind(AssertUnwindSafe(|| waker()));
         }
     }
@@ -402,6 +455,9 @@ pub(crate) mod testing {
     }
 
     /// Waits until the scheduler has nothing left to draw, at most 5 s.
+    ///
+    /// The waker is called after the lock is released, so the scheduler can be idle before the waker for its last
+    /// frame has run: never assert on the waker straight after this; wait for it with [`wait_for`].
     pub(crate) fn wait_idle(s: &Scheduler) {
         wait_for("the scheduler to be idle", || s.idle());
     }
@@ -551,9 +607,12 @@ mod tests {
         s.want(10, false, true);
         wait_idle(&s);
         assert!(s.get(10).is_some());
-        // The same take keeps its frames.
+        // The same take keeps its frames, with another source or with none.
         s.set_source(1, Some(TestSource::new()));
         assert!(s.get(10).is_some());
+        s.set_source(1, None);
+        assert!(s.get(10).is_some());
+        assert_eq!(s.latest_at_or_before(NF).map(|(f, _)| f), Some(10));
         s.set_source(2, Some(TestSource::new()));
         assert!(s.get(10).is_none());
         assert!(s.latest_at_or_before(NF).is_none());
@@ -580,7 +639,8 @@ mod tests {
         wait_idle(&s);
         assert!(s.get(20).is_some());
         assert_eq!(new.calls(), 1);
-        assert_eq!(woken.load(Ordering::SeqCst), 1);
+        // The waker runs after the lock is released, so it may still be on its way when the scheduler is idle.
+        wait_for("the waker", || woken.load(Ordering::SeqCst) == 1);
     }
 
     #[test]
@@ -597,9 +657,10 @@ mod tests {
     #[test]
     fn the_frames_it_wants_are_never_dropped_at_the_loop_point() {
         // 64 frames behind the playhead are kept; playing on from 1,825 wants 0 to 7, which are "behind" 1,825 by
-        // number but are what plays next. They must stay, or they would be drawn and dropped for ever.
+        // number but are what plays next. They must stay, or they would be drawn and dropped for ever. Every draw
+        // counts as 1 ms, so the lead and the stride are 1 however fast this machine draws.
         let src = TestSource::new();
-        let s = scheduler(4);
+        let s = Scheduler::with_draw_ms(4, Arc::new(|| {}), 1.0);
         s.set_source(1, Some(src.clone()));
         for f in 1_761..=1_824 {
             s.want(f, false, true);
@@ -618,17 +679,59 @@ mod tests {
     #[test]
     fn a_panicking_source_leaves_the_scheduler_working() {
         let src = TestSource::panicking_at(5);
-        let s = scheduler(2);
+        let woken = Arc::new(AtomicUsize::new(0));
+        let w = woken.clone();
+        let s = Scheduler::new(2, Arc::new(move || _ = w.fetch_add(1, Ordering::SeqCst)));
         s.set_source(1, Some(src.clone()));
+        assert!(!s.failed(5));
         s.want(5, false, true);
         wait_idle(&s);
         assert!(s.get(5).is_none());
-        // The frame that failed is not drawn again for this take; the others still are.
+        assert!(s.failed(5));
+        assert!(!s.failed(6));
+        assert_eq!(s.failed_count(), 1);
+        // A failed draw wakes the interface too, so it can ask.
+        wait_for("the waker after the failed draw", || woken.load(Ordering::SeqCst) == 1);
+        // The frame that failed is not drawn again for this source; the others still are.
         s.want(5, false, true);
         s.want(6, false, true);
         wait_idle(&s);
         assert!(s.get(6).is_some());
         assert_eq!(src.calls(), 2);
+        assert!(!s.failed(6));
+        // Setting the source again, even for the same take, forgets the failure and tries once more.
+        s.set_source(1, Some(src.clone()));
+        assert!(!s.failed(5));
+        assert_eq!(s.failed_count(), 0);
+        assert!(s.get(6).is_some());
+        s.want(5, false, true);
+        wait_idle(&s);
+        assert_eq!(src.calls(), 3);
+        assert!(s.failed(5));
+        // Another take starts with no failures.
+        s.set_source(2, Some(TestSource::new()));
+        assert_eq!(s.failed_count(), 0);
+        assert!(drops_within_2_s(s, || {}));
+    }
+
+    #[test]
+    fn a_panic_in_the_waker_is_survived() {
+        let calls = Arc::new(AtomicUsize::new(0));
+        let c = calls.clone();
+        let s = Scheduler::new(
+            1,
+            Arc::new(move || {
+                c.fetch_add(1, Ordering::SeqCst);
+                panic!("the test waker fails");
+            }),
+        );
+        s.set_source(1, Some(TestSource::new()));
+        for f in [1, 2] {
+            s.want(f, false, true);
+            wait_idle(&s);
+            assert!(s.get(f).is_some(), "frame {f} is drawn");
+        }
+        wait_for("both wakers", || calls.load(Ordering::SeqCst) == 2);
         assert!(drops_within_2_s(s, || {}));
     }
 
@@ -641,6 +744,46 @@ mod tests {
         wait_idle(&s);
         let ms = s.frame_ms();
         assert!(ms.is_finite() && ms >= 0.0, "frame_ms is {ms}");
+    }
+
+    #[test]
+    fn frame_ms_is_the_mean_of_the_last_30_draws() {
+        let s = scheduler(1);
+        for ms in 1..=40 {
+            s.record_draw_ms(ms as f32);
+        }
+        // The last 30 are 11 to 40.
+        assert_eq!(s.frame_ms(), 25.5);
+        // A real draw is recorded as it is timed (here, fixed at 7 ms).
+        let s = Scheduler::with_draw_ms(1, Arc::new(|| {}), 7.0);
+        s.set_source(1, Some(TestSource::new()));
+        for f in [3, 4] {
+            s.want(f, false, true);
+            wait_idle(&s);
+        }
+        assert_eq!(s.frame_ms(), 7.0);
+    }
+
+    #[test]
+    fn a_slow_draw_moves_the_lead_and_draws_every_second_frame() {
+        // Draws of 300 ms on 7 threads: pace gives a lead of 9 and a stride of 2. The draw time comes from a real
+        // draw (a scrub) and reaches the next `want` through `frame_ms`.
+        let s = Scheduler::with_draw_ms(7, Arc::new(|| {}), 300.0);
+        s.set_source(1, Some(TestSource::new()));
+        s.want(0, false, true);
+        wait_idle(&s);
+        assert_eq!(s.frame_ms(), 300.0);
+        s.want(100, true, true);
+        wait_idle(&s);
+        assert_eq!(kept(&s), [0, 109, 111]);
+
+        // One thread that takes 30 ms a frame cannot draw every frame: every second one is drawn (and held).
+        let s = scheduler(1);
+        s.record_draw_ms(30.0);
+        s.set_source(1, Some(TestSource::new()));
+        s.want(100, true, true);
+        wait_idle(&s);
+        assert_eq!(kept(&s), [101, 103, 105, 107, 109, 111]);
     }
 
     #[test]
