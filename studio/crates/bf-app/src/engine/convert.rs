@@ -1,0 +1,418 @@
+//! Between the interface's draft and the engine's fight file, and from engine errors to words.
+//!
+//! A draft is a thin layer of choices over a fight file: [`fight_file`] lays the draft's choices over the file it
+//! was opened from (its `base`), or over the pair's written fight for a new match-up, so everything the draft does
+//! not hold (the hand-written lines, the solos, the title hits, an old episode's tags and seeds) is kept.
+//! [`draft_of`] is the way back. [`plain`] is the one place an engine error becomes a sentence for the screen.
+//!
+//! Two edge cases of the captions are accepted: a Shorts text that ends in a line break reopens with one line more
+//! (its last text is empty), and an opened file whose `caption` holds a line break moves its second line into the
+//! Instagram tags when it is saved again (the Instagram text's first line is the caption).
+
+use bf_core::fightfile::{Captions, FightFile};
+
+use crate::model::draft::{CaptionTexts, Draft};
+use crate::wording;
+
+/// The role of the fighter that plays bass, and of every other fighter.
+const BASS: &str = "bass";
+const MELODY: &str = "melody";
+
+/// Why a draft has no fight file.
+pub(crate) enum Unusable {
+    /// A new match-up whose music is not written yet (no base, no starter).
+    NoMusic,
+    /// Anything else, already in words.
+    Other(String),
+}
+
+/// The fight file of a draft, as [`fight_file`] makes it, keeping apart the pair that has no music.
+pub(crate) fn build(draft: &Draft) -> Result<FightFile, Unusable> {
+    let [left, right] = [draft.fighters[0].as_str(), draft.fighters[1].as_str()];
+    let base = match &draft.base {
+        Some(text) => Some(FightFile::parse(text).map_err(|e| unusable(&e))?),
+        None => None,
+    };
+    // The base is used only while it is a fight of these two fighters (either way round): its lines, solos and
+    // title hits are written for them by name.
+    let same_pair = |ff: &FightFile| {
+        let mut a: Vec<&str> = ff.fighters.iter().map(String::as_str).collect();
+        let mut b = vec![left, right];
+        a.sort_unstable();
+        b.sort_unstable();
+        a == b
+    };
+    let mut ff = match base.filter(same_pair) {
+        Some(ff) => ff,
+        None => bf_content::starter(left, right).map_err(|e| match e {
+            bf_content::ContentError::NoMusic { .. } => Unusable::NoMusic,
+            other => unusable(&other),
+        })?,
+    };
+    ff.fighters = vec![left.to_string(), right.to_string()];
+    ff.handicap = draft.handicap.to_vec();
+    ff.tempo_bpm = draft.tempo_bpm();
+    ff.pair_rules = bf_content::pair_rules(left, right);
+    ff.seed = draft.seed;
+    ff.music.theme = draft.theme.clone();
+    if let Some(chords) = bf_content::theme_card(&draft.theme).and_then(|t| t.chord_loops.get(draft.chord_loop)) {
+        ff.music.chord_loop = chords.iter().map(|c| c.to_string()).collect();
+    }
+    let bass = draft
+        .bass
+        .filter(|&i| i < 2 && bf_content::card(&draft.fighters[i]).is_some_and(|c| c.can_play_bass));
+    ff.music.roles.clear();
+    for (i, name) in draft.fighters.iter().enumerate() {
+        let role = if bass == Some(i) { BASS } else { MELODY };
+        ff.music.roles.insert(name.clone(), role.to_string());
+    }
+    ff.music.music_seed = draft.music_seed;
+    ff.captions = captions(&draft.captions);
+    ff.app_version = env!("CARGO_PKG_VERSION").to_string();
+    bf_content::validate(&ff).map_err(|e| unusable(&e))?;
+    Ok(ff)
+}
+
+/// A fight file this app refuses, in words.
+fn unusable(e: &dyn std::fmt::Display) -> Unusable {
+    Unusable::Other(plain(&format!("This fight cannot be used: {e}")))
+}
+
+/// The fight file of a draft: the file it was opened from (or, for a new match-up, the pair's written fight) with
+/// the draft's fighters in its order, handicap, tempo, the pair's rules, seed, theme, chord loop, who plays bass,
+/// music seed, captions and this app's version, checked against what this app has.
+///
+/// # Errors
+/// Why the draft cannot be a fight, as a sentence for the screen ("This fight cannot be used: {field}: {message}.",
+/// or "No music is written for Flute vs Piano yet.").
+pub fn fight_file(draft: &Draft) -> Result<FightFile, String> {
+    build(draft).map_err(|why| match why {
+        Unusable::NoMusic => plain(&no_music_sentence(&draft.fighters)),
+        Unusable::Other(text) => text,
+    })
+}
+
+/// "No music is written for Flute vs Piano yet.", from the roster names.
+fn no_music_sentence(fighters: &[String; 2]) -> String {
+    format!("No music is written for {} yet.", wording::versus(fighters))
+}
+
+/// The longer sentence the Match-up screen shows for a pair without music.
+pub(crate) fn no_music_problem(fighters: &[String; 2]) -> String {
+    format!(
+        "No music is written for {} yet, so it cannot be balanced or rendered. Pick another pair.",
+        wording::versus(fighters)
+    )
+}
+
+/// The draft of a fight file read from `toml`: its fighters, theme, tempo as bars, handicap, seed, chord loop (its
+/// place among the theme's loops, 0 when it is none of them), who plays bass, music seed and captions; the
+/// captions count as the owner's own, and the text is kept as the draft's base.
+pub fn draft_of(ff: &FightFile, toml: &str) -> Draft {
+    let name = |i: usize| ff.fighters.get(i).cloned().unwrap_or_default();
+    let fighters = [name(0), name(1)];
+    let handicap = |i: usize| ff.handicap.get(i).copied().unwrap_or(1.0);
+    let chord_loop = bf_content::theme_card(&ff.music.theme)
+        .and_then(|t| {
+            t.chord_loops.iter().position(|l| {
+                l.len() == ff.music.chord_loop.len() && l.iter().zip(&ff.music.chord_loop).all(|(a, b)| a == b)
+            })
+        })
+        .unwrap_or(0);
+    let bass = fighters
+        .iter()
+        .position(|f| ff.music.roles.get(f).is_some_and(|r| r == BASS));
+    Draft {
+        theme: ff.music.theme.clone(),
+        bars: u32::try_from(ff.grid().n_bars).unwrap_or(u32::MAX),
+        handicap: [handicap(0), handicap(1)],
+        seed: ff.seed,
+        chord_loop,
+        bass,
+        music_seed: ff.music.music_seed,
+        captions: caption_texts(&ff.captions),
+        captions_edited: true,
+        base: Some(toml.to_string()),
+        fighters,
+    }
+}
+
+/// The caption fields of a fight file as the three texts the Render screen edits: Instagram's is the caption, a
+/// line break and the Instagram tags; TikTok's the caption, a line break and the TikTok tags; Shorts' its texts
+/// one under the other.
+pub fn caption_texts(c: &Captions) -> CaptionTexts {
+    CaptionTexts {
+        instagram: format!("{}\n{}", c.caption, c.instagram),
+        tiktok: format!("{}\n{}", c.caption, c.tiktok),
+        shorts: c.shorts.join("\n"),
+    }
+}
+
+/// The caption fields of the three texts, the way back from [`caption_texts`]: the caption is the Instagram text's
+/// first line and the Instagram tags the rest; the TikTok tags are the TikTok text after its first line; Shorts'
+/// texts are the title (first line), the description (second line) and the tags (the rest), and an empty text
+/// gives none. A Shorts text of one or two lines gets empty texts for the missing ones, so the file holds three.
+///
+/// Windows line breaks (`\r\n`, as a pasted text may have) count as line breaks: no `\r` reaches the fight file.
+pub fn captions(t: &CaptionTexts) -> Captions {
+    let [ig, tt, sh] = [&t.instagram, &t.tiktok, &t.shorts].map(|s| s.replace("\r\n", "\n"));
+    let (caption, instagram) = ig.split_once('\n').unwrap_or((&ig, ""));
+    let tiktok = tt.split_once('\n').map_or("", |(_, rest)| rest);
+    let mut shorts: Vec<String> = if sh.is_empty() {
+        Vec::new()
+    } else {
+        sh.splitn(3, '\n').map(str::to_string).collect()
+    };
+    if !shorts.is_empty() {
+        shorts.resize(3, String::new());
+    }
+    Captions {
+        caption: caption.to_string(),
+        instagram: instagram.to_string(),
+        tiktok: tiktok.to_string(),
+        shorts,
+    }
+}
+
+/// A fight file's title: "Flute vs Trombone, seed 20418", or "Flute vs Trombone" before a seed is chosen.
+pub fn title_of(ff: &FightFile) -> String {
+    let name = |i: usize| ff.fighters.get(i).cloned().unwrap_or_default();
+    let pair = wording::versus(&[name(0), name(1)]);
+    match ff.seed {
+        Some(seed) => format!("{pair}, seed {seed}"),
+        None => pair,
+    }
+}
+
+/// An engine error as a sentence for the screen: its text with a capital first letter and a full stop at the end.
+/// Every error the engine sends to the interface goes through here.
+pub fn plain(e: &dyn std::fmt::Display) -> String {
+    let text = e.to_string();
+    let text = text.trim();
+    let mut chars = text.chars();
+    let Some(first) = chars.next() else {
+        return "Something went wrong in the engine.".to_string();
+    };
+    let mut out: String = first.to_uppercase().chain(chars).collect();
+    if !out.ends_with(['.', '!', '?']) {
+        out.push('.');
+    }
+    out
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::engine::tests::starting_draft;
+    use bf_core::event::Value;
+
+    const EPISODE: &str = include_str!("../../../../fights/flute_vs_trombone.toml");
+
+    fn texts(instagram: &str, tiktok: &str, shorts: &str) -> CaptionTexts {
+        CaptionTexts {
+            instagram: instagram.to_string(),
+            tiktok: tiktok.to_string(),
+            shorts: shorts.to_string(),
+        }
+    }
+
+    #[test]
+    fn a_draft_becomes_a_valid_fight_file() {
+        let mut d = starting_draft();
+        d.seed = Some(7);
+        let ff = fight_file(&d).expect("a fight file");
+        assert_eq!(bf_content::validate(&ff), Ok(()));
+        assert_eq!(ff.tempo_bpm, 34.0 * 4.0 * 60.0 / 61.0);
+        assert_eq!(ff.pair_rules.get("swat_cobras"), Some(&Value::Bool(true)));
+        assert_eq!(ff.seed, Some(7));
+        assert_eq!(ff.fighters, ["FLUTE", "TROMBONE"]);
+        assert_eq!(ff.handicap, [1.0, 1.0]);
+        assert_eq!(ff.music.theme, "big_top");
+        assert_eq!(ff.music.roles.get("TROMBONE").map(String::as_str), Some("bass"));
+        assert_eq!(ff.music.roles.get("FLUTE").map(String::as_str), Some("melody"));
+        assert_eq!(ff.app_version, env!("CARGO_PKG_VERSION"));
+        assert_eq!(title_of(&ff), "Flute vs Trombone, seed 7");
+        d.seed = None;
+        assert_eq!(title_of(&fight_file(&d).expect("no seed")), "Flute vs Trombone");
+    }
+
+    #[test]
+    fn swapping_sides_swaps_the_file() {
+        let mut d = starting_draft();
+        d.handicap = [2.0, 0.4];
+        let a = fight_file(&d).expect("as drafted");
+        d.fighters.swap(0, 1);
+        d.handicap.swap(0, 1);
+        d.bass = d.bass.map(|i| 1 - i);
+        let b = fight_file(&d).expect("swapped");
+        assert_eq!(a.fighters, ["FLUTE", "TROMBONE"]);
+        assert_eq!(b.fighters, ["TROMBONE", "FLUTE"]);
+        assert_eq!(a.handicap, [2.0, 0.4]);
+        assert_eq!(b.handicap, [0.4, 2.0]);
+        // the trombone keeps the bass from either corner
+        assert_eq!(a.music.roles, b.music.roles);
+        assert_ne!(a.search_key(&[false, false]), b.search_key(&[false, false]));
+    }
+
+    #[test]
+    fn music_and_captions_keep_the_search_key() {
+        let d = starting_draft();
+        let key = |d: &Draft| fight_file(d).expect("a fight file").search_key(&[false, false]);
+        let k = key(&d);
+        let mut same = d.clone();
+        same.captions.instagram = "Something else\n#tags".to_string();
+        same.theme = "big_top".to_string();
+        same.music_seed = 99;
+        same.seed = Some(5);
+        assert_eq!(key(&same), k);
+        // the theme field itself does not count either, even when it names a theme this app lacks
+        let mut theme = fight_file(&d).expect("a fight file");
+        theme.music.theme = "polka".to_string();
+        assert_eq!(theme.search_key(&[false, false]), k);
+        let mut bars = d.clone();
+        bars.bars = 30;
+        assert_ne!(key(&bars), k);
+        let mut handicap = d.clone();
+        handicap.handicap[1] = 1.5;
+        assert_ne!(key(&handicap), k);
+    }
+
+    #[test]
+    fn a_file_round_trips_through_a_draft() {
+        let ff = FightFile::parse(EPISODE).expect("the episode");
+        let d = draft_of(&ff, EPISODE);
+        assert_eq!(d.fighters, ["FLUTE", "TROMBONE"]);
+        assert_eq!(d.bars, ff.grid().n_bars as u32);
+        assert_eq!(
+            (d.handicap, d.seed, d.chord_loop, d.bass),
+            ([2.0, 0.4], Some(392), 0, Some(1))
+        );
+        assert!(d.captions_edited);
+        assert_eq!(d.base.as_deref(), Some(EPISODE));
+        let back = fight_file(&d).expect("the episode again");
+        let mut want = ff.clone();
+        want.tempo_bpm = d.tempo_bpm();
+        want.app_version = back.app_version.clone();
+        assert_eq!(back, want);
+        // what the draft does not hold came from the base
+        assert_eq!(back.music.lines, ff.music.lines);
+        assert_eq!(back.music.solos, ff.music.solos);
+        assert_eq!(back.music.title_hits, ff.music.title_hits);
+        assert_eq!(back.series_tag.as_deref(), Some("BALLFIGHT #15"));
+        assert_eq!(title_of(&back), "Flute vs Trombone, seed 392");
+    }
+
+    #[test]
+    fn a_file_the_app_wrote_round_trips() {
+        let mut d = starting_draft();
+        d.fighters.swap(0, 1);
+        d.bass = d.bass.map(|i| 1 - i);
+        d.handicap = [0.4, 2.0];
+        d.seed = Some(7);
+        d.captions = caption_texts(&bf_content::draft_captions("TROMBONE", "FLUTE"));
+        d.captions.instagram = d
+            .captions
+            .instagram
+            .replacen("Trombone vs Flute", "The back row wins", 1);
+        d.captions_edited = true;
+        let first = fight_file(&d).expect("written").to_toml();
+        let reread = FightFile::parse(&first).expect("read back");
+        assert_eq!(
+            reread.captions.caption.split(' ').take(4).collect::<Vec<_>>(),
+            ["The", "back", "row", "wins"]
+        );
+        let second = fight_file(&draft_of(&reread, &first)).expect("written again").to_toml();
+        assert_eq!(second, first);
+    }
+
+    #[test]
+    fn captions_map_both_ways() {
+        let c = Captions {
+            caption: "Flute vs Trombone".to_string(),
+            instagram: "#ig #tags".to_string(),
+            tiktok: "#tt".to_string(),
+            shorts: vec!["Title".to_string(), "Words".to_string(), "#tags".to_string()],
+        };
+        let t = caption_texts(&c);
+        assert_eq!(
+            t,
+            texts(
+                "Flute vs Trombone\n#ig #tags",
+                "Flute vs Trombone\n#tt",
+                "Title\nWords\n#tags"
+            )
+        );
+        assert_eq!(captions(&t), c);
+        // an empty Shorts text is no texts; a short one is padded to three; more lines stay in the tags
+        let none = captions(&texts("", "", ""));
+        assert_eq!(
+            (none.caption.as_str(), none.instagram.as_str(), none.tiktok.as_str()),
+            ("", "", "")
+        );
+        assert!(none.shorts.is_empty());
+        assert_eq!(
+            captions(&texts("Only a caption", "No tags", "Title")).shorts,
+            ["Title", "", ""]
+        );
+        assert_eq!(
+            captions(&texts("Only a caption", "No tags", "Title")).caption,
+            "Only a caption"
+        );
+        assert_eq!(captions(&texts("Only a caption", "No tags", "Title")).tiktok, "");
+        let long = captions(&texts("a\nb\nc", "x\ny\nz", "1\n2\n3\n4"));
+        assert_eq!(
+            (long.caption.as_str(), long.instagram.as_str(), long.tiktok.as_str()),
+            ("a", "b\nc", "y\nz")
+        );
+        assert_eq!(long.shorts, ["1", "2", "3\n4"]);
+        assert_eq!(caption_texts(&long).shorts, "1\n2\n3\n4");
+        // every edited text is a fight file that validates
+        let mut d = starting_draft();
+        d.captions = texts("One line", "", "Two\nlines");
+        assert!(fight_file(&d).is_ok());
+    }
+
+    #[test]
+    fn windows_line_breaks_leave_no_carriage_return() {
+        let c = captions(&texts(
+            "Flute vs Trombone\r\n#ig\r\n#more",
+            "Flute vs Trombone\r\n#tt",
+            "Title\r\nWords\r\n#tags\r\n#more",
+        ));
+        assert_eq!(
+            (c.caption.as_str(), c.instagram.as_str(), c.tiktok.as_str()),
+            ("Flute vs Trombone", "#ig\n#more", "#tt")
+        );
+        assert_eq!(c.shorts, ["Title", "Words", "#tags\n#more"]);
+        let all = [&c.caption, &c.instagram, &c.tiktok].into_iter().chain(&c.shorts);
+        for text in all {
+            assert!(!text.contains('\r'), "{text:?}");
+        }
+    }
+
+    #[test]
+    fn errors_are_sentences() {
+        assert_eq!(plain(&"fighters: two needed"), "Fighters: two needed.");
+        assert_eq!(plain(&"Already one."), "Already one.");
+        assert_eq!(plain(&"  "), "Something went wrong in the engine.");
+        let mut d = starting_draft();
+        d.handicap[0] = 0.0;
+        assert_eq!(
+            fight_file(&d).unwrap_err(),
+            "This fight cannot be used: handicap[0]: must be above 0, found 0.0."
+        );
+        d.handicap[0] = 1.0;
+        d.base = Some("not a fight file".to_string());
+        let text = fight_file(&d).unwrap_err();
+        assert!(
+            text.starts_with("This fight cannot be used: ") && text.ends_with('.'),
+            "{text}"
+        );
+        d.base = None;
+        d.fighters[1] = "PIANO".to_string();
+        assert_eq!(
+            fight_file(&d).unwrap_err(),
+            "No music is written for Flute vs Piano yet."
+        );
+    }
+}
