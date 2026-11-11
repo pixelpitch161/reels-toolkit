@@ -9,16 +9,16 @@
 #   the PC's renders use today (WinGet\Links\ffmpeg.exe points at that bin\ffmpeg.exe and has the same hash).
 # - in_archive: the installed folder's own layout (the archive unpacks to ffmpeg-9.0.2-full_build\).
 #
-# NOT YET PINNED: the archive itself. winget keeps no record of the installer's address or checksum on this PC and
-# the archive is not on this PC, so its SHA-256 and size cannot be read without downloading it. Until they are
-# filled in, `archive_sha256` holds the words "not yet pinned" and the fetcher refuses to download anything. The url
-# below is the www.gyan.dev release archive of 9.0.2 (the plan's choice when winget names no URL); it is not
-# confirmed yet either, and is checked when the archive is first downloaded and pinned.
+# - url and archive_sha256: winget's manifest (`winget show Gyan.FFmpeg --version 9.0.2`: "Installer Url" and
+#   "Installer SHA256", portable zip, released 2026-09-20), the publisher's own GitHub release. www.gyan.dev does not
+#   serve 9.0.2 under its packages folder (it answered 404).
+# - archive_bytes: the archive downloaded once from that url on 2026-11-11. Its SHA-256 equalled winget's, and its
+#   bin/ffmpeg.exe, bin/ffprobe.exe and LICENSE (all deflated) equalled the installed files' hashes below.
 version = "9.0.2"
 build = "full_build-www.gyan.dev"
-url = "https://www.gyan.dev/ffmpeg/builds/packages/ffmpeg-9.0.2-full_build.zip"
-archive_sha256 = "not yet pinned"
-archive_bytes = 0
+url = "https://github.com/GyanD/codexffmpeg/releases/download/9.0.2/ffmpeg-9.0.2-full_build.zip"
+archive_sha256 = "759d0a9831c436a0eb331ad36f236c06cb04aaa0005da46571f0e9d3d9206f6b"
+archive_bytes = 257736868
 licence = "GPL-3.0-or-later"
 source_note = "FFmpeg's source for this build is commit 946fcce07b at https://github.com/FFmpeg/FFmpeg/commit/946fcce07b (from the build's README.txt); the build is published by www.gyan.dev, whose README lists the source of each external library it includes."
 
