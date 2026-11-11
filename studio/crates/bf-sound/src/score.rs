@@ -96,13 +96,19 @@ pub fn score(ctx: &MusicCtx, bed: &dyn Bed, sounds: [&dyn Sound; 2]) -> Result<M
     // ---- the fight: the bed to the K.O. (tape-stopped there), the fighters (music.py 324-331)
     // bar_ko = int(T_KO // T.BAR)
     let bar_ko = bars("the K.O.", floor_div(show.t_ko, bar))?;
+    // The fighters' stops, which a bed reads inside `fight` (dark tango's `stop_times`: each part's `stops()` in
+    // side order; the bed sorts and filters them). A part's `stops()` reads the run only, so asking before the
+    // bed's fight is asking at the same point.
+    let stops: Vec<f64> = sounds.iter().flat_map(|s| s.stops(ctx)).collect();
+    ctx.set_fighter_stops(stops)?;
     bed.fight(ctx, &mut mix, bar_ko)?;
     // #53: a fighter can set up cross-fighter music first (a line override for the other one).
     for s in sounds {
         s.prepare(ctx, bed)?;
     }
-    for s in sounds {
-        s.play(ctx, bed, &mut mix)?;
+    // Each part with the other side's at hand (M.SOUNDS[self.enemy]).
+    for (k, s) in sounds.iter().enumerate() {
+        s.play_with(ctx, bed, &mut mix, sounds[1 - k])?;
     }
     shared_events(ctx, bed, &mut mix)?;
 
@@ -199,6 +205,14 @@ mod tests {
         fn play(&self, _: &MusicCtx, _: &dyn Bed, _: &mut Mix) -> Played {
             self.wrote("play")
         }
+        fn play_with(&self, ctx: &MusicCtx, bed: &dyn Bed, mix: &mut Mix, enemy: &dyn Sound) -> Played {
+            self.wrote(&format!("play_with({})", enemy.k()))?;
+            self.play(ctx, bed, mix)
+        }
+        fn stops(&self, _: &MusicCtx) -> Vec<f64> {
+            let _ = self.wrote("stops");
+            vec![10.0 + self.0 as f64, 5.0]
+        }
         fn fall_apart(&self, _: &MusicCtx, _: &dyn Bed, _: &mut Mix) -> Played {
             self.wrote("fall_apart")
         }
@@ -231,9 +245,13 @@ mod tests {
             "1.title_blast(0.897)",
             "0.count_in",
             "1.count_in",
+            "0.stops",
+            "1.stops",
             "0.prepare",
             "1.prepare",
+            "0.play_with(1)",
             "0.play",
+            "1.play_with(0)",
             "1.play",
             "0.fall_apart",
             "1.stinger(51.357)",
@@ -243,6 +261,8 @@ mod tests {
             "1.last_bar",
         ];
         assert_eq!(*log.lock().unwrap(), want);
+        // The fighters' stops, left corner first, as each part gave them (the bed sorts and filters them).
+        assert_eq!(ctx.fighter_stops().unwrap(), [10.0, 5.0, 11.0, 5.0]);
         // The test bed plays nothing but its clash marks; the score's own sounds are on `fx`: the doors, the
         // whoosh into FIGHT!, the crowd, the pop, the doors shutting and the caption thuds.
         assert_eq!(mix.bus_names(), ["fx", "clash"]);
@@ -298,5 +318,24 @@ mod tests {
             "count_in: no notes"
         );
         assert_eq!(*log.lock().unwrap(), ["0.title_blast(0.004)", "0.count_in"]);
+    }
+
+    /// The kit's base `Sound` on both sides: the bed alone (a theme's bed-alone gate). Nothing is placed on a
+    /// fighter's bus, and the master's levels still list both buses with the base class's numbers.
+    #[test]
+    fn two_base_sounds_leave_the_bed_alone() {
+        use crate::master::Levels;
+        use crate::traits::BaseSound;
+        let ep = episode();
+        let (ctx, voices) = context(&ep);
+        let bed = TestBed::new((2.0, 0.5, 0.2));
+        let (a, b) = (BaseSound { k: 0 }, BaseSound { k: 1 });
+        let mix = score(&ctx, &bed, [&a, &b]).unwrap();
+        assert_eq!(mix.bus_names(), ["fx", "clash"]);
+        assert!(voices.iter().all(|v| v.calls().is_empty()), "no note is asked for");
+        assert!(ctx.fighter_stops().unwrap().is_empty());
+        let levels = Levels::of(&ctx, [&a, &b], &bed, &[]);
+        assert_eq!(levels.get("flute"), Some((1.5, 0.35)));
+        assert_eq!(levels.get("trombone"), Some((1.5, 0.35)));
     }
 }

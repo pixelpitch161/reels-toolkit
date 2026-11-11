@@ -260,4 +260,24 @@ mod tests {
         assert_eq!(mix.bus_mut("y").len(), 480 + 6 * 48000);
         assert_eq!(mix.bus_names(), ["x", "y"]);
     }
+
+    /// What `apply_stops` and `lead_envelope` (dark tango, stadium rock) need: the bus `place` made, to change in
+    /// place, without a new bus for one the mix does not have (they skip those: `if k not in mix.buses`).
+    #[test]
+    fn bus_mut_is_the_bus_place_made() {
+        let mut mix = Mix::new(0.01);
+        mix.place("strings", &Sig::Mono(vec![0.5, 0.25]), 0.0, 2.0, 0.0);
+        let placed = mix.bus("strings").unwrap().to_vec();
+        let bus = mix.bus_mut("strings");
+        assert_eq!(*bus, placed);
+        for frame in bus.iter_mut().take(1) {
+            frame[0] = 0.0;
+        }
+        assert_eq!(mix.bus("strings").unwrap()[0][0], 0.0);
+        assert_eq!(mix.bus("strings").unwrap()[1], placed[1]);
+        assert_eq!(mix.bus_names(), ["strings"]);
+        // the bed asks first; a bus it does not have stays absent
+        assert!(mix.bus("pad").is_none());
+        assert_eq!(mix.bus_names(), ["strings"]);
+    }
 }

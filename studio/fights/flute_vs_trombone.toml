@@ -1,4 +1,4 @@
-format = 1
+format = 2
 app_version = "0.1.0"
 fighters = ["FLUTE", "TROMBONE"]
 arena = "ring"
@@ -18,6 +18,7 @@ key = "E"
 scale = "harmonic minor"
 chords_intro = ["Em", "B7"]
 chord_loop = ["Em", "Am", "B7", "Em", "C", "Am", "B7", "B7"]
+chords_tail = []
 music_seed = 1
 
 [music.roles]
@@ -56,9 +57,15 @@ TROMBONE = [
 FLUTE = [76, 79, 83, 84, 86, 87, 88]
 TROMBONE = [40, 52]
 
+[music.mix]
+
+[music.theme_options]
+
 [picture]
 shard_seed = 271
 fx_seed = 41
+
+[picture.title_lines]
 
 [captions]
 caption = "The front row vs the back row 🪈🎺 Comment the next match-up 👇"

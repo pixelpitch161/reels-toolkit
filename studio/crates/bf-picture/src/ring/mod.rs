@@ -429,7 +429,7 @@ impl Picture {
             solos[k] = match ff.music.solos.get(&show.names[k]) {
                 Some(s) => s.clone(),
                 None => {
-                    let chords = harmony::chords_for(&ff.music.chords_intro, &ff.music.chord_loop, g.n_bars);
+                    let chords = ff.chords(g.n_bars);
                     let scale = harmony::scale(&ff.music.scale).map_err(music)?;
                     Harmony::new(g, &ff.music.key, scale, chords, Some(ff.music.chord_loop.clone()), 2)
                         .and_then(|h| h.default_solo(cfg[k].register))

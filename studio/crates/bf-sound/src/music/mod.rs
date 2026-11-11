@@ -123,13 +123,14 @@ fn key_bits(x: f64) -> u64 {
 }
 
 /// What a soundtrack build changes as it goes: Python's `drums60_lowpoly._rng`, `_VC`, `_GAIN` and
-/// `T.LINE_OVERRIDE`.
+/// `T.LINE_OVERRIDE`, and the fighters' stops the score hands the bed.
 struct State {
     noise: PpNoise,
     notes: BTreeMap<NoteKey, Arc<[f64]>>,
     gains: BTreeMap<String, f64>,
     first: Vec<NoteCall>,
     line_overrides: BTreeMap<String, Vec<LineOverride>>,
+    fighter_stops: Vec<f64>,
 }
 
 impl State {
@@ -140,6 +141,7 @@ impl State {
             gains: BTreeMap::new(),
             first: Vec::new(),
             line_overrides: BTreeMap::new(),
+            fighter_stops: Vec::new(),
         }
     }
 }
@@ -187,7 +189,8 @@ fn ease(x: f64) -> f64 {
 
 impl<'a> MusicCtx<'a> {
     /// The context of one soundtrack build: the harmony of the fight file (its key and scale, the intro chords,
-    /// then the chord loop to the last bar), the noise stream at its start, nothing cached. `cfg` and `voices`
+    /// then the chord loop, then its tail on the last bars), the noise stream at its start, nothing cached, no
+    /// fighter stops yet (the score gathers them). `cfg` and `voices`
     /// are the two fighters' roster entries and voices, left corner first.
     ///
     /// # Errors
@@ -204,7 +207,7 @@ impl<'a> MusicCtx<'a> {
         const H: &str = "music";
         let m = &ff.music;
         let bad = |e: harmony::HarmonyError| MusicError::new(H, e.to_string());
-        let chords = harmony::chords_for(&m.chords_intro, &m.chord_loop, show.grid.n_bars);
+        let chords = harmony::chords_for(&m.chords_intro, &m.chord_loop, &m.chords_tail, show.grid.n_bars);
         let harmony = Harmony::new(
             &show.grid,
             &m.key,
@@ -276,6 +279,25 @@ impl<'a> MusicCtx<'a> {
         let line_overrides = std::mem::take(&mut st.line_overrides);
         *st = State::new(noise);
         st.line_overrides = line_overrides;
+        Ok(())
+    }
+
+    /// The fighters' stops: every time each part's `stops()` gave (the kit's `stop_times` before it sorts and
+    /// filters them: the left corner's first, each in its own order), which the score gathers before the bed's
+    /// `fight` (`dark_tango`'s tango stops). Empty before the score gets there, and for parts without stops.
+    ///
+    /// # Errors
+    /// A voice panicked earlier (as every method that reads or changes the build's state).
+    pub fn fighter_stops(&self) -> Result<Vec<f64>, MusicError> {
+        Ok(self.lock()?.fighter_stops.clone())
+    }
+
+    /// Sets [`MusicCtx::fighter_stops`] (the score does, from both parts).
+    ///
+    /// # Errors
+    /// A voice panicked earlier.
+    pub fn set_fighter_stops(&self, stops: Vec<f64>) -> Result<(), MusicError> {
+        self.lock()?.fighter_stops = stops;
         Ok(())
     }
 
