@@ -114,6 +114,7 @@ fn stats_json(s: &Stats) -> Value {
         "no_ko_share": num(s.no_ko_share),
         "lead_changes_mean": num(s.lead_changes_mean),
         "fit_rate": num(s.fit_rate),
+        "ko_hist": s.ko_hist,
     })
 }
 

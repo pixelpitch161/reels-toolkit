@@ -21,7 +21,7 @@ mod support;
 
 use std::fs;
 
-use bf_story::{Outcome, Stats, stats};
+use bf_story::{BALANCE_SEED0, KO_BINS, KO_HIST_FROM, Outcome, Stats, ko_hist, stats};
 use serde_json::Value;
 
 use support::{base, roster, sheet, with_seed};
@@ -46,6 +46,8 @@ fn python_pooled(doc: &Value) -> Stats {
         no_ko_share: f("no_ko_share"),
         lead_changes_mean: f("lead_changes_mean"),
         fit_rate: f("fit_rate"),
+        // the kit prints no histogram: the Rust count of the kit's own rows (only the bins are compared, below)
+        ko_hist: ko_hist(&python_rows(doc)),
     }
 }
 
@@ -86,6 +88,17 @@ fn the_kits_rows_pool_to_the_kits_figures() {
     let got = Stats::of(&rows).unwrap();
     assert_eq!((got.n, got.decided), (want.n, want.decided));
     assert_eq!(bits(&got), bits(&want), "\n got {got:?}\nwant {want:?}");
+    // the bins of the kit's rows, counted here without the helper: a decided fight with 30 <= t < 58 is in bin
+    // floor(t) - 30
+    let mut bins = [0u32; KO_BINS];
+    for r in rows.iter().filter(|r| r.winner.is_some()) {
+        if let Some(t) = r.t_ko.filter(|t| (30.0..58.0).contains(t)) {
+            bins[(t as usize) - 30] += 1;
+        }
+    }
+    assert_eq!(got.ko_hist, bins);
+    assert_eq!(got.ko_hist, want.ko_hist);
+    assert!(bins.iter().sum::<u32>() <= got.decided as u32);
     // an odd count takes the other branch of numpy's median, and other weights in its percentile: the kit's first
     // 1,001 and 37 rows, pooled by numpy (`tools.studio_export.stats.pooled(rows[:n], names)` on this PC)
     for (n, want) in [(1_001, PY_1001), (37, PY_37)] {
@@ -275,4 +288,25 @@ fn statistics_of_a_setup_the_engine_refuses_are_an_error_in_words() {
     assert!(words.starts_with("seed 1: rules.DT: "), "{words}");
     let none = stats(&|seed| with_seed(&base, seed), &sheet, 5..5, 2);
     assert!(matches!(none, Err(bf_story::Halt::Failed(_))), "{none:?}");
+}
+
+/// The K.O. histogram of a balance step's 400 seeds: at most one count per decided fight, every bin a whole second
+/// from 30 s, and most K.O.s inside the 28 seconds it covers.
+#[test]
+fn the_histogram_counts_ko_seconds_of_400_balance_seeds() {
+    let roster = roster();
+    let base = base(&roster);
+    let seeds = BALANCE_SEED0..BALANCE_SEED0 + 400;
+    let s = stats(&|seed| with_seed(&base, seed), &sheet(&base), seeds, workers()).unwrap();
+    println!(
+        "  K.O.s a second from {KO_HIST_FROM} s: {:?} ({} decided)",
+        s.ko_hist, s.decided
+    );
+    let counted = s.ko_hist.iter().sum::<u32>();
+    assert!(counted <= s.decided as u32, "{counted} counted, {} decided", s.decided);
+    assert!(
+        counted * 10 >= s.decided as u32 * 9,
+        "{counted} of {} decided counted",
+        s.decided
+    );
 }

@@ -5,7 +5,8 @@
 //! instrument voices, the parts in the score and the looks of the two ported ones: [`look_for`]), the themes
 //! ([`themes`]: the big top), the soundtrack of a fight ([`build_soundtrack`]) and its picture
 //! ([`build_picture`]). Milestone 2 adds what the interface shows about them ([`card`], [`theme_card`],
-//! [`shown_order`]) and the fight a new match-up begins from ([`starter`], [`draft_captions`]).
+//! [`shown_order`]), the fight a new match-up begins from ([`starter`], [`draft_captions`]) and its VS title card
+//! before any fight exists ([`title_preview`]).
 
 mod cards;
 mod error;
@@ -21,7 +22,7 @@ pub use cards::{FighterCard, Section, ThemeCard, card, note_name, pair_rule_text
 pub use error::ContentError;
 pub use fighters::look_for;
 pub use pair_rules::pair_rules;
-pub use picture::build_picture;
+pub use picture::{build_picture, title_preview};
 pub use registry::{PORTED, RETIRED, available, music_feeds_fight, name_status, roster};
 pub use soundtrack::{SoundBuild, build_soundtrack, validate};
 pub use starter::{draft_captions, starter};
