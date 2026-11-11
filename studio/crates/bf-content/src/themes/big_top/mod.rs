@@ -26,8 +26,9 @@ use bf_core::dmath::{self, PI};
 use bf_core::harmony::{Harmony, HarmonyError};
 use bf_core::py::py_max;
 use bf_core::rng::Generator;
+use bf_sound::SRF;
 use bf_sound::dsp;
-use bf_sound::synth::{self, FILTER_O};
+use bf_sound::synth::{self, FILTER_O, clip, noise};
 
 pub use self::classic::BigTopClassic;
 use super::Theme;
@@ -67,9 +68,6 @@ pub const CALLIOPE_VIB: f64 = 0.004;
 pub const ROLL_V0: f64 = 0.4;
 /// `roll`'s default velocity at its end.
 pub const ROLL_V1: f64 = 1.0;
-
-/// The sample rate as a float.
-const SRF: f64 = bf_sound::SR as f64;
 
 /// Whether the theme has a voicing written for `chord`: it is in both of the kit's tables.
 pub fn has_voicing(chord: &str) -> bool {
@@ -115,17 +113,6 @@ fn length(x: f64) -> usize {
     x as usize
 }
 
-/// `np.random.default_rng(seed).normal(0, 1, n)`.
-fn noise(seed: u64, n: usize) -> Vec<f64> {
-    let mut x = vec![0.0; n];
-    Generator::new(seed).fill_normal(0.0, 1.0, &mut x);
-    x
-}
-
-fn clip01(x: f64) -> f64 {
-    x.clamp(0.0, 1.0)
-}
-
 /// `Bed.calliope(ms, dur, vel, seed, att, vib)`: the band organ / calliope: breathy steam pipes (a sine with a
 /// little second and third harmonic), each pipe a hair out of tune, a fast shallow vibrato, chiff noise on the
 /// attack. `ms` are the MIDI notes of the chord, `dur` the held length in seconds (the note is 60 ms longer).
@@ -160,7 +147,7 @@ pub fn calliope(ms: &[i32], dur: f64, vel: f64, seed: u64, att: f64, vib: f64) -
         .map(|i| {
             let chiff = chiff[i] * dmath::exp(-t[i] / 0.015) * 0.25;
             let air = air[i] * 0.04;
-            let env = clip01(t[i] / att) * clip01((dur + 0.06 - t[i]) / 0.06);
+            let env = clip(t[i] / att, 0.0, 1.0) * clip((dur + 0.06 - t[i]) / 0.06, 0.0, 1.0);
             (x[i] / pipes + chiff + air) * env * vel
         })
         .collect()
@@ -185,7 +172,7 @@ pub fn choke(vel: f64, seed: u64) -> Vec<f64> {
         .map(|i| {
             let mut x = hiss[i] * dmath::exp(-t[i] / 0.05);
             x += 0.15 * dmath::sin(2.0 * PI * 4130.0 * t[i]) * dmath::exp(-t[i] / 0.06);
-            x * clip01((0.2 - t[i]) / 0.06) * vel
+            x * clip((0.2 - t[i]) / 0.06, 0.0, 1.0) * vel
         })
         .collect()
 }

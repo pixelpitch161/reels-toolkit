@@ -9,8 +9,8 @@ use bf_core::recording::Recording;
 use bf_core::roster::{FighterCfg, parse_roster};
 use bf_core::show::Show;
 
-use super::num::SRF;
 use super::{MusicCtx, MusicError};
+use crate::SRF;
 use crate::mix::{Mix, Sig};
 use crate::synth;
 use crate::traits::{Bed, Played};

@@ -5,9 +5,12 @@ use bf_core::py::fmod_py;
 use bf_core::rng::Generator;
 
 use super::error::{MusicError, Samples};
-use super::num::{SRF, band_span, check_band, check_some, clip, noise, py_min, samples};
+use super::num::{band_span, check_band, check_some, samples};
+use crate::SRF;
 use crate::dsp;
 use crate::synth::{self, FILTER_O};
+use crate::synth::{clip, noise};
+use bf_core::py::py_min;
 
 /// `clank`'s default noise seed.
 pub const CLANK_SEED: u64 = 0;

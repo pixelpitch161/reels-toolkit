@@ -6,6 +6,7 @@ use bf_core::dmath;
 use bf_core::harmony::HarmonyError;
 use bf_core::py::py_max;
 use bf_core::rng::Generator;
+use bf_sound::SRF;
 use bf_sound::dsp;
 use bf_sound::mix::{Mix, Sig};
 use bf_sound::music::{
@@ -18,9 +19,6 @@ use super::{CALLIOPE_ATT, CALLIOPE_VIB, bass_drum, calliope, choke, organ, roll,
 
 /// The name the bed's errors carry.
 const H: &str = "big_top";
-
-/// The sample rate as a float.
-const SRF: f64 = bf_sound::SR as f64;
 
 /// The big top's bed as the kit plays it.
 #[derive(Clone, Copy, Debug, Default)]

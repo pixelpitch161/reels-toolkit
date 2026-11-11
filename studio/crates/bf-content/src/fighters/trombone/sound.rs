@@ -17,7 +17,7 @@ use bf_sound::music::{
     CLANK_DECAYS, CLANK_DUR, ColourArgs, MusicCtx, MusicError, Samples, Thinner, clank, event_int, event_is,
     event_is_str, event_number, gliss, noise_seed, vibrato, wah,
 };
-use bf_sound::synth::{self, THUD_SEED, WHOOSH_RISE, WHOOSH_SEED};
+use bf_sound::synth::{self, THUD_SEED, WHOOSH_RISE, WHOOSH_SEED, clip};
 use bf_sound::traits::{Bed, Played, Sound};
 
 /// The name the part's errors carry.
@@ -38,17 +38,13 @@ pub const TITLE_HITS: [i32; 2] = [40, 52];
 #[derive(Clone, Copy, Debug)]
 pub struct TromboneSound {
     k: usize,
-    /// Its role is `riff` (#48): the band the checks listen in is the riff's.
+    /// Its role is `riff` (#48), read from the fight file once, when the part is made: the one source of that
+    /// fact for the part (`band` has no context to read the role in; `play` and `solo` read this too).
     riff: bool,
 }
 
 fn bad(e: HarmonyError) -> MusicError {
     MusicError::new(H, e.to_string())
-}
-
-/// `np.clip(x, lo, hi)`.
-fn clip(x: f64, lo: f64, hi: f64) -> f64 {
-    x.clamp(lo, hi)
 }
 
 /// `bone(m, dur, vel, gl, gl_t, cap)`: a trombone note gliding up `gl` semitones into the pitch (the slide)
@@ -69,7 +65,7 @@ pub fn bone(ctx: &MusicCtx, m: i32, dur: f64, vel: f64, gl: f64, gl_t: f64, cap:
 
 impl TromboneSound {
     /// The part of the fighter on side `k` (0 is the left corner); `role` is its role in the fight file
-    /// (`T.ROLES.get(name, 'melody')`), which sets its band.
+    /// (`T.ROLES.get(name, 'melody')`), which sets its band and whether it plays the bass line or the riff.
     pub fn new(k: usize, role: &str) -> TromboneSound {
         TromboneSound {
             k,
@@ -160,7 +156,7 @@ impl TromboneSound {
         let k = self.k;
         let (name, bus) = (self.name(ctx), self.bus(ctx));
         let s16 = ctx.show.grid.s16;
-        let riff = self.role(ctx) == "riff";
+        let riff = self.riff;
         let mut thin = Thinner::new(7.0);
         let mut last_slot = None;
         for e in &ctx.rec.events {
@@ -419,7 +415,7 @@ impl Sound for TromboneSound {
         let grid = &ctx.show.grid;
         let (beat, bar) = (grid.beat, grid.bar);
         let name = self.name(ctx);
-        let riff = self.role(ctx) == "riff";
+        let riff = self.riff;
         let notes = ctx.solo(name)?;
         // t_end = t0 + max(bt + d for bt, m, d in notes) * T.BEAT
         let last = notes
