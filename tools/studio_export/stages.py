@@ -5,10 +5,12 @@
 writes studio/reference/.cache/stages/flute_vs_trombone/f<frame>.npz + f<frame>.json (git-ignored, not in the
 manifest): for every stage in STAGES, in pipeline order, the colour buffer (and the depth buffer where the stage has
 one) exactly as the renderer holds it at that point, in its own dtype. Nothing in the kit is edited: `tap` wraps the
-functions render calls (and three methods of reelkit.raster.Frame) for the length of one render and puts them back.
+functions render calls (and two methods of reelkit.raster.Frame) for the length of one render and puts them back.
 
-Every dump is checked before it is kept: each stage fired once and in STAGES order, the last stage is the frame
-render returns, the same frame drawn without the taps is identical, and every array reads back without pickle."""
+The Studio draws from the committed recording, so the export first proves that file is the kit's own run
+(frames.check_recording); each sidecar names it with its content hash. Every dump is checked before it is kept: each
+stage fired and in STAGES order, the last stage is the frame render returns, the same frame drawn without the taps is
+identical, and every array reads back without pickle."""
 import contextlib
 import os
 import sys
@@ -211,7 +213,8 @@ def capture(P, f):
     return rec, img
 
 
-def dump(P, f):
+def dump(P, f, fight):
+    """write frame f's stage dump; `fight` is the committed recording, already shown to be the kit's run"""
     t0 = time.time()
     rec, img = capture(P, f)
     assert np.array_equal(P.render(f), img), f'frame {f}: the taps changed the picture'
@@ -229,6 +232,8 @@ def dump(P, f):
         about=f'kit.picture.render({f}): the buffers after each stage, in pipeline order (a local debugging dump, '
               f'not a reference file)',
         tool='stages', episode=F.EPISODE, frame=f, t=f / F.FPS, size=[F.W, F.H], stages=list(NAMES),
+        recording=F.recording_note(fight, 'the dump was made from the kit\'s own run, after this file was read and '
+                                          'found equal to it'),
         note='rgb arrays are (640, 360, 3), depth and map arrays (640, 360); each keeps the dtype the renderer '
              'holds it in (float32 or float64 buffers in 0..255 that are not yet clipped unless the stage says so, '
              'uint8 where the renderer has already cut to bytes). Frame.set_array clips to 0..255 and truncates '
@@ -257,8 +262,9 @@ def run(args=()):
     if any(not 0 <= f < F.NF for f in frames):
         raise SystemExit(f'stages: name the frames to dump as numbers 0..{F.NF - 1}: {usage}')
     P = F.picture('stages')
+    fight = F.check_recording(P)      # the Studio draws from the recording: a dump of another fight would mislead
     for f in frames:
-        dump(P, f)
+        dump(P, f, fight)
     print('stages: ' + ', '.join(NAMES))
 
 

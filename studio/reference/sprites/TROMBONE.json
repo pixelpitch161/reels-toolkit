@@ -7955,6 +7955,7 @@
   },
   {
    "args": {
+    "drawn_by": "model",
     "group": "title",
     "k": 1,
     "radius": 44,
@@ -7997,12 +7998,22 @@
   "episode": "the same call for each of `episode_keys` (what the frames ask for) that `picture` does not already hold",
   "model": "sprites.render_sprite(name, radius, yaw, roll): the Pixel Pitch model, for a fighter whose look draws its own sprite",
   "picture": "kit.picture.sprite at the four radii, 60 yaws, and each roll in `rolls`",
-  "title": "title.big_sprite(k), the VS card's close-up"
+  "title": "title.big_sprite(k), the VS card's close-up. args.drawn_by says how it is made: 'closeup' = the look's own close-up function, called with the radius alone (FLUTE: Look.title_closeup of kit/fighters/flute.py), so the case has no yaw or roll; 'model' = sprites.render_sprite(pp, radius, float(yaw), float(roll)) at the view's yaw and roll"
  },
  "k": 1,
- "note": "Every case is the call on an empty sprite cache. kit.picture.sprite rounds the radius, clips it to 12..30 and rounds the yaw to a multiple of 6 (yk), then calls the look's own sprite(r, float(yk), float(roll)) or, when the look has none, sprites.render_sprite(pp, r, float(yk), float(roll)). Its cache key is \"<pp>_<r>_<yk % 360>_<int(roll)>\" (`key`): the yaw is wrapped in the key but not in the call, so a look's sprite at yaw -6 and at yaw 354 share a key though they are drawn differently; the first one asked for stays. episode_keys lists (radius, yk, roll) with yk as the frames give it (negative for FLUTE). Arrays are (size, size, 4) uint8: size is 2 * radius + 7 for the model renderer, 2 * radius + 5 for FLUTE's own sprite. A pixel is part of the sprite where alpha > 0.",
+ "note": "Every picture, episode and model case is the call on an empty sprite cache. A title case is title.big_sprite(k) with the title module's in-memory cache emptied first; for a model close-up big_sprite may still read its file cache (check/sprites_title.npz), so the export also compares every close-up with a fresh draw. kit.picture.sprite rounds the radius, clips it to 12..30 and rounds the yaw to a multiple of 6 (yk), then calls the look's own sprite(r, float(yk), float(roll)) or, when the look has none, sprites.render_sprite(pp, r, float(yk), float(roll)). Its cache key is \"<pp>_<r>_<yk % 360>_<int(roll)>\" (`key`): the yaw is wrapped in the key but not in the call, so a look's sprite at yaw -6 and at yaw 354 share a key though they are drawn differently; the first one asked for stays. episode_keys lists (radius, yk, roll) with yk as the frames give it (negative for FLUTE). Arrays are (size, size, 4) uint8: size is 2 * radius + 7 for the model renderer, 2 * radius + 5 for FLUTE's own sprite and close-up. A pixel is part of the sprite where alpha > 0.",
  "pp": "TROMBONE",
  "radii": [12, 16, 22, 30],
+ "recording": {
+  "checked": "the export read this file and found it equal to the run the kit drew from. episode_keys and the `episode` cases follow from where the balls are in this fight; the other groups do not depend on it",
+  "events": 522,
+  "file": "studio/reference/fights/flute_vs_trombone/ep392.bfrec",
+  "frames": 1394,
+  "hash": "038e1f40fc3373eb",
+  "seed": 392,
+  "t_ko": "0x1.902c2c2c2c2c2p+5",
+  "winner": 1
+ },
  "rolls": [0, 30],
  "sprite_k": 0.8,
  "tool": "sprites",

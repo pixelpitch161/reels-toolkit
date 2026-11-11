@@ -5,14 +5,16 @@ studio/reference/sprites/{FLUTE,TROMBONE}.npz (+ .json, the sidecar): RGBA sprit
     picture   kit.picture.sprite(k, radius, yaw, roll) for radius 12, 16, 22 and 30, yaw every 6 degrees, roll 0 and
               the roll of the fighter's view (plus any roll a look asks for)
     episode   the same call for every (radius, yaw, roll) the episode's 1,830 frames ask for that `picture` lacks
-    title     title.big_sprite(k): the close-up on the VS card
+    title     title.big_sprite(k): the close-up on the VS card, made by the look's own close-up function (FLUTE)
+              or by the model renderer at the view's yaw and roll (TROMBONE); the case says which (drawn_by)
     model     sprites.render_sprite(name, radius, yaw, roll), the Pixel Pitch model, for a fighter whose look draws
               its own sprite instead (FLUTE: its model is a 1 px line at ball size), so its mesh has sprites to be
               tested against too
 
-The export checks itself before it lists a file: the required radii, yaws and rolls are all there; the sprites the
-frames ask for (worked out from the kit's state functions) are exactly the ones real renders of sample frames ask
-for; every array reads back without pickle."""
+The export checks itself before it lists a file: the committed recording is the fight the kit draws (the sprites
+the frames ask for depend on where the balls are); the required radii, yaws and rolls are all there; the sprites
+the frames ask for (worked out from the kit's state functions) are exactly the ones real renders of sample frames
+ask for; each title close-up equals a fresh draw; every array reads back without pickle."""
 import math
 import os
 
@@ -90,6 +92,27 @@ def one(P, k, radius, yaw, roll):
     return a
 
 
+def close_up(P, k):
+    """(sprite, args): the VS card's close-up of fighter k, title.big_sprite(k) with the title module's own
+    sprite cache emptied first, and how it is made. 'closeup': the look gave the card its own close-up function
+    (title.CLOSEUP), which takes the radius alone. 'model': sprites.render_sprite at the view's yaw and roll, which
+    big_sprite may read back from its file cache (check/sprites_title.npz). Either way the sprite must equal a
+    fresh draw made here"""
+    import sprites as SP
+    TT, name = P.TT, P.NAMES[k]
+    r = int(TT.BALLS[k]['r'] * 0.8)
+    TT._SPR.clear()
+    big = TT.big_sprite(k)
+    if name in TT.CLOSEUP:
+        fresh, args = TT.CLOSEUP[name](r), dict(k=k, radius=r, drawn_by='closeup')
+    else:
+        yc, sw, roll = P.CFG[k]['view']
+        fresh = SP.render_sprite(P.CFG[k]['pp'], r, float(yc), float(roll))
+        args = dict(k=k, radius=r, yaw=yc, roll=roll, drawn_by='model')
+    assert np.array_equal(big, fresh), f"{name}: title.big_sprite is not a fresh {args['drawn_by']} draw"
+    return big, args
+
+
 def build(P, k, episode_keys):
     """(cases, arrays, facts) for fighter k"""
     import sprites as SP
@@ -116,10 +139,9 @@ def build(P, k, episode_keys):
             add('episode', 'kit.picture.sprite(k, radius, yaw, roll)', one(P, k, r, yk, roll), k=k, radius=r, yaw=yk,
                 roll=roll, key=f'{pp}_{r}_{yk % 360}_{roll}')
             have.add((r, yk, roll))
-    big = P.TT.big_sprite(k)
-    yc, sw, roll0 = P.CFG[k]['view']
-    add('title', 'title.big_sprite(k)', big, k=k, radius=int(P.TT.BALLS[k]['r'] * 0.8),
-        yaw=0 if own else yc, roll=roll0)
+    big, how = close_up(P, k)
+    add('title', 'title.big_sprite(k)', big, **how)
+    roll0 = P.CFG[k]['view'][2]
     if own:
         for roll in rolls(P, k):
             for r in RADII:
@@ -147,15 +169,21 @@ def check_cases(P, k, cases, episode_keys):
     side = 5 if P.LOOKS[k].sprite(12, 0.0, 0.0) is not None else 7
     for c in cases:
         a = c['args']
-        own_model = a['group'] == 'model'
-        assert a['size'] == 2 * a['radius'] + (7 if own_model else side), (c['id'], a)
+        if a['group'] == 'title':                     # says how it is made, and names only what was passed
+            assert a['drawn_by'] in ('closeup', 'model') and ('yaw' in a) == ('roll' in a) == \
+                (a['drawn_by'] == 'model'), (c['id'], a)
+            if a['drawn_by'] == 'closeup':
+                continue                              # (its size is the look's own business)
+        by_model = a['group'] == 'model' or a.get('drawn_by') == 'model'
+        assert a['size'] == 2 * a['radius'] + (7 if by_model else side), (c['id'], a)
 
 
 def run():
     P = F.picture('sprites')
     try:
+        rec = F.check_recording(P)                    # what the frames ask for depends on the fight
         per_frame = {f: asked(P, f) for f in range(F.NF)}
-        sample = sorted({fr['frame'] for fr in F.select(P)[0]} | set(range(0, F.NF, SAMPLE_STEP)))
+        sample = sorted({fr['frame'] for fr in F.select(P, rec['events'])[0]} | set(range(0, F.NF, SAMPLE_STEP)))
         P._SPR.clear()
         real = really_asked(P, sample)
         P._SPR.clear()
@@ -175,13 +203,24 @@ def run():
                       f"(kit.picture.sprite), the VS card's close-up, and the Pixel Pitch model where the look "
                       f"draws its own",
                 tool='sprites', episode=F.EPISODE, **facts, radii=list(RADII), yaw_step=6,
+                recording=F.recording_note(rec, 'the export read this file and found it equal to the run the kit '
+                                                'drew from. episode_keys and the `episode` cases follow from where '
+                                                'the balls are in this fight; the other groups do not depend on '
+                                                'it'),
                 groups=dict(picture='kit.picture.sprite at the four radii, 60 yaws, and each roll in `rolls`',
                             episode='the same call for each of `episode_keys` (what the frames ask for) that '
                                     '`picture` does not already hold',
-                            title="title.big_sprite(k), the VS card's close-up",
+                            title="title.big_sprite(k), the VS card's close-up. args.drawn_by says how it is "
+                                  "made: 'closeup' = the look's own close-up function, called with the radius "
+                                  "alone (FLUTE: Look.title_closeup of kit/fighters/flute.py), so the case has "
+                                  "no yaw or roll; 'model' = sprites.render_sprite(pp, radius, float(yaw), "
+                                  "float(roll)) at the view's yaw and roll",
                             model='sprites.render_sprite(name, radius, yaw, roll): the Pixel Pitch model, for a '
                                   'fighter whose look draws its own sprite'),
-                note='Every case is the call on an empty sprite cache. kit.picture.sprite rounds the radius, '
+                note='Every picture, episode and model case is the call on an empty sprite cache. A title case '
+                     'is title.big_sprite(k) with the title module\'s in-memory cache emptied first; for a '
+                     'model close-up big_sprite may still read its file cache (check/sprites_title.npz), so the '
+                     'export also compares every close-up with a fresh draw. kit.picture.sprite rounds the radius, '
                      'clips it to 12..30 and rounds the yaw to a multiple of 6 (yk), then calls the look\'s own '
                      'sprite(r, float(yk), float(roll)) or, when the look has none, sprites.render_sprite(pp, r, '
                      'float(yk), float(roll)). Its cache key is "<pp>_<r>_<yk % 360>_<int(roll)>" (`key`): the yaw '
@@ -189,7 +228,7 @@ def run():
                      'a key though they are drawn differently; the first one asked for stays. episode_keys lists '
                      '(radius, yk, roll) with yk as the frames give it (negative for FLUTE). Arrays are (size, '
                      'size, 4) uint8: size is 2 * radius + 7 for the model renderer, 2 * radius + 5 for '
-                     'FLUTE\'s own sprite. A pixel is part of the sprite where alpha > 0.',
+                     'FLUTE\'s own sprite and close-up. A pixel is part of the sprite where alpha > 0.',
                 cases=cases)
             common.write_json(js, doc, register=False)
             z = np.load(npz, allow_pickle=False)
