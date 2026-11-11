@@ -448,10 +448,63 @@ pub fn num(x: f64) -> Value {
     serde_json::Number::from_f64(x).map_or(Value::Null, Value::Number)
 }
 
+/// `--encode best|faster` (render and bench) as the encoder setting.
+pub fn encode_speed(text: &str) -> Result<bf_export::EncodeSpeed, String> {
+    bf_export::EncodeSpeed::from_name(text.trim()).ok_or_else(|| {
+        format!(
+            "{text} is not an encoder setting; give best (the series' own setting, the default) or faster (the \
+             Faster setting: a quicker encode and a larger file)"
+        )
+    })
+}
+
 /// Stops with the stop message when Ctrl+C was pressed.
 pub fn stopped(ctx: &Ctx, what: &str) -> Done {
     if ctx.cancel.load(Ordering::SeqCst) {
         return Err(Fail(format!("{what} was stopped (Ctrl+C).")));
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// The arguments as `ballfight` would be given them, parsed.
+    fn parse(args: &[&str]) -> Result<Cli, clap::Error> {
+        Cli::try_parse_from(std::iter::once("ballfight").chain(args.iter().copied()))
+    }
+
+    #[test]
+    fn the_command_line_takes_encode() {
+        use bf_export::EncodeSpeed;
+        let speed = |args: &[&str]| match parse(args).map(|c| c.command) {
+            Ok(Some(Command::Render(a))) => a.encode,
+            Ok(Some(Command::Bench(a))) => a.encode,
+            Ok(_) => panic!("{args:?}: not render or bench"),
+            Err(e) => panic!("{args:?}: {}", clap_line(&e)),
+        };
+        assert_eq!(speed(&["render", "f.toml", "--out", "o"]), EncodeSpeed::Best);
+        assert_eq!(
+            speed(&["render", "f.toml", "--out", "o", "--encode", "best"]),
+            EncodeSpeed::Best
+        );
+        assert_eq!(
+            speed(&["render", "f.toml", "--out", "o", "--encode", "faster"]),
+            EncodeSpeed::Faster
+        );
+        assert_eq!(speed(&["bench", "f.toml"]), EncodeSpeed::Best);
+        assert_eq!(
+            speed(&["bench", "f.toml", "--out", "o", "--encode", "faster"]),
+            EncodeSpeed::Faster
+        );
+        for bad in ["fast", "Faster", "slow", ""] {
+            let e = parse(&["render", "f.toml", "--out", "o", "--encode", bad])
+                .err()
+                .unwrap_or_else(|| panic!("--encode {bad:?} is refused"));
+            let line = clap_line(&e);
+            assert!(line.contains("best") && line.contains("faster"), "{line}");
+            assert!(!line.contains('\n'), "{line}");
+        }
+    }
 }

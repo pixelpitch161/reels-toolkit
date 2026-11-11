@@ -13,7 +13,8 @@
 //! - `draw`: all 1,830 frames on all workers, without the encode.
 //! - `sound`: the soundtrack build.
 //! - `render` (only with `--out`): the whole render job into a new folder inside `--out`, with the encode, by
-//!   stage. Without `--out` nothing is written anywhere. The render stops at a failed check like any render, so
+//!   stage, with the encoder setting `--encode` (best, the default, or faster), which it reports with the preset
+//!   and the mp4's size. Without `--out` nothing is written anywhere. The render stops at a failed check like any render, so
 //!   time it on a fight that passes them (the example episode:
 //!   `--rec reference/fights/flute_vs_trombone/ep392.bfrec`; the Studio's own fight of seed 392 fails `levels`).
 //!
@@ -24,14 +25,16 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
 
-use bf_export::{ExportError, JobEvent, JobOpts, run_job};
+use bf_export::{EncodeSpeed, ExportError, JobEvent, JobOpts, run_job};
 use bf_picture::config::NF;
 use bf_picture::ring::{Picture, Stage};
 use bf_sim::Setup;
 use bf_story::{BeatSheet, Halt};
 use serde_json::{Map, Value, json};
 
-use crate::{Ctx, Done, Fail, fighters, load_fight, need_ko, note, num, say, say_json, stopped, the_fight};
+use crate::{
+    Ctx, Done, Fail, encode_speed, fighters, load_fight, need_ko, note, num, say, say_json, stopped, the_fight,
+};
 
 /// The parts, in the order they run.
 const PARTS: [&str; 6] = ["fights", "frame", "stages", "draw", "sound", "render"];
@@ -71,6 +74,9 @@ pub struct Args {
         value_parser = clap::value_parser!(u64).range(1..=NF as u64)
     )]
     stage_every: u64,
+    /// The encoder setting of the render part: best (the series' own, the default) or faster.
+    #[arg(long, value_name = "SETTING", default_value = "best", value_parser = encode_speed)]
+    pub encode: EncodeSpeed,
 }
 
 pub fn run(a: &Args, ctx: &Ctx) -> Done {
@@ -151,7 +157,7 @@ pub fn run(a: &Args, ctx: &Ctx) -> Done {
         if has("render") {
             let mut ff = ff.clone();
             ff.seed = Some(seed);
-            let (v, more) = render(&ff, rec, a.out.clone().unwrap_or_default(), ctx)?;
+            let (v, more) = render(&ff, rec, a.out.clone().unwrap_or_default(), a.encode, ctx)?;
             report.insert("render".into(), v);
             show(&more);
         }
@@ -373,15 +379,21 @@ fn render(
     ff: &bf_core::fightfile::FightFile,
     rec: Arc<bf_core::recording::Recording>,
     out: PathBuf,
+    speed: EncodeSpeed,
     ctx: &Ctx,
 ) -> Result<(Value, Vec<String>), Fail> {
     stopped(ctx, "the bench")?;
     let busy = cpu_busy();
-    note(&format!("bench: rendering the whole video on {} workers", ctx.workers));
+    note(&format!(
+        "bench: rendering the whole video on {} workers, encode {}",
+        ctx.workers,
+        speed.name()
+    ));
     let opts = JobOpts {
         out_root: out,
         workers: ctx.workers,
         frames: None,
+        speed,
     };
     let marks: Mutex<Vec<(&'static str, Instant)>> = Mutex::new(Vec::new());
     let passed = AtomicUsize::new(0);
@@ -419,9 +431,20 @@ fn render(
         words.push(format!("{name} {s:.1} s"));
     }
     let (passed, checks) = (passed.into_inner(), checks.into_inner());
+    let mp4 = folder.join(format!(
+        "{}.mp4",
+        folder
+            .file_name()
+            .map(|n| n.to_string_lossy().into_owned())
+            .unwrap_or_default()
+    ));
+    let mp4_bytes = std::fs::metadata(&mp4).map(|m| m.len()).ok();
     let v = json!({
         "cpu_busy": opt(busy),
         "workers": ctx.workers,
+        "encode": speed.name(),
+        "preset": speed.preset(),
+        "mp4_bytes": mp4_bytes,
         "render_s": num(total),
         "stages": rows,
         "checks": checks,
@@ -430,8 +453,10 @@ fn render(
     });
     let lines = vec![
         format!(
-            "render: the whole video with the encode in {total:.1} s on {} workers{} ({passed} of {checks} checks \
-             passed)",
+            "render: the whole video with the encode ({}, x264 preset {}) in {total:.1} s on {} workers{} ({passed} \
+             of {checks} checks passed)",
+            speed.name(),
+            speed.preset(),
             ctx.workers,
             busy_words(busy)
         ),
