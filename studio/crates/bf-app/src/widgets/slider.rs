@@ -17,7 +17,7 @@
 //!   value is left alone until the person moves the slider.
 
 use egui::accesskit::Action;
-use egui::{Key, Modifiers, Rect, Sense, Ui, WidgetInfo, pos2, vec2};
+use egui::{EventFilter, Key, Modifiers, Rect, Sense, Ui, WidgetInfo, pos2, vec2};
 
 use super::buttons::focus_ring;
 use crate::theme::{CONTROL_H, FAINT, LINE, MUTED, TEXT_STRONG};
@@ -39,7 +39,8 @@ const KEY_SHARE: f64 = 0.01;
 pub struct SliderOut {
     /// The person changed the value this frame (with the pointer, the keyboard or a screen reader).
     pub changed: bool,
-    /// A drag or a click ended this frame, or an arrow key moved the slider: the moment to act on the new value.
+    /// A drag or a click ended this frame, an arrow key that moved the slider went up (once per hold, however
+    /// often it repeated), or a screen reader stepped it: the moment to act on the new value.
     pub released: bool,
 }
 
@@ -152,23 +153,45 @@ pub fn bar_slider(ui: &mut Ui, name: &str, value: &mut f64, range: (f64, f64), s
             next = value_at(pointer.x, range, step.unwrap_or(0.0), travel_left, travel);
             acted = true;
         }
-        let mut moves = ui.input(|input| {
+        let reader = ui.input(|input| {
             input.num_accesskit_action_requests(response.id, Action::Increment) as f64
                 - input.num_accesskit_action_requests(response.id, Action::Decrement) as f64
         });
+        let mut keys = 0.0;
         if response.has_focus() {
-            moves += ui.input_mut(|input| {
+            // The arrows belong to the slider while it has the keyboard: without this egui would also move the
+            // focus to the neighbouring control on the same press.
+            ui.memory_mut(|memory| {
+                let filter = EventFilter {
+                    horizontal_arrows: true,
+                    ..EventFilter::default()
+                };
+                memory.set_focus_lock_filter(response.id, filter);
+            });
+            keys = ui.input_mut(|input| {
                 input.count_and_consume_key(Modifiers::NONE, Key::ArrowRight) as f64
                     - input.count_and_consume_key(Modifiers::NONE, Key::ArrowLeft) as f64
             });
         }
-        if moves != 0.0 {
+        if reader + keys != 0.0 {
             let unit = step.unwrap_or(2.0 * half_span(range.0, range.1) * KEY_SHARE);
-            next = snap(next + moves * unit, range, step);
+            next = snap(next + (reader + keys) * unit, range, step);
             acted = true;
+        }
+        // A screen reader's step is finished at once. An arrow key is finished when it goes up: while it is held
+        // and repeats, every repeat moves the slider but only the key going up releases it, once per hold.
+        let held_id = response.id.with("arrow held");
+        let mut held = ui.data(|data| data.get_temp::<bool>(held_id)).unwrap_or(false);
+        if keys != 0.0 {
+            held = true;
+        }
+        let arrow_down = ui.input(|input| input.key_down(Key::ArrowLeft) || input.key_down(Key::ArrowRight));
+        if held && !arrow_down {
+            held = false;
             out.released = true;
         }
-        out.released |= response.drag_stopped() || response.clicked();
+        ui.data_mut(|data| data.insert_temp(held_id, held));
+        out.released |= reader != 0.0 || response.drag_stopped() || response.clicked();
     }
     // `next` is always finite and inside the range; a value that is not a number differs from it, so the first move
     // writes a usable one.

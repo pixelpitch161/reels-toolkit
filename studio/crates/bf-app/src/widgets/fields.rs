@@ -61,7 +61,8 @@ impl Unit<'_> {
         format!("{}{number}{}", self.prefix, self.suffix)
     }
 
-    /// The number in `text`, typed with or without the unit, if it is a finite number.
+    /// The number in `text`, typed with or without the unit, if it is a finite number. A single comma is read as the
+    /// decimal point when there is no point ("1,5" is 1.5); any other comma makes the text unreadable.
     fn read(&self, text: &str) -> Option<f64> {
         let mut text = text.trim();
         let (prefix, suffix) = (self.prefix.trim(), self.suffix.trim());
@@ -76,6 +77,12 @@ impl Unit<'_> {
             .filter(|c| !c.is_whitespace())
             .map(|c| if c == '\u{2212}' { '-' } else { c })
             .collect();
+        let commas = cleaned.matches(',').count();
+        let cleaned = if commas == 1 && !cleaned.contains('.') {
+            cleaned.replace(',', ".")
+        } else {
+            cleaned
+        };
         cleaned.parse::<f64>().ok().filter(|value| value.is_finite())
     }
 }
@@ -116,6 +123,10 @@ fn well_frame() -> Frame {
 
 /// Paints the focus ring around `rect` on a layer of its own just above `ui`'s, clipped 4 px wider than `ui`'s clip
 /// rectangle, so a panel's clip rectangle does not cut it off.
+///
+/// The ring's layer shares its parent's order (it is drawn above everything else of that order). That is right in
+/// panels; revisit it if a field ever sits in a movable window (the ring could draw over another window) or in a
+/// scroll area (the ring of a field scrolled half out of view shows 4 px past the area's edge).
 pub(crate) fn ring_above(ui: &Ui, rect: Rect) {
     let parent = ui.layer_id();
     let layer = LayerId::new(parent.order, parent.id.with("bf-app focus ring"));

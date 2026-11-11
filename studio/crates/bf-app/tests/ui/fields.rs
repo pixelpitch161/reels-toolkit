@@ -4,6 +4,7 @@
 use std::cell::{Cell, RefCell};
 
 use bf_app::theme::{self, FAINT, GROUND, LABEL_W, LINE, MUTED, PANEL, TEXT, TEXT_STRONG};
+use bf_app::widgets::buttons;
 use bf_app::widgets::fields::{self, Unit};
 use bf_app::widgets::slider::{self, SliderOut};
 use egui::accesskit::Role;
@@ -406,6 +407,13 @@ fn typed_numbers_stay_finite_and_inside_the_range() {
         ("NaN", 2.0),
         ("abc", 2.0),
         ("", 2.0),
+        ("1,5", 1.5),
+        ("×2,25", 2.25),
+        (" 3 , 75 ", 3.75),
+        ("1,2,3", 2.0),
+        ("1,234.5", 2.0),
+        (",", 2.0),
+        ("abc,def", 2.0),
     ];
     for (typed, expected) in cases {
         let value = Cell::new(2.0);
@@ -722,4 +730,204 @@ fn the_gallery_matches() {
     let mut harness = common::widget_harness((440.0, 300.0), gallery);
     harness.run();
     harness.snapshot("widgets_fields");
+}
+
+/// A slider named "Gravity" between two box buttons, as in a setting row where the value field sits beside it.
+fn slider_between_neighbours<'a>(value: &'a Cell<f64>, released: &'a Cell<u32>) -> Harness<'a> {
+    common::widget_harness((420.0, 60.0), move |ui| {
+        on_panel(ui);
+        ui.horizontal(|ui| {
+            buttons::boxed(ui, "Before");
+            let mut v = value.get();
+            if slider::bar_slider(ui, "Gravity", &mut v, RANGE, STEP, WIDTH).released {
+                released.set(released.get() + 1);
+            }
+            value.set(v);
+            buttons::boxed(ui, "After");
+        });
+    })
+}
+
+#[test]
+fn the_slider_keeps_the_keyboard_between_neighbours() {
+    let _gpu = common::gpu();
+    let (value, released) = (Cell::new(1.0), Cell::new(0));
+    let mut harness = slider_between_neighbours(&value, &released);
+    harness.run();
+    harness.get_by_label("Gravity").focus();
+    harness.run();
+    for (i, key) in [egui::Key::ArrowRight; 4]
+        .into_iter()
+        .chain([egui::Key::ArrowLeft; 3])
+        .enumerate()
+    {
+        let before = value.get();
+        harness.key_press(key);
+        harness.run();
+        assert!(
+            harness.get_by_label("Gravity").is_focused(),
+            "press {i} ({key:?}): the slider keeps the focus"
+        );
+        let moved = value.get() - before;
+        let expected = if key == egui::Key::ArrowRight { STEP } else { -STEP };
+        assert!((moved - expected).abs() < 1e-9, "press {i} ({key:?}) moved {moved}");
+    }
+    assert!(!harness.get_by_label("Before").is_focused() && !harness.get_by_label("After").is_focused());
+    drop(harness);
+    assert!((value.get() - 1.01).abs() < 1e-9, "{}", value.get());
+    assert_eq!(released.get(), 7, "each press and release of a key releases once");
+}
+
+/// An arrow key event: down (first or repeated) or up.
+fn arrow(key: egui::Key, pressed: bool, repeat: bool) -> egui::Event {
+    egui::Event::Key {
+        key,
+        physical_key: None,
+        pressed,
+        repeat,
+        modifiers: egui::Modifiers::NONE,
+    }
+}
+
+#[test]
+fn a_held_arrow_releases_once_when_it_goes_up() {
+    let _gpu = common::gpu();
+    let (value, released) = (Cell::new(1.0), Cell::new(0));
+    let mut harness = slider_between_neighbours(&value, &released);
+    harness.run();
+    harness.get_by_label("Gravity").focus();
+    harness.run();
+    harness.event(arrow(egui::Key::ArrowRight, true, false));
+    harness.run();
+    for repeat in 1..=4 {
+        harness.event(arrow(egui::Key::ArrowRight, true, true));
+        harness.run();
+        let expected = 1.0 + STEP * f64::from(repeat + 1);
+        assert!(
+            (value.get() - expected).abs() < 1e-9,
+            "repeat {repeat} moves it: {}",
+            value.get()
+        );
+        assert_eq!(released.get(), 0, "nothing is released while the key is held");
+        assert!(harness.get_by_label("Gravity").is_focused());
+    }
+    harness.event(arrow(egui::Key::ArrowRight, false, false));
+    harness.run();
+    assert_eq!(released.get(), 1, "the key going up releases once");
+    harness.run();
+    drop(harness);
+    assert_eq!(released.get(), 1, "and only once");
+    assert!((value.get() - 1.05).abs() < 1e-9, "{}", value.get());
+}
+
+#[test]
+fn the_value_field_keeps_the_keyboard_between_neighbours() {
+    let _gpu = common::gpu();
+    let value = Cell::new(2.0);
+    let mut harness = common::widget_harness((300.0, 140.0), |ui| {
+        on_panel(ui);
+        buttons::boxed(ui, "Above");
+        ui.horizontal(|ui| {
+            buttons::boxed(ui, "Before");
+            let mut v = value.get();
+            fields::value_field(ui, "Speed", &mut v, (0.05, 12.0), TIMES, theme::VALUE_W);
+            value.set(v);
+            buttons::boxed(ui, "After");
+        });
+        buttons::boxed(ui, "Below");
+    });
+    harness.run();
+    harness.get_by_label("Speed").focus();
+    harness.run();
+    let keys = [
+        egui::Key::ArrowUp,
+        egui::Key::ArrowUp,
+        egui::Key::ArrowDown,
+        egui::Key::ArrowLeft,
+        egui::Key::ArrowRight,
+    ];
+    let mut last = value.get();
+    for (i, key) in keys.into_iter().enumerate() {
+        harness.key_press(key);
+        harness.run();
+        assert!(
+            harness.get_by_label("Speed").is_focused(),
+            "press {i} ({key:?}): the field keeps the focus"
+        );
+        let now = value.get();
+        match key {
+            egui::Key::ArrowUp => assert!(now > last, "press {i}: up raises it ({last} to {now})"),
+            egui::Key::ArrowDown => assert!(now < last, "press {i}: down lowers it ({last} to {now})"),
+            _ => assert_eq!(now, last, "press {i}: left and right move the caret only"),
+        }
+        last = now;
+    }
+}
+
+#[test]
+fn a_disabled_value_field_is_faint_and_takes_no_input() {
+    let _gpu = common::gpu();
+    let value = Cell::new(2.0);
+    let mut harness = common::widget_harness((200.0, 60.0), |ui| {
+        on_panel(ui);
+        ui.add_enabled_ui(false, |ui| {
+            let mut v = value.get();
+            fields::value_field(ui, "Gravity", &mut v, (0.05, 12.0), TIMES, theme::VALUE_W);
+            value.set(v);
+        });
+    });
+    harness.run();
+    let node = harness.get_by_label("Gravity");
+    assert!(node.accesskit_node().is_disabled());
+    let rect = node.rect();
+    assert_eq!(at(&mut harness, rect, 2.0, 2.0), rgb(GROUND), "still a GROUND well");
+    assert_eq!(at(&mut harness, rect, 0.0, 11.0), rgb(LINE), "with its LINE border");
+    assert_eq!(
+        brightest(&mut harness, rect.shrink(1.0)),
+        rgb(FAINT),
+        "its text is FAINT"
+    );
+    type_into_field(&mut harness, "7");
+    assert!(!harness.get_by_label("Gravity").is_focused(), "it takes no focus");
+    let start = rect.center();
+    harness.drag_at(start);
+    harness.run();
+    harness.hover_at(start + vec2(40.0, 0.0));
+    harness.run();
+    harness.drop_at(start + vec2(40.0, 0.0));
+    harness.run();
+    drop(harness);
+    assert_eq!(value.get(), 2.0, "typing and dragging do nothing");
+}
+
+#[test]
+fn a_disabled_text_field_is_faint_and_takes_no_input() {
+    let _gpu = common::gpu();
+    let title = RefCell::new("Flute".to_owned());
+    let mut harness = common::widget_harness((260.0, 60.0), |ui| {
+        on_panel(ui);
+        ui.add_enabled_ui(false, |ui| {
+            fields::text_line(ui, "Title", &mut title.borrow_mut(), "Video title", 200.0);
+        });
+    });
+    harness.run();
+    let node = harness.get_by_label("Title");
+    assert!(node.accesskit_node().is_disabled());
+    let rect = node.rect();
+    assert_eq!(at(&mut harness, rect, 2.0, 2.0), rgb(GROUND), "still a GROUND well");
+    assert_eq!(at(&mut harness, rect, 0.0, 13.0), rgb(LINE), "with its LINE border");
+    assert_eq!(
+        brightest(&mut harness, rect.shrink(1.0)),
+        rgb(FAINT),
+        "its text is FAINT"
+    );
+    harness.get_by_label("Title").focus();
+    harness.run();
+    harness.get_by_label("Title").click();
+    harness.run();
+    harness.get_by_label("Title").type_text(" vs Trombone");
+    harness.run();
+    assert!(!harness.get_by_label("Title").is_focused(), "it takes no focus");
+    drop(harness);
+    assert_eq!(title.borrow().as_str(), "Flute", "typing does nothing");
 }
