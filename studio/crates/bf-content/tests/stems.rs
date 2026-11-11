@@ -689,11 +689,44 @@ fn a_fighter_without_a_part_is_an_error() {
     ff.music.roles.clear();
     let mut rec = EPISODE.rec.clone();
     rec.names[0] = "PIANO".into();
-    assert_eq!(validate(&ff), Ok(()));
+    // The app can refuse the file before it renders anything: `validate` says what the build would.
+    let want = "fighters[0]: PIANO has no part in the score yet";
+    assert_eq!(validate(&ff).unwrap_err().to_string(), want);
+    assert_eq!(build_soundtrack(&rec, &ff).unwrap_err().to_string(), want);
+    // The other corner too.
+    let mut ff = EPISODE.ff.clone();
+    ff.fighters[1] = "PIANO".into();
+    ff.music.lines.clear();
+    ff.music.solos.clear();
+    ff.music.title_hits.clear();
+    ff.music.roles.clear();
     assert_eq!(
-        build_soundtrack(&rec, &ff).unwrap_err().to_string(),
-        "fighters[0]: PIANO has no part in the score yet"
+        validate(&ff).unwrap_err().to_string(),
+        "fighters[1]: PIANO has no part in the score yet"
     );
+}
+
+#[test]
+fn unknown_arrangement_is_an_error() {
+    let mut ff = EPISODE.ff.clone();
+    ff.music.arrangement = "jazz".into();
+    // `FightFile::validate` knows the arrangements already, in its words.
+    let want = r#"music.arrangement: "jazz" is not an arrangement (this app has: classic)"#;
+    assert_eq!(validate(&ff).unwrap_err().to_string(), want);
+    assert_eq!(build_soundtrack(&EPISODE.rec, &ff).unwrap_err().to_string(), want);
+}
+
+#[test]
+fn empty_title_hits_are_an_error() {
+    // Every part plays its title hits on the VS card (the first and the last note): an empty list cannot be
+    // played (Python raises an IndexError), whoever wins.
+    for name in ["FLUTE", "TROMBONE"] {
+        let mut ff = EPISODE.ff.clone();
+        ff.music.title_hits.insert(name.into(), Vec::new());
+        let want = format!("music.title_hits.{name}: the title hits are an empty list");
+        assert_eq!(validate(&ff).unwrap_err().to_string(), want);
+        assert_eq!(build_soundtrack(&EPISODE.rec, &ff).unwrap_err().to_string(), want);
+    }
 }
 
 #[test]
