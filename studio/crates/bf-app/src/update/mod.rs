@@ -8,9 +8,13 @@
 //!   rule (a release after its candidates, a candidate only for a candidate);
 //! - it is built from exactly the commit that tag names, in a detached checkout of that copy, with
 //!   `cargo build --release --locked` (cargo checks every crate's checksum against `Cargo.lock`);
-//! - the built program reports that version and that commit through `--version` (`stage::check_staged`);
+//! - the built program reports that version and that commit through `--version` (`stage::check_staged`): a sanity
+//!   check that the right thing was built and staged, not a security check (the program says what it likes);
 //! - the staged package verifies file by file against its manifest, and its ffmpeg against the hashes pinned in that
 //!   version's own `ffmpeg.toml` (`bf_pack::package::check_package`, `bf_pack::ffmpeg::place`).
+//!
+//! Push access to the repository means running code as the owner: build scripts and macros run during the build,
+//! before any "Restart now", and the new version runs after it. That is inherent in building the owner's own repository.
 //!
 //! **Nothing running is ever destroyed.** A build is packaged into the program folder's `.next` and checked there;
 //! only after a restart does the new version, from `.next`, swap itself in (`swap::finish`, by `bf_pack`'s
@@ -66,10 +70,34 @@ pub struct Release {
 
 /// What a build made: the new exe, and the source tree it was built from (the folder that holds `studio\`), from
 /// which the icon, the guide and the ffmpeg pin are packaged.
-#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Built {
     pub exe: PathBuf,
     pub tree: PathBuf,
+    /// Sentences about what the build had to do on the way (a copy of the source set aside), shown afterwards.
+    pub notes: Vec<String>,
+    /// Kept until the new version is staged: the source's lock, so nobody changes the tree meanwhile.
+    pub hold: Option<git::BuildHold>,
+}
+
+impl std::fmt::Debug for Built {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Built")
+            .field("exe", &self.exe)
+            .field("tree", &self.tree)
+            .field("notes", &self.notes)
+            .finish()
+    }
+}
+
+impl Built {
+    pub fn new(exe: PathBuf, tree: PathBuf) -> Built {
+        Built {
+            exe,
+            tree,
+            notes: Vec::new(),
+            hold: None,
+        }
+    }
 }
 
 /// Where new versions come from. Route A is `git::GitSource`; a route that downloads would be another one.
@@ -106,8 +134,10 @@ pub enum UpdateState {
 #[derive(Clone, Debug, PartialEq)]
 pub struct UpdateView {
     pub state: UpdateState,
-    /// The version kept in `.previous`, for "Go back to version {w}".
+    /// The version kept in `.previous`: older after an update, newer after going back.
     pub previous: Option<String>,
+    /// The button for it, in its real words: "Go back to version W" or "Go forward to version W".
+    pub previous_button: Option<String>,
     /// The fault reports folder.
     pub reports: Option<PathBuf>,
     /// The guide's page, when the installed copy has one.
@@ -247,7 +277,8 @@ pub(crate) mod testkit {
         bf_pack::install::find_git()
     }
 
-    /// Runs git in `dir` (with its own `.git`) and gives what it printed; panics when it fails.
+    /// Runs git in `dir` (with its own `.git`) and gives what it printed; panics when it fails. (The `-C` comes
+    /// after the `-c` options.)
     pub(crate) fn git_in(g: &Path, dir: &Path, args: &[&str]) -> String {
         let never = AtomicBool::new(false);
         let mut all: Vec<&OsStr> = vec![OsStr::new("-C"), dir.as_os_str()];
@@ -260,7 +291,16 @@ pub(crate) mod testkit {
             ("GIT_COMMITTER_EMAIL", OsStr::new("test@example.invalid")),
             ("GIT_CEILING_DIRECTORIES", dir.parent().unwrap_or(dir).as_os_str()),
         ];
-        let ran = bf_pack::run::run_with_env(g, &all, &env, Duration::from_secs(60), &never)
+        // Every GIT_ variable of the test's own environment goes first, so a test run from a git hook never acts on
+        // the repository around it; local repositories are let through (tests only).
+        let how = bf_pack::run::Family {
+            env: &env,
+            scrub_git: true,
+            ..Default::default()
+        };
+        let mut with_file: Vec<&OsStr> = vec![OsStr::new("-c"), OsStr::new("protocol.file.allow=always")];
+        with_file.extend(all);
+        let ran = bf_pack::run::run_family(g, &with_file, &how, Duration::from_secs(60), &never, &mut |_| {})
             .unwrap_or_else(|e| panic!("git {args:?}: {e}"));
         assert!(ran.status.success(), "git {args:?}: {:?}", ran.tail);
         String::from_utf8_lossy(&ran.stdout).trim().to_string()

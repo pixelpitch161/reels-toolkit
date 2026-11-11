@@ -169,7 +169,7 @@ pub(crate) mod tests {
         let layout = Layout::under(&root.join("pc"));
         let config = UpdateConfig {
             source: root.join("pc").join("data").join("source"),
-            remote: root.join("upstream").to_string_lossy().into_owned(),
+            remote: "https://example.invalid/someone/repo.git".into(),
             tag_prefix: "studio-v".into(),
             build_dir: root.join("pc").join("data").join("build"),
             downloads: root.join("pc").join("data").join("downloads"),

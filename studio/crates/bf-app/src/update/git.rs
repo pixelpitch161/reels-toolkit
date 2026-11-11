@@ -5,18 +5,24 @@
 //!
 //! **Git is only ever pointed at the app's own copy.** Every git run names the copy's `.git` folder and work tree
 //! explicitly (`--git-dir`, `--work-tree`), runs in the copy, has `GIT_CEILING_DIRECTORIES` set to the copy's parent,
-//! and has the environment variables that could point git elsewhere (`GIT_DIR`, `GIT_WORK_TREE`, `GIT_INDEX_FILE`,
-//! ...) taken away. Git signs in by itself (its credential manager); the app never sees a credential, and
-//! `GIT_TERMINAL_PROMPT=0` keeps git from waiting on a console that is not there.
+//! and has every `GIT_` variable of the app's own environment taken away before its own are added. No hook and no
+//! file-system monitor runs (`core.hooksPath` is an empty folder of the app's under the build folder,
+//! `core.fsmonitor=false`), and git may reach the repository only by https or ssh, with TLS checked. Git signs in
+//! by itself (its credential manager); the app never sees a credential, and `GIT_TERMINAL_PROMPT=0` keeps git from
+//! waiting on a console that is not there. Only an https or ssh address is taken as where updates come from.
 //!
 //! **The copy is never a person's working clone.** Before any git command that changes it, the copy must have its
-//! own `.git` folder (not a link, not a worktree's `.git` file), its `origin` must be exactly the `remote` that
-//! `update.toml` records, and it must carry the mark `ballfightstudio.updatecopy = true` in its own git settings.
-//! The mark is set only on a copy that is still exactly what the install made: a `--no-checkout` clone whose work
-//! tree holds nothing but `.git` and whose index is empty. A clone someone works in has files and an index, never
-//! gets the mark, and is refused in words with nothing changed. Inside the marked copy, `checkout --force` and
-//! `clean -fdx` (git's own commands) make the work tree exactly the tagged commit; nothing in it is ever deleted any
-//! other way.
+//! own `.git` folder (not a link, not a worktree's `.git` file), its `origin` in its own settings (`config --local
+//! --no-includes`) must be exactly the `remote` that `update.toml` records, and it must carry the mark
+//! `ballfightstudio.updatecopy = true` in its own settings (never one from the user's or the PC's settings). The mark
+//! is set only on a copy that is still exactly what the install made: a `--no-checkout` clone whose work tree holds
+//! nothing but `.git` and whose index is empty. A clone someone works in has files and an index, never gets the mark,
+//! and is refused in words with nothing changed.
+//!
+//! **No git command destroys work.** A build checks out the tagged commit only when the copy is clean (`status
+//! --porcelain --untracked-files=all --ignored` prints nothing) or still as the install made it. A marked copy with
+//! anything else in it is never cleaned: it is renamed aside to `source.set-aside-N` (never deleted), a fresh
+//! `--no-checkout` copy is made in its place, and the words say so. Nothing in a copy is ever deleted.
 
 use std::ffi::{OsStr, OsString};
 use std::fs::File;
@@ -24,7 +30,7 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 
-use bf_pack::config::{TAG_PREFIX, UpdateConfig};
+use bf_pack::config::{TAG_PREFIX, UpdateConfig, check_remote};
 use bf_pack::package::{EXE_NAME, is_link};
 use bf_pack::run::{Family, run_family};
 use bf_pack::version::{Version, parse_version};
@@ -36,10 +42,16 @@ pub struct GitSource {
     config: UpdateConfig,
     git: PathBuf,
     cargo: PathBuf,
+    /// Tests only (set by `for_tests`, which exists only in test builds): the repository may be a local folder.
+    local: bool,
+    /// Tests only: variables added to each git child after its `GIT_` variables were taken away.
+    test_env: Vec<(String, OsString)>,
 }
 
 /// The longest a fetch may take (a sign-in window may be waiting for the owner).
 const FETCH_LIMIT: Duration = Duration::from_secs(10 * 60);
+/// The longest a fresh copy of the source may take.
+const CLONE_LIMIT: Duration = Duration::from_secs(30 * 60);
 /// The longest any other git command may take.
 const GIT_LIMIT: Duration = Duration::from_secs(5 * 60);
 /// The longest a build may take (a first build that also installs a new Rust toolchain is the slow case).
@@ -48,24 +60,9 @@ const BUILD_LIMIT: Duration = Duration::from_secs(3 * 60 * 60);
 /// The git setting that marks the app's own copy of the source.
 const MARK: &str = "ballfightstudio.updatecopy";
 
-/// Environment variables that could point git at another repository, index or settings, or change what git reads.
-const GIT_ENV_REMOVED: [&str; 11] = [
-    "GIT_DIR",
-    "GIT_WORK_TREE",
-    "GIT_INDEX_FILE",
-    "GIT_OBJECT_DIRECTORY",
-    "GIT_ALTERNATE_OBJECT_DIRECTORIES",
-    "GIT_COMMON_DIR",
-    "GIT_NAMESPACE",
-    "GIT_CONFIG",
-    "GIT_CONFIG_COUNT",
-    "GIT_CONFIG_PARAMETERS",
-    "GIT_PREFIX",
-];
-
 /// What the build takes away from cargo's environment as well: settings that would make it build something other
 /// than what the tagged source says (another toolchain than its `rust-toolchain.toml`, other compiler flags or
-/// profile values, a wrapper around the compiler).
+/// profile values, a wrapper around the compiler). Every `GIT_` variable goes too.
 const CARGO_ENV_REMOVED: [&str; 18] = [
     "RUSTUP_TOOLCHAIN",
     "RUSTFLAGS",
@@ -87,21 +84,83 @@ const CARGO_ENV_REMOVED: [&str; 18] = [
     "CARGO_PROFILE_RELEASE_PANIC",
 ];
 
+/// What `build` holds until the new version is staged: the update lock.
+pub struct BuildHold(#[allow(dead_code)] File);
+
 impl GitSource {
-    /// Route A with the git and cargo of this PC. Without either: `NO_TOOLS`.
+    /// Route A with the git and cargo of this PC, for an https or ssh repository only. Without git or cargo:
+    /// `NO_TOOLS`.
     pub fn new(c: UpdateConfig) -> Result<GitSource, String> {
+        check_remote(&c.remote).map_err(|e| e.to_string())?;
         let git = bf_pack::install::find_git().ok_or_else(|| NO_TOOLS.to_string())?;
         let cargo = find_cargo().ok_or_else(|| NO_TOOLS.to_string())?;
-        Ok(GitSource::with_programs(c, git, cargo))
+        Ok(GitSource {
+            config: c,
+            git,
+            cargo,
+            local: false,
+            test_env: Vec::new(),
+        })
     }
 
-    /// Route A with the given programs (tests).
-    pub fn with_programs(config: UpdateConfig, git: PathBuf, cargo: PathBuf) -> GitSource {
-        GitSource { config, git, cargo }
+    /// Tests only: route A on a local repository the test made, with the given programs. It is compiled only into
+    /// test builds, so no path of the app can reach it.
+    #[cfg(test)]
+    pub(crate) fn for_tests(config: UpdateConfig, git: PathBuf, cargo: PathBuf) -> GitSource {
+        GitSource {
+            config,
+            git,
+            cargo,
+            local: true,
+            test_env: Vec::new(),
+        }
     }
 
     fn source(&self) -> &Path {
         &self.config.source
+    }
+
+    /// The empty folder of the app's that git is told holds its hooks, so that none runs.
+    fn no_hooks(&self) -> Result<PathBuf, String> {
+        let d = self.config.build_dir.join("no-hooks");
+        std::fs::create_dir_all(&d).map_err(|e| format!("The folder {} could not be made: {e}.", d.display()))?;
+        Ok(d)
+    }
+
+    /// Git's options for every run: no hooks, no file-system monitor, https and ssh only, TLS checked (and, in
+    /// tests, local repositories).
+    fn safe_options(&self) -> Result<Vec<OsString>, String> {
+        let mut hooks = OsString::from("core.hooksPath=");
+        hooks.push(self.no_hooks()?);
+        let mut out: Vec<OsString> = vec!["-c".into(), hooks, "-c".into(), "core.fsmonitor=false".into()];
+        out.extend(bf_pack::install::PROTOCOLS.iter().map(OsString::from));
+        if self.local {
+            out.extend(["-c".into(), "protocol.file.allow=always".into()]);
+        }
+        Ok(out)
+    }
+
+    /// Git with `args`, run in `dir` with every `GIT_` variable of the app's own environment taken away.
+    fn run_git(&self, dir: &Path, args: &[&OsStr], limit: Duration, cancel: &AtomicBool) -> Result<String, String> {
+        let ceiling = dir.parent().unwrap_or(dir).as_os_str();
+        let mut env: Vec<(&str, &OsStr)> = vec![
+            ("GIT_TERMINAL_PROMPT", OsStr::new("0")),
+            ("GIT_CEILING_DIRECTORIES", ceiling),
+        ];
+        env.extend(self.test_env.iter().map(|(k, v)| (k.as_str(), v.as_os_str())));
+        let how = Family {
+            dir: Some(dir),
+            env: &env,
+            scrub_git: true,
+            ..Family::default()
+        };
+        let ran = run_family(&self.git, args, &how, limit, cancel, &mut |_| {})?;
+        if ran.status.success() {
+            Ok(String::from_utf8_lossy(&ran.stdout).trim().to_string())
+        } else {
+            let said = ran.tail.last().cloned().unwrap_or_else(|| "nothing".to_string());
+            Err(format!("Git said \"{}\"", said.trim().trim_end_matches('.')))
+        }
     }
 
     /// Git with `args`, in the app's copy and pointed only at it (see the module notes). Gives what it printed,
@@ -112,26 +171,33 @@ impl GitSource {
         git_dir.push(src.join(".git"));
         let mut work_tree = OsString::from("--work-tree=");
         work_tree.push(src);
+        let options = self.safe_options()?;
         let mut all: Vec<&OsStr> = vec![git_dir.as_os_str(), work_tree.as_os_str()];
+        all.extend(options.iter().map(OsString::as_os_str));
         all.extend_from_slice(args);
-        let ceiling = src.parent().unwrap_or(src).as_os_str();
-        let env = [
-            ("GIT_TERMINAL_PROMPT", OsStr::new("0")),
-            ("GIT_CEILING_DIRECTORIES", ceiling),
-        ];
-        let how = Family {
-            dir: Some(src),
-            env: &env,
-            env_remove: &GIT_ENV_REMOVED,
-            below_normal: false,
-        };
-        let ran = run_family(&self.git, &all, &how, limit, cancel, &mut |_| {})?;
-        if ran.status.success() {
-            Ok(String::from_utf8_lossy(&ran.stdout).trim().to_string())
-        } else {
-            let said = ran.tail.last().cloned().unwrap_or_else(|| "nothing".to_string());
-            Err(format!("Git said \"{}\"", said.trim().trim_end_matches('.')))
-        }
+        self.run_git(src, &all, limit, cancel)
+    }
+
+    /// A value from the copy's own settings file only: never the user's, the PC's, an included file's or one given
+    /// in the environment.
+    fn own_setting(&self, name: &str) -> Option<String> {
+        let never = AtomicBool::new(false);
+        let o = OsStr::new;
+        self.git(
+            &[o("config"), o("--local"), o("--no-includes"), o("--get"), o(name)],
+            GIT_LIMIT,
+            &never,
+        )
+        .ok()
+    }
+
+    /// Whether the copy is exactly as the install made it: nothing but `.git` in its folder, and an empty index.
+    fn pristine(&self) -> bool {
+        let never = AtomicBool::new(false);
+        let only_git = std::fs::read_dir(self.source())
+            .map(|entries| entries.into_iter().all(|e| e.is_ok_and(|e| e.file_name() == ".git")))
+            .unwrap_or(false);
+        only_git && self.git(&[OsStr::new("ls-files")], GIT_LIMIT, &never).as_deref() == Ok("")
     }
 
     /// Checks that the copy is the app's own (see the module notes), marking a fresh copy the first time.
@@ -150,36 +216,34 @@ impl GitSource {
                  are not used."
             ));
         }
+        if !self.local {
+            check_remote(&self.config.remote).map_err(|e| e.to_string())?;
+        }
         let dot_git = src.join(".git");
         if !src.is_absolute() || is_link(src) || is_link(&dot_git) || !dot_git.is_dir() {
             return Err(not_ours("it has no .git folder of its own"));
         }
-        let o = OsStr::new;
         let origin = self
-            .git(&[o("config"), o("--get"), o("remote.origin.url")], GIT_LIMIT, &never)
-            .map_err(|_| not_ours("it names no repository it comes from"))?;
+            .own_setting("remote.origin.url")
+            .ok_or_else(|| not_ours("it names no repository it comes from"))?;
         if origin != self.config.remote {
             return Err(not_ours("it comes from another repository"));
         }
-        let marked = self.git(&[o("config"), o("--get"), o(MARK)], GIT_LIMIT, &never);
-        if marked.as_deref() == Ok("true") {
+        if self.own_setting(MARK).as_deref() == Some("true") {
             return Ok(());
         }
         // Not marked yet: only a copy exactly as the install left it is taken (and marked).
-        let only_git = std::fs::read_dir(src)
-            .map_err(|e| not_ours(&format!("it cannot be read: {e}")))?
-            .all(|e| e.is_ok_and(|e| e.file_name() == ".git"));
-        let index = self.git(&[o("ls-files")], GIT_LIMIT, &never);
-        if !only_git || index.as_deref() != Ok("") {
+        if !self.pristine() {
             return Err(not_ours("it holds files that someone may be working on"));
         }
+        let o = OsStr::new;
         self.git(&[o("config"), o("--local"), o(MARK), o("true")], GIT_LIMIT, &never)
             .map(|_| ())
             .map_err(|e| not_ours(&e))
     }
 
     /// Holds the update lock (`<build folder>\update.lock`) while the copy is used, so two copies of the app never
-    /// fetch or build in it at once.
+    /// fetch, build or stage in it at once.
     fn lock(&self) -> Result<File, String> {
         let dir = &self.config.build_dir;
         std::fs::create_dir_all(dir)
@@ -203,18 +267,57 @@ impl GitSource {
         let never = AtomicBool::new(false);
         let o = OsStr::new;
         let pattern = format!("refs/tags/{TAG_PREFIX}*");
-        let text = self.git(
-            &[
-                o("for-each-ref"),
-                o("--format=%(objectname) %(*objectname) %(refname)"),
-                o(&pattern),
-            ],
-            GIT_LIMIT,
-            &never,
-        )?;
+        let text = self.git(&[o("for-each-ref"), o(TAG_FORMAT), o(&pattern)], GIT_LIMIT, &never)?;
         Ok(parse_tags(&text, TAG_PREFIX))
     }
+
+    /// A copy of ours that has something in it that a build did not put there is never cleaned: it is renamed to
+    /// `source.set-aside-N` (the first free N), and a fresh `--no-checkout` copy of the repository takes its place.
+    /// Gives the sentence that says so.
+    fn set_aside_and_copy_again(&self, cancel: &AtomicBool) -> Result<String, String> {
+        let src = self.source();
+        let name = src.file_name().unwrap_or_default().to_string_lossy().into_owned();
+        let aside = (1..1000)
+            .map(|n| src.with_file_name(format!("{name}.set-aside-{n}")))
+            .find(|p| std::fs::symlink_metadata(p).is_err())
+            .ok_or_else(|| "There is no free name to set the copy of the source aside.".to_string())?;
+        std::fs::rename(src, &aside).map_err(|e| {
+            format!(
+                "The copy of the source has changes in it, and it could not be set aside as {}: {e}.",
+                aside.display()
+            )
+        })?;
+        let parent = src.parent().unwrap_or(src);
+        let options = self.safe_options()?;
+        let o = OsStr::new;
+        let mut args: Vec<&OsStr> = options.iter().map(OsString::as_os_str).collect();
+        args.extend([
+            o("clone"),
+            o("--no-checkout"),
+            o("--quiet"),
+            o("--"),
+            o(&self.config.remote),
+            src.as_os_str(),
+        ]);
+        self.run_git(parent, &args, CLONE_LIMIT, cancel).map_err(|e| {
+            format!(
+                "The copy of the source had changes in it, so it was set aside as {} (nothing in it was deleted), but \
+                 a fresh copy could not be made. {}",
+                aside.display(),
+                sentence(&e)
+            )
+        })?;
+        self.own_copy()?;
+        Ok(format!(
+            "The app's copy of the source had changes in it that BALLFIGHT Studio did not make, so it was set aside as \
+             {} (nothing in it was deleted) and a fresh copy was made.",
+            aside.display()
+        ))
+    }
 }
+
+/// The `for-each-ref` format `parse_tags` reads: the tag's object and its type, the object it peels to and that type.
+const TAG_FORMAT: &str = "--format=%(objectname) %(objecttype) %(*objectname) %(*objecttype) %(refname)";
 
 impl Source for GitSource {
     fn newest(&self, current: &Version) -> Result<Option<Release>, String> {
@@ -222,8 +325,17 @@ impl Source for GitSource {
         self.own_copy()?;
         let never = AtomicBool::new(false);
         let o = OsStr::new;
+        // Only the release tags, and never one that moved (no `+`, no `--force`).
+        let refspec = format!("refs/tags/{TAG_PREFIX}*:refs/tags/{TAG_PREFIX}*");
         self.git(
-            &[o("fetch"), o("--prune"), o("--tags"), o("--quiet"), o("origin")],
+            &[
+                o("fetch"),
+                o("--prune"),
+                o("--no-tags"),
+                o("--quiet"),
+                o("origin"),
+                o(&refspec),
+            ],
             FETCH_LIMIT,
             &never,
         )
@@ -232,7 +344,7 @@ impl Source for GitSource {
     }
 
     fn build(&self, r: &Release, progress: &dyn Fn(String), cancel: &AtomicBool) -> Result<Built, String> {
-        let _lock = self.lock()?;
+        let lock = self.lock()?;
         self.own_copy()?;
         let o = OsStr::new;
         let stopped = || "The build was stopped.".to_string();
@@ -257,6 +369,37 @@ impl Source for GitSource {
                 r.tag
             ));
         }
+        let status_args = [
+            o("status"),
+            o("--porcelain"),
+            o("--untracked-files=all"),
+            o("--ignored"),
+        ];
+        let mut notes = Vec::new();
+        let clean = self.git(&status_args, GIT_LIMIT, cancel).as_deref() == Ok("");
+        if !clean && !self.pristine() {
+            notes.push(self.set_aside_and_copy_again(cancel)?);
+            // The fresh copy needs the tag again (only the tags, as a look fetches them).
+            let refspec = format!("refs/tags/{TAG_PREFIX}*:refs/tags/{TAG_PREFIX}*");
+            self.git(
+                &[o("fetch"), o("--no-tags"), o("--quiet"), o("origin"), o(&refspec)],
+                FETCH_LIMIT,
+                cancel,
+            )?;
+            let again = self.git(
+                &[o("rev-parse"), o("--verify"), o("--quiet"), o(&peeled)],
+                GIT_LIMIT,
+                cancel,
+            )?;
+            if again != r.commit {
+                return Err(format!(
+                    "The tag {} has moved since it was checked. Look for updates again.",
+                    r.tag
+                ));
+            }
+        }
+        // The copy is clean, or as the install made it (an empty index against a branch: every file looks deleted).
+        // `--force` is what lets git fill that empty copy; on a clean copy it has nothing to discard.
         self.git(
             &[
                 o("-c"),
@@ -270,18 +413,8 @@ impl Source for GitSource {
             GIT_LIMIT,
             cancel,
         )?;
-        self.git(&[o("clean"), o("-f"), o("-d"), o("-x"), o("-q")], GIT_LIMIT, cancel)?;
         let head = self.git(&[o("rev-parse"), o("HEAD")], GIT_LIMIT, cancel)?;
-        let status = self.git(
-            &[
-                o("status"),
-                o("--porcelain"),
-                o("--untracked-files=all"),
-                o("--ignored"),
-            ],
-            GIT_LIMIT,
-            cancel,
-        )?;
+        let status = self.git(&status_args, GIT_LIMIT, cancel)?;
         if head != r.commit || !status.is_empty() {
             return Err(format!(
                 "The copy of the source could not be made exactly version {}.",
@@ -301,15 +434,11 @@ impl Source for GitSource {
             ("GIT_TERMINAL_PROMPT", OsStr::new("0")),
             ("GIT_CEILING_DIRECTORIES", ceiling),
         ];
-        let removed: Vec<&str> = GIT_ENV_REMOVED
-            .iter()
-            .chain(CARGO_ENV_REMOVED.iter())
-            .copied()
-            .collect();
         let how = Family {
             dir: Some(&studio),
             env: &env,
-            env_remove: &removed,
+            env_remove: &CARGO_ENV_REMOVED,
+            scrub_git: true,
             below_normal: true,
         };
         let args = [o("build"), o("--release"), o("--locked"), o("-p"), o("bf-app")];
@@ -330,10 +459,10 @@ impl Source for GitSource {
         if !exe.is_file() {
             return Err(format!("The build ended without making {}.", exe.display()));
         }
-        Ok(Built {
-            exe,
-            tree: self.source().to_path_buf(),
-        })
+        let mut built = Built::new(exe, self.source().to_path_buf());
+        built.notes = notes;
+        built.hold = Some(BuildHold(lock));
+        Ok(built)
     }
 }
 
@@ -366,23 +495,27 @@ fn cargo_said(tail: &[String]) -> String {
         .unwrap_or_else(|| "nothing".to_string())
 }
 
-/// Whether `s` is a full commit id: 40 (or, for a SHA-256 repository, 64) lower-case hex digits.
+/// Whether `s` is a full object id: 40 (or, for a SHA-256 repository, 64) lower-case hex digits.
 fn full_commit(s: &str) -> bool {
     (s.len() == 40 || s.len() == 64) && s.bytes().all(|b| matches!(b, b'0'..=b'9' | b'a'..=b'f'))
 }
 
-/// Reads `git for-each-ref --format="%(objectname) %(*objectname) %(refname)"` output: one release for each tag named
-/// exactly `refs/tags/<prefix><version>` with a version `parse_version` reads. The commit is the peeled one for an
-/// annotated tag, the tag's own object for a plain one. Anything else (another prefix, a bad version, a line that
-/// is not in that form) is left out.
+/// Reads `git for-each-ref` output in `TAG_FORMAT` (`<object> <type> <peeled object> <peeled type> <refname>`): one
+/// release for each tag named exactly `refs/tags/<prefix><version>` with a version `parse_version` reads, whose
+/// object is a commit (a plain tag) or peels to a commit (an annotated tag). Anything else (another prefix, a bad
+/// version, a tag of a tree or a file, a line not in that form) is left out.
 pub fn parse_tags(for_each_ref: &str, prefix: &str) -> Vec<Release> {
     let mut out: Vec<Release> = Vec::new();
     for line in for_each_ref.lines() {
-        let mut parts = line.splitn(3, ' ');
-        let (Some(object), Some(peeled), Some(refname)) = (parts.next(), parts.next(), parts.next()) else {
+        let parts: Vec<&str> = line.splitn(5, ' ').collect();
+        let [object, kind, peeled, peeled_kind, refname] = parts[..] else {
             continue;
         };
-        let commit = if peeled.is_empty() { object } else { peeled };
+        let commit = match (kind, peeled.is_empty()) {
+            ("commit", true) if peeled_kind.is_empty() => object,
+            ("tag", false) if peeled_kind == "commit" => peeled,
+            _ => continue,
+        };
         if !full_commit(object) || !full_commit(commit) {
             continue;
         }
@@ -612,15 +745,18 @@ mod tests {
         let c = "3".repeat(40);
         let d = "4".repeat(40);
         let text = format!(
-            "{a}  refs/tags/studio-v0.6.0\n\
-             {b} {c} refs/tags/studio-v0.6.1\n\
-             {d}  refs/tags/other-v0.9.0\n\
-             {d}  refs/tags/studio-v0.7\n\
-             {d}  refs/tags/studio-v0.7.0-beta\n\
-             {d}  refs/tags/studio-vX\n\
-             {d} {d} refs/tags/studio-v0.8.0-rc.2\n\
-             zzzz  refs/tags/studio-v0.9.0\n\
-             {d}  refs/heads/studio-v1.0.0\n\
+            "{a} commit   refs/tags/studio-v0.6.0\n\
+             {b} tag {c} commit refs/tags/studio-v0.6.1\n\
+             {d} commit   refs/tags/other-v0.9.0\n\
+             {d} commit   refs/tags/studio-v0.7\n\
+             {d} commit   refs/tags/studio-v0.7.0-beta\n\
+             {d} commit   refs/tags/studio-vX\n\
+             {d} tag {d} commit refs/tags/studio-v0.8.0-rc.2\n\
+             {d} tree   refs/tags/studio-v0.8.1\n\
+             {d} blob   refs/tags/studio-v0.8.2\n\
+             {d} tag {d} tree refs/tags/studio-v0.8.3\n\
+             zzzz commit   refs/tags/studio-v0.9.0\n\
+             {d} commit   refs/heads/studio-v1.0.0\n\
              not a line\n"
         );
         let tags = parse_tags(&text, "studio-v");
@@ -636,6 +772,113 @@ mod tests {
                 ("studio-v0.8.0-rc.2".to_string(), "0.8.0-rc.2".to_string(), d.clone()),
             ]
         );
+    }
+
+    #[test]
+    fn only_https_or_ssh_repositories_outside_tests() {
+        let dir = TempDir::new("git-https");
+        let config = config_for(dir.path(), &dir.path().join("upstream"));
+        let err = GitSource::new(config).err().unwrap();
+        assert_eq!(err, bf_pack::config::REMOTE_NOT_HTTPS_OR_SSH);
+    }
+
+    #[test]
+    fn a_mark_from_the_users_settings_does_not_count() {
+        let Some((g, cargo)) = tools() else { return };
+        let dir = TempDir::new("git-global");
+        let repo = dir.path().join("upstream");
+        upstream(&g, &cargo, &repo, &[("0.6.1", Kind::default(), false)]);
+        // A clone someone works in (checked out, never marked), from the remote update.toml names.
+        let config = config_for(dir.path(), &repo);
+        std::fs::create_dir_all(config.source.parent().unwrap()).unwrap();
+        git_in(
+            &g,
+            config.source.parent().unwrap(),
+            &[
+                "clone",
+                "--quiet",
+                "--",
+                &repo.to_string_lossy(),
+                &config.source.to_string_lossy(),
+            ],
+        );
+        // The user's own settings (given to git through GIT_CONFIG_GLOBAL, in the test's git children only) carry
+        // the mark.
+        let global = dir.path().join("global.gitconfig");
+        std::fs::write(&global, "[ballfightstudio]\n\tupdatecopy = true\n").unwrap();
+        let mut s = GitSource::for_tests(config.clone(), g.clone(), cargo);
+        s.test_env = vec![("GIT_CONFIG_GLOBAL".into(), global.into_os_string())];
+        let never = AtomicBool::new(false);
+        let o = OsStr::new;
+        // Git does read it there, so only the copy's own settings keep it out.
+        assert_eq!(
+            s.git(&[o("config"), o("--get"), o(MARK)], GIT_LIMIT, &never).unwrap(),
+            "true"
+        );
+        let err = s.newest(&parse_version("0.6.0").unwrap()).unwrap_err();
+        assert!(err.contains("someone may be working on"), "{err}");
+        assert_eq!(
+            git_in(&g, &config.source, &["rev-parse", "--abbrev-ref", "HEAD"]),
+            "main"
+        );
+    }
+
+    #[test]
+    fn a_changed_copy_is_set_aside_whole_and_no_hook_runs() {
+        let Some((g, cargo)) = tools() else { return };
+        let dir = TempDir::new("git-aside");
+        let repo = dir.path().join("upstream");
+        let commits = upstream(&g, &cargo, &repo, &[("0.6.1", Kind::default(), false)]);
+        let config = config_for(dir.path(), &repo);
+        source_copy(&g, &repo, &config.source);
+        // A hook in the user's own settings would write this file if git ran it.
+        let hooks = dir.path().join("user hooks");
+        std::fs::create_dir_all(&hooks).unwrap();
+        let ran_hook = dir.path().join("hook-ran.txt");
+        std::fs::write(
+            hooks.join("post-checkout"),
+            format!(
+                "#!/bin/sh\necho ran > '{}'\n",
+                ran_hook.to_string_lossy().replace('\\', "/")
+            ),
+        )
+        .unwrap();
+        let global = dir.path().join("global.gitconfig");
+        std::fs::write(
+            &global,
+            format!("[core]\n\thooksPath = {}\n", hooks.to_string_lossy().replace('\\', "/")),
+        )
+        .unwrap();
+        let mut s = GitSource::for_tests(config.clone(), g.clone(), cargo);
+        s.test_env = vec![("GIT_CONFIG_GLOBAL".into(), global.into_os_string())];
+        let never = AtomicBool::new(false);
+        let r = s.newest(&parse_version("0.6.0").unwrap()).unwrap().unwrap();
+        drop(s.build(&r, &|_| {}, &never).unwrap());
+        assert!(!ran_hook.exists(), "no hook of the user's ran");
+        // Someone changes the copy: a tracked file edited and a file of their own.
+        let main = config.source.join("studio/crates/bf-app/src/main.rs");
+        let mut edited = std::fs::read(&main).unwrap();
+        edited.extend_from_slice(b"// my change\n");
+        std::fs::write(&main, &edited).unwrap();
+        std::fs::write(config.source.join("studio/my notes.txt"), b"my notes").unwrap();
+        let built = s.build(&r, &|_| {}, &never).unwrap();
+        let aside = config.source.with_file_name("source.set-aside-1");
+        assert_eq!(built.notes.len(), 1, "{:?}", built.notes);
+        assert!(
+            built.notes[0].contains(&aside.display().to_string()),
+            "{:?}",
+            built.notes
+        );
+        // Every byte of the person's work is kept in the set-aside folder; nothing was cleaned.
+        assert_eq!(
+            std::fs::read(aside.join("studio/crates/bf-app/src/main.rs")).unwrap(),
+            edited
+        );
+        assert_eq!(std::fs::read(aside.join("studio/my notes.txt")).unwrap(), b"my notes");
+        // The fresh copy is exactly the tagged commit, and the build used it.
+        assert_eq!(git_in(&g, &config.source, &["rev-parse", "HEAD"]), commits[0]);
+        assert!(!config.source.join("studio/my notes.txt").exists());
+        assert!(!ran_hook.exists());
     }
 
     #[test]
@@ -674,7 +917,7 @@ mod tests {
         git_in(&g, &repo, &["tag", "other-v9.0.0"]);
         let config = config_for(dir.path(), &repo);
         source_copy(&g, &repo, &config.source);
-        let s = GitSource::with_programs(config.clone(), g.clone(), cargo.clone());
+        let s = GitSource::for_tests(config.clone(), g.clone(), cargo.clone());
         let v = |t: &str| parse_version(t).unwrap();
         let r = s.newest(&v("0.6.0")).unwrap().unwrap();
         assert_eq!(r.tag, "studio-v0.6.1");
@@ -708,7 +951,7 @@ mod tests {
         source_copy(&g, &repo, &config.source);
         // update.toml names another repository than the copy's origin.
         config.remote = dir.path().join("elsewhere").to_string_lossy().into_owned();
-        let s = GitSource::with_programs(config.clone(), g.clone(), cargo.clone());
+        let s = GitSource::for_tests(config.clone(), g.clone(), cargo.clone());
         let v = parse_version("0.6.0").unwrap();
         let err = s.newest(&v).unwrap_err();
         assert!(err.contains("comes from another repository"), "{err}");
@@ -733,7 +976,7 @@ mod tests {
         // A prefix other than studio-v is refused too.
         let mut odd = config_for(dir.path(), &repo);
         odd.tag_prefix = "v".into();
-        let s = GitSource::with_programs(odd, g, cargo);
+        let s = GitSource::for_tests(odd, g, cargo);
         assert!(s.newest(&v).unwrap_err().contains("release tags"));
     }
 
@@ -759,7 +1002,7 @@ mod tests {
         );
         let mine = config.source.join("studio").join("my work.txt");
         std::fs::write(&mine, b"unsaved work").unwrap();
-        let s = GitSource::with_programs(config.clone(), g.clone(), cargo);
+        let s = GitSource::for_tests(config.clone(), g.clone(), cargo);
         let err = s.newest(&parse_version("0.6.0").unwrap()).unwrap_err();
         assert!(err.contains("someone may be working on"), "{err}");
         let r = Release {
@@ -784,7 +1027,7 @@ mod tests {
         std::fs::write(wt.join(".git"), format!("gitdir: {}", repo.join(".git").display())).unwrap();
         let mut c2 = config_for(&dir.path().join("wt"), &repo);
         c2.source = wt;
-        let s = GitSource::with_programs(c2, g, find_cargo().unwrap());
+        let s = GitSource::for_tests(c2, g, find_cargo().unwrap());
         assert!(
             s.newest(&parse_version("0.6.0").unwrap())
                 .unwrap_err()
@@ -808,7 +1051,7 @@ mod tests {
         commit_all(&g, &repo, "not released");
         let config = config_for(dir.path(), &repo);
         source_copy(&g, &repo, &config.source);
-        let s = GitSource::with_programs(config.clone(), g.clone(), cargo.clone());
+        let s = GitSource::for_tests(config.clone(), g.clone(), cargo.clone());
         let r = s.newest(&parse_version("0.6.0").unwrap()).unwrap().unwrap();
         // Something left in the copy's work tree is cleared by git before the build.
         std::fs::create_dir_all(config.source.join("studio")).unwrap();
@@ -838,6 +1081,8 @@ mod tests {
             format!("BALLFIGHT Studio 0.6.1 ({}, 11 Nov 2026)", &commits[1][..7])
         );
 
+        // The source stays locked until the new version is staged; then it is free again.
+        drop(built);
         // A tag that moves after the look is refused, with nothing built.
         git_in(
             &g,
@@ -861,7 +1106,7 @@ mod tests {
         upstream(&g, &cargo, &repo, &[("0.6.1", broken, false)]);
         let config = config_for(dir.path(), &repo);
         source_copy(&g, &repo, &config.source);
-        let s = GitSource::with_programs(config.clone(), g, cargo);
+        let s = GitSource::for_tests(config.clone(), g, cargo);
         let r = s.newest(&parse_version("0.6.0").unwrap()).unwrap().unwrap();
         let never = AtomicBool::new(false);
         let err = s.build(&r, &|_| {}, &never).unwrap_err();
@@ -882,7 +1127,7 @@ mod tests {
         upstream(&g, &cargo, &repo, &[("0.6.1", slow, false)]);
         let config = config_for(dir.path(), &repo);
         source_copy(&g, &repo, &config.source);
-        let s = GitSource::with_programs(config, g, cargo);
+        let s = GitSource::for_tests(config, g, cargo);
         let r = s.newest(&parse_version("0.6.0").unwrap()).unwrap().unwrap();
         let cancel = std::sync::Arc::new(AtomicBool::new(false));
         let flag = cancel.clone();
@@ -969,7 +1214,7 @@ mod tests {
         let config = config_for(dir.path(), &origin);
         source_copy(&g, &origin, &config.source);
         eprintln!("origin and the app's copy made in {:?}", t.elapsed());
-        let s = GitSource::with_programs(config.clone(), g.clone(), cargo.clone());
+        let s = GitSource::for_tests(config.clone(), g.clone(), cargo.clone());
         let never = AtomicBool::new(false);
         let v = |t: &str| parse_version(t).unwrap();
 
@@ -991,6 +1236,8 @@ mod tests {
             Err(e) => eprintln!("--version: {e}"),
         }
 
+        // The source's lock goes with the first build.
+        drop(built);
         // A one-line change in bf-app, released as the next tag.
         let work = dir.path().join("work");
         git_in(
@@ -1059,10 +1306,13 @@ mod tests {
         // The installed 9.0.0: the same files, so the swap moves as many bytes as a real one.
         let pkg = dir.path().join("pkg-9.0.0");
         bf_pack::package::package(&built.exe, &tree, &ff, &pkg).unwrap();
-        bf_pack::install::install(&pkg, &layout, &config).unwrap();
+        // The install's update.toml names an https address (a local one is refused there).
+        let mut installed_config = config.clone();
+        installed_config.remote = "https://example.invalid/someone/repo.git".into();
+        bf_pack::install::install(&pkg, &layout, &installed_config).unwrap();
         let inst = super::super::Installed {
             dir: layout.programs.clone(),
-            config: config.clone(),
+            config: installed_config,
         };
         let t = std::time::Instant::now();
         let next = super::super::stage::stage_with(&inst, &built.exe, &tree, &|_| Ok(ff.clone())).unwrap();
@@ -1083,10 +1333,10 @@ mod tests {
         upstream(&g, &cargo, &repo, &[("0.6.1", Kind::default(), false)]);
         let config = config_for(dir.path(), &repo);
         source_copy(&g, &repo, &config.source);
-        let s = GitSource::with_programs(config.clone(), g, cargo);
+        let s = GitSource::for_tests(config.clone(), g, cargo);
         // Another copy of the app holds the lock.
         let held = s.lock().unwrap();
-        let other = GitSource::with_programs(config.clone(), s.git.clone(), s.cargo.clone());
+        let other = GitSource::for_tests(config.clone(), s.git.clone(), s.cargo.clone());
         assert_eq!(
             other.newest(&parse_version("0.6.0").unwrap()).unwrap_err(),
             ANOTHER_COPY

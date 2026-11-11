@@ -66,6 +66,9 @@ pub struct Setup {
     pub open: PathStep,
     /// Removes the app (Task 11's `remove_app`); gives the sentences to show before closing.
     pub remove: Box<dyn Fn() -> Result<Vec<String>, String> + Send>,
+    /// Set by the interface while a video renders (Task 13, through `Worker::set_rendering`): Restart, Go back and
+    /// Remove are then refused with `RENDERING`.
+    pub rendering: Arc<AtomicBool>,
 }
 
 impl Setup {
@@ -99,6 +102,7 @@ impl Setup {
                     .map(|r| bf_pack::remove::removed_words(&r))
                     .map_err(|e| e.to_string())
             }),
+            rendering: Arc::new(AtomicBool::new(false)),
         }
     }
 }
@@ -142,6 +146,9 @@ enum State {
         doing: String,
     },
     Ready(Release),
+    /// The release found is the version kept in `.previous` (after going back), and it still verifies: "Restart
+    /// now" brings it back as it is, without building it again.
+    ReadyKept(Release),
     Failed(String),
 }
 
@@ -159,6 +166,8 @@ pub struct Worker {
     cancel: Arc<AtomicBool>,
     reports: Option<PathBuf>,
     guide: Option<PathBuf>,
+    rendering: Arc<AtomicBool>,
+    running: String,
 }
 
 impl Worker {
@@ -185,6 +194,8 @@ impl Worker {
             .map(|i| i.dir.join(bf_pack::package::GUIDE_DIR).join("index.html"))
             .filter(|g| g.is_file());
         let reports = setup.logs.clone();
+        let rendering = setup.rendering.clone();
+        let running = setup.current.to_string();
         let (requests, rx) = channel();
         if installed {
             let _ = requests.send((Request::Check, Instant::now()));
@@ -205,7 +216,14 @@ impl Worker {
             cancel,
             reports,
             guide,
+            rendering,
+            running,
         }
+    }
+
+    /// Tells the worker whether a video is rendering (Restart, Go back and Remove wait while one is).
+    pub fn set_rendering(&self, on: bool) {
+        self.rendering.store(on, Ordering::Relaxed);
     }
 
     /// Queues a request; never waits. `StopBuild` takes effect at once.
@@ -235,13 +253,17 @@ impl Worker {
                 seconds: started.elapsed().as_secs(),
                 doing: doing.clone(),
             },
-            State::Ready(r) => UpdateState::Ready {
+            State::Ready(r) | State::ReadyKept(r) => UpdateState::Ready {
                 version: r.version.to_string(),
             },
             State::Failed(text) => UpdateState::Failed { text: text.clone() },
         };
         UpdateView {
             state,
+            previous_button: inner
+                .previous
+                .as_deref()
+                .map(|w| super::swap::kept_button(w, &self.running)),
             previous: inner.previous.clone(),
             reports: self.reports.clone(),
             guide: self.guide.clone(),
@@ -295,10 +317,27 @@ fn work(
                     Ok(source) => match source.newest(&setup.current) {
                         Ok(None) => State::UpToDate,
                         Ok(Some(r)) => {
-                            // A version built earlier and staged whole is offered for a restart again.
-                            let staged = staged_version(&inst.dir) == Some(r.version.to_string())
+                            let v = r.version.to_string();
+                            // A version built earlier and staged whole is offered for a restart again; so is the
+                            // version kept in .previous (after going back), when it still verifies.
+                            let staged = staged_version(&inst.dir) == Some(v.clone())
                                 && check_staged(&inst.dir.join(NEXT), &r).is_ok();
-                            if staged { State::Ready(r) } else { State::Available(r) }
+                            let kept = !staged
+                                && super::swap::previous_version(&inst.dir) == Some(v.clone())
+                                && super::stage::check_named(
+                                    &inst.dir.join(super::swap::PREVIOUS),
+                                    &v,
+                                    r.commit.get(..7),
+                                    true,
+                                )
+                                .is_ok();
+                            if staged {
+                                State::Ready(r)
+                            } else if kept {
+                                State::ReadyKept(r)
+                            } else {
+                                State::Available(r)
+                            }
                         }
                         Err(e) => State::Failed(check_failed(&e)),
                     },
@@ -334,7 +373,14 @@ fn work(
                     Err(e) => State::Failed(build_failed(&v, &w, &e)),
                     Ok(built) => {
                         progress("Checking the new program.".to_string());
-                        match (setup.stage)(inst, &built, &release, &setup.current) {
+                        let notes = built.notes.join(" ");
+                        if !notes.is_empty() {
+                            set(&|i| i.note = Some(notes.clone()));
+                        }
+                        // `built` (and with it the source's lock) is held until the stage is done.
+                        let staged = (setup.stage)(inst, &built, &release, &setup.current);
+                        drop(built);
+                        match staged {
                             Ok(()) if cancel.load(Ordering::Relaxed) => {
                                 let _ = super::stage::clear_next(&inst.dir);
                                 State::Available(release.clone())
@@ -350,10 +396,16 @@ fn work(
             }
             Request::StopBuild => {}
             Request::Restart => {
-                if !matches!(state(), State::Ready(_)) {
+                let kept = matches!(state(), State::ReadyKept(_));
+                if !matches!(state(), State::Ready(_) | State::ReadyKept(_)) {
                     continue;
                 }
-                match (setup.restart)(inst) {
+                if setup.rendering.load(Ordering::Relaxed) {
+                    set(&|i| i.note = Some(super::RENDERING.to_string()));
+                    continue;
+                }
+                let step = if kept { &setup.go_back } else { &setup.restart };
+                match step(inst) {
                     Ok(()) => set(&|i| i.close = Some(Vec::new())),
                     Err(text) => set(&|i| i.state = State::Failed(text.clone())),
                 }
@@ -362,6 +414,10 @@ fn work(
                 if inner.lock().unwrap_or_else(|p| p.into_inner()).previous.is_none()
                     || matches!(state(), State::Building { .. })
                 {
+                    continue;
+                }
+                if setup.rendering.load(Ordering::Relaxed) {
+                    set(&|i| i.note = Some(super::RENDERING.to_string()));
                     continue;
                 }
                 match (setup.go_back)(inst) {
@@ -377,6 +433,9 @@ fn work(
                 if let Err(text) = opened {
                     set(&|i| i.note = Some(text.clone()));
                 }
+            }
+            Request::Remove if setup.rendering.load(Ordering::Relaxed) => {
+                set(&|i| i.note = Some(super::RENDERING.to_string()));
             }
             Request::Remove => match (setup.remove)() {
                 Ok(words) => set(&|i| i.close = Some(words.clone())),
@@ -454,10 +513,7 @@ mod tests {
     fn quick_build() -> Arc<BuildFn> {
         Arc::new(|_, progress, _| {
             progress("Building bf-app.".into());
-            Ok(Built {
-                exe: PathBuf::from("built.exe"),
-                tree: PathBuf::from("tree"),
-            })
+            Ok(Built::new(PathBuf::from("built.exe"), PathBuf::from("tree")))
         })
     }
 
@@ -493,6 +549,7 @@ mod tests {
                 l5.lock().unwrap().push("remove".into());
                 Ok(vec!["BALLFIGHT Studio was removed.".into()])
             }),
+            rendering: Arc::new(AtomicBool::new(false)),
         }
     }
 
@@ -671,6 +728,105 @@ mod tests {
     }
 
     #[test]
+    fn nothing_restarts_or_goes_while_a_video_renders() {
+        let dir = TempDir::new("worker-render");
+        let inst = a_fake_install(dir.path());
+        let prev = inst.dir.join(".previous");
+        std::fs::create_dir(&prev).unwrap();
+        std::fs::copy(inst.dir.join("MANIFEST.txt"), prev.join("MANIFEST.txt")).unwrap();
+        let log = Arc::new(Mutex::new(Vec::new()));
+        let (src, _) = fake(Ok(Some(release("0.6.1"))), quick_build());
+        let w = Worker::start(setup(Some(inst), Ok(src), log.clone()), no_wake());
+        until(&w, 10, |v| v.state != UpdateState::Checking);
+        w.send(Request::Build);
+        until(&w, 10, |v| matches!(v.state, UpdateState::Ready { .. }));
+        w.set_rendering(true);
+        for r in [Request::Restart, Request::GoBack, Request::Remove] {
+            w.send(r);
+            let view = until(&w, 10, |v| v.note.is_some());
+            assert_eq!(view.note.as_deref(), Some(super::super::RENDERING), "{r:?}");
+            assert_eq!(view.close, None);
+            // Any next request clears the note.
+            w.send(Request::OpenGuide);
+            until(&w, 10, |v| v.note.is_none());
+        }
+        assert!(
+            log.lock()
+                .unwrap()
+                .iter()
+                .all(|l| l.starts_with("stage") || l.starts_with("open")),
+            "{:?}",
+            log.lock().unwrap()
+        );
+        // When the render is over, the restart goes ahead.
+        w.set_rendering(false);
+        w.send(Request::Restart);
+        let view = until(&w, 10, |v| v.close.is_some());
+        assert_eq!(view.close, Some(Vec::new()));
+        assert!(log.lock().unwrap().iter().any(|l| l == "restart"));
+    }
+
+    #[test]
+    fn after_going_back_the_kept_newer_version_comes_back_without_a_build() {
+        let Some(g) = git() else { return };
+        let Some(cargo) = find_cargo() else { return };
+        let dir = TempDir::new("worker-forward");
+        // The stand-in of 0.6.1, built from a detached commit so it names that commit, kept in .previous.
+        let tree = dir.path().join("tree-0.6.1");
+        super::super::testkit::new_repo(&g, &tree);
+        standin::write(&tree, "0.6.1", &standin::Kind::default());
+        let commit = super::super::testkit::commit_all(&g, &tree, "0.6.1");
+        super::super::testkit::git_in(&g, &tree, &["checkout", "-q", "--detach"]);
+        let target = dir.path().join("target");
+        let never = AtomicBool::new(false);
+        let how = bf_pack::run::Family {
+            dir: Some(&tree.join("studio")),
+            env: &[("CARGO_TARGET_DIR", target.as_os_str())],
+            env_remove: &["RUSTUP_TOOLCHAIN"],
+            scrub_git: true,
+            below_normal: true,
+        };
+        let o = std::ffi::OsStr::new;
+        let ran = bf_pack::run::run_family(
+            &cargo,
+            &[o("build"), o("--release"), o("-p"), o("bf-app")],
+            &how,
+            Duration::from_secs(300),
+            &never,
+            &mut |_| {},
+        )
+        .unwrap();
+        assert!(ran.status.success(), "{:?}", ran.tail);
+        let inst = a_fake_install(dir.path());
+        let checked = standin::checked_ffmpeg(&dir.path().join("ff"));
+        let exe = target.join("release").join(bf_pack::package::EXE_NAME);
+        bf_pack::package::package(&exe, &tree, &checked, &inst.dir.join(".previous")).unwrap();
+
+        let log = Arc::new(Mutex::new(Vec::new()));
+        let mut r = release("0.6.1");
+        r.commit = commit;
+        let (src, counts) = fake(Ok(Some(r)), quick_build());
+        let w = Worker::start(setup(Some(inst), Ok(src), log.clone()), no_wake());
+        let view = until(&w, 30, |v| v.state != UpdateState::Checking);
+        assert_eq!(view.previous_button.as_deref(), Some("Go forward to version 0.6.1"));
+        assert_eq!(
+            view.state,
+            UpdateState::Ready {
+                version: "0.6.1".into()
+            }
+        );
+        // "Restart now" brings the kept version back as it is: the go-back step, no build.
+        w.send(Request::Restart);
+        until(&w, 10, |v| v.close.is_some());
+        assert_eq!(counts.builds.load(Ordering::SeqCst), 0);
+        assert_eq!(*log.lock().unwrap(), ["go back"]);
+        assert_eq!(
+            super::super::swap::kept_button("0.6.0", "0.6.1"),
+            "Go back to version 0.6.0"
+        );
+    }
+
+    #[test]
     fn go_back_open_and_remove_do_what_they_say() {
         let dir = TempDir::new("worker-steps");
         let inst = a_fake_install(dir.path());
@@ -704,8 +860,11 @@ mod tests {
 
     /// The real route A for `inst`: real git and cargo on the install's copy of the source, real staging (the
     /// stand-in's pinned ffmpeg comes from `checked`), and steps that touch nothing outside the test's folders.
-    fn real(inst: &Installed, checked: PathBuf) -> Setup {
-        let source = GitSource::with_programs(inst.config.clone(), git().unwrap(), find_cargo().unwrap());
+    fn real(inst: &Installed, checked: PathBuf, repo: &Path) -> Setup {
+        // The install's update.toml names an https address; the test's source copy comes from a local repository.
+        let mut config = inst.config.clone();
+        config.remote = repo.to_string_lossy().into_owned();
+        let source = GitSource::for_tests(config, git().unwrap(), find_cargo().unwrap());
         Setup {
             installed: Some(inst.clone()),
             source: Ok(Box::new(source)),
@@ -721,6 +880,7 @@ mod tests {
             go_back: Box::new(|_| Ok(())),
             open: Box::new(|_| Ok(())),
             remove: Box::new(|| Err("Not in a test.".into())),
+            rendering: Arc::new(AtomicBool::new(false)),
         }
     }
 
@@ -735,7 +895,7 @@ mod tests {
         standin::upstream(&g, &cargo, &repo, &[("0.6.1", kind, true)]);
         standin::source_copy(&g, &repo, &inst.config.source);
         let checked = standin::checked_ffmpeg(&root.join("ffmpeg-checked"));
-        Some((real(&inst, checked), inst))
+        Some((real(&inst, checked, &repo), inst))
     }
 
     #[test]
@@ -773,7 +933,10 @@ mod tests {
         assert_eq!(now, before);
         // A new start finds the staged version and offers the restart without building again.
         drop(w);
-        let w = Worker::start(real(&inst, dir.path().join("ffmpeg-checked")), no_wake());
+        let w = Worker::start(
+            real(&inst, dir.path().join("ffmpeg-checked"), &dir.path().join("upstream")),
+            no_wake(),
+        );
         let view = until(&w, 60, |v| v.state != UpdateState::Checking);
         assert_eq!(
             view.state,

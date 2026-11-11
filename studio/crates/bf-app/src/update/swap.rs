@@ -3,27 +3,40 @@
 //! old app to end, puts `.next` in place with `bf_pack::install::put_in_place` (the install's own swap: the marker,
 //! only the files the installed manifest lists move into a fresh `.previous`, the new files in, the new manifest
 //! last; any failed step undoes every step), and starts the app again from the program folder. "Go back" turns
-//! `.previous` into `.next` and does the same.
+//! `.previous` into `.next` and does the same. Every swap, and every start's look at a stopped one, holds the swap
+//! lock beside the program folder, so two never run at once.
 //!
-//! **A power cut, step by step** (what is on disk, and what puts it right):
-//! - while `.next` is being made: `.next` holds `PACKING.txt`; the running version is untouched; the next build
-//!   clears `.next` by that list (`stage::clear_next`), and removal leaves it (its words say what stayed).
-//! - after `.next` is made, before "Restart now": nothing has changed; the next look finds it and offers
-//!   "Restart now" again after checking it once more.
-//! - during the swap: the marker `.previous\INSTALLING` is there. Starting the app finishes the swap (`at_start`):
-//!   in this program when the exe in place is already the new one, or by starting `.next`'s exe again when it is
-//!   still the earlier one. For the few steps between the earlier exe moving out and the new one moving in there is
-//!   no exe for the shortcut to start: then running the install again finishes it (the install knows the marker).
-//! - after the swap's last step, before the marker is gone: starting the app removes the marker.
-//! - during "Go back", between turning `.previous` into `.next` and the swap: starting the app turns it back.
+//! **The exe is always at the shortcut's target**, whole: the swap keeps a link of the earlier exe in `.previous`
+//! and puts the new one over it in one replacing rename (see `bf_pack::install`). So a double-click always starts
+//! either the earlier version or the new one, and that start (`at_start`) finishes or takes back the update.
+//!
+//! **A power cut, step by step** (what is on disk, and what a double-click on the shortcut does then):
+//! - while `.next` is being made: `.next` holds `PACKING.txt`; the running version is untouched. A double-click starts
+//!   the earlier version as usual; the next build clears `.next` by that list (`stage::clear_next`).
+//! - after `.next` is made, before "Restart now": nothing has changed. A double-click starts the earlier version, and
+//!   its look offers "Restart now" again after checking `.next` once more.
+//! - during the swap, before the new exe is in place: the earlier exe starts; `at_start` sees the marker, cannot
+//!   finish under its own running exe, and returns `Resume` once: `main` starts `.next`'s exe to finish and closes, and
+//!   the new version starts. If that finish fails too, the next start takes the update back (`undo_stopped`) and
+//!   says so: the earlier version runs, nothing lost.
+//! - during the swap, after the new exe is in place: the new exe starts; `at_start` finishes the swap in this program
+//!   and says so. If it cannot, it takes the update back and says so.
+//! - after the swap's last step, before the marker is gone: the new exe starts; `at_start` removes the marker.
+//! - during "Go back", between turning `.previous` into `.next` and the swap: the current exe starts; `at_start` turns
+//!   `.next` back into `.previous`.
+//! - while another program holds the swap lock (a swap is under way right now): `at_start` gives `Busy`, and `main`
+//!   says `UPDATE_BUSY` and closes.
 
 use std::ffi::OsStr;
 use std::path::Path;
 use std::time::{Duration, Instant};
 
 use bf_pack::PackError;
-use bf_pack::install::{CLOSE_FIRST, put_in_place, swap_unfinished};
+use bf_pack::install::{
+    CLOSE_FIRST, SWAP_BUSY, put_in_place, put_in_place_held, swap_lock, swap_unfinished, undo_stopped,
+};
 use bf_pack::package::{EXE_NAME, MANIFEST_NAME, check_kept_package, read_manifest};
+use bf_pack::version::parse_version;
 
 use super::stage::{NEXT, check_named, clear_next};
 use super::{Installed, restart_failed, sentence, swap_failed};
@@ -34,6 +47,10 @@ pub const FINISH_FLAG: &str = "--finish-update";
 pub const PREVIOUS: &str = ".previous";
 /// The note a failed swap leaves in the logs folder for the next start to show.
 pub const NOTICE_NAME: &str = "update-notice.txt";
+/// The note that a start has already handed a stopped swap to `.next`'s exe once, so it is not handed over again.
+pub const RESUMED_NAME: &str = "update-resumed.txt";
+/// What a start says, and then closes, while another program is putting a version in place.
+pub const UPDATE_BUSY: &str = SWAP_BUSY;
 /// How long `finish` waits for the old app to end.
 const OLD_APP_WAIT: Duration = Duration::from_secs(30);
 
@@ -62,7 +79,19 @@ pub fn finish(dir: &Path, old_pid: u32) -> Result<(), String> {
     })
 }
 
+/// Leaves `notice` for the next start (best effort).
+fn leave_notice(logs: Option<&Path>, notice: &str, why: &str) {
+    if let Some(logs) = logs {
+        let _ = std::fs::create_dir_all(logs);
+        let _ = std::fs::write(logs.join(NOTICE_NAME), format!("{notice}\r\n{why}\r\n"));
+    }
+}
+
 /// `finish`, with the logs folder, the wait and the start of the app given (tests).
+///
+/// When the old app has not ended within `wait` (or its files stay held, or another swap holds the lock), nothing is
+/// put in place and **nothing is started**: the old app is still there (its window stays as it was), `.next` stays
+/// staged, and the next start shows why and offers "Restart now" again.
 pub fn finish_with(
     dir: &Path,
     old_pid: u32,
@@ -77,13 +106,23 @@ pub fn finish_with(
             .unwrap_or_else(|_| "unknown".to_string())
     };
     let (old, new) = (version_of(dir), version_of(&next));
+    let still_open = || {
+        format!(
+            "Version {old} did not close in time, so the update to version {new} was not put in place yet. Close \
+             BALLFIGHT Studio, start it again, and choose Restart now."
+        )
+    };
     let deadline = Instant::now() + wait;
-    bf_pack::run::wait_for_exit(old_pid, wait);
+    if !bf_pack::run::wait_for_exit(old_pid, wait) {
+        let notice = still_open();
+        leave_notice(logs, &notice, "The earlier version was still running.");
+        return Err(notice);
+    }
     // The old app's files may stay held a moment after it ends (or by a copy started meanwhile): try again until
     // the wait is over.
     let put = loop {
         match put_in_place(dir, &next) {
-            Err(PackError::Refused(t)) if t == CLOSE_FIRST && Instant::now() < deadline => {
+            Err(PackError::Refused(t)) if (t == CLOSE_FIRST || t == SWAP_BUSY) && Instant::now() < deadline => {
                 std::thread::sleep(Duration::from_millis(250));
             }
             other => break other,
@@ -98,12 +137,14 @@ pub fn finish_with(
                 sentence(&e)
             )
         }),
+        Err(PackError::Refused(t)) if t == CLOSE_FIRST || t == SWAP_BUSY => {
+            let notice = still_open();
+            leave_notice(logs, &notice, &t);
+            Err(notice)
+        }
         Err(e) => {
             let notice = swap_failed(&new, &old);
-            if let Some(logs) = logs {
-                let _ = std::fs::create_dir_all(logs);
-                let _ = std::fs::write(logs.join(NOTICE_NAME), format!("{notice}\r\n{e}\r\n"));
-            }
+            leave_notice(logs, &notice, &e.to_string());
             let _ = start(&exe);
             Err(format!("{notice} {e}"))
         }
@@ -117,8 +158,11 @@ pub enum AtStart {
     Nothing,
     /// Show this sentence as a notice.
     Notice(String),
-    /// A swap is unfinished and this program (the earlier version) holds its exe: call `resume` and exit.
+    /// A swap is unfinished and this program (the earlier version) holds its exe: call `resume` and exit. Given at
+    /// most once for a stopped swap; the start after that takes the update back.
     Resume,
+    /// Another program is putting a version in place right now: show `UPDATE_BUSY` and exit.
+    Busy,
 }
 
 /// Puts right what a stopped swap or "Go back" left (see the module notes), removes an empty `.next`, and gives the
@@ -126,17 +170,55 @@ pub enum AtStart {
 pub fn at_start(inst: &Installed, logs: Option<&Path>) -> AtStart {
     let dir = &inst.dir;
     let next = dir.join(NEXT);
+    let Ok(lock) = swap_lock(dir) else {
+        return AtStart::Busy;
+    };
+    let resumed = logs.map(|l| l.join(RESUMED_NAME));
+    let forget_resume = || {
+        if let Some(r) = &resumed {
+            let _ = std::fs::remove_file(r);
+        }
+    };
     if swap_unfinished(dir) {
-        return match put_in_place(dir, &next) {
-            Ok(m) => AtStart::Notice(format!("The update to version {} is finished.", m.version)),
-            Err(PackError::Refused(t)) if t == CLOSE_FIRST && next.join(EXE_NAME).is_file() => AtStart::Resume,
+        let version_of = |d: &Path| read_manifest(&d.join(MANIFEST_NAME)).map(|m| m.version).ok();
+        let new = version_of(&next).unwrap_or_else(|| "unknown".to_string());
+        match put_in_place_held(dir, &next, &lock) {
+            Ok(m) => {
+                forget_resume();
+                return AtStart::Notice(format!("The update to version {} is finished.", m.version));
+            }
+            Err(PackError::Refused(t))
+                if t == CLOSE_FIRST
+                    && next.join(EXE_NAME).is_file()
+                    && resumed.as_ref().is_some_and(|r| !r.exists()) =>
+            {
+                if let Some(r) = &resumed {
+                    let _ = std::fs::create_dir_all(r.parent().unwrap_or(r));
+                    if std::fs::write(r, format!("{new}\r\n")).is_ok() {
+                        return AtStart::Resume;
+                    }
+                }
+            }
+            Err(_) => {}
+        }
+        // It could not be finished (or it was handed over once already): take it back.
+        return match undo_stopped(dir, &next, &lock) {
+            Ok(old) => {
+                forget_resume();
+                AtStart::Notice(format!(
+                    "The update to version {new} could not be finished, so it was taken back: this is still version \
+                     {}. Nothing was lost.",
+                    old.version
+                ))
+            }
             Err(e) => AtStart::Notice(format!(
-                "An update was stopped part-way and could not be finished: {} Install BALLFIGHT Studio again to \
-                 finish it.",
+                "An update was stopped part-way and could not be finished or taken back yet. {} Start BALLFIGHT \
+                 Studio again to try once more.",
                 sentence(&e.to_string())
             )),
         };
     }
+    forget_resume();
     if std::fs::symlink_metadata(&next).is_ok() {
         // Only empty folders: gone. (`clear_unfinished` removes nothing else without its own list.)
         let empty = walk_is_only_folders(&next);
@@ -150,6 +232,7 @@ pub fn at_start(inst: &Installed, logs: Option<&Path>) -> AtStart {
             let _ = std::fs::rename(&next, dir.join(PREVIOUS));
         }
     }
+    drop(lock);
     match logs.and_then(take_notice) {
         Some(n) => AtStart::Notice(n),
         None => AtStart::Nothing,
@@ -187,7 +270,8 @@ pub fn take_notice(logs: &Path) -> Option<String> {
     text.lines().next().map(str::to_string).filter(|l| !l.is_empty())
 }
 
-/// The version kept in `.previous` for "Go back", when one is kept whole (no swap under way).
+/// The version kept in `.previous`, when one is kept whole (no swap under way): older than the running one after an
+/// update ("Go back"), newer after going back ("Go forward").
 pub fn previous_version(dir: &Path) -> Option<String> {
     if swap_unfinished(dir) {
         return None;
@@ -197,8 +281,18 @@ pub fn previous_version(dir: &Path) -> Option<String> {
         .map(|m| m.version)
 }
 
-/// "Go back to version W": `.previous` becomes `.next` (a staged update waiting is given up first), its exe must say
-/// its version, then `launch_finish`. If any step fails, `.previous` is put back and nothing changed.
+/// The words of the button for the kept version: "Go back to version W" when it is older than `running`, "Go
+/// forward to version W" when it is newer (after going back).
+pub fn kept_button(kept: &str, running: &str) -> String {
+    match (parse_version(kept), parse_version(running)) {
+        (Some(k), Some(r)) if k > r => format!("Go forward to version {kept}"),
+        _ => format!("Go back to version {kept}"),
+    }
+}
+
+/// "Go back to version W" (or forward, after going back): `.previous` becomes `.next` (a staged update waiting is
+/// given up first), its exe must say its version, then `launch_finish`. If any step fails, `.previous` is put back
+/// and nothing changed. The kept version is used as it is: nothing is built again.
 pub fn go_back(inst: &Installed) -> Result<(), String> {
     go_back_with(inst, &launch_finish)
 }
@@ -206,7 +300,13 @@ pub fn go_back(inst: &Installed) -> Result<(), String> {
 /// `go_back`, with the launch given (tests).
 pub fn go_back_with(inst: &Installed, launch: &dyn Fn(&Installed) -> Result<(), String>) -> Result<(), String> {
     let dir = &inst.dir;
-    let failed = |why: &str| format!("Going back did not start, so nothing changed. {}", sentence(why));
+    let failed = |why: &str| {
+        format!(
+            "Switching to the kept version did not start, so nothing changed. {}",
+            sentence(why)
+        )
+    };
+    let lock = swap_lock(dir).map_err(|e| failed(&e.to_string()))?;
     if swap_unfinished(dir) {
         return Err(failed(
             "An update is still being put in place; start BALLFIGHT Studio again first",
@@ -214,7 +314,7 @@ pub fn go_back_with(inst: &Installed, launch: &dyn Fn(&Installed) -> Result<(), 
     }
     let prev = dir.join(PREVIOUS);
     let next = dir.join(NEXT);
-    let kept = read_manifest(&prev.join(MANIFEST_NAME)).map_err(|_| failed("No earlier version is kept"))?;
+    let kept = read_manifest(&prev.join(MANIFEST_NAME)).map_err(|_| failed("No other version is kept"))?;
     clear_next(dir).map_err(|e| failed(&e))?;
     std::fs::rename(&prev, &next).map_err(|e| failed(&format!("{} could not be renamed: {e}", prev.display())))?;
     let put_back = || {
@@ -222,7 +322,13 @@ pub fn go_back_with(inst: &Installed, launch: &dyn Fn(&Installed) -> Result<(), 
     };
     // It keeps its copy of update.toml until the swap (which keeps the one in place): that copy is what tells a
     // version brought back from a staged update, should the PC stop before the swap.
-    if let Err(e) = check_named(&next, &kept.version, None, true).and_then(|()| launch(inst)) {
+    if let Err(e) = check_named(&next, &kept.version, None, true) {
+        put_back();
+        return Err(failed(&e));
+    }
+    // The finishing program takes the lock itself once this app has closed.
+    drop(lock);
+    if let Err(e) = launch(inst) {
         put_back();
         return Err(failed(&e));
     }
@@ -411,7 +517,10 @@ mod tests {
         // A launch that fails puts .previous back.
         let before = snapshot(&inst.dir);
         let err = go_back_with(&inst, &|_| Err("it would not start".into())).unwrap_err();
-        assert_eq!(err, "Going back did not start, so nothing changed. It would not start.");
+        assert_eq!(
+            err,
+            "Switching to the kept version did not start, so nothing changed. It would not start."
+        );
         assert_eq!(snapshot(&inst.dir), before);
         // A "Go back" stopped after the rename (a power cut) is turned back at the next start.
         std::fs::rename(inst.dir.join(PREVIOUS), inst.dir.join(NEXT)).unwrap();
@@ -432,6 +541,7 @@ mod tests {
                 dir: Some(&tree.join("studio")),
                 env: &[("CARGO_TARGET_DIR", target.as_os_str())],
                 env_remove: &["RUSTUP_TOOLCHAIN"],
+                scrub_git: true,
                 below_normal: true,
             };
             let ran = bf_pack::run::run_family(
@@ -508,13 +618,73 @@ mod tests {
         .spawn()
         .unwrap();
         std::thread::sleep(Duration::from_millis(300));
-        let said = at_start(&inst, None);
-        let _ = child.kill();
-        let _ = child.wait();
+        let logs = dir.path().join("logs");
+        let said = at_start(&inst, Some(&logs));
         assert_eq!(said, AtStart::Resume);
         assert!(
             swap_unfinished(&inst.dir),
             "nothing was moved under the running program"
         );
+        // The finishing program failed as well (here: it never ran), and the earlier version starts again: no second
+        // hand-over. The update is taken back, the earlier version runs, and the words say so.
+        let said = at_start(&inst, Some(&logs));
+        let _ = child.kill();
+        let _ = child.wait();
+        assert_eq!(
+            said,
+            AtStart::Notice(
+                "The update to version 0.6.1 could not be finished, so it was taken back: this is still version \
+                 0.6.0. Nothing was lost."
+                    .to_string()
+            )
+        );
+        assert!(!swap_unfinished(&inst.dir));
+        assert_eq!(
+            std::fs::read(inst.dir.join(EXE_NAME)).unwrap(),
+            std::fs::read(ping()).unwrap()
+        );
+        check_kept_package(&inst.dir.join(NEXT)).unwrap();
+        // The next start has nothing to do, and a later update can hand over again.
+        assert_eq!(at_start(&inst, Some(&logs)), AtStart::Nothing);
+        assert!(!logs.join(RESUMED_NAME).exists());
+    }
+
+    #[test]
+    fn a_start_while_a_swap_runs_steps_aside() {
+        let dir = TempDir::new("swap-busy");
+        let inst = installed(dir.path(), "0.6.0", None);
+        staged(dir.path(), &inst, "0.6.1", &pretend(dir.path(), "pretend exe 0.6.1"));
+        let held = swap_lock(&inst.dir).unwrap();
+        assert_eq!(at_start(&inst, None), AtStart::Busy);
+        assert!(go_back_with(&inst, &|_| Ok(())).unwrap_err().contains(UPDATE_BUSY));
+        drop(held);
+        assert_eq!(at_start(&inst, None), AtStart::Nothing);
+    }
+
+    #[test]
+    fn an_old_app_that_does_not_close_is_left_alone() {
+        let dir = TempDir::new("swap-wait");
+        let inst = installed(dir.path(), "0.6.0", None);
+        staged(dir.path(), &inst, "0.6.1", &pretend(dir.path(), "pretend exe 0.6.1"));
+        let before = snapshot(&inst.dir);
+        // A program that keeps running stands for the old app.
+        let mut child = bf_pack::run::quiet(&ping(), &[OsStr::new("-n"), OsStr::new("9"), OsStr::new("127.0.0.1")])
+            .spawn()
+            .unwrap();
+        let logs = dir.path().join("logs");
+        let (seen, rec) = recorder();
+        let err = finish_with(&inst.dir, child.id(), Some(&logs), Duration::from_millis(500), &|p| {
+            rec(&seen, p)
+        })
+        .unwrap_err();
+        let _ = child.kill();
+        let _ = child.wait();
+        assert!(err.starts_with("Version 0.6.0 did not close in time"), "{err}");
+        assert!(
+            seen.lock().unwrap().is_empty(),
+            "nothing is started while the old app may still be open"
+        );
+        assert_eq!(snapshot(&inst.dir), before, "nothing moved; .next stays staged");
+        assert!(take_notice(&logs).is_some_and(|n| n.starts_with("Version 0.6.0 did not close in time")));
     }
 }
