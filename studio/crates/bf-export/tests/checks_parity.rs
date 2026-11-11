@@ -14,7 +14,7 @@
 //! pass. Run with `-- --nocapture` to see each check's sentence and how long it took.
 
 use std::collections::{BTreeMap, BTreeSet};
-use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::{Arc, LazyLock, Mutex};
 use std::time::Instant;
 
@@ -704,10 +704,37 @@ fn an_early_or_a_missing_ko_does_not_panic() {
 
 // ---------------------------------------------------------------- all of them, as the render job runs them
 #[test]
+fn pre_render_stops_when_cancelled() {
+    let ep = &*EPISODE;
+    let st: &Soundtrack = &BUILT;
+    let t0 = Instant::now();
+    let got = pre_render(
+        &ep.pic,
+        st,
+        &ep.show,
+        &ep.story,
+        &ep.plan,
+        workers(),
+        &AtomicBool::new(true),
+    );
+    assert!(got.is_none());
+    assert!(t0.elapsed().as_secs_f64() < 1.0, "{:?}", t0.elapsed());
+}
+
+#[test]
 fn pre_render_runs_every_check() {
     let ep = &*EPISODE;
     let rs = timed("pre_render", || {
-        pre_render(&ep.pic, &BUILT, &ep.show, &ep.story, &ep.plan, workers())
+        pre_render(
+            &ep.pic,
+            &BUILT,
+            &ep.show,
+            &ep.story,
+            &ep.plan,
+            workers(),
+            &AtomicBool::new(false),
+        )
+        .expect("not cancelled")
     });
     let names: Vec<&str> = rs.iter().map(|r| r.name).collect();
     assert_eq!(
@@ -760,7 +787,16 @@ fn pre_render_runs_every_check() {
     // one worker gives the same
     if std::env::var_os("CHECKS_ONE_WORKER").is_some() {
         let one = timed("pre_render, one worker", || {
-            pre_render(&ep.pic, &BUILT, &ep.show, &ep.story, &ep.plan, 1)
+            pre_render(
+                &ep.pic,
+                &BUILT,
+                &ep.show,
+                &ep.story,
+                &ep.plan,
+                1,
+                &AtomicBool::new(false),
+            )
+            .expect("not cancelled")
         });
         assert_eq!(one, rs);
     }
