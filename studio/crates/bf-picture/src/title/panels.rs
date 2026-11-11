@@ -25,12 +25,52 @@ use crate::np;
 /// is dithered. Here it changes the picture in place.
 pub type Pattern = fn(&mut RgbF);
 
-/// `PATTERNS.get(name)`: the pattern the card itself has for a fighter, by name. Of the kit's sixteen only the
-/// TROMBONE's is ported; a fighter without one here gets its look's pattern, or the plain gradient.
-pub fn builtin_pattern(name: &str) -> Option<Pattern> {
+/// The fighters `title.PATTERNS` has a panel pattern for that is not ported yet: the kit's sixteen but the
+/// TROMBONE's. Each comes with its fighter, in [`builtin_pattern`].
+pub const UNPORTED_PATTERNS: [&str; 15] = [
+    "BAGPIPES",
+    "ACCORDION",
+    "ORGAN",
+    "HARP",
+    "HORN",
+    "UKULELE",
+    "ACOUSTIC",
+    "CLARINET",
+    "OBOE",
+    "BASS CLARINET",
+    "EUPHONIUM",
+    "BASSOON",
+    "BARI SAX",
+    "VIOLA",
+    "VIOLIN",
+];
+
+/// What can keep a title card from being built.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum TitleError {
+    /// The card's own pattern table has a panel pattern for this fighter, and it is not ported yet: without it
+    /// the card would quietly show a plain panel where Python shows the pattern.
+    PatternNotPorted(String),
+}
+
+impl std::fmt::Display for TitleError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            TitleError::PatternNotPorted(name) => write!(f, "the title pattern {name} is not ported yet"),
+        }
+    }
+}
+
+impl std::error::Error for TitleError {}
+
+/// `PATTERNS.get(name)`: the pattern the card itself has for a fighter, by name, or `None` when it has none (the
+/// fighter then gets its look's pattern, or the plain gradient). Of the kit's sixteen only the TROMBONE's is
+/// ported: for the other fifteen ([`UNPORTED_PATTERNS`]) this is an error rather than a plain panel.
+pub fn builtin_pattern(name: &str) -> Result<Option<Pattern>, TitleError> {
     match name {
-        "TROMBONE" => Some(slide_tubes),
-        _ => None,
+        "TROMBONE" => Ok(Some(slide_tubes)),
+        _ if UNPORTED_PATTERNS.contains(&name) => Err(TitleError::PatternNotPorted(name.to_string())),
+        _ => Ok(None),
     }
 }
 

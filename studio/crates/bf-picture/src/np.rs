@@ -18,6 +18,16 @@
 
 use crate::img::Img;
 
+pub(crate) mod index;
+
+/// `np.hypot(x, y)` for `float64`: numpy's `hypot` is the C runtime's, which on the reference PC is the plain
+/// `sqrt(x * x + y * y)` (equal on 100,000 of 100,000 random pairs). Python's `math.hypot` is another, more careful
+/// algorithm (as is `bf_core::dmath::hypot`) and differs from numpy's in the last bit for about 17 % of pairs: a
+/// port of `np.hypot` whose result meets a threshold takes this one.
+pub fn hypot(x: f64, y: f64) -> f64 {
+    (x * x + y * y).sqrt()
+}
+
 /// `np.clip(x, lo, hi)` with both bounds given, for `float64`: numpy's loop is
 /// `if (x < lo) x = lo; if (x > hi) x = hi;`. So a NaN `x` stays NaN, and an `x` equal to a bound stays itself
 /// (`clip(-0.0, 0.0, 1.0)` is `-0.0`). If a bound is NaN the result is that NaN, as numpy gives.
@@ -254,6 +264,32 @@ pub fn mean(a: &[f64]) -> f64 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use bf_testdata::parse_hex_f64;
+
+    #[test]
+    fn hypot_is_numpys() {
+        assert_eq!(hypot(3.0, 4.0), 5.0);
+        assert_eq!(hypot(-0.0, 0.0), 0.0);
+        // Python: np.hypot(x, y) and math.hypot(x, y) for two pairs where they differ (numpy's is the first)
+        for (x, y, np_hypot, math_hypot) in [
+            (
+                "-0x1.69489ace217b4p+3",
+                "-0x1.266d2ae7f6f18p+2",
+                "0x1.86200567116c7p+3",
+                "0x1.86200567116c8p+3",
+            ),
+            (
+                "-0x1.79ddad711213cp+3",
+                "-0x1.6522de9444730p+1",
+                "0x1.84455a822ef09p+3",
+                "0x1.84455a822ef0ap+3",
+            ),
+        ] {
+            let (x, y) = (parse_hex_f64(x), parse_hex_f64(y));
+            assert_eq!(hypot(x, y).to_bits(), parse_hex_f64(np_hypot).to_bits());
+            assert_ne!(hypot(x, y).to_bits(), parse_hex_f64(math_hypot).to_bits());
+        }
+    }
 
     #[test]
     fn roll_moves_rows_and_columns() {

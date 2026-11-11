@@ -12,6 +12,7 @@ use super::{INK, over};
 use crate::font;
 use crate::img::Img;
 use crate::np;
+use crate::np::index::resample_index;
 
 /// `word_masks(text, scale, k)`: the masks of a word and the thickness of its outline.
 #[derive(Clone, Debug)]
@@ -24,17 +25,6 @@ pub struct WordMasks {
     pub hi: Img<u8>,
     /// `r`: `max(2, int(round(scale * 0.6 * k)))`.
     pub r: i32,
-}
-
-/// The source index of each of `n` new rows or columns of an axis `size` long:
-/// `np.minimum((np.arange(n) * size / n).astype(int), size - 1)`, nearest neighbour by truncation.
-fn resample_index(n: usize, size: usize) -> Vec<usize> {
-    (0..n)
-        .map(|i| {
-            let src = np::f64_to_i64((i * size) as f64 / n as f64).max(0) as usize;
-            src.min(size.saturating_sub(1))
-        })
-        .collect()
 }
 
 /// Python's `max(1, int(round(x)))` for a size in pixels.

@@ -8,7 +8,7 @@
 //! which is OpenBLAS's `dot`, a fused multiply-add chain on the reference PC: see [`crate::np`].)
 
 use crate::img::Img;
-use bf_core::py;
+use bf_core::py::{self, py_max, py_min};
 use std::sync::OnceLock;
 
 /// The internal render width in pixels.
@@ -94,16 +94,6 @@ pub fn safe_overshoot(x0: i32, y0: i32, x1: i32, y1: i32) -> i32 {
         over = over.max((x1 - bx0).min(y1 - by0));
     }
     over
-}
-
-/// Python's `max(a, b)` on floats: `a` unless `b` is greater.
-fn py_max(a: f64, b: f64) -> f64 {
-    if b > a { b } else { a }
-}
-
-/// Python's `min(a, b)` on floats: `a` unless `b` is smaller.
-fn py_min(a: f64, b: f64) -> f64 {
-    if b < a { b } else { a }
 }
 
 /// `whole_period(period, dur)`: the nearest period that completes a whole number of cycles (at least one) in

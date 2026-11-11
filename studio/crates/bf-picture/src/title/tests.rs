@@ -56,6 +56,7 @@ fn card(a: &str, b: &str, bpm: f64, tag: Option<&str>) -> TitleCard {
         looks,
         tag,
     )
+    .expect("a card of these names")
 }
 
 fn grey() -> Rgb8 {
@@ -261,40 +262,66 @@ fn the_card_shakes_after_a_slam_but_not_on_it() {
 #[test]
 fn the_cover_frame_is_shut_and_still_at_every_tempo() {
     // Python: `ceil(T_DOORS[0] * 30) - 1` stepped back while `title.shake(f / 30) != (0, 0)`, on the kit's
-    // timeline for every whole tempo from 60 to 200 (neighbouring tempos snap to the same number of bars).
+    // timeline for every whole tempo from 60 to 198 (neighbouring tempos snap to the same number of bars).
     #[rustfmt::skip]
-    let python: [usize; 141] = [
+    let python: [usize; 139] = [
         94, 88, 88, 88, 88, 83, 83, 83, 83, 79, 79, 79, 79, 75, 75, 75, 75, 71, 71, 71, 71, 68, 68, 68, 68, 65, 65,
         65, 65, 62, 62, 62, 62, 60, 60, 60, 60, 57, 57, 57, 57, 55, 55, 55, 55, 53, 53, 53, 53, 52, 52, 52, 52, 50,
         50, 50, 50, 48, 48, 48, 48, 47, 47, 47, 45, 45, 45, 45, 44, 44, 44, 44, 43, 43, 43, 43, 42, 42, 42, 42, 41,
         41, 41, 41, 40, 40, 40, 40, 39, 39, 39, 39, 38, 38, 38, 38, 37, 37, 37, 37, 36, 36, 36, 36, 35, 35, 35, 35,
         34, 34, 34, 34, 34, 34, 34, 34, 33, 33, 33, 33, 32, 32, 32, 32, 32, 32, 32, 31, 31, 31, 31, 31, 31, 31, 31,
-        30, 30, 30, 30, 1, 1,
+        30, 30, 30, 30,
     ];
-    for (bpm, want) in (60..=200).zip(python) {
+    for (bpm, want) in (60..=198).zip(python) {
         let g = Grid::new(f64::from(bpm));
         let f = super::cover_frame(&g);
         assert_eq!(f, want, "{bpm} BPM");
         let t = f as f64 / 30.0;
         assert_eq!(super::door_offset(&g, t), 0.0, "{bpm} BPM, frame {f}");
         assert_eq!(super::shake(&g, t), (0.0, 0.0), "{bpm} BPM, frame {f}");
+        // the hold: the right name landed 0.26 s ago or more, and on the next frame the doors move
+        assert!(t >= g.title[2] + 0.26 && t < g.t_doors.0, "{bpm} BPM, frame {f}");
+        assert!(super::door_offset(&g, (f + 1) as f64 / 30.0) > 0.0, "{bpm} BPM");
+    }
+    // Up to 198 BPM the rule is the one before ruling R36 (no bound; the doors shut and no shake), which the
+    // Python list above is.
+    let before_r36 = |g: &Grid| {
+        let still = |f: usize| {
+            let t = f as f64 / 30.0;
+            super::door_offset(g, t) == 0.0 && super::shake(g, t) == (0.0, 0.0)
+        };
+        let mut f = (g.t_doors.0 * 30.0).ceil() as usize - 1;
+        while f > 0 && !still(f) {
+            f -= 1;
+        }
+        f
+    };
+    for bpm in 30..=198 {
+        let g = Grid::new(f64::from(bpm));
+        assert_eq!(super::cover_frame(&g), before_r36(&g), "{bpm} BPM");
+    }
+    // At every tempo a fight file may ask for, the cover has the doors shut and all three words settled: the
+    // names at rest, VS opaque and within the 6 % the card files a settled word at (it swells on beat 4).
+    let mut fast = Vec::new();
+    for bpm in 30..=300 {
+        let g = Grid::new(f64::from(bpm));
+        let f = super::cover_frame(&g);
+        let t = f as f64 / 30.0;
+        assert_eq!(super::door_offset(&g, t), 0.0, "{bpm} BPM, frame {f}");
+        assert_eq!(super::word_state(&g, t, 0), Some((1.0, 1.0)), "{bpm} BPM, frame {f}");
+        assert_eq!(super::word_state(&g, t, 2), Some((1.0, 1.0)), "{bpm} BPM, frame {f}");
+        let (k, a) = super::word_state(&g, t, 1).expect("VS is up");
+        assert!((k - 1.0).abs() < 0.06 && a == 1.0, "{bpm} BPM, frame {f}: VS at {k}");
         if bpm <= 198 {
-            // the hold: the right name landed 0.26 s ago or more, and on the next frame the doors move
-            assert!(t >= g.title[2] + 0.26 && t < g.t_doors.0, "{bpm} BPM, frame {f}");
-            assert!(super::door_offset(&g, (f + 1) as f64 / 30.0) > 0.0, "{bpm} BPM");
+            assert!(t >= g.title[2] + 0.26 && t < g.t_doors.0, "{bpm} BPM");
+        } else {
+            // from 199 BPM (200.7 once snapped to whole bars) no frame after the right name settles is still:
+            // the last shut frame, shaking
+            assert_eq!(f, (g.t_doors.0 * 30.0).ceil() as usize - 1, "{bpm} BPM");
+            fast.push(super::shake(&g, t) != (0.0, 0.0));
         }
     }
-    // From 199 BPM (200.7 once snapped to whole bars) the doors open while the last jolt still runs: no frame is
-    // shut and still but the first two, and the rule lands on frame 1, the left name half-way through its slam.
-    // So it does at every faster tempo a fight file may ask for.
-    for bpm in 199..=300 {
-        assert!(super::cover_frame(&Grid::new(f64::from(bpm))) <= 1, "{bpm} BPM");
-    }
-    for bpm in 30..60 {
-        let g = Grid::new(f64::from(bpm));
-        let t = super::cover_frame(&g) as f64 / 30.0;
-        assert!(t >= g.title[2] + 0.26 && t < g.t_doors.0, "{bpm} BPM");
-    }
+    assert_eq!((fast.len(), fast.iter().filter(|&&s| s).count()), (102, 102));
     let c = card("FLUTE", "TROMBONE", 132.0, None);
     assert_eq!((c.cover_frame(), super::cover_frame(&Grid::new(132.0))), (43, 43));
 }
@@ -305,7 +332,11 @@ fn the_plain_panel_and_the_slide_tubes_are_pythons() {
     // Python: title._panel_rgb(COL[0], DARK[0], 0, None) with the FLUTE's colours (no pattern), and
     // title._panel_rgb(COL[1], DARK[1], 1, 'TROMBONE'): [y, x] values, the sum of all values, the bands used.
     let plain = panels::panel_rgb(FLUTE.0, FLUTE.1, |_| {});
-    let tubes = panels::panel_rgb(TROMBONE.0, TROMBONE.1, panels::builtin_pattern("TROMBONE").unwrap());
+    let tubes = panels::panel_rgb(
+        TROMBONE.0,
+        TROMBONE.1,
+        panels::builtin_pattern("TROMBONE").unwrap().unwrap(),
+    );
     for (x, y, p, t) in [
         (0, 0, [102.0, 127.5, 153.0], [51.0, 153.0, 102.0]),
         (1, 1, [127.5, 127.5, 153.0], [51.0, 178.5, 127.5]),
@@ -332,9 +363,8 @@ fn the_plain_panel_and_the_slide_tubes_are_pythons() {
 struct Blackout;
 
 impl Look for Blackout {
-    fn title_pattern(&self, base: &mut RgbF) -> bool {
+    fn title_pattern(&self, base: &mut RgbF) {
         base.data.fill(0.0);
-        true
     }
 }
 
@@ -355,6 +385,7 @@ fn the_cards_own_pattern_wins_over_the_looks() {
             looks,
             None,
         )
+        .expect("both patterns are ported or absent")
     };
     // PATTERNS.setdefault(name, look.title_pattern): TROMBONE is in the card's table already, TUBA is not.
     let c = both("TUBA", "TROMBONE");
@@ -362,8 +393,10 @@ fn the_cards_own_pattern_wins_over_the_looks() {
     // far from the divider's bright edge the panels are as built
     assert_eq!(c.panels[0].px(10, 10), &[0.0, 0.0, 0.0]);
     assert_eq!(c.panels[1].px(350, 630), tubes.px(350, 630));
-    assert!(panels::builtin_pattern("TROMBONE").is_some());
-    assert!(panels::builtin_pattern("TUBA").is_none() && panels::builtin_pattern("FLUTE").is_none());
+    assert!(matches!(panels::builtin_pattern("TROMBONE"), Ok(Some(_))));
+    assert!(
+        matches!(panels::builtin_pattern("TUBA"), Ok(None)) && matches!(panels::builtin_pattern("FLUTE"), Ok(None))
+    );
     // the divider's edge is bright on both panels (np.clip(COL * 0.5 + 150, 0, 255)) and opaque; each panel is
     // 94 % opaque on its own half only
     assert_eq!(c.panels[0].px(180, 320), &[255.0, 255.0, 255.0]);
@@ -376,7 +409,7 @@ fn the_cards_own_pattern_wins_over_the_looks() {
 #[test]
 fn the_defaults_of_a_look() {
     let mut base: RgbF = Img::filled(2, 2, &[1.0, 2.0, 3.0]);
-    assert!(!Plain.title_pattern(&mut base));
+    Plain.title_pattern(&mut base);
     assert_eq!(base, Img::filled(2, 2, &[1.0, 2.0, 3.0]));
     assert!(Plain.title_closeup(44).is_none());
     assert_eq!((Plain.glass(), GLASS), ([236.0, 232.0, 226.0], [236.0, 232.0, 226.0]));
@@ -401,13 +434,67 @@ fn a_close_up_must_be_square() {
         yaw: 0.0,
         roll: 0.0,
     });
-    TitleCard::new(
+    let _ = TitleCard::new(
         &show("A", "B", 132.0),
         [FLUTE.0, TROMBONE.0],
         [FLUTE.1, TROMBONE.1],
         looks,
         None,
     );
+}
+
+#[test]
+fn a_pattern_not_ported_yet_is_an_error() {
+    // Python: sorted(title.PATTERNS): the card's own sixteen; only the TROMBONE's is ported
+    let python = [
+        "ACCORDION",
+        "ACOUSTIC",
+        "BAGPIPES",
+        "BARI SAX",
+        "BASS CLARINET",
+        "BASSOON",
+        "CLARINET",
+        "EUPHONIUM",
+        "HARP",
+        "HORN",
+        "OBOE",
+        "ORGAN",
+        "TROMBONE",
+        "UKULELE",
+        "VIOLA",
+        "VIOLIN",
+    ];
+    let mut ours: Vec<&str> = panels::UNPORTED_PATTERNS.iter().copied().chain(["TROMBONE"]).collect();
+    ours.sort_unstable();
+    assert_eq!(ours, python);
+    for name in panels::UNPORTED_PATTERNS {
+        let err = panels::builtin_pattern(name).expect_err("an error");
+        assert_eq!(err.to_string(), format!("the title pattern {name} is not ported yet"));
+    }
+    // the card's constructor says so, on either side, whatever the look offers
+    let mesh = Mesh { faces: Vec::new() };
+    let looks = [0, 1].map(|_| CardLook {
+        look: &Blackout,
+        mesh: &mesh,
+        yaw: 0.0,
+        roll: 0.0,
+    });
+    let new = |a: &str, b: &str| {
+        TitleCard::new(
+            &show(a, b, 132.0),
+            [FLUTE.0, TROMBONE.0],
+            [FLUTE.1, TROMBONE.1],
+            looks,
+            None,
+        )
+    };
+    let err = new("HORN", "TROMBONE").expect_err("HORN is not ported");
+    assert_eq!(err, super::TitleError::PatternNotPorted("HORN".into()));
+    assert_eq!(err.to_string(), "the title pattern HORN is not ported yet");
+    let err = new("FLUTE", "BARI SAX").expect_err("BARI SAX is not ported");
+    assert_eq!(err.to_string(), "the title pattern BARI SAX is not ported yet");
+    // names the table does not hold are fine: the look's pattern, or a plain panel
+    assert!(new("TUBA", "ALTO SAX").is_ok());
 }
 
 #[test]
@@ -761,8 +848,8 @@ fn while_the_doors_move_there_are_no_slam_effects_and_no_boxes() {
     let (n, (sx, sy)) = (layout::normal(), c.shake(t));
     for (side, sgn) in [(0, 1.0), (1, -1.0)] {
         let (layer, alpha) = c.door(side, t, off, &mut log);
-        let dx = super::round(n[0] * off * sgn + sx);
-        let dy = super::round(n[1] * off * sgn + sy);
+        let dx = crate::ui::round_i32(n[0] * off * sgn + sx);
+        let dy = crate::ui::round_i32(n[1] * off * sgn + sy);
         super::lay_over(&mut want, &layer, &alpha, dx, dy);
     }
     let mut img = grey();
