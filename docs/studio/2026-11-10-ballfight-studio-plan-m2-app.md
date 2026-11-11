@@ -37,7 +37,8 @@ Every task's requirements include this section. The M1 plan's Global Constraints
 lines below are the ones this milestone adds or leans on.
 
 - **Block A touches only `studio/crates/bf-app/**`**, plus its own entries in `studio/Cargo.toml` and
-  `studio/Cargo.lock` (Task 1), and is built in its own lane clone. It must not read, need or change any other crate
+  `studio/Cargo.lock` and one step of `.github/workflows/studio.yml` (all in Task 1), and is built in lane
+  clones. It must not read, need or change any other crate
   except `bf-core`, of which it uses only `bf_core::grid::loop_bpm`. Block B may add to engine crates only where a task
   says so.
 - **Nothing in `projects/`, `reelkit/` or `series/` is edited. GUITAR and SAX never appear** in any roster, list,
@@ -58,6 +59,13 @@ lines below are the ones this milestone adds or leans on.
   do next. No code names, no jargon ("seed" and "handicap" are the app's own words and stay).
 - **Every control has an accessible name.** The test harness fails any control without one; never switch that check
   off.
+- **Finding a control in a test.** `get_by_label` panics when a label appears more than once, and many do ("Flute"
+  is a segment, a lane name, a winner and a bout-bar name; "Remove" repeats per job). Use `get_by_label` only for a
+  label that is unique on the screen; otherwise take `query_all_by_label(..)` and pick by role, by position or by
+  the parent node.
+- **Reference pictures are blessed on this Windows PC.** If the Ubuntu job reports a difference against them, the
+  worker who sees it adds `[linux] max_failed_pixels = N` to `kittest.toml` with the smallest N that passes, 200 at
+  most, and says so in the report; a larger difference is a real one to find.
 - **Video and sound numbers:** 1,830 frames at 30 fps, internal 360 x 640; soundtrack 48,000 Hz stereo, exactly
   2,928,640 samples (61.013 s); 1,600 samples per frame. Safe zone: internal x 20 to 340, y 96 to 500, minus x >= 300
   below y 290.
@@ -90,23 +98,61 @@ Failure modes the spec implies but states no test for, most likely first. Each h
 
 ## Order of work
 
-**Block A can start now**, while milestone 1 is still being built. It runs the way milestone 1's lanes do
-(`lanes.md` in the build's scratch folder): in a clone of its own, `.lanes/app` on the branch `lane/app`, merged by
-the controller task by task; side-by-side tasks get their own clones the same way. Tasks 1 to 3 come first, in
-order. Then three groups that share no file:
+**Block A can start now**, while milestone 1 is still being built. It runs the way milestone 1's lanes do (`lanes.md`
+in the build's scratch folder): each task in a clone under `.lanes/`, on its own branch, merged by the controller
+when it passes review. What each task needs before it can start:
 
-- **Widgets:** 4, 5, 6, 7.
-- **State and storage:** 8, then 9; 10, 11 and 13 can run beside 9; 12 needs 9 and 11.
-- **Preview:** 14, then 15 and 16, which need Task 8 for the frame-source, sound and player types.
-- **Screens** (need all three lanes): 17 first, then 18, then 19 to 24 in any order or side by side.
-- **Together:** 25.
+| Task | Needs merged first |
+|---|---|
+| 1, 2, 3 | one after another |
+| 4, 5, 6, 7 | 3 |
+| 8 | 3 |
+| 8b, 10, 14 | 8 |
+| 8c, 9 | 8b |
+| 11, 13 | 10 |
+| 12 | 9, 11 |
+| 15 | 14 |
+| 16 | 15 |
+| 17 | 4 to 7, 12, 13, 16 |
+| 18 | 17 |
+| 19 to 24 | 18 |
+| 25 | everything above |
 
-**Block B starts when milestone 1's Task 30 is merged** (the `ballfight` command line works end to end) and Block A
-is done. 26 and 27 first (they add to engine crates), then 28; then 29, 30, 31, 33 and 34 in any order; 32 after 31;
-35 last. Every Block B task begins by checking the M1 interfaces it uses against the code as merged.
+Tasks that can run at the same time in separate clones, because no two of them write the same file:
 
-Task 1 creates every module file of the crate, empty, and declares them all, so no later task edits `lib.rs`, a
-`mod.rs` or `tests/ui/main.rs`; each task fills in its own files.
+- after 3: 4, 5, 6, 7 and 8 (five clones);
+- after 8: 8b, 10 and 14 (4 to 7 may still be running);
+- then 8c and 9 (after 8b), 11 and 13 (after 10), 15 (after 14);
+- then 12 (after 9 and 11) and 16 (after 15);
+- 17, then 18, one at a time;
+- then 19, 20, 21, 22, 23 and 24 (six clones: each writes only its own screen file, fixture file, test module and
+  pictures);
+- 25 last.
+
+**Block B starts when milestone 1 is complete** (its Task 31 merged, so `docs/studio/m1-measurements.md` exists and
+`bf-cli` is at rest) and Block A is done. Every Block B task begins by checking the M1 interfaces it uses against the
+code as merged.
+
+| Task | Needs merged first |
+|---|---|
+| 26 | milestone 1, Block A |
+| 27 | 26 |
+| 28 | 27 |
+| 29, 30, 33, 34 | 28 |
+| 31 | 30 |
+| 32 | 31 |
+| 35 | everything above |
+
+26, 27 and 28 run one after another: 26 and 27 both write `bf-content/src/lib.rs`, and 28 writes the engine's routing
+once, with an empty handler in each of `balance.rs`, `search.rs`, `takes.rs`, `jobs.rs` and `files.rs`. After 28,
+Tasks 29, 30, 33 and 34 can run at the same time in separate clones, each filling only its own handler file (29 and
+30 may each also touch `bf-story`, in different files). 31 follows 30 (it uses `search::story_view`), 32 follows 31,
+35 is last.
+
+Task 1 creates every file of the crate, empty, and declares every module, so no later task edits `lib.rs` (Task 28
+excepted: it adds `pub mod engine;`) or `tests/ui/main.rs`. Where a later task's Files line says "Create" for a file
+Task 1 made, the task fills that file. A `mod.rs` that holds content (`theme`, `model`, `seam`, `state`, `store`) is
+written by the task that owns it; the other `mod.rs` files hold only their `pub mod` lines and are not edited again.
 
 ## What is live and what waits
 
@@ -130,11 +176,11 @@ one thread), **`soundtrack_build_s`**, **`fights_per_second`**.
 | Quantity | Budget | Where it is checked |
 |---|---|---|
 | Frames shown on time | at least 99 % over 20 s of playback from FIGHT!, search yielding | Task 32, `--preview-bench` |
-| Threads the preview needs | `P = ceil(1.25 * frame_ms_p95 / 33.3)`; must be at most `workers` (cores minus one: 7 on the owner's PC, so `frame_ms_p95` up to 186 ms). One thread is enough up to 26.7 ms | Task 32 |
+| Threads the preview needs | `P = ceil(1.25 * frame_ms_p95 / 33.3)`; must be at most `workers` (cores minus one: 7 on the owner's PC, so `frame_ms_p95` up to 186 ms). One thread is enough up to 26.6 ms | Task 32 |
 | If `P > workers` | the scheduler draws every second frame and holds it; sound never stalls; Task 32 reports it against Task 31's "Speed plan" | Tasks 15, 32 |
 | Draw-ahead buffer | 12 frames (0.4 s) ahead of the playhead; 64 frames kept (44 MB) | Task 15 |
 | Scrub | the newest asked frame is on screen within `frame_ms_p95` + 20 ms; older requests are skipped | Tasks 15, 32 |
-| Interface thread | no single update over 4 ms besides painting: one 360 x 640 texture upload per shown frame, channel sends | Tasks 17, 35 |
+| Interface thread | no single update over 4 ms besides painting: one 360 x 640 texture upload per shown frame, channel sends | Tasks 17, 25, 35 |
 | First picture after choosing a seed | within one fight simulation, one picture set-up and one frame; playback may start silent and the sound joins when built (`soundtrack_build_s`) | Tasks 16, 31 |
 | While a video renders | the render keeps its `workers`; the preview may skip frames and the status bar says so | Task 33 |
 
@@ -142,6 +188,7 @@ one thread), **`soundtrack_build_s`**, **`fights_per_second`**.
 
 ```
 studio/Cargo.toml  Cargo.lock                    one member and eight dependency lines added (Task 1)
+.github/workflows/studio.yml                     Linux packages (Task 1); the Windows job builds and tests the app (Task 35)
 studio/crates/bf-app/
   Cargo.toml  kittest.toml  .gitignore  README.md
   assets/fonts/      IBMPlexSans-{Regular,Medium,SemiBold}.ttf  IBMPlexMono-Regular.ttf  NotoEmoji-Variable.ttf
@@ -155,7 +202,7 @@ studio/crates/bf-app/
   src/seam/          mod.rs (Command, Event, EngineHandle)  sample.rs (sample data)  fake.rs (sample engine)
   src/state/         mod.rs (AppState, ViewModel, Action, Effect)  fight.rs  seeds.rs  queue_run.rs  events.rs
   src/store/         mod.rs (Paths, write_atomic, Writer)  settings.rs  queue_file.rs  shortlist_cache.rs  library.rs
-  src/preview/       mod.rs clock.rs scale.rs scheduler.rs audio.rs player.rs
+  src/preview/       mod.rs clock.rs scale.rs scheduler.rs audio.rs player.rs bench.rs
   src/screens/       mod.rs shell.rs stage.rs timeline.rs matchup.rs balance.rs seeds.rs music.rs render.rs
                      library.rs settings.rs
   src/wording.rs     shared text formatters
@@ -182,7 +229,9 @@ Pure logic is unit-tested inside its own file (`#[cfg(test)] mod tests`, run wit
 
 **Files:**
 - Modify: `studio/Cargo.toml` (add `"crates/bf-app"` to `members`; add the dependency lines below to
-  `[workspace.dependencies]`), `studio/Cargo.lock`
+  `[workspace.dependencies]`), `studio/Cargo.lock`, `.github/workflows/studio.yml` (one step in the Ubuntu job,
+  before the first cargo step: `sudo apt-get update && sudo apt-get install -y libasound2-dev pkg-config
+  mesa-vulkan-drivers`; the sound crate needs the first two to build and the drawing tests need the third)
 - Create: `studio/crates/bf-app/Cargo.toml`, `kittest.toml`, `.gitignore`, `README.md`, `src/main.rs`, `src/lib.rs`,
   `src/app.rs`, every other file under `src/` in the file map except `src/engine/` (empty, or holding only its `pub
   mod` lines; `src/model/roster.rs`, `story.rs` and `take.rs` hold the five types below), `tests/ui/main.rs`,
@@ -252,8 +301,10 @@ Pure logic is unit-tested inside its own file (`#[cfg(test)] mod tests`, run wit
   Task 2 a test must not draw text.
 - [ ] **Step 4:** Run: PASS, twenty times in a row (`for i in $(seq 20); do cargo test -p bf-app --test ui smoke::
   || break; done`), to prove the lock. `cargo build --release -p bf-app`, then run `target/release/
-  ballfight-studio.exe --smoke` once: a window opens and closes by itself within 3 s, exit code 0. Write
-  `README.md`: what the crate is, how to run the app and its tests.
+  ballfight-studio.exe --smoke` once: a window opens and closes by itself within 3 s, exit code 0. Run
+  `cargo tree -p bf-app -e normal --target x86_64-unknown-linux-gnu` and confirm no `gtk` crate is in it (the
+  folder dialog must use the portal on Linux, which needs no system library). Write `README.md`: what the crate is,
+  how to run the app and its tests.
 - [ ] **Step 5:** Commit `bf-app: crate, pinned dependencies, test harness`.
 
 ### Task 2: Fonts in the exe
@@ -357,8 +408,8 @@ Pure logic is unit-tested inside its own file (`#[cfg(test)] mod tests`, run wit
   TEXT`, `visuals.widgets.active.fg_stroke.color == ON_LIGHT`, `visuals.selection.bg_fill == TEXT`,
   `spacing.item_spacing == vec2(8.0, 6.0)`, `spacing.button_padding == vec2(10.0, 5.0)`, `spacing.interact_size.y ==
   26.0`, and `text_styles[&TextStyle::Body] == body()`, `[Button] == body()`, `[Small] == small()`, `[Monospace] ==
-  value()`, `[Heading] == title()`. `plain_text_is_the_text_colour` (takes `gpu()`): a label
-  "Flute" drawn on a `PANEL` background renders at least one pixel equal to `[0xe2, 0xe2, 0xe2]`.
+  value()`, `[Heading] == title()`. `plain_text_is_the_text_colour` (takes `gpu()`): for a
+  label "Flute" drawn on a `PANEL` background, the brightest pixel of the picture is `[0xe2, 0xe2, 0xe2]`.
 - [ ] **Step 2:** Run `cargo test -p bf-app --lib theme::` and `--test ui theme::`. Expected: FAIL.
 - [ ] **Step 3:** Implement with `ctx.set_fonts(definitions())` and `ctx.all_styles_mut(|style| ...)`; set
   `visuals.override_text_color = Some(TEXT)`, the open state like the active state, `visuals.window_shadow` and
@@ -409,8 +460,10 @@ Pure logic is unit-tested inside its own file (`#[cfg(test)] mod tests`, run wit
 - [ ] **Step 3:** Implement. Buttons are `egui::Button` with explicit fill, stroke and `min_size`; the switch, the
   progress bar and the icons are painted by hand on an allocated rect and named with `response.widget_info(...)`
   (`Role::Switch` with its state, `Role::ProgressIndicator`, `Role::Button`); the dropdown is an
-  `egui::ComboBox::from_id_salt(name)` given its name with `.labelled_by` on an invisible label, its list styled as
-  the menu. Icon coordinates are in the interface reference, section 3.
+  `egui::ComboBox::from_id_salt(name)` named through its response (`.show_ui(..).response.labelled_by(label.id)`
+  with an invisible label, which the planning probe found to work), its list styled as the menu. If
+  `unnamed_widgets()` still lists it, build the dropdown as an `egui::menu_button` styled the same (a menu button is
+  named by its label) and say so in the report. Icon coordinates are in the interface reference, section 3.
 - [ ] **Step 4:** Run with `UPDATE_SNAPSHOTS=true` once, open the picture and compare it with section 3 of the
   interface reference; then run without it: PASS.
 - [ ] **Step 5:** Commit `bf-app: buttons, segments, switch, dropdown, icons`.
@@ -439,16 +492,16 @@ Pure logic is unit-tested inside its own file (`#[cfg(test)] mod tests`, run wit
   The slider is a 2 px `LINE` track, a `MUTED` fill up to the knob and a 3 x 14 `TEXT_STRONG` knob, in a row 26 tall;
   it takes drags and clicks anywhere on its row, and with the keyboard on it the left and right arrows move one
   `step`. `released` is true on the frame a drag or a click ends.
-- [ ] **Step 1: Write the failing tests.** Unit: `knob_x(2.0, (0.05, 3.0), 100.0, 200.0)` is within 0.01 of
-  `100.0 + 200.0 * (1.95 / 2.95)`; `value_at(100.0 + 0.66 * 200.0, (0.05, 3.0), 0.01, 100.0, 200.0) == 2.0`;
-  `value_at(-50.0, ..) == 0.05`; `value_at(9999.0, ..) == 3.0`; `value_at(x, (24.0, 42.0), 1.0, ..)` is always a
-  whole number. UI: `dragging_changes_then_releases` (drag from the knob to the row's right end with
-  `harness.drag_at` and `harness.drop_at`: the value ends at the range's top, `changed` was seen, `released` was
-  seen exactly once); `the_value_field_shows_its_unit` (`value_field(.., &mut 2.0, (0.05, 12.0), Unit { prefix: "×",
-  suffix: "", decimals: 2 }, 62.0)` has width 62, height 22, and the text "×2.00" is on screen; with `Unit { prefix:
-  "", suffix: " s", decimals: 1 }` and 49.0 the text is "49.0 s"); `typing_into_a_text_line` (focus the field found
-  by its hint "Seed number", type "20418": the bound string is "20418"); `nothing_is_unnamed`;
-  `the_gallery_matches` (`harness.snapshot("widgets_fields")`).
+- [ ] **Step 1: Write the failing tests.** Unit: `knob_x(2.0, (0.05, 3.0), 100.0, 200.0)` is within 0.01 of `100.0 +
+  200.0 * (1.95 / 2.95)`; `(value_at(100.0 + 0.66 * 200.0, (0.05, 3.0), 0.01, 100.0, 200.0) - 2.0).abs() < 1e-9`;
+  `value_at(-50.0, ..) == 0.05`; `value_at(9999.0, ..) == 3.0`; `value_at(x, (24.0, 42.0), 1.0, ..)` is always a whole
+  number. UI: `dragging_changes_then_releases` (drag from the knob to the row's right end with `harness.drag_at` and
+  `harness.drop_at`: the value ends at the range's top, `changed` was seen, `released` was seen exactly once);
+  `the_value_field_shows_its_unit` (`value_field(.., &mut 2.0, (0.05, 12.0), Unit { prefix: "×", suffix: "", decimals: 2
+  }, 62.0)` has width 62, height 22, and the text "×2.00" is on screen; with `Unit { prefix: "", suffix: " s", decimals:
+  1 }` and 49.0 the text is "49.0 s"); `typing_into_a_text_line` (focus the field found by its hint "Seed number", type
+  "20418": the bound string is "20418"); `nothing_is_unnamed`; `the_gallery_matches`
+  (`harness.snapshot("widgets_fields")`).
 - [ ] **Step 2:** Run `cargo test -p bf-app --lib widgets::slider` and `--test ui fields::`. Expected: FAIL.
 - [ ] **Step 3:** Implement. The slider is painted by hand with `Sense::click_and_drag()` and named with
   `WidgetInfo::slider`; the value field is an `egui::DragValue` with `prefix`, `suffix`, `fixed_decimals`, `range`
@@ -541,11 +594,11 @@ Pure logic is unit-tested inside its own file (`#[cfg(test)] mod tests`, run wit
 - [ ] **Step 4:** Bless after comparing with section 4 of the interface reference ("The lead ribbon"); run: PASS.
 - [ ] **Step 5:** Commit `bf-app: the lead ribbon`.
 
-### Task 8: The model, the seam and the sample data
+### Task 8: The model, the seam and the wording helpers
 
 **Files:**
 - Create: `src/model/{mod.rs,draft.rs,shortlist.rs,balance.rs,queue.rs,library.rs}` (types only; the queue's
-  methods are Task 11), `src/seam/mod.rs`, `src/seam/sample.rs`, `src/wording.rs`
+  methods are Task 11), `src/seam/mod.rs`, `src/wording.rs`
 - Modify: `src/model/roster.rs` and `src/model/take.rs` (add to what Task 1 made)
 
 **Interfaces:**
@@ -575,7 +628,8 @@ Pure logic is unit-tested inside its own file (`#[cfg(test)] mod tests`, run wit
   impl Draft { pub fn tempo_bpm(&self) -> f64; }    // loop_bpm(bars as f64 * 4.0 * 60.0 / 61.0, 61.0, 4)
   // model::roster
   pub enum Section { Woodwinds, Brass, Strings, Keys, Percussion }   // shown as "Keys and electronics" for Keys
-  pub struct AbilityLine { pub tag: String, pub name: String, pub text: String }   // "LV2", "Flutter tongue", "Twice as fast for 8 beats"
+  pub struct AbilityLine { pub tag: String, pub name: String, pub text: String,   // "LV2", "Flutter tongue", "Twice as fast for 8 beats"
+      pub key: String }                                                           // the roster's own name, "FLUTTER TONGUE": what a filter stores
   pub struct FighterCard { pub weapon: String, pub text: String, pub abilities: [AbilityLine; 3], pub range: String,
       pub usually_plays: String, pub colour_name: String, pub music_title: String, pub music_text: String,
       pub can_play_bass: bool, pub portrait: Option<Sprite> }
@@ -658,26 +712,17 @@ Pure logic is unit-tested inside its own file (`#[cfg(test)] mod tests`, run wit
       LibraryCover { folder: PathBuf, cover: Frame },
       FightOpened { draft: Draft, title: String },
       Tools { ffmpeg: Result<String, String> },
-      Folder { root: PathBuf, state: FolderState },  FolderPicked { path: Option<PathBuf> },
+      Folder { root: PathBuf, name: String, state: FolderState },  FolderPicked { path: Option<PathBuf> },
       Problem { text: String } }
   pub type Waker = Arc<dyn Fn() + Send + Sync>;
   pub struct EngineHandle { /* Sender<Command>, Receiver<Event> */ }
   impl EngineHandle { pub fn send(&self, c: Command); pub fn poll(&self) -> Option<Event>; }
-  pub struct EngineSide { pub commands: std::sync::mpsc::Receiver<Command>, /* Sender<Event>, Waker */ }
-  impl EngineSide { pub fn emit(&self, e: Event); }          // sends, then calls the waker; `Clone`-able sender inside
+  #[derive(Clone)]
+  pub struct EventSender { /* Sender<Event>, Waker */ }      // what a worker thread keeps
+  impl EventSender { pub fn emit(&self, e: Event); }         // sends, then calls the waker
+  pub struct EngineSide { pub commands: std::sync::mpsc::Receiver<Command>, pub events: EventSender }
+  impl EngineSide { pub fn emit(&self, e: Event); }          // the same, through `events`
   pub fn channel(waker: Waker) -> (EngineHandle, EngineSide);
-  // seam::sample (sample data: the mock-ups' own; used by tests, by the fixtures and by --fixtures)
-  pub fn mask(text: &str) -> PixelMask;                      // 5 x 7 glyphs A to Z and space, advance 6
-  pub fn roster() -> Roster;                                 // the 30 fighters of the interface reference, all available
-  pub fn story(seed: u64) -> StoryView;                      // the mock-ups' generator, below
-  pub fn stories() -> Vec<StoryView>;                        // the mock-ups' 14 seeds, best score first
-  pub fn stats() -> BalanceStats;                            // 3,000 fights, 47 %, the histogram of the Balance mock-up
-  pub fn frames(colors: [[u8; 3]; 2]) -> Arc<dyn FrameSource>;   // drawn shapes, a different picture for every frame
-  pub fn title_card(colors: [[u8; 3]; 2], masks: [&PixelMask; 2]) -> Frame;
-  pub fn audio() -> AudioTake;                               // a 10 ms 1 kHz blip on every beat at 133.77 bpm, peak 0.03
-  pub fn music() -> MusicView;                               // the lanes, clips and markers of the Music mock-up
-  pub fn captions() -> CaptionTexts;                         // the Render mock-up's caption and tags
-  pub fn library() -> Vec<(LibraryEntry, Frame)>;            // six past videos with drawn 180 x 320 covers
   // wording
   pub fn display_name(roster_name: &str) -> String;          // "BASS CLARINET" -> "Bass clarinet"
   pub fn thousands(n: u64) -> String;                        // 18240 -> "18,240"
@@ -687,6 +732,40 @@ Pure logic is unit-tested inside its own file (`#[cfg(test)] mod tests`, run wit
   pub fn plural(n: u64, one: &str, many: &str) -> String;    // (1, "video", "videos") -> "1 video"
   pub fn folder_stem(names: &[String; 2]) -> String;         // ["BASS CLARINET", "BASSOON"] -> "bass_clarinet_vs_bassoon"
   pub fn versus(names: &[String; 2]) -> String;              // ["FLUTE", "TROMBONE"] -> "Flute vs Trombone"
+  ```
+- [ ] **Step 1: Write the failing tests** (unit, in the files that own them). `tempo_snaps_to_whole_bars`: a draft
+  with `bars: 34` has `(tempo_bpm() - 133.770_491_803_278_7).abs() < 1e-12`; with 24 bars `tempo_bpm() == 24.0 * 4.0
+  * 60.0 / 61.0`. `the_wording_helpers`: every example in the comments above. `events_reach_the_other_side`:
+  `channel(waker)`; `side.emit(Event::Problem { .. })` makes `handle.poll()` return it and the waker has run once; an
+  event emitted from another thread through a clone of `side.events` arrives too; `handle.send(Command::StopSearch)`
+  arrives on `side.commands`. `filters_default_to_the_beat_sheet`. `the_win_range_is_40_to_60` (`in_range()` is true
+  at 0.40 and 0.60, false at 0.39 and 0.61).
+- [ ] **Step 2:** Run `cargo test -p bf-app --lib model:: seam:: wording::`. Expected: FAIL.
+- [ ] **Step 3:** Implement.
+- [ ] **Step 4:** Run: PASS.
+- [ ] **Step 5:** Commit `bf-app: model, the engine seam, wording helpers`.
+
+### Task 8b: The sample data
+
+**Files:**
+- Create: `src/seam/sample.rs`
+
+**Interfaces:**
+- Consumes: the model (Task 8); the interface reference: section 2 (the roster and its colours), 5.1 (the two corner
+  cards) and section 11 (the mock-ups' sample values: balance numbers, lanes, captions, queue, library).
+- Produces (sample data: the mock-ups' own; used by tests, by the fixtures and by `--fixtures`):
+  ```rust
+  pub fn mask(text: &str) -> PixelMask;                      // 5 x 7 glyphs A to Z and space, advance 6
+  pub fn roster() -> Roster;                                 // the 30 fighters of the interface reference, all available
+  pub fn story(seed: u64) -> StoryView;                      // the mock-ups' generator, below
+  pub fn stories() -> Vec<StoryView>;                        // the mock-ups' 14 seeds, best score first
+  pub fn stats() -> BalanceStats;                            // interface reference, section 11
+  pub fn frames(colors: [[u8; 3]; 2]) -> Arc<dyn FrameSource>;   // drawn shapes, a different picture for every frame
+  pub fn title_card(colors: [[u8; 3]; 2], masks: [&PixelMask; 2]) -> Frame;
+  pub fn audio() -> AudioTake;                               // a 10 ms 1 kHz blip on every beat at 133.77 bpm, peak 0.03
+  pub fn music() -> MusicView;                               // interface reference, section 11
+  pub fn captions() -> CaptionTexts;                         // interface reference, section 11
+  pub fn library() -> Vec<(LibraryEntry, Frame)>;            // six past videos with drawn 180 x 320 covers
   ```
 - **The sample generator** (a port of the mock-ups' script, so the sample shortlist is the approved one):
   ```rust
@@ -704,28 +783,84 @@ Pure logic is unit-tested inside its own file (`#[cfg(test)] mod tests`, run wit
   // 11.96 s and 30.62 s (fighter 0: "Flutter tongue", "Snake dance") and 17.02 s, 25.99 s and 41.0 s (fighter 1:
   // "Sad trombone", "Power slide", "Pedal tone").
   ```
-  The seeds are 20418, 7731, 15290, 3306, 11874, 26051, 902, 18433, 5627, 23980, 14402, 8175, 29766, 1248. Glyph
-  rows for `mask` are copied from the `_G` table in `reelkit/font.py` (read only; A to Z). The sample roster's cards
-  for FLUTE and TROMBONE carry the Match-up mock-up's texts (interface reference, 5.1) with `can_play_bass` false
-  for FLUTE and true for TROMBONE; every other fighter's card says "Sample fighter" as its weapon and "This card is
-  sample data." as its text. The sample theme list is one entry: `big_top`, "Big top", the mock-up's line, key E,
+  The seeds are 20418, 7731, 15290, 3306, 11874, 26051, 902, 18433, 5627, 23980, 14402, 8175, 29766, 1248. Ranked by
+  score the list starts 18433 (7.84), 5627, 8175, 23980, 11874, and 20418 is twelfth: the mock-ups' selected seed is
+  18433 (checked by running the generator while planning). Glyph rows for `mask` are copied from the `_G` table in
+  `reelkit/font.py` (read only; A to Z). The sample roster's cards for FLUTE and TROMBONE carry the Match-up
+  mock-up's texts (interface reference, 5.1) with `can_play_bass` false for FLUTE and true for TROMBONE; every other
+  fighter's card says "Sample fighter" as its weapon and "This card is sample data." as its text; an ability's `key`
+  is its name in upper case. The sample theme list is one entry: `big_top`, "Big top", the mock-up's line, key E,
   "harmonic minor", two chord loops (`Em Am B7 Em C Am B7 B7` and `Em C Am B7 Em C Am B7`), bars (24, 42).
-  `roster().start` is `["FLUTE", "TROMBONE"]`; PIANO has `music_feeds_fight: true`, everyone else false.
-- [ ] **Step 1: Write the failing tests** (unit, in the files that own them). `the_sample_roster_is_the_series`: 30
-  fighters; 9, 6, 8, 5 and 2 per section in the order of the interface reference; no entry is named "GUITAR" or
-  "SAX"; FLUTE is `[0xde, 0xe8, 0xf6]`, TROMBONE `[0x78, 0xf0, 0xb8]`, TUBA `[0x68, 0x5c, 0xec]`, BASS DRUM `[0x80,
-  0x80, 0x8c]`. `masks_use_the_series_font`: `mask("FLUTE")` is 29 x 7; `mask("F")` rows are `#####`, `#....`,
-  `#....`, `####.`, `#....`, `#....`, `#....`; `mask("VS").w == 11`. `the_sample_stories_are_ranked`: 14 stories,
-  scores descending, every `t_ko` between 49 and 53, every `lead` 30 points starting at 3.6 s.
-  `tempo_snaps_to_whole_bars`: a draft with `bars: 34` has `(tempo_bpm() - 133.770_491_803_278_7).abs() < 1e-12`;
-  with 24 bars `tempo_bpm() == 24.0 * 4.0 * 60.0 / 61.0`. `the_wording_helpers`: every example in the comments
-  above. `events_reach_the_other_side`: `channel(waker)`; `side.emit(Event::Problem { .. })` makes
-  `handle.poll()` return it and the waker has run once; `handle.send(Command::StopSearch)` arrives on
-  `side.commands`. `filters_default_to_the_beat_sheet`.
-- [ ] **Step 2:** Run `cargo test -p bf-app --lib model:: seam:: wording::`. Expected: FAIL.
+  `roster().start` is `["FLUTE", "TROMBONE"]`, `app_version` is "0.1.0"; PIANO has `music_feeds_fight: true`,
+  everyone else false. Where section 11 of the interface reference gives no value for something a sample needs,
+  choose a plausible one, list it in the report, and keep it the same everywhere.
+- [ ] **Step 1: Write the failing tests** (unit, in `sample.rs`). `the_sample_roster_is_the_series`: 30 fighters; 9,
+  6, 8, 5 and 2 per section in the order of the interface reference; no entry is named "GUITAR" or "SAX"; FLUTE is
+  `[0xde, 0xe8, 0xf6]`, TROMBONE `[0x78, 0xf0, 0xb8]`, TUBA `[0x68, 0x5c, 0xec]`, BASS DRUM `[0x80, 0x80, 0x8c]`;
+  FLUTE's first ability has `name` "Flutter tongue" and `key` "FLUTTER TONGUE". `masks_use_the_series_font`:
+  `mask("FLUTE")` is 29 x 7; `mask("F")` rows are `#####`, `#....`, `#....`, `####.`, `#....`, `#....`, `#....`;
+  `mask("VS").w == 11`. `the_sample_stories_are_the_mock_ups`: 14 stories, scores descending; the first is seed
+  18433 with `winner == Some(1)`, `(t_ko - 49.1).abs() < 0.05`, `winner_hp == 16.0` and a score that prints as
+  "7.84"; seed 20418 is twelfth with 4 lead changes; 7 of the 14 are won by fighter 1 and 6 end with the winner at 12
+  HP or less; every `t_ko` is between 49 and 53; every `lead` has 30 points starting at 3.6 s.
+  `the_sample_values_are_the_references`: `stats()` has 3,000 fights, `win_share` 0.47 and 28 histogram bins;
+  `music()` has seven lanes (two fighters, five band) and seven markers; `captions().instagram` starts with "The
+  front row vs the back row"; `library()` has six entries, each `modified` at 12:00 UTC of its day.
+  `sample_frames_differ` (`frames(..).draw(0).rgb != frames(..).draw(1).rgb`, both 360 x 640).
+- [ ] **Step 2:** Run `cargo test -p bf-app --lib seam::sample`. Expected: FAIL.
 - [ ] **Step 3:** Implement.
 - [ ] **Step 4:** Run: PASS.
-- [ ] **Step 5:** Commit `bf-app: model, the engine seam, sample data`.
+- [ ] **Step 5:** Commit `bf-app: sample data`.
+
+### Task 8c: The sample engine
+
+**Files:**
+- Create: `src/seam/fake.rs`
+
+**Interfaces:**
+- Consumes: `seam::{Command, Event, EngineHandle, EngineSide, EventSender, channel, Waker}`, `seam::sample`, the
+  model (Tasks 8, 8b).
+- Produces:
+  ```rust
+  pub enum Pace { Instant, Live }
+  pub fn spawn(waker: Waker, pace: Pace) -> EngineHandle;   // answers every Command from seam::sample, on its own thread
+  ```
+  Per command: `LoadRoster`, the sample roster. `DescribeFight`, the pair rule "A live lance knocks a risen cobra
+  flat." when FLUTE meets TROMBONE (none otherwise), `sample::captions()`, the sample title card. `AutoBalance`, 29
+  `BalanceProgress` then `Balanced { handicap: [2.0, 0.4], stats: sample::stats() }`. `Measure`, `Measured` with the
+  sample numbers and `win_share` moved by `0.1 * (handicap[0] / handicap[1]).ln()` from 0.47, kept in 0.05 to 0.95.
+  `StartSearch`, fourteen `Shortlist` events, each one story longer in ranked order, `checked` rising by 1,303 each
+  time, the last one `Stopped`; the rows pass through the command's filters. `SetFilters`, the list again. The
+  sample engine filters by winner, K.O. bounds and finish only (`Close` = winner at 12 HP or less; `Comeback` keeps
+  none); the lead-change count and the ability keep every row, because the mock-ups' sample fights were drawn
+  without regard to them (the mock-up reads "At least 2" over rows with fewer). `LoadTake`, `TakePicture` with
+  `sample::story(seed)` and `sample::frames`, then `TakeSound` with `sample::audio()` and `sample::music()`; a seed
+  ending in 13 gives `TakeFailed { problem: "Seed {n} has no K.O. before 58 s, so it cannot be made into a video.
+  Pick another seed." }`. `Enqueue`, `Enqueued` with a `JobSpec` built from the draft. `RunJob`, the ten steps in
+  order with `Frames` every 61 frames (`seconds` rising by 0.2 each time), then `Done`; a job whose seed ends in 2
+  fails at Loudness with the headline "Stopped at the loudness check", the detail "The opening is 2.1 dB quieter
+  than the ending, and the limit is 1.5 dB. Nothing was saved. Open it in Music to see the levels, or try another
+  seed, then queue it again." and `FailHint::OpenInMusic`. `CancelJob`, `Cancelled` (and no `Done` for that job).
+  `ScanLibrary`, the six sample entries and their covers. `OpenFight` and `OpenFightText`, `FightOpened` with the
+  starting draft, seed 18433 and the title "Flute vs Trombone, seed 18433". `CheckTools`, `Ok("ffmpeg (sample)")`.
+  `CheckFolder` and `CreateFolder`, `Folder { state: Ok { taken: false } }` with the command's root and name.
+  `PickFolder`, `FolderPicked(None)`. The rest, nothing. With `Pace::Instant` every answer is sent at once; with
+  `Pace::Live` progress events are 40 ms apart and a job takes 6 s. A command that carries a generation or a take
+  number is answered with it.
+- [ ] **Step 1: Write the failing tests** (unit, in `fake.rs`, `Pace::Instant` unless said; a helper `drain(&handle)
+  -> Vec<Event>` polls until nothing has arrived for 50 ms): `the_roster_is_answered`;
+  `a_fight_is_described_with_its_generation` (`DescribeFight { gen: 4, .. }` answers `FightInfo { gen: 4, .. }` with
+  the cobra rule for FLUTE and TROMBONE and none for FLUTE and OBOE); `balance_reports_then_lands` (29
+  `BalanceProgress`, then `Balanced` with `[2.0, 0.4]`); `a_search_grows_to_fourteen_rows_and_stops`;
+  `filters_narrow_the_list` (`winner: Some(1)` leaves 7 rows, `Finish::Close` leaves 6);
+  `a_take_arrives_picture_then_sound`; `seed_13_has_no_ko`; `a_job_runs_its_ten_steps` (steps in `STEP_ORDER`'s
+  order, 30 `Frames`, then `Done`); `a_seed_ending_in_2_fails_at_loudness` (the two texts above, word for word);
+  `cancel_answers_cancelled` (`Pace::Live`: `CancelJob` after the first `Frames` gives `Cancelled` and no `Done`
+  within 1 s); `the_library_has_six_videos_and_covers`; `a_folder_check_echoes_root_and_name`.
+- [ ] **Step 2:** Run `cargo test -p bf-app --lib seam::fake`. Expected: FAIL.
+- [ ] **Step 3:** Implement.
+- [ ] **Step 4:** Run: PASS, ten times in a row.
+- [ ] **Step 5:** Commit `bf-app: sample engine`.
 
 ### Task 9: App state: navigation, the draft, what feeds the fight, late results
 
@@ -734,7 +869,7 @@ Pure logic is unit-tested inside its own file (`#[cfg(test)] mod tests`, run wit
   `src/fixtures/base.rs`
 
 **Interfaces:**
-- Consumes: everything in `model` and `seam` (Task 8), `wording`.
+- Consumes: everything in `model` and `seam` (Task 8), `seam::sample` (Task 8b), `wording`.
 - Produces:
   ```rust
   pub struct BalanceView { pub stats: Option<BalanceStats>, pub running: Option<(u32, u32)> }   // running: done, total
@@ -772,15 +907,20 @@ Pure logic is unit-tested inside its own file (`#[cfg(test)] mod tests`, run wit
 - **The rules.**
   - `new` shows Match-up and returns `Send(LoadRoster)`, `Send(CheckTools)` and `Send(CheckFolder { root:
     settings.output_folder, name: "" })`. On `Event::Roster` the draft becomes `roster.start`, the first theme, 34
-    bars clamped to the theme's range, handicap `[1.0, 1.0]`, no seed, chord loop 0, bass `None`, music seed 1; the
-    generation becomes 1; `Send(DescribeFight)` follows.
+    bars clamped to the theme's range, handicap `[1.0, 1.0]`, no seed, chord loop 0, music seed 1, and `bass` the
+    first of the two fighters whose card has `can_play_bass` (`None` if neither has); the generation becomes 1;
+    `Send(DescribeFight)` follows. `bass` is worked out again whenever a fighter is picked, and follows its fighter
+    in a swap.
   - **What feeds the fight** (§4): the two fighters in order, `bars` and `handicap`; and also `chord_loop` and
     `music_seed` when either chosen fighter has `music_feeds_fight`. An action that changes any of these adds 1 to
     the generation, clears the seed, the shortlist (to `Idle`), the balance numbers and the take, and returns
     `Send(StopSearch)` if a search was running, `Send(StopBalance)` if a balance was, and `Player(Still(card))` with
     the last title card (or `Player(Clear)`); when the fighters changed it also returns `Send(DescribeFight)`.
     Changing the theme, the bass player or (for other fighters) the chord loop never changes the generation; if a
-    seed is chosen they ask for a new take.
+    seed is chosen they ask for a new take. When a new generation begins while Seeds is the view (a `Balanced` or a
+    `FightOpened` landing there), it also returns `Send(StartSearch)` for the new generation and marks the
+    shortlist `Searching` (§4: the search restarts); on any other view the search restarts when Seeds is next
+    shown, so dragging a handicap slider does not start a search per step.
   - `PickFighter` with the fighter already in the other corner is `SwapSides` (fighters and handicap swap). Any other
     new fighter resets the handicap to `[1.0, 1.0]`, forgets `draft.base` and un-sets `captions_edited`.
   - `SetHandicap` clamps to 0.05 to 12.0 and rounds to two decimals; when `released` it returns `Send(Measure)`.
@@ -808,10 +948,11 @@ Pure logic is unit-tested inside its own file (`#[cfg(test)] mod tests`, run wit
     (`thousands`, one decimal); "Searching on {workers} cores"; "Seed {n} is ready"; and the problem text when
     there is one.
 - [ ] **Step 1: Write the failing tests** (unit, in `state/mod.rs`, driving `dispatch` and `apply` only; a helper
-  `sent(&effects)` lists the commands): `starts_by_asking_for_the_roster`; `the_roster_sets_the_starting_pair`
-  (fighters `["FLUTE", "TROMBONE"]`, `bars == 34`, generation 1, one `DescribeFight`);
+  `sent(&effects)` lists the commands; the `Settings` and the `Queue` are built as struct literals, since their
+  helpers come in Tasks 10 and 11): `starts_by_asking_for_the_roster`; `the_roster_sets_the_starting_pair`
+  (fighters `["FLUTE", "TROMBONE"]`, `bars == 34`, `bass == Some(1)`, generation 1, one `DescribeFight`);
   `picking_the_other_corners_fighter_swaps` (after `SetHandicap` to 2.0 and 0.4: `PickFighter { side: 0, name:
-  "TROMBONE" }` gives fighters `["TROMBONE", "FLUTE"]` and handicap `[0.4, 2.0]`);
+  "TROMBONE" }` gives fighters `["TROMBONE", "FLUTE"]`, handicap `[0.4, 2.0]` and `bass == Some(0)`);
   `every_fight_input_starts_a_new_generation` (for `PickFighter` to OBOE, `SwapSides`, `SetBars(30)`, `SetHandicap`:
   the generation rises by exactly 1, `draft.seed` is `None`, the shortlist is empty and `Idle`, `balance.stats` is
   `None`); `music_settings_keep_the_generation` (`SetTheme`, `SetBass(1)`, `SetChordLoop(1)`);
@@ -820,7 +961,9 @@ Pure logic is unit-tested inside its own file (`#[cfg(test)] mod tests`, run wit
   `SwapSides` or a second `SelectSeed`: `vm` is equal to a clone taken before, and no effect comes back);
   `releasing_the_handicap_measures` (`released: false` sends nothing, `true` sends one `Measure`; 2.004 becomes
   2.0, 99.0 becomes 12.0); `opening_balance_balances_once`; `a_balanced_handicap_keeps_its_numbers`;
-  `opening_seeds_starts_one_search` (a second `Go` sends none); `choosing_a_seed_asks_for_its_take` then
+  `opening_seeds_starts_one_search` (a second `Go` sends none);
+  `a_new_fight_on_seeds_restarts_the_search` (on Seeds, a `Balanced` with another handicap returns one `StartSearch`
+  carrying the new generation; the same on Balance returns none); `choosing_a_seed_asks_for_its_take` then
   `the_picture_starts_at_fight` (`t_fight` 3.6 gives `start == 108`, `autoplay` true on Seeds and false on Music);
   `a_seed_with_no_winner_cannot_be_used`; `drafted_captions_arrive_until_edited`;
   `the_caption_line_is_shared` (setting the TikTok text to "New line\n#fyp" makes the Instagram text start with
@@ -850,7 +993,8 @@ Pure logic is unit-tested inside its own file (`#[cfg(test)] mod tests`, run wit
   pub fn move_aside(path: &Path, tag: &str) -> std::io::Result<PathBuf>;   // settings.toml, "corrupt" -> settings.corrupt-1.toml (first free number)
   pub struct Writer { /* one thread; of each kind only the newest value is written */ }
   impl Writer { pub fn start(paths: Paths) -> Writer; pub fn settings(&self, s: &Settings); pub fn queue(&self, q: &Queue);
-      pub fn flush(&self); }                          // waits until everything asked for is on disk
+      pub fn flush(&self);                            // waits until everything asked for is on disk
+      pub fn problems(&self) -> Vec<String>; }        // what could not be written since the last call, in words
   // store::settings
   pub const SETTINGS_FORMAT: u32 = 1;
   pub fn default_settings(cores: usize) -> Settings;  // <Videos>/BALLFIGHT (else <home>/Videos/BALLFIGHT); workers = max(1, cores - 1)
@@ -870,7 +1014,9 @@ Pure logic is unit-tested inside its own file (`#[cfg(test)] mod tests`, run wit
   Studio, so the app is using its defaults. The file was kept as settings.newer-1.toml.");
   `workers_stay_between_1_and_the_cores` (0 loads as 1, 999 as `cores`); `unknown_keys_are_ignored`;
   `write_atomic_leaves_no_tmp_file` and creates a missing folder; `the_writer_writes_the_newest` (ask for three
-  settings in a row, `flush()`: the file holds the third).
+  settings in a row, `flush()`: the file holds the third); `a_write_that_fails_is_reported_in_words` (the config
+  path is a plain file, so nothing can be written under it: after `flush()`, `problems()` holds one text that starts
+  "Your settings could not be saved to" and names the path; a second call returns nothing).
 - [ ] **Step 2:** Run `cargo test -p bf-app --lib store::`. Expected: FAIL.
 - [ ] **Step 3:** Implement.
 - [ ] **Step 4:** Run: PASS.
@@ -896,11 +1042,11 @@ Pure logic is unit-tested inside its own file (`#[cfg(test)] mod tests`, run wit
       pub fn requeue(&mut self, id: JobId) -> bool;             // failed or cancelled -> waiting, last in line, steps cleared
       pub fn rendering(&self) -> Option<JobId>;
       pub fn next_to_run(&self) -> Option<JobId>;               // the first waiting job; None while paused or rendering
-      pub fn start(&mut self, id: JobId);                       // Rendering { done: 0, total: 1830 }, the ten steps Todo
+      pub fn start(&mut self, id: JobId);                       // Rendering { done: 0, total: 1830 }, the ten steps Todo, `interrupted` cleared
       pub fn apply(&mut self, id: JobId, update: JobUpdate);
       pub fn counts(&self) -> (usize, usize);                   // rendering, waiting
       pub fn shown(&self) -> Vec<JobId>;                        // rendering, then waiting in order, then finished, newest first
-      pub fn after_restart(&mut self) -> usize;                 // rendering -> waiting and `interrupted`; pauses if anything waits; how many were interrupted
+      pub fn after_restart(&mut self) -> usize;                 // see below
       pub fn trim(&mut self); }                                 // keeps the 20 newest finished jobs
   pub const STEP_ORDER: [StepKey; 10];   // Soundtrack, SafeZone, Focus, Loudness, Band, Flashes, LoopPoint, Frames, Encode, Verify
   pub const QUEUE_FORMAT: u32 = 1;
@@ -909,19 +1055,27 @@ Pure logic is unit-tested inside its own file (`#[cfg(test)] mod tests`, run wit
   ```
   One job renders at a time (§9). `apply`: `Step` sets that line; `Frames` sets `Rendering { done, total }`; `Done`,
   `Failed` and `Cancelled` set the state (a failed step keeps its `Failed` line). A job saved while rendering is
-  written as waiting with `interrupted: true`. `save_queue` trims first.
+  written as waiting with `interrupted: true`. `save_queue` trims first. `after_restart` turns any job still marked
+  rendering into waiting with `interrupted`, pauses the queue if anything waits, and returns the number of waiting
+  jobs whose `interrupted` is set, whether this call set it or the file did. When the file's `app_version` is not
+  this app's and jobs wait in it, `load_queue` keeps them and returns the notice "The queue was saved by another
+  version of BALLFIGHT Studio. A queued video may come out as a different fight, so look at it before you render."
+  (fights are only promised to repeat within one version).
 - [ ] **Step 1: Write the failing tests** (unit). Model: `ids_count_up`; `one_job_at_a_time` (`next_to_run` is `None`
   while one renders and while paused); `the_running_job_cannot_be_removed`; `moving_reorders_waiting_jobs_only` (three
   waiting A, B, C: `move_to(C, 0)` gives C, A, B; moving a finished job returns false);
   `requeue_goes_last_with_clean_steps`; `updates_change_the_job` (each `JobUpdate`); Review Focus 4:
   `a_failed_job_lets_the_next_one_run` (after `Failed`, `next_to_run` is the next waiting job) and
   `after_a_restart_the_interrupted_job_waits` (a rendering job becomes waiting with `interrupted`, the queue is paused,
-  the count returned is 1; with nothing waiting it is not paused); `shown_order`; `trim_keeps_20_finished`. File:
-  `queue_round_trip`; `a_rendering_job_is_saved_as_waiting`; Review Focus 2: `a_newer_queue_is_left_alone` (`"format":
-  2`: an empty queue comes back with the notice "The render queue was saved by a newer version of BALLFIGHT Studio, so
-  it was left alone as queue.newer-1.json. Videos you add now go in a fresh queue.", and that file holds the original
-  bytes) and `a_corrupt_queue_is_moved_aside` (notice "The render queue could not be read, so it starts empty. The old
-  file was kept as queue.corrupt-1.json."); `a_missing_queue_is_empty_and_silent`.
+  the count returned is 1; with nothing waiting it is not paused; `start` clears the mark);
+  `a_saved_rendering_job_is_reported_after_loading` (save a queue with one rendering and one waiting job, load it,
+  `after_restart()` returns 1 and both wait); `shown_order`; `trim_keeps_20_finished`. File: `queue_round_trip`;
+  `a_rendering_job_is_saved_as_waiting`; Review Focus 2: `a_newer_queue_is_left_alone` (`"format": 2`: an empty queue
+  comes back with the notice "The render queue was saved by a newer version of BALLFIGHT Studio, so it was left alone as
+  queue.newer-1.json. Videos you add now go in a fresh queue.", and that file holds the original bytes) and
+  `a_corrupt_queue_is_moved_aside` (notice "The render queue could not be read, so it starts empty. The old file was
+  kept as queue.corrupt-1.json."); `a_missing_queue_is_empty_and_silent`; `a_queue_from_another_version_says_so` (the
+  notice above, word for word, and the jobs are kept).
 - [ ] **Step 2:** Run `cargo test -p bf-app --lib model::queue store::queue_file`. Expected: FAIL.
 - [ ] **Step 3:** Implement.
 - [ ] **Step 4:** Run: PASS.
@@ -936,12 +1090,19 @@ Pure logic is unit-tested inside its own file (`#[cfg(test)] mod tests`, run wit
 **Interfaces:**
 - Consumes: `AppState`, `Action`, `QueueAction`, `Effect` (Task 9); `Queue` methods (Task 11); `Command`, `Event`,
   `FolderState`, `wording::{folder_stem, versus, plural}`.
-- Produces: the behaviour of `AddToQueue`, every `QueueAction`, `ChangeFolder`, `CreateFolder`, `RefreshLibrary`,
+- Produces: `pub fn why_not_add(vm: &ViewModel) -> Option<String>` (in `state::queue_run`; Render shows it, Task
+  23), and the behaviour of `AddToQueue`, every `QueueAction`, `ChangeFolder`, `CreateFolder`, `RefreshLibrary`,
   `SelectVideo`, `Reopen`, `OpenVideoFolder`, `SetWorkers`, `Dismiss`, `Go(Library)`, and of the events `Enqueued`,
   `EnqueueFailed`, `Job`, `Library`, `LibraryCover`, `FightOpened`, `Tools`, `Folder`, `FolderPicked`, `Problem`.
 - **The rules.**
-  - `AddToQueue` returns `Send(Enqueue { draft, out_root })` only when a seed is chosen, its take has a winner, the
-    folder state is `Ok` and ffmpeg was found; otherwise it changes nothing (Render shows why, Task 23).
+  - `why_not_add` gives the first of these that holds, else `None`: a fight problem, its text; no seed, "Pick a
+    seed first."; a take problem, its text; the take's story not there yet, "Seed {n} is still being drawn."; folder
+    `Unknown`, "Checking the output folder."; `Missing`, "The output folder {path} is missing. Create it, or choose
+    another folder."; `NotWritable`, "The output folder {path} cannot be written to. Choose another folder."; ffmpeg
+    not answered yet, "Looking for ffmpeg."; ffmpeg not found, "ffmpeg was not found on this PC, so videos cannot be
+    saved yet. Install ffmpeg, then start the app again."
+  - `AddToQueue` returns `Send(Enqueue { draft, out_root })` exactly when `why_not_add(&vm)` is `None`; otherwise it
+    changes nothing. The button is never enabled without doing something, and never disabled without its reason.
   - `Enqueued` adds the job and returns `SaveQueue`; then, like every event that ends a job, it starts the next one:
     if `queue.next_to_run()` gives a job, `queue.start(id)` and `Send(RunJob)`. `EnqueueFailed` adds its text as a
     notice.
@@ -959,7 +1120,9 @@ Pure logic is unit-tested inside its own file (`#[cfg(test)] mod tests`, run wit
   - At start (`AppState::new`), `queue.after_restart()` runs; if it interrupted n > 0 jobs a notice is added: "1
     video was interrupted when the app closed. It is back in the queue. Resume the queue to render it." (`plural`
     for more); if jobs are only waiting: "{n} videos are waiting in the queue. Resume the queue to render them."
-  - Folder (Review Focus 1): `Folder { root, state }` for the current output folder sets `vm.folder`;
+  - Folder (Review Focus 1): `Folder { root, name, state }` sets `vm.folder` only when `root` is the current output
+    folder and `name` is the current `folder_stem` (or empty, as at start), so an answer about the pair before
+    cannot mark the new one taken;
     `ChangeFolder` returns `Send(PickFolder)`; `FolderPicked(Some(p))` sets `settings.output_folder`, returns
     `SaveSettings`, `Send(CheckFolder)` and `Send(ScanLibrary)`; `CreateFolder` returns `Send(CreateFolder)`; the
     draft's fighters or seed changing returns `Send(CheckFolder { name: folder_stem(..) })` again.
@@ -968,14 +1131,16 @@ Pure logic is unit-tested inside its own file (`#[cfg(test)] mod tests`, run wit
     `Send(OpenFight { path })` for that entry's fight file.
   - `SetWorkers(n)` (kept in 1 to `cores`) returns `SaveSettings` and `Send(SetWorkers)`. `Tools` sets `vm.ffmpeg`.
     `Problem { text }` adds a notice. `Dismiss(i)` removes notice i.
-- [ ] **Step 1: Write the failing tests** (unit, in `queue_run.rs`): `adding_needs_a_seed_a_folder_and_ffmpeg` (each
-  missing one alone sends nothing); `an_enqueued_job_starts_when_idle` (effects: `SaveQueue`, `RunJob`);
-  `a_second_job_waits`; `the_queue_goes_on_after_done_failed_and_cancelled` (three tests: the next `RunJob` is sent);
-  `the_status_counts_down` (`Frames { done: 610, total: 1830, seconds: 10.0 }` for a job titled "Tuba vs Bass drum"
-  gives "Rendering Tuba vs Bass drum, about 20 s left"); `pausing_lets_the_current_job_finish_and_holds_the_next`;
-  `resuming_starts_it`; `cancel_reaches_only_the_rendering_job`; `a_restart_explains_itself` (the two notices above,
-  word for word, and `queue.paused`); `a_missing_folder_blocks_adding_and_can_be_created` (`Folder { state: Missing }`
-  then `AddToQueue` sends nothing; `CreateFolder` sends the command); `a_picked_folder_is_saved_checked_and_scanned`;
+- [ ] **Step 1: Write the failing tests** (unit, in `queue_run.rs`): `why_not_add_has_nine_reasons_in_order` (each of
+  the nine texts above, word for word, each with every earlier cause absent; `None` when all is well);
+  `adding_sends_exactly_when_nothing_is_in_the_way`; `a_folder_answer_for_another_pair_is_ignored`;
+  `an_enqueued_job_starts_when_idle` (effects: `SaveQueue`, `RunJob`); `a_second_job_waits`;
+  `the_queue_goes_on_after_done_failed_and_cancelled` (three tests: the next `RunJob` is sent); `the_status_counts_down`
+  (`Frames { done: 610, total: 1830, seconds: 10.0 }` for a job titled "Tuba vs Bass drum" gives "Rendering Tuba vs Bass
+  drum, about 20 s left"); `pausing_lets_the_current_job_finish_and_holds_the_next`; `resuming_starts_it`;
+  `cancel_reaches_only_the_rendering_job`; `a_restart_explains_itself` (the two notices above, word for word, and
+  `queue.paused`); `a_missing_folder_blocks_adding_and_can_be_created` (`Folder { state: Missing }` then `AddToQueue`
+  sends nothing; `CreateFolder` sends the command); `a_picked_folder_is_saved_checked_and_scanned`;
   `reopening_loads_the_fight` (`FightOpened` raises the generation, shows Match-up, status "Opened Flute vs Trombone,
   seed 20418", sends `DescribeFight` and `LoadTake`); `open_in_music_lands_on_music`; `workers_are_saved_and_sent`;
   `a_problem_becomes_a_notice_and_can_be_dismissed`.
@@ -1078,7 +1243,7 @@ Pure logic is unit-tested inside its own file (`#[cfg(test)] mod tests`, run wit
 - Produces:
   ```rust
   pub const AHEAD: u32 = 12;   pub const KEEP: usize = 64;
-  pub fn pace(frame_ms: f32, threads: usize) -> (u32, u32);   // lead = ceil(frame_ms / 33.33) kept in 1..=12; stride = max(1, ceil(1.25 * frame_ms / (33.33 * threads)))
+  pub fn pace(frame_ms: f32, threads: usize) -> (u32, u32);   // (lead, stride), below
   pub fn wanted(playhead: u32, playing: bool, looping: bool, lead: u32, stride: u32) -> Vec<u32>;
   pub fn evict(cached: &[u32], playhead: u32, keep: usize) -> Vec<u32>;
   pub struct Scheduler { /* worker threads, a queue, the frame cache */ }
@@ -1091,6 +1256,9 @@ Pure logic is unit-tested inside its own file (`#[cfg(test)] mod tests`, run wit
       pub fn frame_ms(&self) -> f32;      // mean of the last 30 draw times; 33.0 before the first
       pub fn idle(&self) -> bool; }
   ```
+  `pace`: with `f = frame_ms * 30.0 / 1000.0` (frames of playback one draw takes), lead is `(f - 1e-3).ceil()` kept
+  in 1 to 12, and stride is `(1.25 * f / threads as f32 - 1e-3).ceil()`, at least 1; the small margin keeps a draw
+  time of exactly three frames from counting as four.
   `wanted` when paused is `[playhead]` (a scrub: drawn before anything else). When playing it is `playhead + lead`,
   then every `stride`-th frame after it up to `playhead + AHEAD`, wrapping past 1,829 to 0 when looping and stopping
   at 1,829 when not. Workers take the paused playhead first, else the earliest wanted frame that is neither kept nor
@@ -1104,7 +1272,8 @@ Pure logic is unit-tested inside its own file (`#[cfg(test)] mod tests`, run wit
   109, 111]`; `wanted(1_825, true, true, 1, 1) == [1826, 1827, 1828, 1829, 0, 1, 2, 3, 4, 5, 6, 7]`;
   `wanted(1_825, true, false, 1, 1) == [1826, 1827, 1828, 1829]`; `evict(&[1, 2, 3, 50, 51], 50, 3) == [1, 2]`.
   Threaded, with a test source whose `draw(f)` returns a frame whose every byte is `(f % 251) as u8` and counts its
-  calls, and a helper that waits (at most 5 s) for `idle()`: `it_draws_ahead_while_playing` (after `want(100, true,
+  calls, and a helper that waits (at most 5 s) for `idle()`, both in `#[cfg(test)] pub(crate) mod testing` of
+  `scheduler.rs` so Tasks 16 and 32 can use them: `it_draws_ahead_while_playing` (after `want(100, true,
   true)`: `get(f)` is some for 101 to 112 and none for 200); `a_scrub_draws_just_that_frame`;
   `scrubs_skip_to_the_newest` (the source sleeps 5 ms; 50 `want(f, false, true)` calls for f = 0 to 49 in a row,
   with 2 threads: `get(49)` is some and the source drew fewer than 20 frames); `frames_are_the_sources_own_bytes`;
@@ -1134,11 +1303,12 @@ Pure logic is unit-tested inside its own file (`#[cfg(test)] mod tests`, run wit
   pub trait AudioOut: Send {
       fn start(&mut self, audio: AudioTake, at: u64, looping: bool) -> Result<(), String>;
       fn stop(&mut self);
-      fn position(&self) -> Option<u64>;      // the source sample now sounding; None when stopped
+      fn position(&self) -> Option<u64>;      // the source sample now sounding; None when stopped or when the device was lost
       fn set_looping(&mut self, on: bool); }
   pub struct NoAudio(pub String);             // every start fails with its text
   pub struct CpalOut { /* the default output device, a stream, an atomic position */ }
   pub fn open_audio() -> Box<dyn AudioOut>;   // CpalOut, else NoAudio("No sound device was found, so the preview is silent.")
+  pub fn source_pos(start: u64, device_frames: u64, device_rate: u32) -> u64;   // start + device_frames * 48_000 / device_rate
   // preview::player
   pub type Now = Box<dyn Fn() -> std::time::Duration + Send>;
   pub struct PlayerStats { pub shown: u64, pub late: u64 }
@@ -1152,22 +1322,25 @@ Pure logic is unit-tested inside its own file (`#[cfg(test)] mod tests`, run wit
       pub fn wants_repaint(&self) -> bool; }      // playing, or waiting for a frame
   ```
 - **The rules.** `Still(frame)`: `tick` gives it once; the transport is not enabled. `Load`: the scheduler gets the
-  source, the position is `pos_of(start)`, the transport is enabled, sound is `Building`, and with `autoplay` it
-  plays at once on the wall clock (`now`). `Sound` for the loaded take: sound is `Ready`, and if playing the audio
-  starts from the current position; if `start` fails, sound is `NoDevice` and playback stays on the wall clock
-  (Review Focus 5). While the audio sounds, the position is `audio.position()`: **the sound is the clock** (§7);
-  otherwise it advances by wall time x 48,000. `PlayPause` toggles (from the very end with loop off it starts over).
-  `Step(n)` pauses and moves n frames. `ScrubTo(t)` stops the audio, sets the position to `t * 48_000` kept below
-  `NA`, and remembers whether it was playing; `ScrubEnd` resumes if it was. `SetLoop` (on at first) and
-  `SetSafeZone` set their flags. `tick` asks the scheduler for the current frame: kept and different from the one on
-  screen gives it (`shown += 1`); not kept yet counts `late` once per frame and gives `latest_at_or_before` if that
-  is newer than what is on screen. `CpalOut` asks the device for its default output configuration, plays `f32`
-  frames through `fill` with `step = 48_000 / device rate`, and counts the position in the callback.
+  source, the position is `pos_of(start)`, the transport is enabled, sound is `Building`, and with `autoplay` it plays
+  at once on the wall clock (`now`). `Sound` for the loaded take: sound is `Ready`, and if playing the audio starts from
+  the current position; if `start` fails, sound is `NoDevice` and playback stays on the wall clock (Review Focus 5).
+  While the audio sounds, the position is `audio.position()`: **the sound is the clock** (§7); otherwise it advances by
+  wall time x 48,000. `PlayPause` toggles (from the very end with loop off it starts over). `Step(n)` pauses and moves n
+  frames. `ScrubTo(t)` stops the audio, sets the position to `t * 48_000` kept below `NA`, and remembers whether it was
+  playing; `ScrubEnd` resumes if it was. `SetLoop` (on at first) and `SetSafeZone` set their flags. `tick` asks the
+  scheduler for the current frame: kept and different from the one on screen gives it (`shown += 1`); not kept yet
+  counts `late` once per frame and gives `latest_at_or_before` if that is newer than what is on screen. If
+  `audio.position()` gives `None` while the player believes the sound is running (the device was unplugged; cpal reports
+  it to the stream's error callback, and `CpalOut` then answers `None`), sound becomes `NoDevice` and playback goes on
+  from the same position on the wall clock. `CpalOut` asks the device for its default output configuration, plays `f32`
+  frames through `fill` with `step = 48_000 / device rate`, counts device frames in the callback and reports
+  `source_pos(..)`.
 - [ ] **Step 1: Write the failing tests** (unit). `fill`: `step_one_copies` (stereo out equals the source);
   `one_channel_gets_the_mean`; `six_channels_get_two_and_silence`; `half_step_interpolates` (source `[[0.0, 0.0], [1.0,
   1.0]]`, step 0.5: left samples 0.0, 0.5, 1.0); `looping_wraps_exactly` (a 4-sample source, 6 frames out: samples 0, 1,
   2, 3, 0, 1 and `false`); `the_end_is_silence` (not looping: 0, 1, 2, 3, then zeros, and `true`). Player, with a `Now`
-  the test moves by hand, the sample source of Task 15's tests and a `FakeOut` (records `start` and `stop` calls;
+  the test moves by hand, the test source of `scheduler::testing` and a `FakeOut` (records `start` and `stop` calls;
   `position()` is what the test sets): `a_still_is_shown_once_and_disables_the_transport`;
   `it_plays_silently_before_the_sound_arrives` (after `Load { start: 108, autoplay: true }` and 1 s of `now`,
   `view().frame == 138` and `FakeOut` saw no `start`); `the_sound_joins_at_the_playhead` (then `Sound`: `start` was
@@ -1175,8 +1348,12 @@ Pure logic is unit-tested inside its own file (`#[cfg(test)] mod tests`, run wit
   `view().frame == 300`); `no_sound_device_still_plays` (with `NoAudio`: after `Sound`, `view().sound ==
   SoundState::NoDevice` and the frame still advances with `now`); `step_pauses`;
   `scrub_stops_the_sound_and_resumes_after`; `the_loop_wraps` and `without_loop_it_stops_on_the_last_frame`;
-  `a_late_frame_counts_once`. And one test marked `#[ignore]` (it needs a sound device; run it by name on this PC):
-  `this_pc_plays_silence` (`open_audio()` starts one second of zeros and its position passes 24,000 within 2 s).
+  `a_late_frame_counts_once`; `a_lost_device_falls_back_to_the_wall_clock` (while sounding, `FakeOut`'s position becomes
+  `None`: `view().sound == SoundState::NoDevice`, `view().playing` stays true and the frame goes on advancing with
+  `now`). And unit: `source_pos(1_000, 44_100, 44_100) == 49_000`, `source_pos(0, 22_050, 44_100) == 24_000`,
+  `source_pos(7, 48_000, 48_000) == 48_007`. And one test marked `#[ignore]` (it needs a sound device; run it by name on
+  this PC): `this_pc_plays_silence` (`open_audio()` starts one second of zeros and its position passes 24,000 within 2
+  s).
 - [ ] **Step 2:** Run `cargo test -p bf-app --lib preview::audio preview::player`. Expected: FAIL.
 - [ ] **Step 3:** Implement. `cpal`: `cpal::default_host().default_output_device()`, `default_output_config()`,
   `build_output_stream(config.into(), move |out: &mut [f32], _| ..., |err| ..., None)`, `stream.play()`. The stream
@@ -1187,9 +1364,11 @@ Pure logic is unit-tested inside its own file (`#[cfg(test)] mod tests`, run wit
 ### Task 17: The shell: toolbar, bout bar, status bar, views, keys
 
 **Files:**
-- Create: `src/screens/shell.rs`, `src/screens/mod.rs` (the `show` of each screen as an empty function for now),
-  `tests/ui/shell.rs`, `tests/snapshots/shell_1440x900.png`
-- Modify: `src/app.rs`
+- Create: `src/screens/shell.rs`, `tests/ui/shell.rs`, `tests/snapshots/shell_1440x900.png`
+- Modify: `src/app.rs`; `src/screens/{matchup,balance,seeds,music,render,library,settings}.rs` (each gets `pub fn
+  show(ui: &mut egui::Ui, vm: &ViewModel, out: &mut Vec<Action>) {}`), `src/screens/stage.rs` and
+  `src/screens/timeline.rs` (the two functions of Task 18's Produces, with empty bodies). `shell.rs` calls all nine
+  now, so Tasks 18 to 24 each fill one function in one file and never touch the shell.
 
 **Interfaces:**
 - Consumes: `AppState`, `ViewModel`, `Action`, `Effect` (Tasks 9, 12); `EngineHandle`, `channel`; `Writer`;
@@ -1201,11 +1380,15 @@ Pure logic is unit-tested inside its own file (`#[cfg(test)] mod tests`, run wit
       pub settings: Settings, pub queue: Queue, pub notices: Vec<Notice>, pub cores: usize }
   pub struct ShellLayout { pub toolbar: egui::Rect, pub bout: egui::Rect, pub workspace: egui::Rect, pub stage: egui::Rect,
       pub timeline: egui::Rect, pub status: egui::Rect }
-  pub struct BfApp { pub state: AppState, pub layout: ShellLayout, pub log: Vec<Action>, /* engine, writer, player, texture */ }
+  pub struct BfApp { pub state: AppState, pub layout: ShellLayout, pub log: Vec<Action>,
+      pub slowest_update_ms: f32,                   // the longest one `logic` call or one action's dispatch has taken
+      /* engine, writer, player, texture */ }
   impl BfApp {
       pub fn new(cc: &eframe::CreationContext<'_>, boot: Boot) -> BfApp;
-      pub fn showing(cc: &eframe::CreationContext<'_>, vm: ViewModel) -> BfApp;   // screen tests: an engine that never answers, no sound, no writer
-      pub fn sent(&mut self) -> Vec<Command>; }     // in `showing` mode: the commands sent since the last call
+      pub fn showing(cc: &eframe::CreationContext<'_>, vm: ViewModel) -> BfApp;   // screen tests, see below
+      pub fn sent(&mut self) -> Vec<Command>;       // in `showing` mode: the commands sent since the last call
+      pub fn show_frame(&mut self, frame: Frame);   // loads a picture into the preview texture (the shell uses it; tests may)
+      pub fn shutdown(&mut self); }                 // sends Command::Shutdown and flushes the writer; `on_exit` calls it
   // screens: every screen has this shape; shell.rs calls the one for `vm.view`
   pub fn show(ui: &mut egui::Ui, vm: &ViewModel, out: &mut Vec<Action>);
   // screens::shell
@@ -1221,7 +1404,18 @@ Pure logic is unit-tested inside its own file (`#[cfg(test)] mod tests`, run wit
   changed, send `Command::PreviewBusy`. `ui`: the keys, then the panels (toolbar 40, bout bar 48, status bar 24 and
   timeline 112 from the bottom, stage 410 on the right, the notice strip if any, the workspace), each screen pushing
   actions; then `state.dispatch` each action in order, log it, and carry out its effects. Ask for a repaint while
-  `player.wants_repaint()`. On exit: `Command::Shutdown` and `writer.flush()`.
+  `player.wants_repaint()`. `writer.problems()` become notices. On exit: `shutdown()`.
+- **`showing` mode** is for screen tests: the view model is shown as given. Actions are still dispatched, so the
+  state changes as it would, but their effects are not carried out: commands are kept for `sent()` instead of being
+  sent; player effects are dropped; `logic` does not copy the player's view, so
+  `vm.transport` stays what the fixture set; the preview is a `GROUND` block of its size until `show_frame` gives it
+  a picture.
+- **Waking.** The engine's waker is `request_repaint()` on a clone of `cc.egui_ctx`, so an event from the engine
+  runs `logic` even while the window is minimised, and the next queued video starts with nobody watching. The
+  engine is therefore made inside the creation closure, where the context exists. egui_kittest 0.37.0's
+  `build_eframe` calls `logic` and then `ui` on every step (read in its source); the first test below proves it. If
+  it ever does not, take the events at the start of `ui` whenever `logic` has not run since the last paint, and say
+  so in the report.
 - **What the shell draws** is in the interface reference, section 4, with these additions: a fourth right-hand
   toolbar button "Settings"; "Queue" shows the count of rendering and waiting videos only when it is above 0 and
   goes to Render; "Update" is `buttons::disabled` with "Updates from inside the app arrive in a later version.";
@@ -1232,6 +1426,11 @@ Pure logic is unit-tested inside its own file (`#[cfg(test)] mod tests`, run wit
   In every screen test below and in Tasks 18 to 24, "the log" is `harness.state().log`: the actions pushed
   since the app was built.
 - [ ] **Step 1: Write the failing tests** (each takes `gpu()`; `app_harness(REF, |cc| BfApp::showing(cc, base::vm()))`):
+  `the_harness_runs_logic` (a `BfApp::new` on a hand-held `channel`: after `harness.run()` the app has sent
+  `Command::LoadRoster`, which only `logic` carrying out the start-up effects can do);
+  `showing_mode_keeps_the_fixtures_transport` (with `transport.frame = 942` in the view model, it is still 942 after
+  `harness.run()`); `shutdown_flushes` (after a `SaveSettings` effect and `shutdown()`, the settings file holds the
+  new value and `Command::Shutdown` arrived on the engine side);
   `the_frame_has_the_reference_measurements` (`harness.state().layout`: toolbar `[0, 0]` to `[1440, 40]`, bout `[0, 40]`
   to `[1440, 88]`, workspace `[0, 88]` to `[1030, 764]`, stage `[1030, 88]` to `[1440, 764]`, timeline `[0, 764]` to
   `[1440, 876]`, status `[0, 876]` to `[1440, 900]`); Review Focus 5: `the_frame_at_the_minimum_size` (at `MIN`:
@@ -1254,10 +1453,11 @@ Pure logic is unit-tested inside its own file (`#[cfg(test)] mod tests`, run wit
 ### Task 18: The stage column and the story timeline
 
 **Files:**
-- Create: `src/screens/stage.rs`, `src/screens/timeline.rs`, `tests/ui/timeline.rs`,
-  `tests/snapshots/timeline_empty.png`, `tests/snapshots/timeline_story.png`
-- Modify: `src/screens/shell.rs` (call the two), `src/fixtures/base.rs` (add `pub fn with_take() -> ViewModel`: the
-  base on Seeds, handicap `[2.0, 0.4]`, the first sample story chosen, transport enabled at frame 942, loop on)
+- Create: `tests/ui/timeline.rs`, `tests/snapshots/timeline_empty.png`, `tests/snapshots/timeline_story.png`
+- Modify: `src/screens/stage.rs` and `src/screens/timeline.rs` (fill the two functions Task 17 left empty),
+  `src/fixtures/base.rs` (add `pub fn with_take() -> ViewModel`: the base on Seeds, handicap `[2.0, 0.4]`, the first
+  sample story chosen, which is seed 18433, won by Trombone at 49.1 s; transport enabled at frame 942, loop on,
+  sound `Ready`)
 
 **Interfaces:**
 - Consumes: `ViewModel { take, transport, draft, view }`, `StoryView`, `ribbon::{paint, x_of, t_of}`,
@@ -1280,18 +1480,18 @@ Pure logic is unit-tested inside its own file (`#[cfg(test)] mod tests`, run wit
   `Transport(ScrubEnd)` on release. Keys, handled here and taken from the widgets, ignored while a text field has
   the keyboard and while the transport is not enabled: Space pushes `PlayPause`, the left and right arrows
   `Step(-1)` and `Step(1)`.
-- [ ] **Step 1: Write the failing tests.** With `base::vm()`: `the_empty_state_says_what_to_do` ("The fight's
-  story appears here once you pick a seed." is on screen; "Play", "Loop" and "Safe zone" are disabled; the time
-  reads "0:00.00 / 1:01.00"); `the_title_card_caption`; `space_does_nothing_without_a_take`. With
-  `base::with_take()`: `the_time_reads_the_frame` ("0:31.40 / 1:01.00"); `the_lanes_are_named` ("Flute", "Who
-  leads", "Trombone", and the five ability names are on screen; "Snake dance" starts within 2 of `x_of(30.62, 120.0,
-  1320.0) + 7`); `the_playhead_is_at_the_frame` (the pixel column at `x_of(31.4, 120.0, 1320.0)` holds white pixels
-  in all three lanes); `clicking_the_story_scrubs` (a click at x = 780 in the lanes logs
-  `Transport(ScrubTo(t))` with `(t - 30.5).abs() < 0.05`, then `ScrubEnd`); `space_plays_and_pauses` and
-  `arrows_step_a_frame` (the log holds `PlayPause`, `Step(-1)`, `Step(1)`); `loop_and_safe_zone_toggle`;
-  `the_preview_is_360x640_at_the_reference_size` and Review Focus 5 `it_fits_at_the_minimum_size` (310 x 552 at
-  `MIN`, inside the stage); `the_safe_zone_shades_the_outside` (with a plain white picture and the safe zone on,
-  the preview's pixel at internal (10, 10) is darker than `[200; 3]` and the one at (180, 300) is white);
+- [ ] **Step 1: Write the failing tests.** With `base::vm()`: `the_empty_state_says_what_to_do` ("The fight's story
+  appears here once you pick a seed." is on screen; "Play", "Loop" and "Safe zone" are disabled; the time reads "0:00.00
+  / 1:01.00"); `the_title_card_caption`; `space_does_nothing_without_a_take`. With `base::with_take()`:
+  `the_time_reads_the_frame` ("0:31.40 / 1:01.00"); `the_lanes_are_named` ("Flute", "Who leads", "Trombone", and the
+  five ability names are on screen; "Snake dance" starts within 2 of `x_of(30.62, 120.0, 1320.0) + 7`);
+  `the_playhead_is_at_the_frame` (the pixel column at `x_of(31.4, 120.0, 1320.0)` holds white pixels in all three
+  lanes); `clicking_the_story_scrubs` (a click at x = 780 in the lanes logs `Transport(ScrubTo(t))` with `(t -
+  30.5).abs() < 0.05`, then `ScrubEnd`); `space_plays_and_pauses` and `arrows_step_a_frame` (the log holds `PlayPause`,
+  `Step(-1)`, `Step(1)`); `loop_and_safe_zone_toggle`; `the_preview_is_360x640_at_the_reference_size` and Review Focus 5
+  `it_fits_at_the_minimum_size` (310 x 552 at `MIN`, inside the stage); `the_safe_zone_shades_the_outside` (after
+  `harness.state_mut().show_frame(..)` with a plain white 360 x 640 picture and with `transport.safe_zone` on, the
+  preview's pixel at internal (10, 10) is darker than `[200; 3]` and the one at (180, 300) is white);
   `nothing_is_unnamed`; `the_timeline_matches` (two snapshots).
 - [ ] **Step 2:** Run `cargo test -p bf-app --test ui timeline::`. Expected: FAIL.
 - [ ] **Step 3:** Implement.
@@ -1301,8 +1501,8 @@ Pure logic is unit-tested inside its own file (`#[cfg(test)] mod tests`, run wit
 ### Task 19: Screen: Match-up
 
 **Files:**
-- Create: `src/screens/matchup.rs`, `src/fixtures/matchup.rs`, `tests/ui/matchup.rs`,
-  `tests/snapshots/matchup_1440x900.png`
+- Create: `src/fixtures/matchup.rs`, `tests/ui/matchup.rs`, `tests/snapshots/matchup_1440x900.png`
+- Modify: `src/screens/matchup.rs` (fill `show`, which Task 17 left empty)
 
 **Interfaces:**
 - Consumes: `ViewModel { roster, draft, pair_rules, fight_problem }`, `RosterEntry`, `FighterCard`, `ThemeEntry`,
@@ -1339,8 +1539,8 @@ Pure logic is unit-tested inside its own file (`#[cfg(test)] mod tests`, run wit
 ### Task 20: Screen: Balance
 
 **Files:**
-- Create: `src/screens/balance.rs`, `src/fixtures/balance.rs`, `tests/ui/balance.rs`,
-  `tests/snapshots/balance_1440x900.png`
+- Create: `src/fixtures/balance.rs`, `tests/ui/balance.rs`, `tests/snapshots/balance_1440x900.png`
+- Modify: `src/screens/balance.rs` (fill `show`)
 
 **Interfaces:**
 - Consumes: `ViewModel { draft, balance }`, `BalanceStats` (`win_share`, `ko_median`, `ko_p10`, `ko_p90`,
@@ -1380,7 +1580,8 @@ Pure logic is unit-tested inside its own file (`#[cfg(test)] mod tests`, run wit
 ### Task 21: Screen: Seeds
 
 **Files:**
-- Create: `src/screens/seeds.rs`, `src/fixtures/seeds.rs`, `tests/ui/seeds.rs`, `tests/snapshots/seeds_1440x900.png`
+- Create: `src/fixtures/seeds.rs`, `tests/ui/seeds.rs`, `tests/snapshots/seeds_1440x900.png`
+- Modify: `src/screens/seeds.rs` (fill `show`)
 
 **Interfaces:**
 - Consumes: `ViewModel { filters, shortlist, take, draft, roster }`, `Shortlist { rows, fits_total, checked, state,
@@ -1391,26 +1592,27 @@ Pure logic is unit-tested inside its own file (`#[cfg(test)] mod tests`, run wit
   bool }`; `pub fn seed_columns(row_width: f32) -> SeedColumns`; `pub fn parse_seed(text: &str) -> Option<u64>`;
   `fixtures::seeds::vm()` (`with_take()`, the 14 sample stories, `fits_total: 212`, `checked: 18_240`, `Searching`,
   7 workers) and `fixtures::seeds::empty(state: SearchState)`.
-- **Beyond the mock-up.** `seed_columns`: the fixed parts take 348; with what is left `r`, the winner column is 150
-  and shows "{n} HP left" when `r >= 350`, else 96 without it; the ribbon is `r - winner`, kept in 120 to 400. The
-  rows scroll. A row's accessible name is "Seed {n}, {Winner} wins at {t} s"; clicking it pushes `SelectSeed`. A
-  row outside the beat sheet (shown only with the switch on) has "–" as its rank and, in place of the score, its
-  first miss in `muted` ("K.O. at 47.2 s"). Each filter control pushes `SetFilters` with the whole new spec; the
-  ability dropdown lists "Any ability" and the six ability names of the two fighters' cards and stores the roster
-  name. The footer by state: `Searching` "{fits} fights fit the beat sheet, from {checked} checked. Still
-  searching." with "Stop search"; `Stopped` "... Search stopped." with "Keep searching" (`SearchOn`); `Full` "200 fights
-  fit the beat sheet, from {checked} checked. The shortlist is full."; counts through `thousands`. With no rows:
-  "No fights fit the beat sheet yet. The search is still running." while searching, else "No fights fit the beat
-  sheet in {checked} checked. Keep searching, or use the switch on the left to show fights outside the beat
-  sheet." "Use seed {n}" is
-  `disabled` with "Pick a fight first" when no seed is chosen and with the take's problem when it has one. The watch
-  box: `parse_seed` accepts whole numbers up to 9,223,372,036,854,775,807; "Watch" pushes `SelectSeed` and is
-  `disabled` with "Type a whole number" otherwise.
+- **Beyond the mock-up.** `seed_columns`: the fixed parts take 348; with what is left `r`, the winner column is 150 and
+  shows "{n} HP left" when `r >= 350`, else 96 without it; the ribbon is `r - winner`, kept in 120 to 400. The rows
+  scroll. A row's accessible name is "Seed {n}, {Winner} wins at {t} s"; clicking it pushes `SelectSeed`. A row outside
+  the beat sheet (shown only with the switch on) has "–" as its rank and, in place of the score, its first miss in
+  `muted` ("K.O. at 47.20 s (needs 49 to 53 s)"). Each filter control pushes `SetFilters` with the whole new spec; the
+  ability dropdown lists "Any ability" and the six ability names of the two fighters' cards and stores the chosen one's
+  `key` (the roster's own name, which is what the engine's filter compares). The footer by state (`Idle` lasts only
+  until the search is asked for and reads as `Searching`): `Searching` "{fits} fights fit the beat sheet, from {checked}
+  checked. Still searching." with "Stop search"; `Stopped` "... Search stopped." with "Keep searching" (`SearchOn`);
+  `Full` "200 fights fit the beat sheet, from {checked} checked. The shortlist is full."; counts through `thousands`.
+  With no rows: "No fights fit the beat sheet yet. The search is still running." while searching, else "No fights fit
+  the beat sheet in {checked} checked. Keep searching, or use the switch on the left to show fights outside the beat
+  sheet." "Use seed {n}" is `disabled` with "Pick a fight first" when no seed is chosen and with the take's problem when
+  it has one. The watch box: `parse_seed` accepts whole numbers up to 9,223,372,036,854,775,807; "Watch" pushes
+  `SelectSeed` and is `disabled` with "Type a whole number" otherwise.
 - [ ] **Step 1: Write the failing tests:** `every_word_of_the_mock_up` (the texts of 5.3; the footer reads "212 fights
   fit the beat sheet, from 18,240 checked. Still searching."); `seed_columns(792.0)` is ribbon 294, winner 150, HP
   shown; `seed_columns(632.0)` is ribbon 188, winner 96, no HP; `seed_columns(1200.0).ribbon == 400.0`;
   `parse_seed("20418") == Some(20418)`, and `None` for "", "abc", "-3", "1.5", "99999999999999999999";
-  `the_filters_column_is_230_wide`; `fourteen_rows_ranked` (rank 1 is the chosen row and has the selected look);
+  `the_filters_column_is_230_wide`; `fourteen_rows_ranked` (rank 1 is seed 18433, the chosen row: it has the selected
+  look, its accessible name is "Seed 18433, Trombone wins at 49.1 s", and the footer's button reads "Use seed 18433");
   `clicking_a_row_selects_its_seed`; `each_filter_pushes_the_whole_spec` (clicking "Trombone" under Winner logs
   `SetFilters` with `winner: Some(1)` and the other fields unchanged; "Close" gives `finish: Finish::Close`; the switch
   gives `show_outside: true`); `the_footer_by_state` (three states); `empty_states_say_what_to_do` (both texts);
@@ -1425,7 +1627,8 @@ Pure logic is unit-tested inside its own file (`#[cfg(test)] mod tests`, run wit
 ### Task 22: Screen: Music
 
 **Files:**
-- Create: `src/screens/music.rs`, `src/fixtures/music.rs`, `tests/ui/music.rs`, `tests/snapshots/music_1440x900.png`
+- Create: `src/fixtures/music.rs`, `tests/ui/music.rs`, `tests/snapshots/music_1440x900.png`
+- Modify: `src/screens/music.rs` (fill `show`)
 
 **Interfaces:**
 - Consumes: `ViewModel { draft, roster, take }`, `MusicView { checks, lanes, markers }`, `Lane`, `LaneGroup`,
@@ -1469,48 +1672,49 @@ Pure logic is unit-tested inside its own file (`#[cfg(test)] mod tests`, run wit
 ### Task 23: Screen: Render
 
 **Files:**
-- Create: `src/screens/render.rs`, `src/fixtures/render.rs`, `tests/ui/render.rs`,
-  `tests/snapshots/render_1440x900.png`
+- Create: `src/fixtures/render.rs`, `tests/ui/render.rs`, `tests/snapshots/render_1440x900.png`
+- Modify: `src/screens/render.rs` (fill `show`)
 
 **Interfaces:**
 - Consumes: `ViewModel { draft, caption_tab, folder, ffmpeg, settings, take, queue, selected_job }`, `Queue::{shown,
   counts, job, rendering}`, `Job`, `JobState`, `StepLine`, `StepKey`, `StepState`, `FailHint`, `STEP_ORDER`,
-  `chips::{fighter_bar, object_row}`, `buttons`, `fields`, `icons`, `wording`, `Action::{SetCaptionTab, SetCaption,
-  ChangeFolder, CreateFolder, AddToQueue, Queue}`. Layout and wording: interface reference, 5.5.
-- Produces: `pub fn show(ui, vm, out)`; `pub fn step_title(key: StepKey) -> &'static str` and `pub fn
-  step_note(key: StepKey) -> &'static str` (the table of 5.5; no note is `""`); `pub fn why_not_add(vm: &ViewModel)
-  -> Option<String>`; `fixtures::render::vm()` (`with_take()` on Render, `sample::captions()`, folder `Ok { taken:
-  false }`, ffmpeg found, and the mock-up's four jobs: TUBA vs BASS DRUM rendering at frame 1,171 with its first
-  seven steps done, ALTO SAX vs TENOR SAX waiting, OBOE vs BASSOON failed at Loudness with the mock-up's two texts
-  and `FailHint::OpenInMusic`, CELLO vs CONTRABASS done in 48 s).
+  `chips::{fighter_bar, object_row}`, `buttons`, `fields`, `icons`, `wording`, `state::queue_run::why_not_add` (Task
+  12), `Action::{SetCaptionTab, SetCaption, ChangeFolder, CreateFolder, AddToQueue, Queue}`. Layout and wording:
+  interface reference, 5.5; the four sample jobs: section 11.
+- Produces: `pub fn show(ui, vm, out)`; `pub fn step_title(key: StepKey) -> &'static str` and `pub fn step_note(key:
+  StepKey) -> &'static str` (the table of 5.5; no note is `""`); `fixtures::render::vm()` (`with_take()` on Render,
+  `sample::captions()`, folder `Ok { taken: false }`, ffmpeg found, and the mock-up's four jobs: TUBA vs BASS DRUM
+  rendering at frame 1,171 with its first seven steps done, ALTO SAX vs TENOR SAX waiting, OBOE vs BASSOON failed at
+  Loudness with the headline "Stopped at the loudness check", the detail "The opening is 2.1 dB quieter than the ending,
+  and the limit is 1.5 dB. Nothing was saved. Open it in Music to see the levels, or try another seed, then queue it
+  again." and `FailHint::OpenInMusic`, CELLO vs CONTRABASS done in 48 s).
 - **Beyond the mock-up.** The text box shows the caption of `caption_tab` and pushes `SetCaption` on every edit; its
-  label reads "Text and tags for {Instagram | TikTok | Shorts}". "Saves to" shows `<output folder>\<folder_stem>\`;
-  with `Ok { taken: true }` a `small` `muted` line adds "That folder exists, so this one will be named
-  {stem}_seed{n}." `why_not_add`, in this order: no seed, "Pick a seed first."; a take problem, that text; folder
-  `Missing`, "The output folder {path} is missing. Create it, or choose another folder." (with a box button "Create
-  folder"); `NotWritable`, "The output folder {path} cannot be written to. Choose another folder."; ffmpeg not
-  found, "ffmpeg was not found on this PC, so videos cannot be saved yet. Install ffmpeg, then start the app
-  again."; the text stands in `TEXT_STRONG` beside the button, which is then `disabled`. The queue's header:
-  "{r} rendering, {w} waiting", "Paused. {w} waiting" or "Nothing is queued. Add this fight to render it."; the
-  button is "Pause queue" or "Resume queue"; with two or more waiting, `small` `muted` "Drag a waiting video to
-  change the order". Rows follow `queue.shown()` and scroll. A row by state: rendering, the progress bar and
-  "{step_title of the step in progress} {percent of frames}" in mono (the percent only for Frames), "Cancel";
-  waiting, "Waiting" (or "Waiting. It was interrupted when the app closed."), "Remove", and it can be dragged onto
-  another waiting row (`Move`) or moved from its right-click menu ("Move up", "Move down", "Render next"); failed,
-  the headline in `TEXT_STRONG`, the detail in `muted`, then "Queue again", the hint's button ("Open in Seeds",
-  "Open in Music" or "Change folder"; none for the others) and "Remove"; cancelled, "Cancelled. Nothing was saved.",
-  "Queue again", "Remove"; done, "Done in {s} s. All checks passed.", "Open folder". Clicking a row selects it. The
-  check list shows the selected job, else the rendering one, else "Nothing is rendering. A video's checks show
-  here while it renders."; each line's note is the job's own when it has one, else `step_note`; Frames reads
-  "{done} of {total}" (`thousands`).
+  label reads "Text and tags for {Instagram | TikTok | Shorts}". "Saves to" shows `<output folder>\<folder_stem>\`; with
+  `Ok { taken: true }` a `small` `muted` line adds "That folder exists, so this one will be named {stem}_seed{n}." When
+  `why_not_add(vm)` gives a reason, it stands in `TEXT_STRONG` beside "Add to queue", which is then `disabled` with it;
+  when it gives none the button is `primary` and pushes `AddToQueue`. With the folder `Missing`, a box button "Create
+  folder" (`CreateFolder`) stands there too. The queue's header: "{r} rendering, {w} waiting", "Paused. {w} waiting" or
+  "Nothing is queued. Add this fight to render it."; the button is "Pause queue" or "Resume queue"; with two or more
+  waiting, `small` `muted` "Drag a waiting video to change the order". Rows follow `queue.shown()` and scroll. A row by
+  state: rendering, the progress bar and "{step_title of the step in progress} {percent of frames}" in mono (the percent
+  only for Frames), "Cancel"; waiting, "Waiting" (or "Waiting. It was interrupted when the app closed."), "Remove", and
+  it can be dragged onto another waiting row (`Move`) or moved from its right-click menu ("Move up", "Move down",
+  "Render next"); the row's own response senses clicks and drags (`Sense::click_and_drag()`) and the drag starts from
+  it, so a click still selects the row; failed, the headline in `TEXT_STRONG`, the detail in `muted`, then "Queue
+  again", the hint's button ("Open in Seeds", "Open in Music" or "Change folder"; none for the others) and "Remove";
+  cancelled, "Cancelled. Nothing was saved.", "Queue again", "Remove"; done, "Done in {s} s. All checks passed.", "Open
+  folder". Clicking a row selects it. The check list shows the selected job, else the rendering one, else "Nothing is
+  rendering. A video's checks show here while it renders."; each line's note is the job's own when it has one, else
+  `step_note`; Frames reads "{done} of {total}" (`thousands`).
 - [ ] **Step 1: Write the failing tests:** `every_word_of_the_mock_up` (the texts of 5.5 as the fixture gives them,
   among them "Drawing frames 64%", "1,171 of 1,830", "Stopped at the loudness check", "Done in 48 s. All checks
   passed.", "1 rendering, 1 waiting"); `the_check_list_is_330_wide_with_ten_lines`; `the_caption_tabs_switch_the_text`
   (`SetCaptionTab(Platform::TikTok)`; the label follows `caption_tab`); `typing_edits_the_caption` (type "!" at the end:
   the log ends with `SetCaption { platform: Instagram, text }` whose text ends with "!");
   `keys_do_not_fire_while_typing` (with the box focused, pressing 3 and Space logs no `Go` and no `Transport`);
-  `why_not_add` for each of the five cases, in that order; `add_to_queue_pushes` and
-  `add_to_queue_waits_with_the_reason`; Review Focus 1 `a_missing_folder_offers_to_create_it`;
+  `add_to_queue_pushes`; `add_to_queue_waits_with_the_reason` (for three of `why_not_add`'s cases, no seed,
+  "Checking the output folder." and ffmpeg not found: the text is on screen, the button is disabled and a click logs
+  nothing); Review Focus 1 `a_missing_folder_offers_to_create_it`;
   `each_job_state_has_its_words_and_buttons` (the four fixture rows, plus a cancelled one and an interrupted one);
   `the_failed_job_names_the_check_and_the_numbers` (Review Focus 4: the fixture's two texts are on screen, "Open in
   Music" logs `Queue(OpenIn { step: Step::Music, .. })`, "Queue again" logs `Requeue`); `pause_and_resume`;
@@ -1525,16 +1729,17 @@ Pure logic is unit-tested inside its own file (`#[cfg(test)] mod tests`, run wit
 ### Task 24: Views: Library and Settings
 
 **Files:**
-- Create: `src/screens/library.rs`, `src/screens/settings.rs`, `src/fixtures/library.rs`,
-  `src/fixtures/settings.rs`, `tests/ui/library.rs`, `tests/ui/settings.rs`,
+- Create: `src/fixtures/library.rs`, `src/fixtures/settings.rs`, `tests/ui/library.rs`, `tests/ui/settings.rs`,
   `tests/snapshots/library_1440x900.png`, `tests/snapshots/settings_1440x900.png`
+- Modify: `src/screens/library.rs`, `src/screens/settings.rs` (fill each `show`)
 
 **Interfaces:**
 - Consumes: `ViewModel { library, settings, cores, ffmpeg, folder, roster }`, `LibraryView`, `LibraryEntry`,
   `store::library::local_date`, `chips::{object_row, picture}`, `buttons`, `slider`, `fields`,
   `Action::{SelectVideo, Reopen, OpenVideoFolder, RefreshLibrary, ChangeFolder, SetWorkers}`.
-- Produces: `library::show`, `settings::show`; `fixtures::library::vm()` (six entries with drawn covers, the second
-  selected, one with the problem "Made by a newer version of the app."), `fixtures::library::empty()`,
+- Produces: `library::show`, `settings::show`; `fixtures::library::vm()` (the six entries and covers of
+  `sample::library()`, whose times are 12:00 UTC so the dates read the same in every time zone; the second selected; the
+  fourth with the problem "Made by a newer version of the app."), `fixtures::library::empty()`,
   `fixtures::library::missing()`; `fixtures::settings::vm()` (8 cores, 7 workers, ffmpeg "ffmpeg 9.0.2").
 - **Library** (§4): a header 40 tall, "Library" (`section`), `small` `muted` "{n} videos in {folder}" (`plural`),
   a spacer, box button "Look again" (`RefreshLibrary`). Then a scrolling grid of tiles 16 apart, padded 16: each
@@ -1562,61 +1767,46 @@ Pure logic is unit-tested inside its own file (`#[cfg(test)] mod tests`, run wit
 - [ ] **Step 4:** Bless both pictures; run: PASS.
 - [ ] **Step 5:** Commit `bf-app: Library and Settings views`.
 
-### Task 25: The sample engine, `--fixtures`, whole flows and the final pictures
+### Task 25: `--fixtures`, whole flows, the wording test and the small-window pictures
 
 **Files:**
-- Create: `src/seam/fake.rs`, `tests/ui/flows.rs`, `tests/ui/wording.rs`, `tests/ui/small_window.rs`,
-  `tests/snapshots/*_1280x800.png` (seven: matchup, balance, seeds, music, render, library, settings)
+- Create: `tests/ui/flows.rs`, `tests/ui/wording.rs`, `tests/ui/small_window.rs`, `tests/snapshots/*_1280x800.png`
+  (seven: matchup, balance, seeds, music, render, library, settings)
 - Modify: `src/main.rs`, `README.md`
 
 **Interfaces:**
-- Consumes: everything above.
-- Produces:
-  ```rust
-  pub enum Pace { Instant, Live }
-  pub fn spawn(waker: Waker, pace: Pace) -> EngineHandle;   // seam::fake: answers every Command from seam::sample
-  ```
-  The sample engine, per command: `LoadRoster`, the sample roster. `DescribeFight`, the pair rule "A live lance knocks a
-  risen cobra flat." when FLUTE meets TROMBONE (none otherwise), `sample::captions()`, the sample title card.
-  `AutoBalance`, 29 `BalanceProgress` then `Balanced { handicap: [2.0, 0.4], stats: sample::stats() }`. `Measure`,
-  `Measured` with the sample numbers and `win_share` moved by `0.1 * (handicap[0] / handicap[1]).ln()` from 0.47, kept
-  in 0.05 to 0.95. `StartSearch`, fourteen `Shortlist` events, each one story longer, `checked` rising by 1,303 each
-  time, the last one `Stopped`. `SetFilters`, the list again, filtered here (winner, K.O. bounds, lead changes, `Close`
-  = winner at 12 HP or less; `Comeback` keeps none). `LoadTake`, `TakePicture` with `sample::story(seed)` and
-  `sample::frames`, then `TakeSound` with `sample::audio()` and `sample::music()`; a seed ending in 13 gives `TakeFailed
-  { problem: "Seed {n} has no K.O. before 58 s, so it cannot be made into a video. Pick another seed." }`. `Enqueue`,
-  `Enqueued` with a `JobSpec` built from the draft. `RunJob`, the ten steps in order with `Frames` every 61 frames
-  (`seconds` rising by 0.2 each time), then `Done`; a job whose seed ends in 2 fails at Loudness with the Render
-  mock-up's two texts and `FailHint::OpenInMusic`. `CancelJob`, `Cancelled`. `ScanLibrary`, six sample entries and their
-  covers. `OpenFight` and `OpenFightText`, `FightOpened` with the base draft and seed 20418. `CheckTools`, `Ok("ffmpeg
-  (sample)")`. `CheckFolder`, `Ok { taken: false }`. `CreateFolder`, the same. `PickFolder`, `FolderPicked(None)`. The
-  rest, nothing. With `Pace::Instant` every answer is sent at once; with `Pace::Live` progress events are 40 ms apart
-  and a job takes 6 s. A command that carries a generation is answered with it. `main.rs`: `--fixtures` runs the app on
-  `fake::spawn(.., Pace::Live)` with real sound out (`open_audio()`), storage under a temp folder, and the status bar's
-  right side reading "Sample data, not a real fight"; without the flag the app says in a window "The engine is not
-  connected in this build. Start it with --fixtures to see the interface." (Task 35 replaces this). `--data-dir
-  <folder>` puts settings, queue and cache there.
-- [ ] **Step 1: Write the failing tests.** `flows.rs` (`BfApp::new` on `fake::spawn(.., Pace::Instant)`, storage under a
-  temp folder, `NoAudio`; drive by clicks only): `a_whole_video_in_clicks` ("Balance this match-up"; the numbers appear
-  and the handicap reads "×2.00"; "Search seeds"; fourteen rows; click row 1; "Use seed {n}"; "Go to render"; "Add to
-  queue"; the row reads "Done in"; "Queue" shows no count); `the_bad_job_stops_and_the_next_one_runs` (queue seed 902,
-  then another: the first reads "Stopped at the loudness check", the second "Done in"; Review Focus 4);
-  `a_late_shortlist_is_not_shown` (Review Focus 3, on a `seam::channel` the test answers by hand: go to Seeds, note the
-  generation of the `StartSearch` that arrives, press "Swap sides" on Match-up, then emit a `Shortlist` with the noted
-  generation: back on Seeds no row of it is shown); `a_seed_with_no_ko_says_so` (watch seed 13: the stage reads the
-  problem and "Use seed" is disabled); `the_queue_survives_a_restart` (on a hand-answered channel that sends `Enqueued`
-  twice and never answers `RunJob`: drop the app after `writer.flush()`, load settings and queue from the same folder
-  into a second app: one video waits, the interrupted one waits too, the notice about the interrupted video shows, and
-  "Resume queue" sends `RunJob`); `reopening_from_the_library`. `wording.rs`: `sentence_case_everywhere` (for each of
-  the fixture view models of Tasks 17 to 24, every accessible label and every text on screen passes this rule: after its
-  first word, a word may start with a capital letter only if it follows ". " or ": ", or holds a digit, a backslash or
-  an underscore, or is a note or chord name (`[A-G]` then an optional `#` or `b`, an optional `m`, `7`, `m7` or `maj7`,
-  an optional octave digit), or is one of: BALLFIGHT, Studio, K.O., HP, PC, Instagram, TikTok, Shorts, LV2, LV3, LOW,
-  the step and view names Match-up, Balance, Seeds, Music, Render, Library, Settings and Queue, a three-letter month, or
-  a word of a fighter's or theme's name as shown); `no_retired_fighter_anywhere` (no label holds the word GUITAR, and
-  none is exactly "Sax" or "SAX"); `no_button_is_vague` (no button is labelled "OK", "Yes", "No", "Submit" or "Apply").
-  `small_window.rs` (Review Focus 5): for each of the seven fixtures at `MIN`, `harness.unnamed_widgets()` is empty, no
-  control's rect lies outside the window, and `harness.snapshot("<screen>_1280x800")`.
+- Consumes: everything above; `seam::fake::{spawn, Pace}` (Task 8c); `BfApp::{new, shutdown}` and
+  `slowest_update_ms` (Task 17); the fixtures of Tasks 17 to 24.
+- Produces: `main.rs`: `--fixtures` runs the app on `fake::spawn(.., Pace::Live)` with real sound out
+  (`open_audio()`), storage under a temp folder, and the status bar's right side reading "Sample data, not a real
+  fight"; without the flag the app says in its window "The engine is not connected in this build. Start it with
+  --fixtures to see the interface." (Task 35 replaces this). `--data-dir <folder>` puts settings, queue and cache
+  there. The engine is made inside the creation closure, where the context for its waker exists.
+- [ ] **Step 1: Write the failing tests.** `flows.rs` (`BfApp::new` on `fake::spawn(.., Pace::Instant)`, storage
+  under a temp folder, `NoAudio`; driven by clicks only): `a_whole_video_in_clicks` ("Balance this match-up"; the
+  numbers appear and the handicap reads "×2.00"; "Search seeds"; fourteen rows; click row 1; "Use seed 18433"; "Go to
+  render"; "Add to queue"; the row reads "Done in"; "Queue" shows no count; and `slowest_update_ms < 20.0`, the
+  test's bound for the 4 ms budget); `the_bad_job_stops_and_the_next_one_runs` (queue seed 902, then seed 18433: the
+  first reads "Stopped at the loudness check", the second "Done in"; Review Focus 4); `a_late_shortlist_is_not_shown`
+  (Review Focus 3, on a `seam::channel` the test answers by hand: go to Seeds, note the generation of the
+  `StartSearch` that arrives, press "Swap sides" on Match-up, then emit a `Shortlist` with the noted generation:
+  back on Seeds no row of it is shown); `a_seed_with_no_ko_says_so` (watch seed 13: the stage reads the problem and
+  "Use seed" is disabled); `the_queue_survives_a_restart` (on a hand-answered channel that sends `Enqueued` twice and
+  never answers `RunJob`: call `harness.state_mut().shutdown()`, drop the app, load settings and queue from the same
+  folder into a second app: both videos wait, the notice "1 video was interrupted when the app closed. It is back in
+  the queue. Resume the queue to render it." shows, and "Resume queue" sends `RunJob`);
+  `reopening_from_the_library`. `wording.rs`: `sentence_case_everywhere` (for each of the fixture view models of
+  Tasks 17 to 24, every accessible label and every text on screen, except what is typed in the caption text box
+  (the series' own text), passes this rule: after its first word, a word may start with a capital letter only if it
+  follows ". " or ": ", or holds a digit, a backslash or an underscore, or is a note or chord name (`[A-G]` then an
+  optional `#` or `b`, an optional `m`, `7`, `m7` or `maj7`, an optional octave digit), or is one of: BALLFIGHT,
+  Studio, K.O., HP, PC, Instagram, TikTok, Shorts, LV2, LV3, LOW, the step and view names Match-up, Balance, Seeds,
+  Music, Render, Library, Settings and Queue, a three-letter month, or a word of a fighter's or theme's name as
+  shown); `no_retired_fighter_anywhere` (no label holds the word GUITAR, and none is exactly "Sax" or "SAX");
+  `no_button_is_vague` (no button is labelled "OK", "Yes", "No", "Submit" or "Apply"). `small_window.rs` (Review
+  Focus 5): for each of the seven fixtures at `MIN`, `harness.unnamed_widgets()` is empty, no control outside a
+  scroll area lies outside the window, every `primary` button lies inside the window, and
+  `harness.snapshot("<screen>_1280x800")`.
 - [ ] **Step 2:** Run `cargo test -p bf-app --test ui flows:: wording:: small_window::`. Expected: FAIL.
 - [ ] **Step 3:** Implement. Write in `README.md`: how to run `--fixtures`; **how to bless pictures**
   (`UPDATE_SNAPSHOTS=true cargo test -p bf-app --test ui <module>::` rewrites only the pictures that differ; a
@@ -1626,26 +1816,53 @@ Pure logic is unit-tested inside its own file (`#[cfg(test)] mod tests`, run wit
 - [ ] **Step 4:** Run the whole crate ten times in a row (`cargo test -p bf-app`): PASS each time. Run
   `ballfight-studio.exe --fixtures --smoke`. `cargo clippy -p bf-app --all-targets -- -D warnings` and `cargo fmt
   --check` clean.
-- [ ] **Step 5:** Commit `bf-app: sample engine, whole flows, final pictures`. Block A is done: the whole interface
+- [ ] **Step 5:** Commit `bf-app: fixtures mode, whole flows, final pictures`. Block A is done: the whole interface
   runs on sample data.
 
 ---
 
 # Block B: the real engine behind the seam
 
-Block B starts when milestone 1's Task 30 is merged. The signatures under "Consumes" are copied from the M1 plan and,
-where the code was already merged or on a lane when this plan was written, from the code: `bf_core::fightfile` (the
-folder `bf-core/src/fightfile/`), `bf_core::show` (`Show`, `Cap`, `captions`, `Show::solo_times`), the registry in
-`bf-content`, `bf_sim::{run, setup_from, Rules, Setup, SimError}`, and `bf_story::{story, score, Story, Verdict,
-BeatSheet}` with `BeatSheet::series(fighters: [&FighterCfg; 2]) -> BeatSheet`. The dev crate `bf-testdata`
-(`reference(rel)`, `read_png`, `write_png_rgb`) is there for any test that needs a reference file; add it under
-`[dev-dependencies]` when used. **Step 1 of every task begins the same way: open the named files, confirm each signature
-against the code as merged, and where one differs, adapt this task's code to the merged one (never the other way round)
-and say so in the report.** `bf-cli` is the worked example of calling the engine: where this plan and
-`studio/crates/bf-cli/src/cmd/*.rs` disagree about how a function is called, do what `bf-cli` does. Engine tests live in
-`#[cfg(test)]` modules of `src/engine/*.rs`, are run with `cargo test -p bf-app --release --lib engine::`, and wait for
-events with one helper, `wait_for(handle, seconds, |event| ...) -> Event`, which polls every 10 ms and panics with the
-events it saw when the time runs out.
+Block B starts when milestone 1 is complete. The signatures under "Consumes" are copied from the M1 plan and, where
+the code exists today, from the code. **Step 1 of every task begins the same way: open the named files, confirm each
+signature against the code as merged, and where one differs, adapt this task's code to the merged one (never the
+other way round) and say so in the report.** `bf-cli` is the worked example of calling the engine: where this plan
+and `studio/crates/bf-cli/src/cmd/*.rs` disagree about how a function is called, do what `bf-cli` does.
+
+What is merged on the build branch as this plan is revised (commit `faa01c7`), with the signatures used here:
+
+- `bf_core::fightfile` (the folder `bf-core/src/fightfile/`): `FightFile` with the fields this plan names plus
+  `format`, `arena` and `dmg_scale`; `parse`, `to_toml`, `validate`, `grid`, `search_key` (which leaves out theme,
+  roles, solos, seed, captions and the series tag); `Captions { caption, instagram, tiktok, shorts }`.
+- `bf_core::show`: `Show` with the twelve fields Task 27 names, `HITSTOP` (0.35), `Show::new`, `Show::solo_times`,
+  `ShowError::{NoKo, Winner, Names, Event}`. `bf_core::grid`: `Grid { n_bars, t_fight, beat, t_reassemble, .. }`,
+  `next_bar`, `loop_bpm`.
+- `bf_sim`: `setup_from<'a>(ff: &FightFile, roster: &'a [FighterCfg], seed: u64) -> Result<Setup<'a>, SimError>`;
+  `run(setup: &Setup, record: bool) -> Recording`, which panics on rules that `setup_from` refuses, so every fight
+  here goes through `setup_from`; `Rules`.
+- `bf_story`: `Story` and `Verdict` field for field as Task 30 lists them, `story`, `score`, and
+  `BeatSheet::series(fighters: [&FighterCfg; 2]) -> BeatSheet`, the only way to make a beat sheet (it has no
+  default). A miss reads "no K.O.", "K.O. at 47.20 s (needs 49 to 53 s)", "1 lead change (needs 2)", "winner HP 46.60
+  (needs 30 or less)": lower-case first letters.
+- `bf_content`: `roster`, `available`, `PORTED`, `pair_rules`, `name_status`, `music_feeds_fight` (false for every
+  fighter today).
+- `bf-testdata` (a dev crate): `reference(rel)`, `read_png`, `write_png_rgb`; add it under `[dev-dependencies]` when
+  a test needs a reference file.
+
+Still to come from milestone 1 (their crates hold only stubs today): everything this plan uses of `bf-picture`
+(`font::text_mask`, `sprite`, `TitleCard`, `Picture`, and `SAFE` and `SAFE_BUTTONS`, which are tuples of four
+`i32`), of `bf-sound`, of `bf-export` and of `bf-cli`; in `bf-story`, `search`, `Filters`, `stats` and
+`auto_balance`; in `bf-content`, `theme_names`, `validate`, `look_for`, `build_picture` and `build_soundtrack`.
+
+Engine crates this block edits, so the controller knows them all: Task 26 (two new files in `bf-content`); Task 27
+(`bf-core/src/show.rs`, `bf-story/src/stats.rs` and every place that builds a `Stats`, `bf-content`); and three
+edits made only if the merged code needs them: Task 28 (a public `bf_content::mesh`), Task 29 (a helper moved from
+`bf-cli` into `bf-story`), Task 30 (`bf_story::search` saying how far it got).
+
+Engine tests live in `#[cfg(test)]` modules of `src/engine/*.rs`. Those that simulate fights, draw frames or build
+sound are marked `#[cfg_attr(debug_assertions, ignore)]` and run with `cargo test -p bf-app --release --lib
+engine::`; a debug run skips them, so `cargo test -p bf-app` stays quick, and Block A's tests alone are `cargo test
+-p bf-app --test ui`. They wait for events with `engine::wait_for` (Task 28).
 
 ### Task 26: What the interface shows about fighters and themes
 
@@ -1654,7 +1871,8 @@ events it saw when the time runs out.
 - Modify: `studio/crates/bf-content/src/lib.rs` (declare and re-export)
 
 **Interfaces:**
-- Consumes (`bf-content` and `bf-core` as merged): `roster() -> &'static [FighterCfg]`, `available() -> Vec<&'static
+- Consumes (`bf-content` and `bf-core`: merged today, except `theme_names` and `validate`, which M1 Task 27
+  brings): `roster() -> &'static [FighterCfg]`, `available() -> Vec<&'static
   str>`, `PORTED: [&str; 2]`, `pair_rules(a: &str, b: &str) -> BTreeMap<String, Value>`, `theme_names() ->
   Vec<&'static str>`, `validate(ff: &FightFile) -> Result<(), ContentError>`; `FightFile::parse(text) ->
   Result<FightFile, FightFileError>`, `FightFile { fighters, handicap, seed, series_tag, pair_rules, picture,
@@ -1716,11 +1934,11 @@ events it saw when the time runs out.
   no_std_maths`) still pass.
 - [ ] **Step 5:** Commit `bf-content: fighter and theme cards, starter fights, caption drafts`.
 
-### Task 27: Three small additions to the engine
+### Task 27: Small additions to the engine
 
 **Files:**
-- Modify: `studio/crates/bf-core/src/show.rs`, `studio/crates/bf-story/src/stats.rs`, the file of
-  `bf_picture::Picture`, `studio/crates/bf-content/src/lib.rs` (or the file `build_picture` lives in)
+- Modify: `studio/crates/bf-core/src/show.rs`, `studio/crates/bf-story/src/stats.rs` (and every place that builds
+  a `Stats`, `bf-cli` included), `studio/crates/bf-content/src/lib.rs` (or the file `build_picture` lives in)
 
 **Interfaces:**
 - Consumes: `Show { grid, names, win, lose, t_ko, t_hs, t_solo, caps_ability, cap_ko, cap_wins, cap_comment,
@@ -1729,14 +1947,13 @@ events it saw when the time runs out.
   `TitleCard::draw(&self, img: &mut Rgb8, t: f64)`, `TitleCard::cover_frame(&self) -> usize`; `look_for(name: &str) ->
   Box<dyn Look>`; `bf_story::Stats { n, decided, win_share, ko_median, ko_p10, ko_p90, no_ko_share,
   lead_changes_mean, fit_rate }` and `stats(setup_for, sheet: &BeatSheet, seeds: Range<u64>, workers: usize) ->
-  Stats`; `Picture`.
+  Stats`; `starter` (Task 26).
 - Produces:
   ```rust
   impl Show { pub fn placeholder(ff: &FightFile) -> Show; }   // no recording: grid and names from the file, win 0, lose 1,
                                                               // t_ko 50.0, t_hs 50.0 + HITSTOP, t_solo grid.next_bar(51.6), no captions
   pub fn title_preview(ff: &FightFile) -> Result<Rgb8, ContentError>;   // bf_content: the VS card on its cover frame, over a black 360 x 640 picture
   pub ko_hist: [u32; 28],                                     // new field of bf_story::Stats: K.O.s per second, 30 s (bin 0) to 58 s
-  impl Picture { pub fn cover_frame(&self) -> usize; }        // only if the merged code has no such accessor
   ```
   The title card shows the same picture on Match-up and Balance, before any fight exists (§11, touch 2).
 - [ ] **Step 1: Confirm the interfaces, then write the failing tests:** `a_placeholder_show_has_the_files_grid`
@@ -1747,29 +1964,43 @@ events it saw when the time runs out.
   s is counted in bin 20: check with a hand-built list through the helper that fills the bins).
 - [ ] **Step 2:** Run `cargo test -p bf-core show`, `-p bf-story stats`, `-p bf-content title_preview`. Expected:
   FAIL.
-- [ ] **Step 3:** Implement. Every other place that builds a `Stats` gets the new field.
+- [ ] **Step 3:** Implement. Every other place that builds a `Stats` gets the new field (`bf-cli` too).
 - [ ] **Step 4:** Run: PASS; `cargo test --workspace` has no new failure; the std-maths scan passes.
-- [ ] **Step 5:** Commit `engine: title preview without a fight, K.O. histogram, cover frame`.
+- [ ] **Step 5:** Commit `engine: title preview without a fight, K.O. histogram`.
 
 ### Task 28: The engine thread, the fight file behind a draft, the roster
 
 **Files:**
-- Create: `src/engine/mod.rs`, `src/engine/convert.rs`, `src/engine/content.rs`
+- Create: `src/engine/mod.rs`, `src/engine/convert.rs`, `src/engine/content.rs`, and `src/engine/balance.rs`,
+  `search.rs`, `takes.rs`, `jobs.rs`, `files.rs`, each with the empty `State` and `handle` below
 - Modify: `src/lib.rs` (`pub mod engine;`), `studio/crates/bf-app/Cargo.toml` (add `bf-sim`, `bf-story`,
   `bf-picture`, `bf-sound`, `bf-content`, `bf-export`, all `.workspace = true`)
 
 **Interfaces:**
-- Consumes: Tasks 26 and 27; `seam::{Command, Event, EngineHandle, EngineSide, channel, Waker}`; `store::Paths`;
+- Consumes: Tasks 26 and 27; `seam::{Command, Event, EngineHandle, EngineSide, EventSender, channel, Waker}`;
+  `store::Paths`;
   `FightFile::{parse, to_toml, validate, grid, search_key}`; `Grid { n_bars, .. }`; `bf_content::{validate,
   music_feeds_fight(name) -> bool}`; `bf_picture::font::text_mask(s: &str, scale: u32) -> Img<u8>`;
   `bf_picture::sprite::{Mesh, render_sprite(mesh: &Mesh, radius_px: u32, yaw_deg: f64, roll_deg: f64) -> Img<u8>}`
-  (RGBA) and the function `bf-content` uses to load a fighter's mesh; `bf_picture::{SAFE, SAFE_BUTTONS}`;
+  (RGBA) and whatever public function gives a fighter's mesh (if the merged code has none, add `pub fn
+  bf_content::mesh(name: &str) -> Option<Mesh>`, an engine addition of one function, or leave `portrait` as `None`
+  so the disc is drawn, and say which in the report); `bf_picture::{SAFE, SAFE_BUTTONS}`;
   `bf_export::folder_name(names: [&str; 2], seed: u64, root: &Path) -> PathBuf`.
 - Produces:
   ```rust
   // engine
-  pub struct EngineConfig { pub workers: usize, pub paths: Paths, pub clip: Option<std::ops::Range<usize>> }   // clip: tests render only these frames
+  pub struct EngineConfig { pub workers: usize, pub paths: Paths,
+      pub clip: Option<std::ops::Range<usize>>,    // tests: a job renders only these frames
+      pub search_limit: Option<u64> }              // tests: a search stops once this many seeds are checked
   pub fn spawn(waker: Waker, config: EngineConfig) -> EngineHandle;
+  pub struct Ctx { pub events: EventSender, pub config: Arc<EngineConfig>, pub workers: Arc<AtomicUsize>,
+      pub preview_busy: Arc<AtomicBool> }          // what every handler is given
+  // in each of engine::{balance, search, takes, jobs, files}: empty here, filled by Tasks 29, 30, 31, 33, 34
+  #[derive(Default)] pub struct State;             // what a handler keeps between commands (cancel flags, caches)
+  pub fn handle(state: &mut State, ctx: &Ctx, command: Command);   // returns at once; long work goes to its own thread
+  #[cfg(test)] pub(crate) fn wait_for(handle: &EngineHandle, seconds: f64, want: impl Fn(&Event) -> bool) -> Event;
+      // polls every 10 ms; panics with the events it saw when the time runs out
+  #[cfg(test)] pub(crate) fn test_engine() -> (EngineHandle, std::path::PathBuf);   // 4 workers, storage under a new temp folder
   // engine::convert
   pub fn fight_file(draft: &Draft) -> Result<FightFile, String>;
   pub fn draft_of(ff: &FightFile, toml: &str) -> Draft;
@@ -1781,10 +2012,17 @@ events it saw when the time runs out.
   pub fn roster() -> Roster;
   pub fn describe(gen: Gen, draft: &Draft) -> Event;   // Event::FightInfo
   ```
-- **The rules.** One coordinator thread takes commands and never does long work itself: balance, search, takes,
-  jobs, library scans and the folder dialog each run on their own thread with a cancel flag, and send their events
-  through a clone of the `EngineSide` sender. This task answers `LoadRoster`, `DescribeFight`, `SetWorkers` and
-  `Shutdown`; every other command is accepted and ignored until its task.
+- **The rules.** One coordinator thread takes commands and never does long work itself: describing a fight,
+  balance, search, takes, jobs, library scans and the folder dialog each run on their own thread with a cancel flag,
+  and send their events through a clone of `EventSender`. The coordinator's `match` is written once, here, and no
+  later task edits `mod.rs`: `LoadRoster`, `DescribeFight` (on a thread of its own, the newest wins: it draws a
+  title card and a portrait), `SetWorkers`, `PreviewBusy` (both set the shared values in `Ctx`) and `Shutdown` are
+  handled in `mod.rs`; `AutoBalance`, `Measure` and `StopBalance` go to `balance::handle`; `StartSearch`,
+  `StopSearch` and `SetFilters` to `search::handle`; `LoadTake` to `takes::handle`; `Enqueue`, `RunJob`, `CancelJob`
+  and `CheckTools` to `jobs::handle`; `ScanLibrary`, `OpenFight`, `OpenFightText`, `CheckFolder`, `CreateFolder`,
+  `PickFolder` and `RevealFolder` to `files::handle`. The five handlers ignore their commands until their tasks.
+  `bf_content`'s `Section` and `FighterCard` share their names with the app's own: import them as `bf_content::{Section
+  as ContentSection, FighterCard as ContentCard}`.
   - `fight_file`: start from `FightFile::parse(draft.base)` if there is one, else `starter(left, right)`; then set
     the fighters in the draft's order, `handicap`, `tempo_bpm = draft.tempo_bpm()`, `pair_rules =
     bf_content::pair_rules(left, right)`, `seed`, `music.theme`, `music.chord_loop` (the theme card's loop number
@@ -1798,11 +2036,11 @@ events it saw when the time runs out.
     line break, `tiktok`; the Shorts text is `shorts` joined by line breaks. Back: `caption` is the first line of
     the Instagram text and `instagram` the rest; `tiktok` is the TikTok text after its first line; `shorts` is the
     Shorts text's lines (three at most; an empty text gives an empty list).
-  - `roster()`: one entry per `shown_order()` name: `display` through `wording::display_name`, the section, the
-    colour, `available`, `music_feeds_fight`, the mask from `text_mask(name, 1)` (a pixel is on where the mask is
-    not 0), and for available fighters the card: the weapon and texts from `card(name)`; the abilities tagged
-    "LV2", "LV3", "LOW" with the roster's ability names in sentence case; `range` is `note_name` of the two ends of
-    `register` joined by " to "; `usually_plays`, `colour_name`, the music lines, `can_play_bass`; `portrait` is
+  - `roster()`: one entry per `shown_order()` name: `display` through `wording::display_name`, the section, the colour,
+    `available`, `music_feeds_fight`, the mask from `text_mask(name, 1)` (a pixel is on where the mask is not 0), and
+    for available fighters the card: the weapon and texts from `card(name)`; the abilities tagged "LV2", "LV3", "LOW"
+    with the roster's ability names in sentence case as `name` and unchanged as `key`; `range` is `note_name` of the two
+    ends of `register` joined by " to "; `usually_plays`, `colour_name`, the music lines, `can_play_bass`; `portrait` is
     `render_sprite` at radius 22, yaw 30, roll 0. Themes from `theme_names()` and `theme_card`. `vs` is the mask of
     "VS"; `start` is `["FLUTE", "TROMBONE"]`; `app_version` is this crate's.
   - `describe`: with `fight_file(draft)` `Ok`: the pair rules as texts (`pair_rule_text`, or the key itself), the
@@ -1824,20 +2062,24 @@ events it saw when the time runs out.
   handicap does not); `a_file_round_trips_through_a_draft` (for the episode file `studio/fights/
   flute_vs_trombone.toml`: `fight_file(&draft_of(&ff, text))` equals `ff` except `tempo_bpm` (snapped),
   `app_version` and `pair_rules` order; its lines, solos and title hits are kept, which proves the base carries
-  them); `captions_map_both_ways`; `a_pair_without_music_is_a_plain_problem`; and through `spawn`:
+  them); `a_file_the_app_wrote_round_trips` (the starting draft with the sides swapped, handicap `[0.4, 2.0]`, seed
+  7 and an edited Instagram caption: `to_toml` of `fight_file` of it, read back through `FightFile::parse` and
+  `draft_of`, then `fight_file` and `to_toml` again, gives the same text, so a reopened video renders the same
+  fight); `captions_map_both_ways`; `a_pair_without_music_is_a_plain_problem`; and through `spawn`:
   `the_engine_answers_the_roster_and_the_fight` (`LoadRoster` gives `Event::Roster` within 5 s; `DescribeFight {
   gen: 4, .. }` gives `FightInfo` with `gen == 4`, the cobra rule's sentence, the drafted caption and a 360 x 640
   title card).
 - [ ] **Step 2:** Run `cargo test -p bf-app --release --lib engine::`. Expected: FAIL.
 - [ ] **Step 3:** Implement.
-- [ ] **Step 4:** Run: PASS; `cargo test -p bf-app` (Block A's tests) still passes.
+- [ ] **Step 4:** Run: PASS; `cargo test -p bf-app --test ui` and `cargo test -p bf-app --lib` (Block A's tests; a
+  debug run skips the ignored engine tests) still pass.
 - [ ] **Step 5:** Commit `bf-app: engine thread, fight files behind drafts, the real roster`.
 
 ### Task 29: Balance through the seam
 
 **Files:**
-- Create: `src/engine/balance.rs`
-- Modify: `src/engine/mod.rs` (route `AutoBalance`, `Measure`, `StopBalance`)
+- Modify: `src/engine/balance.rs` (fill `State` and `handle`, which Task 28 left empty; they receive `AutoBalance`,
+  `Measure` and `StopBalance`)
 
 **Interfaces:**
 - Consumes: `bf_sim::setup_from<'a>(ff: &FightFile, roster: &'a [FighterCfg], seed: u64) -> Result<Setup<'a>,
@@ -1871,8 +2113,8 @@ events it saw when the time runs out.
 ### Task 30: Search, filters and the shortlist cache
 
 **Files:**
-- Create: `src/engine/search.rs`
-- Modify: `src/engine/mod.rs` (route `StartSearch`, `StopSearch`, `SetFilters`, `PreviewBusy`)
+- Modify: `src/engine/search.rs` (fill `State` and `handle`; they receive `StartSearch`, `StopSearch` and
+  `SetFilters`, and read `ctx.preview_busy`)
 
 **Interfaces:**
 - Consumes: `bf_story::{BeatSheet, Story { seed, winner: Option<usize>, t_ko:
@@ -1889,7 +2131,7 @@ events it saw when the time runs out.
 - Produces:
   ```rust
   pub const CHUNK: u64 = 512;  pub const FITS: usize = 200;  pub const OTHERS: usize = 300;
-  pub fn story_view(c: &Candidate, t_fight: f64) -> StoryView;   // ability names in sentence case
+  pub fn story_view(c: &Candidate, t_fight: f64) -> StoryView;   // ability names in sentence case; each miss with a capital first letter
   pub fn filters(spec: &FilterSpec) -> bf_story::Filters;        // Close -> close_finish, Comeback -> comeback, show_outside -> show_misfits
   ```
 - **The rules.** `StartSearch`: the key is `ff.search_key(&feeds)`; a cached shortlist for this app version and key is
@@ -1900,23 +2142,24 @@ events it saw when the time runs out.
   one past the last seed that call checked (if the merged `search` does not say how far it got, have it say so). After
   each chunk a `Shortlist` goes out: the rows are the candidates that pass `filters(spec).keep`, fits first by score
   downward, then by seed upward, as `story_view`; `fits_total`; `checked = next_seed - 1`; the state. The cache is saved
-  after every eighth chunk and when the search ends. It ends `Full` at `FITS` fits, `Stopped` on `StopSearch`, and
-  silently when a `StartSearch` for another generation arrives (Review Focus 3). `SetFilters` sends the list again from
+  after every eighth chunk and when the search ends. It ends
+  `Full` at `FITS` fits, `Stopped` on `StopSearch` or once `config.search_limit` seeds are checked, and silently when
+  a `StartSearch` for another generation arrives (Review Focus 3). `SetFilters` sends the list again from
   memory. The set of seeds checked is always 1 to `next_seed - 1`, so the shortlist is the same for any number of
   workers.
 - [ ] **Step 1: Confirm the interfaces, then write the failing tests:** `story_view_maps_a_candidate` and
-  `filters_map_the_spec` (unit); `the_shortlist_fills_ranked` (handicap `[2.0, 0.4]`; wait for a `Shortlist` with
-  at least 3 rows: scores do not rise down the list, every row `fits`, every `t_ko` is within 49 to 53, `lead`
-  starts at or after `t_fight`, the first uses are named in sentence case); `filters_are_the_engines`
-  (`SetFilters { winner: Some(1) }`: every row's winner is 1; `show_outside: true`: some row has `fits == false`
-  once 512 seeds are checked); `stopping_saves_and_starting_again_resumes` (after `StopSearch` the cache file
-  exists; a new engine on the same folder answers `StartSearch` first with a `Shortlist` whose `checked` is the
-  saved one, not 0); `a_cache_from_another_version_is_ignored` (write the cache under another version string: the
-  first `Shortlist` has `checked == 0` or comes after a fresh chunk); `a_new_fight_silences_the_old_search`
-  (`StartSearch { gen: 1 }`, then `StartSearch { gen: 2 }` with the sides swapped: after the first event of
-  generation 2, none of generation 1 arrives within 3 s); `the_shortlist_does_not_depend_on_the_workers` (two
-  engines with 1 and 8 workers, stopped at `checked == 1024` by a test hook that ends the loop there: the same
-  seeds in the same order).
+  `filters_map_the_spec` (unit); `the_shortlist_fills_ranked` (handicap `[2.0, 0.4]`; wait, 120 s at most, for a
+  `Shortlist` with at least 3 rows, which at the fit rate milestone 1 measured for this handicap, 0.75 %, is about 400
+  seeds: scores do not rise down the list, every row `fits`, every `t_ko` is within 49 to 53, `lead` starts at or after
+  `t_fight`, the first uses are named in sentence case); `filters_are_the_engines` (`SetFilters { winner: Some(1) }`:
+  every row's winner is 1; `show_outside: true`: some row has `fits == false` once 512 seeds are checked);
+  `stopping_saves_and_starting_again_resumes` (after `StopSearch` the cache file exists; a new engine on the same folder
+  answers `StartSearch` first with a `Shortlist` whose `checked` is the saved one, not 0);
+  `a_cache_from_another_version_is_ignored` (write the cache under another version string: the first `Shortlist` has
+  `checked == 0` or comes after a fresh chunk); `a_new_fight_silences_the_old_search` (`StartSearch { gen: 1 }`, then
+  `StartSearch { gen: 2 }` with the sides swapped: after the first event of generation 2, none of generation 1 arrives
+  within 3 s); `the_shortlist_does_not_depend_on_the_workers` (two engines with 1 and 8 workers and `search_limit:
+  Some(1024)`: their last `Shortlist` events hold the same seeds in the same order).
 - [ ] **Step 2:** Run `cargo test -p bf-app --release --lib engine::search`. Expected: FAIL.
 - [ ] **Step 3:** Implement.
 - [ ] **Step 4:** Run: PASS. Note the fights per second for `m2-measurements.md`.
@@ -1925,8 +2168,7 @@ events it saw when the time runs out.
 ### Task 31: Takes: the fight, its picture, its sound
 
 **Files:**
-- Create: `src/engine/takes.rs`
-- Modify: `src/engine/mod.rs` (route `LoadTake`)
+- Modify: `src/engine/takes.rs` (fill `State` and `handle`; they receive `LoadTake`)
 
 **Interfaces:**
 - Consumes: `bf_sim::{setup_from, run(setup: &Setup, record: bool) -> Recording}`; `bf_core::show::{Show,
@@ -1955,10 +2197,14 @@ events it saw when the time runs out.
   `build_soundtrack`, the three checks, and `TakeSound { audio, music }` with the master as `f32`. Before each
   stage, if a newer `LoadTake` has arrived, this one stops and sends nothing more (a soundtrack being built cannot
   be interrupted; it is finished and thrown away). The last three takes are kept, keyed by the fight file's text,
-  so going back to a seed answers at once. A lane per stem: `Fighters` (the fighter's colour, its name as shown)
+  so going back to a seed answers at once. A kept take holds the picture, the story, the `f32` master and the music
+  view, nothing else: the `f64` master and the stems (about half a gigabyte for a take) are dropped as soon as the
+  checks and the lanes are made. A lane per stem: `Fighters` (the fighter's colour, its name as shown)
   when the stem's name is one of the two fighters' names, compared without case; else `Band`, named in sentence
   case; `clips` from `sounding` with `beat_samples = round(beat * 48_000)`. Markers: (0, "Title card"), (`t_fight`,
-  "Fight"), each time in `story.lc_t` "Lead change", (`t_ko`, "K.O."), (`t_reassemble`, "Reset"). Check lines:
+  "Fight"), each time in `story.lc_t` "Lead change", the first use of each fighter's low ability (the entry of
+  `story.firsts` whose name is that fighter's `low.name`) "Desperation", (`t_ko`, "K.O."), (`t_reassemble`, "Reset"),
+  in time order. Check lines:
   "Loudness" for `levels`, "Perceived loudness" for `loudness`, "Fighters above the music" for `band`; the note is
   the result's `summary` (§8: a failing take is seen on Music, not in the queue).
 - [ ] **Step 1: Confirm the interfaces, then write the failing tests:** unit: `sounding_joins_neighbouring_beats`
@@ -1981,7 +2227,7 @@ events it saw when the time runs out.
 ### Task 32: Preview speed against the budget
 
 **Files:**
-- Create: `docs/studio/m2-measurements.md`, `src/preview/bench.rs` (declared in `src/preview/mod.rs`)
+- Create: `docs/studio/m2-measurements.md`, `src/preview/bench.rs` (Task 1 made and declared the empty file)
 - Modify: `src/main.rs` (`--preview-bench`), `src/preview/scheduler.rs` and `player.rs` only if the numbers ask for it
 
 **Interfaces:**
@@ -1997,13 +2243,13 @@ events it saw when the time runs out.
   handicap `[2.0, 0.4]` (the first fitting seed unless one is given), runs `run` with no window and no sound (the
   wall clock, `tick()` every 4 ms, from FIGHT!), then asks for 50 random frames one after another through `ScrubTo`
   and times each until `tick()` gives it, and prints the report as one line per field.
-- [ ] **Step 1: Write the failing tests:** `the_bench_counts_frames` (unit, on the test source of Task 15, 2 s, 2
-  threads: `shown + late` is between 55 and 61 and `on_time == shown / (shown + late)`); and, marked `#[ignore]`
-  and run by name in release, `playback_meets_the_budget` (the real take, 20 s, `threads = workers`: when `P =
-  ceil(1.25 * frame_ms / 33.3)` is at most `workers`, `on_time >= 0.99` and `stride == 1`; when it is more,
-  `stride == pace(frame_ms, workers).1` and the run still ends on time, which shows the clock does not wait for
-  frames) and `scrubbing_meets_the_budget` (`scrub_worst_ms <= frame_ms_p95 + 20.0`, with `frame_ms_p95` read from
-  this run's own draw times).
+- [ ] **Step 1: Write the failing tests:** `the_bench_counts_frames` (unit, on the test source of `scheduler::testing`,
+  2 s, 2 threads: `shown + late` is between 55 and 61 and `on_time == shown / (shown + late)`); and, marked `#[ignore]`
+  and run by name in release, `playback_meets_the_budget` (the real take, 20 s, `threads = workers`: when `P = ceil(1.25
+  * frame_ms / 33.3)` is at most `workers`, `on_time >= 0.99` and `stride == 1`; when it is more, `stride ==
+  pace(frame_ms, workers).1` and the run still ends on time, which shows the clock does not wait for frames) and
+  `scrubbing_meets_the_budget` (`scrub_worst_ms <= frame_ms_p95 + 20.0`, with `frame_ms_p95` read from this run's own
+  draw times).
 - [ ] **Step 2:** Run `cargo test -p bf-app --release --lib preview::bench`. Expected: FAIL.
 - [ ] **Step 3:** Implement. Run `ballfight-studio --preview-bench` three times on this PC with nothing else
   running, and once more while `ballfight search` runs beside it.
@@ -2016,8 +2262,8 @@ events it saw when the time runs out.
 ### Task 33: Render jobs through the seam
 
 **Files:**
-- Create: `src/engine/jobs.rs`
-- Modify: `src/engine/mod.rs` (route `Enqueue`, `RunJob`, `CancelJob`, `CheckTools`)
+- Modify: `src/engine/jobs.rs` (fill `State` and `handle`; they receive `Enqueue`, `RunJob`, `CancelJob` and
+  `CheckTools`)
 
 **Interfaces:**
 - Consumes: `bf_export::{find_ffmpeg() -> Result<Ffmpeg, ExportError>, JobOpts { out_root: PathBuf, workers: usize,
@@ -2035,22 +2281,23 @@ events it saw when the time runs out.
   pub fn failure(error: &ExportError, failed: Option<&CheckResult>) -> JobUpdate;
   ```
 - **The rules.** `Enqueue`: `fight_file(draft)`, which must have a seed; `Enqueued { spec }` with the title
-  (`wording::versus`), the two colours, the theme as shown, the seed, `fight_toml: ff.to_toml()` and the root; an
-  error gives `EnqueueFailed`. `RunJob`: parse the text, simulate with recording on, `run_job` with the config's
-  `clip` as `frames`. Its events become updates: a stage makes its step `Now` and the step before it `Done`; a
-  check makes its step `Done` or `Failed` with the check's `summary` as the note (Loudness is done when both
-  `levels` and `loudness` passed, and carries the `levels` summary); `Progress` becomes `Frames`, ten a second at
-  most; success makes every step `Done` and sends `Done { folder, seconds }`. `failure`: a failed check gives the
-  headline "Stopped at {check_title}" and the detail "{summary} Nothing was saved. {advice}", with, for Safe zone,
-  Focus, Flashes and Loop point, "Try another seed, then queue it again." and `OpenInSeeds`; for Loudness and
-  Band, "Open it in Music to see the levels, or try another seed, then queue it again." and `OpenInMusic`; for
-  Verify, "Queue it again; if it stops here twice, try another seed." and `None`. ffmpeg not found: "ffmpeg was
-  not found", "Videos cannot be saved without it. Install ffmpeg, start the app again, then queue it again.",
-  `InstallFfmpeg`. The folder missing or not writable: "The output folder cannot be used", "{the error's text}
-  Nothing was saved. Choose another folder, then queue it again.", `CheckFolder`. Anything else: "The video could
-  not be made", "{the error's text} Nothing was saved.", `None`. `CancelJob` sets the flag and the job answers
-  `Cancelled`. `CheckTools` answers `Tools` with ffmpeg's version line ("ffmpeg 9.0.2") or "ffmpeg was not found on
-  this PC."
+  (`wording::versus`), the two colours, the theme as shown, the seed, `fight_toml: ff.to_toml()` and the root; an error
+  gives `EnqueueFailed`. `RunJob`: parse the text, simulate with recording on, `run_job` with the config's `clip` as
+  `frames`. Its events become updates: a stage makes its step `Now` and the step before it `Done`; a check makes its
+  step `Done` or `Failed` with the check's `summary` as the note (Loudness is done when both `levels` and `loudness`
+  passed, and carries the `levels` summary); `Progress` becomes `Frames`, ten a second at most; success makes every step
+  `Done` and sends `Done { folder, seconds }`. `failure`: a failed check gives the headline "Stopped at {check_title}"
+  and the detail "{summary} Nothing was saved. {advice}", with, for Safe zone, Focus, Flashes and Loop point, "Try
+  another seed, then queue it again." and `OpenInSeeds`; for Loudness and Band, "Open it in Music to see the levels, or
+  try another seed, then queue it again." and `OpenInMusic`; for Verify, "Queue it again; if it stops here twice, try
+  another seed." and `None`. ffmpeg not found: "ffmpeg was not found", "Videos cannot be saved without it. Install
+  ffmpeg, start the app again, then queue it again.", `InstallFfmpeg`. The folder missing or not writable: "The output
+  folder cannot be used", "{the error's text} Nothing was saved. Choose another folder, then queue it again.",
+  `CheckFolder`. Anything else: "The video could not be made", "{the error's text} Nothing was saved.", `None`. If the
+  merged `ExportError` cannot tell a missing ffmpeg from a folder problem, do not change `bf-export`: call
+  `find_ffmpeg()` and `store::library::folder_state(root, "")` before `run_job` and fail there with the texts above.
+  `CancelJob` sets the flag and the job answers `Cancelled`. `CheckTools` answers `Tools` with ffmpeg's version line
+  ("ffmpeg 9.0.2") or "ffmpeg was not found on this PC."
 - [ ] **Step 1: Confirm the interfaces, then write the failing tests** (those that encode print a notice and pass
   when ffmpeg is absent; those that set `BALLFIGHT_FFMPEG` share one lock, since the variable belongs to the whole
   process; `clip` is `Some(0..90)`): `every_check_has_a_step` (for each name in `bf_export::checks`,
@@ -2072,23 +2319,25 @@ events it saw when the time runs out.
 ### Task 34: Library, reopening and folders through the seam
 
 **Files:**
-- Create: `src/engine/files.rs`
-- Modify: `src/engine/mod.rs` (route `ScanLibrary`, `OpenFight`, `OpenFightText`, `CheckFolder`, `CreateFolder`,
-  `PickFolder`, `RevealFolder`)
+- Modify: `src/engine/files.rs` (fill `State` and `handle`; they receive `ScanLibrary`, `OpenFight`,
+  `OpenFightText`, `CheckFolder`, `CreateFolder`, `PickFolder` and `RevealFolder`)
 
 **Interfaces:**
 - Consumes: `store::library::{scan, thumbnail, folder_state, FightSummary}`; `FightFile::parse`,
   `bf_content::validate`; `convert::{draft_of, title_of, plain}`; `engine::content::roster` (colours);
   `wording::versus`; the `rfd` crate.
-- Produces: the seven commands' behaviour. `ScanLibrary`: `scan(root, read)`, where `read` parses the text as a
-  fight file and gives its title (`versus`), colours and seed, or the parse error as `plain` text; then `Library`;
-  then, for each entry, its `cover.png` through `thumbnail` as `LibraryCover`. A missing root gives `Library` with
-  no entries and the problem (Review Focus 1). `OpenFight`: read, parse, validate; `FightOpened { draft:
-  draft_of(..), title: title_of(..) }`, or `Problem { text: "{file name} cannot be opened: {reason}" }`.
-  `OpenFightText`: the same from text. `CheckFolder` and, after `create_dir_all`, `CreateFolder`: `Folder { state:
-  folder_state(..) }`. `PickFolder`: on its own thread, `rfd::FileDialog::new().set_title("Choose the output
-  folder").set_directory(start).pick_folder()`, then `FolderPicked`. `RevealFolder`: start `explorer <path>` on
-  Windows and `xdg-open <path>` elsewhere, without waiting for it.
+- Produces: the seven commands' behaviour. `ScanLibrary`: `scan(root, read)`, where `read` parses the text as a fight
+  file and gives its title (`versus`), colours and seed, or the parse error as `plain` text; then `Library`; then, for
+  each entry, its `cover.png` through `thumbnail` as `LibraryCover`. A missing root gives `Library` with no entries and
+  the problem (Review Focus 1). Before each scan, `pub fn clear_stale_temp(root: &Path, older_than: std::time::Duration)
+  -> usize` removes the folders in the root whose names start with `.tmp-` and that were last changed more than a day
+  ago: what a render left behind when the app was closed in the middle of it (the render's own temp folders, never the
+  owner's files). `OpenFight`: read, parse, validate; `FightOpened { draft: draft_of(..), title: title_of(..) }`, or
+  `Problem { text: "{file name} cannot be opened: {reason}" }`. `OpenFightText`: the same from text. `CheckFolder` and,
+  after `create_dir_all`, `CreateFolder`: `Folder { root, name, state: folder_state(..) }` (`CreateFolder` answers with
+  an empty name). `PickFolder`: on its own thread, `rfd::FileDialog::new().set_title("Choose the output
+  folder").set_directory(start).pick_folder()`, then `FolderPicked`. `RevealFolder`: start `explorer <path>` on Windows
+  and `xdg-open <path>` elsewhere, without waiting for it.
 - [ ] **Step 1: Confirm the interfaces, then write the failing tests** (temp folders; a cover is a 1080 x 1920 PNG made
   with the `png` crate; a fight file is `starter(..)` with a seed, written with `to_toml`):
   `a_rendered_folder_shows_in_the_library` (one entry: "Flute vs Trombone", its seed, the two colours; then one
@@ -2097,8 +2346,9 @@ events it saw when the time runs out.
   format 1"); `reopening_gives_the_fight_back` (`OpenFight` gives `FightOpened` whose draft has the file's fighters,
   handicap and seed and `base` set, titled "Flute vs Trombone, seed 7"); `a_broken_fight_file_is_a_problem` (a file
   naming KAZOO: `Problem` whose text holds the file's name and "KAZOO"); `a_created_folder_is_ok`;
-  `a_taken_name_is_reported`. `PickFolder` and `RevealFolder` open windows and are not run by tests: keep each to a few
-  lines.
+  `a_taken_name_is_reported`; `stale_temp_folders_are_cleared` (`clear_stale_temp` with a zero age removes
+  `.tmp-flute_vs_trombone-1` and leaves `flute_vs_trombone` and a `.keep` folder; with a day's age it removes nothing
+  that was just made). `PickFolder` and `RevealFolder` open windows and are not run by tests: keep each to a few lines.
 - [ ] **Step 2:** Run `cargo test -p bf-app --release --lib engine::files`. Expected: FAIL.
 - [ ] **Step 3:** Implement.
 - [ ] **Step 4:** Run: PASS.
@@ -2108,7 +2358,7 @@ events it saw when the time runs out.
 
 **Files:**
 - Create: `tests/ui/real.rs`, `tests/snapshots/real_matchup_1440x900.png`
-- Modify: `src/main.rs`, `src/app.rs` (the slowest-update counter), `studio/crates/bf-app/README.md`,
+- Modify: `src/main.rs`, `studio/crates/bf-app/README.md`,
   `studio/README.md`, `.github/workflows/studio.yml`, `docs/studio/HANDOFF.md`, `docs/studio/m2-measurements.md`
 
 **Interfaces:**
@@ -2116,8 +2366,7 @@ events it saw when the time runs out.
   `open_audio`.
 - Produces: `ballfight-studio` with no flag runs the real engine: storage from `Paths::system()` (or `--data-dir`),
   settings and queue loaded with their notices, `engine::spawn` with the settings' workers, `open_audio()`, the
-  writer. `--fixtures` stays as it is. `BfApp` gains `pub slowest_update_ms: f32`, the longest time one `logic`
-  call or one action's dispatch has taken.
+  writer. `--fixtures` stays as it is.
 - [ ] **Step 1: Write the failing tests** in `tests/ui/real.rs` (release; `BfApp::new` on `engine::spawn` with a
   temp storage folder and `NoAudio`; a helper runs the harness and sleeps 20 ms until a label appears or a time
   limit passes): `the_real_match_up_screen` ("Snake charmer", "Slide lance", "C5 to A6", "E2 to F4", "2 of 20
@@ -2131,13 +2380,11 @@ events it saw when the time runs out.
   chosen seed; `ffprobe` reports 61.01 s; `slowest_update_ms < 20.0` over the whole run, which is the test's bound
   for the 4 ms budget under a software renderer).
 - [ ] **Step 2:** Run `cargo test -p bf-app --release --test ui real::`. Expected: FAIL.
-- [ ] **Step 3:** Implement. CI: in the Ubuntu job add, before the build, `sudo apt-get update && sudo apt-get
-  install -y libasound2-dev pkg-config mesa-vulkan-drivers`; in the Windows job add `cargo build --release -p
-  bf-app` and `cargo test --release -p bf-app`. If the Ubuntu job reports picture differences against the
-  references (blessed on Windows), add `[linux] max_failed_pixels = N` to `kittest.toml` with the smallest N that
-  passes, 200 at most; more than that is a real difference to find. Docs: `studio/README.md` (the `bf-app` row, how
-  to start the app), `HANDOFF.md` (the app exists, where the exe is built, `--fixtures`), `m2-measurements.md`
-  (test counts, the slowest update, the run time of the whole-video test), the crate's `README.md`.
+- [ ] **Step 3:** Implement. CI: in the Windows job add `cargo build --release -p bf-app` and `cargo test --release -p
+  bf-app` (the Ubuntu job has had its packages since Task 1, and the rule for picture differences on Linux is in the
+  Global Constraints). Docs: `studio/README.md` (the `bf-app` row, how to start the app), `HANDOFF.md` (the app exists,
+  where the exe is built, `--fixtures`), `m2-measurements.md` (test counts, the slowest update, the run time of the
+  whole-video test), the crate's `README.md`.
 - [ ] **Step 4:** `cargo test --workspace --release`, then the ignored tests by name
   (`a_whole_video_with_the_real_engine`, the two of Task 32, `this_pc_plays_silence`): PASS. `cargo build --release -p
   bf-app`; start `studio/target/release/ballfight-studio.exe --smoke`: it opens on the real Match-up screen and closes
@@ -2187,6 +2434,64 @@ Nobody was available to ask, so these were decided here. Each says what it costs
 | 30 | Reopening a video from the Library lands on Match-up with its seed loaded. | Land on Render instead: one line. |
 | 31 | `bf-app` depends on `bf-core` from the start, for the tempo rule only. | None; the alternative was a second copy of the rule. |
 | 32 | Library dates are local (the `chrono` crate) and covers are shown at 180 x 320. | A dependency that could be replaced by 20 lines if it ever troubles the build. |
+| 33 | A change to the fight restarts the search at once only while Seeds is shown; from any other screen it restarts when Seeds is next opened. | A search that could have run in the background while the owner was on Balance starts a moment later. |
+| 34 | Before each Library scan, the render's own `.tmp-` folders older than a day are removed from the output folder. | A day-old leftover the owner wanted to look at is gone; nothing of the owner's own is ever touched. |
+| 35 | The sample shortlist is the mock-ups' own generator, whose best fight is seed 18433; the interface reference's wording examples now use that number. | None: 20418 was only an example number in the reference, never the mock-ups' selected seed. |
+
+## Changes after the pre-flight review
+
+The plan was reviewed before any task ran (`preflight.md` in the build's scratch folder for this plan: 4 Critical, 16
+Important and 18 Minor findings, and eleven untested risks). What was done with each:
+
+| Finding | Severity | Outcome | In one line |
+|---|---|---|---|
+| F1 | Critical | applied | Screen-test mode keeps the fixture's transport and drops effects; `BfApp::show_frame` gives the preview a picture (Tasks 17, 18). |
+| F2 | Critical | applied | `after_restart` counts waiting jobs marked `interrupted`, from this call or from the file; `start` clears the mark; a load-then-restart test (Task 11). |
+| F3 | Critical | applied differently | The generator was run: its best fight is seed 18433, which is what the mock-ups show. The reference's example number 20418 was wrong, so the reference and the tests now say 18433 instead of re-ranking the sample. |
+| F6 | Critical | applied | `pace` now works in frames with a small margin; the reviewer's formula was run and gives every value the tests list (Task 15). |
+| F4 | Important | applied differently | A new fight restarts the search at once while Seeds is shown; elsewhere on the next visit, so a slider drag does not start a search per step. `Idle` reads as `Searching` (Tasks 9, 21; decision 33). |
+| F5 | Important | applied | Block B starts when milestone 1 is complete; 26, 27, 28 in order; Task 28 writes the routing once with an empty handler per file, so 29, 30, 33, 34 can run side by side; 31 after 30. |
+| F7 | Important | applied | "Order of work" is now two tables of real prerequisites and a list of what can run at the same time. |
+| F8 | Important | applied | The "no later task edits" rule is reworded; Task 17 gives every screen its empty `show`; Tasks 18 to 24 fill one function in one file each. |
+| F9 | Important | applied | `why_not_add` moved to the app state with nine reasons; "Add to queue" sends exactly when it gives none (Tasks 12, 23). |
+| F10 | Important | applied | `AbilityLine.key` holds the roster's own name; the filter stores it (Tasks 8, 8b, 21, 28). |
+| F11 | Important | applied | Task 4 may build the dropdown as a menu button if the ComboBox cannot be named (the planning probe did name one through its response). |
+| F12 | Important | applied | The mock-ups' sample values are now in the interface reference, section 11; Task 8b says what to do where it is silent. |
+| F13 | Important | applied | The small-window rule is about controls outside scroll areas and primary buttons (Task 25). |
+| F14 | Important | applied | The wording test leaves out what is typed in the caption box (Task 25). |
+| F15 | Important | applied | `BfApp::shutdown` sends `Shutdown` and flushes the writer; the restart test uses it (Tasks 17, 25). |
+| F16 | Important | applied | `wait_for` and `test_engine` live in `engine/mod.rs`; `EngineConfig.search_limit`; a stated fallback for the mesh loader and for `ExportError` (Tasks 28, 30, 33). |
+| F17 | Important | applied | Task 17's first test proves the harness runs `logic`, with a stated fallback. |
+| F18 | Important | applied | A Global Constraint says how tests find a control whose label repeats. |
+| F19 | Important | applied | Task 1 adds the Linux packages to the workflow and checks the folder dialog pulls in no GTK; the rule for picture differences on Linux is a Global Constraint. |
+| F20 | Important | applied | Engine tests that simulate are ignored in debug runs; Block A's check is named exactly. |
+| F21 | Minor | applied | Task 9's tests build `Settings` and `Queue` as struct literals. |
+| F22 | Minor | applied | The scheduler's test source is in `scheduler::testing` for Tasks 16 and 32. |
+| F23 | Minor | applied | 26.6 ms. |
+| F24 | Minor | applied | `bass` starts as the first fighter that can play it and is worked out again on a pick. |
+| F25 | Minor | applied | Task 1 makes and declares `preview/bench.rs`; Task 32 only fills it. |
+| F26 | Minor | applied | Task 26's "Consumes" says which functions are merged today and which M1 Task 27 brings. |
+| F27 | Minor | applied | The sample failed job uses the advice the real engine gives, not "another music take". |
+| F28 | Minor | applied | Task 28 imports the content's `Section` and `FighterCard` under other names. |
+| F29 | Minor | applied | `Picture::cover_frame` dropped from Task 27: nothing used it. |
+| F30 | Minor | applied | A "Desperation" marker at the first use of each fighter's low ability (Task 31). |
+| F31 | Minor | applied | Task 5 compares within 1e-9; Task 3 checks the brightest pixel. |
+| F32 | Minor | applied | `Event::Folder` carries the name it was asked about (Tasks 8, 12, 34). |
+| F33 | Minor | applied | The Library's sample times are 12:00 UTC. |
+| F34 | Minor | applied | A queue row senses clicks and drags itself (Task 23). |
+| F35 | Minor | applied | `DescribeFight` runs on a thread of its own (Task 28). |
+| F36 | Minor | applied | `story_view` gives each miss a capital first letter (Task 30). |
+| F37 | Minor | applied in part | Task 8 is now three tasks (8: model and seam; 8b: sample data; 8c: sample engine), which also takes the sample engine out of Task 25. Task 28 stays one task: its routing is now mechanical, and splitting it would leave no testable half. |
+| F38 | Minor | applied | The shortlist test waits 120 s at most and says why. |
+
+The eleven untested risks of the review's section 6: 1 (a file the app wrote round-trips: Task 28), 2 (a kept take
+holds no stems: Task 31), 3 (stale temp folders: Task 34, decision 34), 5 (the engine's waker runs `logic` while the
+window is minimised: Task 17, stated, not testable in the harness), 6 and 7 (a lost sound device; position at other
+device rates: Task 16), 8 (a queue from another app version says so: Task 11), 9 (a file that cannot be written
+becomes a notice: Tasks 10, 17), 10 (the interface's slowest update is measured in Block A too: Tasks 17, 25) and 11
+(time zones: F33) are now covered. Risk 4 (the output folder disappearing in the middle of a render) is not: on
+Windows a folder in use cannot be removed from a test, so it cannot be made to happen reliably; the error path it
+would take is the one Task 33 tests with a root that is bad from the start.
 
 ## Spec coverage
 
@@ -2202,7 +2507,7 @@ Nobody was available to ask, so these were decided here. Each says what it costs
 | §4 the fight file as the whole recipe | 26 (starter), 28 (`fight_file`, `draft_of`), 33 |
 | §4 Library: covers, match-up, date, reopen | 12, 13, 24, 34 |
 | §4 Settings: output folder (default `Videos\BALLFIGHT`), worker threads (default cores minus one) | 10, 12, 24, 34 |
-| §5 `bf-app` on eframe, egui and wgpu; the interface never blocks; work on threads with progress through channels; one core kept for the preview | 1, 8, 17, 28 to 34, 35 (`slowest_update_ms`) |
+| §5 `bf-app` on eframe, egui and wgpu; the interface never blocks; work on threads with progress through channels; one core kept for the preview | 1, 8, 17, 25 and 35 (`slowest_update_ms`), 28 to 34 |
 | §6 search runs until stopped or 200 fits; results cached per search key | 13, 30 |
 | §6 filters, and the switch for fights outside the beat sheet, marked as such | 21, 30 |
 | §7 live preview: drawn ahead on worker threads into a small buffer; nearest filtering at a whole-number scale; sound is the clock; scrubbing on demand; safe-zone tint | 14, 15, 16, 18, 31 |
@@ -2212,10 +2517,10 @@ Nobody was available to ask, so these were decided here. Each says what it costs
 | §9 queue: one at a time, reorder, pause, cancel, remove, survives a restart | 11, 12, 23, 25 |
 | §9 output folder and the `_seed<N>` name | 13 (`folder_state`), 23, 28 (`folder_names_agree`), 33 |
 | §9 captions drafted from emoji and tags plus the series line, then editable | 9, 23, 26 |
-| §10 the app reads the roster and theme list from the registry; GUITAR and SAX never appear | 8, 25 (`no_retired_fighter_anywhere`), 26, 28 |
+| §10 the app reads the roster and theme list from the registry; GUITAR and SAX never appear | 8b, 25 (`no_retired_fighter_anywhere`), 26, 28 |
 | §11 the design system, fonts built in, 26 px controls, 2 px corners, 1 px dividers, inverted fill | 2, 3, 4, 5 |
 | §11 colour belongs to fighters; errors in words; 22 % fills with a full-colour edge | 3, 6, 20, 22, 23 |
-| §11 touch 1: names in the 5 x 7 pixel font at whole-number scales | 6, 8, 17, 19, 28 |
+| §11 touch 1: names in the 5 x 7 pixel font at whole-number scales | 6, 8b, 17, 19, 28 |
 | §11 touch 2: the VS title card on Match-up and Balance | 9, 18, 27, 28 |
 | §11 touch 3: the lead ribbon in rows and as the scrub bar with ability lanes | 7, 18, 21 |
 | §11 layout: 1440 x 900 reference, 1280 x 800 minimum, the five heights and widths | 1, 3, 17, 18, 19 to 25 |
@@ -2223,8 +2528,8 @@ Nobody was available to ask, so these were decided here. Each says what it costs
 | §11 wording; empty and failed states say what to do next | 19 to 25 (`wording.rs`) |
 | §11 keys: Space, arrows, 1 to 5 | 17, 18, 23 |
 | §13 unit tests written first; interface snapshot tests of each screen against the mock-ups on a software adapter | every task; 1, 4 to 7, 17 to 25, 35 |
-| §13 CI: Linux runs everything; Windows builds the app and runs the tests | 35 |
-| §14 milestone 2: five steps, preview, shortlist, queue, Library, settings, on the one match-up | 25 (on sample data), 35 (on the real engine) |
+| §13 CI: Linux runs everything; Windows builds the app and runs the tests | 1, 35 |
+| §14 milestone 2: five steps, preview, shortlist, queue, Library, settings, on the one match-up | 8c and 25 (on sample data), 35 (on the real engine) |
 | M1 plan's leftovers: queue persistence and reordering, Library, shortlist cache, caption drafting, live preview and sound | 11, 12, 13, 14 to 16, 24, 26, 30, 31 |
 | Update button and ffmpeg: a place now, their function in milestone 6 | 17, 23, 24, 33 |
 

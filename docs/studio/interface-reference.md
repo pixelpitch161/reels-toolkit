@@ -117,7 +117,7 @@ Sans Medium (500) is used only for the text of a selected chip or row.
   1 px `line` border.
 - **On / primary button**: `text` fill, `on-light` label. Marks a toggle that is on (the current step, Loop, a
   chosen segment) and the screen's main action ("Balance this match-up", "Auto-balance", "Search seeds", "Use seed
-  20418", "Go to render", "Add to queue").
+  18433", "Go to render", "Add to queue").
 - **Disabled**: keeps its place, text `faint`, no hover fill.
 - **Segmented control**: buttons 24 tall sharing a 1 px `line` border, no gaps, square inner corners; the chosen one
   is inverted.
@@ -168,7 +168,7 @@ top"; "Tempo" "133.77 bpm" (mono); "Handicap" "×2.00 / ×0.40" (mono; drawn on 
 
 **Stage column** (410 wide, `stage`, 1 px `line-soft` on its left): the preview centred, 8 below it one `small`
 `muted` line. Match-up and Balance: the VS title card, "Title card, also saved as the cover image". Seeds and Music:
-the fight, "Seed 20418, the real picture and sound". Render: "Flute vs Trombone, seed 20418". (The mock-ups draw the
+the fight, "Seed 18433, the real picture and sound". Render: "Flute vs Trombone, seed 18433". (The mock-ups draw the
 picture 351 x 624; see section 9.)
 
 **Story timeline** (112 tall, `panel`, 1 px `line-soft` above). A transport row 30 tall (padding 0 x 10, 1 px
@@ -287,10 +287,10 @@ each a `muted` label with its control 5 under it:
 rank column with no title, "Seed" (62), "Who leads" followed by an 8 x 8 swatch and "Flute above", another swatch and
 "Trombone below" (400), "Winner" (150), "K.O." (58, right-aligned), "Changes" (58, right-aligned), "Story" (the rest,
 right-aligned). Rows 38 tall, corner 8, padding 0 x 10, gap 12, the list padded 2 x 4: rank (mono `muted`), seed
-(mono), the row's lead ribbon (28 tall), the winner (a 4 x 18 bar in its colour, its name, then `small` `muted` "12
-HP left"), the K.O. time (mono, "51.2 s"), lead changes (mono), the story score (mono, two decimals). The chosen row
+(mono), the row's lead ribbon (28 tall), the winner (a 4 x 18 bar in its colour, its name, then `small` `muted` "16
+HP left"), the K.O. time (mono, "49.1 s"), lead changes (mono), the story score (mono, two decimals). The chosen row
 has the selected look. A footer 46 tall (1 px `line-soft` above, padding 0 x 14): `muted` "212 fights fit the beat
-sheet, from 18,240 checked. Still searching.", box button "Stop search", a spacer, primary button "Use seed 20418".
+sheet, from 18,240 checked. Still searching.", box button "Stop search", a spacer, primary button "Use seed 18433".
 
 Status bar: "Searching on 7 cores".
 
@@ -337,7 +337,7 @@ Status bar: "Soundtrack rebuilt for take 0417".
 ### 5.5 Render
 
 **This fight** (padding 14, gap 10, 1 px `line-soft` below): a row "This fight" (`section`) and `small` `muted`
-"Seed 20418, music take 0417". Then rows 6 apart:
+"Seed 18433, music take 0417". Then rows 6 apart:
 
 - "Caption" (`muted`, 70 wide), segments "Instagram", "TikTok", "Shorts" (270 wide), `small` `muted` "Drafted for
   you. Edit freely."
@@ -468,6 +468,7 @@ rustc 1.99.1, `x86_64-pc-windows-gnu`), so workers need not rediscover it:
 | No Library screen | A view in the workspace: a grid of covers | Spec section 4 |
 | Queue rows cannot be reordered | Drag a waiting row, or its right-click menu | Spec section 9 |
 | "Open in Music" on every failed check | The step that can fix it: Music for a sound check, Seeds for a picture check | Wording rule: say what to do next |
+| A failed loudness check advises "Try another music take, then queue it again." | "Open it in Music to see the levels, or try another seed, then queue it again." | New takes arrive with milestone 5; advice must be something the app can do |
 | Right side of the status bar holds a note about sample data | The counts of fighters and themes the app has | The notes are the mock-ups' own |
 | Arrangement clips carry names ("Melody", "Bass, thinner") | Until the music system is built (milestone 5): plain blocks showing where each part of the real soundtrack sounds | The names belong to the reacting arrangement, which does not exist yet |
 | "What the music listens for" | Until milestone 5: "Loudness", the take's level checks, and one line saying what arrives later | Spec section 8: loudness is checked on the Music step; no claim the app cannot keep |
@@ -492,3 +493,70 @@ travels with them: `license.txt` beside the Plex files (4,360 bytes, blob `f72f7
 and `OFL.txt` beside the Noto file (4,330 bytes, blob `d09d3d0e09169f6747754e6b25faf5ba5ef6402d`). `git hash-object
 <file>` prints a file's blob id, which is how a download is checked. Noto Emoji is the monochrome emoji font; it is
 there because captions are drafted with each fighter's emoji and the interface stays grey.
+
+## 11. The mock-ups' sample data
+
+Every number on the mock-ups is sample data. It is written down here so the app's sample data (`seam::sample`) and
+every fixture show the same thing the owner approved. Times given in percent are percent of the 61 s timeline.
+
+**The shortlist.** Fourteen seeds, 20418, 7731, 15290, 3306, 11874, 26051, 902, 18433, 5627, 23980, 14402, 8175, 29766
+and 1248, each turned into a fight by the mock-ups' own script (ported in the plan's Task 8b) and ranked by score.
+Run, it gives this order: 18433 (score 7.84, Trombone wins at 49.1 s with 16 HP left, no lead change), 5627 (7.75,
+Flute, 50.3 s, 26 HP, 2 changes), 8175 (7.73, Trombone, 52.7 s, 4 HP, 3), 23980, 11874, 29766, 7731, 15290, 1248,
+26051, 3306, 20418 (6.55, Trombone, 52.2 s, 10 HP, 4 changes), 14402, 902. The selected fight on every screen is
+therefore **seed 18433**. Seven of the fourteen are won by Trombone; six end with the winner at 12 HP or less. The
+footer's counts are 212 fits from 18,240 checked, searching on 7 cores. The mock-up's filter column reads "At least 2"
+lead changes over rows that have fewer, so the sample engine does not filter by lead changes or by ability. First uses
+of abilities, the same for every sample fight: Flute's "Flutter tongue" at 19.6 % and "Snake dance" at 50.2 %;
+Trombone's "Sad trombone" at 27.9 %, "Power slide" at 42.6 % and "Pedal tone" at 67.2 %. FIGHT! is at 3.6 s. The
+playhead stands at 0:31.40 (frame 942).
+
+**Balance.** 3,000 fights; Flute wins 47 %; typical K.O. 50.6 s, most between 44.2 and 56.9 s; 2.6 lead changes on
+average; 4 % with no K.O. by 58 s; 8 % fit the beat sheet (use a fit rate of 0.083, which reads "8%" and "About 1
+fight in 12"); measured in 1.4 s. Handicaps ×2.00 and ×0.40. The histogram's 28 bars, for the seconds 30 to 57:
+2, 3, 3, 5, 6, 8, 10, 13, 17, 22, 28, 36, 45, 56, 68, 80, 91, 98, 100, 96, 88, 76, 62, 47, 33, 21, 12, 6.
+
+**Music.** Markers: "Title card" 0 %, "Fight" 5.9 %, "Lead change" 32.8 %, "Lead change" 54.1 %, "Desperation"
+67.2 %, "K.O." 84 %, "Reset" 95.1 %. Lanes and where their clips run (start to end, in percent):
+
+| Group | Lane | Clips |
+|---|---|---|
+| Fighters | Flute | 0 to 2.6; 5.9 to 32.5; 32.8 to 53.8; 54.1 to 83.7; 86 to 94.8 |
+| Fighters | Trombone | 3 to 5.6; 5.9 to 32.5; 32.8 to 53.8; 54.1 to 83.7; 95.1 to 100 |
+| Band | Drums | 0 to 5.6; 5.9 to 66.9; 72.1 to 83.7; 86 to 94.8; 95.1 to 100 |
+| Band | Calliope | 5.9 to 66.9; 72.1 to 83.7 |
+| Band | Organ | 54.1 to 66.9; 72.1 to 83.7 |
+| Band | Glockenspiel | 72.1 to 83.7; 86 to 94.8 |
+| Band | Band hits | half a percent wide, at 19.6, 27.9, 42.6, 50.2 and 67.2 |
+
+The mock-up has no loudness lines (they replace "What the music listens for"); the sample uses three that pass:
+"Loudness", "The opening is 0.6 dB quieter than the ending, and the limit is 1.5 dB."; "Perceived loudness", "The
+title card is 0.4 LU under the fight."; "Fighters above the music", "Both fighters sit above the band in their own
+range." The music seed reads "0417"; the two chord loops are `Em Am B7 Em C Am B7 B7` (chosen) and, drawn short on the
+mock-up, `Em C Am B7` (use `Em C Am B7 Em C Am B7`).
+
+**Captions.** The caption line is "The front row vs the back row 🪈🎺 Comment the next match-up 👇". Instagram's tags:
+"#ballfight #flute #trombone #bandkids #marchingband #musicmemes #musician #pixelart #lowpoly #gamedev #satisfying
+#music". The mock-up shows only the Instagram tab; for the others the sample uses: TikTok, the same caption line and
+"#fyp #ballfight #flute #trombone #bandkid #musictok #pixelart #satisfying #bandtok #music"; Shorts, three lines:
+"Flute vs Trombone", "Flute vs Trombone, every hit in key. Comment the next match-up", "#shorts #ballfight #flute
+#trombone #music #pixelart". The output folder reads `Videos\BALLFIGHT\flute_vs_trombone\`.
+
+**The queue's four videos**, in the order drawn:
+
+| Video | Colours | Theme, seed | State |
+|---|---|---|---|
+| Tuba vs Bass drum | `#685cec`, `#80808c` | "Dark drumline", 9120 | rendering: the first seven lines of the check list done, "Drawing frames" at 1,171 of 1,830 (64 %) |
+| Alto sax vs Tenor sax | `#c850f0`, `#e66e1e` | "Dark disco", 15007 | waiting |
+| Oboe vs Bassoon | `#9cb034`, `#1e824c` | "Heist", 662 | stopped at the loudness check: "The opening is 2.1 dB quieter than the ending, and the limit is 1.5 dB. Nothing was saved." and then the advice of section 9 |
+| Cello vs Contrabass | `#c45428`, `#466ec8` | "Dark tango", 4471 | done in 48 s |
+
+The check list's notes while the first one renders: "Opening within 0.6 dB of the ending" under Loudness, "Busiest
+stretch peaks at 17% of the frame" under Flashes, "1,171 of 1,830" under Drawing frames. The status bar reads
+"Rendering Tuba vs Bass drum, about 20 s left"; the toolbar reads "Queue 2".
+
+**The Library** has no mock-up. Its sample is six videos, newest first, each dated at 12:00 UTC so the date reads the
+same in every time zone: Flute vs Trombone (seed 18433, Nov 10, 2026), Tuba vs Bass drum (9120, Nov 9), Cello vs
+Contrabass (4471, Nov 8), Alto sax vs Tenor sax (15007, Nov 7; this one carries the problem "Made by a newer version
+of the app."), Oboe vs Bassoon (662, Nov 6), Trumpet vs Horn (3306, Nov 5). Covers are drawn: the two fighters'
+colours split on a diagonal, 180 x 320. The sample app version is "0.1.0".
