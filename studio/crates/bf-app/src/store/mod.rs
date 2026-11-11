@@ -10,6 +10,7 @@ pub mod queue_file;
 pub mod settings;
 pub mod shortlist_cache;
 
+use std::collections::BTreeSet;
 use std::ffi::OsString;
 use std::fs;
 use std::io::{self, Write as _};
@@ -103,19 +104,61 @@ pub(crate) fn read_patiently(path: &Path) -> io::Result<Vec<u8>> {
     retry_busy(|| fs::read(path), &mut pause_before_retry)
 }
 
-/// `<name>.tmp` beside `path`.
+/// `<name>.<process>-<n>.tmp` beside `path`: a name of its own for every write, so two copies of the app (or two
+/// writes in one) never write into the same temporary file.
 fn tmp_path(path: &Path) -> io::Result<PathBuf> {
+    use std::sync::atomic::{AtomicU64, Ordering};
+    static NEXT: AtomicU64 = AtomicU64::new(0);
     let name = path
         .file_name()
         .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput, "the path has no file name"))?;
     let mut tmp = OsString::from(name);
-    tmp.push(".tmp");
+    tmp.push(format!(
+        ".{}-{}.tmp",
+        std::process::id(),
+        NEXT.fetch_add(1, Ordering::Relaxed)
+    ));
     Ok(path.with_file_name(tmp))
 }
 
+/// Settings files that `load_settings` could not open, so the app is running on its defaults while the owner's own
+/// file is still there. Before the writer saves settings over one of these, it moves the old file aside as
+/// `settings.unread-N.toml` (ruling M2-R9).
+static UNREAD: Mutex<BTreeSet<PathBuf>> = Mutex::new(BTreeSet::new());
+
+fn unread() -> MutexGuard<'static, BTreeSet<PathBuf>> {
+    UNREAD.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
+}
+
+/// Records that the file at `path` exists but could not be read.
+pub(crate) fn mark_unread(path: &Path) {
+    unread().insert(path.to_path_buf());
+}
+
+/// Records that the file at `path` was read (or is not there), so it may be written over.
+pub(crate) fn clear_unread(path: &Path) {
+    unread().remove(path);
+}
+
+/// Before settings are saved to `path`: if the file there could not be read at start, moves it aside as
+/// `settings.unread-N.toml` first. An error means the old file could not be kept, and the save must not happen.
+fn keep_unread(path: &Path) -> io::Result<()> {
+    if !unread().contains(path) {
+        return Ok(());
+    }
+    if !path.try_exists()? {
+        clear_unread(path);
+        return Ok(());
+    }
+    move_aside(path, "unread")?;
+    clear_unread(path);
+    Ok(())
+}
+
 /// Writes `bytes` to `path` so that the file is either the old one or the new one, never half of each: creates the
-/// folder if it is missing, writes `<name>.tmp` beside it, flushes it to the disk and renames it over `path`. A file
-/// that another program holds open is tried again for up to 375 ms. On failure no `.tmp` file is left behind.
+/// folder if it is missing, writes a temporary file of its own beside it (`<name>.<process>-<n>.tmp`), flushes it to
+/// the disk and renames it over `path`. A file that another program holds open is tried again for up to 375 ms. On
+/// failure no temporary file is left behind.
 pub fn write_atomic(path: &Path, bytes: &[u8]) -> io::Result<()> {
     write_atomic_with(path, bytes, &mut pause_before_retry)
 }
@@ -157,12 +200,43 @@ fn aside_path(path: &Path, tag: &str, n: u32) -> PathBuf {
     path.with_file_name(name)
 }
 
-/// The first set-aside name not taken.
-fn free_aside_path(path: &Path, tag: &str) -> io::Result<PathBuf> {
+/// The first set-aside name not taken, as a name only (for a notice that says where a file would go).
+pub(crate) fn next_aside_name(path: &Path, tag: &str) -> String {
+    let n = (1..=MAX_ASIDE)
+        .find(|&n| !aside_path(path, tag, n).exists())
+        .unwrap_or(1);
+    aside_path(path, tag, n)
+        .file_name()
+        .unwrap_or_default()
+        .to_string_lossy()
+        .into_owned()
+}
+
+/// Tests only: a hook called with a set-aside name just before it is claimed.
+#[cfg(test)]
+type ClaimHook = Option<Box<dyn FnMut(&Path)>>;
+
+#[cfg(test)]
+thread_local! {
+    /// Tests only: called with each set-aside name just before it is claimed, to play another program taking it.
+    static BEFORE_CLAIM: std::cell::RefCell<ClaimHook> = const { std::cell::RefCell::new(None) };
+}
+
+/// Claims the first free set-aside name by creating it empty with `create_new`, which fails if the name exists,
+/// even if another program made it a moment ago. Returns the name and the new, empty file.
+fn claim_aside(path: &Path, tag: &str) -> io::Result<(PathBuf, fs::File)> {
     for n in 1..=MAX_ASIDE {
         let candidate = aside_path(path, tag, n);
-        if !candidate.try_exists()? {
-            return Ok(candidate);
+        #[cfg(test)]
+        BEFORE_CLAIM.with(|hook| {
+            if let Some(hook) = hook.borrow_mut().as_mut() {
+                hook(&candidate);
+            }
+        });
+        match fs::OpenOptions::new().write(true).create_new(true).open(&candidate) {
+            Ok(file) => return Ok((candidate, file)),
+            Err(err) if err.kind() == io::ErrorKind::AlreadyExists => continue,
+            Err(err) => return Err(err),
         }
     }
     Err(io::Error::new(
@@ -172,27 +246,40 @@ fn free_aside_path(path: &Path, tag: &str) -> io::Result<PathBuf> {
 }
 
 /// Moves a file the app cannot use out of the way without deleting it: `settings.toml` with `tag` "corrupt"
-/// becomes `settings.corrupt-1.toml`, or the first free number after it. Returns the new path.
+/// becomes `settings.corrupt-1.toml`, or the first free number after it. The name is claimed first, so a file of
+/// that name made by anyone else is never written over. Returns the new path.
 pub fn move_aside(path: &Path, tag: &str) -> io::Result<PathBuf> {
-    let target = free_aside_path(path, tag)?;
-    retry_busy(|| fs::rename(path, &target), &mut pause_before_retry)?;
-    Ok(target)
+    let (target, claimed) = claim_aside(path, tag)?;
+    drop(claimed);
+    // The rename replaces only the empty file claimed above.
+    match retry_busy(|| fs::rename(path, &target), &mut pause_before_retry) {
+        Ok(()) => Ok(target),
+        Err(err) => {
+            let _ = fs::remove_file(&target);
+            Err(err)
+        }
+    }
 }
 
 /// When `move_aside` fails (another program holds the file), keeps the bytes the app already read under the
 /// set-aside name instead, so they are not lost when the file is written over later. Returns the new path.
 pub(crate) fn keep_copy(path: &Path, tag: &str, bytes: &[u8]) -> io::Result<PathBuf> {
-    let target = free_aside_path(path, tag)?;
-    let mut file = fs::OpenOptions::new().write(true).create_new(true).open(&target)?;
-    file.write_all(bytes)?;
-    file.sync_all()?;
-    Ok(target)
+    let (target, mut file) = claim_aside(path, tag)?;
+    let written = file.write_all(bytes).and_then(|()| file.sync_all());
+    drop(file);
+    match written {
+        Ok(()) => Ok(target),
+        Err(err) => {
+            let _ = fs::remove_file(&target);
+            Err(err)
+        }
+    }
 }
 
 /// Why a write failed, in words the owner can act on.
 fn plain_reason(err: &io::Error) -> &'static str {
     if is_busy(err) {
-        return "The file may be open in another program, or the folder may be read-only.";
+        return "The file may be open in another program, or the file or its folder may be read-only.";
     }
     match err.kind() {
         io::ErrorKind::NotFound => "The folder could not be found.",
@@ -224,6 +311,9 @@ struct State {
     /// Tests only: how many files the writer has written.
     #[cfg(test)]
     files_written: u64,
+    /// Tests only: the next settings write panics, as a bug in the writer would.
+    #[cfg(test)]
+    panic_next: bool,
 }
 
 struct Shared {
@@ -341,9 +431,19 @@ impl Drop for Writer {
 /// Marks the writer's thread as stopped when it ends, even by a panic, so `flush` never waits for a dead thread.
 struct StopGuard<'a>(&'a Shared);
 
+/// Said when the writer's thread ends by a fault rather than by the writer being dropped.
+const WRITER_STOPPED: &str = "Saving in the background stopped because of a fault in the app, so your latest settings \
+                              or render queue may not have been saved yet. Close the app and start it again: it saves \
+                              them as it closes.";
+
 impl Drop for StopGuard<'_> {
     fn drop(&mut self) {
-        self.0.lock().stopped = true;
+        let mut state = self.0.lock();
+        state.stopped = true;
+        if std::thread::panicking() {
+            state.problems.push(WRITER_STOPPED.to_string());
+        }
+        drop(state);
         self.0.done.notify_all();
     }
 }
@@ -381,13 +481,25 @@ fn write_pending(shared: &Shared, paths: &Paths) {
     let mut files = 0u64;
     if let Some(s) = settings {
         let path = paths.settings();
-        match settings::save_settings(&path, &s) {
-            Ok(()) => files += 1,
+        #[cfg(test)]
+        if std::mem::take(&mut shared.lock().panic_next) {
+            panic!("a test asked the writer to stop");
+        }
+        match keep_unread(&path) {
             Err(err) => problems.push(format!(
-                "Your settings could not be saved to {}. {}",
+                "Your settings were not saved to {}, because the old settings file there could not be kept safe \
+                 first. {} Change a setting again to try once more.",
                 path.display(),
                 plain_reason(&err)
             )),
+            Ok(()) => match settings::save_settings(&path, &s) {
+                Ok(()) => files += 1,
+                Err(err) => problems.push(format!(
+                    "Your settings could not be saved to {}. {}",
+                    path.display(),
+                    plain_reason(&err)
+                )),
+            },
         }
     }
     if let Some(q) = queue {
@@ -496,8 +608,23 @@ mod tests {
         let root = TempRoot::new("write_atomic_leaves_no_tmp_file");
         let path = root.0.join("not yet").join("made é").join("file.json");
         write_atomic(&path, b"first").unwrap();
-        assert_eq!(fs::read(&path).unwrap(), b"first");
+        write_atomic(&path, b"second").unwrap();
+        assert_eq!(fs::read(&path).unwrap(), b"second");
         assert_eq!(files_in(path.parent().unwrap()), vec!["file.json"]);
+    }
+
+    #[test]
+    fn every_write_has_its_own_temporary_name() {
+        let path = Path::new(r"C:\data dir\config\settings.toml");
+        let first = tmp_path(path).unwrap();
+        let second = tmp_path(path).unwrap();
+        assert_ne!(first, second);
+        for tmp in [&first, &second] {
+            assert_eq!(tmp.parent(), path.parent());
+            let name = tmp.file_name().unwrap().to_string_lossy().into_owned();
+            let prefix = format!("settings.toml.{}-", std::process::id());
+            assert!(name.starts_with(&prefix) && name.ends_with(".tmp"), "{name}");
+        }
     }
 
     #[test]
@@ -511,14 +638,15 @@ mod tests {
     }
 
     #[test]
-    fn a_write_that_cannot_happen_keeps_the_old_file() {
-        let root = TempRoot::new("a_write_that_cannot_happen_keeps_the_old_file");
+    fn a_write_that_cannot_happen_leaves_what_was_there() {
+        let root = TempRoot::new("a_write_that_cannot_happen_leaves_what_was_there");
+        // A folder with something in it where the file should go: the rename fails.
         let path = root.0.join("file.json");
-        fs::write(&path, b"old").unwrap();
-        // A folder where the temporary file would go: the write fails before anything is renamed.
-        fs::create_dir(root.0.join("file.json.tmp")).unwrap();
+        fs::create_dir(&path).unwrap();
+        fs::write(path.join("inside"), b"old").unwrap();
         assert!(write_atomic_with(&path, b"new", &mut |_| false).is_err());
-        assert_eq!(fs::read(&path).unwrap(), b"old");
+        assert_eq!(fs::read(path.join("inside")).unwrap(), b"old");
+        assert_eq!(files_in(&root.0), vec!["file.json"]);
     }
 
     #[cfg(windows)]
@@ -592,6 +720,72 @@ mod tests {
         let bare = root.0.join("queue");
         fs::write(&bare, b"q").unwrap();
         assert_eq!(move_aside(&bare, "corrupt").unwrap(), root.0.join("queue.corrupt-1"));
+    }
+
+    #[test]
+    fn move_aside_never_writes_over_a_file_already_there() {
+        let root = TempRoot::new("move_aside_never_writes_over_a_file_already_there");
+        let path = root.0.join("settings.toml");
+        fs::write(root.0.join("settings.corrupt-1.toml"), b"kept before").unwrap();
+        fs::write(&path, b"now").unwrap();
+        assert_eq!(
+            move_aside(&path, "corrupt").unwrap(),
+            root.0.join("settings.corrupt-2.toml")
+        );
+        assert_eq!(
+            fs::read(root.0.join("settings.corrupt-1.toml")).unwrap(),
+            b"kept before"
+        );
+        assert_eq!(fs::read(root.0.join("settings.corrupt-2.toml")).unwrap(), b"now");
+    }
+
+    #[test]
+    fn a_name_taken_at_the_last_moment_is_skipped() {
+        let root = TempRoot::new("a_name_taken_at_the_last_moment_is_skipped");
+        let path = root.0.join("settings.toml");
+        fs::write(&path, b"mine").unwrap();
+        // Another copy of the app makes settings.corrupt-1.toml just as this one is about to claim it.
+        let mut first = true;
+        BEFORE_CLAIM.with(|hook| {
+            *hook.borrow_mut() = Some(Box::new(move |candidate: &Path| {
+                if std::mem::take(&mut first) {
+                    fs::write(candidate, b"theirs").unwrap();
+                }
+            }));
+        });
+        let moved = move_aside(&path, "corrupt");
+        BEFORE_CLAIM.with(|hook| *hook.borrow_mut() = None);
+        assert_eq!(moved.unwrap(), root.0.join("settings.corrupt-2.toml"));
+        assert_eq!(fs::read(root.0.join("settings.corrupt-1.toml")).unwrap(), b"theirs");
+        assert_eq!(fs::read(root.0.join("settings.corrupt-2.toml")).unwrap(), b"mine");
+        assert!(!path.exists());
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn a_move_that_fails_gives_back_the_name_it_claimed() {
+        let root = TempRoot::new("a_move_that_fails_gives_back_the_name_it_claimed");
+        let path = root.0.join("settings.toml");
+        fs::write(&path, b"old").unwrap();
+        let lock = lock_exclusively(&path);
+        assert!(move_aside(&path, "unread").is_err());
+        drop(lock);
+        assert_eq!(files_in(&root.0), vec!["settings.toml"]);
+    }
+
+    #[test]
+    fn a_fault_in_the_writer_is_reported_in_words() {
+        let root = TempRoot::new("a_fault_in_the_writer_is_reported_in_words");
+        let paths = root.paths();
+        let writer = Writer::start(paths.clone());
+        writer.shared.lock().panic_next = true;
+        writer.settings(&sample_settings(2));
+        writer.flush();
+        assert_eq!(writer.problems(), vec![WRITER_STOPPED.to_string()]);
+        // What was pending is still written, on the caller's thread.
+        writer.settings(&sample_settings(3));
+        writer.flush();
+        assert_eq!(load_settings(&paths.settings(), 8).0, sample_settings(3));
     }
 
     #[test]
