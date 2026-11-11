@@ -110,9 +110,7 @@ def forget_stale(folder, keep, prefix='f'):
     gone = {common.rel(os.path.join(folder, n)) for n in stale}
     for n in stale:
         os.remove(os.path.join(folder, n))
-    with manifest._Lock():                                # (the manifest has no call of its own for this)
-        entries = manifest.load()
-        manifest._save([e for e in entries if e['path'] not in gone])
+    manifest.remove(gone)
     print(f"{__name__}: removed {len(stale)} PNGs of an earlier selection: {', '.join(stale)}")
 
 

@@ -83,7 +83,14 @@ is modified.
 
 ## The manifest
 
-`studio/reference/manifest.json` has one line per file, sorted by path: `path` (repo-relative), `sha256`, `bytes`,
+The manifest is sharded by folder (milestone 3): every `studio/reference/fighters/<slug>/`, `themes/<name>/` and
+`episodes/<pair>/` folder has its own `manifest.json`, which lists the files under that folder, so two lanes that
+export two fighters never write the same manifest. Every other file (milestones 0 to 2, and the files an export
+writes outside `studio/reference/`) is in the top-level `studio/reference/manifest.json`. `manifest.add(path)`
+picks the shard itself (`manifest.shard_of(path)`); `verify` walks every shard and also reports an entry listed in
+a shard it does not belong to, or listed twice. `manifest.remove(paths)` drops the entries of deleted files.
+
+Each manifest has one line per file, sorted by path: `path` (repo-relative), `sha256`, `bytes`,
 `tool` (the module that wrote it), `commit` (`git rev-parse HEAD` at export time), `dirty` (whether `projects/`,
 `reelkit/` or `series/` had uncommitted changes then), `python`, `numpy`, `scipy`, `pillow` and `platform`.
 
@@ -140,6 +147,124 @@ EXPORTS = {'thing': run}                         # python -m tools.studio_export
 # ORDER = {'thing': 60}                          # only if it must run after the default 50s under `all`
 ```
 
+## Milestone 3: committed set, pinned cache, budgets (`m3refs.py`)
+
+From milestone 3 the reference data of a fighter, a theme or a pair gate lives in its own folder,
+`studio/reference/fighters/<slug>/`, `themes/<name>/` or `episodes/<pair>/`, in two parts (plan, section 4):
+
+- **committed** files, in git and in the folder's manifest shard: what the always-run Rust gates read (a recording,
+  hashes, coverage tables, pooled statistics, fingerprints, small vectors), plus `pins.json`;
+- **cache** files under the git-ignored `studio/reference/.cache/m3/<area>/<name>/`: the bulky data of the
+  `#[ignore]`d gates (scenario recordings, statistics rows, stems, note vectors, stage dumps). The export writes
+  them, and `pins.json` records each one: `path` (below `studio/reference/.cache/m3/`), `sha256`, `bytes` and the
+  `export` that makes it. The kit is deterministic on the reference PC with the pinned libraries, so a regenerated
+  file is the pinned file.
+
+```
+.studio-tools\py313\Scripts\python.exe -m tools.studio_export fighter_flute            # committed + cache, new pins
+.studio-tools\py313\Scripts\python.exe -m tools.studio_export cache fighters/flute     # regenerate, check the pins
+.studio-tools\py313\Scripts\python.exe -m tools.studio_export cache all                # every folder with pins.json
+.studio-tools\py313\Scripts\python.exe -m tools.studio_export remake fighters/flute    # a port's own folder, whole
+.studio-tools\py313\Scripts\python.exe -m tools.studio_export budget                   # sizes against the budgets
+.studio-tools\py313\Scripts\python.exe -m tools.studio_export.unit_checks.m3refs_checks   # the framework's checks
+```
+
+- An **export run** (`fighter_<slug>`) writes the committed files (listed in the shard) and the cache files, and
+  pins every cache file that has no pin yet. A cache file that differs from its pin, or a pin the run no longer
+  makes, stops the run naming the file: the export never moves a pin on its own.
+- A **cache run** (`cache <area>/<name>...` or `cache all`) does the same work but writes no committed file: each
+  must come out byte for byte as it is (a difference stops the run naming the file), every cache file must equal
+  its pin, and at the end `check_pins` re-hashes them all. So regenerating the cache never touches the working
+  tree. The folder's export is the one its pins name (else `fighter_<slug>`, `theme_<name>`, `episode_<pair>` by
+  the area).
+- A **remake** (`remake <area>/<name>`) is the one command that makes a folder again whole after its spec changed:
+  committed files, shard and pins together (changed pins replaced, stale ones dropped), all or nothing. A port types
+  it for its own folder before it is merged; on a merged folder it is a **controller decision**, recorded in the
+  ledger with the reason (ruling M3-R1). Nothing runs it implicitly; `remake all` is refused.
+- All or nothing, in every mode: committed writes and `pins.json` wait in the run's stage and are applied only in
+  `finish(folder)`, after every pin has been checked against its file; a run that stops changes nothing committed.
+- A fighter's model (`studio/crates/bf-content/data/models/<NAME>.json`) is listed in its fighter's shard
+  (`fighters/<slug>/manifest.json`), not the top-level manifest, so a port never touches a shared manifest.
+- The Rust side (`bf_testdata::cache_file("fighters/flute/right.bfrec")`) checks the pin (once per path and
+  process; `cache_bytes` hashes the bytes it hands out) and panics with `run: python -m tools.studio_export cache
+  fighters/flute` when the file is missing, unpinned or changed, or with the export command when the folder has no
+  `pins.json` at all: a cache-backed test fails, it never skips.
+- `budget` prints every milestone 3 folder's size and the whole set's against section 4 (fighters/<slug>/ 300 KB;
+  themes/<name>/ 120 KB + 160 KB per `.bfrec` in it; episodes/<pair>/ 100 KB, 260 KB for `trombone_vs_tuba` and
+  `bassclarinet_vs_euphonium`; all of `studio/reference/` 147 MB; KB = 1,000 bytes), over the files git tracks or
+  would track there, and exits 1 naming each folder over. `bf-testdata`'s test `budget` applies the same numbers.
+- `cache`, `remake` and `budget` are in `m3refs.TAKES_ARGS`, so `all` leaves them out.
+- Per-fighter, theme and pair exports (`fighter_<slug>`, `theme_<name>`, `episode_<pair>`) add no row to the
+  table "What each export writes" below: their module docstrings and this section document them.
+
+### A fighter's export: `fighter_<slug>.py`
+
+```python
+from . import m3refs
+
+SPEC = dict(name='TUBA', opponent='FLUTE')        # every other key has a default (below)
+
+EXPORTS = {'fighter_tuba': lambda: m3refs.fighter_refs(SPEC)}
+```
+
+| Key | Default | What it is |
+| --- | --- | --- |
+| `name` | (required) | the roster name; never a retired fighter |
+| `opponent` | (required) | the other fighter of every fight: FLUTE (TROMBONE for FLUTE itself) |
+| `fights` | see below | the fight config and the statistics |
+| `scenarios` | `None` | `None` = the template's: `early_levels` (`LV_DMG=(2.0, 5.0)`), `early_low` (also `LOW_HP=92.0`), `early_ko` (`dmg_scale=3.0`), `plain` (seeds 7, 8, 9), `swapped` (the opponent in the left corner), three seeds each, and `vs_trombone` (two plain fights against TROMBONE) unless one fighter is TROMBONE; or a list of `dict(name=, seeds=(..), overrides={}, swapped=False, opponent=None)` |
+| `frames` | `dict(left=64, right=32, times=())` | the look gates' frame counts and extra times (Task 6) |
+| `roles` | `()` | the roles its part is exported in; `()` = its kit role (Task 6) |
+| `voice_notes` | `dict(pitches=None, velocities=(0.6, 0.9), durations=(0.12, 0.25, 1.0))` | the voice notes (Task 6) |
+| `hooks` | `()` | the look and title hooks its picture gates log (Task 6) |
+
+`fights`: `base='flute_vs_trombone'` (the kit example the configs are copied from, with the fight's own
+`FIGHTERS`, `DMG_SCALE`, `DMG_SIDE` and `RULES` appended; the series' pair rules come from `m3refs.PAIR_RULES`),
+`handicap=(1.0, 1.0)`, `dmg_scale=1.0`, `rules={}`, `stats=2000`, `scan=500`, `left=None`, `right=None` (fixed
+seeds instead of the scan) and `must=()` (coverage items to require besides the automatic ones).
+
+What `fighter_refs` writes today (the fight half; Task 6 adds the picture, sound, voice and check parts):
+
+| File | Where | What |
+| --- | --- | --- |
+| `fight.json` | committed | the normalised spec, the config, the two look fights, each scenario with its full rules, the pooled statistics and `fights_with` counts, `same_as`, and the coverage table: each required item's first occurrence over the scenarios (scenario, seed, `t`, `after_fight`, event index, the event) |
+| `left.bfrec` | committed | X in the left corner, winning, all three abilities fired: the lowest such statistics seed. If the bytes equal a recording the set already has, `left.file` points at it and no copy is written |
+| `right.bfrec` | cache | the opponent in the left corner and winning (X's shards fly): the lowest such seed |
+| `scenarios/<name>_s<seed>.bfrec` | cache | the scenario fights; when an item is not covered within 20 s of FIGHT!, every group gets 3 more seeds (up to 3 times), then the export stops naming what it cannot reach |
+| `stats_rows.json` | cache | one row per seed (the columns of `stats.py`), X left |
+| `pins.json`, `manifest.json` | committed | the pins, the shard |
+
+The statistics run in a `spawn` pool of `m3refs.WORKERS` = 3 processes (plan section 2: six lanes share the PC).
+
+`fighter_flute` and `fighter_trombone` are the framework's first users. They fight at the kit's handicap for their
+pair (the example's `DMG_SIDE`), not at (1.0, 1.0): at (1.0, 1.0) FLUTE wins no fight against TROMBONE, and at the
+example's handicap the framework's recordings are milestone 1's own where the seeds are the same (`same_as`).
+
+### How a port adds its exports
+
+1. Write `tools/studio_export/fighter_<slug>.py` (or `theme_<name>.py`, `episode_<a>_vs_<b>.py`) with its `SPEC`
+   and `EXPORTS`, nothing else.
+2. Run it (`python -m tools.studio_export fighter_<slug>`): the committed files land in its folder with their shard
+   and the new pins, the cache files under `.cache/m3/`.
+3. `python -m tools.studio_export cache fighters/<slug>` must then pass without touching the tree (it proves the
+   export reproduces itself), and `budget` must show the folder inside its budget.
+4. A Rust test reads committed files through `bf_testdata::reference("fighters/<slug>/fight.json")` and cache files
+   through `bf_testdata::cache_file("fighters/<slug>/right.bfrec")`, in an `#[ignore]`d test.
+5. Commit the folder (committed files, `pins.json`, `manifest.json`), the model if it has one, and the export
+   module.
+6. After a change to the SPEC (or the port) that changes a committed or a pinned file, the export and `cache` stop;
+   `python -m tools.studio_export remake fighters/<slug>` makes the unmerged folder again in one run. Never remake a
+   merged folder on your own: if a regenerated file differs, report it.
+
+### Hand-over to Task 6 (the proving harness)
+
+`m3refs.py`'s docstring ends with it: `fighter_refs` calls `fighter_model` (`models.model` through `commit_path`);
+each picture part runs in a fresh process with `fighter_picture(cfg.with_seed(seed))`; sprites go to the pinned
+cache through `fighter_sprites` (`.cache/m3/fighters/<slug>/sprites.{npz,json}`, ruling M3-R18) with only their
+hashes committed; the committed files Template F implies are `look.json`, `sound.json`, `voice.json`, `checks.json`
+and `exceptions.toml`; `right`'s frame hashes are cached while `left`'s are committed; a pair folder is the kit
+config's name without its `ballfight_` prefix (`LARGE_EPISODES` relies on it).
+
 ## What each export writes
 
 | Name | Module | Files |
@@ -155,13 +280,14 @@ EXPORTS = {'thing': run}                         # python -m tools.studio_export
 | `rules_map` | `rules_map.py` | `studio/reference/fights/rules_map/{no_handicap,swat_off}.bfrec,index.json`: the example episode with no `DMG_SIDE`, and with `RULES = dict(swat_cobras=False)`, each fought for its first 3 s (seed 1): the recorded `rules` (`vars(rules)`) of a fight file with no handicap and of one with the pair rule `swat_cobras = false`; `crates/bf-sim/tests/rules_map.rs` reads them (under a second) |
 | `lance_bag` | `lance_bag.py` | `studio/reference/fights/lance_vs_bag/{<kind>_<corner>_s<seed>.bfrec,index.json}`: 9 fights of the TROMBONE's lance against a bag (the two bags of `striker_bag`, and a LANCER: the TROMBONE with POWER SLIDE as its only ability; all added to the kit's roster table for the run only), the first 16 s of each, so that only the engine core and the lance act; `index.json` lists them, the three added entries and what the set covers (about 2 s) |
 | `look_trombone` | `look_trombone.py` | `studio/reference/picture_looks/trombone_frames.json`: the episode drawn with the TROMBONE's own look and the kit's base-class look for the FLUTE (replaced in the worker process only), for two fights, each in a process of its own: the episode's (seed 392, the TROMBONE wins) and seed 3 (it loses): per frame the SHA-256 of the frame, of the hook calls and of the draw log, 181 frames (about 1 minute). `look_trombone_stages <fight> <frame>...` is no reference export: it writes the stage dumps of those frames for the same two looks under `studio/reference/.cache/stages_look_trombone/<fight>/` |
-| `models` | `models.py` | `studio/crates/bf-content/data/models/{FLUTE,TROMBONE}.json` |
+| `models` | `models.py` | `studio/crates/bf-content/data/models/{FLUTE,TROMBONE}.json` (`models.model(name)` writes one roster name's file only) |
+| `cache`, `remake`, `budget` | `m3refs.py` | no reference export: see "Milestone 3" |
 | `pillow` | `pillow_vectors.py` | `studio/reference/pillow/calls.json` and 18 vector files, each `.npz` with its sidecar `.json` (about 4 minutes: it draws all 1,830 frames in 8 worker processes) |
 | `py` | `py_vectors.py` | `studio/reference/py/vectors.json` |
 | `pyhash` | `pyhash_vectors.py` | `studio/reference/pyhash/vectors.json` |
 | `rng` | `rng_vectors.py` | `studio/reference/rng/vectors.json` |
 | `roster` | `roster.py` | `studio/crates/bf-content/data/roster.json` |
-| `sprites` | `sprites.py` | `studio/reference/sprites/{FLUTE,TROMBONE}.npz`, each with its sidecar `.json` (about 2 minutes) |
+| `sprites` | `sprites.py` | `studio/reference/sprites/{FLUTE,TROMBONE}.npz`, each with its sidecar `.json` (about 2 minutes; `sprites.run_one(name)` writes one fighter's two files only) |
 | `stats` | `stats.py` | `studio/reference/fights/flute_vs_trombone/stats.json` (seeds 1 to 4,000, pooled figures; order 55) |
 | `scenarios` | `scenarios.py` | `studio/reference/fights/flute_vs_trombone/{scenarios/*.bfrec,no_ko.bfrec,coverage.json}` (reads `stats.json`; order 60) |
 | `stories` | `stories.py` | `studio/reference/fights/flute_vs_trombone/stories.json` (the kit's story and score of every recording there; order 70) |

@@ -6,7 +6,10 @@ them: P (k x 3 vertices), n (unit normal), rgb, two (two-sided), emit (unshaded)
 by its shortest round-trip repr, so it reads back to the same bits.
 
 Each file is read back and compared value for value, and a sprite drawn from the file alone must equal the kit's own
-(sprites.render_sprite): the file holds everything the sprite renderer needs."""
+(sprites.render_sprite): the file holds everything the sprite renderer needs.
+
+`model(name)` writes one roster name's file and nothing else (a fighter's port calls it from its own export); the
+`models` export writes the two milestone 1 fighters'."""
 import json
 import os
 
@@ -55,11 +58,10 @@ def geo_from(doc):
     return g
 
 
-def check(name, path, doc, faces):
-    """the file says what the bridge said, and draws the same sprites"""
+def check(name, data, doc, faces):
+    """the file's bytes say what the bridge said, and draw the same sprites"""
     import sprites as SP
-    with open(path, encoding='utf-8') as fh:
-        back = json.load(fh)
+    back = json.loads(data.decode('utf-8'))
     common.same(common.plain(doc), back, name)
     assert len(back['faces']) == len(faces)
     for f, (P_, n, rgb, two, emit, gid, spec) in zip(back['faces'], faces):
@@ -78,23 +80,42 @@ def check(name, path, doc, faces):
         assert a.any() and np.array_equal(a, b), f'{name}: the sprite from the file differs (r {r}, yaw {yaw})'
 
 
-def run():
-    P = F.picture('models')
+def model(name, P=None, write=None):
+    """write studio/crates/bf-content/data/models/<name>.json for one roster name, and only that file: the Pixel
+    Pitch model its roster entry names (`pp`), proven from its bytes by its sprites. `P` is a loaded kit picture
+    (frames.picture), made here when not given: the bridge needs the kit's paths. `write(path, data)` writes the
+    checked bytes; by default the file is written and listed (its entry goes to its fighter's shard,
+    fighters/<slug>/manifest.json); a fighter's export passes its own (m3refs.commit_path, so a cache run compares
+    instead and a remake stages it). Returns the path"""
+    if P is None:
+        P = F.picture('models')
     import pp_bridge as B
+    pp = common.roster()[name]['pp']
     os.makedirs(OUT, exist_ok=True)
-    for name in sorted({P.CFG[k]['pp'] for k in (0, 1)}):
-        assert name in P.NAMES, name                      # (these two fighters' models carry their own names)
-        faces = B.model_faces(name)
-        again = B.model_faces(name)
-        assert all(a[0].tobytes() == b[0].tobytes() and a[1].tobytes() == b[1].tobytes() for a, b in zip(faces, again))
-        doc = faces_doc(name, faces, B.entrant(name), B.scene(name).get('key'))
-        path = os.path.join(OUT, f'{name}.json')
-        common.write_json(path, doc, register=False)
-        check(name, path, doc, faces)
+    faces = B.model_faces(pp)
+    again = B.model_faces(pp)
+    assert all(a[0].tobytes() == b[0].tobytes() and a[1].tobytes() == b[1].tobytes() for a, b in zip(faces, again))
+    doc = faces_doc(pp, faces, B.entrant(pp), B.scene(pp).get('key'))
+    path = os.path.join(OUT, f'{name}.json')
+    data = common.dumps(doc).encode('utf-8')
+    check(pp, data, doc, faces)
+    if write is None:
+        common.write_bytes(path, data)
         manifest.add(path, tool=__name__)
-        sides = sorted({len(f['P']) for f in doc['faces']})
-        print(f"models: {common.rel(path)}  {len(faces)} faces ({', '.join(map(str, sides))} vertices)  "
-              f"{os.path.getsize(path) / 1e3:.0f} kB")
+    else:
+        write(path, data)
+    sides = sorted({len(f['P']) for f in doc['faces']})
+    print(f"models: {common.rel(path)}  {len(faces)} faces ({', '.join(map(str, sides))} vertices)  "
+          f"{len(data) / 1e3:.0f} kB")
+    return path
+
+
+def run():
+    """the two milestone 1 fighters' models (the episode's fighters, whose models carry their own names)"""
+    P = F.picture('models')
+    for name in sorted(P.NAMES):
+        assert P.CFG[P.NAMES.index(name)]['pp'] == name, name
+        model(name, P)
 
 
 EXPORTS = {'models': run}
