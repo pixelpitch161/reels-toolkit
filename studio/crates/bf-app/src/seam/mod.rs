@@ -34,6 +34,8 @@ pub enum Command {
     /// Answered by `Event::Roster`.
     LoadRoster,
     /// The pair rules, drafted captions and title card of the draft's fighters: `Event::FightInfo`.
+    /// The description must depend on the fighters and their order only (never on the tempo, the handicap or the
+    /// music): the interface keeps it for every generation until the fighters or their order change.
     DescribeFight {
         r#gen: Gen,
         draft: Draft,
