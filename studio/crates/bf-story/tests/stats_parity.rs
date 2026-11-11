@@ -12,7 +12,7 @@
 //!   4,000. Seeds are Studio-owned: the Rust engine agrees with the kit for the first 25 s or more of a fight and
 //!   then drifts in the last bits, so one seed's winner or K.O. time may differ from the kit's. Nothing here
 //!   compares seed by seed; only the distributions are compared, with bars several times the sampling noise of the
-//!   kit's 4,000 fights (win share 0.8 points, median K.O. about 0.15 s, mean lead changes 0.013, fit rate 0.14
+//!   kit's 4,000 fights (win share 0.8 points, median K.O. 0.12 s, mean lead changes 0.015, fit rate 0.14
 //!   points, one standard error each). A single fight that goes another way (a knife-edge clash that only one
 //!   engine sees) moves the win share and the fit rate by 1 / 40,000 and leaves the median where it is, so the
 //!   comparison cannot break on it.
@@ -24,10 +24,10 @@ use std::fs;
 use bf_story::{Outcome, Stats, stats};
 use serde_json::Value;
 
-use support::{base, roster, sheet, studio, with_seed};
+use support::{base, roster, sheet, with_seed};
 
 fn stats_json() -> Value {
-    let path = studio().join("reference/fights/flute_vs_trombone/stats.json");
+    let path = bf_testdata::reference("fights/flute_vs_trombone/stats.json");
     let text = fs::read_to_string(&path).unwrap_or_else(|e| panic!("{}: {e}", path.display()));
     serde_json::from_str(&text).unwrap()
 }
@@ -158,9 +158,11 @@ fn workers() -> usize {
     std::thread::available_parallelism().map_or(1, |n| n.get())
 }
 
-/// The proof at the size every test run can afford: 4,000 Rust fights (seeds 1 to 4,000, about a second) against
-/// the kit's 4,000, with the same bars as the 40,000-fight proof below. The seeds are fixed, so the figures are too:
-/// this cannot pass one day and fail the next.
+/// A regression guard that every test run can afford, NOT an independent sample: 4,000 Rust fights of the same
+/// seeds 1 to 4,000 the kit's figures are of. The two engines agree on most of these fights (3,687 end with the
+/// same winner), so the figures are close because the fights are largely the same fights; that makes this a
+/// sensitive alarm for a change that moves the engine, and no proof about its statistics. The proof is the
+/// 40,000-fight test below. The seeds are fixed, so the figures are too: this cannot pass one day and fail the next.
 #[test]
 fn rust_statistics_of_4000_fights_are_the_kits() {
     let doc = stats_json();
@@ -168,6 +170,7 @@ fn rust_statistics_of_4000_fights_are_the_kits() {
     let roster = roster();
     let base = base(&roster);
     let rs = stats(&|seed| with_seed(&base, seed), &sheet(&base), 1..4_001, workers()).unwrap();
+    assert_eq!(py.n, 4_000);
     println!("  kit  (seeds 1 to 4,000): {py:?}");
     println!("  Rust (seeds 1 to 4,000): {rs:?}");
     assert_eq!(rs.n, 4_000);
@@ -195,8 +198,20 @@ fn rust_statistics_are_the_kits() {
     );
     println!("  kit  (seeds 1 to 4,000):  {py:?}");
     println!("  Rust (seeds 1 to 40,000): {rs:?}");
-    assert_eq!(rs.n, 40_000);
+    assert_eq!((rs.n, py.n), (40_000, 4_000));
     assert_the_kits(&rs, &py);
+    // The brief's bars for the fit rate (1.5 points on a rate of 0.75 %) and the lead changes (0.25 on 0.57) would
+    // let a fault through, so both are also held to about 4 standard errors of the kit's 4,000 fights (fit rate
+    // 0.14 points, mean lead changes 0.015; the Rust figures' own errors are a third of that).
+    for (what, rust, kit, bar) in [
+        ("fit rate", rs.fit_rate, py.fit_rate, 0.005),
+        ("mean lead changes", rs.lead_changes_mean, py.lead_changes_mean, 0.06),
+    ] {
+        assert!(
+            (rust - kit).abs() <= bar,
+            "{what}: Rust {rust}, the kit {kit}, more than {bar} apart (the tight bar)"
+        );
+    }
 
     // one worker: the speed of one core, and the same figures as many workers give
     let started = std::time::Instant::now();

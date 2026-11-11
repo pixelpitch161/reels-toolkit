@@ -129,7 +129,10 @@ fn handicap(ln_r: f64, ln_s: f64) -> [f64; 2] {
 /// Finds the handicap that balances a pairing, starting from `start`, with the Studio's plan (28 steps of 400
 /// fights and a confirmation of 3,000: 14,200 fights).
 ///
-/// `setup_for` gives the fight of a seed under a handicap (left fighter first). `progress` hears of every
+/// `setup_for` gives the fight of a seed under a handicap (left fighter first). The handicap is the ONLY thing it
+/// may change from one call to the next: it is the rules' damage handicap (`rules.dmg_side`), the one lever a
+/// pairing has. The fighters, their roster numbers and every other rule stay as they are; a fight is never edited
+/// to make it even. `progress` hears of every
 /// measurement. `cancel` is tested before every fight; a run that was stopped is `Halt::Cancelled` and gives
 /// nothing. A handicap or a set-up the engine refuses, or a fight that broke off, is `Halt::Failed` with the seed
 /// and the reason, said once (the first fight of the first step already says it).

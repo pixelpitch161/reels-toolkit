@@ -11,4 +11,5 @@ bf-sim.workspace = true
 rayon.workspace = true
 
 [dev-dependencies]
+bf-testdata = { path = "../bf-testdata" }
 serde_json.workspace = true

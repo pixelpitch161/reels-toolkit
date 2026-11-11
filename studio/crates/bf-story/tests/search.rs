@@ -10,7 +10,8 @@ use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 
 use bf_sim::Setup;
 use bf_story::{
-    Candidate, Filters, SearchEnd, SearchOpts, SearchProgress, SearchResult, Story, Verdict, fight, rank, search,
+    Candidate, Filters, KEEP_MISFITS, SearchEnd, SearchOpts, SearchProgress, SearchResult, Story, Verdict, fight, rank,
+    search, shortlist,
 };
 
 use support::{base, roster, sheet, with_seed};
@@ -45,12 +46,15 @@ fn same_shortlist_for_any_worker_count() {
     assert_eq!(one.end, SearchEnd::Full);
     let fits: Vec<&Candidate> = one.candidates.iter().filter(|c| c.verdict.fits).collect();
     assert_eq!(fits.len(), 5, "the search stops on the fifth fit");
-    // every seed from 1 to the last one checked is there once, and the last one is the fifth fit
-    assert_eq!(one.candidates.len() as u64, one.checked);
+    // the last seed checked is the fifth fit; the rest of the list is the best misfits of the seeds before it
+    assert_eq!(fits.iter().map(|c| c.seed).max(), Some(one.checked));
+    let misfits = (one.checked as usize - 5).min(KEEP_MISFITS);
+    assert_eq!(one.candidates.len(), 5 + misfits);
     let mut all = seeds(&one);
     all.sort_unstable();
-    assert_eq!(all, (1..=one.checked).collect::<Vec<_>>());
-    assert_eq!(fits.iter().map(|c| c.seed).max(), Some(one.checked));
+    all.dedup();
+    assert_eq!(all.len(), one.candidates.len(), "no seed twice");
+    assert!(all.iter().all(|s| (1..=one.checked).contains(s)));
     // fits first, by score downward, then by seed upward; the same for the rest
     let fits_n = fits.len();
     for part in [&one.candidates[..fits_n], &one.candidates[fits_n..]] {
@@ -140,6 +144,59 @@ fn a_search_in_chunks_is_the_search_in_one_go() {
 }
 
 #[test]
+fn a_long_search_holds_a_bounded_shortlist() {
+    let roster = roster();
+    let base = base(&roster);
+    let run = |from, n, workers| {
+        run(
+            &base,
+            &SearchOpts {
+                from,
+                stop_fits: 200,
+                max_seeds: Some(n),
+                workers,
+            },
+        )
+    };
+    let whole = run(1, 1_000, 7);
+    assert_eq!(
+        (&whole.end, whole.checked),
+        (&SearchEnd::OutOfSeeds, 1_000),
+        "every seed is counted"
+    );
+    let fits = whole.candidates.iter().filter(|c| c.verdict.fits).count();
+    assert!(fits >= 1, "1,000 seeds of the example fight hold a fit");
+    // every fit, and the best 200 of the 1,000 - fits others: never more than stop_fits + KEEP_MISFITS
+    assert_eq!(KEEP_MISFITS, 200);
+    assert_eq!(whole.candidates.len(), fits + KEEP_MISFITS);
+    // which ones: the same 1,000 seeds in chunks small enough to keep everything, merged and cut by `shortlist`
+    let mut merged = Vec::new();
+    for chunk in 0..8 {
+        let part = run(1 + 125 * chunk, 125, 7);
+        assert_eq!(
+            (part.checked, part.candidates.len()),
+            (125, 125),
+            "a chunk of 125 keeps all its seeds"
+        );
+        merged.extend(part.candidates);
+    }
+    assert_eq!(merged.len(), 1_000);
+    // worked out here, without the crate's ordering: the 200 misfits with the highest scores (lower seed first)
+    let mut others: Vec<(f64, u64)> = merged
+        .iter()
+        .filter(|c| !c.verdict.fits)
+        .map(|c| (c.verdict.score, c.seed))
+        .collect();
+    others.sort_by(|a, b| b.0.total_cmp(&a.0).then(a.1.cmp(&b.1)));
+    let best: Vec<u64> = others[..KEEP_MISFITS].iter().map(|x| x.1).collect();
+    assert_eq!(seeds(&whole)[fits..], best[..]);
+    shortlist(&mut merged);
+    assert_eq!(merged, whole.candidates);
+    // and one worker keeps the same ones
+    assert_eq!(run(1, 1_000, 1), whole);
+}
+
+#[test]
 fn progress_counts_every_seed_in_order() {
     let roster = roster();
     let base = base(&roster);
@@ -209,10 +266,12 @@ fn search_can_be_cancelled() {
     );
     assert_eq!(r.end, SearchEnd::Stopped);
     assert!(r.checked >= 20, "checked {}", r.checked);
-    // the workers are never more than 4 seeds each ahead of the reading, and start nothing once the flag is set
+    // Exact: the flag is set while the 20th seed is read, under the search's lock. A fight is started only by a
+    // worker that saw, under that lock, fewer than 4 * 7 seeds between its own and the first unread one; the last
+    // such look was while at most 19 seeds were read, so the fights started are of seeds 1 to 19 + 28 at most.
     let fought = fought.load(Ordering::SeqCst);
     assert!(
-        fought <= 20 + 4 * 7,
+        fought <= 19 + 4 * 7,
         "{fought} fights were started; 20 were checked when it was told to stop"
     );
     assert!(r.checked <= fought);

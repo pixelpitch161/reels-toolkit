@@ -21,6 +21,8 @@ pub use balance::{
 };
 pub use filters::Filters;
 pub use score::{BeatSheet, Verdict, score};
-pub use search::{Candidate, Halt, SearchEnd, SearchOpts, SearchProgress, SearchResult, fight, rank, search};
+pub use search::{
+    Candidate, Halt, KEEP_MISFITS, SearchEnd, SearchOpts, SearchProgress, SearchResult, fight, rank, search, shortlist,
+};
 pub use stats::{Outcome, Stats, stats, stats_until};
 pub use story::{Story, story, story_at};

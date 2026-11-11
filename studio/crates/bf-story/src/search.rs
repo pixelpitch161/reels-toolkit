@@ -52,7 +52,6 @@ pub struct SearchOpts {
     /// Stop at the seed whose fight is this many-th fit (the Studio's shortlist is full at 200).
     pub stop_fits: usize,
     /// Check at most this many seeds; `None`: go on until `stop_fits`, the stop flag, or the last seed there is.
-    /// Every seed checked stays in the result, so a search without a limit should have a stop flag someone sets.
     pub max_seeds: Option<u64>,
     /// Worker threads (0 counts as 1). The result does not depend on it.
     pub workers: usize,
@@ -97,11 +96,11 @@ pub enum SearchEnd {
 /// What a search found.
 #[derive(Clone, Debug, PartialEq)]
 pub struct SearchResult {
-    /// Every seed checked, as [`rank`] orders them: the fits first, then the rest; each by score downward, then by
-    /// seed upward.
+    /// The shortlist of the seeds checked, as [`rank`] orders it: every fit, then the best [`KEEP_MISFITS`] of the
+    /// fights that do not fit; each group by score downward, then by seed upward.
     pub candidates: Vec<Candidate>,
-    /// How many seeds were checked: `from` to `from + checked - 1`, each one once. A search that goes on starts at
-    /// `from + checked`.
+    /// How many seeds were checked: `from` to `from + checked - 1`, each one once, whether or not its fight is
+    /// still in `candidates`. A search that goes on starts at `from + checked`.
     pub checked: u64,
     /// Why it ended.
     pub end: SearchEnd,
@@ -141,23 +140,41 @@ pub fn fight(setup: &Setup, sheet: &BeatSheet) -> Result<Candidate, SimError> {
     })
 }
 
+/// How many fights that do not fit a shortlist keeps: the best of them by [`rank`]'s order. (Every fit is kept.)
+pub const KEEP_MISFITS: usize = 200;
+
+/// The shortlist's order of two candidates: a fit before a misfit, then the higher score, then the lower seed. No
+/// two candidates of different seeds are equal in it.
+fn order(a: &Candidate, b: &Candidate) -> std::cmp::Ordering {
+    b.verdict
+        .fits
+        .cmp(&a.verdict.fits)
+        .then(b.verdict.score.total_cmp(&a.verdict.score))
+        .then(a.seed.cmp(&b.seed))
+}
+
 /// The shortlist's order: the fits first, then the rest; each by score downward (the kit's
 /// `fits.sort(key=lambda r: -r['score'])`), equal scores by seed upward.
 pub fn rank(candidates: &mut [Candidate]) {
-    candidates.sort_by(|a, b| {
-        b.verdict
-            .fits
-            .cmp(&a.verdict.fits)
-            .then(b.verdict.score.total_cmp(&a.verdict.score))
-            .then(a.seed.cmp(&b.seed))
-    });
+    candidates.sort_by(order);
 }
 
-/// Fights the seeds from `opts.from` upward and returns every seed checked, ranked, with how far it got and why it
-/// ended. `setup_for` gives the fight of a seed (the seed handed out is the seed fought, whatever seed the set-up
+/// [`rank`], then only the best [`KEEP_MISFITS`] of the fights that do not fit are kept (every fit stays). What a
+/// search returns has been through this; a caller that merges the results of several searches calls it on the
+/// merged list and has what one long search would have returned.
+pub fn shortlist(candidates: &mut Vec<Candidate>) {
+    rank(candidates);
+    let fits = candidates.iter().take_while(|c| c.verdict.fits).count();
+    candidates.truncate(fits + KEEP_MISFITS);
+}
+
+/// Fights the seeds from `opts.from` upward and returns the shortlist of the seeds checked (every fit, and the best
+/// [`KEEP_MISFITS`] of the rest: at most `stop_fits + KEEP_MISFITS` candidates however long it runs), ranked, with
+/// how far it got and why it ended. `setup_for` gives the fight of a seed (the seed handed out is the seed fought, whatever seed the set-up
 /// comes back with). `progress` hears of every seed, in seed order. `cancel` is tested before every fight: set it
-/// from any thread and the search returns what it has, which is whole (every seed from `from` to the last one
-/// checked).
+/// from any thread and the search returns what it has, which is whole (the shortlist of every seed from `from` to
+/// the last one checked). A fight starts after the flag only if its worker had been cleared to start it just
+/// before (at most one such fight per worker); a flag set from `progress` is exact: no fight starts after it.
 ///
 /// The result is the same for any number of workers: it is decided by the seeds alone, read in order (see the
 /// module's words). Only a stop by `cancel` depends on when it was set.
@@ -170,7 +187,9 @@ pub fn search<'a>(
     progress: &(dyn Fn(SearchProgress) + Sync),
     cancel: &AtomicBool,
 ) -> SearchResult {
-    let mut candidates = Vec::new();
+    let mut kept = Vec::new();
+    let mut misfits: Vec<Candidate> = Vec::new();
+    let mut checked = 0u64;
     let mut fits = 0usize;
     let end = if opts.stop_fits == 0 {
         End::Enough
@@ -181,18 +200,28 @@ pub fn search<'a>(
             opts.workers,
             &|seed| fight_of(setup_for, sheet, seed),
             &mut |_, c: Candidate| {
-                fits += usize::from(c.verdict.fits);
-                candidates.push(c);
-                progress(SearchProgress {
-                    checked: candidates.len() as u64,
-                    fits,
-                });
+                checked += 1;
+                if c.verdict.fits {
+                    fits += 1;
+                    kept.push(c);
+                } else {
+                    misfits.push(c);
+                    if misfits.len() > KEEP_MISFITS {
+                        // one too many: the worst goes (the order is total, so which one does not depend on timing)
+                        let worst = (0..misfits.len())
+                            .max_by(|&i, &j| order(&misfits[i], &misfits[j]))
+                            .unwrap_or(0);
+                        misfits.swap_remove(worst);
+                    }
+                }
+                progress(SearchProgress { checked, fits });
                 fits >= opts.stop_fits
             },
             cancel,
         )
     };
-    let checked = candidates.len() as u64;
+    let mut candidates = kept;
+    candidates.append(&mut misfits);
     rank(&mut candidates);
     SearchResult {
         candidates,
@@ -319,7 +348,9 @@ pub(crate) fn run_seeds<T: Send>(
                     };
                     line = back;
                 }
-                if line.end.is_some() {
+                // the stop flag is read once more here, under the lock: a worker that was woken because the
+                // reading moved on must not start a fight after the flag
+                if line.end.is_some() || cancel.load(Ordering::SeqCst) {
                     return;
                 }
             }
@@ -528,6 +559,43 @@ mod tests {
         // what was read is a run of seeds from the first one, with no hole
         assert_eq!(seen, (1..=seen.len() as u64).collect::<Vec<_>>());
         assert!(seen.len() as u64 <= started);
+    }
+
+    #[test]
+    fn workers_woken_by_the_reading_start_nothing_after_the_stop_flag() {
+        // The 20th seed is slow and every other job is done at once: the other six workers run to the bound (seed
+        // 19 + 28) and wait there with their next seeds in hand. When the 20th comes in, one reading takes seeds 20
+        // to 47 and sets the flag at the 20th; the reading has moved on, the waiting workers wake, and none of them
+        // may start its job now.
+        for _ in 0..20 {
+            let cancel = AtomicBool::new(false);
+            let started = AtomicU64::new(0);
+            let mut read = 0;
+            let end = run_seeds(
+                1,
+                None,
+                7,
+                &|seed| {
+                    started.fetch_add(1, Ordering::SeqCst);
+                    if seed == 20 {
+                        std::thread::sleep(Duration::from_millis(30));
+                    }
+                    Ok(seed)
+                },
+                &mut |seed, _| {
+                    read += 1;
+                    if seed == 20 {
+                        cancel.store(true, Ordering::SeqCst);
+                    }
+                    false
+                },
+                &cancel,
+            );
+            assert_eq!(end, End::Cancelled);
+            let started = started.load(Ordering::SeqCst);
+            assert!(started <= 19 + 28, "{started} jobs were started");
+            assert_eq!(read, started, "every job that was started was read");
+        }
     }
 
     #[test]
