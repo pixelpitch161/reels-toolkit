@@ -10,13 +10,19 @@
 //! - [`schedule`]: the order of a step (`Fight.run`), the one place that calls the weapon kinds and abilities.
 //! - [`kinds`]: the weapon kinds, one module each (`striker`: the FLUTE's baskets and cobras, and the swat rule;
 //!   `blade`: the TROMBONE's thrust lance).
+//! - [`abilities`]: the abilities, one module per kind (`haste`, `dance`, `wave`, `shockwave` with its slow, `slam`),
+//!   with `trigger` and `effects_step`.
 //! - `record`: what is written down at every frame (`Fight.snap`).
+//! - [`parity`]: how long a fight of this engine agrees with the Python recording of the same fight, and what ends
+//!   the agreement (the parity suites' measure).
 //! - [`roster`]: the fighters' numbers, exported from `fighters.py` (the types live in `bf_core::roster`).
 
+pub mod abilities;
 pub mod ball;
 pub mod fight;
 pub mod geom;
 pub mod kinds;
+pub mod parity;
 mod record;
 pub mod roster;
 pub mod rules;
@@ -126,12 +132,14 @@ pub(crate) mod testing {
     }
 
     /// A fighter with no weapon and no abilities the engine knows: only the core acts on it, whatever kinds are
-    /// ported later.
+    /// ported later. Its abilities are the bags' of the reference fights (`dict(name='NOTHING', kind='none',
+    /// every_bars=4)`), a kind not ported: should one come up (on a beat below `LOW_HP`, or after a level), it is
+    /// announced by an `ability` event and does nothing.
     fn bare(name: &str) -> FighterCfg {
         let nothing = || AbilityCfg {
             name: "NOTHING".into(),
             kind: AbilityKind::Unsupported("none".into()),
-            params: BTreeMap::new(),
+            params: BTreeMap::from([("every_bars".to_string(), 4.0)]),
             slow: None,
         };
         FighterCfg {
