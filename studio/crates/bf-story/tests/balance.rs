@@ -297,5 +297,5 @@ fn a_handicap_the_engine_refuses_is_said_once_in_words() {
         words.starts_with(&format!("seed {BALANCE_SEED0}: rules.DT: ")),
         "{words}"
     );
-    assert!(fought.load(Ordering::SeqCst) <= 14);
+    assert!(fought.load(Ordering::SeqCst) <= 4 * 7);
 }

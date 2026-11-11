@@ -209,11 +209,11 @@ fn search_can_be_cancelled() {
     );
     assert_eq!(r.end, SearchEnd::Stopped);
     assert!(r.checked >= 20, "checked {}", r.checked);
-    // each worker finishes at most the fight it is in, and one more it had taken before the flag was set
+    // the workers are never more than 4 seeds each ahead of the reading, and start nothing once the flag is set
     let fought = fought.load(Ordering::SeqCst);
     assert!(
-        fought <= 20 + 2 * 7,
-        "{fought} fights were started after 20 were checked"
+        fought <= 20 + 4 * 7,
+        "{fought} fights were started; 20 were checked when it was told to stop"
     );
     assert!(r.checked <= fought);
     let mut got = seeds(&r);
@@ -259,7 +259,7 @@ fn a_setup_the_engine_refuses_is_said_once_in_words() {
         assert!(!words.contains('\n'), "{words}");
         // not one fight that "did not fit", and no walk through the seeds
         assert_eq!((r.checked, r.candidates.len()), (0, 0));
-        assert!(asked.load(Ordering::SeqCst) <= 2 * workers as u64);
+        assert!(asked.load(Ordering::SeqCst) <= 4 * workers as u64);
     }
 }
 

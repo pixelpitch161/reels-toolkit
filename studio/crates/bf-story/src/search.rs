@@ -24,8 +24,9 @@ use std::any::Any;
 use std::collections::BTreeMap;
 use std::fmt;
 use std::panic::{AssertUnwindSafe, catch_unwind};
-use std::sync::Mutex;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+use std::sync::{Condvar, Mutex};
+use std::time::Duration;
 
 use bf_sim::{Setup, SimError};
 
@@ -232,6 +233,15 @@ pub(crate) enum End {
 /// The most worker threads a run starts.
 const MAX_WORKERS: usize = 256;
 
+/// How far ahead of the reading the workers may fight, in seeds per worker: a worker whose next seed is this many
+/// times the worker count past the first seed not yet read waits for the reading to catch up. So a run never
+/// starts more than `AHEAD * workers` jobs past the seed it ends at (a failure is not followed by a walk through
+/// thousands of seeds while its own worker is waiting for a core), and never holds more results than that.
+const AHEAD: u64 = 4;
+
+/// How long a waiting worker sleeps before it looks at the stop flag again.
+const WAIT: Duration = Duration::from_millis(2);
+
 /// What the workers of one run share behind its lock: the results that are waiting for an earlier seed, and how
 /// far the reading in seed order has got.
 struct Line<'t, T> {
@@ -247,8 +257,8 @@ struct Line<'t, T> {
 /// `workers` threads and gives the results to `take` **in seed order**, one at a time. The run ends when `take`
 /// answers true (it has enough), at the first seed, in seed order, whose job returned an error or panicked, when
 /// the seeds are used up, or when `cancel` is set (tested before every job). Jobs past the end that were already
-/// running are finished and thrown away, so what `take` saw is decided by the seeds alone, not by the number of
-/// workers or by timing.
+/// running are finished and thrown away (there are at most [`AHEAD`] per worker), so what `take` saw is decided by
+/// the seeds alone, not by the number of workers or by timing.
 pub(crate) fn run_seeds<T: Send>(
     from: u64,
     count: Option<u64>,
@@ -273,8 +283,11 @@ pub(crate) fn run_seeds<T: Send>(
         Ok(pool) => pool,
         Err(e) => return End::Failed(format!("could not start {workers} worker threads: {e}")),
     };
+    let ahead = AHEAD * workers as u64;
     let hand = AtomicU64::new(0);
     let halt = AtomicBool::new(false);
+    // told whenever the reading has moved on or the run has ended
+    let moved = Condvar::new();
     let line = Mutex::new(Line {
         waiting: BTreeMap::new(),
         next: 0,
@@ -282,7 +295,7 @@ pub(crate) fn run_seeds<T: Send>(
         end: None,
     });
     // Every worker thread runs this loop. A panic in it (only `take` can panic: a job's own are caught) poisons the
-    // lock, the other workers stop there, and the panic goes on to the caller.
+    // lock; the other workers stop when they next come to it, and the panic goes on to the caller.
     pool.broadcast(|_| {
         loop {
             if halt.load(Ordering::SeqCst) || cancel.load(Ordering::SeqCst) {
@@ -292,12 +305,29 @@ pub(crate) fn run_seeds<T: Send>(
             if i >= limit {
                 return;
             }
+            // not too far ahead of the reading (the worker that holds the seed the reading waits for never waits)
+            {
+                let Ok(mut line) = line.lock() else {
+                    return;
+                };
+                while line.end.is_none() && i.saturating_sub(line.next) >= ahead {
+                    if cancel.load(Ordering::SeqCst) {
+                        return;
+                    }
+                    let Ok((back, _)) = moved.wait_timeout(line, WAIT) else {
+                        return;
+                    };
+                    line = back;
+                }
+                if line.end.is_some() {
+                    return;
+                }
+            }
             let seed = from + i;
             let out = catch_unwind(AssertUnwindSafe(|| one(seed)))
                 .unwrap_or_else(|panic| Err(format!("the fight broke off ({})", panic_words(panic.as_ref()))))
                 .map_err(|why| format!("seed {seed}: {why}"));
             let Ok(mut line) = line.lock() else {
-                halt.store(true, Ordering::SeqCst);
                 return;
             };
             line.waiting.insert(i, out);
@@ -318,6 +348,7 @@ pub(crate) fn run_seeds<T: Send>(
                     Err(words) => line.end = Some(End::Failed(words)),
                 }
             }
+            moved.notify_all();
             if line.end.is_some() {
                 halt.store(true, Ordering::SeqCst);
                 return;
