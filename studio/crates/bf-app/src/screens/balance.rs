@@ -70,9 +70,10 @@ const BAR_H: f32 = 30.0;
 const MARK_REACH: f32 = 4.0;
 /// The bar's top edge in each fighter's full colour.
 const EDGE_H: f32 = 2.0;
-/// The win range's ends.
-const LOW: f32 = 0.40;
-const HIGH: f32 = 0.60;
+/// The win range's ends, as `BalanceStats::in_range()` has them, and where the bar marks them.
+const WIN_RANGE: (f64, f64) = (0.40, 0.60);
+const LOW: f32 = WIN_RANGE.0 as f32;
+const HIGH: f32 = WIN_RANGE.1 as f32;
 /// The handicap block: the padding under its top line, the gap between its rows, the fighter bar, the label column.
 const HANDICAP_PAD: f32 = 16.0;
 const ROW_GAP: f32 = 6.0;
@@ -239,10 +240,14 @@ fn win_split(ui: &mut Ui, vm: &ViewModel, w: f32) {
     let stats = vm.balance.stats.as_ref();
     let shares = stats.and_then(left_share);
     let (left_words, right_words) = match shares {
-        Some(s) => (
-            format!("{left_name} wins {}", wording::percent(s)),
-            format!("{right_name} wins {}", wording::percent(1.0 - s)),
-        ),
+        // Both from the left share rounded once, so the two always add up to 100.
+        Some(s) => {
+            let left = (s * 100.0).round();
+            (
+                format!("{left_name} wins {}", wording::percent(left / 100.0)),
+                format!("{right_name} wins {}", wording::percent((100.0 - left) / 100.0)),
+            )
+        }
         None => (
             format!("{left_name} wins {NO_VALUE}"),
             format!("{right_name} wins {NO_VALUE}"),
@@ -353,16 +358,15 @@ fn win_split(ui: &mut Ui, vm: &ViewModel, w: f32) {
             MUTED,
         );
     }
+    // `in_range()` decides; outside it the left fighter is above 60 % or the right one is.
     let verdict = if stats.in_range() {
-        Some("In range".to_string())
-    } else if left_share > f64::from(HIGH) {
-        Some(format!("{left_name} wins too often"))
-    } else if left_share < f64::from(LOW) {
-        Some(format!("{right_name} wins too often"))
+        "In range".to_string()
+    } else if left_share > WIN_RANGE.1 {
+        format!("{left_name} wins too often")
     } else {
-        None
+        format!("{right_name} wins too often")
     };
-    if let Some(verdict) = verdict {
+    {
         let half = label_w - width_of(ui, "40%", small()) / 2.0 - SMALL_GAP;
         let x = at(0.5);
         text_in(
@@ -522,10 +526,14 @@ fn numbers(ui: &mut Ui, stats: Option<&BalanceStats>, w: f32) {
     let frame = take(ui, w, BOX_H);
     let cells: [(&str, String, String); 4] = match stats {
         Some(s) => {
-            let range = if usable(s.ko_p10) && usable(s.ko_p90) {
-                format!("Most land between {:.1} and {}", s.ko_p10, wording::seconds(s.ko_p90))
+            // Both ends written by `wording::seconds`, the unit said once; ends that cannot be shown, or that are the
+            // wrong way round, read as no value.
+            let range = if usable(s.ko_p10) && usable(s.ko_p90) && s.ko_p10 <= s.ko_p90 {
+                let low = wording::seconds(s.ko_p10);
+                let low = low.strip_suffix(" s").unwrap_or(&low);
+                format!("Most land between {low} and {}", wording::seconds(s.ko_p90))
             } else {
-                String::new()
+                NO_VALUE.to_string()
             };
             [
                 ("Typical K.O.", shown(s.ko_median, wording::seconds), range),
@@ -614,10 +622,11 @@ fn ko_times(ui: &mut Ui, stats: Option<&BalanceStats>, w: f32, hist_h: f32) {
         let bar_w = (w - (BARS as f32 - 1.0) * HIST_GAP) / BARS as f32;
         if most > 0 {
             for (i, &count) in counts.iter().enumerate() {
-                let height = (count as f32 / most as f32 * hist_h).round();
-                if height <= 0.0 {
+                // A second with any K.O. at all shows at least 1 px.
+                if count == 0 {
                     continue;
                 }
+                let height = (count as f32 / most as f32 * hist_h).round().max(1.0);
                 let x0 = rect.min.x + i as f32 * (bar_w + HIST_GAP);
                 let second = FIRST_SECOND + i as u32;
                 let colour = if (WINDOW.0..=WINDOW.1).contains(&second) {

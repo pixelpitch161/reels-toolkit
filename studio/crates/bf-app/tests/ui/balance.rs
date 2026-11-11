@@ -30,6 +30,17 @@ fn has(harness: &Harness<'_, BfApp>, label: &str) -> bool {
     harness.query_all_by_label(label).next().is_some()
 }
 
+/// The text a node shows: a label keeps it in its value, any other node in its name.
+fn text_of(node: &egui_kittest::Node<'_>) -> String {
+    let node = node.accesskit_node();
+    let text = if node.role() == egui::accesskit::Role::Label {
+        node.value()
+    } else {
+        node.label()
+    };
+    text.unwrap_or_default()
+}
+
 fn is_disabled(harness: &Harness<'_, BfApp>, label: &str) -> bool {
     harness.get_by_label(label).accesskit_node().is_disabled()
 }
@@ -436,13 +447,247 @@ fn numbers_that_are_not_numbers_read_as_none() {
     harness.run();
     assert_eq!(
         harness.query_all_by_label("–").count(),
-        5,
-        "four numbers and the fit note"
+        6,
+        "four numbers, the K.O. range and the fit note"
     );
     for node in harness.query_all_by_role(egui::accesskit::Role::Label) {
-        let label = node.accesskit_node().label().unwrap_or_default();
+        let label = text_of(&node);
         assert!(!label.contains("NaN") && !label.contains("inf"), "{label}");
     }
+}
+
+#[test]
+fn a_k_o_range_the_wrong_way_round_reads_as_none() {
+    let _gpu = gpu();
+    let mut vm = balance::vm();
+    let stats = vm.balance.stats.as_mut().expect("numbers");
+    stats.ko_p10 = 57.0;
+    stats.ko_p90 = 44.0;
+    let mut harness = showing(REF, vm);
+    harness.run();
+    assert_eq!(harness.query_all_by_label("–").count(), 1, "the range note");
+    assert!(!harness.query_all_by_label_contains("Most land").any(|_| true));
+}
+
+#[test]
+fn the_two_shares_add_up_to_100() {
+    let _gpu = gpu();
+    for share in [0.475, 0.4949, 0.505, 0.125, 0.995, 0.0, 1.0] {
+        let mut vm = balance::vm();
+        vm.balance.stats.as_mut().expect("numbers").win_share = share;
+        let mut harness = showing(REF, vm);
+        harness.run();
+        let percent = |prefix: &str| -> u32 {
+            let node = harness
+                .query_all_by_label_contains(prefix)
+                .find(|n| text_of(n).ends_with('%'))
+                .unwrap_or_else(|| panic!("{prefix} at {share}"));
+            let label = text_of(&node);
+            label[prefix.len()..]
+                .trim_end_matches('%')
+                .parse()
+                .expect("a whole percentage")
+        };
+        let (left, right) = (percent("Flute wins "), percent("Trombone wins "));
+        assert_eq!(left + right, 100, "{share}: {left} + {right}");
+    }
+}
+
+#[test]
+fn a_share_on_a_bound_is_in_range() {
+    let _gpu = gpu();
+    for (share, words) in [
+        (0.40, "In range"),
+        (0.60, "In range"),
+        (0.3999, "Trombone wins too often"),
+        (0.6001, "Flute wins too often"),
+    ] {
+        let mut vm = balance::vm();
+        vm.balance.stats.as_mut().expect("numbers").win_share = share;
+        let mut harness = showing(REF, vm);
+        harness.run();
+        assert!(has(&harness, words), "{share}: {words}");
+        let verdicts = ["In range", "Flute wins too often", "Trombone wins too often"];
+        assert_eq!(
+            verdicts.iter().filter(|v| has(&harness, v)).count(),
+            1,
+            "{share}: one verdict"
+        );
+    }
+}
+
+#[test]
+fn a_rare_k_o_second_still_shows() {
+    let _gpu = gpu();
+    let mut vm = balance::vm();
+    let mut hist = vec![0; 28];
+    hist[0] = 1;
+    hist[18] = 1_000;
+    vm.balance.stats.as_mut().expect("numbers").ko_hist = hist;
+    let mut harness = showing(REF, vm);
+    harness.run();
+    let histogram = harness.get_by_label(HISTOGRAM).rect();
+    let bar_w = (histogram.width() - 27.0 * 2.0) / 28.0;
+    let x = |i: f32| (histogram.min.x + i * (bar_w + 2.0) + bar_w / 2.0) as u32;
+    let bottom = histogram.max.y as u32 - 1;
+    let seen = pixels(&mut harness, &[(x(0.0), bottom), (x(1.0), bottom)]);
+    assert_eq!(seen[0], [0x66; 3], "a count of 1 in 1,000 is still 1 px tall");
+    assert_eq!(seen[1], [0x28; 3], "a count of 0 draws nothing");
+}
+
+#[test]
+fn a_fight_problem_holds_auto_balance() {
+    let _gpu = gpu();
+    let problem = "These two cannot fight yet.";
+    let mut vm = balance::vm();
+    vm.fight_problem = Some(problem.to_string());
+    let mut harness = showing(REF, vm);
+    harness.run();
+    assert!(is_disabled(&harness, "Auto-balance"));
+    harness.get_by_label("Auto-balance").hover();
+    harness.run();
+    assert!(has(&harness, problem), "hovering says why");
+    harness.get_by_label("Auto-balance").click();
+    harness.run();
+    assert!(harness.state().log.is_empty(), "{:?}", harness.state().log);
+}
+
+/// Whether a `TEXT_STRONG` pixel lies 1 to 5 px outside `rect` on the side `side` ("above", "below", "left",
+/// "right"), along a line through `along` (a share of that side's length).
+fn ring_beside(harness: &mut Harness<'_, BfApp>, rect: Rect, side: &str, along: f32) -> bool {
+    let at: Vec<(u32, u32)> = (1..=5)
+        .map(|d| {
+            let d = d as f32;
+            let x = rect.min.x + along * rect.width();
+            let y = rect.min.y + along * rect.height();
+            match side {
+                "above" => (x, rect.min.y - d),
+                "below" => (x, rect.max.y - 1.0 + d),
+                "left" => (rect.min.x - d, y),
+                _ => (rect.max.x - 1.0 + d, y),
+            }
+        })
+        .map(|(x, y)| (x as u32, y as u32))
+        .collect();
+    pixels(harness, &at).contains(&[255; 3])
+}
+
+/// Whether a `TEXT_STRONG` pixel lies on the slider's row edge (its ring is drawn inside the 26 tall row), on the
+/// side `side`, at `along` of its width.
+fn ring_on_row_edge(harness: &mut Harness<'_, BfApp>, row: Rect, side: &str, along: f32) -> bool {
+    let x = (row.min.x + along * row.width()) as u32;
+    let ys: Vec<(u32, u32)> = (0..4)
+        .map(|d| match side {
+            "above" => (x, row.min.y as u32 + d),
+            _ => (x, row.max.y as u32 - 1 - d),
+        })
+        .collect();
+    pixels(harness, &ys).contains(&[255; 3])
+}
+
+#[test]
+fn every_control_shows_its_focus_ring() {
+    let _gpu = gpu();
+    for size in [REF, MIN] {
+        let mut harness = showing(size, balance::vm());
+        harness.run();
+        // Buttons and the value fields: the ring is 2 px outside them. With nothing focused there is none.
+        let controls = [
+            RESET,
+            "Auto-balance",
+            "Search seeds",
+            "Flute damage value",
+            "Trombone damage value",
+        ];
+        let sides = ["above", "below", "left", "right"];
+        for label in controls {
+            let rect = harness.get_by_label(label).rect();
+            for side in sides {
+                assert!(
+                    !ring_beside(&mut harness, rect, side, 0.3),
+                    "{label} has no ring before focus"
+                );
+            }
+        }
+        for label in controls {
+            let rect = harness.get_by_label(label).rect();
+            harness.get_by_label(label).focus();
+            harness.run();
+            for side in sides {
+                assert!(
+                    ring_beside(&mut harness, rect, side, 0.3),
+                    "{label}: ring {side} at {size:?}"
+                );
+            }
+        }
+        // The sliders: the ring is inside their 26 tall rows, which touch; the lower row must not cover the upper
+        // row's ring, nor the upper the lower's.
+        for label in ["Flute damage", "Trombone damage"] {
+            let row = harness.get_by_label(label).rect();
+            harness.get_by_label(label).focus();
+            harness.run();
+            for side in ["above", "below"] {
+                assert!(
+                    ring_on_row_edge(&mut harness, row, side, 0.1),
+                    "{label}: ring {side} at {size:?}"
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn tab_walks_the_screen_in_order() {
+    let _gpu = gpu();
+    let mut harness = showing(REF, balance::vm());
+    harness.run();
+    let order = [
+        RESET,
+        "Auto-balance",
+        "Flute damage",
+        "Flute damage value",
+        "Trombone damage",
+        "Trombone damage value",
+        "Search seeds",
+    ];
+    harness.get_by_label(order[0]).focus();
+    harness.run();
+    for pair in order.windows(2) {
+        assert!(
+            harness.get_by_label(pair[0]).is_focused(),
+            "{} has the keyboard",
+            pair[0]
+        );
+        harness.key_press(egui::Key::Tab);
+        harness.run();
+        assert!(
+            harness.get_by_label(pair[1]).is_focused(),
+            "Tab from {} goes to {}",
+            pair[0],
+            pair[1]
+        );
+    }
+    assert!(handicaps(&harness).is_empty(), "walking through changes nothing");
+}
+
+#[test]
+fn at_the_minimum_size_while_balancing() {
+    let _gpu = gpu();
+    let mut harness = showing(MIN, balance::running());
+    harness.run();
+    let workspace = harness.state().layout.workspace;
+    for label in [
+        "Stop balancing",
+        RESET,
+        "Flute damage",
+        "Trombone damage",
+        "Search seeds",
+        "Balance progress",
+    ] {
+        let rect = harness.get_by_label(label).rect();
+        assert!(workspace.contains_rect(rect), "{label} {rect:?} inside {workspace:?}");
+    }
+    assert!(has(&harness, "Trying handicaps, step 9 of 29"));
 }
 
 #[test]
