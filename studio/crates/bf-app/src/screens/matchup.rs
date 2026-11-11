@@ -16,8 +16,6 @@
 //! theme (`SetTheme`), the slider and the value field set the tempo in whole bars (`SetBars`), and the two buttons
 //! push `SwapSides` and `Go(Balance)`. It keeps nothing of its own beyond egui's widget memory.
 
-use egui::scroll_area::ScrollBarVisibility;
-use egui::style::ScrollStyle;
 use egui::{Align, Frame, Label, Layout, Margin, Rect, RichText, ScrollArea, Sense, Stroke, Ui, UiBuilder, pos2, vec2};
 
 use crate::model::draft::Draft;
@@ -25,8 +23,7 @@ use crate::model::roster::{Roster, RosterEntry, Section};
 use crate::model::{Step, View};
 use crate::state::{Action, ViewModel};
 use crate::theme::{
-    CONTROL_H, FAINT, GROUND, LABEL_W, LINE_SOFT, MUTED, RADIUS, TEXT, TEXT_STRONG, body, rgb, section, small, strong,
-    value,
+    CONTROL_H, LABEL_W, LINE_SOFT, MUTED, RADIUS, TEXT, TEXT_STRONG, body, rgb, section, small, strong, value,
 };
 use crate::widgets::buttons;
 use crate::widgets::chips::{portrait, roster_chip};
@@ -104,9 +101,6 @@ pub const TEMPO_FIELD: &str = "Tempo in bpm";
 /// side padding `PAD_X` 10. One point more covers the label's rounding to a whole point.
 const CHIP_BEFORE_NAME: f32 = 34.0;
 const CHIP_AFTER_NAME: f32 = 8.0 + 10.0 + 1.0;
-/// The scroll bar of a column that overflows: 6 wide, 4 from the content and 4 from the column's edge.
-const BAR_W: f32 = 6.0;
-const BAR_MARGIN: f32 = 4.0;
 
 /// How many columns of chips fit in `width`: `(width + 6) / 126` rounded down, kept in 2 to 4 (2 for a width that
 /// is not a number).
@@ -138,28 +132,10 @@ fn widest_chip(ui: &Ui, roster: &Roster) -> f32 {
     (CHIP_BEFORE_NAME + name + CHIP_AFTER_NAME + side).ceil()
 }
 
-/// A vertical scroll area whose bar is drawn whenever its content overflows, not only on hover: a solid 6 wide bar
-/// on a `GROUND` track, its handle `FAINT` (`MUTED` when hovered, `TEXT` while dragged).
+/// A vertical scroll area with the app's scroll look (`buttons::scrolled`): its bar is drawn whenever its content
+/// overflows, not only on hover, and nothing fades at a scrolled edge.
 fn column_scroll(ui: &mut Ui, salt: impl egui::AsIdSalt, add: impl FnOnce(&mut Ui)) {
-    ui.scope(|ui| {
-        let style = ui.style_mut();
-        style.spacing.scroll = ScrollStyle {
-            bar_width: BAR_W,
-            bar_inner_margin: BAR_MARGIN,
-            bar_outer_margin: BAR_MARGIN,
-            ..ScrollStyle::solid()
-        };
-        style.visuals.extreme_bg_color = GROUND;
-        let widgets = &mut style.visuals.widgets;
-        widgets.inactive.bg_fill = FAINT;
-        widgets.hovered.bg_fill = MUTED;
-        widgets.active.bg_fill = TEXT;
-        ScrollArea::vertical()
-            .id_salt(salt)
-            .auto_shrink(false)
-            .scroll_bar_visibility(ScrollBarVisibility::VisibleWhenNeeded)
-            .show(ui, add);
-    });
+    buttons::scrolled(ui, ScrollArea::vertical().id_salt(salt).auto_shrink(false), add);
 }
 
 /// A section's name as the roster shows it.

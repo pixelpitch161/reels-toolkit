@@ -17,15 +17,21 @@
 //! - Ids come from the allocation order (`Ui::unique_id`, egui's automatic ids), never from the name alone, so two
 //!   controls with the same name in one `Ui` do not clash.
 
+use std::ops::Range;
+
 use egui::accesskit::Role;
+use egui::scroll_area::{ScrollAreaOutput, ScrollBarVisibility};
+use egui::style::{ScrollFadeStyle, ScrollStyle};
 use egui::text::{LayoutJob, TextWrapping};
 use egui::{
-    Color32, ComboBox, CornerRadius, IdSalt, Painter, Rect, Response, RichText, Sense, Stroke, StrokeKind, Style, Ui,
-    UiBuilder, WidgetInfo, pos2, vec2,
+    Color32, ComboBox, CornerRadius, IdSalt, Painter, Rect, Response, RichText, ScrollArea, Sense, Stroke, StrokeKind,
+    Style, Ui, UiBuilder, Visuals, WidgetInfo, pos2, vec2,
 };
 
 use super::icons::{self, Icon};
-use crate::theme::{CONTROL_H, FAINT, HOVER, LINE, MUTED, ON_LIGHT, RADIUS, RAISED, TEXT, TEXT_STRONG, VALUE_H, body};
+use crate::theme::{
+    CONTROL_H, FAINT, GROUND, HOVER, LINE, MUTED, ON_LIGHT, RADIUS, RAISED, TEXT, TEXT_STRONG, VALUE_H, body,
+};
 
 /// Side padding of a button's label.
 const PAD_X: f32 = 10.0;
@@ -49,6 +55,11 @@ const PROGRESS_H: f32 = 4.0;
 const RING_W: f32 = 2.0;
 const RING_GAP: f32 = 2.0;
 const RING_ROOM: f32 = RING_W + RING_GAP;
+/// A scroll area's bar: 6 wide, 4 from the content and 4 from the area's edge.
+const SCROLL_BAR_W: f32 = 6.0;
+const SCROLL_BAR_MARGIN: f32 = 4.0;
+/// The width a scroll area's bar takes from its content while it shows ([`scrolled`]).
+pub const SCROLL_BAR_ROOM: f32 = SCROLL_BAR_W + 2.0 * SCROLL_BAR_MARGIN;
 
 /// What a button looks like in its present state.
 struct Look {
@@ -531,4 +542,62 @@ pub fn progress(ui: &mut Ui, name: &str, share: f32, width: f32) -> Response {
         }
     }
     response
+}
+
+/// Shows `area` in `ui` with the app's scroll look (widget rule 21): no fade at a scrolled edge (egui's fade would
+/// cover a focus ring there, and the look has no gradients), and a solid bar whenever the content overflows, hovered
+/// or not: 6 wide, 4 from the content and 4 from the area's edge, a `GROUND` track with a `FAINT` handle (`MUTED`
+/// when hovered, `TEXT` while dragged). The content keeps the visuals `ui` had.
+pub fn scrolled<R>(ui: &mut Ui, area: ScrollArea, add: impl FnOnce(&mut Ui) -> R) -> ScrollAreaOutput<R> {
+    ui.scope(|ui| {
+        let content = scroll_look(ui);
+        area.scroll_bar_visibility(ScrollBarVisibility::VisibleWhenNeeded)
+            .show(ui, |ui| {
+                *ui.visuals_mut() = content;
+                add(ui)
+            })
+    })
+    .inner
+}
+
+/// [`scrolled`] for `count` rows of `row_h`, laying out only the rows in view (`ScrollArea::show_rows`): `add` gets
+/// the range of rows to lay out.
+pub fn scrolled_rows<R>(
+    ui: &mut Ui,
+    area: ScrollArea,
+    row_h: f32,
+    count: usize,
+    add: impl FnOnce(&mut Ui, Range<usize>) -> R,
+) -> ScrollAreaOutput<R> {
+    ui.scope(|ui| {
+        let content = scroll_look(ui);
+        area.scroll_bar_visibility(ScrollBarVisibility::VisibleWhenNeeded)
+            .show_rows(ui, row_h, count, |ui, rows| {
+                *ui.visuals_mut() = content;
+                add(ui, rows)
+            })
+    })
+    .inner
+}
+
+/// Gives `ui` the scroll look of [`scrolled`]; returns the visuals it had, for the content.
+fn scroll_look(ui: &mut Ui) -> Visuals {
+    let content = ui.visuals().clone();
+    let style = ui.style_mut();
+    style.spacing.scroll = ScrollStyle {
+        bar_width: SCROLL_BAR_W,
+        bar_inner_margin: SCROLL_BAR_MARGIN,
+        bar_outer_margin: SCROLL_BAR_MARGIN,
+        fade: ScrollFadeStyle {
+            strength: 0.0,
+            ..ScrollFadeStyle::default()
+        },
+        ..ScrollStyle::solid()
+    };
+    style.visuals.extreme_bg_color = GROUND;
+    let widgets = &mut style.visuals.widgets;
+    widgets.inactive.bg_fill = FAINT;
+    widgets.hovered.bg_fill = MUTED;
+    widgets.active.bg_fill = TEXT;
+    content
 }

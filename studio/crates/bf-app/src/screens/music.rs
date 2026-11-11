@@ -156,27 +156,20 @@ fn paint_text(painter: &Painter, rect: Rect, text: &str, font: egui::FontId, col
     );
 }
 
-/// Turns off egui's fade at a scrolled edge for the scroll areas `ui` holds: the fade would draw over the focus ring
-/// of a control at that edge, and the look has no gradients.
-fn no_fade(ui: &mut Ui) {
-    ui.spacing_mut().scroll.fade.strength = 0.0;
-}
-
 fn controls_column(ui: &mut Ui, vm: &ViewModel, out: &mut Vec<Action>) {
     let rect = ui.max_rect();
-    no_fade(ui);
-    ScrollArea::vertical()
+    let area = ScrollArea::vertical()
         .id_salt("music controls scroll")
-        .auto_shrink([false, false])
-        .show(ui, |ui| {
-            Frame::new()
-                .inner_margin(Margin::symmetric(CONTROLS_PAD.0, CONTROLS_PAD.1))
-                .show(ui, |ui| {
-                    ui.spacing_mut().item_spacing = vec2(ROW_GAP, 0.0);
-                    let inner_h = rect.height() - 2.0 * f32::from(CONTROLS_PAD.1);
-                    controls(ui, vm, inner_h, out);
-                });
-        });
+        .auto_shrink([false, false]);
+    buttons::scrolled(ui, area, |ui| {
+        Frame::new()
+            .inner_margin(Margin::symmetric(CONTROLS_PAD.0, CONTROLS_PAD.1))
+            .show(ui, |ui| {
+                ui.spacing_mut().item_spacing = vec2(ROW_GAP, 0.0);
+                let inner_h = rect.height() - 2.0 * f32::from(CONTROLS_PAD.1);
+                controls(ui, vm, inner_h, out);
+            });
+    });
 }
 
 /// The groups of the controls column, top to bottom; the tempo line sits at the bottom of `inner_h` when there is
@@ -358,25 +351,24 @@ fn arrangement_column(ui: &mut Ui, vm: &ViewModel, out: &mut Vec<Action>) {
     );
 
     let mut child = ui.new_child(UiBuilder::new().id_salt("lanes").max_rect(middle));
-    no_fade(&mut child);
-    ScrollArea::vertical()
+    let lanes_area = ScrollArea::vertical()
         .id_salt("music lanes scroll")
-        .auto_shrink([false, false])
-        .show(&mut child, |ui| {
-            ui.spacing_mut().item_spacing = vec2(0.0, 0.0);
-            match &vm.take.music {
-                Some(music) => lanes(ui, music),
-                None => {
-                    Frame::new()
-                        .inner_margin(Margin::symmetric(UNDER_PAD.0, UNDER_PAD.1))
-                        .show(ui, |ui| {
-                            let text = format!("Building the sound for seed {seed}");
-                            plain(ui, RichText::new(text).font(body()).color(MUTED));
-                        });
-                }
+        .auto_shrink([false, false]);
+    buttons::scrolled(&mut child, lanes_area, |ui| {
+        ui.spacing_mut().item_spacing = vec2(0.0, 0.0);
+        match &vm.take.music {
+            Some(music) => lanes(ui, music),
+            None => {
+                Frame::new()
+                    .inner_margin(Margin::symmetric(UNDER_PAD.0, UNDER_PAD.1))
+                    .show(ui, |ui| {
+                        let text = format!("Building the sound for seed {seed}");
+                        plain(ui, RichText::new(text).font(body()).color(MUTED));
+                    });
             }
-            loudness(ui, vm.take.music.as_ref());
-        });
+        }
+        loudness(ui, vm.take.music.as_ref());
+    });
 
     ui.painter().rect_filled(
         Rect::from_x_y_ranges(area.x_range(), footer.min.y..=footer.min.y + 1.0),

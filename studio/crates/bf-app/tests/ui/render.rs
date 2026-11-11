@@ -1072,3 +1072,90 @@ fn render_matches() {
 fn the_fixture_ids_are_the_shown_order() {
     assert_eq!(render::vm().queue.shown(), vec![TUBA, ALTO, OBOE, CELLO]);
 }
+
+#[test]
+fn the_queue_shows_its_scroll_bar_when_it_overflows() {
+    let _gpu = gpu();
+    let (vm, _, _) = three_waiting();
+    let mut harness = showing(MIN, vm);
+    let workspace = harness.state().layout.workspace;
+    let header = harness.get_by_label("Pause queue").rect();
+    let row = control(&harness, TUBA_ROW).rect();
+    // The bar: 4 past the rows, 6 wide; its handle is FAINT without hovering.
+    let x = (row.max.x + 4.0 + 3.0) as u32;
+    assert!(
+        x as f32 <= workspace.max.x - CHECKS_W,
+        "the bar lies in the queue's column"
+    );
+    let column: Vec<(u32, u32)> = (header.max.y as u32 + 8..workspace.max.y as u32 - 2)
+        .map(|y| (x, y))
+        .collect();
+    let px = pixels(&mut harness, &column);
+    assert!(
+        px.contains(&[0x77, 0x77, 0x77]),
+        "the handle is drawn FAINT without hovering"
+    );
+}
+
+#[test]
+fn a_done_time_that_is_infinite_or_negative_is_not_shown() {
+    let _gpu = gpu();
+    for seconds in [f64::INFINITY, f64::NEG_INFINITY, -3.0, -0.0001] {
+        let mut vm = render::vm();
+        for job in &mut vm.queue.jobs {
+            if let JobState::Done { seconds: s, .. } = &mut job.state {
+                *s = seconds;
+            }
+        }
+        let harness = showing(REF, vm);
+        let texts = all_text(&harness);
+        assert!(
+            in_row(&harness, CELLO_ROW, "Done. All checks passed.").is_some(),
+            "{seconds}: {texts:?}"
+        );
+        assert!(!texts.iter().any(|t| t.contains("Done in")), "{seconds}: {texts:?}");
+        for text in &texts {
+            for bad in ["NaN", "inf", "-0", "-3"] {
+                assert!(!text.contains(bad), "{seconds}: {text:?}");
+            }
+        }
+    }
+}
+
+#[test]
+fn a_flag_and_a_joined_sequence_keep_every_character_through_an_edit() {
+    let _gpu = gpu();
+    // A flag is two regional indicators (U+1F1EB U+1F1F7, France); a joined sequence is three emoji held together by
+    // zero-width joiners (U+1F468 U+200D U+1F469 U+200D U+1F467). As in the sample caption, the test harness has no
+    // font with them and they are written here as escapes; the box must keep every one of them.
+    let caption =
+        "Flute vs Trombone \u{1f1eb}\u{1f1f7} for the family \u{1f468}\u{200d}\u{1f469}\u{200d}\u{1f467} #music";
+    let mut vm = render::vm();
+    vm.draft.captions.instagram = caption.to_string();
+    let mut harness = showing(REF, vm);
+    assert_eq!(caption_box(&harness, INSTAGRAM_BOX).value().as_deref(), Some(caption));
+    caption_box(&harness, INSTAGRAM_BOX).focus();
+    harness.run();
+    caption_box(&harness, INSTAGRAM_BOX).type_text("!");
+    harness.run();
+    let typed = format!("{caption}!");
+    match harness.state().log.last() {
+        Some(Action::SetCaption { text, .. }) => assert_eq!(text, &typed, "every character kept, the new one last"),
+        other => panic!("SetCaption was pushed: {other:?}"),
+    }
+    harness.key_press(Key::Backspace);
+    harness.run();
+    match harness.state().log.last() {
+        Some(Action::SetCaption { text, .. }) => assert_eq!(text, caption, "Backspace takes away only the new one"),
+        other => panic!("SetCaption was pushed: {other:?}"),
+    }
+    // From the start of the box, the arrows step over the characters one by one and an edit there keeps the rest.
+    harness.key_press_modifiers(Modifiers::COMMAND, Key::Home);
+    harness.run();
+    caption_box(&harness, INSTAGRAM_BOX).type_text("A ");
+    harness.run();
+    match harness.state().log.last() {
+        Some(Action::SetCaption { text, .. }) => assert_eq!(text, &format!("A {caption}")),
+        other => panic!("SetCaption was pushed: {other:?}"),
+    }
+}
