@@ -195,6 +195,7 @@ pub struct AbilityCfg {
     /// `dur_beats`, `mult`, `speed`, `radius`, `dmg`, `knock`, `tele`, ...
     pub params: BTreeMap<String, f64>,
     /// A shockwave's or wave's `slow` (`ab.get('slow')`: the enemy it hits moves at `mult` x speed for `dur` s).
+    /// `None` when the entry has none or one Python counts as false (an empty table).
     pub slow: Option<SlowCfg>,
 }
 
@@ -233,6 +234,19 @@ pub enum AbilityKind {
 }
 
 impl AbilityKind {
+    /// The kind's name in `fighters.py` (`ab['kind']`), as an `ability` event carries it. For a kind the engine has
+    /// not ported it is the kind alone, without the `+option` an unported option adds.
+    pub fn name(&self) -> &str {
+        match self {
+            AbilityKind::Haste => "haste",
+            AbilityKind::Dance => "dance",
+            AbilityKind::Wave => "wave",
+            AbilityKind::Shockwave => "shockwave",
+            AbilityKind::Slam => "slam",
+            AbilityKind::Unsupported(kind) => kind.split('+').next().unwrap_or(kind),
+        }
+    }
+
     fn from_name(kind: &str) -> AbilityKind {
         match kind {
             "haste" => AbilityKind::Haste,
@@ -503,8 +517,11 @@ impl Entry<'_> {
             }
         }
         let supported = !matches!(kind, AbilityKind::Unsupported(_));
+        // `fight.py` asks `if ab.get('slow')` (and `if W.get('slow')` when the ring lands): Python's truth test, by
+        // which an empty table, like no table at all, is no slow.
         let slow = match ab.get("slow") {
-            None | Some(Json::Null) => None,
+            Some(s) if !py_truthy(s) => None,
+            None => None,
             Some(s) => {
                 let mult = s.get("mult").and_then(Json::as_f64);
                 let dur = s.get("dur").and_then(Json::as_f64);
@@ -556,6 +573,18 @@ impl Entry<'_> {
             params,
             slow,
         })
+    }
+}
+
+/// Python's truth value of a JSON value (`if x:`): `None`, `False`, zero, `""`, `[]` and `{}` are false.
+fn py_truthy(v: &Json) -> bool {
+    match v {
+        Json::Null => false,
+        Json::Bool(b) => *b,
+        Json::Number(n) => n.as_f64() != Some(0.0),
+        Json::String(s) => !s.is_empty(),
+        Json::Array(a) => !a.is_empty(),
+        Json::Object(o) => !o.is_empty(),
     }
 }
 
@@ -1082,6 +1111,99 @@ mod tests {
         raw["weapon"]["pull"] = Json::from(0.5);
         raw["abilities"]["unlock1"]["odd"] = Json::from(true);
         assert!(FighterCfg::from_json(&raw).is_ok());
+    }
+
+    /// `fight.py` tests an ability's `slow` for truth (`if ab.get('slow')`, `if W.get('slow')`): an empty table is
+    /// no slow at all, and the fight runs (checked in Python: a wave with `slow={}` lands without a `slow` event and
+    /// does not make the recording hold `EXT`, `SLW` and `CRV`). A table with only one of its two numbers is true in
+    /// Python and raises when the ring lands, so it is refused here.
+    #[test]
+    fn an_empty_slow_is_no_slow() {
+        for empty in [
+            serde_json::json!({}),
+            Json::Null,
+            Json::Bool(false),
+            Json::from(0),
+            Json::from(0.0),
+            serde_json::json!([]),
+            Json::from(""),
+        ] {
+            let mut raw = fighter("TROMBONE").raw;
+            raw["abilities"]["unlock1"]["slow"] = empty.clone();
+            let f = FighterCfg::from_json(&raw).unwrap_or_else(|e| panic!("slow = {empty}: {e}"));
+            assert_eq!(
+                (f.unlock1.kind.clone(), f.unlock1.slow),
+                (AbilityKind::Shockwave, None),
+                "slow = {empty}"
+            );
+        }
+        // a wave may slow too, as in Python (the option is the ring's, not the shockwave's)
+        let mut raw = fighter("FLUTE").raw;
+        raw["abilities"]["low"]["slow"] = serde_json::json!({"mult": 0.5, "dur": 0.75});
+        let f = FighterCfg::from_json(&raw).expect("loads");
+        assert_eq!(
+            (f.low.kind.clone(), f.low.slow),
+            (AbilityKind::Wave, Some(SlowCfg { mult: 0.5, dur: 0.75 }))
+        );
+        // half a slow, or one that is no table
+        for odd in [
+            serde_json::json!({"mult": 0.5}),
+            serde_json::json!({"dur": 1.0}),
+            Json::from(2),
+            Json::Bool(true),
+        ] {
+            let mut raw = fighter("TROMBONE").raw;
+            raw["abilities"]["unlock1"]["slow"] = odd.clone();
+            assert_eq!(
+                FighterCfg::from_json(&raw).unwrap_err().to_string(),
+                "roster: TROMBONE: abilities.unlock1.slow: must be a table with mult and dur",
+                "slow = {odd}"
+            );
+        }
+    }
+
+    /// An ability kind's name is the one `fighters.py` gives it: what an `ability` event carries.
+    #[test]
+    fn an_ability_kind_has_its_python_name() {
+        let (flute, trombone) = (fighter("FLUTE"), fighter("TROMBONE"));
+        let names: Vec<&str> = [
+            &flute.unlock1,
+            &flute.unlock2,
+            &flute.low,
+            &trombone.unlock1,
+            &trombone.low,
+        ]
+        .iter()
+        .map(|ab| ab.kind.name())
+        .collect();
+        assert_eq!(names, ["haste", "dance", "wave", "shockwave", "slam"]);
+        for f in [&flute, &trombone] {
+            for (ab, slot) in [(&f.unlock1, "unlock1"), (&f.unlock2, "unlock2"), (&f.low, "low")] {
+                assert_eq!(
+                    Some(ab.kind.name()),
+                    f.raw["abilities"][slot]["kind"].as_str(),
+                    "{}",
+                    ab.name
+                );
+            }
+        }
+        // a kind not ported, and a ported kind with an option that is not
+        assert_eq!(fighter("PIANO").unlock1.kind.name(), "sustain");
+        let oboe = fighter("OBOE");
+        assert_eq!(oboe.low.kind, AbilityKind::Unsupported("wave+detune".into()));
+        assert_eq!(oboe.low.kind.name(), "wave");
+        // every ability of the roster: the name is the entry's own kind
+        for f in parse_roster(ROSTER).expect("loads") {
+            for (ab, slot) in [(&f.unlock1, "unlock1"), (&f.unlock2, "unlock2"), (&f.low, "low")] {
+                assert_eq!(
+                    Some(ab.kind.name()),
+                    f.raw["abilities"][slot]["kind"].as_str(),
+                    "{} {}",
+                    f.name,
+                    ab.name
+                );
+            }
+        }
     }
 
     #[test]
