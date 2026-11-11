@@ -171,7 +171,7 @@ fn the_beds_bars() {
     let show = Show::new(&ep.rec, &ep.ff).unwrap();
     let b = SoundBuild::new(&show, &ep.rec, &ep.ff).unwrap();
     let mut mix = Mix::new(show.grid.dur + 4.0);
-    let bed = BigTopClassic;
+    let bed = BigTopClassic::new();
     bed.bar(&b.ctx, &mut mix, 5, 1.0, true).unwrap();
     bed.bar(&b.ctx, &mut mix, 8, 1.3, false).unwrap();
     bed.bar(&b.ctx, &mut mix, 11, 1.26, false).unwrap();

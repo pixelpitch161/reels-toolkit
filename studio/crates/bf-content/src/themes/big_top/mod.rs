@@ -37,7 +37,7 @@ use super::Theme;
 pub static THEME: Theme = Theme {
     name: "big_top",
     voices: has_voicing,
-    classic: || Box::new(BigTopClassic),
+    classic: || Box::new(BigTopClassic::new()),
 };
 
 /// `VOICE`: the calliope's off-beat chords (E4 to C5: under the melody), as #41 voiced them.
@@ -156,11 +156,19 @@ pub fn calliope(ms: &[i32], dur: f64, vel: f64, seed: u64, att: f64, vib: f64) -
 /// `Bed.bass_drum(vel)`: the concert bass drum (the "oom"): a soft boom, over in about 0.2 s and high-passed so
 /// a bass line stays on top.
 pub fn bass_drum(vel: f64) -> Vec<f64> {
+    scaled(&bass_drum_boom(), vel)
+}
+
+/// `x * vel` for every sample `x` of `x`: the last step of an instrument whose sound is the same at every
+/// velocity, so a build can make that sound once and scale it per stroke with the same arithmetic.
+pub fn scaled(x: &[f64], vel: f64) -> Vec<f64> {
+    x.iter().map(|v| v * vel).collect()
+}
+
+/// [`bass_drum`] before its velocity: `A.hp(A.kick(0.7, 0.2, 105, 50)[:int(0.36 * SR)], 46)`. It draws no noise.
+pub fn bass_drum_boom() -> Vec<f64> {
     let x = synth::kick(0.7, 0.2, 105.0, 50.0);
     synth::hp(&x[..length(0.36 * SRF)], 46.0, FILTER_O)
-        .iter()
-        .map(|v| v * vel)
-        .collect()
 }
 
 /// `Bed.choke(vel, seed)`: the "pah" cymbal: a crash choked by hand after about 0.12 s.
@@ -179,7 +187,7 @@ pub fn choke(vel: f64, seed: u64) -> Vec<f64> {
 
 /// `Bed.snare(vel)`: `A.snare(0.13) * vel`.
 pub fn snare(vel: f64) -> Vec<f64> {
-    synth::snare(0.13).iter().map(|v| v * vel).collect()
+    scaled(&synth::snare(0.13), vel)
 }
 
 /// `Bed.roll(dur, v0, v1, rate)`: a snare roll of `dur` seconds, a stroke every `rate` seconds (the kit's
@@ -210,6 +218,12 @@ pub fn roll(dur: f64, v0: f64, v1: f64, rate: f64) -> Vec<f64> {
 
 /// `Bed.tambourine(vel, seed)`: a short shake: band-passed noise over three high partials.
 pub fn tambourine(vel: f64, seed: u64) -> Vec<f64> {
+    scaled(&tambourine_shake(seed), vel)
+}
+
+/// [`tambourine`] before its velocity. Its noise comes from a new generator of `seed`, drawn here and nowhere
+/// else: making it once for a seed and reusing it skips no draw any other sound depends on.
+pub fn tambourine_shake(seed: u64) -> Vec<f64> {
     let n = length(0.12 * SRF);
     let t = synth::tt(n);
     let shake = synth::bp(&noise(seed, n), 5500.0, 12000.0, FILTER_O);
@@ -222,7 +236,7 @@ pub fn tambourine(vel: f64, seed: u64) -> Vec<f64> {
                 jingle += dmath::sin(2.0 * PI * f * t[i]);
             }
             x += 0.2 * jingle * dmath::exp(-t[i] / 0.05);
-            x * vel
+            x
         })
         .collect()
 }
