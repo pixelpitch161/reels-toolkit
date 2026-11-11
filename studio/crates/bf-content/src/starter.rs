@@ -28,22 +28,16 @@ const SHORTS_TAGS: &str = "#music #pixelart";
 /// rules, drafted captions and this app's version.
 ///
 /// # Errors
-/// For a pair with no music written yet (every pair but FLUTE and TROMBONE), a `fighters` error whose message is
+/// For a pair with no music written yet (every pair but FLUTE and TROMBONE), [`ContentError::NoMusic`], which reads
 /// "No music is written for {Left} vs {Right} yet." with both names in sentence case.
 pub fn starter(left: &str, right: &str) -> Result<FightFile, ContentError> {
     let text = STARTERS
         .iter()
         .find(|(a, b, _)| (left == *a && right == *b) || (left == *b && right == *a))
         .map(|(_, _, text)| *text)
-        .ok_or_else(|| {
-            ContentError::field(
-                "fighters",
-                format!(
-                    "No music is written for {} vs {} yet.",
-                    sentence_case(left),
-                    sentence_case(right)
-                ),
-            )
+        .ok_or_else(|| ContentError::NoMusic {
+            left: sentence_case(left),
+            right: sentence_case(right),
         })?;
     let mut ff = FightFile::parse(text)?;
     ff.app_version = env!("CARGO_PKG_VERSION").to_string();
@@ -148,10 +142,17 @@ mod tests {
     #[test]
     fn a_pair_without_music_says_so() {
         let message = |left: &str, right: &str| match starter(left, right) {
-            Err(ContentError::FightFile(e)) => e.message,
+            Err(e @ ContentError::NoMusic { .. }) => e.to_string(),
             other => panic!("{left} vs {right}: {other:?}"),
         };
         assert_eq!(message("FLUTE", "PIANO"), "No music is written for Flute vs Piano yet.");
+        assert_eq!(
+            starter("FLUTE", "PIANO").unwrap_err(),
+            ContentError::NoMusic {
+                left: "Flute".into(),
+                right: "Piano".into()
+            }
+        );
         assert_eq!(
             message("BASS DRUM", "ALTO SAX"),
             "No music is written for Bass drum vs Alto sax yet."

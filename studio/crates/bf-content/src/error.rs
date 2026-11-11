@@ -23,6 +23,9 @@ pub enum ContentError {
     /// The picture could not be built from this recording and fight file: what the picture code reported (the
     /// recording lacks something a frame reads), or the message of a panic while it was built.
     Picture(PictureError),
+    /// A new match-up of two fighters whose music is not written yet (see `starter`): both names in sentence
+    /// case, left corner first.
+    NoMusic { left: String, right: String },
 }
 
 impl ContentError {
@@ -42,6 +45,7 @@ impl fmt::Display for ContentError {
             ContentError::Show(e) => e.fmt(f),
             ContentError::Sound(problem) => write!(f, "the soundtrack could not be built: {problem}"),
             ContentError::Picture(e) => e.fmt(f),
+            ContentError::NoMusic { left, right } => write!(f, "No music is written for {left} vs {right} yet."),
         }
     }
 }
