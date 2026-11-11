@@ -40,6 +40,91 @@ fn the_design_systems_egui_notes_hold() {
     assert!(checked, "the checks ran");
 }
 
+/// A bare context with the theme installed and one pass run, so its fonts exist. Nothing is drawn with wgpu, so no
+/// `common::gpu()`.
+fn themed_context() -> egui::Context {
+    let ctx = egui::Context::default();
+    theme::install(&ctx);
+    pass(&ctx);
+    ctx
+}
+
+/// Runs one pass that lays out a label and says whether it uploaded any texture (a font atlas). The texture changes
+/// are cleared afterwards: egui panics when they are dropped unhandled.
+fn pass(ctx: &egui::Context) -> bool {
+    let mut output = ctx.run_ui(egui::RawInput::default(), |ui| {
+        ui.label("Flute");
+    });
+    let uploaded = !output.textures_delta.set.is_empty();
+    output.textures_delta.clear();
+    uploaded
+}
+
+/// `style` with its number formatter taken from `like`: egui compares formatters by pointer, and each theme has its
+/// own, so two styles that are the same in every value otherwise read as different.
+fn with_formatter_of(style: &egui::Style, like: &egui::Style) -> egui::Style {
+    let mut style = style.clone();
+    style.number_formatter = like.number_formatter.clone();
+    style
+}
+
+#[test]
+fn both_egui_themes_look_the_same() {
+    let ctx = themed_context();
+    let dark = ctx.style_of(egui::Theme::Dark);
+    let light = ctx.style_of(egui::Theme::Light);
+    assert_eq!(
+        dark.visuals, light.visuals,
+        "the PC's light or dark setting changes nothing"
+    );
+    assert_eq!(*dark, with_formatter_of(&light, &dark));
+}
+
+#[test]
+fn the_choices_beyond_the_notes_hold() {
+    let ctx = themed_context();
+    let style = ctx.style_of(egui::Theme::Dark);
+    let visuals = &style.visuals;
+    assert_eq!(visuals.widgets.open, visuals.widgets.active, "open looks like active");
+    assert_eq!(visuals.override_text_color, Some(theme::TEXT));
+    assert_eq!(
+        visuals.widgets.noninteractive.bg_stroke,
+        Stroke::new(1.0, theme::LINE_SOFT)
+    );
+    assert_eq!(style.spacing.menu_margin, egui::Margin::same(3));
+}
+
+#[test]
+fn a_second_install_changes_nothing() {
+    let ctx = egui::Context::default();
+    theme::install(&ctx);
+    assert!(pass(&ctx), "building the fonts uploads their atlas");
+    let dark = ctx.style_of(egui::Theme::Dark);
+    let light = ctx.style_of(egui::Theme::Light);
+    let fonts = ctx.fonts(|fonts| fonts.definitions().clone());
+    theme::install(&ctx);
+    let uploaded = pass(&ctx);
+    assert_eq!(ctx.style_of(egui::Theme::Dark), dark);
+    assert_eq!(ctx.style_of(egui::Theme::Light), light);
+    assert!(
+        ctx.fonts(|now| *now.definitions() == fonts),
+        "the font definitions are the same"
+    );
+    assert!(!uploaded, "the fonts were not rebuilt");
+}
+
+/// A trap for later work: egui's "strong" text takes the active state's foreground, which is `ON_LIGHT` here (the
+/// inverted fill's label colour), so `.strong()` text would be near-black on a dark panel. That is why `.strong()`
+/// is banned in this app and emphasis uses `RichText::color(TEXT_STRONG)`.
+#[test]
+fn strong_text_would_be_on_light() {
+    let ctx = themed_context();
+    assert_eq!(
+        ctx.style_of(egui::Theme::Dark).visuals.strong_text_color(),
+        theme::ON_LIGHT
+    );
+}
+
 #[test]
 fn plain_text_is_the_text_colour() {
     let _gpu = common::gpu();
