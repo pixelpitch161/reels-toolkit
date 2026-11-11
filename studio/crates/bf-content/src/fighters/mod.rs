@@ -233,29 +233,29 @@ mod tests {
 
     #[test]
     fn every_kit_fighter_has_a_folder() {
-        // the twenty kit fighters, each with its entry points; the two ported ones say so, the eighteen stubs
-        // say "none" everywhere
+        // every roster fighter has its folder, and a fighter the app offers has everything in it; a folder a port
+        // has filled before the register task offers it may hold anything (nothing here names its state)
+        assert_eq!(roster().len(), 20);
         for f in roster() {
             let e = entry(&f.name).unwrap_or_else(|| panic!("{} has no folder", f.name));
-            let ported = PORTED.contains(&f.name.as_str());
-            assert_eq!((e.look)().is_some(), ported, "{}", f.name);
-            assert_eq!((e.voice)().is_some(), ported, "{}", f.name);
-            assert_eq!((e.card)().is_some(), ported, "{}", f.name);
-            assert_eq!(e.mesh.is_some(), ported, "{}", f.name);
-            assert!(!e.music_feeds_fight && e.extra_lines.is_empty(), "{}", f.name);
-            assert_eq!(mesh_json(&f.name).is_some(), ported, "{}", f.name);
-            assert!(
-                !music_feeds_fight(&f.name) && extra_lines(&f.name).is_empty(),
-                "{}",
-                f.name
-            );
+            if PORTED.contains(&f.name.as_str()) {
+                assert!((e.look)().is_some(), "{} is offered without a look", f.name);
+                assert!((e.voice)().is_some(), "{} is offered without a voice", f.name);
+                assert!((e.card)().is_some(), "{} is offered without a card", f.name);
+                assert!(e.mesh.is_some(), "{} is offered without a model", f.name);
+            }
+            // the dispatch says what the folder says
+            assert_eq!(mesh_json(&f.name), e.mesh, "{}", f.name);
+            assert_eq!(music_feeds_fight(&f.name), e.music_feeds_fight, "{}", f.name);
+            assert_eq!(extra_lines(&f.name), e.extra_lines, "{}", f.name);
+            assert_eq!(card(&f.name).is_some(), (e.card)().is_some(), "{}", f.name);
         }
-        assert_eq!(roster().len(), 20);
-        for name in RETIRED.iter().chain(&["flute", "", "KAZOO", "BARI SAX"]) {
+        for name in RETIRED.iter().chain(&["flute", "", "KAZOO", "NOT A FIGHTER"]) {
             assert!(
                 entry(name).is_none() && card(name).is_none() && mesh_json(name).is_none(),
                 "{name:?}"
             );
+            assert!(!music_feeds_fight(name) && extra_lines(name).is_empty(), "{name:?}");
         }
     }
 
@@ -265,7 +265,12 @@ mod tests {
         for f in roster() {
             for k in 0..2 {
                 let part = sound(&f.name, k, &ff);
-                assert_eq!(part.is_some(), PORTED.contains(&f.name.as_str()), "{}", f.name);
+                // offered implies a part; a folder filled before it is offered may have one too
+                assert!(
+                    part.is_some() || !PORTED.contains(&f.name.as_str()),
+                    "{} has no part",
+                    f.name
+                );
                 if let Some(part) = part {
                     assert_eq!(part.k(), k, "{}", f.name);
                 }
@@ -301,12 +306,11 @@ mod tests {
         // The Pixel Pitch registers of pp_bridge's roster (not the fighters' own: TROMBONE fights from 40 to 65).
         assert_eq!(voice("FLUTE").unwrap().register(), (72, 93));
         assert_eq!(voice("TROMBONE").unwrap().register(), (45, 67));
-        // Nothing else has one: not a fighter that is not ported yet, not a retired one, not another spelling.
+        // Offered implies a voice; nothing outside the roster has one (not a retired name, not another spelling).
         for f in roster() {
-            assert_eq!(
-                voice(&f.name).is_some(),
-                PORTED.contains(&f.name.as_str()),
-                "{}",
+            assert!(
+                voice(&f.name).is_some() || !PORTED.contains(&f.name.as_str()),
+                "{} has no voice",
                 f.name
             );
         }
@@ -317,10 +321,9 @@ mod tests {
 
     #[test]
     fn a_ported_fighter_plays_its_own_roster_voice() {
-        // `kit.music.note` is asked for the roster's `pp` name: for the ported fighters it is their own name.
+        // `kit.music.note` is asked for the roster's `pp` name (ELECTRIC's is an internal voice id, not its name).
         for name in PORTED {
             let cfg = roster().iter().find(|f| f.name == name).expect("in the roster");
-            assert_eq!(cfg.pp, name);
             assert_eq!(voice(name).expect("a voice").name(), cfg.pp);
         }
     }
