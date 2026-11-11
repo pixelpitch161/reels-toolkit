@@ -22,31 +22,36 @@ use std::time::Duration;
 use crate::model::Settings;
 use crate::model::queue::Queue;
 
-/// The app's two storage folders.
+/// The app's storage folders.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Paths {
     /// Settings and the render queue.
     pub config: PathBuf,
     /// What can be rebuilt (the shortlists).
     pub cache: PathBuf,
+    /// Fault reports and the record of the last start (see `report`).
+    pub logs: PathBuf,
 }
 
 impl Paths {
-    /// The per-user folders: on Windows `%APPDATA%\BALLFIGHT Studio\config` and
-    /// `%LOCALAPPDATA%\BALLFIGHT Studio\cache`. Only works out the paths; nothing is created.
+    /// The per-user folders: on Windows `%APPDATA%\BALLFIGHT Studio\config`,
+    /// `%LOCALAPPDATA%\BALLFIGHT Studio\cache` and `%LOCALAPPDATA%\BALLFIGHT Studio\data\logs`. Only works out the
+    /// paths; nothing is created.
     pub fn system() -> Option<Paths> {
         let dirs = directories::ProjectDirs::from("", "", "BALLFIGHT Studio")?;
         Some(Paths {
             config: dirs.config_dir().to_path_buf(),
             cache: dirs.cache_dir().to_path_buf(),
+            logs: dirs.data_local_dir().join("logs"),
         })
     }
 
-    /// `<root>/config` and `<root>/cache`: for tests and `--data-dir`.
+    /// `<root>/config`, `<root>/cache` and `<root>/logs`: for tests and `--data-dir`.
     pub fn under(root: &Path) -> Paths {
         Paths {
             config: root.join("config"),
             cache: root.join("cache"),
+            logs: root.join("logs"),
         }
     }
 
@@ -676,6 +681,20 @@ mod tests {
         assert_eq!(paths.settings(), root.join("config").join("settings.toml"));
         assert_eq!(paths.queue(), root.join("config").join("queue.json"));
         assert_eq!(paths.shortlists(), root.join("cache").join("shortlists"));
+    }
+
+    #[test]
+    fn paths_hold_logs() {
+        let root = Path::new(r"C:\data dir");
+        assert_eq!(Paths::under(root).logs, root.join("logs"));
+        // Works the paths out only: nothing is read or created.
+        let system = Paths::system().expect("this PC has per-user folders");
+        assert!(system.logs.to_string_lossy().contains("BALLFIGHT Studio"), "{system:?}");
+        assert_eq!(system.logs.file_name(), Some("logs".as_ref()));
+        // `data\logs` sits beside `cache`, in the per-PC folder, never among the settings.
+        let data = system.logs.parent().expect("logs has a parent");
+        assert_eq!(data.parent(), system.cache.parent(), "{system:?}");
+        assert_ne!(system.logs.parent(), system.config.parent());
     }
 
     #[test]
