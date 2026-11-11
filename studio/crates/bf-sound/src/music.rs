@@ -20,14 +20,15 @@
 //! that is not a number), instead of reaching the panics of [`crate::dsp`]. One bound is this module's own: a
 //! length over [`MAX_SECONDS`] is refused (Python would try to allocate it). [`MusicCtx::note`] refuses a few
 //! values more, listed there. The number helpers (`h01`, `Thinner`, ...) panic where Python raises, as the rest
-//! of the crate does.
+//! of the crate does. If a voice panics while a note is being made, the build's state is not handed out again:
+//! every later call on that context is an error.
 //!
 //! Each sample is computed with the operations of the numpy expression it ports, in the same order; `sin`, `exp`,
 //! `pow` and `tanh` come from `dmath`.
 
 use std::collections::BTreeMap;
 use std::fmt;
-use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
+use std::sync::{Arc, Mutex, MutexGuard};
 
 use bf_core::dmath::{self, PI};
 use bf_core::event::{Event, Value};
@@ -364,6 +365,14 @@ pub fn thin_37(slot: f64, key: f64, hp: f64, prev_dropped: bool) -> bool {
 
 // ---------------------------------------------------------------- shaping
 
+/// Why `fit` refuses a note of `len` samples with a fade of `fade` seconds.
+fn no_room(len: usize, fade: f64) -> String {
+    format!(
+        "{len} sample(s) with a fade of {fade} s leave no room for a fade (3 samples and a fade of one sample are \
+         the least)"
+    )
+}
+
 /// `fit(x, cap, fade)`: `x` cut or padded with silence to `int(cap * SR)` samples, its end faded out over
 /// `fade` seconds (over a third of it, if that is shorter). A `cap` below zero cuts that much off the end
 /// instead, as Python's slice does.
@@ -391,14 +400,7 @@ pub fn fit(x: &[f64], cap: f64, fade: f64) -> Samples {
     }
     if fd == 0 {
         // x[-0:] is the whole note, and numpy cannot scale it by a ramp of no samples.
-        return Err(MusicError::new(
-            H,
-            format!(
-                "{} sample(s) with a fade of {fade} s leave no room for a fade (3 samples and a fade of one \
-                 sample are the least)",
-                y.len()
-            ),
-        ));
+        return Err(MusicError::new(H, no_room(y.len(), fade)));
     }
     let fd = fd as usize;
     let start = y.len() - fd;
@@ -810,12 +812,12 @@ pub struct MusicCtx<'a> {
 }
 
 impl fmt::Debug for MusicCtx<'_> {
+    /// The fighters and their voices. What sits behind the lock is not printed: formatting a context must not
+    /// wait for a note that is being made.
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let st = self.lock();
         f.debug_struct("MusicCtx")
             .field("names", &self.show.names)
-            .field("notes", &st.notes.len())
-            .field("gains", &st.gains)
+            .field("voices", &[self.voices[0].name(), self.voices[1].name()])
             .finish_non_exhaustive()
     }
 }
@@ -832,8 +834,9 @@ impl<'a> MusicCtx<'a> {
     /// are the two fighters' roster entries and voices, left corner first.
     ///
     /// # Errors
-    /// The fight file's key, scale or chords do not parse, or the recording has no `HP` array of two fighters
-    /// with at least one frame.
+    /// The fight file's key, scale or chords do not parse; the recording has no `HP` array of two fighters with
+    /// at least one frame; or `voices[k]` is not the voice fighter `k`'s roster entry names (its `pp`): swapped
+    /// voices would play each part on the other's instrument.
     pub fn new(
         show: &'a Show,
         rec: &'a Recording,
@@ -871,6 +874,14 @@ impl<'a> MusicCtx<'a> {
                 ));
             }
         };
+        for (k, (voice, cfg)) in voices.iter().zip(cfg).enumerate() {
+            if voice.name() != cfg.pp {
+                return Err(MusicError::new(
+                    H,
+                    format!("voice {k} is {:?}, but {} plays {:?}", voice.name(), cfg.name, cfg.pp),
+                ));
+            }
+        }
         Ok(MusicCtx {
             show,
             rec,
@@ -883,29 +894,42 @@ impl<'a> MusicCtx<'a> {
         })
     }
 
-    /// The lock on the build's state. A panic while it was held (a voice that panicked) leaves the state as it
-    /// was at that moment; it is still handed out.
-    fn lock(&self) -> MutexGuard<'_, State> {
-        self.state.lock().unwrap_or_else(PoisonError::into_inner)
+    /// The lock on the build's state. If a voice panicked while a note was being made, the noise stream and the
+    /// cache may be half-advanced, and later notes would be silently wrong: the state is not handed out again.
+    ///
+    /// # Errors
+    /// The lock is poisoned.
+    fn lock(&self) -> Result<MutexGuard<'_, State>, MusicError> {
+        self.state.lock().map_err(|_| {
+            MusicError::new(
+                "music",
+                "a voice panicked while a note was being made: the noise stream and the notes of this build cannot \
+                 be trusted any more",
+            )
+        })
     }
 
     /// Forgets every cached note, every gain and the log of first-time notes, and puts the noise stream at
     /// `noise`: a new build in the same context (line overrides stay).
-    pub fn restart(&self, noise: PpNoise) {
-        let mut st = self.lock();
+    ///
+    /// # Errors
+    /// A voice panicked earlier (as every method that reads or changes the build's state).
+    pub fn restart(&self, noise: PpNoise) -> Result<(), MusicError> {
+        let mut st = self.lock()?;
         let line_overrides = std::mem::take(&mut st.line_overrides);
         *st = State::new(noise);
         st.line_overrides = line_overrides;
+        Ok(())
     }
 
     /// A copy of the noise stream where it stands now.
-    pub fn noise(&self) -> PpNoise {
-        self.lock().noise.clone()
+    pub fn noise(&self) -> Result<PpNoise, MusicError> {
+        Ok(self.lock()?.noise.clone())
     }
 
     /// Every first-time note so far, in the order `note` synthesised them.
-    pub fn first_notes(&self) -> Vec<NoteCall> {
-        self.lock().first.clone()
+    pub fn first_notes(&self) -> Result<Vec<NoteCall>, MusicError> {
+        Ok(self.lock()?.first.clone())
     }
 
     /// `q16(t)`: the nearest 16th of the episode's grid, see [`q16`].
@@ -975,7 +999,7 @@ impl<'a> MusicCtx<'a> {
     /// `name` is not the voice of a fighter of this fight, or the voice gives no samples, or samples that are
     /// not numbers, for that note.
     pub fn inst_gain(&self, name: &str) -> Result<f64, MusicError> {
-        self.gain(&mut self.lock(), "inst_gain", name)
+        self.gain(&mut *self.lock()?, "inst_gain", name)
     }
 
     fn gain(&self, st: &mut State, helper: &'static str, name: &str) -> Result<f64, MusicError> {
@@ -1008,24 +1032,22 @@ impl<'a> MusicCtx<'a> {
     /// only past the rounding share the first one's note, as in the kit. The first note of a voice also measures
     /// the voice's gain, after its own voice call (see [`MusicCtx::inst_gain`]).
     ///
+    /// A `dur` a little below zero is a note that is its release alone, and a `cap` below zero cuts that much
+    /// off the end of the note instead of setting its length (Python's slice), both as in the kit.
+    ///
     /// # Errors
     /// Checked before anything is synthesised: an argument that is not a number (Python raises for `midi`,
-    /// `dur` and `cap`, and plays NaN for `vel`); a `dur` or `cap` below zero (Python plays a `dur` down to the
-    /// voice's release below zero and raises under that, and cuts the note's end off for a negative `cap`); a
-    /// `dur` over [`MAX_SECONDS`]; a `cap` of 1 or 2 samples (Python raises: no room for the fade); a `name`
-    /// that is not the voice of a fighter of this fight (Python has every instrument of the series). And after
-    /// the voice call: samples that are not numbers, which is what a MIDI note far outside what the voice can
-    /// make gives (Python plays the NaN).
+    /// `dur` and `cap`, and plays NaN for `vel`); a `dur` the voice cannot hold (so far below zero that the note
+    /// has a negative number of samples: Python raises) or over [`MAX_SECONDS`]; a `cap` of 1 or 2 samples
+    /// (Python raises: no room for the fade); a `name` that is not the voice of a fighter of this fight (Python
+    /// has every instrument of the series). And after the voice call: samples that are not numbers, which is
+    /// what a MIDI note far outside what the voice can make gives (Python plays the NaN); and a negative `cap`
+    /// that leaves 1 or 2 samples of the note (Python raises there too, after the voice has drawn its noise).
     pub fn note(&self, name: &str, midi: f64, dur: f64, cap: f64, vel: f64) -> Result<Arc<[f64]>, MusicError> {
         const H: &str = "note";
         for (what, v) in [("midi", midi), ("dur", dur), ("cap", cap), ("vel", vel)] {
             if !v.is_finite() {
                 return Err(MusicError::new(H, format!("{what} is {v}, not a number")));
-            }
-        }
-        for (what, v) in [("held length (dur)", dur), ("length (cap)", cap)] {
-            if v < 0.0 {
-                return Err(MusicError::new(H, format!("a {what} of {v} s is below zero")));
             }
         }
         if dur > MAX_SECONDS {
@@ -1042,13 +1064,23 @@ impl<'a> MusicCtx<'a> {
             cap: key_bits(cap),
             vel: key_bits(round_nd(vel, 2)),
         };
-        let mut st = self.lock();
+        let mut st = self.lock()?;
         if let Some(x) = st.notes.get(&key) {
             return Ok(Arc::clone(x));
         }
         let k = self.voice_of(H, name)?;
-        // What fit refuses depends on the cap alone: find out before the voice draws any noise.
-        fit(&[], cap, FIT_FADE).map_err(|e| MusicError::new(H, e.problem))?;
+        // What fit refuses for a cap from zero up depends on the cap alone (the note is then `int(cap * SR)`
+        // samples long whatever the voice gives): find out before the voice draws any noise.
+        let n = int(H, "cap", cap * SRF)?;
+        if n == 1 || n == 2 {
+            return Err(MusicError::new(H, no_room(n as usize, FIT_FADE)));
+        }
+        if !self.voices[k].can_hold(dur) {
+            return Err(MusicError::new(
+                H,
+                format!("{name} has no note for a held length (dur) of {dur} s: it would end before it starts"),
+            ));
+        }
         let x = self.voices[k].note(&mut st.noise, midi, vel, dur);
         if !x.iter().all(|v| v.is_finite()) {
             return Err(MusicError::new(
@@ -1100,22 +1132,42 @@ impl<'a> MusicCtx<'a> {
     /// instead: `(beat from tz, midi note or a rest, beats)`. A fighter registers it in its `prepare`; whoever
     /// reads the fighter's line (`T.line_at`) looks the windows up with [`MusicCtx::line_overrides`].
     ///
-    /// # Panics
-    /// When `k` is not 0 or 1.
-    pub fn line_override(&self, k: usize, t0: f64, t1: f64, tz: f64, notes: &[(f64, Option<i32>, f64)]) {
-        let name = self.show.names[k].clone();
-        self.lock().line_overrides.entry(name).or_default().push(LineOverride {
-            t0,
-            t1,
-            tz,
-            notes: notes.to_vec(),
-        });
+    /// # Errors
+    /// `k` is not 0 or 1, or a voice panicked earlier.
+    pub fn line_override(
+        &self,
+        k: usize,
+        t0: f64,
+        t1: f64,
+        tz: f64,
+        notes: &[(f64, Option<i32>, f64)],
+    ) -> Result<(), MusicError> {
+        let Some(name) = self.show.names.get(k) else {
+            return Err(MusicError::new(
+                "line_override",
+                format!("fighter {k} (there are two, 0 and 1)"),
+            ));
+        };
+        self.lock()?
+            .line_overrides
+            .entry(name.clone())
+            .or_default()
+            .push(LineOverride {
+                t0,
+                t1,
+                tz,
+                notes: notes.to_vec(),
+            });
+        Ok(())
     }
 
     /// `T.LINE_OVERRIDE.get(name, ())`: the windows registered for the fighter `name`, in the order they were
     /// registered.
-    pub fn line_overrides(&self, name: &str) -> Vec<LineOverride> {
-        self.lock().line_overrides.get(name).cloned().unwrap_or_default()
+    ///
+    /// # Errors
+    /// A voice panicked earlier.
+    pub fn line_overrides(&self, name: &str) -> Result<Vec<LineOverride>, MusicError> {
+        Ok(self.lock()?.line_overrides.get(name).cloned().unwrap_or_default())
     }
 }
 
@@ -1218,16 +1270,19 @@ pub(crate) mod testkit {
         Episode { rec, ff, show, cfg }
     }
 
-    /// A voice for tests: a sine on the note's pitch for `dur + 0.1` s, plus `draws` normals from the noise
-    /// stream at a hundredth of the level. It remembers every call.
+    /// A voice for tests, under the roster name `name`: a sine on the note's pitch for `dur + 0.1` s (so it can
+    /// hold a `dur` down to -0.1 s), plus `draws` normals from the noise stream at a hundredth of the level. It
+    /// remembers every call.
     pub(crate) struct TestVoice {
+        pub(crate) name: &'static str,
         pub(crate) draws: usize,
         pub(crate) calls: Mutex<Vec<(f64, f64, f64)>>,
     }
 
     impl TestVoice {
-        pub(crate) fn new(draws: usize) -> Arc<TestVoice> {
+        pub(crate) fn new(name: &'static str, draws: usize) -> Arc<TestVoice> {
             Arc::new(TestVoice {
+                name,
                 draws,
                 calls: Mutex::new(Vec::new()),
             })
@@ -1254,6 +1309,14 @@ pub(crate) mod testkit {
 
         fn register(&self) -> (i32, i32) {
             (60, 73)
+        }
+
+        fn name(&self) -> &str {
+            self.name
+        }
+
+        fn can_hold(&self, dur: f64) -> bool {
+            dur >= -0.1
         }
     }
 
@@ -1343,7 +1406,7 @@ pub(crate) mod testkit {
 
     /// The episode's context with two test voices: the FLUTE's draws 100 normals a note, the TROMBONE's none.
     pub(crate) fn context(ep: &Episode) -> (MusicCtx<'_>, [Arc<TestVoice>; 2]) {
-        let voices = [TestVoice::new(100), TestVoice::new(0)];
+        let voices = [TestVoice::new("FLUTE", 100), TestVoice::new("TROMBONE", 0)];
         let ctx = MusicCtx::new(
             &ep.show,
             &ep.rec,
@@ -1725,7 +1788,7 @@ mod tests {
         // A scale the kit does not know, and a recording without HP.
         let mut ff = ep.ff.clone();
         ff.music.scale = "wholetone".into();
-        let voices = || -> [Arc<dyn Voice>; 2] { [TestVoice::new(0), TestVoice::new(0)] };
+        let voices = || -> [Arc<dyn Voice>; 2] { [TestVoice::new("FLUTE", 0), TestVoice::new("TROMBONE", 0)] };
         let cfg = [&ep.cfg[0], &ep.cfg[1]];
         let e = refused(MusicCtx::new(&ep.show, &ep.rec, &ff, cfg, voices()));
         assert!(e.starts_with("music: ") && e.contains("wholetone"), "{e}");
@@ -1752,7 +1815,7 @@ mod tests {
     fn a_note_is_made_once_and_its_gain_after_it() {
         let ep = episode();
         let (ctx, voices) = context(&ep);
-        let start = ctx.noise();
+        let start = ctx.noise().unwrap();
         let x = ctx.note("FLUTE", 76.9, 0.2, 0.3, 0.8).unwrap();
         // int(midi), then the level-matching note: the middle of the register, velocity 0.8, 0.2 s.
         assert_eq!(voices[0].calls(), [(76.0, 0.8, 0.2), (66.0, 0.8, 0.2)]);
@@ -1770,17 +1833,17 @@ mod tests {
         assert_eq!(ctx.inst_gain("FLUTE").unwrap(), gain);
         let want: Vec<f64> = fit(&own, 0.3, FIT_FADE).unwrap().iter().map(|v| v * gain).collect();
         assert_eq!(x.to_vec(), want);
-        assert_eq!(ctx.noise().0.clone().random(), noise.0.random());
+        assert_eq!(ctx.noise().unwrap().0.clone().random(), noise.0.random());
 
         // The same key again: the same samples, no voice call, no noise.
         let calls = voices[0].calls().len();
-        let before = ctx.noise().0.random();
+        let before = ctx.noise().unwrap().0.random();
         for (midi, dur, vel) in [(76.9, 0.2, 0.8), (76.0, 0.2004, 0.8), (76.2, 0.1996, 0.804)] {
             let again = ctx.note("FLUTE", midi, dur, 0.3, vel).unwrap();
             assert!(Arc::ptr_eq(&again, &x), "midi {midi}, dur {dur}, vel {vel}");
         }
         assert_eq!(voices[0].calls().len(), calls);
-        assert_eq!(ctx.noise().0.random(), before);
+        assert_eq!(ctx.noise().unwrap().0.random(), before);
         // Another key (the cap, the rounded dur, the rounded vel, the note): another note, with the arguments
         // as they were passed, and no second gain note.
         ctx.note("FLUTE", 76.0, 0.2, 0.31, 0.8).unwrap();
@@ -1799,7 +1862,7 @@ mod tests {
         // The other voice has its own gain, measured on its own first note.
         ctx.note("TROMBONE", 52.0, 0.2, 0.3, 0.8).unwrap();
         assert_eq!(voices[1].calls(), [(52.0, 0.8, 0.2), (66.0, 0.8, 0.2)]);
-        let log = ctx.first_notes();
+        let log = ctx.first_notes().unwrap();
         assert_eq!(log.len(), 6);
         assert_eq!(
             log[0],
@@ -1817,13 +1880,13 @@ mod tests {
         );
 
         // A new build: nothing cached, the stream where it is put.
-        ctx.restart(start.clone());
-        assert!(ctx.first_notes().is_empty());
+        ctx.restart(start.clone()).unwrap();
+        assert!(ctx.first_notes().unwrap().is_empty());
         let again = ctx.note("FLUTE", 76.9, 0.2, 0.3, 0.8).unwrap();
         assert!(!Arc::ptr_eq(&again, &x));
         assert_eq!(again, x);
         // Measuring the gain before the first note puts other noise under the note.
-        ctx.restart(start);
+        ctx.restart(start).unwrap();
         ctx.inst_gain("FLUTE").unwrap();
         assert!(ctx.note("FLUTE", 76.9, 0.2, 0.3, 0.8).unwrap() != x);
     }
@@ -1832,20 +1895,12 @@ mod tests {
     fn a_note_refuses_what_it_cannot_play() {
         let ep = episode();
         let (ctx, voices) = context(&ep);
-        let start = ctx.noise().0.random();
+        let start = ctx.noise().unwrap().0.random();
         let note = |midi: f64, dur: f64, cap: f64, vel: f64| refused(ctx.note("FLUTE", midi, dur, cap, vel));
         assert_eq!(note(f64::NAN, 0.2, 0.3, 0.8), "note: midi is NaN, not a number");
         assert_eq!(note(76.0, f64::INFINITY, 0.3, 0.8), "note: dur is inf, not a number");
         assert_eq!(note(76.0, 0.2, f64::NAN, 0.8), "note: cap is NaN, not a number");
         assert_eq!(note(76.0, 0.2, 0.3, f64::NAN), "note: vel is NaN, not a number");
-        assert_eq!(
-            note(76.0, -0.05, 0.3, 0.8),
-            "note: a held length (dur) of -0.05 s is below zero"
-        );
-        assert_eq!(
-            note(76.0, 0.2, -0.3, 0.8),
-            "note: a length (cap) of -0.3 s is below zero"
-        );
         assert_eq!(
             note(76.0, 700.0, 0.3, 0.8),
             "note: a held length (dur) of 700 s is longer than 600 s"
@@ -1865,8 +1920,8 @@ mod tests {
         );
         assert!(refused(ctx.inst_gain("TUBA")).starts_with("inst_gain: \"TUBA\" is not the voice"));
         // Nothing was synthesised, nothing drawn, nothing logged.
-        assert!(voices[0].calls().is_empty() && ctx.first_notes().is_empty());
-        assert_eq!(ctx.noise().0.random(), start);
+        assert!(voices[0].calls().is_empty() && ctx.first_notes().unwrap().is_empty());
+        assert_eq!(ctx.noise().unwrap().0.random(), start);
         // A note of no held length and a note of no length are notes (Python plays both).
         assert_eq!(ctx.note("FLUTE", 76.0, 0.0, 0.3, 0.8).unwrap().len(), 14400);
         assert!(ctx.note("FLUTE", 76.0, 0.2, 0.0, 0.8).unwrap().is_empty());
@@ -1889,6 +1944,10 @@ mod tests {
         fn register(&self) -> (i32, i32) {
             (-3, 0)
         }
+
+        fn name(&self) -> &str {
+            "FLUTE"
+        }
     }
 
     #[test]
@@ -1899,7 +1958,7 @@ mod tests {
             &ep.rec,
             &ep.ff,
             [&ep.cfg[0], &ep.cfg[1]],
-            [Arc::new(Mute), TestVoice::new(0)],
+            [Arc::new(Mute), TestVoice::new("TROMBONE", 0)],
         )
         .unwrap();
         // (lo + hi) // 2 floors: (-3 + 0) // 2 is -2.
@@ -1914,10 +1973,11 @@ mod tests {
     fn line_overrides_are_kept_by_fighter() {
         let ep = episode();
         let (ctx, _) = context(&ep);
-        assert!(ctx.line_overrides("TROMBONE").is_empty());
-        ctx.line_override(1, 10.0, 12.0, 10.0, &[(0.0, Some(52), 1.0), (1.0, None, 1.0)]);
-        ctx.line_override(1, 20.0, 22.0, 20.5, &[]);
-        let got = ctx.line_overrides("TROMBONE");
+        assert!(ctx.line_overrides("TROMBONE").unwrap().is_empty());
+        ctx.line_override(1, 10.0, 12.0, 10.0, &[(0.0, Some(52), 1.0), (1.0, None, 1.0)])
+            .unwrap();
+        ctx.line_override(1, 20.0, 22.0, 20.5, &[]).unwrap();
+        let got = ctx.line_overrides("TROMBONE").unwrap();
         assert_eq!(got.len(), 2);
         assert_eq!(
             got[0],
@@ -1929,10 +1989,10 @@ mod tests {
             }
         );
         assert_eq!((got[1].t0, got[1].tz), (20.0, 20.5));
-        assert!(ctx.line_overrides("FLUTE").is_empty());
+        assert!(ctx.line_overrides("FLUTE").unwrap().is_empty());
         // They belong to the fight, not to one pass over its notes.
-        ctx.restart(PpNoise::start());
-        assert_eq!(ctx.line_overrides("TROMBONE").len(), 2);
+        ctx.restart(PpNoise::start()).unwrap();
+        assert_eq!(ctx.line_overrides("TROMBONE").unwrap().len(), 2);
     }
 
     /// One event of a recording.
@@ -2031,5 +2091,124 @@ mod tests {
         // Nothing to read, nothing wrong: other kinds are not this function's.
         assert_eq!(run(vec![event(5.0, "hit", vec![]), event(6.0, "ko", vec![])]), Ok(()));
         assert_eq!(run(Vec::new()), Ok(()));
+    }
+
+    #[test]
+    fn a_note_below_zero_follows_python() {
+        let ep = episode();
+        let (ctx, voices) = context(&ep);
+        // A held length a little below zero is a note: what the voice rings on past it (the test voice 0.1 s,
+        // so 0.05 s are left here), padded to the cap.
+        let x = ctx.note("FLUTE", 76.0, -0.05, 0.3, 0.8).unwrap();
+        assert_eq!(x.len(), 14400);
+        assert_eq!(voices[0].calls()[0], (76.0, 0.8, -0.05));
+        assert!(x[2399] != 0.0 && x[2400..].iter().all(|v| *v == 0.0));
+        // A held length the voice cannot hold is refused before anything is drawn (Python raises there).
+        let before = ctx.noise().unwrap().0.random();
+        assert_eq!(
+            refused(ctx.note("FLUTE", 77.0, -0.2, 0.3, 0.8)),
+            "note: FLUTE has no note for a held length (dur) of -0.2 s: it would end before it starts"
+        );
+        assert_eq!(ctx.noise().unwrap().0.random(), before);
+        assert_eq!(voices[0].calls().len(), 2);
+
+        // A cap below zero cuts that much off the end of what the voice gave (Python's slice `x[:n]`), then
+        // fades what is left: here 14,400 samples less 4,800.
+        let whole = ctx.note("TROMBONE", 52.0, 0.2, 0.3, 0.8).unwrap();
+        let cut = ctx.note("TROMBONE", 52.0, 0.2, -0.1, 0.8).unwrap();
+        assert_eq!((whole.len(), cut.len()), (14400, 9600));
+        assert_eq!(cut[..7680], whole[..7680]);
+        assert!(cut[7681] != whole[7681] && cut[9599] == 0.0);
+        // More than there is: an empty note.
+        assert!(ctx.note("TROMBONE", 52.0, 0.2, -1.0, 0.8).unwrap().is_empty());
+        // 1 or 2 samples left have no room for the fade: found once the voice has given its note.
+        let calls = voices[1].calls().len();
+        let e = refused(ctx.note("TROMBONE", 53.0, 0.2, -14398.5 / 48000.0, 0.8));
+        assert_eq!(
+            e,
+            "note: 2 sample(s) with a fade of 0.04 s leave no room for a fade (3 samples and a fade of one sample \
+             are the least)"
+        );
+        assert_eq!(voices[1].calls().len(), calls + 1);
+    }
+
+    #[test]
+    fn the_voices_must_be_the_fighters() {
+        let ep = episode();
+        let cfg = [&ep.cfg[0], &ep.cfg[1]];
+        let swapped: [Arc<dyn Voice>; 2] = [TestVoice::new("TROMBONE", 0), TestVoice::new("FLUTE", 0)];
+        assert_eq!(
+            refused(MusicCtx::new(&ep.show, &ep.rec, &ep.ff, cfg, swapped)),
+            "music: voice 0 is \"TROMBONE\", but FLUTE plays \"FLUTE\""
+        );
+        let other: [Arc<dyn Voice>; 2] = [TestVoice::new("FLUTE", 0), TestVoice::new("TUBA", 0)];
+        assert_eq!(
+            refused(MusicCtx::new(&ep.show, &ep.rec, &ep.ff, cfg, other)),
+            "music: voice 1 is \"TUBA\", but TROMBONE plays \"TROMBONE\""
+        );
+    }
+
+    /// A voice that breaks on MIDI note 13, after it has drawn its noise.
+    struct Shaky;
+
+    impl Voice for Shaky {
+        fn note(&self, noise: &mut PpNoise, midi: f64, _: f64, _: f64) -> Vec<f64> {
+            let x = noise.nz(10);
+            assert!(midi != 13.0, "the voice broke");
+            x
+        }
+
+        fn register(&self) -> (i32, i32) {
+            (60, 72)
+        }
+
+        fn name(&self) -> &str {
+            "FLUTE"
+        }
+    }
+
+    #[test]
+    fn a_voice_that_panicked_ends_the_build() {
+        let ep = episode();
+        let ctx = MusicCtx::new(
+            &ep.show,
+            &ep.rec,
+            &ep.ff,
+            [&ep.cfg[0], &ep.cfg[1]],
+            [Arc::new(Shaky), TestVoice::new("TROMBONE", 0)],
+        )
+        .unwrap();
+        assert!(ctx.note("FLUTE", 76.0, 0.2, 0.3, 0.8).is_ok());
+        // Formatting a context does not wait for the lock: it works while a note is being made.
+        {
+            let _making_a_note = ctx.state.lock().unwrap();
+            assert!(format!("{ctx:?}").contains("[\"FLUTE\", \"TROMBONE\"]"));
+        }
+        let broke = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| ctx.note("FLUTE", 13.0, 0.2, 0.3, 0.8)));
+        assert!(broke.is_err());
+        // The voice had drawn noise before it broke, so every later note would be silently another note: nothing
+        // of this build is handed out any more, not even a note that was cached.
+        let dead = "music: a voice panicked while a note was being made: the noise stream and the notes of this \
+                    build cannot be trusted any more";
+        assert_eq!(refused(ctx.note("FLUTE", 76.0, 0.2, 0.3, 0.8)), dead);
+        assert_eq!(refused(ctx.note("TROMBONE", 52.0, 0.2, 0.3, 0.8)), dead);
+        assert_eq!(refused(ctx.inst_gain("FLUTE")), dead);
+        assert_eq!(refused(ctx.noise()), dead);
+        assert_eq!(refused(ctx.first_notes()), dead);
+        assert_eq!(refused(ctx.restart(PpNoise::start())), dead);
+        assert_eq!(refused(ctx.line_override(0, 1.0, 2.0, 1.0, &[])), dead);
+        assert_eq!(refused(ctx.line_overrides("FLUTE")), dead);
+        assert!(format!("{ctx:?}").contains("FLUTE"));
+    }
+
+    #[test]
+    fn a_line_override_is_for_one_of_the_two() {
+        let ep = episode();
+        let (ctx, _) = context(&ep);
+        assert_eq!(
+            refused(ctx.line_override(2, 1.0, 2.0, 1.0, &[])),
+            "line_override: fighter 2 (there are two, 0 and 1)"
+        );
+        assert!(ctx.line_overrides("FLUTE").unwrap().is_empty());
     }
 }

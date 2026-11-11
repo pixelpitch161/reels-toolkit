@@ -532,7 +532,7 @@ fn helpers() {
         let helper = extra["helper"].as_str().expect("helper");
         let a = &case.args;
         // A case that drew noise names the state before it: the stream must stand there.
-        let before = ctx.noise();
+        let before = ctx.noise().unwrap();
         if let Some(noise) = extra.get("noise") {
             assert!(
                 stands_at(&before.0, big(&noise["state"])),
@@ -618,7 +618,7 @@ fn helpers() {
             Ok(got) => t.db(id, helper, &got, want, DB),
         }
         // The stream after the call: where Python's stood, or where it was.
-        let after = ctx.noise();
+        let after = ctx.noise().unwrap();
         match extra.get("noise_after") {
             Some(state) => assert!(stands_at(&after.0, big(state)), "{id}: the stream after the call"),
             None => {
@@ -708,6 +708,7 @@ fn scalars() {
     for case in doc["cases"].as_array().expect("cases") {
         let (id, call, a) = (&case["id"], case["call"].as_str().expect("call"), &case["args"]);
         let want = &case["result"];
+        assert!(want.as_array().is_some_and(|w| !w.is_empty()), "{id}: no results");
         seen.insert(call);
         match call {
             "[kit.music.h01(slot, seed) for slot in slots]" => {
@@ -789,18 +790,25 @@ fn first_notes() {
     let mut t = Tally::new("first_notes");
     let mut shas = (0, 0);
     let calls = json("sound/flute_vs_trombone/note_calls.json");
+    assert_eq!(v.index.cases.len(), 3, "the first three notes of the score");
     for (i, case) in v.index.cases.iter().enumerate() {
         let id = case.id.as_str();
         let extra = &top["cases"][i];
         let a = &case.args;
         let name = a["name"].as_str().expect("name");
         let midi = a["midi"].as_i64().expect("midi") as f64;
-        assert!(stands_at(&ctx.noise().0, big(&extra["noise"]["state"])), "{id}: before");
+        assert!(
+            stands_at(&ctx.noise().unwrap().0, big(&extra["noise"]["state"])),
+            "{id}: before"
+        );
         let out = ctx
             .note(name, midi, hex_arg(&a["dur"]), hex_arg(&a["cap"]), hex_arg(&a["vel"]))
             .expect("the note");
         t.db(id, "note (float64)", &out, v.array(case, "out").f64(), DB);
-        assert!(stands_at(&ctx.noise().0, big(&extra["noise_after"])), "{id}: after");
+        assert!(
+            stands_at(&ctx.noise().unwrap().0, big(&extra["noise_after"])),
+            "{id}: after"
+        );
         let gain = parse_hex_f64(extra["gain"].as_str().expect("gain"));
         let mine = ctx.inst_gain(name).expect("the gain");
         assert!(rel(mine, gain) <= LEVEL_REL, "{id}: gain {mine} against {gain}");
@@ -808,6 +816,12 @@ fn first_notes() {
         // level-matching note of inst_gain.
         let voice = fighters::voice(name).expect("a voice");
         let logged = &calls["calls"][i]["voice_calls"];
+        let behind = extra["voice_calls"].as_array().expect("voice_calls").len();
+        assert_eq!(
+            behind,
+            if i == 0 { 2 } else { 1 },
+            "{id}: the note's voice call, and the gain note after the first"
+        );
         for (j, call) in extra["voice_calls"].as_array().expect("voice_calls").iter().enumerate() {
             let role = if call["why"] == "note" { "voice" } else { "gain_voice" };
             let log = &logged[j];
@@ -859,6 +873,11 @@ fn every_first_time_note_of_the_episode() {
     let ctx = context(&ep);
     let doc = json("sound/flute_vs_trombone/note_calls.json");
     let calls = doc["calls"].as_array().expect("calls");
+    // The episode's score makes 174 first-time notes, 95 of the FLUTE and 79 of the TROMBONE: an empty or
+    // cut-short log must not pass for want of notes to replay.
+    assert_eq!(calls.len(), 174, "the first-time notes in note_calls.json");
+    let of = |name: &str| calls.iter().filter(|c| c["name"] == name).count();
+    assert_eq!((of("FLUTE"), of("TROMBONE")), (95, 79));
     assert_eq!(calls.len() as u64, whole(&doc["first_time"]));
     assert_eq!(doc["start"], PpNoise::START_STATE.to_string());
     assert_eq!(doc["generator"]["inc"], PpNoise::START_INC.to_string());
@@ -877,12 +896,15 @@ fn every_first_time_note_of_the_episode() {
     for c in calls {
         let i = &c["i"];
         let (name, midi, dur, cap, vel) = args(c);
-        assert!(stands_at(&ctx.noise().0, big(&c["noise_before"])), "note {i}: before");
+        assert!(
+            stands_at(&ctx.noise().unwrap().0, big(&c["noise_before"])),
+            "note {i}: before"
+        );
         let x = ctx.note(&name, midi, dur, cap, vel).expect("the note");
         assert_eq!(x.len() as u64, whole(&c["samples"]), "note {i}: samples");
         assert!(x.iter().all(|v| v.is_finite()), "note {i}");
         assert!(
-            stands_at(&ctx.noise().0, big(&c["noise_after"])),
+            stands_at(&ctx.noise().unwrap().0, big(&c["noise_after"])),
             "note {i}: it drew another number of normals"
         );
         let gain = parse_hex_f64(c["gain"].as_str().expect("gain"));
@@ -893,10 +915,13 @@ fn every_first_time_note_of_the_episode() {
         notes.push(x);
     }
     let took = started.elapsed();
-    assert!(stands_at(&ctx.noise().0, big(&doc["end"])), "the end of the score");
+    assert!(
+        stands_at(&ctx.noise().unwrap().0, big(&doc["end"])),
+        "the end of the score"
+    );
     assert!(gain_worst <= LEVEL_REL, "a gain is {gain_worst:e} from Python's");
     // The log of first-time notes is the file's, in order.
-    let log = ctx.first_notes();
+    let log = ctx.first_notes().unwrap();
     assert_eq!(log.len(), calls.len());
     for (mine, c) in log.iter().zip(calls) {
         let (name, midi, dur, cap, vel) = args(c);
@@ -908,15 +933,15 @@ fn every_first_time_note_of_the_episode() {
         );
     }
     // Asked for again, every note comes from the cache: the same samples, nothing drawn, nothing logged.
-    let before = ctx.noise();
+    let before = ctx.noise().unwrap();
     for (c, first) in calls.iter().zip(&notes) {
         let (name, midi, dur, cap, vel) = args(c);
         let again = ctx.note(&name, midi, dur, cap, vel).expect("the note");
         assert!(Arc::ptr_eq(&again, first), "note {}: synthesised twice", c["i"]);
     }
-    let (mut a, mut b) = (before.0.clone(), ctx.noise().0.clone());
+    let (mut a, mut b) = (before.0.clone(), ctx.noise().unwrap().0.clone());
     assert_eq!(a.random().to_bits(), b.random().to_bits(), "a cached note drew noise");
-    assert_eq!(ctx.first_notes().len(), calls.len());
+    assert_eq!(ctx.first_notes().unwrap().len(), calls.len());
     println!(
         "note_calls: {} first-time notes replayed in order in {:.2} s; every length and every generator state \
          as Python's; worst gain {gain_worst:.1e} rel; float64 SHA-256 equal for {sha_same} of {} notes",
@@ -1097,6 +1122,9 @@ fn master_case() {
     assert_eq!(st.stems.keys().map(String::as_str).collect::<Vec<_>>(), bus_order);
     assert!(st.stems.values().all(|s| s.len() == NA));
 
+    let mut all_roles: Vec<&str> = st.stems.keys().map(String::as_str).chain(["master"]).collect();
+    all_roles.sort_unstable();
+    let mut windows = 0;
     let mut t = Tally::new("master_case");
     for case in &v.index.cases {
         let id = case.id.as_str();
@@ -1108,6 +1136,9 @@ fn master_case() {
             continue;
         }
         let (i0, n) = (whole(&case.args["i0"]) as usize, whole(&case.args["n"]) as usize);
+        windows += 1;
+        let roles: Vec<&str> = case.arrays.keys().map(String::as_str).collect();
+        assert_eq!(roles, all_roles, "{id}: the master and every stem");
         for role in case.arrays.keys() {
             let mine = if role == "master" { &st.master } else { &st.stems[role] };
             let function = if role == "master" { "master" } else { "stem" };
@@ -1122,10 +1153,15 @@ fn master_case() {
         }
     }
     t.finish(&["master", "stem"]);
+    assert_eq!(windows, 3, "the start, the middle and the seam");
 
     // Every 100 ms block of the whole length against Python's levels (blocks under -200 dB are silence).
     let mut worst = 0.0f64;
-    for (role, want) in top["db"].as_object().expect("db") {
+    let profiles = top["db"].as_object().expect("db");
+    let mut profiled: Vec<&str> = profiles.keys().map(String::as_str).filter(|r| *r != "about").collect();
+    profiled.sort_unstable();
+    assert_eq!(profiled, all_roles, "the level profiles: the master and every stem");
+    for (role, want) in profiles {
         if role == "about" {
             continue;
         }
@@ -1136,6 +1172,7 @@ fn master_case() {
             .iter()
             .map(|d| d.as_f64().expect("dB"))
             .collect();
+        assert_eq!(want.len(), NA.div_ceil(SR / 10), "{role}: a level for every 100 ms");
         assert_eq!(mine.len(), want.len(), "{role}: blocks");
         for (b, (got, want)) in mine.iter().zip(&want).enumerate() {
             if *want > -200.0 {
@@ -1188,12 +1225,12 @@ fn the_base_sound_plays_as_base_py_does() {
     );
     assert_eq!((Base(0).bus(&ctx), Base(0).role(&ctx)), ("flute".to_string(), "melody"));
     assert_eq!((s.bus_gain(), s.send(), s.band()), (1.5, 0.35, (200.0, 4000.0)));
-    assert_eq!((s.detune(&ctx, 12.0), s.detune(&ctx, 1.0)), (0.0, 0.0));
+    assert_eq!((s.detune(&ctx, 12.0), s.detune(&ctx, 1.0)), (Ok(0.0), Ok(0.0)));
     let peak = |x: &[f64]| x.iter().fold(0.0f64, |p, v| p.max(v.abs()));
 
     let x = s.voice(&ctx, 52.0, 0.2504, 0.84).expect("the note");
     assert_eq!(x.len(), 21600);
-    let first = &ctx.first_notes()[0];
+    let first = &ctx.first_notes().unwrap()[0];
     assert_eq!(
         (first.name.as_str(), first.midi, first.dur, first.cap, first.vel),
         ("TROMBONE", 52, 0.25, 0.45, 0.8)
@@ -1237,7 +1274,7 @@ fn shared_events_of_the_episode() {
     music::shared_events(&ctx, &bed, &mut mix).expect("the events");
     assert_eq!(mix.bus_names(), ["fx"]);
     // It makes no note: the noise stream has not moved.
-    assert!(stands_at(&ctx.noise().0, PpNoise::START_STATE));
+    assert!(stands_at(&ctx.noise().unwrap().0, PpNoise::START_STATE));
     let fx = mix.bus("fx").expect("fx");
     let loud: Vec<usize> = (0..fx.len()).filter(|&i| fx[i] != [0.0, 0.0]).collect();
     assert_eq!((loud[0], loud[loud.len() - 1], loud.len()), (first, last, sounding));
@@ -1251,4 +1288,151 @@ fn shared_events_of_the_episode() {
         assert!(rel(dsp::sum(&square), squares[c]) <= LEVEL_REL, "channel {c}: squares");
         assert!(rel(dsp::sum(&channel), sums[c]) <= LEVEL_REL, "channel {c}: sum");
     }
+}
+
+// ---------------------------------------------------------------- notes below zero
+
+/// The samples of `x` at the given places against what the kit printed there (`float.hex()`), to 1e-12.
+fn samples_are(x: &[f64], want: &[(usize, &str)], what: &str) {
+    for &(i, hex) in want {
+        let python = parse_hex_f64(hex);
+        assert!(
+            (x[i] - python).abs() < 1e-12,
+            "{what}: sample {i} is {}, Python has {python}",
+            x[i]
+        );
+    }
+}
+
+#[test]
+fn a_note_below_zero_is_pythons() {
+    // `kit.music.note(name, midi, dur, cap, 0.8)` on the reference PC for a held length and for a cap below
+    // zero, each from the start state with nothing cached. Python raises for none of them except where it says
+    // so: a held length a little below zero is the note's release alone, and a cap below zero cuts that much off
+    // the end of the note (the slice `x[:int(cap * SR)]`) before the fade.
+    let ep = episode();
+    let peak = |x: &[f64]| x.iter().fold(0.0f64, |p, v| p.max(v.abs()));
+    let refused = |r: Result<Arc<[f64]>, MusicError>| r.expect_err("Python raises here").to_string();
+
+    // ---- the TROMBONE (no noise: one context does for all)
+    let ctx = context(&ep);
+    // dur -0.1: 0.04 s of release (1,764 samples at 44.1 kHz, 1,920 at 48 kHz), padded to the cap.
+    let x = ctx.note("TROMBONE", 52.0, -0.1, 0.3, 0.8).expect("a release alone");
+    assert_eq!(x.len(), 14400);
+    samples_are(
+        &x,
+        &[
+            (100, "0x1.c6f5013bd0986p-13"),
+            (1000, "0x1.aa3c9f75af71bp-9"),
+            (1900, "0x1.caaa768668bdfp-10"),
+            (1919, "0x1.218fea43200ccp-13"),
+        ],
+        "TROMBONE, dur -0.1",
+    );
+    assert!(x[1919] != 0.0 && x[1920..].iter().all(|v| *v == 0.0));
+    assert!(rel(peak(&x), parse_hex_f64("0x1.513f6e29f32cfp-7")) <= LEVEL_REL);
+    // dur -0.14: a note of no samples at all, which the cap pads to silence.
+    let silent = ctx.note("TROMBONE", 52.0, -0.14, 0.3, 0.8).expect("silence");
+    assert!(silent.len() == 14400 && silent.iter().all(|v| *v == 0.0));
+    // dur -0.2: a negative number of samples. Python raises; nothing is synthesised.
+    let e = refused(ctx.note("TROMBONE", 52.0, -0.2, 0.3, 0.8));
+    assert_eq!(
+        e,
+        "note: TROMBONE has no note for a held length (dur) of -0.2 s: it would end before it starts"
+    );
+    // cap -0.01: the 16,320 samples of the note less 480, the last 1,920 of what is left faded.
+    let x = ctx.note("TROMBONE", 52.0, 0.2, -0.01, 0.8).expect("a note cut short");
+    assert_eq!(x.len(), 15840);
+    samples_are(
+        &x,
+        &[
+            (5000, "0x1.2eff86a1567bfp-2"),
+            (13920, "-0x1.1a48cb1cc885ap-6"),
+            (15000, "0x1.4614fa2e44490p-9"),
+            (15838, "0x1.f6e98971d9bfep-19"),
+            (15839, "0x0.0p+0"),
+        ],
+        "TROMBONE, cap -0.01",
+    );
+    assert!(rel(peak(&x), parse_hex_f64("0x1.3f9287c636972p-2")) <= LEVEL_REL);
+    // A cap that leaves 3 samples (int(cap * SR) is -16317), one sample (-16319: Python raises, there is no
+    // room for the fade), none (-16320), and less than none.
+    let x = ctx
+        .note("TROMBONE", 52.0, 0.2, parse_hex_f64("-0x1.5c1e098ead65bp-2"), 0.8)
+        .expect("three samples");
+    assert_eq!(x.len(), 3);
+    samples_are(
+        &x,
+        &[(1, "0x1.f253ed4fa969bp-21"), (2, "0x1.0870e8b263de0p-18")],
+        "TROMBONE, three samples",
+    );
+    let e = refused(ctx.note("TROMBONE", 52.0, 0.2, parse_hex_f64("-0x1.5c237fa89e60fp-2"), 0.8));
+    assert!(
+        e.starts_with("note: 1 sample(s) with a fade of 0.04 s leave no room for a fade"),
+        "{e}"
+    );
+    for cap in [parse_hex_f64("-0x1.5c28f5c28f5c3p-2"), -1.0] {
+        assert!(
+            ctx.note("TROMBONE", 52.0, 0.2, cap, 0.8)
+                .expect("nothing left")
+                .is_empty()
+        );
+    }
+    let gain = parse_hex_f64("0x1.a1206dba7baf8p-1");
+    assert!(rel(ctx.inst_gain("TROMBONE").expect("the gain"), gain) <= LEVEL_REL);
+
+    // ---- the FLUTE (each from the start of the noise stream)
+    // dur -0.1: 0.08 s of tone (3,528 normals), then the gain note.
+    let ctx = context(&ep);
+    let x = ctx.note("FLUTE", 76.0, -0.1, 0.3, 0.8).expect("a release alone");
+    assert_eq!(x.len(), 14400);
+    samples_are(
+        &x,
+        &[
+            (0, "0x1.d0b443d0ccdd1p-12"),
+            (100, "-0x1.61082e8071100p-8"),
+            (1000, "-0x1.66517c454efddp-7"),
+            (3000, "0x1.2b0f6e39938e3p-7"),
+        ],
+        "FLUTE, dur -0.1",
+    );
+    assert!(x[3848] != 0.0 && x[3849..].iter().all(|v| *v == 0.0));
+    assert!(stands_at(
+        &ctx.noise().unwrap().0,
+        103275142608439468136010328423419220429
+    ));
+    let gain = parse_hex_f64("0x1.5eea83f2d92eap-1");
+    assert!(rel(ctx.inst_gain("FLUTE").expect("the gain"), gain) <= LEVEL_REL);
+    // dur -0.18: a tone of no samples (nothing drawn for it), silence; only the gain note draws.
+    let ctx = context(&ep);
+    let silent = ctx.note("FLUTE", 76.0, -0.18, 0.3, 0.8).expect("silence");
+    assert!(silent.len() == 14400 && silent.iter().all(|v| *v == 0.0));
+    assert!(stands_at(
+        &ctx.noise().unwrap().0,
+        298504411499926805183013488005417175337
+    ));
+    // dur -0.19: Python raises before it draws.
+    let ctx = context(&ep);
+    let e = refused(ctx.note("FLUTE", 76.0, -0.19, 0.3, 0.8));
+    assert!(
+        e.starts_with("note: FLUTE has no note for a held length (dur) of -0.19 s"),
+        "{e}"
+    );
+    assert!(stands_at(&ctx.noise().unwrap().0, PpNoise::START_STATE));
+    assert!(ctx.first_notes().unwrap().is_empty());
+    // cap -0.9: the 56,810 samples of the note and its echoes less 43,200.
+    let ctx = context(&ep);
+    let x = ctx.note("FLUTE", 76.0, 0.2, -0.9, 0.8).expect("a note cut short");
+    assert_eq!(x.len(), 13610);
+    samples_are(
+        &x,
+        &[
+            (0, "0x1.d0bf08706ff66p-12"),
+            (3000, "0x1.0a768e66dbfedp-2"),
+            (13609, "0x0.0p+0"),
+        ],
+        "FLUTE, cap -0.9",
+    );
+    let gain = parse_hex_f64("0x1.5ef2a594e7b91p-1");
+    assert!(rel(ctx.inst_gain("FLUTE").expect("the gain"), gain) <= LEVEL_REL);
 }

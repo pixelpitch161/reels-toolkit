@@ -52,6 +52,15 @@ impl Voice for TromboneVoice {
     fn register(&self) -> (i32, i32) {
         REGISTER
     }
+
+    fn name(&self) -> &str {
+        "TROMBONE"
+    }
+
+    /// Down to -0.14 s: the tone is `int((dur + .14) * SR)` samples, and numpy refuses a negative count.
+    fn can_hold(&self, dur: f64) -> bool {
+        pp::has_len(dur + 0.14)
+    }
 }
 
 /// `brass2(f, dur, vel, bright=BRIGHT, vib=VIB, scoop=SCOOP)` with no glide and no plunger: the tone at `f` Hz
@@ -164,7 +173,12 @@ mod tests {
         assert_eq!(note, pp::to_48k(&raw));
         assert_eq!((raw.len(), note.len()), (17199, 18720));
         assert_eq!(noise.nz(4), PpNoise::start().nz(4));
-        assert_eq!(TromboneVoice.register(), REGISTER);
+        assert_eq!((TromboneVoice.register(), TromboneVoice.name()), (REGISTER, "TROMBONE"));
+        // What it can hold is what Python does not raise for.
+        assert!(TromboneVoice.can_hold(0.0) && TromboneVoice.can_hold(-0.1) && TromboneVoice.can_hold(-0.14));
+        assert!(!TromboneVoice.can_hold(-0.2) && !TromboneVoice.can_hold(f64::INFINITY));
+        // A held length of -0.1 s leaves 0.04 s of release: 1,764 samples, 1,920 at 48 kHz.
+        assert_eq!(TromboneVoice.note(&mut noise, 52.0, 0.8, -0.1).len(), 1920);
         // A note of no held length is its attack cut short and its release.
         assert_eq!(synth(52.0, 0.8, 0.0).len(), 6174);
         // A note that ends 0.14 s before it starts has no samples at all (Python's is empty too).

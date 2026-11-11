@@ -51,6 +51,7 @@ mod tests {
         for name in PORTED {
             let cfg = roster().iter().find(|f| f.name == name).expect("in the roster");
             assert_eq!(cfg.pp, name);
+            assert_eq!(voice(name).expect("a voice").name(), cfg.pp);
         }
     }
 }

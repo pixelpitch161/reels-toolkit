@@ -88,20 +88,35 @@ pub trait Sound: Send + Sync {
     }
 
     /// `detune(t)`: the OUT OF TUNE depth on it at `t` (0 to 1): the engine's recorded status, `RUN['DET']`
-    /// (per frame and fighter: the time left and the depth). 0 outside the fight, when the time left is not above
-    /// zero, and for a recording without a `DET` array of that shape (no fighter of Milestone 1 records one).
-    fn detune(&self, ctx: &MusicCtx, t: f64) -> f64 {
+    /// (per frame and fighter: the time left and the depth). 0 for a recording without a `DET` array (no fighter
+    /// of Milestone 1 records one), outside the fight, and when the time left is not above zero.
+    ///
+    /// # Errors
+    /// The recording has a `DET` that is not a number array of `(frames, 2, 2)` (Python fails on it too).
+    fn detune(&self, ctx: &MusicCtx, t: f64) -> Result<f64, MusicError> {
+        let Some(det) = ctx.rec.arrays.get("DET") else {
+            return Ok(0.0);
+        };
         if !(ctx.show.grid.t_fight <= t && t < ctx.show.t_ko) {
-            return 0.0;
+            return Ok(0.0);
         }
         let at = (ctx.sim_i(t) * 2 + self.k()) * 2;
-        let is_det = |shape: &[usize], len: usize| shape.len() == 3 && shape[1..] == [2, 2] && at + 1 < len;
-        let (left, depth) = match ctx.rec.arrays.get("DET") {
-            Some(Array::F64 { shape, data }) if is_det(shape, data.len()) => (data[at], data[at + 1]),
-            Some(Array::I64 { shape, data }) if is_det(shape, data.len()) => (data[at] as f64, data[at + 1] as f64),
-            _ => return 0.0,
+        let pair = match det {
+            Array::F64 { shape, data } if shape.len() == 3 && shape[1..] == [2, 2] => {
+                data.get(at..at + 2).map(|p| (p[0], p[1]))
+            }
+            Array::I64 { shape, data } if shape.len() == 3 && shape[1..] == [2, 2] => {
+                data.get(at..at + 2).map(|p| (p[0] as f64, p[1] as f64))
+            }
+            _ => None,
         };
-        if left > 0.0 { depth } else { 0.0 }
+        let Some((left, depth)) = pair else {
+            return Err(MusicError::new(
+                "detune",
+                "the recording's DET is not a time left and a depth for both fighters at every frame",
+            ));
+        };
+        Ok(if left > 0.0 { depth } else { 0.0 })
     }
 
     /// `colour(x, t, drive_k=1.0, **kw)`: its tone at `t`: `M.colour(x, k, t, drive_k, **a)` with `a` its
@@ -294,7 +309,7 @@ mod tests {
         let x = b.voice(&ctx, 52.0, 0.2504, 0.84).unwrap();
         assert_eq!(x.len(), 21600);
         assert_eq!(voices[1].calls()[0], (52.0, 0.8, 0.25));
-        let first = &ctx.first_notes()[0];
+        let first = &ctx.first_notes().unwrap()[0];
         assert_eq!(
             (first.name.as_str(), first.midi, first.dur, first.cap, first.vel),
             ("TROMBONE", 52, 0.25, 0.45, 0.8)
@@ -332,7 +347,11 @@ mod tests {
         let ep = episode();
         // The episode's fighters record no DET: never out of tune.
         let (ctx, _) = context(&ep);
-        assert_eq!((Plain(0).detune(&ctx, 12.0), Plain(1).detune(&ctx, 1.0)), (0.0, 0.0));
+        assert_eq!(
+            (Plain(0).detune(&ctx, 12.0), Plain(1).detune(&ctx, 1.0)),
+            (Ok(0.0), Ok(0.0))
+        );
+        let (cfg, voices) = (ctx.cfg, ctx.voices.clone());
         drop(ctx);
         // With one: per frame and fighter, the time left and the depth.
         let mut rec = ep.rec.clone();
@@ -341,44 +360,50 @@ mod tests {
         let frame = 252; // the frame at 12.0 s
         data[(frame * 2 + 1) * 2..][..2].copy_from_slice(&[0.5, 0.7]); // fighter 1: 0.5 s left, depth 0.7
         data[(frame * 2) * 2..][..2].copy_from_slice(&[0.0, 0.9]); // fighter 0: none left
-        rec.arrays.insert(
-            "DET".into(),
-            Array::F64 {
-                shape: vec![frames, 2, 2],
-                data,
-            },
-        );
-        let old = context(&ep).0;
-        let ctx = MusicCtx::new(&ep.show, &rec, &ep.ff, old.cfg, old.voices.clone()).unwrap();
-        assert_eq!(ctx.sim_i(12.0), frame);
-        assert_eq!((Plain(1).detune(&ctx, 12.0), Plain(0).detune(&ctx, 12.0)), (0.7, 0.0));
-        assert_eq!(Plain(1).detune(&ctx, 13.0), 0.0);
-        // Only during the fight: not before FIGHT!, not from the K.O. on.
-        let last = (frames - 1) * 2 + 1;
-        if let Some(Array::F64 { data, .. }) = rec.arrays.get_mut("DET") {
-            data[..4].copy_from_slice(&[1.0, 0.3, 1.0, 0.3]);
-            data[last * 2..][..2].copy_from_slice(&[1.0, 0.4]);
-        }
-        let ctx = MusicCtx::new(&ep.show, &rec, &ep.ff, old.cfg, old.voices.clone()).unwrap();
+        // FIGHT! (frame 0) and the last frame, fighter 1.
+        data[2..4].copy_from_slice(&[1.0, 0.3]);
+        data[((frames - 1) * 2 + 1) * 2..][..2].copy_from_slice(&[1.0, 0.4]);
+        let mut with = |det: Array, k: usize, t: f64| {
+            rec.arrays.insert("DET".into(), det);
+            let ctx = MusicCtx::new(&ep.show, &rec, &ep.ff, cfg, voices.clone()).unwrap();
+            assert_eq!(ctx.sim_i(12.0), frame);
+            Plain(k).detune(&ctx, t)
+        };
+        let shape = vec![frames, 2, 2];
+        let det = || Array::F64 {
+            shape: shape.clone(),
+            data: data.clone(),
+        };
+        assert_eq!((with(det(), 1, 12.0), with(det(), 0, 12.0)), (Ok(0.7), Ok(0.0)));
+        assert_eq!(with(det(), 1, 13.0), Ok(0.0));
+        // Only during the fight: not before FIGHT!, not from the K.O. on, not at a time that is no number.
         let grid = &ep.show.grid;
-        assert_eq!(Plain(1).detune(&ctx, grid.t_fight - 0.01), 0.0);
-        assert_eq!(Plain(1).detune(&ctx, grid.t_fight), 0.3);
-        assert_eq!(Plain(1).detune(&ctx, ep.show.t_ko - 0.001), 0.4);
-        assert_eq!(Plain(1).detune(&ctx, ep.show.t_ko), 0.0);
-        assert_eq!(Plain(1).detune(&ctx, f64::NAN), 0.0);
-        // Whole numbers are read as numbers; anything of another shape is not a DET.
-        rec.arrays.insert(
-            "DET".into(),
-            Array::I64 {
-                shape: vec![frames, 2, 2],
-                data: vec![2; frames * 4],
-            },
-        );
-        let ctx = MusicCtx::new(&ep.show, &rec, &ep.ff, old.cfg, old.voices.clone()).unwrap();
-        assert_eq!(Plain(0).detune(&ctx, 12.0), 2.0);
-        rec.arrays
-            .insert("DET".into(), Array::Nested(Value::List(vec![Value::Null; frames])));
-        let ctx = MusicCtx::new(&ep.show, &rec, &ep.ff, old.cfg, old.voices.clone()).unwrap();
-        assert_eq!(Plain(0).detune(&ctx, 12.0), 0.0);
+        assert_eq!(with(det(), 1, grid.t_fight - 0.01), Ok(0.0));
+        assert_eq!(with(det(), 1, grid.t_fight), Ok(0.3));
+        assert_eq!(with(det(), 1, ep.show.t_ko - 0.001), Ok(0.4));
+        assert_eq!(with(det(), 1, ep.show.t_ko), Ok(0.0));
+        assert_eq!(with(det(), 1, f64::NAN), Ok(0.0));
+        // Whole numbers are read as numbers.
+        let whole = Array::I64 {
+            shape: shape.clone(),
+            data: vec![2; frames * 4],
+        };
+        assert_eq!(with(whole, 0, 12.0), Ok(2.0));
+        // A DET of another kind, of another shape, or shorter than the fight is an error, not silence. Outside
+        // the fight nobody looks at it (Python does not either).
+        let malformed = "detune: the recording's DET is not a time left and a depth for both fighters at every frame";
+        let ragged = || Array::Nested(Value::List(vec![Value::Null; frames]));
+        let flat = Array::F64 {
+            shape: vec![frames, 4],
+            data: data.clone(),
+        };
+        let short = Array::F64 {
+            shape: vec![10, 2, 2],
+            data: vec![1.0; 40],
+        };
+        assert_eq!(with(ragged(), 0, 12.0).unwrap_err().to_string(), malformed);
+        assert_eq!(with(flat, 0, 12.0).unwrap_err().to_string(), malformed);
+        assert_eq!(with(short, 0, 12.0).unwrap_err().to_string(), malformed);
+        assert_eq!(with(ragged(), 0, 1.0), Ok(0.0));
     }
 }

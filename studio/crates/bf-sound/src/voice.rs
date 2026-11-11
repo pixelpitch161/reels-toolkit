@@ -57,11 +57,25 @@ pub trait Voice: Send + Sync {
     /// for `dur` seconds. The note rings on past `dur` as the synth makes it (a release, echoes), so it is longer
     /// than `dur`. Noise, if the voice has any, is drawn from `noise`, which is left where the note left it.
     ///
-    /// A voice gives samples for every finite `midi` and `vel` and every finite `dur` from 0 up, however far
-    /// outside the instrument (Python does too; far outside they may be NaN). Where Python raises (a `dur` so
-    /// far below 0 that the note has a negative number of samples, a `dur` that is not a number) a voice panics;
-    /// [`crate::music::MusicCtx::note`] refuses those values before it calls a voice.
+    /// A voice gives samples for every finite `midi` and `vel` and every `dur` it [can hold](Voice::can_hold),
+    /// however far outside the instrument (Python does too; far outside they may be NaN). A `dur` a little below
+    /// zero is such a `dur`: the note is then its release alone, as in Python. Where Python raises (a `dur` so far
+    /// below zero that the note has a negative number of samples, a `dur` that is not a number) a voice panics;
+    /// [`crate::music::MusicCtx::note`] asks `can_hold` first and returns an error instead.
     fn note(&self, noise: &mut PpNoise, midi: f64, vel: f64, dur: f64) -> Vec<f64>;
+
+    /// The voice's name in `pp_bridge`'s roster (`entrant(name)[0]`), which is what a fighter's roster entry
+    /// names as its `pp`: `FLUTE`, `TROMBONE`. [`crate::music::MusicCtx::new`] checks it against each fighter's.
+    fn name(&self) -> &str;
+
+    /// Whether the voice has a note for a held length of `dur` seconds: false where Python raises for it (the
+    /// note would have a negative number of samples; a voice rings on for its own release past `dur`, so each
+    /// has its own limit a little below zero). The default says yes to every `dur`: right for a voice whose
+    /// `note` never panics.
+    fn can_hold(&self, dur: f64) -> bool {
+        let _ = dur;
+        true
+    }
 
     /// The instrument's register in `pp_bridge`'s roster, lowest and highest MIDI note (`entrant(name)[3]`).
     /// `kit.music.inst_gain` measures the instrument's level on the note in its middle, `(lo + hi) // 2`. This
@@ -92,6 +106,13 @@ pub mod pp {
         assert!(n.is_finite(), "cannot convert float {n} to integer");
         assert!(n > -1.0, "negative dimensions are not allowed ({seconds} s)");
         n as usize
+    }
+
+    /// Whether [`len`] takes `seconds`: a number, and not a negative count of samples (a fraction of a sample
+    /// below zero is cut to none, as Python's `int` cuts it).
+    pub fn has_len(seconds: f64) -> bool {
+        let n = seconds * SRF;
+        n.is_finite() && n > -1.0
     }
 
     /// `_t(n)`: the time of each of `n` samples, in seconds (`np.arange(n) / SR`).
@@ -133,6 +154,9 @@ pub mod pp {
             assert_eq!(len(0.0), 0);
             // int() cuts toward zero: a length a fraction of a sample below zero is none.
             assert_eq!(len(-0.5 / 44100.0), 0);
+            // has_len says where len would refuse.
+            assert!(has_len(0.0) && has_len(1.0) && has_len(-0.5 / 44100.0));
+            assert!(!has_len(-0.2) && !has_len(-1.5 / 44100.0) && !has_len(f64::NAN) && !has_len(f64::INFINITY));
             assert_eq!(tt(3), [0.0, 1.0 / 44100.0, 2.0 / 44100.0]);
             assert!(tt(0).is_empty());
         }

@@ -47,6 +47,15 @@ impl Voice for FluteVoice {
     fn register(&self) -> (i32, i32) {
         REGISTER
     }
+
+    fn name(&self) -> &str {
+        "FLUTE"
+    }
+
+    /// Down to -0.18 s: the tone is `int((dur + .18) * SR)` samples, and numpy refuses a negative count.
+    fn can_hold(&self, dur: f64) -> bool {
+        pp::has_len(dur + 0.18)
+    }
 }
 
 /// `flute_tone(f, dur, v, bright=BRIGHT, vib=VIB, chiff=CHIFF)`: the tone at `f` Hz held for `dur` seconds at
@@ -162,7 +171,14 @@ mod tests {
         let raw = synth(&mut b, 84.0, 0.9, 0.25);
         assert_eq!(note, pp::to_48k(&raw));
         assert_eq!(note.len(), (raw.len() * 160).div_ceil(147));
-        assert_eq!(FluteVoice.register(), REGISTER);
+        assert_eq!((FluteVoice.register(), FluteVoice.name()), (REGISTER, "FLUTE"));
+        // What it can hold is what Python does not raise for (-0.18 s is a tone of no samples: only the room
+        // for the echoes is left; at -0.19 s numpy refuses).
+        assert!(FluteVoice.can_hold(0.0) && FluteVoice.can_hold(-0.1) && FluteVoice.can_hold(-0.18));
+        assert!(!FluteVoice.can_hold(-0.19) && !FluteVoice.can_hold(f64::NAN));
+        let mut e = PpNoise::start();
+        let none = FluteVoice.note(&mut e, 76.0, 0.8, -0.18);
+        assert!(none.len() == 38570 && none.iter().all(|v| *v == 0.0));
         // A note of no held length is its attack and release: 0.18 s of tone, then the echoes.
         let mut c = PpNoise::start();
         assert_eq!(synth(&mut c, 76.0, 0.8, 0.0).len(), 7938 + 2 * 17718);
