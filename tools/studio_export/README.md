@@ -148,7 +148,7 @@ EXPORTS = {'thing': run}                         # python -m tools.studio_export
 | `dsp` | `dsp_vectors.py` | `studio/reference/dsp/{butter,filters,resample,fftconvolve,numpy,ufuncs,generators}.npz`, each with its sidecar `.json` (order 40) |
 | `fights` | `fights.py` | `studio/reference/fights/flute_vs_trombone/{ep392,seed1,seed2,seed3,seed500}.bfrec` |
 | `frames` | `frames.py` | `studio/reference/frames/flute_vs_trombone/{f<frame>.png,frames.json}` (43 frames), and `studio/reference/frames/exceptions.toml` if it does not exist yet |
-| `kit` | `kit_vectors.py` | `studio/reference/picture_kit/{config,font,np,camera,geometry,raster,lighting,shadows,lens,fftconv,post,hull}.npz`, each with its sidecar `.json` (about 10 seconds) |
+| `kit` | `kit_vectors.py`, `kit_renderer_vectors.py` | `studio/reference/picture_kit/{config,font,np,camera,geometry,raster,lighting,shadows,lens,fftconv,post,hull}.npz`, each with its sidecar `.json` (about 10 seconds) |
 | `lance_bag` | `lance_bag.py` | `studio/reference/fights/lance_vs_bag/{<kind>_<corner>_s<seed>.bfrec,index.json}`: 9 fights of the TROMBONE's lance against a bag (the two bags of `striker_bag`, and a LANCER: the TROMBONE with POWER SLIDE as its only ability; all added to the kit's roster table for the run only), the first 16 s of each, so that only the engine core and the lance act; `index.json` lists them, the three added entries and what the set covers (about 2 s) |
 | `models` | `models.py` | `studio/crates/bf-content/data/models/{FLUTE,TROMBONE}.json` |
 | `pillow` | `pillow_vectors.py` | `studio/reference/pillow/calls.json` and 18 vector files, each `.npz` with its sidecar `.json` (about 4 minutes: it draws all 1,830 frames in 8 worker processes) |
@@ -319,8 +319,10 @@ What the cases pin down, from Pillow's source (`_imaging.c`, `Draw.c`, `Resample
 ### `kit`: the renderer kit's own helpers
 
 For `bf-picture`'s ports of the `reelkit` picture modules. One file per group in `studio/reference/picture_kit/`;
-a case is one Python expression (`call`), its scalar arguments (`args`) and its arrays. The later picture tasks add
-their groups to the same module.
+a case is one Python expression (`call`), its scalar arguments (`args`) and its arrays. `kit_vectors.py` holds the
+three groups of the table below and the export itself; the renderer kit's nine groups (`camera`, `geometry`,
+`raster`, `lighting`, `shadows`, `lens`, `fftconv`, `post`, `hull`) are in `kit_renderer_vectors.py`, whose
+docstring lists them.
 
 | File | Cases |
 | --- | --- |
