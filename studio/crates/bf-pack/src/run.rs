@@ -144,24 +144,46 @@ fn took_words(limit: Duration) -> String {
 pub struct Family<'a> {
     /// The folder it runs in (otherwise this program's own).
     pub dir: Option<&'a Path>,
-    /// Environment variables added for it, each a name and its value.
+    /// Environment variables added for it, each a name and its value (after the ones taken away).
     pub env: &'a [(&'a str, &'a OsStr)],
     /// Environment variables taken away for it.
     pub env_remove: &'a [&'a str],
+    /// Whether every variable whose name starts with `GIT_` is taken away for it (before `env` is added), so that
+    /// nothing in this program's own environment can point git at another repository, index or settings.
+    pub scrub_git: bool,
     /// Whether it, and every program it starts, runs at Windows' below-normal priority.
     pub below_normal: bool,
 }
 
 /// Windows' `BELOW_NORMAL_PRIORITY_CLASS` process flag.
 pub const BELOW_NORMAL_PRIORITY_CLASS: u32 = 0x0000_4000;
+/// Windows' `CREATE_SUSPENDED` process flag: the program's first thread waits until it is resumed.
+const CREATE_SUSPENDED: u32 = 0x0000_0004;
+/// Windows' `CREATE_BREAKAWAY_FROM_JOB` process flag.
+const CREATE_BREAKAWAY_FROM_JOB: u32 = 0x0100_0000;
 
-/// `run` for a program that starts programs of its own (the update build: cargo starts rustc and build scripts).
-/// On Windows the program is put in a job of its own the moment it starts, and every program it starts joins that
-/// job, so when it is stopped (by `cancel` or the time limit) the whole family is stopped at once, and so is anything
-/// of the family still running when it ends or when this program ends. Each line of its error output goes to
-/// `on_line` as it comes (on the calling thread). No shell is involved at any point.
-///
-/// If Windows does not give a job (it always does on Windows 8 and later), only the program itself can be stopped.
+/// The names of every variable in this program's environment that starts with `GIT_` (as Windows compares names).
+pub fn git_variables() -> Vec<std::ffi::OsString> {
+    std::env::vars_os()
+        .map(|(k, _)| k)
+        .filter(|k| k.to_string_lossy().to_ascii_uppercase().starts_with("GIT_"))
+        .collect()
+}
+
+#[cfg(test)]
+thread_local! {
+    /// For a test only: wait this long between starting a program and putting it in its job, so a test can show
+    /// that a program cannot start anything of its own before it is held.
+    static HOLD_DELAY_MS: std::cell::Cell<u64> = const { std::cell::Cell::new(0) };
+}
+
+/// `run` for a program that starts programs of its own (the update build: cargo, through rustup's proxy, starts the
+/// real cargo, rustc and build scripts). On Windows the program is started suspended, put in a job of its own, and
+/// only then let run, so every program it starts joins that job: when it is stopped (by `cancel` or the time limit)
+/// the whole family is stopped at once, and so is anything of the family still running when it ends or when this
+/// program ends. If Windows gives no job, or the program cannot be put in it, the program is ended before it ran and
+/// this is an error in words. Each line of its error output goes to `on_line` as it comes (on the calling thread).
+/// No shell is involved at any point.
 pub fn run_family(
     program: &Path,
     args: &[&OsStr],
@@ -176,11 +198,16 @@ pub fn run_family(
         .to_string_lossy()
         .into_owned();
     let mut cmd = quiet(program, args);
-    for (k, v) in how.env {
-        cmd.env(k, v);
+    if how.scrub_git {
+        for k in git_variables() {
+            cmd.env_remove(k);
+        }
     }
     for k in how.env_remove {
         cmd.env_remove(k);
+    }
+    for (k, v) in how.env {
+        cmd.env(k, v);
     }
     if let Some(dir) = how.dir {
         cmd.current_dir(dir);
@@ -194,12 +221,21 @@ pub fn run_family(
         } else {
             0
         };
-        cmd.creation_flags(CREATE_NO_WINDOW | priority);
+        cmd.creation_flags(CREATE_SUSPENDED | CREATE_NO_WINDOW | priority);
     }
+    let not_held = || format!("{name} could not be held so that it can be stopped, so it was not run.");
     let job = family::Job::new(how.below_normal);
     let mut child = cmd.spawn().map_err(|e| format!("{name} could not be started: {e}."))?;
-    if let Some(job) = &job {
-        job.hold(&child);
+    #[cfg(test)]
+    std::thread::sleep(Duration::from_millis(HOLD_DELAY_MS.with(|d| d.get())));
+    let held = job.as_ref().is_some_and(|j| j.hold(&child)) && family::resume(child.id());
+    if !held {
+        if let Some(job) = &job {
+            job.stop();
+        }
+        let _ = child.kill();
+        let _ = child.wait();
+        return Err(not_held());
     }
     let stdout = child.stdout.take();
     let stderr = child.stderr.take();
@@ -293,16 +329,31 @@ pub fn wait_for_exit(pid: u32, limit: Duration) -> bool {
 
 /// Starts `program` with `args` in the folder `dir` and hands it off on purpose: it is not waited for and keeps
 /// running after this program ends (the app's own exe, started again after an update; or `explorer.exe` opening a
-/// file). No console window, and no input or output is connected to it. Gives its process id.
+/// file). No console window, and no input or output is connected to it. It is started outside any job this program
+/// is in when Windows allows that (so closing this program's job does not end it), else inside it. Gives its id.
 pub fn start_detached(program: &Path, args: &[&OsStr], dir: &Path) -> Result<u32, String> {
     let name = program
         .file_name()
         .unwrap_or(program.as_os_str())
         .to_string_lossy()
         .into_owned();
-    let mut cmd = quiet(program, args);
-    cmd.stdout(Stdio::null()).stderr(Stdio::null()).current_dir(dir);
-    let child = cmd.spawn().map_err(|e| format!("{name} could not be started: {e}."))?;
+    let make = |breakaway: bool| {
+        let mut cmd = quiet(program, args);
+        cmd.stdout(Stdio::null()).stderr(Stdio::null()).current_dir(dir);
+        #[cfg(windows)]
+        {
+            use std::os::windows::process::CommandExt;
+            let extra = if breakaway { CREATE_BREAKAWAY_FROM_JOB } else { 0 };
+            cmd.creation_flags(CREATE_NO_WINDOW | extra);
+        }
+        #[cfg(not(windows))]
+        let _ = breakaway;
+        cmd
+    };
+    let child = make(true)
+        .spawn()
+        .or_else(|_| make(false).spawn())
+        .map_err(|e| format!("{name} could not be started: {e}."))?;
     let pid = child.id();
     // Dropping the handle leaves the program running.
     drop(child);
@@ -380,6 +431,48 @@ mod family {
         }
     }
 
+    /// Lets every thread of the suspended program `pid` run (a program started suspended has exactly one). True when
+    /// at least one was resumed.
+    #[cfg(windows)]
+    pub(super) fn resume(pid: u32) -> bool {
+        use windows_sys::Win32::Foundation::{CloseHandle, INVALID_HANDLE_VALUE};
+        use windows_sys::Win32::System::Diagnostics::ToolHelp::{
+            CreateToolhelp32Snapshot, TH32CS_SNAPTHREAD, THREADENTRY32, Thread32First, Thread32Next,
+        };
+        use windows_sys::Win32::System::Threading::{OpenThread, ResumeThread, THREAD_SUSPEND_RESUME};
+        // SAFETY: a snapshot of the threads of every process; the handle is checked and closed once at the end.
+        let snap = unsafe { CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0) };
+        if snap == INVALID_HANDLE_VALUE || snap.is_null() {
+            return false;
+        }
+        let mut entry = THREADENTRY32 {
+            dwSize: std::mem::size_of::<THREADENTRY32>() as u32,
+            ..Default::default()
+        };
+        let mut resumed = false;
+        // SAFETY: `entry` is a whole THREADENTRY32 with its size set, as both calls require; the snapshot is live.
+        let mut more = unsafe { Thread32First(snap, &raw mut entry) } != 0;
+        while more {
+            if entry.th32OwnerProcessID == pid {
+                // SAFETY: plain values in; the thread handle is checked, used once and closed once.
+                unsafe {
+                    let thread = OpenThread(THREAD_SUSPEND_RESUME, 0, entry.th32ThreadID);
+                    if !thread.is_null() {
+                        resumed |= ResumeThread(thread) != u32::MAX;
+                        CloseHandle(thread);
+                    }
+                }
+            }
+            // SAFETY: as for Thread32First.
+            more = unsafe { Thread32Next(snap, &raw mut entry) } != 0;
+        }
+        // SAFETY: the snapshot handle is closed exactly once, here.
+        unsafe {
+            CloseHandle(snap);
+        }
+        resumed
+    }
+
     #[cfg(windows)]
     pub(super) fn wait_for_exit(pid: u32, limit: Duration) -> bool {
         use windows_sys::Win32::Foundation::{CloseHandle, WAIT_OBJECT_0};
@@ -401,18 +494,24 @@ mod family {
         waited == WAIT_OBJECT_0
     }
 
+    // Elsewhere there are no jobs and nothing is started suspended: the program is held as it is.
     #[cfg(not(windows))]
     pub(super) struct Job;
 
     #[cfg(not(windows))]
     impl Job {
         pub(super) fn new(_below_normal: bool) -> Option<Job> {
-            None
+            Some(Job)
         }
         pub(super) fn hold(&self, _child: &std::process::Child) -> bool {
-            false
+            true
         }
         pub(super) fn stop(&self) {}
+    }
+
+    #[cfg(not(windows))]
+    pub(super) fn resume(_pid: u32) -> bool {
+        true
     }
 
     #[cfg(not(windows))]
@@ -552,6 +651,7 @@ mod tests {
                 dir: Some(&dir),
                 env: &[("BF_FAMILY_ADDED", OsStr::new("yes"))],
                 env_remove: &["USERNAME"],
+                scrub_git: false,
                 below_normal: false,
             },
             Duration::from_secs(20),
@@ -622,6 +722,10 @@ mod tests {
             false
         });
         let started = Instant::now();
+        // As rustup's cargo proxy does, cmd starts its own program at once. With a pause between starting cmd and
+        // putting it in the job, a cmd that was already running would have started ping outside the job by then;
+        // started suspended, it cannot.
+        HOLD_DELAY_MS.with(|d| d.set(1500));
         let err = run_family(
             &system32("cmd.exe"),
             &[OsStr::new("/d"), OsStr::new("/c"), OsStr::new(line)],
@@ -634,6 +738,7 @@ mod tests {
             &mut |_| {},
         )
         .unwrap_err();
+        HOLD_DELAY_MS.with(|d| d.set(0));
         assert!(err.contains("was stopped"), "{err}");
         assert!(stopper.join().unwrap(), "ping held its file while it ran");
         assert!(started.elapsed() < Duration::from_secs(25));
