@@ -468,7 +468,7 @@ fn a_pattern_not_ported_yet_is_an_error() {
     ours.sort_unstable();
     assert_eq!(ours, python);
     for name in panels::UNPORTED_PATTERNS {
-        let err = panels::builtin_pattern(name).err().expect("an error");
+        let err = panels::builtin_pattern(name).expect_err("an error");
         assert_eq!(err.to_string(), format!("the title pattern {name} is not ported yet"));
     }
     // the card's constructor says so, on either side, whatever the look offers
@@ -488,10 +488,10 @@ fn a_pattern_not_ported_yet_is_an_error() {
             None,
         )
     };
-    let err = new("HORN", "TROMBONE").err().expect("HORN is not ported");
+    let err = new("HORN", "TROMBONE").expect_err("HORN is not ported");
     assert_eq!(err, super::TitleError::PatternNotPorted("HORN".into()));
     assert_eq!(err.to_string(), "the title pattern HORN is not ported yet");
-    let err = new("FLUTE", "BARI SAX").err().expect("BARI SAX is not ported");
+    let err = new("FLUTE", "BARI SAX").expect_err("BARI SAX is not ported");
     assert_eq!(err.to_string(), "the title pattern BARI SAX is not ported yet");
     // names the table does not hold are fine: the look's pattern, or a plain panel
     assert!(new("TUBA", "ALTO SAX").is_ok());
