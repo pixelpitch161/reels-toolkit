@@ -639,9 +639,27 @@ mod tests {
         assert!(!p.source_note.is_empty());
     }
 
+    /// `text` with its `archive_sha256` and `archive_bytes` lines set to the given values (TOML written as is).
+    fn with_archive(text: &str, sha: &str, bytes: &str) -> String {
+        text.lines()
+            .map(|line| {
+                if line.starts_with("archive_sha256 =") {
+                    format!("archive_sha256 = {sha}")
+                } else if line.starts_with("archive_bytes =") {
+                    format!("archive_bytes = {bytes}")
+                } else {
+                    line.to_string()
+                }
+            })
+            .collect::<Vec<_>>()
+            .join("\n")
+    }
+
     #[test]
     fn a_bad_pin_is_refused() {
-        let good = include_str!("../../../packaging/ffmpeg.toml");
+        assert!(parse_pin(PIN_TEXT).is_ok());
+        // The checks below start from the pin file in its "not yet pinned" form, whatever the file holds now.
+        let good = &with_archive(PIN_TEXT, "\"not yet pinned\"", "0");
         assert!(parse_pin(good).is_ok());
         let sha = "589e50b766d251afdf181dd664d40bd94407e200b019989fd7468c7d118a28d0";
         for (from, to) in [
@@ -988,22 +1006,32 @@ mod tests {
         );
     }
 
-    /// The real download, run by name only (it needs the internet, and the owner's go-ahead: ruling M6-R1). It
-    /// refuses while the archive is not pinned yet.
+    /// The real `Curl`, counting its downloads.
+    struct CountedCurl(Cell<usize>);
+
+    impl Download for CountedCurl {
+        fn fetch(&self, url: &str, max_bytes: u64, to: &Path) -> Result<(), String> {
+            self.0.set(self.0.get() + 1);
+            crate::fetch::Curl.fetch(url, max_bytes, to)
+        }
+    }
+
+    /// The real download, run by name only (it needs the internet, and the owner's go-ahead: ruling M6-R1). The
+    /// cache is a fresh temp folder, or the folder `BF_FFMPEG_CACHE` names (an archive already there that matches
+    /// the pin is used, not downloaded again). It prints how many downloads it made.
     #[test]
-    #[ignore = "downloads the real ffmpeg archive (about 200 MB); run by name, only with the owner's go-ahead"]
+    #[ignore = "downloads the real ffmpeg archive (about 260 MB); run by name, only with the owner's go-ahead"]
     fn the_real_archive_fetches() {
         let dir = TempDir::new("real");
+        let cache = std::env::var_os("BF_FFMPEG_CACHE").map_or_else(|| dir.path().join("cache"), PathBuf::from);
         let p = pin();
-        let got = ensure(&p, &dir.path().join("cache"), &crate::fetch::Curl).unwrap();
+        let dl = CountedCurl(Cell::new(0));
+        let got = ensure(&p, &cache, &dl).unwrap();
         for f in &p.files {
             assert_eq!(sha256_file(&got.join(&f.name)).unwrap(), f.sha256, "{}", f.name);
         }
-        println!(
-            "the archive is {} bytes",
-            std::fs::metadata(dir.path().join("cache").join(p.archive_name()))
-                .unwrap()
-                .len()
-        );
+        let bytes = std::fs::metadata(cache.join(p.archive_name())).unwrap().len();
+        assert_eq!(bytes, p.archive_bytes);
+        println!("the archive is {bytes} bytes; downloads made: {}", dl.0.get());
     }
 }
