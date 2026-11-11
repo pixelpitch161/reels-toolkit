@@ -249,6 +249,15 @@ occur).
 | TROMBONE | `POWER SLIDE` | `haste` | from level 3, every 6 bars |
 | TROMBONE | `PEDAL TONE` | `slam` | once, below `LOW_HP` |
 
+Two more kinds, which these two weapons can make but this pairing never does. `block` is in the bag fights
+(`studio/reference/fights/striker_vs_bag/` and `lance_vs_bag/`, where a bag has a shield); no reference recording
+holds a `parry`, because no ported weapon fires a projectile.
+
+| Kind | `who` (2) | 3 | 4 | 5 | 6 |
+| --- | --- | --- | --- | --- | --- |
+| `block` | the shielded fighter | the attacker (int) | contact x (float) | contact y (float) | what was blocked (string): `blade` or `fang`, as element 7 of a `hit` |
+| `parry` | the projectile's owner | the fighter whose lance killed it (int) | the projectile's x (float) | its y (float) | the projectile's id (int) |
+
 The story reads events like this: captions come from `ability` events whose element 5 is 1; hit points over time
 are 100 minus the running sum of element 4 of the `hit` events whose element 3 is that fighter.
 

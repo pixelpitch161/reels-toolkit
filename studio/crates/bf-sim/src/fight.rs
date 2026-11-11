@@ -1,10 +1,11 @@
 //! The fight: `fight.py`'s `class Fight`, its core. Two balls in a square ring, one generator, one event list.
 //!
-//! Ported here: `Fight.__init__` (lines 264 to 316), `ev`, `damage` and `knock` (319 to 368), `move` for the balls
-//! (3128 to 3234: walls, rope give, ball against ball), the level and low-HP bookkeeping of `abilities_step` (3017 to
-//! 3032) and `lead_changes` (6225 to 6242). The order of a step is in [`crate::schedule`], the per-frame record in
-//! `record.rs`. Weapon kinds and abilities are separate modules of free functions taking `&mut Fight`; their state
-//! hangs off [`Fight`] as `Option` fields and they are called only from `schedule.rs`.
+//! Ported here: `Fight.__init__` (lines 264 to 316), `ev`, `damage` and `knock` (319 to 368), `kill_keys` (380 to
+//! 387), `move` for the balls (3128 to 3234: walls, rope give, ball against ball), the level and low-HP bookkeeping
+//! of `abilities_step` (3017 to 3032) and `lead_changes` (6225 to 6242). The order of a step is in
+//! [`crate::schedule`], the per-frame record in `record.rs`. Weapon kinds and abilities are separate modules of free
+//! functions taking `&mut Fight`; their state hangs off [`Fight`] as `Option` fields (or is on the ball, where
+//! `Ball.__init__` puts it) and they are called only from `schedule.rs`.
 //!
 //! The Python code checks, in many places, state that only kinds not ported yet can set (a rewinding, swallowed,
 //! stunned, anchored, hopping, smashed, walking, grabbed, airborne or strutting ball; a per-ball radius or mass).
@@ -89,6 +90,26 @@ pub struct Slam {
     pub name: String,
 }
 
+/// A projectile in flight: one row of `fight.py`'s parallel arrays `kp`, `kv`, `kown`, `kid`, `kvol`, `kidx` and
+/// `kdmg` (lines 286 to 292).
+#[derive(Clone, Debug, PartialEq)]
+pub struct Key {
+    /// Where it is (`kp`).
+    pub p: V2,
+    /// Its velocity (`kv`).
+    pub v: V2,
+    /// The fighter that fired it (`kown`).
+    pub own: usize,
+    /// Its number, counting up over the fight (`kid`).
+    pub id: i64,
+    /// The volley it belongs to (`kvol`).
+    pub vol: i64,
+    /// Its index in that volley (`kidx`).
+    pub idx: i64,
+    /// The damage it does (`kdmg`).
+    pub dmg: f64,
+}
+
 /// One fight in progress.
 #[derive(Clone, Debug)]
 pub struct Fight<'a> {
@@ -106,6 +127,11 @@ pub struct Fight<'a> {
     pub corner: [V2; 2],
     /// Whether a fighter thrusts, curves its shots or slows: the record then has `EXT`, `SLW` and `CRV`.
     pub uses_ext: bool,
+    /// The projectiles in flight, in the order they were fired (`kp` and its sister arrays). No ported kind fires
+    /// one, so the list is empty in every fight the engine can run today: it is here because the thrust lance's
+    /// parry reads it and [`Fight::kill_keys`] empties it. Their flight, their hits and their `K` rows come with
+    /// the first kind that fires them (the slots in [`Fight::move_step`] and `record.rs`).
+    pub keys: Vec<Key>,
     /// Rings in flight.
     pub waves: Vec<Wave>,
     /// Slams called and not yet forgotten.
@@ -122,9 +148,11 @@ pub struct Fight<'a> {
     /// `None` for a fighter that is not a striker, and for every fighter until the fight loop sets the kinds up
     /// ([`crate::kinds::striker::setup`]), as the Python ball has no `baskets` before `striker_setup`.
     pub striker: [Option<Striker>; 2],
-    // SLOT (Tasks 13 to 14): each further kind's own state, as `pub <kind>: [Option<...>; 2]` or `Option<...>`,
-    // `None` when no fighter has the kind. `fight.py` lines 286 to 312 list the Python fields (projectile arrays,
-    // arcs, beams, hazards, ...); FLUTE and TROMBONE need none of those.
+    // The thrust blade has no entry here: its state is on the ball (`th`, `ext`, `thr`, `thr_hit`, `thr_k`).
+    // SLOT (Task 14): each further kind's own state, as `pub <kind>: [Option<...>; 2]` or `Option<...>`, `None`
+    // when no fighter has the kind. `fight.py` lines 286 to 312 list the Python fields (arcs, beams, hazards, ...,
+    // and what `spawn_key` needs beside `keys`: `next_id`, `next_vol`, `vol_landed`); FLUTE and TROMBONE need none of
+    // those.
 }
 
 impl<'a> Fight<'a> {
@@ -172,6 +200,7 @@ impl<'a> Fight<'a> {
             record,
             corner,
             uses_ext,
+            keys: Vec::new(),
             waves: Vec::new(),
             slams: Vec::new(),
             events: Vec::new(),
@@ -264,6 +293,34 @@ impl<'a> Fight<'a> {
         b.boost = geom::py_max(b.boost, k);
     }
 
+    /// `kill_keys(mask, why, by)` (`fight.py` 380 to 387): takes the projectiles the mask marks out of the fight, with
+    /// one event each in the order they were fired: `why` (`parry` when a lance killed it), the projectile's owner,
+    /// then `by` (the fighter that killed it; Python's default is -1, nobody), where it was and its id. The others
+    /// keep their order.
+    ///
+    /// # Panics
+    /// When the mask is not one entry per projectile.
+    pub fn kill_keys(&mut self, mask: &[bool], why: &str, by: i64) {
+        assert_eq!(mask.len(), self.keys.len(), "one mask entry per projectile");
+        if !mask.contains(&true) {
+            return;
+        }
+        for i in (0..mask.len()).filter(|&i| mask[i]) {
+            let key = &self.keys[i];
+            let data = vec![
+                Value::Int(by),
+                Value::Float(key.p[0]),
+                Value::Float(key.p[1]),
+                Value::Int(key.id),
+            ];
+            let own = key.own as i64;
+            self.ev(why, own, data);
+        }
+        let mut killed = mask.iter();
+        self.keys
+            .retain(|_| !killed.next().expect("one mask entry per projectile"));
+    }
+
     /// `move(dt)` for the balls (`fight.py` 3128 to 3234): each ball flies at `V * (1 + boost)` (times its slow),
     /// bounces off the ropes with a seeded give, and the two clash when they overlap.
     ///
@@ -349,9 +406,10 @@ impl<'a> Fight<'a> {
             self.ev("clash", -1, vec![Value::Float(mid[0]), Value::Float(mid[1])]);
             // fight.py 3233 to 3234: `clash_hooks` (inflate's contact damage). Kind not ported.
         }
-        // SLOT (projectile kinds: volley, arc, roll): fight.py 3235 to 3278, in this order: `steer`, the projectiles'
-        // flight, `ricochet`, projectiles that leave the ring (`kill_keys(out, 'wall')`), projectiles that hit a
-        // ball (`damage(..., 'key', ...)`, volley growth, the nudge). FLUTE and TROMBONE fire none.
+        // SLOT (projectile kinds: volley, arc, roll), on `self.keys`: fight.py 3235 to 3278, in this order: `steer`,
+        // the projectiles' flight, `ricochet`, projectiles that leave the ring (`kill_keys(out, 'wall')`),
+        // projectiles that hit a ball (`damage(..., 'key', ...)`, volley growth, the nudge). FLUTE and TROMBONE fire
+        // none.
     }
 
     /// `abilities_step(on_beat)` (`fight.py` 3012 to 3053), the bookkeeping: levels follow the damage dealt (each
@@ -757,6 +815,53 @@ mod tests {
         assert_eq!((fight.ab_mult(0), fight.ab_mult(1)), (1.0, 2.0));
         fight.balls[1].haste = 0.0;
         assert_eq!(fight.ab_mult(1), 1.0);
+    }
+
+    /// `kill_keys`: the marked projectiles leave the fight, each with an event (its owner, who killed it, where it
+    /// was, its id) in the order they were fired; the others stay as they are. The events are what Python gave for
+    /// four projectiles put in by `spawn_key`.
+    #[test]
+    fn kill_keys_takes_the_marked_projectiles_out_in_order() {
+        use Value::{Float as F, Int as I};
+        let bare = testing::bare_pair();
+        let mut fight = Fight::new(&testing::bare_setup(&bare, 1), false);
+        assert!(fight.keys.is_empty(), "a fight starts with no projectile");
+        fight.t = 7.123456;
+        let key = |own: usize, id: i64, p: V2| Key {
+            p,
+            v: [0.0, 0.0],
+            own,
+            id,
+            vol: 7,
+            idx: id,
+            dmg: 2.0 + id as f64,
+        };
+        fight.keys = vec![
+            key(0, 0, [0.5, -0.25]),
+            key(1, 1, [1.5, 2.0]),
+            key(0, 2, [-1.0, 0.125]),
+            key(1, 3, [0.0, 0.0]),
+        ];
+        // nothing marked: nothing happens
+        fight.kill_keys(&[false; 4], "wall", -1);
+        assert!(fight.events.is_empty() && fight.keys.len() == 4);
+        // Python's default `by` is -1: nobody
+        fight.kill_keys(&[true, false, true, true], "wall", -1);
+        assert_eq!(
+            fight.events,
+            vec![
+                ev(7.12346, "wall", vec![I(0), I(-1), F(0.5), F(-0.25), I(0)]),
+                ev(7.12346, "wall", vec![I(0), I(-1), F(-1.0), F(0.125), I(2)]),
+                ev(7.12346, "wall", vec![I(1), I(-1), F(0.0), F(0.0), I(3)]),
+            ]
+        );
+        assert_eq!(fight.keys, vec![key(1, 1, [1.5, 2.0])]);
+        fight.kill_keys(&[true], "parry", 0);
+        assert_eq!(
+            fight.events.last(),
+            Some(&ev(7.12346, "parry", vec![I(1), I(0), F(1.5), F(2.0), I(1)]))
+        );
+        assert!(fight.keys.is_empty());
     }
 
     /// A free ball flies straight at the shared speed. (The step divides by `norm + 1e-12`, so the speed is the
