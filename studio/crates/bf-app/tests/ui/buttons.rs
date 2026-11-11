@@ -555,3 +555,114 @@ fn the_gallery_matches() {
     harness.run();
     harness.snapshot("widgets_buttons");
 }
+
+#[test]
+fn a_focused_list_item_is_inverted_with_an_on_light_label() {
+    let _gpu = common::gpu();
+    let mut harness = common::widget_harness((300.0, 160.0), |ui| {
+        on_panel(ui);
+        theme_dropdown(ui);
+    });
+    harness.run();
+    harness.get_by_label("Theme").click();
+    harness.run();
+    harness.get_by_label("Dark disco").focus();
+    harness.run();
+    assert!(harness.get_by_label("Dark disco").is_focused());
+    let other = harness.get_by_label("Dark disco").rect();
+    let chosen = harness.get_by_label("Big top").rect();
+    assert_inverted_with_on_light_label(&mut harness, other, "the focused item");
+    assert_eq!(
+        at(&mut harness, chosen, 2.0, 2.0),
+        rgb(RAISED),
+        "only the focused item is inverted"
+    );
+}
+
+#[test]
+fn the_dropdown_works_from_the_keyboard() {
+    let _gpu = common::gpu();
+    let picked = Cell::new(None);
+    let mut harness = common::widget_harness((300.0, 160.0), |ui| {
+        on_panel(ui);
+        if let Some(index) = theme_dropdown(ui) {
+            picked.set(Some(index));
+        }
+    });
+    harness.run();
+    harness.get_by_label("Theme").focus();
+    harness.run();
+    harness.key_press(egui::Key::Space);
+    harness.run();
+    assert!(harness.query_by_label("Dark disco").is_some(), "Space opens the list");
+    harness.key_press(egui::Key::ArrowDown);
+    harness.run();
+    assert!(
+        harness.get_by_label("Big top").is_focused(),
+        "Down enters the list at its first item"
+    );
+    harness.key_press(egui::Key::ArrowDown);
+    harness.run();
+    assert!(
+        harness.get_by_label("Dark disco").is_focused(),
+        "Down moves to the next item"
+    );
+    let item = harness.get_by_label("Dark disco").rect();
+    assert_inverted_with_on_light_label(&mut harness, item, "the item reached by the keyboard");
+    harness.key_press(egui::Key::Enter);
+    harness.run();
+    assert!(
+        harness.query_by_label("Dark disco").is_none(),
+        "Enter picks and closes the list"
+    );
+    drop(harness);
+    assert_eq!(picked.get(), Some(1));
+}
+
+#[test]
+fn space_and_enter_activate_focused_controls() {
+    let _gpu = common::gpu();
+    for key in [egui::Key::Space, egui::Key::Enter] {
+        let (boxed, segment, switch) = (Cell::new(false), Cell::new(None), Cell::new(false));
+        let mut harness = common::widget_harness((320.0, 140.0), |ui| {
+            on_panel(ui);
+            if buttons::boxed(ui, "Swap sides").clicked() {
+                boxed.set(true);
+            }
+            if let Some(index) = winner(ui, None, Some(0)) {
+                segment.set(Some(index));
+            }
+            if buttons::switch(ui, "Loop the fight", false).clicked() {
+                switch.set(true);
+            }
+        });
+        harness.run();
+        for name in ["Swap sides", "Trombone", "Loop the fight"] {
+            harness.get_by_label(name).focus();
+            harness.run();
+            harness.key_press(key);
+            harness.run();
+        }
+        drop(harness);
+        assert!(boxed.get(), "{key:?} presses a box button");
+        assert_eq!(segment.get(), Some(2), "{key:?} chooses a segment");
+        assert!(switch.get(), "{key:?} toggles the switch");
+    }
+}
+
+#[test]
+fn a_progress_share_that_is_not_a_number_shows_as_zero() {
+    let _gpu = common::gpu();
+    for share in [f32::NAN, f32::INFINITY, f32::NEG_INFINITY] {
+        let mut harness = common::widget_harness((240.0, 40.0), move |ui| {
+            on_panel(ui);
+            buttons::progress(ui, "Drawing frames", share, 200.0);
+        });
+        harness.run();
+        let node = harness.get_by_label("Drawing frames");
+        assert_eq!(node.accesskit_node().numeric_value(), Some(0.0), "{share}");
+        let rect = node.rect();
+        assert_eq!(at(&mut harness, rect, 1.0, 2.0), rgb(LINE), "{share}: nothing filled");
+        assert_eq!(at(&mut harness, rect, 190.0, 2.0), rgb(LINE), "{share}");
+    }
+}

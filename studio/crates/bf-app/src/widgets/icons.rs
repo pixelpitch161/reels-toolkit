@@ -2,9 +2,10 @@
 //! built-in fonts have no icon glyphs.
 
 use egui::accesskit::Role;
-use egui::{Color32, Painter, Pos2, Rect, Response, Sense, Shape, Stroke, StrokeKind, Ui, Vec2, WidgetInfo, vec2};
+use egui::{Color32, Painter, Pos2, Rect, Response, Sense, Shape, Stroke, Ui, Vec2, WidgetInfo, vec2};
 
-use crate::theme::{CONTROL_H, FAINT, HOVER, RADIUS, TEXT, TEXT_STRONG};
+use super::buttons::focus_ring;
+use crate::theme::{CONTROL_H, FAINT, HOVER, RADIUS, TEXT};
 
 /// The icons the app paints.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -95,12 +96,7 @@ pub fn icon_button(ui: &mut Ui, icon: Icon, name: &str, enabled: bool) -> Respon
         let icon_box = Rect::from_center_size(rect.center(), Vec2::splat(icon.side())).round();
         paint(painter, icon_box, icon, if enabled { TEXT } else { FAINT });
         if response.has_focus() {
-            painter.rect_stroke(
-                rect.expand(2.0),
-                f32::from(RADIUS) + 2.0,
-                Stroke::new(2.0, TEXT_STRONG),
-                StrokeKind::Outside,
-            );
+            focus_ring(painter, rect);
         }
     }
     response

@@ -43,7 +43,7 @@ struct Look {
 }
 
 /// The keyboard focus ring: 2 px `TEXT_STRONG`, 2 px outside `rect`.
-fn focus_ring(painter: &Painter, rect: Rect) {
+pub(crate) fn focus_ring(painter: &Painter, rect: Rect) {
     painter.rect_stroke(
         rect.expand(2.0),
         f32::from(RADIUS) + 2.0,
@@ -271,7 +271,8 @@ fn menu_list_style(style: &mut Style) {
 
 /// A dropdown named `name`, `width` wide and 22 tall: `RAISED` with a 1 px `LINE` border, the chosen option on the
 /// left and a 10 x 10 `MUTED` chevron on the right. While its list is open it is inverted. Its list is a menu of 24
-/// tall items; the hovered item is inverted, or the chosen one while none is hovered. Returns the index picked this
+/// tall items; the item with keyboard focus is inverted, else the hovered one, else the chosen one. Space or Enter
+/// opens it, the arrow keys move through the list, Space or Enter picks, Escape closes. Returns the index picked this
 /// frame.
 ///
 /// It is an `egui::ComboBox` named through its response, so the accessibility tree has a combo box called `name`
@@ -317,8 +318,9 @@ pub fn dropdown(ui: &mut Ui, name: &str, options: &[String], chosen: usize, widt
     picked
 }
 
-/// The items of a dropdown's list, 24 tall and as wide as the list, padded 8 at each side. The hovered one is
-/// inverted, else the chosen one. Returns the index clicked.
+/// The items of a dropdown's list, 24 tall and as wide as the list, padded 8 at each side. The one with keyboard
+/// focus is inverted, else the hovered one, else the chosen one. Returns the index clicked (or pressed with Space or
+/// Enter), and closes the list when one is.
 fn menu_items(ui: &mut Ui, options: &[String], chosen: usize) -> Option<usize> {
     let width = ui.available_width();
     let responses: Vec<Response> = options
@@ -330,7 +332,9 @@ fn menu_items(ui: &mut Ui, options: &[String], chosen: usize) -> Option<usize> {
             response
         })
         .collect();
-    let lit = responses.iter().position(Response::hovered).unwrap_or(chosen);
+    let lit = (responses.iter().position(Response::has_focus))
+        .or_else(|| responses.iter().position(Response::hovered))
+        .unwrap_or(chosen);
     let painter = ui.painter();
     for (i, (option, response)) in options.iter().zip(&responses).enumerate() {
         let label = if i == lit {
@@ -341,13 +345,17 @@ fn menu_items(ui: &mut Ui, options: &[String], chosen: usize) -> Option<usize> {
         };
         paint_label(painter, response.rect, option, label, Some(MENU_PAD_X));
     }
-    responses.iter().position(Response::clicked)
+    let clicked = responses.iter().position(Response::clicked);
+    if clicked.is_some() {
+        ui.close();
+    }
+    clicked
 }
 
 /// A progress bar named `name`, `width` wide and 4 tall: a `LINE` track with a `TEXT` fill over the first `share`
-/// (0 to 1) of it.
+/// (0 to 1) of it. A share that is not a finite number is drawn and reported as 0.
 pub fn progress(ui: &mut Ui, name: &str, share: f32, width: f32) -> Response {
-    let share = share.clamp(0.0, 1.0);
+    let share = if share.is_finite() { share.clamp(0.0, 1.0) } else { 0.0 };
     let (rect, response) = ui.allocate_exact_size(vec2(width, PROGRESS_H), Sense::hover());
     response.widget_info(|| {
         let mut info = WidgetInfo::labeled(Role::ProgressIndicator, true, name);
