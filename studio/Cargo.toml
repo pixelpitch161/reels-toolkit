@@ -11,6 +11,7 @@ members = [
     "crates/bf-cli",
     "crates/bf-testdata",
     "crates/bf-app",
+    "crates/bf-pack",
 ]
 
 [workspace.package]
@@ -29,6 +30,7 @@ bf-sound = { path = "crates/bf-sound" }
 bf-content = { path = "crates/bf-content" }
 bf-export = { path = "crates/bf-export" }
 bf-app = { path = "crates/bf-app" }
+bf-pack = { path = "crates/bf-pack" }
 
 # The tech stack. Crates opt in with `name.workspace = true`; all of these are pure Rust.
 clap = { version = "4.6.7", features = ["derive"] }

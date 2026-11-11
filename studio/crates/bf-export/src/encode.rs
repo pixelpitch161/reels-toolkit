@@ -1,8 +1,15 @@
 //! Finding ffmpeg, and the loop-clean encode of `projects/maze_race/mux.py main()` with the frames piped in.
 //!
-//! ffmpeg is the program named by the environment variable `BALLFIGHT_FFMPEG`, else the first `ffmpeg.exe` on the
-//! `PATH`; ffprobe is the one beside it, else the first on the `PATH`. Before any job it must say it has the
-//! `libx264` and `aac` encoders.
+//! ffmpeg is, in this order:
+//! 1. the program named by the environment variable `BALLFIGHT_FFMPEG` (tests and CI), when it is set and not
+//!    empty; ffprobe is the one beside it, else the first on the `PATH`;
+//! 2. the app's own copy, `ffmpeg\ffmpeg.exe` in the folder of the running program, when anything named
+//!    `ffmpeg.exe` or `ffprobe.exe` is in that `ffmpeg\` folder; ffprobe must then be the one in the same folder.
+//!    Once the app's own copy is there it is the one used or the answer is an error in words: a broken copy
+//!    never falls back to another ffmpeg on the `PATH`, whose version could make other bytes;
+//! 3. the first `ffmpeg.exe` on the `PATH`, with ffprobe beside it, else the first on the `PATH`.
+//!
+//! Before any job it must say it has the `libx264` and `aac` encoders.
 //!
 //! Every program is started directly with its arguments passed one by one (never through a shell, never pasted
 //! into one command line), with its error output read on a thread of its own so its pipe can never fill and
@@ -33,6 +40,20 @@ const ASK_LIMIT: Duration = Duration::from_secs(20);
 /// How many of the last lines of a program's error output are kept for its error message.
 const TAIL_LINES: usize = 6;
 
+/// The folder, beside the running program, that holds the app's own `ffmpeg.exe` and `ffprobe.exe`.
+pub const APP_FFMPEG_DIR: &str = "ffmpeg";
+
+/// Where the ffmpeg a job uses was found.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum FfmpegSource {
+    /// The program the `BALLFIGHT_FFMPEG` setting names.
+    Setting,
+    /// The app's own copy, in the [`APP_FFMPEG_DIR`] folder beside the running program.
+    WithTheApp,
+    /// The first on the `PATH`.
+    Path,
+}
+
 /// The ffmpeg (and ffprobe) a job uses.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Ffmpeg {
@@ -42,16 +63,31 @@ pub struct Ffmpeg {
     pub ffprobe: PathBuf,
     /// "ffmpeg 9.0.2": the version ffmpeg names in its first line (all of that line if it names none).
     pub version: String,
+    /// Where it was found.
+    pub source: FfmpegSource,
 }
 
-/// The ffmpeg to use: `BALLFIGHT_FFMPEG` if it is set and not empty, else the first on the `PATH`, with ffprobe
-/// beside it (else the first on the `PATH`).
+/// The ffmpeg to use: `BALLFIGHT_FFMPEG` if it is set and not empty, else the app's own copy in the `ffmpeg`
+/// folder beside the running program if there is one, else the first on the `PATH` (see the module's notes for
+/// where each one's ffprobe comes from).
 ///
 /// # Errors
 /// [`ExportError::Ffmpeg`], in words naming the path: no ffmpeg there (or none on the `PATH`), no ffprobe, a
-/// program that does not start or answer like ffmpeg, or one without the `libx264` or `aac` encoder.
+/// program that does not start or answer like ffmpeg, or one without the `libx264` or `aac` encoder. A broken
+/// copy of the app's own is such an error, never a reason to use another ffmpeg.
 pub fn find_ffmpeg() -> Result<Ffmpeg, ExportError> {
-    find_with(std::env::var_os(ENV), std::env::var_os("PATH"))
+    find_with(std::env::var_os(ENV), beside_the_program(), std::env::var_os("PATH"))
+}
+
+/// The [`APP_FFMPEG_DIR`] folder in the folder of the running program (`None` if that cannot be told).
+fn beside_the_program() -> Option<PathBuf> {
+    let exe = std::env::current_exe().ok()?;
+    Some(exe.parent()?.join(APP_FFMPEG_DIR))
+}
+
+/// Whether anything (a file, a folder, a link) has this name.
+fn is_there(p: &Path) -> bool {
+    std::fs::symlink_metadata(p).is_ok()
 }
 
 /// The file name of program `name` on this system: `name.exe` on Windows.
@@ -71,10 +107,41 @@ fn on_path(file: &str, path: Option<&OsStr>) -> Option<PathBuf> {
         .find(|p| p.is_file())
 }
 
-/// [`find_ffmpeg`] with the variable and the `PATH` given.
-pub(crate) fn find_with(var: Option<OsString>, path: Option<OsString>) -> Result<Ffmpeg, ExportError> {
+/// What every sentence about a broken copy of the app's own ffmpeg ends with (then a full stop).
+pub const REINSTALL: &str = "install the app again";
+
+/// Whether `sentence` (an [`ExportError::Ffmpeg`]'s text) is about the app's own copy of ffmpeg: it then ends in
+/// [`REINSTALL`], and saying "ffmpeg was not found" instead would be wrong.
+pub fn is_about_the_apps_own(sentence: &str) -> bool {
+    sentence.strip_suffix('.').is_some_and(|s| s.ends_with(REINSTALL))
+}
+
+/// [`find_ffmpeg`] with the variable (`BALLFIGHT_FFMPEG`'s value), the app's own `ffmpeg` folder and the `PATH`
+/// given, so a test can pass its own folders without changing the process's environment or the program's folder.
+///
+/// # Errors
+/// As [`find_ffmpeg`].
+pub fn find_with(
+    var: Option<OsString>,
+    beside: Option<PathBuf>,
+    path: Option<OsString>,
+) -> Result<Ffmpeg, ExportError> {
     let fail = |s: String| ExportError::Ffmpeg(s);
-    let ffmpeg = match var.filter(|v| !v.is_empty()) {
+    let var = var.filter(|v| !v.is_empty());
+    if var.is_none()
+        && let Some(dir) = beside
+    {
+        let (ffmpeg, ffprobe) = (dir.join(exe("ffmpeg")), dir.join(exe("ffprobe")));
+        if is_there(&ffmpeg) || is_there(&ffprobe) {
+            return own(dir, ffmpeg, ffprobe);
+        }
+    }
+    let source = if var.is_some() {
+        FfmpegSource::Setting
+    } else {
+        FfmpegSource::Path
+    };
+    let ffmpeg = match var {
         Some(v) => {
             let p = PathBuf::from(v);
             let is_exe = p
@@ -103,42 +170,93 @@ pub(crate) fn find_with(var: Option<OsString>, path: Option<OsString>) -> Result
             ))
         })?,
     };
-    check(ffmpeg, path.as_deref())
+    let ffprobe = ffprobe_for(&ffmpeg, path.as_deref())?;
+    check(ffmpeg, ffprobe, source)
 }
 
-/// The [`Ffmpeg`] of the program `ffmpeg` (any file that runs, a script too), with its ffprobe and its version, after
-/// asking it for its encoders. Not for the app (a script would run through cmd.exe, and ending cmd.exe leaves
-/// ffmpeg running): only `bf-export`'s own tests use it, for their stand-in ffmpeg, through the `test-support`
-/// feature their dev-dependency turns on.
-///
-/// # Errors
-/// As [`find_ffmpeg`].
-#[cfg(feature = "test-support")]
-pub fn ffmpeg_at(ffmpeg: PathBuf) -> Result<Ffmpeg, ExportError> {
-    check(ffmpeg, std::env::var_os("PATH").as_deref())
-}
-
-fn check(ffmpeg: PathBuf, path: Option<&OsStr>) -> Result<Ffmpeg, ExportError> {
-    let fail = |s: String| ExportError::Ffmpeg(s);
-    let ffprobe = ffmpeg
+/// The ffprobe beside `ffmpeg`, else the first on the `PATH` value `path`.
+fn ffprobe_for(ffmpeg: &Path, path: Option<&OsStr>) -> Result<PathBuf, ExportError> {
+    ffmpeg
         .parent()
         .map(|dir| dir.join(exe("ffprobe")))
         .filter(|p| p.is_file())
         .or_else(|| on_path(&exe("ffprobe"), path))
         .ok_or_else(|| {
-            fail(format!(
+            ExportError::Ffmpeg(format!(
                 "ffprobe was not found beside {} or on the PATH, so a finished video cannot be checked; install \
                  the whole ffmpeg package (it comes with ffprobe), then try again.",
                 ffmpeg.display()
             ))
-        })?;
+        })
+}
+
+/// The app's own ffmpeg and ffprobe in `dir`: both must be program files there, and nothing elsewhere stands in
+/// for either.
+fn own(dir: PathBuf, ffmpeg: PathBuf, ffprobe: PathBuf) -> Result<Ffmpeg, ExportError> {
+    let fail = |s: String| ExportError::Ffmpeg(s);
+    if !ffmpeg.is_file() {
+        return Err(fail(if is_there(&ffmpeg) {
+            format!(
+                "The app's own ffmpeg at {} is not a program file, so no video can be made; install the app again.",
+                ffmpeg.display()
+            )
+        } else {
+            format!(
+                "The app's own ffmpeg is missing from {}, so no video can be made; install the app again.",
+                dir.display()
+            )
+        }));
+    }
+    if !ffprobe.is_file() {
+        return Err(fail(if is_there(&ffprobe) {
+            format!(
+                "The app's own ffprobe at {} is not a program file, so a finished video cannot be checked; install \
+                 the app again.",
+                ffprobe.display()
+            )
+        } else {
+            format!(
+                "The app's own ffprobe is missing from {}, so a finished video cannot be checked; install the app \
+                 again.",
+                dir.display()
+            )
+        }));
+    }
+    check(ffmpeg, ffprobe, FfmpegSource::WithTheApp)
+}
+
+/// The [`Ffmpeg`] of the program `ffmpeg` (any file that runs, a script too), with its ffprobe and its version, after
+/// asking it for its encoders. Not for the app (a script would run through cmd.exe, and ending cmd.exe leaves
+/// ffmpeg running): only `bf-export`'s own tests use it, for their stand-in ffmpeg, through the `test-support`
+/// feature their dev-dependency turns on. Its source is [`FfmpegSource::Setting`]: the caller named it.
+///
+/// # Errors
+/// As [`find_ffmpeg`].
+#[cfg(feature = "test-support")]
+pub fn ffmpeg_at(ffmpeg: PathBuf) -> Result<Ffmpeg, ExportError> {
+    let ffprobe = ffprobe_for(&ffmpeg, std::env::var_os("PATH").as_deref())?;
+    check(ffmpeg, ffprobe, FfmpegSource::Setting)
+}
+
+/// What the words say to do when an ffmpeg cannot be used: `today` (the words for an ffmpeg of the PC's) or, for
+/// the app's own copy, "install the app again".
+fn remedy(source: FfmpegSource, today: &str) -> String {
+    match source {
+        FfmpegSource::WithTheApp => REINSTALL.to_string(),
+        FfmpegSource::Setting | FfmpegSource::Path => today.to_string(),
+    }
+}
+
+/// The [`Ffmpeg`] of `ffmpeg` and `ffprobe` found at `source`, after asking ffmpeg for its version and encoders.
+fn check(ffmpeg: PathBuf, ffprobe: PathBuf, source: FfmpegSource) -> Result<Ffmpeg, ExportError> {
+    let fail = |s: String| ExportError::Ffmpeg(s);
+    let usual = remedy(source, &format!("install ffmpeg or correct the {ENV} setting"));
 
     let ask = |what: &str| -> Result<String, ExportError> {
         let never = AtomicBool::new(false);
         let ran = run_tool(&ffmpeg, &["-hide_banner".as_ref(), what.as_ref()], ASK_LIMIT, &never).map_err(|why| {
             fail(format!(
-                "The program {} could not be asked for its {} ({why}), so it cannot be used as ffmpeg; install \
-                 ffmpeg or correct the {ENV} setting.",
+                "The program {} could not be asked for its {} ({why}), so it cannot be used as ffmpeg; {usual}.",
                 ffmpeg.display(),
                 what.trim_start_matches('-')
             ))
@@ -146,7 +264,7 @@ fn check(ffmpeg: PathBuf, path: Option<&OsStr>) -> Result<Ffmpeg, ExportError> {
         if !ran.status.success() {
             return Err(fail(format!(
                 "The program {} did not answer like ffmpeg when asked for its {} ({}), so it cannot be used; \
-                 install ffmpeg or correct the {ENV} setting.",
+                 {usual}.",
                 ffmpeg.display(),
                 what.trim_start_matches('-'),
                 ran.said()
@@ -157,18 +275,24 @@ fn check(ffmpeg: PathBuf, path: Option<&OsStr>) -> Result<Ffmpeg, ExportError> {
     let first = ask("-version")?.lines().next().unwrap_or("").trim().to_string();
     if !first.starts_with("ffmpeg version") {
         return Err(fail(format!(
-            "The program {} does not call itself ffmpeg (it says \"{first}\"), so it cannot be used; install \
-             ffmpeg or correct the {ENV} setting.",
+            "The program {} does not call itself ffmpeg (it says \"{first}\"), so it cannot be used; {usual}.",
             ffmpeg.display()
         )));
     }
     let version = version_of(&first);
     let encoders = ask("-encoders")?;
+    let whose = match source {
+        FfmpegSource::WithTheApp => "The app's own ffmpeg",
+        FfmpegSource::Setting | FfmpegSource::Path => "The ffmpeg",
+    };
+    let full = remedy(
+        source,
+        "install a full build of ffmpeg (one with libx264 and aac), then try again",
+    );
     for (kind, name) in [('V', "libx264"), ('A', "aac")] {
         if !has_encoder(&encoders, kind, name) {
             return Err(fail(format!(
-                "The ffmpeg at {} has no {name} encoder, which the videos need; install a full build of ffmpeg \
-                 (one with libx264 and aac), then try again.",
+                "{whose} at {} has no {name} encoder, which the videos need; {full}.",
                 ffmpeg.display()
             )));
         }
@@ -177,6 +301,7 @@ fn check(ffmpeg: PathBuf, path: Option<&OsStr>) -> Result<Ffmpeg, ExportError> {
         ffmpeg,
         ffprobe,
         version,
+        source,
     })
 }
 
@@ -606,7 +731,7 @@ mod tests {
         std::fs::create_dir_all(&dir).unwrap();
         let script = dir.join(format!("bf-export not ffmpeg {}.cmd", std::process::id()));
         std::fs::write(&script, "@echo off\r\n").unwrap();
-        let err = find_with(Some(script.clone().into_os_string()), None).unwrap_err();
+        let err = find_with(Some(script.clone().into_os_string()), None, None).unwrap_err();
         std::fs::remove_file(&script).unwrap();
         assert!(matches!(err, ExportError::Ffmpeg(_)));
         assert!(
@@ -629,13 +754,229 @@ mod tests {
         assert!(!has_encoder(" V....D libx264rgb x\n", 'V', "libx264"));
     }
 
+    // ------------------------------------------------------------ where ffmpeg comes from
+    // Nothing here changes the process's environment or the folder of the test program: the setting, the app's
+    // folder and the PATH are passed to `find_with`, and the "app's own" ffmpeg is a temp folder of the test's.
+
+    /// A new empty folder under the system's temp folder (the same drive as the PC's ffmpeg, so a hard link
+    /// works), removed when dropped.
+    struct Temp(PathBuf);
+
+    impl Temp {
+        fn new(what: &str) -> Temp {
+            static N: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+            let n = N.fetch_add(1, Ordering::SeqCst);
+            let dir = std::env::temp_dir().join(format!("bf-export {what} {}-{n}", std::process::id()));
+            let _ = std::fs::remove_dir_all(&dir);
+            std::fs::create_dir_all(&dir).unwrap();
+            Temp(dir)
+        }
+    }
+
+    impl Drop for Temp {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_dir_all(&self.0);
+        }
+    }
+
+    /// The PC's own ffmpeg (the setting or the PATH, read, never changed), or a notice and `None`.
+    fn pcs_ffmpeg(test: &str) -> Option<Ffmpeg> {
+        match find_with(std::env::var_os(ENV), None, std::env::var_os("PATH")) {
+            Ok(f) => Some(f),
+            Err(e) => {
+                println!("{test}: checks only what it can, ffmpeg is not usable here: {e}");
+                None
+            }
+        }
+    }
+
+    /// Puts `from` (followed through links) into `dir` as `name`: a hard link, else a copy.
+    fn put(from: &Path, dir: &Path, name: &str) -> PathBuf {
+        let from = std::fs::canonicalize(from).unwrap();
+        let to = dir.join(name);
+        if std::fs::hard_link(&from, &to).is_err() {
+            std::fs::copy(&from, &to).unwrap();
+        }
+        to
+    }
+
+    /// A folder holding a copy of the PC's ffmpeg and ffprobe, as the app's own `ffmpeg\` folder holds them.
+    fn copy_of(pc: &Ffmpeg, what: &str) -> Temp {
+        let t = Temp::new(what);
+        put(&pc.ffmpeg, &t.0, &exe("ffmpeg"));
+        put(&pc.ffprobe, &t.0, &exe("ffprobe"));
+        t
+    }
+
+    /// A `PATH` value naming the folder that holds the PC's ffmpeg.
+    fn path_of(pc: &Ffmpeg) -> Option<OsString> {
+        Some(pc.ffmpeg.parent().unwrap().as_os_str().to_os_string())
+    }
+
+    #[test]
+    fn the_setting_comes_first() {
+        let Some(pc) = pcs_ffmpeg("the_setting_comes_first") else {
+            return;
+        };
+        let set = copy_of(&pc, "setting");
+        let own = copy_of(&pc, "own");
+        let named = set.0.join(exe("ffmpeg"));
+        let found = find_with(Some(named.clone().into_os_string()), Some(own.0.clone()), path_of(&pc)).unwrap();
+        assert_eq!(found.source, FfmpegSource::Setting);
+        assert_eq!(found.ffmpeg, named);
+        assert_eq!(found.ffprobe, set.0.join(exe("ffprobe")));
+        assert_eq!(found.version, pc.version);
+    }
+
+    #[test]
+    fn the_apps_own_comes_before_the_path() {
+        let Some(pc) = pcs_ffmpeg("the_apps_own_comes_before_the_path") else {
+            return;
+        };
+        let own = copy_of(&pc, "own");
+        let found = find_with(None, Some(own.0.clone()), path_of(&pc)).unwrap();
+        assert_eq!(found.source, FfmpegSource::WithTheApp);
+        assert_eq!(found.ffmpeg, own.0.join(exe("ffmpeg")));
+        assert_eq!(found.ffprobe, own.0.join(exe("ffprobe")));
+        assert_eq!(found.version, pc.version);
+        // an empty setting is no setting
+        let found = find_with(Some(OsString::new()), Some(own.0.clone()), path_of(&pc)).unwrap();
+        assert_eq!(found.source, FfmpegSource::WithTheApp);
+    }
+
+    #[test]
+    fn the_path_is_last() {
+        // nothing beside the app (no folder, or an empty one): the PATH, exactly as before
+        let empty = Temp::new("empty");
+        let gone = empty.0.join("no ffmpeg folder");
+        let no_path = Some(empty.0.clone().into_os_string());
+        for beside in [None, Some(gone.clone()), Some(empty.0.clone())] {
+            let err = find_with(None, beside, no_path.clone()).unwrap_err();
+            assert_eq!(
+                err,
+                find_with(None, None, no_path.clone()).unwrap_err(),
+                "nothing beside the app gives today's answer"
+            );
+        }
+        let Some(pc) = pcs_ffmpeg("the_path_is_last") else {
+            return;
+        };
+        for beside in [None, Some(gone), Some(empty.0.clone())] {
+            let found = find_with(None, beside, path_of(&pc)).unwrap();
+            assert_eq!(found.source, FfmpegSource::Path);
+            assert_eq!(
+                (&found.ffmpeg, &found.ffprobe, &found.version),
+                (&pc.ffmpeg, &pc.ffprobe, &pc.version)
+            );
+        }
+    }
+
+    #[test]
+    fn the_apps_own_ffmpeg_needs_its_own_ffprobe() {
+        // an ffprobe on the PATH (a stand-in file: it is never started) is not used for the app's own ffmpeg
+        let own = Temp::new("own no ffprobe");
+        std::fs::write(own.0.join(exe("ffmpeg")), b"not run").unwrap();
+        let elsewhere = Temp::new("path ffprobe");
+        std::fs::write(elsewhere.0.join(exe("ffprobe")), b"not run").unwrap();
+        std::fs::write(elsewhere.0.join(exe("ffmpeg")), b"not run").unwrap();
+        let err = find_with(None, Some(own.0.clone()), Some(elsewhere.0.clone().into_os_string())).unwrap_err();
+        assert!(matches!(err, ExportError::Ffmpeg(_)), "{err:?}");
+        assert_eq!(
+            err.to_string(),
+            format!(
+                "The app's own ffprobe is missing from {}, so a finished video cannot be checked; install the app \
+                 again.",
+                own.0.display()
+            )
+        );
+        // with the PC's real ffmpeg on the PATH it is the same answer
+        if let Some(pc) = pcs_ffmpeg("the_apps_own_ffmpeg_needs_its_own_ffprobe") {
+            let err2 = find_with(None, Some(own.0.clone()), path_of(&pc)).unwrap_err();
+            assert_eq!(err2, err);
+        }
+    }
+
+    #[test]
+    fn a_broken_ffmpeg_beside_the_app_is_not_passed_over() {
+        // files that are not a usable ffmpeg in the app's own folder are an error, never a quiet fall-back to
+        // another ffmpeg on the PATH
+        let path = pcs_ffmpeg("a_broken_ffmpeg_beside_the_app_is_not_passed_over")
+            .and_then(|pc| path_of(&pc))
+            .or_else(|| std::env::var_os("PATH"));
+
+        // only ffprobe is there
+        let own = Temp::new("own only ffprobe");
+        std::fs::write(own.0.join(exe("ffprobe")), b"not run").unwrap();
+        let err = find_with(None, Some(own.0.clone()), path.clone()).unwrap_err();
+        let text = err.to_string();
+        assert!(matches!(err, ExportError::Ffmpeg(_)), "{err:?}");
+        assert!(
+            text.contains(&own.0.display().to_string()) && text.contains("install the app again"),
+            "{text}"
+        );
+
+        // a folder where the program should be
+        let own = Temp::new("own a folder");
+        std::fs::create_dir(own.0.join(exe("ffmpeg"))).unwrap();
+        std::fs::write(own.0.join(exe("ffprobe")), b"not run").unwrap();
+        let err = find_with(None, Some(own.0.clone()), path.clone()).unwrap_err();
+        let text = err.to_string();
+        assert!(
+            text.contains(&own.0.join(exe("ffmpeg")).display().to_string()) && text.contains("install the app again"),
+            "{text}"
+        );
+
+        // two files that are not programs
+        let own = Temp::new("own not programs");
+        std::fs::write(own.0.join(exe("ffmpeg")), b"not a program").unwrap();
+        std::fs::write(own.0.join(exe("ffprobe")), b"not a program").unwrap();
+        let err = find_with(None, Some(own.0.clone()), path).unwrap_err();
+        let text = err.to_string();
+        assert!(matches!(err, ExportError::Ffmpeg(_)), "{err:?}");
+        assert!(
+            text.contains(&own.0.join(exe("ffmpeg")).display().to_string()) && text.contains("install the app again"),
+            "{text}"
+        );
+    }
+
+    #[test]
+    fn sentences_about_the_apps_own_copy_can_be_told_apart() {
+        let own = Temp::new("own told apart");
+        let none = Temp::new("path told apart");
+        let no_path = Some(none.0.clone().into_os_string());
+        let missing = find_with(None, None, no_path.clone()).unwrap_err().to_string();
+        assert!(!is_about_the_apps_own(&missing), "{missing}");
+        let setting = find_with(
+            Some("C:\\nowhere\\ffmpeg.exe".into()),
+            Some(own.0.clone()),
+            no_path.clone(),
+        );
+        assert!(!is_about_the_apps_own(&setting.unwrap_err().to_string()));
+        // only ffmpeg; then a file that is no program as both
+        std::fs::write(own.0.join(exe("ffmpeg")), b"not a program").unwrap();
+        let e = find_with(None, Some(own.0.clone()), no_path.clone())
+            .unwrap_err()
+            .to_string();
+        assert!(is_about_the_apps_own(&e), "{e}");
+        std::fs::write(own.0.join(exe("ffprobe")), b"not a program").unwrap();
+        let e = find_with(None, Some(own.0.clone()), no_path).unwrap_err().to_string();
+        assert!(is_about_the_apps_own(&e), "{e}");
+    }
+
+    #[test]
+    fn the_apps_own_folder_is_named_ffmpeg_beside_the_program() {
+        let exe_dir = std::env::current_exe().unwrap().parent().unwrap().to_path_buf();
+        assert_eq!(beside_the_program(), Some(exe_dir.join(APP_FFMPEG_DIR)));
+        assert_eq!(APP_FFMPEG_DIR, "ffmpeg");
+    }
+
     #[test]
     fn no_ffmpeg_on_the_path_is_named() {
         let empty = Path::new(env!("CARGO_MANIFEST_DIR")).join("no such folder 7f3a");
-        let err = find_with(None, Some(empty.into_os_string())).unwrap_err();
+        let err = find_with(None, None, Some(empty.into_os_string())).unwrap_err();
         assert!(matches!(err, ExportError::Ffmpeg(_)));
         assert!(err.to_string().contains("PATH"), "{err}");
-        let err = find_with(Some("C:\\nowhere\\ffmpeg.exe".into()), None).unwrap_err();
+        let err = find_with(Some("C:\\nowhere\\ffmpeg.exe".into()), None, None).unwrap_err();
         assert!(err.to_string().contains("C:\\nowhere\\ffmpeg.exe"), "{err}");
     }
 }
