@@ -1,14 +1,14 @@
 # BALLFIGHT Studio: handoff brief for a new Claude Code project (Nov 10)
 
-## Status (Nov 11): the Studio's engine exists
+## Status (Nov 11): the Studio app runs on the real engine
 
-**What exists.** The whole engine of BALLFIGHT Studio, rebuilt as a native Windows program: the fight, the story
-and seed search, the balance, the picture, the sound, the quality checks and the video encode. It lives in the
-`studio/` folder of this repo. Right now it knows one match-up, FLUTE against TROMBONE with the big top music, and
-it is driven by one command, `ballfight`. The window (the app with its five steps, preview and queue) is the next
-milestone and is being built: its screens (Match-up, Balance, Seeds, Music, Render, Library, Settings) already exist
-in the `bf-app` crate, but they still show sample data and are not connected to the engine yet, so nothing in that
-window today is a real fight or a real video.
+**What exists.** BALLFIGHT Studio is a native Windows program in the `studio/` folder of this repo: the engine (the
+fight, the story and seed search, the balance, the picture, the sound, the quality checks and the video encode)
+and, since milestone 2, the app's window on top of it. The window has the five steps (Match-up, Balance, Seeds,
+Music, Render), a live preview with sound, the shortlist of seeds, the render queue, the Library of finished videos
+and Settings, and it runs on the real engine: the fights, pictures, sounds and videos it shows and saves are real.
+Today it knows one match-up, FLUTE against TROMBONE with the big top music; the other 18 kit fighters are shown in
+the roster but cannot be picked yet.
 
 **It makes the same video as the Python kit.** For the example episode (`projects/ballfight/examples/
 flute_vs_trombone`, seed 392) the Studio draws all 43 checked frames of the video byte for byte as the kit does,
@@ -17,36 +17,26 @@ loop point, safe zone, focus) gives the kit's verdict. A fight the Studio runs i
 least the first 25 seconds of fighting; after that tiny rounding differences take over, so a Studio seed is its own
 fight, not the kit's (that is by design).
 
-**How fast it is** (this PC; details in `docs/studio/m1-measurements.md`):
+**How fast it is** (this PC; details in `docs/studio/m1-measurements.md` and `docs/studio/m2-measurements.md`):
 
-- A whole 61 s video, from the fight to the checked mp4 with its cover and caption: about **82 seconds** (it was
-  about 97 s before the last speed-ups). The goal is under 60 s; most of the remaining time is the video encoder
-  itself, and the plan for getting there is in the measurements file.
+- A whole 61 s video, from the fight to the checked mp4 with its cover and caption: about **82 seconds** on its
+  own. The goal is under 60 s; most of the remaining time is the video encoder itself.
 - Searching seeds: about **6,000 to 7,000 fights a second**, so 200 fitting seeds take about 5 seconds.
-- Building the soundtrack: about **4.7 seconds**.
-- One picture of the video: about 0.13 to 0.22 seconds on one core, so live playback at 30 frames a second needs
-  about 7 cores drawing ahead. The app is planned that way.
+- After choosing a seed its picture is on screen in about a quarter of a second, and its sound joins about 7
+  seconds later; on a PC not busy with other heavy work the preview plays every frame on time.
 
-**How to run it.** There is no double-click program yet (that comes with the app), so for now this step is for
-whoever is developing it, not something the owner has to do. Today it takes one command. Open
-PowerShell in the repo's `studio` folder (in File Explorer: open `studio`, type `powershell` in the address bar,
-press Enter) and paste:
+**How it is started today.** There is no installer yet (that is milestone 6), so the program is still built from
+the code: `cargo build --release -p bf-app` in the `studio` folder makes `studio\target\release\ballfight-studio.exe`,
+and that exe is the app (double-click it). Its settings and queue live in `%APPDATA%\BALLFIGHT Studio`, its
+shortlist cache in `%LOCALAPPDATA%\BALLFIGHT Studio`, and videos go to `Videos\BALLFIGHT` unless Settings says
+otherwise. It needs ffmpeg on the PC to save videos (Settings says whether it found it). Started with `--fixtures`
+it shows the same window on sample data instead (nothing real, nothing saved), which is how the interface was built
+and tested. The `ballfight` command line (crate `bf-cli`, listed in `studio/README.md`) still runs every step without
+the window.
 
-```
-cargo build --release -p bf-cli; .\target\release\ballfight.exe render fights\flute_vs_trombone.toml --rec reference\fights\flute_vs_trombone\ep392.bfrec --out "$env:USERPROFILE\Videos\BALLFIGHT"
-```
-
-The first build takes a few minutes; after that it renders the example episode into
-`Videos\BALLFIGHT\flute_vs_trombone\` (the mp4, the cover picture, the caption and the fight file). It never
-replaces a video that is already there: a second render goes into `flute_vs_trombone_seed392\`. Other commands
-(find seeds that fit, balance the pair, draw one frame, build only the sound, run only the checks, measure the
-speed) are listed in `studio/README.md`.
-
-**What comes next.** Milestone 2 is the app: the window with the five steps, live preview with sound, the shortlist
-of seeds, the render queue and the Library of finished videos, all on FLUTE against TROMBONE. Then the other 18 kit
-fighters and 13 themes (milestone 3), the older ten fighters (4), the music system (5), and packaging with the
-Update button (6).
-
+**What comes next.** Milestone 3 brings the other 18 kit fighters and 13 themes into the app (its plan is
+`docs/studio/2026-11-11-ballfight-studio-plan-m3-kit-roster.md`); then the older ten fighters (4), the music system
+(5), and packaging with an installer and the Update button (6, `docs/studio/2026-11-11-ballfight-studio-plan-m6-packaging.md`).
 The user is building the BALLFIGHT software themselves in a Claude Code project. **Start here, then read the files
 below in this order.** Everything about how a fight is simulated, drawn, scored and rendered already exists in this repo
 as the episode kit; the software is a front end + packaging on top of it, not a rewrite.

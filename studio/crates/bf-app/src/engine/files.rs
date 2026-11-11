@@ -823,7 +823,8 @@ mod tests {
         });
         let text = problem_text(&engine);
         assert!(text.starts_with("flute_vs_trombone.toml cannot be opened: "), "{text}");
-        assert!(text.contains("this app reads fight files up to format 1"), "{text}");
+        // the reason is a sentence of its own after the colon, as every reason an open gives
+        assert!(text.contains("This app reads fight files up to format 1"), "{text}");
         assert_eq!(
             fs::read_to_string(folder.join("flute_vs_trombone.toml")).unwrap(),
             newer

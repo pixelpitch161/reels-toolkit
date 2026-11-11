@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
-use bf_app::app::{self, BfApp, Boot};
+use bf_app::app::{self, BfApp, Boot, EngineKind};
 use bf_app::fixtures::base;
 use bf_app::model::queue::{JobSpec, Queue};
 use bf_app::model::take::{SoundState, TransportAction};
@@ -487,7 +487,12 @@ fn the_log_is_capped() {
 fn without_a_folder_the_app_says_so() {
     let _gpu = gpu();
     let mut harness = app_harness(REF, |cc| {
-        app::start(cc, None, || Box::new(NoAudio::new("No sound device in tests.")))
+        app::start(
+            cc,
+            None,
+            || Box::new(NoAudio::new("No sound device in tests.")),
+            EngineKind::Sample,
+        )
     });
     harness.run();
     let notices = &harness.state().state.vm.notices;
@@ -609,9 +614,12 @@ fn starting_installs_the_theme_and_loads_what_was_saved() {
     std::fs::write(paths.queue(), b"{ this is not a queue").unwrap();
     let start_paths = paths.clone();
     let mut harness = app_harness(REF, move |cc| {
-        app::start(cc, Some(start_paths), || {
-            Box::new(NoAudio::new("No sound device in tests."))
-        })
+        app::start(
+            cc,
+            Some(start_paths),
+            || Box::new(NoAudio::new("No sound device in tests.")),
+            EngineKind::Sample,
+        )
     });
     // The live engine answers on its own thread, and each answer asks for another frame: `run` could run out of
     // steps while answers trickle in on a busy PC. Step until the start-up answers are in, bounded, instead.

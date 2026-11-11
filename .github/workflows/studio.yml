@@ -104,3 +104,13 @@ jobs:
           ./target/release/ballfight render fights/flute_vs_trombone.toml \
             --rec reference/fights/flute_vs_trombone/ep392.bfrec --frames 0:90 --out "$out"
           test -s "$out/flute_vs_trombone_frames0-90/flute_vs_trombone_frames0-90.mp4"
+
+      # The desktop app: its release build, and the tests that need no graphics adapter (the unit tests inside each
+      # file, among them the real engine's with the ffmpeg installed above; the command line's; and the saved-file
+      # compatibility tests). The interface tests (`--test ui`) draw through DirectX 12 only (ruling M2-R27) and are
+      # not run here: a hosted runner is not known to offer a DirectX 12 adapter. They run on the owner's PC.
+      - name: Build the app
+        run: cargo build --release --locked -p bf-app
+
+      - name: Test the app (no window)
+        run: cargo test --release --locked -p bf-app --lib --bins --test compat

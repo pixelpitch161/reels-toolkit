@@ -264,9 +264,24 @@ pub fn folder_state(root: &Path, name: &str) -> FolderState {
     FolderState::Ok { taken }
 }
 
-/// The probe file's name for try `n`: starts with ".", so `scan` never takes it for a video.
+/// The probe file's name for try `n`: starts with ".", so `scan` never takes it for a video. It names this process
+/// and this thread, so two checks running at once never try the same name: on Windows a name whose file is still
+/// being deleted (an antivirus scan may hold it a moment) cannot be made again, and the check would then wrongly
+/// say the folder cannot be written to.
 fn probe_path(root: &Path, n: u32) -> PathBuf {
-    root.join(format!(".bf-write-check-{}-{n}.tmp", std::process::id()))
+    root.join(format!(
+        ".bf-write-check-{}-{}-{n}.tmp",
+        std::process::id(),
+        PROBE_THREAD.with(|tag| *tag)
+    ))
+}
+
+/// The next thread's tag in probe names.
+static NEXT_PROBE_THREAD: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+
+thread_local! {
+    /// This thread's tag in probe names: the same for every check on it, never another thread's.
+    static PROBE_THREAD: u64 = NEXT_PROBE_THREAD.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
 }
 
 #[cfg(test)]
@@ -819,6 +834,26 @@ mod tests {
         assert_eq!(folder_state(&root.0, "x"), FolderState::Ok { taken: false });
         assert_eq!(fs::read(&theirs).unwrap(), b"theirs");
         assert_eq!(files_in(&root.0).len(), 1);
+    }
+
+    #[test]
+    fn checks_at_once_on_several_threads_never_share_a_probe_name() {
+        let root = TempRoot::new("checks_at_once_on_several_threads_never_share_a_probe_name");
+        let mine = probe_path(&root.0, 0);
+        assert_eq!(mine, probe_path(&root.0, 0), "one thread keeps its name");
+        let theirs = std::thread::scope(|s| s.spawn(|| probe_path(&root.0, 0)).join().unwrap());
+        assert_ne!(mine, theirs);
+        // Eight checks at once, many times over: every one finds the folder writable and leaves nothing behind.
+        std::thread::scope(|s| {
+            for _ in 0..8 {
+                s.spawn(|| {
+                    for _ in 0..40 {
+                        assert_eq!(folder_state(&root.0, "x"), FolderState::Ok { taken: false });
+                    }
+                });
+            }
+        });
+        assert_eq!(files_in(&root.0), Vec::<String>::new());
     }
 
     #[cfg(windows)]

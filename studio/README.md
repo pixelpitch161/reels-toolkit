@@ -15,7 +15,7 @@ kit in `projects/ballfight/` and checked against it. Design: `docs/studio/2026-1
 | `bf-content` | Fighters, themes, the registry and the pair rules | sim, picture, sound |
 | `bf-export` | Checks, encode, render job, output folders | story, picture, sound, content |
 | `bf-cli` | The `ballfight` command line | all |
-| `bf-app` | The window (egui). Its screens exist but run on sample data: they are not connected to the engine yet | core |
+| `bf-app` | BALLFIGHT Studio, the desktop app (egui): the five steps, the live preview with sound, the shortlist, the render queue, the Library and Settings, on the real engine (`--fixtures` runs it on sample data) | core, story, sim, picture, sound, content, export |
 
 ## Building and testing
 
@@ -33,7 +33,16 @@ cargo test --workspace
   through the dev-only crate `bf-testdata` and need nothing else: no Python, no network. `cargo test -p <crate>` runs
   one crate, `cargo test -p bf-core --test rng_vectors` one test file. CI
   (`.github/workflows/studio.yml`, one Windows job) builds `bf-cli`, tests `bf-core`, `bf-sim` and the command line's
-  `render_is_reproducible`, and renders a 3 s clip of the example episode.
+  `render_is_reproducible`, renders a 3 s clip of the example episode, builds the app (`bf-app`) and runs the app's
+  tests that need no window: `cargo test --release -p bf-app --lib --bins --test compat` (the unit tests inside each
+  file, the real engine's among them, the command line's and the saved-file tests). The app's interface tests
+  (`--test ui`) are not run on CI: they draw through DirectX 12 only, and a hosted runner is not known to offer a
+  DirectX 12 adapter. They run on the owner's PC, with the ignored ones below.
+- Ignored tests, run by name on the owner's PC (each needs minutes, ffmpeg, a sound device or a quiet PC):
+  `cargo test -p bf-app --release --test ui real::a_whole_video_with_the_real_engine -- --ignored` (a whole video,
+  by clicks, on the real engine), `cargo test -p bf-app --release --lib preview:: -- --ignored` (the preview's
+  budgets, `playback_meets_the_budget` and `scrubbing_meets_the_budget`, and `this_pc_plays_silence`, which opens the
+  sound device).
 - `cargo test -p bf-testdata --test reads_reference -- --nocapture` opens every `.npz` under `reference/` with its
   sidecar and lists what it found: the quick check that a newly exported vector file is readable from Rust.
 - Before a commit, `cargo fmt --check` and `cargo clippy --workspace --all-targets -- -D warnings` are clean and the
@@ -86,6 +95,14 @@ ballfight bench   fights/flute_vs_trombone.toml [--out <folder>] [--only fights,
   frames of the example episode with `replay/render_hashes.txt` (`BF_BLESS=1` rewrites it). The two whole renders
   are ignored by default: `cargo test --release -p bf-cli --test e2e -- --ignored --nocapture`.
 
+## The app
+
+`bf-app` is BALLFIGHT Studio itself. `cargo build --release -p bf-app` makes `target/release/ballfight-studio.exe`;
+double-click it (or start it with no option) for the real app on the real engine: pick the match-up, balance it,
+search seeds, choose one with its picture and sound, then queue the video. Videos go to `Videos\BALLFIGHT` unless
+Settings says otherwise. Today it knows FLUTE against TROMBONE; there is no installer yet (milestone 6).
+`--fixtures` runs the same window on sample data, `--data-dir <folder>` keeps its settings, queue and cache in
+another folder, and `--smoke` opens it, paints 30 frames and closes it. Details: `crates/bf-app/README.md`.
 ## Determinism
 
 Results must be bit-identical on every PC. The engine crates use `f64` in the Python operation order, never fused

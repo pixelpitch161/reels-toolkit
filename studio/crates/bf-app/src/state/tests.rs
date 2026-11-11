@@ -500,6 +500,52 @@ fn a_stopped_balance_ignores_what_was_on_its_way() {
 }
 
 #[test]
+fn a_failed_balance_ends_on_screen() {
+    let text = "The balance could not finish: a fight broke off.";
+    // A balance run that fails: nothing runs, the reason is a notice, and opening Balance does not retry.
+    let mut s = ready();
+    go(&mut s, Step::Balance);
+    assert!(s.vm.balance.running.is_some());
+    let fx = s.apply(Event::BalanceFailed {
+        r#gen: s.generation(),
+        text: text.to_string(),
+    });
+    assert!(fx.is_empty(), "{fx:?}");
+    assert_eq!(s.vm.balance.running, None);
+    assert_eq!(s.vm.balance.stats, None);
+    assert_eq!(s.vm.notices, vec![Notice { text: text.to_string() }]);
+    go(&mut s, Step::Matchup);
+    assert!(sent(&go(&mut s, Step::Balance)).is_empty(), "no retry loop");
+    // The button still starts one by hand.
+    assert_eq!(count(&s.dispatch(Action::AutoBalance), is_auto_balance), 1);
+
+    // A measurement that fails ends the same way.
+    let mut s = ready();
+    s.dispatch(handicap(0, 2.0, false));
+    assert_eq!(count(&go(&mut s, Step::Balance), is_measure), 1);
+    s.apply(Event::BalanceFailed {
+        r#gen: s.generation(),
+        text: text.to_string(),
+    });
+    go(&mut s, Step::Matchup);
+    assert!(sent(&go(&mut s, Step::Balance)).is_empty(), "no retry loop");
+    assert_eq!(s.vm.notices.len(), 1);
+
+    // A failure of another generation changes nothing.
+    let mut s = ready();
+    go(&mut s, Step::Balance);
+    let before = s.vm.clone();
+    assert!(
+        s.apply(Event::BalanceFailed {
+            r#gen: s.generation() + 1,
+            text: text.to_string(),
+        })
+        .is_empty()
+    );
+    assert_eq!(s.vm, before);
+}
+
+#[test]
 fn opening_seeds_starts_one_search() {
     let mut s = ready();
     let fx = go(&mut s, Step::Seeds);

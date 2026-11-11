@@ -231,7 +231,8 @@ pub struct AppState {
     title_card: Option<Frame>,
     /// A measurement was asked for in this generation and has not come back.
     measuring: bool,
-    /// The owner stopped a balance run in this generation, so opening Balance does not start another by itself.
+    /// The owner stopped a balance run in this generation, or a balance run or measurement failed
+    /// (`Event::BalanceFailed`), so opening Balance does not start another by itself.
     balance_stopped: bool,
     /// The generation the current fighters were described for (`DescribeFight`): a description for it or any
     /// later generation is of these fighters.
