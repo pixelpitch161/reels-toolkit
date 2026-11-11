@@ -58,11 +58,13 @@ pub fn loudness(master: &[[f64; 2]], show: &Show) -> CheckResult {
         let (fight, ko) = (show.grid.t_fight, show.t_ko);
         let text = if fight.is_finite() && ko.is_finite() {
             format!(
-                "the soundtrack is {:.1} s long and has no intro before {fight:.1} s followed by a fight up to the                  K.O. at {ko:.1} s, so the two cannot be compared; a video's soundtrack is 61 s",
+                "the soundtrack is {:.1} s long and has no intro before {fight:.1} s followed by a fight up to \
+                 the knockout at {ko:.1} s, so the two cannot be compared; a video's soundtrack is 61 s",
                 master.len() as f64 / super::SRF
             )
         } else {
-            "the fight has no time for FIGHT! or for the K.O., so the intro and the fight cannot be compared;              pick a fight that ends in a K.O."
+            "the fight has no time for its start or for its knockout, so the intro and the fight cannot be \
+             compared; pick a fight that ends in a knockout"
                 .to_string()
         };
         return CheckResult::failed(NAME, format!("{TITLE}: {text}."));
@@ -74,9 +76,9 @@ pub fn loudness(master: &[[f64; 2]], show: &Show) -> CheckResult {
     let intro = lufs(&y[..i0]);
     let diff = intro - fight;
     let how = if diff < 0.0 {
-        format!("{:.1} LU quieter than", -diff)
+        format!("{:.1} loudness units (LU) quieter than", -diff)
     } else {
-        format!("{diff:.1} LU louder than")
+        format!("{diff:.1} loudness units (LU) louder than")
     };
     CheckResult::new(
         NAME,

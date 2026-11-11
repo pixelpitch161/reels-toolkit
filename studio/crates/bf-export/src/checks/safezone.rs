@@ -12,7 +12,7 @@ use bf_core::py::round_half_even;
 use bf_picture::config::{H, SAFE, SAFE_BUTTONS, W, safe_overshoot};
 use bf_picture::ui::{DrawLog, Kind};
 
-use super::CheckResult;
+use super::{CheckResult, thousands};
 
 /// `kit.checks.safezone`'s default step: a frame every quarter of a second.
 pub const STEP: f64 = 0.25;
@@ -199,10 +199,10 @@ pub fn safezone(logs: &[(f64, DrawLog)]) -> CheckResult {
                 ),
             };
             format!(
-                "{TITLE}: all {} captions, labels and panels drawn in the {} frames looked at are inside the safe \
+                "{TITLE}: all {} caption, label and panel positions checked in {} frames are inside the safe \
                  area{covered}.",
-                report.tracked,
-                logs.len()
+                thousands(report.tracked),
+                thousands(logs.len())
             )
         }
         Some(o) => {
