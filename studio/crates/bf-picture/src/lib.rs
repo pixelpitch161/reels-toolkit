@@ -11,5 +11,6 @@ pub mod img;
 pub mod np;
 pub mod pil;
 pub mod sprite;
+pub mod ui;
 
 pub use self::img::{Gray32, Img, Rgb8, RgbF};
