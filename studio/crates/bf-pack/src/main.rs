@@ -29,16 +29,16 @@ enum Command {
 fn main() -> ExitCode {
     let cli = Cli::parse();
     let result = match cli.command {
+        // A bad embedded pin is a sentence and exit 1, never a panic.
         Command::FetchFfmpeg { cache, out } => {
-            let pin = bf_pack::ffmpeg::pin();
-            bf_pack::ffmpeg::ensure(&pin, &cache, &bf_pack::fetch::Curl)
-                .and_then(|verified| bf_pack::ffmpeg::place(&pin, &verified, &out))
-                .map(|()| format!("ffmpeg {} is ready in {}.", pin.version, out.display()))
+            bf_pack::ffmpeg::fetch_command(bf_pack::ffmpeg::PIN_TEXT, &cache, &out, &bf_pack::fetch::Curl)
         }
     };
     match result {
-        Ok(line) => {
-            println!("{line}");
+        Ok(lines) => {
+            for line in lines {
+                println!("{line}");
+            }
             ExitCode::SUCCESS
         }
         Err(e) => {

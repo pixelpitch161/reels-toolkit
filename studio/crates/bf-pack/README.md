@@ -28,7 +28,11 @@ ballfight-pack fetch-ffmpeg --cache <folder> --out <folder>
   the `.part` file and is an error. Unpacking works the same way, in `<folder>.part`.
 - The out folder receives `ffmpeg.exe`, `ffprobe.exe`, `LICENSE.txt` and `ABOUT.txt` (version, build, the archive's
   address and SHA-256, the licence, where the source is, and that the Studio runs ffmpeg as a separate program). It
-  is the folder that becomes the app's `ffmpeg\`. A file already there with the right SHA-256 is kept.
+  is the folder that becomes the app's `ffmpeg\`. Every checked file is checked again before the out folder is
+  touched. A file already there with the right SHA-256 is kept; one with another SHA-256 is replaced, and the command
+  prints "Replaced an older <name>." for it. If a copy fails part-way, the files placed before it stay (each checked),
+  no `.part` file is left, and `ABOUT.txt`, written last, is not written.
+- A bad pin built into the tool is a plain sentence and exit 1, never a crash.
 - Nothing is written outside the two folders it is given.
 
 Where the cache lives: on the owner's PC `%LOCALAPPDATA%\BALLFIGHT Studio\data\downloads`; in CI the runner's temp
@@ -37,12 +41,20 @@ not the exes).
 
 ## Downloads and programs
 
-- Downloads go through Windows' own `%SystemRoot%\System32\curl.exe` with fixed arguments
-  (`-fsSL --retry 3 --proto =https --proto-redir =https -o <file> --url <address>`). Only a public https address is
-  taken: one holding a user name or password is refused without repeating it. No sign-in is ever sent.
+- Downloads go through Windows' own curl, `<drive>:\Windows\System32\curl.exe` (from the `SystemRoot` variable,
+  which must name a drive's `Windows` folder; never from `PATH`), with fixed arguments:
+  `-q -fsSL --retry 3 --proto =https --proto-redir =https --connect-timeout 30 --speed-limit 1024 --speed-time 120
+  --max-filesize <archive bytes> -o <file> --url <address>`. `-q` comes first so that curl reads no `.curlrc` or
+  `_curlrc`: a user's curl settings can add nothing (no credentials, headers, proxy, `-k` or other output).
+- Only a public https address is taken: one holding a user name or password is refused without repeating it, and so
+  is one naming this PC or a private network (`localhost`, `127.0.0.0/8`, `[::1]`, `10/8`, `172.16/12`,
+  `192.168/16`, link-local, unique-local IPv6, or a number curl would read as an address). No sign-in is ever sent.
+- Each file unpacked from the archive may be at most 1 GB (`ffmpeg::UNPACK_CAP`), by what the archive declares and
+  by what is actually read.
 - Every child program is started through `run::run` (`run::quiet` builds the command): its arguments one by one, no
   console window, no input, its error output read on a thread, always waited for, stopped after a time limit or on
-  cancel. `tests/scan.rs` fails on any other `Command::new` in this crate and in the app's packaging modules.
+  cancel. `tests/scan.rs` fails on any other `Command::new`, `process::Command` or `Command as` in this crate and in
+  the app's packaging modules.
 
 ## Tests
 

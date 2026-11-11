@@ -90,10 +90,40 @@ struct PinFileEntry {
     sha256: String,
 }
 
-/// The pin this build was made with (`studio/packaging/ffmpeg.toml`).
+/// The text of the pin this build was made with (`studio/packaging/ffmpeg.toml`).
+pub const PIN_TEXT: &str = include_str!("../../../packaging/ffmpeg.toml");
+
+/// The pin this build was made with. A bad file is a test failure (`the_pin_reads`); code that must never panic
+/// uses `parse_pin(PIN_TEXT)` instead.
 pub fn pin() -> FfmpegPin {
-    parse_pin(include_str!("../../../packaging/ffmpeg.toml")).expect("studio/packaging/ffmpeg.toml is a good pin")
+    parse_pin(PIN_TEXT).expect("studio/packaging/ffmpeg.toml is a good pin")
 }
+
+/// What `ballfight-pack fetch-ffmpeg` does: reads the pin from `pin_text`, makes sure the cache holds the checked
+/// files, and places them in `out`. Gives the lines to print: one for each older file that was replaced, then that
+/// ffmpeg is ready.
+pub fn fetch_command(pin_text: &str, cache: &Path, out: &Path, dl: &dyn Download) -> Result<Vec<String>, PackError> {
+    let pin = parse_pin(pin_text)?;
+    let verified = ensure(&pin, cache, dl)?;
+    let replaced = place(&pin, &verified, out)?;
+    let mut lines: Vec<String> = replaced
+        .iter()
+        .map(|name| format!("Replaced an older {name}."))
+        .collect();
+    lines.push(format!("ffmpeg {} is ready in {}.", pin.version, out.display()));
+    Ok(lines)
+}
+
+/// The SHA-256 of nothing at all, which no pinned file may have.
+const EMPTY_SHA256: &str = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
+
+/// Whether `s` is a usable pinned checksum: 64 lower-case hex digits, not all zeros, not that of an empty file.
+fn real_sha256(s: &str) -> bool {
+    is_sha256(s) && s.bytes().any(|b| b != b'0') && s != EMPTY_SHA256
+}
+
+/// The largest file this crate unpacks from the archive (each of the real exes is about 230 MB).
+pub const UNPACK_CAP: u64 = 1 << 30;
 
 /// A name made of letters, digits, '.', '-' and '_' only, not starting with '.': safe as a file or folder name.
 fn plain_name(s: &str) -> bool {
@@ -124,9 +154,9 @@ pub fn parse_pin(text: &str) -> Result<FfmpegPin, PackError> {
         if raw.archive_bytes != 0 {
             return bad("the archive has a size but no checksum".into());
         }
-    } else if !is_sha256(&raw.archive_sha256) {
+    } else if !real_sha256(&raw.archive_sha256) {
         return bad(format!(
-            "the archive's checksum is neither 64 lower-case hex digits nor \"{NOT_PINNED}\""
+            "the archive's checksum is neither a real SHA-256 (64 lower-case hex digits) nor \"{NOT_PINNED}\""
         ));
     } else if raw.archive_bytes == 0 {
         return bad("the archive has a checksum but no size".into());
@@ -154,8 +184,11 @@ pub fn parse_pin(text: &str) -> Result<FfmpegPin, PackError> {
         if f.in_archive.is_empty() || f.in_archive.contains('\\') || f.in_archive.ends_with('/') {
             return bad(format!("the path of {} inside the archive is not a file path", f.name));
         }
-        if !is_sha256(&f.sha256) {
-            return bad(format!("the checksum of {} is not 64 lower-case hex digits", f.name));
+        if !real_sha256(&f.sha256) {
+            return bad(format!(
+                "the checksum of {} is not a real SHA-256 (64 lower-case hex digits)",
+                f.name
+            ));
         }
         files.push(PinnedFile {
             name: f.name,
@@ -182,6 +215,11 @@ const ABOUT: &str = "ABOUT.txt";
 /// folder of checked files. A matching archive already in `cache` is not downloaded again; an unpacked folder already
 /// there is checked again, not trusted. Nothing outside `cache` is written.
 pub fn ensure(pin: &FfmpegPin, cache: &Path, dl: &dyn Download) -> Result<PathBuf, PackError> {
+    ensure_capped(pin, cache, dl, UNPACK_CAP)
+}
+
+/// `ensure`, with the largest file it unpacks given (tests use a small one).
+fn ensure_capped(pin: &FfmpegPin, cache: &Path, dl: &dyn Download, cap: u64) -> Result<PathBuf, PackError> {
     pin.refuse_unpinned()?;
     crate::fetch::check_public_url(&pin.url).map_err(PackError::Refused)?;
     std::fs::create_dir_all(cache).map_err(|e| io_error("make the folder", cache, &e))?;
@@ -198,7 +236,7 @@ pub fn ensure(pin: &FfmpegPin, cache: &Path, dl: &dyn Download) -> Result<PathBu
         }
         std::fs::remove_dir_all(&folder).map_err(|e| io_error("remove the folder", &folder, &e))?;
     }
-    unpack(pin, &archive, &folder)?;
+    unpack(pin, &archive, &folder, cap)?;
     Ok(folder)
 }
 
@@ -222,7 +260,7 @@ fn download(pin: &FfmpegPin, archive: &Path, dl: &dyn Download) -> Result<(), Pa
     let part = with_suffix(archive, ".part");
     remove_if_there(&part)?;
     let checked = (|| {
-        dl.fetch(&pin.url, &part).map_err(|e| {
+        dl.fetch(&pin.url, pin.archive_bytes, &part).map_err(|e| {
             PackError::Download(format!(
                 "The ffmpeg {} archive could not be downloaded from {}: {}.",
                 pin.version,
@@ -273,7 +311,7 @@ fn files_match(pin: &FfmpegPin, folder: &Path) -> Result<bool, PackError> {
 
 /// Unpacks the pinned files from `archive` into `<folder>.part`, checking each as it is written, then gives the
 /// folder its name. Any failure removes the half-made folder.
-fn unpack(pin: &FfmpegPin, archive: &Path, folder: &Path) -> Result<(), PackError> {
+fn unpack(pin: &FfmpegPin, archive: &Path, folder: &Path, cap: u64) -> Result<(), PackError> {
     let part = with_suffix(folder, ".part");
     if part.exists() {
         std::fs::remove_dir_all(&part).map_err(|e| io_error("remove the folder", &part, &e))?;
@@ -294,13 +332,28 @@ fn unpack(pin: &FfmpegPin, archive: &Path, folder: &Path) -> Result<(), PackErro
                     f.in_archive, pin.version, f.name
                 ))
             })?;
+            if entry.size() > cap {
+                return Err(PackError::Archive(format!(
+                    "{} in the ffmpeg {} archive says it is {} bytes, more than the {cap} this tool unpacks.",
+                    f.name,
+                    pin.version,
+                    entry.size()
+                )));
+            }
             let to = part.join(&f.name);
-            let sha = copy_hashing(&mut entry, &to).map_err(|e| {
+            // Read at most one byte past the cap, whatever the archive declares, so a lying entry is caught.
+            let (sha, len) = copy_hashing(&mut (&mut entry).take(cap + 1), &to).map_err(|e| {
                 PackError::Archive(format!(
                     "{} could not be unpacked from the ffmpeg archive: {e}.",
                     f.name
                 ))
             })?;
+            if len > cap {
+                return Err(PackError::Archive(format!(
+                    "{} in the ffmpeg {} archive is larger than the {cap} bytes this tool unpacks.",
+                    f.name, pin.version
+                )));
+            }
             if sha != f.sha256 {
                 return Err(PackError::Checksum {
                     what: format!("{} inside the ffmpeg {} archive", f.name, pin.version),
@@ -318,8 +371,9 @@ fn unpack(pin: &FfmpegPin, archive: &Path, folder: &Path) -> Result<(), PackErro
     done
 }
 
-/// Copies everything `from` gives into a new file `to`, and gives the SHA-256 of what was written.
-fn copy_hashing(from: &mut impl Read, to: &Path) -> std::io::Result<String> {
+/// Copies everything `from` gives into a new file `to`, and gives the SHA-256 and the length of what was written.
+fn copy_hashing(from: &mut impl Read, to: &Path) -> std::io::Result<(String, u64)> {
+    let mut len = 0u64;
     let mut out = std::fs::File::create(to)?;
     let mut hasher = Sha256::new();
     let mut buf = vec![0u8; 1 << 16];
@@ -332,26 +386,46 @@ fn copy_hashing(from: &mut impl Read, to: &Path) -> std::io::Result<String> {
         };
         hasher.update(&buf[..n]);
         out.write_all(&buf[..n])?;
+        len += n as u64;
     }
     out.sync_all()?;
-    Ok(crate::sha::hex(&hasher.finalize()))
+    Ok((crate::sha::hex(&hasher.finalize()), len))
 }
 
 /// Copies the checked files from `verified` (what `ensure` gave) into `dest`, which becomes the app's `ffmpeg\`
-/// folder, checking each copy, and writes `ABOUT.txt` beside them. Nothing outside `dest` is written.
-pub fn place(pin: &FfmpegPin, verified: &Path, dest: &Path) -> Result<(), PackError> {
+/// folder, and writes `ABOUT.txt` beside them. Nothing outside `dest` is written.
+///
+/// Every file in `verified` is checked first, before `dest` is touched. Then each is copied (to a `.part` name,
+/// checked again, renamed). A file of a pinned name already in `dest` with the right checksum is kept; one with
+/// another checksum is replaced, and the names replaced are given back so the caller can say so. If a copy fails
+/// part-way, the files placed before it stay (each one checked), no `.part` file is left, and `ABOUT.txt` is not
+/// written or updated, since it is written last.
+pub fn place(pin: &FfmpegPin, verified: &Path, dest: &Path) -> Result<Vec<String>, PackError> {
     pin.refuse_unpinned()?;
+    for f in &pin.files {
+        let from = verified.join(&f.name);
+        let sha = sha256_file(&from).map_err(|e| io_error("read", &from, &e))?;
+        if sha != f.sha256 {
+            return Err(PackError::Checksum {
+                what: format!("{} in {}", f.name, verified.display()),
+                want: f.sha256.clone(),
+                got: sha,
+            });
+        }
+    }
     std::fs::create_dir_all(dest).map_err(|e| io_error("make the folder", dest, &e))?;
+    let mut replaced = Vec::new();
     for f in &pin.files {
         let target = dest.join(&f.name);
-        if target.is_file() && sha256_file(&target).map_err(|e| io_error("read", &target, &e))? == f.sha256 {
+        let there = target.is_file();
+        if there && sha256_file(&target).map_err(|e| io_error("read", &target, &e))? == f.sha256 {
             continue;
         }
         let from = verified.join(&f.name);
         let part = dest.join(format!(".{}.part", f.name));
         let placed = (|| {
             let mut src = std::fs::File::open(&from).map_err(|e| io_error("open", &from, &e))?;
-            let sha = copy_hashing(&mut src, &part).map_err(|e| io_error("write", &part, &e))?;
+            let (sha, _) = copy_hashing(&mut src, &part).map_err(|e| io_error("write", &part, &e))?;
             if sha != f.sha256 {
                 return Err(PackError::Checksum {
                     what: format!("{} in {}", f.name, verified.display()),
@@ -365,6 +439,9 @@ pub fn place(pin: &FfmpegPin, verified: &Path, dest: &Path) -> Result<(), PackEr
             let _ = std::fs::remove_file(&part);
         }
         placed?;
+        if there {
+            replaced.push(f.name.clone());
+        }
     }
     let about = dest.join(ABOUT);
     let part = dest.join(format!(".{ABOUT}.part"));
@@ -374,7 +451,7 @@ pub fn place(pin: &FfmpegPin, verified: &Path, dest: &Path) -> Result<(), PackEr
     if written.is_err() {
         let _ = std::fs::remove_file(&part);
     }
-    written
+    written.map(|()| replaced)
 }
 
 /// What `ABOUT.txt` says: what this ffmpeg is, where it came from, its licence and where its source is.
@@ -427,6 +504,7 @@ mod tests {
         from: PathBuf,
         keep: Option<usize>,
         calls: Cell<usize>,
+        max: Cell<u64>,
     }
 
     impl LocalFile {
@@ -435,13 +513,15 @@ mod tests {
                 from: from.to_path_buf(),
                 keep: None,
                 calls: Cell::new(0),
+                max: Cell::new(0),
             }
         }
     }
 
     impl Download for LocalFile {
-        fn fetch(&self, _url: &str, to: &Path) -> Result<(), String> {
+        fn fetch(&self, _url: &str, max_bytes: u64, to: &Path) -> Result<(), String> {
             self.calls.set(self.calls.get() + 1);
+            self.max.set(max_bytes);
             let mut bytes = std::fs::read(&self.from).map_err(|e| e.to_string())?;
             if let Some(n) = self.keep {
                 bytes.truncate(n);
@@ -454,7 +534,7 @@ mod tests {
     struct NoNetwork;
 
     impl Download for NoNetwork {
-        fn fetch(&self, _url: &str, _to: &Path) -> Result<(), String> {
+        fn fetch(&self, _url: &str, _max: u64, _to: &Path) -> Result<(), String> {
             Err("could not resolve host".into())
         }
     }
@@ -570,6 +650,16 @@ mod tests {
             ("archive_sha256 = \"not yet pinned\"", "archive_sha256 = \"0000\""),
             ("archive_sha256 = \"not yet pinned\"", "archive_sha256 = \"\""),
             (sha, "589E50B766D251AFDF181DD664D40BD94407E200B019989FD7468C7D118A28D0"),
+            (sha, "0000000000000000000000000000000000000000000000000000000000000000"),
+            (sha, EMPTY_SHA256),
+            (
+                "archive_sha256 = \"not yet pinned\"\narchive_bytes = 0",
+                "archive_sha256 = \"0000000000000000000000000000000000000000000000000000000000000000\"\narchive_bytes = 9",
+            ),
+            (
+                "archive_sha256 = \"not yet pinned\"\narchive_bytes = 0",
+                "archive_sha256 = \"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\"\narchive_bytes = 9",
+            ),
             ("name = \"ffmpeg.exe\"", "name = \"..\\\\ffmpeg.exe\""),
             ("name = \"ffmpeg.exe\"", "name = \"ffprobe.exe\""),
             ("name = \"ffmpeg.exe\"", "name = \"ABOUT.txt\""),
@@ -772,10 +862,129 @@ mod tests {
         let dest = dir.path().join("ffmpeg");
         let err = place(&pin, &verified, &dest).unwrap_err();
         assert!(matches!(err, PackError::Checksum { .. }), "{err:?}");
-        assert!(
-            !names_in(&dest).iter().any(|n| n.contains("ffprobe")),
-            "{:?}",
-            names_in(&dest)
+        // Every source is checked before `dest` is touched: it is not even made.
+        assert!(!dest.exists(), "{:?}", names_in(&dest));
+    }
+
+    #[test]
+    fn place_replaces_a_different_file_and_says_so() {
+        let (dir, archive, pin, cache) = setup("place-replace");
+        let verified = ensure(&pin, &cache, &LocalFile::new(&archive)).unwrap();
+        let dest = dir.path().join("ffmpeg");
+        std::fs::create_dir_all(&dest).unwrap();
+        std::fs::write(dest.join("ffmpeg.exe"), b"an older ffmpeg").unwrap();
+        std::fs::write(dest.join("LICENSE.txt"), LICENCE).unwrap();
+        let replaced = place(&pin, &verified, &dest).unwrap();
+        assert_eq!(replaced, ["ffmpeg.exe"]);
+        assert_eq!(std::fs::read(dest.join("ffmpeg.exe")).unwrap(), FFMPEG);
+        assert_eq!(
+            names_in(&dest),
+            ["ABOUT.txt", "LICENSE.txt", "ffmpeg.exe", "ffprobe.exe"]
+        );
+        // Placing again replaces nothing.
+        assert!(place(&pin, &verified, &dest).unwrap().is_empty());
+    }
+
+    #[test]
+    fn place_that_fails_part_way_leaves_what_it_says() {
+        let (dir, archive, pin, cache) = setup("place-part-way");
+        let verified = ensure(&pin, &cache, &LocalFile::new(&archive)).unwrap();
+        let dest = dir.path().join("ffmpeg");
+        // A folder in the way of ffprobe.exe (the second file) makes its rename fail.
+        std::fs::create_dir_all(dest.join("ffprobe.exe")).unwrap();
+        std::fs::write(dest.join("ffmpeg.exe"), b"an older ffmpeg").unwrap();
+        let err = place(&pin, &verified, &dest).unwrap_err();
+        assert!(matches!(err, PackError::Io(_)), "{err:?}");
+        // After it: ffmpeg.exe is the checked new copy (placed before the failure), the folder in the way is
+        // untouched, LICENSE.txt (after the failure) and ABOUT.txt (always last) are not written, no `.part` is left.
+        assert_eq!(names_in(&dest), ["ffmpeg.exe", "ffprobe.exe"]);
+        assert_eq!(std::fs::read(dest.join("ffmpeg.exe")).unwrap(), FFMPEG);
+        assert!(dest.join("ffprobe.exe").is_dir());
+    }
+
+    #[test]
+    fn a_file_over_the_cap_is_refused() {
+        let (_dir, archive, pin, cache) = setup("cap");
+        let cap = FFMPEG.len() as u64 - 1;
+        let err = ensure_capped(&pin, &cache, &LocalFile::new(&archive), cap).unwrap_err();
+        assert!(matches!(err, PackError::Archive(_)), "{err:?}");
+        assert!(err.to_string().contains("ffmpeg.exe"), "{err}");
+        assert_eq!(names_in(&cache), [pin.archive_name().to_string()]);
+        // At the cap exactly it unpacks; the real cap is 1 GB.
+        let biggest = [FFMPEG, FFPROBE, LICENCE].iter().map(|b| b.len()).max().unwrap() as u64;
+        ensure_capped(&pin, &cache, &LocalFile::new(&archive), biggest).unwrap();
+        assert_eq!(UNPACK_CAP, 1 << 30);
+    }
+
+    #[test]
+    fn an_archive_that_is_not_a_zip_is_refused() {
+        let dir = TempDir::new("not-zip");
+        let fake = dir.path().join("ffmpeg-9.0.2-full_build.zip");
+        std::fs::write(&fake, b"this is not a zip file at all").unwrap();
+        let pin = pin_for(&fake);
+        let cache = dir.path().join("cache");
+        let err = ensure(&pin, &cache, &LocalFile::new(&fake)).unwrap_err();
+        assert!(matches!(err, PackError::Archive(_)), "{err:?}");
+        assert!(err.to_string().contains("zip"), "{err}");
+        // The archive matched its pin and stays; no unpacked folder and no `.part` folder.
+        assert_eq!(names_in(&cache), [pin.archive_name().to_string()]);
+    }
+
+    #[test]
+    fn an_unpinned_archive_is_refused_even_when_unpacked() {
+        let (_dir, archive, pin, cache) = setup("unpinned-unpacked");
+        let got = ensure(&pin, &cache, &LocalFile::new(&archive)).unwrap();
+        let mut unpinned = pin.clone();
+        unpinned.archive_sha256 = NOT_PINNED.into();
+        unpinned.archive_bytes = 0;
+        let dl = LocalFile::new(&archive);
+        assert!(matches!(ensure(&unpinned, &cache, &dl), Err(PackError::Refused(_))));
+        assert_eq!(dl.calls.get(), 0);
+        assert!(got.is_dir());
+    }
+
+    #[test]
+    fn the_download_is_told_the_size() {
+        let (_dir, archive, pin, cache) = setup("size");
+        let dl = LocalFile::new(&archive);
+        ensure(&pin, &cache, &dl).unwrap();
+        assert_eq!(dl.max.get(), pin.archive_bytes);
+    }
+
+    #[test]
+    fn the_command_says_what_it_did_and_refuses_a_bad_pin_in_words() {
+        let (dir, archive, pin, cache) = setup("command");
+        let out = dir.path().join("out");
+        let err = fetch_command("this is = not a pin", &cache, &out, &LocalFile::new(&archive)).unwrap_err();
+        assert!(err.to_string().starts_with("The ffmpeg pin is not usable"), "{err}");
+        assert!(!out.exists() && !cache.exists());
+        // The embedded pin reads without a panic (it is not pinned yet, or it is).
+        match fetch_command(PIN_TEXT, &cache, &out, &NoNetwork) {
+            Err(PackError::Refused(t)) => assert!(t.contains("not pinned"), "{t}"),
+            Err(PackError::Download(t)) => assert!(t.contains("could not be downloaded"), "{t}"),
+            other => panic!("{other:?}"),
+        }
+        // A good pin: the lines name each replaced file, then say it is ready.
+        let mut text = format!(
+            "version = \"{}\"\nbuild = \"{}\"\nurl = \"{}\"\narchive_sha256 = \"{}\"\narchive_bytes = {}\n\
+             licence = \"{}\"\nsource_note = \"{}\"\n",
+            pin.version, pin.build, pin.url, pin.archive_sha256, pin.archive_bytes, pin.licence, pin.source_note
+        );
+        for f in &pin.files {
+            text.push_str(&format!(
+                "[[files]]\nname = \"{}\"\nin_archive = \"{}\"\nsha256 = \"{}\"\n",
+                f.name, f.in_archive, f.sha256
+            ));
+        }
+        std::fs::create_dir_all(&out).unwrap();
+        std::fs::write(out.join("ffprobe.exe"), b"an older ffprobe").unwrap();
+        let lines = fetch_command(&text, &cache, &out, &LocalFile::new(&archive)).unwrap();
+        assert_eq!(
+            lines,
+            [
+                "Replaced an older ffprobe.exe.".to_string(),
+                format!("ffmpeg 9.0.2 is ready in {}.", out.display())
+            ]
         );
     }
 
