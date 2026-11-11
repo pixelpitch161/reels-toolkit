@@ -24,6 +24,13 @@ impl PictureCtx {
     /// `sprite(k, radius_px, yaw_deg, roll)`: fighter `k`'s instrument for a ball: its look's own sprite, or its
     /// model's, at the radius rounded and held to 12..30 and the yaw rounded to a multiple of 6 degrees. Drawn
     /// once and kept.
+    ///
+    /// The cache's key is what the sprite is drawn from: the fighter, the radius, the yaw step as it is and the
+    /// roll to the bit. Python's key is `<model>_<r>_<yaw % 360>_<int(roll)>` while it draws with `float(yk)`
+    /// and `float(roll)`: two rolls with the same whole part (30.2 and 30.9) share one sprite there, the first
+    /// asked, and so do yaw steps a full turn apart. Here each is its own sprite, so a frame does not depend on
+    /// which was drawn first. The kit's rolls are whole numbers (the view's, and a look's debuff), for which the
+    /// two agree.
     pub fn sprite(&self, k: usize, radius_px: f64, yaw_deg: f64, roll: f64) -> Arc<Img<u8>> {
         let key = SpriteKey::for_ball(k, radius_px, yaw_deg, roll);
         self.sprites.get_or_draw(key, || {
@@ -141,6 +148,16 @@ impl PictureCtx {
             Some(o) => o.sprite.clone(),
             None => self.sprite(k, rp * self.looks[k].sprite_k(), yaw, roll),
         };
+        // Python reads the sprite's height for both sides and its fourth channel as the alpha: a sprite that is not
+        // square RGBA is a look's bug (numpy would cut it or raise). A debug build stops; a release build draws
+        // the ball without it.
+        debug_assert!(
+            spr.c == 4 && spr.w == spr.h,
+            "fighter {k}'s sprite is {} x {} with {} channels, not square RGBA",
+            spr.w,
+            spr.h,
+            spr.c
+        );
         if spr.c == 4 && spr.w == spr.h {
             let sn = spr.h as i32;
             let (sx0, sy0) = (round_i32(s.0).wrapping_sub(sn / 2), round_i32(s.1).wrapping_sub(sn / 2));
