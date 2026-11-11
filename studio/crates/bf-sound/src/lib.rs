@@ -7,17 +7,31 @@
 //! - [`synth`]: `reelkit/audio.py`'s generators (drums, effects, tonal voices, reverb, tape stop).
 //! - [`mix`]: named stereo buses and the placing of sounds on them.
 //! - [`wav`]: 16-bit `.wav` output.
+//! - [`voice`]: the instrument-voice trait, the Pixel Pitch voices' shared noise stream and what those voices
+//!   have in common (the instruments' own synthesisers are in `bf-content`).
+//! - [`music`]: `kit/music.py`'s helpers (the cached, level-matched notes, the shaping and the shared sound
+//!   effects) and the context a soundtrack is built in.
+//! - [`traits`]: what a fighter's part and a theme's bed provide to the score (`Sound`, `Bed`).
+//! - [`mod@master`]: the master chain (bus levels, reverb, the fold onto the loop point, compressor, limiter).
 
 pub mod dsp;
+pub mod master;
 pub mod mix;
+pub mod music;
 pub mod synth;
+pub mod traits;
+pub mod voice;
 pub mod wav;
 
 pub use self::dsp::{
     FilterKind, Sos, butter_ba, butter_sos, convolve_same, fftconvolve, interp, interp_lr, lfilter, percentile,
     resample_poly, sosfilt,
 };
+pub use self::master::{Levels, Soundtrack, master};
 pub use self::mix::{Mix, Sig};
+pub use self::music::{MusicCtx, MusicError};
+pub use self::traits::{Bed, Sound};
+pub use self::voice::{PpNoise, Voice};
 pub use self::wav::write_wav16;
 
 /// The sample rate of everything the Studio synthesises, in Hz.
