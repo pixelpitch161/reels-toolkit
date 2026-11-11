@@ -884,3 +884,42 @@ fn a_disabled_dropdown_is_faint_and_says_why() {
     harness.run();
     assert!(harness.query_by_label(why).is_some(), "hovering says why");
 }
+
+#[test]
+fn a_wrapped_switch_is_one_control_over_its_words() {
+    let _gpu = common::gpu();
+    let clicked = Cell::new(0);
+    let label = "Show fights outside the beat sheet";
+    let mut harness = common::widget_harness((320.0, 120.0), |ui| {
+        on_panel(ui);
+        if buttons::wrapped_switch(ui, label, false, 206.0).clicked() {
+            clicked.set(clicked.get() + 1);
+        }
+    });
+    harness.run();
+    assert_eq!(
+        harness.query_all_by_label(label).count(),
+        1,
+        "one node carries the name"
+    );
+    let node = harness.get_by_label(label);
+    assert_eq!(node.accesskit_node().role(), Role::Switch);
+    let rect = node.rect();
+    assert_eq!(rect.width(), 206.0, "as wide as it was given");
+    assert!(rect.height() > 26.0, "the words wrap onto two lines: {rect:?}");
+    let second_line = Rect::from_min_max(
+        egui::pos2(rect.min.x + 38.0, rect.min.y + 26.0),
+        egui::pos2(rect.max.x, rect.max.y),
+    );
+    assert_eq!(
+        brightest(&mut harness, second_line),
+        rgb(TEXT),
+        "the second line is drawn inside it"
+    );
+    let outline = at(&mut harness, rect, 15.0, 5.0);
+    assert_eq!(outline, rgb(FAINT), "the switch sits level with the first line");
+    harness.get_by_label(label).click();
+    harness.run();
+    drop(harness);
+    assert_eq!(clicked.get(), 1);
+}

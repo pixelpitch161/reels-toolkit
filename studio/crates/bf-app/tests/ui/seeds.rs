@@ -534,14 +534,16 @@ fn a_clicked_row_takes_the_arrows() {
 fn only_the_switch_carries_its_name() {
     let _gpu = gpu();
     let mut harness = showing(REF, seeds::vm());
-    let named = harness
-        .query_all_by_label(SHOW_OUTSIDE)
-        .filter(|n| !n.accesskit_node().is_hidden())
-        .count();
-    assert_eq!(named, 1, "the words beside it are hidden from screen readers");
-    // The words still turn it over when clicked.
+    let named = harness.query_all_by_label(SHOW_OUTSIDE).count();
+    assert_eq!(named, 1, "one node carries the name: the switch with its words");
     let switch = by_role(&harness, SHOW_OUTSIDE, Role::Switch).rect();
-    let words = egui::pos2(switch.max.x + 40.0, switch.min.y + 13.0);
+    assert_eq!(switch.width(), 206.0, "the switch and its words fill the column");
+    assert!(
+        switch.height() > 26.0,
+        "its words wrap onto a second line inside it: {switch:?}"
+    );
+    // The words turn it over when clicked: here the second line of them.
+    let words = egui::pos2(switch.min.x + 38.0 + 10.0, switch.max.y - 8.0);
     harness.hover_at(words);
     harness.drag_at(words);
     harness.drop_at(words);

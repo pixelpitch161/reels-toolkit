@@ -339,7 +339,7 @@ fn switch_row(ui: &mut Ui, label: &str, on: bool, wrap: Option<f32>) -> Response
             let job = LayoutJob::simple(label.to_owned(), body(), colour, (width - words_x).max(1.0));
             let galley = ui.painter().layout_job(job);
             let first = galley.rows.first().map_or(0.0, |row| row.height());
-            let pad = ((CONTROL_H - first) / 2.0).round().max(0.0);
+            let pad = ((CONTROL_H - first) / 2.0).floor().max(0.0);
             let height = (pad + galley.size().y + pad).max(CONTROL_H).ceil();
             (vec2(width, height), Some((galley, pad)))
         }
@@ -364,7 +364,7 @@ fn switch_row(ui: &mut Ui, label: &str, on: bool, wrap: Option<f32>) -> Response
                 paint_label(&painter, row, label, label_colour, Some(0.0), row.width());
             }
             Some((galley, pad)) => {
-                let at = pos2(text.min.x.round(), rect.min.y + pad);
+                let at = pos2(text.min.x, rect.min.y + pad).round();
                 painter
                     .with_clip_rect(text.intersect(painter.clip_rect()))
                     .galley(at, galley, label_colour);

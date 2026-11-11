@@ -320,31 +320,11 @@ fn filters_column(ui: &mut Ui, vm: &ViewModel, out: &mut Vec<Action>) {
     watch_box(ui, inner, out);
 }
 
-/// The switch "Show fights outside the beat sheet". Its words take two lines in the column, so the switch is drawn
-/// without them and named by them, and the words beside it, wrapped, also turn it over when clicked.
+/// The switch "Show fights outside the beat sheet". Its words take two lines in the column, so they wrap inside it;
+/// the switch and its words are one control, and clicking the words turns it over too.
 fn show_outside(ui: &mut Ui, vm: &ViewModel, out: &mut Vec<Action>) {
     let on = vm.filters.show_outside;
-    let clicked = ui
-        .horizontal_top(|ui| {
-            ui.spacing_mut().item_spacing.x = 0.0;
-            let switch = buttons::switch(ui, "", on).accessible_name(SHOW_OUTSIDE);
-            ui.vertical(|ui| {
-                // The first line sits level with the switch, which is centred in its 26.
-                ui.add_space(4.0);
-                let words = Label::new(RichText::new(SHOW_OUTSIDE).font(body()).color(TEXT))
-                    .wrap()
-                    .selectable(false)
-                    .sense(Sense::CLICK);
-                let words = ui.add(words);
-                // The switch carries the name; the words are not read out a second time.
-                ui.ctx().accesskit_node_builder(words.id, |node| node.set_hidden());
-                words.clicked()
-            })
-            .inner
-                || switch.clicked()
-        })
-        .inner;
-    if clicked {
+    if buttons::wrapped_switch(ui, SHOW_OUTSIDE, on, ui.available_width()).clicked() {
         push_filters(
             vm,
             FilterSpec {
