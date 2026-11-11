@@ -1,1 +1,573 @@
+//! Fighter marks, chips and rows (interface reference, section 3 and 5.1): the fighter bar, the portrait, a picture
+//! from the engine (a cover, a frame), the roster chip and the object row (shortlist rows, library tiles).
+//!
+//! The chips and rows paint their own look with a painter that egui's disabled fade does not touch, so a disabled
+//! one is exactly `FAINT`; they paint their own focus ring (2 px `TEXT_STRONG`, 2 px outside) on a painter whose clip
+//! rectangle reaches 4 px past the `Ui`'s, so the ring is not cut off at a panel's edge; and they name themselves for
+//! the accessibility tree.
+//!
+//! Pictures from data (a sprite, a frame) are uploaded once as textures with nearest sampling and kept in one cache
+//! in egui's temporary data (`ctx.data_mut`), keyed by a name; a texture is made again only when its pixels are
+//! another allocation, and the cache keeps at most `MAX_TEXTURES`, dropping the one used longest ago.
 
+use std::sync::Arc;
+
+use egui::accesskit::Role;
+use egui::text::{LayoutJob, TextWrapping};
+use egui::{
+    Align, Color32, ColorImage, Context, FontId, Id, Key, Layout, Painter, Pos2, Rect, Response, Sense, Shape, Stroke,
+    StrokeKind, TextureHandle, TextureOptions, Ui, UiBuilder, Vec2, WidgetInfo, pos2, vec2,
+};
+
+use crate::model::roster::Sprite;
+use crate::model::take::Frame;
+use crate::theme::{
+    FAINT, HOVER, MUTED, RADIUS_ROW, RAISED, ROW_H, SELECTED, TEXT, TEXT_STRONG, body, large_fill, rgb, small, strong,
+};
+
+/// A fighter bar's width.
+const BAR_W: f32 = 4.0;
+/// A fighter bar's corner.
+const BAR_CORNER: f32 = 1.0;
+/// Side padding of a chip or row.
+const PAD_X: f32 = 10.0;
+/// The chip's disc: its diameter, its ring and where it starts (after the bar and a gap of 8).
+const CHIP_DISC: f32 = 14.0;
+const CHIP_DISC_RING: f32 = 2.0;
+const CHIP_DISC_LEFT: f32 = 12.0;
+/// The gap after the disc and before the side label.
+const CHIP_GAP: f32 = 8.0;
+/// The disc's fill: the fighter's colour at one third opacity.
+const CHIP_DISC_ALPHA: u8 = 85;
+/// The ring of a selected chip or row, drawn inside it.
+const SELECTED_RING: f32 = 1.5;
+/// The ring around a portrait's disc.
+const PORTRAIT_RING: f32 = 3.0;
+/// The focus ring: its width and its gap from the control.
+const FOCUS_W: f32 = 2.0;
+const FOCUS_GAP: f32 = 2.0;
+/// How many picture textures the cache keeps at most.
+const MAX_TEXTURES: usize = 64;
+/// What hovering a chip that is not built says.
+const NOT_BUILT: &str = "Not built yet. It arrives in an update.";
+
+/// A painter on `ui`'s layer and clip rectangle that egui's disabled fade does not touch.
+fn exact_painter(ui: &Ui) -> Painter {
+    Painter::new(ui.ctx().clone(), ui.layer_id(), ui.clip_rect())
+}
+
+/// The keyboard focus ring around `rect` (corner 8 + 2), 2 px `TEXT_STRONG`, 2 px outside, on a painter that may
+/// paint 4 px past `ui`'s clip rectangle.
+fn focus_ring(ui: &Ui, rect: Rect) {
+    let painter = Painter::new(
+        ui.ctx().clone(),
+        ui.layer_id(),
+        ui.clip_rect().expand(FOCUS_GAP + FOCUS_W),
+    );
+    painter.rect_stroke(
+        rect.expand(FOCUS_GAP),
+        f32::from(RADIUS_ROW) + FOCUS_GAP,
+        Stroke::new(FOCUS_W, TEXT_STRONG),
+        StrokeKind::Outside,
+    );
+}
+
+/// `rect` with its corners on whole physical pixels.
+fn snap(rect: Rect, ppp: f32) -> Rect {
+    let px = |p: Pos2| pos2((p.x * ppp).round() / ppp, (p.y * ppp).round() / ppp);
+    Rect::from_min_max(px(rect.min), px(rect.max))
+}
+
+/// A fighter bar: 4 wide and `height` tall in the fighter's full colour, corner 1. Decoration only: it has no name.
+pub fn fighter_bar(ui: &mut Ui, color: [u8; 3], height: f32) -> Response {
+    let (rect, response) = ui.allocate_exact_size(vec2(BAR_W, height), Sense::hover());
+    if ui.is_rect_visible(rect) {
+        let rect = snap(rect, ui.ctx().pixels_per_point());
+        ui.painter().rect_filled(rect, BAR_CORNER, rgb(color));
+    }
+    response
+}
+
+/// A fighter's portrait, `size` square, named `name` (an image). With a usable sprite it is the sprite, drawn with
+/// nearest sampling at the largest whole-number scale that fits (scaled down to fit when the sprite is larger than
+/// `size`), centred on whole pixels; its texture is cached under `name`. Without one, or when the sprite is empty,
+/// its buffer does not hold `w * h * 4` bytes or it is larger than a texture can be, it is a disc filled with
+/// `large_fill(color)` inside a 3 px ring of the full colour.
+pub fn portrait(ui: &mut Ui, color: [u8; 3], sprite: Option<&Sprite>, size: f32, name: &str) -> Response {
+    let (rect, response) = ui.allocate_exact_size(Vec2::splat(size), Sense::hover());
+    response.widget_info(|| WidgetInfo::labeled(Role::Image, true, name));
+    if !ui.is_rect_visible(rect) {
+        return response;
+    }
+    let ctx = ui.ctx().clone();
+    let usable = sprite.filter(|s| usable(&ctx, s.w, s.h, 4, s.rgba.len()));
+    match usable {
+        Some(sprite) => {
+            let texture = texture(
+                &ctx,
+                format!("portrait {name}"),
+                &sprite.rgba,
+                [sprite.w, sprite.h],
+                || ColorImage::from_rgba_unmultiplied([sprite.w, sprite.h], &sprite.rgba),
+            );
+            let (w, h) = (sprite.w as f32, sprite.h as f32);
+            let whole = (size / w.max(h)).floor();
+            let scale = if whole >= 1.0 { whole } else { size / w.max(h) };
+            let drawn = vec2(w * scale, h * scale);
+            let at = snap(
+                Rect::from_min_size(rect.center() - drawn / 2.0, drawn),
+                ctx.pixels_per_point(),
+            );
+            let uv = Rect::from_min_max(Pos2::ZERO, pos2(1.0, 1.0));
+            ui.painter().image(texture.id(), at, uv, Color32::WHITE);
+        }
+        None => {
+            let painter = ui.painter();
+            let radius = size / 2.0;
+            painter.circle_filled(rect.center(), radius, large_fill(color));
+            // epaint strokes a circle outside its radius, so the ring's radius is its inner edge.
+            painter.circle_stroke(
+                rect.center(),
+                radius - PORTRAIT_RING,
+                Stroke::new(PORTRAIT_RING, rgb(color)),
+            );
+        }
+    }
+    response
+}
+
+/// A picture from the engine (a cover, a video frame) drawn into `size` points with nearest sampling, its corners on
+/// whole pixels, named `name` (an image). Its texture is cached under `key`. A frame that is empty, whose buffer
+/// does not hold `w * h * 3` bytes or that is larger than a texture can be is drawn as a `RAISED` block of `size`.
+pub fn picture(ui: &mut Ui, key: &str, frame: &Frame, size: Vec2, name: &str) -> Response {
+    let (rect, response) = ui.allocate_exact_size(size, Sense::hover());
+    response.widget_info(|| WidgetInfo::labeled(Role::Image, true, name));
+    if !ui.is_rect_visible(rect) {
+        return response;
+    }
+    let ctx = ui.ctx().clone();
+    let at = snap(rect, ctx.pixels_per_point());
+    let (w, h) = (frame.w as usize, frame.h as usize);
+    if usable(&ctx, w, h, 3, frame.rgb.len()) {
+        let texture = texture(&ctx, format!("picture {key}"), &frame.rgb, [w, h], || {
+            ColorImage::from_rgb([w, h], &frame.rgb)
+        });
+        let uv = Rect::from_min_max(Pos2::ZERO, pos2(1.0, 1.0));
+        ui.painter().image(texture.id(), at, uv, Color32::WHITE);
+    } else {
+        ui.painter().rect_filled(at, 0.0, RAISED);
+    }
+    response
+}
+
+/// Whether a `w` x `h` picture of `channels` bytes per pixel in a buffer of `len` bytes can be made a texture: not
+/// empty, the buffer exactly the size, and no side over the largest texture side.
+fn usable(ctx: &Context, w: usize, h: usize, channels: usize, len: usize) -> bool {
+    let max_side = ctx.input(|i| i.max_texture_side);
+    let exact = w.checked_mul(h).and_then(|n| n.checked_mul(channels)) == Some(len);
+    w > 0 && h > 0 && w <= max_side && h <= max_side && exact
+}
+
+/// One cached texture: what it was made from and when it was last drawn.
+#[derive(Clone)]
+struct Entry<T> {
+    key: String,
+    pixels: Arc<[u8]>,
+    size: [usize; 2],
+    handle: T,
+    used: u64,
+}
+
+/// The picture textures, at most `MAX_TEXTURES` of them. Generic over the handle so its rules can be tested without
+/// a context. Each entry keeps its pixels' `Arc`, so their address cannot be reused by other pixels while cached.
+#[derive(Clone)]
+struct Cache<T> {
+    entries: Vec<Entry<T>>,
+}
+
+impl<T> Default for Cache<T> {
+    fn default() -> Self {
+        Cache { entries: Vec::new() }
+    }
+}
+
+/// What the cache holds for a key.
+#[derive(Debug, PartialEq)]
+enum Found<T> {
+    /// A texture made from these very pixels.
+    Fresh(T),
+    /// A texture for this key made from other pixels: set it to the new ones.
+    Stale(T),
+    Missing,
+}
+
+impl<T: Clone> Cache<T> {
+    /// The texture for `key` and `pixels`, marking it used at `now` when it is fresh.
+    fn find(&mut self, key: &str, pixels: &Arc<[u8]>, size: [usize; 2], now: u64) -> Found<T> {
+        match self.entries.iter_mut().find(|e| e.key == key) {
+            Some(e) if Arc::ptr_eq(&e.pixels, pixels) && e.size == size => {
+                e.used = now;
+                Found::Fresh(e.handle.clone())
+            }
+            Some(e) => Found::Stale(e.handle.clone()),
+            None => Found::Missing,
+        }
+    }
+
+    /// Keeps `handle` for `key`, made from `pixels`, used at `now`; then drops the entry used longest ago while
+    /// there are more than `MAX_TEXTURES`.
+    fn put(&mut self, key: String, pixels: Arc<[u8]>, size: [usize; 2], handle: T, now: u64) {
+        let entry = Entry {
+            key,
+            pixels,
+            size,
+            handle,
+            used: now,
+        };
+        match self.entries.iter_mut().find(|e| e.key == entry.key) {
+            Some(old) => *old = entry,
+            None => self.entries.push(entry),
+        }
+        while self.entries.len() > MAX_TEXTURES {
+            let last = self.entries.len() - 1;
+            let oldest = (0..last).min_by_key(|&i| self.entries[i].used).unwrap_or(0);
+            self.entries.remove(oldest);
+        }
+    }
+}
+
+/// The texture for `key` made from `pixels` (`size` pixels, `image` building it), from the cache when it holds one
+/// made from these very pixels, else uploaded (or set on the key's old texture) and cached.
+fn texture(
+    ctx: &Context,
+    key: String,
+    pixels: &Arc<[u8]>,
+    size: [usize; 2],
+    image: impl FnOnce() -> ColorImage,
+) -> TextureHandle {
+    let id = Id::unique("bf-app picture textures");
+    let now = ctx.cumulative_pass_nr();
+    let found = ctx.data_mut(|d| {
+        d.get_temp_mut_or_default::<Cache<TextureHandle>>(id)
+            .find(&key, pixels, size, now)
+    });
+    let handle = match found {
+        Found::Fresh(handle) => return handle,
+        Found::Stale(mut handle) => {
+            handle.set(image(), TextureOptions::NEAREST);
+            handle
+        }
+        Found::Missing => ctx.load_texture(format!("bf-app {key}"), image(), TextureOptions::NEAREST),
+    };
+    ctx.data_mut(|d| {
+        d.get_temp_mut_or_default::<Cache<TextureHandle>>(id)
+            .put(key, pixels.clone(), size, handle.clone(), now);
+    });
+    handle
+}
+
+/// What a chip got this frame.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ChipOut {
+    /// Clicked (or Space or Enter while focused): the left corner.
+    pub left: bool,
+    /// Right-clicked (or the menu key or Shift+F10 while focused): the right corner.
+    pub right: bool,
+}
+
+/// The outline of `rect` with corners `r`, clockwise on screen, each corner in `steps` segments.
+fn rounded_outline(rect: Rect, r: f32, steps: usize) -> Vec<Pos2> {
+    use std::f32::consts::{FRAC_PI_2, PI};
+    let corners = [
+        (pos2(rect.min.x + r, rect.min.y + r), PI),
+        (pos2(rect.max.x - r, rect.min.y + r), 1.5 * PI),
+        (pos2(rect.max.x - r, rect.max.y - r), 0.0),
+        (pos2(rect.min.x + r, rect.max.y - r), FRAC_PI_2),
+    ];
+    let mut points = Vec::with_capacity(4 * (steps + 1));
+    for (centre, start) in corners {
+        for i in 0..=steps {
+            let a = start + FRAC_PI_2 * i as f32 / steps as f32;
+            points.push(centre + r * vec2(a.cos(), a.sin()));
+        }
+    }
+    points
+}
+
+/// The part of the convex polygon `points` left of `x` (Sutherland and Hodgman, one edge).
+fn left_of(points: &[Pos2], x: f32) -> Vec<Pos2> {
+    let mut out = Vec::with_capacity(points.len() + 2);
+    for (i, &p) in points.iter().enumerate() {
+        let q = points[(i + 1) % points.len()];
+        let (p_in, q_in) = (p.x <= x, q.x <= x);
+        if p_in {
+            out.push(p);
+        }
+        if p_in != q_in {
+            let t = (x - p.x) / (q.x - p.x);
+            out.push(pos2(x, p.y + t * (q.y - p.y)));
+        }
+    }
+    out
+}
+
+/// A roster chip, `width` wide and 30 tall, corner 8: a 4 x 30 bar in the fighter's colour along its left edge (cut
+/// by the corners), a 14 round disc (2 px ring in the colour, filled with it at one third opacity), the name, and
+/// at the right "Left" or "Right" (`small`, `MUTED`) when `side` is `Some(0)` or `Some(1)` (any other side counts as
+/// not chosen). A chosen chip has the selected look: `SELECTED` fill, a 1.5 px `TEXT` ring inside, the name in Plex
+/// Sans Medium `TEXT_STRONG`. A name too long for the chip ends in an ellipsis.
+///
+/// Its accessible name is "Flute", "Flute, left corner" or "Flute, right corner". A chip that is not `available`, or
+/// sits in a disabled `Ui`, is drawn `FAINT` (bar, disc and name) and takes no clicks; one not available says "Not
+/// built yet. It arrives in an update." on hover.
+pub fn roster_chip(
+    ui: &mut Ui,
+    display: &str,
+    color: [u8; 3],
+    side: Option<usize>,
+    available: bool,
+    width: f32,
+) -> ChipOut {
+    let enabled = available && ui.is_enabled();
+    let sense = if enabled { Sense::click() } else { Sense::hover() };
+    let (rect, mut response) = ui.allocate_exact_size(vec2(width, ROW_H), sense);
+    let corner = match side {
+        Some(0) => Some(("Left", "left")),
+        Some(1) => Some(("Right", "right")),
+        _ => None,
+    };
+    let name = match corner {
+        Some((_, which)) => format!("{display}, {which} corner"),
+        None => display.to_owned(),
+    };
+    response.widget_info(|| WidgetInfo::selected(Role::Button, enabled, corner.is_some(), &name));
+    if !available {
+        response = response.on_hover_text(NOT_BUILT).on_disabled_hover_text(NOT_BUILT);
+    }
+
+    if ui.is_rect_visible(rect) {
+        let painter = exact_painter(ui);
+        let chosen = corner.is_some();
+        let fill = if chosen {
+            Some(SELECTED)
+        } else if enabled && response.hovered() {
+            Some(HOVER)
+        } else {
+            None
+        };
+        if let Some(fill) = fill {
+            painter.rect_filled(rect, RADIUS_ROW, fill);
+        }
+        if chosen {
+            let ring = if enabled { TEXT } else { FAINT };
+            painter.rect_stroke(rect, RADIUS_ROW, Stroke::new(SELECTED_RING, ring), StrokeKind::Inside);
+        }
+
+        let mark = if enabled { rgb(color) } else { FAINT };
+        let outline = rounded_outline(rect, f32::from(RADIUS_ROW), 8);
+        painter.add(Shape::convex_polygon(
+            left_of(&outline, rect.min.x + BAR_W),
+            mark,
+            Stroke::NONE,
+        ));
+        let centre = pos2(rect.min.x + CHIP_DISC_LEFT + CHIP_DISC / 2.0, rect.center().y);
+        let [r, g, b, _] = mark.to_array();
+        painter.circle_filled(
+            centre,
+            CHIP_DISC / 2.0,
+            Color32::from_rgba_unmultiplied(r, g, b, CHIP_DISC_ALPHA),
+        );
+        painter.circle_stroke(
+            centre,
+            CHIP_DISC / 2.0 - CHIP_DISC_RING,
+            Stroke::new(CHIP_DISC_RING, mark),
+        );
+
+        let mut right = rect.max.x - PAD_X;
+        if let Some((label, _)) = corner {
+            let galley = painter.layout_no_wrap(label.to_owned(), small(), MUTED);
+            let at = pos2(right - galley.size().x, rect.center().y - galley.size().y / 2.0).round();
+            right = at.x - CHIP_GAP;
+            let label_rect = Rect::from_min_size(at, galley.size());
+            let node = ui.interact(label_rect, response.id.with("side"), Sense::hover());
+            node.widget_info(|| WidgetInfo::labeled(Role::Label, true, label));
+            painter.galley(at, galley, MUTED);
+        }
+        let left = rect.min.x + CHIP_DISC_LEFT + CHIP_DISC + CHIP_GAP;
+        let (font, colour) = match (enabled, chosen) {
+            (false, _) => (body(), FAINT),
+            (true, true) => (strong(), TEXT_STRONG),
+            (true, false) => (body(), TEXT),
+        };
+        paint_name(&painter, display, font, colour, left, right, rect);
+    }
+
+    if response.has_focus() {
+        focus_ring(ui, rect);
+    }
+    let keyed_right = response.has_focus()
+        && ui.input(|i| i.key_pressed(Key::Menu) || (i.modifiers.shift_only() && i.key_pressed(Key::F10)));
+    ChipOut {
+        left: enabled && response.clicked(),
+        right: enabled && (response.secondary_clicked() || keyed_right),
+    }
+}
+
+/// `text` on one line from `left` to at most `right`, in the middle of `rect`'s height, ending in an ellipsis when
+/// it does not fit, and never painted past `right`.
+fn paint_name(painter: &Painter, text: &str, font: FontId, colour: Color32, left: f32, right: f32, rect: Rect) {
+    let max_width = (right - left).max(0.0);
+    let mut job = LayoutJob::simple_singleline(text.to_owned(), font, colour);
+    job.wrap = TextWrapping {
+        max_width,
+        max_rows: 1,
+        break_anywhere: true,
+        overflow_character: Some('…'),
+    };
+    let galley = painter.layout_job(job);
+    let at = pos2(left, rect.center().y - galley.size().y / 2.0).round();
+    let area = Rect::from_x_y_ranges(left..=right.max(left), rect.y_range());
+    painter.with_clip_rect(area).galley(at, galley, colour);
+}
+
+/// An object row (a shortlist row, a library tile): as wide as the space left and `height` tall, corner 8, padded 10
+/// at each side, with `add` laying out its content left to right, centred in its height, clipped to the row. The
+/// whole row is one control named `name` (a button that is selected or not): clicking anywhere on it, or Space or
+/// Enter while it has the focus, clicks it. Selected: `SELECTED` fill, a 1.5 px `TEXT` ring inside, and its text
+/// `TEXT_STRONG`; otherwise transparent, `HOVER` when hovered. In a disabled `Ui` it takes no clicks, its ring is
+/// `FAINT` and its text `FAINT`. Labels inside it cannot be selected, so they never take its clicks.
+pub fn object_row<R>(
+    ui: &mut Ui,
+    name: &str,
+    selected: bool,
+    height: f32,
+    add: impl FnOnce(&mut Ui) -> R,
+) -> (Response, R) {
+    let enabled = ui.is_enabled();
+    let sense = if enabled { Sense::click() } else { Sense::hover() };
+    let (rect, response) = ui.allocate_exact_size(vec2(ui.available_width(), height), sense);
+    response.widget_info(|| WidgetInfo::selected(Role::Button, enabled, selected, name));
+    if ui.is_rect_visible(rect) {
+        let painter = exact_painter(ui);
+        let fill = if selected {
+            Some(SELECTED)
+        } else if enabled && response.hovered() {
+            Some(HOVER)
+        } else {
+            None
+        };
+        if let Some(fill) = fill {
+            painter.rect_filled(rect, RADIUS_ROW, fill);
+        }
+        if selected {
+            let ring = if enabled { TEXT } else { FAINT };
+            painter.rect_stroke(rect, RADIUS_ROW, Stroke::new(SELECTED_RING, ring), StrokeKind::Inside);
+        }
+    }
+    let inside = rect.shrink2(vec2(PAD_X, 0.0));
+    let mut child = ui.new_child(
+        UiBuilder::new()
+            .max_rect(inside)
+            .layout(Layout::left_to_right(Align::Center)),
+    );
+    child.set_clip_rect(rect.intersect(ui.clip_rect()));
+    let style = child.style_mut();
+    style.interaction.selectable_labels = false;
+    style.visuals.override_text_color = Some(match (enabled, selected) {
+        (false, _) => FAINT,
+        (true, true) => TEXT_STRONG,
+        (true, false) => TEXT,
+    });
+    let inner = add(&mut child);
+    if response.has_focus() {
+        focus_ring(ui, rect);
+    }
+    (response, inner)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn pixels(n: u8) -> Arc<[u8]> {
+        Arc::from(vec![n; 3])
+    }
+
+    #[test]
+    fn the_same_pixels_are_found_fresh_and_other_pixels_stale() {
+        let mut cache = Cache::<u32>::default();
+        let first = pixels(1);
+        assert_eq!(cache.find("a", &first, [1, 1], 0), Found::Missing);
+        cache.put("a".into(), first.clone(), [1, 1], 7, 0);
+        assert_eq!(cache.find("a", &first, [1, 1], 1), Found::Fresh(7));
+        assert_eq!(
+            cache.find("a", &first.clone(), [1, 1], 2),
+            Found::Fresh(7),
+            "a clone is the same allocation"
+        );
+        let same_values = pixels(1);
+        assert_eq!(
+            cache.find("a", &same_values, [1, 1], 3),
+            Found::Stale(7),
+            "another allocation is made again"
+        );
+        assert_eq!(
+            cache.find("a", &first, [3, 1], 3),
+            Found::Stale(7),
+            "another size is made again"
+        );
+        cache.put("a".into(), same_values.clone(), [1, 1], 7, 3);
+        assert_eq!(cache.entries.len(), 1, "a key has one entry");
+        assert_eq!(cache.find("a", &same_values, [1, 1], 4), Found::Fresh(7));
+        assert_eq!(
+            cache.find("b", &same_values, [1, 1], 4),
+            Found::Missing,
+            "keys are separate"
+        );
+    }
+
+    #[test]
+    fn the_cache_drops_the_one_used_longest_ago() {
+        let mut cache = Cache::<usize>::default();
+        let all: Vec<_> = (0..=MAX_TEXTURES).map(|i| pixels(i as u8)).collect();
+        for (i, p) in all.iter().enumerate().take(MAX_TEXTURES) {
+            cache.put(format!("k{i}"), p.clone(), [1, 1], i, i as u64);
+        }
+        assert!(
+            matches!(cache.find("k0", &all[0], [1, 1], 100), Found::Fresh(0)),
+            "k0 is used again"
+        );
+        cache.put(
+            format!("k{MAX_TEXTURES}"),
+            all[MAX_TEXTURES].clone(),
+            [1, 1],
+            MAX_TEXTURES,
+            101,
+        );
+        assert_eq!(cache.entries.len(), MAX_TEXTURES, "bounded");
+        assert_eq!(
+            cache.find("k1", &all[1], [1, 1], 102),
+            Found::Missing,
+            "k1 was used longest ago"
+        );
+        assert!(matches!(cache.find("k0", &all[0], [1, 1], 102), Found::Fresh(0)));
+        assert!(matches!(
+            cache.find(&format!("k{MAX_TEXTURES}"), &all[MAX_TEXTURES], [1, 1], 102),
+            Found::Fresh(_)
+        ));
+    }
+
+    #[test]
+    fn the_bar_is_the_rounded_outline_left_of_4() {
+        let rect = Rect::from_min_size(Pos2::ZERO, vec2(120.0, 30.0));
+        let bar = left_of(&rounded_outline(rect, 8.0, 8), 4.0);
+        assert!(bar.iter().all(|p| p.x <= 4.0 + 1e-4 && p.x >= -1e-4));
+        assert!(
+            bar.iter().any(|p| (p.y - 15.0).abs() < 8.0 && p.x.abs() < 1e-4),
+            "the straight left edge"
+        );
+        let top = bar.iter().map(|p| p.y).fold(f32::INFINITY, f32::min);
+        assert!(top > 1.0 && top < 3.0, "the corner cuts the top: {top}");
+        assert!(left_of(&[], 4.0).is_empty());
+    }
+}
