@@ -485,6 +485,7 @@ dependencies = [
  "bf-sound",
  "bf-story",
  "bf-testdata",
+ "png",
  "serde_json",
 ]
 

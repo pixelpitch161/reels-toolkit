@@ -11,6 +11,7 @@ bf-story.workspace = true
 bf-picture.workspace = true
 bf-sound.workspace = true
 bf-content.workspace = true
+png.workspace = true
 
 # The reader for studio/reference (dev support only) and the reference file's JSON values.
 [dev-dependencies]
