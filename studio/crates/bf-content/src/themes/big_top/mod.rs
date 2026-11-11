@@ -24,6 +24,7 @@ mod classic;
 
 use bf_core::dmath::{self, PI};
 use bf_core::harmony::{Harmony, HarmonyError};
+use bf_core::py::py_max;
 use bf_core::rng::Generator;
 use bf_sound::dsp;
 use bf_sound::synth::{self, FILTER_O};
@@ -204,7 +205,7 @@ pub fn roll(dur: f64, v0: f64, v1: f64, rate: f64) -> Vec<f64> {
     let n = length((dur + 0.15) * SRF);
     let mut out = vec![0.0; n];
     let stroke = synth::snare(0.13);
-    let span = if 1e-6 > dur { 1e-6 } else { dur };
+    let span = py_max(dur, 1e-6);
     let mut k = 0usize;
     while (k as f64) * rate < dur - 1e-6 {
         let v = v0 + (v1 - v0) * (k as f64 * rate / span);

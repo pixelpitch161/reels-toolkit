@@ -11,9 +11,9 @@
 
 use bf_core::dmath::{self, PI};
 use bf_core::event::{Event, Value};
-use bf_core::py::{imod_py, round_nd};
+use bf_core::py::{imod_py, py_max, py_min, round_nd};
 use bf_core::rng::Generator;
-use bf_sim::roster::WeaponCfg;
+use bf_core::roster::WeaponCfg;
 use bf_sound::dsp;
 use bf_sound::mix::{Mix, Sig};
 use bf_sound::music::{
@@ -50,11 +50,6 @@ pub const TITLE_HITS: [i32; 7] = [76, 79, 83, 84, 86, 87, 88];
 #[derive(Clone, Copy, Debug)]
 pub struct FluteSound {
     k: usize,
-}
-
-/// Python's `max(a, b)` on floats: `a` unless `b` is greater.
-fn py_max(a: f64, b: f64) -> f64 {
-    if b > a { b } else { a }
 }
 
 /// `np.clip(x, lo, hi)`.
@@ -156,6 +151,7 @@ pub fn swat_sound(seed: u64) -> Vec<f64> {
             let t = tt[i];
             let smack = smack[i] * dmath::exp(-t / 0.012);
             let body = dmath::sin(2.0 * PI * c / SRF) * dmath::exp(-t / 0.05);
+            // np.maximum(tt_ - 0.04, 0)
             let late = if t - 0.04 > 0.0 { t - 0.04 } else { 0.0 };
             let hs = hs[i] * clip((t - 0.02) / 0.02, 0.0, 1.0) * dmath::exp(-late / 0.07);
             smack * 1.2 + body * 0.6 + hs * 0.5
@@ -191,7 +187,7 @@ impl Charmer {
             .iter()
             .map(|&(_, t)| t)
             .chain([99.0])
-            .reduce(|least, t| if t < least { t } else { least })
+            .reduce(py_min)
             .unwrap_or(99.0);
         // DANCES: every 'ability' event of kind 'dance' of its own, for the ability's length in beats.
         let beats = ctx.cfg[k].unlock2.get("dur_beats").unwrap_or(4.0);

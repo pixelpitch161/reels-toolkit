@@ -4,6 +4,7 @@
 
 use bf_core::dmath;
 use bf_core::harmony::HarmonyError;
+use bf_core::py::py_max;
 use bf_core::rng::Generator;
 use bf_sound::dsp;
 use bf_sound::mix::{Mix, Sig};
@@ -329,8 +330,7 @@ impl Bed for BigTopClassic {
 
     /// `A.whoosh(max(0.2, t_solo - tw - 0.1), 300, 5000)` from just after the stinger to the solo.
     fn after_ko(&self, _: &MusicCtx, mix: &mut Mix, _bar_ko: usize, tw: f64, t_solo: f64) -> Played {
-        let gap = t_solo - tw - 0.1;
-        let dur = if gap > 0.2 { gap } else { 0.2 };
+        let dur = py_max(0.2, t_solo - tw - 0.1);
         put(
             mix,
             "fx",

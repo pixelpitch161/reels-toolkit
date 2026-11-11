@@ -11,7 +11,7 @@
 
 use bf_core::event::Event;
 use bf_core::harmony::HarmonyError;
-use bf_core::py::{imod_py, round_half_even, round_nd};
+use bf_core::py::{imod_py, py_max, py_min, round_half_even, round_nd};
 use bf_sound::mix::{Mix, Sig};
 use bf_sound::music::{
     CLANK_DECAYS, CLANK_DUR, ColourArgs, MusicCtx, MusicError, Samples, Thinner, clank, event_int, event_is,
@@ -271,8 +271,7 @@ impl TromboneSound {
                         if j == 3 {
                             x = vibrato(&x, 0.5, 5.0, 0.2)?;
                         }
-                        let open = if d * 0.6 < 0.18 { d * 0.6 } else { 0.18 };
-                        let x = wah(&x, &[(0.0, open)])?;
+                        let x = wah(&x, &[(0.0, py_min(0.18, d * 0.6))])?;
                         let sig = self.tone(ctx, &x, t, 1.0, false)?.0;
                         mix.place(&bus, &Sig::Mono(sig), tq + j as f64 * 0.5 * beat, 0.42, 0.1);
                     }
@@ -426,7 +425,7 @@ impl Sound for TromboneSound {
         let last = notes
             .iter()
             .map(|&(bt, _, d)| bt + d)
-            .reduce(|most, end| if end > most { end } else { most })
+            .reduce(py_max)
             .ok_or_else(|| MusicError::new(H, format!("{name}'s solo has no notes")))?;
         let t_end = t0 + last * beat;
         // range(int(math.ceil(t_end / T.BEAT)), int((T.N_BARS - 1) * T.BAR / T.BEAT + 0.5))
