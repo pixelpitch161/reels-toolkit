@@ -33,9 +33,6 @@ use bf_core::event::{Event, Value};
 use bf_core::py;
 use bf_core::recording::{Array, Recording};
 
-use crate::fight::{Fight, Setup};
-use crate::schedule::Schedule;
-
 /// The floor of the agreement window: seconds of fighting (counted from `t_fight`) over which this engine and a
 /// Python recording of the same fight must agree. A fight that ends sooner must agree to its end.
 pub const PREFIX_FLOOR_S: f64 = 10.0;
@@ -506,6 +503,11 @@ fn frame_break(
 }
 
 /// The report of the first event that is not the same in both lists, when every frame before it agrees.
+///
+/// An event whose only difference is a float field past the bar is drift when the LAST AGREED FRAME's largest
+/// difference, over all its keys, is above [`DRIFT_FROM`]. That is looser than the frame rule (which looks only at
+/// the keys that break): an event's floats (positions, distances, times) come from several keys at once, so no
+/// single key matches them.
 fn event_break(
     rust: &Recording,
     python: &Recording,
@@ -650,9 +652,12 @@ fn no_break(
 /// elsewhere); also when the fight has no such step, or the engine cannot run the setup.
 ///
 /// A diagnostic for the parity suites only (it is how a knife-edge `clash` is shown to be one); a fighter of a kind
-/// not ported is let in, as the test entry [`Fight::with_unported`] does.
+/// not ported is let in, as the test entry `Fight::with_unported` does.
+#[cfg(any(test, feature = "testing"))]
 #[doc(hidden)]
-pub fn clash_margin(setup: &Setup, t: f64) -> Option<f64> {
+pub fn clash_margin(setup: &crate::fight::Setup, t: f64) -> Option<f64> {
+    use crate::fight::Fight;
+    use crate::schedule::Schedule;
     let mut fight = Fight::with_unported(setup, false).ok()?;
     let mut sched = Schedule::new(&mut fight);
     fight.t = fight.rules.t_fight;

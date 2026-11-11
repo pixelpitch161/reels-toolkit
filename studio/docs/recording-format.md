@@ -208,6 +208,11 @@ overrides of a scenario fight appear here with the value used.
 each fighter (a file with no `handicap` line; the kit passes no `dmg_side` for an episode without `DMG_SIDE`), and
 `swat_cobras` exactly when the file's `pair_rules` set it, with the value set (`false` too: Python's `setattr` lists
 an attribute set to false). The fight is the same either way; only the content hash shows it.
+
+One known difference from the kit: an explicit `handicap = [1.0, 1.0]` is the same fight file as no `handicap` line,
+so the Studio records no `dmg_side` for it, where Python with `DMG_SIDE = (1.0, 1.0)` records `dmg_side` `[1.0,
+1.0]`. It cannot change a fight: the engine's only reader of `dmg_side` multiplies a hit's damage by it. Such a pair of
+recordings differs in its content hash only.
 `studio/reference/fights/rules_map/` (export `rules_map`) holds a Python recording of each case, and
 `crates/bf-sim/tests/rules_map.rs` checks that the Studio's map equals it.
 

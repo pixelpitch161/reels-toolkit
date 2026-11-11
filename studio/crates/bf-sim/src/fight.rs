@@ -179,6 +179,11 @@ impl<'a> Fight<'a> {
     /// for the parity tests whose Python fights use a punching bag (a fighter with no weapon, and abilities of kind
     /// `none`, or the shield bag's `shield`). Everything else is checked as [`Fight::new`] checks it, and an unlock of
     /// a kind not ported must have its `every_bars` (the engine reads it when the unlock fires).
+    ///
+    /// It exists only in the engine's own tests: under `cfg(test)` and the crate feature `testing`, which bf-sim's
+    /// dev-dependency on itself turns on for its integration tests. No other crate enables it, so the app cannot
+    /// call it.
+    #[cfg(any(test, feature = "testing"))]
     #[doc(hidden)]
     pub fn with_unported(setup: &Setup<'a>, record: bool) -> Result<Fight<'a>, SimError> {
         setup.check_with(true)?;
@@ -445,7 +450,7 @@ impl<'a> Fight<'a> {
     /// first of `unlock1` and `unlock2` that is ready (`t >= ready - 1e-6`), which is then ready again `every_bars`
     /// bars later.
     ///
-    /// An unlock's `every_bars` is there: [`Fight::new`] (and the test entry [`Fight::with_unported`]) refuse an
+    /// An unlock's `every_bars` is there: [`Fight::new`] (and the test entry `Fight::with_unported`) refuse an
     /// unlock without one, where Python raises `KeyError` when it fires.
     pub fn abilities_step(&mut self, on_beat: bool) {
         // SLOT (ability kind `beam`, not one of FLUTE's or TROMBONE's): fight.py 3013 to 3016, a charged ability beam
@@ -504,8 +509,9 @@ pub fn run(setup: &Setup, record: bool) -> Result<Recording, SimError> {
     Ok(record::recording(fight, frames))
 }
 
-/// [`run`] through the test entry [`Fight::with_unported`]: a fighter of a kind not ported is let in (and that kind
+/// [`run`] through the test entry `Fight::with_unported`: a fighter of a kind not ported is let in (and that kind
 /// does nothing). For the parity tests against Python fights with a punching bag; not a fight of the series.
+#[cfg(any(test, feature = "testing"))]
 #[doc(hidden)]
 pub fn run_with_unported(setup: &Setup, record: bool) -> Result<Recording, SimError> {
     let mut fight = Fight::with_unported(setup, record)?;
@@ -528,7 +534,7 @@ impl Setup<'_> {
     }
 
     /// [`Setup::check`], letting in kinds not ported when `unported` is true (the test entry
-    /// [`Fight::with_unported`]).
+    /// `Fight::with_unported`).
     fn check_with(&self, unported: bool) -> Result<(), SimError> {
         self.rules.check()?;
         for (k, cfg) in self.fighters.iter().enumerate() {
@@ -585,8 +591,10 @@ fn check_fighter(cfg: &FighterCfg, k: usize, unported: bool) -> Result<(), SimEr
 /// engine has not ported or whose roster numbers it cannot run, a pair rule the engine does not have.
 ///
 /// A handicap of 1.0 for each fighter is no handicap: the rules then have no `dmg_side`, as the kit's rules have
-/// none for an episode without `DMG_SIDE` (a fight file cannot tell the two apart, and the fight is the same: a
-/// damage times 1.0 is that damage). So a recording's `rules` are the kit's for a file with no `handicap` line.
+/// none for an episode without `DMG_SIDE`. So a recording's `rules` are the kit's for a file with no `handicap`
+/// line. A fight file cannot tell that from an explicit `handicap = [1.0, 1.0]`, which in Python (`DMG_SIDE =
+/// (1.0, 1.0)`) DOES record `dmg_side`; the Studio records none for it. That cannot change a fight: the only reader
+/// of `dmg_side` (`damage`) multiplies by it, and a damage times 1.0 is that damage. Only the content hash differs.
 pub fn setup_from<'a>(ff: &FightFile, roster: &'a [FighterCfg], seed: u64) -> Result<Setup<'a>, SimError> {
     if ff.fighters.len() != 2 {
         return Err(SimError::new(
@@ -1270,6 +1278,49 @@ mod error_tests {
             let err = Fight::with_unported(&setup, false).map(|_| ()).expect_err("refused");
             assert_eq!(err.to_string(), want);
         }
+        // counters that would overflow (fix round 1): a beat so short, or a start so late, that the beat grid's
+        // whole numbers pass 2^53 (the counters would saturate, then `next_beat += 1` overflow)
+        let mut setup = base.clone();
+        setup.rules.beat = 1e-300;
+        assert_eq!(
+            refused(&setup),
+            "rules.beat: a beat of 1e-300 s is too short for a fight that runs to 5.8e1 s: the beat grid would count \
+             2.32e302 sixteenth notes (at most 2^53)"
+        );
+        let mut setup = base.clone();
+        setup.rules.beat = 1e-15;
+        assert_eq!(
+            refused(&setup),
+            "rules.beat: a beat of 1e-15 s is too short for a fight that runs to 5.8e1 s: the beat grid would count \
+             2.3199999999999997e17 sixteenth notes (at most 2^53)"
+        );
+        let mut setup = base.clone();
+        setup.rules.t_fight = 1e18;
+        setup.rules.t_max = 1e18 + 1024.0;
+        assert!((setup.rules.t_max - setup.rules.t_fight) / setup.rules.dt <= crate::rules::MAX_STEPS);
+        assert_eq!(
+            refused(&setup),
+            "rules.beat: a beat of 4.4852941176470584e-1 s is too short for a fight that runs to \
+             1.000000000000001e18 s: the beat grid would count 8.918032786885256e18 sixteenth notes (at most 2^53)"
+        );
+        // a start the grid can count, but whose frame number cannot be
+        let mut setup = base.clone();
+        setup.rules.t_fight = 1e15;
+        setup.rules.t_max = 1e15 + 1.0;
+        assert_eq!(
+            refused(&setup),
+            "rules.t_fight: 1e15 s is too late a start: its frame number 3e16 is past 2^53"
+        );
+        // and through a fight file's pair rules, as a person would type them
+        let roster = testing::roster();
+        let mut ff = testing::example_fight_file();
+        ff.pair_rules.insert("beat".into(), Value::Float(1e-300));
+        let err = setup_from(&ff, &roster, 1).expect_err("refused").to_string();
+        assert!(
+            err.starts_with("pair_rules.beat: a beat of 1e-300 s is too short"),
+            "{err}"
+        );
+
         // the setup itself says so before anything runs
         let mut setup = base.clone();
         setup.rules.knock_t = 0.0;

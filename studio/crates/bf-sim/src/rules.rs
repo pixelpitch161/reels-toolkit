@@ -42,6 +42,11 @@ impl std::error::Error for SimError {}
 /// ask for more are refused, so a mistyped `DT` cannot make the engine run for hours.
 pub const MAX_STEPS: f64 = 1_000_000.0;
 
+/// The largest whole number the engine counts in its grids (2^53): the beat and 16th-note counters, the steps
+/// between two frames and the first frame's number are whole numbers that Python holds without end; here they are
+/// `i64` and are multiplied back into seconds as `f64`, which is exact only below 2^53.
+pub const MAX_COUNT: f64 = 9_007_199_254_740_992.0;
+
 /// The rules of one fight. Field names are the Python attribute names in lower case; the comment gives the Python
 /// name and the engine's default.
 #[derive(Clone, Debug, PartialEq)]
@@ -186,6 +191,10 @@ impl Rules {
     /// Some of these are stricter than Python on purpose, the Studio's own load-time limits for rules a person types
     /// (as the roster's `frets0` limit is): a negative `t_fight` runs in Python (the first beat and frame then fall
     /// before the video's start), and so do rules whose fight would take more than [`MAX_STEPS`] steps (for hours).
+    /// The grid's whole numbers must stay below [`MAX_COUNT`]: the 16th notes from the video's start to the end of the
+    /// fight (`max(t_max, t_fight) / (beat / 4)`; a beat of `1e-300` s, or a `t_fight` of `1e18` s, would overflow the
+    /// counters), the steps between two frames (`1 / (FPS * DT)`) and the first frame's number (`t_fight * FPS`);
+    /// Python's integers have no end and it would run such rules for ever or fire a beat every step.
     /// [`crate::Fight::new`] and [`crate::run`] check this first, so such rules are an error, never a panic.
     pub fn check(&self) -> Result<(), SimError> {
         let numbers = [
@@ -240,6 +249,43 @@ impl Rules {
         }
         if self.fps == 0 {
             return Err(SimError::new("rules.FPS", "0 is not a frame rate"));
+        }
+        // the beat grid: `next_beat` and the 16th counters count from 0 at the video's start
+        let t_end = if self.t_max > self.t_fight {
+            self.t_max
+        } else {
+            self.t_fight
+        };
+        let sixteenths = t_end / (self.beat / 4.0);
+        if sixteenths.is_nan() || sixteenths >= MAX_COUNT {
+            return Err(SimError::new(
+                "rules.beat",
+                format!(
+                    "a beat of {:e} s is too short for a fight that runs to {t_end:e} s: the beat grid would count \
+                     {sixteenths:e} sixteenth notes (at most 2^53)",
+                    self.beat
+                ),
+            ));
+        }
+        let per_frame = 1.0 / (f64::from(self.fps) * self.dt);
+        if per_frame.is_nan() || per_frame >= MAX_COUNT {
+            return Err(SimError::new(
+                "rules.DT",
+                format!(
+                    "{:e} s is too short a step: {per_frame:e} steps between two frames (at most 2^53)",
+                    self.dt
+                ),
+            ));
+        }
+        let f0 = self.t_fight * f64::from(self.fps);
+        if f0.is_nan() || f0 >= MAX_COUNT {
+            return Err(SimError::new(
+                "rules.t_fight",
+                format!(
+                    "{:e} s is too late a start: its frame number {f0:e} is past 2^53",
+                    self.t_fight
+                ),
+            ));
         }
         if self.steps_per_frame() < 1 {
             return Err(SimError::new(
