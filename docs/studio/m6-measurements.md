@@ -42,21 +42,24 @@ rule applies, and `fast` has the shortest median (61.8 s). The choice does not r
 
 - `fast` is the only candidate whose three runs agree closely (57.6 to 64.1 s; its frames stage 33.0 to 34.6 s).
 - From `fast` on, the encode no longer holds the frames stage back: the frames stage of `faster` and `veryfast` is
-  not reliably shorter (27.9 to 41.6 s), because the drawing (about 23 s on a quiet PC) is then what the stage waits
-  for. The quicker presets buy no measurable time and cost file size (`veryfast` +42 %).
+  not reliably shorter (27.9 to 41.6 s), because the drawing (about 23 s for the frames of that stage, as measured in
+  `m1-measurements.md`, section 2) is then what the stage waits for. The quicker presets buy no measurable time and cost file size (`veryfast` +42 %).
 - `medium` is clearly slower (76.1 s median) than `fast` in the same rounds.
 
 **The 60 s goal: not met on this measurement.** With Faster (`fast`) the whole render took 57.6 s at best and 61.8 s
-median on a PC 60 to 100 % busy; the series' own setting took 94.9 s best and 105.2 s median in the same rounds. On a
-quieter PC Faster is expected under 60 s (the default ran about 20 s quicker in milestone 1 than here), but that was
-not measured, so this document does not claim it.
+median on a PC 60 to 100 % busy; the series' own setting took 94.9 s best and 105.2 s median in the same rounds. The
+default ran 13 to 22 s quicker in milestone 1 than here (best against best 81.4 against 94.9 s; median against median
+82.9 against 105.2 s), so Faster may be under 60 s on a quiet PC; that was not measured.
 
-**The saving, for the Settings line (Task 13).** Median against median in the same rounds, 105.2 - 61.8 = 43.4 s; best
-against best, 94.9 - 57.6 = 37.3 s. Rounded to the nearest 5 s: **about 40 seconds a video** (between the two).
-Faster's file is **about a quarter larger** (75.4 MB against 59.3 MB), which is more than "slightly".
+**The saving, for the Settings line (Task 13): no number of seconds yet.** On this busy PC Faster took about 60 % of
+the default's time (median 61.8 against 105.2 s, best 57.6 against 94.9 s). That ratio is all these runs support; a
+figure in seconds is added only after a quiet-PC re-measure (three runs each of `best` and `fast`, median against
+median, rounded to the nearest 5 s), which the controller schedules. Until then the Settings description is: "Best
+quality is the series' own setting. Faster makes the video sooner and the file about a quarter larger." Faster's file
+is about a quarter larger (75.4 MB against 59.3 MB, +27 %).
 
-**Re-measuring.** At a quiet moment, three runs each of `best` and `fast` (about 8 minutes) would give the quiet-PC
-figure and settle the 60 s question; changing the preset later is the constant `FASTER_PRESET` in
+**Re-measuring.** That quiet-PC run (about 8 minutes) gives the figure in seconds and settles the 60 s question;
+changing the preset later is the constant `FASTER_PRESET` in
 `studio/crates/bf-export/src/encode.rs` and a re-bless of the `clip0-90-faster.mp4` line of
 `studio/replay/encode_hashes.txt` (`BF_BLESS=1 cargo test --release -p bf-cli --test e2e -- --exact
 the_faster_clip_is_pinned` with the pinned ffmpeg).
