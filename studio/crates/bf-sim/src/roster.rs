@@ -58,9 +58,9 @@ pub struct StrikerCfg {
     pub style: String,
     /// Beats between strikes on the 16th grid (`int(round(4 * every))` 16ths; haste divides it).
     pub every: f64,
-    /// A basket drops every `int(drop_every)` beats.
+    /// A basket drops every `int(drop_every)` beats; a roster entry must give at least 1.
     pub drop_every: f64,
-    /// At most `int(max_baskets)` baskets; the oldest is taken back for a new one.
+    /// At most `int(max_baskets)` baskets, at least 1 in a roster entry; the oldest is taken back for a new one.
     pub max_baskets: f64,
     /// Beats a cobra takes to rise out of its basket.
     pub rise: f64,
@@ -335,6 +335,17 @@ impl Entry<'_> {
         self.number(self.get(obj, prefix, key)?, &join(prefix, key))
     }
 
+    /// A number `fight.py` uses as a count, `int(w[key])`: its whole part must be at least 1. (With a count of 0 the
+    /// Python fight raises in its first beat; a negative one means nothing.) The number itself is kept as written.
+    fn count(&self, obj: &Json, prefix: &str, key: &str, why: &str) -> Result<f64, RosterError> {
+        let x = self.f64(obj, prefix, key)?;
+        // `x as i64` truncates toward zero, as `int()` does
+        if (x as i64) < 1 {
+            return Err(self.err(&join(prefix, key), format!("{x} is less than 1 ({why})")));
+        }
+        Ok(x)
+    }
+
     /// `w.get(key, default)`.
     fn f64_or(&self, obj: &Json, prefix: &str, key: &str, default: f64) -> Result<f64, RosterError> {
         match obj.get(key) {
@@ -388,8 +399,8 @@ impl Entry<'_> {
                 Ok(WeaponCfg::Striker(StrikerCfg {
                     style,
                     every: self.f64(w, p, "every")?,
-                    drop_every: self.f64(w, p, "drop_every")?,
-                    max_baskets: self.f64(w, p, "max_baskets")?,
+                    drop_every: self.count(w, p, "drop_every", "a basket drops every that many beats")?,
+                    max_baskets: self.count(w, p, "max_baskets", "there must be room for a basket")?,
                     rise: self.f64(w, p, "rise")?,
                     base: self.f64_or(w, p, "base", 0.0)?,
                     grow: self.f64(w, p, "grow")?,
@@ -757,6 +768,59 @@ mod tests {
         assert_eq!(
             parse_roster(r#"{"fighters": []}"#).unwrap_err().to_string(),
             "roster: roster.json: no format, this app reads 1"
+        );
+    }
+
+    /// A striker drops a basket every `int(drop_every)` beats and keeps `int(max_baskets)`: with a whole part
+    /// below 1 the Python fight raises in its first beat (a remainder by zero, a pop from an empty list), so such an
+    /// entry is refused when the roster is read.
+    #[test]
+    fn a_striker_needs_a_beat_count_and_room_for_a_basket() {
+        let load = |key: &str, value: f64| FighterCfg::from_json(&weapon_with("FLUTE", key, Some(Json::from(value))));
+        for (key, value, why) in [
+            ("drop_every", 0.0, "a basket drops every that many beats"),
+            ("drop_every", 0.5, "a basket drops every that many beats"),
+            ("drop_every", -4.0, "a basket drops every that many beats"),
+            ("max_baskets", 0.0, "there must be room for a basket"),
+            ("max_baskets", 0.99, "there must be room for a basket"),
+            ("max_baskets", -1.0, "there must be room for a basket"),
+        ] {
+            assert_eq!(
+                load(key, value).unwrap_err().to_string(),
+                format!("roster: FLUTE: weapon.{key}: {value} is less than 1 ({why})")
+            );
+        }
+        // the whole part counts, as Python's int(): 1.9 beats is every beat, 1.5 baskets is one basket
+        for (key, value) in [
+            ("drop_every", 1.0),
+            ("drop_every", 1.9),
+            ("max_baskets", 1.5),
+            ("max_baskets", 7.0),
+        ] {
+            let WeaponCfg::Striker(w) = load(key, value).expect("loads").weapon else {
+                panic!("a striker")
+            };
+            // the number is kept as written
+            assert_eq!(
+                if key == "drop_every" {
+                    w.drop_every
+                } else {
+                    w.max_baskets
+                },
+                value
+            );
+        }
+        // a whole number in the file is read the same way
+        let raw = weapon_with("FLUTE", "max_baskets", Some(Json::from(0)));
+        assert_eq!(
+            FighterCfg::from_json(&raw).unwrap_err().to_string(),
+            "roster: FLUTE: weapon.max_baskets: 0 is less than 1 (there must be room for a basket)"
+        );
+        // and a missing one is still named as missing
+        let raw = weapon_with("FLUTE", "drop_every", None);
+        assert_eq!(
+            FighterCfg::from_json(&raw).unwrap_err().to_string(),
+            "roster: FLUTE: weapon.drop_every: missing"
         );
     }
 

@@ -5,7 +5,8 @@
 //! reader serves both: `P` and `V` are (frames, 2, 2) floats; `TH`, `BL`, `HP`, `SH`, `HA`, `SPIN`, `OM` (frames, 2)
 //! floats; `FR`, `NV`, `LV` (frames, 2) whole numbers; `K` (frames, 72, 7) floats, NaN where there is no projectile;
 //! `WAVES` and `SLAMS` ragged lists. `EXT`, `SLW` and `CRV` (frames, 2) are there when a fighter thrusts, curves or
-//! slows ([`Fight::uses_ext`]). A weapon kind adds its own keys when a fighter has it.
+//! slows ([`Fight::uses_ext`]). A weapon kind adds its own keys when a fighter has it: `COB`, a ragged list of the
+//! baskets and cobras, when a fighter is a striker.
 
 use std::collections::BTreeMap;
 
@@ -14,6 +15,7 @@ use bf_core::recording::{Array, RECORDING_FORMAT, Recording, Source};
 
 use crate::fight::Fight;
 use crate::geom;
+use crate::kinds::striker;
 
 /// `KMAX`: the most projectiles a frame records.
 pub(crate) const KMAX: usize = 72;
@@ -43,17 +45,18 @@ pub(crate) struct Frames {
     slams: Vec<Value>,
     /// `EXT`, `SLW`, `CRV`: only when a fighter thrusts, curves or slows.
     ext: Option<[Vec<f64>; 3]>,
-    // SLOT (Task 12): `cob: Option<Vec<Value>>`, the `COB` key, `Some` when a fighter is a striker (fight.py 5773 to
-    // 5774). Later kinds add their keys the same way: an `Option` that is `Some` exactly when Python's `rec` has the
-    // key.
+    /// `COB`: the baskets and cobras, only when a fighter is a striker (`fight.py` 5773 to 5774).
+    cob: Option<Vec<Value>>,
+    // Later kinds add their keys the same way: an `Option` that is `Some` exactly when Python's `rec` has the key.
 }
 
 impl Frames {
     /// The empty record of a fight: the keys `run()` starts `rec` with (`fight.py` 5737), plus the opt-in keys this
-    /// fight's fighters bring (5779 to 5780).
+    /// fight's fighters bring (`COB`, 5773 to 5774; `EXT`, `SLW` and `CRV`, 5779 to 5780).
     pub(crate) fn new(fight: &Fight) -> Frames {
         Frames {
             ext: fight.uses_ext.then(Default::default),
+            cob: (0..2).any(|k| striker::is_striker(fight, k)).then(Vec::new),
             ..Frames::default()
         }
     }
@@ -111,8 +114,24 @@ impl Frames {
         });
         self.slams.push(Value::List(slams.collect()));
         // fight.py 5520 to 5521: `RAD` (inflate). Kind not ported.
-        // SLOT (Task 12), 5522 to 5524: `COB`, for each fighter the list of its baskets as
-        // [id, home x, home y, cobra x, cobra y, t_drop].
+        if let Some(cob) = &mut self.cob {
+            // #32 v2, 5522 to 5524: for each fighter the list of its baskets (none for a fighter without `baskets`),
+            // each (id, home x, home y, cobra x, cobra y, t_drop)
+            let sides = fight.striker.iter().map(|st| {
+                let baskets = st.iter().flat_map(|st| &st.baskets).map(|bk| {
+                    Value::List(vec![
+                        Value::Int(bk.id),
+                        Value::Float(bk.home[0]),
+                        Value::Float(bk.home[1]),
+                        Value::Float(bk.cp[0]),
+                        Value::Float(bk.cp[1]),
+                        Value::Float(bk.t_drop),
+                    ])
+                });
+                Value::List(baskets.collect())
+            });
+            cob.push(Value::List(sides.collect()));
+        }
         if let Some([ext, slw, crv]) = &mut self.ext {
             // #34, only recorded when a fighter uses the options
             for b in &fight.balls {
@@ -170,6 +189,9 @@ impl Frames {
         );
         put("WAVES", Array::Nested(Value::List(self.waves)));
         put("SLAMS", Array::Nested(Value::List(self.slams)));
+        if let Some(cob) = self.cob {
+            put("COB", Array::Nested(Value::List(cob)));
+        }
         if let Some([ext, slw, crv]) = self.ext {
             put("EXT", pair(ext));
             put("SLW", pair(slw));
@@ -268,7 +290,8 @@ mod tests {
         assert_eq!((&a["WAVES"], &a["SLAMS"]), (&empty, &empty));
     }
 
-    /// Fighters that neither thrust, curve nor slow have no `EXT`, `SLW`, `CRV`.
+    /// Fighters that neither thrust, curve nor slow have no `EXT`, `SLW`, `CRV`, and without a striker there is no
+    /// `COB`.
     #[test]
     fn the_opt_in_keys_follow_the_fighters() {
         let bare = testing::bare_pair();
@@ -282,6 +305,64 @@ mod tests {
             [
                 "BL", "FR", "HA", "HP", "K", "LV", "NV", "OM", "P", "SH", "SLAMS", "SPIN", "TH", "V", "WAVES"
             ]
+        );
+        // FLUTE against TROMBONE has the 19 keys of the Python recordings
+        let roster = testing::roster();
+        let fight = Fight::new(&testing::episode_setup(&roster, 1), true);
+        let mut frames = Frames::new(&fight);
+        frames.snap(&fight);
+        let a = frames.into_arrays();
+        let py = testing::python_recording("seed1.bfrec");
+        assert_eq!(a.keys().collect::<Vec<_>>(), py.arrays.keys().collect::<Vec<_>>());
+        assert_eq!(a.len(), 19);
+    }
+
+    /// `COB`: per frame, for each fighter the list of its baskets, each `[id, home x, home y, cobra x, cobra y,
+    /// t_drop]` with the id a whole number; a fighter without baskets (the TROMBONE; the FLUTE before the fight loop
+    /// has set it up) has an empty list.
+    #[test]
+    fn cob_lists_each_fighters_baskets() {
+        use crate::kinds::striker::{Basket, setup};
+        use Value::{Float as F, Int as I, List as L};
+        let roster = testing::roster();
+        let ep = testing::episode_setup(&roster, 1);
+        // TROMBONE on the left, so the baskets are the second list
+        let swapped = crate::Setup {
+            fighters: [ep.fighters[1], ep.fighters[0]],
+            ..ep
+        };
+        let mut fight = Fight::new(&swapped, true);
+        let mut frames = Frames::new(&fight);
+        frames.snap(&fight); // the ball has no `baskets` yet
+        setup(&mut fight, 1);
+        frames.snap(&fight); // none on the floor
+        let st = fight.striker[1].as_mut().expect("set up");
+        st.baskets.push(Basket {
+            id: 3,
+            home: [0.5, -0.25],
+            cp: [0.5, -0.25],
+            t_drop: 8.97156862745098,
+            strike: None,
+            down: None,
+        });
+        st.baskets.push(Basket {
+            id: 4,
+            home: [1.5, 2.0],
+            cp: [1.25, 1.75], // out dancing
+            t_drop: 10.77156862745098,
+            strike: None,
+            down: Some(11.0),
+        });
+        frames.snap(&fight);
+        let a = frames.into_arrays();
+        let none = || L(vec![L(vec![]), L(vec![])]);
+        let rows = L(vec![
+            L(vec![I(3), F(0.5), F(-0.25), F(0.5), F(-0.25), F(8.97156862745098)]),
+            L(vec![I(4), F(1.5), F(2.0), F(1.25), F(1.75), F(10.77156862745098)]),
+        ]);
+        assert_eq!(
+            a["COB"],
+            Array::Nested(L(vec![none(), none(), L(vec![L(vec![]), rows])]))
         );
     }
 

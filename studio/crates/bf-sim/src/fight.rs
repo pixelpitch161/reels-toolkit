@@ -20,6 +20,7 @@ use bf_core::rng::Generator;
 
 use crate::ball::{Ball, Slot};
 use crate::geom::{self, V2};
+use crate::kinds::striker::Striker;
 use crate::record;
 use crate::roster::{AbilityKind, FighterCfg, SlowCfg, WeaponCfg};
 use crate::rules::{Rules, SimError};
@@ -117,9 +118,13 @@ pub struct Fight<'a> {
     pub winner: Option<usize>,
     /// The time of the K.O.
     pub t_ko: Option<f64>,
-    // SLOT (Tasks 12 to 14): each kind's own state, as `pub <kind>: [Option<...>; 2]` or `Option<...>`, `None` when
-    // no fighter has the kind. `fight.py` lines 286 to 312 list the Python fields (projectile arrays, arcs, beams,
-    // hazards, ...); FLUTE and TROMBONE need none of those, only the striker's baskets (set in `striker_setup`).
+    /// Each striker's baskets and cobras, by fighter (`B.baskets`, `B.next_bk`, `B.dance_until`, `B.t_strike`):
+    /// `None` for a fighter that is not a striker, and for every fighter until the fight loop sets the kinds up
+    /// ([`crate::kinds::striker::setup`]), as the Python ball has no `baskets` before `striker_setup`.
+    pub striker: [Option<Striker>; 2],
+    // SLOT (Tasks 13 to 14): each further kind's own state, as `pub <kind>: [Option<...>; 2]` or `Option<...>`,
+    // `None` when no fighter has the kind. `fight.py` lines 286 to 312 list the Python fields (projectile arrays,
+    // arcs, beams, hazards, ...); FLUTE and TROMBONE need none of those.
 }
 
 impl<'a> Fight<'a> {
@@ -173,6 +178,17 @@ impl<'a> Fight<'a> {
             t: 0.0,
             winner: None,
             t_ko: None,
+            striker: [None, None],
+        }
+    }
+
+    /// `ab_mult(k)` (`fight.py` 2827 to 2828): how many times faster fighter `k`'s weapon grid runs: its
+    /// `haste_mult` while its haste lasts, else 1.0.
+    pub fn ab_mult(&self, k: usize) -> f64 {
+        if self.balls[k].haste > 0.0 {
+            self.balls[k].haste_mult
+        } else {
+            1.0
         }
     }
 
@@ -727,6 +743,20 @@ mod tests {
         fight.abilities_step(true);
         assert!(fight.balls[0].low_done);
         assert!(!fight.balls[1].low_done);
+    }
+
+    /// `ab_mult`: the haste factor counts only while haste lasts, and only for the hasted fighter.
+    #[test]
+    fn ab_mult_is_the_haste_factor_while_haste_lasts() {
+        let bare = testing::bare_pair();
+        let mut fight = Fight::new(&testing::bare_setup(&bare, 1), false);
+        assert_eq!((fight.ab_mult(0), fight.ab_mult(1)), (1.0, 1.0));
+        fight.balls[1].haste_mult = 2.0;
+        assert_eq!(fight.ab_mult(1), 1.0, "a factor without haste time left does nothing");
+        fight.balls[1].haste = 0.25;
+        assert_eq!((fight.ab_mult(0), fight.ab_mult(1)), (1.0, 2.0));
+        fight.balls[1].haste = 0.0;
+        assert_eq!(fight.ab_mult(1), 1.0);
     }
 
     /// A free ball flies straight at the shared speed. (The step divides by `norm + 1e-12`, so the speed is the

@@ -7,3 +7,8 @@ publish.workspace = true
 
 [dependencies]
 bf-core.workspace = true
+
+# The reader for studio/reference (dev support only) and the sidecars' JSON values.
+[dev-dependencies]
+bf-testdata = { path = "../bf-testdata" }
+serde_json.workspace = true

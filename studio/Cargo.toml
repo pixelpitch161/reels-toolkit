@@ -10,6 +10,7 @@ members = [
     "crates/bf-export",
     "crates/bf-cli",
     "crates/bf-testdata",
+    "crates/bf-app",
 ]
 
 [workspace.package]
@@ -27,6 +28,7 @@ bf-picture = { path = "crates/bf-picture" }
 bf-sound = { path = "crates/bf-sound" }
 bf-content = { path = "crates/bf-content" }
 bf-export = { path = "crates/bf-export" }
+bf-app = { path = "crates/bf-app" }
 
 # The tech stack. Crates opt in with `name.workspace = true`; all of these are pure Rust.
 clap = { version = "4.6.7", features = ["derive"] }
@@ -41,6 +43,15 @@ sha2 = "0.11.1"
 toml = "1.2.1"
 # Deflate only (flate2 on zlib-rs, plus zopfli for writing): no C libraries.
 zip = { version = "9.5.0", default-features = false, features = ["deflate"] }
+
+# The app (bf-app) only: window, interface, sound out, folder dialog, folders, local dates. Pinned exactly.
+chrono = { version = "=0.4.45", default-features = false, features = ["clock", "std"] }
+cpal = "=0.18.2"
+directories = "=6.0.0"
+eframe = { version = "=0.37.0", default-features = false, features = ["wgpu", "accesskit", "clipboard", "system_fonts", "x11", "wayland"] }
+egui = { version = "=0.37.0", default-features = false }
+egui_kittest = { version = "=0.37.0", features = ["snapshot", "wgpu", "eframe"] }
+rfd = "=0.18.0"
 
 [profile.release]
 opt-level = 3
