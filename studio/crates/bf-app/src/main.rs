@@ -42,13 +42,16 @@ impl eframe::App for Smoke {
 
 fn main() -> std::process::ExitCode {
     let smoke = std::env::args().skip(1).any(|arg| arg == "--smoke");
-    let options = eframe::NativeOptions {
+    let mut options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
             .with_title("BALLFIGHT Studio")
             .with_inner_size([1440.0, 900.0])
             .with_min_inner_size([1280.0, 800.0]),
         ..Default::default()
     };
+    // DirectX 12 alone where the PC has a DirectX 12 card, so overlay and capture hooks that ride on Vulkan and
+    // OpenGL stay out of the Studio (see `app::prefer_dx12`).
+    app::prefer_dx12(&mut options.wgpu_options);
     // A smoke run never touches the owner's own settings folder or sound device: its files go in a folder of its
     // own under the system temp folder, removed when the window has closed, and it has no sound.
     let smoke_root = smoke.then(|| std::env::temp_dir().join(format!("bf-smoke-{}", std::process::id())));

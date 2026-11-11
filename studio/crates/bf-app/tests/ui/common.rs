@@ -39,6 +39,26 @@ fn require_gpu() {
     assert!(is_held(&GPU) && mine, "take common::gpu() first");
 }
 
+/// The wgpu setup of every test that draws: kittest's own (it picks the software adapter), with only the DirectX 12
+/// backend started on Windows, where that adapter (Microsoft Basic Render Driver) is a DirectX 12 one anyway.
+///
+/// Why: the default set also starts Vulkan and OpenGL in every harness, and the Vulkan loader then pulls every
+/// overlay and capture hook registered on the PC (Overwolf, OBS, Steam, Epic) and more driver DLLs into the test
+/// process, though nothing draws through them. One of them is the suspect (not proven, Task 24d) for the rare
+/// non-zero exit after every test had passed. This cannot hide a test failure: it only narrows which graphics
+/// libraries are loaded, and the adapter the tests draw on is the same. `WGPU_BACKEND`, when set, still wins, and
+/// other systems (lavapipe on Linux is Vulkan) keep the default set.
+pub fn wgpu_setup() -> eframe::egui_wgpu::WgpuSetup {
+    let mut setup = egui_kittest::wgpu::default_wgpu_setup();
+    if let eframe::egui_wgpu::WgpuSetup::CreateNew(new) = &mut setup
+        && cfg!(windows)
+        && eframe::egui_wgpu::wgpu::Backends::from_env().is_none()
+    {
+        new.instance_descriptor.backends = eframe::egui_wgpu::wgpu::Backends::DX12;
+    }
+    setup
+}
+
 /// The whole app in a window of `size`: edge to edge, one pixel per point, no cursor drawn, drawn with wgpu.
 pub fn app_harness<'a>(
     size: (f32, f32),
@@ -49,7 +69,7 @@ pub fn app_harness<'a>(
         .with_size(egui::Vec2::new(size.0, size.1))
         .with_pixels_per_point(1.0)
         .with_render_cursor(false)
-        .wgpu()
+        .wgpu_setup(wgpu_setup())
         .build_eframe(make)
 }
 
@@ -60,7 +80,7 @@ pub fn widget_harness<'a>(size: (f32, f32), ui: impl FnMut(&mut egui::Ui) + 'a) 
         .with_size(egui::Vec2::new(size.0, size.1))
         .with_pixels_per_point(1.0)
         .with_render_cursor(false)
-        .wgpu()
+        .wgpu_setup(wgpu_setup())
         .with_context_setup(bf_app::theme::install)
         .build_ui(ui)
 }

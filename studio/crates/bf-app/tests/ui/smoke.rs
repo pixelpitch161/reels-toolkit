@@ -8,7 +8,7 @@ use crate::common::{REF, app_harness, gpu, pixels, widget_harness};
 fn the_test_adapter_is_software() {
     let _gpu = gpu();
     let state = egui_kittest::wgpu::create_render_state(
-        egui_kittest::wgpu::default_wgpu_setup(),
+        crate::common::wgpu_setup(),
         eframe::egui_wgpu::RendererOptions::PREDICTABLE,
     );
     let info = state.adapter.get_info();
