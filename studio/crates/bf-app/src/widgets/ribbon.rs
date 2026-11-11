@@ -101,9 +101,22 @@ pub fn curve(story: &StoryView) -> Vec<(f32, f32)> {
     points
 }
 
-/// Whether a ribbon can be drawn in `rect`: finite, with some width and some height.
+/// Whether a ribbon can be drawn in `rect`: finite, with a finite width and height above zero (a rect from
+/// `-f32::MAX` to `f32::MAX` is finite but its width is not).
 fn usable(rect: Rect) -> bool {
-    rect.is_finite() && rect.width() > 0.0 && rect.height() > 0.0
+    let size = rect.size();
+    rect.is_finite() && size.x.is_finite() && size.y.is_finite() && size.x > 0.0 && size.y > 0.0
+}
+
+/// The top of the 1 px centre line's pixel row in `rect`: the row the middle of `rect` falls in.
+fn line_top(rect: Rect) -> f32 {
+    (rect.center().y - 0.5).round()
+}
+
+/// The y the fills grow from: the middle of the centre line's pixel row, so the fills' base and the line always lie
+/// on the same row of pixels, whatever the ribbon's height.
+fn centre_y(rect: Rect) -> f32 {
+    (line_top(rect) + 0.5).clamp(rect.min.y, rect.max.y)
 }
 
 /// Adds one quad from `left` to `right`, between the centre line and the heights `y_left` and `y_right`.
@@ -128,7 +141,7 @@ pub fn mesh(story: &StoryView, rect: Rect, colors: [Color32; 2]) -> Mesh {
         return mesh;
     }
     let points = curve(story);
-    let centre = rect.center().y;
+    let centre = centre_y(rect);
     let mid = rect.height() / 2.0;
     let x = |t: f32| x_of(t, rect.min.x, rect.width()).clamp(rect.min.x, rect.max.x);
     // The height above the line (positive) or below it (negative).
@@ -183,7 +196,7 @@ fn paint_in(painter: &Painter, rect: Rect, story: &StoryView, fills: [Color32; 2
         let window = Rect::from_x_y_ranges(x(KO_WINDOW.0)..=x(KO_WINDOW.1), rect.y_range());
         painter.rect_filled(window.intersect(rect), 0.0, RAISED);
     }
-    let line_top = (rect.center().y - 0.5).round();
+    let line_top = line_top(rect);
     let line = Rect::from_x_y_ranges(rect.x_range(), line_top..=line_top + 1.0);
     painter.rect_filled(line.intersect(rect), 0.0, LINE);
     let fill = mesh(story, rect, fills);
@@ -261,7 +274,7 @@ mod tests {
     fn check(mesh: &Mesh, rect: Rect, colors: [Color32; 2]) {
         assert!(mesh.is_valid(), "every index points at a vertex");
         assert_eq!(mesh.indices.len() % 3, 0);
-        let centre = rect.center().y;
+        let centre = centre_y(rect);
         for v in &mesh.vertices {
             assert!(v.pos.x.is_finite() && v.pos.y.is_finite(), "{:?}", v.pos);
             assert!(rect.contains(v.pos), "{:?} outside {rect:?}", v.pos);
@@ -337,7 +350,7 @@ mod tests {
         let mesh = mesh(&story(), rect(), colors);
         assert_eq!(mesh.indices.len() / 3, 2 * 3 * 2);
         check(&mesh, rect(), colors);
-        let centre = rect().center().y;
+        let centre = centre_y(rect());
         let top = mesh.vertices.iter().map(|v| v.pos.y).fold(f32::INFINITY, f32::min);
         let bottom = mesh.vertices.iter().map(|v| v.pos.y).fold(f32::NEG_INFINITY, f32::max);
         assert!((top - (centre - 6.5)).abs() < 1e-4, "21 HP is half of 13: {top}");
@@ -351,7 +364,7 @@ mod tests {
         let rect = rect();
         let mesh = mesh(&story(), rect, [FLUTE, TROMBONE]);
         let x15 = x_of(15.0, rect.min.x, rect.width());
-        let centre = rect.center().y;
+        let centre = centre_y(rect);
         let at_crossing = mesh
             .vertices
             .iter()
@@ -380,7 +393,7 @@ mod tests {
         assert_eq!(curve(&story), vec![(3.6, 0.0), (51.0, 0.0)]);
         let mesh = mesh(&story, rect(), [FLUTE, TROMBONE]);
         check(&mesh, rect(), [FLUTE, TROMBONE]);
-        let centre = rect().center().y;
+        let centre = centre_y(rect());
         assert!(mesh.vertices.iter().all(|v| v.pos.y == centre), "no fill");
     }
 
@@ -540,9 +553,32 @@ mod tests {
             Rect::from_min_max(pos2(10.0, 20.0), pos2(f32::INFINITY, 48.0)),
             Rect::NOTHING,
             Rect::EVERYTHING,
+            Rect::from_min_max(pos2(-f32::MAX, 20.0), pos2(f32::MAX, 48.0)),
+            Rect::from_min_max(pos2(10.0, -f32::MAX), pos2(410.0, f32::MAX)),
         ];
         for rect in rects {
             assert!(mesh(&story(), rect, [FLUTE, TROMBONE]).is_empty(), "{rect:?}");
+        }
+    }
+
+    #[test]
+    fn the_fills_grow_from_the_centre_line_row() {
+        let story = StoryView {
+            lead: Vec::new(),
+            ..story()
+        };
+        for rect in [
+            rect(),
+            Rect::from_min_size(pos2(-50.0, 3.0), vec2(1320.0, 41.0)),
+            Rect::from_min_size(pos2(0.0, 7.0), vec2(400.0, 27.0)),
+            Rect::from_min_size(pos2(0.0, 7.25), vec2(400.0, 28.5)),
+        ] {
+            let row = (rect.center().y - 0.5).round();
+            let mesh = mesh(&story, rect, [FLUTE, TROMBONE]);
+            assert!(!mesh.is_empty());
+            for v in &mesh.vertices {
+                assert_eq!(v.pos.y, row + 0.5, "the base lies in the line's row {row} in {rect:?}");
+            }
         }
     }
 
@@ -551,6 +587,6 @@ mod tests {
         let rect = Rect::from_min_size(pos2(0.0, 0.0), vec2(400.0, 1.5));
         let mesh = mesh(&story(), rect, [FLUTE, TROMBONE]);
         check(&mesh, rect, [FLUTE, TROMBONE]);
-        assert!(mesh.vertices.iter().all(|v| v.pos.y == rect.center().y));
+        assert!(mesh.vertices.iter().all(|v| v.pos.y == centre_y(rect)));
     }
 }
