@@ -1,8 +1,48 @@
 # bf-pack
 
-Everything about files on disk outside the app's own data: the ffmpeg that BALLFIGHT Studio ships, and its checked
-download. Later tasks of milestone 6 add the package folder, the install, the shortcuts and removal here
-(`package.rs`, `install.rs`, `remove.rs`, `config.rs`, `version.rs` are declared and still empty).
+Everything about files on disk outside the app's own data: the ffmpeg that BALLFIGHT Studio ships and its checked
+download (`ffmpeg.rs`, `fetch.rs`), the package folder (`package.rs`), the install and its shortcuts
+(`install.rs`), removal (`remove.rs`), `update.toml` (`config.rs`) and version numbers (`version.rs`).
+
+## The package, the install and removal
+
+```
+ballfight-pack package --exe <ballfight-studio.exe> --out <new folder> [--from <checkout>] [--cache <folder>]
+ballfight-pack install --exe <ballfight-studio.exe> --from <owner's clone> [--root <folder>] [--cache <folder>]
+```
+
+- **The package** is the program folder as installed: `ballfight-studio.exe`, `ballfight.ico` (from
+  `studio/crates/bf-app/assets/icon`), `ffmpeg\` (the pinned files and ABOUT.txt, from the cache), `guide\` (from
+  `studio/packaging/guide`, when there is one) and `MANIFEST.txt`, which lists every other file with its size and
+  SHA-256 (first line `BALLFIGHT Studio package manifest 1`, then `version <v>`, then `<sha256> <bytes> <path>`).
+  The out folder must be new or empty and outside any cargo build folder. Packaging never downloads: ffmpeg must
+  already be in the cache (default `%LOCALAPPDATA%\BALLFIGHT Studio\data\downloads`; fill it with `fetch-ffmpeg`).
+- **The install** (decision D2: a plain per-user folder, no installer, no admin rights, nothing in the registry)
+  packages into a temp folder, makes the app's own copy of the source for updates (`git clone --no-checkout` of the
+  clone's `origin` into `<data>\source`; an address with a user name or password is refused without repeating it),
+  copies the package into `BALLFIGHT Studio.installing` beside the program folder, checks every file, and only
+  then puts it in place: one rename for a fresh install; over an earlier install, each file the earlier manifest
+  lists moves into `.previous` and each new file moves in, all undone if any move fails. It refuses while the app
+  runs ("Close BALLFIGHT Studio first."), over a folder without our manifest, and when a new file would land on a
+  file a person put there. Then it writes `update.toml` and the two shortcuts. `--root <folder>` puts everything
+  (program folder, Start menu, desktop, data) inside that folder instead.
+- **Where** (`install::Layout::system()`): `%LOCALAPPDATA%\Programs\BALLFIGHT Studio`,
+  `%APPDATA%\Microsoft\Windows\Start Menu\Programs\BALLFIGHT Studio.lnk`, `<Desktop>\BALLFIGHT Studio.lnk`
+  (Windows' own desktop folder, which follows OneDrive), data in `%LOCALAPPDATA%\BALLFIGHT Studio\data`.
+- **Shortcuts** are written by `install::lnk`, a small writer of the shell link format (MS-SHLLINK): the target's
+  item id list comes from Windows itself (`SHParseDisplayName`, on a thread of its own), everything else is plain
+  code. No PowerShell, no `cmd`, no COM interface tables. An existing shortcut of that name is replaced only when it
+  already opens the installed exe.
+- **Removal** (`remove::schedule_removal`, for Settings) deletes only what an install wrote, file by file from the
+  manifest, each file only while its SHA-256 still matches: the program folder's listed files, `update.toml`,
+  `MANIFEST.txt`, the same inside `.previous` and `.next`, the two shortcuts when they open the installed exe, and
+  then each folder that is left empty. It never deletes a folder with what is in it, never follows a link, and
+  refuses a folder without our manifest, one not named `BALLFIGHT Studio`, a drive root, the user's own folder and
+  the data folder. Files a person added stay. **Kept:** settings and the queue (`%APPDATA%\BALLFIGHT Studio`), the
+  whole of `%LOCALAPPDATA%\BALLFIGHT Studio` (cache, logs and fault reports, and the rebuildable source copy,
+  builds and downloads) and every video. Since the app cannot delete its own running exe, the removal is done by one
+  hidden Windows PowerShell with a fixed script (`remove::REMOVAL_SCRIPT`, passed encoded), which waits for the app
+  to end and works through a list file; the paths are never part of the script or its command line.
 
 ## The ffmpeg pin
 

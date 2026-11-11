@@ -560,9 +560,11 @@ name = "bf-pack"
 version = "0.1.0"
 dependencies = [
  "clap",
+ "directories",
  "serde",
  "sha2",
  "toml",
+ "windows-sys 0.61.2",
  "zip",
 ]
 
