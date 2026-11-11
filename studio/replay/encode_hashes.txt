@@ -1,0 +1,9 @@
+# The SHA-256 of the mp4 that `ballfight render` writes for the example episode (FLUTE against TROMBONE,
+# studio/fights/flute_vs_trombone.toml, recording studio/reference/fights/flute_vs_trombone/ep392.bfrec) with the
+# pinned ffmpeg (studio/packaging/ffmpeg.toml): clip0-90.mp4 is `--frames 0:90`, video.mp4 the whole video. The
+# `ffmpeg` line is the first line that ffmpeg's `-version` prints; the bytes of an mp4 depend on the ffmpeg build,
+# so the hashes are compared only when the ffmpeg in use is the pinned one. Written by crates/bf-cli/tests/e2e.rs
+# (the_encode_is_pinned, the_whole_video_is_pinned) with BF_BLESS=1 on the Windows reference PC. Do not edit by hand.
+# file sha256
+ffmpeg ffmpeg version 9.0.2-full_build-www.gyan.dev Copyright (c) 2000-2026 the FFmpeg developers
+clip0-90.mp4 2a647d2919ab318d7b5bcf6966c099f71e8f13e1d2c3b646d3420f1b9470a07b
