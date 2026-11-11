@@ -2,8 +2,10 @@
 //! (a graphics card that draws with DirectX 12, ffmpeg, the output folder, the app's own data folders).
 //!
 //! Every check returns what it found, as a kind and in words ([`Found`]); what to show, and whether to go on, is
-//! the caller's (the start-up wiring in `main.rs`). A check never panics, never deletes or overwrites anything, and
-//! writes nothing outside the app's data folders except one probe file of its own, which it removes at once. A check
+//! the caller's (the start-up wiring in `main.rs`). A check never panics, never overwrites anything, and writes
+//! nothing outside the app's data folders except one probe file of its own, which it removes at once. The only
+//! other thing it deletes is an earlier start's leftover probe in a data folder it checks (an empty plain file named
+//! `.bf-start-check-<digits>-<digits>.tmp`, see `remove_leftover_probes`). A check
 //! that asks the system runs on a thread of its own and is waited for at most a fixed time (the `*_WAIT`
 //! constants); a check still running then is answered [`Late::Slow`] and its thread finishes by itself later.
 //!
@@ -30,6 +32,10 @@ pub const NO_GRAPHICS: &str = "BALLFIGHT Studio could not open its window, becau
 /// The notice for a window drawn by Windows' software drawing (WARP) rather than a graphics card.
 pub const SOFTWARE_DRAWING: &str = "This PC draws the window without its graphics card, so the preview may be \
     slow. Updating the graphics driver usually fixes this.";
+
+/// What a second start says when another copy holds the lock but has no window to bring forward (it is still
+/// closing, or hung): for when [`bring_forward`] answers false.
+pub const ALREADY_OPEN: &str = "BALLFIGHT Studio is already open or still closing. Wait a moment, then start it again.";
 
 /// The longest [`check_graphics`] waits for Windows to list its DirectX 12 adapters.
 pub const GRAPHICS_WAIT: Duration = Duration::from_secs(10);
@@ -177,12 +183,20 @@ fn wide(text: &str) -> Vec<u16> {
 }
 
 /// Brings the app's window titled `title` to the front, restoring it first when it is minimised (a maximised
-/// window stays maximised). False when no such window is found or Windows refuses. Off Windows, false.
+/// window stays maximised). False when no such window is found or Windows refuses; the caller then shows
+/// [`ALREADY_OPEN`]. Off Windows, false.
+///
+/// It never waits on the other copy: the restore is posted (`ShowWindowAsync`), so a hung, minimised first copy
+/// cannot hang this start; `FindWindowW`, `IsIconic` and `SetForegroundWindow` send the other window no message
+/// that has to be answered.
+///
+/// Accepted: two copies on different data folders (`--data-dir`) share the title, so a second start of one of them
+/// may raise the other's window.
 pub fn bring_forward(title: &str) -> bool {
     #[cfg(windows)]
     {
         use windows_sys::Win32::UI::WindowsAndMessaging::{
-            FindWindowW, IsIconic, SW_RESTORE, SetForegroundWindow, ShowWindow,
+            FindWindowW, IsIconic, SW_RESTORE, SetForegroundWindow, ShowWindowAsync,
         };
         let (class, title) = (wide(WINDOW_CLASS), wide(title));
         // SAFETY: both strings are NUL-terminated and live across the calls; a null window is checked first.
@@ -192,7 +206,7 @@ pub fn bring_forward(title: &str) -> bool {
                 return false;
             }
             if IsIconic(window) != 0 {
-                ShowWindow(window, SW_RESTORE);
+                ShowWindowAsync(window, SW_RESTORE);
             }
             SetForegroundWindow(window) != 0
         }
@@ -272,14 +286,19 @@ pub fn window_graphics(info: &wgpu::AdapterInfo) -> Found<Graphics> {
     )
 }
 
+/// What the graphics check's "no answer" words ask the person to do.
+const RESTART: &str = "Restart the PC, then start BALLFIGHT Studio again.";
+
 /// The words for a graphics check that gave no answer.
 pub fn graphics_late(late: Late) -> Found<Graphics> {
     let words = match late {
         Late::Slow(wait) => format!(
-            "Windows did not say within {} which graphics cards can draw with DirectX 12.",
+            "Windows did not say within {} which graphics cards can draw with DirectX 12. {RESTART}",
             wait_words(wait)
         ),
-        Late::Broke => "The check for a graphics card that draws with DirectX 12 stopped with a fault.".to_string(),
+        Late::Broke => {
+            format!("The check for a graphics card that draws with DirectX 12 stopped with a fault. {RESTART}")
+        }
     };
     Found::new(Graphics::NoAnswer, words)
 }
@@ -308,6 +327,9 @@ pub fn dx12_adapters() -> Vec<wgpu::AdapterInfo> {
     }
     let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
         backends: wgpu::Backends::DX12,
+        // No debug layer or validation, even in a debug build: a listing that ends after the window's device exists
+        // must not change how that device was set up.
+        flags: wgpu::InstanceFlags::empty(),
         ..wgpu::InstanceDescriptor::new_without_display_handle()
     });
     ready(instance.enumerate_adapters(wgpu::Backends::DX12))
@@ -347,8 +369,14 @@ pub enum Ffmpeg {
 
 /// What `bf_export`'s search found, in words: the version and where it came from; for a broken copy (the app's own
 /// or another) `bf_export`'s own sentence, which names the program and what is wrong; for none at all the words the
-/// queue already uses.
-pub fn ffmpeg_found(found: Result<bf_export::Ffmpeg, bf_export::ExportError>) -> Found<Ffmpeg> {
+/// queue already uses, unless `own` names the app's own ffmpeg folder as expected (see [`expected_own_folder`]).
+///
+/// When none was found (bf-export's sentence starts "ffmpeg was not found" or "ffprobe was not found"):
+/// - `own` is `Some(dir)`: "The app's own ffmpeg is missing from {dir}, so no video can be made; install the app
+///   again." (the same sentence bf-export gives when only ffprobe is there);
+/// - `own` is `None`: "ffmpeg was not found on this PC, so videos cannot be saved yet. Install ffmpeg, then start the
+///   app again." (today's words).
+pub fn ffmpeg_found(found: Result<bf_export::Ffmpeg, bf_export::ExportError>, own: Option<&Path>) -> Found<Ffmpeg> {
     match found {
         Ok(f) => {
             let words = match f.source {
@@ -362,7 +390,19 @@ pub fn ffmpeg_found(found: Result<bf_export::Ffmpeg, bf_export::ExportError>) ->
         Err(e) => {
             let said = e.to_string();
             let not_found = said.starts_with("ffmpeg was not found") || said.starts_with("ffprobe was not found");
-            if not_found && !bf_export::is_about_the_apps_own(&said) {
+            if not_found
+                && !bf_export::is_about_the_apps_own(&said)
+                && let Some(dir) = own
+            {
+                Found::new(
+                    Ffmpeg::Missing,
+                    format!(
+                        "The app's own ffmpeg is missing from {}, so no video can be made; {}.",
+                        dir.display(),
+                        bf_export::REINSTALL
+                    ),
+                )
+            } else if not_found && !bf_export::is_about_the_apps_own(&said) {
                 Found::new(
                     Ffmpeg::Missing,
                     "ffmpeg was not found on this PC, so videos cannot be saved yet. Install ffmpeg, then start the \
@@ -393,10 +433,23 @@ pub fn ffmpeg_late(late: Late) -> Found<Ffmpeg> {
 /// own, waiting at most [`FFMPEG_WAIT`]. A search still running then goes on by itself: `bf_export` ends and waits for
 /// each ffmpeg it asks within 20 seconds, two questions at most.
 pub fn check_ffmpeg() -> Found<Ffmpeg> {
+    let program_dir = std::env::current_exe()
+        .ok()
+        .and_then(|exe| exe.parent().map(Path::to_path_buf));
+    let own = program_dir.as_deref().and_then(expected_own_folder);
     match within("startup: ffmpeg", FFMPEG_WAIT, bf_export::find_ffmpeg) {
-        Ok(found) => ffmpeg_found(found),
+        Ok(found) => ffmpeg_found(found, own.as_deref()),
         Err(late) => ffmpeg_late(late),
     }
+}
+
+/// The app's own ffmpeg folder (`bf_export::APP_FFMPEG_DIR` in `program_dir`) when the program is expected to have
+/// one: that folder is there (even empty, which bf-export passes over), or `program_dir` holds the package's
+/// `MANIFEST.txt` (an installed copy, Task 11). `None` for a developer's build without either.
+pub fn expected_own_folder(program_dir: &Path) -> Option<PathBuf> {
+    let dir = program_dir.join(bf_export::APP_FFMPEG_DIR);
+    let there = |p: &Path| fs::symlink_metadata(p).is_ok();
+    (there(&dir) || there(&program_dir.join("MANIFEST.txt"))).then_some(dir)
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -527,7 +580,37 @@ fn remove_patiently(path: &Path) -> io::Result<()> {
     }
 }
 
-/// The data folder check itself: make `dir` when missing, then write and remove a probe file of its own.
+/// Whether `name` is a probe name of some start: ".bf-start-check-", digits, "-", digits, ".tmp".
+fn is_probe_name(name: &str) -> bool {
+    let digits = |s: &str| !s.is_empty() && s.bytes().all(|b| b.is_ascii_digit());
+    name.strip_prefix(".bf-start-check-")
+        .and_then(|rest| rest.strip_suffix(".tmp"))
+        .and_then(|rest| rest.split_once('-'))
+        .is_some_and(|(pid, n)| digits(pid) && digits(n))
+}
+
+/// The most entries of a data folder looked at for leftover probes (the app's data folders hold a few dozen).
+const LEFTOVER_LOOK: usize = 10_000;
+
+/// Removes the probes earlier starts left in `dir` (one that could not delete its own): only plain files (never a
+/// link or a folder) with a probe's name ([`is_probe_name`]) and 0 bytes. Best effort: anything it cannot read or
+/// remove is left as it is.
+fn remove_leftover_probes(dir: &Path) {
+    let Ok(entries) = fs::read_dir(dir) else {
+        return;
+    };
+    for entry in entries.take(LEFTOVER_LOOK).flatten() {
+        let is_probe = entry.file_name().to_str().is_some_and(is_probe_name);
+        // `DirEntry::metadata` does not follow links, so a link is never a plain file here.
+        let empty_file = || entry.metadata().is_ok_and(|m| m.is_file() && m.len() == 0);
+        if is_probe && empty_file() {
+            let _ = fs::remove_file(entry.path());
+        }
+    }
+}
+
+/// The data folder check itself: make `dir` when missing, remove leftover probes of earlier starts, then write and
+/// remove a probe file of its own.
 fn data_folder(dir: &Path) -> Found<Folder> {
     let full = |err: &io::Error| err.kind() == io::ErrorKind::StorageFull;
     if fs::metadata(dir).is_ok_and(|m| !m.is_dir()) {
@@ -543,6 +626,7 @@ fn data_folder(dir: &Path) -> Found<Folder> {
     if let Err(err) = fs::create_dir_all(dir) {
         return Found::new(Folder::NotWritable, data_cannot_write(dir, full(&err)));
     }
+    remove_leftover_probes(dir);
     for n in 0..PROBE_TRIES {
         let path = dir.join(probe_name(n));
         match fs::OpenOptions::new().write(true).create_new(true).open(&path) {
@@ -785,13 +869,15 @@ mod tests {
         assert_eq!(slow.kind, Graphics::NoAnswer);
         assert_eq!(
             slow.words,
-            "Windows did not say within 10 seconds which graphics cards can draw with DirectX 12."
+            "Windows did not say within 10 seconds which graphics cards can draw with DirectX 12. Restart the PC, \
+             then start BALLFIGHT Studio again."
         );
         let broke = graphics_late(Late::Broke);
         assert_eq!(broke.kind, Graphics::NoAnswer);
         assert_eq!(
             broke.words,
-            "The check for a graphics card that draws with DirectX 12 stopped with a fault."
+            "The check for a graphics card that draws with DirectX 12 stopped with a fault. Restart the PC, then \
+             start BALLFIGHT Studio again."
         );
         for found in [none, soft, both, vulkan, slow, broke] {
             reads_plainly(&found.words.replace("AMD Radeon RX 7800 XT", "the card"));
@@ -810,18 +896,28 @@ mod tests {
 
     #[test]
     fn the_texts_read_plainly() {
-        for text in [NO_GRAPHICS, SOFTWARE_DRAWING, &no_window_text(Some(Path::new(REPORT)))] {
+        assert_eq!(
+            ALREADY_OPEN,
+            "BALLFIGHT Studio is already open or still closing. Wait a moment, then start it again."
+        );
+        for text in [
+            NO_GRAPHICS,
+            SOFTWARE_DRAWING,
+            ALREADY_OPEN,
+            &no_window_text(Some(Path::new(REPORT))),
+        ] {
             reads_plainly(text);
         }
         assert_eq!(breaks("Windows did not Offer a card"), ["Offer"], "the rule bites");
     }
 
-    /// Asks this PC (read only): a PC that runs these tests draws, so the answer is a card or software drawing.
+    /// Asks this PC (read only) and prints what it found; any answer passes on Windows.
     #[test]
     fn this_pc_answers_the_graphics_check() {
         let found = check_graphics();
         if cfg!(windows) {
-            assert!(matches!(found.kind, Graphics::Card | Graphics::Software), "{found:?}");
+            // Every answer but "not Windows" is fine here: a PC without DirectX 12 must not fail the test.
+            assert_ne!(found.kind, Graphics::NotWindows, "{found:?}");
         } else {
             assert_eq!(found.kind, Graphics::NotWindows);
         }
@@ -861,7 +957,7 @@ mod tests {
             version: "ffmpeg 9.0.2".to_string(),
             source,
         };
-        let own = ffmpeg_found(Ok(ready(bf_export::FfmpegSource::WithTheApp)));
+        let own = ffmpeg_found(Ok(ready(bf_export::FfmpegSource::WithTheApp)), None);
         assert_eq!(
             own,
             Found {
@@ -869,7 +965,7 @@ mod tests {
                 words: "ffmpeg 9.0.2 comes with the app.".to_string()
             }
         );
-        let pcs = ffmpeg_found(Ok(ready(bf_export::FfmpegSource::Path)));
+        let pcs = ffmpeg_found(Ok(ready(bf_export::FfmpegSource::Path)), None);
         assert_eq!(
             pcs,
             Found {
@@ -881,8 +977,11 @@ mod tests {
         let root = TempRoot::new("ffmpeg words");
         let empty = root.0.join("empty");
         fs::create_dir_all(&empty).unwrap();
-        // Nothing on the PATH: missing.
-        let missing = ffmpeg_found(bf_export::find_ffmpeg_with(None, None, Some(empty.clone().into())));
+        // Nothing on the PATH, and no own folder expected (a developer's build): today's words.
+        let missing = ffmpeg_found(
+            bf_export::find_ffmpeg_with(None, None, Some(empty.clone().into())),
+            None,
+        );
         assert_eq!(
             missing,
             Found {
@@ -892,11 +991,36 @@ mod tests {
                     .to_string()
             }
         );
-        // The app's own copy with its ffmpeg gone: broken, in bf-export's words (they end "install the app again").
-        let own_dir = root.0.join("ffmpeg");
+        // Nothing found, but the program has an empty own folder (bf-export passes over it): install again.
+        let program = root.0.join("program");
+        let own_dir = program.join("ffmpeg");
         fs::create_dir_all(&own_dir).unwrap();
+        assert_eq!(expected_own_folder(&program), Some(own_dir.clone()));
+        let searched = bf_export::find_ffmpeg_with(None, Some(own_dir.clone()), Some(empty.clone().into()));
+        let own_missing = ffmpeg_found(searched, expected_own_folder(&program).as_deref());
+        assert_eq!(
+            own_missing,
+            Found {
+                kind: Ffmpeg::Missing,
+                words: format!(
+                    "The app's own ffmpeg is missing from {}, so no video can be made; install the app again.",
+                    own_dir.display()
+                )
+            }
+        );
+        assert!(bf_export::is_about_the_apps_own(&own_missing.words));
+        // An installed copy (its MANIFEST.txt) without the folder at all expects it too; a bare build does not.
+        let installed = root.0.join("installed");
+        fs::create_dir_all(&installed).unwrap();
+        assert_eq!(expected_own_folder(&installed), None);
+        fs::write(installed.join("MANIFEST.txt"), b"").unwrap();
+        assert_eq!(expected_own_folder(&installed), Some(installed.join("ffmpeg")));
+        // The app's own copy with its ffmpeg gone: broken, in bf-export's words (they end "install the app again").
         fs::write(own_dir.join(if cfg!(windows) { "ffprobe.exe" } else { "ffprobe" }), b"").unwrap();
-        let broken = ffmpeg_found(bf_export::find_ffmpeg_with(None, Some(own_dir), Some(empty.into())));
+        let broken = ffmpeg_found(
+            bf_export::find_ffmpeg_with(None, Some(own_dir.clone()), Some(empty.into())),
+            Some(&own_dir),
+        );
         assert_eq!(broken.kind, Ffmpeg::Broken);
         assert!(bf_export::is_about_the_apps_own(&broken.words), "{}", broken.words);
         // A file named ffmpeg on the PATH that is not a program: broken, not missing.
@@ -910,9 +1034,9 @@ mod tests {
             };
             fs::write(fake.join(file), b"not a program").unwrap();
         }
-        let not_a_program = ffmpeg_found(bf_export::find_ffmpeg_with(None, None, Some(fake.into())));
+        let not_a_program = ffmpeg_found(bf_export::find_ffmpeg_with(None, None, Some(fake.into())), None);
         assert_eq!(not_a_program.kind, Ffmpeg::Broken, "{}", not_a_program.words);
-        for found in [own, pcs, missing, broken] {
+        for found in [own, pcs, missing, own_missing, broken] {
             reads_plainly_under(&root, &found.words);
         }
     }
@@ -985,6 +1109,61 @@ mod tests {
     }
 
     #[test]
+    fn leftover_probes_go_and_nothing_else() {
+        assert!(is_probe_name(".bf-start-check-1234-0.tmp"));
+        assert!(is_probe_name(&probe_name(15)));
+        for not in [
+            ".bf-start-check-1234-0.tmp.bak",
+            ".bf-start-check--0.tmp",
+            ".bf-start-check-1234-.tmp",
+            ".bf-start-check-12a4-0.tmp",
+            ".bf-start-check-1234-0-1.tmp",
+            "bf-start-check-1234-0.tmp",
+            ".bf-write-check-1234-0.tmp",
+            "settings.toml",
+        ] {
+            assert!(!is_probe_name(not), "{not}");
+        }
+
+        let root = TempRoot::new("leftovers");
+        let dir = root.0.join("config");
+        fs::create_dir_all(&dir).unwrap();
+        // Earlier starts' leftovers: empty plain files with a probe's name. They go.
+        for name in [".bf-start-check-1-0.tmp", ".bf-start-check-99999-15.tmp"] {
+            fs::write(dir.join(name), b"").unwrap();
+        }
+        // Everything else stays, byte for byte.
+        let kept: [(&str, &[u8]); 4] = [
+            (".bf-start-check-2-0.tmp", b"holds bytes"),
+            (".bf-start-check-3-0.tmp.bak", b""),
+            (".bf-write-check-4-0.tmp", b""),
+            ("settings.toml", b"format = 1\n"),
+        ];
+        for (name, bytes) in kept {
+            fs::write(dir.join(name), bytes).unwrap();
+        }
+        // A folder with a probe's name is not a file: it stays, with what is in it.
+        let folder = dir.join(".bf-start-check-5-0.tmp");
+        fs::create_dir_all(&folder).unwrap();
+        fs::write(folder.join("inside"), b"").unwrap();
+
+        assert_eq!(check_data_folder(&dir).kind, Folder::Ready);
+        let mut left: Vec<String> = fs::read_dir(&dir)
+            .unwrap()
+            .map(|e| e.unwrap().file_name().to_string_lossy().into_owned())
+            .collect();
+        left.sort();
+        let mut want: Vec<String> = kept.iter().map(|(n, _)| n.to_string()).collect();
+        want.push(".bf-start-check-5-0.tmp".to_string());
+        want.sort();
+        assert_eq!(left, want);
+        for (name, bytes) in kept {
+            assert_eq!(fs::read(dir.join(name)).unwrap(), bytes, "{name}");
+        }
+        assert!(folder.join("inside").is_file());
+    }
+
+    #[test]
     fn a_data_folder_is_made_or_refused_in_words() {
         let root = TempRoot::new("data folder");
         let dir = root.0.join("BALLFIGHT Studio").join("config");
@@ -1003,7 +1182,7 @@ mod tests {
             "the probe leaves nothing behind"
         );
 
-        // A file that has a probe's name is skipped, never written over or deleted.
+        // A file that has a probe's name but holds bytes is skipped, never written over or deleted.
         let taken = dir.join(probe_name(0));
         fs::write(&taken, b"someone else's").unwrap();
         assert_eq!(check_data_folder(&dir).kind, Folder::Ready);
