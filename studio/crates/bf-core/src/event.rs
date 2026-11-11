@@ -35,6 +35,21 @@ impl PartialEq for Value {
 
 impl Eq for Value {}
 
+impl Value {
+    /// Python's truth value (`if e[5]:`): `None`, `False`, zero (`0.0` and `-0.0`; NaN is true), `""` and `[]`
+    /// are false, everything else true.
+    pub fn truthy(&self) -> bool {
+        match self {
+            Value::Null => false,
+            Value::Bool(b) => *b,
+            Value::Int(n) => *n != 0,
+            Value::Float(x) => *x != 0.0,
+            Value::Str(s) => !s.is_empty(),
+            Value::List(l) => !l.is_empty(),
+        }
+    }
+}
+
 /// One fight event: Python's `e[0]` is `t`, `e[1]` is `kind`, and `e[2..]` are `fields`.
 #[derive(Debug, Clone)]
 pub struct Event {
@@ -174,6 +189,31 @@ mod tests {
             fields: vec![Value::Float(1.0)],
         };
         assert_eq!(odd.who(), None);
+    }
+
+    #[test]
+    fn truthy_is_pythons_truth_value() {
+        for v in [
+            Value::Null,
+            Value::Bool(false),
+            Value::Int(0),
+            Value::Float(0.0),
+            Value::Float(-0.0),
+            Value::Str(String::new()),
+            Value::List(vec![]),
+        ] {
+            assert!(!v.truthy(), "{v:?}");
+        }
+        for v in [
+            Value::Bool(true),
+            Value::Int(-1),
+            Value::Float(f64::NAN),
+            Value::Float(0.5),
+            Value::Str("0".into()),
+            Value::List(vec![Value::Null]),
+        ] {
+            assert!(v.truthy(), "{v:?}");
+        }
     }
 
     #[test]
