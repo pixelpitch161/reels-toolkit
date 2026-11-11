@@ -10,7 +10,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
-use bf_export::{CheckResult, JobEvent, JobOpts, run_job};
+use bf_export::{CheckResult, ExportError, JobEvent, JobOpts, run_job};
 use bf_picture::config::NF;
 use serde_json::json;
 
@@ -98,7 +98,16 @@ pub fn run(a: &Args, ctx: &Ctx) -> Done {
         JobEvent::Done(_) => {}
     };
     let cancel: &AtomicBool = ctx.cancel;
-    let folder = run_job(&ff, Arc::new(rec), &opts, &on, cancel).map_err(|e| Fail(e.to_string()))?;
+    let folder = run_job(&ff, Arc::new(rec), &opts, &on, cancel).map_err(|e| match e {
+        ExportError::Cancelled(why) => {
+            let mut why = why;
+            if let Some(c) = why.get(..1) {
+                why = c.to_lowercase() + &why[1..];
+            }
+            Fail(format!("the render was stopped (Ctrl+C): {why}"))
+        }
+        e => Fail(e.to_string()),
+    })?;
     if cancel.load(Ordering::SeqCst) {
         note("render: Ctrl+C came after the video was saved");
     }

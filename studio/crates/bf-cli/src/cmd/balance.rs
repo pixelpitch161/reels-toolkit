@@ -5,8 +5,8 @@
 //! changes nothing else there: the `handicap = [..]` value is replaced in the file's own text, so comments, the
 //! order of the keys and every other line stay as they were. The new text is read back and must be the same fight
 //! file with the new handicap before it is written (through a temporary file beside it, then a rename). A file
-//! whose handicap is not written on one line (or not at all) is written in the fight file's canonical layout
-//! instead, which keeps every value but not comments, and the command says so.
+//! whose handicap is not written on one line of its own (or not at all) is refused before the balance runs: the
+//! rest of the file is never rewritten.
 
 use std::path::{Path, PathBuf};
 use std::time::Instant;
@@ -29,6 +29,9 @@ pub struct Args {
 
 pub fn run(a: &Args, ctx: &Ctx) -> Done {
     let (ff, text) = load_fight_text(&a.fight)?;
+    if a.write && set_handicap(&text, [1.0, 1.0]).is_none() {
+        return Err(one_line_handicap(&a.fight));
+    }
     let cfg = fighters(&ff)?;
     let sheet = bf_story::BeatSheet::series(cfg);
     let base =
@@ -126,18 +129,9 @@ fn write_handicap(path: &Path, text: &str, ff: &FightFile, h: [f64; 2]) -> Done 
     }
     let mut want = ff.clone();
     want.handicap = h.to_vec();
-    let edited = set_handicap(text, h).filter(|t| FightFile::parse(t).is_ok_and(|f| f == want));
-    let new_text = match edited {
-        Some(t) => t,
-        None => {
-            note(&format!(
-                "balance: the handicap in {} is not one line of its own, so the file is written in the standard \
-                 layout (every value kept, comments not)",
-                path.display()
-            ));
-            want.to_toml()
-        }
-    };
+    let new_text = set_handicap(text, h)
+        .filter(|t| FightFile::parse(t).is_ok_and(|f| f == want))
+        .ok_or_else(|| one_line_handicap(path))?;
     let tmp = temp_beside(path);
     let wrote =
         write_whole(&tmp, new_text.as_bytes()).and_then(|()| std::fs::rename(&tmp, path).map_err(|e| e.to_string()));
@@ -149,6 +143,14 @@ fn write_handicap(path: &Path, text: &str, ff: &FightFile, h: [f64; 2]) -> Done 
         )));
     }
     Ok(())
+}
+
+/// The refusal of `--write` for a fight file whose handicap is not one line of its own.
+fn one_line_handicap(path: &Path) -> Fail {
+    Fail(format!(
+        "the fight file {} has no line `handicap = [a, b]` of its own before its first table, so --write cannot store \n         the handicap without rewriting the rest of the file; write the handicap on one line (for example \n         handicap = [1.0, 1.0]) and run it again.",
+        path.display()
+    ))
 }
 
 /// `text` with the value of its top-level `handicap = [..]` line replaced by `h`, or `None` when the file has no

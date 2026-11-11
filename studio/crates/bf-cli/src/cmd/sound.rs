@@ -7,7 +7,7 @@ use std::path::{Path, PathBuf};
 use bf_sound::wav::wav16_bytes;
 use serde_json::json;
 
-use crate::{Ctx, Done, Fail, load_fight, need_ko, new_file, note, say, say_json, the_fight, write_new};
+use crate::{Ctx, Done, Fail, load_fight, need_ko, new_file, note, say, say_json, stopped, the_fight, write_new};
 
 #[derive(clap::Args)]
 pub struct Args {
@@ -35,8 +35,10 @@ pub fn run(a: &Args, ctx: &Ctx) -> Done {
     }
     let rec = the_fight(&ff, &a.fight, a.rec.as_deref(), a.seed, true)?;
     need_ko(&rec)?;
+    stopped(ctx, "the soundtrack")?;
     note("sound: building the soundtrack");
     let st = bf_content::build_soundtrack(&rec, &ff).map_err(|e| Fail(format!("{}: {e}.", a.fight.display())))?;
+    stopped(ctx, "the soundtrack")?;
     write_new(&a.out, &wav16_bytes(&st.master))?;
     let mut stems = Vec::new();
     if let Some(dir) = &a.stems {

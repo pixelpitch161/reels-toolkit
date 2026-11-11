@@ -68,10 +68,23 @@ jobs:
       - name: Test bf-core and bf-sim
         run: cargo test --release --locked -p bf-core -p bf-sim
 
-      # The command line end to end. ffmpeg (with libx264 and aac) for the clips; BALLFIGHT_FFMPEG is not set, so the
-      # render job takes the ffmpeg on the PATH.
+      # The command line end to end. ffmpeg (with libx264 and aac) from Chocolatey, which the runner image has. The
+      # render job is pointed at the real ffmpeg.exe (not Chocolatey's shim, which a kill would not pass on).
       - name: Install ffmpeg
-        uses: FedericoCarboni/setup-ffmpeg@v3
+        run: |
+          choco install ffmpeg -y --no-progress
+          real="$(find /c/ProgramData/chocolatey/lib/ffmpeg -iname ffmpeg.exe 2>/dev/null | head -n 1)"
+          if [ -z "$real" ]; then real="$(command -v ffmpeg || true)"; fi
+          if [ -z "$real" ]; then echo "::error::ffmpeg was not installed"; exit 1; fi
+          encoders="$("$real" -hide_banner -encoders)"
+          for enc in libx264 aac; do
+            if ! grep -qE "^ *[VA][^ ]* +$enc( |$)" <<<"$encoders"; then
+              echo "::error::the installed ffmpeg ($real) has no $enc encoder, so no video can be made"
+              exit 1
+            fi
+          done
+          "$real" -version | head -n 1
+          echo "BALLFIGHT_FFMPEG=$(cygpath -w "$real")" >> "$GITHUB_ENV"
 
       # The sound and three frames of the example episode against studio/replay/render_hashes.txt (blessed on the
       # Windows reference PC): the proof that picture and sound are the same bytes on another PC; and a clip encoded
@@ -80,6 +93,10 @@ jobs:
         env:
           BF_NEED_FFMPEG: "1"
         run: cargo test --release --locked -p bf-cli --test e2e -- --exact render_is_reproducible --nocapture
+
+      # The shipped binary, built on its own after the tests, so the clip below runs exactly what a person runs.
+      - name: Build the ballfight binary
+        run: cargo build --release --locked -p bf-cli --bin ballfight
 
       - name: Render a clip of the example episode
         run: |

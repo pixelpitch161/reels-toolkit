@@ -7,7 +7,7 @@ use bf_core::recording::Recording;
 use bf_story::{BeatSheet, Story, Verdict, score, story};
 use serde_json::{Value, json};
 
-use crate::{Ctx, Done, Fail, fighters, load_fight, num, say, say_json, secs, the_fight};
+use crate::{Ctx, Done, Fail, fighters, load_fight, num, say, say_json, secs, stopped, the_fight};
 
 #[derive(clap::Args)]
 pub struct Args {
@@ -24,6 +24,7 @@ pub struct Args {
 pub fn run(a: &Args, ctx: &Ctx) -> Done {
     let ff = load_fight(&a.fight)?;
     let rec = the_fight(&ff, &a.fight, a.rec.as_deref(), a.seed, false)?;
+    stopped(ctx, "the story")?;
     let (st, verdict) = judge(&ff, &rec)?;
     if ctx.json {
         say_json(&story_json(&st, &verdict, &ff.fighters));

@@ -65,6 +65,10 @@ ballfight hash    fights/flute_vs_trombone.toml --seeds 1,2,3
 
 - Exit code 0 on success; 1 on bad input, a fight it refuses (for example "seed N has no K.O. before 58 s"), a
   failed check or a run stopped with Ctrl+C, with the reason as one line on stderr (`ballfight: ...`).
+- Ctrl+C stops a command (exit 1): `render` removes its temporary folder, `search` prints what it found, `balance`
+  and `check` stop within about a second; `sim`, `story`, `frame` and `sound` stop between
+  their steps (the soundtrack build itself, about 5 s, always runs to its end). A second Ctrl+C ends the program
+  at once.
 - Files are never replaced: a command refuses an output path that exists, and writes each file whole through a
   temporary file beside it. `render` goes through the render job (`bf_export::run_job`): a new folder
   `<a>_vs_<b>` (or `<a>_vs_<b>_seed<N>`) inside `--out` with the mp4, `cover.png`, `caption.txt` and the fight file;

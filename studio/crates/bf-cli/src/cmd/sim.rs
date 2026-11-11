@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 
 use serde_json::json;
 
-use crate::{Ctx, Done, load_fight, new_file, say, say_json, secs, seed_of, write_new_with};
+use crate::{Ctx, Done, load_fight, new_file, say, say_json, secs, seed_of, stopped, write_new_with};
 
 #[derive(clap::Args)]
 pub struct Args {
@@ -23,6 +23,7 @@ pub fn run(a: &Args, ctx: &Ctx) -> Done {
     let seed = seed_of(&ff, &a.fight, a.seed)?;
     new_file(&a.out)?;
     let rec = crate::fight(&ff, &a.fight, seed, true)?;
+    stopped(ctx, "the fight")?;
     write_new_with(&a.out, |tmp: &Path| rec.write(tmp).map_err(|e| e.to_string()))?;
     let winner = rec.winner.and_then(|w| rec.names.get(w)).cloned();
     if ctx.json {

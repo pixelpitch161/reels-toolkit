@@ -9,7 +9,7 @@ use bf_picture::config::NF;
 use bf_picture::ring::upscale3;
 use serde_json::json;
 
-use crate::{Ctx, Done, Fail, load_fight, need_ko, new_file, say, say_json, the_fight, write_new};
+use crate::{Ctx, Done, Fail, load_fight, need_ko, new_file, say, say_json, stopped, the_fight, write_new};
 
 #[derive(clap::Args)]
 pub struct Args {
@@ -37,9 +37,11 @@ pub fn run(a: &Args, ctx: &Ctx) -> Done {
     new_file(&a.out)?;
     let rec = the_fight(&ff, &a.fight, a.rec.as_deref(), a.seed, true)?;
     need_ko(&rec)?;
+    stopped(ctx, "the frame")?;
     let seed = rec.seed;
     let pic =
         bf_content::build_picture(Arc::new(rec), &ff).map_err(|e| Fail(format!("{}: {e}.", a.fight.display())))?;
+    stopped(ctx, "the frame")?;
     let f = usize::try_from(a.frame).unwrap_or(0);
     let (img, _, report) = pic.frame_reported(f);
     if report.hull_errors != 0 {
