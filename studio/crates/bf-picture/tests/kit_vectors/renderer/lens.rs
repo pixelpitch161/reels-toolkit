@@ -38,17 +38,30 @@ pub(super) fn run(v: &Vectors, case: &Case) -> Found {
         "reelkit.lens.dof(img, coc)" => {
             let (img, coc) = (img_f32(arr("in"))?, img_f64(arr("coc"))?);
             if !args["block"].is_null() {
-                // The full frame: the stored arrays blown up, and every block-th pixel of the result.
+                // The full frame: the stored arrays blown up, and two samplings of the result, every block-th
+                // pixel from the top left corner (`out[::block, ::block]`) and from the middle of the first block.
                 let block = count(args, "block")?;
                 let out =
                     lens::dof(&repeated(&img, block), &repeated(&coc, block)).ok_or("None: nothing out of focus")?;
-                let mut sub = Vec::new();
-                for y in (0..out.h).step_by(block) {
-                    for x in (0..out.w).step_by(block) {
-                        sub.extend_from_slice(out.px(x, y));
+                let sampled = |from: usize| -> Vec<f64> {
+                    let mut sub = Vec::new();
+                    for y in (from..out.h).step_by(block) {
+                        for x in (from..out.w).step_by(block) {
+                            sub.extend_from_slice(out.px(x, y));
+                        }
                     }
-                }
-                return close_array(&sub, arr("out_sub").f64());
+                    sub
+                };
+                let same_size = |role: &str| match arr(role).shape == [out.h / block, out.w / block, 3] {
+                    true => Ok(()),
+                    false => Err(format!("{role} has shape {:?}", arr(role).shape)),
+                };
+                same_size("out_sub")?;
+                same_size("out_mid")?;
+                return worst_of(&[
+                    close_array(&sampled(0), arr("out_sub").f64()),
+                    close_array(&sampled(block / 2), arr("out_mid").f64()),
+                ]);
             }
             match (lens::dof(&img, &coc), arr("out").dtype()) {
                 // Nothing out of focus: Python hands the float32 picture back as it was.

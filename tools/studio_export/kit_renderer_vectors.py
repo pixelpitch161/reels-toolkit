@@ -662,8 +662,10 @@ def group_lens():
                    'so out is float64. dof: "in" is the float32 picture (h, w, 3), coc float64 (h, w); out is '
                    'float64, or float32 (the picture as it was) where no pixel is out of focus. The case with '
                    'args.block ran at the full 640 x 360: its picture and coc are the stored small arrays with '
-                   'every value repeated block x block times (np.repeat on both axes), and out_sub is '
-                   'out[::block, ::block]. All cases use the default levels.')
+                   'every value repeated block x block times (np.repeat on both axes). Two samplings of its '
+                   'result are stored: out_sub is out[::block, ::block], the top left pixel of every block, and '
+                   'out_mid is out[block // 2::block, block // 2::block], a pixel in the middle of every block. '
+                   'All cases use the default levels.')
     r = rng(18, 6)
     # (at 5.05, 7.2 and 10.45 a pixel sits between the octagon widened by 0.34 and by 0.35)
     for rad in LN.LEVELS[1:] + [0.5, 1.5, 2.5, 4.0, 12.0, 5.05, 7.2, 10.45]:
@@ -705,7 +707,9 @@ def group_lens():
     coc = coc_field(r, C.H // b, C.W // b, 12.0, 0.3)
     out = LN.dof(np.repeat(np.repeat(img, b, 0), b, 1), np.repeat(np.repeat(coc, b, 0), b, 1))
     assert out.shape == (C.H, C.W, 3) and out.dtype == np.float64 and (coc > 7.6).any()
-    g.add('reelkit.lens.dof(img, coc)', dict(block=b), in_=img, coc=coc, out_sub=np.ascontiguousarray(out[::b, ::b]))
+    # (a block's corner sits where four patches of the picture meet; its middle is 4 pixels inside one)
+    g.add('reelkit.lens.dof(img, coc)', dict(block=b), in_=img, coc=coc, out_sub=np.ascontiguousarray(out[::b, ::b]),
+          out_mid=np.ascontiguousarray(out[b // 2::b, b // 2::b]))
     return g
 
 

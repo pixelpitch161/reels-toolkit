@@ -363,12 +363,13 @@
    "arrays": {
     "coc": "c033__coc",
     "in": "c033__in",
+    "out_mid": "c033__out_mid",
     "out_sub": "c033__out_sub"
    },
    "call": "reelkit.lens.dof(img, coc)",
    "id": "c033"
   }
  ],
- "note": "coc_map: depth is float32 and zf a numpy float64 (as Frame.depth() and Cam.depth give them), so out is float64. dof: \"in\" is the float32 picture (h, w, 3), coc float64 (h, w); out is float64, or float32 (the picture as it was) where no pixel is out of focus. The case with args.block ran at the full 640 x 360: its picture and coc are the stored small arrays with every value repeated block x block times (np.repeat on both axes), and out_sub is out[::block, ::block]. All cases use the default levels.",
+ "note": "coc_map: depth is float32 and zf a numpy float64 (as Frame.depth() and Cam.depth give them), so out is float64. dof: \"in\" is the float32 picture (h, w, 3), coc float64 (h, w); out is float64, or float32 (the picture as it was) where no pixel is out of focus. The case with args.block ran at the full 640 x 360: its picture and coc are the stored small arrays with every value repeated block x block times (np.repeat on both axes). Two samplings of its result are stored: out_sub is out[::block, ::block], the top left pixel of every block, and out_mid is out[block // 2::block, block // 2::block], a pixel in the middle of every block. All cases use the default levels.",
  "tool": "kit"
 }
