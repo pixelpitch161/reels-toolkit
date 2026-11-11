@@ -367,3 +367,66 @@ fn impact_landings_equal_the_kits() {
     }
     assert!(impact_landings(&[], IMPACT_STAGGER, IMPACT_FALL).is_empty());
 }
+
+/// A recording belongs to the tempo it was fought at (the fight strikes on the beat): one fought at another grid
+/// than the fight file's would give a soundtrack and a picture that do not fit the fight, so `Show::new` refuses
+/// it in words. The comparison is exact: the recording's `rules.bpm`, `rules.beat` and `rules.t_fight` are the
+/// same expressions of the same tempo as the fight file's grid (`build_timeline`), and `f0` is
+/// `round(t_fight * fps)`.
+#[test]
+fn a_recording_fought_at_another_tempo_is_refused() {
+    let full = recording("ep392.bfrec");
+    let ff = fight_file(full.seed);
+    assert!(Show::new(&full, &ff).is_ok());
+    // A tempo that fits 61 s in the same number of bars gives the same grid: the same fight.
+    let mut same_grid = ff.clone();
+    same_grid.tempo_bpm = 133.0;
+    assert!(Show::new(&full, &same_grid).is_ok());
+
+    let mut slower = ff.clone();
+    slower.tempo_bpm = 120.0;
+    let err = Show::new(&full, &slower).unwrap_err();
+    assert!(matches!(err, ShowError::Tempo(_)), "{err:?}");
+    assert_eq!(
+        err.to_string(),
+        "the recording was fought at 133.77 bpm; the fight file's grid is 118.03 bpm (tempo_bpm = 120, fitted to \
+         whole bars in 61 s): fight this fight file again, or set its tempo back"
+    );
+
+    let rule = |key: &str, v: EvValue| {
+        let mut rec = full.clone();
+        rec.rules.insert(key.to_string(), v);
+        Show::new(&rec, &ff).unwrap_err().to_string()
+    };
+    // A hair off is off: both sides come from the same arithmetic, so they are equal to the bit or not the same.
+    let beat = 0.44852941176470584f64;
+    assert_eq!(
+        rule("beat", EvValue::Float(f64::from_bits(beat.to_bits() + 1))),
+        "the recording's beat is 0.4485294117647059 s; the fight file's grid has 0.44852941176470584 s"
+    );
+    assert_eq!(
+        rule("t_fight", EvValue::Float(1.794)),
+        "the recording's fight starts at 1.794 s; the fight file's grid starts it at 3.588 s (bar 2)"
+    );
+    assert_eq!(
+        rule("bpm", EvValue::Int(133)),
+        "the recording does not say its tempo: rules.bpm is not a number"
+    );
+    let mut gone = full.clone();
+    gone.rules.remove("t_fight");
+    assert_eq!(
+        Show::new(&gone, &ff).unwrap_err().to_string(),
+        "the recording does not say its tempo: rules.t_fight is missing"
+    );
+    let mut late = full.clone();
+    late.f0 = 109;
+    assert_eq!(
+        Show::new(&late, &ff).unwrap_err().to_string(),
+        "the recording's first frame is video frame 109; the fight file's grid starts the fight on frame 108"
+    );
+    // Every reference recording was fought at the example fight file's tempo.
+    for name in ["seed1.bfrec", "seed2.bfrec", "seed3.bfrec", "seed500.bfrec"] {
+        let rec = recording(name);
+        assert!(Show::new(&rec, &fight_file(rec.seed)).is_ok(), "{name}");
+    }
+}

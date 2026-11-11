@@ -25,10 +25,11 @@ use std::sync::LazyLock;
 use std::time::Instant;
 
 use bf_content::{ContentError, SoundBuild, build_soundtrack, theme_names, validate};
+use bf_core::event::Value as EvValue;
 use bf_core::fightfile::FightFile;
 use bf_core::recording::{Array, Recording};
 use bf_core::rng::Generator;
-use bf_core::show::Show;
+use bf_core::show::{Show, ShowError};
 use bf_sound::master::Soundtrack;
 use bf_sound::music::NoteCall;
 use bf_sound::voice::PpNoise;
@@ -767,6 +768,18 @@ fn a_panic_in_the_sound_code_is_an_error() {
 
 // ---------------------------------------------------------------- other tempos
 
+/// `rec` relabelled as fought on the grid of `ff`: its `rules.bpm`, `rules.beat`, `rules.t_fight` and `f0` are the
+/// grid's, everything else (the run itself) is as it was.
+fn on_grid(rec: &Recording, ff: &FightFile) -> Recording {
+    let grid = ff.grid();
+    let mut rec = rec.clone();
+    for (key, v) in [("bpm", grid.bpm), ("beat", grid.beat), ("t_fight", grid.t_fight)] {
+        rec.rules.insert(key.to_string(), EvValue::Float(v));
+    }
+    rec.f0 = bf_core::py::round_half_even(grid.t_fight * f64::from(rec.fps)) as usize;
+    rec
+}
+
 /// What the kit made of the same run at another tempo: the bars, each stem's energy (the sum of its squared
 /// samples, `float.hex()`), the master's, and the master's level in six 100 ms blocks.
 struct OtherTempo {
@@ -781,12 +794,17 @@ struct OtherTempo {
 /// the grid, the soundtrack is still whole AAC frames, and it is the kit's.
 ///
 /// The recording is the episode's own, fought at 132: a fight belongs to the tempo it was fought at (the engine
-/// strikes on the beat), so a real video at another tempo needs a fight simulated at that tempo. This is what the
-/// kit itself plays when an episode's `BPM` is changed after its run was made (it caches a run by its seed
-/// alone): the same run on the new grid. The numbers are from exactly that, a copy of the example's config
-/// with `BPM` replaced and one chord per bar of the new grid (the intro, then the loop over and over, as
+/// strikes on the beat), so a real video at another tempo needs a fight simulated at that tempo, and
+/// `build_soundtrack` refuses the episode's recording under these fight files (`Show::new` compares the grids).
+/// The kit has no such check: when an episode's `BPM` is changed after its run was made it plays the same run on
+/// the new grid (it caches a run by its seed alone). The numbers are from exactly that, a copy of the example's
+/// config with `BPM` replaced and one chord per bar of the new grid (the intro, then the loop over and over, as
 /// `bf_core::harmony::chords_for` lays them out), through `kit.music.score()` and `master()`. Beyond these
 /// numbers the kit's 16-bit master was compared once, by hand: the same samples at both tempos.
+///
+/// To compare with that, the parts are built through [`SoundBuild`] directly, from the episode's run relabelled
+/// as fought on the new grid ([`on_grid`]): the score reads the run and the fight file's grid, never the
+/// recording's own `rules` or `f0`, so this is the kit's stale run on the new grid, sample for sample.
 #[test]
 fn other_tempos_build() {
     #[rustfmt::skip]
@@ -828,7 +846,17 @@ fn other_tempos_build() {
         ff.tempo_bpm = case.bpm;
         assert_eq!(ff.grid().n_bars, case.bars, "tempo {}", case.bpm);
         assert_eq!(validate(&ff), Ok(()));
-        let st = build_soundtrack(&EPISODE.rec, &ff).unwrap_or_else(|e| panic!("tempo {}: {e}", case.bpm));
+        let refused = build_soundtrack(&EPISODE.rec, &ff).unwrap_err();
+        assert!(
+            matches!(&refused, ContentError::Show(ShowError::Tempo(_))),
+            "tempo {}: {refused:?}",
+            case.bpm
+        );
+        let rec = on_grid(&EPISODE.rec, &ff);
+        let show = Show::new(&rec, &ff).unwrap_or_else(|e| panic!("tempo {}: {e}", case.bpm));
+        let build = SoundBuild::new(&show, &rec, &ff).unwrap_or_else(|e| panic!("tempo {}: {e}", case.bpm));
+        let mix = build.score().unwrap_or_else(|e| panic!("tempo {}: {e}", case.bpm));
+        let st = build.master(&mix);
         assert_eq!(st.master.len(), NA, "tempo {}", case.bpm);
         assert_eq!(st.stems.len(), BUSES.len(), "tempo {}", case.bpm);
         let mut worst = 0.0f64;
