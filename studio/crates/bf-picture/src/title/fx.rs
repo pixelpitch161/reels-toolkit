@@ -64,8 +64,50 @@ pub fn light(img: &mut RgbF, grid: &Grid, t: f64, j: usize, cx: f64, cy: f64, co
 /// rest), shooting outward and fading over a quarter of a second, from the frame after the slam.
 #[allow(clippy::too_many_arguments)] // the Python signature
 pub fn streaks(img: &mut RgbF, grid: &Grid, t: f64, j: usize, cx: f64, cy: f64, w: i32, h: i32, col: [f64; 3]) {
+    streaks_at(img, grid, t, j, cx, cy, w, h, col, 0.0);
+}
+
+/// `np.arange(start, stop, step)` for `float64`: `ceil((stop - start) / step)` values, the first two `start` and
+/// `start + step`, then `start + i * delta` with `delta` the difference of those two (numpy's `fill`).
+pub(crate) fn arange(start: f64, stop: f64, step: f64) -> Vec<f64> {
+    let len = ((stop - start) / step).ceil();
+    if len.is_nan() || len <= 0.0 {
+        return Vec::new();
+    }
+    let n = np::f64_to_i64(len).max(0) as usize;
+    let mut out = Vec::with_capacity(n);
+    out.push(start);
+    if n > 1 {
+        let second = start + step;
+        let delta = second - start;
+        out.push(second);
+        out.extend((2..n).map(|i| start + i as f64 * delta));
+    }
+    out
+}
+
+/// `streaks(img, t, j, cx, cy, w, h, col, ang)`: [`streaks`], and for an angle other than 0 (Python's `if ang:`)
+/// `_streaks_turned`: the streaks shoot out of both ends of the turned word along its direction, one pixel every
+/// 0.7 px of their length.
+#[allow(clippy::too_many_arguments)] // the Python signature
+pub fn streaks_at(
+    img: &mut RgbF,
+    grid: &Grid,
+    t: f64,
+    j: usize,
+    cx: f64,
+    cy: f64,
+    w: i32,
+    h: i32,
+    col: [f64; 3],
+    ang: f64,
+) {
     let u = (t - grid.title[j] - frame(grid)) / 0.25;
     if !(0.0..1.0).contains(&u) {
+        return;
+    }
+    if ang != 0.0 {
+        streaks_turned(img, u, j, cx, cy, w, h, col, ang);
         return;
     }
     let mut rg = rng(j as u64);
@@ -90,6 +132,39 @@ pub fn streaks(img: &mut RgbF, grid: &Grid, t: f64, j: usize, cx: f64, cy: f64, 
     }
 }
 
+/// The direction along a word turned `ang` degrees and the normal to it, `D = (cos a, -sin a)` and
+/// `Nn = (sin a, cos a)`.
+fn turned_axes(ang: f64) -> ([f64; 2], [f64; 2]) {
+    let a = layout::radians(ang);
+    let (c, s) = (dmath::cos(a), dmath::sin(a));
+    ([c, -s], [s, c])
+}
+
+/// `_streaks_turned(img, u, j, cx, cy, w, h, col, ang)`.
+#[allow(clippy::too_many_arguments)] // the Python signature
+fn streaks_turned(img: &mut RgbF, u: f64, j: usize, cx: f64, cy: f64, w: i32, h: i32, col: [f64; 3], ang: f64) {
+    let (d, nn) = turned_axes(ang);
+    let mut rg = rng(j as u64);
+    let (w, h) = (f64::from(w), f64::from(h));
+    let hot = col.map(|c| np::clip(c * 0.5 + 140.0, 0.0, 255.0));
+    for i in 0..14 {
+        let off = rg.uniform(-0.6, 0.6) * h;
+        let side = if i % 2 == 1 { 1.0 } else { -1.0 };
+        let s_in = w / 2.0 + 4.0 + 40.0 * u;
+        let len = rg.uniform(30.0, 80.0) * (1.0 - u);
+        for s in arange(s_in, s_in + len, 0.7) {
+            // x, y = (c + D * side * s_ + Nn * off).astype(int)
+            let x = np::f64_to_i64(cx + d[0] * side * s + nn[0] * off);
+            let y = np::f64_to_i64(cy + d[1] * side * s + nn[1] * off);
+            if (0..W as i64).contains(&x) && (0..H as i64).contains(&y) {
+                for (v, hc) in img.px_mut(x as usize, y as usize).iter_mut().zip(hot) {
+                    *v = *v * (0.35 + 0.65 * u) + hc * (0.65 * (1.0 - u));
+                }
+            }
+        }
+    }
+}
+
 /// The colour of the dust, `np.array([236, 226, 214])`.
 const DUST: [f64; 3] = [236.0, 226.0, 214.0];
 
@@ -97,11 +172,19 @@ const DUST: [f64; 3] = [236.0, 226.0, 214.0];
 /// growing and fading over 0.6 s, each a dithered disc mixed into the picture.
 #[allow(clippy::too_many_arguments)] // the Python signature
 pub fn dust(img: &mut RgbF, grid: &Grid, t: f64, j: usize, cx: f64, cy: f64, w: i32, h: i32) {
+    dust_at(img, grid, t, j, cx, cy, w, h, 0.0);
+}
+
+/// `dust(img, t, j, cx, cy, w, h, ang)`: [`dust`], and for an angle other than 0 each puff in the turned word's
+/// own frame, along its base line.
+#[allow(clippy::too_many_arguments)] // the Python signature
+pub fn dust_at(img: &mut RgbF, grid: &Grid, t: f64, j: usize, cx: f64, cy: f64, w: i32, h: i32, ang: f64) {
     let u = (t - grid.title[j] - frame(grid)) / 0.6;
     if !(0.0..1.0).contains(&u) {
         return;
     }
     let mut rg = rng(j as u64 + 10);
+    let (d, nn) = turned_axes(ang);
     let (w, h) = (f64::from(w), f64::from(h));
     for _ in 0..12 {
         let x0 = cx + rg.uniform(-0.55, 0.55) * w;
@@ -109,6 +192,15 @@ pub fn dust(img: &mut RgbF, grid: &Grid, t: f64, j: usize, cx: f64, cy: f64, w: 
         // (1 - u) ** 2 is a Python float squared: a product here
         let x = x0 + vx * (1.0 - (1.0 - u) * (1.0 - u)) * 0.8;
         let y = cy + h * 0.5 + rg.uniform(-4.0, 4.0) - 18.0 * u;
+        let (x, y) = if ang != 0.0 {
+            // x, y = np.array([cx, cy]) + D * (x - cx) + Nn * (y - cy)
+            (
+                cx + d[0] * (x - cx) + nn[0] * (y - cy),
+                cy + d[1] * (x - cx) + nn[1] * (y - cy),
+            )
+        } else {
+            (x, y)
+        };
         let rad = 3.0 + 12.0 * u * rg.uniform(0.7, 1.2);
         let a = 0.55 * dmath::pow(1.0 - u, 1.5);
         let (x0i, x1i) = (int(py_max(0.0, x - rad)), int(py_min(W as f64, x + rad + 1.0)));
@@ -136,6 +228,12 @@ pub fn dust(img: &mut RgbF, grid: &Grid, t: f64, j: usize, cx: f64, cy: f64, w: 
 /// `sparks(img, t)`: twenty gold sparks flying out from `VS` (at (180, 300)) and falling, for 0.45 s from its
 /// slam; each is five pixels along its last 0.03 s of flight.
 pub fn sparks(img: &mut RgbF, grid: &Grid, t: f64) {
+    sparks_from(img, grid, t, (180.0, 300.0));
+}
+
+/// `sparks(img, t)` with the sparks flying out from `p0`: `(180, 300)` for `VS`, the centre of a turned middle
+/// word (`WORDS['VS']['cx'], ['cy']` when it has an angle).
+pub fn sparks_from(img: &mut RgbF, grid: &Grid, t: f64, p0: (f64, f64)) {
     let u = t - grid.title[1];
     if !(0.0..0.45).contains(&u) {
         return;
@@ -146,7 +244,7 @@ pub fn sparks(img: &mut RgbF, grid: &Grid, t: f64) {
         let v = rg.uniform(90.0, 220.0);
         let dir = [dmath::cos(a), dmath::sin(a)];
         // p = p0 + v * u * [cos, sin] + [0, 160 * u * u];  q = p - v * 0.03 * [cos, sin]
-        let p = [180.0 + v * u * dir[0] + 0.0, 300.0 + v * u * dir[1] + 160.0 * u * u];
+        let p = [p0.0 + v * u * dir[0] + 0.0, p0.1 + v * u * dir[1] + 160.0 * u * u];
         let q = [p[0] - v * 0.03 * dir[0], p[1] - v * 0.03 * dir[1]];
         let k = 1.0 - u / 0.45;
         // np.linspace(0, 1, 5)

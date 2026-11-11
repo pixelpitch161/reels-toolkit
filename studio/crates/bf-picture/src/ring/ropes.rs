@@ -77,11 +77,20 @@ fn linspace01(n: usize) -> Vec<f64> {
 }
 
 impl PictureCtx {
+    /// `side_ends(s)`: the two corner posts a rope of side `s` (an index into [`ROPE_SIDES`]) runs between, as
+    /// ring-frame `(x, z)`: `S.CORNERS[a], S.CORNERS[b]` for `a, b = S.ROPE_SIDES[s]`.
+    ///
+    /// # Panics
+    /// For a side above 3 (Python's `IndexError`).
+    pub fn side_ends(&self, s: usize) -> ([f64; 2], [f64; 2]) {
+        let (ca, cb) = ROPE_SIDES[s];
+        (CORNERS[ca], CORNERS[cb])
+    }
+
     /// `rope_points(s, y, t, n=15)`: one rope (side `s`, height `y`) as `n` world points: a slight sag and the
     /// give where balls hit it, decaying. Python's default `n` is 15.
     pub fn rope_points(&self, s: usize, y: f64, t: f64, n: usize) -> Vec<V3> {
-        let (ca, cb) = ROPE_SIDES[s];
-        let (a, b) = (CORNERS[ca], CORNERS[cb]);
+        let (a, b) = self.side_ends(s);
         let ab = [b[0] - a[0], b[1] - a[1]];
         let u = linspace01(n);
         let mid = [(a[0] + b[0]) / 2.0, (a[1] + b[1]) / 2.0];

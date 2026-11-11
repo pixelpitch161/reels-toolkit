@@ -865,3 +865,107 @@ fn upscale3_repeats_every_pixel() {
         }
     }
 }
+
+/// A look that notes the side and the roster entry its `setup` saw.
+#[derive(Default)]
+struct SetupSpy {
+    seen: Vec<(usize, String)>,
+}
+
+impl Look for SetupSpy {
+    fn setup(&mut self, p: &PictureCtx, k: usize) {
+        self.seen.push((k, p.cfg[k].name.clone()));
+    }
+}
+
+#[test]
+fn setup_as_is_setup_for_a_look_that_reads_no_numbers() {
+    // the trait's default for `Look(P, k)` made with another fighter's numbers: the look's own setup for side k
+    let p = picture().ctx();
+    let mut spy = SetupSpy::default();
+    spy.setup_as(p, 1, &p.cfg[0]);
+    spy.setup(p, 0);
+    assert_eq!(spy.seen, [(1, "TROMBONE".to_string()), (0, "FLUTE".to_string())]);
+    // DefaultLook too: nothing to do, nothing changes
+    let mut d = DefaultLook;
+    d.setup_as(p, 0, &p.cfg[1]);
+    assert_eq!(d, DefaultLook);
+}
+
+#[test]
+fn the_context_has_what_the_looks_call() {
+    let p = picture().ctx();
+    // P.side_ends(s): the posts of each rope side, the ends rope_points runs between
+    for s in 0..4 {
+        let (a, b) = p.side_ends(s);
+        let (ca, cb) = scene::ROPE_SIDES[s];
+        assert_eq!((a, b), (scene::CORNERS[ca], scene::CORNERS[cb]));
+        let pts = p.rope_points(s, 0.8, 0.0, 15);
+        let first = scene::to_world(a[0], a[1], 0.8);
+        assert!(
+            (pts[0][0] - first[0]).abs() < 1e-12 && (pts[0][2] - first[2]).abs() < 1e-12,
+            "side {s}"
+        );
+    }
+    // P.shade is reelkit.lighting.shade
+    let cam = p.camera(10.0);
+    let l = p.lights(10.0, &cam);
+    let (nrm, ctr, base) = ([[0.0, 1.0, 0.0]], [[0.0, 0.5, 0.0]], [[200.0, 100.0, 50.0]]);
+    assert_eq!(
+        p.shade(&l, &nrm, &ctr, &base, None, 0.5, 0.0, 5.0),
+        crate::lighting::shade(&l, &nrm, &ctr, &base, None, 0.5, 0.0, 5.0)
+    );
+    assert_eq!(PictureCtx::HITSTOP, 0.35);
+    // TT.WORDS and TT.BALLS: the card's layout, the plain one for this fight file (no opt-ins)
+    assert_eq!(p.title, crate::title::layout::Layout::plain("FLUTE", "TROMBONE"));
+    assert_eq!(picture().card().layout(), &p.title);
+}
+
+#[test]
+fn the_fight_files_title_opt_ins_reach_the_card() {
+    let mut q = parts();
+    q.ff.picture
+        .title_lines
+        .insert("FLUTE".into(), ("SILVER".into(), "FLUTE".into()));
+    q.ff.picture.title_balls = Some([[74.0, 250.0, 54.0], [282.0, 396.0, 56.0]]);
+    q.ff.picture.middle = Some(("REMATCH".into(), bf_core::fightfile::Middle::Divider));
+    let want = crate::title::layout::Layout::new("FLUTE", "TROMBONE", &q.ff.picture).expect("fits");
+    let pic = build(q, default_looks()).expect("the picture builds");
+    assert_eq!(pic.ctx().title, want);
+    assert_eq!(pic.card().layout(), &want);
+    assert_eq!(want.balls[0].cx, 74.0);
+    assert_eq!(want.words[1].middle.as_ref().map(|m| m.0.as_str()), Some("REMATCH"));
+    // a middle word that cannot fit refuses the picture in words
+    let mut q = parts();
+    q.ff.picture.middle = Some((
+        "THE ULTIMATE GRAND FINAL REMATCH".into(),
+        bf_core::fightfile::Middle::Divider,
+    ));
+    let err = build(q, default_looks()).err().expect("refused");
+    assert_eq!(
+        err.to_string(),
+        "MIDDLE 'THE ULTIMATE GRAND FINAL REMATCH' does not fit the diagonal"
+    );
+}
+
+#[test]
+fn the_runs_rows_are_the_recordings() {
+    let run = &picture().ctx().run;
+    for i in [0, 7, run.last()] {
+        for k in 0..2 {
+            let p = run.p(i, k);
+            assert_eq!(run.row("P", i, k), Some(p.to_vec()), "P[{i}, {k}]");
+            assert_eq!(run.row("HP", i, k), run.f("HP", i, k).map(|v| vec![v]), "HP[{i}, {k}]");
+        }
+        let all = run.frame_values("P", i).expect("P");
+        assert_eq!(all.len(), 4);
+        assert_eq!([all[2], all[3]], run.p(i, 1));
+    }
+    assert_eq!(run.row("P", run.last() + 1, 0), None);
+    assert_eq!(run.row("NO SUCH KEY", 0, 0), None);
+    assert_eq!(
+        run.frame_values("WAVES", 0),
+        None,
+        "a ragged array has its own accessor"
+    );
+}

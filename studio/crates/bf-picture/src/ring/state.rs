@@ -118,6 +118,43 @@ impl Run {
         }
     }
 
+    /// `RUN[key][i]` of an array with one entry a recording frame, whatever its shape after the frame (`K`'s
+    /// slots, a kind's `(2, w)` rows): the entry's values in C order as floats (an `int64` array's values
+    /// converted), or `None` when the recording has no such numeric array or it does not reach frame `i`.
+    pub fn frame_values(&self, key: &str, i: usize) -> Option<Vec<f64>> {
+        let (shape, len) = match self.rec.arrays.get(key)? {
+            Array::F64 { shape, data } => (shape, data.len()),
+            Array::I64 { shape, data } => (shape, data.len()),
+            Array::Nested(_) => return None,
+        };
+        let per: usize = shape.get(1..)?.iter().product();
+        let range = i.checked_mul(per)?..(i + 1).checked_mul(per)?;
+        if shape.is_empty() || i >= shape[0] || range.end > len {
+            return None;
+        }
+        match self.rec.arrays.get(key)? {
+            Array::F64 { data, .. } => Some(data[range].to_vec()),
+            Array::I64 { data, .. } => Some(data[range].iter().map(|&v| v as f64).collect()),
+            Array::Nested(_) => None,
+        }
+    }
+
+    /// `RUN[key][i, k]` of an array of one row a fighter a frame (shape `(n, 2, ...)`: the velocities `V`,
+    /// OBOE's `DET` (`left, depth`), a kind's per-ball record): fighter `k`'s row in C order as floats. For an
+    /// array of shape `(n, 2)` it is the one value [`Run::f`] gives. `None` as [`Run::frame_values`].
+    pub fn row(&self, key: &str, i: usize, k: usize) -> Option<Vec<f64>> {
+        let shape = match self.rec.arrays.get(key)? {
+            Array::F64 { shape, .. } | Array::I64 { shape, .. } => shape,
+            Array::Nested(_) => return None,
+        };
+        if shape.len() < 2 || shape[1] != 2 || k >= 2 {
+            return None;
+        }
+        let all = self.frame_values(key, i)?;
+        let per = all.len() / 2;
+        Some(all[k * per..(k + 1) * per].to_vec())
+    }
+
     /// `RUN['P'][i, k]`: fighter `k`'s position at recording frame `i` (held to the last frame).
     pub fn p(&self, i: usize, k: usize) -> [f64; 2] {
         let i = i.min(self.nsim - 1);
@@ -482,6 +519,29 @@ impl PictureCtx {
         }
         l
     }
+
+    /// `P.shade`: `reelkit.lighting.shade(L, nrm, ctr, base, kvis=None, rimk=0.55, trans=0.0, emit=0.0,
+    /// step=5)`, which `kit/picture.py` imports and the looks call through it (PIANO's keys, ORGAN's pipes,
+    /// TUBA's bell). The Python defaults are `kvis = None`, `rimk = 0.55`, `emit = 0.0`, `step = 5.0` (and
+    /// `trans = 0.0`, which lives in `kvis` here). See [`crate::lighting::shade`].
+    #[allow(clippy::too_many_arguments)] // the Python signature
+    pub fn shade(
+        &self,
+        l: &Lights,
+        nrm: &[V3],
+        ctr: &[V3],
+        base: &[V3],
+        kvis: Option<crate::lighting::KeyVis<'_>>,
+        rimk: f64,
+        emit: f64,
+        step: f64,
+    ) -> Vec<V3> {
+        crate::lighting::shade(l, nrm, ctr, base, kvis, rimk, emit, step)
+    }
+
+    /// `HITSTOP`: the hit-stop after the K.O. in seconds (`T_HS = T_KO + HITSTOP`), which ORGAN's and TRUMPET's
+    /// effects step back by.
+    pub const HITSTOP: f64 = bf_core::show::HITSTOP;
 }
 
 /// `AIM`: the camera's target.

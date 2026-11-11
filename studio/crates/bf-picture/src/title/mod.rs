@@ -22,16 +22,16 @@
 //!
 //! # What is ported, and what is not
 //!
-//! Ported: the layout ([`layout`]), the panels with the TROMBONE's own pattern and the plain panel, the close-up
-//! balls ([`panels`]), the words ([`words`]), the crack and the slam effects ([`fx`]), and here the card's
-//! timing (`door_offset`, `slam_k`, `word_state`, `shake`), the series tag (`ui_tag`) and `draw`.
+//! Ported: the layout ([`layout`]) with the three opt-ins of the fight file's `picture` settings
+//! (`TITLE_LINES`: a long name on two lines; `TITLE_BALLS`: other places for the balls; `MIDDLE`: another word
+//! than `VS`, turned, with `rotate_mask`, `_fit_middle` and `_streaks_turned`), the panels with the TROMBONE's
+//! own pattern and the plain panel, the close-up balls ([`panels`]), the words ([`words`]), the crack and the
+//! slam effects ([`fx`]), and here the card's timing (`door_offset`, `slam_k`, `word_state`, `shake`), the
+//! series tag (`ui_tag`) and `draw`. Without the opt-ins the card is exactly the card of every existing fight.
 //!
-//! Not ported, because the fight file has no setting for them: the three opt-ins an episode's timeline could
-//! carry, `TITLE_LINES` (a long name on two lines), `TITLE_BALLS` (other places for the balls) and `MIDDLE`
-//! (another word than `VS`, turned), with `rotate_mask`, `_fit_middle` and `_streaks_turned`. Without them the
-//! Python card is exactly this one. Of the sixteen panel patterns in `PATTERNS` only the TROMBONE's is here: each
-//! of the other fifteen comes with its fighter ([`panels::builtin_pattern`] is where it goes), and until then a
-//! card for one of those fighters is an error ([`TitleError`]), not a plain panel.
+//! Of the sixteen panel patterns in `PATTERNS` only the TROMBONE's is here: each of the other fifteen comes with
+//! its fighter, in its own file of [`patterns`], and until then a card for one of those fighters is an error
+//! ([`TitleError`]), not a plain panel.
 //!
 //! # Numbers
 //!
@@ -45,6 +45,7 @@
 pub mod fx;
 pub mod layout;
 pub mod panels;
+pub mod patterns;
 pub mod words;
 
 #[cfg(test)]
@@ -55,9 +56,10 @@ use bf_core::grid::Grid;
 use bf_core::py::{py_max, py_min};
 use bf_core::show::Show;
 
-use self::layout::{BALLS, Panel, Word};
+use self::layout::{Layout, Panel, Word};
+use self::panels::Pattern;
 use crate::config::{H, W};
-use crate::font::{self, ADV};
+use crate::font;
 use crate::img::{Img, Rgb8, RgbF};
 use crate::np;
 use crate::sprite::{self, Mesh};
@@ -106,8 +108,8 @@ pub struct TitleCard {
     glass: [[f64; 3]; 2],
     /// `T.SERIES`: the small tag at the top, or empty.
     series: String,
-    /// `WORDS`, in the order of `T.TITLE`: the left name, `VS`, the right name.
-    words: [Word; 3],
+    /// `WORDS` (in the order of `T.TITLE`: the left name, `VS` or the middle word, the right name) and `BALLS`.
+    layout: Layout,
     /// Per side, the panel as every frame starts from it: `panels()[side]` with the divider's bright edge.
     panels: [RgbF; 2],
     /// Per side, the panel's opacity as every frame starts from it: 0.94 on its half, 1 on the bright edge.
@@ -232,19 +234,21 @@ fn cover_frame(g: &Grid) -> usize {
 }
 
 /// One side of the card as [`TitleCard::new`] builds it: the panel and its opacity as every frame starts from
-/// them, and the fighter's close-up sprite.
+/// them, and the fighter's close-up sprite. `builtin` is the card's own pattern for the fighter (`PATTERNS`), or
+/// `None` for the look's.
 fn build_side(
     k: usize,
     name: &str,
     colour: [f64; 3],
     dark: [f64; 3],
     look: &CardLook<'_>,
+    layout: &Layout,
+    builtin: Option<Pattern>,
 ) -> Result<(RgbF, Img<f64>, Img<u8>), TitleError> {
     // _panel_rgb(RD.COL[k], RD.DARK[k], side, RD.NAMES[k]): PATTERNS[name], if the card or the look has one
-    let builtin = panels::builtin_pattern(name)?;
     let mut panel = panels::panel_rgb(colour, dark, |base| match builtin {
-        Some(pattern) => pattern(base),
-        None => look.look.title_pattern(base),
+        Some(pattern) => pattern(base, layout),
+        None => look.look.title_pattern_with(base, layout),
     });
     // What every frame does to a fresh copy of the panel before anything else, done once:
     //   alpha = ((SIDE > 0) if side == 0 else (SIDE <= 0)).astype(np.float64) * 0.94
@@ -259,12 +263,16 @@ fn build_side(
             alpha.data[i] = 1.0;
         }
     }
-    // big_sprite(k): the look's own close-up, else the model at its view's yaw and roll
-    let r = np::f64_to_i32(f64::from(BALLS[k].r) * 0.8).max(0) as u32;
-    let spr = look
-        .look
-        .title_closeup(r)
-        .unwrap_or_else(|| sprite::render_sprite(look.mesh, r, look.yaw, look.roll));
+    // big_sprite(k): the look's own close-up, else the model at its view's yaw and roll, of radius
+    // int(BALLS[k]['r'] * 0.8)
+    let r = layout.closeup_r(k);
+    let too_big = || TitleError::CloseupTooBig(name.to_string(), r);
+    let r = u32::try_from(r).map_err(|_| too_big())?;
+    let spr = match look.look.title_closeup(r) {
+        Some(spr) => spr,
+        None if r <= sprite::MAX_RADIUS => sprite::render_sprite(look.mesh, r, look.yaw, look.roll),
+        None => return Err(too_big()),
+    };
     assert!(
         spr.c == 4 && spr.w == spr.h,
         "the close-up of {name} is {} x {} with {} channels: the card wants a square RGBA sprite",
@@ -303,9 +311,12 @@ impl TitleCard {
     /// Everything Python builds on first use is built here: the layout, both panels, both close-up sprites and
     /// the crack.
     ///
+    /// This is the card without the fight file's opt-ins ([`Layout::plain`]); [`TitleCard::with_layout`] takes
+    /// them.
+    ///
     /// # Errors
     /// [`TitleError::PatternNotPorted`] when the card's own pattern table has a panel pattern for a fighter that
-    /// is not ported yet ([`panels::UNPORTED_PATTERNS`]).
+    /// is not ported yet ([`patterns::unported`]).
     ///
     /// # Panics
     /// When a look's close-up sprite is not RGBA and square.
@@ -316,14 +327,56 @@ impl TitleCard {
         looks: [CardLook<'_>; 2],
         series_tag: Option<&str>,
     ) -> Result<TitleCard, TitleError> {
-        let (p0, a0, s0) = build_side(0, &show.names[0], colors[0], darks[0], &looks[0])?;
-        let (p1, a1, s1) = build_side(1, &show.names[1], colors[1], darks[1], &looks[1])?;
+        let layout = Layout::plain(&show.names[0], &show.names[1]);
+        TitleCard::with_layout(show, colors, darks, looks, series_tag, layout)
+    }
+
+    /// [`TitleCard::new`] with the words and balls of `layout` ([`Layout::new`]: the fight file's `title_lines`,
+    /// `title_balls` and `middle`).
+    ///
+    /// # Errors
+    /// As [`TitleCard::new`], and [`TitleError::CloseupTooBig`] for a ball whose close-up the model cannot be
+    /// drawn at.
+    pub fn with_layout(
+        show: &Show,
+        colors: [[f64; 3]; 2],
+        darks: [[f64; 3]; 2],
+        looks: [CardLook<'_>; 2],
+        series_tag: Option<&str>,
+        layout: Layout,
+    ) -> Result<TitleCard, TitleError> {
+        // PATTERNS.get(name): the card's own pattern for a fighter wins over its look's
+        let builtin = [patterns::builtin(&show.names[0])?, patterns::builtin(&show.names[1])?];
+        TitleCard::from_parts(show, colors, darks, looks, series_tag, layout, builtin)
+    }
+
+    /// The card with the panel patterns given: `builtin[k]` stands for `PATTERNS[NAMES[k]]` (the card's own
+    /// pattern for the fighter, or `None`: the look's [`Look::title_pattern_with`]). [`TitleCard::with_layout`]
+    /// takes them from [`patterns::builtin`]; a test that stands in for a pattern not ported yet gives them here.
+    ///
+    /// # Errors
+    /// [`TitleError::CloseupTooBig`], as [`TitleCard::with_layout`].
+    ///
+    /// # Panics
+    /// When a look's close-up sprite is not RGBA and square.
+    #[allow(clippy::too_many_arguments)] // the card's inputs, each its own
+    pub fn from_parts(
+        show: &Show,
+        colors: [[f64; 3]; 2],
+        darks: [[f64; 3]; 2],
+        looks: [CardLook<'_>; 2],
+        series_tag: Option<&str>,
+        layout: Layout,
+        builtin: [Option<Pattern>; 2],
+    ) -> Result<TitleCard, TitleError> {
+        let (p0, a0, s0) = build_side(0, &show.names[0], colors[0], darks[0], &looks[0], &layout, builtin[0])?;
+        let (p1, a1, s1) = build_side(1, &show.names[1], colors[1], darks[1], &looks[1], &layout, builtin[1])?;
         Ok(TitleCard {
             grid: show.grid.clone(),
             colors,
             glass: [looks[0].look.glass(), looks[1].look.glass()],
             series: series_tag.unwrap_or("").to_string(),
-            words: layout::words(&show.names[0], &show.names[1]),
+            layout,
             panels: [p0, p1],
             alpha: [a0, a1],
             sprites: [s0, s1],
@@ -333,7 +386,12 @@ impl TitleCard {
 
     /// `WORDS`: where the three words rest, in the order they slam in.
     pub fn words(&self) -> &[Word; 3] {
-        &self.words
+        &self.layout.words
+    }
+
+    /// `WORDS` and `BALLS`: the card's layout.
+    pub fn layout(&self) -> &Layout {
+        &self.layout
     }
 
     /// `door_offset(t)`: how far the doors are open at `t`, in pixels along the divider's normal: 0 while the
@@ -420,7 +478,7 @@ impl TitleCard {
         let g = &self.grid;
         let mut layer = self.panels[side].clone();
         let mut alpha = self.alpha[side].clone();
-        let b = BALLS[side];
+        let b = self.layout.balls[side];
         // the ball flares as its fighter's name slams in, bobs once a bar and swells on the beat
         let ts = g.title[if side == 0 { 0 } else { 2 }];
         let flare = if ts <= t && t < g.dur - 1.0 {
@@ -436,8 +494,8 @@ impl TitleCard {
             &self.sprites[side],
             self.glass[side],
             b.cx,
-            f64::from(b.cy) + bob,
-            f64::from(b.r) * (1.0 + 0.03 * g.beat_pulse(t, 0.15, 0.12)),
+            b.cy + bob,
+            b.r * (1.0 + 0.03 * g.beat_pulse(t, 0.15, 0.12)),
             gl,
             self.colors[side],
         );
@@ -456,7 +514,7 @@ impl TitleCard {
     /// has settled on the shut card is filed in `log`, once.
     fn words_on(&self, side: usize, t: f64, off: f64, layer: &mut RgbF, alpha: &mut Img<f64>, log: &mut DrawLog) {
         let side_of = layout::side();
-        for (j, word) in self.words.iter().enumerate() {
+        for (j, word) in self.layout.words.iter().enumerate() {
             if !word.panel.is_on(side) {
                 continue;
             }
@@ -469,13 +527,27 @@ impl TitleCard {
                 self.colors[j / 2].map(|c| np::clip(c * 0.85 + 50.0, 0.0, 255.0))
             };
             let settled = (k - 1.0).abs() < 0.06 && a >= 1.0 && off == 0.0;
-            let (cx, cy) = (f64::from(word.cx), f64::from(word.cy));
-            let stamped = words::stamp_word(W, H, &word.text, word.scale, k, cx, cy, col, a);
             let halved = word.panel == Panel::Both;
-            // note=settled and (spec['side'] == side or side == 0)
-            if settled && (!halved || side == 0) {
-                let (x0, y0, x1, y1) = stamped.noted;
-                log.note(x0, y0, x1, y1, Kind::Caption, &word.text);
+            let (cx, cy) = (word.cx, word.cy);
+            // the stamps: one a line (#38, scaled about the block), the turned middle word (#54), or the word
+            let (stamped, texts, note): (_, Vec<&str>, bool) = if let Some(lines) = &word.lines {
+                let l: Vec<(&str, f64, f64)> = lines.iter().map(|(ln, dy)| (ln.as_str(), cx, cy + dy * k)).collect();
+                let stamped = words::stamp_words(W, H, &l, word.scale, k, col, a, 0.0);
+                // note=settled and (spec['side'] == side or side == 0), each line
+                (stamped, l.iter().map(|l| l.0).collect(), !halved || side == 0)
+            } else if let Some((text, ang)) = &word.middle {
+                let stamped = words::stamp_words(W, H, &[(text.as_str(), cx, cy)], word.scale, k, col, a, *ang);
+                // note=settled and side == 0
+                (stamped, vec![text.as_str()], side == 0)
+            } else {
+                let stamped = words::stamp_word(W, H, &word.text, word.scale, k, cx, cy, col, a);
+                (stamped, vec![word.text.as_str()], !halved || side == 0)
+            };
+            if settled && note {
+                // a turned word files its strips under its one text; two lines file a box each
+                for (n, &(x0, y0, x1, y1)) in stamped.noted.iter().enumerate() {
+                    log.note(x0, y0, x1, y1, Kind::Caption, texts[n.min(texts.len() - 1)]);
+                }
             }
             let wl = &stamped.layer;
             for by in 0..wl.h {
@@ -506,20 +578,28 @@ impl TitleCard {
     /// its streaks and its dust, around the word as the card's shake `(sx, sy)` has moved it; then the sparks.
     fn slam_effects(&self, out: &mut RgbF, t: f64, sx: f64, sy: f64) {
         let g = &self.grid;
-        for (j, word) in self.words.iter().enumerate() {
+        for (j, word) in self.layout.words.iter().enumerate() {
             if self.word_state(t, j).is_none() {
                 continue;
             }
             let col = if j == 1 { GOLD } else { self.colors[j / 2] };
-            // w_px = len(text) * ADV * scale;  h_px = 7 * scale
-            let w_px = word.text.chars().count() as i32 * ADV * word.scale as i32;
-            let h_px = 7 * word.scale as i32;
-            let (cx, cy) = (f64::from(word.cx) + sx, f64::from(word.cy) + sy);
+            // w_px = spec.get('w', len(text) * ADV * spec['scale']);  h_px = spec.get('h', 7 * spec['scale'])
+            let (w_px, h_px) = (word.effect_w(), word.effect_h());
+            let (cx, cy) = (word.cx + sx, word.cy + sy);
             fx::light(out, g, t, j, cx, cy, col);
-            fx::streaks(out, g, t, j, cx, cy, w_px, h_px, col);
-            fx::dust(out, g, t, j, cx, cy, w_px, h_px);
+            // #54: along the turned word
+            let ang = word.turn().unwrap_or(0.0);
+            fx::streaks_at(out, g, t, j, cx, cy, w_px, h_px, col, ang);
+            fx::dust_at(out, g, t, j, cx, cy, w_px, h_px, ang);
         }
-        fx::sparks(out, g, t);
+        // the sparks fly from VS at (180, 300), or from a turned middle word's centre
+        let mid = &self.layout.words[1];
+        let from = if mid.turn().is_some() {
+            (mid.cx, mid.cy)
+        } else {
+            (180.0, 300.0)
+        };
+        fx::sparks_from(out, g, t, from);
     }
 
     /// `ui_tag(layer, alpha)`: the small series tag at the top of the card, centred on column 180 at row 100:

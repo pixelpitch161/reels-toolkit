@@ -1,5 +1,12 @@
-//! The fighters: one folder per ported fighter. Each holds its instrument voice (`voice.rs`), its part in the
-//! score (`sound.rs`) and, once ported, its look (`look.rs`).
+//! The fighters: one folder per kit fighter (`<slug>/`, the kit's `name.lower().replace(' ', '_')`). Each holds
+//! its instrument voice (`voice.rs`), its part in the score (`sound.rs`), its look (`look.rs`), its card
+//! (`card.rs`) and what the look and the part both derive from the recording (`state.rs`), and offers the same
+//! entry points from its `mod.rs`: `look()`, `voice()`, `sound(k, ff)`, `card()`, `MESH`, `MUSIC_FEEDS_FIGHT`
+//! and `EXTRA_LINES`. FLUTE and TROMBONE are ported; the other eighteen folders are stubs whose entry points say
+//! "none" until their port fills them. [`entry`] is the one place that names every folder, so a port changes only
+//! its own folder.
+//!
+//! [`shared`] holds the helpers several fighters' looks and voices call (milestone 3's Task 4).
 
 use std::sync::Arc;
 
@@ -8,32 +15,104 @@ use bf_picture::look::{DefaultLook, Look};
 use bf_sound::traits::Sound;
 use bf_sound::voice::Voice;
 
+use crate::cards::FighterCard;
+
+pub mod shared;
+
+pub mod acoustic;
+pub mod alto_sax;
+pub mod bass_clarinet;
+pub mod bass_drum;
+pub mod bassoon;
+pub mod cello;
+pub mod clarinet;
+pub mod contrabass;
+pub mod electric;
+pub mod euphonium;
 pub mod flute;
+pub mod horn;
+pub mod oboe;
+pub mod organ;
+pub mod piano;
+pub mod sousaphone;
+pub mod tenor_sax;
 pub mod trombone;
+pub mod trumpet;
+pub mod tuba;
+
+/// What one fighter's folder offers: its `mod.rs`'s entry points.
+#[derive(Clone, Copy)]
+pub struct Entry {
+    /// `look()`: its look, or `None` while not ported.
+    pub look: fn() -> Option<Box<dyn Look>>,
+    /// `voice()`: its instrument voice, or `None`.
+    pub voice: fn() -> Option<Arc<dyn Voice>>,
+    /// `sound(k, ff)`: its part on side `k` of the fight `ff`, or `None`.
+    pub sound: fn(usize, &FightFile) -> Option<Box<dyn Sound>>,
+    /// `card()`: its card, or `None`.
+    pub card: fn() -> Option<&'static FighterCard>,
+    /// `MESH`: its model file's text, or `None`.
+    pub mesh: Option<&'static str>,
+    /// `MUSIC_FEEDS_FIGHT`.
+    pub music_feeds_fight: bool,
+    /// `EXTRA_LINES`.
+    pub extra_lines: &'static [&'static str],
+}
+
+/// The entry points of one fighter's folder.
+macro_rules! entry {
+    ($m:ident) => {
+        Entry {
+            look: $m::look,
+            voice: $m::voice,
+            sound: $m::sound,
+            card: $m::card,
+            mesh: $m::MESH,
+            music_feeds_fight: $m::MUSIC_FEEDS_FIGHT,
+            extra_lines: $m::EXTRA_LINES,
+        }
+    };
+}
+
+/// The folder of the kit fighter `fighter` (its name in the roster, such as `BASS CLARINET`), or `None` for a name
+/// that is not one of the twenty kit fighters (the retired ones, the older fighters, another spelling).
+pub fn entry(fighter: &str) -> Option<Entry> {
+    Some(match fighter {
+        "ACOUSTIC" => entry!(acoustic),
+        "ALTO SAX" => entry!(alto_sax),
+        "BASS CLARINET" => entry!(bass_clarinet),
+        "BASS DRUM" => entry!(bass_drum),
+        "BASSOON" => entry!(bassoon),
+        "CELLO" => entry!(cello),
+        "CLARINET" => entry!(clarinet),
+        "CONTRABASS" => entry!(contrabass),
+        "ELECTRIC" => entry!(electric),
+        "EUPHONIUM" => entry!(euphonium),
+        "FLUTE" => entry!(flute),
+        "HORN" => entry!(horn),
+        "OBOE" => entry!(oboe),
+        "ORGAN" => entry!(organ),
+        "PIANO" => entry!(piano),
+        "SOUSAPHONE" => entry!(sousaphone),
+        "TENOR SAX" => entry!(tenor_sax),
+        "TROMBONE" => entry!(trombone),
+        "TRUMPET" => entry!(trumpet),
+        "TUBA" => entry!(tuba),
+        _ => return None,
+    })
+}
 
 /// The instrument voice of the fighter `fighter` (its name in the roster, such as `FLUTE`), or `None` for a
 /// fighter whose voice is not ported. Every fighter the app offers ([`crate::PORTED`]) has one.
 pub fn voice(fighter: &str) -> Option<Arc<dyn Voice>> {
-    match fighter {
-        "FLUTE" => Some(Arc::new(flute::FluteVoice)),
-        "TROMBONE" => Some(Arc::new(trombone::TromboneVoice)),
-        _ => None,
-    }
+    entry(fighter).and_then(|e| (e.voice)())
 }
 
 /// The part in the score of the fighter `fighter` on side `k` (0 is the left corner) of the fight `ff`: the
 /// kit's `fighters.sound(name, M, k)`. `None` for a fighter whose part is not ported. Every fighter the app
 /// offers ([`crate::PORTED`]) has one.
 pub fn sound(fighter: &str, k: usize, ff: &FightFile) -> Option<Box<dyn Sound>> {
-    match fighter {
-        "FLUTE" => Some(Box::new(flute::FluteSound::new(k))),
-        "TROMBONE" => {
-            // Its role (`T.ROLES.get(name, 'melody')`) sets the band it is checked in.
-            let role = ff.music.roles.get(fighter).map_or("melody", String::as_str);
-            Some(Box::new(trombone::TromboneSound::new(k, role)))
-        }
-        _ => None,
-    }
+    entry(fighter).and_then(|e| (e.sound)(k, ff))
 }
 
 /// The look of the fighter `fighter` (its name in the roster, such as `FLUTE`): the kit's
@@ -41,17 +120,87 @@ pub fn sound(fighter: &str, k: usize, ff: &FightFile) -> Option<Box<dyn Sound>> 
 /// [`Look::setup`]. As in the kit, a fighter whose look is not ported draws as the bare ball
 /// ([`DefaultLook`]).
 pub fn look_for(fighter: &str) -> Box<dyn Look> {
-    match fighter {
-        "FLUTE" => Box::new(flute::FluteLook::new()),
-        "TROMBONE" => Box::new(trombone::TromboneLook::default()),
-        _ => Box::new(DefaultLook),
-    }
+    entry(fighter)
+        .and_then(|e| (e.look)())
+        .unwrap_or_else(|| Box::new(DefaultLook))
+}
+
+/// The card of the fighter `fighter`, or `None` while it has none.
+pub fn card(fighter: &str) -> Option<&'static FighterCard> {
+    entry(fighter).and_then(|e| (e.card)())
+}
+
+/// The model file of the fighter `fighter` (`data/models/<NAME>.json`, compiled in), or `None` while its look is
+/// not ported.
+pub fn mesh_json(fighter: &str) -> Option<&'static str> {
+    entry(fighter).and_then(|e| e.mesh)
+}
+
+/// Whether the fighter's music settings feed its fight (PIANO's roll, once it is ported).
+pub fn music_feeds_fight(fighter: &str) -> bool {
+    entry(fighter).is_some_and(|e| e.music_feeds_fight)
+}
+
+/// The extra lines the fighter's part declares beside its own (HORN: `HORN THEME`); empty for every other.
+pub fn extra_lines(fighter: &str) -> &'static [&'static str] {
+    entry(fighter).map_or(&[], |e| e.extra_lines)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::{PORTED, RETIRED, roster};
+
+    #[test]
+    fn a_look_made_for_another_side_takes_that_fighters_numbers() {
+        use bf_core::recording::Recording;
+        // the episode's picture: FLUTE on side 0, TROMBONE on side 1
+        let ff = FightFile::parse(include_str!("../../../../fights/flute_vs_trombone.toml")).expect("parses");
+        let rec = Recording::read(&bf_testdata::reference("fights/flute_vs_trombone/ep392.bfrec")).expect("ep392");
+        let pic = crate::build_picture(Arc::new(rec), &ff).expect("the picture");
+        let p = pic.ctx();
+        // for its own side, setup_as with its own numbers is setup
+        let (mut a, mut b) = (trombone::TromboneLook::default(), trombone::TromboneLook::default());
+        a.setup(p, 1);
+        b.setup_as(p, 1, &p.cfg[1]);
+        assert_eq!(format!("{a:?}"), format!("{b:?}"));
+        let (mut a, mut b) = (flute::FluteLook::new(), flute::FluteLook::new());
+        a.setup(p, 0);
+        b.setup_as(p, 0, &p.cfg[0]);
+        assert_eq!(format!("{a:?}"), format!("{b:?}"));
+        // EUPHONIUM's dup: TROMBONE's look made for side 0 with TROMBONE's numbers keeps side 0 (its events) and
+        // TROMBONE's PEDAL TONE radius; made for side 0 with side 0's numbers it has FLUTE's PICCOLO radius
+        let (radius, flute_radius) = (p.cfg[1].low.get("radius"), p.cfg[0].low.get("radius"));
+        assert!(
+            radius.is_some() && radius != flute_radius,
+            "{radius:?} {flute_radius:?}"
+        );
+        let mut dup = trombone::TromboneLook::default();
+        dup.setup_as(p, 0, &p.cfg[1]);
+        let text = format!("{dup:?}");
+        assert!(text.starts_with("TromboneLook { k: 0, thr_t: [],"), "{text}");
+        assert!(text.ends_with(&format!("low_radius: {radius:?} }}")), "{text}");
+        let mut own = trombone::TromboneLook::default();
+        own.setup(p, 0);
+        assert!(
+            format!("{own:?}").ends_with(&format!("low_radius: {flute_radius:?} }}")),
+            "{own:?}"
+        );
+        // FLUTE's look for side 1 with FLUTE's numbers: its roll, rise and PICCOLO are FLUTE's, its side is 1
+        let mut dup = flute::FluteLook::new();
+        dup.setup_as(p, 1, &p.cfg[0]);
+        let mut own = flute::FluteLook::new();
+        own.setup(p, 0);
+        let field = |l: &flute::FluteLook, name: &str| {
+            let t = format!("{l:?}");
+            let i = t.find(&format!(" {name}: ")).expect("the field");
+            t[i..].split(", ").next().expect("a value").to_string()
+        };
+        for name in ["roll", "rise", "low"] {
+            assert_eq!(field(&dup, name), field(&own, name), "{name}");
+        }
+        assert_eq!(field(&dup, "k"), " k: 1");
+    }
 
     #[test]
     fn the_ported_fighters_have_their_looks() {
@@ -77,6 +226,34 @@ mod tests {
             assert_eq!(look.glass(), DefaultLook.glass(), "{name:?}");
             assert!(
                 look.shards().is_empty() && look.sprite(16, 0.0, 0.0).is_none(),
+                "{name:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn every_kit_fighter_has_a_folder() {
+        // the twenty kit fighters, each with its entry points; the two ported ones say so, the eighteen stubs
+        // say "none" everywhere
+        for f in roster() {
+            let e = entry(&f.name).unwrap_or_else(|| panic!("{} has no folder", f.name));
+            let ported = PORTED.contains(&f.name.as_str());
+            assert_eq!((e.look)().is_some(), ported, "{}", f.name);
+            assert_eq!((e.voice)().is_some(), ported, "{}", f.name);
+            assert_eq!((e.card)().is_some(), ported, "{}", f.name);
+            assert_eq!(e.mesh.is_some(), ported, "{}", f.name);
+            assert!(!e.music_feeds_fight && e.extra_lines.is_empty(), "{}", f.name);
+            assert_eq!(mesh_json(&f.name).is_some(), ported, "{}", f.name);
+            assert!(
+                !music_feeds_fight(&f.name) && extra_lines(&f.name).is_empty(),
+                "{}",
+                f.name
+            );
+        }
+        assert_eq!(roster().len(), 20);
+        for name in RETIRED.iter().chain(&["flute", "", "KAZOO", "BARI SAX"]) {
+            assert!(
+                entry(name).is_none() && card(name).is_none() && mesh_json(name).is_none(),
                 "{name:?}"
             );
         }

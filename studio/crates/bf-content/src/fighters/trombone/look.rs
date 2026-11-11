@@ -18,6 +18,7 @@
 use bf_core::dmath;
 use bf_core::event::{Event, Value};
 use bf_core::py::{self, py_max, py_min};
+use bf_core::roster::FighterCfg;
 use bf_picture::camera::{Cam, V3};
 use bf_picture::config::{BAYER, FPS, ease, ss};
 use bf_picture::fx::{Emit, Mark, MarkKind};
@@ -417,6 +418,8 @@ pub struct TromboneLook {
     solo_lo: i32,
     /// `solo_hi`: the solo's highest note (1 without a solo).
     solo_hi: i32,
+    /// `self.cfg['abilities']['low']['radius']`: PEDAL TONE's radius, `None` for a low ability without one.
+    low_radius: Option<f64>,
 }
 
 impl TromboneLook {
@@ -474,7 +477,15 @@ impl Look for TromboneLook {
     }
 
     fn setup(&mut self, p: &PictureCtx, k: usize) {
+        self.setup_as(p, k, &p.cfg[k]);
+    }
+
+    /// `Look(P, k)` with `self.cfg = cfg`, then `setup()`: the one number `trombone.py` reads from `self.cfg`
+    /// (PEDAL TONE's radius) comes from `cfg`, the rest from side `k`. For its own side `cfg` is `p.cfg[k]`, and
+    /// this is `setup`.
+    fn setup_as(&mut self, p: &PictureCtx, k: usize, cfg: &FighterCfg) {
         self.k = k;
+        self.low_radius = cfg.low.get("radius");
         self.thr_t = p
             .rec
             .events
@@ -928,7 +939,7 @@ impl Look for TromboneLook {
             if e.kind == "slam" && e.who() == Some(self.k) && 0.0 <= t - e.t && t - e.t < 0.6 && t < p.t_hs {
                 let u = (t - e.t) / 0.6;
                 // rad = self.cfg['abilities']['low']['radius'] (Python raises for an ability without one)
-                let (Some(rad), Some((cx, cz))) = (p.cfg[self.k].low.get("radius"), centre(e)) else {
+                let (Some(rad), Some((cx, cz))) = (self.low_radius, centre(e)) else {
                     continue;
                 };
                 let c = scene::to_world(cx, cz, 0.05);
