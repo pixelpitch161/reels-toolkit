@@ -8,8 +8,11 @@
 The shards: every `studio/reference/fighters/<slug>/`, `themes/<name>/` and `episodes/<pair>/` folder (milestone 3
 on) has its own `manifest.json`, holding the entries of the files under that folder, so two lanes that export two
 fighters never write the same manifest. Every other file (milestones 0 to 2, and files an export writes outside
-`studio/reference/`) is listed in the top-level `studio/reference/manifest.json`. `shard_of(path)` says which shard
-a file belongs to; `verify` walks them all and reports an entry that sits in the wrong one.
+`studio/reference/`) is listed in the top-level `studio/reference/manifest.json`, with one exception: a fighter's
+model, `studio/crates/bf-content/data/models/<NAME>.json`, belongs to its fighter's shard
+(`fighters/<slug>/manifest.json`, slug = NAME.lower().replace(' ', '_')), so a port's model never touches a shared
+manifest. `shard_of(path)` says which shard a file belongs to; `verify` walks them all and reports an entry that
+sits in the wrong one.
 
 An entry: path (repo-relative, forward slashes), sha256, bytes, tool (the module that wrote the file), commit
 (`git rev-parse HEAD` when it was exported), dirty (projects/, reelkit/ or series/ had uncommitted changes then),
@@ -35,6 +38,7 @@ from . import common
 NAME = 'manifest.json'
 MANIFEST = common.ref(NAME)   # the top-level manifest of the real reference set (what `top()` gives unredirected)
 AREAS = ('fighters', 'themes', 'episodes')        # the sharded areas: one manifest per folder below each
+MODELS = 'studio/crates/bf-content/data/models/'   # <NAME>.json here is listed in fighters/<slug>/manifest.json
 FORMAT = 1
 KEYS = ('path', 'sha256', 'bytes', 'tool', 'commit', 'dirty', 'python', 'numpy', 'scipy', 'pillow', 'platform')
 ADOPTED = 'rust-bless'        # the `tool` of a file a Rust test wrote and `adopt` recorded
@@ -63,11 +67,21 @@ def area_folder(rel_path):
     return None
 
 
+def model_folder(rel_path):
+    """'fighters/<slug>' for a fighter's model (studio/crates/bf-content/data/models/<NAME>.json), else None"""
+    if not rel_path.startswith(MODELS):
+        return None
+    name = rel_path[len(MODELS):]
+    if '/' in name or not name.endswith('.json') or len(name) <= 5:
+        return None
+    return 'fighters/' + name[:-5].lower().replace(' ', '_')
+
+
 def shard_of(path):
     """the absolute path of the manifest that lists the file at `path` (absolute or repo-relative): its folder's
     own `manifest.json` inside fighters/<slug>/, themes/<name>/ or episodes/<pair>/, else the top-level one"""
     r = common.rel(path if os.path.isabs(path) else os.path.join(common.REPO, path))
-    folder = area_folder(r)
+    folder = area_folder(r) or model_folder(r)
     return os.path.join(common.REFERENCE, *folder.split('/'), NAME) if folder else top()
 
 

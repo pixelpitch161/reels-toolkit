@@ -58,11 +58,10 @@ def geo_from(doc):
     return g
 
 
-def check(name, path, doc, faces):
-    """the file says what the bridge said, and draws the same sprites"""
+def check(name, data, doc, faces):
+    """the file's bytes say what the bridge said, and draw the same sprites"""
     import sprites as SP
-    with open(path, encoding='utf-8') as fh:
-        back = json.load(fh)
+    back = json.loads(data.decode('utf-8'))
     common.same(common.plain(doc), back, name)
     assert len(back['faces']) == len(faces)
     for f, (P_, n, rgb, two, emit, gid, spec) in zip(back['faces'], faces):
@@ -81,11 +80,15 @@ def check(name, path, doc, faces):
         assert a.any() and np.array_equal(a, b), f'{name}: the sprite from the file differs (r {r}, yaw {yaw})'
 
 
-def model(name, P=None):
+def model(name, P=None, write=None):
     """write studio/crates/bf-content/data/models/<name>.json for one roster name, and only that file: the Pixel
-    Pitch model its roster entry names (`pp`), read back and proven by its sprites. `P` is a loaded kit picture
-    (frames.picture), made here when not given: the bridge needs the kit's paths. Returns the path"""
-    P = P or F.picture('models')
+    Pitch model its roster entry names (`pp`), proven from its bytes by its sprites. `P` is a loaded kit picture
+    (frames.picture), made here when not given: the bridge needs the kit's paths. `write(path, data)` writes the
+    checked bytes; by default the file is written and listed (its entry goes to its fighter's shard,
+    fighters/<slug>/manifest.json); a fighter's export passes its own (m3refs.commit_path, so a cache run compares
+    instead and a remake stages it). Returns the path"""
+    if P is None:
+        P = F.picture('models')
     import pp_bridge as B
     pp = common.roster()[name]['pp']
     os.makedirs(OUT, exist_ok=True)
@@ -94,12 +97,16 @@ def model(name, P=None):
     assert all(a[0].tobytes() == b[0].tobytes() and a[1].tobytes() == b[1].tobytes() for a, b in zip(faces, again))
     doc = faces_doc(pp, faces, B.entrant(pp), B.scene(pp).get('key'))
     path = os.path.join(OUT, f'{name}.json')
-    common.write_json(path, doc, register=False)
-    check(pp, path, doc, faces)
-    manifest.add(path, tool=__name__)
+    data = common.dumps(doc).encode('utf-8')
+    check(pp, data, doc, faces)
+    if write is None:
+        common.write_bytes(path, data)
+        manifest.add(path, tool=__name__)
+    else:
+        write(path, data)
     sides = sorted({len(f['P']) for f in doc['faces']})
     print(f"models: {common.rel(path)}  {len(faces)} faces ({', '.join(map(str, sides))} vertices)  "
-          f"{os.path.getsize(path) / 1e3:.0f} kB")
+          f"{len(data) / 1e3:.0f} kB")
     return path
 
 

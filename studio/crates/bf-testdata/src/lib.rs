@@ -20,7 +20,7 @@ pub mod png;
 pub mod sidecar;
 
 pub use self::budget::{Budget, budget_report, budget_rows, reference_files};
-pub use self::cache::{Pin, cache_command, cache_file, cache_root, pins};
+pub use self::cache::{Pin, cache_bytes, cache_command, cache_file, cache_root, export_command, pins};
 pub use self::diff::{ImgDiff, db_max_diff, diff_u8, max_rel_diff};
 pub use self::hexf::{hex_arg, parse_hex_f64};
 pub use self::manifest::{ManifestEntry, manifest_entries, manifest_shards, shard_of};

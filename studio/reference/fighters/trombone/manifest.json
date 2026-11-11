@@ -1,6 +1,7 @@
 {
  "format": 1,
  "entries": [
+  {"path": "studio/crates/bf-content/data/models/TROMBONE.json", "sha256": "4468cba0dc211b6dc074d0bdfa8c01652285dc3225379dbe4e16d473243e0af3", "bytes": 271125, "tool": "tools.studio_export.models", "commit": "3d132966d24895012b2f7b0ba1b50d0c4a6fda36", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"},
   {"path": "studio/reference/fighters/trombone/fight.json", "sha256": "f12ec232def8f9f8be0041e79d93ac0c55f654741772f0337b8b34c8010575af", "bytes": 17603, "tool": "tools.studio_export.fighter_trombone", "commit": "0d275876026f385c08131b95ec90741956687e30", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"},
   {"path": "studio/reference/fighters/trombone/pins.json", "sha256": "adbdf2810f69af48ce8ce86b4504b7e3d3c7300c96023e788869981150c2f19a", "bytes": 3770, "tool": "tools.studio_export.m3refs", "commit": "0d275876026f385c08131b95ec90741956687e30", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"}
  ]

@@ -6,7 +6,8 @@
     verify    re-hash every file of every manifest (studio/reference/manifest.json and the folder shards under
               fighters/, themes/, episodes/); exit 1 if one is missing, changed or listed in the wrong shard
     adopt     record files that a Rust test blessed (repo-relative paths) in the manifest, as tool "rust-bless"
-    cache <area>/<name>... | all [--repin]   regenerate milestone 3 cache files and check their pins (m3refs.py)
+    cache <area>/<name>... | all   regenerate milestone 3 cache files and check their pins (m3refs.py)
+    remake <area>/<name>...        make a milestone 3 folder again whole: committed files, shard, pins (m3refs.py)
     budget    the reference set's sizes against the budgets of the plan's section 4 (m3refs.py)
 
 A module registers exports with a module-level `EXPORTS = {"name": function}` (and, if one must run before or after
@@ -23,7 +24,7 @@ import sys
 import time
 
 RESERVED = ('all', 'verify', 'list', 'adopt')
-ARG_COMMANDS = ('cache', 'budget')                     # m3refs' TAKES_ARGS exports: `cache all` is one of them
+ARG_COMMANDS = ('cache', 'remake', 'budget')        # m3refs' TAKES_ARGS exports: `cache all` is one of them
 DEFAULT_ORDER = 50
 PYTHON = (3, 13, 18)                                   # the CPython the reference numbers come from (README.md)
 HASH_PROBE = ('FLUTE', -3109979385477651667)           # hash('FLUTE') under seed 0: a row of pyhash/vectors.json

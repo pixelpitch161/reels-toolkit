@@ -1,7 +1,10 @@
 //! The reference manifest, sharded by folder (milestone 3): every `studio/reference/fighters/<slug>/`,
 //! `themes/<name>/` and `episodes/<pair>/` folder has its own `manifest.json` listing the files under it; every other
-//! reference file is in the top-level `studio/reference/manifest.json`. `tools/studio_export/manifest.py` writes
-//! them; this module reads them, so a Rust test can see the same layout `verify` checks.
+//! reference file is in the top-level `studio/reference/manifest.json`, except a fighter's model
+//! (`studio/crates/bf-content/data/models/<NAME>.json`), which belongs to its fighter's shard
+//! (`fighters/<slug>/manifest.json`, slug = the name in lower case with `_` for spaces), so a port never touches a
+//! shared manifest. `tools/studio_export/manifest.py` writes them; this module reads them, so a Rust test can see
+//! the same layout `verify` checks.
 
 use std::fs;
 use std::path::PathBuf;
@@ -30,9 +33,18 @@ pub fn area_folder(rel: &str) -> Option<String> {
         .then(|| format!("{}/{}", parts[0], parts[1]))
 }
 
+/// The models folder: `<NAME>.json` here is listed in `fighters/<slug>/manifest.json`.
+pub const MODELS: &str = "studio/crates/bf-content/data/models/";
+
+/// `fighters/<slug>` for a fighter's model (`studio/crates/bf-content/data/models/<NAME>.json`).
+pub fn model_folder(rel: &str) -> Option<String> {
+    let name = rel.strip_prefix(MODELS)?.strip_suffix(".json")?;
+    (!name.is_empty() && !name.contains('/')).then(|| format!("fighters/{}", name.to_lowercase().replace(' ', "_")))
+}
+
 /// The repo-relative path of the manifest that lists the file at the repo-relative `rel`.
 pub fn shard_of(rel: &str) -> String {
-    match area_folder(rel) {
+    match area_folder(rel).or_else(|| model_folder(rel)) {
         Some(folder) => format!("studio/reference/{folder}/manifest.json"),
         None => "studio/reference/manifest.json".to_string(),
     }
@@ -126,6 +138,14 @@ mod tests {
         assert_eq!(
             shard_of("studio/crates/bf-content/data/roster.json"),
             "studio/reference/manifest.json"
+        );
+        assert_eq!(
+            shard_of("studio/crates/bf-content/data/models/BASS CLARINET.json"),
+            "studio/reference/fighters/bass_clarinet/manifest.json"
+        );
+        assert_eq!(
+            shard_of("studio/crates/bf-content/data/models/FLUTE.json"),
+            "studio/reference/fighters/flute/manifest.json"
         );
     }
 

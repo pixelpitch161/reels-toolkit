@@ -28,11 +28,20 @@ fn the_set_is_inside_its_budget() {
 
 #[test]
 fn every_reference_file_is_in_its_shard() {
-    let listed: BTreeMap<String, String> = manifest_entries()
-        .into_iter()
-        .map(|(shard, e)| (e.path, shard))
-        .collect();
+    let mut listed: BTreeMap<String, String> = BTreeMap::new();
     let mut problems = Vec::new();
+    for (shard, e) in manifest_entries() {
+        if shard != shard_of(&e.path) {
+            problems.push(format!(
+                "{} is listed in {shard}, belongs in {}",
+                e.path,
+                shard_of(&e.path)
+            ));
+        }
+        if let Some(first) = listed.insert(e.path.clone(), shard.clone()) {
+            problems.push(format!("{} is listed twice ({first} and {shard})", e.path));
+        }
+    }
     let mut n = 0;
     for (rel, _) in reference_files() {
         let path = format!("studio/reference/{rel}");
@@ -40,12 +49,8 @@ fn every_reference_file_is_in_its_shard() {
             continue;
         }
         n += 1;
-        match listed.get(&path) {
-            None => problems.push(format!("not in any manifest: {path}")),
-            Some(shard) if *shard != shard_of(&path) => {
-                problems.push(format!("{path} is listed in {shard}, belongs in {}", shard_of(&path)))
-            }
-            Some(_) => {}
+        if !listed.contains_key(&path) {
+            problems.push(format!("not in any manifest: {path}"));
         }
     }
     println!("{n} reference files, {} manifest entries", listed.len());

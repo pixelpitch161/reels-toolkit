@@ -1,6 +1,7 @@
 {
  "format": 1,
  "entries": [
+  {"path": "studio/crates/bf-content/data/models/FLUTE.json", "sha256": "f9b509abb82bf57e30f6e982b9e39c6650d022fb292a66f4b7551c3d03e40915", "bytes": 57583, "tool": "tools.studio_export.models", "commit": "3d132966d24895012b2f7b0ba1b50d0c4a6fda36", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"},
   {"path": "studio/reference/fighters/flute/fight.json", "sha256": "628c3fe329b183d04fea7c99ca4ca875e0cae22e2cc4b9e32a7f543e9d8a3640", "bytes": 19037, "tool": "tools.studio_export.fighter_flute", "commit": "0d275876026f385c08131b95ec90741956687e30", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"},
   {"path": "studio/reference/fighters/flute/pins.json", "sha256": "aead7a57401b98e06e68d211449b672b73a5c68a64ba2f679e23df26c8a2ab02", "bytes": 3661, "tool": "tools.studio_export.m3refs", "commit": "0d275876026f385c08131b95ec90741956687e30", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"}
  ]

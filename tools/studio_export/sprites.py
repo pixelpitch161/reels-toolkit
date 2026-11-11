@@ -181,43 +181,57 @@ def check_cases(P, k, cases, episode_keys):
         assert a['size'] == 2 * a['radius'] + (7 if by_model else side), (c['id'], a)
 
 
-def prepare(P=None):
-    """(P, rec, per_frame): the kit picture (frames.picture, made here when not given), the committed recording
-    proven to be the fight it draws, and the sprites each frame asks for, proven against real renders of sample
-    frames. What run_one needs, shared when it writes several fighters"""
-    P = P or F.picture('sprites')
-    rec = F.check_recording(P)                        # what the frames ask for depends on the fight
+def prepare(P=None, recording_path=None):
+    """(P, rec, per_frame, recording_path): the kit picture, the recording proven to be the fight it draws, and the
+    sprites each frame asks for, proven against real renders of sample frames. What run_one needs, shared when it
+    writes several fighters.
+
+    Without arguments: milestone 1's example picture (frames.picture) and its committed recording, and the sample
+    is the golden frames plus every SAMPLE_STEP-th frame. A port passes the picture of its own config (the kit's
+    `ballfight.kit.picture` imported in a fresh process after its config, with SEED set to the recording's seed,
+    was loaded; m3refs.fighter_picture) and that recording (its `left.bfrec`); the sample is then every
+    SAMPLE_STEP-th frame, since the golden-frame rules are milestone 1's"""
+    if P is None:
+        P = F.picture('sprites')
+    rec = F.check_recording(P, recording_path)        # what the frames ask for depends on the fight
     per_frame = {f: asked(P, f) for f in range(F.NF)}
-    sample = sorted({fr['frame'] for fr in F.select(P, rec['events'])[0]} | set(range(0, F.NF, SAMPLE_STEP)))
+    sample = set(range(0, F.NF, SAMPLE_STEP))
+    if recording_path is None:
+        sample |= {fr['frame'] for fr in F.select(P, rec['events'])[0]}
+    sample = sorted(sample)
     P._SPR.clear()
     real = really_asked(P, sample)
     P._SPR.clear()
     wrong = [f for f in sample if real[f] != per_frame[f]]
     assert not wrong, f'frames {wrong[:6]}: a render asks for {real[wrong[0]]}, worked out {per_frame[wrong[0]]}'
     print(f'sprites: the sprites worked out for {len(sample)} sample frames are the ones their renders ask for')
-    return P, rec, per_frame
+    return P, rec, per_frame, recording_path or F.RECORDING
 
 
-def run_one(name, ready=None):
-    """write studio/reference/sprites/<name>.npz and .json for one fighter of the picture, and only those files;
-    `ready` is prepare()'s result (made here when not given). Returns the two files' size in bytes"""
-    P, rec, per_frame = ready or prepare()
+def run_one(name, ready=None, out=None):
+    """write one fighter's sprite file and its sidecar, and only those: by default
+    studio/reference/sprites/<name>.npz and .json, listed in the manifest (milestone 1's FLUTE and TROMBONE). A
+    port passes `out` = (npz path, json path) under its cache folder: the files are written and not listed (the
+    caller pins them; m3refs.fighter_sprites). `name` is any fighter of the picture; `ready` is prepare()'s result
+    (made here when not given). Returns dict(size, npz, json, sha256={case id: SHA-256 of its RGBA bytes})"""
+    import hashlib
+    P, rec, per_frame, rec_path = ready or prepare()
     k = list(P.NAMES).index(name)
     try:
         keys = {x[1:] for s in per_frame.values() for x in s if x[0] == k}
         cases, arrays, facts = build(P, k, keys)
         check_cases(P, k, cases, keys)
-        npz, js = os.path.join(OUT, f'{name}.npz'), os.path.join(OUT, f'{name}.json')
+        npz, js = out or (os.path.join(OUT, f'{name}.npz'), os.path.join(OUT, f'{name}.json'))
         common.write_npz(npz, arrays, register=False)
         doc = dict(
             about=f"{name}'s sprites as the Python kit draws them, RGBA: the instrument inside its glass ball "
                   f"(kit.picture.sprite), the VS card's close-up, and the Pixel Pitch model where the look "
                   f"draws its own",
-            tool='sprites', episode=F.EPISODE, **facts, radii=list(RADII), yaw_step=6,
-            recording=F.recording_note(rec, 'the export read this file and found it equal to the run the kit '
-                                            'drew from. episode_keys and the `episode` cases follow from where '
-                                            'the balls are in this fight; the other groups do not depend on '
-                                            'it'),
+            tool='sprites', episode=P.EP.name, **facts, radii=list(RADII), yaw_step=6,
+            recording=dict(F.recording_note(rec, 'the export read this file and found it equal to the run the '
+                                                 'kit drew from. episode_keys and the `episode` cases follow from '
+                                                 'where the balls are in this fight; the other groups do not '
+                                                 'depend on it'), file=common.rel(rec_path)),
             groups=dict(picture='kit.picture.sprite at the four radii, 60 yaws, and each roll in `rolls`',
                         episode='the same call for each of `episode_keys` (what the frames ask for) that '
                                 '`picture` does not already hold',
@@ -247,20 +261,22 @@ def run_one(name, ready=None):
         for key, a in arrays.items():
             b = z[key]
             assert b.dtype == a.dtype and b.shape == a.shape and b.tobytes() == a.tobytes(), key
-        manifest.add(npz, tool=__name__)
-        manifest.add(js, tool=__name__)
+        if out is None:
+            manifest.add(npz, tool=__name__)
+            manifest.add(js, tool=__name__)
         size = os.path.getsize(npz) + os.path.getsize(js)
         groups = {g: sum(c['args']['group'] == g for c in cases) for g in ('picture', 'episode', 'title', 'model')}
         print(f"sprites: {common.rel(npz)}  {len(cases)} sprites {groups}  drawn by its {facts['drawn_by']}  "
               f"the frames ask for {len(keys)}  {size / 1e3:.0f} kB")
-        return size
+        sha = {c['id']: hashlib.sha256(arrays[c['arrays']['out']].tobytes()).hexdigest() for c in cases}
+        return dict(size=size, npz=npz, json=js, sha256=sha)
     finally:
         P._SPR.clear()                    # a later export of this process must not meet a sprite of another yaw
 
 
 def run():
     ready = prepare()
-    total = sum(run_one(name, ready) for name in ready[0].NAMES)
+    total = sum(run_one(name, ready)['size'] for name in ready[0].NAMES)
     print(f'sprites: {total / 1e6:.2f} MB -> {common.rel(OUT)}')
 
 

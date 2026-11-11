@@ -5,31 +5,39 @@ pinned cache, the per-fighter export, and the size budgets.
     fighter_refs(spec)   a fighter_<slug>.py's SPEC: writes fighters/<slug>/ (committed) and its cache files
     theme_refs(spec)     themes/<name>/ + cache (filled by Task 2 and the theme ports)
     episode_refs(spec)   episodes/<pair>/ + cache (filled by Task 6 and the pair gates)
-    pin(path)            record a cache file in its folder's pins.json (path, sha256, bytes, export)
+    pin(path)            record a cache file in its folder's staged pins (path, sha256, bytes, export)
+    finish(folder)       end a folder's run: check every pin, then apply the committed writes and pins.json
     check_pins(folder)   every pinned file present and equal, else SystemExit naming the command to run
 
-    python -m tools.studio_export cache <area>/<name>... | all [--repin]   regenerate cache files and check the pins
-    python -m tools.studio_export budget                                  sizes per folder against the budgets
+    python -m tools.studio_export cache <area>/<name>... | all   regenerate cache files and check the pins
+    python -m tools.studio_export remake <area>/<name>...        make a folder again whole (a port's own folder)
+    python -m tools.studio_export budget                         sizes per folder against the budgets
 
 Storage (plan section 4). Every milestone 3 folder, `studio/reference/fighters/<slug>/`, `themes/<name>/` and
 `episodes/<pair>/`, holds two kinds of data:
 
 - committed files (in git, listed in the folder's own manifest shard `manifest.json`): what the always-run gates
-  read, small enough for the budgets below;
+  read, small enough for the budgets below. A fighter's model, `studio/crates/bf-content/data/models/<NAME>.json`,
+  belongs to its folder too: its entry is in the fighter's shard, so a port never touches a shared manifest;
 - cache files, under `studio/reference/.cache/m3/<area>/<name>/` (git-ignored): the bulky data the `#[ignore]`d
-  gates read (scenario recordings, statistics rows, stems, ...). The export writes them, and the folder's committed
-  `pins.json` records each one's SHA-256, size and the export that makes it. Because the kit is deterministic on
-  the reference PC with the pinned libraries, a regenerated cache file is the pinned file, and its pin proves it.
+  gates read (scenario recordings, statistics rows, sprites, stems, ...). The export writes them, and the folder's
+  committed `pins.json` records each one's SHA-256, size and the export that makes it. Because the kit is
+  deterministic on the reference PC with the pinned libraries, a regenerated cache file is the pinned file, and its
+  pin proves it.
 
-The pins are never changed silently. When a regenerated cache file differs from its pin, or a pinned file is no
-longer made, the run stops naming the file; `cache <folder> --repin` is the only way to change a pin, and on a
-folder whose pins are on the build branch that is the controller's decision (ruling M3-R1). A folder's first run
-(no pins.json yet) records its pins.
+Modes (Run). Every mode does the same work; what differs is what it may change:
 
-Modes. An export run (`python -m tools.studio_export fighter_flute`) writes the committed files and the cache
-files and records new pins. A cache run (`cache fighters/flute`) does the same work, but must reproduce every
-committed file byte for byte (it stops naming a file that would change, and writes none) and every pinned cache
-file, so regenerating the cache never touches the working tree.
+- export (`python -m tools.studio_export fighter_flute`): writes the committed files and records the pins of new
+  cache files. A cache file that differs from its pin, or a pin no longer made, stops it.
+- cache (`cache fighters/flute`, `cache all`): must reproduce every committed file byte for byte and every pinned
+  cache file; it writes no committed file, so regenerating the cache never touches the working tree.
+- remake (`remake fighters/flute`): the one command that makes a folder again whole after its spec changed:
+  committed files, the shard and the pins (changed pins replaced, stale ones dropped). It is typed by a port for its
+  own folder before it is merged; on a merged folder it is the controller's decision (ruling M3-R1). Nothing runs
+  it implicitly.
+
+In every mode the committed writes, deletions and pins.json wait in the run's stage until finish(folder), which
+checks every pin against its file first: a run that stops leaves the committed state exactly as it was.
 
 A fighter's SPEC (fighter_<slug>.py; every key but `name` and `opponent` has the default shown):
 
@@ -56,7 +64,7 @@ A fighter's SPEC (fighter_<slug>.py; every key but `name` and `opponent` has the
     )
 
 What fighter_refs writes for it today (the fight half of Template F; Task 6 adds the picture, sound, voice and
-check parts, which read `frames`, `roles`, `voice_notes` and `hooks`):
+check parts, which read `frames`, `roles`, `voice_notes` and `hooks`; see the hand-over at the end):
 
 - `fighters/<slug>/fight.json` (committed): the normalised spec, the fight config (fighters, handicap, damage
   scale, rules), the two look fights, every scenario with its full rules, the statistics' pooled figures and
@@ -80,7 +88,30 @@ Budgets (plan section 4; KB and MB are 1,000 and 1,000,000 bytes, as m1-measurem
 fighters/<slug>/ 300 KB; themes/<name>/ 120 KB + 160 KB per .bfrec in it; episodes/<pair>/ 100 KB (260 KB for
 trombone_vs_tuba and bassclarinet_vs_euphonium); everything under studio/reference/ 147 MB. Counted over the files
 git tracks or would track (`git ls-files --cached --others --exclude-standard`), so a folder an export has just
-written is measured before it is committed. bf-testdata's `budget` test applies the same numbers."""
+written is measured before it is committed. bf-testdata's `budget` test applies the same numbers.
+Hand-over to Task 6 (the proving harness), which adds the picture, sound, voice and check parts to fighter_refs:
+
+- The model: fighter_refs calls fighter_model(folder, NAME, P, tool) (models.model through commit_path) in the
+  process that built the fighter's picture, so the model's entry goes to the fighter's shard and a cache run only
+  compares it.
+- The picture: kit.picture builds itself once per process from the current episode, so each picture part runs in a
+  fresh process (a spawn worker): fighter_picture(cfg.with_seed(seed)) with the `left` (or `right`) seed, which
+  appends SEED to the config.
+- Sprites (ruling M3-R18): fighter_sprites(folder, NAME, P, left recording, export) writes
+  .cache/m3/fighters/<slug>/sprites.npz and sprites.json (pinned) and returns {case id: SHA-256}; only those hashes
+  are committed (in look.json). It works for any roster name (proven on TUBA against FLUTE: 282 sprites, model 1,054
+  faces). Milestone 1's studio/reference/sprites/{FLUTE,TROMBONE}.{npz,json} stay where they are.
+- The committed files Template F implies, all in fighters/<slug>/: look.json (left's frame, hook-log and draw-log
+  SHA-256, the hull log, title-card and title-hook hashes, the sprite hashes), sound.json (the 16-bit master's
+  SHA-256, per-bus RMS, the note order, for left and right), voice.json (the fingerprints), checks.json (the kit's
+  check numbers for left) and exceptions.toml (frames the Studio may miss, with reasons; written empty once, then
+  adopted by hand, as frames/exceptions.toml). `right`'s frame hashes are cached (look_right.json, pinned) while
+  left's are committed; stems and whole voice notes are cached too.
+- Pair folders (episode_refs): episodes/<pair>/ is named after the kit config without its `ballfight_` prefix and
+  its examples/ folder (`examples/trombone_vs_tuba` -> trombone_vs_tuba, `ballfight_horn_vs_trombone_rematch` ->
+  horn_vs_trombone_rematch); LARGE_EPISODES relies on that rule. Theme folders are the mood's name (themes/big_top).
+- Every part stages its committed files with commit_bytes / commit_json / commit_path and its cache files with
+  cache_bytes / cache_json / pin, and fighter_refs calls finish(folder) once, at the end."""
 import hashlib
 import json
 import multiprocessing as mp
@@ -149,20 +180,50 @@ def folder_of(cache_path):
     return '/'.join(cache_rel(cache_path).split('/')[:2])
 
 
-def command(folder, repin=False):
-    return f"python -m tools.studio_export cache {folder}" + (' --repin' if repin else '')
+def command(folder):
+    """the command that regenerates a folder's cache and checks its pins"""
+    return f'python -m tools.studio_export cache {folder}'
 
 
-# ---------------------------------------------------------------- the run: export or cache mode
+def remake_command(folder):
+    """the one command that re-makes a folder whole: committed files, shard and pins"""
+    return f'python -m tools.studio_export remake {folder}'
+
+
+# ---------------------------------------------------------------- the run: export, cache or remake mode
+MODES = ('export', 'cache', 'remake')
+
+
+class Stage:
+    """one folder's part of a run: the pins as they were and as they will be, the cache files made, and the
+    committed writes and deletions waiting for finish()"""
+
+    def __init__(self, folder):
+        self.folder = folder
+        self.old_pins = read_pins(folder)
+        self.pins = dict(self.old_pins)
+        self.made = set()
+        self.commits = {}                      # absolute path -> (bytes, tool)
+        self.deletes = set()                   # absolute paths
+
+
 class Run:
-    """what one run of a folder's export has done so far: its mode, the cache files it made, the committed files it
-    wrote or checked"""
+    """one run of exports: its mode and each folder's stage. `export` (python -m tools.studio_export fighter_<slug>):
+    committed files are written, new cache files pinned, a changed or stale pin stops it. `cache`: nothing
+    committed may change, every cache file must equal its pin. `remake` (python -m tools.studio_export remake
+    <folder>): committed files, shard and pins are all made again, changed pins replaced and stale ones dropped. In
+    every mode the committed writes and pins.json are applied only in finish(), after the last check: a run that
+    stops leaves the committed state as it was"""
 
-    def __init__(self, mode='export', repin=False):
-        assert mode in ('export', 'cache')
-        self.mode, self.repin = mode, repin
-        self.made = {}                         # folder -> {cache rel}
-        self.committed = {}                    # folder -> {repo-relative path}
+    def __init__(self, mode='export'):
+        assert mode in MODES, mode
+        self.mode = mode
+        self.stages = {}
+
+    def stage(self, folder):
+        if folder not in self.stages:
+            self.stages[folder] = Stage(folder)
+        return self.stages[folder]
 
 
 _RUN = None
@@ -188,7 +249,7 @@ def pins_path(folder):
 
 
 def read_pins(folder):
-    """{cache rel: pin} from the folder's pins.json ({} when it has none)"""
+    """{cache rel: pin} from the folder's pins.json on disk ({} when it has none)"""
     p = pins_path(folder)
     if not os.path.exists(p):
         return {}
@@ -199,58 +260,85 @@ def read_pins(folder):
     return {e['path']: e for e in doc['pins']}
 
 
-def write_pins(folder, pins):
-    p = pins_path(folder)
+def pins_bytes(folder, pins):
     doc = dict(
         about=f'the cache files of {folder}: each is regenerated by its export on the reference PC and must have '
               f'exactly this SHA-256 and size; `path` is below {CACHE}/',
         format=PIN_FORMAT, folder=folder, cache=CACHE,
         command=command(folder),
         pins=[dict(path=r, sha256=e['sha256'], bytes=e['bytes'], export=e['export']) for r, e in sorted(pins.items())])
-    common.write_json(p, doc, sort_keys=False, register=False)
+    return common.dumps(doc, sort_keys=False).encode('utf-8')
+
+
+def write_pins(folder, pins):
+    """write pins.json now and list it in the shard (finish() does this; the unit checks call it directly)"""
+    p = pins_path(folder)
+    common.write_bytes(p, pins_bytes(folder, pins))
     manifest.add(p, tool=__name__)
 
 
 def pin(path, export=None):
-    """record the cache file at `path` in its folder's pins.json: a new file is pinned; a file equal to its pin is
-    left as it is; a file that differs from its pin stops the run (unless this is a `--repin` run). Returns the pin"""
+    """record the cache file at `path` in its folder's staged pins: a new file is pinned (not in a cache run); a file
+    equal to its pin is left as it is; a file that differs from its pin stops the run unless it is a remake.
+    pins.json itself is written by finish(). Returns the pin"""
     run = run_state()
     r, folder = cache_rel(path), folder_of(path)
+    st = run.stage(folder)
     export = export or PREFIX[folder.split('/')[0]] + folder.split('/')[1]
     entry = dict(path=r, sha256=manifest.sha256(path), bytes=os.path.getsize(path), export=export)
-    pins = read_pins(folder)
-    old = pins.get(r)
-    run.made.setdefault(folder, set()).add(r)
+    old = st.old_pins.get(r)
+    st.made.add(r)
     if old is not None and (old['sha256'], old['bytes']) == (entry['sha256'], entry['bytes']):
+        st.pins[r] = old
         return old
-    if old is not None and not run.repin:
+    if old is not None and run.mode != 'remake':
         raise SystemExit(f"{CACHE}/{r}: the regenerated file differs from its pin in {common.rel(pins_path(folder))} "
                          f"(sha256 {entry['sha256'][:16]}..., {entry['bytes']} bytes; pinned "
-                         f"{old['sha256'][:16]}..., {old['bytes']} bytes). Find out why before anything else: a "
-                         f"re-pin ({command(folder, repin=True)}) is the controller's decision")
-    if old is None and run.mode == 'cache' and not run.repin:
-        raise SystemExit(f'{CACHE}/{r}: made by {export} but not pinned in {common.rel(pins_path(folder))}: run the '
-                         f'export ({export}) first, or `{command(folder, repin=True)}`')
-    pins[r] = entry
-    write_pins(folder, pins)
+                         f"{old['sha256'][:16]}..., {old['bytes']} bytes). Find out why before anything else. A port "
+                         f"re-makes its own unmerged folder with `{remake_command(folder)}`; on a merged folder that "
+                         f"is the controller's decision (ruling M3-R1)")
+    if old is None and run.mode == 'cache':
+        raise SystemExit(f'{CACHE}/{r}: made by {export} but not pinned in {common.rel(pins_path(folder))}: the '
+                         f'folder was made by another spec; `{remake_command(folder)}` re-makes it')
+    st.pins[r] = entry
     return entry
 
 
 def finish(folder):
-    """end a folder's run: every pin must be a file this run made (a pin it no longer makes stops the run, or is
-    dropped by --repin), then check_pins"""
+    """end a folder's run, all or nothing: every pin must be a file this run made (a stale pin stops an export or
+    cache run; a remake drops it); every staged pin is checked against its cache file; only then are the committed
+    writes, deletions and pins.json applied (export and remake). Then check_pins re-reads them from disk; returns
+    the number of pins"""
     run = run_state()
-    made = run.made.get(folder, set())
-    pins = read_pins(folder)
-    stale = sorted(set(pins) - made)
-    if stale and not run.repin:
-        raise SystemExit(f"{folder}: pinned but no longer made: {', '.join(stale)}. If that is intended, "
-                         f"`{command(folder, repin=True)}` (the controller's decision on a merged folder)")
-    if stale:
-        for r in stale:
-            del pins[r]
-        write_pins(folder, pins)
-    check_pins(folder)
+    st = run.stages.pop(folder, None) or Stage(folder)
+    stale = sorted(set(st.old_pins) - st.made)
+    if stale and run.mode != 'remake':
+        raise SystemExit(f"{folder}: pinned but no longer made: {', '.join(stale)}. A port re-makes its own unmerged "
+                         f"folder with `{remake_command(folder)}` (the controller's decision on a merged folder)")
+    for r in stale:
+        del st.pins[r]
+    problems = []
+    for r, e in sorted(st.pins.items()):
+        p = os.path.join(cache_root(), *r.split('/'))
+        if not os.path.isfile(p) or os.path.getsize(p) != e['bytes'] or manifest.sha256(p) != e['sha256']:
+            problems.append(r)
+    if problems:
+        raise SystemExit(f"{folder}: cache files changed during the run: {', '.join(problems)}; nothing committed "
+                         f"was written")
+    if run.mode != 'cache':
+        for path, (data, tool) in sorted(st.commits.items()):
+            have = open(path, 'rb').read() if os.path.isfile(path) else None
+            if have != data:
+                common.write_bytes(path, data)
+            manifest.add(path, tool=tool)
+        gone = [p for p in sorted(st.deletes) if os.path.exists(p)]
+        for p in gone:
+            os.remove(p)
+        if gone:
+            manifest.remove(gone)
+        if st.pins != st.old_pins or (st.pins and not os.path.exists(pins_path(folder))):
+            write_pins(folder, st.pins)
+    return check_pins(folder)
 
 
 def check_pins(folder):
@@ -272,26 +360,44 @@ def check_pins(folder):
 
 
 # ---------------------------------------------------------------- writing a folder's files
-def commit_bytes(folder, name, data, tool):
-    """a committed file of the folder: written and listed in its shard (export mode), or compared byte for byte
-    with the file already there (cache mode: nothing is written; a difference stops the run). Returns the path"""
+def commit_path(folder, path, data, tool):
+    """a committed file that belongs to `folder` (inside it, or the fighter's model under
+    studio/crates/bf-content/data/models/, whose entry goes to the folder's shard): staged for finish() in an
+    export or remake run, compared byte for byte with the file there in a cache run (a difference stops the run).
+    Returns the path"""
     run = run_state()
-    path = ref_dir(folder, *name.split('/'))
-    run.committed.setdefault(folder, set()).add(common.rel(path))
+    path = os.path.abspath(path)
+    if manifest.shard_of(path) != ref_dir(folder, manifest.NAME):
+        raise ValueError(f'{common.rel(path)} does not belong to {folder}')
     if run.mode == 'cache':
         have = open(path, 'rb').read() if os.path.isfile(path) else None
         if have != data:
             how = 'is missing' if have is None else 'would change'
-            raise SystemExit(f'{common.rel(path)} {how}: the cache run must reproduce the committed files. Run the '
-                             f'export ({tool.rsplit(".", 1)[-1]}) and review the difference')
+            raise SystemExit(f'{common.rel(path)} {how}: a cache run must reproduce the committed files. If the spec '
+                             f'changed, `{remake_command(folder)}` re-makes the folder; else find out why')
         return path
-    common.write_bytes(path, data)
-    manifest.add(path, tool=tool)
+    st = run.stage(folder)
+    st.commits[path] = (data, tool)
+    st.deletes.discard(path)
     return path
+
+
+def commit_bytes(folder, name, data, tool):
+    """a committed file of the folder (`name` below it): see commit_path"""
+    return commit_path(folder, ref_dir(folder, *name.split('/')), data, tool)
 
 
 def commit_json(folder, name, obj, tool, sort_keys=True):
     return commit_bytes(folder, name, common.dumps(obj, sort_keys).encode('utf-8'), tool)
+
+
+def delete_committed(folder, name):
+    """a committed file of the folder that this run no longer makes: removed (with its entry) in finish()"""
+    run = run_state()
+    if run.mode != 'cache':
+        path = ref_dir(folder, *name.split('/'))
+        run.stage(folder).commits.pop(path, None)
+        run.stage(folder).deletes.add(path)
 
 
 def cache_bytes(folder, name, data, export):
@@ -405,8 +511,9 @@ def pair_rules(a, b):
     return {rule: True for x, y, rule in PAIR_RULES if {a, b} == {x, y}}
 
 
-def config_text(base, fighters, handicap, dmg_scale, rules):
-    """the kit example `base`'s episode.py with the fight's own settings appended (later assignments win)"""
+def config_text(base, fighters, handicap, dmg_scale, rules, seed=None):
+    """the kit example `base`'s episode.py with the fight's own settings appended (later assignments win); `seed`
+    sets SEED too (the fight the kit's picture and soundtrack draw)"""
     src = os.path.join(common.REPO, 'projects', 'ballfight', 'examples', base, 'episode.py')
     with open(src, encoding='utf-8', newline='') as fh:
         text = fh.read()
@@ -414,7 +521,8 @@ def config_text(base, fighters, handicap, dmg_scale, rules):
         text += '\n'
     return (text + '\n# ---------------------------------------------------------------- tools/studio_export m3refs\n'
             f'FIGHTERS = {tuple(fighters)!r}\nDMG_SCALE = {float(dmg_scale)!r}\n'
-            f'DMG_SIDE = {tuple(float(x) for x in handicap)!r}\nRULES = {dict(sorted(rules.items()))!r}\n')
+            f'DMG_SIDE = {tuple(float(x) for x in handicap)!r}\nRULES = {dict(sorted(rules.items()))!r}\n'
+            + ('' if seed is None else f'SEED = {int(seed)!r}\n'))
 
 
 def config_folder(tag, base, text):
@@ -437,10 +545,15 @@ def load_config(folder):
 class Config:
     """one fight setup of a folder: who stands where, the handicap, the damage scale, the rules"""
 
-    def __init__(self, tag, base, fighters, handicap, dmg_scale, rules):
+    def __init__(self, tag, base, fighters, handicap, dmg_scale, rules, seed=None):
         self.tag, self.base, self.fighters = tag, base, tuple(fighters)
-        self.handicap, self.dmg_scale, self.rules = tuple(handicap), dmg_scale, dict(rules)
-        self.folder = config_folder(tag, base, config_text(base, fighters, handicap, dmg_scale, rules))
+        self.handicap, self.dmg_scale, self.rules, self.seed = tuple(handicap), dmg_scale, dict(rules), seed
+        self.folder = config_folder(tag, base, config_text(base, fighters, handicap, dmg_scale, rules, seed))
+
+    def with_seed(self, seed):
+        """the same setup with SEED = seed, in a folder of its own (for the picture and the soundtrack)"""
+        return Config(f'{self.tag}_s{seed}', self.base, self.fighters, self.handicap, self.dmg_scale, self.rules,
+                      seed)
 
     def load(self):
         ep, story = load_config(self.folder)
@@ -471,6 +584,41 @@ def fighter_configs(spec):
     return out
 
 
+# ---------------------------------------------------------------- the kit's picture, sprites and model of a fighter
+def fighter_picture(cfg):
+    """the kit's renderer (ballfight.kit.picture) for cfg, which must carry a seed (Config.with_seed). The module
+    builds everything at import from the current episode, so this works once per process, in a process that has
+    not imported it yet (a spawn worker or a fresh interpreter)"""
+    assert cfg.seed is not None, 'a picture needs its fight: Config.with_seed(seed)'
+    if 'ballfight.kit.picture' in sys.modules:
+        raise SystemExit('fighter_picture: kit.picture is already built in this process (for another episode); '
+                         'draw each fighter\'s picture in a fresh process')
+    ep, _ = cfg.load()
+    from ballfight.kit import picture as P                # noqa: N812  (the kit's own short name for it)
+    assert ep.seed == cfg.seed and tuple(P.NAMES) == cfg.fighters, (ep.seed, P.NAMES)
+    return P
+
+
+def fighter_sprites(folder, name, P, recording_path, export):
+    """the fighter's sprite cache (ruling M3-R18): sprites.run_one for `name` in the picture P (fighter_picture of
+    the fight in `recording_path`), written to .cache/m3/<folder>/sprites.npz and sprites.json and pinned. Returns
+    {case id: SHA-256 of its RGBA bytes} for the folder's committed hashes (Task 6: in look.json). Milestone 1's
+    committed sprite files (studio/reference/sprites/) stay where they are"""
+    from . import sprites
+    ready = sprites.prepare(P, recording_path)
+    got = sprites.run_one(name, ready, out=(cache_dir(folder, 'sprites.npz'), cache_dir(folder, 'sprites.json')))
+    pin(got['npz'], export)
+    pin(got['json'], export)
+    return got['sha256']
+
+
+def fighter_model(folder, name, P, tool):
+    """the fighter's model (models.model) in the process that built its picture P, staged through commit_path:
+    its entry goes to the folder's shard, a cache run only compares it, a remake stages it. Returns the path"""
+    from . import models
+    return models.model(name, P=P, write=lambda path, data: commit_path(folder, path, data, tool))
+
+
 # ---------------------------------------------------------------- recordings
 def record(cfg, seed, over, path):
     """story.run_seed(seed, **over) under cfg, written to `path` (not listed anywhere), read back and checked as the
@@ -493,10 +641,12 @@ def rec_note(rec, **more):
                 events=len(rec['events']), frames=len(rec['arrays']['HP']), hash=recording.rec_hash(rec), **more)
 
 
-def existing_copy(sha):
-    """the repo-relative path of a committed reference recording with these bytes, or None"""
-    for shard, entries in manifest.load_all().items():
-        for e in entries:
+def existing_copy(sha, folder):
+    """the repo-relative path of a committed reference recording with these bytes, or None. Only the top-level
+    manifest (milestones 0 to 2) and the folder's own shard are searched, never another port's folder, so one port's
+    files never depend on another's"""
+    for shard in (manifest.top(), ref_dir(folder, manifest.NAME)):
+        for e in manifest.load(shard):
             if e['sha256'] == sha and e['path'].endswith('.bfrec'):
                 return e['path']
     return None
@@ -506,8 +656,17 @@ def existing_copy(sha):
 _STORY = None
 
 
+THREAD_VARS = ('OPENBLAS_NUM_THREADS', 'OMP_NUM_THREADS', 'MKL_NUM_THREADS')
+
+
 def _init(folder):
+    """pool worker start: one BLAS thread, the reference string hash, then the episode (spawn starts from nothing)"""
     global _STORY
+    from . import __main__ as entry
+    for k in THREAD_VARS:
+        os.environ[k] = '1'
+    assert 'numpy' not in sys.modules, 'numpy was imported before the worker set its thread count'
+    assert hash(entry.HASH_PROBE[0]) == entry.HASH_PROBE[1], 'the worker does not hash strings as the reference does'
     _, _STORY = load_config(folder)
 
 
@@ -521,6 +680,8 @@ def statistics(cfg, n):
     against direct calls in this process"""
     from . import stats
     seeds = list(range(1, n + 1))
+    for k in THREAD_VARS:                         # the workers inherit it (this process has numpy loaded already)
+        os.environ[k] = '1'
     with mp.get_context('spawn').Pool(WORKERS, initializer=_init, initargs=(cfg.folder,)) as pool:
         got = pool.map(_row, seeds, chunksize=8)
     assert [g[0]['seed'] for g in got] == seeds
@@ -549,7 +710,7 @@ def fighter_refs(spec):
     folder = f'fighters/{slug(name)}'
     export = f'fighter_{slug(name)}'
     run = run_state()
-    run.made.pop(folder, None)
+    run.stages.pop(folder, None)
     t_all = time.time()
     cfgs = fighter_configs(spec)
     main = cfgs[(opp, False)]
@@ -586,14 +747,11 @@ def fighter_refs(spec):
     data = open(tmp, 'rb').read()
     os.remove(tmp)
     assert rec_left['winner'] == 0, f'{export}: left seed {left_seed}: {name} does not win'
-    copy = existing_copy(hashlib.sha256(data).hexdigest())
+    copy = existing_copy(hashlib.sha256(data).hexdigest(), folder)
     if copy and not copy.startswith(f'{REF}/{folder}/'):
         left_file = copy[len(REF) + 1:]
         print(f'{export}: left seed {left_seed} is {copy} byte for byte: pointing at it')
-        own = ref_dir(folder, 'left.bfrec')
-        if run.mode == 'export' and os.path.exists(own):          # a copy an earlier run wrote
-            os.remove(own)
-            manifest.remove([own])
+        delete_committed(folder, 'left.bfrec')                  # a copy an earlier run wrote, if any
     else:
         commit_bytes(folder, 'left.bfrec', data, module)
         left_file = f'{folder}/left.bfrec'
@@ -615,7 +773,7 @@ def fighter_refs(spec):
     assert rec_right['winner'] == 0, f'{export}: right seed {right_seed}: {name} does not lose'
     pin(rpath, export)
     same_as = {}                                  # cache file -> the committed reference recording it equals
-    copy = existing_copy(manifest.sha256(rpath))
+    copy = existing_copy(manifest.sha256(rpath), folder)
     if copy:
         same_as[f'{folder}/right.bfrec'] = copy
 
@@ -636,7 +794,7 @@ def fighter_refs(spec):
                 path = cache_dir(folder, *rel_name.split('/'))
                 rec = record(cfg, seed, g['overrides'], path)
                 pin(path, export)
-                copy = existing_copy(manifest.sha256(path))
+                copy = existing_copy(manifest.sha256(path), folder)
                 if copy:
                     same_as[f'{folder}/{rel_name}'] = copy
                 recs.append(((g['name'], seed, f'{folder}/{rel_name}'), rec))
@@ -769,7 +927,8 @@ def budget_cmd(args):
     over = [r for r in rows if r['bytes'] > r['limit']]
     for r in rows:
         mark = 'OVER' if r['bytes'] > r['limit'] else 'ok'
-        print(f"budget: {r['folder']:40s} {r['bytes']:>12,d} of {r['limit']:>12,d} bytes  {r['files']:4d} files  {mark}")
+        print(f"budget: {r['folder']:40s} {r['bytes']:>12,d} of {r['limit']:>12,d} bytes  {r['files']:4d} files  "
+              f"{mark}")
     if over:
         raise SystemExit('budget: over: ' + ', '.join(f"{r['folder']} ({r['bytes']:,d} > {r['limit']:,d})"
                                                       for r in over))
@@ -794,35 +953,60 @@ def pinned_folders():
     return out
 
 
-def cache_cmd(args):
-    repin = '--repin' in args
-    names = [a for a in args if a != '--repin']
-    flags = [a for a in names if a.startswith('-')]
+def run_folder(folder, mode, found=None):
+    """run the export that makes `folder` in `mode` ('cache' or 'remake'); returns the number of pins. `found` is
+    the export registry ({name: (order, function, module)}; the entry point's when not given)"""
+    if found is None:
+        from . import __main__ as entry
+        found = entry.exports()
+    name = export_for(folder)
+    if name not in found:
+        raise SystemExit(f'{mode}: {folder}: no export named {name}')
+    old = set_run(Run(mode))
+    try:
+        found[name][1]()
+        leftover = sorted(run_state().stages)
+        if leftover:                                  # an export must finish() every folder it staged
+            raise SystemExit(f"{mode}: {name} left {', '.join(leftover)} unfinished")
+        return check_pins(folder)
+    finally:
+        set_run(old)
+
+
+def _folders(cmd, args, allow_all):
+    flags = [a for a in args if a.startswith('-')]
     if flags:
-        raise SystemExit(f"cache: unknown option {', '.join(flags)} (only --repin)")
-    if not names:
-        raise SystemExit('cache: name the folders (<area>/<name>, for example fighters/flute) or all')
-    if 'all' in names:
-        if names != ['all']:
-            raise SystemExit('cache: all stands alone')
-        folders = pinned_folders()
-    else:
-        folders = [check_folder(n) for n in names]
-    from . import __main__ as entry
-    found = entry.exports()
-    for folder in folders:
-        name = export_for(folder)
-        if name not in found:
-            raise SystemExit(f'cache: {folder}: no export named {name}')
+        hint = ' (a pin is re-made with `remake <folder>`)' if '--repin' in flags else ''
+        raise SystemExit(f"{cmd}: unknown option {', '.join(flags)}{hint}")
+    if not args:
+        raise SystemExit(f'{cmd}: name the folders (<area>/<name>, for example fighters/flute)'
+                         + (' or all' if allow_all else ''))
+    if 'all' in args:
+        if not allow_all:
+            raise SystemExit(f'{cmd}: all is not allowed: name your own folder')
+        if args != ['all']:
+            raise SystemExit(f'{cmd}: all stands alone')
+        return pinned_folders()
+    return [check_folder(n) for n in args]
+
+
+def cache_cmd(args, found=None):
+    """cache <area>/<name>... | all: regenerate the cache files and check the pins; nothing committed changes"""
+    for folder in _folders('cache', args, True):
         t0 = time.time()
-        old = set_run(Run('cache', repin))
-        try:
-            found[name][1]()
-            n = check_pins(folder)
-        finally:
-            set_run(old)
-        print(f'[cache {folder}: {name}, {n} pinned files match, {time.time() - t0:.1f} s]')
+        n = run_folder(folder, 'cache', found)
+        print(f'[cache {folder}: {export_for(folder)}, {n} pinned files match, {time.time() - t0:.1f} s]')
 
 
-EXPORTS = {'cache': cache_cmd, 'budget': budget_cmd}
-TAKES_ARGS = ('cache', 'budget')
+def remake_cmd(args, found=None):
+    """remake <area>/<name>...: make the folders again whole, all or nothing: committed files, the shard and the
+    pins (changed pins replaced, stale ones dropped). Typed by a port for its own folder after a spec change; on a
+    folder merged into the build branch it is the controller's decision (ruling M3-R1). Never run implicitly"""
+    for folder in _folders('remake', args, False):
+        t0 = time.time()
+        n = run_folder(folder, 'remake', found)
+        print(f'[remake {folder}: {export_for(folder)}, {n} pins, {time.time() - t0:.1f} s]')
+
+
+EXPORTS = {'cache': cache_cmd, 'remake': remake_cmd, 'budget': budget_cmd}
+TAKES_ARGS = ('cache', 'remake', 'budget')

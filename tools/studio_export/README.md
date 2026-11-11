@@ -164,6 +164,7 @@ From milestone 3 the reference data of a fighter, a theme or a pair gate lives i
 .studio-tools\py313\Scripts\python.exe -m tools.studio_export fighter_flute            # committed + cache, new pins
 .studio-tools\py313\Scripts\python.exe -m tools.studio_export cache fighters/flute     # regenerate, check the pins
 .studio-tools\py313\Scripts\python.exe -m tools.studio_export cache all                # every folder with pins.json
+.studio-tools\py313\Scripts\python.exe -m tools.studio_export remake fighters/flute    # a port's own folder, whole
 .studio-tools\py313\Scripts\python.exe -m tools.studio_export budget                   # sizes against the budgets
 .studio-tools\py313\Scripts\python.exe -m tools.studio_export.unit_checks.m3refs_checks   # the framework's checks
 ```
@@ -172,21 +173,29 @@ From milestone 3 the reference data of a fighter, a theme or a pair gate lives i
   pins every cache file that has no pin yet. A cache file that differs from its pin, or a pin the run no longer
   makes, stops the run naming the file: the export never moves a pin on its own.
 - A **cache run** (`cache <area>/<name>...` or `cache all`) does the same work but writes no committed file: each
-  must come out byte for byte as it is (a difference stops the run naming the file and the export to run), every
-  cache file must equal its pin, and at the end `check_pins` re-hashes them all. So regenerating the cache never
-  touches the working tree. The folder's export is the one its pins name (else `fighter_<slug>`, `theme_<name>`,
-  `episode_<pair>` by the area).
-- `--repin` (on `cache` only) replaces differing pins and drops stale ones. On a folder whose pins are on the build
-  branch that is a **controller decision**, recorded in the ledger with the reason (ruling M3-R1); a port worker
-  uses it only on its own folder before it is merged (for example after changing its SPEC's seeds).
-- The Rust side (`bf_testdata::cache_file("fighters/flute/right.bfrec")`) checks the pin before handing out the
-  path, and panics with `run: python -m tools.studio_export cache fighters/flute` when the file is missing,
-  unpinned or changed: a cache-backed test fails, it never skips.
+  must come out byte for byte as it is (a difference stops the run naming the file), every cache file must equal
+  its pin, and at the end `check_pins` re-hashes them all. So regenerating the cache never touches the working
+  tree. The folder's export is the one its pins name (else `fighter_<slug>`, `theme_<name>`, `episode_<pair>` by
+  the area).
+- A **remake** (`remake <area>/<name>`) is the one command that makes a folder again whole after its spec changed:
+  committed files, shard and pins together (changed pins replaced, stale ones dropped), all or nothing. A port types
+  it for its own folder before it is merged; on a merged folder it is a **controller decision**, recorded in the
+  ledger with the reason (ruling M3-R1). Nothing runs it implicitly; `remake all` is refused.
+- All or nothing, in every mode: committed writes and `pins.json` wait in the run's stage and are applied only in
+  `finish(folder)`, after every pin has been checked against its file; a run that stops changes nothing committed.
+- A fighter's model (`studio/crates/bf-content/data/models/<NAME>.json`) is listed in its fighter's shard
+  (`fighters/<slug>/manifest.json`), not the top-level manifest, so a port never touches a shared manifest.
+- The Rust side (`bf_testdata::cache_file("fighters/flute/right.bfrec")`) checks the pin (once per path and
+  process; `cache_bytes` hashes the bytes it hands out) and panics with `run: python -m tools.studio_export cache
+  fighters/flute` when the file is missing, unpinned or changed, or with the export command when the folder has no
+  `pins.json` at all: a cache-backed test fails, it never skips.
 - `budget` prints every milestone 3 folder's size and the whole set's against section 4 (fighters/<slug>/ 300 KB;
   themes/<name>/ 120 KB + 160 KB per `.bfrec` in it; episodes/<pair>/ 100 KB, 260 KB for `trombone_vs_tuba` and
   `bassclarinet_vs_euphonium`; all of `studio/reference/` 147 MB; KB = 1,000 bytes), over the files git tracks or
   would track there, and exits 1 naming each folder over. `bf-testdata`'s test `budget` applies the same numbers.
-- `cache` and `budget` are in `m3refs.TAKES_ARGS`, so `all` leaves them out.
+- `cache`, `remake` and `budget` are in `m3refs.TAKES_ARGS`, so `all` leaves them out.
+- Per-fighter, theme and pair exports (`fighter_<slug>`, `theme_<name>`, `episode_<pair>`) add no row to the
+  table "What each export writes" below: their module docstrings and this section document them.
 
 ### A fighter's export: `fighter_<slug>.py`
 
@@ -241,8 +250,20 @@ example's handicap the framework's recordings are milestone 1's own where the se
    export reproduces itself), and `budget` must show the folder inside its budget.
 4. A Rust test reads committed files through `bf_testdata::reference("fighters/<slug>/fight.json")` and cache files
    through `bf_testdata::cache_file("fighters/<slug>/right.bfrec")`, in an `#[ignore]`d test.
-5. Commit the folder (committed files, `pins.json`, `manifest.json`) and the export module. Never re-pin a merged
-   folder: if a regenerated file differs, report it.
+5. Commit the folder (committed files, `pins.json`, `manifest.json`), the model if it has one, and the export
+   module.
+6. After a change to the SPEC (or the port) that changes a committed or a pinned file, the export and `cache` stop;
+   `python -m tools.studio_export remake fighters/<slug>` makes the unmerged folder again in one run. Never remake a
+   merged folder on your own: if a regenerated file differs, report it.
+
+### Hand-over to Task 6 (the proving harness)
+
+`m3refs.py`'s docstring ends with it: `fighter_refs` calls `fighter_model` (`models.model` through `commit_path`);
+each picture part runs in a fresh process with `fighter_picture(cfg.with_seed(seed))`; sprites go to the pinned
+cache through `fighter_sprites` (`.cache/m3/fighters/<slug>/sprites.{npz,json}`, ruling M3-R18) with only their
+hashes committed; the committed files Template F implies are `look.json`, `sound.json`, `voice.json`, `checks.json`
+and `exceptions.toml`; `right`'s frame hashes are cached while `left`'s are committed; a pair folder is the kit
+config's name without its `ballfight_` prefix (`LARGE_EPISODES` relies on it).
 
 ## What each export writes
 
@@ -260,8 +281,7 @@ example's handicap the framework's recordings are milestone 1's own where the se
 | `lance_bag` | `lance_bag.py` | `studio/reference/fights/lance_vs_bag/{<kind>_<corner>_s<seed>.bfrec,index.json}`: 9 fights of the TROMBONE's lance against a bag (the two bags of `striker_bag`, and a LANCER: the TROMBONE with POWER SLIDE as its only ability; all added to the kit's roster table for the run only), the first 16 s of each, so that only the engine core and the lance act; `index.json` lists them, the three added entries and what the set covers (about 2 s) |
 | `look_trombone` | `look_trombone.py` | `studio/reference/picture_looks/trombone_frames.json`: the episode drawn with the TROMBONE's own look and the kit's base-class look for the FLUTE (replaced in the worker process only), for two fights, each in a process of its own: the episode's (seed 392, the TROMBONE wins) and seed 3 (it loses): per frame the SHA-256 of the frame, of the hook calls and of the draw log, 181 frames (about 1 minute). `look_trombone_stages <fight> <frame>...` is no reference export: it writes the stage dumps of those frames for the same two looks under `studio/reference/.cache/stages_look_trombone/<fight>/` |
 | `models` | `models.py` | `studio/crates/bf-content/data/models/{FLUTE,TROMBONE}.json` (`models.model(name)` writes one roster name's file only) |
-| `fighter_flute`, `fighter_trombone` | `fighter_flute.py`, `fighter_trombone.py` (through `m3refs.py`) | `studio/reference/fighters/{flute,trombone}/{fight.json,left.bfrec,pins.json,manifest.json}` and their cache under `studio/reference/.cache/m3/fighters/` (see "Milestone 3"; about 5 minutes each, 3 workers) |
-| `cache`, `budget` | `m3refs.py` | no reference export: `cache <area>/<name>... \| all [--repin]` regenerates the cache and checks the pins; `budget` reports the sizes |
+| `cache`, `remake`, `budget` | `m3refs.py` | no reference export: see "Milestone 3" |
 | `pillow` | `pillow_vectors.py` | `studio/reference/pillow/calls.json` and 18 vector files, each `.npz` with its sidecar `.json` (about 4 minutes: it draws all 1,830 frames in 8 worker processes) |
 | `py` | `py_vectors.py` | `studio/reference/py/vectors.json` |
 | `pyhash` | `pyhash_vectors.py` | `studio/reference/pyhash/vectors.json` |
