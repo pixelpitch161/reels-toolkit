@@ -56,7 +56,8 @@ pub enum WeaponCfg {
 pub struct StrikerCfg {
     /// The picture's style (default: the kind name, as `kit/preview.py` reads it).
     pub style: String,
-    /// Beats between strikes on the 16th grid (`int(round(4 * every))` 16ths; haste divides it).
+    /// Beats between strikes on the 16th grid (`int(round(4 * every))` 16ths; haste divides it). In a roster entry
+    /// 4 x `every` is a finite number.
     pub every: f64,
     /// A basket drops every `int(drop_every)` beats; a roster entry must give at least 1.
     pub drop_every: f64,
@@ -125,7 +126,8 @@ pub struct BladeCfg {
     pub style: String,
     /// The mode.
     pub mode: BladeMode,
-    /// Beats between thrusts on the 16th grid (`int(round(4 * every))` 16ths; haste divides it).
+    /// Beats between thrusts on the 16th grid (`int(round(4 * every))` 16ths; haste divides it). In a roster entry
+    /// 4 x `every` is a finite number.
     pub every: f64,
     /// The closed lance's length beyond the ball, as given. `fight.py` reads it with two defaults: see
     /// [`BladeCfg::rest_idle`] and [`BladeCfg::rest_start`].
@@ -136,7 +138,8 @@ pub struct BladeCfg {
     pub grow: f64,
     /// The reach never grows past this.
     pub max_len: f64,
-    /// The starting fret count (`.get('frets0', 0)`; an int, it goes into hit events).
+    /// The starting fret count (`.get('frets0', 0)`; an int, it goes into hit events). From 0 to [`MAX_FRETS0`] in
+    /// a roster entry.
     pub frets0: i64,
     /// Seconds the lance takes to shoot out.
     pub t_out: f64,
@@ -153,6 +156,11 @@ pub struct BladeCfg {
     /// Whether the live lance swats enemy projectiles (`.get('parry')`, falsy when absent).
     pub parry: bool,
 }
+
+/// The largest `frets0` a roster entry may give. A landed thrust adds one fret, so a count that starts here stays a
+/// whole number the engine can hold however long the fight (Python's ints have no end; an `i64` has), and far more
+/// frets than this are nothing a picture could draw.
+pub const MAX_FRETS0: i64 = 1_000_000;
 
 /// The keys a thrust-blade entry may hold: `kind`, `mode`, `style` and [`BladeCfg`]'s fields.
 const BLADE_KEYS: [&str; 16] = [
@@ -346,6 +354,20 @@ impl Entry<'_> {
         Ok(x)
     }
 
+    /// A weapon's `every`, the beats between two starts on its 16th grid: `fight.py` takes `int(round(4 * every))`,
+    /// which raises when 4 x `every` is not a finite number (the engine would carry on with a grid of its own). Any
+    /// finite grid runs, as in Python: one that rounds to less than a 16th note is every 16th note.
+    fn grid(&self, obj: &Json, prefix: &str, key: &str) -> Result<f64, RosterError> {
+        let x = self.f64(obj, prefix, key)?;
+        if !(4.0 * x).is_finite() {
+            return Err(self.err(
+                &join(prefix, key),
+                format!("{x:e} beats is too long (4 x {key} must be a finite number)"),
+            ));
+        }
+        Ok(x)
+    }
+
     /// `w.get(key, default)`.
     fn f64_or(&self, obj: &Json, prefix: &str, key: &str, default: f64) -> Result<f64, RosterError> {
         match obj.get(key) {
@@ -398,7 +420,7 @@ impl Entry<'_> {
                 self.only(w, p, "a striker weapon", &STRIKER_KEYS)?;
                 Ok(WeaponCfg::Striker(StrikerCfg {
                     style,
-                    every: self.f64(w, p, "every")?,
+                    every: self.grid(w, p, "every")?,
                     drop_every: self.count(w, p, "drop_every", "a basket drops every that many beats")?,
                     max_baskets: self.count(w, p, "max_baskets", "there must be room for a basket")?,
                     rise: self.f64(w, p, "rise")?,
@@ -420,13 +442,21 @@ impl Entry<'_> {
                 Ok(WeaponCfg::Blade(BladeCfg {
                     style,
                     mode: BladeMode::Thrust,
-                    every: self.f64(w, p, "every")?,
+                    every: self.grid(w, p, "every")?,
                     rest: w.get("rest").map(|v| self.number(v, "weapon.rest")).transpose()?,
                     base: self.f64_or(w, p, "base", 0.0)?,
                     grow: self.f64(w, p, "grow")?,
                     max_len: self.f64(w, p, "max_len")?,
                     frets0: match w.get("frets0") {
-                        Some(v) => self.int(v, "weapon.frets0")?,
+                        Some(v) => {
+                            let n = self.int(v, "weapon.frets0")?;
+                            if !(0..=MAX_FRETS0).contains(&n) {
+                                return Err(
+                                    self.err("weapon.frets0", format!("{n} is not a fret count (0 to {MAX_FRETS0})"))
+                                );
+                            }
+                            n
+                        }
                         None => 0,
                     },
                     t_out: self.f64(w, p, "t_out")?,
@@ -491,6 +521,17 @@ impl Entry<'_> {
             }
             if slot != "low" && !params.contains_key("every_bars") {
                 return Err(self.err(&join(&prefix, "every_bars"), "missing"));
+            }
+            // A haste divides its fighter's weapon grid, the time of a thrust and the time of a lunge by `mult`
+            // (`ab_mult`): with 0 the Python fight raises (a division by zero) on the first 16th note of the haste,
+            // where the engine would start a thrust that never ends; below 0 a thrust runs backwards for ever.
+            if let (AbilityKind::Haste, Some(&mult)) = (&kind, params.get("mult"))
+                && mult <= 0.0
+            {
+                return Err(self.err(
+                    &join(&prefix, "mult"),
+                    format!("{mult} is not above 0 (a haste divides the weapon's grid by it)"),
+                ));
             }
         }
         Ok(AbilityCfg {
@@ -822,6 +863,98 @@ mod tests {
             FighterCfg::from_json(&raw).unwrap_err().to_string(),
             "roster: FLUTE: weapon.drop_every: missing"
         );
+    }
+
+    /// What the thrust lance cannot run on. A haste factor of 0: Python divides the thrust grid and the thrust's time
+    /// by it and raises on the first 16th note of the haste (the engine would start a thrust that never ends);
+    /// below 0 a thrust would run backwards. An `every` whose fourfold is not a finite number: Python raises in the
+    /// fight's first step. A `frets0` out of range: the count goes up by one per landed thrust in a whole number
+    /// that, unlike Python's, has an end. Each is refused when the roster is read, with the fighter and the field.
+    #[test]
+    fn a_thrust_blade_needs_a_haste_above_zero_a_finite_grid_and_a_fret_count() {
+        let err = |raw: &Json| FighterCfg::from_json(raw).unwrap_err().to_string();
+        // the haste factor, on whichever fighter and slot the haste sits: the lance's own POWER SLIDE, and the
+        // striker's FLUTTER TONGUE, whose strike grid and lunge time it divides the same way
+        for (name, slot) in [("TROMBONE", "unlock2"), ("FLUTE", "unlock1")] {
+            for mult in [0.0, -2.0, -0.0] {
+                let mut raw = fighter(name).raw;
+                raw["abilities"][slot]["mult"] = Json::from(mult);
+                assert_eq!(
+                    err(&raw),
+                    format!(
+                        "roster: {name}: abilities.{slot}.mult: {mult} is not above 0 (a haste divides the weapon's \
+                         grid by it)"
+                    )
+                );
+            }
+            for mult in [0.5, 2.0, 1e-9] {
+                let mut raw = fighter(name).raw;
+                raw["abilities"][slot]["mult"] = Json::from(mult);
+                let f = FighterCfg::from_json(&raw).expect("loads");
+                let ab = if slot == "unlock1" { &f.unlock1 } else { &f.unlock2 };
+                assert_eq!((ab.kind.clone(), ab.get("mult")), (AbilityKind::Haste, Some(mult)));
+            }
+        }
+        // a whole number in the file is read the same way
+        let mut raw = fighter("TROMBONE").raw;
+        raw["abilities"]["unlock2"]["mult"] = Json::from(0);
+        assert_eq!(
+            err(&raw),
+            "roster: TROMBONE: abilities.unlock2.mult: 0 is not above 0 (a haste divides the weapon's grid by it)"
+        );
+        // `mult` on an ability that is no haste is that kind's own business
+        let mut raw = fighter("TROMBONE").raw;
+        raw["abilities"]["low"]["mult"] = Json::from(0.0);
+        assert_eq!(
+            FighterCfg::from_json(&raw).expect("loads").low.kind,
+            AbilityKind::Unsupported("slam+mult".into())
+        );
+
+        // the grid: 4 x every must be a finite number, for the lance and for the cobras
+        for name in ["TROMBONE", "FLUTE"] {
+            for every in [1e308, -1e308] {
+                let raw = weapon_with(name, "every", Some(Json::from(every)));
+                assert_eq!(
+                    err(&raw),
+                    format!(
+                        "roster: {name}: weapon.every: {every:e} beats is too long (4 x every must be a finite number)"
+                    )
+                );
+            }
+            // any finite grid runs, as in Python: a huge one starts once, a tiny or negative one on every 16th
+            for every in [4e307, 0.25, 0.0, -1.0, 2.5] {
+                let raw = weapon_with(name, "every", Some(Json::from(every)));
+                let got = match FighterCfg::from_json(&raw).expect("loads").weapon {
+                    WeaponCfg::Blade(w) => w.every,
+                    WeaponCfg::Striker(w) => w.every,
+                    other => panic!("{other:?}"),
+                };
+                assert_eq!(got, every, "kept as written");
+            }
+        }
+        assert_eq!(
+            err(&weapon_with("TROMBONE", "every", Some(Json::from(1e308)))),
+            "roster: TROMBONE: weapon.every: 1e308 beats is too long (4 x every must be a finite number)"
+        );
+
+        // the fret count
+        for frets0 in [-1, -20, MAX_FRETS0 + 1, i64::MAX] {
+            let raw = weapon_with("TROMBONE", "frets0", Some(Json::from(frets0)));
+            assert_eq!(
+                err(&raw),
+                format!("roster: TROMBONE: weapon.frets0: {frets0} is not a fret count (0 to 1000000)")
+            );
+        }
+        for frets0 in [0, 1, 24, MAX_FRETS0] {
+            let raw = weapon_with("TROMBONE", "frets0", Some(Json::from(frets0)));
+            let WeaponCfg::Blade(w) = FighterCfg::from_json(&raw).expect("loads").weapon else {
+                panic!("a blade")
+            };
+            assert_eq!(w.frets0, frets0);
+        }
+        // and a count that is no whole number is still named as such
+        let raw = weapon_with("TROMBONE", "frets0", Some(Json::from(1.5)));
+        assert_eq!(err(&raw), "roster: TROMBONE: weapon.frets0: must be a whole number");
     }
 
     #[test]

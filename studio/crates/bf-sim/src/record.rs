@@ -87,8 +87,9 @@ impl Frames {
         }
         // K = np.full((KMAX, 7), np.nan)
         self.k.extend(std::iter::repeat_n(NAN, KMAX * K_FIELDS));
-        // SLOT (projectile kinds): fight.py 5510 to 5514 fills the first min(KMAX, len(kp)) rows of this frame's K
-        // with [x, y, atan2(vy, vx), owner, id, index in its volley, volley id]. FLUTE and TROMBONE fire none.
+        // SLOT (projectile kinds), from `fight.keys`: fight.py 5510 to 5514 fills the first min(KMAX, len(kp)) rows
+        // of this frame's K with [x, y, atan2(vy, vx), owner, id, index in its volley, volley id]. FLUTE and TROMBONE
+        // fire none.
         let waves = fight.waves.iter().map(|w| {
             Value::List(vec![
                 Value::Int(w.owner as i64),
