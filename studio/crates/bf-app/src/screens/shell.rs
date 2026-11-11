@@ -32,11 +32,11 @@ const COUNT_GAP: f32 = 4.0;
 const PAIR_GAP: f32 = 28.0 - 8.0;
 
 /// The keys of section 7 that the shell owns: 1 to 5 go to the five steps. They are taken from the widgets
-/// (`consume_key`), so nothing else acts on them too, and left alone while any widget has the keyboard
-/// (`egui_wants_keyboard_input`: a text field being typed in, a slider moved with its keys), so typing "3" into a
-/// caption types it. A number with Ctrl held is not a step key.
+/// (`consume_key`), so nothing else acts on them too, and left alone while a text field has the keyboard
+/// (`text_edit_focused`), so typing "3" into a caption types it. Any other focused control (a button that Tab has
+/// moved to) lets them through. A number with Ctrl held is not a step key.
 pub fn keys(ctx: &Context, out: &mut Vec<Action>) {
-    if ctx.egui_wants_keyboard_input() {
+    if ctx.text_edit_focused() {
         return;
     }
     for (step, _, key) in STEPS {

@@ -34,7 +34,12 @@ const PAD_X: i8 = 10;
 /// The side padding of the bout bar.
 const BOUT_PAD_X: i8 = 16;
 /// What the notice says when the PC gives the app no folder for its files.
-const NO_FOLDER: &str = "This PC gave the app no folder for its settings, so changes are kept only until it closes.";
+pub const NO_FOLDER: &str =
+    "This PC gave the app no folder for its settings, so changes are kept only until it closes.";
+/// The most actions `log` holds.
+pub const LOG_CAP: usize = 10_000;
+/// How many of the newest actions `log` keeps when it reaches `LOG_CAP`.
+pub const LOG_KEEP: usize = 5_000;
 
 /// What the app starts with, made in the creator passed to `eframe::run_native` (where the window's context
 /// exists, so the engine's waker can wake it).
@@ -98,7 +103,8 @@ pub struct BfApp {
     pub state: AppState,
     /// Where the regions were drawn in the last frame.
     pub layout: ShellLayout,
-    /// Every action the screens pushed, in order, since the app was built.
+    /// Every action the screens pushed, in order, since the app was built. In a long session it never grows past
+    /// `LOG_CAP`: at that size the oldest are dropped, keeping the newest `LOG_KEEP`.
     pub log: Vec<Action>,
     /// The longest one `logic` call or one action's dispatch has taken, in milliseconds.
     pub slowest_update_ms: f32,
@@ -112,16 +118,16 @@ pub struct BfApp {
     closed: bool,
 }
 
-/// Builds the real app in the creator passed to `eframe::run_native`: the theme, then the settings and the queue,
-/// read once through `paths` (the same `paths` the writer is started with), their notices kept to be shown, the
-/// sample engine (until the real one is behind the seam) woken through the window's context, and the sound output
-/// that `open_audio` gives (it may wait up to 3 s for the device here, once).
+/// Builds the real app in the creator passed to `eframe::run_native`: the settings and the queue, read once
+/// through `paths` (the same `paths` the writer is started with), their notices kept to be shown, the sample engine
+/// (until the real one is behind the seam) woken through the window's context, and the sound output that
+/// `open_audio` gives (it may wait up to 3 s for the device here, once). `BfApp::new` then installs the theme: the
+/// one call on this path.
 pub fn start(
     cc: &eframe::CreationContext<'_>,
     paths: Option<Paths>,
     open_audio: impl FnOnce() -> Box<dyn AudioOut>,
 ) -> BfApp {
-    theme::install(&cc.egui_ctx);
     let cores = std::thread::available_parallelism().map_or(1, std::num::NonZero::get);
     let mut notices = Vec::new();
     let (settings, queue, writer) = match paths {
@@ -239,6 +245,9 @@ impl BfApp {
         let began = Instant::now();
         let effects = self.state.dispatch(action.clone());
         carry_out(&mut self.link, effects);
+        if self.log.len() >= LOG_CAP {
+            self.log.drain(..LOG_CAP - LOG_KEEP);
+        }
         self.log.push(action);
         self.note(began);
     }

@@ -23,9 +23,9 @@ use crate::model::shortlist::{FilterSpec, SearchState, Shortlist};
 use crate::model::story::StoryView;
 use crate::model::take::{Frame, MusicView, PlayerCmd, SoundState, TransportAction, TransportView};
 use crate::model::{Gen, JobId, Notice, Platform, Settings, Step, TakeId, View};
-use crate::preview::audio::NO_DEVICE;
 use crate::seam::{Command, Event};
 use crate::wording;
+use crate::wording::NO_DEVICE;
 
 /// The Balance screen's numbers, or how far a balance run has got.
 #[derive(Clone, Debug, PartialEq, Default)]

@@ -1,5 +1,9 @@
 //! Shared text formatters, so every screen writes names, counts and numbers the same way.
 
+/// What the preview says when the PC has no sound output that works, or the one it had was lost: the transport, the
+/// status bar and `open_audio` all use it.
+pub const NO_DEVICE: &str = "No sound device was found, so the preview is silent.";
+
 /// A roster name as shown, in sentence case: "BASS CLARINET" -> "Bass clarinet".
 pub fn display_name(roster_name: &str) -> String {
     let lower = roster_name.to_lowercase();

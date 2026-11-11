@@ -1,9 +1,10 @@
-//! BALLFIGHT Studio. `--smoke` opens the window, paints 30 frames, closes it and exits with code 0.
+//! BALLFIGHT Studio. `--smoke` opens the window, paints 30 frames, closes it and exits with code 0; it keeps its
+//! files in a temp folder of its own and has no sound.
 
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use bf_app::app::{self, BfApp};
-use bf_app::preview::audio::open_audio;
+use bf_app::preview::audio::{NO_DEVICE, NoAudio, open_audio};
 use bf_app::store::Paths;
 
 /// How many painted frames `--smoke` waits for before it closes the window.
@@ -48,20 +49,30 @@ fn main() -> std::process::ExitCode {
             .with_min_inner_size([1280.0, 800.0]),
         ..Default::default()
     };
+    // A smoke run never touches the owner's own settings folder or sound device: its files go in a folder of its
+    // own under the system temp folder, removed when the window has closed, and it has no sound.
+    let smoke_root = smoke.then(|| std::env::temp_dir().join(format!("bf-smoke-{}", std::process::id())));
+    let paths = match &smoke_root {
+        Some(root) => Some(Paths::under(root)),
+        None => Paths::system(),
+    };
     let result = eframe::run_native(
         "BALLFIGHT Studio",
         options,
         Box::new(move |cc| {
             // The theme is installed, and the settings and the queue are read, here, before the first frame.
-            let app = app::start(cc, Paths::system(), open_audio);
             let app: Box<dyn eframe::App> = if smoke {
+                let app = app::start(cc, paths, || Box::new(NoAudio::new(NO_DEVICE)));
                 Box::new(Smoke { app, painted: 0 })
             } else {
-                Box::new(app)
+                Box::new(app::start(cc, paths, open_audio))
             };
             Ok(app)
         }),
     );
+    if let Some(root) = smoke_root {
+        let _ = std::fs::remove_dir_all(root);
+    }
     match result {
         Ok(()) => std::process::ExitCode::SUCCESS,
         Err(err) => {

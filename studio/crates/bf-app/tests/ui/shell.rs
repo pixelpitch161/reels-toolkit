@@ -17,7 +17,7 @@ use bf_app::state::{Action, ViewModel};
 use bf_app::store::settings::{load_settings, save_settings};
 use bf_app::store::{Paths, Writer};
 use bf_app::theme;
-use bf_app::widgets::fields;
+use bf_app::widgets::{buttons, fields};
 use egui::accesskit::{Role, Toggled};
 use egui_kittest::Harness;
 use egui_kittest::kittest::{NodeT as _, Queryable as _};
@@ -268,6 +268,27 @@ fn step_keys_are_left_to_a_text_field_that_has_the_keyboard() {
 }
 
 #[test]
+fn step_keys_still_work_when_tab_has_moved_to_a_button() {
+    let _gpu = gpu();
+    let mut out = Vec::new();
+    let mut harness = widget_harness((300.0, 80.0), |ui| {
+        shell::keys(ui.ctx(), &mut out);
+        buttons::flat(ui, "Swap sides");
+    });
+    harness.run();
+    harness.key_press(egui::Key::Tab);
+    harness.run();
+    assert!(
+        harness.ctx.memory(|m| m.focused()).is_some(),
+        "the button has the keyboard"
+    );
+    harness.key_press(egui::Key::Num4);
+    harness.run();
+    drop(harness);
+    assert_eq!(out, vec![Action::Go(View::Step(Step::Music))]);
+}
+
+#[test]
 fn update_is_disabled_and_says_why() {
     let _gpu = gpu();
     let mut harness = showing(REF, base::vm());
@@ -430,11 +451,89 @@ fn writer_problems_become_notices() {
     let (mut harness, _side) = live(Some(Writer::start(temp.paths())));
     harness.run();
     harness.state_mut().act(Action::SetWorkers(3));
-    harness.state_mut().shutdown();
+    // The writer fails on its own thread; each frame's `logic` reads its problems. Bounded by a step count.
+    for _ in 0..2_000 {
+        if !harness.state().state.vm.notices.is_empty() {
+            break;
+        }
+        harness.step();
+        std::thread::sleep(Duration::from_millis(5));
+    }
     harness.run();
     let notices = &harness.state().state.vm.notices;
     assert_eq!(notices.len(), 1, "{notices:?}");
-    assert!(harness.query_by_label("Dismiss").is_some());
+    assert!(harness.query_by_label("Dismiss").is_some(), "the notice is on screen");
+}
+
+#[test]
+fn the_log_is_capped() {
+    let _gpu = gpu();
+    let (mut harness, _side) = live(None);
+    harness.run();
+    for i in 0..app::LOG_CAP + 1 {
+        let action = if i % 2 == 0 {
+            Action::Go(View::Library)
+        } else {
+            Action::Go(View::Settings)
+        };
+        harness.state_mut().act(action);
+    }
+    let log = &harness.state().log;
+    assert_eq!(log.len(), app::LOG_KEEP + 1, "the oldest were dropped");
+    assert_eq!(log.last(), Some(&Action::Go(View::Library)), "the newest is kept");
+}
+
+#[test]
+fn without_a_folder_the_app_says_so() {
+    let _gpu = gpu();
+    let mut harness = app_harness(REF, |cc| {
+        app::start(cc, None, || Box::new(NoAudio::new("No sound device in tests.")))
+    });
+    harness.run();
+    let notices = &harness.state().state.vm.notices;
+    assert_eq!(
+        notices,
+        &vec![Notice {
+            text: app::NO_FOLDER.to_string()
+        }]
+    );
+    assert!(harness.query_by_label(app::NO_FOLDER).is_some());
+    harness.state_mut().shutdown();
+}
+
+#[test]
+fn long_lines_are_cut_short_at_the_minimum_size() {
+    let _gpu = gpu();
+    let sentence = "This line is far too long to fit, so it is cut short with an ellipsis rather than drawn over \
+                    its neighbours.";
+    let long = [sentence; 4].join(" ");
+    let mut vm = base::vm();
+    vm.notices.push(Notice { text: long.clone() });
+    vm.status = long.clone();
+    let mut harness = showing(MIN, vm);
+    harness.run();
+    let l = harness.state().layout;
+    let lines: Vec<egui::Rect> = harness.query_all_by_label(&long).map(|n| n.rect()).collect();
+    assert_eq!(lines.len(), 2, "the notice and the status line");
+    let dismiss = harness.get_by_label("Dismiss").rect();
+    let counts = harness.get_by_label("30 fighters, 1 theme").rect();
+    for line in lines {
+        if line.center().y < l.workspace.min.y {
+            assert!(
+                line.max.x <= dismiss.min.x,
+                "the notice {line:?} stops before Dismiss {dismiss:?}"
+            );
+        } else {
+            assert!(
+                l.status.contains_rect(line),
+                "the status {line:?} is inside the status bar"
+            );
+            assert!(
+                line.max.x <= counts.min.x,
+                "the status {line:?} stops before the counts {counts:?}"
+            );
+        }
+    }
 }
 
 #[test]
