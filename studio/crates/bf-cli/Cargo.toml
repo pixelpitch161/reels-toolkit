@@ -17,3 +17,15 @@ bf-picture.workspace = true
 bf-sound.workspace = true
 bf-content.workspace = true
 bf-export.workspace = true
+clap.workspace = true
+png.workspace = true
+serde_json.workspace = true
+
+# Ctrl+C stops a long command cleanly (a render removes its temporary folder).
+[target.'cfg(windows)'.dependencies]
+windows-sys = { workspace = true, features = ["Win32_System_Console"] }
+
+# The reader for studio/reference (dev support only), and the hashes of what the commands write.
+[dev-dependencies]
+bf-testdata = { path = "../bf-testdata" }
+sha2.workspace = true
