@@ -231,3 +231,48 @@ The bench holds one take (the engine that made it has ended and its kept takes w
 app, add the kept takes (about 57 MB each, three at most) and the playing take's soundtrack (23 MB): about 0.4 GB
 while playing, about 1 GB for the few seconds a take's sound is built. The picture's caches did not grow over a full
 play-through.
+
+## 6. The app on the real engine (Task 35)
+
+Measured on Nov 11, 2026 on the same PC, from release test builds, while three other workers were building and
+testing on it. "Busy" is the whole PC's CPU use read just before (and after) the run.
+
+### Test counts
+
+`cargo test --workspace --release --no-fail-fast` (busy 42 % before, 54 % after; 612 s): **1,919 passed, 0 failed,
+21 ignored**. For `bf-app`: the unit tests inside each file 493 passed and 7 ignored; the command line 3; the saved
+files of older versions (`tests/compat.rs`) 8; the interface program (`tests/ui`) 347 passed and 1 ignored (the
+whole-video test). The release engine tests with the ignored ones (`--lib engine:: -- --include-ignored`): 93
+passed. The interface program run ten times in a row (release, PC 20 to 41 % busy): ten exits with code 0, 347
+passed each time, 157 to 233 s a run.
+
+### The whole video by clicks (`real::a_whole_video_with_the_real_engine`)
+
+Balance (auto-balance from 1.00 / 1.00 to 1.94 / 0.39), search, the first shortlist row whose take passes all three
+Music checks (it was row 1, **seed 469**, in every run), Render, the queue, and the finished folder checked
+(`flute_vs_trombone.mp4` of 61.01 s by ffprobe, `cover.png`, `caption.txt` starting with the drafted caption, the
+fight file with seed 469). 15 engine workers (the settings' default here).
+
+| Run | Busy before | Whole test | Slowest update (`slowest_update_ms`) | Result |
+| --- | --- | --- | --- | --- |
+| 1, before the interface thread was raised | about 60 % | 123.2 s | 45.8 ms | every file check passed; the 20 ms bound failed |
+| 2, the same, while finding where the time went | 50 to 60 % | 116 to 122 s | 103 to 109 ms (the timing printout itself added to it) | as run 1 |
+| 3, interface thread raised | 38 % | 134.3 s | 30.5 ms | every file check passed; the 20 ms bound failed |
+| 4, the same | 100 % | 124.8 s | 55.1 ms | the same |
+| 5, the same | 93 % | 168.0 s | 37.4 ms | the same |
+
+**Where the slow updates are.** Almost all of them are in `Player::tick` while a video renders and the preview
+plays at the same time on the Render screen: the preview's 15 drawing threads, the render's 15 and ffmpeg's want
+more cores than the PC has, on top of other workers' builds. In a timed run before the change below, 33 of the 84
+updates over 8 ms on Render took more than 20 ms (up to 74 ms). Since the interface thread runs above the app's
+other threads (`app::interface_first`, Windows `THREAD_PRIORITY_ABOVE_NORMAL`), two timed runs had none and one
+such update; what remains is `tick` waiting for the preview scheduler's lock while a drawing thread that holds it waits for a core. The bound was not
+loosened. Making the interface never wait on that lock (or giving the drawing threads the same priority) is in
+`preview/scheduler.rs`, outside this task, and is proposed for a ruling.
+
+### The preview budgets, run again by name
+
+`playback_meets_the_budget` and `scrubbing_meets_the_budget`, one at a time: at 45 % busy, scrubbing passed and
+playback failed (first take 82.5 % on time with `frame_ms` 188 ms; later take 99.8 %); at 100 % busy both failed
+(91.0 % / 89.1 %). Section 2 has their passing runs on a quieter PC; nothing they measure changed in this task.
+`this_pc_plays_silence` passed.

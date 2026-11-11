@@ -26,6 +26,8 @@ The program is `target/release/ballfight-studio.exe`. Started with no option it 
   and no limit on a search. The PC's sound device plays the preview; without one the app says so and plays silently.
 - At start the app asks the engine for the fighters, for ffmpeg (shown in Settings, with where it was found) and
   about the output folder.
+- The interface's thread runs above the app's other threads on Windows (`app::interface_first`), so the preview's
+  drawing threads and a render, which together can keep every core busy, do not keep the window waiting for a core.
 - Closing the window stops the engine first and waits for it, a few seconds at most (`BfApp::close`,
   `app::ENGINE_STOP`): a video being rendered is cancelled, its ffmpeg is ended and its temporary folder removed,
   and it starts again from the beginning next time (it is back in the queue, which is paused and says so).
