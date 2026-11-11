@@ -9,9 +9,10 @@
 //!
 //! **The newest take wins.** A newer `LoadTake` silences every older take at once (its cancel flag): an older
 //! worker stops before its next stage and sends nothing more. A soundtrack being built cannot be interrupted, so
-//! one that is replaced is finished and thrown away. The new worker first waits (a millisecond at most) for any
-//! older one that is in the middle of sending an event, so nothing of an older take ever arrives after the first
-//! event of a newer one. Only one soundtrack is built at a time (a turn the workers pass on, never a lock held by
+//! one that is replaced is finished and thrown away. The new worker first waits, up to a second (`HUSH_WAIT`; a
+//! send takes far less), for any older one that is in the middle of sending an event, so nothing of an older take
+//! arrives after the first event of a newer one. A late event would in any case be ignored by the state, which
+//! takes only the take id it asked for last. Only one soundtrack is built at a time (a turn the workers pass on, never a lock held by
 //! the handler): a replaced take that is still waiting for its turn gives up, so quick clicks through the seeds
 //! never build several half-gigabyte soundtracks together. A new take may therefore wait for the replaced build
 //! (about 4 s) before its own starts.
@@ -191,17 +192,53 @@ fn check_title(name: &str) -> String {
     }
 }
 
+/// The title a check puts before its own summary ("Levels: the loudness is even ..."), which Music does not repeat
+/// under its own title.
+fn summary_title(name: &str) -> Option<&'static str> {
+    match name {
+        "levels" => Some("Levels"),
+        "loudness" => Some("Perceived loudness"),
+        "band" => Some("Band"),
+        _ => None,
+    }
+}
+
+/// A check's summary as the note under its line: without the check's own "{title}: " in front, as a sentence.
+fn check_note(name: &str, summary: &str) -> String {
+    let text = summary_title(name)
+        .and_then(|title| summary.strip_prefix(title))
+        .and_then(|rest| rest.strip_prefix(": "))
+        .unwrap_or(summary);
+    plain(&text)
+}
+
 /// The check lines of Music: "Loudness" for `levels`, "Perceived loudness" for `loudness`, "Fighters above the
-/// music" for `band`, in the order given; each note is the check's own sentence.
+/// music" for `band`, in the order given; each note is the check's own sentence, without the check's own title in
+/// front ("Levels: the loudness is even ..." is noted "The loudness is even ...").
 pub fn check_lines(results: &[CheckResult]) -> Vec<CheckLine> {
     results
         .iter()
         .map(|r| CheckLine {
             title: check_title(r.name),
             pass: r.pass,
-            note: r.summary.clone(),
+            note: check_note(r.name, &r.summary),
         })
         .collect()
+}
+
+/// Why seed `seed` has no show, as a sentence: no K.O., or a recording that does not belong to the fight file
+/// (whose own words list names in code form), or the tempo's own sentence.
+fn show_problem(seed: u64, e: &ShowError) -> String {
+    match e {
+        ShowError::NoKo => {
+            format!("Seed {seed} has no K.O. before 58 s, so it cannot be made into a video. Pick another seed.")
+        }
+        ShowError::Names { .. } | ShowError::Winner(_) | ShowError::Event { .. } => format!(
+            "The fight of seed {seed} does not match this fight file, so it cannot be shown. Pick the seed again, \
+             and if this stays, pick another seed."
+        ),
+        ShowError::Tempo(_) => plain(e),
+    }
 }
 
 /// A lock that a panic elsewhere cannot poison for good.
@@ -320,6 +357,9 @@ pub fn handle(state: &mut State, ctx: &Ctx, command: Command) {
     };
     // A voice whose worker has ended is held by this state alone (newer workers may hold it a while longer).
     state.voices.retain(|v| Arc::strong_count(v) > 1);
+    // The older takes are silenced before `ctx.spawn`, not after it returns: the handshake in `Voice::say` needs
+    // every older flag set before the new worker looks at their `speaking`. If the thread cannot start, the new take
+    // still ends in `TakeFailed` (spawn's answer), and silencing the old ones is right either way.
     for v in &state.voices {
         v.quiet.store(true, Ordering::SeqCst);
     }
@@ -413,7 +453,9 @@ impl Worker {
             return Err("Pick a seed first.".to_string());
         };
         let key = ff.to_toml();
-        if let Some(k) = kept_take(&mut lock(&self.kept), &key) {
+        // Bound first, so the lock's guard (a temporary) is dropped before anything is sent.
+        let found = kept_take(&mut lock(&self.kept), &key);
+        if let Some(k) = found {
             if me.say(
                 ctx,
                 Event::TakePicture {
@@ -441,12 +483,7 @@ impl Worker {
             return Ok(());
         }
         let rec = bf_sim::run(&setup, true).map_err(|e| plain(&format!("Seed {seed} cannot be fought: {e}")))?;
-        let show = Show::new(&rec, &ff).map_err(|e| match e {
-            ShowError::NoKo => {
-                format!("Seed {seed} has no K.O. before 58 s, so it cannot be made into a video. Pick another seed.")
-            }
-            other => plain(&other),
-        })?;
+        let show = Show::new(&rec, &ff).map_err(|e| show_problem(seed, &e))?;
         let sheet = BeatSheet::series(setup.fighters);
         let lows = [setup.fighters[0].low.name.as_str(), setup.fighters[1].low.name.as_str()];
         let story = bf_story::story(&rec, &show.grid, &sheet, lows);
@@ -716,19 +753,86 @@ mod tests {
                 CheckLine {
                     title: "Loudness".to_string(),
                     pass: false,
-                    note: "levels said this.".to_string(),
+                    note: "Levels said this.".to_string(),
                 },
                 CheckLine {
                     title: "Perceived loudness".to_string(),
                     pass: true,
-                    note: "loudness said this.".to_string(),
+                    note: "Loudness said this.".to_string(),
                 },
                 CheckLine {
                     title: "Fighters above the music".to_string(),
                     pass: true,
-                    note: "band said this.".to_string(),
+                    note: "Band said this.".to_string(),
                 },
             ]
+        );
+    }
+
+    #[test]
+    fn a_note_does_not_repeat_the_checks_title() {
+        let r = |name: &'static str, summary: &str| CheckResult {
+            name,
+            pass: true,
+            summary: summary.to_string(),
+            numbers: BTreeMap::new(),
+        };
+        // the three summaries as the checks write them
+        let lines = check_lines(&[
+            r(
+                "levels",
+                "Levels: the loudness is even from the first frame: the opening (first 10 s) is -0.6 dB against the \
+                 rest.",
+            ),
+            r(
+                "loudness",
+                "Perceived loudness: to the ear the intro (title card and count-in) is 0.4 LU under the fight.",
+            ),
+            r(
+                "band",
+                "Band: each fighter is louder than the bed in its own band in every section of the fight.",
+            ),
+        ]);
+        let notes: Vec<&str> = lines.iter().map(|l| l.note.as_str()).collect();
+        assert_eq!(
+            notes,
+            [
+                "The loudness is even from the first frame: the opening (first 10 s) is -0.6 dB against the rest.",
+                "To the ear the intro (title card and count-in) is 0.4 LU under the fight.",
+                "Each fighter is louder than the bed in its own band in every section of the fight.",
+            ]
+        );
+        // another check's title, or none, is kept as it is
+        assert_eq!(check_note("band", "Levels: odd."), "Levels: odd.");
+        assert_eq!(check_note("levels", "no title here"), "No title here.");
+    }
+
+    #[test]
+    fn a_show_that_cannot_be_made_is_a_sentence() {
+        let mismatch = "The fight of seed 7 does not match this fight file, so it cannot be shown. Pick the seed \
+                        again, and if this stays, pick another seed.";
+        for e in [
+            ShowError::Names {
+                recording: vec!["FLUTE".to_string()],
+                fight_file: vec!["FLUTE".to_string(), "TROMBONE".to_string()],
+            },
+            ShowError::Winner(3),
+            ShowError::Event {
+                index: 12,
+                problem: "element 2 is missing".to_string(),
+            },
+        ] {
+            let words = show_problem(7, &e);
+            assert_eq!(words, mismatch);
+            assert!(!words.contains('[') && !words.contains('"'), "{words}");
+        }
+        assert_eq!(
+            show_problem(7, &ShowError::NoKo),
+            "Seed 7 has no K.O. before 58 s, so it cannot be made into a video. Pick another seed."
+        );
+        assert_eq!(
+            show_problem(7, &ShowError::Tempo("the recording was fought at 120 BPM".to_string())),
+            "The recording was fought at 120 BPM."
         );
     }
 
@@ -872,8 +976,8 @@ mod tests {
     #[test]
     fn a_replaced_take_that_panics_says_nothing() {
         let (engine, root) = test_engine();
+        // in whichever order the two workers run, take 9,998 is replaced and panics
         load(&engine, PANICS_REPLACED, &draft(Some(1)));
-        std::thread::sleep(Duration::from_millis(50));
         load(&engine, 2, &draft(None));
         let events = gather(&engine, 1.5, |_| false);
         let takes: Vec<Option<TakeId>> = events.iter().map(take_of).collect();
