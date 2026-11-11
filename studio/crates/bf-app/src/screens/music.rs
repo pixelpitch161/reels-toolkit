@@ -74,6 +74,8 @@ const CLIP_H: f32 = 20.0;
 const CLIP_MIN_W: f32 = 6.0;
 /// A marker's name starts 4 right of its line.
 const MARKER_GAP: f32 = 4.0;
+/// How far a marker's hover area reaches each side of its line.
+const MARKER_HOVER: f32 = 3.0;
 /// The block under the lanes: padded 14 at the sides and 16 above and below, 6 between its lines.
 const UNDER_PAD: (i8, i8) = (14, 16);
 const UNDER_GAP: f32 = 6.0;
@@ -156,8 +158,15 @@ fn paint_text(painter: &Painter, rect: Rect, text: &str, font: egui::FontId, col
     );
 }
 
+/// Turns off egui's fade at a scrolled edge for the scroll areas `ui` holds: the fade would draw over the focus ring
+/// of a control at that edge, and the look has no gradients.
+fn no_fade(ui: &mut Ui) {
+    ui.spacing_mut().scroll.fade.strength = 0.0;
+}
+
 fn controls_column(ui: &mut Ui, vm: &ViewModel, out: &mut Vec<Action>) {
     let rect = ui.max_rect();
+    no_fade(ui);
     ScrollArea::vertical()
         .id_salt("music controls scroll")
         .auto_shrink([false, false])
@@ -400,6 +409,7 @@ fn arrangement_column(ui: &mut Ui, vm: &ViewModel, out: &mut Vec<Action>) {
     );
 
     let mut child = ui.new_child(UiBuilder::new().id_salt("lanes").max_rect(middle));
+    no_fade(&mut child);
     ScrollArea::vertical()
         .id_salt("music lanes scroll")
         .auto_shrink([false, false])
@@ -533,8 +543,10 @@ fn lanes(ui: &mut Ui, music: &MusicView) {
     }
 }
 
-/// The marker lane's markers: each a 1 px `FAINT` line with its small `MUTED` name 4 to its right, cut short where
-/// the next marker begins.
+/// The marker lane's markers: each a 1 px `FAINT` line with its small `MUTED` name 4 to its right when the name fits
+/// whole before the next marker, and nothing else when it does not (ruling M2-R25). Every marker is a hover area
+/// round its line that shows its whole name, and carries that name for screen readers (role `Mark`); the words
+/// beside it are hidden from them, so the name is read once.
 fn markers(ui: &mut Ui, row: Rect, left: f32, width: f32, markers: &[(f32, String)]) {
     let mut shown: Vec<(f32, &str)> = markers
         .iter()
@@ -547,14 +559,25 @@ fn markers(ui: &mut Ui, row: Rect, left: f32, width: f32, markers: &[(f32, Strin
         let x = x.min(row.max.x - 1.0);
         ui.painter()
             .rect_filled(Rect::from_x_y_ranges(x..=x + 1.0, line_y.clone()), 0.0, FAINT);
+        let hover = Rect::from_x_y_ranges(x - MARKER_HOVER..=x + 1.0 + MARKER_HOVER, line_y.clone());
+        let marker = ui.interact(hover, ui.scope_id().with(("marker", i)), Sense::hover());
+        marker.widget_info(|| WidgetInfo::labeled(Role::Mark, true, name));
+        marker.on_hover_text(name);
         let next = shown.get(i + 1).map_or(row.max.x, |&(next, _)| next);
-        let text = Rect::from_x_y_ranges(
-            x + 1.0 + MARKER_GAP..=(next - MARKER_GAP).max(x + 1.0 + MARKER_GAP),
-            line_y.clone(),
-        );
-        cell(ui, text, ("marker", i), Layout::left_to_right(Align::Center), |ui| {
-            plain(ui, RichText::new(name).font(small()).color(MUTED))
-        });
+        let from = x + 1.0 + MARKER_GAP;
+        let room = next - MARKER_GAP - from;
+        let needs = ui.painter().layout_no_wrap(name.to_owned(), small(), MUTED).size().x;
+        if needs <= room {
+            let text = Rect::from_x_y_ranges(from..=from + room, line_y.clone());
+            let words = cell(
+                ui,
+                text,
+                ("marker words", i),
+                Layout::left_to_right(Align::Center),
+                |ui| plain(ui, RichText::new(name).font(small()).color(MUTED)),
+            );
+            ui.ctx().accesskit_node_builder(words.id, |node| node.set_hidden());
+        }
     }
 }
 

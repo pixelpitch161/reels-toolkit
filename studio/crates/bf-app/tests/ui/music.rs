@@ -487,3 +487,158 @@ fn music_matches() {
     let mut harness = showing(REF, music::vm());
     harness.snapshot("music_1440x900");
 }
+
+const MARKERS: [&str; 7] = [
+    "Title card",
+    "Fight",
+    "Lead change",
+    "Lead change",
+    "Desperation",
+    "K.O.",
+    "Reset",
+];
+
+/// The text a node shows: a label's value, any other node's name.
+fn text_of(node: &egui_kittest::Node<'_>) -> String {
+    let node = node.accesskit_node();
+    let text = if node.role() == Role::Label {
+        node.value()
+    } else {
+        node.label()
+    };
+    text.unwrap_or_default()
+}
+
+/// The marker lane's markers on screen (role `Mark`), left to right: name and rect.
+fn marker_nodes(harness: &Harness<'_, BfApp>) -> Vec<(String, Rect)> {
+    let mut marks: Vec<(String, Rect)> = harness
+        .query_all_by_role(Role::Mark)
+        .map(|n| (text_of(&n), n.rect()))
+        .collect();
+    marks.sort_by(|a, b| a.1.min.x.total_cmp(&b.1.min.x));
+    marks
+}
+
+#[test]
+fn markers_show_whole_names_or_none() {
+    let _gpu = gpu();
+    for size in [REF, MIN] {
+        let harness = showing(size, music::vm());
+        let marks = marker_nodes(&harness);
+        let names: Vec<&str> = marks.iter().map(|(n, _)| n.as_str()).collect();
+        assert_eq!(names, MARKERS, "every marker carries its whole name at {size:?}");
+        let row = marks[0].1;
+        let mut drawn = 0;
+        for (i, (name, mark)) in marks.iter().enumerate() {
+            let next = marks.get(i + 1).map_or(f32::INFINITY, |(_, r)| r.min.x);
+            let words: Vec<Rect> = harness
+                .query_all_by_role(Role::Label)
+                .filter(|n| text_of(n) == *name)
+                .map(|n| n.rect())
+                .filter(|r| r.center().y >= row.min.y && r.center().y <= row.max.y && r.min.x >= mark.min.x)
+                .filter(|r| r.min.x < next)
+                .collect();
+            assert!(words.len() <= 1, "{name}: {words:?}");
+            if let Some(words) = words.first() {
+                drawn += 1;
+                let whole = harness.ctx.fonts_mut(|f| {
+                    f.layout_no_wrap(name.clone(), bf_app::theme::small(), egui::Color32::WHITE)
+                        .size()
+                        .x
+                });
+                assert!(
+                    words.width() >= whole - 0.5,
+                    "{name} at {size:?} is whole: {words:?}, needs {whole}"
+                );
+                assert!(words.max.x <= next, "{name} stops before the next marker");
+            }
+        }
+        assert!(drawn >= 4, "most names fit at {size:?}: {drawn}");
+        let all_text: Vec<String> = harness.query_all_by_role(Role::Label).map(|n| text_of(&n)).collect();
+        assert!(
+            all_text.iter().all(|t| !t.contains('…')),
+            "nothing is cut short in the marker lane"
+        );
+    }
+}
+
+#[test]
+fn hovering_a_marker_without_its_words_shows_its_name() {
+    let _gpu = gpu();
+    let mut harness = showing(REF, music::vm());
+    let words = |harness: &Harness<'_, BfApp>| {
+        harness
+            .query_all_by_role(Role::Label)
+            .filter(|n| text_of(n) == "Title card")
+            .count()
+    };
+    assert_eq!(words(&harness), 0, "Title card does not fit before Fight at 1440 x 900");
+    let mark = marker_nodes(&harness)[0].1;
+    harness.hover_at(mark.center());
+    harness.run();
+    assert_eq!(words(&harness), 1, "hovering shows its name");
+}
+
+#[test]
+fn the_key_keeps_its_line_beside_it() {
+    let _gpu = gpu();
+    for size in [REF, MIN] {
+        let harness = showing(size, music::vm());
+        let key = by_role(&harness, "Key", Role::ComboBox).rect();
+        let line = harness.get_by_label("harmonic minor, from the theme").rect();
+        assert!(
+            line.min.x >= key.max.x && (line.center().y - key.center().y).abs() <= 1.0,
+            "{line:?}"
+        );
+        let workspace = harness.state().layout.workspace;
+        assert!(
+            line.max.x <= workspace.min.x + CONTROLS_W,
+            "inside the column at {size:?}"
+        );
+    }
+}
+
+#[test]
+fn no_text_says_nan() {
+    let _gpu = gpu();
+    let mut vm = music::vm();
+    let m = vm.take.music.as_mut().unwrap();
+    m.lanes[0].clips.push((f32::NAN, 20.0));
+    m.lanes[1].clips.push((5.0, f32::INFINITY));
+    m.markers.push((f32::NAN, "Lost".to_string()));
+    m.markers.push((f32::NEG_INFINITY, "Gone".to_string()));
+    let harness = showing(REF, vm);
+    let mut read = 0;
+    for node in harness.root().children_recursive() {
+        let text = text_of(&node);
+        read += usize::from(!text.is_empty());
+        assert!(!text.contains("NaN") && !text.contains("inf"), "{text}");
+    }
+    assert!(read > 50, "the texts were read: {read}");
+    assert!(
+        !has(&harness, "Lost") && !has(&harness, "Gone"),
+        "markers with no time are left out"
+    );
+}
+
+#[test]
+fn rings_in_the_scrolled_controls_column_at_the_minimum_size() {
+    let _gpu = gpu();
+    let mut harness = showing(MIN, music::vm());
+    harness.get_by_label(TEMPO_LINE).scroll_to_me();
+    harness.run();
+    let workspace = harness.state().layout.workspace;
+    let tempo = harness.get_by_label(TEMPO_LINE).rect();
+    assert!(workspace.contains_rect(tempo), "scrolled to the bottom: {tempo:?}");
+    for (label, role) in &FOCUSABLE[..4] {
+        by_role(&harness, label, *role).focus();
+        harness.run();
+        assert!(by_role(&harness, label, *role).is_focused(), "{label}");
+        let rect = by_role(&harness, label, *role).rect();
+        assert!(
+            workspace.contains_rect(rect.expand(4.0)),
+            "{label} with its ring in view: {rect:?}"
+        );
+        assert_ring(&mut harness, rect, "ltrb", &format!("{label}, column scrolled"));
+    }
+}
