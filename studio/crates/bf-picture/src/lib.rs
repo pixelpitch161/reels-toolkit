@@ -26,6 +26,7 @@ pub mod post;
 pub mod raster;
 pub mod shadows;
 pub mod sprite;
+pub mod ui;
 mod v3;
 
 pub use self::img::{Gray32, Img, Rgb8, RgbF};

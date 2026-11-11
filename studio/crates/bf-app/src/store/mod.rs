@@ -121,9 +121,9 @@ fn tmp_path(path: &Path) -> io::Result<PathBuf> {
     Ok(path.with_file_name(tmp))
 }
 
-/// Settings files that `load_settings` could not open, so the app is running on its defaults while the owner's own
-/// file is still there. Before the writer saves settings over one of these, it moves the old file aside as
-/// `settings.unread-N.toml` (ruling M2-R9).
+/// Files that `load_settings` or `load_queue` could not open, so the app is running on its defaults (or an empty
+/// queue) while the owner's own file is still there. Before the writer saves over one of these, it moves the old
+/// file aside as `settings.unread-N.toml` or `queue.unread-N.json` (ruling M2-R9).
 static UNREAD: Mutex<BTreeSet<PathBuf>> = Mutex::new(BTreeSet::new());
 
 fn unread() -> MutexGuard<'static, BTreeSet<PathBuf>> {
@@ -152,9 +152,10 @@ pub(crate) fn clear_unread(path: &Path) {
     unread().remove(&unread_key(path));
 }
 
-/// Before settings are saved to `path`: if the file there could not be read at start, moves it aside as
-/// `settings.unread-N.toml` first. An error means the old file could not be kept, and the save must not happen.
-fn keep_unread(path: &Path) -> io::Result<()> {
+/// Before a file is saved to `path`: if the file there could not be read at start, moves it aside under `tag`
+/// (`settings.unread-N.toml`, `queue.unread-N.json`) first. An error means the old file could not be kept, and the
+/// save must not happen.
+fn keep_unread(path: &Path, tag: &str) -> io::Result<()> {
     if !unread().contains(&unread_key(path)) {
         return Ok(());
     }
@@ -162,9 +163,57 @@ fn keep_unread(path: &Path) -> io::Result<()> {
         clear_unread(path);
         return Ok(());
     }
-    move_aside(path, "unread")?;
+    move_aside(path, tag)?;
     clear_unread(path);
     Ok(())
+}
+
+/// How the writer speaks of one kind of file it saves.
+struct Kind {
+    /// The set-aside tag for a file that could not be read at start.
+    unread_tag: &'static str,
+    /// "Your settings were not saved to".
+    not_saved: &'static str,
+    /// "the old settings file".
+    old_file: &'static str,
+    /// "Change a setting again to try once more."
+    try_again: &'static str,
+    /// "Your settings could not be saved to".
+    could_not: &'static str,
+}
+
+const SETTINGS_FILE: Kind = Kind {
+    unread_tag: "unread",
+    not_saved: "Your settings were not saved to",
+    old_file: "the old settings file",
+    try_again: "Change a setting again to try once more.",
+    could_not: "Your settings could not be saved to",
+};
+
+const QUEUE_FILE: Kind = Kind {
+    unread_tag: "unread",
+    not_saved: "The render queue was not saved to",
+    old_file: "the old queue file",
+    try_again: "Change the queue again to try once more.",
+    could_not: "The render queue could not be saved to",
+};
+
+/// Saves one file to `path` with `save`, first keeping aside an old file there that could not be read at start.
+/// Returns what went wrong, in words, or None when the file was saved.
+fn save_keeping_unread(path: &Path, kind: &Kind, save: impl FnOnce() -> io::Result<()>) -> Option<String> {
+    if let Err(err) = keep_unread(path, kind.unread_tag) {
+        return Some(format!(
+            "{} {}, because {} there could not be kept safe first. {} {}",
+            kind.not_saved,
+            path.display(),
+            kind.old_file,
+            plain_reason(&err),
+            kind.try_again
+        ));
+    }
+    save()
+        .err()
+        .map(|err| format!("{} {}. {}", kind.could_not, path.display(), plain_reason(&err)))
 }
 
 /// Writes `bytes` to `path` so that the file is either the old one or the new one, never half of each: creates the
@@ -232,11 +281,21 @@ type ClaimHook = Option<Box<dyn FnMut(&Path)>>;
 thread_local! {
     /// Tests only: called with each set-aside name just before it is claimed, to play another program taking it.
     static BEFORE_CLAIM: std::cell::RefCell<ClaimHook> = const { std::cell::RefCell::new(None) };
+    /// Tests only: while set, every claim of a set-aside name on this thread fails, as on a drive that refuses new
+    /// files, so neither `move_aside` nor `keep_copy` can keep a file.
+    pub(crate) static CLAIMS_FAIL: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
 }
 
 /// Claims the first free set-aside name by creating it empty with `create_new`, which fails if the name exists,
 /// even if another program made it a moment ago. Returns the name and the new, empty file.
 fn claim_aside(path: &Path, tag: &str) -> io::Result<(PathBuf, fs::File)> {
+    #[cfg(test)]
+    if CLAIMS_FAIL.with(std::cell::Cell::get) {
+        return Err(io::Error::new(
+            io::ErrorKind::PermissionDenied,
+            "a test refused the claim",
+        ));
+    }
     for n in 1..=MAX_ASIDE {
         let candidate = aside_path(path, tag, n);
         #[cfg(test)]
@@ -527,37 +586,17 @@ fn write_pending(shared: &Shared, paths: &Paths) {
         if std::mem::take(&mut shared.lock().panic_next) {
             panic!("a test asked the writer to stop");
         }
-        match keep_unread(&path) {
-            Err(err) => problems.push(format!(
-                "Your settings were not saved to {}, because the old settings file there could not be kept safe \
-                 first. {} Change a setting again to try once more.",
-                path.display(),
-                plain_reason(&err)
-            )),
-            Ok(()) => match settings::save_settings(&path, s) {
-                Ok(()) => files += 1,
-                Err(err) => problems.push(format!(
-                    "Your settings could not be saved to {}. {}",
-                    path.display(),
-                    plain_reason(&err)
-                )),
-            },
+        match save_keeping_unread(&path, &SETTINGS_FILE, || settings::save_settings(&path, s)) {
+            None => files += 1,
+            Some(problem) => problems.push(problem),
         }
         in_flight.settings = None;
     }
     if let Some(q) = &in_flight.queue {
-        // Task 11 swaps in `save_queue`.
         let path = paths.queue();
-        let written = serde_json::to_vec_pretty(q)
-            .map_err(io::Error::other)
-            .and_then(|bytes| write_atomic(&path, &bytes));
-        match written {
-            Ok(()) => files += 1,
-            Err(err) => problems.push(format!(
-                "The render queue could not be saved to {}. {}",
-                path.display(),
-                plain_reason(&err)
-            )),
+        match save_keeping_unread(&path, &QUEUE_FILE, || queue_file::save_queue(&path, q)) {
+            None => files += 1,
+            Some(problem) => problems.push(problem),
         }
         in_flight.queue = None;
     }
@@ -909,8 +948,7 @@ mod tests {
         };
         writer.queue(&queue);
         writer.flush();
-        let text = fs::read_to_string(paths.queue()).unwrap();
-        assert_eq!(serde_json::from_str::<Queue>(&text).unwrap(), queue);
+        assert_eq!(queue_file::load_queue(&paths.queue()), (queue, None));
         assert_eq!(files_in(&paths.config), vec!["queue.json"]);
     }
 
