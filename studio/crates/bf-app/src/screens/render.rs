@@ -661,7 +661,17 @@ fn job_row(
             .map(|t| wrapped_h(ui, t.text(), body(), text_w).max(body_h))
             .sum::<f32>(),
     };
-    let content_h = title_h + TITLE_GAP + under_h;
+    // The title line: a fighter's bar (4 wide), the title, the other bar and the theme and seed, 6 apart. When it
+    // does not fit (a small window), the theme and seed go on a line of their own under the title.
+    let about = format!("{}, seed {}", job.spec.theme, job.spec.seed);
+    let text_width = |text: &str, font: egui::FontId| ui.painter().layout_no_wrap(text.to_owned(), font, TEXT).size().x;
+    let title_line_w = 2.0 * 4.0 + 3.0 * 6.0 + text_width(&job.spec.title, section()) + text_width(&about, small());
+    let about_h = if title_line_w > text_w {
+        wrapped_h(ui, &about, small(), text_w)
+    } else {
+        0.0
+    };
+    let content_h = title_h + about_h + TITLE_GAP + under_h;
     let height = (content_h.max(THUMB.1) + 2.0 * JOB_PAD_Y).ceil();
     let name = format!("{}, seed {}", job.spec.title, job.spec.seed);
 
@@ -690,10 +700,18 @@ fn job_row(
         fighter_bar(&mut c, job.spec.colors[0], 16.0);
         plain(&mut c, RichText::new(&job.spec.title).font(section()));
         fighter_bar(&mut c, job.spec.colors[1], 16.0);
-        let about = format!("{}, seed {}", job.spec.theme, job.spec.seed);
-        plain(&mut c, RichText::new(about).font(small()).color(MUTED));
+        let about = RichText::new(&about).font(small()).color(MUTED);
+        if about_h == 0.0 {
+            plain(&mut c, about);
+        } else {
+            let below = Rect::from_x_y_ranges(text_x..=text_x + text_w, title.max.y..=title.max.y + about_h);
+            let mut c = child(ui, below, "about", Layout::top_down(Align::Min));
+            c.set_width(text_w);
+            wrapped(&mut c, about);
+        }
 
-        let under = Rect::from_x_y_ranges(text_x..=text_x + text_w, title.max.y + TITLE_GAP..=inside.max.y);
+        let under_top = title.max.y + about_h + TITLE_GAP;
+        let under = Rect::from_x_y_ranges(text_x..=text_x + text_w, under_top..=inside.max.y);
         if let JobState::Rendering { .. } = job.state {
             let line = Rect::from_x_y_ranges(under.x_range(), under.min.y..=under.min.y + under_h);
             let mut c = child(ui, line, "progress", Layout::right_to_left(Align::Center));
@@ -711,8 +729,9 @@ fn job_row(
             let mut c = child(ui, under, "under", Layout::top_down(Align::Min));
             c.set_width(text_w);
             for (i, line) in state.lines.iter().enumerate() {
-                // The first line is one line (cut short with an ellipsis); a failed job's detail wraps.
-                if i == 0 {
+                // The first line is one line (cut short with an ellipsis), except a failed job's headline, which
+                // wraps so it is read whole in a small window; a failed job's detail wraps.
+                if i == 0 && !matches!(job.state, JobState::Failed { .. }) {
                     plain(&mut c, line.clone());
                 } else {
                     wrapped(&mut c, line.clone());

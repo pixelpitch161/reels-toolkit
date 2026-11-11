@@ -109,6 +109,9 @@ pub struct BfApp {
     pub log: Vec<Action>,
     /// The longest one `logic` call or one action's dispatch has taken, in milliseconds.
     pub slowest_update_ms: f32,
+    /// A note the status bar's right side shows in place of the roster's counts (`--fixtures`: "Sample data, not a
+    /// real fight"). `None` shows the counts. It is not the status line, which `AppState::status` works out.
+    pub status_note: Option<String>,
     link: Link,
     /// Effects waiting for the first `logic` (the start-up ones).
     pending: Vec<Effect>,
@@ -268,6 +271,7 @@ impl BfApp {
             layout: ShellLayout::NONE,
             log: Vec::new(),
             slowest_update_ms: 0.0,
+            status_note: None,
             link,
             pending,
             texture: None,
@@ -392,8 +396,15 @@ fn fill(colour: Color32, pad_x: i8) -> Fill {
 /// The regions of section 4, each screen pushing what the owner does into `out`: the toolbar 40 and the bout bar 48
 /// at the top, the status bar 24 and the timeline 112 at the bottom, the stage column 410 on the right, the notice
 /// strip (34, only while there is a notice) above the workspace, and the workspace in what is left. Panels touch
-/// with 1 px `LINE_SOFT` dividers, drawn inside the panel they belong to.
-fn panels(ui: &mut Ui, vm: &ViewModel, picture: Option<&TextureHandle>, out: &mut Vec<Action>) -> ShellLayout {
+/// with 1 px `LINE_SOFT` dividers, drawn inside the panel they belong to. `note` is the status bar's right-hand
+/// note, if any (`BfApp::status_note`).
+fn panels(
+    ui: &mut Ui,
+    vm: &ViewModel,
+    note: Option<&str>,
+    picture: Option<&TextureHandle>,
+    out: &mut Vec<Action>,
+) -> ShellLayout {
     let top = |id: &'static str, size: f32| {
         Panel::top(id)
             .exact_size(size)
@@ -418,7 +429,7 @@ fn panels(ui: &mut Ui, vm: &ViewModel, picture: Option<&TextureHandle>, out: &mu
         .rect;
     let status = bottom("status", STATUS_H)
         .frame(fill(GROUND, PAD_X))
-        .show(ui, |ui| shell::status_bar(ui, vm))
+        .show(ui, |ui| shell::status_bar(ui, vm, note))
         .response
         .rect;
     let timeline = bottom("timeline", TIMELINE_H)
@@ -508,7 +519,8 @@ impl eframe::App for BfApp {
         let mut out = Vec::new();
         shell::keys(ui.ctx(), &mut out);
         let picture = self.picture();
-        self.layout = panels(ui, &self.state.vm, picture.as_ref(), &mut out);
+        let note = self.status_note.as_deref();
+        self.layout = panels(ui, &self.state.vm, note, picture.as_ref(), &mut out);
         if !out.is_empty() {
             // The frame was drawn from the state before these actions: draw the next one from after.
             ui.ctx().request_repaint();
