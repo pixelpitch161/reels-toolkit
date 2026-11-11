@@ -1,0 +1,14 @@
+# Buses of a soundtrack the Studio does not reproduce to -120 dBFS (spec section 8, "Proving the sound").
+# The bar: every stem window of a listed bus is within -80 dBFS of the kit's, and every entry has a reason
+# (the cause that was found, not only that the bus differs).
+# An entry is one table per bus, replacing the empty list below:
+#
+#   [[exceptions]]
+#   episode = "flute_vs_trombone"
+#   bus = "calliope"
+#   reason = "why this bus cannot be made closer"
+#
+# Read by `studio/crates/bf-content/tests/stems.rs`, which also fails for an entry that is not needed any more.
+# After an edit, record the new bytes with
+# `python -m tools.studio_export adopt studio/reference/sound/exceptions.toml`.
+exceptions = []
