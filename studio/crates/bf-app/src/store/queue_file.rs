@@ -80,7 +80,8 @@ fn parse(bytes: &[u8]) -> Read {
 /// Reads the queue file. A missing file gives an empty queue and no notice. A file that cannot be understood (a
 /// half-written one too) or was written by a newer app gives an empty queue and a notice in words, and is moved aside
 /// as `queue.corrupt-N.json` or `queue.newer-N.json` rather than deleted (or, if another program holds it, copied
-/// there). A file that cannot be opened at all gives an empty queue and a notice, and is left where it is; the writer
+/// there). A file that cannot be opened at all, or one that could be neither moved nor copied, gives an empty queue
+/// and a notice, and is left where it is; the writer
 /// moves it aside as `queue.unread-N.json` before it saves the queue over it (or refuses to save). A file saved by
 /// another version of the app keeps its jobs, and says so if any of them wait.
 ///
@@ -130,10 +131,16 @@ pub fn load_queue(path: &Path) -> (Queue, Option<Notice>) {
     };
     let text = match move_aside(path, tag).or_else(|_| keep_copy(path, tag, &bytes)) {
         Ok(aside) => kept.replace("{}", &aside.file_name().unwrap_or_default().to_string_lossy()),
-        Err(_) => format!(
-            "{not_kept} The old file could not be moved aside, so copy {} somewhere safe before you add a video.",
-            path.display()
-        ),
+        Err(_) => {
+            // Ruling M2-R10: the writer keeps it aside (or refuses to save) before it saves the queue over it.
+            mark_unread(path);
+            format!(
+                "{not_kept} The old file could not be moved aside, so it stays where it is for now. Before the queue \
+                 is saved over it, it is kept as {}; if that cannot be done, the queue is not saved and the app says \
+                 so.",
+                next_aside_name(path, "unread")
+            )
+        }
     };
     (Queue::new(), Some(Notice { text }))
 }
@@ -656,6 +663,111 @@ mod tests {
         writer_a.flush();
         assert!(writer_a.problems().is_empty());
         assert_eq!(files_in(&a.paths().config), vec!["queue.json", "queue.unread-1.json"]);
+    }
+
+    /// Loads `path` while no set-aside name can be claimed, so the bad file can be neither moved nor copied.
+    fn load_while_nothing_can_be_kept(path: &Path) -> (Queue, Option<Notice>) {
+        crate::store::CLAIMS_FAIL.with(|fail| fail.set(true));
+        let loaded = load_queue(path);
+        crate::store::CLAIMS_FAIL.with(|fail| fail.set(false));
+        loaded
+    }
+
+    // M2-R10
+    #[test]
+    fn a_corrupt_queue_that_cannot_be_kept_says_what_happens_next() {
+        let root = TempRoot::new("a_corrupt_queue_that_cannot_be_kept_says_what_happens_next");
+        let config = root.paths().config;
+        let path = root.paths().queue();
+        fs::create_dir_all(&config).unwrap();
+        fs::write(&path, b"{\"format\": 1, \"jobs\": [").unwrap();
+        assert_eq!(
+            load_while_nothing_can_be_kept(&path),
+            (
+                Queue::new(),
+                notice(
+                    "The render queue could not be read, so it starts empty. The old file could not be moved aside, \
+                     so it stays where it is for now. Before the queue is saved over it, it is kept as \
+                     queue.unread-1.json; if that cannot be done, the queue is not saved and the app says so."
+                )
+            )
+        );
+        assert_eq!(fs::read(&path).unwrap(), b"{\"format\": 1, \"jobs\": [");
+        assert_eq!(files_in(&config), vec!["queue.json"]);
+        // Once the obstacle is gone, the first save keeps the old bytes aside before it writes.
+        let writer = Writer::start(root.paths());
+        let mut fresh = Queue::new();
+        fresh.add(spec("Flute vs Trombone"));
+        writer.queue(&fresh);
+        writer.flush();
+        assert!(writer.problems().is_empty());
+        assert_eq!(
+            fs::read(config.join("queue.unread-1.json")).unwrap(),
+            b"{\"format\": 1, \"jobs\": ["
+        );
+        assert_eq!(load_queue(&path), (fresh, None));
+    }
+
+    // M2-R10
+    #[test]
+    fn a_newer_queue_that_cannot_be_kept_says_what_happens_next() {
+        let root = TempRoot::new("a_newer_queue_that_cannot_be_kept_says_what_happens_next");
+        let path = root.paths().queue();
+        fs::create_dir_all(root.paths().config).unwrap();
+        fs::write(&path, b"{\"format\": 2}").unwrap();
+        let (q, said) = load_while_nothing_can_be_kept(&path);
+        assert_eq!(q, Queue::new());
+        assert_eq!(
+            said.unwrap().text,
+            "The render queue was saved by a newer version of BALLFIGHT Studio, so the app starts with a fresh \
+             queue. The old file could not be moved aside, so it stays where it is for now. Before the queue is \
+             saved over it, it is kept as queue.unread-1.json; if that cannot be done, the queue is not saved and \
+             the app says so."
+        );
+        let writer = Writer::start(root.paths());
+        writer.queue(&Queue::new());
+        writer.flush();
+        assert!(writer.problems().is_empty());
+        assert_eq!(
+            fs::read(root.paths().config.join("queue.unread-1.json")).unwrap(),
+            b"{\"format\": 2}"
+        );
+    }
+
+    // M2-R10 (a) then (b)
+    #[cfg(windows)]
+    #[test]
+    fn a_corrupt_queue_that_cannot_be_kept_is_protected_from_the_next_save() {
+        let root = TempRoot::new("a_corrupt_queue_that_cannot_be_kept_is_protected_from_the_next_save");
+        let paths = root.paths();
+        let path = paths.queue();
+        fs::create_dir_all(&paths.config).unwrap();
+        let bad = b"{\"format\": 1, \"jobs\": [[".to_vec();
+        fs::write(&path, &bad).unwrap();
+        assert!(load_while_nothing_can_be_kept(&path).1.is_some());
+        // (a) Another program now holds the file, so it still cannot be kept: the save is refused.
+        let writer = Writer::start(paths.clone());
+        let held = open_shared(&path, 0);
+        writer.queue(&Queue::new());
+        writer.flush();
+        let problems = writer.problems();
+        drop(held);
+        assert_eq!(problems.len(), 1, "{problems:?}");
+        assert!(
+            problems[0].starts_with(&format!("The render queue was not saved to {}", path.display())),
+            "{}",
+            problems[0]
+        );
+        assert_eq!(fs::read(&path).unwrap(), bad);
+        assert_eq!(files_in(&paths.config), vec!["queue.json"]);
+        // (b) The program lets go: the next save keeps the old bytes aside and writes the new file.
+        let mut fresh = Queue::new();
+        fresh.add(spec("Tuba vs Bass drum"));
+        writer.queue(&fresh);
+        writer.flush();
+        assert!(writer.problems().is_empty());
+        assert_eq!(fs::read(paths.config.join("queue.unread-1.json")).unwrap(), bad);
+        assert_eq!(load_queue(&path), (fresh, None));
     }
 
     /// An unread queue file does not make the settings beside it be moved aside, nor the other way round.

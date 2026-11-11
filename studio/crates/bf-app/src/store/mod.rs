@@ -281,11 +281,21 @@ type ClaimHook = Option<Box<dyn FnMut(&Path)>>;
 thread_local! {
     /// Tests only: called with each set-aside name just before it is claimed, to play another program taking it.
     static BEFORE_CLAIM: std::cell::RefCell<ClaimHook> = const { std::cell::RefCell::new(None) };
+    /// Tests only: while set, every claim of a set-aside name on this thread fails, as on a drive that refuses new
+    /// files, so neither `move_aside` nor `keep_copy` can keep a file.
+    pub(crate) static CLAIMS_FAIL: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
 }
 
 /// Claims the first free set-aside name by creating it empty with `create_new`, which fails if the name exists,
 /// even if another program made it a moment ago. Returns the name and the new, empty file.
 fn claim_aside(path: &Path, tag: &str) -> io::Result<(PathBuf, fs::File)> {
+    #[cfg(test)]
+    if CLAIMS_FAIL.with(std::cell::Cell::get) {
+        return Err(io::Error::new(
+            io::ErrorKind::PermissionDenied,
+            "a test refused the claim",
+        ));
+    }
     for n in 1..=MAX_ASIDE {
         let candidate = aside_path(path, tag, n);
         #[cfg(test)]
