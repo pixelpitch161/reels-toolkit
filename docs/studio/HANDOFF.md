@@ -1,5 +1,49 @@
 # BALLFIGHT Studio: handoff brief for a new Claude Code project (Nov 10)
 
+## Status (Nov 11): the Studio's engine exists
+
+**What exists.** The whole engine of BALLFIGHT Studio, rebuilt as a native Windows program: the fight, the story
+and seed search, the balance, the picture, the sound, the quality checks and the video encode. It lives in the
+`studio/` folder of this repo. Right now it knows one match-up, FLUTE against TROMBONE with the big top music, and
+it is driven by one command, `ballfight`. The window (the app with its five steps, preview and queue) is the next
+milestone and is being built.
+
+**It makes the same video as the Python kit.** For the example episode (`projects/ballfight/examples/
+flute_vs_trombone`, seed 392) the Studio draws all 43 checked frames of the video byte for byte as the kit does,
+and its sound file is the kit's sound file sample for sample. Every quality check (loudness, levels, band, flashes,
+loop point, safe zone, focus) gives the kit's verdict. A fight the Studio runs itself matches the kit's fight for at
+least the first 25 seconds of fighting; after that tiny rounding differences take over, so a Studio seed is its own
+fight, not the kit's (that is by design).
+
+**How fast it is** (this PC; details in `docs/studio/m1-measurements.md`):
+
+- A whole 61 s video, from the fight to the checked mp4 with its cover and caption: about **82 seconds** (it was
+  about 97 s before the last speed-ups). The goal is under 60 s; most of the remaining time is the video encoder
+  itself, and the plan for getting there is in the measurements file.
+- Searching seeds: about **6,000 to 7,000 fights a second**, so 200 fitting seeds take about 5 seconds.
+- Building the soundtrack: about **4.7 seconds**.
+- One picture of the video: about 0.13 to 0.22 seconds on one core, so live playback at 30 frames a second needs
+  about 7 cores drawing ahead. The app is planned that way.
+
+**How to run it.** There is no double-click program yet (that comes with the app). Today it takes one command. Open
+PowerShell in the repo's `studio` folder (in File Explorer: open `studio`, type `powershell` in the address bar,
+press Enter) and paste:
+
+```
+cargo build --release -p bf-cli; .\target\release\ballfight.exe render fights\flute_vs_trombone.toml --rec reference\fights\flute_vs_trombone\ep392.bfrec --out "$env:USERPROFILE\Videos\BALLFIGHT"
+```
+
+The first build takes a few minutes; after that it renders the example episode into
+`Videos\BALLFIGHT\flute_vs_trombone\` (the mp4, the cover picture, the caption and the fight file). It never
+replaces a video that is already there: a second render goes into `flute_vs_trombone_seed392\`. Other commands
+(find seeds that fit, balance the pair, draw one frame, build only the sound, run only the checks, measure the
+speed) are listed in `studio/README.md`.
+
+**What comes next.** Milestone 2 is the app: the window with the five steps, live preview with sound, the shortlist
+of seeds, the render queue and the Library of finished videos, all on FLUTE against TROMBONE. Then the other 18 kit
+fighters and 13 themes (milestone 3), the older ten fighters (4), the music system (5), and packaging with the
+Update button (6).
+
 The user is building the BALLFIGHT software themselves in a Claude Code project. **Start here, then read the files
 below in this order.** Everything about how a fight is simulated, drawn, scored and rendered already exists in this repo
 as the episode kit; the software is a front end + packaging on top of it, not a rewrite.

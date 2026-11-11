@@ -21,9 +21,15 @@ clap.workspace = true
 png.workspace = true
 serde_json.workspace = true
 
-# Ctrl+C stops a long command cleanly (a render removes its temporary folder).
+# Ctrl+C stops a long command cleanly (a render removes its temporary folder); `bench` reads the CPU's name and
+# how busy the PC is.
 [target.'cfg(windows)'.dependencies]
-windows-sys = { workspace = true, features = ["Win32_System_Console"] }
+windows-sys = { workspace = true, features = [
+    "Win32_Foundation",
+    "Win32_System_Console",
+    "Win32_System_Registry",
+    "Win32_System_Threading",
+] }
 
 # The reader for studio/reference (dev support only), and the hashes of what the commands write.
 [dev-dependencies]

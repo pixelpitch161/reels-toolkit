@@ -48,7 +48,7 @@ cargo test --workspace
 `ballfight` (crate `bf-cli`; `cargo build --release -p bf-cli` makes `target/release/ballfight.exe`) runs every step
 of a video without the app. Every command takes a fight file; `--rec <file.bfrec>` uses a recording instead of
 fighting the seed again, `--seed N` fights another seed than the file's, `--workers N` sets the threads of search,
-balance, check and render (default: all cores but one; 1 to 256) and `--json` prints one JSON value on stdout.
+balance, check, render and bench (default: all cores but one; 1 to 256) and `--json` prints one JSON value on stdout.
 Progress goes to stderr.
 
 ```
@@ -61,7 +61,15 @@ ballfight sound   fights/flute_vs_trombone.toml --out audio.wav [--stems DIR] [-
 ballfight check   fights/flute_vs_trombone.toml [--rec F]
 ballfight render  fights/flute_vs_trombone.toml --out <folder> [--seed N] [--rec F] [--frames A:B]
 ballfight hash    fights/flute_vs_trombone.toml --seeds 1,2,3
+ballfight bench   fights/flute_vs_trombone.toml [--out <folder>] [--only fights,frame,stages,draw,sound,render]
 ```
+
+- `bench` measures this PC: fights a second (record off, seeds 1 to 2,000, all workers and one), one frame on one
+  thread (every 10th frame: mean, 95th percentile, slowest), the frame by stage, all 1,830 frames on all workers
+  without the encode, and the soundtrack build; with `--out` also a whole render (with the encode) into a new
+  folder there, by stage. Each part says how busy the PC was the second before it. Without `--out` it writes
+  nothing. `--seeds`, `--every` and `--stage-every` make it quicker. Milestone 1's numbers are in
+  `docs/studio/m1-measurements.md`.
 
 - Exit code 0 on success; 1 on bad input, a fight it refuses (for example "seed N has no K.O. before 58 s"), a
   failed check or a run stopped with Ctrl+C, with the reason as one line on stderr (`ballfight: ...`).
