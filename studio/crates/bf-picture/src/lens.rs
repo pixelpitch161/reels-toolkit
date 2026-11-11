@@ -147,21 +147,30 @@ pub fn dof(img: &Img<f32>, coc: &Img<f64>) -> Option<Img<f64>> {
         for (m, &c) in mask.iter_mut().zip(&coc.data) {
             *m = if c >= r * 0.7 { 1.0 } else { 0.0 };
         }
-        let lens = lens_for(r, w, h);
-        lens.convolve_into(&mask, &mut ws, &mut den);
         let mut blur = spare.take().unwrap_or_else(|| vec![0.0f64; n * 3]);
-        for ch in 0..3 {
-            for (p, (px, &m)) in plane.iter_mut().zip(img.data.as_chunks::<3>().0.iter().zip(&mask)) {
-                *p = px[ch] * m;
+        if mask.iter().all(|&m| m == 0.0) {
+            // No pixel takes part (2 % of the levels of the example episode): `den` is the convolution of zeros,
+            // every product and sum of which is a zero, so `den > 1e-3` holds nowhere and the blur is the picture
+            // itself, to the bit. The four convolutions are left out.
+            for (b, &v) in blur.iter_mut().zip(&img.data) {
+                *b = f64::from(v);
             }
-            lens.convolve_into(&plane, &mut ws, &mut num);
-            for (j, (&nm, &d)) in num.iter().zip(&den).enumerate() {
-                // np.where(den > 1e-3, num / np.maximum(den, 1e-3), img)
-                blur[j * 3 + ch] = if d > 1e-3 {
-                    nm / np::maximum(d, 1e-3)
-                } else {
-                    f64::from(img.data[j * 3 + ch])
-                };
+        } else {
+            let lens = lens_for(r, w, h);
+            lens.convolve_into(&mask, &mut ws, &mut den);
+            for ch in 0..3 {
+                for (p, (px, &m)) in plane.iter_mut().zip(img.data.as_chunks::<3>().0.iter().zip(&mask)) {
+                    *p = px[ch] * m;
+                }
+                lens.convolve_into(&plane, &mut ws, &mut num);
+                for (j, (&nm, &d)) in num.iter().zip(&den).enumerate() {
+                    // np.where(den > 1e-3, num / np.maximum(den, 1e-3), img)
+                    blur[j * 3 + ch] = if d > 1e-3 {
+                        nm / np::maximum(d, 1e-3)
+                    } else {
+                        f64::from(img.data[j * 3 + ch])
+                    };
+                }
             }
         }
         let mut mixed = out.take().unwrap_or_else(widened);
@@ -220,6 +229,25 @@ mod tests {
         // The sky: 26 * (1 - 0.17), capped by the last level. A depth of nothing is held at a thousandth.
         assert_eq!(&coc.data[3..5], &[10.5, 10.5]);
         assert_eq!(coc.data[5], 10.5);
+    }
+
+    #[test]
+    fn a_level_no_pixel_takes_part_in_is_the_picture() {
+        // Every circle of confusion is 0.5: the first level runs (0.5 > 0) but its mask (>= 0.7) is empty. Its
+        // convolutions would be of zeros, which are zeros to the bit, so the blur is the picture.
+        let (w, h) = (24, 16);
+        let zeros = vec![0.0f32; w * h];
+        assert!(lens_for(LEVELS[1], w, h).convolve(&zeros).iter().all(|&d| d == 0.0));
+        let img: Img<f32> = Img::from_vec(w, h, 3, (0..w * h * 3).map(|i| (i % 251) as f32 * 0.75).collect());
+        let coc: Img<f64> = Img::filled(w, h, &[0.5]);
+        let out = dof(&img, &coc).expect("the first level runs");
+        // mixed = before * (1 - wgt) + blur * wgt, with before and blur both the picture and wgt = 0.5
+        let want: Vec<f64> = img
+            .data
+            .iter()
+            .map(|&v| f64::from(v) * (1.0 - 0.5) + f64::from(v) * 0.5)
+            .collect();
+        assert_eq!(out.data, want);
     }
 
     #[test]
