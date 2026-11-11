@@ -11,6 +11,7 @@
 use std::sync::Arc;
 use std::time::Instant;
 
+use eframe::wgpu;
 use egui::{CentralPanel, Color32, Frame as Fill, Margin, Panel, Rect, Stroke, TextureHandle, TextureOptions, Ui};
 
 use crate::model::queue::Queue;
@@ -156,6 +157,64 @@ pub fn start(
         cores,
     };
     BfApp::new(cc, boot)
+}
+
+/// Has the window draw with DirectX 12 alone on a PC that has a DirectX 12 graphics card, keeping wgpu's default
+/// set of backends only on one that has none, or when `WGPU_BACKEND` names the backends (for tracking a graphics
+/// problem down). Called on `NativeOptions::wgpu_options` before `eframe::run_native`.
+///
+/// Why: wgpu's default set also starts Vulkan and OpenGL, and starting the Vulkan loader pulls every "implicit
+/// layer" registered on the PC into the process: the overlay and capture hooks of programs such as Overwolf, OBS,
+/// Steam and Epic, and with OpenGL more driver DLLs. The window never draws through them. Such a hook is the suspect
+/// (not proven) for a rare crash while the UI test program closes (Task 24d), so the Studio keeps them out of its
+/// process. The tests do the same in `tests/ui/common.rs`.
+pub fn prefer_dx12(options: &mut eframe::egui_wgpu::WgpuConfiguration) {
+    if let eframe::egui_wgpu::WgpuSetup::CreateNew(setup) = &mut options.wgpu_setup {
+        let default = setup.instance_descriptor.backends;
+        setup.instance_descriptor.backends = backends(wgpu::Backends::from_env(), has_dx12_card, default);
+    }
+}
+
+/// The backends to start: those `WGPU_BACKEND` names (`env`), else DirectX 12 alone when `has_dx12` says this PC
+/// has a DirectX 12 graphics card, else `default`.
+pub fn backends(
+    env: Option<wgpu::Backends>,
+    has_dx12: impl FnOnce() -> bool,
+    default: wgpu::Backends,
+) -> wgpu::Backends {
+    match env {
+        Some(chosen) => chosen,
+        None if has_dx12() => wgpu::Backends::DX12,
+        None => default,
+    }
+}
+
+/// Whether DirectX 12 offers a graphics card on this PC. The software adapter (WARP) that Windows always offers does
+/// not count: a PC with nothing better keeps the default set, which may find a card through Vulkan or OpenGL.
+fn has_dx12_card() -> bool {
+    if !cfg!(windows) {
+        return false;
+    }
+    let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
+        backends: wgpu::Backends::DX12,
+        ..wgpu::InstanceDescriptor::new_without_display_handle()
+    });
+    ready(instance.enumerate_adapters(wgpu::Backends::DX12))
+        .iter()
+        .any(|adapter| adapter.get_info().device_type != wgpu::DeviceType::Cpu)
+}
+
+/// The output of `future`, which on a native backend is ready when first polled (wgpu lists the adapters before it
+/// returns the future).
+fn ready<F: std::future::Future>(future: F) -> F::Output {
+    let mut future = std::pin::pin!(future);
+    let mut cx = std::task::Context::from_waker(std::task::Waker::noop());
+    loop {
+        if let std::task::Poll::Ready(out) = future.as_mut().poll(&mut cx) {
+            return out;
+        }
+        std::thread::yield_now();
+    }
 }
 
 /// Asks the window to repaint, from any thread: `logic` then runs even while the window is minimised.
@@ -465,5 +524,24 @@ impl eframe::App for BfApp {
 
     fn on_exit(&mut self) {
         self.shutdown();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn dx12_alone_where_the_pc_has_a_dx12_card() {
+        let default = wgpu::Backends::PRIMARY | wgpu::Backends::GL;
+        assert_eq!(backends(None, || true, default), wgpu::Backends::DX12);
+        assert_eq!(
+            backends(None, || false, default),
+            default,
+            "no DirectX 12 card: the default set"
+        );
+        let named = wgpu::Backends::VULKAN;
+        let never = || -> bool { panic!("WGPU_BACKEND wins without a look at the cards") };
+        assert_eq!(backends(Some(named), never, default), named);
     }
 }

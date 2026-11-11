@@ -931,3 +931,54 @@ fn a_disabled_text_field_is_faint_and_takes_no_input() {
     drop(harness);
     assert_eq!(title.borrow().as_str(), "Flute", "typing does nothing");
 }
+
+#[test]
+fn a_compact_read_field_is_a_value_well_and_a_reason_disables_it() {
+    let _gpu = common::gpu();
+    let why = "New takes arrive with the music system.";
+    let mut harness = common::widget_harness((320.0, 120.0), |ui| {
+        on_panel(ui);
+        let compact = fields::ReadLook {
+            compact: true,
+            why: None,
+        };
+        fields::read_field_with(ui, "Take number", "0417", 62.0, compact);
+        let disabled = fields::ReadLook {
+            compact: true,
+            why: Some(why),
+        };
+        fields::read_field_with(ui, "Music seed", "0417", 62.0, disabled);
+    });
+    harness.run();
+    for name in ["Take number", "Music seed"] {
+        let node = harness.get_by_label(name);
+        assert_eq!(node.value().as_deref(), Some("0417"), "{name}");
+        assert_eq!(node.rect().height(), theme::VALUE_H, "{name} is 22 tall");
+    }
+    assert!(!harness.get_by_label("Take number").accesskit_node().is_disabled());
+    assert!(
+        harness.get_by_label("Music seed").accesskit_node().is_disabled(),
+        "a reason disables it"
+    );
+    let plain = harness.get_by_label("Take number").rect();
+    let faint = harness.get_by_label("Music seed").rect();
+    assert_eq!(brightest(&mut harness, plain.shrink(1.0)), rgb(TEXT));
+    assert_eq!(
+        brightest(&mut harness, faint.shrink(1.0)),
+        rgb(FAINT),
+        "its value is FAINT"
+    );
+    assert_eq!(at(&mut harness, faint, 0.0, 11.0), rgb(LINE), "the well's border");
+    assert_eq!(at(&mut harness, faint, 3.0, 3.0), rgb(GROUND), "the well");
+    // Right-aligned: the value's last glyph pixels are near the right edge, none near the left.
+    let left_part = Rect::from_min_max(faint.min + vec2(2.0, 3.0), pos2(faint.min.x + 20.0, faint.max.y - 3.0));
+    assert_eq!(
+        brightest(&mut harness, left_part),
+        rgb(GROUND),
+        "the value is right-aligned"
+    );
+    assert!(harness.query_by_label(why).is_none(), "not before hovering");
+    harness.get_by_label("Music seed").hover();
+    harness.run();
+    assert!(harness.query_by_label(why).is_some(), "hovering says why");
+}
