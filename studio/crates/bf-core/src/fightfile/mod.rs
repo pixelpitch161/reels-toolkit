@@ -73,6 +73,12 @@ pub const SHARD_SEED: u64 = 271;
 /// How a rest is written in a `music.lines` list (Python's `None`).
 pub const REST: &str = "rest";
 
+/// The largest bus gain `music.mix` takes (the kit's configs go up to 2.7).
+pub const MIX_GAIN_MAX: f64 = 10.0;
+
+/// The largest reverb send `music.mix` takes (the kit's configs go up to 0.45; 1 is all of it).
+pub const MIX_SEND_MAX: f64 = 1.0;
+
 /// How [`Middle::Divider`] is written (the kit's word for it).
 pub const MIDDLE_DIVIDER: &str = "divider";
 
@@ -151,7 +157,30 @@ pub struct Music {
     /// The theme's options by the theme's own names (format 2), such as `sequel = true` for the kit's
     /// `TRAILER = dict(sequel=True)`: each is true or false, a number or a text. The theme's schema is checked by
     /// the content registry.
-    pub theme_options: BTreeMap<String, Value>,
+    pub theme_options: BTreeMap<String, OptionValue>,
+}
+
+/// A theme option's value: true or false, a number or a text (there is no "no value": TOML has none to write, so
+/// an option is either given or left out).
+#[derive(Clone, Debug)]
+pub enum OptionValue {
+    Bool(bool),
+    Int(i64),
+    Float(f64),
+    Str(String),
+}
+
+impl PartialEq for OptionValue {
+    /// Bit-exact: `Float`s compare by their bits (as [`Value`] does).
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (OptionValue::Bool(a), OptionValue::Bool(b)) => a == b,
+            (OptionValue::Int(a), OptionValue::Int(b)) => a == b,
+            (OptionValue::Float(a), OptionValue::Float(b)) => a.to_bits() == b.to_bits(),
+            (OptionValue::Str(a), OptionValue::Str(b)) => a == b,
+            _ => false,
+        }
+    }
 }
 
 /// The picture's seeds and the title card's opt-ins.
@@ -416,26 +445,7 @@ impl Music {
                     ),
                 ));
             }
-            if line.len() < bars {
-                return Err(err(
-                    field,
-                    format!("at least {bars} notes needed (one a bar), found {}", line.len()),
-                ));
-            }
-            if !line.len().is_multiple_of(bars) {
-                return Err(err(
-                    field,
-                    format!(
-                        "{} notes do not fit the {bars}-chord loop (every bar needs the same number of notes)",
-                        line.len()
-                    ),
-                ));
-            }
-            for (i, n) in line.iter().enumerate() {
-                if let Some(n) = n {
-                    check_midi(*n, &format!("{field}[{i}]"))?;
-                }
-            }
+            check_line(name, line, bars)?;
         }
         for (name, solo) in &self.solos {
             fighting("music.solos", name)?;
@@ -462,25 +472,58 @@ impl Music {
             if bus.is_empty() {
                 return Err(err(field, "a bus needs a name"));
             }
-            for (what, x) in [("gain", gain), ("reverb send", send)] {
+            for (what, x, most) in [("gain", gain, MIX_GAIN_MAX), ("reverb send", send, MIX_SEND_MAX)] {
                 if !x.is_finite() || x < 0.0 {
                     return Err(err(field, format!("the {what} must be 0 or more, found {x:?}")));
+                }
+                if x > most {
+                    return Err(err(field, format!("the {what} must be at most {most:?}, found {x:?}")));
                 }
             }
         }
         for (key, v) in &self.theme_options {
             let field = path("music.theme_options", key);
-            match v {
-                Value::Bool(_) | Value::Int(_) | Value::Str(_) => {}
-                Value::Float(x) if x.is_finite() => {}
-                Value::Float(x) => return Err(err(field, format!("must be a finite number, found {x:?}"))),
-                Value::Null | Value::List(_) => {
-                    return Err(err(field, "must be true or false, a number or a text"));
-                }
+            if let OptionValue::Float(x) = v
+                && !x.is_finite()
+            {
+                return Err(err(field, format!("must be a finite number, found {x:?}")));
             }
         }
         Ok(())
     }
+}
+
+/// The check every `music.lines` entry goes through (the fight file's own check calls it): a line named `name`
+/// over a chord loop of `loop_len` chords holds at least one note a bar, the same whole number of notes for every
+/// bar, and only MIDI notes (0 to 127) or rests. The kit's `line_at` reads `len(line) // len(LOOP)` notes a bar,
+/// so a shorter line would divide by zero there; spare notes it never plays are refused here.
+///
+/// # Errors
+/// `music.lines.<name>` (or `music.lines.<name>[i]` for a note), with what is wrong.
+pub fn check_line(name: &str, line: &[Option<i32>], loop_len: usize) -> Result<(), FightFileError> {
+    let field = path("music.lines", name);
+    let bars = loop_len.max(1);
+    if line.len() < bars {
+        return Err(err(
+            field,
+            format!("at least {bars} notes needed (one a bar), found {}", line.len()),
+        ));
+    }
+    if !line.len().is_multiple_of(bars) {
+        return Err(err(
+            field,
+            format!(
+                "{} notes do not fit the {bars}-chord loop (every bar needs the same number of notes)",
+                line.len()
+            ),
+        ));
+    }
+    for (i, n) in line.iter().enumerate() {
+        if let Some(n) = n {
+            check_midi(*n, &format!("{field}[{i}]"))?;
+        }
+    }
+    Ok(())
 }
 
 /// Whether `line` names an extra line of the fighter `fighter`: its name, a space, and at least one more letter

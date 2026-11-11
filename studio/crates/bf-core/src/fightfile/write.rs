@@ -10,7 +10,8 @@ impl FightFile {
     /// (`validate` refuses it).
     pub fn to_toml(&self) -> String {
         let mut o = String::new();
-        let _ = writeln!(o, "format = {}", self.format);
+        // Always the newest format: the text holds format 2's settings whatever the value says.
+        let _ = writeln!(o, "format = {FIGHT_FORMAT}");
         let _ = writeln!(o, "app_version = {}", w_str(&self.app_version));
         let _ = writeln!(o, "fighters = {}", w_strs(&self.fighters));
         let _ = writeln!(o, "arena = {}", w_str(&self.arena));
@@ -74,9 +75,13 @@ impl FightFile {
         }
         o.push_str("\n[music.theme_options]\n");
         for (k, v) in &m.theme_options {
-            if let Some(v) = w_value(v) {
-                let _ = writeln!(o, "{} = {v}", w_key(k));
-            }
+            let v = match v {
+                OptionValue::Bool(b) => b.to_string(),
+                OptionValue::Int(i) => i.to_string(),
+                OptionValue::Float(x) => w_f64(*x),
+                OptionValue::Str(s) => w_str(s),
+            };
+            let _ = writeln!(o, "{} = {v}", w_key(k));
         }
         let p = &self.picture;
         o.push_str("\n[picture]\n");

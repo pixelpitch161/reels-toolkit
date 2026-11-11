@@ -706,8 +706,8 @@ fn format_2_settings_read_and_write_back() {
     assert_eq!(m.chords_tail, strings(&["Dm", "Bb", "Gm", "A", "A"]));
     assert_eq!(m.mix["trombone"], (2.3, 0.2));
     assert_eq!(m.mix["bass clarinet"], (1.95, 0.25));
-    assert_eq!(m.theme_options["sequel"], Value::Bool(true));
-    assert_eq!(m.theme_options["plugged"], Value::Str("FLUTE".into()));
+    assert_eq!(m.theme_options["sequel"], OptionValue::Bool(true));
+    assert_eq!(m.theme_options["plugged"], OptionValue::Str("FLUTE".into()));
     assert_eq!(m.lines["FLUTE THEME"].len(), 8);
     let p = &ff.picture;
     assert_eq!(p.title_balls, Some([[74.0, 250.0, 54.0], [282.0, 396.0, 56.0]]));
@@ -853,7 +853,10 @@ fn search_key_counts_the_tail_only_when_music_feeds_the_fight() {
     // the mix, the theme's options and the title card's opt-ins never feed the fight
     let mut other = ff.clone();
     other.music.mix.insert("trombone".into(), (2.3, 0.2));
-    other.music.theme_options.insert("sequel".into(), Value::Bool(true));
+    other
+        .music
+        .theme_options
+        .insert("sequel".into(), OptionValue::Bool(true));
     other.picture.middle = Some(("REMATCH".into(), Middle::Divider));
     other.picture.title_balls = Some([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]);
     other
@@ -863,4 +866,90 @@ fn search_key_counts_the_tail_only_when_music_feeds_the_fight() {
     for feeds in [[false, false], [true, true]] {
         assert_eq!(other.search_key(&feeds), ff.search_key(&feeds));
     }
+}
+
+#[test]
+fn check_line_is_the_line_check() {
+    assert_eq!(check_line("FLUTE", &[Some(60); 64], 8), Ok(()));
+    assert_eq!(check_line("HORN THEME", &[Some(60); 8], 4), Ok(()));
+    assert_eq!(check_line("PIANO", &[Some(60), None, Some(62), None], 4), Ok(()));
+    assert_eq!(
+        check_line("FLUTE", &[Some(60); 30], 8).unwrap_err().to_string(),
+        "music.lines.FLUTE: 30 notes do not fit the 8-chord loop (every bar needs the same number of notes)"
+    );
+    assert_eq!(
+        check_line("FLUTE", &[Some(60); 3], 4).unwrap_err().to_string(),
+        "music.lines.FLUTE: at least 4 notes needed (one a bar), found 3"
+    );
+    assert_eq!(
+        check_line("FLUTE", &[Some(60), Some(128), None, None], 4)
+            .unwrap_err()
+            .to_string(),
+        "music.lines.FLUTE[1]: 128 is not a MIDI note (0 to 127)"
+    );
+    // the fight file's own check says the same
+    let text = with(
+        "    78, 75, 71, 75, 78, 81, 83, 75,
+",
+        "    78, 75, 71, 75, 78, 81,
+",
+    );
+    let mut short = episode().music.lines["FLUTE"].clone();
+    short.truncate(62);
+    assert_eq!(
+        parse_err(&text),
+        check_line("FLUTE", &short, 8).unwrap_err().to_string()
+    );
+}
+
+#[test]
+fn to_toml_writes_the_newest_format() {
+    let mut ff = episode();
+    ff.format = 1;
+    assert!(ff.to_toml().starts_with(
+        "format = 2
+"
+    ));
+    assert_eq!(FightFile::parse(&ff.to_toml()).unwrap().format, FIGHT_FORMAT);
+}
+
+#[test]
+fn mix_levels_have_bounds() {
+    let mut ff = episode();
+    ff.music.mix.insert("trombone".into(), (10.0, 1.0));
+    assert_eq!(ff.validate(&names), Ok(()));
+    ff.music.mix.insert("trombone".into(), (10.5, 0.2));
+    assert_eq!(
+        validate_err(&ff),
+        "music.mix.trombone: the gain must be at most 10.0, found 10.5"
+    );
+    ff.music.mix.insert("trombone".into(), (2.3, 1.5));
+    assert_eq!(
+        validate_err(&ff),
+        "music.mix.trombone: the reverb send must be at most 1.0, found 1.5"
+    );
+}
+
+/// A theme option is always a value TOML can write (there is no null to drop): every kind writes and reads back.
+#[test]
+fn every_theme_option_writes_and_reads_back() {
+    let mut ff = episode();
+    for (k, v) in [
+        ("a", OptionValue::Bool(false)),
+        ("b", OptionValue::Int(-3)),
+        ("c", OptionValue::Float(0.1 + 0.2)),
+        ("d", OptionValue::Str("ELECTRIC".into())),
+    ] {
+        ff.music.theme_options.insert(k.into(), v);
+    }
+    let text = ff.to_toml();
+    assert!(text.contains(
+        "[music.theme_options]
+a = false
+b = -3
+c = 0.30000000000000004
+d = \"ELECTRIC\"
+"
+    ));
+    assert_eq!(FightFile::parse(&text), Ok(ff));
 }

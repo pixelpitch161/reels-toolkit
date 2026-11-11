@@ -196,6 +196,7 @@ pub(crate) fn context(ep: &Episode) -> (MusicCtx<'_>, [Arc<TestVoice>; 2]) {
         &ep.ff,
         [&ep.cfg[0], &ep.cfg[1]],
         [voices[0].clone(), voices[1].clone()],
+        Vec::new(),
     )
     .expect("the context builds");
     (ctx, voices)
