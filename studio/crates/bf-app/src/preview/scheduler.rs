@@ -61,6 +61,15 @@ pub fn wanted(playhead: u32, playing: bool, looping: bool, lead: u32, stride: u3
     out
 }
 
+/// The frames to draw when playback is about to start from `playhead` (ruling M2-R30: after a `Load` the clock
+/// waits for the take's first picture): the playhead's own frame first, so it is the first thing shown, then the
+/// frames playback will want, as [`wanted`] gives them while playing.
+pub fn wanted_from(playhead: u32, looping: bool, lead: u32, stride: u32) -> Vec<u32> {
+    let mut out = vec![playhead];
+    out.extend(wanted(playhead, true, looping, lead, stride));
+    out
+}
+
 /// Which of the `cached` frames to drop so that `keep` remain: the frames farthest behind the playhead first, then
 /// the farthest ahead. The playhead's own frame counts as ahead, by nothing, so it goes last.
 pub fn evict(cached: &[u32], playhead: u32, keep: usize) -> Vec<u32> {
@@ -224,6 +233,18 @@ impl Scheduler {
         let mut st = self.shared.lock();
         let (lead, stride) = pace(mean(&st.times), threads);
         st.queue = wanted(playhead, playing, looping, lead, stride);
+        st.playhead = playhead;
+        drop(st);
+        self.shared.work.notify_all();
+    }
+
+    /// Asks for `playhead`'s own frame first and then the frames playback from it will want ([`wanted_from`]):
+    /// what the player asks while it waits for a take's first picture. Replaces what was asked before.
+    pub fn want_start(&self, playhead: u32, looping: bool) {
+        let threads = self.workers.len();
+        let mut st = self.shared.lock();
+        let (lead, stride) = pace(mean(&st.times), threads);
+        st.queue = wanted_from(playhead, looping, lead, stride);
         st.playhead = playhead;
         drop(st);
         self.shared.work.notify_all();
@@ -532,6 +553,53 @@ mod tests {
         );
         assert_eq!(wanted(1_825, true, false, 1, 1), [1826, 1827, 1828, 1829]);
         assert_eq!(wanted(1_829, true, false, 1, 1), Vec::<u32>::new());
+    }
+
+    #[test]
+    fn wanted_from_starts_with_the_playhead() {
+        let mut ahead = vec![100];
+        ahead.extend(101..=112);
+        assert_eq!(wanted_from(100, true, 1, 1), ahead);
+        assert_eq!(wanted_from(100, true, 3, 2), [100, 103, 105, 107, 109, 111]);
+        assert_eq!(wanted_from(1_829, false, 1, 1), [1_829]);
+        assert_eq!(wanted_from(1_829, true, 11, 1), [1_829, 10, 11]);
+    }
+
+    /// A test source that remembers the order frames were asked in.
+    struct Order {
+        inner: Arc<TestSource>,
+        asked: std::sync::Mutex<Vec<u32>>,
+    }
+
+    impl FrameSource for Order {
+        fn frames(&self) -> u32 {
+            self.inner.frames()
+        }
+
+        fn draw(&self, f: u32) -> Frame {
+            self.asked.lock().unwrap().push(f);
+            self.inner.draw(f)
+        }
+    }
+
+    #[test]
+    fn want_start_draws_the_playhead_first_then_ahead() {
+        let s = Scheduler::with_draw_ms(1, Arc::new(|| {}), 1.0);
+        let gate = TestSource::gated();
+        let src = Arc::new(Order {
+            inner: gate.clone(),
+            asked: std::sync::Mutex::new(Vec::new()),
+        });
+        s.set_source(1, Some(src.clone()));
+        // A draw time of 1 ms, so the lead and the stride are 1 from the first `want_start`.
+        s.record_draw_ms(1.0);
+        s.want_start(100, true);
+        wait_for("the first draw", || gate.calls() == 1);
+        gate.open();
+        wait_idle(&s);
+        let asked = src.asked.lock().unwrap().clone();
+        assert_eq!(asked.first(), Some(&100), "{asked:?}");
+        assert_eq!(kept(&s), (100..=112).collect::<Vec<_>>());
     }
 
     #[test]

@@ -2,7 +2,8 @@
 //! and no sound, and measures it against the plan's "Performance budget for the preview".
 //!
 //! [`run`] drives a real [`Player`] on the wall clock: it loads the take at `start` with autoplay, calls `tick()`
-//! every 4 ms for `seconds`, and counts what the player counts (`shown`, `late`). It then pauses, lets the draws in
+//! every 4 ms for `seconds` of playback from the moment the clock starts (with the take's first picture, ruling
+//! M2-R30), and counts what the player counts (`shown`, `late`). It then pauses, lets the draws in
 //! progress finish, and asks for 50 frames that were never drawn, one after another, through `ScrubTo`, timing each
 //! from the request until `tick()` gives that frame (the interface repaints on the scheduler's waker; here `tick()`
 //! is called every millisecond instead).
@@ -15,8 +16,7 @@
 //!   (one frame on one thread, as milestone 1 measured `frame_ms_p95`); `play_ms_p95` is that of the playback's
 //!   draws, which share the PC's cores with each other;
 //! - `first_picture_ms` is the time from the `Load` until the first picture is given, and `late_after_start` the
-//!   frames counted late after it, which tells playback's own misses from those of its start (the clock runs from
-//!   the `Load`, while a fresh take's first draws are still going on).
+//!   frames counted late after it (with the clock waiting for the first picture, nothing before it counts late).
 //!
 //! When every frame was drawn during playback (a run as long as the video), there is nothing left to scrub to and
 //! the three scrub figures are 0.
@@ -35,7 +35,7 @@ use crate::model::queue::Queue;
 use crate::model::take::{Frame, FrameSource, PlayerCmd, TransportAction};
 use crate::model::{FPS, TakeId};
 use crate::preview::audio::NoAudio;
-use crate::preview::player::{Now, Player};
+use crate::preview::player::{FIRST_PICTURE_WAIT, Now, Player};
 use crate::preview::scheduler::pace;
 use crate::seam::{Command, Event};
 use crate::state::AppState;
@@ -236,7 +236,11 @@ pub fn run(frames: Arc<dyn FrameSource>, start: u32, seconds: f32, threads: usiz
     });
     // When the first picture was given, and how many frames were late by then.
     let mut first: Option<(Duration, u64)> = None;
-    while began.elapsed() < length {
+    // The clock starts with the first picture (ruling M2-R30), or once the player stops waiting for it: `seconds`
+    // of playback are measured from then.
+    let clock_from =
+        |first: Option<(Duration, u64)>| first.map_or(FIRST_PICTURE_WAIT, |(t, _)| t.min(FIRST_PICTURE_WAIT));
+    while began.elapsed() < clock_from(first) + length {
         player.tick();
         if first.is_none() && player.has_picture() {
             first = Some((began.elapsed(), player.stats().late));
