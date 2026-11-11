@@ -25,9 +25,11 @@
 //! After each step [`run`] tests for a K.O. and records a frame every [`Schedule::steps_per_frame`] steps.
 
 use bf_core::event::Value;
+use bf_core::py;
 
 use crate::fight::Fight;
 use crate::geom;
+use crate::kinds::striker;
 use crate::record::Frames;
 
 /// The counters of the fight loop: what `run()` sets up before its `while` (`fight.py` 5739 to 5914) and moves
@@ -51,7 +53,9 @@ pub struct Schedule {
     /// `kb`: the number of the last beat reached, counted from the fight's first beat (-1 before it). On a step with
     /// `on_beat`, this is the `kb` the weapon triggers of stage 2 get.
     pub kb: i64,
-    // SLOT (Task 12): `pub next16k: i64`, the strikers' 16th counter (fight.py 5772), starting at `k16_0`.
+    /// `next16k`: the strikers' own 16th counter (`fight.py` 5772): the next 16th of the video their strike grid
+    /// reaches. It starts at `k16_0` and moves only while a fighter is a striker.
+    pub next16k: i64,
     // SLOT (Task 13): `pub next16t: i64`, the thrusters' 16th counter (fight.py 5776), starting at `k16_0`.
     // Python keeps one counter per kind (`next16`, `dc_next`, `n16b`, `next16c`, `next16k`, `next16t`, `n16p`, ...):
     // each moves only while a fighter has its kind, so they are separate fields, never one shared counter.
@@ -70,9 +74,14 @@ impl Schedule {
         let k16_0 = (r.t_fight / s16 - 1e-6).ceil() as i64;
         // Kind setups, in the Python order. Each is `if a fighter has the kind: setup(k)`, some with a record key.
         //   5756 to 5764  combo, flail, inflate setups (kinds not ported)
-        //   SLOT (Task 12), 5765 to 5774: for k in ball order, a `striker` weapon: `kinds::striker::setup(fight, k)`
-        //     and `t_strike = w.t_strike`; `next16k = k16_0`; the record gets `COB` when a fighter is a striker
-        //     (see `record.rs`). (The same loop sets up `swallow`, a kind not ported.)
+        // 5765 to 5774: the strikers, in ball order (the same loop sets up `swallow`, a kind not ported). `setup`
+        // also starts `t_strike` at the weapon's (5770); `next16k = k16_0` is below; the record gets `COB` when a
+        // fighter is a striker (`record.rs`).
+        for k in 0..2 {
+            if striker::is_striker(fight, k) {
+                striker::setup(fight, k);
+            }
+        }
         //   SLOT (Task 13), 5775 to 5776: `thrusters` = the fighters whose weapon has `mode = 'thrust'`
         //     (`Ball::thrusts`); `next16t = k16_0`. The record's `EXT`, `SLW`, `CRV` (5779 to 5780) are already
         //     handled in `record.rs` from `Fight::uses_ext`.
@@ -88,6 +97,7 @@ impl Schedule {
             step: 0,
             on_beat: false,
             kb: -1,
+            next16k: k16_0,
         }
     }
 
@@ -107,9 +117,14 @@ impl Schedule {
             self.next_beat += 1;
             // For k in ball order (5925), skipping a stunned fighter (5926, `_stunned`: stun and shadow, kinds not
             // ported), by weapon kind:
-            //   5928 to 5937  volley (not on16), beam, combo, swallow (kinds not ported)
-            //   SLOT (Task 12), 5938 to 5939: `striker` => `kinds::striker::beat(fight, k, self.kb)` (basket drops)
-            //   5940 to 5945  line / trap, scratch_floor, tether (kinds not ported)
+            for k in 0..2 {
+                //   5928 to 5937  volley (not on16), beam, combo, swallow (kinds not ported)
+                if striker::is_striker(fight, k) {
+                    // 5938 to 5939: basket drops
+                    striker::beat(fight, k, self.kb);
+                }
+                //   5940 to 5945  line / trap, scratch_floor, tether (kinds not ported)
+            }
             // The thrust blade has no entry here: it starts on the 16th grid (stage 3).
         }
 
@@ -117,10 +132,23 @@ impl Schedule {
         //    in this order:
         //   5946 to 5986  pulse / volley on16 (`next16`), dash / cone / surf / rake (`dc_next`), aura / bellows /
         //     inflate / bite (`n16b`), tether (`next16c`) (kinds not ported)
-        //   SLOT (Task 12), 5987 to 5993: strikers. `k16k = next16k - k16_0; next16k += 1;` then for each striker k:
-        //     `main16 = int(round(4 * w.every))`; if `k16k % max(1, int(round(main16 / ab_mult(k)))) == 0` and k is
-        //     not stunned: `kinds::striker::fire(fight, k)`.
-        //   SLOT (Task 13), 5994 to 6000: thrusters. The same with `next16t`, calling
+        // 5987 to 5993: the strikers' cobras lunge on the 16th grid, every `every` beats (haste divides it). The
+        // counter moves only when a fighter is a striker (`strikers`, 5771, is the list of those fighters).
+        let strikers = [0, 1].map(|k| striker::is_striker(fight, k));
+        if strikers.contains(&true) && fight.t + 1e-9 >= self.next16k as f64 * self.s16 {
+            let k16k = self.next16k - self.k16_0;
+            self.next16k += 1;
+            for k in (0..2).filter(|&k| strikers[k]) {
+                // main16 = int(round(4 * w['every'])); k16k % max(1, int(round(main16 / ab_mult(k)))) == 0
+                let main16 = striker::main16(fight, k);
+                let every16 = (py::round_half_even(main16 as f64 / fight.ab_mult(k)) as i64).max(1);
+                // (`and not self._stunned(k)`: stun and shadow, kinds not ported)
+                if k16k % every16 == 0 {
+                    striker::fire(fight, k);
+                }
+            }
+        }
+        //   SLOT (Task 13), 5994 to 6000: thrusters. The same with `next16t` and the blade's `every`, calling
         //     `kinds::blade::start_thrust(fight, k)`.
         //   6001 to 6095  pack, echo, jump, tune, mortar, anchor, rattle, wrecking, rests, lightning, tiptoe,
         //     grapple, walk, roll, spotlight, crowd, drill, roll_charge (kinds not ported), in that order.
@@ -141,11 +169,19 @@ impl Schedule {
 
         // 7. `rewind_step` (6116 to 6117) (kind not ported).
 
-        // 8. Each fighter's weapon step (6118 to 6136), for k in ball order, by weapon kind:
-        //   SLOT (Task 13), 6119 to 6120: `blade` => `kinds::blade::step(fight, k, dt)` (thrust mode: `thrust_step`)
-        //   6121 to 6134  orbit, combo, flail, scratch_floor, tether, inflate, swallow (kinds not ported)
-        //   SLOT (Task 12), 6135 to 6136: `striker` => `kinds::striker::step(fight, k, dt)`
-        // It is one loop over the balls: with TROMBONE on the left, its blade steps before the FLUTE's cobras.
+        // 8. Each fighter's weapon step (6118 to 6136), for k in ball order, by weapon kind. It is one loop over the
+        //    balls: with TROMBONE on the left, its blade steps before the FLUTE's cobras.
+        for k in 0..2 {
+            //   SLOT (Task 13), 6119 to 6120: `blade` => `kinds::blade::step(fight, k, dt)` (thrust mode:
+            //     `thrust_step`). While the lance is going out or held and `fight.rules.swat_cobras` is on, the
+            //     thrust step calls `kinds::striker::swat_cobras(fight, k, a, d, l)` with the lance's base, direction
+            //     and length (fight.py 753 to 754): after its parry, before its own hit test.
+            //   6121 to 6134  orbit, combo, flail, scratch_floor, tether, inflate, swallow (kinds not ported)
+            if striker::is_striker(fight, k) {
+                // 6135 to 6136
+                striker::step(fight, k, dt);
+            }
+        }
 
         // 9. `lash_step`, `beams_step`, `hazards_step` (6137 to 6142) (kinds not ported).
 

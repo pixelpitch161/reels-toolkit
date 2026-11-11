@@ -158,6 +158,7 @@ EXPORTS = {'thing': run}                         # python -m tools.studio_export
 | `stats` | `stats.py` | `studio/reference/fights/flute_vs_trombone/stats.json` (seeds 1 to 4,000, pooled figures; order 55) |
 | `scenarios` | `scenarios.py` | `studio/reference/fights/flute_vs_trombone/{scenarios/*.bfrec,no_ko.bfrec,coverage.json}` (reads `stats.json`; order 60) |
 | `stories` | `stories.py` | `studio/reference/fights/flute_vs_trombone/stories.json` (the kit's story and score of every recording there; order 70) |
+| `striker_bag` | `striker_bag.py` | `studio/reference/fights/striker_vs_bag/{<kind>_<corner>_s<seed>.bfrec,index.json}`: 12 fights of the FLUTE against a bag (a fighter with no weapon, added to the kit's roster table for the run only), the first 10 s of each, so that only the engine core and the striker act; `index.json` lists them, the two bag entries and what the set covers (about 4 s) |
 | `title` | `frames.py` | `studio/reference/frames/flute_vs_trombone/title/{f<frame>.png,noise.png,title.json}` (18 cards) |
 | `stems` | `stems.py` | `studio/reference/sound/flute_vs_trombone/{audio.wav,stems.npz,premaster.npz,rms.json,master_case.npz}` (its own interpreter; reads what `voices` wrote; order 55) |
 | `voices` | `voices.py` | `studio/reference/sound/{pp_noise_start.json,flute_vs_trombone/{note_calls.json,first_notes.npz},voices/{FLUTE,TROMBONE,helpers}.npz,voices/scalars.json}` (its own interpreter) |
