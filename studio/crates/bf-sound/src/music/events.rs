@@ -6,9 +6,11 @@ use bf_core::event::{Event, Value};
 use super::MusicCtx;
 use super::error::MusicError;
 use super::fx::{CLANK_DECAYS, CLANK_DUR, clank};
-use super::num::{clip, py_min};
+use bf_core::py::py_min;
+
 use crate::mix::{Mix, Sig};
 use crate::synth;
+use crate::synth::clip;
 use crate::traits::Bed;
 
 /// Python's `e[i]` for `i >= 2`: element `i` of an event (`e[0]` is its time, `e[1]` its kind).
