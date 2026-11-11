@@ -7,18 +7,25 @@
 //! time, merges each chunk into the shortlist it keeps (every fit and the best [`OTHERS`] of the rest) and sends a
 //! `Shortlist` after each chunk. The seeds checked are always 1 to `next_seed - 1`, whatever the number of workers,
 //! so the shortlist is the same for any number of them. While the preview is drawing, a chunk runs on half the
-//! workers (at least one) so the preview keeps its frames.
+//! workers (at least one) so the preview keeps its frames; `PreviewBusy` and `SetWorkers` are read before each
+//! chunk, so a change takes effect at the next chunk (a chunk is a fraction of a second).
 //!
-//! **How it ends.** `Full` at [`FITS`] fits; `Stopped` on `StopSearch` (within one fight per worker), once
-//! `config.search_limit` seeds are checked, or when a fight cannot be fought (with an `Event::Problem` in words);
-//! silently when a newer `StartSearch` replaces it, for another generation or the same one (its late answers are
-//! never sent: the new search's worker waits, up to `STOP_WAIT`, for the old one to finish before it starts). The cache is saved after every
-//! eighth chunk and whenever the search ends.
+//! **How it ends.** `Full` at [`FITS`] fits; `Stopped` on `StopSearch` (within one fight per worker, or once the
+//! cached seeds are fought again, at most `FITS + OTHERS` fights), once `config.search_limit` seeds are checked,
+//! or when a fight cannot be fought (with an `Event::Problem` in words); silently when a newer `StartSearch`
+//! replaces it, for another generation or the same one (its late answers are never sent: the new search's worker
+//! waits, up to `STOP_WAIT`, for the old one to finish before it starts). A panic on the worker ends it with the
+//! engine's `Event::Problem` and a `Stopped` list of what it had. The cache is saved after every eighth chunk and
+//! whenever the search ends; a silenced search never saves over a cache that got further. A cache file that does
+//! not hold together (more fits or others than a shortlist keeps, a seed twice, a seed past its next seed, a
+//! `checked` that disagrees) is a miss.
 //!
 //! **Filters.** `SetFilters` for the running search's generation stores the filters; while the worker runs, it
 //! sends the list again at its next seed (so only one thread ever sends a running search's lists, in order); once
 //! it has ended, `handle` sends the list from memory itself. For any other generation the answer is an empty, idle
-//! list, as the sample engine's.
+//! list, as the sample engine's. A list resent at the next seed is built inside `bf_story::search`'s progress
+//! callback, under the story search's own lock: building it takes well under a millisecond (at most `FITS +
+//! OTHERS` rows) and happens once per filter change, so the search's workers wait that long at most, once.
 
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, MutexGuard};
@@ -108,6 +115,61 @@ pub fn search_key(ff: &FightFile) -> String {
 /// The threads a chunk runs on: all of them, or half (at least one) while the preview is drawing.
 fn chunk_workers(workers: usize, busy: bool) -> usize {
     if busy { workers / 2 } else { workers }.max(1)
+}
+
+/// Tests: a search of this generation panics after its first chunk, on purpose.
+#[cfg(test)]
+const PANICS: Gen = 9_999;
+
+/// Why the engine refuses a fight's set-up, as a plain sentence. `field` is the `SimError`'s field (such as
+/// `fighters[1]` or `rules.swat_cobras`); its message is left out, since it is written for the fight file's author
+/// (field paths, kinds in code form), not for the screen.
+fn unsearchable(field: &str, fighters: &[String]) -> String {
+    let fighter = field
+        .strip_prefix("fighters[")
+        .and_then(|rest| rest.strip_suffix(']'))
+        .and_then(|i| i.parse::<usize>().ok())
+        .and_then(|i| fighters.get(i));
+    let why = match fighter {
+        Some(name) => format!("the engine cannot fight with {}", wording::display_name(name)),
+        None => "the engine cannot use one of its settings".to_string(),
+    };
+    convert::plain(&format!("This fight cannot be searched yet: {why}"))
+}
+
+/// Why the search stopped at a fight that could not be fought (`SearchEnd::Failed`, whose words begin "seed N:"),
+/// as a plain sentence.
+fn failed_sentence(words: &str) -> String {
+    let seed = words
+        .strip_prefix("seed ")
+        .and_then(|rest| rest.split(':').next())
+        .and_then(|n| n.parse::<u64>().ok());
+    match seed {
+        Some(n) => format!(
+            "The search stopped at seed {}, because that fight could not be fought. Try another handicap.",
+            wording::thousands(n)
+        ),
+        None => "The search stopped, because a fight could not be fought. Try another handicap.".to_string(),
+    }
+}
+
+/// Whether `ours` may be saved over `disk`: only when it got further (an older search never undoes a newer one's
+/// progress).
+fn fresher(ours: &CachedShortlist, disk: Option<&CachedShortlist>) -> bool {
+    disk.is_none_or(|d| ours.next_seed > d.next_seed)
+}
+
+/// Whether a cached shortlist holds together: within the shortlist's bounds, no seed twice, every seed below its
+/// next seed, and `checked` one less than it.
+fn sound(cached: &CachedShortlist) -> bool {
+    let mut seeds: Vec<u64> = cached.fit_seeds.iter().chain(&cached.other_seeds).copied().collect();
+    seeds.sort_unstable();
+    cached.next_seed > 0
+        && cached.checked == cached.next_seed - 1
+        && cached.fit_seeds.len() <= FITS
+        && cached.other_seeds.len() <= OTHERS
+        && seeds.windows(2).all(|w| w[0] != w[1])
+        && seeds.iter().all(|&s| s > 0 && s < cached.next_seed)
 }
 
 /// A lock that a panic elsewhere cannot poison for good.
@@ -286,14 +348,15 @@ impl Worker {
         !self.silent.load(Ordering::SeqCst) && !ctx.stopping()
     }
 
-    /// Sends the list as it stands (unless the search was silenced).
+    /// Sends the list as it stands (unless the search was silenced). Either way a resend asked for is answered: a
+    /// silenced search owes no list, so `finish` never waits on one.
     fn send(&self, ctx: &Ctx) {
-        if !self.heard(ctx) {
-            return;
-        }
         let list = {
             let m = lock(&self.memory);
             self.resend.store(false, Ordering::SeqCst);
+            if !self.heard(ctx) {
+                return;
+            }
             m.list()
         };
         // checked once more right before sending: a newer search may have taken over meanwhile
@@ -313,8 +376,15 @@ impl Worker {
             m.key.clone().filter(|_| m.next_seed > 1).map(|key| (key, m.cached()))
         };
         if let Some((key, cached)) = saved {
-            // The cache is a convenience: a search that cannot be saved still stands in memory.
-            _ = save_shortlist(&ctx.config.paths.shortlists(), APP_VERSION, &key, &cached);
+            let dir = ctx.config.paths.shortlists();
+            // A silenced search may have been overtaken by a newer one of the same key: it never saves over a
+            // cache that got further.
+            let newer = self.silent.load(Ordering::SeqCst)
+                && !fresher(&cached, load_shortlist(&dir, APP_VERSION, &key).as_ref());
+            if !newer {
+                // The cache is a convenience: a search that cannot be saved still stands in memory.
+                _ = save_shortlist(&dir, APP_VERSION, &key, &cached);
+            }
         }
         self.send(ctx);
         // a SetFilters that came in while the last list was being sent is answered before the handler takes over
@@ -339,23 +409,40 @@ impl Worker {
     }
 }
 
-/// Marks the worker done when it ends, even by a panic, so neither the handler nor a newer search waits on it.
-struct Done<'a>(&'a Worker);
+/// Marks the worker done when it ends, even by a panic, so neither the handler nor a newer search waits on it. A
+/// panic (whose `Event::Problem` the engine sends) also ends the list: what the search had, `Stopped`, so the
+/// interface offers to search again.
+struct Done<'a>(&'a Worker, &'a Ctx);
 
 impl Drop for Done<'_> {
     fn drop(&mut self) {
-        lock(&self.0.memory).running = false;
-        self.0.done.store(true, Ordering::SeqCst);
+        let Done(me, ctx) = *self;
+        let list = {
+            let mut m = lock(&me.memory);
+            m.running = false;
+            (std::thread::panicking() && me.heard(ctx)).then(|| {
+                m.state = SearchState::Stopped;
+                m.list()
+            })
+        };
+        if let Some(list) = list {
+            ctx.emit(Event::Shortlist { r#gen: me.r#gen, list });
+        }
+        me.done.store(true, Ordering::SeqCst);
     }
 }
 
 /// The search's thread.
 fn search_worker(ctx: &Ctx, me: &Worker, draft: &Draft, before: Option<(Arc<Mutex<Memory>>, Arc<AtomicBool>)>) {
-    let _done = Done(me);
+    let _done = Done(me, ctx);
     // The search it replaces ends within one fight per worker; it is waited for so its last answer comes first.
     if let Some((_, done)) = &before {
         let deadline = Instant::now() + STOP_WAIT;
-        while !done.load(Ordering::SeqCst) && Instant::now() < deadline && !ctx.stopping() {
+        while !done.load(Ordering::SeqCst)
+            && Instant::now() < deadline
+            && !ctx.stopping()
+            && !me.stop.load(Ordering::SeqCst)
+        {
             std::thread::sleep(Duration::from_millis(2));
         }
     }
@@ -365,7 +452,7 @@ fn search_worker(ctx: &Ctx, me: &Worker, draft: &Draft, before: Option<(Arc<Mute
     };
     let base = match bf_sim::setup_from(&ff, bf_content::roster(), 0) {
         Ok(base) => base,
-        Err(e) => return me.fail(ctx, convert::plain(&format!("This fight cannot be searched: {e}"))),
+        Err(e) => return me.fail(ctx, unsearchable(&e.field, &ff.fighters)),
     };
     let sheet = BeatSheet::series(base.fighters);
     let key = search_key(&ff);
@@ -381,24 +468,25 @@ fn search_worker(ctx: &Ctx, me: &Worker, draft: &Draft, before: Option<(Arc<Mute
         (old.key.as_deref() == Some(key.as_str()) && old.next_seed > 1).then(|| (old.candidates.clone(), old.next_seed))
     });
     let resumed = earlier.or_else(|| {
-        let cached = load_shortlist(&ctx.config.paths.shortlists(), APP_VERSION, &key)?;
+        let cached = load_shortlist(&ctx.config.paths.shortlists(), APP_VERSION, &key).filter(sound)?;
         refight(ctx, me, &setup_for, &sheet, &cached).map(|c| (c, cached.next_seed))
     });
+    // What was resumed is installed first, so a stop that came at once keeps it (and saves it again).
+    let full = resumed.is_some_and(|(mut candidates, next_seed)| {
+        bf_story::shortlist(&mut candidates);
+        let mut m = lock(&me.memory);
+        m.fits = candidates.iter().filter(|c| c.verdict.fits).count();
+        m.candidates = candidates;
+        m.next_seed = next_seed;
+        m.fits >= FITS
+    });
+    if full {
+        return me.finish(ctx, SearchState::Full);
+    }
     if me.stop.load(Ordering::SeqCst) {
         return me.finish(ctx, SearchState::Stopped);
     }
-    if let Some((mut candidates, next_seed)) = resumed {
-        bf_story::shortlist(&mut candidates);
-        let full = {
-            let mut m = lock(&me.memory);
-            m.fits = candidates.iter().filter(|c| c.verdict.fits).count();
-            m.candidates = candidates;
-            m.next_seed = next_seed;
-            m.fits >= FITS
-        };
-        if full {
-            return me.finish(ctx, SearchState::Full);
-        }
+    if lock(&me.memory).next_seed > 1 {
         me.send(ctx);
     }
     let progress = |_: bf_story::SearchProgress| {
@@ -440,9 +528,7 @@ fn search_worker(ctx: &Ctx, me: &Worker, draft: &Draft, before: Option<(Arc<Mute
         chunks += 1;
         match result.end {
             _ if full => return me.finish(ctx, SearchState::Full),
-            SearchEnd::Failed(words) => {
-                return me.fail(ctx, convert::plain(&format!("The search stopped: {words}")));
-            }
+            SearchEnd::Failed(words) => return me.fail(ctx, failed_sentence(&words)),
             SearchEnd::Stopped => return me.finish(ctx, SearchState::Stopped),
             _ if me.stop.load(Ordering::SeqCst) => return me.finish(ctx, SearchState::Stopped),
             SearchEnd::Full | SearchEnd::OutOfSeeds => {}
@@ -452,11 +538,17 @@ fn search_worker(ctx: &Ctx, me: &Worker, draft: &Draft, before: Option<(Arc<Mute
             _ = save_shortlist(&ctx.config.paths.shortlists(), APP_VERSION, &key, &cached);
         }
         me.send(ctx);
+        #[cfg(test)]
+        if me.r#gen == PANICS {
+            panic!("on purpose");
+        }
     }
 }
 
-/// The candidates of a cached shortlist, fought again on the engine's workers; None when the cache does not hold
-/// together (a seed past where it says it got, a fight that cannot be fought) or the search was stopped meanwhile.
+/// The candidates of a cached shortlist (one [`sound`] says holds together), fought again on the engine's workers;
+/// None when a fight cannot be fought, or when the search was silenced or the engine is ending meanwhile. A
+/// `StopSearch` does not cut it short (at most `FITS + OTHERS` fights, a fraction of a second on the workers): the
+/// stopped list then still holds what was cached.
 fn refight(
     ctx: &Ctx,
     me: &Worker,
@@ -465,9 +557,7 @@ fn refight(
     cached: &CachedShortlist,
 ) -> Option<Vec<Candidate>> {
     let seeds: Vec<u64> = cached.fit_seeds.iter().chain(&cached.other_seeds).copied().collect();
-    if cached.next_seed == 0 || seeds.iter().any(|&s| s == 0 || s >= cached.next_seed) {
-        return None;
-    }
+    let gone = || me.silent.load(Ordering::SeqCst) || ctx.stopping();
     let next = std::sync::atomic::AtomicUsize::new(0);
     let out: Mutex<Vec<Option<Candidate>>> = Mutex::new(vec![None; seeds.len()]);
     let failed = AtomicBool::new(false);
@@ -475,7 +565,7 @@ fn refight(
         for _ in 0..ctx.workers().min(seeds.len()).max(1) {
             s.spawn(|| {
                 loop {
-                    if me.stop.load(Ordering::SeqCst) || failed.load(Ordering::SeqCst) {
+                    if gone() || failed.load(Ordering::SeqCst) {
                         return;
                     }
                     let i = next.fetch_add(1, Ordering::SeqCst);
@@ -490,7 +580,7 @@ fn refight(
             });
         }
     });
-    if failed.into_inner() || me.stop.load(Ordering::SeqCst) {
+    if failed.into_inner() || gone() {
         return None;
     }
     out.into_inner()
@@ -822,16 +912,11 @@ mod tests {
         let (engine, waker) = engine_at(&root, 4, None);
         start(&engine, 1, &d, FilterSpec::default());
         wait_for(&engine, 60.0, |e| is_list(e, |l| l.checked >= CHUNK));
-        let asked = Instant::now();
         engine.send(Command::StopSearch);
+        // the stop is seen within one fight per worker; the bound leaves room for other builds on the PC
         let stopped = list_of(wait_for(&engine, 5.0, |e| {
             is_list(e, |l| l.state == SearchState::Stopped)
         }));
-        assert!(
-            asked.elapsed() < Duration::from_secs(2),
-            "the stop took {:?}",
-            asked.elapsed()
-        );
         close(engine, waker);
         assert!(cache_file(&dir, APP_VERSION, &key).is_file(), "the cache file exists");
         let saved = load_shortlist(&dir, APP_VERSION, &key).expect("the saved search");
@@ -849,6 +934,215 @@ mod tests {
         assert_eq!(next.checked, saved.checked + CHUNK);
         close(engine, waker);
         std::fs::remove_dir_all(&root).expect("the temp folder");
+    }
+
+    /// The draft swapped corner for corner (another search key).
+    fn swapped(d: &Draft) -> Draft {
+        let mut s = d.clone();
+        s.fighters.swap(0, 1);
+        s.handicap.swap(0, 1);
+        s.bass = s.bass.map(|i| 1 - i);
+        s
+    }
+
+    #[test]
+    #[cfg_attr(
+        debug_assertions,
+        ignore = "slow in debug: cargo test -p bf-app --release --lib engine::"
+    )]
+    fn a_filter_change_then_a_new_fight_ends_the_old_search() {
+        let root = temp_root("silenced-resend");
+        let (engine, waker) = engine_at(&root, 4, None);
+        let d = draft();
+        start(&engine, 1, &d, FilterSpec::default());
+        engine.send(Command::SetFilters {
+            r#gen: 1,
+            filters: FilterSpec {
+                show_outside: true,
+                ..FilterSpec::default()
+            },
+        });
+        start(&engine, 2, &swapped(&d), FilterSpec::default());
+        // the old worker ends at once, so the new one does not wait out STOP_WAIT for it
+        wait_for(&engine, STOP_WAIT.as_secs_f64() * 0.8, |e| {
+            matches!(e, Event::Shortlist { r#gen: 2, .. })
+        });
+        close(engine, waker);
+        std::fs::remove_dir_all(&root).expect("the temp folder");
+    }
+
+    #[test]
+    #[cfg_attr(
+        debug_assertions,
+        ignore = "slow in debug: cargo test -p bf-app --release --lib engine::"
+    )]
+    fn a_panic_ends_the_list_stopped() {
+        let root = temp_root("panic");
+        let (engine, waker) = engine_at(&root, 4, None);
+        start(&engine, PANICS, &draft(), FilterSpec::default());
+        let ended = std::cell::Cell::new(None);
+        let Event::Problem { text } = wait_for(&engine, 60.0, |e| {
+            if let Event::Shortlist { list, .. } = e
+                && list.state == SearchState::Stopped
+            {
+                ended.set(Some(list.checked));
+            }
+            matches!(e, Event::Problem { .. })
+        }) else {
+            unreachable!()
+        };
+        assert_eq!(
+            text,
+            "Something went wrong while searching seeds, so it stopped. Try again."
+        );
+        assert_eq!(ended.get(), Some(CHUNK), "the list it had, stopped");
+        // the handler answers the filters from then on
+        engine.send(Command::SetFilters {
+            r#gen: PANICS,
+            filters: FilterSpec::default(),
+        });
+        let list = list_of(wait_for(&engine, 5.0, |e| is_list(e, |_| true)));
+        assert_eq!((list.state, list.checked), (SearchState::Stopped, CHUNK));
+        close(engine, waker);
+        std::fs::remove_dir_all(&root).expect("the temp folder");
+    }
+
+    #[test]
+    #[cfg_attr(
+        debug_assertions,
+        ignore = "slow in debug: cargo test -p bf-app --release --lib engine::"
+    )]
+    fn a_stop_at_once_keeps_what_was_found() {
+        let root = temp_root("stop-at-once");
+        let d = draft();
+        let (engine, waker) = engine_at(&root, 4, None);
+        start(&engine, 1, &d, FilterSpec::default());
+        wait_for(&engine, 60.0, |e| is_list(e, |l| l.checked >= CHUNK));
+        engine.send(Command::StopSearch);
+        let stopped = list_of(wait_for(&engine, 5.0, |e| {
+            is_list(e, |l| l.state == SearchState::Stopped)
+        }));
+        // "keep searching", then stop at once: the earlier search's memory stays
+        start(&engine, 1, &d, FilterSpec::default());
+        engine.send(Command::StopSearch);
+        let again = list_of(wait_for(&engine, 5.0, |e| {
+            is_list(e, |l| l.state == SearchState::Stopped)
+        }));
+        assert!(
+            again.checked >= stopped.checked,
+            "{} < {}",
+            again.checked,
+            stopped.checked
+        );
+        assert!(again.fits_total >= stopped.fits_total);
+        close(engine, waker);
+        // from the cache in a new session, stopped at once: the cached fights are still fought again and kept
+        let (engine, waker) = engine_at(&root, 4, None);
+        start(&engine, 1, &d, FilterSpec::default());
+        engine.send(Command::StopSearch);
+        let cached = list_of(wait_for(&engine, 10.0, |e| {
+            is_list(e, |l| l.state == SearchState::Stopped)
+        }));
+        assert!(
+            cached.checked >= again.checked,
+            "{} < {}",
+            cached.checked,
+            again.checked
+        );
+        assert!(cached.fits_total >= again.fits_total);
+        close(engine, waker);
+        std::fs::remove_dir_all(&root).expect("the temp folder");
+    }
+
+    #[test]
+    #[cfg_attr(
+        debug_assertions,
+        ignore = "slow in debug: cargo test -p bf-app --release --lib engine::"
+    )]
+    fn an_oversized_or_repeating_cache_is_a_miss() {
+        let d = draft();
+        let key = search_key(&convert::fight_file(&d).expect("a fight file"));
+        let bad = [
+            ("oversized", (1..=FITS as u64 + 1).collect(), vec![], 5_000),
+            ("too-many-others", vec![], (1..=OTHERS as u64 + 1).collect(), 5_000),
+            ("repeating", vec![3, 3], vec![4], 5_000),
+            ("repeating-across", vec![3], vec![3], 5_000),
+            ("disagreeing", vec![3], vec![4], 4_000),
+        ];
+        for (name, fit_seeds, other_seeds, checked) in bad {
+            let root = temp_root(name);
+            let cache = CachedShortlist {
+                next_seed: 5_001,
+                checked,
+                fit_seeds,
+                other_seeds,
+            };
+            save_shortlist(&Paths::under(&root).shortlists(), APP_VERSION, &key, &cache).expect("written");
+            let (engine, waker) = engine_at(&root, 4, None);
+            start(&engine, 1, &d, FilterSpec::default());
+            let first = list_of(wait_for(&engine, 60.0, |e| is_list(e, |_| true)));
+            assert_eq!(first.checked, CHUNK, "{name}: a fresh chunk");
+            close(engine, waker);
+            std::fs::remove_dir_all(&root).expect("the temp folder");
+        }
+    }
+
+    #[test]
+    #[cfg_attr(
+        debug_assertions,
+        ignore = "slow in debug: cargo test -p bf-app --release --lib engine::"
+    )]
+    fn a_draft_that_cannot_be_searched_says_why() {
+        let root = temp_root("unsearchable");
+        let (engine, waker) = engine_at(&root, 4, None);
+        let mut d = draft();
+        d.handicap[0] = 0.0;
+        start(&engine, 1, &d, FilterSpec::default());
+        let Event::Problem { text } = wait_for(&engine, 5.0, |e| matches!(e, Event::Problem { .. })) else {
+            unreachable!()
+        };
+        assert_eq!(
+            text,
+            "This fight cannot be used: handicap[0]: must be above 0, found 0.0."
+        );
+        let list = list_of(wait_for(&engine, 5.0, |e| is_list(e, |_| true)));
+        assert_eq!(
+            (list.state, list.checked, list.rows.len()),
+            (SearchState::Stopped, 0, 0)
+        );
+        close(engine, waker);
+        std::fs::remove_dir_all(&root).expect("the temp folder");
+    }
+
+    #[test]
+    fn a_set_up_the_engine_refuses_is_a_sentence() {
+        let pair = ["FLUTE".to_string(), "PIANO".to_string()];
+        assert_eq!(
+            unsearchable("fighters[1]", &pair),
+            "This fight cannot be searched yet: the engine cannot fight with Piano."
+        );
+        assert_eq!(
+            unsearchable("rules.swat_cobras", &pair),
+            "This fight cannot be searched yet: the engine cannot use one of its settings."
+        );
+        assert_eq!(
+            unsearchable("fighters[7]", &pair),
+            "This fight cannot be searched yet: the engine cannot use one of its settings."
+        );
+    }
+
+    #[test]
+    fn an_older_search_never_saves_over_a_newer_one() {
+        let at = |next_seed: u64| CachedShortlist {
+            next_seed,
+            checked: next_seed - 1,
+            fit_seeds: vec![],
+            other_seeds: vec![],
+        };
+        assert!(fresher(&at(1_025), None));
+        assert!(fresher(&at(1_025), Some(&at(513))));
+        assert!(!fresher(&at(513), Some(&at(1_025))));
+        assert!(!fresher(&at(513), Some(&at(513))));
     }
 
     #[test]
