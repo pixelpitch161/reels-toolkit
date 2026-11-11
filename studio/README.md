@@ -37,7 +37,12 @@ cargo test --workspace
   tests that need no window: `cargo test --release -p bf-app --lib --bins --test compat` (the unit tests inside each
   file, the real engine's among them, the command line's and the saved-file tests). The app's interface tests
   (`--test ui`) are not run on CI: they draw through DirectX 12 only, and a hosted runner is not known to offer a
-  DirectX 12 adapter. They run on the owner's PC, with the ignored ones below.
+  DirectX 12 adapter. They run on the owner's PC, with the ignored ones below. The app's two steps add about 11 minutes or more to
+  the job: the first run on GitHub took 6 min 44 s to build the app, and its tests ran 4 min 23 s before they failed.
+  When the app's tests fail, a step after them repeats the failed tests, the panics, compile errors and the last 30
+  lines of their output as annotations on the run, so the failure can be read without opening the log. A test that
+  needs something a hosted runner may lack says "not run here: <reason>" in its output instead of passing quietly
+  (today: the render tests when no usable ffmpeg is found).
 - Ignored tests, run by name on the owner's PC (each needs minutes, ffmpeg, a sound device or a quiet PC):
   `cargo test -p bf-app --release --test ui real::a_whole_video_with_the_real_engine -- --ignored` (a whole video,
   by clicks, on the real engine), `cargo test -p bf-app --release --lib preview:: -- --ignored` (the preview's
