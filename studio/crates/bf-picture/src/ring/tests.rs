@@ -1,6 +1,6 @@
 //! Unit tests of the ring renderer and the scene against numbers the Python kit printed for the example episode
-//! drawn with its base-class look for both fighters: `tests_python.json` beside this file is the output of
-//! `tools/studio_export/unit_checks/ring_unit_vectors.py`.
+//! drawn with its base-class look for both fighters: the reference file `studio/reference/picture_ring/unit.json`,
+//! written by the export `ring` (`tools/studio_export/ring_vectors.py`).
 //!
 //! A value made of plain arithmetic must be Python's to the bit. A value that passes through a sine, an
 //! exponential or a fused dot product may differ in its last bits (`bf_core::dmath` against the C runtime and
@@ -30,7 +30,11 @@ use crate::sprite::Mesh;
 
 fn python() -> &'static Value {
     static DOC: OnceLock<Value> = OnceLock::new();
-    DOC.get_or_init(|| serde_json::from_str(include_str!("tests_python.json")).expect("tests_python.json is JSON"))
+    DOC.get_or_init(|| {
+        let path = reference("picture_ring/unit.json");
+        let text = std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("cannot read {}: {e}", path.display()));
+        serde_json::from_str(&text).unwrap_or_else(|e| panic!("{}: {e}", path.display()))
+    })
 }
 
 /// A float Python wrote as `float.hex()`.

@@ -11,8 +11,8 @@ use std::sync::OnceLock;
 
 use bf_core::dmath;
 
+use super::Picture;
 use super::canvas::circle_angles;
-use super::{Picture, owner};
 use crate::camera::V3;
 use crate::config::{FPS, H, W, ss};
 use crate::hull::{self, Unusual};
@@ -354,7 +354,7 @@ impl Picture {
         }
         for ei in p.events_between(t - 0.15, t, &["hit"]) {
             let e = &p.rec.events[ei];
-            let att = owner(e).unwrap_or(0);
+            let att = super::checked_owner(e);
             if let Some((r, a)) = p.looks[att].hit_glow(p, e) {
                 let s = cam.wp(&[scene::to_world(e.f(5), e.f(6), R)])[0];
                 let col = p.fl_col[att].map(|c| c * 0.7 + 70.0);

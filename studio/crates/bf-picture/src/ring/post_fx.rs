@@ -112,7 +112,7 @@ impl PictureCtx {
     pub(super) fn post_fx(&self, img: &mut Pic, cam: &Cam, t: f64, _fs: &[BallState; 2], drawn: &[DrawnBall]) {
         for i in self.events_between(t - 0.12, t, &["hit"]) {
             let e = &self.rec.events[i];
-            let att = super::owner(e).unwrap_or(0);
+            let att = super::checked_owner(e);
             if self.looks[att].fringe(self, e) {
                 let s = cam.wp(&[scene::to_world(e.f(5), e.f(6), R)])[0];
                 let (fr_r, fr_px) = self.looks[att].fringe_size(self, e);
