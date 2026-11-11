@@ -10,8 +10,8 @@
 //! Each sample is computed with the same operations in the same order as numpy computes it; `sin`, `exp` and
 //! `pow` come from `dmath` (numpy's own loops can differ from it in the last bit), sums that numpy takes in a
 //! special order come from [`crate::dsp`], and noise is `np.random.default_rng(seed).normal(0, 1, n)` through
-//! `bf_core::rng::Generator`. Where Python would raise (a negative length, a band too short to filter) these
-//! functions panic.
+//! `bf_core::rng::Generator`. Where Python would raise (a negative length, an empty signal handed to a filter, a
+//! band of a sweep with no sample of its own) these functions panic.
 
 use bf_core::dmath::{self, PI};
 use bf_core::py::fmod_py;
@@ -129,16 +129,25 @@ pub fn sos(kind: FilterKind, f: &[f64], o: usize) -> Sos {
 }
 
 /// `hp(x, f, o)`: `x` through a Butterworth high-pass at `f` Hz.
+///
+/// # Panics
+/// Where scipy raises: `x` is empty, or `f` is not between 0 and half the sample rate.
 pub fn hp(x: &[f64], f: f64, o: usize) -> Vec<f64> {
     dsp::sosfilt(&sos(FilterKind::Hp, &[f], o), x)
 }
 
 /// `lp(x, f, o)`: `x` through a Butterworth low-pass at `f` Hz.
+///
+/// # Panics
+/// As [`hp`].
 pub fn lp(x: &[f64], f: f64, o: usize) -> Vec<f64> {
     dsp::sosfilt(&sos(FilterKind::Lp, &[f], o), x)
 }
 
 /// `bp(x, lo, hi, o)`: `x` through a Butterworth band-pass from `lo` to `hi` Hz.
+///
+/// # Panics
+/// Where scipy raises: `x` is empty, or the edges are not ascending between 0 and half the sample rate.
 pub fn bp(x: &[f64], lo: f64, hi: f64, o: usize) -> Vec<f64> {
     dsp::sosfilt(&sos(FilterKind::Bp, &[lo, hi], o), x)
 }
@@ -287,7 +296,7 @@ pub fn crash(dur: f64) -> Vec<f64> {
 /// down, if `rise` is false), each band filtered with a 2,048-sample run-in, under a `sin^2` swell.
 ///
 /// # Panics
-/// Where Python raises: too short for a band to have a sample of its own (under 24 samples, and not empty).
+/// Where Python raises: under 24 samples, when a band has no sample of its own.
 pub fn whoosh(dur: f64, lo: f64, hi: f64, rise: bool, seed: u64) -> Vec<f64> {
     let n = length(dur * SRF);
     let x = noise(seed, n);
@@ -298,6 +307,9 @@ pub fn whoosh(dur: f64, lo: f64, hi: f64, rise: bool, seed: u64) -> Vec<f64> {
         let fc = lo * dmath::pow(hi / lo, if rise { u } else { 1.0 - u });
         let a = ((k * n) as f64 / nb as f64) as usize;
         let b = (((k + 1) * n) as f64 / nb as f64) as usize;
+        // A band with no sample of its own: Python fails there, on filtering nothing or on storing `[-0:]` (the
+        // whole filtered run) into no room.
+        assert!(b > a, "whoosh: {n} samples are too few for 24 bands");
         let top = SRF / 2.0 - 100.0;
         let high = fc * 1.25;
         let band = bp(
@@ -306,8 +318,7 @@ pub fn whoosh(dur: f64, lo: f64, hi: f64, rise: bool, seed: u64) -> Vec<f64> {
             if top < high { top } else { high },
             FILTER_O,
         );
-        // `[-(b - a):]` of the filtered run; with b == a Python would take all of it and fail to store it.
-        assert!(b > a || band.is_empty(), "whoosh: {n} samples are too few for 24 bands");
+        // `[-(b - a):]` of the filtered run.
         out[a..b].copy_from_slice(&band[band.len() - (b - a)..]);
     }
     let swell = dsp::linspace(0.0, PI, n);
@@ -402,6 +413,9 @@ pub fn chime(m: f64, dur: f64) -> Vec<f64> {
 /// `reverb(x, dur, decay, seed)`: `x` convolved, channel by channel, with `dur` seconds of decaying stereo noise
 /// (low-passed at 5 kHz, silent for its first 20 ms, scaled so the louder channel has unit energy), cut to the
 /// length of `x`. The wet signal only.
+///
+/// # Panics
+/// Where Python raises: `dur` is under one sample (there is no tail to filter).
 pub fn reverb(x: &[[f64; 2]], dur: f64, decay: f64, seed: u64) -> Vec<[f64; 2]> {
     let mut r = Generator::new(seed);
     let n = length(dur * SRF);
@@ -531,7 +545,31 @@ mod tests {
         assert_eq!(pad(&[60.0, 64.0], 0.1, PAD_CUT, PAD_ATT).len(), 4800);
         assert_eq!(bass(40.0, 0.1).len(), 4800);
         assert_eq!(chime(84.0, 0.1).len(), 4800);
-        assert!(whoosh(0.0, WHOOSH_LO, WHOOSH_HI, WHOOSH_RISE, WHOOSH_SEED).is_empty());
+    }
+
+    #[test]
+    fn a_filtered_sound_of_no_length_is_refused() {
+        // scipy's sosfilt raises on an empty signal, so these raise in Python.
+        let refused = |f: &dyn Fn()| {
+            let payload = std::panic::catch_unwind(std::panic::AssertUnwindSafe(f)).expect_err("it did not panic");
+            let text = payload.downcast_ref::<String>().cloned();
+            text.or_else(|| payload.downcast_ref::<&str>().map(|s| s.to_string()))
+                .expect("a panic with a message")
+        };
+        assert!(refused(&|| drop(hp(&[], 100.0, FILTER_O))).contains("sosfilt: x is empty"));
+        assert!(refused(&|| drop(lp(&[], 100.0, FILTER_O))).contains("sosfilt: x is empty"));
+        assert!(refused(&|| drop(bp(&[], 100.0, 200.0, FILTER_O))).contains("sosfilt: x is empty"));
+        assert!(refused(&|| drop(crash(0.0))).contains("sosfilt: x is empty"));
+        assert!(refused(&|| drop(thud(0.0, THUD_F0, THUD_F1, THUD_SEED))).contains("sosfilt: x is empty"));
+        assert!(refused(&|| drop(pad(&[60.0], 0.0, PAD_CUT, PAD_ATT))).contains("sosfilt: x is empty"));
+        assert!(
+            refused(&|| drop(reverb(&[[1.0, 1.0]], 0.0, REVERB_DECAY, REVERB_SEED))).contains("sosfilt: x is empty")
+        );
+        let few = "whoosh: 0 samples are too few for 24 bands";
+        assert!(refused(&|| drop(whoosh(0.0, WHOOSH_LO, WHOOSH_HI, WHOOSH_RISE, WHOOSH_SEED))).contains(few));
+        // The unfiltered ones are simply empty, as in Python; so is a reverb of nothing.
+        assert!(pluck(60.0, 0.0).is_empty() && bass(40.0, 0.0).is_empty() && chime(84.0, 0.0).is_empty());
+        assert!(reverb(&[], REVERB_DUR, REVERB_DECAY, REVERB_SEED).is_empty());
     }
 
     #[test]

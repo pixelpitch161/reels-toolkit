@@ -163,7 +163,8 @@ fn output_len(len_h: usize, in_len: usize, up: usize, down: usize) -> usize {
 
 /// `scipy.signal.upfirdn(h, x, up, down)`: put `up - 1` zeros after every sample, filter with `h`, keep every
 /// `down`-th sample; values beyond the ends of `x` count as zero. Done phase by phase, in scipy's order of
-/// additions, so on the same filter the output has scipy's bits. An empty `x` gives an empty output.
+/// additions, so on the same filter the output has scipy's bits. An empty `x` gives an empty output (scipy
+/// returns a few zeros there, `(len(h) - up - 1) // down + 1` of them).
 ///
 /// # Panics
 /// Where scipy raises: `h` is empty, or `up` or `down` is 0.

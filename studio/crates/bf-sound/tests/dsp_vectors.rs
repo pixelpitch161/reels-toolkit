@@ -2,6 +2,8 @@
 //!
 //! One test per file. Each walks every case of the sidecar, fails on a case whose `call` it does not know, and
 //! prints one summary line (`butter: 311/311, worst 1.2e-15 rel (c042)`) and then the worst case of each function.
+//! Nothing passes for want of cases: a file with no case fails, a file that has no case for one of the functions
+//! it is there to prove fails, and so does a vector file in the folder that no test here walks.
 //! The bars are the plan's: second-order sections within 1e-12 relative; the filters, the resampler, `interp`,
 //! `percentile`, `convolve` and every generator below -120 dBFS of difference (`20 log10(max |a - b|) < -120`);
 //! `fftconvolve` and `reverb` below -100 dBFS. Results that are plain IEEE arithmetic in the library's order must
@@ -166,8 +168,10 @@ impl Tally {
         self.failures.push(format!("{id} {function}: {why}"));
     }
 
-    /// Prints the summary line and the per-function lines, then fails the test if any case failed.
-    fn finish(self) {
+    /// Prints the summary line and the per-function lines, then fails the test if the file had no case, if any
+    /// case failed, or if one of the `required` functions had no check at all (an export that lost its cases, or
+    /// one kind of them, must not pass for want of anything to compare).
+    fn finish(self, required: &[&str]) {
         let total = self.cases.len();
         let passed = total - self.failed_cases.len();
         let worst = match &self.worst {
@@ -182,6 +186,7 @@ impl Tally {
                 println!("    {function}: {n} check(s), worst {} ({id})", self.show(*v));
             }
         }
+        assert!(total > 0, "{}: no cases", self.file);
         assert!(
             self.failures.is_empty(),
             "{}: {} of {total} case(s) failed:\n{}",
@@ -189,7 +194,58 @@ impl Tally {
             self.failed_cases.len(),
             self.failures.join("\n")
         );
+        let missing: Vec<&str> = required
+            .iter()
+            .copied()
+            .filter(|function| !self.by_function.contains_key(*function))
+            .collect();
+        assert!(missing.is_empty(), "{}: no case for {}", self.file, missing.join(", "));
     }
+}
+
+#[test]
+#[should_panic(expected = "empty: no cases")]
+fn a_file_without_cases_fails() {
+    Tally::new("empty", Unit::Db).finish(&[]);
+}
+
+#[test]
+#[should_panic(expected = "partial: no case for b, c")]
+fn a_function_without_a_case_fails() {
+    let mut t = Tally::new("partial", Unit::Db);
+    t.check("c000", "a", -200.0, DB);
+    t.finish(&["a", "b", "c"]);
+}
+
+/// The vector files under `studio/reference/dsp`: each has one test here that walks all of its cases.
+const FILES: [&str; 7] = [
+    "butter",
+    "fftconvolve",
+    "filters",
+    "generators",
+    "numpy",
+    "resample",
+    "ufuncs",
+];
+
+/// A vector file that is not listed in `FILES` has no test: the folder must hold exactly those.
+#[test]
+fn the_folder_holds_only_the_files_tested() {
+    let dir = bf_testdata::reference_dir().join("dsp");
+    let mut found: Vec<String> = std::fs::read_dir(&dir)
+        .unwrap_or_else(|e| panic!("cannot list {}: {e}", dir.display()))
+        .map(|entry| entry.expect("a directory entry").path())
+        .filter(|path| path.extension().is_some_and(|x| x == "npz"))
+        .map(|path| path.file_stem().expect("a file name").to_string_lossy().into_owned())
+        .collect();
+    found.sort();
+    assert_eq!(found, FILES, "the .npz files under {}", dir.display());
+}
+
+/// Opens one of `FILES`.
+fn open(file: &str) -> Vectors {
+    assert!(FILES.contains(&file), "{file} is not in FILES");
+    Vectors::open(&format!("dsp/{file}.npz"))
 }
 
 // ---------------------------------------------------------------- reading cases
@@ -251,7 +307,7 @@ fn extra<'a>(v: &'a Vectors, i: usize, key: &str) -> &'a Value {
 
 #[test]
 fn butter() {
-    let v = Vectors::open("dsp/butter.npz");
+    let v = open("butter");
     let mut t = Tally::new("butter", Unit::Rel);
     for case in &v.index.cases {
         let id = case.id.as_str();
@@ -289,14 +345,21 @@ fn butter() {
             other => t.fail(id, "butter", format!("unknown output {other:?}")),
         }
     }
-    t.finish();
+    // The kinds of design the episode asks for.
+    t.finish(&[
+        "butter Lp order 2 sos",
+        "butter Hp order 2 sos",
+        "butter Bp order 2 sos",
+        "butter Bp order 4 sos",
+        "butter Lp order 2 ba",
+    ]);
 }
 
 // ---------------------------------------------------------------- sosfilt, lfilter
 
 #[test]
 fn filters() {
-    let v = Vectors::open("dsp/filters.npz");
+    let v = open("filters");
     let mut t = Tally::new("filters", Unit::Db);
 
     // The fixed inputs are what the sidecar says they are: seeded noise, drawn as numpy draws it.
@@ -396,14 +459,23 @@ fn filters() {
             other => t.fail(id, other, "a call this test does not know".into()),
         }
     }
-    t.finish();
+    t.finish(&[
+        "sosfilt (scipy's sos)",
+        "sosfilt (own design)",
+        "sosfilt stereo (scipy's sos)",
+        "sosfilt stereo (own design)",
+        "lfilter (scipy's b, a)",
+        "lfilter (own design)",
+        "lfilter (envelope follower)",
+        "lfilter stereo (K-weighting)",
+    ]);
 }
 
 // ---------------------------------------------------------------- resample_poly
 
 #[test]
 fn resample() {
-    let v = Vectors::open("dsp/resample.npz");
+    let v = open("resample");
     let mut t = Tally::new("resample", Unit::Db);
     for case in &v.index.cases {
         let id = case.id.as_str();
@@ -446,14 +518,19 @@ fn resample() {
 
         t.db(id, "resample_poly", &dsp::resample_poly(x, up, down), want, DB);
     }
-    t.finish();
+    t.finish(&[
+        "firwin (kaiser 5.0)",
+        "firwin * up, padded",
+        "upfirdn (scipy's filter)",
+        "resample_poly",
+    ]);
 }
 
 // ---------------------------------------------------------------- fftconvolve
 
 #[test]
 fn fftconvolve() {
-    let v = Vectors::open("dsp/fftconvolve.npz");
+    let v = open("fftconvolve");
     let mut t = Tally::new("fftconvolve", Unit::Db);
     for case in &v.index.cases {
         let id = case.id.as_str();
@@ -478,14 +555,14 @@ fn fftconvolve() {
             DB_FFT,
         );
     }
-    t.finish();
+    t.finish(&["fftconvolve", "fftconvolve (b, a)"]);
 }
 
 // ---------------------------------------------------------------- numpy
 
 #[test]
 fn numpy() {
-    let v = Vectors::open("dsp/numpy.npz");
+    let v = open("numpy");
     let mut t = Tally::new("numpy", Unit::Db);
     for case in &v.index.cases {
         let id = case.id.as_str();
@@ -564,7 +641,20 @@ fn numpy() {
             other => t.fail(id, other, "a call this test does not know".into()),
         }
     }
-    t.finish();
+    t.finish(&[
+        "interp",
+        "percentile",
+        "convolve same",
+        "cumsum",
+        "linspace",
+        "mean (pairwise)",
+        "mean of each row",
+        "sum of each column",
+        "mean of each column, added",
+        "peak",
+        "16-bit conversion",
+        "find_peaks",
+    ]);
 }
 
 /// One `find_peaks` case: `want` holds scipy's peak indices (as floats) and `heights` the signal at each.
@@ -704,7 +794,7 @@ fn ulps(a: f64, b: f64) -> f64 {
 
 #[test]
 fn ufuncs() {
-    let v = Vectors::open("dsp/ufuncs.npz");
+    let v = open("ufuncs");
     let mut t = Tally::new("ufuncs", Unit::Ulp);
     println!("ufuncs: dmath against numpy 2.5.3's array loops and Python 3.13's math on the reference PC");
     for (i, case) in v.index.cases.iter().enumerate() {
@@ -757,7 +847,29 @@ fn ufuncs() {
         );
         t.check(id, &case.call, worst, bar);
     }
-    t.finish();
+    t.finish(&[
+        "np.sin(x)",
+        "np.cos(x)",
+        "np.exp(x)",
+        "np.tanh(x)",
+        "np.log10(x)",
+        "np.sqrt(x)",
+        "x ** 0.5",
+        "x ** 2",
+        "x ** 1.5",
+        "x ** 0.62",
+        "x ** 1.3",
+        "2 ** x",
+        "20 ** x",
+        "np.sin(np.pi * 0.5 * x) ** 2",
+        "python: math.sin(x)",
+        "python: math.cos(x)",
+        "python: math.exp(x)",
+        "python: x ** 0.8",
+        "python: x ** 1.6",
+        "python: 10 ** (x / 20)",
+        "python: 2 ** ((x - 69) / 12)",
+    ]);
 }
 
 // ---------------------------------------------------------------- the generators
@@ -771,7 +883,7 @@ fn generator_name(call: &str) -> Option<&str> {
 
 #[test]
 fn generators() {
-    let v = Vectors::open("dsp/generators.npz");
+    let v = open("generators");
     let mut t = Tally::new("generators", Unit::Db);
     for (i, case) in v.index.cases.iter().enumerate() {
         let id = case.id.as_str();
@@ -829,7 +941,27 @@ fn generators() {
         assert_eq!(want.shape.len(), 1, "{id}: a mono generator");
         t.db(id, name, &mono, want.f64(), DB);
     }
-    t.finish();
+    // Every generator of reelkit/audio.py.
+    t.finish(&[
+        "kick",
+        "snare",
+        "clap",
+        "hat",
+        "crash",
+        "whoosh",
+        "thud",
+        "pluck",
+        "pad",
+        "bass",
+        "chime",
+        "reverb",
+        "tape_stop",
+        "saw",
+        "square",
+        "tri",
+        "adsr",
+        "expenv",
+    ]);
 }
 
 /// A default argument value, as the sidecar's `signatures` gives it.
@@ -881,7 +1013,7 @@ fn generator_defaults_are_pythons() {
     ]
     .into_iter()
     .collect();
-    let v = Vectors::open("dsp/generators.npz");
+    let v = open("generators");
     let signatures = v.index.raw["signatures"].as_object().expect("signatures");
     let mut seen = BTreeSet::new();
     for (generator, params) in signatures {
