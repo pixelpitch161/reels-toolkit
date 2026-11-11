@@ -7,8 +7,11 @@
 //! the accessibility tree.
 //!
 //! Pictures from data (a sprite, a frame) are uploaded once as textures with nearest sampling and kept in one cache
-//! in egui's temporary data (`ctx.data_mut`), keyed by a name; a texture is made again only when its pixels are
-//! another allocation, and the cache keeps at most `MAX_TEXTURES`, dropping the one used longest ago.
+//! in egui's temporary data (`ctx.data_mut`), keyed by a name. Freshness is by allocation (`Arc::ptr_eq`): a
+//! texture is made again only when its pixels are another `Arc`, so a caller keeps one `Arc` per image (a new `Arc`
+//! every frame means an upload every frame). The cache keeps at most `MAX_TEXTURES` (64) textures, dropping the
+//! one drawn longest ago, except that it never drops one still on screen: with more than 64 on screen at once it
+//! holds them all while they stay on screen and shrinks back afterwards (see `Cache`).
 
 use std::sync::Arc;
 
@@ -16,7 +19,7 @@ use egui::accesskit::Role;
 use egui::text::{LayoutJob, TextWrapping};
 use egui::{
     Align, Color32, ColorImage, Context, FontId, Id, Key, Layout, Painter, Pos2, Rect, Response, Sense, Shape, Stroke,
-    StrokeKind, TextureHandle, TextureOptions, Ui, UiBuilder, Vec2, WidgetInfo, pos2, vec2,
+    StrokeKind, TextWrapMode, TextureHandle, TextureOptions, Ui, UiBuilder, Vec2, WidgetInfo, pos2, vec2,
 };
 
 use crate::model::roster::Sprite;
@@ -78,7 +81,8 @@ fn snap(rect: Rect, ppp: f32) -> Rect {
     Rect::from_min_max(px(rect.min), px(rect.max))
 }
 
-/// A fighter bar: 4 wide and `height` tall in the fighter's full colour, corner 1. Decoration only: it has no name.
+/// A fighter bar: 4 wide and `height` tall in the fighter's full colour, corner 1. Decoration only: it has no name,
+/// and inside a disabled `Ui` it takes egui's disabled fade like any other content.
 pub fn fighter_bar(ui: &mut Ui, color: [u8; 3], height: f32) -> Response {
     let (rect, response) = ui.allocate_exact_size(vec2(BAR_W, height), Sense::hover());
     if ui.is_rect_visible(rect) {
@@ -90,13 +94,21 @@ pub fn fighter_bar(ui: &mut Ui, color: [u8; 3], height: f32) -> Response {
 
 /// A fighter's portrait, `size` square, named `name` (an image). With a usable sprite it is the sprite, drawn with
 /// nearest sampling at the largest whole-number scale that fits (scaled down to fit when the sprite is larger than
-/// `size`), centred on whole pixels; its texture is cached under `name`. Without one, or when the sprite is empty,
-/// its buffer does not hold `w * h * 4` bytes or it is larger than a texture can be, it is a disc filled with
-/// `large_fill(color)` inside a 3 px ring of the full colour.
+/// `size`), centred on whole pixels. Without one, or when the sprite is empty, its buffer does not hold `w * h * 4`
+/// bytes or it is larger than a texture can be, it is a disc filled with `large_fill(color)` inside a 3 px ring of
+/// the full colour. A `size` that is not a positive number takes no space and draws nothing.
+///
+/// The sprite's texture is cached under `name` and is fresh while `sprite.rgba` is the same allocation
+/// (`Arc::ptr_eq`): keep one `Arc` per sprite, since a new `Arc` each frame uploads it each frame. The cache holds
+/// 64 textures, or all those on screen when more are (see the module's notes).
+///
+/// It is decoration: inside a disabled `Ui` it takes egui's disabled fade like any other content.
 pub fn portrait(ui: &mut Ui, color: [u8; 3], sprite: Option<&Sprite>, size: f32, name: &str) -> Response {
-    let (rect, response) = ui.allocate_exact_size(Vec2::splat(size), Sense::hover());
+    let drawable = size.is_finite() && size > 0.0;
+    let side = if drawable { size } else { 0.0 };
+    let (rect, response) = ui.allocate_exact_size(Vec2::splat(side), Sense::hover());
     response.widget_info(|| WidgetInfo::labeled(Role::Image, true, name));
-    if !ui.is_rect_visible(rect) {
+    if !drawable || !ui.is_rect_visible(rect) {
         return response;
     }
     let ctx = ui.ctx().clone();
@@ -137,12 +149,21 @@ pub fn portrait(ui: &mut Ui, color: [u8; 3], sprite: Option<&Sprite>, size: f32,
 }
 
 /// A picture from the engine (a cover, a video frame) drawn into `size` points with nearest sampling, its corners on
-/// whole pixels, named `name` (an image). Its texture is cached under `key`. A frame that is empty, whose buffer
-/// does not hold `w * h * 3` bytes or that is larger than a texture can be is drawn as a `RAISED` block of `size`.
+/// whole pixels, named `name` (an image). A frame that is empty, whose buffer does not hold `w * h * 3` bytes or
+/// that is larger than a texture can be is drawn as a `RAISED` block of `size`. A `size` with a side that is not a
+/// positive number takes no space and draws nothing.
+///
+/// Its texture is cached under `key` and is fresh while `frame.rgb` is the same allocation (`Arc::ptr_eq`): keep
+/// one `Arc` per picture, since a new `Arc` each frame uploads it each frame. The cache holds 64 textures, or all
+/// those on screen when more are (see the module's notes).
+///
+/// It is decoration: inside a disabled `Ui` it takes egui's disabled fade like any other content.
 pub fn picture(ui: &mut Ui, key: &str, frame: &Frame, size: Vec2, name: &str) -> Response {
+    let drawable = size.x.is_finite() && size.y.is_finite() && size.x > 0.0 && size.y > 0.0;
+    let size = if drawable { size } else { Vec2::ZERO };
     let (rect, response) = ui.allocate_exact_size(size, Sense::hover());
     response.widget_info(|| WidgetInfo::labeled(Role::Image, true, name));
-    if !ui.is_rect_visible(rect) {
+    if !drawable || !ui.is_rect_visible(rect) {
         return response;
     }
     let ctx = ui.ctx().clone();
@@ -168,26 +189,39 @@ fn usable(ctx: &Context, w: usize, h: usize, channels: usize, len: usize) -> boo
     w > 0 && h > 0 && w <= max_side && h <= max_side && exact
 }
 
-/// One cached texture: what it was made from and when it was last drawn.
+/// One cached texture: what it was made from, the pass it was last drawn in and, for recency, the cache's call
+/// count when it was last drawn.
 #[derive(Clone)]
 struct Entry<T> {
     key: String,
     pixels: Arc<[u8]>,
     size: [usize; 2],
     handle: T,
+    pass: u64,
     used: u64,
 }
 
-/// The picture textures, at most `MAX_TEXTURES` of them. Generic over the handle so its rules can be tested without
-/// a context. Each entry keeps its pixels' `Arc`, so their address cannot be reused by other pixels while cached.
+/// The picture textures. Generic over the handle so its rules can be tested without a context. Each entry keeps its
+/// pixels' `Arc`, so their address cannot be reused by other pixels while cached.
+///
+/// The bound: while there are more than `MAX_TEXTURES`, entries drawn neither in the current pass nor in the pass
+/// before it are dropped, the one drawn longest ago first (recency is the call count, so entries drawn in one pass
+/// are ordered too). An entry on screen is never dropped, so when more than `MAX_TEXTURES` pictures are on screen at
+/// once the cache grows to hold them all for as long as they stay there (nothing is uploaded again), and it shrinks
+/// back to `MAX_TEXTURES` on the second pass after some of them leave the screen. The overflow is never re-made.
 #[derive(Clone)]
 struct Cache<T> {
     entries: Vec<Entry<T>>,
+    /// Counts lookups and stores, so that entries of one pass are still ordered by recency.
+    clock: u64,
 }
 
 impl<T> Default for Cache<T> {
     fn default() -> Self {
-        Cache { entries: Vec::new() }
+        Cache {
+            entries: Vec::new(),
+            clock: 0,
+        }
     }
 }
 
@@ -202,11 +236,19 @@ enum Found<T> {
 }
 
 impl<T: Clone> Cache<T> {
-    /// The texture for `key` and `pixels`, marking it used at `now` when it is fresh.
-    fn find(&mut self, key: &str, pixels: &Arc<[u8]>, size: [usize; 2], now: u64) -> Found<T> {
+    fn tick(&mut self) -> u64 {
+        self.clock += 1;
+        self.clock
+    }
+
+    /// The texture for `key` and `pixels`, marking it drawn in `pass` when it is fresh. Trims the cache first.
+    fn find(&mut self, key: &str, pixels: &Arc<[u8]>, size: [usize; 2], pass: u64) -> Found<T> {
+        self.trim(pass);
+        let used = self.tick();
         match self.entries.iter_mut().find(|e| e.key == key) {
             Some(e) if Arc::ptr_eq(&e.pixels, pixels) && e.size == size => {
-                e.used = now;
+                e.pass = pass;
+                e.used = used;
                 Found::Fresh(e.handle.clone())
             }
             Some(e) => Found::Stale(e.handle.clone()),
@@ -214,24 +256,36 @@ impl<T: Clone> Cache<T> {
         }
     }
 
-    /// Keeps `handle` for `key`, made from `pixels`, used at `now`; then drops the entry used longest ago while
-    /// there are more than `MAX_TEXTURES`.
-    fn put(&mut self, key: String, pixels: Arc<[u8]>, size: [usize; 2], handle: T, now: u64) {
+    /// Keeps `handle` for `key`, made from `pixels`, drawn in `pass`; then trims the cache.
+    fn put(&mut self, key: String, pixels: Arc<[u8]>, size: [usize; 2], handle: T, pass: u64) {
         let entry = Entry {
             key,
             pixels,
             size,
             handle,
-            used: now,
+            pass,
+            used: self.tick(),
         };
         match self.entries.iter_mut().find(|e| e.key == entry.key) {
             Some(old) => *old = entry,
             None => self.entries.push(entry),
         }
+        self.trim(pass);
+    }
+
+    /// While there are more than `MAX_TEXTURES`, drops the entry drawn longest ago among those drawn neither in
+    /// `pass` nor in the pass before it (so what is on screen is never dropped between one pass and the next).
+    fn trim(&mut self, pass: u64) {
         while self.entries.len() > MAX_TEXTURES {
-            let last = self.entries.len() - 1;
-            let oldest = (0..last).min_by_key(|&i| self.entries[i].used).unwrap_or(0);
-            self.entries.remove(oldest);
+            let oldest = (0..self.entries.len())
+                .filter(|&i| self.entries[i].pass.saturating_add(1) < pass)
+                .min_by_key(|&i| self.entries[i].used);
+            match oldest {
+                Some(i) => {
+                    self.entries.remove(i);
+                }
+                None => break,
+            }
         }
     }
 }
@@ -246,10 +300,10 @@ fn texture(
     image: impl FnOnce() -> ColorImage,
 ) -> TextureHandle {
     let id = Id::unique("bf-app picture textures");
-    let now = ctx.cumulative_pass_nr();
+    let pass = ctx.cumulative_pass_nr();
     let found = ctx.data_mut(|d| {
         d.get_temp_mut_or_default::<Cache<TextureHandle>>(id)
-            .find(&key, pixels, size, now)
+            .find(&key, pixels, size, pass)
     });
     let handle = match found {
         Found::Fresh(handle) => return handle,
@@ -261,7 +315,7 @@ fn texture(
     };
     ctx.data_mut(|d| {
         d.get_temp_mut_or_default::<Cache<TextureHandle>>(id)
-            .put(key, pixels.clone(), size, handle.clone(), now);
+            .put(key, pixels.clone(), size, handle.clone(), pass);
     });
     handle
 }
@@ -435,7 +489,8 @@ fn paint_name(painter: &Painter, text: &str, font: FontId, colour: Color32, left
 /// whole row is one control named `name` (a button that is selected or not): clicking anywhere on it, or Space or
 /// Enter while it has the focus, clicks it. Selected: `SELECTED` fill, a 1.5 px `TEXT` ring inside, and its text
 /// `TEXT_STRONG`; otherwise transparent, `HOVER` when hovered. In a disabled `Ui` it takes no clicks, its ring is
-/// `FAINT` and its text `FAINT`. Labels inside it cannot be selected, so they never take its clicks.
+/// `FAINT` and its text `FAINT`. Labels inside it cannot be selected, so they never take its clicks, and they do
+/// not wrap: a label too long for the row is cut with an ellipsis.
 pub fn object_row<R>(
     ui: &mut Ui,
     name: &str,
@@ -473,6 +528,7 @@ pub fn object_row<R>(
     child.set_clip_rect(rect.intersect(ui.clip_rect()));
     let style = child.style_mut();
     style.interaction.selectable_labels = false;
+    style.wrap_mode = Some(TextWrapMode::Truncate);
     style.visuals.override_text_color = Some(match (enabled, selected) {
         (false, _) => FAINT,
         (true, true) => TEXT_STRONG,
@@ -555,6 +611,73 @@ mod tests {
             cache.find(&format!("k{MAX_TEXTURES}"), &all[MAX_TEXTURES], [1, 1], 102),
             Found::Fresh(_)
         ));
+    }
+
+    /// Draws `count` pictures in one pass, in order, the way `texture` does; returns how many were uploaded.
+    fn draw_pass(cache: &mut Cache<usize>, all: &[Arc<[u8]>], count: usize, pass: u64) -> usize {
+        let mut uploads = 0;
+        for (i, p) in all.iter().enumerate().take(count) {
+            if cache.find(&format!("k{i}"), p, [1, 1], pass) != Found::Fresh(i) {
+                uploads += 1;
+                cache.put(format!("k{i}"), p.clone(), [1, 1], i, pass);
+            }
+        }
+        uploads
+    }
+
+    #[test]
+    fn pictures_on_screen_are_never_made_again_however_many() {
+        for count in [MAX_TEXTURES - 1, MAX_TEXTURES, MAX_TEXTURES + 1, 80] {
+            let mut cache = Cache::<usize>::default();
+            let all: Vec<_> = (0..count).map(|i| pixels(i as u8)).collect();
+            assert_eq!(
+                draw_pass(&mut cache, &all, count, 1),
+                count,
+                "{count}: the first pass uploads each"
+            );
+            for pass in 2..6 {
+                assert_eq!(
+                    draw_pass(&mut cache, &all, count, pass),
+                    0,
+                    "{count}: pass {pass} uploads none"
+                );
+            }
+            assert_eq!(cache.entries.len(), count, "{count}: all on screen are held");
+            // Ten stay on screen: the cache shrinks back to its bound on the next pass and keeps those ten.
+            assert_eq!(
+                draw_pass(&mut cache, &all, 10, 6),
+                0,
+                "{count}: the ten that stay are not made again"
+            );
+            assert_eq!(
+                cache.entries.len(),
+                count,
+                "{count}: last pass's pictures are kept one pass"
+            );
+            assert_eq!(draw_pass(&mut cache, &all, 10, 7), 0);
+            assert_eq!(
+                cache.entries.len(),
+                count.min(MAX_TEXTURES),
+                "{count}: back within the bound"
+            );
+            assert_eq!(draw_pass(&mut cache, &all, 10, 8), 0);
+        }
+    }
+
+    #[test]
+    fn within_one_pass_the_first_drawn_is_the_oldest() {
+        let mut cache = Cache::<usize>::default();
+        let all: Vec<_> = (0..=MAX_TEXTURES).map(|i| pixels(i as u8)).collect();
+        draw_pass(&mut cache, &all, MAX_TEXTURES, 1);
+        let last = MAX_TEXTURES;
+        cache.put(format!("k{last}"), all[last].clone(), [1, 1], last, 3);
+        assert_eq!(cache.entries.len(), MAX_TEXTURES);
+        assert_eq!(
+            cache.find("k0", &all[0], [1, 1], 3),
+            Found::Missing,
+            "k0 was drawn first"
+        );
+        assert_eq!(cache.find("k1", &all[1], [1, 1], 3), Found::Fresh(1));
     }
 
     #[test]

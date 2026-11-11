@@ -326,6 +326,7 @@ fn the_selected_chip_is_ringed() {
         "the name is TEXT_STRONG"
     );
 
+    drop(harness);
     let mut harness = chip_harness(Some(1), true, &out);
     harness.run();
     assert!(harness.query_by_label("Flute, right corner").is_some());
@@ -452,9 +453,56 @@ fn a_long_name_stays_inside_its_chip() {
         region(&mut harness, beyond).iter().all(|&p| p == rgb(PANEL)),
         "nothing is drawn past the chip's right edge"
     );
+    let side = harness.get_by_label("Right").rect();
+    let name = Rect::from_x_y_ranges(
+        rect.min.x + 30.0..=side.min.x - 1.0,
+        rect.min.y + 3.0..=rect.max.y - 3.0,
+    );
+    assert_ends_in_ellipsis(&mut harness, name, "the chip's name");
+}
+
+#[test]
+fn a_long_label_in_a_row_is_cut_with_an_ellipsis() {
+    let _gpu = common::gpu();
+    let long = "A label far too long for this row, so it has to be cut short";
+    let mut harness = common::widget_harness((300.0, 80.0), |ui| {
+        on_panel(ui);
+        ui.allocate_ui(vec2(200.0, 38.0), |ui| {
+            chips::object_row(ui, "Seed 1", false, 38.0, |ui| ui.label(long));
+        });
+    });
+    harness.run();
+    let rect = harness.get_by_label("Seed 1").rect();
+    assert_eq!(rect.width(), 200.0);
+    let beyond = Rect::from_min_max(rect.right_top() + vec2(1.0, 0.0), rect.right_bottom() + vec2(80.0, 0.0));
     assert!(
-        harness.query_by_label("Right").is_some(),
-        "the side label keeps its place"
+        region(&mut harness, beyond).iter().all(|&p| p == rgb(PANEL)),
+        "nothing is drawn past the row's right edge"
+    );
+    assert_ends_in_ellipsis(&mut harness, rect.shrink2(vec2(10.0, 2.0)), "the row's label");
+}
+
+/// The text in `area` (one line, bright on dark) ends in an ellipsis: its last 6 lit columns hold only dots, low on
+/// the line, where any letter would reach higher.
+fn assert_ends_in_ellipsis(harness: &mut Harness<'_>, area: Rect, what: &str) {
+    let image = harness.render().expect("the harness renders");
+    let mut lit = Vec::new();
+    for y in area.min.y.ceil() as u32..area.max.y.floor() as u32 {
+        for x in area.min.x.ceil() as u32..area.max.x.floor() as u32 {
+            let [r, g, b, _] = image.get_pixel(x, y).0;
+            if brightness([r, g, b]) > 3 * 0x80 {
+                lit.push((x, y));
+            }
+        }
+    }
+    assert!(!lit.is_empty(), "{what}: text is drawn");
+    let top = lit.iter().map(|p| p.1).min().unwrap_or(0) as f32;
+    let bottom = lit.iter().map(|p| p.1).max().unwrap_or(0) as f32;
+    let last = lit.iter().map(|p| p.0).max().unwrap_or(0);
+    let tail: Vec<_> = lit.iter().filter(|p| p.0 + 6 > last).collect();
+    assert!(
+        tail.iter().all(|p| p.1 as f32 > top + 0.6 * (bottom - top)),
+        "{what}: it ends in low dots, an ellipsis (top {top}, bottom {bottom}, tail {tail:?})"
     );
 }
 
@@ -764,28 +812,96 @@ fn a_picture_texture_is_made_once_and_again_for_new_pixels() {
     );
 }
 
+/// The texture made for the picture keyed `key`, if one is allocated.
+fn texture_of<S>(harness: &Harness<'_, S>, key: &str) -> Option<egui::TextureId> {
+    let manager = harness.ctx.tex_manager();
+    let manager = manager.read();
+    let name = format!("bf-app picture {key}");
+    manager
+        .allocated()
+        .find(|(_, meta)| meta.name == name)
+        .map(|(id, _)| *id)
+}
+
+/// Texture ids are never reused, so a picture uploaded again shows as a new id: comparing the ids held across
+/// frames counts uploads.
 #[test]
-fn the_texture_cache_is_bounded() {
+fn pictures_on_screen_are_not_made_again_however_many() {
     let _gpu = common::gpu();
-    let frames: Vec<Frame> = (0..80u8)
-        .map(|i| Frame {
-            w: 1,
-            h: 1,
-            rgb: Arc::from(vec![i, i, i]),
-        })
-        .collect();
-    let mut harness = common::widget_harness((900.0, 200.0), move |ui| {
-        on_panel(ui);
-        ui.horizontal_wrapped(|ui| {
-            for (i, frame) in frames.iter().enumerate() {
-                chips::picture(ui, &format!("tile {i}"), frame, vec2(8.0, 8.0), &format!("Tile {i}"));
-            }
+    for count in [65usize, 80] {
+        let frames: Vec<Frame> = (0..count)
+            .map(|i| Frame {
+                w: 1,
+                h: 1,
+                rgb: Arc::from(vec![i as u8; 3]),
+            })
+            .collect();
+        let shown = Rc::new(Cell::new(count));
+        let showing = shown.clone();
+        let mut harness = common::widget_harness((900.0, 200.0), move |ui| {
+            on_panel(ui);
+            ui.horizontal_wrapped(|ui| {
+                for (i, frame) in frames.iter().enumerate().take(showing.get()) {
+                    chips::picture(ui, &format!("tile {i}"), frame, vec2(8.0, 8.0), &format!("Tile {i}"));
+                }
+            });
         });
-    });
-    harness.run();
-    let held = picture_textures(&harness).len();
-    assert!(held <= 64, "at most 64 textures are kept, found {held}");
-    assert!(held >= 16, "recent ones are kept, found {held}");
+        harness.run();
+        let first = picture_textures(&harness);
+        assert_eq!(first.len(), count, "{count} on screen: one texture each");
+        for _ in 0..5 {
+            harness.step();
+        }
+        assert_eq!(
+            picture_textures(&harness),
+            first,
+            "{count} on screen: no upload after the first frame"
+        );
+
+        let ten: Vec<_> = (0..10).map(|i| texture_of(&harness, &format!("tile {i}"))).collect();
+        shown.set(10);
+        for _ in 0..3 {
+            harness.step();
+        }
+        assert_eq!(
+            picture_textures(&harness).len(),
+            64,
+            "{count}: back to 64 once fewer are on screen"
+        );
+        let still: Vec<_> = (0..10).map(|i| texture_of(&harness, &format!("tile {i}"))).collect();
+        assert_eq!(still, ten, "{count}: the ten still on screen were not made again");
+    }
+}
+
+#[test]
+fn a_portrait_or_picture_without_a_size_draws_nothing() {
+    let _gpu = common::gpu();
+    for size in [f32::NAN, 0.0, -5.0, f32::INFINITY] {
+        let frame = Frame {
+            w: 2,
+            h: 2,
+            rgb: quad_rgb(),
+        };
+        let mut harness = common::widget_harness((100.0, 100.0), move |ui| {
+            on_panel(ui);
+            chips::portrait(ui, FLUTE, None, size, "Flute");
+            chips::picture(ui, "no size", &frame, vec2(size, 20.0), "Cover");
+            chips::picture(ui, "no size 2", &frame, vec2(20.0, size), "Cover 2");
+        });
+        harness.run();
+        for name in ["Flute", "Cover", "Cover 2"] {
+            let rect = harness.get_by_label(name).rect();
+            assert!(
+                rect.width() == 0.0 || rect.height() == 0.0,
+                "{size}: {name} takes no space"
+            );
+        }
+        let window = Rect::from_min_max(egui::Pos2::ZERO, egui::pos2(100.0, 100.0));
+        assert!(
+            region(&mut harness, window).iter().all(|&p| p == rgb(PANEL)),
+            "{size}: nothing is drawn"
+        );
+    }
 }
 
 /// The gallery: both names at scales 3 and 4, both portraits, two fighter bars, four chips (one chosen, one not
