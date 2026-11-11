@@ -3,7 +3,7 @@
 use bf_core::dmath;
 use bf_core::py::round_half_even;
 
-use super::num::py_min;
+use bf_core::py::py_min;
 
 /// `q16(t)` on a grid whose sixteenth is `s16` seconds: the nearest 16th, `round(t / S16) * S16` (Python's
 /// `round`: halves go to the even 16th). A `t` that is not a number comes back as NaN (Python raises).

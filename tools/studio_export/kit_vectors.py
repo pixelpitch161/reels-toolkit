@@ -11,9 +11,27 @@ studio/reference/picture_kit/ (every .npz has a sidecar .json: vectors-conventio
     np.npz       the numpy semantics the renderer leans on, element by element: np.clip (two bounds and one),
                  astype(np.uint8 / np.int32 / np.int64) from floats, the two floor dithers, np.roll, np.nonzero
 
+The renderer kit (the 3D-to-2D machinery of reelkit, each function on seeded inputs):
+
+    camera.npz   reelkit.camera: Cam (the constructor's fields, to_cam, proj, wp, depth, pixel_rays, ground_hit),
+                 clip_near, interp_keys
+    geometry.npz reelkit.geometry: face, box, prism, lathe, catenary, thin_quad
+    raster.npz   reelkit.raster: Frame (the constructor, poly, screen_poly, line, disc, set_array, array, depth) at
+                 the full 360 x 640, the 60 glow kernels, apply_glows
+    lighting.npz reelkit.lighting: Lights (key, fill, point) and shade
+    shadows.npz  reelkit.shadows: MaskGrid (its size, raster, sample), proj_point
+    lens.npz     reelkit.lens: oct_kernel, coc_map, dof
+    fftconv.npz  what dof stands on: scipy.fft.rfftn and irfftn with the padded shapes fftconvolve uses, and
+                 scipy.signal.fftconvolve(mode='same') itself
+    post.npz     reelkit.post: bloom, grade, vignette, top_scrim
+    hull.npz     scipy.spatial.ConvexHull(points).vertices for 2-D points (the order the spot's beam is drawn in)
+
 A group is one file. Each case stores the inputs and what Python gave; one call per element where the function takes
 scalars (ss, ease, ...), so a row of the output is exactly one Python call. Floats that Rust must match bit for bit
-are float64 / float32 arrays or float.hex() strings. Tasks 18 and 19 add their groups to this module."""
+are float64 / float32 arrays or float.hex() strings.
+
+This module holds the Group class, the first three groups and the export itself. The renderer kit's nine groups are
+in kit_renderer_vectors.py, which `run` calls after them."""
 import os
 
 import numpy as np
@@ -329,7 +347,8 @@ def group_np():
 
 
 def run():
-    total = sum(make().write() for make in (group_config, group_font, group_np))
+    from . import kit_renderer_vectors                    # (it imports Group from this module)
+    total = sum(make().write() for make in (group_config, group_font, group_np, *kit_renderer_vectors.GROUPS))
     print(f'kit: {total / 1e3:.1f} kB -> {common.rel(OUT)}')
 
 

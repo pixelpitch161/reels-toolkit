@@ -8,25 +8,24 @@
 //!   to float32 before it is compared (the rounding itself sits near -150 dBFS).
 //! - `rms.json`: the RMS of every 100 ms block of every stem and of the master, within 0.01 dB; a block the kit
 //!   has below -90 dBFS must be below it here too and is not compared further.
-//! - `audio.wav`: the mastered file as the kit wrote it (16 bit): every sample within 3 LSB, the RMS of the
-//!   difference below -90 dBFS, and the first and last 4 ms (the loop seam) as loud as the kit's.
+//! - `audio.wav`: the mastered file as the kit wrote it (16 bit): every sample the same (none may differ), and the
+//!   first and last 4 ms (the loop seam) as loud as the kit's. The solo bus is the references' float32 to the bit.
 //! - `note_calls.json`: the order of the 174 first-time notes (every FLUTE note moves the shared noise stream on).
 //! - `premaster.npz`: every bus as the score leaves it, before the master (the place to look first when a stem
 //!   is off).
 //!
-//! Then what a fight file can do wrong (an unknown theme, a chord the theme has no voicing for, a fighter whose
-//! part is not here, a fight with no K.O.), a panic inside the sound code, and the same fight file at two other
-//! tempos.
+//! What a fight file or a recording can do wrong is in `tests/errors.rs`, the same fight file at two other tempos
+//! in `tests/tempos.rs`, the readers of the kit's files in `tests/common/mod.rs`.
 //!
 //! The tests print the worst difference per bus; run with `-- --nocapture` to see them.
+
+mod common;
 
 use std::collections::BTreeMap;
 use std::sync::LazyLock;
 use std::time::Instant;
 
-use bf_content::{ContentError, SoundBuild, build_soundtrack, theme_names, validate};
-use bf_core::fightfile::FightFile;
-use bf_core::recording::{Array, Recording};
+use bf_content::{SoundBuild, build_soundtrack};
 use bf_core::rng::Generator;
 use bf_core::show::Show;
 use bf_sound::master::Soundtrack;
@@ -34,40 +33,25 @@ use bf_sound::music::NoteCall;
 use bf_sound::voice::PpNoise;
 use bf_sound::wav::sample_i16;
 use bf_sound::{NA, SR};
-use bf_testdata::{Vectors, hex_arg, reference, repo_root};
-use serde_json::Value;
+use bf_testdata::{Vectors, hex_arg};
+
+use common::{
+    BLOCK, BUSES, DIR, EPISODE, RMS_DB, RMS_FLOOR, block_db, db, exceptions, floats, json, kit_wav, profile, rms_i16,
+    show_db, span, window, window_db,
+};
 
 /// Sample differences of a stem window: below this many dBFS.
 const DB: f64 = -120.0;
 /// The same for a bus listed in `exceptions.toml`.
 const DB_EXCEPTION: f64 = -80.0;
-/// A 100 ms block's RMS against the kit's: within this many dB.
-const RMS_DB: f64 = 0.01;
-/// Blocks the kit has below this many dBFS are only checked to be below it.
-const RMS_FLOOR: f64 = -90.0;
-/// 100 ms.
-const BLOCK: usize = SR / 10;
-/// The buses of the episode, in the order its score first touches them.
-const BUSES: [&str; 7] = ["drums", "calliope", "fx", "flute", "trombone", "glock", "solo"];
 /// The windows of `stems.npz` and `premaster.npz`: eight of 2.0 s and one of 0.25 s.
 const WINDOWS: usize = 9;
-
-const DIR: &str = "sound/flute_vs_trombone";
+/// The buses whose every window, rounded to float32, has exactly the reference's bits (before and after the
+/// master). The other six differ from the kit's float64 in the last places (`dmath` and numpy's maths differ by
+/// an ulp here and there), which float32 rounding does not always hide: they are held to the -120 dBFS bar.
+const EXACT_F32: [&str; 1] = ["solo"];
 
 // ---------------------------------------------------------------- the episode, built once
-
-struct Episode {
-    rec: Recording,
-    ff: FightFile,
-}
-
-static EPISODE: LazyLock<Episode> = LazyLock::new(|| {
-    let rec = Recording::read(&reference("fights/flute_vs_trombone/ep392.bfrec")).expect("the recording reads");
-    let path = repo_root().join("studio/fights/flute_vs_trombone.toml");
-    let text = std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("{}: {e}", path.display()));
-    let ff = FightFile::parse(&text).expect("the fight file parses");
-    Episode { rec, ff }
-});
 
 /// The soundtrack of the episode, as `build_soundtrack` makes it.
 static BUILT: LazyLock<Soundtrack> = LazyLock::new(|| {
@@ -121,186 +105,6 @@ static SCORED: LazyLock<Scored> = LazyLock::new(|| {
         noise: build.ctx.noise().expect("the noise stream"),
     }
 });
-
-// ---------------------------------------------------------------- reading the files
-
-fn json(rel: &str) -> Value {
-    let path = reference(rel);
-    let text = std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("{}: {e}", path.display()));
-    serde_json::from_str(&text).unwrap_or_else(|e| panic!("{}: {e}", path.display()))
-}
-
-/// `(i0, n)` of a window case.
-fn span(args: &Value) -> (usize, usize) {
-    let whole = |key: &str| {
-        args[key]
-            .as_u64()
-            .unwrap_or_else(|| panic!("the case has no whole number {key:?}: {args}")) as usize
-    };
-    (whole("i0"), whole("n"))
-}
-
-/// A float32 `(n, 2)` reference window as float64 frames.
-fn window(v: &Vectors, case: &bf_testdata::Case, bus: &str, n: usize) -> Vec<[f64; 2]> {
-    let a = v.array(case, bus);
-    assert_eq!(a.shape, [n, 2], "{} {bus}: shape", case.id);
-    a.f32()
-        .as_chunks::<2>()
-        .0
-        .iter()
-        .map(|f| [f64::from(f[0]), f64::from(f[1])])
-        .collect()
-}
-
-/// The largest sample difference in dBFS between `got`, rounded to float32 as the reference was, and `want`;
-/// negative infinity when every sample rounds to the reference's float32. And the same without the rounding.
-fn window_db(got: &[[f64; 2]], want: &[[f64; 2]]) -> (f64, f64) {
-    assert_eq!(got.len(), want.len(), "window lengths");
-    let (mut rounded, mut raw) = (0.0f64, 0.0f64);
-    for (g, w) in got.as_flattened().iter().zip(want.as_flattened()) {
-        // A NaN is kept, so that it never passes.
-        let d = (f64::from(*g as f32) - w).abs();
-        if d > rounded || d.is_nan() {
-            rounded = d;
-        }
-        let d = (g - w).abs();
-        if d > raw || d.is_nan() {
-            raw = d;
-        }
-    }
-    (db(rounded), db(raw))
-}
-
-fn db(x: f64) -> f64 {
-    if x == 0.0 {
-        f64::NEG_INFINITY
-    } else {
-        20.0 * bf_core::dmath::log10(x)
-    }
-}
-
-fn show_db(v: f64) -> String {
-    if v == f64::NEG_INFINITY {
-        "-inf dBFS (the same float32)".to_string()
-    } else {
-        format!("{v:.1} dBFS")
-    }
-}
-
-/// `rms.json`'s formula: `20 * log10(sqrt(mean(x ** 2)) + 1e-12)` over both channels of each 100 ms block; the
-/// last block is what is left.
-fn block_db(x: &[[f64; 2]]) -> Vec<f64> {
-    x.chunks(BLOCK)
-        .map(|block| {
-            let flat = block.as_flattened();
-            let mean = flat.iter().map(|v| v * v).sum::<f64>() / flat.len() as f64;
-            20.0 * bf_core::dmath::log10(mean.sqrt() + 1e-12)
-        })
-        .collect()
-}
-
-fn floats(v: &Value) -> Vec<f64> {
-    v.as_array()
-        .unwrap_or_else(|| panic!("{v} is not a list"))
-        .iter()
-        .map(|x| x.as_f64().unwrap_or_else(|| panic!("{x} is not a number")))
-        .collect()
-}
-
-/// The buses `exceptions.toml` lists for `episode`, each with its reason.
-fn exceptions(episode: &str) -> BTreeMap<String, String> {
-    let path = reference("sound/exceptions.toml");
-    let text = std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("{}: {e}", path.display()));
-    let doc: toml::Table = text.parse().unwrap_or_else(|e| panic!("{}: {e}", path.display()));
-    let list = doc
-        .get("exceptions")
-        .and_then(toml::Value::as_array)
-        .unwrap_or_else(|| panic!("{}: no list `exceptions`", path.display()));
-    let mut out = BTreeMap::new();
-    for entry in list {
-        let text = |key: &str| {
-            entry
-                .get(key)
-                .and_then(toml::Value::as_str)
-                .unwrap_or_else(|| panic!("{}: an exception without a text {key:?}: {entry}", path.display()))
-                .to_string()
-        };
-        let reason = text("reason");
-        assert!(
-            reason.trim().len() >= 20,
-            "{}: the reason for {} says nothing: {reason:?}",
-            path.display(),
-            text("bus")
-        );
-        if text("episode") == episode {
-            out.insert(text("bus"), reason);
-        }
-    }
-    out
-}
-
-/// Compares the 100 ms profile `got` with the kit's `want`; returns the largest difference in dB over the
-/// blocks compared, and how many blocks were compared.
-fn profile(what: &str, got: &[f64], want: &[f64], failures: &mut Vec<String>) -> (f64, usize) {
-    if got.len() != want.len() {
-        failures.push(format!("{what}: {} blocks, the kit has {}", got.len(), want.len()));
-        return (f64::NAN, 0);
-    }
-    let (mut worst, mut compared) = (0.0f64, 0);
-    for (b, (g, w)) in got.iter().zip(want).enumerate() {
-        if *w < RMS_FLOOR {
-            // Quiet in the kit: it must be quiet here too (a hair of slack for a block right at the floor).
-            if g.is_nan() || *g >= RMS_FLOOR + RMS_DB {
-                failures.push(format!(
-                    "{what} block {b}: {g:.3} dB, the kit has {w:.3} dB (below {RMS_FLOOR})"
-                ));
-            }
-            continue;
-        }
-        compared += 1;
-        let d = (g - w).abs();
-        if d > worst || d.is_nan() {
-            worst = d;
-        }
-        if d.is_nan() || d >= RMS_DB {
-            failures.push(format!(
-                "{what} block {b} ({:.1} s): {g:.4} dB, the kit has {w:.4} dB",
-                b as f64 / 10.0
-            ));
-        }
-    }
-    (worst, compared)
-}
-
-/// `audio.wav` as the kit wrote it: 16 bit, 48 kHz, stereo, the canonical 44-byte header.
-fn kit_wav() -> Vec<[i16; 2]> {
-    let path = reference(&format!("{DIR}/audio.wav"));
-    let bytes = std::fs::read(&path).unwrap_or_else(|e| panic!("{}: {e}", path.display()));
-    let u16_at = |i: usize| u16::from_le_bytes([bytes[i], bytes[i + 1]]);
-    let u32_at = |i: usize| u32::from_le_bytes([bytes[i], bytes[i + 1], bytes[i + 2], bytes[i + 3]]);
-    assert!(bytes.len() > 44, "{}: too short for a wav", path.display());
-    assert_eq!(
-        (&bytes[0..4], &bytes[8..16], &bytes[36..40]),
-        (&b"RIFF"[..], &b"WAVEfmt "[..], &b"data"[..]),
-        "{}: not a canonical wav header",
-        path.display()
-    );
-    // PCM, 2 channels, 48 kHz, 16 bit.
-    assert_eq!((u16_at(20), u16_at(22), u32_at(24), u16_at(34)), (1, 2, SR as u32, 16));
-    let data = &bytes[44..];
-    assert_eq!(u32_at(40) as usize, data.len(), "the data chunk's length");
-    data.as_chunks::<4>()
-        .0
-        .iter()
-        .map(|f| [i16::from_le_bytes([f[0], f[1]]), i16::from_le_bytes([f[2], f[3]])])
-        .collect()
-}
-
-fn rms_i16(x: &[[i16; 2]]) -> f64 {
-    let flat = x.as_flattened();
-    let sum: f64 = flat.iter().map(|&v| f64::from(v) * f64::from(v)).sum();
-    db((sum / flat.len() as f64).sqrt() / 32767.0)
-}
 
 // ---------------------------------------------------------------- the stems and the master
 
@@ -410,6 +214,15 @@ fn stem_windows() {
         failures.len(),
         failures.join("\n")
     );
+    // The buses that are the reference's float32 to the bit stay so.
+    for bus in EXACT_F32 {
+        assert_eq!(
+            worst[bus].0,
+            f64::NEG_INFINITY,
+            "{bus}: a window no longer has the reference's float32 bits ({})",
+            show_db(worst[bus].0)
+        );
+    }
     // An exception that is not needed any more must go.
     for (bus, why) in &excepted {
         assert!(
@@ -494,6 +307,11 @@ fn master_matches() {
         } else {
             format!("{rms:.1} dBFS")
         }
+    );
+    // The bar is exact: every 16-bit sample is the kit's.
+    assert_eq!(
+        differing, 0,
+        "{differing} samples differ from the kit's audio.wav (first: {first:?})"
     );
     assert!(largest <= 3, "a sample differs by {largest} LSB");
     assert!(rms < -90.0, "the RMS of the difference is {rms:.1} dBFS");
@@ -624,6 +442,9 @@ fn premaster_windows() {
             }
         }
         println!("    {bus}: worst {} ({at})", show_db(worst));
+        if EXACT_F32.contains(&bus) && worst != f64::NEG_INFINITY {
+            failures.push(format!("{bus}: a window no longer has the reference's float32 bits"));
+        }
     }
     let rms = json(&format!("{DIR}/rms.json"));
     for bus in BUSES {
@@ -638,202 +459,4 @@ fn premaster_windows() {
         failures.len(),
         failures.join("\n")
     );
-}
-
-// ---------------------------------------------------------------- what a fight file can do wrong
-
-#[test]
-fn the_registry_lists_the_themes() {
-    assert_eq!(theme_names(), ["big_top"]);
-    assert_eq!(validate(&EPISODE.ff), Ok(()));
-}
-
-#[test]
-fn unknown_theme_is_an_error() {
-    let mut ff = EPISODE.ff.clone();
-    ff.music.theme = "polka".into();
-    let want = r#"music.theme: "polka" is not a theme"#;
-    assert_eq!(validate(&ff).unwrap_err().to_string(), want);
-    assert_eq!(build_soundtrack(&EPISODE.rec, &ff).unwrap_err().to_string(), want);
-}
-
-#[test]
-fn unvoiced_chord_is_an_error() {
-    let mut ff = EPISODE.ff.clone();
-    ff.music.chord_loop[4] = "F#m".into();
-    let want = r#"music.chord_loop[4]: big_top has no voicing for "F#m""#;
-    assert_eq!(validate(&ff).unwrap_err().to_string(), want);
-    assert_eq!(build_soundtrack(&EPISODE.rec, &ff).unwrap_err().to_string(), want);
-    // The intro's chords are checked too, and before the loop's.
-    ff.music.chords_intro[1] = "G7".into();
-    assert_eq!(
-        validate(&ff).unwrap_err().to_string(),
-        r#"music.chords_intro[1]: big_top has no voicing for "G7""#
-    );
-    // What the fight file's own checks refuse comes first, in their words.
-    ff.music.chord_loop.pop();
-    assert_eq!(
-        validate(&ff).unwrap_err().to_string(),
-        "music.chord_loop: 8 chords needed, found 7"
-    );
-}
-
-#[test]
-fn a_fighter_without_a_part_is_an_error() {
-    // PIANO is in the roster, so the fight file is valid, but its part in the score is not ported.
-    let mut ff = EPISODE.ff.clone();
-    ff.fighters[0] = "PIANO".into();
-    ff.music.lines.clear();
-    ff.music.solos.clear();
-    ff.music.title_hits.clear();
-    ff.music.roles.clear();
-    let mut rec = EPISODE.rec.clone();
-    rec.names[0] = "PIANO".into();
-    assert_eq!(validate(&ff), Ok(()));
-    assert_eq!(
-        build_soundtrack(&rec, &ff).unwrap_err().to_string(),
-        "fighters[0]: PIANO has no part in the score yet"
-    );
-}
-
-#[test]
-fn a_fight_without_a_ko_is_an_error() {
-    let rec = Recording::read(&reference("fights/flute_vs_trombone/no_ko.bfrec")).expect("the recording reads");
-    let err = build_soundtrack(&rec, &EPISODE.ff).unwrap_err();
-    assert!(matches!(err, ContentError::Show(_)), "{err:?}");
-    assert_eq!(err.to_string(), "the fight has no K.O. (no winner and K.O. time)");
-    // Another fight's recording.
-    let mut ff = EPISODE.ff.clone();
-    ff.fighters.reverse();
-    let err = build_soundtrack(&EPISODE.rec, &ff).unwrap_err().to_string();
-    assert!(err.starts_with("the recording's fighters"), "{err}");
-}
-
-#[test]
-fn a_panic_in_the_sound_code_is_an_error() {
-    // A recording whose HP is above 100: the note thinning cannot take it (Python raises there, the port
-    // panics), and the build must hand that back as an error, not take its caller down.
-    let mut rec = EPISODE.rec.clone();
-    let Some(Array::F64 { data, .. }) = rec.arrays.get_mut("HP") else {
-        panic!("the recording has no HP");
-    };
-    data.fill(150.0);
-    let err = build_soundtrack(&rec, &EPISODE.ff).unwrap_err();
-    assert!(matches!(err, ContentError::Sound(_)), "{err:?}");
-    let text = err.to_string();
-    assert!(
-        text.starts_with("the soundtrack could not be built: ") && text.contains("hp01 is 1.5, above 1"),
-        "{text}"
-    );
-    // A recording that lacks what a part reads is an error too.
-    let mut rec = EPISODE.rec.clone();
-    rec.arrays.remove("HA");
-    let text = build_soundtrack(&rec, &EPISODE.ff).unwrap_err().to_string();
-    assert!(text.contains("HA"), "{text}");
-}
-
-// ---------------------------------------------------------------- other tempos
-
-/// What the kit made of the same run at another tempo: the bars, each stem's energy (the sum of its squared
-/// samples, `float.hex()`), the master's, and the master's level in six 100 ms blocks.
-struct OtherTempo {
-    bpm: f64,
-    bars: usize,
-    energy: [(&'static str, &'static str); 7],
-    master: &'static str,
-    blocks: [(usize, f64); 6],
-}
-
-/// The fight file at `tempo_bpm = 120` and `150` (30 and 38 bars instead of 34): the bed and both parts follow
-/// the grid, the soundtrack is still whole AAC frames, and it is the kit's.
-///
-/// The recording is the episode's own, fought at 132: a fight belongs to the tempo it was fought at (the engine
-/// strikes on the beat), so a real video at another tempo needs a fight simulated at that tempo. This is what the
-/// kit itself plays when an episode's `BPM` is changed after its run was made (it caches a run by its seed
-/// alone): the same run on the new grid. The numbers are from exactly that, a copy of the example's config
-/// with `BPM` replaced and one chord per bar of the new grid (the intro, then the loop over and over, as
-/// `bf_core::harmony::chords_for` lays them out), through `kit.music.score()` and `master()`. Beyond these
-/// numbers the kit's 16-bit master was compared once, by hand: the same samples at both tempos.
-#[test]
-fn other_tempos_build() {
-    #[rustfmt::skip]
-    let cases = [
-        OtherTempo {
-            bpm: 120.0,
-            bars: 30,
-            energy: [
-                ("drums", "0x1.ab892805681c8p+14"), ("calliope", "0x1.9721312b4ccf2p+13"),
-                ("fx", "0x1.a209ec45f1e42p+12"), ("flute", "0x1.22d4facae6ebcp+15"),
-                ("trombone", "0x1.81c9598f3270ap+16"), ("glock", "0x1.0896157e7479cp+5"),
-                ("solo", "0x1.3f5e9d0f500f0p+13"),
-            ],
-            master: "0x1.421f3a1b2a7e6p+18",
-            blocks: [
-                (0, -10.268382592897261), (37, -11.381821917778698), (250, -11.985698527178094),
-                (500, -9.95513838632431), (520, -12.373479082973988), (610, -11.433604111717937),
-            ],
-        },
-        OtherTempo {
-            bpm: 150.0,
-            bars: 38,
-            energy: [
-                ("drums", "0x1.14e1452766800p+15"), ("calliope", "0x1.039ef06c140ccp+14"),
-                ("fx", "0x1.b04f4f0b10994p+12"), ("flute", "0x1.89c3a73cce303p+15"),
-                ("trombone", "0x1.77d0d515f4c7ep+16"), ("glock", "0x1.668d7d5125d2ep+5"),
-                ("solo", "0x1.a9d36497fdaecp+13"),
-            ],
-            master: "0x1.6c9c189608643p+18",
-            blocks: [
-                (0, -9.91336100998854), (37, -11.77677961097145), (250, -12.612456059931102),
-                (500, -9.16530826187168), (520, -12.02299463316066), (610, -11.23015564395333),
-            ],
-        },
-    ];
-    let energy = |x: &[[f64; 2]]| x.as_flattened().iter().map(|v| v * v).sum::<f64>();
-    for case in cases {
-        let mut ff = EPISODE.ff.clone();
-        ff.tempo_bpm = case.bpm;
-        assert_eq!(ff.grid().n_bars, case.bars, "tempo {}", case.bpm);
-        assert_eq!(validate(&ff), Ok(()));
-        let st = build_soundtrack(&EPISODE.rec, &ff).unwrap_or_else(|e| panic!("tempo {}: {e}", case.bpm));
-        assert_eq!(st.master.len(), NA, "tempo {}", case.bpm);
-        assert_eq!(st.stems.len(), BUSES.len(), "tempo {}", case.bpm);
-        let mut worst = 0.0f64;
-        for (bus, want) in case.energy {
-            let stem = &st.stems[bus];
-            assert_eq!(stem.len(), NA, "tempo {}: {bus}", case.bpm);
-            let (got, want) = (energy(stem), bf_testdata::parse_hex_f64(want));
-            let rel = ((got - want) / want).abs();
-            assert!(
-                rel < 1e-9,
-                "tempo {}: {bus}'s energy is {got}, the kit's {want}",
-                case.bpm
-            );
-            worst = worst.max(rel);
-        }
-        let (got, want) = (energy(&st.master), bf_testdata::parse_hex_f64(case.master));
-        let rel = ((got - want) / want).abs();
-        assert!(
-            rel < 1e-9,
-            "tempo {}: the master's energy is {got}, the kit's {want}",
-            case.bpm
-        );
-        let levels = block_db(&st.master);
-        assert_eq!(levels.len(), 611);
-        for (b, want) in case.blocks {
-            assert!(
-                (levels[b] - want).abs() < 1e-6,
-                "tempo {}: block {b} of the master is at {} dB, the kit's at {want}",
-                case.bpm,
-                levels[b]
-            );
-        }
-        println!(
-            "tempo {}: {} bars, {} samples; the stems' energies within {:.1e} of the kit's, the master's {rel:.1e}",
-            case.bpm,
-            case.bars,
-            NA,
-            worst.max(rel)
-        );
-    }
 }

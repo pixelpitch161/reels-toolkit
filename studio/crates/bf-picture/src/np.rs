@@ -72,6 +72,12 @@ pub fn minimum(a: f64, b: f64) -> f64 {
     if a.is_nan() || a < b { a } else { b }
 }
 
+/// [`maximum`] for `float32`. `np.maximum(a32, x)` with a Python float `x` stays `float32`: convert `x` to `f32`
+/// first, as numpy does.
+pub fn maximum_f32(a: f32, b: f32) -> f32 {
+    if a.is_nan() || a > b { a } else { b }
+}
+
 /// `a.astype(np.int32)` for one `float64`: the fraction is dropped (toward zero). NaN, the infinities and every
 /// value whose whole part does not fit give `i32::MIN`: numpy leaves such casts to the processor, and that is what
 /// the x86 conversion (`cvttsd2si`) returns. C's `(int)x` in Pillow is the same instruction.
@@ -197,6 +203,54 @@ pub fn nonzero_1d(v: &[bool]) -> Vec<usize> {
     v.iter().enumerate().filter_map(|(i, &on)| on.then_some(i)).collect()
 }
 
+/// `a.sum()` (`np.add.reduce`) for a 1-D `float64` array, in numpy's order, which is not left to right: fewer
+/// than 8 elements are added in order; up to 128 go into eight running sums (element `i` into sum `i % 8`) that
+/// are then added as `((r0 + r1) + (r2 + r3)) + ((r4 + r5) + (r6 + r7))`, with the last `n % 8` elements added
+/// one by one after that; a longer array is cut in two (the first half rounded down to a multiple of 8) and the
+/// halves are summed this way and added. (`pairwise_sum` in numpy's `loops_utils.h.src`; checked against numpy
+/// for every length from 1 to 299.)
+///
+/// This is the sum along the array's only axis. A sum down the rows of a 2-D array (`a.sum(0)`, `a.mean(0)`)
+/// adds row after row, in order.
+pub fn sum(a: &[f64]) -> f64 {
+    // The reduction starts from add's identity.
+    0.0 + pairwise_sum(a)
+}
+
+fn pairwise_sum(a: &[f64]) -> f64 {
+    let n = a.len();
+    if n < 8 {
+        let mut res = 0.0;
+        for &v in a {
+            res += v;
+        }
+        res
+    } else if n <= 128 {
+        let mut r = [0.0; 8];
+        r.copy_from_slice(&a[..8]);
+        let whole = n - n % 8;
+        for block in a[8..whole].as_chunks::<8>().0 {
+            for (acc, &v) in r.iter_mut().zip(block) {
+                *acc += v;
+            }
+        }
+        let mut res = ((r[0] + r[1]) + (r[2] + r[3])) + ((r[4] + r[5]) + (r[6] + r[7]));
+        for &v in &a[whole..] {
+            res += v;
+        }
+        res
+    } else {
+        let mut half = n / 2;
+        half -= half % 8;
+        pairwise_sum(&a[..half]) + pairwise_sum(&a[half..])
+    }
+}
+
+/// `a.mean()` for a 1-D `float64` array: [`sum`] divided by the number of elements (NaN for an empty array).
+pub fn mean(a: &[f64]) -> f64 {
+    sum(a) / a.len() as f64
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -213,6 +267,33 @@ mod tests {
         assert_eq!(roll_1d(&[1, 2, 3, 4], 1), [4, 1, 2, 3]);
         assert_eq!(roll_1d(&[1, 2, 3, 4], -5), [2, 3, 4, 1]);
         assert!(roll_1d::<u8>(&[], 3).is_empty());
+    }
+
+    #[test]
+    fn sums_follow_numpys_order() {
+        // a[i] = (-1000 if i % 3 == 0 else 1) / (i + 1) + i * 1e-7, and what numpy 2.5.3 gives for it.
+        let a = |n: usize| -> Vec<f64> {
+            (0..n)
+                .map(|i| (if i % 3 == 0 { -1000.0 } else { 1.0 }) / (i as f64 + 1.0) + i as f64 * 1e-7)
+                .collect()
+        };
+        for (n, total, average) in [
+            (1, 0xc08f400000000000, 0xc08f400000000000),
+            (5, 0xc09383dddd9ac200, 0xc06f3962fc2ad000),
+            (8, 0xc095be20e952b948, 0xc065be20e952b948),
+            (21, 0xc09a4bce29aab8fc, 0xc05408fe99a6a552),
+            (128, 0xc0a1eaa3f1239ab6, 0xc031eaa3f1239ab6),
+            (129, 0xc0a1ea9ff7663b4e, 0xc031c711d3bebdd2),
+            (300, 0xc0a41d9c05425b58, 0xc0212a5559d23977),
+        ] {
+            assert_eq!(sum(&a(n)).to_bits(), total, "sum of {n}");
+            assert_eq!(mean(&a(n)).to_bits(), average, "mean of {n}");
+        }
+        assert_eq!(sum(&[]), 0.0);
+        assert!(mean(&[]).is_nan());
+        // Left to right would give another last bit for the long ones.
+        let plain: f64 = a(300).iter().sum();
+        assert_ne!(plain.to_bits(), sum(&a(300)).to_bits());
     }
 
     #[test]
@@ -254,5 +335,9 @@ mod tests {
         assert!(maximum(1.0, f64::NAN).is_nan());
         assert!(minimum(1.0, f64::NAN).is_nan());
         assert_eq!((maximum(2.0, 3.0), minimum(2.0, 3.0)), (3.0, 2.0));
+        assert_eq!((maximum_f32(2.0, 3.0), maximum_f32(3.0, 2.0)), (3.0, 3.0));
+        assert!(maximum_f32(f32::NAN, 1.0).is_nan() && maximum_f32(1.0, f32::NAN).is_nan());
+        // The floor of a float32 depth: the Python float 1e-3 as a float32.
+        assert_eq!(maximum_f32(1e-9, 1e-3).to_bits(), 1e-3f32.to_bits());
     }
 }
