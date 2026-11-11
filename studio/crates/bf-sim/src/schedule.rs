@@ -153,6 +153,8 @@ impl Schedule {
         }
         // 5994 to 6000: thrusts start on the 16th grid, every `every` beats (haste divides it). `thrusters` (5775)
         // is the list of the fighters whose weapon has `mode = 'thrust'`; the counter moves only when there is one.
+        // Python fixes the list once before the loop and this recomputes it every step: the two are the same only
+        // while a fighter's weapon cannot change during a fight, so a later kind that swaps weapons revisits this.
         let thrusters = [0, 1].map(|k| fight.balls[k].thrusts());
         if thrusters.contains(&true) && fight.t + 1e-9 >= self.next16t as f64 * self.s16 {
             let k16t = self.next16t - self.k16_0;

@@ -49,15 +49,8 @@ pub fn radians(deg: f64) -> f64 {
     deg * (dmath::PI / 180.0)
 }
 
-/// Python's `max(a, b)` on floats: `a` unless `b` is greater.
-pub fn py_max(a: f64, b: f64) -> f64 {
-    if b > a { b } else { a }
-}
-
-/// Python's `min(a, b)` on floats: `a` unless `b` is smaller.
-pub fn py_min(a: f64, b: f64) -> f64 {
-    if b < a { b } else { a }
-}
+/// Python's `max(a, b)` and `min(a, b)` on floats (one home: `bf_core::py`).
+pub use bf_core::py::{py_max, py_min};
 
 /// `np.clip(x, lo, hi)` on a float with plain numbers as bounds: numpy's loop is `if x < lo: x = lo`, then
 /// `if x > hi: x = hi`, so `hi` wins when the bounds cross and NaN stays NaN.
