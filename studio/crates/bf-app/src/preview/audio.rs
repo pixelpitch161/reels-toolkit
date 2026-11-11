@@ -11,8 +11,8 @@ use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use crate::model::SR;
 use crate::model::take::AudioTake;
 
-/// What `open_audio` gives when the PC has no output device that works.
-pub const NO_DEVICE: &str = "No sound device was found, so the preview is silent.";
+/// What `open_audio` gives when the PC has no output device that works (the words live in `wording`).
+pub use crate::wording::NO_DEVICE;
 
 /// Writes interleaved frames of `channels` samples from `src` into `out`, starting at source position `pos` and
 /// moving `step` source samples per output frame (straight-line interpolation between neighbouring samples). One

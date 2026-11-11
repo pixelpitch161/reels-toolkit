@@ -1147,3 +1147,66 @@ fn the_bars_stay_inside_the_theme() {
     s.dispatch(Action::SetBars(10));
     assert_eq!(s.vm.draft.bars, 24);
 }
+
+/// The transport as the player shows it with a take loaded at frame `frame`, with `sound`.
+fn transport(frame: u32, sound: SoundState) -> TransportView {
+    TransportView {
+        enabled: true,
+        frame,
+        playing: false,
+        looping: true,
+        safe_zone: false,
+        sound,
+    }
+}
+
+#[test]
+fn the_players_view_is_copied_and_its_lines_join_the_status_order() {
+    let mut s = ready();
+    let take = take_of(&s.dispatch(Action::SelectSeed(18433)));
+    s.apply(picture(take, sample::story(18433)));
+    assert_eq!(s.vm.status, "Seed 18433 is ready");
+
+    s.player_view(transport(942, SoundState::Ready), None);
+    assert_eq!(s.vm.transport, transport(942, SoundState::Ready), "the view is copied");
+    assert_eq!(s.vm.status, "Seed 18433 is ready");
+
+    // 6. A sound device that is missing or lost stands where the take's own line would.
+    s.player_view(transport(942, SoundState::NoDevice), None);
+    assert_eq!(s.vm.status, "No sound device was found, so the preview is silent.");
+
+    // 2. A frame that could not be drawn outranks it, and the search, and goes when the player says it is drawn.
+    s.player_view(transport(1200, SoundState::NoDevice), Some(1200));
+    assert_eq!(s.vm.status, "Frame 1200 could not be drawn. Try another seed.");
+    go(&mut s, Step::Seeds);
+    assert_eq!(
+        s.vm.status, "Frame 1200 could not be drawn. Try another seed.",
+        "it outranks the search"
+    );
+    s.dispatch(Action::StopSearch);
+    s.player_view(transport(1201, SoundState::NoDevice), None);
+    assert_eq!(s.vm.status, "No sound device was found, so the preview is silent.");
+
+    // 4. A running search outranks the silent device.
+    s.dispatch(Action::SearchOn);
+    assert_eq!(s.vm.status, "Searching on 7 cores");
+    s.dispatch(Action::StopSearch);
+
+    // 1. A problem outranks the failed frame.
+    s.player_view(transport(1201, SoundState::Ready), Some(1201));
+    let take = take_of(&s.dispatch(Action::SelectSeed(613)));
+    s.apply(Event::TakeFailed {
+        take,
+        problem: "Seed 613 cannot be made.".to_string(),
+    });
+    assert_eq!(s.vm.status, "Seed 613 cannot be made.");
+}
+
+#[test]
+fn the_same_view_again_changes_nothing() {
+    let mut s = ready();
+    s.player_view(transport(10, SoundState::None), None);
+    let before = s.vm.clone();
+    s.player_view(transport(10, SoundState::None), None);
+    assert_eq!(s.vm, before);
+}
