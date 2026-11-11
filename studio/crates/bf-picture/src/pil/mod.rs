@@ -2,7 +2,11 @@
 //! `point`, ported from `src/libImaging/Draw.c`, `src/_imaging.c` and `src/PIL/ImageDraw.py`.
 //!
 //! The kit draws every frame with these calls, so every function here gives the bytes Pillow gives.
-//! `tests/pillow_vectors.rs` holds them to that on the cases of `studio/reference/pillow` (2,447 of them).
+//! `tests/pillow_vectors.rs` holds them to that on the cases of `studio/reference/pillow` (2,705 of them).
+//!
+//! Two more of Pillow's operations live beside the drawing, each with its own documentation and vectors:
+//! [`blur::gaussian_blur`] (`Image.filter(ImageFilter.GaussianBlur(radius))`) and [`resize::resize`]
+//! (`Image.resize(size, filter)`). `tests/pillow_as_used.rs` runs the renderer's whole calls through all of them.
 //!
 //! # The API
 //!
@@ -164,11 +168,13 @@ use crate::img::Img;
 use crate::np;
 
 pub mod blend;
+pub mod blur;
 mod ellipse;
 mod line;
 mod point;
 mod polygon;
 mod rect;
+pub mod resize;
 
 pub use self::ellipse::ellipse;
 pub use self::line::line;
