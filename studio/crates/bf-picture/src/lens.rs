@@ -131,22 +131,30 @@ pub fn dof(img: &Img<f32>, coc: &Img<f64>) -> Option<Img<f64>> {
     // `out` and `prev` start as the picture; they become float64 with the first level that runs.
     let mut out: Option<Vec<f64>> = None;
     let mut prev: Option<Vec<f64>> = None;
+    // The buffers are made once and used by every level (fresh memory from the system is slow here); each is
+    // written whole before it is read.
     let mut plane = vec![0.0f32; n];
+    let mut mask = vec![0.0f32; n];
+    let (mut den, mut num) = (vec![0.0f64; n], vec![0.0f64; n]);
+    let mut spare: Option<Vec<f64>> = None;
+    let mut ws = fft::Workspace::default();
     for i in 1..levels.len() {
         let (r, lo) = (levels[i], levels[i - 1]);
         if !coc.data.iter().any(|&c| c > lo) {
             break;
         }
         // The pixels blurred enough to take part in this level.
-        let mask: Vec<f32> = coc.data.iter().map(|&c| if c >= r * 0.7 { 1.0 } else { 0.0 }).collect();
+        for (m, &c) in mask.iter_mut().zip(&coc.data) {
+            *m = if c >= r * 0.7 { 1.0 } else { 0.0 };
+        }
         let lens = lens_for(r, w, h);
-        let den = lens.convolve(&mask);
-        let mut blur = vec![0.0f64; n * 3];
+        lens.convolve_into(&mask, &mut ws, &mut den);
+        let mut blur = spare.take().unwrap_or_else(|| vec![0.0f64; n * 3]);
         for ch in 0..3 {
             for (p, (px, &m)) in plane.iter_mut().zip(img.data.as_chunks::<3>().0.iter().zip(&mask)) {
                 *p = px[ch] * m;
             }
-            let num = lens.convolve(&plane);
+            lens.convolve_into(&plane, &mut ws, &mut num);
             for (j, (&nm, &d)) in num.iter().zip(&den).enumerate() {
                 // np.where(den > 1e-3, num / np.maximum(den, 1e-3), img)
                 blur[j * 3 + ch] = if d > 1e-3 {
@@ -169,6 +177,8 @@ pub fn dof(img: &Img<f32>, coc: &Img<f64>) -> Option<Img<f64>> {
         }
         out = Some(mixed);
         prev = Some(blur);
+        // the blur before is not read again: the next level writes its blur into it
+        spare = Some(before);
     }
     out.map(|data| Img::from_vec(w, h, 3, data))
 }

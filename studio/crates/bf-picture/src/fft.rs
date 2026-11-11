@@ -31,8 +31,9 @@
 //!   reference cases, 9 of the 15 `irfftn` ones). The backward passes run only in `float64` (`irfftn` of the
 //!   product of the spectra), so those `irfftn` cases are the only place a backward pass is checked exactly;
 //!   the `fftconvolve` and `dof` cases hold them to the bar, not to the bit.
-//! - Speed: every call builds its plans again (the factors and twiddle tables of both lengths). Only the
-//!   kernel's spectrum is kept between calls ([`Convolver`]). A later speed task may keep the plans per length.
+//! - Speed: a [`Convolver`] keeps the kernel's spectrum and the plans of both lengths (building the plans is
+//!   0.2 % of a convolution), and a [`Workspace`] the buffers a run of convolutions works in (fresh memory from
+//!   the system costs about a fifth of a convolution). Neither changes a value.
 
 use crate::img::Img;
 use bf_core::dmath;
@@ -1030,25 +1031,67 @@ pub fn good_size_real(n: usize) -> usize {
     best
 }
 
+/// The plans of the complex transform down the columns of one length: the plain plan, and the plan for a column
+/// left over where `ducc0` builds another one ([`CPlan::split`]).
+struct ColPlans<T> {
+    plan: CPlan<T>,
+    odd: Option<CPlan<T>>,
+}
+
+impl<T: Real> ColPlans<T> {
+    fn new(rows: usize) -> ColPlans<T> {
+        ColPlans {
+            plan: CPlan::new(rows, false),
+            odd: CPlan::<T>::split(rows).then(|| CPlan::new(rows, true)),
+        }
+    }
+}
+
+/// The buffers a transform works in, kept from one transform to the next. Memory asked from the system is fresh
+/// pages, and filling 9 MB of them costs about a fifth of a convolution here, so [`Workspace`] keeps them. What a
+/// buffer holds between uses is never read: every transform writes each element it reads.
+struct Bufs<T> {
+    row: Vec<T>,
+    scratch: Vec<T>,
+    col: Vec<C<T>>,
+    col_scratch: Vec<C<T>>,
+}
+
+impl<T> Default for Bufs<T> {
+    fn default() -> Bufs<T> {
+        Bufs {
+            row: Vec::new(),
+            scratch: Vec::new(),
+            col: Vec::new(),
+            col_scratch: Vec::new(),
+        }
+    }
+}
+
+/// `v` as `n` elements (its old contents, or defaults where it grew).
+fn sized<V: Clone + Default>(v: &mut Vec<V>, n: usize) -> &mut [V] {
+    v.resize(n, V::default());
+    v
+}
+
 /// The complex transform down every column of a `(rows, cols)` array, in place: `ducc0::c2c` along axis 0. The
 /// columns are taken `T::LANES` at a time with the plain plan; the columns left over get the plan `ducc0` builds
 /// for single transforms, which is another one only in `float32`, when the length is above 300 and a multiple of
 /// 4 ([`CPlan::split`]).
-fn columns<T: Real>(a: &mut [C<T>], rows: usize, cols: usize, fwd: bool) {
-    let plan: CPlan<T> = CPlan::new(rows, false);
-    let odd_plan: Option<CPlan<T>> = CPlan::<T>::split(rows).then(|| CPlan::new(rows, true));
+fn columns<T: Real>(plans: &ColPlans<T>, a: &mut [C<T>], rows: usize, cols: usize, fwd: bool, bufs: &mut Bufs<T>) {
     let together = cols - cols % T::LANES;
-    let (mut col, mut scratch) = (vec![C::default(); rows], vec![C::default(); rows]);
+    let col = sized(&mut bufs.col, rows);
+    let scratch = sized(&mut bufs.col_scratch, rows);
     for x in 0..cols {
         for (y, v) in col.iter_mut().enumerate() {
             *v = a[y * cols + x];
         }
         let p = if x < together {
-            &plan
+            &plans.plan
         } else {
-            odd_plan.as_ref().unwrap_or(&plan)
+            plans.odd.as_ref().unwrap_or(&plans.plan)
         };
-        p.exec(fwd, &mut col, &mut scratch);
+        p.exec(fwd, col, scratch);
         for (y, &v) in col.iter().enumerate() {
             a[y * cols + x] = v;
         }
@@ -1060,34 +1103,60 @@ fn columns<T: Real>(a: &mut [C<T>], rows: usize, cols: usize, fwd: bool) {
 fn rfftn<T: Real>(x: &[T], shape: (usize, usize), s: (usize, usize)) -> Vec<C<T>> {
     assert_eq!(x.len(), shape.0 * shape.1, "rfftn: the array does not have its shape");
     assert!(s.0 >= 1 && s.1 >= 1, "rfftn: an empty transform");
+    let mut out = Vec::new();
+    rfftn_into(
+        &RPlan::new(s.1),
+        &ColPlans::new(s.0),
+        x,
+        shape,
+        s,
+        &mut out,
+        &mut Bufs::default(),
+    );
+    out
+}
+
+/// [`rfftn`] with the plans (`rplan` for the length `s.1`, `cplans` for `s.0`) and the buffers given, into `out`.
+fn rfftn_into<T: Real>(
+    rplan: &RPlan<T>,
+    cplans: &ColPlans<T>,
+    x: &[T],
+    shape: (usize, usize),
+    s: (usize, usize),
+    out: &mut Vec<C<T>>,
+    bufs: &mut Bufs<T>,
+) {
+    assert_eq!(x.len(), shape.0 * shape.1, "rfftn: the array does not have its shape");
+    assert!(s.0 >= 1 && s.1 >= 1, "rfftn: an empty transform");
     let (rows, len) = s;
     let cols = len / 2 + 1;
-    let plan: RPlan<T> = RPlan::new(len);
-    let mut out = vec![C::default(); rows * cols];
-    let (mut row, mut scratch) = (vec![T::default(); len], vec![T::default(); len]);
-    for y in 0..rows {
-        row.fill(T::default());
-        if y < shape.0 {
-            let n = shape.1.min(len);
-            row[..n].copy_from_slice(&x[y * shape.1..y * shape.1 + n]);
-        }
-        plan.exec(true, &mut row, &mut scratch);
-        // FFTPACK's half-complex row as complex numbers.
-        let o = &mut out[y * cols..(y + 1) * cols];
-        o[0] = C::new(row[0], T::default());
-        let mut i = 1;
-        let mut ii = 1;
-        while i + 1 < len {
-            o[ii] = C::new(row[i], row[i + 1]);
-            i += 2;
-            ii += 1;
-        }
-        if i < len {
-            o[ii] = C::new(row[i], T::default());
+    let out = sized(out, rows * cols);
+    {
+        let row = sized(&mut bufs.row, len);
+        let scratch = sized(&mut bufs.scratch, len);
+        for y in 0..rows {
+            row.fill(T::default());
+            if y < shape.0 {
+                let n = shape.1.min(len);
+                row[..n].copy_from_slice(&x[y * shape.1..y * shape.1 + n]);
+            }
+            rplan.exec(true, row, scratch);
+            // FFTPACK's half-complex row as complex numbers.
+            let o = &mut out[y * cols..(y + 1) * cols];
+            o[0] = C::new(row[0], T::default());
+            let mut i = 1;
+            let mut ii = 1;
+            while i + 1 < len {
+                o[ii] = C::new(row[i], row[i + 1]);
+                i += 2;
+                ii += 1;
+            }
+            if i < len {
+                o[ii] = C::new(row[i], T::default());
+            }
         }
     }
-    columns(&mut out, rows, cols, true);
-    out
+    columns(cplans, out, rows, cols, true, bufs);
 }
 
 /// `scipy.fft.irfftn(X, s)` for a 2-D array of `s.0` rows of `s.1 / 2 + 1` complex values: back down the columns,
@@ -1097,12 +1166,42 @@ fn irfftn<T: Real>(x: &[C<T>], s: (usize, usize), fct: T) -> Vec<T> {
     let cols = len / 2 + 1;
     assert_eq!(x.len(), rows * cols, "irfftn: the array does not have its shape");
     let mut tmp = x.to_vec();
-    columns(&mut tmp, rows, cols, false);
-    let plan: RPlan<T> = RPlan::new(len);
-    let mut out = vec![T::default(); rows * len];
-    let mut scratch = vec![T::default(); len];
-    for y in 0..rows {
-        let (src, row) = (&tmp[y * cols..(y + 1) * cols], &mut out[y * len..(y + 1) * len]);
+    let mut out = Vec::new();
+    irfftn_into(
+        &RPlan::new(len),
+        &ColPlans::new(rows),
+        &mut tmp,
+        s,
+        fct,
+        0..rows,
+        &mut out,
+        &mut Bufs::default(),
+    );
+    out
+}
+
+/// [`irfftn`] with the plans and the buffers given, spending `x` (its columns are transformed in place), into
+/// `out`: only the rows `keep` are transformed back (the others stay as they were; every row is independent of
+/// the others once the columns are done, so leaving one out changes no value of another).
+#[allow(clippy::too_many_arguments)]
+fn irfftn_into<T: Real>(
+    rplan: &RPlan<T>,
+    cplans: &ColPlans<T>,
+    x: &mut [C<T>],
+    s: (usize, usize),
+    fct: T,
+    keep: std::ops::Range<usize>,
+    out: &mut Vec<T>,
+    bufs: &mut Bufs<T>,
+) {
+    let (rows, len) = s;
+    let cols = len / 2 + 1;
+    assert_eq!(x.len(), rows * cols, "irfftn: the array does not have its shape");
+    columns(cplans, x, rows, cols, false, bufs);
+    let out = sized(out, rows * len);
+    let scratch = sized(&mut bufs.scratch, len);
+    for y in keep {
+        let (src, row) = (&x[y * cols..(y + 1) * cols], &mut out[y * len..(y + 1) * len]);
         row[0] = src[0].r;
         let mut i = 1;
         let mut ii = 1;
@@ -1115,12 +1214,11 @@ fn irfftn<T: Real>(x: &[C<T>], s: (usize, usize), fct: T) -> Vec<T> {
         if i < len {
             row[i] = src[ii].r;
         }
-        plan.exec(false, row, &mut scratch);
+        rplan.exec(false, row, scratch);
         for v in row.iter_mut() {
             *v = *v * fct;
         }
     }
-    out
 }
 
 fn pairs<T: Real>(a: Vec<C<T>>) -> Vec<Cpx<T>> {
@@ -1147,8 +1245,21 @@ pub fn irfftn_f64(x: &[Cpx<f64>], s: (usize, usize)) -> Vec<f64> {
     irfftn(&x, s, 1.0 / (s.0 * s.1) as f64)
 }
 
+/// The memory a run of convolutions works in ([`Convolver::convolve_into`]): kept by the caller across the
+/// convolutions of one picture, so their buffers are not asked from the system again for each one. It holds
+/// nothing a result depends on.
+#[derive(Default)]
+pub struct Workspace {
+    b32: Bufs<f32>,
+    b64: Bufs<f64>,
+    spectrum: Vec<C<f32>>,
+    product: Vec<C<f64>>,
+    full: Vec<f64>,
+}
+
 /// A kernel ready to be convolved with planes of one size: its spectrum at the padded size, which
-/// `fftconvolve` works out again on every call and [`crate::lens::dof`] needs four times per blur level.
+/// `fftconvolve` works out again on every call and [`crate::lens::dof`] needs four times per blur level, and the
+/// plans of the transforms (the same for every plane; `ducc0` builds them again each call, to the same values).
 pub struct Convolver {
     /// The plane's (rows, columns).
     plane: (usize, usize),
@@ -1157,6 +1268,10 @@ pub struct Convolver {
     /// The padded (rows, columns) of the transforms.
     s: (usize, usize),
     spectrum: Vec<C<f64>>,
+    rows_f32: RPlan<f32>,
+    cols_f32: ColPlans<f32>,
+    rows_f64: RPlan<f64>,
+    cols_f64: ColPlans<f64>,
 }
 
 impl Convolver {
@@ -1175,31 +1290,58 @@ impl Convolver {
             kernel,
             s,
             spectrum: rfftn(&kern.data, kernel, s),
+            rows_f32: RPlan::new(s.1),
+            cols_f32: ColPlans::new(s.0),
+            rows_f64: RPlan::new(s.1),
+            cols_f64: ColPlans::new(s.0),
         }
     }
 
     /// `fftconvolve(a, kern, mode='same')` for a `float32` plane of the size given to [`Convolver::new`],
     /// row-major: the `float64` plane of the same size.
     pub fn convolve(&self, a: &[f32]) -> Vec<f64> {
-        let ((h, w), s) = (self.plane, self.s);
-        // complex64 times complex128, in complex128. (numpy's product is fused on the reference PC.)
-        let product: Vec<C<f64>> = rfftn(a, self.plane, s)
-            .iter()
-            .zip(&self.spectrum)
-            .map(|(p, q)| {
-                let (pr, pi) = (f64::from(p.r), f64::from(p.i));
-                C::new(pr * q.r - pi * q.i, pr * q.i + pi * q.r)
-            })
-            .collect();
-        let full = irfftn(&product, s, 1.0 / (s.0 * s.1) as f64);
-        // The full convolution is the top-left (h + kh - 1, w + kw - 1); 'same' is its centre.
-        let (y0, x0) = ((self.kernel.0 - 1) / 2, (self.kernel.1 - 1) / 2);
-        let mut out = Vec::with_capacity(h * w);
-        for y in 0..h {
-            let at = (y + y0) * s.1 + x0;
-            out.extend_from_slice(&full[at..at + w]);
-        }
+        let mut out = vec![0.0; self.plane.0 * self.plane.1];
+        self.convolve_into(a, &mut Workspace::default(), &mut out);
         out
+    }
+
+    /// [`Convolver::convolve`] into `out` (the plane's size), working in `ws`: the same values, without asking
+    /// the system for memory once `ws` has been used for a convolution of this size.
+    pub fn convolve_into(&self, a: &[f32], ws: &mut Workspace, out: &mut [f64]) {
+        let ((h, w), s) = (self.plane, self.s);
+        assert_eq!(out.len(), h * w, "fftconvolve: the result has the plane's size");
+        rfftn_into(
+            &self.rows_f32,
+            &self.cols_f32,
+            a,
+            self.plane,
+            s,
+            &mut ws.spectrum,
+            &mut ws.b32,
+        );
+        // complex64 times complex128, in complex128. (numpy's product is fused on the reference PC.)
+        ws.product.clear();
+        ws.product.extend(ws.spectrum.iter().zip(&self.spectrum).map(|(p, q)| {
+            let (pr, pi) = (f64::from(p.r), f64::from(p.i));
+            C::new(pr * q.r - pi * q.i, pr * q.i + pi * q.r)
+        }));
+        // The full convolution is the top-left (h + kh - 1, w + kw - 1); 'same' is its centre: rows y0 to
+        // y0 + h - 1, so only those are transformed back.
+        let (y0, x0) = ((self.kernel.0 - 1) / 2, (self.kernel.1 - 1) / 2);
+        irfftn_into(
+            &self.rows_f64,
+            &self.cols_f64,
+            &mut ws.product,
+            s,
+            1.0 / (s.0 * s.1) as f64,
+            y0..y0 + h,
+            &mut ws.full,
+            &mut ws.b64,
+        );
+        for (y, o) in out.chunks_exact_mut(w).enumerate() {
+            let at = (y + y0) * s.1 + x0;
+            o.copy_from_slice(&ws.full[at..at + w]);
+        }
     }
 }
 
@@ -1347,7 +1489,7 @@ mod tests {
         for y in 0..rows {
             a[y * cols + cols - 1] = a[y * cols];
         }
-        columns(&mut a, rows, cols, fwd);
+        columns(&ColPlans::new(rows), &mut a, rows, cols, fwd, &mut Bufs::default());
         let column = |x: usize| (0..rows).map(|y| a[y * cols + x]).collect::<Vec<_>>();
         (column(0), column(cols - 1))
     }
