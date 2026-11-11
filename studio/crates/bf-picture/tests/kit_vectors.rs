@@ -7,14 +7,15 @@
 //! (`config: 12/12`) and lists the cases that fail. A case whose `call` the test does not know is a failure.
 //!
 //! The renderer kit's files (`camera`, `geometry`, `raster`, `lighting`, `shadows`, `lens`, `fftconv`, `post`,
-//! `hull`) are checked in the module [`renderer`], which says what "equal" means for each result.
+//! `hull`) are checked in the module [`renderer`] (one file per group under `kit_vectors/renderer/`), which says
+//! what "equal" means for each result.
 
 use bf_picture::img::Img;
 use bf_picture::{config, font, np};
 use bf_testdata::{Case, NpArray, Vectors, diff_u8, hex_arg};
 use serde_json::Value;
 
-#[path = "kit_vectors/renderer.rs"]
+#[path = "kit_vectors/renderer/mod.rs"]
 mod renderer;
 
 type Check = Result<(), String>;
