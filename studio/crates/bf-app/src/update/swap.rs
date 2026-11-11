@@ -143,10 +143,25 @@ pub fn finish_with(
             Err(notice)
         }
         Err(e) => {
-            let notice = swap_failed(&new, &old);
-            leave_notice(logs, &notice, &e.to_string());
+            let text = e.to_string();
+            let notice = if swap_unfinished(dir) {
+                // Not everything could be put back: the marker stays, and the next start finishes or takes it back.
+                format!(
+                    "The update to version {new} could not be put in place, and version {old} could not be put back \
+                     whole yet. Starting BALLFIGHT Studio again finishes the update or takes it back by itself."
+                )
+            } else if text.contains("The copy kept from the version before it was cleared.") {
+                format!(
+                    "The update to version {new} could not be put in place, so this is still version {old}. The \
+                     version kept for going back was cleared to make room for it."
+                )
+            } else {
+                swap_failed(&new, &old)
+            };
+            leave_notice(logs, &notice, &text);
+            // The exe at its place is whichever version is there now; its start finishes or takes back the rest.
             let _ = start(&exe);
-            Err(format!("{notice} {e}"))
+            Err(format!("{notice} {text}"))
         }
     }
 }
@@ -163,11 +178,24 @@ pub enum AtStart {
     Resume,
     /// Another program is putting a version in place right now: show `UPDATE_BUSY` and exit.
     Busy,
+    /// An update was taken back while this program (the new version) runs: call `start_installed` and exit; the
+    /// earlier version starts and shows why (the notice is left in the logs folder).
+    Restart,
+}
+
+/// `AtStart::Restart`: starts the exe at its place in the program folder (the earlier version, after a take-back).
+pub fn start_installed(inst: &Installed) -> Result<(), String> {
+    bf_pack::run::start_detached(&inst.dir.join(EXE_NAME), &[], &inst.dir).map(|_| ())
 }
 
 /// Puts right what a stopped swap or "Go back" left (see the module notes), removes an empty `.next`, and gives the
 /// notice a failed swap left in `logs`, once.
 pub fn at_start(inst: &Installed, logs: Option<&Path>) -> AtStart {
+    at_start_as(inst, logs, crate::version::VERSION)
+}
+
+/// `at_start` for a program of version `running` (tests).
+pub fn at_start_as(inst: &Installed, logs: Option<&Path>, running: &str) -> AtStart {
     let dir = &inst.dir;
     let next = dir.join(NEXT);
     let Ok(lock) = swap_lock(dir) else {
@@ -205,15 +233,24 @@ pub fn at_start(inst: &Installed, logs: Option<&Path>) -> AtStart {
         return match undo_stopped(dir, &next, &lock) {
             Ok(old) => {
                 forget_resume();
-                AtStart::Notice(format!(
-                    "The update to version {new} could not be finished, so it was taken back: this is still version \
-                     {}. Nothing was lost.",
+                let notice = format!(
+                    "The update to version {new} could not be finished, so it was taken back: this is version {} \
+                     again. Nothing was lost.",
                     old.version
-                ))
+                );
+                if running != old.version {
+                    // This program is the new version, whose files are gone from the folder now: the earlier
+                    // version starts in its place and says so.
+                    leave_notice(logs, &notice, "Taken back at a start of the new version.");
+                    AtStart::Restart
+                } else {
+                    AtStart::Notice(notice)
+                }
             }
             Err(e) => AtStart::Notice(format!(
-                "An update was stopped part-way and could not be finished or taken back yet. {} Start BALLFIGHT \
-                 Studio again to try once more.",
+                "An update to version {new} was stopped part-way and could not be finished or taken back yet, so \
+                 this is version {running} with some of its files not in place. {} Starting BALLFIGHT Studio again \
+                 tries once more.",
                 sentence(&e.to_string())
             )),
         };
@@ -619,7 +656,8 @@ mod tests {
         .unwrap();
         std::thread::sleep(Duration::from_millis(300));
         let logs = dir.path().join("logs");
-        let said = at_start(&inst, Some(&logs));
+        // The earlier version (0.6.0) is the one running.
+        let said = at_start_as(&inst, Some(&logs), "0.6.0");
         assert_eq!(said, AtStart::Resume);
         assert!(
             swap_unfinished(&inst.dir),
@@ -627,14 +665,14 @@ mod tests {
         );
         // The finishing program failed as well (here: it never ran), and the earlier version starts again: no second
         // hand-over. The update is taken back, the earlier version runs, and the words say so.
-        let said = at_start(&inst, Some(&logs));
+        let said = at_start_as(&inst, Some(&logs), "0.6.0");
         let _ = child.kill();
         let _ = child.wait();
         assert_eq!(
             said,
             AtStart::Notice(
-                "The update to version 0.6.1 could not be finished, so it was taken back: this is still version \
-                 0.6.0. Nothing was lost."
+                "The update to version 0.6.1 could not be finished, so it was taken back: this is version 0.6.0 \
+                 again. Nothing was lost."
                     .to_string()
             )
         );
@@ -647,6 +685,56 @@ mod tests {
         // The next start has nothing to do, and a later update can hand over again.
         assert_eq!(at_start(&inst, Some(&logs)), AtStart::Nothing);
         assert!(!logs.join(RESUMED_NAME).exists());
+    }
+
+    #[test]
+    fn the_new_version_running_takes_back_an_update_it_cannot_finish_and_hands_over() {
+        let dir = TempDir::new("swap-new-undo");
+        let inst = installed(dir.path(), "0.6.0", None);
+        // 0.6.1 is staged with a real program as its exe (a copy of ping).
+        staged(dir.path(), &inst, "0.6.1", &ping());
+        let next = inst.dir.join(NEXT);
+        let old_exe = std::fs::read(inst.dir.join(EXE_NAME)).unwrap();
+        // Stopped as a power cut would, after the new exe went to its place: marker, the earlier manifest kept, the
+        // earlier exe linked into .previous, the new exe at its place. A new file is missing, so it cannot finish.
+        let prev = inst.dir.join(PREVIOUS);
+        std::fs::create_dir(&prev).unwrap();
+        std::fs::write(
+            prev.join("INSTALLING"),
+            "BALLFIGHT Studio is putting a new version in place.\r\n",
+        )
+        .unwrap();
+        std::fs::copy(inst.dir.join(MANIFEST_NAME), prev.join(MANIFEST_NAME)).unwrap();
+        std::fs::hard_link(inst.dir.join(EXE_NAME), prev.join(EXE_NAME)).unwrap();
+        std::fs::rename(next.join(EXE_NAME), inst.dir.join(EXE_NAME)).unwrap();
+        std::fs::remove_file(next.join("ffmpeg").join("ffprobe.exe")).unwrap();
+        std::fs::remove_file(inst.dir.join("ffmpeg").join("ffprobe.exe")).unwrap();
+        // The new version runs from its place (started by a double-click).
+        let mut child = bf_pack::run::quiet(
+            &inst.dir.join(EXE_NAME),
+            &[OsStr::new("-n"), OsStr::new("30"), OsStr::new("127.0.0.1")],
+        )
+        .spawn()
+        .unwrap();
+        std::thread::sleep(Duration::from_millis(300));
+        let logs = dir.path().join("logs");
+        let said = at_start_as(&inst, Some(&logs), "0.6.1");
+        let still = child.try_wait().is_ok_and(|s| s.is_none());
+        let _ = child.kill();
+        let _ = child.wait();
+        assert!(still, "the new version ran all along");
+        assert_eq!(said, AtStart::Restart, "the earlier version takes over");
+        assert_eq!(std::fs::read(inst.dir.join(EXE_NAME)).unwrap(), old_exe);
+        assert!(!swap_unfinished(&inst.dir));
+        // The earlier version, started next, says what happened.
+        assert_eq!(
+            at_start_as(&inst, Some(&logs), "0.6.0"),
+            AtStart::Notice(
+                "The update to version 0.6.1 could not be finished, so it was taken back: this is version 0.6.0 \
+                 again. Nothing was lost."
+                    .to_string()
+            )
+        );
     }
 
     #[test]

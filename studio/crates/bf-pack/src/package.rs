@@ -54,6 +54,19 @@ pub const RESERVED: [&str; 8] = [
     PACKING_NAME,
 ];
 
+/// The name a running exe is set aside under inside `.previous` when a swap is taken back while it runs (Windows
+/// lets a running exe be renamed, not replaced): `ballfight-studio.exe.running-<n>`.
+pub fn set_aside_exe_name(n: u32) -> String {
+    format!("{EXE_NAME}.running-{n}")
+}
+
+/// Whether `name` is such a set-aside exe's name.
+pub fn is_set_aside_exe(name: &str) -> bool {
+    name.strip_prefix(EXE_NAME)
+        .and_then(|rest| rest.strip_prefix(".running-"))
+        .is_some_and(|n| !n.is_empty() && n.len() < 6 && n.bytes().all(|b| b.is_ascii_digit()))
+}
+
 /// What a package holds.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Manifest {
@@ -709,6 +722,7 @@ fn check_package_with(dir: &Path, kept_config: bool) -> Result<Manifest, PackErr
                 )));
             }
             Kind::File if rel == MANIFEST_NAME => {}
+            Kind::File if kept_config && is_set_aside_exe(&rel) => {}
             Kind::File
                 if kept_config
                     && rel == crate::config::CONFIG_NAME

@@ -321,6 +321,65 @@ pub fn run_family(
     })
 }
 
+/// The protocols git may use to reach an update's repository: https and ssh only, and TLS checked.
+pub const GIT_PROTOCOLS: [&str; 8] = [
+    "-c",
+    "protocol.allow=never",
+    "-c",
+    "protocol.https.allow=always",
+    "-c",
+    "protocol.ssh.allow=always",
+    "-c",
+    "http.sslVerify=true",
+];
+
+/// How `git` runs git.
+pub struct GitRun<'a> {
+    /// The folder it runs in; git never looks for a repository above its parent (`GIT_CEILING_DIRECTORIES`).
+    pub dir: &'a Path,
+    /// An empty folder of the app's that git is told holds its hooks, so no hook runs.
+    pub no_hooks: &'a Path,
+    /// Tests only: also let git read a local repository.
+    pub local: bool,
+    /// Variables added after every `GIT_` one of this program's environment was taken away.
+    pub env: &'a [(&'a str, &'a OsStr)],
+    pub limit: Duration,
+    pub cancel: &'a AtomicBool,
+}
+
+/// The one way git is started (the install's and the update engine's): every `GIT_` variable of this program's
+/// environment taken away, `GIT_TERMINAL_PROMPT=0` (git signs in by itself through its own window, never on a
+/// console), `GIT_CEILING_DIRECTORIES`, no hook (`core.hooksPath` = an empty folder), no file-system monitor, and
+/// https and ssh only with TLS checked (`GIT_PROTOCOLS`), in a job of its own (`run_family`).
+pub fn git(program: &Path, args: &[&OsStr], how: &GitRun) -> Result<Ran, String> {
+    let mut hooks = std::ffi::OsString::from("core.hooksPath=");
+    hooks.push(how.no_hooks);
+    let mut all: Vec<&OsStr> = vec![
+        OsStr::new("-c"),
+        hooks.as_os_str(),
+        OsStr::new("-c"),
+        OsStr::new("core.fsmonitor=false"),
+    ];
+    all.extend(GIT_PROTOCOLS.iter().map(OsStr::new));
+    if how.local {
+        all.extend([OsStr::new("-c"), OsStr::new("protocol.file.allow=always")]);
+    }
+    all.extend_from_slice(args);
+    let ceiling = how.dir.parent().unwrap_or(how.dir).as_os_str();
+    let mut env: Vec<(&str, &OsStr)> = vec![
+        ("GIT_TERMINAL_PROMPT", OsStr::new("0")),
+        ("GIT_CEILING_DIRECTORIES", ceiling),
+    ];
+    env.extend_from_slice(how.env);
+    let family = Family {
+        dir: Some(how.dir),
+        env: &env,
+        scrub_git: true,
+        ..Family::default()
+    };
+    run_family(program, &all, &family, how.limit, how.cancel, &mut |_| {})
+}
+
 /// Waits up to `limit` for the program with process id `pid` to end. True when it has ended (or no such program is
 /// running); false when it still runs after `limit`.
 pub fn wait_for_exit(pid: u32, limit: Duration) -> bool {

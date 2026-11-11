@@ -127,34 +127,21 @@ impl GitSource {
         Ok(d)
     }
 
-    /// Git's options for every run: no hooks, no file-system monitor, https and ssh only, TLS checked (and, in
-    /// tests, local repositories).
-    fn safe_options(&self) -> Result<Vec<OsString>, String> {
-        let mut hooks = OsString::from("core.hooksPath=");
-        hooks.push(self.no_hooks()?);
-        let mut out: Vec<OsString> = vec!["-c".into(), hooks, "-c".into(), "core.fsmonitor=false".into()];
-        out.extend(bf_pack::install::PROTOCOLS.iter().map(OsString::from));
-        if self.local {
-            out.extend(["-c".into(), "protocol.file.allow=always".into()]);
-        }
-        Ok(out)
-    }
-
-    /// Git with `args`, run in `dir` with every `GIT_` variable of the app's own environment taken away.
+    /// Git with `args`, run in `dir` through bf-pack's one way of starting git (`bf_pack::run::git`): every `GIT_`
+    /// variable of the app's own environment taken away, no hooks, no file-system monitor, https and ssh only with
+    /// TLS checked (and, in tests, local repositories).
     fn run_git(&self, dir: &Path, args: &[&OsStr], limit: Duration, cancel: &AtomicBool) -> Result<String, String> {
-        let ceiling = dir.parent().unwrap_or(dir).as_os_str();
-        let mut env: Vec<(&str, &OsStr)> = vec![
-            ("GIT_TERMINAL_PROMPT", OsStr::new("0")),
-            ("GIT_CEILING_DIRECTORIES", ceiling),
-        ];
-        env.extend(self.test_env.iter().map(|(k, v)| (k.as_str(), v.as_os_str())));
-        let how = Family {
-            dir: Some(dir),
+        let hooks = self.no_hooks()?;
+        let env: Vec<(&str, &OsStr)> = self.test_env.iter().map(|(k, v)| (k.as_str(), v.as_os_str())).collect();
+        let how = bf_pack::run::GitRun {
+            dir,
+            no_hooks: &hooks,
+            local: self.local,
             env: &env,
-            scrub_git: true,
-            ..Family::default()
+            limit,
+            cancel,
         };
-        let ran = run_family(&self.git, args, &how, limit, cancel, &mut |_| {})?;
+        let ran = bf_pack::run::git(&self.git, args, &how)?;
         if ran.status.success() {
             Ok(String::from_utf8_lossy(&ran.stdout).trim().to_string())
         } else {
@@ -171,13 +158,10 @@ impl GitSource {
         git_dir.push(src.join(".git"));
         let mut work_tree = OsString::from("--work-tree=");
         work_tree.push(src);
-        let options = self.safe_options()?;
         let mut all: Vec<&OsStr> = vec![git_dir.as_os_str(), work_tree.as_os_str()];
-        all.extend(options.iter().map(OsString::as_os_str));
         all.extend_from_slice(args);
         self.run_git(src, &all, limit, cancel)
     }
-
     /// A value from the copy's own settings file only: never the user's, the PC's, an included file's or one given
     /// in the environment.
     fn own_setting(&self, name: &str) -> Option<String> {
@@ -288,17 +272,15 @@ impl GitSource {
             )
         })?;
         let parent = src.parent().unwrap_or(src);
-        let options = self.safe_options()?;
         let o = OsStr::new;
-        let mut args: Vec<&OsStr> = options.iter().map(OsString::as_os_str).collect();
-        args.extend([
+        let args = [
             o("clone"),
             o("--no-checkout"),
             o("--quiet"),
             o("--"),
             o(&self.config.remote),
             src.as_os_str(),
-        ]);
+        ];
         self.run_git(parent, &args, CLONE_LIMIT, cancel).map_err(|e| {
             format!(
                 "The copy of the source had changes in it, so it was set aside as {} (nothing in it was deleted), but \
@@ -377,7 +359,8 @@ impl Source for GitSource {
         ];
         let mut notes = Vec::new();
         let clean = self.git(&status_args, GIT_LIMIT, cancel).as_deref() == Ok("");
-        if !clean && !self.pristine() {
+        let mut pristine = !clean && self.pristine();
+        if !clean && !pristine {
             notes.push(self.set_aside_and_copy_again(cancel)?);
             // The fresh copy needs the tag again (only the tags, as a look fetches them).
             let refspec = format!("refs/tags/{TAG_PREFIX}*:refs/tags/{TAG_PREFIX}*");
@@ -397,22 +380,17 @@ impl Source for GitSource {
                     r.tag
                 ));
             }
+            pristine = true;
         }
-        // The copy is clean, or as the install made it (an empty index against a branch: every file looks deleted).
-        // `--force` is what lets git fill that empty copy; on a clean copy it has nothing to discard.
-        self.git(
-            &[
-                o("-c"),
-                o("advice.detachedHead=false"),
-                o("checkout"),
-                o("--detach"),
-                o("--force"),
-                o("--quiet"),
-                o(&r.commit),
-            ],
-            GIT_LIMIT,
-            cancel,
-        )?;
+        // A copy as the install made it has an empty index against a branch, so every file looks deleted: only
+        // `--force` fills it, and there is nothing in it to lose. A clean copy gets a plain checkout, which refuses
+        // to overwrite any change made between the status check and the checkout.
+        let mut checkout = vec![o("-c"), o("advice.detachedHead=false"), o("checkout"), o("--detach")];
+        if pristine {
+            checkout.push(o("--force"));
+        }
+        checkout.extend([o("--quiet"), o(&r.commit)]);
+        self.git(&checkout, GIT_LIMIT, cancel)?;
         let head = self.git(&[o("rev-parse"), o("HEAD")], GIT_LIMIT, cancel)?;
         let status = self.git(&status_args, GIT_LIMIT, cancel)?;
         if head != r.commit || !status.is_empty() {
@@ -1277,6 +1255,9 @@ mod tests {
             t.elapsed(),
             size_of(&config.build_dir) as f64 / 1e9
         );
+        // The build never writes into the source tree, so a second build sets nothing aside.
+        assert!(built.notes.is_empty(), "{:?}", built.notes);
+        assert!(!config.source.with_file_name("source.set-aside-1").exists());
 
         // Staging and the swap, with ffmpeg files of the real sizes (the exes are about 228 MB each).
         let tree = dir.path().join("stage-tree");
