@@ -4,6 +4,10 @@
 //! was opened from (its `base`), or over the pair's written fight for a new match-up, so everything the draft does
 //! not hold (the hand-written lines, the solos, the title hits, an old episode's tags and seeds) is kept.
 //! [`draft_of`] is the way back. [`plain`] is the one place an engine error becomes a sentence for the screen.
+//!
+//! Two edge cases of the captions are accepted: a Shorts text that ends in a line break reopens with one line more
+//! (its last text is empty), and an opened file whose `caption` holds a line break moves its second line into the
+//! Instagram tags when it is saved again (the Instagram text's first line is the caption).
 
 use bf_core::fightfile::{Captions, FightFile};
 
@@ -148,13 +152,16 @@ pub fn caption_texts(c: &Captions) -> CaptionTexts {
 /// first line and the Instagram tags the rest; the TikTok tags are the TikTok text after its first line; Shorts'
 /// texts are the title (first line), the description (second line) and the tags (the rest), and an empty text
 /// gives none. A Shorts text of one or two lines gets empty texts for the missing ones, so the file holds three.
+///
+/// Windows line breaks (`\r\n`, as a pasted text may have) count as line breaks: no `\r` reaches the fight file.
 pub fn captions(t: &CaptionTexts) -> Captions {
-    let (caption, instagram) = t.instagram.split_once('\n').unwrap_or((&t.instagram, ""));
-    let tiktok = t.tiktok.split_once('\n').map_or("", |(_, rest)| rest);
-    let mut shorts: Vec<String> = if t.shorts.is_empty() {
+    let [ig, tt, sh] = [&t.instagram, &t.tiktok, &t.shorts].map(|s| s.replace("\r\n", "\n"));
+    let (caption, instagram) = ig.split_once('\n').unwrap_or((&ig, ""));
+    let tiktok = tt.split_once('\n').map_or("", |(_, rest)| rest);
+    let mut shorts: Vec<String> = if sh.is_empty() {
         Vec::new()
     } else {
-        t.shorts.splitn(3, '\n').map(str::to_string).collect()
+        sh.splitn(3, '\n').map(str::to_string).collect()
     };
     if !shorts.is_empty() {
         shorts.resize(3, String::new());
@@ -363,6 +370,24 @@ mod tests {
         let mut d = starting_draft();
         d.captions = texts("One line", "", "Two\nlines");
         assert!(fight_file(&d).is_ok());
+    }
+
+    #[test]
+    fn windows_line_breaks_leave_no_carriage_return() {
+        let c = captions(&texts(
+            "Flute vs Trombone\r\n#ig\r\n#more",
+            "Flute vs Trombone\r\n#tt",
+            "Title\r\nWords\r\n#tags\r\n#more",
+        ));
+        assert_eq!(
+            (c.caption.as_str(), c.instagram.as_str(), c.tiktok.as_str()),
+            ("Flute vs Trombone", "#ig\n#more", "#tt")
+        );
+        assert_eq!(c.shorts, ["Title", "Words", "#tags\n#more"]);
+        let all = [&c.caption, &c.instagram, &c.tiktok].into_iter().chain(&c.shorts);
+        for text in all {
+            assert!(!text.contains('\r'), "{text:?}");
+        }
     }
 
     #[test]

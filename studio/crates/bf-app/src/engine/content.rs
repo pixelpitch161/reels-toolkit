@@ -138,7 +138,12 @@ fn sprite(img: Img<u8>) -> Sprite {
 
 /// What the Match-up screen shows about the draft's fighters, for generation `gen`: the pair rules in words (a rule
 /// this app has no words for is shown by its key), the drafted captions and the VS title card when the two can
-/// fight; otherwise no rules, empty captions, no card and the problem in words.
+/// fight; otherwise no rules, empty captions, no card and the problem in words ([`cannot_fight`]).
+///
+/// The card is drawn at the tempo of the draft being described, and the interface keeps it until the fighters or
+/// their order change: it is not redrawn on a tempo change (controller ruling M2-R28), since a take's own frames and
+/// the video's cover come from the real fight file. A `title_preview` that fails leaves the card absent on purpose,
+/// with no problem: the fight itself can still be used.
 ///
 /// Drawing the card takes about 40 ms, so this runs on a thread of its own, never on the coordinator.
 pub fn describe(r#gen: Gen, draft: &Draft) -> Event {
@@ -160,20 +165,29 @@ pub fn describe(r#gen: Gen, draft: &Draft) -> Event {
             }),
             problem: None,
         },
-        Err(why) => Event::FightInfo {
+        Err(why) => cannot_fight(
             r#gen,
-            pair_rules: Vec::new(),
-            captions: CaptionTexts {
-                instagram: String::new(),
-                tiktok: String::new(),
-                shorts: String::new(),
-            },
-            title_card: None,
-            problem: Some(match why {
+            match why {
                 Unusable::NoMusic => convert::no_music_problem(&draft.fighters),
                 Unusable::Other(text) => text,
-            }),
+            },
+        ),
+    }
+}
+
+/// The description of a pair that cannot fight, for generation `gen`: no rules, empty captions, no card, and
+/// `problem`, so the interface offers no balance and no search for it.
+pub fn cannot_fight(r#gen: Gen, problem: String) -> Event {
+    Event::FightInfo {
+        r#gen,
+        pair_rules: Vec::new(),
+        captions: CaptionTexts {
+            instagram: String::new(),
+            tiktok: String::new(),
+            shorts: String::new(),
         },
+        title_card: None,
+        problem: Some(problem),
     }
 }
 

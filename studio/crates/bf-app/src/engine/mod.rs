@@ -20,7 +20,16 @@
 //! **Panics.** A panic on a thread started with [`Ctx::spawn`] is caught there and becomes the event the caller
 //! asked for, carrying a plain sentence ("Something went wrong while ..., so it stopped. Try again."). A panic in
 //! a handler's `handle` (on the coordinator) is caught by the coordinator and becomes `Event::Problem`. Either way
-//! the engine keeps taking commands.
+//! the engine keeps taking commands. A panic while describing a fight answers that generation as a pair that
+//! cannot fight (`Event::FightInfo` with the sentence as its problem), so balance and search are not offered.
+//!
+//! **For the handler tasks: sharing state with a worker.** What a worker and its handler's `State` share lives in
+//! `Arc<Mutex<..>>` or atomics that `handle` clones into the worker before `ctx.spawn`. A cancel flag the handler
+//! keeps is finished with once its worker has dropped its clone: prune it when `Arc::strong_count(&flag) == 1`.
+//! Never hold a handler's lock across the worker's long work or across an `emit` (the waker runs inside `emit`).
+//! Change `State` only after `ctx.spawn` returned true: a panic in `handle` is caught, but leaves `State` as it was
+//! at that point. Starting the next job of the queue is the interface's business: the state sends one `RunJob` per
+//! job, and `jobs` only runs what it is sent.
 //!
 //! **The newest description wins.** `DescribeFight` goes to one describing thread that keeps only the newest
 //! request waiting. It answers in the order it was asked and drops an answer when a newer request is already
@@ -367,13 +376,19 @@ fn describe_loop(ctx: &Ctx, mailbox: &(Mutex<Mailbox>, Condvar)) {
                 m = bell.wait(m).unwrap_or_else(|e| e.into_inner());
             }
         };
-        match catch_unwind(AssertUnwindSafe(|| content::describe(generation, &draft))) {
-            // A newer request is waiting: its answer replaces this one.
-            Ok(_) if lock(mailbox).next.is_some() => {}
-            Ok(answer) => ctx.emit(answer),
-            Err(_) => ctx.emit(problem(panic_sentence("describing the fight"))),
+        let answer = described(generation, || content::describe(generation, &draft));
+        // A newer request is waiting: its answer replaces this one.
+        if lock(mailbox).next.is_none() {
+            ctx.emit(answer);
         }
     }
+}
+
+/// What `describe` answers for generation `gen`; if it panics, the description of a pair that cannot fight, with
+/// the panic sentence as its problem (so the interface offers no balance and no search for it).
+fn described(r#gen: Gen, describe: impl FnOnce() -> Event) -> Event {
+    catch_unwind(AssertUnwindSafe(describe))
+        .unwrap_or_else(|_| content::cannot_fight(r#gen, panic_sentence("describing the fight")))
 }
 
 /// Waits up to `seconds` for an event that `want` accepts and returns it, polling every 10 ms; the events it
@@ -631,6 +646,36 @@ pub(crate) mod tests {
         assert!(!unused.exists(), "nothing was written");
         engine.send(Command::Shutdown);
         std::fs::remove_dir(&root).expect("the engine left its temp folder empty");
+    }
+
+    #[test]
+    fn a_panic_while_describing_is_a_pair_that_cannot_fight() {
+        let Event::FightInfo {
+            r#gen,
+            pair_rules,
+            captions,
+            title_card,
+            problem,
+        } = described(9, || panic!("on purpose"))
+        else {
+            panic!("not a description");
+        };
+        assert_eq!(r#gen, 9);
+        assert!(pair_rules.is_empty() && title_card.is_none());
+        assert_eq!(
+            (captions.instagram, captions.tiktok, captions.shorts),
+            (String::new(), String::new(), String::new())
+        );
+        assert_eq!(
+            problem.as_deref(),
+            Some("Something went wrong while describing the fight, so it stopped. Try again.")
+        );
+        // without a panic, the answer is passed on as it is
+        assert!(matches!(described(2, problem_event), Event::Problem { .. }));
+    }
+
+    fn problem_event() -> Event {
+        problem("passed on".to_string())
     }
 
     #[test]
