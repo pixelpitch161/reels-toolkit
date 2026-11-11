@@ -1,0 +1,639 @@
+{
+ "abilities": ["SAD TROMBONE", "POWER SLIDE", "PEDAL TONE"],
+ "about": "TROMBONE's fight references (milestone 3, Template F): the config, the two look fights, the scenario fights, the statistics against FLUTE and the coverage table",
+ "cache_files": "cache files are under studio/reference/.cache/m3/ and pinned in pins.json",
+ "config": {
+  "base": "flute_vs_trombone",
+  "bpm": 133.7704918032787,
+  "dmg_scale": 1.0,
+  "fighters": ["TROMBONE", "FLUTE"],
+  "handicap": [0.4, 2.0],
+  "key": "E",
+  "overrides": {},
+  "rules": {
+   "A": 3.0,
+   "DT": 0.008333333333333333,
+   "FPS": 30,
+   "HP": 100.0,
+   "KEY_R": 0.11,
+   "KNOCK_T": 0.38,
+   "LAUNCH_SPREAD": 38.0,
+   "LOW_HP": 25.0,
+   "LV_DMG": [14.0, 36.0],
+   "R": 0.6,
+   "ROPE_GIVE": 5.0,
+   "V": 2.6,
+   "beat": 0.44852941176470584,
+   "bpm": 133.7704918032787,
+   "dmg_scale": 1.0,
+   "dmg_side": [0.4, 2.0],
+   "swat_cobras": true,
+   "t_fight": 3.5882352941176467,
+   "t_max": 58.0
+  },
+  "rules_on": {
+   "swat_cobras": true
+  },
+  "t_fight": 3.5882352941176467
+ },
+ "coverage": {
+  "require_fights": 20,
+  "required": ["ability", "ability/PEDAL TONE", "ability/POWER SLIDE", "ability/SAD TROMBONE", "basket", "clash", "hit", "hit/blade", "hit/fang", "hit/shockwave", "hit/slam", "hit/wave", "ko", "level", "rope", "slam", "slow", "strike", "swat", "thrust"],
+  "rows": [
+   {
+    "after_fight": 1.800004705882353,
+    "event": [5.38824, "ability", 0, "SAD TROMBONE", "shockwave", 1],
+    "index": 16,
+    "item": "ability",
+    "required": true,
+    "scenario": "early_levels",
+    "seed": 1,
+    "stats_fights": 2000,
+    "t": 5.38824
+   },
+   {
+    "after_fight": 1.800004705882353,
+    "event": [5.38824, "ability", 1, "FLUTTER TONGUE", "haste", 1],
+    "index": 17,
+    "item": "ability/FLUTTER TONGUE",
+    "required": false,
+    "scenario": "early_levels",
+    "seed": 1,
+    "stats_fights": 1999,
+    "t": 5.38824
+   },
+   {
+    "after_fight": 5.383334705882353,
+    "event": [8.97157, "ability", 0, "PEDAL TONE", "slam", 1],
+    "index": 54,
+    "item": "ability/PEDAL TONE",
+    "required": true,
+    "scenario": "early_low",
+    "seed": 1,
+    "stats_fights": 1493,
+    "t": 8.97157
+   },
+   {
+    "after_fight": 6.283334705882353,
+    "event": [9.87157, "ability", 1, "PICCOLO", "wave", 1],
+    "index": 67,
+    "item": "ability/PICCOLO",
+    "required": false,
+    "scenario": "early_low",
+    "seed": 1,
+    "stats_fights": 1775,
+    "t": 9.87157
+   },
+   {
+    "after_fight": 3.591664705882353,
+    "event": [7.1799, "ability", 0, "POWER SLIDE", "haste", 1],
+    "index": 33,
+    "item": "ability/POWER SLIDE",
+    "required": true,
+    "scenario": "early_levels",
+    "seed": 3,
+    "stats_fights": 1980,
+    "t": 7.1799
+   },
+   {
+    "after_fight": 1.800004705882353,
+    "event": [5.38824, "ability", 0, "SAD TROMBONE", "shockwave", 1],
+    "index": 16,
+    "item": "ability/SAD TROMBONE",
+    "required": true,
+    "scenario": "early_levels",
+    "seed": 1,
+    "stats_fights": 2000,
+    "t": 5.38824
+   },
+   {
+    "after_fight": 4.491664705882354,
+    "event": [8.0799, "ability", 1, "SNAKE DANCE", "dance", 1],
+    "index": 41,
+    "item": "ability/SNAKE DANCE",
+    "required": false,
+    "scenario": "early_levels",
+    "seed": 1,
+    "stats_fights": 1967,
+    "t": 8.0799
+   },
+   {
+    "after_fight": 0.008334705882353077,
+    "event": [3.59657, "basket", 1, 0, 1.85, -1.85, -1],
+    "index": 0,
+    "item": "basket",
+    "required": true,
+    "scenario": "early_levels",
+    "seed": 1,
+    "stats_fights": 2000,
+    "t": 3.59657
+   },
+   {
+    "after_fight": 0.8416647058823532,
+    "event": [4.4299, "clash", -1, -0.5259357582309138, -0.5816938800197929],
+    "index": 3,
+    "item": "clash",
+    "required": true,
+    "scenario": "early_levels",
+    "seed": 2,
+    "stats_fights": 1932,
+    "t": 4.4299
+   },
+   {
+    "after_fight": 0.9000047058823535,
+    "event": [4.48824, "hit", 0, 1, 1.4000000000000001, 0.5384865669252139, 0.26757744027038666, "blade", 1],
+    "index": 4,
+    "item": "hit",
+    "required": true,
+    "scenario": "early_levels",
+    "seed": 1,
+    "stats_fights": 2000,
+    "t": 4.48824
+   },
+   {
+    "after_fight": 0.9000047058823535,
+    "event": [4.48824, "hit", 0, 1, 1.4000000000000001, 0.5384865669252139, 0.26757744027038666, "blade", 1],
+    "index": 4,
+    "item": "hit/blade",
+    "required": true,
+    "scenario": "early_levels",
+    "seed": 1,
+    "stats_fights": 2000,
+    "t": 4.48824
+   },
+   {
+    "after_fight": 1.4750047058823537,
+    "event": [5.06324, "hit", 1, 0, 2.16, 0.8338777455298303, -1.4147955337642009, "fang", 0],
+    "index": 10,
+    "item": "hit/fang",
+    "required": true,
+    "scenario": "early_levels",
+    "seed": 1,
+    "stats_fights": 2000,
+    "t": 5.06324
+   },
+   {
+    "after_fight": 2.0416647058823534,
+    "event": [5.6299, "hit", 0, 1, 1.2000000000000002, 1.3655375062108013, 1.2632212804717344, "shockwave", 0],
+    "index": 18,
+    "item": "hit/shockwave",
+    "required": true,
+    "scenario": "early_levels",
+    "seed": 1,
+    "stats_fights": 1869,
+    "t": 5.6299
+   },
+   {
+    "after_fight": 6.283334705882353,
+    "event": [9.87157, "hit", 0, 1, 9.600000000000001, 1.2646054119927836, -1.4598719571489296, "slam", 0],
+    "index": 66,
+    "item": "hit/slam",
+    "required": true,
+    "scenario": "early_low",
+    "seed": 1,
+    "stats_fights": 786,
+    "t": 9.87157
+   },
+   {
+    "after_fight": 6.700004705882353,
+    "event": [10.28824, "hit", 1, 0, 16.0, -0.47579648247939543, 0.707910722025864, "wave", 0],
+    "index": 71,
+    "item": "hit/wave",
+    "required": true,
+    "scenario": "early_low",
+    "seed": 1,
+    "stats_fights": 1478,
+    "t": 10.28824
+   },
+   {
+    "after_fight": 17.316664705882353,
+    "event": [20.9049, "ko", 0, 1],
+    "index": 156,
+    "item": "ko",
+    "required": true,
+    "scenario": "early_ko",
+    "seed": 3,
+    "stats_fights": 1852,
+    "t": 20.9049
+   },
+   {
+    "after_fight": 1.391664705882353,
+    "event": [4.9799, "level", 0, 2],
+    "index": 9,
+    "item": "level",
+    "required": true,
+    "scenario": "early_levels",
+    "seed": 1,
+    "stats_fights": 2000,
+    "t": 4.9799
+   },
+   {
+    "after_fight": 1.1666647058823534,
+    "event": [4.7549, "rope", 0, 0, -1, -2.3952818812908165, 0.05494737247774634, 3.7599727847315125],
+    "index": 6,
+    "item": "rope",
+    "required": true,
+    "scenario": "swapped",
+    "seed": 3,
+    "stats_fights": 2000,
+    "t": 4.7549
+   },
+   {
+    "after_fight": 6.283334705882353,
+    "event": [9.87157, "slam", 0, 2.4, -1.1478977377872102, 1],
+    "index": 65,
+    "item": "slam",
+    "required": true,
+    "scenario": "early_low",
+    "seed": 1,
+    "stats_fights": 1451,
+    "t": 9.87157
+   },
+   {
+    "after_fight": 2.0416647058823534,
+    "event": [5.6299, "slow", 1, 0, 1.0],
+    "index": 19,
+    "item": "slow",
+    "required": true,
+    "scenario": "early_levels",
+    "seed": 1,
+    "stats_fights": 1869,
+    "t": 5.6299
+   },
+   {
+    "after_fight": 1.3500047058823537,
+    "event": [4.93824, "strike", 1, 0, 2.3248537768065334, 1.385542908388587, 0.12],
+    "index": 6,
+    "item": "strike",
+    "required": true,
+    "scenario": "early_levels",
+    "seed": 1,
+    "stats_fights": 2000,
+    "t": 4.93824
+   },
+   {
+    "after_fight": 2.3333347058823533,
+    "event": [5.92157, "swat", 0, 1, 0, 0.8610295097297793, -1.2851944842609426],
+    "index": 17,
+    "item": "swat",
+    "required": true,
+    "scenario": "early_levels",
+    "seed": 3,
+    "stats_fights": 2000,
+    "t": 5.92157
+   },
+   {
+    "after_fight": 0.008334705882353077,
+    "event": [3.59657, "thrust", 0, 0.95],
+    "index": 1,
+    "item": "thrust",
+    "required": true,
+    "scenario": "early_levels",
+    "seed": 1,
+    "stats_fights": 2000,
+    "t": 3.59657
+   }
+  ],
+  "rule": "required = every event kind and hit sub-kind (\"hit/<what>\") in at least require_fights of the statistics fights, the fighter's three abilities and spec.fights.must; a row is an item's first occurrence over the scenario fights (the earliest t; a tie goes to the scenario listed first, then the lower seed): its scenario and seed (rules in `scenarios`), t, after_fight = t - t_fight, its index in the events and the event",
+  "t_fight": 3.5882352941176467,
+  "window": 20.0
+ },
+ "fighter": "TROMBONE",
+ "format": 1,
+ "left": {
+  "events": 492,
+  "file": "fights/flute_vs_trombone/scenarios/swapped_s2.bfrec",
+  "frames": 1435,
+  "hash": "de3d586f83f4a4c9",
+  "names": ["TROMBONE", "FLUTE"],
+  "seed": 2,
+  "t_ko": 51.38823529411764,
+  "why": "the lowest statistics seed with TROMBONE in the left corner winning and all three of its abilities firing",
+  "winner": 0
+ },
+ "opponent": "FLUTE",
+ "right": {
+  "cache": "fighters/trombone/right.bfrec",
+  "events": 398,
+  "frames": 1113,
+  "hash": "8689c1af755ed173",
+  "names": ["FLUTE", "TROMBONE"],
+  "seed": 1,
+  "t_ko": 40.63823529411764,
+  "why": "the lowest seed with FLUTE in the left corner winning (so TROMBONE is knocked out)",
+  "winner": 0
+ },
+ "same_as": {
+  "fighters/trombone/right.bfrec": "studio/reference/fights/flute_vs_trombone/seed1.bfrec",
+  "fighters/trombone/scenarios/swapped_s1.bfrec": "studio/reference/fights/flute_vs_trombone/seed1.bfrec",
+  "fighters/trombone/scenarios/swapped_s2.bfrec": "studio/reference/fights/flute_vs_trombone/seed2.bfrec",
+  "fighters/trombone/scenarios/swapped_s3.bfrec": "studio/reference/fights/flute_vs_trombone/seed3.bfrec"
+ },
+ "scenarios": [
+  {
+   "cache": ["fighters/trombone/scenarios/early_levels_s1.bfrec", "fighters/trombone/scenarios/early_levels_s2.bfrec", "fighters/trombone/scenarios/early_levels_s3.bfrec"],
+   "fighters": ["TROMBONE", "FLUTE"],
+   "hashes": ["e808bb665ebfa1ff", "9fcb686516947f89", "8dfb8a2a92236e85"],
+   "name": "early_levels",
+   "opponent": "FLUTE",
+   "overrides": {
+    "LV_DMG": [2.0, 5.0]
+   },
+   "rules": {
+    "A": 3.0,
+    "DT": 0.008333333333333333,
+    "FPS": 30,
+    "HP": 100.0,
+    "KEY_R": 0.11,
+    "KNOCK_T": 0.38,
+    "LAUNCH_SPREAD": 38.0,
+    "LOW_HP": 25.0,
+    "LV_DMG": [2.0, 5.0],
+    "R": 0.6,
+    "ROPE_GIVE": 5.0,
+    "V": 2.6,
+    "beat": 0.44852941176470584,
+    "bpm": 133.7704918032787,
+    "dmg_scale": 1.0,
+    "dmg_side": [0.4, 2.0],
+    "swat_cobras": true,
+    "t_fight": 3.5882352941176467,
+    "t_max": 58.0
+   },
+   "seeds": [1, 2, 3],
+   "swapped": false
+  },
+  {
+   "cache": ["fighters/trombone/scenarios/early_low_s1.bfrec", "fighters/trombone/scenarios/early_low_s2.bfrec", "fighters/trombone/scenarios/early_low_s3.bfrec"],
+   "fighters": ["TROMBONE", "FLUTE"],
+   "hashes": ["9a65203f34fc4603", "ff6d85e0f8b07b63", "d3f1cdb7efac5ff2"],
+   "name": "early_low",
+   "opponent": "FLUTE",
+   "overrides": {
+    "LOW_HP": 92.0,
+    "LV_DMG": [2.0, 5.0]
+   },
+   "rules": {
+    "A": 3.0,
+    "DT": 0.008333333333333333,
+    "FPS": 30,
+    "HP": 100.0,
+    "KEY_R": 0.11,
+    "KNOCK_T": 0.38,
+    "LAUNCH_SPREAD": 38.0,
+    "LOW_HP": 92.0,
+    "LV_DMG": [2.0, 5.0],
+    "R": 0.6,
+    "ROPE_GIVE": 5.0,
+    "V": 2.6,
+    "beat": 0.44852941176470584,
+    "bpm": 133.7704918032787,
+    "dmg_scale": 1.0,
+    "dmg_side": [0.4, 2.0],
+    "swat_cobras": true,
+    "t_fight": 3.5882352941176467,
+    "t_max": 58.0
+   },
+   "seeds": [1, 2, 3],
+   "swapped": false
+  },
+  {
+   "cache": ["fighters/trombone/scenarios/early_ko_s1.bfrec", "fighters/trombone/scenarios/early_ko_s2.bfrec", "fighters/trombone/scenarios/early_ko_s3.bfrec"],
+   "fighters": ["TROMBONE", "FLUTE"],
+   "hashes": ["7f8b6e80e3340f52", "10dc06c5bc36d5e7", "52a56398ad3d70a6"],
+   "name": "early_ko",
+   "opponent": "FLUTE",
+   "overrides": {
+    "dmg_scale": 3.0
+   },
+   "rules": {
+    "A": 3.0,
+    "DT": 0.008333333333333333,
+    "FPS": 30,
+    "HP": 100.0,
+    "KEY_R": 0.11,
+    "KNOCK_T": 0.38,
+    "LAUNCH_SPREAD": 38.0,
+    "LOW_HP": 25.0,
+    "LV_DMG": [14.0, 36.0],
+    "R": 0.6,
+    "ROPE_GIVE": 5.0,
+    "V": 2.6,
+    "beat": 0.44852941176470584,
+    "bpm": 133.7704918032787,
+    "dmg_scale": 3.0,
+    "dmg_side": [0.4, 2.0],
+    "swat_cobras": true,
+    "t_fight": 3.5882352941176467,
+    "t_max": 58.0
+   },
+   "seeds": [1, 2, 3],
+   "swapped": false
+  },
+  {
+   "cache": ["fighters/trombone/scenarios/plain_s7.bfrec", "fighters/trombone/scenarios/plain_s8.bfrec", "fighters/trombone/scenarios/plain_s9.bfrec"],
+   "fighters": ["TROMBONE", "FLUTE"],
+   "hashes": ["7d0c49928b2f090b", "33ccac3508eb3944", "1ed6fa752418847f"],
+   "name": "plain",
+   "opponent": "FLUTE",
+   "overrides": {},
+   "rules": {
+    "A": 3.0,
+    "DT": 0.008333333333333333,
+    "FPS": 30,
+    "HP": 100.0,
+    "KEY_R": 0.11,
+    "KNOCK_T": 0.38,
+    "LAUNCH_SPREAD": 38.0,
+    "LOW_HP": 25.0,
+    "LV_DMG": [14.0, 36.0],
+    "R": 0.6,
+    "ROPE_GIVE": 5.0,
+    "V": 2.6,
+    "beat": 0.44852941176470584,
+    "bpm": 133.7704918032787,
+    "dmg_scale": 1.0,
+    "dmg_side": [0.4, 2.0],
+    "swat_cobras": true,
+    "t_fight": 3.5882352941176467,
+    "t_max": 58.0
+   },
+   "seeds": [7, 8, 9],
+   "swapped": false
+  },
+  {
+   "cache": ["fighters/trombone/scenarios/swapped_s1.bfrec", "fighters/trombone/scenarios/swapped_s2.bfrec", "fighters/trombone/scenarios/swapped_s3.bfrec"],
+   "fighters": ["FLUTE", "TROMBONE"],
+   "hashes": ["8689c1af755ed173", "ec9e2ac0d1ca33fc", "9bff0f539177070e"],
+   "name": "swapped",
+   "opponent": "FLUTE",
+   "overrides": {},
+   "rules": {
+    "A": 3.0,
+    "DT": 0.008333333333333333,
+    "FPS": 30,
+    "HP": 100.0,
+    "KEY_R": 0.11,
+    "KNOCK_T": 0.38,
+    "LAUNCH_SPREAD": 38.0,
+    "LOW_HP": 25.0,
+    "LV_DMG": [14.0, 36.0],
+    "R": 0.6,
+    "ROPE_GIVE": 5.0,
+    "V": 2.6,
+    "beat": 0.44852941176470584,
+    "bpm": 133.7704918032787,
+    "dmg_scale": 1.0,
+    "dmg_side": [2.0, 0.4],
+    "swat_cobras": true,
+    "t_fight": 3.5882352941176467,
+    "t_max": 58.0
+   },
+   "seeds": [1, 2, 3],
+   "swapped": true
+  }
+ ],
+ "slug": "trombone",
+ "spec": {
+  "fights": {
+   "base": "flute_vs_trombone",
+   "dmg_scale": 1.0,
+   "handicap": [0.4, 2.0],
+   "left": null,
+   "must": [],
+   "right": null,
+   "rules": {},
+   "scan": 500,
+   "stats": 2000
+  },
+  "frames": {
+   "left": 64,
+   "right": 32,
+   "times": []
+  },
+  "hooks": [],
+  "name": "TROMBONE",
+  "opponent": "FLUTE",
+  "roles": [],
+  "scenarios": [
+   {
+    "name": "early_levels",
+    "opponent": "FLUTE",
+    "overrides": {
+     "LV_DMG": [2.0, 5.0]
+    },
+    "seeds": [1, 2, 3],
+    "swapped": false
+   },
+   {
+    "name": "early_low",
+    "opponent": "FLUTE",
+    "overrides": {
+     "LOW_HP": 92.0,
+     "LV_DMG": [2.0, 5.0]
+    },
+    "seeds": [1, 2, 3],
+    "swapped": false
+   },
+   {
+    "name": "early_ko",
+    "opponent": "FLUTE",
+    "overrides": {
+     "dmg_scale": 3.0
+    },
+    "seeds": [1, 2, 3],
+    "swapped": false
+   },
+   {
+    "name": "plain",
+    "opponent": "FLUTE",
+    "overrides": {},
+    "seeds": [7, 8, 9],
+    "swapped": false
+   },
+   {
+    "name": "swapped",
+    "opponent": "FLUTE",
+    "overrides": {},
+    "seeds": [1, 2, 3],
+    "swapped": true
+   }
+  ],
+  "voice_notes": {
+   "durations": [0.12, 0.25, 1.0],
+   "pitches": null,
+   "velocities": [0.6, 0.9]
+  }
+ },
+ "stats": {
+  "cache": "fighters/trombone/stats_rows.json",
+  "columns": ["seed", "winner", "t_ko", "lead_changes", "winner_hp", "n_caps", "max_gap", "lows", "fits", "score"],
+  "definitions": {
+   "both_lows_share": "share of all n fights in which both desperation moves (lows) fired",
+   "decided": "fights with a K.O. before rules.t_max (winner not null)",
+   "fit_rate": "fits / n, over all n fights (a fight with no K.O. never fits)",
+   "fits": "fights whose score() fits is true",
+   "ko_median": "numpy median of t_ko over ALL n fights, a fight with no K.O. counting as 99.0 s (kit/tuning.py; also how kit/story.py score treats it)",
+   "ko_median_decided": "numpy median of t_ko over the decided fights only",
+   "ko_p10": "numpy percentile 10 (linear) of the same list as ko_median",
+   "ko_p90": "numpy percentile 90 (linear) of the same list as ko_median",
+   "lead_changes_mean": "mean of lead_changes over all n fights (fights with no K.O. included)",
+   "left_wins": "decided fights the left fighter (names[0]) won",
+   "n": "fights: seeds 1 to 2000",
+   "names": "the fighters, left corner first: index 0 is the left fighter in winner and win_share",
+   "no_ko": "fights with no K.O. (n - decided)",
+   "no_ko_share": "no_ko / n",
+   "win_share": "left_wins / decided: the left fighter's share of the decided fights (fights with no K.O. left out), as kit/tuning.py",
+   "winner_hp_median_decided": "numpy median of winner_hp over the decided fights"
+  },
+  "fights_with": {
+   "ability": 2000,
+   "ability/FLUTTER TONGUE": 1999,
+   "ability/PEDAL TONE": 1493,
+   "ability/PICCOLO": 1775,
+   "ability/POWER SLIDE": 1980,
+   "ability/SAD TROMBONE": 2000,
+   "ability/SNAKE DANCE": 1967,
+   "basket": 2000,
+   "clash": 1932,
+   "hit": 2000,
+   "hit/blade": 2000,
+   "hit/fang": 2000,
+   "hit/shockwave": 1869,
+   "hit/slam": 786,
+   "hit/wave": 1478,
+   "ko": 1852,
+   "level": 2000,
+   "rope": 2000,
+   "slam": 1451,
+   "slow": 1869,
+   "strike": 2000,
+   "swat": 2000,
+   "thrust": 2000
+  },
+  "pooled": {
+   "both_lows_share": 0.638,
+   "decided": 1852,
+   "fit_rate": 0.0035,
+   "fits": 7,
+   "ko_median": 50.25490196078431,
+   "ko_median_decided": 49.82573529411765,
+   "ko_p10": 43.57990196078431,
+   "ko_p90": 57.00490196078431,
+   "lead_changes_mean": 0.5375,
+   "left_wins": 1046,
+   "n": 2000,
+   "names": ["TROMBONE", "FLUTE"],
+   "no_ko": 148,
+   "no_ko_share": 0.074,
+   "win_share": 0.5647948164146869,
+   "winner_hp_median_decided": 21.999999999999904
+  },
+  "seeds": [1, 2000]
+ },
+ "swapped_config": {
+  "fighters": ["FLUTE", "TROMBONE"],
+  "handicap": [2.0, 0.4]
+ },
+ "tool": "tools.studio_export.fighter_trombone"
+}

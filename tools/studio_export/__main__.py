@@ -3,8 +3,12 @@
     list      the exports the package's modules register, in the order `all` runs them
     <name>... run those exports, in the order given
     all       run every export: by each one's ORDER number (50 unless its module says otherwise), then by name
-    verify    re-hash every file in studio/reference/manifest.json; exit 1 if one is missing or changed
+    verify    re-hash every file of every manifest (studio/reference/manifest.json and the folder shards under
+              fighters/, themes/, episodes/); exit 1 if one is missing, changed or listed in the wrong shard
     adopt     record files that a Rust test blessed (repo-relative paths) in the manifest, as tool "rust-bless"
+    cache <area>/<name>... | all   regenerate milestone 3 cache files and check their pins (m3refs.py)
+    remake <area>/<name>...        make a milestone 3 folder again whole: committed files, shard, pins (m3refs.py)
+    budget    the reference set's sizes against the budgets of the plan's section 4 (m3refs.py)
 
 A module registers exports with a module-level `EXPORTS = {"name": function}` (and, if one must run before or after
 others under `all`, `ORDER = {"name": number}`). An export named in a module's `TAKES_ARGS` is not a reference export:
@@ -20,6 +24,7 @@ import sys
 import time
 
 RESERVED = ('all', 'verify', 'list', 'adopt')
+ARG_COMMANDS = ('cache', 'remake', 'budget')        # m3refs' TAKES_ARGS exports: `cache all` is one of them
 DEFAULT_ORDER = 50
 PYTHON = (3, 13, 18)                                   # the CPython the reference numbers come from (README.md)
 HASH_PROBE = ('FLUTE', -3109979385477651667)           # hash('FLUTE') under seed 0: a row of pyhash/vectors.json
@@ -94,7 +99,7 @@ def main(argv):
     if not argv or argv[0] in ('-h', '--help', 'help'):
         print(__doc__)
         return 0
-    if argv[0] != 'adopt' and len(argv) > 1 and any(a in RESERVED for a in argv):
+    if argv[0] not in ('adopt',) + ARG_COMMANDS and len(argv) > 1 and any(a in RESERVED for a in argv):
         raise SystemExit('all, verify and list stand alone; adopt comes first, then its paths')
     if argv == ['verify']:
         from . import manifest
