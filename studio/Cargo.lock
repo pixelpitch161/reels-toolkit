@@ -476,6 +476,7 @@ dependencies = [
  "bf-content",
  "bf-core",
  "bf-export",
+ "bf-pack",
  "bf-picture",
  "bf-sim",
  "bf-sound",
@@ -551,6 +552,17 @@ dependencies = [
  "png",
  "serde_json",
  "windows-sys 0.61.2",
+]
+
+[[package]]
+name = "bf-pack"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "serde",
+ "sha2",
+ "toml",
+ "zip",
 ]
 
 [[package]]

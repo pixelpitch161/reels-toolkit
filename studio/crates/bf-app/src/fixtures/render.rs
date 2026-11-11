@@ -146,7 +146,7 @@ pub fn vm() -> ViewModel {
     vm.draft.music_seed = 417;
     vm.draft.captions = sample::captions();
     vm.folder = FolderState::Ok { taken: false };
-    vm.ffmpeg = Some(Ok("ffmpeg 9.0.2".to_string()));
+    vm.ffmpeg = Some(Ok("ffmpeg 9.0.2, found on this PC".to_string()));
     vm.queue = queue();
     let mut state = AppState::showing(vm);
     state.apply(Event::Job {

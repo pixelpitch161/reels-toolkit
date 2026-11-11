@@ -67,7 +67,7 @@ enum OpenWhat {
 
 /// Why "Add to queue" cannot do anything now, in words; `None` when it can. The first of these that holds: a fight
 /// problem; no seed; a take problem; the take still being drawn; the output folder not checked yet, missing or not
-/// writable; ffmpeg not answered yet, or not found.
+/// writable; ffmpeg not answered yet, not found, or the app's own copy broken (its own sentence).
 pub fn why_not_add(vm: &ViewModel) -> Option<String> {
     if let Some(problem) = &vm.fight_problem {
         return Some(problem.clone());
@@ -98,6 +98,8 @@ pub fn why_not_add(vm: &ViewModel) -> Option<String> {
     }
     match &vm.ffmpeg {
         None => Some("Looking for ffmpeg.".to_string()),
+        // a broken copy of the app's own ffmpeg: the export's sentence, which says to install the app again
+        Some(Err(said)) if bf_export::is_about_the_apps_own(said) => Some(said.clone()),
         Some(Err(_)) => Some(
             "ffmpeg was not found on this PC, so videos cannot be saved yet. Install ffmpeg, then start the app again."
                 .to_string(),
