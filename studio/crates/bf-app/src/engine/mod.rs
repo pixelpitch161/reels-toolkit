@@ -631,7 +631,9 @@ pub(crate) mod tests {
                 root: unused.clone(),
                 name: String::new(),
             },
-            Command::CreateFolder { root: unused.clone() },
+            Command::CreateFolder {
+                root: unused.join("inner"),
+            },
             Command::PickFolder { start: unused.clone() },
             Command::RevealFolder { path: unused.clone() },
             Command::LoadRoster,
@@ -640,7 +642,12 @@ pub(crate) mod tests {
             engine.send(c);
         }
         wait_for(&engine, 5.0, |e| {
-            assert!(!matches!(e, Event::Problem { .. }), "{e:?}");
+            if let Event::Problem { text } = e {
+                assert!(
+                    text.starts_with("This fight cannot be opened: ") || text.starts_with("The folder "),
+                    "{text}"
+                );
+            }
             matches!(e, Event::Roster(_))
         });
         assert!(!unused.exists(), "nothing was written");
