@@ -200,14 +200,15 @@ pub fn loop_audio(master: &[[f64; 2]]) -> CheckResult {
     }
     if click {
         faults.push(format!(
-            "the sound jumps by {jump:.3} from the last sample to the first, which is heard as a click when the \
-             video loops; let the sound of the end run on into the start"
+            "there is a click where the video loops: the sound jumps by {jump:.3} between the end and the start, \
+             so let the sound of the end run on into the start"
         ));
     }
     let summary = if fails == 0 {
         format!(
-            "{AUDIO_TITLE}: the sound runs through the loop point without a step or a click (the last and the \
-             first 20 ms are {step:.1} dB apart, at most 6 allowed, and the samples meet within {jump:.3})."
+            "{AUDIO_TITLE}: the sound runs through the point where the video loops without a step in loudness or \
+             a click (the last and the first 20 ms are {step:.1} dB apart, at most 6 allowed, and the sound jumps \
+             by only {jump:.3} there)."
         )
     } else {
         format!("{AUDIO_TITLE}: {}.", faults.join("; and "))

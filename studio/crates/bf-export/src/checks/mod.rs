@@ -126,6 +126,19 @@ pub(crate) fn bad_sample(x: &[[f64; 2]]) -> Option<(usize, &'static str)> {
     })
 }
 
+/// A count with a thousands separator: `5,503`.
+pub(crate) fn thousands(n: usize) -> String {
+    let digits = n.to_string();
+    let mut out = String::new();
+    for (i, c) in digits.chars().enumerate() {
+        if i > 0 && (digits.len() - i).is_multiple_of(3) {
+            out.push(',');
+        }
+        out.push(c);
+    }
+    out
+}
+
 /// The failed result for a master no sound check can measure (empty, or with a [`bad_sample`]); `None` for a
 /// master that can be measured.
 pub(crate) fn unusable(name: &'static str, title: &str, master: &[[f64; 2]]) -> Option<CheckResult> {
@@ -139,8 +152,8 @@ pub(crate) fn unusable(name: &'static str, title: &str, master: &[[f64; 2]]) -> 
         CheckResult::failed(
             name,
             format!(
-                "{title}: the soundtrack's sample at {:.3} s {why}, so it cannot be measured; build the soundtrack \
-                 again, and if this stays, one of the instruments is faulty.",
+                "{title}: the soundtrack holds a value at {:.3} s that {why}, so it cannot be measured; build the \
+                 soundtrack again, and if this stays, one of the instruments is faulty.",
                 i as f64 / SRF
             ),
         )
@@ -231,6 +244,8 @@ impl BandPlan {
         let part = |k: usize| -> Result<(String, (f64, f64)), ContentError> {
             let name = ff.fighters.get(k).ok_or_else(|| missing("fighter list"))?;
             let sound = bf_content::fighters::sound(name, k, ff).ok_or_else(|| missing("fighter"))?;
+            // `Sound::bus` needs the music context of a recording, which a fight file alone does not give;
+            // it is the fighter's name in lower case (`self.name.lower()`), and no part overrides it
             Ok((name.to_lowercase(), sound.band()))
         };
         let mut bed_buses: Vec<String> = bed.buses().iter().map(|(bus, _)| (*bus).to_string()).collect();
@@ -267,6 +282,20 @@ pub fn pre_render(
     plan: &BandPlan,
     workers: usize,
 ) -> Vec<CheckResult> {
+    pre_render_with(&|f| pic.frame_logged(f), pic, st, show, story, plan, workers)
+}
+
+/// [`pre_render`] with the drawing of a frame given: `draw_frame(f)` is `pic.frame_logged(f)` there, and a
+/// stand-in in the tests.
+fn pre_render_with(
+    draw_frame: &(dyn Fn(usize) -> (Rgb8, DrawLog) + Sync),
+    pic: &Picture,
+    st: &Soundtrack,
+    show: &Show,
+    story: &Story,
+    plan: &BandPlan,
+    workers: usize,
+) -> Vec<CheckResult> {
     let nf = pic.nf();
     let fps = show.grid.fps;
     let cfg = &pic.ctx().cfg;
@@ -288,7 +317,7 @@ pub fn pre_render(
         .collect();
 
     let draw = |f: usize| -> Result<Drawn, String> {
-        match catch_unwind(AssertUnwindSafe(|| pic.frame_logged(f))) {
+        match catch_unwind(AssertUnwindSafe(|| draw_frame(f))) {
             Ok((rgb, log)) => Ok(Drawn {
                 log: safe_set.contains(&f).then_some(log),
                 lum: (f0..f1).contains(&f).then(|| flash::rel_lum(&rgb)),
@@ -443,6 +472,70 @@ mod tests {
         x[48_000][1] = 1.0e200;
         let r = unusable("levels", "Levels", &x).unwrap();
         assert!(!r.pass && r.summary.contains("outside"));
+    }
+
+    #[test]
+    fn counts_are_grouped_in_thousands() {
+        let shown: Vec<String> = [0, 244, 1000, 5503, 1_234_567].into_iter().map(thousands).collect();
+        assert_eq!(shown, ["0", "244", "1,000", "5,503", "1,234,567"]);
+    }
+
+    #[test]
+    fn a_frame_that_cannot_be_drawn_fails_the_checks_that_need_it() {
+        use std::sync::Arc;
+
+        use bf_core::recording::Recording;
+
+        let rec = Recording::read(&bf_testdata::reference("fights/flute_vs_trombone/ep392.bfrec")).unwrap();
+        let rec = Arc::new(rec);
+        let path = bf_testdata::repo_root().join("studio/fights/flute_vs_trombone.toml");
+        let ff = FightFile::parse(&std::fs::read_to_string(path).unwrap()).unwrap();
+        let show = Show::new(&rec, &ff).unwrap();
+        let pic = bf_content::build_picture(Arc::clone(&rec), &ff).unwrap();
+        let st = bf_content::build_soundtrack(&rec, &ff).unwrap();
+        let cfg = &pic.ctx().cfg;
+        let lows = [cfg[0].low.name.as_str(), cfg[1].low.name.as_str()];
+        let sheet = bf_story::BeatSheet::series([&cfg[0], &cfg[1]]);
+        let story = bf_story::story(&rec, &show.grid, &sheet, lows);
+        let plan = BandPlan::of(&ff).unwrap();
+        // Frame 0 is one of the safe zone's and of the loop's, frame 1300 one of the flash stretch's; every
+        // other frame is a grey picture with one caption inside the safe zone.
+        let stand_in = |f: usize| -> (Rgb8, DrawLog) {
+            assert!(f != 0 && f != 1300, "the look of frame {f} lost its footing.");
+            let mut log = DrawLog::new();
+            log.note(100, 100, 200, 120, bf_picture::ui::Kind::Caption, "FLUTE");
+            (Rgb8::filled(36, 64, &[90, 90, 90]), log)
+        };
+        let rs = pre_render_with(&stand_in, &pic, &st, &show, &story, &plan, 4);
+        let by_name = |name: &str| rs.iter().find(|r| r.name == name).unwrap();
+        for (name, frame) in [
+            ("safezone", "frame 0 (at 0.00 s)"),
+            ("flash", "frame 1300 (at 43.33 s)"),
+        ] {
+            let r = by_name(name);
+            assert!(!r.pass && r.summary.contains(frame), "{}", r.summary);
+            assert!(
+                r.summary.contains("lost its footing), so this check did not run"),
+                "{}",
+                r.summary
+            );
+            assert!(r.summary.ends_with('.') && !r.summary.contains(". "), "{}", r.summary);
+        }
+        let r = by_name("loop_picture");
+        assert!(
+            !r.pass && r.summary.contains("frame 0 (at 0.00 s) could not be drawn"),
+            "{}",
+            r.summary
+        );
+        // the camera maths and the sound checks ran all the same
+        for name in ["focus", "levels", "band", "loudness", "loop_audio"] {
+            assert!(by_name(name).pass, "{}", by_name(name).summary);
+        }
+        assert_eq!(rs.len(), 8);
+        // with every frame drawn the stand-in's pictures pass
+        let calm = |_: usize| stand_in(1);
+        let rs = pre_render_with(&calm, &pic, &st, &show, &story, &plan, 4);
+        assert!(rs.iter().all(|r| r.pass), "{rs:?}");
     }
 
     #[test]
