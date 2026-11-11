@@ -203,6 +203,18 @@ fn two(a: f64, b: f64, short: usize) -> (String, String) {
     }
 }
 
+/// A rule's value in words, for an error.
+fn describe(v: &Value) -> String {
+    match v {
+        Value::Null => "empty (null)".into(),
+        Value::Bool(b) => format!("{b}"),
+        Value::Int(n) => format!("the integer {n}"),
+        Value::Float(x) => format!("the float {x:?}"),
+        Value::Str(s) => format!("the text {s:?}"),
+        Value::List(_) => "a list".into(),
+    }
+}
+
 /// That the recording `rec` was fought on `grid`, the grid of the fight file whose tempo is `tempo_bpm`.
 ///
 /// The recording's `rules.bpm`, `rules.beat` and `rules.t_fight` are `T.BPM`, `T.BEAT` and `T.T_FIGHT` of the
@@ -211,10 +223,14 @@ fn two(a: f64, b: f64, short: usize) -> (String, String) {
 /// of the same tempo are equal to the bit, and they are compared exactly: there is no tolerance to choose. Two
 /// tempos that fit 61 s in the same number of bars give the same grid, and are the same fight.
 fn check_grid(rec: &Recording, grid: &Grid, tempo_bpm: f64) -> Result<(), ShowError> {
+    // A whole number stored as an integer (`120` for `120.0`) is that number; a writer of format 1 writes these
+    // as floats, but the value is still plain.
     let rule = |key: &str| match rec.rules.get(key) {
         Some(Value::Float(x)) => Ok(*x),
-        Some(_) => Err(ShowError::Tempo(format!(
-            "the recording does not say its tempo: rules.{key} is not a number"
+        Some(Value::Int(n)) => Ok(*n as f64),
+        Some(other) => Err(ShowError::Tempo(format!(
+            "the recording does not say its tempo: rules.{key} is {}, not a number",
+            describe(other)
         ))),
         None => Err(ShowError::Tempo(format!(
             "the recording does not say its tempo: rules.{key} is missing"

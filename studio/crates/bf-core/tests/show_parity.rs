@@ -408,9 +408,19 @@ fn a_recording_fought_at_another_tempo_is_refused() {
         rule("t_fight", EvValue::Float(1.794)),
         "the recording's fight starts at 1.794 s; the fight file's grid starts it at 3.588 s (bar 2)"
     );
+    // A whole number stored as an integer is that number: 133 is not the grid's 133.77...
     assert_eq!(
         rule("bpm", EvValue::Int(133)),
-        "the recording does not say its tempo: rules.bpm is not a number"
+        "the recording was fought at 133.00 bpm; the fight file's grid is 133.77 bpm (tempo_bpm = 132, fitted to \
+         whole bars in 61 s): fight this fight file again, or set its tempo back"
+    );
+    assert_eq!(
+        rule("bpm", EvValue::Str("fast".into())),
+        "the recording does not say its tempo: rules.bpm is the text \"fast\", not a number"
+    );
+    assert_eq!(
+        rule("beat", EvValue::List(Vec::new())),
+        "the recording does not say its tempo: rules.beat is a list, not a number"
     );
     let mut gone = full.clone();
     gone.rules.remove("t_fight");

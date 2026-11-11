@@ -8,8 +8,8 @@
 //!   to float32 before it is compared (the rounding itself sits near -150 dBFS).
 //! - `rms.json`: the RMS of every 100 ms block of every stem and of the master, within 0.01 dB; a block the kit
 //!   has below -90 dBFS must be below it here too and is not compared further.
-//! - `audio.wav`: the mastered file as the kit wrote it (16 bit): every sample within 3 LSB, the RMS of the
-//!   difference below -90 dBFS, and the first and last 4 ms (the loop seam) as loud as the kit's.
+//! - `audio.wav`: the mastered file as the kit wrote it (16 bit): every sample the same (none may differ), and the
+//!   first and last 4 ms (the loop seam) as loud as the kit's. The solo bus is the references' float32 to the bit.
 //! - `note_calls.json`: the order of the 174 first-time notes (every FLUTE note moves the shared noise stream on).
 //! - `premaster.npz`: every bus as the score leaves it, before the master (the place to look first when a stem
 //!   is off).
@@ -46,6 +46,10 @@ const DB: f64 = -120.0;
 const DB_EXCEPTION: f64 = -80.0;
 /// The windows of `stems.npz` and `premaster.npz`: eight of 2.0 s and one of 0.25 s.
 const WINDOWS: usize = 9;
+/// The buses whose every window, rounded to float32, has exactly the reference's bits (before and after the
+/// master). The other six differ from the kit's float64 in the last places (`dmath` and numpy's maths differ by
+/// an ulp here and there), which float32 rounding does not always hide: they are held to the -120 dBFS bar.
+const EXACT_F32: [&str; 1] = ["solo"];
 
 // ---------------------------------------------------------------- the episode, built once
 
@@ -210,6 +214,15 @@ fn stem_windows() {
         failures.len(),
         failures.join("\n")
     );
+    // The buses that are the reference's float32 to the bit stay so.
+    for bus in EXACT_F32 {
+        assert_eq!(
+            worst[bus].0,
+            f64::NEG_INFINITY,
+            "{bus}: a window no longer has the reference's float32 bits ({})",
+            show_db(worst[bus].0)
+        );
+    }
     // An exception that is not needed any more must go.
     for (bus, why) in &excepted {
         assert!(
@@ -294,6 +307,11 @@ fn master_matches() {
         } else {
             format!("{rms:.1} dBFS")
         }
+    );
+    // The bar is exact: every 16-bit sample is the kit's.
+    assert_eq!(
+        differing, 0,
+        "{differing} samples differ from the kit's audio.wav (first: {first:?})"
     );
     assert!(largest <= 3, "a sample differs by {largest} LSB");
     assert!(rms < -90.0, "the RMS of the difference is {rms:.1} dBFS");
@@ -424,6 +442,9 @@ fn premaster_windows() {
             }
         }
         println!("    {bus}: worst {} ({at})", show_db(worst));
+        if EXACT_F32.contains(&bus) && worst != f64::NEG_INFINITY {
+            failures.push(format!("{bus}: a window no longer has the reference's float32 bits"));
+        }
     }
     let rms = json(&format!("{DIR}/rms.json"));
     for bus in BUSES {
