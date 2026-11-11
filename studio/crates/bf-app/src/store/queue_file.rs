@@ -12,6 +12,11 @@ use crate::model::queue::{Job, JobState, Queue};
 use crate::model::{JobId, Notice};
 
 /// The queue file's format. A file with a higher number was written by a newer app and is left alone.
+///
+/// Within one format: a field the app does not know (at the top or in a job) is ignored when read and is not written
+/// back, while a job state, check-list step or other value it does not know makes the whole file unreadable (its
+/// bytes are kept aside as `queue.corrupt-N.json`). So a new field that must survive, or a new state or step, needs
+/// this number raised.
 pub const QUEUE_FORMAT: u32 = 1;
 
 /// This app's version, written into the file: a fight is only promised to come out the same within one version.
@@ -46,7 +51,7 @@ enum Read {
     Good(Queue, String),
     /// Written by a newer app.
     Newer,
-    /// Not text, not JSON, cut short, missing a value, or holding one id twice.
+    /// Not text, not JSON, cut short, missing a value, holding one id twice, or with ids at the very top.
     Corrupt,
 }
 
@@ -67,12 +72,19 @@ fn parse(bytes: &[u8]) -> Read {
     if !file.jobs.iter().all(|job| ids.insert(job.id)) {
         return Read::Corrupt;
     }
-    // A new job never takes an id already in the queue.
-    let after_highest = ids.last().map_or(1, |&id| id.saturating_add(1));
+    // A new job never takes an id already in the queue, and the id after it must still exist: a file whose ids are
+    // at the very top (only a hand-edited one) is refused rather than let the ids run out.
+    let Some(after_highest) = ids.last().map_or(Some(1), |&id| id.checked_add(1)) else {
+        return Read::Corrupt;
+    };
+    let next_id = file.next_id.max(after_highest);
+    if next_id == JobId::MAX {
+        return Read::Corrupt;
+    }
     let queue = Queue {
         jobs: file.jobs,
         paused: file.paused,
-        next_id: file.next_id.max(after_highest),
+        next_id,
     };
     Read::Good(queue, file.app_version)
 }
@@ -98,8 +110,8 @@ pub fn load_queue(path: &Path) -> (Queue, Option<Notice>) {
             mark_unread(path);
             let text = format!(
                 "The render queue file could not be opened, so the queue starts empty for now. It may be open in \
-                 another program: close that program and start the app again to get your queue back. If you add a \
-                 video first, the old file is kept as {}.",
+                 another program: close that program and start the app again to get your queue back. If the queue \
+                 changes first, the old file is kept as {}.",
                 next_aside_name(path, "unread")
             );
             return (Queue::new(), Some(Notice { text }));
@@ -470,6 +482,110 @@ mod tests {
         assert_eq!(loaded.add(spec("New")), 6);
     }
 
+    /// Writes `q` exactly as it is (a rendering job stays rendering), in this format and app version, after `edit`.
+    fn write_raw(path: &Path, q: &Queue, edit: impl FnOnce(&mut serde_json::Value)) {
+        let mut value = serde_json::to_value(q).unwrap();
+        value["format"] = serde_json::Value::from(QUEUE_FORMAT);
+        value["app_version"] = serde_json::Value::from(APP_VERSION);
+        edit(&mut value);
+        fs::create_dir_all(path.parent().unwrap()).unwrap();
+        fs::write(path, serde_json::to_vec_pretty(&value).unwrap()).unwrap();
+    }
+
+    #[test]
+    fn ids_at_the_top_make_the_file_unreadable() {
+        let root = TempRoot::new("ids_at_the_top_make_the_file_unreadable");
+        let path = root.paths().queue();
+        for (job_id, next_id) in [
+            (JobId::MAX, 1),
+            (JobId::MAX - 1, 1),
+            (3, JobId::MAX),
+            (JobId::MAX, JobId::MAX),
+        ] {
+            let mut q = Queue::new();
+            q.add(spec("Flute vs Trombone"));
+            q.jobs[0].id = job_id;
+            q.next_id = next_id;
+            write_raw(&path, &q, |_| {});
+            let (loaded, said) = load_queue(&path);
+            assert_eq!(loaded, Queue::new(), "id {job_id}, next {next_id}");
+            assert!(
+                said.unwrap().text.starts_with("The render queue could not be read"),
+                "id {job_id}, next {next_id}"
+            );
+        }
+        // Just below the top still loads, and the next job takes the last id that leaves room after it.
+        let mut q = Queue::new();
+        q.add(spec("Flute vs Trombone"));
+        q.jobs[0].id = JobId::MAX - 2;
+        write_raw(&path, &q, |_| {});
+        let (mut loaded, said) = load_queue(&path);
+        assert_eq!(said, None);
+        assert_eq!(loaded.next_id, JobId::MAX - 1);
+        assert_eq!(loaded.add(spec("Tuba vs Bass drum")), JobId::MAX - 1);
+        // The top itself is never given out.
+        assert_eq!(loaded.add(spec("Oboe vs Harp")), 1);
+    }
+
+    #[test]
+    fn two_rendering_jobs_in_a_file_both_wait_in_order() {
+        let root = TempRoot::new("two_rendering_jobs_in_a_file_both_wait_in_order");
+        let path = root.paths().queue();
+        // A hand-edited file, in this order: a finished job, one rendering, one waiting, another rendering.
+        let mut q = Queue::new();
+        let a = q.add(spec("Flute vs Trombone"));
+        let first = q.add(spec("Tuba vs Bass drum"));
+        let waiting = q.add(spec("Oboe vs Harp"));
+        let second = q.add(spec("Piccolo vs Cello"));
+        let rendering = JobState::Rendering {
+            done: 100,
+            total: 1_830,
+        };
+        q.jobs[0].state = JobState::Cancelled;
+        q.jobs[1].state = rendering.clone();
+        q.jobs[3].state = rendering;
+        write_raw(&path, &q, |_| {});
+        let (mut loaded, said) = load_queue(&path);
+        assert_eq!(said, None);
+        assert_eq!(loaded.after_restart(), 2);
+        for id in [first, second] {
+            let job = loaded.job(id).unwrap();
+            assert_eq!(job.state, JobState::Waiting);
+            assert!(job.interrupted);
+        }
+        assert_eq!(loaded.rendering(), None);
+        // Both first in line, in file order, then the job that was already waiting, then the finished one.
+        assert_eq!(loaded.shown(), vec![first, second, waiting, a]);
+        assert!(loaded.paused);
+    }
+
+    #[test]
+    fn unknown_fields_are_ignored_and_not_written_back() {
+        let root = TempRoot::new("unknown_fields_are_ignored_and_not_written_back");
+        let path = root.paths().queue();
+        let q = mixed();
+        write_raw(&path, &q, |value| {
+            value["window"] = serde_json::json!({"width": 1440});
+            value["jobs"][0]["colour_names"] = serde_json::json!(["ice", "mint"]);
+        });
+        assert_eq!(load_queue(&path), (q.clone(), None));
+        save_queue(&path, &q).unwrap();
+        let text = fs::read_to_string(&path).unwrap();
+        assert!(!text.contains("window") && !text.contains("colour_names"), "{text}");
+        // An unknown job state, though, makes the file unreadable, and its bytes are kept.
+        write_raw(&path, &q, |value| {
+            value["jobs"][0]["state"] = serde_json::json!("Paused");
+        });
+        let bytes = fs::read(&path).unwrap();
+        let (loaded, said) = load_queue(&path);
+        assert_eq!(loaded, Queue::new());
+        assert!(said.unwrap().text.starts_with("The render queue could not be read"));
+        assert_eq!(
+            fs::read(root.paths().config.join("queue.corrupt-1.json")).unwrap(),
+            bytes
+        );
+    }
+
     /// Writes `q` as saved by app version `version`.
     fn save_as_version(path: &Path, q: &Queue, version: &str) {
         save_queue(path, q).unwrap();
@@ -560,8 +676,8 @@ mod tests {
                 Queue::new(),
                 notice(
                     "The render queue file could not be opened, so the queue starts empty for now. It may be open in \
-                     another program: close that program and start the app again to get your queue back. If you add \
-                     a video first, the old file is kept as queue.unread-1.json."
+                     another program: close that program and start the app again to get your queue back. If the \
+                     queue changes first, the old file is kept as queue.unread-1.json."
                 )
             )
         );

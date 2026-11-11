@@ -142,10 +142,18 @@ impl Queue {
         }
     }
 
-    /// Queues a video: it waits, last in line.
+    /// Queues a video: it waits, last in line. Its id is `next_id`, which then counts up. Ids never run out in
+    /// practice (`load_queue` refuses a file whose ids are near the top), but if `next_id` has reached the top, or a
+    /// job already holds it, the lowest id no job holds is used instead, so an id is never given twice and nothing
+    /// overflows.
     pub fn add(&mut self, spec: JobSpec) -> JobId {
-        let id = self.next_id;
-        self.next_id += 1;
+        let id = match self.next_id {
+            next if next < JobId::MAX && self.job(next).is_none() => {
+                self.next_id = next + 1;
+                next
+            }
+            _ => (1..JobId::MAX).find(|&id| self.job(id).is_none()).unwrap_or(JobId::MAX),
+        };
         self.jobs.push(Job {
             id,
             spec,
@@ -313,19 +321,27 @@ impl Queue {
 
     /// A job marked as rendering waits again, first in line, marked as interrupted and with its check list cleared:
     /// it starts over. What `after_restart` does to such a job, and what the queue file holds for it.
+    /// More than one such job (a hand-edited file) all go first in line, in the order the list held them.
     pub(crate) fn rendering_waits_again(&mut self) {
-        while let Some(i) = self.jobs.iter().position(is_rendering) {
-            let mut job = self.jobs.remove(i);
+        let Some(first) = self.jobs.iter().position(is_rendering) else {
+            return;
+        };
+        let (mut again, rest): (Vec<Job>, Vec<Job>) =
+            std::mem::take(&mut self.jobs).into_iter().partition(is_rendering);
+        self.jobs = rest;
+        for job in &mut again {
             job.state = JobState::Waiting;
             job.steps.clear();
             job.interrupted = true;
-            let first_waiting = self
-                .jobs
-                .iter()
-                .position(|job| job.state == JobState::Waiting)
-                .unwrap_or(self.jobs.len());
-            self.jobs.insert(first_waiting.min(i), job);
         }
+        // The jobs before `first` are where they were, so `first` is still a place in the shorter list.
+        let first_waiting = self
+            .jobs
+            .iter()
+            .position(|job| job.state == JobState::Waiting)
+            .unwrap_or(self.jobs.len());
+        let at = first_waiting.min(first);
+        self.jobs.splice(at..at, again);
     }
 
     /// After the app starts with a saved queue: a job still marked as rendering waits again, first in line and marked
@@ -521,6 +537,26 @@ mod tests {
         assert!(job.steps.is_empty());
         assert!(!job.interrupted);
         assert_eq!(q.shown(), vec![1, 2, 4]);
+    }
+
+    #[test]
+    fn ids_at_the_top_never_overflow_or_repeat() {
+        let mut q = Queue::new();
+        let a = q.add(spec("A"));
+        q.next_id = JobId::MAX;
+        // The top is not given out; the lowest free id is, and nothing panics.
+        assert_eq!(q.add(spec("B")), 2);
+        assert_eq!(q.add(spec("C")), 3);
+        assert_eq!(q.next_id, JobId::MAX);
+        assert!(q.remove(a));
+        assert_eq!(q.add(spec("D")), 1);
+        // A next id that a job already holds is not given twice either.
+        let mut odd = Queue::new();
+        odd.add(spec("E"));
+        odd.next_id = 1;
+        assert_eq!(odd.add(spec("F")), 2);
+        let ids: Vec<JobId> = odd.jobs.iter().map(|job| job.id).collect();
+        assert_eq!(ids, vec![1, 2]);
     }
 
     #[test]
