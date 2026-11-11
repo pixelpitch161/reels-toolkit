@@ -52,8 +52,8 @@ use bf_core::fightfile::{FightFile, INTRO_BARS};
 use bf_core::harmony::{self, Harmony};
 use bf_core::py::{ifloor_div, round_half_even, round_nd};
 use bf_core::recording::{Array, Recording};
+use bf_core::roster::FighterCfg;
 use bf_core::show::Show;
-use bf_sim::roster::FighterCfg;
 
 pub use self::error::{MusicError, Samples};
 pub use self::events::{event_at, event_int, event_is, event_is_str, event_number, noise_seed, shared_events};
