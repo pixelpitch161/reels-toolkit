@@ -1,8 +1,8 @@
 //! The fonts built into the exe, so the app looks the same on every PC: IBM Plex Sans (Regular, Medium, SemiBold)
 //! and IBM Plex Mono (Regular). Where each file comes from is in `assets/fonts/SOURCES.md`.
 //!
-//! Noto Emoji is built in too but in no family: the pinned file has no harp (U+1FA89), so emoji are drawn by the
-//! PC's own fonts, which eframe's `system_fonts` feature finds.
+//! No emoji font is built in: no official monochrome Noto Emoji has the harp (U+1FA89) yet, so emoji are drawn by
+//! the PC's own fonts, which eframe's `system_fonts` feature finds.
 
 use std::sync::Arc;
 
@@ -11,8 +11,8 @@ const SANS_MEDIUM: &str = "IBMPlexSans-Medium";
 const SANS_SEMIBOLD: &str = "IBMPlexSans-SemiBold";
 const MONO_REGULAR: &str = "IBMPlexMono-Regular";
 
-/// Each built-in font file's name and bytes, in the order Sans Regular, Medium, SemiBold, Mono Regular, Noto Emoji.
-pub const FILES: [(&str, &[u8]); 5] = [
+/// Each built-in font file's name and bytes, in the order Sans Regular, Medium, SemiBold, Mono Regular.
+pub const FILES: [(&str, &[u8]); 4] = [
     (
         "IBMPlexSans-Regular.ttf",
         include_bytes!("../../assets/fonts/IBMPlexSans-Regular.ttf"),
@@ -29,13 +29,9 @@ pub const FILES: [(&str, &[u8]); 5] = [
         "IBMPlexMono-Regular.ttf",
         include_bytes!("../../assets/fonts/IBMPlexMono-Regular.ttf"),
     ),
-    (
-        "NotoEmoji-Variable.ttf",
-        include_bytes!("../../assets/fonts/NotoEmoji-Variable.ttf"),
-    ),
 ];
 
-/// The font names `definitions` registers, one per entry of `FILES`, in the same order. Noto Emoji is left out.
+/// The font names `definitions` registers, one per entry of `FILES`, in the same order.
 const NAMES: [&str; 4] = [SANS_REGULAR, SANS_MEDIUM, SANS_SEMIBOLD, MONO_REGULAR];
 
 /// Plex Sans Medium (500), for the text of a selected chip or row.
