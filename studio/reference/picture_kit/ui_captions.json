@@ -1,0 +1,7087 @@
+{
+ "about": "reelkit.ui.draw_captions(style='impact'), impact_landings and caption_scale",
+ "cases": [
+  {
+   "args": {
+    "alt": [120, 240, 184],
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "caps": [],
+    "frame": 360,
+    "hi": [222, 232, 246],
+    "source": "kit.picture",
+    "t": "0x1.8000000000000p+3"
+   },
+   "arrays": {
+    "out": "c000__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', hi=hi, alt=alt)",
+   "expect": {
+    "noted": []
+   },
+   "id": "c000"
+  },
+  {
+   "args": {
+    "base": [237, 245, 255],
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["FLUTTER TONGUE"],
+      "t0": "0x1.66d2dcb1465e9p+3",
+      "t1": "0x1.b39fa97e132b6p+3"
+     },
+     {
+      "lines": ["SNAKE DANCE"],
+      "t0": "0x1.e0e0ded288ce7p+4",
+      "t1": "0x1.03a3a29c779a7p+5"
+     },
+     {
+      "lines": ["PICCOLO"],
+      "t0": "0x1.54e7ea5f84cadp+5",
+      "t1": "0x1.681b1d92b7fe0p+5"
+     }
+    ],
+    "frame": 336,
+    "puff": [222, 232, 246],
+    "source": "kit.picture",
+    "t": "0x1.6666666666666p+3"
+   },
+   "arrays": {
+    "out": "c001__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, puff=puff)",
+   "expect": {
+    "noted": []
+   },
+   "id": "c001"
+  },
+  {
+   "args": {
+    "base": [237, 245, 255],
+    "canvas": {
+     "add": [186, 51, 34],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [229, 161, 111],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["FLUTTER TONGUE"],
+      "t0": "0x1.66d2dcb1465e9p+3",
+      "t1": "0x1.b39fa97e132b6p+3"
+     },
+     {
+      "lines": ["SNAKE DANCE"],
+      "t0": "0x1.e0e0ded288ce7p+4",
+      "t1": "0x1.03a3a29c779a7p+5"
+     },
+     {
+      "lines": ["PICCOLO"],
+      "t0": "0x1.54e7ea5f84cadp+5",
+      "t1": "0x1.681b1d92b7fe0p+5"
+     }
+    ],
+    "frame": 337,
+    "puff": [222, 232, 246],
+    "source": "kit.picture",
+    "t": "0x1.6777777777777p+3"
+   },
+   "arrays": {
+    "out": "c002__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, puff=puff)",
+   "expect": {
+    "noted": [
+     [56, 96, 305, 117, "caption", "FLUTTER TONGUE"]
+    ]
+   },
+   "id": "c002"
+  },
+  {
+   "args": {
+    "base": [237, 245, 255],
+    "canvas": {
+     "add": [158, 161, 245],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [13, 171, 29],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["FLUTTER TONGUE"],
+      "t0": "0x1.66d2dcb1465e9p+3",
+      "t1": "0x1.b39fa97e132b6p+3"
+     },
+     {
+      "lines": ["SNAKE DANCE"],
+      "t0": "0x1.e0e0ded288ce7p+4",
+      "t1": "0x1.03a3a29c779a7p+5"
+     },
+     {
+      "lines": ["PICCOLO"],
+      "t0": "0x1.54e7ea5f84cadp+5",
+      "t1": "0x1.681b1d92b7fe0p+5"
+     }
+    ],
+    "frame": 338,
+    "puff": [222, 232, 246],
+    "source": "kit.picture",
+    "t": "0x1.6888888888889p+3"
+   },
+   "arrays": {
+    "out": "c003__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, puff=puff)",
+   "expect": {
+    "noted": [
+     [56, 97, 305, 118, "caption", "FLUTTER TONGUE"]
+    ]
+   },
+   "id": "c003"
+  },
+  {
+   "args": {
+    "base": [237, 245, 255],
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["FLUTTER TONGUE"],
+      "t0": "0x1.66d2dcb1465e9p+3",
+      "t1": "0x1.b39fa97e132b6p+3"
+     },
+     {
+      "lines": ["SNAKE DANCE"],
+      "t0": "0x1.e0e0ded288ce7p+4",
+      "t1": "0x1.03a3a29c779a7p+5"
+     },
+     {
+      "lines": ["PICCOLO"],
+      "t0": "0x1.54e7ea5f84cadp+5",
+      "t1": "0x1.681b1d92b7fe0p+5"
+     }
+    ],
+    "frame": 339,
+    "puff": [222, 232, 246],
+    "source": "kit.picture",
+    "t": "0x1.699999999999ap+3"
+   },
+   "arrays": {
+    "out": "c004__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, puff=puff)",
+   "expect": {
+    "noted": [
+     [56, 99, 305, 120, "caption", "FLUTTER TONGUE"]
+    ]
+   },
+   "id": "c004"
+  },
+  {
+   "args": {
+    "base": [237, 245, 255],
+    "canvas": {
+     "add": [222, 197, 71],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [181, 223, 251],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["FLUTTER TONGUE"],
+      "t0": "0x1.66d2dcb1465e9p+3",
+      "t1": "0x1.b39fa97e132b6p+3"
+     },
+     {
+      "lines": ["SNAKE DANCE"],
+      "t0": "0x1.e0e0ded288ce7p+4",
+      "t1": "0x1.03a3a29c779a7p+5"
+     },
+     {
+      "lines": ["PICCOLO"],
+      "t0": "0x1.54e7ea5f84cadp+5",
+      "t1": "0x1.681b1d92b7fe0p+5"
+     }
+    ],
+    "frame": 340,
+    "puff": [222, 232, 246],
+    "source": "kit.picture",
+    "t": "0x1.6aaaaaaaaaaabp+3"
+   },
+   "arrays": {
+    "out": "c005__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, puff=puff)",
+   "expect": {
+    "noted": [
+     [47, 99, 312, 121, "caption", "FLUTTER TONGUE"]
+    ]
+   },
+   "id": "c005"
+  },
+  {
+   "args": {
+    "base": [237, 245, 255],
+    "canvas": {
+     "add": [30, 225, 166],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [107, 185, 75],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["FLUTTER TONGUE"],
+      "t0": "0x1.66d2dcb1465e9p+3",
+      "t1": "0x1.b39fa97e132b6p+3"
+     },
+     {
+      "lines": ["SNAKE DANCE"],
+      "t0": "0x1.e0e0ded288ce7p+4",
+      "t1": "0x1.03a3a29c779a7p+5"
+     },
+     {
+      "lines": ["PICCOLO"],
+      "t0": "0x1.54e7ea5f84cadp+5",
+      "t1": "0x1.681b1d92b7fe0p+5"
+     }
+    ],
+    "frame": 341,
+    "puff": [222, 232, 246],
+    "source": "kit.picture",
+    "t": "0x1.6bbbbbbbbbbbcp+3"
+   },
+   "arrays": {
+    "out": "c006__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, puff=puff)",
+   "expect": {
+    "noted": [
+     [52, 100, 306, 121, "caption", "FLUTTER TONGUE"]
+    ]
+   },
+   "id": "c006"
+  },
+  {
+   "args": {
+    "base": [237, 245, 255],
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["FLUTTER TONGUE"],
+      "t0": "0x1.66d2dcb1465e9p+3",
+      "t1": "0x1.b39fa97e132b6p+3"
+     },
+     {
+      "lines": ["SNAKE DANCE"],
+      "t0": "0x1.e0e0ded288ce7p+4",
+      "t1": "0x1.03a3a29c779a7p+5"
+     },
+     {
+      "lines": ["PICCOLO"],
+      "t0": "0x1.54e7ea5f84cadp+5",
+      "t1": "0x1.681b1d92b7fe0p+5"
+     }
+    ],
+    "frame": 343,
+    "puff": [222, 232, 246],
+    "source": "kit.picture",
+    "t": "0x1.6dddddddddddep+3"
+   },
+   "arrays": {
+    "out": "c007__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, puff=puff)",
+   "expect": {
+    "noted": [
+     [55, 100, 304, 121, "caption", "FLUTTER TONGUE"]
+    ]
+   },
+   "id": "c007"
+  },
+  {
+   "args": {
+    "base": [237, 245, 255],
+    "canvas": {
+     "add": [47, 22, 67],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [85, 189, 11],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["FLUTTER TONGUE"],
+      "t0": "0x1.66d2dcb1465e9p+3",
+      "t1": "0x1.b39fa97e132b6p+3"
+     },
+     {
+      "lines": ["SNAKE DANCE"],
+      "t0": "0x1.e0e0ded288ce7p+4",
+      "t1": "0x1.03a3a29c779a7p+5"
+     },
+     {
+      "lines": ["PICCOLO"],
+      "t0": "0x1.54e7ea5f84cadp+5",
+      "t1": "0x1.681b1d92b7fe0p+5"
+     }
+    ],
+    "frame": 346,
+    "puff": [222, 232, 246],
+    "source": "kit.picture",
+    "t": "0x1.7111111111111p+3"
+   },
+   "arrays": {
+    "out": "c008__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, puff=puff)",
+   "expect": {
+    "noted": [
+     [56, 100, 305, 121, "caption", "FLUTTER TONGUE"]
+    ]
+   },
+   "id": "c008"
+  },
+  {
+   "args": {
+    "base": [237, 245, 255],
+    "canvas": {
+     "add": [151, 13, 136],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [221, 99, 231],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["FLUTTER TONGUE"],
+      "t0": "0x1.66d2dcb1465e9p+3",
+      "t1": "0x1.b39fa97e132b6p+3"
+     },
+     {
+      "lines": ["SNAKE DANCE"],
+      "t0": "0x1.e0e0ded288ce7p+4",
+      "t1": "0x1.03a3a29c779a7p+5"
+     },
+     {
+      "lines": ["PICCOLO"],
+      "t0": "0x1.54e7ea5f84cadp+5",
+      "t1": "0x1.681b1d92b7fe0p+5"
+     }
+    ],
+    "frame": 350,
+    "puff": [222, 232, 246],
+    "source": "kit.picture",
+    "t": "0x1.7555555555555p+3"
+   },
+   "arrays": {
+    "out": "c009__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, puff=puff)",
+   "expect": {
+    "noted": [
+     [56, 100, 305, 121, "caption", "FLUTTER TONGUE"]
+    ]
+   },
+   "id": "c009"
+  },
+  {
+   "args": {
+    "base": [237, 245, 255],
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["FLUTTER TONGUE"],
+      "t0": "0x1.66d2dcb1465e9p+3",
+      "t1": "0x1.b39fa97e132b6p+3"
+     },
+     {
+      "lines": ["SNAKE DANCE"],
+      "t0": "0x1.e0e0ded288ce7p+4",
+      "t1": "0x1.03a3a29c779a7p+5"
+     },
+     {
+      "lines": ["PICCOLO"],
+      "t0": "0x1.54e7ea5f84cadp+5",
+      "t1": "0x1.681b1d92b7fe0p+5"
+     }
+    ],
+    "frame": 373,
+    "puff": [222, 232, 246],
+    "source": "kit.picture",
+    "t": "0x1.8dddddddddddep+3"
+   },
+   "arrays": {
+    "out": "c010__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, puff=puff)",
+   "expect": {
+    "noted": [
+     [56, 100, 305, 121, "caption", "FLUTTER TONGUE"]
+    ]
+   },
+   "id": "c010"
+  },
+  {
+   "args": {
+    "base": [237, 245, 255],
+    "canvas": {
+     "add": [199, 74, 97],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [129, 89, 245],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["FLUTTER TONGUE"],
+      "t0": "0x1.66d2dcb1465e9p+3",
+      "t1": "0x1.b39fa97e132b6p+3"
+     },
+     {
+      "lines": ["SNAKE DANCE"],
+      "t0": "0x1.e0e0ded288ce7p+4",
+      "t1": "0x1.03a3a29c779a7p+5"
+     },
+     {
+      "lines": ["PICCOLO"],
+      "t0": "0x1.54e7ea5f84cadp+5",
+      "t1": "0x1.681b1d92b7fe0p+5"
+     }
+    ],
+    "frame": 406,
+    "puff": [222, 232, 246],
+    "source": "kit.picture",
+    "t": "0x1.b111111111111p+3"
+   },
+   "arrays": {
+    "out": "c011__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, puff=puff)",
+   "expect": {
+    "noted": [
+     [56, 100, 305, 121, "caption", "FLUTTER TONGUE"]
+    ]
+   },
+   "id": "c011"
+  },
+  {
+   "args": {
+    "base": [237, 245, 255],
+    "canvas": {
+     "add": [39, 61, 100],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [125, 29, 147],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["FLUTTER TONGUE"],
+      "t0": "0x1.66d2dcb1465e9p+3",
+      "t1": "0x1.b39fa97e132b6p+3"
+     },
+     {
+      "lines": ["SNAKE DANCE"],
+      "t0": "0x1.e0e0ded288ce7p+4",
+      "t1": "0x1.03a3a29c779a7p+5"
+     },
+     {
+      "lines": ["PICCOLO"],
+      "t0": "0x1.54e7ea5f84cadp+5",
+      "t1": "0x1.681b1d92b7fe0p+5"
+     }
+    ],
+    "frame": 407,
+    "puff": [222, 232, 246],
+    "source": "kit.picture",
+    "t": "0x1.b222222222222p+3"
+   },
+   "arrays": {
+    "out": "c012__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, puff=puff)",
+   "expect": {
+    "noted": [
+     [56, 100, 305, 121, "caption", "FLUTTER TONGUE"]
+    ]
+   },
+   "id": "c012"
+  },
+  {
+   "args": {
+    "base": [237, 245, 255],
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["FLUTTER TONGUE"],
+      "t0": "0x1.66d2dcb1465e9p+3",
+      "t1": "0x1.b39fa97e132b6p+3"
+     },
+     {
+      "lines": ["SNAKE DANCE"],
+      "t0": "0x1.e0e0ded288ce7p+4",
+      "t1": "0x1.03a3a29c779a7p+5"
+     },
+     {
+      "lines": ["PICCOLO"],
+      "t0": "0x1.54e7ea5f84cadp+5",
+      "t1": "0x1.681b1d92b7fe0p+5"
+     }
+    ],
+    "frame": 408,
+    "puff": [222, 232, 246],
+    "source": "kit.picture",
+    "t": "0x1.b333333333333p+3"
+   },
+   "arrays": {
+    "out": "c013__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, puff=puff)",
+   "expect": {
+    "noted": [
+     [56, 100, 305, 121, "caption", "FLUTTER TONGUE"]
+    ]
+   },
+   "id": "c013"
+  },
+  {
+   "args": {
+    "base": [237, 245, 255],
+    "canvas": {
+     "add": [109, 194, 85],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [153, 225, 125],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["FLUTTER TONGUE"],
+      "t0": "0x1.66d2dcb1465e9p+3",
+      "t1": "0x1.b39fa97e132b6p+3"
+     },
+     {
+      "lines": ["SNAKE DANCE"],
+      "t0": "0x1.e0e0ded288ce7p+4",
+      "t1": "0x1.03a3a29c779a7p+5"
+     },
+     {
+      "lines": ["PICCOLO"],
+      "t0": "0x1.54e7ea5f84cadp+5",
+      "t1": "0x1.681b1d92b7fe0p+5"
+     }
+    ],
+    "frame": 409,
+    "puff": [222, 232, 246],
+    "source": "kit.picture",
+    "t": "0x1.b444444444444p+3"
+   },
+   "arrays": {
+    "out": "c014__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, puff=puff)",
+   "expect": {
+    "noted": []
+   },
+   "id": "c014"
+  },
+  {
+   "args": {
+    "base": [237, 245, 255],
+    "canvas": {
+     "add": [123, 191, 218],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [29, 189, 47],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["FLUTTER TONGUE"],
+      "t0": "0x1.66d2dcb1465e9p+3",
+      "t1": "0x1.b39fa97e132b6p+3"
+     },
+     {
+      "lines": ["SNAKE DANCE"],
+      "t0": "0x1.e0e0ded288ce7p+4",
+      "t1": "0x1.03a3a29c779a7p+5"
+     },
+     {
+      "lines": ["PICCOLO"],
+      "t0": "0x1.54e7ea5f84cadp+5",
+      "t1": "0x1.681b1d92b7fe0p+5"
+     }
+    ],
+    "frame": 901,
+    "puff": [222, 232, 246],
+    "source": "kit.picture",
+    "t": "0x1.e088888888889p+4"
+   },
+   "arrays": {
+    "out": "c015__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, puff=puff)",
+   "expect": {
+    "noted": []
+   },
+   "id": "c015"
+  },
+  {
+   "args": {
+    "base": [237, 245, 255],
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["FLUTTER TONGUE"],
+      "t0": "0x1.66d2dcb1465e9p+3",
+      "t1": "0x1.b39fa97e132b6p+3"
+     },
+     {
+      "lines": ["SNAKE DANCE"],
+      "t0": "0x1.e0e0ded288ce7p+4",
+      "t1": "0x1.03a3a29c779a7p+5"
+     },
+     {
+      "lines": ["PICCOLO"],
+      "t0": "0x1.54e7ea5f84cadp+5",
+      "t1": "0x1.681b1d92b7fe0p+5"
+     }
+    ],
+    "frame": 902,
+    "puff": [222, 232, 246],
+    "source": "kit.picture",
+    "t": "0x1.e111111111111p+4"
+   },
+   "arrays": {
+    "out": "c016__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, puff=puff)",
+   "expect": {
+    "noted": [
+     [82, 96, 277, 117, "caption", "SNAKE DANCE"]
+    ]
+   },
+   "id": "c016"
+  },
+  {
+   "args": {
+    "base": [237, 245, 255],
+    "canvas": {
+     "add": [47, 68, 205],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [69, 9, 205],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["FLUTTER TONGUE"],
+      "t0": "0x1.66d2dcb1465e9p+3",
+      "t1": "0x1.b39fa97e132b6p+3"
+     },
+     {
+      "lines": ["SNAKE DANCE"],
+      "t0": "0x1.e0e0ded288ce7p+4",
+      "t1": "0x1.03a3a29c779a7p+5"
+     },
+     {
+      "lines": ["PICCOLO"],
+      "t0": "0x1.54e7ea5f84cadp+5",
+      "t1": "0x1.681b1d92b7fe0p+5"
+     }
+    ],
+    "frame": 903,
+    "puff": [222, 232, 246],
+    "source": "kit.picture",
+    "t": "0x1.e19999999999ap+4"
+   },
+   "arrays": {
+    "out": "c017__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, puff=puff)",
+   "expect": {
+    "noted": [
+     [82, 97, 277, 118, "caption", "SNAKE DANCE"]
+    ]
+   },
+   "id": "c017"
+  },
+  {
+   "args": {
+    "base": [237, 245, 255],
+    "canvas": {
+     "add": [64, 163, 186],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [237, 145, 147],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["FLUTTER TONGUE"],
+      "t0": "0x1.66d2dcb1465e9p+3",
+      "t1": "0x1.b39fa97e132b6p+3"
+     },
+     {
+      "lines": ["SNAKE DANCE"],
+      "t0": "0x1.e0e0ded288ce7p+4",
+      "t1": "0x1.03a3a29c779a7p+5"
+     },
+     {
+      "lines": ["PICCOLO"],
+      "t0": "0x1.54e7ea5f84cadp+5",
+      "t1": "0x1.681b1d92b7fe0p+5"
+     }
+    ],
+    "frame": 904,
+    "puff": [222, 232, 246],
+    "source": "kit.picture",
+    "t": "0x1.e222222222222p+4"
+   },
+   "arrays": {
+    "out": "c018__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, puff=puff)",
+   "expect": {
+    "noted": [
+     [82, 98, 277, 119, "caption", "SNAKE DANCE"]
+    ]
+   },
+   "id": "c018"
+  },
+  {
+   "args": {
+    "base": [237, 245, 255],
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["FLUTTER TONGUE"],
+      "t0": "0x1.66d2dcb1465e9p+3",
+      "t1": "0x1.b39fa97e132b6p+3"
+     },
+     {
+      "lines": ["SNAKE DANCE"],
+      "t0": "0x1.e0e0ded288ce7p+4",
+      "t1": "0x1.03a3a29c779a7p+5"
+     },
+     {
+      "lines": ["PICCOLO"],
+      "t0": "0x1.54e7ea5f84cadp+5",
+      "t1": "0x1.681b1d92b7fe0p+5"
+     }
+    ],
+    "frame": 905,
+    "puff": [222, 232, 246],
+    "source": "kit.picture",
+    "t": "0x1.e2aaaaaaaaaabp+4"
+   },
+   "arrays": {
+    "out": "c019__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, puff=puff)",
+   "expect": {
+    "noted": [
+     [76, 99, 286, 122, "caption", "SNAKE DANCE"]
+    ]
+   },
+   "id": "c019"
+  },
+  {
+   "args": {
+    "base": [237, 245, 255],
+    "canvas": {
+     "add": [59, 203, 212],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [59, 77, 113],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["FLUTTER TONGUE"],
+      "t0": "0x1.66d2dcb1465e9p+3",
+      "t1": "0x1.b39fa97e132b6p+3"
+     },
+     {
+      "lines": ["SNAKE DANCE"],
+      "t0": "0x1.e0e0ded288ce7p+4",
+      "t1": "0x1.03a3a29c779a7p+5"
+     },
+     {
+      "lines": ["PICCOLO"],
+      "t0": "0x1.54e7ea5f84cadp+5",
+      "t1": "0x1.681b1d92b7fe0p+5"
+     }
+    ],
+    "frame": 906,
+    "puff": [222, 232, 246],
+    "source": "kit.picture",
+    "t": "0x1.e333333333333p+4"
+   },
+   "arrays": {
+    "out": "c020__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, puff=puff)",
+   "expect": {
+    "noted": [
+     [81, 101, 282, 123, "caption", "SNAKE DANCE"]
+    ]
+   },
+   "id": "c020"
+  },
+  {
+   "args": {
+    "base": [237, 245, 255],
+    "canvas": {
+     "add": [128, 61, 220],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [13, 43, 225],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["FLUTTER TONGUE"],
+      "t0": "0x1.66d2dcb1465e9p+3",
+      "t1": "0x1.b39fa97e132b6p+3"
+     },
+     {
+      "lines": ["SNAKE DANCE"],
+      "t0": "0x1.e0e0ded288ce7p+4",
+      "t1": "0x1.03a3a29c779a7p+5"
+     },
+     {
+      "lines": ["PICCOLO"],
+      "t0": "0x1.54e7ea5f84cadp+5",
+      "t1": "0x1.681b1d92b7fe0p+5"
+     }
+    ],
+    "frame": 908,
+    "puff": [222, 232, 246],
+    "source": "kit.picture",
+    "t": "0x1.e444444444444p+4"
+   },
+   "arrays": {
+    "out": "c021__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, puff=puff)",
+   "expect": {
+    "noted": [
+     [82, 100, 277, 121, "caption", "SNAKE DANCE"]
+    ]
+   },
+   "id": "c021"
+  },
+  {
+   "args": {
+    "base": [237, 245, 255],
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["FLUTTER TONGUE"],
+      "t0": "0x1.66d2dcb1465e9p+3",
+      "t1": "0x1.b39fa97e132b6p+3"
+     },
+     {
+      "lines": ["SNAKE DANCE"],
+      "t0": "0x1.e0e0ded288ce7p+4",
+      "t1": "0x1.03a3a29c779a7p+5"
+     },
+     {
+      "lines": ["PICCOLO"],
+      "t0": "0x1.54e7ea5f84cadp+5",
+      "t1": "0x1.681b1d92b7fe0p+5"
+     }
+    ],
+    "frame": 911,
+    "puff": [222, 232, 246],
+    "source": "kit.picture",
+    "t": "0x1.e5ddddddddddep+4"
+   },
+   "arrays": {
+    "out": "c022__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, puff=puff)",
+   "expect": {
+    "noted": [
+     [82, 100, 277, 121, "caption", "SNAKE DANCE"]
+    ]
+   },
+   "id": "c022"
+  },
+  {
+   "args": {
+    "base": [237, 245, 255],
+    "canvas": {
+     "add": [164, 128, 197],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [27, 235, 215],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["FLUTTER TONGUE"],
+      "t0": "0x1.66d2dcb1465e9p+3",
+      "t1": "0x1.b39fa97e132b6p+3"
+     },
+     {
+      "lines": ["SNAKE DANCE"],
+      "t0": "0x1.e0e0ded288ce7p+4",
+      "t1": "0x1.03a3a29c779a7p+5"
+     },
+     {
+      "lines": ["PICCOLO"],
+      "t0": "0x1.54e7ea5f84cadp+5",
+      "t1": "0x1.681b1d92b7fe0p+5"
+     }
+    ],
+    "frame": 915,
+    "puff": [222, 232, 246],
+    "source": "kit.picture",
+    "t": "0x1.e800000000000p+4"
+   },
+   "arrays": {
+    "out": "c023__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, puff=puff)",
+   "expect": {
+    "noted": [
+     [82, 100, 277, 121, "caption", "SNAKE DANCE"]
+    ]
+   },
+   "id": "c023"
+  },
+  {
+   "args": {
+    "base": [237, 245, 255],
+    "canvas": {
+     "add": [153, 81, 222],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [165, 165, 99],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["FLUTTER TONGUE"],
+      "t0": "0x1.66d2dcb1465e9p+3",
+      "t1": "0x1.b39fa97e132b6p+3"
+     },
+     {
+      "lines": ["SNAKE DANCE"],
+      "t0": "0x1.e0e0ded288ce7p+4",
+      "t1": "0x1.03a3a29c779a7p+5"
+     },
+     {
+      "lines": ["PICCOLO"],
+      "t0": "0x1.54e7ea5f84cadp+5",
+      "t1": "0x1.681b1d92b7fe0p+5"
+     }
+    ],
+    "frame": 938,
+    "puff": [222, 232, 246],
+    "source": "kit.picture",
+    "t": "0x1.f444444444444p+4"
+   },
+   "arrays": {
+    "out": "c024__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, puff=puff)",
+   "expect": {
+    "noted": [
+     [82, 100, 277, 121, "caption", "SNAKE DANCE"]
+    ]
+   },
+   "id": "c024"
+  },
+  {
+   "args": {
+    "base": [237, 245, 255],
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["FLUTTER TONGUE"],
+      "t0": "0x1.66d2dcb1465e9p+3",
+      "t1": "0x1.b39fa97e132b6p+3"
+     },
+     {
+      "lines": ["SNAKE DANCE"],
+      "t0": "0x1.e0e0ded288ce7p+4",
+      "t1": "0x1.03a3a29c779a7p+5"
+     },
+     {
+      "lines": ["PICCOLO"],
+      "t0": "0x1.54e7ea5f84cadp+5",
+      "t1": "0x1.681b1d92b7fe0p+5"
+     }
+    ],
+    "frame": 971,
+    "puff": [222, 232, 246],
+    "source": "kit.picture",
+    "t": "0x1.02eeeeeeeeeefp+5"
+   },
+   "arrays": {
+    "out": "c025__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, puff=puff)",
+   "expect": {
+    "noted": [
+     [82, 100, 277, 121, "caption", "SNAKE DANCE"]
+    ]
+   },
+   "id": "c025"
+  },
+  {
+   "args": {
+    "base": [237, 245, 255],
+    "canvas": {
+     "add": [7, 213, 211],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [139, 215, 83],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["FLUTTER TONGUE"],
+      "t0": "0x1.66d2dcb1465e9p+3",
+      "t1": "0x1.b39fa97e132b6p+3"
+     },
+     {
+      "lines": ["SNAKE DANCE"],
+      "t0": "0x1.e0e0ded288ce7p+4",
+      "t1": "0x1.03a3a29c779a7p+5"
+     },
+     {
+      "lines": ["PICCOLO"],
+      "t0": "0x1.54e7ea5f84cadp+5",
+      "t1": "0x1.681b1d92b7fe0p+5"
+     }
+    ],
+    "frame": 972,
+    "puff": [222, 232, 246],
+    "source": "kit.picture",
+    "t": "0x1.0333333333333p+5"
+   },
+   "arrays": {
+    "out": "c026__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, puff=puff)",
+   "expect": {
+    "noted": [
+     [82, 100, 277, 121, "caption", "SNAKE DANCE"]
+    ]
+   },
+   "id": "c026"
+  },
+  {
+   "args": {
+    "base": [237, 245, 255],
+    "canvas": {
+     "add": [8, 55, 2],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [255, 227, 51],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["FLUTTER TONGUE"],
+      "t0": "0x1.66d2dcb1465e9p+3",
+      "t1": "0x1.b39fa97e132b6p+3"
+     },
+     {
+      "lines": ["SNAKE DANCE"],
+      "t0": "0x1.e0e0ded288ce7p+4",
+      "t1": "0x1.03a3a29c779a7p+5"
+     },
+     {
+      "lines": ["PICCOLO"],
+      "t0": "0x1.54e7ea5f84cadp+5",
+      "t1": "0x1.681b1d92b7fe0p+5"
+     }
+    ],
+    "frame": 973,
+    "puff": [222, 232, 246],
+    "source": "kit.picture",
+    "t": "0x1.0377777777777p+5"
+   },
+   "arrays": {
+    "out": "c027__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, puff=puff)",
+   "expect": {
+    "noted": [
+     [82, 100, 277, 121, "caption", "SNAKE DANCE"]
+    ]
+   },
+   "id": "c027"
+  },
+  {
+   "args": {
+    "base": [237, 245, 255],
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["FLUTTER TONGUE"],
+      "t0": "0x1.66d2dcb1465e9p+3",
+      "t1": "0x1.b39fa97e132b6p+3"
+     },
+     {
+      "lines": ["SNAKE DANCE"],
+      "t0": "0x1.e0e0ded288ce7p+4",
+      "t1": "0x1.03a3a29c779a7p+5"
+     },
+     {
+      "lines": ["PICCOLO"],
+      "t0": "0x1.54e7ea5f84cadp+5",
+      "t1": "0x1.681b1d92b7fe0p+5"
+     }
+    ],
+    "frame": 974,
+    "puff": [222, 232, 246],
+    "source": "kit.picture",
+    "t": "0x1.03bbbbbbbbbbcp+5"
+   },
+   "arrays": {
+    "out": "c028__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, puff=puff)",
+   "expect": {
+    "noted": []
+   },
+   "id": "c028"
+  },
+  {
+   "args": {
+    "base": [237, 245, 255],
+    "canvas": {
+     "add": [88, 94, 46],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [235, 87, 179],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["FLUTTER TONGUE"],
+      "t0": "0x1.66d2dcb1465e9p+3",
+      "t1": "0x1.b39fa97e132b6p+3"
+     },
+     {
+      "lines": ["SNAKE DANCE"],
+      "t0": "0x1.e0e0ded288ce7p+4",
+      "t1": "0x1.03a3a29c779a7p+5"
+     },
+     {
+      "lines": ["PICCOLO"],
+      "t0": "0x1.54e7ea5f84cadp+5",
+      "t1": "0x1.681b1d92b7fe0p+5"
+     }
+    ],
+    "frame": 1278,
+    "puff": [222, 232, 246],
+    "source": "kit.picture",
+    "t": "0x1.54ccccccccccdp+5"
+   },
+   "arrays": {
+    "out": "c029__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, puff=puff)",
+   "expect": {
+    "noted": []
+   },
+   "id": "c029"
+  },
+  {
+   "args": {
+    "base": [237, 245, 255],
+    "canvas": {
+     "add": [224, 179, 209],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [169, 59, 121],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["FLUTTER TONGUE"],
+      "t0": "0x1.66d2dcb1465e9p+3",
+      "t1": "0x1.b39fa97e132b6p+3"
+     },
+     {
+      "lines": ["SNAKE DANCE"],
+      "t0": "0x1.e0e0ded288ce7p+4",
+      "t1": "0x1.03a3a29c779a7p+5"
+     },
+     {
+      "lines": ["PICCOLO"],
+      "t0": "0x1.54e7ea5f84cadp+5",
+      "t1": "0x1.681b1d92b7fe0p+5"
+     }
+    ],
+    "frame": 1279,
+    "puff": [222, 232, 246],
+    "source": "kit.picture",
+    "t": "0x1.5511111111111p+5"
+   },
+   "arrays": {
+    "out": "c030__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, puff=puff)",
+   "expect": {
+    "noted": [
+     [118, 96, 241, 117, "caption", "PICCOLO"]
+    ]
+   },
+   "id": "c030"
+  },
+  {
+   "args": {
+    "base": [237, 245, 255],
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["FLUTTER TONGUE"],
+      "t0": "0x1.66d2dcb1465e9p+3",
+      "t1": "0x1.b39fa97e132b6p+3"
+     },
+     {
+      "lines": ["SNAKE DANCE"],
+      "t0": "0x1.e0e0ded288ce7p+4",
+      "t1": "0x1.03a3a29c779a7p+5"
+     },
+     {
+      "lines": ["PICCOLO"],
+      "t0": "0x1.54e7ea5f84cadp+5",
+      "t1": "0x1.681b1d92b7fe0p+5"
+     }
+    ],
+    "frame": 1280,
+    "puff": [222, 232, 246],
+    "source": "kit.picture",
+    "t": "0x1.5555555555555p+5"
+   },
+   "arrays": {
+    "out": "c031__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, puff=puff)",
+   "expect": {
+    "noted": [
+     [118, 97, 241, 118, "caption", "PICCOLO"]
+    ]
+   },
+   "id": "c031"
+  },
+  {
+   "args": {
+    "base": [237, 245, 255],
+    "canvas": {
+     "add": [230, 170, 73],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [149, 13, 105],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["FLUTTER TONGUE"],
+      "t0": "0x1.66d2dcb1465e9p+3",
+      "t1": "0x1.b39fa97e132b6p+3"
+     },
+     {
+      "lines": ["SNAKE DANCE"],
+      "t0": "0x1.e0e0ded288ce7p+4",
+      "t1": "0x1.03a3a29c779a7p+5"
+     },
+     {
+      "lines": ["PICCOLO"],
+      "t0": "0x1.54e7ea5f84cadp+5",
+      "t1": "0x1.681b1d92b7fe0p+5"
+     }
+    ],
+    "frame": 1281,
+    "puff": [222, 232, 246],
+    "source": "kit.picture",
+    "t": "0x1.559999999999ap+5"
+   },
+   "arrays": {
+    "out": "c032__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, puff=puff)",
+   "expect": {
+    "noted": [
+     [118, 99, 241, 120, "caption", "PICCOLO"]
+    ]
+   },
+   "id": "c032"
+  },
+  {
+   "args": {
+    "base": [237, 245, 255],
+    "canvas": {
+     "add": [231, 123, 255],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [151, 173, 25],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["FLUTTER TONGUE"],
+      "t0": "0x1.66d2dcb1465e9p+3",
+      "t1": "0x1.b39fa97e132b6p+3"
+     },
+     {
+      "lines": ["SNAKE DANCE"],
+      "t0": "0x1.e0e0ded288ce7p+4",
+      "t1": "0x1.03a3a29c779a7p+5"
+     },
+     {
+      "lines": ["PICCOLO"],
+      "t0": "0x1.54e7ea5f84cadp+5",
+      "t1": "0x1.681b1d92b7fe0p+5"
+     }
+    ],
+    "frame": 1282,
+    "puff": [222, 232, 246],
+    "source": "kit.picture",
+    "t": "0x1.55ddddddddddep+5"
+   },
+   "arrays": {
+    "out": "c033__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, puff=puff)",
+   "expect": {
+    "noted": [
+     [113, 99, 244, 121, "caption", "PICCOLO"]
+    ]
+   },
+   "id": "c033"
+  },
+  {
+   "args": {
+    "base": [237, 245, 255],
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["FLUTTER TONGUE"],
+      "t0": "0x1.66d2dcb1465e9p+3",
+      "t1": "0x1.b39fa97e132b6p+3"
+     },
+     {
+      "lines": ["SNAKE DANCE"],
+      "t0": "0x1.e0e0ded288ce7p+4",
+      "t1": "0x1.03a3a29c779a7p+5"
+     },
+     {
+      "lines": ["PICCOLO"],
+      "t0": "0x1.54e7ea5f84cadp+5",
+      "t1": "0x1.681b1d92b7fe0p+5"
+     }
+    ],
+    "frame": 1283,
+    "puff": [222, 232, 246],
+    "source": "kit.picture",
+    "t": "0x1.5622222222222p+5"
+   },
+   "arrays": {
+    "out": "c034__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, puff=puff)",
+   "expect": {
+    "noted": [
+     [116, 100, 242, 121, "caption", "PICCOLO"]
+    ]
+   },
+   "id": "c034"
+  },
+  {
+   "args": {
+    "base": [237, 245, 255],
+    "canvas": {
+     "add": [132, 131, 177],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [149, 41, 83],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["FLUTTER TONGUE"],
+      "t0": "0x1.66d2dcb1465e9p+3",
+      "t1": "0x1.b39fa97e132b6p+3"
+     },
+     {
+      "lines": ["SNAKE DANCE"],
+      "t0": "0x1.e0e0ded288ce7p+4",
+      "t1": "0x1.03a3a29c779a7p+5"
+     },
+     {
+      "lines": ["PICCOLO"],
+      "t0": "0x1.54e7ea5f84cadp+5",
+      "t1": "0x1.681b1d92b7fe0p+5"
+     }
+    ],
+    "frame": 1285,
+    "puff": [222, 232, 246],
+    "source": "kit.picture",
+    "t": "0x1.56aaaaaaaaaabp+5"
+   },
+   "arrays": {
+    "out": "c035__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, puff=puff)",
+   "expect": {
+    "noted": [
+     [117, 100, 240, 121, "caption", "PICCOLO"]
+    ]
+   },
+   "id": "c035"
+  },
+  {
+   "args": {
+    "base": [237, 245, 255],
+    "canvas": {
+     "add": [42, 22, 124],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [77, 133, 49],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["FLUTTER TONGUE"],
+      "t0": "0x1.66d2dcb1465e9p+3",
+      "t1": "0x1.b39fa97e132b6p+3"
+     },
+     {
+      "lines": ["SNAKE DANCE"],
+      "t0": "0x1.e0e0ded288ce7p+4",
+      "t1": "0x1.03a3a29c779a7p+5"
+     },
+     {
+      "lines": ["PICCOLO"],
+      "t0": "0x1.54e7ea5f84cadp+5",
+      "t1": "0x1.681b1d92b7fe0p+5"
+     }
+    ],
+    "frame": 1288,
+    "puff": [222, 232, 246],
+    "source": "kit.picture",
+    "t": "0x1.5777777777777p+5"
+   },
+   "arrays": {
+    "out": "c036__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, puff=puff)",
+   "expect": {
+    "noted": [
+     [118, 100, 241, 121, "caption", "PICCOLO"]
+    ]
+   },
+   "id": "c036"
+  },
+  {
+   "args": {
+    "base": [237, 245, 255],
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["FLUTTER TONGUE"],
+      "t0": "0x1.66d2dcb1465e9p+3",
+      "t1": "0x1.b39fa97e132b6p+3"
+     },
+     {
+      "lines": ["SNAKE DANCE"],
+      "t0": "0x1.e0e0ded288ce7p+4",
+      "t1": "0x1.03a3a29c779a7p+5"
+     },
+     {
+      "lines": ["PICCOLO"],
+      "t0": "0x1.54e7ea5f84cadp+5",
+      "t1": "0x1.681b1d92b7fe0p+5"
+     }
+    ],
+    "frame": 1292,
+    "puff": [222, 232, 246],
+    "source": "kit.picture",
+    "t": "0x1.5888888888889p+5"
+   },
+   "arrays": {
+    "out": "c037__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, puff=puff)",
+   "expect": {
+    "noted": [
+     [118, 100, 241, 121, "caption", "PICCOLO"]
+    ]
+   },
+   "id": "c037"
+  },
+  {
+   "args": {
+    "base": [237, 245, 255],
+    "canvas": {
+     "add": [115, 24, 86],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [63, 45, 255],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["FLUTTER TONGUE"],
+      "t0": "0x1.66d2dcb1465e9p+3",
+      "t1": "0x1.b39fa97e132b6p+3"
+     },
+     {
+      "lines": ["SNAKE DANCE"],
+      "t0": "0x1.e0e0ded288ce7p+4",
+      "t1": "0x1.03a3a29c779a7p+5"
+     },
+     {
+      "lines": ["PICCOLO"],
+      "t0": "0x1.54e7ea5f84cadp+5",
+      "t1": "0x1.681b1d92b7fe0p+5"
+     }
+    ],
+    "frame": 1315,
+    "puff": [222, 232, 246],
+    "source": "kit.picture",
+    "t": "0x1.5eaaaaaaaaaabp+5"
+   },
+   "arrays": {
+    "out": "c038__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, puff=puff)",
+   "expect": {
+    "noted": [
+     [118, 100, 241, 121, "caption", "PICCOLO"]
+    ]
+   },
+   "id": "c038"
+  },
+  {
+   "args": {
+    "base": [237, 245, 255],
+    "canvas": {
+     "add": [246, 138, 201],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [29, 171, 79],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["FLUTTER TONGUE"],
+      "t0": "0x1.66d2dcb1465e9p+3",
+      "t1": "0x1.b39fa97e132b6p+3"
+     },
+     {
+      "lines": ["SNAKE DANCE"],
+      "t0": "0x1.e0e0ded288ce7p+4",
+      "t1": "0x1.03a3a29c779a7p+5"
+     },
+     {
+      "lines": ["PICCOLO"],
+      "t0": "0x1.54e7ea5f84cadp+5",
+      "t1": "0x1.681b1d92b7fe0p+5"
+     }
+    ],
+    "frame": 1348,
+    "puff": [222, 232, 246],
+    "source": "kit.picture",
+    "t": "0x1.6777777777777p+5"
+   },
+   "arrays": {
+    "out": "c039__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, puff=puff)",
+   "expect": {
+    "noted": [
+     [118, 100, 241, 121, "caption", "PICCOLO"]
+    ]
+   },
+   "id": "c039"
+  },
+  {
+   "args": {
+    "base": [237, 245, 255],
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["FLUTTER TONGUE"],
+      "t0": "0x1.66d2dcb1465e9p+3",
+      "t1": "0x1.b39fa97e132b6p+3"
+     },
+     {
+      "lines": ["SNAKE DANCE"],
+      "t0": "0x1.e0e0ded288ce7p+4",
+      "t1": "0x1.03a3a29c779a7p+5"
+     },
+     {
+      "lines": ["PICCOLO"],
+      "t0": "0x1.54e7ea5f84cadp+5",
+      "t1": "0x1.681b1d92b7fe0p+5"
+     }
+    ],
+    "frame": 1349,
+    "puff": [222, 232, 246],
+    "source": "kit.picture",
+    "t": "0x1.67bbbbbbbbbbcp+5"
+   },
+   "arrays": {
+    "out": "c040__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, puff=puff)",
+   "expect": {
+    "noted": [
+     [118, 100, 241, 121, "caption", "PICCOLO"]
+    ]
+   },
+   "id": "c040"
+  },
+  {
+   "args": {
+    "base": [237, 245, 255],
+    "canvas": {
+     "add": [118, 244, 132],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [59, 135, 61],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["FLUTTER TONGUE"],
+      "t0": "0x1.66d2dcb1465e9p+3",
+      "t1": "0x1.b39fa97e132b6p+3"
+     },
+     {
+      "lines": ["SNAKE DANCE"],
+      "t0": "0x1.e0e0ded288ce7p+4",
+      "t1": "0x1.03a3a29c779a7p+5"
+     },
+     {
+      "lines": ["PICCOLO"],
+      "t0": "0x1.54e7ea5f84cadp+5",
+      "t1": "0x1.681b1d92b7fe0p+5"
+     }
+    ],
+    "frame": 1350,
+    "puff": [222, 232, 246],
+    "source": "kit.picture",
+    "t": "0x1.6800000000000p+5"
+   },
+   "arrays": {
+    "out": "c041__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, puff=puff)",
+   "expect": {
+    "noted": [
+     [118, 100, 241, 121, "caption", "PICCOLO"]
+    ]
+   },
+   "id": "c041"
+  },
+  {
+   "args": {
+    "base": [237, 245, 255],
+    "canvas": {
+     "add": [59, 241, 23],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [3, 99, 107],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["FLUTTER TONGUE"],
+      "t0": "0x1.66d2dcb1465e9p+3",
+      "t1": "0x1.b39fa97e132b6p+3"
+     },
+     {
+      "lines": ["SNAKE DANCE"],
+      "t0": "0x1.e0e0ded288ce7p+4",
+      "t1": "0x1.03a3a29c779a7p+5"
+     },
+     {
+      "lines": ["PICCOLO"],
+      "t0": "0x1.54e7ea5f84cadp+5",
+      "t1": "0x1.681b1d92b7fe0p+5"
+     }
+    ],
+    "frame": 1351,
+    "puff": [222, 232, 246],
+    "source": "kit.picture",
+    "t": "0x1.6844444444444p+5"
+   },
+   "arrays": {
+    "out": "c042__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, puff=puff)",
+   "expect": {
+    "noted": []
+   },
+   "id": "c042"
+  },
+  {
+   "args": {
+    "base": [156, 252, 207],
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["SAD TROMBONE"],
+      "t0": "0x1.027a786c22681p+4",
+      "t1": "0x1.28e0ded288ce7p+4"
+     },
+     {
+      "lines": ["POWER SLIDE"],
+      "t0": "0x1.a05859c8c9321p+4",
+      "t1": "0x1.c6bec02f2f987p+4"
+     }
+    ],
+    "frame": 484,
+    "puff": [120, 240, 184],
+    "source": "kit.picture",
+    "t": "0x1.0222222222222p+4"
+   },
+   "arrays": {
+    "out": "c043__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, puff=puff)",
+   "expect": {
+    "noted": []
+   },
+   "id": "c043"
+  },
+  {
+   "args": {
+    "base": [156, 252, 207],
+    "canvas": {
+     "add": [159, 93, 75],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [243, 255, 161],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["SAD TROMBONE"],
+      "t0": "0x1.027a786c22681p+4",
+      "t1": "0x1.28e0ded288ce7p+4"
+     },
+     {
+      "lines": ["POWER SLIDE"],
+      "t0": "0x1.a05859c8c9321p+4",
+      "t1": "0x1.c6bec02f2f987p+4"
+     }
+    ],
+    "frame": 485,
+    "puff": [120, 240, 184],
+    "source": "kit.picture",
+    "t": "0x1.02aaaaaaaaaabp+4"
+   },
+   "arrays": {
+    "out": "c044__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, puff=puff)",
+   "expect": {
+    "noted": [
+     [74, 96, 287, 117, "caption", "SAD TROMBONE"]
+    ]
+   },
+   "id": "c044"
+  },
+  {
+   "args": {
+    "base": [156, 252, 207],
+    "canvas": {
+     "add": [203, 53, 88],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [39, 211, 149],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["SAD TROMBONE"],
+      "t0": "0x1.027a786c22681p+4",
+      "t1": "0x1.28e0ded288ce7p+4"
+     },
+     {
+      "lines": ["POWER SLIDE"],
+      "t0": "0x1.a05859c8c9321p+4",
+      "t1": "0x1.c6bec02f2f987p+4"
+     }
+    ],
+    "frame": 486,
+    "puff": [120, 240, 184],
+    "source": "kit.picture",
+    "t": "0x1.0333333333333p+4"
+   },
+   "arrays": {
+    "out": "c045__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, puff=puff)",
+   "expect": {
+    "noted": [
+     [74, 97, 287, 118, "caption", "SAD TROMBONE"]
+    ]
+   },
+   "id": "c045"
+  },
+  {
+   "args": {
+    "base": [156, 252, 207],
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["SAD TROMBONE"],
+      "t0": "0x1.027a786c22681p+4",
+      "t1": "0x1.28e0ded288ce7p+4"
+     },
+     {
+      "lines": ["POWER SLIDE"],
+      "t0": "0x1.a05859c8c9321p+4",
+      "t1": "0x1.c6bec02f2f987p+4"
+     }
+    ],
+    "frame": 487,
+    "puff": [120, 240, 184],
+    "source": "kit.picture",
+    "t": "0x1.03bbbbbbbbbbcp+4"
+   },
+   "arrays": {
+    "out": "c046__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, puff=puff)",
+   "expect": {
+    "noted": [
+     [74, 98, 287, 119, "caption", "SAD TROMBONE"]
+    ]
+   },
+   "id": "c046"
+  },
+  {
+   "args": {
+    "base": [156, 252, 207],
+    "canvas": {
+     "add": [186, 24, 32],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [93, 67, 63],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["SAD TROMBONE"],
+      "t0": "0x1.027a786c22681p+4",
+      "t1": "0x1.28e0ded288ce7p+4"
+     },
+     {
+      "lines": ["POWER SLIDE"],
+      "t0": "0x1.a05859c8c9321p+4",
+      "t1": "0x1.c6bec02f2f987p+4"
+     }
+    ],
+    "frame": 488,
+    "puff": [120, 240, 184],
+    "source": "kit.picture",
+    "t": "0x1.0444444444444p+4"
+   },
+   "arrays": {
+    "out": "c047__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, puff=puff)",
+   "expect": {
+    "noted": [
+     [66, 99, 296, 122, "caption", "SAD TROMBONE"]
+    ]
+   },
+   "id": "c047"
+  },
+  {
+   "args": {
+    "base": [156, 252, 207],
+    "canvas": {
+     "add": [2, 192, 248],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [159, 235, 79],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["SAD TROMBONE"],
+      "t0": "0x1.027a786c22681p+4",
+      "t1": "0x1.28e0ded288ce7p+4"
+     },
+     {
+      "lines": ["POWER SLIDE"],
+      "t0": "0x1.a05859c8c9321p+4",
+      "t1": "0x1.c6bec02f2f987p+4"
+     }
+    ],
+    "frame": 489,
+    "puff": [120, 240, 184],
+    "source": "kit.picture",
+    "t": "0x1.04ccccccccccdp+4"
+   },
+   "arrays": {
+    "out": "c048__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, puff=puff)",
+   "expect": {
+    "noted": [
+     [71, 101, 290, 123, "caption", "SAD TROMBONE"]
+    ]
+   },
+   "id": "c048"
+  },
+  {
+   "args": {
+    "base": [156, 252, 207],
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["SAD TROMBONE"],
+      "t0": "0x1.027a786c22681p+4",
+      "t1": "0x1.28e0ded288ce7p+4"
+     },
+     {
+      "lines": ["POWER SLIDE"],
+      "t0": "0x1.a05859c8c9321p+4",
+      "t1": "0x1.c6bec02f2f987p+4"
+     }
+    ],
+    "frame": 491,
+    "puff": [120, 240, 184],
+    "source": "kit.picture",
+    "t": "0x1.05ddddddddddep+4"
+   },
+   "arrays": {
+    "out": "c049__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, puff=puff)",
+   "expect": {
+    "noted": [
+     [74, 100, 287, 121, "caption", "SAD TROMBONE"]
+    ]
+   },
+   "id": "c049"
+  },
+  {
+   "args": {
+    "base": [156, 252, 207],
+    "canvas": {
+     "add": [29, 72, 122],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [47, 29, 35],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["SAD TROMBONE"],
+      "t0": "0x1.027a786c22681p+4",
+      "t1": "0x1.28e0ded288ce7p+4"
+     },
+     {
+      "lines": ["POWER SLIDE"],
+      "t0": "0x1.a05859c8c9321p+4",
+      "t1": "0x1.c6bec02f2f987p+4"
+     }
+    ],
+    "frame": 494,
+    "puff": [120, 240, 184],
+    "source": "kit.picture",
+    "t": "0x1.0777777777777p+4"
+   },
+   "arrays": {
+    "out": "c050__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, puff=puff)",
+   "expect": {
+    "noted": [
+     [74, 100, 287, 121, "caption", "SAD TROMBONE"]
+    ]
+   },
+   "id": "c050"
+  },
+  {
+   "args": {
+    "base": [156, 252, 207],
+    "canvas": {
+     "add": [206, 93, 16],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [255, 131, 99],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["SAD TROMBONE"],
+      "t0": "0x1.027a786c22681p+4",
+      "t1": "0x1.28e0ded288ce7p+4"
+     },
+     {
+      "lines": ["POWER SLIDE"],
+      "t0": "0x1.a05859c8c9321p+4",
+      "t1": "0x1.c6bec02f2f987p+4"
+     }
+    ],
+    "frame": 498,
+    "puff": [120, 240, 184],
+    "source": "kit.picture",
+    "t": "0x1.099999999999ap+4"
+   },
+   "arrays": {
+    "out": "c051__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, puff=puff)",
+   "expect": {
+    "noted": [
+     [74, 100, 287, 121, "caption", "SAD TROMBONE"]
+    ]
+   },
+   "id": "c051"
+  },
+  {
+   "args": {
+    "base": [156, 252, 207],
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["SAD TROMBONE"],
+      "t0": "0x1.027a786c22681p+4",
+      "t1": "0x1.28e0ded288ce7p+4"
+     },
+     {
+      "lines": ["POWER SLIDE"],
+      "t0": "0x1.a05859c8c9321p+4",
+      "t1": "0x1.c6bec02f2f987p+4"
+     }
+    ],
+    "frame": 521,
+    "puff": [120, 240, 184],
+    "source": "kit.picture",
+    "t": "0x1.15ddddddddddep+4"
+   },
+   "arrays": {
+    "out": "c052__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, puff=puff)",
+   "expect": {
+    "noted": [
+     [74, 100, 287, 121, "caption", "SAD TROMBONE"]
+    ]
+   },
+   "id": "c052"
+  },
+  {
+   "args": {
+    "base": [156, 252, 207],
+    "canvas": {
+     "add": [225, 170, 78],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [235, 73, 247],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["SAD TROMBONE"],
+      "t0": "0x1.027a786c22681p+4",
+      "t1": "0x1.28e0ded288ce7p+4"
+     },
+     {
+      "lines": ["POWER SLIDE"],
+      "t0": "0x1.a05859c8c9321p+4",
+      "t1": "0x1.c6bec02f2f987p+4"
+     }
+    ],
+    "frame": 554,
+    "puff": [120, 240, 184],
+    "source": "kit.picture",
+    "t": "0x1.2777777777777p+4"
+   },
+   "arrays": {
+    "out": "c053__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, puff=puff)",
+   "expect": {
+    "noted": [
+     [74, 100, 287, 121, "caption", "SAD TROMBONE"]
+    ]
+   },
+   "id": "c053"
+  },
+  {
+   "args": {
+    "base": [156, 252, 207],
+    "canvas": {
+     "add": [16, 223, 23],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [45, 213, 15],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["SAD TROMBONE"],
+      "t0": "0x1.027a786c22681p+4",
+      "t1": "0x1.28e0ded288ce7p+4"
+     },
+     {
+      "lines": ["POWER SLIDE"],
+      "t0": "0x1.a05859c8c9321p+4",
+      "t1": "0x1.c6bec02f2f987p+4"
+     }
+    ],
+    "frame": 555,
+    "puff": [120, 240, 184],
+    "source": "kit.picture",
+    "t": "0x1.2800000000000p+4"
+   },
+   "arrays": {
+    "out": "c054__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, puff=puff)",
+   "expect": {
+    "noted": [
+     [74, 100, 287, 121, "caption", "SAD TROMBONE"]
+    ]
+   },
+   "id": "c054"
+  },
+  {
+   "args": {
+    "base": [156, 252, 207],
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["SAD TROMBONE"],
+      "t0": "0x1.027a786c22681p+4",
+      "t1": "0x1.28e0ded288ce7p+4"
+     },
+     {
+      "lines": ["POWER SLIDE"],
+      "t0": "0x1.a05859c8c9321p+4",
+      "t1": "0x1.c6bec02f2f987p+4"
+     }
+    ],
+    "frame": 556,
+    "puff": [120, 240, 184],
+    "source": "kit.picture",
+    "t": "0x1.2888888888889p+4"
+   },
+   "arrays": {
+    "out": "c055__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, puff=puff)",
+   "expect": {
+    "noted": [
+     [74, 100, 287, 121, "caption", "SAD TROMBONE"]
+    ]
+   },
+   "id": "c055"
+  },
+  {
+   "args": {
+    "base": [156, 252, 207],
+    "canvas": {
+     "add": [70, 6, 157],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [127, 3, 87],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["SAD TROMBONE"],
+      "t0": "0x1.027a786c22681p+4",
+      "t1": "0x1.28e0ded288ce7p+4"
+     },
+     {
+      "lines": ["POWER SLIDE"],
+      "t0": "0x1.a05859c8c9321p+4",
+      "t1": "0x1.c6bec02f2f987p+4"
+     }
+    ],
+    "frame": 557,
+    "puff": [120, 240, 184],
+    "source": "kit.picture",
+    "t": "0x1.2911111111111p+4"
+   },
+   "arrays": {
+    "out": "c056__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, puff=puff)",
+   "expect": {
+    "noted": []
+   },
+   "id": "c056"
+  },
+  {
+   "args": {
+    "base": [156, 252, 207],
+    "canvas": {
+     "add": [179, 215, 66],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [221, 71, 153],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["SAD TROMBONE"],
+      "t0": "0x1.027a786c22681p+4",
+      "t1": "0x1.28e0ded288ce7p+4"
+     },
+     {
+      "lines": ["POWER SLIDE"],
+      "t0": "0x1.a05859c8c9321p+4",
+      "t1": "0x1.c6bec02f2f987p+4"
+     }
+    ],
+    "frame": 780,
+    "puff": [120, 240, 184],
+    "source": "kit.picture",
+    "t": "0x1.a000000000000p+4"
+   },
+   "arrays": {
+    "out": "c057__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, puff=puff)",
+   "expect": {
+    "noted": []
+   },
+   "id": "c057"
+  },
+  {
+   "args": {
+    "base": [156, 252, 207],
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["SAD TROMBONE"],
+      "t0": "0x1.027a786c22681p+4",
+      "t1": "0x1.28e0ded288ce7p+4"
+     },
+     {
+      "lines": ["POWER SLIDE"],
+      "t0": "0x1.a05859c8c9321p+4",
+      "t1": "0x1.c6bec02f2f987p+4"
+     }
+    ],
+    "frame": 781,
+    "puff": [120, 240, 184],
+    "source": "kit.picture",
+    "t": "0x1.a088888888889p+4"
+   },
+   "arrays": {
+    "out": "c058__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, puff=puff)",
+   "expect": {
+    "noted": [
+     [82, 96, 277, 117, "caption", "POWER SLIDE"]
+    ]
+   },
+   "id": "c058"
+  },
+  {
+   "args": {
+    "base": [156, 252, 207],
+    "canvas": {
+     "add": [229, 171, 87],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [183, 81, 67],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["SAD TROMBONE"],
+      "t0": "0x1.027a786c22681p+4",
+      "t1": "0x1.28e0ded288ce7p+4"
+     },
+     {
+      "lines": ["POWER SLIDE"],
+      "t0": "0x1.a05859c8c9321p+4",
+      "t1": "0x1.c6bec02f2f987p+4"
+     }
+    ],
+    "frame": 782,
+    "puff": [120, 240, 184],
+    "source": "kit.picture",
+    "t": "0x1.a111111111111p+4"
+   },
+   "arrays": {
+    "out": "c059__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, puff=puff)",
+   "expect": {
+    "noted": [
+     [82, 97, 277, 118, "caption", "POWER SLIDE"]
+    ]
+   },
+   "id": "c059"
+  },
+  {
+   "args": {
+    "base": [156, 252, 207],
+    "canvas": {
+     "add": [254, 211, 244],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [57, 227, 45],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["SAD TROMBONE"],
+      "t0": "0x1.027a786c22681p+4",
+      "t1": "0x1.28e0ded288ce7p+4"
+     },
+     {
+      "lines": ["POWER SLIDE"],
+      "t0": "0x1.a05859c8c9321p+4",
+      "t1": "0x1.c6bec02f2f987p+4"
+     }
+    ],
+    "frame": 783,
+    "puff": [120, 240, 184],
+    "source": "kit.picture",
+    "t": "0x1.a19999999999ap+4"
+   },
+   "arrays": {
+    "out": "c060__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, puff=puff)",
+   "expect": {
+    "noted": [
+     [82, 98, 277, 119, "caption", "POWER SLIDE"]
+    ]
+   },
+   "id": "c060"
+  },
+  {
+   "args": {
+    "base": [156, 252, 207],
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["SAD TROMBONE"],
+      "t0": "0x1.027a786c22681p+4",
+      "t1": "0x1.28e0ded288ce7p+4"
+     },
+     {
+      "lines": ["POWER SLIDE"],
+      "t0": "0x1.a05859c8c9321p+4",
+      "t1": "0x1.c6bec02f2f987p+4"
+     }
+    ],
+    "frame": 784,
+    "puff": [120, 240, 184],
+    "source": "kit.picture",
+    "t": "0x1.a222222222222p+4"
+   },
+   "arrays": {
+    "out": "c061__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, puff=puff)",
+   "expect": {
+    "noted": [
+     [76, 99, 286, 122, "caption", "POWER SLIDE"]
+    ]
+   },
+   "id": "c061"
+  },
+  {
+   "args": {
+    "base": [156, 252, 207],
+    "canvas": {
+     "add": [114, 102, 159],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [99, 123, 165],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["SAD TROMBONE"],
+      "t0": "0x1.027a786c22681p+4",
+      "t1": "0x1.28e0ded288ce7p+4"
+     },
+     {
+      "lines": ["POWER SLIDE"],
+      "t0": "0x1.a05859c8c9321p+4",
+      "t1": "0x1.c6bec02f2f987p+4"
+     }
+    ],
+    "frame": 785,
+    "puff": [120, 240, 184],
+    "source": "kit.picture",
+    "t": "0x1.a2aaaaaaaaaabp+4"
+   },
+   "arrays": {
+    "out": "c062__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, puff=puff)",
+   "expect": {
+    "noted": [
+     [81, 101, 282, 123, "caption", "POWER SLIDE"]
+    ]
+   },
+   "id": "c062"
+  },
+  {
+   "args": {
+    "base": [156, 252, 207],
+    "canvas": {
+     "add": [39, 40, 147],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [71, 63, 87],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["SAD TROMBONE"],
+      "t0": "0x1.027a786c22681p+4",
+      "t1": "0x1.28e0ded288ce7p+4"
+     },
+     {
+      "lines": ["POWER SLIDE"],
+      "t0": "0x1.a05859c8c9321p+4",
+      "t1": "0x1.c6bec02f2f987p+4"
+     }
+    ],
+    "frame": 787,
+    "puff": [120, 240, 184],
+    "source": "kit.picture",
+    "t": "0x1.a3bbbbbbbbbbcp+4"
+   },
+   "arrays": {
+    "out": "c063__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, puff=puff)",
+   "expect": {
+    "noted": [
+     [82, 100, 277, 121, "caption", "POWER SLIDE"]
+    ]
+   },
+   "id": "c063"
+  },
+  {
+   "args": {
+    "base": [156, 252, 207],
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["SAD TROMBONE"],
+      "t0": "0x1.027a786c22681p+4",
+      "t1": "0x1.28e0ded288ce7p+4"
+     },
+     {
+      "lines": ["POWER SLIDE"],
+      "t0": "0x1.a05859c8c9321p+4",
+      "t1": "0x1.c6bec02f2f987p+4"
+     }
+    ],
+    "frame": 790,
+    "puff": [120, 240, 184],
+    "source": "kit.picture",
+    "t": "0x1.a555555555555p+4"
+   },
+   "arrays": {
+    "out": "c064__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, puff=puff)",
+   "expect": {
+    "noted": [
+     [82, 100, 277, 121, "caption", "POWER SLIDE"]
+    ]
+   },
+   "id": "c064"
+  },
+  {
+   "args": {
+    "base": [156, 252, 207],
+    "canvas": {
+     "add": [233, 235, 208],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [233, 205, 191],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["SAD TROMBONE"],
+      "t0": "0x1.027a786c22681p+4",
+      "t1": "0x1.28e0ded288ce7p+4"
+     },
+     {
+      "lines": ["POWER SLIDE"],
+      "t0": "0x1.a05859c8c9321p+4",
+      "t1": "0x1.c6bec02f2f987p+4"
+     }
+    ],
+    "frame": 794,
+    "puff": [120, 240, 184],
+    "source": "kit.picture",
+    "t": "0x1.a777777777777p+4"
+   },
+   "arrays": {
+    "out": "c065__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, puff=puff)",
+   "expect": {
+    "noted": [
+     [82, 100, 277, 121, "caption", "POWER SLIDE"]
+    ]
+   },
+   "id": "c065"
+  },
+  {
+   "args": {
+    "base": [156, 252, 207],
+    "canvas": {
+     "add": [187, 224, 111],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [235, 27, 235],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["SAD TROMBONE"],
+      "t0": "0x1.027a786c22681p+4",
+      "t1": "0x1.28e0ded288ce7p+4"
+     },
+     {
+      "lines": ["POWER SLIDE"],
+      "t0": "0x1.a05859c8c9321p+4",
+      "t1": "0x1.c6bec02f2f987p+4"
+     }
+    ],
+    "frame": 817,
+    "puff": [120, 240, 184],
+    "source": "kit.picture",
+    "t": "0x1.b3bbbbbbbbbbcp+4"
+   },
+   "arrays": {
+    "out": "c066__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, puff=puff)",
+   "expect": {
+    "noted": [
+     [82, 100, 277, 121, "caption", "POWER SLIDE"]
+    ]
+   },
+   "id": "c066"
+  },
+  {
+   "args": {
+    "base": [156, 252, 207],
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["SAD TROMBONE"],
+      "t0": "0x1.027a786c22681p+4",
+      "t1": "0x1.28e0ded288ce7p+4"
+     },
+     {
+      "lines": ["POWER SLIDE"],
+      "t0": "0x1.a05859c8c9321p+4",
+      "t1": "0x1.c6bec02f2f987p+4"
+     }
+    ],
+    "frame": 850,
+    "puff": [120, 240, 184],
+    "source": "kit.picture",
+    "t": "0x1.c555555555555p+4"
+   },
+   "arrays": {
+    "out": "c067__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, puff=puff)",
+   "expect": {
+    "noted": [
+     [82, 100, 277, 121, "caption", "POWER SLIDE"]
+    ]
+   },
+   "id": "c067"
+  },
+  {
+   "args": {
+    "base": [156, 252, 207],
+    "canvas": {
+     "add": [166, 178, 168],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [231, 111, 81],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["SAD TROMBONE"],
+      "t0": "0x1.027a786c22681p+4",
+      "t1": "0x1.28e0ded288ce7p+4"
+     },
+     {
+      "lines": ["POWER SLIDE"],
+      "t0": "0x1.a05859c8c9321p+4",
+      "t1": "0x1.c6bec02f2f987p+4"
+     }
+    ],
+    "frame": 851,
+    "puff": [120, 240, 184],
+    "source": "kit.picture",
+    "t": "0x1.c5ddddddddddep+4"
+   },
+   "arrays": {
+    "out": "c068__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, puff=puff)",
+   "expect": {
+    "noted": [
+     [82, 100, 277, 121, "caption", "POWER SLIDE"]
+    ]
+   },
+   "id": "c068"
+  },
+  {
+   "args": {
+    "base": [156, 252, 207],
+    "canvas": {
+     "add": [192, 173, 33],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [171, 65, 245],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["SAD TROMBONE"],
+      "t0": "0x1.027a786c22681p+4",
+      "t1": "0x1.28e0ded288ce7p+4"
+     },
+     {
+      "lines": ["POWER SLIDE"],
+      "t0": "0x1.a05859c8c9321p+4",
+      "t1": "0x1.c6bec02f2f987p+4"
+     }
+    ],
+    "frame": 852,
+    "puff": [120, 240, 184],
+    "source": "kit.picture",
+    "t": "0x1.c666666666666p+4"
+   },
+   "arrays": {
+    "out": "c069__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, puff=puff)",
+   "expect": {
+    "noted": [
+     [82, 100, 277, 121, "caption", "POWER SLIDE"]
+    ]
+   },
+   "id": "c069"
+  },
+  {
+   "args": {
+    "base": [156, 252, 207],
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["SAD TROMBONE"],
+      "t0": "0x1.027a786c22681p+4",
+      "t1": "0x1.28e0ded288ce7p+4"
+     },
+     {
+      "lines": ["POWER SLIDE"],
+      "t0": "0x1.a05859c8c9321p+4",
+      "t1": "0x1.c6bec02f2f987p+4"
+     }
+    ],
+    "frame": 853,
+    "puff": [120, 240, 184],
+    "source": "kit.picture",
+    "t": "0x1.c6eeeeeeeeeefp+4"
+   },
+   "arrays": {
+    "out": "c070__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, puff=puff)",
+   "expect": {
+    "noted": []
+   },
+   "id": "c070"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [214, 220, 246],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [101, 139, 187],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["*K.O.*"],
+      "t0": "0x1.902c2c2c2c2c2p+5",
+      "t1": "0x1.9a2c2c2c2c2c2p+5"
+     }
+    ],
+    "frame": 1500,
+    "hi": [255, 214, 96],
+    "source": "kit.picture",
+    "t": "0x1.9000000000000p+5"
+   },
+   "arrays": {
+    "out": "c071__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', hi=hi)",
+   "expect": {
+    "noted": []
+   },
+   "id": "c071"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [177, 155, 110],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [219, 3, 175],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["*K.O.*"],
+      "t0": "0x1.902c2c2c2c2c2p+5",
+      "t1": "0x1.9a2c2c2c2c2c2p+5"
+     }
+    ],
+    "frame": 1501,
+    "hi": [255, 214, 96],
+    "source": "kit.picture",
+    "t": "0x1.9044444444444p+5"
+   },
+   "arrays": {
+    "out": "c072__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', hi=hi)",
+   "expect": {
+    "noted": [
+     [146, 96, 215, 117, "caption", "K.O."]
+    ]
+   },
+   "id": "c072"
+  },
+  {
+   "args": {
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["*K.O.*"],
+      "t0": "0x1.902c2c2c2c2c2p+5",
+      "t1": "0x1.9a2c2c2c2c2c2p+5"
+     }
+    ],
+    "frame": 1502,
+    "hi": [255, 214, 96],
+    "source": "kit.picture",
+    "t": "0x1.9088888888889p+5"
+   },
+   "arrays": {
+    "out": "c073__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', hi=hi)",
+   "expect": {
+    "noted": [
+     [146, 97, 215, 118, "caption", "K.O."]
+    ]
+   },
+   "id": "c073"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [113, 42, 7],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [67, 247, 245],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["*K.O.*"],
+      "t0": "0x1.902c2c2c2c2c2p+5",
+      "t1": "0x1.9a2c2c2c2c2c2p+5"
+     }
+    ],
+    "frame": 1503,
+    "hi": [255, 214, 96],
+    "source": "kit.picture",
+    "t": "0x1.90ccccccccccdp+5"
+   },
+   "arrays": {
+    "out": "c074__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', hi=hi)",
+   "expect": {
+    "noted": [
+     [146, 98, 215, 119, "caption", "K.O."]
+    ]
+   },
+   "id": "c074"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [51, 128, 197],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [235, 61, 13],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["*K.O.*"],
+      "t0": "0x1.902c2c2c2c2c2p+5",
+      "t1": "0x1.9a2c2c2c2c2c2p+5"
+     }
+    ],
+    "frame": 1504,
+    "hi": [255, 214, 96],
+    "source": "kit.picture",
+    "t": "0x1.9111111111111p+5"
+   },
+   "arrays": {
+    "out": "c075__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', hi=hi)",
+   "expect": {
+    "noted": [
+     [144, 99, 218, 122, "caption", "K.O."]
+    ]
+   },
+   "id": "c075"
+  },
+  {
+   "args": {
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["*K.O.*"],
+      "t0": "0x1.902c2c2c2c2c2p+5",
+      "t1": "0x1.9a2c2c2c2c2c2p+5"
+     }
+    ],
+    "frame": 1505,
+    "hi": [255, 214, 96],
+    "source": "kit.picture",
+    "t": "0x1.9155555555555p+5"
+   },
+   "arrays": {
+    "out": "c076__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', hi=hi)",
+   "expect": {
+    "noted": [
+     [145, 101, 216, 123, "caption", "K.O."]
+    ]
+   },
+   "id": "c076"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [3, 198, 117],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [249, 137, 123],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["*K.O.*"],
+      "t0": "0x1.902c2c2c2c2c2p+5",
+      "t1": "0x1.9a2c2c2c2c2c2p+5"
+     }
+    ],
+    "frame": 1507,
+    "hi": [255, 214, 96],
+    "source": "kit.picture",
+    "t": "0x1.91ddddddddddep+5"
+   },
+   "arrays": {
+    "out": "c077__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', hi=hi)",
+   "expect": {
+    "noted": [
+     [146, 100, 215, 121, "caption", "K.O."]
+    ]
+   },
+   "id": "c077"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [216, 7, 93],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [55, 173, 65],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["*K.O.*"],
+      "t0": "0x1.902c2c2c2c2c2p+5",
+      "t1": "0x1.9a2c2c2c2c2c2p+5"
+     }
+    ],
+    "frame": 1510,
+    "hi": [255, 214, 96],
+    "source": "kit.picture",
+    "t": "0x1.92aaaaaaaaaabp+5"
+   },
+   "arrays": {
+    "out": "c078__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', hi=hi)",
+   "expect": {
+    "noted": [
+     [146, 100, 215, 121, "caption", "K.O."]
+    ]
+   },
+   "id": "c078"
+  },
+  {
+   "args": {
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["*K.O.*"],
+      "t0": "0x1.902c2c2c2c2c2p+5",
+      "t1": "0x1.9a2c2c2c2c2c2p+5"
+     }
+    ],
+    "frame": 1514,
+    "hi": [255, 214, 96],
+    "source": "kit.picture",
+    "t": "0x1.93bbbbbbbbbbcp+5"
+   },
+   "arrays": {
+    "out": "c079__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', hi=hi)",
+   "expect": {
+    "noted": [
+     [146, 100, 215, 121, "caption", "K.O."]
+    ]
+   },
+   "id": "c079"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [109, 218, 232],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [95, 77, 149],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["*K.O.*"],
+      "t0": "0x1.902c2c2c2c2c2p+5",
+      "t1": "0x1.9a2c2c2c2c2c2p+5"
+     }
+    ],
+    "frame": 1520,
+    "hi": [255, 214, 96],
+    "source": "kit.picture",
+    "t": "0x1.9555555555555p+5"
+   },
+   "arrays": {
+    "out": "c080__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', hi=hi)",
+   "expect": {
+    "noted": [
+     [146, 100, 215, 121, "caption", "K.O."]
+    ]
+   },
+   "id": "c080"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [210, 218, 11],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [237, 179, 189],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["*K.O.*"],
+      "t0": "0x1.902c2c2c2c2c2p+5",
+      "t1": "0x1.9a2c2c2c2c2c2p+5"
+     }
+    ],
+    "frame": 1536,
+    "hi": [255, 214, 96],
+    "source": "kit.picture",
+    "t": "0x1.999999999999ap+5"
+   },
+   "arrays": {
+    "out": "c081__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', hi=hi)",
+   "expect": {
+    "noted": [
+     [146, 100, 215, 121, "caption", "K.O."]
+    ]
+   },
+   "id": "c081"
+  },
+  {
+   "args": {
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["*K.O.*"],
+      "t0": "0x1.902c2c2c2c2c2p+5",
+      "t1": "0x1.9a2c2c2c2c2c2p+5"
+     }
+    ],
+    "frame": 1537,
+    "hi": [255, 214, 96],
+    "source": "kit.picture",
+    "t": "0x1.99ddddddddddep+5"
+   },
+   "arrays": {
+    "out": "c082__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', hi=hi)",
+   "expect": {
+    "noted": [
+     [146, 100, 215, 121, "caption", "K.O."]
+    ]
+   },
+   "id": "c082"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [209, 66, 185],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [37, 13, 119],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["*K.O.*"],
+      "t0": "0x1.902c2c2c2c2c2p+5",
+      "t1": "0x1.9a2c2c2c2c2c2p+5"
+     }
+    ],
+    "frame": 1538,
+    "hi": [255, 214, 96],
+    "source": "kit.picture",
+    "t": "0x1.9a22222222222p+5"
+   },
+   "arrays": {
+    "out": "c083__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', hi=hi)",
+   "expect": {
+    "noted": [
+     [146, 100, 215, 121, "caption", "K.O."]
+    ]
+   },
+   "id": "c083"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [75, 125, 84],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [135, 197, 207],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["*K.O.*"],
+      "t0": "0x1.902c2c2c2c2c2p+5",
+      "t1": "0x1.9a2c2c2c2c2c2p+5"
+     }
+    ],
+    "frame": 1539,
+    "hi": [255, 214, 96],
+    "source": "kit.picture",
+    "t": "0x1.9a66666666666p+5"
+   },
+   "arrays": {
+    "out": "c084__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', hi=hi)",
+   "expect": {
+    "noted": []
+   },
+   "id": "c084"
+  },
+  {
+   "args": {
+    "base": [156, 252, 207],
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["TROMBONE", "WINS!"],
+      "t0": "0x1.9a92929292928p+5",
+      "t1": "0x1.ac92929292928p+5"
+     }
+    ],
+    "frame": 1539,
+    "source": "kit.picture",
+    "t": "0x1.9a66666666666p+5"
+   },
+   "arrays": {
+    "out": "c085__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base)",
+   "expect": {
+    "noted": []
+   },
+   "id": "c085"
+  },
+  {
+   "args": {
+    "base": [156, 252, 207],
+    "canvas": {
+     "add": [255, 126, 163],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [47, 175, 73],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["TROMBONE", "WINS!"],
+      "t0": "0x1.9a92929292928p+5",
+      "t1": "0x1.ac92929292928p+5"
+     }
+    ],
+    "frame": 1540,
+    "source": "kit.picture",
+    "t": "0x1.9aaaaaaaaaaabp+5"
+   },
+   "arrays": {
+    "out": "c086__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base)",
+   "expect": {
+    "noted": [
+     [110, 96, 251, 117, "caption", "TROMBONE"]
+    ]
+   },
+   "id": "c086"
+  },
+  {
+   "args": {
+    "base": [156, 252, 207],
+    "canvas": {
+     "add": [159, 186, 138],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [61, 155, 203],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["TROMBONE", "WINS!"],
+      "t0": "0x1.9a92929292928p+5",
+      "t1": "0x1.ac92929292928p+5"
+     }
+    ],
+    "frame": 1541,
+    "source": "kit.picture",
+    "t": "0x1.9aeeeeeeeeeefp+5"
+   },
+   "arrays": {
+    "out": "c087__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base)",
+   "expect": {
+    "noted": [
+     [110, 97, 251, 118, "caption", "TROMBONE"]
+    ]
+   },
+   "id": "c087"
+  },
+  {
+   "args": {
+    "base": [156, 252, 207],
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["TROMBONE", "WINS!"],
+      "t0": "0x1.9a92929292928p+5",
+      "t1": "0x1.ac92929292928p+5"
+     }
+    ],
+    "frame": 1542,
+    "source": "kit.picture",
+    "t": "0x1.9b33333333333p+5"
+   },
+   "arrays": {
+    "out": "c088__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base)",
+   "expect": {
+    "noted": [
+     [110, 98, 251, 119, "caption", "TROMBONE"]
+    ]
+   },
+   "id": "c088"
+  },
+  {
+   "args": {
+    "base": [156, 252, 207],
+    "canvas": {
+     "add": [134, 182, 2],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [35, 147, 129],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["TROMBONE", "WINS!"],
+      "t0": "0x1.9a92929292928p+5",
+      "t1": "0x1.ac92929292928p+5"
+     }
+    ],
+    "frame": 1543,
+    "source": "kit.picture",
+    "t": "0x1.9b77777777777p+5"
+   },
+   "arrays": {
+    "out": "c089__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base)",
+   "expect": {
+    "noted": [
+     [105, 99, 257, 122, "caption", "TROMBONE"]
+    ]
+   },
+   "id": "c089"
+  },
+  {
+   "args": {
+    "base": [156, 252, 207],
+    "canvas": {
+     "add": [233, 30, 155],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [81, 1, 121],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["TROMBONE", "WINS!"],
+      "t0": "0x1.9a92929292928p+5",
+      "t1": "0x1.ac92929292928p+5"
+     }
+    ],
+    "frame": 1544,
+    "source": "kit.picture",
+    "t": "0x1.9bbbbbbbbbbbcp+5"
+   },
+   "arrays": {
+    "out": "c090__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base)",
+   "expect": {
+    "noted": [
+     [109, 101, 254, 123, "caption", "TROMBONE"]
+    ]
+   },
+   "id": "c090"
+  },
+  {
+   "args": {
+    "base": [156, 252, 207],
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["TROMBONE", "WINS!"],
+      "t0": "0x1.9a92929292928p+5",
+      "t1": "0x1.ac92929292928p+5"
+     }
+    ],
+    "frame": 1546,
+    "source": "kit.picture",
+    "t": "0x1.9c44444444444p+5"
+   },
+   "arrays": {
+    "out": "c091__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base)",
+   "expect": {
+    "noted": [
+     [110, 100, 251, 121, "caption", "TROMBONE"]
+    ]
+   },
+   "id": "c091"
+  },
+  {
+   "args": {
+    "base": [156, 252, 207],
+    "canvas": {
+     "add": [93, 209, 191],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [199, 237, 59],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["TROMBONE", "WINS!"],
+      "t0": "0x1.9a92929292928p+5",
+      "t1": "0x1.ac92929292928p+5"
+     }
+    ],
+    "frame": 1547,
+    "source": "kit.picture",
+    "t": "0x1.9c88888888889p+5"
+   },
+   "arrays": {
+    "out": "c092__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base)",
+   "expect": {
+    "noted": [
+     [110, 100, 251, 121, "caption", "TROMBONE"],
+     [136, 124, 223, 145, "caption", "WINS!"]
+    ]
+   },
+   "id": "c092"
+  },
+  {
+   "args": {
+    "base": [156, 252, 207],
+    "canvas": {
+     "add": [197, 220, 19],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [47, 113, 3],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["TROMBONE", "WINS!"],
+      "t0": "0x1.9a92929292928p+5",
+      "t1": "0x1.ac92929292928p+5"
+     }
+    ],
+    "frame": 1549,
+    "source": "kit.picture",
+    "t": "0x1.9d11111111111p+5"
+   },
+   "arrays": {
+    "out": "c093__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base)",
+   "expect": {
+    "noted": [
+     [110, 100, 251, 121, "caption", "TROMBONE"],
+     [136, 127, 223, 148, "caption", "WINS!"]
+    ]
+   },
+   "id": "c093"
+  },
+  {
+   "args": {
+    "base": [156, 252, 207],
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["TROMBONE", "WINS!"],
+      "t0": "0x1.9a92929292928p+5",
+      "t1": "0x1.ac92929292928p+5"
+     }
+    ],
+    "frame": 1550,
+    "source": "kit.picture",
+    "t": "0x1.9d55555555555p+5"
+   },
+   "arrays": {
+    "out": "c094__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base)",
+   "expect": {
+    "noted": [
+     [110, 100, 251, 121, "caption", "TROMBONE"],
+     [133, 128, 225, 150, "caption", "WINS!"]
+    ]
+   },
+   "id": "c094"
+  },
+  {
+   "args": {
+    "base": [156, 252, 207],
+    "canvas": {
+     "add": [205, 153, 172],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [201, 231, 129],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["TROMBONE", "WINS!"],
+      "t0": "0x1.9a92929292928p+5",
+      "t1": "0x1.ac92929292928p+5"
+     }
+    ],
+    "frame": 1551,
+    "source": "kit.picture",
+    "t": "0x1.9d9999999999ap+5"
+   },
+   "arrays": {
+    "out": "c095__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base)",
+   "expect": {
+    "noted": [
+     [110, 100, 251, 121, "caption", "TROMBONE"],
+     [136, 127, 225, 148, "caption", "WINS!"]
+    ]
+   },
+   "id": "c095"
+  },
+  {
+   "args": {
+    "base": [156, 252, 207],
+    "canvas": {
+     "add": [218, 120, 42],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [47, 17, 79],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["TROMBONE", "WINS!"],
+      "t0": "0x1.9a92929292928p+5",
+      "t1": "0x1.ac92929292928p+5"
+     }
+    ],
+    "frame": 1553,
+    "source": "kit.picture",
+    "t": "0x1.9e22222222222p+5"
+   },
+   "arrays": {
+    "out": "c096__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base)",
+   "expect": {
+    "noted": [
+     [110, 100, 251, 121, "caption", "TROMBONE"],
+     [136, 128, 223, 149, "caption", "WINS!"]
+    ]
+   },
+   "id": "c096"
+  },
+  {
+   "args": {
+    "base": [156, 252, 207],
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["TROMBONE", "WINS!"],
+      "t0": "0x1.9a92929292928p+5",
+      "t1": "0x1.ac92929292928p+5"
+     }
+    ],
+    "frame": 1556,
+    "source": "kit.picture",
+    "t": "0x1.9eeeeeeeeeeefp+5"
+   },
+   "arrays": {
+    "out": "c097__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base)",
+   "expect": {
+    "noted": [
+     [110, 100, 251, 121, "caption", "TROMBONE"],
+     [136, 128, 223, 149, "caption", "WINS!"]
+    ]
+   },
+   "id": "c097"
+  },
+  {
+   "args": {
+    "base": [156, 252, 207],
+    "canvas": {
+     "add": [109, 61, 78],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [137, 83, 123],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["TROMBONE", "WINS!"],
+      "t0": "0x1.9a92929292928p+5",
+      "t1": "0x1.ac92929292928p+5"
+     }
+    ],
+    "frame": 1562,
+    "source": "kit.picture",
+    "t": "0x1.a088888888889p+5"
+   },
+   "arrays": {
+    "out": "c098__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base)",
+   "expect": {
+    "noted": [
+     [110, 100, 251, 121, "caption", "TROMBONE"],
+     [136, 128, 223, 149, "caption", "WINS!"]
+    ]
+   },
+   "id": "c098"
+  },
+  {
+   "args": {
+    "base": [156, 252, 207],
+    "canvas": {
+     "add": [190, 42, 37],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [183, 139, 251],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["TROMBONE", "WINS!"],
+      "t0": "0x1.9a92929292928p+5",
+      "t1": "0x1.ac92929292928p+5"
+     }
+    ],
+    "frame": 1574,
+    "source": "kit.picture",
+    "t": "0x1.a3bbbbbbbbbbcp+5"
+   },
+   "arrays": {
+    "out": "c099__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base)",
+   "expect": {
+    "noted": [
+     [110, 100, 251, 121, "caption", "TROMBONE"],
+     [136, 128, 223, 149, "caption", "WINS!"]
+    ]
+   },
+   "id": "c099"
+  },
+  {
+   "args": {
+    "base": [156, 252, 207],
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["TROMBONE", "WINS!"],
+      "t0": "0x1.9a92929292928p+5",
+      "t1": "0x1.ac92929292928p+5"
+     }
+    ],
+    "frame": 1605,
+    "source": "kit.picture",
+    "t": "0x1.ac00000000000p+5"
+   },
+   "arrays": {
+    "out": "c100__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base)",
+   "expect": {
+    "noted": [
+     [110, 100, 251, 121, "caption", "TROMBONE"],
+     [136, 128, 223, 149, "caption", "WINS!"]
+    ]
+   },
+   "id": "c100"
+  },
+  {
+   "args": {
+    "base": [156, 252, 207],
+    "canvas": {
+     "add": [33, 31, 177],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [97, 105, 135],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["TROMBONE", "WINS!"],
+      "t0": "0x1.9a92929292928p+5",
+      "t1": "0x1.ac92929292928p+5"
+     }
+    ],
+    "frame": 1606,
+    "source": "kit.picture",
+    "t": "0x1.ac44444444444p+5"
+   },
+   "arrays": {
+    "out": "c101__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base)",
+   "expect": {
+    "noted": [
+     [110, 100, 251, 121, "caption", "TROMBONE"],
+     [136, 128, 223, 149, "caption", "WINS!"]
+    ]
+   },
+   "id": "c101"
+  },
+  {
+   "args": {
+    "base": [156, 252, 207],
+    "canvas": {
+     "add": [178, 2, 92],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [65, 33, 219],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["TROMBONE", "WINS!"],
+      "t0": "0x1.9a92929292928p+5",
+      "t1": "0x1.ac92929292928p+5"
+     }
+    ],
+    "frame": 1607,
+    "source": "kit.picture",
+    "t": "0x1.ac88888888889p+5"
+   },
+   "arrays": {
+    "out": "c102__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base)",
+   "expect": {
+    "noted": [
+     [110, 100, 251, 121, "caption", "TROMBONE"],
+     [136, 128, 223, 149, "caption", "WINS!"]
+    ]
+   },
+   "id": "c102"
+  },
+  {
+   "args": {
+    "base": [156, 252, 207],
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["TROMBONE", "WINS!"],
+      "t0": "0x1.9a92929292928p+5",
+      "t1": "0x1.ac92929292928p+5"
+     }
+    ],
+    "frame": 1608,
+    "source": "kit.picture",
+    "t": "0x1.acccccccccccdp+5"
+   },
+   "arrays": {
+    "out": "c103__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base)",
+   "expect": {
+    "noted": []
+   },
+   "id": "c103"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [99, 20, 36],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [187, 81, 145],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["COMMENT THE", "*NEXT MATCH-UP*"],
+      "t0": "0x1.ad5f5f5f5f5f5p+5",
+      "t1": "0x1.cb4b4b4b4b4b4p+5"
+     }
+    ],
+    "frame": 1610,
+    "hi": [255, 214, 96],
+    "source": "kit.picture",
+    "t": "0x1.ad55555555555p+5"
+   },
+   "arrays": {
+    "out": "c104__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', hi=hi)",
+   "expect": {
+    "noted": []
+   },
+   "id": "c104"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [253, 67, 110],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [245, 191, 169],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["COMMENT THE", "*NEXT MATCH-UP*"],
+      "t0": "0x1.ad5f5f5f5f5f5p+5",
+      "t1": "0x1.cb4b4b4b4b4b4p+5"
+     }
+    ],
+    "frame": 1611,
+    "hi": [255, 214, 96],
+    "source": "kit.picture",
+    "t": "0x1.ad9999999999ap+5"
+   },
+   "arrays": {
+    "out": "c105__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', hi=hi)",
+   "expect": {
+    "noted": [
+     [82, 96, 277, 117, "caption", "COMMENT THE"]
+    ]
+   },
+   "id": "c105"
+  },
+  {
+   "args": {
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["COMMENT THE", "*NEXT MATCH-UP*"],
+      "t0": "0x1.ad5f5f5f5f5f5p+5",
+      "t1": "0x1.cb4b4b4b4b4b4p+5"
+     }
+    ],
+    "frame": 1612,
+    "hi": [255, 214, 96],
+    "source": "kit.picture",
+    "t": "0x1.adddddddddddep+5"
+   },
+   "arrays": {
+    "out": "c106__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', hi=hi)",
+   "expect": {
+    "noted": [
+     [82, 98, 277, 119, "caption", "COMMENT THE"]
+    ]
+   },
+   "id": "c106"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [29, 243, 208],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [159, 31, 245],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["COMMENT THE", "*NEXT MATCH-UP*"],
+      "t0": "0x1.ad5f5f5f5f5f5p+5",
+      "t1": "0x1.cb4b4b4b4b4b4p+5"
+     }
+    ],
+    "frame": 1613,
+    "hi": [255, 214, 96],
+    "source": "kit.picture",
+    "t": "0x1.ae22222222222p+5"
+   },
+   "arrays": {
+    "out": "c107__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', hi=hi)",
+   "expect": {
+    "noted": [
+     [82, 100, 277, 121, "caption", "COMMENT THE"]
+    ]
+   },
+   "id": "c107"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [33, 184, 24],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [9, 89, 187],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["COMMENT THE", "*NEXT MATCH-UP*"],
+      "t0": "0x1.ad5f5f5f5f5f5p+5",
+      "t1": "0x1.cb4b4b4b4b4b4p+5"
+     }
+    ],
+    "frame": 1614,
+    "hi": [255, 214, 96],
+    "source": "kit.picture",
+    "t": "0x1.ae66666666666p+5"
+   },
+   "arrays": {
+    "out": "c108__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', hi=hi)",
+   "expect": {
+    "noted": [
+     [77, 100, 282, 122, "caption", "COMMENT THE"]
+    ]
+   },
+   "id": "c108"
+  },
+  {
+   "args": {
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["COMMENT THE", "*NEXT MATCH-UP*"],
+      "t0": "0x1.ad5f5f5f5f5f5p+5",
+      "t1": "0x1.cb4b4b4b4b4b4p+5"
+     }
+    ],
+    "frame": 1615,
+    "hi": [255, 214, 96],
+    "source": "kit.picture",
+    "t": "0x1.aeaaaaaaaaaabp+5"
+   },
+   "arrays": {
+    "out": "c109__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', hi=hi)",
+   "expect": {
+    "noted": [
+     [80, 99, 278, 120, "caption", "COMMENT THE"]
+    ]
+   },
+   "id": "c109"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [149, 121, 203],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [155, 53, 97],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["COMMENT THE", "*NEXT MATCH-UP*"],
+      "t0": "0x1.ad5f5f5f5f5f5p+5",
+      "t1": "0x1.cb4b4b4b4b4b4p+5"
+     }
+    ],
+    "frame": 1617,
+    "hi": [255, 214, 96],
+    "source": "kit.picture",
+    "t": "0x1.af33333333333p+5"
+   },
+   "arrays": {
+    "out": "c110__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', hi=hi)",
+   "expect": {
+    "noted": [
+     [82, 100, 277, 121, "caption", "COMMENT THE"],
+     [64, 124, 295, 145, "caption", "NEXT MATCH-UP"]
+    ]
+   },
+   "id": "c110"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [208, 126, 220],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [83, 121, 21],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["COMMENT THE", "*NEXT MATCH-UP*"],
+      "t0": "0x1.ad5f5f5f5f5f5p+5",
+      "t1": "0x1.cb4b4b4b4b4b4p+5"
+     }
+    ],
+    "frame": 1618,
+    "hi": [255, 214, 96],
+    "source": "kit.picture",
+    "t": "0x1.af77777777777p+5"
+   },
+   "arrays": {
+    "out": "c111__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', hi=hi)",
+   "expect": {
+    "noted": [
+     [82, 100, 277, 121, "caption", "COMMENT THE"],
+     [64, 125, 295, 146, "caption", "NEXT MATCH-UP"]
+    ]
+   },
+   "id": "c111"
+  },
+  {
+   "args": {
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["COMMENT THE", "*NEXT MATCH-UP*"],
+      "t0": "0x1.ad5f5f5f5f5f5p+5",
+      "t1": "0x1.cb4b4b4b4b4b4p+5"
+     }
+    ],
+    "frame": 1620,
+    "hi": [255, 214, 96],
+    "source": "kit.picture",
+    "t": "0x1.b000000000000p+5"
+   },
+   "arrays": {
+    "out": "c112__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', hi=hi)",
+   "expect": {
+    "noted": [
+     [82, 100, 277, 121, "caption", "COMMENT THE"],
+     [56, 126, 306, 149, "caption", "NEXT MATCH-UP"]
+    ]
+   },
+   "id": "c112"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [208, 209, 2],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [65, 19, 155],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["COMMENT THE", "*NEXT MATCH-UP*"],
+      "t0": "0x1.ad5f5f5f5f5f5p+5",
+      "t1": "0x1.cb4b4b4b4b4b4p+5"
+     }
+    ],
+    "frame": 1621,
+    "hi": [255, 214, 96],
+    "source": "kit.picture",
+    "t": "0x1.b044444444444p+5"
+   },
+   "arrays": {
+    "out": "c113__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', hi=hi)",
+   "expect": {
+    "noted": [
+     [82, 100, 277, 121, "caption", "COMMENT THE"],
+     [60, 129, 299, 151, "caption", "NEXT MATCH-UP"]
+    ]
+   },
+   "id": "c113"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [53, 25, 182],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [187, 183, 161],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["COMMENT THE", "*NEXT MATCH-UP*"],
+      "t0": "0x1.ad5f5f5f5f5f5p+5",
+      "t1": "0x1.cb4b4b4b4b4b4p+5"
+     }
+    ],
+    "frame": 1622,
+    "hi": [255, 214, 96],
+    "source": "kit.picture",
+    "t": "0x1.b088888888889p+5"
+   },
+   "arrays": {
+    "out": "c114__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', hi=hi)",
+   "expect": {
+    "noted": [
+     [82, 100, 277, 121, "caption", "COMMENT THE"],
+     [64, 129, 296, 150, "caption", "NEXT MATCH-UP"]
+    ]
+   },
+   "id": "c114"
+  },
+  {
+   "args": {
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["COMMENT THE", "*NEXT MATCH-UP*"],
+      "t0": "0x1.ad5f5f5f5f5f5p+5",
+      "t1": "0x1.cb4b4b4b4b4b4p+5"
+     }
+    ],
+    "frame": 1624,
+    "hi": [255, 214, 96],
+    "source": "kit.picture",
+    "t": "0x1.b111111111111p+5"
+   },
+   "arrays": {
+    "out": "c115__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', hi=hi)",
+   "expect": {
+    "noted": [
+     [82, 100, 277, 121, "caption", "COMMENT THE"],
+     [64, 128, 295, 149, "caption", "NEXT MATCH-UP"]
+    ]
+   },
+   "id": "c115"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [49, 118, 86],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [35, 235, 245],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["COMMENT THE", "*NEXT MATCH-UP*"],
+      "t0": "0x1.ad5f5f5f5f5f5p+5",
+      "t1": "0x1.cb4b4b4b4b4b4p+5"
+     }
+    ],
+    "frame": 1627,
+    "hi": [255, 214, 96],
+    "source": "kit.picture",
+    "t": "0x1.b1ddddddddddep+5"
+   },
+   "arrays": {
+    "out": "c116__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', hi=hi)",
+   "expect": {
+    "noted": [
+     [82, 100, 277, 121, "caption", "COMMENT THE"],
+     [64, 128, 295, 149, "caption", "NEXT MATCH-UP"]
+    ]
+   },
+   "id": "c116"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [28, 255, 76],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [103, 245, 83],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["COMMENT THE", "*NEXT MATCH-UP*"],
+      "t0": "0x1.ad5f5f5f5f5f5p+5",
+      "t1": "0x1.cb4b4b4b4b4b4p+5"
+     }
+    ],
+    "frame": 1633,
+    "hi": [255, 214, 96],
+    "source": "kit.picture",
+    "t": "0x1.b377777777777p+5"
+   },
+   "arrays": {
+    "out": "c117__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', hi=hi)",
+   "expect": {
+    "noted": [
+     [82, 100, 277, 121, "caption", "COMMENT THE"],
+     [64, 128, 295, 149, "caption", "NEXT MATCH-UP"]
+    ]
+   },
+   "id": "c117"
+  },
+  {
+   "args": {
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["COMMENT THE", "*NEXT MATCH-UP*"],
+      "t0": "0x1.ad5f5f5f5f5f5p+5",
+      "t1": "0x1.cb4b4b4b4b4b4p+5"
+     }
+    ],
+    "frame": 1667,
+    "hi": [255, 214, 96],
+    "source": "kit.picture",
+    "t": "0x1.bc88888888889p+5"
+   },
+   "arrays": {
+    "out": "c118__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', hi=hi)",
+   "expect": {
+    "noted": [
+     [82, 100, 277, 121, "caption", "COMMENT THE"],
+     [64, 128, 295, 149, "caption", "NEXT MATCH-UP"]
+    ]
+   },
+   "id": "c118"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [80, 8, 134],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [149, 127, 123],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["COMMENT THE", "*NEXT MATCH-UP*"],
+      "t0": "0x1.ad5f5f5f5f5f5p+5",
+      "t1": "0x1.cb4b4b4b4b4b4p+5"
+     }
+    ],
+    "frame": 1720,
+    "hi": [255, 214, 96],
+    "source": "kit.picture",
+    "t": "0x1.caaaaaaaaaaabp+5"
+   },
+   "arrays": {
+    "out": "c119__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', hi=hi)",
+   "expect": {
+    "noted": [
+     [82, 100, 277, 121, "caption", "COMMENT THE"],
+     [64, 128, 295, 149, "caption", "NEXT MATCH-UP"]
+    ]
+   },
+   "id": "c119"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [71, 177, 158],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [93, 43, 11],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["COMMENT THE", "*NEXT MATCH-UP*"],
+      "t0": "0x1.ad5f5f5f5f5f5p+5",
+      "t1": "0x1.cb4b4b4b4b4b4p+5"
+     }
+    ],
+    "frame": 1721,
+    "hi": [255, 214, 96],
+    "source": "kit.picture",
+    "t": "0x1.caeeeeeeeeeefp+5"
+   },
+   "arrays": {
+    "out": "c120__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', hi=hi)",
+   "expect": {
+    "noted": [
+     [82, 100, 277, 121, "caption", "COMMENT THE"],
+     [64, 128, 295, 149, "caption", "NEXT MATCH-UP"]
+    ]
+   },
+   "id": "c120"
+  },
+  {
+   "args": {
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["COMMENT THE", "*NEXT MATCH-UP*"],
+      "t0": "0x1.ad5f5f5f5f5f5p+5",
+      "t1": "0x1.cb4b4b4b4b4b4p+5"
+     }
+    ],
+    "frame": 1722,
+    "hi": [255, 214, 96],
+    "source": "kit.picture",
+    "t": "0x1.cb33333333333p+5"
+   },
+   "arrays": {
+    "out": "c121__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', hi=hi)",
+   "expect": {
+    "noted": [
+     [82, 100, 277, 121, "caption", "COMMENT THE"],
+     [64, 128, 295, 149, "caption", "NEXT MATCH-UP"]
+    ]
+   },
+   "id": "c121"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [153, 64, 248],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [111, 229, 219],
+     "rows": [84, 196],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["COMMENT THE", "*NEXT MATCH-UP*"],
+      "t0": "0x1.ad5f5f5f5f5f5p+5",
+      "t1": "0x1.cb4b4b4b4b4b4p+5"
+     }
+    ],
+    "frame": 1723,
+    "hi": [255, 214, 96],
+    "source": "kit.picture",
+    "t": "0x1.cb77777777777p+5"
+   },
+   "arrays": {
+    "out": "c122__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', hi=hi)",
+   "expect": {
+    "noted": []
+   },
+   "id": "c122"
+  },
+  {
+   "args": {
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["*"],
+      "t0": "0x1.ce64089b3bb07p+5",
+      "t1": "0x1.d864089b3bb07p+5"
+     }
+    ],
+    "t": "0x1.ce64089b3bb07p+5"
+   },
+   "arrays": {
+    "out": "c123__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact')",
+   "expect": {
+    "noted": [
+     [178, 96, 181, 117, "caption", ""]
+    ]
+   },
+   "id": "c123"
+  },
+  {
+   "args": {
+    "base": [69, 79, 201],
+    "canvas": {
+     "add": [150, 77, 102],
+     "h": 220,
+     "mul": [215, 139, 207],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["*unclosed", "15 CHARS HERE!!"],
+      "t0": "0x1.78b0f7e972199p+5",
+      "t1": "0x1.8be42b1ca54ccp+5"
+     }
+    ],
+    "t": "0x1.7ab0f7e972199p+5"
+   },
+   "arrays": {
+    "out": "c124__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base)",
+   "expect": {
+    "noted": [
+     [133, 100, 227, 114, "caption", "unclosed"],
+     [91, 117, 269, 131, "caption", "15 CHARS HERE!!"]
+    ]
+   },
+   "id": "c124"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [28, 131, 112],
+     "h": 200,
+     "mul": [221, 81, 187],
+     "w": 300
+    },
+    "caps": [
+     {
+      "lines": ["DON'T *BLINK*", "SNAKE DANCE", "21 CHARS EXACTLY HERE"],
+      "t0": "0x1.4000000000000p+4",
+      "t1": "0x1.6666666666666p+4"
+     }
+    ],
+    "hi": [66, 73, 145],
+    "t": "0x1.44a3d70a3d70ap+4"
+   },
+   "arrays": {
+    "out": "c125__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', hi=hi)",
+   "expect": {
+    "noted": [
+     [115, 100, 245, 114, "caption", "DON'T BLINK"],
+     [115, 119, 245, 133, "caption", "SNAKE DANCE"]
+    ]
+   },
+   "id": "c125"
+  },
+  {
+   "args": {
+    "alt": [43, 71, 72],
+    "canvas": {
+     "add": [114, 110, 72],
+     "h": 260,
+     "mul": [99, 251, 63],
+     "w": 240
+    },
+    "caps": [
+     {
+      "lines": ["SNAKE DANCE"],
+      "t0": "0x1.2bce78210a4bep+5",
+      "t1": "0x1.316811baa3e58p+5"
+     }
+    ],
+    "t": "0x1.2c9b44edd718bp+5"
+   },
+   "arrays": {
+    "out": "c126__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', alt=alt)",
+   "expect": {
+    "noted": [
+     [72, 100, 287, 123, "caption", "SNAKE DANCE"]
+    ]
+   },
+   "id": "c126"
+  },
+  {
+   "args": {
+    "base": [102, 123, 247],
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["COMMENT THE", "*NEXT MATCH-UP*"],
+      "t0": "0x1.a3f78871071bep-1",
+      "t1": "0x1.9c31154f74fa2p+1"
+     }
+    ],
+    "puff": null,
+    "t": "0x1.dc4973f625d43p-1"
+   },
+   "arrays": {
+    "out": "c127__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, puff=puff)",
+   "expect": {
+    "noted": [
+     [76, 99, 287, 122, "caption", "COMMENT THE"]
+    ]
+   },
+   "id": "c127"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [118, 253, 64],
+     "h": 640,
+     "mul": [3, 203, 121],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["SAD TROMBONE", "SNAKE DANCE", "I"],
+      "t0": "0x1.4fd57698ab66fp+5",
+      "t1": "0x1.6308a9cbde9a2p+5"
+     }
+    ],
+    "t": "0x1.511d24ad26483p+5",
+    "y0": 470
+   },
+   "arrays": {
+    "out": "c128__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', y0=y0)",
+   "expect": {
+    "noted": [
+     [71, 469, 287, 490, "caption", "SAD TROMBONE"]
+    ]
+   },
+   "id": "c128"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [112, 15, 162],
+     "h": 220,
+     "mul": [79, 151, 37],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["~a~*b*c"],
+      "t0": "0x1.6ca237e0d7c11p+5",
+      "t1": "0x1.723bd17a715abp+5"
+     }
+    ],
+    "cx": 330,
+    "hi": [218, 115, 86],
+    "t": "0x1.6e8dbcff90130p+5"
+   },
+   "arrays": {
+    "out": "c129__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', hi=hi, cx=cx)",
+   "expect": {
+    "noted": [
+     [304, 100, 355, 121, "caption", "abc"]
+    ]
+   },
+   "id": "c129"
+  },
+  {
+   "args": {
+    "base": [69, 242, 193],
+    "canvas": {
+     "add": [27, 23, 118],
+     "h": 200,
+     "mul": [243, 29, 121],
+     "w": 300
+    },
+    "caps": [
+     {
+      "lines": ["21 CHARS EXACTLY HERE", "PEDAL TONE"],
+      "t0": "0x1.7dddddddddddep+2",
+      "t1": "0x1.9111111111111p+2"
+     }
+    ],
+    "t": "0x1.9dddddddddddep+2"
+   },
+   "arrays": {
+    "out": "c130__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base)",
+   "expect": {
+    "noted": []
+   },
+   "id": "c130"
+  },
+  {
+   "args": {
+    "alt": [150, 56, 47],
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 260,
+     "w": 240
+    },
+    "caps": [
+     {
+      "lines": ["WINS!", "WINS!", "21 CHARS EXACTLY HERE"],
+      "t0": "0x1.cf62d86d5a256p+3",
+      "t1": "0x1.0e17d29d13791p+4"
+     }
+    ],
+    "t": "0x1.0cad86f536d40p+4"
+   },
+   "arrays": {
+    "out": "c131__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', alt=alt)",
+   "expect": {
+    "noted": [
+     [151, 100, 209, 114, "caption", "WINS!"],
+     [151, 121, 209, 135, "caption", "WINS!"],
+     [55, 142, 305, 156, "caption", "21 CHARS EXACTLY HERE"]
+    ]
+   },
+   "id": "c131"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [191, 239, 74],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [23, 67, 201],
+     "rows": [84, 232],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["*K.O.*"],
+      "t0": "0x1.8eb2d6bc95daep+4",
+      "t1": "0x1.8eb2d6bc95daep+4"
+     },
+     {
+      "lines": ["*K.O.*"],
+      "t0": "0x1.8eb2d6bc95daep+4",
+      "t1": "0x1.7eb2d6bc95daep+4"
+     },
+     {
+      "lines": ["*K.O.*"],
+      "t0": "0x1.91e609efc90e1p+4",
+      "t1": "0x1.a37fa38962a7bp+4"
+     }
+    ],
+    "t": "0x1.95193d22fc414p+4"
+   },
+   "arrays": {
+    "out": "c132__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact')",
+   "expect": {
+    "noted": [
+     [147, 100, 216, 121, "caption", "K.O."]
+    ]
+   },
+   "id": "c132"
+  },
+  {
+   "args": {
+    "base": [215, 161, 227],
+    "canvas": {
+     "add": [31, 54, 54],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [185, 145, 15],
+     "rows": [84, 232],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["", "DON'T *BLINK*"],
+      "t0": "0x1.a1e16a4cfb7fap+4",
+      "t1": "0x1.a6ae3719c84c7p+4"
+     },
+     {
+      "lines": ["*NEXT MATCH-UP*"],
+      "t0": "0x1.a37b03e695194p+4",
+      "t1": "0x1.aeae3719c84c7p+4"
+     }
+    ],
+    "hi": [55, 213, 244],
+    "puff": [65, 150, 129],
+    "t": "0x1.a77b03e695194p+4"
+   },
+   "arrays": {
+    "out": "c133__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, hi=hi, puff=puff)",
+   "expect": {
+    "noted": [
+     [64, 100, 295, 121, "caption", "NEXT MATCH-UP"]
+    ]
+   },
+   "id": "c133"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [190, 59, 203],
+     "h": 220,
+     "mul": [195, 67, 125],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["POWER SLIDE", "21 CHARS EXACTLY HERE", "ROUND *2*: ~FIGHT~!"],
+      "t0": "0x1.288b09e5b7165p+4",
+      "t1": "0x1.3c8b09e5b7165p+4"
+     }
+    ],
+    "t": "0x1.2c10289e0901dp+4"
+   },
+   "arrays": {
+    "out": "c134__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact')",
+   "expect": {
+    "noted": [
+     [114, 100, 244, 114, "caption", "POWER SLIDE"],
+     [55, 117, 305, 131, "caption", "21 CHARS EXACTLY HERE"]
+    ]
+   },
+   "id": "c134"
+  },
+  {
+   "args": {
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 200,
+     "w": 300
+    },
+    "caps": [
+     {
+      "lines": ["I"],
+      "t0": "0x1.9dddddddddddep+2",
+      "t1": "0x1.b111111111111p+2"
+     }
+    ],
+    "t": "0x1.9fc962fc962fdp+2",
+    "y0": 470
+   },
+   "arrays": {
+    "out": "c135__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', y0=y0)",
+   "expect": {
+    "noted": [
+     [172, 466, 187, 487, "caption", "I"]
+    ]
+   },
+   "id": "c135"
+  },
+  {
+   "args": {
+    "alt": [186, 90, 68],
+    "base": [148, 193, 95],
+    "canvas": {
+     "add": [29, 176, 7],
+     "h": 260,
+     "mul": [95, 81, 95],
+     "w": 240
+    },
+    "caps": [
+     {
+      "lines": ["15 CHARS HERE!!", "PEDAL TONE"],
+      "t0": "0x1.94eef7077f351p+2",
+      "t1": "0x1.174448508c675p+3"
+     }
+    ],
+    "t": "0x1.9969d84f2d499p+2"
+   },
+   "arrays": {
+    "out": "c136__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, alt=alt)",
+   "expect": {
+    "noted": [
+     [91, 98, 269, 112, "caption", "15 CHARS HERE!!"]
+    ]
+   },
+   "id": "c136"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [169, 204, 81],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [139, 81, 247],
+     "rows": [84, 232],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["", "POWER SLIDE", "~FLUTE~ VS *TROMBONE*"],
+      "t0": "0x1.3d4cc9d095f72p+5",
+      "t1": "0x1.3fb33036fc5d8p+5"
+     }
+    ],
+    "cx": 180,
+    "hi": [51, 145, 253],
+    "t": "0x1.3e19969d62c3fp+5"
+   },
+   "arrays": {
+    "out": "c137__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', hi=hi, cx=cx)",
+   "expect": {
+    "noted": [
+     [179, 101, 181, 116, "caption", ""]
+    ]
+   },
+   "id": "c137"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [143, 249, 79],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [207, 137, 147],
+     "rows": [84, 232],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["~FLUTE~ VS *TROMBONE*"],
+      "t0": "0x1.18755dd146e5ap+4",
+      "t1": "0x1.3edbc437ad4c0p+4"
+     }
+    ],
+    "t": "0x1.1a37ed2d6fdb6p+4"
+   },
+   "arrays": {
+    "out": "c138__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact')",
+   "expect": {
+    "noted": [
+     [73, 100, 291, 115, "caption", "FLUTE VS TROMBONE"]
+    ]
+   },
+   "id": "c138"
+  },
+  {
+   "args": {
+    "base": [74, 253, 188],
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 220,
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["COMMENT THE", "14 CHARS HERE!"],
+      "t0": "0x1.462145ef66a5fp+5",
+      "t1": "0x1.5954792299d92p+5"
+     }
+    ],
+    "puff": null,
+    "t": "0x1.4768f403e1873p+5"
+   },
+   "arrays": {
+    "out": "c139__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, puff=puff)",
+   "expect": {
+    "noted": [
+     [80, 99, 278, 120, "caption", "COMMENT THE"]
+    ]
+   },
+   "id": "c139"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [97, 175, 248],
+     "h": 200,
+     "mul": [19, 153, 215],
+     "w": 300
+    },
+    "caps": [
+     {
+      "lines": ["SNAKE DANCE", "COMMENT THE", "15 CHARS HERE!!"],
+      "t0": "0x1.5733333333333p+5",
+      "t1": "0x1.5cccccccccccdp+5"
+     }
+    ],
+    "t": "0x1.591eb851eb852p+5"
+   },
+   "arrays": {
+    "out": "c140__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact')",
+   "expect": {
+    "noted": [
+     [115, 100, 245, 114, "caption", "SNAKE DANCE"],
+     [115, 117, 245, 131, "caption", "COMMENT THE"]
+    ]
+   },
+   "id": "c140"
+  },
+  {
+   "args": {
+    "alt": [191, 166, 132],
+    "canvas": {
+     "add": [175, 25, 21],
+     "h": 260,
+     "mul": [197, 101, 245],
+     "w": 240
+    },
+    "caps": [
+     {
+      "lines": ["I"],
+      "t0": "0x1.b2e45079fd64ap+4",
+      "t1": "0x1.d94ab6e063cb0p+4"
+     }
+    ],
+    "hi": [212, 235, 247],
+    "t": "0x1.bae45079fd64ap+4"
+   },
+   "arrays": {
+    "out": "c141__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', hi=hi, alt=alt)",
+   "expect": {
+    "noted": [
+     [172, 100, 187, 121, "caption", "I"]
+    ]
+   },
+   "id": "c141"
+  },
+  {
+   "args": {
+    "base": [185, 81, 226],
+    "canvas": {
+     "add": [204, 171, 211],
+     "h": 640,
+     "mul": [113, 45, 251],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["14 CHARS HERE!", "POWER SLIDE"],
+      "t0": "0x1.76e6c6f98015dp+1",
+      "t1": "0x1.9d4d2d5fe67c3p+1"
+     }
+    ],
+    "t": "0x1.9173fc0fb060fp+1",
+    "y0": 470
+   },
+   "arrays": {
+    "out": "c142__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, y0=y0)",
+   "expect": {
+    "noted": [
+     [57, 470, 306, 491, "caption", "14 CHARS HERE!"]
+    ]
+   },
+   "id": "c142"
+  },
+  {
+   "args": {
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["*K.O.*", "FLUTTER TONGUE", ""],
+      "t0": "0x1.94172bc0a5438p+3",
+      "t1": "0x1.94172bc0a5438p+3"
+     },
+     {
+      "lines": ["*K.O.*", "FLUTTER TONGUE", ""],
+      "t0": "0x1.94172bc0a5438p+3",
+      "t1": "0x1.74172bc0a5438p+3"
+     },
+     {
+      "lines": ["*K.O.*"],
+      "t0": "0x1.9a7d92270ba9ep+3",
+      "t1": "0x1.ca7d92270ba9ep+3"
+     }
+    ],
+    "t": "0x1.a0e3f88d72105p+3"
+   },
+   "arrays": {
+    "out": "c143__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact')",
+   "expect": {
+    "noted": [
+     [147, 100, 216, 121, "caption", "K.O."]
+    ]
+   },
+   "id": "c143"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [121, 14, 72],
+     "h": 220,
+     "mul": [89, 159, 93],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["ROUND *2*: ~FIGHT~!"],
+      "t0": "0x1.f660948c754d5p+3",
+      "t1": "0x1.06637d796dd9ep+4"
+     },
+     {
+      "lines": ["POWER SLIDE"],
+      "t0": "0x1.f993c7bfa8808p+3",
+      "t1": "0x1.0e637d796dd9ep+4"
+     }
+    ],
+    "t": "0x1.00c9e3dfd4404p+4"
+   },
+   "arrays": {
+    "out": "c144__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact')",
+   "expect": {
+    "noted": [
+     [91, 100, 269, 114, "caption", "ROUND 2: FIGHT!"],
+     [82, 100, 277, 121, "caption", "POWER SLIDE"]
+    ]
+   },
+   "id": "c144"
+  },
+  {
+   "args": {
+    "base": [122, 41, 76],
+    "canvas": {
+     "add": [168, 118, 198],
+     "h": 200,
+     "mul": [75, 125, 153],
+     "w": 300
+    },
+    "caps": [
+     {
+      "lines": ["14 CHARS HERE!", "~FLUTE~ VS *TROMBONE*"],
+      "t0": "0x1.ec44444444444p+4",
+      "t1": "0x1.0955555555555p+5"
+     }
+    ],
+    "cx": 20,
+    "hi": [43, 99, 125],
+    "puff": [230, 151, 7],
+    "t": "0x1.ec44444444444p+4"
+   },
+   "arrays": {
+    "out": "c145__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, hi=hi, puff=puff, cx=cx)",
+   "expect": {
+    "noted": [
+     [-63, 96, 103, 110, "caption", "14 CHARS HERE!"]
+    ]
+   },
+   "id": "c145"
+  },
+  {
+   "args": {
+    "alt": [12, 61, 122],
+    "canvas": {
+     "add": [204, 127, 42],
+     "h": 260,
+     "mul": [83, 157, 191],
+     "w": 240
+    },
+    "caps": [
+     {
+      "lines": ["*NEXT MATCH-UP*", "WINS!", "*unclosed"],
+      "t0": "0x1.30127aed979cep+3",
+      "t1": "0x1.58127aed979cep+3"
+     }
+    ],
+    "t": "0x1.38127aed979cep+3"
+   },
+   "arrays": {
+    "out": "c146__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', alt=alt)",
+   "expect": {
+    "noted": [
+     [64, 100, 295, 121, "caption", "NEXT MATCH-UP"],
+     [136, 124, 223, 145, "caption", "WINS!"]
+    ]
+   },
+   "id": "c146"
+  },
+  {
+   "args": {
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["FLUTTER TONGUE"],
+      "t0": "0x1.47bf732aff86cp+3",
+      "t1": "0x1.51590cc499206p+3"
+     }
+    ],
+    "t": "0x1.49fce3ced6910p+3"
+   },
+   "arrays": {
+    "out": "c147__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact')",
+   "expect": {
+    "noted": [
+     [56, 98, 305, 119, "caption", "FLUTTER TONGUE"]
+    ]
+   },
+   "id": "c147"
+  },
+  {
+   "args": {
+    "base": [71, 242, 54],
+    "canvas": {
+     "add": [165, 200, 156],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [37, 189, 75],
+     "rows": [84, 232],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["I", "ROUND *2*: ~FIGHT~!"],
+      "t0": "0x1.15b41bc9b44c8p+4",
+      "t1": "0x1.3c1a82301ab2ep+4"
+     }
+    ],
+    "t": "0x1.174db5634de62p+4"
+   },
+   "arrays": {
+    "out": "c148__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base)",
+   "expect": {
+    "noted": [
+     [174, 101, 185, 116, "caption", "I"]
+    ]
+   },
+   "id": "c148"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [24, 30, 245],
+     "h": 220,
+     "mul": [117, 77, 15],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["A", "SAD TROMBONE", "WINS!"],
+      "t0": "0x1.beb6184a74affp+5",
+      "t1": "0x1.d1e94b7da7e32p+5"
+     }
+    ],
+    "hi": [56, 227, 55],
+    "t": "0x1.bf975ff8892adp+5",
+    "y0": 130
+   },
+   "arrays": {
+    "out": "c149__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', hi=hi, y0=y0)",
+   "expect": {
+    "noted": [
+     [174, 129, 190, 152, "caption", "A"]
+    ]
+   },
+   "id": "c149"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [79, 196, 91],
+     "h": 200,
+     "mul": [3, 147, 35],
+     "w": 300
+    },
+    "caps": [
+     {
+      "lines": ["FLUTTER TONGUE"],
+      "t0": "0x1.7e66666666666p+4",
+      "t1": "0x1.8333333333333p+4"
+     }
+    ],
+    "t": "0x1.80f5c28f5c28fp+4"
+   },
+   "arrays": {
+    "out": "c150__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact')",
+   "expect": {
+    "noted": [
+     [53, 99, 306, 120, "caption", "FLUTTER TONGUE"]
+    ]
+   },
+   "id": "c150"
+  },
+  {
+   "args": {
+    "alt": [137, 225, 204],
+    "base": [154, 171, 52],
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 260,
+     "w": 240
+    },
+    "caps": [
+     {
+      "lines": ["*", "POWER SLIDE"],
+      "t0": "0x1.2cb3d32860ce3p+4",
+      "t1": "0x1.31809ff52d9b0p+4"
+     }
+    ],
+    "puff": null,
+    "t": "0x1.340ffc1e235d8p+4"
+   },
+   "arrays": {
+    "out": "c151__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, alt=alt, puff=puff)",
+   "expect": {
+    "noted": []
+   },
+   "id": "c151"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [11, 249, 10],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [33, 147, 195],
+     "rows": [84, 232],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["DON'T *BLINK*", "15 CHARS HERE!!", "PEDAL TONE"],
+      "t0": "0x1.852154eb6ff0cp+5",
+      "t1": "0x1.8abaee85098a6p+5"
+     }
+    ],
+    "t": "0x1.892154eb6ff0cp+5"
+   },
+   "arrays": {
+    "out": "c152__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact')",
+   "expect": {
+    "noted": [
+     [115, 100, 245, 114, "caption", "DON'T BLINK"],
+     [91, 121, 269, 135, "caption", "15 CHARS HERE!!"],
+     [121, 139, 239, 153, "caption", "PEDAL TONE"]
+    ]
+   },
+   "id": "c152"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [90, 179, 8],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [125, 61, 47],
+     "rows": [84, 232],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["PICCOLO"],
+      "t0": "0x1.639e83968cb92p+5",
+      "t1": "0x1.76d1b6c9bfec5p+5"
+     }
+    ],
+    "cx": 120,
+    "hi": [104, 218, 41],
+    "t": "0x1.7691df2a4a239p+5"
+   },
+   "arrays": {
+    "out": "c153__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', hi=hi, cx=cx)",
+   "expect": {
+    "noted": [
+     [58, 100, 181, 121, "caption", "PICCOLO"]
+    ]
+   },
+   "id": "c153"
+  },
+  {
+   "args": {
+    "base": [191, 70, 83],
+    "canvas": {
+     "add": [251, 45, 86],
+     "h": 220,
+     "mul": [217, 17, 45],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["PEDAL TONE", "WINS!"],
+      "t0": "0x1.4900131f48e4ep+1",
+      "t1": "0x1.4900131f48e4ep+1"
+     },
+     {
+      "lines": ["PEDAL TONE", "WINS!"],
+      "t0": "0x1.4900131f48e4ep+1",
+      "t1": "0x1.9200263e91c9cp+0"
+     },
+     {
+      "lines": ["PEDAL TONE"],
+      "t0": "0x1.6299acb8e27e8p+1",
+      "t1": "0x1.3480098fa4727p+2"
+     }
+    ],
+    "t": "0x1.7c3346527c181p+1"
+   },
+   "arrays": {
+    "out": "c154__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base)",
+   "expect": {
+    "noted": [
+     [93, 100, 270, 121, "caption", "PEDAL TONE"]
+    ]
+   },
+   "id": "c154"
+  },
+  {
+   "args": {
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 200,
+     "w": 300
+    },
+    "caps": [
+     {
+      "lines": ["*", "~a~*b*c", "COMMENT THE"],
+      "t0": "0x1.1333333333333p+4",
+      "t1": "0x1.1e66666666666p+4"
+     },
+     {
+      "lines": ["~FLUTE~ VS *TROMBONE*"],
+      "t0": "0x1.14ccccccccccdp+4",
+      "t1": "0x1.2666666666666p+4"
+     }
+    ],
+    "t": "0x1.18ccccccccccdp+4"
+   },
+   "arrays": {
+    "out": "c155__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact')",
+   "expect": {
+    "noted": [
+     [178, 100, 181, 121, "caption", ""],
+     [155, 129, 208, 151, "caption", "abc"],
+     [79, 100, 281, 114, "caption", "FLUTE VS TROMBONE"]
+    ]
+   },
+   "id": "c155"
+  },
+  {
+   "args": {
+    "alt": [215, 137, 78],
+    "canvas": {
+     "add": [127, 190, 240],
+     "h": 260,
+     "mul": [37, 49, 105],
+     "w": 240
+    },
+    "caps": [
+     {
+      "lines": ["A"],
+      "t0": "0x1.cb628b8c7ba73p+4",
+      "t1": "0x1.f1c8f1f2e20d9p+4"
+     }
+    ],
+    "t": "0x1.cb628b8c7ba73p+4",
+    "y0": 230
+   },
+   "arrays": {
+    "out": "c156__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', alt=alt, y0=y0)",
+   "expect": {
+    "noted": [
+     [172, 226, 187, 247, "caption", "A"]
+    ]
+   },
+   "id": "c156"
+  },
+  {
+   "args": {
+    "base": [142, 253, 125],
+    "canvas": {
+     "add": [222, 68, 117],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [237, 181, 127],
+     "rows": [84, 232],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["PICCOLO", "POWER SLIDE"],
+      "t0": "0x1.4fb5a5117d0e4p+5",
+      "t1": "0x1.521c0b77e374ap+5"
+     }
+    ],
+    "hi": [142, 142, 253],
+    "puff": [16, 99, 198],
+    "t": "0x1.4ff315b554188p+5"
+   },
+   "arrays": {
+    "out": "c157__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, hi=hi, puff=puff)",
+   "expect": {
+    "noted": [
+     [118, 96, 241, 117, "caption", "PICCOLO"]
+    ]
+   },
+   "id": "c157"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [128, 233, 214],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [71, 17, 107],
+     "rows": [84, 232],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["SAD TROMBONE", "THIS LINE IS FAR TOO LONG TO FIT IN", "*K.O.*"],
+      "t0": "0x1.3701a673ddd18p+5",
+      "t1": "0x1.4a34d9a71104bp+5"
+     }
+    ],
+    "t": "0x1.3791029cd3941p+5"
+   },
+   "arrays": {
+    "out": "c158__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact')",
+   "expect": {
+    "noted": [
+     [109, 98, 251, 112, "caption", "SAD TROMBONE"]
+    ]
+   },
+   "id": "c158"
+  },
+  {
+   "args": {
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 220,
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["*"],
+      "t0": "0x1.5a195570638bfp+5",
+      "t1": "0x1.6d4c88a396bf2p+5"
+     }
+    ],
+    "t": "0x1.5ae6223d3058cp+5"
+   },
+   "arrays": {
+    "out": "c159__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact')",
+   "expect": {
+    "noted": [
+     [178, 100, 181, 123, "caption", ""]
+    ]
+   },
+   "id": "c159"
+  },
+  {
+   "args": {
+    "base": [13, 48, 249],
+    "canvas": {
+     "add": [104, 130, 232],
+     "h": 200,
+     "mul": [123, 205, 239],
+     "w": 300
+    },
+    "caps": [
+     {
+      "lines": ["WINS!", "*"],
+      "t0": "0x1.9666666666666p+3",
+      "t1": "0x1.e333333333333p+3"
+     }
+    ],
+    "t": "0x1.a0f5c28f5c28fp+3"
+   },
+   "arrays": {
+    "out": "c160__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base)",
+   "expect": {
+    "noted": [
+     [136, 100, 223, 121, "caption", "WINS!"],
+     [178, 126, 181, 149, "caption", ""]
+    ]
+   },
+   "id": "c160"
+  },
+  {
+   "args": {
+    "alt": [5, 182, 226],
+    "canvas": {
+     "add": [176, 206, 78],
+     "h": 260,
+     "mul": [21, 227, 153],
+     "w": 240
+    },
+    "caps": [
+     {
+      "lines": ["FLUTTER TONGUE", "21 CHARS EXACTLY HERE", "ROUND *2*: ~FIGHT~!"],
+      "t0": "0x1.a20a92a5f2b5bp+5",
+      "t1": "0x1.b53dc5d925e8ep+5"
+     }
+    ],
+    "cx": 330,
+    "hi": [145, 63, 213],
+    "t": "0x1.a6d75f72bf827p+5"
+   },
+   "arrays": {
+    "out": "c161__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', hi=hi, alt=alt, cx=cx)",
+   "expect": {
+    "noted": [
+     [247, 100, 413, 114, "caption", "FLUTTER TONGUE"],
+     [205, 121, 455, 135, "caption", "21 CHARS EXACTLY HERE"],
+     [241, 142, 422, 156, "caption", "ROUND 2: FIGHT!"]
+    ]
+   },
+   "id": "c161"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [10, 2, 105],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [183, 241, 141],
+     "rows": [84, 232],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["who ~wins~ *this*?"],
+      "t0": "0x1.2897cdbd32107p+2",
+      "t1": "0x1.7897cdbd32107p+2"
+     }
+    ],
+    "t": "0x1.37f3f6b2f49fdp+2"
+   },
+   "arrays": {
+    "out": "c162__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact')",
+   "expect": {
+    "noted": [
+     [56, 100, 305, 121, "caption", "who wins this?"]
+    ]
+   },
+   "id": "c162"
+  },
+  {
+   "args": {
+    "base": [51, 114, 147],
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["*K.O.*", "A"],
+      "t0": "0x1.5b63acd88694dp+3",
+      "t1": "0x1.64fd4672202e7p+3"
+     }
+    ],
+    "puff": null,
+    "t": "0x1.6b63acd88694dp+3",
+    "y0": 60
+   },
+   "arrays": {
+    "out": "c163__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, puff=puff, y0=y0)",
+   "expect": {
+    "noted": []
+   },
+   "id": "c163"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [104, 247, 119],
+     "h": 220,
+     "mul": [117, 249, 251],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["who ~wins~ *this*?", "SNAKE DANCE", "*NEXT MATCH-UP*"],
+      "t0": "0x1.4b8534373dcd6p+4",
+      "t1": "0x1.71eb9a9da433cp+4"
+     }
+    ],
+    "t": "0x1.713ebf82b700ap+4"
+   },
+   "arrays": {
+    "out": "c164__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact')",
+   "expect": {
+    "noted": [
+     [56, 100, 305, 121, "caption", "who wins this?"],
+     [82, 128, 277, 149, "caption", "SNAKE DANCE"],
+     [64, 156, 295, 177, "caption", "NEXT MATCH-UP"]
+    ]
+   },
+   "id": "c164"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [47, 110, 247],
+     "h": 200,
+     "mul": [247, 171, 103],
+     "w": 300
+    },
+    "caps": [
+     {
+      "lines": ["*K.O.*"],
+      "t0": "0x1.7333333333333p+5",
+      "t1": "0x1.7333333333333p+5"
+     },
+     {
+      "lines": ["*K.O.*"],
+      "t0": "0x1.7333333333333p+5",
+      "t1": "0x1.6b33333333333p+5"
+     },
+     {
+      "lines": ["*K.O.*"],
+      "t0": "0x1.74ccccccccccdp+5",
+      "t1": "0x1.7d99999999999p+5"
+     }
+    ],
+    "hi": [177, 130, 221],
+    "t": "0x1.7666666666666p+5"
+   },
+   "arrays": {
+    "out": "c165__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', hi=hi)",
+   "expect": {
+    "noted": [
+     [147, 100, 216, 121, "caption", "K.O."]
+    ]
+   },
+   "id": "c165"
+  },
+  {
+   "args": {
+    "alt": [60, 16, 14],
+    "base": [127, 15, 246],
+    "canvas": {
+     "add": [181, 203, 251],
+     "h": 260,
+     "mul": [79, 249, 127],
+     "w": 240
+    },
+    "caps": [
+     {
+      "lines": ["A", "I"],
+      "t0": "0x1.3adc0d9f8288cp+4",
+      "t1": "0x1.3fa8da6c4f559p+4"
+     },
+     {
+      "lines": ["SNAKE DANCE"],
+      "t0": "0x1.3c75a7391c226p+4",
+      "t1": "0x1.47a8da6c4f559p+4"
+     }
+    ],
+    "t": "0x1.4075a7391c226p+4"
+   },
+   "arrays": {
+    "out": "c166__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', base=base, alt=alt)",
+   "expect": {
+    "noted": [
+     [82, 100, 277, 121, "caption", "SNAKE DANCE"]
+    ]
+   },
+   "id": "c166"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [4, 65, 165],
+     "h": 220,
+     "mul": [135, 217, 195],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["A LINE OF 25 CHARACTERS!!"],
+      "t0": "0x1.4000000000000p+4",
+      "t1": "0x1.6000000000000p+4"
+     }
+    ],
+    "t": "0x1.419999999999ap+4"
+   },
+   "arrays": {
+    "out": "c167__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact')",
+   "expect": {
+    "noted": [
+     [22, 101, 338, 116, "caption", "A LINE OF 25 CHARACTERS!!"]
+    ]
+   },
+   "id": "c167"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [91, 177, 6],
+     "h": 220,
+     "mul": [93, 47, 97],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["A LINE OF 25 CHARACTERS!!"],
+      "t0": "0x1.4000000000000p+4",
+      "t1": "0x1.6000000000000p+4"
+     }
+    ],
+    "t": "0x1.41eb851eb851fp+4"
+   },
+   "arrays": {
+    "out": "c168__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact')",
+   "expect": {
+    "noted": [
+     [21, 99, 337, 114, "caption", "A LINE OF 25 CHARACTERS!!"]
+    ]
+   },
+   "id": "c168"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [33, 185, 216],
+     "h": 220,
+     "mul": [21, 193, 117],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["A LINE OF 25 CHARACTERS!!"],
+      "t0": "0x1.4000000000000p+4",
+      "t1": "0x1.6000000000000p+4"
+     }
+    ],
+    "t": "0x1.428f5c28f5c29p+4"
+   },
+   "arrays": {
+    "out": "c169__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact')",
+   "expect": {
+    "noted": [
+     [27, 99, 330, 113, "caption", "A LINE OF 25 CHARACTERS!!"]
+    ]
+   },
+   "id": "c169"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [129, 237, 236],
+     "h": 220,
+     "mul": [147, 249, 101],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["*A LINE* OF ~26 CHARACTERS~!!!"],
+      "t0": "0x1.4000000000000p+4",
+      "t1": "0x1.6000000000000p+4"
+     }
+    ],
+    "t": "0x1.419999999999ap+4"
+   },
+   "arrays": {
+    "out": "c170__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact')",
+   "expect": {
+    "noted": [
+     [22, 101, 338, 115, "caption", "A LINE OF 26 CHARACTERS!!!"]
+    ]
+   },
+   "id": "c170"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [36, 134, 186],
+     "h": 220,
+     "mul": [189, 143, 147],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["*A LINE* OF ~26 CHARACTERS~!!!"],
+      "t0": "0x1.4000000000000p+4",
+      "t1": "0x1.6000000000000p+4"
+     }
+    ],
+    "t": "0x1.41eb851eb851fp+4"
+   },
+   "arrays": {
+    "out": "c171__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact')",
+   "expect": {
+    "noted": [
+     [21, 99, 337, 113, "caption", "A LINE OF 26 CHARACTERS!!!"]
+    ]
+   },
+   "id": "c171"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [51, 207, 28],
+     "h": 220,
+     "mul": [161, 83, 163],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["*A LINE* OF ~26 CHARACTERS~!!!"],
+      "t0": "0x1.4000000000000p+4",
+      "t1": "0x1.6000000000000p+4"
+     }
+    ],
+    "t": "0x1.428f5c28f5c29p+4"
+   },
+   "arrays": {
+    "out": "c172__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact')",
+   "expect": {
+    "noted": [
+     [21, 99, 336, 113, "caption", "A LINE OF 26 CHARACTERS!!!"]
+    ]
+   },
+   "id": "c172"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [117, 222, 67],
+     "h": 220,
+     "mul": [161, 83, 53],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["THIS LINE IS FAR TOO LONG TO FIT IN"],
+      "t0": "0x1.4000000000000p+4",
+      "t1": "0x1.6000000000000p+4"
+     }
+    ],
+    "t": "0x1.419999999999ap+4"
+   },
+   "arrays": {
+    "out": "c173__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact')",
+   "expect": {
+    "noted": [
+     [-29, 101, 389, 115, "caption", "THIS LINE IS FAR TOO LONG TO FIT IN"]
+    ]
+   },
+   "id": "c173"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [172, 214, 230],
+     "h": 220,
+     "mul": [189, 49, 199],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["THIS LINE IS FAR TOO LONG TO FIT IN"],
+      "t0": "0x1.4000000000000p+4",
+      "t1": "0x1.6000000000000p+4"
+     }
+    ],
+    "t": "0x1.41eb851eb851fp+4"
+   },
+   "arrays": {
+    "out": "c174__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact')",
+   "expect": {
+    "noted": [
+     [-30, 99, 388, 113, "caption", "THIS LINE IS FAR TOO LONG TO FIT IN"]
+    ]
+   },
+   "id": "c174"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [97, 252, 116],
+     "h": 220,
+     "mul": [241, 239, 19],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["THIS LINE IS FAR TOO LONG TO FIT IN"],
+      "t0": "0x1.4000000000000p+4",
+      "t1": "0x1.6000000000000p+4"
+     }
+    ],
+    "t": "0x1.428f5c28f5c29p+4"
+   },
+   "arrays": {
+    "out": "c175__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact')",
+   "expect": {
+    "noted": [
+     [-30, 99, 388, 113, "caption", "THIS LINE IS FAR TOO LONG TO FIT IN"]
+    ]
+   },
+   "id": "c175"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [187, 212, 1],
+     "h": 220,
+     "mul": [185, 103, 161],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["~FADE~ *OUT*", "slowly"],
+      "t0": "0x1.4000000000000p+4",
+      "t1": "0x1.6000000000000p+4"
+     }
+    ],
+    "t": "0x1.5e1cac083126fp+4"
+   },
+   "arrays": {
+    "out": "c176__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact')",
+   "expect": {
+    "noted": [
+     [110, 100, 251, 121, "caption", "FADE OUT"],
+     [128, 128, 233, 149, "caption", "slowly"]
+    ]
+   },
+   "id": "c176"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [223, 73, 133],
+     "h": 220,
+     "mul": [97, 235, 191],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["~FADE~ *OUT*", "slowly"],
+      "t0": "0x1.4000000000000p+4",
+      "t1": "0x1.6000000000000p+4"
+     }
+    ],
+    "t": "0x1.5e20c49ba5e35p+4"
+   },
+   "arrays": {
+    "out": "c177__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact')",
+   "expect": {
+    "noted": [
+     [110, 100, 251, 121, "caption", "FADE OUT"],
+     [128, 128, 233, 149, "caption", "slowly"]
+    ]
+   },
+   "id": "c177"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [53, 168, 131],
+     "h": 220,
+     "mul": [207, 63, 173],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["~FADE~ *OUT*", "slowly"],
+      "t0": "0x1.4000000000000p+4",
+      "t1": "0x1.6000000000000p+4"
+     }
+    ],
+    "t": "0x1.5e66666666666p+4"
+   },
+   "arrays": {
+    "out": "c178__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact')",
+   "expect": {
+    "noted": [
+     [110, 100, 251, 121, "caption", "FADE OUT"],
+     [128, 128, 233, 149, "caption", "slowly"]
+    ]
+   },
+   "id": "c178"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [142, 132, 110],
+     "h": 220,
+     "mul": [223, 73, 249],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["~FADE~ *OUT*", "slowly"],
+      "t0": "0x1.4000000000000p+4",
+      "t1": "0x1.6000000000000p+4"
+     }
+    ],
+    "t": "0x1.5f851eb851eb8p+4"
+   },
+   "arrays": {
+    "out": "c179__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact')",
+   "expect": {
+    "noted": [
+     [110, 100, 251, 121, "caption", "FADE OUT"],
+     [128, 128, 233, 149, "caption", "slowly"]
+    ]
+   },
+   "id": "c179"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [35, 141, 92],
+     "h": 220,
+     "mul": [51, 185, 95],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["*K.O.*", "ok"],
+      "t0": "0x1.4000000000000p+4",
+      "t1": "0x1.6000000000000p+4"
+     }
+    ],
+    "t": "0x1.407ae147ae148p+4",
+    "y0": 96
+   },
+   "arrays": {
+    "out": "c180__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', y0=y0)",
+   "expect": {
+    "noted": [
+     [146, 96, 215, 117, "caption", "K.O."]
+    ]
+   },
+   "id": "c180"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [228, 215, 252],
+     "h": 220,
+     "mul": [219, 177, 189],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["*K.O.*", "ok"],
+      "t0": "0x1.4000000000000p+4",
+      "t1": "0x1.6000000000000p+4"
+     }
+    ],
+    "t": "0x1.411eb851eb852p+4",
+    "y0": 96
+   },
+   "arrays": {
+    "out": "c181__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', y0=y0)",
+   "expect": {
+    "noted": [
+     [146, 96, 215, 117, "caption", "K.O."]
+    ]
+   },
+   "id": "c181"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [44, 12, 85],
+     "h": 220,
+     "mul": [203, 79, 79],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["*K.O.*", "ok"],
+      "t0": "0x1.4000000000000p+4",
+      "t1": "0x1.6000000000000p+4"
+     }
+    ],
+    "t": "0x1.499999999999ap+4",
+    "y0": 60
+   },
+   "arrays": {
+    "out": "c182__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', y0=y0)",
+   "expect": {
+    "noted": [
+     [146, 96, 215, 117, "caption", "K.O."],
+     [164, 96, 197, 117, "caption", "ok"]
+    ]
+   },
+   "id": "c182"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [88, 182, 231],
+     "h": 220,
+     "mul": [73, 47, 37],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["*K.O.*", "ok"],
+      "t0": "0x1.4000000000000p+4",
+      "t1": "0x1.6000000000000p+4"
+     }
+    ],
+    "t": "0x1.40ccccccccccdp+4",
+    "y0": 60
+   },
+   "arrays": {
+    "out": "c183__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', y0=y0)",
+   "expect": {
+    "noted": [
+     [146, 96, 215, 117, "caption", "K.O."]
+    ]
+   },
+   "id": "c183"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [212, 42, 114],
+     "h": 220,
+     "mul": [213, 101, 23],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["*K.O.*", "ok"],
+      "t0": "0x1.4000000000000p+4",
+      "t1": "0x1.6000000000000p+4"
+     }
+    ],
+    "t": "0x1.4666666666666p+4",
+    "y0": -10
+   },
+   "arrays": {
+    "out": "c184__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', y0=y0)",
+   "expect": {
+    "noted": [
+     [146, 96, 215, 117, "caption", "K.O."],
+     [163, 96, 196, 117, "caption", "ok"]
+    ]
+   },
+   "id": "c184"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [48, 233, 89],
+     "h": 220,
+     "mul": [223, 27, 171],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["*K.O.*", "ok"],
+      "t0": "0x1.4000000000000p+4",
+      "t1": "0x1.6000000000000p+4"
+     }
+    ],
+    "t": "0x1.41ae147ae147bp+4",
+    "y0": 97
+   },
+   "arrays": {
+    "out": "c185__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', y0=y0)",
+   "expect": {
+    "noted": [
+     [144, 97, 219, 120, "caption", "K.O."]
+    ]
+   },
+   "id": "c185"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [243, 198, 50],
+     "h": 220,
+     "mul": [159, 151, 105],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["*K.O.*", "ok"],
+      "t0": "0x1.4000000000000p+4",
+      "t1": "0x1.6000000000000p+4"
+     }
+    ],
+    "t": "0x1.41eb851eb851fp+4",
+    "y0": 97
+   },
+   "arrays": {
+    "out": "c186__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', y0=y0)",
+   "expect": {
+    "noted": [
+     [143, 96, 216, 118, "caption", "K.O."]
+    ]
+   },
+   "id": "c186"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [135, 202, 31],
+     "h": 220,
+     "mul": [157, 169, 171],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["*K.O.*", "ok"],
+      "t0": "0x1.4000000000000p+4",
+      "t1": "0x1.6000000000000p+4"
+     }
+    ],
+    "t": "0x1.423d70a3d70a4p+4",
+    "y0": 97
+   },
+   "arrays": {
+    "out": "c187__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact', y0=y0)",
+   "expect": {
+    "noted": [
+     [146, 97, 217, 119, "caption", "K.O."]
+    ]
+   },
+   "id": "c187"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [76, 199, 217],
+     "h": 220,
+     "mul": [227, 243, 197],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["*K.O.*"],
+      "t0": "0x1.4000000000000p+2",
+      "t1": "0x1.4000000000000p+2"
+     }
+    ],
+    "t": "0x1.4000000000000p+2"
+   },
+   "arrays": {
+    "out": "c188__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact')",
+   "expect": {
+    "noted": []
+   },
+   "id": "c188"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [177, 146, 96],
+     "h": 220,
+     "mul": [35, 129, 115],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["*K.O.*"],
+      "t0": "0x1.4000000000000p+2",
+      "t1": "0x1.0000000000000p+2"
+     }
+    ],
+    "t": "0x1.2000000000000p+2"
+   },
+   "arrays": {
+    "out": "c189__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact')",
+   "expect": {
+    "noted": []
+   },
+   "id": "c189"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [136, 143, 187],
+     "h": 220,
+     "mul": [13, 41, 227],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["*K.O.*"],
+      "t0": "0x1.4000000000000p+2",
+      "t1": "0x1.0000000000000p+2"
+     }
+    ],
+    "t": "0x1.4000000000000p+2"
+   },
+   "arrays": {
+    "out": "c190__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact')",
+   "expect": {
+    "noted": []
+   },
+   "id": "c190"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [26, 227, 52],
+     "h": 220,
+     "mul": [127, 155, 7],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["WINS!"],
+      "t0": "0x1.4000000000000p+2",
+      "t1": "0x1.8000000000000p+2"
+     }
+    ],
+    "t": "0x1.8000000000000p+2"
+   },
+   "arrays": {
+    "out": "c191__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact')",
+   "expect": {
+    "noted": []
+   },
+   "id": "c191"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [133, 221, 170],
+     "h": 220,
+     "mul": [7, 255, 47],
+     "w": 360
+    },
+    "caps": [
+     {
+      "lines": ["WINS!"],
+      "t0": "0x1.4000000000000p+2",
+      "t1": "0x1.8000000000000p+2"
+     }
+    ],
+    "t": "0x1.3fef9db22d0e5p+2"
+   },
+   "arrays": {
+    "out": "c192__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact')",
+   "expect": {
+    "noted": []
+   },
+   "id": "c192"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [119, 114, 61],
+     "h": 220,
+     "mul": [73, 37, 41],
+     "w": 360
+    },
+    "caps": [],
+    "t": "0x1.8000000000000p+1"
+   },
+   "arrays": {
+    "out": "c193__out"
+   },
+   "call": "reelkit.ui.draw_captions(img, t, caps, style='impact')",
+   "expect": {
+    "noted": []
+   },
+   "id": "c193"
+  },
+  {
+   "args": {
+    "caps": [
+     {
+      "lines": ["FLUTTER TONGUE"],
+      "t0": "0x1.66d2dcb1465e9p+3",
+      "t1": "0x1.b39fa97e132b6p+3"
+     },
+     {
+      "lines": ["SNAKE DANCE"],
+      "t0": "0x1.e0e0ded288ce7p+4",
+      "t1": "0x1.03a3a29c779a7p+5"
+     },
+     {
+      "lines": ["PICCOLO"],
+      "t0": "0x1.54e7ea5f84cadp+5",
+      "t1": "0x1.681b1d92b7fe0p+5"
+     },
+     {
+      "lines": ["SAD TROMBONE"],
+      "t0": "0x1.027a786c22681p+4",
+      "t1": "0x1.28e0ded288ce7p+4"
+     },
+     {
+      "lines": ["POWER SLIDE"],
+      "t0": "0x1.a05859c8c9321p+4",
+      "t1": "0x1.c6bec02f2f987p+4"
+     },
+     {
+      "lines": ["*K.O.*"],
+      "t0": "0x1.902c2c2c2c2c2p+5",
+      "t1": "0x1.9a2c2c2c2c2c2p+5"
+     },
+     {
+      "lines": ["TROMBONE", "WINS!"],
+      "t0": "0x1.9a92929292928p+5",
+      "t1": "0x1.ac92929292928p+5"
+     },
+     {
+      "lines": ["COMMENT THE", "*NEXT MATCH-UP*"],
+      "t0": "0x1.ad5f5f5f5f5f5p+5",
+      "t1": "0x1.cb4b4b4b4b4b4p+5"
+     }
+    ]
+   },
+   "arrays": {},
+   "call": "reelkit.ui.impact_landings(caps)",
+   "expect": {
+    "returns": [
+     ["0x1.6a060fe47991cp+3", 0, 14],
+     ["0x1.e27a786c22681p+4", 0, 11],
+     ["0x1.55b4b72c5197ap+5", 0, 7],
+     ["0x1.04141205bc01bp+4", 0, 12],
+     ["0x1.a1f1f36262cbbp+4", 0, 11],
+     ["0x1.90f8f8f8f8f8fp+5", 0, 4],
+     ["0x1.9b5f5f5f5f5f5p+5", 0, 8],
+     ["0x1.9d21eebb88551p+5", 1, 5],
+     ["0x1.ae2c2c2c2c2c2p+5", 0, 11],
+     ["0x1.afeebb885521ep+5", 1, 13]
+    ]
+   },
+   "id": "c194"
+  },
+  {
+   "args": {
+    "caps": [
+     {
+      "lines": ["A", "*B*c", "~d e~"],
+      "t0": "0x1.0000000000000p+0",
+      "t1": "0x1.8000000000000p+1"
+     },
+     {
+      "lines": ["NEVER"],
+      "t0": "0x1.0000000000000p+2",
+      "t1": "0x1.0000000000000p+2"
+     },
+     {
+      "lines": ["TOO", "SHORT"],
+      "t0": "0x1.4000000000000p+2",
+      "t1": "0x1.4333333333333p+2"
+     },
+     {
+      "lines": ["ONE", "TWO", "THREE"],
+      "t0": "0x1.8000000000000p+2",
+      "t1": "0x1.951eb851eb852p+2"
+     },
+     {
+      "lines": ["BACKWARDS"],
+      "t0": "0x1.c000000000000p+2",
+      "t1": "0x1.8000000000000p+2"
+     },
+     {
+      "lines": [],
+      "t0": "0x1.0000000000000p+3",
+      "t1": "0x1.2000000000000p+3"
+     }
+    ]
+   },
+   "arrays": {},
+   "call": "reelkit.ui.impact_landings(caps)",
+   "expect": {
+    "returns": [
+     ["0x1.199999999999ap+0", 0, 1],
+     ["0x1.51eb851eb851fp+0", 1, 2],
+     ["0x1.8a3d70a3d70a4p+0", 2, 3],
+     ["0x1.8666666666666p+2", 0, 3],
+     ["0x1.947ae147ae147p+2", 1, 3]
+    ]
+   },
+   "id": "c195"
+  },
+  {
+   "args": {
+    "caps": [
+     {
+      "lines": ["A", "B", "C"],
+      "t0": "0x1.0000000000000p+0",
+      "t1": "0x1.8000000000000p+1"
+     },
+     {
+      "lines": ["x", "y"],
+      "t0": "0x1.4000000000000p+1",
+      "t1": "0x1.7333333333333p+1"
+     }
+    ],
+    "fall": "0x1.0000000000000p-2",
+    "stagger": "0x1.0000000000000p-1"
+   },
+   "arrays": {},
+   "call": "reelkit.ui.impact_landings(caps, stagger=stagger, fall=fall)",
+   "expect": {
+    "returns": [
+     ["0x1.4000000000000p+0", 0, 1],
+     ["0x1.c000000000000p+0", 1, 1],
+     ["0x1.2000000000000p+1", 2, 1],
+     ["0x1.6000000000000p+1", 0, 1]
+    ]
+   },
+   "id": "c196"
+  },
+  {
+   "args": {
+    "caps": [
+     {
+      "lines": ["A", "B"],
+      "t0": "0x0.0p+0",
+      "t1": "0x1.0000000000000p+0"
+     }
+    ],
+    "fall": "0x0.0p+0",
+    "stagger": "0x0.0p+0"
+   },
+   "arrays": {},
+   "call": "reelkit.ui.impact_landings(caps, stagger=stagger, fall=fall)",
+   "expect": {
+    "returns": [
+     ["0x0.0p+0", 0, 1],
+     ["0x0.0p+0", 1, 1]
+    ]
+   },
+   "id": "c197"
+  },
+  {
+   "args": {
+    "caps": [
+     {
+      "lines": ["*LINE*", "two"],
+      "t0": "0x1.8ad3d9f4108d1p+4",
+      "t1": "0x1.9ad3d9f4108d1p+4"
+     },
+     {
+      "lines": ["*LINE*", "two"],
+      "t0": "0x1.a077a8ece6d6ep+4",
+      "t1": "0x1.b077a8ece6d6ep+4"
+     },
+     {
+      "lines": ["*LINE*", "two"],
+      "t0": "0x1.ee542ba0184fcp+3",
+      "t1": "0x1.072a15d00c27ep+4"
+     },
+     {
+      "lines": ["*LINE*", "two"],
+      "t0": "0x1.a939b9ce85fc4p+5",
+      "t1": "0x1.b139b9ce85fc4p+5"
+     },
+     {
+      "lines": ["*LINE*", "two"],
+      "t0": "0x1.c48455aa63d90p+0",
+      "t1": "0x1.62422ad531ec8p+1"
+     },
+     {
+      "lines": ["*LINE*", "two"],
+      "t0": "0x1.f65b629633cc6p+4",
+      "t1": "0x1.032db14b19e63p+5"
+     },
+     {
+      "lines": ["*LINE*", "two"],
+      "t0": "0x1.001299903d123p+5",
+      "t1": "0x1.081299903d123p+5"
+     },
+     {
+      "lines": ["*LINE*", "two"],
+      "t0": "0x1.472d1f4421352p+3",
+      "t1": "0x1.672d1f4421352p+3"
+     },
+     {
+      "lines": ["*LINE*", "two"],
+      "t0": "0x1.056dac8a6a0a9p+5",
+      "t1": "0x1.0d6dac8a6a0a9p+5"
+     },
+     {
+      "lines": ["*LINE*", "two"],
+      "t0": "0x1.db599b11cb058p+3",
+      "t1": "0x1.fb599b11cb058p+3"
+     },
+     {
+      "lines": ["*LINE*", "two"],
+      "t0": "0x1.8452f573082f6p+5",
+      "t1": "0x1.8c52f573082f6p+5"
+     },
+     {
+      "lines": ["*LINE*", "two"],
+      "t0": "0x1.e389c816d6166p+3",
+      "t1": "0x1.01c4e40b6b0b3p+4"
+     }
+    ],
+    "fall": "0x1.999999999999ap-4"
+   },
+   "arrays": {},
+   "call": "reelkit.ui.impact_landings(caps, fall=fall)",
+   "expect": {
+    "returns": [
+     ["0x1.8c6d738daa26bp+4", 0, 4],
+     ["0x1.8ff29245fc123p+4", 1, 3],
+     ["0x1.a211428680708p+4", 0, 4],
+     ["0x1.a596613ed25c0p+4", 1, 3],
+     ["0x1.f1875ed34b82fp+3", 0, 4],
+     ["0x1.f8919c43ef5a0p+3", 1, 3],
+     ["0x1.aa06869b52c91p+5", 0, 4],
+     ["0x1.abc915f77bbedp+5", 1, 3],
+     ["0x1.de1def43fd72ap+0", 0, 4],
+     ["0x1.0b37ed648e157p+1", 1, 3],
+     ["0x1.f7f4fc2fcd660p+4", 0, 4],
+     ["0x1.fb7a1ae81f518p+4", 1, 3],
+     ["0x1.00df665d09df0p+5", 0, 4],
+     ["0x1.02a1f5b932d4cp+5", 1, 3],
+     ["0x1.4a60527754685p+3", 0, 4],
+     ["0x1.516a8fe7f83f6p+3", 1, 3],
+     ["0x1.063a795736d76p+5", 0, 4],
+     ["0x1.07fd08b35fcd2p+5", 1, 3],
+     ["0x1.de8cce44fe38bp+3", 0, 4],
+     ["0x1.e5970bb5a20fcp+3", 1, 3],
+     ["0x1.851fc23fd4fc3p+5", 0, 4],
+     ["0x1.86e2519bfdf1fp+5", 1, 3],
+     ["0x1.e6bcfb4a09499p+3", 0, 4],
+     ["0x1.edc738baad20ap+3", 1, 3]
+    ]
+   },
+   "id": "c198"
+  },
+  {
+   "args": {
+    "caps": [
+     {
+      "lines": ["EDGE"],
+      "t0": "0x1.0000000000000p+0",
+      "t1": "0x1.4000000000000p+0"
+     },
+     {
+      "lines": ["IN"],
+      "t0": "0x1.0000000000000p+1",
+      "t1": "0x1.2000000000001p+1"
+     }
+    ],
+    "fall": "0x1.0000000000000p-2"
+   },
+   "arrays": {},
+   "call": "reelkit.ui.impact_landings(caps, fall=fall)",
+   "expect": {
+    "returns": [
+     ["0x1.2000000000000p+1", 0, 2]
+    ]
+   },
+   "id": "c199"
+  },
+  {
+   "args": {
+    "lines": ["FLUTTER TONGUE"]
+   },
+   "arrays": {},
+   "call": "reelkit.ui.caption_scale(lines)",
+   "expect": {
+    "returns": 3
+   },
+   "id": "c200"
+  },
+  {
+   "args": {
+    "lines": ["15 CHARS HERE!!"]
+   },
+   "arrays": {},
+   "call": "reelkit.ui.caption_scale(lines)",
+   "expect": {
+    "returns": 2
+   },
+   "id": "c201"
+  },
+  {
+   "args": {
+    "lines": ["*NEXT MATCH-UP*", "COMMENT THE"]
+   },
+   "arrays": {},
+   "call": "reelkit.ui.caption_scale(lines)",
+   "expect": {
+    "returns": 3
+   },
+   "id": "c202"
+  },
+  {
+   "args": {
+    "lines": ["TROMBONE", "WINS!"]
+   },
+   "arrays": {},
+   "call": "reelkit.ui.caption_scale(lines)",
+   "expect": {
+    "returns": 3
+   },
+   "id": "c203"
+  },
+  {
+   "args": {
+    "lines": [""]
+   },
+   "arrays": {},
+   "call": "reelkit.ui.caption_scale(lines)",
+   "expect": {
+    "returns": 3
+   },
+   "id": "c204"
+  },
+  {
+   "args": {
+    "lines": ["*~*~"]
+   },
+   "arrays": {},
+   "call": "reelkit.ui.caption_scale(lines)",
+   "expect": {
+    "returns": 3
+   },
+   "id": "c205"
+  },
+  {
+   "args": {
+    "lines": ["~21 CHARS~ *EXACTLY* HERE"]
+   },
+   "arrays": {},
+   "call": "reelkit.ui.caption_scale(lines)",
+   "expect": {
+    "returns": 2
+   },
+   "id": "c206"
+  },
+  {
+   "args": {
+    "lines": ["a", "THIS LINE IS FAR TOO LONG TO FIT IN"]
+   },
+   "arrays": {},
+   "call": "reelkit.ui.caption_scale(lines)",
+   "expect": {
+    "returns": 2
+   },
+   "id": "c207"
+  },
+  {
+   "args": {
+    "lines": ["x\u00d72 = 4\u00b0 14 ok"]
+   },
+   "arrays": {},
+   "call": "reelkit.ui.caption_scale(lines)",
+   "expect": {
+    "returns": 3
+   },
+   "id": "c208"
+  },
+  {
+   "args": {
+    "lines": ["\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9"]
+   },
+   "arrays": {},
+   "call": "reelkit.ui.caption_scale(lines)",
+   "expect": {
+    "returns": 2
+   },
+   "id": "c209"
+  }
+ ],
+ "constants": {
+  "AMBER": [255, 198, 92],
+  "CAP_BIG_MAX": 14,
+  "CAP_SMALL_MAX": 21,
+  "CAP_Y0": 100,
+  "CORAL": [255, 118, 96],
+  "CREAM": [252, 240, 214],
+  "CYAN": [110, 240, 255],
+  "IMPACT_DROP": 4,
+  "IMPACT_FALL": "0x1.999999999999ap-4",
+  "IMPACT_PUNCH": "0x1.199999999999ap+0",
+  "IMPACT_PUNCH_T": "0x1.999999999999ap-4",
+  "IMPACT_SHAKE": "0x1.0000000000000p+1",
+  "IMPACT_SHAKE_T": "0x1.70a3d70a3d70ap-3",
+  "IMPACT_STAGGER": "0x1.c28f5c28f5c29p-3",
+  "INK": [12, 16, 30],
+  "MINT": [124, 246, 200],
+  "PINK": [255, 120, 200],
+  "PUFF_T": "0x1.ccccccccccccdp-2",
+  "SKYB": [140, 200, 255]
+ },
+ "note": "args.canvas makes the picture the call draws on, w x h, uint8 RGB: with only \"flat\", that colour everywhere; with \"mul\" and \"add\", pixel i (counted row by row from the top left) has the channels (mul[c] * i + add[c]) % 256, and if \"rows\" [ya, yb] is there too only rows ya to yb - 1 are woven like that and the rest is \"flat\". \"out\" is the picture after the call. draw_captions: caps is the list of (t0, t1, lines) with the times as float.hex() strings; a keyword that is absent was not passed (y0 100, cx 180, base CREAM, hi AMBER, alt SKYB, puff (236, 204, 150); puff null is puff=None); expect.noted is what the call appended to reelkit.ui.DRAWN: [x0, y0, x1, y1, kind, info]. Cases with source \"kit.picture\" hold the caption list and keywords kit.picture.render passes for the example episode, at the time of the frame named. impact_landings: expect.returns rows are [t_land, line, chars]. Python scalar maths (math.sin for the shake, ** 2 for the punch) is the C runtime of the reference PC's.",
+ "tool": "kit_ui"
+}
