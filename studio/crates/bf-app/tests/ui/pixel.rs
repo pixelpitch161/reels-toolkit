@@ -107,7 +107,7 @@ fn zoomed_harness<'a>(zoom: f32, size: (f32, f32), ui: impl FnMut(&mut Ui) + 'a)
         .with_size(vec2(size.0, size.1))
         .with_pixels_per_point(zoom)
         .with_render_cursor(false)
-        .wgpu()
+        .wgpu_setup(common::wgpu_setup())
         .with_context_setup(theme::install)
         .build_ui(ui)
 }
