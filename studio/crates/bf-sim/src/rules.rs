@@ -47,6 +47,9 @@ pub const MAX_STEPS: f64 = 1_000_000.0;
 /// `i64` and are multiplied back into seconds as `f64`, which is exact only below 2^53.
 pub const MAX_COUNT: f64 = 9_007_199_254_740_992.0;
 
+/// A roll fighter's rows by fighter index (`Rules::roll_rows`): each row the MIDI notes of one 8th, empty for a rest.
+pub type RollRows = BTreeMap<usize, Vec<Vec<i64>>>;
+
 /// The rules of one fight. Field names are the Python attribute names in lower case; the comment gives the Python
 /// name and the engine's default.
 #[derive(Clone, Debug, PartialEq)]
@@ -92,6 +95,28 @@ pub struct Rules {
     /// `swat_cobras = false`): the same fight as `None`, but Python's `vars(rules)` then lists it, and so does a
     /// recording's `rules`.
     pub swat_cobras: Option<bool>,
+    /// `swat_shells` (absent, read as false: `getattr(self.R, 'swat_shells', False)`, `fight.py` 755): a live thrust
+    /// lance swats an enemy mortar shell out of the air (#48, EUPHONIUM against TROMBONE). Listed in a recording's
+    /// `rules` exactly when set, as `swat_cobras` is.
+    pub swat_shells: Option<bool>,
+    /// `swat_shell_h` (absent: 0.85, `getattr(self.R, 'swat_shell_h', 0.85)`, 1257): the highest a shell may be to
+    /// meet the lance. See [`Rules::swat_shell_h`].
+    pub swat_shell_h: Option<f64>,
+    /// `swat_shell_r` (absent: 0.2, 1258): how near the lance a shell must pass in plan. See [`Rules::swat_shell_r`].
+    pub swat_shell_r: Option<f64>,
+    /// `swallow_rollers` (absent, read as false: `getattr(self.R, 'swallow_rollers', False)`, 1100): a swallowing
+    /// bell can gulp a rolling drum (#56, BASS DRUM against TUBA).
+    pub swallow_rollers: Option<bool>,
+    /// `roll_rows` (absent: `getattr(self.R, 'roll_rows', None)`, 5189): a roll fighter's rows by fighter index, the
+    /// fighter's line (`kit/story.py` 33 to 35, `roll_rows` 41 to 75; PIANO's port sets it through
+    /// `kinds::roll::feed_rules`). Python keeps a dict `{fighter index: [row, ...]}`, each row a tuple of MIDI notes
+    /// (empty for a rest); a recording's `rules` lists it as a list of `[fighter index, [[note, ...], ...]]` pairs in
+    /// index order (`recording-format.md` 6.1; ruling M3-R19), which [`Rules::apply`] reads and [`Rules::to_values`]
+    /// writes. Absent, as in every recording without a roller, it is `None`.
+    pub roll_rows: Option<RollRows>,
+    /// `roll_start8` (absent: 0, `int(getattr(self.R, 'roll_start8', 0))`, 5192): the 8th of the video the roll's
+    /// first row belongs to, `8 * LOOP_START` (`kit/story.py` 35).
+    pub roll_start8: Option<i64>,
 }
 
 impl Rules {
@@ -117,7 +142,23 @@ impl Rules {
             dmg_scale: 1.0,
             dmg_side: None,
             swat_cobras: None,
+            swat_shells: None,
+            swat_shell_h: None,
+            swat_shell_r: None,
+            swallow_rollers: None,
+            roll_rows: None,
+            roll_start8: None,
         }
+    }
+
+    /// `getattr(self.R, 'swat_shell_h', 0.85)`.
+    pub fn swat_shell_h(&self) -> f64 {
+        self.swat_shell_h.unwrap_or(0.85)
+    }
+
+    /// `getattr(self.R, 'swat_shell_r', 0.2)`.
+    pub fn swat_shell_r(&self) -> f64 {
+        self.swat_shell_r.unwrap_or(0.2)
     }
 
     /// Sets rules by their Python attribute name, as `Rules(**overrides)` does: `swat_cobras = true` from a fight
@@ -170,10 +211,16 @@ impl Rules {
                         _ => Some(pair(value, &field)?),
                     }
                 }
-                "swat_cobras" => {
-                    next.swat_cobras = match value {
-                        Value::Bool(on) => Some(*on),
-                        _ => return Err(SimError::new(&field, "must be true or false")),
+                "swat_cobras" => next.swat_cobras = Some(boolean(value, &field)?),
+                "swat_shells" => next.swat_shells = Some(boolean(value, &field)?),
+                "swat_shell_h" => next.swat_shell_h = Some(number(value, &field)?),
+                "swat_shell_r" => next.swat_shell_r = Some(number(value, &field)?),
+                "swallow_rollers" => next.swallow_rollers = Some(boolean(value, &field)?),
+                "roll_rows" => next.roll_rows = roll_rows(value, &field)?,
+                "roll_start8" => {
+                    next.roll_start8 = match value {
+                        Value::Int(n) => Some(*n),
+                        _ => return Err(SimError::new(&field, "must be a whole number")),
                     }
                 }
                 _ => return Err(SimError::new(&field, "the engine has no rule of this name")),
@@ -217,7 +264,11 @@ impl Rules {
             ("dmg_scale", self.dmg_scale),
         ];
         let sides = self.dmg_side.unwrap_or([1.0, 1.0]);
-        for (name, x) in numbers.into_iter().chain(sides.map(|x| ("dmg_side", x))) {
+        let shells = [
+            ("swat_shell_h", self.swat_shell_h()),
+            ("swat_shell_r", self.swat_shell_r()),
+        ];
+        for (name, x) in numbers.into_iter().chain(sides.map(|x| ("dmg_side", x))).chain(shells) {
             if !x.is_finite() {
                 return Err(SimError::new(
                     format!("rules.{name}"),
@@ -348,6 +399,31 @@ impl Rules {
         if let Some(on) = self.swat_cobras {
             put("swat_cobras", Value::Bool(on));
         }
+        // the kit's other opt-in rules, each listed exactly when set (`roll_rows` as pairs: see its field)
+        if let Some(on) = self.swat_shells {
+            put("swat_shells", Value::Bool(on));
+        }
+        if let Some(h) = self.swat_shell_h {
+            put("swat_shell_h", Value::Float(h));
+        }
+        if let Some(r) = self.swat_shell_r {
+            put("swat_shell_r", Value::Float(r));
+        }
+        if let Some(on) = self.swallow_rollers {
+            put("swallow_rollers", Value::Bool(on));
+        }
+        if let Some(rows) = &self.roll_rows {
+            let pair = |(k, rows): (&usize, &Vec<Vec<i64>>)| {
+                let rows = rows
+                    .iter()
+                    .map(|r| Value::List(r.iter().map(|&m| Value::Int(m)).collect()));
+                Value::List(vec![Value::Int(*k as i64), Value::List(rows.collect())])
+            };
+            put("roll_rows", Value::List(rows.iter().map(pair).collect()));
+        }
+        if let Some(n) = self.roll_start8 {
+            put("roll_start8", Value::Int(n));
+        }
         m
     }
 }
@@ -359,6 +435,56 @@ fn number(value: &Value, field: &str) -> Result<f64, SimError> {
         Value::Int(n) => Ok(*n as f64),
         _ => Err(SimError::new(field, "must be a number")),
     }
+}
+
+/// `true` or `false`: an opt-in rule (Python takes any value and asks its truth; the Studio's rules are typed).
+fn boolean(value: &Value, field: &str) -> Result<bool, SimError> {
+    match value {
+        Value::Bool(on) => Ok(*on),
+        _ => Err(SimError::new(field, "must be true or false")),
+    }
+}
+
+/// `roll_rows` as a recording's `rules` lists it: `null` (none), or a list of `[fighter index, rows]` pairs, the
+/// indices 0 or 1 in ascending order, each row a list of whole numbers (MIDI notes; empty for a rest).
+fn roll_rows(value: &Value, field: &str) -> Result<Option<RollRows>, SimError> {
+    let bad = || SimError::new(field, "must be a list of [fighter index, [[note, ...], ...]] pairs");
+    let pairs = match value {
+        Value::Null => return Ok(None),
+        Value::List(pairs) => pairs,
+        _ => return Err(bad()),
+    };
+    let mut out = BTreeMap::new();
+    for pair in pairs {
+        let Value::List(pair) = pair else { return Err(bad()) };
+        let [Value::Int(k), Value::List(rows)] = pair.as_slice() else {
+            return Err(bad());
+        };
+        let k = match usize::try_from(*k) {
+            Ok(k @ 0..=1) if out.keys().all(|&j| j < k) => k,
+            _ => {
+                return Err(SimError::new(
+                    field,
+                    format!("fighter index {k}: 0 or 1, each once, in order"),
+                ));
+            }
+        };
+        let rows = rows
+            .iter()
+            .map(|row| match row {
+                Value::List(notes) => notes
+                    .iter()
+                    .map(|m| match m {
+                        Value::Int(m) => Ok(*m),
+                        _ => Err(bad()),
+                    })
+                    .collect(),
+                _ => Err(bad()),
+            })
+            .collect::<Result<Vec<Vec<i64>>, SimError>>()?;
+        out.insert(k, rows);
+    }
+    Ok(Some(out))
 }
 
 /// A list of exactly two numbers.
@@ -435,6 +561,110 @@ mod tests {
         assert!(!Rules::new(120.0, 4.0).to_values().contains_key("dmg_side"));
     }
 
+    /// The kit's other opt-in rules (`swat_shells` #48, its two numbers, `swallow_rollers` #56, `roll_start8` #45):
+    /// absent by default (Python's `getattr` defaults: false, 0.85, 0.2, false, 0), set by name, and listed in a
+    /// recording's `rules` exactly when set, as Python's `vars(rules)` lists them.
+    #[test]
+    fn the_kits_other_opt_in_rules_apply_by_name() {
+        let r = Rules::new(120.0, 4.0);
+        assert_eq!((r.swat_shells, r.swallow_rollers, r.roll_start8), (None, None, None));
+        assert_eq!((r.swat_shell_h(), r.swat_shell_r()), (0.85, 0.2));
+        assert!(r.roll_rows.is_none());
+        assert!(!r.to_values().contains_key("roll_rows"));
+        let keys = |r: &Rules| r.to_values().into_keys().collect::<Vec<_>>();
+        assert_eq!(keys(&r).len(), 17);
+        let mut r = Rules::new(120.0, 4.0);
+        let over = BTreeMap::from([
+            ("swat_shells".to_string(), Value::Bool(true)),
+            ("swat_shell_h".to_string(), Value::Float(0.9)),
+            ("swat_shell_r".to_string(), Value::Int(1)),
+            ("swallow_rollers".to_string(), Value::Bool(false)),
+            ("roll_start8".to_string(), Value::Int(16)),
+        ]);
+        r.apply(&over).expect("applies");
+        assert_eq!(
+            (r.swat_shells, r.swallow_rollers, r.roll_start8),
+            (Some(true), Some(false), Some(16))
+        );
+        assert_eq!((r.swat_shell_h(), r.swat_shell_r()), (0.9, 1.0));
+        let m = r.to_values();
+        for (key, want) in [
+            ("swat_shells", Value::Bool(true)),
+            ("swat_shell_h", Value::Float(0.9)),
+            ("swat_shell_r", Value::Float(1.0)),
+            ("swallow_rollers", Value::Bool(false)),
+            ("roll_start8", Value::Int(16)),
+        ] {
+            assert_eq!(m[key], want, "{key}");
+        }
+        // typed as the Studio's rules are: a truth value is true or false, a count a whole number
+        for (key, value, want) in [
+            ("swat_shells", Value::Int(1), "rules.swat_shells: must be true or false"),
+            (
+                "swallow_rollers",
+                Value::Null,
+                "rules.swallow_rollers: must be true or false",
+            ),
+            (
+                "roll_start8",
+                Value::Float(16.0),
+                "rules.roll_start8: must be a whole number",
+            ),
+            (
+                "swat_shell_h",
+                Value::Float(f64::NAN),
+                "rules.swat_shell_h: NaN is not a finite number",
+            ),
+            (
+                "roll_rows",
+                Value::List(vec![Value::Int(0)]),
+                "rules.roll_rows: must be a list of [fighter index, [[note, ...], ...]] pairs",
+            ),
+            (
+                "roll_rows",
+                Value::List(vec![Value::List(vec![Value::Int(2), Value::List(vec![])])]),
+                "rules.roll_rows: fighter index 2: 0 or 1, each once, in order",
+            ),
+        ] {
+            let mut r = Rules::new(120.0, 4.0);
+            let err = r.apply(&BTreeMap::from([(key.to_string(), value)])).unwrap_err();
+            assert_eq!(err.to_string(), want);
+        }
+    }
+
+    /// `roll_rows` (#45, PIANO's line): Python's dict `{1: [(64, 52, 60), (), (67,)]}` is listed as
+    /// `[[1, [[64, 52, 60], [], [67]]]]` and reads back the same; `null` is none.
+    #[test]
+    fn roll_rows_are_listed_as_index_and_rows_pairs() {
+        use Value::{Int as I, List as L};
+        let listed = L(vec![L(vec![
+            I(1),
+            L(vec![L(vec![I(64), I(52), I(60)]), L(vec![]), L(vec![I(67)])]),
+        ])]);
+        let mut r = Rules::new(132.0, 3.5);
+        r.apply(&BTreeMap::from([("roll_rows".to_string(), listed.clone())]))
+            .expect("applies");
+        let want = BTreeMap::from([(1, vec![vec![64, 52, 60], vec![], vec![67]])]);
+        assert_eq!(r.roll_rows, Some(want));
+        assert_eq!(r.to_values()["roll_rows"], listed);
+        r.apply(&BTreeMap::from([("roll_rows".to_string(), Value::Null)]))
+            .expect("applies");
+        assert_eq!(r.roll_rows, None);
+        // both fighters, in order; out of order is refused
+        let both = L(vec![L(vec![I(0), L(vec![])]), L(vec![I(1), L(vec![L(vec![I(48)])])])]);
+        r.apply(&BTreeMap::from([("roll_rows".to_string(), both.clone())]))
+            .expect("applies");
+        assert_eq!(r.to_values()["roll_rows"], both);
+        let swapped = L(vec![L(vec![I(1), L(vec![])]), L(vec![I(0), L(vec![])])]);
+        let err = r
+            .apply(&BTreeMap::from([("roll_rows".to_string(), swapped)]))
+            .unwrap_err();
+        assert_eq!(
+            err.to_string(),
+            "rules.roll_rows: fighter index 0: 0 or 1, each once, in order"
+        );
+    }
+
     #[test]
     fn a_bad_override_is_named_and_changes_nothing() {
         let before = Rules::new(120.0, 4.0);
@@ -443,9 +673,9 @@ mod tests {
             ("ROPE_GIVE", Value::Float(-0.0), "rules.ROPE_GIVE: -0 is negative"),
             ("t_fight", Value::Float(-2.0), "rules.t_fight: -2 is negative"),
             (
-                "swat_shells",
+                "swat_drums",
                 Value::Bool(true),
-                "rules.swat_shells: the engine has no rule of this name",
+                "rules.swat_drums: the engine has no rule of this name",
             ),
             ("LOW_HP", Value::Str("low".into()), "rules.LOW_HP: must be a number"),
             (

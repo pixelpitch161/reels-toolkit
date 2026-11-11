@@ -34,7 +34,7 @@ use bf_sound::wav::wav16_bytes;
 use bf_story::{BeatSheet, story};
 
 use crate::checks::{BandPlan, CheckResult, Kept, panic_text, pre_render_keeping};
-use crate::encode::{Encoder, Ffmpeg, find_ffmpeg};
+use crate::encode::{ENCODING_NOTE, EncodeSpeed, Encoder, Ffmpeg, find_ffmpeg};
 use crate::output::{TempFolder, caption_text, clip_folder_name, folder_stem, png_bytes, prepare_root, taken};
 use crate::probe::verify_until;
 use crate::{ExportError, output};
@@ -69,6 +69,10 @@ pub struct JobOpts {
     /// and the checks before the render and the two loop checks of the file are left out, since they are about
     /// the whole video. `None` for the whole video.
     pub frames: Option<Range<usize>>,
+    /// How the video is encoded. [`EncodeSpeed::Best`] (the default) makes exactly the files it always made; a
+    /// video (or clip) made with [`EncodeSpeed::Faster`] also has [`ENCODING_NOTE`] in its folder, saying so. The
+    /// fight file is the same either way.
+    pub speed: EncodeSpeed,
 }
 
 /// What a running job reports.
@@ -197,6 +201,7 @@ fn job_with(
         frames,
         whole,
         ffmpeg,
+        speed: opts.speed,
         name: &name,
         on,
         cancel,
@@ -222,6 +227,7 @@ struct Job<'a> {
     frames: Range<usize>,
     whole: bool,
     ffmpeg: &'a Ffmpeg,
+    speed: EncodeSpeed,
     name: &'a str,
     on: &'a (dyn Fn(JobEvent) + Sync),
     cancel: &'a AtomicBool,
@@ -259,7 +265,7 @@ impl Job<'_> {
         let part_path = tmp.file(&part);
         let total = self.frames.len();
         on(JobEvent::Stage(stage::FRAMES));
-        let mut enc = Encoder::start(self.ffmpeg, &wav, &part_path, total)?;
+        let mut enc = Encoder::start(self.ffmpeg, &wav, &part_path, total, self.speed)?;
         let t0 = Instant::now();
         let first = self.frames.start;
         let kept = Mutex::new(kept);
@@ -303,6 +309,9 @@ impl Job<'_> {
         on(JobEvent::Stage(stage::SAVE));
         tmp.rename(&part, &mp4)?;
         tmp.remove("audio.wav")?;
+        if let Some(note) = self.speed.note() {
+            tmp.write(ENCODING_NOTE, note.as_bytes())?;
+        }
         if self.whole {
             let f = pic.card().cover_frame();
             let cover = draw(&pic, f).map_err(|why| frame_error(f, &why))?;

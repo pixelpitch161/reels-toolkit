@@ -173,6 +173,10 @@ fn trigger_announces_the_ability_and_its_kind_acts() {
                 name: "PICCOLO".into(),
                 t0: 12.533333333333331,
                 slow: None,
+                stun: None,
+                detune: None,
+                grow: false,
+                clears: true,
             },
             Wave {
                 owner: 1,
@@ -187,6 +191,10 @@ fn trigger_announces_the_ability_and_its_kind_acts() {
                 name: "SAD TROMBONE".into(),
                 t0: 12.541666666666664,
                 slow: Some(SlowCfg { mult: 0.6, dur: 1.0 }),
+                stun: None,
+                detune: None,
+                grow: false,
+                clears: true,
             },
         ]
     );
@@ -200,6 +208,7 @@ fn trigger_announces_the_ability_and_its_kind_acts() {
         knock: 1.6,
         done: false,
         name: "PEDAL TONE".into(),
+        how: "slam".into(),
     };
     assert_eq!(
         fight.slams,
@@ -1244,6 +1253,7 @@ fn the_weapons_act_before_the_effects_in_a_step() {
         knock: 1.6,
         done: false,
         name: "PEDAL TONE".into(),
+        how: "slam".into(),
     });
     sched.step(&mut fight);
     assert_eq!(

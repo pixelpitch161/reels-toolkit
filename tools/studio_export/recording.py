@@ -56,6 +56,11 @@ def write_bfrec(run, rules, path, source=None, rect_keys=None, register=True):
         _, story = common.kit()
         rect_keys = story.REC_KEYS
     rules = dict(rules) if isinstance(rules, dict) else dict(vars(rules))
+    if isinstance(rules.get('roll_rows'), dict):
+        # ruling M3-R19: PIANO's rows {fighter index: [row, ...]} as [index, [[note, ...], ...]] pairs in index order
+        # (recording-format.md 2 and 6.1); a recording without a roller has no such rule and is written as before
+        rules['roll_rows'] = [[int(k), [[int(m) for m in row] for row in rows]]
+                              for k, rows in sorted(rules['roll_rows'].items())]
     if 'HP' not in run:
         raise ValueError('the run was made with record=False: there is nothing per-frame to store')
     frames = len(run['HP'])

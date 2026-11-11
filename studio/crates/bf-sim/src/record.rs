@@ -7,15 +7,22 @@
 //! `WAVES` and `SLAMS` ragged lists. `EXT`, `SLW` and `CRV` (frames, 2) are there when a fighter thrusts, curves or
 //! slows ([`Fight::uses_ext`]). A weapon kind adds its own keys when a fighter has it: `COB`, a ragged list of the
 //! baskets and cobras, when a fighter is a striker.
+//!
+//! The kit's other kinds add theirs through [`Frames`]' kind keys: each kind module says which keys its fighters
+//! bring (`record_keys`, Python's `rec` at the start of `run()`) and writes its rows of each frame (`snap`), with
+//! [`Frames::push_f64`], [`Frames::push_i64`] or [`Frames::push_nested`]. `snap` calls them in `fight.py`'s order.
 
 use std::collections::BTreeMap;
 
 use bf_core::event::Value;
 use bf_core::recording::{Array, RECORDING_FORMAT, Recording, Source};
 
+use crate::abilities::{flick, hook, lights_out, snip};
 use crate::fight::Fight;
 use crate::geom;
-use crate::kinds::striker;
+use crate::kinds::{
+    anchor, crowd, drill, echo, grapple, mortar, roll, roll_charge, spotlight, striker, tiptoe, tune, walk,
+};
 
 /// `KMAX`: the most projectiles a frame records.
 pub(crate) const KMAX: usize = 72;
@@ -47,17 +54,129 @@ pub(crate) struct Frames {
     ext: Option<[Vec<f64>; 3]>,
     /// `COB`: the baskets and cobras, only when a fighter is a striker (`fight.py` 5773 to 5774).
     cob: Option<Vec<Value>>,
-    // Later kinds add their keys the same way: an `Option` that is `Some` exactly when Python's `rec` has the key.
+    /// The kit's other kinds' keys, each present exactly when Python's `rec` has it, in the order `run()` adds them.
+    kinds: Vec<(&'static str, Rows)>,
+}
+
+/// A kit kind's frame writer for `Frames::snap`: its socket's name, its `record_keys` and its `snap`.
+type KindSnap = (
+    &'static str,
+    fn(&Fight) -> &'static [&'static str],
+    fn(&Fight, &mut Frames),
+);
+
+/// The rows a kind key holds so far.
+#[derive(Clone, Debug, Default)]
+// the kit kinds' `snap`s write these once their ports fill them; until then only the tests do
+#[cfg_attr(not(test), allow(dead_code))]
+pub(crate) enum Rows {
+    /// None yet.
+    #[default]
+    Empty,
+    /// A rectangular float array: each frame's row has the shape `row` (`<f8`, NaN allowed).
+    F64 { row: Vec<usize>, data: Vec<f64> },
+    /// A rectangular whole-number array (`<i8`).
+    I64 { row: Vec<usize>, data: Vec<i64> },
+    /// A ragged list: one value per frame (`<KEY>.json`).
+    Nested(Vec<Value>),
 }
 
 impl Frames {
     /// The empty record of a fight: the keys `run()` starts `rec` with (`fight.py` 5737), plus the opt-in keys this
     /// fight's fighters bring (`COB`, 5773 to 5774; `EXT`, `SLW` and `CRV`, 5779 to 5780).
     pub(crate) fn new(fight: &Fight) -> Frames {
+        // the kit's other kinds, in the order `run()` adds their keys (5791 to 5911)
+        let kinds = [
+            echo::record_keys(fight),
+            tune::record_keys(fight),
+            snip::record_keys(fight),
+            lights_out::record_keys(fight),
+            mortar::record_keys(fight),
+            anchor::record_keys(fight),
+            flick::record_keys(fight),
+            tiptoe::record_keys(fight),
+            hook::record_keys(fight),
+            grapple::record_keys(fight),
+            walk::record_keys(fight),
+            roll::record_keys(fight),
+            spotlight::record_keys(fight),
+            crowd::record_keys(fight),
+            drill::record_keys(fight),
+            roll_charge::record_keys(fight),
+        ];
         Frames {
             ext: fight.uses_ext.then(Default::default),
             cob: (0..2).any(|k| striker::is_striker(fight, k)).then(Vec::new),
+            kinds: kinds
+                .iter()
+                .flat_map(|keys| keys.iter())
+                .map(|&key| (key, Rows::Empty))
+                .collect(),
             ..Frames::default()
+        }
+    }
+
+    /// Whether the record has this kind key (Python's `'KEY' in rec`).
+    pub(crate) fn has(&self, key: &str) -> bool {
+        self.kinds.iter().any(|(k, _)| *k == key)
+    }
+
+    #[cfg_attr(not(test), allow(dead_code))]
+    fn rows(&mut self, key: &str) -> &mut Rows {
+        match self.kinds.iter_mut().find(|(k, _)| *k == key) {
+            Some((_, rows)) => rows,
+            None => panic!("the record has no key {key}: the kind's record_keys must list it"),
+        }
+    }
+
+    /// Appends this frame's row of the float key `key`, of shape `row` (the same in every frame).
+    ///
+    /// # Panics
+    /// When the record has no such key, or the key's rows are of another type or shape: a kind's own mistake.
+    #[cfg_attr(not(test), allow(dead_code))]
+    pub(crate) fn push_f64(&mut self, key: &str, row: &[usize], values: &[f64]) {
+        assert_eq!(row.iter().product::<usize>(), values.len(), "{key}: a row of {row:?}");
+        match self.rows(key) {
+            rows @ Rows::Empty => {
+                *rows = Rows::F64 {
+                    row: row.to_vec(),
+                    data: values.to_vec(),
+                }
+            }
+            Rows::F64 { row: r, data } if r.as_slice() == row => data.extend_from_slice(values),
+            other => panic!("{key}: a float row of {row:?} after {other:?}"),
+        }
+    }
+
+    /// Appends this frame's row of the whole-number key `key`, of shape `row`.
+    ///
+    /// # Panics
+    /// As [`Frames::push_f64`].
+    #[cfg_attr(not(test), allow(dead_code))]
+    pub(crate) fn push_i64(&mut self, key: &str, row: &[usize], values: &[i64]) {
+        assert_eq!(row.iter().product::<usize>(), values.len(), "{key}: a row of {row:?}");
+        match self.rows(key) {
+            rows @ Rows::Empty => {
+                *rows = Rows::I64 {
+                    row: row.to_vec(),
+                    data: values.to_vec(),
+                }
+            }
+            Rows::I64 { row: r, data } if r.as_slice() == row => data.extend_from_slice(values),
+            other => panic!("{key}: a whole-number row of {row:?} after {other:?}"),
+        }
+    }
+
+    /// Appends this frame's value of the ragged key `key`.
+    ///
+    /// # Panics
+    /// As [`Frames::push_f64`].
+    #[cfg_attr(not(test), allow(dead_code))]
+    pub(crate) fn push_nested(&mut self, key: &str, value: Value) {
+        match self.rows(key) {
+            rows @ Rows::Empty => *rows = Rows::Nested(vec![value]),
+            Rows::Nested(list) => list.push(value),
+            other => panic!("{key}: a ragged row after {other:?}"),
         }
     }
 
@@ -86,10 +205,15 @@ impl Frames {
             self.om.push(b.spin);
         }
         // K = np.full((KMAX, 7), np.nan)
+        let start = self.k.len();
         self.k.extend(std::iter::repeat_n(NAN, KMAX * K_FIELDS));
-        // SLOT (projectile kinds), from `fight.keys`: fight.py 5510 to 5514 fills the first min(KMAX, len(kp)) rows
-        // of this frame's K with [x, y, atan2(vy, vx), owner, id, index in its volley, volley id]. FLUTE and TROMBONE
+        // fight.py 5509 to 5514, from `fight.keys`: the first min(KMAX, len(kp)) rows of this frame's K are [x, y,
+        // atan2(vy, vx), owner, id, index in its volley, volley id]: the roll's (PIANO's) code. FLUTE and TROMBONE
         // fire none.
+        fight.socket("snap.K");
+        if !fight.keys.is_empty() {
+            roll::k_rows(fight, &mut self.k[start..]);
+        }
         let waves = fight.waves.iter().map(|w| {
             Value::List(vec![
                 Value::Int(w.owner as i64),
@@ -141,7 +265,32 @@ impl Frames {
                 crv.push(b.curve_now);
             }
         }
-        // fight.py 5529 to 5732: the keys of the kinds not ported (HOUNDS ... RCHG), in that order.
+        // fight.py 5529 to 5732: the kit's other kinds' keys, each written by its kind while the record has it, in
+        // `snap`'s order (HOUNDS 5529, WRECK 5577, SNAP 5588, RATTLE 5595 and REST 5616 are older kinds': SLOT)
+        let kinds: [KindSnap; 16] = [
+            ("snap.ECHO", echo::record_keys, echo::snap),               // 5539 to 5549
+            ("snap.DET", tune::record_keys, tune::snap),                // 5550 to 5554
+            ("snap.SNIP", snip::record_keys, snip::snap),               // 5555 to 5561
+            ("snap.LO", lights_out::record_keys, lights_out::snap),     // 5562 to 5563
+            ("snap.SHELLS", mortar::record_keys, mortar::snap),         // 5564 to 5568
+            ("snap.ANC", anchor::record_keys, anchor::snap),            // 5569 to 5576
+            ("snap.HOOK", hook::record_keys, hook::snap),               // 5602 to 5608
+            ("snap.HOP", tiptoe::record_keys, tiptoe::snap),            // 5609 to 5615
+            ("snap.ROLL", roll::record_keys, roll::snap),               // 5621 to 5624
+            ("snap.GRAB", grapple::record_keys, grapple::snap),         // 5625 to 5633
+            ("snap.WALK", walk::record_keys, walk::snap),               // 5634 to 5642
+            ("snap.DRILL", drill::record_keys, drill::snap),            // 5643 to 5670
+            ("snap.SPOT", spotlight::record_keys, spotlight::snap),     // 5671 to 5681
+            ("snap.CROWD", crowd::record_keys, crowd::snap),            // 5682 to 5704
+            ("snap.FLICK", flick::record_keys, flick::snap),            // 5705 to 5711
+            ("snap.RCHG", roll_charge::record_keys, roll_charge::snap), // 5713 to 5732
+        ];
+        for (socket, keys, snap) in kinds {
+            fight.socket(socket);
+            if keys(fight).iter().any(|key| self.has(key)) {
+                snap(fight, self);
+            }
+        }
     }
 
     /// The per-frame arrays of a recording, each under its Python key.
@@ -197,6 +346,27 @@ impl Frames {
             put("EXT", pair(ext));
             put("SLW", pair(slw));
             put("CRV", pair(crv));
+        }
+        for (key, rows) in self.kinds {
+            let shape = |row: Vec<usize>| [vec![n], row].concat();
+            match rows {
+                Rows::Empty => put(key, Array::Nested(Value::List(Vec::new()))),
+                Rows::F64 { row, data } => put(
+                    key,
+                    Array::F64 {
+                        shape: shape(row),
+                        data,
+                    },
+                ),
+                Rows::I64 { row, data } => put(
+                    key,
+                    Array::I64 {
+                        shape: shape(row),
+                        data,
+                    },
+                ),
+                Rows::Nested(list) => put(key, Array::Nested(Value::List(list))),
+            }
         }
         arrays
     }
@@ -387,6 +557,10 @@ mod tests {
             name: "SAD TROMBONE".into(),
             t0: 16.25,
             slow: None,
+            stun: None,
+            detune: None,
+            grow: false,
+            clears: true,
         });
         fight.slams.push(Slam {
             owner: 0,
@@ -398,6 +572,7 @@ mod tests {
             knock: 1.6,
             done: false,
             name: "PEDAL TONE".into(),
+            how: "slam".into(),
         });
         let mut frames = Frames::new(&fight);
         for t in [20.25, 21.0, 21.1, 21.125] {
@@ -430,6 +605,33 @@ mod tests {
                 rows(&[])
             ]))
         );
+    }
+
+    /// A kit kind's keys: present only when its `record_keys` gave them (none yet: FLUTE and TROMBONE bring 19
+    /// keys, as before), each frame's rows appended in order, and written as rectangular arrays (frames first) or
+    /// ragged lists.
+    #[test]
+    fn kind_keys_hold_their_rows_frame_by_frame() {
+        let roster = testing::roster();
+        let fight = testing::fight(&testing::episode_setup(&roster, 1), true);
+        let mut frames = Frames::new(&fight);
+        assert!(frames.kinds.is_empty());
+        frames.kinds = vec![("SNIP", Rows::Empty), ("ROLL", Rows::Empty), ("HOLD", Rows::Empty)];
+        assert!(frames.has("SNIP") && !frames.has("HOP"));
+        for i in 0..2 {
+            frames.snap(&fight);
+            let x = i as f64;
+            frames.push_f64("SNIP", &[2, 3], &[x, 1.0, 2.0, NAN, NAN, NAN]);
+            frames.push_i64("ROLL", &[2], &[i, -1]);
+            frames.push_nested("HOLD", Value::List(vec![Value::Int(i)]));
+        }
+        let a = frames.into_arrays();
+        assert_eq!(a.len(), 22);
+        let (shape, snip) = floats(&a, "SNIP");
+        assert_eq!((shape, snip[6], snip[3].to_bits()), (vec![2, 2, 3], 1.0, NAN.to_bits()));
+        assert_eq!(wholes(&a, "ROLL"), (vec![2, 2], vec![0, -1, 1, -1]));
+        let rows = |i: i64| Value::List(vec![Value::Int(i)]);
+        assert_eq!(a["HOLD"], Array::Nested(Value::List(vec![rows(0), rows(1)])));
     }
 
     #[test]

@@ -433,10 +433,12 @@ fn ffmpeg_pin_file() -> PathBuf {
 const ENCODE_HASHES_HEADER: &str = "\
 # The SHA-256 of the mp4 that `ballfight render` writes for the example episode (FLUTE against TROMBONE,
 # studio/fights/flute_vs_trombone.toml, recording studio/reference/fights/flute_vs_trombone/ep392.bfrec) with the
-# pinned ffmpeg (studio/packaging/ffmpeg.toml): clip0-90.mp4 is `--frames 0:90`, video.mp4 the whole video. The
-# `ffmpeg` line is the first line that ffmpeg's `-version` prints; the bytes of an mp4 depend on the ffmpeg build,
-# so the hashes are compared only when the ffmpeg in use is the pinned one. Written by crates/bf-cli/tests/e2e.rs
-# (the_encode_is_pinned, the_whole_video_is_pinned) with BF_BLESS=1 on the Windows reference PC. Do not edit by hand.
+# pinned ffmpeg (studio/packaging/ffmpeg.toml): clip0-90.mp4 is `--frames 0:90`, video.mp4 the whole video, and
+# clip0-90-faster.mp4 is `--frames 0:90 --encode faster` (the Faster setting). The `ffmpeg` line is the first line
+# that ffmpeg's `-version` prints; the bytes of an mp4 depend on the ffmpeg build, so the hashes are compared only
+# when the ffmpeg in use is the pinned one. Written by crates/bf-cli/tests/e2e.rs (the_encode_is_pinned,
+# the_whole_video_is_pinned, the_faster_clip_is_pinned) with BF_BLESS=1 on the Windows reference PC. Do not edit by
+# hand.
 # file sha256
 ";
 
@@ -561,6 +563,11 @@ fn env_is_1(name: &str) -> bool {
 /// both builds. Without any usable ffmpeg it prints a notice and passes, except with `BF_NEED_FFMPEG=1` or
 /// `BF_NEED_PINNED_FFMPEG=1`.
 fn encode_is_pinned(test: &str, frames: Option<&str>, key: &str) {
+    encode_is_pinned_with(test, frames, key, &[]);
+}
+
+/// [`encode_is_pinned`] with `more` added to the render's arguments (`--encode faster`).
+fn encode_is_pinned_with(test: &str, frames: Option<&str>, key: &str, more: &[&str]) {
     let bless = env_is_1("BF_BLESS");
     let need_pinned = env_is_1("BF_NEED_PINNED_FFMPEG");
     let file = EncodeHashes::read();
@@ -619,6 +626,9 @@ fn encode_is_pinned(test: &str, frames: Option<&str>, key: &str) {
         args.push(&"--frames");
         args.push(r);
     }
+    for m in more {
+        args.push(m);
+    }
     let t0 = Instant::now();
     ballfight(&root.0, &args).ok("render");
     let took = t0.elapsed().as_secs_f64();
@@ -672,6 +682,85 @@ fn the_encode_is_pinned() {
 #[ignore = "a whole 61 s render, about a minute and a half in release: run it by name"]
 fn the_whole_video_is_pinned() {
     encode_is_pinned("the_whole_video_is_pinned", None, "video.mp4");
+}
+
+/// The same clip with `--encode faster`, encoded by the pinned ffmpeg, is byte for byte the `clip0-90-faster.mp4`
+/// line of `studio/replay/encode_hashes.txt` (the Faster setting is pinned too, beside the default).
+#[test]
+fn the_faster_clip_is_pinned() {
+    encode_is_pinned_with(
+        "the_faster_clip_is_pinned",
+        Some("0:90"),
+        "clip0-90-faster.mp4",
+        &["--encode", "faster"],
+    );
+}
+
+/// A clip made with `--encode faster` passes every check of its file, says so in the JSON, and its folder holds the
+/// mp4 and `encoding.txt`, which names the setting; the same clip with the default holds the mp4 alone, and an
+/// unknown setting is refused in one line naming the two there are.
+#[test]
+fn a_faster_clip_passes_its_checks() {
+    let root = TempRoot::new("faster clip");
+    let (fight, rec) = (example(), ep392());
+    let line = ballfight(
+        &root.0,
+        &[
+            &"render",
+            &fight,
+            &"--rec",
+            &rec,
+            &"--out",
+            &"out",
+            &"--frames",
+            &"0:30",
+            &"--encode",
+            &"fast",
+        ],
+    )
+    .refused("--encode fast");
+    assert!(line.contains("best") && line.contains("faster"), "{line}");
+    assert!(!root.join("out").exists(), "nothing made before the refusal");
+    if !have_ffmpeg("a_faster_clip_passes_its_checks") {
+        return;
+    }
+    let mut folders = Vec::new();
+    for encode in ["faster", "best"] {
+        let out = root.join(&format!("out {encode}"));
+        let ran = ballfight(
+            &root.0,
+            &[
+                &"render",
+                &fight,
+                &"--rec",
+                &rec,
+                &"--out",
+                &out,
+                &"--frames",
+                &"0:30",
+                &"--encode",
+                &encode,
+                &"--json",
+            ],
+        )
+        .ok("render --encode");
+        let v = ran.json();
+        assert_eq!(v["encode"], encode, "{v}");
+        let checks = v["checks"].as_array().expect("the checks");
+        assert!(!checks.is_empty(), "{v}");
+        for c in checks {
+            assert_eq!(c["pass"], Value::Bool(true), "{c}");
+        }
+        folders.push(PathBuf::from(v["folder"].as_str().expect("the folder")));
+    }
+    let name = "flute_vs_trombone_frames0-30";
+    assert_eq!(
+        entries(&folders[0]),
+        ["encoding.txt".to_string(), format!("{name}.mp4")]
+    );
+    assert_eq!(entries(&folders[1]), [format!("{name}.mp4")]);
+    let note = std::fs::read_to_string(folders[0].join("encoding.txt")).unwrap();
+    assert!(note.contains("Faster") && note.contains("Best quality"), "{note}");
 }
 
 /// Another build is told apart from the pinned one by its exe's SHA-256 even when it prints the same version line,
