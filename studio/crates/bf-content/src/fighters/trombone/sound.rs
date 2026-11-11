@@ -47,6 +47,42 @@ fn bad(e: HarmonyError) -> MusicError {
     MusicError::new(H, e.to_string())
 }
 
+/// What a fight file can change when one of its chords is too small for the TROMBONE's bass.
+const CHORD_FIELDS: &str = "music.chords_intro or music.chord_loop";
+
+/// `r + ((pcs[1] - pcs[0]) % 12)`: the third of `chord` (pitch classes `pcs`, root first) above its root `r`, for
+/// the walking bass. A chord of fewer than two notes has no third: Python raises an `IndexError` there, this
+/// says which chord it is. (Every chord the kit names has three notes or more; this guards a later chord type.)
+fn third_above(chord: &str, pcs: &[i32], r: i32) -> Result<i32, MusicError> {
+    match pcs {
+        [root, second, ..] => Ok(r + (second - root).rem_euclid(12)),
+        _ => Err(MusicError::new(
+            H,
+            format!(
+                "the chord {chord:?} has {} note(s), and the walking bass needs a second one above the root: use a \
+                 chord of three notes or more in {CHORD_FIELDS}",
+                pcs.len()
+            ),
+        )),
+    }
+}
+
+/// `climb[bt % len(climb)]`: beat `bt` of the climb up the last chord `chord` into the title. An empty climb (no
+/// note of the chord within the octave from its root) has nothing to play: Python divides by zero there, this
+/// says which chord it is. (The root is always a note of its chord, so no chord the kit names gives one.)
+fn climb_note(chord: &str, climb: &[i32], bt: usize) -> Result<i32, MusicError> {
+    if climb.is_empty() {
+        return Err(MusicError::new(
+            H,
+            format!(
+                "the last chord {chord:?} has no note within an octave of its root for the bass to climb into the \
+                 title: change the chord that falls on the last bar in {CHORD_FIELDS}"
+            ),
+        ));
+    }
+    Ok(climb[bt % climb.len()])
+}
+
 /// `bone(m, dur, vel, gl, gl_t, cap)`: a trombone note gliding up `gl` semitones into the pitch (the slide)
 /// (#34): `M.note('TROMBONE', m, round(dur, 3), cap or round(dur + 0.3, 2), round(vel, 1))`, through
 /// `M.gliss(x, gl, gl_t)` unless `gl` is 0. Python's defaults are [`BONE_DUR`], [`BONE_VEL`], [`BONE_GL`],
@@ -113,7 +149,7 @@ impl TromboneSound {
     /// (8 per bar).
     ///
     /// # Errors
-    /// `t` is not a time.
+    /// `t` is not a time, or the chord there has no second note above its root.
     pub fn walk_note(&self, ctx: &MusicCtx, t: f64) -> Result<i32, MusicError> {
         let grid = &ctx.show.grid;
         let (lo, hi) = self.register(ctx);
@@ -126,7 +162,7 @@ impl TromboneSound {
             r
         };
         let pcs = ctx.harmony.chord_pcs(c).map_err(bad)?;
-        let third = r + (pcs[1] - pcs[0]).rem_euclid(12);
+        let third = third_above(c, pcs, r)?;
         let fifth = r + 7;
         let approach = if nxt + 2 <= hi { nxt + 2 } else { nxt - 1 };
         let table = [r, r, third, third, fifth, fifth, approach, nxt + 1];
@@ -486,10 +522,42 @@ impl Sound for TromboneSound {
         let mut climb = ctx.harmony.chord_tones(r, r + 11, ch).map_err(bad)?;
         climb.truncate(4);
         for bt in 0..4usize {
-            // The root itself is always a tone of its chord: the climb is never empty.
-            let x = bone(ctx, climb[bt % climb.len()], 0.35, 0.9, 3.0, 0.06, None)?;
+            let x = bone(ctx, climb_note(ch, &climb, bt)?, 0.35, 0.9, 3.0, 0.06, None)?;
             mix.place(&bus, &Sig::Mono(x), t_last + bt as f64 * grid.beat, 0.42, 0.0);
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_chord_without_a_third_is_an_error() {
+        // E minor: E G B, the third is three semitones up.
+        assert_eq!(third_above("Em", &[4, 7, 11], 40), Ok(43));
+        // Python: `pcs[1]` raises an IndexError.
+        assert_eq!(
+            third_above("E1", &[4], 40).unwrap_err().to_string(),
+            "TROMBONE: the chord \"E1\" has 1 note(s), and the walking bass needs a second one above the root: use a \
+             chord of three notes or more in music.chords_intro or music.chord_loop"
+        );
+        assert!(third_above("", &[], 40).is_err());
+    }
+
+    #[test]
+    fn an_empty_climb_is_an_error() {
+        let climb = [47, 51, 54, 57];
+        let got: Vec<i32> = (0..4).map(|bt| climb_note("B7", &climb, bt).unwrap()).collect();
+        assert_eq!(got, climb);
+        // Fewer than four notes go round again, as `bt % len(climb)` does.
+        assert_eq!(climb_note("B7", &[47, 51], 3), Ok(51));
+        // Python: `bt % len(climb)` divides by zero.
+        assert_eq!(
+            climb_note("B7", &[], 0).unwrap_err().to_string(),
+            "TROMBONE: the last chord \"B7\" has no note within an octave of its root for the bass to climb into the \
+             title: change the chord that falls on the last bar in music.chords_intro or music.chord_loop"
+        );
     }
 }

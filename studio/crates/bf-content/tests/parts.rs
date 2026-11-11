@@ -391,3 +391,34 @@ fn a_fight_file_the_parts_cannot_play_is_an_error() {
         "{e}"
     );
 }
+
+/// A chord too small for the TROMBONE's bass would be an error in words, not a panic (`walk_note` needs a second
+/// note above the root, the climb in `last_bar` at least one note): every chord type the kit names has three
+/// notes or more, so through the public hooks each one walks and climbs.
+#[test]
+fn every_chord_type_walks_and_climbs() {
+    use bf_content::fighters::trombone::TromboneSound;
+    use bf_core::harmony::QUALITY;
+    let ep = episode();
+    for (quality, intervals) in QUALITY {
+        let chord = format!("E{quality}");
+        let mut ff = ep.ff.clone();
+        ff.music.chords_intro.iter_mut().for_each(|c| *c = chord.clone());
+        ff.music.chord_loop.iter_mut().for_each(|c| *c = chord.clone());
+        let show = Show::new(&ep.rec, &ff).unwrap();
+        let b = SoundBuild::new(&show, &ep.rec, &ff).unwrap_or_else(|e| panic!("{chord}: {e}"));
+        let grid = &show.grid;
+        // The third 8th of bar 4: `table[2]`, the root (E2, the register's bottom) plus the chord's second note.
+        let t = grid.bar_t(4.0) + grid.beat;
+        let walk = TromboneSound::new(1, "bass").walk_note(&b.ctx, t);
+        assert_eq!(walk, Ok(40 + intervals[1]), "{chord}");
+        let mut mix = Mix::new(grid.dur + 4.0);
+        b.sounds[1]
+            .last_bar(&b.ctx, b.bed.as_ref(), &mut mix)
+            .unwrap_or_else(|e| panic!("{chord}: {e}"));
+        let bus = mix
+            .bus("trombone")
+            .unwrap_or_else(|| panic!("{chord}: the climb played nothing"));
+        assert!(bus.iter().any(|f| *f != [0.0, 0.0]), "{chord}: the climb is silent");
+    }
+}
