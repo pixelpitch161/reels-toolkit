@@ -1,9 +1,9 @@
 //! `ballfight`: the BALLFIGHT Studio command line, every step without a window.
 //!
 //! Every command takes a fight file. `--rec <file.bfrec>` uses a recording instead of fighting the seed again,
-//! `--workers N` sets the threads of the commands that fight or draw many (search, balance, check, render; the
-//! default is all cores but one) and `--json` prints one JSON value on stdout instead of text. Progress goes to
-//! stderr.
+//! `--workers N` sets the threads of the commands that fight or draw many (search, balance, check, render,
+//! bench; the default is all cores but one) and `--json` prints one JSON value on stdout instead of text.
+//! Progress goes to stderr.
 //!
 //! Exit code 0 on success; 1 on bad input, a refused fight, a failed check or a stopped run, with the reason as one
 //! line on stderr (`ballfight: ...`). Nothing a person can type makes the program panic; were it to happen, the
@@ -26,6 +26,7 @@ use serde_json::Value;
 
 mod cmd {
     pub mod balance;
+    pub mod bench;
     pub mod check;
     pub mod frame;
     pub mod hash;
@@ -49,7 +50,7 @@ const MAX_WORKERS: u64 = 256;
 struct Cli {
     #[command(subcommand)]
     command: Option<Command>,
-    /// Threads for the commands that fight or draw many (search, balance, check, render); default: all cores but
+    /// Threads for the commands that fight or draw many (search, balance, check, render, bench); default: all cores but
     /// one.
     #[arg(long, global = true, value_name = "N", value_parser = clap::value_parser!(u64).range(1..=MAX_WORKERS))]
     workers: Option<u64>,
@@ -78,6 +79,8 @@ enum Command {
     Render(cmd::render::Args),
     /// Print the replay line of each seed: winner, K.O. time, events and the recording's hash.
     Hash(cmd::hash::Args),
+    /// Measure how fast this PC fights, draws and sounds a video (milestone 1's measurements).
+    Bench(cmd::bench::Args),
 }
 
 /// Why a command did not succeed: one sentence for stderr, exit code 1.
@@ -183,6 +186,7 @@ fn run() -> Done {
         Command::Check(a) => cmd::check::run(&a, &ctx),
         Command::Render(a) => cmd::render::run(&a, &ctx),
         Command::Hash(a) => cmd::hash::run(&a, &ctx),
+        Command::Bench(a) => cmd::bench::run(&a, &ctx),
     }
 }
 

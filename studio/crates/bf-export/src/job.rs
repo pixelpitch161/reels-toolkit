@@ -12,7 +12,9 @@
 //!
 //! Frames are drawn on `workers` threads, at most `2 x workers` ahead of the encoder, and given to ffmpeg strictly
 //! in order, so memory stays bounded and the video does not depend on the number of workers. Raw frames are never
-//! written to disk.
+//! written to disk. The frames the checks drew (673 of the example episode's 1,830) are kept in memory (about
+//! 465 MB) and given to ffmpeg in their turn instead of being drawn twice: a frame is a pure function of its
+//! number, so the file is the same.
 
 use std::collections::BTreeMap;
 use std::ops::Range;
@@ -27,11 +29,11 @@ use bf_core::fightfile::FightFile;
 use bf_core::recording::Recording;
 use bf_picture::Rgb8;
 use bf_picture::config::{FPS, NF};
-use bf_picture::ring::{Picture, upscale3};
+use bf_picture::ring::{FrameReport, Picture, upscale3};
 use bf_sound::wav::wav16_bytes;
 use bf_story::{BeatSheet, story};
 
-use crate::checks::{BandPlan, CheckResult, panic_text, pre_render};
+use crate::checks::{BandPlan, CheckResult, Kept, panic_text, pre_render_keeping};
 use crate::encode::{Encoder, Ffmpeg, find_ffmpeg};
 use crate::output::{TempFolder, caption_text, clip_folder_name, folder_stem, png_bytes, prepare_root, taken};
 use crate::probe::verify_until;
@@ -235,6 +237,8 @@ impl Job<'_> {
         let pic = build_picture(Arc::clone(rec), ff)?;
         stop()?;
 
+        // the frames the checks drew: the video takes them instead of drawing them again
+        let mut kept = Kept::new();
         if self.whole {
             on(JobEvent::Stage(stage::CHECKS));
             let cfg = &pic.ctx().cfg;
@@ -242,10 +246,11 @@ impl Job<'_> {
             let sheet = BeatSheet::series([&cfg[0], &cfg[1]]);
             let story = story(rec, &show.grid, &sheet, [&cfg[0].low.name, &cfg[1].low.name]);
             let plan = BandPlan::of(ff)?;
-            let results = pre_render(&pic, &st, show, &story, &plan, self.workers, self.cancel)
+            let (results, drawn) = pre_render_keeping(&pic, &st, show, &story, &plan, self.workers, self.cancel)
                 .ok_or_else(ExportError::cancelled)?;
             report(results, on)?;
             stop()?;
+            kept = drawn;
         }
 
         let wav = tmp.write("audio.wav", &wav16_bytes(&st.master))?;
@@ -257,10 +262,18 @@ impl Job<'_> {
         let mut enc = Encoder::start(self.ffmpeg, &wav, &part_path, total)?;
         let t0 = Instant::now();
         let first = self.frames.start;
+        let kept = Mutex::new(kept);
+        let take_or_draw = |f: usize| {
+            let held = kept.lock().unwrap_or_else(|e| e.into_inner()).remove(&f);
+            match held {
+                Some((img, report)) => accept(img, report),
+                None => draw(&pic, f),
+            }
+        };
         let drawn = draw_in_order(
             self.frames.clone(),
             self.workers,
-            &|f| draw(&pic, f),
+            &take_or_draw,
             &mut |f, img| {
                 enc.push(&img)?;
                 on(JobEvent::Progress {
@@ -318,6 +331,11 @@ fn report(results: Vec<CheckResult>, on: &(dyn Fn(JobEvent) + Sync)) -> Result<(
 /// the kit's frame and is never written.
 fn draw(pic: &Picture, f: usize) -> Result<Rgb8, String> {
     let (img, _, report) = pic.frame_reported(f);
+    accept(img, report)
+}
+
+/// A drawn frame as the video takes it, or why it cannot be (see [`draw`]).
+fn accept(img: Rgb8, report: FrameReport) -> Result<Rgb8, String> {
     if report.hull_errors != 0 {
         return Err(format!(
             "{} of its shapes could not be drawn the way the reference does",

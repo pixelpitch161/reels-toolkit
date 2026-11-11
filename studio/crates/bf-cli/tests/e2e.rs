@@ -836,3 +836,104 @@ fn ctrl_c_stops_a_render_and_leaves_nothing() {
         entries(&out)
     );
 }
+
+// ---------------------------------------------------------------- bench
+
+/// `bench` on a few seeds and frames: every number it names is there, as JSON on stdout, progress on stderr, and it
+/// writes nothing (the folder it ran in stays empty).
+#[test]
+fn bench_measures_and_writes_nothing() {
+    let root = TempRoot::new("bench");
+    let ran = ballfight(
+        &root.0,
+        &[
+            &"bench",
+            &example(),
+            &"--only",
+            &"fights,frame,stages",
+            &"--seeds",
+            &"12",
+            &"--every",
+            &"915",
+            &"--stage-every",
+            &"1830",
+            &"--workers",
+            &"2",
+            &"--json",
+        ],
+    )
+    .ok("bench");
+    let v = ran.json();
+    assert!(v["machine"]["logical_cores"].as_u64().is_some_and(|n| n >= 1), "{v}");
+    assert_eq!(v["machine"]["workers"], 2, "{v}");
+    assert_eq!(v["seed"], 392, "the fight file's seed: {v}");
+    assert_eq!(v["fights"]["seeds"], 12);
+    for n in [
+        &v["fights"]["fights_per_second"],
+        &v["fights"]["one_worker"]["fights_per_second"],
+    ] {
+        assert!(n.as_f64().is_some_and(|x| x > 0.0), "{v}");
+    }
+    assert_eq!(v["frame"]["frames"], 2, "frames 0 and 915: {v}");
+    let (mean, p95, max) = (
+        v["frame"]["frame_ms_mean"].as_f64().unwrap(),
+        v["frame"]["frame_ms_p95"].as_f64().unwrap(),
+        v["frame"]["frame_ms_max"].as_f64().unwrap(),
+    );
+    assert!(0.0 < mean && mean <= p95 && p95 <= max, "{v}");
+    let stages = v["stages"]["stages"].as_array().unwrap();
+    let names: Vec<&str> = stages.iter().map(|s| s["stage"].as_str().unwrap()).collect();
+    assert_eq!(names.first(), Some(&"floor"));
+    assert!(names.contains(&"lens"), "{names:?}");
+    assert_eq!(names.last(), Some(&"title"));
+    assert!(
+        v.get("draw").is_none() && v.get("sound").is_none() && v.get("render").is_none(),
+        "{v}"
+    );
+    assert!(
+        ran.stderr.contains("bench: 12 fights"),
+        "progress on stderr: {}",
+        ran.stderr
+    );
+    assert!(entries(&root.0).is_empty(), "bench wrote {:?}", entries(&root.0));
+}
+
+/// `bench` refuses what it cannot do in one line before any work: an unknown part, a render without a folder, and
+/// a folder that is a file.
+#[test]
+fn bench_refuses_in_one_line() {
+    let root = TempRoot::new("bench refuses");
+    let ff = example();
+    let line = ballfight(&root.0, &[&"bench", &ff, &"--only", &"fights,speed"]).refused("unknown part");
+    assert!(line.contains("\"speed\" is not a part of the bench"), "{line}");
+    let line = ballfight(&root.0, &[&"bench", &ff, &"--only", &"render"]).refused("render without --out");
+    assert!(line.contains("--out"), "{line}");
+    std::fs::write(root.join("a file"), b"x").unwrap();
+    let line = ballfight(&root.0, &[&"bench", &ff, &"--out", &"a file"]).refused("--out is a file");
+    assert!(line.contains("is not a folder"), "{line}");
+    assert_eq!(entries(&root.0), ["a file"]);
+}
+
+/// `bench` text output: one line a part, the machine first.
+#[test]
+fn bench_text_names_the_numbers() {
+    let root = TempRoot::new("bench text");
+    let ran = ballfight(
+        &root.0,
+        &[
+            &"bench",
+            &example(),
+            &"--only",
+            &"fights",
+            &"--seeds",
+            &"8",
+            &"--workers",
+            &"2",
+        ],
+    )
+    .ok("bench text");
+    let lines: Vec<&str> = ran.stdout.lines().collect();
+    assert_eq!(lines.len(), 2, "{}", ran.stdout);
+    assert!(lines[0].starts_with("machine: "), "{}", ran.stdout);
+    assert!(lines[1].starts_with("fights: fights_per_second "), "{}", ran.stdout);
+}

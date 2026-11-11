@@ -2,7 +2,7 @@
 //!
 //! | Module | Holds |
 //! | --- | --- |
-//! | [`checks`] | every check a video passes ([`CheckResult`], [`pre_render`]) |
+//! | [`checks`] | every check a video passes ([`CheckResult`], [`pre_render`], [`pre_render_keeping`]) |
 //! | [`encode`] | finding ffmpeg ([`find_ffmpeg`]) and the loop-clean encode ([`Encoder`]) |
 //! | [`probe`] | the checks of the finished file ([`verify_mp4`]) |
 //! | [`output`] | the output folder: its name ([`folder_name`]), the temporary folder, the files beside the video |
@@ -18,7 +18,7 @@ pub mod job;
 pub mod output;
 pub mod probe;
 
-pub use self::checks::{BandPlan, CheckResult, pre_render};
+pub use self::checks::{BandPlan, CheckResult, Kept, pre_render, pre_render_keeping};
 #[cfg(feature = "test-support")]
 pub use self::encode::ffmpeg_at;
 pub use self::encode::{Encoder, Ffmpeg, find_ffmpeg};

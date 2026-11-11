@@ -27,7 +27,7 @@ use bf_export::checks::levels::profile;
 use bf_export::checks::safezone::frames as safezone_frames;
 use bf_export::checks::{
     BandPlan, CheckResult, as_wav16, band, flash, flash_span, focus, levels, loop_audio, loop_picture, loudness,
-    pre_render, safezone,
+    pre_render, pre_render_keeping, safezone,
 };
 use bf_picture::ring::Picture;
 use bf_picture::ui::{DrawLog, Kind};
@@ -724,8 +724,9 @@ fn pre_render_stops_when_cancelled() {
 #[test]
 fn pre_render_runs_every_check() {
     let ep = &*EPISODE;
-    let rs = timed("pre_render", || {
-        pre_render(
+    // the render job calls the keeping variant: its results are pre_render's
+    let (rs, kept) = timed("pre_render_keeping", || {
+        pre_render_keeping(
             &ep.pic,
             &BUILT,
             &ep.show,
@@ -784,6 +785,21 @@ fn pre_render_runs_every_check() {
         loop_audio(&WAV),
     ];
     assert_eq!(rs, alone);
+    // it kept every frame it drew, and nothing else: the safe zone's frames, the flash stretch and the loop's,
+    // each the frame itself (the render takes them instead of drawing them again)
+    let want: BTreeSet<usize> = safezone_frames(nf, 30)
+        .iter()
+        .map(|&(_, f)| f)
+        .chain(span.0..span.1)
+        .chain((nf - 150..nf).chain(0..30))
+        .collect();
+    assert_eq!(kept.keys().copied().collect::<BTreeSet<usize>>(), want);
+    assert_eq!(kept.len(), 673, "the example episode's checks draw 673 frames");
+    let numbers: Vec<usize> = kept.keys().copied().collect();
+    for (d, (f, (img, report))) in frames(&numbers).iter().zip(&kept) {
+        assert_eq!(report.hull_errors + report.hull_fallbacks, 0, "frame {f}");
+        assert!(d.0 == *img, "frame {f}: the kept frame is not the frame");
+    }
     // one worker gives the same
     if std::env::var_os("CHECKS_ONE_WORKER").is_some() {
         let one = timed("pre_render, one worker", || {
