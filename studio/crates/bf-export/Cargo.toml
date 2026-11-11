@@ -17,3 +17,7 @@ png.workspace = true
 [dev-dependencies]
 bf-testdata = { path = "../bf-testdata" }
 serde_json.workspace = true
+
+# A move that never replaces anything and the Hidden attribute of the temporary folder.
+[target.'cfg(windows)'.dependencies]
+windows-sys = { workspace = true, features = ["Win32_Storage_FileSystem"] }

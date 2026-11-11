@@ -21,7 +21,9 @@ use std::ffi::OsStr;
 use std::io::Read;
 use std::path::Path;
 use std::process::Stdio;
-use std::time::Duration;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, Mutex};
+use std::time::{Duration, Instant};
 
 use bf_picture::config::{FPS, H, NF, UP, W};
 use bf_picture::{Gray32, Rgb8};
@@ -38,22 +40,39 @@ const MIN_BYTES: u64 = 64 * 1024;
 /// How long ffprobe or a sound decode may take.
 const PROBE_LIMIT: Duration = Duration::from_secs(120);
 
+/// How long the decode of the frames may take (it takes about 5 s for a whole video on the reference PC).
+const DECODE_LIMIT: Duration = Duration::from_secs(600);
+
+/// A flag that is never set, for the calls that cannot be cancelled.
+static NEVER: AtomicBool = AtomicBool::new(false);
+
 /// Every check of a finished 61 s video at `mp4`, in the order of the module's table.
 pub fn verify_mp4(ff: &Ffmpeg, mp4: &Path) -> Vec<CheckResult> {
-    verify(ff, mp4, NF, true)
+    verify_until(ff, mp4, NF, true, &NEVER).unwrap_or_default()
 }
 
 /// The checks of a clip of `nf` frames: those of [`verify_mp4`] but the two loop checks (a clip does not loop).
 pub fn verify_clip(ff: &Ffmpeg, mp4: &Path, nf: usize) -> Vec<CheckResult> {
-    verify(ff, mp4, nf, false)
+    verify_until(ff, mp4, nf, false, &NEVER).unwrap_or_default()
 }
 
-fn verify(ff: &Ffmpeg, mp4: &Path, nf: usize, whole: bool) -> Vec<CheckResult> {
+/// The checks of a file of `nf` frames (`whole`: with the two loop checks); `None` once `cancel` is set (it is
+/// looked at while the frames and the sound are decoded, which ffmpeg is then stopped for).
+pub(crate) fn verify_until(
+    ff: &Ffmpeg,
+    mp4: &Path,
+    nf: usize,
+    whole: bool,
+    cancel: &AtomicBool,
+) -> Option<Vec<CheckResult>> {
     let mut out = vec![size(mp4)];
     out.push(streams(ff, mp4));
     out.push(keyframes(ff, mp4, nf));
-    let picture = decode_picture(ff, mp4);
-    let sound = decode_sound(ff, mp4);
+    let picture = decode_picture(ff, mp4, cancel, DECODE_LIMIT);
+    let sound = decode_sound(ff, mp4, cancel);
+    if cancel.load(Ordering::SeqCst) {
+        return None;
+    }
     out.push(length(&picture, &sound, nf));
     out.push(match &picture {
         Ok(p) => p.flash.clone(),
@@ -72,7 +91,7 @@ fn verify(ff: &Ffmpeg, mp4: &Path, nf: usize, whole: bool) -> Vec<CheckResult> {
             Err(why) => unreadable("mp4_loop_audio", "Loop point of the finished video (sound)", why),
         });
     }
-    out
+    Some(out)
 }
 
 fn renamed(name: &'static str, mut r: CheckResult) -> CheckResult {
@@ -116,7 +135,7 @@ fn ffprobe(ff: &Ffmpeg, args: &[&str], mp4: &Path) -> Result<String, String> {
     let mut all: Vec<&OsStr> = vec!["-v".as_ref(), "error".as_ref()];
     all.extend(args.iter().map(OsStr::new));
     all.push(mp4.as_os_str());
-    let ran = run_tool(&ff.ffprobe, &all, PROBE_LIMIT).map_err(|why| format!("ffprobe: {why}"))?;
+    let ran = run_tool(&ff.ffprobe, &all, PROBE_LIMIT, &NEVER).map_err(|why| format!("ffprobe: {why}"))?;
     if !ran.status.success() {
         return Err(format!("ffprobe: {}", ran.said()));
     }
@@ -265,7 +284,9 @@ struct Picture {
 
 /// Decodes every frame at 360 x 640 (`scale=360:640:flags=area`, as `reelkit.flashcheck` does), streaming:
 /// the flash rule sees each frame once, the first second and the last 5 s are kept for the loop check.
-fn decode_picture(ff: &Ffmpeg, mp4: &Path) -> Result<Picture, String> {
+///
+/// A watchdog thread ends ffmpeg once `cancel` is set or after `limit`, so a hung ffmpeg cannot hang the job.
+fn decode_picture(ff: &Ffmpeg, mp4: &Path, cancel: &AtomicBool, limit: Duration) -> Result<Picture, String> {
     let scale = format!("scale={W}:{H}:flags=area");
     let args: [&OsStr; 11] = [
         "-v".as_ref(),
@@ -283,6 +304,9 @@ fn decode_picture(ff: &Ffmpeg, mp4: &Path) -> Result<Picture, String> {
     let mut child = spawn(&ff.ffmpeg, &args, Stdio::null()).map_err(|e| format!("ffmpeg could not be started: {e}"))?;
     let tail_lines = Tail::read(child.stderr.take().expect("piped"));
     let mut out = child.stdout.take().expect("piped");
+    let child = Arc::new(Mutex::new(child));
+    let finished = AtomicBool::new(false);
+    let timed_out = AtomicBool::new(false);
     let nh = (HEAD_S * f64::from(FPS)) as usize;
     let nt = (TAIL_S * f64::from(FPS)) as usize;
     let mut scan = FlashScan::default();
@@ -290,28 +314,53 @@ fn decode_picture(ff: &Ffmpeg, mp4: &Path) -> Result<Picture, String> {
     let mut tail = VecDeque::new();
     let mut frames = 0usize;
     let mut buf = vec![0u8; W * H * 3];
-    let read = loop {
-        match read_full(&mut out, &mut buf) {
-            Ok(0) => break Ok(()),
-            Ok(n) if n == buf.len() => {
-                let img = Rgb8::from_vec(W, H, 3, buf.clone());
-                scan.push(rel_lum(&img));
-                if frames < nh {
-                    head.push(img.clone());
+    let read = std::thread::scope(|s| {
+        s.spawn(|| {
+            let t0 = Instant::now();
+            while !finished.load(Ordering::SeqCst) {
+                let over = t0.elapsed() > limit;
+                if over || cancel.load(Ordering::SeqCst) {
+                    timed_out.store(over, Ordering::SeqCst);
+                    let _ = child.lock().unwrap_or_else(|e| e.into_inner()).kill();
+                    break;
                 }
-                tail.push_back(img);
-                if tail.len() > nt {
-                    tail.pop_front();
-                }
-                frames += 1;
+                std::thread::sleep(Duration::from_millis(20));
             }
-            Ok(n) => break Err(format!("the last frame was cut short at {n} bytes")),
-            Err(e) => break Err(format!("reading ffmpeg's frames failed: {e}")),
-        }
-    };
+        });
+        let read = loop {
+            match read_full(&mut out, &mut buf) {
+                Ok(0) => break Ok(()),
+                Ok(n) if n == buf.len() => {
+                    let img = Rgb8::from_vec(W, H, 3, buf.clone());
+                    scan.push(rel_lum(&img));
+                    if frames < nh {
+                        head.push(img.clone());
+                    }
+                    tail.push_back(img);
+                    if tail.len() > nt {
+                        tail.pop_front();
+                    }
+                    frames += 1;
+                }
+                Ok(n) => break Err(format!("the last frame was cut short at {n} bytes")),
+                Err(e) => break Err(format!("reading ffmpeg's frames failed: {e}")),
+            }
+        };
+        finished.store(true, Ordering::SeqCst);
+        read
+    });
     drop(out);
-    let status = end(&mut child);
+    let status = end(&mut child.lock().unwrap_or_else(|e| e.into_inner()));
     let lines = tail_lines.finish();
+    if timed_out.load(Ordering::SeqCst) {
+        return Err(format!(
+            "ffmpeg did not finish decoding it within {} s",
+            limit.as_secs()
+        ));
+    }
+    if cancel.load(Ordering::SeqCst) {
+        return Err("the decode was stopped because the render was cancelled".to_string());
+    }
     read?;
     match status {
         Some(s) if s.success() => {}
@@ -342,7 +391,7 @@ fn read_full(r: &mut impl Read, buf: &mut [u8]) -> std::io::Result<usize> {
 
 /// The sound as `reelkit.loopcheck` decodes it from an mp4 (`-vn -ac 1 -ar 48000`, 16 bit, divided by 32,768),
 /// as two equal channels.
-fn decode_sound(ff: &Ffmpeg, mp4: &Path) -> Result<Vec<[f64; 2]>, String> {
+fn decode_sound(ff: &Ffmpeg, mp4: &Path, cancel: &AtomicBool) -> Result<Vec<[f64; 2]>, String> {
     let args: [&OsStr; 14] = [
         "-v".as_ref(),
         "error".as_ref(),
@@ -359,7 +408,7 @@ fn decode_sound(ff: &Ffmpeg, mp4: &Path) -> Result<Vec<[f64; 2]>, String> {
         "pcm_s16le".as_ref(),
         "-".as_ref(),
     ];
-    let ran = run_tool(&ff.ffmpeg, &args, PROBE_LIMIT).map_err(|why| format!("ffmpeg: {why}"))?;
+    let ran = run_tool(&ff.ffmpeg, &args, PROBE_LIMIT, cancel).map_err(|why| format!("ffmpeg: {why}"))?;
     if !ran.status.success() {
         return Err(format!("ffmpeg could not decode its sound: {}", ran.said()));
     }

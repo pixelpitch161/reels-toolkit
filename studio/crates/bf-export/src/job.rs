@@ -4,9 +4,11 @@
 //! Stages, in order ([`JobEvent::Stage`]): [`stage::SOUNDTRACK`], [`stage::CHECKS`] (a whole video only),
 //! [`stage::FRAMES`] (the frames drawn and piped to ffmpeg; [`JobEvent::Progress`] after each), [`stage::ENCODE`]
 //! (ffmpeg finishes the file), [`stage::VERIFY`], [`stage::SAVE`]. Each check's result is sent as
-//! [`JobEvent::Check`] when it is known; the job stops at the first that failed. Cancel is looked at between the
-//! stages and between frames (also while it waits for a frame), never inside the soundtrack build or the
-//! pre-render checks, which run to their end (about 5 s and 16 s on the reference PC).
+//! [`JobEvent::Check`] when it is known; the job stops at the first that failed.
+//!
+//! Cancel is looked at between the stages, before each frame is drawn (in the pre-render checks too), every
+//! 50 ms while a frame is awaited, and while the finished file is decoded: it acts within about a second
+//! everywhere except inside the soundtrack build (about 4 s), which runs to its end.
 //!
 //! Frames are drawn on `workers` threads, at most `2 x workers` ahead of the encoder, and given to ffmpeg strictly
 //! in order, so memory stays bounded and the video does not depend on the number of workers. Raw frames are never
@@ -30,9 +32,9 @@ use bf_sound::wav::wav16_bytes;
 use bf_story::{BeatSheet, story};
 
 use crate::checks::{BandPlan, CheckResult, panic_text, pre_render};
-use crate::encode::{Encoder, find_ffmpeg};
-use crate::output::{TempFolder, caption_text, folder_stem, png_bytes, prepare_root, taken};
-use crate::probe::{verify_clip, verify_mp4};
+use crate::encode::{Encoder, Ffmpeg, find_ffmpeg};
+use crate::output::{TempFolder, caption_text, clip_folder_name, folder_stem, png_bytes, prepare_root, taken};
+use crate::probe::verify_until;
 use crate::{ExportError, output};
 
 /// The names of the stages a job goes through, in order.
@@ -60,8 +62,10 @@ pub struct JobOpts {
     pub out_root: PathBuf,
     /// The threads that draw frames (at least one is used).
     pub workers: usize,
-    /// Only these frames (a clip, for tests and quick looks): the checks before the render and the two loop
-    /// checks of the file are left out, since they are about the whole video. `None` for the whole video.
+    /// Only these frames (a clip, for tests and quick looks). A clip is never a finished video (ruling R41): its
+    /// folder and file are `<a>_vs_<b>_frames<A>-<B>` and hold only the mp4 (no cover, caption or fight file),
+    /// and the checks before the render and the two loop checks of the file are left out, since they are about
+    /// the whole video. `None` for the whole video.
     pub frames: Option<Range<usize>>,
 }
 
@@ -78,15 +82,38 @@ pub enum JobEvent {
     Done(PathBuf),
 }
 
-/// Renders the fight `ff` from its recording `rec` into a new folder under `opts.out_root` and gives that folder.
-///
-/// Before any work: ffmpeg is found ([`find_ffmpeg`]), the fight file is checked, the output folder is made if
-/// missing and the video's folder name is decided ([`output::folder_name`]); a name already taken twice is an
-/// error. Everything is written into a temporary folder beside it, which a failure or a cancel removes.
+/// Renders the fight `ff` from its recording `rec` into a new folder under `opts.out_root` and gives that folder,
+/// with the ffmpeg [`find_ffmpeg`] finds. See [`run_job_using`].
 ///
 /// # Errors
-/// An [`ExportError`] in one plain sentence; nothing is left in the output folder.
+/// An [`ExportError`] in one plain sentence.
 pub fn run_job(
+    ff: &FightFile,
+    rec: Arc<Recording>,
+    opts: &JobOpts,
+    on: &(dyn Fn(JobEvent) + Sync),
+    cancel: &AtomicBool,
+) -> Result<PathBuf, ExportError> {
+    if cancel.load(Ordering::SeqCst) {
+        return Err(ExportError::cancelled());
+    }
+    let ffmpeg = find_ffmpeg()?;
+    run_job_using(&ffmpeg, ff, rec, opts, on, cancel)
+}
+
+/// [`run_job`] with the ffmpeg given (one found once by [`find_ffmpeg`], or a stand-in from
+/// [`crate::encode::ffmpeg_at`] in tests).
+///
+/// Before any work: the fight file is checked, the output folder is made if missing and the video's folder name
+/// is decided ([`output::folder_name`], [`output::clip_folder_name`]); a name already taken twice is an error.
+/// Everything is written into a hidden temporary folder beside it, which a failure or a cancel removes.
+///
+/// # Errors
+/// An [`ExportError`] in one plain sentence; nothing is left in the output folder (unless the temporary folder
+/// could not be removed, which the sentence then says, or the finished video's name was taken at the last
+/// moment, when the finished folder is kept and named).
+pub fn run_job_using(
+    ffmpeg: &Ffmpeg,
     ff: &FightFile,
     rec: Arc<Recording>,
     opts: &JobOpts,
@@ -95,13 +122,13 @@ pub fn run_job(
 ) -> Result<PathBuf, ExportError> {
     let stop = || {
         if cancel.load(Ordering::SeqCst) {
-            Err(ExportError::Cancelled)
+            Err(ExportError::cancelled())
         } else {
             Ok(())
         }
     };
     stop()?;
-    let ffmpeg = find_ffmpeg()?;
+    // validate() refuses any fight file without exactly two fighters
     bf_content::validate(ff)?;
     let names = [ff.fighters[0].as_str(), ff.fighters[1].as_str()];
     let seed = ff.seed.unwrap_or(rec.seed);
@@ -121,12 +148,20 @@ pub fn run_job(
     let whole = opts.frames.is_none();
     let root = std::path::absolute(&opts.out_root).unwrap_or_else(|_| opts.out_root.clone());
     prepare_root(&root)?;
-    let target = output::folder_name(names, seed, &root);
+    let (target, first) = if whole {
+        (output::folder_name(names, seed, &root), root.join(folder_stem(names)))
+    } else {
+        let stem = folder_stem(names);
+        (
+            clip_folder_name(names, seed, &frames, &root),
+            root.join(format!("{stem}_frames{}-{}", frames.start, frames.end)),
+        )
+    };
     if taken(&target) {
         return Err(ExportError::Folder(format!(
             "Both {} and {} are already taken in the output folder, so nothing was made; move or rename one of \
              them, or choose another folder.",
-            root.join(folder_stem(names)).display(),
+            first.display(),
             target.display()
         )));
     }
@@ -137,20 +172,18 @@ pub fn run_job(
     stop()?;
     let mut tmp = TempFolder::create(&root, &name)?;
 
-    let made = make(
+    let job = Job {
         ff,
-        &rec,
-        opts.workers,
+        rec: &rec,
+        workers: opts.workers.max(1),
         frames,
         whole,
-        &ffmpeg,
-        &name,
-        &mut tmp,
+        ffmpeg,
+        name: &name,
         on,
         cancel,
-        &stop,
-    )
-    .and_then(|()| tmp.move_to(&target));
+    };
+    let made = job.make(&mut tmp, &stop).and_then(|()| tmp.move_to(&target));
     match made {
         Ok(()) => {
             on(JobEvent::Done(target.clone()));
@@ -158,94 +191,99 @@ pub fn run_job(
         }
         Err(e) => match tmp.discard() {
             Ok(()) => Err(e),
-            Err(left) => Err(ExportError::Folder(format!("{} {left}", e.to_string().trim_end()))),
+            Err(left) => Err(e.with_clause(&left)),
         },
     }
 }
 
-/// Everything between the temporary folder and the move, written into `tmp`.
-#[allow(clippy::too_many_arguments)]
-fn make(
-    ff: &FightFile,
-    rec: &Arc<Recording>,
+/// One job's inputs.
+struct Job<'a> {
+    ff: &'a FightFile,
+    rec: &'a Arc<Recording>,
     workers: usize,
     frames: Range<usize>,
     whole: bool,
-    ffmpeg: &crate::Ffmpeg,
-    name: &str,
-    tmp: &mut TempFolder,
-    on: &(dyn Fn(JobEvent) + Sync),
-    cancel: &AtomicBool,
-    stop: &dyn Fn() -> Result<(), ExportError>,
-) -> Result<(), ExportError> {
-    let workers = workers.max(1);
-    on(JobEvent::Stage(stage::SOUNDTRACK));
-    let st = build_soundtrack(rec, ff)?;
-    stop()?;
-    let pic = build_picture(Arc::clone(rec), ff)?;
-    stop()?;
+    ffmpeg: &'a Ffmpeg,
+    name: &'a str,
+    on: &'a (dyn Fn(JobEvent) + Sync),
+    cancel: &'a AtomicBool,
+}
 
-    if whole {
-        on(JobEvent::Stage(stage::CHECKS));
-        let cfg = &pic.ctx().cfg;
-        let show = &pic.ctx().show;
-        let sheet = BeatSheet::series([&cfg[0], &cfg[1]]);
-        let story = story(rec, &show.grid, &sheet, [&cfg[0].low.name, &cfg[1].low.name]);
-        let plan = BandPlan::of(ff)?;
-        let results = pre_render(&pic, &st, show, &story, &plan, workers);
+impl Job<'_> {
+    /// Everything between the temporary folder and the move, written into `tmp`.
+    fn make(&self, tmp: &mut TempFolder, stop: &dyn Fn() -> Result<(), ExportError>) -> Result<(), ExportError> {
+        let (ff, rec, on, name) = (self.ff, self.rec, self.on, self.name);
+        on(JobEvent::Stage(stage::SOUNDTRACK));
+        let st = build_soundtrack(rec, ff)?;
+        stop()?;
+        let pic = build_picture(Arc::clone(rec), ff)?;
+        stop()?;
+
+        if self.whole {
+            on(JobEvent::Stage(stage::CHECKS));
+            let cfg = &pic.ctx().cfg;
+            let show = &pic.ctx().show;
+            let sheet = BeatSheet::series([&cfg[0], &cfg[1]]);
+            let story = story(rec, &show.grid, &sheet, [&cfg[0].low.name, &cfg[1].low.name]);
+            let plan = BandPlan::of(ff)?;
+            let results = pre_render(&pic, &st, show, &story, &plan, self.workers, self.cancel)
+                .ok_or_else(ExportError::cancelled)?;
+            report(results, on)?;
+            stop()?;
+        }
+
+        let wav = tmp.write("audio.wav", &wav16_bytes(&st.master))?;
+        drop(st);
+        let (part, mp4) = (format!("{name}.mp4.part"), format!("{name}.mp4"));
+        let part_path = tmp.file(&part);
+        let total = self.frames.len();
+        on(JobEvent::Stage(stage::FRAMES));
+        let mut enc = Encoder::start(self.ffmpeg, &wav, &part_path, total)?;
+        let t0 = Instant::now();
+        let first = self.frames.start;
+        let drawn = draw_in_order(
+            self.frames.clone(),
+            self.workers,
+            &|f| draw(&pic, f),
+            &mut |f, img| {
+                enc.push(&img)?;
+                on(JobEvent::Progress {
+                    done: f - first + 1,
+                    total,
+                    seconds: t0.elapsed().as_secs_f64(),
+                });
+                Ok(())
+            },
+            self.cancel,
+        );
+        if let Err(e) = drawn {
+            enc.abort();
+            return Err(e);
+        }
+        stop()?;
+        on(JobEvent::Stage(stage::ENCODE));
+        enc.finish()?;
+        stop()?;
+
+        on(JobEvent::Stage(stage::VERIFY));
+        let results =
+            verify_until(self.ffmpeg, &part_path, total, self.whole, self.cancel).ok_or_else(ExportError::cancelled)?;
         report(results, on)?;
         stop()?;
+
+        on(JobEvent::Stage(stage::SAVE));
+        tmp.rename(&part, &mp4)?;
+        tmp.remove("audio.wav")?;
+        if self.whole {
+            let f = pic.card().cover_frame();
+            let cover = draw(&pic, f).map_err(|why| frame_error(f, &why))?;
+            tmp.write("cover.png", &png_bytes(&upscale3(&cover)))?;
+            tmp.write("caption.txt", caption_text(ff).as_bytes())?;
+            // the fight file last: a folder with it is a finished video
+            tmp.write(&format!("{name}.toml"), ff.to_toml().as_bytes())?;
+        }
+        stop()
     }
-
-    let wav = tmp.write("audio.wav", &wav16_bytes(&st.master))?;
-    drop(st);
-    let mp4 = tmp.file(&format!("{name}.mp4"));
-    let total = frames.len();
-    on(JobEvent::Stage(stage::FRAMES));
-    let mut enc = Encoder::start(ffmpeg, &wav, &mp4, total)?;
-    let t0 = Instant::now();
-    let first = frames.start;
-    let drawn = draw_in_order(
-        frames,
-        workers,
-        &|f| draw(&pic, f),
-        &mut |f, img| {
-            enc.push(&img)?;
-            on(JobEvent::Progress {
-                done: f - first + 1,
-                total,
-                seconds: t0.elapsed().as_secs_f64(),
-            });
-            Ok(())
-        },
-        cancel,
-    );
-    if let Err(e) = drawn {
-        enc.abort();
-        return Err(e);
-    }
-    stop()?;
-    on(JobEvent::Stage(stage::ENCODE));
-    enc.finish()?;
-    stop()?;
-
-    on(JobEvent::Stage(stage::VERIFY));
-    let results = if whole {
-        verify_mp4(ffmpeg, &mp4)
-    } else {
-        verify_clip(ffmpeg, &mp4, total)
-    };
-    report(results, on)?;
-    stop()?;
-
-    on(JobEvent::Stage(stage::SAVE));
-    let f = pic.card().cover_frame();
-    let cover = draw(&pic, f).map_err(|why| frame_error(f, &why))?;
-    tmp.write("cover.png", &png_bytes(&upscale3(&cover)))?;
-    tmp.write("caption.txt", caption_text(ff).as_bytes())?;
-    tmp.write(&format!("{name}.toml"), ff.to_toml().as_bytes())?;
-    tmp.remove("audio.wav")?;
-    stop()
 }
 
 /// Sends every result, then fails with the first that did not pass.
@@ -299,9 +337,23 @@ fn lock(m: &Mutex<Line>) -> MutexGuard<'_, Line> {
     m.lock().unwrap_or_else(|e| e.into_inner())
 }
 
+/// Tells the drawing threads to stop when dropped, however the writer leaves (a return or a panic).
+struct StopOnDrop<'a> {
+    line: &'a Mutex<Line>,
+    moved: &'a Condvar,
+}
+
+impl Drop for StopOnDrop<'_> {
+    fn drop(&mut self) {
+        lock(self.line).stop = true;
+        self.moved.notify_all();
+    }
+}
+
 /// Draws `frames` on `workers` threads, at most `2 x workers` frames ahead of the writer, and gives each to `sink`
 /// in order, on the calling thread. A frame `draw` refuses (or panics on) stops it with that frame named;
-/// `cancel` is looked at before each frame and every 50 ms while one is awaited.
+/// `cancel` is looked at before each frame and every 50 ms while one is awaited. A panic in `sink` stops the
+/// drawing threads and goes on up.
 pub(crate) fn draw_in_order(
     frames: Range<usize>,
     workers: usize,
@@ -342,32 +394,31 @@ pub(crate) fn draw_in_order(
                 }
             });
         }
-        let result = (|| {
-            for f in frames.clone() {
-                let img = {
-                    let mut l = lock(&line);
-                    loop {
-                        if cancel.load(Ordering::SeqCst) {
-                            return Err(ExportError::Cancelled);
-                        }
-                        if let Some(img) = l.ready.remove(&f) {
-                            l.written = f + 1;
-                            break img;
-                        }
-                        l = moved
-                            .wait_timeout(l, Duration::from_millis(50))
-                            .unwrap_or_else(|e| e.into_inner())
-                            .0;
+        let _stop = StopOnDrop {
+            line: &line,
+            moved: &moved,
+        };
+        for f in frames.clone() {
+            let img = {
+                let mut l = lock(&line);
+                loop {
+                    if cancel.load(Ordering::SeqCst) {
+                        return Err(ExportError::cancelled());
                     }
-                };
-                moved.notify_all();
-                sink(f, img.map_err(|why| frame_error(f, &why))?)?;
-            }
-            Ok(())
-        })();
-        lock(&line).stop = true;
-        moved.notify_all();
-        result
+                    if let Some(img) = l.ready.remove(&f) {
+                        l.written = f + 1;
+                        break img;
+                    }
+                    l = moved
+                        .wait_timeout(l, Duration::from_millis(50))
+                        .unwrap_or_else(|e| e.into_inner())
+                        .0;
+                }
+            };
+            moved.notify_all();
+            sink(f, img.map_err(|why| frame_error(f, &why))?)?;
+        }
+        Ok(())
     })
 }
 
@@ -482,7 +533,7 @@ mod tests {
             &cancel,
         )
         .unwrap_err();
-        assert_eq!(err, ExportError::Cancelled);
+        assert!(matches!(err, ExportError::Cancelled(_)));
         assert_eq!(seen, 10);
     }
 
@@ -508,5 +559,32 @@ mod tests {
         .unwrap_err();
         assert!(matches!(err, ExportError::Encode(_)));
         assert!(drawn.load(Ordering::SeqCst) <= 4 + 2 * 4 + 4);
+    }
+
+    #[test]
+    fn a_panicking_writer_returns() {
+        // a progress consumer that panics (a closed pipe, a dropped receiver) must not leave the drawers waiting
+        let (tx, rx) = std::sync::mpsc::channel();
+        std::thread::spawn(move || {
+            let got = catch_unwind(AssertUnwindSafe(|| {
+                draw_in_order(
+                    0..1000,
+                    4,
+                    &|f| Ok(tiny(f)),
+                    &mut |f, _| {
+                        if f == 5 {
+                            panic!("the receiver is gone");
+                        }
+                        Ok(())
+                    },
+                    &AtomicBool::new(false),
+                )
+            }));
+            let _ = tx.send(got.is_err());
+        });
+        let panicked = rx
+            .recv_timeout(Duration::from_secs(10))
+            .expect("draw_in_order returned instead of hanging");
+        assert!(panicked, "the writer's panic goes on up");
     }
 }

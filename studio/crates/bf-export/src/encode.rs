@@ -14,6 +14,7 @@ use std::ffi::{OsStr, OsString};
 use std::io::{BufRead, BufReader, Read, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Child, ChildStdin, Command, ExitStatus, Stdio};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::thread::JoinHandle;
 use std::time::{Duration, Instant};
@@ -76,6 +77,16 @@ pub(crate) fn find_with(var: Option<OsString>, path: Option<OsString>) -> Result
     let ffmpeg = match var.filter(|v| !v.is_empty()) {
         Some(v) => {
             let p = PathBuf::from(v);
+            let is_exe = p
+                .extension()
+                .is_some_and(|e| e.eq_ignore_ascii_case("exe") || !cfg!(windows));
+            if p.is_file() && !is_exe {
+                return Err(fail(format!(
+                    "The {ENV} setting names {}, which is not a program file (.exe), so it cannot be used as ffmpeg; \
+                     name ffmpeg.exe itself.",
+                    p.display()
+                )));
+            }
             if !p.is_file() {
                 return Err(fail(format!(
                     "ffmpeg was not found at {} (the program the {ENV} setting names), so no video can be made; \
@@ -92,11 +103,25 @@ pub(crate) fn find_with(var: Option<OsString>, path: Option<OsString>) -> Result
             ))
         })?,
     };
+    check(ffmpeg, path.as_deref())
+}
+
+/// The [`Ffmpeg`] of the program `ffmpeg` (any file that runs, a script too: for tests), with its ffprobe and its
+/// version, after asking it for its encoders.
+///
+/// # Errors
+/// As [`find_ffmpeg`].
+pub fn ffmpeg_at(ffmpeg: PathBuf) -> Result<Ffmpeg, ExportError> {
+    check(ffmpeg, std::env::var_os("PATH").as_deref())
+}
+
+fn check(ffmpeg: PathBuf, path: Option<&OsStr>) -> Result<Ffmpeg, ExportError> {
+    let fail = |s: String| ExportError::Ffmpeg(s);
     let ffprobe = ffmpeg
         .parent()
         .map(|dir| dir.join(exe("ffprobe")))
         .filter(|p| p.is_file())
-        .or_else(|| on_path(&exe("ffprobe"), path.as_deref()))
+        .or_else(|| on_path(&exe("ffprobe"), path))
         .ok_or_else(|| {
             fail(format!(
                 "ffprobe was not found beside {} or on the PATH, so a finished video cannot be checked; install \
@@ -106,7 +131,8 @@ pub(crate) fn find_with(var: Option<OsString>, path: Option<OsString>) -> Result
         })?;
 
     let ask = |what: &str| -> Result<String, ExportError> {
-        let ran = run_tool(&ffmpeg, &["-hide_banner".as_ref(), what.as_ref()], ASK_LIMIT).map_err(|why| {
+        let never = AtomicBool::new(false);
+        let ran = run_tool(&ffmpeg, &["-hide_banner".as_ref(), what.as_ref()], ASK_LIMIT, &never).map_err(|why| {
             fail(format!(
                 "The program {} could not be asked for its {} ({why}), so it cannot be used as ffmpeg; install \
                  ffmpeg or correct the {ENV} setting.",
@@ -275,11 +301,12 @@ pub(crate) fn end(child: &mut Child) -> Option<ExitStatus> {
     child.wait().ok()
 }
 
-/// Runs `program` with `args` to its end, at most `limit` long (then it is ended), and gives what it printed.
+/// Runs `program` with `args` to its end, at most `limit` long and only while `cancel` is not set (otherwise it
+/// is ended), and gives what it printed.
 ///
 /// # Errors
-/// It could not be started, or it ran longer than `limit`: in words.
-pub(crate) fn run_tool(program: &Path, args: &[&OsStr], limit: Duration) -> Result<Ran, String> {
+/// It could not be started, it ran longer than `limit`, or it was cancelled: in words.
+pub(crate) fn run_tool(program: &Path, args: &[&OsStr], limit: Duration, cancel: &AtomicBool) -> Result<Ran, String> {
     let mut child = spawn(program, args, Stdio::null()).map_err(|e| format!("it could not be started: {e}"))?;
     let tail = Tail::read(child.stderr.take().expect("piped"));
     let mut out = child.stdout.take().expect("piped");
@@ -292,7 +319,9 @@ pub(crate) fn run_tool(program: &Path, args: &[&OsStr], limit: Duration) -> Resu
     let status = loop {
         match child.try_wait() {
             Ok(Some(status)) => break Some(status),
-            Ok(None) if t0.elapsed() < limit => std::thread::sleep(Duration::from_millis(10)),
+            Ok(None) if t0.elapsed() < limit && !cancel.load(Ordering::SeqCst) => {
+                std::thread::sleep(Duration::from_millis(10))
+            }
             _ => {
                 end(&mut child);
                 break None;
@@ -303,15 +332,21 @@ pub(crate) fn run_tool(program: &Path, args: &[&OsStr], limit: Duration) -> Resu
     let tail = tail.finish();
     match status {
         Some(status) => Ok(Ran { status, stdout, tail }),
+        None if cancel.load(Ordering::SeqCst) => Err("it was stopped because the render was cancelled".to_string()),
         None => Err(format!("it did not finish within {} s", limit.as_secs())),
     }
 }
 
 // ---------------------------------------------------------------- the encode
-/// The arguments of the encode, exactly `mux.py main()`'s after `ffmpeg`, with the frames read from the pipe:
-/// raw 360 x 640 RGB at 30 fps, the soundtrack `wav` untrimmed, 3x nearest-neighbour upscale, libx264 slow CRF 18
-/// yuv420p high profile, tune animation, `mbtree=0`, keyframes forced on the first and the last frame (`nf`
-/// frames), AAC 256k at 48 kHz, `+faststart`.
+/// The arguments of the encode: `mux.py main()`'s after `ffmpeg`, with the frames read from the pipe: raw 360 x
+/// 640 RGB at 30 fps, the soundtrack `wav` untrimmed, 3x nearest-neighbour upscale, libx264 slow CRF 18 yuv420p
+/// high profile, tune animation, `mbtree=0`, keyframes forced on the first and the last frame (`nf` frames), AAC
+/// 256k at 48 kHz, `+faststart`.
+///
+/// Two stated departures from the kit, both about the container only (no sample or pixel changes):
+/// `-max_interleave_delta 0` before `-movflags`, so the muxer interleaves the two streams by their timestamps
+/// alone and the file's bytes do not depend on when the frames arrive (ruling R42); and `-f mp4` before the
+/// output, which is written as `<name>.mp4.part` and renamed once it is verified.
 pub fn encode_args(wav: &Path, out: &Path, nf: usize) -> Vec<OsString> {
     let mut a: Vec<OsString> = Vec::new();
     let mut put = |s: &str| a.push(s.into());
@@ -348,7 +383,20 @@ pub fn encode_args(wav: &Path, out: &Path, nf: usize) -> Vec<OsString> {
         put(s);
     }
     put(&format!("expr:eq(n,0)+eq(n,{})", nf.saturating_sub(1)));
-    for s in ["-c:a", "aac", "-b:a", "256k", "-ar", "48000", "-movflags", "+faststart"] {
+    for s in [
+        "-c:a",
+        "aac",
+        "-b:a",
+        "256k",
+        "-ar",
+        "48000",
+        "-max_interleave_delta",
+        "0",
+        "-movflags",
+        "+faststart",
+        "-f",
+        "mp4",
+    ] {
         put(s);
     }
     a.push(out.as_os_str().to_os_string());
@@ -529,17 +577,39 @@ mod tests {
 
     #[test]
     fn the_arguments_are_the_kits() {
-        let args = encode_args(Path::new("C:\\a b!\\audio.wav"), Path::new("C:\\a b!\\x.mp4"), 1830);
+        // mux.py's arguments token by token, with two stated departures that touch the container only:
+        // `-max_interleave_delta 0` (ruling R42: the bytes do not depend on timing) and `-f mp4` (the output is
+        // written as `.mp4.part`)
+        let args = encode_args(Path::new(r"C:\a b!\audio.wav"), Path::new(r"C:\a b!\x.mp4.part"), 1830);
         let args: Vec<String> = args.iter().map(|a| a.to_string_lossy().into_owned()).collect();
-        let want = "-y -loglevel error -f rawvideo -pix_fmt rgb24 -s 360x640 -r 30 -i pipe:0 -i C:\\a b!\\audio.wav \
-                    -vf scale=1080:1920:flags=neighbor -c:v libx264 -preset slow -crf 18 -pix_fmt yuv420p \
-                    -profile:v high -tune animation -x264-params mbtree=0 -force_key_frames \
-                    expr:eq(n,0)+eq(n,1829) -c:a aac -b:a 256k -ar 48000 -movflags +faststart C:\\a b!\\x.mp4";
+        let want = [
+            r"-y -loglevel error -f rawvideo -pix_fmt rgb24 -s 360x640 -r 30 -i pipe:0 -i C:\a b!\audio.wav",
+            "-vf scale=1080:1920:flags=neighbor -c:v libx264 -preset slow -crf 18 -pix_fmt yuv420p",
+            "-profile:v high -tune animation -x264-params mbtree=0 -force_key_frames",
+            "expr:eq(n,0)+eq(n,1829) -c:a aac -b:a 256k -ar 48000 -max_interleave_delta 0 -movflags +faststart",
+            r"-f mp4 C:\a b!\x.mp4.part",
+        ]
+        .join(" ");
         // the two paths are single arguments with their spaces
-        assert_eq!(args[14], "C:\\a b!\\audio.wav");
-        assert_eq!(args.last().map(String::as_str), Some("C:\\a b!\\x.mp4"));
+        assert_eq!(args[14], r"C:\a b!\audio.wav");
+        assert_eq!(args.last().map(String::as_str), Some(r"C:\a b!\x.mp4.part"));
         assert_eq!(args.join(" "), want);
-        assert_eq!(args.len(), 42);
+        assert_eq!(args.len(), 46);
+    }
+
+    #[test]
+    fn only_a_program_file_is_taken_from_the_setting() {
+        let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../target/tmp");
+        std::fs::create_dir_all(&dir).unwrap();
+        let script = dir.join(format!("bf-export not ffmpeg {}.cmd", std::process::id()));
+        std::fs::write(&script, "@echo off\r\n").unwrap();
+        let err = find_with(Some(script.clone().into_os_string()), None).unwrap_err();
+        std::fs::remove_file(&script).unwrap();
+        assert!(matches!(err, ExportError::Ffmpeg(_)));
+        assert!(
+            err.to_string().contains(".exe") && err.to_string().contains("not ffmpeg"),
+            "{err}"
+        );
     }
 
     #[test]

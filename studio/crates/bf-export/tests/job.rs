@@ -1,6 +1,7 @@
 //! The render job end to end (Review Focus 3): ffmpeg missing or failing, an output folder that cannot be written,
 //! a name already taken, a cancel, and short clips of the example episode (FLUTE against TROMBONE, seed 392)
-//! encoded for real.
+//! encoded for real. A clip is never named or filled like a finished video (ruling R41); the plain name and the
+//! seed suffix of a whole video are pinned by `full_render_passes_every_check` and `folder_name`.
 //!
 //! Every test writes only under its own folder in Cargo's temporary folder for tests (`CARGO_TARGET_TMPDIR`, under
 //! `studio/target`), named with spaces, a "!" and letters outside ASCII so such paths are exercised. The tests that
@@ -20,7 +21,10 @@ use std::time::{Duration, Instant};
 
 use bf_core::fightfile::FightFile;
 use bf_core::recording::Recording;
-use bf_export::{ExportError, JobEvent, JobOpts, find_ffmpeg, folder_name, run_job, stage};
+use bf_export::{
+    ExportError, JobEvent, JobOpts, clip_folder_name, ffmpeg_at, find_ffmpeg, folder_name, run_job, run_job_using,
+    stage,
+};
 use bf_testdata::{reference, repo_root};
 
 // ---------------------------------------------------------------- shared set-up
@@ -203,13 +207,25 @@ fn failing_ffmpeg_leaves_nothing() {
         return;
     }
     let tools = TempRoot::new("stub tools");
-    let _var = FfmpegVar::set(stub_ffmpeg(&tools.0).as_os_str());
-    let found = find_ffmpeg().expect("the stub passes as an ffmpeg with libx264 and aac");
+    let stub = stub_ffmpeg(&tools.0);
+    {
+        // outside tests BALLFIGHT_FFMPEG must name a program file: a script would run through cmd.exe and leave an
+        // ffmpeg that cannot be ended
+        let _var = FfmpegVar::set(stub.as_os_str());
+        let err = find_ffmpeg().expect_err("a .cmd is refused");
+        assert!(matches!(err, ExportError::Ffmpeg(_)), "{err:?}");
+        assert!(
+            err.to_string().contains(".exe") && err.to_string().contains("fake ffmpeg!.cmd"),
+            "{err}"
+        );
+    }
+    let found = ffmpeg_at(stub).expect("the stub passes as an ffmpeg with libx264 and aac");
     assert_eq!(found.version, "ffmpeg 0.0");
 
     let root = TempRoot::new("failing");
     let ep = &*EPISODE;
-    let err = run_job(
+    let err = run_job_using(
+        &found,
         &ep.ff,
         Arc::clone(&ep.rec),
         &opts(&root.0, 2, Some(0..30)),
@@ -323,64 +339,6 @@ fn unwritable_root_is_a_clear_error() {
 }
 
 #[test]
-fn second_render_gets_seed_suffix() {
-    let _guard = lock();
-    if !have_ffmpeg("second_render_gets_seed_suffix") {
-        return;
-    }
-    let ep = &*EPISODE;
-    let root = TempRoot::new("second");
-    let first = root.0.join("flute_vs_trombone");
-    std::fs::create_dir(&first).unwrap();
-    std::fs::write(first.join("keep me.txt"), b"an earlier video").unwrap();
-    assert_eq!(
-        folder_name(["FLUTE", "TROMBONE"], 392, &root.0),
-        root.0.join("flute_vs_trombone_seed392")
-    );
-
-    let got = run_job(
-        &ep.ff,
-        Arc::clone(&ep.rec),
-        &opts(&root.0, workers(), Some(0..3)),
-        &|_| {},
-        &AtomicBool::new(false),
-    )
-    .expect("the clip renders");
-    assert_eq!(got, root.0.join("flute_vs_trombone_seed392"));
-    assert_eq!(entries(&root.0), ["flute_vs_trombone", "flute_vs_trombone_seed392"]);
-    assert_eq!(
-        entries(&got),
-        [
-            "caption.txt",
-            "cover.png",
-            "flute_vs_trombone_seed392.mp4",
-            "flute_vs_trombone_seed392.toml"
-        ]
-    );
-    assert_eq!(entries(&first), ["keep me.txt"]);
-    assert_eq!(std::fs::read(first.join("keep me.txt")).unwrap(), b"an earlier video");
-
-    // both names taken: refused at once, in words, and nothing changes
-    let t0 = Instant::now();
-    let err = run_job(
-        &ep.ff,
-        Arc::clone(&ep.rec),
-        &opts(&root.0, 2, Some(0..3)),
-        &|_| {},
-        &AtomicBool::new(false),
-    )
-    .expect_err("no free name");
-    assert!(matches!(err, ExportError::Folder(_)), "{err:?}");
-    assert!(err.to_string().contains("flute_vs_trombone_seed392"), "{err}");
-    assert!(
-        t0.elapsed() < Duration::from_secs(3),
-        "refused before any work: {:?}",
-        t0.elapsed()
-    );
-    assert_eq!(entries(&root.0), ["flute_vs_trombone", "flute_vs_trombone_seed392"]);
-}
-
-#[test]
 fn cancel_leaves_nothing() {
     let _guard = lock();
     if !have_ffmpeg("cancel_leaves_nothing") {
@@ -398,7 +356,7 @@ fn cancel_leaves_nothing() {
         &AtomicBool::new(true),
     )
     .expect_err("cancelled");
-    assert!(matches!(err, ExportError::Cancelled), "{err:?}");
+    assert!(matches!(err, ExportError::Cancelled(_)), "{err:?}");
     assert_eq!(entries(&root.0), Vec::<String>::new());
 
     // cancelled while the frames are drawn and encoded
@@ -421,7 +379,7 @@ fn cancel_leaves_nothing() {
     )
     .expect_err("cancelled");
     let late = at.lock().unwrap().expect("the frames started").elapsed();
-    assert!(matches!(err, ExportError::Cancelled), "{err:?}");
+    assert!(matches!(err, ExportError::Cancelled(_)), "{err:?}");
     assert!(
         late < Duration::from_secs(3),
         "the job stopped {late:?} after the cancel"
@@ -438,6 +396,22 @@ fn clip_is_valid() {
     }
     let ep = &*EPISODE;
     let root = TempRoot::new("clip");
+    // an earlier video under the plain name, and an earlier clip of the same frames: neither is touched, and the
+    // clip takes the seed name of a clip
+    let plain = root.0.join("flute_vs_trombone");
+    std::fs::create_dir(&plain).unwrap();
+    std::fs::write(plain.join("keep me.txt"), b"an earlier video").unwrap();
+    let earlier = root.0.join("flute_vs_trombone_frames0-91");
+    std::fs::create_dir(&earlier).unwrap();
+    assert_eq!(
+        folder_name(["FLUTE", "TROMBONE"], 392, &root.0),
+        root.0.join("flute_vs_trombone_seed392")
+    );
+    let name = "flute_vs_trombone_seed392_frames0-91";
+    assert_eq!(
+        clip_folder_name(["FLUTE", "TROMBONE"], 392, &(0..91), &root.0),
+        root.0.join(name)
+    );
     let events = Events::default();
     let t0 = Instant::now();
     let folder = run_job(
@@ -449,9 +423,17 @@ fn clip_is_valid() {
     )
     .expect("the clip renders");
     println!("clip of 91 frames: {:.1} s", t0.elapsed().as_secs_f64());
-    assert_eq!(folder, root.0.join("flute_vs_trombone"));
-    assert_eq!(entries(&root.0), ["flute_vs_trombone"]);
-    let mp4 = folder.join("flute_vs_trombone.mp4");
+    assert_eq!(folder, root.0.join(name));
+    assert_eq!(
+        entries(&root.0),
+        ["flute_vs_trombone", "flute_vs_trombone_frames0-91", name]
+    );
+    // a clip holds its mp4 only: no cover, caption or fight file, so the Library never lists it as a video
+    assert_eq!(entries(&folder), [format!("{name}.mp4")]);
+    assert_eq!(entries(&plain), ["keep me.txt"]);
+    assert_eq!(std::fs::read(plain.join("keep me.txt")).unwrap(), b"an earlier video");
+    assert_eq!(entries(&earlier), Vec::<String>::new());
+    let mp4 = folder.join(format!("{name}.mp4"));
 
     // the events: the stages in order, the frames counted up to the last, every check passed, then done
     let events = events.take();
@@ -555,21 +537,27 @@ fn clip_is_valid() {
         frames.iter().filter(|f| f.1).collect::<Vec<_>>()
     );
 
-    // the cover, the caption and the fight file
-    let (w, h, c, _) = bf_testdata::png::read_png(&folder.join("cover.png"));
-    assert_eq!((w, h, c), (1080, 1920, 3));
-    let caption = std::fs::read_to_string(folder.join("caption.txt")).unwrap();
-    let c = &ep.ff.captions;
-    let want = format!(
-        "{}\ninstagram: {}\ntiktok: {}\nshorts: {}\n",
-        c.caption,
-        c.instagram,
-        c.tiktok,
-        c.shorts.join("\n")
+    // both clip names taken: refused at once, in words, and nothing changes
+    let t0 = Instant::now();
+    let err = run_job(
+        &ep.ff,
+        Arc::clone(&ep.rec),
+        &opts(&root.0, 2, Some(0..91)),
+        &|_| {},
+        &AtomicBool::new(false),
+    )
+    .expect_err("no free name");
+    assert!(matches!(err, ExportError::Folder(_)), "{err:?}");
+    assert!(err.to_string().contains(name), "{err}");
+    assert!(
+        t0.elapsed() < Duration::from_secs(3),
+        "refused before any work: {:?}",
+        t0.elapsed()
     );
-    assert_eq!(caption, want);
-    let toml = std::fs::read_to_string(folder.join("flute_vs_trombone.toml")).unwrap();
-    assert_eq!(FightFile::parse(&toml).expect("the saved fight file reads"), ep.ff);
+    assert_eq!(
+        entries(&root.0),
+        ["flute_vs_trombone", "flute_vs_trombone_frames0-91", name]
+    );
 }
 
 #[test]
@@ -597,26 +585,22 @@ fn the_video_does_not_depend_on_the_workers() {
         let folder = run_job(
             &ep.ff,
             Arc::clone(&ep.rec),
-            &opts(&root.0, w, Some(1500..1524)),
+            &opts(&root.0, w, Some(1500..1512)),
             &|_| {},
             &AtomicBool::new(false),
         )
         .expect("the clip renders");
-        let mp4 = folder.join("flute_vs_trombone.mp4");
+        let mp4 = folder.join("flute_vs_trombone_frames1500-1512.mp4");
         got.push((packets(&mp4, "0:v"), packets(&mp4, "0:a"), std::fs::read(&mp4).unwrap()));
     }
     assert!(got[0].0.starts_with("MD5=") && got[0].2.len() > 100_000);
     assert_eq!(got[0].0, got[1].0, "the video stream differs between 1 and 8 workers");
     assert_eq!(got[0].1, got[1].1, "the sound stream differs between 1 and 8 workers");
-    // With the kit's arguments ffmpeg's muxer interleaves the two streams in chunks that follow the timing of the
-    // frames' arrival, so the file's bytes may differ though every packet is the same (see the lane notes).
-    println!(
-        "the whole files are {}",
-        if got[0].2 == got[1].2 {
-            "identical"
-        } else {
-            "different (the interleaving only)"
-        }
+    // the streams first (the clearer message), then the whole file: `-max_interleave_delta 0` makes the muxer's
+    // chunks follow the timestamps alone, not the timing of the frames' arrival (ruling R42)
+    assert!(
+        got[0].2 == got[1].2,
+        "the mp4 files differ between 1 and 8 workers though every packet is the same"
     );
 }
 
@@ -648,6 +632,32 @@ fn full_render_passes_every_check() {
     for (s, t) in stamps.lock().unwrap().iter() {
         println!("stage {s} from {t:.1} s");
     }
+    // the plain name, holding the four files of a finished video
+    assert_eq!(folder, root.0.join("flute_vs_trombone"));
+    assert_eq!(entries(&root.0), ["flute_vs_trombone"]);
+    assert_eq!(
+        entries(&folder),
+        [
+            "caption.txt",
+            "cover.png",
+            "flute_vs_trombone.mp4",
+            "flute_vs_trombone.toml"
+        ]
+    );
+    let (w, h, c, _) = bf_testdata::png::read_png(&folder.join("cover.png"));
+    assert_eq!((w, h, c), (1080, 1920, 3));
+    let caption = std::fs::read_to_string(folder.join("caption.txt")).unwrap();
+    let cap = &ep.ff.captions;
+    let want = format!(
+        "{}\ninstagram: {}\ntiktok: {}\nshorts: {}\n",
+        cap.caption,
+        cap.instagram,
+        cap.tiktok,
+        cap.shorts.join("\n")
+    );
+    assert_eq!(caption, want);
+    let toml = std::fs::read_to_string(folder.join("flute_vs_trombone.toml")).unwrap();
+    assert_eq!(FightFile::parse(&toml).expect("the saved fight file reads"), ep.ff);
     let mp4 = folder.join("flute_vs_trombone.mp4");
     let size = std::fs::metadata(&mp4).unwrap().len();
     println!("full render: {total:.1} s with {} workers, {size} bytes", workers());
