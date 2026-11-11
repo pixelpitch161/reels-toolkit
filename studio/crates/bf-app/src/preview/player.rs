@@ -19,13 +19,19 @@ pub type Now = Box<dyn Fn() -> Duration + Send>;
 /// stalled (ruling M2-R12): it is then treated as lost.
 const STALL: Duration = Duration::from_millis(500);
 
+/// How long playback waits at most, after a `Load` with autoplay, for the take's first picture before its clock
+/// starts anyway (ruling M2-R30). A first frame whose draw fails ends the wait at once.
+pub const FIRST_PICTURE_WAIT: Duration = Duration::from_secs(3);
+
 /// What the player counts about the frames it gives.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct PlayerStats {
     /// The playhead's own frames given when they were kept (a held picture does not count).
     pub shown: u64,
     /// Frames not kept yet when the playhead reached them, once per frame. This also counts the first missing frame
-    /// after a `Load`, a `Step` or a scrub while paused, not only frames missed during playback.
+    /// after a `Load` without autoplay, a `Step` or a scrub while paused, not only frames missed during playback.
+    /// While playback waits for a take's first picture nothing is counted: the playhead is not moving. A wait that
+    /// ends because the start frame's draw failed, or at `FIRST_PICTURE_WAIT`, counts that start frame late once.
     pub late: u64,
 }
 
@@ -45,6 +51,16 @@ struct Reading {
 /// [`Player::has_picture`] says whether the shell should show a picture at all: false at the start, after `Clear`,
 /// after a `Still` until `tick` has given it, and after a `Load` until that take's first frame has been given (so the
 /// previous take's last picture is never shown under the new take's transport).
+///
+/// **Playback starts with the first picture** (ruling M2-R30). After a `Load` with autoplay the transport shows
+/// playing, but the playhead stays on the start frame, and the scheduler is asked for that frame first, until `tick`
+/// gives it: then the clock starts from the start frame. A soundtrack that arrives meanwhile is kept and started at
+/// that moment, at the start frame's first sample, so from then on the audio position is the device's count from the
+/// start frame and picture and sound are in step. The wait ends anyway when the start frame's draw fails (its
+/// failed-frame status shows, widget rule 11) or after [`FIRST_PICTURE_WAIT`]. Pausing, stepping or scrubbing ends
+/// the wait as they end playback, so a pause and then a play during the wait starts the clock at once, as any play
+/// from pause does. Nothing is counted late while waiting, and the stall rule cannot fire since the sound is not
+/// started.
 pub struct Player {
     scheduler: Scheduler,
     audio: Box<dyn AudioOut>,
@@ -77,6 +93,8 @@ pub struct Player {
     /// While sounding: the last position the audio reported, and when (by `now`) it last moved or the audio started.
     heard: u64,
     heard_at: Duration,
+    /// Playing after a `Load`, waiting for the take's first picture: the clock has not started. Since when.
+    waiting: Option<Duration>,
     stats: PlayerStats,
 }
 
@@ -116,6 +134,7 @@ impl Player {
             picture: false,
             heard: 0,
             heard_at: Duration::ZERO,
+            waiting: None,
             stats: PlayerStats::default(),
         }
     }
@@ -143,6 +162,8 @@ impl Player {
                 self.late_at = None;
                 self.picture = false;
                 if autoplay {
+                    // The clock starts with the first picture (`tick`).
+                    self.waiting = Some((self.now)());
                     self.play();
                 }
                 self.ask();
@@ -154,7 +175,8 @@ impl Player {
                 self.settle();
                 self.sound_take = Some(audio);
                 self.sound = SoundState::Ready;
-                if self.playing {
+                // While waiting for the first picture the sound is kept and starts with the clock.
+                if self.playing && self.waiting.is_none() {
                     // Joins at the playhead (or replaces a soundtrack already sounding).
                     self.halt();
                     self.play();
@@ -230,6 +252,11 @@ impl Player {
         self.picture
     }
 
+    /// Whether playback is waiting for the loaded take's first picture: playing, with the clock not started yet.
+    pub fn waiting(&self) -> bool {
+        self.waiting.is_some()
+    }
+
     /// Once per repaint: moves the clock, asks the scheduler for the playhead's frame and gives a picture when the one
     /// to show has changed. A frame not kept yet (late, or failed) holds the latest kept one before it.
     pub fn tick(&mut self) -> Option<Frame> {
@@ -239,6 +266,18 @@ impl Player {
         }
         self.take?;
         self.settle();
+        if let Some(since) = self.waiting {
+            let f = frame_of(self.pos);
+            let given_up = (self.now)().saturating_sub(since) >= FIRST_PICTURE_WAIT;
+            if self.scheduler.get(f).is_some() || self.scheduler.failed(f) || given_up {
+                // The clock starts now, from the start frame (and the sound with it, if it has arrived).
+                self.waiting = None;
+                self.play();
+            } else {
+                self.ask();
+                return None;
+            }
+        }
         self.ask();
         let f = frame_of(self.pos);
         if self.shown == Some(f) {
@@ -320,6 +359,10 @@ impl Player {
     fn play(&mut self) {
         self.playing = true;
         self.sounding = false;
+        if self.waiting.is_some() {
+            // Neither the sound nor the wall clock starts before the first picture.
+            return;
+        }
         if let Some(audio) = &self.sound_take {
             match self.audio.start(audio.clone(), self.pos, self.looping) {
                 Ok(()) => {
@@ -344,6 +387,7 @@ impl Player {
             self.sounding = false;
         }
         self.playing = false;
+        self.waiting = None;
     }
 
     /// Measures wall-clock playback from now and the current position.
@@ -360,6 +404,14 @@ impl Player {
             return Reading {
                 pos: self.pos,
                 playing: false,
+                lost: false,
+            };
+        }
+        if self.waiting.is_some() {
+            // Playing, but the clock has not started: the playhead stays on the start frame.
+            return Reading {
+                pos: self.pos,
+                playing: true,
                 lost: false,
             };
         }
@@ -404,7 +456,11 @@ impl Player {
     /// Tells the scheduler which frames are wanted now.
     fn ask(&self) {
         if self.take.is_some() {
-            self.scheduler.want(frame_of(self.pos), self.playing, self.looping);
+            if self.waiting.is_some() {
+                self.scheduler.want_start(frame_of(self.pos), self.looping);
+            } else {
+                self.scheduler.want(frame_of(self.pos), self.playing, self.looping);
+            }
         }
     }
 }
@@ -527,6 +583,15 @@ mod tests {
         });
     }
 
+    /// Waits until the take's first picture is given: after a `Load` with autoplay the clock starts then (ruling
+    /// M2-R30).
+    fn started(p: &mut Player) {
+        wait_for("the first picture", || {
+            p.tick();
+            p.has_picture()
+        });
+    }
+
     fn act(p: &mut Player, a: TransportAction) {
         p.run(PlayerCmd::Transport(a));
     }
@@ -558,6 +623,7 @@ mod tests {
         assert!(v.enabled && v.playing);
         assert_eq!(v.frame, 108);
         assert_eq!(v.sound, SoundState::Building);
+        started(&mut p);
         hand.forward(Duration::from_secs(1));
         p.tick();
         assert_eq!(p.view().frame, 138);
@@ -571,6 +637,7 @@ mod tests {
     fn the_sound_joins_at_the_playhead() {
         let (mut p, hand, log) = faked();
         load(&mut p, 1, TestSource::new(), 108, true);
+        started(&mut p);
         hand.forward(Duration::from_secs(1));
         p.tick();
         // Sound for another take is ignored.
@@ -598,6 +665,7 @@ mod tests {
     fn no_sound_device_still_plays() {
         let (mut p, hand) = player_with(Box::new(NoAudio::new("No sound device.")), DRAW_MS);
         load(&mut p, 1, TestSource::new(), 0, true);
+        started(&mut p);
         sound(&mut p, 1);
         assert_eq!(p.view().sound, SoundState::NoDevice);
         hand.forward(Duration::from_secs(1));
@@ -612,6 +680,7 @@ mod tests {
     fn step_pauses() {
         let (mut p, hand, log) = faked();
         load(&mut p, 1, TestSource::new(), 100, true);
+        started(&mut p);
         sound(&mut p, 1);
         log.lock().unwrap().position = Some(pos_of(115) + 10);
         act(&mut p, TransportAction::Step(2));
@@ -635,6 +704,7 @@ mod tests {
     fn scrub_stops_the_sound_and_resumes_after() {
         let (mut p, hand, log) = faked();
         load(&mut p, 1, TestSource::new(), 0, true);
+        started(&mut p);
         sound(&mut p, 1);
         act(&mut p, TransportAction::ScrubTo(10.0));
         assert_eq!(log.lock().unwrap().stops, 1);
@@ -670,6 +740,7 @@ mod tests {
         let (mut p, hand, log) = faked();
         assert!(p.view().looping);
         load(&mut p, 1, TestSource::new(), 1_825, true);
+        started(&mut p);
         hand.forward(Duration::from_secs(1));
         p.tick();
         let v = p.view();
@@ -694,6 +765,7 @@ mod tests {
         let (mut p, hand, log) = faked();
         act(&mut p, TransportAction::SetLoop(false));
         load(&mut p, 1, TestSource::new(), 1_825, true);
+        started(&mut p);
         assert!(!p.view().looping);
         hand.forward(Duration::from_secs(1));
         p.tick();
@@ -766,6 +838,7 @@ mod tests {
     fn a_lost_device_falls_back_to_the_wall_clock() {
         let (mut p, hand, log) = faked();
         load(&mut p, 1, TestSource::new(), 0, true);
+        started(&mut p);
         sound(&mut p, 1);
         log.lock().unwrap().position = Some(pos_of(300));
         p.tick();
@@ -1010,6 +1083,7 @@ mod tests {
     fn a_stalled_device_falls_back_to_the_wall_clock() {
         let (mut p, hand, log) = faked();
         load(&mut p, 1, TestSource::new(), 0, true);
+        started(&mut p);
         sound(&mut p, 1);
         log.lock().unwrap().position = Some(pos_of(300));
         p.tick();
@@ -1034,6 +1108,7 @@ mod tests {
     fn a_moving_device_never_counts_as_stalled() {
         let (mut p, hand, log) = faked();
         load(&mut p, 1, TestSource::new(), 0, true);
+        started(&mut p);
         sound(&mut p, 1);
         // Right after the start the position still answers the start value: the first movement gets 500 ms too.
         hand.forward(Duration::from_millis(450));
@@ -1049,5 +1124,164 @@ mod tests {
             assert_eq!(v.frame, k * 10);
         }
         assert_eq!(log.lock().unwrap().stops, 0);
+    }
+
+    /// A source none of whose frames can be drawn.
+    struct Broken;
+
+    impl FrameSource for Broken {
+        fn frames(&self) -> u32 {
+            NF
+        }
+
+        fn draw(&self, f: u32) -> Frame {
+            panic!("frame {f} cannot be drawn");
+        }
+    }
+
+    #[test]
+    fn the_clock_waits_for_the_first_picture() {
+        let (mut p, hand, log) = faked();
+        let src = TestSource::gated();
+        let _open = Opens(src.clone());
+        load(&mut p, 1, src.clone(), 108, true);
+        // Playing, but nothing is drawn yet: the playhead stays on the start frame however long it takes.
+        hand.forward(Duration::from_secs(2));
+        assert_eq!(p.tick(), None);
+        let v = p.view();
+        assert!(v.playing);
+        assert_eq!(v.frame, 108);
+        assert!(!p.has_picture());
+        assert!(p.wants_repaint());
+        assert_eq!(p.stats(), PlayerStats::default(), "nothing counts late while waiting");
+        // The sound arriving meanwhile does not start yet, and the 500 ms stall rule does not fire.
+        sound(&mut p, 1);
+        hand.forward(Duration::from_millis(600));
+        assert_eq!(p.tick(), None);
+        assert!(log.lock().unwrap().starts.is_empty());
+        assert_eq!(p.view().sound, SoundState::Ready);
+        assert_eq!(p.view().frame, 108);
+        // The start frame is asked for first and is the first thing shown; the clock and the sound start with it,
+        // at the start frame's first sample, so picture and sound are in step.
+        src.open();
+        wait_for("frame 108", || p.scheduler.get(108).is_some());
+        assert_eq!(p.tick(), Some(TestSource::frame(108)));
+        assert!(p.has_picture());
+        assert_eq!(p.stats(), PlayerStats { shown: 1, late: 0 });
+        assert_eq!(log.lock().unwrap().starts, [(pos_of(108), true)]);
+        // From then on the device's count from the start frame is the playhead.
+        log.lock().unwrap().position = Some(pos_of(108) + 48_000);
+        p.tick();
+        assert_eq!(p.view().frame, 138);
+        assert_eq!(p.view().sound, SoundState::Ready);
+    }
+
+    #[test]
+    fn without_sound_the_clock_runs_from_the_start_frame_after_the_first_picture() {
+        let (mut p, hand, _log) = faked();
+        let src = TestSource::gated();
+        let _open = Opens(src.clone());
+        load(&mut p, 1, src.clone(), 50, true);
+        hand.forward(Duration::from_millis(700));
+        assert_eq!(p.tick(), None);
+        src.open();
+        let mut first = None;
+        wait_for("the first picture", || {
+            first = first.take().or_else(|| p.tick());
+            first.is_some()
+        });
+        assert_eq!(
+            first,
+            Some(TestSource::frame(50)),
+            "the first frame shown is the start frame"
+        );
+        assert_eq!(p.view().frame, 50);
+        hand.forward(Duration::from_secs(1));
+        p.tick();
+        assert_eq!(p.view().frame, 80);
+        assert!(p.view().playing);
+    }
+
+    #[test]
+    fn a_first_picture_that_cannot_be_drawn_does_not_hang() {
+        // Every draw fails: the start frame's failure ends the wait, its status shows, and the clock runs.
+        let (mut p, hand, _log) = faked();
+        load(&mut p, 1, Arc::new(Broken), 10, true);
+        wait_for("frame 10 to fail", || p.scheduler.failed(10));
+        assert_eq!(p.tick(), None);
+        assert_eq!(p.failed_frame(), Some(10));
+        assert!(!p.has_picture());
+        hand.forward(Duration::from_secs(1));
+        p.tick();
+        assert_eq!(p.view().frame, 40);
+        assert!(p.view().playing);
+    }
+
+    #[test]
+    fn a_first_picture_that_never_comes_starts_the_clock_after_the_wait() {
+        let (mut p, hand, _log) = faked();
+        let src = TestSource::gated();
+        let _open = Opens(src.clone());
+        load(&mut p, 1, src.clone(), 10, true);
+        hand.forward(FIRST_PICTURE_WAIT - Duration::from_millis(1));
+        assert_eq!(p.tick(), None);
+        assert_eq!(p.view().frame, 10);
+        hand.forward(Duration::from_millis(1));
+        p.tick();
+        hand.forward(Duration::from_secs(1));
+        p.tick();
+        assert_eq!(p.view().frame, 40);
+        assert!(p.view().playing);
+    }
+
+    #[test]
+    fn a_warm_player_misses_no_frame_after_the_start() {
+        // A player that has drawn before: draw times of about 107 ms on 15 threads, so playing asks from the
+        // playhead plus a lead of 4. The frames between the start frame and that lead must still be asked for.
+        let t = Arc::new(AtomicU64::new(1_000_000_000));
+        let t2 = t.clone();
+        let now: Now = Box::new(move || Duration::from_nanos(t2.load(Ordering::SeqCst)));
+        let log = Arc::new(Mutex::new(Log::default()));
+        let mut p = Player::with_draw_ms(15, Box::new(FakeOut(log)), now, Arc::new(|| {}), 107.0);
+        let hand = Hand(t);
+        for _ in 0..30 {
+            p.scheduler.record_draw_ms(107.0);
+        }
+        load(&mut p, 1, TestSource::new(), 100, true);
+        assert!(p.waiting());
+        started(&mut p);
+        assert!(!p.waiting());
+        assert_eq!(p.stats(), PlayerStats { shown: 1, late: 0 });
+        // One second of playback, a frame at a time; each step waits until the scheduler has drawn what it was
+        // asked, so a frame that is late was never asked for in time.
+        for k in 1..=30u32 {
+            wait_for("the asked frames", || p.scheduler.idle());
+            hand.forward(frames(1));
+            p.tick();
+            assert_eq!(p.view().frame, 100 + k);
+            assert_eq!(p.stats().late, 0, "frame {}", 100 + k);
+        }
+        assert_eq!(p.stats().shown, 31);
+    }
+
+    #[test]
+    fn pausing_while_waiting_stays_on_the_start_frame() {
+        let (mut p, hand, log) = faked();
+        let src = TestSource::gated();
+        let _open = Opens(src.clone());
+        load(&mut p, 1, src.clone(), 10, true);
+        sound(&mut p, 1);
+        act(&mut p, TransportAction::PlayPause);
+        assert!(!p.view().playing);
+        src.open();
+        wait_for("frame 10", || p.scheduler.get(10).is_some());
+        assert_eq!(p.tick(), Some(TestSource::frame(10)));
+        hand.forward(Duration::from_secs(1));
+        p.tick();
+        assert_eq!(p.view().frame, 10);
+        assert!(log.lock().unwrap().starts.is_empty());
+        // Play from there plays at once, as before.
+        act(&mut p, TransportAction::PlayPause);
+        assert_eq!(log.lock().unwrap().starts, [(pos_of(10), true)]);
     }
 }
