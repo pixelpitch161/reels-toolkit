@@ -14,4 +14,5 @@ bf-sound.workspace = true
 [dev-dependencies]
 bf-testdata = { path = "../bf-testdata" }
 serde_json.workspace = true
+sha2.workspace = true
 toml.workspace = true
