@@ -12,9 +12,10 @@
 //! - a `Job` update for a job that is not rendering (one the queue does not hold, a waiting one, or one already
 //!   finished or cancelled);
 //! - a `FightOpened` when no open is pending. Only the person cancels an open (ruling M2-R20): one open is pending
-//!   at a time (a later one replaces it), an action of theirs that changes the fight drops it, and a `Problem`
-//!   (the engine's answer when the file cannot be opened) clears it. A result from the engine that begins a
-//!   generation meanwhile (a balance with a new handicap, a second roster) never does: the opened fight replaces it.
+//!   at a time (a later one replaces it), and an action of theirs that changes the fight drops it. No engine event
+//!   does: not a result that begins a generation meanwhile (a balance with a new handicap, a second roster), which
+//!   the opened fight replaces, and not a `Problem`, which does not say what it answers. An open whose file could
+//!   not be opened stays waiting, harmlessly, until the person's next open or fight change replaces it.
 //!
 //! An `Enqueued` is never late: the owner asked for that video, fixed when it was asked for, so it joins the queue
 //! even if the draft has changed since.
@@ -312,11 +313,8 @@ impl AppState {
                 self.scan_library(fx);
             }
             Event::FolderPicked { path: None } => {}
-            Event::Problem { text } => {
-                // The engine's answer when a fight file cannot be opened: the open waiting for it is over.
-                self.run.pending_open = None;
-                self.vm.notices.push(Notice { text });
-            }
+            // A problem does not say what it answers, so it leaves a waiting open alone (ruling M2-R20).
+            Event::Problem { text } => self.vm.notices.push(Notice { text }),
             _ => {}
         }
     }
@@ -377,10 +375,14 @@ impl AppState {
             // Nobody asked, or the person moved on since (ruling M2-R20).
             return;
         };
-        // The opened fight replaces whatever the engine left meanwhile; then its step opens as the person would
-        // open it (Balance balances, Seeds searches).
+        // The view first, so opening the draft does not start a search for the step the person is leaving (from
+        // Seeds into Music, say); the opened fight replaces whatever the engine left meanwhile; then its step opens
+        // as the person would open it (Balance balances, Seeds searches once).
+        let view = View::Step(open.step);
+        self.vm.view = view;
+        self.vm.step = open.step;
         self.open_draft(draft, fx);
-        self.go(View::Step(open.step), fx);
+        self.go(view, fx);
         if self.vm.draft.seed.is_some() {
             self.ask_take(fx);
         }

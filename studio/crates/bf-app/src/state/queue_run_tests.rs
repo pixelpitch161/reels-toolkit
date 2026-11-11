@@ -951,16 +951,35 @@ fn two_opens_in_a_row_land_on_the_second_ones_step() {
 }
 
 #[test]
-fn a_problem_answering_the_open_clears_it() {
+fn an_unrelated_problem_does_not_lose_an_open() {
     let mut s = ready();
     let entries = library(&mut s);
-    s.dispatch(Action::Reopen(entries[0].folder.clone()));
+    s.dispatch(Action::Reopen(entries[1].folder.clone()));
     s.apply(Event::Problem {
-        text: "The fight file could not be read.".to_string(),
+        text: "The shortlist cache could not be read.".to_string(),
     });
     let generation = s.generation();
-    assert!(s.apply(opened(&s, ["TUBA", "BASS DRUM"], 9120)).is_empty());
-    assert_eq!(s.generation(), generation);
+    s.apply(opened(&s, ["TUBA", "BASS DRUM"], 9120));
+    assert_eq!(s.generation(), generation + 1);
+    assert_eq!(s.vm.draft.fighters, ["TUBA".to_string(), "BASS DRUM".to_string()]);
+    assert_eq!(s.vm.notices.len(), 1, "the problem is still told");
+}
+
+#[test]
+fn on_seeds_an_open_into_music_starts_no_search() {
+    let mut s = two_jobs();
+    s.apply(job(1, failed()));
+    s.dispatch(Action::Go(View::Step(Step::Seeds)));
+    s.dispatch(Action::Queue(QueueAction::OpenIn {
+        id: 1,
+        step: Step::Music,
+    }));
+    let fx = s.apply(opened(&s, ["TUBA", "BASS DRUM"], 9120));
+    assert_eq!(s.vm.view, View::Step(Step::Music));
+    assert!(
+        !sent(&fx).iter().any(|c| matches!(c, Command::StartSearch { .. })),
+        "{fx:?}"
+    );
 }
 
 #[test]
