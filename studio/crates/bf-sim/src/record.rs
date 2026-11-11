@@ -244,7 +244,7 @@ mod tests {
     #[test]
     fn a_frame_holds_the_balls_state() {
         let roster = testing::roster();
-        let mut fight = Fight::new(&testing::episode_setup(&roster, 392), true);
+        let mut fight = testing::fight(&testing::episode_setup(&roster, 392), true);
         let mut frames = Frames::new(&fight);
         frames.snap(&fight);
         // change everything a frame holds, then take a second frame
@@ -296,7 +296,7 @@ mod tests {
     #[test]
     fn the_opt_in_keys_follow_the_fighters() {
         let bare = testing::bare_pair();
-        let fight = Fight::new(&testing::bare_setup(&bare, 1), true);
+        let fight = testing::fight(&testing::bare_setup(&bare, 1), true);
         let mut frames = Frames::new(&fight);
         frames.snap(&fight);
         let a = frames.into_arrays();
@@ -309,7 +309,7 @@ mod tests {
         );
         // FLUTE against TROMBONE has the 19 keys of the Python recordings
         let roster = testing::roster();
-        let fight = Fight::new(&testing::episode_setup(&roster, 1), true);
+        let fight = testing::fight(&testing::episode_setup(&roster, 1), true);
         let mut frames = Frames::new(&fight);
         frames.snap(&fight);
         let a = frames.into_arrays();
@@ -332,7 +332,7 @@ mod tests {
             fighters: [ep.fighters[1], ep.fighters[0]],
             ..ep
         };
-        let mut fight = Fight::new(&swapped, true);
+        let mut fight = testing::fight(&swapped, true);
         let mut frames = Frames::new(&fight);
         frames.snap(&fight); // the ball has no `baskets` yet
         setup(&mut fight, 1);
@@ -373,7 +373,7 @@ mod tests {
     fn waves_and_slams_are_listed_as_python_lists_them() {
         use Value::{Float as F, Int as I};
         let bare = testing::bare_pair();
-        let mut fight = Fight::new(&testing::bare_setup(&bare, 1), true);
+        let mut fight = testing::fight(&testing::bare_setup(&bare, 1), true);
         fight.waves.push(Wave {
             owner: 1,
             c: [0.5, -1.5],
@@ -436,7 +436,7 @@ mod tests {
     fn the_recording_carries_the_fights_header() {
         let roster = testing::roster();
         let setup = testing::episode_setup(&roster, 392);
-        let mut fight = Fight::new(&setup, false);
+        let mut fight = testing::fight(&setup, false);
         fight.winner = Some(1);
         fight.t_ko = Some(50.5);
         fight.t = 50.5;

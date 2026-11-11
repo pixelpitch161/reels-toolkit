@@ -106,7 +106,7 @@ fn position_gap(rs: &Recording, py: &Recording, t: f64) -> f64 {
 /// Runs the Rust fight of a Python recording and compares everything before the first ability.
 fn compare(name: &str, roster: &[FighterCfg]) -> Window {
     let py = python_recording(name);
-    let rs = run(&support::setup_like(&py, roster), true);
+    let rs = run(&support::setup_like(&py, roster), true).expect("the engine runs this fight");
 
     let first = py
         .events
@@ -309,7 +309,7 @@ fn the_lance_rows_have_the_python_layout() {
     let roster = support::roster();
     for name in ["ep392.bfrec", "scenarios/swapped_s1.bfrec"] {
         let py = python_recording(name);
-        let rs = run(&support::setup_like(&py, &roster), true);
+        let rs = run(&support::setup_like(&py, &roster), true).expect("the engine runs this fight");
         let lance = py
             .names
             .iter()

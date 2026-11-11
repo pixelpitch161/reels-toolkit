@@ -8,3 +8,11 @@ publish.workspace = true
 [dependencies]
 bf-core.workspace = true
 serde_json.workspace = true
+
+[features]
+# The test entry `Fight::with_unported` / `run_with_unported` (fighters of kinds not ported: the parity tests' punching
+# bags). Only the engine's own tests turn it on, through the dev-dependency below; the app never does.
+testing = []
+
+[dev-dependencies]
+bf-sim = { path = ".", features = ["testing"] }

@@ -365,6 +365,11 @@ impl Entry<'_> {
     /// Python fight raises in its first beat; a negative one means nothing.) The number itself is kept as written.
     fn count(&self, obj: &Json, prefix: &str, key: &str, why: &str) -> Result<f64, RosterError> {
         let x = self.f64(obj, prefix, key)?;
+        self.count_value(prefix, key, x, why)
+    }
+
+    /// The check of [`Entry::count`] on a number already read.
+    fn count_value(&self, prefix: &str, key: &str, x: f64, why: &str) -> Result<f64, RosterError> {
         // `x as i64` truncates toward zero, as `int()` does
         if (x as i64) < 1 {
             return Err(self.err(&join(prefix, key), format!("{x} is less than 1 ({why})")));
@@ -377,6 +382,11 @@ impl Entry<'_> {
     /// finite grid runs, as in Python: one that rounds to less than a 16th note is every 16th note.
     fn grid(&self, obj: &Json, prefix: &str, key: &str) -> Result<f64, RosterError> {
         let x = self.f64(obj, prefix, key)?;
+        self.grid_value(prefix, key, x)
+    }
+
+    /// The check of [`Entry::grid`] on a number already read.
+    fn grid_value(&self, prefix: &str, key: &str, x: f64) -> Result<f64, RosterError> {
         if !(4.0 * x).is_finite() {
             return Err(self.err(
                 &join(prefix, key),
@@ -384,6 +394,57 @@ impl Entry<'_> {
             ));
         }
         Ok(x)
+    }
+
+    /// A thrust blade's starting fret count, from 0 to [`MAX_FRETS0`].
+    fn frets0_value(&self, n: i64) -> Result<i64, RosterError> {
+        if !(0..=MAX_FRETS0).contains(&n) {
+            return Err(self.err("weapon.frets0", format!("{n} is not a fret count (0 to {MAX_FRETS0})")));
+        }
+        Ok(n)
+    }
+
+    /// The numbers a ported ability kind cannot do without (`fight.py` reads them as `ab[name]`), the `every_bars` of
+    /// an unlock, and a haste's factor, which the weapon's grid, a thrust and a lunge are divided by.
+    fn ability_numbers(
+        &self,
+        prefix: &str,
+        slot: &str,
+        kind: &AbilityKind,
+        params: &BTreeMap<String, f64>,
+    ) -> Result<(), RosterError> {
+        for group in kind.required() {
+            if !group.iter().any(|k| params.contains_key(*k)) {
+                return Err(self.err(&join(prefix, &group.join(" or ")), "missing"));
+            }
+        }
+        if slot != "low" && !params.contains_key("every_bars") {
+            return Err(self.err(&join(prefix, "every_bars"), "missing"));
+        }
+        // A haste divides its fighter's weapon grid, the time of a thrust and the time of a lunge by `mult`
+        // (`ab_mult`): with 0 the Python fight raises (a division by zero) on the first 16th note of the haste,
+        // where the engine would start a thrust that never ends; below 0 a thrust runs backwards for ever.
+        if let (AbilityKind::Haste, Some(&mult)) = (kind, params.get("mult")) {
+            if mult <= 0.0 {
+                return Err(self.err(
+                    &join(prefix, "mult"),
+                    format!("{mult} is not above 0 (a haste divides the weapon's grid by it)"),
+                ));
+            }
+            // So small that its inverse (a thrust's `thr_k = 1 / mult`) is infinite: Python's
+            // `int(round(main16 / mult))` then raises `OverflowError` for any grid but 0, where the engine would
+            // saturate and run on. The weapon's own grid is checked against it in `FighterCfg::check`.
+            if !(1.0 / mult).is_finite() {
+                return Err(self.err(
+                    &join(prefix, "mult"),
+                    format!(
+                        "{mult:e} is too small (a haste divides the weapon's grid by it, and 1 / mult must be a \
+                         finite number)"
+                    ),
+                ));
+            }
+        }
+        Ok(())
     }
 
     /// `w.get(key, default)`.
@@ -466,15 +527,7 @@ impl Entry<'_> {
                     grow: self.f64(w, p, "grow")?,
                     max_len: self.f64(w, p, "max_len")?,
                     frets0: match w.get("frets0") {
-                        Some(v) => {
-                            let n = self.int(v, "weapon.frets0")?;
-                            if !(0..=MAX_FRETS0).contains(&n) {
-                                return Err(
-                                    self.err("weapon.frets0", format!("{n} is not a fret count (0 to {MAX_FRETS0})"))
-                                );
-                            }
-                            n
-                        }
+                        Some(v) => self.frets0_value(self.int(v, "weapon.frets0")?)?,
                         None => 0,
                     },
                     t_out: self.f64(w, p, "t_out")?,
@@ -535,37 +588,7 @@ impl Entry<'_> {
             }
         };
         if supported {
-            for group in kind.required() {
-                if !group.iter().any(|k| params.contains_key(*k)) {
-                    return Err(self.err(&join(&prefix, &group.join(" or ")), "missing"));
-                }
-            }
-            if slot != "low" && !params.contains_key("every_bars") {
-                return Err(self.err(&join(&prefix, "every_bars"), "missing"));
-            }
-            // A haste divides its fighter's weapon grid, the time of a thrust and the time of a lunge by `mult`
-            // (`ab_mult`): with 0 the Python fight raises (a division by zero) on the first 16th note of the haste,
-            // where the engine would start a thrust that never ends; below 0 a thrust runs backwards for ever.
-            if let (AbilityKind::Haste, Some(&mult)) = (&kind, params.get("mult")) {
-                if mult <= 0.0 {
-                    return Err(self.err(
-                        &join(&prefix, "mult"),
-                        format!("{mult} is not above 0 (a haste divides the weapon's grid by it)"),
-                    ));
-                }
-                // So small that its inverse (a thrust's `thr_k = 1 / mult`) is infinite: Python's
-                // `int(round(main16 / mult))` then raises `OverflowError` for any grid but 0, where the engine would
-                // saturate and run on. The weapon's own grid is checked against it in `FighterCfg::from_json`.
-                if !(1.0 / mult).is_finite() {
-                    return Err(self.err(
-                        &join(&prefix, "mult"),
-                        format!(
-                            "{mult:e} is too small (a haste divides the weapon's grid by it, and 1 / mult must be a \
-                             finite number)"
-                        ),
-                    ));
-                }
-            }
+            self.ability_numbers(&prefix, slot, &kind, &params)?;
         }
         Ok(AbilityCfg {
             name,
@@ -646,11 +669,50 @@ impl FighterCfg {
             raw: v.clone(),
             name,
         };
+        // what the entry's fields hold together (the haste against the weapon's grid), and so that every entry this
+        // reader gives passes the check the engine makes again
+        f.check()?;
+        Ok(f)
+    }
+
+    /// Whether the fight engine can run this entry's numbers: every check [`parse_roster`] makes on a ported weapon
+    /// or ability kind, made again on the typed settings. Every entry the reader gives passes it; it is for an entry
+    /// built or changed in code (the fields are public), which the engine checks before a fight
+    /// (`bf_sim::Fight::new`) so that no number of a roster entry can make it panic or run for ever. A kind not
+    /// ported is not looked at here: the engine refuses it on its own.
+    ///
+    /// The striker's counts, the grids and `frets0` are the Studio's own load-time limits, as [`MAX_FRETS0`] says:
+    /// where these refuse an entry the Python fight raises mid-fight, never finishes, or (for `frets0`) runs on with
+    /// integers an `i64` cannot hold.
+    pub fn check(&self) -> Result<(), RosterError> {
+        let e = Entry { fighter: &self.name };
+        let p = "weapon";
+        match &self.weapon {
+            WeaponCfg::Striker(w) => {
+                e.grid_value(p, "every", w.every)?;
+                e.count_value(p, "drop_every", w.drop_every, "a basket drops every that many beats")?;
+                e.count_value(p, "max_baskets", w.max_baskets, "there must be room for a basket")?;
+            }
+            WeaponCfg::Blade(w) => {
+                e.grid_value(p, "every", w.every)?;
+                e.frets0_value(w.frets0)?;
+            }
+            WeaponCfg::Unsupported(_) => {}
+        }
+        let slots = [
+            ("unlock1", &self.unlock1),
+            ("unlock2", &self.unlock2),
+            ("low", &self.low),
+        ];
+        for (slot, ab) in slots {
+            if !matches!(ab.kind, AbilityKind::Unsupported(_)) {
+                e.ability_numbers(&format!("abilities.{slot}"), slot, &ab.kind, &ab.params)?;
+            }
+        }
         // A haste divides the weapon's 16th grid by its factor (`int(round(main16 / ab_mult(k)))`): Python raises
         // `OverflowError` when the quotient is not a finite number, where the engine would saturate and run on.
-        if let Some(main16) = f.weapon.main16() {
-            let e = Entry { fighter: &f.name };
-            for (slot, ab) in [("unlock1", &f.unlock1), ("unlock2", &f.unlock2), ("low", &f.low)] {
+        if let Some(main16) = self.weapon.main16() {
+            for (slot, ab) in slots {
                 if let (AbilityKind::Haste, Some(mult)) = (&ab.kind, ab.get("mult"))
                     && !(main16 / mult).is_finite()
                 {
@@ -664,7 +726,7 @@ impl FighterCfg {
                 }
             }
         }
-        Ok(f)
+        Ok(())
     }
 }
 
@@ -1204,6 +1266,90 @@ mod tests {
                 );
             }
         }
+    }
+
+    /// `FighterCfg::check` makes the reader's checks again on typed settings changed in code: every entry the reader
+    /// gives passes, and each change names the fighter and the field as the reader does.
+    #[test]
+    fn check_refuses_typed_settings_changed_by_hand() {
+        for f in parse_roster(ROSTER).expect("loads") {
+            assert_eq!(f.check(), Ok(()), "{}", f.name);
+        }
+        let err = |name: &str, change: &dyn Fn(&mut FighterCfg)| {
+            let mut f = fighter(name);
+            change(&mut f);
+            f.check().expect_err("refused").to_string()
+        };
+        let striker = |f: &mut FighterCfg| match &mut f.weapon {
+            WeaponCfg::Striker(w) => w.clone(),
+            other => panic!("{other:?}"),
+        };
+        let set_striker = |f: &mut FighterCfg, w: StrikerCfg| f.weapon = WeaponCfg::Striker(w);
+        assert_eq!(
+            err("FLUTE", &|f| {
+                let mut w = striker(f);
+                w.drop_every = 0.9;
+                set_striker(f, w);
+            }),
+            "roster: FLUTE: weapon.drop_every: 0.9 is less than 1 (a basket drops every that many beats)"
+        );
+        assert_eq!(
+            err("FLUTE", &|f| {
+                let mut w = striker(f);
+                w.max_baskets = 0.0;
+                set_striker(f, w);
+            }),
+            "roster: FLUTE: weapon.max_baskets: 0 is less than 1 (there must be room for a basket)"
+        );
+        assert_eq!(
+            err("FLUTE", &|f| {
+                let mut w = striker(f);
+                w.every = f64::MAX;
+                set_striker(f, w);
+            }),
+            "roster: FLUTE: weapon.every: 1.7976931348623157e308 beats is too long (4 x every must be a finite number)"
+        );
+        let blade = |f: &mut FighterCfg, change: &dyn Fn(&mut BladeCfg)| match &mut f.weapon {
+            WeaponCfg::Blade(w) => change(w),
+            other => panic!("{other:?}"),
+        };
+        assert_eq!(
+            err("TROMBONE", &|f| blade(f, &|w| w.frets0 = -1)),
+            "roster: TROMBONE: weapon.frets0: -1 is not a fret count (0 to 1000000)"
+        );
+        assert_eq!(
+            err("TROMBONE", &|f| blade(f, &|w| w.every = f64::NAN)),
+            "roster: TROMBONE: weapon.every: NaN beats is too long (4 x every must be a finite number)"
+        );
+        assert_eq!(
+            err("FLUTE", &|f| _ = f.unlock1.params.remove("every_bars")),
+            "roster: FLUTE: abilities.unlock1.every_bars: missing"
+        );
+        assert_eq!(
+            err("FLUTE", &|f| _ = f.unlock1.params.insert("mult".into(), 0.0)),
+            "roster: FLUTE: abilities.unlock1.mult: 0 is not above 0 (a haste divides the weapon's grid by it)"
+        );
+        assert_eq!(
+            err("TROMBONE", &|f| _ = f.low.params.remove("tele")),
+            "roster: TROMBONE: abilities.low.tele: missing"
+        );
+        assert_eq!(
+            err("FLUTE", &|f| {
+                f.low.params.remove("speed");
+            }),
+            "roster: FLUTE: abilities.low.speed: missing"
+        );
+        // a ported kind changed into one that reads other numbers
+        assert_eq!(
+            err("FLUTE", &|f| f.unlock2.kind = AbilityKind::Haste),
+            "roster: FLUTE: abilities.unlock2.mult: missing"
+        );
+        // a kind not ported is not looked at
+        let mut f = fighter("FLUTE");
+        f.unlock1.kind = AbilityKind::Unsupported("shield".into());
+        f.unlock1.params.clear();
+        f.weapon = WeaponCfg::Unsupported("roll".into());
+        assert_eq!(f.check(), Ok(()));
     }
 
     #[test]

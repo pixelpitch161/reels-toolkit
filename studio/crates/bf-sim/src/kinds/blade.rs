@@ -127,7 +127,7 @@ pub fn thrust_step(fight: &mut Fight, k: usize, dt: f64) {
             fight.kill_keys(&hit, "parry", k as i64);
         }
     }
-    if live && fight.rules.swat_cobras {
+    if live && fight.rules.swat_cobras == Some(true) {
         // 753 to 754, opt-in rule (#41): the lance swats enemy cobras too
         striker::swat_cobras(fight, k, a, d, l);
     }

@@ -258,7 +258,7 @@ fn compare(row: &Row, bags: &[FighterCfg]) -> Span {
     };
 
     // the fight loop (`Fight.run`): a frame before the first step and after every `steps_per_frame` steps
-    let mut fight = Fight::new(&setup, false);
+    let mut fight = Fight::with_unported(&setup, false).expect("the engine runs the bags (kinds not ported)");
     let mut sched = Schedule::new(&mut fight);
     fight.t = fight.rules.t_fight;
     let mut frames = vec![snap(&fight)];
