@@ -30,6 +30,8 @@ pub fn fire(fight: &mut Fight, k: usize, ab: &AbilityCfg) {
         knock: param(ab, "knock"),
         done: false,
         name: ab.name.clone(),
+        // `S.get('how', 'slam')`: only 1812 OVERTURE's cannons (`roll_charge::start_cannons`) say otherwise
+        how: "slam".to_string(),
     };
     fight.slams.push(slam);
 }
@@ -49,6 +51,7 @@ pub fn step(fight: &mut Fight) {
         }
         s.done = true;
         let (owner, c, radius, dmg, knock) = (s.owner, s.c, s.radius, s.dmg, s.knock);
+        let how = s.how.clone();
         let o = 1 - owner;
         let (o_p, o_v) = (fight.balls[o].p, fight.balls[o].v);
         let rel = geom::sub(o_p, c);
@@ -57,8 +60,9 @@ pub fn step(fight: &mut Fight) {
         let data = vec![Value::Float(c[0]), Value::Float(c[1]), Value::Int(i64::from(inside))];
         fight.ev("slam", owner as i64, data);
         if inside {
-            // `S.get('how', 'slam')`: only the kind `cannons` (#56, not ported) calls its slams something else
-            fight.damage(owner, o, dmg, "slam", o_p, 0);
+            // fight.py 3097: `S.get('how', 'slam')`, `cannon` for 1812 OVERTURE's (#56)
+            fight.socket("effects.slam.how");
+            fight.damage(owner, o, dmg, &how, o_p, 0);
             fight.knock(o, if dist > 1e-3 { rel } else { o_v }, knock);
         }
     }
