@@ -3,7 +3,8 @@
 
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
-use std::sync::mpsc;
+use std::sync::mpsc::{self, RecvTimeoutError};
+use std::time::Duration;
 
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 
@@ -71,10 +72,22 @@ pub trait AudioOut: Send {
     /// The source sample now sounding; `None` when stopped or when the device was lost.
     fn position(&self) -> Option<u64>;
     fn set_looping(&mut self, on: bool);
+    /// Why there is no sound, in the words of the system, when the output could not be opened (for the Settings
+    /// screen). `None` for an output that works.
+    fn detail(&self) -> Option<&str> {
+        None
+    }
 }
 
-/// No sound at all: every start fails with its text.
-pub struct NoAudio(pub String);
+/// No sound at all: every start fails with its text (`.0`). `.1` keeps the system's own reason, when there was one.
+pub struct NoAudio(pub String, pub Option<String>);
+
+impl NoAudio {
+    /// No sound, with `text` and no further reason.
+    pub fn new(text: impl Into<String>) -> NoAudio {
+        NoAudio(text.into(), None)
+    }
+}
 
 impl AudioOut for NoAudio {
     fn start(&mut self, _audio: AudioTake, _at: u64, _looping: bool) -> Result<(), String> {
@@ -85,6 +98,9 @@ impl AudioOut for NoAudio {
         None
     }
     fn set_looping(&mut self, _on: bool) {}
+    fn detail(&self) -> Option<&str> {
+        self.1.as_deref()
+    }
 }
 
 /// The source sample reached after `device_frames` frames at `device_rate` from `start`:
@@ -106,6 +122,22 @@ enum Cmd {
     Loop(bool),
 }
 
+/// What the sound thread is told.
+enum Ctl {
+    /// A soundtrack the callback has let go of. It is dropped on the sound thread, so the callback never frees one
+    /// (the last handle to a 23 MB soundtrack can be the callback's once the player has moved on).
+    Bin(Arc<[[f32; 2]]>),
+    /// The output is closing: drop the stream and end.
+    Quit,
+}
+
+/// Room for soundtracks on their way from the callback to the sound thread. The channel's slots are made once, so
+/// passing one on does not allocate inside the callback; the sound thread empties it as they come.
+const BIN: usize = 16;
+
+/// How long `CpalOut::open` waits for the device to answer before the preview goes silent.
+const OPEN_WAIT: Duration = Duration::from_secs(3);
+
 /// What the callback and the interface share.
 struct Shared {
     /// The epoch of the start being played (high 32 bits) and the source sample now sounding (low 32 bits), in one
@@ -125,45 +157,65 @@ pub struct CpalOut {
     /// Where the latest start began; the position until the callback has picked that start up.
     at: u64,
     running: bool,
-    /// Dropping it ends the sound thread, which then closes the stream.
-    _alive: mpsc::Sender<()>,
+    /// To the sound thread: `Quit` when this is dropped.
+    ctl: mpsc::SyncSender<Ctl>,
 }
 
 impl CpalOut {
-    /// Opens the PC's default output device and starts a silent stream on it. Waits for the device to answer, so it
-    /// is called once, at start, never inside a frame.
+    /// Opens the PC's default output device and starts a silent stream on it. Waits for the device to answer, at most
+    /// 3 s (a driver that hangs then leaves the preview silent, not the app stuck), so it is called once, at start,
+    /// never inside a frame. The error is the system's own reason.
     pub fn open() -> Result<CpalOut, String> {
         let (cmds, cmd_rx) = mpsc::channel();
-        let (alive, alive_rx) = mpsc::channel::<()>();
+        let (ctl, ctl_rx) = mpsc::sync_channel(BIN);
         let (ready_tx, ready_rx) = mpsc::sync_channel(1);
         let shared = Arc::new(Shared {
             sounding: AtomicU64::new(0),
             lost: AtomicBool::new(false),
         });
-        let s = shared.clone();
+        let feed = Feed {
+            cmds: cmd_rx,
+            bin: ctl.clone(),
+            shared: shared.clone(),
+            playing: None,
+            channels: 1,
+            rate: SR,
+        };
         std::thread::Builder::new()
             .name("preview-sound".into())
-            .spawn(move || match stream(cmd_rx, s) {
+            .spawn(move || match stream(feed) {
                 Ok(stream) => {
-                    _ = ready_tx.send(Ok(()));
-                    // Keeps the stream until the `CpalOut` is dropped.
-                    _ = alive_rx.recv();
+                    // `open` gave up waiting: nobody will use this stream.
+                    if ready_tx.send(Ok(())).is_err() {
+                        return;
+                    }
+                    // Frees what the callback lets go of, until the `CpalOut` is dropped (or `open` gave up).
+                    while let Ok(Ctl::Bin(samples)) = ctl_rx.recv() {
+                        drop(samples);
+                    }
+                    // The callback, and what it still plays, are freed here too.
                     drop(stream);
                 }
                 Err(e) => _ = ready_tx.send(Err(e)),
             })
             .map_err(|e| e.to_string())?;
-        ready_rx
-            .recv()
-            .map_err(|_| "the sound thread ended before the device answered".to_string())??;
-        Ok(CpalOut {
-            cmds,
-            shared,
-            epoch: 0,
-            at: 0,
-            running: false,
-            _alive: alive,
-        })
+        match ready_rx.recv_timeout(OPEN_WAIT) {
+            Ok(Ok(())) => Ok(CpalOut {
+                cmds,
+                shared,
+                epoch: 0,
+                at: 0,
+                running: false,
+                ctl,
+            }),
+            Ok(Err(e)) => Err(e),
+            Err(RecvTimeoutError::Timeout) => {
+                // If the stream starts after all, the sound thread finds this and closes it.
+                _ = ctl.try_send(Ctl::Quit);
+                Err("the sound device did not answer within 3 s".into())
+            }
+            Err(RecvTimeoutError::Disconnected) => Err("the sound thread ended before the device answered".into()),
+        }
     }
 
     fn lost(&self) -> bool {
@@ -215,6 +267,13 @@ impl AudioOut for CpalOut {
     }
 }
 
+impl Drop for CpalOut {
+    /// Tells the sound thread to close the stream; does not wait for it.
+    fn drop(&mut self) {
+        _ = self.ctl.try_send(Ctl::Quit);
+    }
+}
+
 /// The take the callback is playing.
 struct Playing {
     samples: Arc<[[f32; 2]]>,
@@ -238,64 +297,19 @@ fn is_loss(kind: cpal::ErrorKind) -> bool {
 
 /// Builds and starts the output stream on the default device: `f32` frames in the device's default layout, filled
 /// from the current take, or silence.
-fn stream(cmds: mpsc::Receiver<Cmd>, shared: Arc<Shared>) -> Result<cpal::Stream, String> {
+fn stream(mut feed: Feed) -> Result<cpal::Stream, String> {
     let host = cpal::default_host();
     let device = host
         .default_output_device()
         .ok_or_else(|| "there is no default output device".to_string())?;
     let config: cpal::StreamConfig = device.default_output_config().map_err(|e| e.to_string())?.into();
-    let channels = usize::from(config.channels).max(1);
-    let rate = config.sample_rate;
-    if rate == 0 {
+    if config.sample_rate == 0 {
         return Err("the output device reports a rate of 0".into());
     }
-    let step = f64::from(SR) / f64::from(rate);
-    let on_error = shared.clone();
-    let mut playing: Option<Playing> = None;
-    let data = move |out: &mut [f32], _: &cpal::OutputCallbackInfo| {
-        while let Ok(cmd) = cmds.try_recv() {
-            match cmd {
-                Cmd::Start {
-                    samples,
-                    at,
-                    looping,
-                    epoch,
-                } => {
-                    playing = Some(Playing {
-                        samples,
-                        pos: at as f64,
-                        looping,
-                        epoch,
-                        from: at,
-                        frames: 0,
-                    });
-                }
-                Cmd::Stop => playing = None,
-                Cmd::Loop(on) => {
-                    if let Some(p) = &mut playing {
-                        // Counting starts again from where `fill` is, so a wrap counted before stays counted.
-                        p.looping = on;
-                        p.from = p.pos as u64;
-                        p.frames = 0;
-                    }
-                }
-            }
-        }
-        let Some(p) = &mut playing else {
-            out.fill(0.0);
-            return;
-        };
-        // The first frame of this buffer is the one now starting to sound.
-        let mut now = source_pos(p.from, p.frames, rate);
-        let len = p.samples.len() as u64;
-        if p.looping && len > 0 {
-            now %= len;
-        }
-        let word = (u64::from(p.epoch) << 32) | now.min(u64::from(u32::MAX));
-        shared.sounding.store(word, Ordering::Release);
-        fill(out, channels, &p.samples, &mut p.pos, step, p.looping);
-        p.frames += (out.len() / channels) as u64;
-    };
+    feed.channels = usize::from(config.channels).max(1);
+    feed.rate = config.sample_rate;
+    let on_error = feed.shared.clone();
+    let data = move |out: &mut [f32], _: &cpal::OutputCallbackInfo| feed.run(out);
     let error = move |err: cpal::Error| {
         if is_loss(err.kind()) {
             on_error.lost.store(true, Ordering::Release);
@@ -308,11 +322,85 @@ fn stream(cmds: mpsc::Receiver<Cmd>, shared: Arc<Shared>) -> Result<cpal::Stream
     Ok(stream)
 }
 
-/// The PC's default output device, or [`NoAudio`] saying the preview is silent.
+/// What the sound callback runs: it takes the interface's commands, fills the device's buffer and reports the
+/// position. It never frees a soundtrack: one it lets go of goes to the sound thread through `bin`.
+struct Feed {
+    cmds: mpsc::Receiver<Cmd>,
+    bin: mpsc::SyncSender<Ctl>,
+    shared: Arc<Shared>,
+    playing: Option<Playing>,
+    channels: usize,
+    rate: u32,
+}
+
+impl Feed {
+    /// One device buffer.
+    fn run(&mut self, out: &mut [f32]) {
+        while let Ok(cmd) = self.cmds.try_recv() {
+            match cmd {
+                Cmd::Start {
+                    samples,
+                    at,
+                    looping,
+                    epoch,
+                } => {
+                    let new = Playing {
+                        samples,
+                        pos: at as f64,
+                        looping,
+                        epoch,
+                        from: at,
+                        frames: 0,
+                    };
+                    if let Some(old) = self.playing.replace(new) {
+                        self.let_go(old);
+                    }
+                }
+                Cmd::Stop => {
+                    if let Some(old) = self.playing.take() {
+                        self.let_go(old);
+                    }
+                }
+                Cmd::Loop(on) => {
+                    if let Some(p) = &mut self.playing {
+                        // Counting starts again from where `fill` is, so a wrap counted before stays counted.
+                        p.looping = on;
+                        p.from = p.pos as u64;
+                        p.frames = 0;
+                    }
+                }
+            }
+        }
+        let Some(p) = &mut self.playing else {
+            out.fill(0.0);
+            return;
+        };
+        // The first frame of this buffer is the one now starting to sound.
+        let mut now = source_pos(p.from, p.frames, self.rate);
+        let len = p.samples.len() as u64;
+        if p.looping && len > 0 {
+            now %= len;
+        }
+        let word = (u64::from(p.epoch) << 32) | now.min(u64::from(u32::MAX));
+        self.shared.sounding.store(word, Ordering::Release);
+        let step = f64::from(SR) / f64::from(self.rate.max(1));
+        fill(out, self.channels, &p.samples, &mut p.pos, step, p.looping);
+        p.frames += (out.len() / self.channels.max(1)) as u64;
+    }
+
+    /// Hands a soundtrack to the sound thread to free. Only if its 16 slots are all taken (the thread empties them as
+    /// they come, so this does not happen) or the thread is gone is it dropped here.
+    fn let_go(&self, old: Playing) {
+        _ = self.bin.try_send(Ctl::Bin(old.samples));
+    }
+}
+
+/// The PC's default output device, or [`NoAudio`] saying the preview is silent and keeping the system's reason
+/// (`AudioOut::detail`).
 pub fn open_audio() -> Box<dyn AudioOut> {
     match CpalOut::open() {
         Ok(out) => Box::new(out),
-        Err(_) => Box::new(NoAudio(NO_DEVICE.into())),
+        Err(reason) => Box::new(NoAudio(NO_DEVICE.into(), Some(reason))),
     }
 }
 
@@ -408,12 +496,99 @@ mod tests {
 
     #[test]
     fn no_audio_fails_with_its_text() {
-        let mut out = NoAudio("No sound here.".into());
+        let mut out = NoAudio::new("No sound here.");
         let audio = AudioTake {
             samples: vec![[0.0; 2]; 4].into(),
         };
         assert_eq!(out.start(audio, 0, true), Err("No sound here.".to_string()));
         assert_eq!(out.position(), None);
+        assert_eq!(out.detail(), None);
+        // The system's reason stays reachable through the trait, for the Settings screen.
+        let out: Box<dyn AudioOut> = Box::new(NoAudio(NO_DEVICE.into(), Some("the driver hung".into())));
+        assert_eq!(out.detail(), Some("the driver hung"));
+    }
+
+    /// A feed for a 2-channel, 48 kHz device, with the ends of its channels.
+    fn feed() -> (Feed, mpsc::Sender<Cmd>, mpsc::Receiver<Ctl>, Arc<Shared>) {
+        let (cmds, cmd_rx) = mpsc::channel();
+        let (bin, bin_rx) = mpsc::sync_channel(BIN);
+        let shared = Arc::new(Shared {
+            sounding: AtomicU64::new(0),
+            lost: AtomicBool::new(false),
+        });
+        let feed = Feed {
+            cmds: cmd_rx,
+            bin,
+            shared: shared.clone(),
+            playing: None,
+            channels: 2,
+            rate: SR,
+        };
+        (feed, cmds, bin_rx, shared)
+    }
+
+    fn start(samples: &Arc<[[f32; 2]]>, at: u64, epoch: u32) -> Cmd {
+        Cmd::Start {
+            samples: samples.clone(),
+            at,
+            looping: true,
+            epoch,
+        }
+    }
+
+    #[test]
+    fn the_callback_never_frees_a_soundtrack() {
+        let (mut feed, cmds, bin, _shared) = feed();
+        let one: Arc<[[f32; 2]]> = ramp(1_000).into();
+        let two: Arc<[[f32; 2]]> = ramp(1_000).into();
+        let (weak_one, weak_two) = (Arc::downgrade(&one), Arc::downgrade(&two));
+        let mut out = [0.0; 64];
+        cmds.send(start(&one, 0, 1)).unwrap();
+        feed.run(&mut out);
+        // The player lets go of its own handle: the callback's is the last.
+        drop(one);
+        // Replacing what it plays hands the old soundtrack on, still alive.
+        cmds.send(start(&two, 0, 2)).unwrap();
+        drop(two);
+        feed.run(&mut out);
+        let Ok(Ctl::Bin(back)) = bin.try_recv() else {
+            panic!("the first soundtrack was not handed on")
+        };
+        assert!(weak_one.upgrade().is_some());
+        drop(back);
+        assert!(weak_one.upgrade().is_none());
+        // Stopping hands the second on too.
+        cmds.send(Cmd::Stop).unwrap();
+        feed.run(&mut out);
+        assert!(weak_two.upgrade().is_some());
+        let Ok(Ctl::Bin(back)) = bin.try_recv() else {
+            panic!("the second soundtrack was not handed on")
+        };
+        drop(back);
+        assert!(weak_two.upgrade().is_none());
+        // Stopped, it writes silence.
+        out.fill(9.0);
+        feed.run(&mut out);
+        assert_eq!(out, [0.0; 64]);
+    }
+
+    #[test]
+    fn the_callback_reports_the_first_sample_of_each_buffer() {
+        let (mut feed, cmds, _bin, shared) = feed();
+        let src: Arc<[[f32; 2]]> = ramp(1_000).into();
+        cmds.send(start(&src, 900, 7)).unwrap();
+        // 32 frames of stereo a buffer.
+        let mut out = [0.0; 64];
+        feed.run(&mut out);
+        assert_eq!(shared.sounding.load(Ordering::Acquire), (7 << 32) | 900);
+        assert_eq!(left(&out)[..2], [900.0, 901.0]);
+        for _ in 0..3 {
+            feed.run(&mut out);
+        }
+        // 900 + 3 * 32 = 996; looping, the next buffer starts at 1,028 - 1,000 = 28.
+        assert_eq!(shared.sounding.load(Ordering::Acquire), (7 << 32) | 996);
+        feed.run(&mut out);
+        assert_eq!(shared.sounding.load(Ordering::Acquire), (7 << 32) | 28);
     }
 
     /// Needs a sound device: run it by name on this PC with `--ignored`.

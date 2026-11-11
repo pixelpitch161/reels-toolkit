@@ -6,7 +6,7 @@
 use std::time::Duration;
 
 use crate::model::take::{AudioTake, Frame, PlayerCmd, SoundState, TransportAction, TransportView};
-use crate::model::{NA, SR, TakeId};
+use crate::model::{NA, NF, SR, TakeId};
 use crate::preview::audio::AudioOut;
 use crate::preview::clock::{advance, frame_of, pos_of, step};
 use crate::preview::scheduler::Scheduler;
@@ -15,11 +15,17 @@ use crate::seam::Waker;
 /// The wall clock: any steadily rising time (the app passes the time since it started).
 pub type Now = Box<dyn Fn() -> Duration + Send>;
 
-/// Frames given on time (`shown`: the playhead's own frame, kept when asked) and frames that were not kept yet when
-/// the playhead reached them (`late`, once per frame).
+/// How long the sound may report the same position while it is believed to be running before the device counts as
+/// stalled (ruling M2-R12): it is then treated as lost.
+const STALL: Duration = Duration::from_millis(500);
+
+/// What the player counts about the frames it gives.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct PlayerStats {
+    /// The playhead's own frames given when they were kept (a held picture does not count).
     pub shown: u64,
+    /// Frames not kept yet when the playhead reached them, once per frame. This also counts the first missing frame
+    /// after a `Load`, a `Step` or a scrub while paused, not only frames missed during playback.
     pub late: u64,
 }
 
@@ -27,11 +33,18 @@ pub struct PlayerStats {
 struct Reading {
     pos: u64,
     playing: bool,
-    /// The sound was running and the device no longer answers.
+    /// The sound was running and the device no longer answers (or has stalled).
     lost: bool,
 }
 
 /// Plays one take at a time. It owns one scheduler for its whole life and switches takes on it (widget rule 12).
+///
+/// Dropping a `Player` drops its scheduler, which joins the worker threads and can wait for a draw in progress, so it
+/// is dropped only when the app closes, never on the interface thread while the app runs.
+///
+/// [`Player::has_picture`] says whether the shell should show a picture at all: false at the start, after `Clear`,
+/// after a `Still` until `tick` has given it, and after a `Load` until that take's first frame has been given (so the
+/// previous take's last picture is never shown under the new take's transport).
 pub struct Player {
     scheduler: Scheduler,
     audio: Box<dyn AudioOut>,
@@ -59,6 +72,11 @@ pub struct Player {
     shown: Option<u32>,
     /// The last frame counted late, so it is counted once.
     late_at: Option<u32>,
+    /// Whether `tick` has given a picture that belongs to what is loaded now (a still, or a frame of this take).
+    picture: bool,
+    /// While sounding: the last position the audio reported, and when (by `now`) it last moved or the audio started.
+    heard: u64,
+    heard_at: Duration,
     stats: PlayerStats,
 }
 
@@ -66,8 +84,19 @@ impl Player {
     /// A player with `threads` drawing threads, sound through `audio`, wall time from `now`; `waker` is called when a
     /// frame is drawn (or fails), so the interface repaints.
     pub fn new(threads: usize, audio: Box<dyn AudioOut>, now: Now, waker: Waker) -> Player {
+        Player::with(Scheduler::new(threads, waker), audio, now)
+    }
+
+    /// A player whose scheduler records every draw as taking `ms` milliseconds, so the lead and the stride it asks
+    /// for do not depend on how fast this machine draws.
+    #[cfg(test)]
+    pub(crate) fn with_draw_ms(threads: usize, audio: Box<dyn AudioOut>, now: Now, waker: Waker, ms: f32) -> Player {
+        Player::with(Scheduler::with_draw_ms(threads, waker, ms), audio, now)
+    }
+
+    fn with(scheduler: Scheduler, audio: Box<dyn AudioOut>, now: Now) -> Player {
         Player {
-            scheduler: Scheduler::new(threads, waker),
+            scheduler,
             audio,
             now,
             take: None,
@@ -84,6 +113,9 @@ impl Player {
             scrub: None,
             shown: None,
             late_at: None,
+            picture: false,
+            heard: 0,
+            heard_at: Duration::ZERO,
             stats: PlayerStats::default(),
         }
     }
@@ -109,6 +141,7 @@ impl Player {
                 self.scrub = None;
                 self.shown = None;
                 self.late_at = None;
+                self.picture = false;
                 if autoplay {
                     self.play();
                 }
@@ -143,16 +176,19 @@ impl Player {
     fn transport(&mut self, action: TransportAction) {
         match action {
             TransportAction::PlayPause => {
+                self.leave_scrub_paused();
                 if self.playing {
                     self.halt();
                 } else {
-                    if !self.looping && self.pos >= NA - 1 {
+                    // On the last frame with loop off there is nothing left to play: start over.
+                    if !self.looping && frame_of(self.pos) == NF - 1 {
                         self.pos = 0;
                     }
                     self.play();
                 }
             }
             TransportAction::Step(n) => {
+                self.leave_scrub_paused();
                 self.halt();
                 self.pos = pos_of(step(frame_of(self.pos), n));
             }
@@ -180,10 +216,25 @@ impl Player {
         }
     }
 
+    /// Inside a scrub, a play/pause or a step is the owner's own choice: the scrub's end no longer resumes.
+    fn leave_scrub_paused(&mut self) {
+        if self.scrub.is_some() {
+            self.scrub = Some(false);
+        }
+    }
+
+    /// Whether the shell should show a picture: a still or a frame of the loaded take has been given by `tick`.
+    /// False at the start, after `Clear`, after `Still` until it is given and after `Load` until the take's first
+    /// frame is given.
+    pub fn has_picture(&self) -> bool {
+        self.picture
+    }
+
     /// Once per repaint: moves the clock, asks the scheduler for the playhead's frame and gives a picture when the one
     /// to show has changed. A frame not kept yet (late, or failed) holds the latest kept one before it.
     pub fn tick(&mut self) -> Option<Frame> {
         if let Some(frame) = self.still.take() {
+            self.picture = true;
             return Some(frame);
         }
         self.take?;
@@ -196,6 +247,7 @@ impl Player {
         if let Some(frame) = self.scheduler.get(f) {
             self.shown = Some(f);
             self.late_at = None;
+            self.picture = true;
             self.stats.shown += 1;
             return Some(frame);
         }
@@ -208,7 +260,9 @@ impl Player {
         if self.shown.is_some_and(|s| s <= f && s >= n) {
             return None;
         }
+        // The scheduler keeps only the loaded take's frames, so a held picture belongs to this take too.
         self.shown = Some(n);
+        self.picture = true;
         Some(frame)
     }
 
@@ -259,6 +313,7 @@ impl Player {
         self.scrub = None;
         self.shown = None;
         self.late_at = None;
+        self.picture = false;
     }
 
     /// Starts playback from `pos`: on the sound when it has arrived and starts, else on the wall clock.
@@ -270,6 +325,9 @@ impl Player {
                 Ok(()) => {
                     self.sounding = true;
                     self.sound = SoundState::Ready;
+                    // The first movement gets the same allowance as any later one.
+                    self.heard = self.pos;
+                    self.heard_at = (self.now)();
                 }
                 Err(_) => self.sound = SoundState::NoDevice,
             }
@@ -294,7 +352,9 @@ impl Player {
         self.wall_pos = self.pos;
     }
 
-    /// Where the playhead is now, from the sound while it sounds, else from the wall clock.
+    /// Where the playhead is now, from the sound while it sounds, else from the wall clock. The sound counts as lost
+    /// when the device no longer answers, or when it has answered the same position for `STALL` (a device that stopped
+    /// calling back without an error).
     fn read(&self) -> Reading {
         if !self.playing {
             return Reading {
@@ -307,7 +367,8 @@ impl Player {
             match self.audio.position() {
                 Some(p) => {
                     let (pos, on) = advance(p, 0, self.looping);
-                    (pos, on, false)
+                    let stalled = pos == self.heard && (self.now)().saturating_sub(self.heard_at) >= STALL;
+                    (pos, on || stalled, stalled)
                 }
                 None => (self.pos, true, true),
             }
@@ -320,12 +381,17 @@ impl Player {
         Reading { pos, playing, lost }
     }
 
-    /// Takes in what `read` sees: the new position, the end of playback, a lost device (playback goes on from the
-    /// same position on the wall clock).
+    /// Takes in what `read` sees: the new position, the end of playback, a lost or stalled device (the audio is
+    /// stopped and playback goes on from the same position on the wall clock).
     fn settle(&mut self) {
         let r = self.read();
         self.pos = r.pos;
+        if self.sounding && !r.lost && r.pos != self.heard {
+            self.heard = r.pos;
+            self.heard_at = (self.now)();
+        }
         if r.lost {
+            self.audio.stop();
             self.sounding = false;
             self.sound = SoundState::NoDevice;
             self.restart_wall();
@@ -358,14 +424,14 @@ fn scrub_pos(t: f32) -> u64 {
 mod tests {
     use std::sync::atomic::{AtomicU64, Ordering};
     use std::sync::{Arc, Mutex, mpsc};
-    use std::time::Duration;
 
     use super::*;
-    use crate::model::NA;
-    use crate::model::take::{AudioTake, FrameSource, SoundState, TransportAction};
+    use crate::model::take::FrameSource;
     use crate::preview::audio::NoAudio;
-    use crate::preview::clock::pos_of;
     use crate::preview::scheduler::testing::{TestSource, wait_for};
+
+    /// Every draw counts as this many milliseconds, so the lead and the stride are 1 however fast this machine draws.
+    const DRAW_MS: f32 = 1.0;
 
     /// What a [`FakeOut`] was asked, and the position the test gives it.
     #[derive(Default)]
@@ -425,17 +491,22 @@ mod tests {
         Duration::from_nanos(n * 33_333_334)
     }
 
-    fn player_with(threads: usize, audio: Box<dyn AudioOut>) -> (Player, Hand) {
+    /// A player with two threads whose draws all count as `ms`, and the hand that moves its clock.
+    fn player_with(audio: Box<dyn AudioOut>, ms: f32) -> (Player, Hand) {
         let t = Arc::new(AtomicU64::new(1_000_000_000));
         let t2 = t.clone();
         let now: Now = Box::new(move || Duration::from_nanos(t2.load(Ordering::SeqCst)));
-        (Player::new(threads, audio, now, Arc::new(|| {})), Hand(t))
+        (Player::with_draw_ms(2, audio, now, Arc::new(|| {}), ms), Hand(t))
+    }
+
+    fn faked_with(ms: f32) -> (Player, Hand, Arc<Mutex<Log>>) {
+        let log = Arc::new(Mutex::new(Log::default()));
+        let (p, hand) = player_with(Box::new(FakeOut(log.clone())), ms);
+        (p, hand, log)
     }
 
     fn faked() -> (Player, Hand, Arc<Mutex<Log>>) {
-        let log = Arc::new(Mutex::new(Log::default()));
-        let (p, hand) = player_with(2, Box::new(FakeOut(log.clone())));
-        (p, hand, log)
+        faked_with(DRAW_MS)
     }
 
     fn load(p: &mut Player, take: u64, frames: Arc<dyn FrameSource>, start: u32, autoplay: bool) {
@@ -525,7 +596,7 @@ mod tests {
 
     #[test]
     fn no_sound_device_still_plays() {
-        let (mut p, hand) = player_with(2, Box::new(NoAudio("No sound device.".into())));
+        let (mut p, hand) = player_with(Box::new(NoAudio::new("No sound device.")), DRAW_MS);
         load(&mut p, 1, TestSource::new(), 0, true);
         sound(&mut p, 1);
         assert_eq!(p.view().sound, SoundState::NoDevice);
@@ -716,7 +787,8 @@ mod tests {
 
     #[test]
     fn a_failed_frame_keeps_the_last_good_picture() {
-        let (mut p, hand, log) = faked();
+        // Depends on the lead being 1 (frame 5 is asked for from frame 4): the draws count as `DRAW_MS`.
+        let (mut p, _hand, log) = faked();
         load(&mut p, 1, TestSource::panicking_at(5), 4, false);
         sound(&mut p, 1);
         wait_for("frame 4", || p.scheduler.get(4).is_some());
@@ -753,14 +825,13 @@ mod tests {
         assert_eq!(p.failed_frame(), Some(5));
         load(&mut p, 2, TestSource::new(), 5, false);
         assert_eq!(p.failed_frame(), None);
-        _ = hand;
     }
 
     #[test]
     fn two_loads_use_one_scheduler() {
-        let (mut p, _hand, _log) = faked();
-        // Draw times only this scheduler knows: a new one would report 33 ms, and one real draw (a few ms) cannot
-        // bring the mean of 30 below 900.
+        // Every draw of this scheduler counts as 1,000 ms, and so do the 30 recorded here before any draw: a new
+        // scheduler would report 33 ms.
+        let (mut p, _hand, _log) = faked_with(1_000.0);
         for _ in 0..30 {
             p.scheduler.record_draw_ms(1_000.0);
         }
@@ -780,8 +851,7 @@ mod tests {
             .recv_timeout(Duration::from_secs(2))
             .expect("the second load returned");
         let _open_again = Opens(old.clone());
-        let ms = p.scheduler.frame_ms();
-        assert!(ms > 900.0, "the scheduler reports {ms} ms: it is a new one");
+        assert_eq!(p.scheduler.frame_ms(), 1_000.0);
         assert_eq!(p.view().frame, 20);
         wait_for("frame 20 of the new take", || p.scheduler.get(20).is_some());
         assert_eq!(p.tick(), Some(TestSource::frame(20)));
@@ -797,8 +867,13 @@ mod tests {
     fn safe_zone_and_clear() {
         let (mut p, _hand, log) = faked();
         assert!(!p.view().safe_zone);
-        load(&mut p, 1, TestSource::new(), 0, true);
+        assert!(!p.has_picture());
+        load(&mut p, 1, TestSource::new(), 0, false);
+        wait_for("frame 0", || p.scheduler.get(0).is_some());
+        assert_eq!(p.tick(), Some(TestSource::frame(0)));
+        assert!(p.has_picture());
         sound(&mut p, 1);
+        act(&mut p, TransportAction::PlayPause);
         act(&mut p, TransportAction::SetSafeZone(true));
         assert!(p.view().safe_zone);
         p.run(PlayerCmd::Clear);
@@ -806,7 +881,140 @@ mod tests {
         assert!(!v.enabled && !v.playing);
         assert_eq!(v.sound, SoundState::None);
         assert_eq!(log.lock().unwrap().stops, 1);
+        assert!(!p.has_picture());
         assert_eq!(p.tick(), None);
+        assert!(!p.has_picture());
         assert!(!p.wants_repaint());
+    }
+
+    #[test]
+    fn has_picture_follows_the_still_and_the_take() {
+        let (mut p, _hand, _log) = faked();
+        // A still: there once `tick` has given it, and it stays (the transport is disabled, the picture is not).
+        p.run(PlayerCmd::Still(TestSource::frame(9)));
+        assert!(!p.has_picture());
+        assert_eq!(p.tick(), Some(TestSource::frame(9)));
+        assert!(p.has_picture());
+        assert!(!p.view().enabled);
+        assert_eq!(p.tick(), None);
+        assert!(p.has_picture());
+        // A take whose frames are held back: no picture until its first frame is given.
+        let src = TestSource::gated();
+        let _open = Opens(src.clone());
+        load(&mut p, 1, src.clone(), 10, false);
+        assert!(!p.has_picture());
+        assert_eq!(p.tick(), None);
+        assert!(!p.has_picture());
+        src.open();
+        wait_for("frame 10", || p.scheduler.get(10).is_some());
+        assert_eq!(p.tick(), Some(TestSource::frame(10)));
+        assert!(p.has_picture());
+        // Another take: the old picture no longer counts until the new take's first frame.
+        let src2 = TestSource::gated();
+        let _open2 = Opens(src2.clone());
+        load(&mut p, 2, src2.clone(), 30, false);
+        assert!(!p.has_picture());
+        assert_eq!(p.tick(), None);
+        assert!(!p.has_picture());
+        src2.open();
+        wait_for("frame 30", || p.scheduler.get(30).is_some());
+        assert_eq!(p.tick(), Some(TestSource::frame(30)));
+        assert!(p.has_picture());
+    }
+
+    #[test]
+    fn play_on_the_last_frame_without_loop_starts_over() {
+        let (mut p, _hand, _log) = faked();
+        act(&mut p, TransportAction::SetLoop(false));
+        load(&mut p, 1, TestSource::new(), 1_000, false);
+        // Stopped on the last frame by a step, well before the last sample.
+        act(&mut p, TransportAction::Step(5_000));
+        assert_eq!(p.view().frame, 1_829);
+        act(&mut p, TransportAction::PlayPause);
+        let v = p.view();
+        assert!(v.playing);
+        assert_eq!(v.frame, 0);
+        // With loop on, play from the last frame plays on (and wraps).
+        act(&mut p, TransportAction::Step(5_000));
+        act(&mut p, TransportAction::SetLoop(true));
+        act(&mut p, TransportAction::PlayPause);
+        let v = p.view();
+        assert!(v.playing);
+        assert_eq!(v.frame, 1_829);
+    }
+
+    #[test]
+    fn a_choice_inside_a_scrub_is_kept_at_its_end() {
+        let (mut p, _hand, log) = faked();
+        load(&mut p, 1, TestSource::new(), 0, true);
+        sound(&mut p, 1);
+        // A step inside a scrub that began while playing: the scrub's end does not resume.
+        act(&mut p, TransportAction::ScrubTo(5.0));
+        act(&mut p, TransportAction::Step(1));
+        act(&mut p, TransportAction::ScrubEnd);
+        assert!(!p.view().playing);
+        assert_eq!(p.view().frame, 151);
+        // Play inside a scrub, then pause: the scrub's end leaves it paused.
+        act(&mut p, TransportAction::PlayPause);
+        act(&mut p, TransportAction::ScrubTo(10.0));
+        act(&mut p, TransportAction::PlayPause);
+        assert!(p.view().playing);
+        act(&mut p, TransportAction::PlayPause);
+        act(&mut p, TransportAction::ScrubEnd);
+        assert!(!p.view().playing);
+        assert_eq!(p.view().frame, 300);
+        // Play inside a scrub: still playing after its end, and the sound was not started twice.
+        act(&mut p, TransportAction::PlayPause);
+        act(&mut p, TransportAction::ScrubTo(20.0));
+        act(&mut p, TransportAction::PlayPause);
+        let starts = log.lock().unwrap().starts.len();
+        act(&mut p, TransportAction::ScrubEnd);
+        assert!(p.view().playing);
+        assert_eq!(log.lock().unwrap().starts.len(), starts);
+    }
+
+    #[test]
+    fn a_stalled_device_falls_back_to_the_wall_clock() {
+        let (mut p, hand, log) = faked();
+        load(&mut p, 1, TestSource::new(), 0, true);
+        sound(&mut p, 1);
+        log.lock().unwrap().position = Some(pos_of(300));
+        p.tick();
+        assert_eq!(p.view().sound, SoundState::Ready);
+        // The device stops calling back: its position stays where it was.
+        hand.forward(Duration::from_millis(600));
+        let v = p.view();
+        assert_eq!(v.sound, SoundState::NoDevice);
+        assert!(v.playing);
+        assert_eq!(v.frame, 300);
+        p.tick();
+        assert_eq!(log.lock().unwrap().stops, 1);
+        hand.forward(Duration::from_secs(1));
+        p.tick();
+        let v = p.view();
+        assert_eq!(v.sound, SoundState::NoDevice);
+        assert!(v.playing);
+        assert_eq!(v.frame, 330);
+    }
+
+    #[test]
+    fn a_moving_device_never_counts_as_stalled() {
+        let (mut p, hand, log) = faked();
+        load(&mut p, 1, TestSource::new(), 0, true);
+        sound(&mut p, 1);
+        // Right after the start the position still answers the start value: the first movement gets 500 ms too.
+        hand.forward(Duration::from_millis(450));
+        p.tick();
+        assert_eq!(p.view().sound, SoundState::Ready);
+        for k in 1..=20u32 {
+            log.lock().unwrap().position = Some(pos_of(k * 10));
+            p.tick();
+            hand.forward(Duration::from_millis(450));
+            p.tick();
+            let v = p.view();
+            assert_eq!(v.sound, SoundState::Ready, "after move {k}");
+            assert_eq!(v.frame, k * 10);
+        }
+        assert_eq!(log.lock().unwrap().stops, 0);
     }
 }
