@@ -17,9 +17,11 @@
 //!   algorithm are not here, nor the routes `ducc0` takes above 10,000 samples; [`rfftn_f32`] and its siblings
 //!   panic for such a length.
 //! - Two-dimensional arrays, transformed as `ducc0` does: the rows first (real to half-complex), then the columns
-//!   (complex). `ducc0` transforms columns four at a time (two in `float64`) with one plan, and the columns left
-//!   over, when the length is above 300 and a multiple of 4, with a differently built plan (`cfftp_vecpass`): the
-//!   same is done here, since the two plans round differently.
+//!   (complex). `ducc0` transforms columns four at a time (two in `float64`) with one plan. In `float32` the
+//!   columns left over, when the length is above 300 and a multiple of 4, get a differently built plan
+//!   (`cfftp_vecpass`), and the same is done here, since the two plans round differently. In `float64` there is
+//!   no such plan on the reference build (it needs a SIMD type of four values, and the build is SSE2): a
+//!   left-over column is transformed like every other.
 //! - Where the port cannot be bit-identical: the twiddle factors come from `sin` and `cos` (`bf_core::dmath` here,
 //!   the C library there; a twiddle can differ in the last bit of its double, which a `float32` twiddle almost
 //!   never sees), and numpy multiplies the two spectra with fused operations. Both are far below the bar.
@@ -37,12 +39,17 @@ trait Real:
 {
     /// How many columns `ducc0` transforms at a time in this precision (its SIMD width on the reference build).
     const LANES: usize;
+    /// Whether the reference build has a SIMD type of four values in this precision (`simd_exists<Tfs, 4>`). It is
+    /// an SSE2 build: four `float`s fit a register, four `double`s do not. Only where this holds does `ducc0`
+    /// build the split plan for a single transform ([`CPlan::split`]).
+    const FOUR_LANES: bool;
     /// A double constant or twiddle in this precision (`Tfs(x)`).
     fn of(x: f64) -> Self;
 }
 
 impl Real for f32 {
     const LANES: usize = 4;
+    const FOUR_LANES: bool = true;
     fn of(x: f64) -> f32 {
         x as f32
     }
@@ -50,6 +57,7 @@ impl Real for f32 {
 
 impl Real for f64 {
     const LANES: usize = 2;
+    const FOUR_LANES: bool = false;
     fn of(x: f64) -> f64 {
         x
     }
@@ -475,12 +483,21 @@ enum CPlan<T> {
     /// `cfft_multipass` (or a single pass, or nothing for length 1): the radix passes one after another.
     Passes(Vec<CPass<T>>),
     /// `cfftp_vecpass<4>`: one radix 4 pass over the whole array, then the four quarters transformed each on its
-    /// own and woven together. What `ducc0` uses for a left-over column whose length is above 300 and a
-    /// multiple of 4.
+    /// own and woven together. What `ducc0` uses for a left-over `float32` column whose length is above 300 and a
+    /// multiple of 4 ([`CPlan::split`]).
     Quarters { first: CPass<T>, rest: Box<CPlan<T>> },
 }
 
 impl<T: Real> CPlan<T> {
+    /// Whether the plan for one transform on its own (`vectorize`) is the split one: `cfftpass::make_pass` takes
+    /// `cfftp_vecpass<4>` for a length above 300 (and up to 100,000) that is a multiple of 4, and only
+    /// `if constexpr (simd_exists<Tfs, 4>)`. So never in `float64` on the reference build: there a column on its
+    /// own is transformed exactly like a column in a group (in scipy a 1-D `complex128` transform equals the
+    /// same column of a 2-D one to the bit; a `complex64` one of such a length does not).
+    fn split(n: usize) -> bool {
+        T::FOUR_LANES && n > 300 && n <= 100_000 && n & 3 == 0
+    }
+
     /// `pocketfft_c<T>(n, vectorize)`.
     fn new(n: usize, vectorize: bool) -> CPlan<T> {
         // Above this ducc0 splits the passes into two packets, and transforms long columns one at a time.
@@ -489,7 +506,7 @@ impl<T: Real> CPlan<T> {
             "fft: complex transforms above 10,000 samples are not ported"
         );
         let roots = Roots::new(n);
-        if vectorize && n > 300 && n <= 100_000 && n & 3 == 0 {
+        if vectorize && Self::split(n) {
             // The sub-plans take their twiddles from the roots of the whole length.
             return CPlan::Quarters {
                 first: CPass::new(1, n / 4, 4, &roots),
@@ -1003,10 +1020,11 @@ pub fn good_size_real(n: usize) -> usize {
 
 /// The complex transform down every column of a `(rows, cols)` array, in place: `ducc0::c2c` along axis 0. The
 /// columns are taken `T::LANES` at a time with the plain plan; the columns left over get the plan `ducc0` builds
-/// for single transforms, which is another one when the length is above 300 and a multiple of 4.
+/// for single transforms, which is another one only in `float32`, when the length is above 300 and a multiple of
+/// 4 ([`CPlan::split`]).
 fn columns<T: Real>(a: &mut [C<T>], rows: usize, cols: usize, fwd: bool) {
     let plan: CPlan<T> = CPlan::new(rows, false);
-    let odd_plan: Option<CPlan<T>> = (rows >= 300 && rows & 3 == 0).then(|| CPlan::new(rows, true));
+    let odd_plan: Option<CPlan<T>> = CPlan::<T>::split(rows).then(|| CPlan::new(rows, true));
     let together = cols - cols % T::LANES;
     let (mut col, mut scratch) = (vec![C::default(); rows], vec![C::default(); rows]);
     for x in 0..cols {
@@ -1281,16 +1299,79 @@ mod tests {
             let x: Vec<(f64, f64)> = re.iter().zip(&im).map(|(&a, &b)| (a, b)).collect();
             for (fwd, sign) in [(true, -1.0), (false, 1.0)] {
                 let want = dft(&x, sign);
+                let plan: CPlan<f64> = CPlan::new(n, false);
+                let mut data: Vec<C<f64>> = x.iter().map(|&(r, i)| C::new(r, i)).collect();
+                plan.exec(fwd, &mut data, &mut vec![C::default(); n]);
+                for (k, (g, w)) in data.iter().zip(&want).enumerate() {
+                    assert!(
+                        (g.r - w.0).abs() < 1e-12 && (g.i - w.1).abs() < 1e-12,
+                        "n {n} fwd {fwd} k {k}: {g:?} {w:?}"
+                    );
+                }
+                // In float32, with the plan for a transform on its own (the split one for 320 and 360).
                 for vectorize in [false, true] {
-                    let plan: CPlan<f64> = CPlan::new(n, vectorize);
-                    let mut data: Vec<C<f64>> = x.iter().map(|&(r, i)| C::new(r, i)).collect();
+                    let plan: CPlan<f32> = CPlan::new(n, vectorize);
+                    assert_eq!(matches!(plan, CPlan::Quarters { .. }), vectorize && n > 300);
+                    let mut data: Vec<C<f32>> = x.iter().map(|&(r, i)| C::new(r as f32, i as f32)).collect();
                     plan.exec(fwd, &mut data, &mut vec![C::default(); n]);
                     for (k, (g, w)) in data.iter().zip(&want).enumerate() {
                         assert!(
-                            (g.r - w.0).abs() < 1e-12 && (g.i - w.1).abs() < 1e-12,
+                            (f64::from(g.r) - w.0).abs() < 1e-4 && (f64::from(g.i) - w.1).abs() < 1e-4,
                             "n {n} fwd {fwd} vectorize {vectorize} k {k}: {g:?} {w:?}"
                         );
                     }
+                }
+            }
+        }
+    }
+
+    /// The same noise down the first and the last of `cols` columns of `rows`; the two columns after `columns`.
+    fn first_and_last_column<T: Real>(rows: usize, cols: usize, fwd: bool) -> (Vec<C<T>>, Vec<C<T>>) {
+        let (re, im) = (
+            noise(rows * cols, rows as u64),
+            noise(rows * cols, 31 * rows as u64 + 7),
+        );
+        let mut a: Vec<C<T>> = re.iter().zip(&im).map(|(&r, &i)| C::new(T::of(r), T::of(i))).collect();
+        for y in 0..rows {
+            a[y * cols + cols - 1] = a[y * cols];
+        }
+        columns(&mut a, rows, cols, fwd);
+        let column = |x: usize| (0..rows).map(|y| a[y * cols + x]).collect::<Vec<_>>();
+        (column(0), column(cols - 1))
+    }
+
+    #[test]
+    fn a_float64_column_left_over_is_transformed_like_one_in_a_group() {
+        // Three columns in float64: two together, one left over. scipy gives the left-over one the same bits.
+        assert_eq!((<f64 as Real>::FOUR_LANES, <f64 as Real>::LANES), (false, 2));
+        for rows in [320usize, 360, 400, 648, 300, 96] {
+            assert!(matches!(CPlan::<f64>::new(rows, true), CPlan::Passes(_)), "{rows}");
+            for fwd in [true, false] {
+                let (grouped, alone) = first_and_last_column::<f64>(rows, 3, fwd);
+                let bits = |c: &[C<f64>]| c.iter().map(|v| (v.r.to_bits(), v.i.to_bits())).collect::<Vec<_>>();
+                assert_eq!(bits(&grouped), bits(&alone), "rows {rows} fwd {fwd}");
+            }
+        }
+    }
+
+    #[test]
+    fn a_float32_column_left_over_takes_the_split_plan_above_300() {
+        // Five columns in float32: four together, one left over.
+        for (rows, split) in [
+            (320usize, true),
+            (360, true),
+            (648, true),
+            (300, false),
+            (288, false),
+            (375, false),
+        ] {
+            assert_eq!(CPlan::<f32>::split(rows), split, "{rows}");
+            for fwd in [true, false] {
+                let (grouped, alone) = first_and_last_column::<f32>(rows, 5, fwd);
+                // The split plan rounds differently (scipy: not one such column in 60 keeps its bits).
+                assert_eq!(grouped != alone, split, "rows {rows} fwd {fwd}");
+                for (g, a) in grouped.iter().zip(&alone) {
+                    assert!((g.r - a.r).abs() < 1e-3 && (g.i - a.i).abs() < 1e-3, "rows {rows}");
                 }
             }
         }
