@@ -7,7 +7,8 @@
 //! How close to Python: `clip_near` and the interpolation in `interp_keys` are plain arithmetic and exact. The
 //! rest goes through a sine, a norm or a matrix product, so a result can differ from Python's in its last bit
 //! (`math.sin` on the reference PC is the Windows C runtime, numpy's products are fused, see [`crate::np`]);
-//! `studio/reference/picture_kit/camera.npz` holds them to 1e-9 of the point's size, and in fact to about 1e-15.
+//! `studio/reference/picture_kit/camera.npz` holds every value to 1e-9 of itself, or to 1e-12 of the largest
+//! coordinate of its point where that is wider; they agree to about 1e-15 of the point's size.
 //! One consequence to know: a component that is zero by geometry (the camera-space x of the look-at point) comes
 //! out as rounding noise of either sign, here and in Python, and not the same noise.
 

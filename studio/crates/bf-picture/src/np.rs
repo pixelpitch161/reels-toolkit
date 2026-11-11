@@ -72,6 +72,12 @@ pub fn minimum(a: f64, b: f64) -> f64 {
     if a.is_nan() || a < b { a } else { b }
 }
 
+/// [`maximum`] for `float32`. `np.maximum(a32, x)` with a Python float `x` stays `float32`: convert `x` to `f32`
+/// first, as numpy does.
+pub fn maximum_f32(a: f32, b: f32) -> f32 {
+    if a.is_nan() || a > b { a } else { b }
+}
+
 /// `a.astype(np.int32)` for one `float64`: the fraction is dropped (toward zero). NaN, the infinities and every
 /// value whose whole part does not fit give `i32::MIN`: numpy leaves such casts to the processor, and that is what
 /// the x86 conversion (`cvttsd2si`) returns. C's `(int)x` in Pillow is the same instruction.
@@ -329,5 +335,9 @@ mod tests {
         assert!(maximum(1.0, f64::NAN).is_nan());
         assert!(minimum(1.0, f64::NAN).is_nan());
         assert_eq!((maximum(2.0, 3.0), minimum(2.0, 3.0)), (3.0, 2.0));
+        assert_eq!((maximum_f32(2.0, 3.0), maximum_f32(3.0, 2.0)), (3.0, 3.0));
+        assert!(maximum_f32(f32::NAN, 1.0).is_nan() && maximum_f32(1.0, f32::NAN).is_nan());
+        // The floor of a float32 depth: the Python float 1e-3 as a float32.
+        assert_eq!(maximum_f32(1e-9, 1e-3).to_bits(), 1e-3f32.to_bits());
     }
 }

@@ -4,7 +4,8 @@
 //! How close to Python (`studio/reference/picture_kit/geometry.npz`): corners that involve no angle are exact
 //! (`face`, `catenary`, a `box_` with `rot` 0); corners on a circle go through `math.cos` / `math.sin`, which on
 //! the reference PC can differ from `bf_core::dmath` in the last bit; normals go through `np.linalg.norm`, which
-//! is fused there (see [`crate::np`]). Those are held to 1e-9 and agree to about 1e-16.
+//! is fused there (see [`crate::np`]). Those are held to 1e-9 of each value (or 1e-12 of the largest coordinate
+//! of its point, where that is wider) and agree to about 1e-16.
 //!
 //! Not ported (the BALLFIGHT renderer does not call them): `icosa`, `gable`, `mound`, `ridge`, and the `Obj`
 //! class with its occluder bookkeeping.

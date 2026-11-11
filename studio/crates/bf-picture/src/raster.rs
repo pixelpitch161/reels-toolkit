@@ -143,8 +143,23 @@ impl Frame {
     /// `set_array(arr, depth=None)`: replaces the pixels (after a per-pixel lighting pass, say) so drawing can go
     /// on over them: the picture becomes `np.clip(arr, 0, 255).astype(np.uint8)`, and the depth buffer `depth`
     /// if one is given. `arr` may be `float32` or `float64`.
+    ///
+    /// Panics if the picture and the depth buffer (the one given, or the one kept) would differ in size. Python
+    /// takes any two arrays here and fails later, where the two are used together.
     pub fn set_array<T: Copy + Into<f64>>(&mut self, arr: &Img<T>, depth: Option<&Img<f32>>) {
         assert_eq!(arr.c, 3, "set_array: the picture must be RGB");
+        let dep = depth.unwrap_or(&self.dep);
+        assert_eq!(dep.c, 1, "set_array: the depth buffer has one channel");
+        assert_eq!(
+            (dep.w, dep.h),
+            (arr.w, arr.h),
+            "set_array: the depth buffer {} is {} x {}, the picture {} x {}",
+            if depth.is_some() { "given" } else { "kept" },
+            dep.w,
+            dep.h,
+            arr.w,
+            arr.h
+        );
         self.pil = Img {
             w: arr.w,
             h: arr.h,
@@ -152,7 +167,6 @@ impl Frame {
             data: arr.data.iter().map(|&v| np::clip_u8(v.into())).collect(),
         };
         if let Some(d) = depth {
-            assert_eq!(d.c, 1, "set_array: the depth buffer has one channel");
             self.dep = d.clone();
         }
     }
@@ -330,6 +344,22 @@ mod tests {
         fr.set_array(&fr.array(), None);
         assert_eq!(fr.pil.px(3, 4), &[0, 127, 255]);
         assert_eq!(fr.dep.px(3, 4)[0], 9.0);
+    }
+
+    #[test]
+    #[should_panic(expected = "the depth buffer given is 360 x 639, the picture 360 x 640")]
+    fn set_array_refuses_a_depth_buffer_of_another_size() {
+        let mut fr = Frame::new([0.0; 3]);
+        let arr: Img<f64> = Img::new(W, H, 3);
+        fr.set_array(&arr, Some(&Img::new(W, H - 1, 1)));
+    }
+
+    #[test]
+    #[should_panic(expected = "the depth buffer kept is 360 x 640, the picture 180 x 320")]
+    fn set_array_refuses_a_picture_the_kept_depth_does_not_fit() {
+        let mut fr = Frame::new([0.0; 3]);
+        let arr: Img<f32> = Img::new(W / 2, H / 2, 3);
+        fr.set_array(&arr, None);
     }
 
     #[test]

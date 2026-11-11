@@ -24,7 +24,15 @@
 //!   left-over column is transformed like every other.
 //! - Where the port cannot be bit-identical: the twiddle factors come from `sin` and `cos` (`bf_core::dmath` here,
 //!   the C library there; a twiddle can differ in the last bit of its double, which a `float32` twiddle almost
-//!   never sees), and numpy multiplies the two spectra with fused operations. Both are far below the bar.
+//!   never sees), and numpy multiplies the two spectra with fused operations. Both are far below the bar. What
+//!   it means for each precision: the `float32` forward transform is equal to scipy's to the bit on every
+//!   reference case. A `float64` transform, forward or backward, agrees to about 1e-16 of the array's largest
+//!   value and comes out with no difference at all only where the twiddles happen to coincide (of the
+//!   reference cases, 9 of the 15 `irfftn` ones). The backward passes run only in `float64` (`irfftn` of the
+//!   product of the spectra), so those `irfftn` cases are the only place a backward pass is checked exactly;
+//!   the `fftconvolve` and `dof` cases hold them to the bar, not to the bit.
+//! - Speed: every call builds its plans again (the factors and twiddle tables of both lengths). Only the
+//!   kernel's spectrum is kept between calls ([`Convolver`]). A later speed task may keep the plans per length.
 
 use crate::img::Img;
 use bf_core::dmath;
@@ -32,6 +40,10 @@ use std::ops::{Add, Mul, Neg, Sub};
 
 /// A complex number as `[real, imaginary]`, the form the public functions take and return.
 pub type Cpx<T> = [T; 2];
+
+/// The longest transform this module follows `ducc0` for. Above 10,000 samples `ducc0` splits a plan's passes
+/// into packets and transforms long columns one at a time, which is not ported: a longer transform panics.
+pub const MAX_LEN: usize = 10_000;
 
 /// The float type of a transform: `f32` or `f64`.
 trait Real:
@@ -502,7 +514,7 @@ impl<T: Real> CPlan<T> {
     fn new(n: usize, vectorize: bool) -> CPlan<T> {
         // Above this ducc0 splits the passes into two packets, and transforms long columns one at a time.
         assert!(
-            n <= 10_000,
+            n <= MAX_LEN,
             "fft: complex transforms above 10,000 samples are not ported"
         );
         let roots = Roots::new(n);
@@ -946,7 +958,7 @@ struct RPlan<T> {
 impl<T: Real> RPlan<T> {
     fn new(n: usize) -> RPlan<T> {
         assert!(
-            n <= 10_000 || n & 1 == 1,
+            n <= MAX_LEN || n & 1 == 1,
             "fft: real transforms of an even length above 10,000 are not ported"
         );
         let roots = Roots::new(n);

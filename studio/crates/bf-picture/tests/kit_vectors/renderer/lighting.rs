@@ -76,14 +76,21 @@ pub(super) fn run(v: &Vectors, case: &Case) -> Found {
                 "<f4" => arr("kvis").f32().iter().map(|&x| f64::from(x)).collect(),
                 _ => arr("kvis").f64().to_vec(),
             });
+            // Python's kvis and trans travel together here. A case with trans and no kvis would be one where
+            // Python raises; the exporter writes none.
+            let trans = float_arg(args, "trans")?;
+            let kvis = match &kvis {
+                Some(vis) => Some(lighting::KeyVis { vis, trans }),
+                None if trans == 0.0 => None,
+                None => return Err(format!("trans {trans} without kvis: Python raises here")),
+            };
             let got = lighting::shade(
                 &l,
                 &nrm,
                 &ctr,
                 &base,
-                kvis.as_deref(),
+                kvis,
                 float_arg(args, "rimk")?,
-                float_arg(args, "trans")?,
                 float_arg(args, "emit")?,
                 num(&args["step"], "step")?,
             );

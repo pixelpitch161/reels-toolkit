@@ -62,13 +62,20 @@ pub fn bloom(img: &Img<f64>, thr: f64, k: f64, exclude: Option<&Img<u8>>) -> Img
     }
 }
 
-/// `x ** gamma` as numpy computes it for a `float64` array and a Python float: a square and a square root where
-/// the exponent is 2 or 0.5, else the power function.
+/// `x ** gamma` as numpy computes it for a `float64` array and a Python float. Its power loop has shortcuts for
+/// a scalar exponent (`DOUBLE_power` in `loops_umath_fp.dispatch.c.src`): `1.0 / x` for -1, `1.0` for 0, the
+/// square root for 0.5, `x` for 1 and `x * x` for 2. Every other exponent is the power function.
 fn np_power(x: f64, gamma: f64) -> f64 {
-    if gamma == 2.0 {
-        x * x
+    if gamma == -1.0 {
+        1.0 / x
+    } else if gamma == 0.0 {
+        1.0
     } else if gamma == 0.5 {
         x.sqrt()
+    } else if gamma == 1.0 {
+        x
+    } else if gamma == 2.0 {
+        x * x
     } else {
         dmath::pow(x, gamma)
     }
@@ -107,6 +114,10 @@ pub fn grade(img: &Img<f64>, contrast: f64, sat: f64, black: f64, gamma: f64) ->
 
 /// A table per argument tuple, made once: Python's `_VIG` and `_SCRIM` dictionaries. The key is the arguments'
 /// bits; a `BTreeMap`, so nothing depends on a hash.
+///
+/// Like Python's, the tables live as long as the process and are never emptied: every new argument tuple adds a
+/// frame-sized table (1.8 MB). The ring calls each with constants, so each holds one table; animating an
+/// argument frame by frame would grow them without limit.
 type Tables<const N: usize> = Mutex<BTreeMap<[u64; N], Arc<Img<f64>>>>;
 
 fn cached<const N: usize>(tables: &Tables<N>, key: [f64; N], make: impl FnOnce() -> Img<f64>) -> Arc<Img<f64>> {
@@ -123,7 +134,10 @@ fn hypot_f32(a: f32, b: f32) -> f32 {
 /// `vignette(strength=0.9, start=0.55, cap=0.5, cy=0.47)`: the table that darkens the frame's corners, one
 /// `float64` multiplier per pixel (`(H, W, 1)` in Python), banded into fifths and dithered. `start` is where the
 /// darkening begins (in units of 0.62 of the frame), `cap` the most it takes away, `cy` the height of its centre.
-/// Made once per argument tuple.
+///
+/// Made once per argument tuple and kept for the life of the process, keyed by the four arguments and never
+/// emptied: call it with constants, as the ring does. A new tuple every frame keeps a new 1.8 MB table every
+/// frame.
 pub fn vignette(strength: f64, start: f64, cap: f64, cy: f64) -> Arc<Img<f64>> {
     static TABLES: OnceLock<Tables<4>> = OnceLock::new();
     cached(TABLES.get_or_init(Default::default), [strength, start, cap, cy], || {
@@ -149,7 +163,10 @@ pub fn vignette(strength: f64, start: f64, cap: f64, cy: f64) -> Arc<Img<f64>> {
 
 /// `top_scrim(amount=0.58, top=110, span=120)`: the table that darkens the top of the frame so captions read:
 /// the full `amount` above row `top`, fading out over `span` rows, banded into sixths and dithered. One
-/// `float64` multiplier per pixel; made once per argument tuple.
+/// `float64` multiplier per pixel.
+///
+/// Made once per argument tuple and kept for the life of the process, keyed by the three arguments and never
+/// emptied (see [`vignette`]): call it with constants.
 pub fn top_scrim(amount: f64, top: f64, span: f64) -> Arc<Img<f64>> {
     static TABLES: OnceLock<Tables<3>> = OnceLock::new();
     cached(TABLES.get_or_init(Default::default), [amount, top, span], || {
@@ -208,9 +225,26 @@ mod tests {
         let two = Img::from_vec(2, 1, 3, vec![64.0, 64.0, 64.0, 191.0, 191.0, 191.0]);
         let out = grade(&two, 0.18, 1.0, 0.0, 1.0);
         assert!(out.data[0] < 64.0 && out.data[3] > 191.0);
+    }
+
+    #[test]
+    fn powers_take_numpys_shortcuts() {
         assert_eq!(np_power(9.0, 0.5), 3.0);
         assert_eq!(np_power(3.0, 2.0), 9.0);
         assert_eq!(np_power(2.0, 3.0), 8.0);
+        assert_eq!(np_power(0.3, 1.0).to_bits(), 0.3f64.to_bits());
+        // -1 is a division: of 0 it is infinity, and of 0.3 it is 1.0 / 0.3 to the bit.
+        assert_eq!(np_power(0.3, -1.0).to_bits(), (1.0 / 0.3f64).to_bits());
+        assert_eq!(np_power(0.0, -1.0), f64::INFINITY);
+        assert_eq!(np_power(4.0, -1.0), 0.25);
+        // 0 is 1.0 whatever the base, also for a base that is not a number.
+        for x in [0.0, 0.3, 1.0, 255.0, f64::INFINITY, f64::NAN] {
+            assert_eq!(np_power(x, 0.0).to_bits(), 1.0f64.to_bits(), "{x}");
+        }
+        // Through grade: gamma 0 lifts every channel to 1 before the curve, gamma -1 sends 0.5 to 2 (clipped).
+        let img = Img::from_vec(2, 1, 3, vec![0.0, 64.0, 255.0, 127.5, 127.5, 127.5]);
+        assert_eq!(grade(&img, 0.18, 1.1, 0.0, 0.0).data, vec![255.0; 6]);
+        assert_eq!(&grade(&img, 0.0, 1.0, 0.0, -1.0).data[3..], &[255.0; 3]);
     }
 
     #[test]

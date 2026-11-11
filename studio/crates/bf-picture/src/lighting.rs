@@ -69,25 +69,34 @@ fn positive(x: f64) -> f64 {
     np::maximum(x, 0.0)
 }
 
+/// The shadow terms of [`shade`]: Python's `kvis` and `trans` as one value, because `trans` reads `kvis` (with
+/// `trans` and no `kvis` the Python raises a `TypeError`; here that cannot be written).
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct KeyVis<'a> {
+    /// `kvis`: per face and key light, 1 where the light reaches the face and 0 in shadow, row-major
+    /// (`vis[face * keys + key]`).
+    pub vis: &'a [f64],
+    /// `trans`: light shining through thin faces toward the camera. 0.0, Python's default, is none.
+    pub trans: f64,
+}
+
 /// `shade(L, nrm, ctr, base, kvis=None, rimk=0.55, trans=0.0, emit=0.0, step=5)`: the colours of `nrm.len()`
 /// faces.
 ///
 /// - `nrm`: unit normals; `ctr`: face centres (used by the point lights).
 /// - `base`: the albedo, 0 to 255: one colour for all faces, or one per face.
-/// - `kvis`: per face and key light, 1 where the light reaches the face and 0 in shadow, row-major
-///   (`kvis[face * keys + key]`); `None` is all lit.
-/// - `rimk`: the strength of the silhouette rim each key adds; `trans`: light shining through thin faces toward
-///   the camera (needs `kvis`: Python raises without it, and so does this); `emit`: self-illumination;
-///   `step`: the colours are rounded to multiples of it (ties to the even multiple), then held to 0..=255.
+/// - `kvis`: the shadow terms of the key lights and, with them, Python's `trans` ([`KeyVis`]); `None` is
+///   `kvis=None, trans=0.0`: every key light reaches every face.
+/// - `rimk`: the strength of the silhouette rim each key adds; `emit`: self-illumination; `step`: the colours
+///   are rounded to multiples of it (ties to the even multiple), then held to 0..=255.
 #[allow(clippy::too_many_arguments)] // the Python signature
 pub fn shade(
     l: &Lights,
     nrm: &[V3],
     ctr: &[V3],
     base: &[V3],
-    kvis: Option<&[f64]>,
+    kvis: Option<KeyVis<'_>>,
     rimk: f64,
-    trans: f64,
     emit: f64,
     step: f64,
 ) -> Vec<V3> {
@@ -100,12 +109,9 @@ pub fn shade(
         base.len()
     );
     if let Some(k) = kvis {
-        assert_eq!(k.len(), n * nk, "shade: kvis must hold {n} x {nk} values");
+        assert_eq!(k.vis.len(), n * nk, "shade: kvis must hold {n} x {nk} values");
     }
-    assert!(
-        trans == 0.0 || kvis.is_some() || nk == 0,
-        "shade: trans needs kvis (Python raises a TypeError here)"
-    );
+    let trans = kvis.map_or(0.0, |k| k.trans);
     let vw = l.view;
     // Per key light: the direction of its rim (the part of d across the view), and how much it faces the camera
     // from behind.
@@ -115,9 +121,8 @@ pub fn shade(
         .map(|(_, d, _)| {
             let kp = v3::sub(*d, v3::scale(vw, v3::dot(*d, vw)));
             let kp = v3::div(kp, v3::norm(kp) + 1e-9);
-            let back = -v3::dot(vw, *d);
-            // Python's max(0.0, x): 0.0 unless x is greater.
-            (kp, if back > 0.0 { back } else { 0.0 })
+            // max(0.0, -float(vw @ d))
+            (kp, py::py_max(0.0, -v3::dot(vw, *d)))
         })
         .collect();
     let mut out = Vec::with_capacity(n);
@@ -127,7 +132,7 @@ pub fn shade(
         let mut light: V3 = std::array::from_fn(|ch| l.amb[ch] + up * l.sky[ch] + emit);
         let facing = v3::dot(nr, vw).abs();
         for (ki, (_, d, col)) in l.keys.iter().enumerate() {
-            let vis = kvis.map_or(1.0, |k| k[i * nk + ki]);
+            let vis = kvis.map_or(1.0, |k| k.vis[i * nk + ki]);
             let direct = positive(v3::dot(nr, *d)) * vis;
             for ch in 0..3 {
                 light[ch] += direct * col[ch];
@@ -154,7 +159,8 @@ pub fn shade(
         }
         for (lp, lc, radius) in &l.points {
             let v = v3::sub(*lp, c);
-            let dist = v3::norm_rows(v) + 1e-6;
+            // np.linalg.norm(v, axis=1): numpy's own loop, so exact here
+            let dist = v3::norm(v) + 1e-6;
             // (nrm * v).sum(1): the three products added in order
             let toward = (nr[0] * v[0] + nr[1] * v[1] + nr[2] * v[2]) / dist;
             let lam = 0.3 + 0.7 * positive(toward);
@@ -205,27 +211,27 @@ mod tests {
     #[test]
     fn ambient_alone_scales_the_base_and_snaps_to_fives() {
         let l = Lights::new([0.5, 0.25, 0.1], [0.0; 3]);
-        let got = shade(&l, &[[1.0, 0.0, 0.0]], &[[0.0; 3]], &white(), None, 0.55, 0.0, 0.0, 5.0);
+        let got = shade(&l, &[[1.0, 0.0, 0.0]], &[[0.0; 3]], &white(), None, 0.55, 0.0, 5.0);
         assert_eq!(got, vec![[100.0, 50.0, 20.0]]);
         // 0.33 * 200 = 66 snaps to 65; a step of 1 keeps it.
         let l = Lights::new([0.33; 3], [0.0; 3]);
         let face = ([[1.0, 0.0, 0.0]], [[0.0; 3]]);
         assert_eq!(
-            shade(&l, &face.0, &face.1, &white(), None, 0.55, 0.0, 0.0, 5.0)[0],
+            shade(&l, &face.0, &face.1, &white(), None, 0.55, 0.0, 5.0)[0],
             [65.0; 3]
         );
         assert_eq!(
-            shade(&l, &face.0, &face.1, &white(), None, 0.55, 0.0, 0.0, 1.0)[0],
+            shade(&l, &face.0, &face.1, &white(), None, 0.55, 0.0, 1.0)[0],
             [66.0; 3]
         );
         // Self-illumination adds to every channel; upward faces take the sky.
         assert_eq!(
-            shade(&l, &face.0, &face.1, &white(), None, 0.55, 0.0, 0.5, 1.0)[0],
+            shade(&l, &face.0, &face.1, &white(), None, 0.55, 0.5, 1.0)[0],
             [166.0; 3]
         );
         let l = Lights::new([0.0; 3], [0.5, 0.25, 0.0]);
         let up = [[0.0, 1.0, 0.0], [0.0, -1.0, 0.0]];
-        let got = shade(&l, &up, &[[0.0; 3]; 2], &white(), None, 0.0, 0.0, 0.0, 5.0);
+        let got = shade(&l, &up, &[[0.0; 3]; 2], &white(), None, 0.0, 0.0, 5.0);
         assert_eq!(got, vec![[100.0, 50.0, 0.0], [0.0, 0.0, 0.0]]);
     }
 
@@ -236,15 +242,19 @@ mod tests {
         l.key("key", [0.0, 0.0, 1.0], [0.5, 0.5, 0.5]);
         let faces = [[0.0, 0.0, 1.0], [0.0, 0.0, -1.0]];
         let centres = [[0.0; 3]; 2];
-        let lit = shade(&l, &faces, &centres, &white(), None, 0.0, 0.0, 0.0, 5.0);
+        let lit = shade(&l, &faces, &centres, &white(), None, 0.0, 0.0, 5.0);
         assert_eq!(lit, vec![[100.0; 3], [0.0; 3]]);
-        let shadowed = shade(&l, &faces, &centres, &white(), Some(&[0.0, 1.0]), 0.0, 0.0, 0.0, 5.0);
+        let shadow = KeyVis {
+            vis: &[0.0, 1.0],
+            trans: 0.0,
+        };
+        let shadowed = shade(&l, &faces, &centres, &white(), Some(shadow), 0.0, 0.0, 5.0);
         assert_eq!(shadowed, vec![[0.0; 3], [0.0; 3]]);
         // One base colour per face.
         let two = [[200.0; 3], [100.0; 3]];
         l.fill([0.0, 0.0, -1.0], [1.0; 3]);
         assert_eq!(
-            shade(&l, &faces, &centres, &two, None, 0.0, 0.0, 0.0, 5.0),
+            shade(&l, &faces, &centres, &two, None, 0.0, 0.0, 5.0),
             vec![[100.0; 3], [100.0; 3]]
         );
     }
@@ -252,31 +262,11 @@ mod tests {
     #[test]
     fn bright_light_rolls_off_below_white() {
         let l = Lights::new([3.0; 3], [0.0; 3]);
-        let got = shade(
-            &l,
-            &[[1.0, 0.0, 0.0]],
-            &[[0.0; 3]],
-            &[[100.0; 3]],
-            None,
-            0.0,
-            0.0,
-            0.0,
-            5.0,
-        )[0];
+        let got = shade(&l, &[[1.0, 0.0, 0.0]], &[[0.0; 3]], &[[100.0; 3]], None, 0.0, 0.0, 5.0)[0];
         // 3.0 becomes 0.95 + 0.6 (1 - exp(-2.05 / 0.6)) = 1.53: 153 snaps to 155.
         assert_eq!(got, [155.0; 3]);
         let l = Lights::new([0.9; 3], [0.0; 3]);
-        let got = shade(
-            &l,
-            &[[1.0, 0.0, 0.0]],
-            &[[0.0; 3]],
-            &[[300.0; 3]],
-            None,
-            0.0,
-            0.0,
-            0.0,
-            5.0,
-        )[0];
+        let got = shade(&l, &[[1.0, 0.0, 0.0]], &[[0.0; 3]], &[[300.0; 3]], None, 0.0, 0.0, 5.0)[0];
         assert_eq!(got, [255.0; 3]);
     }
 
@@ -285,17 +275,39 @@ mod tests {
         let mut l = Lights::new([0.0; 3], [0.0; 3]);
         l.point([0.0, 0.0, 2.0], [1.0, 1.0, 1.0], 2.0);
         let n = [[0.0, 0.0, 1.0]];
-        let near = shade(&l, &n, &[[0.0, 0.0, 1.0]], &white(), None, 0.0, 0.0, 0.0, 1.0)[0][0];
-        let far = shade(&l, &n, &[[0.0, 0.0, -2.0]], &white(), None, 0.0, 0.0, 0.0, 1.0)[0][0];
+        let near = shade(&l, &n, &[[0.0, 0.0, 1.0]], &white(), None, 0.0, 0.0, 1.0)[0][0];
+        let far = shade(&l, &n, &[[0.0, 0.0, -2.0]], &white(), None, 0.0, 0.0, 1.0)[0][0];
         // At distance 1: 1 / (1 + 0.25) = 0.8 of 200; at 4: 1 / 5.
         assert_eq!((near, far), (160.0, 40.0));
     }
 
     #[test]
-    #[should_panic(expected = "trans needs kvis")]
-    fn trans_without_shadow_terms_is_refused() {
+    fn light_comes_through_a_thin_face_where_the_key_reaches_it() {
+        // A key light behind two faces that look at the camera: nothing direct. With `trans` its light comes
+        // through the face it reaches (0.4 of 200), and not through the one in shadow.
+        let mut l = Lights::new([0.0; 3], [0.0; 3]);
+        l.view = [0.0, 0.0, 1.0];
+        l.key("back", [0.0, 0.0, -2.0], [1.0; 3]);
+        let faces = [[0.0, 0.0, 1.0]; 2];
+        let centres = [[0.0; 3]; 2];
+        let reached = [1.0, 0.0];
+        let with = |trans: f64| {
+            let kvis = KeyVis { vis: &reached, trans };
+            shade(&l, &faces, &centres, &white(), Some(kvis), 0.0, 0.0, 5.0)
+        };
+        assert_eq!(with(0.0), vec![[0.0; 3], [0.0; 3]]);
+        assert_eq!(with(0.4), vec![[80.0; 3], [0.0; 3]]);
+    }
+
+    #[test]
+    #[should_panic(expected = "kvis must hold 1 x 1 values")]
+    fn shadow_terms_of_the_wrong_size_are_refused() {
         let mut l = Lights::new([0.0; 3], [0.0; 3]);
         l.key("key", [0.0, 0.0, 1.0], [1.0; 3]);
-        shade(&l, &[[0.0, 0.0, 1.0]], &[[0.0; 3]], &white(), None, 0.0, 0.4, 0.0, 5.0);
+        let kvis = KeyVis {
+            vis: &[1.0, 1.0],
+            trans: 0.0,
+        };
+        shade(&l, &[[0.0, 0.0, 1.0]], &[[0.0; 3]], &white(), Some(kvis), 0.0, 0.0, 5.0);
     }
 }

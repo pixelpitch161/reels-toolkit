@@ -5,20 +5,25 @@
 //! ```text
 //! zf  = the subject's camera depth              cam.depth(&[subject])[0]
 //! coc = coc_map(&frame.depth(), zf, K, sharp)   the blur radius of every pixel, in pixels
-//! img = dof(&frame.array(), &coc, &LEVELS)      the blurred picture
+//! img = dof(&frame.array(), &coc)               the blurred picture
 //! ```
 //!
 //! [`dof`] is a stack of masked, normalised blurs, one per radius in [`LEVELS`]: each level blurs only the pixels
 //! out of focus enough to belong to it, so a sharp foreground never bleeds into a blurred background. A level's
 //! blur is `scipy.signal.fftconvolve` with the octagon of that radius, which is [`crate::fft`].
 //!
+//! Python's `coc_map` and `dof` take the levels as an argument (`levels=LEVELS`) that no caller in the kit
+//! passes. Here they always work with [`LEVELS`], so no caller can hand over a list the blur is not made for (a
+//! negative radius, a NaN, radii out of order).
+//!
 //! How close to Python (`studio/reference/picture_kit/lens.npz`): [`oct_kernel`] and [`coc_map`] are equal to the
 //! bit. [`dof`] carries the rounding of a `float32` FFT (about 1e-5 of a level on a 0..=255 picture, the same in
-//! Python and here) and is held to 1e-9 of the picture's largest value; it agrees to about 1e-15.
+//! Python and here) and is held to 1e-9 of each value, or 1e-12 of the picture's largest value where that is
+//! wider; it agrees to about 1e-15 of the picture's largest value.
 //!
 //! Not ported (the BALLFIGHT renderer does not call it): `add_bokeh`.
 
-use crate::fft::Convolver;
+use crate::fft::{self, Convolver};
 use crate::img::Img;
 use crate::np;
 use bf_core::{dmath, py};
@@ -57,6 +62,10 @@ pub fn oct_kernel(r: f64) -> Img<f64> {
 
 /// The octagon of radius `r` ready to blur planes of `w` x `h`: Python's `kernel(r)` cache, with the kernel's
 /// spectrum kept too (scipy works it out again on every call; the result is the same).
+///
+/// The table lives as long as the process, is keyed by the radius and the picture size, and is never emptied.
+/// The ring blurs one picture size with the six radii of [`LEVELS`]: six entries of about 2 MB. Blurring
+/// pictures of ever new sizes would grow it without limit.
 fn lens_for(r: f64, w: usize, h: usize) -> Arc<Convolver> {
     type Made = Mutex<BTreeMap<(u64, usize, usize), Arc<Convolver>>>;
     static MADE: OnceLock<Made> = OnceLock::new();
@@ -69,39 +78,37 @@ fn lens_for(r: f64, w: usize, h: usize) -> Arc<Convolver> {
         .clone()
 }
 
-/// `np.maximum(depth, 1e-3)` for a `float32` depth: the Python float becomes a `float32`.
-fn floor_depth(d: f32) -> f32 {
-    let floor = 1e-3f32;
-    if d.is_nan() || d > floor { d } else { floor }
-}
-
-/// `coc_map(depth, zf, K, sharp=0.05, levels=LEVELS)`: the circle of confusion of every pixel, in pixels, from
-/// its depth, the focus depth `zf` and the lens strength `K`; `sharp` is the band around the focus plane that
-/// stays fully crisp. `depth` is the frame's `float32` buffer and `zf` a numpy `float64` (what `Cam.depth` gives),
-/// so the result is `float64`. It never exceeds the last level.
-pub fn coc_map(depth: &Img<f32>, zf: f64, k: f64, sharp: f64, levels: &[f64]) -> Img<f64> {
+/// `coc_map(depth, zf, K, sharp=0.05)`: the circle of confusion of every pixel, in pixels, from its depth, the
+/// focus depth `zf` and the lens strength `K`; `sharp` is the band around the focus plane that stays fully crisp.
+/// `depth` is the frame's `float32` buffer and `zf` a numpy `float64` (what `Cam.depth` gives), so the result is
+/// `float64`. It never exceeds the last of [`LEVELS`].
+pub fn coc_map(depth: &Img<f32>, zf: f64, k: f64, sharp: f64) -> Img<f64> {
     assert_eq!(depth.c, 1, "coc_map: the depth buffer has one channel");
-    let top = levels[levels.len() - 1];
+    let top = LEVELS[LEVELS.len() - 1];
     let data = depth
         .data
         .iter()
         .map(|&d| {
-            let off = (1.0 - zf / f64::from(floor_depth(d))).abs() - sharp;
-            // np.maximum(0.0, off): 0.0 unless off is larger or not a number
-            let off = if off.is_nan() || off > 0.0 { off } else { 0.0 };
+            // np.maximum(depth, 1e-3) is still float32: the Python float becomes a float32.
+            let depth = f64::from(np::maximum_f32(d, 1e-3));
+            let off = np::maximum(0.0, (1.0 - zf / depth).abs() - sharp);
             np::clip(k * off, 0.0, top)
         })
         .collect();
     Img::from_vec(depth.w, depth.h, 1, data)
 }
 
-/// `dof(img, coc, levels=LEVELS)`: the picture (`float32` RGB, as `Frame::array` gives it) blurred by the
-/// circle-of-confusion map `coc`.
+/// `dof(img, coc)`: the picture (`float32` RGB, as `Frame::array` gives it) blurred by the circle-of-confusion
+/// map `coc`, through the radii of [`LEVELS`].
 ///
 /// Returns `None` when no pixel is out of focus (`coc` nowhere above the first level): Python then returns the
 /// picture as it was, still `float32`, and what follows (`apply_glows`) keeps working in `float32`. Otherwise the
 /// result is `float64`.
-pub fn dof(img: &Img<f32>, coc: &Img<f64>, levels: &[f64]) -> Option<Img<f64>> {
+///
+/// Panics, before any work, for a picture the FFT here does not take: one pixel wide or high, or so large that
+/// a side padded for the widest kernel exceeds [`fft::MAX_LEN`] samples.
+pub fn dof(img: &Img<f32>, coc: &Img<f64>) -> Option<Img<f64>> {
+    let levels = &LEVELS;
     assert_eq!(img.c, 3, "dof: the picture must be RGB");
     assert_eq!(
         (coc.w, coc.h, coc.c),
@@ -109,6 +116,17 @@ pub fn dof(img: &Img<f32>, coc: &Img<f64>, levels: &[f64]) -> Option<Img<f64>> {
         "dof: coc must be one value per pixel"
     );
     let (w, h, n) = (img.w, img.h, img.w * img.h);
+    // The widest kernel pads the most (the padded size never shrinks as the kernel grows).
+    let widest = 2 * (LEVELS[LEVELS.len() - 1].ceil() as usize) + 1;
+    let padded = (fft::good_size_real(w + widest - 1), fft::good_size_real(h + widest - 1));
+    assert!(
+        w > 1 && h > 1 && padded.0 <= fft::MAX_LEN && padded.1 <= fft::MAX_LEN,
+        "dof: a picture of {w} x {h} cannot be blurred here: it must be more than one pixel each way, and its \
+         size padded for the FFT ({} x {}) at most {} a side",
+        padded.0,
+        padded.1,
+        fft::MAX_LEN
+    );
     let widened = || -> Vec<f64> { img.data.iter().map(|&v| f64::from(v)).collect() };
     // `out` and `prev` start as the picture; they become float64 with the first level that runs.
     let mut out: Option<Vec<f64>> = None;
@@ -184,7 +202,7 @@ mod tests {
     #[test]
     fn the_circle_of_confusion_grows_away_from_the_focus() {
         let depth = Img::from_vec(6, 1, 1, vec![27.5f32, 26.0, 20.0, 1e6, 1e-9, 13.75]);
-        let coc = coc_map(&depth, 27.5, 26.0, 0.17, &LEVELS);
+        let coc = coc_map(&depth, 27.5, 26.0, 0.17);
         // In focus, and inside the sharp band.
         assert_eq!(&coc.data[..2], &[0.0, 0.0]);
         // |1 - 27.5 / 20| = 0.375: 26 * (0.375 - 0.17).
@@ -198,7 +216,22 @@ mod tests {
     fn nothing_out_of_focus_is_no_blur() {
         let img: Img<f32> = Img::filled(12, 10, &[10.0, 20.0, 30.0]);
         let coc: Img<f64> = Img::new(12, 10, 1);
-        assert_eq!(dof(&img, &coc, &LEVELS), None);
+        assert_eq!(dof(&img, &coc), None);
+    }
+
+    #[test]
+    #[should_panic(expected = "a picture of 1 x 40 cannot be blurred here")]
+    fn a_picture_one_pixel_wide_is_refused_at_once() {
+        let _ = dof(&Img::new(1, 40, 3), &Img::new(1, 40, 1));
+    }
+
+    #[test]
+    #[should_panic(expected = "a picture of 2 x 9990 cannot be blurred here")]
+    fn a_picture_too_long_for_the_fft_is_refused_at_once() {
+        // 9,990 + 22 rows pad to 10,125, above what the FFT here follows ducc0 for. Nothing is out of focus:
+        // the size is checked before anything else.
+        assert_eq!(fft::good_size_real(9_990 + 22), 10_125);
+        let _ = dof(&Img::new(2, 9_990, 3), &Img::new(2, 9_990, 1));
     }
 
     #[test]
@@ -216,7 +249,7 @@ mod tests {
         // One bright dot in the sharp half and one dark dot in a corner of the blurred half.
         img.px_mut(3, 8).copy_from_slice(&[255.0; 3]);
         img.px_mut(22, 14).copy_from_slice(&[0.0; 3]);
-        let out = dof(&img, &coc, &LEVELS).expect("the right half is out of focus");
+        let out = dof(&img, &coc).expect("the right half is out of focus");
         // Sharp pixels are untouched, to the bit.
         for y in 0..h {
             for x in 0..w / 2 {

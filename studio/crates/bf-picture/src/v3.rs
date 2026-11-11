@@ -40,15 +40,14 @@ pub(crate) fn dot(a: V3, b: V3) -> f64 {
     a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
 }
 
-/// `np.linalg.norm(a)`: the square root of [`dot`]`(a, a)`.
+/// The length of `a`: the square root of [`dot`]`(a, a)`, a plain sum. It stands for two numpy expressions:
+///
+/// - `np.linalg.norm(a)` of one vector, which goes through BLAS and is fused there: this can differ from it in
+///   the last bit;
+/// - `np.linalg.norm(a, axis=1)` for one row of an array, and `np.sqrt((a * a).sum(1))`: numpy's own loop
+///   (square, add along the row in order, root), with no BLAS. For these it is exact.
 pub(crate) fn norm(a: V3) -> f64 {
     dot(a, a).sqrt()
-}
-
-/// `np.linalg.norm(a, axis=1)` for one row, and `np.sqrt((a * a).sum(1))`: numpy squares, adds along the row in
-/// order and takes the root, with no BLAS. The same sum as [`norm`], which is why this one is exact.
-pub(crate) fn norm_rows(a: V3) -> f64 {
-    (a[0] * a[0] + a[1] * a[1] + a[2] * a[2]).sqrt()
 }
 
 /// `np.cross(a, b)`: numpy multiplies and subtracts in separate steps, `(a1 b2 - a2 b1, a2 b0 - a0 b2,
@@ -85,7 +84,7 @@ mod tests {
     fn sums_and_norms() {
         assert_eq!(dot([1.0, 2.0, 3.0], [4.0, 5.0, 6.0]), 32.0);
         assert_eq!(norm([3.0, 0.0, 4.0]), 5.0);
-        assert_eq!(norm_rows([0.0, -2.0, 0.0]), 2.0);
+        assert_eq!(norm([0.0, -2.0, 0.0]), 2.0);
         assert_eq!(mean(&[[1.0, 2.0, 3.0], [3.0, 4.0, 5.0]]), [2.0, 3.0, 4.0]);
         assert_eq!(sub(add([1.0, 2.0, 3.0], [1.0, 1.0, 1.0]), [2.0, 3.0, 4.0]), [0.0; 3]);
         assert_eq!(neg(scale(div([2.0, 4.0, 6.0], 2.0), 3.0)), [-3.0, -6.0, -9.0]);

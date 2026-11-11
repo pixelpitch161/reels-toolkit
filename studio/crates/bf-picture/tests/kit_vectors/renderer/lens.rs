@@ -32,7 +32,6 @@ pub(super) fn run(v: &Vectors, case: &Case) -> Found {
                 float_arg(args, "zf")?,
                 float_arg(args, "K")?,
                 float_arg(args, "sharp")?,
-                &lens::LEVELS,
             );
             exact_img_f64(&got, arr("out"))
         }
@@ -41,8 +40,8 @@ pub(super) fn run(v: &Vectors, case: &Case) -> Found {
             if !args["block"].is_null() {
                 // The full frame: the stored arrays blown up, and every block-th pixel of the result.
                 let block = count(args, "block")?;
-                let out = lens::dof(&repeated(&img, block), &repeated(&coc, block), &lens::LEVELS)
-                    .ok_or("None: nothing out of focus")?;
+                let out =
+                    lens::dof(&repeated(&img, block), &repeated(&coc, block)).ok_or("None: nothing out of focus")?;
                 let mut sub = Vec::new();
                 for y in (0..out.h).step_by(block) {
                     for x in (0..out.w).step_by(block) {
@@ -51,7 +50,7 @@ pub(super) fn run(v: &Vectors, case: &Case) -> Found {
                 }
                 return close_array(&sub, arr("out_sub").f64());
             }
-            match (lens::dof(&img, &coc, &lens::LEVELS), arr("out").dtype()) {
+            match (lens::dof(&img, &coc), arr("out").dtype()) {
                 // Nothing out of focus: Python hands the float32 picture back as it was.
                 (None, "<f4") => exact_f32(&img.data, arr("out").f32()),
                 (Some(out), "<f8") => {
