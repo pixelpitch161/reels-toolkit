@@ -15,7 +15,9 @@
 //! The reference set already held the look's sprites as Python drew them (`sprites/FLUTE.npz`: 503 in-ball
 //! sprites and the VS card's close-up) and every frame of the VS card with the FLUTE on it
 //! (`frames/flute_vs_trombone/title/hashes.npz`, four timelines); `bf-picture`'s own tests read those through a
-//! stand-in for this look. Here the real look is held to them.
+//! stand-in for this look. Here the real look is held to them. The same goes for the stages of the episode's own
+//! frames that come before any look draws (`picture_ring/stage_hashes.json`, `episode_looks`: the floor, the
+//! arena and the skirt, which the looks' camera shake and attack lights reach).
 //!
 //! One test reads local files that are not reference files: `python -m tools.studio_export look_flute_stages
 //! [episode | flute_wins | flute_right] <frame>...` writes the buffers of those frames after each stage of the Python renderer
@@ -39,6 +41,7 @@ use bf_picture::img::{Img, RgbF};
 use bf_picture::lighting::Lights;
 use bf_picture::look::{BallSprite, CanvasCtx, DefaultLook, DrawnBall, FrameCtx, Fx, Look, Payload, Phase, Pic, Spark};
 use bf_picture::raster::Frame;
+use bf_picture::ring::effects::up;
 use bf_picture::ring::state::{BallState, Wave};
 use bf_picture::ring::{Picture, PictureCtx, Stage, StagePic};
 use bf_picture::sprite::Mesh;
@@ -632,6 +635,8 @@ struct Tally {
     n: usize,
     exact: usize,
     failures: Vec<String>,
+    /// The values within the bar that are not Python's to the bit.
+    last_bits: Vec<String>,
 }
 
 impl Tally {
@@ -645,6 +650,8 @@ impl Tally {
         let apart = (got - want).abs();
         if apart.is_nan() || apart > 1e-12 * want.abs().max(1.0) {
             self.failures.push(format!("  {what}: got {got:e}, Python {want:e}"));
+        } else {
+            self.last_bits.push(format!("{what} ({apart:e})"));
         }
     }
 
@@ -780,7 +787,10 @@ fn state_is_pythons(fight: &str) -> [usize; 4] {
             }
         }
     }
-    println!("state ({fight}): {} values, {} equal to the bit", t.n, t.exact);
+    println!(
+        "state ({fight}): {} values, {} equal to the bit; the others: {:?}",
+        t.n, t.exact, t.last_bits
+    );
     assert!(t.failures.is_empty(), "{fight}:\n{}", t.failures.join("\n"));
     [striking, swatted, away, victory]
 }
@@ -1020,6 +1030,121 @@ fn every_card_frame_is_pythons_with_the_real_look() {
         wrong.len(),
         &wrong[..wrong.len().min(12)]
     );
+}
+
+// ---------------------------------------------------------------- the episode's own early stages
+/// The TROMBONE's look as far as the camera and the lights go: its `shake` and the `P.FL.add` calls of its
+/// `fx_event` and `fx_after`, as `bf-picture/tests/ring_stages.rs` has them (`TromboneLights`). It stands in for
+/// the TROMBONE's own look, which is another task's.
+#[derive(Default)]
+struct TromboneLights {
+    k: usize,
+}
+
+impl Look for TromboneLights {
+    fn setup(&mut self, _p: &PictureCtx, k: usize) {
+        self.k = k;
+    }
+
+    fn shake(&self, _p: &PictureCtx, e: &Event) -> Option<f64> {
+        match if e.kind == "hit" { e.s(7) } else { "" } {
+            "blade" => Some(0.55),
+            "slam" => Some(2.5),
+            "shockwave" => Some(1.2),
+            _ if e.kind == "swat" => Some(0.4),
+            _ => (e.kind == "slam").then_some(1.6),
+        }
+    }
+
+    fn fx_event(&self, p: &PictureCtx, fx: &mut Fx, e: &Event) {
+        let col = p.fl_col[e.i(2) as usize];
+        match if e.kind == "hit" { e.s(7) } else { "" } {
+            "blade" => fx.fl.add(e.t, up(e.f(5), e.f(6), 0.6), col, 1.4, 0.6, 0.03, 0.22, 0.0),
+            "shockwave" => fx.fl.add(e.t, up(e.f(5), e.f(6), 0.6), col, 1.6, 0.8, 0.03, 0.3, 0.0),
+            // PEDAL TONE: the bell stomps (low: under the bell's rim)
+            _ if e.kind == "slam" => fx.fl.add(e.t, up(e.f(3), e.f(4), 0.15), col, 2.4, 0.9, 0.03, 0.5, 0.0),
+            _ => {}
+        }
+    }
+
+    fn fx_after(&self, p: &PictureCtx, fx: &mut Fx) {
+        // PEDAL TONE's bell hovers mint-lit
+        let ev = &p.rec.events;
+        for e in ev {
+            if e.kind == "ability" && e.s(4) == "slam" && e.i(2) == self.k as i64 && e.t < p.t_ko {
+                let first = ev.iter().find(|q| q.kind == "slam" && q.i(2) == e.i(2) && q.t >= e.t);
+                if let Some(sl) = first {
+                    // decay=max(0.3, sl[0][0] - e[0])
+                    let decay = if sl.t - e.t > 0.3 { sl.t - e.t } else { 0.3 };
+                    let pos = up(sl.f(3), sl.f(4), 2.4);
+                    fx.fl
+                        .add(e.t + 0.15, pos, p.fl_col[e.i(2) as usize], 2.6, 0.65, 0.03, decay, 0.0);
+                }
+            }
+        }
+    }
+}
+
+/// The dtype of a buffer as numpy names it, and the SHA-256 of its samples as numpy stores them.
+fn hash_of(pic: &StagePic) -> (&'static str, String) {
+    fn le<const N: usize, T: Copy>(data: &[T], bytes: impl Fn(T) -> [u8; N]) -> String {
+        let raw: Vec<u8> = data.iter().flat_map(|&v| bytes(v)).collect();
+        hex(&Sha256::digest(&raw))
+    }
+    match pic {
+        StagePic::U8(a) => ("|u1", hex(&Sha256::digest(&a.data))),
+        StagePic::F32(a) => ("<f4", le(&a.data, f32::to_le_bytes)),
+        StagePic::F64(a) => ("<f8", le(&a.data, f64::to_le_bytes)),
+    }
+}
+
+/// In the episode's own frames (both fighters' real looks in Python) the stages before any look draws are
+/// Python's with the real [`FluteLook`]: the colour and depth buffers of `floor`, `arena` and `skirt` of frames
+/// 150, 600 and 1,500, 18 buffers by their hashes. They depend on the looks through the camera shake
+/// (`shake(e)`), the attack lights (`P.FL.add` in `fx_setup` and `fx_event`) and `flare_scale`. The TROMBONE's
+/// part of those comes from the stand-in `bf-picture`'s own test uses.
+#[test]
+fn the_stages_before_the_looks_layers_are_the_episodes() {
+    let path = reference("picture_ring/stage_hashes.json");
+    let raw = std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("cannot read {}: {e}", path.display()));
+    let doc: Value = serde_json::from_str(&raw).unwrap_or_else(|e| panic!("{}: {e}", path.display()));
+    assert_eq!(doc["tool"], "ring");
+    let pic = build("episode", &|_, name| match name {
+        "FLUTE" => Box::new(FluteLook::new()),
+        "TROMBONE" => Box::new(TromboneLights::default()),
+        other => panic!("no look for {other} in this test"),
+    });
+    let (mut n, mut wrong) = (0, Vec::new());
+    for (frame, stages) in doc["episode_looks"]["stages"].as_object().expect("the frames") {
+        let f: usize = frame.parse().expect("a frame number");
+        for (name, roles) in stages.as_object().expect("the stages") {
+            let stage = *Stage::ALL
+                .iter()
+                .find(|s| s.name() == name)
+                .unwrap_or_else(|| panic!("no stage {name}"));
+            let got = pic.stage_buffers(f, stage);
+            for (role, want) in roles.as_object().expect("the roles") {
+                let have = match role.as_str() {
+                    "rgb" => hash_of(&got.rgb),
+                    "depth" => hash_of(&StagePic::F32(got.depth.clone().expect("a depth buffer"))),
+                    other => panic!("stage_hashes.json has a role {other}"),
+                };
+                n += 1;
+                if (have.0, have.1.as_str()) != (text(&want[0]), text(&want[1])) {
+                    wrong.push(format!(
+                        "frame {f} {name} {role}: {} {}, Python has {want}",
+                        have.0, have.1
+                    ));
+                }
+            }
+        }
+    }
+    println!(
+        "floor, arena, skirt of the episode: {} of {n} buffers are Python's",
+        n - wrong.len()
+    );
+    assert_eq!(n, 18, "the reference holds another number of buffers");
+    assert!(wrong.is_empty(), "\n{}", wrong.join("\n"));
 }
 
 // ---------------------------------------------------------------- the stages (local dumps)
