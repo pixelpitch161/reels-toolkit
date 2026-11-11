@@ -5,10 +5,10 @@
 
 use std::collections::BTreeMap;
 
-use bf_core::py::round_nd;
-use bf_sim::roster::FighterCfg;
+use bf_core::py::{py_max, round_nd};
+use bf_core::roster::FighterCfg;
 
-use crate::story::{Story, py_max};
+use crate::story::Story;
 
 /// The beat sheet: the hard windows a fight must meet to fit, and the caption targets the score aims at.
 #[derive(Clone, Debug, PartialEq)]

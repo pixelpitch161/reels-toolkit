@@ -7,9 +7,8 @@ publish.workspace = true
 
 [dependencies]
 libm.workspace = true
+# The roster reader (`roster`): the exported roster.json, each entry kept as it is.
+serde_json.workspace = true
 sha2.workspace = true
 toml.workspace = true
 zip.workspace = true
-
-[dev-dependencies]
-serde_json.workspace = true
