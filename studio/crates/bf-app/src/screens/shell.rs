@@ -187,11 +187,14 @@ pub fn notice(ui: &mut Ui, vm: &ViewModel, out: &mut Vec<Action>) {
 }
 
 /// The status bar: what the app is doing or last did on the left, in small `MUTED` (cut short with an ellipsis
-/// when it does not fit); on the right the fighters that can be picked and the themes, once the roster is here.
-pub fn status_bar(ui: &mut Ui, vm: &ViewModel) {
+/// when it does not fit); on the right `note` when there is one (`--fixtures`: "Sample data, not a real fight"),
+/// else the fighters that can be picked and the themes, once the roster is here.
+pub fn status_bar(ui: &mut Ui, vm: &ViewModel, note: Option<&str>) {
     ui.horizontal_centered(|ui| {
         ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-            if let Some(roster) = &vm.roster {
+            if let Some(note) = note {
+                plain(ui, RichText::new(note).font(small()).color(MUTED));
+            } else if let Some(roster) = &vm.roster {
                 let fighters = roster.fighters.iter().filter(|f| f.available).count() as u64;
                 let themes = roster.themes.len() as u64;
                 let counts = format!(

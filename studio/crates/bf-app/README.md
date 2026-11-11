@@ -12,11 +12,28 @@ the engine crates.
 From `studio/`:
 
 ```sh
-cargo run --release -p bf-app
+cargo run --release -p bf-app -- --fixtures
 ```
 
-The program is `target/release/ballfight-studio.exe`. `--smoke` opens the window, paints 30 frames, closes it and
-exits with code 0: a quick check that the app starts on this PC.
+The program is `target/release/ballfight-studio.exe`. Until the real engine is behind the seam (Task 35), the whole
+interface runs on sample data:
+
+- `--fixtures` runs the app on the sample engine (`seam::fake`, answering at a real engine's pace) with real sound
+  out. Its settings, queue and cache go in a folder of its own under the system temp folder, removed when the window
+  closes, and the status bar's right side reads "Sample data, not a real fight". Nothing it shows is a real fight
+  and no video is saved.
+- Without `--fixtures` the window says "The engine is not connected in this build. Start it with --fixtures to see
+  the interface."
+- `--data-dir <folder>` keeps the settings, the queue and the cache in `<folder>` (`config` and `cache` under it)
+  instead of the temp folder or the PC's own app folders. The folder is created if missing; a folder that cannot be
+  used stops the app with one sentence on stderr and exit code 2.
+- `--smoke` opens the window, paints 30 frames, closes it and exits with code 0, with no sound and its files in a
+  temp folder of its own. `ballfight-studio.exe --fixtures --smoke` is the quick check that the interface starts on
+  this PC.
+
+At start the app writes one line to stderr naming the graphics adapter its window draws with, for example
+`BALLFIGHT Studio draws with AMD Radeon ... (Dx12, DiscreteGpu)`. A release build has no console, so redirect stderr
+to a file to read it.
 
 ## Run its tests
 
@@ -57,9 +74,24 @@ takes the lock `common::gpu()` before anything else. They never open a window, a
 The rule for every new test: a test that builds a harness or reads pixels takes `common::gpu()` first and keeps the
 guard to its end; `app_harness`, `widget_harness` and `pixels` refuse to run (they panic) without it.
 
-Reference pictures live in `tests/snapshots/` and are blessed on Windows. To bless a changed picture, run the test
-with `UPDATE_SNAPSHOTS=1` and look at the new picture before you commit it. A failing comparison leaves
-`*.new.png` and `*.diff.png` beside the reference, and a bless leaves the previous reference behind as `*.old.png`;
-git ignores all three.
+Tests that build the whole app (`tests/ui/flows.rs`) keep its files in a temp folder of their own and use a
+`NoAudio` output, so they never touch the real `%APPDATA%`, `%LOCALAPPDATA%` or Videos folders or open a sound
+device. They wait for the engine on a condition, bounded in time, and never assert anything through timing.
+
+### Blessing pictures
+
+Reference pictures live in `tests/snapshots/` and are blessed on Windows. To bless, run the module whose pictures
+changed with `UPDATE_SNAPSHOTS` set:
+
+```sh
+UPDATE_SNAPSHOTS=true cargo test -p bf-app --test ui small_window::
+```
+
+This rewrites only the pictures that differ. Without it, a failed comparison leaves `<name>.new.png` and
+`<name>.diff.png` beside the reference, and a bless leaves the previous reference behind as `<name>.old.png`; git
+ignores all three and none is committed. A picture is blessed only after it has been looked at next to its section
+of `docs/studio/interface-reference.md`, and the differences from the mock-up are written in the task's report.
+Each test builds one harness per picture, so a bless rewrites each picture on its own. The shell's picture,
+`shell_1440x900.png`, shows the Match-up screen and is re-blessed only by Match-up work (widget rule 18).
 
 On Linux the sound crate needs `libasound2-dev` and `pkg-config` to build.
