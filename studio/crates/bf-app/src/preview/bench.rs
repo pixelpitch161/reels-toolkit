@@ -52,6 +52,9 @@ const SCRUBS: usize = 50;
 const TIMES: usize = 30;
 /// The longest the bench waits for one scrubbed frame, or for the draws in progress to end.
 const PATIENCE: Duration = Duration::from_secs(30);
+/// How long the warm-up take plays (from its first picture) before the measured take is loaded: long enough for
+/// the scheduler to have 30 draw times.
+pub const WARM_UP: Duration = Duration::from_secs(3);
 /// The longest the bench waits for the take's picture and for its sound.
 const TAKE_WAIT: Duration = Duration::from_secs(180);
 /// The handicap of the starter fight the bench plays (the kit's handicap for this pair).
@@ -206,52 +209,130 @@ fn scrub_frames(frames: u32, drawn: &HashSet<u32>, n: usize) -> Vec<u32> {
     out
 }
 
+/// A player for the bench: `threads` drawing threads, no sound, the wall clock.
+fn bench_player(threads: usize) -> Player {
+    let origin = Instant::now();
+    let now: Now = Box::new(move || origin.elapsed());
+    Player::new(
+        threads,
+        Box::new(NoAudio::new("The bench plays without sound.")),
+        now,
+        Arc::new(|| {}),
+    )
+}
+
 /// Plays `frames` from `start` for `seconds` on `threads` drawing threads with no sound, then scrubs to 50 frames
-/// one after another (see the module's description).
+/// one after another (see the module's description), on a new player: the app's first take.
 pub fn run(frames: Arc<dyn FrameSource>, start: u32, seconds: f32, threads: usize) -> BenchReport {
+    run_after(None, frames, start, seconds, threads)
+}
+
+/// As [`run`], but when `warm` is given the same player first plays that other take (`warm.1` its start frame)
+/// for [`WARM_UP`] after its clock starts, so the measured take is loaded on a player whose scheduler already knows
+/// its draw times: what the app does from the second seed on (the player lives as long as the app).
+pub fn run_after(
+    warm: Option<(Arc<dyn FrameSource>, u32)>,
+    frames: Arc<dyn FrameSource>,
+    start: u32,
+    seconds: f32,
+    threads: usize,
+) -> BenchReport {
+    let mut player = bench_player(threads);
+    let mut take: TakeId = 1;
+    if let Some((warm, warm_start)) = warm {
+        player.run(PlayerCmd::Load {
+            take,
+            frames: warm,
+            start: warm_start,
+            autoplay: true,
+        });
+        play(&mut player, WARM_UP);
+        take += 1;
+    }
+    measure(&mut player, take, frames, start, seconds, threads)
+}
+
+/// Ticks `player` every 4 ms until its clock has run for `length` (it starts with the first picture, ruling
+/// M2-R30); the time from the call until the clock started, if it did.
+fn play(player: &mut Player, length: Duration) -> Option<Duration> {
+    let began = Instant::now();
+    let mut clock: Option<Duration> = None;
+    // The player ends its wait by itself within `FIRST_PICTURE_WAIT`; the margin only guards the bench.
+    let most = FIRST_PICTURE_WAIT + Duration::from_secs(1);
+    loop {
+        player.tick();
+        if clock.is_none() && !player.waiting() {
+            clock = Some(began.elapsed());
+        }
+        let done = match clock {
+            Some(t) => began.elapsed() >= t + length,
+            None => began.elapsed() >= most + length,
+        };
+        if done {
+            return clock;
+        }
+        std::thread::sleep(TICK);
+    }
+}
+
+/// Loads `frames` as take `take` with autoplay on `player`, plays it for `seconds` from when its clock starts, then
+/// scrubs.
+fn measure(
+    player: &mut Player,
+    take: TakeId,
+    frames: Arc<dyn FrameSource>,
+    start: u32,
+    seconds: f32,
+    threads: usize,
+) -> BenchReport {
     let count = frames.frames();
     let timed = Arc::new(Timed {
         inner: frames,
         log: Mutex::new(Vec::new()),
         drawing: AtomicUsize::new(0),
     });
-    let origin = Instant::now();
-    let now: Now = Box::new(move || origin.elapsed());
-    let mut player = Player::new(
-        threads,
-        Box::new(NoAudio::new("The bench plays without sound.")),
-        now,
-        Arc::new(|| {}),
-    );
-    const TAKE: TakeId = 1;
+    let before = player.stats();
 
     // Playback, from `start`, as the app plays a take it has just been given.
     let length = Duration::from_secs_f32(if seconds.is_finite() { seconds.max(0.0) } else { 0.0 });
     let began = Instant::now();
     player.run(PlayerCmd::Load {
-        take: TAKE,
+        take,
         frames: timed.clone(),
         start,
         autoplay: true,
     });
-    // When the first picture was given, and how many frames were late by then.
+    // When the first picture was given, and how many frames were late by then (counted while ticking).
     let mut first: Option<(Duration, u64)> = None;
-    // The clock starts with the first picture (ruling M2-R30), or once the player stops waiting for it: `seconds`
-    // of playback are measured from then.
-    let clock_from =
-        |first: Option<(Duration, u64)>| first.map_or(FIRST_PICTURE_WAIT, |(t, _)| t.min(FIRST_PICTURE_WAIT));
-    while began.elapsed() < clock_from(first) + length {
+    let mut clock: Option<Duration> = None;
+    let most = FIRST_PICTURE_WAIT + Duration::from_secs(1);
+    loop {
         player.tick();
+        let late = player.stats().late - before.late;
         if first.is_none() && player.has_picture() {
-            first = Some((began.elapsed(), player.stats().late));
+            first = Some((began.elapsed(), late));
+        }
+        if clock.is_none() && !player.waiting() {
+            clock = Some(began.elapsed());
+        }
+        let done = match clock {
+            Some(t) => began.elapsed() >= t + length,
+            None => began.elapsed() >= most + length,
+        };
+        if done {
+            break;
         }
         std::thread::sleep(TICK);
     }
     player.tick();
     let end_frame = player.view().frame;
-    let stats = player.stats();
+    let all = player.stats();
+    let stats = crate::preview::player::PlayerStats {
+        shown: all.shown - before.shown,
+        late: all.late - before.late,
+    };
     player.run(PlayerCmd::Transport(TransportAction::PlayPause));
-    settle(&mut player, &timed);
+    settle(player, &timed);
     let played = timed.log();
     let play_ms: Vec<f32> = played.iter().map(|d| d.ms).collect();
     let last = &play_ms[play_ms.len().saturating_sub(TIMES)..];
@@ -266,14 +347,14 @@ pub fn run(frames: Arc<dyn FrameSource>, start: u32, seconds: f32, threads: usiz
     let drawn: HashSet<u32> = played.iter().map(|d| d.f).collect();
     let mut waits = Vec::with_capacity(SCRUBS);
     for f in scrub_frames(count, &drawn, SCRUBS) {
-        let before = player.stats().shown;
+        let shown = player.stats().shown;
         let asked = Instant::now();
         player.run(PlayerCmd::Transport(TransportAction::ScrubTo(
             (f as f32 + 0.5) / FPS as f32,
         )));
         loop {
             player.tick();
-            let given = player.stats().shown > before;
+            let given = player.stats().shown > shown;
             if given || player.failed_frame() == Some(f) || asked.elapsed() > PATIENCE {
                 break;
             }
@@ -282,7 +363,7 @@ pub fn run(frames: Arc<dyn FrameSource>, start: u32, seconds: f32, threads: usiz
         waits.push(asked.elapsed().as_secs_f32() * 1000.0);
     }
     player.run(PlayerCmd::Transport(TransportAction::ScrubEnd));
-    settle(&mut player, &timed);
+    settle(player, &timed);
     let scrub_ms: Vec<f32> = timed.log()[played.len()..].iter().map(|d| d.ms).collect();
 
     let counted = stats.shown + stats.late;
@@ -342,23 +423,36 @@ fn starter_draft() -> Draft {
 
 /// The first seed from 1 whose fight under `draft` fits the story, by the search's own test.
 fn first_fitting_seed(draft: &Draft) -> Result<u64, String> {
+    fitting_seed_from(draft, 1)
+}
+
+/// The first seed after `seed` whose fight under the starter draft fits the story (the bench's second take).
+pub fn fitting_seed_after(seed: u64) -> Result<u64, String> {
+    fitting_seed_from(&starter_draft(), seed.saturating_add(1))
+}
+
+/// The first seed from `from` (below 10,000 past it) whose fight under `draft` fits the story.
+fn fitting_seed_from(draft: &Draft, from: u64) -> Result<u64, String> {
     let ff = engine::convert::fight_file(draft)?;
     let base =
         bf_sim::setup_from(&ff, bf_content::roster(), 0).map_err(|e| format!("This fight cannot be fought: {e}"))?;
     let sheet = bf_story::BeatSheet::series(base.fighters);
-    for seed in 1..10_000 {
+    for seed in from..from.saturating_add(10_000) {
         let setup = bf_sim::Setup { seed, ..base.clone() };
         let c = bf_story::fight(&setup, &sheet).map_err(|e| format!("Seed {seed} cannot be fought: {e}"))?;
         if c.verdict.fits {
             return Ok(seed);
         }
     }
-    Err("No seed under 10,000 fits the story.".to_string())
+    Err(format!(
+        "No seed from {from} to {} fits the story.",
+        from.saturating_add(9_999)
+    ))
 }
 
 /// The starter fight's take (FLUTE against TROMBONE at [`HANDICAP`]) for `seed`, or for the first fitting seed,
-/// made by the real engine through `LoadTake`. Its files go in a temp folder of its own, removed before this
-/// returns. Waits for the sound too, so the bench then plays on a PC the take no longer works on.
+/// made by the real engine through `LoadTake`. Its files go in a temp folder of its own, removed (by a drop guard)
+/// before this returns. Waits for the sound too, so the bench then plays on a PC the take no longer works on.
 pub fn starter_take(seed: Option<u64>) -> Result<Take, String> {
     let mut draft = starter_draft();
     let seed = match seed {
@@ -366,11 +460,16 @@ pub fn starter_take(seed: Option<u64>) -> Result<Take, String> {
         None => first_fitting_seed(&draft)?,
     };
     draft.seed = Some(seed);
-    let root = std::env::temp_dir().join(format!("bf-preview-bench-{}", std::process::id()));
-    std::fs::create_dir_all(&root).map_err(|_| "The bench could not make its temp folder.".to_string())?;
+    static N: AtomicUsize = AtomicUsize::new(0);
+    let root = TempDir(std::env::temp_dir().join(format!(
+        "bf-preview-bench-{}-{}",
+        std::process::id(),
+        N.fetch_add(1, Ordering::SeqCst)
+    )));
+    std::fs::create_dir_all(&root.0).map_err(|_| "The bench could not make its temp folder.".to_string())?;
     let config = EngineConfig {
         workers: workers(),
-        paths: Paths::under(&root),
+        paths: Paths::under(&root.0),
         clip: None,
         search_limit: None,
     };
@@ -416,8 +515,17 @@ pub fn starter_take(seed: Option<u64>) -> Result<Take, String> {
     };
     handle.send(Command::Shutdown);
     drop(handle);
-    _ = std::fs::remove_dir_all(&root);
+    drop(root);
     result
+}
+
+/// A temp folder removed when this is dropped, however the bench leaves.
+struct TempDir(std::path::PathBuf);
+
+impl Drop for TempDir {
+    fn drop(&mut self) {
+        _ = std::fs::remove_dir_all(&self.0);
+    }
 }
 
 #[cfg(test)]
@@ -459,22 +567,38 @@ mod tests {
         assert_eq!(scrub_frames(1_830, &most, 50).len(), 5);
     }
 
-    /// One bench of the real take on `workers` threads, shared by the two budget tests (two at once would measure
-    /// each other).
-    fn real() -> &'static BenchReport {
-        static RUN: OnceLock<BenchReport> = OnceLock::new();
+    #[test]
+    fn a_warm_player_plays_the_second_take_from_its_start_frame() {
+        let r = run_after(Some((TestSource::new(), 500)), TestSource::new(), 100, 1.0, 4);
+        assert_eq!(r.start, 100);
+        assert!(r.end_frame.abs_diff(130) <= 1, "{r:?}");
+        assert!(r.shown >= 29, "{r:?}");
+    }
+
+    /// The real takes on `workers` threads, shared by the two budget tests (two at once would measure each other):
+    /// the first take on a new player, and the next fitting seed's take on a player that has played the first.
+    fn real() -> &'static [BenchReport; 2] {
+        static RUN: OnceLock<[BenchReport; 2]> = OnceLock::new();
         RUN.get_or_init(|| {
-            let take = starter_take(None).expect("the starter fight's take");
-            let r = run(take.frames, take.start, 20.0, workers());
-            eprintln!("seed {}: {r:?}", take.seed);
-            r
+            let a = starter_take(None).expect("the starter fight's take");
+            let b = starter_take(Some(fitting_seed_after(a.seed).expect("a second seed"))).expect("a second take");
+            let first = run(a.frames.clone(), a.start, 20.0, workers());
+            eprintln!("first take, seed {}: {first:?}", a.seed);
+            let warm = run_after(Some((a.frames, a.start)), b.frames, b.start, 20.0, workers());
+            eprintln!("warm, seed {}: {warm:?}", b.seed);
+            [first, warm]
         })
     }
 
     #[test]
-    #[ignore = "plays the real take for 20 s; run by name in release"]
+    #[ignore = "plays the real takes for 20 s each; run by name in release"]
     fn playback_meets_the_budget() {
-        let r = real();
+        for r in real() {
+            playback_meets_the_budget_in(r);
+        }
+    }
+
+    fn playback_meets_the_budget_in(r: &BenchReport) {
         let workers = workers();
         assert_eq!(r.threads, workers);
         let p = (1.25 * r.frame_ms / 33.3).ceil() as usize;
@@ -494,9 +618,10 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "plays the real take for 20 s; run by name in release"]
+    #[ignore = "plays the real takes for 20 s each; run by name in release"]
     fn scrubbing_meets_the_budget() {
-        let r = real();
-        assert!(r.scrub_worst_ms <= r.frame_ms_p95 + 20.0, "{r:?}");
+        for r in real() {
+            assert!(r.scrub_worst_ms <= r.frame_ms_p95 + 20.0, "{r:?}");
+        }
     }
 }

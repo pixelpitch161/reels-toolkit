@@ -30,7 +30,8 @@ pub struct PlayerStats {
     pub shown: u64,
     /// Frames not kept yet when the playhead reached them, once per frame. This also counts the first missing frame
     /// after a `Load` without autoplay, a `Step` or a scrub while paused, not only frames missed during playback.
-    /// While playback waits for a take's first picture nothing is counted: the playhead is not moving.
+    /// While playback waits for a take's first picture nothing is counted: the playhead is not moving. A wait that
+    /// ends because the start frame's draw failed, or at `FIRST_PICTURE_WAIT`, counts that start frame late once.
     pub late: u64,
 }
 
@@ -57,8 +58,9 @@ struct Reading {
 /// that moment, at the start frame's first sample, so from then on the audio position is the device's count from the
 /// start frame and picture and sound are in step. The wait ends anyway when the start frame's draw fails (its
 /// failed-frame status shows, widget rule 11) or after [`FIRST_PICTURE_WAIT`]. Pausing, stepping or scrubbing ends
-/// the wait as they end playback; nothing is counted late while waiting, and the stall rule cannot fire since the
-/// sound is not started.
+/// the wait as they end playback, so a pause and then a play during the wait starts the clock at once, as any play
+/// from pause does. Nothing is counted late while waiting, and the stall rule cannot fire since the sound is not
+/// started.
 pub struct Player {
     scheduler: Scheduler,
     audio: Box<dyn AudioOut>,
@@ -248,6 +250,11 @@ impl Player {
     /// frame is given.
     pub fn has_picture(&self) -> bool {
         self.picture
+    }
+
+    /// Whether playback is waiting for the loaded take's first picture: playing, with the clock not started yet.
+    pub fn waiting(&self) -> bool {
+        self.waiting.is_some()
     }
 
     /// Once per repaint: moves the clock, asks the scheduler for the playhead's frame and gives a picture when the one
@@ -1225,6 +1232,36 @@ mod tests {
         p.tick();
         assert_eq!(p.view().frame, 40);
         assert!(p.view().playing);
+    }
+
+    #[test]
+    fn a_warm_player_misses_no_frame_after_the_start() {
+        // A player that has drawn before: draw times of about 107 ms on 15 threads, so playing asks from the
+        // playhead plus a lead of 4. The frames between the start frame and that lead must still be asked for.
+        let t = Arc::new(AtomicU64::new(1_000_000_000));
+        let t2 = t.clone();
+        let now: Now = Box::new(move || Duration::from_nanos(t2.load(Ordering::SeqCst)));
+        let log = Arc::new(Mutex::new(Log::default()));
+        let mut p = Player::with_draw_ms(15, Box::new(FakeOut(log)), now, Arc::new(|| {}), 107.0);
+        let hand = Hand(t);
+        for _ in 0..30 {
+            p.scheduler.record_draw_ms(107.0);
+        }
+        load(&mut p, 1, TestSource::new(), 100, true);
+        assert!(p.waiting());
+        started(&mut p);
+        assert!(!p.waiting());
+        assert_eq!(p.stats(), PlayerStats { shown: 1, late: 0 });
+        // One second of playback, a frame at a time; each step waits until the scheduler has drawn what it was
+        // asked, so a frame that is late was never asked for in time.
+        for k in 1..=30u32 {
+            wait_for("the asked frames", || p.scheduler.idle());
+            hand.forward(frames(1));
+            p.tick();
+            assert_eq!(p.view().frame, 100 + k);
+            assert_eq!(p.stats().late, 0, "frame {}", 100 + k);
+        }
+        assert_eq!(p.stats().shown, 31);
     }
 
     #[test]

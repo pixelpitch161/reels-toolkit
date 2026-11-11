@@ -1,12 +1,12 @@
 # BALLFIGHT Studio: milestone 2 measurements (the preview)
 
-**In plain words.** On this PC the preview plays smoothly: every frame of 20 s of playback from FIGHT! arrives on
-time, at 30 frames a second, with no frame skipped, and it stays smooth while a seed search runs the way the app
-runs it (on half the cores). After you pick a seed the picture is on screen in about a quarter of a second, and
-playback starts from FIGHT!'s own frame at that moment; the sound joins about 7 s later, in step with the picture.
-The app holds about 200 MB while it plays a take, rising to about 0.8 GB for a few seconds while a take's sound is
-built. A search that takes every core (another program, not the app's own) does make the preview stutter.
-
+**In plain words.** With the final code, on this PC, the preview plays smoothly when the PC is not busy with other
+heavy work: in every such run, 20 s of playback from FIGHT! showed every frame on time at 30 frames a second, both
+for the first seed after the app starts and for the seeds after it. Beside a seed search run the way the app runs
+it (on half the cores) it stayed at 99.7 to 100 % on time. After you pick a seed the picture is on screen in about
+a quarter of a second, and playback starts from FIGHT!'s own frame at that moment; the sound joins about 7 s
+later, in step with the picture. The app holds about 200 MB while it plays a take, rising to about 0.8 GB for a few
+seconds while a take's sound is built. When other programs keep every core busy, the preview does stutter.
 Measured on Nov 11, 2026 on the owner's PC (AMD Ryzen 7 9800X3D, 8 cores / 16 threads, 64 GB, Windows 11), from a
 release build: `ballfight-studio --preview-bench` (Task 32), run from `studio/` as
 `target\release\ballfight-studio.exe --preview-bench [--seed N] [--seconds S] [--threads T]`. The take is the
@@ -24,7 +24,7 @@ from an older estimate of 8 cores, but the code counts threads, not cores).
 
 | Quantity | Budget | Measured (best / median) | Met? |
 | --- | --- | --- | --- |
-| Frames shown on time over 20 s from FIGHT! | at least 99 % | **100 % / 100 %** (601 shown, 0 late, every run since ruling M2-R30, PC 11 to 22 % busy); before it 98.7 % (section 3) | **yes** |
+| Frames shown on time over 20 s from FIGHT! | at least 99 % | **100 % / 100 %** for the first take and for a later take (601 shown, 0 late, every run with the final code that began on a PC up to 49 % busy and was not loaded by others meanwhile, section 2); 99.7 to 100 % beside the app's yielding search; before ruling M2-R30 98.7 % (section 3) | **yes**, on a PC not saturated by other work |
 | Threads the preview needs, `P = ceil(1.25 * frame_ms_p95 / 33.3)` | at most `workers` (15) | **5** from this run's `frame_ms_p95` (109.2 ms); 7 / 9 from milestone 1's 178 / 222 ms; 14 under a full search | **yes** |
 | If `P > workers`: every second frame | the scheduler draws every n-th frame, the clock does not wait | not needed on this PC (stride 1 in every run at 15 threads); shown working with `--threads 1`: stride 4, the playhead ends exactly 20 s on | **yes** (the fallback works) |
 | Draw-ahead | 12 frames ahead, 64 kept | lead 4 frames (quiet), 5 (search yielding), 11 to 12 (full search) | as designed |
@@ -40,12 +40,59 @@ from an older estimate of 8 cores, but the code counts threads, not cores).
 frames missed after the first picture. "To picture" and "to sound" are from `LoadTake` to `TakePicture` and to
 `TakeSound`.
 
-### After ruling M2-R30: the clock starts with the first picture (20 s, 15 threads)
+### With the final code (ruling M2-R30 and its fix round; 20 s, 15 threads)
 
 Since ruling M2-R30 the player keeps the playhead on the start frame after a `Load` with autoplay, asks for that
-frame first, and starts the clock (and the sound, if it has arrived) when the frame is given; the bench measures
-20 s of playback from then. Other workers began building on the PC during these runs, so how busy it was is noted
-for each.
+frame first and then the frames right after it in order, and starts the clock (and the sound, if it has arrived)
+when the start frame is given; the bench measures 20 s of playback from the moment the clock starts. Each bench run
+now plays two takes: the **first take** (seed 255) on a new player, as the app's first seed after it starts, and
+then a **later take** (seed 542, the next fitting seed) on the same player after it has played seed 255 for 3 s, as
+every seed after the first: the player lives as long as the app, so its scheduler already knows its draw times
+(lead 4 to 12). The fix round closed a gap that only this second case shows: before it, the frames between the
+start frame and the lead were never asked for.
+
+Other workers were building on the PC through all of these runs, so it was often fully busy. "Busy before" is the
+second before the bench; "busy during" is the mean and the highest of one reading a second while the bench ran,
+which includes the bench's own 15 drawing threads.
+
+| Run | Busy before / during | First take: frame_ms, shown / late, on time, first picture, scrub median / worst (`frame_ms_p95`) | Later take: the same |
+| --- | --- | --- | --- |
+| 1 | 49 % / not read | 121.2 ms, 601 / 0, **100 %**, 251 ms, 107.9 / 125.0 ms (119.6) | 112.4 ms, 601 / 0, **100 %**, 228 ms, 106.3 / 124.9 ms (117.5) |
+| 2 | 28 % / not read | 131.2 ms, 601 / 0, **100 %**, 258 ms, 108.6 / 127.6 ms (123.0) | 125.3 ms, 559 / 14, 97.6 %, 234 ms, 107.2 / 119.3 ms (117.3) |
+| 3 | 27 % / not read | 175.4 ms, 601 / 0, **100 %**, 248 ms, 179.2 / 353.6 ms (251.1) | 121.2 ms, 598 / 0, **100 %**, 287 ms, 113.1 / 189.0 ms (138.6) |
+| 4 | 78 % / 96 % | 641.6 ms, 62 / 540, 10.3 % (stride 2), 331 ms | 299.3 ms, 516 / 16, 97.0 %, 413 ms |
+| 5 | 56 % / 81 % | 314.4 ms, 516 / 37, 93.3 %, 268 ms | 170.3 ms, 582 / 4, 99.3 %, 286 ms |
+| 6 | 16 % / 40 % (max 70) | 123.6 ms, 601 / 0, **100 %**, 254 ms, 102.0 / 121.2 ms (113.2) | 120.1 ms, 601 / 0, **100 %**, 258 ms, 102.4 / 118.0 ms (112.0) |
+| tests | 15 % / 15 % after | 114.6 ms, 601 / 0, **100 %**, 240 ms, 100.2 / 114.2 ms (108.9) | 104.1 ms, 601 / 0, **100 %**, 266 ms, 100.7 / 109.6 ms (105.4) |
+
+- On a PC that was not loaded by others during the run (runs 1, 3, 6 and the tests' run) both takes showed all 601
+  frames (108 to 708) on time, and every scrub came within its run's `frame_ms_p95` + 20 ms, except run 3's first
+  take, whose scrubs ran while someone else's work started (worst 353.6 ms against 251.1 + 20).
+- Run 2's later take (97.6 %) and runs 4 and 5 ran while other workers' builds took most or all of the PC: there
+  playback misses, and in run 2 and run 4 even the bench's own 4 ms tick was starved, so some frames went by
+  uncounted (shown + late below 601). That is the same limit as a search on every core, below.
+- "tests" is `cargo test -p bf-app --release --lib preview:: -- --include-ignored` (80 passed), where
+  `playback_meets_the_budget` and `scrubbing_meets_the_budget` check both takes of one shared run.
+
+Beside `ballfight search` on 7 workers (the app's own search yields to half the workers while the preview plays),
+re-run after the fix round. The first six tries (busy 64 to 100 % before, 92 to 100 % during, other workers'
+builds on top of the search) are left out of the medians but listed; the last three started on a PC 15 to 29 % busy
+before the search began:
+
+| Run | Busy before (after the search started) / during | First take: frame_ms, shown / late, on time, scrub median / worst (`frame_ms_p95`) | Later take: the same |
+| --- | --- | --- | --- |
+| 7 | 56 % / 81 % | 182.1 ms, 601 / 0, **100 %**, 135.9 / 161.0 ms (149.3) | 143.5 ms, 601 / 0, **100 %**, 123.0 / 141.5 ms (129.3) |
+| 8 | 60 % / 86 % | 180.5 ms, 601 / 0, **100 %**, 140.5 / 162.7 ms (158.3) | 173.5 ms, 601 / 1, **99.83 %**, 135.9 / 159.8 ms (151.6) |
+| 9 | 62 % / 91 % | 192.5 ms, 599 / 2, **99.67 %**, 140.3 / 170.8 ms (157.1) | 180.3 ms, 598 / 0, **100 %**, 143.0 / 161.0 ms (152.8) |
+| saturated tries | 64 to 100 % / 92 to 100 % | 68.0 to 100 % | 83.2 to 100 % |
+
+With the search yielding, both takes met the 99 % budget in all three runs, and every scrub came within its
+`frame_ms_p95` + 20 ms.
+
+### After ruling M2-R30, before its fix round (first take only)
+
+These runs used a new player for the one take, so the scheduler had no draw times yet and asked from the start
+frame with a lead of 1: the fix round's gap could not show in them, and their first-take figures stand.
 
 | Run | PC busy | frame_ms | play p95 | frame_ms_p95 | lead / stride | shown / late | on time | first picture | scrub median / worst | to picture / to sound |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -57,13 +104,10 @@ for each.
 | `scrubbing_meets_the_budget` by name | 55 % | 245.2 | 325.8 | 154.5 | 8 / 1 | 530 / 8 | 98.5 % | 245 ms | 116.7 / 171.1 ms | |
 | `playback_meets_the_budget` by name | 100 % | 330.2 | 462.2 | 208.3 | 10 / 1 | 372 / 55 | 87.1 % | 470 ms | 151.8 / 256.9 ms | |
 
-Every run on a PC up to 22 % busy shows 601 frames shown (frames 108 to 708) and none late, and every scrub
-within `frame_ms_p95` + 20 ms (in runs 1 and "tests, together" someone else's work started during the scrubs, which
-raised both figures together). The last two rows ran while another worker's build took half or all of the PC: the
-scrub budget still held at 55 % busy; at 100 % busy playback missed (the playback test failed in that run and
-passed when rerun at 22 %); with the PC that loaded even the bench's own 4 ms tick was starved, so some frames went
-by uncounted (372 + 55 is less than 601). That is the same limit as the full search below.
-
+The run at 55 % busy showed 530 shown and 8 late: **98.5 % on time, below the 99 % budget** (that run checked only
+the scrub budget, which held). At 100 % busy playback missed by much more (87.1 %; the test failed in that run and
+passed when rerun at 22 %). Both runs had other workers' builds taking half or all of the PC; in both, the bench's
+own 4 ms tick was starved, so frames went by uncounted (530 + 8 and 372 + 55 are below 601).
 ### Before ruling M2-R30: the clock ran from the `Load` (nothing else running, 20 s, 15 threads)
 
 | Run | PC busy | frame_ms | play p95 | frame_ms_p95 | lead / stride | shown / late | on time | late after start | first picture | scrub median / worst | to picture / to sound |
@@ -132,17 +176,20 @@ draws of frames 109 to 122 finished between 245 and 251 ms after the load, whate
 never asked for at all: while playing, the scheduler asks from the playhead plus the lead). Every quiet and yielding
 run has all of its late frames before the first picture and none after it.
 
-**Ruling M2-R30** settled it the first way proposed: playback starts with the take's first picture.
+**Ruling M2-R30** settled it the first way proposed: playback starts with the take's first picture (its fix
+round added that the frames right after the start frame are asked for in order, whatever the lead).
 
 - After a `Load` with autoplay the transport shows playing, the stage shows nothing yet (`has_picture()` false),
-  and the playhead stays on the start frame. The scheduler is asked for that frame first, then the frames playback
-  will want (`Scheduler::want_start`).
+  and the playhead stays on the start frame. The scheduler is asked for that frame first, then the frames right after
+  it in order, up to 12 ahead (`Scheduler::want_start`; with the clock stopped no frame is too close).
 - When `tick` gives the start frame, the clock starts from it. A soundtrack that arrived meanwhile starts then, at
   the start frame's first sample, so the device's count from there is the playhead and picture and sound are in
   step. Nothing counts late while waiting, and the 500 ms stall rule cannot fire, since the sound has not started.
 - The wait is bounded: a start frame whose draw fails ends it at once (the failed-frame status shows), and after
   3 s (`FIRST_PICTURE_WAIT`) the clock starts anyway.
-- The result is in section 2: 100 % on time, and the first frame shown is FIGHT!'s own.
+- Pausing and then playing during the wait starts the clock at once, as any play from pause does.
+- The result is in section 2: 100 % on time on a PC not loaded by others, for the first take and the later ones,
+  and the first frame shown is FIGHT!'s own.
 
 ## 4. Frame time against milestone 1
 

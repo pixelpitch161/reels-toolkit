@@ -134,27 +134,41 @@ fn parse_bench(args: impl IntoIterator<Item = OsString>, cores: usize) -> Result
     Ok(parsed)
 }
 
-/// `--preview-bench`: makes the starter fight's take with the real engine, plays it with no window and no sound,
-/// scrubs it, and prints what it measured, one line per field. Writes nothing outside a temp folder.
+/// `--preview-bench`: makes the starter fight's take, and the next fitting seed's, with the real engine; plays the
+/// first on a new player and then the second on a player that has just played the first (`warm_` lines), each with
+/// no window and no sound, scrubs each, and prints what it measured, one line per field. Writes nothing outside a
+/// temp folder.
 fn preview_bench(args: &BenchArgs) -> std::process::ExitCode {
     let cores = bench::cores();
     let threads = args.threads.unwrap_or_else(bench::workers);
     println!("pc_threads {cores}");
     println!("workers {}", bench::workers());
-    let take = match bench::starter_take(args.seed) {
-        Ok(take) => take,
+    // The first take, and a second (the next fitting seed) for a player that has already played one.
+    let takes = bench::starter_take(args.seed).and_then(|a| {
+        let b = bench::starter_take(Some(bench::fitting_seed_after(a.seed)?))?;
+        Ok((a, b))
+    });
+    let (a, b) = match takes {
+        Ok(takes) => takes,
         Err(problem) => {
             eprintln!("The bench could not make its take: {problem}");
             return std::process::ExitCode::FAILURE;
         }
     };
-    println!("seed {}", take.seed);
-    println!("to_picture_s {:.3}", take.to_picture.as_secs_f32());
-    println!("to_sound_s {:.2}", take.to_sound.as_secs_f32());
+    println!("seed {}", a.seed);
+    println!("to_picture_s {:.3}", a.to_picture.as_secs_f32());
+    println!("to_sound_s {:.2}", a.to_sound.as_secs_f32());
     println!("seconds {}", args.seconds);
-    let report = bench::run(take.frames, take.start, args.seconds, threads);
-    for line in report.lines() {
+    let first = bench::run(a.frames.clone(), a.start, args.seconds, threads);
+    for line in first.lines() {
         println!("{line}");
+    }
+    // The app's player lives as long as the app: from the second seed on, a take is loaded on a scheduler that
+    // already knows its draw times.
+    println!("warm_seed {}", b.seed);
+    let warm = bench::run_after(Some((a.frames, a.start)), b.frames, b.start, args.seconds, threads);
+    for line in warm.lines() {
+        println!("warm_{line}");
     }
     std::process::ExitCode::SUCCESS
 }
