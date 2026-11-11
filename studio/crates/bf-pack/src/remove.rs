@@ -318,6 +318,15 @@ pub(crate) fn remove_app_with(
     }
     let goes = plan.goes();
     done.stayed.extend(remove_now(&plan));
+    // The empty swap lock file beside the program folder goes too, once the folder is gone and nobody holds it.
+    let lock = crate::install::swap_lock_path(&layout.programs);
+    if fs::symlink_metadata(&layout.programs).is_err()
+        && !is_link(&lock)
+        && fs::metadata(&lock).is_ok_and(|m| m.is_file() && m.len() == 0)
+        && crate::install::swap_lock(&layout.programs).is_ok()
+    {
+        let _ = fs::remove_file(&lock);
+    }
     done.went
         .extend(goes.into_iter().filter(|p| fs::symlink_metadata(p).is_err()));
     Ok(done)
