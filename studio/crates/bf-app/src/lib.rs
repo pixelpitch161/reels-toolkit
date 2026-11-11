@@ -1,6 +1,7 @@
 //! BALLFIGHT Studio, the desktop app: the interface, its state and its test fixtures.
 
 pub mod app;
+pub mod engine;
 pub mod fixtures;
 pub mod model;
 pub mod preview;

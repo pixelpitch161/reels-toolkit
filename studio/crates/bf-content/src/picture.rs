@@ -47,6 +47,13 @@ fn fighter(name: &str, k: usize) -> Result<(&'static FighterCfg, Mesh), ContentE
     Ok((cfg, mesh))
 }
 
+/// The model of the roster fighter `name` (the mesh its sprites are drawn from), or `None` for a fighter whose
+/// model is not in this app or a name that is not in the roster. The app draws its corner-card portraits from it.
+pub fn mesh(name: &str) -> Option<Mesh> {
+    let cfg = roster().iter().find(|f| f.name == name)?;
+    Mesh::from_json(model_json(&cfg.pp)?).ok()
+}
+
 /// What a caught panic said.
 fn panic_text(payload: Box<dyn Any + Send>) -> String {
     match payload.downcast::<String>() {
@@ -190,6 +197,17 @@ mod tests {
         let card = pic.card();
         card.draw(&mut want, card.cover_frame() as f64 / 30.0);
         assert_eq!(title_preview(&ff).expect("the preview").data, want.data);
+    }
+
+    #[test]
+    fn the_ported_fighters_have_models() {
+        for name in crate::PORTED {
+            let m = mesh(name).unwrap_or_else(|| panic!("{name} has no model"));
+            assert_eq!(Some(m), fighter(name, 0).ok().map(|(_, m)| m), "{name}");
+        }
+        for name in ["PIANO", "KAZOO", "", "flute"] {
+            assert!(mesh(name).is_none(), "{name:?}");
+        }
     }
 
     #[test]
