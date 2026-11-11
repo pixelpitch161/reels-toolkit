@@ -1,5 +1,6 @@
 //! The striker's unit tests. Every expected number is what `fight.py` gave on the reference PC (CPython 3.13, numpy
-//! 2.5): see the note below the imports and the tests that drive the fight loop.
+//! 2.5): see the note below the imports and the tests that drive the fight loop. The Python scripts that print them
+//! are in `tools/studio_export/checks/` (`striker_unit_vectors.py`; `striker_grid_vectors.py` for the fight loop).
 
 use bf_core::event::{Event, Value};
 

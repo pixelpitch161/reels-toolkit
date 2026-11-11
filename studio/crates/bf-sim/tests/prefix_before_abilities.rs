@@ -160,6 +160,17 @@ fn compare(name: &str, roster: &[FighterCfg]) -> Window {
         })
         .collect();
 
+    // and no Rust event beyond the compared ones falls inside the window: from index `first` on, every Rust event is
+    // at or after the stopping event's time (a spurious Rust event before it would otherwise go unnoticed)
+    if let Some((j, e)) = rs.events.iter().enumerate().skip(first).find(|(_, e)| e.t < stop.t) {
+        panic!(
+            "{name}: Rust event {j} at {} s comes before the {} at {} s that ends the compared {first} events: {e:?}",
+            e.t,
+            stop.s(3),
+            stop.t
+        );
+    }
+
     let kinds = count_kinds(&py.events[..first]);
     println!(
         "{name}: agrees for {frames} frames and {first} events, until {} s ({:.2} s of fighting), ended by {} \

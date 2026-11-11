@@ -1,5 +1,7 @@
 //! The thrust blade's unit tests. Every expected number is what `fight.py` gave on the reference PC (CPython 3.13,
-//! numpy 2.5): see the note below the imports and the tests that drive the fight loop.
+//! numpy 2.5): see the note below the imports and the tests that drive the fight loop. The Python scripts that print
+//! them are in `tools/studio_export/checks/` (`blade_unit_vectors.py`, `blade_unit_vectors2.py` and
+//! `blade_unit_vectors3.py`).
 
 use bf_core::event::{Event, Value};
 

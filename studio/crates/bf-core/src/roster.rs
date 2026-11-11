@@ -160,6 +160,10 @@ pub struct BladeCfg {
 /// The largest `frets0` a roster entry may give. A landed thrust adds one fret, so a count that starts here stays a
 /// whole number the engine can hold however long the fight (Python's ints have no end; an `i64` has), and far more
 /// frets than this are nothing a picture could draw.
+///
+/// This limit is the Studio's own, stricter than the kit on purpose: Python accepts any integer here. A roster is
+/// Studio-owned data checked when it is loaded, and a `frets0` outside 0 to 1,000,000 is a typing mistake the app
+/// names in words. No reference roster comes near it (the TROMBONE starts at 1).
 pub const MAX_FRETS0: i64 = 1_000_000;
 
 /// The keys a thrust-blade entry may hold: `kind`, `mode`, `style` and [`BladeCfg`]'s fields.
@@ -525,13 +529,25 @@ impl Entry<'_> {
             // A haste divides its fighter's weapon grid, the time of a thrust and the time of a lunge by `mult`
             // (`ab_mult`): with 0 the Python fight raises (a division by zero) on the first 16th note of the haste,
             // where the engine would start a thrust that never ends; below 0 a thrust runs backwards for ever.
-            if let (AbilityKind::Haste, Some(&mult)) = (&kind, params.get("mult"))
-                && mult <= 0.0
-            {
-                return Err(self.err(
-                    &join(&prefix, "mult"),
-                    format!("{mult} is not above 0 (a haste divides the weapon's grid by it)"),
-                ));
+            if let (AbilityKind::Haste, Some(&mult)) = (&kind, params.get("mult")) {
+                if mult <= 0.0 {
+                    return Err(self.err(
+                        &join(&prefix, "mult"),
+                        format!("{mult} is not above 0 (a haste divides the weapon's grid by it)"),
+                    ));
+                }
+                // So small that its inverse (a thrust's `thr_k = 1 / mult`) is infinite: Python's
+                // `int(round(main16 / mult))` then raises `OverflowError` for any grid but 0, where the engine would
+                // saturate and run on. The weapon's own grid is checked against it in `FighterCfg::from_json`.
+                if !(1.0 / mult).is_finite() {
+                    return Err(self.err(
+                        &join(&prefix, "mult"),
+                        format!(
+                            "{mult:e} is too small (a haste divides the weapon's grid by it, and 1 / mult must be a \
+                             finite number)"
+                        ),
+                    ));
+                }
             }
         }
         Ok(AbilityCfg {
@@ -588,7 +604,7 @@ impl FighterCfg {
                 .and_then(|n| i32::try_from(n).map_err(|_| e.err("register", "out of range")))
         };
         let abilities = e.get(v, "", "abilities")?;
-        Ok(FighterCfg {
+        let f = FighterCfg {
             color: e.rgb(v, "color")?,
             dark: e.rgb(v, "dark")?,
             weapon: e.weapon(e.get(v, "", "weapon")?)?,
@@ -600,7 +616,39 @@ impl FighterCfg {
             pp: e.string(v, "", "pp")?,
             raw: v.clone(),
             name,
-        })
+        };
+        // A haste divides the weapon's 16th grid by its factor (`int(round(main16 / ab_mult(k)))`): Python raises
+        // `OverflowError` when the quotient is not a finite number, where the engine would saturate and run on.
+        if let Some(main16) = f.weapon.main16() {
+            let e = Entry { fighter: &f.name };
+            for (slot, ab) in [("unlock1", &f.unlock1), ("unlock2", &f.unlock2), ("low", &f.low)] {
+                if let (AbilityKind::Haste, Some(mult)) = (&ab.kind, ab.get("mult"))
+                    && !(main16 / mult).is_finite()
+                {
+                    return Err(e.err(
+                        &format!("abilities.{slot}.mult"),
+                        format!(
+                            "{mult:e} is too small for the weapon's grid ({main16:e} sixteenths / mult must be a finite \
+                             number)"
+                        ),
+                    ));
+                }
+            }
+        }
+        Ok(f)
+    }
+}
+
+impl WeaponCfg {
+    /// The weapon's 16th grid before any haste, `main16 = int(round(4 * w['every']))` (as a float: Python divides it
+    /// by the haste factor as one), for the kinds that start on a grid; `None` for a kind not ported yet.
+    fn main16(&self) -> Option<f64> {
+        let every = match self {
+            WeaponCfg::Striker(w) => w.every,
+            WeaponCfg::Blade(w) => w.every,
+            WeaponCfg::Unsupported(_) => return None,
+        };
+        Some(crate::py::round_half_even(4.0 * every))
     }
 }
 
@@ -895,6 +943,54 @@ mod tests {
                 assert_eq!((ab.kind.clone(), ab.get("mult")), (AbilityKind::Haste, Some(mult)));
             }
         }
+        // a factor above 0 so small that Python's `int(round(main16 / ab_mult(k)))` raises `OverflowError` (the
+        // quotient is infinite) where the engine would saturate and run on: the smallest positive double, whose
+        // inverse is not finite either, and 1e-308, whose inverse is finite but whose grid of 4 sixteenths is not
+        // (Python on the reference PC: both raise; the 1e-9 above, a small factor Python runs, still loads)
+        for (name, slot) in [("TROMBONE", "unlock2"), ("FLUTE", "unlock1")] {
+            let mut raw = fighter(name).raw;
+            raw["abilities"][slot]["mult"] = Json::from(5e-324);
+            assert_eq!(
+                err(&raw),
+                format!(
+                    "roster: {name}: abilities.{slot}.mult: 5e-324 is too small (a haste divides the weapon's grid by \
+                     it, and 1 / mult must be a finite number)"
+                )
+            );
+            let mut raw = fighter(name).raw;
+            raw["abilities"][slot]["mult"] = Json::from(1e-308);
+            assert_eq!(
+                err(&raw),
+                format!(
+                    "roster: {name}: abilities.{slot}.mult: 1e-308 is too small for the weapon's grid (4e0 sixteenths \
+                     / mult must be a finite number)"
+                )
+            );
+        }
+        // the grid's side of it: a huge but finite grid that a haste of 0.5 takes past the largest double (Python
+        // raises), and the same grid under a haste of 0.9, which stays finite (Python runs it)
+        let mut raw = weapon_with("TROMBONE", "every", Some(Json::from(4e307)));
+        raw["abilities"]["unlock2"]["mult"] = Json::from(0.5);
+        assert_eq!(
+            err(&raw),
+            "roster: TROMBONE: abilities.unlock2.mult: 5e-1 is too small for the weapon's grid (1.6e308 sixteenths / \
+             mult must be a finite number)"
+        );
+        raw["abilities"]["unlock2"]["mult"] = Json::from(0.9);
+        assert_eq!(
+            FighterCfg::from_json(&raw).expect("loads").unlock2.get("mult"),
+            Some(0.9)
+        );
+        // a haste on a fighter whose weapon is not ported yet: only its own factor is checked
+        let mut raw = fighter("TUBA").raw;
+        raw["abilities"]["unlock1"]["mult"] = Json::from(1e-308);
+        assert_eq!(
+            FighterCfg::from_json(&raw).expect("loads").unlock1.get("mult"),
+            Some(1e-308)
+        );
+        raw["abilities"]["unlock1"]["mult"] = Json::from(5e-324);
+        assert!(err(&raw).ends_with("1 / mult must be a finite number)"));
+
         // a whole number in the file is read the same way
         let mut raw = fighter("TROMBONE").raw;
         raw["abilities"]["unlock2"]["mult"] = Json::from(0);
