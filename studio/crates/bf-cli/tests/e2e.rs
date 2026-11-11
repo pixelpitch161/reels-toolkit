@@ -13,6 +13,11 @@
 //!
 //! `render_is_reproducible` compares the sound and three frames of the example episode with
 //! `studio/replay/render_hashes.txt`; `BF_BLESS=1` writes that file instead (blessed on the Windows reference PC).
+//!
+//! `the_encode_is_pinned` compares the mp4 of a 3 s clip with `studio/replay/encode_hashes.txt`, but only when the
+//! ffmpeg in use is the pinned build of `studio/packaging/ffmpeg.toml` (its exe's SHA-256 and its version line);
+//! with another ffmpeg it prints "not compared: this ffmpeg is not the pinned build" and passes, unless
+//! `BF_NEED_PINNED_FFMPEG=1` (as CI sets it), which makes that a failure.
 
 use std::io::Read;
 use std::path::{Path, PathBuf};
@@ -411,6 +416,276 @@ fn render_is_reproducible() {
         files[0] == files[1],
         "the clip with 1 worker differs from the clip with 8"
     );
+}
+
+// ---------------------------------------------------------------- the encode is pinned (plan M6, Task 3)
+
+/// `studio/replay/encode_hashes.txt`.
+fn encode_hashes_file() -> PathBuf {
+    repo_root().join("studio/replay/encode_hashes.txt")
+}
+
+/// `studio/packaging/ffmpeg.toml`, the pin of the ffmpeg the app ships.
+fn ffmpeg_pin_file() -> PathBuf {
+    repo_root().join("studio/packaging/ffmpeg.toml")
+}
+
+const ENCODE_HASHES_HEADER: &str = "\
+# The SHA-256 of the mp4 that `ballfight render` writes for the example episode (FLUTE against TROMBONE,
+# studio/fights/flute_vs_trombone.toml, recording studio/reference/fights/flute_vs_trombone/ep392.bfrec) with the
+# pinned ffmpeg (studio/packaging/ffmpeg.toml): clip0-90.mp4 is `--frames 0:90`, video.mp4 the whole video. The
+# `ffmpeg` line is the first line that ffmpeg's `-version` prints; the bytes of an mp4 depend on the ffmpeg build,
+# so the hashes are compared only when the ffmpeg in use is the pinned one. Written by crates/bf-cli/tests/e2e.rs
+# (the_encode_is_pinned, the_whole_video_is_pinned) with BF_BLESS=1 on the Windows reference PC. Do not edit by hand.
+# file sha256
+";
+
+/// The ffmpeg's line and the `file sha256` lines of `encode_hashes.txt`.
+struct EncodeHashes {
+    ffmpeg: String,
+    files: Vec<(String, String)>,
+}
+
+impl EncodeHashes {
+    fn read() -> Option<EncodeHashes> {
+        let text = std::fs::read_to_string(encode_hashes_file()).ok()?;
+        let mut ffmpeg = String::new();
+        let mut files = Vec::new();
+        for line in text.lines().filter(|l| !l.starts_with('#') && !l.trim().is_empty()) {
+            let (key, value) = line.split_once(' ').unwrap_or((line, ""));
+            if key == "ffmpeg" {
+                ffmpeg = value.to_string();
+            } else {
+                files.push((key.to_string(), value.to_string()));
+            }
+        }
+        Some(EncodeHashes { ffmpeg, files })
+    }
+
+    fn get(&self, key: &str) -> Option<&str> {
+        self.files.iter().find(|(k, _)| k == key).map(|(_, v)| v.as_str())
+    }
+
+    fn text(&self) -> String {
+        let mut text = format!("{ENCODE_HASHES_HEADER}ffmpeg {}\n", self.ffmpeg);
+        for (k, v) in &self.files {
+            text.push_str(&format!("{k} {v}\n"));
+        }
+        text
+    }
+}
+
+/// The pinned version and `ffmpeg.exe`'s SHA-256, read from `studio/packaging/ffmpeg.toml` (its `version` line and
+/// the `sha256` of the `[[files]]` entry named `ffmpeg.exe`).
+fn pinned_ffmpeg() -> (String, String) {
+    let path = ffmpeg_pin_file();
+    let text = std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("cannot read {}: {e}", path.display()));
+    let value = |line: &str, key: &str| -> Option<String> {
+        let rest = line.strip_prefix(key)?.trim_start().strip_prefix('=')?.trim();
+        Some(rest.trim_matches('"').to_string())
+    };
+    let (mut version, mut sha) = (None, None);
+    let mut in_ffmpeg_exe = false;
+    for line in text.lines().map(str::trim) {
+        if line.starts_with("[[files]]") {
+            in_ffmpeg_exe = false;
+        } else if let Some(v) = value(line, "version") {
+            version = Some(v);
+        } else if let Some(name) = value(line, "name") {
+            in_ffmpeg_exe = name == "ffmpeg.exe";
+        } else if in_ffmpeg_exe && let Some(v) = value(line, "sha256") {
+            sha = Some(v);
+        }
+    }
+    let sha = sha.unwrap_or_else(|| panic!("{} names no sha256 for ffmpeg.exe", path.display()));
+    assert!(
+        sha.len() == 64 && sha.bytes().all(|b| b.is_ascii_hexdigit()),
+        "{}: ffmpeg.exe's sha256 is not 64 hex digits",
+        path.display()
+    );
+    (version.unwrap_or_default(), sha)
+}
+
+/// The first line that `ffmpeg -version` prints.
+fn first_version_line(ffmpeg: &Path) -> String {
+    let out = Command::new(ffmpeg)
+        .arg("-version")
+        .stdin(Stdio::null())
+        .output()
+        .unwrap_or_else(|e| panic!("{} does not start: {e}", ffmpeg.display()));
+    String::from_utf8_lossy(&out.stdout)
+        .lines()
+        .next()
+        .unwrap_or("")
+        .trim()
+        .to_string()
+}
+
+/// The ffmpeg that the `ballfight` program under test finds (the same lookup as `bf_export::find_ffmpeg`, with the
+/// program's own folder: `BALLFIGHT_FFMPEG`, then `ffmpeg\` beside `ballfight.exe`, then the `PATH`).
+fn the_programs_ffmpeg() -> Result<bf_export::Ffmpeg, String> {
+    let beside = Path::new(env!("CARGO_BIN_EXE_ballfight"))
+        .parent()
+        .map(|d| d.join(bf_export::APP_FFMPEG_DIR));
+    bf_export::find_ffmpeg_with(std::env::var_os("BALLFIGHT_FFMPEG"), beside, std::env::var_os("PATH"))
+        .map_err(|e| e.to_string())
+}
+
+/// Whether the ffmpeg in use is the pinned build: the same first version line as `encode_hashes.txt` and the same
+/// `ffmpeg.exe` SHA-256 as `ffmpeg.toml`. `Err` names what differs, with both values.
+fn is_the_pinned_build(found_line: &str, found_sha: &str, file_line: &str, pin_sha: &str) -> Result<(), String> {
+    let mut why = Vec::new();
+    if found_sha != pin_sha {
+        why.push(format!(
+            "its ffmpeg.exe has SHA-256 {found_sha}, the pin in studio/packaging/ffmpeg.toml is {pin_sha}"
+        ));
+    }
+    if found_line != file_line {
+        why.push(format!(
+            "it says \"{found_line}\", studio/replay/encode_hashes.txt was made with \"{file_line}\""
+        ));
+    }
+    if why.is_empty() { Ok(()) } else { Err(why.join("; ")) }
+}
+
+/// Whether `name` is set to "1".
+fn env_is_1(name: &str) -> bool {
+    std::env::var_os(name).is_some_and(|v| v == "1")
+}
+
+/// Renders the example episode (`frames`: a `--frames` range, or the whole video) with the ffmpeg the program finds
+/// and compares the mp4's SHA-256 with the line `key` of `encode_hashes.txt`, or writes that line with `BF_BLESS=1`.
+///
+/// When the ffmpeg in use is not the pinned build, nothing is compared: the test prints "not compared: this ffmpeg is
+/// not the pinned build" and passes, except with `BF_NEED_PINNED_FFMPEG=1` (as CI sets it), where it fails naming
+/// both builds. Without any usable ffmpeg it prints a notice and passes, except with `BF_NEED_FFMPEG=1` or
+/// `BF_NEED_PINNED_FFMPEG=1`.
+fn encode_is_pinned(test: &str, frames: Option<&str>, key: &str) {
+    let bless = env_is_1("BF_BLESS");
+    let need_pinned = env_is_1("BF_NEED_PINNED_FFMPEG");
+    let file = EncodeHashes::read();
+    if !bless {
+        let path = encode_hashes_file();
+        let file = file
+            .as_ref()
+            .unwrap_or_else(|| panic!("cannot read {} (bless it with BF_BLESS=1)", path.display()));
+        assert!(
+            file.get(key).is_some() && !file.ffmpeg.is_empty(),
+            "{} has no `ffmpeg` line or no `{key}` line (bless it with BF_BLESS=1)",
+            path.display()
+        );
+    }
+    let ff = match the_programs_ffmpeg() {
+        Ok(ff) => ff,
+        Err(e) => {
+            assert!(
+                !need_pinned && !env_is_1("BF_NEED_FFMPEG") && !bless,
+                "{test}: the pinned ffmpeg is needed but ffmpeg is not usable: {e}"
+            );
+            println!("{test}: not compared, ffmpeg is not usable here: {e}");
+            return;
+        }
+    };
+    let found_line = first_version_line(&ff.ffmpeg);
+    let found_sha = sha256(&ff.ffmpeg);
+    let (pin_version, pin_sha) = pinned_ffmpeg();
+    println!(
+        "{test}: ffmpeg {} ({:?}): \"{found_line}\", SHA-256 {found_sha}",
+        ff.ffmpeg.display(),
+        ff.source
+    );
+    if bless {
+        // only the pinned build may write the pin
+        if let Err(why) = is_the_pinned_build(&found_line, &found_sha, &found_line, &pin_sha) {
+            panic!("{test}: BF_BLESS=1 needs the pinned ffmpeg {pin_version}, and this one is not it: {why}");
+        }
+    } else {
+        let file = file.as_ref().expect("read above");
+        if let Err(why) = is_the_pinned_build(&found_line, &found_sha, &file.ffmpeg, &pin_sha) {
+            assert!(
+                !need_pinned,
+                "{test}: BF_NEED_PINNED_FFMPEG=1 but this ffmpeg is not the pinned build {pin_version}: {why}"
+            );
+            println!("{test}: not compared: this ffmpeg is not the pinned build ({why})");
+            return;
+        }
+    }
+
+    let root = TempRoot::new(test);
+    let out = root.join("out");
+    let (fight, rec) = (example(), ep392());
+    let mut args: Vec<&dyn AsRef<std::ffi::OsStr>> = vec![&"render", &fight, &"--rec", &rec, &"--out", &out];
+    if let Some(r) = &frames {
+        args.push(&"--frames");
+        args.push(r);
+    }
+    let t0 = Instant::now();
+    ballfight(&root.0, &args).ok("render");
+    let took = t0.elapsed().as_secs_f64();
+    let name = match frames {
+        Some(r) => format!("flute_vs_trombone_frames{}", r.replace(':', "-")),
+        None => "flute_vs_trombone".to_string(),
+    };
+    assert_eq!(entries(&out), [name.as_str()]);
+    let mp4 = out.join(&name).join(format!("{name}.mp4"));
+    let got = sha256(&mp4);
+    println!("{test}: {key} {got} (the render took {took:.1} s)");
+
+    let path = encode_hashes_file();
+    if bless {
+        let mut file = file.unwrap_or(EncodeHashes {
+            ffmpeg: String::new(),
+            files: Vec::new(),
+        });
+        if file.ffmpeg != found_line {
+            // the other lines were made by another build: they no longer hold
+            file.files.clear();
+            file.ffmpeg = found_line;
+        }
+        match file.files.iter_mut().find(|(k, _)| k == key) {
+            Some(line) => line.1 = got,
+            None => file.files.push((key.to_string(), got)),
+        }
+        std::fs::write(&path, file.text()).expect("write encode_hashes.txt");
+        eprintln!("blessed {} ({key})", path.display());
+    } else {
+        let want = file.as_ref().and_then(|f| f.get(key)).expect("read above");
+        assert_eq!(
+            got,
+            want,
+            "{test}: the mp4 made by the pinned ffmpeg differs from {}",
+            path.display()
+        );
+    }
+}
+
+/// The 3 s clip `--frames 0:90` of the example episode, encoded by the pinned ffmpeg, is byte for byte the
+/// `clip0-90.mp4` line of `studio/replay/encode_hashes.txt`.
+#[test]
+fn the_encode_is_pinned() {
+    encode_is_pinned("the_encode_is_pinned", Some("0:90"), "clip0-90.mp4");
+}
+
+/// The whole 61 s video of the example episode, encoded by the pinned ffmpeg, is byte for byte the `video.mp4` line
+/// of `studio/replay/encode_hashes.txt`.
+#[test]
+#[ignore = "a whole 61 s render, about a minute and a half in release: run it by name"]
+fn the_whole_video_is_pinned() {
+    encode_is_pinned("the_whole_video_is_pinned", None, "video.mp4");
+}
+
+/// Another build is told apart from the pinned one by its exe's SHA-256 even when it prints the same version line,
+/// and by its version line; the reason names both values.
+#[test]
+fn another_ffmpeg_is_not_the_pinned_build() {
+    let pin = "a".repeat(64);
+    let other = "b".repeat(64);
+    let line = "ffmpeg version 9.0.2-full_build-www.gyan.dev";
+    assert_eq!(is_the_pinned_build(line, &pin, line, &pin), Ok(()));
+    let why = is_the_pinned_build(line, &other, line, &pin).unwrap_err();
+    assert!(why.contains(&pin) && why.contains(&other), "{why}");
+    let why = is_the_pinned_build("ffmpeg version 8.1", &pin, line, &pin).unwrap_err();
+    assert!(why.contains("ffmpeg version 8.1") && why.contains(line), "{why}");
 }
 
 /// Review Focus 1: a seed without a K.O. (found by scanning with handicap [0.05, 0.05]) is refused by `render`
