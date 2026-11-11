@@ -18,38 +18,89 @@
 //! (clouds from 1e-6 to 1e6 across, ellipses, the beam's shape, near-lines, tight clusters, whole-number grids,
 //! repeated points): it gave an order for 36,979 of them, and every one was scipy's.
 //!
-//! What is not ported is Qhull's merging. When a new point is within rounding of the line of an edge it does not
-//! replace (three points in a row, met in an awkward order), or the new edges are not clearly convex, Qhull
-//! merges facets; when the points do not span a plane it stops with an error. [`qhull_order`] reports those
-//! inputs instead of guessing (the other 3,021 of the 40,000: 2,903 sets drawn from a 6 x 6 grid of whole
-//! numbers, with many points in a row, and 118 that scipy itself refuses), and [`convex_hull`] then returns the
-//! hull by a plain scan: the hull's corners, counter-clockwise, but starting at the leftmost point. Repeated
-//! points and points along an edge are fine as long as Qhull happens to add the end points of a row before a
-//! middle one; the beam (a point and 32 points of an ellipse) never comes near a merge.
+//! What is not ported is Qhull's merging (`merge_r.c`). When a new point is within rounding of the line of an
+//! edge it does not replace (three points in a row, met in an awkward order), or a new edge is flipped, or the
+//! new edges are not clearly convex, Qhull goes on to merge facets; when the points do not span a plane it stops
+//! with an error. [`qhull_order`] reports those inputs instead of guessing (the other 3,021 of the 40,000: 2,903
+//! sets drawn from a 6 x 6 grid of whole numbers, with many points in a row, and 118 that scipy itself refuses),
+//! and [`convex_hull`] then answers with a plain scan **and says so** ([`Hull::fallback`]): the hull's corners,
+//! counter-clockwise, but starting at the leftmost point, which is not where scipy starts. The start matters to
+//! a caller that fills the polygon (Pillow's fill can differ by a pixel between two rotations of one vertex
+//! list), so no caller should treat a fallback as scipy's answer. Repeated points and points along an edge are
+//! fine as long as Qhull happens to add the end points of a row before a middle one; the beam (a point and 32
+//! points of an ellipse) never comes near a merge.
+//!
+//! Two limits of the port, both on the careful side:
+//!
+//! - It reports [`Unusual::Merge`] more often than Qhull really merges. Qhull's quick test
+//!   (`qh_checkzero`) only decides whether its merge code (`qh_premerge`) runs at all; that code then tests the
+//!   new edges by their centrums and may merge nothing. The centrum test is not ported, so every input that
+//!   fails the quick test counts as a merge here.
+//! - Of `qh_matchnewfacets` only the 2-D essence is here: the two new edges are joined at the new corner, and if
+//!   they are not oriented opposite ways (what `qh_matchneighbor` requires of a match) the input counts as a
+//!   merge. Qhull's own handling of such a duplicate ridge (`qh_matchdupridge`) is not ported.
+//!
+//! Speed: the facet list is a `Vec` that `Qhull::position` and `Qhull::from` scan, so a step costs the
+//! number of edges where Qhull follows a pointer. That is nothing for the beam's 33 points; a hull of thousands
+//! of corners would want a linked list.
 
 /// Why [`qhull_order`] did not follow Qhull: the input is one Qhull itself treats specially.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Unusual {
-    /// Fewer than three points, or a coordinate that is not a finite number (scipy raises).
+    /// Fewer than three points, or a coordinate that is not a finite number. scipy raises: a `ValueError` for a
+    /// NaN, a `QhullError` for too few points or an infinite coordinate.
     NotEnoughPoints,
-    /// All points on one line: Qhull finds no first triangle (scipy raises `QhullError`).
+    /// All points on one line or in one place: Qhull finds no first triangle (scipy raises `QhullError`).
     Flat,
-    /// A point within rounding of an edge's line, or new edges that are not clearly convex: Qhull merges.
+    /// A point within rounding of an edge's line, a new edge that is flipped, or new edges that are not clearly
+    /// convex: Qhull runs its merge code, which is not ported. scipy has an answer; its order is not known here.
     Merge,
 }
 
-/// The corners of the convex hull of `pts`, as indices into `pts`, in the order
-/// `scipy.spatial.ConvexHull(pts).vertices` gives them: counter-clockwise for x right and y up (clockwise on a
-/// screen), from Qhull's own starting corner. Points inside the hull or along its edges are left out.
-///
-/// For an input where Qhull would merge or fail (see [`Unusual`]) the result is the same hull from a plain scan,
-/// counter-clockwise from the leftmost point (the lower one of two); fewer than three distinct points come back
-/// as they are.
-pub fn convex_hull(pts: &[(f64, f64)]) -> Vec<usize> {
-    qhull_order(pts).unwrap_or_else(|_| scan_hull(pts))
+/// What [`convex_hull`] found: the corners, and whether their order is scipy's.
+#[derive(Clone, Debug, PartialEq, Eq)]
+#[must_use = "check `fallback`: the order is scipy's only when it is None"]
+pub struct Hull {
+    /// The hull's corners as indices into the points, counter-clockwise for x right and y up (clockwise on a
+    /// screen). Points inside the hull or along its edges are left out.
+    pub vertices: Vec<usize>,
+    /// `None`: `vertices` is `scipy.spatial.ConvexHull(pts).vertices`, from Qhull's own starting corner.
+    /// `Some(why)`: Qhull's order is not known for this input and `vertices` is the plain scan's answer (see
+    /// [`convex_hull`]). For [`Unusual::Flat`] and [`Unusual::NotEnoughPoints`] scipy raises instead of
+    /// answering, and `vertices` is not a polygon (two points, one or none).
+    pub fallback: Option<Unusual>,
 }
 
-/// [`convex_hull`] where Qhull's order is certain, else the reason it is not.
+/// The convex hull of `pts`: [`qhull_order`] where the port follows Qhull, in the order
+/// `scipy.spatial.ConvexHull(pts).vertices` has (`fallback` is `None`); otherwise a plain scan, with the reason
+/// in `fallback`. A caller must look at `fallback`: do what the Python does at that place when scipy raises
+/// (`Flat`, `NotEnoughPoints`), and count a `Merge`, where scipy has an order that this one may not be.
+///
+/// The plain scan is Andrew's monotone chain. The points are sorted by x, then y, then index (so of several
+/// equal points the first in `pts` is the one named); equal points and points along an edge are dropped; the
+/// corners come counter-clockwise from the leftmost point (the lowest of several). Its turns are plain `f64`
+/// cross products, not Qhull's distances, so within rounding of a line it can keep or drop a point Qhull treats
+/// the other way. It also answers where scipy raises:
+///
+/// - fewer than three points, a line, or all points equal: the distinct end points (two, one or none);
+/// - a NaN or an infinite coordinate: that point is dropped and the rest scanned. (scipy rejects a NaN itself,
+///   and an infinite coordinate fails inside Qhull.)
+pub fn convex_hull(pts: &[(f64, f64)]) -> Hull {
+    match qhull_order(pts) {
+        Ok(vertices) => Hull {
+            vertices,
+            fallback: None,
+        },
+        Err(why) => Hull {
+            vertices: scan_hull(pts),
+            fallback: Some(why),
+        },
+    }
+}
+
+/// The hull's corners in the order `scipy.spatial.ConvexHull(pts).vertices` has, where the port follows Qhull
+/// all the way; else the reason it does not ([`Unusual`]). Use it where a wrong order is worse than no hull;
+/// [`convex_hull`] is this with a plain scan for the `Err` cases.
 pub fn qhull_order(pts: &[(f64, f64)]) -> Result<Vec<usize>, Unusual> {
     if pts.len() < 3 || pts.iter().any(|p| !p.0.is_finite() || !p.1.is_finite()) {
         return Err(Unusual::NotEnoughPoints);
@@ -58,15 +109,16 @@ pub fn qhull_order(pts: &[(f64, f64)]) -> Result<Vec<usize>, Unusual> {
 }
 
 /// The hull by Andrew's monotone chain: counter-clockwise from the leftmost (then lowest) point, corners only.
+/// Points with a coordinate that is not finite are left out.
 fn scan_hull(pts: &[(f64, f64)]) -> Vec<usize> {
     let mut order: Vec<usize> = (0..pts.len())
         .filter(|&i| pts[i].0.is_finite() && pts[i].1.is_finite())
         .collect();
+    // By value: adding 0.0 makes -0.0 sort as the 0.0 it equals.
     order.sort_by(|&a, &b| {
-        pts[a]
-            .0
-            .total_cmp(&pts[b].0)
-            .then(pts[a].1.total_cmp(&pts[b].1))
+        (pts[a].0 + 0.0)
+            .total_cmp(&(pts[b].0 + 0.0))
+            .then((pts[a].1 + 0.0).total_cmp(&(pts[b].1 + 0.0)))
             .then(a.cmp(&b))
     });
     order.dedup_by(|a, b| pts[*a] == pts[*b]);
@@ -269,6 +321,7 @@ impl Qhull {
     }
 
     // ---- the facet list (qh_appendfacet, qh_removefacet)
+    /// Where a facet is in the list, by a scan (Qhull follows a pointer; see the module's note on speed).
     fn position(&self, f: usize) -> usize {
         self.list
             .iter()
@@ -352,6 +405,11 @@ impl Qhull {
         facet.normal = (n0, n1);
         facet.offset = -(p0.0 * n0 + p0.1 * n1);
         Ok(())
+    }
+
+    /// `qh.interior_point`: the middle of the first triangle, kept after the input points.
+    fn interior(&self) -> usize {
+        self.pts.len() - 1
     }
 
     /// `qh_DISToutside`: how far above an edge a point must be to go straight into its outside set.
@@ -718,11 +776,24 @@ impl Qhull {
         let &[a, b] = made.as_slice() else {
             return Err(Unusual::Merge);
         };
-        // qh_matchnewfacets: the two new edges meet at the new vertex; qh_makenewplanes.
+        // qh_matchnewfacets: the two new edges meet at the new vertex. qh_matchneighbor pairs them only if they
+        // are oriented opposite ways; otherwise the corner is a duplicate ridge, which Qhull settles by merging.
+        if self.facets[a].top == self.facets[b].top {
+            return Err(Unusual::Merge);
+        }
         self.facets[a].nb[1] = Some(b);
         self.facets[b].nb[1] = Some(a);
+        // qh_makenewplanes. qh_setfacetplane ends with qh_checkflipped(facet, NULL, qh_ALL): an edge the
+        // first triangle's middle is not clearly below is flipped. qh_checkzero then reports a problem and
+        // qh_premerge merges the flipped edge away (qh_flippedmerges).
         self.set_plane(a)?;
         self.set_plane(b)?;
+        let interior = self.interior();
+        for f in [a, b] {
+            if self.dist(interior, f) >= -self.dist_round {
+                return Err(Unusual::Merge);
+            }
+        }
         // qh_premerge: qh_checkzero finds the new edges clearly convex, or Qhull goes on to merge.
         for (f, other) in [(a, b), (b, a)] {
             let facet = &self.facets[f];
@@ -821,8 +892,12 @@ mod tests {
     fn a_triangle_comes_back_counter_clockwise() {
         // scipy 1.18.1: ConvexHull([[0, 0], [1, 0], [0, 1]]).vertices is [0, 1, 2], and [0, 2, 1] for the
         // triangle listed the other way round.
-        assert_eq!(convex_hull(&[(0.0, 0.0), (1.0, 0.0), (0.0, 1.0)]), [0, 1, 2]);
-        assert_eq!(convex_hull(&[(0.0, 0.0), (0.0, 1.0), (1.0, 0.0)]), [0, 2, 1]);
+        let scipys = |vertices: &[usize]| Hull {
+            vertices: vertices.to_vec(),
+            fallback: None,
+        };
+        assert_eq!(convex_hull(&[(0.0, 0.0), (1.0, 0.0), (0.0, 1.0)]), scipys(&[0, 1, 2]));
+        assert_eq!(convex_hull(&[(0.0, 0.0), (0.0, 1.0), (1.0, 0.0)]), scipys(&[0, 2, 1]));
     }
 
     #[test]
@@ -868,23 +943,42 @@ mod tests {
     }
 
     #[test]
-    fn inputs_qhull_treats_specially_fall_back_to_a_plain_hull() {
+    fn inputs_qhull_treats_specially_fall_back_to_a_plain_hull_and_say_so() {
+        let plain = |vertices: &[usize], why: Unusual| Hull {
+            vertices: vertices.to_vec(),
+            fallback: Some(why),
+        };
         // On a line: scipy raises QhullError. Here: the two ends.
         let line = [(0.0, 0.0), (1.0, 1.0), (2.0, 2.0), (3.0, 3.0)];
         assert_eq!(qhull_order(&line), Err(Unusual::Flat));
-        assert_eq!(convex_hull(&line), [0, 3]);
-        // Too few points, or not numbers.
+        assert_eq!(convex_hull(&line), plain(&[0, 3], Unusual::Flat));
+        // All in one place: scipy raises QhullError. Here: the first of them.
+        let spot = [(1.0, 2.0); 4];
+        assert_eq!(qhull_order(&spot), Err(Unusual::Flat));
+        assert_eq!(convex_hull(&spot), plain(&[0], Unusual::Flat));
+        // Too few points, or not numbers (scipy raises for each of these).
         assert_eq!(qhull_order(&[(0.0, 0.0), (1.0, 0.0)]), Err(Unusual::NotEnoughPoints));
-        assert_eq!(convex_hull(&[(1.0, 0.0), (0.0, 0.0)]), [1, 0]);
-        assert_eq!(convex_hull(&[]), Vec::<usize>::new());
+        assert_eq!(
+            convex_hull(&[(1.0, 0.0), (0.0, 0.0)]),
+            plain(&[1, 0], Unusual::NotEnoughPoints)
+        );
+        assert_eq!(convex_hull(&[]), plain(&[], Unusual::NotEnoughPoints));
         let holes = [(0.0, 0.0), (f64::NAN, 1.0), (2.0, 0.0), (1.0, 5.0)];
         assert_eq!(qhull_order(&holes), Err(Unusual::NotEnoughPoints));
-        assert_eq!(convex_hull(&holes), [0, 2, 3]);
+        assert_eq!(convex_hull(&holes), plain(&[0, 2, 3], Unusual::NotEnoughPoints));
+        let far = [
+            (0.0, 0.0),
+            (f64::INFINITY, 1.0),
+            (2.0, 0.0),
+            (1.0, f64::NEG_INFINITY),
+            (1.0, 5.0),
+        ];
+        assert_eq!(convex_hull(&far), plain(&[0, 2, 4], Unusual::NotEnoughPoints));
         // Three points in a row that Qhull meets middle first: it merges. scipy has [3, 0, 2] here; the plain
         // hull has the same corners the same way round, from the leftmost (lower) one.
         let row = [(0.0, 4.0), (1.0, 1.0), (0.0, 1.0), (5.0, 1.0), (0.0, 4.0)];
         assert_eq!(qhull_order(&row), Err(Unusual::Merge));
-        assert_eq!(convex_hull(&row), [2, 3, 0]);
+        assert_eq!(convex_hull(&row), plain(&[2, 3, 0], Unusual::Merge));
     }
 
     #[test]
@@ -945,6 +1039,11 @@ mod tests {
             (1.0, 1.0),
         ];
         assert_eq!(scan_hull(&square), [1, 2, 0, 3]);
+        // -0.0 is 0.0: the start is the lowest of the leftmost points, whichever zero its x is written with.
+        // (scipy has [0, 1, 2, 3] for these four points; the scan starts at point 1.)
+        let zeros = [(-0.0, 5.0), (0.0, 1.0), (3.0, 0.0), (3.0, 4.0)];
+        assert_eq!(scan_hull(&zeros), [1, 2, 3, 0]);
+        assert_eq!(scan_hull(&[(0.0, -0.0), (-0.0, 0.0), (0.0, 0.0)]), [0]);
     }
 
     #[test]

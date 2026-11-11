@@ -916,8 +916,9 @@ fn hull_case(v: &Vectors, case: &Case) -> Found {
             // the port follows all the way.
             let order =
                 hull::qhull_order(&pts).map_err(|why| format!("the port does not follow Qhull here: {why:?}"))?;
-            if hull::convex_hull(&pts) != order {
-                return Err("convex_hull and qhull_order disagree".to_string());
+            let whole = hull::convex_hull(&pts);
+            if whole.fallback.is_some() || whole.vertices != order {
+                return Err(format!("convex_hull has {whole:?}, qhull_order {order:?}"));
             }
             let got: Vec<i32> = order.iter().map(|&k| k as i32).collect();
             same(&got, v.array(case, "out").i32(), |a, b| a == b).map(|()| 0.0)
