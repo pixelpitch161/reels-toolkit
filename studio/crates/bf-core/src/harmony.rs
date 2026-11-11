@@ -3,7 +3,8 @@
 //! A port of the harmony part of `projects/ballfight/kit/episode.py`: `NOTE_PC`, `QUALITY`, `SCALES`,
 //! `pitch_class`, `parse_chord`, the harmony half of `build_timeline` (`KEY_PC`, `KEY_ROOT`, `SCALE`, the
 //! `CHORDS` length check, `CHORD_PCS`, the default `LOOP`) and the helpers `chord_at`, `chord_tones`, `scale_notes`,
-//! `root_above` and `loop_index`. Where Python raises on a bad name (a `KeyError` or an `IndexError`) this returns a
+//! `root_above` and `loop_index` (`default_line`, `default_solo` and the plain half of `line_at` are in
+//! [`crate::lines`]). Where Python raises on a bad name (a `KeyError` or an `IndexError`) this returns a
 //! [`HarmonyError`] naming the text; nothing here panics on what a config holds.
 
 use std::collections::BTreeMap;
@@ -59,6 +60,11 @@ pub enum HarmonyError {
     ChordCount { got: usize, want: usize },
     /// The loop has no chords (Python would divide by zero in `loop_index`).
     EmptyLoop,
+    /// No note from `lo` to `hi` is a tone of the chord, where a line or a solo is to be made of them (Python
+    /// divides by zero in `default_line` and indexes an empty list in `default_solo`).
+    NoTones { chord: String, lo: i32, hi: i32 },
+    /// A line with fewer notes than the loop has bars (Python divides by zero in `line_at`: no note a bar).
+    ShortLine { notes: usize, bars: usize },
 }
 
 impl fmt::Display for HarmonyError {
@@ -73,6 +79,13 @@ impl fmt::Display for HarmonyError {
             HarmonyError::UnknownChord(s) => write!(f, "{s:?} is not one of the episode's chords"),
             HarmonyError::ChordCount { got, want } => write!(f, "CHORDS has {got} bars, the episode has {want}"),
             HarmonyError::EmptyLoop => write!(f, "the chord loop is empty"),
+            HarmonyError::NoTones { chord, lo, hi } => {
+                write!(f, "no note from {lo} to {hi} is a tone of {chord}")
+            }
+            HarmonyError::ShortLine { notes, bars } => write!(
+                f,
+                "a line of {notes} note(s) is shorter than the loop's {bars} bars (it needs at least one a bar)"
+            ),
         }
     }
 }

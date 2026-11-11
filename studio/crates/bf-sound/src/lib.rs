@@ -12,12 +12,14 @@
 //! - [`music`]: `kit/music.py`'s helpers (the cached, level-matched notes, the shaping and the shared sound
 //!   effects) and the context a soundtrack is built in.
 //! - [`traits`]: what a fighter's part and a theme's bed provide to the score (`Sound`, `Bed`).
+//! - [`mod@score`]: the order a soundtrack is built in, `kit/music.py score()`.
 //! - [`mod@master`]: the master chain (bus levels, reverb, the fold onto the loop point, compressor, limiter).
 
 pub mod dsp;
 pub mod master;
 pub mod mix;
 pub mod music;
+pub mod score;
 pub mod synth;
 pub mod traits;
 pub mod voice;
@@ -30,6 +32,7 @@ pub use self::dsp::{
 pub use self::master::{Levels, Soundtrack, master};
 pub use self::mix::{Mix, Sig};
 pub use self::music::{MusicCtx, MusicError};
+pub use self::score::score;
 pub use self::traits::{Bed, Sound};
 pub use self::voice::{PpNoise, Voice};
 pub use self::wav::write_wav16;

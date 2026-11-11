@@ -2,8 +2,10 @@
 //!
 //! A port of the module-level derivations at the top of `projects/ballfight/kit/picture.py` (`T_KO`, `WIN`, `LOSE`,
 //! `NAMES`, `HITSTOP`, `T_HS`, `T_SOLO`, `SOLO_T`) and of its `_caps()`, with `kit/story.py`'s `captions()` (the
-//! first use of each ability, kept greedily when at least `CAP_GAP` seconds after the previous kept one). Every time
-//! here is a sum or a product in Python's operation order, so it equals the kit's bit for bit.
+//! first use of each ability, kept greedily when at least `CAP_GAP` seconds after the previous kept one), and of
+//! `reelkit/ui.py`'s `impact_landings` (when each caption line lands: the picture drops the lines then and the
+//! sound puts a thud on each). Every time here is a sum or a product in Python's operation order, so it equals the
+//! kit's bit for bit.
 
 use std::fmt;
 
@@ -20,6 +22,12 @@ pub const HITSTOP: f64 = 0.35;
 
 /// How long an ability caption stays up (`(t, t + 2.4, [name])` in `_caps()`).
 const ABILITY_HOLD: f64 = 2.4;
+
+/// `reelkit/ui.py` `IMPACT_STAGGER`: the seconds between one caption line landing and the next.
+pub const IMPACT_STAGGER: f64 = 0.22;
+
+/// `reelkit/ui.py` `IMPACT_FALL`: the seconds a caption line falls before it lands.
+pub const IMPACT_FALL: f64 = 0.10;
 
 /// One caption window, a `(t0, t1, lines)` tuple of `_caps()`: drawn while `t0 <= t < t1` (`reelkit/ui.py`
 /// `draw_captions`; a window with `t1 <= t0` is never drawn). A line may carry `*...*` highlight marks.
@@ -147,6 +155,25 @@ fn try_captions(events: &[Event], gap: f64) -> Result<Vec<(f64, usize, String)>,
 /// there too). [`Show::new`] reports the same as [`ShowError::Event`] instead.
 pub fn captions(events: &[Event], gap: f64) -> Vec<(f64, usize, String)> {
     try_captions(events, gap).unwrap_or_else(|e| panic!("captions: {e}"))
+}
+
+/// `reelkit/ui.py` `impact_landings(caps, stagger, fall)`: when each line of the caption windows `caps` lands in
+/// the `impact` style, as `(t_land, line index, characters)`: line `k` of a window lands at
+/// `t0 + k * stagger + fall`, and a line that would land at or after the window's end is left out. The characters
+/// are counted without the `*` and `~` marks (`len(_plain(line))`). Python's defaults are [`IMPACT_STAGGER`] and
+/// [`IMPACT_FALL`]. The picture drops the lines at these times; the sound puts a soft thud on each.
+pub fn impact_landings(caps: &[Cap], stagger: f64, fall: f64) -> Vec<(f64, usize, usize)> {
+    let mut out = Vec::new();
+    for cap in caps {
+        for (k, line) in cap.lines.iter().enumerate() {
+            let t_land = cap.t0 + k as f64 * stagger + fall;
+            if t_land < cap.t1 {
+                let plain = line.chars().filter(|c| !matches!(c, '*' | '~')).count();
+                out.push((t_land, k, plain));
+            }
+        }
+    }
+    out
 }
 
 impl Show {
