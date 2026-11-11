@@ -7,8 +7,13 @@ publish.workspace = true
 
 [dependencies]
 bf-core.workspace = true
+# The roster entry of each fighter (`FighterCfg`), which the music helpers read.
+bf-sim.workspace = true
 
-# The reader for studio/reference (dev support only) and the sidecars' JSON values.
+# The reader for studio/reference (dev support only), the sidecars' JSON values, the SHA-256 of a note's samples,
+# and the two fighters' voices (bf-content builds on this crate; only the tests under tests/ use it back).
 [dev-dependencies]
+bf-content.workspace = true
 bf-testdata = { path = "../bf-testdata" }
 serde_json.workspace = true
+sha2.workspace = true

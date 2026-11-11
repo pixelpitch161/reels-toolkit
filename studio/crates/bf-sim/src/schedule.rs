@@ -29,7 +29,7 @@ use bf_core::py;
 
 use crate::fight::Fight;
 use crate::geom;
-use crate::kinds::striker;
+use crate::kinds::{blade, striker};
 use crate::record::Frames;
 
 /// The counters of the fight loop: what `run()` sets up before its `while` (`fight.py` 5739 to 5914) and moves
@@ -56,7 +56,9 @@ pub struct Schedule {
     /// `next16k`: the strikers' own 16th counter (`fight.py` 5772): the next 16th of the video their strike grid
     /// reaches. It starts at `k16_0` and moves only while a fighter is a striker.
     pub next16k: i64,
-    // SLOT (Task 13): `pub next16t: i64`, the thrusters' 16th counter (fight.py 5776), starting at `k16_0`.
+    /// `next16t`: the thrusters' own 16th counter (`fight.py` 5776): the next 16th of the video the thrust grid
+    /// reaches. It starts at `k16_0` and moves only while a fighter's weapon thrusts.
+    pub next16t: i64,
     // Python keeps one counter per kind (`next16`, `dc_next`, `n16b`, `next16c`, `next16k`, `next16t`, `n16p`, ...):
     // each moves only while a fighter has its kind, so they are separate fields, never one shared counter.
 }
@@ -82,9 +84,9 @@ impl Schedule {
                 striker::setup(fight, k);
             }
         }
-        //   SLOT (Task 13), 5775 to 5776: `thrusters` = the fighters whose weapon has `mode = 'thrust'`
-        //     (`Ball::thrusts`); `next16t = k16_0`. The record's `EXT`, `SLW`, `CRV` (5779 to 5780) are already
-        //     handled in `record.rs` from `Fight::uses_ext`.
+        // 5775 to 5776: the thrusters need no setup (the lance's state is the ball's, from `Ball.__init__`);
+        // `next16t = k16_0` is below. The record's `EXT`, `SLW`, `CRV` (5779 to 5780) follow `Fight::uses_ext`
+        // (`record.rs`).
         //   5777 to 5911  tether, pack, echo, jump, tune, snip, lights_out, mortar, anchor, flick, tiptoe, rattle,
         //     wrecking, snap, hook, lightning, rests, grapple, swan, stampede, prelude, walk, roll, spotlight, crowd,
         //     drill, roll_charge (kinds not ported), in that order.
@@ -98,6 +100,7 @@ impl Schedule {
             on_beat: false,
             kb: -1,
             next16k: k16_0,
+            next16t: k16_0,
         }
     }
 
@@ -148,8 +151,22 @@ impl Schedule {
                 }
             }
         }
-        //   SLOT (Task 13), 5994 to 6000: thrusters. The same with `next16t` and the blade's `every`, calling
-        //     `kinds::blade::start_thrust(fight, k)`.
+        // 5994 to 6000: thrusts start on the 16th grid, every `every` beats (haste divides it). `thrusters` (5775)
+        // is the list of the fighters whose weapon has `mode = 'thrust'`; the counter moves only when there is one.
+        let thrusters = [0, 1].map(|k| fight.balls[k].thrusts());
+        if thrusters.contains(&true) && fight.t + 1e-9 >= self.next16t as f64 * self.s16 {
+            let k16t = self.next16t - self.k16_0;
+            self.next16t += 1;
+            for k in (0..2).filter(|&k| thrusters[k]) {
+                // main16 = int(round(4 * w['every'])); k16t % max(1, int(round(main16 / ab_mult(k)))) == 0
+                let main16 = blade::main16(fight, k);
+                let every16 = (py::round_half_even(main16 as f64 / fight.ab_mult(k)) as i64).max(1);
+                // (`and not self._stunned(k)`: stun and shadow, kinds not ported)
+                if k16t % every16 == 0 {
+                    blade::start_thrust(fight, k);
+                }
+            }
+        }
         //   6001 to 6095  pack, echo, jump, tune, mortar, anchor, rattle, wrecking, rests, lightning, tiptoe,
         //     grapple, walk, roll, spotlight, crowd, drill, roll_charge (kinds not ported), in that order.
 
@@ -172,13 +189,14 @@ impl Schedule {
         // 8. Each fighter's weapon step (6118 to 6136), for k in ball order, by weapon kind. It is one loop over the
         //    balls: with TROMBONE on the left, its blade steps before the FLUTE's cobras.
         for k in 0..2 {
-            //   SLOT (Task 13), 6119 to 6120: `blade` => `kinds::blade::step(fight, k, dt)` (thrust mode:
-            //     `thrust_step`). While the lance is going out or held and `fight.rules.swat_cobras` is on, the
-            //     thrust step calls `kinds::striker::swat_cobras(fight, k, a, d, l)` with the lance's base, direction
-            //     and length (fight.py 753 to 754): after its parry, before its own hit test.
-            //   6121 to 6134  orbit, combo, flail, scratch_floor, tether, inflate, swallow (kinds not ported)
-            if striker::is_striker(fight, k) {
-                // 6135 to 6136
+            // an `if` / `elif` chain on `B.w['kind']`, in this order:
+            if blade::is_blade(fight, k) {
+                // 6119 to 6120: `blade_step`. In thrust mode that is the thrust step, which is also where a live
+                // lance swats the enemy's cobras (`swat_cobras`, fight.py 753 to 754).
+                blade::step(fight, k, dt);
+            } else if striker::is_striker(fight, k) {
+                // 6121 to 6134 come first: orbit, combo, flail, scratch_floor, tether, inflate, swallow (kinds not
+                // ported). 6135 to 6136:
                 striker::step(fight, k, dt);
             }
         }
