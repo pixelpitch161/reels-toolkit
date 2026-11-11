@@ -15,6 +15,7 @@ use bf_core::{dmath, py};
 use serde::Deserialize;
 
 use crate::img::Img;
+use crate::v3::norm;
 
 /// The kit's canvas (`piano_lowpoly.RW`, `RH`). The sprite is drawn in its top-left corner; triangles are clipped
 /// to it and the outline pass wraps around its edges (`np.roll`).
@@ -87,11 +88,6 @@ fn cross(a: V3, b: V3) -> V3 {
         a[2] * b[0] - a[0] * b[2],
         a[0] * b[1] - a[1] * b[0],
     ]
-}
-
-/// `np.linalg.norm(x)` of a vector: `sqrt(x.dot(x))`.
-fn norm(x: V3) -> f64 {
-    dot3(x, x).sqrt()
 }
 
 /// `x / s`, element by element.

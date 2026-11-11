@@ -33,8 +33,8 @@
 //!
 //! The HUD paints with numpy slices such as `img[y0:y1, x0:x1] = colour`, and a slice or an index that leaves the
 //! picture does not fail in Python: a slice is cut to the picture, and a negative bound or index counts from the
-//! far edge. The port does the same ([`py_slice`], [`py_index`]), so a HUD placed partly outside the picture is
-//! drawn as Python draws it, odd as that is; only an index at or beyond the far edge, where numpy raises, panics.
+//! far edge. The port does the same (`np::index::{py_slice, py_index}`), so a HUD placed partly outside the picture
+//! is drawn as Python draws it, odd as that is; only an index at or beyond the far edge, where numpy raises, panics.
 
 pub mod captions;
 pub mod hud;
@@ -44,9 +44,7 @@ pub use self::captions::{Caption, CaptionStyle, Landing, caption_scale, draw_cap
 pub use self::hud::{AbilityRow, Fighter, Hud, HudOptions, fight_hud};
 pub use self::label::{label, panel};
 
-use crate::img::Rgb8;
 use crate::np;
-use std::ops::Range;
 
 /// `CREAM`: the captions' base colour.
 pub const CREAM: [u8; 3] = [252, 240, 214];
@@ -133,52 +131,9 @@ impl DrawLog {
     }
 }
 
-/// Python's `min(a, b)` on floats: `a` unless `b` is smaller.
-pub(crate) fn py_min(a: f64, b: f64) -> f64 {
-    if b < a { b } else { a }
-}
-
-/// Python's `max(a, b)` on floats: `a` unless `b` is greater.
-pub(crate) fn py_max(a: f64, b: f64) -> f64 {
-    if b > a { b } else { a }
-}
-
 /// Python's `int(round(x))` where the result is a pixel coordinate: the nearest whole number, ties to even.
 pub(crate) fn round_i32(x: f64) -> i32 {
     np::f64_to_i64(bf_core::py::round_half_even(x)).clamp(i64::from(i32::MIN), i64::from(i32::MAX)) as i32
-}
-
-/// The indices Python's `a[lo:hi]` selects on an axis of `n` elements: a negative bound counts from the end, and
-/// both bounds are then cut to the axis. Empty when the bounds cross.
-pub(crate) fn py_slice(lo: i32, hi: i32, n: usize) -> Range<usize> {
-    let n = n as i64;
-    let bound = |b: i32| {
-        let b = i64::from(b);
-        (if b < 0 { b + n } else { b }).clamp(0, n) as usize
-    };
-    let (lo, hi) = (bound(lo), bound(hi));
-    lo..hi.max(lo)
-}
-
-/// The element Python's `a[i]` reads on an axis of `n` elements: a negative index counts from the end. Panics
-/// when the index is outside the axis, where numpy raises `IndexError`.
-pub(crate) fn py_index(i: i32, n: usize) -> usize {
-    let wrapped = if i < 0 { i64::from(i) + n as i64 } else { i64::from(i) };
-    assert!(
-        (0..n as i64).contains(&wrapped),
-        "index {i} is out of bounds for an axis of {n} pixels"
-    );
-    wrapped as usize
-}
-
-/// `img[ys.0:ys.1, xs.0:xs.1] = col`: a filled rectangle, as numpy's slice assignment paints it.
-pub(crate) fn fill(img: &mut Rgb8, ys: (i32, i32), xs: (i32, i32), col: [u8; 3]) {
-    let cols = py_slice(xs.0, xs.1, img.w);
-    for y in py_slice(ys.0, ys.1, img.h) {
-        for x in cols.clone() {
-            img.px_mut(x, y).copy_from_slice(&col);
-        }
-    }
 }
 
 /// `np.clip(c, 0, 255).astype(np.uint8)` for a colour.
@@ -186,19 +141,9 @@ pub(crate) fn clip_rgb(c: [f64; 3]) -> [u8; 3] {
     c.map(np::clip_u8)
 }
 
-/// `img[:] = (before * (1 - k) + img * k).astype(np.uint8)`: the whole picture mixed with an earlier copy of
-/// itself, every pixel (also the ones that did not change: `v * (1 - k) + v * k` is not always `v`).
-pub(crate) fn mix_over(img: &mut Rgb8, before: &Rgb8, k: f64) {
-    let back = 1.0 - k;
-    for (p, &b) in img.data.iter_mut().zip(&before.data) {
-        *p = np::f64_to_u8(f64::from(b) * back + f64::from(*p) * k);
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::img::Img;
 
     #[test]
     fn the_log_keeps_boxes_in_order_and_clears() {
@@ -226,30 +171,7 @@ mod tests {
     }
 
     #[test]
-    fn slices_count_from_the_end_and_are_cut() {
-        assert_eq!(py_slice(2, 5, 10), 2..5);
-        assert_eq!(py_slice(-3, 20, 10), 7..10);
-        assert_eq!(py_slice(-30, 4, 10), 0..4);
-        assert_eq!(py_slice(4, -2, 10), 4..8);
-        assert!(py_slice(6, 3, 10).is_empty());
-        assert!(py_slice(12, 15, 10).is_empty());
-        assert!(py_slice(-2, 3, 10).is_empty());
-        assert_eq!((py_index(3, 10), py_index(-1, 10), py_index(-10, 10)), (3, 9, 0));
-    }
-
-    #[test]
-    #[should_panic(expected = "index 10 is out of bounds")]
-    fn an_index_past_the_axis_panics() {
-        py_index(10, 10);
-    }
-
-    #[test]
-    fn python_min_max_and_round() {
-        assert_eq!((py_min(1.0, 2.0), py_min(2.0, 1.0), py_max(1.0, 2.0)), (1.0, 1.0, 2.0));
-        // A NaN second argument never wins, a NaN first argument stays.
-        assert_eq!(py_max(0.0, f64::NAN), 0.0);
-        assert!(py_min(f64::NAN, 1.0).is_nan());
-        assert!(py_max(0.0, -0.0).is_sign_positive());
+    fn python_round_ties_to_even() {
         assert_eq!(
             (round_i32(0.5), round_i32(1.5), round_i32(2.5), round_i32(-0.5)),
             (0, 2, 2, 0)
@@ -258,18 +180,7 @@ mod tests {
     }
 
     #[test]
-    fn fill_and_mix() {
-        let mut img: Rgb8 = Img::filled(4, 3, &[100, 100, 100]);
-        fill(&mut img, (1, 9), (-2, 4), [1, 2, 3]);
-        assert_eq!(img.px(1, 1), &[100, 100, 100]);
-        assert_eq!(img.px(2, 1), &[1, 2, 3]);
-        assert_eq!(img.px(3, 2), &[1, 2, 3]);
-        assert_eq!(img.px(3, 0), &[100, 100, 100]);
-        let before: Rgb8 = Img::filled(4, 3, &[200, 200, 200]);
-        mix_over(&mut img, &before, 0.25);
-        // 200 * 0.75 + 100 * 0.25 = 175; 200 * 0.75 + 1 * 0.25 = 150.25
-        assert_eq!(img.px(0, 0), &[175, 175, 175]);
-        assert_eq!(img.px(2, 1), &[150, 150, 150]);
+    fn colours_are_clipped_to_bytes() {
         assert_eq!(clip_rgb([-3.0, 255.9, 300.0]), [0, 255, 255]);
     }
 }

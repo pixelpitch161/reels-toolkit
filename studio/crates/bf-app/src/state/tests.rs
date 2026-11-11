@@ -174,7 +174,11 @@ fn the_roster_sets_the_starting_pair() {
     assert_eq!(d.bass, Some(1));
     assert_eq!(s.generation(), 1);
     assert_eq!(count(&fx, is_describe), 1);
-    assert!(matches!(&sent(&fx)[..], [Command::DescribeFight { r#gen: 1, draft }] if draft == &s.vm.draft));
+    // The starting pair's folder is checked (Task 12).
+    assert!(
+        matches!(&sent(&fx)[..], [Command::DescribeFight { r#gen: 1, draft }, Command::CheckFolder { name, .. }]
+        if draft == &s.vm.draft && name == "flute_vs_trombone")
+    );
     assert_eq!(s.vm.status, "Flute vs Trombone, not balanced yet");
 }
 
@@ -563,9 +567,16 @@ fn choosing_a_seed_asks_for_its_take() {
     let fx = s.dispatch(Action::SelectSeed(18433));
     assert_eq!(s.vm.draft.seed, Some(18433));
     assert!(s.vm.take.loading);
-    assert!(matches!(&sent(&fx)[..], [Command::LoadTake { take: 1, draft }] if draft.seed == Some(18433)));
+    // The output folder is checked again for the new seed (Task 12).
+    assert!(
+        matches!(&sent(&fx)[..], [Command::LoadTake { take: 1, draft }, Command::CheckFolder { .. }]
+        if draft.seed == Some(18433))
+    );
     let fx = s.dispatch(Action::SelectSeed(20418));
-    assert!(matches!(&sent(&fx)[..], [Command::LoadTake { take: 2, draft }] if draft.seed == Some(20418)));
+    assert!(
+        matches!(&sent(&fx)[..], [Command::LoadTake { take: 2, draft }, Command::CheckFolder { .. }]
+        if draft.seed == Some(20418))
+    );
 }
 
 #[test]
@@ -911,8 +922,11 @@ fn an_opened_draft_always_begins_a_new_generation() {
     assert!(matches!(&sent(&more)[..], [Command::LoadTake { draft, .. }] if draft.seed == Some(20418)));
 
     // A description for the generation before the opening is late.
+    // (The opened seed's folder check, which this direct call skipped, goes out with the next event: Task 12.)
     let before_info = s.vm.clone();
-    assert!(s.apply(fight_info(before, sample::captions())).is_empty());
+    let fx = s.apply(fight_info(before, sample::captions()));
+    assert!(matches!(&sent(&fx)[..], [Command::CheckFolder { .. }]), "{fx:?}");
+    assert_eq!(fx.len(), 1);
     assert_eq!(s.vm, before_info);
 }
 

@@ -61,14 +61,15 @@ fn differences_inside_the_bar_are_agreement() {
     assert!((report.worst - 9e-7).abs() < 1e-12, "{}", report.worst);
 }
 
-/// A per-frame value outside the bar is a logic break at that frame's time; the words name the key, what the other
-/// keys do there and at the frame before, and how far the event lists stay the same.
+/// A per-frame value that jumps outside the bar (the frame before inside `DRIFT_FROM`) is a logic break at that
+/// frame's time; the words name the key, what the other keys do there and at the frame before, and how far the event
+/// lists stay the same.
 #[test]
 fn a_value_outside_the_bar_is_a_logic_break() {
     let (mut rs, py) = pair();
     floats(&mut rs, "P")[4 * 100 + 1] += 2e-6;
     floats(&mut rs, "V")[4 * 100] += 3e-7;
-    floats(&mut rs, "P")[4 * 99 + 1] += 4e-7;
+    floats(&mut rs, "P")[4 * 99 + 1] += 6e-8;
     // a difference inside the bar in an event AFTER that frame: outside the window, so it does not count
     let later = py.events.iter().rposition(|e| e.kind == "rope").expect("a rope bounce");
     assert!(py.events[later].t > 10.0);
@@ -89,13 +90,13 @@ fn a_value_outside_the_bar_is_a_logic_break() {
         "{w}"
     );
     assert!(w.contains("inside it at that frame: V 3.0e-7;"), "{w}");
-    assert!(w.contains("these keys at the frame before: P 4.0e-7;"), "{w}");
+    assert!(w.contains("these keys at the frame before: P 6.0e-8;"), "{w}");
     assert!(
         w.ends_with("and the event lists are the same in kind, time and whole numbers to the end"),
         "{w}"
     );
     assert!(
-        (report.worst - 4e-7).abs() < 1e-12,
+        (report.worst - 6e-8).abs() < 1e-12,
         "the largest difference inside the window: {}",
         report.worst
     );
@@ -123,6 +124,64 @@ fn a_value_outside_the_bar_is_a_logic_break() {
     assert_eq!((report.kind, report.frames), (Some(BreakKind::Logic), 3));
     assert!(
         words(&report).contains("WAVES (1 items against Python's 0"),
+        "{}",
+        words(&report)
+    );
+}
+
+/// A float that passes the bar while the same key was already more than `DRIFT_FROM` apart in the frame before is
+/// drift, in a frame and in an event's float field; a whole number or a layout that differs never is.
+#[test]
+fn a_value_that_drifts_past_the_bar_is_drift() {
+    let (mut rs, py) = pair();
+    floats(&mut rs, "P")[4 * 100 + 1] += 2e-6;
+    floats(&mut rs, "P")[4 * 99 + 1] += 4e-7;
+    let report = prefix_window(&rs, &py);
+    assert_eq!((report.kind, report.frames), (Some(BreakKind::Drift), 100));
+    assert_eq!(report.agree_until_s, frame_time(&py, 100));
+    let w = words(&report);
+    assert!(
+        w.starts_with(
+            "drift (values past 1e-6, the frame before at 4.0e-7): at frame 100 (6.92157 s) outside 1e-6: P (2.0e-6);"
+        ),
+        "{w}"
+    );
+    assert!(w.contains("these keys at the frame before: P 4.0e-7;"), "{w}");
+    // only the keys outside the bar count: another key that was apart in the frame before does not make it drift
+    let (mut rs, py) = pair();
+    floats(&mut rs, "P")[4 * 100 + 1] += 2e-6;
+    floats(&mut rs, "V")[4 * 99] += 4e-7;
+    assert_eq!(prefix_window(&rs, &py).kind, Some(BreakKind::Logic));
+    // a whole number that differs is a logic break, however far apart the floats were in the frame before
+    let (mut rs, py) = pair();
+    floats(&mut rs, "P")[4 * 6 + 1] += 4e-7;
+    let Some(Array::I64 { data, .. }) = rs.arrays.get_mut("LV") else {
+        panic!("LV is whole numbers")
+    };
+    data[2 * 7] = 2;
+    assert_eq!(prefix_window(&rs, &py).kind, Some(BreakKind::Logic));
+
+    // an event's float field past the bar: drift when the frame before is more than DRIFT_FROM apart
+    let (mut rs, py) = pair();
+    let i = py.events.iter().position(|e| e.kind == "hit").expect("a hit");
+    let before = (0..340)
+        .filter(|&f| py::round_nd(frame_time(&py, f), 5) < py.events[i].t)
+        .count();
+    let Value::Float(x) = &mut rs.events[i].fields[3] else {
+        panic!("a hit's x is a float")
+    };
+    *x += 2e-6;
+    floats(&mut rs, "V")[4 * (before - 1) + 2] += 3e-7;
+    let report = prefix_window(&rs, &py);
+    assert_eq!(
+        (report.kind, report.events, report.frames),
+        (Some(BreakKind::Drift), i, before)
+    );
+    assert!(
+        words(&report).starts_with(&format!(
+            "drift (a float field of an event past 1e-6, the frame before at 3.0e-7): event {i}: a float field is \
+             2.0e-6 apart"
+        )),
         "{}",
         words(&report)
     );
@@ -392,7 +451,7 @@ fn clash_margin_is_the_distance_less_two_radii() {
     let bare = testing::bare_pair();
     let mut setup = testing::bare_setup(&bare, 3);
     setup.rules.t_max = setup.rules.t_fight + 20.0;
-    let rec = crate::run(&setup, true);
+    let rec = crate::run_with_unported(&setup, true).expect("the bare pair runs");
     let clashes: Vec<f64> = rec.events.iter().filter(|e| e.kind == "clash").map(|e| e.t).collect();
     assert!(clashes.len() >= 2, "seed 3 clashes in its first 20 s: {clashes:?}");
     for &t in &clashes {
@@ -416,6 +475,12 @@ fn clash_margin_is_the_distance_less_two_radii() {
     assert_eq!(clash_margin(&setup, 1.0), None, "before the fight");
     assert_eq!(clash_margin(&setup, 99.0), None, "after it");
     assert_eq!(clash_margin(&setup, clashes[0] + 1e-5), None, "between two steps");
+    // a step with a rope bounce: the replay of one ball would draw from the generator out of turn
+    let ropes: Vec<f64> = rec.events.iter().filter(|e| e.kind == "rope").map(|e| e.t).collect();
+    assert!(!ropes.is_empty());
+    for &t in &ropes {
+        assert_eq!(clash_margin(&setup, t), None, "a rope bounce at {t}");
+    }
     // rules the engine cannot run
     let mut bad = setup.clone();
     bad.rules.dt = 0.0;

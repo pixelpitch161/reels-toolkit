@@ -30,6 +30,7 @@ pub mod post;
 pub mod raster;
 pub mod shadows;
 pub mod sprite;
+pub mod title;
 pub mod ui;
 mod v3;
 

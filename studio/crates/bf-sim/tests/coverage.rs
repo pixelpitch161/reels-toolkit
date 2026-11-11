@@ -98,7 +98,7 @@ fn every_kind_fires_inside_the_window() {
         let rel = file.strip_prefix("fights/").expect("a file under fights/");
         let (py, rs, agree_until) = fights.entry(file.to_string()).or_insert_with(|| {
             let py = support::python_recording(rel);
-            let rs = run(&support::setup_like(&py, &roster), true);
+            let rs = run(&support::setup_like(&py, &roster), true).expect("the engine runs this fight");
             let agree_until = prefix_window(&rs, &py).agree_until_s;
             (py, rs, agree_until)
         });

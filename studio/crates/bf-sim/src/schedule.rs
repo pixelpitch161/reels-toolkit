@@ -266,13 +266,13 @@ pub(crate) fn run(fight: &mut Fight) -> Option<Frames> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::fight::run as run_fight;
+    use crate::fight::run_with_unported as run_fight;
     use crate::testing;
 
     #[test]
     fn the_grid_counters_start_on_the_fights_first_beat() {
         let bare = testing::bare_pair();
-        let mut fight = Fight::new(&testing::bare_setup(&bare, 1), false);
+        let mut fight = testing::fight(&testing::bare_setup(&bare, 1), false);
         let sched = Schedule::new(&mut fight);
         // the fight starts on the bar-2 downbeat: beat 8, 16th 32 of the video
         assert_eq!(
@@ -284,7 +284,7 @@ mod tests {
         // a start between beats: the first beat is the next one
         let mut setup = testing::bare_setup(&bare, 1);
         setup.rules.t_fight += 0.1;
-        let sched = Schedule::new(&mut Fight::new(&setup, false));
+        let sched = Schedule::new(&mut testing::fight(&setup, false));
         assert_eq!((sched.k0, sched.k16_0), (9, 33));
     }
 
@@ -293,7 +293,7 @@ mod tests {
     #[test]
     fn beats_fall_on_the_grid() {
         let bare = testing::bare_pair();
-        let mut fight = Fight::new(&testing::bare_setup(&bare, 1), false);
+        let mut fight = testing::fight(&testing::bare_setup(&bare, 1), false);
         let mut sched = Schedule::new(&mut fight);
         let (t_fight, dt, beat) = (fight.rules.t_fight, fight.rules.dt, fight.rules.beat);
         let mut beats = Vec::new();
@@ -316,7 +316,7 @@ mod tests {
     #[test]
     fn the_timers_run_down_to_zero() {
         let bare = testing::bare_pair();
-        let mut fight = Fight::new(&testing::bare_setup(&bare, 1), false);
+        let mut fight = testing::fight(&testing::bare_setup(&bare, 1), false);
         let mut sched = Schedule::new(&mut fight);
         let dt = fight.rules.dt;
         fight.balls[0].shield = 2.5 * dt;
@@ -341,7 +341,7 @@ mod tests {
     #[test]
     fn a_fight_without_a_ko_runs_to_t_max() {
         let bare = testing::bare_pair();
-        let rec = run_fight(&testing::bare_setup(&bare, 392), true);
+        let rec = run_fight(&testing::bare_setup(&bare, 392), true).expect("the bare pair runs");
         assert_eq!((rec.winner, rec.t_ko), (None, None));
         assert_eq!(rec.frames(), testing::python_recording("no_ko.bfrec").frames());
         assert_eq!(rec.frames(), 1633);
@@ -359,7 +359,7 @@ mod tests {
     fn a_ko_ends_the_fight_with_a_last_frame() {
         let bare = testing::bare_pair();
         let setup = testing::bare_setup(&bare, 1);
-        let mut fight = Fight::new(&setup, true);
+        let mut fight = testing::fight(&setup, true);
         fight.balls[1].hp = 0.0;
         let frames = run(&mut fight).expect("the fight records");
         let t1 = setup.rules.t_fight + setup.rules.dt;
@@ -389,7 +389,7 @@ mod tests {
         assert_eq!(frames.len(), 2);
 
         // both down in the same step: the lower HP loses
-        let mut fight = Fight::new(&setup, false);
+        let mut fight = testing::fight(&setup, false);
         fight.balls[0].hp = -3.0;
         fight.balls[1].hp = -1.0;
         assert!(run(&mut fight).is_none(), "nothing is recorded");
@@ -399,13 +399,13 @@ mod tests {
             (ko.kind.as_str(), &ko.fields),
             ("ko", &vec![Value::Int(0), Value::Int(1)])
         );
-        let mut fight = Fight::new(&setup, false);
+        let mut fight = testing::fight(&setup, false);
         fight.balls[0].hp = -1.0;
         fight.balls[1].hp = -3.0;
         run(&mut fight);
         assert_eq!(fight.winner, Some(0));
         // equal: Python's min() keeps the first, the left fighter loses
-        let mut fight = Fight::new(&setup, false);
+        let mut fight = testing::fight(&setup, false);
         fight.balls[0].hp = -2.0;
         fight.balls[1].hp = -2.0;
         run(&mut fight);
@@ -419,7 +419,7 @@ mod tests {
         let bare = testing::bare_pair();
         let mut setup = testing::bare_setup(&bare, 1);
         setup.rules.fps = 120;
-        let mut fight = Fight::new(&setup, true);
+        let mut fight = testing::fight(&setup, true);
         assert_eq!(Schedule::new(&mut fight).steps_per_frame, 1);
         fight.balls[0].hp = 0.0;
         let frames = run(&mut fight).expect("the fight records");
@@ -428,7 +428,7 @@ mod tests {
         // and without the K.O. every step is a frame
         let mut setup = setup.clone();
         setup.rules.t_max = setup.rules.t_fight + 0.1;
-        let rec = run_fight(&setup, true);
+        let rec = run_fight(&setup, true).expect("the bare pair runs");
         assert_eq!(rec.frames(), 1 + 12, "0.1 s is 12 steps of 1/120 s");
     }
 }

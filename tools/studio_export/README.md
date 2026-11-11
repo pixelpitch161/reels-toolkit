@@ -149,7 +149,9 @@ EXPORTS = {'thing': run}                         # python -m tools.studio_export
 | `fights` | `fights.py` | `studio/reference/fights/flute_vs_trombone/{ep392,seed1,seed2,seed3,seed500}.bfrec` |
 | `frames` | `frames.py` | `studio/reference/frames/flute_vs_trombone/{f<frame>.png,frames.json}` (43 frames), and `studio/reference/frames/exceptions.toml` if it does not exist yet |
 | `kit` | `kit_vectors.py`, `kit_renderer_vectors.py` | `studio/reference/picture_kit/{config,font,np,camera,geometry,raster,lighting,shadows,lens,fftconv,post,hull}.npz`, each with its sidecar `.json` (about 10 seconds) |
+| `kit_ui` | `kit_ui_vectors.py` | `studio/reference/picture_kit/ui_{label,puff,captions,hud}.npz`, each with its sidecar `.json` (about 40 s: it renders 47 frames to record the real calls) |
 | `knife_edge` | `knife_edge.py` | `studio/reference/fights/knife_edge/{core_s<seed>.bfrec,index.json}`: one core-only fight (the two bags of `striker_bag` against each other, the first 13 s) in which the balls travel side by side exactly R + R apart, so `clash` events are made or not on the last bit of a distance: the real sample of a knife-edge for `bf_sim::parity`; `crates/bf-sim/tests/prefix.rs` reads it (under a second) |
+| `rules_map` | `rules_map.py` | `studio/reference/fights/rules_map/{no_handicap,swat_off}.bfrec,index.json`: the example episode with no `DMG_SIDE`, and with `RULES = dict(swat_cobras=False)`, each fought for its first 3 s (seed 1): the recorded `rules` (`vars(rules)`) of a fight file with no handicap and of one with the pair rule `swat_cobras = false`; `crates/bf-sim/tests/rules_map.rs` reads them (under a second) |
 | `lance_bag` | `lance_bag.py` | `studio/reference/fights/lance_vs_bag/{<kind>_<corner>_s<seed>.bfrec,index.json}`: 9 fights of the TROMBONE's lance against a bag (the two bags of `striker_bag`, and a LANCER: the TROMBONE with POWER SLIDE as its only ability; all added to the kit's roster table for the run only), the first 16 s of each, so that only the engine core and the lance act; `index.json` lists them, the three added entries and what the set covers (about 2 s) |
 | `models` | `models.py` | `studio/crates/bf-content/data/models/{FLUTE,TROMBONE}.json` |
 | `pillow` | `pillow_vectors.py` | `studio/reference/pillow/calls.json` and 18 vector files, each `.npz` with its sidecar `.json` (about 4 minutes: it draws all 1,830 frames in 8 worker processes) |
@@ -162,7 +164,7 @@ EXPORTS = {'thing': run}                         # python -m tools.studio_export
 | `scenarios` | `scenarios.py` | `studio/reference/fights/flute_vs_trombone/{scenarios/*.bfrec,no_ko.bfrec,coverage.json}` (reads `stats.json`; order 60) |
 | `stories` | `stories.py` | `studio/reference/fights/flute_vs_trombone/stories.json` (the kit's story and score of every recording there; order 70) |
 | `striker_bag` | `striker_bag.py` | `studio/reference/fights/striker_vs_bag/{<kind>_<corner>_s<seed>.bfrec,index.json}`: 12 fights of the FLUTE against a bag (a fighter with no weapon, added to the kit's roster table for the run only), the first 10 s of each, so that only the engine core and the striker act; `index.json` lists them, the two bag entries and what the set covers (about 4 s) |
-| `title` | `frames.py` | `studio/reference/frames/flute_vs_trombone/title/{f<frame>.png,noise.png,title.json}` (18 cards) |
+| `title` | `frames.py` | `studio/reference/frames/flute_vs_trombone/title/{f<frame>.png,noise.png,title.json}` (18 cards) and `title/hashes.{npz,json}` (the SHA-256 of every card frame of four timelines) |
 | `stems` | `stems.py` | `studio/reference/sound/flute_vs_trombone/{audio.wav,stems.npz,premaster.npz,rms.json,master_case.npz}` (its own interpreter; reads what `voices` wrote; order 55) |
 | `voices` | `voices.py` | `studio/reference/sound/{pp_noise_start.json,flute_vs_trombone/{note_calls.json,first_notes.npz},voices/{FLUTE,TROMBONE,helpers}.npz,voices/scalars.json}` (its own interpreter) |
 | `kit_fx` | `kit_fx_vectors.py` | `studio/reference/picture_kit/fx_{timing,bursts,warp,particles,marks,moments}.npz`, each with its sidecar `.json`: the effects kit, `reelkit.fx` (about 40 s: it renders some 50 frames to record the real calls; see its docstring for the cases) |
@@ -464,6 +466,14 @@ cases: `{"id", "call", "args": {"frame", "t"}, "file", "rule", "reason", "expect
 with `t`, `title.door_offset(t)` and `title.shake(t)` as `float.hex()` strings. The card takes only the two
 fighters' names from the fight (nothing on it depends on who wins); `title.json` still carries the `recording`
 entry of the checked file.
+
+`title/hashes.npz` (with its sidecar `hashes.json`) pins every other frame on which the card is drawn: one case per
+timeline, `frames` (`<i4`, every frame with `door_offset` not `None` and below `OPEN_PX - 1`) and `sha256` (`|u1`,
+n x 32, the digest of `title.draw(noise, frame / 30).tobytes()`). The timelines are the episode as `kit.picture`
+draws it (61 frames) and the example config with only `FIGHTERS`, `BPM` or `SERIES` changed: the two fighters
+swapped (61), 96 BPM without a tag (84) and 200 BPM (43). Those three are drawn in fresh spawned processes (title.py
+keeps module-level state) with a stand-in `render` module and the looks' hooks registered by `kit.picture`'s own
+lines; the episode is drawn that way too and must give the same digests. About 14 KB.
 
 | Rules | Frames |
 | --- | --- |

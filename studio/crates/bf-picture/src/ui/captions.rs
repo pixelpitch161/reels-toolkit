@@ -14,11 +14,13 @@
 //! a picture can only differ where a value lies within about 1e-9 (the sand), 1e-13 (the punch) or 1e-15 (the
 //! shake) of a rounding step. On the reference vectors the nearest is 5e-6, and every picture is Python's.
 
-use super::{DrawLog, Kind, py_max, py_min, round_i32};
+use super::{DrawLog, Kind, round_i32};
 use crate::config::{SAFE, SAFE_CX, ss};
 use crate::font::{self, ADV};
 use crate::img::{Img, Rgb8};
 use crate::np;
+use crate::np::index::resample;
+use bf_core::py::{py_max, py_min};
 use bf_core::{dmath, py, pyhash};
 
 /// `CAP_Y0`: the top of the first caption line, 4 px below the top of the safe box.
@@ -30,10 +32,9 @@ pub const CAP_BIG_MAX: usize = 14;
 pub const CAP_SMALL_MAX: usize = 21;
 /// `IMPACT_DROP`: the pixels a line falls before it lands.
 pub const IMPACT_DROP: f64 = 4.0;
-/// `IMPACT_FALL`: the seconds of the fall.
-pub const IMPACT_FALL: f64 = 0.10;
-/// `IMPACT_STAGGER`: the seconds between one line starting to fall and the next.
-pub const IMPACT_STAGGER: f64 = 0.22;
+/// `IMPACT_FALL` (the seconds of the fall) and `IMPACT_STAGGER` (the seconds between one line starting to fall
+/// and the next): the core's, which the soundtrack's caption thuds use too.
+pub use bf_core::show::{IMPACT_FALL, IMPACT_STAGGER};
 /// `IMPACT_PUNCH`: the scale on landing, settling to 1 over [`IMPACT_PUNCH_T`].
 pub const IMPACT_PUNCH: f64 = 1.10;
 /// `IMPACT_PUNCH_T`: the seconds of the punch.
@@ -52,13 +53,9 @@ pub const HASH_K: [f64; 4] = [12.9898, 78.233, 37.719, 4.581];
 /// The outline under every caption letter: `_stamp_rgb`'s default `(10, 20, 26)`.
 const OUTLINE: [f64; 3] = [10.0, 20.0, 26.0];
 
-/// One caption: the lines shown from `t0` (inclusive) to `t1` (exclusive).
-#[derive(Clone, Debug, PartialEq)]
-pub struct Caption {
-    pub t0: f64,
-    pub t1: f64,
-    pub lines: Vec<String>,
-}
+/// One caption: the lines shown from `t0` (inclusive) to `t1` (exclusive). The core's caption window, the one
+/// the show derives.
+pub use bf_core::show::Cap as Caption;
 
 /// The keywords of `draw_captions` the `impact` style reads. `Default` is Python's: the top centre of the safe
 /// box, [`super::CREAM`] text with [`super::AMBER`] and [`super::SKYB`] highlights, sand in [`PUFF`].
@@ -91,14 +88,10 @@ impl Default for CaptionStyle {
     }
 }
 
-/// One row of `impact_landings`: when a caption line lands, which line of its caption it is (from 0) and how many
-/// characters it has.
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct Landing {
-    pub t: f64,
-    pub line: usize,
-    pub chars: usize,
-}
+/// `impact_landings(caps, stagger=IMPACT_STAGGER, fall=IMPACT_FALL)` and its rows: every caption line that lands
+/// before its caption ends, in the order of `caps`, with which line of its caption it is (from 0) and how many
+/// characters it has. One port, in the core: the soundtrack puts a soft thud on each landing.
+pub use bf_core::show::{Landing, impact_landings};
 
 /// `_plain(line)`: the line without its `*` and `~` marks.
 fn plain(line: &str) -> String {
@@ -114,25 +107,6 @@ pub fn caption_scale<S: AsRef<str>>(lines: &[S]) -> u32 {
         .max()
         .unwrap_or(0);
     if longest <= CAP_BIG_MAX { 3 } else { 2 }
-}
-
-/// `impact_landings(caps, stagger=IMPACT_STAGGER, fall=IMPACT_FALL)`: every caption line that lands before its
-/// caption ends, in the order of `caps` (the soundtrack puts a soft thud on each).
-pub fn impact_landings(caps: &[Caption], stagger: f64, fall: f64) -> Vec<Landing> {
-    let mut out = Vec::new();
-    for cap in caps {
-        for (k, line) in cap.lines.iter().enumerate() {
-            let tl = cap.t0 + k as f64 * stagger + fall;
-            if tl < cap.t1 {
-                out.push(Landing {
-                    t: tl,
-                    line: k,
-                    chars: plain(line).chars().count(),
-                });
-            }
-        }
-    }
-    out
 }
 
 /// `_line_ink(line, scale, ...)`: the line's mask at an integer scale and, for every column of it, which colour
@@ -158,30 +132,6 @@ fn line_ink(line: &str, scale: u32) -> (Img<u8>, Vec<u8>) {
     let last = modes.last().copied().unwrap_or(0);
     let cols = (0..m.w).map(|x| modes.get(x / step).copied().unwrap_or(last)).collect();
     (m, cols)
-}
-
-/// `_resample`'s index list for one axis: `np.minimum((np.arange(n) * size / n).astype(int), size - 1)`, the
-/// source index of each of the `n` new rows or columns (nearest neighbour, by truncation).
-fn resample_index(n: usize, size: usize) -> Vec<usize> {
-    (0..n)
-        .map(|i| {
-            let src = np::f64_to_i64((i * size) as f64 / n as f64).max(0) as usize;
-            src.min(size.saturating_sub(1))
-        })
-        .collect()
-}
-
-/// `_resample(mask, hh, ww)` and `_resample(rgb, hh, ww)`: the mask and its column colours at another size.
-fn resample(m: &Img<u8>, cols: &[u8], hh: usize, ww: usize) -> (Img<u8>, Vec<u8>) {
-    let (ys, xs) = (resample_index(hh, m.h), resample_index(ww, m.w));
-    let mut out: Img<u8> = Img::new(ww, hh, 1);
-    for (y, &sy) in ys.iter().enumerate() {
-        let src = m.row(sy);
-        for (o, &sx) in out.row_mut(y).iter_mut().zip(&xs) {
-            *o = src[sx];
-        }
-    }
-    (out, xs.iter().map(|&sx| cols[sx]).collect())
 }
 
 /// One layer of `_stamp_rgb`: the set pixels of `m`, placed with its top left at `(mx, my)`, take the colour
@@ -434,19 +384,6 @@ mod tests {
         let (m, cols) = line_ink("**", 3);
         assert_eq!((m.w, m.h, cols), (3, 21, vec![0, 0, 0]));
         assert_eq!(line_ink("*ab", 2).1, vec![1; 22]);
-    }
-
-    #[test]
-    fn resampling_is_nearest_by_truncation() {
-        assert_eq!(resample_index(4, 2), [0, 0, 1, 1]);
-        assert_eq!(resample_index(3, 2), [0, 0, 1]);
-        assert_eq!(resample_index(5, 3), [0, 0, 1, 1, 2]);
-        assert_eq!(resample_index(2, 5), [0, 2]);
-        let m = Img::from_vec(2, 1, 1, vec![1u8, 0]);
-        let (big, cols) = resample(&m, &[2, 1], 2, 3);
-        assert_eq!((big.w, big.h), (3, 2));
-        assert_eq!(big.data, [1, 1, 0, 1, 1, 0]);
-        assert_eq!(cols, [2, 2, 1]);
     }
 
     #[test]

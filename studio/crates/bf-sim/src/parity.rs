@@ -6,16 +6,25 @@
 //! [`PREFIX_TOL`] for at least [`PREFIX_FLOOR_S`] seconds of fighting. [`prefix_window`] measures the window of one
 //! fight and says in words what ended it:
 //!
+//! - **drift**: a float (a per-frame value, or a float field of an event that is otherwise the same) passes the bar
+//!   while the frame before was already more than [`DRIFT_FROM`] apart: the two fights have been parting slowly, as
+//!   the last-bit differences grow. That is how a window of a correct port ends.
 //! - **a knife-edge**: one engine made an event the other did not make there, while every per-frame value before it
 //!   is still inside the bar, and the event is of a kind that a comparison of positions decides (a `clash`, a `rope`
 //!   bounce, a `hit`, ...). That is what a last-bit difference does when such a comparison is decided by the last
-//!   bit (two balls that travel side by side exactly `R + R` apart clash or not on it). The words name the event
-//!   and, for a `clash`, how close to `R + R` the balls are in the frames around it; [`clash_margin`] replays the
-//!   step and gives the margin of the comparison itself. A missing event is ALSO what a mistake in the port looks
-//!   like, so a knife-edge before the floor is never passed silently: the margin tells the two apart.
-//! - **a logic break**: a per-frame value outside the bar; an event of the same kind at the same time with different
-//!   fields; or an event only one engine made of a kind that the clock and whole hit points decide (an `ability`, a
-//!   `level`, a `basket`, a `thrust`, a `slam`, a `ko`), which no last bit can make or unmake.
+//!   bit (two balls that travel side by side exactly `R + R` apart clash or not on it). The words name the event.
+//!   Only a `clash` carries a margin: the words say how close to `R + R` the balls are in the frames around it, and
+//!   [`clash_margin`] replays the step and gives the margin of the comparison itself. A missing event is ALSO what a
+//!   mistake in the port looks like, so a knife-edge before the floor is never passed silently: the margin tells the
+//!   two apart.
+//! - **a logic break**: a float outside the bar where the frame before was close (inside [`DRIFT_FROM`]: a jump, not
+//!   a drift); a whole number, a text or the layout of a row or an event that differs; or an event only one engine
+//!   made of a kind that the clock and whole hit points decide (an `ability`, a `level`, a `basket`, a `thrust`, a
+//!   `slam`, a `ko`), which no last bit can make or unmake.
+//!
+//! [`prefix_window`] is three steps: the event scan (the first event that is not the same in both lists), the frame
+//! scan (the frames before that event, up to the first one outside the bar), and the classification of whichever
+//! break comes first.
 
 use std::collections::BTreeMap;
 
@@ -23,9 +32,6 @@ use bf_core::dmath;
 use bf_core::event::{Event, Value};
 use bf_core::py;
 use bf_core::recording::{Array, Recording};
-
-use crate::fight::{Fight, Setup};
-use crate::schedule::Schedule;
 
 /// The floor of the agreement window: seconds of fighting (counted from `t_fight`) over which this engine and a
 /// Python recording of the same fight must agree. A fight that ends sooner must agree to its end.
@@ -35,14 +41,21 @@ pub const PREFIX_FLOOR_S: f64 = 10.0;
 /// Whole numbers, texts, event kinds and event times are compared exactly.
 pub const PREFIX_TOL: f64 = 1e-6;
 
+/// A float that passes [`PREFIX_TOL`] is drift, not a jump, when the frame before was already more than this apart.
+pub const DRIFT_FROM: f64 = 1e-7;
+
 /// What ended an agreement window.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum BreakKind {
+    /// A float passed the bar (a per-frame value, or a float field of an event that is otherwise the same) while the
+    /// frame before was already more than [`DRIFT_FROM`] apart: the slow parting of two fights whose maths differ in
+    /// the last bit.
+    Drift,
     /// One engine made an event the other did not make there (the next events differ in kind or in time), of a kind
     /// that a comparison of positions decides, while every per-frame value before it is inside the bar.
     KnifeEdge,
-    /// A per-frame value is outside the bar, an event of the same kind at the same time has different fields, or
-    /// only one engine made an event of a kind that the clock and whole hit points decide.
+    /// A float jumped outside the bar (the frame before was inside [`DRIFT_FROM`]), a whole number, a text or a
+    /// layout differs, or only one engine made an event of a kind that the clock and whole hit points decide.
     Logic,
 }
 
@@ -169,7 +182,10 @@ fn frame_shape(a: &Array) -> String {
 enum EventGap {
     /// The same event: the largest difference of its float fields (inside the bar).
     Same(f64),
-    /// The same kind at the same time with different fields: what differs.
+    /// The same kind at the same time, the same whole numbers, texts and layout, a float field outside the bar: the
+    /// largest difference.
+    Float(f64),
+    /// The same kind at the same time with a whole number, a text or a layout that differs: what differs.
     Fields(String),
     /// Another kind or another time: one engine made an event the other did not make there.
     Other,
@@ -181,7 +197,7 @@ fn event_gap(a: &Event, b: &Event) -> EventGap {
     }
     match value_gap(&Value::List(a.fields.clone()), &Value::List(b.fields.clone())) {
         Ok(d) if d <= PREFIX_TOL => EventGap::Same(d),
-        Ok(d) => EventGap::Fields(format!("a float field is {d:.1e} apart")),
+        Ok(d) => EventGap::Float(d),
         Err(what) => EventGap::Fields(what),
     }
 }
@@ -246,64 +262,132 @@ fn broken(t: f64, kind: BreakKind, words: String, frames: usize, events: usize, 
 /// recordings must hold their per-frame arrays.
 pub fn prefix_window(rust: &Recording, python: &Recording) -> PrefixReport {
     let t_start = rule(python, "t_fight").unwrap_or(0.0);
-    let not_comparable = |what: String| broken(t_start, BreakKind::Logic, what, 0, 0, 0.0);
+    let clock = match comparable(rust, python) {
+        Ok(clock) => clock,
+        Err(what) => return broken(t_start, BreakKind::Logic, what, 0, 0, 0.0),
+    };
+    let events = scan_events(rust, python);
+    let t_event = events.brk.as_ref().map_or(f64::INFINITY, |b| b.t);
+    let frames = scan_frames(rust, python, &clock, t_event);
+    if let Some(at) = &frames.brk {
+        return frame_break(rust, python, &frames, at, &events.gaps);
+    }
+    match events.brk {
+        Some(at) => event_break(rust, python, &frames, at, &events.gaps),
+        None => no_break(rust, python, &clock, &frames, &events.gaps, t_start),
+    }
+}
+
+/// Whether the two recordings are of the same fight with the same per-frame keys, each of the same shape; the clock
+/// of their frames if so, else what differs.
+fn comparable(rust: &Recording, python: &Recording) -> Result<Clock, String> {
     if rust.names != python.names || rust.seed != python.seed {
-        return not_comparable(format!(
+        return Err(format!(
             "not the same fight: {:?} seed {} against Python's {:?} seed {}",
             rust.names, rust.seed, python.names, python.seed
         ));
     }
-    let Some(clock) = Clock::of(python) else {
-        return not_comparable("the Python recording's rules lack t_fight, DT or FPS".to_string());
-    };
+    let clock = Clock::of(python).ok_or("the Python recording's rules lack t_fight, DT or FPS")?;
     let (rs_keys, py_keys): (Vec<&String>, Vec<&String>) =
         (rust.arrays.keys().collect(), python.arrays.keys().collect());
     if rs_keys != py_keys || py_keys.is_empty() {
-        return not_comparable(format!(
+        return Err(format!(
             "the per-frame keys differ: {rs_keys:?} against Python's {py_keys:?}"
         ));
     }
     for (key, py_array) in &python.arrays {
         let (a, b) = (frame_shape(&rust.arrays[key]), frame_shape(py_array));
         if a != b {
-            return not_comparable(format!("{key} is {a} per frame against Python's {b}"));
+            return Err(format!("{key} is {a} per frame against Python's {b}"));
         }
     }
+    Ok(clock)
+}
 
-    // The first event that is not the same in both lists; before it, how far apart each pair of events is.
-    let mut event_gaps: Vec<f64> = Vec::new();
-    let mut event_break: Option<(usize, f64, Option<String>)> = None; // index, time, the differing fields
-    let n_events = rust.events.len().max(python.events.len());
-    for i in 0..n_events {
-        match (rust.events.get(i), python.events.get(i)) {
+/// The event scan: how far apart each pair of events is, up to the first one that is not the same in both lists.
+struct EventScan {
+    /// The largest float difference of each pair of events before the break.
+    gaps: Vec<f64>,
+    /// The first event that is not the same, if any.
+    brk: Option<EventBreak>,
+}
+
+/// The first event that is not the same in both lists.
+struct EventBreak {
+    /// Its index in the lists.
+    i: usize,
+    /// Its time: Python's for an event of the same kind at the same time, else the earlier of the two.
+    t: f64,
+    /// How the two compare there: never `Same`; `Other` also when one list has no event left.
+    gap: EventGap,
+}
+
+fn scan_events(rust: &Recording, python: &Recording) -> EventScan {
+    let mut gaps = Vec::new();
+    for i in 0.. {
+        let (gap, t) = match (rust.events.get(i), python.events.get(i)) {
             (Some(a), Some(b)) => match event_gap(a, b) {
-                EventGap::Same(d) => event_gaps.push(d),
-                EventGap::Fields(what) => {
-                    event_break = Some((i, b.t, Some(what)));
-                    break;
+                EventGap::Same(d) => {
+                    gaps.push(d);
+                    continue;
                 }
-                EventGap::Other => {
-                    event_break = Some((i, a.t.min(b.t), None));
-                    break;
-                }
+                EventGap::Other => (EventGap::Other, a.t.min(b.t)),
+                gap => (gap, b.t),
             },
-            (Some(e), None) | (None, Some(e)) => {
-                event_break = Some((i, e.t, None));
-                break;
-            }
-            (None, None) => unreachable!("i is below the longer list's length"),
-        }
+            (Some(e), None) | (None, Some(e)) => (EventGap::Other, e.t),
+            (None, None) => break,
+        };
+        return EventScan {
+            gaps,
+            brk: Some(EventBreak { i, t, gap }),
+        };
     }
-    let t_event = event_break.as_ref().map_or(f64::INFINITY, |b| b.1);
+    EventScan { gaps, brk: None }
+}
 
-    // The frames before it (an event's time is its step's, rounded to 5 places: so are the frame times here).
-    let frames = rust.frames().min(python.frames());
-    let mut agreed = 0;
-    // the largest difference in the frames that agree, and in their positions
-    let (mut worst, mut worst_p) = (0.0f64, 0.0f64);
-    // the largest difference in the first `n` events
-    let in_events = |n: usize| event_gaps[..n].iter().copied().fold(0.0, f64::max);
-    for i in 0..frames {
+/// The largest difference in the first `n` events.
+fn in_events(gaps: &[f64], n: usize) -> f64 {
+    gaps[..n.min(gaps.len())].iter().copied().fold(0.0, f64::max)
+}
+
+/// The frame scan: the frames before the first event break (an event's time is its step's, rounded to 5 places: so
+/// are the frame times here), up to the first one with a value outside the bar.
+struct FrameScan<'a> {
+    /// Frames that agree.
+    agreed: usize,
+    /// The frames both recordings hold.
+    common: usize,
+    /// The largest difference in the frames that agree.
+    worst: f64,
+    /// The largest difference in their positions (`P`).
+    worst_p: f64,
+    /// The largest difference in the last frame that agrees (0 when none does).
+    last: f64,
+    /// The first frame with a value outside the bar, if it comes before the event break.
+    brk: Option<FrameBreak<'a>>,
+}
+
+/// A frame with a value outside the bar.
+struct FrameBreak<'a> {
+    /// The frame.
+    i: usize,
+    /// Its time.
+    t: f64,
+    /// How far apart each key is at that frame.
+    gaps: BTreeMap<&'a str, Result<f64, String>>,
+}
+
+fn scan_frames<'a>(rust: &Recording, python: &'a Recording, clock: &Clock, t_event: f64) -> FrameScan<'a> {
+    let common = rust.frames().min(python.frames());
+    let mut scan = FrameScan {
+        agreed: 0,
+        common,
+        worst: 0.0,
+        worst_p: 0.0,
+        last: 0.0,
+        brk: None,
+    };
+    for i in 0..common {
         let t = clock.frame(python, i);
         if py::round_nd(t, 5) >= t_event {
             break;
@@ -313,126 +397,159 @@ pub fn prefix_window(rust: &Recording, python: &Recording) -> PrefixReport {
             .iter()
             .map(|(key, py_array)| (key.as_str(), frame_gap(&rust.arrays[key], py_array, i)))
             .collect();
-        let outside = |gap: &Result<f64, String>| !matches!(gap, Ok(d) if *d <= PREFIX_TOL);
         if gaps.values().any(outside) {
-            // every key at this frame, the ones outside the bar first; then the frame before, and the events
-            let show = |gap: &Result<f64, String>| match gap {
-                Ok(d) => format!("{d:.1e}"),
-                Err(what) => what.clone(),
-            };
-            let out: Vec<String> = gaps
-                .iter()
-                .filter(|(_, gap)| outside(gap))
-                .map(|(key, gap)| format!("{key} ({})", show(gap)))
-                .collect();
-            let rest: Vec<String> = gaps
-                .iter()
-                .filter(|(_, gap)| !outside(gap))
-                .filter(|(_, gap)| !matches!(gap, Ok(d) if *d == 0.0))
-                .map(|(key, gap)| format!("{key} {}", show(gap)))
-                .collect();
-            let before: Vec<String> = match i.checked_sub(1) {
-                Some(j) => gaps
-                    .iter()
-                    .filter(|(_, gap)| outside(gap))
-                    .map(|(key, _)| {
-                        format!(
-                            "{key} {}",
-                            show(&frame_gap(&rust.arrays[*key], &python.arrays[*key], j))
-                        )
-                    })
-                    .collect(),
-                None => Vec::new(),
-            };
-            // the events up to this frame all agree (an event break at or before it would have ended the window
-            // first); what the lists do afterwards says whether the two fights still tell the same story
-            let n_before = python.events.iter().take_while(|e| e.t <= py::round_nd(t, 5)).count();
-            let story = match same_story_until(rust, python) {
-                Some((j, t_j)) => format!("stay the same in kind, time and whole numbers until event {j} at {t_j} s"),
-                None => "are the same in kind, time and whole numbers to the end".to_string(),
-            };
-            let words = format!(
-                "logic break (values): at frame {i} ({t:.5} s) outside 1e-6: {}; inside it at that frame: {}; these \
-                 keys at the frame before: {}; the {n_before} events up to that frame agree, and the event lists \
-                 {story}",
-                out.join(", "),
-                if rest.is_empty() {
-                    "nothing else differs".to_string()
-                } else {
-                    rest.join(", ")
-                },
-                if before.is_empty() {
-                    "(none)".to_string()
-                } else {
-                    before.join(", ")
-                },
-            );
-            return broken(
-                t,
-                BreakKind::Logic,
-                words,
-                agreed,
-                n_before,
-                worst.max(in_events(n_before)),
-            );
+            scan.brk = Some(FrameBreak { i, t, gaps });
+            break;
         }
+        scan.last = 0.0;
         for (key, gap) in &gaps {
             let d = *gap.as_ref().expect("inside the bar");
-            worst = worst.max(d);
+            scan.last = scan.last.max(d);
             if *key == "P" {
-                worst_p = worst_p.max(d);
+                scan.worst_p = scan.worst_p.max(d);
             }
         }
-        agreed += 1;
+        scan.worst = scan.worst.max(scan.last);
+        scan.agreed += 1;
     }
+    scan
+}
 
-    let Some((i, t, fields)) = event_break else {
-        // every event agrees, and every frame both recordings hold
-        if rust.frames() != python.frames() {
-            let t = clock.frame(if rust.frames() > frames { rust } else { python }, frames);
-            let words = format!(
-                "logic break (values): {} frames against Python's {}, with the same events",
-                rust.frames(),
-                python.frames()
-            );
-            return broken(
-                t,
-                BreakKind::Logic,
-                words,
-                agreed,
-                n_events,
-                worst.max(in_events(n_events)),
-            );
-        }
-        let end = match (python.t_ko, frames.checked_sub(1)) {
-            (Some(t_ko), _) => t_ko,
-            (None, Some(last)) => clock.frame(python, last),
-            (None, None) => t_start,
-        };
-        return PrefixReport {
-            agree_until_s: end,
-            first_break: None,
-            kind: None,
-            frames: agreed,
-            events: n_events,
-            worst: worst.max(in_events(n_events)),
-        };
+/// Whether a frame's gap is outside the bar (a float past it, or anything else that differs).
+fn outside(gap: &Result<f64, String>) -> bool {
+    !matches!(gap, Ok(d) if *d <= PREFIX_TOL)
+}
+
+/// The report of a frame with a value outside the bar: drift when every value outside is a float and the same keys
+/// were already more than [`DRIFT_FROM`] apart in the frame before, else a logic break.
+fn frame_break(
+    rust: &Recording,
+    python: &Recording,
+    scan: &FrameScan,
+    at: &FrameBreak,
+    event_gaps: &[f64],
+) -> PrefixReport {
+    let FrameBreak { i, t, gaps } = at;
+    let (i, t) = (*i, *t);
+    // every key at this frame, the ones outside the bar first; then the frame before, and the events
+    let show = |gap: &Result<f64, String>| match gap {
+        Ok(d) => format!("{d:.1e}"),
+        Err(what) => what.clone(),
     };
-    let worst = worst.max(in_events(i));
+    let out: Vec<String> = gaps
+        .iter()
+        .filter(|(_, gap)| outside(gap))
+        .map(|(key, gap)| format!("{key} ({})", show(gap)))
+        .collect();
+    let rest: Vec<String> = gaps
+        .iter()
+        .filter(|(_, gap)| !outside(gap))
+        .filter(|(_, gap)| !matches!(gap, Ok(d) if *d == 0.0))
+        .map(|(key, gap)| format!("{key} {}", show(gap)))
+        .collect();
+    // the keys outside the bar, at the frame before
+    let before: Vec<(&str, Result<f64, String>)> = match i.checked_sub(1) {
+        Some(j) => gaps
+            .iter()
+            .filter(|(_, gap)| outside(gap))
+            .map(|(key, _)| (*key, frame_gap(&rust.arrays[*key], &python.arrays[*key], j)))
+            .collect(),
+        None => Vec::new(),
+    };
+    let floats_only = gaps.values().filter(|gap| outside(gap)).all(Result::is_ok);
+    let was = before
+        .iter()
+        .filter_map(|(_, gap)| gap.as_ref().ok())
+        .copied()
+        .fold(0.0, f64::max);
+    let drift = floats_only && !before.is_empty() && was > DRIFT_FROM;
+    // the events up to this frame all agree (an event break at or before it would have ended the window first);
+    // what the lists do afterwards says whether the two fights still tell the same story
+    let n_before = python.events.iter().take_while(|e| e.t <= py::round_nd(t, 5)).count();
+    let story = match same_story_until(rust, python) {
+        Some((j, t_j)) => format!("stay the same in kind, time and whole numbers until event {j} at {t_j} s"),
+        None => "are the same in kind, time and whole numbers to the end".to_string(),
+    };
+    let head = if drift {
+        format!("drift (values past 1e-6, the frame before at {was:.1e})")
+    } else {
+        "logic break (values)".to_string()
+    };
+    let words = format!(
+        "{head}: at frame {i} ({t:.5} s) outside 1e-6: {}; inside it at that frame: {}; these keys at the frame \
+         before: {}; the {n_before} events up to that frame agree, and the event lists {story}",
+        out.join(", "),
+        if rest.is_empty() {
+            "nothing else differs".to_string()
+        } else {
+            rest.join(", ")
+        },
+        if before.is_empty() {
+            "(none)".to_string()
+        } else {
+            let shown: Vec<String> = before.iter().map(|(key, gap)| format!("{key} {}", show(gap))).collect();
+            shown.join(", ")
+        },
+    );
+    let kind = if drift { BreakKind::Drift } else { BreakKind::Logic };
+    broken(
+        t,
+        kind,
+        words,
+        scan.agreed,
+        n_before,
+        scan.worst.max(in_events(event_gaps, n_before)),
+    )
+}
 
+/// The report of the first event that is not the same in both lists, when every frame before it agrees.
+///
+/// An event whose only difference is a float field past the bar is drift when the LAST AGREED FRAME's largest
+/// difference, over all its keys, is above [`DRIFT_FROM`]. That is looser than the frame rule (which looks only at
+/// the keys that break): an event's floats (positions, distances, times) come from several keys at once, so no
+/// single key matches them.
+fn event_break(
+    rust: &Recording,
+    python: &Recording,
+    scan: &FrameScan,
+    at: EventBreak,
+    event_gaps: &[f64],
+) -> PrefixReport {
+    let EventBreak { i, t, gap } = at;
+    let (agreed, worst_p) = (scan.agreed, scan.worst_p);
+    let worst = scan.worst.max(in_events(event_gaps, i));
     let show = |e: Option<&Event>| match e {
         Some(e) => format!("{:?} at {} s {:?}", e.kind, e.t, e.fields),
         None => "no more events".to_string(),
     };
     let (a, b) = (rust.events.get(i), python.events.get(i));
-    if let Some(what) = fields {
-        let words = format!(
-            "logic break (an event with different fields at the same time): event {i}: {what}\n Rust:   {}\n Python: \
-             {}\n the largest position difference in the {agreed} frames before is {worst_p:.1e}",
-            show(a),
-            show(b)
-        );
-        return broken(t, BreakKind::Logic, words, agreed, i, worst);
+    let tail = format!(
+        "\n Rust:   {}\n Python: {}\n the largest position difference in the {agreed} frames before is {worst_p:.1e}",
+        show(a),
+        show(b)
+    );
+    match gap {
+        EventGap::Float(d) if agreed > 0 && scan.last > DRIFT_FROM => {
+            let words = format!(
+                "drift (a float field of an event past 1e-6, the frame before at {:.1e}): event {i}: a float field \
+                 is {d:.1e} apart{tail}",
+                scan.last
+            );
+            return broken(t, BreakKind::Drift, words, agreed, i, worst);
+        }
+        EventGap::Float(d) => {
+            let words = format!(
+                "logic break (an event with different fields at the same time): event {i}: a float field is {d:.1e} \
+                 apart{tail}"
+            );
+            return broken(t, BreakKind::Logic, words, agreed, i, worst);
+        }
+        EventGap::Fields(what) => {
+            let words =
+                format!("logic break (an event with different fields at the same time): event {i}: {what}{tail}");
+            return broken(t, BreakKind::Logic, words, agreed, i, worst);
+        }
+        EventGap::Other | EventGap::Same(_) => {}
     }
     // One engine made an event the other did not make there. The earlier of the two is the one the other engine
     // lacks; of two at the same time, the one the other engine's list simply skips.
@@ -462,28 +579,20 @@ pub fn prefix_window(rust: &Recording, python: &Recording) -> PrefixReport {
     if !by_positions {
         let words = format!(
             "logic break (an event only one engine made, of a kind no last bit decides): a {:?} at {} s, event {i}: \
-             {whose}\n Rust:   {}\n Python: {}\n the largest position difference in the {agreed} frames before is \
-             {worst_p:.1e}",
-            odd.kind,
-            odd.t,
-            show(a),
-            show(b)
+             {whose}{tail}",
+            odd.kind, odd.t
         );
         return broken(t, BreakKind::Logic, words, agreed, i, worst);
     }
     let mut words = format!(
         "knife-edge (an event break while every per-frame value before it is inside 1e-6): a {:?} at {} s, event {i}: \
-         {whose}\n Rust:   {}\n Python: {}\n the largest position difference in the {agreed} frames before is \
-         {worst_p:.1e}",
-        odd.kind,
-        odd.t,
-        show(a),
-        show(b)
+         {whose}{tail}",
+        odd.kind, odd.t
     );
     if odd.kind == "clash" {
         // the comparison that makes a clash is `dist < R + R`: how close to it the balls are in the frames around
         let f = |x: Option<f64>| x.map_or("?".to_string(), |x| format!("{x:.1e}"));
-        let after = (agreed < frames).then_some(agreed);
+        let after = (agreed < scan.common).then_some(agreed);
         words.push_str(&format!(
             "\n the balls' distance less R + R: in the frame before, {} (Rust) and {} (Python); in the frame after, {} \
              (Rust) and {} (Python)",
@@ -496,16 +605,60 @@ pub fn prefix_window(rust: &Recording, python: &Recording) -> PrefixReport {
     broken(t, BreakKind::KnifeEdge, words, agreed, i, worst)
 }
 
+/// The report when every event agrees, and every frame both recordings hold: the window is the whole fight, unless
+/// one recording has more frames.
+fn no_break(
+    rust: &Recording,
+    python: &Recording,
+    clock: &Clock,
+    scan: &FrameScan,
+    event_gaps: &[f64],
+    t_start: f64,
+) -> PrefixReport {
+    let n_events = event_gaps.len();
+    let worst = scan.worst.max(in_events(event_gaps, n_events));
+    let frames = scan.common;
+    if rust.frames() != python.frames() {
+        let t = clock.frame(if rust.frames() > frames { rust } else { python }, frames);
+        let words = format!(
+            "logic break (values): {} frames against Python's {}, with the same events",
+            rust.frames(),
+            python.frames()
+        );
+        return broken(t, BreakKind::Logic, words, scan.agreed, n_events, worst);
+    }
+    let end = match (python.t_ko, frames.checked_sub(1)) {
+        (Some(t_ko), _) => t_ko,
+        (None, Some(last)) => clock.frame(python, last),
+        (None, None) => t_start,
+    };
+    PrefixReport {
+        agree_until_s: end,
+        first_break: None,
+        kind: None,
+        frames: scan.agreed,
+        events: n_events,
+        worst,
+    }
+}
+
 /// The margin of the comparison that makes a `clash` (`dist < R + R`, `fight.py` 3179 to 3188) in the step of this
 /// engine's fight whose events carry the time `t`: the distance between the two balls after both have flown (and
-/// bounced), less `R + R`. Below 0 the engine clashes in that step, by that much; from 0 up it does not. `None` when
-/// the fight has no such step, or its rules cannot be run.
+/// bounced), less `R + R`. Below 0 the engine clashes in that step, by that much; from 0 up it does not.
 ///
 /// It replays the fight to that step, then flies each ball once more with the other out of its way: a ball's flight
-/// depends on nothing but itself.
-pub fn clash_margin(setup: &Setup, t: f64) -> Option<f64> {
-    setup.rules.check().ok()?;
-    let mut fight = Fight::new(setup, false);
+/// depends on nothing but itself, except for the fight's generator, which a rope bounce draws from. So the margin is
+/// `None` when that step has a `rope` event (the replay of one ball would draw out of turn there and fly it
+/// elsewhere); also when the fight has no such step, or the engine cannot run the setup.
+///
+/// A diagnostic for the parity suites only (it is how a knife-edge `clash` is shown to be one); a fighter of a kind
+/// not ported is let in, as the test entry `Fight::with_unported` does.
+#[cfg(any(test, feature = "testing"))]
+#[doc(hidden)]
+pub fn clash_margin(setup: &crate::fight::Setup, t: f64) -> Option<f64> {
+    use crate::fight::Fight;
+    use crate::schedule::Schedule;
+    let mut fight = Fight::with_unported(setup, false).ok()?;
     let mut sched = Schedule::new(&mut fight);
     fight.t = fight.rules.t_fight;
     while fight.t < fight.rules.t_max {
@@ -516,6 +669,9 @@ pub fn clash_margin(setup: &Setup, t: f64) -> Option<f64> {
             return None;
         }
         if now == t {
+            if fight.events[before.0.events.len()..].iter().any(|e| e.kind == "rope") {
+                return None;
+            }
             let flown = |k: usize| {
                 let (mut alone, mut sched) = before.clone();
                 // far outside the ring: nothing of ball `k` can touch it, and it cannot clash

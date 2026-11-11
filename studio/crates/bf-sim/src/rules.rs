@@ -42,6 +42,11 @@ impl std::error::Error for SimError {}
 /// ask for more are refused, so a mistyped `DT` cannot make the engine run for hours.
 pub const MAX_STEPS: f64 = 1_000_000.0;
 
+/// The largest whole number the engine counts in its grids (2^53): the beat and 16th-note counters, the steps
+/// between two frames and the first frame's number are whole numbers that Python holds without end; here they are
+/// `i64` and are multiplied back into seconds as `f64`, which is exact only below 2^53.
+pub const MAX_COUNT: f64 = 9_007_199_254_740_992.0;
+
 /// The rules of one fight. Field names are the Python attribute names in lower case; the comment gives the Python
 /// name and the engine's default.
 #[derive(Clone, Debug, PartialEq)]
@@ -82,8 +87,11 @@ pub struct Rules {
     pub dmg_scale: f64,
     /// `dmg_side` (absent): the damage each fighter deals is scaled by its entry (left, right).
     pub dmg_side: Option<[f64; 2]>,
-    /// `swat_cobras` (absent, which is false): a live thrust lance knocks a risen enemy cobra flat (#41).
-    pub swat_cobras: bool,
+    /// `swat_cobras` (absent, which `fight.py` reads as false: `getattr(R, 'swat_cobras', False)`): a live thrust
+    /// lance knocks a risen enemy cobra flat (#41). `Some(false)` is the attribute set to false (a pair rule
+    /// `swat_cobras = false`): the same fight as `None`, but Python's `vars(rules)` then lists it, and so does a
+    /// recording's `rules`.
+    pub swat_cobras: Option<bool>,
 }
 
 impl Rules {
@@ -108,7 +116,7 @@ impl Rules {
             t_max: 58.0,
             dmg_scale: 1.0,
             dmg_side: None,
-            swat_cobras: false,
+            swat_cobras: None,
         }
     }
 
@@ -118,6 +126,12 @@ impl Rules {
     ///
     /// An unknown name, a value of the wrong type, or rules the engine cannot run ([`Rules::check`]) is an error
     /// that names the entry, and then nothing is changed.
+    ///
+    /// Stricter than Python on purpose, as the Studio's own load-time limits (as the roster's `frets0` limit is):
+    /// `FPS` must be a whole number (Python would take `30.0` and carry a float frame rate into the record's
+    /// arithmetic), `swat_cobras` must be true or false (Python takes any value and asks its truth), and every number
+    /// must pass [`Rules::check`]. Rules are Studio-owned data that a person types; a value outside these is a
+    /// mistake the app names in words, and no reference episode comes near one.
     pub fn apply(&mut self, overrides: &BTreeMap<String, Value>) -> Result<(), SimError> {
         let mut next = self.clone();
         for (key, value) in overrides {
@@ -158,7 +172,7 @@ impl Rules {
                 }
                 "swat_cobras" => {
                     next.swat_cobras = match value {
-                        Value::Bool(on) => *on,
+                        Value::Bool(on) => Some(*on),
                         _ => return Err(SimError::new(&field, "must be true or false")),
                     }
                 }
@@ -173,6 +187,15 @@ impl Rules {
     /// Whether the engine can run these rules: every number finite; a positive ring, ball, step, beat, knock decay
     /// and frame rate; a rope give and a start time that are not negative; at least one step per recorded frame; and
     /// at most [`MAX_STEPS`] steps. Python has no such check: there such rules raise mid-fight or never finish.
+    ///
+    /// Some of these are stricter than Python on purpose, the Studio's own load-time limits for rules a person types
+    /// (as the roster's `frets0` limit is): a negative `t_fight` runs in Python (the first beat and frame then fall
+    /// before the video's start), and so do rules whose fight would take more than [`MAX_STEPS`] steps (for hours).
+    /// The grid's whole numbers must stay below [`MAX_COUNT`]: the 16th notes from the video's start to the end of the
+    /// fight (`max(t_max, t_fight) / (beat / 4)`; a beat of `1e-300` s, or a `t_fight` of `1e18` s, would overflow the
+    /// counters), the steps between two frames (`1 / (FPS * DT)`) and the first frame's number (`t_fight * FPS`);
+    /// Python's integers have no end and it would run such rules for ever or fire a beat every step.
+    /// [`crate::Fight::new`] and [`crate::run`] check this first, so such rules are an error, never a panic.
     pub fn check(&self) -> Result<(), SimError> {
         let numbers = [
             ("A", self.a),
@@ -227,6 +250,43 @@ impl Rules {
         if self.fps == 0 {
             return Err(SimError::new("rules.FPS", "0 is not a frame rate"));
         }
+        // the beat grid: `next_beat` and the 16th counters count from 0 at the video's start
+        let t_end = if self.t_max > self.t_fight {
+            self.t_max
+        } else {
+            self.t_fight
+        };
+        let sixteenths = t_end / (self.beat / 4.0);
+        if sixteenths.is_nan() || sixteenths >= MAX_COUNT {
+            return Err(SimError::new(
+                "rules.beat",
+                format!(
+                    "a beat of {:e} s is too short for a fight that runs to {t_end:e} s: the beat grid would count \
+                     {sixteenths:e} sixteenth notes (at most 2^53)",
+                    self.beat
+                ),
+            ));
+        }
+        let per_frame = 1.0 / (f64::from(self.fps) * self.dt);
+        if per_frame.is_nan() || per_frame >= MAX_COUNT {
+            return Err(SimError::new(
+                "rules.DT",
+                format!(
+                    "{:e} s is too short a step: {per_frame:e} steps between two frames (at most 2^53)",
+                    self.dt
+                ),
+            ));
+        }
+        let f0 = self.t_fight * f64::from(self.fps);
+        if f0.is_nan() || f0 >= MAX_COUNT {
+            return Err(SimError::new(
+                "rules.t_fight",
+                format!(
+                    "{:e} s is too late a start: its frame number {f0:e} is past 2^53",
+                    self.t_fight
+                ),
+            ));
+        }
         if self.steps_per_frame() < 1 {
             return Err(SimError::new(
                 "rules.FPS",
@@ -257,7 +317,8 @@ impl Rules {
     }
 
     /// The rules as a recording holds them: `vars(rules)` in Python, each attribute under its Python name. `dmg_side`
-    /// and `swat_cobras` are attributes only an episode adds, so they are left out when absent (`None`, `false`).
+    /// and `swat_cobras` are attributes only an episode adds, so they are left out when absent (`None`); a
+    /// `swat_cobras` set to false is listed, as Python lists it.
     pub fn to_values(&self) -> BTreeMap<String, Value> {
         let mut m = BTreeMap::new();
         let mut put = |key: &str, v: Value| _ = m.insert(key.to_string(), v);
@@ -284,8 +345,8 @@ impl Rules {
         if let Some([left, right]) = self.dmg_side {
             put("dmg_side", Value::List(vec![Value::Float(left), Value::Float(right)]));
         }
-        if self.swat_cobras {
-            put("swat_cobras", Value::Bool(true));
+        if let Some(on) = self.swat_cobras {
+            put("swat_cobras", Value::Bool(on));
         }
         m
     }
@@ -325,7 +386,7 @@ mod tests {
         assert_eq!((r.knock_t, r.launch_spread, r.key_r), (0.38, 38.0, 0.11));
         assert_eq!(r.beat.to_bits(), (60.0f64 / 129.84).to_bits());
         assert_eq!((r.t_fight, r.t_max, r.dmg_scale), (1.8485, 58.0, 1.0));
-        assert_eq!((r.dmg_side, r.swat_cobras), (None, false));
+        assert_eq!((r.dmg_side, r.swat_cobras), (None, None));
         assert_eq!(r.steps_per_frame(), 4);
         assert_eq!(r.check(), Ok(()));
     }
@@ -347,7 +408,7 @@ mod tests {
         }
         assert_eq!(seen_overrides, 9, "the early_levels, early_low and early_ko scenarios");
         let ep = testing::episode_rules();
-        assert_eq!((ep.dmg_side, ep.swat_cobras), (Some([2.0, 0.4]), true));
+        assert_eq!((ep.dmg_side, ep.swat_cobras), (Some([2.0, 0.4]), Some(true)));
         assert_eq!((ep.bpm, ep.beat), (133.7704918032787, 0.44852941176470584));
     }
 
@@ -361,7 +422,7 @@ mod tests {
         ]);
         r.apply(&over).unwrap();
         let mut want = Rules::new(120.0, 4.0);
-        want.swat_cobras = true;
+        want.swat_cobras = Some(true);
         want.low_hp = 92.0;
         want.bpm = 60.0; // and beat stays 0.5, as setattr leaves it
         assert_eq!(r, want);

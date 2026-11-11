@@ -29,7 +29,7 @@ fn s(x: &str) -> Value {
 
 /// FLUTE (0) against TROMBONE (1) under the episode's rules, the FLUTE set up as a striker.
 fn charmer(roster: &[FighterCfg]) -> Fight<'_> {
-    let mut fight = Fight::new(&testing::episode_setup(roster, 392), false);
+    let mut fight = testing::fight(&testing::episode_setup(roster, 392), false);
     setup(&mut fight, 0);
     fight
 }
@@ -89,7 +89,7 @@ fn close2(got: V2, want: V2) {
 #[test]
 fn setup_gives_the_striker_its_start_state() {
     let roster = testing::roster();
-    let mut fight = Fight::new(&testing::episode_setup(&roster, 392), false);
+    let mut fight = testing::fight(&testing::episode_setup(&roster, 392), false);
     assert_eq!(fight.striker, [None, None], "Fight::new sets no kind up");
     assert!(is_striker(&fight, 0) && !is_striker(&fight, 1));
     setup(&mut fight, 0);
@@ -111,11 +111,11 @@ fn setup_gives_the_striker_its_start_state() {
         fighters: [ep.fighters[1], ep.fighters[0]],
         ..ep
     };
-    let mut fight = Fight::new(&swapped, false);
+    let mut fight = testing::fight(&swapped, false);
     Schedule::new(&mut fight);
     assert!(fight.striker[0].is_none() && fight.striker[1].is_some());
     let bare = testing::bare_pair();
-    let mut fight = Fight::new(&testing::bare_setup(&bare, 1), false);
+    let mut fight = testing::fight(&testing::bare_setup(&bare, 1), false);
     Schedule::new(&mut fight);
     assert_eq!(fight.striker, [None, None]);
 }
@@ -208,7 +208,7 @@ fn a_basket_drops_every_4_beats_and_the_oldest_is_taken_back() {
 #[test]
 fn baskets_drop_on_the_beat_grid() {
     let roster = testing::roster();
-    let mut fight = Fight::new(&testing::episode_setup(&roster, 392), false);
+    let mut fight = testing::fight(&testing::episode_setup(&roster, 392), false);
     let mut sched = Schedule::new(&mut fight);
     let py = testing::python_recording("ep392.bfrec");
     let mut py_drops = py.events.iter().filter(|e| e.kind == "basket");
@@ -297,7 +297,7 @@ fn held(steps: i64, haste_from: Option<i64>) -> (Vec<(i64, i64, i64, f64)>, i64)
         rules: testing::episode_rules(),
         seed: 392,
     };
-    let mut fight = Fight::new(&setup, false);
+    let mut fight = testing::fight(&setup, false);
     let mut sched = Schedule::new(&mut fight);
     assert_eq!(sched.next16k, sched.k16_0);
     let (mut lunges, mut sixteenths) = (Vec::new(), 0);
@@ -1089,7 +1089,7 @@ fn swat_cobras_tests_every_cobra_of_the_enemy() {
         fighters: [ep.fighters[1], ep.fighters[0]],
         ..ep
     };
-    let mut fight = Fight::new(&swapped, false);
+    let mut fight = testing::fight(&swapped, false);
     setup(&mut fight, 1);
     basket(&mut fight, 1, [0.5, -0.25], 10.0, None);
     fight.t = T_RISEN;
