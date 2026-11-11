@@ -9,8 +9,9 @@
 //! hook calls in the same order and the same draw log.
 //!
 //! `every_stage_matches_python` compares stage by stage against local dumps
-//! (`python -m tools.studio_export look_trombone_stages ep392 1319 ...`, git-ignored) and is skipped with a note
-//! when there are none: it is the tool for finding where a frame first differs.
+//! (`python -m tools.studio_export look_trombone_stages ep392 1319 ...`, git-ignored). It is ignored in a plain
+//! run (`-- --ignored every_stage`) and fails when there are none: it is the tool for finding where a frame first
+//! differs.
 
 use std::cell::RefCell;
 use std::path::PathBuf;
@@ -477,6 +478,9 @@ fn the_event_hooks_are_pythons() {
         }
         take();
         assert_eq!(seen.len(), table.len(), "{}: kinds of events", fight.name);
+        // exactly the look's events of the recording (552 in all)
+        let need = if fight.name == "ep392" { 278 } else { 274 };
+        assert_eq!(n, need, "{}: the number of events compared", fight.name);
         println!("{}: {n} events of {} kinds", fight.name, seen.len());
     }
 }
@@ -600,9 +604,12 @@ fn every_frame_is_pythons() {
             rows.len(),
             lines.join("\n")
         );
+        // exactly the frames the export wrote: a file cut short cannot pass
+        let need = if fight.name == "ep392" { 102 } else { 79 };
+        assert_eq!(rows.len(), need, "{}: the number of frames in the file", fight.name);
         total += rows.len();
     }
-    assert!(total >= 64 && list(&fights()[0].doc["frames"]).len() >= 64);
+    assert_eq!(total, 181, "the number of frames compared");
 }
 
 /// `a` is `b` to within `1e-12` of its size (a value that passes through a sine or an exponential may differ
@@ -656,7 +663,9 @@ fn the_state_and_the_focus_points_are_pythons() {
             }
         }
         take();
-        assert!(n > 100, "{}: {n} values", fight.name);
+        // exactly the values the export wrote (267 in all)
+        let need = if fight.name == "ep392" { 141 } else { 126 };
+        assert_eq!(n, need, "{}: the number of state and focus values compared", fight.name);
         println!("{}: {n} state and focus values, {exact} equal to the bit", fight.name);
     }
 }
@@ -696,9 +705,10 @@ fn diff_rgb(got: &StagePic, want: &NpArray) -> (usize, f64, String) {
 }
 
 /// Every stage of every locally dumped frame against Python's buffers: the drawing stages to the bit, the float
-/// stages between the lens and the cut to bytes to `1e-9` of a level (the lens's FFT). Skipped when there are no
+/// stages between the lens and the cut to bytes to `1e-9` of a level (the lens's FFT). Fails when there are no
 /// dumps.
 #[test]
+#[ignore = "needs local stage dumps: python -m tools.studio_export look_trombone_stages <fight> <frame>..."]
 fn every_stage_matches_python() {
     let (mut compared, mut float_worst) = (0, 0.0f64);
     for fight in fights() {
@@ -755,14 +765,12 @@ fn every_stage_matches_python() {
         take();
         assert!(failures.is_empty(), "\n{}", failures.join("\n"));
     }
-    if compared == 0 {
-        eprintln!(
-            "skipped: no stage dumps under studio/reference/.cache/stages_look_trombone \
-             (python -m tools.studio_export look_trombone_stages <fight> <frame>...)"
-        );
-    } else {
-        println!(
-            "{compared} frames compared stage by stage; the float stages differ by at most {float_worst:e} of a level"
-        );
-    }
+    assert!(
+        compared != 0,
+        "no stage dumps under studio/reference/.cache/stages_look_trombone (python -m tools.studio_export \
+         look_trombone_stages <fight> <frame>...)"
+    );
+    println!(
+        "{compared} frames compared stage by stage; the float stages differ by at most {float_worst:e} of a level"
+    );
 }

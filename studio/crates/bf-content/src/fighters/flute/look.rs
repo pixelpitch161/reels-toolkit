@@ -9,7 +9,10 @@
 //! `math.sin` or a numpy function the port calls `bf_core::dmath`; `np.hypot` is the plain root
 //! ([`bf_picture::np::hypot`]); `np.dot` and `np.linalg.norm` of one vector are the plain sums (numpy's are
 //! fused on the reference PC, so a value here can differ from Python's in its last bit: none of them decides a
-//! pixel in the frames of `tests/flute_look.rs`).
+//! pixel in the frames of `tests/flute_look.rs`). A cobra's `aim` is an `atan2` (`dmath`'s here, the C
+//! runtime's in Python): of the 1,183 state values that test compares, ten aims differ from Python's by 1 or 2
+//! units in the last place, and no pixel moves with them. The shards and `ko_fx` are proven from the left
+//! corner only (in the fights of that test the FLUTE loses only from the left corner).
 
 use std::any::Any;
 use std::collections::BTreeMap;
