@@ -43,14 +43,28 @@ pub fn quiet(program: &Path, args: &[&OsStr]) -> Command {
 /// Starts `program` with `args`, waits for it, and gives what it left. It is stopped (and this is an error) when it
 /// runs longer than `limit` or when `cancel` turns true.
 pub fn run(program: &Path, args: &[&OsStr], limit: Duration, cancel: &AtomicBool) -> Result<Ran, String> {
+    run_with_env(program, args, &[], limit, cancel)
+}
+
+/// `run`, with these environment variables added for the program (each a name and its value; everything else it
+/// inherits as `run` does).
+pub fn run_with_env(
+    program: &Path,
+    args: &[&OsStr],
+    env: &[(&str, &OsStr)],
+    limit: Duration,
+    cancel: &AtomicBool,
+) -> Result<Ran, String> {
     let name = program
         .file_name()
         .unwrap_or(program.as_os_str())
         .to_string_lossy()
         .into_owned();
-    let mut child = quiet(program, args)
-        .spawn()
-        .map_err(|e| format!("{name} could not be started: {e}."))?;
+    let mut cmd = quiet(program, args);
+    for (k, v) in env {
+        cmd.env(k, v);
+    }
+    let mut child = cmd.spawn().map_err(|e| format!("{name} could not be started: {e}."))?;
     let stdout = child.stdout.take();
     let stderr = child.stderr.take();
     let out_reader = std::thread::spawn(move || {
@@ -199,6 +213,22 @@ mod tests {
         setter.join().unwrap();
         assert!(started.elapsed() < Duration::from_secs(5), "{:?}", started.elapsed());
         assert!(err.contains("was stopped"), "{err}");
+    }
+
+    #[test]
+    fn added_environment_reaches_the_program() {
+        let never = AtomicBool::new(false);
+        // cmd's `set NAME` prints that variable; the value comes in the environment, not on the command line.
+        let ran = run_with_env(
+            &system32("cmd.exe"),
+            &os(&["/d", "/c", "set", "BF_RUN_TEST_VALUE"]),
+            &[("BF_RUN_TEST_VALUE", OsStr::new("given"))],
+            Duration::from_secs(20),
+            &never,
+        )
+        .unwrap();
+        assert!(ran.status.success());
+        assert!(String::from_utf8_lossy(&ran.stdout).contains("BF_RUN_TEST_VALUE=given"));
     }
 
     #[test]

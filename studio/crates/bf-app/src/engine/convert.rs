@@ -519,8 +519,8 @@ mod tests {
                 "300 is not a MIDI note (0 to 127) (Trombone's title hits).",
             ),
             (
-                "This fight cannot be opened: format: this app reads fight files up to format 1 (this file is format 2)",
-                "This fight cannot be opened: this app reads fight files up to format 1 (this file is format 2).",
+                "This fight cannot be opened: format: this app reads fight files up to format 2 (this file is format 3)",
+                "This fight cannot be opened: this app reads fight files up to format 2 (this file is format 3).",
             ),
             (
                 "line 3: expected a table",

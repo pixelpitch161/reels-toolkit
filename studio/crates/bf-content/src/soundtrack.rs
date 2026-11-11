@@ -23,6 +23,9 @@ use bf_sound::score::score;
 use bf_sound::traits::{Bed, Sound};
 use bf_sound::voice::Voice;
 
+use bf_core::fightfile::is_extra_line;
+use bf_sound::master::BUS;
+
 use crate::error::ContentError;
 use crate::fighters;
 use crate::registry::{name_status, roster};
@@ -64,35 +67,76 @@ fn player(name: &str, k: usize, ff: &FightFile) -> Result<Player, ContentError> 
 
 /// Whether this app can make the soundtrack of the fight `ff`, before any recording is read: everything
 /// `FightFile::validate` checks (with the registry's fighter names, the themes' arrangements included), then
-/// that its theme exists and has a voicing for every chord of the intro and of the loop, that each fighter has
-/// its roster entry, voice and part in the score here, and that no title-hits list is empty (every part plays
-/// the first and the last of its title hits on the VS card). [`build_soundtrack`] calls this first; what it can
-/// still refuse after this depends on the recording.
+/// that its theme exists and is ported, that its options fit the theme's schema, that each fighter has its roster
+/// entry, voice and part in the score here, that the theme's bed has every hook a fighter's part calls (ruling
+/// M3-R2: the kit itself would crash on that pair under that theme), that every `music.lines` key is a fighter or
+/// an extra line one of them declares, that every `music.mix` bus is one the fight has (the theme's, a fighter's,
+/// or a shared one), and that no title-hits list is empty (every part plays the first and the last of its title
+/// hits on the VS card). Every chord the harmony parses has a voicing (the voicing rule replaces milestone 1's
+/// list of allowed chords). [`build_soundtrack`] calls this first; what it can still refuse after this depends on
+/// the recording.
 ///
 /// # Errors
 /// The first problem found, as `field: what is wrong` (`music.theme: "polka" is not a theme`,
-/// `music.chord_loop[4]: big_top has no voicing for "F#m"`, `fighters[0]: PIANO has no part in the score yet`,
-/// `music.title_hits.FLUTE: the title hits are an empty list`).
+/// `music.theme: Heist has no boom (a big drum hit), which the TROMBONE's part plays; pick another theme`,
+/// `fighters[0]: PIANO has no part in the score yet`, `music.title_hits.FLUTE: the title hits are an empty list`).
 pub fn validate(ff: &FightFile) -> Result<(), ContentError> {
     ff.validate(&name_status)?;
-    let theme = theme_of(ff)?;
-    theme_bed(theme, ff)?;
-    let lists = [
-        ("music.chords_intro", &ff.music.chords_intro),
-        ("music.chord_loop", &ff.music.chord_loop),
-    ];
-    for (field, chords) in lists {
-        for (i, chord) in chords.iter().enumerate() {
-            if !theme.voices(chord) {
+    validate_with(ff, theme_of(ff)?)
+}
+
+/// [`validate`]'s checks after the fight file's own, under `theme`.
+pub(crate) fn validate_with(ff: &FightFile, theme: &Theme) -> Result<(), ContentError> {
+    if !theme.ported {
+        return Err(themes::not_ported(theme.name));
+    }
+    let options = theme.options_of(ff)?;
+    let bed = theme.bed(&ff.music.arrangement, &options)?;
+    let mut players = Vec::new();
+    for (k, name) in ff.fighters.iter().enumerate() {
+        players.push(player(name, k, ff)?);
+    }
+    for (name, p) in ff.fighters.iter().zip(&players) {
+        if let Some(&hook) = p.part.bed_calls().iter().find(|h| !bed.has(**h)) {
+            return Err(ContentError::field(
+                "music.theme",
+                format!(
+                    "{} has no {} ({}), which the {name}'s part plays; pick another theme",
+                    theme.display(),
+                    hook.name(),
+                    hook.what()
+                ),
+            ));
+        }
+    }
+    for key in ff.music.lines.keys() {
+        let declared =
+            ff.fighters.iter().zip(&players).any(|(name, p)| {
+                key == name || (is_extra_line(key, name) && p.part.extra_lines().contains(&key.as_str()))
+            });
+        if !declared {
+            let owner = ff.fighters.iter().find(|name| is_extra_line(key, name));
+            let why = match owner {
+                Some(name) => format!("the {name}'s part reads no line {key:?}"),
+                None => format!("{key} is not one of the fighters"),
+            };
+            return Err(ContentError::field(format!("music.lines.{key}"), why));
+        }
+    }
+    if !ff.music.mix.is_empty() {
+        let mut buses: Vec<String> = bed.buses().iter().map(|(b, _)| b.to_string()).collect();
+        buses.extend(BUS.iter().map(|(b, _)| b.to_string()));
+        buses.extend(ff.fighters.iter().map(|name| name.to_lowercase()));
+        buses.sort();
+        buses.dedup();
+        for bus in ff.music.mix.keys() {
+            if !buses.contains(bus) {
                 return Err(ContentError::field(
-                    format!("{field}[{i}]"),
-                    format!("{} has no voicing for {chord:?}", theme.name),
+                    format!("music.mix.{bus}"),
+                    format!("no bus {bus:?} in this fight (it has: {})", buses.join(", ")),
                 ));
             }
         }
-    }
-    for (k, name) in ff.fighters.iter().enumerate() {
-        player(name, k, ff)?;
     }
     for (name, hits) in &ff.music.title_hits {
         if hits.is_empty() {
@@ -105,14 +149,10 @@ pub fn validate(ff: &FightFile) -> Result<(), ContentError> {
     Ok(())
 }
 
-/// The bed of the fight file's arrangement of `theme`, or the error that the theme has no such arrangement.
+/// The bed of the fight file's arrangement of `theme` for its options, or the error that the theme has no such
+/// arrangement or options that fit.
 fn theme_bed(theme: &Theme, ff: &FightFile) -> Result<Box<dyn Bed>, ContentError> {
-    theme.bed(&ff.music.arrangement).ok_or_else(|| {
-        ContentError::field(
-            "music.arrangement",
-            format!("{} has no arrangement {:?}", theme.name, ff.music.arrangement),
-        )
-    })
+    theme.bed(&ff.music.arrangement, &theme.options_of(ff)?)
 }
 
 /// What a soundtrack is built from: the music context of the fight (`kit.music`'s module state: the run, the
@@ -164,14 +204,22 @@ impl<'a> SoundBuild<'a> {
         )?)
     }
 
-    /// The bus levels of the master: the two parts' buses, the shared ones, the bed's (the fight file has no
-    /// overrides, the kit's `MIX`).
+    /// The bus levels of the master: the two parts' buses, the shared ones, the bed's, then the fight file's
+    /// `music.mix` (the kit's `MIX`).
     pub fn levels(&self) -> Levels {
+        let mix: Vec<(&str, (f64, f64))> = self
+            .ctx
+            .ff
+            .music
+            .mix
+            .iter()
+            .map(|(bus, level)| (bus.as_str(), *level))
+            .collect();
         Levels::of(
             &self.ctx,
             [self.sounds[0].as_ref(), self.sounds[1].as_ref()],
             self.bed.as_ref(),
-            &[],
+            &mix,
         )
     }
 
@@ -214,5 +262,188 @@ pub fn build_soundtrack(rec: &Recording, ff: &FightFile) -> Result<Soundtrack, C
     match built {
         Ok(result) => result,
         Err(payload) => Err(ContentError::Sound(panic_text(payload))),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use bf_sound::music::MusicCtx;
+    use bf_sound::traits::{BedHook, Played, no_hook};
+
+    use super::*;
+    use crate::ThemeCard;
+    use crate::themes::{Theme, ThemeOptions};
+
+    fn episode() -> FightFile {
+        FightFile::parse(include_str!("../../../fights/flute_vs_trombone.toml")).expect("the episode")
+    }
+
+    /// A bed with no boom, as `dark_disco` and `heist` are: its sections play nothing.
+    struct NoBoom;
+
+    impl Bed for NoBoom {
+        fn hooks(&self) -> &'static [BedHook] {
+            &[BedHook::Hit]
+        }
+        fn buses(&self) -> &[(&'static str, (f64, f64))] {
+            &[("drums", (1.3, 0.1)), ("pad", (0.7, 0.35))]
+        }
+        fn reverb(&self) -> (f64, f64, f64) {
+            (2.0, 0.5, 0.2)
+        }
+        fn comp(&self) -> (f64, f64) {
+            (0.15, 0.62)
+        }
+        fn roar_gain(&self) -> f64 {
+            0.15
+        }
+        fn doors_gain(&self) -> f64 {
+            0.4
+        }
+        fn landing(&self) -> (f64, f64) {
+            (0.07, 0.05)
+        }
+        fn pop(&self) -> (f64, f64, f64) {
+            (95.0, 100.0, 0.1)
+        }
+        fn boom(&self, _: &MusicCtx, _: &mut Mix, _: f64, _: f64) -> Played {
+            no_hook(BedHook::Boom)
+        }
+        fn hit(&self, _: &MusicCtx, _: &mut Mix, _: f64, _: &str, _: f64, _: f64) -> Played {
+            Ok(())
+        }
+        fn clash(&self, _: &MusicCtx, _: &mut Mix, _: f64) -> Played {
+            Ok(())
+        }
+        fn title(&self, _: &MusicCtx, _: &mut Mix, _: [f64; 3]) -> Played {
+            Ok(())
+        }
+        fn vs(&self, _: &MusicCtx, _: &mut Mix, _: f64) -> Played {
+            Ok(())
+        }
+        fn title_rest(&self, _: &MusicCtx, _: &mut Mix) -> Played {
+            Ok(())
+        }
+        fn count_in(&self, _: &MusicCtx, _: &mut Mix) -> Played {
+            Ok(())
+        }
+        fn fight_start(&self, _: &MusicCtx, _: &mut Mix) -> Played {
+            Ok(())
+        }
+        fn fight(&self, _: &MusicCtx, _: &mut Mix, _: usize) -> Played {
+            Ok(())
+        }
+        fn ko(&self, _: &MusicCtx, _: &mut Mix) -> Played {
+            Ok(())
+        }
+        fn stinger(&self, _: &MusicCtx, _: &mut Mix, _: f64) -> Played {
+            Ok(())
+        }
+        fn after_ko(&self, _: &MusicCtx, _: &mut Mix, _: usize, _: f64, _: f64) -> Played {
+            Ok(())
+        }
+        fn victory(&self, _: &MusicCtx, _: &mut Mix, _: usize) -> Played {
+            Ok(())
+        }
+        fn last_bars(&self, _: &MusicCtx, _: &mut Mix) -> Played {
+            Ok(())
+        }
+    }
+
+    fn no_boom(_: &ThemeOptions) -> Result<Box<dyn Bed>, ContentError> {
+        Ok(Box::new(NoBoom))
+    }
+
+    static NO_BOOM_CARD: ThemeCard = ThemeCard {
+        display: "Heist",
+        text: "",
+        key: "D",
+        scale: "minor",
+        chord_loops: &[],
+        presets: &[],
+        bars: (24, 42),
+    };
+
+    /// A ported theme whose bed has no boom (a stand-in for `heist`, which is not ported yet).
+    static NO_BOOM: Theme = Theme {
+        name: "heist",
+        ported: true,
+        card: &NO_BOOM_CARD,
+        options: &[],
+        voices: &[],
+        classic: no_boom,
+    };
+
+    /// Review Focus 1 (ruling M3-R2): the TROMBONE's PEDAL TONE calls `bed.boom` without asking, so the kit would
+    /// crash on this fight mid-soundtrack. It is refused in words, before any recording is read.
+    #[test]
+    fn a_theme_without_a_hook_a_fighter_plays_is_refused() {
+        let mut ff = episode();
+        ff.music.theme = "heist".into();
+        assert_eq!(
+            validate_with(&ff, &NO_BOOM).unwrap_err().to_string(),
+            "music.theme: Heist has no boom (a big drum hit), which the TROMBONE's part plays; pick another theme"
+        );
+        // the same theme under two fighters that never call it is fine (FLUTE calls no hook)
+        assert!(crate::fighters::sound("FLUTE", 0, &ff).unwrap().bed_calls().is_empty());
+        // the real heist is not ported yet: that is said first
+        assert_eq!(
+            validate(&ff).unwrap_err().to_string(),
+            r#"music.theme: "heist" is not ported yet"#
+        );
+        // the big top has a boom
+        assert_eq!(validate(&episode()), Ok(()));
+    }
+
+    #[test]
+    fn lines_and_mix_name_what_the_fight_has() {
+        let mut ff = episode();
+        // an extra line nobody declares
+        let line = ff.music.lines["FLUTE"].clone();
+        ff.music.lines.insert("FLUTE THEME".into(), line);
+        assert_eq!(
+            validate(&ff).unwrap_err().to_string(),
+            r#"music.lines.FLUTE THEME: the FLUTE's part reads no line "FLUTE THEME""#
+        );
+        // a mix bus of the bed, of a fighter, or a shared one
+        let mut ff = episode();
+        for bus in ["calliope", "drums", "glock", "trombone", "flute", "solo", "fx"] {
+            ff.music.mix.insert(bus.into(), (1.0, 0.1));
+        }
+        assert_eq!(validate(&ff), Ok(()));
+        ff.music.mix.insert("pad".into(), (1.0, 0.1));
+        assert_eq!(
+            validate(&ff).unwrap_err().to_string(),
+            r#"music.mix.pad: no bus "pad" in this fight (it has: calliope, drums, flute, fx, glock, solo, trombone)"#
+        );
+        // an option the big top does not have
+        let mut ff = episode();
+        ff.music
+            .theme_options
+            .insert("sequel".into(), bf_core::event::Value::Bool(true));
+        assert_eq!(
+            validate(&ff).unwrap_err().to_string(),
+            r#"music.theme_options.sequel: big_top has no option "sequel" (it has none)"#
+        );
+    }
+
+    /// The master takes the fight file's `MIX` as the kit's `levels.update(T.MIX)`: a bus already listed keeps its
+    /// place and takes the new numbers.
+    #[test]
+    fn the_mix_reaches_the_master() {
+        let rec = bf_core::recording::Recording::read(&bf_testdata::reference("fights/flute_vs_trombone/ep392.bfrec"))
+            .expect("the recording");
+        let mut ff = episode();
+        let show = Show::new(&rec, &ff).expect("a show");
+        let plain = SoundBuild::new(&show, &rec, &ff).unwrap().levels();
+        ff.music.mix.insert("trombone".into(), (2.3, 0.2));
+        let build = SoundBuild::new(&show, &rec, &ff).unwrap();
+        let mixed = build.levels();
+        assert_eq!(mixed.get("trombone"), Some((2.3, 0.2)));
+        let order = |l: &Levels| l.iter().map(|(b, _)| b.to_string()).collect::<Vec<_>>();
+        assert_eq!(order(&mixed), order(&plain));
+        for (bus, level) in plain.iter().filter(|(b, _)| *b != "trombone") {
+            assert_eq!(mixed.get(bus), Some(level), "{bus}");
+        }
     }
 }

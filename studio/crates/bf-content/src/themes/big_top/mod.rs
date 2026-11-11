@@ -11,9 +11,10 @@
 //! **Voicings.** The kit has two tables, the calliope's off-beat chords ([`VOICE`]) and the held organ chord
 //! ([`ORGAN`]), for the four chords of #41, and voices any other chord "by the same rule" (the chord's tones in
 //! the calliope's octave; the tables are what the rule gives for #41's chords). [`voice`] and [`organ`] are
-//! that, table first, then the rule. What a fight file may ask for is narrower: the registry lets through only
-//! the chords the tables hold ([`has_voicing`]), as the plan of Milestone 1 has it; the kit itself would play
-//! any chord it can parse.
+//! that, table first, then the rule, for every chord the harmony parses (12 roots x 13 qualities, checked against
+//! the kit's own answers in `tests/theme_big_top.rs`). A fight file may ask for any of them, as the kit plays
+//! them: milestone 1's gate that let through only the tables' four chords (ruling R33) is replaced by this rule
+//! (milestone 3, Task 2).
 //!
 //! **Instruments.** Each is the kit's expression sample for sample. They take every argument of the kit's
 //! method in its order (the defaults are the constants `<INSTRUMENT>_<ARGUMENT>`); `roll` takes the rate the kit
@@ -31,14 +32,63 @@ use bf_sound::dsp;
 use bf_sound::synth::{self, FILTER_O, clip, noise};
 
 pub use self::classic::BigTopClassic;
-use super::Theme;
+use super::{Preset, Theme};
+use crate::cards::ThemeCard;
 
-/// The theme as the registry lists it.
+/// The theme as the registry lists it: no options, no voice of a fighter in its bed.
 pub static THEME: Theme = Theme {
     name: "big_top",
-    voices: has_voicing,
-    classic: || Box::new(BigTopClassic::new()),
+    ported: true,
+    card: &CARD,
+    options: &[],
+    voices: &[],
+    classic: |_| Ok(Box::new(BigTopClassic::new())),
 };
+
+/// What the interface says about the big top.
+pub static CARD: ThemeCard = ThemeCard {
+    display: "Big top",
+    text: "A sinister circus in a minor key. Leaves the bass and the top line to the fighters.",
+    key: "E",
+    scale: "harmonic minor",
+    chord_loops: &[&["Em", "Am", "B7", "Em", "C", "Am", "B7", "B7"]],
+    presets: &PRESETS,
+    bars: (24, 42),
+};
+
+/// The kit configs that play the big top (Table S4 and milestone 1's): their music as each `episode.py` sets it.
+pub static PRESETS: [Preset; 3] = [
+    Preset {
+        config: "examples/flute_vs_trombone",
+        fighters: ["FLUTE", "TROMBONE"],
+        bpm: 132.0,
+        key: "E",
+        scale: "harmonic minor",
+        intro: ["Em", "B7"],
+        chord_loop: &["Em", "Am", "B7", "Em", "C", "Am", "B7", "B7"],
+        tail: &[],
+    },
+    Preset {
+        config: "examples/trombone_vs_tuba",
+        fighters: ["TROMBONE", "TUBA"],
+        bpm: 126.0,
+        key: "F",
+        scale: "minor",
+        intro: ["Fm", "C"],
+        chord_loop: &["Fm", "Db", "Bbm", "C"],
+        tail: &["Db", "C"],
+    },
+    Preset {
+        config: "examples/bassclarinet_vs_euphonium",
+        fighters: ["BASS CLARINET", "EUPHONIUM"],
+        bpm: 126.0,
+        key: "C",
+        scale: "minor",
+        intro: ["Cm", "G"],
+        chord_loop: &["Cm", "Ab", "Fm", "G"],
+        tail: &["Ab", "G"],
+    },
+];
 
 /// `VOICE`: the calliope's off-beat chords (E4 to C5: under the melody), as #41 voiced them.
 pub const VOICE: [(&str, &[i32]); 4] = [
@@ -68,11 +118,6 @@ pub const CALLIOPE_VIB: f64 = 0.004;
 pub const ROLL_V0: f64 = 0.4;
 /// `roll`'s default velocity at its end.
 pub const ROLL_V1: f64 = 1.0;
-
-/// Whether the theme has a voicing written for `chord`: it is in both of the kit's tables.
-pub fn has_voicing(chord: &str) -> bool {
-    VOICE.iter().any(|(c, _)| *c == chord) && ORGAN.iter().any(|(c, _)| *c == chord)
-}
 
 fn table(of: &[(&str, &[i32])], chord: &str) -> Option<Vec<i32>> {
     of.iter().find(|(c, _)| *c == chord).map(|(_, notes)| notes.to_vec())
@@ -256,7 +301,7 @@ mod tests {
     fn harmony(chords: &[&str]) -> Harmony {
         let g = Grid::new(132.0);
         let all = names(chords);
-        let bars = chords_for(&all[..2.min(all.len())], &all, g.n_bars);
+        let bars = chords_for(&all[..2.min(all.len())], &all, &[], g.n_bars);
         Harmony::new(&g, "E", scale("harmonic minor").unwrap(), bars, Some(all), 2).unwrap()
     }
 
@@ -301,11 +346,6 @@ mod tests {
         assert_eq!(organ(&plain, "Am").unwrap(), [60, 64, 69]);
         assert_eq!(voice(&plain, "F#m"), Err(HarmonyError::UnknownChord("F#m".into())));
         assert_eq!(organ(&plain, "F#m"), Err(HarmonyError::UnknownChord("F#m".into())));
-        // A fight file may ask for the tables' chords only.
-        for (chord, _, _) in cases {
-            assert_eq!(has_voicing(chord), ["Em", "Am", "B7", "C"].contains(&chord), "{chord}");
-        }
-        assert!(!has_voicing("") && !has_voicing("em"));
     }
 
     #[test]

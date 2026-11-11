@@ -3,7 +3,11 @@
 //! what each one means): `FIGHTERS` is `fighters`, `DMG_SIDE` `handicap`, `RULES` `pair_rules`, `BPM` `tempo_bpm`,
 //! `MOOD` `music.theme`, `CHORDS[:2]` `music.chords_intro`, `LOOP` `music.chord_loop`, `LINES`, `SOLO`, `TITLE_HITS`
 //! and `ROLES` the `music` tables, `SHARD_SEED` and `FX_SEED` `[picture]`, `CAPTION` and `TAGS` `[captions]`, and
-//! `SERIES` `series_tag`.
+//! `SERIES` `series_tag`. Format 2 (milestone 3) adds what the kit's other episode configs use: a 4- or 8-chord
+//! `LOOP`, the bars after the last whole loop (`CHORDS[2 + n * len(LOOP):]`, `music.chords_tail`), `MIX`
+//! (`music.mix`), the theme's options (`TRAILER`, `DRUMLINE`, `PLUGGED`: `music.theme_options`, checked against the
+//! theme's schema by the content registry) and the title card's opt-ins (`TITLE_LINES`, `TITLE_BALLS`, `MIDDLE`:
+//! `[picture]`).
 //!
 //! [`FightFile::parse`] reads the text and checks every value; [`FightFile::to_toml`] writes the canonical text: a
 //! fixed order of keys and sections, map entries sorted by name, and every float in Rust's shortest text that reads
@@ -12,8 +16,12 @@
 //! Errors are one line, `field: what is wrong`, and nothing here panics on any input text.
 //!
 //! The format number: a file without `format` is refused ("missing"); `format = 0` is refused (formats start at 1); a
-//! format above [`FIGHT_FORMAT`] is refused with "this app reads fight files up to format 1" before anything else in
-//! the file is looked at, since a newer file may hold settings this app does not know.
+//! format above [`FIGHT_FORMAT`] is refused with "this app reads fight files up to format 2" before anything else in
+//! the file is looked at, since a newer file may hold settings this app does not know. A format 1 file (milestones 1
+//! and 2) reads with what format 1 could not say at its defaults (no tail, no mix overrides, no theme options, no
+//! title opt-ins), and a setting that format 2 added is refused in it. Reading never writes: a format 1 file stays as
+//! it is on disk. The fight it reads to is a format 2 fight ([`FightFile::format`] is [`FIGHT_FORMAT`]), which
+//! [`FightFile::to_toml`] writes as format 2.
 //!
 //! This file holds the types and the checks; `read.rs` is the TOML reader, `write.rs` the canonical writer, `key.rs`
 //! the search key, `tests.rs` the tests.
@@ -32,8 +40,8 @@ mod write;
 #[cfg(test)]
 mod tests;
 
-/// The newest fight-file format this app reads and writes.
-pub const FIGHT_FORMAT: u32 = 1;
+/// The newest fight-file format this app reads and writes (it reads 1 and 2, and writes 2).
+pub const FIGHT_FORMAT: u32 = 2;
 
 /// The two retired fighters: never offered, never ported, never accepted in a fight file.
 pub const RETIRED: [&str; 2] = ["GUITAR", "SAX"];
@@ -50,8 +58,11 @@ pub const FIGHTERS: usize = 2;
 /// The bars before the chord loop: the title card (bar 0) and the count-in (bar 1); the loop starts on FIGHT!.
 pub const INTRO_BARS: usize = 2;
 
-/// The bars of the chord loop.
-pub const LOOP_BARS: usize = 8;
+/// The lengths a chord loop may have, in bars (the kit's `LOOP`s are 4 or 8 chords).
+pub const LOOP_LENGTHS: [usize; 2] = [4, 8];
+
+/// The most chords the tail may hold (the kit's configs have 0 to 6 bars after their last whole loop).
+pub const TAIL_MAX: usize = 8;
 
 /// The tempos a fight file may ask for, in beats a minute (both ends included).
 pub const TEMPO_RANGE: (f64, f64) = (30.0, 300.0);
@@ -62,13 +73,17 @@ pub const SHARD_SEED: u64 = 271;
 /// How a rest is written in a `music.lines` list (Python's `None`).
 pub const REST: &str = "rest";
 
+/// How [`Middle::Divider`] is written (the kit's word for it).
+pub const MIDDLE_DIVIDER: &str = "divider";
+
 /// The largest seed a TOML file can hold (TOML integers are signed 64-bit).
 const SEED_MAX: u64 = i64::MAX as u64;
 
 /// One fight: everything that makes its video.
 #[derive(Clone, Debug, PartialEq)]
 pub struct FightFile {
-    /// The fight-file format, 1 to [`FIGHT_FORMAT`].
+    /// The fight-file format: [`FIGHT_FORMAT`] for a file read from text (an older file reads as this format's
+    /// fight) and for every file this app makes; `validate` refuses a newer one.
     pub format: u32,
     /// The version of the app that wrote the file.
     pub app_version: String,
@@ -89,7 +104,7 @@ pub struct FightFile {
     pub seed: Option<u64>,
     /// The music settings.
     pub music: Music,
-    /// The picture's own seeds.
+    /// The picture's own seeds and the title card's opt-ins.
     pub picture: PictureSeeds,
     /// The post texts.
     pub captions: Captions,
@@ -110,27 +125,58 @@ pub struct Music {
     pub scale: String,
     /// The chords of bars 0 and 1.
     pub chords_intro: Vec<String>,
-    /// The 8-bar chord loop from FIGHT! on.
+    /// The chord loop from FIGHT! on: 4 or 8 chords (the kit's `LOOP`).
     pub chord_loop: Vec<String>,
+    /// The bars after the last whole loop, 0 to [`TAIL_MAX`] chords (format 2; a format 1 file has none). The song
+    /// is the intro, the loop repeated (the last repeat may stop part-way), then the tail: see
+    /// [`crate::harmony::chords_for`].
+    pub chords_tail: Vec<String>,
     /// The composer's seed.
     pub music_seed: u64,
     /// Who plays what (`bass`, `melody`, ...), by fighter.
     pub roles: BTreeMap<String, String>,
-    /// Hand-written lines over the loop (8 notes a bar = 8ths, 4 = beats), by fighter; `None` is a rest.
+    /// Hand-written lines over the loop (8 notes a bar = 8ths, 4 = beats), by fighter, or by an extra line a
+    /// fighter declares (its name, a space and more, such as `HORN THEME`); `None` is a rest. A line has the same
+    /// whole number of notes for every bar of the loop.
     pub lines: BTreeMap<String, Vec<Option<i32>>>,
     /// Victory solos as `(beat, midi note, beats)`, by fighter.
     pub solos: BTreeMap<String, Vec<(f64, i32, f64)>>,
     /// The notes each fighter plays as its name slams in.
     pub title_hits: BTreeMap<String, Vec<i32>>,
+    /// The kit's `MIX` (format 2): a bus's `(gain, reverb send)` in the master instead of its own, by bus name.
+    /// Which buses exist (the theme's, the fighters', the shared ones) is the content registry's to check. The kit
+    /// applies its `MIX` in the config's order, but only buses that already have a level are named in it, and those
+    /// keep their place: a sorted map gives the same master.
+    pub mix: BTreeMap<String, (f64, f64)>,
+    /// The theme's options by the theme's own names (format 2), such as `sequel = true` for the kit's
+    /// `TRAILER = dict(sequel=True)`: each is true or false, a number or a text. The theme's schema is checked by
+    /// the content registry.
+    pub theme_options: BTreeMap<String, Value>,
 }
 
-/// The picture's seeds.
+/// The picture's seeds and the title card's opt-ins.
 #[derive(Clone, Debug, PartialEq)]
 pub struct PictureSeeds {
     /// The shatter seed (default 271).
     pub shard_seed: u64,
     /// The particle seed; `None` takes the kit's default, see [`FightFile::fx_seed`].
     pub fx_seed: Option<u64>,
+    /// The kit's `TITLE_LINES` (format 2): a fighter's name on the VS card as two stacked lines, by fighter.
+    pub title_lines: BTreeMap<String, (String, String)>,
+    /// The kit's `TITLE_BALLS` (format 2): the VS card's two big balls as `[cx, cy, r]`, left corner first, moved
+    /// to make room for a two-line name. `None` keeps the card's own.
+    pub title_balls: Option<[[f64; 3]; 2]>,
+    /// The kit's `MIDDLE` (format 2): another word instead of VS, and how it is turned. `None` is VS.
+    pub middle: Option<(String, Middle)>,
+}
+
+/// How the title card's middle word is turned (the second value of the kit's `MIDDLE`).
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum Middle {
+    /// Along the card's diagonal divider (`'divider'`).
+    Divider,
+    /// Turned this many degrees.
+    Degrees(f64),
 }
 
 /// The post texts.
@@ -188,6 +234,13 @@ impl FightFile {
     /// The bar and beat grid at this fight's tempo.
     pub fn grid(&self) -> Grid {
         Grid::new(self.tempo_bpm)
+    }
+
+    /// One chord per bar of `n_bars`: the intro, the loop repeated (the last repeat may stop part-way), then the
+    /// tail ([`harmony::chords_for`] of this fight's chords).
+    pub fn chords(&self, n_bars: usize) -> Vec<String> {
+        let m = &self.music;
+        harmony::chords_for(&m.chords_intro, &m.chord_loop, &m.chords_tail, n_bars)
     }
 
     /// The particle seed: `picture.fx_seed`, or the kit's default, the sum of the fighter names' character codes
@@ -280,6 +333,7 @@ impl FightFile {
             }
         }
         self.music.check(&self.fighters)?;
+        self.picture.check(&self.fighters)?;
         let n = self.captions.shorts.len();
         if n != 0 && n != 3 {
             return Err(err(
@@ -305,19 +359,37 @@ impl Music {
         }
         harmony::pitch_class(&self.key).map_err(|e| err("music.key", e.to_string()))?;
         harmony::scale(&self.scale).map_err(|e| err("music.scale", e.to_string()))?;
-        let lists = [
-            (
+        if self.chords_intro.len() != INTRO_BARS {
+            return Err(err(
                 "music.chords_intro",
-                &self.chords_intro,
-                INTRO_BARS,
-                " (the title card and the count-in)",
-            ),
-            ("music.chord_loop", &self.chord_loop, LOOP_BARS, ""),
+                format!(
+                    "{INTRO_BARS} chords needed (the title card and the count-in), found {}",
+                    self.chords_intro.len()
+                ),
+            ));
+        }
+        if !LOOP_LENGTHS.contains(&self.chord_loop.len()) {
+            let [a, b] = LOOP_LENGTHS;
+            return Err(err(
+                "music.chord_loop",
+                format!("{a} or {b} chords needed, found {}", self.chord_loop.len()),
+            ));
+        }
+        if self.chords_tail.len() > TAIL_MAX {
+            return Err(err(
+                "music.chords_tail",
+                format!(
+                    "at most {TAIL_MAX} chords (the bars after the last whole loop), found {}",
+                    self.chords_tail.len()
+                ),
+            ));
+        }
+        let lists = [
+            ("music.chords_intro", &self.chords_intro),
+            ("music.chord_loop", &self.chord_loop),
+            ("music.chords_tail", &self.chords_tail),
         ];
-        for (field, chords, want, why) in lists {
-            if chords.len() != want {
-                return Err(err(field, format!("{want} chords needed{why}, found {}", chords.len())));
-            }
+        for (field, chords) in lists {
             for (i, c) in chords.iter().enumerate() {
                 harmony::parse_chord(c).map_err(|e| err(format!("{field}[{i}]"), e.to_string()))?;
             }
@@ -332,13 +404,31 @@ impl Music {
         for name in self.roles.keys() {
             fighting("music.roles", name)?;
         }
+        let bars = self.chord_loop.len();
         for (name, line) in &self.lines {
-            fighting("music.lines", name)?;
             let field = path("music.lines", name);
-            if line.len() < LOOP_BARS {
+            if !fighters.iter().any(|f| f == name || is_extra_line(name, f)) {
                 return Err(err(
                     field,
-                    format!("at least {LOOP_BARS} notes needed (one a bar), found {}", line.len()),
+                    format!(
+                        "{name} is not one of the fighters (an extra line is named after its fighter, such as \
+                         \"HORN THEME\")"
+                    ),
+                ));
+            }
+            if line.len() < bars {
+                return Err(err(
+                    field,
+                    format!("at least {bars} notes needed (one a bar), found {}", line.len()),
+                ));
+            }
+            if !line.len().is_multiple_of(bars) {
+                return Err(err(
+                    field,
+                    format!(
+                        "{} notes do not fit the {bars}-chord loop (every bar needs the same number of notes)",
+                        line.len()
+                    ),
                 ));
             }
             for (i, n) in line.iter().enumerate() {
@@ -365,6 +455,75 @@ impl Music {
             fighting("music.title_hits", name)?;
             for (i, &n) in hits.iter().enumerate() {
                 check_midi(n, &format!("{}[{i}]", path("music.title_hits", name)))?;
+            }
+        }
+        for (bus, &(gain, send)) in &self.mix {
+            let field = path("music.mix", bus);
+            if bus.is_empty() {
+                return Err(err(field, "a bus needs a name"));
+            }
+            for (what, x) in [("gain", gain), ("reverb send", send)] {
+                if !x.is_finite() || x < 0.0 {
+                    return Err(err(field, format!("the {what} must be 0 or more, found {x:?}")));
+                }
+            }
+        }
+        for (key, v) in &self.theme_options {
+            let field = path("music.theme_options", key);
+            match v {
+                Value::Bool(_) | Value::Int(_) | Value::Str(_) => {}
+                Value::Float(x) if x.is_finite() => {}
+                Value::Float(x) => return Err(err(field, format!("must be a finite number, found {x:?}"))),
+                Value::Null | Value::List(_) => {
+                    return Err(err(field, "must be true or false, a number or a text"));
+                }
+            }
+        }
+        Ok(())
+    }
+}
+
+/// Whether `line` names an extra line of the fighter `fighter`: its name, a space, and at least one more letter
+/// (`HORN THEME` is the HORN's).
+pub fn is_extra_line(line: &str, fighter: &str) -> bool {
+    line.strip_prefix(fighter)
+        .and_then(|rest| rest.strip_prefix(' '))
+        .is_some_and(|word| !word.trim().is_empty())
+}
+
+impl PictureSeeds {
+    fn check(&self, fighters: &[String]) -> Result<(), FightFileError> {
+        for (name, (a, b)) in &self.title_lines {
+            let field = path("picture.title_lines", name);
+            if !fighters.iter().any(|f| f == name) {
+                return Err(err(field, format!("{name} is not one of the fighters")));
+            }
+            if a.trim().is_empty() || b.trim().is_empty() {
+                return Err(err(field, "both lines need a text"));
+            }
+        }
+        if let Some(balls) = &self.title_balls {
+            for (i, &[cx, cy, r]) in balls.iter().enumerate() {
+                let field = format!("picture.title_balls[{i}]");
+                if !(cx.is_finite() && cy.is_finite()) {
+                    return Err(err(field, "the centre must be two finite numbers"));
+                }
+                if !r.is_finite() || r <= 0.0 {
+                    return Err(err(field, format!("the radius must be above 0, found {r:?}")));
+                }
+            }
+        }
+        if let Some((word, turn)) = &self.middle {
+            if word.trim().is_empty() {
+                return Err(err("picture.middle", "the word needs a text"));
+            }
+            if let Middle::Degrees(d) = turn
+                && !d.is_finite()
+            {
+                return Err(err(
+                    "picture.middle",
+                    format!("the angle must be a finite number, found {d:?}"),
+                ));
             }
         }
         Ok(())

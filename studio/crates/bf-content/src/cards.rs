@@ -3,6 +3,8 @@
 //!
 //! Every text is the interface reference's own (sections 5.1 and 5.4).
 
+use crate::themes::{self, PORTED_THEMES, Preset};
+
 /// A section of the band, as the roster groups its fighters.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Section {
@@ -38,19 +40,21 @@ pub struct FighterCard {
     pub tags: &'static [&'static str],
 }
 
-/// What the interface says about a theme.
+/// What the interface says about a theme (each theme's card lives in its own folder, `themes/<name>/mod.rs`).
 #[derive(Debug, PartialEq)]
 pub struct ThemeCard {
     /// Its name as shown, such as "Big top".
     pub display: &'static str,
     /// The line beside the theme picker.
     pub text: &'static str,
-    /// Its key's note name, such as "E".
+    /// Its key's note name, such as "E" (its first preset's).
     pub key: &'static str,
     /// Its scale's name, such as "harmonic minor".
     pub scale: &'static str,
-    /// The chord loops it has, eight chords each.
-    pub chord_loops: &'static [[&'static str; 8]],
+    /// The chord loops it has, 4 or 8 chords each.
+    pub chord_loops: &'static [&'static [&'static str]],
+    /// The kit configs it ships with (Table S4 of the milestone 3 plan): their tempo, key and chords.
+    pub presets: &'static [Preset],
     /// The fewest and the most bars it can fill 61 s with.
     pub bars: (u32, u32),
 }
@@ -118,15 +122,6 @@ static TROMBONE: FighterCard = FighterCard {
     tags: &BAND_TAGS,
 };
 
-static BIG_TOP: ThemeCard = ThemeCard {
-    display: "Big top",
-    text: "A sinister circus in a minor key. Leaves the bass and the top line to the fighters.",
-    key: "E",
-    scale: "harmonic minor",
-    chord_loops: &[["Em", "Am", "B7", "Em", "C", "Am", "B7", "B7"]],
-    bars: (24, 42),
-};
-
 /// The section a roster fighter sits in, or `None` for a name that is not in the roster.
 pub fn section(name: &str) -> Option<Section> {
     SCORE.iter().find(|(n, _)| *n == name).map(|(_, s)| *s)
@@ -146,12 +141,13 @@ pub fn card(name: &str) -> Option<&'static FighterCard> {
     }
 }
 
-/// The card of a theme (by its name in a fight file), or `None` for a name that is no theme.
+/// The card of a theme the app offers (by its name in a fight file, one of [`crate::theme_names`]), or `None` for
+/// any other name.
 pub fn theme_card(name: &str) -> Option<&'static ThemeCard> {
-    match name {
-        "big_top" => Some(&BIG_TOP),
-        _ => None,
+    if !PORTED_THEMES.contains(&name) {
+        return None;
     }
+    themes::theme(name).map(|t| t.card)
 }
 
 /// What a pair rule does, in words, or `None` for a rule this app has no words for.
@@ -314,8 +310,29 @@ mod tests {
             "A sinister circus in a minor key. Leaves the bass and the top line to the fighters."
         );
         assert_eq!((t.key, t.scale), ("E", "harmonic minor"));
-        assert_eq!(t.chord_loops, [["Em", "Am", "B7", "Em", "C", "Am", "B7", "B7"]]);
+        let loops: Vec<&[&str]> = t.chord_loops.to_vec();
+        assert_eq!(loops, [&["Em", "Am", "B7", "Em", "C", "Am", "B7", "B7"][..]]);
         assert_eq!(t.bars, (24, 42));
+        // its presets are the kit configs that play it; every loop is 4 or 8 chords
+        let configs: Vec<&str> = t.presets.iter().map(|p| p.config).collect();
+        assert_eq!(
+            configs,
+            [
+                "examples/flute_vs_trombone",
+                "examples/trombone_vs_tuba",
+                "examples/bassclarinet_vs_euphonium"
+            ]
+        );
+        for l in t
+            .chord_loops
+            .iter()
+            .copied()
+            .chain(t.presets.iter().map(|p| p.chord_loop))
+        {
+            assert!([4, 8].contains(&l.len()), "{l:?}");
+        }
+        // a kit theme that is not offered yet has no card
+        assert!(theme_card("heist").is_none() && theme_card("brass_trailer").is_none());
         for name in ["", "polka", "Big top", "big top"] {
             assert!(theme_card(name).is_none(), "{name:?}");
         }

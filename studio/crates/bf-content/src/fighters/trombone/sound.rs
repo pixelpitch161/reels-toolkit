@@ -360,6 +360,11 @@ impl Sound for TromboneSound {
         self.k
     }
 
+    /// PEDAL TONE lands on `M.bed.boom` without asking (`trombone.py` 553).
+    fn bed_calls(&self) -> &'static [bf_sound::traits::BedHook] {
+        &[bf_sound::traits::BedHook::Boom]
+    }
+
     fn bus_gain(&self) -> f64 {
         1.8
     }

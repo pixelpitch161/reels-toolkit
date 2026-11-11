@@ -9,9 +9,10 @@
 //! - [`fight`]: the fight's core (`class Fight`: the launch, events, damage, knockback, motion, levels).
 //! - [`schedule`]: the order of a step (`Fight.run`), the one place that calls the weapon kinds and abilities.
 //! - [`kinds`]: the weapon kinds, one module each (`striker`: the FLUTE's baskets and cobras, and the swat rule;
-//!   `blade`: the TROMBONE's thrust lance).
-//! - [`abilities`]: the abilities, one module per kind (`haste`, `dance`, `wave`, `shockwave` with its slow, `slam`),
-//!   with `trigger` and `effects_step`.
+//!   `blade`: the TROMBONE's thrust lance; and a module for each other weapon kind of the kit, a stub until its
+//!   fighter's port, already called wherever `fight.py` calls it).
+//! - [`abilities`]: the abilities, one module per kind (`haste`, `dance`, `wave`, `shockwave` with its slow, `slam`,
+//!   `shield`, and the kit's other kinds, stubs until their ports), with `trigger` and `effects_step`.
 //! - `record`: what is written down at every frame (`Fight.snap`).
 //! - [`parity`]: how long a fight of this engine agrees with the Python recording of the same fight, and what ends
 //!   the agreement (the parity suites' measure).
@@ -28,9 +29,9 @@ pub mod roster;
 pub mod rules;
 pub mod schedule;
 
+pub use fight::{Fight, Setup, lead_changes, run, setup_from, stunned};
 #[cfg(any(test, feature = "testing"))]
-pub use fight::run_with_unported;
-pub use fight::{Fight, Setup, lead_changes, run, setup_from};
+pub use fight::{run_traced, run_with_unported};
 pub use rules::{Rules, SimError};
 
 /// What the unit tests share: the roster, the Python reference recordings and ready-made setups.
@@ -43,7 +44,7 @@ pub(crate) mod testing {
     use bf_core::recording::{Array, Recording};
 
     use crate::fight::{Fight, Setup};
-    use crate::roster::{AbilityCfg, AbilityKind, FighterCfg, WeaponCfg, parse_roster};
+    use crate::roster::{AbilityCfg, AbilityKind, AbilitySettings, FighterCfg, WeaponCfg, parse_roster};
     use crate::rules::Rules;
 
     /// A fight of a setup, through the test entry `Fight::with_unported`: the bare fighters below have no weapon
@@ -150,6 +151,8 @@ pub(crate) mod testing {
             kind: AbilityKind::Unsupported("none".into()),
             params: BTreeMap::from([("every_bars".to_string(), 4.0)]),
             slow: None,
+            detune: None,
+            settings: AbilitySettings::Plain,
         };
         FighterCfg {
             name: name.into(),
@@ -163,6 +166,16 @@ pub(crate) mod testing {
             idiom: String::new(),
             pp: String::new(),
             raw: serde_json::Value::Null,
+        }
+    }
+
+    /// FLUTE's entry as `KAZOO BALL`, with a weapon of a made-up kind (`kazoo`): a fighter the engine refuses whatever
+    /// the kit's kinds ported so far.
+    pub(crate) fn kazoo(roster: &[FighterCfg]) -> FighterCfg {
+        FighterCfg {
+            name: "KAZOO BALL".into(),
+            weapon: WeaponCfg::Unsupported("kazoo".into()),
+            ..fighter(roster, "FLUTE").clone()
         }
     }
 

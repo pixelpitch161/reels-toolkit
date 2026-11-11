@@ -963,6 +963,9 @@ struct CaseBed {
 type Played = Result<(), MusicError>;
 
 impl Bed for CaseBed {
+    fn hooks(&self) -> &'static [bf_sound::traits::BedHook] {
+        &[bf_sound::traits::BedHook::Boom]
+    }
     fn buses(&self) -> &[(&'static str, (f64, f64))] {
         &[("drums", (1.0, 0.15)), ("calliope", (1.2, 0.45)), ("glock", (1.0, 0.5))]
     }

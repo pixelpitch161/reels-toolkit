@@ -122,7 +122,7 @@ mod tests {
     /// flute_vs_trombone's harmony.
     fn episode() -> Harmony {
         let g = Grid::new(132.0);
-        let chords = chords_for(&v(["Em", "B7"]), &loop8(), g.n_bars);
+        let chords = chords_for(&v(["Em", "B7"]), &loop8(), &[], g.n_bars);
         Harmony::new(&g, "E", scale("harmonic minor").unwrap(), chords, Some(loop8()), 2).unwrap()
     }
 
