@@ -335,7 +335,7 @@ fn impact_landings_equal_the_kits() {
     assert_eq!(got.len(), want.len());
     for (i, (g, w)) in got.iter().zip(want).enumerate() {
         assert_eq!(
-            (g.0.to_bits(), g.1, g.2),
+            (g.t.to_bits(), g.line, g.chars),
             (hexf(w.0).to_bits(), w.1, w.2),
             "landing {i}"
         );
@@ -360,7 +360,7 @@ fn impact_landings_equal_the_kits() {
     assert_eq!(got.len(), want.len());
     for (i, (g, w)) in got.iter().zip(want).enumerate() {
         assert_eq!(
-            (g.0.to_bits(), g.1, g.2),
+            (g.t.to_bits(), g.line, g.chars),
             (hexf(w.0).to_bits(), w.1, w.2),
             "landing {i}"
         );

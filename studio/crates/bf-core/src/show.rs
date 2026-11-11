@@ -162,19 +162,31 @@ pub fn captions(events: &[Event], gap: f64) -> Vec<(f64, usize, String)> {
     try_captions(events, gap).unwrap_or_else(|e| panic!("captions: {e}"))
 }
 
+/// One row of `impact_landings`, Python's `(t_land, k, len(_plain(line)))`: when a caption line lands, which line
+/// of its caption it is (from 0) and how many characters it has without its `*` and `~` marks (Python's
+/// characters: Unicode code points).
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Landing {
+    /// When the line lands, in seconds.
+    pub t: f64,
+    /// Which line of its caption it is, from 0.
+    pub line: usize,
+    /// Its characters without the marks.
+    pub chars: usize,
+}
+
 /// `reelkit/ui.py` `impact_landings(caps, stagger, fall)`: when each line of the caption windows `caps` lands in
-/// the `impact` style, as `(t_land, line index, characters)`: line `k` of a window lands at
-/// `t0 + k * stagger + fall`, and a line that would land at or after the window's end is left out. The characters
-/// are counted without the `*` and `~` marks (`len(_plain(line))`). Python's defaults are [`IMPACT_STAGGER`] and
+/// the `impact` style, in the order of `caps`: line `k` of a window lands at `t0 + k * stagger + fall`, and a
+/// line that would land at or after the window's end is left out. Python's defaults are [`IMPACT_STAGGER`] and
 /// [`IMPACT_FALL`]. The picture drops the lines at these times; the sound puts a soft thud on each.
-pub fn impact_landings(caps: &[Cap], stagger: f64, fall: f64) -> Vec<(f64, usize, usize)> {
+pub fn impact_landings(caps: &[Cap], stagger: f64, fall: f64) -> Vec<Landing> {
     let mut out = Vec::new();
     for cap in caps {
         for (k, line) in cap.lines.iter().enumerate() {
-            let t_land = cap.t0 + k as f64 * stagger + fall;
-            if t_land < cap.t1 {
-                let plain = line.chars().filter(|c| !matches!(c, '*' | '~')).count();
-                out.push((t_land, k, plain));
+            let t = cap.t0 + k as f64 * stagger + fall;
+            if t < cap.t1 {
+                let chars = line.chars().filter(|c| !matches!(c, '*' | '~')).count();
+                out.push(Landing { t, line: k, chars });
             }
         }
     }
