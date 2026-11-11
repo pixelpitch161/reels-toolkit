@@ -33,6 +33,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # bf-app's sound crate (cpal, through alsa-sys) needs the ALSA headers and pkg-config to build; its drawing
+      # tests need a software Vulkan adapter (lavapipe, in mesa-vulkan-drivers).
+      - name: Install the system packages the app needs
+        run: sudo apt-get update && sudo apt-get install -y libasound2-dev pkg-config mesa-vulkan-drivers
+
       # The channel comes from studio/rust-toolchain.toml, which rustup then uses for every cargo call below.
       - name: Install the pinned toolchain
         run: |
