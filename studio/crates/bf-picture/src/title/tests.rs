@@ -787,8 +787,8 @@ fn while_the_doors_move_there_are_no_slam_effects_and_no_boxes() {
     let (n, (sx, sy)) = (layout::normal(), c.shake(t));
     for (side, sgn) in [(0, 1.0), (1, -1.0)] {
         let (layer, alpha) = c.door(side, t, off, &mut log);
-        let dx = super::round(n[0] * off * sgn + sx);
-        let dy = super::round(n[1] * off * sgn + sy);
+        let dx = crate::ui::round_i32(n[0] * off * sgn + sx);
+        let dy = crate::ui::round_i32(n[1] * off * sgn + sy);
         super::lay_over(&mut want, &layer, &alpha, dx, dy);
     }
     let mut img = grey();

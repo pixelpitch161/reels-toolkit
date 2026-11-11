@@ -30,6 +30,7 @@ use bf_core::recording::Recording;
 use bf_core::roster::{FighterCfg, parse_roster};
 use bf_core::show::Show;
 use bf_picture::img::{Img, RgbF};
+use bf_picture::np;
 use bf_picture::sprite::Mesh;
 use bf_picture::title::{self, CardLook, Look, TitleCard};
 use bf_picture::ui::{DrawLog, Kind};
@@ -63,10 +64,8 @@ impl Look for FluteStandIn {
                 let u = (x as f64 * dd[0] + y as f64 * dd[1]) / 22.0;
                 let v = side.px(x, y)[0] / 30.0;
                 let (cu, cv) = (py::fmod_py(u, 1.0) - 0.5, py::fmod_py(v, 1.0) - 0.5);
-                // d = np.hypot(cu * 22.0, cv * 30.0). numpy's hypot is the C runtime's, which on the reference PC
-                // is the plain square root of the sum of the squares (measured on 100,000 pairs, all equal).
-                let (a, b) = (cu * 22.0, cv * 30.0);
-                let d = (a * a + b * b).sqrt();
+                // d = np.hypot(cu * 22.0, cv * 30.0): numpy's hypot, not math.hypot
+                let d = np::hypot(cu * 22.0, cv * 30.0);
                 let (cup, hole) = (d < 6.5, d < 3.0);
                 for (p, tint) in base.px_mut(x, y).iter_mut().zip([0.70, 0.72, 0.80]) {
                     // base_ = base_ * np.array([0.70, 0.72, 0.80])

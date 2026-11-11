@@ -19,6 +19,7 @@ use crate::config::{SAFE, SAFE_CX, ss};
 use crate::font::{self, ADV};
 use crate::img::{Img, Rgb8};
 use crate::np;
+use crate::np::index::resample;
 use bf_core::py::{py_max, py_min};
 use bf_core::{dmath, py, pyhash};
 
@@ -159,30 +160,6 @@ fn line_ink(line: &str, scale: u32) -> (Img<u8>, Vec<u8>) {
     let last = modes.last().copied().unwrap_or(0);
     let cols = (0..m.w).map(|x| modes.get(x / step).copied().unwrap_or(last)).collect();
     (m, cols)
-}
-
-/// `_resample`'s index list for one axis: `np.minimum((np.arange(n) * size / n).astype(int), size - 1)`, the
-/// source index of each of the `n` new rows or columns (nearest neighbour, by truncation).
-fn resample_index(n: usize, size: usize) -> Vec<usize> {
-    (0..n)
-        .map(|i| {
-            let src = np::f64_to_i64((i * size) as f64 / n as f64).max(0) as usize;
-            src.min(size.saturating_sub(1))
-        })
-        .collect()
-}
-
-/// `_resample(mask, hh, ww)` and `_resample(rgb, hh, ww)`: the mask and its column colours at another size.
-fn resample(m: &Img<u8>, cols: &[u8], hh: usize, ww: usize) -> (Img<u8>, Vec<u8>) {
-    let (ys, xs) = (resample_index(hh, m.h), resample_index(ww, m.w));
-    let mut out: Img<u8> = Img::new(ww, hh, 1);
-    for (y, &sy) in ys.iter().enumerate() {
-        let src = m.row(sy);
-        for (o, &sx) in out.row_mut(y).iter_mut().zip(&xs) {
-            *o = src[sx];
-        }
-    }
-    (out, xs.iter().map(|&sx| cols[sx]).collect())
 }
 
 /// One layer of `_stamp_rgb`: the set pixels of `m`, placed with its top left at `(mx, my)`, take the colour
@@ -435,19 +412,6 @@ mod tests {
         let (m, cols) = line_ink("**", 3);
         assert_eq!((m.w, m.h, cols), (3, 21, vec![0, 0, 0]));
         assert_eq!(line_ink("*ab", 2).1, vec![1; 22]);
-    }
-
-    #[test]
-    fn resampling_is_nearest_by_truncation() {
-        assert_eq!(resample_index(4, 2), [0, 0, 1, 1]);
-        assert_eq!(resample_index(3, 2), [0, 0, 1]);
-        assert_eq!(resample_index(5, 3), [0, 0, 1, 1, 2]);
-        assert_eq!(resample_index(2, 5), [0, 2]);
-        let m = Img::from_vec(2, 1, 1, vec![1u8, 0]);
-        let (big, cols) = resample(&m, &[2, 1], 2, 3);
-        assert_eq!((big.w, big.h), (3, 2));
-        assert_eq!(big.data, [1, 1, 0, 1, 1, 0]);
-        assert_eq!(cols, [2, 2, 1]);
     }
 
     #[test]

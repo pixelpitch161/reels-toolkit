@@ -50,7 +50,7 @@ mod tests;
 
 use bf_core::dmath;
 use bf_core::grid::Grid;
-use bf_core::py::{self, py_max, py_min};
+use bf_core::py::{py_max, py_min};
 use bf_core::show::Show;
 
 use self::layout::{BALLS, Panel, Word};
@@ -59,7 +59,7 @@ use crate::font::{self, ADV};
 use crate::img::{Img, Rgb8, RgbF};
 use crate::np;
 use crate::sprite::{self, Mesh};
-use crate::ui::{DrawLog, Kind};
+use crate::ui::{DrawLog, Kind, round_i32};
 
 pub use self::layout::OPEN_PX;
 
@@ -178,11 +178,6 @@ pub fn slam_k(t: f64, t0: f64) -> Option<f64> {
 /// way goes through here.
 pub(crate) fn over(dst: f64, src: f64, a: f64) -> f64 {
     dst * (1.0 - a) + src * a
-}
-
-/// Python's `int(round(x))` for a pixel count.
-fn round(x: f64) -> i32 {
-    np::f64_to_i32(py::round_half_even(x))
 }
 
 /// `door_offset(t)` on the timeline `g`, with [`OPEN_PX`] where Python returns `None`: see
@@ -428,7 +423,7 @@ impl TitleCard {
             // slide the door: a whole-pixel shift along its normal (and the shake)
             //   vec = N * off * (1 if side == 0 else -1) + np.array([sx, sy])
             let sgn = if side == 0 { 1.0 } else { -1.0 };
-            let (dx, dy) = (round(n[0] * off * sgn + sx), round(n[1] * off * sgn + sy));
+            let (dx, dy) = (round_i32(n[0] * off * sgn + sx), round_i32(n[1] * off * sgn + sy));
             lay_over(&mut out, &layer, &alpha, dx, dy);
         }
         if off == 0.0 && t < self.grid.dur - 1.0 {
@@ -560,7 +555,7 @@ impl TitleCard {
         let m = font::text_mask(&self.series, 1);
         let o = font::dilate(&m, 1);
         // x0, y0 = int(round(180 - w_ / 2)), 100
-        let (x0, y0) = (round(180.0 - m.w as f64 / 2.0), 100);
+        let (x0, y0) = (round_i32(180.0 - m.w as f64 / 2.0), 100);
         for (mask, c, rr) in [(&o, INK, 1), (&m, TAG, 0)] {
             for my in 0..mask.h {
                 for (mx, &on) in mask.row(my).iter().enumerate() {
