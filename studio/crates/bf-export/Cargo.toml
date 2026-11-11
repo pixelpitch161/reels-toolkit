@@ -13,8 +13,15 @@ bf-sound.workspace = true
 bf-content.workspace = true
 png.workspace = true
 
-# The reader for studio/reference (dev support only) and the reference file's JSON values.
+[features]
+# The test entries `ffmpeg_at` and `run_job_using` (a stand-in ffmpeg for the job tests). Only this crate's own tests
+# turn it on, through the dev-dependency below; the app and the command line never do.
+test-support = []
+
+# This crate with its test entries, the reader for studio/reference (dev support only) and the reference file's JSON
+# values.
 [dev-dependencies]
+bf-export = { path = ".", features = ["test-support"] }
 bf-testdata = { path = "../bf-testdata" }
 serde_json.workspace = true
 

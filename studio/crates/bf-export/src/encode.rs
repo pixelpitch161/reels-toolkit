@@ -106,11 +106,14 @@ pub(crate) fn find_with(var: Option<OsString>, path: Option<OsString>) -> Result
     check(ffmpeg, path.as_deref())
 }
 
-/// The [`Ffmpeg`] of the program `ffmpeg` (any file that runs, a script too: for tests), with its ffprobe and its
-/// version, after asking it for its encoders.
+/// The [`Ffmpeg`] of the program `ffmpeg` (any file that runs, a script too), with its ffprobe and its version, after
+/// asking it for its encoders. Not for the app (a script would run through cmd.exe, and ending cmd.exe leaves
+/// ffmpeg running): only `bf-export`'s own tests use it, for their stand-in ffmpeg, through the `test-support`
+/// feature their dev-dependency turns on.
 ///
 /// # Errors
 /// As [`find_ffmpeg`].
+#[cfg(feature = "test-support")]
 pub fn ffmpeg_at(ffmpeg: PathBuf) -> Result<Ffmpeg, ExportError> {
     check(ffmpeg, std::env::var_os("PATH").as_deref())
 }

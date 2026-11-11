@@ -83,7 +83,7 @@ pub enum JobEvent {
 }
 
 /// Renders the fight `ff` from its recording `rec` into a new folder under `opts.out_root` and gives that folder,
-/// with the ffmpeg [`find_ffmpeg`] finds. See [`run_job_using`].
+/// with the ffmpeg [`find_ffmpeg`] finds.
 ///
 /// # Errors
 /// An [`ExportError`] in one plain sentence.
@@ -98,11 +98,27 @@ pub fn run_job(
         return Err(ExportError::cancelled());
     }
     let ffmpeg = find_ffmpeg()?;
-    run_job_using(&ffmpeg, ff, rec, opts, on, cancel)
+    job_with(&ffmpeg, ff, rec, opts, on, cancel)
 }
 
-/// [`run_job`] with the ffmpeg given (one found once by [`find_ffmpeg`], or a stand-in from
-/// [`crate::encode::ffmpeg_at`] in tests).
+/// [`run_job`] with the ffmpeg given: a stand-in from `ffmpeg_at`. Not for the app: only `bf-export`'s own tests
+/// use it, through the `test-support` feature their dev-dependency turns on.
+///
+/// # Errors
+/// As [`run_job`].
+#[cfg(feature = "test-support")]
+pub fn run_job_using(
+    ffmpeg: &Ffmpeg,
+    ff: &FightFile,
+    rec: Arc<Recording>,
+    opts: &JobOpts,
+    on: &(dyn Fn(JobEvent) + Sync),
+    cancel: &AtomicBool,
+) -> Result<PathBuf, ExportError> {
+    job_with(ffmpeg, ff, rec, opts, on, cancel)
+}
+
+/// [`run_job`] with the ffmpeg given.
 ///
 /// Before any work: the fight file is checked, the output folder is made if missing and the video's folder name
 /// is decided ([`output::folder_name`], [`output::clip_folder_name`]); a name already taken twice is an error.
@@ -112,7 +128,7 @@ pub fn run_job(
 /// An [`ExportError`] in one plain sentence; nothing is left in the output folder (unless the temporary folder
 /// could not be removed, which the sentence then says, or the finished video's name was taken at the last
 /// moment, when the finished folder is kept and named).
-pub fn run_job_using(
+fn job_with(
     ffmpeg: &Ffmpeg,
     ff: &FightFile,
     rec: Arc<Recording>,

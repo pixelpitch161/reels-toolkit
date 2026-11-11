@@ -481,6 +481,7 @@ version = "0.1.0"
 dependencies = [
  "bf-content",
  "bf-core",
+ "bf-export",
  "bf-picture",
  "bf-sound",
  "bf-story",
