@@ -9,15 +9,18 @@
 //! sounding frame, the energy (the sum of the squared samples) and one frame from the middle, as `float.hex()`.
 //! The whole buses were compared once, by hand, when this was written: below -230 dBFS everywhere.
 
+mod common;
+
 use bf_content::SoundBuild;
 use bf_content::fighters::flute::sound as flute;
 use bf_content::themes::big_top::{self, BigTopClassic, CALLIOPE_ATT, CALLIOPE_VIB};
 use bf_core::fightfile::FightFile;
-use bf_core::recording::Recording;
 use bf_core::show::Show;
 use bf_sound::mix::Mix;
 use bf_sound::traits::Bed;
-use bf_testdata::{parse_hex_f64, reference, repo_root};
+use bf_testdata::parse_hex_f64;
+
+use common::episode;
 
 /// A bus the kit left: its first and last sounding frame, its energy, and the frame `mid` (left, right).
 type Bus = (&'static str, usize, usize, &'static str, usize, [&'static str; 2]);
@@ -26,21 +29,6 @@ type Bus = (&'static str, usize, usize, &'static str, usize, [&'static str; 2]);
 const ENERGY_REL: f64 = 1e-9;
 /// One frame against the kit's: the largest difference allowed (-180 dBFS).
 const FRAME_ABS: f64 = 1e-9;
-
-struct Episode {
-    rec: Recording,
-    ff: FightFile,
-}
-
-fn episode() -> Episode {
-    let rec = Recording::read(&reference("fights/flute_vs_trombone/ep392.bfrec")).expect("the recording reads");
-    let path = repo_root().join("studio/fights/flute_vs_trombone.toml");
-    let text = std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("{}: {e}", path.display()));
-    Episode {
-        rec,
-        ff: FightFile::parse(&text).expect("the fight file parses"),
-    }
-}
 
 /// The mix has exactly the buses of `want`, each as the kit left it.
 #[track_caller]
