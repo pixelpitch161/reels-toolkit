@@ -13,7 +13,7 @@ mod common;
 
 use bf_content::themes::{self, Preset, ThemeOptions};
 use bf_content::{SoundBuild, name_status, theme_card, validate};
-use bf_core::fightfile::FightFile;
+use bf_core::fightfile::{FightFile, check_line};
 use bf_core::grid::Grid;
 use bf_core::harmony::{Harmony, chords_for, scale};
 use bf_core::show::Show;
@@ -46,6 +46,7 @@ fn every_kit_configs_chords_rebuild() {
     let configs = doc["configs"].as_array().expect("configs");
     assert_eq!(configs.len(), 18, "milestone 1's config and Table S4's 17");
     let mut tails = Vec::new();
+    let mut lines = 0;
     for c in configs {
         let name = c["config"].as_str().unwrap();
         let (intro, loop_, tail, chords) = (
@@ -66,12 +67,34 @@ fn every_kit_configs_chords_rebuild() {
         ff.music.chords_intro = intro;
         ff.music.chord_loop = loop_;
         ff.music.chords_tail = tail.clone();
+        // the config's own fighters and every line it writes, through the fight file's line check
+        ff.fighters = strings(&c["fighters"]);
+        ff.music.roles.clear();
+        ff.music.solos.clear();
+        ff.music.title_hits.clear();
         ff.music.lines.clear();
+        for (who, line) in c["lines"].as_object().expect("lines") {
+            let notes: Vec<Option<i32>> = line
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|n| n.as_i64().map(|m| m as i32))
+                .collect();
+            assert!(
+                line.as_array().unwrap().iter().all(|n| n.is_null() || n.is_i64()),
+                "{name} {who}"
+            );
+            check_line(who, &notes, ff.music.chord_loop.len()).unwrap_or_else(|e| panic!("{name}: {e}"));
+            ff.music.lines.insert(who.clone(), notes);
+            lines += 1;
+        }
         ff.validate(&name_status).unwrap_or_else(|e| panic!("{name}: {e}"));
         let back = FightFile::parse(&ff.to_toml()).unwrap();
         assert_eq!(back.chords(back.grid().n_bars), chords, "{name}");
         tails.push((name.to_string(), tail.len()));
     }
+    // every kit config's every line passed (33 lines in the 18 configs, two of them extra `HORN THEME` lines)
+    assert_eq!(lines, 33);
     // Table S4's "loop + tail" column, for the configs it names with a tail.
     for (name, want) in [
         ("examples/clarinet_vs_oboe", 2),

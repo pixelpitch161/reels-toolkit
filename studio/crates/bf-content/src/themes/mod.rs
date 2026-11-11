@@ -11,13 +11,16 @@
 //! not have (ruling M3-R2).
 
 use std::collections::BTreeMap;
+use std::sync::Arc;
 
-use bf_core::event::Value;
-use bf_core::fightfile::FightFile;
+use bf_core::fightfile::{FightFile, OptionValue};
 use bf_sound::traits::Bed;
+use bf_sound::voice::Voice;
 
 use crate::cards::ThemeCard;
 use crate::error::ContentError;
+use crate::fighters;
+use crate::registry::roster;
 
 pub mod baroque_storm;
 pub mod big_top;
@@ -44,7 +47,7 @@ pub const PORTED_THEMES: [&str; 1] = ["big_top"];
 /// A theme's options as one fight has them: every option of the theme's schema, by its name, with the fight
 /// file's value or the option's default (a fighter option's default is the left corner's fighter, as the kit's
 /// `PLUGGED` is `M.NAMES[0]`).
-pub type ThemeOptions = BTreeMap<String, Value>;
+pub type ThemeOptions = BTreeMap<String, OptionValue>;
 
 /// What kind of value a theme option holds.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -65,9 +68,9 @@ pub struct ThemeOption {
     pub kit: &'static str,
     /// Its kind.
     pub kind: OptionKind,
-    /// The kit's default when the config does not set it. For a [`OptionKind::Fighter`] option, `Value::Null`
+    /// The kit's default when the config does not set it. For a [`OptionKind::Fighter`] option, `None`
     /// stands for the left corner's fighter.
-    pub default: Value,
+    pub default: Option<OptionValue>,
 }
 
 /// A kit episode config a theme ships with (Table S4): what its music fixes, for the starters (Task 59).
@@ -100,10 +103,20 @@ pub struct Theme {
     pub card: &'static ThemeCard,
     /// Its options (the kit config names the mood reads besides the music: `TRAILER`, `DRUMLINE`, `PLUGGED`).
     pub options: &'static [ThemeOption],
-    /// The Pixel Pitch voices its bed plays itself (`hot_jazz` and `second_line` play the TUBA's), by `pp` id.
+    /// The Pixel Pitch voices its bed plays itself (`hot_jazz` and `second_line` play the TUBA's), by `pp` id, in
+    /// the order the build hands them to the music context ([`Theme::bed_voices`] makes them).
     pub voices: &'static [&'static str],
+    /// A voice of its own for a `pp` id no roster fighter plays (`mambo`'s alto voice, ported in its own folder),
+    /// or `None` ([`no_own_voice`]: every voice comes from a roster fighter's).
+    pub own_voice: fn(&str) -> Option<Arc<dyn Voice>>,
     /// Its classic arrangement, for the fight's options.
     pub classic: fn(&ThemeOptions) -> Result<Box<dyn Bed>, ContentError>,
+}
+
+/// A theme with no voice of its own.
+pub fn no_own_voice(pp: &str) -> Option<Arc<dyn Voice>> {
+    let _ = pp;
+    None
 }
 
 /// The card of a theme whose port has not filled its own yet.
@@ -118,6 +131,44 @@ pub static NOT_PORTED_CARD: ThemeCard = ThemeCard {
 };
 
 impl Theme {
+    /// The voices its bed plays, in the order of its `voices`: each its own ([`Theme::own_voice`]), else the voice
+    /// of the roster fighter whose `pp` it is, from the fighters' voice registry. The music context looks a name
+    /// up among the fighters' voices first, so a voice that a fighter of the fight also plays is that fighter's
+    /// (one note cache and one gain for the name, as in the kit).
+    ///
+    /// # Errors
+    /// A voice that is not ported yet, in words (`music.theme: Hot jazz plays the TUBA's voice, which is not
+    /// ported yet`; a voice of the theme's own is not named, since such ids may carry a retired name).
+    pub fn bed_voices(&self) -> Result<Vec<Arc<dyn Voice>>, ContentError> {
+        let mut out = Vec::new();
+        for &pp in self.voices {
+            let fighter = roster().iter().find(|f| f.pp == pp);
+            let voice = (self.own_voice)(pp)
+                .or_else(|| fighter.and_then(|f| fighters::voice(&f.name)))
+                .filter(|v| v.name() == pp);
+            match (voice, fighter) {
+                (Some(v), _) => out.push(v),
+                (None, Some(f)) => {
+                    return Err(ContentError::field(
+                        "music.theme",
+                        format!(
+                            "{} plays the {}'s voice, which is not ported yet",
+                            self.display(),
+                            f.name
+                        ),
+                    ));
+                }
+                (None, None) => {
+                    return Err(ContentError::field(
+                        "music.theme",
+                        format!("{} plays a voice of its own that is not ported yet", self.display()),
+                    ));
+                }
+            }
+        }
+        Ok(out)
+    }
+
     /// Its name as shown (the card's), or its fight-file name while it has no card.
     pub fn display(&self) -> &'static str {
         if self.card.display.is_empty() {
@@ -149,9 +200,9 @@ impl Theme {
                 ));
             };
             match (option.kind, value) {
-                (OptionKind::Bool, Value::Bool(_)) => {}
+                (OptionKind::Bool, OptionValue::Bool(_)) => {}
                 (OptionKind::Bool, _) => return Err(ContentError::field(field, "must be true or false")),
-                (OptionKind::Fighter, Value::Str(name)) => {
+                (OptionKind::Fighter, OptionValue::Str(name)) => {
                     if !ff.fighters.iter().any(|f| f == name) {
                         return Err(ContentError::field(
                             field,
@@ -168,10 +219,10 @@ impl Theme {
         for option in self.options {
             let value = match (ff.music.theme_options.get(option.key), option.kind) {
                 (Some(v), _) => v.clone(),
-                (None, OptionKind::Fighter) if option.default == Value::Null => {
-                    Value::Str(ff.fighters.first().cloned().unwrap_or_default())
-                }
-                (None, _) => option.default.clone(),
+                (None, _) => match &option.default {
+                    Some(v) => v.clone(),
+                    None => OptionValue::Str(ff.fighters.first().cloned().unwrap_or_default()),
+                },
             };
             out.insert(option.key.to_string(), value);
         }
@@ -305,13 +356,13 @@ mod tests {
             key: "sequel",
             kit: "TRAILER.sequel",
             kind: OptionKind::Bool,
-            default: Value::Bool(false),
+            default: Some(OptionValue::Bool(false)),
         },
         ThemeOption {
             key: "plugged",
             kit: "PLUGGED",
             kind: OptionKind::Fighter,
-            default: Value::Null,
+            default: None,
         },
     ];
 
@@ -321,6 +372,7 @@ mod tests {
         card: &NOT_PORTED_CARD,
         options: &OPTIONS,
         voices: &[],
+        own_voice: no_own_voice,
         classic: |_| Err(not_ported("test_theme")),
     };
 
@@ -329,44 +381,124 @@ mod tests {
         let mut ff = episode();
         // nothing set: the defaults, a fighter option's being the left corner's fighter
         let got = WITH_OPTIONS.options_of(&ff).unwrap();
-        assert_eq!(got["sequel"], Value::Bool(false));
-        assert_eq!(got["plugged"], Value::Str("FLUTE".into()));
-        ff.music.theme_options.insert("sequel".into(), Value::Bool(true));
+        assert_eq!(got["sequel"], OptionValue::Bool(false));
+        assert_eq!(got["plugged"], OptionValue::Str("FLUTE".into()));
+        ff.music.theme_options.insert("sequel".into(), OptionValue::Bool(true));
         ff.music
             .theme_options
-            .insert("plugged".into(), Value::Str("TROMBONE".into()));
+            .insert("plugged".into(), OptionValue::Str("TROMBONE".into()));
         let got = WITH_OPTIONS.options_of(&ff).unwrap();
         assert_eq!(
             (got["sequel"].clone(), got["plugged"].clone()),
-            (Value::Bool(true), Value::Str("TROMBONE".into()))
+            (OptionValue::Bool(true), OptionValue::Str("TROMBONE".into()))
         );
-        let err = |key: &str, v: Value| {
+        let err = |key: &str, v: OptionValue| {
             let mut f = episode();
             f.music.theme_options.insert(key.into(), v);
             WITH_OPTIONS.options_of(&f).unwrap_err().to_string()
         };
         assert_eq!(
-            err("sequal", Value::Bool(true)),
+            err("sequal", OptionValue::Bool(true)),
             r#"music.theme_options.sequal: test_theme has no option "sequal" (it has: sequel, plugged)"#
         );
         assert_eq!(
-            err("sequel", Value::Str("yes".into())),
+            err("sequel", OptionValue::Str("yes".into())),
             "music.theme_options.sequel: must be true or false"
         );
         assert_eq!(
-            err("plugged", Value::Str("PIANO".into())),
+            err("plugged", OptionValue::Str("PIANO".into())),
             r#"music.theme_options.plugged: "PIANO" is not one of the fighters"#
         );
         assert_eq!(
-            err("plugged", Value::Int(0)),
+            err("plugged", OptionValue::Int(0)),
             "music.theme_options.plugged: must be the name of one of the fighters"
         );
         // the big top has no options at all
         let mut f = episode();
-        f.music.theme_options.insert("sequel".into(), Value::Bool(true));
+        f.music.theme_options.insert("sequel".into(), OptionValue::Bool(true));
         assert_eq!(
             theme("big_top").unwrap().options_of(&f).unwrap_err().to_string(),
             r#"music.theme_options.sequel: big_top has no option "sequel" (it has none)"#
+        );
+    }
+
+    /// A stand-in voice of a theme's own, under an id no roster fighter plays.
+    struct OwnVoice;
+
+    impl Voice for OwnVoice {
+        fn note(&self, _: &mut bf_sound::voice::PpNoise, _: f64, _: f64, dur: f64) -> Vec<f64> {
+            vec![0.0; (dur * 48000.0) as usize]
+        }
+        fn register(&self) -> (i32, i32) {
+            (60, 72)
+        }
+        fn name(&self) -> &str {
+            "OWN VOICE"
+        }
+        fn can_hold(&self, dur: f64) -> bool {
+            dur >= 0.0
+        }
+    }
+
+    fn own(pp: &str) -> Option<Arc<dyn Voice>> {
+        (pp == "OWN VOICE").then(|| Arc::new(OwnVoice) as Arc<dyn Voice>)
+    }
+
+    fn voiced(voices: &'static [&'static str]) -> Theme {
+        Theme {
+            name: "voiced",
+            ported: true,
+            card: &NOT_PORTED_CARD,
+            options: &[],
+            voices,
+            own_voice: own,
+            classic: |_| Err(not_ported("voiced")),
+        }
+    }
+
+    #[test]
+    fn a_themes_voices_come_from_the_fighters_registry_or_its_own() {
+        // none: the big top
+        assert!(theme("big_top").unwrap().bed_voices().unwrap().is_empty());
+        // a roster fighter's voice, through the fighters' voice registry, and one of its own, in the listed order
+        let got = voiced(&["TROMBONE", "OWN VOICE", "FLUTE"]).bed_voices().unwrap();
+        let names: Vec<&str> = got.iter().map(|v| v.name()).collect();
+        assert_eq!(names, ["TROMBONE", "OWN VOICE", "FLUTE"]);
+        // a fighter's voice that is not ported yet, in words
+        assert_eq!(
+            voiced(&["TROMBONE", "TUBA"]).bed_voices().err().unwrap().to_string(),
+            "music.theme: voiced plays the TUBA's voice, which is not ported yet"
+        );
+        // an id nobody has: not named
+        assert_eq!(
+            voiced(&["NOBODY"]).bed_voices().err().unwrap().to_string(),
+            "music.theme: voiced plays a voice of its own that is not ported yet"
+        );
+        // the kit themes that play a fighter's voice list it (their ports add the rest)
+        assert_eq!(theme("hot_jazz").unwrap().voices, ["TUBA"]);
+        assert_eq!(theme("second_line").unwrap().voices, ["TUBA"]);
+        assert_eq!(theme("stadium_rock").unwrap().voices, ["ACOUSTIC"]);
+        assert_eq!(theme("mambo").unwrap().voices, ["CONTRABASS", "PIANO"]);
+    }
+
+    /// `validate` refuses a ported theme whose bed plays a voice that is not ported, before anything else of the
+    /// theme's.
+    #[test]
+    fn validate_refuses_a_theme_voice_not_ported() {
+        static TUBA_BED: Theme = Theme {
+            name: "tuba_bed",
+            ported: true,
+            card: &NOT_PORTED_CARD,
+            options: &[],
+            voices: &["TUBA"],
+            own_voice: no_own_voice,
+            classic: |_| Err(not_ported("tuba_bed")),
+        };
+        assert_eq!(
+            crate::soundtrack::validate_with(&episode(), &TUBA_BED)
+                .unwrap_err()
+                .to_string(),
+            "music.theme: tuba_bed plays the TUBA's voice, which is not ported yet"
         );
     }
 }

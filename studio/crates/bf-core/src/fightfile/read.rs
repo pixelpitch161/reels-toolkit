@@ -191,10 +191,10 @@ impl Music {
         for (k, v) in opt_table(t, p, "theme_options")? {
             let field = path("music.theme_options", k);
             let value = match v {
-                toml::Value::Boolean(b) => Value::Bool(*b),
-                toml::Value::Integer(i) => Value::Int(*i),
-                toml::Value::Float(x) => Value::Float(*x),
-                toml::Value::String(s) => Value::Str(s.clone()),
+                toml::Value::Boolean(b) => OptionValue::Bool(*b),
+                toml::Value::Integer(i) => OptionValue::Int(*i),
+                toml::Value::Float(x) => OptionValue::Float(*x),
+                toml::Value::String(s) => OptionValue::Str(s.clone()),
                 other => {
                     return Err(err(
                         field,

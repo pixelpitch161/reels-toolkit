@@ -9,7 +9,8 @@ studio/reference/themes/big_top/ (python -m tools.studio_export theme_big_top):
     voicings.json   Bed.voice and Bed.organ for the 12 roots x 13 qualities (the tables first, then the chord-tone rule)
     chords.json     every kit config whose two fighters are kit fighters (the 17 of the milestone 3 plan's Table S4 and
                     milestone 1's): its tempo, bar count, key and scale, CHORDS, and CHORDS split as the fight file
-                    writes it (the intro, LOOP, the bars after the last whole loop)
+                    writes it (the intro, LOOP, the bars after the last whole loop), and its LINES (a rest as null),
+                    which the fight file's line check must pass
 
 No cache files: everything is small enough to commit."""
 from . import common, m3refs
@@ -47,7 +48,8 @@ def chord_lists(folder, export, module):
     m3refs.commit_json(folder, 'chords.json', dict(
         about='every kit episode config whose two fighters are kit fighters: BPM, the bar count the kit derives '
               '(loop_bpm, then round(61 / BAR)), KEY, SCALE, CHORDS, and CHORDS as [intro 2] + LOOP * n + tail: '
-              '`intro`, `loop` (the config\'s LOOP) and `tail` (the bars after the last whole loop)',
+              '`intro`, `loop` (the config\'s LOOP) and `tail` (the bars after the last whole loop); `lines`: its '
+              'LINES as written, a rest as null',
         configs=rows), module, sort_keys=False)
     print(f'{export}: chords.json: {len(rows)} kit configs')
 

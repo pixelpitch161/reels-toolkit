@@ -11,6 +11,7 @@ pub static THEME: Theme = Theme {
     ported: false,
     card: &NOT_PORTED_CARD,
     options: &[],
-    voices: &[],
+    voices: &["CONTRABASS", "PIANO"],
+    own_voice: super::no_own_voice,
     classic: classic::classic,
 };
