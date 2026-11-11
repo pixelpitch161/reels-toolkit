@@ -23,12 +23,12 @@ impl Edge {
     pub(crate) fn new(x0: i32, y0: i32, x1: i32, y1: i32) -> Edge {
         let (xmin, xmax) = if x0 <= x1 { (x0, x1) } else { (x1, x0) };
         let (ymin, ymax) = if y0 <= y1 { (y0, y1) } else { (y1, y0) };
-        // `((float)(x1 - x0)) / (y1 - y0)`: both differences become floats, then one float division. (The
-        // differences are taken in 64 bits so that absurd coordinates cannot overflow.)
+        // `((float)(x1 - x0)) / (y1 - y0)`: both differences become floats, then one float division. The
+        // differences are C `int`s: for absurd coordinates they wrap, as they do in the reference build.
         let dx = if y0 == y1 {
             0.0
         } else {
-            (i64::from(x1) - i64::from(x0)) as f32 / (i64::from(y1) - i64::from(y0)) as f32
+            x1.wrapping_sub(x0) as f32 / y1.wrapping_sub(y0) as f32
         };
         Edge {
             x0,
@@ -41,9 +41,10 @@ impl Edge {
         }
     }
 
-    /// Where the edge crosses row `y`: `(y - y0) * dx + x0`, a float product and a float sum.
+    /// Where the edge crosses row `y`: `(y - y0) * dx + x0`, an `int` difference (wrapping for an absurd `y0`),
+    /// then a float product and a float sum.
     fn x_at(&self, y: i32) -> f32 {
-        (i64::from(y) - i64::from(self.y0)) as f32 * self.dx + self.x0 as f32
+        y.wrapping_sub(self.y0) as f32 * self.dx + self.x0 as f32
     }
 }
 

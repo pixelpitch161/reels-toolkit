@@ -106,4 +106,88 @@ mod tests {
         rectangle(&mut out, (0.0, -9.0, 3.0, -1.0), Some(&[1]), None);
         assert!(out.data.iter().all(|&v| v == 0));
     }
+
+    #[test]
+    #[should_panic(expected = "y1 must be greater than or equal to y0")]
+    fn an_upside_down_box_is_refused() {
+        let mut im: Img<u8> = Img::new(4, 3, 1);
+        rectangle(&mut im, (0.0, 2.0, 3.0, 1.0), Some(&[1]), None);
+    }
+
+    /// A NaN corner is not refused (Pillow's `xy[2] < xy[0]` is false for it): it is the lowest `int`, and the
+    /// rest of the box is drawn. These are the pictures Pillow 12.3.0 gives on a 16 x 12 `L` image (taken on the
+    /// reference PC; the outlines with a NaN row take Pillow 5.4 s each, for the side lines' walk).
+    #[test]
+    fn a_nan_corner_draws_what_pillow_draws() {
+        let (nan, inf) = (f64::NAN, f64::INFINITY);
+        let draw = |bbox: (f64, f64, f64, f64), fill: bool| {
+            let mut im: Img<u8> = Img::new(16, 12, 1);
+            let started = std::time::Instant::now();
+            if fill {
+                rectangle(&mut im, bbox, Some(&[1]), None);
+            } else {
+                rectangle(&mut im, bbox, None, Some(&[1]));
+            }
+            assert!(started.elapsed().as_millis() < 100, "{bbox:?}: {:?}", started.elapsed());
+            rows(&im).join("|")
+        };
+        let blank = "................";
+        let picture = |lines: &[(usize, &str)]| {
+            let mut out = [blank; 12];
+            for &(y, row) in lines {
+                out[y] = row;
+            }
+            out.join("|")
+        };
+        let span = |from: usize, to: usize, row: &'static str| (from..=to).map(|y| (y, row)).collect::<Vec<_>>();
+
+        // Filled. x0 NaN: from the left edge. x1 NaN: nothing. y0 NaN: from the top. y1 NaN: the rows above y0.
+        assert_eq!(
+            draw((nan, 2.0, 5.0, 9.0), true),
+            picture(&span(2, 9, "######.........."))
+        );
+        assert_eq!(draw((5.0, 2.0, nan, 9.0), true), picture(&[]));
+        assert_eq!(
+            draw((5.0, nan, 9.0, 9.0), true),
+            picture(&span(0, 9, ".....#####......"))
+        );
+        assert_eq!(
+            draw((5.0, 2.0, 9.0, nan), true),
+            picture(&span(0, 2, ".....#####......"))
+        );
+        assert_eq!(draw((nan, nan, nan, nan), true), picture(&[]));
+        assert_eq!(draw((5.0, 2.0, inf, 9.0), true), picture(&[]));
+        assert_eq!(
+            draw((5.0, 2.0, 9.0, inf), true),
+            picture(&span(0, 2, ".....#####......"))
+        );
+        assert_eq!(
+            draw((-inf, 2.0, 9.0, 9.0), true),
+            picture(&span(2, 9, "##########......"))
+        );
+
+        // Outlined.
+        let mut left_open = span(3, 8, ".....#..........");
+        left_open.extend([(2, "######.........."), (9, "######..........")]);
+        assert_eq!(draw((nan, 2.0, 5.0, 9.0), false), picture(&left_open));
+        assert_eq!(
+            draw((5.0, 2.0, nan, 9.0), false),
+            picture(&span(3, 8, ".....#.........."))
+        );
+        assert_eq!(
+            draw((5.0, 2.0, inf, 9.0), false),
+            picture(&span(3, 8, ".....#.........."))
+        );
+        let mut from_above = span(10, 11, ".....#...#......");
+        from_above.push((9, ".....#####......"));
+        assert_eq!(draw((5.0, nan, 9.0, 9.0), false), picture(&from_above));
+        let mut to_the_bottom = span(3, 11, ".....#...#......");
+        to_the_bottom.push((2, ".....#####......"));
+        assert_eq!(draw((5.0, 2.0, 9.0, nan), false), picture(&to_the_bottom));
+        assert_eq!(draw((5.0, 2.0, 9.0, inf), false), picture(&to_the_bottom));
+        assert_eq!(draw((nan, nan, nan, nan), false), picture(&[]));
+        let mut wide = span(3, 8, ".........#......");
+        wide.extend([(2, "##########......"), (9, "##########......")]);
+        assert_eq!(draw((-inf, 2.0, 9.0, 9.0), false), picture(&wide));
+    }
 }

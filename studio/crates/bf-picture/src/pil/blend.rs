@@ -104,13 +104,13 @@ pub fn polygon_outline(img: &mut Img<u8>, pts: &[(f64, f64)], fill: Option<[u8; 
 }
 
 /// `ImageDraw.Draw(rgb, 'RGBA').line(pts, fill=fill, width=width)`: a blended polyline; pass width 1 when the
-/// Python call has no `width=`. See [`super::line`].
+/// Python call has no `width=`. See [`super::line()`].
 pub fn line(img: &mut Img<u8>, pts: &[(f64, f64)], fill: [u8; 4], width: u32) {
     line_on(&mut Blended::new(img, fill), pts, width);
 }
 
 /// `ImageDraw.Draw(rgb, 'RGBA').ellipse([x0, y0, x1, y1], fill=fill, outline=outline, width=width)`: a blended
-/// ellipse. See [`super::ellipse`].
+/// ellipse. See [`super::ellipse()`].
 pub fn ellipse(
     img: &mut Img<u8>,
     bbox: (f64, f64, f64, f64),

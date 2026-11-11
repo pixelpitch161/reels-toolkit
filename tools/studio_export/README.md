@@ -150,7 +150,7 @@ EXPORTS = {'thing': run}                         # python -m tools.studio_export
 | `frames` | `frames.py` | `studio/reference/frames/flute_vs_trombone/{f<frame>.png,frames.json}` (43 frames), and `studio/reference/frames/exceptions.toml` if it does not exist yet |
 | `kit` | `kit_vectors.py` | `studio/reference/picture_kit/{config,font,np}.npz`, each with its sidecar `.json` (under a second) |
 | `models` | `models.py` | `studio/crates/bf-content/data/models/{FLUTE,TROMBONE}.json` |
-| `pillow` | `pillow_vectors.py` | `studio/reference/pillow/calls.json` and 16 vector files, each `.npz` with its sidecar `.json` (about 3 minutes: it draws all 1,830 frames in 8 worker processes) |
+| `pillow` | `pillow_vectors.py` | `studio/reference/pillow/calls.json` and 18 vector files, each `.npz` with its sidecar `.json` (about 4 minutes: it draws all 1,830 frames in 8 worker processes) |
 | `py` | `py_vectors.py` | `studio/reference/py/vectors.json` |
 | `pyhash` | `pyhash_vectors.py` | `studio/reference/pyhash/vectors.json` |
 | `rng` | `rng_vectors.py` | `studio/reference/rng/vectors.json` |
@@ -277,6 +277,8 @@ modules the bridge imports for the models paint posters for their own videos as 
 | `rectangle` | 204: `rectangle(xy, fill=...)`, a few outlined, on `RGB` and `L` |
 | `point` | 200: `point(xy, fill=...)` on `RGB`, `L` and `F` |
 | `blend_polygon`, `blend_line`, `blend_ellipse`, `blend_rectangle`, `blend_point` | 200 or more each: the same calls through `ImageDraw.Draw(rgb_image, 'RGBA')`, which blends the ink into the picture by its alpha (particles, speed lines) |
+| `polygon_rounding` | 57: filled polygons (plain on `L`, `RGB`, `F`, `RGBA`, and blended) with an edge that crosses a row at 0.49999997, the largest float below one half. `Draw.c` rounds a span's start with `floor(f + 0.5F)`, a C float sum, which is 1.0 there: the span starts at column 1, where a double sum would start it at column 0. Edges from (0, 0) with slope 1/82, 1/94, 1/110, 1/122, 1/164 and 1/166 do this on rows 41, 47, 55, 61, 82 and 83 (`args.row`); so does one built for it on row 1. The export checks on every case that the row's column 0 is untouched and its column 1 drawn |
+| `nonfinite` | 201: the drawing calls with a coordinate that is NaN, infinite or beyond a C int, on a 16 x 12 image: boxes with such a corner (rectangles and ellipses, filled, outlined, blended), ellipses up to 10^7 pixels across, wide and thin lines with such an end, polygons with such a vertex, points. In `args` those values are `"nan"`, `"inf"` and `"-inf"` |
 | `gaussian_blur` | 202: `im.filter(ImageFilter.GaussianBlur(radius))` on `L` (0.7: the shadow masks) and `RGB` (3.0: the bloom), and other radii |
 | `resize_nearest`, `resize_bilinear`, `resize_bicubic` | 200 each: `im.resize(size, filter)` on `L`, `RGB` and `RGBA`. The renderer itself only resizes `RGB` with `BILINEAR` (the bloom: down by 4, up by 4) |
 | `as_used` | 23 whole calls captured from `kit.picture.render` at full size: four canvas shadow masks (63 to 70 polygons, then the 0.7 blur), four blooms (the source, the quarter-size picture, its blur, the result), four spot-beam hulls, nine ink starbursts, two title-card cracks |
@@ -303,6 +305,14 @@ What the cases pin down, from Pillow's source (`_imaging.c`, `Draw.c`, `Resample
   a point given twice, the two sides of a flattened outline) blend again where they overlap.
 - `resize` works on premultiplied colour for `RGBA` (every filter but `NEAREST`).
 - `GaussianBlur` is three passes of an extended box blur, and reads its radius as a C float.
+- Pillow does not refuse a NaN or infinite coordinate (its box check `x1 < x0` is false for a NaN). It converts it
+  to a C `int`, which on the reference PC gives the lowest `int`, and the arithmetic that follows wraps. The C
+  standard leaves both undefined, so `nonfinite` records the reference build's answers: a rectangle with a NaN
+  left edge is filled from column 0; a thin line to a NaN end paints a run to the image's edge; a filled ellipse
+  with a NaN corner draws nothing. Pillow walks every pixel on the way, on the image or not: a thin line with such
+  an end takes it 1.5 to 2.7 s, a rectangle outline with a NaN row 5.4 s, and an ellipse outline with one NaN
+  corner did not return within 40 s, so `nonfinite` holds only calls that Pillow finishes (the export spends
+  about half a minute on them).
 
 ### `kit`: the renderer kit's own helpers
 

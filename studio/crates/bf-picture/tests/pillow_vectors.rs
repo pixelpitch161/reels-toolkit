@@ -1,6 +1,8 @@
-//! Pillow parity for the drawing primitives: every case of the eleven drawing files under
+//! Pillow parity for the drawing primitives: every case of the thirteen drawing files under
 //! `studio/reference/pillow` (written by `tools/studio_export/pillow_vectors.py` with Pillow 12.3.0) is drawn again
 //! with `bf_picture::pil` and compared with what Pillow drew, byte for byte; a mode `F` image float32 bit for bit.
+//! Eleven files hold seeded cases per primitive; `polygon_rounding` holds polygons with an edge at the one value
+//! where the rounding of a span's start shows, and `nonfinite` calls with NaN, infinite and absurd coordinates.
 //!
 //! One test per file. Each prints its result line (`polygon: 208/208`; run with `--nocapture` to see them when all
 //! pass) and, for every case that fails, the case id, its kind, mode and size, the call, how many pixels differ and
@@ -13,8 +15,10 @@ use bf_testdata::{Case, NpArray, Vectors, diff_u8, hex_arg};
 use serde_json::Value;
 
 /// Every key a case's `args` may have. Any other key is a part of the call this test would silently drop.
-const KNOWN_ARGS: [&str; 10] = [
+/// (`row` belongs to `polygon_rounding`: the row its case is about. It is not an argument of the call.)
+const KNOWN_ARGS: [&str; 11] = [
     "kind",
+    "row",
     "mode",
     "size",
     "xy",
@@ -126,7 +130,7 @@ fn draw_plain<T: pil::Sample>(
         // ImageDraw.line's width defaults to 1.
         ("line", Some(f), None, w) => pil::line(img, pts, f, w.unwrap_or(1)),
         // ImageDraw.ellipse's and rectangle's outline width defaults to 1.
-        ("ellipse", f, o, None) if f.is_some() || o.is_some() => pil::ellipse(img, bbox(pts)?, f, o, 1),
+        ("ellipse", f, o, w) if f.is_some() || o.is_some() => pil::ellipse(img, bbox(pts)?, f, o, w.unwrap_or(1)),
         ("rectangle", f, o, None) if f.is_some() || o.is_some() => pil::rectangle(img, bbox(pts)?, f, o),
         ("point", Some(f), None, None) => pil::point(img, pts, f),
         _ => {
@@ -153,7 +157,9 @@ fn draw_blend(
         ("polygon", Some(f), None, None) => pil::blend::polygon(img, pts, f),
         ("polygon", f, Some(o), None) => pil::blend::polygon_outline(img, pts, f, o),
         ("line", Some(f), None, w) => pil::blend::line(img, pts, f, w.unwrap_or(1)),
-        ("ellipse", f, o, None) if f.is_some() || o.is_some() => pil::blend::ellipse(img, bbox(pts)?, f, o, 1),
+        ("ellipse", f, o, w) if f.is_some() || o.is_some() => {
+            pil::blend::ellipse(img, bbox(pts)?, f, o, w.unwrap_or(1))
+        }
         ("rectangle", f, o, None) if f.is_some() || o.is_some() => pil::blend::rectangle(img, bbox(pts)?, f, o),
         ("point", Some(f), None, None) => pil::blend::point(img, pts, f),
         _ => {
@@ -372,6 +378,16 @@ fn blend_rectangle() {
 #[test]
 fn blend_point() {
     check_file("blend_point");
+}
+
+#[test]
+fn polygon_rounding() {
+    check_file("polygon_rounding");
+}
+
+#[test]
+fn nonfinite() {
+    check_file("nonfinite");
 }
 
 /// The test's own guard: a call or an argument it does not know is reported, not passed over.

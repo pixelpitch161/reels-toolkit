@@ -76,6 +76,12 @@
 //! - **Nothing is returned and nothing fails for geometry**: shapes outside the image are clipped; a degenerate
 //!   shape draws what Pillow draws for it. The only panics are the calls Pillow itself refuses (a box with
 //!   `x1 < x0` or `y1 < y0`, a polygon of fewer than two points) and a wrong ink length or channel count.
+//! - **NaN and infinite coordinates are not refused and cannot stall a frame.** Pillow does not refuse them either
+//!   (its box check `x1 < x0` is false for a NaN); it truncates them to the lowest `int` and draws with that. So
+//!   does this port, with the wrapping arithmetic of the reference build, and it gives the same pixels: usually
+//!   none, sometimes a run to the image's edge. Where Pillow would walk thousands of millions of pixels to get
+//!   there (a thin line: 1.5 to 2.7 s each; an ellipse outline: more than 40 s, or for ever) the port goes
+//!   straight to the part on the image. See quirk 10.
 //! - **Widths**: `line(.., width)` takes the `width=` keyword (pass 1 when the Python call has none); `ellipse`
 //!   takes the outline width (Pillow's default is 1); `rectangle` and `polygon_outline` draw 1 px outlines, the
 //!   only width the kit uses.
@@ -126,6 +132,20 @@
 //!    `Draw(rgb, 'RGBA')` each colour byte becomes `BLEND(alpha, pixel, ink)` (`ImagingUtils.h`):
 //!    `t = pixel * (255 - alpha) + ink * alpha + 128; ((t >> 8) + t) >> 8`. Alpha 255 gives the ink, alpha 0
 //!    leaves the pixel.
+//! 10. **Coordinates no `int` holds** (NaN, an infinity, anything beyond 2^31). C leaves `(int)` of such a value
+//!     undefined, and the overflowing sums that follow; the reference build gives the lowest `int` and wraps, and
+//!     Pillow draws accordingly. The port does the same in every primitive, and `studio/reference/pillow/nonfinite`
+//!     holds 201 such calls as Pillow drew them: `rectangle([nan, 2, 5, 9], fill)` fills from the left edge to
+//!     column 5; `line([(5, 5), (nan, 7)])` paints row 5 from column 5 to the right edge; a polygon with a NaN
+//!     vertex is the polygon with that vertex at the lowest `int`; an ellipse with a NaN corner draws nothing
+//!     when its box wraps to a negative size or its fill width `a + b` wraps below 1, which covers every box of
+//!     the form `[x - r, y - r, x + r, y + r]`. Pillow's loops over pixels far outside the image are not walked:
+//!     the thin line (`line.rs`) and the ellipse (`ellipse.rs`) go straight to the part on the image, with the
+//!     same pixels. Two bounds remain, both past anything Pillow finishes in good time: a thin line whose two
+//!     differences both overflow and whose error term changes sign more than 65,536 times before the walk
+//!     reaches the image draws nothing; and an ellipse is drawn as far as 2^21 steps of its walk get, which only
+//!     one millions of pixels across can exceed: one whose 64-bit sums overflow (`a (b + 2)` above about
+//!     3.04e9), or a tall one whose middle lies millions of rows from the image (Pillow: a second to never).
 //!
 //! Not ported, because the kit never calls them: `arc`, `chord`, `pieslice`, `rounded_rectangle`, `bitmap`,
 //! `text`, `line(joint="curve")`, rectangle and polygon outlines wider than 1 px (Pillow draws the polygon's
@@ -287,11 +307,17 @@ pub(crate) fn truncated(pts: &[(f64, f64)]) -> Vec<(i32, i32)> {
     pts.iter().map(|&(x, y)| (c_int(x), c_int(y))).collect()
 }
 
-/// A box truncated to pixels, after the two checks `_draw_ellipse` and `_draw_rectangle` make on the floats.
+/// A box truncated to pixels, after the two checks `_draw_ellipse` and `_draw_rectangle` make on the floats:
+/// `if (xy[2] < xy[0])` and `if (xy[3] < xy[1])` raise. Both are false when a corner is NaN, so a NaN box is not
+/// refused: Pillow goes on to draw it with `(int)NaN`, the lowest `int`, and so does the port.
 pub(crate) fn truncated_box(bbox: (f64, f64, f64, f64)) -> (i32, i32, i32, i32) {
     let (x0, y0, x1, y1) = bbox;
-    assert!(x1 >= x0, "x1 must be greater than or equal to x0 (x0 {x0}, x1 {x1})");
-    assert!(y1 >= y0, "y1 must be greater than or equal to y0 (y0 {y0}, y1 {y1})");
+    if x1 < x0 {
+        panic!("x1 must be greater than or equal to x0 (x0 {x0}, x1 {x1})");
+    }
+    if y1 < y0 {
+        panic!("y1 must be greater than or equal to y0 (y0 {y0}, y1 {y1})");
+    }
     (c_int(x0), c_int(y0), c_int(x1), c_int(y1))
 }
 
