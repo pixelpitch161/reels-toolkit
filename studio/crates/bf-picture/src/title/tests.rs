@@ -261,40 +261,66 @@ fn the_card_shakes_after_a_slam_but_not_on_it() {
 #[test]
 fn the_cover_frame_is_shut_and_still_at_every_tempo() {
     // Python: `ceil(T_DOORS[0] * 30) - 1` stepped back while `title.shake(f / 30) != (0, 0)`, on the kit's
-    // timeline for every whole tempo from 60 to 200 (neighbouring tempos snap to the same number of bars).
+    // timeline for every whole tempo from 60 to 198 (neighbouring tempos snap to the same number of bars).
     #[rustfmt::skip]
-    let python: [usize; 141] = [
+    let python: [usize; 139] = [
         94, 88, 88, 88, 88, 83, 83, 83, 83, 79, 79, 79, 79, 75, 75, 75, 75, 71, 71, 71, 71, 68, 68, 68, 68, 65, 65,
         65, 65, 62, 62, 62, 62, 60, 60, 60, 60, 57, 57, 57, 57, 55, 55, 55, 55, 53, 53, 53, 53, 52, 52, 52, 52, 50,
         50, 50, 50, 48, 48, 48, 48, 47, 47, 47, 45, 45, 45, 45, 44, 44, 44, 44, 43, 43, 43, 43, 42, 42, 42, 42, 41,
         41, 41, 41, 40, 40, 40, 40, 39, 39, 39, 39, 38, 38, 38, 38, 37, 37, 37, 37, 36, 36, 36, 36, 35, 35, 35, 35,
         34, 34, 34, 34, 34, 34, 34, 34, 33, 33, 33, 33, 32, 32, 32, 32, 32, 32, 32, 31, 31, 31, 31, 31, 31, 31, 31,
-        30, 30, 30, 30, 1, 1,
+        30, 30, 30, 30,
     ];
-    for (bpm, want) in (60..=200).zip(python) {
+    for (bpm, want) in (60..=198).zip(python) {
         let g = Grid::new(f64::from(bpm));
         let f = super::cover_frame(&g);
         assert_eq!(f, want, "{bpm} BPM");
         let t = f as f64 / 30.0;
         assert_eq!(super::door_offset(&g, t), 0.0, "{bpm} BPM, frame {f}");
         assert_eq!(super::shake(&g, t), (0.0, 0.0), "{bpm} BPM, frame {f}");
+        // the hold: the right name landed 0.26 s ago or more, and on the next frame the doors move
+        assert!(t >= g.title[2] + 0.26 && t < g.t_doors.0, "{bpm} BPM, frame {f}");
+        assert!(super::door_offset(&g, (f + 1) as f64 / 30.0) > 0.0, "{bpm} BPM");
+    }
+    // Up to 198 BPM the rule is the one before ruling R36 (no bound; the doors shut and no shake), which the
+    // Python list above is.
+    let before_r36 = |g: &Grid| {
+        let still = |f: usize| {
+            let t = f as f64 / 30.0;
+            super::door_offset(g, t) == 0.0 && super::shake(g, t) == (0.0, 0.0)
+        };
+        let mut f = (g.t_doors.0 * 30.0).ceil() as usize - 1;
+        while f > 0 && !still(f) {
+            f -= 1;
+        }
+        f
+    };
+    for bpm in 30..=198 {
+        let g = Grid::new(f64::from(bpm));
+        assert_eq!(super::cover_frame(&g), before_r36(&g), "{bpm} BPM");
+    }
+    // At every tempo a fight file may ask for, the cover has the doors shut and all three words settled: the
+    // names at rest, VS opaque and within the 6 % the card files a settled word at (it swells on beat 4).
+    let mut fast = Vec::new();
+    for bpm in 30..=300 {
+        let g = Grid::new(f64::from(bpm));
+        let f = super::cover_frame(&g);
+        let t = f as f64 / 30.0;
+        assert_eq!(super::door_offset(&g, t), 0.0, "{bpm} BPM, frame {f}");
+        assert_eq!(super::word_state(&g, t, 0), Some((1.0, 1.0)), "{bpm} BPM, frame {f}");
+        assert_eq!(super::word_state(&g, t, 2), Some((1.0, 1.0)), "{bpm} BPM, frame {f}");
+        let (k, a) = super::word_state(&g, t, 1).expect("VS is up");
+        assert!((k - 1.0).abs() < 0.06 && a == 1.0, "{bpm} BPM, frame {f}: VS at {k}");
         if bpm <= 198 {
-            // the hold: the right name landed 0.26 s ago or more, and on the next frame the doors move
-            assert!(t >= g.title[2] + 0.26 && t < g.t_doors.0, "{bpm} BPM, frame {f}");
-            assert!(super::door_offset(&g, (f + 1) as f64 / 30.0) > 0.0, "{bpm} BPM");
+            assert!(t >= g.title[2] + 0.26 && t < g.t_doors.0, "{bpm} BPM");
+        } else {
+            // from 199 BPM (200.7 once snapped to whole bars) no frame after the right name settles is still:
+            // the last shut frame, shaking
+            assert_eq!(f, (g.t_doors.0 * 30.0).ceil() as usize - 1, "{bpm} BPM");
+            fast.push(super::shake(&g, t) != (0.0, 0.0));
         }
     }
-    // From 199 BPM (200.7 once snapped to whole bars) the doors open while the last jolt still runs: no frame is
-    // shut and still but the first two, and the rule lands on frame 1, the left name half-way through its slam.
-    // So it does at every faster tempo a fight file may ask for.
-    for bpm in 199..=300 {
-        assert!(super::cover_frame(&Grid::new(f64::from(bpm))) <= 1, "{bpm} BPM");
-    }
-    for bpm in 30..60 {
-        let g = Grid::new(f64::from(bpm));
-        let t = super::cover_frame(&g) as f64 / 30.0;
-        assert!(t >= g.title[2] + 0.26 && t < g.t_doors.0, "{bpm} BPM");
-    }
+    assert_eq!((fast.len(), fast.iter().filter(|&&s| s).count()), (102, 102));
     let c = card("FLUTE", "TROMBONE", 132.0, None);
     assert_eq!((c.cover_frame(), super::cover_frame(&Grid::new(132.0))), (43, 43));
 }

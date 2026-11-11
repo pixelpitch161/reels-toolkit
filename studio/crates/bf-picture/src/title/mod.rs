@@ -242,12 +242,19 @@ fn shake(g: &Grid, t: f64) -> (f64, f64) {
 /// The cover frame on the timeline `g`: see [`TitleCard::cover_frame`].
 fn cover_frame(g: &Grid) -> usize {
     let fps = f64::from(g.fps);
-    let still = |f: usize| {
-        let t = f as f64 / fps;
-        door_offset(g, t) == 0.0 && shake(g, t) == (0.0, 0.0)
+    let at = |f: usize| f as f64 / fps;
+    // the last shut frame: ceil(T_DOORS[0] * FPS) - 1
+    let last_shut = np::f64_to_i64((g.t_doors.0 * fps).ceil()).max(1) as usize - 1;
+    // the bound: the first frame on which the right name has settled
+    let Some(settled) = (0..=last_shut).find(|&f| word_state(g, at(f), 2) == Some((1.0, 1.0))) else {
+        return last_shut;
     };
-    let mut f = np::f64_to_i64((g.t_doors.0 * fps).ceil()).max(1) as usize - 1;
-    while f > 0 && !still(f) {
+    let mut f = last_shut;
+    while shake(g, at(f)) != (0.0, 0.0) {
+        if f == settled {
+            // no still frame with all three words up: the last shut frame, shake or not
+            return last_shut;
+        }
         f -= 1;
     }
     f
@@ -379,11 +386,11 @@ impl TitleCard {
         shake(&self.grid, t)
     }
 
-    /// The cover picture's frame: the last frame on which the card is shut (`door_offset` is 0) and does not
-    /// shake, `ceil(T_DOORS[0] * FPS) - 1` stepped back while the card shakes. At the series' tempos that is the
-    /// hold after the right name has landed. (At a tempo so fast that the doors open before the last jolt has
-    /// died, from 199 BPM, every earlier frame but the first two shakes as well, and this is frame 1: the left
-    /// name half-way through its slam.)
+    /// The cover picture's frame: the last shut frame (`ceil(T_DOORS[0] * FPS) - 1`) stepped back while the card
+    /// shakes, but never to before the first frame on which the right name has settled (`word_state(t, 2)` is
+    /// `(1, 1)`). If no frame from there on is still, it is the last shut frame, shake or not. At the series'
+    /// tempos (up to 198 BPM) this is the last frame of the hold after the right name has landed; from 199 BPM the
+    /// doors open while the last jolt still runs, and it is the last shut frame, with all three words up.
     pub fn cover_frame(&self) -> usize {
         cover_frame(&self.grid)
     }
