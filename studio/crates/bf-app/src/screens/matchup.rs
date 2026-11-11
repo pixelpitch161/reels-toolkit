@@ -2,9 +2,10 @@
 //! card side by side, and under them the bottom strip with the theme, the tempo and the pair rules.
 //!
 //! Layout. The three columns are 250, the rest, and 250 wide, with 1 px `LINE_SOFT` lines drawn on the roster's
-//! edges. Each column scrolls by itself when its content does not fit (the roster does at the minimum window, two
-//! chips wide). The bottom strip (a 1 px `LINE_SOFT` line above it, padded 12 x 16, rows 26 tall and 8 apart) holds
-//! three rows: "Theme", "Tempo" with "Swap sides" and "Balance this match-up" at the right, and "Pair rules". When the
+//! edges. The roster's grid has as many columns as fit with every name whole beside its "Left" or "Right" (ruling
+//! M2-R24: three at the reference window, two at the minimum). Each column scrolls by itself when its content does
+//! not fit, and then shows a solid scroll bar without being hovered (the roster does at the minimum window). The
+//! bottom strip (a 1 px `LINE_SOFT` line above it, padded 12 x 16, rows 26 tall and 8 apart) holds three rows: "Theme", "Tempo" with "Swap sides" and "Balance this match-up" at the right, and "Pair rules". When the
 //! pair cannot fight, the reason stands between the columns and the strip in `TEXT_STRONG`, and "Balance this
 //! match-up" is disabled with it.
 //!
@@ -13,13 +14,18 @@
 //! theme (`SetTheme`), the slider and the value field set the tempo in whole bars (`SetBars`), and the two buttons
 //! push `SwapSides` and `Go(Balance)`. It keeps nothing of its own beyond egui's widget memory.
 
+use egui::scroll_area::ScrollBarVisibility;
+use egui::style::ScrollStyle;
 use egui::{Align, Frame, Label, Layout, Margin, Rect, RichText, ScrollArea, Sense, Stroke, Ui, UiBuilder, pos2, vec2};
 
 use crate::model::draft::Draft;
 use crate::model::roster::{Roster, RosterEntry, Section};
 use crate::model::{Step, View};
 use crate::state::{Action, ViewModel};
-use crate::theme::{CONTROL_H, LABEL_W, LINE_SOFT, MUTED, RADIUS, TEXT, TEXT_STRONG, body, rgb, section, small, value};
+use crate::theme::{
+    CONTROL_H, FAINT, GROUND, LABEL_W, LINE_SOFT, MUTED, RADIUS, TEXT, TEXT_STRONG, body, rgb, section, small, strong,
+    value,
+};
 use crate::widgets::buttons;
 use crate::widgets::chips::{portrait, roster_chip};
 use crate::widgets::fields::{Unit, value_field};
@@ -89,6 +95,15 @@ const BPM: Unit<'static> = Unit {
 /// The value field's name.
 pub const TEMPO_FIELD: &str = "Tempo in bpm";
 
+/// What a roster chip keeps around its name, as `widgets/chips.rs` lays it out: 34 before it (`CHIP_DISC_LEFT` 12,
+/// `CHIP_DISC` 14, `CHIP_GAP` 8), and after it the gap `CHIP_GAP` 8 before "Left" or "Right", that label, and the
+/// side padding `PAD_X` 10. One point more covers the label's rounding to a whole point.
+const CHIP_BEFORE_NAME: f32 = 34.0;
+const CHIP_AFTER_NAME: f32 = 8.0 + 10.0 + 1.0;
+/// The scroll bar of a column that overflows: 6 wide, 4 from the content and 4 from the column's edge.
+const BAR_W: f32 = 6.0;
+const BAR_MARGIN: f32 = 4.0;
+
 /// How many columns of chips fit in `width`: `(width + 6) / 126` rounded down, kept in 2 to 4 (2 for a width that
 /// is not a number).
 pub fn columns_for(width: f32) -> usize {
@@ -97,6 +112,50 @@ pub fn columns_for(width: f32) -> usize {
         return 2;
     }
     columns.clamp(2.0, 4.0) as usize
+}
+
+/// How many columns the roster's grid has in `width` when its widest chip needs `widest` (ruling M2-R24): as many
+/// as `columns_for` allows, but never so many that a chip is narrower than `widest`; at least 1.
+pub fn grid_columns(width: f32, widest: f32) -> usize {
+    let fit = ((width + CHIP_GAP_X) / (widest + CHIP_GAP_X)).floor();
+    let fit = if fit.is_nan() { 1 } else { fit.clamp(1.0, 4.0) as usize };
+    columns_for(width).min(fit)
+}
+
+/// The width a roster chip needs so that the longest name, drawn as a chosen chip draws it (Plex Sans Medium), and
+/// the longer of "Left" and "Right" both fit whole.
+fn widest_chip(ui: &Ui, roster: &Roster) -> f32 {
+    let name = roster
+        .fighters
+        .iter()
+        .map(|f| text_width(ui, &f.display, strong()))
+        .fold(0.0, f32::max);
+    let side = text_width(ui, "Left", small()).max(text_width(ui, "Right", small()));
+    (CHIP_BEFORE_NAME + name + CHIP_AFTER_NAME + side).ceil()
+}
+
+/// A vertical scroll area whose bar is drawn whenever its content overflows, not only on hover: a solid 6 wide bar
+/// on a `GROUND` track, its handle `FAINT` (`MUTED` when hovered, `TEXT` while dragged).
+fn column_scroll(ui: &mut Ui, salt: impl egui::AsIdSalt, add: impl FnOnce(&mut Ui)) {
+    ui.scope(|ui| {
+        let style = ui.style_mut();
+        style.spacing.scroll = ScrollStyle {
+            bar_width: BAR_W,
+            bar_inner_margin: BAR_MARGIN,
+            bar_outer_margin: BAR_MARGIN,
+            ..ScrollStyle::solid()
+        };
+        style.visuals.extreme_bg_color = GROUND;
+        let widgets = &mut style.visuals.widgets;
+        widgets.inactive.bg_fill = FAINT;
+        widgets.hovered.bg_fill = MUTED;
+        widgets.active.bg_fill = TEXT;
+        ScrollArea::vertical()
+            .id_salt(salt)
+            .auto_shrink(false)
+            .scroll_bar_visibility(ScrollBarVisibility::VisibleWhenNeeded)
+            .show(ui, add);
+    });
 }
 
 /// A section's name as the roster shows it.
@@ -205,68 +264,65 @@ fn divider(ui: &mut Ui) {
 /// A corner card: "Left corner" or "Right corner", the portrait and the name in pixel letters, the weapon, the three
 /// abilities, and the range, what the fighter usually plays and its colour. It scrolls when it does not fit.
 fn corner_card(ui: &mut Ui, vm: &ViewModel, side: usize) {
-    ScrollArea::vertical()
-        .id_salt(("matchup corner", side))
-        .auto_shrink(false)
-        .show(ui, |ui| {
-            Frame::new()
-                .inner_margin(Margin::symmetric(CARD_PAD.0, CARD_PAD.1))
-                .show(ui, |ui| {
-                    ui.set_width(ui.available_width());
-                    ui.spacing_mut().item_spacing = vec2(ITEM_GAP, 0.0);
-                    let corner = if side == 0 { "Left corner" } else { "Right corner" };
-                    line(ui, RichText::new(corner).font(small()).color(MUTED));
-                    let Some(fighter) = vm.fighter(side) else {
-                        return;
-                    };
-                    ui.add_space(CARD_GAP);
-                    name_row(ui, fighter);
-                    let Some(card) = &fighter.card else {
-                        return;
-                    };
-                    ui.add_space(CARD_GAP);
-                    line(ui, RichText::new(&card.weapon).font(section()).color(TEXT));
-                    ui.add_space(SMALL_GAP);
-                    let paragraph = RichText::new(&card.text).font(body()).color(MUTED);
-                    ui.add(Label::new(paragraph).selectable(false).wrap());
-                    ui.add_space(CARD_GAP);
-                    divider(ui);
-                    ui.add_space(CARD_GAP);
-                    line(ui, RichText::new("Abilities").font(section()).color(TEXT));
-                    for ability in &card.abilities {
-                        ui.add_space(ROW_GAP);
-                        ui.with_layout(Layout::left_to_right(Align::Min), |ui| {
-                            cell(
-                                ui,
-                                TAG_W,
-                                LINE_H,
-                                RichText::new(&ability.tag).font(value()).color(MUTED),
-                            );
-                            ui.vertical(|ui| {
-                                ui.spacing_mut().item_spacing.y = 0.0;
-                                line(ui, RichText::new(&ability.name).font(body()).color(TEXT));
-                                line(ui, RichText::new(&ability.text).font(small()).color(MUTED));
-                            });
+    column_scroll(ui, ("matchup corner", side), |ui| {
+        Frame::new()
+            .inner_margin(Margin::symmetric(CARD_PAD.0, CARD_PAD.1))
+            .show(ui, |ui| {
+                ui.set_width(ui.available_width());
+                ui.spacing_mut().item_spacing = vec2(ITEM_GAP, 0.0);
+                let corner = if side == 0 { "Left corner" } else { "Right corner" };
+                line(ui, RichText::new(corner).font(small()).color(MUTED));
+                let Some(fighter) = vm.fighter(side) else {
+                    return;
+                };
+                ui.add_space(CARD_GAP);
+                name_row(ui, fighter);
+                let Some(card) = &fighter.card else {
+                    return;
+                };
+                ui.add_space(CARD_GAP);
+                line(ui, RichText::new(&card.weapon).font(section()).color(TEXT));
+                ui.add_space(SMALL_GAP);
+                let paragraph = RichText::new(&card.text).font(body()).color(MUTED);
+                ui.add(Label::new(paragraph).selectable(false).wrap());
+                ui.add_space(CARD_GAP);
+                divider(ui);
+                ui.add_space(CARD_GAP);
+                line(ui, RichText::new("Abilities").font(section()).color(TEXT));
+                for ability in &card.abilities {
+                    ui.add_space(ROW_GAP);
+                    ui.with_layout(Layout::left_to_right(Align::Min), |ui| {
+                        cell(
+                            ui,
+                            TAG_W,
+                            LINE_H,
+                            RichText::new(&ability.tag).font(value()).color(MUTED),
+                        );
+                        ui.vertical(|ui| {
+                            ui.spacing_mut().item_spacing.y = 0.0;
+                            line(ui, RichText::new(&ability.name).font(body()).color(TEXT));
+                            line(ui, RichText::new(&ability.text).font(small()).color(MUTED));
                         });
-                    }
-                    ui.add_space(CARD_GAP);
-                    divider(ui);
-                    ui.add_space(CARD_GAP);
-                    fact(ui, "Range", |ui| {
-                        line(ui, RichText::new(&card.range).font(body()).color(TEXT))
                     });
-                    ui.add_space(ROW_GAP);
-                    fact(ui, "Usually plays", |ui| {
-                        line(ui, RichText::new(&card.usually_plays).font(body()).color(TEXT));
-                    });
-                    ui.add_space(ROW_GAP);
-                    fact(ui, "Colour", |ui| {
-                        let (rect, _) = ui.allocate_exact_size(vec2(SWATCH, SWATCH), Sense::hover());
-                        ui.painter().rect_filled(rect, RADIUS, rgb(fighter.color));
-                        line(ui, RichText::new(&card.colour_name).font(body()).color(TEXT));
-                    });
+                }
+                ui.add_space(CARD_GAP);
+                divider(ui);
+                ui.add_space(CARD_GAP);
+                fact(ui, "Range", |ui| {
+                    line(ui, RichText::new(&card.range).font(body()).color(TEXT))
                 });
-        });
+                ui.add_space(ROW_GAP);
+                fact(ui, "Usually plays", |ui| {
+                    line(ui, RichText::new(&card.usually_plays).font(body()).color(TEXT));
+                });
+                ui.add_space(ROW_GAP);
+                fact(ui, "Colour", |ui| {
+                    let (rect, _) = ui.allocate_exact_size(vec2(SWATCH, SWATCH), Sense::hover());
+                    ui.painter().rect_filled(rect, RADIUS, rgb(fighter.color));
+                    line(ui, RichText::new(&card.colour_name).font(body()).color(TEXT));
+                });
+            });
+    });
 }
 
 /// The portrait (a 52 disc, or the sprite) and the name in pixel letters, 28 tall when it fits beside it, else the
@@ -300,29 +356,26 @@ fn fact(ui: &mut Ui, label: &str, add: impl FnOnce(&mut Ui)) {
 
 /// The roster: its header, then one block per section with a grid of chips. It scrolls when it does not fit.
 fn roster_column(ui: &mut Ui, vm: &ViewModel, roster: &Roster, out: &mut Vec<Action>) {
-    ScrollArea::vertical()
-        .id_salt("matchup roster")
-        .auto_shrink(false)
-        .show(ui, |ui| {
-            Frame::new()
-                .inner_margin(Margin::symmetric(ROSTER_PAD.0, ROSTER_PAD.1))
-                .show(ui, |ui| {
-                    ui.set_width(ui.available_width());
-                    ui.spacing_mut().item_spacing = vec2(ITEM_GAP, 0.0);
-                    roster_header(ui, roster);
-                    for section in SECTIONS {
-                        let fighters: Vec<&RosterEntry> =
-                            roster.fighters.iter().filter(|f| f.section == section).collect();
-                        if fighters.is_empty() {
-                            continue;
-                        }
-                        ui.add_space(ROSTER_GAP);
-                        line(ui, RichText::new(section_name(section)).font(small()).color(MUTED));
-                        ui.add_space(SECTION_GAP);
-                        chip_grid(ui, vm, &fighters, out);
+    let widest = widest_chip(ui, roster);
+    column_scroll(ui, "matchup roster", |ui| {
+        Frame::new()
+            .inner_margin(Margin::symmetric(ROSTER_PAD.0, ROSTER_PAD.1))
+            .show(ui, |ui| {
+                ui.set_width(ui.available_width());
+                ui.spacing_mut().item_spacing = vec2(ITEM_GAP, 0.0);
+                roster_header(ui, roster);
+                for section in SECTIONS {
+                    let fighters: Vec<&RosterEntry> = roster.fighters.iter().filter(|f| f.section == section).collect();
+                    if fighters.is_empty() {
+                        continue;
                     }
-                });
-        });
+                    ui.add_space(ROSTER_GAP);
+                    line(ui, RichText::new(section_name(section)).font(small()).color(MUTED));
+                    ui.add_space(SECTION_GAP);
+                    chip_grid(ui, vm, &fighters, widest, out);
+                }
+            });
+    });
 }
 
 /// "Roster", the count ("30 fighters", or "29 of 30 ready" when some are not built yet) and the hint, which moves to
@@ -353,10 +406,10 @@ fn roster_header(ui: &mut Ui, roster: &Roster) {
     }
 }
 
-/// The chips of one section, as many columns as fit (2 to 4), 6 apart side by side and 3 between rows.
-fn chip_grid(ui: &mut Ui, vm: &ViewModel, fighters: &[&RosterEntry], out: &mut Vec<Action>) {
+/// The chips of one section, as many columns as fit with every name whole (1 to 4, see `grid_columns`), 6 apart side by side and 3 between rows.
+fn chip_grid(ui: &mut Ui, vm: &ViewModel, fighters: &[&RosterEntry], widest: f32, out: &mut Vec<Action>) {
     let width = ui.available_width();
-    let columns = columns_for(width);
+    let columns = grid_columns(width, widest);
     let chip_w = ((width - CHIP_GAP_X * (columns as f32 - 1.0)) / columns as f32).floor();
     for (i, row) in fighters.chunks(columns).enumerate() {
         if i > 0 {
@@ -534,6 +587,16 @@ mod tests {
         assert_eq!(columns_for(-50.0), 2);
         assert_eq!(columns_for(f32::NAN), 2);
         assert_eq!(columns_for(f32::INFINITY), 4);
+    }
+
+    #[test]
+    fn grid_columns_never_make_a_chip_too_narrow() {
+        assert_eq!(grid_columns(498.0, 120.0), 4);
+        assert_eq!(grid_columns(498.0, 160.0), 3);
+        assert_eq!(grid_columns(498.0, 250.0), 1);
+        assert_eq!(grid_columns(324.0, 159.0), 2);
+        assert_eq!(grid_columns(324.0, 160.0), 1);
+        assert_eq!(grid_columns(f32::NAN, 160.0), 1);
     }
 
     #[test]

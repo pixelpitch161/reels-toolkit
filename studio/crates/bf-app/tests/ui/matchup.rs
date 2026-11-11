@@ -212,18 +212,22 @@ fn the_corner_cards_are_250_wide() {
         "the right card starts 250 from the right"
     );
     let first = chip(&harness, "Flute, left corner").rect();
-    let fourth = chip(&harness, "Bass clarinet").rect();
+    let third = chip(&harness, "Clarinet").rect();
     assert_eq!(
         first.min.x,
         area.min.x + 250.0 + 16.0,
         "the roster starts at 250, padded 16"
     );
     assert_eq!(
-        fourth.max.x,
+        third.max.x,
         area.max.x - 250.0 - 16.0,
         "and ends 250 from the right, padded 16"
     );
-    assert_eq!(first.width(), 120.0, "four chips of 120 with 6 between");
+    assert_eq!(
+        third.min.y, first.min.y,
+        "three chips to a row: the longest name stays whole (M2-R24)"
+    );
+    assert_eq!(first.width(), 162.0, "three chips of 162 with 6 between");
     assert_eq!(first.height(), 30.0);
     for text in ["Snake charmer", "C5 to A6", "Silver"] {
         let r = in_workspace(&harness, text)[0];
@@ -396,7 +400,10 @@ fn a_fight_problem_blocks_balancing() {
     assert_eq!(text.len(), 1, "the problem stands in the workspace");
     let swap = harness.get_by_label("Swap sides").rect();
     assert!(text[0].max.y <= swap.min.y, "above the bottom strip");
-    assert!(text[0].min.y > in_workspace(&harness, "Percussion")[0].max.y);
+    assert!(
+        text[0].min.y > in_workspace(&harness, "Left corner")[0].max.y,
+        "below the columns"
+    );
     let balance = harness.get_by_label("Balance this match-up");
     assert!(balance.accesskit_node().is_disabled());
     balance.click();
@@ -438,7 +445,13 @@ fn at_the_minimum_size() {
         "the tempo row does not overlap"
     );
     let first = chip(&harness, "Flute, left corner").rect();
-    assert_eq!(first.width(), 166.0, "two columns at the minimum size");
+    let oboe = chip(&harness, "Oboe").rect();
+    let clarinet = chip(&harness, "Clarinet").rect();
+    assert!(
+        oboe.min.y == first.min.y && clarinet.min.y > first.min.y,
+        "two columns at the minimum size"
+    );
+    assert_eq!(oboe.min.x, first.max.x + 6.0);
 
     let bottom = chip(&harness, "Bass drum").rect();
     assert!(bottom.min.y > swap.min.y, "Bass drum starts below the fold: {bottom:?}");
@@ -537,4 +550,212 @@ fn the_keyboard_works_the_screen() {
         vec![[255, 255, 255]; 3],
         "the ring is not cut off"
     );
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Ruling M2-R24 (whole names), the visible scroll bar, focus rings and Tab order (rule 19)
+// ---------------------------------------------------------------------------------------------------------------
+
+/// Every text the last frame painted: its full text, whether it was cut short, and the characters actually drawn.
+fn painted_texts(harness: &Harness<'_, BfApp>) -> Vec<(String, bool, String)> {
+    fn walk(shape: &egui::Shape, found: &mut Vec<(String, bool, String)>) {
+        match shape {
+            egui::Shape::Text(text) => {
+                let drawn: String = text
+                    .galley
+                    .rows
+                    .iter()
+                    .flat_map(|r| r.row.glyphs.iter().map(|g| g.chr))
+                    .collect();
+                found.push((text.galley.text().to_string(), text.galley.elided, drawn));
+            }
+            egui::Shape::Vec(shapes) => shapes.iter().for_each(|s| walk(s, found)),
+            _ => {}
+        }
+    }
+    let mut found = Vec::new();
+    for clipped in &harness.output().shapes {
+        walk(&clipped.shape, &mut found);
+    }
+    found
+}
+
+/// The chip's accessible name for `display` in the Match-up fixture.
+fn chip_name(display: &str) -> String {
+    match display {
+        "Flute" => "Flute, left corner".to_string(),
+        "Trombone" => "Trombone, right corner".to_string(),
+        _ => display.to_string(),
+    }
+}
+
+#[test]
+fn no_chip_name_is_cut_short() {
+    let _gpu = gpu();
+    let roster = sample::roster();
+    for size in [REF, MIN] {
+        let mut harness = showing(size, matchup::vm());
+        harness.run();
+        for fighter in &roster.fighters {
+            let name = chip_name(&fighter.display);
+            chip(&harness, &name).scroll_to_me();
+            harness.run();
+            let texts = painted_texts(&harness);
+            let painted: Vec<_> = texts.iter().filter(|(text, _, _)| *text == fighter.display).collect();
+            assert_eq!(painted.len(), 1, "{size:?}: {} is painted once", fighter.display);
+            let (_, elided, drawn) = painted[0];
+            assert!(!elided, "{size:?}: {} is cut short", fighter.display);
+            assert_eq!(drawn, &fighter.display, "{size:?}: the whole name is drawn");
+        }
+    }
+}
+
+#[test]
+fn the_roster_shows_its_scroll_bar_when_it_overflows() {
+    let _gpu = gpu();
+    let mut harness = showing(MIN, matchup::vm());
+    harness.run();
+    let area = workspace(&harness);
+    let top = area.min.y as u32;
+    let column = |harness: &mut Harness<'_, BfApp>, x: f32| {
+        let at: Vec<(u32, u32)> = (top + 2..top + 60).map(|y| (x as u32, y)).collect();
+        pixels(harness, &at)
+    };
+    let bar = column(&mut harness, area.max.x - 250.0 - 4.0 - 3.0);
+    assert!(
+        bar.contains(&[0x77, 0x77, 0x77]),
+        "the roster's handle is drawn FAINT without hovering: {bar:?}"
+    );
+    drop(harness);
+    // The left card fits at the reference size, so no bar is drawn there.
+    let mut harness = showing(REF, matchup::vm());
+    harness.run();
+    let area = workspace(&harness);
+    let card = column(&mut harness, area.min.x + 250.0 - 4.0 - 3.0);
+    assert!(
+        card.iter().all(|p| *p == [0x28, 0x28, 0x28]),
+        "no bar where nothing overflows"
+    );
+}
+
+/// Whether white (`TEXT_STRONG`) pixels lie on each side of `rect` (top, right, bottom, left), looking along a short
+/// line across the middle of the side, from 2 inside it to 5 outside.
+fn ring_sides(harness: &mut Harness<'_, BfApp>, rect: Rect) -> [bool; 4] {
+    let (cx, cy) = (rect.center().x as i32, rect.center().y as i32);
+    let (x0, x1, y0, y1) = (
+        rect.min.x as i32,
+        rect.max.x as i32,
+        rect.min.y as i32,
+        rect.max.y as i32,
+    );
+    let lines: [Vec<(i32, i32)>; 4] = [
+        (y0 - 5..y0 + 2).map(|y| (cx, y)).collect(),
+        (x1 - 2..x1 + 5).map(|x| (x, cy)).collect(),
+        (y1 - 2..y1 + 5).map(|y| (cx, y)).collect(),
+        (x0 - 5..x0 + 2).map(|x| (x, cy)).collect(),
+    ];
+    lines.map(|line| {
+        let at: Vec<(u32, u32)> = line.iter().map(|&(x, y)| (x.max(0) as u32, y.max(0) as u32)).collect();
+        pixels(harness, &at).contains(&[255, 255, 255])
+    })
+}
+
+/// The controls a ring test checks: the chips at the roster's edges (the first and last of its first row and of its
+/// last row) and every control of the strip.
+fn edge_controls(harness: &Harness<'_, BfApp>) -> Vec<(String, Role)> {
+    let chips: Vec<(String, Rect)> = sample::roster()
+        .fighters
+        .iter()
+        .map(|f| {
+            let name = chip_name(&f.display);
+            let r = chip(harness, &name).rect();
+            (name, r)
+        })
+        .collect();
+    let top = chips.iter().map(|c| c.1.min.y).fold(f32::INFINITY, f32::min);
+    let bottom = chips.iter().map(|c| c.1.min.y).fold(f32::NEG_INFINITY, f32::max);
+    let first_row: Vec<_> = chips.iter().filter(|c| c.1.min.y == top).collect();
+    let last_row: Vec<_> = chips.iter().filter(|c| c.1.min.y == bottom).collect();
+    let mut out = vec![
+        (first_row[0].0.clone(), Role::Button),
+        (first_row[first_row.len() - 1].0.clone(), Role::Button),
+        (last_row[0].0.clone(), Role::Button),
+        (last_row[last_row.len() - 1].0.clone(), Role::Button),
+    ];
+    out.extend(strip_controls());
+    out
+}
+
+/// The strip's controls in reading order.
+fn strip_controls() -> [(String, Role); 5] {
+    [
+        ("Theme".to_string(), Role::ComboBox),
+        ("Tempo".to_string(), Role::Slider),
+        ("Tempo in bpm".to_string(), Role::SpinButton),
+        ("Swap sides".to_string(), Role::Button),
+        ("Balance this match-up".to_string(), Role::Button),
+    ]
+}
+
+#[test]
+fn every_control_shows_its_focus_ring() {
+    let _gpu = gpu();
+    for size in [REF, MIN] {
+        let mut harness = showing(size, matchup::vm());
+        harness.run();
+        for (name, role) in edge_controls(&harness) {
+            control(&harness, &name, role).scroll_to_me();
+            harness.run();
+            let rect = control(&harness, &name, role).rect();
+            assert!(
+                workspace(&harness).contains_rect(rect),
+                "{size:?}: {name} is on screen at {rect:?}"
+            );
+            assert_eq!(
+                ring_sides(&mut harness, rect),
+                [false; 4],
+                "{size:?}: {name} has no ring while another control has the focus"
+            );
+            control(&harness, &name, role).focus();
+            harness.run();
+            assert!(
+                control(&harness, &name, role).is_focused(),
+                "{size:?}: {name} takes the focus"
+            );
+            assert_eq!(
+                ring_sides(&mut harness, rect),
+                [true; 4],
+                "{size:?}: {name}'s ring is whole"
+            );
+            harness.key_press(Key::Escape);
+            harness.run();
+        }
+    }
+}
+
+#[test]
+fn tab_walks_every_control_in_reading_order() {
+    let _gpu = gpu();
+    let mut order: Vec<(String, Role)> = sample::roster()
+        .fighters
+        .iter()
+        .map(|f| (chip_name(&f.display), Role::Button))
+        .collect();
+    order.extend(strip_controls());
+    for size in [REF, MIN] {
+        let mut harness = showing(size, matchup::vm());
+        harness.run();
+        control(&harness, &order[0].0, order[0].1).focus();
+        harness.run();
+        for (i, (name, role)) in order.iter().enumerate() {
+            if i > 0 {
+                harness.key_press(Key::Tab);
+                harness.run();
+            }
+            assert!(
+                control(&harness, name, *role).is_focused(),
+                "{size:?}: Tab number {i} reaches {name}"
+            );
+        }
+    }
 }
