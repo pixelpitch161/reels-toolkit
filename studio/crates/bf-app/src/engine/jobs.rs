@@ -13,10 +13,12 @@
 //! - `CancelJob` sets the running job's cancel flag; the job answers `Cancelled` once `run_job` has returned, so the
 //!   half-made video's temporary folder is already gone. `run_job` looks at the flag within about a second
 //!   everywhere except inside the soundtrack build (about 4 s), which runs to its end first.
-//! - `CheckTools` looks for ffmpeg on a thread of its own: `Tools` with its version line ("ffmpeg 9.0.2"), or
-//!   "ffmpeg was not found on this PC.".
+//! - `CheckTools` looks for ffmpeg on a thread of its own: `Tools` with its version and where it came from
+//!   ("ffmpeg 9.0.2, comes with the app" or "ffmpeg 9.0.2, found on this PC"), or "ffmpeg was not found on this
+//!   PC.".
 //!
-//! ffmpeg is found by `bf_export::find_ffmpeg` (`BALLFIGHT_FFMPEG`, then the `PATH`); `run_job` asks for it again
+//! ffmpeg is found by `bf_export::find_ffmpeg` (`BALLFIGHT_FFMPEG`, then the app's own `ffmpeg\` folder beside the
+//! program, then the `PATH`); `run_job` asks for it again
 //! before any work, so a missing ffmpeg, like a folder that cannot be used, is refused before anything is written.
 
 use std::collections::{BTreeMap, HashMap};
@@ -110,9 +112,7 @@ pub fn handle(state: &mut State, ctx: &Ctx, command: Command) {
                 "engine: tools",
                 "looking for ffmpeg",
                 |ctx| {
-                    let ffmpeg = bf_export::find_ffmpeg()
-                        .map(|f| f.version)
-                        .map_err(|_| NO_FFMPEG.to_string());
+                    let ffmpeg = tools_answer(bf_export::find_ffmpeg());
                     if !ctx.stopping() {
                         ctx.emit(Event::Tools { ffmpeg });
                     }
@@ -124,6 +124,34 @@ pub fn handle(state: &mut State, ctx: &Ctx, command: Command) {
         }
         // The coordinator sends this handler nothing else.
         _ => {}
+    }
+}
+
+/// What `CheckTools` answers for the ffmpeg found: its version and where it came from ("ffmpeg 9.0.2, comes with
+/// the app", or "ffmpeg 9.0.2, found on this PC" for the setting's or the `PATH`'s).
+fn tools_line(f: &bf_export::Ffmpeg) -> String {
+    match f.source {
+        bf_export::FfmpegSource::WithTheApp => format!("{}, comes with the app", f.version),
+        bf_export::FfmpegSource::Setting | bf_export::FfmpegSource::Path => {
+            format!("{}, found on this PC", f.version)
+        }
+    }
+}
+
+/// What `CheckTools` answers for what the search found: [`tools_line`]; for a broken copy of the app's own ffmpeg
+/// the export's own sentence (it ends "install the app again", and "not found" would be wrong); for anything else
+/// today's [`NO_FFMPEG`].
+fn tools_answer(found: Result<bf_export::Ffmpeg, ExportError>) -> Result<String, String> {
+    match found {
+        Ok(f) => Ok(tools_line(&f)),
+        Err(e) => {
+            let said = e.to_string();
+            if bf_export::is_about_the_apps_own(&said) {
+                Err(said)
+            } else {
+                Err(NO_FFMPEG.to_string())
+            }
+        }
     }
 }
 
@@ -1123,12 +1151,82 @@ mod tests {
         match bf_export::find_ffmpeg() {
             Ok(f) => {
                 assert!(f.version.starts_with("ffmpeg "), "{}", f.version);
-                assert_eq!(ffmpeg, Ok(f.version));
+                assert_eq!(ffmpeg, Ok(tools_line(&f)));
             }
             Err(_) => assert_eq!(ffmpeg, Err(NO_FFMPEG.to_string())),
         }
         engine.send(Command::Shutdown);
         std::fs::remove_dir(&root).expect("nothing was written");
+    }
+
+    #[test]
+    fn tools_say_where_ffmpeg_came_from() {
+        let found = |source| bf_export::Ffmpeg {
+            ffmpeg: PathBuf::from(r"C:\x\ffmpeg.exe"),
+            ffprobe: PathBuf::from(r"C:\x\ffprobe.exe"),
+            version: "ffmpeg 9.0.2".to_string(),
+            source,
+        };
+        assert_eq!(
+            tools_line(&found(bf_export::FfmpegSource::WithTheApp)),
+            "ffmpeg 9.0.2, comes with the app"
+        );
+        for source in [bf_export::FfmpegSource::Setting, bf_export::FfmpegSource::Path] {
+            assert_eq!(tools_line(&found(source)), "ffmpeg 9.0.2, found on this PC");
+        }
+    }
+
+    /// A new empty folder under the temp folder, removed when dropped.
+    struct TempDir(PathBuf);
+
+    impl TempDir {
+        fn new(what: &str) -> TempDir {
+            static N: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+            let n = N.fetch_add(1, Ordering::SeqCst);
+            let dir = std::env::temp_dir().join(format!("bf-app tools {what} {}-{n}", std::process::id()));
+            let _ = std::fs::remove_dir_all(&dir);
+            std::fs::create_dir_all(&dir).expect("the test's temp folder");
+            TempDir(dir)
+        }
+    }
+
+    impl Drop for TempDir {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_dir_all(&self.0);
+        }
+    }
+
+    #[test]
+    fn a_broken_own_copy_is_not_called_missing() {
+        // the setting, the app's folder and the PATH are passed in: nothing of the process changes
+        let none = TempDir::new("empty path");
+        let path = Some(none.0.clone().into_os_string());
+
+        // nothing anywhere: today's words
+        let missing = tools_answer(bf_export::find_ffmpeg_with(None, None, path.clone()));
+        assert_eq!(missing, Err(NO_FFMPEG.to_string()));
+        let empty_own = TempDir::new("empty own");
+        let missing = tools_answer(bf_export::find_ffmpeg_with(
+            None,
+            Some(empty_own.0.clone()),
+            path.clone(),
+        ));
+        assert_eq!(missing, Err(NO_FFMPEG.to_string()));
+
+        // the app's own folder holds ffmpeg.exe but no ffprobe.exe: the export's sentence
+        let own = TempDir::new("own");
+        std::fs::write(own.0.join("ffmpeg.exe"), b"not run").expect("a stand-in file");
+        let broken = tools_answer(bf_export::find_ffmpeg_with(None, Some(own.0.clone()), path));
+        let Err(said) = broken else { panic!("{broken:?}") };
+        assert_eq!(
+            said,
+            format!(
+                "The app's own ffprobe is missing from {}, so a finished video cannot be checked; install the app \
+                 again.",
+                own.0.display()
+            )
+        );
+        assert!(!said.contains("not found"), "{said}");
     }
 
     #[test]

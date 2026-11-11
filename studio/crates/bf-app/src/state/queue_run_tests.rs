@@ -261,6 +261,27 @@ fn why_not_add_has_nine_reasons_in_order() {
 }
 
 #[test]
+fn a_broken_own_ffmpeg_is_not_called_missing() {
+    let mut s = all_well();
+    let said = r"The app's own ffprobe is missing from C:\Programs\BALLFIGHT Studio\ffmpeg, so a finished video cannot be checked; install the app again.";
+    s.apply(Event::Tools {
+        ffmpeg: Err(said.to_string()),
+    });
+    assert_eq!(why_not_add(&s.vm), Some(said.to_string()));
+    // any other reason keeps today's words
+    s.apply(Event::Tools {
+        ffmpeg: Err("ffmpeg was not found on this PC.".to_string()),
+    });
+    assert_eq!(
+        why_not_add(&s.vm),
+        Some(
+            "ffmpeg was not found on this PC, so videos cannot be saved yet. Install ffmpeg, then start the app again."
+                .to_string()
+        )
+    );
+}
+
+#[test]
 fn adding_sends_exactly_when_nothing_is_in_the_way() {
     each_stage(|s, expected| {
         let before = s.vm.clone();

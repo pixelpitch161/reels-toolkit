@@ -4,7 +4,8 @@
 //!   button "Change folder" (`ChangeFolder`);
 //! - "Worker threads": a slider from 1 to the PC's cores in whole steps and a value field (`SetWorkers`, which the
 //!   state also keeps within the cores), with what the number means under them;
-//! - "Video encoder": the ffmpeg that was found, or what to do when none was;
+//! - "Video encoder": the engine's line for the ffmpeg that was found (it says where from), or what to do when
+//!   none was or the app's own copy is broken;
 //! - "Version": the app's version, and that the Update button works in a later version.
 //!
 //! The view reads the view model and pushes actions; it keeps nothing of its own beyond egui's widget memory.
@@ -60,7 +61,10 @@ pub fn show(ui: &mut Ui, vm: &ViewModel, out: &mut Vec<Action>) {
     row(ui, "Video encoder", |ui| {
         let text = match &vm.ffmpeg {
             None => LOOKING_FOR_FFMPEG.to_string(),
-            Some(Ok(version)) => format!("{version}, found on this PC"),
+            // the engine's line already says where it came from ("..., comes with the app")
+            Some(Ok(line)) => line.clone(),
+            // a broken copy of the app's own: the export's sentence, which says to install the app again
+            Some(Err(said)) if bf_export::is_about_the_apps_own(said) => said.clone(),
             Some(Err(_)) => FFMPEG_MISSING.to_string(),
         };
         words(ui, text);
