@@ -32,10 +32,9 @@ pub const CAP_BIG_MAX: usize = 14;
 pub const CAP_SMALL_MAX: usize = 21;
 /// `IMPACT_DROP`: the pixels a line falls before it lands.
 pub const IMPACT_DROP: f64 = 4.0;
-/// `IMPACT_FALL`: the seconds of the fall.
-pub const IMPACT_FALL: f64 = 0.10;
-/// `IMPACT_STAGGER`: the seconds between one line starting to fall and the next.
-pub const IMPACT_STAGGER: f64 = 0.22;
+/// `IMPACT_FALL` (the seconds of the fall) and `IMPACT_STAGGER` (the seconds between one line starting to fall
+/// and the next): the core's, which the soundtrack's caption thuds use too.
+pub use bf_core::show::{IMPACT_FALL, IMPACT_STAGGER};
 /// `IMPACT_PUNCH`: the scale on landing, settling to 1 over [`IMPACT_PUNCH_T`].
 pub const IMPACT_PUNCH: f64 = 1.10;
 /// `IMPACT_PUNCH_T`: the seconds of the punch.
@@ -54,13 +53,9 @@ pub const HASH_K: [f64; 4] = [12.9898, 78.233, 37.719, 4.581];
 /// The outline under every caption letter: `_stamp_rgb`'s default `(10, 20, 26)`.
 const OUTLINE: [f64; 3] = [10.0, 20.0, 26.0];
 
-/// One caption: the lines shown from `t0` (inclusive) to `t1` (exclusive).
-#[derive(Clone, Debug, PartialEq)]
-pub struct Caption {
-    pub t0: f64,
-    pub t1: f64,
-    pub lines: Vec<String>,
-}
+/// One caption: the lines shown from `t0` (inclusive) to `t1` (exclusive). The core's caption window, the one
+/// the show derives.
+pub use bf_core::show::Cap as Caption;
 
 /// The keywords of `draw_captions` the `impact` style reads. `Default` is Python's: the top centre of the safe
 /// box, [`super::CREAM`] text with [`super::AMBER`] and [`super::SKYB`] highlights, sand in [`PUFF`].
@@ -93,14 +88,10 @@ impl Default for CaptionStyle {
     }
 }
 
-/// One row of `impact_landings`: when a caption line lands, which line of its caption it is (from 0) and how many
-/// characters it has.
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct Landing {
-    pub t: f64,
-    pub line: usize,
-    pub chars: usize,
-}
+/// `impact_landings(caps, stagger=IMPACT_STAGGER, fall=IMPACT_FALL)` and its rows: every caption line that lands
+/// before its caption ends, in the order of `caps`, with which line of its caption it is (from 0) and how many
+/// characters it has. One port, in the core: the soundtrack puts a soft thud on each landing.
+pub use bf_core::show::{Landing, impact_landings};
 
 /// `_plain(line)`: the line without its `*` and `~` marks.
 fn plain(line: &str) -> String {
@@ -116,25 +107,6 @@ pub fn caption_scale<S: AsRef<str>>(lines: &[S]) -> u32 {
         .max()
         .unwrap_or(0);
     if longest <= CAP_BIG_MAX { 3 } else { 2 }
-}
-
-/// `impact_landings(caps, stagger=IMPACT_STAGGER, fall=IMPACT_FALL)`: every caption line that lands before its
-/// caption ends, in the order of `caps` (the soundtrack puts a soft thud on each).
-pub fn impact_landings(caps: &[Caption], stagger: f64, fall: f64) -> Vec<Landing> {
-    let mut out = Vec::new();
-    for cap in caps {
-        for (k, line) in cap.lines.iter().enumerate() {
-            let tl = cap.t0 + k as f64 * stagger + fall;
-            if tl < cap.t1 {
-                out.push(Landing {
-                    t: tl,
-                    line: k,
-                    chars: plain(line).chars().count(),
-                });
-            }
-        }
-    }
-    out
 }
 
 /// `_line_ink(line, scale, ...)`: the line's mask at an integer scale and, for every column of it, which colour
