@@ -1,0 +1,2213 @@
+{
+ "about": "the example episode drawn by the Python kit with FLUTE's real look (kit/fighters/flute.py) and the base-class look (kit/fighters/base.py) for the other fighter: frame hashes, hook calls, draw logs",
+ "call": "kit.picture.render(frame)",
+ "episode": "flute_vs_trombone",
+ "fight_notes": {
+  "episode": "the example episode (examples/flute_vs_trombone/episode.py, SEED 392): the FLUTE loses",
+  "flute_right": "the config with SEED = 1 and FIGHTERS and DMG_SIDE reversed (the fight of fights/flute_vs_trombone/scenarios/swapped_s1.bfrec): the FLUTE is side 1, in the right corner, and wins",
+  "flute_wins": "the same config with SEED = 3 and nothing else changed (the fight of fights/flute_vs_trombone/seed3.bfrec): the FLUTE wins, so its two victory baskets stand beside it through its solo"
+ },
+ "fights": {
+  "episode": {
+   "covered": {
+    "FLUTE:basket": 97,
+    "FLUTE:cobra": 97,
+    "FLUTE:dance": 16,
+    "FLUTE:haste": 32,
+    "FLUTE:shards": 18,
+    "FLUTE:solo_baskets": 0,
+    "FLUTE:strike": 23,
+    "FLUTE:swatted": 34,
+    "FLUTE:wave": 7
+   },
+   "fighters": ["FLUTE", "TROMBONE"],
+   "frames": [
+    [0, "f9e13f40c2c9fe6edada94400326ac763681d4d5d0cad85d0d45f5439058f1a9", 38, "6d8bc6b7a5e68f423c56da2596de48cd5ce95d5600cf7aa2d01485a088287cf0", 0, "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", "card card_closed rev", "spread"],
+    [13, "92c3239c45200178ffcec67b92fcf30a001060533dbf39ad426cfeca03346363", 38, "1d06738e4154afe68650a302798c0879b1dd67138d7125ba3fb3fafb731056e4", 1, "2ad9ff155ab66d75ecd71c81a7aa306d6f2d1632153519326ccac8b22b841a2e", "card card_closed rev", "the title card, the doors and the count-in"],
+    [27, "459b5680843087ceaf354f2de6360b924831b0ac75c5e1cfc9405963ade8ca5e", 38, "6d8bc6b7a5e68f423c56da2596de48cd5ce95d5600cf7aa2d01485a088287cf0", 2, "5ea2ab5825622f8d2f2326aa056d4f7299396cb4efe909e95e4bab1c993dba0a", "card card_closed rev", "the title card, the doors and the count-in"],
+    [43, "a5eba776aac4b2366f161ae40155a8cf7130fbd4acd14006b84635dc63bcef52", 38, "1d06738e4154afe68650a302798c0879b1dd67138d7125ba3fb3fafb731056e4", 3, "291cbcf43e367260446ade78712d2361ad7cd9180fbe74051d923ffff6eb0249", "card card_closed rev", "the title card, the doors and the count-in"],
+    [44, "6941162704fa21cd34fa5ac8b833893deff9e7e05941d49c22383a329dbd6b00", 42, "177a597a30ec1ab1cd3c7108365b43e3c1bbcbfec58720b80ecb506b2c6b6863", 22, "96c0817897d2edef3d6c2cba50661b0d0592388eed762bdd5a4c21b31ce3d149", "card doors rev", "the title card, the doors and the count-in"],
+    [45, "38d527f81194230a459c999124e654134b3e886a4493eb201bb08db8f48cfa82", 42, "177a597a30ec1ab1cd3c7108365b43e3c1bbcbfec58720b80ecb506b2c6b6863", 22, "a0cebe28de0ef514a80d03c289c5895ef6bd305df409c5f973c3a8a4ce9c4368", "card doors rev", "spread"],
+    [90, "0fa9acb91a0f130656955a237f941cd662611007628506b5f74fd56b6514501b", 42, "e248c3ecc63411746777b391286c296e03acbcca03daf86b716c94aa63cbf66a", 23, "3180a137d0175ce2b00ff369f386a5c17311681fc8b1c84b49f22ebabf753014", "rev", "spread"],
+    [107, "ce5e38812e3529bf2874ebd944654152ad721a3ec08141571d9c40cb9a536842", 38, "6d8bc6b7a5e68f423c56da2596de48cd5ce95d5600cf7aa2d01485a088287cf0", 21, "e0d8d6dc69ed29345c09c6f40122748cd8380150d6c3d865915de2ac8314cba1", "rev", "the title card, the doors and the count-in"],
+    [108, "306b2e88e42e6aaa0de0b9bcf7ff58d7ff461dfaba93fc117198a2ef811565e7", 40, "3fed27755502a983eff9c514ba4344a727aff0ba898233ed371a1ed9b23ee907", 21, "72057a9471b83ea5284035625d333d828596311a1df7e9544d3e65ff6b50c21e", "FLUTE:basket FLUTE:cobra fight", "the title card, the doors and the count-in; FLUTE:basket (first of 1420 frames); FLUTE:cobra (first of 1420 frames)"],
+    [109, "f61595d9437fc6525a33b537c2440c39d157ed859798742c12d1d25cf51ab30d", 40, "3fed27755502a983eff9c514ba4344a727aff0ba898233ed371a1ed9b23ee907", 21, "ea75186d3ef856cdee82dbb0c09bd6f40cfd7c55ce4b0fff07a1624a2210dbdd", "FLUTE:basket FLUTE:cobra fight", "the title card, the doors and the count-in"],
+    [110, "e99ba21d2bbe052f7fb128ab23f51b1540989f4fd0fdeb62defbd367d1e3bb35", 40, "d03034c07f518463fa916f5df303f08081855956e4bcf533e65df60d9c034f27", 21, "0b00067396a7250c202150d3f5c055788fb2ad7128ae72831964b435c74657c8", "FLUTE:basket FLUTE:cobra fight marks particles", "basket 0 lands"],
+    [115, "10d9f96c827e8b1265ffc825acfc0c61026bdf0301daa6538e7278577688608f", 40, "5601bfb32aa596b934bea060e45af72ea68cc8c0958a985ec9490b6b7b20a1bd", 21, "733c418e5abd71baa68519676f73a4a5860e643fc3bb131ab991d3b26cdb941b", "FLUTE:basket FLUTE:cobra fight marks particles", "basket 0: its cobra half risen"],
+    [135, "bfd1aeae7f32b9f5c4852770442737670381af271e0cadaba6efa3f3bb95cdcd", 47, "3deeafd0ea213920581f32f21ef3872ee03f8edf6b8c0dd92297cd9c418e3d71", 22, "8cd6fb5be98f011d259aafd128400a0050ed0ee942b542e2a2dba1a0dd6e921f", "FLUTE:basket FLUTE:cobra fight marks particles", "spread"],
+    [164, "fa43c6eabec8e7aead7c5bc77ec7ed6d99f9ebda83e2693876f77bd9fe9872ce", 46, "2113f4998eb4586f09fd0e3621335ccd990f0a0266016e8c38542613afc6d8cc", 22, "8438c50ade773d16f1e9094cea4197d5b4b360be122df3a53d5e3c635760c2a9", "FLUTE:basket FLUTE:cobra fight marks particles", "basket 1 lands"],
+    [169, "2ace6966953a07043e7c4045d7c5acded756074a88f4d0c5d5028dcecbc350bf", 46, "d35e5ce6261dcb720b652c9a18e7018ec725ecfcc35b69013d1027a41257deae", 22, "6ddcd80ad4bfcfd660c482621021036982ba7042d34ce6910a532df93e6558df", "FLUTE:basket FLUTE:cobra fight marks particles", "basket 1: its cobra half risen"],
+    [176, "9f66efbc8dca81b865129efd9c8e1752c9ef8a74bfac43152762c7c5021fa597", 49, "1e2ff90ff8769dfeaec6c872339c4b53e39b61962cb7fcf04893dce53fa32297", 22, "518c592774ca3de5e1ef2a99057e4b6c6d0e0797763cc1cf85a6d8776185c094", "FLUTE:basket FLUTE:cobra FLUTE:strike fight marks particles", "FLUTE:strike (first of 179 frames)"],
+    [179, "66d1733dbe73d7eb5191080a340d60a1a1d250e613613eaf3188d8acf648609c", 54, "4f59f1cb38dbfa15884eb94578d27decc2f7bb21a3b8a716a8e8cd36ddc0a770", 22, "34f04ba6a82f5298ee6eb743f848212b538406895ee851559a4e1e6940f2c1e6", "FLUTE:basket FLUTE:cobra FLUTE:strike burst fight flares marks particles", "a 'fang' hit at 5.96324 s: its glow, burst and particles; a 'fang' hit at 5.96324 s: its glow, burst and particles"],
+    [180, "298f8aa73badc01ba066231b8c1e7ffe506910d7c5c2153acb3777dbd6ebc4af", 53, "548cfc3b27612c3ad0889c2f243520b5b6e378225960d78d126bc38d94a90853", 22, "6d0d27a373ac63ca8a8ac5365a63cbdf9442beb239b8bab4e4998f0bac732054", "FLUTE:basket FLUTE:cobra FLUTE:strike burst fight flares marks particles", "spread"],
+    [218, "eab990279b8b75d072670ebe07abf442728a10acc06692c6c8261bb5321fbf73", 51, "86549c9dbe7d118546b04b06e1eb39266e2b7a23cb3406d99fe53a86de31ca16", 22, "f18ace35e65e42aa5c30cd242ed5b71204f255da6732e2b1a08af63a4a26a5be", "FLUTE:basket FLUTE:cobra fight marks particles", "basket 2 lands"],
+    [219, "bb6bdbd4e7a3fdc769c606b16c1c182ff71cca4542d5a4e67eb44d7ca1842fb6", 51, "86549c9dbe7d118546b04b06e1eb39266e2b7a23cb3406d99fe53a86de31ca16", 22, "4a9dbd0f0b043b11c9f9b0f8c7efcbab4e05f771b0b62f725984c801367dcfb6", "FLUTE:basket FLUTE:cobra fight marks particles", "basket 0 is taken back"],
+    [223, "866eca6feba55d015298d6088cf43f061f6d24dfaf95791ecb07a4bd41cf14cc", 47, "913ecc9a999d811b41ea6e6889bbe676c424d509b0cc33fc42f97bda9db7bb1a", 22, "2ef59747207ae5eb21d8c8b588dd34c498250c15ec87b01a72fc78b8eef0beed", "FLUTE:basket FLUTE:cobra fight marks particles", "basket 2: its cobra half risen"],
+    [225, "7eac7953ea6017fa4aa125a4177a94d1a5df16660ffa4eca5a3b36d77a3b4ae8", 47, "913ecc9a999d811b41ea6e6889bbe676c424d509b0cc33fc42f97bda9db7bb1a", 22, "ab4ac5df92162061901b97152be8d7f2e4b1e304c01b08000cf9e01819ac5a1e", "FLUTE:basket FLUTE:cobra fight marks particles", "spread"],
+    [229, "d9752fd9d66916cab54ebcc55499c8d617a22ea169cb361e0190c2ac073e90d2", 46, "2e534b41fc9e7e9fae20f8ea5d6806204ec0efd1fe90fc5d478e67e93355a58a", 22, "2d77c7727a9629dad0e49259b5493b63c3ad52bbfd6c31009f0c24149c38d98b", "FLUTE:basket FLUTE:cobra FLUTE:swatted burst fight flares marks particles", "FLUTE:swatted (first of 494 frames); 0 frames after a swat at 7.6299 s"],
+    [231, "0d1b0e99cf019ed45942d4fc9d90e7da2c5ddb0605552b1d02bfa3387a8b894e", 46, "bf1d53d647a247c5cda820a19ca7798ea75797ddac5910a45dcdd0886289d58e", 22, "489c0cc2a2e10b625d3b595e0cf537e8aebc0a51704bd62375ffd3485d78b5d7", "FLUTE:basket FLUTE:cobra FLUTE:swatted fight flares marks particles", "2 frames after a swat at 7.6299 s"],
+    [246, "7c63c2da6bfcfe7a894d3096ec7e031e619af58bf62e43b3f0e1b00f2de4a1b8", 49, "92817877f294719e221f0d67589e6aaf2b7b766950bc531098768d2cd5ddd7f5", 22, "81ef7c98304d8db6e8afb0552a67d5295df83a4e4728cd485cb6276bcd640c46", "FLUTE:basket FLUTE:cobra FLUTE:strike FLUTE:swatted burst fight flares marks particles", "a 'fang' hit at 8.19657 s: its glow, burst and particles"],
+    [249, "7d70f4d147cf7d4cbb22dbdfaf0faabb45dfd6d744351573a4a1080f50090f06", 49, "92817877f294719e221f0d67589e6aaf2b7b766950bc531098768d2cd5ddd7f5", 22, "a9d25a82b9d5bb4e1fa812911fc188da072c19346661641f2643248dfb6bb1f3", "FLUTE:basket FLUTE:cobra FLUTE:strike FLUTE:swatted fight flares marks particles", "20 frames after a swat at 7.6299 s"],
+    [270, "3dd7078d5d5565d4fea76a2dc5463fa820edcdcf7786332cecf23455459c37c6", 48, "536a2ff21410dd59a6886b8a85dafc4f6818a62f1bba3502ab99146cd9a8413e", 22, "689708eab91048f2cd3baf787c992d347318ad92e03adaf0c122add37625ce1d", "FLUTE:basket FLUTE:cobra FLUTE:strike fight flares marks particles", "spread"],
+    [273, "3ddeb06cf5b376274a9c95fb3229c53222b58f31a1ca3d9f5530a7ecb02d4dc3", 51, "00c82e9c98bc78c579c25c212cca8fa6c9751480a99b7ee5a3ce5468cf7f57cc", 22, "dcec55147435d970b0d98233c3f1992d8b99c8a73da275138f04f67ca50e3c7d", "FLUTE:basket FLUTE:cobra FLUTE:strike burst fight flares marks particles", "basket 1 is taken back"],
+    [315, "3d50c875e756d954170dafdd3bb8da9afb10032760f52727dc765f963dba0be0", 46, "93e2066f0b942ecb56576a91afa2706c6a3b3a9ac84700fd6281a55616768a15", 22, "cb627d159152129714a972b325175822be50586456f59e8183c51b94060fa419", "FLUTE:basket FLUTE:cobra fight marks particles", "spread"],
+    [327, "eb37f9d217f18365555de08327079e7d95cc8d7a4b489e2c06be94f206a5fde2", 54, "29426684b4e5b6bd083098e041c4a9b16ee86682b531cda6375e9baf407a4262", 22, "404f277e6be8d8e9ce1c037917c787e0241b5ba9e3714a5ef8a31e40696d23c8", "FLUTE:basket FLUTE:cobra FLUTE:strike burst fight flares marks particles", "basket 2 is taken back"],
+    [337, "a40e905893fb0696748ffe150d9062037a905226771135c91a448f8889c4d27e", 46, "5ca17306f8d7618d1de2e9c0621d6330cc7d0f630d80f4de2658a1348f9ce74c", 24, "0285c4f5088e09e389bc68fdf7919cb19985521c96e95cdaace376162712c77d", "FLUTE:basket FLUTE:cobra FLUTE:haste fight flares marks particles", "FLUTE:haste (first of 572 frames)"],
+    [343, "f736bb81ccd8c7113939c113de80135b761357063f32ff231600c1edd9e0e98e", 46, "2869017f81dd8a518d46da4f085c49fc7103aa98e3be00d03145361e868f6c1a", 24, "277fa2f25e0be05b60aa6e5ff7d3c58b483ec4cde43a8787d62b162fd20cbade", "FLUTE:basket FLUTE:cobra FLUTE:haste fight flares marks particles", "0.2 s after FLUTTER TONGUE at 11.21324 s"],
+    [355, "746e9795c8f506d0a8fc31443646334f17e30d85b51a352a347613dd1f05d103", 46, "2869017f81dd8a518d46da4f085c49fc7103aa98e3be00d03145361e868f6c1a", 24, "0305336776a9cae458e1e884b224d7f1af4ded668e82d27a2c05f234cb4858e2", "FLUTE:basket FLUTE:cobra FLUTE:haste fight marks particles", "0.6 s after FLUTTER TONGUE at 11.21324 s"],
+    [360, "071669010b0a6aee59fdb911dac3e24ff5b4300df107589c215af940f2e68d1f", 46, "2869017f81dd8a518d46da4f085c49fc7103aa98e3be00d03145361e868f6c1a", 24, "0a00771b4017e88985132f1510c4ff1dbc8ce87c44efd618630e3fe6a604ad57", "FLUTE:basket FLUTE:cobra FLUTE:haste fight marks particles", "spread"],
+    [379, "187713a792019ca99d42c676fdae353263970507ed3b77a3ea34c7bc20bd5ef5", 51, "584ac66863723be0481987c8f41cc15b5a66f660f119354406b1b3ead7ad76f0", 24, "78c085985105a73b4e15c526204b1b4ee9d4d6c7d7ea2660e4b2ef29dae1fd3b", "FLUTE:basket FLUTE:cobra FLUTE:haste FLUTE:strike burst fight flares marks particles", "1.4 s after FLUTTER TONGUE at 11.21324 s"],
+    [405, "aebf9a8b48bdf626dd0c38d490317a18e478f594b2c07d8445fa45c2ebaeb461", 46, "5ca17306f8d7618d1de2e9c0621d6330cc7d0f630d80f4de2658a1348f9ce74c", 24, "0d18f40be67005ed9aa22691c201a0bb9db24e295e29f7a64357fbd329fb1620", "FLUTE:basket FLUTE:cobra FLUTE:haste fight marks particles", "spread"],
+    [450, "a16df3be541431fe7b941deaf329458b2ad2e78d3e5056100ec944d0c2416d45", 47, "df8dcf53c1d92da48d1f28a016b5c4751efd365b3e0ab1a8ef341b033fd70425", 23, "677c58484c34a8d5dcfc1bdedfc76904a90b37520c28ffac8df8a99c58ce0dcf", "FLUTE:basket FLUTE:cobra fight marks particles", "spread"],
+    [459, "ae2df9a057c29512548ebfcf0d137f40d95e61db2793e5432d9abb1b613b1cbb", 46, "2e534b41fc9e7e9fae20f8ea5d6806204ec0efd1fe90fc5d478e67e93355a58a", 22, "a1d4830b3f37dbe7395870b980f9a4db720bdb8025f47c5c8355766dc3565f67", "FLUTE:basket FLUTE:cobra FLUTE:swatted burst fight flares marks particles", "0 frames after a swat at 15.28824 s"],
+    [461, "992f525848a619a9b0215f32b71e43d56e5aa2e8bdf94e83bdfbdc7738642dec", 46, "2e534b41fc9e7e9fae20f8ea5d6806204ec0efd1fe90fc5d478e67e93355a58a", 22, "bbcd3cf375ccde20520d45e471b729ae15ae188207e8a39ed6d4b478dcfde5fa", "FLUTE:basket FLUTE:cobra FLUTE:swatted fight flares marks particles", "2 frames after a swat at 15.28824 s"],
+    [472, "0e556d96e1ed92c1176b049908fdfb82fb62274cbb0e946f949033dc6db7b22f", 49, "aab817d1cdbe0b9c5860d87a23685aec95235ea223d2a24ae122e2d440fb2921", 22, "e1d5e16ff8adb2de4c512ff36f29937c3930df69d681d5b4f8b93a350b943ac1", "FLUTE:basket FLUTE:cobra FLUTE:swatted burst fight flares marks particles", "0 frames after a swat at 15.7299 s"],
+    [474, "21278fb87652febc8af51b21d77443088511ee6ae468e6b8e918f6695450c6e4", 49, "40e2eb6f23e664554df236b92392a133ad77feaafeed6261e143e6482aaeb5bb", 22, "42f48cf85b061ce03697d7008523051d92419ed6233ea6f2401187350ba894fe", "FLUTE:basket FLUTE:cobra FLUTE:swatted fight flares marks particles", "2 frames after a swat at 15.7299 s"],
+    [479, "62937984fe2ba1420e3c0a707b4cc24937aac488a2fb096963c7b19a77f3fb81", 47, "65cf0050471523c3999e842323a51987532d3a517702864a841d84a4894ce855", 22, "3f794286750125770a4d7a2f37418e69658194f80e8f2a8d65517d5bd7a45243", "FLUTE:basket FLUTE:cobra FLUTE:swatted fight flares marks particles", "20 frames after a swat at 15.28824 s"],
+    [492, "5f5ac26f26b3fbb81eedbb5277d53729a21d91b0083ee743ede940c78f305fc4", 53, "c3e761328451522d54d089d25ad9cac59264302cc368388e219d536da3cfccf8", 24, "7008f6c4d3891255a95d8683b81d69a8d98eeed981f51a37bbd6bfc073d72b88", "FLUTE:basket FLUTE:cobra fight flares fringe marks particles shimmer", "20 frames after a swat at 15.7299 s"],
+    [495, "9d3f47ba9dfdce9e3afca83b959651970ef632776d1befd6e6e3f4fa00a2e0c1", 52, "8f98d9ff74a6087b8a5957f879c298ce9d1c7728ff5bfadd6b9dabe3834ddf52", 24, "a3f00f5cf04deb8b032a66668adbfe8931ba731172cd3d9b0ab3a0c18686da27", "FLUTE:basket FLUTE:cobra fight flares fringe marks particles shimmer", "spread"],
+    [540, "2dd545df0118657e855b152e790cbb719417f55b77de94a8a81f9a4921144a39", 48, "8de447d1af4a638d5100f5d124d24eaa0e66db991c43bb1cf15235987d1f0906", 23, "efb093c720d4b1f5c2f58ec474133587606fbf7cd3934f9336bbce1874c5fe8c", "FLUTE:basket FLUTE:cobra FLUTE:strike fight marks particles", "spread"],
+    [558, "c6e60a6118c164429290b7f3cf071cd480b7176b21ec65d748c1e8b18272e31e", 47, "5a4fdb1da75b2d739c0751559ffd703dc45b47493440e603be924cb0c379e507", 23, "8b93ea688c3f1d1aaf42ce11bc7f12359ebb28c35e0d917cd967b3d0ee45bd40", "FLUTE:basket FLUTE:cobra FLUTE:haste FLUTE:swatted fight flares marks particles", "0.2 s after FLUTTER TONGUE at 18.39657 s"],
+    [570, "135053e5d11d512b7f8c440aa7510c9c3f5ebfe71682dafe3b9dfd73fa3b408d", 46, "50fdb31af0fa9de8e067b80989270a8ddfe24e326e5e0a49689c837d4e5fa5ef", 23, "8e80ecf2bbdb6d164c5605dc2e346680852b2c3c97a939c528932af7dfbe59ad", "FLUTE:basket FLUTE:cobra FLUTE:haste FLUTE:swatted fight flares marks particles", "0.6 s after FLUTTER TONGUE at 18.39657 s"],
+    [585, "5c05f7d7a96d7b1bd451e0a3bdb8a8b31fc506acf4aa825d21f496f0dc3dcb98", 47, "40838114fbda2f43135abde2401ae66422daa8e439f62048a834d27f1785f9ba", 23, "9cdd551d8e48d4724b72afd5dcf6062fbdf2b808f13311e6e2da2c3fa0dbd52f", "FLUTE:basket FLUTE:cobra FLUTE:haste fight marks particles", "spread"],
+    [594, "b0ac3ea7c0356d8892099edcba35163f8f488e945d5196dc93eb805864d93210", 48, "248a7fbba49c6d1e32ce8d547c7277f6a53aab037bf3a0846c750d9587bf198b", 23, "d032ed72211b25699a95d11f6ba86c65e67cf2509c9b4090fc15c4312ede5704", "FLUTE:basket FLUTE:cobra FLUTE:haste fight marks particles", "1.4 s after FLUTTER TONGUE at 18.39657 s"],
+    [630, "c84fb5fba256a6498a3413914b418ad62b16bc6b8f0c8f7a33f27a2007826da5", 46, "2cff3ebc8273a6612ef9f7a12e8d460fddddcf49133bec255d513d2070ba912c", 23, "871a6181b9f6731b1bad88e0c7b2e40250800b763c8ff1b5ae36a5cac5b0096e", "FLUTE:basket FLUTE:cobra FLUTE:haste fight marks particles", "spread"],
+    [675, "466cf283a69fd859a1abd52671517714271767fb8104b535daf1e0b5f95622fe", 49, "ac9d926b7438ea7faeb4ee5d1cfb98d88b7844390fac8e302138831dc1e87e05", 22, "3726d861c6ee8097df3dcf90593e0e6106595acec5efd1682fbb9047c29ce01a", "FLUTE:basket FLUTE:cobra fight marks particles", "spread"],
+    [720, "d2a497ff02c6c8736825773b8efa75fc90e4a610a64484db0b65c6f9a3249b86", 49, "aca991ec5937cb41009c5a90c0f6ee3b00d6d9824541205001a2f7291024db6f", 23, "bd3931d497f1f65a822f0d1ab0abcbed03cf3d4cfdc0aab99485b6a507ba966f", "FLUTE:basket FLUTE:cobra FLUTE:swatted fight flares marks particles shimmer", "spread"],
+    [765, "0dd7118d7f90e7a3accb1a999d1b2f034c26dbdffbcbdfb419cfe5120ca26769", 46, "50fdb31af0fa9de8e067b80989270a8ddfe24e326e5e0a49689c837d4e5fa5ef", 22, "8fb092377ab94d190ed98799fed5646911a91d237d79ddf1923a0703e73c6ce5", "FLUTE:basket FLUTE:cobra fight marks particles", "spread"],
+    [810, "115548d0e06a3c3fcead5c7241dc79f40e99cb86704583a0e41e45dfc6046f83", 51, "7dbb272cb0918642dd38aed6167fbe2064a6faf7da29be47df6432df35313a31", 25, "ee00e2b189daf1b1396e7bb43c377409898e02db9a4f6dd7c76df1b504743d8f", "FLUTE:basket FLUTE:cobra FLUTE:haste FLUTE:strike burst fight flares marks particles", "spread; basket 13 lands"],
+    [815, "5e48f88f9d376c91b967f0aeba92acc26e918a9ace175f6a34dc5f4597b4cca7", 47, "c39bb25409ab656d98413da9534723284a638dcf22c9a0b8714d28784c9df460", 25, "7c136dfbee06d5e60846f6d935e083d09f77f55f3e85ff947fa5983f3e7f6e47", "FLUTE:basket FLUTE:cobra FLUTE:haste FLUTE:strike fight flares marks particles", "basket 13: its cobra half risen"],
+    [818, "52508fb7d3a970e68c3ec544660d7121648acd93b2a5b0df6e3a830be3fb565e", 50, "ca8d57c2475e83292719b091b60e434cd2f8573420d534732394683bb994ff71", 25, "043d30c182235fd2922811caf711d229ffcdc23e8345caf4977a77c1dcbdfa6b", "FLUTE:basket FLUTE:cobra FLUTE:haste fight flares marks particles", "FLUTE:basket (middle of 1420 frames); FLUTE:cobra (middle of 1420 frames)"],
+    [835, "a020450b43477cd63872bd28546708f8f7e487e869c7062fd026262a55fcad48", 47, "4c70b2924afcebb3b863d6e34b4919829eb185f1a91be789bebd42cebda809a9", 25, "86887c60047f355bd3fdeadfcb82c2b21ddf8f24e8cd37538a18899968fc9203", "FLUTE:basket FLUTE:cobra FLUTE:haste FLUTE:strike fight flares marks particles", "FLUTE:strike (middle of 179 frames)"],
+    [852, "f1c77c3223b459b90b3e0cf9ddacdfad626df5abd68cc27618aaad4ff993e02c", 46, "359cc06c321fac9d9148e8e20069f3223415608def1fbe522b9bfa261a1814b0", 25, "e71a65d323644da01bb41a68f694481a9052195c6a90701b6ab0844eef645e94", "FLUTE:basket FLUTE:cobra FLUTE:haste fight flares marks particles", "FLUTE:haste (middle of 572 frames)"],
+    [855, "3ebe0d11e475bd84f6950cdd46fccdc78ba8bc6e3aa7a17b6ebedc319c470e16", 46, "bf1d53d647a247c5cda820a19ca7798ea75797ddac5910a45dcdd0886289d58e", 24, "2c913f8f1ede5b6ce10955c840aa7e0b692d5076c7a24d2287f3a0998bcdf7b6", "FLUTE:basket FLUTE:cobra FLUTE:haste FLUTE:strike fight flares marks particles", "spread"],
+    [900, "07b33e5e58d809277260d39665d4532e1cac3909be29ed32a27619f3b01faaf6", 46, "5ca17306f8d7618d1de2e9c0621d6330cc7d0f630d80f4de2658a1348f9ce74c", 24, "4b1e2f3a56571af30bdec8a49a23664cdff20b03c6c5c8177940f51e2d7fac3d", "FLUTE:basket FLUTE:cobra fight flares marks particles", "spread"],
+    [902, "1fea997a87a4a526d073705bc81c10c02d6e9aab72d7ffdd831f7b9c5e6b903c", 46, "5ca17306f8d7618d1de2e9c0621d6330cc7d0f630d80f4de2658a1348f9ce74c", 26, "630605a850776b2cccab1cd7d0c4410460cc3a5995eccbd6cad7bfda2699d3dd", "FLUTE:basket FLUTE:cobra FLUTE:dance fight flares marks particles", "FLUTE:dance (first of 173 frames)"],
+    [908, "f37b5cd73ed39690d2fe16601df8575f476c2e0aba4c9c56c3854053bbcd784f", 46, "5ca17306f8d7618d1de2e9c0621d6330cc7d0f630d80f4de2658a1348f9ce74c", 24, "342fa56fcc38557390dd2fc33734d8246b574bc4b4c94052225e639c246ac34f", "FLUTE:basket FLUTE:cobra FLUTE:dance fight flares marks particles", "0.2 s after SNAKE DANCE at 30.0549 s"],
+    [919, "c1cbabed72845c9b367e2008f29e7161d1c7c78ba1124003f2cafe421989194f", 54, "d59d01abc2d8720caaddcfc0414c7965ae7ff149deb71ae692b5aa9451d9303f", 24, "9d6c47b0b1360d716558191016438d3238f4360fd86c197b29d92b1b9c645051", "FLUTE:basket FLUTE:cobra FLUTE:dance FLUTE:strike burst fight flares marks particles", "basket 13 is taken back"],
+    [920, "cb01773a62ccbb7422a843281153ed8853fdc275bd2f555eac063c2316e376c4", 53, "2a03a37bb962ffe5aba28d53056cbd5fe8da0cb9e6c79375e42ce456cb785fcb", 24, "21da0a83e02f45da8c187ed8d28eabddaa92a0ba3225b455e0627fb0024ef401", "FLUTE:basket FLUTE:cobra FLUTE:dance FLUTE:strike fight flares marks particles", "0.6 s after SNAKE DANCE at 30.0549 s"],
+    [944, "e8afd88fcb2acc1186080d702c1c9192bff5869827b1389cd1d255de37bfe5a3", 51, "5ca09b07b83ca3d32da2ebfe71bc85c18da6b0f2410203c3e4c416c91a611bad", 25, "bcbad8f33c24d0af7574b67d39cec46a237de2ae37b29ab82abe88dc1ada66ea", "FLUTE:basket FLUTE:cobra FLUTE:dance FLUTE:strike FLUTE:swatted fight flares marks particles shimmer", "1.4 s after SNAKE DANCE at 30.0549 s"],
+    [945, "cdc34a4799b21b845dede573ade5d35049c7d7c6544f838daf97684925dac3b0", 54, "c5010d8b80eb64373be6310f462dfe7ee1208703a1dc998998cff3c179b9be9c", 25, "497d84ba83052c1d99ded6c86ec6d90a707465b790e21d7cb08c108b80778237", "FLUTE:basket FLUTE:cobra FLUTE:dance FLUTE:strike FLUTE:swatted burst fight flares marks particles shimmer", "spread"],
+    [990, "4852067943ff6f1072f3f4ab316986dae721c11a1d9e630e94f7d9794e21a869", 48, "b410f4717a8fb8ff7ffeedb9d0b34ef4a73d8fdf5217a4cd7745b253203cf177", 22, "cf299221bbc5ba5fe9157a0b3d941096722bf272e14fdc3db28fe8a6326e81d4", "FLUTE:basket FLUTE:cobra FLUTE:swatted fight flares marks particles", "spread"],
+    [1035, "e70eadc040354e46c3d430e6bb7cef50c835f51ebaca360da221bf233635bcbb", 46, "2e534b41fc9e7e9fae20f8ea5d6806204ec0efd1fe90fc5d478e67e93355a58a", 23, "73fc011a5f83a3c8f25222f8fe709c53c00c37bfd3819cdd0f55150fd71efe89", "FLUTE:basket FLUTE:cobra FLUTE:haste fight marks particles", "spread"],
+    [1063, "7ddbbdcdabb3e64929a77b58fe6de41eca727d684179c142da56b8b7dcb74ef7", 46, "2e534b41fc9e7e9fae20f8ea5d6806204ec0efd1fe90fc5d478e67e93355a58a", 23, "08fa6da45cc4df03b0cc0c68653f9c3327bbc12f52f39630fb5dfee4c531b726", "FLUTE:basket FLUTE:cobra FLUTE:haste FLUTE:swatted fight flares marks particles", "FLUTE:swatted (middle of 494 frames)"],
+    [1080, "5308e257cc9490184b6cce57621b0e9d827c6cfdd08a0ad4383624efc553e5b1", 51, "86549c9dbe7d118546b04b06e1eb39266e2b7a23cb3406d99fe53a86de31ca16", 23, "7de80873400bb005fff1bd01ed5c4eae8b02b0460c030e1eb2c90d90513cf2a3", "FLUTE:basket FLUTE:cobra FLUTE:haste FLUTE:swatted burst fight flares marks particles", "spread"],
+    [1125, "edd2764d27dc9f52d8ee80c84df1bec3e2cbf1f2d231e3523e6df4d26e08d02a", 51, "86e957706e29fd4b42790684112dfa87f6cb6f37aada43219ba5266ba4274989", 24, "a2fcb14d9659b62f10bef4dce35750b279c63ca697684b4ae3bf415df297252e", "FLUTE:basket FLUTE:cobra fight flares marks particles", "spread"],
+    [1170, "9f94573ac8639165d068be0929ff948fdbd216ea195f37e6e300ef1718bf9d5a", 46, "8afa52564232776e88f0d6e98479069c950b622abb6763f07ed07356c87b2442", 23, "cc2a2f418efd58b0332482fb96cf1e97a9a64a1124d9aa7bd2c47bdef8282028", "FLUTE:basket FLUTE:cobra fight flares marks particles", "spread"],
+    [1177, "6c0ebc7ca84d1f8c08d94e30ea050fb2aff0e54dd45c80b38a4be2f5479741d3", 52, "ab5e7e41b42ba2564a04ad82a2169da8e55edb468b13794759962d7d109ca9fa", 25, "43122ff03a72ab012cd7f1fce94d85e01ec96001e4f6b16cd3e04cfbb23d8915", "FLUTE:basket FLUTE:cobra FLUTE:dance fight flares marks particles shimmer", "0.2 s after SNAKE DANCE at 39.0299 s"],
+    [1189, "c827ebfa71453f4004caad1c58f252c8b2a11c8718c048e7c48e526fde02f204", 48, "6838fd0a600fd5e6bc5bcb83ff3f106f693676ce896238bba7cc6b8cbd5fcbc5", 24, "6a24be8c01a54736cb11a3bda705a3f90e99b6ae58ab1a2c6900abe16b1d73be", "FLUTE:basket FLUTE:cobra FLUTE:dance fight flares marks particles", "0.6 s after SNAKE DANCE at 39.0299 s"],
+    [1194, "34e45486e76cfb81bdd977fab63fa86aa0b873368dac9d371d8f5c98aafa9534", 46, "b2c674b227efbe77c4664f2dd8ee30963cc921a8d88ace0ca5726dc891b0e888", 24, "55e8f5ca9b4da00182e9078e7b3daf6c93eb446190e5309610acb51a15f476de", "FLUTE:basket FLUTE:cobra FLUTE:dance fight flares marks particles", "FLUTE:dance (middle of 173 frames)"],
+    [1213, "b62d40b5fd6a345285f143418e9dbe03ac4727a5eb6c6c6c6fd0f5dabaa1201f", 50, "63785518f12b83a6195355200a79c709ebea6361377aa0b275589caa1e70fbdf", 24, "974e6336d2a7795376aacda0a0433ce1994d7fd4544cc0a2e6d3dac0a1acd3b3", "FLUTE:basket FLUTE:cobra FLUTE:dance FLUTE:strike FLUTE:swatted fight flares marks particles", "1.4 s after SNAKE DANCE at 39.0299 s"],
+    [1215, "a83bb68c5968718ba13fc5302702fe5abbe66e61ef852988f52d8c1394a26599", 52, "b6a16f4dd5b2392379e071c1a95de53357acc81351ebce62dc5fa681e39df818", 24, "938cf002f86c3ba9829caaafdab90bc39acdba32be15dd3be6fdf9c327fa0fe9", "FLUTE:basket FLUTE:cobra FLUTE:dance FLUTE:strike FLUTE:swatted burst fight flares marks particles", "spread"],
+    [1260, "4fa0e4a4c747c58920a7430ed5aaad98ba9b791e2d47207527a28d53074eeaf6", 48, "82cd8beb42d928c67ddf9495b94b634db2cdaa96ff3d954cf27208aca7f05d21", 22, "c9156110e82ce7ffa4c59f7633839fe21242fe1dff51cbbf58918bd0cdf119d0", "FLUTE:basket FLUTE:cobra FLUTE:haste fight flares marks particles", "spread"],
+    [1279, "2eb27da8ebf69ea32beb435504d43432cf0cf998f595566c931ee97522f6f8b9", 48, "009262c9c450ab0c2f54b497d58f9888ea4f03f670b702848190b35718f612e2", 25, "5b5592bec7d19a5aca4aa13fb55917c68d3ab92f518a0a1113d95cc2b3417272", "FLUTE:basket FLUTE:cobra FLUTE:haste FLUTE:wave fight flares marks particles shimmer", "FLUTE:wave (first of 42 frames)"],
+    [1285, "90406d317b3d6a32482cae6042c536214492aacff71e93a0416068d3ee6b368b", 49, "6409c9bafb62975471272d47a643a15f5d9544cd4f77cf67f86957c1f8c1f21a", 24, "f93f4d34656c136a3714c2b4682e6e3836776e765a5465880840d09fe0a29dfd", "FLUTE:basket FLUTE:cobra FLUTE:haste FLUTE:wave fight flares marks particles shimmer", "0.2 s after PICCOLO at 42.61324 s"],
+    [1287, "83f0d92c47d1d0f9ff71db71f17381373b58efc47a786f7ebc253290a8c58b1f", 59, "b17781f52dffdbb1e31c9a0d3a387bbe5ab8de4d9ae1f2c17b4a4e196f03756c", 25, "48c55beec8e9c11bbe5ccc6a0cd696a823aa8deffae62bb0d1552dca1c469cc0", "FLUTE:basket FLUTE:cobra FLUTE:haste FLUTE:strike FLUTE:wave burst fight flares fringe marks particles shimmer", "a 'wave' hit at 42.8799 s: its glow, burst and particles; a 'wave' hit at 42.8799 s: its glow, burst and particles"],
+    [1297, "9fbe76f72c83fbc849fd96ce79b34710178164b69a95c9a1376c8e4d538f0126", 52, "3bf0d11194f3ec07bd43a074716b6af44d7759d423d719d61a7b5820240f4132", 25, "a261730bec21ade92705e79f1b8b9d2e3bca0360ca532b13ebfca835505f0b11", "FLUTE:basket FLUTE:cobra FLUTE:haste FLUTE:wave fight flares marks particles shimmer", "0.6 s after PICCOLO at 42.61324 s"],
+    [1300, "51910933ec924e5a845e8ac01f29c8479ab574c67c75a35d84b171f6fe251ac8", 49, "384d72d0e5107ab6f03a419bb23f60500e91e2be670686dc94f2f12c64e481e7", 25, "aa17f1e2e49ef98ab0546c06fc87bea9e0a36af350e2b84d10ef6885a8e0bfee", "FLUTE:basket FLUTE:cobra FLUTE:haste FLUTE:wave fight flares marks particles shimmer", "FLUTE:wave (middle of 42 frames)"],
+    [1305, "fde882933d91902b6263d065945a76fa70180fe1f0ebd71ff42df3ea032e4377", 48, "6010c362e8475189276694044418581f2438feffd057371eac52279a0620477a", 25, "5c464f4ae605de1c593ab419f2be9a0a5eaf7ab430492e5805342242b90f332a", "FLUTE:basket FLUTE:cobra FLUTE:haste FLUTE:wave fight flares marks particles shimmer", "spread"],
+    [1320, "5e02c4848074be22dc2d31c1f6088a24bbdbcc981935465c9b0847204e1ef77a", 52, "62483d7f266f98f680d4de082a00beeb2500a56984f2590f23c1228e713cf587", 25, "8c2c3847742e340ed485fba4fd5e282f0bc064852faa7beb178ed27427fb2557", "FLUTE:basket FLUTE:cobra FLUTE:haste FLUTE:swatted FLUTE:wave burst fight flares marks particles shimmer", "FLUTE:wave (last of 42 frames)"],
+    [1321, "569f867e4337f4db5a794c1324e2181b6f55e663f456718aea968688a60d03ab", 50, "c90cae3d8f487a7c4772e19d6e9b18cccb1dfc8a85a924794b2ae7c0307ee133", 25, "1a8187b12f2bbb1021c40ce8b48a5fdb508c24483fb38cf9a42ad25b677e8741", "FLUTE:basket FLUTE:cobra FLUTE:haste FLUTE:swatted burst fight flares marks particles shimmer", "1.4 s after PICCOLO at 42.61324 s"],
+    [1350, "bc6d4050df40664ad1a800fd9260c922721d8e61ce94e0fb7d8014245bf45e86", 50, "53e30910089f87cb06fb714012f68bdd44f886a9760cf07d3b41d80cfe09e2a2", 24, "908e06433aa55e42b77e16c49d5669219d98d168f5f720647002c89d55548ea0", "FLUTE:basket FLUTE:cobra FLUTE:swatted fight flares marks particles", "spread"],
+    [1395, "400b80005dedfc88caaac17c7f811d50ae93e3abcd2002bc8c6ade8cae023f89", 47, "913ecc9a999d811b41ea6e6889bbe676c424d509b0cc33fc42f97bda9db7bb1a", 22, "b098cbace32b2d3f5c8c27b7c08390cb2b58cee3e574c7d47df5ee04ea609772", "FLUTE:basket FLUTE:cobra fight marks", "spread"],
+    [1402, "39e589fe9bbef25a0a2aedbf7e6b8a6db7a2ef47e23ebfe4cb04a2bc741da1e6", 50, "ea5543003e4a8f6854010ee3e1d6bfd2f1c4576dd9bf270ca6a07a77ccc248b0", 23, "adb0b8306a7b98bc1a9507439f6c7ab0c520128e665b508742edbd6a965a89f8", "FLUTE:basket FLUTE:cobra fight marks particles shimmer", "basket 24 lands"],
+    [1407, "cf2b7fffa0fc5879d8dd580438e581b4b278cf8e76d7b90c213729d3953f26a6", 48, "3ee6244d505aa0fadde4c3e44b45beed9b5a31f0e95851453000db7d95a1c013", 23, "b3305f1585729071da4f30b59bb2983e573b35b9eebb62a990d07ad6998500ad", "FLUTE:basket FLUTE:cobra fight marks particles shimmer", "basket 24: its cobra half risen"],
+    [1429, "9eb22a9b425cb6626fedd8992cb96bf116fb1faef78ba1d61dc0a100d49d81aa", 52, "237ea6b227632cc4e5db1dee19a259db6b3931effc330c3d22a84948a1ca6cf6", 22, "0233d43d0a8c3fc462e0024dfab496647595f4d5c2606318a642bcf6d53bcec1", "FLUTE:basket FLUTE:cobra FLUTE:strike burst fight flares marks particles", "a 'fang' hit at 47.62157 s: its glow, burst and particles"],
+    [1440, "25b3343f2500fdb905562d16cc00ba923cf0ce834fdcf76413d6258165fe5e3d", 46, "33669c928a60ac154d4fe8b48a2b42271b84b88a5d2750fb65449ad7fdaa1817", 23, "83221e1978a8337186e187de52fcaf327d504a29066d132ae2fdfa33c85942db", "FLUTE:basket FLUTE:cobra fight flares marks particles", "spread"],
+    [1456, "6044e0b1387cc156b2b0a4477c81753751d852a661dbe0098afb1baa82d73091", 51, "9ffe1e158edb74b6426b5af5de8843cc0cc17760c6e2dc7616f29cf9856bd727", 24, "20d9a4c8f1a4bea2edc9aa6b7a2ef09416fc9bef3c52ac47971137abc16837b7", "FLUTE:basket FLUTE:cobra FLUTE:dance fight marks particles", "basket 25 lands"],
+    [1461, "9214589faf0bcd99b473ecd44f966c03bdd79eb14df51089c0131b237b95ee68", 47, "913ecc9a999d811b41ea6e6889bbe676c424d509b0cc33fc42f97bda9db7bb1a", 24, "6e909c93e79205bff22c0502ac2228ae55b6624e4f36b7cb500156569a4ceb13", "FLUTE:basket FLUTE:cobra FLUTE:dance fight marks particles", "basket 25: its cobra half risen"],
+    [1474, "05897bf9f2f992605fb93100c16869c43b081552ff1bf5355ce23cefd12cfbec", 47, "913ecc9a999d811b41ea6e6889bbe676c424d509b0cc33fc42f97bda9db7bb1a", 25, "5e192245bba29ea7c6e5d0c71f071d3026737efbb1c6c8a9b48cba6a6460fd36", "FLUTE:basket FLUTE:cobra FLUTE:dance FLUTE:haste FLUTE:strike FLUTE:swatted fight flares marks particles", "FLUTE:strike (last of 179 frames)"],
+    [1485, "6ddd97678dc9ed19c0477bc1b2b08a2116c592b812e1cfacdc8ef40fe154d3bb", 48, "81d7e6cb219f29511d875d2379a4c3fa8c8fcf6ec13e0f89cafb0178f81f435d", 25, "1f4e55e80be4df4aac5942732df74feff7ba612fce3ba5781bff8e89fd4369a5", "FLUTE:basket FLUTE:cobra FLUTE:dance FLUTE:haste FLUTE:swatted fight flares marks particles", "spread"],
+    [1500, "bcbbacd1d26a88f78853e20694eac6d93d8caa3dea322f0f0b9703f6ce28dbe9", 47, "0f78823c9a9384d736c1a51ec402effa3f5e74436e273f226e584e1f850778d6", 25, "b5aceea7f55768442c427ab1e20f508eed75449261fb17bf5372742f6c46142d", "FLUTE:basket FLUTE:cobra FLUTE:dance FLUTE:haste FLUTE:swatted fight marks particles", "FLUTE:dance (last of 173 frames); FLUTE:haste (last of 572 frames); -1 frames from the K.O."],
+    [1501, "f58c3b64176ce5304d40b87f5db38d6cbb7b4b36dda88f223965cc24c9bc26c9", 50, "8290edbfd68f8e8ffdb9392a5065de9014a655354b5992d3d06de1d356b2b72f", 26, "cbc055bc73b44e351a570bcdd524d60603a1c94a6feaa8e746edf638ae399bd7", "FLUTE:basket FLUTE:cobra FLUTE:swatted burst fringe hitstop marks particles", "0 frames from the K.O."],
+    [1502, "e9e380e64a20e4dc974fda36357d8b7a2fe0c0d7f934286ee63f10bbc6c3e298", 50, "8290edbfd68f8e8ffdb9392a5065de9014a655354b5992d3d06de1d356b2b72f", 26, "c57c1cc1a05555288a621549ae045436e413e2ca99d0c58f933c6cd324303d72", "FLUTE:basket FLUTE:cobra FLUTE:swatted burst fringe hitstop marks particles", "1 frames from the K.O."],
+    [1503, "397761dd6635cc53f7a05e7a4f01945a67c31358134d9eb3cd68defdd64c5c9c", 50, "8290edbfd68f8e8ffdb9392a5065de9014a655354b5992d3d06de1d356b2b72f", 26, "f736459b0b3141d5a4f3d63ddba9f94d3e5a0a7575f5d51dbc132aea389956e4", "FLUTE:basket FLUTE:cobra FLUTE:swatted fringe hitstop marks particles", "2 frames from the K.O."],
+    [1506, "fe5e6f59e2f20a8035b85583f364c3085463613c1a35e7ee90d6e8bed0a97a5f", 47, "b8ee7828178ae4ff13a7ca1a69e64f9e9648b858c7ae4a71fbe39c1814e08dd6", 26, "62c0eaec117a8265b105fcd32dd0af0fd6d2f46e57247c1a3d4b5a2a02c521a9", "FLUTE:basket FLUTE:cobra FLUTE:swatted fringe hitstop marks particles", "5 frames from the K.O."],
+    [1512, "c92637d28277e88023b6ca64d922da76f2f8ed6049f203f0cd4497697c0ebd76", 54, "ba0ab29f5ef5a085992b89bb3efc1edde10860770f65eb4c36233d3be7512e84", 25, "30a0722f2e08f0b343f4cc564bc495b74fbe8dca934db3199f52c2b8118a762d", "FLUTE:basket FLUTE:cobra FLUTE:shards FLUTE:swatted flares fringe glass_shards marks particles tail", "FLUTE:shards (first of 265 frames); 11 frames from the K.O."],
+    [1513, "47f44a5348ec43dd352d50e4cfb88874c281e40658266114e8b3b2e46560f39f", 54, "37bc46b735ef1169985aa7f2002dd7d8e886466988288c89f9f26ea977ed0ce7", 25, "30a0722f2e08f0b343f4cc564bc495b74fbe8dca934db3199f52c2b8118a762d", "FLUTE:basket FLUTE:cobra FLUTE:shards FLUTE:swatted flares fringe glass_shards marks particles tail", "12 frames from the K.O."],
+    [1521, "69a32f0d6afc007880e2e8efae3da82ff0e30708ed4555bc2dadc1bc1a7e04b4", 54, "37bc46b735ef1169985aa7f2002dd7d8e886466988288c89f9f26ea977ed0ce7", 25, "c2da083998017ee71bb9bfad3486d25994958ca83ba8813422a8b961779dd223", "FLUTE:basket FLUTE:cobra FLUTE:shards FLUTE:swatted flares glass_shards marks particles tail", "the baskets fading after the hit-stop"],
+    [1527, "bb97210e455f33d91c8e5c7388854e14e6caa43c0bb863209816f11f4e90df49", 54, "37bc46b735ef1169985aa7f2002dd7d8e886466988288c89f9f26ea977ed0ce7", 25, "6a1e5b2c8131661d2c2dffb1865f8e878967e137f38d38d9070127c722a57a52", "FLUTE:basket FLUTE:cobra FLUTE:shards FLUTE:swatted flares glass_shards particles tail", "FLUTE:basket (last of 1420 frames); FLUTE:cobra (last of 1420 frames)"],
+    [1528, "49ebf3dfc324f4f2c3cb7d81ebea45a690b4373ba4e41d29dde5abcb9b67f3c7", 54, "37bc46b735ef1169985aa7f2002dd7d8e886466988288c89f9f26ea977ed0ce7", 25, "12d13f63ff905070cce0d4b43c012f0a204234ea23fc3c9fc29fa279223bb977", "FLUTE:shards FLUTE:swatted flares glass_shards particles tail", "FLUTE:swatted (last of 494 frames)"],
+    [1529, "a33906b5ab0279047799d1e51ba75f2a2a67c008a570587d676da9c98a6409cd", 50, "bb5b0d766c4687e86fd76794a5849644fb6872974b51777048bab3a1edf60b5c", 25, "12d13f63ff905070cce0d4b43c012f0a204234ea23fc3c9fc29fa279223bb977", "FLUTE:shards flares glass_shards particles tail", "the baskets fading after the hit-stop"],
+    [1530, "d10153ce4e9e79a6010253c27f6d3777e0cde5522782ec8b144de02f5d1cc63c", 50, "bb5b0d766c4687e86fd76794a5849644fb6872974b51777048bab3a1edf60b5c", 25, "fc2e073336863c23066349457be01d89d7f06cd84ae64272431e3e6a3425ddd5", "FLUTE:shards flares glass_shards particles tail", "spread"],
+    [1531, "c299dfcc571bafbefc0ad6e64ba702fcbbbf2a832b778b6719e60c3aaf41f171", 50, "bb5b0d766c4687e86fd76794a5849644fb6872974b51777048bab3a1edf60b5c", 25, "31be5f9a38f37f79d093defff22fbe6af487f542570fc8fc08b8d1370802232a", "FLUTE:shards flares glass_shards particles tail", "30 frames from the K.O."],
+    [1561, "06dd6e5839d80baa7bf694721457960f75b3f2d0a3ffdf9693e4e09254b60f29", 50, "bb5b0d766c4687e86fd76794a5849644fb6872974b51777048bab3a1edf60b5c", 25, "91a92a1d435b292b60535c84e62c95ccc86747994ba7932d94ea3b474560080f", "FLUTE:shards flares glass_shards solo tail", "60 frames from the K.O."],
+    [1575, "cded015bc2c6b9b3c91f041584e07bec3cdc5c0928caf513fadb93a2f6a27531", 50, "bb5b0d766c4687e86fd76794a5849644fb6872974b51777048bab3a1edf60b5c", 24, "bd4e3f146c6f4a0825b1bd76035f3de7d8dd635b56f59e8bf47e3eee4dce0f1c", "FLUTE:shards flares glass_shards solo tail", "spread"],
+    [1620, "8b1c5958808525bf227968df1748de93d2d12efacf64dbdf54235629b87b2e1c", 50, "bb5b0d766c4687e86fd76794a5849644fb6872974b51777048bab3a1edf60b5c", 23, "8bbbea41103ae6a43506f0d7e301f91729908d7a3cf6e5e6f7b4ef898aa80153", "FLUTE:shards glass_shards solo tail", "spread"],
+    [1644, "bc7b089428f0e1defa8c88e0bdb61ed135294a40387dcdeaab7177e8a0e73aeb", 50, "bb5b0d766c4687e86fd76794a5849644fb6872974b51777048bab3a1edf60b5c", 23, "73848547e573e1760528e57151af84a3991b24ccb0204f344df2daab8fa5d38c", "FLUTE:shards glass_shards solo tail", "FLUTE:shards (middle of 265 frames)"],
+    [1665, "49c20fa014be3aa4b7c001a48b1ce80963c307b2bdf478881128ac07e3de35ec", 50, "bb5b0d766c4687e86fd76794a5849644fb6872974b51777048bab3a1edf60b5c", 23, "a846ac3aed9771c750a94631b5a3e9d7db72ee29f3026700312430048e69eec3", "FLUTE:shards glass_shards solo tail", "spread"],
+    [1710, "658cb3dd7d21895a6014e6dfb38f468f28b785093db76f0407ec64046826bd20", 50, "bb5b0d766c4687e86fd76794a5849644fb6872974b51777048bab3a1edf60b5c", 23, "381b775c8247869bbf6bcc2cd3f56a924fbffb7a2ba40bdf974f610c7bcaab3e", "FLUTE:shards glass_shards solo tail", "spread"],
+    [1750, "06a3a4614bcc27746af9f6279ced6e82bf4b29c2337d4b1bea911e8528b4943a", 50, "bb5b0d766c4687e86fd76794a5849644fb6872974b51777048bab3a1edf60b5c", 21, "0b3a22ee08b24c95fc3f8db17f7737d765afbf4360031f71458f49efe5057e77", "FLUTE:shards glass_shards reassembly tail", "the loser's pieces half-way home"],
+    [1755, "62942d72c6cc664c038d5d24571a44d0828539c731f38743e8dde2a625170c51", 50, "bb5b0d766c4687e86fd76794a5849644fb6872974b51777048bab3a1edf60b5c", 21, "0b3a22ee08b24c95fc3f8db17f7737d765afbf4360031f71458f49efe5057e77", "FLUTE:shards glass_shards reassembly tail", "spread"],
+    [1773, "71f98bdfe8c8557333fc5458ba366e069fb3ba382b09dce46a42d9a57f19a30f", 57, "0bfef6208556494367baa318271c8c32a592f0bad449e8dcdb3ae806b7938932", 21, "3249a0bc3d5626018a669283ef4560fc2a157371e2a78e7a4c2a7c499d689d51", "FLUTE:shards glass_shards reassembly tail", "-4 frames from the glide home"],
+    [1776, "805b6e1ba9105741d05d35f40b9fb1adc0c58349e0032106278ba47cff801df8", 57, "0bfef6208556494367baa318271c8c32a592f0bad449e8dcdb3ae806b7938932", 21, "3249a0bc3d5626018a669283ef4560fc2a157371e2a78e7a4c2a7c499d689d51", "FLUTE:shards glass_shards reassembly tail", "FLUTE:shards (last of 265 frames)"],
+    [1777, "6dab881223ce8ad04d7fe3fa798f23f6b6f570792251b93fece605a98310d9bb", 44, "2974bc1bb8d90f25a5e6b46ab51ff3487bdbbb489e626610fc6d07702953c2b5", 21, "3f01ea251b32dc4cad925804935927e879789228b143b2601ceab10491665b12", "glide tail", "0 frames from the glide home"],
+    [1780, "33187c0fe827d8c8cb899409554833186c04d2f7d018a6e52222ce87c7c31f77", 46, "596eea17f8f75f4d7f7905a177524f5f56630dd41a0d0460417cd66e04d35e8d", 22, "22bdc25c1d6eb042695b80d343a5a89733fce86d6a87ed06263ac02231e0df74", "glide tail", "3 frames from the glide home"],
+    [1800, "3af131bde2a6f9e320b8a1df073a42f39e873081b15c4b3a59535835fbe2841d", 46, "596eea17f8f75f4d7f7905a177524f5f56630dd41a0d0460417cd66e04d35e8d", 22, "444156cc6e4e630ecea673b0993104352e2df6f433ed9cec672694705392e2f8", "glide tail", "spread"],
+    [1828, "669db2275f4670308d989644281f4c5335c8baa7bcb63654367a3a92c219e53f", 42, "d0aa4cb70e21c44807b446c14fb97312ee946234eb8fa5491f5137271ca36a16", 22, "76745f6ee16e5f5b77b9222ff619b7c817f897287e8e1aef4ac9b07c101a5f50", "card doors glide tail", "the title card, the doors and the count-in"],
+    [1829, "3ed7524836e4c917a7f762e83cadbb8efb5a47c5eb7b91ff4e0177fdf7fe3af6", 38, "ca4a9f836724e40560bcf6702d59656b68c12d35d89bb3f918ceb86af5df3a7f", 0, "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", "card card_closed glide tail", "the title card, the doors and the count-in"]
+   ],
+   "hooks_build": [1033, "9e17168d11f20635d924edff74d56321a59cdc99f9a758451aafa846c4967e2b"],
+   "hooks_build_head": ["0.setup", "1.setup", "0.shake", "1.shake", "1.shake", "1.shake", "1.shake", "1.shake"],
+   "hooks_frame": {
+    "calls": ["0.light", "1.light", "0.state(0,fight)", "1.state(0,fight)", "0.state(1,fight)", "1.state(1,fight)", "0.shadows", "1.shadows", "0.shadows_free", "1.shadows_free", "0.canvas", "1.canvas", "0.canvas_after", "1.canvas_after", "0.canvas_overlay", "1.canvas_overlay", "0.items_ball", "1.items_ball", "0.items_free", "1.items_free", "0.ball(1)", "1.ball(1)", "1.ball_sprite(1)", "0.ball(0)", "1.ball(0)", "0.ball_sprite(0)", "0.draw_item", "0.draw_item", "0.draw_item", "0.draw_item", "0.over_ring", "1.over_ring", "1.spark", "0.shimmer_after", "1.shimmer_after", "0.glows", "1.glows", "1.hit_glow", "0.after_grade", "1.after_grade", "1.fringe", "0.state(1,fight)", "1.state(1,fight)", "0.state(0,fight)", "1.state(0,fight)", "0.hides_hp(1)", "1.hides_hp(1)", "0.hides_hp(0)", "1.hides_hp(0)"],
+    "frame": 176
+   },
+   "k": 0,
+   "recording": {
+    "checked": "before any frame was drawn the export read this file and found it equal to the run the kit drew from",
+    "events": 522,
+    "file": "studio/reference/fights/flute_vs_trombone/ep392.bfrec",
+    "frames": 1394,
+    "hash": "038e1f40fc3373eb",
+    "seed": 392,
+    "t_ko": "0x1.902c2c2c2c2c2p+5",
+    "winner": 1
+   },
+   "seed": 392,
+   "state": {
+    "baskets": [
+     [
+      0,
+      "0x1.cc5c67dfe32a0p+1",
+      ["-0x1.d99999999999ap+0", "0x1.d99999999999ap+0"],
+      "0x1.cb837b4a2339cp+2"
+     ],
+     [
+      1,
+      "0x1.58d8ec95bff04p+2",
+      ["-0x1.ef9bca652a8a7p+0", "0x1.0614cc27cf19ap+1"],
+      "0x1.1f1719f7f8ca8p+3"
+     ],
+     [
+      2,
+      "0x1.cb837b4a2339cp+2",
+      ["-0x1.20b11c2c244ccp-3", "0x1.56f07e3ba6778p-2"],
+      "0x1.58b0b39192642p+3"
+     ],
+     [
+      3,
+      "0x1.1f1719f7f8ca8p+3",
+      ["0x1.332fd4a29875bp+1", "0x1.12c40c1e0be65p+1"],
+      "0x1.92060fe47991cp+3"
+     ],
+     [
+      4,
+      "0x1.58b0b39192642p+3",
+      ["0x1.f0159d55527b8p-4", "0x1.e2d9254b20bfbp+0"],
+      "0x1.cb5b573eab368p+3"
+     ],
+     [
+      5,
+      "0x1.92060fe47991cp+3",
+      ["-0x1.104e042df4f4ap+1", "0x1.d639748cc787bp+0"],
+      "0x1.027a786c22681p+4"
+     ],
+     [
+      6,
+      "0x1.cb5b573eab368p+3",
+      ["-0x1.0ae324b685303p+1", "0x1.6482cc91e85b5p+0"],
+      "0x1.1f25269595feep+4"
+     ],
+     [
+      7,
+      "0x1.027a786c22681p+4",
+      ["-0x1.b027b028cded8p+0", "0x1.de92ad8f731cep+0"],
+      "0x1.3bcfd4bf0995bp+4"
+     ],
+     [
+      8,
+      "0x1.1f25269595feep+4",
+      ["-0x1.1a02d9d900369p+1", "0x1.9fd14f3da4b33p+0"],
+      "0x1.587a786c22681p+4"
+     ],
+     [
+      9,
+      "0x1.3bcfd4bf0995bp+4",
+      ["-0x1.21ca1a73ac077p+1", "0x1.abced46992737p+0"],
+      "0x1.75474538ef34dp+4"
+     ],
+     [
+      10,
+      "0x1.587a786c22681p+4",
+      ["-0x1.29239e41fede6p+1", "0x1.9b9f3dfe575bep+0"],
+      "0x1.91f1f36262cbap+4"
+     ],
+     [
+      11,
+      "0x1.75474538ef34dp+4",
+      ["-0x1.30ad99dd66f4ap+1", "-0x1.1dd40171b8fe6p+1"],
+      "0x1.ae9ca18bd6627p+4"
+     ],
+     [
+      12,
+      "0x1.91f1f36262cbap+4",
+      ["-0x1.1ede973fdd415p+0", "-0x1.b72e28cf5c596p+0"],
+      "0x1.cb696e58a32f4p+4"
+     ],
+     [
+      13,
+      "0x1.ae9ca18bd6627p+4",
+      ["-0x1.b6bee53dccc28p+0", "0x1.1aa9781c7657bp+1"],
+      "0x1.e8141205bc01ap+4"
+     ],
+     [
+      14,
+      "0x1.cb696e58a32f4p+4",
+      ["-0x1.b9f2f5f0ce7cdp-8", "0x1.dceb994854579p+0"],
+      "0x1.025f601797cc4p+5"
+     ],
+     [
+      15,
+      "0x1.e8141205bc01ap+4",
+      ["-0x1.3df7d84766f5fp+0", "0x1.9fbde7e97bb1ep-1"],
+      "0x1.10b4b72c5197ap+5"
+     ],
+     [
+      16,
+      "0x1.025f601797cc4p+5",
+      ["-0x1.55bc774da64aap+0", "0x1.04b0e0cdb6465p+0"],
+      "0x1.1f1b1d92b7fe1p+5"
+     ],
+     [
+      17,
+      "0x1.10b4b72c5197ap+5",
+      ["-0x1.2a38e330e0d1ep+0", "0x1.564cc715e6bedp+0"],
+      "0x1.2d706f6944674p+5"
+     ],
+     [
+      18,
+      "0x1.1f1b1d92b7fe1p+5",
+      ["-0x1.6a4689e586223p-2", "0x1.d77adf87d2138p+0"],
+      "0x1.3bc5c67dfe32ap+5"
+     ],
+     [
+      19,
+      "0x1.2d706f6944674p+5",
+      ["0x1.2d536ee890709p+1", "0x1.8a93c987dd9c7p+0"],
+      "0x1.4a2c2ce464990p+5"
+     ],
+     [
+      20,
+      "0x1.3bc5c67dfe32ap+5",
+      ["0x1.afec9f662ed09p+0", "-0x1.523010c2bff4cp-2"],
+      "0x1.588183f91e647p+5"
+     ],
+     [
+      21,
+      "0x1.4a2c2ce464990p+5",
+      ["0x1.0450842990e36p+1", "-0x1.0607113c49026p+1"],
+      "0x1.66d6d5cfaacdap+5"
+     ],
+     [
+      22,
+      "0x1.588183f91e647p+5",
+      ["0x1.65193f46b35ebp+0", "-0x1.2a20af11156c3p+1"],
+      "0x1.753d3c3611340p+5"
+     ],
+     [
+      23,
+      "0x1.66d6d5cfaacdap+5",
+      ["0x1.b230b79f1361dp+0", "-0x1.2107aa160ad7cp+1"],
+      "0x1.8392934acaff7p+5"
+     ],
+     [
+      24,
+      "0x1.753d3c3611340p+5",
+      ["0x1.2cf9ac99d1decp+1", "-0x1.bc3327fdc9044p-6"],
+      "0x1.8c00000000000p+6"
+     ],
+     [
+      25,
+      "0x1.8392934acaff7p+5",
+      ["0x1.131991c4016f3p+0", "0x1.b86810bb214eap+0"],
+      "0x1.8c00000000000p+6"
+     ]
+    ],
+    "cobras": [
+     [
+      "0x1.cb4b4b4b4b4b4p+1",
+      "0x0.0p+0",
+      []
+     ],
+     [
+      "0x1.76ed6777079e5p+2",
+      "0x0.0p+0",
+      [
+       [
+        0,
+        ["-0x1.d99999999999ap+0", "0x1.d99999999999ap+0"],
+        "0x1.0000000000000p+0",
+        ["-0x1.d99999999999ap+0", "0x1.d99999999999ap+0"],
+        "0x1.cc5c67dfe32a0p+1",
+        ["0x1.75a5b9628cbd1p+2", "0x1.7d53cddd6e04cp+2", "0x1.899d883ba3444p+2", "-0x1.6a2f35f341bf7p+0", "0x1.a3d70a3d70a3dp+0"],
+        "-0x1.6bdd7e2c798a1p+0",
+        "0x1.0000000000000p+0",
+        null
+       ],
+       [
+        1,
+        ["-0x1.ef9bca652a8a7p+0", "0x1.0614cc27cf19ap+1"],
+        "0x1.0000000000000p+0",
+        ["-0x1.ef9bca652a8a7p+0", "0x1.0614cc27cf19ap+1"],
+        "0x1.58d8ec95bff04p+2",
+        ["0x1.75a5b9628cbd1p+2", "0x1.7d53cddd6e04cp+2", "0x1.899d883ba3444p+2", "-0x1.63f658164e213p+0", "0x1.a3d70a3d70a3dp+0"],
+        "-0x1.654c3f6366570p+0",
+        "0x1.0000000000000p+0",
+        null
+       ]
+      ]
+     ],
+     [
+      "0x1.7d53cddd6e04cp+2",
+      "0x0.0p+0",
+      [
+       [
+        0,
+        ["-0x1.d99999999999ap+0", "0x1.d99999999999ap+0"],
+        "0x1.0000000000000p+0",
+        ["-0x1.d99999999999ap+0", "0x1.d99999999999ap+0"],
+        "0x1.cc5c67dfe32a0p+1",
+        ["0x1.75a5b9628cbd1p+2", "0x1.7d53cddd6e04cp+2", "0x1.899d883ba3444p+2", "-0x1.6a2f35f341bf7p+0", "0x1.a3d70a3d70a3dp+0"],
+        "-0x1.6f1112769d329p+0",
+        "0x1.0000000000000p+0",
+        null
+       ],
+       [
+        1,
+        ["-0x1.ef9bca652a8a7p+0", "0x1.0614cc27cf19ap+1"],
+        "0x1.0000000000000p+0",
+        ["-0x1.ef9bca652a8a7p+0", "0x1.0614cc27cf19ap+1"],
+        "0x1.58d8ec95bff04p+2",
+        ["0x1.75a5b9628cbd1p+2", "0x1.7d53cddd6e04cp+2", "0x1.899d883ba3444p+2", "-0x1.63f658164e213p+0", "0x1.a3d70a3d70a3dp+0"],
+        "-0x1.6745680f21888p+0",
+        "0x1.0000000000000p+0",
+        null
+       ]
+      ]
+     ],
+     [
+      "0x1.ea3bcd35a8588p+2",
+      "0x0.0p+0",
+      [
+       [
+        1,
+        ["-0x1.ef9bca652a8a7p+0", "0x1.0614cc27cf19ap+1"],
+        "0x1.0000000000000p+0",
+        ["-0x1.ef9bca652a8a7p+0", "0x1.0614cc27cf19ap+1"],
+        "0x1.58d8ec95bff04p+2",
+        null,
+        "-0x1.15b1be2541a48p+0",
+        "0x1.0000000000000p+0",
+        null
+       ],
+       [
+        2,
+        ["-0x1.20b11c2c244ccp-3", "0x1.56f07e3ba6778p-2"],
+        "0x1.0000000000000p+0",
+        ["-0x1.20b11c2c244ccp-3", "0x1.56f07e3ba6778p-2"],
+        "0x1.cb837b4a2339cp+2",
+        null,
+        "-0x1.395a2d43d2582p+1",
+        "0x1.3ee721a54d864p-1",
+        ["0x1.eb851eb851f00p-6", "0x1.0000000000000p+0"]
+       ]
+      ]
+     ],
+     [
+      "0x1.f51d14e3bcd36p+2",
+      "0x0.0p+0",
+      [
+       [
+        1,
+        ["-0x1.ef9bca652a8a7p+0", "0x1.0614cc27cf19ap+1"],
+        "0x1.0000000000000p+0",
+        ["-0x1.ef9bca652a8a7p+0", "0x1.0614cc27cf19ap+1"],
+        "0x1.58d8ec95bff04p+2",
+        null,
+        "-0x1.ed0b5c4e39b5ap-1",
+        "0x1.0000000000000p+0",
+        null
+       ],
+       [
+        2,
+        ["-0x1.20b11c2c244ccp-3", "0x1.56f07e3ba6778p-2"],
+        "0x1.0000000000000p+0",
+        ["-0x1.20b11c2c244ccp-3", "0x1.56f07e3ba6778p-2"],
+        "0x1.cb837b4a2339cp+2",
+        null,
+        "-0x1.7e40497e9ef80p+1",
+        "0x1.eb851eb851eb8p-4",
+        ["0x1.99999999999a0p-3", "0x1.0000000000000p+0"]
+       ]
+      ]
+     ],
+     [
+      "0x1.075b573eab368p+3",
+      "0x0.0p+0",
+      [
+       [
+        1,
+        ["-0x1.ef9bca652a8a7p+0", "0x1.0614cc27cf19ap+1"],
+        "0x1.0000000000000p+0",
+        ["-0x1.ef9bca652a8a7p+0", "0x1.0614cc27cf19ap+1"],
+        "0x1.58d8ec95bff04p+2",
+        ["0x1.028e8a71de69bp+3", "0x1.06346dc5d6389p+3", "0x1.0c0aa64c2f838p+3", "-0x1.6845fe9c19686p-1", "0x1.6d0f23324ea62p+0"],
+        "-0x1.0e8bdd82c614dp-1",
+        "0x1.0000000000000p+0",
+        null
+       ],
+       [
+        2,
+        ["-0x1.20b11c2c244ccp-3", "0x1.56f07e3ba6778p-2"],
+        "0x1.0000000000000p+0",
+        ["-0x1.20b11c2c244ccp-3", "0x1.56f07e3ba6778p-2"],
+        "0x1.cb837b4a2339cp+2",
+        null,
+        "0x1.e827fe5be576dp+0",
+        "0x1.eb851eb851eb8p-4",
+        ["0x1.3333333333338p-1", "0x1.27b9c0969b5f2p-1"]
+       ]
+      ]
+     ],
+     [
+      "0x1.4000000000000p+3",
+      "0x0.0p+0",
+      [
+       [
+        2,
+        ["-0x1.20b11c2c244ccp-3", "0x1.56f07e3ba6778p-2"],
+        "0x1.0000000000000p+0",
+        ["-0x1.20b11c2c244ccp-3", "0x1.56f07e3ba6778p-2"],
+        "0x1.cb837b4a2339cp+2",
+        null,
+        "-0x1.bb80dfc22014ap-1",
+        "0x1.0000000000000p+0",
+        null
+       ],
+       [
+        3,
+        ["0x1.332fd4a29875bp+1", "0x1.12c40c1e0be65p+1"],
+        "0x1.0000000000000p+0",
+        ["0x1.332fd4a29875bp+1", "0x1.12c40c1e0be65p+1"],
+        "0x1.1f1719f7f8ca8p+3",
+        null,
+        "-0x1.b5b09de878208p+0",
+        "0x1.0000000000000p+0",
+        null
+       ]
+      ]
+     ],
+     [
+      "0x1.4000000000000p+4",
+      "0x0.0p+0",
+      [
+       [
+        8,
+        ["-0x1.1a02d9d900369p+1", "0x1.9fd14f3da4b33p+0"],
+        "0x1.0000000000000p+0",
+        ["-0x1.1a02d9d900369p+1", "0x1.9fd14f3da4b33p+0"],
+        "0x1.1f25269595feep+4",
+        null,
+        "-0x1.764f548e6b5f8p-1",
+        "0x1.0000000000000p+0",
+        null
+       ],
+       [
+        9,
+        ["-0x1.21ca1a73ac077p+1", "0x1.abced46992737p+0"],
+        "0x1.11f6a2f85d4eep+0",
+        ["-0x1.21ca1a73ac077p+1", "0x1.abced46992737p+0"],
+        "0x1.3bcfd4bf0995bp+4",
+        null,
+        "-0x1.75c86beb3bcccp-1",
+        "0x1.0000000000000p+0",
+        null
+       ]
+      ]
+     ],
+     [
+      "0x1.e000000000000p+4",
+      "0x0.0p+0",
+      [
+       [
+        13,
+        ["-0x1.b6bee53dccc28p+0", "0x1.1aa9781c7657bp+1"],
+        "0x1.0000000000000p+0",
+        ["-0x1.b6bee53dccc28p+0", "0x1.1aa9781c7657bp+1"],
+        "0x1.ae9ca18bd6627p+4",
+        null,
+        "-0x1.2efc3c66054aep+0",
+        "0x1.0000000000000p+0",
+        null
+       ],
+       [
+        14,
+        ["-0x1.b9f2f5f0ce7cdp-8", "0x1.dceb994854579p+0"],
+        "0x1.0000000000000p+0",
+        ["-0x1.b9f2f5f0ce7cdp-8", "0x1.dceb994854579p+0"],
+        "0x1.cb696e58a32f4p+4",
+        null,
+        "-0x1.88f1453f69356p+0",
+        "0x1.0000000000000p+0",
+        null
+       ]
+      ]
+     ],
+     [
+      "0x1.e27a786c22681p+4",
+      "0x1.0000000000078p-1",
+      [
+       [
+        13,
+        ["-0x1.b6bee53dccc28p+0", "0x1.1aa9781c7657bp+1"],
+        "0x1.0000000000000p+0",
+        ["-0x1.a01ead7f81b75p+0", "0x1.00e000c3a7601p+1"],
+        "0x1.ae9ca18bd6627p+4",
+        null,
+        "-0x1.2584e8626676cp+0",
+        "0x1.0000000000000p+0",
+        null
+       ],
+       [
+        14,
+        ["-0x1.b9f2f5f0ce7cdp-8", "0x1.dceb994854579p+0"],
+        "0x1.0000000000000p+0",
+        ["0x1.4a53b885e9650p-11", "0x1.a4a1c83087794p+0"],
+        "0x1.cb696e58a32f4p+4",
+        null,
+        "-0x1.89cbf0ed88300p+0",
+        "0x1.0000000000000p+0",
+        null
+       ]
+      ]
+     ],
+     [
+      "0x1.f0e0ded288ce7p+4",
+      "0x1.0000000000000p+0",
+      [
+       [
+        14,
+        ["-0x1.b9f2f5f0ce7cdp-8", "0x1.dceb994854579p+0"],
+        "0x1.0000000000000p+0",
+        ["0x1.c189aab650bf8p-6", "0x1.4b2c3c2a98d41p-2"],
+        "0x1.cb696e58a32f4p+4",
+        ["0x1.ef474538ef34dp+4", "0x1.f065fd8adab9fp+4", "0x1.f230be0ded288p+4", "-0x1.8f6f43b7ec8c3p+0", "0x1.dff0d46d0f9a4p+0"],
+        "-0x1.8f8a9c5ce31c9p+0",
+        "0x1.0000000000000p+0",
+        null
+       ],
+       [
+        15,
+        ["-0x1.3df7d84766f5fp+0", "0x1.9fbde7e97bb1ep-1"],
+        "0x1.0000000000000p+0",
+        ["-0x1.71d5fb80e2e68p-1", "-0x1.8996da9452178p-6"],
+        "0x1.e8141205bc01ap+4",
+        null,
+        "-0x1.3ca5d2b02228ep+0",
+        "0x1.7c57c57c57bb7p-2",
+        ["0x1.9999999999a00p-5", "0x1.0000000000000p+0"]
+       ]
+      ]
+     ],
+     [
+      "0x1.4000000000000p+5",
+      "0x1.0000000000000p+0",
+      [
+       [
+        19,
+        ["0x1.2d536ee890709p+1", "0x1.8a93c987dd9c7p+0"],
+        "0x1.0000000000000p+0",
+        ["0x1.ab2dbdc234ea8p-1", "0x1.c8c1f83fe3cf0p+0"],
+        "0x1.2d706f6944674p+5",
+        null,
+        "0x1.70afd56c9fe3ep+1",
+        "0x1.49021e437a893p-1",
+        ["0x1.d1cc100e6b000p-6", "0x1.0000000000000p+0"]
+       ],
+       [
+        20,
+        ["0x1.afec9f662ed09p+0", "-0x1.523010c2bff4cp-2"],
+        "0x1.0000000000000p+0",
+        ["0x1.83ca5c0a7e20ep-1", "0x1.67af83c3f06bap-2"],
+        "0x1.3bc5c67dfe32ap+5",
+        null,
+        "0x1.3134a14dcabf4p+1",
+        "0x1.0000000000000p+0",
+        null
+       ]
+      ]
+     ],
+     [
+      "0x1.8c2c2c2c2c2c2p+5",
+      "0x1.0000000000000p+0",
+      [
+       [
+        24,
+        ["0x1.2cf9ac99d1decp+1", "-0x1.bc3327fdc9044p-6"],
+        "0x1.0000000000000p+0",
+        ["0x1.6d625b1f43574p-1", "0x1.ca5430faa0b0ap-1"],
+        "0x1.753d3c3611340p+5",
+        null,
+        "0x1.5bbae5ee83cfcp+1",
+        "0x1.eb851eb851eb8p-4",
+        ["0x1.7777fb0d7c100p-2", "0x1.ffad461a296bdp-1"]
+       ],
+       [
+        25,
+        ["0x1.131991c4016f3p+0", "0x1.b86810bb214eap+0"],
+        "0x1.0000000000000p+0",
+        ["0x1.cdfea0416cff7p-4", "0x1.ccb080add6579p+0"],
+        "0x1.8392934acaff7p+5",
+        null,
+        "-0x1.168dba42b095ep+1",
+        "0x1.eb851eb851eb8p-4",
+        ["0x1.3bbbfd86be080p-1", "0x1.1013421216206p-1"]
+       ]
+      ]
+     ],
+     [
+      "0x1.91c5c5c5c5c5cp+5",
+      "0x1.0000000000000p+0",
+      [
+       [
+        24,
+        ["0x1.2cf9ac99d1decp+1", "-0x1.bc3327fdc9044p-6"],
+        "0x1.0000000000000p+0",
+        ["0x1.6d625b1f43574p-1", "0x1.ca5430faa0b0ap-1"],
+        "0x1.753d3c3611340p+5",
+        null,
+        "-0x1.a14841f33e656p+0",
+        "0x1.eb851eb851eb8p-4",
+        ["0x1.bbbbfd86be080p-1", "0x1.2d997898adf00p-7"]
+       ],
+       [
+        25,
+        ["0x1.131991c4016f3p+0", "0x1.b86810bb214eap+0"],
+        "0x1.0000000000000p+0",
+        ["0x1.61b66877d12b6p-3", "0x1.a220176c891fbp+0"],
+        "0x1.8392934acaff7p+5",
+        null,
+        "-0x1.2f1ecfe373e08p+0",
+        "0x1.0000000000000p+0",
+        null
+       ]
+      ]
+     ],
+     [
+      "0x1.955f5f5f5f5f5p+5",
+      "0x0.0p+0",
+      [
+       [
+        24,
+        ["0x1.2cf9ac99d1decp+1", "-0x1.bc3327fdc9044p-6"],
+        "0x1.0000000000050p-1",
+        ["0x1.6d625b1f43574p-1", "0x1.ca5430faa0b0ap-1"],
+        "0x1.753d3c3611340p+5",
+        null,
+        "-0x1.aae9e14c9336ap+0",
+        "0x1.eb851eb851eb8p-4",
+        ["0x1.bbbbfd86be080p-1", "0x1.2d997898adf00p-7"]
+       ],
+       [
+        25,
+        ["0x1.131991c4016f3p+0", "0x1.b86810bb214eap+0"],
+        "0x1.0000000000050p-1",
+        ["0x1.61b66877d12b6p-3", "0x1.a220176c891fbp+0"],
+        "0x1.8392934acaff7p+5",
+        null,
+        "-0x1.33fa80731d2f6p+0",
+        "0x1.0000000000000p+0",
+        null
+       ]
+      ]
+     ]
+    ],
+    "dances": [
+     ["0x1.e0e0ded288ce7p+4", "0x1.fd9593873d832p+4"],
+     ["0x1.383d3c3611340p+5", "0x1.469796906b8e6p+5"],
+     ["0x1.8392934acaff7p+5", "0x1.91eceda52559dp+5"]
+    ],
+    "n_strikes": 58,
+    "strikes": [
+     [
+      0,
+      1,
+      ["0x1.75a5b9628cbd1p+2", "0x1.7d53cddd6e04cp+2", "0x1.899d883ba3444p+2", "-0x1.6a2f35f341bf7p+0", "0x1.a3d70a3d70a3dp+0"],
+      ["0x1.75a5b9628cbd1p+2", "0x1.7d53cddd6e04cp+2", "0x1.899d883ba3444p+2", "-0x1.6a2f35f341bf7p+0", "0x1.a3d70a3d70a3dp+0"]
+     ],
+     [
+      1,
+      2,
+      ["0x1.75a5b9628cbd1p+2", "0x1.7d53cddd6e04cp+2", "0x1.899d883ba3444p+2", "-0x1.63f658164e213p+0", "0x1.a3d70a3d70a3dp+0"],
+      ["0x1.028e8a71de69bp+3", "0x1.06346dc5d6389p+3", "0x1.0c0aa64c2f838p+3", "-0x1.6845fe9c19686p-1", "0x1.6d0f23324ea62p+0"]
+     ],
+     [
+      2,
+      4,
+      ["0x1.e8504816f0069p+2", "0x1.ef9c0ebedfa44p+2", "0x1.fb487fcb923a3p+2", "-0x1.310c5c8dbc632p+1", "0x1.0669a3d18b387p-1"],
+      ["0x1.2d7d805e5f30ep+3", "0x1.30d9a95421c04p+3", "0x1.3639eadd590c0p+3", "-0x1.0812a744e0befp+0", "0x1.78885514145dap+0"]
+     ],
+     [
+      3,
+      1,
+      ["0x1.58b0b39192642p+3", "0x1.5bf4491298890p+3", "0x1.612d38476f2a6p+3", "-0x1.c464d96da55b8p+0", "0x1.ed43912edab42p+0"],
+      ["0x1.58b0b39192642p+3", "0x1.5bf4491298890p+3", "0x1.612d38476f2a6p+3", "-0x1.c464d96da55b8p+0", "0x1.ed43912edab42p+0"]
+     ],
+     [
+      4,
+      2,
+      ["0x1.92060fe47991cp+3", "0x1.939b90ea9e6efp+3", "0x1.96245f5ad96a7p+3", "-0x1.a168722888c92p+0", "0x1.050546b1e5b3cp+1"],
+      ["0x1.bcf4f0d844d01p+3", "0x1.be7e28240b780p+3", "0x1.c0f34d6a161e5p+3", "-0x1.f2f38fd7c1bc0p+0", "0x1.199999999999ap+1"]
+     ],
+     [
+      6,
+      2,
+      ["0x1.e828240b78034p+3", "0x1.eb21ff2e48e8ap+3", "0x1.efe4f765fd8adp+3", "-0x1.7041241d8d7c7p+0", "0x1.09d87aedd21f3p+1"],
+      ["0x1.098b8cfbfc654p+4", "0x1.0b087a8d64d7fp+4", "0x1.0d69f6a93f291p+4", "0x1.9c41c0182249dp-3", "0x1.fee3fc02f27d0p+0"]
+     ],
+     [
+      5,
+      1,
+      ["0x1.f68e8a71de69bp+3", "0x1.f9886594af4f1p+3", "0x1.fe4b5dcc63f14p+3", "-0x1.11d4187ebfd2ap+0", "0x1.ca8d4c22a5c4cp+0"],
+      ["0x1.f68e8a71de69bp+3", "0x1.f9886594af4f1p+3", "0x1.fe4b5dcc63f14p+3", "-0x1.11d4187ebfd2ap+0", "0x1.ca8d4c22a5c4cp+0"]
+     ],
+     [
+      7,
+      1,
+      ["0x1.1f25269595feep+4", "0x1.2095ca6ca03c5p+4", "0x1.22e39d5e4a383p+4", "-0x1.5f82288463d74p-3", "0x1.290761d79e7abp+1"],
+      ["0x1.1f25269595feep+4", "0x1.2095ca6ca03c5p+4", "0x1.22e39d5e4a383p+4", "-0x1.5f82288463d74p-3", "0x1.290761d79e7abp+1"]
+     ]
+    ],
+    "swat_down": "0x1.cb4b4b4b4b4b4p-1",
+    "swats": [
+     [
+      2,
+      ["0x1.e8504816f0069p+2"]
+     ],
+     [
+      6,
+      ["0x1.e9394317acc4fp+3"]
+     ],
+     [
+      5,
+      ["0x1.f75b573eab368p+3"]
+     ],
+     [
+      7,
+      ["0x1.20363b256ffc1p+4"]
+     ],
+     [
+      8,
+      ["0x1.278b8cfbfc654p+4"]
+     ],
+     [
+      11,
+      ["0x1.7ce0ded288ce7p+4"]
+     ],
+     [
+      12,
+      ["0x1.99474538ef34dp+4"]
+     ],
+     [
+      15,
+      ["0x1.f0141205bc01ap+4", "0x1.028183f91e647p+5"]
+     ],
+     [
+      16,
+      ["0x1.09e7ea5f84cadp+5", "0x1.182c2ce464990p+5"]
+     ],
+     [
+      17,
+      ["0x1.182c2ce464990p+5", "0x1.1f8183f91e647p+5"]
+     ],
+     [
+      18,
+      ["0x1.22e7ea5f84cadp+5"]
+     ],
+     [
+      19,
+      ["0x1.3fc5c67dfe32ap+5"]
+     ],
+     [
+      20,
+      ["0x1.453d3c3611340p+5"]
+     ],
+     [
+      22,
+      ["0x1.5c3d3c3611340p+5", "0x1.644e50c5eb314p+5", "0x1.6b8183f91e647p+5"]
+     ],
+     [
+      21,
+      ["0x1.5fe7ea5f84cadp+5"]
+     ],
+     [
+      23,
+      ["0x1.6a8183f91e647p+5"]
+     ],
+     [
+      25,
+      ["0x1.873d3c3611340p+5"]
+     ],
+     [
+      24,
+      ["0x1.893d3c3611340p+5"]
+     ]
+    ]
+   },
+   "swapped": false,
+   "winner": "TROMBONE"
+  },
+  "flute_right": {
+   "covered": {
+    "FLUTE:basket": 59,
+    "FLUTE:cobra": 55,
+    "FLUTE:dance": 4,
+    "FLUTE:haste": 8,
+    "FLUTE:shards": 0,
+    "FLUTE:solo_baskets": 28,
+    "FLUTE:strike": 6,
+    "FLUTE:swatted": 15,
+    "FLUTE:wave": 5
+   },
+   "fighters": ["TROMBONE", "FLUTE"],
+   "frames": [
+    [0, "dea9f5858430e6ce6b6f2717a8e8d2bbab60f3ca922940cb868ab8d38b2e0832", 38, "6d8bc6b7a5e68f423c56da2596de48cd5ce95d5600cf7aa2d01485a088287cf0", 0, "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", "card card_closed rev", "spread"],
+    [90, "e1bff214893e47325bef5b0573c8b66b8b56722363e5e3603ab6415111487320", 42, "e248c3ecc63411746777b391286c296e03acbcca03daf86b716c94aa63cbf66a", 23, "5d72a71b629368cbc1074bed7f50235fc08b668d64cdeb7c7ded0d5f575ff4db", "rev", "spread"],
+    [108, "0ee201f785eabded20ac83ee47fb54b038c3e64bea4f773edd0a19d7961a4820", 40, "510009eb3ce2b41cc07f1365a72c3edbb6584eab2b3c51ca59997a395c9e11d8", 21, "8cc09d470c3371aada93885f554791ff9e1c6bef848fc87d47cd290557f4764f", "FLUTE:basket FLUTE:cobra fight", "FLUTE:basket (first of 1651 frames); FLUTE:cobra (first of 1643 frames)"],
+    [149, "3323f524620b88a368f046efa52b6a2aad9a1e1e849843a6e7bd51a245b1ecc2", 44, "df03cf2e62aafc958744d9e719a8871dc272fda9f6c238b765b9b1d65549168b", 22, "1a0ba6a8132ccbee86884037a4b9634276749d4fbbe75bc6da5eacc8e8d2dd2e", "FLUTE:basket FLUTE:cobra FLUTE:strike fight marks particles", "FLUTE:strike (first of 174 frames)"],
+    [180, "0beda187592e0a3446ac7340dd2a3163768b6a19a32ff8a376602d23535831d8", 46, "a1c3e2e1d8453636a5d625da363bc2968660aeda022a2a6ce95a40fac8845713", 22, "2a526d548379d28b50dd24d232cbfc061c262c07aa02078c3f5f77e00db25e9f", "FLUTE:basket FLUTE:cobra fight marks particles", "spread"],
+    [232, "6feb60f7292d929a6a4b4be541bf8461c7f8b6e078212f5b3a46f0ab5f73423b", 49, "9bf3a4e72f93bfd4fb38617e1a61caf5c37218525481ce56ade953a2ce1eb616", 22, "9e53ad4c1198de333cd15fea068b029f9d65fac0c6e5ebbccbdee86f4f6ce311", "FLUTE:basket FLUTE:cobra FLUTE:swatted burst fight flares marks particles", "FLUTE:swatted (first of 503 frames)"],
+    [270, "b9432e9f0e0d454a21194127ca81bd4e70da09bcd1d5d48da78151dd8bec0390", 48, "913bd5ae787322f0124fd9e001c1819c34d326ea2d0fad8de22f9d27e35a865b", 22, "855114101ec1fde5a2eec8df00be5d18fe41ac93affb81de7cb899238285cf00", "FLUTE:basket FLUTE:cobra FLUTE:swatted fight flares marks particles", "spread"],
+    [360, "4b47f7a3cb3600e66124a05dd54b7f9a7dfdde1994f13ba7d5d11e0c2f3252d2", 46, "f1a08ef0e70d4adb308fc05480188234e7b7c8196ef65e4a01874c4a5114d75d", 22, "be63b8e6b8fa8d194760395fc17b16eff46e82605436db9dda8dc7805588a694", "FLUTE:basket FLUTE:cobra fight marks particles", "spread"],
+    [450, "11c358abd7b870eb3ce8600eda50d03ab600cb30b8e99a10eb034dbb5658ce17", 53, "f6851949142030424f0ae25b9abf3071266c0ae864adc7474cf828ced94cce46", 23, "24d666853a8f6b1398ce0b57794eeb09f79acdd01cb482d60757cc2980c2207e", "FLUTE:basket FLUTE:cobra FLUTE:strike fight flares marks particles", "spread"],
+    [512, "b9f2d5f7235edc83a3fabcf796526e6709ff3594fa8ea200a7202f3435ce78fa", 49, "7d197fdb5e2e44647a54914cae71ded796f9f8bd820ce3388bf4035dd4e85350", 23, "fe144cc89450e015ad826fe7da886de94296679e1c76b034b3e4c0f75eb05072", "FLUTE:basket FLUTE:cobra FLUTE:haste fight flares marks particles", "FLUTE:haste (first of 431 frames)"],
+    [540, "681cb5205138f991b04a67509ea745d88764a0f310ebd6ea8961d61a9eea3987", 51, "9c99818417a156be044d59233081be40c90e2df45246c2c393a8194578a9bdf0", 23, "c68405b52acbf62f640d68d66eb9cb4fbc1202a1e7dc05bbe3f45824b607a4d9", "FLUTE:basket FLUTE:cobra FLUTE:haste fight marks particles", "spread"],
+    [630, "bbf1f9e55fe9ee1b599fb32367be6871f49e35d283e2eee80664c17489a20173", 46, "e52114875c0e035fb97135fe0bc03bfbc8fd0416e258b13ecff392d17260f708", 23, "cade56f6ce12bfc10d1329e8a50af4361afdda0a3bdd01104690ae3a7e66f21c", "FLUTE:basket FLUTE:cobra FLUTE:swatted fight flares marks particles", "spread"],
+    [687, "8986f41dac72bd90e3428b7dfcf1759e6a2883739a6a312859a2006ec60b30e0", 49, "d06113d928493d0c2608329ef31c9ab9fc4d4158168cf226289e816355594257", 22, "c87841432e9c62bfdf798981d698fd779bf08159bc868b0fe98edfc7541d68a4", "FLUTE:basket FLUTE:cobra FLUTE:strike FLUTE:swatted fight flares marks particles", "FLUTE:strike (middle of 174 frames)"],
+    [720, "200ba63cb56cda594d3fbf6d4675a84b7567ff53355ec2282766ae38c58f99a4", 46, "f1a08ef0e70d4adb308fc05480188234e7b7c8196ef65e4a01874c4a5114d75d", 22, "31e513c74482038c49f3c44056a5f104692aae6a6d0b6098071c29f05aaa4102", "FLUTE:basket FLUTE:cobra fight marks particles", "spread"],
+    [801, "8b06f799f352681ed5a144633785f690b639f6a22fdedb3886ecb5b8ee450504", 46, "335f5cea98caf32acb6526bf2cf112e8d82ab4cc49045efefb9c73847eb4be7e", 25, "3d3255780a74bd31bff3ad2b3703ca58b18244a01915ab200bdef6c5b82d1f38", "FLUTE:basket FLUTE:cobra FLUTE:haste FLUTE:swatted fight flares marks particles", "FLUTE:swatted (middle of 503 frames)"],
+    [810, "baa3bed48ef800c4986756a0c6fbcb747afa9a767fc9b20d4102ad8a84f5c81c", 52, "126f402b1b346919151e6ae2a878e45426ee327498b66234ae9bdbf149b26766", 25, "5db3c0636a63505791cabac7ae97a158b3f0bc9bb96ad2f521e5c812be1b7fa7", "FLUTE:basket FLUTE:cobra FLUTE:haste FLUTE:swatted fight flares marks particles", "spread"],
+    [848, "8053b96a3e14eda5d8767de358c366183595b245c1d481bbec858166a0f07f4e", 47, "032c77a8ecae09c6eb7aa0d301cfddbae3024096e48b8b9b69a48e2a3dce4930", 25, "beab0dd41996e4e156ab45d823b10c50e810add556a2d86a8cb68959df7aacf6", "FLUTE:basket FLUTE:cobra FLUTE:haste FLUTE:swatted fight flares marks particles", "FLUTE:haste (middle of 431 frames)"],
+    [900, "3997179b082e3aa163263a71705de66c48e74163408f265669410c3b4fc17b90", 46, "632b29177d11101e56cb282a63a0e687e0915d1787bec50cd2d36ae6197975c6", 23, "81b14682c12a39c24003bb36406eee5fbf410c1685540ea075ce1828bfa58abb", "FLUTE:basket FLUTE:cobra fight marks particles", "spread"],
+    [929, "a26c2619a47df3367af4cd448ab8134b1a10adeb58a46e5ad680e45d3d576690", 46, "e52114875c0e035fb97135fe0bc03bfbc8fd0416e258b13ecff392d17260f708", 22, "d23a262f047cba45bd6afa41dae8a403d373c13e4b0c3d5a33485ca21cfdd563", "FLUTE:basket FLUTE:cobra FLUTE:swatted fight marks particles", "FLUTE:cobra (middle of 1643 frames)"],
+    [933, "8b08f9d5ea40a289402efa7ef3d7cfd237724d5a4ede8f8d465c8d35d0702f64", 49, "d06113d928493d0c2608329ef31c9ab9fc4d4158168cf226289e816355594257", 22, "22b3fe55e69f117911fb5f64b91af797d14ccbdc325e34aa436ddec2499e25c5", "FLUTE:basket FLUTE:cobra fight marks particles", "FLUTE:basket (middle of 1651 frames)"],
+    [956, "b339efe1efda804556f6cfaea307a574d2dcd30f4cd4aaf8462d320d6886ce4b", 46, "8b3ab69c1fa6f244cb531fb09a66565899343c617a0dd2cdcba4160c6a01d5d5", 24, "b5327ce68ffd3ba901c97ce8f95a4ae9e69cdbe7b9369471c28991624e07aed1", "FLUTE:basket FLUTE:cobra FLUTE:dance fight flares marks particles", "FLUTE:dance (first of 126 frames)"],
+    [990, "725859d6f7139f2fb2acb3b0d8a622d9308e3aa25135b22964d5f1233b37f24a", 48, "1bfbefe0e45c9666bd67f2371304d0332f7d68fec30638f69eae06fc43f5d091", 25, "88295d32e7e85485b2b396a0a007d2f032fe339fb5ea8e78e89a8707b13d2544", "FLUTE:basket FLUTE:cobra FLUTE:dance FLUTE:haste FLUTE:strike FLUTE:swatted fight flares marks particles", "spread"],
+    [1080, "d89cebbe2f089fe96bab75a7a32fd57b4f02b2944e4c096ad7ca41e56d926359", 51, "9c99818417a156be044d59233081be40c90e2df45246c2c393a8194578a9bdf0", 23, "3ed26a469a7bc34ff4c1568c3b72fbb0bb9ba11a4a6c51209efc9990e4da5889", "FLUTE:basket FLUTE:cobra fight flares marks particles", "spread"],
+    [1170, "8ab02aff86099cbb11f95f135bbb9d95f08edcacef930a81b15ee45dcdea2d94", 47, "a31449145eda2cb1edbaab60effdd5fd45c7a9e991effe542773d0eb687b825c", 23, "aeb645c4f5884ae0f3f3037a6a97ca88d2b58666ec86a6a33bcda72cf25f151c", "FLUTE:basket FLUTE:cobra fight marks particles", "spread"],
+    [1225, "f72e0482e532952031810e549a778b37a2b7e156e286ef903bda5e10c5efe652", 47, "327222cf0563d63f999b9c2f5b26656178f5c40322f77a84089f63177b46d424", 25, "1ff356ab4e9eba2ff2a67b7a7fe6162cd17c9cbff344a0639b76cf9a24f1fa13", "FLUTE:basket FLUTE:cobra FLUTE:dance FLUTE:haste fight marks particles", "FLUTE:dance (middle of 126 frames)"],
+    [1260, "a6f499d0bee9a06a6518ebf2414f12b6e7f41a545032964669c3a1bdead1fcfc", 54, "387f456d4ddac916004f4676ff7a158ba50a826b5b47cab2f19efecd0cc69758", 24, "817a4bc5bdfe90249122294a078f063bed0938546dd978e831da3b8e93764eaf", "FLUTE:basket FLUTE:cobra FLUTE:dance FLUTE:haste FLUTE:strike burst fight flares marks particles", "spread"],
+    [1306, "e4562d9df125e2cf1859efb28d5149c01ea6ba3052a21f2b9fefabe24e774b46", 52, "ad8e70cbb69003df5098181a5f878013180faa88b300996bddb1b9f0be4f1572", 26, "8e5941207555165dc502d4b47fd5e86c36403365ec574b6b71210846b0d69b45", "FLUTE:basket FLUTE:cobra FLUTE:swatted FLUTE:wave fight flares fringe marks particles shimmer", "FLUTE:wave (first of 39 frames)"],
+    [1325, "9adb216bc609964198edb5682180a8f9abfa48220122e07fbcfc406cdf1d676d", 52, "677ba2696be873882bbf9e34dd667529af857c2d303986574e965a7b6f8043e2", 24, "b8e6133aa66e93d91dcca8233005bf52f05094ff79acfa41382398ea88baea47", "FLUTE:basket FLUTE:cobra FLUTE:wave fight flares marks particles shimmer", "FLUTE:wave (middle of 39 frames)"],
+    [1334, "b8ffc76b838d2efa2171a626a62b2b99bb8579abd0dc925b9b5aad66d798d790", 51, "e35c724130b2266c8590fa68f8a565275edd6594dd6ac5625959b77787bd8fcd", 24, "9f3657a74a6a5e6041ff1bd316a86e06363ff3fd707f5117bf1f0f347b782d32", "FLUTE:basket FLUTE:cobra FLUTE:strike FLUTE:swatted FLUTE:wave burst fight flares marks particles shimmer", "-1 frames from the K.O."],
+    [1335, "ff024a4a8de32a58b0be95040e82b7db8d6bce2a51abce4e9bd5c26f6cc54dca", 54, "d00794301ca5f7c85ecfa972677e14ee1f4524d2470dd3ea03de6390b5c0ee32", 25, "b22525dbbdcd2f0c832cae2bd8edcec16f19c4c4a66bcb1760b8faade42bc660", "FLUTE:basket FLUTE:cobra FLUTE:swatted FLUTE:wave burst flares fringe hitstop marks particles shimmer", "0 frames from the K.O."],
+    [1337, "5fe7fd8d1259a9b05752ffbe86f571adc437c9aae3420def62bbea12b1225465", 53, "6b28110344156ceb3a87220fedb19449eb31a40e95543d194f7b2bff32c9bd4c", 25, "0158c1019c94a93de4b4cf62956d0918dc21e862a3c1adf4abe32f09311e6acd", "FLUTE:basket FLUTE:cobra FLUTE:swatted FLUTE:wave flares fringe hitstop marks particles shimmer", "2 frames from the K.O."],
+    [1347, "1c9f8d55853b2e79ccd2f75cf8babcec56b2c564b41de97fb7774d14226ffef2", 41, "ae4c8ae08d3076b9c605f9227680a685ccf29f89d10cba8ce16715e48e4b08f6", 23, "427024b118bf82b216a435d46cfceeb05d75ce308c32b9658cf41a6acb93eab7", "FLUTE:basket FLUTE:cobra FLUTE:swatted flares fringe glass_shards marks particles tail", "12 frames from the K.O."],
+    [1350, "3df5ae1a5a752a70c2f8c384e9fa26a03bd6b3ff67262a315a4648549980c4f4", 41, "ae4c8ae08d3076b9c605f9227680a685ccf29f89d10cba8ce16715e48e4b08f6", 23, "427024b118bf82b216a435d46cfceeb05d75ce308c32b9658cf41a6acb93eab7", "FLUTE:basket FLUTE:cobra FLUTE:swatted flares fringe glass_shards marks particles tail", "spread"],
+    [1365, "e33de10effd36e0fc43cfe27f754e96e2139961deee18418806943c08a1371f1", 37, "03295ad5748e9ac209288b3c4cf385f61b7a890938de039b031df10fc173dad3", 22, "58aebd3484f42b140312d07959b507ad324a22fccdaf442b9a56171dd3f2f8c9", "flares glass_shards marks particles tail", "30 frames from the K.O."],
+    [1377, "3e318eb30c0ccd3dc8a75a354192665509ab5fb3ef67a48aade33b5ff7bdb55f", 41, "8d7c9c78519a1fdf2c8a66fc9e8f4dd48fa27b95e935b9a896f57e89efcfbea2", 22, "740bf4b82d9e17d46b4cf90f708e4799d996b50d718a4fe5516cc3bd6f904051", "FLUTE:basket FLUTE:solo_baskets flares glass_shards marks tail", "the victory baskets (frames 1377..1773)"],
+    [1378, "a0cd7e26778068f76c47856c67235c8dde884eb384768403f24f323b60839add", 41, "8d7c9c78519a1fdf2c8a66fc9e8f4dd48fa27b95e935b9a896f57e89efcfbea2", 22, "e4e33cc3357b468a2a1086b6b98565605aa43851cb1f94bfea4ddc84586aa17b", "FLUTE:basket FLUTE:solo_baskets flares glass_shards marks tail", "the victory baskets popping in and sinking away"],
+    [1380, "2bdeb13114a743597ea5d6f342d470b8aa214f6b9b1d3bf9baf5e0650719c1a7", 41, "8d7c9c78519a1fdf2c8a66fc9e8f4dd48fa27b95e935b9a896f57e89efcfbea2", 23, "35bbe37018e450c8470b35bf267b2a1273eacfe248d8495eea50babf43a83df3", "FLUTE:basket FLUTE:solo_baskets flares glass_shards marks tail", "the victory baskets popping in and sinking away"],
+    [1383, "90a2fdd6d3d2d9fcfe891006ebae5dd274a7fb18bdcaac3cfb7a6c02ed5f0608", 41, "8d7c9c78519a1fdf2c8a66fc9e8f4dd48fa27b95e935b9a896f57e89efcfbea2", 23, "fcca41ac1c73019ae52d0c95f07d17bcef72a4e6098cad8b6631f024fa048f77", "FLUTE:basket FLUTE:solo_baskets flares glass_shards marks tail", "the victory baskets popping in and sinking away"],
+    [1401, "fb4451e8ab7db3eef2d91512661905c6659ba630f945178fd756a02c59d32183", 41, "8d7c9c78519a1fdf2c8a66fc9e8f4dd48fa27b95e935b9a896f57e89efcfbea2", 23, "6c6ff808c732308a1f59315804271ea40ff24a2a4452c9f771872d0db011d7c0", "FLUTE:basket FLUTE:cobra FLUTE:solo_baskets flares glass_shards marks solo tail", "a note of the solo at 46.647 s"],
+    [1408, "700c68558db00f677a086ba90fda9362067008053fb99ca3a31e2468cadf1160", 41, "8d7c9c78519a1fdf2c8a66fc9e8f4dd48fa27b95e935b9a896f57e89efcfbea2", 23, "a249f8ef0224a636fd2be81e0dfd762d9e2306723b2f096b79f2efab5717cbed", "FLUTE:basket FLUTE:cobra FLUTE:solo_baskets flares glass_shards marks solo tail", "a note of the solo at 46.871 s"],
+    [1411, "642247d6a020adbc62a8d6f63c53a5000e39a4f602f6376996de3376136357d3", 41, "8d7c9c78519a1fdf2c8a66fc9e8f4dd48fa27b95e935b9a896f57e89efcfbea2", 23, "0d798942b65fe7e122594b8f1ab5f96599fa10ef0f0c0ed0145833fc02334134", "FLUTE:basket FLUTE:cobra FLUTE:solo_baskets flares glass_shards marks solo tail", "a note of the solo at 46.983 s"],
+    [1413, "9708791a36ab79f8e567b1625e80f0fe5cd5bbb7872b04223a8a4156b253955b", 41, "8d7c9c78519a1fdf2c8a66fc9e8f4dd48fa27b95e935b9a896f57e89efcfbea2", 23, "0d798942b65fe7e122594b8f1ab5f96599fa10ef0f0c0ed0145833fc02334134", "FLUTE:basket FLUTE:cobra FLUTE:solo_baskets flares glass_shards marks solo tail", "the victory baskets (frames 1377..1773)"],
+    [1414, "7044cfebb850e229985833427956d14aba6387c058ca9359501e1a842d48b720", 41, "8d7c9c78519a1fdf2c8a66fc9e8f4dd48fa27b95e935b9a896f57e89efcfbea2", 23, "0d798942b65fe7e122594b8f1ab5f96599fa10ef0f0c0ed0145833fc02334134", "FLUTE:basket FLUTE:cobra FLUTE:solo_baskets flares glass_shards marks solo tail", "a note of the solo at 47.096 s"],
+    [1440, "166020b594d1f1fb7780df7a08b15477fcd86b587920968121eddd7aba45c3b5", 41, "8d7c9c78519a1fdf2c8a66fc9e8f4dd48fa27b95e935b9a896f57e89efcfbea2", 23, "0d798942b65fe7e122594b8f1ab5f96599fa10ef0f0c0ed0145833fc02334134", "FLUTE:basket FLUTE:cobra FLUTE:solo_baskets glass_shards marks solo tail", "spread"],
+    [1449, "d46c20e2515d011ff2e7e017a03d75f07b1f66fcf8c4f0334f808a539c7bd6de", 41, "8d7c9c78519a1fdf2c8a66fc9e8f4dd48fa27b95e935b9a896f57e89efcfbea2", 22, "9da10c890120a7087e3eec111813424194e99c89324b16f50d855f38e37eb98c", "FLUTE:basket FLUTE:cobra FLUTE:solo_baskets glass_shards marks solo tail", "the victory baskets (frames 1377..1773)"],
+    [1485, "7d9a22beb52b8d004c9bc6fed4bb8c8443cf885124cf34195079e47fdb03b56c", 41, "8d7c9c78519a1fdf2c8a66fc9e8f4dd48fa27b95e935b9a896f57e89efcfbea2", 23, "9607d0443ac106e2ea26f22281263dadf1d0090486069348217d8d5bb7098331", "FLUTE:basket FLUTE:cobra FLUTE:solo_baskets glass_shards solo tail", "the victory baskets (frames 1377..1773)"],
+    [1521, "a77d1fc5297ebceff544a66497f46987b5fc987d3c58983d5c16a5fc6e520cf4", 41, "8d7c9c78519a1fdf2c8a66fc9e8f4dd48fa27b95e935b9a896f57e89efcfbea2", 23, "0e5fa82f4605dc2265f9a64ca050f0cecdbd70339f2b186e987a9a245ab88d52", "FLUTE:basket FLUTE:cobra FLUTE:solo_baskets glass_shards solo tail", "the victory baskets (frames 1377..1773)"],
+    [1530, "60b230e9f2d6de09fbcfc8d464cecebf7bcfcb607afe2d64e31c1087eea82f50", 41, "8d7c9c78519a1fdf2c8a66fc9e8f4dd48fa27b95e935b9a896f57e89efcfbea2", 23, "082273376ad0f31d1a97197c37f04e9f8505237ba6010ad4ece05fbb5d0cdfdb", "FLUTE:basket FLUTE:cobra FLUTE:solo_baskets glass_shards solo tail", "spread"],
+    [1557, "6d6b2381a0db4434448fb890ef3367acf83793b353c44409c55ab3fb5bfafd23", 41, "8d7c9c78519a1fdf2c8a66fc9e8f4dd48fa27b95e935b9a896f57e89efcfbea2", 23, "58628e1f4a8b40700298d2a5f3436b8ec2160e8d5477240c64567134353bd5e6", "FLUTE:basket FLUTE:cobra FLUTE:solo_baskets glass_shards solo tail", "the victory baskets (frames 1377..1773)"],
+    [1593, "c08781052c3316c42639ded254bceb41c98ab660814f5ca7690a6cc0e93f447a", 41, "8d7c9c78519a1fdf2c8a66fc9e8f4dd48fa27b95e935b9a896f57e89efcfbea2", 23, "9607d0443ac106e2ea26f22281263dadf1d0090486069348217d8d5bb7098331", "FLUTE:basket FLUTE:cobra FLUTE:solo_baskets glass_shards solo tail", "the victory baskets (frames 1377..1773)"],
+    [1620, "30a23645663bcae877dab49a8e494e2f190259eab8272e9196fdee01388aef93", 41, "8d7c9c78519a1fdf2c8a66fc9e8f4dd48fa27b95e935b9a896f57e89efcfbea2", 23, "61c157a9f1003864cc85c08a4fef3d03f64149f6e800c76e9055101e075fb960", "FLUTE:basket FLUTE:cobra FLUTE:solo_baskets glass_shards solo tail", "spread"],
+    [1629, "36aaa1b2f89cd5cfbdcb1e3328ca290cb55d64014cd7477ddbc517de7d4dd525", 41, "8d7c9c78519a1fdf2c8a66fc9e8f4dd48fa27b95e935b9a896f57e89efcfbea2", 23, "0e5fa82f4605dc2265f9a64ca050f0cecdbd70339f2b186e987a9a245ab88d52", "FLUTE:basket FLUTE:cobra FLUTE:solo_baskets glass_shards solo tail", "the victory baskets (frames 1377..1773)"],
+    [1665, "d31724fc5780cbc12d942d385383ef8257cc7cb4d17642f4b4a7b7bb2b81f29f", 41, "8d7c9c78519a1fdf2c8a66fc9e8f4dd48fa27b95e935b9a896f57e89efcfbea2", 23, "58628e1f4a8b40700298d2a5f3436b8ec2160e8d5477240c64567134353bd5e6", "FLUTE:basket FLUTE:cobra FLUTE:solo_baskets glass_shards solo tail", "the victory baskets (frames 1377..1773)"],
+    [1701, "753a7a47c6fbf15aeeb731ae6467acf4433da0a203c77156bb75399f955e8f0f", 41, "8d7c9c78519a1fdf2c8a66fc9e8f4dd48fa27b95e935b9a896f57e89efcfbea2", 23, "9607d0443ac106e2ea26f22281263dadf1d0090486069348217d8d5bb7098331", "FLUTE:basket FLUTE:cobra FLUTE:solo_baskets glass_shards solo tail", "the victory baskets (frames 1377..1773)"],
+    [1710, "255d8bbe69e13a8dc2e2bf8adce56f0eeb915bd743563b4de1cf332521cf750b", 41, "8d7c9c78519a1fdf2c8a66fc9e8f4dd48fa27b95e935b9a896f57e89efcfbea2", 23, "54e6d29232b417358f0a08f6a6b5c603cd5ac6fb247cf0fe9e113a6fc8db5968", "FLUTE:basket FLUTE:cobra FLUTE:solo_baskets glass_shards solo tail", "spread"],
+    [1732, "1580dbe2f021efbb09c75f7e33419705cab0830b328b9d63a4e88a1975caecd4", 41, "8d7c9c78519a1fdf2c8a66fc9e8f4dd48fa27b95e935b9a896f57e89efcfbea2", 21, "96cb6dc4d768c8e451d53e74f77d2910ee860d0c3f0cd203ccefa6afc4c33437", "FLUTE:basket FLUTE:cobra FLUTE:solo_baskets glass_shards reassembly tail", "0.3 s into the reassembly"],
+    [1737, "bb13a8c4d6150f0af4fc835d4831ace1de010aaf2d282ee91dbb7e6450efb01f", 41, "8d7c9c78519a1fdf2c8a66fc9e8f4dd48fa27b95e935b9a896f57e89efcfbea2", 21, "96cb6dc4d768c8e451d53e74f77d2910ee860d0c3f0cd203ccefa6afc4c33437", "FLUTE:basket FLUTE:cobra FLUTE:solo_baskets glass_shards reassembly tail", "the victory baskets (frames 1377..1773)"],
+    [1741, "2b31e2abb05475a2007a78c15732267e91e1a023a5cde51a25a4ce979e54e8e8", 41, "8d7c9c78519a1fdf2c8a66fc9e8f4dd48fa27b95e935b9a896f57e89efcfbea2", 21, "f32460cc7fcef20c071ddacfec595d870e23c7bff5db834146094e4fff6bee7d", "FLUTE:basket FLUTE:cobra FLUTE:solo_baskets glass_shards reassembly tail", "0.6 s into the reassembly"],
+    [1750, "2051e35e3eb02570db023b9d5206b6ee187e562aeaa06951ed46a27d285b082f", 41, "8d7c9c78519a1fdf2c8a66fc9e8f4dd48fa27b95e935b9a896f57e89efcfbea2", 21, "f32460cc7fcef20c071ddacfec595d870e23c7bff5db834146094e4fff6bee7d", "FLUTE:basket FLUTE:cobra FLUTE:solo_baskets glass_shards reassembly tail", "0.9 s into the reassembly"],
+    [1768, "a68275a9f521427fb8ae462a1af52d21579d4907a5ab72f8e65aac99d661dcad", 41, "8d7c9c78519a1fdf2c8a66fc9e8f4dd48fa27b95e935b9a896f57e89efcfbea2", 21, "c128784911ddf5eb86a66baf8269bf9f0895b8f27e23d651d303fbe01341585c", "FLUTE:basket FLUTE:cobra FLUTE:solo_baskets glass_shards reassembly tail", "the victory baskets popping in and sinking away"],
+    [1772, "4bb93cf3660363acf9bf42aa9359d30a6e934b498e6464f2ca3ea3a5cda1b824", 41, "8d7c9c78519a1fdf2c8a66fc9e8f4dd48fa27b95e935b9a896f57e89efcfbea2", 21, "af6beb7e0e6816e233c8f7c41de647c6999f25b1851858b6e752c665cf818af6", "FLUTE:basket FLUTE:cobra FLUTE:solo_baskets glass_shards reassembly tail", "the victory baskets popping in and sinking away"],
+    [1773, "7f3beef5c16b1b388706a25586fd3010e3bc0d03c212eec6929b91db208b4e6e", 48, "d86a4063994eb7b709b73698924ef15c57a752fdc44a752e825ee3554ebcb1ab", 21, "af6beb7e0e6816e233c8f7c41de647c6999f25b1851858b6e752c665cf818af6", "FLUTE:basket FLUTE:cobra FLUTE:solo_baskets glass_shards reassembly tail", "the victory baskets (frames 1377..1773)"],
+    [1776, "e036868aa432c572535ee470baf29c84c2280949a51790e8a381c0b59662dcf0", 48, "d86a4063994eb7b709b73698924ef15c57a752fdc44a752e825ee3554ebcb1ab", 21, "af6beb7e0e6816e233c8f7c41de647c6999f25b1851858b6e752c665cf818af6", "glass_shards reassembly tail", "-1 frames from the glide home"],
+    [1777, "85ac4f2bea8e4cde844152847fa17cf99eb11d37b027b0fca01abafaddd5b13b", 44, "2974bc1bb8d90f25a5e6b46ab51ff3487bdbbb489e626610fc6d07702953c2b5", 21, "a10d56610e77aa310c06d66793f200e8294db8af5d5dbb0e7d93aa41a43ca770", "glide tail", "0 frames from the glide home"],
+    [1800, "ac369e5a6159c852c028ab72ce51140255f956ebc5a1c9af6788e130959b1757", 46, "596eea17f8f75f4d7f7905a177524f5f56630dd41a0d0460417cd66e04d35e8d", 22, "f90c80015f98d192228a7f5c8b183decf06679dca9359543f9c5d142a5b83c42", "glide tail", "spread"]
+   ],
+   "hooks_build": [911, "359c7594006d6f5efc897f3dcdce3bb0f86e9f65d90dd929136b8ef2f5f92b31"],
+   "hooks_build_head": ["0.setup", "1.setup", "1.shake", "0.shake", "0.shake", "0.shake", "0.shake", "1.shake"],
+   "hooks_frame": {
+    "calls": ["0.state(1,tail)", "1.state(1,tail)", "0.light", "1.light", "0.state(0,tail)", "1.state(0,tail)", "0.state(1,tail)", "1.state(1,tail)", "0.state(1,tail)", "1.state(1,tail)", "1.shadows", "0.shadows_free", "1.shadows_free", "0.canvas", "1.canvas", "0.canvas_after", "1.canvas_after", "0.canvas_overlay", "1.canvas_overlay", "1.items_ball", "0.items_free", "1.items_free", "1.draw_item", "1.draw_item", "1.draw_item", "1.draw_item", "0.ball(1)", "1.ball(1)", "1.ball_sprite(1)", "0.over_ring", "1.over_ring", "0.shimmer_after", "1.shimmer_after", "0.glows", "1.glows", "0.after_grade", "1.after_grade", "0.state(1,tail)", "1.state(1,tail)", "0.hides_hp(1)", "1.hides_hp(1)"],
+    "frame": 1377
+   },
+   "k": 1,
+   "recording": {
+    "checked": "before any frame was drawn the export read this file and found it equal to the run the kit drew from",
+    "events": 453,
+    "file": "studio/reference/fights/flute_vs_trombone/scenarios/swapped_s1.bfrec",
+    "frames": 1228,
+    "hash": "5e305859c8c761c6",
+    "seed": 1,
+    "t_ko": "0x1.63d6d6d6d6d6dp+5",
+    "winner": 1
+   },
+   "seed": 1,
+   "state": {
+    "baskets": [
+     [
+      0,
+      "0x1.cc5c67dfe32a0p+1",
+      ["0x1.d99999999999ap+0", "-0x1.d99999999999ap+0"],
+      "0x1.cb837b4a2339cp+2"
+     ],
+     [
+      1,
+      "0x1.58d8ec95bff04p+2",
+      ["0x1.183508bcf5d14p+1", "0x1.30b2fc3206725p+1"],
+      "0x1.1f1719f7f8ca8p+3"
+     ],
+     [
+      2,
+      "0x1.cb837b4a2339cp+2",
+      ["-0x1.4e617cbc8b985p-2", "-0x1.e5adb5ef6b4e3p+0"],
+      "0x1.58b0b39192642p+3"
+     ],
+     [
+      3,
+      "0x1.1f1719f7f8ca8p+3",
+      ["-0x1.07cf8ffc66a09p+1", "-0x1.f9afe570d4f01p+0"],
+      "0x1.92060fe47991cp+3"
+     ],
+     [
+      4,
+      "0x1.58b0b39192642p+3",
+      ["-0x1.adc332596b329p+0", "-0x1.3cdcad6d558f1p-1"],
+      "0x1.cb5b573eab368p+3"
+     ],
+     [
+      5,
+      "0x1.92060fe47991cp+3",
+      ["0x1.5fade52c40963p-1", "-0x1.7f2b35ef23b61p+0"],
+      "0x1.027a786c22681p+4"
+     ],
+     [
+      6,
+      "0x1.cb5b573eab368p+3",
+      ["0x1.1d263f5443500p+0", "-0x1.027efa766f1eep+1"],
+      "0x1.1f25269595feep+4"
+     ],
+     [
+      7,
+      "0x1.027a786c22681p+4",
+      ["-0x1.4f3bd18a7604cp+0", "-0x1.2bf9a10f28c01p+1"],
+      "0x1.3bcfd4bf0995bp+4"
+     ],
+     [
+      8,
+      "0x1.1f25269595feep+4",
+      ["-0x1.ea28156549d5ap-4", "-0x1.395bb35847189p-1"],
+      "0x1.587a786c22681p+4"
+     ],
+     [
+      9,
+      "0x1.3bcfd4bf0995bp+4",
+      ["0x1.b3accd383d00dp-1", "-0x1.90a0db969dcbap-1"],
+      "0x1.75474538ef34dp+4"
+     ],
+     [
+      10,
+      "0x1.587a786c22681p+4",
+      ["0x1.428e0cb34c5e4p+0", "-0x1.16d63c253db61p+1"],
+      "0x1.91f1f36262cbap+4"
+     ],
+     [
+      11,
+      "0x1.75474538ef34dp+4",
+      ["0x1.6d668edc3b060p+0", "-0x1.df55861805c9dp+0"],
+      "0x1.ae9ca18bd6627p+4"
+     ],
+     [
+      12,
+      "0x1.91f1f36262cbap+4",
+      ["0x1.e720a32a8966dp-2", "-0x1.5ff94f8fdde52p+0"],
+      "0x1.cb696e58a32f4p+4"
+     ],
+     [
+      13,
+      "0x1.ae9ca18bd6627p+4",
+      ["0x1.e3a81f3c18869p+0", "-0x1.0a13521ac436bp+1"],
+      "0x1.e8141205bc01ap+4"
+     ],
+     [
+      14,
+      "0x1.cb696e58a32f4p+4",
+      ["0x1.d5798bf112f88p-2", "-0x1.ebdd4d32593e8p+0"],
+      "0x1.025f601797cc4p+5"
+     ],
+     [
+      15,
+      "0x1.e8141205bc01ap+4",
+      ["-0x1.fbd1815eff2f9p+0", "-0x1.98a04b5dab479p+0"],
+      "0x1.10b4b72c5197ap+5"
+     ],
+     [
+      16,
+      "0x1.025f601797cc4p+5",
+      ["-0x1.c0efea3effef5p+0", "-0x1.7331c90152e35p-1"],
+      "0x1.1f1b1d92b7fe1p+5"
+     ],
+     [
+      17,
+      "0x1.10b4b72c5197ap+5",
+      ["-0x1.0baa976ff9f43p+1", "-0x1.0b19c87a37152p-2"],
+      "0x1.2d706f6944674p+5"
+     ],
+     [
+      18,
+      "0x1.1f1b1d92b7fe1p+5",
+      ["0x1.88d3371079bc3p+0", "-0x1.ecac6da3f66f3p+0"],
+      "0x1.3bc5c67dfe32ap+5"
+     ],
+     [
+      19,
+      "0x1.2d706f6944674p+5",
+      ["0x1.1352dfa6f81d1p+1", "-0x1.c99d3e4a69101p+0"],
+      "0x1.4a2c2ce464990p+5"
+     ],
+     [
+      20,
+      "0x1.3bc5c67dfe32ap+5",
+      ["0x1.1fbf7cbe62040p+1", "-0x1.8a93f123f6b71p+0"],
+      "0x1.588183f91e647p+5"
+     ],
+     [
+      21,
+      "0x1.4a2c2ce464990p+5",
+      ["0x1.035b58ba169c1p-4", "-0x1.6b017a582fa65p+0"],
+      "0x1.8c00000000000p+6"
+     ],
+     [
+      22,
+      "0x1.588183f91e647p+5",
+      ["-0x1.108583936b0aap+0", "-0x1.f1a8177b871a4p+0"],
+      "0x1.8c00000000000p+6"
+     ]
+    ],
+    "cobras": [
+     [
+      "0x1.cb4b4b4b4b4b4p+1",
+      "0x0.0p+0",
+      []
+     ],
+     [
+      "0x1.3d53cddd6e04cp+2",
+      "0x0.0p+0",
+      [
+       [
+        0,
+        ["0x1.d99999999999ap+0", "-0x1.d99999999999ap+0"],
+        "0x1.0000000000000p+0",
+        ["0x1.d99999999999ap+0", "-0x1.d99999999999ap+0"],
+        "0x1.cc5c67dfe32a0p+1",
+        ["0x1.3c0c1fc8f3238p+2", "0x1.43ba3443d46b3p+2", "0x1.5003eea209aabp+2", "0x1.2994cefdaedddp+1", "0x1.62b2f0a6bbd42p+0"],
+        "0x1.29593cf220783p+1",
+        "0x1.0000000000000p+0",
+        null
+       ]
+      ]
+     ],
+     [
+      "0x1.ef089a0275255p+2",
+      "0x0.0p+0",
+      [
+       [
+        1,
+        ["0x1.183508bcf5d14p+1", "0x1.30b2fc3206725p+1"],
+        "0x1.0000000000000p+0",
+        ["0x1.183508bcf5d14p+1", "0x1.30b2fc3206725p+1"],
+        "0x1.58d8ec95bff04p+2",
+        null,
+        "-0x1.3e3ece1ed0283p+1",
+        "0x1.0000000000000p+0",
+        null
+       ],
+       [
+        2,
+        ["-0x1.4e617cbc8b985p-2", "-0x1.e5adb5ef6b4e3p+0"],
+        "0x1.0000000000000p+0",
+        ["-0x1.4e617cbc8b985p-2", "-0x1.e5adb5ef6b4e3p+0"],
+        "0x1.cb837b4a2339cp+2",
+        null,
+        "0x1.c81429ce6f656p+0",
+        "0x1.3ee721a54d864p-1",
+        ["0x1.eb851eb851f00p-6", "0x1.0000000000000p+0"]
+       ]
+      ]
+     ],
+     [
+      "0x1.4000000000000p+4",
+      "0x0.0p+0",
+      [
+       [
+        8,
+        ["-0x1.ea28156549d5ap-4", "-0x1.395bb35847189p-1"],
+        "0x1.0000000000000p+0",
+        ["-0x1.ea28156549d5ap-4", "-0x1.395bb35847189p-1"],
+        "0x1.1f25269595feep+4",
+        ["0x1.3f696e58a32f4p+4", "0x1.402e09fe86833p+4", "0x1.41689ca18bd66p+4", "0x1.2f0271e7f8ea3p+1", "0x1.04b622e840996p+1"],
+        "0x1.31c2ba49af20dp+1",
+        "0x1.0000000000000p+0",
+        null
+       ],
+       [
+        9,
+        ["0x1.b3accd383d00dp-1", "-0x1.90a0db969dcbap-1"],
+        "0x1.11f6a2f85d4eep+0",
+        ["0x1.b3accd383d00dp-1", "-0x1.90a0db969dcbap-1"],
+        "0x1.3bcfd4bf0995bp+4",
+        null,
+        "0x1.4776c16397206p+1",
+        "0x1.0000000000000p+0",
+        null
+       ]
+      ]
+     ],
+     [
+      "0x1.ff25269595feep+4",
+      "0x1.0000000000000p-1",
+      [
+       [
+        14,
+        ["0x1.d5798bf112f88p-2", "-0x1.ebdd4d32593e8p+0"],
+        "0x1.0000000000000p+0",
+        ["0x1.081cd47e0ffe5p-1", "-0x1.b0a56550f51f6p+0"],
+        "0x1.cb696e58a32f4p+4",
+        null,
+        "0x1.511920f1eaa35p+0",
+        "0x1.0000000000000p+0",
+        null
+       ],
+       [
+        15,
+        ["-0x1.fbd1815eff2f9p+0", "-0x1.98a04b5dab479p+0"],
+        "0x1.0000000000000p+0",
+        ["-0x1.d33283b655b06p+0", "-0x1.6b1a2d2b7c1d0p+0"],
+        "0x1.e8141205bc01ap+4",
+        null,
+        "0x1.a9aa1773c1d04p-1",
+        "0x1.0000000000000p+0",
+        null
+       ]
+      ]
+     ],
+     [
+      "0x1.6570707070707p+5",
+      "0x0.0p+0",
+      [
+       [
+        21,
+        ["0x1.035b58ba169c1p-4", "-0x1.6b017a582fa65p+0"],
+        "0x1.0000000000000p+0",
+        ["0x1.035b58ba169c1p-4", "-0x1.6b017a582fa65p+0"],
+        "0x1.4a2c2ce464990p+5",
+        null,
+        "0x1.8d3d190958090p+0",
+        "0x1.7c514f42f99b7p-2",
+        ["0x1.999db649be400p-5", "0x1.0000000000000p+0"]
+       ],
+       [
+        22,
+        ["-0x1.108583936b0aap+0", "-0x1.f1a8177b871a4p+0"],
+        "0x1.0000000000000p+0",
+        ["-0x1.108583936b0aap+0", "-0x1.f1a8177b871a4p+0"],
+        "0x1.588183f91e647p+5",
+        null,
+        "0x1.26b55f44b3552p+0",
+        "0x1.0000000000000p+0",
+        null
+       ]
+      ]
+     ],
+     [
+      "0x1.6f93939393938p+5",
+      "0x0.0p+0",
+      [
+       [
+        100,
+        ["-0x1.c655abbdc938fp-1", "0x1.dec524481d9e4p-3"],
+        "0x1.097b425ed0800p-2",
+        ["-0x1.c655abbdc938fp-1", "0x1.dec524481d9e4p-3"],
+        "0x1.712d2d2d2d2d2p+5",
+        null,
+        "0x1.2d97c7f3321d2p+1",
+        "0x1.0000000000000p+0",
+        null
+       ],
+       [
+        101,
+        ["0x1.a010baa89d2d7p-1", "-0x1.775a8eaa2f7f6p+0"],
+        "0x1.097b425ed0800p-2",
+        ["0x1.a010baa89d2d7p-1", "-0x1.775a8eaa2f7f6p+0"],
+        "0x1.7222efbc89561p+5",
+        null,
+        "0x1.5fdbbe9bba775p+2",
+        "0x1.0000000000000p+0",
+        null
+       ]
+      ]
+     ],
+     [
+      "0x1.72c6c6c6c6c6cp+5",
+      "0x0.0p+0",
+      [
+       [
+        100,
+        ["-0x1.a97acab4c42bbp-1", "0x1.85a95a26bf6c3p-1"],
+        "0x1.0000000000000p+0",
+        ["-0x1.a97acab4c42bbp-1", "0x1.85a95a26bf6c3p-1"],
+        "0x1.712d2d2d2d2d2p+5",
+        null,
+        "0x1.2d97c7f3321d2p+1",
+        "0x1.0000000000000p+0",
+        null
+       ],
+       [
+        101,
+        ["0x1.bceb9bb1a23abp-1", "-0x1.e0bd0c3fa6fa3p-1"],
+        "0x1.0000000000000p+0",
+        ["0x1.bceb9bb1a23abp-1", "-0x1.e0bd0c3fa6fa3p-1"],
+        "0x1.7222efbc89561p+5",
+        null,
+        "0x1.5fdbbe9bba775p+2",
+        "0x1.0000000000000p+0",
+        null
+       ]
+      ]
+     ],
+     [
+      "0x1.7d2d2d2d2d2d2p+5",
+      "0x0.0p+0",
+      [
+       [
+        100,
+        ["-0x1.d12cf11d6d8c9p-1", "0x1.d12cf11d6d8c9p-1"],
+        "0x1.0000000000000p+0",
+        ["-0x1.d12cf11d6d8c9p-1", "0x1.d12cf11d6d8c9p-1"],
+        "0x1.712d2d2d2d2d2p+5",
+        null,
+        "0x1.2d97c7f3321d2p+1",
+        "0x1.0000000000000p+0",
+        null
+       ],
+       [
+        101,
+        ["0x1.95397548f8d9dp-1", "-0x1.95397548f8d9dp-1"],
+        "0x1.0000000000000p+0",
+        ["0x1.95397548f8d9dp-1", "-0x1.95397548f8d9dp-1"],
+        "0x1.7222efbc89561p+5",
+        null,
+        "0x1.5fdbbe9bba775p+2",
+        "0x1.0000000000000p+0",
+        null
+       ]
+      ]
+     ],
+     [
+      "0x1.d1b1b1b1b1b1ap+5",
+      "0x0.0p+0",
+      [
+       [
+        100,
+        ["-0x1.d1a98e0a6ab25p-1", "0x1.d1a98e0a6ab25p-1"],
+        "0x1.d9b91bfd97256p-1",
+        ["-0x1.d1a98e0a6ab25p-1", "0x1.d1a98e0a6ab25p-1"],
+        "0x1.712d2d2d2d2d2p+5",
+        null,
+        "0x1.2d97c7f3321d2p+1",
+        "0x1.0000000000000p+0",
+        null
+       ],
+       [
+        101,
+        ["0x1.94bcd85bfbb41p-1", "-0x1.94bcd85bfbb41p-1"],
+        "0x1.d9b91bfd97256p-1",
+        ["0x1.94bcd85bfbb41p-1", "-0x1.94bcd85bfbb41p-1"],
+        "0x1.7222efbc89561p+5",
+        null,
+        "0x1.5fdbbe9bba775p+2",
+        "0x1.0000000000000p+0",
+        null
+       ]
+      ]
+     ],
+     [
+      "0x1.d93f3f3f3f3f4p+5",
+      "0x0.0p+0",
+      [
+       [
+        100,
+        ["-0x1.b4a655a14b629p-1", "0x1.b4a655a14b629p-1"],
+        "0x1.4f150be98f300p-8",
+        ["-0x1.b4a655a14b629p-1", "0x1.b4a655a14b629p-1"],
+        "0x1.712d2d2d2d2d2p+5",
+        null,
+        "0x1.2d97c7f3321d2p+1",
+        "0x1.0000000000000p+0",
+        null
+       ],
+       [
+        101,
+        ["0x1.b1c010c51b03dp-1", "-0x1.b1c010c51b03dp-1"],
+        "0x1.4f150be98f300p-8",
+        ["0x1.b1c010c51b03dp-1", "-0x1.b1c010c51b03dp-1"],
+        "0x1.7222efbc89561p+5",
+        null,
+        "0x1.5fdbbe9bba775p+2",
+        "0x1.0000000000000p+0",
+        null
+       ]
+      ]
+     ]
+    ],
+    "dances": [
+     ["0x1.fd8b8cfbfc654p+4", "0x1.0d2020d8588d0p+5"],
+     ["0x1.4692934acaff7p+5", "0x1.54eceda52559dp+5"]
+    ],
+    "n_strikes": 58,
+    "strikes": [
+     [
+      0,
+      1,
+      ["0x1.3c0c1fc8f3238p+2", "0x1.43ba3443d46b3p+2", "0x1.5003eea209aabp+2", "0x1.2994cefdaedddp+1", "0x1.62b2f0a6bbd42p+0"],
+      ["0x1.3c0c1fc8f3238p+2", "0x1.43ba3443d46b3p+2", "0x1.5003eea209aabp+2", "0x1.2994cefdaedddp+1", "0x1.62b2f0a6bbd42p+0"]
+     ],
+     [
+      2,
+      2,
+      ["0x1.e8504816f0069p+2", "0x1.efcd35a858794p+2", "0x1.fbc84b5dcc63fp+2", "0x1.d673b1745f3c1p+0", "0x1.b5c28f5c28f5cp+0"],
+      ["0x1.4a4a4d2b2bfdbp+3", "0x1.4e08c3f3e0370p+3", "0x1.54064ece9a2c6p+3", "0x1.f385440139efbp-1", "0x1.b5c28f5c28f5cp+0"]
+     ],
+     [
+      4,
+      3,
+      ["0x1.839fa97e132b5p+3", "0x1.875e2046c764ap+3", "0x1.8d5bab21815a0p+3", "0x1.deaae9ebb7072p+0", "0x1.b5c28f5c28f5cp+0"],
+      ["0x1.bcf4f0d844d01p+3", "0x1.c09ad42c3c9efp+3", "0x1.c6710cb295e9ep+3", "-0x1.6635236216fb9p-3", "0x1.b646882d8dcd0p+0"]
+     ]
+    ],
+    "swat_down": "0x1.cb4b4b4b4b4b4p-1",
+    "swats": [
+     [
+      2,
+      ["0x1.ed1d14e3bcd36p+2", "0x1.135b573eab368p+3"]
+     ],
+     [
+      4,
+      ["0x1.86d2dcb1465e9p+3"]
+     ],
+     [
+      5,
+      ["0x1.a1394317acc4fp+3"]
+     ],
+     [
+      8,
+      ["0x1.26bec02f2f987p+4", "0x1.43696e58a32f4p+4"]
+     ],
+     [
+      9,
+      ["0x1.527a786c22681p+4", "0x1.6f25269595feep+4"]
+     ],
+     [
+      10,
+      ["0x1.67cfd4bf0995bp+4"]
+     ],
+     [
+      12,
+      ["0x1.99696e58a32f4p+4", "0x1.a7cfd4bf0995bp+4"]
+     ],
+     [
+      11,
+      ["0x1.a0bec02f2f987p+4"]
+     ],
+     [
+      13,
+      ["0x1.b65859c8c9321p+4"]
+     ],
+     [
+      14,
+      ["0x1.e1cfd4bf0995bp+4"]
+     ],
+     [
+      16,
+      ["0x1.063d3c3611340p+5", "0x1.10e7ea5f84cadp+5"]
+     ],
+     [
+      15,
+      ["0x1.0d706f6944674p+5"]
+     ],
+     [
+      18,
+      ["0x1.232c2ce464990p+5", "0x1.2dd6d5cfaacdap+5"]
+     ],
+     [
+      21,
+      ["0x1.552c2ce464990p+5", "0x1.63706f6944674p+5"]
+     ]
+    ]
+   },
+   "swapped": true,
+   "winner": "FLUTE"
+  },
+  "flute_wins": {
+   "covered": {
+    "FLUTE:basket": 59,
+    "FLUTE:cobra": 55,
+    "FLUTE:dance": 4,
+    "FLUTE:haste": 13,
+    "FLUTE:shards": 0,
+    "FLUTE:solo_baskets": 26,
+    "FLUTE:strike": 6,
+    "FLUTE:swatted": 9,
+    "FLUTE:wave": 2
+   },
+   "fighters": ["FLUTE", "TROMBONE"],
+   "frames": [
+    [0, "f9e13f40c2c9fe6edada94400326ac763681d4d5d0cad85d0d45f5439058f1a9", 38, "6d8bc6b7a5e68f423c56da2596de48cd5ce95d5600cf7aa2d01485a088287cf0", 0, "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", "card card_closed rev", "spread"],
+    [90, "0fa9acb91a0f130656955a237f941cd662611007628506b5f74fd56b6514501b", 42, "e248c3ecc63411746777b391286c296e03acbcca03daf86b716c94aa63cbf66a", 23, "3180a137d0175ce2b00ff369f386a5c17311681fc8b1c84b49f22ebabf753014", "rev", "spread"],
+    [108, "306b2e88e42e6aaa0de0b9bcf7ff58d7ff461dfaba93fc117198a2ef811565e7", 40, "3fed27755502a983eff9c514ba4344a727aff0ba898233ed371a1ed9b23ee907", 21, "72057a9471b83ea5284035625d333d828596311a1df7e9544d3e65ff6b50c21e", "FLUTE:basket FLUTE:cobra fight", "FLUTE:basket (first of 1630 frames); FLUTE:cobra (first of 1622 frames)"],
+    [180, "a696ea96d5c48cb56f555e746b58d2fa8074ae17ee5774439f70499792cd80e9", 46, "66640085a73be3ffbedddeeec368e0a94923a05381fe94d19f60bcce19991d22", 22, "b7930c0a223e365246479111dbedcf6aeb2a4e903a374d4639991f5d75814cb7", "FLUTE:basket FLUTE:cobra fight marks particles", "spread"],
+    [202, "560a311691363bf99063b537eab52724ae673e429095e37d28da3906d182d881", 46, "66640085a73be3ffbedddeeec368e0a94923a05381fe94d19f60bcce19991d22", 22, "f0abd3400724ad7de4e025e870ca836048309382affbef89bac6885fff5c8509", "FLUTE:basket FLUTE:cobra FLUTE:strike fight marks particles", "FLUTE:strike (first of 214 frames)"],
+    [270, "5ea1ebf21f38b7300a43704c08ad1949937cad4bdd69ec05a73a64e4eb7c7b61", 48, "992cad07ca28f9417ad90c90054811664b7bc5bee3553a97cd412597a975a495", 22, "8b258712e433d063f221a35fab11d6402bd3506e700a231a4f335810c6f6b1d7", "FLUTE:basket FLUTE:cobra FLUTE:strike fight marks", "spread"],
+    [360, "42909dbba4d44d25406dafd19d77788e9646fd87529bcb578a49d2f12f54ee72", 46, "bf1d53d647a247c5cda820a19ca7798ea75797ddac5910a45dcdd0886289d58e", 22, "30fc383bbf7151f2d5ebbabe7722e5055c03e03238fca8caa94fc687a97b3c2f", "FLUTE:basket FLUTE:cobra fight marks particles", "spread"],
+    [445, "abb952f683418c2fb25cd8c5a303b743451647c8291997c5e9970b8968ac7979", 46, "b2c674b227efbe77c4664f2dd8ee30963cc921a8d88ace0ca5726dc891b0e888", 22, "1b26fad9285dbe3562cb002edc61a70723a27f1bbcf516321570d14ceac75055", "FLUTE:basket FLUTE:cobra FLUTE:swatted burst fight flares marks particles", "FLUTE:swatted (first of 534 frames)"],
+    [450, "c4883f3b6c2c55fab622e1336ef20c80a01f95b29d5c17ffb911eeddce7d3541", 46, "93e2066f0b942ecb56576a91afa2706c6a3b3a9ac84700fd6281a55616768a15", 22, "64c419c52cd9f826e7bc8fbb53731ee971dadc9c156d6fb8f7793af6c53be4d0", "FLUTE:basket FLUTE:cobra FLUTE:swatted fight flares marks particles", "spread"],
+    [526, "35f892825469907d7c6f47c5dc895496d6a3679e3f53fc2caa42e1297ced7d21", 46, "d35e5ce6261dcb720b652c9a18e7018ec725ecfcc35b69013d1027a41257deae", 24, "46465fb835f659f1a5ac718e3513586246d504d5ad43ae8b51409013d25f890c", "FLUTE:basket FLUTE:cobra FLUTE:haste FLUTE:strike fight flares marks particles", "FLUTE:haste (first of 519 frames)"],
+    [540, "2c78a723877606ed931a6a97792516cf2d361f5664ab0729a07883b6b1280ada", 48, "09c1a0a56774856f4cc05471ed484fce3286181c4393a9b5dd9d1df57feb9c80", 24, "65fa7d7a2bd9855d55235aea99b5da36c4b14592da74bcab03541af05529669c", "FLUTE:basket FLUTE:cobra FLUTE:haste fight flares marks particles", "spread"],
+    [613, "96dca9fe186f90b27d006bdc4b5c379d65eda7c8bbc8251400903218a9858dbb", 48, "a130973d1ed99dfb1d20c815a93838907f2af58c76469000dbc35e1aa4516040", 23, "819693b8df4ea327d5498ac2495a4890a7c7310bfe99b5d5b06e42e764c37056", "FLUTE:basket FLUTE:cobra FLUTE:haste FLUTE:strike fight flares marks particles", "FLUTE:strike (middle of 214 frames)"],
+    [630, "8a1f218f583a683161e3551b2a658ae8620ed23fc0dd96142c5a12c339b2695a", 46, "2e534b41fc9e7e9fae20f8ea5d6806204ec0efd1fe90fc5d478e67e93355a58a", 23, "4e61b44378eb331a34bf0f6a820b164a808697498a07a79309d7f7256195acf5", "FLUTE:basket FLUTE:cobra FLUTE:haste fight flares marks particles", "spread"],
+    [720, "ddcb77728270c87750382ac1e092db75c40b9dbfe415197b6075a5c5760e5a3d", 50, "e5a38274fb10dab21c704fa0e2a7dd6cfe9fabb90e48c9d4f7bdf5037dd87f8e", 23, "5f59045cf3280d3b8171ad51d0e2254fe53510e47b8bbc3ef4a9ea119ab72883", "FLUTE:basket FLUTE:cobra FLUTE:swatted fight flares marks particles shimmer", "spread"],
+    [808, "04ec6339e760a94d4d523a53486dbd565f9a29552a71ae8b156075d32a28400f", 50, "176c10790408720629fcb1c35b03e939138c4d54e98c1f25c5196fc6406ab26c", 25, "398c7280eccf22309544f416f912be4e4aa8403e3aeeca782ada2f24194d21ed", "FLUTE:basket FLUTE:cobra FLUTE:dance FLUTE:haste fight flares marks particles", "FLUTE:dance (first of 188 frames)"],
+    [810, "532668e10ce5933a24bbaa612f87091f6f00d80898fa2f3575ac76eb3509fabe", 53, "e1a6e40fe295f5cd947c65299b7e7df9070b2389c53f9bfc0d3f4eb16a8d7d04", 25, "563605530d6eb6eff99597f92b4bcaf6fe921c45bba7e1e81ce2713058de3c5c", "FLUTE:basket FLUTE:cobra FLUTE:dance FLUTE:haste fight flares marks particles", "spread"],
+    [900, "be39dea9fd64bbab8ca6f57703d71df551a81ef2d30cb446bed0ab16d51bddcd", 46, "2113f4998eb4586f09fd0e3621335ccd990f0a0266016e8c38542613afc6d8cc", 22, "58c61f866e6603744d7ba64de232bc4905430bca656a8485623ff56c94ec554b", "FLUTE:basket FLUTE:cobra FLUTE:swatted fight flares marks particles", "spread"],
+    [908, "2c9e3dba79bdb06def50361b5da8976fd8202b16bebaf8b1753e805c5c3558a0", 49, "982277307389dbc6b19fdacce6e821474477701b65bad3d0726bb6ecc5186fa3", 23, "0d46661bbb5f07428b3b5e2e25fa097c5ecb9ad59c063a3e839e556204c0d1dd", "FLUTE:basket FLUTE:cobra FLUTE:swatted fight flares marks particles", "FLUTE:swatted (middle of 534 frames)"],
+    [919, "66b69c37026b20eb54eddad99ae35297a2d1adc2120b7322ffb46c85f1fba5bb", 50, "e487a5520773d1298a888455cf2de9730d2556cd7ee5d08da954629c3d2d1b1b", 23, "a856f30c20d330c8b90e2d67214e881304164885d7bd41c89dbf9e2606dbf494", "FLUTE:basket FLUTE:cobra fight flares marks particles", "FLUTE:cobra (middle of 1622 frames)"],
+    [923, "c6eeda7661bd40805e0305ee039dc466a33650849f25d4dd1d802b5c245e7e7b", 50, "2c1c13c2a7afba86c81ff7faf7ac0621bc45f9327e3a5e3e63e1613ee4552c8e", 23, "7586b6c1b7310d7d3046c2c0e7ab5d2abf8a4a06e67e49e3f6ec994fa18ffbbc", "FLUTE:basket FLUTE:cobra fight flares marks particles", "FLUTE:basket (middle of 1630 frames)"],
+    [990, "a8aa30dd253004d37b09213a2c7fa73272529e3787cafd62850a164ff0b35566", 46, "2e534b41fc9e7e9fae20f8ea5d6806204ec0efd1fe90fc5d478e67e93355a58a", 24, "3e64f730d98071e34e69b3522c1463ff9cf67a6253feffb2b5d6e5f468841fe4", "FLUTE:basket FLUTE:cobra FLUTE:haste fight flares marks particles", "spread"],
+    [1027, "e25b7fe10b9dacba7dbc935452317a83a78d4749f759c3d6e262373d14708aeb", 51, "6cac902bf8f2050da9beaff726c5b74a829af2d5fd07b7f6e2bac40e82d1a26d", 23, "70c84f1af4666f0a47b44da6b07841698e9693c0908f0f6e04dafafecc16a5ca", "FLUTE:basket FLUTE:cobra FLUTE:haste fight flares marks particles", "FLUTE:haste (middle of 519 frames)"],
+    [1080, "4bd8641be9cb0eaabe494a91c4dabad35ca4922fa253871d9f99f08abc23ad29", 51, "aab4e7543f03a6b65bf15f1a2603774c062a4476325a2ba3cfd3ffd3b1defb2a", 24, "2e43ee1eb6c192a2ff5075c3863953bdfd979f740a8ee6ff2cb1666b46087b2d", "FLUTE:basket FLUTE:cobra FLUTE:dance FLUTE:haste fight marks particles", "spread"],
+    [1108, "27c20e42c74d61aff5badbaa778b0ded577b82f1f88254df4c9d22014b14f795", 46, "d35e5ce6261dcb720b652c9a18e7018ec725ecfcc35b69013d1027a41257deae", 23, "d69b1ebe9ca53e5f0c54a27f0ae20eac95783e472d90d562cbe1595e97fe0213", "FLUTE:basket FLUTE:cobra FLUTE:dance FLUTE:swatted fight flares marks particles", "FLUTE:dance (middle of 188 frames)"],
+    [1170, "e10a9b5c84c31409b4be1b6503ab8c104ff8e96e9f6189a6be46f9435092dc44", 46, "ec695aa5791365618a3f0f05b47fcb450b8ddf009bf613c6246dc7167b4747eb", 22, "c512c42639d9279380b926b3d6f6c1e01755f4f2be75a01ee7fea28bc85d5829", "FLUTE:basket FLUTE:cobra fight flares marks particles", "spread"],
+    [1260, "79637418f823107a9e0868157a927da51f469e23bf17d10293b20795cb5f8741", 50, "ac0b6eb660aff5bf5171963997f419ace7ce8a7f59b3c4257c51d263742266eb", 24, "23ccec610b07907fd62b8fca4c2fbf4c02b76e80545f74e10bf8dd97c4c45558", "FLUTE:basket FLUTE:cobra FLUTE:haste FLUTE:swatted burst fight flares marks particles", "spread"],
+    [1279, "d6aa2ad0c65ae05c2611b8e8d05304e1aee80223fd514e528e5fb53173d1f931", 49, "ce263cf06921fca0efd8bbd9f13f802251998e19ba25968a6144cdaed5b54dc8", 26, "09a743f6f381fb16de42969c762abcf96d279cf7a5529760d0e29c9cf9dc7357", "FLUTE:basket FLUTE:cobra FLUTE:haste FLUTE:strike FLUTE:swatted FLUTE:wave fight flares marks particles shimmer", "FLUTE:wave (first of 42 frames)"],
+    [1300, "571e7b3aaba26122035f6e4400fe27be3e5b3739f31dd532f77447401423acd7", 52, "2a6d37f1fa6844c00a96b4664d365e505543a228b2f9880fc7931331d841d0c0", 26, "aab27bc1c2153341d43d4c1b5f88e67bd68fe4a760be657a8eb74ce1d92a57eb", "FLUTE:basket FLUTE:cobra FLUTE:haste FLUTE:wave fight flares fringe marks particles shimmer", "FLUTE:wave (middle of 42 frames)"],
+    [1350, "8400531e161629a3b1129149eec35d257ab5c5b4b59eaf454232ed2bceab1bf4", 50, "dc70689c43973f8bebc1296c4077a008518dd23eb559676e50d38624c0600cdd", 23, "c86ba8e23c7d4f8b9442aac5b350feee0da8b8f4addaa9e8b4beeab373be43b4", "FLUTE:basket FLUTE:cobra FLUTE:swatted fight flares marks particles", "spread"],
+    [1440, "2384bd186102a931a4db300b4b4e5d457d6d26bc1d0f153625632476a5469061", 46, "1699fd2213e98b19e17830246daf8078a2c079110965a077d6d61898d5064bfd", 23, "cf81c3f2a9440a1d1af117992654adb1aa5406cbc257d2379a00bab3450f0a2c", "FLUTE:basket FLUTE:cobra fight marks particles", "spread"],
+    [1528, "eef8915f74798b34ac3f60dc0cc3ef4f07e227e081d1829501c987317cf57da7", 46, "d35e5ce6261dcb720b652c9a18e7018ec725ecfcc35b69013d1027a41257deae", 23, "e73141ffc75dc24053b1cbef80085b326cc53503b2c6879ff77ef4f0cbdc4ddd", "FLUTE:basket FLUTE:cobra FLUTE:haste FLUTE:strike fight flares marks particles", "-1 frames from the K.O."],
+    [1529, "d0abfab41cc2c0ce31e8c3617690b68a67e28cbe6941b62266056d86d8c8b856", 49, "7bf839465934cf760fa209db316b3150187e6233f3e7c118a329378472ebc250", 24, "4030c734289cce074b1b0ea56f5e59632bdeab75cb596d2e3588349a9860b0aa", "FLUTE:basket FLUTE:cobra burst flares fringe hitstop marks particles", "0 frames from the K.O."],
+    [1530, "54a4da9dcd7b6e87ce6584429fba0f6f2541c07ab9e7caa846b7263d9d9e14fe", 49, "7bf839465934cf760fa209db316b3150187e6233f3e7c118a329378472ebc250", 24, "d0db57e3fa6f7d1bb0d79f6a965d0701ce867040f9e59ad54242bd10b3ec163c", "FLUTE:basket FLUTE:cobra burst flares fringe hitstop marks particles", "spread"],
+    [1531, "0fc7824205d7e153e839a861417290481ca841c02038ec4b385681c3461bd77f", 49, "7bf839465934cf760fa209db316b3150187e6233f3e7c118a329378472ebc250", 24, "71a9532081720f2132c4ec308acdce030c209fea482f7aa2900799453585b7ed", "FLUTE:basket FLUTE:cobra flares fringe hitstop marks particles", "2 frames from the K.O."],
+    [1541, "97ec7c157be1adbb868619a40013d704dbdac77e42f7324a4410a0792211a1c4", 41, "63dac6fef037431a09e73051d9672bfc5e5775895bb4d6b82617b3abe279b979", 23, "8cff069fb0c91197166f424d96ffe090639d7f5399d69c5ee6313eb9e2fc5483", "FLUTE:basket FLUTE:cobra flares fringe glass_shards marks particles tail", "12 frames from the K.O."],
+    [1559, "63f4c9e4444dc58e32d3626d8d2671f04192e3eb88143d1293c02c7a68e20019", 37, "e9331569e8dac66a9d26fedcd44f35d134c63b058e48277de712baf4c41ac07e", 23, "2797a4127f17487b1487dff0f46ea8e90c2ca8fd162444ed01df75bfb4cdc5c5", "flares glass_shards marks particles tail", "30 frames from the K.O."],
+    [1592, "55363efff9966ad49914be5fe46e239a03fa686dfe2043ebeb96a7c1cfa1934c", 41, "ce7a4e9cfd2fb304a442a0abe919f4c16f921768fa4a53f1ad7ec8c7794c255c", 23, "724dc41bf683987aa347e5e38d420e19e5f8437453aa7adc3174ca0a4b8d2e3b", "FLUTE:basket FLUTE:solo_baskets flares glass_shards marks tail", "the victory baskets (frames 1592..1773)"],
+    [1593, "315c9f0cb0dc255d9bb2213926fcf2479a3d37d737985652464a28b9f93ed7cd", 41, "ce7a4e9cfd2fb304a442a0abe919f4c16f921768fa4a53f1ad7ec8c7794c255c", 23, "724dc41bf683987aa347e5e38d420e19e5f8437453aa7adc3174ca0a4b8d2e3b", "FLUTE:basket FLUTE:solo_baskets flares glass_shards marks tail", "the victory baskets popping in and sinking away"],
+    [1595, "e2dd570b449cb27d5176011019f168f9daae56f610da9421294acb9681c47394", 41, "ce7a4e9cfd2fb304a442a0abe919f4c16f921768fa4a53f1ad7ec8c7794c255c", 23, "724dc41bf683987aa347e5e38d420e19e5f8437453aa7adc3174ca0a4b8d2e3b", "FLUTE:basket FLUTE:solo_baskets flares glass_shards marks tail", "the victory baskets popping in and sinking away"],
+    [1598, "b4564ed32e030a9af1d98af57a13f61624bd1c5a09633dfc813314e445f8eff1", 41, "ce7a4e9cfd2fb304a442a0abe919f4c16f921768fa4a53f1ad7ec8c7794c255c", 23, "778d42bc0a46713d061f536ecac157b6e259ba3829f80e7d3290eaec18ce2e4b", "FLUTE:basket FLUTE:solo_baskets flares glass_shards marks tail", "the victory baskets popping in and sinking away"],
+    [1608, "ffa8563dc2d3a7a494b0998af1f4cb215043a61e209fd721e8cc541400bd63c3", 41, "ce7a4e9cfd2fb304a442a0abe919f4c16f921768fa4a53f1ad7ec8c7794c255c", 23, "4221f613190632783695fb409b8a96c61350d4e6563236639a7564ac91db9ec1", "FLUTE:basket FLUTE:cobra FLUTE:solo_baskets flares glass_shards marks tail", "the victory baskets (frames 1592..1773)"],
+    [1616, "fb50ba325b5625563f61fa75165e99559d688c08c6313d6bd0b7d6f9add7165c", 41, "ce7a4e9cfd2fb304a442a0abe919f4c16f921768fa4a53f1ad7ec8c7794c255c", 23, "c0eea700b805d195a455b74b4a8a7f98d14359267ec67618512f9e85ae4fd59d", "FLUTE:basket FLUTE:cobra FLUTE:solo_baskets glass_shards solo tail", "a note of the solo at 53.824 s"],
+    [1620, "529c1f26c7533bf15a8dc8539d8817adf52a3bcf803ee784b78a1cb8f3d51764", 41, "ce7a4e9cfd2fb304a442a0abe919f4c16f921768fa4a53f1ad7ec8c7794c255c", 23, "c0eea700b805d195a455b74b4a8a7f98d14359267ec67618512f9e85ae4fd59d", "FLUTE:basket FLUTE:cobra FLUTE:solo_baskets glass_shards solo tail", "spread"],
+    [1623, "78c41ba3f9da048cb2b0c3949c119d1bf848219ddeb8de4190fc6ac833061b63", 41, "ce7a4e9cfd2fb304a442a0abe919f4c16f921768fa4a53f1ad7ec8c7794c255c", 23, "c0eea700b805d195a455b74b4a8a7f98d14359267ec67618512f9e85ae4fd59d", "FLUTE:basket FLUTE:cobra FLUTE:solo_baskets glass_shards solo tail", "a note of the solo at 54.048 s"],
+    [1625, "9a692c6d8f27faddfde1c72dca6cbe4d26c8d77669c0204fe721028b5f504eb1", 41, "ce7a4e9cfd2fb304a442a0abe919f4c16f921768fa4a53f1ad7ec8c7794c255c", 23, "c0eea700b805d195a455b74b4a8a7f98d14359267ec67618512f9e85ae4fd59d", "FLUTE:basket FLUTE:cobra FLUTE:solo_baskets glass_shards solo tail", "the victory baskets (frames 1592..1773)"],
+    [1626, "2d656b1a7af51897bda2962d4e5e1f108ec131de490c372f76694e82088e6908", 41, "ce7a4e9cfd2fb304a442a0abe919f4c16f921768fa4a53f1ad7ec8c7794c255c", 23, "c0eea700b805d195a455b74b4a8a7f98d14359267ec67618512f9e85ae4fd59d", "FLUTE:basket FLUTE:cobra FLUTE:solo_baskets glass_shards solo tail", "a note of the solo at 54.160 s"],
+    [1630, "037448cf7ad962ff0864fcf53a4b89bc1a3a2ffa907c5a19c26d6f37c8cafe7f", 41, "ce7a4e9cfd2fb304a442a0abe919f4c16f921768fa4a53f1ad7ec8c7794c255c", 23, "4221f613190632783695fb409b8a96c61350d4e6563236639a7564ac91db9ec1", "FLUTE:basket FLUTE:cobra FLUTE:solo_baskets glass_shards solo tail", "a note of the solo at 54.272 s"],
+    [1641, "a77a495ab6b05b7e8641c38046e08ecdd1dba1ed74e4d1f817aa30e484695c71", 41, "ce7a4e9cfd2fb304a442a0abe919f4c16f921768fa4a53f1ad7ec8c7794c255c", 22, "2ea9fa9a1915f8489f3ca2228a163f04514328bdc8dd3d702e6e43262efcd1a5", "FLUTE:basket FLUTE:cobra FLUTE:solo_baskets glass_shards solo tail", "the victory baskets (frames 1592..1773)"],
+    [1658, "e62ddb6aa99039765ce833adabe34c55bbc6000dbca2412233b6209a54c36bcb", 41, "ce7a4e9cfd2fb304a442a0abe919f4c16f921768fa4a53f1ad7ec8c7794c255c", 23, "5021487fd57e9aebb3a68cd0862c04d80e7ac74ce1ffd05e677865e2ce241142", "FLUTE:basket FLUTE:cobra FLUTE:solo_baskets glass_shards solo tail", "the victory baskets (frames 1592..1773)"],
+    [1674, "0dcf162f5c927629126fe46565b501e8674eaf94873a15dbd1329dc67c191226", 41, "ce7a4e9cfd2fb304a442a0abe919f4c16f921768fa4a53f1ad7ec8c7794c255c", 23, "22d25cecfd54938180d89d30401e5513c86f775dd0980587bb466c408cdf4a48", "FLUTE:basket FLUTE:cobra FLUTE:solo_baskets glass_shards solo tail", "the victory baskets (frames 1592..1773)"],
+    [1691, "9537013ffae87e1ef23275fd1de5cc01af0652784f4d8b2780da8b33fa1e6813", 41, "ce7a4e9cfd2fb304a442a0abe919f4c16f921768fa4a53f1ad7ec8c7794c255c", 23, "5021487fd57e9aebb3a68cd0862c04d80e7ac74ce1ffd05e677865e2ce241142", "FLUTE:basket FLUTE:cobra FLUTE:solo_baskets glass_shards solo tail", "the victory baskets (frames 1592..1773)"],
+    [1707, "dc71f39f3f698eacd27112b812e2776df8441c3a1fc7eb61a43a7945b35709b4", 41, "ce7a4e9cfd2fb304a442a0abe919f4c16f921768fa4a53f1ad7ec8c7794c255c", 23, "54ab3b5d7ca62f1d42b7a3ea1e78f4d96397b44a21ca0b79bda105b291f256e7", "FLUTE:basket FLUTE:cobra FLUTE:solo_baskets glass_shards solo tail", "the victory baskets (frames 1592..1773)"],
+    [1710, "c6ada23cfa8316be3473e0f6968fc424e04fd18a60d5cf4edbc1c0062faba5d2", 41, "ce7a4e9cfd2fb304a442a0abe919f4c16f921768fa4a53f1ad7ec8c7794c255c", 23, "54ab3b5d7ca62f1d42b7a3ea1e78f4d96397b44a21ca0b79bda105b291f256e7", "FLUTE:basket FLUTE:cobra FLUTE:solo_baskets glass_shards solo tail", "spread"],
+    [1724, "78191b8ec2ae7123e1bc3a37f219561dfdf58c805085b955428857adb7d72818", 41, "ce7a4e9cfd2fb304a442a0abe919f4c16f921768fa4a53f1ad7ec8c7794c255c", 21, "f4ecbc57b5db99f672021d707432e1b72bd51da107fbe62709cb956c42930416", "FLUTE:basket FLUTE:cobra FLUTE:solo_baskets glass_shards reassembly tail", "the victory baskets (frames 1592..1773)"],
+    [1732, "2f5105374aa3a7a8c018b29ed9f66104ddb251bf4e5b2ddaa02210a22247da03", 41, "ce7a4e9cfd2fb304a442a0abe919f4c16f921768fa4a53f1ad7ec8c7794c255c", 21, "f4ecbc57b5db99f672021d707432e1b72bd51da107fbe62709cb956c42930416", "FLUTE:basket FLUTE:cobra FLUTE:solo_baskets glass_shards reassembly tail", "0.3 s into the reassembly"],
+    [1740, "6896c7dab26e4b0ec6b6a63bd17827811f85ee0075f291e1f7f39f4b8dac6a71", 41, "ce7a4e9cfd2fb304a442a0abe919f4c16f921768fa4a53f1ad7ec8c7794c255c", 21, "1a7bcb89edaea83696380e11cc673b4dc04d8a2e047ab939edb391cec668243b", "FLUTE:basket FLUTE:cobra FLUTE:solo_baskets glass_shards reassembly tail", "the victory baskets (frames 1592..1773)"],
+    [1741, "ca98cb9310f9369504d83796ae23033ca5d6a6ad51bc6132ca1c638f8592b022", 41, "ce7a4e9cfd2fb304a442a0abe919f4c16f921768fa4a53f1ad7ec8c7794c255c", 21, "1a7bcb89edaea83696380e11cc673b4dc04d8a2e047ab939edb391cec668243b", "FLUTE:basket FLUTE:cobra FLUTE:solo_baskets glass_shards reassembly tail", "0.6 s into the reassembly"],
+    [1750, "8beee53246eed1e34d03ea0c2710e3adb90428bca12ce5c6f52a4e67b6e1d744", 41, "ce7a4e9cfd2fb304a442a0abe919f4c16f921768fa4a53f1ad7ec8c7794c255c", 21, "35be5bf0811ea77db9f4923b257110b45978ac1448938ec23ccc039505977190", "FLUTE:basket FLUTE:cobra FLUTE:solo_baskets glass_shards reassembly tail", "0.9 s into the reassembly"],
+    [1757, "da22dc098aa948ca653e4fa0c68a6fff5893e29ce3b7bec5f9f18dc35f5d75e0", 41, "ce7a4e9cfd2fb304a442a0abe919f4c16f921768fa4a53f1ad7ec8c7794c255c", 21, "70df75f523852117ba7128f10957aa590cb3b79d8c6de47ae5ebdcfa14e9d6d5", "FLUTE:basket FLUTE:cobra FLUTE:solo_baskets glass_shards reassembly tail", "the victory baskets (frames 1592..1773)"],
+    [1768, "ee9060940aa30459c8edb76250efa70e9911f8f2c1f56753db7d705b8974c48c", 41, "ce7a4e9cfd2fb304a442a0abe919f4c16f921768fa4a53f1ad7ec8c7794c255c", 21, "7e20b9b3a7bedae71e4b822d96caae38b9cbebdda1ccdf4565bb699685799d79", "FLUTE:basket FLUTE:cobra FLUTE:solo_baskets glass_shards reassembly tail", "the victory baskets popping in and sinking away"],
+    [1772, "2ef982a328d6d2fad2d6b42667c3600cf486d7c2c34de24a2aeb797d94f4f274", 41, "ce7a4e9cfd2fb304a442a0abe919f4c16f921768fa4a53f1ad7ec8c7794c255c", 21, "933be7c764be341e6193a4e7f7554132207aaa805f13ff541f2a9f1b0f88fd93", "FLUTE:basket FLUTE:cobra FLUTE:solo_baskets glass_shards reassembly tail", "the victory baskets popping in and sinking away"],
+    [1773, "596b02b41fc60b61c2a43e4d869c3a844bb234799434b4632f141c4cc02b184b", 48, "3541a5fde238468d05aac3df0c59757822b27ca2f711d3ce733e3a1efc8bc304", 21, "933be7c764be341e6193a4e7f7554132207aaa805f13ff541f2a9f1b0f88fd93", "FLUTE:basket FLUTE:cobra FLUTE:solo_baskets glass_shards reassembly tail", "the victory baskets (frames 1592..1773)"],
+    [1776, "76e25b4931f27caec4d83b33b7faad17c29997173b2e1f58ed914fc4614d4e73", 48, "3541a5fde238468d05aac3df0c59757822b27ca2f711d3ce733e3a1efc8bc304", 21, "933be7c764be341e6193a4e7f7554132207aaa805f13ff541f2a9f1b0f88fd93", "glass_shards reassembly tail", "-1 frames from the glide home"],
+    [1777, "3b2821e41a44be2dac513db5166b81f166933961ddd284f2027cc85c54571131", 44, "c995447657eeba91ef28b1214a150d0b8308a529f2274c67409eb04bdf7e6682", 21, "dd3fd43105d726cc975c72a9babc5dc9efcb4178213f67950dd7c3293170ac56", "glide tail", "0 frames from the glide home"],
+    [1800, "ecf922c997b24d8199a8c394f6f1cd748c36c0631d4cd49f6b64d8437e07c612", 46, "4f1afb9fe8be06ce7844f46322ce0d74bd596a0a33fa1139a4bcc318499786a0", 22, "1555176108a8f0eb22db1d2639e10fff9d0820456d5c3f61497f5bcfdc974327", "glide tail", "spread"]
+   ],
+   "hooks_build": [1025, "4ebd9f6634a458d7460786370c152928f664af7720ac5239ef66f44e34ffc7d5"],
+   "hooks_build_head": ["0.setup", "1.setup", "0.shake", "1.shake", "1.shake", "1.shake", "1.shake", "0.shake"],
+   "hooks_frame": {
+    "calls": ["0.state(0,tail)", "1.state(0,tail)", "0.light", "1.light", "0.state(0,tail)", "1.state(0,tail)", "0.state(1,tail)", "1.state(1,tail)", "0.state(0,tail)", "1.state(0,tail)", "0.shadows", "0.shadows_free", "1.shadows_free", "0.canvas", "1.canvas", "0.canvas_after", "1.canvas_after", "0.canvas_overlay", "1.canvas_overlay", "0.items_ball", "0.items_free", "1.items_free", "0.draw_item", "0.draw_item", "0.draw_item", "0.draw_item", "0.ball(0)", "1.ball(0)", "0.ball_sprite(0)", "0.over_ring", "1.over_ring", "0.shimmer_after", "1.shimmer_after", "0.glows", "1.glows", "0.after_grade", "1.after_grade", "0.state(0,tail)", "1.state(0,tail)", "0.hides_hp(0)", "1.hides_hp(0)"],
+    "frame": 1592
+   },
+   "k": 0,
+   "recording": {
+    "checked": "before any frame was drawn the export read this file and found it equal to the run the kit drew from",
+    "events": 510,
+    "file": "studio/reference/fights/flute_vs_trombone/seed3.bfrec",
+    "frames": 1422,
+    "hash": "9bff0f539177070e",
+    "seed": 3,
+    "t_ko": "0x1.97a3a3a3a3a3ap+5",
+    "winner": 0
+   },
+   "seed": 3,
+   "state": {
+    "baskets": [
+     [
+      0,
+      "0x1.cc5c67dfe32a0p+1",
+      ["-0x1.d99999999999ap+0", "0x1.d99999999999ap+0"],
+      "0x1.cb837b4a2339cp+2"
+     ],
+     [
+      1,
+      "0x1.58d8ec95bff04p+2",
+      ["-0x1.1cdd286554cdbp-1", "0x1.8f86c2e05d662p-1"],
+      "0x1.1f1719f7f8ca8p+3"
+     ],
+     [
+      2,
+      "0x1.cb837b4a2339cp+2",
+      ["0x1.2c8ff3e2980f7p+1", "0x1.32d824a4a594ep+0"],
+      "0x1.58b0b39192642p+3"
+     ],
+     [
+      3,
+      "0x1.1f1719f7f8ca8p+3",
+      ["-0x1.100d53b69bcc0p+1", "0x1.01654e6a78310p-1"],
+      "0x1.92060fe47991cp+3"
+     ],
+     [
+      4,
+      "0x1.58b0b39192642p+3",
+      ["0x1.fafd835e1c4b1p-2", "0x1.8aa3fd85b787bp+0"],
+      "0x1.cb5b573eab368p+3"
+     ],
+     [
+      5,
+      "0x1.92060fe47991cp+3",
+      ["0x1.0d4de085af476p+1", "-0x1.2e57a0cdc8933p+0"],
+      "0x1.027a786c22681p+4"
+     ],
+     [
+      6,
+      "0x1.cb5b573eab368p+3",
+      ["0x1.ae51f16d0c99ep-1", "-0x1.60d33806a07b9p+0"],
+      "0x1.1f25269595feep+4"
+     ],
+     [
+      7,
+      "0x1.027a786c22681p+4",
+      ["0x1.661505e3b45f1p-1", "-0x1.f2dd7f64fda61p-1"],
+      "0x1.3bcfd4bf0995bp+4"
+     ],
+     [
+      8,
+      "0x1.1f25269595feep+4",
+      ["-0x1.3261f959dd327p+0", "0x1.e12eda151ec79p+0"],
+      "0x1.587a786c22681p+4"
+     ],
+     [
+      9,
+      "0x1.3bcfd4bf0995bp+4",
+      ["0x1.2b0ddd4b7c4d3p+1", "-0x1.0961ec6c2682ep-2"],
+      "0x1.75474538ef34dp+4"
+     ],
+     [
+      10,
+      "0x1.587a786c22681p+4",
+      ["0x1.c787e1b49d587p+0", "0x1.41e25666121b7p-1"],
+      "0x1.91f1f36262cbap+4"
+     ],
+     [
+      11,
+      "0x1.75474538ef34dp+4",
+      ["0x1.4c2a68fc4a333p+0", "0x1.69033aed36162p+0"],
+      "0x1.ae9ca18bd6627p+4"
+     ],
+     [
+      12,
+      "0x1.91f1f36262cbap+4",
+      ["0x1.301db692444f4p+1", "0x1.2acadf9cffa4fp+1"],
+      "0x1.cb696e58a32f4p+4"
+     ],
+     [
+      13,
+      "0x1.ae9ca18bd6627p+4",
+      ["-0x1.9b24240c5ec26p+0", "0x1.7c97f03ba70dfp+0"],
+      "0x1.e8141205bc01ap+4"
+     ],
+     [
+      14,
+      "0x1.cb696e58a32f4p+4",
+      ["0x1.e7f7da04a8102p-2", "0x1.2e07ff15bbb00p-1"],
+      "0x1.025f601797cc4p+5"
+     ],
+     [
+      15,
+      "0x1.e8141205bc01ap+4",
+      ["0x1.c649f99a45f02p+0", "-0x1.bbe0db4a04848p+0"],
+      "0x1.10b4b72c5197ap+5"
+     ],
+     [
+      16,
+      "0x1.025f601797cc4p+5",
+      ["0x1.1265bd721ce35p+1", "0x1.cc3192aa0cca2p-1"],
+      "0x1.1f1b1d92b7fe1p+5"
+     ],
+     [
+      17,
+      "0x1.10b4b72c5197ap+5",
+      ["0x1.86cccf58d3decp+0", "0x1.2c8dcb5ec457cp+1"],
+      "0x1.2d706f6944674p+5"
+     ],
+     [
+      18,
+      "0x1.1f1b1d92b7fe1p+5",
+      ["0x1.b44bd6df76783p+0", "0x1.4d3af199e4035p-1"],
+      "0x1.3bc5c67dfe32ap+5"
+     ],
+     [
+      19,
+      "0x1.2d706f6944674p+5",
+      ["-0x1.947f5296dd93bp+0", "0x1.beb313a75e04ep+0"],
+      "0x1.4a2c2ce464990p+5"
+     ],
+     [
+      20,
+      "0x1.3bc5c67dfe32ap+5",
+      ["-0x1.068c2e4d87e2bp+0", "0x1.7f24ac9419960p+0"],
+      "0x1.588183f91e647p+5"
+     ],
+     [
+      21,
+      "0x1.4a2c2ce464990p+5",
+      ["-0x1.a50040f8ec362p+0", "0x1.1f195fc66b7b5p+1"],
+      "0x1.66d6d5cfaacdap+5"
+     ],
+     [
+      22,
+      "0x1.588183f91e647p+5",
+      ["-0x1.3788209df8db7p+0", "0x1.15001a7466dfcp+1"],
+      "0x1.753d3c3611340p+5"
+     ],
+     [
+      23,
+      "0x1.66d6d5cfaacdap+5",
+      ["-0x1.0847cc203b993p+0", "0x1.740e44a7b4199p+0"],
+      "0x1.8392934acaff7p+5"
+     ],
+     [
+      24,
+      "0x1.753d3c3611340p+5",
+      ["-0x1.80e93bc46571cp+0", "0x1.12d357b5d95c9p+1"],
+      "0x1.91e7ea5f84cadp+5"
+     ],
+     [
+      25,
+      "0x1.8392934acaff7p+5",
+      ["-0x1.2b864fdd38501p+1", "0x1.430906dc4c4eep+0"],
+      "0x1.8c00000000000p+6"
+     ],
+     [
+      26,
+      "0x1.91e7ea5f84cadp+5",
+      ["0x1.129606bedcd47p+1", "0x1.b15bc5778cdebp+0"],
+      "0x1.8c00000000000p+6"
+     ]
+    ],
+    "cobras": [
+     [
+      "0x1.cb4b4b4b4b4b4p+1",
+      "0x0.0p+0",
+      []
+     ],
+     [
+      "0x1.affe5c91d14e3p+2",
+      "0x0.0p+0",
+      [
+       [
+        0,
+        ["-0x1.d99999999999ap+0", "0x1.d99999999999ap+0"],
+        "0x1.0000000000000p+0",
+        ["-0x1.d99999999999ap+0", "0x1.d99999999999ap+0"],
+        "0x1.cc5c67dfe32a0p+1",
+        null,
+        "-0x1.1203466064f21p-1",
+        "0x1.0000000000000p+0",
+        null
+       ],
+       [
+        1,
+        ["-0x1.1cdd286554cdbp-1", "0x1.8f86c2e05d662p-1"],
+        "0x1.0000000000000p+0",
+        ["-0x1.1cdd286554cdbp-1", "0x1.8f86c2e05d662p-1"],
+        "0x1.58d8ec95bff04p+2",
+        ["0x1.aeb6ae7d566cfp+2", "0x1.b664c2f837b4ap+2", "0x1.c2ae7d566cf42p+2", "-0x1.83e001daf6cabp-2", "0x1.2762b52306458p+0"],
+        "-0x1.695665790eb28p-2",
+        "0x1.0000000000000p+0",
+        null
+       ]
+      ]
+     ],
+     [
+      "0x1.db844d013a92ap+3",
+      "0x0.0p+0",
+      [
+       [
+        5,
+        ["0x1.0d4de085af476p+1", "-0x1.2e57a0cdc8933p+0"],
+        "0x1.0000000000000p+0",
+        ["0x1.0d4de085af476p+1", "-0x1.2e57a0cdc8933p+0"],
+        "0x1.92060fe47991cp+3",
+        null,
+        "0x1.69c45b2314b17p+1",
+        "0x1.0000000000000p+0",
+        null
+       ],
+       [
+        6,
+        ["0x1.ae51f16d0c99ep-1", "-0x1.60d33806a07b9p+0"],
+        "0x1.0000000000000p+0",
+        ["0x1.ae51f16d0c99ep-1", "-0x1.60d33806a07b9p+0"],
+        "0x1.cb5b573eab368p+3",
+        null,
+        "0x1.4080edb02867dp+1",
+        "0x1.3ee721a54d8cap-1",
+        ["0x1.eb851eb851e00p-6", "0x1.0000000000000p+0"]
+       ]
+      ]
+     ],
+     [
+      "0x1.4000000000000p+4",
+      "0x0.0p+0",
+      [
+       [
+        8,
+        ["-0x1.3261f959dd327p+0", "0x1.e12eda151ec79p+0"],
+        "0x1.0000000000000p+0",
+        ["-0x1.3261f959dd327p+0", "0x1.e12eda151ec79p+0"],
+        "0x1.1f25269595feep+4",
+        null,
+        "-0x1.4de37c5206f43p+0",
+        "0x1.0000000000000p+0",
+        null
+       ],
+       [
+        9,
+        ["0x1.2b0ddd4b7c4d3p+1", "-0x1.0961ec6c2682ep-2"],
+        "0x1.11f6a2f85d4eep+0",
+        ["0x1.2b0ddd4b7c4d3p+1", "-0x1.0961ec6c2682ep-2"],
+        "0x1.3bcfd4bf0995bp+4",
+        null,
+        "-0x1.5264675d32f32p+1",
+        "0x1.0000000000000p+0",
+        null
+       ]
+      ]
+     ],
+     [
+      "0x1.b0363b256ffc1p+4",
+      "0x1.0000000000078p-1",
+      [
+       [
+        11,
+        ["0x1.4c2a68fc4a333p+0", "0x1.69033aed36162p+0"],
+        "0x1.fffffffffff10p-2",
+        ["0x1.4c2a68fc4a333p+0", "0x1.69033aed36162p+0"],
+        "0x1.75474538ef34dp+4",
+        null,
+        "-0x1.08469a4f5ca30p+1",
+        "0x1.0000000000000p+0",
+        null
+       ],
+       [
+        12,
+        ["0x1.301db692444f4p+1", "0x1.2acadf9cffa4fp+1"],
+        "0x1.0000000000000p+0",
+        ["0x1.1e4c0bbfa670fp+1", "0x1.1207e4dc9f1aep+1"],
+        "0x1.91f1f36262cbap+4",
+        null,
+        "-0x1.18b9e438fb654p+1",
+        "0x1.0000000000000p+0",
+        null
+       ],
+       [
+        13,
+        ["-0x1.9b24240c5ec26p+0", "0x1.7c97f03ba70dfp+0"],
+        "0x1.ed2d6b3eb1d18p-1",
+        ["-0x1.75e16c102030dp+0", "0x1.4c53df969281cp+0"],
+        "0x1.ae9ca18bd6627p+4",
+        null,
+        "-0x1.f08818b6d6477p-1",
+        "0x1.0000000000000p+0",
+        null
+       ]
+      ]
+     ],
+     [
+      "0x1.993d3d3d3d3d4p+5",
+      "0x0.0p+0",
+      [
+       [
+        25,
+        ["-0x1.2b864fdd38501p+1", "0x1.430906dc4c4eep+0"],
+        "0x1.0000000000000p+0",
+        ["-0x1.2b864fdd38501p+1", "0x1.430906dc4c4eep+0"],
+        "0x1.8392934acaff7p+5",
+        null,
+        "-0x1.960e44e8ce3bdp+0",
+        "0x1.0000000000000p+0",
+        null
+       ],
+       [
+        26,
+        ["0x1.129606bedcd47p+1", "0x1.b15bc5778cdebp+0"],
+        "0x1.0000000000000p+0",
+        ["0x1.129606bedcd47p+1", "0x1.b15bc5778cdebp+0"],
+        "0x1.91e7ea5f84cadp+5",
+        null,
+        "-0x1.40fc778c19008p+1",
+        "0x1.0000000000000p+0",
+        null
+       ]
+      ]
+     ],
+     [
+      "0x1.a8fcfcfcfcfcfp+5",
+      "0x0.0p+0",
+      [
+       [
+        100,
+        ["-0x1.b4849de3327a6p-1", "0x1.b4849de3327a6p-1"],
+        "0x1.097b425ed0800p-2",
+        ["-0x1.b4849de3327a6p-1", "0x1.b4849de3327a6p-1"],
+        "0x1.aa96969696969p+5",
+        null,
+        "0x1.2d97c7f3321d2p+1",
+        "0x1.0000000000000p+0",
+        null
+       ],
+       [
+        101,
+        ["0x1.b1e1c88333ec0p-1", "-0x1.b1e1c88333ec0p-1"],
+        "0x1.097b425ed0800p-2",
+        ["0x1.b1e1c88333ec0p-1", "-0x1.b1e1c88333ec0p-1"],
+        "0x1.ab8c5925f2bf8p+5",
+        null,
+        "0x1.5fdbbe9bba775p+2",
+        "0x1.0000000000000p+0",
+        null
+       ]
+      ]
+     ],
+     [
+      "0x1.ac30303030303p+5",
+      "0x0.0p+0",
+      [
+       [
+        100,
+        ["-0x1.c7fd60175c6bep-1", "0x1.c7fd60175c6bep-1"],
+        "0x1.0000000000000p+0",
+        ["-0x1.c7fd60175c6bep-1", "0x1.c7fd60175c6bep-1"],
+        "0x1.aa96969696969p+5",
+        null,
+        "0x1.2d97c7f3321d2p+1",
+        "0x1.0000000000000p+0",
+        null
+       ],
+       [
+        101,
+        ["0x1.9e69064f09fa8p-1", "-0x1.9e69064f09fa8p-1"],
+        "0x1.0000000000000p+0",
+        ["0x1.9e69064f09fa8p-1", "-0x1.9e69064f09fa8p-1"],
+        "0x1.ab8c5925f2bf8p+5",
+        null,
+        "0x1.5fdbbe9bba775p+2",
+        "0x1.0000000000000p+0",
+        null
+       ]
+      ]
+     ],
+     [
+      "0x1.b696969696969p+5",
+      "0x0.0p+0",
+      [
+       [
+        100,
+        ["-0x1.b6ef62d83c793p-1", "0x1.b6ef62d83c793p-1"],
+        "0x1.0000000000000p+0",
+        ["-0x1.b6ef62d83c793p-1", "0x1.b6ef62d83c793p-1"],
+        "0x1.aa96969696969p+5",
+        null,
+        "0x1.2d97c7f3321d2p+1",
+        "0x1.0000000000000p+0",
+        null
+       ],
+       [
+        101,
+        ["0x1.af77038e29ed3p-1", "-0x1.af77038e29ed3p-1"],
+        "0x1.0000000000000p+0",
+        ["0x1.af77038e29ed3p-1", "-0x1.af77038e29ed3p-1"],
+        "0x1.ab8c5925f2bf8p+5",
+        null,
+        "0x1.5fdbbe9bba775p+2",
+        "0x1.0000000000000p+0",
+        null
+       ]
+      ]
+     ],
+     [
+      "0x1.d1b1b1b1b1b1ap+5",
+      "0x0.0p+0",
+      [
+       [
+        100,
+        ["-0x1.c12b8a3763604p-1", "0x1.c12b8a3763604p-1"],
+        "0x1.d9b91bfd97256p-1",
+        ["-0x1.c12b8a3763604p-1", "0x1.c12b8a3763604p-1"],
+        "0x1.aa96969696969p+5",
+        null,
+        "0x1.2d97c7f3321d2p+1",
+        "0x1.0000000000000p+0",
+        null
+       ],
+       [
+        101,
+        ["0x1.a53adc2f03062p-1", "-0x1.a53adc2f03062p-1"],
+        "0x1.d9b91bfd97256p-1",
+        ["0x1.a53adc2f03062p-1", "-0x1.a53adc2f03062p-1"],
+        "0x1.ab8c5925f2bf8p+5",
+        null,
+        "0x1.5fdbbe9bba775p+2",
+        "0x1.0000000000000p+0",
+        null
+       ]
+      ]
+     ],
+     [
+      "0x1.d93f3f3f3f3f4p+5",
+      "0x0.0p+0",
+      [
+       [
+        100,
+        ["-0x1.96c881cfb3754p-1", "0x1.96c881cfb3754p-1"],
+        "0x1.4f150be98f300p-8",
+        ["-0x1.96c881cfb3754p-1", "0x1.96c881cfb3754p-1"],
+        "0x1.aa96969696969p+5",
+        null,
+        "0x1.2d97c7f3321d2p+1",
+        "0x1.0000000000000p+0",
+        null
+       ],
+       [
+        101,
+        ["0x1.cf9de496b2f12p-1", "-0x1.cf9de496b2f12p-1"],
+        "0x1.4f150be98f300p-8",
+        ["0x1.cf9de496b2f12p-1", "-0x1.cf9de496b2f12p-1"],
+        "0x1.ab8c5925f2bf8p+5",
+        null,
+        "0x1.5fdbbe9bba775p+2",
+        "0x1.0000000000000p+0",
+        null
+       ]
+      ]
+     ]
+    ],
+    "dances": [
+     ["0x1.ae9ca18bd6627p+4", "0x1.cb5156408b172p+4"],
+     ["0x1.1f1b1d92b7fe1p+5", "0x1.2d7577ed12587p+5"],
+     ["0x1.6a706f6944674p+5", "0x1.78cac9c39ec1ap+5"]
+    ],
+    "n_strikes": 62,
+    "strikes": [
+     [
+      1,
+      2,
+      ["0x1.aeb6ae7d566cfp+2", "0x1.b664c2f837b4ap+2", "0x1.c2ae7d566cf42p+2", "-0x1.83e001daf6cabp-2", "0x1.2762b52306458p+0"],
+      ["0x1.cb837b4a2339cp+2", "0x1.d30068db8bac7p+2", "0x1.defb7e90ff972p+2", "-0x1.18644f8cd704fp-2", "0x1.b5c28f5c28f5cp+0"]
+     ],
+     [
+      2,
+      2,
+      ["0x1.e8504816f0069p+2", "0x1.efcd35a858794p+2", "0x1.fbc84b5dcc63fp+2", "-0x1.b19f74fbc7bacp+0", "0x1.b5c28f5c28f5cp+0"],
+      ["0x1.1f1719f7f8ca8p+3", "0x1.22d590c0ad03ep+3", "0x1.28d31b9b66f93p+3", "-0x1.042787e691b77p+1", "0x1.61b07bf94057ap+0"]
+     ],
+     [
+      3,
+      3,
+      ["0x1.58b0b39192642p+3", "0x1.5c5696e58a330p+3", "0x1.622ccf6be37dfp+3", "-0x1.2f406ab1dfe00p+0", "0x1.3ed06c891ef28p+0"],
+      ["0x1.839fa97e132b5p+3", "0x1.872cf95d4e8fbp+3", "0x1.8cdbdf8f47304p+3", "-0x1.473ac9f01d162p-1", "0x1.81ef9478c47a8p+0"]
+     ]
+    ],
+    "swat_down": "0x1.cb4b4b4b4b4b4p-1",
+    "swats": [
+     [
+      6,
+      ["0x1.da8e8a71de69bp+3", "0x1.03474538ef34dp+4"]
+     ],
+     [
+      5,
+      ["0x1.ea4a4d2b2bfdbp+3"]
+     ],
+     [
+      7,
+      ["0x1.3525269595feep+4"]
+     ],
+     [
+      9,
+      ["0x1.60363b256ffc1p+4"]
+     ],
+     [
+      11,
+      ["0x1.7ce0ded288ce7p+4", "0x1.8badab9f559b4p+4", "0x1.9a141205bc01ap+4"]
+     ],
+     [
+      10,
+      ["0x1.8bcfd4bf0995bp+4"]
+     ],
+     [
+      12,
+      ["0x1.99adab9f559b4p+4"]
+     ],
+     [
+      13,
+      ["0x1.b6141205bc01ap+4", "0x1.c5cfd4bf0995bp+4"]
+     ],
+     [
+      14,
+      ["0x1.da9ca18bd6627p+4", "0x1.fe7a786c22681p+4"]
+     ],
+     [
+      16,
+      ["0x1.1492934acaff7p+5"]
+     ],
+     [
+      18,
+      ["0x1.22d6d5cfaacdap+5"]
+     ],
+     [
+      17,
+      ["0x1.26706f6944674p+5"]
+     ],
+     [
+      20,
+      ["0x1.432c2ce464990p+5", "0x1.4c3d3c3611340p+5", "0x1.56f8f9b13165dp+5"]
+     ],
+     [
+      19,
+      ["0x1.43f8f9b13165dp+5"]
+     ],
+     [
+      21,
+      ["0x1.4fa3a29c779a7p+5"]
+     ],
+     [
+      22,
+      ["0x1.63c5c67dfe32ap+5", "0x1.6af8f9b13165dp+5"]
+     ],
+     [
+      23,
+      ["0x1.6e1b1d92b7fe1p+5", "0x1.755f601797cc4p+5"]
+     ]
+    ]
+   },
+   "swapped": false,
+   "winner": "FLUTE"
+  }
+ },
+ "fps": 30,
+ "frame_columns": ["frame", "sha256 of the frame", "hook calls", "sha256 of the hook calls", "boxes drawn", "sha256 of the boxes", "tags", "why the frame was chosen"],
+ "hook_names": ["setup", "state", "ball", "ball_sprite", "hides_hp", "shake", "rope", "spark", "hit_glow", "fx_setup", "fx_event", "fx_after", "ko_fx", "fx_end", "light", "shadows", "shadows_free", "canvas", "canvas_wave", "canvas_after", "canvas_overlay", "items_ball", "items_free", "draw_item", "over_ring", "draw_shard", "shimmer", "shimmer_after", "glows", "fringe", "fringe_size", "after_grade"],
+ "hook_note": "a hook call is '<side>.<hook>'; state adds '(ball,phase)', ball, ball_sprite and hides_hp add '(ball)'. sprite, title_closeup, title_pattern and focus_points are not hooks of this list. hooks_build leaves out rope (the kit asks it twice for an event that shakes the ropes)",
+ "look": "FLUTE",
+ "mode": "RGB",
+ "other_look": "kit/fighters/base.py Look",
+ "size": [360, 640],
+ "tag_notes": {
+  "FLUTE:basket": "at least one basket is on the canvas",
+  "FLUTE:cobra": "at least one cobra is up",
+  "FLUTE:dance": "SNAKE DANCE is running (the cobras leave their baskets)",
+  "FLUTE:haste": "FLUTTER TONGUE is running",
+  "FLUTE:shards": "its silver shards are flying (it lost)",
+  "FLUTE:solo_baskets": "one of its two victory baskets is on screen (it won)",
+  "FLUTE:strike": "a cobra is lunging or recoiling",
+  "FLUTE:swatted": "a cobra was slapped flat by the lance and is still down or curling back up",
+  "FLUTE:wave": "PICCOLO's ring is crossing the canvas",
+  "burst": "an ink starburst is drawn",
+  "card": "the VS title card is drawn",
+  "card_closed": "the card is shut (no HUD under it)",
+  "doors": "the card is sliding open or shut",
+  "fight": "the fight, up to the K.O.",
+  "flares": "an attack light is lit",
+  "fringe": "chromatic fringing on a big hit or the K.O.",
+  "glass_shards": "the K.O. shatter is on screen",
+  "glide": "the last bar: both balls glide to their corners",
+  "hitstop": "the 0.35 s hit-stop on the K.O.",
+  "marks": "fading marks are on the canvas",
+  "particles": "reelkit.fx particles are alive",
+  "reassembly": "the loser's pieces fly home",
+  "rev": "before FIGHT!: both balls rev in their corners",
+  "shimmer": "a heat shimmer warps the frame",
+  "solo": "the winner's solo",
+  "tail": "after the hit-stop"
+ },
+ "title": {
+  "closeup": {
+   "call": "Look.title_closeup(44)",
+   "radius": 44,
+   "sha256": "cf9398cefb0a06d3c31902ae0e698e067d364cf01f94309865dfa4d800c9aacb",
+   "size": 93
+  },
+  "flare_scale": "0x1.b333333333333p-1",
+  "glass": [150, 160, 196],
+  "pattern": {
+   "base": "base[y, x, c] = 40.0 + x * 0.5 + y * 0.25 + 20.0 * c, float64, (640, 360, 3)",
+   "call": "flute_keys(base)",
+   "samples": [
+    [
+     0,
+     0,
+     ["0x1.a999999999999p+4", "0x1.4851eb851eb84p+5", "0x1.e666666666666p+5"]
+    ],
+    [
+     180,
+     320,
+     ["0x1.174cccccccccdp+7", "0x1.3aa3d70a3d70ap+7", "0x1.7c00000000000p+7"]
+    ],
+    [
+     359,
+     639,
+     ["0x1.f8670a3d70a3cp+7", "0x1.111645a1cac08p+8", "0x1.3ea147ae147aep+8"]
+    ],
+    [
+     100,
+     200,
+     ["0x1.7466666666666p+6", "0x1.b5c28f5c28f5bp+6", "0x1.1199999999999p+7"]
+    ],
+    [
+     201,
+     77,
+     ["0x1.a8ef5c28f5c28p+6", "0x1.ebcbc6a7ef9dap+6", "0x1.2f9eb851eb852p+7"]
+    ],
+    [
+     17,
+     503,
+     ["0x1.cf8147ae147adp+6", "0x1.09bbe76c8b439p+7", "0x1.45a8f5c28f5c2p+7"]
+    ]
+   ],
+   "sha256": "c42573329d9519b1e1c9954c41893aff8019dc428a691175c020d64b1393fefb",
+   "sha256_of": "the float64 values, little-endian, C order"
+  },
+  "shards": ["tube_s", "tube_s", "tube_s", "tube_s", "tube_s", "tube_s", "key", "key", "key", "key", "key", "key", "key"]
+ },
+ "tool": "look_flute"
+}
