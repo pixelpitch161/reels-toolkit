@@ -6,7 +6,9 @@
 and seed search, the balance, the picture, the sound, the quality checks and the video encode. It lives in the
 `studio/` folder of this repo. Right now it knows one match-up, FLUTE against TROMBONE with the big top music, and
 it is driven by one command, `ballfight`. The window (the app with its five steps, preview and queue) is the next
-milestone and is being built.
+milestone and is being built: its screens (Match-up, Balance, Seeds, Music, Render, Library, Settings) already exist
+in the `bf-app` crate, but they still show sample data and are not connected to the engine yet, so nothing in that
+window today is a real fight or a real video.
 
 **It makes the same video as the Python kit.** For the example episode (`projects/ballfight/examples/
 flute_vs_trombone`, seed 392) the Studio draws all 43 checked frames of the video byte for byte as the kit does,
@@ -25,7 +27,8 @@ fight, not the kit's (that is by design).
 - One picture of the video: about 0.13 to 0.22 seconds on one core, so live playback at 30 frames a second needs
   about 7 cores drawing ahead. The app is planned that way.
 
-**How to run it.** There is no double-click program yet (that comes with the app). Today it takes one command. Open
+**How to run it.** There is no double-click program yet (that comes with the app), so for now this step is for
+whoever is developing it, not something the owner has to do. Today it takes one command. Open
 PowerShell in the repo's `studio` folder (in File Explorer: open `studio`, type `powershell` in the address bar,
 press Enter) and paste:
 

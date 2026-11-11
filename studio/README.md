@@ -15,6 +15,7 @@ kit in `projects/ballfight/` and checked against it. Design: `docs/studio/2026-1
 | `bf-content` | Fighters, themes, the registry and the pair rules | sim, picture, sound |
 | `bf-export` | Checks, encode, render job, output folders | story, picture, sound, content |
 | `bf-cli` | The `ballfight` command line | all |
+| `bf-app` | The window (egui). Its screens exist but run on sample data: they are not connected to the engine yet | core |
 
 ## Building and testing
 
