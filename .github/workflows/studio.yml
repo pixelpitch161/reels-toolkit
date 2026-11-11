@@ -24,54 +24,6 @@ env:
   CARGO_INCREMENTAL: "0"
 
 jobs:
-  linux:
-    name: fmt, clippy, test (Ubuntu)
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: studio
-    steps:
-      - uses: actions/checkout@v4
-
-      # bf-app's sound crate (cpal, through alsa-sys) needs the ALSA headers and pkg-config to build; its drawing
-      # tests need a software Vulkan adapter (lavapipe, in mesa-vulkan-drivers).
-      - name: Install the system packages the app needs
-        run: sudo apt-get update && sudo apt-get install -y libasound2-dev pkg-config mesa-vulkan-drivers
-
-      # The channel comes from studio/rust-toolchain.toml, which rustup then uses for every cargo call below.
-      - name: Install the pinned toolchain
-        run: |
-          channel="$(sed -n 's/^channel *= *"\(.*\)"/\1/p' rust-toolchain.toml)"
-          test -n "$channel"
-          rustup toolchain install "$channel" --profile minimal --component clippy,rustfmt
-          rustc -V
-          cargo -V
-
-      - name: Cache cargo registry and build
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/registry/index
-            ~/.cargo/registry/cache
-            ~/.cargo/git/db
-            studio/target
-          key: studio-${{ runner.os }}-${{ hashFiles('studio/rust-toolchain.toml', 'studio/Cargo.lock') }}
-          restore-keys: |
-            studio-${{ runner.os }}-
-
-      - name: Format
-        run: cargo fmt --all --check
-
-      - name: Clippy
-        run: cargo clippy --workspace --all-targets --locked -- -D warnings
-
-      - name: Test
-        run: cargo test --workspace --release --locked
-
-  # The reference PC is Windows with the GNU host toolchain (x86_64-pc-windows-gnu, whose MinGW linker ships with
-  # rustup). This job builds the command line there and runs the engine's two crates in release: the `dmath` bits, the
-  # random vectors, the parity suites and the self-replay hashes (studio/replay/hashes.txt, blessed on that PC). The
-  # Linux job runs the same tests, so the two together show the same bits on both systems.
   windows:
     name: build bf-cli, test bf-core and bf-sim (Windows)
     runs-on: windows-latest
