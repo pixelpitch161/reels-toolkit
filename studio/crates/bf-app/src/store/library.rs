@@ -56,18 +56,28 @@ pub struct FightSummary {
 /// each give the entry a problem in words; the title then falls back to the folder's name. A folder name that is not
 /// valid Unicode is shown with its invalid parts replaced.
 ///
-/// Only a missing `root` (or a file in its place) is an error. Anything else that cannot be read is skipped.
+/// The errors are about `root` itself: missing (or a file in its place), "The output folder {path} is missing.";
+/// there but impossible to list, "The output folder {path} could not be read. {plain reason}". Anything inside it
+/// that cannot be read is skipped or becomes that video's problem, so one bad video folder never hides the others.
 pub fn scan(root: &Path, read: &dyn Fn(&str) -> Result<FightSummary, String>) -> Result<Vec<LibraryEntry>, String> {
     let missing = || Err(format!("The output folder {} is missing.", root.display()));
+    let unreadable = |err: &io::Error| {
+        Err(format!(
+            "The output folder {} could not be read. {}",
+            root.display(),
+            unreadable_reason(err)
+        ))
+    };
     match fs::metadata(root) {
         Ok(meta) if meta.is_dir() => {}
         Ok(_) => return missing(),
         Err(err) if err.kind() == io::ErrorKind::NotFound => return missing(),
-        // Neither missing nor readable: listing it below fails too, and gives no videos.
-        Err(_) => {}
+        Err(err) => return unreadable(&err),
     }
-    let Ok(dir) = fs::read_dir(root) else {
-        return Ok(Vec::new());
+    let dir = match fs::read_dir(root) {
+        Ok(dir) => dir,
+        Err(err) if err.kind() == io::ErrorKind::NotFound => return missing(),
+        Err(err) => return unreadable(&err),
     };
     let mut entries: Vec<LibraryEntry> = dir
         .filter_map(Result::ok)
@@ -75,6 +85,15 @@ pub fn scan(root: &Path, read: &dyn Fn(&str) -> Result<FightSummary, String>) ->
         .collect();
     entries.sort_by(|a, b| b.modified.cmp(&a.modified).then_with(|| a.folder.cmp(&b.folder)));
     Ok(entries)
+}
+
+/// Why the output folder could not be listed, in words the owner can act on.
+fn unreadable_reason(err: &io::Error) -> &'static str {
+    if err.kind() == io::ErrorKind::PermissionDenied {
+        "Your Windows account is not allowed to open it. Check its permissions, or choose another folder."
+    } else {
+        "Check that its drive is connected, or choose another folder."
+    }
 }
 
 /// The entry for the folder `folder` called `name`, or None when it is not a video.
@@ -577,6 +596,36 @@ mod tests {
         assert_eq!(entries[1].title, "locked");
         assert_eq!(entries[1].fight_path, None);
         assert_eq!(entries[1].problem.as_deref(), Some(FOLDER_UNREADABLE));
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn an_output_folder_that_cannot_be_read_is_named() {
+        let root = TempRoot::new("an_output_folder_that_cannot_be_read_is_named");
+        let videos = root.0.join("videos");
+        video(
+            &videos,
+            "flute_vs_trombone",
+            &[("f.toml", b"Flute vs Trombone")],
+            1_794_000_000,
+        );
+        let denied = Denied::new(&videos, "RD");
+        assert!(fs::read_dir(&videos).is_err(), "the folder can still be listed");
+        let result = scan(&videos, &read_title);
+        drop(denied);
+        let text = result.unwrap_err();
+        assert!(text.starts_with("The output folder"), "{text}");
+        assert!(text.contains(&videos.display().to_string()), "{text}");
+        assert_eq!(
+            text,
+            format!(
+                "The output folder {} could not be read. Your Windows account is not allowed to open it. Check its \
+                 permissions, or choose another folder.",
+                videos.display()
+            )
+        );
+        // Once it can be read again, its videos are back.
+        assert_eq!(scan(&videos, &read_title).unwrap().len(), 1);
     }
 
     #[test]
