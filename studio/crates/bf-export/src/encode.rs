@@ -466,16 +466,85 @@ pub(crate) fn run_tool(program: &Path, args: &[&OsStr], limit: Duration, cancel:
 }
 
 // ---------------------------------------------------------------- the encode
+/// How the video is encoded: the series' own setting, or one that encodes faster (plan M6, decision D4).
+///
+/// The two differ only in the x264 preset; CRF 18, the profile, `tune animation`, `mbtree=0`, the forced
+/// keyframes, the sound and the container are the same, and every video passes the same checks before it is saved.
+/// The setting changes no frame and no sample, so it is not part of the fight file: a job is given it when it
+/// starts ([`crate::JobOpts::speed`]), and a video made with [`EncodeSpeed::Faster`] says so in a file of its own
+/// folder ([`ENCODING_NOTE`]).
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum EncodeSpeed {
+    /// The kit's encode, libx264 `slow`: the series' own setting. Its bytes are pinned
+    /// (`the_arguments_are_the_kits`, `studio/replay/encode_hashes.txt`).
+    #[default]
+    Best,
+    /// A faster x264 preset ([`FASTER_PRESET`]), chosen by measurement (`docs/studio/m6-measurements.md`).
+    Faster,
+}
+
+/// The x264 preset of [`EncodeSpeed::Faster`], measured on the reference PC (`docs/studio/m6-measurements.md`,
+/// section 1). Changing it changes the `clip0-90-faster.mp4` line of `studio/replay/encode_hashes.txt`.
+pub const FASTER_PRESET: &str = "fast";
+
+/// The file a video made with [`EncodeSpeed::Faster`] has beside its mp4, saying which setting made it. A video
+/// made with the series' own setting has none, so its folder is exactly what it always was.
+pub const ENCODING_NOTE: &str = "encoding.txt";
+
+impl EncodeSpeed {
+    /// Both settings, the default first.
+    pub const ALL: [EncodeSpeed; 2] = [EncodeSpeed::Best, EncodeSpeed::Faster];
+
+    /// The x264 preset.
+    pub fn preset(self) -> &'static str {
+        match self {
+            EncodeSpeed::Best => "slow",
+            EncodeSpeed::Faster => FASTER_PRESET,
+        }
+    }
+
+    /// "best" or "faster": the name the command line takes and a saved setting uses.
+    pub fn name(self) -> &'static str {
+        match self {
+            EncodeSpeed::Best => "best",
+            EncodeSpeed::Faster => "faster",
+        }
+    }
+
+    /// The setting named `name` ([`EncodeSpeed::name`], exactly), if there is one.
+    pub fn from_name(name: &str) -> Option<EncodeSpeed> {
+        EncodeSpeed::ALL.into_iter().find(|s| s.name() == name)
+    }
+
+    /// The text of [`ENCODING_NOTE`] for a video made with this setting; `None` for the series' own.
+    pub fn note(self) -> Option<String> {
+        match self {
+            EncodeSpeed::Best => None,
+            EncodeSpeed::Faster => Some(format!(
+                "This video was encoded with the Faster setting (x264 preset {}), not with Best quality, the \
+                 series' own setting (preset slow).\nThe fight, every frame and the sound are the same either way, \
+                 and it passed the same checks; only the compression differs, which makes the file larger.\n",
+                self.preset()
+            )),
+        }
+    }
+}
+
 /// The arguments of the encode: `mux.py main()`'s after `ffmpeg`, with the frames read from the pipe: raw 360 x
 /// 640 RGB at 30 fps, the soundtrack `wav` untrimmed, 3x nearest-neighbour upscale, libx264 slow CRF 18 yuv420p
 /// high profile, tune animation, `mbtree=0`, keyframes forced on the first and the last frame (`nf` frames), AAC
-/// 256k at 48 kHz, `+faststart`.
+/// 256k at 48 kHz, `+faststart`. The same as [`encode_args_at`] with [`EncodeSpeed::Best`].
 ///
 /// Two stated departures from the kit, both about the container only (no sample or pixel changes):
 /// `-max_interleave_delta 0` before `-movflags`, so the muxer interleaves the two streams by their timestamps
 /// alone and the file's bytes do not depend on when the frames arrive (ruling R42); and `-f mp4` before the
 /// output, which is written as `<name>.mp4.part` and renamed once it is verified.
 pub fn encode_args(wav: &Path, out: &Path, nf: usize) -> Vec<OsString> {
+    encode_args_at(wav, out, nf, EncodeSpeed::Best)
+}
+
+/// [`encode_args`] with the x264 preset of `speed`; nothing else differs.
+pub fn encode_args_at(wav: &Path, out: &Path, nf: usize, speed: EncodeSpeed) -> Vec<OsString> {
     let mut a: Vec<OsString> = Vec::new();
     let mut put = |s: &str| a.push(s.into());
     for s in ["-y", "-loglevel", "error", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s"] {
@@ -495,7 +564,7 @@ pub fn encode_args(wav: &Path, out: &Path, nf: usize) -> Vec<OsString> {
         "-c:v",
         "libx264",
         "-preset",
-        "slow",
+        speed.preset(),
         "-crf",
         "18",
         "-pix_fmt",
@@ -546,12 +615,12 @@ pub struct Encoder {
 }
 
 impl Encoder {
-    /// Starts ffmpeg encoding `nf` frames and the soundtrack `wav` into `out`.
+    /// Starts ffmpeg encoding `nf` frames and the soundtrack `wav` into `out` with the setting `speed`.
     ///
     /// # Errors
     /// [`ExportError::Ffmpeg`]: ffmpeg could not be started.
-    pub fn start(ff: &Ffmpeg, wav: &Path, out: &Path, nf: usize) -> Result<Encoder, ExportError> {
-        let args = encode_args(wav, out, nf);
+    pub fn start(ff: &Ffmpeg, wav: &Path, out: &Path, nf: usize, speed: EncodeSpeed) -> Result<Encoder, ExportError> {
+        let args = encode_args_at(wav, out, nf, speed);
         let args: Vec<&OsStr> = args.iter().map(OsString::as_os_str).collect();
         let mut child = spawn(&ff.ffmpeg, &args, Stdio::piped()).map_err(|e| {
             ExportError::Ffmpeg(format!(
@@ -723,6 +792,66 @@ mod tests {
         assert_eq!(args.last().map(String::as_str), Some(r"C:\a b!\x.mp4.part"));
         assert_eq!(args.join(" "), want);
         assert_eq!(args.len(), 46);
+    }
+
+    /// The arguments of `encode_args_at` as strings.
+    fn strings(speed: EncodeSpeed) -> Vec<String> {
+        encode_args_at(
+            Path::new(r"C:\a b!\audio.wav"),
+            Path::new(r"C:\a b!\x.mp4.part"),
+            1830,
+            speed,
+        )
+        .iter()
+        .map(|a| a.to_string_lossy().into_owned())
+        .collect()
+    }
+
+    #[test]
+    fn best_is_the_kits_arguments() {
+        let kits: Vec<String> = encode_args(Path::new(r"C:\a b!\audio.wav"), Path::new(r"C:\a b!\x.mp4.part"), 1830)
+            .iter()
+            .map(|a| a.to_string_lossy().into_owned())
+            .collect();
+        assert_eq!(strings(EncodeSpeed::Best), kits, "token for token");
+        assert_eq!(EncodeSpeed::default(), EncodeSpeed::Best);
+        assert_eq!(EncodeSpeed::Best.preset(), "slow");
+    }
+
+    #[test]
+    fn faster_changes_only_the_preset() {
+        let (best, faster) = (strings(EncodeSpeed::Best), strings(EncodeSpeed::Faster));
+        assert_eq!(best.len(), faster.len());
+        let differ: Vec<usize> = (0..best.len()).filter(|&k| best[k] != faster[k]).collect();
+        assert_eq!(differ.len(), 1, "exactly one token differs: {differ:?}");
+        let k = differ[0];
+        assert_eq!(best[k - 1], "-preset");
+        assert_eq!(faster[k], EncodeSpeed::Faster.preset());
+        assert_ne!(faster[k], "slow");
+    }
+
+    #[test]
+    fn the_settings_have_names() {
+        for speed in EncodeSpeed::ALL {
+            assert_eq!(EncodeSpeed::from_name(speed.name()), Some(speed));
+        }
+        assert_eq!(EncodeSpeed::Best.name(), "best");
+        assert_eq!(EncodeSpeed::Faster.name(), "faster");
+        assert_eq!(EncodeSpeed::from_name("fast"), None);
+        assert_eq!(EncodeSpeed::from_name("Faster"), None);
+    }
+
+    #[test]
+    fn only_a_faster_video_has_a_note() {
+        assert_eq!(EncodeSpeed::Best.note(), None);
+        let note = EncodeSpeed::Faster.note().expect("a faster video says so");
+        assert!(
+            note.contains("Faster") && note.contains(EncodeSpeed::Faster.preset()),
+            "{note}"
+        );
+        assert!(note.contains("Best quality") && note.contains("slow"), "{note}");
+        assert!(note.ends_with(".\n") && !note.contains("EncodeSpeed"), "{note}");
+        assert_eq!(ENCODING_NOTE, "encoding.txt");
     }
 
     #[test]

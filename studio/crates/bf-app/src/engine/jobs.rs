@@ -29,7 +29,7 @@ use std::time::{Duration, Instant};
 
 use bf_core::fightfile::FightFile;
 use bf_core::recording::Recording;
-use bf_export::{CheckResult, ExportError, JobEvent, JobOpts, run_job, stage};
+use bf_export::{CheckResult, EncodeSpeed, ExportError, JobEvent, JobOpts, run_job, stage};
 
 use super::Ctx;
 use super::convert::{fight_file, plain};
@@ -241,6 +241,8 @@ fn render(ctx: &Ctx, id: JobId, fight_toml: &str, out_root: PathBuf, cancel: &At
         out_root,
         workers: ctx.workers(),
         frames: ctx.config.clip.clone(),
+        // the Settings screen's choice reaches the job in a later step (plan M6, Task 13)
+        speed: EncodeSpeed::Best,
     };
     let steps = Mutex::new(Steps::default());
     let on = |e: JobEvent| {
