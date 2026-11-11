@@ -1,0 +1,2813 @@
+{
+ "HASH_K": ["0x1.9fac710cb295fp+3", "0x1.38ee978d4fdf4p+6", "0x1.2dc083126e979p+5", "0x1.252f1a9fbe76dp+2"],
+ "PUFF_T": "0x1.ccccccccccccdp-2",
+ "about": "reelkit.ui._hash01 and reelkit.ui._sand_puff",
+ "cases": [
+  {
+   "args": {},
+   "arrays": {
+    "a": "c000__a",
+    "b": "c000__b",
+    "c": "c000__c",
+    "out": "c000__out",
+    "phase": "c000__phase"
+   },
+   "call": "reelkit.ui._hash01(a, b, c)",
+   "id": "c000"
+  },
+  {
+   "args": {},
+   "arrays": {
+    "a": "c001__a",
+    "b": "c001__b",
+    "c": "c001__c",
+    "out": "c001__out",
+    "phase": "c001__phase"
+   },
+   "call": "reelkit.ui._hash01(a, b, c)",
+   "id": "c001"
+  },
+  {
+   "args": {},
+   "arrays": {
+    "a": "c002__a",
+    "out": "c002__out",
+    "phase": "c002__phase"
+   },
+   "call": "reelkit.ui._hash01(a)",
+   "id": "c002"
+  },
+  {
+   "args": {},
+   "arrays": {
+    "a": "c003__a",
+    "b": "c003__b",
+    "out": "c003__out",
+    "phase": "c003__phase"
+   },
+   "call": "reelkit.ui._hash01(a, b)",
+   "id": "c003"
+  },
+  {
+   "args": {},
+   "arrays": {
+    "a": "c004__a",
+    "b": "c004__b",
+    "c": "c004__c",
+    "d": "c004__d",
+    "out": "c004__out",
+    "phase": "c004__phase"
+   },
+   "call": "reelkit.ui._hash01(a, b, c, d)",
+   "id": "c004"
+  },
+  {
+   "args": {
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "col": [222, 232, 246],
+    "frame": 340,
+    "key": 191,
+    "line": "FLUTTER TONGUE",
+    "source": "kit.picture",
+    "t": "0x1.6aaaaaaaaaaabp+3",
+    "tl": "0x1.6a060fe47991cp+3",
+    "x0": 56,
+    "x1": 305,
+    "ybot": 121
+   },
+   "arrays": {
+    "out": "c005__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c005"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [151, 15, 43],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [101, 97, 55],
+     "rows": [77, 161],
+     "w": 360
+    },
+    "col": [222, 232, 246],
+    "frame": 342,
+    "key": 191,
+    "line": "FLUTTER TONGUE",
+    "source": "kit.picture",
+    "t": "0x1.6cccccccccccdp+3",
+    "tl": "0x1.6a060fe47991cp+3",
+    "x0": 56,
+    "x1": 305,
+    "ybot": 121
+   },
+   "arrays": {
+    "out": "c006__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c006"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [46, 186, 233],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [127, 153, 119],
+     "rows": [77, 161],
+     "w": 360
+    },
+    "col": [222, 232, 246],
+    "frame": 345,
+    "key": 191,
+    "line": "FLUTTER TONGUE",
+    "source": "kit.picture",
+    "t": "0x1.7000000000000p+3",
+    "tl": "0x1.6a060fe47991cp+3",
+    "x0": 56,
+    "x1": 305,
+    "ybot": 121
+   },
+   "arrays": {
+    "out": "c007__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c007"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [34, 107, 242],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [27, 39, 47],
+     "rows": [77, 161],
+     "w": 360
+    },
+    "col": [222, 232, 246],
+    "frame": 347,
+    "key": 191,
+    "line": "FLUTTER TONGUE",
+    "source": "kit.picture",
+    "t": "0x1.7222222222222p+3",
+    "tl": "0x1.6a060fe47991cp+3",
+    "x0": 56,
+    "x1": 305,
+    "ybot": 121
+   },
+   "arrays": {
+    "out": "c008__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c008"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [214, 141, 170],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [125, 139, 55],
+     "rows": [77, 161],
+     "w": 360
+    },
+    "col": [222, 232, 246],
+    "frame": 350,
+    "key": 191,
+    "line": "FLUTTER TONGUE",
+    "source": "kit.picture",
+    "t": "0x1.7555555555555p+3",
+    "tl": "0x1.6a060fe47991cp+3",
+    "x0": 56,
+    "x1": 305,
+    "ybot": 121
+   },
+   "arrays": {
+    "out": "c009__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c009"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [213, 223, 88],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [7, 161, 219],
+     "rows": [77, 161],
+     "w": 360
+    },
+    "col": [222, 232, 246],
+    "frame": 353,
+    "key": 191,
+    "line": "FLUTTER TONGUE",
+    "source": "kit.picture",
+    "t": "0x1.7888888888889p+3",
+    "tl": "0x1.6a060fe47991cp+3",
+    "x0": 56,
+    "x1": 305,
+    "ybot": 121
+   },
+   "arrays": {
+    "out": "c010__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c010"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [238, 58, 89],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [21, 177, 77],
+     "rows": [77, 161],
+     "w": 360
+    },
+    "col": [222, 232, 246],
+    "frame": 905,
+    "key": 928,
+    "line": "SNAKE DANCE",
+    "source": "kit.picture",
+    "t": "0x1.e2aaaaaaaaaabp+4",
+    "tl": "0x1.e27a786c22681p+4",
+    "x0": 82,
+    "x1": 277,
+    "ybot": 121
+   },
+   "arrays": {
+    "out": "c011__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c011"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [125, 103, 206],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [205, 117, 153],
+     "rows": [77, 161],
+     "w": 360
+    },
+    "col": [222, 232, 246],
+    "frame": 906,
+    "key": 928,
+    "line": "SNAKE DANCE",
+    "source": "kit.picture",
+    "t": "0x1.e333333333333p+4",
+    "tl": "0x1.e27a786c22681p+4",
+    "x0": 82,
+    "x1": 277,
+    "ybot": 121
+   },
+   "arrays": {
+    "out": "c012__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c012"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [60, 200, 179],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [81, 159, 119],
+     "rows": [77, 161],
+     "w": 360
+    },
+    "col": [222, 232, 246],
+    "frame": 908,
+    "key": 928,
+    "line": "SNAKE DANCE",
+    "source": "kit.picture",
+    "t": "0x1.e444444444444p+4",
+    "tl": "0x1.e27a786c22681p+4",
+    "x0": 82,
+    "x1": 277,
+    "ybot": 121
+   },
+   "arrays": {
+    "out": "c013__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c013"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [212, 56, 242],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [157, 245, 169],
+     "rows": [77, 161],
+     "w": 360
+    },
+    "col": [222, 232, 246],
+    "frame": 912,
+    "key": 928,
+    "line": "SNAKE DANCE",
+    "source": "kit.picture",
+    "t": "0x1.e666666666666p+4",
+    "tl": "0x1.e27a786c22681p+4",
+    "x0": 82,
+    "x1": 277,
+    "ybot": 121
+   },
+   "arrays": {
+    "out": "c014__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c014"
+  },
+  {
+   "args": {
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "col": [222, 232, 246],
+    "frame": 913,
+    "key": 928,
+    "line": "SNAKE DANCE",
+    "source": "kit.picture",
+    "t": "0x1.e6eeeeeeeeeefp+4",
+    "tl": "0x1.e27a786c22681p+4",
+    "x0": 82,
+    "x1": 277,
+    "ybot": 121
+   },
+   "arrays": {
+    "out": "c015__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c015"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [238, 201, 193],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [117, 55, 219],
+     "rows": [77, 161],
+     "w": 360
+    },
+    "col": [222, 232, 246],
+    "frame": 917,
+    "key": 928,
+    "line": "SNAKE DANCE",
+    "source": "kit.picture",
+    "t": "0x1.e911111111111p+4",
+    "tl": "0x1.e27a786c22681p+4",
+    "x0": 82,
+    "x1": 277,
+    "ybot": 121
+   },
+   "arrays": {
+    "out": "c016__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c016"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [106, 92, 109],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [211, 43, 83],
+     "rows": [77, 161],
+     "w": 360
+    },
+    "col": [222, 232, 246],
+    "frame": 918,
+    "key": 928,
+    "line": "SNAKE DANCE",
+    "source": "kit.picture",
+    "t": "0x1.e99999999999ap+4",
+    "tl": "0x1.e27a786c22681p+4",
+    "x0": 82,
+    "x1": 277,
+    "ybot": 121
+   },
+   "arrays": {
+    "out": "c017__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c017"
+  },
+  {
+   "args": {
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "col": [222, 232, 246],
+    "frame": 919,
+    "key": 928,
+    "line": "SNAKE DANCE",
+    "source": "kit.picture",
+    "t": "0x1.ea22222222222p+4",
+    "tl": "0x1.e27a786c22681p+4",
+    "x0": 82,
+    "x1": 277,
+    "ybot": 121
+   },
+   "arrays": {
+    "out": "c018__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c018"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [250, 200, 213],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [37, 101, 189],
+     "rows": [77, 161],
+     "w": 360
+    },
+    "col": [222, 232, 246],
+    "frame": 1282,
+    "key": 537,
+    "line": "PICCOLO",
+    "source": "kit.picture",
+    "t": "0x1.55ddddddddddep+5",
+    "tl": "0x1.55b4b72c5197ap+5",
+    "x0": 118,
+    "x1": 241,
+    "ybot": 121
+   },
+   "arrays": {
+    "out": "c019__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c019"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [192, 206, 244],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [239, 33, 249],
+     "rows": [77, 161],
+     "w": 360
+    },
+    "col": [222, 232, 246],
+    "frame": 1284,
+    "key": 537,
+    "line": "PICCOLO",
+    "source": "kit.picture",
+    "t": "0x1.5666666666666p+5",
+    "tl": "0x1.55b4b72c5197ap+5",
+    "x0": 118,
+    "x1": 241,
+    "ybot": 121
+   },
+   "arrays": {
+    "out": "c020__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c020"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [70, 123, 217],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [13, 255, 221],
+     "rows": [77, 161],
+     "w": 360
+    },
+    "col": [222, 232, 246],
+    "frame": 1287,
+    "key": 537,
+    "line": "PICCOLO",
+    "source": "kit.picture",
+    "t": "0x1.5733333333333p+5",
+    "tl": "0x1.55b4b72c5197ap+5",
+    "x0": 118,
+    "x1": 241,
+    "ybot": 121
+   },
+   "arrays": {
+    "out": "c021__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c021"
+  },
+  {
+   "args": {
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "col": [222, 232, 246],
+    "frame": 1289,
+    "key": 537,
+    "line": "PICCOLO",
+    "source": "kit.picture",
+    "t": "0x1.57bbbbbbbbbbcp+5",
+    "tl": "0x1.55b4b72c5197ap+5",
+    "x0": 118,
+    "x1": 241,
+    "ybot": 121
+   },
+   "arrays": {
+    "out": "c022__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c022"
+  },
+  {
+   "args": {
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "col": [222, 232, 246],
+    "frame": 1292,
+    "key": 537,
+    "line": "PICCOLO",
+    "source": "kit.picture",
+    "t": "0x1.5888888888889p+5",
+    "tl": "0x1.55b4b72c5197ap+5",
+    "x0": 118,
+    "x1": 241,
+    "ybot": 121
+   },
+   "arrays": {
+    "out": "c023__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c023"
+  },
+  {
+   "args": {
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "col": [222, 232, 246],
+    "frame": 1295,
+    "key": 537,
+    "line": "PICCOLO",
+    "source": "kit.picture",
+    "t": "0x1.5955555555555p+5",
+    "tl": "0x1.55b4b72c5197ap+5",
+    "x0": 118,
+    "x1": 241,
+    "ybot": 121
+   },
+   "arrays": {
+    "out": "c024__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c024"
+  },
+  {
+   "args": {
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "col": [120, 240, 184],
+    "frame": 488,
+    "key": 882,
+    "line": "SAD TROMBONE",
+    "source": "kit.picture",
+    "t": "0x1.0444444444444p+4",
+    "tl": "0x1.04141205bc01bp+4",
+    "x0": 74,
+    "x1": 287,
+    "ybot": 121
+   },
+   "arrays": {
+    "out": "c025__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c025"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [144, 219, 248],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [67, 211, 127],
+     "rows": [77, 161],
+     "w": 360
+    },
+    "col": [120, 240, 184],
+    "frame": 489,
+    "key": 882,
+    "line": "SAD TROMBONE",
+    "source": "kit.picture",
+    "t": "0x1.04ccccccccccdp+4",
+    "tl": "0x1.04141205bc01bp+4",
+    "x0": 74,
+    "x1": 287,
+    "ybot": 121
+   },
+   "arrays": {
+    "out": "c026__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c026"
+  },
+  {
+   "args": {
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "col": [120, 240, 184],
+    "frame": 491,
+    "key": 882,
+    "line": "SAD TROMBONE",
+    "source": "kit.picture",
+    "t": "0x1.05ddddddddddep+4",
+    "tl": "0x1.04141205bc01bp+4",
+    "x0": 74,
+    "x1": 287,
+    "ybot": 121
+   },
+   "arrays": {
+    "out": "c027__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c027"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [113, 135, 46],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [129, 99, 57],
+     "rows": [77, 161],
+     "w": 360
+    },
+    "col": [120, 240, 184],
+    "frame": 495,
+    "key": 882,
+    "line": "SAD TROMBONE",
+    "source": "kit.picture",
+    "t": "0x1.0800000000000p+4",
+    "tl": "0x1.04141205bc01bp+4",
+    "x0": 74,
+    "x1": 287,
+    "ybot": 121
+   },
+   "arrays": {
+    "out": "c028__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c028"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [11, 217, 198],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [145, 39, 213],
+     "rows": [77, 161],
+     "w": 360
+    },
+    "col": [120, 240, 184],
+    "frame": 496,
+    "key": 882,
+    "line": "SAD TROMBONE",
+    "source": "kit.picture",
+    "t": "0x1.0888888888889p+4",
+    "tl": "0x1.04141205bc01bp+4",
+    "x0": 74,
+    "x1": 287,
+    "ybot": 121
+   },
+   "arrays": {
+    "out": "c029__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c029"
+  },
+  {
+   "args": {
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "col": [120, 240, 184],
+    "frame": 500,
+    "key": 882,
+    "line": "SAD TROMBONE",
+    "source": "kit.picture",
+    "t": "0x1.0aaaaaaaaaaabp+4",
+    "tl": "0x1.04141205bc01bp+4",
+    "x0": 74,
+    "x1": 287,
+    "ybot": 121
+   },
+   "arrays": {
+    "out": "c030__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c030"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [145, 40, 116],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [161, 85, 207],
+     "rows": [77, 161],
+     "w": 360
+    },
+    "col": [120, 240, 184],
+    "frame": 501,
+    "key": 882,
+    "line": "SAD TROMBONE",
+    "source": "kit.picture",
+    "t": "0x1.0b33333333333p+4",
+    "tl": "0x1.04141205bc01bp+4",
+    "x0": 74,
+    "x1": 287,
+    "ybot": 121
+   },
+   "arrays": {
+    "out": "c031__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c031"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [19, 153, 41],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [41, 253, 113],
+     "rows": [77, 161],
+     "w": 360
+    },
+    "col": [120, 240, 184],
+    "frame": 502,
+    "key": 882,
+    "line": "SAD TROMBONE",
+    "source": "kit.picture",
+    "t": "0x1.0bbbbbbbbbbbcp+4",
+    "tl": "0x1.04141205bc01bp+4",
+    "x0": 74,
+    "x1": 287,
+    "ybot": 121
+   },
+   "arrays": {
+    "out": "c032__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c032"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [246, 74, 82],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [47, 89, 191],
+     "rows": [77, 161],
+     "w": 360
+    },
+    "col": [120, 240, 184],
+    "frame": 784,
+    "key": 309,
+    "line": "POWER SLIDE",
+    "source": "kit.picture",
+    "t": "0x1.a222222222222p+4",
+    "tl": "0x1.a1f1f36262cbbp+4",
+    "x0": 82,
+    "x1": 277,
+    "ybot": 121
+   },
+   "arrays": {
+    "out": "c033__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c033"
+  },
+  {
+   "args": {
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "col": [120, 240, 184],
+    "frame": 786,
+    "key": 309,
+    "line": "POWER SLIDE",
+    "source": "kit.picture",
+    "t": "0x1.a333333333333p+4",
+    "tl": "0x1.a1f1f36262cbbp+4",
+    "x0": 82,
+    "x1": 277,
+    "ybot": 121
+   },
+   "arrays": {
+    "out": "c034__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c034"
+  },
+  {
+   "args": {
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "col": [120, 240, 184],
+    "frame": 789,
+    "key": 309,
+    "line": "POWER SLIDE",
+    "source": "kit.picture",
+    "t": "0x1.a4ccccccccccdp+4",
+    "tl": "0x1.a1f1f36262cbbp+4",
+    "x0": 82,
+    "x1": 277,
+    "ybot": 121
+   },
+   "arrays": {
+    "out": "c035__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c035"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [144, 92, 205],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [95, 121, 179],
+     "rows": [77, 161],
+     "w": 360
+    },
+    "col": [120, 240, 184],
+    "frame": 791,
+    "key": 309,
+    "line": "POWER SLIDE",
+    "source": "kit.picture",
+    "t": "0x1.a5ddddddddddep+4",
+    "tl": "0x1.a1f1f36262cbbp+4",
+    "x0": 82,
+    "x1": 277,
+    "ybot": 121
+   },
+   "arrays": {
+    "out": "c036__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c036"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [227, 196, 192],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [139, 229, 197],
+     "rows": [77, 161],
+     "w": 360
+    },
+    "col": [120, 240, 184],
+    "frame": 794,
+    "key": 309,
+    "line": "POWER SLIDE",
+    "source": "kit.picture",
+    "t": "0x1.a777777777777p+4",
+    "tl": "0x1.a1f1f36262cbbp+4",
+    "x0": 82,
+    "x1": 277,
+    "ybot": 121
+   },
+   "arrays": {
+    "out": "c037__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c037"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [179, 131, 166],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [157, 45, 199],
+     "rows": [77, 161],
+     "w": 360
+    },
+    "col": [120, 240, 184],
+    "frame": 797,
+    "key": 309,
+    "line": "POWER SLIDE",
+    "source": "kit.picture",
+    "t": "0x1.a911111111111p+4",
+    "tl": "0x1.a1f1f36262cbbp+4",
+    "x0": 82,
+    "x1": 277,
+    "ybot": 121
+   },
+   "arrays": {
+    "out": "c038__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c038"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [193, 119, 154],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [113, 179, 63],
+     "rows": [77, 161],
+     "w": 360
+    },
+    "col": [236, 204, 150],
+    "frame": 1504,
+    "key": 975,
+    "line": "K.O.",
+    "source": "kit.picture",
+    "t": "0x1.9111111111111p+5",
+    "tl": "0x1.90f8f8f8f8f8fp+5",
+    "x0": 146,
+    "x1": 215,
+    "ybot": 121
+   },
+   "arrays": {
+    "out": "c039__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c039"
+  },
+  {
+   "args": {
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "col": [236, 204, 150],
+    "frame": 1505,
+    "key": 975,
+    "line": "K.O.",
+    "source": "kit.picture",
+    "t": "0x1.9155555555555p+5",
+    "tl": "0x1.90f8f8f8f8f8fp+5",
+    "x0": 146,
+    "x1": 215,
+    "ybot": 121
+   },
+   "arrays": {
+    "out": "c040__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c040"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [39, 208, 215],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [143, 229, 85],
+     "rows": [77, 161],
+     "w": 360
+    },
+    "col": [236, 204, 150],
+    "frame": 1507,
+    "key": 975,
+    "line": "K.O.",
+    "source": "kit.picture",
+    "t": "0x1.91ddddddddddep+5",
+    "tl": "0x1.90f8f8f8f8f8fp+5",
+    "x0": 146,
+    "x1": 215,
+    "ybot": 121
+   },
+   "arrays": {
+    "out": "c041__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c041"
+  },
+  {
+   "args": {
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "col": [236, 204, 150],
+    "frame": 1511,
+    "key": 975,
+    "line": "K.O.",
+    "source": "kit.picture",
+    "t": "0x1.92eeeeeeeeeefp+5",
+    "tl": "0x1.90f8f8f8f8f8fp+5",
+    "x0": 146,
+    "x1": 215,
+    "ybot": 121
+   },
+   "arrays": {
+    "out": "c042__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c042"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [32, 224, 210],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [199, 221, 131],
+     "rows": [77, 161],
+     "w": 360
+    },
+    "col": [236, 204, 150],
+    "frame": 1512,
+    "key": 975,
+    "line": "K.O.",
+    "source": "kit.picture",
+    "t": "0x1.9333333333333p+5",
+    "tl": "0x1.90f8f8f8f8f8fp+5",
+    "x0": 146,
+    "x1": 215,
+    "ybot": 121
+   },
+   "arrays": {
+    "out": "c043__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c043"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [199, 225, 60],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [211, 135, 49],
+     "rows": [77, 161],
+     "w": 360
+    },
+    "col": [236, 204, 150],
+    "frame": 1516,
+    "key": 975,
+    "line": "K.O.",
+    "source": "kit.picture",
+    "t": "0x1.9444444444444p+5",
+    "tl": "0x1.90f8f8f8f8f8fp+5",
+    "x0": 146,
+    "x1": 215,
+    "ybot": 121
+   },
+   "arrays": {
+    "out": "c044__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c044"
+  },
+  {
+   "args": {
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "col": [236, 204, 150],
+    "frame": 1517,
+    "key": 975,
+    "line": "K.O.",
+    "source": "kit.picture",
+    "t": "0x1.9488888888889p+5",
+    "tl": "0x1.90f8f8f8f8f8fp+5",
+    "x0": 146,
+    "x1": 215,
+    "ybot": 121
+   },
+   "arrays": {
+    "out": "c045__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c045"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [212, 86, 226],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [57, 91, 141],
+     "rows": [77, 161],
+     "w": 360
+    },
+    "col": [236, 204, 150],
+    "frame": 1518,
+    "key": 975,
+    "line": "K.O.",
+    "source": "kit.picture",
+    "t": "0x1.94ccccccccccdp+5",
+    "tl": "0x1.90f8f8f8f8f8fp+5",
+    "x0": 146,
+    "x1": 215,
+    "ybot": 121
+   },
+   "arrays": {
+    "out": "c046__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c046"
+  },
+  {
+   "args": {
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "col": [236, 204, 150],
+    "frame": 1543,
+    "key": 720,
+    "line": "TROMBONE",
+    "source": "kit.picture",
+    "t": "0x1.9b77777777777p+5",
+    "tl": "0x1.9b5f5f5f5f5f5p+5",
+    "x0": 110,
+    "x1": 251,
+    "ybot": 121
+   },
+   "arrays": {
+    "out": "c047__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c047"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [165, 174, 244],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [177, 107, 203],
+     "rows": [77, 161],
+     "w": 360
+    },
+    "col": [236, 204, 150],
+    "frame": 1545,
+    "key": 720,
+    "line": "TROMBONE",
+    "source": "kit.picture",
+    "t": "0x1.9c00000000000p+5",
+    "tl": "0x1.9b5f5f5f5f5f5p+5",
+    "x0": 110,
+    "x1": 251,
+    "ybot": 121
+   },
+   "arrays": {
+    "out": "c048__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c048"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [162, 21, 22],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [5, 119, 195],
+     "rows": [77, 161],
+     "w": 360
+    },
+    "col": [236, 204, 150],
+    "frame": 1548,
+    "key": 720,
+    "line": "TROMBONE",
+    "source": "kit.picture",
+    "t": "0x1.9cccccccccccdp+5",
+    "tl": "0x1.9b5f5f5f5f5f5p+5",
+    "x0": 110,
+    "x1": 251,
+    "ybot": 121
+   },
+   "arrays": {
+    "out": "c049__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c049"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [131, 172, 220],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [233, 181, 219],
+     "rows": [77, 161],
+     "w": 360
+    },
+    "col": [236, 204, 150],
+    "frame": 1550,
+    "key": 720,
+    "line": "TROMBONE",
+    "source": "kit.picture",
+    "t": "0x1.9d55555555555p+5",
+    "tl": "0x1.9b5f5f5f5f5f5p+5",
+    "x0": 110,
+    "x1": 251,
+    "ybot": 121
+   },
+   "arrays": {
+    "out": "c050__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c050"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [51, 139, 2],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [77, 231, 75],
+     "rows": [77, 161],
+     "w": 360
+    },
+    "col": [236, 204, 150],
+    "frame": 1553,
+    "key": 720,
+    "line": "TROMBONE",
+    "source": "kit.picture",
+    "t": "0x1.9e22222222222p+5",
+    "tl": "0x1.9b5f5f5f5f5f5p+5",
+    "x0": 110,
+    "x1": 251,
+    "ybot": 121
+   },
+   "arrays": {
+    "out": "c051__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c051"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [3, 67, 199],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [223, 163, 89],
+     "rows": [77, 161],
+     "w": 360
+    },
+    "col": [236, 204, 150],
+    "frame": 1556,
+    "key": 720,
+    "line": "TROMBONE",
+    "source": "kit.picture",
+    "t": "0x1.9eeeeeeeeeeefp+5",
+    "tl": "0x1.9b5f5f5f5f5f5p+5",
+    "x0": 110,
+    "x1": 251,
+    "ybot": 121
+   },
+   "arrays": {
+    "out": "c052__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c052"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [226, 26, 64],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [99, 151, 153],
+     "rows": [105, 189],
+     "w": 360
+    },
+    "col": [236, 204, 150],
+    "frame": 1550,
+    "key": 1476,
+    "line": "WINS!",
+    "source": "kit.picture",
+    "t": "0x1.9d55555555555p+5",
+    "tl": "0x1.9d21eebb88551p+5",
+    "x0": 136,
+    "x1": 223,
+    "ybot": 149
+   },
+   "arrays": {
+    "out": "c053__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c053"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [26, 137, 206],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [163, 167, 203],
+     "rows": [105, 189],
+     "w": 360
+    },
+    "col": [236, 204, 150],
+    "frame": 1551,
+    "key": 1476,
+    "line": "WINS!",
+    "source": "kit.picture",
+    "t": "0x1.9d9999999999ap+5",
+    "tl": "0x1.9d21eebb88551p+5",
+    "x0": 136,
+    "x1": 223,
+    "ybot": 149
+   },
+   "arrays": {
+    "out": "c054__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c054"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [37, 210, 231],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [61, 145, 221],
+     "rows": [105, 189],
+     "w": 360
+    },
+    "col": [236, 204, 150],
+    "frame": 1553,
+    "key": 1476,
+    "line": "WINS!",
+    "source": "kit.picture",
+    "t": "0x1.9e22222222222p+5",
+    "tl": "0x1.9d21eebb88551p+5",
+    "x0": 136,
+    "x1": 223,
+    "ybot": 149
+   },
+   "arrays": {
+    "out": "c055__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c055"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [120, 29, 121],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [249, 213, 153],
+     "rows": [105, 189],
+     "w": 360
+    },
+    "col": [236, 204, 150],
+    "frame": 1557,
+    "key": 1476,
+    "line": "WINS!",
+    "source": "kit.picture",
+    "t": "0x1.9f33333333333p+5",
+    "tl": "0x1.9d21eebb88551p+5",
+    "x0": 136,
+    "x1": 223,
+    "ybot": 149
+   },
+   "arrays": {
+    "out": "c056__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c056"
+  },
+  {
+   "args": {
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "col": [236, 204, 150],
+    "frame": 1558,
+    "key": 1476,
+    "line": "WINS!",
+    "source": "kit.picture",
+    "t": "0x1.9f77777777777p+5",
+    "tl": "0x1.9d21eebb88551p+5",
+    "x0": 136,
+    "x1": 223,
+    "ybot": 149
+   },
+   "arrays": {
+    "out": "c057__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c057"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [4, 107, 160],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [35, 35, 41],
+     "rows": [105, 189],
+     "w": 360
+    },
+    "col": [236, 204, 150],
+    "frame": 1562,
+    "key": 1476,
+    "line": "WINS!",
+    "source": "kit.picture",
+    "t": "0x1.a088888888889p+5",
+    "tl": "0x1.9d21eebb88551p+5",
+    "x0": 136,
+    "x1": 223,
+    "ybot": 149
+   },
+   "arrays": {
+    "out": "c058__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c058"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [69, 106, 251],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [109, 173, 227],
+     "rows": [105, 189],
+     "w": 360
+    },
+    "col": [236, 204, 150],
+    "frame": 1563,
+    "key": 1476,
+    "line": "WINS!",
+    "source": "kit.picture",
+    "t": "0x1.a0ccccccccccdp+5",
+    "tl": "0x1.9d21eebb88551p+5",
+    "x0": 136,
+    "x1": 223,
+    "ybot": 149
+   },
+   "arrays": {
+    "out": "c059__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c059"
+  },
+  {
+   "args": {
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "col": [236, 204, 150],
+    "frame": 1564,
+    "key": 1476,
+    "line": "WINS!",
+    "source": "kit.picture",
+    "t": "0x1.a111111111111p+5",
+    "tl": "0x1.9d21eebb88551p+5",
+    "x0": 136,
+    "x1": 223,
+    "ybot": 149
+   },
+   "arrays": {
+    "out": "c060__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c060"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [37, 43, 191],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [213, 27, 79],
+     "rows": [77, 161],
+     "w": 360
+    },
+    "col": [236, 204, 150],
+    "frame": 1614,
+    "key": 1248,
+    "line": "COMMENT THE",
+    "source": "kit.picture",
+    "t": "0x1.ae66666666666p+5",
+    "tl": "0x1.ae2c2c2c2c2c2p+5",
+    "x0": 82,
+    "x1": 277,
+    "ybot": 121
+   },
+   "arrays": {
+    "out": "c061__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c061"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [25, 12, 27],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [113, 107, 83],
+     "rows": [77, 161],
+     "w": 360
+    },
+    "col": [236, 204, 150],
+    "frame": 1616,
+    "key": 1248,
+    "line": "COMMENT THE",
+    "source": "kit.picture",
+    "t": "0x1.aeeeeeeeeeeefp+5",
+    "tl": "0x1.ae2c2c2c2c2c2p+5",
+    "x0": 82,
+    "x1": 277,
+    "ybot": 121
+   },
+   "arrays": {
+    "out": "c062__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c062"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [32, 59, 232],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [101, 173, 219],
+     "rows": [77, 161],
+     "w": 360
+    },
+    "col": [236, 204, 150],
+    "frame": 1619,
+    "key": 1248,
+    "line": "COMMENT THE",
+    "source": "kit.picture",
+    "t": "0x1.afbbbbbbbbbbcp+5",
+    "tl": "0x1.ae2c2c2c2c2c2p+5",
+    "x0": 82,
+    "x1": 277,
+    "ybot": 121
+   },
+   "arrays": {
+    "out": "c063__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c063"
+  },
+  {
+   "args": {
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "col": [236, 204, 150],
+    "frame": 1621,
+    "key": 1248,
+    "line": "COMMENT THE",
+    "source": "kit.picture",
+    "t": "0x1.b044444444444p+5",
+    "tl": "0x1.ae2c2c2c2c2c2p+5",
+    "x0": 82,
+    "x1": 277,
+    "ybot": 121
+   },
+   "arrays": {
+    "out": "c064__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c064"
+  },
+  {
+   "args": {
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "col": [236, 204, 150],
+    "frame": 1624,
+    "key": 1248,
+    "line": "COMMENT THE",
+    "source": "kit.picture",
+    "t": "0x1.b111111111111p+5",
+    "tl": "0x1.ae2c2c2c2c2c2p+5",
+    "x0": 82,
+    "x1": 277,
+    "ybot": 121
+   },
+   "arrays": {
+    "out": "c065__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c065"
+  },
+  {
+   "args": {
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "col": [236, 204, 150],
+    "frame": 1627,
+    "key": 1248,
+    "line": "COMMENT THE",
+    "source": "kit.picture",
+    "t": "0x1.b1ddddddddddep+5",
+    "tl": "0x1.ae2c2c2c2c2c2p+5",
+    "x0": 82,
+    "x1": 277,
+    "ybot": 121
+   },
+   "arrays": {
+    "out": "c066__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c066"
+  },
+  {
+   "args": {
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "col": [236, 204, 150],
+    "frame": 1620,
+    "key": 1029,
+    "line": "NEXT MATCH-UP",
+    "source": "kit.picture",
+    "t": "0x1.b000000000000p+5",
+    "tl": "0x1.afeebb885521ep+5",
+    "x0": 64,
+    "x1": 295,
+    "ybot": 149
+   },
+   "arrays": {
+    "out": "c067__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c067"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [35, 37, 245],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [117, 155, 35],
+     "rows": [105, 189],
+     "w": 360
+    },
+    "col": [236, 204, 150],
+    "frame": 1621,
+    "key": 1029,
+    "line": "NEXT MATCH-UP",
+    "source": "kit.picture",
+    "t": "0x1.b044444444444p+5",
+    "tl": "0x1.afeebb885521ep+5",
+    "x0": 64,
+    "x1": 295,
+    "ybot": 149
+   },
+   "arrays": {
+    "out": "c068__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c068"
+  },
+  {
+   "args": {
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "col": [236, 204, 150],
+    "frame": 1623,
+    "key": 1029,
+    "line": "NEXT MATCH-UP",
+    "source": "kit.picture",
+    "t": "0x1.b0ccccccccccdp+5",
+    "tl": "0x1.afeebb885521ep+5",
+    "x0": 64,
+    "x1": 295,
+    "ybot": 149
+   },
+   "arrays": {
+    "out": "c069__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c069"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [39, 237, 55],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [17, 69, 17],
+     "rows": [105, 189],
+     "w": 360
+    },
+    "col": [236, 204, 150],
+    "frame": 1627,
+    "key": 1029,
+    "line": "NEXT MATCH-UP",
+    "source": "kit.picture",
+    "t": "0x1.b1ddddddddddep+5",
+    "tl": "0x1.afeebb885521ep+5",
+    "x0": 64,
+    "x1": 295,
+    "ybot": 149
+   },
+   "arrays": {
+    "out": "c070__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c070"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [194, 5, 19],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [179, 253, 207],
+     "rows": [105, 189],
+     "w": 360
+    },
+    "col": [236, 204, 150],
+    "frame": 1628,
+    "key": 1029,
+    "line": "NEXT MATCH-UP",
+    "source": "kit.picture",
+    "t": "0x1.b222222222222p+5",
+    "tl": "0x1.afeebb885521ep+5",
+    "x0": 64,
+    "x1": 295,
+    "ybot": 149
+   },
+   "arrays": {
+    "out": "c071__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c071"
+  },
+  {
+   "args": {
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "col": [236, 204, 150],
+    "frame": 1632,
+    "key": 1029,
+    "line": "NEXT MATCH-UP",
+    "source": "kit.picture",
+    "t": "0x1.b333333333333p+5",
+    "tl": "0x1.afeebb885521ep+5",
+    "x0": 64,
+    "x1": 295,
+    "ybot": 149
+   },
+   "arrays": {
+    "out": "c072__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c072"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [122, 17, 129],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [73, 49, 59],
+     "rows": [105, 189],
+     "w": 360
+    },
+    "col": [236, 204, 150],
+    "frame": 1633,
+    "key": 1029,
+    "line": "NEXT MATCH-UP",
+    "source": "kit.picture",
+    "t": "0x1.b377777777777p+5",
+    "tl": "0x1.afeebb885521ep+5",
+    "x0": 64,
+    "x1": 295,
+    "ybot": 149
+   },
+   "arrays": {
+    "out": "c073__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c073"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [234, 145, 64],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [31, 23, 61],
+     "rows": [105, 189],
+     "w": 360
+    },
+    "col": [236, 204, 150],
+    "frame": 1634,
+    "key": 1029,
+    "line": "NEXT MATCH-UP",
+    "source": "kit.picture",
+    "t": "0x1.b3bbbbbbbbbbcp+5",
+    "tl": "0x1.afeebb885521ep+5",
+    "x0": 64,
+    "x1": 295,
+    "ybot": 149
+   },
+   "arrays": {
+    "out": "c074__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c074"
+  },
+  {
+   "args": {
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "col": [106, 74, 23],
+    "key": 1418,
+    "t": "0x1.a360cd217ff50p-3",
+    "tl": "0x1.a360cd217ff50p-3",
+    "x0": 60,
+    "x1": 300,
+    "ybot": 121
+   },
+   "arrays": {
+    "out": "c075__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c075"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [68, 176, 68],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [245, 103, 133],
+     "rows": [105, 189],
+     "w": 360
+    },
+    "col": [110, 14, 58],
+    "key": 846,
+    "t": "0x1.bd9999999999ap+5",
+    "tl": "0x1.bdb160349649cp+5",
+    "x0": 20,
+    "x1": 340,
+    "ybot": 149
+   },
+   "arrays": {
+    "out": "c076__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c076"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [173, 233, 240],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [203, 33, 183],
+     "rows": [52, 136],
+     "w": 360
+    },
+    "col": [73, 109, 115],
+    "key": 1398,
+    "t": "0x1.265ff945f982dp+3",
+    "tl": "0x1.260e0dc0daca8p+3",
+    "x0": 0,
+    "x1": 360,
+    "ybot": 96
+   },
+   "arrays": {
+    "out": "c077__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c077"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [234, 10, 147],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [57, 197, 55],
+     "rows": [56, 140],
+     "w": 360
+    },
+    "col": [183, 107, 77],
+    "key": 1139,
+    "t": "0x1.24f544d06a574p+5",
+    "tl": "0x1.242878039d8a7p+5",
+    "x0": 150,
+    "x1": 210,
+    "ybot": 100
+   },
+   "arrays": {
+    "out": "c078__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c078"
+  },
+  {
+   "args": {
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "col": [42, 106, 72],
+    "key": 1498,
+    "t": "0x1.c8546b51e3e03p+4",
+    "tl": "0x1.c521381eb0ad0p+4",
+    "x0": 20,
+    "x1": 27,
+    "ybot": 495
+   },
+   "arrays": {
+    "out": "c079__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c079"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [228, 93, 32],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [145, 169, 253],
+     "rows": [455, 539],
+     "w": 360
+    },
+    "col": [140, 210, 122],
+    "key": 504,
+    "t": "0x1.4a22222222222p+5",
+    "tl": "0x1.4810cbb133b1fp+5",
+    "x0": 300,
+    "x1": 339,
+    "ybot": 499
+   },
+   "arrays": {
+    "out": "c080__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c080"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [219, 231, 139],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [215, 227, 243],
+     "rows": [256, 340],
+     "w": 360
+    },
+    "col": [26, 162, 155],
+    "key": 1576,
+    "t": "0x1.6f7accda5986ep+3",
+    "tl": "0x1.677accda5986ep+3",
+    "x0": 180,
+    "x1": 180,
+    "ybot": 300
+   },
+   "arrays": {
+    "out": "c081__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c081"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [10, 147, 110],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [117, 91, 123],
+     "rows": [46, 130],
+     "w": 360
+    },
+    "col": [232, 114, 21],
+    "key": 514,
+    "t": "0x1.ca70d9da4a13bp+5",
+    "tl": "0x1.c870d9ccde1a6p+5",
+    "x0": 200,
+    "x1": 190,
+    "ybot": 90
+   },
+   "arrays": {
+    "out": "c082__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c082"
+  },
+  {
+   "args": {
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "col": [176, 11, 95],
+    "key": 1243,
+    "t": "0x1.aeda42b095eddp+0",
+    "tl": "0x1.620d75e3c9210p+0",
+    "x0": 330,
+    "x1": 420,
+    "ybot": 498
+   },
+   "arrays": {
+    "out": "c083__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c083"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [99, 128, 225],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [55, 179, 63],
+     "rows": [426, 510],
+     "w": 360
+    },
+    "col": [221, 167, 21],
+    "key": 1208,
+    "t": "0x1.f555555555555p+3",
+    "tl": "0x1.e89fbc901fc27p+3",
+    "x0": -40,
+    "x1": 30,
+    "ybot": 470
+   },
+   "arrays": {
+    "out": "c084__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c084"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [4, 232, 3],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [185, 13, 193],
+     "rows": [77, 161],
+     "w": 360
+    },
+    "col": null,
+    "key": 635,
+    "t": "0x1.303e59d7df9c6p+5",
+    "tl": "0x1.2ca4c04bb1fc1p+5",
+    "x0": 20,
+    "x1": 26,
+    "ybot": 121
+   },
+   "arrays": {
+    "out": "c085__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c085"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [161, 207, 196],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [15, 161, 201],
+     "rows": [105, 189],
+     "w": 360
+    },
+    "col": [150, 11, 60],
+    "key": 673,
+    "t": "0x1.52a3a6152830bp+1",
+    "tl": "0x1.190a0c7b8e971p+1",
+    "x0": 100,
+    "x1": 114,
+    "ybot": 149
+   },
+   "arrays": {
+    "out": "c086__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c086"
+  },
+  {
+   "args": {
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "col": [109, 91, 219],
+    "key": 857,
+    "t": "0x1.60de168d9d175p+4",
+    "tl": "0x1.5981ed97da87fp+4",
+    "x0": 60,
+    "x1": 300,
+    "ybot": 96
+   },
+   "arrays": {
+    "out": "c087__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c087"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [132, 225, 139],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [157, 67, 167],
+     "rows": [56, 140],
+     "w": 360
+    },
+    "col": [83, 77, 7],
+    "key": 1159,
+    "t": "0x1.c19999999999ap+4",
+    "tl": "0x1.c1f95cbf27157p+4",
+    "x0": 20,
+    "x1": 340,
+    "ybot": 100
+   },
+   "arrays": {
+    "out": "c088__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c088"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [111, 178, 179],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [77, 55, 221],
+     "rows": [451, 535],
+     "w": 360
+    },
+    "col": [118, 185, 165],
+    "key": 478,
+    "t": "0x1.909cc7352f442p+5",
+    "tl": "0x1.909cc7352f4cfp+5",
+    "x0": 0,
+    "x1": 360,
+    "ybot": 495
+   },
+   "arrays": {
+    "out": "c089__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c089"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [246, 169, 25],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [247, 79, 17],
+     "rows": [455, 539],
+     "w": 360
+    },
+    "col": [88, 237, 30],
+    "key": 1192,
+    "t": "0x1.ac96ded7199d5p+5",
+    "tl": "0x1.ac307870b336fp+5",
+    "x0": 150,
+    "x1": 210,
+    "ybot": 499
+   },
+   "arrays": {
+    "out": "c090__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c090"
+  },
+  {
+   "args": {
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "col": [47, 204, 174],
+    "key": 16,
+    "t": "0x1.64a5e6abcd1e2p+4",
+    "tl": "0x1.623f804566b7cp+4",
+    "x0": 20,
+    "x1": 27,
+    "ybot": 300
+   },
+   "arrays": {
+    "out": "c091__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c091"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [68, 66, 50],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [191, 105, 189],
+     "rows": [46, 130],
+     "w": 360
+    },
+    "col": [229, 133, 3],
+    "key": 877,
+    "t": "0x1.2333333333333p+4",
+    "tl": "0x1.1d9010cf99c5ap+4",
+    "x0": 300,
+    "x1": 339,
+    "ybot": 90
+   },
+   "arrays": {
+    "out": "c092__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c092"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [67, 108, 241],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [205, 13, 137],
+     "rows": [454, 538],
+     "w": 360
+    },
+    "col": [70, 74, 223],
+    "key": 1204,
+    "t": "0x1.bf926b5ff8e36p+5",
+    "tl": "0x1.bf926b5ff8e36p+5",
+    "x0": 180,
+    "x1": 180,
+    "ybot": 498
+   },
+   "arrays": {
+    "out": "c093__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c093"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [144, 39, 190],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [99, 255, 131],
+     "rows": [426, 510],
+     "w": 360
+    },
+    "col": [248, 30, 9],
+    "key": 250,
+    "t": "0x1.3523c59a1f76bp+1",
+    "tl": "0x1.3523c597f9b53p+1",
+    "x0": 200,
+    "x1": 190,
+    "ybot": 470
+   },
+   "arrays": {
+    "out": "c094__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c094"
+  },
+  {
+   "args": {
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "col": [232, 8, 151],
+    "key": 318,
+    "t": "0x1.e4775c0cfbdcap+4",
+    "tl": "0x1.e44e664a6c807p+4",
+    "x0": 330,
+    "x1": 420,
+    "ybot": 121
+   },
+   "arrays": {
+    "out": "c095__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c095"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [196, 47, 190],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [153, 19, 45],
+     "rows": [105, 189],
+     "w": 360
+    },
+    "col": null,
+    "key": 135,
+    "t": "0x1.fb33333333333p+4",
+    "tl": "0x1.f982d6e35b94ep+4",
+    "x0": -40,
+    "x1": 30,
+    "ybot": 149
+   },
+   "arrays": {
+    "out": "c096__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c096"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [6, 244, 174],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [19, 127, 163],
+     "rows": [52, 136],
+     "w": 360
+    },
+    "col": [195, 56, 172],
+    "key": 265,
+    "t": "0x1.b824f4f6f1b03p+5",
+    "tl": "0x1.b68b5b5d58169p+5",
+    "x0": 20,
+    "x1": 26,
+    "ybot": 96
+   },
+   "arrays": {
+    "out": "c097__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c097"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [67, 203, 221],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [199, 251, 149],
+     "rows": [56, 140],
+     "w": 360
+    },
+    "col": [104, 12, 182],
+    "key": 1431,
+    "t": "0x1.92636f1a2a90bp+4",
+    "tl": "0x1.8e636f3502835p+4",
+    "x0": 100,
+    "x1": 114,
+    "ybot": 100
+   },
+   "arrays": {
+    "out": "c098__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c098"
+  },
+  {
+   "args": {
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "col": [142, 10, 86],
+    "key": 747,
+    "t": "0x1.91e9c7035a652p+5",
+    "tl": "0x1.8fe9c7035a652p+5",
+    "x0": 60,
+    "x1": 300,
+    "ybot": 495
+   },
+   "arrays": {
+    "out": "c099__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c099"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [68, 81, 214],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [19, 233, 247],
+     "rows": [455, 539],
+     "w": 360
+    },
+    "col": [105, 175, 180],
+    "key": 162,
+    "t": "0x1.3444444444444p+3",
+    "tl": "0x1.2cad775eb64d8p+3",
+    "x0": 20,
+    "x1": 340,
+    "ybot": 499
+   },
+   "arrays": {
+    "out": "c100__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c100"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [15, 200, 98],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [77, 117, 23],
+     "rows": [256, 340],
+     "w": 360
+    },
+    "col": [74, 143, 47],
+    "key": 479,
+    "t": "0x1.bbb0c9c151735p+0",
+    "tl": "0x1.6ee3fcf484a68p+0",
+    "x0": 0,
+    "x1": 360,
+    "ybot": 300
+   },
+   "arrays": {
+    "out": "c101__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c101"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [225, 192, 76],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [255, 69, 75],
+     "rows": [46, 130],
+     "w": 360
+    },
+    "col": [23, 191, 110],
+    "key": 952,
+    "t": "0x1.35a7d616cdabbp+5",
+    "tl": "0x1.3274a2e39a788p+5",
+    "x0": 150,
+    "x1": 210,
+    "ybot": 90
+   },
+   "arrays": {
+    "out": "c102__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c102"
+  },
+  {
+   "args": {
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "col": [42, 145, 16],
+    "key": 645,
+    "t": "0x1.449a22fb24c80p+5",
+    "tl": "0x1.4100896ef727bp+5",
+    "x0": 20,
+    "x1": 27,
+    "ybot": 498
+   },
+   "arrays": {
+    "out": "c103__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c103"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [103, 161, 118],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [1, 147, 179],
+     "rows": [426, 510],
+     "w": 360
+    },
+    "col": [104, 232, 175],
+    "key": 1399,
+    "t": "0x1.6000000000000p+5",
+    "tl": "0x1.5c7cd56dff5e4p+5",
+    "x0": 300,
+    "x1": 339,
+    "ybot": 470
+   },
+   "arrays": {
+    "out": "c104__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c104"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [151, 32, 57],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [55, 191, 219],
+     "rows": [77, 161],
+     "w": 360
+    },
+    "col": [176, 240, 52],
+    "key": 521,
+    "t": "0x1.c0a8a1c9a1056p+5",
+    "tl": "0x1.bcfa8d4ebfbdbp+5",
+    "x0": 180,
+    "x1": 180,
+    "ybot": 121
+   },
+   "arrays": {
+    "out": "c105__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c105"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [219, 230, 146],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [249, 223, 251],
+     "rows": [105, 189],
+     "w": 360
+    },
+    "col": [143, 196, 187],
+    "key": 1219,
+    "t": "0x1.fec1d16b67f7ap+2",
+    "tl": "0x1.ff65a875a5684p+2",
+    "x0": 200,
+    "x1": 190,
+    "ybot": 149
+   },
+   "arrays": {
+    "out": "c106__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c106"
+  },
+  {
+   "args": {
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 640,
+     "w": 360
+    },
+    "col": null,
+    "key": 215,
+    "t": "0x1.66ac5a060b8edp+4",
+    "tl": "0x1.66ac5a060ba06p+4",
+    "x0": 330,
+    "x1": 420,
+    "ybot": 96
+   },
+   "arrays": {
+    "out": "c107__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c107"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [123, 70, 53],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [241, 229, 187],
+     "rows": [56, 140],
+     "w": 360
+    },
+    "col": [228, 174, 157],
+    "key": 1223,
+    "t": "0x1.c3bbbbbbbbbbcp+5",
+    "tl": "0x1.c36763dbb2260p+5",
+    "x0": -40,
+    "x1": 30,
+    "ybot": 100
+   },
+   "arrays": {
+    "out": "c108__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c108"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [124, 159, 76],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [227, 7, 117],
+     "rows": [451, 535],
+     "w": 360
+    },
+    "col": [22, 152, 85],
+    "key": 387,
+    "t": "0x1.85b3cf3729547p+4",
+    "tl": "0x1.834d68d0c2ee1p+4",
+    "x0": 20,
+    "x1": 26,
+    "ybot": 495
+   },
+   "arrays": {
+    "out": "c109__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c109"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [183, 88, 78],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [207, 107, 131],
+     "rows": [455, 539],
+     "w": 360
+    },
+    "col": [238, 88, 187],
+    "key": 662,
+    "t": "0x1.cdb9534d68531p+4",
+    "tl": "0x1.c81fb9b3ceb97p+4",
+    "x0": 100,
+    "x1": 114,
+    "ybot": 499
+   },
+   "arrays": {
+    "out": "c110__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c110"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [137, 245, 211],
+     "h": 140,
+     "mul": [45, 99, 107],
+     "w": 200
+    },
+    "col": [236, 204, 150],
+    "key": 1220,
+    "t": "0x1.ec6fac453a901p+1",
+    "tl": "0x1.e60945ded429bp+1",
+    "x0": 40,
+    "x1": 330,
+    "ybot": 136
+   },
+   "arrays": {
+    "out": "c111__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c111"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [247, 230, 41],
+     "h": 140,
+     "mul": [165, 217, 73],
+     "w": 220
+    },
+    "col": [236, 204, 150],
+    "key": 722,
+    "t": "0x1.bfdb6313485eap+5",
+    "tl": "0x1.bed125a2a487ap+5",
+    "x0": 40,
+    "x1": 330,
+    "ybot": 136
+   },
+   "arrays": {
+    "out": "c112__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c112"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [17, 1, 182],
+     "h": 140,
+     "mul": [109, 97, 229],
+     "w": 240
+    },
+    "col": [236, 204, 150],
+    "key": 65,
+    "t": "0x1.0e2ccabee0bb7p+5",
+    "tl": "0x1.0c7eb643ff73dp+5",
+    "x0": 40,
+    "x1": 330,
+    "ybot": 136
+   },
+   "arrays": {
+    "out": "c113__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c113"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [209, 88, 212],
+     "h": 140,
+     "mul": [213, 125, 179],
+     "w": 260
+    },
+    "col": [236, 204, 150],
+    "key": 1462,
+    "t": "0x1.5bf70fa7612d6p+4",
+    "tl": "0x1.5753389d23bccp+4",
+    "x0": 40,
+    "x1": 330,
+    "ybot": 136
+   },
+   "arrays": {
+    "out": "c114__out"
+   },
+   "call": "reelkit.ui._sand_puff(img, t, tl, x0, x1, ybot, col, key)",
+   "id": "c114"
+  }
+ ],
+ "note": "_hash01: one Python call per row of the int arrays a, b, c, d (as many as the call names); \"phase\" is the number its sine is taken of, sum(x * k for x, k in zip(xs, HASH_K)) + 0.5 (Python's sum() of floats is compensated, so this is not the plain left-to-right sum), and \"out\" what it returned. math.sin comes from the C runtime of the reference PC: a port with another sine can differ from \"out\" in the last bits, never from \"phase\". _sand_puff: t and tl are float.hex() strings, col null is col=None. args.canvas makes the picture the call draws on, w x h, uint8 RGB: with only \"flat\", that colour everywhere; with \"mul\" and \"add\", pixel i (counted row by row from the top left) has the channels (mul[c] * i + add[c]) % 256, and if \"rows\" [ya, yb] is there too only rows ya to yb - 1 are woven like that and the rest is \"flat\". \"out\" is the picture after the call. ",
+ "tool": "kit_ui"
+}

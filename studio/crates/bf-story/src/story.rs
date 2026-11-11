@@ -8,6 +8,7 @@ use std::collections::BTreeSet;
 
 use bf_core::event::Event;
 use bf_core::grid::Grid;
+use bf_core::py::py_max;
 use bf_core::recording::Recording;
 use bf_core::show::captions;
 
@@ -49,11 +50,6 @@ pub struct Story {
     /// recording's `HP` array holds it. HP here follows `lead_changes()`: hits take away, `heal` events give back.
     /// Not in the kit's story dict.
     pub lead: Vec<(f64, f64)>,
-}
-
-/// Python's `max(a, b)`: `a` unless `b` is greater.
-pub(crate) fn py_max(a: f64, b: f64) -> f64 {
-    if b > a { b } else { a }
 }
 
 /// A fighter index element (`hp[e[3]]`); Python's negative indices never occur for a fighter.

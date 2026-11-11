@@ -249,6 +249,15 @@ occur).
 | TROMBONE | `POWER SLIDE` | `haste` | from level 3, every 6 bars |
 | TROMBONE | `PEDAL TONE` | `slam` | once, below `LOW_HP` |
 
+Two more kinds, which these two weapons can make but this pairing never does. `block` is in the bag fights
+(`studio/reference/fights/striker_vs_bag/` and `lance_vs_bag/`, where a bag has a shield); no reference recording
+holds a `parry`, because no ported weapon fires a projectile.
+
+| Kind | `who` (2) | 3 | 4 | 5 | 6 |
+| --- | --- | --- | --- | --- | --- |
+| `block` | the shielded fighter | the attacker (int) | contact x (float) | contact y (float) | what was blocked (string): `blade` or `fang`, as element 7 of a `hit` |
+| `parry` | the projectile's owner | the fighter whose lance killed it (int) | the projectile's x (float) | its y (float) | the projectile's id (int) |
+
 The story reads events like this: captions come from `ability` events whose element 5 is 1; hit points over time
 are 100 minus the running sum of element 4 of the `hit` events whose element 3 is that fighter.
 
@@ -261,7 +270,7 @@ are 100 minus the running sum of element 4 of the `hit` events whose element 3 i
 | `P` | `<f8` | (frames, 2, 2) | ball centre: `P[i][k]` is fighter `k`'s `[x, y]` |
 | `V` | `<f8` | (frames, 2, 2) | velocity `[vx, vy]`, ring units per second |
 | `TH` | `<f8` | (frames, 2) | weapon angle, 0 to 2 pi. TROMBONE: where the lance points. FLUTE: fixed at its seeded start value. |
-| `BL` | `<f8` | (frames, 2) | weapon reach beyond the ball's surface; it grows with landed hits. FLUTE: the cobras' reach (1.4 up to 2.4). TROMBONE: the lance's full length (0.95 up to 2.5). |
+| `BL` | `<f8` | (frames, 2) | weapon reach beyond the ball's surface; it grows with landed hits. FLUTE: the cobras' reach (1.4 up to 2.4). TROMBONE: the lance's full length (0.95 up to 2.47, `2.470000000000001`: it grows by 0.08 per landed thrust only while that stays within `max_len` 2.5). |
 | `FR` | `<i8` | (frames, 2) | growth steps so far. TROMBONE starts at 1 and adds 1 each time a landed hit lengthens the lance; FLUTE stays 0. |
 | `NV` | `<i8` | (frames, 2) | projectiles per volley (0 for both) |
 | `HP` | `<f8` | (frames, 2) | hit points, never below 0 |

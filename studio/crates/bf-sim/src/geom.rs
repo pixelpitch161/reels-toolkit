@@ -49,14 +49,14 @@ pub fn radians(deg: f64) -> f64 {
     deg * (dmath::PI / 180.0)
 }
 
-/// Python's `max(a, b)` on floats: `a` unless `b` is greater.
-pub fn py_max(a: f64, b: f64) -> f64 {
-    if b > a { b } else { a }
-}
+/// Python's `max(a, b)` and `min(a, b)` on floats (one home: `bf_core::py`).
+pub use bf_core::py::{py_max, py_min};
 
-/// Python's `min(a, b)` on floats: `a` unless `b` is smaller.
-pub fn py_min(a: f64, b: f64) -> f64 {
-    if b < a { b } else { a }
+/// `np.clip(x, lo, hi)` on a float with plain numbers as bounds: numpy's loop is `if x < lo: x = lo`, then
+/// `if x > hi: x = hi`, so `hi` wins when the bounds cross and NaN stays NaN.
+pub fn np_clip(x: f64, lo: f64, hi: f64) -> f64 {
+    let x = if x < lo { lo } else { x };
+    if x > hi { hi } else { x }
 }
 
 /// `np.sign(x)`: -1.0, 0.0 or 1.0, and NaN for NaN.
@@ -145,6 +145,27 @@ mod tests {
             (100.0, -0.5309649148733762),
         ] {
             assert_eq!(wrap(a).to_bits(), f64::to_bits(want), "_wrap({a})");
+        }
+    }
+
+    /// `np.clip` with plain numbers as bounds: -0.0 is not below 0, so it passes; the upper bound wins when the
+    /// bounds cross; NaN stays NaN.
+    #[test]
+    fn np_clip_matches_numpy() {
+        let xs = [-1.0, 0.5, 2.0, f64::NAN, -0.0, 0.0, 1.0, -0.2, -0.3];
+        for (lo, hi, want) in [
+            (0.0, 1.0, [0.0, 0.5, 1.0, f64::NAN, -0.0, 0.0, 1.0, 0.0, 0.0]),
+            (0.0, -0.2, [-0.2, -0.2, -0.2, f64::NAN, -0.2, -0.2, -0.2, -0.2, -0.2]),
+            (0.0, 0.0, [0.0, 0.0, 0.0, f64::NAN, -0.0, 0.0, 0.0, 0.0, 0.0]),
+        ] {
+            for (x, want) in xs.into_iter().zip(want) {
+                let got = np_clip(x, lo, hi);
+                if want.is_nan() {
+                    assert!(got.is_nan(), "np.clip({x}, {lo}, {hi}) = {got}");
+                } else {
+                    assert_eq!(got.to_bits(), want.to_bits(), "np.clip({x}, {lo}, {hi}) = {got}");
+                }
+            }
         }
     }
 
