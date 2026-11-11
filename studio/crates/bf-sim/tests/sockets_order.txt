@@ -1,0 +1,172 @@
+# The engine's sockets in the order `fight.py` reaches them (the kit's commit of this milestone), for
+# `tests/sockets.rs`. Transcribed from `projects/ballfight/fight.py`: each line is a socket's name as the engine logs
+# it with `Fight::trace_sockets` on, the `fight.py` line(s) it stands for, and when it is reached:
+#
+#   setup    once, in `run()` before the loop (`Schedule::new`)
+#   frame    at every recorded frame (`snap`, `Frames::snap`)
+#   step     on every step
+#   beat     on a step that reaches a beat
+#   unlock   on a beat, for an unlock whose turn it is (`abilities_step`'s loop over the two unlocks)
+#   ability  when an ability fires (`trigger`)
+#   hit      when `damage` is called
+#   knock    when `knock` is called
+#   clash    when the balls overlap and may clash
+#   lance    on a step of a thrust in progress (`thrust_step` past its idle branch)
+#   ringhit  when a ring's front passes the enemy (`effects_step`, the wave branch)
+#   slamhit  when a slam lands on the enemy (`effects_step`, the slam branch)
+#   copy     when IDENTITY CRISIS fires a copied ability (`trigger(..., quiet=True)`)
+#
+# Lines that run once per fighter appear twice, fighter 0's first. Existing calls (striker, blade, effects,
+# abilities) are listed among the sockets, so the order of the new ones against them is checked too. The kinds
+# older than the kit's (volley, pulse, pack, rattle, ...) have no socket: they stay `SLOT` comments in the code.
+#
+# name                     fight.py      when
+
+# ---- setup: run() 5756 to 5911, in order
+setup.combo                5756-5762     setup
+setup.swallow_striker      5765-5774     setup
+setup.echo                 5787-5792     setup
+setup.jump                 5793-5796     setup
+setup.tune                 5797-5802     setup
+setup.mortar               5809-5817     setup
+setup.anchor               5818-5826     setup
+setup.tiptoe               5830-5835     setup
+setup.lightning            5854-5857     setup
+setup.grapple              5864-5869     setup
+setup.walk                 5876-5881     setup
+setup.roll                 5882-5887     setup
+setup.spotlight            5888-5893     setup
+setup.crowd                5894-5899     setup
+setup.drill                5900-5905     setup
+setup.roll_charge          5906-5911     setup
+
+# ---- a frame: snap 5509 to 5732, in order
+snap.K                     5509-5514     frame
+snap.ECHO                  5539-5549     frame
+snap.DET                   5550-5554     frame
+snap.SNIP                  5555-5561     frame
+snap.LO                    5562-5563     frame
+snap.SHELLS                5564-5568     frame
+snap.ANC                   5569-5576     frame
+snap.HOOK                  5602-5608     frame
+snap.HOP                   5609-5615     frame
+snap.ROLL                  5621-5624     frame
+snap.GRAB                  5625-5633     frame
+snap.WALK                  5634-5642     frame
+snap.DRILL                 5643-5670     frame
+snap.SPOT                  5671-5681     frame
+snap.CROWD                 5682-5704     frame
+snap.FLICK                 5705-5711     frame
+snap.RCHG                  5713-5732     frame
+
+# ---- a step: run() 5919 to 6204
+clock                      5919          step
+# the beat grid, fighter 0 then fighter 1 (5925 to 5945)
+beat.stunned               5926-5927     beat
+beat.combo                 5934-5935     beat
+beat.swallow               5936-5937     beat
+beat.striker               5938-5939     beat
+beat.line                  5940-5941     beat
+beat.stunned               5926-5927     beat
+beat.combo                 5934-5935     beat
+beat.swallow               5936-5937     beat
+beat.striker               5938-5939     beat
+beat.line                  5940-5941     beat
+# the 16th counters (5946 to 6095)
+tick.rake                  5964-5974     step
+tick.striker               5987-5993     step
+tick.thrust                5994-6000     step
+tick.echo                  6009-6014     step
+tick.jump                  6015-6019     step
+tick.tune                  6020-6024     step
+tick.mortar                6025-6029     step
+tick.anchor                6030-6034     step
+tick.lightning             6050-6054     step
+tick.tiptoe                6055-6059     step
+tick.grapple               6060-6064     step
+tick.walk                  6065-6069     step
+tick.roll                  6070-6075     step
+tick.spotlight             6076-6080     step
+tick.crowd                 6081-6085     step
+tick.drill                 6086-6090     step
+tick.roll_charge           6091-6095     step
+# the timers, fighter 0 then fighter 1: stun, detune, the smashed timer (6100 to 6107)
+timers                     6100-6107     step
+timers                     6100-6107     step
+# steered before move (6110 to 6114)
+steer.lights_out           6110-6112     step
+steer.hold                 6113-6114     step
+# move (3128 to 3278), fighter 0 then fighter 1, then the clash, then the projectiles
+move.skips                 3131-3150     step
+move.speeds                3153-3160     step
+move.skips                 3131-3150     step
+move.speeds                3153-3160     step
+move.clash                 3180-3187     step
+move.walker                3190-3193     clash
+move.walker_pinned         3203-3205     clash
+move.wclash                3227-3232     clash
+move.keys                  3235-3278     step
+# the weapon steps, fighter 0 then fighter 1 (6118 to 6136)
+weapon.blade               6119-6120     step
+lance.swat_shells          755-756       lance
+weapon.combo               6123-6124     step
+weapon.swallow             6133-6134     step
+weapon.striker             6135-6136     step
+weapon.blade               6119-6120     step
+lance.swat_shells          755-756       lance
+weapon.combo               6123-6124     step
+weapon.swallow             6133-6134     step
+weapon.striker             6135-6136     step
+# beams and hazards (6139 to 6142)
+stage9.beams               6139-6140     step
+stage9.hazards             6141-6142     step
+# effects_step (6143; 3055 to 3113)
+effects.waves              3057-3087     step
+effects.wave.detune        3069-3071     ringhit
+effects.wave.stun          3072-3074     ringhit
+effects.slams              3088-3098     step
+effects.slam.how           3097          slamhit
+effects.arcs               3099-3113     step
+# the later kinds' steps (6144 to 6202)
+later.echo                 6146-6147     step
+later.flick                6148-6149     step
+later.tune                 6150-6151     step
+later.snip                 6152-6153     step
+later.extra_snip           6154-6156     step
+later.shells               6157-6158     step
+later.anchor               6159-6162     step
+later.hook                 6163-6164     step
+later.tiptoe               6171-6172     step
+later.walk                 6173-6174     step
+later.grapple              6175-6176     step
+later.prelude              6177-6178     step
+later.swan                 6179-6180     step
+later.stampede             6181-6182     step
+later.spotlight            6183-6184     step
+later.crowd                6185-6186     step
+later.drill                6187-6188     step
+later.roll_charge          6189-6190     step
+later.splinters            6193-6194     step
+later.dash_cone            6195-6196     step
+later.surf_rake            6197-6198     step
+# abilities_step (6203; 3012 to 3053): the charged beams, then fighter 0's turn, then fighter 1's
+abilities                  6203          step
+abilities.charged_beam     3013-3016     step
+abilities.charged_beam     3013-3016     step
+abilities.levels           3017-3024     step
+abilities.smashed          3027-3028     beat
+abilities.gates            3034-3049     unlock
+abilities.levels           3017-3024     step
+abilities.smashed          3027-3028     beat
+abilities.gates            3034-3049     unlock
+
+# ---- trigger (2830 to 2988), when an ability fires
+trigger.ability            2836-2839     ability
+trigger.last_ab            2840          ability
+trigger.dispatch           2841-2988     ability
+trigger.quiet              2830-2835     copy
+
+# ---- damage (322 to 351) and knock (353 to 368)
+damage.skips               325-334       hit
+damage.detuned             344-346       hit
+knock.skips                355-360       knock

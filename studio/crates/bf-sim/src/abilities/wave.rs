@@ -6,9 +6,10 @@
 //! from the ring's centre, and its slow if it has one ([`crate::abilities::shockwave::slow`]). On its way it clears
 //! the enemy's projectiles.
 
-use crate::abilities::{param, shockwave};
+use crate::abilities::{self, param, shockwave};
 use crate::fight::{Fight, Wave};
 use crate::geom;
+use crate::kinds::tune;
 use crate::roster::AbilityCfg;
 
 /// `trigger`, kind `wave`: a ring of kind `wave` from where fighter `k` is.
@@ -33,9 +34,12 @@ pub fn ring(fight: &mut Fight, k: usize, ab: &AbilityCfg, kind: &str) {
         name: ab.name.clone(),
         t0: fight.t,
         slow: ab.slow,
+        stun: None,
+        // fight.py 2845 to 2846: `if ab.get('detune'): self.waves[-1]['detune'] = ab['detune']` (ILL WIND; the roster
+        // reads it only once the option is ported)
+        detune: ab.detune.clone(),
     };
     fight.waves.push(wave);
-    // fight.py 2845 to 2846: a ring with `detune` (ILL WIND). The roster reads such an ability as not ported.
 }
 
 /// `effects_step`, the rings: each spreads by `speed * dt` up to its final radius, hits the enemy its front passes
@@ -56,14 +60,24 @@ pub fn step(fight: &mut Fight, dt: f64) {
         let reach = dist - r * 0.5;
         if !w.hit && r0 < reach && reach <= front + 1e-9 {
             w.hit = true;
-            let (dmg, knock, slow) = (w.dmg, w.knock, w.slow);
+            let (dmg, knock, slow, stun) = (w.dmg, w.knock, w.slow, w.stun);
+            let detune = w.detune.clone();
             let kind = w.kind.clone();
             // hx, hy = W['c'] + rel / max(dist, 1e-6) * (dist - R): the near side of the enemy's ball
             let m = geom::py_max(dist, 1e-6);
             let h = [c[0] + rel[0] / m * (dist - r), c[1] + rel[1] / m * (dist - r)];
             let landed = fight.damage(owner, o, dmg, &kind, h, 0);
             fight.knock(o, rel, knock);
-            // fight.py 3069 to 3074: a ring with `detune` or `stun` (kinds and options not ported).
+            fight.socket("effects.wave.detune");
+            if let Some(detune) = detune.filter(|_| landed) {
+                // #37, fight.py 3069 to 3071: out of tune (ILL WIND); `_detune` is the tune's (OBOE's) code
+                tune::wave_detune(fight, o, owner, &detune);
+            }
+            fight.socket("effects.wave.stun");
+            if let Some(stun) = stun.filter(|s| landed && *s != 0.0) {
+                // #37, fight.py 3072 to 3074: stunned (can't move or start an attack); SQUEAK's (CLARINET's) code
+                abilities::stun::hit(fight, o, owner, stun);
+            }
             if let Some(slow) = slow.filter(|_| landed) {
                 // #34: the enemy it hits is slowed for a moment
                 shockwave::slow(fight, o, owner, slow);

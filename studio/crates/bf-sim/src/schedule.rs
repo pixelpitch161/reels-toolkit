@@ -3,24 +3,27 @@
 //! stage 12, by `Fight::abilities_step`.)
 //!
 //! `fight.py` runs every kind any fighter could have, each behind an `if`. The stages below are numbered in the
-//! Python order and every stage names the lines it mirrors. A stage whose kinds are not ported yet is a `SLOT`
-//! comment: the next kind's call goes exactly there, and nothing already present moves. Within a stage, Python's
-//! order is the order of the lines named.
+//! Python order and every stage names the lines it mirrors. Every kind of the kit has its call here already (a
+//! socket), behind the same test Python makes (the fighters of the kind, `B.w['kind'] == ...`), calling the kind's
+//! module; a kind not ported is a stub that no fighter reaches (its `is` is false until the roster reads the kind).
+//! The kinds older than the kit's are `SLOT` comments at their place. Within a stage, Python's order is the order of
+//! the lines named. With `Fight::trace_sockets` on, every socket logs its name (`tests/sockets.rs` checks the order
+//! against `tests/sockets_order.txt`).
 //!
 //! One step, in order:
 //!
 //! 1. the clock: `t = t_fight + (step + 1) * DT`;
-//! 2. the beat grid: on a beat, each fighter's on-the-beat weapon trigger, in ball order;
+//! 2. the beat grid: on a beat, each fighter's on-the-beat weapon trigger, in ball order (a stunned one has none);
 //! 3. the 16th-note counters, one per kind, in the Python order (each kind has its own counter);
-//! 4. the timers: shield, haste and slow run down;
+//! 4. the timers: shield, haste and slow run down, then stun, detune and the smashed timer (with `rebuild`);
 //! 5. steps that steer a ball before it moves (pull, shadow, held notes);
-//! 6. `move`: the balls fly, bounce and clash;
+//! 6. `move`: the balls fly, bounce and clash, then the projectiles;
 //! 7. the rewind step;
 //! 8. each fighter's weapon step, in ball order;
 //! 9. lashes, beams and hazards;
 //! 10. `effects_step`: waves, slams and arcs;
 //! 11. the later kinds' steps, in the Python order;
-//! 12. `abilities_step`: levels, then on a beat the low-HP ability and the unlocks;
+//! 12. `abilities_step`: charged beams, levels, then on a beat the low-HP ability and the unlocks;
 //! 13. `step += 1`.
 //!
 //! After each step [`run`] tests for a K.O. and records a frame every [`Schedule::steps_per_frame`] steps.
@@ -28,11 +31,15 @@
 use bf_core::event::Value;
 use bf_core::py;
 
-use crate::abilities;
-use crate::fight::Fight;
+use crate::abilities::{self, beam, flick, hook, lights_out, prelude, smash, snip, stampede, swan, x33};
+use crate::fight::{Fight, stunned};
 use crate::geom;
-use crate::kinds::{blade, striker};
+use crate::kinds::{
+    anchor, blade, combo, crowd, drill, echo, grapple, jump, lightning, line, mortar, rake, roll, roll_charge,
+    spotlight, striker, swallow, tiptoe, tune, walk,
+};
 use crate::record::Frames;
+use crate::roster::AbilityKind;
 
 /// The counters of the fight loop: what `run()` sets up before its `while` (`fight.py` 5739 to 5914) and moves
 /// forward in it.
@@ -61,13 +68,57 @@ pub struct Schedule {
     /// `next16t`: the thrusters' own 16th counter (`fight.py` 5776): the next 16th of the video the thrust grid
     /// reaches. It starts at `k16_0` and moves only while a fighter's weapon thrusts.
     pub next16t: i64,
+    /// `dc_next`: the dash / cone / surf / rake weapons' 16th counter (5752 to 5753; its `dc_k0` is `k16_0`, the
+    /// same formula). Of those kinds the kit has the rake (ACOUSTIC).
+    pub dc_next: i64,
+    /// `n16e`: the echo's (HORN, 5790).
+    pub n16e: i64,
+    /// `n16j`: the jump's (CLARINET, 5796).
+    pub n16j: i64,
+    /// `n16u`: the tune's (OBOE, 5800).
+    pub n16u: i64,
+    /// `n16m`: the mortar's (EUPHONIUM, 5815).
+    pub n16m: i64,
+    /// `n16a`: the anchor's (BASS CLARINET, 5824).
+    pub n16a: i64,
+    /// `n16r`: the roll charge's (BASS DRUM, 5909). Python sets it up for the older `rattle` kind first (5839) and
+    /// again here, and both blocks move it (6035 to 6039, 6091 to 6095): one counter, as in Python.
+    pub n16r: i64,
+    /// `n16l`: the lightning's (ELECTRIC, 5857).
+    pub n16l: i64,
+    /// `n16h`: the tiptoe's (BASSOON, 5833).
+    pub n16h: i64,
+    /// `n16g`: the grapple's (CELLO, 5867).
+    pub n16g: i64,
+    /// `n16k`: the walk's (CONTRABASS, 5879; not the strikers' `next16k`).
+    pub n16k: i64,
+    /// `n16o`: the roll's (PIANO, 5885). The roll gets the counter itself, not its distance from `k16_0`.
+    pub n16o: i64,
+    /// `n16s`: the spotlight's (ALTO SAX, 5891).
+    pub n16s: i64,
+    /// `n16c`: the crowd's (TENOR SAX, 5897).
+    pub n16c: i64,
+    /// `n16d`: the drill's (SOUSAPHONE, 5903).
+    pub n16d: i64,
     // Python keeps one counter per kind (`next16`, `dc_next`, `n16b`, `next16c`, `next16k`, `next16t`, `n16p`, ...):
-    // each moves only while a fighter has its kind, so they are separate fields, never one shared counter.
+    // each moves only while a fighter has its kind, so they are separate fields, never one shared counter. The older
+    // kinds' (`next16`, `n16b`, `next16c`, `n16p`, `n16w`, `n16v`) come with those kinds.
+}
+
+/// The fighters (in ball order) that pass `is`, taken before a loop over them, as Python makes its lists (`echoers`,
+/// `snippers`, ...) before it walks them.
+fn which(fight: &Fight, is: impl Fn(&Fight, usize) -> bool) -> Vec<usize> {
+    (0..2).filter(|&k| is(fight, k)).collect()
+}
+
+/// Fighter `k` has an ability of this kind (Python's lists `snippers`, `hookers`, `flickers`, ...).
+fn has(fight: &Fight, k: usize, kind: AbilityKind) -> bool {
+    abilities::has(fight, k, &kind)
 }
 
 impl Schedule {
     /// `run()` up to its loop (`fight.py` 5739 to 5914): the grid counters, then each kind's setup in the Python
-    /// order.
+    /// order. (The record's keys, which `run()` adds beside the setups, are `Frames::new`'s.)
     pub fn new(fight: &mut Fight) -> Schedule {
         let r = &fight.rules;
         let steps_per_frame = r.steps_per_frame();
@@ -77,21 +128,105 @@ impl Schedule {
         // first 16th of the fight
         let k16_0 = (r.t_fight / s16 - 1e-6).ceil() as i64;
         // Kind setups, in the Python order. Each is `if a fighter has the kind: setup(k)`, some with a record key.
-        //   5756 to 5764  combo, flail, inflate setups (kinds not ported)
-        // 5765 to 5774: the strikers, in ball order (the same loop sets up `swallow`, a kind not ported). `setup`
-        // also starts `t_strike` at the weapon's (5770); `next16k = k16_0` is below; the record gets `COB` when a
-        // fighter is a striker (`record.rs`).
+        // 5756 to 5762: combo (flail and inflate are older kinds: SLOT), in ball order
+        fight.socket("setup.combo");
         for k in 0..2 {
-            if striker::is_striker(fight, k) {
+            if combo::is(fight, k) {
+                combo::setup(fight, k);
+            }
+        }
+        //   5763 to 5764  `RAD` (inflate, an older kind)
+        // 5765 to 5774: the swallowers and the strikers, in ball order, one loop. The striker's `setup` also starts
+        // `t_strike` at the weapon's (5770); `next16k = k16_0` is below; the record gets `COB` when a fighter is a
+        // striker (`record.rs`).
+        fight.socket("setup.swallow_striker");
+        for k in 0..2 {
+            if swallow::is(fight, k) {
+                swallow::setup(fight, k);
+            } else if striker::is_striker(fight, k) {
                 striker::setup(fight, k);
             }
         }
         // 5775 to 5776: the thrusters need no setup (the lance's state is the ball's, from `Ball.__init__`);
         // `next16t = k16_0` is below. The record's `EXT`, `SLW`, `CRV` (5779 to 5780) follow `Fight::uses_ext`
         // (`record.rs`).
-        //   5777 to 5911  tether, pack, echo, jump, tune, snip, lights_out, mortar, anchor, flick, tiptoe, rattle,
-        //     wrecking, snap, hook, lightning, rests, grapple, swan, stampede, prelude, walk, roll, spotlight, crowd,
-        //     drill, roll_charge (kinds not ported), in that order.
+        //   5777 to 5778  tether; 5781 to 5786  pack (older kinds)
+        // 5787 to 5792: echo
+        fight.socket("setup.echo");
+        for k in which(fight, echo::is) {
+            echo::setup(fight, k);
+        }
+        // 5793 to 5796: jump
+        fight.socket("setup.jump");
+        for k in which(fight, jump::is) {
+            jump::setup(fight, k);
+        }
+        // 5797 to 5802: tune
+        fight.socket("setup.tune");
+        for k in which(fight, tune::is) {
+            tune::setup(fight, k);
+        }
+        // 5803 to 5808: the snippers and the dimmers need no setup (their keys `SNIP`, `LO`: `record.rs`)
+        // 5809 to 5817: the shelling fight's `shells`, `next_salvo`, `salvo_landed` (`Fight`'s, empty) and the mortars
+        fight.socket("setup.mortar");
+        for k in which(fight, mortar::is) {
+            mortar::setup(fight, k);
+        }
+        // 5818 to 5826: anchor (5821 to 5823, `anc = None` on both balls, is `Ball::anc`'s default)
+        fight.socket("setup.anchor");
+        for k in which(fight, anchor::is) {
+            anchor::setup(fight, k);
+        }
+        // 5827 to 5829: the flickers need no setup (`FLICK`)
+        // 5830 to 5835: tiptoe
+        fight.socket("setup.tiptoe");
+        for k in which(fight, tiptoe::is) {
+            tiptoe::setup(fight, k);
+        }
+        //   5836 to 5850  rattle, wrecking, snap (older kinds)
+        // 5851 to 5853: the hookers need no setup (`HOOK`)
+        // 5854 to 5857: lightning
+        fight.socket("setup.lightning");
+        for k in which(fight, lightning::is) {
+            lightning::setup(fight, k);
+        }
+        //   5858 to 5863  rests (an older kind)
+        // 5864 to 5869: grapple
+        fight.socket("setup.grapple");
+        for k in which(fight, grapple::is) {
+            grapple::setup(fight, k);
+        }
+        // 5870 to 5875: the swans, stampeders and preluders need no setup
+        // 5876 to 5881: walk
+        fight.socket("setup.walk");
+        for k in which(fight, walk::is) {
+            walk::setup(fight, k);
+        }
+        // 5882 to 5887: roll
+        fight.socket("setup.roll");
+        for k in which(fight, roll::is) {
+            roll::setup(fight, k);
+        }
+        // 5888 to 5893: spotlight
+        fight.socket("setup.spotlight");
+        for k in which(fight, spotlight::is) {
+            spotlight::setup(fight, k);
+        }
+        // 5894 to 5899: crowd
+        fight.socket("setup.crowd");
+        for k in which(fight, crowd::is) {
+            crowd::setup(fight, k);
+        }
+        // 5900 to 5905: drill
+        fight.socket("setup.drill");
+        for k in which(fight, drill::is) {
+            drill::setup(fight, k);
+        }
+        // 5906 to 5911: roll_charge
+        fight.socket("setup.roll_charge");
+        for k in which(fight, roll_charge::is) {
+            roll_charge::setup(fight, k);
+        }
         Schedule {
             steps_per_frame,
             k0,
@@ -103,6 +238,21 @@ impl Schedule {
             kb: -1,
             next16k: k16_0,
             next16t: k16_0,
+            dc_next: k16_0,
+            n16e: k16_0,
+            n16j: k16_0,
+            n16u: k16_0,
+            n16m: k16_0,
+            n16a: k16_0,
+            n16r: k16_0,
+            n16l: k16_0,
+            n16h: k16_0,
+            n16g: k16_0,
+            n16k: k16_0,
+            n16o: k16_0,
+            n16s: k16_0,
+            n16c: k16_0,
+            n16d: k16_0,
         }
     }
 
@@ -112,6 +262,7 @@ impl Schedule {
         let dt = fight.rules.dt;
 
         // 1. The clock (5919). The time is recomputed from the step count, never accumulated.
+        fight.socket("clock");
         fight.t = fight.rules.t_fight + (self.step + 1) as f64 * dt;
 
         // 2. The beat grid (5920 to 5945).
@@ -120,25 +271,60 @@ impl Schedule {
             self.on_beat = true;
             self.kb = self.next_beat - self.k0;
             self.next_beat += 1;
-            // For k in ball order (5925), skipping a stunned fighter (5926, `_stunned`: stun and shadow, kinds not
-            // ported), by weapon kind:
+            // For k in ball order (5925), by weapon kind (an `if` / `elif` chain; a ball has one weapon, so the `if`s
+            // below are the same):
             for k in 0..2 {
-                //   5928 to 5937  volley (not on16), beam, combo, swallow (kinds not ported)
+                // 5926 to 5927: a stunned fighter starts no attack
+                fight.socket("beat.stunned");
+                if stunned(fight, k) {
+                    continue;
+                }
+                //   5928 to 5933  volley (not on16), beam weapon (older kinds)
+                // 5934 to 5935
+                fight.socket("beat.combo");
+                if combo::is(fight, k) {
+                    combo::beat(fight, k, self.kb);
+                }
+                // 5936 to 5937
+                fight.socket("beat.swallow");
+                if swallow::is(fight, k) {
+                    swallow::beat(fight, k, self.kb);
+                }
+                // 5938 to 5939: basket drops
+                fight.socket("beat.striker");
                 if striker::is_striker(fight, k) {
-                    // 5938 to 5939: basket drops
                     striker::beat(fight, k, self.kb);
                 }
-                //   5940 to 5945  line / trap, scratch_floor, tether (kinds not ported)
+                // 5940 to 5941 (`line` or the older `trap`)
+                fight.socket("beat.line");
+                if line::is(fight, k) {
+                    line::beat(fight, k, self.kb);
+                }
+                //   5942 to 5945  scratch_floor, tether (older kinds)
             }
             // The thrust blade has no entry here: it starts on the 16th grid (stage 3).
         }
 
         // 3. The 16th-note counters (5946 to 6095), each `if <fighters of the kind> and t + 1e-9 >= <counter> * s16`,
         //    in this order:
-        //   5946 to 5986  pulse / volley on16 (`next16`), dash / cone / surf / rake (`dc_next`), aura / bellows /
-        //     inflate / bite (`n16b`), tether (`next16c`) (kinds not ported)
+        //   5946 to 5963  pulse / volley on16 (`next16`) (older kinds)
+        // 5964 to 5974: dash / cone / surf / rake (`dc_next`), a stunned fighter skipped; the rake's own block body
+        fight.socket("tick.rake");
+        let dc = [0, 1].map(|k| rake::is(fight, k));
+        if dc.contains(&true) && fight.t + 1e-9 >= self.dc_next as f64 * self.s16 {
+            let dc_k = self.dc_next - self.k16_0;
+            self.dc_next += 1;
+            for k in (0..2).filter(|&k| dc[k]) {
+                if stunned(fight, k) {
+                    continue;
+                }
+                rake::tick(fight, k, dc_k);
+            }
+        }
+        //   5975 to 5986  aura / bellows / inflate / bite (`n16b`), tether (`next16c`) (older kinds)
         // 5987 to 5993: the strikers' cobras lunge on the 16th grid, every `every` beats (haste divides it). The
         // counter moves only when a fighter is a striker (`strikers`, 5771, is the list of those fighters).
+        fight.socket("tick.striker");
         let strikers = [0, 1].map(|k| striker::is_striker(fight, k));
         if strikers.contains(&true) && fight.t + 1e-9 >= self.next16k as f64 * self.s16 {
             let k16k = self.next16k - self.k16_0;
@@ -147,8 +333,8 @@ impl Schedule {
                 // main16 = int(round(4 * w['every'])); k16k % max(1, int(round(main16 / ab_mult(k)))) == 0
                 let main16 = striker::main16(fight, k);
                 let every16 = (py::round_half_even(main16 as f64 / fight.ab_mult(k)) as i64).max(1);
-                // (`and not self._stunned(k)`: stun and shadow, kinds not ported)
-                if k16k % every16 == 0 {
+                // `and not self._stunned(k)`
+                if k16k % every16 == 0 && !stunned(fight, k) {
                     striker::fire(fight, k);
                 }
             }
@@ -157,6 +343,7 @@ impl Schedule {
         // is the list of the fighters whose weapon has `mode = 'thrust'`; the counter moves only when there is one.
         // Python fixes the list once before the loop and this recomputes it every step: the two are the same only
         // while a fighter's weapon cannot change during a fight, so a later kind that swaps weapons revisits this.
+        fight.socket("tick.thrust");
         let thrusters = [0, 1].map(|k| fight.balls[k].thrusts());
         if thrusters.contains(&true) && fight.t + 1e-9 >= self.next16t as f64 * self.s16 {
             let k16t = self.next16t - self.k16_0;
@@ -165,61 +352,306 @@ impl Schedule {
                 // main16 = int(round(4 * w['every'])); k16t % max(1, int(round(main16 / ab_mult(k)))) == 0
                 let main16 = blade::main16(fight, k);
                 let every16 = (py::round_half_even(main16 as f64 / fight.ab_mult(k)) as i64).max(1);
-                // (`and not self._stunned(k)`: stun and shadow, kinds not ported)
-                if k16t % every16 == 0 {
+                // `and not self._stunned(k)`
+                if k16t % every16 == 0 && !stunned(fight, k) {
                     blade::start_thrust(fight, k);
                 }
             }
         }
-        //   6001 to 6095  pack, echo, jump, tune, mortar, anchor, rattle, wrecking, rests, lightning, tiptoe,
-        //     grapple, walk, roll, spotlight, crowd, drill, roll_charge (kinds not ported), in that order.
+        //   6001 to 6008  pack (`n16p`, an older kind)
+        // 6009 to 6014: echo, a stunned fighter skipped
+        fight.socket("tick.echo");
+        self.counter(
+            fight,
+            echo::is,
+            |s| &mut s.n16e,
+            |f, k, k16| {
+                if !stunned(f, k) {
+                    echo::tick(f, k, k16);
+                }
+            },
+        );
+        // 6015 to 6019: jump
+        fight.socket("tick.jump");
+        self.counter(fight, jump::is, |s| &mut s.n16j, jump::tick);
+        // 6020 to 6024: tune
+        fight.socket("tick.tune");
+        self.counter(fight, tune::is, |s| &mut s.n16u, tune::tick);
+        // 6025 to 6029: mortar
+        fight.socket("tick.mortar");
+        self.counter(fight, mortar::is, |s| &mut s.n16m, mortar::tick);
+        // 6030 to 6034: anchor
+        fight.socket("tick.anchor");
+        self.counter(fight, anchor::is, |s| &mut s.n16a, anchor::tick);
+        //   6035 to 6049  rattle (`n16r`), wrecking (`n16w`), rests (`n16v`) (older kinds)
+        // 6050 to 6054: lightning
+        fight.socket("tick.lightning");
+        self.counter(fight, lightning::is, |s| &mut s.n16l, lightning::tick);
+        // 6055 to 6059: tiptoe
+        fight.socket("tick.tiptoe");
+        self.counter(fight, tiptoe::is, |s| &mut s.n16h, tiptoe::tick);
+        // 6060 to 6064: grapple
+        fight.socket("tick.grapple");
+        self.counter(fight, grapple::is, |s| &mut s.n16g, grapple::tick);
+        // 6065 to 6069: walk
+        fight.socket("tick.walk");
+        self.counter(fight, walk::is, |s| &mut s.n16k, walk::tick);
+        // 6070 to 6075: roll, a stunned fighter skipped; the roll gets the counter itself (`n16a_ = n16o`)
+        fight.socket("tick.roll");
+        let rollers = [0, 1].map(|k| roll::is(fight, k));
+        if rollers.contains(&true) && fight.t + 1e-9 >= self.n16o as f64 * self.s16 {
+            let n16 = self.n16o;
+            self.n16o += 1;
+            for k in (0..2).filter(|&k| rollers[k]) {
+                if !stunned(fight, k) {
+                    roll::tick(fight, k, n16);
+                }
+            }
+        }
+        // 6076 to 6080: spotlight
+        fight.socket("tick.spotlight");
+        self.counter(fight, spotlight::is, |s| &mut s.n16s, spotlight::tick);
+        // 6081 to 6085: crowd
+        fight.socket("tick.crowd");
+        self.counter(fight, crowd::is, |s| &mut s.n16c, crowd::tick);
+        // 6086 to 6090: drill
+        fight.socket("tick.drill");
+        self.counter(fight, drill::is, |s| &mut s.n16d, drill::tick);
+        // 6091 to 6095: roll_charge (on `n16r`, the counter the older `rattle` shares)
+        fight.socket("tick.roll_charge");
+        self.counter(fight, roll_charge::is, |s| &mut s.n16r, roll_charge::tick);
 
         // 4. The timers (6096 to 6107).
-        for b in &mut fight.balls {
+        for k in 0..2 {
+            let b = &mut fight.balls[k];
             b.shield = geom::py_max(0.0, b.shield - dt);
             b.haste = geom::py_max(0.0, b.haste - dt);
             b.slow = geom::py_max(0.0, b.slow - dt);
-            // 6100 to 6107: stun, detune and the smashed timer with its `rebuild` event (kinds not ported).
+            fight.socket("timers");
+            let b = &mut fight.balls[k];
+            // 6100 to 6103: `if hasattr(B, 'stun')`, `if hasattr(B, 'detune_t')`: a ball without the attribute is at
+            // 0.0 here, which stays 0.0
+            b.stun = geom::py_max(0.0, b.stun - dt);
+            b.detune_t = geom::py_max(0.0, b.detune_t - dt);
+            // 6104 to 6107: the pieces snap back together (#44)
+            if b.smashed > 0.0 {
+                b.smashed = geom::py_max(0.0, b.smashed - dt);
+                if b.smashed == 0.0 {
+                    fight.ev("rebuild", k as i64, Vec::new());
+                }
+            }
         }
 
-        // 5. Steps that steer a ball before it moves (6108 to 6114): `pull_step` for a weapon with `pull`,
-        //    `lights_out_step`, `hold_step` (kinds not ported).
+        // 5. Steps that steer a ball before it moves (6108 to 6114).
+        //   6108 to 6109  `pull_step` for a weapon with `pull` (an older option)
+        // 6110 to 6112: LIGHTS OUT, for either ball (a copied one too) while any fighter has the kind
+        fight.socket("steer.lights_out");
+        if (0..2).any(|k| has(fight, k, AbilityKind::LightsOut)) {
+            for k in 0..2 {
+                lights_out::lights_out_step(fight, k, dt);
+            }
+        }
+        // 6113 to 6114: SUSTAIN's mines stop, hang, re-aim (the roll's)
+        fight.socket("steer.hold");
+        if (0..2).any(|k| roll::is(fight, k)) {
+            roll::hold_step(fight);
+        }
 
         // 6. Motion (6115).
         fight.move_step(dt);
 
-        // 7. `rewind_step` (6116 to 6117) (kind not ported).
+        // 7. `rewind_step` (6116 to 6117) (an older kind).
 
         // 8. Each fighter's weapon step (6118 to 6136), for k in ball order, by weapon kind. It is one loop over the
         //    balls: with TROMBONE on the left, its blade steps before the FLUTE's cobras.
         for k in 0..2 {
-            // an `if` / `elif` chain on `B.w['kind']`, in this order:
+            // an `if` / `elif` chain on `B.w['kind']`, in this order (a ball has one weapon: the `if`s are the same)
+            // 6119 to 6120: `blade_step`. In thrust mode that is the thrust step, which is also where a live lance
+            // swats the enemy's cobras (`swat_cobras`, fight.py 753 to 754) and shells (`swat_shells`, 755 to 756).
+            fight.socket("weapon.blade");
             if blade::is_blade(fight, k) {
-                // 6119 to 6120: `blade_step`. In thrust mode that is the thrust step, which is also where a live
-                // lance swats the enemy's cobras (`swat_cobras`, fight.py 753 to 754).
                 blade::step(fight, k, dt);
-            } else if striker::is_striker(fight, k) {
-                // 6121 to 6134 come first: orbit, combo, flail, scratch_floor, tether, inflate, swallow (kinds not
-                // ported). 6135 to 6136:
+            }
+            //   6121 to 6122  orbit (an older kind)
+            // 6123 to 6124
+            fight.socket("weapon.combo");
+            if combo::is(fight, k) {
+                combo::step(fight, k, dt);
+            }
+            //   6125 to 6132  flail, scratch_floor, tether, inflate (older kinds)
+            // 6133 to 6134
+            fight.socket("weapon.swallow");
+            if swallow::is(fight, k) {
+                swallow::step(fight, k, dt);
+            }
+            // 6135 to 6136
+            fight.socket("weapon.striker");
+            if striker::is_striker(fight, k) {
                 striker::step(fight, k, dt);
             }
         }
 
-        // 9. `lash_step`, `beams_step`, `hazards_step` (6137 to 6142) (kinds not ported).
+        // 9. Lashes, beams and hazards (6137 to 6142).
+        //   6137 to 6138  `lash_step` (an older kind)
+        // 6139 to 6140: `if self.beams or any(B.w['kind'] == 'beam' ...)`: the ability beams (TRUMPET's HIGH C; the
+        // `beam` weapon is an older kind)
+        fight.socket("stage9.beams");
+        if beam::live(fight) {
+            beam::beams_step(fight, dt);
+        }
+        // 6141 to 6142: `if self.lines or self.strings` (the pipes; strings are the older `trap`'s)
+        fight.socket("stage9.hazards");
+        if (0..2).any(|k| line::is(fight, k)) {
+            line::hazards_step(fight, dt);
+        }
 
-        // 10. `effects_step` (6143): the rings spread and hit, then the slams land. It runs on every step, whatever
-        //     the fighters are.
+        // 10. `effects_step` (6143): the rings spread and hit, then the slams land, then the arcs emit. It runs on
+        //     every step, whatever the fighters are.
         abilities::effects_step(fight, dt);
 
-        // 11. The later kinds' steps (6144 to 6202), in this order: pack, echo, flick, tune, snip, shells, anchor,
-        //     hook, rattle, wrecking, snap, tiptoe, walk, grapple, prelude, swan, stampede, spotlight, crowd, drill,
-        //     roll_charge, notes, splinters, dash / cone, surf / rake, suction, clamps (kinds not ported).
+        // 11. The later kinds' steps (6144 to 6202), in this order.
+        //   6144 to 6145  pack (an older kind)
+        // 6146 to 6147
+        fight.socket("later.echo");
+        for k in which(fight, echo::is) {
+            echo::step(fight, k, dt);
+        }
+        // 6148 to 6149
+        fight.socket("later.flick");
+        for k in which(fight, |f, k| has(f, k, AbilityKind::Flick)) {
+            flick::flick_step(fight, k, dt);
+        }
+        // 6150 to 6151
+        fight.socket("later.tune");
+        for k in which(fight, tune::is) {
+            tune::step(fight, k, dt);
+        }
+        // 6152 to 6153: the snippers
+        fight.socket("later.snip");
+        let snippers = [0, 1].map(|k| has(fight, k, AbilityKind::Snip));
+        for k in (0..2).filter(|&k| snippers[k]) {
+            snip::snip_step(fight, k, dt);
+        }
+        // 6154 to 6156: a snip IDENTITY CRISIS copied, for a fighter that is not a snipper
+        fight.socket("later.extra_snip");
+        let extra = fight.extra_snip;
+        for k in (0..2).filter(|&k| extra[k] && !snippers[k]) {
+            snip::snip_step(fight, k, dt);
+        }
+        // 6157 to 6158: `if shelling`
+        fight.socket("later.shells");
+        if mortar::shelling(fight) {
+            mortar::shells_step(fight);
+        }
+        // 6159 to 6162: the whirl, for either ball whose `anc` is set (a copied one too), while a fighter anchors
+        fight.socket("later.anchor");
+        if (0..2).any(|k| anchor::is(fight, k)) {
+            for k in which(fight, |f, k| f.balls[k].anc.is_some()) {
+                anchor::step(fight, k, dt);
+            }
+        }
+        // 6163 to 6164
+        fight.socket("later.hook");
+        for k in which(fight, |f, k| has(f, k, AbilityKind::Hook)) {
+            hook::hook_step(fight, k, dt);
+        }
+        //   6165 to 6170  rattle, wrecking, snap (older kinds)
+        // 6171 to 6172
+        fight.socket("later.tiptoe");
+        for k in which(fight, tiptoe::is) {
+            tiptoe::step(fight, k, dt);
+        }
+        // 6173 to 6174
+        fight.socket("later.walk");
+        for k in which(fight, walk::is) {
+            walk::step(fight, k, dt);
+        }
+        // 6175 to 6176
+        fight.socket("later.grapple");
+        for k in which(fight, grapple::is) {
+            grapple::step(fight, k, dt);
+        }
+        // 6177 to 6178
+        fight.socket("later.prelude");
+        for k in which(fight, |f, k| has(f, k, AbilityKind::Prelude)) {
+            prelude::prelude_step(fight, k);
+        }
+        // 6179 to 6180
+        fight.socket("later.swan");
+        for k in which(fight, |f, k| has(f, k, AbilityKind::Swan)) {
+            swan::swan_step(fight, k);
+        }
+        // 6181 to 6182
+        fight.socket("later.stampede");
+        for k in which(fight, |f, k| has(f, k, AbilityKind::Stampede)) {
+            stampede::stampede_step(fight, k, dt);
+        }
+        // 6183 to 6184
+        fight.socket("later.spotlight");
+        for k in which(fight, spotlight::is) {
+            spotlight::step(fight, k, dt);
+        }
+        // 6185 to 6186
+        fight.socket("later.crowd");
+        for k in which(fight, crowd::is) {
+            crowd::step(fight, k, dt);
+        }
+        // 6187 to 6188
+        fight.socket("later.drill");
+        for k in which(fight, drill::is) {
+            drill::step(fight, k, dt);
+        }
+        // 6189 to 6190
+        fight.socket("later.roll_charge");
+        for k in which(fight, roll_charge::is) {
+            roll_charge::step(fight, k, dt);
+        }
+        //   6191 to 6192  notes (`rests`, an older kind)
+        // 6193 to 6194: `if getattr(self, 'splinters', None)` (the smash's)
+        fight.socket("later.splinters");
+        if smash::live(fight) {
+            smash::splinters_step(fight, dt);
+        }
+        // 6195 to 6196: `if dc` (the rake's branches of `dash_cone_step`)
+        fight.socket("later.dash_cone");
+        if dc.contains(&true) {
+            rake::dash_cone_step(fight, dt);
+        }
+        // 6197 to 6198: `if dc or self.whips or self.sweeps or self.spouts` (spouts are an older kind's)
+        fight.socket("later.surf_rake");
+        if dc.contains(&true) || x33::live(fight) {
+            rake::surf_rake_step(fight, dt);
+        }
+        //   6199 to 6202  suction, clamps (older kinds)
 
         // 12. Levels and abilities (6203).
+        fight.socket("abilities");
         fight.abilities_step(self.on_beat);
 
         // 13. (6204)
         self.step += 1;
+    }
+
+    /// One of `run()`'s plain 16th blocks (6009 to 6095): `if <the fighters of the kind> and t + 1e-9 >= n16 * s16:
+    /// k16 = n16 - k16_0; n16 += 1; for k in <them>: <kind>_tick(k, k16)`, with the kind's own counter. The list is
+    /// made before the block, as Python's is made before the loop.
+    fn counter(
+        &mut self,
+        fight: &mut Fight,
+        is: fn(&Fight, usize) -> bool,
+        n16: fn(&mut Schedule) -> &mut i64,
+        tick: fn(&mut Fight, usize, i64),
+    ) {
+        let who = [0, 1].map(|k| is(fight, k));
+        let (s16, k16_0) = (self.s16, self.k16_0);
+        let next = n16(self);
+        if who.contains(&true) && fight.t + 1e-9 >= *next as f64 * s16 {
+            let k16 = *next - k16_0;
+            *next += 1;
+            for k in (0..2).filter(|&k| who[k]) {
+                tick(fight, k, k16);
+            }
+        }
     }
 }
 
