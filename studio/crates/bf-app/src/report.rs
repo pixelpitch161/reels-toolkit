@@ -403,9 +403,11 @@ fn home_forms(home: Option<&Path>) -> Vec<String> {
 }
 
 /// `text` with every mention of the user folder (any form of `home`, in any mix of capitals) written as
-/// `%USERPROFILE%`. A mention counts only where the folder's name ends: before `\`, `/`, the end of the text, or a
-/// character no Windows file name can hold (`<>:"|?*` and control characters such as a line break). So
-/// `C:\Users\al` is found neither in `C:\Users\alice` nor in `C:\Users\al.old`.
+/// `%USERPROFILE%`. A mention counts where the folder's name ends: before `\`, `/`, the end of the text, a
+/// character no Windows file name can hold (`<>:"|?*` and control characters such as a line break), whitespace, a
+/// comma, a quote or a closing bracket. So `C:\Users\al` is found neither in `C:\Users\alice` nor in
+/// `C:\Users\al.old`. Privacy wins over exactness: a longer folder whose name goes on after a space
+/// (`C:\Users\al two`) becomes `%USERPROFILE% two`.
 fn shorten(text: &str, home: &[String]) -> String {
     let mut out = text.to_string();
     for form in home {
@@ -430,9 +432,31 @@ fn shorten(text: &str, home: &[String]) -> String {
     out
 }
 
-/// Whether `c` cannot continue a path's part: a separator, or a character no Windows file name can hold.
+/// Whether `c` ends a mention of the user folder: a separator, a character no Windows file name can hold,
+/// whitespace, a comma, a quote or a closing bracket.
 fn ends_a_name(c: char) -> bool {
-    matches!(c, '\\' | '/' | '<' | '>' | ':' | '"' | '|' | '?' | '*') || c.is_control()
+    matches!(
+        c,
+        '\\' | '/'
+            | '<'
+            | '>'
+            | ':'
+            | '"'
+            | '|'
+            | '?'
+            | '*'
+            | ','
+            | '\''
+            | '`'
+            | '\u{2018}'
+            | '\u{2019}'
+            | '\u{201c}'
+            | '\u{201d}'
+            | ')'
+            | ']'
+            | '}'
+    ) || c.is_control()
+        || c.is_whitespace()
 }
 
 /// How many characters of `chars`, from `at`, spell `wanted` (lower-cased, `\` and `/` the same), if they do.
@@ -636,6 +660,24 @@ mod tests {
         assert!(short.contains(r"C:\Users\Zoë Ångströmer\b"), "{short}");
         assert!(short.contains(r"C:\Users\Zoë Ångström.old\c"), "{short}");
         assert_eq!(short.matches("%USERPROFILE%").count(), 4, "{short}");
+        // privacy wins over exactness: whitespace, a comma, a quote or a closing bracket also ends the folder
+        for (given, hidden) in [
+            (r"C:\Users\Zoë Ångström cannot be read", "%USERPROFILE% cannot be read"),
+            ("C:\\Users\\Zoë Ångström\tthen", "%USERPROFILE%\tthen"),
+            (r"C:\Users\Zoë Ångström, then", "%USERPROFILE%, then"),
+            (r"'C:\Users\Zoë Ångström'", "'%USERPROFILE%'"),
+            (
+                "\u{201c}C:\\Users\\Zoë Ångström\u{201d}",
+                "\u{201c}%USERPROFILE%\u{201d}",
+            ),
+            (r"(in C:\Users\Zoë Ångström)", "(in %USERPROFILE%)"),
+            (r"[C:\Users\Zoë Ångström]", "[%USERPROFILE%]"),
+            ("{C:\\Users\\Zoë Ångström}", "{%USERPROFILE%}"),
+            // the accepted cost: a longer folder that goes on after a space
+            (r"C:\Users\Zoë Ångström Two\x", r"%USERPROFILE% Two\x"),
+        ] {
+            assert_eq!(shorten(given, &forms), hidden, "{given}");
+        }
         // a user folder on a network share
         #[cfg(windows)]
         {
