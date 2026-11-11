@@ -1,5 +1,6 @@
 //! The order of a step: `Fight.run()` (`fight.py` 5735 to 6222), transcribed. This is the one place that says what
-//! happens when, and the only place that calls the weapon kinds and the abilities.
+//! happens when, and the only place that calls the weapon kinds and the abilities' step. (An ability is fired inside
+//! stage 12, by `Fight::abilities_step`.)
 //!
 //! `fight.py` runs every kind any fighter could have, each behind an `if`. The stages below are numbered in the
 //! Python order and every stage names the lines it mirrors. A stage whose kinds are not ported yet is a `SLOT`
@@ -27,6 +28,7 @@
 use bf_core::event::Value;
 use bf_core::py;
 
+use crate::abilities;
 use crate::fight::Fight;
 use crate::geom;
 use crate::kinds::{blade, striker};
@@ -205,8 +207,9 @@ impl Schedule {
 
         // 9. `lash_step`, `beams_step`, `hazards_step` (6137 to 6142) (kinds not ported).
 
-        // 10. SLOT (Task 14), 6143: `abilities::effects_step(fight, dt)`: waves, then slams, then arcs. It runs on
-        //     every step, whatever the fighters are.
+        // 10. `effects_step` (6143): the rings spread and hit, then the slams land. It runs on every step, whatever
+        //     the fighters are.
+        abilities::effects_step(fight, dt);
 
         // 11. The later kinds' steps (6144 to 6202), in this order: pack, echo, flick, tune, snip, shells, anchor,
         //     hook, rattle, wrecking, snap, tiptoe, walk, grapple, prelude, swan, stampede, spotlight, crowd, drill,
@@ -361,8 +364,23 @@ mod tests {
         let frames = run(&mut fight).expect("the fight records");
         let t1 = setup.rules.t_fight + setup.rules.dt;
         assert_eq!((fight.winner, fight.t_ko), (Some(0), Some(t1)));
-        assert_eq!(fight.events.len(), 1);
-        let e = &fight.events[0];
+        // The fight's first step is a beat, and a fighter below LOW_HP has its low turn there: the bare fighter's
+        // ability is announced (and does nothing: its kind is not ported) before the K.O. is found, as in Python.
+        assert_eq!(fight.events.len(), 2);
+        let (low, e) = (&fight.events[0], &fight.events[1]);
+        assert_eq!(
+            (low.t, low.kind.as_str(), low.fields.as_slice()),
+            (
+                bf_core::py::round_nd(t1, 5),
+                "ability",
+                &[
+                    Value::Int(1),
+                    Value::Str("NOTHING".into()),
+                    Value::Str("none".into()),
+                    Value::Int(1)
+                ][..]
+            )
+        );
         assert_eq!(
             (e.t, e.kind.as_str(), e.fields.as_slice()),
             (bf_core::py::round_nd(t1, 5), "ko", &[Value::Int(1), Value::Int(0)][..])
@@ -376,7 +394,11 @@ mod tests {
         fight.balls[1].hp = -1.0;
         assert!(run(&mut fight).is_none(), "nothing is recorded");
         assert_eq!(fight.winner, Some(1));
-        assert_eq!(fight.events[0].fields, vec![Value::Int(0), Value::Int(1)]);
+        let ko = fight.events.last().expect("the K.O.");
+        assert_eq!(
+            (ko.kind.as_str(), &ko.fields),
+            ("ko", &vec![Value::Int(0), Value::Int(1)])
+        );
         let mut fight = Fight::new(&setup, false);
         fight.balls[0].hp = -1.0;
         fight.balls[1].hp = -3.0;
