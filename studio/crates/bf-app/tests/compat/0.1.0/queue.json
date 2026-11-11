@@ -1,0 +1,114 @@
+{
+  "format": 1,
+  "app_version": "0.1.0",
+  "paused": false,
+  "next_id": 3,
+  "jobs": [
+    {
+      "id": 1,
+      "spec": {
+        "title": "Flute vs Trombone",
+        "colors": [
+          [
+            222,
+            232,
+            246
+          ],
+          [
+            120,
+            240,
+            184
+          ]
+        ],
+        "theme": "Big top",
+        "seed": 20418,
+        "fight_toml": "format = 1\napp_version = \"0.1.0\"\nfighters = [\"FLUTE\", \"TROMBONE\"]\narena = \"ring\"\nhandicap = [1.0, 1.0]\ndmg_scale = 1.0\ntempo_bpm = 133.7704918032787\nseed = 20418\n\n[pair_rules]\nswat_cobras = true\n\n[music]\ntheme = \"big_top\"\narrangement = \"classic\"\nkey = \"E\"\nscale = \"harmonic minor\"\nchords_intro = [\"Em\", \"B7\"]\nchord_loop = [\"Em\", \"Am\", \"B7\", \"Em\", \"C\", \"Am\", \"B7\", \"B7\"]\nmusic_seed = 1\n\n[music.roles]\nFLUTE = \"melody\"\nTROMBONE = \"bass\"\n\n[music.lines]\nFLUTE = [\n    76, 79, 83, 79, 76, 75, 76, 71,\n    81, 84, 83, 81, 79, 76, 77, 76,\n    75, 78, 81, 78, 83, 81, 78, 75,\n    76, 71, 76, 79, 83, 84, 83, 79,\n    84, 83, 79, 76, 72, 76, 79, 84,\n    81, 76, 72, 76, 81, 84, 88, 84,\n    83, 87, 86, 87, 90, 87, 83, 81,\n    78, 75, 71, 75, 78, 81, 83, 75,\n]\n\n[music.solos]\nFLUTE = [\n    [0.0, 83, 0.5], [0.5, 84, 0.25], [0.75, 83, 0.25], [1.0, 81, 0.5],\n    [1.5, 79, 0.5], [2.0, 76, 0.5], [2.5, 75, 0.25], [2.75, 76, 0.25],\n    [3.0, 79, 0.5], [3.5, 83, 0.5], [4.0, 88, 0.75], [4.75, 87, 0.25],\n    [5.0, 84, 0.5], [5.5, 83, 0.5], [6.0, 76, 1.5],\n]\nTROMBONE = [\n    [0.0, 40, 0.5], [0.5, 47, 0.5], [1.0, 52, 1.0], [2.0, 55, 0.5],\n    [2.5, 52, 0.5], [3.0, 47, 0.5], [3.5, 51, 0.5], [4.0, 48, 0.5],\n    [4.5, 55, 0.5], [5.0, 60, 0.75], [5.75, 59, 0.25], [6.0, 55, 0.5],\n    [6.5, 52, 0.5], [7.0, 48, 0.5], [7.5, 47, 0.5], [8.0, 45, 0.5],\n    [8.5, 52, 0.5], [9.0, 57, 0.75], [9.75, 55, 0.25], [10.0, 52, 0.5],\n    [10.5, 48, 0.5], [11.0, 45, 1.0],\n]\n\n[music.title_hits]\nFLUTE = [76, 79, 83, 84, 86, 87, 88]\nTROMBONE = [40, 52]\n\n[picture]\nshard_seed = 271\n\n[captions]\ncaption = \"Flute vs Trombone 🪈🎺 Comment the next match-up 👇\"\ninstagram = \"#ballfight #flute #trombone #bandkids #marchingband #musicmemes #musician #pixelart #lowpoly #gamedev #satisfying #music\"\ntiktok = \"#fyp #ballfight #flute #trombone #bandkid #musictok #pixelart #satisfying #bandtok #music\"\nshorts = [\n    \"Flute vs Trombone\",\n    \"Flute vs Trombone, every hit in key. Comment the next match-up\",\n    \"#shorts #ballfight #flute #trombone #music #pixelart\",\n]\n",
+        "out_root": "D:\\Vidéos du studio\\BALLFIGHT"
+      },
+      "state": {
+        "Done": {
+          "folder": "D:\\Vidéos du studio\\BALLFIGHT\\flute_vs_trombone",
+          "seconds": 82.25
+        }
+      },
+      "steps": [
+        {
+          "key": "Soundtrack",
+          "state": "Done",
+          "note": null
+        },
+        {
+          "key": "SafeZone",
+          "state": "Done",
+          "note": null
+        },
+        {
+          "key": "Focus",
+          "state": "Done",
+          "note": null
+        },
+        {
+          "key": "Loudness",
+          "state": "Done",
+          "note": null
+        },
+        {
+          "key": "Band",
+          "state": "Done",
+          "note": null
+        },
+        {
+          "key": "Flashes",
+          "state": "Done",
+          "note": null
+        },
+        {
+          "key": "LoopPoint",
+          "state": "Done",
+          "note": null
+        },
+        {
+          "key": "Frames",
+          "state": "Done",
+          "note": null
+        },
+        {
+          "key": "Encode",
+          "state": "Done",
+          "note": null
+        },
+        {
+          "key": "Verify",
+          "state": "Done",
+          "note": null
+        }
+      ],
+      "interrupted": false
+    },
+    {
+      "id": 2,
+      "spec": {
+        "title": "Flute vs Trombone",
+        "colors": [
+          [
+            222,
+            232,
+            246
+          ],
+          [
+            120,
+            240,
+            184
+          ]
+        ],
+        "theme": "Big top",
+        "seed": 18433,
+        "fight_toml": "format = 1\napp_version = \"0.1.0\"\nfighters = [\"FLUTE\", \"TROMBONE\"]\narena = \"ring\"\nhandicap = [1.0, 1.0]\ndmg_scale = 1.0\ntempo_bpm = 133.7704918032787\nseed = 18433\n\n[pair_rules]\nswat_cobras = true\n\n[music]\ntheme = \"big_top\"\narrangement = \"classic\"\nkey = \"E\"\nscale = \"harmonic minor\"\nchords_intro = [\"Em\", \"B7\"]\nchord_loop = [\"Em\", \"Am\", \"B7\", \"Em\", \"C\", \"Am\", \"B7\", \"B7\"]\nmusic_seed = 1\n\n[music.roles]\nFLUTE = \"melody\"\nTROMBONE = \"bass\"\n\n[music.lines]\nFLUTE = [\n    76, 79, 83, 79, 76, 75, 76, 71,\n    81, 84, 83, 81, 79, 76, 77, 76,\n    75, 78, 81, 78, 83, 81, 78, 75,\n    76, 71, 76, 79, 83, 84, 83, 79,\n    84, 83, 79, 76, 72, 76, 79, 84,\n    81, 76, 72, 76, 81, 84, 88, 84,\n    83, 87, 86, 87, 90, 87, 83, 81,\n    78, 75, 71, 75, 78, 81, 83, 75,\n]\n\n[music.solos]\nFLUTE = [\n    [0.0, 83, 0.5], [0.5, 84, 0.25], [0.75, 83, 0.25], [1.0, 81, 0.5],\n    [1.5, 79, 0.5], [2.0, 76, 0.5], [2.5, 75, 0.25], [2.75, 76, 0.25],\n    [3.0, 79, 0.5], [3.5, 83, 0.5], [4.0, 88, 0.75], [4.75, 87, 0.25],\n    [5.0, 84, 0.5], [5.5, 83, 0.5], [6.0, 76, 1.5],\n]\nTROMBONE = [\n    [0.0, 40, 0.5], [0.5, 47, 0.5], [1.0, 52, 1.0], [2.0, 55, 0.5],\n    [2.5, 52, 0.5], [3.0, 47, 0.5], [3.5, 51, 0.5], [4.0, 48, 0.5],\n    [4.5, 55, 0.5], [5.0, 60, 0.75], [5.75, 59, 0.25], [6.0, 55, 0.5],\n    [6.5, 52, 0.5], [7.0, 48, 0.5], [7.5, 47, 0.5], [8.0, 45, 0.5],\n    [8.5, 52, 0.5], [9.0, 57, 0.75], [9.75, 55, 0.25], [10.0, 52, 0.5],\n    [10.5, 48, 0.5], [11.0, 45, 1.0],\n]\n\n[music.title_hits]\nFLUTE = [76, 79, 83, 84, 86, 87, 88]\nTROMBONE = [40, 52]\n\n[picture]\nshard_seed = 271\n\n[captions]\ncaption = \"Flute vs Trombone 🪈🎺 Comment the next match-up 👇\"\ninstagram = \"#ballfight #flute #trombone #bandkids #marchingband #musicmemes #musician #pixelart #lowpoly #gamedev #satisfying #music\"\ntiktok = \"#fyp #ballfight #flute #trombone #bandkid #musictok #pixelart #satisfying #bandtok #music\"\nshorts = [\n    \"Flute vs Trombone\",\n    \"Flute vs Trombone, every hit in key. Comment the next match-up\",\n    \"#shorts #ballfight #flute #trombone #music #pixelart\",\n]\n",
+        "out_root": "D:\\Vidéos du studio\\BALLFIGHT"
+      },
+      "state": "Waiting",
+      "steps": [],
+      "interrupted": false
+    }
+  ]
+}
