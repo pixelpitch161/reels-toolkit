@@ -29,7 +29,7 @@ use bf_content::ContentError;
 use bf_core::dmath;
 use bf_core::fightfile::FightFile;
 use bf_core::show::Show;
-use bf_picture::ring::Picture;
+use bf_picture::ring::{FrameReport, Picture};
 use bf_picture::ui::DrawLog;
 use bf_picture::{Gray32, Rgb8};
 use bf_sound::dsp;
@@ -288,6 +288,40 @@ pub fn pre_render(
     cancel: &AtomicBool,
 ) -> Option<Vec<CheckResult>> {
     pre_render_with(&|f| pic.frame_logged(f), pic, st, show, story, plan, workers, cancel)
+}
+
+/// The frames [`pre_render_keeping`] drew, by number, each with its report: frame `f` exactly as
+/// `pic.frame_reported(f)` gives it.
+pub type Kept = BTreeMap<usize, (Rgb8, FrameReport)>;
+
+/// [`pre_render`] that also gives back every frame it drew (673 of the example episode's 1,830, about 465 MB), so
+/// the render can use them instead of drawing them again. A frame is a pure function of its number, so the video
+/// made from them is the same file. The results are [`pre_render`]'s; a frame that could not be drawn is not
+/// kept.
+pub fn pre_render_keeping(
+    pic: &Picture,
+    st: &Soundtrack,
+    show: &Show,
+    story: &Story,
+    plan: &BandPlan,
+    workers: usize,
+    cancel: &AtomicBool,
+) -> Option<(Vec<CheckResult>, Kept)> {
+    let kept: Mutex<Kept> = Mutex::new(BTreeMap::new());
+    let draw = |f: usize| {
+        let (img, log, report) = pic.frame_reported(f);
+        // as `frame_logged` does
+        debug_assert_eq!(
+            report.hull_errors, 0,
+            "frame {f}: a hull scipy would refuse was left out"
+        );
+        kept.lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .insert(f, (img.clone(), report));
+        (img, log)
+    };
+    let results = pre_render_with(&draw, pic, st, show, story, plan, workers, cancel)?;
+    Some((results, kept.into_inner().unwrap_or_else(|e| e.into_inner())))
 }
 
 /// [`pre_render`] with the drawing of a frame given: `draw_frame(f)` is `pic.frame_logged(f)` there, and a
