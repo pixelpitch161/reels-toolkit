@@ -459,6 +459,9 @@ dependencies = [
  "bf-picture",
  "bf-sim",
  "bf-sound",
+ "bf-testdata",
+ "serde_json",
+ "toml",
 ]
 
 [[package]]

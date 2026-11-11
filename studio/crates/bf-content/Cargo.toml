@@ -10,3 +10,9 @@ bf-core.workspace = true
 bf-sim.workspace = true
 bf-picture.workspace = true
 bf-sound.workspace = true
+
+# The reader for studio/reference (dev support only), its sidecars' JSON values and the exceptions list.
+[dev-dependencies]
+bf-testdata = { path = "../bf-testdata" }
+serde_json.workspace = true
+toml.workspace = true

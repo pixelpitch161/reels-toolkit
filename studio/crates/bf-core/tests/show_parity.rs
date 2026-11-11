@@ -310,3 +310,60 @@ fn captions_keep_first_uses_at_least_gap_apart() {
     );
     assert!(captions(&[], 4.0).is_empty());
 }
+
+/// `reelkit.ui.impact_landings` on the episode's captions and on a made-up list, as the kit printed them
+/// (`float.hex()` of each landing time, the line's index, its characters without the marks).
+#[test]
+fn impact_landings_equal_the_kits() {
+    use bf_core::show::{IMPACT_FALL, IMPACT_STAGGER, impact_landings};
+    assert_eq!((IMPACT_STAGGER, IMPACT_FALL), (0.22, 0.10));
+    let rec = recording("ep392.bfrec");
+    let show = Show::new(&rec, &fight_file(rec.seed)).unwrap();
+    let want = [
+        ("0x1.6a060fe47991cp+3", 0, 14), // FLUTTER TONGUE
+        ("0x1.e27a786c22681p+4", 0, 11), // SNAKE DANCE
+        ("0x1.55b4b72c5197ap+5", 0, 7),  // PICCOLO
+        ("0x1.04141205bc01bp+4", 0, 12), // SAD TROMBONE
+        ("0x1.a1f1f36262cbbp+4", 0, 11), // POWER SLIDE
+        ("0x1.90f8f8f8f8f8fp+5", 0, 4),  // *K.O.*
+        ("0x1.9b5f5f5f5f5f5p+5", 0, 8),  // TROMBONE
+        ("0x1.9d21eebb88551p+5", 1, 5),  // WINS!
+        ("0x1.ae2c2c2c2c2c2p+5", 0, 11), // COMMENT THE
+        ("0x1.afeebb885521ep+5", 1, 13), // *NEXT MATCH-UP*
+    ];
+    let got = impact_landings(&show.captions, IMPACT_STAGGER, IMPACT_FALL);
+    assert_eq!(got.len(), want.len());
+    for (i, (g, w)) in got.iter().zip(want).enumerate() {
+        assert_eq!(
+            (g.0.to_bits(), g.1, g.2),
+            (hexf(w.0).to_bits(), w.1, w.2),
+            "landing {i}"
+        );
+    }
+    // A line that would land at or after its window's end is left out; `*` and `~` are not counted.
+    let cap = |t0: f64, t1: f64, lines: &[&str]| Cap {
+        t0,
+        t1,
+        lines: lines.iter().map(|l| l.to_string()).collect(),
+    };
+    let caps = [
+        cap(1.0, 1.3, &["*A*", "B~C~", "D"]),
+        cap(2.0, 2.05, &["X"]),
+        cap(3.0, 3.5, &["one", "two", "three"]),
+    ];
+    let want = [
+        ("0x1.199999999999ap+0", 0, 1),
+        ("0x1.8cccccccccccdp+1", 0, 3),
+        ("0x1.a666666666667p+1", 1, 3),
+    ];
+    let got = impact_landings(&caps, 0.2, 0.1);
+    assert_eq!(got.len(), want.len());
+    for (i, (g, w)) in got.iter().zip(want).enumerate() {
+        assert_eq!(
+            (g.0.to_bits(), g.1, g.2),
+            (hexf(w.0).to_bits(), w.1, w.2),
+            "landing {i}"
+        );
+    }
+    assert!(impact_landings(&[], IMPACT_STAGGER, IMPACT_FALL).is_empty());
+}

@@ -27,8 +27,10 @@
 //! `pow` and `tanh` come from `dmath`.
 //!
 //! The module is in parts: the context is here; [`MusicError`] in `error`; `q16` and the thinning hashes in
-//! `thin`; `fit`, the warps, `wah` and `colour` in `shape`; the sound effects in `fx`; `shared_events` in
-//! `events`; Python's number rules that they share in `num`. Everything public is re-exported here.
+//! `thin`; `fit`, the warps, `wah` and `colour` in `shape`; the sound effects in `fx`; `shared_events` and the
+//! reading of the run's events in `events`; the timeline's lines and solos and the run's per-frame values
+//! (`line_at`, `solo`, `run_at`) in `timeline`; Python's number rules that they share in `num`. Everything public
+//! is re-exported here.
 
 mod error;
 mod events;
@@ -40,6 +42,7 @@ pub(crate) mod testkit;
 #[cfg(test)]
 mod tests;
 mod thin;
+mod timeline;
 
 use std::collections::BTreeMap;
 use std::fmt;
@@ -53,7 +56,7 @@ use bf_core::show::Show;
 use bf_sim::roster::FighterCfg;
 
 pub use self::error::{MusicError, Samples};
-pub use self::events::shared_events;
+pub use self::events::{event_at, event_int, event_is, event_is_str, event_number, noise_seed, shared_events};
 pub use self::fx::{
     CLANK_DECAYS, CLANK_DUR, CLANK_SEED, HISS_DEC, HISS_DUR, HISS_HI, HISS_LO, HISS_SEED, RISER_OVER, RISER_SEED,
     ROAR_SEED, THUNDER_CRACK, THUNDER_DUR, THUNDER_SEED, clank, hiss, riser, roar, thunder,
@@ -481,8 +484,8 @@ impl<'a> MusicCtx<'a> {
     }
 
     /// `line_override(k, t0, t1, tz, notes)` (#53, opt-in): from `t0` to `t1`, fighter `k`'s line plays `notes`
-    /// instead: `(beat from tz, midi note or a rest, beats)`. A fighter registers it in its `prepare`; whoever
-    /// reads the fighter's line (`T.line_at`) looks the windows up with [`MusicCtx::line_overrides`].
+    /// instead: `(beat from tz, midi note or a rest, beats)`. A fighter registers it in its `prepare`;
+    /// [`MusicCtx::line_at`] (`T.line_at`) then reads the windows before the line itself.
     ///
     /// # Errors
     /// `k` is not 0 or 1, or a voice panicked earlier.

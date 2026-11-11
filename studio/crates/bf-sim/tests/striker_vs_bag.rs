@@ -14,11 +14,11 @@
 //! `HP`, `BL`, `SH`, `HA`, `LV` and the `COB` rows) and EVERY event to 1e-9 (times, kinds and whole numbers
 //! exactly).
 //!
-//! The engine does not fire abilities yet. What the abilities in these fights do is one or two assignments in
-//! `trigger`, made at the end of the step that fires them (haste: `fight.py` 2849 to 2851; shield: 2847 to 2848;
-//! dance: 2878 to 2879); the test makes them by hand at the times of Python's `ability` events and leaves those
-//! events out of the comparison. Once the engine fires abilities itself the replay only repeats what the engine has
-//! just done, and can be dropped together with that exception.
+//! The engine fires the abilities itself: FLUTTER TONGUE and SNAKE DANCE are compared like everything else, their
+//! `ability` events too. One kind in these fights is not ported: the SHIELD BAG's `shield` (BRACE). The engine
+//! announces it and does nothing more, so the test makes its one assignment by hand (`B.shield = ab_dur(ab)`,
+//! `fight.py` 2847 to 2848) in the step the ENGINE announces it; when and that it fires is the engine's own doing
+//! and is compared.
 //!
 //! The windows end long before the two engines drift apart. When the striker was ported the same comparison was run
 //! over whole fights for seeds 1 to 40 in both corners, with and without early levels (160 fights): every fight
@@ -33,7 +33,6 @@ use std::collections::BTreeMap;
 use std::path::PathBuf;
 
 use bf_core::event::{Event, Value};
-use bf_core::py;
 use bf_core::recording::{Array, Recording};
 use bf_sim::roster::{FighterCfg, parse_roster};
 use bf_sim::schedule::Schedule;
@@ -167,29 +166,20 @@ fn snap(fight: &Fight) -> Frame {
     }
 }
 
-/// What `trigger` does for the abilities of these fights, at the end of the step that fires them, with `ab_dur(ab)`
-/// = `ab['dur']`, else `ab['dur_beats'] * beat`: haste is `B.haste = ab_dur(ab); B.haste_mult = ab['mult']`, dance
-/// is `B.dance_until = self.t + ab_dur(ab)`, shield is `B.shield = ab_dur(ab)`.
-fn fire_by_hand(fight: &mut Fight, who: usize, name: &str, kind: &str) {
+/// What `trigger` does for the one ability kind of these fights that the engine has not ported, the bag's `shield`:
+/// `B.shield = ab_dur(ab)`, with `ab_dur(ab)` = `ab['dur']`, else `ab['dur_beats'] * beat`. The engine has just
+/// announced the ability `name` of fighter `who` (an `ability` event of kind `shield`) and done nothing else.
+fn shield_by_hand(fight: &mut Fight, who: usize, name: &str) {
     let (cfg, beat) = (fight.balls[who].cfg, fight.rules.beat);
     let ab = [&cfg.unlock1, &cfg.unlock2, &cfg.low]
         .into_iter()
         .find(|ab| ab.name == name)
         .unwrap_or_else(|| panic!("{} has no ability {name}", cfg.name));
-    let dur = match (ab.get("dur"), ab.get("dur_beats")) {
+    fight.balls[who].shield = match (ab.get("dur"), ab.get("dur_beats")) {
         (Some(dur), _) => dur,
         (None, Some(beats)) => beats * beat,
         (None, None) => panic!("{name} has no duration"),
     };
-    match kind {
-        "haste" => {
-            fight.balls[who].haste = dur;
-            fight.balls[who].haste_mult = ab.get("mult").expect("haste has a factor");
-        }
-        "dance" => fight.striker[who].as_mut().expect("a striker dances").dance_until = fight.t + dur,
-        "shield" => fight.balls[who].shield = dur,
-        other => panic!("{name}: the test cannot fire an ability of kind {other}"),
-    }
 }
 
 /// The largest difference between two lists of floats; panics past `TOL`.
@@ -231,7 +221,7 @@ fn compare_values(what: &str, a: &Value, b: &Value) -> f64 {
 struct Span {
     /// Events matched, by kind.
     kinds: BTreeMap<String, usize>,
-    /// The abilities fired by hand, by name.
+    /// The abilities the engine fired, by name.
     abilities: Vec<String>,
     /// Frames in which a cobra is off its basket.
     frames_off_basket: usize,
@@ -241,8 +231,8 @@ struct Span {
     quickest: f64,
 }
 
-/// Runs the Rust fight of a recording (its fighters, rules and seed), firing abilities by hand when Python did, and
-/// compares every frame and every event but the `ability` ones.
+/// Runs the Rust fight of a recording (its fighters, rules and seed), making the bag's shield by hand when the engine
+/// announces it, and compares every frame and every event.
 fn compare(row: &Row, bags: &[FighterCfg]) -> Span {
     let name = row.name.as_str();
     let path = folder().join(format!("{name}.bfrec"));
@@ -268,19 +258,27 @@ fn compare(row: &Row, bags: &[FighterCfg]) -> Span {
     };
 
     // the fight loop (`Fight.run`): a frame before the first step and after every `steps_per_frame` steps
-    let mut abilities = py.events.iter().filter(|e| e.kind == "ability").peekable();
     let mut fight = Fight::new(&setup, false);
     let mut sched = Schedule::new(&mut fight);
     fight.t = fight.rules.t_fight;
     let mut frames = vec![snap(&fight)];
     let mut fired = Vec::new();
     while fight.t < fight.rules.t_max {
+        let seen = fight.events.len();
         sched.step(&mut fight);
-        let t = py::round_nd(fight.t, 5);
-        while let Some(e) = abilities.next_if(|e| e.t <= t) {
-            assert_eq!(e.t, t, "{name}: Python fired {e:?} between two steps");
+        // the abilities the engine fired in this step; the one kind it has not ported is made by hand
+        let new: Vec<Event> = fight.events[seen..]
+            .iter()
+            .filter(|e| e.kind == "ability")
+            .cloned()
+            .collect();
+        for e in new {
             let who = e.who().unwrap_or_else(|| panic!("{name}: {e:?}"));
-            fire_by_hand(&mut fight, who, e.s(3), e.s(4));
+            match e.s(4) {
+                "shield" => shield_by_hand(&mut fight, who, e.s(3)),
+                "haste" | "dance" => {}
+                other => panic!("{name}: an ability of kind {other}: {e:?}"),
+            }
             fired.push(e.s(3).to_string());
         }
         assert!(fight.balls.iter().all(|b| b.hp > 0.0), "{name}: no K.O. in the window");
@@ -288,13 +286,11 @@ fn compare(row: &Row, bags: &[FighterCfg]) -> Span {
             frames.push(snap(&fight));
         }
     }
-    assert!(abilities.next().is_none(), "{name}: every Python ability was fired");
 
-    // every event but the abilities: in order, the same kinds, times and whole numbers
-    let wanted = |events: &[Event]| -> Vec<Event> { events.iter().filter(|e| e.kind != "ability").cloned().collect() };
-    let (rs_events, py_events) = (wanted(&fight.events), wanted(&py.events));
+    // every event, the abilities too: in order, the same kinds, times and whole numbers
+    let (rs_events, py_events) = (&fight.events, &py.events);
     let (mut kinds, mut max_dev, mut quickest) = (BTreeMap::new(), 0.0f64, f64::INFINITY);
-    for (i, (a, b)) in rs_events.iter().zip(&py_events).enumerate() {
+    for (i, (a, b)) in rs_events.iter().zip(py_events).enumerate() {
         let what = format!("{name}: event {i}:\n Rust   {a:?}\n Python {b:?}\n");
         assert_eq!((a.t.to_bits(), &a.kind), (b.t.to_bits(), &b.kind), "{what}");
         let (a_fields, b_fields) = (Value::List(a.fields.clone()), Value::List(b.fields.clone()));
@@ -312,12 +308,9 @@ fn compare(row: &Row, bags: &[FighterCfg]) -> Span {
         rs_events.get(py_events.len()),
         py_events.get(rs_events.len())
     );
-    // the export's own count of this recording's events (the abilities too)
-    let mut counted = kinds.clone();
-    if !fired.is_empty() {
-        counted.insert("ability".to_string(), fired.len());
-    }
-    assert_eq!(counted, row.events, "{name}: the index's event counts");
+    // the export's own count of this recording's events
+    assert_eq!(kinds, row.events, "{name}: the index's event counts");
+    assert_eq!(kinds.get("ability").copied().unwrap_or(0), fired.len(), "{name}");
 
     // every frame
     assert_eq!(frames.len(), py.frames(), "{name}: frames");
@@ -359,7 +352,7 @@ fn compare(row: &Row, bags: &[FighterCfg]) -> Span {
     }
     let [dp, dv, dhp, dbl, dsh, dha, dcob] = worst;
     println!(
-        "{name}: {} frames and {} events agree ({kinds:?}; by hand: {fired:?}); max |d|: events {max_dev:.1e}, P \
+        "{name}: {} frames and {} events agree ({kinds:?}; abilities: {fired:?}); max |d|: events {max_dev:.1e}, P \
          {dp:.1e}, V {dv:.1e}, HP {dhp:.1e}, BL {dbl:.1e}, SH {dsh:.1e}, HA {dha:.1e}, COB {dcob:.1e}",
         frames.len(),
         py_events.len(),
