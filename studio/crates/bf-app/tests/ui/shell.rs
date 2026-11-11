@@ -335,15 +335,15 @@ fn the_bout_bar_reads_the_draft() {
     let _gpu = gpu();
     let mut harness = showing(REF, base::vm());
     harness.run();
-    for text in [
-        "Theme",
-        "Big top",
-        "Tempo",
-        "133.77 bpm",
-        "Seed",
-        "not picked yet",
-        "VS",
-    ] {
+    // "Theme" and "Tempo" also stand in the Match-up workspace: look for them in the bout bar only.
+    let bout = harness.state().layout.bout;
+    for text in ["Theme", "Tempo"] {
+        assert!(
+            harness.query_all_by_label(text).any(|n| bout.contains_rect(n.rect())),
+            "{text}"
+        );
+    }
+    for text in ["Big top", "133.77 bpm", "Seed", "not picked yet", "VS"] {
         assert!(harness.query_by_label(text).is_some(), "{text}");
     }
     assert!(harness.query_by_label("Handicap").is_none(), "not on Match-up");
@@ -613,7 +613,22 @@ fn starting_installs_the_theme_and_loads_what_was_saved() {
             Box::new(NoAudio::new("No sound device in tests."))
         })
     });
-    harness.run();
+    // The live engine answers on its own thread, and each answer asks for another frame: `run` could run out of
+    // steps while answers trickle in on a busy PC. Step until the start-up answers are in, bounded, instead.
+    let deadline = Instant::now() + Duration::from_secs(20);
+    loop {
+        harness.step();
+        let vm = &harness.state().state.vm;
+        if (vm.roster.is_some() && vm.ffmpeg.is_some()) || Instant::now() >= deadline {
+            break;
+        }
+        std::thread::sleep(Duration::from_millis(5));
+    }
+    let vm = &harness.state().state.vm;
+    assert!(
+        vm.roster.is_some() && vm.ffmpeg.is_some(),
+        "the engine answered at start"
+    );
     let style = harness.ctx.global_style();
     assert_eq!(style.visuals.panel_fill, theme::PANEL, "the theme is installed");
     assert_eq!(style.spacing.interact_size.y, theme::CONTROL_H);
