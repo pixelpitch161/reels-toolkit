@@ -1,8 +1,10 @@
-//! `ballfight render <fight.toml> --out <folder> [--seed N | --rec F] [--frames A:B]`: render the video through
-//! the render job (`bf_export::run_job`) into a new folder inside `--out`, and inherit its rules: the folder is
-//! `<a>_vs_<b>` (or `<a>_vs_<b>_seed<N>` when that is taken; both taken is refused before any work), nothing is
-//! ever replaced, and a failure or Ctrl+C leaves nothing behind. `--frames A:B` renders a clip of frames A to B-1
-//! (a folder `<a>_vs_<b>_frames<A>-<B>` holding only the mp4; the whole-video checks are left out).
+//! `ballfight render <fight.toml> --out <folder> [--seed N | --rec F] [--frames A:B] [--encode best|faster]`: render
+//! the video through the render job (`bf_export::run_job`) into a new folder inside `--out`, and inherit its rules:
+//! the folder is `<a>_vs_<b>` (or `<a>_vs_<b>_seed<N>` when that is taken; both taken is refused before any work),
+//! nothing is ever replaced, and a failure or Ctrl+C leaves nothing behind. `--frames A:B` renders a clip of frames
+//! A to B-1 (a folder `<a>_vs_<b>_frames<A>-<B>` holding only the mp4; the whole-video checks are left out).
+//! `--encode faster` encodes with the Faster setting (a faster x264 preset, nothing else changed); its folder also
+//! holds `encoding.txt`, saying so. The default, `best`, is the series' own encode, byte for byte.
 
 use std::ops::Range;
 use std::path::PathBuf;
@@ -10,12 +12,12 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
-use bf_export::{CheckResult, ExportError, JobEvent, JobOpts, run_job};
+use bf_export::{CheckResult, EncodeSpeed, ExportError, JobEvent, JobOpts, run_job};
 use bf_picture::config::NF;
 use serde_json::json;
 
 use crate::cmd::check::{check_json, check_line};
-use crate::{Ctx, Done, Fail, load_fight, need_ko, note, say, say_json, the_fight};
+use crate::{Ctx, Done, Fail, encode_speed, load_fight, need_ko, note, say, say_json, the_fight};
 
 #[derive(clap::Args)]
 pub struct Args {
@@ -33,6 +35,9 @@ pub struct Args {
     /// Only frames A to B-1 (a clip for a quick look), for example 0:90.
     #[arg(long, value_name = "A:B", value_parser = clip)]
     frames: Option<Range<usize>>,
+    /// The encoder setting: best (the series' own, the default) or faster (a quicker encode, a larger file).
+    #[arg(long, value_name = "SETTING", default_value = "best", value_parser = encode_speed)]
+    pub encode: EncodeSpeed,
 }
 
 /// `A:B` as a stretch of the video's frames.
@@ -79,6 +84,7 @@ pub fn run(a: &Args, ctx: &Ctx) -> Done {
         out_root: a.out.clone(),
         workers: ctx.workers,
         frames: a.frames.clone(),
+        speed: a.encode,
     };
     let checks: Mutex<Vec<CheckResult>> = Mutex::new(Vec::new());
     let last = Mutex::new(Instant::now());
@@ -116,10 +122,18 @@ pub fn run(a: &Args, ctx: &Ctx) -> Done {
         say_json(&json!({
             "folder": folder.display().to_string(),
             "seed": ff.seed,
+            "encode": a.encode.name(),
             "checks": checks.iter().map(check_json).collect::<Vec<_>>(),
         }));
-    } else {
+    } else if a.encode == EncodeSpeed::Best {
         say(&format!("saved {}", folder.display()));
+    } else {
+        say(&format!(
+            "saved {} (encoded with the {} setting, x264 preset {})",
+            folder.display(),
+            a.encode.name(),
+            a.encode.preset()
+        ));
     }
     Ok(())
 }

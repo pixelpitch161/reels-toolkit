@@ -22,8 +22,8 @@ pub use self::checks::{BandPlan, CheckResult, Kept, pre_render, pre_render_keepi
 #[cfg(feature = "test-support")]
 pub use self::encode::ffmpeg_at;
 pub use self::encode::{
-    APP_FFMPEG_DIR, Encoder, Ffmpeg, FfmpegSource, REINSTALL, find_ffmpeg, find_with as find_ffmpeg_with,
-    is_about_the_apps_own,
+    APP_FFMPEG_DIR, ENCODING_NOTE, EncodeSpeed, Encoder, FASTER_PRESET, Ffmpeg, FfmpegSource, REINSTALL, encode_args,
+    encode_args_at, find_ffmpeg, find_with as find_ffmpeg_with, is_about_the_apps_own,
 };
 #[cfg(feature = "test-support")]
 pub use self::job::run_job_using;

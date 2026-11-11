@@ -15,10 +15,8 @@
 //! exactly).
 //!
 //! The engine fires the abilities itself: FLUTTER TONGUE and SNAKE DANCE are compared like everything else, their
-//! `ability` events too. One kind in these fights is not ported: the SHIELD BAG's `shield` (BRACE). The engine
-//! announces it and does nothing more, so the test makes its one assignment by hand (`B.shield = ab_dur(ab)`,
-//! `fight.py` 2847 to 2848) in the step the ENGINE announces it; when and that it fires is the engine's own doing
-//! and is compared.
+//! `ability` events too, and so is the SHIELD BAG's `shield` (BRACE), ported in milestone 3 (Task 3): the engine
+//! raises it itself.
 //!
 //! The windows end long before the two engines drift apart. When the striker was ported the same comparison was run
 //! over whole fights for seeds 1 to 40 in both corners, with and without early levels (160 fights): every fight
@@ -166,22 +164,6 @@ fn snap(fight: &Fight) -> Frame {
     }
 }
 
-/// What `trigger` does for the one ability kind of these fights that the engine has not ported, the bag's `shield`:
-/// `B.shield = ab_dur(ab)`, with `ab_dur(ab)` = `ab['dur']`, else `ab['dur_beats'] * beat`. The engine has just
-/// announced the ability `name` of fighter `who` (an `ability` event of kind `shield`) and done nothing else.
-fn shield_by_hand(fight: &mut Fight, who: usize, name: &str) {
-    let (cfg, beat) = (fight.balls[who].cfg, fight.rules.beat);
-    let ab = [&cfg.unlock1, &cfg.unlock2, &cfg.low]
-        .into_iter()
-        .find(|ab| ab.name == name)
-        .unwrap_or_else(|| panic!("{} has no ability {name}", cfg.name));
-    fight.balls[who].shield = match (ab.get("dur"), ab.get("dur_beats")) {
-        (Some(dur), _) => dur,
-        (None, Some(beats)) => beats * beat,
-        (None, None) => panic!("{name} has no duration"),
-    };
-}
-
 /// The largest difference between two lists of floats; panics past `TOL`.
 fn compare_floats(what: &str, rs: &[f64], py: &[f64]) -> f64 {
     assert_eq!(rs.len(), py.len(), "{what}");
@@ -231,8 +213,7 @@ struct Span {
     quickest: f64,
 }
 
-/// Runs the Rust fight of a recording (its fighters, rules and seed), making the bag's shield by hand when the engine
-/// announces it, and compares every frame and every event.
+/// Runs the Rust fight of a recording (its fighters, rules and seed), and compares every frame and every event.
 fn compare(row: &Row, bags: &[FighterCfg]) -> Span {
     let name = row.name.as_str();
     let path = folder().join(format!("{name}.bfrec"));
@@ -266,17 +247,15 @@ fn compare(row: &Row, bags: &[FighterCfg]) -> Span {
     while fight.t < fight.rules.t_max {
         let seen = fight.events.len();
         sched.step(&mut fight);
-        // the abilities the engine fired in this step; the one kind it has not ported is made by hand
+        // the abilities the engine fired in this step (all three kinds of these fights are ported, the bag's shield too)
         let new: Vec<Event> = fight.events[seen..]
             .iter()
             .filter(|e| e.kind == "ability")
             .cloned()
             .collect();
         for e in new {
-            let who = e.who().unwrap_or_else(|| panic!("{name}: {e:?}"));
             match e.s(4) {
-                "shield" => shield_by_hand(&mut fight, who, e.s(3)),
-                "haste" | "dance" => {}
+                "haste" | "dance" | "shield" => {}
                 other => panic!("{name}: an ability of kind {other}: {e:?}"),
             }
             fired.push(e.s(3).to_string());

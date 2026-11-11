@@ -22,8 +22,8 @@ use std::time::{Duration, Instant};
 use bf_core::fightfile::FightFile;
 use bf_core::recording::Recording;
 use bf_export::{
-    ExportError, JobEvent, JobOpts, clip_folder_name, ffmpeg_at, find_ffmpeg, folder_name, run_job, run_job_using,
-    stage,
+    EncodeSpeed, ExportError, JobEvent, JobOpts, clip_folder_name, ffmpeg_at, find_ffmpeg, folder_name, run_job,
+    run_job_using, stage,
 };
 use bf_testdata::{reference, repo_root};
 
@@ -106,6 +106,7 @@ fn opts(root: &Path, workers: usize, frames: Option<std::ops::Range<usize>>) -> 
         out_root: root.to_path_buf(),
         workers,
         frames,
+        speed: EncodeSpeed::Best,
     }
 }
 

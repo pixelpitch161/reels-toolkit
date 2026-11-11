@@ -5,8 +5,9 @@
 //! (every `every` beats; haste divides it) the lance locks on where the enemy is and shoots out to its reach in
 //! `t_out` seconds, holds for `t_hold` and pulls back over `t_back`; haste runs the whole thrust faster. While it
 //! goes out or is held the lance is live: it kills enemy projectiles it touches (`parry`), knocks risen enemy cobras
-//! flat (the rule `swat_cobras`) and hits the enemy once (`dmg`, `knock`; a landed hit grows the reach by `grow` up
-//! to `max_len` and adds a fret). A thrust that meets a shield is blocked and pulls straight back.
+//! flat (the rule `swat_cobras`), swats falling enemy shells (the rule `swat_shells`, the mortar's code) and hits
+//! the enemy once (`dmg`, `knock`; a landed hit grows the reach by `grow` up to `max_len` and adds a fret). A thrust
+//! that meets a shield is blocked and pulls straight back.
 //!
 //! The lance's state is on the ball, where `Ball.__init__` puts it: `th` (its angle), `ext` (its length beyond the
 //! ball now), `thr` (when the thrust in progress started), `thr_hit`, `thr_k` (the thrust's time scale), with the
@@ -21,7 +22,7 @@ use bf_core::py;
 
 use crate::fight::Fight;
 use crate::geom;
-use crate::kinds::striker;
+use crate::kinds::{mortar, striker};
 use crate::roster::{BladeCfg, BladeMode, WeaponCfg};
 
 /// `B.w['kind'] == 'blade'`.
@@ -131,7 +132,11 @@ pub fn thrust_step(fight: &mut Fight, k: usize, dt: f64) {
         // 753 to 754, opt-in rule (#41): the lance swats enemy cobras too
         striker::swat_cobras(fight, k, a, d, l);
     }
-    // 755 to 756: the opt-in rule `swat_shells` (#48) against mortar shells. Kind not ported.
+    fight.socket("lance.swat_shells");
+    if live && fight.rules.swat_shells == Some(true) && !fight.shells.is_empty() {
+        // 755 to 756, opt-in rule (#48): the lance swats enemy mortar shells too (the mortar's code)
+        mortar::swat_shells(fight, k, a, d, l);
+    }
     if live && !fight.balls[k].thr_hit {
         let rel = geom::sub(o_p, a);
         // s_ = min(max(float(rel @ d), 0.0), L_)
