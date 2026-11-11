@@ -278,21 +278,22 @@
   },
   {
    "args": {
-    "amount": "0x1.28f5c28f5c28fp-1",
-    "span": 120,
-    "top": 110
+    "cap": "0x1.3333333333333p-2",
+    "cy": "0x1.3333333333333p-1",
+    "start": "0x1.b851eb851eb85p-2",
+    "strength": "0x1.8f5c28f5c28f6p-1"
    },
    "arrays": {
     "out": "c020__out"
    },
-   "call": "reelkit.post.top_scrim(amount, top, span)",
+   "call": "reelkit.post.vignette(strength, start, cap, cy)",
    "id": "c020"
   },
   {
    "args": {
-    "amount": "0x1.ccccccccccccdp-2",
-    "span": 90,
-    "top": 100
+    "amount": "0x1.28f5c28f5c28fp-1",
+    "span": 120,
+    "top": 110
    },
    "arrays": {
     "out": "c021__out"
@@ -302,9 +303,9 @@
   },
   {
    "args": {
-    "amount": "0x1.3333333333333p-2",
-    "span": 640,
-    "top": 0
+    "amount": "0x1.ccccccccccccdp-2",
+    "span": 90,
+    "top": 100
    },
    "arrays": {
     "out": "c022__out"
@@ -314,9 +315,9 @@
   },
   {
    "args": {
-    "amount": "0x1.0000000000000p+0",
-    "span": 50,
-    "top": 200
+    "amount": "0x1.3333333333333p-2",
+    "span": 640,
+    "top": 0
    },
    "arrays": {
     "out": "c023__out"
@@ -326,15 +327,27 @@
   },
   {
    "args": {
-    "amount": "0x1.28f5c28f5c28fp-1",
-    "span": "0x1.0a66666666666p+5",
-    "top": "0x1.ba00000000000p+6"
+    "amount": "0x1.0000000000000p+0",
+    "span": 50,
+    "top": 200
    },
    "arrays": {
     "out": "c024__out"
    },
    "call": "reelkit.post.top_scrim(amount, top, span)",
    "id": "c024"
+  },
+  {
+   "args": {
+    "amount": "0x1.28f5c28f5c28fp-1",
+    "span": "0x1.0a66666666666p+5",
+    "top": "0x1.ba00000000000p+6"
+   },
+   "arrays": {
+    "out": "c025__out"
+   },
+   "call": "reelkit.post.top_scrim(amount, top, span)",
+   "id": "c025"
   }
  ],
  "note": "bloom: img is float64 (h, w, 3), exclude a bool (h, w) where the case has one (else None); the cases with args.W and args.H ran with reelkit.post.W and H set to that size (the picture decides the size in the port). grade: img float64. vignette and top_scrim: out is the float64 (640, 360, 1) table.",

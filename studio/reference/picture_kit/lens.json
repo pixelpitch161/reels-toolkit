@@ -114,48 +114,39 @@
   },
   {
    "args": {
-    "K": "0x1.a000000000000p+4",
-    "sharp": "0x1.5c28f5c28f5c3p-3",
-    "zf": "0x1.b9fa1d9cd6b35p+4"
+    "r": "0x1.4333333333333p+2"
    },
    "arrays": {
-    "depth": "c011__depth",
     "out": "c011__out"
    },
-   "call": "reelkit.lens.coc_map(depth, np.float64(zf), K, sharp)",
+   "call": "reelkit.lens.oct_kernel(r)",
    "id": "c011"
   },
   {
    "args": {
-    "K": "0x1.a000000000000p+4",
-    "sharp": "0x1.999999999999ap-5",
-    "zf": "0x1.acd0a01cc3135p+4"
+    "r": "0x1.ccccccccccccdp+2"
    },
    "arrays": {
-    "depth": "c012__depth",
     "out": "c012__out"
    },
-   "call": "reelkit.lens.coc_map(depth, np.float64(zf), K, sharp)",
+   "call": "reelkit.lens.oct_kernel(r)",
    "id": "c012"
   },
   {
    "args": {
-    "K": "0x1.4000000000000p+3",
-    "sharp": "0x0.0p+0",
-    "zf": "0x1.a170350f1cc03p+1"
+    "r": "0x1.4e66666666666p+3"
    },
    "arrays": {
-    "depth": "c013__depth",
     "out": "c013__out"
    },
-   "call": "reelkit.lens.coc_map(depth, np.float64(zf), K, sharp)",
+   "call": "reelkit.lens.oct_kernel(r)",
    "id": "c013"
   },
   {
    "args": {
-    "K": "0x1.4000000000000p+5",
-    "sharp": "0x1.3333333333333p-2",
-    "zf": "0x1.b7e9daac6e217p+5"
+    "K": "0x1.a000000000000p+4",
+    "sharp": "0x1.5c28f5c28f5c3p-3",
+    "zf": "0x1.b9fa1d9cd6b35p+4"
    },
    "arrays": {
     "depth": "c014__depth",
@@ -167,8 +158,8 @@
   {
    "args": {
     "K": "0x1.a000000000000p+4",
-    "sharp": "0x1.5c28f5c28f5c3p-3",
-    "zf": "0x1.b392d56a7b7bep+4"
+    "sharp": "0x1.999999999999ap-5",
+    "zf": "0x1.acd0a01cc3135p+4"
    },
    "arrays": {
     "depth": "c015__depth",
@@ -179,9 +170,9 @@
   },
   {
    "args": {
-    "K": "0x1.a000000000000p+4",
-    "sharp": "0x1.999999999999ap-5",
-    "zf": "0x1.b6387563cfa0dp+4"
+    "K": "0x1.4000000000000p+3",
+    "sharp": "0x0.0p+0",
+    "zf": "0x1.a170350f1cc03p+1"
    },
    "arrays": {
     "depth": "c016__depth",
@@ -192,9 +183,9 @@
   },
   {
    "args": {
-    "K": "0x1.4000000000000p+3",
-    "sharp": "0x0.0p+0",
-    "zf": "0x1.ba95b086f3167p+1"
+    "K": "0x1.4000000000000p+5",
+    "sharp": "0x1.3333333333333p-2",
+    "zf": "0x1.b7e9daac6e217p+5"
    },
    "arrays": {
     "depth": "c017__depth",
@@ -205,9 +196,9 @@
   },
   {
    "args": {
-    "K": "0x1.4000000000000p+5",
-    "sharp": "0x1.3333333333333p-2",
-    "zf": "0x1.bb10c73373b2cp+5"
+    "K": "0x1.a000000000000p+4",
+    "sharp": "0x1.5c28f5c28f5c3p-3",
+    "zf": "0x1.b392d56a7b7bep+4"
    },
    "arrays": {
     "depth": "c018__depth",
@@ -217,33 +208,42 @@
    "id": "c018"
   },
   {
-   "args": {},
+   "args": {
+    "K": "0x1.a000000000000p+4",
+    "sharp": "0x1.999999999999ap-5",
+    "zf": "0x1.b6387563cfa0dp+4"
+   },
    "arrays": {
-    "coc": "c019__coc",
-    "in": "c019__in",
+    "depth": "c019__depth",
     "out": "c019__out"
    },
-   "call": "reelkit.lens.dof(img, coc)",
+   "call": "reelkit.lens.coc_map(depth, np.float64(zf), K, sharp)",
    "id": "c019"
   },
   {
-   "args": {},
+   "args": {
+    "K": "0x1.4000000000000p+3",
+    "sharp": "0x0.0p+0",
+    "zf": "0x1.ba95b086f3167p+1"
+   },
    "arrays": {
-    "coc": "c020__coc",
-    "in": "c020__in",
+    "depth": "c020__depth",
     "out": "c020__out"
    },
-   "call": "reelkit.lens.dof(img, coc)",
+   "call": "reelkit.lens.coc_map(depth, np.float64(zf), K, sharp)",
    "id": "c020"
   },
   {
-   "args": {},
+   "args": {
+    "K": "0x1.4000000000000p+5",
+    "sharp": "0x1.3333333333333p-2",
+    "zf": "0x1.bb10c73373b2cp+5"
+   },
    "arrays": {
-    "coc": "c021__coc",
-    "in": "c021__in",
+    "depth": "c021__depth",
     "out": "c021__out"
    },
-   "call": "reelkit.lens.dof(img, coc)",
+   "call": "reelkit.lens.coc_map(depth, np.float64(zf), K, sharp)",
    "id": "c021"
   },
   {
@@ -327,16 +327,46 @@
    "id": "c029"
   },
   {
+   "args": {},
+   "arrays": {
+    "coc": "c030__coc",
+    "in": "c030__in",
+    "out": "c030__out"
+   },
+   "call": "reelkit.lens.dof(img, coc)",
+   "id": "c030"
+  },
+  {
+   "args": {},
+   "arrays": {
+    "coc": "c031__coc",
+    "in": "c031__in",
+    "out": "c031__out"
+   },
+   "call": "reelkit.lens.dof(img, coc)",
+   "id": "c031"
+  },
+  {
+   "args": {},
+   "arrays": {
+    "coc": "c032__coc",
+    "in": "c032__in",
+    "out": "c032__out"
+   },
+   "call": "reelkit.lens.dof(img, coc)",
+   "id": "c032"
+  },
+  {
    "args": {
     "block": 8
    },
    "arrays": {
-    "coc": "c030__coc",
-    "in": "c030__in",
-    "out_sub": "c030__out_sub"
+    "coc": "c033__coc",
+    "in": "c033__in",
+    "out_sub": "c033__out_sub"
    },
    "call": "reelkit.lens.dof(img, coc)",
-   "id": "c030"
+   "id": "c033"
   }
  ],
  "note": "coc_map: depth is float32 and zf a numpy float64 (as Frame.depth() and Cam.depth give them), so out is float64. dof: \"in\" is the float32 picture (h, w, 3), coc float64 (h, w); out is float64, or float32 (the picture as it was) where no pixel is out of focus. The case with args.block ran at the full 640 x 360: its picture and coc are the stored small arrays with every value repeated block x block times (np.repeat on both axes), and out_sub is out[::block, ::block]. All cases use the default levels.",

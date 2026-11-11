@@ -911,10 +911,15 @@ fn post() {
 fn hull_case(v: &Vectors, case: &Case) -> Found {
     match case.call.as_str() {
         "scipy.spatial.ConvexHull(pts).vertices" => {
-            let got: Vec<i32> = hull::convex_hull(&rows2(v.array(case, "pts"))?)
-                .iter()
-                .map(|&k| k as i32)
-                .collect();
+            let pts = rows2(v.array(case, "pts"))?;
+            // Qhull's own order, not the plain hull `convex_hull` falls back to: a reference case must be one
+            // the port follows all the way.
+            let order =
+                hull::qhull_order(&pts).map_err(|why| format!("the port does not follow Qhull here: {why:?}"))?;
+            if hull::convex_hull(&pts) != order {
+                return Err("convex_hull and qhull_order disagree".to_string());
+            }
+            let got: Vec<i32> = order.iter().map(|&k| k as i32).collect();
             same(&got, v.array(case, "out").i32(), |a, b| a == b).map(|()| 0.0)
         }
         other => Err(format!("a call this test does not know: {other}")),

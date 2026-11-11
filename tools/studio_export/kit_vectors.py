@@ -680,6 +680,20 @@ def group_raster():
         P, counts = flat([q[0] for q in lines], 3)
         g.add('fr.line(Cam(**cam), pts, col, width)', dict(cam=hx(c), bg=hx((10, 8, 18))), P=P, counts=counts,
               col=np.stack([q[1] for q in lines]), width=i64(q[2] for q in lines), **pictures(fr))
+    # one point behind the camera hides the whole line, however much of it is in view
+    right, up, fwd = close.M
+    ahead = [close.pos + fwd * 3.0 + right * a + up * b for a, b in ((-0.8, -0.5), (0.0, 0.6), (0.9, -0.2))]
+    lines = [(np.array(ahead), np.array([250.0, 240.0, 60.0]), 3),
+             (np.array(ahead + [close.pos - fwd * 1.0]), np.array([255.0, 0.0, 0.0]), 2),
+             (np.array([close.pos - fwd * 0.5 + right * 0.1] + ahead[::-1]), np.array([0.0, 255.0, 0.0]), 1),
+             (np.array([ahead[0] + up * 0.4, ahead[2] + up * 0.4]), np.array([40.0, 90.0, 250.0]), 2)]
+    fr = Frame((10, 8, 18))
+    for P, col, width in lines:
+        fr.line(close, P, col, width)
+    assert len({tuple(px) for px in np.array(fr.pil).reshape(-1, 3)}) == 3, 'two of the four lines are drawn'
+    P, counts = flat([q[0] for q in lines], 3)
+    g.add('fr.line(Cam(**cam), pts, col, width)', dict(cam=hx(CLOSE_CAM), bg=hx((10, 8, 18))), P=P, counts=counts,
+          col=np.stack([q[1] for q in lines]), width=i64(q[2] for q in lines), **pictures(fr))
 
     # ---- screen_poly and disc
     for _ in range(3):
@@ -970,7 +984,8 @@ def group_lens():
                    'every value repeated block x block times (np.repeat on both axes), and out_sub is '
                    'out[::block, ::block]. All cases use the default levels.')
     r = rng(18, 6)
-    for rad in LN.LEVELS[1:] + [0.5, 1.5, 2.5, 4.0, 12.0]:
+    # (at 5.05, 7.2 and 10.45 a pixel sits between the octagon widened by 0.34 and by 0.35)
+    for rad in LN.LEVELS[1:] + [0.5, 1.5, 2.5, 4.0, 12.0, 5.05, 7.2, 10.45]:
         k = LN.oct_kernel(rad)
         assert k.dtype == np.float64 and k.shape[0] == k.shape[1] == 2 * math.ceil(rad) + 1
         g.add('reelkit.lens.oct_kernel(r)', dict(r=common.hexf(rad)), out=k)
@@ -1123,7 +1138,9 @@ def group_post():
         g.add('reelkit.post.grade(img, contrast, sat, black, gamma)', hx(full), img=img, out=out)
 
     for strength, start, cap, cy in ((0.9, 0.55, 0.5, 0.47), (0.45, 0.55, 0.5, 0.47), (1.2, 0.3, 0.8, 0.5),
-                                     (0.6, 0.0, 0.25, 0.4), (2.0, 0.7, 1.0, 0.47)):
+                                     (0.6, 0.0, 0.25, 0.4), (2.0, 0.7, 1.0, 0.47),
+                                     # here one pixel's band depends on v * 5 being a float32 product
+                                     (0.78, 0.43, 0.3, 0.6)):
         out = PO.vignette(strength, start, cap, cy)
         assert out.dtype == np.float64 and out.shape == (C.H, C.W, 1)
         g.add('reelkit.post.vignette(strength, start, cap, cy)',
@@ -1142,7 +1159,8 @@ def group_hull():
               note='pts is (n, 2) float64; out the indices of the hull corners in the order scipy gives them '
                    '(counter-clockwise for the usual axes; int32 as scipy returns them). The first cases are the '
                    "spot's beam as kit.picture.render builds it: the can's screen position, then 32 points of the "
-                   "pool's rim.")
+                   "pool's rim. The port follows Qhull's build up to its merging of facets and reports the inputs "
+                   'that need it; none of these cases does (the test fails a case the port does not follow).')
     r = rng(18, 9)
     S = scene()
 
@@ -1181,6 +1199,31 @@ def group_hull():
     case([[0.0, 0.0], [2.0, 0.0], [4.0, 0.0], [4.0, 2.0], [4.0, 4.0], [2.0, 4.0], [0.0, 4.0], [0.0, 2.0]],
          'square with edge midpoints')
     case([[1.0, 1.0], [5.0, 2.0], [3.0, 6.0], [1.0, 1.0], [5.0, 2.0], [3.0, 3.0]], 'repeated points')
+    # repeated points among the points still outside the hull: which of two equal points becomes the corner
+    case([[4.0, 4.0], [2.0, 0.0], [0.0, 5.0], [4.0, 5.0], [5.0, 2.0], [5.0, 3.0], [5.0, 3.0]], 'repeated points')
+    for count in (8, 13, 20, 31, 40, 60):
+        pts = r.uniform(0, 100, (count, 2))
+        pts[count // 2:] = pts[:count - count // 2]
+        case(pts, 'cloud with every point twice')
+    # a sliver of a first triangle (Qhull's narrow hull): points along a line, and tight clusters
+    for count, noise in ((12, 1e-7), (30, 1e-4), (50, 1e-9), (20, 1e-2)):
+        pts = r.uniform(0, 1, (count, 2))
+        pts[:, 1] = pts[:, 0] * float(r.uniform(-2, 2)) + r.normal(0, noise, count)
+        case(pts, 'near a line')
+    for count, noise in ((25, 1e-6), (40, 1e-3)):
+        centres = r.uniform(-1, 1, (4, 2))
+        case(centres[r.integers(0, 4, count)] + r.normal(0, noise, (count, 2)), 'tight clusters')
+    for count in (9, 14, 22):
+        case(r.integers(-1000, 1000, (count, 2)).astype(float), 'whole numbers')
+    # more slivers, and clouds that are their own mirror image (edges equally far from their furthest points)
+    for n in range(24):
+        count, noise = int(r.integers(5, 40)), 10.0 ** float(r.uniform(-9, -1))
+        pts = r.uniform(0, 1, (count, 2))
+        pts[:, 1] = pts[:, 0] * float(r.uniform(-2, 2)) + r.normal(0, noise, count)
+        case(pts, 'near a line')
+    for n in range(12):
+        half = r.uniform(0.5, 100, (int(r.integers(3, 16)), 2))
+        case(np.vstack([half, half * [-1.0, 1.0]]), 'mirrored cloud')
     return g
 
 

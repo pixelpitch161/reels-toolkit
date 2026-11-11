@@ -908,6 +908,22 @@ mod tests {
     }
 
     #[test]
+    fn of_two_equal_points_the_corner_is_the_one_scipy_names() {
+        // scipy 1.18.1: [2, 1, 4, 5, 3]. Points 5 and 6 are the same place; both wait above the same first edge,
+        // and Qhull makes the one it meets first the corner.
+        let pts = [
+            (4.0, 4.0),
+            (2.0, 0.0),
+            (0.0, 5.0),
+            (4.0, 5.0),
+            (5.0, 2.0),
+            (5.0, 3.0),
+            (5.0, 3.0),
+        ];
+        assert_eq!(qhull_order(&pts), Ok(vec![2, 1, 4, 5, 3]));
+    }
+
+    #[test]
     fn the_plain_hull_is_counter_clockwise_from_the_left() {
         let square = [
             (1.0, 1.0),

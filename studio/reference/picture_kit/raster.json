@@ -452,18 +452,27 @@
   },
   {
    "args": {
-    "bg": [10, 8, 18]
+    "bg": [10, 8, 18],
+    "cam": {
+     "dist": "0x1.0000000000000p+2",
+     "fov": "0x1.9000000000000p+5",
+     "near": "0x1.999999999999ap-4",
+     "pitch": "0x1.1800000000000p+5",
+     "roll": "0x0.0p+0",
+     "sy": "0x1.4000000000000p+8",
+     "target": ["0x0.0p+0", "0x1.0000000000000p-1", "0x0.0p+0"],
+     "yaw": "0x1.9000000000000p+4"
+    }
    },
    "arrays": {
+    "P": "c021__P",
     "col": "c021__col",
     "counts": "c021__counts",
     "dep": "c021__dep",
-    "has_z": "c021__has_z",
-    "pts": "c021__pts",
     "rgb": "c021__rgb",
-    "z": "c021__z"
+    "width": "c021__width"
    },
-   "call": "fr.screen_poly(pts, col, z)",
+   "call": "fr.line(Cam(**cam), pts, col, width)",
    "id": "c021"
   },
   {
@@ -503,17 +512,15 @@
     "bg": [10, 8, 18]
    },
    "arrays": {
-    "center": "c024__center",
     "col": "c024__col",
+    "counts": "c024__counts",
     "dep": "c024__dep",
     "has_z": "c024__has_z",
-    "n": "c024__n",
-    "r": "c024__r",
+    "pts": "c024__pts",
     "rgb": "c024__rgb",
-    "rot": "c024__rot",
     "z": "c024__z"
    },
-   "call": "fr.disc(center, r, col, n, rot, z)",
+   "call": "fr.screen_poly(pts, col, z)",
    "id": "c024"
   },
   {
@@ -557,13 +564,17 @@
     "bg": [10, 8, 18]
    },
    "arrays": {
-    "arr": "c027__arr",
-    "array": "c027__array",
+    "center": "c027__center",
+    "col": "c027__col",
     "dep": "c027__dep",
-    "depth": "c027__depth",
-    "rgb": "c027__rgb"
+    "has_z": "c027__has_z",
+    "n": "c027__n",
+    "r": "c027__r",
+    "rgb": "c027__rgb",
+    "rot": "c027__rot",
+    "z": "c027__z"
    },
-   "call": "fr.set_array(arr, depth); fr.array()",
+   "call": "fr.disc(center, r, col, n, rot, z)",
    "id": "c027"
   },
   {
@@ -574,6 +585,7 @@
     "arr": "c028__arr",
     "array": "c028__array",
     "dep": "c028__dep",
+    "depth": "c028__depth",
     "rgb": "c028__rgb"
    },
    "call": "fr.set_array(arr, depth); fr.array()",
@@ -587,7 +599,6 @@
     "arr": "c029__arr",
     "array": "c029__array",
     "dep": "c029__dep",
-    "depth": "c029__depth",
     "rgb": "c029__rgb"
    },
    "call": "fr.set_array(arr, depth); fr.array()",
@@ -595,17 +606,21 @@
   },
   {
    "args": {
-    "r": 1
+    "bg": [10, 8, 18]
    },
    "arrays": {
-    "out": "c030__out"
+    "arr": "c030__arr",
+    "array": "c030__array",
+    "dep": "c030__dep",
+    "depth": "c030__depth",
+    "rgb": "c030__rgb"
    },
-   "call": "reelkit.raster.GLOW[r]",
+   "call": "fr.set_array(arr, depth); fr.array()",
    "id": "c030"
   },
   {
    "args": {
-    "r": 2
+    "r": 1
    },
    "arrays": {
     "out": "c031__out"
@@ -615,7 +630,7 @@
   },
   {
    "args": {
-    "r": 3
+    "r": 2
    },
    "arrays": {
     "out": "c032__out"
@@ -625,7 +640,7 @@
   },
   {
    "args": {
-    "r": 4
+    "r": 3
    },
    "arrays": {
     "out": "c033__out"
@@ -635,7 +650,7 @@
   },
   {
    "args": {
-    "r": 5
+    "r": 4
    },
    "arrays": {
     "out": "c034__out"
@@ -645,7 +660,7 @@
   },
   {
    "args": {
-    "r": 6
+    "r": 5
    },
    "arrays": {
     "out": "c035__out"
@@ -655,7 +670,7 @@
   },
   {
    "args": {
-    "r": 7
+    "r": 6
    },
    "arrays": {
     "out": "c036__out"
@@ -665,7 +680,7 @@
   },
   {
    "args": {
-    "r": 8
+    "r": 7
    },
    "arrays": {
     "out": "c037__out"
@@ -675,7 +690,7 @@
   },
   {
    "args": {
-    "r": 9
+    "r": 8
    },
    "arrays": {
     "out": "c038__out"
@@ -685,7 +700,7 @@
   },
   {
    "args": {
-    "r": 10
+    "r": 9
    },
    "arrays": {
     "out": "c039__out"
@@ -695,7 +710,7 @@
   },
   {
    "args": {
-    "r": 11
+    "r": 10
    },
    "arrays": {
     "out": "c040__out"
@@ -705,7 +720,7 @@
   },
   {
    "args": {
-    "r": 12
+    "r": 11
    },
    "arrays": {
     "out": "c041__out"
@@ -715,7 +730,7 @@
   },
   {
    "args": {
-    "r": 13
+    "r": 12
    },
    "arrays": {
     "out": "c042__out"
@@ -725,7 +740,7 @@
   },
   {
    "args": {
-    "r": 14
+    "r": 13
    },
    "arrays": {
     "out": "c043__out"
@@ -735,7 +750,7 @@
   },
   {
    "args": {
-    "r": 15
+    "r": 14
    },
    "arrays": {
     "out": "c044__out"
@@ -745,7 +760,7 @@
   },
   {
    "args": {
-    "r": 16
+    "r": 15
    },
    "arrays": {
     "out": "c045__out"
@@ -755,7 +770,7 @@
   },
   {
    "args": {
-    "r": 17
+    "r": 16
    },
    "arrays": {
     "out": "c046__out"
@@ -765,7 +780,7 @@
   },
   {
    "args": {
-    "r": 18
+    "r": 17
    },
    "arrays": {
     "out": "c047__out"
@@ -775,7 +790,7 @@
   },
   {
    "args": {
-    "r": 19
+    "r": 18
    },
    "arrays": {
     "out": "c048__out"
@@ -785,7 +800,7 @@
   },
   {
    "args": {
-    "r": 20
+    "r": 19
    },
    "arrays": {
     "out": "c049__out"
@@ -795,7 +810,7 @@
   },
   {
    "args": {
-    "r": 21
+    "r": 20
    },
    "arrays": {
     "out": "c050__out"
@@ -805,7 +820,7 @@
   },
   {
    "args": {
-    "r": 22
+    "r": 21
    },
    "arrays": {
     "out": "c051__out"
@@ -815,7 +830,7 @@
   },
   {
    "args": {
-    "r": 23
+    "r": 22
    },
    "arrays": {
     "out": "c052__out"
@@ -825,7 +840,7 @@
   },
   {
    "args": {
-    "r": 24
+    "r": 23
    },
    "arrays": {
     "out": "c053__out"
@@ -835,7 +850,7 @@
   },
   {
    "args": {
-    "r": 25
+    "r": 24
    },
    "arrays": {
     "out": "c054__out"
@@ -845,7 +860,7 @@
   },
   {
    "args": {
-    "r": 26
+    "r": 25
    },
    "arrays": {
     "out": "c055__out"
@@ -855,7 +870,7 @@
   },
   {
    "args": {
-    "r": 27
+    "r": 26
    },
    "arrays": {
     "out": "c056__out"
@@ -865,7 +880,7 @@
   },
   {
    "args": {
-    "r": 28
+    "r": 27
    },
    "arrays": {
     "out": "c057__out"
@@ -875,7 +890,7 @@
   },
   {
    "args": {
-    "r": 29
+    "r": 28
    },
    "arrays": {
     "out": "c058__out"
@@ -885,7 +900,7 @@
   },
   {
    "args": {
-    "r": 30
+    "r": 29
    },
    "arrays": {
     "out": "c059__out"
@@ -895,7 +910,7 @@
   },
   {
    "args": {
-    "r": 31
+    "r": 30
    },
    "arrays": {
     "out": "c060__out"
@@ -905,7 +920,7 @@
   },
   {
    "args": {
-    "r": 32
+    "r": 31
    },
    "arrays": {
     "out": "c061__out"
@@ -915,7 +930,7 @@
   },
   {
    "args": {
-    "r": 33
+    "r": 32
    },
    "arrays": {
     "out": "c062__out"
@@ -925,7 +940,7 @@
   },
   {
    "args": {
-    "r": 34
+    "r": 33
    },
    "arrays": {
     "out": "c063__out"
@@ -935,7 +950,7 @@
   },
   {
    "args": {
-    "r": 35
+    "r": 34
    },
    "arrays": {
     "out": "c064__out"
@@ -945,7 +960,7 @@
   },
   {
    "args": {
-    "r": 36
+    "r": 35
    },
    "arrays": {
     "out": "c065__out"
@@ -955,7 +970,7 @@
   },
   {
    "args": {
-    "r": 37
+    "r": 36
    },
    "arrays": {
     "out": "c066__out"
@@ -965,7 +980,7 @@
   },
   {
    "args": {
-    "r": 38
+    "r": 37
    },
    "arrays": {
     "out": "c067__out"
@@ -975,7 +990,7 @@
   },
   {
    "args": {
-    "r": 39
+    "r": 38
    },
    "arrays": {
     "out": "c068__out"
@@ -985,7 +1000,7 @@
   },
   {
    "args": {
-    "r": 40
+    "r": 39
    },
    "arrays": {
     "out": "c069__out"
@@ -995,7 +1010,7 @@
   },
   {
    "args": {
-    "r": 41
+    "r": 40
    },
    "arrays": {
     "out": "c070__out"
@@ -1005,7 +1020,7 @@
   },
   {
    "args": {
-    "r": 42
+    "r": 41
    },
    "arrays": {
     "out": "c071__out"
@@ -1015,7 +1030,7 @@
   },
   {
    "args": {
-    "r": 43
+    "r": 42
    },
    "arrays": {
     "out": "c072__out"
@@ -1025,7 +1040,7 @@
   },
   {
    "args": {
-    "r": 44
+    "r": 43
    },
    "arrays": {
     "out": "c073__out"
@@ -1035,7 +1050,7 @@
   },
   {
    "args": {
-    "r": 45
+    "r": 44
    },
    "arrays": {
     "out": "c074__out"
@@ -1045,7 +1060,7 @@
   },
   {
    "args": {
-    "r": 46
+    "r": 45
    },
    "arrays": {
     "out": "c075__out"
@@ -1055,7 +1070,7 @@
   },
   {
    "args": {
-    "r": 47
+    "r": 46
    },
    "arrays": {
     "out": "c076__out"
@@ -1065,7 +1080,7 @@
   },
   {
    "args": {
-    "r": 48
+    "r": 47
    },
    "arrays": {
     "out": "c077__out"
@@ -1075,7 +1090,7 @@
   },
   {
    "args": {
-    "r": 49
+    "r": 48
    },
    "arrays": {
     "out": "c078__out"
@@ -1085,7 +1100,7 @@
   },
   {
    "args": {
-    "r": 50
+    "r": 49
    },
    "arrays": {
     "out": "c079__out"
@@ -1095,7 +1110,7 @@
   },
   {
    "args": {
-    "r": 51
+    "r": 50
    },
    "arrays": {
     "out": "c080__out"
@@ -1105,7 +1120,7 @@
   },
   {
    "args": {
-    "r": 52
+    "r": 51
    },
    "arrays": {
     "out": "c081__out"
@@ -1115,7 +1130,7 @@
   },
   {
    "args": {
-    "r": 53
+    "r": 52
    },
    "arrays": {
     "out": "c082__out"
@@ -1125,7 +1140,7 @@
   },
   {
    "args": {
-    "r": 54
+    "r": 53
    },
    "arrays": {
     "out": "c083__out"
@@ -1135,7 +1150,7 @@
   },
   {
    "args": {
-    "r": 55
+    "r": 54
    },
    "arrays": {
     "out": "c084__out"
@@ -1145,7 +1160,7 @@
   },
   {
    "args": {
-    "r": 56
+    "r": 55
    },
    "arrays": {
     "out": "c085__out"
@@ -1155,7 +1170,7 @@
   },
   {
    "args": {
-    "r": 57
+    "r": 56
    },
    "arrays": {
     "out": "c086__out"
@@ -1165,7 +1180,7 @@
   },
   {
    "args": {
-    "r": 58
+    "r": 57
    },
    "arrays": {
     "out": "c087__out"
@@ -1175,7 +1190,7 @@
   },
   {
    "args": {
-    "r": 59
+    "r": 58
    },
    "arrays": {
     "out": "c088__out"
@@ -1185,7 +1200,7 @@
   },
   {
    "args": {
-    "r": 60
+    "r": 59
    },
    "arrays": {
     "out": "c089__out"
@@ -1195,15 +1210,12 @@
   },
   {
    "args": {
-    "H": 64,
-    "W": 48
+    "r": 60
    },
    "arrays": {
-    "glows": "c090__glows",
-    "in": "c090__in",
     "out": "c090__out"
    },
-   "call": "reelkit.raster.apply_glows(img, glows)",
+   "call": "reelkit.raster.GLOW[r]",
    "id": "c090"
   },
   {
@@ -1272,7 +1284,10 @@
    "id": "c095"
   },
   {
-   "args": {},
+   "args": {
+    "H": 64,
+    "W": 48
+   },
    "arrays": {
     "glows": "c096__glows",
     "in": "c096__in",
@@ -1290,6 +1305,16 @@
    },
    "call": "reelkit.raster.apply_glows(img, glows)",
    "id": "c097"
+  },
+  {
+   "args": {},
+   "arrays": {
+    "glows": "c098__glows",
+    "in": "c098__in",
+    "out": "c098__out"
+   },
+   "call": "reelkit.raster.apply_glows(img, glows)",
+   "id": "c098"
   }
  ],
  "note": "Every Frame case starts from Frame(bg) (args.bg: the tuple; or the array \"bg\" for \"Frame(bg_array)\"), runs its calls in order and stores what the frame then holds: rgb = np.asarray(fr.pil) (uint8, (640, 360, 3)) and dep = fr.depth() (float32, (640, 360)). The calls of one case are rows: P or pts holds every point list one after another, counts the points per call, col one colour per call. poly: depth per call; ret and ret_counts are the returned screen points (0 points where Python returned None). screen_poly and disc: z is used where has_z. apply_glows: glows rows are [x, y, r, red, green, blue, intensity]; the cases with args.W and args.H ran with reelkit.raster.W and H set to that size (the picture decides the size in the port).",
