@@ -6,7 +6,7 @@
 use std::sync::OnceLock;
 
 use bf_core::fightfile::NameStatus;
-use bf_sim::roster::{FighterCfg, parse_roster};
+use bf_core::roster::{FighterCfg, parse_roster};
 
 pub use bf_core::fightfile::RETIRED;
 
@@ -57,7 +57,7 @@ pub fn name_status(name: &str) -> NameStatus {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use bf_sim::roster::{AbilityKind, WeaponCfg};
+    use bf_core::roster::{AbilityKind, WeaponCfg};
 
     /// The 20 kit fighters of spec section 10.
     const KIT: [&str; 20] = [

@@ -5,6 +5,7 @@
 //! is the int converted to a float, then the product), plus the timeline helpers `bar_t`, `next_bar`, `beat_env` and
 //! `beat_pulse`. The harmony helpers are in [`crate::harmony`].
 
+use crate::py::{py_max, py_min};
 use crate::{dmath, py};
 
 /// `reelkit/config.py` `loop_bpm`: the nearest tempo at which `dur` seconds hold a whole number of bars (at least
@@ -16,16 +17,6 @@ pub fn loop_bpm(bpm: f64, dur: f64, beats_per_bar: u32) -> f64 {
     let bars = if bars > 1.0 { bars } else { 1.0 };
     // `bars * beats_per_bar` is an exact int product in Python; it is exact here too for any sane tempo.
     bars * bpb * 60.0 / dur
-}
-
-/// Python's `max(a, b)` on floats: `a` unless `b` is greater.
-fn py_max(a: f64, b: f64) -> f64 {
-    if b > a { b } else { a }
-}
-
-/// Python's `min(a, b)` on floats: `a` unless `b` is smaller.
-fn py_min(a: f64, b: f64) -> f64 {
-    if b < a { b } else { a }
 }
 
 /// The episode's tempo and its fixed times, as `build_timeline` derives them (the timeline's upper-case names, in
