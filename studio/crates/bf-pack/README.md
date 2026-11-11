@@ -25,11 +25,12 @@ ballfight-pack install --exe <ballfight-studio.exe> --from <owner's clone> [--ro
   copies the package into `BALLFIGHT Studio.installing` beside the program folder, checks every file, and only
   then puts it in place: one rename for a fresh install; over an earlier install, `.previous` gets a copy of the
   earlier manifest, each file the earlier manifest lists moves into `.previous`, each new file moves in, and the last
-  step replaces `MANIFEST.txt`, all undone if a step fails. An install stopped part-way (a power cut) is finished by
-  running it again. It refuses while the app runs ("Close BALLFIGHT Studio first."), over a folder without our
-  manifest, and when a new file would land on a file a person put there. Then it writes `update.toml` and the two
-  shortcuts (one it cannot make is a note, not a failure). `--root <folder>` puts everything (program folder, Start
-  menu, desktop, data) inside that folder instead.
+  step replaces `MANIFEST.txt`, all undone if a step fails. The swap writes `.previous\INSTALLING` before its first
+  change and removes it after its last, so an install stopped part-way (a power cut) is told from a finished one and
+  is finished by running it again. It refuses while the app runs ("Close BALLFIGHT Studio first."), over a folder
+  without our manifest, and when a new file would land on a file a person put there. Then it writes `update.toml`
+  and the two shortcuts (one it cannot make is a note, not a failure). `--root <folder>` puts everything (program
+  folder, Start menu, desktop, data) inside that folder instead.
 - **Where** (`install::Layout::system()`): `%LOCALAPPDATA%\Programs\BALLFIGHT Studio`,
   `%APPDATA%\Microsoft\Windows\Start Menu\Programs\BALLFIGHT Studio.lnk`, `<Desktop>\BALLFIGHT Studio.lnk`
   (Windows' own desktop folder, which follows OneDrive), data in `%LOCALAPPDATA%\BALLFIGHT Studio\data`.
@@ -41,13 +42,15 @@ ballfight-pack install --exe <ballfight-studio.exe> --from <owner's clone> [--ro
   wrote, file by file from the manifest, each file only while its SHA-256 still matches: the program folder's listed
   files, `update.toml`, `MANIFEST.txt`, the same inside `.previous` and `.next`, what a stopped install left (by the
   staging folder's own manifest), the shortcuts that open the installed exe, and then each folder that is left
-  empty. It never deletes a folder with what is in it, never follows a link, and refuses a folder without our
+  empty (a folder's manifest stays while anything of ours in it could not go, so removal can be run again). It never
+  deletes a folder with what is in it, never follows a link, and refuses a folder without our
   manifest, one not named `BALLFIGHT Studio`, a drive root, the user's own folder and the data folder. Files a person
   added stay. **Kept:** settings and the queue (`%APPDATA%\BALLFIGHT Studio`), the whole of `%LOCALAPPDATA%\BALLFIGHT
   Studio` (cache, logs and fault reports, and the rebuildable source copy, builds and downloads) and every video.
   Windows lets a running exe be renamed but not deleted, so the app's own exe is first moved to a new name in the
   temp folder (same drive only) and the words say where; if that cannot be done, the exe (and so its folder) stays
-  and the words name it. No other program is started.
+  and the words name it. No other program is started. Only the installed exe itself may call it ("This copy of
+  BALLFIGHT Studio is not the installed one in {folder}, so nothing was removed.").
 
 ## The ffmpeg pin
 

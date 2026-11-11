@@ -38,8 +38,17 @@ pub const FFMPEG_DIR: &str = "ffmpeg";
 /// The guide's folder in the package.
 pub const GUIDE_DIR: &str = "guide";
 /// Names at the top of the program folder that are never package files: the manifest, the install's own
-/// `update.toml`, and the update engine's `.next` and `.previous` folders (Task 12).
-pub const RESERVED: [&str; 4] = [MANIFEST_NAME, crate::config::CONFIG_NAME, ".next", ".previous"];
+/// `update.toml`, the update engine's `.next` and `.previous` folders (Task 12), and the names a swap uses inside
+/// `.previous` (its marker and the temp names of its two copies).
+pub const RESERVED: [&str; 7] = [
+    MANIFEST_NAME,
+    crate::config::CONFIG_NAME,
+    ".next",
+    ".previous",
+    crate::install::SWAP_MARKER,
+    crate::install::COPY_PARTS[0],
+    crate::install::COPY_PARTS[1],
+];
 
 /// What a package holds.
 #[derive(Clone, Debug, PartialEq, Eq)]

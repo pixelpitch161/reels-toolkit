@@ -29,7 +29,7 @@ use std::path::{Component, Path, PathBuf};
 
 use crate::PackError;
 use crate::config::{CONFIG_NAME, read_config};
-use crate::install::{Layout, check_layout, opens_the_app};
+use crate::install::{Layout, check_layout, opens_the_app, same_or_inside};
 use crate::package::io_error;
 use crate::package::{MANIFEST_NAME, Manifest, is_link, join_relative, read_manifest};
 use crate::sha::sha256_file;
@@ -159,6 +159,11 @@ pub(crate) fn plan_folder(dir: &Path, r: &mut Removal, also: Option<&Manifest>) 
             }
             Kind::Dir => dirs.push(path),
             Kind::File if rel == MANIFEST_NAME => {}
+            // A swap's own marker and copy names (see `install::swap_in`) are ours by name, whatever they hold.
+            Kind::File if rel == crate::install::SWAP_MARKER || crate::install::COPY_PARTS.contains(&rel.as_str()) => {
+                let now = sha256_file(&path).map_err(|e| io_error("read", &path, &e))?;
+                r.files.push((path, now));
+            }
             Kind::File => {
                 let ours_config = rel == CONFIG_NAME && read_config(&path).is_ok();
                 let wants: Vec<&String> = std::iter::once(&m)
@@ -193,22 +198,36 @@ pub(crate) fn plan_folder(dir: &Path, r: &mut Removal, also: Option<&Manifest>) 
 /// stayed, with why.
 pub fn remove_now(r: &Removal) -> Vec<(PathBuf, String)> {
     let mut stayed = r.kept.clone();
-    for (f, sha) in &r.files {
-        if fs::symlink_metadata(f).is_err() {
-            continue;
-        }
-        if is_link(f) || !f.is_file() {
-            stayed.push((f.clone(), "it is no longer a plain file".to_string()));
-            continue;
-        }
-        match sha256_file(f) {
-            Ok(now) if &now == sha => {
-                if let Err(e) = fs::remove_file(f) {
-                    let why = crate::package::plain_reason(&e).to_lowercase();
-                    stayed.push((f.clone(), format!("it could not be removed ({why})")));
-                }
+    let is_manifest = |f: &Path| f.file_name().is_some_and(|n| n == MANIFEST_NAME);
+    // Every other file first; then a folder's manifest only when nothing planned in that folder stayed, so that
+    // the removal (or an install) can simply be run again over what is left.
+    let mut failed: Vec<PathBuf> = Vec::new();
+    for pass_manifests in [false, true] {
+        for (f, sha) in r.files.iter().filter(|(f, _)| is_manifest(f) == pass_manifests) {
+            if fs::symlink_metadata(f).is_err() {
+                continue;
             }
-            _ => stayed.push((f.clone(), "it has changed since the removal was planned".to_string())),
+            if pass_manifests && f.parent().is_some_and(|dir| failed.iter().any(|x| x.starts_with(dir))) {
+                stayed.push((f.clone(), "it is kept so that removing can be run again".to_string()));
+                continue;
+            }
+            let why = if is_link(f) || !f.is_file() {
+                Some("it is no longer a plain file".to_string())
+            } else {
+                match sha256_file(f) {
+                    Ok(now) if &now == sha => fs::remove_file(f).err().map(|e| {
+                        format!(
+                            "it could not be removed ({})",
+                            crate::package::plain_reason(&e).to_lowercase()
+                        )
+                    }),
+                    _ => Some("it has changed since the removal was planned".to_string()),
+                }
+            };
+            if let Some(why) = why {
+                failed.push(f.clone());
+                stayed.push((f.clone(), why));
+            }
         }
     }
     for d in &r.dirs {
@@ -246,8 +265,9 @@ fn volume(p: &Path) -> Option<String> {
 }
 
 /// Removes BALLFIGHT Studio from this layout now, from inside the running app (Task 13 calls this on the person's
-/// click with `std::env::current_exe()`, then shows `removed_words` and closes). Refusals are those of
-/// `removal_plan`, with nothing changed.
+/// click with `std::env::current_exe()`, then shows `removed_words` and closes). Refused, with nothing changed,
+/// unless `running_exe` is the installed exe `layout.exe()` itself (not a build elsewhere, not the copy in
+/// `.previous` or staging); and refusals are those of `removal_plan`.
 pub fn remove_app(layout: &Layout, running_exe: &Path) -> Result<Removed, PackError> {
     remove_app_with(layout, running_exe, &std::env::temp_dir(), &|from, to| {
         fs::rename(from, to)
@@ -261,6 +281,16 @@ pub(crate) fn remove_app_with(
     temp: &Path,
     rename: &dyn Fn(&Path, &Path) -> std::io::Result<()>,
 ) -> Result<Removed, PackError> {
+    // Only the installed copy itself may remove the install: never a developer's build, a test program, the
+    // packaging tool, or the exe kept in `.previous` or being staged.
+    let installed = layout.exe();
+    let is_installed = same_or_inside(running_exe, &installed) && same_or_inside(&installed, running_exe);
+    if !is_installed {
+        return Err(PackError::Refused(format!(
+            "This copy of BALLFIGHT Studio is not the installed one in {}, so nothing was removed.",
+            layout.programs.display()
+        )));
+    }
     let mut plan = removal_plan(layout)?;
     let mut done = Removed {
         programs: layout.programs.clone(),
@@ -726,6 +756,73 @@ mod tests {
         assert!(!layout.desktop_link().exists());
     }
 
+    /// Every file under `root` with its bytes, and every folder.
+    fn snapshot(root: &Path) -> Vec<(String, Option<Vec<u8>>)> {
+        crate::package::walk(root)
+            .unwrap()
+            .into_iter()
+            .map(|(rel, kind)| {
+                let bytes = (kind == crate::package::Kind::File).then(|| fs::read(join_relative(root, &rel)).unwrap());
+                (rel, bytes)
+            })
+            .collect()
+    }
+
+    #[test]
+    fn only_the_installed_copy_can_remove_the_install() {
+        let dir = TempDir::new("remove-notme");
+        let layout = a_pc(dir.path());
+        let temp = dir.path().join("temp");
+        fs::create_dir_all(&temp).unwrap();
+        // A copy beside the install's staging folder, as a stopped install leaves one.
+        let staged = layout.staging().join(EXE_NAME);
+        fs::create_dir_all(layout.staging()).unwrap();
+        fs::copy(layout.exe(), &staged).unwrap();
+        let before = snapshot(dir.path());
+        let others = [
+            dir.path().join("studio").join("target").join("release").join(EXE_NAME),
+            dir.path().join("ballfight-pack.exe"),
+            layout.programs.join(".previous").join(EXE_NAME),
+            staged.clone(),
+            PathBuf::from(EXE_NAME),
+            layout.programs.clone(),
+        ];
+        for other in others {
+            let err = remove_app_with(&layout, &other, &temp, &plain_rename)
+                .unwrap_err()
+                .to_string();
+            assert_eq!(
+                err,
+                format!(
+                    "This copy of BALLFIGHT Studio is not the installed one in {}, so nothing was removed.",
+                    layout.programs.display()
+                ),
+                "{}",
+                other.display()
+            );
+        }
+        assert_eq!(snapshot(dir.path()), before, "every file is as it was, byte for byte");
+        assert!(names_in(&temp).is_empty());
+    }
+
+    #[test]
+    fn a_removal_that_could_not_finish_can_be_run_again() {
+        let dir = TempDir::new("remove-again");
+        let layout = a_clean_pc(dir.path());
+        let held_path = layout.programs.join(".previous").join("guide").join("index.html");
+        let held = hold(&held_path);
+        let stayed = remove_now(&removal_plan(&layout).unwrap());
+        drop(held);
+        assert!(stayed.iter().any(|(p, _)| p == &held_path), "{stayed:?}");
+        // The manifests of the folders that still hold something of ours stay, so the plan works again.
+        assert!(layout.programs.join(MANIFEST_NAME).is_file());
+        assert!(layout.programs.join(".previous").join(MANIFEST_NAME).is_file());
+        let again = removal_plan(&layout).unwrap();
+        assert!(again.kept.is_empty(), "{:?}", again.kept);
+        assert!(remove_now(&again).is_empty());
+        assert!(!layout.programs.exists());
+    }
+
     #[test]
     fn a_changed_exe_or_a_held_file_stays() {
         let dir = TempDir::new("remove-app-changed");
@@ -792,7 +889,10 @@ mod tests {
         shortcuts(&layout).unwrap();
         let temp = dir.path().join("temp");
         fs::create_dir_all(&temp).unwrap();
-        let mut child = crate::run::quiet(
+        // Started through the one way to start a program, with a bounded wait: stopped (and failed) after 2 minutes.
+        let root = dir.path().join("pc");
+        let never = std::sync::atomic::AtomicBool::new(false);
+        let ran = crate::run::run_with_env(
             &layout.exe(),
             &[
                 OsStr::new("--exact"),
@@ -801,14 +901,16 @@ mod tests {
                 OsStr::new("--nocapture"),
                 OsStr::new("--test-threads=1"),
             ],
-        );
-        let out = child
-            .env("BF_CHILD_REMOVE_ROOT", dir.path().join("pc"))
-            .env("BF_CHILD_REMOVE_TEMP", &temp)
-            .output()
-            .unwrap();
-        let said = String::from_utf8_lossy(&out.stdout);
-        assert!(out.status.success(), "{said}\n{}", String::from_utf8_lossy(&out.stderr));
+            &[
+                ("BF_CHILD_REMOVE_ROOT", root.as_os_str()),
+                ("BF_CHILD_REMOVE_TEMP", temp.as_os_str()),
+            ],
+            std::time::Duration::from_secs(120),
+            &never,
+        )
+        .unwrap_or_else(|e| panic!("the child: {e}"));
+        let said = String::from_utf8_lossy(&ran.stdout);
+        assert!(ran.status.success(), "{said}\n{:?}", ran.tail);
         assert!(said.contains("BALLFIGHT Studio was removed from"), "{said}");
         assert!(said.contains("was moved to"), "{said}");
         assert!(!layout.programs.exists(), "the running app's whole folder went");

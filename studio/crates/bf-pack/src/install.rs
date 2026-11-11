@@ -213,15 +213,27 @@ fn install_stopping(
         .ok_or_else(|| PackError::Refused("The program folder has no parent folder.".to_string()))?;
     fs::create_dir_all(parent).map_err(|e| io_error("make the folder", parent, &e))?;
     let old = installed_manifest(target)?;
+    let staging = layout.staging();
+
+    // A swap stopped after its last real step (the new manifest is in place) left only its marker: take it away.
+    // If that swap was of this very package, the install is already done.
+    if old.is_some() && swap_state(target) == SwapState::Committed {
+        let marker = target.join(".previous").join(SWAP_MARKER);
+        fs::remove_file(&marker).map_err(|e| io_error("remove", &marker, &e))?;
+        if old.as_ref().is_some_and(|o| o.text() == new.text()) {
+            clear_leftover_staging(&staging, old.as_ref())?;
+            return Ok(());
+        }
+    }
 
     // Everything that could stop the install is checked before anything is written.
     let mut housekeeping = Vec::new();
     if let Some(old) = &old {
         refuse_running(target, old)?;
         check_conflicts(target, old, &new)?;
-        // A `.previous` that holds a copy of the manifest at the top is the one an earlier, stopped swap was
-        // filling: it is finished, not cleared.
-        let resuming = interrupted(target);
+        // A `.previous` that an earlier swap was filling when it stopped (its marker is there) is finished, not
+        // cleared.
+        let resuming = swap_state(target) == SwapState::Stopped;
         for name in [".previous", ".next"] {
             let d = target.join(name);
             if (name == ".previous" && resuming) || fs::symlink_metadata(&d).is_err() {
@@ -230,8 +242,9 @@ fn install_stopping(
             housekeeping.push(plan_clear(&d)?);
         }
     }
-    let staging = layout.staging();
-    clear_leftover_staging(&staging, None)?;
+    // The installed manifest also names what is ours there: a stop just after the last step leaves staging without
+    // its own manifest.
+    clear_leftover_staging(&staging, old.as_ref())?;
     if let Err(e) = stage(package, &new, &staging, config) {
         let _ = clear_leftover_staging(&staging, None);
         return Err(e);
@@ -281,16 +294,38 @@ fn install_stopping(
     done
 }
 
-/// Whether `.previous` is the one a stopped swap was filling: it holds a copy of the top `MANIFEST.txt`, byte for
-/// byte.
-fn interrupted(target: &Path) -> bool {
-    let kept = target.join(".previous").join(MANIFEST_NAME);
-    !is_link(&target.join(".previous"))
-        && !is_link(&kept)
-        && kept.is_file()
-        && fs::read(&kept)
-            .ok()
-            .is_some_and(|k| fs::read(target.join(MANIFEST_NAME)).ok() == Some(k))
+/// The file a swap writes into `.previous` before its first change and removes after its last: while it is there,
+/// the swap has not finished.
+pub(crate) const SWAP_MARKER: &str = "INSTALLING";
+/// The names the swap copies the earlier manifest and `update.toml` through, so each copy is whole or absent.
+pub(crate) const COPY_PARTS: [&str; 2] = [".MANIFEST.txt.part", ".update.toml.part"];
+
+/// Where an earlier swap stands.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum SwapState {
+    /// No swap is under way (no marker).
+    Done,
+    /// A swap was stopped before its last real step: the top manifest is still the earlier one, and `.previous`
+    /// holds no manifest yet or a copy of it.
+    Stopped,
+    /// A swap was stopped after it put the new manifest in place: only its marker is left.
+    Committed,
+}
+
+fn swap_state(target: &Path) -> SwapState {
+    let prev = target.join(".previous");
+    let marker = prev.join(SWAP_MARKER);
+    if is_link(&prev) || is_link(&marker) || !marker.is_file() {
+        return SwapState::Done;
+    }
+    let kept = prev.join(MANIFEST_NAME);
+    if fs::symlink_metadata(&kept).is_err() {
+        return SwapState::Stopped;
+    }
+    let same = fs::read(&kept)
+        .ok()
+        .is_some_and(|k| fs::read(target.join(MANIFEST_NAME)).ok() == Some(k));
+    if same { SwapState::Stopped } else { SwapState::Committed }
 }
 
 /// The manifest of what is installed in `target`: `None` when the folder is missing or empty, an error when it holds
@@ -400,14 +435,38 @@ fn plan_clear(dir: &Path) -> Result<crate::remove::Removal, PackError> {
         return Err(foreign(dir));
     }
     let entries = crate::package::walk(dir)?;
-    if entries.iter().all(|(_, kind)| *kind == crate::package::Kind::Dir) {
-        r.dirs
-            .extend(entries.iter().rev().map(|(rel, _)| join_relative(dir, rel)));
+    // Only folders, and perhaps the marker and copy names of a swap stopped before it copied anything.
+    let swap_name = |rel: &str| rel == SWAP_MARKER || COPY_PARTS.contains(&rel);
+    let nearly_empty = entries.iter().all(|(rel, kind)| {
+        *kind == crate::package::Kind::Dir || (*kind == crate::package::Kind::File && swap_name(rel))
+    });
+    if nearly_empty {
+        for (rel, kind) in &entries {
+            if *kind == crate::package::Kind::File {
+                let f = join_relative(dir, rel);
+                let sha = sha256_file(&f).map_err(|e| io_error("read", &f, &e))?;
+                r.files.push((f, sha));
+            }
+        }
+        r.dirs.extend(
+            entries
+                .iter()
+                .rev()
+                .filter(|(_, k)| *k == crate::package::Kind::Dir)
+                .map(|(rel, _)| join_relative(dir, rel)),
+        );
         r.dirs.push(dir.to_path_buf());
         return Ok(r);
     }
-    if !dir.join(MANIFEST_NAME).is_file() {
+    let manifest = dir.join(MANIFEST_NAME);
+    if !manifest.is_file() {
         return Err(foreign(dir));
+    }
+    if read_manifest(&manifest).is_err() {
+        return Err(PackError::Refused(format!(
+            "{} cannot be read, so nothing was installed. Delete that file, then install again.",
+            manifest.display()
+        )));
     }
     crate::remove::plan_folder(dir, &mut r, None)?;
     if let Some((p, _)) = r.kept.first() {
@@ -439,6 +498,7 @@ fn clear_leftover_staging(staging: &Path, also: Option<&Manifest>) -> Result<(),
     let listed = |rel: &str| {
         rel == MANIFEST_NAME
             || rel == CONFIG_NAME
+            || rel == "update.toml.part"
             || manifest
                 .iter()
                 .chain(also)
@@ -562,15 +622,32 @@ fn swap_in(
             fs::create_dir(&prev).map_err(|e| io_error("make the folder", &prev, &e))?;
             undo.push(Undo::Made(prev.clone()));
         }
-        for name in [MANIFEST_NAME, CONFIG_NAME] {
+        // The marker goes in before the first change and comes out after the last: while it is there, the next
+        // install knows this swap did not finish.
+        let marker = prev.join(SWAP_MARKER);
+        if fs::symlink_metadata(&marker).is_err() {
+            steps.next()?;
+            fs::write(&marker, "BALLFIGHT Studio is putting a new version in place.\r\n")
+                .map_err(|e| io_error("write", &marker, &e))?;
+            undo.push(Undo::Copied(marker.clone()));
+        }
+        for (name, part) in [MANIFEST_NAME, CONFIG_NAME].into_iter().zip(COPY_PARTS) {
             let from = target.join(name);
             let to = prev.join(name);
-            if is_link(&from) || !from.is_file() || is_link(&to) {
+            let part = prev.join(part);
+            if is_link(&from) || !from.is_file() || is_link(&to) || is_link(&part) {
                 continue;
             }
             let was_there = fs::symlink_metadata(&to).is_ok();
             steps.next()?;
-            fs::copy(&from, &to).map_err(|e| io_error("copy the earlier version's", &from, &e))?;
+            // Through a temp name, so the copy is whole or not there at all.
+            let copied = fs::copy(&from, &part)
+                .map_err(|e| io_error("copy the earlier version's", &from, &e))
+                .and_then(|_| fs::rename(&part, &to).map_err(|e| io_error("put in place", &to, &e)));
+            if copied.is_err() {
+                let _ = fs::remove_file(&part);
+            }
+            copied?;
             if !was_there {
                 undo.push(Undo::Copied(to));
             }
@@ -612,6 +689,10 @@ fn swap_in(
         let manifest = target.join(MANIFEST_NAME);
         steps.next()?;
         fs::rename(staging.join(MANIFEST_NAME), &manifest).map_err(|e| io_error("put in place", &manifest, &e))?;
+        // Done: the marker comes out. If that fails, the next install sees the new manifest in place and only
+        // removes the marker, so it is never a reason to undo.
+        steps.next()?;
+        let _ = fs::remove_file(&marker);
         Ok::<(), PackError>(())
     })();
 
@@ -818,7 +899,7 @@ pub fn source_copy(git: &Path, from: &Path, data: &Path, say: &dyn Fn(&str)) -> 
         say(COPYING_SOURCE);
         // `--` ends the options, so the address can never be read as one.
         let never = std::sync::atomic::AtomicBool::new(false);
-        let ran = crate::run::run(
+        let ran = crate::run::run_with_env(
             git,
             &[
                 o("clone"),
@@ -828,6 +909,7 @@ pub fn source_copy(git: &Path, from: &Path, data: &Path, say: &dyn Fn(&str)) -> 
                 o(&remote),
                 source.as_os_str(),
             ],
+            &[("GIT_TERMINAL_PROMPT", o("0"))],
             CLONE_LIMIT,
             &never,
         );
@@ -1505,7 +1587,7 @@ pub(crate) mod tests {
     fn a_stopped_install_is_finished_by_installing_again() {
         let mut stopped_ever = false;
         let mut finished_first_time = false;
-        for n in 0..=24 {
+        for n in 0..=27 {
             let dir = TempDir::new("install-stopped");
             let old = package_of(dir.path(), "0.6.0");
             let new = package_with_extra(dir.path(), "0.6.1");
@@ -1571,6 +1653,86 @@ pub(crate) mod tests {
             stopped_ever && finished_first_time,
             "the steps covered both a stop and a whole swap"
         );
+    }
+
+    #[test]
+    fn a_finished_reinstall_is_not_taken_for_a_stopped_one() {
+        let dir = TempDir::new("install-twice");
+        let layout = Layout::under(&dir.path().join("pc"));
+        let v061 = package_of(dir.path(), "0.6.1");
+        install(&v061, &layout, &config_for(&layout)).unwrap();
+        install(&v061, &layout, &config_for(&layout)).unwrap();
+        let prev = layout.programs.join(".previous");
+        assert!(!prev.join(SWAP_MARKER).exists(), "a finished swap leaves no marker");
+        // A person edits a listed file; 0.6.2 drops one file.
+        fs::write(layout.programs.join("guide").join("index.html"), b"a person's edit").unwrap();
+        let inputs = dir.path().join("pkg-0.6.2-inputs");
+        let (exe, tree, checked) = crate::package::tests::fake_inputs(&inputs, "0.6.2");
+        fs::write(&exe, b"pretend exe 0.6.2").unwrap();
+        fs::remove_file(tree.join("studio/packaging/guide/pictures/start.png")).unwrap();
+        fs::remove_dir(tree.join("studio/packaging/guide/pictures")).unwrap();
+        let v062 = dir.path().join("package-0.6.2-dropped");
+        crate::package::package(&exe, &tree, &checked, &v062).unwrap();
+        install(&v062, &layout, &config_for(&layout)).unwrap();
+        check_installed(&layout.programs);
+        assert_eq!(read(&layout.exe()), b"pretend exe 0.6.2");
+        assert!(
+            !layout.programs.join("guide").join("pictures").exists(),
+            "no orphan of the dropped file"
+        );
+        assert_eq!(
+            read(&layout.programs.join("guide").join("index.html")),
+            b"<p>The guide.</p>"
+        );
+        // The kept copy is 0.6.1, with the person's edit in it.
+        assert_eq!(read_manifest(&prev.join(MANIFEST_NAME)).unwrap().version, "0.6.1");
+        assert_eq!(read(&prev.join("guide").join("index.html")), b"a person's edit");
+        assert_eq!(read(&prev.join(EXE_NAME)), b"pretend exe 0.6.1");
+        assert!(prev.join("guide").join("pictures").join("start.png").is_file());
+        assert!(!prev.join(SWAP_MARKER).exists());
+    }
+
+    #[test]
+    fn a_stop_right_after_the_manifest_step_is_finished() {
+        let dir = TempDir::new("install-afterlast");
+        let layout = Layout::under(&dir.path().join("pc"));
+        install(&package_of(dir.path(), "0.6.0"), &layout, &config_for(&layout)).unwrap();
+        let new = package_with_extra(dir.path(), "0.6.1");
+        // 24 steps: the last is taking the marker out; stop just before it.
+        assert!(install_stopped_after(&new, &layout, 23).is_err());
+        let prev = layout.programs.join(".previous");
+        assert!(prev.join(SWAP_MARKER).is_file());
+        assert_eq!(
+            read_manifest(&layout.programs.join(MANIFEST_NAME)).unwrap().version,
+            "0.6.1"
+        );
+        assert!(layout.staging().is_dir() && !layout.staging().join(MANIFEST_NAME).exists());
+        install(&new, &layout, &config_for(&layout)).unwrap();
+        assert!(!prev.join(SWAP_MARKER).exists() && !layout.staging().exists());
+        assert_eq!(read_manifest(&prev.join(MANIFEST_NAME)).unwrap().version, "0.6.0");
+        check_installed(&layout.programs);
+        check_installed(&prev);
+    }
+
+    #[test]
+    fn an_unreadable_kept_manifest_is_named() {
+        let dir = TempDir::new("install-badprev");
+        let layout = Layout::under(&dir.path().join("pc"));
+        install(&package_of(dir.path(), "0.6.0"), &layout, &config_for(&layout)).unwrap();
+        install(&package_of(dir.path(), "0.6.1"), &layout, &config_for(&layout)).unwrap();
+        let kept = layout.programs.join(".previous").join(MANIFEST_NAME);
+        fs::write(&kept, b"BALLFIGHT Studio package mani").unwrap();
+        let err = install(&package_of(dir.path(), "0.6.2"), &layout, &config_for(&layout))
+            .unwrap_err()
+            .to_string();
+        assert_eq!(
+            err,
+            format!(
+                "{} cannot be read, so nothing was installed. Delete that file, then install again.",
+                kept.display()
+            )
+        );
+        assert_eq!(read(&layout.exe()), b"pretend exe 0.6.1");
     }
 
     #[test]
