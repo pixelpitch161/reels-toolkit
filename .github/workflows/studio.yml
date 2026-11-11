@@ -25,7 +25,7 @@ env:
 
 jobs:
   windows:
-    name: build bf-cli, test bf-core and bf-sim (Windows)
+    name: build bf-cli, test bf-core and bf-sim, render a clip (Windows)
     runs-on: windows-latest
     defaults:
       run:
@@ -67,3 +67,23 @@ jobs:
 
       - name: Test bf-core and bf-sim
         run: cargo test --release --locked -p bf-core -p bf-sim
+
+      # The command line end to end. ffmpeg (with libx264 and aac) for the clips; BALLFIGHT_FFMPEG is not set, so the
+      # render job takes the ffmpeg on the PATH.
+      - name: Install ffmpeg
+        uses: FedericoCarboni/setup-ffmpeg@v3
+
+      # The sound and three frames of the example episode against studio/replay/render_hashes.txt (blessed on the
+      # Windows reference PC): the proof that picture and sound are the same bytes on another PC; and a clip encoded
+      # with 1 and with 8 workers is the same file.
+      - name: Test that a render is reproducible
+        env:
+          BF_NEED_FFMPEG: "1"
+        run: cargo test --release --locked -p bf-cli --test e2e -- --exact render_is_reproducible --nocapture
+
+      - name: Render a clip of the example episode
+        run: |
+          out="$RUNNER_TEMP/ballfight out"
+          ./target/release/ballfight render fights/flute_vs_trombone.toml \
+            --rec reference/fights/flute_vs_trombone/ep392.bfrec --frames 0:90 --out "$out"
+          test -s "$out/flute_vs_trombone_frames0-90/flute_vs_trombone_frames0-90.mp4"
