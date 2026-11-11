@@ -94,8 +94,8 @@ pub mod pp {
     /// The series' sample rate (`pp_framework.SR`, `pp_bridge.PP_SR`), in Hz.
     pub const SR: usize = 44_100;
 
-    /// The sample rate as a float.
-    const SRF: f64 = SR as f64;
+    /// [`SR`] as a float (the voices in `bf-content` use it too).
+    pub const SRF: f64 = SR as f64;
 
     /// `int(seconds * SR)`: a length in the series' samples, cut toward zero.
     ///

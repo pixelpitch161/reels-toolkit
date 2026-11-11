@@ -133,16 +133,6 @@ impl DrawLog {
     }
 }
 
-/// Python's `min(a, b)` on floats: `a` unless `b` is smaller.
-pub(crate) fn py_min(a: f64, b: f64) -> f64 {
-    if b < a { b } else { a }
-}
-
-/// Python's `max(a, b)` on floats: `a` unless `b` is greater.
-pub(crate) fn py_max(a: f64, b: f64) -> f64 {
-    if b > a { b } else { a }
-}
-
 /// Python's `int(round(x))` where the result is a pixel coordinate: the nearest whole number, ties to even.
 pub(crate) fn round_i32(x: f64) -> i32 {
     np::f64_to_i64(bf_core::py::round_half_even(x)).clamp(i64::from(i32::MIN), i64::from(i32::MAX)) as i32
@@ -244,12 +234,7 @@ mod tests {
     }
 
     #[test]
-    fn python_min_max_and_round() {
-        assert_eq!((py_min(1.0, 2.0), py_min(2.0, 1.0), py_max(1.0, 2.0)), (1.0, 1.0, 2.0));
-        // A NaN second argument never wins, a NaN first argument stays.
-        assert_eq!(py_max(0.0, f64::NAN), 0.0);
-        assert!(py_min(f64::NAN, 1.0).is_nan());
-        assert!(py_max(0.0, -0.0).is_sign_positive());
+    fn python_round_ties_to_even() {
         assert_eq!(
             (round_i32(0.5), round_i32(1.5), round_i32(2.5), round_i32(-0.5)),
             (0, 2, 2, 0)

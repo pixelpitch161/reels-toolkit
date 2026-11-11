@@ -14,20 +14,18 @@ use bf_core::event::{Event, Value};
 use bf_core::py::{imod_py, py_max, py_min, round_nd};
 use bf_core::rng::Generator;
 use bf_core::roster::WeaponCfg;
+use bf_sound::SRF;
 use bf_sound::dsp;
 use bf_sound::mix::{Mix, Sig};
 use bf_sound::music::{
     HISS_DEC, HISS_HI, HISS_LO, MusicCtx, MusicError, Samples, Thinner, event_at, event_int, event_is, event_is_str,
     event_number, hiss, noise_seed,
 };
-use bf_sound::synth::{self, FILTER_O, THUD_SEED};
+use bf_sound::synth::{self, FILTER_O, THUD_SEED, clip, noise};
 use bf_sound::traits::{Bed, Played, Sound};
 
 /// The name the part's errors carry.
 const H: &str = "FLUTE";
-
-/// The sample rate as a float.
-const SRF: f64 = bf_sound::SR as f64;
 
 /// `flute`'s default held length, in seconds.
 pub const FLUTE_DUR: f64 = 0.1;
@@ -52,11 +50,6 @@ pub struct FluteSound {
     k: usize,
 }
 
-/// `np.clip(x, lo, hi)`.
-fn clip(x: f64, lo: f64, hi: f64) -> f64 {
-    x.clamp(lo, hi)
-}
-
 /// `int(seconds * SR)` as the length of a sound that goes through a filter: at least one sample.
 fn samples(what: &'static str, seconds: f64) -> Result<usize, MusicError> {
     let n = seconds * SRF;
@@ -65,13 +58,6 @@ fn samples(what: &'static str, seconds: f64) -> Result<usize, MusicError> {
     } else {
         Err(MusicError::new(what, format!("a length of {seconds} s")))
     }
-}
-
-/// `np.random.default_rng(seed).normal(0, 1, n)`.
-fn noise(seed: u64, n: usize) -> Vec<f64> {
-    let mut x = vec![0.0; n];
-    Generator::new(seed).fill_normal(0.0, 1.0, &mut x);
-    x
 }
 
 /// `breath(dur, seed)`: flute breath: airy band noise (#32).

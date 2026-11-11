@@ -9,7 +9,7 @@ use std::collections::BTreeMap;
 use bf_core::dmath;
 use bf_core::py::round_half_even;
 
-use crate::SR;
+use crate::{SR, SRF};
 
 /// A sound to place: mono (panned when placed) or stereo (placed as it is).
 #[derive(Clone, Debug, PartialEq)]
@@ -47,7 +47,7 @@ impl Mix {
     pub fn new(dur: f64) -> Mix {
         Mix {
             dur,
-            ns: (SR as f64 * dur) as usize,
+            ns: (SRF * dur) as usize,
             buses: BTreeMap::new(),
             order: Vec::new(),
         }
@@ -95,7 +95,7 @@ impl Mix {
     /// Where Python's `round` raises: `t` is NaN or infinite.
     pub fn place(&mut self, bus: &str, sig: &Sig, t: f64, gain: f64, pan: f64) {
         let b = self.bus_mut(bus);
-        let start = t * SR as f64;
+        let start = t * SRF;
         assert!(start.is_finite(), "place: the time {t} s is not a finite number");
         let i0 = round_half_even(start) as i64;
         let s0 = i0.saturating_neg().max(0);
@@ -129,7 +129,7 @@ impl Mix {
 mod tests {
     use super::*;
 
-    const SRF: f64 = SR as f64;
+    use crate::SRF;
 
     #[test]
     fn a_bus_appears_when_something_is_placed() {

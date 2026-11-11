@@ -457,7 +457,6 @@ version = "0.1.0"
 dependencies = [
  "bf-core",
  "bf-picture",
- "bf-sim",
  "bf-sound",
  "bf-testdata",
  "serde_json",
@@ -509,7 +508,6 @@ version = "0.1.0"
 dependencies = [
  "bf-content",
  "bf-core",
- "bf-sim",
  "bf-testdata",
  "serde_json",
  "sha2",

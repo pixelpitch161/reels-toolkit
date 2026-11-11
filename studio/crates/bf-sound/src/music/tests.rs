@@ -8,11 +8,12 @@ use bf_core::event::{Event, Value};
 use bf_core::recording::Array;
 use bf_core::rng::Generator;
 
-use super::num::{SRF, noise};
 use super::testkit::{TestBed, TestVoice, context, episode};
 use super::*;
+use crate::SRF;
 use crate::dsp;
 use crate::mix::{Mix, Sig};
+use crate::synth::noise;
 use crate::synth::{self, FILTER_O};
 use crate::voice::{PpNoise, Voice};
 

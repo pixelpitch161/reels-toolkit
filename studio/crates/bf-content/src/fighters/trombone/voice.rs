@@ -20,7 +20,8 @@
 
 use bf_core::dmath::{self, PI};
 use bf_sound::dsp;
-use bf_sound::voice::{PpNoise, Voice, pp};
+use bf_sound::voice::pp::{self, SRF};
+use bf_sound::voice::{PpNoise, Voice};
 
 /// The TROMBONE's register in `pp_bridge`'s roster (`('TROMBONE', 'trombone60_lowpoly', None, (45, 67), ...)`).
 /// As a fighter it plays from 40 to 65; `kit.music.inst_gain` measures the voice on the middle of this one.
@@ -36,9 +37,6 @@ const SCOOP: f64 = 0.03;
 const TILT: f64 = 0.8;
 /// `brass2`'s default `att`: the attack, in seconds.
 const ATT: f64 = 0.03;
-
-/// The sample rate of the series, as a float.
-const SRF: f64 = pp::SR as f64;
 
 /// The TROMBONE's Pixel Pitch voice.
 #[derive(Clone, Copy, Debug, Default)]

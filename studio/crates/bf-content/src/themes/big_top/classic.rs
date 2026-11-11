@@ -6,6 +6,7 @@ use bf_core::dmath;
 use bf_core::harmony::HarmonyError;
 use bf_core::py::py_max;
 use bf_core::rng::Generator;
+use bf_sound::SRF;
 use bf_sound::dsp;
 use bf_sound::mix::{Mix, Sig};
 use bf_sound::music::{
@@ -14,17 +15,38 @@ use bf_sound::music::{
 use bf_sound::synth::{self, FILTER_O, THUD_SEED, WHOOSH_RISE, WHOOSH_SEED};
 use bf_sound::traits::{Bed, Played};
 
-use super::{CALLIOPE_ATT, CALLIOPE_VIB, bass_drum, calliope, choke, organ, roll, snare, tambourine, voice};
+use super::{
+    CALLIOPE_ATT, CALLIOPE_VIB, bass_drum_boom, calliope, choke, organ, roll, scaled, tambourine_shake, voice,
+};
 
 /// The name the bed's errors carry.
 const H: &str = "big_top";
 
-/// The sample rate as a float.
-const SRF: f64 = bf_sound::SR as f64;
+/// The seeds of the tambourines of a big bar: `40 + q + bt` for the four 16ths `q` of the four beats `bt`.
+const SHAKE_SEEDS: std::ops::Range<u64> = 40..47;
 
 /// The big top's bed as the kit plays it.
-#[derive(Clone, Copy, Debug, Default)]
-pub struct BigTopClassic;
+///
+/// The sounds that are the same on every beat are made once, when the bed is made (one bed per build), and
+/// scaled per stroke: the bass drum, the snare's stroke (`A.snare(0.13)`) and the tambourine of each of the
+/// seven seeds a big bar uses. Each is a pure function of its arguments (the tambourine's noise comes from its
+/// own generator of its seed, which nothing else reads), and the velocity is applied last in both ways, so the
+/// samples are those of making them anew each time.
+#[derive(Clone, Debug)]
+pub struct BigTopClassic {
+    /// `bass_drum(1.0)` before the velocity.
+    boom: Vec<f64>,
+    /// `A.snare(0.13)`: `self.snare(vel)` before the velocity.
+    stroke: Vec<f64>,
+    /// `tambourine(vel, seed)` before the velocity, for the seeds in [`SHAKE_SEEDS`], in that order.
+    shakes: Vec<Vec<f64>>,
+}
+
+impl Default for BigTopClassic {
+    fn default() -> BigTopClassic {
+        BigTopClassic::new()
+    }
+}
 
 fn bad(e: HarmonyError) -> MusicError {
     MusicError::new(H, e.to_string())
@@ -63,6 +85,34 @@ fn put(mix: &mut Mix, bus: &str, x: Vec<f64>, t: f64, gain: f64, pan: f64) {
 }
 
 impl BigTopClassic {
+    /// The bed, with its every-beat sounds made.
+    pub fn new() -> BigTopClassic {
+        BigTopClassic {
+            boom: bass_drum_boom(),
+            stroke: synth::snare(0.13),
+            shakes: SHAKE_SEEDS.map(tambourine_shake).collect(),
+        }
+    }
+
+    /// `self.bass_drum(vel)`.
+    fn bass_drum(&self, vel: f64) -> Vec<f64> {
+        scaled(&self.boom, vel)
+    }
+
+    /// `self.snare(vel)`.
+    fn snare(&self, vel: f64) -> Vec<f64> {
+        scaled(&self.stroke, vel)
+    }
+
+    /// `self.tambourine(vel, seed)`.
+    fn tambourine(&self, vel: f64, seed: u64) -> Vec<f64> {
+        let i = SHAKE_SEEDS.clone().position(|s| s == seed);
+        match i {
+            Some(i) => scaled(&self.shakes[i], vel),
+            None => super::tambourine(vel, seed),
+        }
+    }
+
     /// `Bed.bar(mix, b, intensity, light)`: one bar of the big top (bar index `b`): the bass drum on beats 1 and
     /// 3, the choked cymbal and a snare on 2 and 4, the calliope's off-beat chords; the back half (`intensity`
     /// above 1.25) adds the march snare's 8ths, tambourine 16ths, the held band-organ chord and, on every other
@@ -80,10 +130,17 @@ impl BigTopClassic {
         for bt in 0..4usize {
             let tb = t0 + bt as f64 * beat;
             if bt == 0 || bt == 2 {
-                put(mix, "drums", bass_drum(1.0), tb, if light { 0.50 } else { 0.62 }, 0.0);
+                put(
+                    mix,
+                    "drums",
+                    self.bass_drum(1.0),
+                    tb,
+                    if light { 0.50 } else { 0.62 },
+                    0.0,
+                );
             } else {
                 put(mix, "drums", choke(0.9, (10 * b + bt) as u64), tb, 0.16, 0.0);
-                put(mix, "drums", snare(0.8), tb, if big { 0.16 } else { 0.10 }, 0.0);
+                put(mix, "drums", self.snare(0.8), tb, if big { 0.16 } else { 0.10 }, 0.0);
             }
             let pan = 0.15 * if bt % 2 == 1 { 1.0 } else { -1.0 };
             let pipes = chunk(ctx, ch, 0.13, 1.0, (b * 4 + bt) as u64)?;
@@ -93,12 +150,12 @@ impl BigTopClassic {
                 for half in [0.0, 0.5] {
                     if !(half == 0.0 && (bt == 1 || bt == 3)) {
                         let vel = 0.55 + 0.25 * if half == 0.0 { 1.0 } else { 0.0 };
-                        put(mix, "drums", snare(vel), tb + half * beat, 0.07, 0.0);
+                        put(mix, "drums", self.snare(vel), tb + half * beat, 0.07, 0.0);
                     }
                 }
                 for q in 0..4usize {
                     let vel = 0.6 + 0.4 * if q == 2 { 1.0 } else { 0.0 };
-                    let shake = tambourine(vel, (40 + q + bt) as u64);
+                    let shake = self.tambourine(vel, (40 + q + bt) as u64);
                     put(mix, "drums", shake, tb + q as f64 * s16, 0.05, 0.3);
                 }
             }
@@ -160,7 +217,7 @@ impl Bed for BigTopClassic {
 
     /// A big drum hit (a slam landing).
     fn boom(&self, _: &MusicCtx, mix: &mut Mix, t: f64, g: f64) -> Played {
-        put(mix, "drums", bass_drum(1.0), t, g, 0.0);
+        put(mix, "drums", self.bass_drum(1.0), t, g, 0.0);
         Ok(())
     }
 
@@ -175,7 +232,7 @@ impl Bed for BigTopClassic {
     fn title(&self, ctx: &MusicCtx, mix: &mut Mix, times: [f64; 3]) -> Played {
         let ch = chord(ctx, 0)?;
         for (j, tw) in times.into_iter().enumerate() {
-            put(mix, "drums", bass_drum(1.0), tw, 0.70, 0.0);
+            put(mix, "drums", self.bass_drum(1.0), tw, 0.70, 0.0);
             put(mix, "drums", synth::crash(1.0), tw, 0.06, 0.0);
             put(
                 mix,
@@ -235,7 +292,7 @@ impl Bed for BigTopClassic {
         let (beat, bar) = (grid.beat, grid.bar);
         let ch = chord(ctx, 1)?;
         for (j, (tc, _)) in grid.count[..3].iter().enumerate() {
-            put(mix, "drums", bass_drum(1.0), *tc, 0.62, 0.0);
+            put(mix, "drums", self.bass_drum(1.0), *tc, 0.62, 0.0);
             put(mix, "drums", choke(1.0, (50 + j) as u64), *tc, 0.14, 0.0);
             put(
                 mix,
@@ -259,7 +316,7 @@ impl Bed for BigTopClassic {
         }
         // Beat 4: the pickup, a band hit, and the roll into FIGHT!
         let t4 = bar + 3.0 * beat;
-        put(mix, "drums", bass_drum(1.0), t4, 0.55, 0.0);
+        put(mix, "drums", self.bass_drum(1.0), t4, 0.55, 0.0);
         put(mix, "calliope", chunk(ctx, ch, 0.18, 1.0, 745)?, t4, 0.18, 0.0);
         put(mix, "drums", roll(beat, 0.5, 1.0, grid.s16 / 2.0), t4, 0.30, 0.0);
         Ok(())
@@ -323,7 +380,7 @@ impl Bed for BigTopClassic {
             0.22,
             0.0,
         );
-        put(mix, "drums", bass_drum(1.0), tw, 0.65, 0.0);
+        put(mix, "drums", self.bass_drum(1.0), tw, 0.65, 0.0);
         put(mix, "drums", synth::crash(1.8), tw, 0.10, 0.0);
         Ok(())
     }
@@ -369,7 +426,7 @@ impl Bed for BigTopClassic {
             0.0,
         );
         for bt in 0..4usize {
-            put(mix, "drums", bass_drum(0.95), t_last + bt as f64 * beat, 0.56, 0.0);
+            put(mix, "drums", self.bass_drum(0.95), t_last + bt as f64 * beat, 0.56, 0.0);
             let pipes = chunk(ctx, ch, 0.13, 1.0, (900 + bt) as u64)?;
             put(mix, "calliope", pipes, t_last + (bt as f64 + 0.5) * beat, 0.20, 0.0);
         }
@@ -384,5 +441,27 @@ impl Bed for BigTopClassic {
         let swell = held(ctx, ch, dur - t_last + 0.012, 0.9, 950, dur - t_last, 0.008)?;
         put(mix, "calliope", swell, t_last, 0.10, 0.0);
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn bits(x: &[f64]) -> Vec<u64> {
+        x.iter().map(|v| v.to_bits()).collect()
+    }
+
+    #[test]
+    fn the_sounds_made_once_are_the_sounds_made_anew() {
+        let bed = BigTopClassic::new();
+        for vel in [1.0, 0.95, 0.8, 0.55, 0.6] {
+            assert_eq!(bits(&bed.bass_drum(vel)), bits(&super::super::bass_drum(vel)), "{vel}");
+            assert_eq!(bits(&bed.snare(vel)), bits(&super::super::snare(vel)), "{vel}");
+            for seed in 38..50 {
+                let want = super::super::tambourine(vel, seed);
+                assert_eq!(bits(&bed.tambourine(vel, seed)), bits(&want), "{vel} {seed}");
+            }
+        }
     }
 }

@@ -3,9 +3,12 @@
 use bf_core::dmath::{self, PI};
 
 use super::error::{MusicError, Samples};
-use super::num::{SRF, band_span, check_band, check_cut, clip, int, np_maximum, py_max, py_min};
+use super::num::{band_span, check_band, check_cut, int, np_maximum};
+use crate::SRF;
 use crate::dsp;
+use crate::synth::clip;
 use crate::synth::{self, FILTER_O};
+use bf_core::py::{py_max, py_min};
 
 /// `fit`'s default fade, in seconds.
 pub const FIT_FADE: f64 = 0.04;

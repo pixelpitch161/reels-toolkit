@@ -14,11 +14,12 @@
 //! a picture can only differ where a value lies within about 1e-9 (the sand), 1e-13 (the punch) or 1e-15 (the
 //! shake) of a rounding step. On the reference vectors the nearest is 5e-6, and every picture is Python's.
 
-use super::{DrawLog, Kind, py_max, py_min, round_i32};
+use super::{DrawLog, Kind, round_i32};
 use crate::config::{SAFE, SAFE_CX, ss};
 use crate::font::{self, ADV};
 use crate::img::{Img, Rgb8};
 use crate::np;
+use bf_core::py::{py_max, py_min};
 use bf_core::{dmath, py, pyhash};
 
 /// `CAP_Y0`: the top of the first caption line, 4 px below the top of the safe box.
