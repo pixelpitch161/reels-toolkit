@@ -1,6 +1,5 @@
 //! The timing helpers of `reelkit/fx.py`: `env_ad`, `_smooth` and `FlashBudget`.
 
-use std::cmp::Ordering;
 use std::collections::VecDeque;
 
 use bf_core::dmath;
@@ -54,12 +53,12 @@ impl FlashBudget {
         }
         let pr = |i: usize| priority.map_or(0.0, |p| p[i]);
         let mut order: Vec<usize> = (0..n).collect();
+        // A total order (`total_cmp`), so the sort cannot panic on a time or priority that is not a number;
+        // `+ 0.0` makes a minus zero a plain zero first, so any two numbers compare as Python's `<` has them.
+        let key = |i: usize| (round_nd(times[i], 4) + 0.0, -pr(i) + 0.0);
         order.sort_by(|&a, &b| {
-            round_nd(times[a], 4)
-                .partial_cmp(&round_nd(times[b], 4))
-                .unwrap_or(Ordering::Equal)
-                .then((-pr(a)).partial_cmp(&-pr(b)).unwrap_or(Ordering::Equal))
-                .then(a.cmp(&b))
+            let (ka, kb) = (key(a), key(b));
+            ka.0.total_cmp(&kb.0).then(ka.1.total_cmp(&kb.1)).then(a.cmp(&b))
         });
         let mut ok = vec![false; n];
         let mut acc: VecDeque<f64> = VecDeque::new();
@@ -107,5 +106,29 @@ mod tests {
             [false, true, false]
         );
         assert!(b.assign(&[], None).is_empty());
+    }
+
+    #[test]
+    fn the_budget_sorts_with_a_total_order() {
+        // times or priorities that are not numbers never panic the sort (the order among them is not Python's,
+        // which has none)
+        let nan = f64::NAN;
+        let times: Vec<f64> = (0..40)
+            .map(|i| if i % 3 == 0 { nan } else { f64::from(i) * 0.1 })
+            .collect();
+        let prio: Vec<f64> = (0..40)
+            .map(|i| if i % 5 == 0 { nan } else { f64::from(i % 4) })
+            .collect();
+        assert_eq!(FlashBudget::new(3, 1.0).assign(&times, Some(&prio)).len(), 40);
+        // a minus zero is a zero: equal times, so the higher priority goes first; equal priorities, so the order
+        // given decides
+        assert_eq!(
+            FlashBudget::new(1, 1.0).assign(&[0.0, -0.0], Some(&[1.0, 2.0])),
+            [false, true]
+        );
+        assert_eq!(
+            FlashBudget::new(1, 1.0).assign(&[2.0, 2.0], Some(&[0.0, -0.0])),
+            [true, false]
+        );
     }
 }
