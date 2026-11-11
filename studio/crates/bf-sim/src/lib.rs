@@ -8,9 +8,10 @@
 //! - [`ball`]: one fighter in the ring (`class Ball`).
 //! - [`fight`]: the fight's core (`class Fight`: the launch, events, damage, knockback, motion, levels).
 //! - [`schedule`]: the order of a step (`Fight.run`), the one place that calls the weapon kinds and abilities.
-//! - [`kinds`]: the weapon kinds, one module each (`striker`: the FLUTE's baskets and cobras, and the swat rule).
+//! - [`kinds`]: the weapon kinds, one module each (`striker`: the FLUTE's baskets and cobras, and the swat rule;
+//!   `blade`: the TROMBONE's thrust lance).
 //! - `record`: what is written down at every frame (`Fight.snap`).
-//! - [`roster`]: the fighters' numbers, exported from `fighters.py`.
+//! - [`roster`]: the fighters' numbers, exported from `fighters.py` (the types live in `bf_core::roster`).
 
 pub mod ball;
 pub mod fight;

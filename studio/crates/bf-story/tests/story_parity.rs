@@ -18,8 +18,8 @@ use bf_core::fightfile::FightFile;
 use bf_core::grid::Grid;
 use bf_core::py::round_nd;
 use bf_core::recording::{Array, Recording};
+use bf_core::roster::{FighterCfg, parse_roster};
 use bf_core::show::{Show, ShowError};
-use bf_sim::roster::{FighterCfg, parse_roster};
 use bf_story::{BeatSheet, Story, Verdict, score, story};
 use serde_json::Value;
 

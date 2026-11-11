@@ -158,6 +158,19 @@ pub fn wrap_pi(a: f64) -> f64 {
     fmod_py(a + dmath::PI, 2.0 * dmath::PI) - dmath::PI
 }
 
+/// Python's `max(a, b)` on floats: `a` unless `b > a` (CPython keeps the first item and replaces it only with a
+/// greater one). So the argument order decides for NaN and signed zeros: `max(nan, 1.0)` is `nan`, `max(1.0, nan)` is
+/// `1.0`, `max(-0.0, 0.0)` is `-0.0`. Never `f64::max`, which differs on both.
+pub fn py_max(a: f64, b: f64) -> f64 {
+    if b > a { b } else { a }
+}
+
+/// Python's `min(a, b)` on floats: `a` unless `b < a`. As with [`py_max`], the argument order decides for NaN and
+/// signed zeros: `min(nan, 1.0)` is `nan`, `min(1.0, nan)` is `1.0`, `min(-0.0, 0.0)` is `-0.0`.
+pub fn py_min(a: f64, b: f64) -> f64 {
+    if b < a { b } else { a }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -238,6 +251,27 @@ mod tests {
 
     fn show(x: f64) -> String {
         format!("{x:e} ({:#018x})", x.to_bits())
+    }
+
+    /// `max(a, b)` and `min(a, b)` as CPython 3.13.18 gave them on the reference PC: NaN in each position, `0.0`
+    /// against `-0.0` in each order, and two plain pairs.
+    #[test]
+    fn py_max_and_py_min_keep_the_first_argument_unless_the_second_wins() {
+        let nan = f64::NAN;
+        // (a, b, max(a, b), min(a, b))
+        for (a, b, max, min) in [
+            (nan, 1.0, nan, nan),
+            (1.0, nan, 1.0, 1.0),
+            (nan, -1.0, nan, nan),
+            (-1.0, nan, -1.0, -1.0),
+            (0.0, -0.0, 0.0, 0.0),
+            (-0.0, 0.0, -0.0, -0.0),
+            (2.0, 3.0, 3.0, 2.0),
+            (3.0, 2.0, 3.0, 2.0),
+        ] {
+            assert_eq!(py_max(a, b).to_bits(), max.to_bits(), "max({a:?}, {b:?})");
+            assert_eq!(py_min(a, b).to_bits(), min.to_bits(), "min({a:?}, {b:?})");
+        }
     }
 
     #[test]
