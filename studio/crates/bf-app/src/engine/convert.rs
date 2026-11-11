@@ -83,8 +83,8 @@ fn unusable(e: &dyn std::fmt::Display) -> Unusable {
 /// music seed, captions and this app's version, checked against what this app has.
 ///
 /// # Errors
-/// Why the draft cannot be a fight, as a sentence for the screen ("This fight cannot be used: {field}: {message}.",
-/// or "No music is written for Flute vs Piano yet.").
+/// Why the draft cannot be a fight, as a sentence for the screen ("This fight cannot be used: the left fighter's
+/// handicap must be above 0, found 0.0.", or "No music is written for Flute vs Piano yet.").
 pub fn fight_file(draft: &Draft) -> Result<FightFile, String> {
     build(draft).map_err(|why| match why {
         Unusable::NoMusic => plain(&no_music_sentence(&draft.fighters)),
@@ -186,8 +186,14 @@ pub fn title_of(ff: &FightFile) -> String {
 
 /// An engine error as a sentence for the screen: its text with a capital first letter and a full stop at the end.
 /// Every error the engine sends to the interface goes through here.
+///
+/// A fight file's field path is put in words: where the text (or a part of it after ": ") starts with a path such
+/// as `handicap[0]` followed by ": ", the path and its colon become the thing's name. A complaint that starts with
+/// "must" follows the name ("the left fighter's handicap must be above 0, found 0.0"); any other comes first, with
+/// the name after it in brackets ("3 texts needed (title, description, tags), found 1 (the Shorts text)"). A path
+/// inside the complaint, such as `fighters[0]`, is named too.
 pub fn plain(e: &dyn std::fmt::Display) -> String {
-    let text = e.to_string();
+    let text = in_words(e.to_string().trim());
     let text = text.trim();
     let mut chars = text.chars();
     let Some(first) = chars.next() else {
@@ -198,6 +204,101 @@ pub fn plain(e: &dyn std::fmt::Display) -> String {
         out.push('.');
     }
     out
+}
+
+/// `text` with its first fight-file field path put in words (see [`plain`]); unchanged when it holds none.
+fn in_words(text: &str) -> String {
+    let starts = std::iter::once(0).chain(text.match_indices(": ").map(|(i, _)| i + 2));
+    for at in starts {
+        let Some((path, complaint)) = text[at..].split_once(": ") else {
+            continue;
+        };
+        let Some(name) = field_name(path) else {
+            continue;
+        };
+        let complaint = complaint.replace("fighters[0]", "the left fighter");
+        let complaint = complaint.replace("fighters[1]", "the right fighter");
+        let words = match complaint.strip_prefix("must ") {
+            _ if name.is_empty() => complaint,
+            Some(rest) => format!("{name} must {rest}"),
+            None => format!("{} ({name})", complaint.trim_end_matches('.')),
+        };
+        return format!("{}{words}", &text[..at]);
+    }
+    text.to_string()
+}
+
+/// The words for a fight file's field path (`handicap[0]`, `music.chord_loop[2]`, `line 3`), or `None` when
+/// `path` is not one. Empty for a field whose complaints name it themselves (`format`).
+fn field_name(path: &str) -> Option<String> {
+    let (head, index) = match path.strip_suffix(']').and_then(|p| p.rsplit_once('[')) {
+        Some((head, i)) if !i.is_empty() && i.bytes().all(|b| b.is_ascii_digit()) => (head, Some(i)),
+        _ => (path, None),
+    };
+    let side = |i: &str| match i {
+        "0" => Some("left"),
+        "1" => Some("right"),
+        _ => None,
+    };
+    let chord = |of: &str| -> Option<String> {
+        let n = index?.parse::<usize>().ok()?;
+        Some(format!("chord {} of {of}", n.checked_add(1)?))
+    };
+    let named = |s: &str| Some(s.to_string());
+    match (head, index) {
+        ("handicap", Some(i)) => Some(format!("the {} fighter's handicap", side(i)?)),
+        ("handicap", None) => named("the handicaps"),
+        ("fighters", Some(i)) => Some(format!("the {} fighter", side(i)?)),
+        ("fighters", None) => named("the fighters"),
+        // Its complaints name the format themselves.
+        ("format", None) => named(""),
+        ("arena", None) => named("the arena"),
+        ("dmg_scale", None) => named("the damage scale"),
+        ("tempo_bpm", None) => named("the tempo"),
+        ("seed", None) => named("the seed"),
+        ("music.music_seed", None) => named("the music seed"),
+        ("music.theme", None) => named("the theme"),
+        ("music.key", None) => named("the key"),
+        ("music.scale", None) => named("the scale"),
+        ("music.arrangement", None) => named("the arrangement"),
+        ("music.chord_loop", None) => named("the chord loop"),
+        ("music.chord_loop", Some(_)) => chord("the chord loop"),
+        ("music.chords_intro", None) => named("the opening chords"),
+        ("music.chords_intro", Some(_)) => chord("the opening chords"),
+        ("picture.shard_seed", None) => named("the picture's shard seed"),
+        ("picture.fx_seed", None) => named("the picture's particle seed"),
+        ("captions.shorts", _) => named("the Shorts text"),
+        _ => {
+            if let Some(n) = head.strip_prefix("line ")
+                && index.is_none()
+                && !n.is_empty()
+                && n.bytes().all(|b| b.is_ascii_digit())
+            {
+                return Some(format!("line {n} of the fight file"));
+            }
+            let parts = [
+                ("music.roles.", "part"),
+                ("music.lines.", "line"),
+                ("music.solos.", "solo"),
+                ("music.title_hits.", "title hits"),
+            ];
+            for (table, what) in parts {
+                if let Some(name) = head.strip_prefix(table).filter(|n| !n.is_empty()) {
+                    return Some(format!("{}'s {what}", wording::display_name(name)));
+                }
+            }
+            if let Some(rule) = head.strip_prefix("pair_rules.").filter(|r| !r.is_empty()) {
+                return Some(format!("the pair rule {rule}"));
+            }
+            if head.starts_with("captions.") {
+                return named("the captions");
+            }
+            if head.starts_with("picture.") {
+                return named("the picture settings");
+            }
+            None
+        }
+    }
 }
 
 #[cfg(test)]
@@ -391,15 +492,64 @@ mod tests {
     }
 
     #[test]
+    fn field_paths_are_put_in_words() {
+        let cases = [
+            (
+                "This fight cannot be used: handicap[1]: must be a finite number, found inf",
+                "This fight cannot be used: the right fighter's handicap must be a finite number, found inf.",
+            ),
+            (
+                "This fight cannot be opened: fighters[1]: \"FLUTE\" is already fighters[0]",
+                "This fight cannot be opened: \"FLUTE\" is already the left fighter (the right fighter).",
+            ),
+            (
+                "tempo_bpm: must be from 60 to 200, found 20.0",
+                "The tempo must be from 60 to 200, found 20.0.",
+            ),
+            (
+                "This fight cannot be used: captions.shorts: 3 texts needed (title, description, tags), found 1",
+                "This fight cannot be used: 3 texts needed (title, description, tags), found 1 (the Shorts text).",
+            ),
+            (
+                "this video's fight file cannot be used: music.chord_loop[2]: big_top has no voicing for \"X\"",
+                "This video's fight file cannot be used: big_top has no voicing for \"X\" (chord 3 of the chord loop).",
+            ),
+            (
+                "music.title_hits.TROMBONE[0]: 300 is not a MIDI note (0 to 127)",
+                "300 is not a MIDI note (0 to 127) (Trombone's title hits).",
+            ),
+            (
+                "This fight cannot be opened: format: this app reads fight files up to format 2 (this file is format 3)",
+                "This fight cannot be opened: this app reads fight files up to format 2 (this file is format 3).",
+            ),
+            (
+                "line 3: expected a table",
+                "Expected a table (line 3 of the fight file).",
+            ),
+        ];
+        for (engine, screen) in cases {
+            assert_eq!(plain(&engine), screen);
+        }
+        // Text with no field path is only made a sentence; a word that merely looks like one is left alone.
+        assert_eq!(plain(&"the seed: 12 is fine"), "The seed: 12 is fine.");
+        assert_eq!(plain(&"handicap[7]: must be above 0"), "Handicap[7]: must be above 0.");
+        // No sentence a person can reach still holds a path.
+        let mut d = starting_draft();
+        d.handicap = [f64::NAN, 1.0];
+        let text = fight_file(&d).unwrap_err();
+        assert!(!text.contains("handicap[") && !text.contains("]: "), "{text}");
+    }
+
+    #[test]
     fn errors_are_sentences() {
-        assert_eq!(plain(&"fighters: two needed"), "Fighters: two needed.");
+        assert_eq!(plain(&"fighters: two needed"), "Two needed (the fighters).");
         assert_eq!(plain(&"Already one."), "Already one.");
         assert_eq!(plain(&"  "), "Something went wrong in the engine.");
         let mut d = starting_draft();
         d.handicap[0] = 0.0;
         assert_eq!(
             fight_file(&d).unwrap_err(),
-            "This fight cannot be used: handicap[0]: must be above 0, found 0.0."
+            "This fight cannot be used: the left fighter's handicap must be above 0, found 0.0."
         );
         d.handicap[0] = 1.0;
         d.base = Some("not a fight file".to_string());

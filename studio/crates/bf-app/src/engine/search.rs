@@ -159,6 +159,12 @@ fn fresher(ours: &CachedShortlist, disk: Option<&CachedShortlist>) -> bool {
     disk.is_none_or(|d| ours.next_seed > d.next_seed)
 }
 
+/// Whether `ours` may be saved over the cache read from disk: [`fresher`] than it, where a cache that does not
+/// hold together ([`sound`]) counts as none.
+fn fresher_than_disk(ours: &CachedShortlist, disk: Option<CachedShortlist>) -> bool {
+    fresher(ours, disk.filter(sound).as_ref())
+}
+
 /// Whether a cached shortlist holds together: within the shortlist's bounds, no seed twice, every seed below its
 /// next seed, and `checked` one less than it.
 fn sound(cached: &CachedShortlist) -> bool {
@@ -378,9 +384,9 @@ impl Worker {
         if let Some((key, cached)) = saved {
             let dir = ctx.config.paths.shortlists();
             // A silenced search may have been overtaken by a newer one of the same key: it never saves over a
-            // cache that got further.
+            // cache that got further. A cache on disk that does not hold together counts as none.
             let newer = self.silent.load(Ordering::SeqCst)
-                && !fresher(&cached, load_shortlist(&dir, APP_VERSION, &key).as_ref());
+                && !fresher_than_disk(&cached, load_shortlist(&dir, APP_VERSION, &key));
             if !newer {
                 // The cache is a convenience: a search that cannot be saved still stands in memory.
                 _ = save_shortlist(&dir, APP_VERSION, &key, &cached);
@@ -1103,7 +1109,7 @@ mod tests {
         };
         assert_eq!(
             text,
-            "This fight cannot be used: handicap[0]: must be above 0, found 0.0."
+            "This fight cannot be used: the left fighter's handicap must be above 0, found 0.0."
         );
         let list = list_of(wait_for(&engine, 5.0, |e| is_list(e, |_| true)));
         assert_eq!(
@@ -1143,6 +1149,16 @@ mod tests {
         assert!(fresher(&at(1_025), Some(&at(513))));
         assert!(!fresher(&at(513), Some(&at(1_025))));
         assert!(!fresher(&at(513), Some(&at(513))));
+        // a cache on disk that does not hold together never holds a newer search back
+        let unsound = CachedShortlist {
+            checked: 7,
+            ..at(4_097)
+        };
+        assert!(!sound(&unsound));
+        assert!(!fresher(&at(1_025), Some(&unsound)));
+        assert!(fresher_than_disk(&at(1_025), Some(unsound)));
+        assert!(!fresher_than_disk(&at(513), Some(at(1_025))));
+        assert!(fresher_than_disk(&at(513), None));
     }
 
     #[test]

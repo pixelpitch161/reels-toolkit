@@ -16,7 +16,8 @@ pub mod sample;
 
 use std::path::PathBuf;
 use std::sync::mpsc::{Receiver, Sender};
-use std::sync::{Arc, mpsc};
+use std::sync::{Arc, Condvar, Mutex, mpsc};
+use std::time::{Duration, Instant};
 
 use crate::model::balance::BalanceStats;
 use crate::model::draft::{CaptionTexts, Draft};
@@ -40,12 +41,12 @@ pub enum Command {
         r#gen: Gen,
         draft: Draft,
     },
-    /// Find a fair handicap: `Event::BalanceProgress`, then `Event::Balanced`.
+    /// Find a fair handicap: `Event::BalanceProgress`, then `Event::Balanced` (or `Event::BalanceFailed`).
     AutoBalance {
         r#gen: Gen,
         draft: Draft,
     },
-    /// Measure the handicap as it stands: `Event::Measured`.
+    /// Measure the handicap as it stands: `Event::Measured` (or `Event::BalanceFailed`).
     Measure {
         r#gen: Gen,
         draft: Draft,
@@ -146,6 +147,12 @@ pub enum Event {
         r#gen: Gen,
         stats: BalanceStats,
     },
+    /// A balance run or a measurement of generation `gen` could not be made or broke off, in words. It ends that
+    /// work on screen (ruling M2-R29): nothing more comes for it.
+    BalanceFailed {
+        r#gen: Gen,
+        text: String,
+    },
     Shortlist {
         r#gen: Gen,
         list: Shortlist,
@@ -209,10 +216,31 @@ pub enum Event {
 /// Called after every event is sent, from the engine's thread, so the interface wakes up and polls.
 pub type Waker = Arc<dyn Fn() + Send + Sync>;
 
+/// Whether the engine's end of a seam ([`EngineSide`]) has been dropped, which is how an engine says it has
+/// stopped: the real engine drops it only after its own threads have ended (or its wait for them ran out), the
+/// sample engine when its thread ends.
+#[derive(Debug, Default)]
+struct Stopped {
+    done: Mutex<bool>,
+    bell: Condvar,
+}
+
+/// Held by the [`EngineSide`]: dropping it marks the engine stopped.
+#[derive(Debug)]
+struct StopMark(Arc<Stopped>);
+
+impl Drop for StopMark {
+    fn drop(&mut self) {
+        *self.0.done.lock().unwrap_or_else(|e| e.into_inner()) = true;
+        self.0.bell.notify_all();
+    }
+}
+
 /// The interface's end of the seam.
 pub struct EngineHandle {
     commands: Sender<Command>,
     events: Receiver<Event>,
+    stopped: Arc<Stopped>,
 }
 
 impl EngineHandle {
@@ -225,6 +253,32 @@ impl EngineHandle {
     /// The next event that has arrived, if any; never waits.
     pub fn poll(&self) -> Option<Event> {
         self.events.try_recv().ok()
+    }
+
+    /// Whether the engine has stopped (its end of the seam is gone).
+    pub fn has_stopped(&self) -> bool {
+        *self.stopped.done.lock().unwrap_or_else(|e| e.into_inner())
+    }
+
+    /// Sends `Shutdown` and waits up to `within` for the engine to stop. Returns whether it stopped in time. The one
+    /// call that waits: it is for the app's exit, when nothing is drawn any more.
+    pub fn stop(&self, within: Duration) -> bool {
+        self.send(Command::Shutdown);
+        let deadline = Instant::now() + within;
+        let mut done = self.stopped.done.lock().unwrap_or_else(|e| e.into_inner());
+        while !*done {
+            let left = deadline.saturating_duration_since(Instant::now());
+            if left.is_zero() {
+                return false;
+            }
+            done = self
+                .stopped
+                .bell
+                .wait_timeout(done, left)
+                .unwrap_or_else(|e| e.into_inner())
+                .0;
+        }
+        true
     }
 }
 
@@ -256,11 +310,14 @@ impl std::fmt::Debug for EventSender {
     }
 }
 
-/// The engine's end of the seam.
+/// The engine's end of the seam. Dropping it tells the interface the engine has stopped
+/// ([`EngineHandle::stop`]), so an engine keeps it until all its work has ended.
 #[derive(Debug)]
 pub struct EngineSide {
     pub commands: Receiver<Command>,
     pub events: EventSender,
+    /// Never read: dropping it is what marks the engine stopped.
+    _stopped: StopMark,
 }
 
 impl EngineSide {
@@ -274,10 +331,12 @@ impl EngineSide {
 pub fn channel(waker: Waker) -> (EngineHandle, EngineSide) {
     let (command_tx, command_rx) = mpsc::channel();
     let (event_tx, event_rx) = mpsc::channel();
+    let stopped = Arc::new(Stopped::default());
     (
         EngineHandle {
             commands: command_tx,
             events: event_rx,
+            stopped: stopped.clone(),
         },
         EngineSide {
             commands: command_rx,
@@ -285,6 +344,7 @@ pub fn channel(waker: Waker) -> (EngineHandle, EngineSide) {
                 events: event_tx,
                 waker,
             },
+            _stopped: StopMark(stopped),
         },
     )
 }
@@ -332,6 +392,30 @@ mod tests {
 
         handle.send(Command::StopSearch);
         assert_eq!(side.commands.try_recv(), Ok(Command::StopSearch));
+    }
+
+    #[test]
+    fn stop_waits_until_the_engine_side_is_gone() {
+        let (handle, side) = channel(Arc::new(|| {}));
+        assert!(!handle.has_stopped());
+        // an engine that does not stop: the wait is bounded
+        let began = Instant::now();
+        assert!(!handle.stop(Duration::from_millis(50)));
+        assert!(began.elapsed() >= Duration::from_millis(50));
+        assert_eq!(side.commands.try_recv(), Ok(Command::Shutdown));
+        // an engine that stops a moment after it is asked
+        let engine = std::thread::spawn(move || {
+            assert_eq!(side.commands.recv(), Ok(Command::Shutdown));
+            std::thread::sleep(Duration::from_millis(30));
+            drop(side);
+        });
+        assert!(handle.stop(Duration::from_secs(10)));
+        assert!(handle.has_stopped());
+        engine.join().unwrap();
+        // once stopped, asking again answers at once
+        let began = Instant::now();
+        assert!(handle.stop(Duration::from_secs(10)));
+        assert!(began.elapsed() < Duration::from_secs(1));
     }
 
     #[test]

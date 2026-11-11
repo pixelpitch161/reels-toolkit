@@ -339,10 +339,21 @@ fn a_seed_with_no_ko_says_so() {
     wait_for(&mut harness, "the watch box", |h| {
         h.query_all_by_label("Seed to watch").next().is_some()
     });
+    // Each step waits on what it needs (a bounded wait on a condition, never a set number of frames): the box has
+    // the keyboard before the digits are typed, and holds them before "Watch" is pressed.
+    let field = |h: &Harness<'_, BfApp>| {
+        h.query_all_by_label("Seed to watch")
+            .find(|n| n.accesskit_node().role() != Role::Label)
+            .map(|n| (n.accesskit_node().is_focused(), n.accesskit_node().value()))
+    };
     harness.get_by_label("Seed to watch").click();
-    harness.step();
+    wait_for(&mut harness, "the watch box to have the keyboard", |h| {
+        field(h).is_some_and(|(focused, _)| focused)
+    });
     harness.get_by_label("Seed to watch").type_text("13");
-    harness.step();
+    wait_for(&mut harness, "the watch box to hold 13", |h| {
+        field(h).is_some_and(|(_, value)| value.as_deref() == Some("13"))
+    });
     press(&mut harness, "Watch");
     wait_for(&mut harness, "the take's problem", |h| {
         h.state().state.vm.take.problem.is_some()

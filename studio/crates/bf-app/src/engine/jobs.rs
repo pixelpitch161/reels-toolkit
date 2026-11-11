@@ -1283,6 +1283,90 @@ mod tests {
         let _ = std::fs::remove_dir_all(&root);
     }
 
+    /// How many ffmpeg processes on this PC have `marker` in their command line (Windows: asked of the system's
+    /// process list through PowerShell; the job's output path is on ffmpeg's command line).
+    #[cfg(windows)]
+    fn ffmpegs_with(marker: &str) -> usize {
+        let script = format!(
+            "@(Get-CimInstance Win32_Process -Filter \"Name='ffmpeg.exe'\" | Where-Object {{ $_.CommandLine -like \
+             '*{marker}*' }}).Count"
+        );
+        let out = std::process::Command::new("powershell")
+            .args(["-NoProfile", "-NonInteractive", "-Command", &script])
+            .output()
+            .expect("PowerShell lists the processes");
+        String::from_utf8_lossy(&out.stdout)
+            .trim()
+            .parse()
+            .unwrap_or_else(|_| panic!("a count, not {out:?}"))
+    }
+
+    /// The app's exit while a video is in its frames stage: the engine stops within the app's wait, every thread of
+    /// it has ended inside the engine's own wait, no ffmpeg of that job is left running, and nothing is left in the
+    /// output folder (no `.mp4.part` finished in a hidden temp folder).
+    #[cfg(windows)]
+    #[test]
+    #[cfg_attr(
+        debug_assertions,
+        ignore = "slow in debug: cargo test -p bf-app --release --lib engine:: -- --include-ignored"
+    )]
+    fn stopping_the_engine_mid_render_leaves_no_ffmpeg() {
+        let _one = one_encode();
+        if !have_ffmpeg() {
+            return;
+        }
+        let marker = format!("bf-app-jobs-stop-{}", std::process::id());
+        let root = std::env::temp_dir().join(&marker);
+        let _ = std::fs::remove_dir_all(&root);
+        std::fs::create_dir_all(&root).expect("the test's temp folder");
+        let config = EngineConfig {
+            workers: 4,
+            paths: Paths::under(&root),
+            clip: Some(0..900),
+            search_limit: None,
+        };
+        let engine = super::super::spawn(Arc::new(|| {}), config);
+        let out = root.join("Videos");
+        let spec = enqueued(&engine, episode_draft(), out.clone());
+        engine.send(Command::RunJob {
+            id: 7,
+            fight_toml: spec.fight_toml,
+            out_root: out.clone(),
+        });
+        wait_for(&engine, 180.0, |e| {
+            matches!(
+                e,
+                Event::Job {
+                    id: 7,
+                    update: JobUpdate::Frames { .. }
+                }
+            )
+        });
+        // the check sees this job's ffmpeg while it encodes, so it can fail
+        let deadline = Instant::now() + Duration::from_secs(30);
+        while ffmpegs_with(&marker) == 0 {
+            assert!(Instant::now() < deadline, "this job's ffmpeg was never seen running");
+            std::thread::sleep(Duration::from_millis(100));
+        }
+        let asked = Instant::now();
+        let stopped = engine.stop(crate::app::ENGINE_STOP);
+        let took = asked.elapsed();
+        eprintln!("the engine stopped {:.2} s after it was asked", took.as_secs_f64());
+        assert!(stopped, "the engine did not stop within {:?}", crate::app::ENGINE_STOP);
+        assert!(
+            took < super::super::STOP_WAIT,
+            "every engine thread ended inside the engine's own wait ({took:?})"
+        );
+        assert_eq!(ffmpegs_with(&marker), 0, "an ffmpeg outlived the engine");
+        assert_eq!(
+            entries(&out),
+            Vec::<String>::new(),
+            "nothing is left in the output folder"
+        );
+        drop(engine);
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
     #[test]
     fn a_file_that_cannot_be_fought_fails_in_words() {
         let (engine, root) = clip_engine();

@@ -6,7 +6,7 @@ use crate::model::draft::Draft;
 use crate::model::roster::Roster;
 use crate::model::shortlist::SearchState;
 use crate::model::take::PlayerCmd;
-use crate::model::{FPS, NF, Step, View};
+use crate::model::{FPS, NF, Notice, Step, View};
 use crate::seam::Event;
 
 impl AppState {
@@ -60,6 +60,17 @@ impl AppState {
                 if r#gen == self.generation {
                     self.numbers(stats);
                 }
+            }
+            // A run that could not finish ends on screen (ruling M2-R29): nothing is running any more, opening
+            // Balance does not try again by itself in this generation, and the reason is a notice.
+            Event::BalanceFailed { r#gen, text } => {
+                if r#gen != self.generation {
+                    return;
+                }
+                self.vm.balance.running = None;
+                self.measuring = false;
+                self.balance_stopped = true;
+                self.vm.notices.push(Notice { text });
             }
             Event::Shortlist { r#gen, list } => {
                 if r#gen != self.generation {

@@ -3,11 +3,15 @@
 //! - `--fixtures` runs the whole interface on the sample engine (`seam::fake`, at a real engine's pace) with real
 //!   sound out, its files in a temp folder of its own (removed when the window has closed), and the status bar's
 //!   right side reading "Sample data, not a real fight".
-//! - Without it the window says that the engine is not connected in this build (Task 35 connects it).
+//! - Without it the app runs on the real engine: its settings, queue and shortlists in the PC's own app folders
+//!   (`Paths::system`), the settings and the queue read once before the first frame (with their notices), the
+//!   engine started with the settings' worker threads, the PC's sound device, and the writer that saves. Closing
+//!   the window stops the engine first (a render in progress is cancelled and its ffmpeg ended), waiting a few
+//!   seconds at most.
 //! - `--data-dir <folder>` keeps the settings, the queue and the cache in `<folder>` instead (created if missing; a
 //!   folder that cannot be used stops the app with one plain sentence and exit code 2).
 //! - `--smoke` opens the window, paints 30 frames, closes it and exits with code 0; it keeps its files in a temp
-//!   folder of its own and has no sound. With `--fixtures` it runs the sample interface that way.
+//!   folder of its own and has no sound. It runs the real app that way, or with `--fixtures` the sample one.
 //!
 //! - `--preview-bench [--seed N] [--seconds 20] [--threads T]` opens no window: it makes the starter fight's take
 //!   (FLUTE against TROMBONE at handicap 2.0 / 0.4, the first seed that fits the story unless `--seed` names one)
@@ -23,19 +27,15 @@
 use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 
-use bf_app::app;
+use bf_app::app::{self, EngineKind};
 use bf_app::preview::audio::{NO_DEVICE, NoAudio, open_audio};
 use bf_app::preview::bench;
 use bf_app::store::Paths;
-use bf_app::theme::{self, GROUND, TEXT, body};
-use egui::{Label, RichText};
 
 /// How many painted frames `--smoke` waits for before it closes the window.
 const SMOKE_FRAMES: u32 = 30;
 /// The status bar's right side in `--fixtures`.
 const SAMPLE_NOTE: &str = "Sample data, not a real fight";
-/// What the window says without `--fixtures`, until the real engine is behind the seam (Task 35).
-const NOT_CONNECTED: &str = "The engine is not connected in this build. Start it with --fixtures to see the interface.";
 
 /// What the command line asks for.
 #[derive(Debug, Default, PartialEq, Eq)]
@@ -222,22 +222,6 @@ impl eframe::App for Smoke {
     }
 }
 
-/// The window without an engine: one centred line saying so, on the window's ground.
-struct NotConnected;
-
-impl eframe::App for NotConnected {
-    fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
-        ui.painter().rect_filled(ui.max_rect(), 0.0, GROUND);
-        ui.centered_and_justified(|ui| {
-            ui.add(Label::new(RichText::new(NOT_CONNECTED).font(body()).color(TEXT)).selectable(false));
-        });
-    }
-
-    fn clear_color(&self, _visuals: &egui::Visuals) -> [f32; 4] {
-        GROUND.to_normalized_gamma_f32()
-    }
-}
-
 fn main() -> std::process::ExitCode {
     if std::env::args_os().skip(1).any(|a| a == "--preview-bench") {
         return match parse_bench(std::env::args_os().skip(1), bench::cores()) {
@@ -294,19 +278,17 @@ fn main() -> std::process::ExitCode {
                 );
             }
             // The theme is installed, and the settings and the queue are read, here, before the first frame; the
-            // sample engine is made here too, where the window's context exists for its waker.
-            let inner: Box<dyn eframe::App> = if fixtures {
-                let mut app = if smoke {
-                    app::start(cc, paths, || Box::new(NoAudio::new(NO_DEVICE)))
-                } else {
-                    app::start(cc, paths, open_audio)
-                };
-                app.status_note = Some(SAMPLE_NOTE.to_string());
-                Box::new(app)
+            // engine is made here too, where the window's context exists for its waker.
+            let kind = if fixtures { EngineKind::Sample } else { EngineKind::Real };
+            let mut app = if smoke {
+                app::start(cc, paths, || Box::new(NoAudio::new(NO_DEVICE)), kind)
             } else {
-                theme::install(&cc.egui_ctx);
-                Box::new(NotConnected)
+                app::start(cc, paths, open_audio, kind)
             };
+            if fixtures {
+                app.status_note = Some(SAMPLE_NOTE.to_string());
+            }
+            let inner: Box<dyn eframe::App> = Box::new(app);
             let app: Box<dyn eframe::App> = if smoke {
                 Box::new(Smoke { app: inner, painted: 0 })
             } else {

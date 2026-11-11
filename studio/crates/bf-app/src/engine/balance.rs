@@ -16,7 +16,8 @@
 //! The worker count is read once, when the work starts (`Ctx::workers`); the figures do not depend on it.
 //!
 //! A run that cannot be made (the draft is no fight, a handicap that is not a number above 0, a fight that broke
-//! off) sends `Event::Problem` with a plain sentence; so does a panic on the worker.
+//! off) sends `Event::BalanceFailed` for its generation with a plain sentence; so does a panic on the worker. The
+//! interface then shows the run as ended (ruling M2-R29).
 
 use std::ops::Range;
 use std::sync::Arc;
@@ -27,7 +28,7 @@ use bf_sim::Setup;
 use bf_story::balance::CONFIRM_OFFSET;
 use bf_story::{BALANCE_SEED0, BalancePlan, BalanceProgress, BeatSheet, Halt, Stats};
 
-use super::{Ctx, convert, problem};
+use super::{Ctx, convert};
 use crate::model::Gen;
 use crate::model::balance::BalanceStats;
 use crate::model::draft::Draft;
@@ -72,7 +73,7 @@ pub fn handle(state: &mut State, ctx: &Ctx, command: Command) {
             Work::Balance => balance(&ctx, r#gen, &draft, &flag),
             Work::Measure => measure(&ctx, r#gen, &draft, &flag),
         },
-        problem,
+        move |text| Event::BalanceFailed { r#gen, text },
     );
     if started {
         state.running = Some(cancel);
@@ -149,7 +150,7 @@ fn balance(ctx: &Ctx, r#gen: Gen, draft: &Draft, cancel: &AtomicBool) {
     let t0 = Instant::now();
     let (base, sheet) = match fight_of(draft, "balanced") {
         Ok(f) => f,
-        Err(text) => return send(ctx, cancel, problem(text)),
+        Err(text) => return send(ctx, cancel, Event::BalanceFailed { r#gen, text }),
     };
     let setup_for = |h: [f64; 2], seed: u64| under(&base, h, seed);
     let progress = |p: BalanceProgress| {
@@ -174,7 +175,14 @@ fn balance(ctx: &Ctx, r#gen: Gen, draft: &Draft, cancel: &AtomicBool) {
             },
         ),
         Err(Halt::Cancelled) => {}
-        Err(Halt::Failed(why)) => send(ctx, cancel, problem(failed("balance", &why))),
+        Err(Halt::Failed(why)) => send(
+            ctx,
+            cancel,
+            Event::BalanceFailed {
+                r#gen,
+                text: failed("balance", &why),
+            },
+        ),
     }
 }
 
@@ -182,7 +190,7 @@ fn measure(ctx: &Ctx, r#gen: Gen, draft: &Draft, cancel: &AtomicBool) {
     let t0 = Instant::now();
     let (base, sheet) = match fight_of(draft, "measured") {
         Ok(f) => f,
-        Err(text) => return send(ctx, cancel, problem(text)),
+        Err(text) => return send(ctx, cancel, Event::BalanceFailed { r#gen, text }),
     };
     let h = draft.handicap;
     let setup_for = |seed: u64| under(&base, h, seed);
@@ -196,7 +204,14 @@ fn measure(ctx: &Ctx, r#gen: Gen, draft: &Draft, cancel: &AtomicBool) {
             },
         ),
         Err(Halt::Cancelled) => {}
-        Err(Halt::Failed(why)) => send(ctx, cancel, problem(failed("measurement", &why))),
+        Err(Halt::Failed(why)) => send(
+            ctx,
+            cancel,
+            Event::BalanceFailed {
+                r#gen,
+                text: failed("measurement", &why),
+            },
+        ),
     }
 }
 
@@ -297,7 +312,10 @@ mod tests {
             draft: draft_with([2.0, 0.4]),
         });
         let Event::Measured { r#gen, stats } = wait_for(&engine, 120.0, |e| {
-            assert!(!matches!(e, Event::Problem { .. }), "{e:?}");
+            assert!(
+                !matches!(e, Event::Problem { .. } | Event::BalanceFailed { .. }),
+                "{e:?}"
+            );
             matches!(e, Event::Measured { .. })
         }) else {
             unreachable!()
@@ -325,7 +343,10 @@ mod tests {
         });
         let progress = RefCell::new(Vec::new());
         let Event::Balanced { r#gen, handicap, stats } = wait_for(&engine, 300.0, |e| {
-            assert!(!matches!(e, Event::Problem { .. }), "{e:?}");
+            assert!(
+                !matches!(e, Event::Problem { .. } | Event::BalanceFailed { .. }),
+                "{e:?}"
+            );
             if let Event::BalanceProgress { r#gen, done, total } = e {
                 assert_eq!(*r#gen, 5);
                 progress.borrow_mut().push((*done, *total));
@@ -365,7 +386,10 @@ mod tests {
             draft: draft_with([2.0, 0.4]),
         });
         wait_for(&engine, 120.0, |e| {
-            assert!(!matches!(e, Event::Problem { .. }), "{e:?}");
+            assert!(
+                !matches!(e, Event::Problem { .. } | Event::BalanceFailed { .. }),
+                "{e:?}"
+            );
             assert!(!matches!(e, Event::Balanced { .. }), "the older run answered");
             matches!(e, Event::Measured { r#gen: 2, .. })
         });
@@ -405,15 +429,17 @@ mod tests {
     }
 
     #[test]
-    fn a_handicap_that_cannot_fight_is_a_problem() {
+    fn a_handicap_that_cannot_fight_ends_the_run_in_words() {
         let (engine, root) = test_engine();
         engine.send(Command::Measure {
             r#gen: 1,
             draft: draft_with([0.0, 1.0]),
         });
-        let Event::Problem { text } = wait_for(&engine, 10.0, |e| matches!(e, Event::Problem { .. })) else {
-            unreachable!()
+        let failed = |e: &Event| matches!(e, Event::BalanceFailed { .. } | Event::Problem { .. });
+        let Event::BalanceFailed { r#gen, text } = wait_for(&engine, 10.0, failed) else {
+            panic!("a failed run is answered BalanceFailed, not Problem");
         };
+        assert_eq!(r#gen, 1);
         assert_eq!(
             text,
             "This handicap cannot be measured: each fighter's handicap must be a number above 0."
@@ -422,12 +448,24 @@ mod tests {
             r#gen: 2,
             draft: draft_with([1.0, f64::INFINITY]),
         });
-        let Event::Problem { text } = wait_for(&engine, 10.0, |e| matches!(e, Event::Problem { .. })) else {
-            unreachable!()
+        let Event::BalanceFailed { r#gen, text } = wait_for(&engine, 10.0, failed) else {
+            panic!("a failed run is answered BalanceFailed, not Problem");
         };
+        assert_eq!(r#gen, 2);
         assert_eq!(
             text,
             "This handicap cannot be balanced: each fighter's handicap must be a number above 0."
+        );
+        // a draft that is no fight at all ends the run the same way
+        let mut lost = draft_with([1.0, 1.0]);
+        lost.fighters[1] = "PIANO".to_string();
+        engine.send(Command::AutoBalance { r#gen: 3, draft: lost });
+        let Event::BalanceFailed { r#gen, text } = wait_for(&engine, 10.0, failed) else {
+            panic!("a failed run is answered BalanceFailed, not Problem");
+        };
+        assert_eq!(
+            (r#gen, text.as_str()),
+            (3, "No music is written for Flute vs Piano yet.")
         );
         engine.send(Command::Shutdown);
         std::fs::remove_dir(&root).expect("the engine left its temp folder empty");

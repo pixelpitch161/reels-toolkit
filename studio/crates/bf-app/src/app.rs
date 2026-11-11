@@ -9,11 +9,12 @@
 //! engine, `Player` to the player, `SaveSettings` and `SaveQueue` to the writer.
 
 use std::sync::Arc;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use eframe::wgpu;
 use egui::{CentralPanel, Color32, Frame as Fill, Margin, Panel, Rect, Stroke, TextureHandle, TextureOptions, Ui};
 
+use crate::engine::{self, EngineConfig, STOP_WAIT};
 use crate::model::queue::Queue;
 use crate::model::take::Frame;
 use crate::model::{Notice, Settings, Step, View};
@@ -122,19 +123,38 @@ pub struct BfApp {
     closed: bool,
 }
 
+/// Which engine the app runs on.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum EngineKind {
+    /// The real engine (`engine::spawn`): real fights, sound and videos.
+    Real,
+    /// The sample engine (`seam::fake`, at a real engine's pace): `--fixtures`.
+    Sample,
+}
+
+/// How long the app's exit waits for the engine to stop: the engine's own wait for its threads, and a moment more.
+pub const ENGINE_STOP: Duration = Duration::from_millis(STOP_WAIT.as_millis() as u64 + 500);
+
+/// Where the real engine keeps its shortlists when the PC gives the app no folder of its own.
+fn fallback_paths() -> Paths {
+    Paths::under(&std::env::temp_dir().join("BALLFIGHT Studio"))
+}
+
 /// Builds the real app in the creator passed to `eframe::run_native`: the settings and the queue, read once
-/// through `paths` (the same `paths` the writer is started with), their notices kept to be shown, the sample engine
-/// (until the real one is behind the seam) woken through the window's context, and the sound output that
-/// `open_audio` gives (it may wait up to 3 s for the device here, once). `BfApp::new` then installs the theme: the
-/// one call on this path.
+/// through `paths` (the same `paths` the writer is started with), their notices kept to be shown, the engine
+/// `kind` names woken through the window's context (the real one with the settings' workers, the same `paths`, every
+/// frame of a video and no limit on a search), and the sound output that `open_audio` gives (it may wait up to 3 s
+/// for the device here, once). `BfApp::new` then installs the theme: the one call on this path. The state's first
+/// effects ask the engine for the roster, ffmpeg and the output folder.
 pub fn start(
     cc: &eframe::CreationContext<'_>,
     paths: Option<Paths>,
     open_audio: impl FnOnce() -> Box<dyn AudioOut>,
+    kind: EngineKind,
 ) -> BfApp {
     let cores = std::thread::available_parallelism().map_or(1, std::num::NonZero::get);
     let mut notices = Vec::new();
-    let (settings, queue, writer) = match paths {
+    let (settings, queue, writer) = match paths.clone() {
         Some(paths) => {
             let (settings, settings_notice) = load_settings(&paths.settings(), cores);
             let (queue, queue_notice) = load_queue(&paths.queue());
@@ -149,7 +169,18 @@ pub fn start(
             (default_settings(cores), Queue::new(), None)
         }
     };
-    let engine = fake::spawn(waker(&cc.egui_ctx), Pace::Live);
+    let engine = match kind {
+        EngineKind::Real => engine::spawn(
+            waker(&cc.egui_ctx),
+            EngineConfig {
+                workers: settings.workers,
+                paths: paths.unwrap_or_else(fallback_paths),
+                clip: None,
+                search_limit: None,
+            },
+        ),
+        EngineKind::Sample => fake::spawn(waker(&cc.egui_ctx), Pace::Live),
+    };
     let boot = Boot {
         engine,
         writer,
@@ -220,6 +251,23 @@ fn ready<F: std::future::Future>(future: F) -> F::Output {
     }
 }
 
+/// Puts the calling thread (the interface's: `BfApp::new` runs on it) above the app's other threads on Windows, so
+/// the preview's drawing threads, a render and its ffmpeg, which can keep every core busy together, never keep the
+/// interface waiting for a turn on a core. It changes nothing else: the work threads still use every core the
+/// interface leaves.
+fn interface_first() {
+    #[cfg(windows)]
+    {
+        use windows_sys::Win32::System::Threading::{
+            GetCurrentThread, SetThreadPriority, THREAD_PRIORITY_ABOVE_NORMAL,
+        };
+        // SAFETY: `GetCurrentThread` returns a pseudo handle that is always valid for the calling thread and never
+        // needs closing; `SetThreadPriority` only reads it. A refusal leaves the priority as it was.
+        unsafe {
+            SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_ABOVE_NORMAL);
+        }
+    }
+}
 /// Asks the window to repaint, from any thread: `logic` then runs even while the window is minimised.
 fn waker(ctx: &egui::Context) -> Waker {
     let ctx = ctx.clone();
@@ -230,6 +278,7 @@ impl BfApp {
     /// The app on `boot`: the theme installed, the state made, the player started with the settings' `workers` as
     /// its threads. The state's start-up effects are carried out by the first `logic`.
     pub fn new(cc: &eframe::CreationContext<'_>, boot: Boot) -> BfApp {
+        interface_first();
         theme::install(&cc.egui_ctx);
         let workers = boot.settings.workers;
         let (state, pending) = AppState::new(boot.settings, boot.queue, boot.notices, boot.cores);
@@ -315,8 +364,19 @@ impl BfApp {
         self.note(began);
     }
 
-    /// Tells the engine the app is closing and waits until everything asked to be saved is on disk. `on_exit`
-    /// calls it; it does its work once.
+    /// The app's exit (`on_exit`): [`BfApp::shutdown`], then a wait of up to [`ENGINE_STOP`] for the engine to
+    /// stop, so a render, and the ffmpeg it started, never outlives the window. Returns whether the engine stopped
+    /// in time (always true when the app has no engine).
+    pub fn close(&mut self) -> bool {
+        self.shutdown();
+        match &self.link {
+            Link::Live(live) => live.engine.stop(ENGINE_STOP),
+            _ => true,
+        }
+    }
+
+    /// Tells the engine the app is closing and waits until everything asked to be saved is on disk. `close` calls
+    /// it; it does its work once.
     pub fn shutdown(&mut self) {
         if self.closed {
             return;
@@ -535,7 +595,7 @@ impl eframe::App for BfApp {
     }
 
     fn on_exit(&mut self) {
-        self.shutdown();
+        self.close();
     }
 }
 
@@ -543,6 +603,26 @@ impl eframe::App for BfApp {
 mod tests {
     use super::*;
 
+    #[cfg(windows)]
+    #[test]
+    fn the_interface_thread_comes_first() {
+        use windows_sys::Win32::System::Threading::{
+            GetCurrentThread, GetThreadPriority, THREAD_PRIORITY_ABOVE_NORMAL, THREAD_PRIORITY_NORMAL,
+        };
+        let priority = || {
+            // SAFETY: the calling thread's pseudo handle is always valid and only read.
+            unsafe { GetThreadPriority(GetCurrentThread()) }
+        };
+        let (before, after) = std::thread::spawn(move || {
+            let before = priority();
+            interface_first();
+            (before, priority())
+        })
+        .join()
+        .unwrap();
+        assert_eq!(before, THREAD_PRIORITY_NORMAL);
+        assert_eq!(after, THREAD_PRIORITY_ABOVE_NORMAL);
+    }
     #[test]
     fn dx12_alone_where_the_pc_has_a_dx12_card() {
         let default = wgpu::Backends::PRIMARY | wgpu::Backends::GL;
