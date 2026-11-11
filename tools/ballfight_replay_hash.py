@@ -10,6 +10,7 @@ EPISODES once it is delivered: (folder, [its chosen seed + a few others]); episo
 import os
 import subprocess
 import sys
+from pathlib import Path
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 EPISODES = [
@@ -93,6 +94,9 @@ if __name__ == '__main__':
         if out.returncode:
             print(folder, 'FAILED\n', out.stderr)
             continue
+        # The kit prints its folder as os.path.abspath gives it (backslashes on Windows): compare both in one form.
+        want = Path(os.path.abspath(d)).as_posix()
         for line in out.stdout.strip().split('\n'):
-            if line.startswith(d + ' '):
-                print(folder, line[len(d) + 1:])
+            head, rest = line[:len(want)], line[len(want):]
+            if Path(head).as_posix() == want and rest.startswith(' '):
+                print(folder, rest[1:])
