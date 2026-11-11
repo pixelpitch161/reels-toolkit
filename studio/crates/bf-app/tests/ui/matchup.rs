@@ -759,3 +759,166 @@ fn tab_walks_every_control_in_reading_order() {
         }
     }
 }
+
+// ---------------------------------------------------------------------------------------------------------------
+// The ability lines, several pair rules, and the ring of every chip
+// ---------------------------------------------------------------------------------------------------------------
+
+#[test]
+fn no_ability_line_is_cut_short() {
+    let _gpu = gpu();
+    let vm = matchup::vm();
+    let abilities: Vec<String> = [0, 1]
+        .iter()
+        .filter_map(|&side| vm.fighter(side)?.card.as_ref())
+        .flat_map(|card| card.abilities.iter().map(|a| a.text.clone()))
+        .collect();
+    assert!(abilities.iter().any(|t| t == "A wave across the ring, below 25 HP"));
+    for size in [REF, MIN] {
+        let mut harness = showing(size, matchup::vm());
+        harness.run();
+        let texts = painted_texts(&harness);
+        for ability in &abilities {
+            // Two fighters may share an ability's words: each card paints its own.
+            let times = abilities.iter().filter(|a| *a == ability).count();
+            let painted: Vec<_> = texts.iter().filter(|(text, _, _)| text == ability).collect();
+            assert_eq!(painted.len(), times, "{size:?}: {ability} is painted once per card");
+            for (_, elided, drawn) in painted {
+                assert!(!elided, "{size:?}: {ability} is cut short");
+                let whole = |s: &str| s.split_whitespace().collect::<String>();
+                assert_eq!(whole(drawn), whole(ability), "{size:?}: every word of it is drawn");
+            }
+            for rect in in_workspace(&harness, ability) {
+                let card_right = workspace(&harness).min.x + 250.0;
+                let card_left = workspace(&harness).max.x - 250.0;
+                assert!(
+                    rect.max.x <= card_right || rect.min.x >= card_left,
+                    "{size:?}: {ability} stays inside its card: {rect:?}"
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn several_pair_rules_stand_one_per_line() {
+    let _gpu = gpu();
+    let long = "A rule so long that it cannot fit in the strip however wide the window is, because it goes on \
+                and on about lances, cobras, slides and rings until it has to be cut short";
+    let rules = [
+        RULE.to_string(),
+        "A low note drowns a high trill.".to_string(),
+        long.to_string(),
+    ];
+    for size in [REF, MIN] {
+        let mut vm = matchup::vm();
+        vm.pair_rules = rules.to_vec();
+        let mut harness = showing(size, vm);
+        harness.run();
+        let area = workspace(&harness);
+        let rects: Vec<Rect> = rules
+            .iter()
+            .map(|rule| {
+                let found = in_workspace(&harness, rule);
+                assert_eq!(found.len(), 1, "{size:?}: {rule} is on screen once");
+                found[0]
+            })
+            .collect();
+        for pair in rects.windows(2) {
+            assert_eq!(pair[0].min.x, pair[1].min.x, "{size:?}: the rules line up");
+            assert!(pair[1].min.y >= pair[0].max.y, "{size:?}: one rule per line: {rects:?}");
+        }
+        for rect in &rects {
+            assert!(rect.max.x <= area.max.x - 16.0, "{size:?}: inside the strip: {rect:?}");
+            assert!(area.contains_rect(*rect), "{size:?}: {rect:?}");
+        }
+        let texts = painted_texts(&harness);
+        for rule in &rules {
+            let elided = texts.iter().find(|(text, _, _)| text == rule).map(|t| t.1);
+            assert_eq!(
+                elided,
+                Some(rule.as_str() == long),
+                "{size:?}: only the long rule is cut short"
+            );
+        }
+        let label = in_workspace(&harness, "Pair rules")[0];
+        assert!(
+            (label.center().y - rects[0].center().y).abs() <= 1.0,
+            "{size:?}: the first rule is level with its label"
+        );
+        let balance = control(&harness, "Balance this match-up", Role::Button).rect();
+        assert!(balance.max.y <= rects[0].min.y, "{size:?}: the strip grew upwards");
+    }
+}
+
+/// Whether white (`TEXT_STRONG`) pixels lie on each side of `rect` (top, right, bottom, left), as `ring_sides`
+/// looks, from one render.
+fn ring_once(harness: &mut Harness<'_, BfApp>, rect: Rect) -> [bool; 4] {
+    let (cx, cy) = (rect.center().x as i32, rect.center().y as i32);
+    let (x0, x1, y0, y1) = (
+        rect.min.x as i32,
+        rect.max.x as i32,
+        rect.min.y as i32,
+        rect.max.y as i32,
+    );
+    let lines: [Vec<(i32, i32)>; 4] = [
+        (y0 - 5..y0 + 2).map(|y| (cx, y)).collect(),
+        (x1 - 2..x1 + 5).map(|x| (x, cy)).collect(),
+        (y1 - 2..y1 + 5).map(|y| (cx, y)).collect(),
+        (x0 - 5..x0 + 2).map(|x| (x, cy)).collect(),
+    ];
+    let all: Vec<(u32, u32)> = lines
+        .iter()
+        .flatten()
+        .map(|&(x, y)| (x.max(0) as u32, y.max(0) as u32))
+        .collect();
+    let px = pixels(harness, &all);
+    let mut at = 0;
+    lines.map(|line| {
+        let found = px[at..at + line.len()].contains(&[255, 255, 255]);
+        at += line.len();
+        found
+    })
+}
+
+#[test]
+fn every_roster_chip_shows_its_ring_and_one_not_built_takes_no_focus() {
+    let _gpu = gpu();
+    for size in [REF, MIN] {
+        let mut vm = matchup::vm();
+        let roster = vm.roster.as_mut().unwrap();
+        roster.fighters.iter_mut().find(|f| f.name == "OBOE").unwrap().available = false;
+        let mut harness = showing(size, vm);
+        harness.run();
+        for fighter in &sample::roster().fighters {
+            let name = chip_name(&fighter.display);
+            chip(&harness, &name).scroll_to_me();
+            harness.run();
+            // The chip before keeps no focus, so its ring cannot stand beside this one.
+            harness.key_press(Key::Escape);
+            harness.run();
+            chip(&harness, &name).focus();
+            harness.run();
+            let rect = chip(&harness, &name).rect();
+            assert!(workspace(&harness).contains_rect(rect), "{size:?}: {name} is on screen");
+            if fighter.name == "OBOE" {
+                assert!(
+                    harness.query_by(|n| n.is_focused()).is_none(),
+                    "{size:?}: nothing has the focus"
+                );
+                assert!(
+                    !chip(&harness, &name).is_focused(),
+                    "{size:?}: {name} is not built: no focus"
+                );
+                assert_eq!(ring_once(&mut harness, rect), [false; 4], "{size:?}: and no ring");
+            } else {
+                assert!(chip(&harness, &name).is_focused(), "{size:?}: {name} takes the focus");
+                assert_eq!(
+                    ring_once(&mut harness, rect),
+                    [true; 4],
+                    "{size:?}: {name}'s ring is whole"
+                );
+            }
+        }
+    }
+}
