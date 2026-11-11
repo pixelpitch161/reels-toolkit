@@ -1,9 +1,10 @@
-//! The fighters: one folder per ported fighter. So far each holds its instrument voice (`voice.rs`) and its
-//! part in the score (`sound.rs`); its look joins them as it is ported.
+//! The fighters: one folder per ported fighter. Each holds its instrument voice (`voice.rs`), its part in the
+//! score (`sound.rs`) and, once ported, its look (`look.rs`).
 
 use std::sync::Arc;
 
 use bf_core::fightfile::FightFile;
+use bf_picture::look::{DefaultLook, Look};
 use bf_sound::traits::Sound;
 use bf_sound::voice::Voice;
 
@@ -35,10 +36,51 @@ pub fn sound(fighter: &str, k: usize, ff: &FightFile) -> Option<Box<dyn Sound>> 
     }
 }
 
+/// The look of the fighter `fighter` (its name in the roster, such as `FLUTE`): the kit's
+/// `fighters.look(name, P, k)`. The picture hands the look its side and the run in
+/// [`Look::setup`]. As in the kit, a fighter whose look is not ported draws as the bare ball
+/// ([`DefaultLook`]).
+pub fn look_for(fighter: &str) -> Box<dyn Look> {
+    match fighter {
+        "FLUTE" => Box::new(flute::FluteLook::new()),
+        "TROMBONE" => Box::new(trombone::TromboneLook::default()),
+        _ => Box::new(DefaultLook),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::{PORTED, RETIRED, roster};
+
+    #[test]
+    fn the_ported_fighters_have_their_looks() {
+        // kit/fighters/flute.py, `class Look`: its glass, its flare scale and its shatter parts.
+        let flute = look_for("FLUTE");
+        assert_eq!(flute.glass(), [150.0, 160.0, 196.0]);
+        assert_eq!(flute.flare_scale(), 0.85);
+        assert_eq!(flute.shards().len(), 13);
+        assert!(flute.sprite(16, 0.0, 32.0).is_some() && flute.title_closeup(44).is_some());
+        // kit/fighters/trombone.py, `class Look`: the base class's glass, its own shatter parts, a smaller sprite.
+        let trombone = look_for("TROMBONE");
+        assert_eq!(trombone.glass(), DefaultLook.glass());
+        assert_eq!(trombone.shards().len(), 14);
+        assert_eq!(trombone.sprite_k(), 0.80);
+        assert_eq!(trombone.spark_flash(), ["blade", "slam"]);
+        // Every fighter the app offers has a look of its own: its shatter parts tell it from the bare ball.
+        for name in PORTED {
+            assert!(!look_for(name).shards().is_empty(), "{name}");
+        }
+        // Anything else that is not ported draws as the bare ball, as the kit does.
+        for name in RETIRED.iter().chain(&["flute", "", "KAZOO"]) {
+            let look = look_for(name);
+            assert_eq!(look.glass(), DefaultLook.glass(), "{name:?}");
+            assert!(
+                look.shards().is_empty() && look.sprite(16, 0.0, 0.0).is_none(),
+                "{name:?}"
+            );
+        }
+    }
 
     #[test]
     fn every_ported_fighter_has_a_part() {

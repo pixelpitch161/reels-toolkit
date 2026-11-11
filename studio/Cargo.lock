@@ -460,6 +460,7 @@ dependencies = [
  "bf-sound",
  "bf-testdata",
  "serde_json",
+ "sha2",
  "toml",
 ]
 

@@ -4,6 +4,7 @@ use std::fmt;
 
 use bf_core::fightfile::FightFileError;
 use bf_core::show::ShowError;
+use bf_picture::ring::PictureError;
 use bf_sound::MusicError;
 
 /// Why a fight cannot be turned into its picture or its soundtrack. Each message is one line; nothing that
@@ -19,6 +20,9 @@ pub enum ContentError {
     /// The soundtrack could not be built from this recording and fight file: what the sound code reported, or
     /// the message of a panic inside it.
     Sound(String),
+    /// The picture could not be built from this recording and fight file: what the picture code reported (the
+    /// recording lacks something a frame reads), or the message of a panic while it was built.
+    Picture(PictureError),
 }
 
 impl ContentError {
@@ -37,6 +41,7 @@ impl fmt::Display for ContentError {
             ContentError::FightFile(e) => e.fmt(f),
             ContentError::Show(e) => e.fmt(f),
             ContentError::Sound(problem) => write!(f, "the soundtrack could not be built: {problem}"),
+            ContentError::Picture(e) => e.fmt(f),
         }
     }
 }
@@ -52,6 +57,12 @@ impl From<FightFileError> for ContentError {
 impl From<ShowError> for ContentError {
     fn from(e: ShowError) -> ContentError {
         ContentError::Show(e)
+    }
+}
+
+impl From<PictureError> for ContentError {
+    fn from(e: PictureError) -> ContentError {
+        ContentError::Picture(e)
     }
 }
 
