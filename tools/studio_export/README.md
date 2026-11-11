@@ -169,6 +169,7 @@ EXPORTS = {'thing': run}                         # python -m tools.studio_export
 | `stems` | `stems.py` | `studio/reference/sound/flute_vs_trombone/{audio.wav,stems.npz,premaster.npz,rms.json,master_case.npz}` (its own interpreter; reads what `voices` wrote; order 55) |
 | `voices` | `voices.py` | `studio/reference/sound/{pp_noise_start.json,flute_vs_trombone/{note_calls.json,first_notes.npz},voices/{FLUTE,TROMBONE,helpers}.npz,voices/scalars.json}` (its own interpreter) |
 | `kit_fx` | `kit_fx_vectors.py` | `studio/reference/picture_kit/fx_{timing,bursts,warp,particles,marks,moments}.npz`, each with its sidecar `.json`: the effects kit, `reelkit.fx` (about 40 s: it renders some 50 frames to record the real calls; see its docstring for the cases) |
+| `look_flute` | `look_flute.py` | `studio/reference/picture_looks/flute_look.json`: the episode drawn with the FLUTE's own look and the kit's base-class look for the TROMBONE (replaced in the drawing processes only), for three fights (the episode; the same config with seed 3, which the FLUTE wins; and seed 1 with the corners swapped): the SHA-256 of 254 finished frames, of the look hooks each called and of its draw log, the look's state at a few times and its title-card hooks; `crates/bf-content/tests/flute_look.rs` reads it (three `spawn` workers, about 70 s). `look_flute_stages [fight] <frame>...` is no reference export: it writes stage dumps drawn the same way into the git-ignored cache folder |
 
 ### `roster`: the fighters' numbers
 
