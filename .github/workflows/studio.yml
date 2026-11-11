@@ -109,8 +109,14 @@ jobs:
       # file, among them the real engine's with the ffmpeg installed above; the command line's; and the saved-file
       # compatibility tests). The interface tests (`--test ui`) draw through DirectX 12 only (ruling M2-R27) and are
       # not run here: a hosted runner is not known to offer a DirectX 12 adapter. They run on the owner's PC.
+      # The build's output is kept the same way as the tests' below, so a failed build names itself too (the step that
+      # reads the log runs on any failure). The step still fails with cargo's own exit code.
       - name: Build the app
-        run: cargo build --release --locked -p bf-app
+        run: |
+          set -o pipefail
+          log="$(cygpath -u '${{ runner.temp }}')/app-tests.log"
+          df -h . | tail -n 1
+          cargo build --release --locked -p bf-app 2>&1 | tee "$log"
 
       # The output is kept as well as shown, so a failure can be read without the log (the step after this one). The
       # job's steps run in Git Bash (`defaults.run.shell: bash`) in `studio/`; the log is written by absolute path in
