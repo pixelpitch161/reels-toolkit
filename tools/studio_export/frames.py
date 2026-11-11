@@ -595,6 +595,153 @@ def run_title():
     common.write_json(TITLE_INDEX, doc)
     size = sum(os.path.getsize(os.path.join(TITLE_OUT, n)) for n in names | {'noise.png'})
     print(f'title: {len(rows)} cards + noise.png, {size / 1e6:.2f} MB of PNG -> {common.rel(TITLE_OUT)}')
+    title_hashes(P, rec, noise)
+
+
+# ---------------------------------------------------------------- every card frame, by its hash
+# The 18 cards above are PNGs (350 to 690 KB each); every other frame on which the card is drawn is pinned by the
+# SHA-256 of its RGB bytes, for the episode and for three other timelines of the same two fighters. Each other
+# timeline is the example config with FIGHTERS, BPM or SERIES changed, and nothing else the card reads: a test can
+# build the same card from the roster, the models and the FLUTE's close-up already in the reference set.
+TITLE_HASHES = os.path.join(TITLE_OUT, 'hashes.npz')
+TITLE_EPISODE = dict(fighters=('FLUTE', 'TROMBONE'), bpm=132, series='BALLFIGHT #15')   # the example config's
+TITLE_TIMELINES = {                                    # name -> FIGHTERS, BPM, SERIES of the config
+    'episode': TITLE_EPISODE,
+    'swapped': dict(fighters=('TROMBONE', 'FLUTE'), bpm=132, series='BALLFIGHT #15'),
+    'bpm96': dict(fighters=('FLUTE', 'TROMBONE'), bpm=96, series=None),
+    'bpm200': dict(fighters=('FLUTE', 'TROMBONE'), bpm=200, series='BALLFIGHT #15'),
+}
+
+
+def card_hashes(TT, T, noise):
+    """(frames, sha256): every frame of the timeline on which title.draw draws (door_offset not None and below
+    OPEN_PX - 1, its own test), and the SHA-256 of the bytes of title.draw(noise, frame / 30) for each, as an
+    (n, 32) uint8 array"""
+    import hashlib
+    frames, digests = [], []
+    for f in range(T.NF):
+        off = TT.door_offset(f / FPS)
+        if off is None or off >= TT.OPEN_PX - 1:
+            continue
+        src = noise.copy()
+        out = TT.draw(src, f / FPS)
+        assert np.array_equal(src, noise) and out.shape == (H, W, 3) and out.dtype == np.uint8, f
+        assert out.flags.c_contiguous, f
+        frames.append(f)
+        digests.append(np.frombuffer(hashlib.sha256(out.tobytes()).digest(), np.uint8))
+    return np.array(frames, np.int32), np.stack(digests)
+
+
+def timeline_note(T):
+    """what the test checks its own timeline against, as float.hex() strings"""
+    return dict(bpm=common.hexf(float(T.BPM)), beat=common.hexf(T.BEAT), bar=common.hexf(T.BAR),
+                title=[common.hexf(float(t0)) for t0, w in T.TITLE],
+                t_doors=[common.hexf(T.T_DOORS[0]), common.hexf(T.T_DOORS[1])], t_close=common.hexf(T.T_CLOSE),
+                dur=common.hexf(T.DUR), nf=T.NF)
+
+
+def _timeline_hashes(name):
+    """pool worker (a fresh process for each timeline: title.py keeps module-level state): the card of the
+    example episode with TITLE_TIMELINES[name] applied, as kit.picture would build it, and card_hashes of it.
+    No fight is run: the card reads only the timeline and, through `render`, the two fighters' names, roster
+    entries and colours, which a stand-in module gives (`kit.picture` is `render` in the kit). The looks' title
+    hooks are registered with kit.picture's own lines"""
+    import importlib.util
+    import types
+    conf = TITLE_TIMELINES[name]
+    E, _ = common.kit()
+    E.activate_paths()
+    src = os.path.join(common.REPO, 'projects', 'ballfight', 'examples', EPISODE, 'episode.py')
+    folder = os.path.join(common.CACHE, 'episodes', f'title_{name}', EPISODE)
+    with open(src, 'rb') as fh:
+        data = fh.read()
+    common.write_bytes(os.path.join(folder, 'episode.py'), data)
+    stale = os.path.join(folder, 'check', 'sprites_title.npz')   # title.big_sprite's cache, keyed by side
+    if os.path.exists(stale):
+        os.remove(stale)
+    spec = importlib.util.spec_from_file_location('title_timeline_config', os.path.join(folder, 'episode.py'))
+    cfg = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(cfg)
+    cfg.FIGHTERS = tuple(conf['fighters'])
+    cfg.BPM = conf['bpm']
+    if conf['series'] is None:
+        del cfg.SERIES
+    else:
+        cfg.SERIES = conf['series']
+    from reelkit.config import loop_bpm
+    cfg.CHORDS = ['Em'] * int(round(61.0 / (4 * 60.0 / loop_bpm(conf['bpm'], 61.0))))   # one chord a bar
+    ep = E.load(folder, cfg)
+    T = ep.T
+    assert (T.FPS, T.NF) == (FPS, NF) and T.SERIES == (conf['series'] or '')
+    from fighters import FIGHTERS
+    RD = types.ModuleType('render')                     # what title.py and the looks read of kit.picture
+    RD.T = T
+    RD.NAMES = list(conf['fighters'])
+    RD.CFG = [FIGHTERS[n] for n in RD.NAMES]
+    RD.COL = [np.array(c['color'], float) for c in RD.CFG]
+    RD.DARK = [np.array(c['dark'], float) for c in RD.CFG]
+    sys.modules['render'] = RD
+    import title as TT
+    from ballfight.kit import fighters as FIGHTER_MODULES
+    if not T.SERIES:                                     # kit.picture: no episode tag on the card
+        TT.ui_tag = lambda layer, alpha: None
+    for _L in [FIGHTER_MODULES.look(RD.NAMES[k], RD, k) for k in (0, 1)]:   # kit.picture's lines, without setup()
+        if _L.title_pattern is not None:
+            TT.PATTERNS.setdefault(_L.name, _L.title_pattern)
+        if type(_L).title_closeup is not FIGHTER_MODULES.base.Look.title_closeup:
+            TT.CLOSEUP.setdefault(_L.name, _L.title_closeup)
+        if tuple(_L.glass) != tuple(FIGHTER_MODULES.base.Look.glass):
+            TT.GLASS.setdefault(_L.name, tuple(_L.glass))
+    noise = np.random.default_rng(NOISE_SEED).integers(0, 256, size=(H, W, 3), dtype=np.uint8)
+    frames, digests = card_hashes(TT, T, noise)
+    return name, frames, digests, timeline_note(T)
+
+
+def title_hashes(P, rec, noise):
+    """write title/hashes.npz + hashes.json: card_hashes for the episode (this process's kit.picture) and for the
+    other TITLE_TIMELINES (each in a fresh spawned process). The episode is drawn both ways, and the two must
+    agree: the worker's stand-in for kit.picture builds the card kit.picture builds"""
+    import multiprocessing as mp
+    want = TITLE_EPISODE
+    assert (tuple(P.NAMES), P.EP.cfg.BPM, P.T.SERIES) == (want['fighters'], want['bpm'], want['series']), want
+    here = ('episode',) + card_hashes(P.TT, P.T, noise) + (timeline_note(P.T),)
+    results = {}
+    with mp.get_context('spawn').Pool(len(TITLE_TIMELINES), maxtasksperchild=1) as pool:
+        for r in pool.map(_timeline_hashes, list(TITLE_TIMELINES), chunksize=1):
+            results[r[0]] = r
+    w = results['episode']
+    assert np.array_equal(w[1], here[1]) and np.array_equal(w[2], here[2]) and w[3] == here[3], \
+        "the episode's card drawn by the worker differs from the one kit.picture draws"
+    arrays, rows = {}, []
+    for n, name in enumerate(TITLE_TIMELINES):
+        _, frames, digests, note = results[name]
+        conf = TITLE_TIMELINES[name]
+        cid = f'c{n:03d}'
+        arrays[f'{cid}__frames'], arrays[f'{cid}__sha256'] = frames, digests
+        rows.append(dict(id=cid, call='hashlib.sha256(title.draw(noise, frame / 30).tobytes()).digest()',
+                         args=dict(timeline=name, fighters=list(conf['fighters']), bpm=conf['bpm'],
+                                   series=conf['series'], cards=int(len(frames)), timeline_values=note),
+                         arrays={'frames': f'{cid}__frames', 'sha256': f'{cid}__sha256'}))
+        print(f'title: {name}: {len(frames)} card frames hashed ({frames[0]}..{frames[-1]})')
+    assert rows[0]['args']['cards'] == 61 and rows[0]['args']['series'] == 'BALLFIGHT #15', rows[0]['args']
+    common.write_npz(TITLE_HASHES, arrays)
+    common.write_json(os.path.splitext(TITLE_HASHES)[0] + '.json', dict(
+        about='every frame on which the VS title card is drawn, pinned by the SHA-256 of title.draw(noise, '
+              'frame / 30) (its (640, 360, 3) uint8 bytes in C order), for the episode and three other timelines',
+        tool='title', episode=EPISODE, fps=FPS, size=[W, H], mode='RGB',
+        noise=dict(file='noise.png', seed=NOISE_SEED, call=NOISE_CALL),
+        recording=recording_note(rec, 'as in title.json; the other timelines run no fight'),
+        note='Each case is one timeline: the example episode (c000, as kit.picture draws it) or its config with '
+             'FIGHTERS, BPM (the base tempo; loop_bpm snaps it to whole bars) and SERIES (None: no tag) as args '
+             'give them and nothing else changed but CHORDS (one a bar, which the card does not read). The looks '
+             'are the kit\'s (FLUTE: flute_keys, its close-up and glass; TROMBONE: the card\'s _slide_tubes and '
+             'its model), registered as kit.picture does. frames (int32) lists every frame with door_offset not '
+             'None and below OPEN_PX - 1, sha256 (uint8, n x 32) their digests in the same order; '
+             'args.timeline_values the timeline\'s values, the floats as float.hex().',
+        cases=rows))
+    size = sum(os.path.getsize(p) for p in (TITLE_HASHES, os.path.splitext(TITLE_HASHES)[0] + '.json'))
+    print(f'title: {sum(len(r[1]) for r in results.values())} card hashes, {size / 1e3:.1f} KB -> '
+          f'{common.rel(TITLE_HASHES)} + .json')
 
 
 EXPORTS = {'frames': run, 'title': run_title}

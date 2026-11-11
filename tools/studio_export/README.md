@@ -163,7 +163,7 @@ EXPORTS = {'thing': run}                         # python -m tools.studio_export
 | `scenarios` | `scenarios.py` | `studio/reference/fights/flute_vs_trombone/{scenarios/*.bfrec,no_ko.bfrec,coverage.json}` (reads `stats.json`; order 60) |
 | `stories` | `stories.py` | `studio/reference/fights/flute_vs_trombone/stories.json` (the kit's story and score of every recording there; order 70) |
 | `striker_bag` | `striker_bag.py` | `studio/reference/fights/striker_vs_bag/{<kind>_<corner>_s<seed>.bfrec,index.json}`: 12 fights of the FLUTE against a bag (a fighter with no weapon, added to the kit's roster table for the run only), the first 10 s of each, so that only the engine core and the striker act; `index.json` lists them, the two bag entries and what the set covers (about 4 s) |
-| `title` | `frames.py` | `studio/reference/frames/flute_vs_trombone/title/{f<frame>.png,noise.png,title.json}` (18 cards) |
+| `title` | `frames.py` | `studio/reference/frames/flute_vs_trombone/title/{f<frame>.png,noise.png,title.json}` (18 cards) and `title/hashes.{npz,json}` (the SHA-256 of every card frame of four timelines) |
 | `stems` | `stems.py` | `studio/reference/sound/flute_vs_trombone/{audio.wav,stems.npz,premaster.npz,rms.json,master_case.npz}` (its own interpreter; reads what `voices` wrote; order 55) |
 | `voices` | `voices.py` | `studio/reference/sound/{pp_noise_start.json,flute_vs_trombone/{note_calls.json,first_notes.npz},voices/{FLUTE,TROMBONE,helpers}.npz,voices/scalars.json}` (its own interpreter) |
 
@@ -464,6 +464,14 @@ cases: `{"id", "call", "args": {"frame", "t"}, "file", "rule", "reason", "expect
 with `t`, `title.door_offset(t)` and `title.shake(t)` as `float.hex()` strings. The card takes only the two
 fighters' names from the fight (nothing on it depends on who wins); `title.json` still carries the `recording`
 entry of the checked file.
+
+`title/hashes.npz` (with its sidecar `hashes.json`) pins every other frame on which the card is drawn: one case per
+timeline, `frames` (`<i4`, every frame with `door_offset` not `None` and below `OPEN_PX - 1`) and `sha256` (`|u1`,
+n x 32, the digest of `title.draw(noise, frame / 30).tobytes()`). The timelines are the episode as `kit.picture`
+draws it (61 frames) and the example config with only `FIGHTERS`, `BPM` or `SERIES` changed: the two fighters
+swapped (61), 96 BPM without a tag (84) and 200 BPM (43). Those three are drawn in fresh spawned processes (title.py
+keeps module-level state) with a stand-in `render` module and the looks' hooks registered by `kit.picture`'s own
+lines; the episode is drawn that way too and must give the same digests. About 14 KB.
 
 | Rules | Frames |
 | --- | --- |

@@ -10,6 +10,10 @@
 //! frames of the card a few of these values differ from Python's by one to three units in the last place, with
 //! no pixel changed: measured on every card frame of seven timelines, not part of the reference set.)
 //!
+//! Every other frame on which the card is drawn is pinned by the SHA-256 of its bytes (`title/hashes.npz`): all
+//! 61 of the episode, and every card frame of three other timelines of the same two fighters (swapped, 96 BPM
+//! without a tag, 200 BPM), 249 in all.
+//!
 //! What the card takes from the two fighters' looks (`bf_picture::title::Look`) is fed as the Python kit had it
 //! for this episode. The TROMBONE's look has none of the three hooks: its panel pattern is the card's own (by
 //! name) and its close-up is its model. The FLUTE's look has all three, and that look is not ported yet, so
@@ -20,6 +24,7 @@ use std::collections::BTreeSet;
 use std::sync::OnceLock;
 
 use bf_core::fightfile::FightFile;
+use bf_core::grid::Grid;
 use bf_core::py;
 use bf_core::recording::Recording;
 use bf_core::roster::{FighterCfg, parse_roster};
@@ -30,6 +35,7 @@ use bf_picture::title::{self, CardLook, Look, TitleCard};
 use bf_picture::ui::{DrawLog, Kind};
 use bf_testdata::{Vectors, diff_u8, hex_arg, read_png, reference, repo_root, write_png_rgb};
 use serde_json::Value;
+use sha2::{Digest, Sha256};
 
 const FOLDER: &str = "frames/flute_vs_trombone/title";
 const FPS: f64 = 30.0;
@@ -146,31 +152,43 @@ fn episode() -> &'static Episode {
         let ff = FightFile::parse(&text).expect("the fight file parses");
         let show = Show::new(&rec, &ff).expect("the episode has a K.O.");
         assert_eq!(show.names, ["FLUTE", "TROMBONE"]);
-        let cfg = [fighter("FLUTE"), fighter("TROMBONE")];
-        let meshes = [mesh(&cfg[0].pp), mesh(&cfg[1].pp)];
-        let flute = FluteStandIn {
-            closeup: flute_closeup(),
-        };
-        let looks: [&dyn Look; 2] = [&flute, &Plain];
-        let card = TitleCard::new(
-            &show,
-            // COL[k] = np.array(c['color'], float), DARK[k] = np.array(c['dark'], float)
-            [cfg[0].color.map(f64::from), cfg[1].color.map(f64::from)],
-            [cfg[0].dark.map(f64::from), cfg[1].dark.map(f64::from)],
-            [0, 1].map(|k| {
-                let (yaw, roll) = view(&cfg[k]);
-                CardLook {
-                    look: looks[k],
-                    mesh: &meshes[k],
-                    yaw,
-                    roll,
-                }
-            }),
-            ff.series_tag.as_deref(),
-        );
+        let card = card_of(&show, ff.series_tag.as_deref());
         assert_eq!(ff.series_tag.as_deref(), Some("BALLFIGHT #15"));
         Episode { show, card }
     })
+}
+
+/// The card of `show` (its timeline and names) with the looks the Python kit has for the two fighters: the
+/// FLUTE's stand-in and the TROMBONE's defaults, on either side.
+fn card_of(show: &Show, series_tag: Option<&str>) -> TitleCard {
+    let cfg = [fighter(&show.names[0]), fighter(&show.names[1])];
+    let meshes = [mesh(&cfg[0].pp), mesh(&cfg[1].pp)];
+    let flute = FluteStandIn {
+        closeup: flute_closeup(),
+    };
+    let looks: [&dyn Look; 2] = [0, 1].map(|k| -> &dyn Look {
+        match show.names[k].as_str() {
+            "FLUTE" => &flute,
+            "TROMBONE" => &Plain,
+            other => panic!("no look for {other} in this test"),
+        }
+    });
+    TitleCard::new(
+        show,
+        // COL[k] = np.array(c['color'], float), DARK[k] = np.array(c['dark'], float)
+        [cfg[0].color.map(f64::from), cfg[1].color.map(f64::from)],
+        [cfg[0].dark.map(f64::from), cfg[1].dark.map(f64::from)],
+        [0, 1].map(|k| {
+            let (yaw, roll) = view(&cfg[k]);
+            CardLook {
+                look: looks[k],
+                mesh: &meshes[k],
+                yaw,
+                roll,
+            }
+        }),
+        series_tag,
+    )
 }
 
 /// The seeded-noise image every card is drawn over.
@@ -297,6 +315,167 @@ fn the_noise_under_the_cards_is_not_flat() {
         seen[usize::from(v)] = true;
     }
     assert!(seen.iter().all(|&s| s), "noise.png holds every byte value");
+}
+
+// ---------------------------------------------------------------- every card frame, by its hash
+const HASHES: &str = "frames/flute_vs_trombone/title/hashes.npz";
+
+/// One timeline of `hashes.npz`: its name, the card frames Python listed and their SHA-256 digests.
+struct Pinned {
+    timeline: String,
+    frames: Vec<usize>,
+    digests: Vec<[u8; 32]>,
+}
+
+/// The timeline a case of `hashes.npz` describes, built here: the episode's show with the case's fighters and
+/// tempo, checked against the case's timeline values to the bit, and the card with the case's tag.
+fn pinned_card(case: &bf_testdata::Case) -> (Show, TitleCard) {
+    let args = &case.args;
+    let names: Vec<String> = args["fighters"]
+        .as_array()
+        .expect("args.fighters")
+        .iter()
+        .map(|v| v.as_str().expect("a name").to_string())
+        .collect();
+    let bpm = args["bpm"].as_f64().expect("args.bpm");
+    let mut show = episode().show.clone();
+    show.grid = Grid::new(bpm);
+    show.names = [names[0].clone(), names[1].clone()];
+    let g = &show.grid;
+    let tv = &args["timeline_values"];
+    let same = |got: f64, want: &Value, what: &str| {
+        assert_eq!(got.to_bits(), hex_arg(want).to_bits(), "{}: {what}", case.id);
+    };
+    same(g.bpm, &tv["bpm"], "bpm");
+    same(g.beat, &tv["beat"], "beat");
+    same(g.bar, &tv["bar"], "bar");
+    same(g.dur, &tv["dur"], "dur");
+    same(g.t_close, &tv["t_close"], "t_close");
+    same(g.t_doors.0, &tv["t_doors"][0], "t_doors[0]");
+    same(g.t_doors.1, &tv["t_doors"][1], "t_doors[1]");
+    for j in 0..3 {
+        same(g.title[j], &tv["title"][j], "title");
+    }
+    assert_eq!(Value::from(g.nf), tv["nf"], "{}: nf", case.id);
+    let card = card_of(&show, args["series"].as_str());
+    (show, card)
+}
+
+#[test]
+fn every_card_frame_matches_its_hash() {
+    let v = Vectors::open(HASHES);
+    assert_eq!(v.index.tool, "title");
+    assert_eq!(v.index.raw["noise"]["file"], "noise.png");
+    let noise = noise();
+    let cases = &v.index.cases;
+    let names: Vec<&str> = cases
+        .iter()
+        .map(|c| c.args["timeline"].as_str().expect("args.timeline"))
+        .collect();
+    assert_eq!(names, ["episode", "swapped", "bpm96", "bpm200"]);
+    let pinned: Vec<(Pinned, &bf_testdata::Case)> = cases
+        .iter()
+        .map(|case| {
+            assert_eq!(
+                case.call, "hashlib.sha256(title.draw(noise, frame / 30).tobytes()).digest()",
+                "{}: a call this test does not know",
+                case.id
+            );
+            let frames = v.array(case, "frames");
+            let sha = v.array(case, "sha256");
+            let n = frames.len();
+            assert_eq!(
+                (frames.shape.as_slice(), sha.shape.as_slice()),
+                (&[n][..], &[n, 32][..]),
+                "{}",
+                case.id
+            );
+            assert_eq!(Value::from(n), case.args["cards"], "{}", case.id);
+            let p = Pinned {
+                timeline: case.args["timeline"].as_str().expect("timeline").to_string(),
+                frames: frames
+                    .i32()
+                    .iter()
+                    .map(|&f| usize::try_from(f).expect("a frame"))
+                    .collect(),
+                digests: sha.u8().chunks(32).map(|d| d.try_into().expect("32 bytes")).collect(),
+            };
+            (p, case)
+        })
+        .collect();
+    // The episode's digests are those of the 18 PNG cards, where both have a frame.
+    let ep = &pinned[0].0;
+    let mut checked = 0;
+    for case in index()["cases"].as_array().expect("cases") {
+        let (frame, _) = when(case);
+        let file = case["file"].as_str().expect("file");
+        let (_, _, _, png) = read_png(&reference(&format!("{FOLDER}/{file}")));
+        let i = ep
+            .frames
+            .iter()
+            .position(|&f| f == frame)
+            .expect("a PNG card is a card frame");
+        assert_eq!(Sha256::digest(&png)[..], ep.digests[i][..], "{file}");
+        checked += 1;
+    }
+    assert_eq!(checked, 18);
+    // Each timeline drawn here, one thread each.
+    let results: Vec<(String, usize, Vec<String>)> = std::thread::scope(|s| {
+        let handles: Vec<_> = pinned
+            .iter()
+            .map(|(p, case)| {
+                let noise = &noise;
+                s.spawn(move || {
+                    let (show, card) = pinned_card(case);
+                    let mut failures = Vec::new();
+                    // the frames on which the card draws are the ones Python listed
+                    let drawn: Vec<usize> = (0..show.grid.nf)
+                        .filter(|&f| card.door_offset(f as f64 / FPS) < title::OPEN_PX - 1.0)
+                        .collect();
+                    if drawn != p.frames {
+                        failures.push(format!("  {}: the card frames differ from Python's", p.timeline));
+                    }
+                    let mut passed = 0;
+                    for (&frame, want) in p.frames.iter().zip(&p.digests) {
+                        let mut img = noise.clone();
+                        card.draw(&mut img, frame as f64 / FPS);
+                        if Sha256::digest(&img.data)[..] == want[..] {
+                            passed += 1;
+                        } else {
+                            let file = format!("{}_f{frame:04}.png", p.timeline);
+                            let out = repo_root().join("studio/target/title_frames").join(&file);
+                            write_png_rgb(&out, img.w, img.h, &img.data);
+                            failures.push(format!(
+                                "  {} frame {frame}: another picture, in {}",
+                                p.timeline,
+                                out.display()
+                            ));
+                        }
+                    }
+                    (p.timeline.clone(), passed, failures)
+                })
+            })
+            .collect();
+        handles
+            .into_iter()
+            .map(|h| h.join().expect("a timeline's thread"))
+            .collect()
+    });
+    let mut failures = Vec::new();
+    let mut counts = Vec::new();
+    for ((name, passed, fails), (p, _)) in results.into_iter().zip(&pinned) {
+        println!("title hashes, {name}: {passed}/{}", p.frames.len());
+        counts.push(p.frames.len());
+        failures.extend(fails);
+    }
+    assert!(
+        failures.is_empty(),
+        "{} failure(s):\n{}",
+        failures.len(),
+        failures.join("\n")
+    );
+    // every frame of the card at 132 BPM (both ways round), at 96 and at 200 BPM
+    assert_eq!(counts, [61, 61, 84, 43]);
 }
 
 // ---------------------------------------------------------------- the hold and the cover

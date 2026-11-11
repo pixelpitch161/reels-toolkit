@@ -12,3 +12,4 @@ serde_json.workspace = true
 
 [dev-dependencies]
 bf-testdata = { path = "../bf-testdata" }
+sha2.workspace = true
