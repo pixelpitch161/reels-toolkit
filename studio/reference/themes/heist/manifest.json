@@ -1,0 +1,11 @@
+{
+ "format": 1,
+ "entries": [
+  {"path": "studio/reference/themes/heist/bed.json", "sha256": "2c9851f90195d4950f75656d1fc25cf5475aa84259476bfef8297e963942fce5", "bytes": 55506, "tool": "tools.studio_export.theme_heist", "commit": "7d6f3e9c4c8732a7d2e8bcaeb698381e84d284a1", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"},
+  {"path": "studio/reference/themes/heist/exceptions.toml", "sha256": "fa29a01e9c4b1693533f0e35589afb4df98031bb9be56d8a8cab7b69f89cf7f4", "bytes": 781, "tool": "tools.studio_export.theme_heist", "commit": "d594c86ee1df09a83d591f9ea569065c476fc7f6", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"},
+  {"path": "studio/reference/themes/heist/oboe_vs_bassoon.bfrec", "sha256": "f7f5bb372764b8f3989e0356218aaca6fc10e955550404a329326fcc00d15820", "bytes": 132879, "tool": "tools.studio_export.theme_heist", "commit": "d594c86ee1df09a83d591f9ea569065c476fc7f6", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"},
+  {"path": "studio/reference/themes/heist/pins.json", "sha256": "43633d1337245a6bbfe96fab49ab852d4342f11bfb969d718bbed4db9c093b1b", "bytes": 1449, "tool": "tools.studio_export.m3refs", "commit": "d594c86ee1df09a83d591f9ea569065c476fc7f6", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"},
+  {"path": "studio/reference/themes/heist/theme.json", "sha256": "c51809c3c9253df9c0dd79e1259a403ad5f0dea57be3b40da872ee12e65acdd9", "bytes": 2237, "tool": "tools.studio_export.theme_heist", "commit": "d594c86ee1df09a83d591f9ea569065c476fc7f6", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"},
+  {"path": "studio/reference/themes/heist/voicings.json", "sha256": "d897686ecb65a4b17ceed13f26656def82572374284c13d3c33fb7ca6a4207f0", "bytes": 4810, "tool": "tools.studio_export.theme_heist", "commit": "d594c86ee1df09a83d591f9ea569065c476fc7f6", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"}
+ ]
+}

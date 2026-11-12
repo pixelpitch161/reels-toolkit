@@ -24,6 +24,12 @@
    "export": "fighter_alto_sax"
   },
   {
+   "path": "fighters/alto_sax/left.bfrec",
+   "sha256": "f1b3127839ecdbec507d32e770e5c684f103b51df8602e1c748818b5d9469960",
+   "bytes": 128172,
+   "export": "fighter_alto_sax"
+  },
+  {
    "path": "fighters/alto_sax/look_right.json",
    "sha256": "895abd04d9d1fc08ddf2c7578fd6320d3a388c1aa04ef626ffee7e5bf46e425a",
    "bytes": 16695,
@@ -145,8 +151,8 @@
   },
   {
    "path": "fighters/alto_sax/sprites.json",
-   "sha256": "c13288861c04151bcfbca5faf3bf2937533aa6be7d0cba096d9e938b60078693",
-   "bytes": 73588,
+   "sha256": "31ea6c6b461cec94f0041538bfc255d94446f548df90b78f7617c669f22166b5",
+   "bytes": 73598,
    "export": "fighter_alto_sax"
   },
   {

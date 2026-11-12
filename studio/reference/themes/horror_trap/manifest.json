@@ -1,0 +1,11 @@
+{
+ "format": 1,
+ "entries": [
+  {"path": "studio/reference/themes/horror_trap/bassclarinet_vs_bassoon.bfrec", "sha256": "5b5bcfaed48c582da258ac1f01b61f45b729b6c8cc7b8f837498f2be684f02f9", "bytes": 137093, "tool": "tools.studio_export.theme_horror_trap", "commit": "d594c86ee1df09a83d591f9ea569065c476fc7f6", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"},
+  {"path": "studio/reference/themes/horror_trap/bed.json", "sha256": "4797798a0f3584d6e392a73519b3a7a466df01ef60202abdc7e1db0dc267eaa5", "bytes": 57141, "tool": "tools.studio_export.theme_horror_trap", "commit": "7d6f3e9c4c8732a7d2e8bcaeb698381e84d284a1", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"},
+  {"path": "studio/reference/themes/horror_trap/exceptions.toml", "sha256": "fa29a01e9c4b1693533f0e35589afb4df98031bb9be56d8a8cab7b69f89cf7f4", "bytes": 781, "tool": "tools.studio_export.theme_horror_trap", "commit": "d594c86ee1df09a83d591f9ea569065c476fc7f6", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"},
+  {"path": "studio/reference/themes/horror_trap/pins.json", "sha256": "3bfac98c421703014d6f3b4fea88181d055c52db7e275b12c06b0ba336c563e8", "bytes": 1548, "tool": "tools.studio_export.m3refs", "commit": "d594c86ee1df09a83d591f9ea569065c476fc7f6", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"},
+  {"path": "studio/reference/themes/horror_trap/theme.json", "sha256": "12c3604059aea283cec1ad2a025f7942c57a502fbf74f57c20302928a1c19e31", "bytes": 2292, "tool": "tools.studio_export.theme_horror_trap", "commit": "d594c86ee1df09a83d591f9ea569065c476fc7f6", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"},
+  {"path": "studio/reference/themes/horror_trap/voicings.json", "sha256": "f6bd9154d77269b37b3b8b7061250b9892f5c430c342decce728d48c55f8dd0d", "bytes": 18298, "tool": "tools.studio_export.theme_horror_trap", "commit": "d594c86ee1df09a83d591f9ea569065c476fc7f6", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"}
+ ]
+}

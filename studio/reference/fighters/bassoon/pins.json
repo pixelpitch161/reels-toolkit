@@ -24,6 +24,12 @@
    "export": "fighter_bassoon"
   },
   {
+   "path": "fighters/bassoon/left.bfrec",
+   "sha256": "651b80de14682df03c82931b37303b11e77d1b3a726d65448db6d3b1e3d9b761",
+   "bytes": 135957,
+   "export": "fighter_bassoon"
+  },
+  {
    "path": "fighters/bassoon/look_right.json",
    "sha256": "3df0c172b4fc227fdc19a357a9f03b0305ec2b06be539ea216eca1867f11d248",
    "bytes": 16641,
@@ -145,8 +151,8 @@
   },
   {
    "path": "fighters/bassoon/sprites.json",
-   "sha256": "f6dc967f4363305c348d278a6e5bdbe2df1c098cc48c123b621573552862f909",
-   "bytes": 75669,
+   "sha256": "7d97188cfe5cca4d2636ab8a6ff8ecbb9fd4b2a69f916d010ef704f130b21af7",
+   "bytes": 75679,
    "export": "fighter_bassoon"
   },
   {

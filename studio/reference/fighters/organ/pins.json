@@ -24,6 +24,12 @@
    "export": "fighter_organ"
   },
   {
+   "path": "fighters/organ/left.bfrec",
+   "sha256": "2520853a0e2490b2633dce1d15f77fd0bac562f84b0cc7f5fbb3d43dd3d3af54",
+   "bytes": 111601,
+   "export": "fighter_organ"
+  },
+  {
    "path": "fighters/organ/look_right.json",
    "sha256": "82c0d0f6cc5424987857d2dba7ced499ed7e9ebf8de8482bd68c3ba9e698e288",
    "bytes": 16917,
@@ -145,8 +151,8 @@
   },
   {
    "path": "fighters/organ/sprites.json",
-   "sha256": "5721cab4a4fcd2e57b5271bc8711540238e33de13ab51138951e3fead28c79ad",
-   "bytes": 73732,
+   "sha256": "0483f3f64fc9fccd40c7fe0243c19921b964a4d9781c3b30493a6749d56021bd",
+   "bytes": 73742,
    "export": "fighter_organ"
   },
   {

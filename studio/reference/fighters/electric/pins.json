@@ -24,6 +24,12 @@
    "export": "fighter_electric"
   },
   {
+   "path": "fighters/electric/left.bfrec",
+   "sha256": "cb4c3b6b9917142d4b872a541c94046b309198a5683ab9eb4908983e73239e50",
+   "bytes": 125582,
+   "export": "fighter_electric"
+  },
+  {
    "path": "fighters/electric/look_right.json",
    "sha256": "e59a3abd5535faa361d659b454d2280a9c0aaca1ab2682123b507b9fa21e66d0",
    "bytes": 16668,
@@ -145,8 +151,8 @@
   },
   {
    "path": "fighters/electric/sprites.json",
-   "sha256": "2e9d1378a1a2e1371bd92ad966e3de507fd4e7af87a776629e0b4103c9ac79c1",
-   "bytes": 140106,
+   "sha256": "1988a12ce664ec12316d005266160687f9097662056a42e78f57459865471ec9",
+   "bytes": 140116,
    "export": "fighter_electric"
   },
   {
