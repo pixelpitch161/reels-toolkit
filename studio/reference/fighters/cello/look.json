@@ -49,6 +49,7 @@
  "hull_cache": "fighters/cello/hull_left.json",
  "hull_note": "ruling M3-R29: each fight's hull calls are in the pinned cache (left: hull_cache, right: hull_cache under `right`; every call's points and vertices); `left.hull` and look_right.json's `hull` hold their counts and the SHA-256 of their exact part (`line`)",
  "left": {
+  "cache": "fighters/cello/left.bfrec",
   "cards": [
    [0, "1693dc0e5faa818b68302cf55f5a670cfe23861ad222398a5743269f56d895aa"],
    [4, "702fff95a6ce024e886b59df7b38e59d75b531e92493c52399d258078858519e"],
@@ -68,7 +69,6 @@
    [1829, "ba74b12dd9e0f8994287603bee85871e99804934adf6f1586261082eb13cf180"]
   ],
   "fighters": ["CELLO", "FLUTE"],
-  "file": "fighters/cello/left.bfrec",
   "frames": [
    [0, "0b6eb2352ea8abf38d6deda3c5e04e09530abff991d00abc1b07b60f183abbb1", 38, "6d8bc6b7a5e68f423c56da2596de48cd5ce95d5600cf7aa2d01485a088287cf0", 0, "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", "spread"],
    [13, "4080dd959f071fb6c0ffdc56ed919224a9c9e0865be0025c0e676b78b3a8f223", 38, "1d06738e4154afe68650a302798c0879b1dd67138d7125ba3fb3fafb731056e4", 1, "4104803c0bf5380f54b670b3db5ea2aae4a91dfe1ea69cd9eca00fc87a3c91f5", "the title card, the doors and the count-in"],
@@ -168,6 +168,7 @@
    "winner": 0
   },
   "seed": 21,
+  "sha256": "7d360594a3b3faa0f3dea37a7f9f16548e0b0b90c24d632384c20b12ca47f66c",
   "winner": "CELLO"
  },
  "opponent": "FLUTE",

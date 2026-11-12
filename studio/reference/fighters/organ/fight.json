@@ -331,12 +331,13 @@
  "fighter": "ORGAN",
  "format": 1,
  "left": {
+  "cache": "fighters/organ/left.bfrec",
   "events": 359,
-  "file": "fighters/organ/left.bfrec",
   "frames": 1304,
   "hash": "cb8db8018797b6f9",
   "names": ["ORGAN", "FLUTE"],
   "seed": 271,
+  "sha256": "2520853a0e2490b2633dce1d15f77fd0bac562f84b0cc7f5fbb3d43dd3d3af54",
   "t_ko": 47.00490196078431,
   "why": "fixed by the spec",
   "winner": 0
@@ -562,6 +563,7 @@
    "times": []
   },
   "hooks": [],
+  "left_in_cache": true,
   "name": "ORGAN",
   "opponent": "FLUTE",
   "roles": ["bass"],

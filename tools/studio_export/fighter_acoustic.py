@@ -17,6 +17,8 @@ other key is the template's default.
 from . import m3refs
 
 SPEC = dict(name='ACOUSTIC', opponent='FLUTE', fights=dict(handicap=(1.7, 1.0)),
-            voice_notes=dict(durations=(0.12, 1.0)))
+            voice_notes=dict(durations=(0.12, 1.0)),
+    left_in_cache=True,  # storage plan B (M3-R43): its kit recording is the pinned cache file
+)
 
 EXPORTS = {'fighter_acoustic': lambda: m3refs.fighter_refs(SPEC)}

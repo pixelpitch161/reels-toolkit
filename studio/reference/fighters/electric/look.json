@@ -49,6 +49,7 @@
  "hull_cache": "fighters/electric/hull_left.json",
  "hull_note": "ruling M3-R29: each fight's hull calls are in the pinned cache (left: hull_cache, right: hull_cache under `right`; every call's points and vertices); `left.hull` and look_right.json's `hull` hold their counts and the SHA-256 of their exact part (`line`)",
  "left": {
+  "cache": "fighters/electric/left.bfrec",
   "cards": [
    [0, "398885b42692ea667f5fd02e2ccf3dc6b96f9dd2dad67d83413ba29c7e9838c5"],
    [4, "4c4d99ce6f875ca10e1f514247c62a512d762ed45f099a5f169c5bba34af73c8"],
@@ -68,7 +69,6 @@
    [1829, "e5be5e26bcbfead85fdb4ae7e5dab15cc18271fb2263b17bb7b36b6f11d75450"]
   ],
   "fighters": ["ELECTRIC", "FLUTE"],
-  "file": "fighters/electric/left.bfrec",
   "frames": [
    [0, "13369a287dc8c4518421ef7a42accaa544e3d6ad0d0dae476b3057259a618b05", 38, "6d8bc6b7a5e68f423c56da2596de48cd5ce95d5600cf7aa2d01485a088287cf0", 0, "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", "spread"],
    [13, "f1d1131ac69a86204d062ea4ae68f750c4644785e0ee7f2b5518ab999210255e", 38, "1d06738e4154afe68650a302798c0879b1dd67138d7125ba3fb3fafb731056e4", 1, "7bea2cb06aa14864dd4381799f5d51476115809b88341d2ce464ec1038d36808", "the title card, the doors and the count-in"],
@@ -167,6 +167,7 @@
    "winner": 0
   },
   "seed": 4,
+  "sha256": "cb4c3b6b9917142d4b872a541c94046b309198a5683ab9eb4908983e73239e50",
   "winner": "ELECTRIC"
  },
  "opponent": "FLUTE",

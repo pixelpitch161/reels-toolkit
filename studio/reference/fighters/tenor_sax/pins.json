@@ -24,6 +24,12 @@
    "export": "fighter_tenor_sax"
   },
   {
+   "path": "fighters/tenor_sax/left.bfrec",
+   "sha256": "0b97b6af264c7b48248d3a14a7ff5ba2fa8682664d4e61d4e5c7981b71d4335c",
+   "bytes": 114032,
+   "export": "fighter_tenor_sax"
+  },
+  {
    "path": "fighters/tenor_sax/look_right.json",
    "sha256": "6771ae5c31ec093b85a1003fee5f879048177b77af4670c3343a8e1aab702b86",
    "bytes": 16901,
@@ -145,8 +151,8 @@
   },
   {
    "path": "fighters/tenor_sax/sprites.json",
-   "sha256": "ed87298b92fed5567015d9a11fb49d66551ccbe230372ba4ecfc6b4646fcb45e",
-   "bytes": 76810,
+   "sha256": "de3a01ac59e42cd0db59d548e71fc1878a1e26b5185fbaf2bf18120b08b0ee3c",
+   "bytes": 76820,
    "export": "fighter_tenor_sax"
   },
   {

@@ -24,6 +24,12 @@
    "export": "fighter_oboe"
   },
   {
+   "path": "fighters/oboe/left.bfrec",
+   "sha256": "a10aa46fab0b984168fc36e0a6e4503a6f70dc830d2f4692cfd2e0d369ed1171",
+   "bytes": 128940,
+   "export": "fighter_oboe"
+  },
+  {
    "path": "fighters/oboe/look_right.json",
    "sha256": "04a79af22adc644f452e9c732ae6bf19180f0ae0f30a2645499d2d2de94958a3",
    "bytes": 17927,
@@ -157,8 +163,8 @@
   },
   {
    "path": "fighters/oboe/sprites.json",
-   "sha256": "049f27c6b1a5edf549c9c122be5c9c6436e69a15a5b5b1904ed89e06c189ce28",
-   "bytes": 74619,
+   "sha256": "17f34fa31203fe2a3cc6ef44e90667ff44fc1b1f4570e84c918c90fc36f1ea9b",
+   "bytes": 74629,
    "export": "fighter_oboe"
   },
   {

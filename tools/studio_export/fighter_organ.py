@@ -22,6 +22,7 @@ SPEC = dict(
     fights=dict(handicap=(1.0, 2.0),             # ORGAN neutral, FLUTE at its kit handicap (see above)
                 left=271),                       # K.O. at 47.0 s, all three abilities
     roles=('bass',),                             # `melody` is the left and right soundtracks' own role
+    left_in_cache=True,  # storage plan B (M3-R43): its kit recording is the pinned cache file
 )
 
 EXPORTS = {'fighter_organ': lambda: m3refs.fighter_refs(SPEC)}

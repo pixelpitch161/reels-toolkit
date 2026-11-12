@@ -11,6 +11,6 @@ stronger side 60 to 85 %. Every other key is the template's default.
     python -m tools.studio_export cache fighters/electric   regenerates the cache and checks the pins"""
 from . import m3refs
 
-SPEC = dict(name='ELECTRIC', opponent='FLUTE', fights=dict(handicap=(1.7, 1.0)))
+SPEC = dict(name='ELECTRIC', opponent='FLUTE', fights=dict(handicap=(1.7, 1.0)), left_in_cache=True)
 
 EXPORTS = {'fighter_electric': lambda: m3refs.fighter_refs(SPEC)}
