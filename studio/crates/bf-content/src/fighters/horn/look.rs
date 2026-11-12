@@ -703,7 +703,10 @@ impl HornLook {
             if np::f64_to_i64(owner) != self.k as i64 {
                 continue;
             }
-            // (the look's own weapon's numbers: Python reads `self.cfg['weapon']` for its own rings)
+            // Python never checks `self.echo` here: it reads the entry's `self.cfg['weapon']['speed']` for every ring
+            // owned by side k. Such rings exist only when side k's weapon is an echo, and a look set up with another
+            // entry (EUPHONIUM's copy) is given HORN's own, so a look without an echo weapon never meets one; it would
+            // skip it here where Python raises `KeyError`.
             let Some((speed, linger)) = self.ring else { continue };
             let field = |n: usize| v.get(n).and_then(num).unwrap_or(f64::NAN);
             let (x, z, rmax, j, t0) = (field(1), field(2), field(4), field(5), field(6));
@@ -1059,11 +1062,12 @@ impl Look for HornLook {
         // ghosts cast no shadow: a copper glow instead
         let tint = p.col[k].map(|v| v / 255.0 + 0.1);
         for gh in self.ghosts_at(p, c.t) {
-            let s = (0.22 + 0.35 * gh.fl) * gh.a;
+            let s = 0.22 + 0.35 * gh.fl;
             for (j, light) in ic.iter_mut().enumerate() {
                 let rd = np::hypot(c.sxp[j] - gh.x, c.szp[j] - gh.z);
                 let g = np::clip(1.0 - rd / 0.75, 0.0, 1.0);
-                let v = g * g * s;
+                // np.clip(1 - rd / 0.75, 0, 1) ** 2 * (0.22 + 0.35 * gf) * ga: left to right
+                let v = g * g * s * gh.a;
                 for ch in 0..3 {
                     light[ch] += v * tint[ch];
                 }

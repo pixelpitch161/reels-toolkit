@@ -309,3 +309,6 @@ pub(crate) fn snap(f: &Fight, out: &mut Frames) {
     });
     out.push_nested("ECHO_R", Value::List(rings.collect()));
 }
+
+#[cfg(test)]
+mod kit_vectors;
