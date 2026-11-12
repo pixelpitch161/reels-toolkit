@@ -419,7 +419,9 @@
   "why": "the lowest seed with FLUTE in the left corner winning (so BASS CLARINET is knocked out)",
   "winner": 0
  },
- "same_as": {},
+ "same_as": {
+  "fighters/bass_clarinet/scenarios/plain_s11.bfrec": "studio/reference/fighters/bass_clarinet/left.bfrec"
+ },
  "scenarios": [
   {
    "cache": ["fighters/bass_clarinet/scenarios/early_levels_s1.bfrec", "fighters/bass_clarinet/scenarios/early_levels_s2.bfrec", "fighters/bass_clarinet/scenarios/early_levels_s3.bfrec", "fighters/bass_clarinet/scenarios/early_levels_s4.bfrec", "fighters/bass_clarinet/scenarios/early_levels_s5.bfrec", "fighters/bass_clarinet/scenarios/early_levels_s6.bfrec"],
