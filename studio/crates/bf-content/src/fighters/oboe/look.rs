@@ -219,6 +219,11 @@ fn draw_beam(
     reeds::blend(img, &reeds::mask(&[], &[core], 1), WHITE, Num::Py(0.95 * k));
 }
 
+/// The colour term of `wobble_rim`, `c * a_ * min(1.0, depth * 1.4)`, in the kit's order: `(c * a_) * m`.
+fn rim_colour(c: f64, a: f64, m: f64) -> f64 {
+    c * a * m
+}
+
 /// `wobble_rim(img, x, y, rp, depth, t, col, seed)`: OUT OF TUNE: a doubled, warped outline round the ball (a sour
 /// ghost a few pixels off, its rim waving), stronger with the detune's depth.
 #[allow(clippy::too_many_arguments)] // the Python signature
@@ -241,7 +246,8 @@ fn wobble_rim<T: Px>(img: &mut Img<T>, x: f64, y: f64, rp: f64, depth: f64, t: f
         let j = j as f64;
         let sh = depth * (1.0 + 0.6 * dmath::sin(t * 9.0 + j * 2.0 + seed));
         let (cx, cy) = (x + ox * sh, y + oy * sh);
-        let aa = a * py_min(1.0, depth * 1.4);
+        let m = py_min(1.0, depth * 1.4);
+        let aa = a * m;
         for py_ in y0..y1 {
             for px_ in x0..x1 {
                 let (dx, dy) = (px_ as f64 - cx, py_ as f64 - cy);
@@ -252,7 +258,7 @@ fn wobble_rim<T: Px>(img: &mut Img<T>, x: f64, y: f64, rp: f64, depth: f64, t: f
                     // sub[ring] = sub[ring] * (1 - aa) + c * aa: the picture's dtype times a Python float, plus a
                     // float64 colour
                     for (v, cc) in img.px_mut(px_ as usize, py_ as usize).iter_mut().zip(c) {
-                        *v = T::set(v.times(1.0 - aa) + cc * aa);
+                        *v = T::set(v.times(1.0 - aa) + rim_colour(cc, a, m));
                     }
                 }
             }
@@ -877,6 +883,16 @@ mod tests {
         assert_eq!(py_slice(0, -3, 640), 0..637);
         assert_eq!(py_slice(700, 703, 640), 0..0);
         assert_eq!(py_slice(0, 0, 640), 0..0);
+    }
+
+    /// The rim's colour term is multiplied in the kit's order, `(c * a_) * m` (the kit's number for a depth of
+    /// 0.0305, a channel of 139.8 and the first ghost's 0.85).
+    #[test]
+    fn the_rims_colour_term_keeps_the_kits_order() {
+        let m = py_min(1.0, 0.0305 * 1.4);
+        // Python prints 5.0740410000000002: the float nearest 5.074041
+        assert_eq!(rim_colour(139.8, 0.85, m), 5.074041);
+        assert_ne!(139.8 * (0.85 * m), 5.074041);
     }
 
     /// The A gathers from the aim lock to the next shot, and not before a lock or after its shot.

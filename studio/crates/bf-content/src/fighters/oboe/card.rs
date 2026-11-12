@@ -8,8 +8,8 @@ use crate::cards::FighterCard;
 pub static CARD: Option<FighterCard> = Some(FighterCard {
     weapon: "Tuning A",
     text: "Every bar it sounds its A as a narrow beam. A beam that lands knocks the enemy out of tune for 2 bars: the \
-           enemy hits weaker, and every eighth note of the oboe stings it. Each beam that lands makes the next one \
-           worse.",
+           enemy hits weaker, and every eighth note of the oboe stings it. Each beam that lands puts the enemy \
+           further out of tune.",
     abilities: [
         "Two blades snap shut on an enemy close by, half a beat after they open",
         "The beam is held for 4 beats and follows the enemy",
