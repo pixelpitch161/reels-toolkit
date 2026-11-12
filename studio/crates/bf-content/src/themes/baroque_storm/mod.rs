@@ -201,7 +201,7 @@ pub fn harpsi(m: i32, dur: f64) -> Vec<f64> {
 
 /// `Bed.strng(m, dur, cut, vib, att)` before its velocity: a string section note: three detuned saws (an
 /// ensemble), a dark low-pass, a bow attack; vibrato on long notes. The note is 80 ms longer than `dur`, released
-/// over 30 ms. It draws no noise.
+/// over 30 ms. Its noise comes from a fresh generator of seed 1 on each call (no shared stream), so it is the same sound every time.
 pub fn strng(m: i32, dur: f64, cut: f64, vib: f64, att: f64) -> Vec<f64> {
     let n = length((dur + 0.08) * SRF);
     let t = synth::tt(n);

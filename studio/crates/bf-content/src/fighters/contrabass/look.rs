@@ -819,7 +819,8 @@ mod tests {
         let ring = jag_ring(0.5, -0.25, 1.0, 1234, 0.05, 56, 0.05);
         assert_eq!(ring.len(), 57);
         for q in &ring {
-            let r = ((q[0] - 0.5).powi(2) + (q[1] + 0.25).powi(2)).sqrt();
+            let (dx, dy) = (q[0] - 0.5, q[1] + 0.25);
+            let r = (dx * dx + dy * dy).sqrt();
             assert!((0.95 - 1e-12..=1.05 + 1e-12).contains(&r), "{r}");
             assert_eq!(q[2], 0.05);
         }

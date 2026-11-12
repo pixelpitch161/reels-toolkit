@@ -39,8 +39,8 @@ fn bits(x: f64) -> u64 {
 ///
 /// Like the kit's class it makes each harpsichord string, string note and timpani stroke once per key of its cache
 /// (the key rounds the length, as the kit's does: a later call whose key matches gets the first call's sound) and
-/// scales the cached sound by the velocity. The modern punch (`A.hp(A.kick(...))`, the same sound on every call and
-/// no noise) is made once.
+/// scales the cached sound by the velocity. The modern punch (`A.hp(A.kick(...))`, the same sound on every call: its noise is a
+/// fresh generator of seed 1 each time, no shared stream) is made once.
 #[derive(Debug)]
 pub struct BaroqueStormClassic {
     cache: Mutex<BTreeMap<Key, Arc<Vec<f64>>>>,
