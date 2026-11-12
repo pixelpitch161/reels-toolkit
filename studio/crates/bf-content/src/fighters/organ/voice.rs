@@ -95,6 +95,7 @@ fn bpf(x: &[f64], lo: f64, hi: f64) -> Vec<f64> {
 }
 
 /// `organ(f, dur, v, ranks, att, rel, chiff, seed=seed)`: the additive pipe-organ voice, at 44,100 Hz.
+#[allow(clippy::too_many_arguments)] // the Python signature
 fn organ(f: f64, dur: f64, v: f64, ranks: &[Rank], att: f64, rel: f64, chiff: f64, seed: u64) -> Vec<f64> {
     let n = pp::len(dur + 5.0 * rel + 0.03);
     let t = pp::tt(n);
