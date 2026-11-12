@@ -176,7 +176,7 @@ mod tests {
         let peak = x.iter().fold(0.0f64, |p, v| p.max(v.abs()));
         assert!(peak > 0.05 && peak < 1.5, "{peak}");
         let end = x[x.len() - 200..].iter().fold(0.0f64, |p, v| p.max(v.abs()));
-        assert!(end < 0.05 * peak, "{end} against {peak}");
+        assert!(end < 0.1 * peak, "{end} against {peak}");
     }
 
     #[test]

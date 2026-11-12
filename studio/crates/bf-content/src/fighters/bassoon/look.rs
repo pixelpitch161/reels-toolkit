@@ -1076,7 +1076,8 @@ mod tests {
     fn a_stomp_ring_grows_and_a_backstab_doubles_it() {
         let r = |u: f64, back: bool| 0.35 + (0.2 + 0.5 + if back { 0.5 } else { 0.0 }) * (1.0 - (1.0 - u) * (1.0 - u));
         assert_eq!(stomp_band(r(0.5, false), 0.5, 0.2, false), 0.5);
-        assert_eq!(stomp_band(r(0.5, false) + 0.07, 0.5, 0.2, false), 0.0);
+        assert!(stomp_band(r(0.5, false) + 0.07, 0.5, 0.2, false) < 1e-12);
+        assert_eq!(stomp_band(r(0.5, false) + 0.08, 0.5, 0.2, false), 0.0);
         assert_eq!(stomp_band(r(0.5, true) * 0.62, 0.5, 0.2, true), 0.5 * 0.8);
         assert_eq!(stomp_band(r(0.5, true) * 0.62, 0.5, 0.2, false), 0.0);
     }

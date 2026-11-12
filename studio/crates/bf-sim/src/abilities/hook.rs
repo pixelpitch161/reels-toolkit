@@ -153,3 +153,6 @@ pub(crate) fn snap(f: &Fight, out: &mut Frames) {
     }
     out.push_f64("HOOK", &[2, 3], &row);
 }
+
+#[cfg(test)]
+mod tests;
