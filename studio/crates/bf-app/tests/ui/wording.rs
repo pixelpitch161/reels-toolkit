@@ -244,3 +244,26 @@ fn no_button_is_vague() {
         }
     }
 }
+
+/// Texts the start-up shows a person outside any screen (message boxes and start-up notices), which no fixture holds.
+fn start_up_texts() -> Vec<String> {
+    use bf_app::update::swap;
+    vec![
+        swap::FINISH_WORDS.to_string(),
+        swap::NOT_STAGED.to_string(),
+        swap::RESUME_FAILED.to_string(),
+        swap::RESTART_FAILED.to_string(),
+        swap::UPDATE_BUSY.to_string(),
+        swap::lock_unusable("the folder cannot be written to"),
+    ]
+}
+
+#[test]
+fn the_start_up_texts_are_in_sentence_case() {
+    for text in start_up_texts() {
+        assert!(breaks(&text, &[]).is_empty(), "{text:?} has {:?}", breaks(&text, &[]));
+        assert!(text.ends_with('.'), "{text:?} is a whole sentence");
+        let first = text.trim_start_matches('-').chars().next().unwrap();
+        assert!(first.is_uppercase() || text.starts_with("--"), "{text:?}");
+    }
+}

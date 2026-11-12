@@ -51,8 +51,30 @@ pub const NOTICE_NAME: &str = "update-notice.txt";
 pub const RESUMED_NAME: &str = "update-resumed.txt";
 /// What a start says, and then closes, while another program is putting a version in place.
 pub const UPDATE_BUSY: &str = SWAP_BUSY;
+/// `--finish-update` given wrongly (`main`'s command line).
+pub const FINISH_WORDS: &str =
+    "--finish-update needs the number of the program it waits for after it, and nothing else.";
+/// `--finish-update` run by a program that is not an update staged in an installed copy's `.next`.
+pub const NOT_STAGED: &str =
+    "This program is not an update waiting in the program folder, so there is nothing to finish.";
+/// `AtStart::Resume` could not hand the unfinished update over.
+pub const RESUME_FAILED: &str = "An update could not be finished just now. Start BALLFIGHT Studio again: it \
+    finishes the update or takes it back by itself.";
+/// `AtStart::Restart` could not start the earlier version.
+pub const RESTART_FAILED: &str = "The update was taken back, but the earlier version could not be started. Start \
+    BALLFIGHT Studio again.";
 /// How long `finish` waits for the old app to end.
 const OLD_APP_WAIT: Duration = Duration::from_secs(30);
+
+/// The start-up notice when the swap lock could not be taken for a reason other than another program holding it
+/// (its folder cannot be written, or its name is a link): the start goes on, so an installed copy is never kept from
+/// starting by it.
+pub fn lock_unusable(why: &str) -> String {
+    format!(
+        "BALLFIGHT Studio could not look for an unfinished update at this start, so it starts as it is. {}",
+        sentence(why)
+    )
+}
 
 /// Starts `.next`'s exe with `--finish-update <this program's id>` in the program folder, after checking `.next`
 /// is a whole package. The app saves and closes right after (Task 13 sees `UpdateView::close`).
@@ -74,7 +96,12 @@ pub fn launch_finish(inst: &Installed) -> Result<(), String> {
 /// sentence the next start shows. Task 9 exits with 0 for `Ok` and 1 for `Err`.
 pub fn finish(dir: &Path, old_pid: u32) -> Result<(), String> {
     let logs = crate::store::Paths::system().map(|p| p.logs);
-    finish_with(dir, old_pid, logs.as_deref(), OLD_APP_WAIT, &|exe| {
+    finish_at(dir, old_pid, logs.as_deref())
+}
+
+/// `finish`, leaving its notice in `logs` (the caller's choice of folder; `finish` passes the PC's own).
+pub fn finish_at(dir: &Path, old_pid: u32, logs: Option<&Path>) -> Result<(), String> {
+    finish_with(dir, old_pid, logs, OLD_APP_WAIT, &|exe| {
         bf_pack::run::start_detached(exe, &[], dir).map(|_| ())
     })
 }
@@ -198,8 +225,12 @@ pub fn at_start(inst: &Installed, logs: Option<&Path>) -> AtStart {
 pub fn at_start_as(inst: &Installed, logs: Option<&Path>, running: &str) -> AtStart {
     let dir = &inst.dir;
     let next = dir.join(NEXT);
-    let Ok(lock) = swap_lock(dir) else {
-        return AtStart::Busy;
+    // Only another program holding the lock means "busy"; any other trouble with it must never keep the app from
+    // starting, so it is a notice and the start goes on.
+    let lock = match swap_lock(dir) {
+        Ok(lock) => lock,
+        Err(PackError::Refused(t)) if t == SWAP_BUSY => return AtStart::Busy,
+        Err(e) => return AtStart::Notice(lock_unusable(&e.to_string())),
     };
     let resumed = logs.map(|l| l.join(RESUMED_NAME));
     let forget_resume = || {
@@ -745,6 +776,34 @@ mod tests {
         let held = swap_lock(&inst.dir).unwrap();
         assert_eq!(at_start(&inst, None), AtStart::Busy);
         assert!(go_back_with(&inst, &|_| Ok(())).unwrap_err().contains(UPDATE_BUSY));
+        drop(held);
+        assert_eq!(at_start(&inst, None), AtStart::Nothing);
+    }
+
+    #[test]
+    fn a_lock_that_cannot_be_used_never_keeps_the_app_from_starting() {
+        let dir = TempDir::new("swap-lock-unusable");
+        let inst = installed(dir.path(), "0.6.0", None);
+        // A folder where the lock file goes: the lock cannot be opened, and nobody holds it.
+        let lock = bf_pack::install::swap_lock_path(&inst.dir);
+        // Making the install may have left the (empty, unheld) lock file there already.
+        let _ = std::fs::remove_file(&lock);
+        std::fs::create_dir_all(&lock).unwrap();
+        let at = at_start(&inst, None);
+        let AtStart::Notice(words) = &at else {
+            panic!("a notice, and the start goes on: {at:?}")
+        };
+        assert!(
+            words.starts_with(
+                "BALLFIGHT Studio could not look for an unfinished update at this start, so it starts as it is."
+            ),
+            "{words}"
+        );
+        assert!(words.ends_with('.'), "{words}");
+        std::fs::remove_dir(&lock).unwrap();
+        // Held by another program: still busy, and only then.
+        let held = swap_lock(&inst.dir).unwrap();
+        assert_eq!(at_start(&inst, None), AtStart::Busy);
         drop(held);
         assert_eq!(at_start(&inst, None), AtStart::Nothing);
     }
