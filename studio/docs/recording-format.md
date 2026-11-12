@@ -745,31 +745,40 @@ for FLUTE and TROMBONE), from the lines below.
 <!-- kind:walk -->
 #### `walk` (weapon kind of CONTRABASS)
 
-`fight.py` 3965 to 4040, 3190 to 3232. Not ported yet: its port fills this section in (the meaning of each field, as 6.2
-and 6.3 do for FLUTE and TROMBONE), from the lines below.
+`fight.py` 3965 to 4040, the walker's side of the clash in `move` 3190 to 3232; ported in `bf-sim/src/kinds/walk.rs`
+(`bf-core/src/roster/kinds/walk.rs` for its roster numbers). The double bass never glides: every `every` beats on the
+16th grid (haste divides the grid) it takes one heavy step of `step16` 16ths, timed so the footfall lands on the grid,
+toward the enemy's spot `lead` x its motion over the step ahead, turned by up to `jitter` degrees, at most `stride`
+long and never past contact (`gap`). While a step is under way the ball is walking: nothing knocks it, no grapple
+holds it, and it gives no way in a clash (planted between steps it is still a walker and gives none either; pinned
+against the ropes, its step restarts where it stands). Each footfall sends a quake ring of kind `step` from the
+landing spot out to `blade_len` beyond its surface (recorded in `BL` and in `WALK` column 3); a quake that lands
+grows `blade_len` by `grow`, up to `max_reach`. No step while its knock boost is above `stagger`, while it is
+stunned, sunk in shadow, grabbed, in pieces, or stampeding (THE ELEPHANT). The generator is drawn once per step
+started (the jitter, 4008).
 
 **Record keys.**
 
-- `WALK`: added to `rec` at `run()` 5881, written by `snap` 5634 to 5642:
+- `WALK`: `<f8`, shape `(frames, 2, 4)`, in a recording where a fighter's weapon is a `walk` (`run()` 5881, `snap`
+  5634 to 5642). One row per fighter; -1.0 where nothing is live.
 
-  ```python
-  if 'WALK' in rec:                                   # #47, only recorded when a fighter uses the 'walk' kind
-      Wk = np.full((2, 4), -1.0)
-      for j, Bj in enumerate((B0, B1)):
-          S_ = getattr(Bj, 'wstep', None)
-          if S_ is not None:
-              Wk[j, :3] = ((self.t - S_['t0']) / max(1e-9, S_['t1'] - S_['t0']), S_['t0'], S_['t1'])
-          if getattr(Bj, 'walker', False):
-              Wk[j, 3] = Bj.blade_len
-      rec['WALK'].append(Wk)
-  ```
+  | Column | Meaning |
+  | --- | --- |
+  | 0 | the step's progress, `(t - start) / (landing - start)`, while a step is under way; else -1.0 |
+  | 1 | the step's start time (a step only) |
+  | 2 | the step's landing time, on the grid (a step only) |
+  | 3 | the quake's reach `blade_len` of any walker (a marching sousaphone, a rolling bass drum and a strutting tenor are walkers too); -1.0 for a ball that is not one |
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+**Events** (`who` is the walking bass; coordinates are ring units; times are on the video clock):
 
-- 4016: `self.ev('step', k, float(B.p[0]), float(B.p[1]), float(p1[0]), float(p1[1]), self.t + dur, B.wstep['kind'])`
-- 4039: `self.ev('step_land', k, float(B.p[0]), float(B.p[1]), float(B.blade_len), S['kind'])`
-- 3232: `self.ev('clash', -1, mx, my)`
+| Kind | Fields after `who` | When |
+| --- | --- | --- |
+| `step` | `x0, y0, x1, y1` (from, to), the landing time, 1 under haste else 0 (int) | a step starts (4016) |
+| `step_land` | `x, y` where it lands, the quake's reach (`blade_len`), 1 under haste else 0 (int) | the footfall (4039): from `walk_step`, or from `walk_tick` when it is due within a substep |
+| `clash` (`who` -1) | `x, y`, the midpoint | a walker's clash, announced once per push: not again within 0.2 s (`wclash_t`, 3227 to 3232) |
+
+**Hits.** `step`: the quake ring's (`effects_step`), `dmg` and `knock` of the weapon; a landed one grows the reach.
+The ring clears no projectile.
 
 <!-- /kind:walk -->
 
@@ -1373,35 +1382,47 @@ and 6.3 do for FLUTE and TROMBONE), from the lines below.
 <!-- kind:slap -->
 #### `slap` (ability kind of CONTRABASS)
 
-`fight.py` 2946 to 2947, 4202 to 4219. Not ported yet: its port fills this section in (the meaning of each field, as 6.2
-and 6.3 do for FLUTE and TROMBONE), from the lines below.
+`fight.py` 2946 to 2947, 4202 to 4219, the gate in `abilities_step` 3043 to 3045; ported in
+`bf-sim/src/abilities/slap.rs`. SLAP BASS waits until the enemy is within `ready` beyond contact, or the fighter is
+held in a grapple; then it fires a ring of kind `slap` (`speed`, out to `radius`, `dmg`, `knock`) that clears the
+enemy's projectiles, and a held fighter's holder lets go first (`grapple_release`, CELLO's kind). It draws nothing.
 
 **Record keys.** None of its own.
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+**Events** (`who` is the slapper):
 
-- 4218: `self.ev('slap', k, broke)`
+| Kind | Fields after `who` | When |
+| --- | --- | --- |
+| `slap` | 1 when it broke a grab, else 0 (int) | it fires (4218) |
+
+**Hits.** `slap`: the ring's (`effects_step`).
 
 <!-- /kind:slap -->
 
 <!-- kind:stampede -->
 #### `stampede` (ability kind of CONTRABASS)
 
-`fight.py` 2953 to 2954, 4302 to 4368. Not ported yet: its port fills this section in (the meaning of each field, as 6.2
-and 6.3 do for FLUTE and TROMBONE), from the lines below.
+`fight.py` 2953 to 2954, 4302 to 4368; ported in `bf-sim/src/abilities/stampede.rs`. THE ELEPHANT: for `beats` beats
+the fighter stops stepping (a step under way stops where it is) and charges after the enemy at `speed` x the shared
+speed, turning toward it at `turn` rad/s, bouncing off the ropes, walking the whole time (no knockback, no grab, no
+giving way). On contact (within 0.04 of touching) it tramples, at most once every `cool` s (`dmg`, `knock`), and
+charges on past, its heading reflected off the contact; every `stomp16` 16ths from its start a ring of kind
+`stampede` leaves it (`stomp_r` beyond its surface, spreading at `stomp_speed`, default 9.0; `stomp_dmg`,
+`stomp_knock`; it clears no projectile). A held fighter breaks free first. It draws nothing.
 
 **Record keys.** None of its own.
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+**Events** (`who` is the stampeding fighter):
 
-- 4321: `self.ev('stampede', k, B.stamp['t1'])`
-- 4333: `self.ev('stampede_end', k)`
-- 4348: `self.ev('rope', k, ax, int(math.copysign(1, B.p[ax])), float(B.p[0]), float(B.p[1]), float(sp))`
-- 4354: `self.damage(k, 1 - k, ab['dmg'], 'trample', hx, hy)`
-- 4357: `self.ev('trample', k, hx, hy)`
-- 4366: `self.ev('stampede_stomp', k, float(B.p[0]), float(B.p[1]), rmax)`
+| Kind | Fields after `who` | When |
+| --- | --- | --- |
+| `stampede` | the time it ends | it starts (4321) |
+| `rope` | the axis (int), the rope's side, -1 or 1 (int), `x, y` after the bounce, the charge's speed | it bounces off a rope (4348) |
+| `trample` | `x, y` of the contact | a landed trample (4357), after its `hit` |
+| `stampede_stomp` | `x, y`, the ring's final radius | a stomp (4366) |
+| `stampede_end` | none | its time is up (4333) |
+
+**Hits.** `trample` (4354; `x, y` the contact on its rim), and `stampede`: the stomp ring's (`effects_step`).
 
 <!-- /kind:stampede -->
 
