@@ -1,0 +1,78 @@
+{
+ "about": "ballfight_bassclarinet_vs_bassoon: the kit config's values, which studio/fights/bassclarinet_vs_bassoon.toml must hold, and its recording",
+ "bpm": 140,
+ "chords": ["Em", "B", "Em", "Em", "C", "B", "Em", "Em", "Am", "B", "Em", "Em", "C", "B", "Em", "Em", "Am", "B", "Em", "Em", "C", "B", "Em", "Em", "Am", "B", "Em", "Em", "C", "B", "Em", "Em", "Am", "B", "C", "B"],
+ "config": "ballfight_bassclarinet_vs_bassoon",
+ "dmg_scale": 1.0,
+ "fighters": ["BASS CLARINET", "BASSOON"],
+ "format": 1,
+ "fx_seed": null,
+ "handicap": [0.58, 0.7],
+ "intro": ["Em", "B"],
+ "key": "E",
+ "lines": {
+  "BASS CLARINET": [40, 40, 52, 40, 43, 40, 47, 40, 40, 40, 52, 40, 43, 46, 47, 48, 36, 36, 48, 36, 40, 36, 43, 42, 35, 35, 47, 35, 39, 42, 45, 39, 40, 40, 52, 40, 43, 40, 47, 40, 40, 40, 52, 47, 46, 45, 44, 44, 45, 45, 57, 45, 48, 45, 52, 51, 35, 35, 47, 35, 39, 41, 42, 39],
+  "BASSOON": [64, 67, 71, 67, 64, 63, 64, 67, 64, 67, 72, 71, 70, 69, 68, 67, 64, 67, 72, 67, 64, 67, 71, 72, 63, 66, 71, 66, 63, 66, 69, 71, 64, 67, 71, 67, 64, 63, 64, 67, 76, 75, 74, 73, 72, 71, 70, 71, 69, 72, 76, 72, 69, 68, 69, 72, 71, 69, 66, 63, 66, 69, 71, 63]
+ },
+ "loop": ["Em", "Em", "C", "B", "Em", "Em", "Am", "B"],
+ "loop_bpm": "0x1.1b47582192e2ap+7",
+ "mix": {
+  "bass clarinet": [1.95, 0.25]
+ },
+ "mood": "horror_trap",
+ "music_seed": null,
+ "n_bars": 36,
+ "pair": "bassclarinet_vs_bassoon",
+ "rec_hash": "fafdec25469e1ac7",
+ "recording": "themes/horror_trap/bassclarinet_vs_bassoon.bfrec",
+ "roles": {
+  "BASS CLARINET": "bass",
+  "BASSOON": "line"
+ },
+ "rules": {},
+ "scale": "minor",
+ "seed": 4,
+ "series": null,
+ "shard_seed": 271,
+ "solos": {
+  "BASS CLARINET": [
+   [0.0, 40, 0.5],
+   [0.5, 43, 0.5],
+   [1.0, 47, 0.5],
+   [1.5, 50, 0.5],
+   [2.0, 52, 0.75],
+   [2.75, 55, 0.25],
+   [3.0, 52, 0.5],
+   [3.5, 47, 0.5],
+   [4.0, 45, 0.5],
+   [4.5, 48, 0.5],
+   [5.0, 51, 0.5],
+   [5.5, 47, 0.25],
+   [5.75, 42, 0.25],
+   [6.0, 40, 1.5]
+  ],
+  "BASSOON": [
+   [0.0, 64, 0.25],
+   [0.5, 67, 0.25],
+   [1.0, 71, 0.25],
+   [1.5, 69, 0.25],
+   [2.0, 67, 0.25],
+   [2.5, 66, 0.25],
+   [3.0, 64, 0.25],
+   [3.5, 71, 0.25],
+   [4.0, 76, 0.25],
+   [4.5, 74, 0.25],
+   [5.0, 71, 0.25],
+   [5.5, 67, 0.25],
+   [6.0, 64, 0.5],
+   [7.0, 40, 0.75]
+  ]
+ },
+ "t_ko": 50.20555555555555,
+ "tail": ["C", "B"],
+ "title_hits": {
+  "BASSOON": [40, 52]
+ },
+ "tool": "tools.studio_export.episode_bassclarinet_vs_bassoon",
+ "winner": 1
+}
