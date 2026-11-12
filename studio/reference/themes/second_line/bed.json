@@ -235,7 +235,7 @@
    ]
   },
   {
-   "appended": "KEY = 'D'\nSCALE = 'minor'\nCHORDS = ['Dm', 'A', 'Dm', 'Gm', 'C', 'F', 'Bb', 'Gm', 'A', 'A', 'Dm', 'Gm', 'C', 'F', 'Bb', 'Gm', 'A', 'A', 'Dm', 'Gm', 'C', 'F', 'Bb', 'Gm', 'A', 'A', 'Dm', 'Gm', 'C', 'F', 'Bb']\n",
+   "appended": "KEY = 'D'\nSCALE = 'minor'\nLOOP = ['Dm', 'Gm', 'C', 'F', 'Bb', 'Gm', 'A', 'A']\nCHORDS = ['Dm', 'A', 'Dm', 'Gm', 'C', 'F', 'Bb', 'Gm', 'A', 'A', 'Dm', 'Gm', 'C', 'F', 'Bb', 'Gm', 'A', 'A', 'Dm', 'Gm', 'C', 'F', 'Bb', 'Gm', 'A', 'A', 'Dm', 'Gm', 'C', 'F', 'Bb']\n",
    "bpm": 121.9672131147541,
    "buses": ["sousa", "drums", "fx", "perc"],
    "config": "ballfight_euphonium_vs_trombone",

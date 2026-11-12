@@ -12,6 +12,12 @@
    "export": "theme_second_line"
   },
   {
+   "path": "themes/second_line/euphonium_vs_trombone.bfrec",
+   "sha256": "671d58056e32599e5fee0f26885b4ce0e03f62eec246b1344a448f95cd68b068",
+   "bytes": 149915,
+   "export": "theme_second_line"
+  },
+  {
    "path": "themes/second_line/hooks.npz",
    "sha256": "07b71a62e36b3a2c0373878badf0e5c705e787f3aeb7696953bbc61566fbb2c3",
    "bytes": 7876665,

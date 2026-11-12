@@ -29,13 +29,63 @@
    },
    "loop": ["Em", "Am", "Em", "C7", "B7", "Em", "Am", "B7"],
    "loop_bpm": "0x1.e7de6d1d60865p+6",
+   "mix": {
+    "drums": [1.25, 0.14],
+    "euphonium": [1.6, 0.35],
+    "sousa": [1.45, 0.1],
+    "trombone": [2.4, 0.2]
+   },
    "mood": "second_line",
    "n_bars": 31,
-   "recording": "themes/second_line/euphonium_vs_trombone.bfrec",
+   "recording": {
+    "cache": "themes/second_line/euphonium_vs_trombone.bfrec",
+    "sha256": "671d58056e32599e5fee0f26885b4ce0e03f62eec246b1344a448f95cd68b068"
+   },
+   "roles": {
+    "EUPHONIUM": "melody",
+    "TROMBONE": "riff"
+   },
    "scale": "harmonic minor",
    "seed": 4604,
+   "solos": {
+    "EUPHONIUM": [
+     [0.0, 64, 1.0],
+     [1.0, 69, 0.5],
+     [1.5, 72, 0.5],
+     [2.0, 71, 1.0],
+     [3.0, 69, 0.5],
+     [3.5, 67, 0.5],
+     [4.0, 67, 1.0],
+     [5.0, 66, 0.5],
+     [5.5, 64, 0.5],
+     [6.0, 59, 0.5],
+     [6.5, 63, 0.5],
+     [7.0, 64, 1.0]
+    ],
+    "TROMBONE": [
+     [0.0, 45, 0.5],
+     [0.5, 52, 0.5],
+     [1.0, 57, 1.0],
+     [2.0, 60, 0.5],
+     [2.5, 59, 0.25],
+     [2.75, 57, 0.25],
+     [3.0, 55, 0.5],
+     [3.5, 52, 0.5],
+     [4.0, 59, 0.75],
+     [4.75, 58, 0.25],
+     [5.0, 55, 0.5],
+     [5.5, 52, 0.5],
+     [6.0, 47, 0.5],
+     [6.5, 50, 0.5],
+     [7.0, 52, 1.0]
+    ]
+   },
    "t_ko": 51.19381720430108,
    "tail": ["Em", "Am", "Em", "C7", "B7"],
+   "title_hits": {
+    "EUPHONIUM": [64, 71, 52],
+    "TROMBONE": [40, 52]
+   },
    "winner": 1
   }
  ],

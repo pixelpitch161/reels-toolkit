@@ -17,6 +17,7 @@ from . import m3refs
 SPEC = dict(
     name='second_line',
     configs=('ballfight_euphonium_vs_trombone',),
+    recordings_in_cache=True,
 )
 
 EXPORTS = {'theme_second_line': lambda: m3refs.theme_refs(SPEC)}
