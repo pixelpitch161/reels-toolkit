@@ -1,0 +1,333 @@
+{
+ "about": "ballfight_euphonium_vs_trombone: the pair's own links (plan Table S5): each item's first occurrence over the scenario fights (scenario, seed, time, event index, the event), within 20.0 s of FIGHT!",
+ "format": 1,
+ "links": [
+  {
+   "after_fight": 0.00833612903225811,
+   "event": [3.94382, "thrust", 1, 0.95],
+   "index": 0,
+   "item": "thrust",
+   "scenario": "plain",
+   "seed": 1,
+   "t": 3.94382
+  },
+  {
+   "after_fight": 0.9916661290322581,
+   "event": [4.92715, "hit", 1, 0, 1.2249999999999999, 0.4935001853425834, 0.37385340882976725, "blade", 1],
+   "index": 6,
+   "item": "hit/blade",
+   "scenario": "plain",
+   "seed": 1,
+   "t": 4.92715
+  },
+  {
+   "after_fight": 0.9916661290322581,
+   "event": [4.92715, "swat_shell", 1, 0, 0, 0, -0.5369702300176122, -0.9268018794155117],
+   "index": 6,
+   "item": "swat_shell",
+   "scenario": "plain",
+   "seed": 2,
+   "t": 4.92715
+  },
+  {
+   "after_fight": 0.00833612903225811,
+   "event": [3.94382, "mortar", 0, 1, 0, 1.061377584654117, 0.5834684618240868],
+   "index": 1,
+   "item": "mortar",
+   "scenario": "plain",
+   "seed": 1,
+   "t": 3.94382
+  },
+  {
+   "after_fight": 0.9999961290322581,
+   "event": [4.93548, "shell", 0, 1.061377584654117, 0.5834684618240868, 1, 0, 0, "mortar"],
+   "index": 8,
+   "item": "shell",
+   "scenario": "plain",
+   "seed": 1,
+   "t": 4.93548
+  },
+  {
+   "after_fight": 0.9999961290322581,
+   "event": [4.93548, "hit", 0, 1, 1.1440000000000001, 1.0672616947610822, 0.627124931044817, "shell", 0],
+   "index": 7,
+   "item": "hit/shell",
+   "scenario": "plain",
+   "seed": 1,
+   "t": 4.93548
+  },
+  {
+   "after_fight": 2.608336129032258,
+   "event": [6.54382, "slow", 1, 0, 1.0],
+   "index": 23,
+   "item": "slow",
+   "scenario": "early_levels_swapped",
+   "seed": 3,
+   "t": 6.54382
+  },
+  {
+   "after_fight": 2.608336129032258,
+   "event": [6.54382, "hit", 0, 1, 1.0499999999999998, 1.5226637016115834, -1.7158658845989343, "shockwave", 0],
+   "index": 22,
+   "item": "hit/shockwave",
+   "scenario": "early_levels_swapped",
+   "seed": 3,
+   "t": 6.54382
+  },
+  {
+   "after_fight": 8.866666129032257,
+   "event": [12.80215, "slam", 0, 0.12013884746087733, 2.3651300709136587, 1],
+   "index": 130,
+   "item": "slam",
+   "scenario": "early_low_swapped",
+   "seed": 1,
+   "t": 12.80215
+  },
+  {
+   "after_fight": 8.866666129032257,
+   "event": [12.80215, "hit", 0, 1, 8.399999999999999, 1.6146439182250194, 1.7941392600584034, "slam", 0],
+   "index": 131,
+   "item": "hit/slam",
+   "scenario": "early_low_swapped",
+   "seed": 1,
+   "t": 12.80215
+  },
+  {
+   "after_fight": 2.958336129032258,
+   "event": [6.89382, "ability", 0, "POWER SLIDE", "haste", 1],
+   "index": 32,
+   "item": "ability/POWER SLIDE",
+   "scenario": "early_levels_swapped",
+   "seed": 3,
+   "t": 6.89382
+  },
+  {
+   "after_fight": 2.466666129032258,
+   "event": [6.40215, "ability", 1, "MARCHING ORDERS", "haste", 1],
+   "index": 19,
+   "item": "ability/MARCHING ORDERS",
+   "scenario": "early_levels_swapped",
+   "seed": 1,
+   "t": 6.40215
+  },
+  {
+   "after_fight": 3.9416661290322583,
+   "event": [7.87715, "barrage", 1, 14, 5],
+   "index": 46,
+   "item": "barrage",
+   "scenario": "early_low_swapped",
+   "seed": 3,
+   "t": 7.87715
+  },
+  {
+   "after_fight": 6.891666129032258,
+   "event": [10.82715, "copy", 0, "SAD TROMBONE", "shockwave"],
+   "index": 64,
+   "item": "copy",
+   "scenario": "early_levels",
+   "seed": 1,
+   "t": 10.82715
+  }
+ ],
+ "scenarios": [
+  {
+   "cache": ["episodes/euphonium_vs_trombone/scenarios/plain_s1.bfrec", "episodes/euphonium_vs_trombone/scenarios/plain_s2.bfrec", "episodes/euphonium_vs_trombone/scenarios/plain_s3.bfrec"],
+   "fighters": ["EUPHONIUM", "TROMBONE"],
+   "handicap": [0.44, 0.35],
+   "hashes": ["16741e619efaadc0", "1162a15b1e75793a", "be70ef31224f76ae"],
+   "name": "plain",
+   "overrides": {},
+   "rules": {
+    "A": 3.0,
+    "DT": 0.008333333333333333,
+    "FPS": 30,
+    "HP": 100.0,
+    "KEY_R": 0.11,
+    "KNOCK_T": 0.38,
+    "LAUNCH_SPREAD": 38.0,
+    "LOW_HP": 25.0,
+    "LV_DMG": [14.0, 36.0],
+    "R": 0.6,
+    "ROPE_GIVE": 5.0,
+    "V": 2.6,
+    "beat": 0.49193548387096775,
+    "bpm": 121.9672131147541,
+    "dmg_scale": 1.0,
+    "dmg_side": [0.44, 0.35],
+    "swat_shells": true,
+    "t_fight": 3.935483870967742,
+    "t_max": 58.0
+   },
+   "seeds": [1, 2, 3],
+   "swapped": false
+  },
+  {
+   "cache": ["episodes/euphonium_vs_trombone/scenarios/swapped_s1.bfrec", "episodes/euphonium_vs_trombone/scenarios/swapped_s2.bfrec", "episodes/euphonium_vs_trombone/scenarios/swapped_s3.bfrec"],
+   "fighters": ["TROMBONE", "EUPHONIUM"],
+   "handicap": [0.35, 0.44],
+   "hashes": ["0c92a350afa351af", "b18e7b193d7f6033", "e895ff8539888fbb"],
+   "name": "swapped",
+   "overrides": {},
+   "rules": {
+    "A": 3.0,
+    "DT": 0.008333333333333333,
+    "FPS": 30,
+    "HP": 100.0,
+    "KEY_R": 0.11,
+    "KNOCK_T": 0.38,
+    "LAUNCH_SPREAD": 38.0,
+    "LOW_HP": 25.0,
+    "LV_DMG": [14.0, 36.0],
+    "R": 0.6,
+    "ROPE_GIVE": 5.0,
+    "V": 2.6,
+    "beat": 0.49193548387096775,
+    "bpm": 121.9672131147541,
+    "dmg_scale": 1.0,
+    "dmg_side": [0.35, 0.44],
+    "swat_shells": true,
+    "t_fight": 3.935483870967742,
+    "t_max": 58.0
+   },
+   "seeds": [1, 2, 3],
+   "swapped": true
+  },
+  {
+   "cache": ["episodes/euphonium_vs_trombone/scenarios/early_levels_s1.bfrec", "episodes/euphonium_vs_trombone/scenarios/early_levels_s2.bfrec", "episodes/euphonium_vs_trombone/scenarios/early_levels_s3.bfrec"],
+   "fighters": ["EUPHONIUM", "TROMBONE"],
+   "handicap": [0.44, 0.35],
+   "hashes": ["9f5348c68b608964", "471131ebf21a7da2", "4711652b860346b1"],
+   "name": "early_levels",
+   "overrides": {
+    "LV_DMG": [2.0, 5.0]
+   },
+   "rules": {
+    "A": 3.0,
+    "DT": 0.008333333333333333,
+    "FPS": 30,
+    "HP": 100.0,
+    "KEY_R": 0.11,
+    "KNOCK_T": 0.38,
+    "LAUNCH_SPREAD": 38.0,
+    "LOW_HP": 25.0,
+    "LV_DMG": [2.0, 5.0],
+    "R": 0.6,
+    "ROPE_GIVE": 5.0,
+    "V": 2.6,
+    "beat": 0.49193548387096775,
+    "bpm": 121.9672131147541,
+    "dmg_scale": 1.0,
+    "dmg_side": [0.44, 0.35],
+    "swat_shells": true,
+    "t_fight": 3.935483870967742,
+    "t_max": 58.0
+   },
+   "seeds": [1, 2, 3],
+   "swapped": false
+  },
+  {
+   "cache": ["episodes/euphonium_vs_trombone/scenarios/early_levels_swapped_s1.bfrec", "episodes/euphonium_vs_trombone/scenarios/early_levels_swapped_s2.bfrec", "episodes/euphonium_vs_trombone/scenarios/early_levels_swapped_s3.bfrec"],
+   "fighters": ["TROMBONE", "EUPHONIUM"],
+   "handicap": [0.35, 0.44],
+   "hashes": ["1768a1ae97da1c41", "b86a522dc1ef9fbc", "461a9e1e92a909fb"],
+   "name": "early_levels_swapped",
+   "overrides": {
+    "LV_DMG": [2.0, 5.0]
+   },
+   "rules": {
+    "A": 3.0,
+    "DT": 0.008333333333333333,
+    "FPS": 30,
+    "HP": 100.0,
+    "KEY_R": 0.11,
+    "KNOCK_T": 0.38,
+    "LAUNCH_SPREAD": 38.0,
+    "LOW_HP": 25.0,
+    "LV_DMG": [2.0, 5.0],
+    "R": 0.6,
+    "ROPE_GIVE": 5.0,
+    "V": 2.6,
+    "beat": 0.49193548387096775,
+    "bpm": 121.9672131147541,
+    "dmg_scale": 1.0,
+    "dmg_side": [0.35, 0.44],
+    "swat_shells": true,
+    "t_fight": 3.935483870967742,
+    "t_max": 58.0
+   },
+   "seeds": [1, 2, 3],
+   "swapped": true
+  },
+  {
+   "cache": ["episodes/euphonium_vs_trombone/scenarios/early_low_s1.bfrec", "episodes/euphonium_vs_trombone/scenarios/early_low_s2.bfrec", "episodes/euphonium_vs_trombone/scenarios/early_low_s3.bfrec"],
+   "fighters": ["EUPHONIUM", "TROMBONE"],
+   "handicap": [0.44, 0.35],
+   "hashes": ["dc1164fe69d00518", "51f4fbe4034b8100", "60abeea27ae100a9"],
+   "name": "early_low",
+   "overrides": {
+    "LOW_HP": 92.0,
+    "LV_DMG": [2.0, 5.0]
+   },
+   "rules": {
+    "A": 3.0,
+    "DT": 0.008333333333333333,
+    "FPS": 30,
+    "HP": 100.0,
+    "KEY_R": 0.11,
+    "KNOCK_T": 0.38,
+    "LAUNCH_SPREAD": 38.0,
+    "LOW_HP": 92.0,
+    "LV_DMG": [2.0, 5.0],
+    "R": 0.6,
+    "ROPE_GIVE": 5.0,
+    "V": 2.6,
+    "beat": 0.49193548387096775,
+    "bpm": 121.9672131147541,
+    "dmg_scale": 1.0,
+    "dmg_side": [0.44, 0.35],
+    "swat_shells": true,
+    "t_fight": 3.935483870967742,
+    "t_max": 58.0
+   },
+   "seeds": [1, 2, 3],
+   "swapped": false
+  },
+  {
+   "cache": ["episodes/euphonium_vs_trombone/scenarios/early_low_swapped_s1.bfrec", "episodes/euphonium_vs_trombone/scenarios/early_low_swapped_s2.bfrec", "episodes/euphonium_vs_trombone/scenarios/early_low_swapped_s3.bfrec"],
+   "fighters": ["TROMBONE", "EUPHONIUM"],
+   "handicap": [0.35, 0.44],
+   "hashes": ["c08f3eb151806e34", "25f36321e77bfe7a", "02f00e37a7a82d0c"],
+   "name": "early_low_swapped",
+   "overrides": {
+    "LOW_HP": 92.0,
+    "LV_DMG": [2.0, 5.0]
+   },
+   "rules": {
+    "A": 3.0,
+    "DT": 0.008333333333333333,
+    "FPS": 30,
+    "HP": 100.0,
+    "KEY_R": 0.11,
+    "KNOCK_T": 0.38,
+    "LAUNCH_SPREAD": 38.0,
+    "LOW_HP": 92.0,
+    "LV_DMG": [2.0, 5.0],
+    "R": 0.6,
+    "ROPE_GIVE": 5.0,
+    "V": 2.6,
+    "beat": 0.49193548387096775,
+    "bpm": 121.9672131147541,
+    "dmg_scale": 1.0,
+    "dmg_side": [0.35, 0.44],
+    "swat_shells": true,
+    "t_fight": 3.935483870967742,
+    "t_max": 58.0
+   },
+   "seeds": [1, 2, 3],
+   "swapped": true
+  }
+ ],
+ "t_fight": 3.935483870967742,
+ "tool": "tools.studio_export.episode_euphonium_vs_trombone",
+ "window": 20.0
+}
