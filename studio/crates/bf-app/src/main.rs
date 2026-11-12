@@ -14,12 +14,13 @@
 //!   folder of its own and has no sound. It runs the real app that way, or with `--fixtures` the sample one.
 //! - `--version` prints "BALLFIGHT Studio 0.6.0 (a842e11, 12 Nov 2026)" (`version::version_text`) and exits 0. It
 //!   opens no window. The release build has no console of its own (`windows_subsystem = "windows"`), so the line
-//!   goes to the output the starting program gave it (a file or a pipe, as `check_staged` and `> file` give), or,
-//!   when there is none, to the console of the program that started it (`AttachConsole`), or nowhere.
+//!   goes to the output the starting program gave it (a file or a pipe, as `check_staged` and `cmd`'s `> file`
+//!   give), or, when there is none or it is unusable (`GetFileType` unknown), to the console of the program that
+//!   started it (`AttachConsole`), or nowhere. PowerShell 5.1's `>` gives a windowed program no file.
 //! - `--finish-update <pid>` is how an update is put in place (`update::swap`): the new version, started from the
 //!   program folder's `.next`, waits for program `<pid>` to end, swaps itself in and starts the app again. It opens
-//!   no window and exits 0 when the swap worked, else 1. It refuses (exit 1, nothing touched) unless this exe sits
-//!   in a folder named `.next` whose parent holds `update.toml` (see `finish_dir`).
+//!   no window and exits 0 when the swap worked, else 1. It refuses (exit 1, nothing read further, written or
+//!   started) unless this exe sits in a folder named `.next` whose parent is a real installed copy (see `finish_dir`).
 //! - `--test-fault-report` (in no help text) makes the interface thread fault on purpose after the first painted
 //!   frame, so the release checklist can see a real fault report and its message box from the shipped exe.
 //! - `--preview-bench [--seed N] [--seconds 20] [--threads T]` opens no window: it makes the starter fight's take
@@ -38,14 +39,16 @@
 //!
 //! 1. **The command line** ([`mode`]). `--version` prints and exits 0 before anything else. A word the app does
 //!    not know is told, exit 2.
-//! 2. **`--finish-update <pid>`**: the swap (`update::swap::finish`), exit 0 or 1; its failure goes to the logs'
-//!    `start.txt`. **`--preview-bench`** runs here too (no window, no hook, no claim, no update check).
+//! 2. **`--finish-update <pid>`**: only for a staged update of a real install ([`finish_dir`]); the swap
+//!    (`update::swap::finish_at`), exit 0 or 1; its failure goes to the PC's own `logs\finish.txt` (the started app
+//!    rewrites `start.txt`). **`--preview-bench`** runs here too (no window, no hook, no claim, no update check).
 //! 3. **The fault hook** (`report::install_hook`), on the interface thread, writing into this run's `logs` folder:
 //!    the PC's own, the `--data-dir` folder's, or a `--smoke` / `--fixtures` run's temp folder.
 //! 4. **The data folders.** A `--data-dir` folder that cannot be used stops the start (exit 2). Then `config`,
 //!    `cache` and `logs` are each checked (`startup::check_data_folder`): `config` that cannot be written stops the
 //!    start (exit 2), since settings and the queue could not be kept; `cache` or `logs` that cannot be written is a
-//!    notice in the window, and the app runs.
+//!    notice in the window, and the app runs. A stop here comes before the claim, so it writes no `start.txt` (an
+//!    open copy's record survives): the words go to the person only.
 //! 5. **One copy at a time** (`startup::claim` on this run's `config` folder). A second copy brings the first
 //!    window forward and exits 0; when there is no window to bring forward it says `ALREADY_OPEN`. A second copy
 //!    writes no `start.txt` (it would replace the open copy's). The claim is held to the end of `run`. A smoke or
@@ -86,7 +89,9 @@ use bf_app::preview::bench;
 use bf_app::startup::{self, ALREADY_OPEN, Folder, Found, Graphics, Instance};
 use bf_app::store::Paths;
 use bf_app::store::settings::{default_settings, save_settings};
-use bf_app::update::swap::{self, AtStart, FINISH_FLAG, UPDATE_BUSY};
+use bf_app::update::swap::{
+    self, AtStart, FINISH_FLAG, FINISH_WORDS, NOT_STAGED, RESTART_FAILED, RESUME_FAILED, UPDATE_BUSY,
+};
 use bf_app::{icon, report, update, version};
 
 /// The window's title, and the title of every message box the start-up shows.
@@ -99,17 +104,6 @@ const SAMPLE_NOTE: &str = "Sample data, not a real fight";
 const FAULT_FLAG: &str = "--test-fault-report";
 /// The fault `--test-fault-report` makes.
 const FAULT_MESSAGE: &str = "A fault made on purpose by --test-fault-report, to check that fault reports work.";
-
-/// `--finish-update` given wrongly.
-const FINISH_WORDS: &str = "--finish-update needs the number of the program it waits for after it, and nothing else.";
-/// `--finish-update` run by a program that is not a staged update.
-const NOT_STAGED: &str = "This program is not an update waiting in the program folder, so there is nothing to finish.";
-/// `AtStart::Resume` could not hand the unfinished update over.
-const RESUME_FAILED: &str = "An update could not be finished just now. Start BALLFIGHT Studio again: it finishes the \
-    update or takes it back by itself.";
-/// `AtStart::Restart` could not start the earlier version.
-const RESTART_FAILED: &str = "The update was taken back, but the earlier version could not be started. Start \
-    BALLFIGHT Studio again.";
 
 /// What the command line asks for, for a start with a window.
 #[derive(Debug, Default, PartialEq, Eq)]
@@ -312,8 +306,11 @@ fn graphics_notice(found: &Found<Graphics>) -> Option<String> {
 }
 
 /// The program folder `--finish-update` swaps into, for the exe at `exe`: the parent of the exe's folder, when that
-/// folder is named `.next` and the parent holds `update.toml` (a staged update of an installed copy; `update.toml`
-/// is the one file a swap never moves). Anything else is refused, so a build in `target\` touches nothing.
+/// folder is named `.next` and the parent is a real installed copy (`update::installed_at` on its
+/// `ballfight-studio.exe`: a `MANIFEST.txt` of ours that reads, and an `update.toml` that `read_config` accepts).
+/// The swap keeps a manifest of ours in the program folder at every step and never moves `update.toml`, so a
+/// stopped swap's folder still passes. Anything else is refused before anything is read further or written, so a
+/// build in `target\`, or a folder made to look like a staged update, touches nothing.
 fn finish_dir(exe: &Path) -> Result<PathBuf, String> {
     let refuse = || NOT_STAGED.to_string();
     let staged = exe.parent().ok_or_else(refuse)?;
@@ -321,7 +318,7 @@ fn finish_dir(exe: &Path) -> Result<PathBuf, String> {
         .file_name()
         .is_some_and(|n| n.to_string_lossy().eq_ignore_ascii_case(".next"));
     let dir = staged.parent().ok_or_else(refuse)?;
-    if named_next && dir.join(bf_pack::config::CONFIG_NAME).is_file() {
+    if named_next && update::installed_at(&dir.join(bf_pack::package::EXE_NAME)).is_some() {
         Ok(dir.to_path_buf())
     } else {
         Err(refuse())
@@ -390,18 +387,30 @@ impl StartLog {
 fn stop(log: &StartLog, code: u8, tell: Option<String>) -> ExitCode {
     if let Some(text) = tell {
         log.add(text.clone());
-        eprintln!("{text}");
+        err_line(&text);
         report::tell(TITLE, &text);
     }
     ExitCode::from(code)
+}
+
+/// `text` and a line end on stderr, ignoring a failed write (never a panic, unlike `eprintln!`).
+fn err_line(text: &str) {
+    use std::io::Write as _;
+    let _ = writeln!(std::io::stderr().lock(), "{text}");
+}
+
+/// `text` and a line end on stdout, ignoring a failed write (never a panic, unlike `println!`).
+fn out_line(text: &str) {
+    use std::io::Write as _;
+    let _ = writeln!(std::io::stdout().lock(), "{text}");
 }
 
 // ---------------------------------------------------------------------------------------------------------------
 // Where `--version` writes.
 
 /// Writes `text` and a line end where the person or program that started this one can read it: the output it was
-/// given (a file or a pipe); else, in the release build, which has no console of its own, the console of the
-/// program that started it.
+/// given (a file, a pipe or a console); else, in the release build, which has no console of its own, the console
+/// of the program that started it; else nowhere. A failed write is ignored.
 fn say(text: &str) {
     #[cfg(windows)]
     if let Some(mut console) = console::parent() {
@@ -409,7 +418,7 @@ fn say(text: &str) {
         let _ = writeln!(console, "{text}");
         return;
     }
-    println!("{text}");
+    out_line(text);
 }
 
 /// The starting program's console, for a program that was given no output of its own.
@@ -421,8 +430,13 @@ mod console {
     #[link(name = "kernel32")]
     unsafe extern "system" {
         fn GetStdHandle(which: u32) -> *mut c_void;
+        fn GetFileType(file: *mut c_void) -> u32;
         fn AttachConsole(process: u32) -> i32;
     }
+
+    /// `FILE_TYPE_UNKNOWN`: what `GetFileType` gives for a handle that is not a file, a pipe or a console (or no
+    /// usable handle at all).
+    const FILE_TYPE_UNKNOWN: u32 = 0;
 
     /// `STD_OUTPUT_HANDLE`, (DWORD)-11.
     const STD_OUTPUT_HANDLE: u32 = -11i32 as u32;
@@ -431,12 +445,14 @@ mod console {
     /// `INVALID_HANDLE_VALUE`.
     const INVALID: isize = -1;
 
-    /// `None` when this program has an output already (a console, a file or a pipe: `println!` reaches it), or when
-    /// the starting program has no console either; else that console, opened for writing.
+    /// `None` when this program has a usable output already (a console, a file or a pipe: stdout reaches it), or
+    /// when the starting program has no console either; else that console, opened for writing. A handle that is
+    /// there but is none of those (`FILE_TYPE_UNKNOWN`) counts as no output.
     pub fn parent() -> Option<File> {
         // SAFETY: GetStdHandle takes a constant and only reads the process's standard handles.
         let out = unsafe { GetStdHandle(STD_OUTPUT_HANDLE) };
-        if !out.is_null() && out as isize != INVALID {
+        // SAFETY: GetFileType only asks about the handle, which is checked for null and INVALID first.
+        if !out.is_null() && out as isize != INVALID && unsafe { GetFileType(out) } != FILE_TYPE_UNKNOWN {
             return None;
         }
         // SAFETY: AttachConsole takes a constant; it fails harmlessly when there is no such console.
@@ -457,8 +473,8 @@ mod console {
 fn preview_bench(args: &BenchArgs) -> ExitCode {
     let cores = bench::cores();
     let threads = args.threads.unwrap_or_else(bench::workers);
-    println!("pc_threads {cores}");
-    println!("workers {}", bench::workers());
+    out_line(&format!("pc_threads {cores}"));
+    out_line(&format!("workers {}", bench::workers()));
     // The first take, and a second (the next fitting seed) for a player that has already played one.
     let takes = bench::starter_take(args.seed).and_then(|a| {
         let b = bench::starter_take(Some(bench::fitting_seed_after(a.seed)?))?;
@@ -467,48 +483,51 @@ fn preview_bench(args: &BenchArgs) -> ExitCode {
     let (a, b) = match takes {
         Ok(takes) => takes,
         Err(problem) => {
-            eprintln!("The bench could not make its take: {problem}");
+            err_line(&format!("The bench could not make its take: {problem}"));
             return ExitCode::FAILURE;
         }
     };
-    println!("seed {}", a.seed);
-    println!("to_picture_s {:.3}", a.to_picture.as_secs_f32());
-    println!("to_sound_s {:.2}", a.to_sound.as_secs_f32());
-    println!("seconds {}", args.seconds);
+    out_line(&format!("seed {}", a.seed));
+    out_line(&format!("to_picture_s {:.3}", a.to_picture.as_secs_f32()));
+    out_line(&format!("to_sound_s {:.2}", a.to_sound.as_secs_f32()));
+    out_line(&format!("seconds {}", args.seconds));
     let first = bench::run(a.frames.clone(), a.start, args.seconds, threads);
     for line in first.lines() {
-        println!("{line}");
+        out_line(&line);
     }
     // The app's player lives as long as the app: from the second seed on, a take is loaded on a scheduler that
     // already knows its draw times.
-    println!("warm_seed {}", b.seed);
+    out_line(&format!("warm_seed {}", b.seed));
     let warm = bench::run_after(Some((a.frames, a.start)), b.frames, b.start, args.seconds, threads);
     for line in warm.lines() {
-        println!("warm_{line}");
+        out_line(&format!("warm_{line}"));
     }
     ExitCode::SUCCESS
 }
 
-/// `--finish-update <pid>`: refuses unless this exe is a staged update ([`finish_dir`]); else the swap. A failed
-/// swap's words go to `start.txt` in the PC's own logs folder (the swap has already left its notice for the next
-/// start, and started the version in place).
-fn finish_update(pid: u32) -> ExitCode {
-    let dir = match std::env::current_exe()
-        .map_err(|_| NOT_STAGED.to_string())
-        .and_then(|e| finish_dir(&e))
-    {
+/// The record `--finish-update` leaves in the logs folder when its swap failed (the started app rewrites
+/// `start.txt`, so the swap's words get a file of their own).
+const FINISH_LOG: &str = "finish.txt";
+
+/// `--finish-update <pid>` for the exe at `exe`, leaving its notice and its record in `logs` (`main` passes the PC's
+/// own logs folder, where the next start looks): refuses, writing nothing anywhere and starting nothing, unless the
+/// exe is a staged update of a real install ([`finish_dir`]); else the swap. A failed swap's words go to
+/// `logs\finish.txt` (the swap has already left its notice for the next start, and started the version in place).
+fn finish_update(exe: &Path, pid: u32, logs: Option<&Path>) -> ExitCode {
+    let dir = match finish_dir(exe) {
         Ok(dir) => dir,
         Err(problem) => {
-            eprintln!("{problem}");
+            err_line(&problem);
             return ExitCode::FAILURE;
         }
     };
-    match swap::finish(&dir, pid) {
+    match swap::finish_at(&dir, pid, logs) {
         Ok(()) => ExitCode::SUCCESS,
         Err(problem) => {
-            eprintln!("{problem}");
-            if let Some(paths) = Paths::system() {
-                let _ = report::write_start(&paths.logs, &[version::version_text(), problem]);
+            err_line(&problem);
+            if let Some(logs) = logs {
+                let text = format!("{}\r\n{problem}\r\n", version::version_text());
+                let _ = bf_app::store::write_atomic(&logs.join(FINISH_LOG), text.as_bytes());
             }
             ExitCode::FAILURE
         }
@@ -599,7 +618,8 @@ fn run(args: Args) -> ExitCode {
     let look: Arc<Mutex<Option<JoinHandle<()>>>> = Arc::new(Mutex::new(None));
     let code = start(args, paths, temp_root.as_deref(), &look);
     if let Some(root) = temp_root {
-        // The late checks write into the temp folder: they end first (each waits a few seconds at most).
+        // The late checks write into the temp folder: they end first. The wait is bounded by their own waits,
+        // `startup::FFMPEG_WAIT` and then `startup::FOLDER_WAIT` (10 s + 5 s), one after the other.
         if let Some(handle) = look.lock().unwrap_or_else(PoisonError::into_inner).take() {
             let _ = handle.join();
         }
@@ -626,11 +646,11 @@ fn start(
         None => "This copy is not an installed one, so it does not look at updates.".to_string(),
     });
 
-    // 4. The data folders.
+    // 4. The data folders. A stop here comes before the claim, so it writes no start.txt (an open copy's record
+    // must survive): its words go to the person only.
     if let Some(dir) = &args.data_dir
         && let Err(problem) = usable(dir)
     {
-        log.open();
         return stop(&log, 2, Some(problem));
     }
     let mut notices = Vec::new();
@@ -641,10 +661,7 @@ fn start(
         }
         match data_folders([&found[0], &found[1], &found[2]]) {
             Ok(more) => notices.extend(more),
-            Err(problem) => {
-                log.open();
-                return stop(&log, 2, Some(problem));
-            }
+            Err(problem) => return stop(&log, 2, Some(problem)),
         }
     }
     // A smoke run's videos would go to its own temp folder too: it never looks at the owner's Videos folder.
@@ -655,10 +672,10 @@ fn start(
     // 5. One copy at a time. The claim is held until this function returns.
     let mut claim = match paths.as_ref().map(|p| startup::claim(&p.config)) {
         Some(Instance::Second) => {
-            eprintln!("Another copy of BALLFIGHT Studio is open with these settings, so this one stepped aside.");
+            err_line("Another copy of BALLFIGHT Studio is open with these settings, so this one stepped aside.");
             // Not `stop`: a second copy never writes the open copy's start.txt.
             if let Some(text) = second_copy(startup::bring_forward(TITLE)) {
-                eprintln!("{text}");
+                err_line(text);
                 report::tell(TITLE, text);
             }
             return ExitCode::SUCCESS;
@@ -789,11 +806,17 @@ fn main() -> ExitCode {
             say(&version::version_text());
             ExitCode::SUCCESS
         }
-        Ok(Mode::FinishUpdate(pid)) => finish_update(pid),
+        Ok(Mode::FinishUpdate(pid)) => match std::env::current_exe() {
+            Ok(exe) => finish_update(&exe, pid, Paths::system().map(|p| p.logs).as_deref()),
+            Err(_) => {
+                err_line(NOT_STAGED);
+                ExitCode::FAILURE
+            }
+        },
         Ok(Mode::Bench(args)) => preview_bench(&args),
         Ok(Mode::Run(args)) => run(args),
         Err(problem) => {
-            eprintln!("{problem}");
+            err_line(&problem);
             report::tell(TITLE, &problem);
             ExitCode::from(2)
         }
@@ -1078,16 +1101,58 @@ mod tests {
         }
     }
 
+    /// Makes `program` a real installed copy as Task 11 leaves one (its exe, a manifest of ours, `update.toml`).
+    fn install_at(program: &Path) {
+        use bf_pack::package::{EXE_NAME, MANIFEST_NAME, Manifest};
+        std::fs::create_dir_all(program).unwrap();
+        let exe = program.join(EXE_NAME);
+        std::fs::write(&exe, b"pretend").unwrap();
+        let m = Manifest {
+            version: "0.6.0".into(),
+            files: vec![(EXE_NAME.into(), 7, bf_pack::sha::sha256_file(&exe).unwrap())],
+        };
+        std::fs::write(program.join(MANIFEST_NAME), m.text()).unwrap();
+        let config = bf_pack::config::UpdateConfig {
+            source: program.join("data").join("source"),
+            remote: "https://github.com/someone/repo.git".into(),
+            tag_prefix: "studio-v".into(),
+            build_dir: program.join("data").join("build"),
+            downloads: program.join("data").join("downloads"),
+        };
+        bf_pack::config::write_config(&program.join(bf_pack::config::CONFIG_NAME), &config).unwrap();
+    }
+
+    /// Every file and folder under `dir`, as paths relative to it, sorted.
+    fn everything(dir: &Path) -> Vec<PathBuf> {
+        fn walk(root: &Path, dir: &Path, out: &mut Vec<PathBuf>) {
+            for entry in std::fs::read_dir(dir).into_iter().flatten().flatten() {
+                let p = entry.path();
+                out.push(p.strip_prefix(root).unwrap().to_path_buf());
+                if p.is_dir() {
+                    walk(root, &p, out);
+                }
+            }
+        }
+        let mut out = Vec::new();
+        walk(dir, dir, &mut out);
+        out.sort();
+        out
+    }
+
     #[test]
-    fn only_a_staged_update_finishes() {
+    fn only_a_staged_update_of_a_real_install_finishes() {
         let temp = Temp::new("finish");
         let program = temp.0.join("BALLFIGHT Studio");
         let next = program.join(".next");
         std::fs::create_dir_all(&next).unwrap();
         let exe = next.join("ballfight-studio.exe");
-        // No update.toml beside .next: not an installed copy's.
+        // Nothing beside .next: not an installed copy's.
         assert_eq!(finish_dir(&exe), Err(NOT_STAGED.to_string()));
+        // An empty update.toml with no manifest is a folder made to look like one: refused.
         std::fs::write(program.join("update.toml"), b"").unwrap();
+        assert_eq!(finish_dir(&exe), Err(NOT_STAGED.to_string()));
+        // A real install (as `launch_finish` and `Resume` find it: the manifest of ours is always in place).
+        install_at(&program);
         assert_eq!(finish_dir(&exe), Ok(program.clone()));
         assert_eq!(
             finish_dir(&program.join(".NEXT").join("ballfight-studio.exe")),
@@ -1114,6 +1179,24 @@ mod tests {
     }
 
     #[test]
+    fn a_made_up_staged_update_writes_nothing_and_starts_nothing() {
+        let temp = Temp::new("finish made up");
+        let program = temp.0.join("X");
+        let next = program.join(".next");
+        std::fs::create_dir_all(&next).unwrap();
+        std::fs::write(program.join("update.toml"), b"").unwrap();
+        let exe = next.join("ballfight-studio.exe");
+        std::fs::write(&exe, b"pretend").unwrap();
+        let logs = temp.0.join("logs");
+        let before = everything(&temp.0);
+        // The pid of this test program: were the swap to run, it would wait for it.
+        let code = finish_update(&exe, std::process::id(), Some(&logs));
+        assert_eq!(code, ExitCode::FAILURE);
+        assert!(!logs.exists(), "no logs folder made, no notice, no record");
+        assert_eq!(everything(&temp.0), before, "nothing anywhere changed");
+    }
+
+    #[test]
     fn the_start_log_is_written_once_open() {
         let temp = Temp::new("start log");
         let logs = temp.0.join("logs");
@@ -1122,12 +1205,25 @@ mod tests {
         log.add("two");
         assert!(!logs.join("start.txt").exists(), "nothing is written before the claim");
         assert_eq!(log.file(), None);
+        // A line added before the claim is not written: the open copy's record survives.
+        std::fs::create_dir_all(&logs).unwrap();
+        std::fs::write(logs.join("start.txt"), "the open copy's record\n").unwrap();
+        // What `stop` adds to the log before the claim (the exe test `a_data_folder_stop_writes_no_start_record`
+        // covers the whole stop; `stop` itself would show a message box here).
+        log.add("Settings cannot be kept.");
+        assert_eq!(
+            std::fs::read_to_string(logs.join("start.txt")).unwrap(),
+            "the open copy's record\n"
+        );
         log.open();
-        assert_eq!(std::fs::read_to_string(logs.join("start.txt")).unwrap(), "one\ntwo\n");
+        assert_eq!(
+            std::fs::read_to_string(logs.join("start.txt")).unwrap(),
+            "one\ntwo\nSettings cannot be kept.\n"
+        );
         log.add("three");
         assert_eq!(
             std::fs::read_to_string(logs.join("start.txt")).unwrap(),
-            "one\ntwo\nthree\n"
+            "one\ntwo\nSettings cannot be kept.\nthree\n"
         );
         assert_eq!(log.file(), Some(logs.join("start.txt")));
 
@@ -1145,15 +1241,11 @@ mod tests {
     }
 
     #[test]
-    fn the_start_up_texts_read_plainly() {
-        for text in [FINISH_WORDS, NOT_STAGED, RESUME_FAILED, RESTART_FAILED, FAULT_MESSAGE] {
-            let first = text.chars().find(|c| c.is_alphabetic()).unwrap();
-            assert!(first.is_uppercase() || text.starts_with("--"), "{text}");
-            assert!(text.ends_with('.'), "{text}");
-            for bad in ["::", "{", "}", "  ", "Err(", "Some("] {
-                assert!(!text.contains(bad), "{text}: {bad}");
-            }
-        }
+    fn the_fault_message_reads_plainly() {
+        // The texts a person reads are in `update::swap` and checked by `tests/ui/wording.rs`; this one goes only
+        // into a fault report.
+        assert!(FAULT_MESSAGE.starts_with("A fault"));
+        assert!(FAULT_MESSAGE.ends_with('.'));
     }
 
     #[test]
@@ -1198,7 +1290,8 @@ mod tests {
     // -----------------------------------------------------------------------------------------------------------
     // The built exe, run by name after `cargo build --release -p bf-app` (or a debug build for a debug test run):
     // each test runs `target\<profile>\ballfight-studio.exe` with a `--data-dir` in a temp folder of its own, and
-    // with `BF_APP_REPORT_CHILD` set, so `report::tell` writes to stderr and no message box waits for a click.
+    // with `BF_APP_REPORT_CHILD` set, so `report::tell` writes to stderr and no message box waits for a click. Every
+    // run is waited for at most a fixed time, and its output is read as it comes, so a chatty child never blocks.
 
     use std::process::{Child, Output, Stdio};
     use std::time::{Duration, Instant};
@@ -1231,41 +1324,63 @@ mod tests {
         dir
     }
 
-    /// Waits at most `limit` for `child`; ends it and fails when it runs longer.
+    /// Reads `pipe` to its end on a thread of its own.
+    fn drain(pipe: Option<impl std::io::Read + Send + 'static>) -> std::thread::JoinHandle<Vec<u8>> {
+        std::thread::spawn(move || {
+            let mut bytes = Vec::new();
+            if let Some(mut pipe) = pipe {
+                let _ = pipe.read_to_end(&mut bytes);
+            }
+            bytes
+        })
+    }
+
+    /// Waits at most `limit` for `child`, reading its output meanwhile; ends it and fails when it runs longer.
     fn wait_within(mut child: Child, limit: Duration, what: &str) -> Output {
+        let (out, err) = (drain(child.stdout.take()), drain(child.stderr.take()));
         let began = Instant::now();
-        loop {
-            if child.try_wait().unwrap().is_some() {
-                return child.wait_with_output().unwrap();
+        let status = loop {
+            if let Some(status) = child.try_wait().unwrap() {
+                break status;
             }
             if began.elapsed() > limit {
                 let _ = child.kill();
-                let out = child.wait_with_output().unwrap();
+                let _ = child.wait();
+                let stderr = err.join().unwrap_or_default();
                 panic!(
                     "{what} ran longer than {limit:?}; stderr: {}",
-                    String::from_utf8_lossy(&out.stderr)
+                    String::from_utf8_lossy(&stderr)
                 );
             }
             std::thread::sleep(Duration::from_millis(20));
+        };
+        Output {
+            status,
+            stdout: out.join().unwrap_or_default(),
+            stderr: err.join().unwrap_or_default(),
         }
+    }
+
+    /// Runs the exe with `args` to its end, at most `limit`.
+    fn run_exe(args: &[&str], no_box: &Path, limit: Duration) -> Output {
+        wait_within(the_exe(args, no_box).spawn().unwrap(), limit, &args.join(" "))
     }
 
     #[test]
     #[ignore = "runs the built exe: build it first, then run by name"]
     fn version_prints_and_exits() {
         let temp = Temp::new("version");
-        let began = Instant::now();
-        let out = the_exe(&["--version"], &temp.0).output().unwrap();
-        assert!(began.elapsed() < Duration::from_secs(2), "took {:?}", began.elapsed());
+        let out = run_exe(&["--version"], &temp.0, Duration::from_secs(2));
         assert_eq!(out.status.code(), Some(0));
         assert_eq!(String::from_utf8_lossy(&out.stdout).trim_end(), version::version_text());
         // Into a file, as `> file` gives it.
         let file = temp.0.join("version.txt");
-        let status = the_exe(&["--version"], &temp.0)
+        let child = the_exe(&["--version"], &temp.0)
             .stdout(Stdio::from(std::fs::File::create(&file).unwrap()))
-            .status()
+            .spawn()
             .unwrap();
-        assert_eq!(status.code(), Some(0));
+        let out = wait_within(child, Duration::from_secs(2), "--version into a file");
+        assert_eq!(out.status.code(), Some(0));
         assert_eq!(
             std::fs::read_to_string(&file).unwrap().trim_end(),
             version::version_text()
@@ -1278,12 +1393,31 @@ mod tests {
     #[ignore = "runs the built exe: build it first, then run by name"]
     fn a_finish_outside_an_install_is_refused() {
         let temp = Temp::new("finish refused");
-        let out = the_exe(&["--finish-update", "1234"], &temp.0).output().unwrap();
+        let out = run_exe(&["--finish-update", "1234"], &temp.0, Duration::from_secs(5));
         assert_eq!(out.status.code(), Some(1));
         assert!(String::from_utf8_lossy(&out.stderr).contains(NOT_STAGED));
-        let out = the_exe(&["--finish-update"], &temp.0).output().unwrap();
+        let out = run_exe(&["--finish-update"], &temp.0, Duration::from_secs(5));
         assert_eq!(out.status.code(), Some(2));
         assert!(String::from_utf8_lossy(&out.stderr).contains(FINISH_WORDS));
+    }
+
+    #[test]
+    #[ignore = "runs the built exe: build it first, then run by name"]
+    fn a_data_folder_stop_writes_no_start_record() {
+        let temp = Temp::new("config stop");
+        let dir = temp.0.join("data");
+        std::fs::create_dir_all(&dir).unwrap();
+        // A file where the settings folder goes: the start stops before the claim.
+        std::fs::write(dir.join("config"), b"in the way").unwrap();
+        let out = run_exe(
+            &["--data-dir", &dir.to_string_lossy()],
+            &temp.0,
+            Duration::from_secs(20),
+        );
+        assert_eq!(out.status.code(), Some(2));
+        let stderr = String::from_utf8_lossy(&out.stderr);
+        assert!(stderr.contains("a file of that name is in the way"), "{stderr}");
+        assert!(!dir.join("logs").join("start.txt").exists(), "no start record");
     }
 
     #[test]
@@ -1292,22 +1426,23 @@ mod tests {
         let temp = Temp::new("second copy");
         let dir = data_dir(&temp.0);
         let dir_text = dir.to_string_lossy().to_string();
-        let first = the_exe(&["--smoke", "--data-dir", &dir_text], &temp.0).spawn().unwrap();
+        let mut first = the_exe(&["--smoke", "--data-dir", &dir_text], &temp.0).spawn().unwrap();
+        let (first_out, first_err) = (drain(first.stdout.take()), drain(first.stderr.take()));
         // Wait until the first has its claim (its start.txt is written from the claim on).
         let began = Instant::now();
         while !dir.join("logs").join("start.txt").exists() {
-            assert!(
-                began.elapsed() < Duration::from_secs(20),
-                "the first copy never started"
-            );
+            if began.elapsed() > Duration::from_secs(20) {
+                let _ = first.kill();
+                panic!("the first copy never started");
+            }
             std::thread::sleep(Duration::from_millis(20));
         }
-        let second = the_exe(&["--smoke", "--data-dir", &dir_text], &temp.0).spawn().unwrap();
-        let out = wait_within(second, Duration::from_secs(2), "the second copy");
+        let out = run_exe(&["--smoke", "--data-dir", &dir_text], &temp.0, Duration::from_secs(2));
         assert_eq!(out.status.code(), Some(0));
         assert!(String::from_utf8_lossy(&out.stderr).contains("stepped aside"));
         let out = wait_within(first, Duration::from_secs(60), "the first copy");
         assert_eq!(out.status.code(), Some(0));
+        let (_, _) = (first_out.join(), first_err.join());
         let start = std::fs::read_to_string(dir.join("logs").join("start.txt")).unwrap();
         assert!(start.contains("The window draws with"), "{start}");
 
@@ -1332,10 +1467,11 @@ mod tests {
         let temp = Temp::new("no window");
         let dir = data_dir(&temp.0);
         // Metal names no adapter on Windows, so the window cannot be made.
-        let out = the_exe(&["--data-dir", &dir.to_string_lossy()], &temp.0)
+        let child = the_exe(&["--data-dir", &dir.to_string_lossy()], &temp.0)
             .env("WGPU_BACKEND", "metal")
-            .output()
+            .spawn()
             .unwrap();
+        let out = wait_within(child, Duration::from_secs(60), "a start with no graphics");
         assert_eq!(out.status.code(), Some(1));
         let start = std::fs::read_to_string(dir.join("logs").join("start.txt")).unwrap();
         assert!(start.contains("The window could not be opened"), "{start}");
@@ -1349,10 +1485,11 @@ mod tests {
     fn a_fault_report_from_the_exe() {
         let temp = Temp::new("fault");
         let dir = data_dir(&temp.0);
-        let child = the_exe(&["--test-fault-report", "--data-dir", &dir.to_string_lossy()], &temp.0)
-            .spawn()
-            .unwrap();
-        let out = wait_within(child, Duration::from_secs(60), "the faulting app");
+        let out = run_exe(
+            &["--test-fault-report", "--data-dir", &dir.to_string_lossy()],
+            &temp.0,
+            Duration::from_secs(60),
+        );
         assert_ne!(out.status.code(), Some(0));
         let reports: Vec<_> = std::fs::read_dir(dir.join("logs"))
             .unwrap()
