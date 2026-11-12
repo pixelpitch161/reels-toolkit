@@ -363,7 +363,7 @@ impl HorrorTrapClassic {
         let first = b - b % 2;
         let (bar1, bar2) =
             box_motif(&ctx.harmony, chord(ctx, first % nb)?, chord(ctx, (first + 1) % nb)?).map_err(bad)?;
-        let notes = if b % 2 == 0 { bar1 } else { bar2 };
+        let notes = if b.is_multiple_of(2) { bar1 } else { bar2 };
         for (j, &m) in notes.iter().enumerate() {
             let tj = t0 + j as f64 * e8;
             let dk = dark(tj);
@@ -382,7 +382,7 @@ impl HorrorTrapClassic {
             }
         }
         // ---- creeping low strings, swelling over 2 bars
-        if b % 2 == 0 && !(dark(t0) || dark(t0 + bar)) {
+        if b.is_multiple_of(2) && !(dark(t0) || dark(t0 + bar)) {
             let ms = self.cluster(ctx, ch)?;
             put(mix, "strings", self.strings(&ms, 2.0 * bar * 0.97, dense)?, t0, 0.42);
         }
