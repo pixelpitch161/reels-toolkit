@@ -21,6 +21,8 @@
 //! the keep circles of the dim are `float32` (`np.zeros((H, W), np.float32)`), so the dim factor is a `float32`
 //! product with the Python-float depth. A pixel mixed in place (the peg's glint) is [`mix`].
 
+use std::collections::BTreeMap;
+
 use bf_core::dmath;
 use bf_core::event::{Event, Value};
 use bf_core::py::{self, py_max, py_min};
@@ -277,20 +279,27 @@ struct Whirl {
 /// The `extra` keys [`Look::state`] keeps the whirl in.
 const ANC_KEYS: [&str; 7] = ["anc_cx", "anc_cz", "anc_th", "anc_r", "anc_tw", "anc_age", "anc_om"];
 
+/// A ball's `extra` (`BallState::extra`).
+type Extra = BTreeMap<String, f64>;
+
 impl Whirl {
     /// `st['anc'] = ...`: into the ball's `extra`.
-    fn put(&self, st: &mut BallState) {
-        st.extra.insert("anc".to_string(), 1.0);
+    fn put(&self, extra: &mut Extra) {
+        extra.insert("anc".to_string(), 1.0);
         let v = [self.c[0], self.c[1], self.th, self.r, self.tw, self.age, self.om];
         for (key, v) in ANC_KEYS.iter().zip(v) {
-            st.extra.insert((*key).to_string(), v);
+            extra.insert((*key).to_string(), v);
         }
     }
 
     /// `st.get('anc')`: the whirl a ball's state holds, if any.
     fn of(st: &BallState) -> Option<Whirl> {
-        st.extra.get("anc")?;
-        let v = |key: &str| st.extra.get(key).copied().unwrap_or(f64::NAN);
+        Whirl::of_extra(&st.extra)
+    }
+
+    fn of_extra(extra: &Extra) -> Option<Whirl> {
+        extra.get("anc")?;
+        let v = |key: &str| extra.get(key).copied().unwrap_or(f64::NAN);
         Some(Whirl {
             c: [v("anc_cx"), v("anc_cz")],
             th: v("anc_th"),
@@ -302,10 +311,10 @@ impl Whirl {
     }
 
     /// `st['anc'] = None`.
-    fn clear(st: &mut BallState) {
-        st.extra.remove("anc");
+    fn clear(extra: &mut Extra) {
+        extra.remove("anc");
         for key in ANC_KEYS {
-            st.extra.remove(key);
+            extra.remove(key);
         }
     }
 }
@@ -513,7 +522,7 @@ impl Look for BassClarinetLook {
         // st['sink'], st['twin'], st['anc'] = 0.0, 0.0, None
         st.sink = 0.0;
         st.extra.insert("twin".to_string(), 0.0);
-        Whirl::clear(st);
+        Whirl::clear(&mut st.extra);
         if phase != Phase::Fight {
             return;
         }
@@ -521,7 +530,7 @@ impl Look for BassClarinetLook {
         st.extra.insert("twin".to_string(), self.twin_at(p.t_ko, t));
         if let Some(w) = self.anc_at(p, t) {
             st.glow = py_max(st.glow, 0.35 * py_max(0.0, 1.0 - w.age / 0.4));
-            w.put(st);
+            w.put(&mut st.extra);
         }
     }
 
@@ -847,7 +856,7 @@ impl Look for BassClarinetLook {
         // the eruption's heat ripple
         for &(t0, at) in &self.erupts {
             let u = t - t0;
-            if 0.0 <= u && u < 0.5 && t0 < p.t_ko {
+            if (0.0..0.5).contains(&u) && t0 < p.t_ko {
                 img.shimmer_world(
                     cam,
                     to_world(at[0], at[1], 0.05),
@@ -933,9 +942,9 @@ mod tests {
     fn it_sinks_into_shadow_and_pops_up_at_the_eruption() {
         let l = look();
         assert_eq!(l.sink_at(60.0, 9.9), 0.0);
-        assert_eq!(l.sink_at(60.0, 10.15), 0.5);
+        assert!((l.sink_at(60.0, 10.15) - 0.5).abs() < 1e-9);
         assert_eq!(l.sink_at(60.0, 11.0), 1.0);
-        assert_eq!(l.sink_at(60.0, 12.06), 0.5);
+        assert!((l.sink_at(60.0, 12.06) - 0.5).abs() < 1e-9);
         assert_eq!(l.sink_at(60.0, 12.2), 0.0);
         // a LIGHTS OUT after the K.O. shows nothing
         assert_eq!(l.sink_at(9.0, 11.0), 0.0);
@@ -961,8 +970,9 @@ mod tests {
 
     #[test]
     fn a_whirl_rides_in_the_balls_extra() {
-        let mut st = BallState::default();
-        assert_eq!(Whirl::of(&st), None);
+        let mut extra = Extra::new();
+        extra.insert("stun".to_string(), 0.5);
+        assert_eq!(Whirl::of_extra(&extra), None);
         let w = Whirl {
             c: [0.5, -0.25],
             th: 7.0,
@@ -971,11 +981,12 @@ mod tests {
             age: 0.1,
             om: -3.0,
         };
-        w.put(&mut st);
-        assert_eq!(Whirl::of(&st), Some(w));
-        Whirl::clear(&mut st);
-        assert_eq!(Whirl::of(&st), None);
-        assert!(st.extra.is_empty());
+        w.put(&mut extra);
+        assert_eq!(Whirl::of_extra(&extra), Some(w));
+        Whirl::clear(&mut extra);
+        assert_eq!(Whirl::of_extra(&extra), None);
+        // what another look keeps there stays
+        assert_eq!(extra.len(), 1);
     }
 
     #[test]
