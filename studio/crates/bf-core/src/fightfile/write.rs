@@ -60,7 +60,16 @@ impl FightFile {
         for (k, solo) in &m.solos {
             let notes: Vec<String> = solo
                 .iter()
-                .map(|&(b, n, d)| format!("[{}, {n}, {}]", w_f64(b), w_f64(d)))
+                .map(|(b, n, d)| {
+                    let n = match n {
+                        SoloNote::Note(n) => n.to_string(),
+                        SoloNote::Chord(ns) => {
+                            let ns: Vec<String> = ns.iter().map(i32::to_string).collect();
+                            format!("[{}]", ns.join(", "))
+                        }
+                    };
+                    format!("[{}, {n}, {}]", w_f64(*b), w_f64(*d))
+                })
                 .collect();
             w_rows(&mut o, k, &notes, 4);
         }

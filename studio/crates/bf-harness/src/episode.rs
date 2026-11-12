@@ -8,7 +8,7 @@ use std::time::Instant;
 
 use bf_content::{SoundBuild, build_picture};
 use bf_core::event::Value as Ev;
-use bf_core::fightfile::FightFile;
+use bf_core::fightfile::{FightFile, SoloNote};
 use bf_core::recording::Recording;
 use bf_core::show::Show;
 use bf_picture::hull;
@@ -150,17 +150,12 @@ pub fn fight_file_is_the_config(pair: &str) {
         ff.music.title_hits == hits,
         format!("{:?}", ff.music.title_hits),
     );
-    let solos: std::collections::BTreeMap<String, Vec<(f64, i32, f64)>> = d["solos"]
+    // single notes, and a chord as a list of notes (ACOUSTIC's strums)
+    let solos: std::collections::BTreeMap<String, Vec<(f64, SoloNote, f64)>> = d["solos"]
         .as_object()
         .expect("solos")
         .iter()
-        .map(|(k, v)| {
-            let notes = list(v)
-                .iter()
-                .map(|n| (num(&n[0]), n[1].as_i64().unwrap() as i32, num(&n[2])))
-                .collect();
-            (k.clone(), notes)
-        })
+        .map(|(k, v)| (k.clone(), crate::refs::solo(v)))
         .collect();
     // the config's solos; a fighter it gives none plays its kit default, which the fight file writes out
     let same_solos = solos.iter().all(|(k, v)| ff.music.solos.get(k) == Some(v));
