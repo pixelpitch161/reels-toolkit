@@ -710,39 +710,53 @@ and 6.3 do for FLUTE and TROMBONE), from the lines below.
 <!-- kind:spotlight -->
 #### `spotlight` (weapon kind of ALTO SAX)
 
-`fight.py` 4369 to 4512. Not ported yet: its port fills this section in (the meaning of each field, as 6.2 and 6.3 do
-for FLUTE and TROMBONE), from the lines below.
+`fight.py` 4369 to 4512 (`spot_setup`, `_spot_line`, `spot_tick`, `spot_pos`, `spot_step`, `start_encore`). Ported:
+`bf-sim/src/kinds/spotlight.rs`, settings in `bf-core/src/roster/kinds/spotlight.rs`.
+
+On its own 16th grid, every `int(round(4 * every))` 16ths (`off16` later; a haste divides it), a light comes on for
+`sweep16` 16ths. It glides, eased, along a straight line `span` long through the point where the enemy will be at
+mid-sweep (`lead` times its motion), square to the enemy's heading, turned by up to `jitter` degrees (one draw from
+the fight's generator per sweep, also when `jitter` is 0) and coming in from the fighter's own side; both ends are
+held 0.25 inside the ropes. No sweep starts while ENCORE runs, or while the fighter is stunned, in shadow or smashed.
+The light's radius for the next sweep is the ball's `BL` (`blade_len`): `base`, plus `grow` per sweep that burned, up
+to `max_r`. The burn's damage starts at `dmg` and grows by `dmg_grow` per sweep that burned, up to `dmg_max`; it is
+not recorded.
 
 **Record keys.**
 
-- `SPOT`: added to `rec` at `run()` 5893, written by `snap` 5671 to 5681:
+- `SPOT` (only when a fighter has the kind): a ragged list, one entry a frame: the lights that are on at that frame
+  (from 1e-9 before their start to 1e-9 after their end), oldest first, then the phone lights of the last 8th. Each
+  light is 9 values:
 
-  ```python
-  if 'SPOT' in rec:                                   # #51, only recorded when a fighter uses the 'spotlight' kind
-      row = []
-      for Sp in self.spots:
-          if Sp['t0'] - 1e-9 <= self.t <= Sp['t1'] + 1e-9:
-              c = self.spot_pos(Sp, self.t)
-              row.append((Sp['owner'], float(c[0]), float(c[1]), Sp['r'], Sp['kind'], Sp['t0'], Sp['t1'], Sp['hot'],
-                          Sp['id']))
-      for t_, q in self.phones:
-          row.append((int(next((j for j, Bj in enumerate((B0, B1)) if Bj.w['kind'] == 'spotlight'), 0)),
-                      float(q[0]), float(q[1]), 0.0, 3, t_, t_ + self.R.beat / 2, 0, -1))
-      rec['SPOT'].append(row)
-  ```
+  | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
+  | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+  | owner (int) | x of its centre now (float) | y (float) | radius (float) | kind (int): 0 a sweep, 1 OCTAVE KEY's second light, 2 ENCORE's chase light, 3 a phone light | when it came on (float) | when it goes out (float); for the chase light ENCORE's end, or the step it ended on | hot (int): 1 if it came on during ALTISSIMO | its id (int, counts up from 0 over the fight; -1 for a phone light) |
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+  A phone light's row is `(the first fighter with the kind, x, y, 0.0, 3, t, t + beat / 2, 0, -1)`, `t` the 8th it
+  came on. The phone lights are replaced on every 8th of an ENCORE and cleared when it ends.
 
-- 4415: `self.damage(k, 1 - k, dmg, 'burn', float(O.p[0]), float(O.p[1]))`
-- 4418: `self.ev('burn', k, Sp['id'], float(c[0]), float(c[1]))`
-- 4423: `self.ev('phones', k, n)`
-- 4426: `self.damage(k, 1 - k, ab['phone_dmg'], 'phone', float(q[0]), float(q[1]))`
-- 4427: `self.ev('phone_burn', k, float(q[0]), float(q[1]))`
-- 4452: `self.ev('spot', k, sid, float(a[0]), float(a[1]), float(b[0]), float(b[1]), self.t, self.t + dur, r, 0)`
-- 4459: `self.ev('spot', k, sid, float(a2[0]), float(a2[1]), float(b2[0]), float(b2[1]), self.t, self.t + dur, r, 1)`
-- 4481: `self.ev('spot_end', k, Sp['id'], int(Sp['hit']))`
-- 4494: `self.ev('spot_end', k, Sp['id'], int(Sp['hit']))`
+**Events.**
+
+| Kind | `who` (2) | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `spot` | the light's owner | its id (int) | x where it starts (float) | y (float) | x where it ends (float) | y (float) | when it comes on (float, not rounded as element 0 is) | when it goes out (float) | its radius (float) | kind (int): 0 a sweep, 1 OCTAVE KEY's second light |
+| `burn` | the owner | the light's id (int) | x of the light's centre (float) | y (float) | | | | | | |
+| `spot_end` | the owner | the light's id (int) | 1 if it burned the enemy at least once, else 0 (int) | | | | | | | |
+| `phones` | the owner | how many phone lights came on (int, `int(n_phone)`) | | | | | | | | |
+| `phone_burn` | the owner | x of the phone light that burned (float) | y (float) | | | | | | | |
+
+A `burn` event is written on every 16th on which the enemy's centre is within a live light's radius plus 0.6 R of
+its centre, whether or not the hit landed (a shielded enemy gives `block`, then `burn`). `spot_end` comes on the first
+step after the light's end; for the chase light it comes on the step ENCORE ends. A sweep that burned grows `BL`
+and the burn at its `spot_end`; OCTAVE KEY's second light and the chase light grow nothing. OCTAVE KEY's second light
+is square to the first through the same point and runs there and back in the same time.
+
+`hit`, elements 7 and 8:
+
+| What hit (7) | Cause | Sub (8) |
+| --- | --- | --- |
+| `burn` | a light on a 16th: the light's damage as it was when the light came on (times `hot` during ALTISSIMO; the chase light's is ENCORE's `dmg`). x and y are the enemy's centre. A landed burn knocks the enemy away from the light's centre (along its own heading when it stands within 0.001 of it), strength `knock` | 0 |
+| `phone` | a phone light within ENCORE's `phone_r` of the enemy's centre: `phone_dmg`. x and y are the phone light's spot. No knock; a landed one is followed by `phone_burn` | 0 |
 
 <!-- /kind:spotlight -->
 
@@ -1131,45 +1145,59 @@ and 6.3 do for FLUTE and TROMBONE), from the lines below.
 <!-- kind:octave -->
 #### `octave` (ability kind of ALTO SAX)
 
-`fight.py` 2958 to 2960. Not ported yet: its port fills this section in (the meaning of each field, as 6.2 and 6.3 do
-for FLUTE and TROMBONE), from the lines below.
+`fight.py` 2958 to 2960. Ported: `bf-sim/src/kinds/spotlight.rs` (`start_octave`), settings in
+`bf-core/src/roster/abilities/octave.rs`. For `dur` seconds (or `dur_beats` beats) every new sweep brings a second
+light (`spot`, kind 1). A sweep already running is not changed. On a fighter without a spotlight it does nothing
+but its event.
 
-**Record keys.** None of its own.
+**Record keys.** None of its own: the second lights are `SPOT` rows of kind 1.
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+**Events.**
 
-- 2960: `self.ev('octave', k, B.oct_until)`
+| Kind | `who` (2) | 3 |
+| --- | --- | --- |
+| `octave` | the fighter | when it ends (float) |
 
 <!-- /kind:octave -->
 
 <!-- kind:altissimo -->
 #### `altissimo` (ability kind of ALTO SAX)
 
-`fight.py` 2961 to 2963. Not ported yet: its port fills this section in (the meaning of each field, as 6.2 and 6.3 do
-for FLUTE and TROMBONE), from the lines below.
+`fight.py` 2961 to 2963. Ported: `bf-sim/src/kinds/spotlight.rs` (`start_altissimo`), settings in
+`bf-core/src/roster/abilities/altissimo.rs`. For `dur` seconds (or `dur_beats` beats) a new sweep's light is
+`narrow` times as wide, burns `hot` times as much and its line is `span_k` times as long. A sweep already running
+is not changed.
 
-**Record keys.** None of its own.
+**Record keys.** None of its own: a light that came on during it has `hot` 1 in its `SPOT` rows.
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+**Events.**
 
-- 2963: `self.ev('altissimo', k, B.alt_until)`
+| Kind | `who` (2) | 3 |
+| --- | --- | --- |
+| `altissimo` | the fighter | when it ends (float) |
 
 <!-- /kind:altissimo -->
 
 <!-- kind:encore -->
 #### `encore` (ability kind of ALTO SAX)
 
-`fight.py` 2964 to 2965, 4501 to 4537. Not ported yet: its port fills this section in (the meaning of each field, as 6.2
-and 6.3 do for FLUTE and TROMBONE), from the lines below.
+`fight.py` 2964 to 2965 and `start_encore` 4501 to 4512; the chase and the phones in `spot_step` 4474 to 4488 and
+`spot_tick` 4419 to 4427. Ported: `bf-sim/src/kinds/spotlight.rs` (`start_encore`), settings in
+`bf-core/src/roster/abilities/encore.rs`. The fighter's lights are taken away (no `spot_end` for them) and one chase
+light comes on where the fighter stands, `max_r` times `r_k` wide, for `beats` beats: every step it moves `speed`
+times the shared speed toward the enemy, and it burns `dmg` on every 16th like any light. On every 8th
+`int(n_phone)` phone lights pick spots within `spread` of the enemy (two draws from the fight's generator each).
 
-**Record keys.** None of its own.
+**Record keys.** None of its own: the chase light is a `SPOT` row of kind 2, the phone lights rows of kind 3.
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+**Events.**
 
-- 4511: `self.ev('encore', k, t1)`
+| Kind | `who` (2) | 3 |
+| --- | --- | --- |
+| `encore` | the fighter | when it ends (float) |
+
+Its `phones`, `phone_burn`, `burn` and `spot_end` events and its `burn` and `phone` hits are in the `spotlight`
+section above.
 
 <!-- /kind:encore -->
 

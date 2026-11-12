@@ -1,27 +1,34 @@
 //! Ability kind `altissimo`, ALTO SAX's ALTISSIMO: its roster settings. `fight.py` `trigger` 2961 to 2963.
 //!
-//! A stub until ALTO SAX's port: [`PORTED`] is false, so an ability of kind `altissimo` loads as
-//! `AbilityKind::Unsupported("altissimo")` and no fight can have it. The port lists the numbers `fight.py` reads as
-//! `ab[name]` in [`REQUIRED`] and every key it reads in [`ALLOWED`], fills [`AltissimoCfg`] (what is not a number:
-//! lists, tables), [`parse`] and [`check`], and sets [`PORTED`].
+//! For `dur` seconds (or `dur_beats` beats) a new sweep's light is `narrow` x as wide, burns `hot` x as much and its
+//! line is `span_k` x as long (`spot_tick` 4443 to 4446, which reads all three as `ab[name]`). It holds only
+//! numbers.
 
 use serde_json::Value as Json;
 
 use crate::roster::{AbilityCfg, Entry, RosterError};
 
-/// Whether the engine runs ability kind `altissimo`. While false the roster reads it as
-/// `AbilityKind::Unsupported("altissimo")`, which the engine refuses in words.
-pub const PORTED: bool = false;
+/// Whether the engine runs ability kind `altissimo`.
+pub const PORTED: bool = true;
 
 /// The numbers `fight.py` reads as `ab[name]` for this kind (a group of names: one of them, as `dur` or `dur_beats`).
 /// An unlock's `every_bars` is checked for every kind.
-pub const REQUIRED: &[&[&str]] = &[];
+pub const REQUIRED: &[&[&str]] = &[&["dur", "dur_beats"], &["span_k"], &["narrow"], &["hot"]];
 
 /// Every key `fight.py` reads from an ability of this kind; an entry holding another key loads as
 /// `Unsupported("altissimo+<key>")`.
-pub const ALLOWED: &[&str] = &["name", "kind", "every_bars"];
+pub const ALLOWED: &[&str] = &[
+    "name",
+    "kind",
+    "every_bars",
+    "dur",
+    "dur_beats",
+    "span_k",
+    "narrow",
+    "hot",
+];
 
-/// What an ability of kind `altissimo` holds besides its numbers (empty until the port).
+/// What an ability of kind `altissimo` holds besides its numbers: nothing.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct AltissimoCfg {}
 
