@@ -37,7 +37,8 @@ cargo test --workspace
   258 MB, downloaded only when the runner's cache does not hold it; every checksum is checked on each run), checks
   that it has the `libx264` and `aac` encoders, runs the command line's `render_is_reproducible` and, with
   `BF_NEED_PINNED_FFMPEG=1`, `the_encode_is_pinned` and `the_faster_clip_is_pinned` (the 3 s clip with each encoder
-  setting must be byte for byte its line in `replay/encode_hashes.txt`), renders a 3 s clip of the example episode,
+  setting must be byte for byte its line in `replay/encode_hashes.txt` for the number of threads x264 used there),
+  renders a 3 s clip of the example episode,
   builds the app (`bf-app`) and runs the app's
   tests that need no window: `cargo test --release -p bf-app --lib --bins --test compat` (the unit tests inside each
   file, the real engine's among them, the command line's and the saved-file tests). The app's interface tests
@@ -123,7 +124,10 @@ Settings says otherwise. Today it knows FLUTE against TROMBONE; there is no inst
 another folder, and `--smoke` opens it, paints 30 frames and closes it. Details: `crates/bf-app/README.md`.
 ## Determinism
 
-Results must be bit-identical on every PC. The engine crates use `f64` in the Python operation order, never fused
+Results must be bit-identical on every PC: fights, frames and sound. The encoded mp4 is the one exception: x264
+picks its thread count from the PC's logical processors and its bytes depend on it, so the same fight file and seed
+give the same mp4 on the same PC with the same ffmpeg, and on another PC the same frames and sound before encoding
+(`docs/studio/m6-measurements.md` section 4). The engine crates use `f64` in the Python operation order, never fused
 multiply-add, and call every transcendental through `bf_core::dmath`; `crates/bf-core/tests/no_std_maths.rs` scans
 the sources and fails on any direct call such as `x.sin()` or `x.mul_add(a, b)`. No result may depend on hash-map
 order or on the number of threads.
