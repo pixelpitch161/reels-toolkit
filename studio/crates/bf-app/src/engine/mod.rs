@@ -445,6 +445,7 @@ pub(crate) mod tests {
         let settings = Settings {
             output_folder: std::path::PathBuf::from("Videos"),
             workers: 4,
+            encode: crate::model::EncodeChoice::Best,
         };
         let (mut s, _) = AppState::new(settings, Queue::new(), Vec::new(), 8);
         s.apply(Event::Roster(content::roster()));
@@ -621,6 +622,7 @@ pub(crate) mod tests {
                 id: 1,
                 fight_toml: String::new(),
                 out_root: unused.clone(),
+                speed: crate::model::EncodeChoice::Best,
             },
             Command::CancelJob { id: 1 },
             Command::CheckTools,

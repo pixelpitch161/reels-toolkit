@@ -1,4 +1,9 @@
-//! The settings file, `config/settings.toml`: where videos are saved and how many threads the engine may use.
+//! The settings file, `config/settings.toml`: where videos are saved, how many threads the engine may use and how
+//! videos are encoded.
+//!
+//! The `encode` key (`"best"` or `"faster"`, plan M6 Task 13) came without a new format number: an older app reads
+//! only `format`, `output_folder` and `workers`, so it ignores the key, and a file without it, or with any other
+//! value, reads as Best with no notice.
 
 use std::io;
 use std::path::{Path, PathBuf};
@@ -6,7 +11,7 @@ use std::path::{Path, PathBuf};
 use serde::Serialize;
 
 use super::{clear_unread, keep_copy, mark_unread, move_aside, next_aside_name, read_patiently, write_atomic};
-use crate::model::{Notice, Settings};
+use crate::model::{EncodeChoice, Notice, Settings};
 
 /// The settings file's format. A file with a higher number was written by a newer app and is moved aside.
 pub const SETTINGS_FORMAT: u32 = 1;
@@ -17,6 +22,7 @@ struct SettingsFile<'a> {
     format: u32,
     output_folder: &'a Path,
     workers: usize,
+    encode: &'a str,
 }
 
 /// The settings a first run starts with: videos go in `<Videos>/BALLFIGHT` (else `<home>/Videos/BALLFIGHT`), and
@@ -25,6 +31,7 @@ pub fn default_settings(cores: usize) -> Settings {
     Settings {
         output_folder: default_output_folder(),
         workers: cores.saturating_sub(1).max(1),
+        encode: EncodeChoice::Best,
     }
 }
 
@@ -75,7 +82,17 @@ fn parse(bytes: &[u8], cores: usize) -> Read {
     };
     let most = i64::try_from(cores.max(1)).unwrap_or(i64::MAX);
     let workers = usize::try_from(workers.clamp(1, most)).unwrap_or(1);
-    Read::Good(Settings { output_folder, workers })
+    // Not a required key: a file without it (from 0.1.0), or with a value this app does not know, is Best.
+    let encode = table
+        .get("encode")
+        .and_then(toml::Value::as_str)
+        .and_then(EncodeChoice::from_name)
+        .unwrap_or_default();
+    Read::Good(Settings {
+        output_folder,
+        workers,
+        encode,
+    })
 }
 
 /// Reads the settings file. A missing file gives the defaults and no notice. A file that cannot be understood or was
@@ -138,12 +155,13 @@ pub fn load_settings(path: &Path, cores: usize) -> (Settings, Option<Notice>) {
     (defaults, Some(Notice { text }))
 }
 
-/// Writes the settings file (`format`, `output_folder`, `workers`) atomically, making its folder if needed.
+/// Writes the settings file (`format`, `output_folder`, `workers`, `encode`) atomically, making its folder if needed.
 pub fn save_settings(path: &Path, s: &Settings) -> io::Result<()> {
     let file = SettingsFile {
         format: SETTINGS_FORMAT,
         output_folder: &s.output_folder,
         workers: s.workers,
+        encode: s.encode.name(),
     };
     let text = toml::to_string(&file).map_err(|err| io::Error::new(io::ErrorKind::InvalidData, err))?;
     write_atomic(path, text.as_bytes())
@@ -160,6 +178,7 @@ mod tests {
         Settings {
             output_folder: PathBuf::from(r"C:\Users\Zoë Ångström\Videos\My BALLFIGHT 動画"),
             workers: 5,
+            encode: EncodeChoice::Best,
         }
     }
 
@@ -207,6 +226,7 @@ mod tests {
         let gone = Settings {
             output_folder: root.0.join("unplugged drive").join("BALLFIGHT"),
             workers: 3,
+            encode: EncodeChoice::Best,
         };
         save_settings(&path, &gone).unwrap();
         assert_eq!(load_settings(&path, 8), (gone.clone(), None));
@@ -617,7 +637,8 @@ mod tests {
                 (
                     Settings {
                         output_folder: PathBuf::from(r"E:\Clips"),
-                        workers: loaded
+                        workers: loaded,
+                        encode: EncodeChoice::Best,
                     },
                     None
                 ),
@@ -641,11 +662,73 @@ mod tests {
             (
                 Settings {
                     output_folder: PathBuf::from(r"E:\Clips"),
-                    workers: 4
+                    workers: 4,
+                    encode: EncodeChoice::Best,
                 },
                 None
             )
         );
         assert_eq!(files_in(&root.paths().config), vec!["settings.toml"]);
+    }
+
+    /// A format 1 file with keys this app does not read loads with no notice and nothing moved aside, which is how an
+    /// older app (reading only `format`, `output_folder` and `workers`) reads a file with the new `encode` key.
+    #[test]
+    fn an_unknown_settings_key_is_ignored() {
+        let root = TempRoot::new("an_unknown_settings_key_is_ignored");
+        let path = root.paths().settings();
+        fs::create_dir_all(root.paths().config).unwrap();
+        fs::write(
+            &path,
+            "format = 1\noutput_folder = 'E:\\Clips'\nworkers = 4\nencode = 'faster'\nlanguage = 'fr'\n",
+        )
+        .unwrap();
+        let (settings, notice) = load_settings(&path, 8);
+        assert_eq!(notice, None);
+        assert_eq!(
+            (settings.output_folder, settings.workers),
+            (PathBuf::from(r"E:\Clips"), 4)
+        );
+        assert_eq!(files_in(&root.paths().config), vec!["settings.toml"]);
+    }
+
+    #[test]
+    fn the_encode_key_round_trips() {
+        let root = TempRoot::new("the_encode_key_round_trips");
+        let path = root.paths().settings();
+        for choice in EncodeChoice::ALL {
+            let s = Settings {
+                encode: choice,
+                ..mine()
+            };
+            save_settings(&path, &s).unwrap();
+            let text = fs::read_to_string(&path).unwrap();
+            assert!(text.contains(&format!("encode = \"{}\"", choice.name())), "{text}");
+            assert!(text.contains("format = 1"), "the format number stays: {text}");
+            assert_eq!(load_settings(&path, 8), (s, None));
+        }
+        assert_eq!(EncodeChoice::from_name("best"), Some(EncodeChoice::Best));
+        assert_eq!(EncodeChoice::from_name("faster"), Some(EncodeChoice::Faster));
+    }
+
+    #[test]
+    fn no_encode_key_is_best() {
+        let root = TempRoot::new("no_encode_key_is_best");
+        let path = root.paths().settings();
+        fs::create_dir_all(root.paths().config).unwrap();
+        for extra in [
+            "",
+            "encode = 'fastest'\n",
+            "encode = 3\n",
+            "encode = 'Faster'\n",
+            "encode = ''\n",
+        ] {
+            let text = format!("format = 1\noutput_folder = 'E:\\Clips'\nworkers = 4\n{extra}");
+            fs::write(&path, text).unwrap();
+            let (settings, notice) = load_settings(&path, 8);
+            assert_eq!((settings.encode, notice), (EncodeChoice::Best, None), "{extra:?}");
+        }
+        assert_eq!(files_in(&root.paths().config), vec!["settings.toml"]);
+        assert_eq!(default_settings(8).encode, EncodeChoice::Best);
     }
 }

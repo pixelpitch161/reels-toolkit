@@ -33,9 +33,9 @@ use bf_export::{CheckResult, EncodeSpeed, ExportError, JobEvent, JobOpts, run_jo
 
 use super::Ctx;
 use super::convert::{fight_file, plain};
-use crate::model::JobId;
 use crate::model::draft::Draft;
 use crate::model::queue::{FailHint, JobSpec, JobUpdate, STEP_ORDER, StepKey, StepState};
+use crate::model::{EncodeChoice, JobId};
 use crate::seam::{Command, Event};
 use crate::wording;
 
@@ -101,7 +101,8 @@ pub fn handle(state: &mut State, ctx: &Ctx, command: Command) {
             id,
             fight_toml,
             out_root,
-        } => run(state, ctx, id, fight_toml, out_root),
+            speed,
+        } => run(state, ctx, id, fight_toml, out_root, speed),
         Command::CancelJob { id } => {
             for r in state.running.iter().filter(|r| r.id == id) {
                 r.cancel.store(true, Ordering::SeqCst);
@@ -187,14 +188,14 @@ fn enqueue(draft: &Draft, out_root: PathBuf) -> Event {
 
 /// Starts job `id` on a thread of its own. A job still running is cancelled and answered `Cancelled` here, at
 /// once (as the sample engine does); its thread then sends nothing more.
-fn run(state: &mut State, ctx: &Ctx, id: JobId, fight_toml: String, out_root: PathBuf) {
+fn run(state: &mut State, ctx: &Ctx, id: JobId, fight_toml: String, out_root: PathBuf, speed: EncodeChoice) {
     let cancel = ctx.cancel_flag();
     let answered = Arc::new(AtomicBool::new(false));
     let (c, a, p) = (cancel.clone(), answered.clone(), answered.clone());
     let started = ctx.spawn(
         "engine: render",
         "rendering the video",
-        move |ctx| render(&ctx, id, &fight_toml, out_root, &c, &a),
+        move |ctx| render(&ctx, id, &fight_toml, out_root, speed, &c, &a),
         move |text| {
             if p.swap(true, Ordering::SeqCst) {
                 // The job had its last word already: the panic is told as a problem only.
@@ -217,6 +218,26 @@ fn run(state: &mut State, ctx: &Ctx, id: JobId, fight_toml: String, out_root: Pa
     state.running.push(Running { id, cancel, answered });
 }
 
+/// The export's encoder setting for Settings' choice: "Best quality" is the series' own (`EncodeSpeed::Best`, whose
+/// arguments `the_arguments_are_the_kits` pins), "Faster" changes only the x264 preset.
+pub fn encode_speed(choice: EncodeChoice) -> EncodeSpeed {
+    match choice {
+        EncodeChoice::Best => EncodeSpeed::Best,
+        EncodeChoice::Faster => EncodeSpeed::Faster,
+    }
+}
+
+/// What a job is rendered with: its output folder, the engine's drawing threads, the engine's frames (a clip in
+/// tests, else every frame) and the encoder setting the job was started with.
+fn job_opts(out_root: PathBuf, workers: usize, frames: Option<std::ops::Range<usize>>, speed: EncodeChoice) -> JobOpts {
+    JobOpts {
+        out_root,
+        workers,
+        frames,
+        speed: encode_speed(speed),
+    }
+}
+
 /// "The video could not be made", with `why` and "Nothing was saved.".
 fn not_made(why: &str) -> JobUpdate {
     JobUpdate::Failed {
@@ -227,7 +248,15 @@ fn not_made(why: &str) -> JobUpdate {
 }
 
 /// The job's thread: the fight again, then the render with its events as updates, then its end.
-fn render(ctx: &Ctx, id: JobId, fight_toml: &str, out_root: PathBuf, cancel: &AtomicBool, answered: &AtomicBool) {
+fn render(
+    ctx: &Ctx,
+    id: JobId,
+    fight_toml: &str,
+    out_root: PathBuf,
+    speed: EncodeChoice,
+    cancel: &AtomicBool,
+    answered: &AtomicBool,
+) {
     let t0 = Instant::now();
     // Nothing after its last word (one a newer job may have sent for it), nor once the engine is ending.
     let send = |update: JobUpdate| send_update(ctx, id, answered, update);
@@ -237,13 +266,7 @@ fn render(ctx: &Ctx, id: JobId, fight_toml: &str, out_root: PathBuf, cancel: &At
         Err(_) if cancel.load(Ordering::SeqCst) => return send(JobUpdate::Cancelled),
         Err(update) => return send(update),
     };
-    let opts = JobOpts {
-        out_root,
-        workers: ctx.workers(),
-        frames: ctx.config.clip.clone(),
-        // the Settings screen's choice reaches the job in a later step (plan M6, Task 13)
-        speed: EncodeSpeed::Best,
-    };
+    let opts = job_opts(out_root, ctx.workers(), ctx.config.clip.clone(), speed);
     let steps = Mutex::new(Steps::default());
     let on = |e: JobEvent| {
         let updates = super::lock(&steps).on(e, Instant::now());
@@ -552,6 +575,24 @@ mod tests {
 
     /// The frames a test job renders.
     const CLIP: Range<usize> = 0..90;
+
+    /// Settings' choice reaches the export as its encoder setting, and nothing else of the job changes with it; the
+    /// names the settings file keeps are the export's own.
+    #[test]
+    fn jobs_pass_the_speed_on() {
+        assert_eq!(encode_speed(EncodeChoice::Best), EncodeSpeed::Best);
+        assert_eq!(encode_speed(EncodeChoice::Faster), EncodeSpeed::Faster);
+        assert_eq!(encode_speed(EncodeChoice::default()), EncodeSpeed::default());
+        for choice in EncodeChoice::ALL {
+            assert_eq!(choice.name(), encode_speed(choice).name(), "{choice:?}");
+            let opts = job_opts(PathBuf::from("out"), 3, Some(CLIP), choice);
+            assert_eq!(opts.speed, encode_speed(choice));
+            assert_eq!(
+                (opts.out_root, opts.workers, opts.frames),
+                (PathBuf::from("out"), 3, Some(CLIP))
+            );
+        }
+    }
 
     /// Every check `bf_export` runs, before the render (`checks::pre_render`) and on the finished file
     /// (`probe::verify_mp4`). `bf_export` keeps the names as private constants, so they are listed here from its
@@ -965,6 +1006,7 @@ mod tests {
                 id: 7,
                 fight_toml: spec.fight_toml.clone(),
                 out_root: out.clone(),
+                speed: crate::model::EncodeChoice::Best,
             });
             let updates = job_until_end(&engine, 7, 240.0);
             let Some(JobUpdate::Done { folder, seconds }) = updates.last().cloned() else {
@@ -1015,6 +1057,7 @@ mod tests {
             id: 3,
             fight_toml: spec.fight_toml,
             out_root: out,
+            speed: crate::model::EncodeChoice::Best,
         });
         let updates = job_until_end(&engine, 3, 60.0);
         let Some(JobUpdate::Failed { headline, detail, hint }) = updates.last().cloned() else {
@@ -1128,6 +1171,7 @@ mod tests {
             id: 1,
             fight_toml: spec.fight_toml,
             out_root: out.clone(),
+            speed: crate::model::EncodeChoice::Best,
         });
         let updates = job_until_end(&engine, 1, 60.0);
         let Some(JobUpdate::Failed { headline, hint, .. }) = updates.last().cloned() else {
@@ -1246,6 +1290,7 @@ mod tests {
                 id: 5,
                 fight_toml: spec.fight_toml,
                 out_root: out.clone(),
+                speed: crate::model::EncodeChoice::Best,
             });
             wait_for(&engine, 120.0, |e| {
                 matches!(
@@ -1332,6 +1377,7 @@ mod tests {
             id: 7,
             fight_toml: spec.fight_toml,
             out_root: out.clone(),
+            speed: crate::model::EncodeChoice::Best,
         });
         wait_for(&engine, 180.0, |e| {
             matches!(
@@ -1374,6 +1420,7 @@ mod tests {
             id: 1,
             fight_toml: "not a fight file".to_string(),
             out_root: root.join("out"),
+            speed: crate::model::EncodeChoice::Best,
         });
         let updates = job_until_end(&engine, 1, 30.0);
         let [JobUpdate::Failed { headline, detail, hint }] = &updates[..] else {
@@ -1457,6 +1504,7 @@ mod tests {
                 id,
                 fight_toml: toml.to_string(),
                 out_root: out.to_path_buf(),
+                speed: crate::model::EncodeChoice::Best,
             },
         );
     }

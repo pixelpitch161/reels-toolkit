@@ -342,6 +342,7 @@ impl BfApp {
         let settings = Settings {
             output_folder: std::path::PathBuf::new(),
             workers: 1,
+            encode: crate::model::EncodeChoice::Best,
         };
         let (state, _) = AppState::new(settings, Queue::new(), Vec::new(), 1);
         BfApp::with(cc, state, Link::Blank, Vec::new())
@@ -662,6 +663,7 @@ mod tests {
         let settings = Settings {
             output_folder: std::path::PathBuf::from("Videos"),
             workers: 7,
+            encode: crate::model::EncodeChoice::Best,
         };
         let paths = Paths::under(std::path::Path::new("studio data"));
         let config = real_config(&settings, Some(paths.clone()));

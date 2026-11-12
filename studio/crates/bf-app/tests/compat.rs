@@ -265,6 +265,7 @@ fn settings_from_0_1_0_read() {
             Settings {
                 output_folder: PathBuf::from(OUTPUT_FOLDER),
                 workers: WORKERS,
+                encode: bf_app::model::EncodeChoice::Best,
             },
             None
         )
@@ -665,6 +666,7 @@ fn make_this_versions_files() {
     writer.settings(&Settings {
         output_folder: out_root.clone(),
         workers: WORKERS,
+        encode: bf_app::model::EncodeChoice::Best,
     });
     writer.queue(&queue);
     writer.flush();

@@ -1,5 +1,9 @@
 //! The render queue, the output folder, the library and the settings.
 //!
+//! A job is sent with Settings' "Video encoding" as it stands when the job starts (`RunJob { speed }`), so a change
+//! applies to the next video that starts and never to one already rendering. While a video renders, "Restart now",
+//! "Go back" and "Remove the app" wait (`upkeep.rs`, which reads `Queue::rendering`).
+//!
 //! One rule decides the "Add to queue" button ([`why_not_add`]): the screen shows its reason and disables the
 //! button, and `Action::AddToQueue` sends the video exactly when it gives none, so the button is never enabled
 //! without doing something and never disabled without its reason.
@@ -185,6 +189,11 @@ impl AppState {
                 fx.push(Effect::SaveSettings(self.vm.settings.clone()));
                 fx.push(Effect::Send(Command::SetWorkers(n)));
             }
+            // A video already rendering keeps the setting it started with; the next one takes this.
+            Action::SetEncode(choice) if choice != self.vm.settings.encode => {
+                self.vm.settings.encode = choice;
+                fx.push(Effect::SaveSettings(self.vm.settings.clone()));
+            }
             Action::Dismiss(i) if i < self.vm.notices.len() => {
                 self.vm.notices.remove(i);
             }
@@ -363,6 +372,8 @@ impl AppState {
                 id: job.id,
                 fight_toml: job.spec.fight_toml.clone(),
                 out_root: job.spec.out_root.clone(),
+                // Settings' "Video encoding" as it stands now that the job starts.
+                speed: self.vm.settings.encode,
             }));
         }
     }

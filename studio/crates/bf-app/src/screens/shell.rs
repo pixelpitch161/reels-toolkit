@@ -2,11 +2,16 @@
 //! status bar, and the keys that switch steps. The app (`app.rs`) places them in their panels.
 
 use egui::accesskit::Role;
-use egui::{Align, Context, Key, Label, Layout, Modifiers, Response, RichText, Sense, Ui, WidgetInfo, pos2, vec2};
+use egui::{
+    Align, Context, Key, Label, Layout, Modifiers, Response, RichText, Sense, Ui, ViewportCommand, WidgetInfo, pos2,
+    vec2,
+};
 
 use crate::model::{Step, View};
+use crate::state::upkeep::{CHECKING, NOT_INSTALLED};
 use crate::state::{Action, ViewModel};
 use crate::theme::{CONTROL_H, HOVER, MUTED, RADIUS, TEXT, body, section, small, value};
+use crate::update::UpdateState;
 use crate::widgets::buttons::{self, focus_ring};
 use crate::widgets::chips::fighter_bar;
 use crate::widgets::pixel::pixel_text;
@@ -21,8 +26,8 @@ pub const STEPS: [(Step, &str, Key); 5] = [
     (Step::Render, "5 Render", Key::Num5),
 ];
 
-/// What hovering the disabled "Update" button says.
-pub const UPDATE_LATER: &str = "Updates from inside the app arrive in a later version.";
+/// How often the window repaints while a new version is being built, so its time goes on.
+const BUILD_TICK: std::time::Duration = std::time::Duration::from_secs(1);
 
 /// Side padding of a toolbar button's label.
 const PAD_X: f32 = 10.0;
@@ -47,9 +52,20 @@ pub fn keys(ctx: &Context, out: &mut Vec<Action>) {
 }
 
 /// The toolbar: the app's name, the five steps (the current one inverted, also while the Library or Settings is
-/// open), then on the right "Library", "Queue" with the count of videos rendering and waiting, "Update" (disabled
-/// until updates arrive) and "Settings". "Library" and "Settings" are inverted while their view is open.
+/// open), then on the right "Library", "Queue" with the count of videos rendering and waiting, "Update" ([`update`])
+/// and "Settings". "Library" and "Settings" are inverted while their view is open.
+///
+/// It is drawn every frame, so it also carries out what the update needs of the window: a repaint each second while
+/// a new version is being built, and closing the window (which saves first) once the upkeep says the app should
+/// close with nothing to say ("Restart now" and "Go back" started the program that finishes them). Closing words
+/// (after a removal) are shown in Settings first, which closes on the person's click.
 pub fn toolbar(ui: &mut Ui, vm: &ViewModel, out: &mut Vec<Action>) {
+    if matches!(vm.update.state, UpdateState::Building { .. }) {
+        ui.ctx().request_repaint_after(BUILD_TICK);
+    }
+    if vm.update.close.as_ref().is_some_and(Vec::is_empty) {
+        ui.ctx().send_viewport_cmd(ViewportCommand::Close);
+    }
     ui.horizontal_centered(|ui| {
         ui.spacing_mut().item_spacing.x = 2.0;
         plain(ui, RichText::new("BALLFIGHT Studio").font(section()).color(TEXT));
@@ -63,7 +79,9 @@ pub fn toolbar(ui: &mut Ui, vm: &ViewModel, out: &mut Vec<Action>) {
             if buttons::toggle(ui, "Settings", vm.view == View::Settings).clicked() {
                 out.push(Action::Go(View::Settings));
             }
-            buttons::disabled(ui, "Update", UPDATE_LATER);
+            if update(ui, &vm.update.state).clicked() {
+                out.push(Action::Go(View::Settings));
+            }
             let (rendering, waiting) = vm.queue.counts();
             if queue_button(ui, rendering + waiting).clicked() {
                 out.push(Action::Go(View::Step(Step::Render)));
@@ -73,6 +91,30 @@ pub fn toolbar(ui: &mut Ui, vm: &ViewModel, out: &mut Vec<Action>) {
             }
         });
     });
+}
+
+/// What hovering the disabled "Update" button says in `state`, when it is disabled: while the app looks for a newer
+/// version, and in a copy that was not installed.
+pub fn update_why(state: &UpdateState) -> Option<&'static str> {
+    match state {
+        UpdateState::NotInstalled => Some(NOT_INSTALLED),
+        UpdateState::Checking => Some(CHECKING),
+        _ => None,
+    }
+}
+
+/// The toolbar's "Update" by the state: drawn disabled exactly as before updates worked, with the state's hover
+/// text, while the app looks and in a copy that was not installed; the primary look when a version is ready to be
+/// built or to restart into; a box button otherwise (up to date, building, failed). A click goes to Settings, where
+/// the "Updates" row is.
+fn update(ui: &mut Ui, state: &UpdateState) -> Response {
+    if let Some(why) = update_why(state) {
+        return buttons::disabled(ui, "Update", why);
+    }
+    match state {
+        UpdateState::Available { .. } | UpdateState::Ready { .. } => buttons::primary(ui, "Update"),
+        _ => buttons::boxed(ui, "Update"),
+    }
 }
 
 /// The flat "Queue" button, followed by `count` in mono `MUTED` when it is above 0; named "Queue" or "Queue 2".

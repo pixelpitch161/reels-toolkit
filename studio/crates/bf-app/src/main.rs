@@ -768,6 +768,11 @@ fn start(
             if fixtures {
                 app.status_note = Some(SAMPLE_NOTE.to_string());
             }
+            if !(smoke || fixtures)
+                && let Some(u) = bf_app::seam::upkeep::for_installed_copy(&cc.egui_ctx)
+            {
+                app.state.set_upkeep(u);
+            }
             // ffmpeg and the output folder, off the interface thread: each a line in start.txt when it answers.
             let output = app.state.vm.settings.output_folder.clone();
             let late_log = Arc::clone(&window_log);

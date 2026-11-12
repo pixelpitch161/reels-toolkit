@@ -16,6 +16,7 @@ pub fn vm() -> ViewModel {
     let settings = Settings {
         output_folder: PathBuf::from("Videos").join("BALLFIGHT"),
         workers: 7,
+        encode: crate::model::EncodeChoice::Best,
     };
     let (mut state, _) = AppState::new(settings, Queue::new(), Vec::new(), 8);
     state.apply(Event::Roster(sample::roster()));

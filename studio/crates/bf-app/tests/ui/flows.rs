@@ -51,6 +51,7 @@ impl Temp {
         Settings {
             output_folder: self.0.join("Videos"),
             workers: 2,
+            encode: bf_app::model::EncodeChoice::Best,
         }
     }
 }

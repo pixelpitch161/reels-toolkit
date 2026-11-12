@@ -56,6 +56,7 @@ fn boot(engine: EngineHandle) -> Boot {
         settings: Settings {
             output_folder: PathBuf::from("Videos").join("BALLFIGHT"),
             workers: 2,
+            encode: bf_app::model::EncodeChoice::Best,
         },
         queue: Queue::new(),
         notices: Vec::new(),
@@ -294,7 +295,8 @@ fn update_is_disabled_and_says_why() {
     let mut harness = showing(REF, base::vm());
     harness.run();
     assert!(harness.get_by_label("Update").accesskit_node().is_disabled());
-    let why = "Updates from inside the app arrive in a later version.";
+    // A copy that was not installed (every test's, and a developer's build) says so.
+    let why = bf_app::state::upkeep::NOT_INSTALLED;
     assert!(harness.query_by_label(why).is_none());
     harness.get_by_label("Update").hover();
     harness.run();
@@ -302,6 +304,66 @@ fn update_is_disabled_and_says_why() {
     harness.get_by_label("Update").click();
     harness.run();
     assert!(harness.state().log.is_empty(), "it does nothing");
+}
+
+/// The toolbar's "Update" in each update state: disabled as before (with the state's hover text) while the app looks
+/// and in a copy that was not installed; the primary look when a version can be built or restarted into; a box
+/// button otherwise. A click on a usable one opens Settings.
+#[test]
+fn update_follows_the_state() {
+    use bf_app::update::UpdateState;
+    let _gpu = gpu();
+    let v = || "0.2.0".to_string();
+    let rgb = |c: egui::Color32| [c.r(), c.g(), c.b()];
+    let states = [
+        (UpdateState::NotInstalled, None),
+        (UpdateState::Checking, None),
+        (UpdateState::UpToDate, Some(theme::RAISED)),
+        (UpdateState::Available { version: v() }, Some(theme::TEXT)),
+        (
+            UpdateState::Building {
+                version: v(),
+                seconds: 5,
+                doing: String::new(),
+            },
+            Some(theme::RAISED),
+        ),
+        (UpdateState::Ready { version: v() }, Some(theme::TEXT)),
+        (
+            UpdateState::Failed {
+                text: "It failed.".to_string(),
+            },
+            Some(theme::RAISED),
+        ),
+    ];
+    for (state, fill) in states {
+        let mut vm = base::vm();
+        vm.update.state = state.clone();
+        let mut harness = showing(REF, vm);
+        harness.run();
+        let node = harness.get_by_label("Update");
+        let rect = node.rect();
+        assert_eq!(node.accesskit_node().is_disabled(), fill.is_none(), "{state:?}");
+        let at = (rect.min.x as u32 + 3, rect.center().y as u32);
+        let seen = crate::common::pixels(&mut harness, &[at])[0];
+        match fill {
+            Some(fill) => assert_eq!(seen, rgb(fill), "{state:?}: its look"),
+            None => assert_eq!(seen, rgb(theme::PANEL), "{state:?}: no fill, as before"),
+        }
+        if let Some(why) = shell::update_why(&state) {
+            harness.get_by_label("Update").hover();
+            harness.run();
+            assert!(harness.query_by_label(why).is_some(), "{state:?}: hovering says why");
+        }
+        harness.get_by_label("Update").click();
+        harness.run();
+        let want = if fill.is_some() {
+            vec![Action::Go(View::Settings)]
+        } else {
+            Vec::new()
+        };
+        assert_eq!(harness.state().log, want, "{state:?}");
+    }
 }
 
 #[test]
@@ -609,6 +671,7 @@ fn starting_installs_the_theme_and_loads_what_was_saved() {
     let saved = Settings {
         output_folder: temp.0.join("My videos"),
         workers: 3,
+        encode: bf_app::model::EncodeChoice::Best,
     };
     save_settings(&paths.settings(), &saved).unwrap();
     std::fs::write(paths.queue(), b"{ this is not a queue").unwrap();
