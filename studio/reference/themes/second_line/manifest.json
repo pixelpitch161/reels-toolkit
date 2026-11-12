@@ -1,0 +1,10 @@
+{
+ "format": 1,
+ "entries": [
+  {"path": "studio/reference/themes/second_line/bed.json", "sha256": "c4d10565c4a18904cfd7b04b922bf9b1e199783bcba8b5594bb263f083826108", "bytes": 47622, "tool": "tools.studio_export.theme_second_line", "commit": "b5c2dc7fa1d8f59b71db1dff7469829a5fce88a9", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"},
+  {"path": "studio/reference/themes/second_line/euphonium_vs_trombone.bfrec", "sha256": "671d58056e32599e5fee0f26885b4ce0e03f62eec246b1344a448f95cd68b068", "bytes": 149915, "tool": "tools.studio_export.theme_second_line", "commit": "b5c2dc7fa1d8f59b71db1dff7469829a5fce88a9", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"},
+  {"path": "studio/reference/themes/second_line/exceptions.toml", "sha256": "fa29a01e9c4b1693533f0e35589afb4df98031bb9be56d8a8cab7b69f89cf7f4", "bytes": 781, "tool": "tools.studio_export.theme_second_line", "commit": "b5c2dc7fa1d8f59b71db1dff7469829a5fce88a9", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"},
+  {"path": "studio/reference/themes/second_line/pins.json", "sha256": "0571c9d7497a11c0c5871c2641541f68f7307fc08a28739230ffbfeec3bf9e19", "bytes": 1545, "tool": "tools.studio_export.m3refs", "commit": "b5c2dc7fa1d8f59b71db1dff7469829a5fce88a9", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"},
+  {"path": "studio/reference/themes/second_line/theme.json", "sha256": "d68cd45be8efbf1c09e8f726e01b0b982611d45d4fac252c185ddcdadc8c0d42", "bytes": 2073, "tool": "tools.studio_export.theme_second_line", "commit": "b5c2dc7fa1d8f59b71db1dff7469829a5fce88a9", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"}
+ ]
+}
