@@ -366,22 +366,41 @@ per hole, from the hole's pitch lane, across the ring and turned toward the enem
 <!-- kind:swallow -->
 #### `swallow` (weapon kind of TUBA)
 
-`fight.py` 1045 to 1130. Not ported yet: its port fills this section in (the meaning of each field, as 6.2 and 6.3 do
-for FLUTE and TROMBONE), from the lines below.
+`fight.py` 1045 to 1130; ported in `bf-sim/src/kinds/swallow.rs` (`bf-core/src/roster/kinds/swallow.rs` for its roster
+numbers). Every `every` beats on the beat grid (haste divides the grid and both times below) the bell goes "oom": it
+inhales for `inhale` beats, and "pah" comes `pah` beats after the oom. One oom-pah runs at a time. The bell turns
+toward the enemy at `aim_rate` (the swallower's `th`, recorded in `TH`). While the bell inhales, an enemy whose
+surface is within the reach (`blade_len`, recorded in `BL`) has its heading turned toward the bell (`suck`; its speed
+is kept); when the two centres are closer than two radii plus `catch` it is gulped: it rides at the swallower's
+centre (its `P` row equals the swallower's), does not move on its own and does not clash, until the pah spits it out
+toward the middle of the ring (the bell's aim when the swallower stands within 0.3 of the middle), turned by up to
+`jitter` degrees either way, at the shared speed with a boost of at least `spit_boost`. If it then hits a rope
+within `spit_t` seconds it takes `dmg_rope` more. A landed gulp lengthens the reach by `grow` up to `max_reach`. A
+rolling enemy (`roll_charge`) is steered but not gulped unless the rule `swallow_rollers` is on. The generator is
+drawn once per spit (the jitter) and never otherwise.
 
-**Record keys.** None of its own.
+**Record keys.** None of its own: the aim is `TH`, the reach `BL`; the ride inside shows only as equal `P` rows.
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+**Events** (`who` is the swallower unless said; coordinates are ring units; times are on the video clock):
 
-- 1062: `self.ev('oom', k, B.sw['t_in'], B.sw['t_pah'], float(B.blade_len))`
-- 1082: `self.damage(k, 1 - k, w['dmg_rope'], 'cannon', e[5], e[6])`
-- 1104: `self.ev('block', 1 - k, k, hx, hy, 'swallow')`
-- 1107: `self.damage(k, 1 - k, w['dmg'], 'gulp', hx, hy)`
-- 1113: `self.ev('gulp', k, hx, hy, float(B.blade_len))`
-- 1117: `self.ev('pah', k, 0, float(B.th))`
-- 1127: `self.ev('pah', k, 1, a)`
-- 1128: `self.damage(k, 1 - k, w['dmg_spit'], 'spit', float(O.p[0]), float(O.p[1]))`
+| Kind | Fields after `who` | When |
+| --- | --- | --- |
+| `oom` | the time the inhale ends, the time the pah is due, the reach now (floats) | the bell starts an oom-pah (1062) |
+| `gulp` | `x, y` (the point of the swallower's rim toward the enemy), the reach after its growth | the enemy is swallowed (1113), right after the `gulp` hit |
+| `pah` | 0 (int), the bell's aim in radians | the pah with nothing caught (1117) |
+| `pah` | 1 (int), the spit's direction in radians (not reduced to a turn) | the pah that spits the enemy out (1127), before the `spit` hit |
+| `block` | `who` is the shielded enemy; then the swallower (int), `x, y`, `swallow` | the gulp met a shield (1104): nothing is caught and the inhale ends at once |
+
+**Hits** (`hit` events of the swallower; the sub-number is 0):
+
+| What | Damage | Where | When |
+| --- | --- | --- | --- |
+| `gulp` | `dmg` | the point of the swallower's rim toward the enemy | the enemy is swallowed (1107) |
+| `spit` | `dmg_spit` | where the enemy lands when spat, two radii and 0.02 from the swallower | the pah (1128) |
+| `cannon` | `dmg_rope` | the `x, y` of the enemy's `rope` event | the spat enemy hits a rope within `spit_t` s (1082) |
+
+A hit on a shielded enemy is the `block` of 6.2 with the hit's name (`gulp` never: the kind tests the shield itself
+and says `swallow`; `spit` and `cannon` can be).
 
 <!-- /kind:swallow -->
 
