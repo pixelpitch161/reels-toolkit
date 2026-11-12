@@ -364,7 +364,7 @@ impl ElectricLook {
             let (j0, j1) = (self.left(ta - BOLT_LIFE), self.right(ta));
             for b in self.bolts.get(j0..j1).unwrap_or(&[]) {
                 let age = ta - b.t0;
-                if 0.0 <= age && age < BOLT_LIFE {
+                if (0.0..BOLT_LIFE).contains(&age) {
                     out.push((*b, dmath::pow(1.0 - age / BOLT_LIFE, 0.7)));
                 }
             }
@@ -414,7 +414,7 @@ impl ElectricLook {
         let post = b.src as usize;
         let lead = 0.10;
         let u = (age + lead) / (lead + 0.04);
-        if !(0.0 <= u && u <= 1.4) {
+        if !(0.0..=1.4).contains(&u) {
             return;
         }
         let k = 1.0 - py_max(0.0, u - 1.0) / 0.4;
@@ -1002,7 +1002,7 @@ impl Look for ElectricLook {
             if tap {
                 let s = cam.wp(&[scene::to_world(q[0], q[1], R * 1.3)])[0];
                 for (j, dx) in [-4.0, 5.0].into_iter().enumerate() {
-                    if (fno as usize + j) % 2 == 0 {
+                    if (fno as usize + j).is_multiple_of(2) {
                         // int(s_[0] + dx), int(s_[1] - 3 + 2 * j): toward zero
                         let x_ = np::f64_to_i64(s.0 + dx);
                         let y_ = np::f64_to_i64(s.1 - 3.0 + 2.0 * j as f64);
