@@ -56,7 +56,29 @@ def asked(P, f):
         if P.LOOKS[k].ball_sprite(k, st, t, rp, yaw) is not None:
             continue
         out.add((k, int(np.clip(round(rp * P.LOOKS[k].sprite_k), 12, 30)), int(round(yaw / 6.0)) * 6, int(roll)))
+    for k, L in enumerate(P.LOOKS):                       # the sprites a look draws besides its ball's
+        more = LOOK_ASKS.get(type(L).__module__.rsplit('.', 1)[-1])
+        if more is not None:
+            out |= more(P, k, t, cam)
     return out
+
+
+def _horn_ghosts(P, k, t, cam):
+    """kit/fighters/horn.py `Look.draw_item`, 'ghost': every echo ghost of `ghosts_at(t)` (each a painter item, drawn
+    or not) asks for its side's sprite at 0.8 x the ghost's radius, at the yaw of the ghost's place"""
+    S, R = P.S, P.R
+    yc, sw, roll = P.LOOKS[k].cfg['view']
+    out = set()
+    for _, gx, gz, _, _ in P.LOOKS[k].ghosts_at(t):
+        rp = R * cam.f / cam.to_cam(S.to_world(gx, gz, R)[None])[0][2]
+        yaw = yc + sw * math.sin(1.25 * gx + 0.45 * gz)
+        out.add((k, int(np.clip(round(rp * 0.80), 12, 30)), int(round(yaw / 6.0)) * 6, int(roll)))
+    return out
+
+
+# by the module of a look's class: fn(P, k, t, cam) -> the sprites its look asks kit.picture.sprite for at time t
+# beyond its ball's, as `asked` writes them (HORN's echo ghosts)
+LOOK_ASKS = dict(horn=_horn_ghosts)
 
 
 def really_asked(P, frames):
