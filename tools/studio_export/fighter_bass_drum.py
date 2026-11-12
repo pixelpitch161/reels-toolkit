@@ -39,6 +39,7 @@ SPEC = dict(
     ],
     voice_notes=dict(pitches=(14, 28, 35, 43, 50), durations=(0.12, 1.0)),
     sprite_size=dict(add=7, pad=1.18),           # kit/fighters/bass_drum.py PAD
+    left_in_cache=True,  # storage plan B (M3-R43): its kit recording is the pinned cache file
 )
 
 

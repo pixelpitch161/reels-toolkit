@@ -408,12 +408,13 @@
  "fighter": "ELECTRIC",
  "format": 1,
  "left": {
+  "cache": "fighters/electric/left.bfrec",
   "events": 624,
-  "file": "fighters/electric/left.bfrec",
   "frames": 1401,
   "hash": "aeaff16d9786876a",
   "names": ["ELECTRIC", "FLUTE"],
   "seed": 4,
+  "sha256": "cb4c3b6b9917142d4b872a541c94046b309198a5683ab9eb4908983e73239e50",
   "t_ko": 50.23823529411764,
   "why": "the lowest statistics seed with ELECTRIC in the left corner winning and all three of its abilities firing, and a K.O. after 44 s, which the kit's checks need (passed over for an earlier K.O.: seeds 2, 3)",
   "winner": 0
@@ -639,6 +640,7 @@
    "times": []
   },
   "hooks": [],
+  "left_in_cache": true,
   "name": "ELECTRIC",
   "opponent": "FLUTE",
   "roles": [],

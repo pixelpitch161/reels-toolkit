@@ -32,7 +32,10 @@
    "loop_bpm": "0x1.0b8a7de6d1d61p+7",
    "mood": "bossa_noir",
    "n_bars": 34,
-   "recording": "themes/bossa_noir/flute_vs_clarinet.bfrec",
+   "recording": {
+    "cache": "themes/bossa_noir/flute_vs_clarinet.bfrec",
+    "sha256": "a16c44dfc56e53ed841378d3d3ef39b5d7090eb68ec3551aca8b9f9729afe308"
+   },
    "scale": "harmonic minor",
    "seed": 3864,
    "t_ko": 52.02990196078431,

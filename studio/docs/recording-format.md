@@ -667,12 +667,21 @@ just before a `lights_out` when LIGHTS OUT starts mid-whirl.
 <!-- kind:mortar -->
 #### `mortar` (weapon kind of EUPHONIUM)
 
-`fight.py` 2659 to 2766, 1243 to 1271. Not ported yet: its port fills this section in (the meaning of each field, as 6.2
-and 6.3 do for FLUTE and TROMBONE), from the lines below.
+`fight.py` 2659 to 2766 (`mortar_setup`, `predict`, `_shell`, `mortar_fire`, `mortar_tick`, `start_barrage`,
+`shells_step`), 1243 to 1271 (`shell_height`, `swat_shells`). Ported: `bf-sim/src/kinds/mortar.rs`, settings in
+`bf-core/src/roster/kinds/mortar.rs`.
 
 **Record keys.**
 
-- `SHELLS`: added to `rec` at `run()` 5817, written by `snap` 5564 to 5568:
+- `SHELLS` (only while a fighter shells: its weapon is a mortar, or either fighter has a `barrage` ability; `run()`
+  5810 and 5817): a ragged list a frame (not one of the kit's array keys) of every shell still in the air or landed
+  less than 0.6 s ago, in the order they were fired, each
+
+  `(owner, x0, y0, x1, y1, t0, t1, salvo, j, landed)` and, for a shell a lance swatted, its swat time `ts` as an 11th
+  field. `owner` the fighter that fired it (int); `x0, y0` where it was fired from (the owner's ball then); `x1, y1`
+  where it lands (clipped 0.2 inside the ropes); `t0` when it was fired, `t1` when it lands (s); `salvo` its salvo's
+  number (int, counted from 0 over the fight, a barrage's too); `j` its index in the salvo (int); `landed` 0 in the
+  air, 1 landed and missed, 2 landed and hit, 3 swatted (int).
 
   ```python
   if 'SHELLS' in rec:                                 # #38, only recorded when a fighter uses 'mortar' / 'barrage'
@@ -682,13 +691,18 @@ and 6.3 do for FLUTE and TROMBONE), from the lines below.
                             for Sh in self.shells])
   ```
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+**Events.**
 
-- 2710: `self.ev('mortar', k, n, salvo, float(tgt[0]), float(tgt[1]))`
-- 2754: `self.damage(Sh['owner'], o, Sh['dmg'], 'shell', float(O.p[0]), float(O.p[1]), Sh['j'])`
-- 2758: `self.ev('shell', Sh['owner'], float(Sh['p1'][0]), float(Sh['p1'][1]), int(landed), Sh['salvo'], Sh['j'], Sh['kind'])`
-- 1270: `self.ev('swat_shell', k, Sh['owner'], Sh['salvo'], Sh['j'], float(p[0]), float(p[1]))`
+| Kind | Fields after `who` | When |
+| --- | --- | --- |
+| `mortar` | shells (int), salvo (int), `x, y` the aim (shell 0's spot) | a salvo is fired (2710), on the grid or by a copy |
+| `shell` | `x, y` where it landed, 1 if it hit else 0, salvo (int), `j` (int), `mortar` or `barrage` | a shell lands (2758) |
+| `swat_shell` | the shell's owner (int), salvo (int), `j` (int), `x, y` where the lance met it | a lance swats a shell (1270; rule `swat_shells`) |
+
+`hit`, elements 7 and 8 (6.2): what hit is `shell`, sub is the shell's index `j`; contact x and y are the victim's
+centre (2754). A shielded victim gives a `block` (what blocked `shell`) and is still knocked away from the impact;
+a victim whirling round a peg is never knocked. The first landed hit of a
+mortar salvo grows the owner's volley (`n_vol`, by `grow` up to `n_max`) when the owner's weapon is a mortar.
 
 <!-- /kind:mortar -->
 
@@ -1838,31 +1852,38 @@ and its landing is the usual `slam` event.
 <!-- kind:copy -->
 #### `copy` (ability kind of EUPHONIUM)
 
-`fight.py` 2893 to 2894, 2801 to 2822. Not ported yet: its port fills this section in (the meaning of each field, as 6.2
-and 6.3 do for FLUTE and TROMBONE), from the lines below.
+`fight.py` 2893 to 2894, 2801 to 2822 (`COPYABLE`, `copy_source`, `start_copy`), the gate 3046 to 3049, `trigger`'s
+quiet path 2830 to 2840. Ported: `bf-sim/src/abilities/copy.rs`, settings in `bf-core/src/roster/abilities/copy.rs`.
 
-**Record keys.** None of its own.
+**Record keys.** None of its own. A copied kind records what its kind records only when a fighter has the kind in its
+own entry (a copied snip adds no `SNIP`, a copied whirl no `ANC`, a copied LIGHTS OUT no `LO`).
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+**Events.**
 
-- 2812: `self.ev('copy', k, src['name'], src['kind'])`
-- 2817: `self.ev('copy', k, O.cfg['weapon'].get('name', O.w['kind'].upper()), O.w['kind'])`
+| Kind | Fields after `who` | When |
+| --- | --- | --- |
+| `copy` | the name of what is copied, its kind | IDENTITY CRISIS fires (2812: the enemy's last ability, when its kind is copyable; 2817: else the enemy's weapon, named as `weapon.name` or the kind in capitals) |
+
+A copied ability gives no `ability` event of its own (`quiet`); its kind's own events follow under the copier's
+index (`shockwave`, `twin`, `lights_out`, `snip_open`, ...). A copied signature is one salvo (`mortar`) or one whirl
+(`anchor`, when the copier is not whirling already); any other weapon gives the `copy` event only.
 
 <!-- /kind:copy -->
 
 <!-- kind:barrage -->
 #### `barrage` (ability kind of EUPHONIUM)
 
-`fight.py` 2900 to 2901, 2721 to 2740. Not ported yet: its port fills this section in (the meaning of each field, as 6.2
-and 6.3 do for FLUTE and TROMBONE), from the lines below.
+`fight.py` 2900 to 2901, 2721 to 2740 (`start_barrage`). Ported: `bf-sim/src/kinds/mortar.rs` (the mortar's shells),
+settings in `bf-core/src/roster/abilities/barrage.rs`.
 
-**Record keys.** None of its own.
+**Record keys.** None of its own: its shells are in `SHELLS` (see `mortar`), and a fighter with the ability makes the
+fight a shelling one.
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+**Events.**
 
-- 2739: `self.ev('barrage', k, n, salvo)`
+| Kind | Fields after `who` | When |
+| --- | --- | --- |
+| `barrage` | shells (int), salvo (int) | the barrage is fired (2739); each shell's landing is a `shell` event of kind `barrage` |
 
 <!-- /kind:barrage -->
 

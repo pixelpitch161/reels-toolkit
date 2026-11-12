@@ -49,6 +49,7 @@
  "hull_cache": "fighters/trumpet/hull_left.json",
  "hull_note": "ruling M3-R29: each fight's hull calls are in the pinned cache (left: hull_cache, right: hull_cache under `right`; every call's points and vertices); `left.hull` and look_right.json's `hull` hold their counts and the SHA-256 of their exact part (`line`)",
  "left": {
+  "cache": "fighters/trumpet/left.bfrec",
   "cards": [
    [0, "ce85f8f293a8ac5d7353a6d5c9979aeb7992bcb55b1e29d58401ba24c22756c3"],
    [4, "e2d91bddfabeb819621e3101c34e302acc13455104a1dc7a03efda0dfc5e66cc"],
@@ -68,7 +69,6 @@
    [1829, "db9eb22ade033ed522ca2e5d5907c10ee248e57187ece5a742abbd223afb9fea"]
   ],
   "fighters": ["TRUMPET", "FLUTE"],
-  "file": "fighters/trumpet/left.bfrec",
   "frames": [
    [0, "5d308facf6937b13b615ce536905d329ca192e0d6dcfed0211924294f3b1c7ec", 38, "6d8bc6b7a5e68f423c56da2596de48cd5ce95d5600cf7aa2d01485a088287cf0", 0, "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", "spread"],
    [13, "0443f2e62361db7f32b032befbaaba57e5b366790047dfec7ed42bba4bb44b03", 38, "1d06738e4154afe68650a302798c0879b1dd67138d7125ba3fb3fafb731056e4", 1, "37ba3451412c11768cb0934ee0a0158ce88b6326fe9bed3cdaf8856baa4cbec5", "the title card, the doors and the count-in"],
@@ -169,6 +169,7 @@
    "winner": 0
   },
   "seed": 1,
+  "sha256": "97a5ec55c293d664518a2eddbe01d63ef0a43a4f7301713b3ae7167906949e71",
   "winner": "TRUMPET"
  },
  "opponent": "FLUTE",

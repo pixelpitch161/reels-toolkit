@@ -49,6 +49,7 @@
  "hull_cache": "fighters/clarinet/hull_left.json",
  "hull_note": "ruling M3-R29: each fight's hull calls are in the pinned cache (left: hull_cache, right: hull_cache under `right`; every call's points and vertices); `left.hull` and look_right.json's `hull` hold their counts and the SHA-256 of their exact part (`line`)",
  "left": {
+  "cache": "fighters/clarinet/left.bfrec",
   "cards": [
    [0, "273b64b68c4b13648cab0f6e721051446fcc82c22f4bab01c87387f1db388f9d"],
    [4, "a1cff5635bd71c1d4c0314789a9a19e980d153c1c45f7d2a07a03ca00821b5a8"],
@@ -68,7 +69,6 @@
    [1829, "1ee79bb06d70521c8e92b5095a3c67f2b93af7fb2cfed1489139ac7c3d77faf3"]
   ],
   "fighters": ["CLARINET", "FLUTE"],
-  "file": "fighters/clarinet/left.bfrec",
   "frames": [
    [0, "5ea8def427ab52a423e426a1ee1624aaadad81d273e67003ddb888994489e23c", 38, "6d8bc6b7a5e68f423c56da2596de48cd5ce95d5600cf7aa2d01485a088287cf0", 0, "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", "spread"],
    [13, "470a552f19b09b830fc8de1bf2c34c48eded43bd94c4097ae46d708460eb9d65", 38, "1d06738e4154afe68650a302798c0879b1dd67138d7125ba3fb3fafb731056e4", 1, "99c49beb7618e9e52ed22921146f8c257dd0c06c6e5f5ad1599f8d4ba6f3a9a6", "the title card, the doors and the count-in"],
@@ -168,6 +168,7 @@
    "winner": 0
   },
   "seed": 4,
+  "sha256": "f9c2eb6a5f11803b220800bc217d8ac195b195cad4a16bef0cc6009c4d8b4e63",
   "winner": "CLARINET"
  },
  "opponent": "FLUTE",

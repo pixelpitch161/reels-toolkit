@@ -237,7 +237,7 @@
    ]
   },
   {
-   "appended": "KEY = 'D'\nSCALE = 'minor'\nCHORDS = ['Dm', 'A', 'Dm', 'Gm', 'C', 'F', 'Bb', 'Gm', 'A', 'A', 'Dm', 'Gm', 'C', 'F', 'Bb', 'Gm', 'A', 'A', 'Dm', 'Gm', 'C', 'F', 'Bb', 'Gm', 'A', 'A', 'Dm', 'Gm', 'C', 'F', 'Bb', 'Gm', 'A', 'A', 'Dm', 'Gm']\n",
+   "appended": "KEY = 'D'\nSCALE = 'minor'\nLOOP = ['Dm', 'Gm', 'C', 'F', 'Bb', 'Gm', 'A', 'A']\nCHORDS = ['Dm', 'A', 'Dm', 'Gm', 'C', 'F', 'Bb', 'Gm', 'A', 'A', 'Dm', 'Gm', 'C', 'F', 'Bb', 'Gm', 'A', 'A', 'Dm', 'Gm', 'C', 'F', 'Bb', 'Gm', 'A', 'A', 'Dm', 'Gm', 'C', 'F', 'Bb', 'Gm', 'A', 'A', 'Dm', 'Gm']\n",
    "bpm": 141.63934426229508,
    "buses": ["808", "drums", "musicbox", "fx", "strings", "swell"],
    "config": "ballfight_bassclarinet_vs_bassoon",

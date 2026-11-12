@@ -205,18 +205,40 @@ pub fn fighter_folder_is_whole(name: &str) {
     let left = &doc["left"];
     if left.get("cache").is_some() {
         // ruling M3-R36: the recording is in the pinned cache; the folder must pin it with the committed SHA-256
-        let rel = text(&left["cache"]);
-        let pin = bf_testdata::pins(&folder)
-            .into_iter()
-            .find(|p| p.path == rel)
-            .unwrap_or_else(|| panic!("{folder}: fight.json's left recording {rel} is not pinned in pins.json"));
-        assert_eq!(
-            pin.sha256,
-            text(&left["sha256"]),
-            "{folder}: the left recording's pin is not fight.json's"
-        );
+        cached_entry_is_pinned(&format!("{folder}/fight.json's left recording"), left);
     } else {
         recording_of(left, Some(text(&left["hash"])));
+    }
+}
+
+/// A cache entry of a reference file (`{cache, sha256}`, rulings M3-R36 and M3-R43) is pinned in the pins.json of
+/// the folder its path names, with the committed SHA-256. Reads no cache file, so it runs in the always-run
+/// `reference_folder` gates.
+pub fn cached_entry_is_pinned(what: &str, entry: &Value) {
+    let rel = text(&entry["cache"]);
+    let owner = rel.splitn(3, '/').take(2).collect::<Vec<_>>().join("/");
+    let pin = bf_testdata::pins(&owner)
+        .into_iter()
+        .find(|p| p.path == rel)
+        .unwrap_or_else(|| panic!("{what}: {rel} is not pinned in studio/reference/{owner}/pins.json"));
+    assert_eq!(
+        pin.sha256,
+        text(&entry["sha256"]),
+        "{what}: the pin of {rel} is not the SHA-256 the reference file commits"
+    );
+}
+
+/// The recording a reference file's `recording` names: a committed path below `studio/reference/` (text), or a
+/// pinned cache file `{cache, sha256}` (ruling M3-R43: a theme's or pair's kit recording that would take its folder
+/// over budget), read through [`recording_of`], so a missing cache fails with the command that makes it.
+pub fn named_recording(v: &Value, hash: Option<&str>) -> Recording {
+    match v {
+        Value::String(rel) => committed_recording(rel, hash),
+        Value::Object(_) if v.get("cache").is_some() => {
+            cached_entry_is_pinned("a cached recording", v);
+            recording_of(v, hash)
+        }
+        other => panic!("a recording is a committed path or {{cache, sha256}}: {other}"),
     }
 }
 
@@ -241,12 +263,16 @@ pub fn recording_of(entry: &Value, hash: Option<&str>) -> Recording {
     rec
 }
 
-/// `themes/<name>/` holds `theme.json`, `bed.json`, `exceptions.toml`, `pins.json`.
+/// `themes/<name>/` holds `theme.json`, `bed.json`, `exceptions.toml`, `pins.json`; a config's recording in the
+/// cache (ruling M3-R43) is pinned with theme.json's SHA-256.
 pub fn theme_folder_is_whole(name: &str) {
-    folder_has(
-        &format!("themes/{name}"),
-        &["theme.json", "bed.json", "exceptions.toml", "pins.json"],
-    );
+    let folder = format!("themes/{name}");
+    folder_has(&folder, &["theme.json", "bed.json", "exceptions.toml", "pins.json"]);
+    for c in list(&json(&folder, "theme.json")["configs"]) {
+        if c["recording"].is_object() {
+            cached_entry_is_pinned(&format!("{folder} {}'s recording", c["config"]), &c["recording"]);
+        }
+    }
 }
 
 /// `episodes/<pair>/` holds every file Template P names.
@@ -264,6 +290,10 @@ pub fn episode_folder_is_whole(pair: &str) {
             "pins.json",
         ],
     );
+    let doc = json(&format!("episodes/{pair}"), "episode.json");
+    if doc["recording"].is_object() {
+        cached_entry_is_pinned(&format!("episodes/{pair}/episode.json's recording"), &doc["recording"]);
+    }
 }
 
 // ---------------------------------------------------------------- the exceptions list
@@ -392,7 +422,7 @@ pub fn report(folder: &str, gate: &str, scope: &str, what: &str, failures: Vec<(
     }
     println!(
         "{folder} {gate}: {} of {total} {what} equal the kit's",
-        total - ok.len() - bad.len()
+        equal_of(total, ok.len() + bad.len())
     );
     assert!(
         bad.is_empty(),
@@ -403,6 +433,12 @@ pub fn report(folder: &str, gate: &str, scope: &str, what: &str, failures: Vec<(
             .collect::<Vec<_>>()
             .join("\n")
     );
+}
+
+/// The items of a gate's run that equal the kit's: `total` less those that failed, never below none (one item can
+/// fail in several ways, and a check can fail before it counts, as a missing stem does).
+fn equal_of(total: usize, failed: usize) -> usize {
+    total.saturating_sub(failed)
 }
 
 /// The larger of two differences, a NaN counting as infinitely far (`f64::max` drops a NaN, which would let a
@@ -467,6 +503,45 @@ mod tests {
             let e = check_exceptions(folder, &text, &rulings).unwrap_err();
             assert!(e.contains("is not a ruling of studio/reference/rulings.toml"), "{e}");
         }
+    }
+
+    #[test]
+    fn more_failures_than_items_still_count() {
+        assert_eq!(equal_of(10, 3), 7);
+        assert_eq!(equal_of(1, 4), 0);
+    }
+
+    #[test]
+    #[should_panic(expected = "big_top sound: 3 of 1 bed-alone facts are not the kit's")]
+    fn a_report_with_more_failures_than_items_lists_them() {
+        // a config whose facts fail before they are counted (brass_trailer's rematch built as the plain bed): the
+        // failure list, not an overflow
+        let failures = (0..3).map(|i| (format!("item {i}"), "differs".to_string())).collect();
+        report("themes/big_top", "sound", "probe", "bed-alone facts", failures, 1);
+    }
+
+    #[test]
+    #[should_panic(expected = "is not pinned in studio/reference/themes/big_top/pins.json")]
+    fn a_cached_recording_entry_must_be_pinned() {
+        named_recording(
+            &serde_json::json!({"cache": "themes/big_top/nobody.bfrec", "sha256": "00"}),
+            None,
+        );
+    }
+
+    #[test]
+    #[should_panic(expected = "a recording is a committed path or {cache, sha256}")]
+    fn a_recording_is_a_path_or_a_cache_entry() {
+        named_recording(
+            &serde_json::json!({"file": "fights/flute_vs_trombone/seed1.bfrec"}),
+            None,
+        );
+    }
+
+    #[test]
+    fn a_committed_recording_path_reads_as_before() {
+        let rec = named_recording(&serde_json::json!("fights/flute_vs_trombone/seed1.bfrec"), None);
+        assert_eq!(rec.seed, 1);
     }
 
     #[test]

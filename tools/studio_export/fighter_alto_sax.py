@@ -18,6 +18,7 @@ SPEC = dict(
     name='ALTO SAX',
     opponent='FLUTE',
     fights=dict(handicap=(0.5, 0.9)),            # a reference handicap (see above)
+    left_in_cache=True,  # storage plan B (M3-R43): its kit recording is the pinned cache file
 )
 
 EXPORTS = {'fighter_alto_sax': lambda: m3refs.fighter_refs(SPEC)}

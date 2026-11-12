@@ -24,6 +24,12 @@
    "export": "fighter_acoustic"
   },
   {
+   "path": "fighters/acoustic/left.bfrec",
+   "sha256": "734ac5479e483f0b17b2c142f475465ae6d7945fccecca283e7fb29c3bdd0a8b",
+   "bytes": 135164,
+   "export": "fighter_acoustic"
+  },
+  {
    "path": "fighters/acoustic/look_right.json",
    "sha256": "94968549e8c8862c9cd160548d1a889fb456ced4f8605696015fe30262d70c18",
    "bytes": 17393,
@@ -145,8 +151,8 @@
   },
   {
    "path": "fighters/acoustic/sprites.json",
-   "sha256": "3a41c39e7ceade9eff0274f60b502ac24b9e488c93c0ac851f1a87804c739097",
-   "bytes": 142746,
+   "sha256": "5b302a79750d624e537c3d5246932c981e1f9233b31d86ccc0e7625d40e8ba84",
+   "bytes": 142756,
    "export": "fighter_acoustic"
   },
   {

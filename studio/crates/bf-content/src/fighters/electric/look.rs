@@ -83,7 +83,7 @@ fn bolt_path(p0: V3, p1: V3, seed: u64, jag: f64, levels: u32) -> Vec<V3> {
         let mut r = vec![0.0f64; m * 3];
         rng.fill_normal(0.0, 1.0, &mut r);
         // 0.5 ** lv: a power of two, exact
-        let scale = 0.5f64.powi(lv as i32);
+        let scale = bf_core::dmath::pow(0.5, lv as f64);
         let mut mids = Vec::with_capacity(m);
         for i in 0..m {
             let (a, b) = (pts[i], pts[i + 1]);

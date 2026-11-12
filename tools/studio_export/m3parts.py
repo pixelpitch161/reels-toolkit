@@ -525,6 +525,30 @@ def _windows(t_ko):
             for w in STEM_WINDOWS]
 
 
+def window_length(i0, na):
+    """the samples a stem window starting at i0 holds in a soundtrack of `na`: a second (SR), fewer where the
+    soundtrack ends inside it (the cache keeps x[i0:i0 + SR]), none past the end"""
+    return max(0, min(SR, na - i0))
+
+
+def stem_windows(t_ko, na, st):
+    """(the windows' records, the cache members w<j>__<bus>) of the stems `st` of a soundtrack of `na` samples: each
+    STEM_WINDOWS window with the samples it holds (window_length); a window wholly past the end holds none and is
+    left out (no record, no member), so j counts the recorded windows only"""
+    import numpy as np
+    arrays, wins = {}, []
+    for label, t in _windows(t_ko):
+        i0 = int(round(t * SR))
+        n = window_length(i0, na)
+        if n == 0:
+            continue
+        j = len(wins)
+        wins.append(dict(window=str(label), t=common.hexf(float(t)), i0=i0, n=n))
+        for bus, x in st.items():
+            arrays[f'w{j}__{bus}'] = x[i0:i0 + SR].astype(np.float32)
+    return wins, arrays
+
+
 def _soundtrack(M, B, D, stems_out):
     """score (notes logged) and master: the summary and the cache file of stem windows"""
     import numpy as np
@@ -536,12 +560,7 @@ def _soundtrack(M, B, D, stems_out):
     assert m.shape == (M.NA, 2)
     lines = [f"{c['name']} {c['midi']} {common.hexf(c['dur'])} {common.hexf(c['cap'])} {common.hexf(c['vel'])}"
              for c in log.calls]
-    arrays, wins = {}, []
-    for j, (label, t) in enumerate(_windows(M.T_KO)):
-        i0 = int(round(t * SR))
-        wins.append(dict(window=str(label), t=common.hexf(float(t)), i0=i0, n=SR))
-        for bus, x in st.items():
-            arrays[f'w{j}__{bus}'] = x[i0:i0 + SR].astype(np.float32)
+    wins, arrays = stem_windows(M.T_KO, M.NA, st)
     common.write_npz(stems_out, arrays, register=False)
     return dict(master_sha256=pcm_sha(m), buses=list(mix.buses), stems=sorted(st),
                 rms=dict({bus: block_db3(x) for bus, x in st.items()}, master=block_db3(m)),
@@ -841,6 +860,39 @@ HOOK_CALLS = {                                        # each optional hook at th
 }
 
 
+# a recorded argument's name in the kit's methods where the two differ: the kit's hit names the chord `ch`, and
+# brass_trailer's trailer_hit names the braam's length `braam_dur` (bed.json keeps HOOK_CALLS' names: the harness
+# reads `chord` and `braam`)
+HOOK_KWARGS = dict(chord='ch', braam='braam_dur')
+# the recorded arguments a hook's method may lack, each with why that is right: a hook's call is otherwise passed
+# exactly, an argument the method does not take, or a parameter the call does not give, stops the export
+HOOK_OMITTED = {
+    ('hit', 'ring'): "the hit of dark_disco, heist and horror_trap takes no ring (a fixed tail); the Rust Bed::hit "
+                     "takes one for every theme and theirs ignore it (dark_disco's `_ring`)",
+}
+
+
+def hook_kwargs(hook, args, fn):
+    """the keywords one HOOK_CALLS call passes to the kit's `fn` (a bound Bed method): every argument under the
+    method's own name (HOOK_KWARGS); an argument the method does not take only when HOOK_OMITTED lists it, and
+    every parameter after `mix` given. Anything else stops the export, so no argument is silently dropped"""
+    params = [n for n in inspect.signature(fn).parameters if n != 'mix']
+    out = {}
+    for a, v in args.items():
+        name = HOOK_KWARGS.get(a, a)
+        if name in params:
+            out[name] = v
+        elif (hook, a) not in HOOK_OMITTED:
+            raise SystemExit(f"hook_child: {hook}'s call passes {a!r} (as {name!r}), which "
+                             f"{getattr(fn, '__qualname__', hook)}{inspect.signature(fn)} does not take: map it in "
+                             f"m3parts.HOOK_KWARGS, or list it in HOOK_OMITTED with why")
+    missing = [n for n in params if n not in out]
+    if missing:
+        raise SystemExit(f"hook_child: {hook}'s call gives no {', '.join(missing)}, which "
+                         f"{getattr(fn, '__qualname__', hook)}{inspect.signature(fn)} takes: add it to HOOK_CALLS")
+    return out
+
+
 def hook_child(cfg_folder, hooks, out_path):
     """each optional hook of the bed called directly on an empty mix (the arguments of HOOK_CALLS; a `chord` of None
     is the chord at that time): {hook: [{args, buses: {bus: sha256}}]} and the buses in a cache npz"""
@@ -861,11 +913,8 @@ def hook_child(cfg_folder, hooks, out_path):
                 args['chord'] = M.T.chord_at(args['t']) if hasattr(M.T, 'chord_at') else M.T.CHORDS[
                     int(args['t'] // M.T.BAR)]
             mix = M.A.Mix(M.T.DUR + 4.0)
-            # the kit's hit names the chord `ch`, and some moods' hit takes no `ring`: pass only what the method takes
             fn = getattr(M.bed, hook)
-            params = inspect.signature(fn).parameters
-            named = {('ch' if a == 'chord' else a): v for a, v in args.items()}
-            fn(mix, **{a: v for a, v in named.items() if a in params})
+            fn(mix, **hook_kwargs(hook, args, fn))
             buses = {}
             for bus, x in mix.buses.items():
                 arrays[f'{hook}{j}__{bus}'] = np.asarray(x, np.float64)

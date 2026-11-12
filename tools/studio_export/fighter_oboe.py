@@ -26,6 +26,7 @@ SPEC = dict(
         dict(name='vs_trombone_low', seeds=(1, 2), opponent='TROMBONE',
              overrides=dict(LV_DMG=m3refs.LV, LOW_HP=92.0)),
     ],
+    left_in_cache=True,  # storage plan B (M3-R43): its kit recording is the pinned cache file
 )
 
 EXPORTS = {'fighter_oboe': lambda: m3refs.fighter_refs(SPEC)}

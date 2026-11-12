@@ -691,6 +691,37 @@ def existing_copy(sha, folder, also=()):
     return None
 
 
+def place_recording(folder, name, data, in_cache, export, module, also=(), cached_from=None):
+    """where a theme's or pair's kit recording (`data`, to be the folder's `name`) lives, as its reference file names
+    it: a committed copy elsewhere (existing_copy: milestone 1's, or the `also` folders') as its path; else a pinned
+    cache copy of `cached_from` (a pair's theme folder) as dict(cache=, sha256=); else, with `in_cache` (ruling
+    M3-R43), the folder's own pinned cache file as dict(cache=, sha256=); else the committed file `<folder>/<name>`.
+    Every branch but the last removes a committed copy an earlier run made"""
+    sha = hashlib.sha256(data).hexdigest()
+    copy = existing_copy(sha, folder, also=also)
+    cached = cached_copy(sha, cached_from) if cached_from else None
+    if copy and not copy.startswith(f'{REF}/{folder}/'):
+        delete_committed(folder, name)
+        return copy[len(REF) + 1:]
+    if cached or in_cache:
+        delete_committed(folder, name)
+        if cached:
+            return cached
+        path = cache_bytes(folder, name, data, export)
+        return dict(cache=cache_rel(path), sha256=manifest.sha256(path))
+    commit_bytes(folder, name, data, module)
+    return f'{folder}/{name}'
+
+
+def cached_copy(sha, folder):
+    """dict(cache=, sha256=) of a recording the folder (a pair gate's theme folder) pins in the cache with these
+    bytes (ruling M3-R43), or None"""
+    for rel, p in sorted(read_pins(folder).items()):
+        if p['sha256'] == sha and rel.endswith('.bfrec'):
+            return dict(cache=rel, sha256=sha)
+    return None
+
+
 # ---------------------------------------------------------------- statistics: a spawn pool, three workers
 _STORY = None
 
@@ -1212,7 +1243,7 @@ def fighter_parts(spec, folder, export, module, main, swapped, left_seed, right_
 
 
 # ---------------------------------------------------------------- a pair gate's references (Template P)
-EPISODE_SPEC_KEYS = ('config', 'stats', 'links', 'scenarios', 'weapon_hit', 'frames')
+EPISODE_SPEC_KEYS = ('config', 'stats', 'links', 'scenarios', 'weapon_hit', 'frames', 'recording_in_cache')
 
 
 class Loaded:
@@ -1258,14 +1289,17 @@ def episode_refs(spec):
     (the config's values), frames.json (the golden frames, both real looks, and 16 card frames), sound.json (the
     kit's soundtrack: its 16-bit master's SHA-256 = audio.wav's samples, the buses' RMS, the notes), checks.json,
     stats.json (pooled; rows cached), pairs.json (the links' coverage), exceptions.toml; the kit's recording of the
-    config is pointed at when a committed file (milestone 1's, or the theme folder's) has its bytes, else copied as
-    run.bfrec"""
+    config is pointed at when a committed file (milestone 1's, or the theme folder's) has its bytes, or a pinned
+    cache file of the theme folder (ruling M3-R43: dict(cache=, sha256=)); else copied as run.bfrec, or with
+    recording_in_cache=True (M3-R43: it would take the folder over its budget) pinned as the cache's run.bfrec"""
     from . import fights, m3parts as MP, recording, scenarios as SC, stats as ST
     module = sys._getframe(1).f_globals.get('__name__', __name__)
     unknown = sorted(set(spec) - set(EPISODE_SPEC_KEYS))
     if unknown:
         raise SystemExit(f"episode spec: unknown keys {', '.join(unknown)} (it has {', '.join(EPISODE_SPEC_KEYS)})")
-    spec = dict(dict(stats=4000, links=(), scenarios=None, weapon_hit={}, frames=40), **spec)
+    spec = dict(dict(stats=4000, links=(), scenarios=None, weapon_hit={}, frames=40, recording_in_cache=False), **spec)
+    if not isinstance(spec['recording_in_cache'], bool):
+        raise SystemExit('episode spec: recording_in_cache is True or False')
     config = spec['config']
     pair = config_slug(config)
     folder, export = f'episodes/{pair}', f'episode_{pair}'
@@ -1291,13 +1325,9 @@ def episode_refs(spec):
     rec = recording.read_bfrec(tmp)
     fights.check(r, rules, rec, recording.rect_keys(story))
     data = open(tmp, 'rb').read()
-    copy = existing_copy(hashlib.sha256(data).hexdigest(), folder, also=(f"themes/{facts['mood']}",))
-    if copy and not copy.startswith(f'{REF}/{folder}/'):
-        rec_file = copy[len(REF) + 1:]
-        delete_committed(folder, 'run.bfrec')
-    else:
-        commit_bytes(folder, 'run.bfrec', data, module)
-        rec_file = f'{folder}/run.bfrec'
+    theme = f"themes/{facts['mood']}"
+    rec_file = place_recording(folder, 'run.bfrec', data, spec['recording_in_cache'], export, module, also=(theme,),
+                               cached_from=theme)
     rec_path = tmp                                  # the same bytes; the parts read it before finish() applies them
     cfg = Loaded(cfg_folder, facts['fighters'], seed)
     # ---- the parts in fresh processes
@@ -1402,7 +1432,8 @@ def episode_refs(spec):
 
 
 # ---------------------------------------------------------------- a theme's references (Task 2; Template T adds)
-THEME_SPEC_KEYS = ('name', 'voicings', 'configs', 'extra', 'variants', 'key_from', 'options', 'hooks')
+THEME_SPEC_KEYS = ('name', 'voicings', 'configs', 'extra', 'variants', 'key_from', 'options', 'hooks',
+                   'recordings_in_cache')
 # the 12 roots (the kit's spellings: a sharp or a flat, as its configs write them) and the 13 qualities of QUALITY
 ROOTS = ('C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B')
 
@@ -1415,12 +1446,18 @@ def theme_spec(spec):
     T): variants (True: a second tempo and a second key), key_from (the config whose key and loop the key variant
     takes; None: the first kit config with a loop of the same length in another key), options (one variant per
     theme option value: dict(name=, text= the config lines it appends, ff= {option: value} for the fight file,
-    why=)), hooks (the optional bed hooks to call directly; None: every one the bed class defines)"""
+    why=)), hooks (the optional bed hooks to call directly; None: every one the bed class defines);
+    recordings_in_cache (ruling M3-R43, R36 extended to themes: True when the configs' kit recordings would take the
+    folder over its budget: each one not already committed elsewhere goes to the pinned cache, theme.json's
+    `recording` then dict(cache=, sha256=) instead of a committed path)"""
     unknown = sorted(set(spec) - set(THEME_SPEC_KEYS))
     if unknown:
         raise SystemExit(f"theme spec: unknown keys {', '.join(unknown)} (it has {', '.join(THEME_SPEC_KEYS)})")
-    out = dict(voicings=(), configs=(), extra=None, variants=True, key_from=None, options=(), hooks=None)
+    out = dict(voicings=(), configs=(), extra=None, variants=True, key_from=None, options=(), hooks=None,
+               recordings_in_cache=False)
     out.update(spec)
+    if not isinstance(out['recordings_in_cache'], bool):
+        raise SystemExit('theme spec: recordings_in_cache is True or False')
     if not out.get('name'):
         raise SystemExit('theme spec: a name (the kit mood) is needed')
     return out
@@ -1448,10 +1485,51 @@ def theme_config_folder(theme, config):
     return config_folder(f'theme_{theme}', config_slug(config), text)
 
 
+# the config names a mood reads besides the music (kit/moods/<mood>.py: `getattr(T, '<NAME>', ...)`), each with
+# its mood and the fight file's names (`music.theme_options`, bf-content's ThemeOption.key): a dict's keys one by
+# one (each a bool), or one fighter of the fight by name. m3refs_checks proves this lists every such name of the 13
+# moods; read_config records a config's values as `theme_options` (absent when it sets none: the defaults)
+THEME_OPTIONS = {
+    'TRAILER': ('brass_trailer', dict(sequel='sequel')),              # self.seq = bool(TRAILER.get('sequel'))
+    'DRUMLINE': ('dark_drumline', dict(bass_drums='bass_drums', after_ko='after_ko')),
+    'PLUGGED': ('stadium_rock', 'plugged'),                         # M.NAMES.index(PLUGGED), default the left one
+}
+
+
+def theme_options_of(cfg, mood, fighters, config='the config'):
+    """the options a kit config module `cfg` sets for its mood, under the fight file's names ({} when it sets
+    none). A name another mood reads is ignored, as the kit ignores it; a key or a value the mood cannot take stops
+    the export, naming it"""
+    out = {}
+    for name, (owner, names) in THEME_OPTIONS.items():
+        if owner != mood or not hasattr(cfg, name):
+            continue
+        value = getattr(cfg, name)
+        if isinstance(names, str):
+            if not isinstance(value, str) or value not in fighters:
+                raise SystemExit(f'{config}: {name} = {value!r} is not one of its fighters {fighters}')
+            out[names] = value
+            continue
+        if not isinstance(value, dict):
+            raise SystemExit(f'{config}: {name} = {value!r} is not a dict')
+        for k, v in value.items():
+            if k not in names:
+                raise SystemExit(f"{config}: {name} sets {k!r}, which {mood} does not read (it reads "
+                                 f"{', '.join(sorted(names))})")
+            if not isinstance(v, bool):
+                raise SystemExit(f'{config}: {name}[{k!r}] = {v!r} is not True or False')
+            out[names[k]] = v
+    return out
+
+
 def read_config(config):
     """the kit config's values (episode.py executed on its own, without the kit), with the bar count the kit's
     timeline derives from its BPM (kit/episode.py build_timeline: loop_bpm, then round(DUR / BAR)) and its LINES
-    (a rest as None, in the config's order)"""
+    (a rest as None, in the config's order); `theme_options` (THEME_OPTIONS: the mood's options it sets, under the
+    fight file's names) only when it sets one, so a config without options reads as before; and MUSIC_EXTRAS
+    (`roles`, `mix`, `solos`, `title_hits`: its ROLES, MIX, SOLO, TITLE_HITS), each only when it sets it: the theme
+    gates' fight file plays as the config does (dark_tango's bed plays the melody fighter's line, second_line's
+    MIX sets its bed buses' levels)"""
     import importlib.util
     from reelkit.config import loop_bpm
     spec = importlib.util.spec_from_file_location('m3refs_config', config_source(config))
@@ -1464,11 +1542,44 @@ def read_config(config):
     loop = list(getattr(cfg, 'LOOP', chords[start:start + 8]))
     whole = (len(chords) - start) // len(loop)
     assert start == 2 and chords[start:start + whole * len(loop)] == loop * whole, config
+    assert getattr(cfg, 'FIGHT_BAR', 2) == 2, f'{config}: FIGHT_BAR {cfg.FIGHT_BAR} (a fight file fights from bar 2)'
     assert len(chords) == n_bars, (config, len(chords), n_bars)
     return dict(config=config, fighters=list(cfg.FIGHTERS), mood=cfg.MOOD, bpm=cfg.BPM, loop_bpm=common.hexf(bpm),
                 n_bars=n_bars, key=cfg.KEY, scale=getattr(cfg, 'SCALE', 'minor'), intro=chords[:start], loop=loop,
                 tail=chords[start + whole * len(loop):], chords=chords,
-                lines={k: [None if n is None else int(n) for n in v] for k, v in getattr(cfg, 'LINES', {}).items()})
+                lines={k: [None if n is None else int(n) for n in v] for k, v in getattr(cfg, 'LINES', {}).items()},
+                **_options_key(theme_options_of(cfg, cfg.MOOD, list(cfg.FIGHTERS), config)), **music_extras(cfg))
+
+
+# what else a kit config sets that the soundtrack reads (kit/episode.py's defaults; kit/music.py, the moods and the
+# fighters' parts read them from T) and a fight file holds, under the fight file's names (music.roles, .mix, .solos,
+# .title_hits); read_config records each only when the config sets it, so a config without one reads as before.
+# The rest of what the soundtrack reads from a config is the music read_config already records (BPM, KEY, SCALE,
+# CHORDS, LOOP, LINES), the theme options (THEME_OPTIONS), or fixed: LOOP_START (asserted 2) and FIGHT_BAR (asserted
+# 2, only a pre-card check config sets it)
+MUSIC_EXTRAS = ('roles', 'mix', 'solos', 'title_hits')
+
+
+def music_extras(cfg):
+    """{roles, mix, solos, title_hits} of a kit config module, each only when it sets it (MUSIC_EXTRAS)"""
+    out = {}
+    if getattr(cfg, 'ROLES', None):
+        out['roles'] = {k: str(v) for k, v in cfg.ROLES.items()}
+    if getattr(cfg, 'MIX', None):                        # bus: (gain, reverb send)
+        out['mix'] = {k: [float(g), float(r)] for k, (g, r) in cfg.MIX.items()}
+    # fighter: [(beat, midi, beats)]. A solo with chords in it (ACOUSTIC's strums: a tuple of notes) is one a fight
+    # file's music.solos cannot hold, so it is left out; the bed alone never plays a solo (it is the winner's voice)
+    solos = {k: [[float(b), int(n), float(d)] for b, n, d in v] for k, v in getattr(cfg, 'SOLO', {}).items()
+             if all(isinstance(n, int) for _, n, _ in v)}
+    if solos:
+        out['solos'] = solos
+    if getattr(cfg, 'TITLE_HITS', None):                 # fighter: notes as its name slams in
+        out['title_hits'] = {k: [int(n) for n in v] for k, v in cfg.TITLE_HITS.items()}
+    return out
+
+
+def _options_key(options):
+    return dict(theme_options=options) if options else {}
 
 
 def chord_names():
@@ -1543,7 +1654,9 @@ def key_variant(facts, key_from):
             continue
         if len(o['loop']) == len(facts['loop']) and (o['key'], o['scale']) != (facts['key'], facts['scale']):
             chords = chords_at(o['intro'], o['loop'], [], facts['n_bars'])
-            text = f"KEY = {o['key']!r}\nSCALE = {o['scale']!r}\nCHORDS = {chords!r}\n"
+            # LOOP too (ruling M3-R45): a config that sets its own LOOP would keep it over the new chords, while the
+            # harness gives the fight file the other config's loop (`chord_loop` below)
+            text = f"KEY = {o['key']!r}\nSCALE = {o['scale']!r}\nLOOP = {list(o['loop'])!r}\nCHORDS = {chords!r}\n"
             return c, text, dict(key=o['key'], scale=o['scale'], chords_intro=list(o['intro']),
                                  chord_loop=list(o['loop']), chords_tail=[])
     raise SystemExit(f"theme variants: no kit config has a {len(facts['loop'])}-chord loop in another key; set key_from")
@@ -1653,14 +1766,8 @@ def theme_refs(spec):
         fights.check(r, rules, rec, recording.rect_keys(story))
         data = open(tmp, 'rb').read()
         os.remove(tmp)
-        copy = existing_copy(hashlib.sha256(data).hexdigest(), folder)
-        rec_name = f'{config_slug(config)}.bfrec'
-        if copy and not copy.startswith(f'{REF}/{folder}/'):
-            rec_file = copy[len(REF) + 1:]
-            delete_committed(folder, rec_name)
-        else:
-            commit_bytes(folder, rec_name, data, module)
-            rec_file = f'{folder}/{rec_name}'
+        rec_file = place_recording(folder, f'{config_slug(config)}.bfrec', data, spec['recordings_in_cache'], export,
+                                   module)
         with mp.get_context('spawn').Pool(1) as pool:
             got = pool.apply(_theme_child, (cfg_folder, list(spec['voicings']), chords if voicings is None else []))
         if voicings is None:
@@ -1671,7 +1778,8 @@ def theme_refs(spec):
         configs.append(dict(facts, seed=seed, recording=rec_file, winner=rec['winner'], t_ko=rec['t_ko'],
                             bed_alone=dict(master_sha256=got['master_sha256'], buses=got['buses'],
                                            stems=got['stems'], bed=got['bed'])))
-        print(f"{export}: {config}: seed {seed} ({rec_file}), the bed alone: buses {', '.join(got['buses'])}, "
+        where = f"{rec_file['cache']}, cached" if isinstance(rec_file, dict) else rec_file
+        print(f"{export}: {config}: seed {seed} ({where}), the bed alone: buses {', '.join(got['buses'])}, "
               f"16-bit master {got['master_sha256'][:16]}..., {time.time() - t0:.1f} s")
     if spec['voicings']:
         commit_json(folder, 'voicings.json', dict(

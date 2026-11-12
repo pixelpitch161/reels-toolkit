@@ -10,12 +10,12 @@ fn line_soundtrack() -> (
     serde_json::Value,
     bf_core::recording::Recording,
 ) {
-    use bf_harness::refs::{committed_recording, fighter_folder, json, list, text};
+    use bf_harness::refs::{fighter_folder, json, list, recording_of, text};
 
     let doc = json(&fighter_folder(NAME), "sound_line.json");
     assert_eq!(text(&doc["fighter"]), NAME);
     let fd = bf_harness::fight::doc(NAME);
-    let rec = committed_recording(text(&fd["left"]["file"]), Some(text(&fd["left"]["hash"])));
+    let rec = recording_of(&fd["left"], Some(text(&fd["left"]["hash"])));
     let mut ff = bf_harness::fight::fight_file(&fd, false);
     ff.seed = Some(rec.seed);
     assert!(
@@ -121,10 +121,10 @@ fn the_line_stems() {
 #[test]
 #[ignore = "a measurement, run by name in release: cargo test --release -p bf-harness --test fighter_trumpet -- --ignored --exact look_frame_time --nocapture"]
 fn look_frame_time() {
-    use bf_harness::refs::{committed_recording, text};
+    use bf_harness::refs::recording_of;
 
     let fd = bf_harness::fight::doc(NAME);
-    let rec = || committed_recording(text(&fd["left"]["file"]), None);
+    let rec = || recording_of(&fd["left"], None);
     let ff = bf_harness::fight::fight_file(&fd, false);
     let real = bf_harness::look::picture(NAME, rec(), &ff, false);
     let bare = bf_harness::look::picture("", rec(), &ff, false);

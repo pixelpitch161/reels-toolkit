@@ -176,7 +176,7 @@
    ]
   },
   {
-   "appended": "KEY = 'E'\nSCALE = 'harmonic minor'\nCHORDS = ['Em', 'B7', 'Em', 'Am', 'B7', 'Em', 'C', 'Am', 'B7', 'B7', 'Em', 'Am', 'B7', 'Em', 'C', 'Am', 'B7', 'B7', 'Em', 'Am', 'B7', 'Em', 'C', 'Am', 'B7', 'B7', 'Em', 'Am', 'B7', 'Em']\n",
+   "appended": "KEY = 'E'\nSCALE = 'harmonic minor'\nLOOP = ['Em', 'Am', 'B7', 'Em', 'C', 'Am', 'B7', 'B7']\nCHORDS = ['Em', 'B7', 'Em', 'Am', 'B7', 'Em', 'C', 'Am', 'B7', 'B7', 'Em', 'Am', 'B7', 'Em', 'C', 'Am', 'B7', 'B7', 'Em', 'Am', 'B7', 'Em', 'C', 'Am', 'B7', 'B7', 'Em', 'Am', 'B7', 'Em']\n",
    "bpm": 118.0327868852459,
    "buses": ["drums", "vibes", "pizz", "bass", "fx", "tension"],
    "config": "ballfight_oboe_vs_bassoon",
