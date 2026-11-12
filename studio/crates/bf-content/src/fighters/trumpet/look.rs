@@ -63,6 +63,9 @@ const BELL_IN: f64 = 0.76;
 const FADE: f64 = 0.22;
 /// `ROLL_STEP`: the sprite turns in steps of this many degrees.
 const ROLL_STEP: i64 = 10;
+/// The kit's `6.28` (its circles of `np.linspace(0, 6.28, n)` stop a little short of a full turn; not 2 pi).
+#[allow(clippy::approx_constant)]
+const TURN: f64 = 6.28;
 /// `SPR_RADII`: the sprites span radii 12 to 19.
 const SPR_RADII: (u32, u32) = (12, 19);
 
@@ -338,7 +341,7 @@ fn draw_flash(arr: &mut Img<f32>, cam: &Cam, p: P2, a: f64, k: f64, col: V3) {
         vec![(s.0, s.1 - l * 0.8), (s.0, s.1 + l * 0.8)],
     ];
     blend_into(arr, &mask_of(&lines, Some(1)), [255.0, 250.0, 230.0], Num::Py(0.85 * k));
-    let qs = linspace(0.0, 6.28, 9);
+    let qs = linspace(0.0, TURN, 9);
     let star: Poly = qs[..8]
         .iter()
         .map(|&q| (s.0 + 2.2 * dmath::cos(q), s.1 + 2.2 * dmath::sin(q)))
@@ -480,7 +483,7 @@ fn draw_piston(arr: &mut Img<f32>, cam: &Cam, p: P2, th: f64, off: f64, ext: f64
         [250.0, 252.0, 255.0],
         Num::Py(0.9),
     );
-    let qs = linspace(0.0, 6.28, 13);
+    let qs = linspace(0.0, TURN, 13);
     let discs = [
         (a0, 0.095, COLLAR),
         (tip, 0.16, clip_col(col.map(|c| c * 0.8 + 30.0))),
@@ -781,7 +784,7 @@ impl TrumpetLook {
             .zip(&self.solo)
             .filter_map(|(&st, &(_, m, _))| {
                 let u = t - st;
-                (0.0 <= u && u < 1.4).then_some((u, m))
+                (0.0..1.4).contains(&u).then_some((u, m))
             })
             .collect()
     }
