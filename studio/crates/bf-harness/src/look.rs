@@ -1297,6 +1297,7 @@ mod hull_rows {
     #[test]
     #[should_panic(expected = "ruling M3-R29")]
     fn only_the_two_merged_folders_keep_format_1() {
+        assert_eq!(INLINE_HULL_ROWS, ["FLUTE", "TROMBONE"]);
         assert_eq!(look_format("FLUTE", &serde_json::json!({"format": 1})), 1);
         assert_eq!(look_format("ORGAN", &serde_json::json!({"format": 2})), 2);
         look_format("ORGAN", &serde_json::json!({"format": 1}));

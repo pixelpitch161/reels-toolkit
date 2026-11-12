@@ -780,6 +780,34 @@ def a_big_left_recording_goes_to_the_cache():
            'a committed copy; specs without it are unchanged'
 
 
+def a_left_file_finish_wrote_is_kept():
+    """review fix: when finish() has applied the stage and check_pins then stops, staged_on_disk does not put the
+    old left.bfrec back under the new fight.json"""
+    with scratch():
+        folder = 'fighters/oboe'
+        old_left = put('studio/reference/fighters/oboe/left.bfrec', b'old\n')
+        m3refs.set_run(m3refs.Run('export'))
+        m3refs.commit_bytes(folder, 'left.bfrec', b'new\n', 'tools.studio_export.fighter_oboe')
+        m3refs.commit_bytes(folder, 'fight.json', b'{"left": "new"}\n', 'tools.studio_export.fighter_oboe')
+        kept = m3refs.check_pins
+
+        def check_pins(f):
+            raise SystemExit('check_pins stopped')
+        m3refs.check_pins = check_pins
+        try:
+            try:
+                with m3refs.staged_on_disk(folder, old_left):
+                    m3refs.finish(folder)
+            except SystemExit as ex:
+                assert 'check_pins stopped' in str(ex), ex
+        finally:
+            m3refs.check_pins = kept
+            m3refs.set_run(None)
+        assert read('studio/reference/fighters/oboe/left.bfrec') == b'new\n', 'the old left.bfrec came back'
+        assert read('studio/reference/fighters/oboe/fight.json') == b'{"left": "new"}\n'
+    return 'a stop after finish() applied the stage leaves the new left.bfrec with the new fight.json'
+
+
 CHECKS = (shard_takes_a_fighter_file, verify_finds_a_changed_byte_in_a_shard, check_pins_names_the_command,
           a_pin_never_moves_on_its_own, remake_makes_a_folder_again_whole, a_cache_run_writes_no_committed_file,
           a_port_never_points_at_another_port, budget_reports_an_overfull_fighter,
@@ -788,7 +816,8 @@ CHECKS = (shard_takes_a_fighter_file, verify_finds_a_changed_byte_in_a_shard, ch
           a_port_declares_its_sprite_size, windows_has_a_fork_stand_in,
           cfg_keys_follow_each_function, a_padded_sprite_is_declared_too,
           a_failed_part_ends_the_export_promptly, a_rolls_fight_goes_through_the_framework_alone,
-          a_neutral_handicap_is_the_same_fight_either_way, a_big_left_recording_goes_to_the_cache)
+          a_neutral_handicap_is_the_same_fight_either_way, a_big_left_recording_goes_to_the_cache,
+          a_left_file_finish_wrote_is_kept)
 
 
 def main():

@@ -211,6 +211,7 @@ class Stage:
         self.made = set()
         self.commits = {}                      # absolute path -> (bytes, tool)
         self.deletes = set()                   # absolute paths
+        self.applied = False                   # finish() has started writing the committed state
 
 
 class Run:
@@ -332,6 +333,7 @@ def finish(folder):
         raise SystemExit(f"{folder}: cache files changed during the run: {', '.join(problems)}; nothing committed "
                          f"was written")
     if run.mode != 'cache':
+        st.applied = True                     # from here the folder's committed state is the new one (staged_on_disk)
         for path, (data, tool) in sorted(st.commits.items()):
             have = open(path, 'rb').read() if os.path.isfile(path) else None
             if have != data:
@@ -819,12 +821,14 @@ def staged_on_disk(folder, path):
     processes, which read it by its committed path before finish() applies the stage (the parts read left.bfrec).
     Nothing happens when the run staged nothing there (a pointer at another committed file, or a cache run, which
     compared the file already). If the block stops, the file is put back as it was (its old bytes, or no file), so a
-    run that stops still leaves the committed state as it found it"""
+    run that stops still leaves the committed state as it found it. Once finish() has applied the stage, the file is
+    part of the folder's new committed state and is left as it is whatever happens after (check_pins)"""
     run = run_state()
     key = os.path.normcase(os.path.abspath(path))
-    staged = None
+    staged, st = None, None
     if run.mode != 'cache':
-        staged = next((v for p, v in run.stage(folder).commits.items() if os.path.normcase(p) == key), None)
+        st = run.stage(folder)
+        staged = next((v for p, v in st.commits.items() if os.path.normcase(p) == key), None)
     if staged is None:
         yield path
         return
@@ -834,6 +838,8 @@ def staged_on_disk(folder, path):
     try:
         yield path
     except BaseException:
+        if st.applied:                            # finish() wrote the new committed state: this file belongs to it
+            raise
         if old is None:
             if os.path.exists(path):
                 os.remove(path)
