@@ -125,14 +125,12 @@ fn busy(f: &Fight, k: usize) -> bool {
 pub fn tick(f: &mut Fight, k: usize, k16: i64) {
     let w = weapon(f, k);
     let holding = matches!(&f.grapple.gr[k], Some(g) if g.state == Phase::Hold);
-    if holding {
-        // VIBRATO: every 16th of the hold while it lasts (`self.t < getattr(B, 'vib_until', -1.0)`)
-        if let Some((until, dmg)) = f.vibrato.on[k] {
-            if f.t < until {
-                let at = f.balls[1 - k].p;
-                f.damage(k, 1 - k, dmg, "vibrato", at, 0);
-            }
-        }
+    // VIBRATO: every 16th of the hold while it lasts (`self.t < getattr(B, 'vib_until', -1.0)`)
+    if let (true, Some((until, dmg))) = (holding, f.vibrato.on[k])
+        && f.t < until
+    {
+        let at = f.balls[1 - k].p;
+        f.damage(k, 1 - k, dmg, "vibrato", at, 0);
     }
     if f.grapple.gr[k].is_some() || busy(f, k) {
         return;

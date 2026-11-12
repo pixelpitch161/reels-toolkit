@@ -598,7 +598,8 @@ impl Look for CelloLook {
             return;
         }
         let fade = dmath::pow(1.0 - w.r / w.rmax, 0.6);
-        let tint = [255.0 / 255.0, 196.0 / 255.0, 110.0 / 255.0];
+        // np.array([255, 196, 110]) / 255.0
+        let tint = [255.0, 196.0, 110.0].map(|v: f64| v / 255.0);
         let bayer = bayer_full();
         for (j, light) in ic.iter_mut().enumerate() {
             let rd = np::hypot(c.sxp[j] - w.cx, c.szp[j] - w.cz);

@@ -59,13 +59,13 @@ pub(crate) fn check(e: &Entry, prefix: &str, ab: &AbilityCfg) -> Result<(), Rost
         AbilitySettings::Prelude(p) if !p.pattern.is_empty() => {}
         _ => return Err(e.err(&join(prefix, "pattern"), "missing")),
     }
-    if let Some(beats) = ab.get("beats") {
-        if !(beats * 4.0).is_finite() || (beats * 4.0).abs() > 9_007_199_254_740_992.0 {
-            return Err(e.err(
-                &join(prefix, "beats"),
-                format!("{beats:e} beats is too long (4 x beats must be a finite number up to 2^53)"),
-            ));
-        }
+    if let Some(beats) = ab.get("beats")
+        && (!(beats * 4.0).is_finite() || (beats * 4.0).abs() > 9_007_199_254_740_992.0)
+    {
+        return Err(e.err(
+            &join(prefix, "beats"),
+            format!("{beats:e} beats is too long (4 x beats must be a finite number up to 2^53)"),
+        ));
     }
     Ok(())
 }
