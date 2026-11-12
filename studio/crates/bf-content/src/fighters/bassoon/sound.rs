@@ -151,6 +151,7 @@ impl BassoonSound {
 
     /// `note(m, dur, vel, t, drive_k=1.0, growl=0.0)`: `self.colour(self.sour(m, dur, vel, t, growl), t, drive_k)`:
     /// `(signal, gain, lead)`.
+    #[allow(clippy::too_many_arguments)] // the Python signature, and the context
     fn note(
         &self,
         ctx: &MusicCtx,
