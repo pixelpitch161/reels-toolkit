@@ -1,0 +1,1725 @@
+{
+ "about": "TRUMPET's look against the Python kit: the `left` fight drawn with its real look and kit/fighters/base.py's Look for FLUTE (every hook of both spied, as look_flute does); the VS card alone on milestone 1's noise image with TRUMPET on either side; its title hooks; its sprites",
+ "cards": {
+  "call": "hashlib.sha256(title.draw(noise, frame / 30).tobytes()), noise = studio/reference/frames/flute_vs_trombone/title/noise.png; left: the fighter on side 0, right: on side 1",
+  "left": [
+   [0, "ce85f8f293a8ac5d7353a6d5c9979aeb7992bcb55b1e29d58401ba24c22756c3"],
+   [4, "e2d91bddfabeb819621e3101c34e302acc13455104a1dc7a03efda0dfc5e66cc"],
+   [8, "348c5f4ee511b34af291966ece4f5b193308d4a6c15e795dc05242ea13542661"],
+   [12, "7bf5a334d8de99bb4a4bf7919d2f5645ecbae4b32d8436cdfea2a5e34021bd03"],
+   [16, "539e86210b61a99eda0cdf22c9fce824b3e6957e704fcb7669d20446d0e84d4c"],
+   [20, "0c7d7f2a56a7470716447ffbad371bf97bdd51351a9ca783ac5631a7e498a1a7"],
+   [24, "7870e673e927f274ee1b927d797e1370caf0e0ca8ae8c054ccca6259aac3c6f3"],
+   [28, "aa65e928ca11eff896e1b980027d09b8ead5d3144e7cd5b253b98eb4cfaf9936"],
+   [32, "bc9cd373f85c27a01b1a3a401c4d6855e06722d7545859da6069ce2054c1106f"],
+   [36, "ef2bcb016421dcfa23475f92fc45c3386a958949210f755233b5710747301c98"],
+   [40, "4b3c43e6d94264fd64bd4fb071f60129a673339797ada3758450c4ab5a5be836"],
+   [44, "4383ff7860cbccd13ad676aee3950131687989269cd0d248f40e84d5c71eb5a3"],
+   [48, "50a384d5e221a02ad0e8d879450790c81a489f527e1763f525bd278b131f7073"],
+   [52, "cff0224db953c66e943a7193c8ece233e739ce21f61b51b4c183327c001e703b"],
+   [1825, "4358bacfdc5f86d3747cae393d36120084758128363affb4cf82f9afc7c52368"],
+   [1829, "db9eb22ade033ed522ca2e5d5907c10ee248e57187ece5a742abbd223afb9fea"]
+  ],
+  "right": [
+   [0, "dae1567e6477248ba187ad83e3ec1b44edf4d3bc489b2e2131a173ffebf8ba52"],
+   [4, "89e3c56d10c3a3f539bc7d6cf1ed2054a8eb5824437915647cdd4bc26e87753c"],
+   [8, "da675704fb3b61c278dc63b7341f16652bb84b5dafaec150913109542985dce7"],
+   [12, "2167d530a2c27278bffc3479351adf41db117d7c4b7ef2e77ce7f2c841d135d8"],
+   [16, "aa2f0ddff1a0973f535156fcd23e00a56ac21b1d79558842707582ddb8a463fd"],
+   [20, "c0c357cc9d6205ce3803ce07191dd715f53b1fe2d1bfa08db800852e0559f025"],
+   [24, "35cc5093c73896d6eca4e6845cf29ff908f9e13c19d8958862edde75b4d43a09"],
+   [28, "abd71fd513098d1a73b4cf493a292b4722db145fd4bf330b97207aa5e3bba00b"],
+   [32, "5c65106f4a18e25315301e627e00db8aaa11fc8df4c24dc36acf1d9aa0f9ac66"],
+   [36, "9de747527ecc57ecd32be5c3ceb8f727008c493f72172367aaeb664e4a6fe46e"],
+   [40, "b7016887b37395b29db1d46203b12fd3768152ddc8f7d2e4121d96fbde405d9e"],
+   [44, "312fabe42fb1cac544cdef7f4d5f59e163a9b17813afdfbe2c2f5e70a2cab57c"],
+   [48, "e9c6b29332d1a4b294d5e34d636bb21df12cbf10e35eada8cde833f2e9f3a143"],
+   [52, "cff0224db953c66e943a7193c8ece233e739ce21f61b51b4c183327c001e703b"],
+   [1825, "bb3fdd62a4ad88db31801d2fbab1f1e472a9b6d26461492c7383e390b7fd04bd"],
+   [1829, "34451c6372a1b5d18cd85737f3b75cec239ca900dcd7599935895dbe4324b1ab"]
+  ]
+ },
+ "cfg_keys": ["abilities.low.hold", "abilities.unlock2.mult", "pp", "view.0", "view.2", "weapon"],
+ "cfg_keys_note": "the roster keys the kit's Look class reads from self.cfg (m3parts.cfg_keys): the look takes them from setup_as's cfg and names exactly these in cfg_summary (EUPHONIUM's copies draw it with another fighter's numbers)",
+ "fighter": "TRUMPET",
+ "format": 1,
+ "frame_columns": ["frame", "sha256 of the frame", "hook calls", "sha256 of the hook calls", "boxes drawn", "sha256 of the boxes", "hull calls: [points, vertices, sum of x, sum of y]", "why"],
+ "hook_names": ["setup", "state", "ball", "ball_sprite", "hides_hp", "shake", "rope", "spark", "hit_glow", "fx_setup", "fx_event", "fx_after", "ko_fx", "fx_end", "light", "shadows", "shadows_free", "canvas", "canvas_wave", "canvas_after", "canvas_overlay", "items_ball", "items_free", "draw_item", "over_ring", "draw_shard", "shimmer", "shimmer_after", "glows", "fringe", "fringe_size", "after_grade"],
+ "hook_note": "a hook call is '<side>.<hook>'; state adds '(ball,phase)', ball, ball_sprite and hides_hp add '(ball)'; hooks_build leaves out rope",
+ "hull_cache": "fighters/trumpet/hull_left.json",
+ "left": {
+  "cards": [
+   [0, "ce85f8f293a8ac5d7353a6d5c9979aeb7992bcb55b1e29d58401ba24c22756c3"],
+   [4, "e2d91bddfabeb819621e3101c34e302acc13455104a1dc7a03efda0dfc5e66cc"],
+   [8, "348c5f4ee511b34af291966ece4f5b193308d4a6c15e795dc05242ea13542661"],
+   [12, "7bf5a334d8de99bb4a4bf7919d2f5645ecbae4b32d8436cdfea2a5e34021bd03"],
+   [16, "539e86210b61a99eda0cdf22c9fce824b3e6957e704fcb7669d20446d0e84d4c"],
+   [20, "0c7d7f2a56a7470716447ffbad371bf97bdd51351a9ca783ac5631a7e498a1a7"],
+   [24, "7870e673e927f274ee1b927d797e1370caf0e0ca8ae8c054ccca6259aac3c6f3"],
+   [28, "aa65e928ca11eff896e1b980027d09b8ead5d3144e7cd5b253b98eb4cfaf9936"],
+   [32, "bc9cd373f85c27a01b1a3a401c4d6855e06722d7545859da6069ce2054c1106f"],
+   [36, "ef2bcb016421dcfa23475f92fc45c3386a958949210f755233b5710747301c98"],
+   [40, "4b3c43e6d94264fd64bd4fb071f60129a673339797ada3758450c4ab5a5be836"],
+   [44, "4383ff7860cbccd13ad676aee3950131687989269cd0d248f40e84d5c71eb5a3"],
+   [48, "50a384d5e221a02ad0e8d879450790c81a489f527e1763f525bd278b131f7073"],
+   [52, "cff0224db953c66e943a7193c8ece233e739ce21f61b51b4c183327c001e703b"],
+   [1825, "4358bacfdc5f86d3747cae393d36120084758128363affb4cf82f9afc7c52368"],
+   [1829, "db9eb22ade033ed522ca2e5d5907c10ee248e57187ece5a742abbd223afb9fea"]
+  ],
+  "fighters": ["TRUMPET", "FLUTE"],
+  "file": "fighters/trumpet/left.bfrec",
+  "frames": [
+   [
+    0,
+    "5d308facf6937b13b615ce536905d329ca192e0d6dcfed0211924294f3b1c7ec",
+    38,
+    "6d8bc6b7a5e68f423c56da2596de48cd5ce95d5600cf7aa2d01485a088287cf0",
+    0,
+    "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a53d0d9b81d4p+12",
+      "0x1.2a48ab7bd62c6p+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    13,
+    "0443f2e62361db7f32b032befbaaba57e5b366790047dfec7ed42bba4bb44b03",
+    38,
+    "1d06738e4154afe68650a302798c0879b1dd67138d7125ba3fb3fafb731056e4",
+    1,
+    "37ba3451412c11768cb0934ee0a0158ce88b6326fe9bed3cdaf8856baa4cbec5",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a53ce57bbf3ep+12",
+      "0x1.2a48ab9a12537p+13"
+     ]
+    ],
+    "the title card, the doors and the count-in"
+   ],
+   [
+    27,
+    "3ff7e86ee58d6e730b67cbf84df5a05b8e69ca652336b16a3415b6798aaa2edb",
+    38,
+    "6d8bc6b7a5e68f423c56da2596de48cd5ce95d5600cf7aa2d01485a088287cf0",
+    2,
+    "ca06b0d5262af56f46565728b26a1f10abc851e4941609c303393c430ca2856c",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a53bc62566dap+12",
+      "0x1.2a48ac735b3cdp+13"
+     ]
+    ],
+    "the title card, the doors and the count-in"
+   ],
+   [
+    43,
+    "9350deec0590f46f80c1f4dbf2d3240abe15abbcac0757825699f2e4ae285196",
+    38,
+    "1d06738e4154afe68650a302798c0879b1dd67138d7125ba3fb3fafb731056e4",
+    3,
+    "7ab5894d4d2fa8e2058a0361ccea89f63b9f140b6a632012f077a6f26080f770",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a5386f71bc72p+12",
+      "0x1.2a48af01a5a86p+13"
+     ]
+    ],
+    "the title card, the doors and the count-in"
+   ],
+   [
+    44,
+    "03358ba5453a7f4c9ce4b7dc6173de8cb2768778ee7ca01d62012c9bb86c5f5c",
+    42,
+    "177a597a30ec1ab1cd3c7108365b43e3c1bbcbfec58720b80ecb506b2c6b6863",
+    22,
+    "4f16e1888aa52c28d508420d0c43bc563dd3f841843c584c807c899b76614d02",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a538242c77dbp+12",
+      "0x1.2a48af3bd74c5p+13"
+     ]
+    ],
+    "the title card, the doors and the count-in"
+   ],
+   [
+    45,
+    "94954abca1b3ee16a503ab545408d617a49065889c73932014c455975794989d",
+    42,
+    "177a597a30ec1ab1cd3c7108365b43e3c1bbcbfec58720b80ecb506b2c6b6863",
+    22,
+    "8c755ef742925ed8843ab83b1d2b4207b65fff4739020ee05fa4de0afbfadec4",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a537d637ba29p+12",
+      "0x1.2a48af783587cp+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    90,
+    "8f17d49e9826af12f61780cfef721f89420e2a16dea6647119b95b0ef98d014a",
+    42,
+    "e248c3ecc63411746777b391286c296e03acbcca03daf86b716c94aa63cbf66a",
+    23,
+    "9fba733bbfae7797ff2fc88788c0e9cf07db83c8f38dca48cffa34e95b6de766",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a51fd95cf597p+12",
+      "0x1.2a48c349ce3a6p+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    107,
+    "dc1fe72de3cf572fb63b7365fc8afac431c5d7d5b89a0468d7dabc141800a679",
+    38,
+    "6d8bc6b7a5e68f423c56da2596de48cd5ce95d5600cf7aa2d01485a088287cf0",
+    21,
+    "8254ff90fe412a8f30b3068830eb0572b63fa102dcbafcaf3b624d2cab57bf4a",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a512df70e33cp+12",
+      "0x1.2a48cf0ea382ep+13"
+     ]
+    ],
+    "the title card, the doors and the count-in"
+   ],
+   [
+    108,
+    "bae39a7f4f6873e6455af77e8dc1594e128e4153c605cc14ebc7bbdbd836e62d",
+    39,
+    "2c765f9a1c37b165f5db21f503fe5e5d4e9fe06592e4349bfbc5d5720e930c0d",
+    21,
+    "8f550dc81234b0906807b20b12c9ab44fab3139842068ab7ec5ab00ec72fe3fa",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a51213a9723bp+12",
+      "0x1.2a48cfcdbd404p+13"
+     ]
+    ],
+    "the title card, the doors and the count-in"
+   ],
+   [
+    109,
+    "582f0f6db260c7ef5a4e8b09271f28f34f44af02c2adbdcae16ff85458d7c4cd",
+    39,
+    "2c765f9a1c37b165f5db21f503fe5e5d4e9fe06592e4349bfbc5d5720e930c0d",
+    21,
+    "8155654804af004cd2d76bc8a962eedc599594f873e1661f9334a56907a5d81d",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a511474eb9cfp+12",
+      "0x1.2a48d08e1d96bp+13"
+     ]
+    ],
+    "the title card, the doors and the count-in"
+   ],
+   [
+    135,
+    "075e9324cd98ee3bb9e11673bfd6f08fa55e5e63ea8f910bef95c672074e57c4",
+    46,
+    "62367faa8a0c917107ab2896ede668cda4103a296750feb9bad1804b5bde8cfc",
+    22,
+    "960060e5bbc6f8b5f7a2229324ab8b390b6215a5164762c57afb5477bfac192f",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a4fc7864fdcap+12",
+      "0x1.2a48e52cce4a4p+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    136,
+    "c006c6bf91e49a66a88a917b396cbde04c6a576cdca4517afc11c7b80e01722b",
+    46,
+    "62367faa8a0c917107ab2896ede668cda4103a296750feb9bad1804b5bde8cfc",
+    22,
+    "ef8e4bd34d62847a81fbc44aa5b14b2fc4b5198bfc857b025ca2faadd5c8f7f4",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a4fbb221ddb7p+12",
+      "0x1.2a48e5fb3c91ep+13"
+     ]
+    ],
+    "its first 'piston' hit at 4.48824 s"
+   ],
+   [
+    180,
+    "5e7726629339f21dbc1c7e6f801c51f582faa108c1123327a0ee657a68ff66ed",
+    43,
+    "b0a19a24efe8ba6950be5dc871bdb1c3806c748c5d856953d9e0d0ed56065948",
+    22,
+    "f3dac8662373be41fcb0231e41954f57c31269e46a42bc8aedcc95f0da922d2c",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a4dffeec0e00p+12",
+      "0x1.2a4904b8d1f2bp+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    225,
+    "3e75f0174a1eb4286b402bab7fd7ee44c8b349a29d870532913b6288e474b291",
+    44,
+    "1f5b750407497fa8916339d8821110d155adfd036f796fb7327e725d6af39a08",
+    22,
+    "686e600c411c283f3813e3fd1d76e78614147d1965f1b2d1185119162b9c8174",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a4d5db6713ebp+12",
+      "0x1.2a4910ec2bf0dp+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    270,
+    "d0de4c5c253d7ce91e7eaf77ed63d275a6c481e33498251898cd50610e8433aa",
+    46,
+    "b07b2a40d9ec348b86b74414bbff8951edde600e6d02251e6bd5b46bd4706421",
+    22,
+    "3c6692ee8db760a4012c75a507f86741a4051d4e1d30db4aa640342a990e03f5",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a4d680734487p+12",
+      "0x1.2a490f041f0edp+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    288,
+    "95298444ec2dfba4c2fda2007a4d2b570be6062dddc53d74c18dc98b362d2cf4",
+    48,
+    "af6020a9d569778b218bf764ee9a1b6899035cff2ff147203fb09d7cdb02186f",
+    22,
+    "2101b629fb5e3e140256981597722741b8100eb82667be5cefd453addfeb45f8",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.69eaaaf651f98p+12",
+      "0x1.2a2b97d4e7680p+13"
+     ]
+    ],
+    "the first hit it takes ('fang' at 9.54657 s)"
+   ],
+   [
+    315,
+    "0a8c840119d806bccdf72297d4919651e4fc3f84955523aa64ed565a06306ebf",
+    43,
+    "4eefaa675cd044d21ede48b2bb2dde81c1ec164be9a710949bc65b06c04dfc4a",
+    22,
+    "80b75467412c9076a76051fadf8cdad68c6efec9ab0aa78a449eee88641fb246",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a4e0aacf75e2p+12",
+      "0x1.2a48f5dbeffbdp+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    360,
+    "096dcb284a0081ded09e7b18d56200587bfebefe199da42d4d2c08a2019b50e9",
+    47,
+    "3e402f6688d7633870d6ea839ede75dfbce4bad5393540a910f5b13a52a3e070",
+    22,
+    "1c888ac23652b360797d017c687a356a1c8a1abc455a16a15476ac288cb8c627",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a4f9ec4dfad6p+12",
+      "0x1.2a48ba9652982p+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    397,
+    "cb88b1f2134bbb2e2479ab854864932c1d5d19da66d2a0c1f2b1ee87ad183381",
+    48,
+    "733f4c8139f20688001331ee75051d7657e00dc05bbf8b8c8c832188917d2b0f",
+    24,
+    "03f756f70bbb3d61d1d3bfe4996cdbc6b6ecfd2c55ec939f97d7584a261cff11",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6bb62529d5d0dp+12",
+      "0x1.2a5a071f20742p+13"
+     ]
+    ],
+    "0.2 s after FANFARE at 13.01324 s; its first 'shockwave' hit at 13.18824 s"
+   ],
+   [
+    405,
+    "fed16c51c5d2f456f9f1b600c685df0c6571134cd286aeffac5537223968045e",
+    44,
+    "57cf81a3386fb14393d038a0e66a2931f274bc146cd81713b90289e83ea8c7bc",
+    24,
+    "3eda54ece2bc7d57cc8584baa695ec81f1f9b9bb25ba4ea647ee0785d08fb7e5",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a51fd39cd90cp+12",
+      "0x1.2a3fbc515ae12p+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    409,
+    "a0a712c7119a25ef8ca47866768cbbab65e3895de9e0c302a9d0551d6ea2e794",
+    43,
+    "4eefaa675cd044d21ede48b2bb2dde81c1ec164be9a710949bc65b06c04dfc4a",
+    23,
+    "00f264f5a5d029c1e1d846e539f485a87f0be68a82d07663ded60086c63a5188",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a4fee53656d8p+12",
+      "0x1.2a47106c2a040p+13"
+     ]
+    ],
+    "0.6 s after FANFARE at 13.01324 s"
+   ],
+   [
+    450,
+    "621f46438f6405bf345a91520f928db40aec664d430055ff704d3ea1e0621fc6",
+    46,
+    "dbfab7a44164120aec004e77870b530ef05f8c6ff12dad083c6cb8ea6d468a23",
+    23,
+    "3a65fbd17116fe961c2914ad105a0770ae165558d34d666f77c9c108de72c129",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a54a714cd96ep+12",
+      "0x1.2a5cfafaa9454p+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    495,
+    "786be78f07a13a06f25de478276b168715327122e61cf3cf30d94d0c19776544",
+    43,
+    "4eefaa675cd044d21ede48b2bb2dde81c1ec164be9a710949bc65b06c04dfc4a",
+    22,
+    "14f7ffe9144a1b38f9d9211f008f518c3e0aba7c7d08944ffa46ce8cb8545083",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a56f61693047p+12",
+      "0x1.2a47dc9cc8730p+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    540,
+    "6f5b7f5b4854174a95cd73756351bf2b7fc0735ee6e0a75b44ba637009938f28",
+    46,
+    "b07b2a40d9ec348b86b74414bbff8951edde600e6d02251e6bd5b46bd4706421",
+    22,
+    "36d1d4cd402aef606145ffc50e59aac9551c484a6736fb6a926bdee5b6f6b503",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a5860bdbea65p+12",
+      "0x1.2a47bac42cf7dp+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    585,
+    "05c04f4874934a124817938ab35c3de9a288fb9cc78be2ad35e07ceb227e6d12",
+    49,
+    "cd90c00659e3b050976ad07292f81bc1bcb7829bd25034c5433a049cb63c685c",
+    22,
+    "dcd19f1f32dbe42d87ea49b9edb7414cc2e4189c6d471bc05dba82f5fc85d65b",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a58ce0516078p+12",
+      "0x1.2a2e90c1e9cafp+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    626,
+    "21dc4bcaa60b47ef359ec781101ef8e9cfbd38a042c0875ca12063845c5f2cf4",
+    45,
+    "749e624e4b0d1c6b865f8ff631e906fecaf387b5f1e73192db7dc8e59c830a04",
+    23,
+    "9f63e9a72c08d13ae39cd5023637352df17f41ddb5d2fc5d642982436f3f80cc",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a58c19e5c4acp+12",
+      "0x1.2a47b636c8962p+13"
+     ]
+    ],
+    "0.2 s after FANFARE at 20.63824 s"
+   ],
+   [
+    630,
+    "6b453aa1696306ddaae15ec86223a9a2732f39a690ec46547366c8387b0306fe",
+    52,
+    "b6f4ddaccdac1ccf0eb89c31fd737e48088d6a8641bed06d4666b15162434900",
+    23,
+    "869acc58dd45c40f62063c99d208c99d2f95f240b07f66f70b2683c7bb99ca47",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a58ba371c916p+12",
+      "0x1.2ab16fc2af893p+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    638,
+    "88c2642b98f2c0ef56acbe9cd66558198c9b1659b6f087d9b9d18fdbef53b054",
+    45,
+    "8952d8006ecafa8478a28fb93970a2ca1626c296aae5de1bd4605333f29d5473",
+    24,
+    "96b8f4f5a30f85b06fb10692f295247d8b8232e39cf53b635c42292d9245a9b2",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a643dee89ad2p+12",
+      "0x1.2a472e7d81a62p+13"
+     ]
+    ],
+    "0.6 s after FANFARE at 20.63824 s"
+   ],
+   [
+    639,
+    "797f2eef9e7078fa226178bc91395ec1f48379ac1fb3fcb2ea027474608fe935",
+    45,
+    "8952d8006ecafa8478a28fb93970a2ca1626c296aae5de1bd4605333f29d5473",
+    24,
+    "fbb2110f824850a7a42bc79da58da0707241195346f0760d7872cbdf5e8cd649",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a524c83a60fbp+12",
+      "0x1.2a469781c55eep+13"
+     ]
+    ],
+    "0.2 s after DOUBLE TONGUE at 21.08824 s"
+   ],
+   [
+    651,
+    "c34492db423d4dc3654b6020daab0738046ecf4cc21189e219562df8ad60b8cc",
+    47,
+    "518502cdbc2a0f658ee72460dc5cb22521e2714bcb14cb8a1a35aebbfd716e39",
+    24,
+    "36a44aaed63e0bc23c1dbde1699a071f42dd8bc0126ac8e4b084f672217b7fad",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a586e2fd26a1p+12",
+      "0x1.2a47d4ca3a2c1p+13"
+     ]
+    ],
+    "0.6 s after DOUBLE TONGUE at 21.08824 s"
+   ],
+   [
+    675,
+    "0c2805a01374afc12a6eb18c4c4492db4323ac453222d86596070b49e6683536",
+    43,
+    "4eefaa675cd044d21ede48b2bb2dde81c1ec164be9a710949bc65b06c04dfc4a",
+    24,
+    "07e103ec7429e83f997c31d8e21724a17ae677482050d7528c423123055b61c8",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a57ba844d2b0p+12",
+      "0x1.2a4816e2c2631p+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    720,
+    "aa463b69ce065178d30cbca5a48fc8fe6a8d142d4b92ab84b605d7d771daa542",
+    42,
+    "e57245301d7da733f9344bd6a83cc626c28f8cdee255b13f8055efe9291c46c0",
+    23,
+    "990d38f0046f9f8a596a683c8c4c068e42a3a2b2c1d958bc7de735c845ad00b7",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a554dcf196bap+12",
+      "0x1.2a48fde68a219p+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    765,
+    "769cbeed429a955119a5e78e9cebd447768874d9a2c0ef97f0b9ef83916ae048",
+    45,
+    "bef90a774bf1ef4c689c732449778558ca3e49f622dca2db75687dc8b220ab31",
+    22,
+    "609f58dc4ed395e420524a23ae784404b299475079d2811a264ab890e586e838",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a51cee2e7951p+12",
+      "0x1.2a4a527addeedp+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    810,
+    "f18a5e5c31c93ff232774e8dd0790ae4cee95f7d78f9e82d09bf3e18b980803f",
+    49,
+    "53093263f1a03ba0023d3d1eed35371d9c8f44b3851c0f3fee8ea6142d4a9240",
+    24,
+    "995178a0b1b782187fd9c7c4d6007ce534ec57f7447f2e0babdc1110145370ff",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a4e10ddc0401p+12",
+      "0x1.2a4bc9529fc0fp+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    855,
+    "28ce001b1ebbf1e36015b19fe18962d20063e764837b8a73b632a2904faffc61",
+    44,
+    "d872fd3b8e6ed495d6bff8ba3694563f5cdd19392d32cc8f7b9f46b1cdc00b68",
+    24,
+    "93735a614905df15b5183970c87546fd65d75094da0073ad10dc32712245a354",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a4af8281e7a7p+12",
+      "0x1.2a4d07e1733c7p+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    900,
+    "77c65bbe8e1b9778f2d4b7e8572afc823be7956fbcaf9ba0de1dd2a0aecb3c31",
+    45,
+    "bef90a774bf1ef4c689c732449778558ca3e49f622dca2db75687dc8b220ab31",
+    23,
+    "f52db988acbfa7094d62099565b1ec17f1588d211fc04541d3f48da5ed6b15f3",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a4921cbf55e0p+12",
+      "0x1.2a4dc8a40c93cp+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    945,
+    "7796afad8e6798742b6226d97e1cf8ab5198eb1af0ab22669a5c15daaf8e5ef2",
+    43,
+    "4eefaa675cd044d21ede48b2bb2dde81c1ec164be9a710949bc65b06c04dfc4a",
+    22,
+    "c641d33b2e0ca9a472bda05ce035512d9fd3293e505412545e5cbdfe955324de",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a489658f0ca9p+12",
+      "0x1.2a4e0256b5bf1p+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    975,
+    "4d248109907a4cd1a54dfc8876d0775cbfdd5a66795dfe4d0f099b645a9fde44",
+    42,
+    "e57245301d7da733f9344bd6a83cc626c28f8cdee255b13f8055efe9291c46c0",
+    23,
+    "f0079e644c5faddc4bb128c647f8c39ca39278859a0c24bed2f6ea28296c6b38",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a488cba13313p+12",
+      "0x1.2a4e06387cf1ap+13"
+     ]
+    ],
+    "0.2 s after DOUBLE TONGUE at 32.29657 s"
+   ],
+   [
+    987,
+    "bdae63d4082e51e86992ad1247fbb5a6c858a779972334dd4be2a0bf066fa805",
+    43,
+    "4eefaa675cd044d21ede48b2bb2dde81c1ec164be9a710949bc65b06c04dfc4a",
+    23,
+    "a4c4a384abe2783e018d1b74ea7222f42cc025c9c1192bd93d6cca538f3eeb63",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a486d67bec6fp+12",
+      "0x1.2a4e12b8f870fp+13"
+     ]
+    ],
+    "0.6 s after DOUBLE TONGUE at 32.29657 s"
+   ],
+   [
+    990,
+    "6d60ef7d71e1e5a4b1531cebb10c1bf580c6f5f99a0523df5a6f1f8d0138c313",
+    43,
+    "4eefaa675cd044d21ede48b2bb2dde81c1ec164be9a710949bc65b06c04dfc4a",
+    23,
+    "639173a976e5b5626b94a48ec4998735c25fdeaa4da5e161b2f9f940be564685",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a485fe1fe468p+12",
+      "0x1.2a4e181ede34fp+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    1035,
+    "5af8384f2e1c66e7789c2ee76936816fcd6b0cb15b0f2a0d4535986b208f35ac",
+    44,
+    "fefc1a5e1acf822c4b2b11c7225937ebf3efc20bf9c0b0ed6baefa7ebcdbcbe2",
+    24,
+    "c583adf28f66e9d088e6f2415f9e7f1b8ecde54c633787e9274030fd7a9008e1",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a4602b3006a3p+12",
+      "0x1.2a4f0a1331a8cp+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    1080,
+    "d32e4734fdb81e072b63c2fb0b8f85f11646b928744e0a790b1b3e9d8cf52c5e",
+    47,
+    "eb36029c442b690554abbf9d48c261a44c83571ab9174ff5252fd2c35ac72611",
+    25,
+    "ad6fdf1b9724c58cc070e721105b5855ecf37a21b570654e233474e1f4622eb2",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a4035446dfa9p+12",
+      "0x1.2a5693e70cc54p+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    1125,
+    "860525b7e29c0cee16239d8d882def0ce75e521a00c424c57a2f324826180c71",
+    42,
+    "8841d50798dab0801bcfcf438c8c7392c4b8f0dd1dcd24f2855569f9980cb0d5",
+    23,
+    "aa5a59c6b16968640422e71d983c7a5d962f406885f1b265c56d6cd5c4428e77",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a37ad738bbc9p+12",
+      "0x1.2a54d4927fefep+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    1170,
+    "6bc567727d2d32e3caabea5ff3ef75db16d1e82c0d3d5f3e899099e4e93aa1ee",
+    42,
+    "8841d50798dab0801bcfcf438c8c7392c4b8f0dd1dcd24f2855569f9980cb0d5",
+    22,
+    "e3ce30b00db9bab8c0e1cd856d54097199a4923eef196124cf22b77fb186fa4d",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a2e51cb56c43p+12",
+      "0x1.2a58aad7660d0p+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    1215,
+    "e54af716e7f4ab33e5ed0cd2fd23ee1b6bc92645c8f80e23942e95eed1b48f1f",
+    51,
+    "d4dc5226665963a7cdc1cd5c4ae1c5a2ddeab7e40ca4bc926f31cc172c412071",
+    24,
+    "8da6a49786b56b1bb57b32914a8cd2658043ffd706ec93413a778a2f5c49dbd2",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a2663d73d81fp+12",
+      "0x1.2a5bf4022e6f5p+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    1260,
+    "4e35a4c954a05e6566113ae12d71eceeb9cb79ae2de51b0e0dbd645f7f80c8d4",
+    46,
+    "b7f10729b36c514301d6022e5cb1b96688dfa7ba9df57c8794d15b9e91e5d7de",
+    24,
+    "304873146242940c1541b93110cb77416ecb043e500f6c32849b9803d02736c5",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a219a0021c17p+12",
+      "0x1.2a5df3e3d6d40p+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    1305,
+    "1240e5422ba9ebda49e4067efc8723eb69af9c303d88b7c0b91d26473effbe40",
+    42,
+    "8841d50798dab0801bcfcf438c8c7392c4b8f0dd1dcd24f2855569f9980cb0d5",
+    24,
+    "aac6c5bfccbab33e106c2df1da8d16db0206019b1bce5e3f2355f392f9910bd2",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a202b6cbf158p+12",
+      "0x1.2a5e8d8930c68p+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    1350,
+    "60b0dc19018d1010df40b0533a21b5bd90ba949e80f8ebaa63784ec5abe86a37",
+    43,
+    "bfacb724a7fb039eda12814e94b24704720fd1d8e8d6a5e4d82f6feec9652341",
+    24,
+    "bbe34f4fa93a54f1f72f1dccdf5e1d252b491260395e045c511055c63818510f",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a1ff4beeff38p+12",
+      "0x1.2a5e99ed1d9a9p+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    1395,
+    "dd12dc6f605d82f40236e99975506a14cb619be3daa580d0377147d359cf6c42",
+    47,
+    "d067cb10cdb93dee73dd20244a7c64749a950f190c3680f575a6fcb1aacf5876",
+    23,
+    "a5dc78830b9587e74daffcd30243a0f22b8209aba61033fdfa0d910ed03172a0",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a1e0dcf07a46p+12",
+      "0x1.2a031ea70b470p+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    1440,
+    "e03c1698094010a833a92986a55691a214f81db96d8e7ea31ef9514f55225c79",
+    43,
+    "bfacb724a7fb039eda12814e94b24704720fd1d8e8d6a5e4d82f6feec9652341",
+    22,
+    "d1fc59bb2dcbf7385ced8f0359a5816a779fafa3e19545d3ecb42f47a863d212",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a1a51700e908p+12",
+      "0x1.2a5fb9171a897p+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    1485,
+    "e9df21affab37b1bc631d35edd52690a23f885791f229164cc87225c13dc2f76",
+    45,
+    "dcb0d0a428aec36ca3c035b7043007ba8984c3a4fa9bcfce95383372ac3cc0a6",
+    24,
+    "2eae911ef578a9d6830de20a5e99c83a221759f82a0b503819fd24d7379cfb2e",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a168a5ab6f1ep+12",
+      "0x1.2a607baf6449ep+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    1530,
+    "5b244a222d3cde616203ada7113767396cd9e2bacb70f6daaa75c506b908a36a",
+    50,
+    "9be0c77197177138e95d051ba4e22ceb5cdbe0365322bcd8306452a657b5dd3c",
+    24,
+    "a3e2567a666c17fd742bacd6f62ed4c409fc5ec0a34185095097ff919617f74c",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a148eaccf51ap+12",
+      "0x1.2a60e28a64d32p+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    1536,
+    "f9f11d46c6b3f8ea8cd52023bfc24ef5f0662789f0193187a631862cf34f7aab",
+    53,
+    "04fd90e11fe8cc68e36e8bf3a7cc0df5df3d2a9c84e79043d1b65ba11ba066ec",
+    25,
+    "489cb56efe1ce0a9c5272c1b58e5ad5cbd561aa0357c2d646aca68306f680a6e",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a1476488798ap+12",
+      "0x1.2a60e77e97b69p+13"
+     ]
+    ],
+    "the first frame with its HP below 25"
+   ],
+   [
+    1554,
+    "6170fb49563a1fca8907f05e065a6ff6c3b031309f447a5ea69bdde652bd3556",
+    44,
+    "67558e9d546692b9cd1f05f9bb1312eab96c1181b66d864d7aad0f624d41c2bc",
+    25,
+    "c998eeb78d4ff07614df2d5e7196070b9f9c37a4b10b153b9effc8ee730a7894",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a145927d8d2fp+12",
+      "0x1.2a60ed6966c15p+13"
+     ]
+    ],
+    "0.2 s after HIGH C at 51.58824 s"
+   ],
+   [
+    1561,
+    "23e04aa79d9e21843ada53f58a14f75a6aa00ab3a9766d54236c775d0f70322f",
+    44,
+    "e3e6aa2c734b99a6b1116f1ec8e9bc374f9483c86d92b3a3f6acc86f2691a1ed",
+    25,
+    "2ed846ca2e00db13e61319ac89afa1c1e34d28d24941dadb45278afa9220ae6d",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a145852c2791p+12",
+      "0x1.2a60ed94b211fp+13"
+     ]
+    ],
+    "-1 frames from the K.O."
+   ],
+   [
+    1562,
+    "8f6b481a2b97f290591fd89be72dbb805727fcf74b8bf4c00b027fcb24c19a45",
+    48,
+    "d697c0f65dddd6adf5ebcee7199f239b34b7ef1f2b322d05cc76efd0f053cb9c",
+    26,
+    "71e6878f55d484fc43605306a73cee0b601fcdf6aefabcdc9a835fd808b2f4e5",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6938d2f740ea7p+12",
+      "0x1.2bb285cfc6be0p+13"
+     ]
+    ],
+    "0 frames from the K.O."
+   ],
+   [
+    1563,
+    "718dcf6142673055f66a0700f0fdcaafa94cfda33681dfd13e287ed4749b53b1",
+    48,
+    "d697c0f65dddd6adf5ebcee7199f239b34b7ef1f2b322d05cc76efd0f053cb9c",
+    26,
+    "e8b27604ad40d935585fe80c625465384a471a08b0abfba2f3a53b2e234de771",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6cc9b3e9bc1d3p+12",
+      "0x1.2b2f5ae456e1dp+13"
+     ]
+    ],
+    "its first 'beam' hit at 52.04657 s; 1 frames from the K.O."
+   ],
+   [
+    1564,
+    "00feb08da2bd890d87017e23a8684a30265d340fade64ff3c92c28852a9be50e",
+    48,
+    "d697c0f65dddd6adf5ebcee7199f239b34b7ef1f2b322d05cc76efd0f053cb9c",
+    26,
+    "9a069c1d4c19c5236de9a776c60173367c50f9c72fa52ef805664cf9a305b222",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6ae11c6fed170p+12",
+      "0x1.2ad6cddbd1fafp+13"
+     ]
+    ],
+    "2 frames from the K.O."
+   ],
+   [
+    1566,
+    "910f8717ffa1dbc6b41924de2e7e746c86bbdf92cb6c4c1e5a5b9b247a56ba5f",
+    44,
+    "13893186ef6dfb75fc706c4742561b3aa4ea1359d68c41f1bd10967256fd25ab",
+    26,
+    "477e82307f009fa212b0d8ffa4654ff8b8798ad9eb201b32e5898aeef23afad3",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.698765caf999ap+12",
+      "0x1.2a7acf9c05226p+13"
+     ]
+    ],
+    "0.6 s after HIGH C at 51.58824 s"
+   ],
+   [
+    1567,
+    "308541d1514427f76683d35fed9f00ef4692455131722e571ef7f28108d64eae",
+    44,
+    "13893186ef6dfb75fc706c4742561b3aa4ea1359d68c41f1bd10967256fd25ab",
+    26,
+    "77951e77261cef5a26dd1f459635be3a8736ad9c5b38d05acc3c68df12aa4291",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a8fb2ab3bbcep+12",
+      "0x1.2a66dc3e6587bp+13"
+     ]
+    ],
+    "5 frames from the K.O."
+   ],
+   [
+    1574,
+    "0fc340706a3ec41a7426eb2cf42ef902a8c0607299ae9b1410bf37dee9524d9d",
+    38,
+    "8f0eb02ece134c2d918a5569204685dc56b4a3bf257811c2b33dd8f0a3a1a421",
+    25,
+    "031ea617b38d680198d67606acb512ea55f3a7ec1631992d3e4eabffbea4c016",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a181d90c1e46p+12",
+      "0x1.2ad9a78577e7cp+13"
+     ]
+    ],
+    "12 frames from the K.O."
+   ],
+   [
+    1575,
+    "72f555d38f57c171b07b7e27cfca53e09e8ff6cddbb04dbd5810ecd9df35dc64",
+    38,
+    "8f0eb02ece134c2d918a5569204685dc56b4a3bf257811c2b33dd8f0a3a1a421",
+    24,
+    "8a5499b69c09e3e83e9558a91946c410fbbae8998acc0ab31e30193384dda571",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a34e4507c58ap+12",
+      "0x1.2b6ca7c2efc43p+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    1581,
+    "e22a179f808bc1c73d6631acefa66c8b47adc712f97181d99e6117bc6f1f9fe5",
+    38,
+    "8f0eb02ece134c2d918a5569204685dc56b4a3bf257811c2b33dd8f0a3a1a421",
+    24,
+    "387fa208c6867862b5858a190e0f02398309c4fa4a473676dd5bdc857b1735b3",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6afe527b0d4efp+12",
+      "0x1.321784f476be3p+13"
+     ]
+    ],
+    "after the hit-stop"
+   ],
+   [
+    1592,
+    "4b6467e7393c9241317c490c0888a9a7397becb8d88335a7305a6b71984491cd",
+    38,
+    "8f0eb02ece134c2d918a5569204685dc56b4a3bf257811c2b33dd8f0a3a1a421",
+    24,
+    "17c10812c6a8eafc27a71f95786edb5383ff5d4943fdcad0c168aa0fac858f1f",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6d528bc77118cp+12",
+      "0x1.3ffa8879ae353p+13"
+     ]
+    ],
+    "30 frames from the K.O."
+   ],
+   [
+    1620,
+    "d6ecc28748a671e52e0bdc265f84c4ecf747084062971bce783bf44672c8d6af",
+    38,
+    "8f0eb02ece134c2d918a5569204685dc56b4a3bf257811c2b33dd8f0a3a1a421",
+    23,
+    "ed4c73d05ed7a95401c15a3e34716bfb432233687e99592a42b8e46de9dfa8ad",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6b6f8f7d665edp+12",
+      "0x1.2accfcb7485a0p+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    1622,
+    "1e5c821a29dd53e554bf430998e880a74a0072e5f6da7461da89319794b1041d",
+    38,
+    "8f0eb02ece134c2d918a5569204685dc56b4a3bf257811c2b33dd8f0a3a1a421",
+    23,
+    "8ed36bd5e3bb2583803d94abfaebc37d78a677d3054d5f7fc9c44167076e5eb2",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6b05a1f425808p+12",
+      "0x1.2a6bc088595dfp+13"
+     ]
+    ],
+    "60 frames from the K.O."
+   ],
+   [
+    1624,
+    "bebe8401f477462f1c943b724ee95fbf96e0e01470eedc2258fca1bf9be31883",
+    38,
+    "8f0eb02ece134c2d918a5569204685dc56b4a3bf257811c2b33dd8f0a3a1a421",
+    23,
+    "d8b5da7faf1d1812dc75fe9091ec48a6b6b27b2f9732df9edf3bb410c4b909be",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a9f7c591385cp+12",
+      "0x1.2a45a15206f36p+13"
+     ]
+    ],
+    "0.3 s into its victory solo"
+   ],
+   [
+    1645,
+    "f2a0e68cf21738df97b0a9ee1db7f4ec68af5d4c8c8b1be3fbecd0167dd133ec",
+    38,
+    "8f0eb02ece134c2d918a5569204685dc56b4a3bf257811c2b33dd8f0a3a1a421",
+    23,
+    "721c95046d167ce062cef56a84722ed362863fe487532a9aafe712eb6a6dec63",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6744155b707f9p+12",
+      "0x1.2a3cc13f2f7f6p+13"
+     ]
+    ],
+    "1.0 s into its victory solo"
+   ],
+   [
+    1665,
+    "db56430831f1027ac0e3affe9d874d300abaa997e9d0b178213666e979be06f2",
+    38,
+    "8f0eb02ece134c2d918a5569204685dc56b4a3bf257811c2b33dd8f0a3a1a421",
+    23,
+    "c27095f83e2ebf7f5d57b241b104ed66779005c4fb9564419c71e34c65a478e5",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.67c74a5e3fdd5p+12",
+      "0x1.2a3de617e8278p+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    1690,
+    "9d4da0a55b62712ffb42e1e1349f3e248c5bab0745c6a9e3d3c729c1d6406a58",
+    38,
+    "8f0eb02ece134c2d918a5569204685dc56b4a3bf257811c2b33dd8f0a3a1a421",
+    23,
+    "9a27633fa0b6f831b8dd5e8849c4227d7c93b66e17acefbc122e4141a165ef7c",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6c38181cbdc8ep+12",
+      "0x1.2a42bca62ea93p+13"
+     ]
+    ],
+    "2.5 s into its victory solo"
+   ],
+   [
+    1710,
+    "60da3dce788e29f04053008a550f4686ec9436c3fa644b13a8ff7f89c24ea058",
+    38,
+    "8f0eb02ece134c2d918a5569204685dc56b4a3bf257811c2b33dd8f0a3a1a421",
+    23,
+    "469952ea2848fab9dbbcbcceb2e91cb3870b450aaf592e125f93a83d8bce644f",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6d94141216036p+12",
+      "0x1.2a44a39f6961bp+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    1750,
+    "72e5d205e38d7beab943e1215dba88ebf5800c48745c1f6f64744a22cb412404",
+    38,
+    "8f0eb02ece134c2d918a5569204685dc56b4a3bf257811c2b33dd8f0a3a1a421",
+    21,
+    "acb8cf0c7e1c930f20c74664db2545f7f85d87d08f00e30fe86774301cbce820",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.678d5f84d1ce5p+12",
+      "0x1.2a42ed1e90240p+13"
+     ]
+    ],
+    "the loser's pieces half-way home"
+   ],
+   [
+    1755,
+    "fc44d54122b58e2121581de10b404b1a77ec406d9a89f1d95d71722e6d9d5d55",
+    38,
+    "8f0eb02ece134c2d918a5569204685dc56b4a3bf257811c2b33dd8f0a3a1a421",
+    21,
+    "b8cf01f664085408846b6d92a509c35478630a813d0f85c839c98a63d25686f1",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6720748d37425p+12",
+      "0x1.2a42e8c459522p+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    1773,
+    "e06edc48fd28019e2c4cc88f8f021c39505914fc5d72411bfed96d58b698b62e",
+    45,
+    "245f571cc8433ad2c0694330b102cf7fc434fa60d12e44ef33a74ee078470775",
+    21,
+    "acb8cf0c7e1c930f20c74664db2545f7f85d87d08f00e30fe86774301cbce820",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.67dad028efd60p+12",
+      "0x1.2a44797165237p+13"
+     ]
+    ],
+    "-4 frames from the glide home"
+   ],
+   [
+    1777,
+    "b89d1e821dae5d927ac1e9bbc4385c914b19a7b1f925939504ea6471b97e8166",
+    45,
+    "245f571cc8433ad2c0694330b102cf7fc434fa60d12e44ef33a74ee078470775",
+    21,
+    "865ebf05f9fcad7f245ddc94bce3bdef4b69539f06d8fe2bfae0db18b1f5dd78",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.686e91e2292f8p+12",
+      "0x1.2a450d0f0881ep+13"
+     ]
+    ],
+    "0 frames from the glide home"
+   ],
+   [
+    1780,
+    "4451bc47d6567a3f054c13b9d481bc374d0ff99fc6f9347996a41f78b94e6a26",
+    47,
+    "6ab83b02a0d2fcc453642e65447e81a86f622414cc89e641bb31ff1058d0badb",
+    22,
+    "5b70af5f6121f49cd67d2bc569e5e0d30dd7349f1385b3062967bd690cb943f7",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.67927b3dc04d6p+12",
+      "0x1.2a452e4522200p+13"
+     ]
+    ],
+    "3 frames from the glide home"
+   ],
+   [
+    1800,
+    "261fbf7dda96960225a2ec45fd89c345f67bc340105582f75c3ef56b0b1f90c5",
+    47,
+    "eda39088e6f54efe3ae69078efa2b7bd21a3f92edd7949f6f1493f98d2a72ad1",
+    22,
+    "175f73cadee8b0cf1f0577c191d8486492860b4914ffe39916a465069fb8e2ef",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.5c83f22f3e61ep+12",
+      "0x1.2a46e03844508p+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    1828,
+    "1df39266c5c437f4cfe0e7f0d07d65d20843b9af4c92d6d7e5118e5cf3dfe0bc",
+    43,
+    "ffeb2666cac02a34885e923e95213e6c785a143d294913d17c4cd18630058bf1",
+    22,
+    "02d39f0ca41e0bdacaf7caa52ffc7d005911cd8ea61159266ddfe63b644dbcf7",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a53d0b9c0beap+12",
+      "0x1.2a48ab5b2ab22p+13"
+     ]
+    ],
+    "the title card, the doors and the count-in"
+   ],
+   [
+    1829,
+    "2ceca781dfed23951dc6371ade0ee35562125f5fa95fe5d7f3d2a7e567c3df3a",
+    39,
+    "1483f40390a9648039b30dd3ddd6ca9f3bb56bcd9bc554c811362daeb7a48f00",
+    0,
+    "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a53d0d5a7cc1p+12",
+      "0x1.2a48ab77aef5fp+13"
+     ]
+    ],
+    "the title card, the doors and the count-in"
+   ]
+  ],
+  "hooks_build": [1353, "2f00cfe046f869a4d3aa3ae9a8f16195fbaacca49c1a9e03c4b982d96656de95"],
+  "hooks_build_head": ["0.setup", "1.setup", "0.shake", "1.shake", "0.shake", "0.shake", "0.shake", "0.shake"],
+  "k": 0,
+  "recording": {
+   "hash": "d24ddd847a806594",
+   "seed": 36,
+   "winner": 0
+  },
+  "seed": 36,
+  "winner": "TRUMPET"
+ },
+ "opponent": "FLUTE",
+ "other_look": "kit/fighters/base.py Look",
+ "right": {
+  "cache": "fighters/trumpet/look_right.json",
+  "frames": 59,
+  "hull_cache": "fighters/trumpet/hull_right.json",
+  "recording": {
+   "hash": "bdfccb9f7fa3ea67",
+   "seed": 7,
+   "winner": 0
+  },
+  "seed": 7
+ },
+ "sprites": {
+  "cache": "fighters/trumpet/sprites.npz",
+  "count": 689,
+  "digest": "47e2f87ae8822198ed75f9eba474522e5ce1a5564597c0a320a9ca79f58f5e7c",
+  "digest_of": "SHA-256 of the cases' RGBA SHA-256 values, one a line, in the order of the cache's sprites.json (sprites.build: picture, episode, title, model)",
+  "drawn_by": "look",
+  "episode_keys": [
+   [16, -6, 150],
+   [16, 0, 140],
+   [16, 0, 150],
+   [16, 6, 140],
+   [16, 6, 150],
+   [16, 12, 150],
+   [17, -18, -180],
+   [17, -18, -170],
+   [17, -18, -160],
+   [17, -18, -150],
+   [17, -18, -140],
+   [17, -18, -130],
+   [17, -18, -120],
+   [17, -18, -110],
+   [17, -18, -100],
+   [17, -18, -90],
+   [17, -18, -80],
+   [17, -18, 90],
+   [17, -18, 100],
+   [17, -18, 110],
+   [17, -18, 120],
+   [17, -18, 130],
+   [17, -18, 150],
+   [17, -18, 170],
+   [17, -12, -180],
+   [17, -12, -170],
+   [17, -12, -160],
+   [17, -12, -150],
+   [17, -12, -140],
+   [17, -12, -130],
+   [17, -12, -120],
+   [17, -12, -110],
+   [17, -12, -100],
+   [17, -12, -90],
+   [17, -12, -80],
+   [17, -12, -70],
+   [17, -12, -60],
+   [17, -12, -50],
+   [17, -12, -40],
+   [17, -12, 90],
+   [17, -12, 100],
+   [17, -12, 110],
+   [17, -12, 120],
+   [17, -12, 130],
+   [17, -12, 140],
+   [17, -12, 150],
+   [17, -12, 160],
+   [17, -12, 170],
+   [17, -6, -180],
+   [17, -6, -160],
+   [17, -6, -150],
+   [17, -6, -140],
+   [17, -6, -120],
+   [17, -6, -110],
+   [17, -6, -100],
+   [17, -6, -90],
+   [17, -6, -80],
+   [17, -6, -70],
+   [17, -6, -30],
+   [17, -6, -20],
+   [17, -6, -10],
+   [17, -6, 0],
+   [17, -6, 80],
+   [17, -6, 100],
+   [17, -6, 120],
+   [17, -6, 130],
+   [17, -6, 150],
+   [17, -6, 160],
+   [17, -6, 170],
+   [17, 0, -180],
+   [17, 0, -170],
+   [17, 0, -160],
+   [17, 0, -140],
+   [17, 0, -130],
+   [17, 0, -120],
+   [17, 0, -100],
+   [17, 0, 0],
+   [17, 0, 10],
+   [17, 0, 80],
+   [17, 0, 90],
+   [17, 0, 100],
+   [17, 0, 130],
+   [17, 0, 140],
+   [17, 0, 160],
+   [17, 0, 170],
+   [17, 6, -140],
+   [17, 6, 80],
+   [17, 6, 90],
+   [17, 6, 100],
+   [17, 6, 160],
+   [17, 6, 170],
+   [17, 12, 80],
+   [17, 12, 90],
+   [18, -18, -120],
+   [18, -18, -110],
+   [18, -18, -100],
+   [18, -12, -140],
+   [18, -12, -130],
+   [18, -12, -120],
+   [18, -12, -110],
+   [18, -12, -100],
+   [18, -12, -90],
+   [18, -6, -140],
+   [18, -6, -130],
+   [18, -6, -120],
+   [18, -6, -100],
+   [18, -6, -90],
+   [18, -6, -70],
+   [18, -6, -60],
+   [18, 0, -100],
+   [18, 0, -90],
+   [18, 0, -60],
+   [18, 0, 10],
+   [18, 0, 100],
+   [18, 6, -180],
+   [18, 6, -170],
+   [18, 6, -160],
+   [18, 6, -90],
+   [18, 6, -60],
+   [18, 6, -50],
+   [18, 6, -10],
+   [18, 6, 0],
+   [18, 6, 10],
+   [18, 6, 20],
+   [18, 6, 30],
+   [18, 6, 40],
+   [18, 6, 50],
+   [18, 6, 100],
+   [18, 6, 110],
+   [18, 6, 160],
+   [18, 12, -160],
+   [18, 12, -150],
+   [18, 12, -110],
+   [18, 12, -100],
+   [18, 12, -90],
+   [18, 12, -60],
+   [18, 12, -50],
+   [18, 12, -40],
+   [18, 12, -30],
+   [18, 12, -20],
+   [18, 12, -10],
+   [18, 12, 0],
+   [18, 12, 10],
+   [18, 12, 50],
+   [18, 12, 60],
+   [18, 12, 90],
+   [18, 12, 100],
+   [18, 12, 110],
+   [18, 12, 120],
+   [18, 12, 140],
+   [18, 12, 150],
+   [18, 12, 160],
+   [18, 18, -140],
+   [18, 18, -130],
+   [18, 18, -120],
+   [18, 18, -110],
+   [18, 18, -90],
+   [18, 18, -80],
+   [18, 18, -70],
+   [18, 18, -60],
+   [18, 18, -50],
+   [18, 18, -40],
+   [18, 18, -30],
+   [18, 18, -20],
+   [18, 18, -10],
+   [18, 18, 10],
+   [18, 18, 60],
+   [18, 18, 70],
+   [18, 18, 80],
+   [18, 18, 90],
+   [18, 18, 100],
+   [18, 18, 130],
+   [18, 18, 140],
+   [19, -12, 0],
+   [19, -12, 10],
+   [19, -12, 20],
+   [19, -12, 30],
+   [19, -12, 40],
+   [19, -12, 50],
+   [19, -12, 80],
+   [19, -12, 100],
+   [19, -6, -50],
+   [19, -6, -10],
+   [19, -6, 0],
+   [19, -6, 10],
+   [19, -6, 20],
+   [19, -6, 30],
+   [19, -6, 40],
+   [19, -6, 50],
+   [19, -6, 60],
+   [19, -6, 100],
+   [19, 0, -50],
+   [19, 0, -40],
+   [19, 0, -10],
+   [19, 0, 0],
+   [19, 0, 10],
+   [19, 0, 20],
+   [19, 6, -50],
+   [19, 6, -40],
+   [19, 6, -20],
+   [19, 6, -10],
+   [19, 6, 0],
+   [19, 6, 10],
+   [19, 12, -50],
+   [19, 12, -40],
+   [19, 12, -20],
+   [19, 12, -10],
+   [19, 12, 10]
+  ],
+  "groups": {
+   "episode": 208,
+   "model": 240,
+   "picture": 240,
+   "title": 1
+  },
+  "k": 0,
+  "radii": [12, 16, 22, 30],
+  "rolls": [0],
+  "title": {
+   "drawn_by": "model",
+   "group": "title",
+   "k": 0,
+   "radius": 44,
+   "roll": 0,
+   "size": 95,
+   "yaw": 0
+  }
+ },
+ "title": {
+  "closeup": {
+   "drawn_by": "model",
+   "radius": 44,
+   "sha256": "6caf4e5aa1656ec93b0cd8b4bb83efb049b4b64dd03e2516ff87e887a293101f",
+   "size": 95
+  },
+  "flare_scale": "0x1.0000000000000p+0",
+  "glass": [236.0, 232.0, 226.0],
+  "pattern": {
+   "base": "base[y, x, c] = 40.0 + x * 0.5 + y * 0.25 + 20.0 * c, float64, (640, 360, 3)",
+   "has": true,
+   "samples": [
+    [
+     0,
+     0,
+     ["0x1.4000000000000p+5", "0x1.e000000000000p+5", "0x1.4000000000000p+6"]
+    ],
+    [
+     180,
+     320,
+     ["0x1.ce00000000001p+7", "0x1.fa00000000001p+7", "0x1.1300000000000p+8"]
+    ],
+    [
+     359,
+     639,
+     ["0x1.7b40000000000p+8", "0x1.8f40000000000p+8", "0x1.a340000000000p+8"]
+    ],
+    [
+     100,
+     200,
+     ["0x1.1800000000000p+7", "0x1.4000000000000p+7", "0x1.6800000000000p+7"]
+    ],
+    [
+     201,
+     77,
+     ["0x1.5f73333333334p+7", "0x1.8b73333333334p+7", "0x1.b773333333334p+7"]
+    ],
+    [
+     17,
+     503,
+     ["0x1.7f5999999999ap+7", "0x1.ab5999999999ap+7", "0x1.d75999999999ap+7"]
+    ]
+   ],
+   "sha256": "23c23320caabbba6e24f2686ad3f147364c60bd5d282bb5af988516424ca34ac",
+   "sha256_of": "the float64 values, little-endian, C order (the base itself when the card has no pattern for the fighter)"
+  },
+  "shards": ["tube", "tube", "tube", "tube", "valve", "valve", "valve", "brass", "brass", "brass", "brass", "brass", "brass"]
+ },
+ "tool": "tools.studio_export.fighter_trumpet"
+}
