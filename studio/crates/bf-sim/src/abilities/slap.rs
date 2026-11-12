@@ -4,7 +4,7 @@
 //! The string is pulled and let go so it snaps onto the fingerboard: a sharp ring of kind `slap` (`speed`, `radius`,
 //! `dmg`, `knock`) that clears enemy projectiles. It waits for its moment: the enemy within `ready` beyond contact,
 //! or the fighter held in a grapple; then it fires and breaks the grab (the holder lets go first). Event (`slap`,
-//! broke 0 / 1). It draws nothing. A copied slap (IDENTITY CRISIS) runs the same code for the copier's ball.
+//! broke 0 / 1). It draws nothing. IDENTITY CRISIS never copies it: `slap` is not in `COPYABLE` (`fight.py` 2802).
 
 use bf_core::event::Value;
 

@@ -8,9 +8,9 @@
 //! (`stomp_dmg`, `stomp_knock`; it clears no projectile). A held fighter breaks free first. Events (`stampede`, its
 //! end), (`trample`, where), (`stampede_stomp`, where, the ring's reach), (`stampede_end`). It draws nothing.
 //!
-//! Python hangs the charge on the ball: `B.stamp` is [`State::stamp`] (`Fight::stampede`), by fighter. A copied
-//! stampede (IDENTITY CRISIS) runs this code for the copier's ball; `run()` steps only the fighters that have the
-//! kind themselves (`stampeders`, 5872 to 5873), as Python does.
+//! Python hangs the charge on the ball: `B.stamp` is [`State::stamp`] (`Fight::stampede`), by fighter. IDENTITY
+//! CRISIS never copies it: `stampede` is not in `COPYABLE` (`fight.py` 2802); `run()` steps the fighters that have
+//! the kind (`stampeders`, 5872 to 5873).
 
 use bf_core::dmath;
 use bf_core::event::Value;

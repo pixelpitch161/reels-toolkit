@@ -95,7 +95,8 @@ pub(crate) fn parse(e: &Entry, w: &Json) -> Result<WalkCfg, RosterError> {
 
 /// [`parse`]'s checks made again on typed settings changed in code (`FighterCfg::check`): what the Python fight
 /// cannot run. `int(round(4 * every))` and `int(round(step16 / m))` raise when the number is not finite; a jitter that
-/// is not finite makes the heading NaN for the rest of the fight.
+/// is not finite makes the heading NaN for the rest of the fight. A `step16` that rounds to more than 1e15 16ths is
+/// refused too: Python keeps a big integer there, the engine counts 16ths in 64 bits.
 pub(crate) fn check(e: &Entry, w: &WalkCfg) -> Result<(), RosterError> {
     let p = "weapon";
     e.grid_value(p, "every", w.every)?;
@@ -103,6 +104,14 @@ pub(crate) fn check(e: &Entry, w: &WalkCfg) -> Result<(), RosterError> {
         if !x.is_finite() {
             return Err(e.err(&format!("{p}.{key}"), format!("{x:e} is not a finite number")));
         }
+    }
+    // `int(round(step16 / m))` is a whole number of any size in Python; the engine's 16th counts are 64-bit, and
+    // `k16 + st16` must not overflow
+    if crate::py::round_half_even(w.step16).abs() > 1e15 {
+        return Err(e.err(
+            &format!("{p}.step16"),
+            format!("{:e} 16ths is too long a step (at most 1e15)", w.step16),
+        ));
     }
     Ok(())
 }
@@ -178,6 +187,7 @@ mod tests {
             ("step16", serde_json::json!(null), "weapon.step16"),
             ("stride", serde_json::json!("far"), "weapon.stride"),
             ("pull_grow", serde_json::json!(0.1), "weapon.pull_grow"),
+            ("step16", serde_json::json!(2e15), "weapon.step16"),
         ] {
             let mut v = contrabass();
             v["weapon"][key] = value;
