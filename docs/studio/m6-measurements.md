@@ -64,9 +64,10 @@ changing the preset later is the constant `FASTER_PRESET` in
 `studio/replay/encode_hashes.txt` (`BF_BLESS=1 cargo test --release -p bf-cli --test e2e -- --exact
 the_faster_clip_is_pinned` with the pinned ffmpeg).
 
-**Pinned.** The 3 s clip `--frames 0:90 --encode faster`, encoded by the pinned ffmpeg, is
-`clip0-90-faster.mp4 7f6d68fa93daa73f2bc75b3d531a6668280dfe8bbd687ff320a1d6c6f4c3b139` in `encode_hashes.txt`; the
-default clip's line (`clip0-90.mp4 2a647d29...a07b`) is unchanged.
+**Pinned.** The 3 s clip `--frames 0:90 --encode faster`, encoded by the pinned ffmpeg on this PC (24 x264 threads),
+is `clip0-90-faster.mp4 threads=24 7f6d68fa93daa73f2bc75b3d531a6668280dfe8bbd687ff320a1d6c6f4c3b139` in
+`encode_hashes.txt`; the default clip's line (`clip0-90.mp4 threads=24 2a647d29...a07b`) is unchanged. Each setting
+also has a line for 6 threads; section 4 says why.
 
 ## 2. The package
 
@@ -133,3 +134,47 @@ run (other programs on the PC, not this build). Times are wall-clock for the who
 - Faster meets the 60 s goal on this PC; Best quality does not (73 s at best).
 - The saving, median against median, is 21 s: "about 20 seconds a video" is the figure the Settings description may
   state. The three Best quality files are identical to each other, and so are the three Faster files.
+
+## 4. What the pinned encode proves: the same build and the same x264 thread count (12 Nov 2026)
+
+**What happened.** The first CI run of `the_encode_is_pinned` and `the_faster_clip_is_pinned` on GitHub's hosted
+Windows runner failed with the pinned ffmpeg (fetched and checked by `ballfight-pack fetch-ffmpeg`): the runner's
+clips were `871ced7a...` (Best) and `c587dd19...` (Faster), not this PC's `2a647d29...` and `7f6d68fa...`.
+`render_is_reproducible` passed on the runner, so the sound and the frames (blessed in `render_hashes.txt` on this PC)
+were the same bytes there.
+
+**The cause: x264's thread count.** No `-threads` is given, so x264 picks its own: 1.5 times the logical processors
+the process may use (its affinity mask), and its output bytes depend on that number (frame threads change its
+look-ahead and rate-control decisions). The output is the same every time for a given number. Shown on this PC
+without changing the product: the same `ballfight render ... --frames 0:90` started with `start /affinity`, which
+ffmpeg inherits.
+
+| Logical processors allowed | x264 `threads=` (read from the settings x264 writes into the stream) | Best clip | Faster clip |
+|---|---|---|---|
+| 16 (all of this PC) | 24 | `2a647d29...a07b` (the blessed line) | `7f6d68fa...b139` (the blessed line) |
+| 4 (mask `F`) | 6 | `871ced7adbf1d1ef9a22657d599924501c2be15cc3f14b985e41d42192f3f7ac` = the runner's | `c587dd1978b4f3774291336e3bfc67e2737a17af0ba78ec517c33434f663d60b` = the runner's |
+| 2 (mask `3`) | 3 | `eca0a3ee96a8ce815f238f2de33c9d3abfb1967537d7b32539da385dd4553584` (no second machine; not pinned) | not run |
+
+Ruled out:
+- **The CPU's instruction sets.** The runner's CPU is not this AMD one, yet this PC limited to 4 processors gives
+  the runner's exact bytes.
+- **The sound.** The audio stream alone (`-map 0:a -c copy -f md5`) is the same at 4 and at 2 processors; only the
+  video stream differs.
+- **The container** (a creation time, an encoder string). The files differ only where the video stream differs, and
+  the 4-processor file is the runner's file byte for byte.
+- **What is fed to the encoder.** `render_is_reproducible` compares the sound and frames 0, 500 and 1700 with
+  `render_hashes.txt` (committed in `fb1504b`, blessed on this PC), and it passes on the runner.
+
+**What the pinned encode proves now.** The same ffmpeg build with the same number of x264 threads makes the same
+file. `encode_hashes.txt` holds one line per clip for each thread count (`clip0-90.mp4 threads=24 <sha256>`). The
+test reads the count x264 used from the clip it made and compares the clip only with that count's line. These lines
+are pinned: 24 threads (this PC) and 6 threads (any 4-processor machine, such as the CI runner). The 6-thread lines
+are confirmed by two machines: the runner and this PC limited to 4 processors. When a machine's count has no line,
+the test prints "not compared: no pinned line for N threads". Under `BF_NEED_PINNED_FFMPEG=1` (CI) that is a failure
+whose message starts with the whole line the clip gave, so that line can be checked and added.
+
+**What it does not prove.** A video made on a PC with another number of processor threads is not byte-identical,
+even though every frame and every sound sample fed to the encoder is. The default encode arguments are unchanged
+(`the_arguments_are_the_kits`), so the series' videos keep their bytes on this PC. Giving x264 a fixed `-threads`
+would make the bytes the same on every PC, but it changes the kit's encode arguments and the encode's speed on PCs
+with fewer or more processors. It is not done here; it would be the owner's choice.
