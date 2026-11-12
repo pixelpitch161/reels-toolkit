@@ -17,6 +17,7 @@ SPEC = dict(
     name='dark_disco',
     voicings=('voicing',),
     configs=('ballfight_altosax_vs_tenorsax',),
+    recordings_in_cache=True,  # storage plan B (M3-R43): its kit recording is the pinned cache file
 )
 
 EXPORTS = {'theme_dark_disco': lambda: m3refs.theme_refs(SPEC)}

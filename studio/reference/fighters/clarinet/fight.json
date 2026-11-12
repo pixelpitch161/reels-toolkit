@@ -331,12 +331,13 @@
  "fighter": "CLARINET",
  "format": 1,
  "left": {
+  "cache": "fighters/clarinet/left.bfrec",
   "events": 646,
-  "file": "fighters/clarinet/left.bfrec",
   "frames": 1428,
   "hash": "29057943c6773fd2",
   "names": ["CLARINET", "FLUTE"],
   "seed": 4,
+  "sha256": "f9c2eb6a5f11803b220800bc217d8ac195b195cad4a16bef0cc6009c4d8b4e63",
   "t_ko": 51.13823529411764,
   "why": "the lowest statistics seed with CLARINET in the left corner winning and all three of its abilities firing",
   "winner": 0
@@ -562,6 +563,7 @@
    "times": []
   },
   "hooks": [],
+  "left_in_cache": true,
   "name": "CLARINET",
   "opponent": "FLUTE",
   "roles": [],

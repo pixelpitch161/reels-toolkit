@@ -12,6 +12,6 @@ fight of this folder has it (it is proven at that pair's gate).
     python -m tools.studio_export cache fighters/tuba   regenerates the cache and checks the pins"""
 from . import m3refs
 
-SPEC = dict(name='TUBA', opponent='FLUTE')
+SPEC = dict(name='TUBA', opponent='FLUTE', left_in_cache=True)
 
 EXPORTS = {'fighter_tuba': lambda: m3refs.fighter_refs(SPEC)}

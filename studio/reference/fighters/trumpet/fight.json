@@ -353,12 +353,13 @@
  "fighter": "TRUMPET",
  "format": 1,
  "left": {
+  "cache": "fighters/trumpet/left.bfrec",
   "events": 568,
-  "file": "fighters/trumpet/left.bfrec",
   "frames": 1361,
   "hash": "c7411352c08a89ec",
   "names": ["TRUMPET", "FLUTE"],
   "seed": 1,
+  "sha256": "97a5ec55c293d664518a2eddbe01d63ef0a43a4f7301713b3ae7167906949e71",
   "t_ko": 48.90490196078431,
   "why": "the lowest statistics seed with TRUMPET in the left corner winning and all three of its abilities firing",
   "winner": 0
@@ -584,6 +585,7 @@
    "times": []
   },
   "hooks": [],
+  "left_in_cache": true,
   "name": "TRUMPET",
   "opponent": "FLUTE",
   "roles": [],

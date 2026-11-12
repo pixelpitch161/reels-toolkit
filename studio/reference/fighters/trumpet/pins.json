@@ -24,6 +24,12 @@
    "export": "fighter_trumpet"
   },
   {
+   "path": "fighters/trumpet/left.bfrec",
+   "sha256": "97a5ec55c293d664518a2eddbe01d63ef0a43a4f7301713b3ae7167906949e71",
+   "bytes": 127864,
+   "export": "fighter_trumpet"
+  },
+  {
    "path": "fighters/trumpet/look_right.json",
    "sha256": "9119c7ceede85b9c4e02b4611774b2162fcf7d91c9b497fd787b1e04e1bcc97a",
    "bytes": 16401,
@@ -151,8 +157,8 @@
   },
   {
    "path": "fighters/trumpet/sprites.json",
-   "sha256": "3c2dea54e696c0752bdda314a431bf72977864be907ac3f9fdaea8a8213bdb12",
-   "bytes": 184058,
+   "sha256": "21c830cd17be77c2cb91cac91cc6bd7c2c4a38f518e5774a0814bba9a4ebccac",
+   "bytes": 184068,
    "export": "fighter_trumpet"
   },
   {

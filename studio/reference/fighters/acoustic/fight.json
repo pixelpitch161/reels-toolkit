@@ -353,12 +353,13 @@
  "fighter": "ACOUSTIC",
  "format": 1,
  "left": {
+  "cache": "fighters/acoustic/left.bfrec",
   "events": 592,
-  "file": "fighters/acoustic/left.bfrec",
   "frames": 1512,
   "hash": "f9b95b3c9b0b4d2c",
   "names": ["ACOUSTIC", "FLUTE"],
   "seed": 1,
+  "sha256": "734ac5479e483f0b17b2c142f475465ae6d7945fccecca283e7fb29c3bdd0a8b",
   "t_ko": 53.938235294117646,
   "why": "the lowest statistics seed with ACOUSTIC in the left corner winning and all three of its abilities firing",
   "winner": 0
@@ -584,6 +585,7 @@
    "times": []
   },
   "hooks": [],
+  "left_in_cache": true,
   "name": "ACOUSTIC",
   "opponent": "FLUTE",
   "roles": [],

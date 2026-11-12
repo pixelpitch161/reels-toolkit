@@ -485,12 +485,13 @@
  "fighter": "TENOR SAX",
  "format": 1,
  "left": {
+  "cache": "fighters/tenor_sax/left.bfrec",
   "events": 563,
-  "file": "fighters/tenor_sax/left.bfrec",
   "frames": 1223,
   "hash": "f2c3afb0a4f39f8b",
   "names": ["TENOR SAX", "FLUTE"],
   "seed": 171,
+  "sha256": "0b97b6af264c7b48248d3a14a7ff5ba2fa8682664d4e61d4e5c7981b71d4335c",
   "t_ko": 44.30490196078431,
   "why": "the lowest statistics seed with TENOR SAX in the left corner winning and all three of its abilities firing, and a K.O. after 44 s, which the kit's checks need (passed over for an earlier K.O.: seeds 1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 15, 16, 17, 18, 19, 22, 23, 24, 25, 27, 29, 30, 32, 33, 34, 37, 38, 42, 43, 44, 45, 47, 48, 49, 50, 53, 54, 55, 56, 58, 59, 60, 61, 63, 64, 66, 67, 68, 70, 73, 74, 78, 79, 80, 81, 84, 86, 87, 88, 91, 92, 93, 94, 95, 97, 98, 99, 100, 101, 103, 104, 105, 106, 108, 109, 110, 112, 116, 117, 119, 120, 121, 123, 124, 126, 130, 132, 134, 135, 138, 139, 142, 143, 144, 145, 146, 148, 149, 150, 153, 154, 155, 157, 161, 162, 163, 164, 165, 166, 169, 170)",
   "winner": 0
@@ -716,6 +717,7 @@
    "times": []
   },
   "hooks": [],
+  "left_in_cache": true,
   "name": "TENOR SAX",
   "opponent": "FLUTE",
   "roles": [],

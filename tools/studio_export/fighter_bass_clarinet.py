@@ -17,6 +17,7 @@ SPEC = dict(
     name='BASS CLARINET',
     opponent='FLUTE',
     roles=('bass', 'counter'),
+    left_in_cache=True,  # storage plan B (M3-R43): its kit recording is the pinned cache file
 )
 
 EXPORTS = {'fighter_bass_clarinet': lambda: m3refs.fighter_refs(SPEC)}

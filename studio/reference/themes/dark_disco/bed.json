@@ -173,7 +173,7 @@
    ]
   },
   {
-   "appended": "KEY = 'D'\nSCALE = 'minor'\nCHORDS = ['Dm', 'A', 'Dm', 'Gm', 'C', 'F', 'Bb', 'Gm', 'A', 'A', 'Dm', 'Gm', 'C', 'F', 'Bb', 'Gm', 'A', 'A', 'Dm', 'Gm', 'C', 'F', 'Bb', 'Gm', 'A', 'A', 'Dm', 'Gm', 'C', 'F']\n",
+   "appended": "KEY = 'D'\nSCALE = 'minor'\nLOOP = ['Dm', 'Gm', 'C', 'F', 'Bb', 'Gm', 'A', 'A']\nCHORDS = ['Dm', 'A', 'Dm', 'Gm', 'C', 'F', 'Bb', 'Gm', 'A', 'A', 'Dm', 'Gm', 'C', 'F', 'Bb', 'Gm', 'A', 'A', 'Dm', 'Gm', 'C', 'F', 'Bb', 'Gm', 'A', 'A', 'Dm', 'Gm', 'C', 'F']\n",
    "bpm": 118.0327868852459,
    "buses": ["drums", "strings", "bass", "fx", "pad", "shimmer"],
    "config": "ballfight_altosax_vs_tenorsax",
