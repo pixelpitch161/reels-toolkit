@@ -1,9 +1,7 @@
 //! Ability kind `twin`, BASS CLARINET's MULTIPHONICS: its roster settings. `fight.py` `trigger` 2897 to 2899.
 //!
-//! A stub until BASS CLARINET's port: [`PORTED`] is false, so an ability of kind `twin` loads as
-//! `AbilityKind::Unsupported("twin")` and no fight can have it. The port lists the numbers `fight.py` reads as
-//! `ab[name]` in [`REQUIRED`] and every key it reads in [`ALLOWED`], fills [`TwinCfg`] (what is not a number: lists,
-//! tables), [`parse`] and [`check`], and sets [`PORTED`].
+//! For `dur` s or `dur_beats` beats (`ab_dur`) a ghost twin doubles the fighter's signature: an anchor whirl gets a
+//! second arm on the far side of the peg, a mortar salvo doubles. The ability holds nothing else.
 
 use serde_json::Value as Json;
 
@@ -11,17 +9,17 @@ use crate::roster::{AbilityCfg, Entry, RosterError};
 
 /// Whether the engine runs ability kind `twin`. While false the roster reads it as `AbilityKind::Unsupported("twin")`,
 /// which the engine refuses in words.
-pub const PORTED: bool = false;
+pub const PORTED: bool = true;
 
 /// The numbers `fight.py` reads as `ab[name]` for this kind (a group of names: one of them, as `dur` or `dur_beats`).
 /// An unlock's `every_bars` is checked for every kind.
-pub const REQUIRED: &[&[&str]] = &[];
+pub const REQUIRED: &[&[&str]] = &[&["dur", "dur_beats"]];
 
 /// Every key `fight.py` reads from an ability of this kind; an entry holding another key loads as
 /// `Unsupported("twin+<key>")`.
-pub const ALLOWED: &[&str] = &["name", "kind", "every_bars"];
+pub const ALLOWED: &[&str] = &["name", "kind", "every_bars", "dur", "dur_beats"];
 
-/// What an ability of kind `twin` holds besides its numbers (empty until the port).
+/// What an ability of kind `twin` holds besides its numbers: nothing.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct TwinCfg {}
 
