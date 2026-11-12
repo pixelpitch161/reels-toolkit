@@ -242,7 +242,17 @@ def a_port_never_points_at_another_port():
                                     'fighters/oboe') is None, 'found in another port\'s shard'
         assert m3refs.existing_copy(sha(os.path.join(common.REPO, 'studio/reference/fighters/oboe/left.bfrec')),
                                     'fighters/oboe') == 'studio/reference/fighters/oboe/left.bfrec'
-    return 'existing_copy looks in the top-level manifest and the folder\'s own shard, never another port\'s'
+        # a remake that moves the left recording to the cache (delete_committed) no longer counts it as a copy:
+        # what the remake writes in same_as is what a cache run after it finds
+        m3refs.set_run(m3refs.Run('remake'))
+        m3refs.delete_committed('fighters/oboe', 'left.bfrec')
+        assert m3refs.existing_copy(sha(os.path.join(common.REPO, 'studio/reference/fighters/oboe/left.bfrec')),
+                                    'fighters/oboe') is None, 'a file the run is deleting counted as a copy'
+        m3refs.set_run(m3refs.Run('cache'))
+        assert m3refs.existing_copy(sha(os.path.join(common.REPO, 'studio/reference/fighters/oboe/left.bfrec')),
+                                    'fighters/oboe') == 'studio/reference/fighters/oboe/left.bfrec'
+    return 'existing_copy looks in the top-level manifest and the folder\'s own shard, never another port\'s, and ' \
+           'never at a file the run is deleting'
 
 
 def budget_reports_an_overfull_fighter():
@@ -889,11 +899,10 @@ def theme_options_are_recorded_per_config():
             for c in json.load(f)['configs']:
                 facts = m3refs.read_config(c['config'])
                 assert 'theme_options' not in facts and 'theme_options' not in c, (theme, c['config'])
-                # MUSIC_EXTRAS (roles, mix, solos, title_hits) are the keys a re-export adds (recorded after these
-                # folders were committed): everything else reads exactly as committed
-                assert set(facts) - set(c) <= set(m3refs.MUSIC_EXTRAS), (theme, c['config'], set(facts) - set(c))
-                same = {k: v for k, v in facts.items() if k not in m3refs.MUSIC_EXTRAS}
-                assert {k: c[k] for k in same} == json.loads(json.dumps(same)), (theme, c['config'])
+                # MUSIC_EXTRAS (roles, mix, solos, title_hits), recorded after these folders were first made, are
+                # in theme.json since their re-make: every value reads exactly as committed
+                assert set(facts) == set(c) - {'seed', 'recording', 'winner', 't_ko', 'bed_alone'}, (theme, c['config'])
+                assert {k: c[k] for k in facts} == json.loads(json.dumps(facts)), (theme, c['config'])
     fighters = ['ELECTRIC', 'ACOUSTIC']
 
     def opts(mood, names):
@@ -1104,6 +1113,60 @@ def every_config_name_the_soundtrack_reads_is_recorded():
            f"(LOOP_START) or a fighter part's own (OBBLIGATO)"
 
 
+def every_folder_reproduces_its_inputs():
+    """the cheap half of `cache all` (m3refs.drift): every committed fighter, theme and pair folder's JSON holds what
+    the current framework writes from its own inputs (the module's SPEC, the kit config's values, the manifests and
+    the pins), so a cache run cannot stop on `... would change` for any of those reasons. The kit's own numbers are
+    still proven only by the cache run itself"""
+    folders = m3refs.pinned_folders()
+    problems = [p for f in folders for p in m3refs.drift(f)]
+    assert not problems, '\n  ' + '\n  '.join(problems)
+    areas = {a: sum(f.startswith(a + '/') for f in folders) for a in m3refs.AREAS}
+    return ', '.join(f'{n} {a}' for a, n in areas.items()) + ': each folder\'s JSON follows from its inputs'
+
+
+def drift_finds_what_a_cache_run_would_stop_on():
+    """drift names the two faults found after storage plan B and the framework round: a fight.json `same_as` entry
+    pointing at a left.bfrec that moved to the cache, and a theme config without a value read_config now records;
+    and the rest of what it compares"""
+    import copy
+    import json
+
+    def doc(folder, name):
+        with open(os.path.join(common.REFERENCE, *folder.split('/'), name), encoding='utf-8') as f:
+            return json.load(f)
+    fight = doc('fighters/tuba', 'fight.json')
+    stale = copy.deepcopy(fight)
+    stale['same_as']['fighters/tuba/scenarios/plain_s9.bfrec'] = 'studio/reference/fighters/tuba/left.bfrec'
+    got = m3refs.fighter_drift('fighters/tuba', fight=stale)
+    assert len(got) == 1 and 'same_as' in got[0] and 'plain_s9' in got[0], got
+    moved = copy.deepcopy(fight)
+    moved['left'] = {k: v for k, v in moved['left'].items() if k not in ('cache', 'sha256')}
+    moved['left']['file'] = 'fighters/tuba/left.bfrec'
+    got = m3refs.fighter_drift('fighters/tuba', fight=moved)
+    assert any('fight.json: left' in g for g in got) and any('look.json: left' in g for g in got), got
+    respec = copy.deepcopy(fight)
+    respec['spec']['fights']['stats'] = 1999
+    got = m3refs.fighter_drift('fighters/tuba', fight=respec)
+    assert len(got) == 1 and 'spec differs' in got[0] and 'fights' in got[0], got
+    theme = doc('themes/heist', 'theme.json')
+    old = copy.deepcopy(theme)
+    del old['configs'][0]['roles']
+    got = m3refs.theme_drift('themes/heist', theme=old)
+    assert len(got) == 1 and 'missing: roles' in got[0], got
+    old = copy.deepcopy(theme)
+    old['configs'][0]['recording'] = 'themes/heist/gone.bfrec'
+    got = m3refs.theme_drift('themes/heist', theme=old)
+    assert len(got) == 1 and 'not a file a manifest lists' in got[0], got
+    ep = doc('episodes/flute_vs_trombone', 'episode.json')
+    old = copy.deepcopy(ep)
+    old['solos'] = {'FLUTE': [[0.0, 76, 1.0]]}
+    got = m3refs.episode_drift('episodes/flute_vs_trombone', episode=old)
+    assert len(got) == 1 and 'solos' in got[0], got
+    return 'a stale same_as, a moved left recording, a changed spec, a missing config value, a recording no ' \
+           'manifest lists and a changed episode value are each named'
+
+
 CHECKS = (shard_takes_a_fighter_file, verify_finds_a_changed_byte_in_a_shard, check_pins_names_the_command,
           a_pin_never_moves_on_its_own, remake_makes_a_folder_again_whole, a_cache_run_writes_no_committed_file,
           a_port_never_points_at_another_port, budget_reports_an_overfull_fighter,
@@ -1117,7 +1180,8 @@ CHECKS = (shard_takes_a_fighter_file, verify_finds_a_changed_byte_in_a_shard, ch
           every_option_the_moods_read_is_listed, theme_options_are_recorded_per_config,
           every_hook_call_reaches_its_method, a_stem_window_past_the_end_is_cut, a_theme_recording_goes_to_the_cache,
           the_key_variant_sets_its_loop, a_configs_lines_and_roles_reach_theme_json,
-          every_config_name_the_soundtrack_reads_is_recorded)
+          every_config_name_the_soundtrack_reads_is_recorded, every_folder_reproduces_its_inputs,
+          drift_finds_what_a_cache_run_would_stop_on)
 
 
 def main():
