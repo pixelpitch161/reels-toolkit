@@ -261,6 +261,8 @@ fn a_full_frame_is_scipys() {
         }
         n += 1;
     }
-    println!("full frames: {n}, {by_sha} of them scipy's bytes (the other: float64 at sigma 6, within R34)");
+    println!(
+        "full frames: {n}, {by_sha} of them scipy's bytes; the other (float64 at sigma 6) is checked at 9 values only, the stored corner, within R34: enough, as no kit look passes sigma 6 (the small pictures check it whole)"
+    );
     assert_eq!((n, by_sha), (8, 7));
 }

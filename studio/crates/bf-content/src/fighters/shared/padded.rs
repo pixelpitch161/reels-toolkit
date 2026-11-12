@@ -19,8 +19,9 @@ pub const PAD: f64 = 1.25;
 /// side `2 * int(round(r * pad)) + 7`.
 ///
 /// # Panics
-/// If the crop does not fit the sprite renderer's 270 x 480 canvas (`int(round(r * pad))` above 131), where Python
-/// cannot cut a square either.
+/// If the crop does not fit the sprite renderer's 270 x 480 canvas (`int(round(r * pad))` above 131). Python does
+/// not raise there: `img[:n, :n]` quietly returns a picture narrower than `n` (cut at the canvas's 270 columns), not
+/// the square sprite the ring expects; this refuses it instead (no kit look asks for one).
 pub fn padded_sprite(mesh: &Mesh, r: u32, yaw: f64, roll: f64, pad: f64) -> Img<u8> {
     let half = py::round_half_even(f64::from(r) * pad);
     assert!(

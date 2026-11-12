@@ -17,7 +17,7 @@ use bf_picture::img::Img;
 use bf_picture::look::Pic;
 use bf_picture::ring::state::BallState;
 use bf_picture::ring::{self, PictureCtx};
-use bf_picture::{pil, scene};
+use bf_picture::{np, pil, scene};
 
 /// `CANE`
 pub const CANE: [f64; 3] = [232.0, 210.0, 152.0];
@@ -313,7 +313,7 @@ pub fn beam_lane(
             let along = rx * d[0] + rz * d[1];
             let across = (-rx * d[1] + rz * d[0]).abs();
             // clip(1 - across / (0.16 + width), 0, 1) * (along > 0) * (along < length)
-            let lane = bf_sound::synth::clip(1.0 - across / span, 0.0, 1.0)
+            let lane = np::clip(1.0 - across / span, 0.0, 1.0)
                 * f64::from(u8::from(along > 0.0))
                 * f64::from(u8::from(along < length));
             (lane * 3.0 + bayer.px(xs[i], ys[i])[0] * 0.9).floor() / 3.0
@@ -368,7 +368,7 @@ pub fn draw_woodwind_shard(arr: &mut Img<f32>, cam: &Cam, kind: &str, p: V3, rot
     .collect();
     let sp = ring::screen(cam, &tri);
     let shade_k = 0.75 + 0.25 * dmath::cos(rot * 2.0);
-    let col = col.map(|c| bf_sound::synth::clip(c * shade_k, 0.0, 255.0));
+    let col = col.map(|c| np::clip(c * shade_k, 0.0, 255.0));
     ring::layer_blend(arr, &[sp], col, 1.0, None);
 }
 

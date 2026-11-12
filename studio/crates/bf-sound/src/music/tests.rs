@@ -880,3 +880,55 @@ fn a_themes_voices_share_the_build() {
     );
     assert_eq!(refused(e), "music: the theme lists one of its voices twice");
 }
+
+/// A voice whose every note is one draw of the alto generator, held for 0.5 s.
+struct AltoDraw;
+
+impl Voice for AltoDraw {
+    fn note(&self, noise: &mut PpNoise, _: f64, _: f64, _: f64) -> Vec<f64> {
+        vec![noise.1.alto.random() - 0.5; 24_000]
+    }
+
+    fn register(&self) -> (i32, i32) {
+        (72, 93)
+    }
+
+    fn name(&self) -> &str {
+        "FLUTE"
+    }
+}
+
+#[test]
+fn a_reseed_through_with_noise_is_what_later_notes_draw_from() {
+    let ep = episode();
+    let ctx = MusicCtx::new(
+        &ep.show,
+        &ep.rec,
+        &ep.ff,
+        [&ep.cfg[0], &ep.cfg[1]],
+        [Arc::new(AltoDraw), TestVoice::new("TROMBONE", 0)],
+        Vec::new(),
+    )
+    .unwrap();
+    // the part's reseed, on the build's own noise (not a copy)
+    let drawn = ctx
+        .with_noise(|n| {
+            n.1.alto = Generator::new(72_250);
+            n.1.alto.random()
+        })
+        .unwrap();
+    let mut want = Generator::new(72_250);
+    assert_eq!(drawn.to_bits(), want.random().to_bits());
+    // the next note draws on from there: the note's own draw, then the level-matching note's
+    let x = ctx.note("FLUTE", 76.0, 0.2, 0.3, 0.8).unwrap();
+    let first = want.random() - 0.5;
+    let gain = x[0] / first;
+    assert!(gain.is_finite() && gain > 0.0, "{gain}");
+    want.random();
+    let next = want.random().to_bits();
+    assert_eq!(ctx.noise().unwrap().1.alto.random().to_bits(), next);
+    // a copy from noise() changes nothing in the build
+    let mut copy = ctx.noise().unwrap();
+    copy.1.alto.random();
+    assert_eq!(ctx.noise().unwrap().1.alto.random().to_bits(), next);
+}
