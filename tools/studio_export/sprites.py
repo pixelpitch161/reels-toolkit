@@ -57,7 +57,8 @@ def asked(P, f):
             continue
         out.add((k, int(np.clip(round(rp * P.LOOKS[k].sprite_k), 12, 30)), int(round(yaw / 6.0)) * 6, int(roll)))
     for k, L in enumerate(P.LOOKS):                       # the sprites a look draws besides its ball's
-        more = LOOK_ASKS.get(type(L).__module__.rsplit('.', 1)[-1])
+        mods = [c.__module__.rsplit('.', 1)[-1] for c in type(L).__mro__]    # (the export's spies subclass it)
+        more = next((LOOK_ASKS[m] for m in mods if m in LOOK_ASKS), None)
         if more is not None:
             out |= more(P, k, t, cam)
     return out
@@ -76,7 +77,7 @@ def _horn_ghosts(P, k, t, cam):
     return out
 
 
-# by the module of a look's class: fn(P, k, t, cam) -> the sprites its look asks kit.picture.sprite for at time t
+# by the module of a look's class (or of a class it derives from): fn(P, k, t, cam) -> the sprites its look asks kit.picture.sprite for at time t
 # beyond its ball's, as `asked` writes them (HORN's echo ghosts)
 LOOK_ASKS = dict(horn=_horn_ghosts)
 
