@@ -861,7 +861,7 @@ def hook_child(cfg_folder, hooks, out_path):
                 args['chord'] = M.T.chord_at(args['t']) if hasattr(M.T, 'chord_at') else M.T.CHORDS[
                     int(args['t'] // M.T.BAR)]
             mix = M.A.Mix(M.T.DUR + 4.0)
-            getattr(M.bed, hook)(mix, **args)
+            getattr(M.bed, hook)(mix, **{('ch' if a == 'chord' else a): v for a, v in args.items()})  # the kit's hit names the chord `ch`
             buses = {}
             for bus, x in mix.buses.items():
                 arrays[f'{hook}{j}__{bus}'] = np.asarray(x, np.float64)
