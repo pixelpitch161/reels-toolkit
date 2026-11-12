@@ -453,17 +453,42 @@ mod tests {
         }
     }
 
+    /// A kit theme whose port has not filled its folder, as the registry lists one: no card, no bed.
+    static NOT_PORTED: Theme = Theme {
+        name: "not_ported_yet",
+        ported: false,
+        card: &NOT_PORTED_CARD,
+        options: &[],
+        voices: &[],
+        own_voice: no_own_voice,
+        classic: |_| Err(not_ported("not_ported_yet")),
+    };
+
+    /// The kit themes not ported yet (found at run time, so this never names one a port makes whole) have no bed,
+    /// are not offered, and `validate` refuses them in words. Once every kit theme is ported, a stand-in theme that
+    /// is not takes their place, so the check never passes on nothing.
     #[test]
     fn a_theme_not_ported_yet_has_no_bed() {
-        for t in all_themes().iter().filter(|t| !t.ported) {
+        let mut left: Vec<&Theme> = all_themes().iter().copied().filter(|t| !t.ported).collect();
+        if left.is_empty() {
+            eprintln!("every kit theme is ported: checking a stand-in theme that is not");
+            left.push(&NOT_PORTED);
+        }
+        for t in left {
             assert!(!PORTED_THEMES.contains(&t.name), "{}", t.name);
             assert_eq!(t.display(), t.name);
+            let why = format!("music.theme: {:?} is not ported yet", t.name);
             let e = t
                 .bed(CLASSIC, &ThemeOptions::new())
                 .err()
                 .expect("no bed yet")
                 .to_string();
-            assert_eq!(e, format!("music.theme: {:?} is not ported yet", t.name));
+            assert_eq!(e, why);
+            assert!(!t.plays(["FLUTE", "TROMBONE"]), "{}", t.name);
+            assert_eq!(
+                crate::soundtrack::validate_with(&episode(), t).unwrap_err().to_string(),
+                why
+            );
         }
     }
 

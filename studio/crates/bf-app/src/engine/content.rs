@@ -324,7 +324,10 @@ mod tests {
         assert!(tc.can_play_bass);
         assert!(tc.portrait.is_some());
         assert_eq!(get("BASS DRUM").section, Section::Percussion);
-        assert_eq!(r.themes.len(), 1);
+        // every theme the registry offers, the big top (the starting pair's) first
+        let names: Vec<&str> = r.themes.iter().map(|t| t.name.as_str()).collect();
+        assert_eq!(names, bf_content::theme_names());
+        assert_eq!(names.len(), 14);
         let t = &r.themes[0];
         assert_eq!(
             (t.name.as_str(), t.display.as_str(), t.bars),
