@@ -1,0 +1,11 @@
+{
+ "format": 1,
+ "entries": [
+  {"path": "studio/reference/themes/bossa_noir/bed.json", "sha256": "61e43448aea81e4ddf025b2b0a5aae5b0d66a088f6e6e83da9dcd9ab30a4e71e", "bytes": 50957, "tool": "tools.studio_export.theme_bossa_noir", "commit": "f568288f259498cf09fe68e602078f64ceb3c4fc", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"},
+  {"path": "studio/reference/themes/bossa_noir/exceptions.toml", "sha256": "fa29a01e9c4b1693533f0e35589afb4df98031bb9be56d8a8cab7b69f89cf7f4", "bytes": 781, "tool": "tools.studio_export.theme_bossa_noir", "commit": "f568288f259498cf09fe68e602078f64ceb3c4fc", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"},
+  {"path": "studio/reference/themes/bossa_noir/flute_vs_clarinet.bfrec", "sha256": "a16c44dfc56e53ed841378d3d3ef39b5d7090eb68ec3551aca8b9f9729afe308", "bytes": 124891, "tool": "tools.studio_export.theme_bossa_noir", "commit": "f568288f259498cf09fe68e602078f64ceb3c4fc", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"},
+  {"path": "studio/reference/themes/bossa_noir/pins.json", "sha256": "38e4861ca5738da1dda82ea70204c5de5e18567290212964ca72ceadcf936114", "bytes": 1525, "tool": "tools.studio_export.m3refs", "commit": "f568288f259498cf09fe68e602078f64ceb3c4fc", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"},
+  {"path": "studio/reference/themes/bossa_noir/theme.json", "sha256": "a33633aaa91830f89b8b91d7de28fce47ccc41aa9e8228b7ad8b150ee058466f", "bytes": 2166, "tool": "tools.studio_export.theme_bossa_noir", "commit": "f568288f259498cf09fe68e602078f64ceb3c4fc", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"},
+  {"path": "studio/reference/themes/bossa_noir/voicings.json", "sha256": "73d9f51a69f89ebe5aab2e9d73eefac7f0ac452e6ad5d609cd754e8aa0c1f0b4", "bytes": 5036, "tool": "tools.studio_export.theme_bossa_noir", "commit": "f568288f259498cf09fe68e602078f64ceb3c4fc", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"}
+ ]
+}
