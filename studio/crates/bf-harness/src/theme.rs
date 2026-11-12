@@ -401,8 +401,18 @@ pub fn hook_vectors(name: &str) {
 /// `voicings.json`, each chord in a harmony that holds it, as the kit's episode does.
 pub type Voicing = fn(&Harmony, &str) -> Result<Vec<i32>, HarmonyError>;
 
+/// The theme's `voicings.json`, or nothing (`Value::Null`) when it has no voicing method: such a theme needs no file
+/// (theme.json's `voicing_methods` must then be empty too, which [`voicings`] checks).
+fn voicings_doc(name: &str, methods: &[(&str, Voicing)]) -> Value {
+    if methods.is_empty() {
+        Value::Null
+    } else {
+        json(&folder(name), "voicings.json")
+    }
+}
+
 pub fn voicings(name: &str, methods: &[(&str, Voicing)]) {
-    let doc = json(&folder(name), "voicings.json");
+    let doc = voicings_doc(name, methods);
     let v = &doc["voicings"];
     let g = Grid::new(132.0);
     let mut n = 0;
@@ -483,6 +493,20 @@ mod tests {
             config_fight_file(&c, &rec).music.theme_options["plugged"],
             OptionValue::Str("TROMBONE".into())
         );
+    }
+
+    #[test]
+    fn a_theme_without_voicing_methods_needs_no_voicings_file() {
+        assert_eq!(voicings_doc("no_such_theme", &[]), Value::Null);
+    }
+
+    #[test]
+    #[should_panic(expected = "studio/reference/themes/no_such_theme/voicings.json is missing")]
+    fn a_theme_with_voicing_methods_reads_its_file() {
+        fn none(_: &Harmony, _: &str) -> Result<Vec<i32>, HarmonyError> {
+            Ok(vec![])
+        }
+        voicings_doc("no_such_theme", &[("root", none)]);
     }
 
     #[test]

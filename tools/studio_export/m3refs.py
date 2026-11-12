@@ -1623,7 +1623,9 @@ def key_variant(facts, key_from):
             continue
         if len(o['loop']) == len(facts['loop']) and (o['key'], o['scale']) != (facts['key'], facts['scale']):
             chords = chords_at(o['intro'], o['loop'], [], facts['n_bars'])
-            text = f"KEY = {o['key']!r}\nSCALE = {o['scale']!r}\nCHORDS = {chords!r}\n"
+            # LOOP too (ruling M3-R45): a config that sets its own LOOP would keep it over the new chords, while the
+            # harness gives the fight file the other config's loop (`chord_loop` below)
+            text = f"KEY = {o['key']!r}\nSCALE = {o['scale']!r}\nLOOP = {list(o['loop'])!r}\nCHORDS = {chords!r}\n"
             return c, text, dict(key=o['key'], scale=o['scale'], chords_intro=list(o['intro']),
                                  chord_loop=list(o['loop']), chords_tail=[])
     raise SystemExit(f"theme variants: no kit config has a {len(facts['loop'])}-chord loop in another key; set key_from")

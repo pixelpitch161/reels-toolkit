@@ -40,7 +40,8 @@ KIT_CONFIGS = (
 
 def chord_lists(folder, export, module):
     """chords.json: every kit config's chords, split as format 2 of the fight file writes them"""
-    rows = [m3refs.read_config(c) for c in KIT_CONFIGS]
+    # the music only: read_config's theme_options are not chords.json's (which stays as merged)
+    rows = [{k: v for k, v in m3refs.read_config(c).items() if k != 'theme_options'} for c in KIT_CONFIGS]
     roster = common.roster()
     for r in rows:
         assert all(n in roster for n in r['fighters']), r['config']

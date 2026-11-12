@@ -1027,6 +1027,25 @@ def a_theme_recording_goes_to_the_cache():
     return 'with recordings_in_cache a theme\'s recording moves from its folder to the pinned cache (entry, pin, ' \
            'committed copy gone); a pair takes its theme\'s cached copy, or pins its own with recording_in_cache'
 
+def the_key_variant_sets_its_loop():
+    """ruling M3-R45: the key variant's appended text sets LOOP to the other config's loop (prog_duel's #45 sets its
+    own LOOP, which would otherwise stay over the new chords), the same loop bed.json's `ff` gives the fight file"""
+    common.kit()
+    roster = os.path.join(common.REPO, 'projects', 'ballfight')      # the configs import the roster, as in an export
+    if roster not in sys.path:
+        sys.path.append(roster)
+    for config in ('ballfight_piano_vs_organ', 'examples/flute_vs_trombone'):
+        facts = m3refs.read_config(config)
+        c, text, ff = m3refs.key_variant(facts, None)
+        with open(m3refs.config_source(config), encoding='utf-8') as fh:
+            src = fh.read()
+        ns = {}
+        exec(compile(src + '\n' + text, config, 'exec'), ns)     # noqa: S102 (the kit config, as the kit loads it)
+        assert ns['LOOP'] == ff['chord_loop'], (config, ns['LOOP'], ff['chord_loop'])
+        assert ns['CHORDS'][2:2 + len(ns['LOOP'])] == ns['LOOP'], (config, ns['CHORDS'])
+        assert (ns['KEY'], ns['SCALE']) == (ff['key'], ff['scale']), config
+    return 'the key variant sets KEY, SCALE, LOOP and CHORDS together, LOOP being the fight file\'s chord_loop'
+
 
 CHECKS = (shard_takes_a_fighter_file, verify_finds_a_changed_byte_in_a_shard, check_pins_names_the_command,
           a_pin_never_moves_on_its_own, remake_makes_a_folder_again_whole, a_cache_run_writes_no_committed_file,
@@ -1039,7 +1058,8 @@ CHECKS = (shard_takes_a_fighter_file, verify_finds_a_changed_byte_in_a_shard, ch
           a_neutral_handicap_is_the_same_fight_either_way, a_big_left_recording_goes_to_the_cache,
           a_left_file_finish_wrote_is_kept, a_nan_rectangular_key_is_an_array,
           every_option_the_moods_read_is_listed, theme_options_are_recorded_per_config,
-          every_hook_call_reaches_its_method, a_stem_window_past_the_end_is_cut, a_theme_recording_goes_to_the_cache)
+          every_hook_call_reaches_its_method, a_stem_window_past_the_end_is_cut, a_theme_recording_goes_to_the_cache,
+          the_key_variant_sets_its_loop)
 
 
 def main():
