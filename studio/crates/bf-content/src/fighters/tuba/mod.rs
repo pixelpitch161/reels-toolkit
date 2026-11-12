@@ -1,11 +1,9 @@
-//! TUBA: its look, instrument voice, part in the score and card, ported in milestone 3's Task 17
-//! (`kit/fighters/tuba.py`). Until then every entry point here says it has none: the picture draws TUBA as the
-//! bare ball, the score has no part for it, the app has no card for it, and the app does not offer it (the
-//! registry's `PORTED`, which only a register task changes).
+//! TUBA: its look, instrument voice, part in the score and card (`kit/fighters/tuba.py`, ported in milestone 3's
+//! Task 17). The app does not offer it until a register task adds it to the registry's `PORTED`.
 //!
-//! The port fills this folder only: `look.rs`, `sound.rs`, `voice.rs`, `card.rs`, `state.rs` (what the look and
-//! the part both derive from the recording) and the entry points below. Nothing outside it names TUBA's
-//! types, so nothing outside it changes.
+//! This folder holds everything of it outside the engine: `look.rs`, `sound.rs`, `voice.rs`, `card.rs`, `state.rs`
+//! (what the look derives from the recording's events) and the entry points below. Nothing outside it names TUBA's
+//! types.
 
 use std::sync::Arc;
 
@@ -21,26 +19,28 @@ pub mod state;
 pub mod voice;
 
 pub use card::{CARD, card};
+pub use look::TubaLook;
+pub use sound::TubaSound;
+pub use voice::TubaVoice;
 
-/// `fighters.look('TUBA', P, k)`: its look, or `None` while it is not ported (the bare ball is drawn then).
+/// `fighters.look('TUBA', P, k)`.
 pub fn look() -> Option<Box<dyn Look>> {
-    None
+    Some(Box::new(TubaLook::new()))
 }
 
-/// Its instrument voice (`pp_bridge`'s entry), or `None` while it is not ported.
+/// Its instrument voice (`pp_bridge`'s entry).
 pub fn voice() -> Option<Arc<dyn Voice>> {
-    None
+    Some(Arc::new(TubaVoice))
 }
 
-/// `fighters.sound('TUBA', M, k)`: its part on side `k` of the fight `ff`, or `None` while it is not ported.
+/// `fighters.sound('TUBA', M, k)`: its part on side `k` of the fight `ff`.
 pub fn sound(k: usize, ff: &FightFile) -> Option<Box<dyn Sound>> {
-    let _ = (k, ff);
-    None
+    let _ = ff;
+    Some(Box::new(TubaSound::new(k)))
 }
 
-/// Its model (`data/models/TUBA.json`, written by the export tool's `models` for one roster name), compiled in:
-/// `Some(include_str!("../../../data/models/TUBA.json"))` once ported, `None` until then.
-pub const MESH: Option<&str> = None;
+/// Its model (`data/models/TUBA.json`, written by its export), compiled in.
+pub const MESH: Option<&str> = Some(include_str!("../../../data/models/TUBA.json"));
 
 /// Whether its music settings (key, chord loop, its line) feed its fight. True only for PIANO, once ported.
 pub const MUSIC_FEEDS_FIGHT: bool = false;

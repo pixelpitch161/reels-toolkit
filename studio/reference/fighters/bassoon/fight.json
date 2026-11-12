@@ -1,0 +1,743 @@
+{
+ "abilities": ["STACCATO", "BOCAL HOOK", "MOUNTAIN KING"],
+ "about": "BASSOON's fight references (milestone 3, Template F): the config, the two look fights, the scenario fights, the statistics against FLUTE and the coverage table",
+ "cache_files": "cache files are under studio/reference/.cache/m3/ and pinned in pins.json",
+ "config": {
+  "base": "flute_vs_trombone",
+  "bpm": 133.7704918032787,
+  "dmg_scale": 1.0,
+  "fighters": ["BASSOON", "FLUTE"],
+  "handicap": [0.41, 0.6],
+  "key": "E",
+  "overrides": {},
+  "rules": {
+   "A": 3.0,
+   "DT": 0.008333333333333333,
+   "FPS": 30,
+   "HP": 100.0,
+   "KEY_R": 0.11,
+   "KNOCK_T": 0.38,
+   "LAUNCH_SPREAD": 38.0,
+   "LOW_HP": 25.0,
+   "LV_DMG": [14.0, 36.0],
+   "R": 0.6,
+   "ROPE_GIVE": 5.0,
+   "V": 2.6,
+   "beat": 0.44852941176470584,
+   "bpm": 133.7704918032787,
+   "dmg_scale": 1.0,
+   "dmg_side": [0.41, 0.6],
+   "t_fight": 3.5882352941176467,
+   "t_max": 58.0
+  },
+  "rules_on": {},
+  "t_fight": 3.5882352941176467
+ },
+ "coverage": {
+  "require_fights": 20,
+  "required": ["ability", "ability/BOCAL HOOK", "ability/MOUNTAIN KING", "ability/STACCATO", "basket", "clash", "hit", "hit/fang", "hit/hook", "hit/stomp", "hit/wave", "hook", "hook_open", "hop", "ko", "level", "mountain", "mountain_end", "rope", "stomp", "strike"],
+  "rows": [
+   {
+    "after_fight": 1.800004705882353,
+    "event": [5.38824, "ability", 0, "STACCATO", "haste", 1],
+    "index": 18,
+    "item": "ability",
+    "required": true,
+    "scenario": "early_levels",
+    "seed": 3,
+    "stats_fights": 2000,
+    "t": 5.38824
+   },
+   {
+    "after_fight": 6.283334705882353,
+    "event": [9.87157, "ability", 0, "BOCAL HOOK", "hook", 1],
+    "index": 104,
+    "item": "ability/BOCAL HOOK",
+    "required": true,
+    "scenario": "early_low",
+    "seed": 3,
+    "stats_fights": 838,
+    "t": 9.87157
+   },
+   {
+    "after_fight": 4.491664705882354,
+    "event": [8.0799, "ability", 1, "FLUTTER TONGUE", "haste", 1],
+    "index": 50,
+    "item": "ability/FLUTTER TONGUE",
+    "required": false,
+    "scenario": "early_levels",
+    "seed": 2,
+    "stats_fights": 2000,
+    "t": 8.0799
+   },
+   {
+    "after_fight": 5.833334705882352,
+    "event": [9.42157, "ability", 0, "MOUNTAIN KING", "mountain", 1],
+    "index": 93,
+    "item": "ability/MOUNTAIN KING",
+    "required": true,
+    "scenario": "early_low",
+    "seed": 3,
+    "stats_fights": 1490,
+    "t": 9.42157
+   },
+   {
+    "after_fight": 4.491664705882354,
+    "event": [8.0799, "ability", 1, "PICCOLO", "wave", 1],
+    "index": 64,
+    "item": "ability/PICCOLO",
+    "required": false,
+    "scenario": "early_low",
+    "seed": 3,
+    "stats_fights": 1969,
+    "t": 8.0799
+   },
+   {
+    "after_fight": 9.875004705882354,
+    "event": [13.46324, "ability", 1, "POWER SLIDE", "haste", 1],
+    "index": 86,
+    "item": "ability/POWER SLIDE",
+    "required": false,
+    "scenario": "vs_trombone",
+    "seed": 2,
+    "stats_fights": 0,
+    "t": 13.46324
+   },
+   {
+    "after_fight": 4.941664705882353,
+    "event": [8.5299, "ability", 1, "SAD TROMBONE", "shockwave", 1],
+    "index": 41,
+    "item": "ability/SAD TROMBONE",
+    "required": false,
+    "scenario": "vs_trombone",
+    "seed": 2,
+    "stats_fights": 0,
+    "t": 8.5299
+   },
+   {
+    "after_fight": 5.383334705882353,
+    "event": [8.97157, "ability", 1, "SNAKE DANCE", "dance", 1],
+    "index": 83,
+    "item": "ability/SNAKE DANCE",
+    "required": false,
+    "scenario": "early_low",
+    "seed": 3,
+    "stats_fights": 2000,
+    "t": 8.97157
+   },
+   {
+    "after_fight": 1.800004705882353,
+    "event": [5.38824, "ability", 0, "STACCATO", "haste", 1],
+    "index": 18,
+    "item": "ability/STACCATO",
+    "required": true,
+    "scenario": "early_levels",
+    "seed": 3,
+    "stats_fights": 2000,
+    "t": 5.38824
+   },
+   {
+    "after_fight": 0.008334705882353077,
+    "event": [3.59657, "basket", 1, 0, 1.85, -1.85, -1],
+    "index": 0,
+    "item": "basket",
+    "required": true,
+    "scenario": "early_levels",
+    "seed": 1,
+    "stats_fights": 2000,
+    "t": 3.59657
+   },
+   {
+    "after_fight": 1.2250047058823537,
+    "event": [4.81324, "clash", -1, -1.5184734986099024, -0.08136795381818955],
+    "index": 11,
+    "item": "clash",
+    "required": true,
+    "scenario": "swapped",
+    "seed": 2,
+    "stats_fights": 2000,
+    "t": 4.81324
+   },
+   {
+    "after_fight": 0.5250047058823535,
+    "event": [4.11324, "hit", 1, 0, 2.1, 0.09920872782840673, 0.2231070803025808, "blade", 1],
+    "index": 5,
+    "item": "hit",
+    "required": true,
+    "scenario": "vs_trombone",
+    "seed": 1,
+    "stats_fights": 2000,
+    "t": 4.11324
+   },
+   {
+    "after_fight": 0.5250047058823535,
+    "event": [4.11324, "hit", 1, 0, 2.1, 0.09920872782840673, 0.2231070803025808, "blade", 1],
+    "index": 5,
+    "item": "hit/blade",
+    "required": false,
+    "scenario": "vs_trombone",
+    "seed": 1,
+    "stats_fights": 0,
+    "t": 4.11324
+   },
+   {
+    "after_fight": 1.0250047058823535,
+    "event": [4.61324, "hit", 1, 0, 0.648, 0.4884821933280103, -1.0400686703456548, "fang", 0],
+    "index": 8,
+    "item": "hit/fang",
+    "required": true,
+    "scenario": "early_levels",
+    "seed": 1,
+    "stats_fights": 2000,
+    "t": 4.61324
+   },
+   {
+    "after_fight": 6.508334705882353,
+    "event": [10.09657, "hit", 0, 1, 1.64, -1.4869792478644916, -0.7374533157784011, "hook", 0],
+    "index": 111,
+    "item": "hit/hook",
+    "required": true,
+    "scenario": "early_low",
+    "seed": 3,
+    "stats_fights": 763,
+    "t": 10.09657
+   },
+   {
+    "after_fight": 5.275004705882353,
+    "event": [8.86324, "hit", 1, 0, 1.7999999999999998, 1.4876408903718812, -0.3203753123216837, "shockwave", 0],
+    "index": 44,
+    "item": "hit/shockwave",
+    "required": false,
+    "scenario": "vs_trombone",
+    "seed": 2,
+    "stats_fights": 0,
+    "t": 8.86324
+   },
+   {
+    "after_fight": 0.675004705882353,
+    "event": [4.26324, "hit", 0, 1, 0.49199999999999994, 0.7376973951479576, -0.3623082683732383, "stomp", 0],
+    "index": 4,
+    "item": "hit/stomp",
+    "required": true,
+    "scenario": "early_levels",
+    "seed": 1,
+    "stats_fights": 2000,
+    "t": 4.26324
+   },
+   {
+    "after_fight": 4.516664705882354,
+    "event": [8.1049, "hit", 1, 0, 4.8, 1.8378366712153242, 0.44340066575030745, "wave", 0],
+    "index": 65,
+    "item": "hit/wave",
+    "required": true,
+    "scenario": "early_low",
+    "seed": 3,
+    "stats_fights": 972,
+    "t": 8.1049
+   },
+   {
+    "after_fight": 6.508334705882353,
+    "event": [10.09657, "hook", 0, 1, 2.575288603350712, 1.1],
+    "index": 112,
+    "item": "hook",
+    "required": true,
+    "scenario": "early_low",
+    "seed": 3,
+    "stats_fights": 835,
+    "t": 10.09657
+   },
+   {
+    "after_fight": 6.283334705882353,
+    "event": [9.87157, "hook_open", 0, 10.095833333333333, 2.352361521238754],
+    "index": 105,
+    "item": "hook_open",
+    "required": true,
+    "scenario": "early_low",
+    "seed": 3,
+    "stats_fights": 838,
+    "t": 9.87157
+   },
+   {
+    "after_fight": 0.008334705882353077,
+    "event": [3.59657, "hop", 0, -1.85, 1.85, -0.8500384969984153, 0.6009695790274718, 3.820833333333333, 0],
+    "index": 1,
+    "item": "hop",
+    "required": true,
+    "scenario": "early_levels",
+    "seed": 1,
+    "stats_fights": 2000,
+    "t": 3.59657
+   },
+   {
+    "after_fight": 11.891664705882354,
+    "event": [15.4799, "ko", 1, 0],
+    "index": 173,
+    "item": "ko",
+    "required": true,
+    "scenario": "early_ko",
+    "seed": 3,
+    "stats_fights": 2000,
+    "t": 15.4799
+   },
+   {
+    "after_fight": 1.5750047058823533,
+    "event": [5.16324, "level", 0, 2],
+    "index": 15,
+    "item": "level",
+    "required": true,
+    "scenario": "early_levels",
+    "seed": 3,
+    "stats_fights": 2000,
+    "t": 5.16324
+   },
+   {
+    "after_fight": 5.833334705882352,
+    "event": [9.42157, "mountain", 0, 20],
+    "index": 94,
+    "item": "mountain",
+    "required": true,
+    "scenario": "early_low",
+    "seed": 3,
+    "stats_fights": 1490,
+    "t": 9.42157
+   },
+   {
+    "after_fight": 9.650004705882353,
+    "event": [13.23824, "mountain_end", 0],
+    "index": 206,
+    "item": "mountain_end",
+    "required": true,
+    "scenario": "early_low",
+    "seed": 3,
+    "stats_fights": 1350,
+    "t": 13.23824
+   },
+   {
+    "after_fight": 1.0000047058823531,
+    "event": [4.58824, "rope", 0, 0, -1, -2.378326024588387, -0.39082753685950294, 3.086660154770243],
+    "index": 8,
+    "item": "rope",
+    "required": true,
+    "scenario": "swapped",
+    "seed": 3,
+    "stats_fights": 2000,
+    "t": 4.58824
+   },
+   {
+    "after_fight": 5.275004705882353,
+    "event": [8.86324, "slow", 0, 1, 1.0],
+    "index": 45,
+    "item": "slow",
+    "required": false,
+    "scenario": "vs_trombone",
+    "seed": 2,
+    "stats_fights": 0,
+    "t": 8.86324
+   },
+   {
+    "after_fight": 0.22500470588235322,
+    "event": [3.81324, "stomp", 0, -0.8500384969984153, 0.6009695790274718, 0, 0, 0.2, 0],
+    "index": 2,
+    "item": "stomp",
+    "required": true,
+    "scenario": "early_levels",
+    "seed": 1,
+    "stats_fights": 2000,
+    "t": 3.81324
+   },
+   {
+    "after_fight": 0.9000047058823535,
+    "event": [4.48824, "strike", 1, 0, 2.483659106179434, 1.64, 0.12],
+    "index": 6,
+    "item": "strike",
+    "required": true,
+    "scenario": "early_levels",
+    "seed": 1,
+    "stats_fights": 2000,
+    "t": 4.48824
+   },
+   {
+    "after_fight": 0.008334705882353077,
+    "event": [3.59657, "thrust", 1, 0.95],
+    "index": 0,
+    "item": "thrust",
+    "required": false,
+    "scenario": "vs_trombone",
+    "seed": 1,
+    "stats_fights": 0,
+    "t": 3.59657
+   }
+  ],
+  "rule": "required = every event kind and hit sub-kind (\"hit/<what>\") in at least require_fights of the statistics fights, the fighter's three abilities and spec.fights.must; a row is an item's first occurrence over the scenario fights (the earliest t; a tie goes to the scenario listed first, then the lower seed): its scenario and seed (rules in `scenarios`), t, after_fight = t - t_fight, its index in the events and the event",
+  "t_fight": 3.5882352941176467,
+  "window": 20.0
+ },
+ "fighter": "BASSOON",
+ "format": 1,
+ "left": {
+  "events": 914,
+  "file": "fighters/bassoon/left.bfrec",
+  "frames": 1461,
+  "hash": "dc026b4228f36e38",
+  "names": ["BASSOON", "FLUTE"],
+  "seed": 9,
+  "t_ko": 52.25490196078431,
+  "why": "the lowest statistics seed with BASSOON in the left corner winning and all three of its abilities firing",
+  "winner": 0
+ },
+ "opponent": "FLUTE",
+ "right": {
+  "cache": "fighters/bassoon/right.bfrec",
+  "events": 906,
+  "frames": 1362,
+  "hash": "2d84cd32dabe47c9",
+  "names": ["FLUTE", "BASSOON"],
+  "seed": 10,
+  "t_ko": 48.938235294117646,
+  "why": "the lowest seed with FLUTE in the left corner winning (so BASSOON is knocked out)",
+  "winner": 0
+ },
+ "same_as": {
+  "fighters/bassoon/scenarios/plain_s9.bfrec": "studio/reference/fighters/bassoon/left.bfrec"
+ },
+ "scenarios": [
+  {
+   "cache": ["fighters/bassoon/scenarios/early_levels_s1.bfrec", "fighters/bassoon/scenarios/early_levels_s2.bfrec", "fighters/bassoon/scenarios/early_levels_s3.bfrec"],
+   "fighters": ["BASSOON", "FLUTE"],
+   "hashes": ["bcef59b8a45a5a5d", "68a3de35f8a21bd1", "da54bfdda09010e0"],
+   "name": "early_levels",
+   "opponent": "FLUTE",
+   "overrides": {
+    "LV_DMG": [2.0, 5.0]
+   },
+   "rules": {
+    "A": 3.0,
+    "DT": 0.008333333333333333,
+    "FPS": 30,
+    "HP": 100.0,
+    "KEY_R": 0.11,
+    "KNOCK_T": 0.38,
+    "LAUNCH_SPREAD": 38.0,
+    "LOW_HP": 25.0,
+    "LV_DMG": [2.0, 5.0],
+    "R": 0.6,
+    "ROPE_GIVE": 5.0,
+    "V": 2.6,
+    "beat": 0.44852941176470584,
+    "bpm": 133.7704918032787,
+    "dmg_scale": 1.0,
+    "dmg_side": [0.41, 0.6],
+    "t_fight": 3.5882352941176467,
+    "t_max": 58.0
+   },
+   "seeds": [1, 2, 3],
+   "swapped": false
+  },
+  {
+   "cache": ["fighters/bassoon/scenarios/early_low_s1.bfrec", "fighters/bassoon/scenarios/early_low_s2.bfrec", "fighters/bassoon/scenarios/early_low_s3.bfrec"],
+   "fighters": ["BASSOON", "FLUTE"],
+   "hashes": ["538a4fc0c141c6d3", "da43974230b61eb1", "dfc9856b5659464d"],
+   "name": "early_low",
+   "opponent": "FLUTE",
+   "overrides": {
+    "LOW_HP": 92.0,
+    "LV_DMG": [2.0, 5.0]
+   },
+   "rules": {
+    "A": 3.0,
+    "DT": 0.008333333333333333,
+    "FPS": 30,
+    "HP": 100.0,
+    "KEY_R": 0.11,
+    "KNOCK_T": 0.38,
+    "LAUNCH_SPREAD": 38.0,
+    "LOW_HP": 92.0,
+    "LV_DMG": [2.0, 5.0],
+    "R": 0.6,
+    "ROPE_GIVE": 5.0,
+    "V": 2.6,
+    "beat": 0.44852941176470584,
+    "bpm": 133.7704918032787,
+    "dmg_scale": 1.0,
+    "dmg_side": [0.41, 0.6],
+    "t_fight": 3.5882352941176467,
+    "t_max": 58.0
+   },
+   "seeds": [1, 2, 3],
+   "swapped": false
+  },
+  {
+   "cache": ["fighters/bassoon/scenarios/early_ko_s1.bfrec", "fighters/bassoon/scenarios/early_ko_s2.bfrec", "fighters/bassoon/scenarios/early_ko_s3.bfrec"],
+   "fighters": ["BASSOON", "FLUTE"],
+   "hashes": ["04a3c7c97f3017bf", "dde1df9810c91b5c", "ffdc861e13d2fdfb"],
+   "name": "early_ko",
+   "opponent": "FLUTE",
+   "overrides": {
+    "dmg_scale": 3.0
+   },
+   "rules": {
+    "A": 3.0,
+    "DT": 0.008333333333333333,
+    "FPS": 30,
+    "HP": 100.0,
+    "KEY_R": 0.11,
+    "KNOCK_T": 0.38,
+    "LAUNCH_SPREAD": 38.0,
+    "LOW_HP": 25.0,
+    "LV_DMG": [14.0, 36.0],
+    "R": 0.6,
+    "ROPE_GIVE": 5.0,
+    "V": 2.6,
+    "beat": 0.44852941176470584,
+    "bpm": 133.7704918032787,
+    "dmg_scale": 3.0,
+    "dmg_side": [0.41, 0.6],
+    "t_fight": 3.5882352941176467,
+    "t_max": 58.0
+   },
+   "seeds": [1, 2, 3],
+   "swapped": false
+  },
+  {
+   "cache": ["fighters/bassoon/scenarios/plain_s7.bfrec", "fighters/bassoon/scenarios/plain_s8.bfrec", "fighters/bassoon/scenarios/plain_s9.bfrec"],
+   "fighters": ["BASSOON", "FLUTE"],
+   "hashes": ["c6ec6b6750d62786", "f44191ff9f2f13cd", "dc026b4228f36e38"],
+   "name": "plain",
+   "opponent": "FLUTE",
+   "overrides": {},
+   "rules": {
+    "A": 3.0,
+    "DT": 0.008333333333333333,
+    "FPS": 30,
+    "HP": 100.0,
+    "KEY_R": 0.11,
+    "KNOCK_T": 0.38,
+    "LAUNCH_SPREAD": 38.0,
+    "LOW_HP": 25.0,
+    "LV_DMG": [14.0, 36.0],
+    "R": 0.6,
+    "ROPE_GIVE": 5.0,
+    "V": 2.6,
+    "beat": 0.44852941176470584,
+    "bpm": 133.7704918032787,
+    "dmg_scale": 1.0,
+    "dmg_side": [0.41, 0.6],
+    "t_fight": 3.5882352941176467,
+    "t_max": 58.0
+   },
+   "seeds": [7, 8, 9],
+   "swapped": false
+  },
+  {
+   "cache": ["fighters/bassoon/scenarios/swapped_s1.bfrec", "fighters/bassoon/scenarios/swapped_s2.bfrec", "fighters/bassoon/scenarios/swapped_s3.bfrec"],
+   "fighters": ["FLUTE", "BASSOON"],
+   "hashes": ["5d77e528ce99b594", "5f7cd680e359f532", "4a13b14594d1c8ff"],
+   "name": "swapped",
+   "opponent": "FLUTE",
+   "overrides": {},
+   "rules": {
+    "A": 3.0,
+    "DT": 0.008333333333333333,
+    "FPS": 30,
+    "HP": 100.0,
+    "KEY_R": 0.11,
+    "KNOCK_T": 0.38,
+    "LAUNCH_SPREAD": 38.0,
+    "LOW_HP": 25.0,
+    "LV_DMG": [14.0, 36.0],
+    "R": 0.6,
+    "ROPE_GIVE": 5.0,
+    "V": 2.6,
+    "beat": 0.44852941176470584,
+    "bpm": 133.7704918032787,
+    "dmg_scale": 1.0,
+    "dmg_side": [0.6, 0.41],
+    "t_fight": 3.5882352941176467,
+    "t_max": 58.0
+   },
+   "seeds": [1, 2, 3],
+   "swapped": true
+  },
+  {
+   "cache": ["fighters/bassoon/scenarios/vs_trombone_s1.bfrec", "fighters/bassoon/scenarios/vs_trombone_s2.bfrec"],
+   "fighters": ["BASSOON", "TROMBONE"],
+   "hashes": ["4bcf52da25747192", "7af9e90c6045b710"],
+   "name": "vs_trombone",
+   "opponent": "TROMBONE",
+   "overrides": {},
+   "rules": {
+    "A": 3.0,
+    "DT": 0.008333333333333333,
+    "FPS": 30,
+    "HP": 100.0,
+    "KEY_R": 0.11,
+    "KNOCK_T": 0.38,
+    "LAUNCH_SPREAD": 38.0,
+    "LOW_HP": 25.0,
+    "LV_DMG": [14.0, 36.0],
+    "R": 0.6,
+    "ROPE_GIVE": 5.0,
+    "V": 2.6,
+    "beat": 0.44852941176470584,
+    "bpm": 133.7704918032787,
+    "dmg_scale": 1.0,
+    "dmg_side": [0.41, 0.6],
+    "t_fight": 3.5882352941176467,
+    "t_max": 58.0
+   },
+   "seeds": [1, 2],
+   "swapped": false
+  }
+ ],
+ "slug": "bassoon",
+ "spec": {
+  "fights": {
+   "base": "flute_vs_trombone",
+   "dmg_scale": 1.0,
+   "handicap": [0.41, 0.6],
+   "left": null,
+   "must": [],
+   "right": null,
+   "rules": {},
+   "scan": 500,
+   "stats": 2000
+  },
+  "frames": {
+   "left": 64,
+   "right": 32,
+   "times": []
+  },
+  "hooks": [],
+  "name": "BASSOON",
+  "opponent": "FLUTE",
+  "roles": [],
+  "scenarios": [
+   {
+    "name": "early_levels",
+    "opponent": "FLUTE",
+    "overrides": {
+     "LV_DMG": [2.0, 5.0]
+    },
+    "seeds": [1, 2, 3],
+    "swapped": false
+   },
+   {
+    "name": "early_low",
+    "opponent": "FLUTE",
+    "overrides": {
+     "LOW_HP": 92.0,
+     "LV_DMG": [2.0, 5.0]
+    },
+    "seeds": [1, 2, 3],
+    "swapped": false
+   },
+   {
+    "name": "early_ko",
+    "opponent": "FLUTE",
+    "overrides": {
+     "dmg_scale": 3.0
+    },
+    "seeds": [1, 2, 3],
+    "swapped": false
+   },
+   {
+    "name": "plain",
+    "opponent": "FLUTE",
+    "overrides": {},
+    "seeds": [7, 8, 9],
+    "swapped": false
+   },
+   {
+    "name": "swapped",
+    "opponent": "FLUTE",
+    "overrides": {},
+    "seeds": [1, 2, 3],
+    "swapped": true
+   },
+   {
+    "name": "vs_trombone",
+    "opponent": "TROMBONE",
+    "overrides": {},
+    "seeds": [1, 2],
+    "swapped": false
+   }
+  ],
+  "voice_notes": {
+   "durations": [0.12, 0.25, 1.0],
+   "pitches": null,
+   "velocities": [0.6, 0.9]
+  }
+ },
+ "stats": {
+  "cache": "fighters/bassoon/stats_rows.json",
+  "columns": ["seed", "winner", "t_ko", "lead_changes", "winner_hp", "n_caps", "max_gap", "lows", "fits", "score"],
+  "definitions": {
+   "both_lows_share": "share of all n fights in which both desperation moves (lows) fired",
+   "decided": "fights with a K.O. before rules.t_max (winner not null)",
+   "fit_rate": "fits / n, over all n fights (a fight with no K.O. never fits)",
+   "fits": "fights whose score() fits is true",
+   "ko_median": "numpy median of t_ko over ALL n fights, a fight with no K.O. counting as 99.0 s (kit/tuning.py; also how kit/story.py score treats it)",
+   "ko_median_decided": "numpy median of t_ko over the decided fights only",
+   "ko_p10": "numpy percentile 10 (linear) of the same list as ko_median",
+   "ko_p90": "numpy percentile 90 (linear) of the same list as ko_median",
+   "lead_changes_mean": "mean of lead_changes over all n fights (fights with no K.O. included)",
+   "left_wins": "decided fights the left fighter (names[0]) won",
+   "n": "fights: seeds 1 to 2000",
+   "names": "the fighters, left corner first: index 0 is the left fighter in winner and win_share",
+   "no_ko": "fights with no K.O. (n - decided)",
+   "no_ko_share": "no_ko / n",
+   "win_share": "left_wins / decided: the left fighter's share of the decided fights (fights with no K.O. left out), as kit/tuning.py",
+   "winner_hp_median_decided": "numpy median of winner_hp over the decided fights"
+  },
+  "fights_with": {
+   "ability": 2000,
+   "ability/BOCAL HOOK": 838,
+   "ability/FLUTTER TONGUE": 2000,
+   "ability/MOUNTAIN KING": 1490,
+   "ability/PICCOLO": 1969,
+   "ability/SNAKE DANCE": 2000,
+   "ability/STACCATO": 2000,
+   "basket": 2000,
+   "clash": 2000,
+   "hit": 2000,
+   "hit/fang": 2000,
+   "hit/hook": 763,
+   "hit/stomp": 2000,
+   "hit/wave": 972,
+   "hook": 835,
+   "hook_open": 838,
+   "hop": 2000,
+   "ko": 2000,
+   "level": 2000,
+   "mountain": 1490,
+   "mountain_end": 1350,
+   "rope": 2000,
+   "stomp": 2000,
+   "strike": 2000
+  },
+  "pooled": {
+   "both_lows_share": 0.7295,
+   "decided": 2000,
+   "fit_rate": 0.0,
+   "fits": 0,
+   "ko_median": 49.00490196078431,
+   "ko_median_decided": 49.00490196078431,
+   "ko_p10": 43.84656862745098,
+   "ko_p90": 52.521568627450975,
+   "lead_changes_mean": 0.5515,
+   "left_wins": 1555,
+   "n": 2000,
+   "names": ["BASSOON", "FLUTE"],
+   "no_ko": 0,
+   "no_ko_share": 0.0,
+   "win_share": 0.7775,
+   "winner_hp_median_decided": 9.01600000000009
+  },
+  "seeds": [1, 2000]
+ },
+ "swapped_config": {
+  "fighters": ["FLUTE", "BASSOON"],
+  "handicap": [0.6, 0.41]
+ },
+ "tool": "tools.studio_export.fighter_bassoon"
+}

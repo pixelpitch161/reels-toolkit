@@ -173,8 +173,10 @@ reader must not depend on either and must accept any valid UTF-8 JSON. In Rust t
 `Array::Nested(Value::List(...))`.
 
 `WAVES`, `SLAMS` and `COB` are always JSON, in every recording, even when every frame happens to hold the same
-number of things. In general: a key that the kit's `story.REC_KEYS` lists is `.npy` whenever its values form a
-rectangular array of integers or floats, and every other key is JSON.
+number of things. In general: a key that the kit's `story.REC_KEYS` lists, or one of the kit kinds' rectangular
+keys that list leaves out (`recording.KIT_RECT_KEYS`: BASSOON's `HOOK` and `HOP`, two rows of three a frame, `HOOK`
+NaN where no hook is out), is `.npy` whenever its values form a rectangular array of integers or floats, and every
+other key is JSON.
 
 ## 6. What the fields mean (FLUTE and TROMBONE)
 
@@ -364,22 +366,41 @@ per hole, from the hole's pitch lane, across the ring and turned toward the enem
 <!-- kind:swallow -->
 #### `swallow` (weapon kind of TUBA)
 
-`fight.py` 1045 to 1130. Not ported yet: its port fills this section in (the meaning of each field, as 6.2 and 6.3 do
-for FLUTE and TROMBONE), from the lines below.
+`fight.py` 1045 to 1130; ported in `bf-sim/src/kinds/swallow.rs` (`bf-core/src/roster/kinds/swallow.rs` for its roster
+numbers). Every `every` beats on the beat grid (haste divides the grid and both times below) the bell goes "oom": it
+inhales for `inhale` beats, and "pah" comes `pah` beats after the oom. One oom-pah runs at a time. The bell turns
+toward the enemy at `aim_rate` (the swallower's `th`, recorded in `TH`). While the bell inhales, an enemy whose
+surface is within the reach (`blade_len`, recorded in `BL`) has its heading turned toward the bell (`suck`; its speed
+is kept); when the two centres are closer than two radii plus `catch` it is gulped: it rides at the swallower's
+centre (its `P` row equals the swallower's), does not move on its own and does not clash, until the pah spits it out
+toward the middle of the ring (the bell's aim when the swallower stands within 0.3 of the middle), turned by up to
+`jitter` degrees either way, at the shared speed with a boost of at least `spit_boost`. If it then hits a rope
+within `spit_t` seconds it takes `dmg_rope` more. A landed gulp lengthens the reach by `grow` up to `max_reach`. A
+rolling enemy (`roll_charge`) is steered but not gulped unless the rule `swallow_rollers` is on. The generator is
+drawn once per spit (the jitter) and never otherwise.
 
-**Record keys.** None of its own.
+**Record keys.** None of its own: the aim is `TH`, the reach `BL`; the ride inside shows only as equal `P` rows.
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+**Events** (`who` is the swallower unless said; coordinates are ring units; times are on the video clock):
 
-- 1062: `self.ev('oom', k, B.sw['t_in'], B.sw['t_pah'], float(B.blade_len))`
-- 1082: `self.damage(k, 1 - k, w['dmg_rope'], 'cannon', e[5], e[6])`
-- 1104: `self.ev('block', 1 - k, k, hx, hy, 'swallow')`
-- 1107: `self.damage(k, 1 - k, w['dmg'], 'gulp', hx, hy)`
-- 1113: `self.ev('gulp', k, hx, hy, float(B.blade_len))`
-- 1117: `self.ev('pah', k, 0, float(B.th))`
-- 1127: `self.ev('pah', k, 1, a)`
-- 1128: `self.damage(k, 1 - k, w['dmg_spit'], 'spit', float(O.p[0]), float(O.p[1]))`
+| Kind | Fields after `who` | When |
+| --- | --- | --- |
+| `oom` | the time the inhale ends, the time the pah is due, the reach now (floats) | the bell starts an oom-pah (1062) |
+| `gulp` | `x, y` (the point of the swallower's rim toward the enemy), the reach after its growth | the enemy is swallowed (1113), right after the `gulp` hit |
+| `pah` | 0 (int), the bell's aim in radians | the pah with nothing caught (1117) |
+| `pah` | 1 (int), the spit's direction in radians (not reduced to a turn) | the pah that spits the enemy out (1127), before the `spit` hit |
+| `block` | `who` is the shielded enemy; then the swallower (int), `x, y`, `swallow` | the gulp met a shield (1104): nothing is caught and the inhale ends at once |
+
+**Hits** (`hit` events of the swallower; the sub-number is 0):
+
+| What | Damage | Where | When |
+| --- | --- | --- | --- |
+| `gulp` | `dmg` | the point of the swallower's rim toward the enemy | the enemy is swallowed (1107) |
+| `spit` | `dmg_spit` | where the enemy lands when spat, two radii and 0.02 from the swallower | the pah (1128) |
+| `cannon` | `dmg_rope` | the `x, y` of the enemy's `rope` event | the spat enemy hits a rope within `spit_t` s (1082) |
+
+A hit on a shielded enemy is the `block` of 6.2 with the hit's name (`gulp` never: the kind tests the shield itself
+and says `swallow`; `spit` and `cannon` can be).
 
 <!-- /kind:swallow -->
 
@@ -649,30 +670,44 @@ and 6.3 do for FLUTE and TROMBONE), from the lines below.
 <!-- kind:tiptoe -->
 #### `tiptoe` (weapon kind of BASSOON)
 
-`fight.py` 3280 to 3429. Not ported yet: its port fills this section in (the meaning of each field, as 6.2 and 6.3 do
-for FLUTE and TROMBONE), from the lines below.
+`fight.py` 3280 to 3429 (`tiptoe_setup`, `_behind`, `_hop_launch`, `_hop_land`, `tiptoe_tick`, `tiptoe_step`).
+Ported: `bf-sim/src/kinds/tiptoe.rs`, settings in `bf-core/src/roster/kinds/tiptoe.rs`.
 
 **Record keys.**
 
-- `HOP`: added to `rec` at `run()` 5835, written by `snap` 5609 to 5615:
+- `HOP`, `<f8` of shape `(n, 2, 3)`, present when a fighter's weapon is a `tiptoe`. Per ball: the progress of the
+  hop it is in (0 to 1: `(t - t0) / max(1e-9, t1 - t0)`), the time `t0` it left the floor and the time `t1` it
+  lands; three times -1.0 for a ball on the ground (and for a ball that is no hopper). While a ball is in the air
+  its `P` is the point that far along the straight line from the hop's start to its landing spot.
+- A hopper's `BL` is its longest hop (`blade_len`: `base`, plus `grow` per landed stomp of an ordinary or follow-up
+  hop, up to `max_reach`). Its `V` is its heading: a hopper stands still between hops and only slides when knocked
+  (at the shared speed times its knock boost), so `V` is not its speed.
 
-  ```python
-  if 'HOP' in rec:                                    # #39, only recorded when a fighter uses the 'tiptoe' kind
-      Hp = np.full((2, 3), -1.0)
-      for j, Bj in enumerate((B0, B1)):
-          H = getattr(Bj, 'hop', None)
-          if H is not None:
-              Hp[j] = ((self.t - H['t0']) / max(1e-9, H['t1'] - H['t0']), H['t0'], H['t1'])
-      rec['HOP'].append(Hp)
-  ```
+**Events.**
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+| Kind | `who` (2) | 3 | 4 | 5 | 6 | 7 | 8 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `hop` | the hopper | x where it leaves the floor (float) | y (float) | x of the landing spot (float), inside the ropes | y (float) | the time it lands (float) | kind (int): 0 an ordinary hop, 1 the follow-up after a BOCAL HOOK that landed, 2 a hop of MOUNTAIN KING |
+| `stomp` | the hopper | x where it landed (float): the landing spot, or stepped out to `2 R + 0.02` from the enemy's centre if that was nearer | y (float) | hit (int 0 / 1): the enemy was within the stomp radius beyond contact | back (int 0 / 1): a hit from within `back_half` degrees of straight behind the enemy (the backstab) | the stomp radius after this stomp (float): `stomp`, plus `stomp_grow` per landed stomp of an ordinary or follow-up hop, up to `stomp_max` | the hop's kind (int, as above) |
+| `mountain_end` | the hopper | | | | | | |
 
-- 3329: `self.ev('hop', k, float(p0[0]), float(p0[1]), float(p1[0]), float(p1[1]), self.t + air, kind)`
-- 3358: `self.damage(k, 1 - k, dmg * (w['back'] if back else 1.0), 'stomp', hx, hy, int(back))`
-- 3363: `self.ev('stomp', k, float(B.p[0]), float(B.p[1]), int(hit), int(back), float(B.stomp_r), H['kind'])`
-- 3379: `self.ev('mountain_end', k)`
+An ordinary hop starts on the fight's 16th grid, every `max(1, int(round(int(round(4 * every)) / mult)))` 16ths
+(`mult` is the haste factor while a haste lasts, 1 otherwise), and is in the air `max(1, int(round(air16 / mult)))`
+16ths; none starts while the hopper is in the air, stunned, dancing MOUNTAIN KING or tumbling (its knock boost above
+`stagger`). It aims `gap` beyond contact behind the enemy (against its direction of travel) where the enemy will be
+at the landing (`lead` times its motion over the air time), turned by up to `jitter` degrees (one draw of the
+fight's generator per ordinary hop, the only draw of the kind), at most `BL` away. A hop due within one substep of a
+16th lands on that 16th (before the next hop is launched); otherwise it lands in the step its time comes.
+`mountain_end` is the 16th MOUNTAIN KING finds its hops used up.
+
+`hit`, elements 7 and 8:
+
+| What hit (7) | Cause | Sub (8) |
+| --- | --- | --- |
+| `stomp` | a landing with the enemy within the stomp radius beyond contact: `dmg` (MOUNTAIN KING's hops: the ability's `dmg`), times `back` from behind. x and y are the point of the enemy's surface nearest the hopper | 1 for a backstab, else 0 |
+
+A `stomp` on a shielded enemy is a `block` (element 6 `stomp`); the knock (`knock`, away from the hopper) is given
+either way, and only a landed stomp grows the reach and the radius.
 
 <!-- /kind:tiptoe -->
 
@@ -806,12 +841,40 @@ for FLUTE and TROMBONE), from the lines below.
 <!-- kind:crowd -->
 #### `crowd` (weapon kind of TENOR SAX)
 
-`fight.py` 4513 to 4757. Not ported yet: its port fills this section in (the meaning of each field, as 6.2 and 6.3 do
-for FLUTE and TROMBONE), from the lines below.
+`fight.py` 4513 to 4757; ported in `bf-sim/src/kinds/crowd.rs` (`bf-core/src/roster/kinds/crowd.rs` for its roster
+numbers), with the three abilities `runway`, `subtone` and `stagedive`. Every `every` beats (`off16` 16ths later;
+haste divides the grid) the tenor strikes a pose for `pose16` 16ths (its speed x `pose_v`) and the crowd hurls
+`int(hype)` things at the enemy, one every `stagger16` 16ths from a 16th after the pose. Each throw leaves the stands
+beyond the rope nearest the enemy's predicted spot (`stand` outside it, spread `stand_spread` along it), flies
+`flight16` 16ths and lands on that spot (`lead` x the enemy's motion, +- `scatter`), but no further into the ring from
+that rope than the reach (`blade_len`). A landing within `splash` + 0.6 R of the enemy hits it and knocks it along the
+throw; the first landed throw of a volley grows the hype (`n0` + `grow`, up to `n_max`), the reach (`reach` +
+`reach_grow`, up to `reach_max`) and the damage (`dmg` + `dmg_grow`, up to `dmg_max`). No pose and no volley while a
+hush, a strut or a dive is live, or while it is stunned or smashed. Each throw launched draws from the fight's
+generator `uniform(-1, 1, 2)` (the scatter), then `uniform(-1, 1)` (the spread). Items cycle tomato (0), rose (1),
+foam finger (2) by volley and place in it; they change only the picture.
 
-**Record keys.**
+**Record keys.** Both are in a recording where a fighter's weapon is a `crowd` (`run()` 5899, `snap` 5682 to 5704),
+one entry a frame. Neither is in `story.REC_KEYS`, so the kit keeps them as lists and the export writes them as JSON.
 
-- `CROWD` (and `THROWS`): added to `rec` at `run()` 5899, written by `snap` 5682 to 5704:
+- `CROWD`: a `(2, 7)` array of floats a frame, one row per fighter; the row of a fighter that is not a crowd pleaser
+  is all -1.0.
+
+  | Column | Meaning |
+  | --- | --- |
+  | 0 | the hype (`n_vol`): the throws a volley, as a float |
+  | 1 | the pose's progress, 0 at the pose to 1 at its end; -1.0 with no pose |
+  | 2 | 1.0 while SUBTONE's hush is live, else 0.0 |
+  | 3 | WALK THE BAR's progress, 0 to 1; -1.0 with no strut |
+  | 4 | STAGE DIVE's phase: 0 none, 1 the leap, 2 the surf, 3 the cannonball |
+  | 5, 6 | the phase's start and end times (0.0, 0.0 with no dive) |
+
+- `THROWS`: a list a frame of every throw still held (in flight, or landed less than 0.7 s ago), each `(owner, x0,
+  y0, x1, y1, t0, t1, item, landed, id)`: the side it is thrown for (int), where it leaves the stands, where it lands,
+  its launch and landing times, the item (int), 0 while it flies / 1 a hit / 2 a miss (int), its id (int, from 0 in
+  launch order).
+
+The kit's lines (`snap`):
 
   ```python
   if 'CROWD' in rec:                                  # #51, only recorded when a fighter uses the 'crowd' kind
@@ -839,14 +902,17 @@ for FLUTE and TROMBONE), from the lines below.
                             for Th in self.throws])
   ```
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+**Events** (`who` is the tenor; coordinates are ring units; times are on the video clock):
 
-- 4585: `self.ev('throw', k, tid, float(o[0]), float(o[1]), float(tgt[0]), float(tgt[1]), self.t, self.t + fl, item, P_['vol'])`
-- 4596: `self.ev('subtone', k)`
-- 4607: `self.ev('pose', k, B.pose_until, float(B.n_vol))`
-- 4630: `self.damage(k, 1 - k, Th['dmg'], 'throw', float(Th['p1'][0]), float(Th['p1'][1]))`
-- 4641: `self.ev('splat', k, Th['id'], float(Th['p1'][0]), float(Th['p1'][1]), int(landed))`
+| Kind | Fields after `who` | When |
+| --- | --- | --- |
+| `pose` | the pose's end time, the hype (float) | a pose and its volley (4607) |
+| `throw` | the id (int), `x0, y0` (from the stands), `x1, y1` (the landing spot), the launch time, the landing time, the item (int), the volley (int) | a throw leaves the crowd (4585) |
+| `splat` | the id (int), `x, y` where it lands, 1 if it hit else 0 (int) | a throw lands (4641) |
+| `subtone` | none | SUBTONE's hush ends in its volley (4596) |
+
+**Hits** (`hit` events, 6.2; the sub-number is 0): `throw` (4630: the throw's damage, held when it was thrown; the
+enemy is knocked along the throw). A shield turns it into a `block`.
 
 <!-- /kind:crowd -->
 
@@ -1182,52 +1248,67 @@ Its hit is `front`, with `front_step`, `front_hit`, `trample_basket` and `front_
 <!-- kind:runway -->
 #### `runway` (ability kind of TENOR SAX)
 
-`fight.py` 2966 to 2968, 4648 to 4691. Not ported yet: its port fills this section in (the meaning of each field, as 6.2
-and 6.3 do for FLUTE and TROMBONE), from the lines below.
+`fight.py` 2966 to 2968, 4648 to 4691; ported in `bf-sim/src/kinds/crowd.rs` (`start_runway`, `strut_step`). WALK
+THE BAR: a runway from the ball through the enemy to the far ropes (at least 0.5 long); it struts down it at an even
+pace for `beats` beats, cannot be knocked and gives no way in a clash. It bumps the enemy aside on contact (`dmg`,
+`knock`, at most once every `cool` s) and honks a ring of kind `honk` on every beat (`honk_r` beyond its surface,
+`honk_dmg`, `honk_knock`). It does not start during a STAGE DIVE; a STAGE DIVE ends it.
 
-**Record keys.** None of its own.
+**Record keys.** None of its own: `CROWD` column 3 (the `crowd` section).
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+**Events.**
 
-- 4663: `self.ev('runway', k, float(B.p[0]), float(B.p[1]), float(p1[0]), float(p1[1]), self.t, t1)`
-- 4673: `self.ev('strut_end', k)`
-- 4683: `self.damage(k, 1 - k, ab['dmg'], 'strut', hx, hy)`
-- 4685: `self.ev('strut_bump', k, hx, hy)`
+| Kind | Fields after `who` | When |
+| --- | --- | --- |
+| `runway` | `x0, y0, x1, y1` (from, to), the start time, the end time | WALK THE BAR starts (4663) |
+| `strut_bump` | `x, y` on its surface toward the enemy | the strut touches the enemy (4685), landed or blocked |
+| `strut_end` | none | the strut reaches the runway's end (4673) |
+
+**Hits:** `strut` (4683: `dmg`, knocked aside), and its honk rings' hits as any ring's (6.2).
 
 <!-- /kind:runway -->
 
 <!-- kind:subtone -->
 #### `subtone` (ability kind of TENOR SAX)
 
-`fight.py` 2969 to 2972. Not ported yet: its port fills this section in (the meaning of each field, as 6.2 and 6.3 do
-for FLUTE and TROMBONE), from the lines below.
+`fight.py` 2969 to 2972; ported in `bf-sim/src/kinds/crowd.rs`. SUBTONE: the crowd hushes for `hush_beats` beats
+(its throws not yet launched are called off, and no pose comes), then throws one volley of `max(1, round(int(hype) x
+n_k))` throws at `mult` x the damage with `reach_k` x the reach. A STAGE DIVE ends the hush.
 
-**Record keys.** None of its own.
+**Record keys.** None of its own: `CROWD` column 2 (the `crowd` section).
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+**Events.**
 
-- 2972: `self.ev('hush', k, B.hush['t_throw'])`
+| Kind | Fields after `who` | When |
+| --- | --- | --- |
+| `hush` | the time of the volley | SUBTONE starts (2972) |
+
+The volley's end is the `subtone` event and its throws are `throw` events (the `crowd` section).
 
 <!-- /kind:subtone -->
 
 <!-- kind:stagedive -->
 #### `stagedive` (ability kind of TENOR SAX)
 
-`fight.py` 2973 to 2976, 4692 to 4757. Not ported yet: its port fills this section in (the meaning of each field, as 6.2
-and 6.3 do for FLUTE and TROMBONE), from the lines below.
+`fight.py` 2973 to 2976, 4692 to 4757; ported in `bf-sim/src/kinds/crowd.rs` (`start_dive`, `dive_step`). STAGE
+DIVE ends any strut or hush, then: the leap (`leap_beats`) beyond the nearest rope into the stands (0.9 outside it),
+the surf (`surf_beats`) along the stands to the spot nearest the enemy (0.4 short of the corners), and the
+cannonball at the enemy's spot predicted `lead` x its motion, at `speed` x the shared speed. Passing within 2 R +
+`hit_r` of the enemy hits it once (`dmg`, `knock`); where it lands a ring of kind `dive` spreads (`radius`,
+`ring_dmg`, `ring_knock`). From the leap to the landing it is airborne: no hit, no knock and no clash.
 
-**Record keys.** None of its own.
+**Record keys.** None of its own: `CROWD` columns 4 to 6 (the `crowd` section).
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+**Events.**
 
-- 4708: `self.ev('dive', k, float(out[0]), float(out[1]), t_surf, t_launch)`
-- 4737: `self.ev('dive_launch', k, float(B.p[0]), float(B.p[1]), float(tgt[0]), float(tgt[1]), Dv['t_land'])`
-- 4745: `self.damage(k, 1 - k, ab['dmg'], 'dive', float(O.p[0]), float(O.p[1]))`
-- 4748: `self.ev('dive_hit', k, float(O.p[0]), float(O.p[1]))`
-- 4756: `self.ev('dive_land', k, float(B.p[0]), float(B.p[1]))`
+| Kind | Fields after `who` | When |
+| --- | --- | --- |
+| `dive` | `x, y` where it lands in the stands, the time the surf starts, the time planned for the launch | the leap (4708) |
+| `dive_launch` | `x0, y0` (from the stands), `x1, y1` (the target), the landing time | the cannonball leaves the crowd (4737) |
+| `dive_hit` | `x, y` (the enemy's centre) | the cannonball passes the enemy (4748), landed or blocked |
+| `dive_land` | `x, y` | it lands (4756) |
+
+**Hits:** `dive` (4745: `dmg`, knocked mostly along the flight), and its ring's hits as any ring's (6.2).
 
 <!-- /kind:stagedive -->
 
@@ -1359,44 +1440,59 @@ and 6.3 do for FLUTE and TROMBONE), from the lines below.
 <!-- kind:hook -->
 #### `hook` (ability kind of BASSOON)
 
-`fight.py` 2915 to 2916, 3430 to 3476. Not ported yet: its port fills this section in (the meaning of each field, as 6.2
-and 6.3 do for FLUTE and TROMBONE), from the lines below.
+`fight.py` 2915 to 2916, 3430 to 3476 (`hook_ready`, `start_hook`, `hook_step`); the gate in `abilities_step` 3040 to
+3042. Ported: `bf-sim/src/abilities/hook.rs`, settings in `bf-core/src/roster/abilities/hook.rs`.
 
 **Record keys.**
 
-- `HOOK`: added to `rec` at `run()` 5853, written by `snap` 5602 to 5608:
+- `HOOK`, `<f8` of shape `(n, 2, 3)`, present when a fighter has a `hook` among its abilities. Per ball: the hook's
+  state (1.0 swinging out, 2.0 hooked: it stays out 0.3 s after it hooks, hit or not), its aim (an angle in
+  [-pi, pi)) and the time it hooks; three NaN for a ball with no hook out.
 
-  ```python
-  if 'HOOK' in rec:                                   # #39, only recorded when a fighter has a 'hook' ability
-      Hq = np.full((2, 3), np.nan)
-      for j, Bj in enumerate((B0, B1)):
-          Hk = getattr(Bj, 'hook', None)
-          if Hk is not None:
-              Hq[j] = (Hk['state'], Hk['aim'], Hk['t_hook'])
-      rec['HOOK'].append(Hq)
-  ```
+**Events.**
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+| Kind | `who` (2) | 3 | 4 | 5 |
+| --- | --- | --- | --- | --- |
+| `hook_open` | the owner | the time it hooks (float): `open16` 16ths after it starts | the aim (float): the angle to the enemy as it stands | |
+| `hook` | the owner | hit (int 0 / 1): the enemy within `reach` beyond contact and `half` degrees of the aim | the aim then (float): while it swings out the aim turns to the enemy, at most `track` rad a second | `reach` (float) |
 
-- 3446: `self.ev('hook_open', k, B.hook['t_hook'], aim)`
-- 3466: `self.damage(k, 1 - k, ab['dmg'], 'hook', hx, hy)`
-- 3472: `self.ev('hook', k, int(hit), Hk['aim'], float(ab['reach']))`
+An unlock of this kind waits for its moment: when it is ready it fires on the first beat the owner is on the ground
+(not mid-hop) with the enemy within `ready` beyond contact. A hook that lands (not blocked) spins the enemy round: its
+`V` becomes its speed along the direction away from the owner, its knock boost is raised to `knock`, and an owner
+whose weapon is a `tiptoe` gets a follow-up hop (`hop` kind 1) on the next 16th.
+
+`hit`, elements 7 and 8:
+
+| What hit (7) | Cause | Sub (8) |
+| --- | --- | --- |
+| `hook` | the hook, at its time, with the enemy in reach and in the aim's cone: `dmg`. x and y are the point of the enemy's surface nearest the owner | 0 |
+
+A `hook` on a shielded enemy is a `block` (element 6 `hook`): the enemy is not spun and no follow-up hop is given; the
+`hook` event still says hit 1.
 
 <!-- /kind:hook -->
 
 <!-- kind:mountain -->
 #### `mountain` (ability kind of BASSOON)
 
-`fight.py` 2917 to 2918, 3423 to 3429. Not ported yet: its port fills this section in (the meaning of each field, as 6.2
-and 6.3 do for FLUTE and TROMBONE), from the lines below.
+`fight.py` 2917 to 2918, 3423 to 3428 (`start_mountain`), and the dance in `tiptoe_tick` (3374 to 3391). Ported: in
+the weapon's module, `bf-sim/src/kinds/tiptoe.rs`; settings in `bf-core/src/roster/abilities/mountain.rs`.
 
-**Record keys.** None of its own.
+**Record keys.** None of its own: its hops are in `HOP` like any other.
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+**Events.**
 
-- 3428: `self.ev('mountain', k, len(ab['seq16']))`
+| Kind | `who` (2) | 3 |
+| --- | --- | --- |
+| `mountain` | the owner | the number of hops (int): the length of `seq16` |
+
+Hop `i` of the dance is launched on the first 16th that is `seq16[i - 1]` 16ths after the launch of the one before
+(the first on the next 16th the hopper is on the ground and not stunned), is in the air `min(int(air16), seq16[i])`
+16ths, and aims `gap` beyond contact from where the enemy will be, `step` degrees further round it per hop from
+straight behind it (the angle is fixed at the first hop), at most `reach` away. Each is a `hop` of kind 2 and each
+landing a `stomp` of kind 2 with the ability's `dmg` and `knock` (times the weapon's `back` from behind); these
+stomps do not grow the weapon. Ordinary hops pause meanwhile and the dance ignores the stagger. `mountain_end`
+(the weapon's event) ends it.
 
 <!-- /kind:mountain -->
 
