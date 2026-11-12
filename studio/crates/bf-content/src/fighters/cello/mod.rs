@@ -1,11 +1,8 @@
-//! CELLO: its look, instrument voice, part in the score and card, ported in milestone 3's Task 24
-//! (`kit/fighters/cello.py`). Until then every entry point here says it has none: the picture draws CELLO as the
-//! bare ball, the score has no part for it, the app has no card for it, and the app does not offer it (the
-//! registry's `PORTED`, which only a register task changes).
+//! CELLO: its look, instrument voice, part in the score and card (`kit/fighters/cello.py`, ported in milestone 3's
+//! Task 24). The app does not offer it until a register task adds it to the registry's `PORTED`.
 //!
-//! The port fills this folder only: `look.rs`, `sound.rs`, `voice.rs`, `card.rs`, `state.rs` (what the look and
-//! the part both derive from the recording) and the entry points below. Nothing outside it names CELLO's
-//! types, so nothing outside it changes.
+//! This folder holds everything of it outside the engine: `look.rs`, `sound.rs`, `voice.rs`, `card.rs`, `state.rs`
+//! and the entry points below. Nothing outside it names CELLO's types.
 
 use std::sync::Arc;
 
@@ -21,10 +18,11 @@ pub mod state;
 pub mod voice;
 
 pub use card::{CARD, card};
+pub use look::CelloLook;
 
-/// `fighters.look('CELLO', P, k)`: its look, or `None` while it is not ported (the bare ball is drawn then).
+/// `fighters.look('CELLO', P, k)`.
 pub fn look() -> Option<Box<dyn Look>> {
-    None
+    Some(Box::new(CelloLook::new()))
 }
 
 /// Its instrument voice (`pp_bridge`'s entry), or `None` while it is not ported.
@@ -38,9 +36,8 @@ pub fn sound(k: usize, ff: &FightFile) -> Option<Box<dyn Sound>> {
     None
 }
 
-/// Its model (`data/models/CELLO.json`, written by the export tool's `models` for one roster name), compiled in:
-/// `Some(include_str!("../../../data/models/CELLO.json"))` once ported, `None` until then.
-pub const MESH: Option<&str> = None;
+/// Its model (`data/models/CELLO.json`, written by its export), compiled in.
+pub const MESH: Option<&str> = Some(include_str!("../../../data/models/CELLO.json"));
 
 /// Whether its music settings (key, chord loop, its line) feed its fight. True only for PIANO, once ported.
 pub const MUSIC_FEEDS_FIGHT: bool = false;
