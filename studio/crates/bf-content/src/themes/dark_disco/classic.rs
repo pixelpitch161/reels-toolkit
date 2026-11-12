@@ -152,7 +152,9 @@ impl DarkDiscoClassic {
 
     /// `self.pad(ch, dur, v)`.
     fn pad(&self, ctx: &MusicCtx, ch: &str, dur: f64, v: f64) -> Result<Vec<f64>, MusicError> {
-        self.cached(Key::Pad(ch.to_string(), r3(dur)), v, || pad(&ctx.harmony, ch, dur).map_err(bad))
+        self.cached(Key::Pad(ch.to_string(), r3(dur)), v, || {
+            pad(&ctx.harmony, ch, dur).map_err(bad)
+        })
     }
 
     /// `self.glint(m, v)`.
@@ -183,7 +185,14 @@ impl DarkDiscoClassic {
         let e8 = beat / 2.0;
         for bt in 0..4u64 {
             let tb = t0 + bt as f64 * beat;
-            put(mix, "drums", self.kick(1.0, false)?, tb, if light { 0.46 } else { 0.55 }, 0.0);
+            put(
+                mix,
+                "drums",
+                self.kick(1.0, false)?,
+                tb,
+                if light { 0.46 } else { 0.55 },
+                0.0,
+            );
             put(mix, "drums", self.hat(1.0, true, bt)?, tb + e8, 0.075, 0.25);
             if bt == 1 || bt == 3 {
                 put(mix, "drums", self.clap(1.0, b as u64 + bt)?, tb, 0.26, -0.05);
@@ -271,8 +280,22 @@ impl Bed for DarkDiscoClassic {
     /// `ring`: it is not used.
     fn hit(&self, ctx: &MusicCtx, mix: &mut Mix, t: f64, ch: &str, g: f64, _ring: f64) -> Played {
         put(mix, "drums", self.kick(1.0, true)?, t, 0.6 * g, 0.0);
-        put(mix, "drums", self.clap(1.0, noise_seed(H, t * 10.0)?)?, t, 0.28 * g, 0.0);
-        put(mix, "strings", self.stab(ctx, ch, 1.0, 0.4, STAB_LO)?, t, 0.28 * g, 0.15);
+        put(
+            mix,
+            "drums",
+            self.clap(1.0, noise_seed(H, t * 10.0)?)?,
+            t,
+            0.28 * g,
+            0.0,
+        );
+        put(
+            mix,
+            "strings",
+            self.stab(ctx, ch, 1.0, 0.4, STAB_LO)?,
+            t,
+            0.28 * g,
+            0.15,
+        );
         let r = self.root(ctx, ch)?;
         put(mix, "bass", self.bass(r, 0.5, 1.0)?, t, 0.5 * g, 0.0);
         Ok(())
@@ -435,13 +458,34 @@ impl Bed for DarkDiscoClassic {
             if bt == 1 || bt == 3 {
                 put(mix, "drums", self.clap(1.0, bt)?, tb, 0.26, 0.0);
             }
-            put(mix, "strings", self.stab(ctx, ch, 1.0, STAB_DUR, STAB_LO)?, tb + e8, 0.18, 0.15);
+            put(
+                mix,
+                "strings",
+                self.stab(ctx, ch, 1.0, STAB_DUR, STAB_LO)?,
+                tb + e8,
+                0.18,
+                0.15,
+            );
         }
         let walk = [tgt - 5, tgt + 7, tgt - 4, tgt + 8, tgt - 3, tgt + 9, tgt - 1, tgt + 11];
         for (j, &m) in walk.iter().enumerate() {
-            put(mix, "bass", self.bass(m, e8 * 0.8, 1.0)?, t_last + j as f64 * e8, 0.40, 0.0);
+            put(
+                mix,
+                "bass",
+                self.bass(m, e8 * 0.8, 1.0)?,
+                t_last + j as f64 * e8,
+                0.40,
+                0.0,
+            );
         }
-        put(mix, "pad", self.pad(ctx, ch, dur - t_last + 0.012, 1.0)?, t_last, 0.18, 0.0);
+        put(
+            mix,
+            "pad",
+            self.pad(ctx, ch, dur - t_last + 0.012, 1.0)?,
+            t_last,
+            0.18,
+            0.0,
+        );
         put(
             mix,
             "fx",
