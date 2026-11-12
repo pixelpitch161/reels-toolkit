@@ -5,6 +5,10 @@ use bf_sound::traits::Bed;
 use crate::error::ContentError;
 use crate::themes::{ThemeOptions, not_ported};
 
+/// The classic bed (its port makes it).
+#[derive(Debug)]
+pub struct DarkDrumlineClassic;
+
 /// The classic bed for the fight's options (its port makes it).
 pub(super) fn classic(options: &ThemeOptions) -> Result<Box<dyn Bed>, ContentError> {
     let _ = options;
