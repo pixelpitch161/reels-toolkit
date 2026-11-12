@@ -35,10 +35,11 @@ pub struct PpNoise(pub Generator, pub ModuleNoise);
 /// `studio/reference/shared/pp_blocks.json`).
 #[derive(Clone, Debug)]
 pub struct ModuleNoise {
-    /// `altosax60_lowpoly._RN = np.random.default_rng(23)`: the breath and slap noise of
-    /// [`pp::sax::sax_tone`]. The ALTO SAX's voice and the alto voice the mambo bed plays both call it, so both
-    /// move this one generator on.
-    pub sax: Generator,
+    /// `altosax60_lowpoly._RN`, `np.random.default_rng(23)` at import: the breath and slap noise of
+    /// [`pp::alto::alto_tone`]. The ALTO SAX's voice and the alto voice the mambo bed plays both draw from it, and
+    /// the ALTO SAX's part replaces it with a freshly seeded generator before each tone it makes itself
+    /// ([`pp::alto::part_seed`], through [`crate::music::MusicCtx::with_noise`]); later draws go on from there.
+    pub alto: Generator,
     /// `violin_lowpoly.rng = np.random.default_rng(9)`: one `random()` a note for the vibrato's phase in
     /// `bowed` (the CELLO's voice).
     pub violin: Generator,
@@ -46,14 +47,14 @@ pub struct ModuleNoise {
 
 impl ModuleNoise {
     /// The seed of `altosax60_lowpoly._RN`.
-    pub const SAX_SEED: u64 = 23;
+    pub const ALTO_SEED: u64 = 23;
     /// The seed of `violin_lowpoly.rng`.
     pub const VIOLIN_SEED: u64 = 9;
 
     /// Both generators where a soundtrack build starts: fresh generators of their seeds.
     pub fn start() -> ModuleNoise {
         ModuleNoise {
-            sax: Generator::new(Self::SAX_SEED),
+            alto: Generator::new(Self::ALTO_SEED),
             violin: Generator::new(Self::VIOLIN_SEED),
         }
     }
@@ -147,20 +148,20 @@ mod tests {
     #[test]
     fn the_module_generators_start_fresh_and_go_their_own_way() {
         let mut a = PpNoise::start();
-        let (mut sax, mut violin) = (Generator::new(23), Generator::new(9));
-        assert_eq!(a.1.sax.random().to_bits(), sax.random().to_bits());
+        let (mut alto, mut violin) = (Generator::new(23), Generator::new(9));
+        assert_eq!(a.1.alto.random().to_bits(), alto.random().to_bits());
         assert_eq!(a.1.violin.random().to_bits(), violin.random().to_bits());
         // Drawing from one leaves the others where they were.
         let mut fresh = Generator::new(PpNoise::SEED);
         let mut want = vec![0.0; 4];
         fresh.fill_normal(0.0, 1.0, &mut want);
         assert_eq!(a.nz(4), want);
-        assert_eq!(a.1.sax.random().to_bits(), sax.random().to_bits());
+        assert_eq!(a.1.alto.random().to_bits(), alto.random().to_bits());
         // A stream resumed from a state brings fresh module generators with it.
         let mut b = PpNoise::from_state(PpNoise::START_STATE, PpNoise::START_INC);
         assert_eq!(
-            b.1.sax.random().to_bits(),
-            Generator::new(ModuleNoise::SAX_SEED).random().to_bits()
+            b.1.alto.random().to_bits(),
+            Generator::new(ModuleNoise::ALTO_SEED).random().to_bits()
         );
         assert_eq!(
             b.1.violin.random().to_bits(),

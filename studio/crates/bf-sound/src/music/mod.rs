@@ -322,6 +322,20 @@ impl<'a> MusicCtx<'a> {
         Ok(self.lock()?.noise.clone())
     }
 
+    /// `f` on the build's own noise (not a copy), under the build's lock: for a part that draws from, reseeds or
+    /// replaces a Pixel Pitch generator itself, as the kit's parts do through a voice module's globals. The
+    /// ALTO SAX's `tone` sets `altosax60_lowpoly._RN` to a fresh generator before each uncached tone and makes
+    /// the tone from it; every later note of the build that draws from that generator (the ALTO SAX's voice, the
+    /// mambo bed's alto) continues from there. `f` must not call back into this context (the lock is held); a
+    /// panic in it ends the build, as a voice's does.
+    ///
+    /// # Errors
+    /// A voice panicked earlier (as every method that reads or changes the build's state).
+    pub fn with_noise<R>(&self, f: impl FnOnce(&mut PpNoise) -> R) -> Result<R, MusicError> {
+        let mut st = self.lock()?;
+        Ok(f(&mut st.noise))
+    }
+
     /// Every first-time note so far, in the order `note` synthesised them.
     pub fn first_notes(&self) -> Result<Vec<NoteCall>, MusicError> {
         Ok(self.lock()?.first.clone())

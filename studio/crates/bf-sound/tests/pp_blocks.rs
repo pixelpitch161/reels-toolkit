@@ -2,11 +2,14 @@
 //! (the `shared` export). Each case is a call the kit made while its users' voices played (`pp_bridge.voice` over
 //! each user's register) or an edge case:
 //!
-//! - `brass` (TRUMPET, TUBA, HORN), `ks_pluck` (ACOUSTIC, ELECTRIC), `sax_tone` (ALTO SAX and the mambo bed's alto,
+//! - `brass` (TRUMPET, TUBA, HORN), `ks_pluck` (ACOUSTIC, ELECTRIC), the alto's tone (ALTO SAX and the mambo bed's alto, the kit's call `sax_tone`,
 //!   from the state of `altosax60_lowpoly._RN` recorded before it; the generator must stand where Python left it
 //!   after), `bp` (on the normals of a fresh generator);
 //! - each note against its fingerprint: the length exactly; 64 samples and the RMS of every 882-sample (20 ms) block below
-//!   -120 dBFS of difference (the voices' bar of milestone 1); a note that is NaN in Python is NaN here. The SHA-256
+//!   -240 dBFS of difference (these blocks are plain float64 arithmetic on a few last-bit `sin`, `exp` and `pow`
+//!   differences; measured worst -275 to -319 dBFS); a note that is NaN in Python is NaN here. The fingerprint is
+//!   a sample of each note: the real guard of a voice is each port's whole-note voice gate and the 16-bit master
+//!   of its soundtrack. The SHA-256
 //!   of the float64 samples is counted (a nice-to-know: `dmath` and the C library differ in the last bit of some
 //!   `sin`, `exp` and `pow` values); `ks_pluck` is plain arithmetic on the generator and must match it every time;
 //! - `starts`: the series' three module generators are fresh generators of their seeds where a soundtrack starts.
@@ -15,9 +18,9 @@
 
 use bf_core::rng::Generator;
 use bf_sound::dsp;
+use bf_sound::voice::pp::alto::{AltoTone, alto_tone};
 use bf_sound::voice::pp::brass::{Brass, brass};
 use bf_sound::voice::pp::pluck::ks_pluck;
-use bf_sound::voice::pp::sax::{Sax, sax_tone};
 use bf_sound::voice::pp::{self};
 use bf_sound::voice::{ModuleNoise, PpNoise};
 use bf_testdata::{Case, Vectors, db_max_diff, hex_arg};
@@ -25,8 +28,8 @@ use serde_json::Value;
 use sha2::{Digest, Sha256};
 
 const FILE: &str = "shared/pp_blocks.npz";
-/// Sample and block-RMS differences: below this many dBFS.
-const DB: f64 = -120.0;
+/// Sample and block-RMS differences: below this many dBFS (measured worst -275 dBFS).
+const DB: f64 = -240.0;
 /// The fingerprint's RMS blocks, in samples.
 const BLOCK: usize = 882;
 
@@ -228,18 +231,18 @@ fn ks_pluck_is_the_kits_to_the_bit() {
 }
 
 #[test]
-fn sax_tone_is_the_kits_and_moves_its_generator_as_python() {
+fn the_alto_tone_is_the_kits_and_moves_its_generator_as_python() {
     let v = Vectors::open(FILE);
     let mut t = Tally::new();
     let mut moved = 0;
     for (i, c) in cases(&v, "sax_tone") {
         let get = |key: &str, default: f64| c.args.get(key).map_or(default, hex_arg);
-        let d = Sax::default();
+        let d = AltoTone::default();
         let gl = match c.args.get("gl") {
             None | Some(Value::Null) => None,
             Some(g) => Some((hex_arg(&g[0]), hex_arg(&g[1]))),
         };
-        let tone = Sax {
+        let tone = AltoTone {
             bright: get("bright", d.bright),
             vib: get("vib", d.vib),
             vrate: get("vrate", d.vrate),
@@ -255,7 +258,7 @@ fn sax_tone_is_the_kits_and_moves_its_generator_as_python() {
         };
         let r = raw(&v, i);
         let mut rn = generator(&r["rn_before"]);
-        let x = sax_tone(&mut rn, arg(c, "f"), arg(c, "dur"), arg(c, "v"), &tone);
+        let x = alto_tone(&mut rn, arg(c, "f"), arg(c, "dur"), arg(c, "v"), &tone);
         t.note(&v, i, &x);
         let after = generator(&r["rn_after"]);
         assert!(
@@ -268,7 +271,7 @@ fn sax_tone_is_the_kits_and_moves_its_generator_as_python() {
         }
     }
     assert!(moved > 10, "only {moved} cases drew from _RN");
-    t.finish("sax_tone", 15);
+    t.finish("alto tone", 15);
 }
 
 #[test]
@@ -292,7 +295,7 @@ fn the_module_generators_start_where_python_starts() {
     let s = PpNoise::start();
     for (label, ours, seed) in [
         ("drums60_lowpoly._rng", &s.0, PpNoise::SEED),
-        ("altosax60_lowpoly._RN", &s.1.sax, ModuleNoise::SAX_SEED),
+        ("altosax60_lowpoly._RN", &s.1.alto, ModuleNoise::ALTO_SEED),
         ("violin_lowpoly.rng", &s.1.violin, ModuleNoise::VIOLIN_SEED),
     ] {
         let want = &starts[label];

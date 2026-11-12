@@ -1,10 +1,21 @@
-//! `altosax60_lowpoly.sax_tone`: the Pixel Pitch alto saxophone's tone. The ALTO SAX's voice
-//! (`altosax_lowpoly.alto_tone`, the same recipe a shade brighter) and the alto voice the mambo bed plays
-//! (`altosax60_lowpoly.synth` with its scene's `TONES` entry) both call it; their tone tables and what they add
-//! belong to their own ports.
+//! The Pixel Pitch alto's tone (`series/instrument-history/altosax60_lowpoly.py`, the function the ALTO SAX's
+//! `alto_tone` calls), named here [`alto_tone`]. The ALTO SAX's voice (`altosax_lowpoly.alto_tone`: this recipe a
+//! shade brighter) and the alto voice the mambo bed plays (`altosax60_lowpoly.synth` with its scene's `TONES`
+//! entry) both call it; their tone tables and what they add belong to their own ports.
 //!
-//! Its breath and slap noise come from the module's own generator, `_RN = default_rng(23)`, which both callers
-//! share: [`crate::voice::ModuleNoise::sax`].
+//! Its breath and slap noise come from the module's own generator, `_RN` ([`crate::voice::ModuleNoise::alto`]),
+//! made `default_rng(23)` at import. It is not one continuous stream: the ALTO SAX's part
+//! (`kit/fighters/alto_sax.py` `Sound.tone`) replaces it with `default_rng(int(m) * 1000 + int(round(dur * 1000)))`
+//! before every tone it has not cached ([`part_seed`]), and every later draw (the ALTO SAX's voice, the mambo bed's
+//! alto) continues from that generator. A part does this through
+//! [`crate::music::MusicCtx::with_noise`]:
+//!
+//! ```ignore
+//! let x = ctx.with_noise(|n| {
+//!     n.1.alto = Generator::new(part_seed(m, dur));
+//!     alto_tone(&mut n.1.alto, f, dur, vel, &tone)
+//! })?;
+//! ```
 
 use bf_core::dmath::{self, PI};
 use bf_core::rng::Generator;
@@ -12,10 +23,10 @@ use bf_core::rng::Generator;
 use super::{SRF, bp, clip01, len, min1, tt};
 use crate::dsp;
 
-/// `sax_tone`'s tone arguments with their Python defaults ([`Sax::default`]). The ones Python tests for truth
+/// [`alto_tone`]'s tone arguments with their Python defaults ([`AltoTone::default`]). The ones Python tests for truth
 /// (`if gl:`, `if growl:`, `if breath:`, `if slap:`) are off at `None` or 0.
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub struct Sax {
+pub struct AltoTone {
     /// `bright=.6`
     pub bright: f64,
     /// `vib=.005`: the vibrato's depth, a fraction of the frequency.
@@ -42,9 +53,9 @@ pub struct Sax {
     pub gl: Option<(f64, f64)>,
 }
 
-impl Default for Sax {
-    fn default() -> Sax {
-        Sax {
+impl Default for AltoTone {
+    fn default() -> AltoTone {
+        AltoTone {
             bright: 0.6,
             vib: 0.005,
             vrate: 5.2,
@@ -61,7 +72,23 @@ impl Default for Sax {
     }
 }
 
-/// `sax_tone(f, dur, v, **tone)`: `int((dur + .16) * SR)` samples at 44,100 Hz of the alto at `f` Hz held for `dur`
+/// The seed the ALTO SAX's part gives the alto generator before an uncached tone of MIDI note `m` held `dur`
+/// seconds: `int(m) * 1000 + int(round(dur * 1000))` (Python's `round`: halves to even; `int` cuts toward zero).
+///
+/// # Panics
+/// Where numpy raises: a negative seed (a note below MIDI 0), or a `dur` that is not a number.
+pub fn part_seed(m: f64, dur: f64) -> u64 {
+    let r = bf_core::py::round_half_even(dur * 1000.0);
+    assert!(
+        m.is_finite() && r.is_finite(),
+        "cannot convert float to integer ({m}, {dur})"
+    );
+    let seed = (m.trunc() as i64) * 1000 + r as i64;
+    assert!(seed >= 0, "expected non-negative integer: the seed {seed}");
+    seed as u64
+}
+
+/// The kit's tone function `(f, dur, v, **tone)`: `int((dur + .16) * SR)` samples at 44,100 Hz of the alto at `f` Hz held for `dur`
 /// seconds at velocity `v`: up to 47 harmonics (those up to 9 kHz) shaped by the formant and blended dark to bright
 /// by the level, then the growl, the breath (`bp(_RN.normal(0, 1, n), 1600, 6500)`) and the slap
 /// (`bp(_RN.normal(0, 1, int(.03 * SR)), 800, 4000)` on the first 30 ms), drawing from `rn` in that order.
@@ -69,7 +96,7 @@ impl Default for Sax {
 /// # Panics
 /// Where Python raises: `dur` is not a number or gives a negative number of samples, or a slap on a note shorter
 /// than 30 ms (`dur` below -0.13 s: numpy cannot add the 1,323 slap samples to fewer).
-pub fn sax_tone(rn: &mut Generator, f: f64, dur: f64, v: f64, tone: &Sax) -> Vec<f64> {
+pub fn alto_tone(rn: &mut Generator, f: f64, dur: f64, v: f64, tone: &AltoTone) -> Vec<f64> {
     let n = len(dur + 0.16);
     let t = tt(n);
     // env = minimum(1, t / att) ** 1.4 * where(t < dur, 1, exp(-(t - dur) / .05)) * (.86 + .14 * exp(-t * 5))
@@ -174,9 +201,9 @@ mod tests {
 
     #[test]
     fn the_tone_draws_its_noise_from_its_own_generator() {
-        let tone = Sax::default();
+        let tone = AltoTone::default();
         let (mut a, mut b) = (Generator::new(23), Generator::new(23));
-        let x = sax_tone(&mut a, 440.0, 0.2, 0.8, &tone);
+        let x = alto_tone(&mut a, 440.0, 0.2, 0.8, &tone);
         assert_eq!(x.len(), 15876);
         // the breath drew n normals; nothing else
         let mut skip = vec![0.0; 15876];
@@ -184,36 +211,54 @@ mod tests {
         assert_eq!(a.random().to_bits(), b.random().to_bits());
         // no breath, no slap: no draw at all
         let mut c = Generator::new(23);
-        let dry = sax_tone(&mut c, 440.0, 0.2, 0.8, &Sax { breath: 0.0, ..tone });
+        let dry = alto_tone(&mut c, 440.0, 0.2, 0.8, &AltoTone { breath: 0.0, ..tone });
         assert_eq!(c.random().to_bits(), Generator::new(23).random().to_bits());
         assert!(x.iter().zip(&dry).any(|(p, q)| p != q));
         // a slap draws 1,323 more, after the breath's
         let (mut d, mut e) = (Generator::new(23), Generator::new(23));
-        sax_tone(&mut d, 440.0, 0.2, 0.8, &Sax { slap: 0.5, ..tone });
+        alto_tone(&mut d, 440.0, 0.2, 0.8, &AltoTone { slap: 0.5, ..tone });
         let mut skip = vec![0.0; 15876 + 1323];
         e.fill_normal(0.0, 1.0, &mut skip);
         assert_eq!(d.random().to_bits(), e.random().to_bits());
     }
 
     #[test]
+    fn the_parts_seed_rounds_as_python() {
+        // what Python prints for int(m) * 1000 + int(round(dur * 1000)): round(62.5) is 62 and round(63.5) 64
+        // (halves to even), 0.0005 * 1000 rounds to 0, 0.0015 * 1000 to 2
+        for (m, dur, want) in [
+            (72.0, 0.25, 72_250),
+            (60.0, 0.0625, 60_062),
+            (60.0, 0.0635, 60_064),
+            (61.9, 0.5, 61_500),
+            (55.0, 0.1235, 55_124),
+            (55.0, 0.0005, 55_000),
+            (55.0, 0.0015, 55_002),
+            (80.0, 1.0005, 81_000),
+        ] {
+            assert_eq!(part_seed(m, dur), want, "{m} {dur}");
+        }
+    }
+
+    #[test]
     fn the_glide_and_the_growl_change_the_tone() {
-        let tone = Sax {
+        let tone = AltoTone {
             breath: 0.0,
-            ..Sax::default()
+            ..AltoTone::default()
         };
         let mut g = Generator::new(23);
-        let plain = sax_tone(&mut g, 330.0, 0.3, 0.9, &tone);
-        let glide = sax_tone(
+        let plain = alto_tone(&mut g, 330.0, 0.3, 0.9, &tone);
+        let glide = alto_tone(
             &mut g,
             330.0,
             0.3,
             0.9,
-            &Sax {
+            &AltoTone {
                 gl: Some((-2.0, 0.08)),
                 ..tone
             },
         );
-        let growl = sax_tone(&mut g, 330.0, 0.3, 0.9, &Sax { growl: 0.3, ..tone });
+        let growl = alto_tone(&mut g, 330.0, 0.3, 0.9, &AltoTone { growl: 0.3, ..tone });
         assert!(plain.iter().zip(&glide).any(|(p, q)| (p - q).abs() > 1e-3));
         assert!(plain.iter().zip(&growl).any(|(p, q)| (p - q).abs() > 1e-3));
         // past the glide's end the glided note runs on at the same pitch
@@ -223,14 +268,14 @@ mod tests {
     #[test]
     #[should_panic(expected = "operands could not be broadcast together")]
     fn a_slap_on_a_note_shorter_than_the_slap_is_refused() {
-        sax_tone(
+        alto_tone(
             &mut Generator::new(23),
             440.0,
             -0.14,
             0.8,
-            &Sax {
+            &AltoTone {
                 slap: 0.5,
-                ..Sax::default()
+                ..AltoTone::default()
             },
         );
     }
