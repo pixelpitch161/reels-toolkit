@@ -172,7 +172,7 @@ on an empty input: the minimum column says what it requires.
 | `record_flag` | always | events, winner and K.O. equal with the recording on and off | 10 fights |
 | `left_fight` | always | the fight file's rules are the recording's (a recorded `dmg_side` of `[1.0, 1.0]` counts as none, which is what the Studio records for a neutral handicap; `fight::rules_text`); the Rust fight agrees with the left fight for the 10 s floor | 1 fight |
 | `prefix` | ignored | left, right and every scenario agree for `PREFIX_FLOOR_S` = 10 s of fighting from `t_fight`, or to the end (M3-R5) | 2 + every scenario fight |
-| `stats` / `stats_wide` | release | 2,000 / 20,000 Rust fights against the kit's pooled figures, milestone 1's bars; the fits present where the kit has them | the seeds |
+| `stats` / `stats_wide` | release | 2,000 / 20,000 Rust fights against the kit's pooled figures, milestone 1's bars; the fits (ruling M3-R32): where the kit has fits the port has at least one, and wherever either has fits the two counts agree under a two-proportion test, \|z\| at most 3 (`fight::fits_present`; it replaces milestone 1's fixed "above 0.002", which refused sampling noise at rare rates) | the seeds |
 | `look_frames` | always | the left fight with the real look and `DefaultLook`: frame bytes, hook calls, draw log; hull calls: every call's point count and vertices, as the SHA-256 of `<frame> <points> <v0>,<v1>,...` lines against `left.hull` (M3-R29; FLUTE and TROMBONE, format 1: each row's calls, the point sums within 1e-12 px a point); the build's hooks; a hull fallback STOPS the task (M3-R4) | the spec's frames (64) |
 | `look_frames_cached` | ignored | the same for the right fight | the cache's rows |
 | `hull_points` | ignored | every hull point of both fights within 1e-12 px and every vertex, from the pinned hull logs; the logs are the ones look.json's `hull` describes (counts, SHA-256). A `look_frames` hull failure is named frame by frame here | the frames and calls of look.json |
@@ -184,7 +184,7 @@ on an empty input: the minimum column says what it requires.
 | `looks_take_numbers_from_setup_as` | always | the source scan (below) | 20 folders |
 | `voice` | always | the spec's notes from their noise states: length exact, peak and every 10 ms block RMS within 1e-6, the noise where the kit's stood | the spec's count |
 | `voice_notes` | ignored | every sample within 1e-6 | the notes |
-| `sound` | always | the left soundtrack and each role: 16-bit master SHA-256, buses, stems, every 100 ms block within 0.01 dB above -90 dBFS, notes, noise end | a note of its part |
+| `sound` | always | the left soundtrack and each role: 16-bit master SHA-256, buses, stems, every 100 ms block within 0.01 dB above -90 dBFS, notes, noise end | a first-time note of its part, or, when the kit's own count is 0 (a part that plays only through its own synth, CLARINET), its own bus a stem above -60 dBFS in at least 100 blocks (`sound::part_is_compared`) |
 | `sound_stems` | ignored | the right soundtrack likewise (cached RMS), every stem window within -120 dBFS | a window a soundtrack |
 | `bed_calls` | always | `Sound::bed_calls()` is every `bed.<hook>(` of the Python part not under `hasattr` | |
 | `checks` | ignored (M3-R24) | every check of the left fight: the soundtrack is the kit's `audio.wav`; verdicts and numbers within `checks_parity.rs`'s bars | the cached rows |

@@ -523,23 +523,53 @@ pub fn assert_the_kits(what: &str, rs: &Stats, py: &Stats) {
             "{what} {key}: Rust {rust}, the kit {kit}, more than {bar} apart"
         );
     }
-    // milestone 1's own check (stats_parity.rs): a fit rate of zero passes a bar of points, so where the kit has fits
-    // the port must have them, above 0.002 where the kit is (as milestone 1's pair is)
-    if py.fit_rate > 0.0 {
-        assert!(
-            rs.fit_rate > 0.0,
-            "{what}: the kit's fit rate is {}, the port has no fits at all",
-            py.fit_rate
-        );
+    if let Err(why) = fits_present(rs, py) {
+        panic!("{what}: {why}");
     }
-    if py.fit_rate > 0.002 {
-        assert!(
-            rs.fit_rate > 0.002,
-            "{what}: fit rate {}: the fits are missing (the kit's {})",
-            rs.fit_rate,
-            py.fit_rate
-        );
+}
+
+/// Two fit rates may differ by this many standard errors of a two-proportion test (ruling M3-R32).
+pub const FIT_Z: f64 = 3.0;
+
+/// How many fights of a sample fit (`fit_rate` is fits over all `n` fights).
+pub fn fit_count(s: &Stats) -> u64 {
+    (s.fit_rate * s.n as f64).round() as u64
+}
+
+/// The two-proportion z of the Rust and the kit's fit counts: the gap between the rates over the pooled standard
+/// error, `sqrt(p (1 - p) (1 / n_rs + 1 / n_py))`, `p` the pooled rate (0 when neither has a fit).
+pub fn fit_z(rs: &Stats, py: &Stats) -> f64 {
+    let (a, b) = (fit_count(rs) as f64, fit_count(py) as f64);
+    let (na, nb) = (rs.n as f64, py.n as f64);
+    let p = (a + b) / (na + nb);
+    if p == 0.0 {
+        return 0.0;
     }
+    (a / na - b / nb) / (p * (1.0 - p) * (1.0 / na + 1.0 / nb)).sqrt()
+}
+
+/// Ruling M3-R32: the fits are where the kit's are. A fit rate of zero passes a bar of points, so where the kit has
+/// fits the port must have at least one, AND wherever either has fits the two counts must be one rate's samples:
+/// the two-proportion z within [`FIT_Z`]. (Milestone 1's fixed "above 0.002 where the kit is" refused sampling
+/// noise at rare rates: the kit's 5 fits in 2,000 for CLARINET against the port's 25 in 20,000, z 1.4, while the
+/// kit itself gives 0.0015 over 12,000 seeds.) A mechanism that never fits fails the first rule; a rate that is off
+/// fails the z test at rare rates and the rate bar above (0.5 points in release) at common ones.
+pub fn fits_present(rs: &Stats, py: &Stats) -> Result<(), String> {
+    let (a, b) = (fit_count(rs), fit_count(py));
+    if b > 0 && a == 0 {
+        return Err(format!(
+            "the kit's fit rate is {} ({b} of {}), the port has no fits at all in {}",
+            py.fit_rate, py.n, rs.n
+        ));
+    }
+    let z = fit_z(rs, py);
+    if z.is_nan() || z.abs() > FIT_Z {
+        return Err(format!(
+            "fit rate {} ({a} of {}) against the kit's {} ({b} of {}): z = {z:.2}, more than {FIT_Z} (ruling M3-R32)",
+            rs.fit_rate, rs.n, py.fit_rate, py.n
+        ));
+    }
+    Ok(())
 }
 
 #[cfg(test)]
