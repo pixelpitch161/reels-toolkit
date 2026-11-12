@@ -39,9 +39,12 @@ pub fn norm(a: V2) -> f64 {
     dot(a, a).sqrt()
 }
 
-/// `float(np.hypot(*a))`.
+/// `float(np.hypot(*a))`, and one element of `np.hypot(*arr.T)`: numpy's `hypot` (`dmath::np_hypot`), which for
+/// every distance of a fight is the plain `sqrt(a[0] * a[0] + a[1] * a[1])`. It is not `math.hypot` (CPython's own,
+/// `dmath::py_hypot`), which `fight.py` never calls, and not `np.linalg.norm` ([`norm`]): the three differ in the
+/// last bit, and the kit's line decides which one a port takes (ruling M3-R35).
 pub fn hypot(a: V2) -> f64 {
-    dmath::hypot(a[0], a[1])
+    dmath::np_hypot(a[0], a[1])
 }
 
 /// `math.radians(deg)`: `deg * (pi / 180.0)`, the constant formed first, as CPython does.
@@ -268,6 +271,15 @@ mod tests {
         assert!(sign(f64::NAN).is_nan());
         // np.linalg.norm([3, 4]) and np.hypot(3, 4)
         assert_eq!((norm([3.0, 4.0]), hypot([3.0, 4.0])), (5.0, 5.0));
+        // np.hypot(x, y) on the reference PC, where math.hypot(x, y) is one step away (the second number)
+        for (x, y, np_hypot, math_hypot) in [
+            (-1.613, -1.996, 0x400487bcfcce3c1fu64, 0x400487bcfcce3c20u64),
+            (1.252, -1.349, 0x3ffd7289999e0598, 0x3ffd7289999e0597),
+        ] {
+            assert_eq!(hypot([x, y]).to_bits(), np_hypot, "np.hypot({x}, {y})");
+            assert_ne!(dmath::py_hypot(x, y).to_bits(), np_hypot);
+            assert_eq!(dmath::py_hypot(x, y).to_bits(), math_hypot, "math.hypot({x}, {y})");
+        }
         assert_eq!(dot([1.0, 2.0], [3.0, 4.0]), 11.0);
         assert_eq!(div(scale(add([1.0, 2.0], [3.0, 4.0]), 2.0), 4.0), [2.0, 3.0]);
     }
