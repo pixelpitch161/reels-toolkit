@@ -1,0 +1,11 @@
+{
+ "format": 1,
+ "entries": [
+  {"path": "studio/reference/themes/hot_jazz/bed.json", "sha256": "55484d5fc3e52d8f83991c133efd9795bae234ab106cb957ccb1de9b905481a8", "bytes": 46658, "tool": "tools.studio_export.theme_hot_jazz", "commit": "b5c2dc7fa1d8f59b71db1dff7469829a5fce88a9", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"},
+  {"path": "studio/reference/themes/hot_jazz/exceptions.toml", "sha256": "fa29a01e9c4b1693533f0e35589afb4df98031bb9be56d8a8cab7b69f89cf7f4", "bytes": 781, "tool": "tools.studio_export.theme_hot_jazz", "commit": "b5c2dc7fa1d8f59b71db1dff7469829a5fce88a9", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"},
+  {"path": "studio/reference/themes/hot_jazz/pins.json", "sha256": "0747c95d809036622c107a77fbeca0fd7eb5d8ff892c4a3bd9e2feae8a3b1ee0", "bytes": 1498, "tool": "tools.studio_export.m3refs", "commit": "b5c2dc7fa1d8f59b71db1dff7469829a5fce88a9", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"},
+  {"path": "studio/reference/themes/hot_jazz/theme.json", "sha256": "195a75700f9d4192dcefbc394d3c032cd393ada4649709800130267392f03092", "bytes": 2087, "tool": "tools.studio_export.theme_hot_jazz", "commit": "b5c2dc7fa1d8f59b71db1dff7469829a5fce88a9", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"},
+  {"path": "studio/reference/themes/hot_jazz/trumpet_vs_clarinet.bfrec", "sha256": "dab138e6bc37afb83134e8838882ea2226fe838aac6d6fd86fb457a5c98a7b1a", "bytes": 139040, "tool": "tools.studio_export.theme_hot_jazz", "commit": "b5c2dc7fa1d8f59b71db1dff7469829a5fce88a9", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"},
+  {"path": "studio/reference/themes/hot_jazz/voicings.json", "sha256": "fa28b49b70612d6f74eae3ec48a9897ac78acbd7e133cdfebffe715c26cec055", "bytes": 5032, "tool": "tools.studio_export.theme_hot_jazz", "commit": "b5c2dc7fa1d8f59b71db1dff7469829a5fce88a9", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"}
+ ]
+}
