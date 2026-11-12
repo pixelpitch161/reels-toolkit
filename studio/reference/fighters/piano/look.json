@@ -1,0 +1,1520 @@
+{
+ "about": "PIANO's look against the Python kit: the `left` fight drawn with its real look and kit/fighters/base.py's Look for FLUTE (every hook of both spied, as look_flute does); the VS card alone on milestone 1's noise image with PIANO on either side; its title hooks; its sprites",
+ "cards": {
+  "call": "hashlib.sha256(title.draw(noise, frame / 30).tobytes()), noise = studio/reference/frames/flute_vs_trombone/title/noise.png; left: the fighter on side 0, right: on side 1",
+  "left": [
+   [0, "1aa615d9f4eae664a7f061e42957a36d60955636528345c6fd8fe384847fd499"],
+   [4, "65b11a89f281ee230752f4184dcca9cdb3917110bbe851df9ee2477b17d5fb45"],
+   [8, "14d4b21ecce5dca16d83e6edfd06f12aa20e4ca0c2b90786326414efbc9ddd5f"],
+   [12, "ec310ba605e595df48553fed90ca22d0a84b20b6470fc8adde2b4992be5affcd"],
+   [16, "ab100cd2d09585fad8227b6ae92e944360b82cbef5972f2da7cc44af0b8d966b"],
+   [20, "04dada6d8a2a2bae996e608c7354dadaa20d0ac33e57c0916eb025088aafa7ab"],
+   [24, "c38ca41ae9ca3682fc823a0e23d2c05255a5458d488cd416b7bdc7e9c4cd1fa4"],
+   [28, "644936279719fbb31cef58559f61cdb02cd93625adc5cf8b93875b7847d0936e"],
+   [32, "e134c60a27d86b04c0a7b9edbb48834b327207997083bcdefc4a29b723e4ceca"],
+   [36, "0cf97ad27af700d1169b39367b91b4053fc990603369cf21f3622da8fbf3f74f"],
+   [40, "61762ec6fbe028cc1d22481a97cb0840a1537ee6f29d2aef6a7646bd4e53098a"],
+   [44, "c089748a6b76fb8df3ec52f04057f99656163390fb0cf3573d4d0d569e1897f7"],
+   [48, "35a58fd675787e632bfd42b20df34c4dfe9f30cbe54d6a51861e193f0498b581"],
+   [52, "cff0224db953c66e943a7193c8ece233e739ce21f61b51b4c183327c001e703b"],
+   [1825, "7a7b90e9feba313b56bec763320fe77006850c0ecf83336b2b7da485c35c14d1"],
+   [1829, "57d970830d150e1c93e40f37e80f2daa0cb60e492d2d84500a151c7fb9c8b817"]
+  ],
+  "right": [
+   [0, "a48987ba6bd418f767d4bc701ea05ffe0fa1c99398e26472ab626d66f0a10ad0"],
+   [4, "9c4145a52490f36e87bb3af09f950646fdadcecc9f3f90c91c0d97c6a64d44fa"],
+   [8, "72695848b218695910fbf257162c05675a542c1670deab85ca2fad829dda0f54"],
+   [12, "1e532da4459941fc66836425eb426f54c2092de262a8feea94c0ca1460c0096e"],
+   [16, "52111c007e3692c1e92b80fc3595c0b2567c74b294eb412b5a13e29ab6ea4088"],
+   [20, "9758cd55fb0cd956246a1d4ffcafa4d6eb4e7393a2d9fb2726cf407d517cb5f2"],
+   [24, "bb05454be355a3bc9a6c31bb2fced1bbc39dd4a102539a477769194c7760a527"],
+   [28, "187d26ed87291e47b12327dc1c2dd9cfaaa2571d177f80b825122fd3818ddbd1"],
+   [32, "7248d693489f4e57454c70866897548d81fca84540733fa270e03a0feaef686c"],
+   [36, "3552e2870fdfd2979effdb7c6d92daf4bb21c0dab0135def06dce47a3ce171e5"],
+   [40, "28667ee6812fffa9a1d9ab6ef0c568a9517fae189b53703d0a95a297a4d55928"],
+   [44, "ca450214cf4c054b8370d0575c96b6393b1119a50358ea1e3f2d4021b740289c"],
+   [48, "55572345250a523675fd190eedd4503c80d8cfc707c1da1879a77fd63c152dc6"],
+   [52, "cff0224db953c66e943a7193c8ece233e739ce21f61b51b4c183327c001e703b"],
+   [1825, "299998ac3223eb6e51e63a5741c66fc1d7847953b2b1b3be5e2b08f01ebd9e77"],
+   [1829, "e8df85d621d2ed55f975f62f41d446f69de3c3c72515deadca721fce0d40a680"]
+  ]
+ },
+ "cfg_keys": ["abilities.low", "abilities.unlock1", "register", "weapon.margin", "weapon.reg"],
+ "cfg_keys_note": "the roster keys the kit's Look class reads from self.cfg (m3parts.cfg_keys): the look takes them from setup_as's cfg and names exactly these in cfg_summary (EUPHONIUM's copies draw it with another fighter's numbers)",
+ "fighter": "PIANO",
+ "format": 1,
+ "frame_columns": ["frame", "sha256 of the frame", "hook calls", "sha256 of the hook calls", "boxes drawn", "sha256 of the boxes", "hull calls: [points, vertices, sum of x, sum of y]", "why"],
+ "hook_names": ["setup", "state", "ball", "ball_sprite", "hides_hp", "shake", "rope", "spark", "hit_glow", "fx_setup", "fx_event", "fx_after", "ko_fx", "fx_end", "light", "shadows", "shadows_free", "canvas", "canvas_wave", "canvas_after", "canvas_overlay", "items_ball", "items_free", "draw_item", "over_ring", "draw_shard", "shimmer", "shimmer_after", "glows", "fringe", "fringe_size", "after_grade"],
+ "hook_note": "a hook call is '<side>.<hook>'; state adds '(ball,phase)', ball, ball_sprite and hides_hp add '(ball)'; hooks_build leaves out rope",
+ "hull_cache": "fighters/piano/hull_left.json",
+ "left": {
+  "cards": [
+   [0, "1aa615d9f4eae664a7f061e42957a36d60955636528345c6fd8fe384847fd499"],
+   [4, "65b11a89f281ee230752f4184dcca9cdb3917110bbe851df9ee2477b17d5fb45"],
+   [8, "14d4b21ecce5dca16d83e6edfd06f12aa20e4ca0c2b90786326414efbc9ddd5f"],
+   [12, "ec310ba605e595df48553fed90ca22d0a84b20b6470fc8adde2b4992be5affcd"],
+   [16, "ab100cd2d09585fad8227b6ae92e944360b82cbef5972f2da7cc44af0b8d966b"],
+   [20, "04dada6d8a2a2bae996e608c7354dadaa20d0ac33e57c0916eb025088aafa7ab"],
+   [24, "c38ca41ae9ca3682fc823a0e23d2c05255a5458d488cd416b7bdc7e9c4cd1fa4"],
+   [28, "644936279719fbb31cef58559f61cdb02cd93625adc5cf8b93875b7847d0936e"],
+   [32, "e134c60a27d86b04c0a7b9edbb48834b327207997083bcdefc4a29b723e4ceca"],
+   [36, "0cf97ad27af700d1169b39367b91b4053fc990603369cf21f3622da8fbf3f74f"],
+   [40, "61762ec6fbe028cc1d22481a97cb0840a1537ee6f29d2aef6a7646bd4e53098a"],
+   [44, "c089748a6b76fb8df3ec52f04057f99656163390fb0cf3573d4d0d569e1897f7"],
+   [48, "35a58fd675787e632bfd42b20df34c4dfe9f30cbe54d6a51861e193f0498b581"],
+   [52, "cff0224db953c66e943a7193c8ece233e739ce21f61b51b4c183327c001e703b"],
+   [1825, "7a7b90e9feba313b56bec763320fe77006850c0ecf83336b2b7da485c35c14d1"],
+   [1829, "57d970830d150e1c93e40f37e80f2daa0cb60e492d2d84500a151c7fb9c8b817"]
+  ],
+  "fighters": ["PIANO", "FLUTE"],
+  "file": "fighters/piano/left.bfrec",
+  "frames": [
+   [
+    0,
+    "9fec502ef38ed8f3cb87db1c588fc0a4404c95186628382c52351efe79efadbd",
+    38,
+    "6d8bc6b7a5e68f423c56da2596de48cd5ce95d5600cf7aa2d01485a088287cf0",
+    0,
+    "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a53d0d9b81d4p+12",
+      "0x1.2a48ab7bd62c6p+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    13,
+    "e63be3a0e773587f88ce2c6f9aa281ddf4d51a09a1614a7006c75491728c5d6e",
+    38,
+    "1d06738e4154afe68650a302798c0879b1dd67138d7125ba3fb3fafb731056e4",
+    1,
+    "ec7e21341cc2a6fae58d24b771c62e0ceaf16a63f32ba63e0ba5339e976ab726",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a53ce57bbf3ep+12",
+      "0x1.2a48ab9a12537p+13"
+     ]
+    ],
+    "the title card, the doors and the count-in"
+   ],
+   [
+    27,
+    "d5667d79068f51096606a86d2de4f530517058ce33e9bf301686a0ca22c93865",
+    38,
+    "6d8bc6b7a5e68f423c56da2596de48cd5ce95d5600cf7aa2d01485a088287cf0",
+    2,
+    "697b35b1dcaf07da42ea21f3b3a578ab03d92afb2c81c96e8aa6e79bcc3d8931",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a53bc62566dap+12",
+      "0x1.2a48ac735b3cdp+13"
+     ]
+    ],
+    "the title card, the doors and the count-in"
+   ],
+   [
+    43,
+    "246b384ea44950a6acc89d75a9b8da0e1804d32b8f7e81f15e6fa3455d3b3425",
+    38,
+    "1d06738e4154afe68650a302798c0879b1dd67138d7125ba3fb3fafb731056e4",
+    3,
+    "6b6db73ff1484954516262f2b7612653523dede6c4a28ba89f610924c2621a59",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a5386f71bc72p+12",
+      "0x1.2a48af01a5a86p+13"
+     ]
+    ],
+    "the title card, the doors and the count-in"
+   ],
+   [
+    44,
+    "17586cb68b812b7d190d92fef6dae675a3d7da8a39b7355d10780fe2b7eac433",
+    42,
+    "177a597a30ec1ab1cd3c7108365b43e3c1bbcbfec58720b80ecb506b2c6b6863",
+    22,
+    "0b3c32a681a5e57c2080eb3ca44534a1325d635ebc768844ba0cf7752b49f5c6",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a538242c77dbp+12",
+      "0x1.2a48af3bd74c5p+13"
+     ]
+    ],
+    "the title card, the doors and the count-in"
+   ],
+   [
+    45,
+    "372759ccd27846dfb98b859494490f839cfe771da92a0d967757838112d18e9b",
+    42,
+    "177a597a30ec1ab1cd3c7108365b43e3c1bbcbfec58720b80ecb506b2c6b6863",
+    22,
+    "f9e1800a7e2e70b8ea1d38122e724339e30e15055000495e98a7de48d73a3bdc",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a537d637ba29p+12",
+      "0x1.2a48af783587cp+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    90,
+    "d8c680213f75315ce2647b9fff29b553cae75645ee38b3b6629593698cd68723",
+    42,
+    "e248c3ecc63411746777b391286c296e03acbcca03daf86b716c94aa63cbf66a",
+    23,
+    "ecd533b4d06ff89844b2e1a8fba2fc9cf8d7fb80fdcd297a59c027dc09078a5a",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a51fd95cf597p+12",
+      "0x1.2a48c349ce3a6p+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    107,
+    "e9417dc6b971080ae559fe1af134b9145d9179ff0f4610894c2cee5e118dbda5",
+    38,
+    "6d8bc6b7a5e68f423c56da2596de48cd5ce95d5600cf7aa2d01485a088287cf0",
+    21,
+    "3cefefe0a2a519e96448da4817e05b1ff597e10b09fdd6d8b7a5b4d681324ecb",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a512df70e33cp+12",
+      "0x1.2a48cf0ea382ep+13"
+     ]
+    ],
+    "the title card, the doors and the count-in"
+   ],
+   [
+    108,
+    "ce3f574227278328415c070f51df980682e7f3b69ca5bf31fd162c09c60bbd7c",
+    38,
+    "94eb2bfd4a01f18705b3128f28a6d9abfac9a8bcaf9dd63662f57690b43dba71",
+    21,
+    "70442f993cb9cfe4ed2c27981bc01993b58346dd9a229d3f0abdfb54fb9bd616",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a51213a9723bp+12",
+      "0x1.2a48cfcdbd404p+13"
+     ]
+    ],
+    "the title card, the doors and the count-in"
+   ],
+   [
+    109,
+    "931f1cbe291e3205cc40ad835823c95f850a005189d15e282dd9242bd4c6d94d",
+    39,
+    "2c765f9a1c37b165f5db21f503fe5e5d4e9fe06592e4349bfbc5d5720e930c0d",
+    21,
+    "58646477e6c2554c4a96227b93f94194cbd65667b051a3b02d7b913945fef843",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a511474eb9cfp+12",
+      "0x1.2a48d08e1d96bp+13"
+     ]
+    ],
+    "the title card, the doors and the count-in"
+   ],
+   [
+    135,
+    "0492eab312ae20505aee839c3cc22f3ce5c23a644514afcea137e9be6555539f",
+    47,
+    "45c869fe4066148c14443ca51e1a6d11d9602f5df94b0aecb10c5d1991590cfe",
+    22,
+    "c24c590b6670df1660ba69e801e1303af613e40f6593df531264f59dd23bccd6",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a4fc7864fdcap+12",
+      "0x1.2a48e52cce4a4p+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    149,
+    "cf2f70c81345568ab602db8f2ac9423482ea2fd40ad01243e14764e10594d581",
+    49,
+    "92817877f294719e221f0d67589e6aaf2b7b766950bc531098768d2cd5ddd7f5",
+    22,
+    "dce45f5116f2783206fb5cf5af821ce898de7d3e97a84922ad7919c9d9010e88",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a4f20e721b44p+12",
+      "0x1.2a48f041b4549p+13"
+     ]
+    ],
+    "its first 'key' hit at 4.92157 s"
+   ],
+   [
+    180,
+    "74e6387ecfdebc0c3f2655ab5f2e66fd689346497860c0cdead2a7b626c054c0",
+    50,
+    "1e622b40b06d2851104a19abf584773a9aa5392e0ae6571d31dd3c6c990628fe",
+    22,
+    "927c2d253573a5a8cbe8b9abb284c382d7812b9dd022178696c99662da38c293",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a4dffeec0e00p+12",
+      "0x1.2a4904b8d1f2bp+13"
+     ]
+    ],
+    "spread; the first hit it takes ('fang' at 5.96324 s)"
+   ],
+   [
+    225,
+    "54b6550737700c58eb8a33976587b1dc36fe3f291945c560fcd9e2314286c752",
+    49,
+    "6ea51c6f08b19eac64dfa35128fea4537a4834b778b6195f651112a942388779",
+    22,
+    "dafc55cdfb28ed4b2e3044fd6340c94fdc29ea869555ca71a45511491f17b8a2",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a4d5db6713ebp+12",
+      "0x1.2a4910ec2bf0dp+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    270,
+    "9dcf9e269ce47133b862076b5fa8cbd043eb17296104b14df8e22329628f99e7",
+    50,
+    "dc1146fccea15911c4a36da9ba2186467ab982b0d886e88711d4ca9c8e50b2a5",
+    22,
+    "a63bbbb0083a606703b29d9d85fd367d0275a5dd2094de9cbcd8521a3930c5ce",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a4d680734487p+12",
+      "0x1.2a490f041f0edp+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    315,
+    "4ddb67b897dfea4f8c81979e8c96b8c231c767a89c591bd455815e9aa08c7a6c",
+    66,
+    "dcd2075e1e6c50ce7d79563e14001db153725e1d282c754bc1dcfc9cf9d5f846",
+    22,
+    "d72cbab8717a46a955576442ed15228b4e654137baa570700950228d6753eb1c",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a4e0aacf75e2p+12",
+      "0x1.2a48f5dbeffbdp+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    330,
+    "a64db5bc8e39e25a850303acbde795b3cdbd17b39968704eae5a48db40df0814",
+    59,
+    "a29749c7cb0f41d416227d00e1c1a54a0f212bf5b71033d44844b79c5dad505f",
+    24,
+    "680923d248027e2f4f9d7a58f208defc21bda0b06b94a061456c2bb7f9cc5d5d",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a4e7634aa706p+12",
+      "0x1.2a48e5a4b76a4p+13"
+     ]
+    ],
+    "0.2 s after SUSTAIN at 10.77157 s"
+   ],
+   [
+    342,
+    "7191e96418b8e6404d96e74d16a12a93296e5a878c6c0eebcd04f04d60be634f",
+    65,
+    "2e22830fe478502b19622da99dd3ae05956d23b46e6c7f2eed9f9536ea44f239",
+    24,
+    "b3fd42f23ece6249eaa6582c907517d9b919e544c8121cf1caf388eb5f1050f0",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a4ee03d18a92p+12",
+      "0x1.2a48d5f8af87ep+13"
+     ]
+    ],
+    "0.6 s after SUSTAIN at 10.77157 s"
+   ],
+   [
+    360,
+    "db9f0af5e675e5b2038f463c376c16c3f42fb59b30e4fd12079591178c3d2cd7",
+    64,
+    "68231be86705803d97a4c42550159bcb111b4e39d6be1d7aa66b2f793b0f4352",
+    24,
+    "4aaf1d0c1048037f509fdc2c939e72d81aac56b6b90aaaab1e787207b1062d5a",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a4f9ec4dfad6p+12",
+      "0x1.2a48ba9652982p+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    405,
+    "427bd2278945daca6ff53518745eee404fe8ce4b2da335cea9b38e2cfa6ec9cb",
+    73,
+    "e633312a57f5e4d0b35e4c51bd1e22439594182233e135bb7a9096357af36229",
+    22,
+    "be069479bbc1aad065e6bffa4a255a5cf3b84fc6f19447e9e0535f611fbdd526",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a51fd39cd90cp+12",
+      "0x1.2a4869c54ae6cp+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    450,
+    "dd37a288545fb44a22399dc28345b65d2a6fcded86601cef1c23d32675040c97",
+    62,
+    "c4ab8008bf994492402753ce23921f59d548eb0063340e9ec1130460f0e8cf01",
+    23,
+    "2225546df92ff0acf679d076492b9e22ab6293a1828d8cbd8282cee6c2f56a47",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a54a714cd970p+12",
+      "0x1.2a4819a43e8d4p+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    495,
+    "49a8cec3c5c4492834bbf159d4042e4cc804839a0461abc46c3d7e56a39a8da4",
+    65,
+    "eee11f45743de9aafb436712e37c93b6210cdf68396cde15f03b88ccf4a0d26d",
+    23,
+    "4a0e707cf5f05a14c2cbc4553d8ab2b05abf7a000e5a5af57336f070eecb33d9",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a56f61693047p+12",
+      "0x1.2a47dc9cc8730p+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    540,
+    "508b028af209ee25b1db4e36bdfc803c56ab0542174c1b1e4439b7ec6e2ce78f",
+    62,
+    "c66675e9ff7b0e441f5211d278a621ca9bbbb5a0ac7f995cc80fa4c5b130e9b8",
+    22,
+    "8348ea8fade00972196c51c58158c29e5c71136efa407c69d4501a2c3ea0264c",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a5860bdbea65p+12",
+      "0x1.2a47bac42cf7dp+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    585,
+    "6d06dfdd24c94ab934c48417834837f77a37eb8ddece1fc56b76228550a2a342",
+    61,
+    "dd18506b5562b594defcc71b3705885e9dabbaf718ff58d446e7a7daa80ff0aa",
+    22,
+    "ded9a5f598505ad078b5362efc0ace7619a72e9affb10e917727a942f8f406eb",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a58ce0516076p+12",
+      "0x1.2a47b114b389dp+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    630,
+    "e8641e0a399a293fa96e05a52b57cc7883bbca8d55e7828e210fe081ef34c29b",
+    64,
+    "db6439f49ee490f7d1e7b8d600199caaf14e67c41f28b429266902b6cf20eca2",
+    22,
+    "c577e01ded45eb0939c615df2d01489411c1d4372460ba5a645db531fc9e81cf",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a58ba371c91bp+12",
+      "0x1.2a47b8ec972e2p+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    652,
+    "cd15d5d5f72f227b94c6a42a6bf4ecdd16f6d9fb8d374bb9b5eb8f7593081a0b",
+    68,
+    "d7d5be344363aaf8fb3fb758089397d3488e3b0df7b348ac2024ddae9e3603f6",
+    25,
+    "39a87b620639616f45a0895a54537186744ddd2624fe8954cb041dbd97e51f84",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a5868cb4b58ap+12",
+      "0x1.2a47d6c4cf25dp+13"
+     ]
+    ],
+    "0.2 s after GLISSANDO at 21.5299 s"
+   ],
+   [
+    664,
+    "3676fd87b2e4ee0b34cd3065d7c2b51963d4d30819dad00a97d44c6f6fbca3e4",
+    81,
+    "272eda22b0ee156f0cdb7ebf29b52f0b7b0ebf4da7dbbc81a01aa8aae3e686fc",
+    25,
+    "53258645cc165d7f44dd51f4a2e2b4692807cf8f2daf8d4e05bd3fe49d04ad4a",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a581a1e9e773p+12",
+      "0x1.2a47f3ac5e218p+13"
+     ]
+    ],
+    "0.6 s after GLISSANDO at 21.5299 s"
+   ],
+   [
+    666,
+    "3fc2c061bdbc7900bf39e4a17bda4a6478bb3e89232b82c16ea4d6e415ac3710",
+    78,
+    "818816bb4c39a7f01223c189a17bf0ae04f34e084ac4cb21fff1738c67bf69f5",
+    25,
+    "79deba53917249b968fca4afd7ec1a14aed4e465b773557115c775718265ac7f",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a580a6ee0241p+12",
+      "0x1.2a47f971bd328p+13"
+     ]
+    ],
+    "0.2 s after SUSTAIN at 21.9799 s"
+   ],
+   [
+    675,
+    "ce7e20cebf06cc3e16d9f560c5ab8ad8b765e544d1d177e3d6c5e199368d781f",
+    71,
+    "3481488aa53a0295fd1fa8f7fb77221c084efc8387d86f1d2c62a0531f235835",
+    25,
+    "2455abf119366dd82c7ed4cf1512feeeb3daa0e67f9a4e20e1c831f196b6c610",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a57ba844d2b0p+12",
+      "0x1.2a4816e2c2631p+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    678,
+    "cb3d956cfc26703d6e954b346436be466a0eeced62a16db17438194dd87cea88",
+    68,
+    "e034ea9a6790f5b1ef959231b99f081d5caf2167bce3bac13bbe6201c1d34dd0",
+    25,
+    "606f3002a901a9f91a3126f2fe3098faf7901cbfc97e5b35e2c6486ad631035f",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a579c7816ed2p+12",
+      "0x1.2a4821f91d63dp+13"
+     ]
+    ],
+    "0.6 s after SUSTAIN at 21.9799 s"
+   ],
+   [
+    720,
+    "b20abef9488ac684079a6eeda58a11e5a55a82db6ba593899e7d757bff2aa113",
+    72,
+    "940cd9bd2eeede4be873dc82073d7e7deeb90cbf94d77075e57e1aade65fbb74",
+    24,
+    "03d67a73832cfd7806bb2526b2dd3aba3e192f64a61180c302d19e58fc1b468e",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a554dcf196bap+12",
+      "0x1.2a48fde68a219p+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    765,
+    "24f091566eca574658ae8b9cc19b7b4cf1096c3e839e4038b88ebb3d6491c354",
+    63,
+    "e02320faad683bdcce39cb12ae99d5ce08976a817e64521b9c436a0c0b255b94",
+    22,
+    "a3e7ee30251722dce52727c597ec9ad6f8a71c03770e6ad36a785013c2121e11",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a51cee2e7951p+12",
+      "0x1.2a4a527addeedp+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    810,
+    "0004ea9284c59954ea869a899b7c54968f1a241017d7cc24bac69fa046af3f5d",
+    75,
+    "fb6a642e8e78a4cb864512c3bfb0a40c3ac446ba7ae1ed9db51d2c079f2fa4b2",
+    24,
+    "f893e02c29e2588c9774da2345fa4c712c0d5e8417b70b78a0fa443f17efa0b4",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a4e10ddc0401p+12",
+      "0x1.2a4bc9529fc0fp+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    855,
+    "bd2f3f901dc96e6052c69875e6f0d008474f12118ff52db8ab8f84d46ca830a4",
+    68,
+    "0cba2505b1bbf4e7b5971d204877f4d8d137b2c778924817e062eb72cbdba1e6",
+    22,
+    "42c7396e2534768a1ba3312c580800a56caa3034f47a66a80e69c9f8d67c8ceb",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a4af8281e7a7p+12",
+      "0x1.2a4d07e1733c7p+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    868,
+    "51d7e5ac47612b6b225798c497cbfd6b7fd3b35c5ea297cd853e6b07228f94bb",
+    68,
+    "129392b47ae80afe38aa6200a473dd69afdba6c7f9d15977ded8dea53d3b7057",
+    24,
+    "90b769c4df3bab00f6ff6f17399c3579623e467a430ad276ad97e8fb1991f4ca",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a4a4b55041edp+12",
+      "0x1.2a4d4e6082a20p+13"
+     ]
+    ],
+    "0.2 s after GLISSANDO at 28.71324 s"
+   ],
+   [
+    880,
+    "3085a2992abc31b4472a5c7eec424e3427c8ea1f2886680d15d96882e217dbb1",
+    74,
+    "9c1bacb5ea98fa433615ba802f57baba7a95222e53414f9f212b4e6ae1752991",
+    23,
+    "082c16c51eb2bf0016d1b5862cb945b18e4f315760a6ae5dca33e27f3dedff42",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a49c62cafb26p+12",
+      "0x1.2a4d84f4073e2p+13"
+     ]
+    ],
+    "0.6 s after GLISSANDO at 28.71324 s"
+   ],
+   [
+    900,
+    "eae421c5568b6f74a22dac2f3b1a31312561236ea864e1f33b32fcb74f9e677d",
+    65,
+    "654c9cd09ace530b7e227bd035966b56bfffd89888571ca30003c94f2740d955",
+    23,
+    "f201614199e539b52120812f80426bbb89a0137d58d1ca55ab1fffe2ae1dbb18",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a4921cbf55e0p+12",
+      "0x1.2a4dc8a40c93cp+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    945,
+    "9b32b903715a2d97130644c23aea998e080fd3c3cddaa4b4aa1eb164850ef32b",
+    67,
+    "bc6c9323c34f40c892d844bf8531107788e4abdb57b6ebdbed77f16b2b5b97a4",
+    23,
+    "11b17c1410dd72c5de8a85e1278b3938cf4078c5c8730f629c2f1cbf2a8bc0fb",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a489658f0ca9p+12",
+      "0x1.2a4e0256b5bf1p+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    990,
+    "d9432c9a332087b654d3cf6fceb77dedd9d90742f7419f75b3ca1ce0252f8748",
+    61,
+    "8bf72525f112b5af72cf76ba9aa3e9d99e3fb27d61f0eadf652f154d650e5df8",
+    23,
+    "18b498accd7fd47dda22f24b6238de6104a0bef25fc94f4f7bf3f4fa7137ca77",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a485fe1fe468p+12",
+      "0x1.2a4e181ede34fp+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    1035,
+    "193bc54cf3fe61257646996129f4adcd113cbb7c9726f07c90c0783a2d442c05",
+    70,
+    "3fdbb4a58b4cc2b5c9c62c15683b7488204e98bf3943d7471c95e985bae41b81",
+    23,
+    "d8e663ac25f82b896fdd23cbe1dd4582bb9e155e056fba08c47428ffd45e4173",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a4602b3006a3p+12",
+      "0x1.2a4f0a1331a8cp+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    1080,
+    "ed7bf26d1c767faf3935de6b311a8a5d7590bbceec9d66cb9d6ec14e85b92d31",
+    52,
+    "ea2d89d1c9e45f981a1cb6cd52f33e0a24b643e1d837e5dabcec600c33c454b5",
+    24,
+    "d94093d815538c711e4144056bff24d749fef3a8a5e3e0e80acc41f1521903b6",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a4035446dfaap+12",
+      "0x1.2a515f07e3284p+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    1125,
+    "e0599d86ab699e7eb400dc51eccfb9724ef29b27fde0aeda00b7a8cff9746b89",
+    73,
+    "da24cc262ed0c1f0350d89b3403acf6034998f0a3ef9f05d5d1dc6accce3b855",
+    24,
+    "851cb317ee22c54fa29ae7a13c726570929270a5d3fdd4f621aa9cb378d00025",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a37ad738bbc9p+12",
+      "0x1.2a54d4927fefep+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    1170,
+    "12faba27c7e5e171501caad77038fb792738dd9921ed85490118f9ffa7fca1ba",
+    62,
+    "86232acce33c3e99c7bd4f9d032cb3f94de6e407b3dd5e66ded4b51373c44c03",
+    23,
+    "1372a325968490035618dee945777638b31baedd3be29cf9194a0005caaf9172",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a2e51cb56c43p+12",
+      "0x1.2a58aad7660d0p+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    1200,
+    "64241b42201c30d3f97b0b60fbc30d218a2a88bd434b9310390f07db83e6e63e",
+    69,
+    "8da709c0b9ce4adeeacf272d873ae592879498b52f46a1ef9e719ac89e8e7158",
+    23,
+    "14e8f3f3eb4dd91205340adffbe2d6af48ea236bc1fdd0bb319b84452d9581dc",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a28bf47f7be6p+12",
+      "0x1.2a5af91c33b44p+13"
+     ]
+    ],
+    "the first frame with its HP below 25"
+   ],
+   [
+    1215,
+    "69bc0ee83077a22a606a1b6e2cd8bc74831f2976fa13dc7c461289b48fa250fa",
+    102,
+    "d7b845f1f5a8961440fae7353d4f46706c68d86a6cf241e4f5e108ecc90a95f4",
+    24,
+    "c8355da3909bbd0c3621be8cac15f3ea973e45bab5cadc2033abb5e2831b162c",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a2663d73d825p+12",
+      "0x1.2a14fb50befaap+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    1218,
+    "f50902aa967f8b9faa32db53c8e354864fe28e3e1ac723a11b75b4810e30f6e7",
+    102,
+    "d7b845f1f5a8961440fae7353d4f46706c68d86a6cf241e4f5e108ecc90a95f4",
+    24,
+    "77d403ff0e280bfedd75ae85e25db5063c33f2c38973c0d31212348d926050da",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.69e679aeb1555p+12",
+      "0x1.2a493b0fed962p+13"
+     ]
+    ],
+    "0.2 s after 88 KEYS at 40.37157 s"
+   ],
+   [
+    1230,
+    "b1f1987c00ab72b2d8251ce600a8e0a211d359f8b7163ad681908d95e5015fb0",
+    103,
+    "5629f1df1ac8c6f57e34355a246b90cd95e66b94b4c6a15cd8c673d2b31a6a1e",
+    24,
+    "17f6f3578d7b1fe537651c51b87d9324da2e09911a4340391699f49fc48cc82a",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a2464e7de90dp+12",
+      "0x1.2a5cc90115a28p+13"
+     ]
+    ],
+    "0.6 s after 88 KEYS at 40.37157 s"
+   ],
+   [
+    1260,
+    "44964a9d42f713f8f11b6f53ac7521e790720e79278569f48f8cc1d5a958d1d0",
+    43,
+    "3e822a6f7289018313ee4c0bb51c3d18635530818cb9817cc9aa06413baf39e1",
+    24,
+    "e98697cf6c96d27231a5b5717a71c14e88404d2e0a2dbe7ef26f1400cd33a3b7",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a219a0021c17p+12",
+      "0x1.2a5df3e3d6d40p+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    1305,
+    "295a35d9afed01e7e2e29d115a46a4b2881ceaf7671632d27ff33c4e134d176a",
+    67,
+    "cf935ef1f3bce07df78d94c53fa0356478e1284651503d988c51da3d36f84799",
+    22,
+    "8b02e6887b5daddb20ee45686802c027bae7081de17eec4a65213f613cca630d",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a202b6cbf158p+12",
+      "0x1.2a5e8d8930c68p+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    1350,
+    "a1ac4b6896281c506893a6938eefd2cdac76489a9d527de3591eb35bd7615cb6",
+    69,
+    "1971321ff487a6804be948f4bbad89583582e3c296e523dcaabec138819d249c",
+    25,
+    "1ea85a8ce604db617a3c40d66ff61da761b28705b7f3a4740b91cd5eeda2b136",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a1841ab65056p+12",
+      "0x1.2a602311ddf8cp+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    1370,
+    "06cd48bb96db9e9589c028e2ad31adfe749ff535774c526e7684697d57aac5f9",
+    75,
+    "3157bc5c95cc3944b7606fe0f911702762de4ea95494e44a0f680b5e90d03629",
+    25,
+    "152b6288e6a1e38c945fd01633d312ff7b3cf6ec36ca50f70752655ab6eb9a47",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a14586298e94p+12",
+      "0x1.2a60ed917a4d9p+13"
+     ]
+    ],
+    "-1 frames from the K.O."
+   ],
+   [
+    1371,
+    "2bd709bb115f75b3c87d81c5a8050bbeb9afb791ade2f1c81e501e336f97d2c8",
+    79,
+    "9f77112d8da77b64ec76d0b0b1bc49037aa19b9f7baa18db28eaa7d61123e12e",
+    26,
+    "a7ca71cce8f1741e763dc34488fd5a9ba3b0b1564fc669502296cc8aafed037f",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6cbd26292781ap+12",
+      "0x1.29e3a7f429b58p+13"
+     ]
+    ],
+    "0 frames from the K.O."
+   ],
+   [
+    1372,
+    "66ad420a8cd1399024449ff22012694ad4e0a5ea3106ee0ab05a9740d1f8a471",
+    77,
+    "f0bd84da45e6c03f949458fc28b5c43fd4b7f9f381e5e626069e73accd445196",
+    26,
+    "425839fa59f761b8243d5ab90b1546fae26af49020c38900ee2a0d988d1e2cfd",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.67c204dced056p+12",
+      "0x1.2a43aad2195cdp+13"
+     ]
+    ],
+    "1 frames from the K.O."
+   ],
+   [
+    1373,
+    "9ecd23d4aeb2bda38279adb9546ee0281e101486b763ae71cd96e22768544cd0",
+    77,
+    "f0bd84da45e6c03f949458fc28b5c43fd4b7f9f381e5e626069e73accd445196",
+    26,
+    "88e53e8b86cc0b3483ac235e405c7adb86c0015437c12ebf7dfc0fb757dae28d",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6879fd6455ab7p+12",
+      "0x1.2a751ecb7206cp+13"
+     ]
+    ],
+    "2 frames from the K.O."
+   ],
+   [
+    1376,
+    "a56228fa6ca086ac61e51551eace2b5a24fb2feb782983175c3b3b7ab4023ba3",
+    71,
+    "fd25cac4a6e16d6c9427058ec9aedad5671df2b69381b6d5ac866e57dd9106a4",
+    26,
+    "0499210f819e3011dc6032dbe15cd02836003230af1b0128b218c3079c8d591f",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.69ca968639726p+12",
+      "0x1.2a8b6305ae0c7p+13"
+     ]
+    ],
+    "5 frames from the K.O."
+   ],
+   [
+    1383,
+    "cfab74ecbfc382e34a80c01f671f8450feb6d4f9d8e873b98846d69c11f58fba",
+    37,
+    "e9331569e8dac66a9d26fedcd44f35d134c63b058e48277de712baf4c41ac07e",
+    25,
+    "65bfcb2c729713f36f91a49f94a7e3055d86d4e6a1e294d61b45a48f976af108",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a1ed3fb9cbc9p+12",
+      "0x1.29f81daccf9ccp+13"
+     ]
+    ],
+    "12 frames from the K.O."
+   ],
+   [
+    1391,
+    "98bb48ea5ab8228a1a5ca1e3b631169329fb2cb77884aa7dc86e8394074b9040",
+    37,
+    "e9331569e8dac66a9d26fedcd44f35d134c63b058e48277de712baf4c41ac07e",
+    24,
+    "7d8749913da89b8e814e18ca74eebd7d89c4c94d80905cbdf33f95786cc01853",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.69c3f3327fa26p+12",
+      "0x1.20d63a7c20acdp+13"
+     ]
+    ],
+    "after the hit-stop"
+   ],
+   [
+    1395,
+    "2646b71c8bbe651ec7016ec63642c7692968811e6ff3d84af8e2d12b2832e4f4",
+    37,
+    "e9331569e8dac66a9d26fedcd44f35d134c63b058e48277de712baf4c41ac07e",
+    24,
+    "d7fc9b01391ea8fbc0c9dd4d1c78322b8aa0e4ae8871b499becc8376c9bb9e95",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.69ab9eaf6535cp+12",
+      "0x1.1a7c15704e503p+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    1401,
+    "0d31089ee7eed6adc3123fb960f0d487f277f9d10851e51e91b7f2a713560900",
+    37,
+    "e9331569e8dac66a9d26fedcd44f35d134c63b058e48277de712baf4c41ac07e",
+    24,
+    "06150c07f4416cafa913271fd40dfe34e9b33fa9478be34b24c438d832248e1f",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.69fb26bae2d28p+12",
+      "0x1.1387d38abce84p+13"
+     ]
+    ],
+    "30 frames from the K.O."
+   ],
+   [
+    1431,
+    "022662eeab1abed6ce5a2a45cbff619308bb13c63dc7d6dbb900d53f9b3fb18c",
+    37,
+    "e9331569e8dac66a9d26fedcd44f35d134c63b058e48277de712baf4c41ac07e",
+    24,
+    "677774e3a563309ead925f05be9b6a5edd8c4ba4996b7a590b37a0ee9fd366a4",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6b0b13b8ee0acp+12",
+      "0x1.2a0a00601073fp+13"
+     ]
+    ],
+    "60 frames from the K.O."
+   ],
+   [
+    1440,
+    "06d0142fcbd31db69103735b7ad16873eb58d9f89e0d90defdf2990c298df2ad",
+    37,
+    "e9331569e8dac66a9d26fedcd44f35d134c63b058e48277de712baf4c41ac07e",
+    24,
+    "66ae6f7450ec6997ebe219a26f778e4cfbe331151df0628047794bbc98d4b3d2",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.69520a624d6f9p+12",
+      "0x1.2a3e6e03c2033p+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    1463,
+    "21263f9ba4cfdf7ba6f4852b28113efff1ddc9fb524d771bba3dbb79d0f07700",
+    37,
+    "e9331569e8dac66a9d26fedcd44f35d134c63b058e48277de712baf4c41ac07e",
+    23,
+    "47e5c9bf1121ef30a66b58bca0b0bc8df904814b80454f6854882a9cb794d640",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.66f21c3379828p+12",
+      "0x1.2a3c7d5b285e8p+13"
+     ]
+    ],
+    "0.3 s into its victory solo"
+   ],
+   [
+    1484,
+    "a95fe27b81f6566e497a2b09f5d996b21ff2364be73173b75d829d5df5592aad",
+    37,
+    "e9331569e8dac66a9d26fedcd44f35d134c63b058e48277de712baf4c41ac07e",
+    22,
+    "8e208b86a0f511d5d058dc2fe7ed4b4e5e887709fbd75bd3129e3109dce7105d",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.695dab15e9721p+12",
+      "0x1.2a3e6f0b61247p+13"
+     ]
+    ],
+    "1.0 s into its victory solo"
+   ],
+   [
+    1485,
+    "15d901c0572c80f667f7d49618356f50cb9ca3a0f8dc9095ae8267000e2163cb",
+    37,
+    "e9331569e8dac66a9d26fedcd44f35d134c63b058e48277de712baf4c41ac07e",
+    22,
+    "eeb7a7a1c8ad4342e9d8bc5b9e8489558a77c9e9bea27cad92447573707ba6c2",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.698e33acc203dp+12",
+      "0x1.2a3e95cd22ca6p+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    1529,
+    "14f7e8020dcb8f0260ebb5509c87225a27b93656a5bd8c067f0932763fcfb00c",
+    37,
+    "e9331569e8dac66a9d26fedcd44f35d134c63b058e48277de712baf4c41ac07e",
+    23,
+    "6b31c0b47d3d190da1a77d8bd3d97d3baf6fdb84bfee434a7911792b453d934f",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6cafa7856af7bp+12",
+      "0x1.2a41746aa1cfap+13"
+     ]
+    ],
+    "2.5 s into its victory solo"
+   ],
+   [
+    1530,
+    "cf05a42db2941e5d064942bc6ce7aec92e16846f11878d1fd06c7eae10feead1",
+    37,
+    "e9331569e8dac66a9d26fedcd44f35d134c63b058e48277de712baf4c41ac07e",
+    23,
+    "6b31c0b47d3d190da1a77d8bd3d97d3baf6fdb84bfee434a7911792b453d934f",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6c8b9169d9c0ep+12",
+      "0x1.2a415efff84dcp+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    1575,
+    "c62cd7889e64eaac39ee9d3f9e25362b55dee3e417c9627c472f6e0ccfb9a203",
+    37,
+    "e9331569e8dac66a9d26fedcd44f35d134c63b058e48277de712baf4c41ac07e",
+    23,
+    "af2ea28839ef02a796e31c777d62f1216ff88253eec468c6639cfb8fe53b891f",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.671e8e633a587p+12",
+      "0x1.2a3efb1512837p+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    1620,
+    "eadf307d6c9e0ffd93fa38533bf6e815cf6b500a629ed4ccb38923a70700bf5b",
+    37,
+    "e9331569e8dac66a9d26fedcd44f35d134c63b058e48277de712baf4c41ac07e",
+    23,
+    "6ac651606fee462ad0bb2702dcb66202b73b981308e7503420049b4261577605",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6d95b310f48a5p+12",
+      "0x1.2a43fee7bad99p+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    1665,
+    "738556260f10fe78f76942c4d2228f91477fa3058bc729d2e4b703b36e31dc73",
+    37,
+    "e9331569e8dac66a9d26fedcd44f35d134c63b058e48277de712baf4c41ac07e",
+    23,
+    "4b9c982fdb5629f563375c4ac269274572a08fda88f8bbf034d4d72c6e686557",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.67c63b6d51c95p+12",
+      "0x1.2a4250ccf777ep+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    1710,
+    "9e5b82f813482a12705de2902073b05e29ba35a2aae7ee615594d4f5a57f8ee5",
+    37,
+    "e9331569e8dac66a9d26fedcd44f35d134c63b058e48277de712baf4c41ac07e",
+    23,
+    "bc17dc460fcc2d152ab55aa8675d019375613aa9dd27af19cfbe83aeb4f83798",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6b708276d6266p+12",
+      "0x1.2a444f799e2d1p+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    1750,
+    "153c5d285ad26ce49517fe3796cfd406e16f7138b8620e6e79bf005b6a7db33d",
+    37,
+    "e9331569e8dac66a9d26fedcd44f35d134c63b058e48277de712baf4c41ac07e",
+    21,
+    "c35129fa899c9ca2b0f0d85fded0c7e668a1551af07aa46de20b0d4b9dace5c1",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6bcc5bffa98f2p+12",
+      "0x1.2a44894d58acap+13"
+     ]
+    ],
+    "the loser's pieces half-way home"
+   ],
+   [
+    1755,
+    "1a4af4b1e75cb877536974a7834e7f5603ef1f18e4309de277fb52d2cd01b7e2",
+    37,
+    "e9331569e8dac66a9d26fedcd44f35d134c63b058e48277de712baf4c41ac07e",
+    21,
+    "fb13714a5aade71377d3822f331ef3e23d85ee6e600821038cf4581ec4fb80f5",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6ae009867573fp+12",
+      "0x1.2a444bccc3898p+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    1773,
+    "cd43b48cac2514d8deb5733841f0c91b44d1d6de85dc227f05078082de9d6f29",
+    44,
+    "39706a087752af1d557e9641889651bfa5e26deb78dc7215f0104dba821eb807",
+    21,
+    "36a47946219b44f5e175469c250722aa6453a2d314695dd86a4869f15d6d9f25",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.67bd70368e045p+12",
+      "0x1.2a4471205eab6p+13"
+     ]
+    ],
+    "-4 frames from the glide home"
+   ],
+   [
+    1777,
+    "3ddec526641b525715515c1eea4ca0df104cdc4d7d3e8f616e70cd3ed6858407",
+    44,
+    "39706a087752af1d557e9641889651bfa5e26deb78dc7215f0104dba821eb807",
+    21,
+    "dd8751bcb890256e524b839921928e6bb4e7b4c8d020b1466161be506cdcfe0a",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.674f2a8bde1cfp+12",
+      "0x1.2a44c3fd5793fp+13"
+     ]
+    ],
+    "0 frames from the glide home"
+   ],
+   [
+    1780,
+    "1b321c7ef5b1ab080d541d87d719a79b82b00f5f8635736dd8f74a87c14fc710",
+    46,
+    "6c82dbe9940400eef43199b4df14c1932736a898a007819ec1ee726f28670603",
+    22,
+    "e00dfc30f35a72f80b67dc77a1254cec694ad0b5fcaf4941b3dd9580331fd682",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.65d3f4da2249ep+12",
+      "0x1.2a44c7023ca6cp+13"
+     ]
+    ],
+    "3 frames from the glide home"
+   ],
+   [
+    1800,
+    "ce2c995cd745fc148f725b36e4ee159b072b9de8046735865462bf5240795fa6",
+    46,
+    "6c82dbe9940400eef43199b4df14c1932736a898a007819ec1ee726f28670603",
+    22,
+    "044779ee0dbb9242ed450f889168730087e6127283208ce18f02f93ac3b24061",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.5c73becaf6239p+12",
+      "0x1.2a46deeae58c3p+13"
+     ]
+    ],
+    "spread"
+   ],
+   [
+    1828,
+    "ee7d6424381d8035cfa738782c3976d3ab43c82348a5a8b6feb9e394942412d1",
+    42,
+    "d0aa4cb70e21c44807b446c14fb97312ee946234eb8fa5491f5137271ca36a16",
+    22,
+    "274e99cbd3bba164fc8bc7f89883ebbc008f9ab0f6af070363cf9bcdfc50a5a7",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a53d0b9c0beap+12",
+      "0x1.2a48ab5b2ab22p+13"
+     ]
+    ],
+    "the title card, the doors and the count-in"
+   ],
+   [
+    1829,
+    "b77cb5d15a7d55ac568b388623d4983d9fcd6c8489b2b4f4d70ac41cc92c0c39",
+    38,
+    "ca4a9f836724e40560bcf6702d59656b68c12d35d89bb3f918ceb86af5df3a7f",
+    0,
+    "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    [
+     [
+      33,
+      [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "0x1.6a53d0d5a7cc1p+12",
+      "0x1.2a48ab77aef5fp+13"
+     ]
+    ],
+    "the title card, the doors and the count-in"
+   ]
+  ],
+  "hooks_build": [2471, "3e51b39f06bcc1e99c5eff651135ebd2f230c627b8c776e52b469b181ce4af04"],
+  "hooks_build_head": ["0.setup", "1.setup", "1.shake", "0.shake", "0.shake", "0.shake", "0.shake", "0.shake"],
+  "k": 0,
+  "recording": {
+   "hash": "498e03538e5f4bd7",
+   "seed": 41,
+   "winner": 0
+  },
+  "seed": 41,
+  "winner": "PIANO"
+ },
+ "opponent": "FLUTE",
+ "other_look": "kit/fighters/base.py Look",
+ "right": {
+  "cache": "fighters/piano/look_right.json",
+  "frames": 59,
+  "hull_cache": "fighters/piano/hull_right.json",
+  "recording": {
+   "hash": "b0868ae9ce220de5",
+   "seed": 29,
+   "winner": 0
+  },
+  "seed": 29
+ },
+ "sprites": {
+  "cache": "fighters/piano/sprites.npz",
+  "count": 257,
+  "digest": "dd4a22117cfe1d55bc57c8dfda64c714645b804a487e5243eb5234d06388ccf2",
+  "digest_of": "SHA-256 of the cases' RGBA SHA-256 values, one a line, in the order of the cache's sprites.json (sprites.build: picture, episode, title, model)",
+  "drawn_by": "model",
+  "episode_keys": [
+   [16, 222, 0],
+   [16, 228, 0],
+   [16, 234, 0],
+   [16, 240, 0],
+   [17, 204, 0],
+   [17, 210, 0],
+   [17, 216, 0],
+   [17, 222, 0],
+   [17, 228, 0],
+   [17, 234, 0],
+   [17, 240, 0],
+   [18, 204, 0],
+   [18, 210, 0],
+   [18, 216, 0],
+   [18, 222, 0],
+   [18, 228, 0],
+   [18, 234, 0],
+   [18, 240, 0],
+   [18, 246, 0],
+   [19, 210, 0]
+  ],
+  "groups": {
+   "episode": 16,
+   "model": 0,
+   "picture": 240,
+   "title": 1
+  },
+  "k": 0,
+  "radii": [12, 16, 22, 30],
+  "rolls": [0],
+  "title": {
+   "drawn_by": "model",
+   "group": "title",
+   "k": 0,
+   "radius": 44,
+   "roll": 0,
+   "size": 95,
+   "yaw": 225
+  }
+ },
+ "title": {
+  "closeup": {
+   "drawn_by": "model",
+   "radius": 44,
+   "sha256": "d53bbaecb2de6d6f23498f36e314a1e02d369c24c434395dc82392d6673713c5",
+   "size": 95
+  },
+  "flare_scale": "0x1.0000000000000p+0",
+  "glass": [236.0, 232.0, 226.0],
+  "pattern": {
+   "base": "base[y, x, c] = 40.0 + x * 0.5 + y * 0.25 + 20.0 * c, float64, (640, 360, 3)",
+   "has": true,
+   "samples": [
+    [
+     0,
+     0,
+     ["0x1.4000000000000p+5", "0x1.e000000000000p+5", "0x1.4000000000000p+6"]
+    ],
+    [
+     180,
+     320,
+     ["0x1.39f7ced916873p+7", "0x1.9be872b020c4ap+7", "0x1.f4b3333333333p+7"]
+    ],
+    [
+     359,
+     639,
+     ["0x1.4bf5c28f5c290p+8", "0x1.5ac28f5c28f5dp+8", "0x1.6766666666667p+8"]
+    ],
+    [
+     100,
+     200,
+     ["0x1.191eb851eb852p+7", "0x1.36b851eb851ecp+7", "0x1.5000000000000p+7"]
+    ],
+    [
+     201,
+     77,
+     ["0x1.3f80000000000p+7", "0x1.6780000000000p+7", "0x1.8f80000000000p+7"]
+    ],
+    [
+     17,
+     503,
+     ["0x1.4feb851eb851fp+7", "0x1.6d851eb851eb8p+7", "0x1.86ccccccccccdp+7"]
+    ]
+   ],
+   "sha256": "d0a7b3eb551dfa2739543bff0e5e5d0e21bc10aa74597e8dde6338ec411ea47f",
+   "sha256_of": "the float64 values, little-endian, C order (the base itself when the card has no pattern for the fighter)"
+  },
+  "shards": ["key", "key", "key", "key", "key", "key", "key", "key", "blackkey", "blackkey", "blackkey", "blackkey", "hammer", "hammer", "hammer", "hammer", "hammer", "paper", "paper", "paper", "paper"]
+ },
+ "tool": "tools.studio_export.fighter_piano"
+}
