@@ -4,9 +4,9 @@ bf_harness::fighter_suite!("ALTO SAX");
 
 /// The first sweep of the committed left fight is the kit's to the last bit: the `spot` event (the line through
 /// the enemy's predicted spot, turned by the jitter draw and held inside the ropes), the first `hit` of kind
-/// `burn` and its `burn` event (the light's eased place on its line at that 16th). Everything up to there is the
-/// spotlight's own arithmetic; after the first burn the enemy has been knocked, and the engine's knock is one of
-/// the known last-bit gaps (numpy's fused `norm`), so later floats are only held to the prefix gate's 1e-6.
+/// `burn` and its `burn` event (the light's eased place on its line at that 16th): the spotlight's own arithmetic,
+/// checked here event by event. The whole fight after it (the knocks included, through the engine's fused `norm`)
+/// is the kit's bit for bit too: the `prefix` gate finds every reference fight equal to its end.
 #[test]
 fn the_first_sweep_is_the_kits_to_the_last_bit() {
     use bf_harness::fight::{doc, fight_file, roster, traced};

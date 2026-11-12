@@ -489,7 +489,8 @@ impl Look for AltoSaxLook {
                 let w = scene::to_world(s.cx, s.cz, 0.05);
                 // d = np.array([w[0], 0, w[2]]);  d = d / (np.linalg.norm(d) + 1e-9)
                 let d = [w[0], 0.0, w[2]];
-                let n = (d[0] * d[0] + d[1] * d[1] + d[2] * d[2]).sqrt() + 1e-9;
+                // numpy's norm of a float64 3-vector is fused on the reference PC (M3-R30, as `sprite.rs` dot3)
+                let n = dmath::fma(d[2], d[2], dmath::fma(d[1], d[1], d[0] * d[0])).sqrt() + 1e-9;
                 let d = d.map(|v| v / n);
                 let src = [d[0] * 6.6, -0.2, d[2] * 6.6];
                 let sp = cam.wp(&[w, src]);
