@@ -15,7 +15,6 @@ use bf_core::{dmath, py};
 use serde::Deserialize;
 
 use crate::img::Img;
-use crate::v3::norm;
 
 /// The kit's canvas (`piano_lowpoly.RW`, `RH`). The sprite is drawn in its top-left corner; triangles are clipped
 /// to it and the outline pass wraps around its edges (`np.roll`).
@@ -69,16 +68,32 @@ impl Mesh {
 
 type V3 = [f64; 3];
 
-/// `a @ b` for two 3-vectors, and one element of a numpy matrix product with three terms.
+/// `a @ b` for two 3-vectors, and one element of a numpy matrix product (`P @ R.T`, `Rz @ Ry`: a row of the
+/// left matrix against a column of the right).
 ///
-/// A plain sum, as the Studio's rule against fused multiply-add asks. On the reference PC numpy hands these
-/// products to OpenBLAS, whose kernels there are fused (measured: `P @ R.T`, `a @ b` and `x.dot(x)` give
-/// `fma(a2, b2, fma(a1, b1, a0 * b0))`, a matrix times a vector gives `fma(a2, b2, fma(a0, b0, a1 * b1))`), so a
-/// vertex here can differ from Python's in its last bit. No pixel depends on that: in the reference sprites every
-/// decision the renderer takes (a pixel centre against an edge, one depth against another, the shading band, the
-/// highlight steps, the outline's depth step) is at least 1e-7 away from its threshold.
+/// numpy hands these products to OpenBLAS, whose kernels on the reference PC are fused: the first product is
+/// rounded, the other two are added with one rounding each, `fma(a2, b2, fma(a1, b1, a0 * b0))`. Measured there on
+/// random values, every element equal and no other order or the plain sum equal: `P @ R.T` for 2 to 64 rows,
+/// `A @ B` for 3 x 3 matrices, `a @ b` and `np.linalg.norm(a)` for 3-vectors. The plain sum differs in the last
+/// bit about once in ten, and that reaches pixels: two faces of a model that lie in one plane and overlap have
+/// depths a last bit apart or equal, and the depth test `iz > zb` picks the colour (ORGAN, radius 16, yaw 0, row
+/// 26, column 21). So the sprite's camera maths is fused exactly where numpy's is, through [`dmath::fma`]
+/// (software, the same bits on every PC).
 fn dot3(a: V3, b: V3) -> f64 {
-    a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
+    dmath::fma(a[2], b[2], dmath::fma(a[1], b[1], a[0] * b[0]))
+}
+
+/// One element of a numpy matrix times a vector (`R @ n`, `Q @ fwd`): the row `a` against the vector `b`.
+///
+/// OpenBLAS's matrix-vector kernel on the reference PC is fused in another order than [`dot3`]: the second
+/// product is the rounded one, `fma(a2, b2, fma(a0, b0, a1 * b1))` (measured as for [`dot3`], for 2 to 64 rows).
+fn dot3_mv(a: V3, b: V3) -> f64 {
+    dmath::fma(a[2], b[2], dmath::fma(a[0], b[0], a[1] * b[1]))
+}
+
+/// `np.linalg.norm(x)` of one vector: the square root of the fused `x @ x`.
+fn norm(x: V3) -> f64 {
+    dot3(x, x).sqrt()
 }
 
 /// `np.cross(a, b)`.
@@ -100,6 +115,62 @@ fn radians(deg: f64) -> f64 {
     deg * (dmath::PI / 180.0)
 }
 
+/// The whole-degree angles from -360 to 720 whose sine or cosine `bf_core::dmath` gives one step away from
+/// Python's `math.sin` / `math.cos` on the reference PC (the Windows C runtime), with Python's value: (degrees,
+/// cosine?, bits). The other 2,127 of these 2,162 values are equal. A step here turns every corner of the model
+/// and, with faces that share a plane, reaches a pixel (ORGAN at radius 22, yaw 342), so the sprite's camera
+/// takes the kit's value for these angles (as rulings M3-R20 and M3-R22 do for the kit's constants).
+const KIT_TRIG: [(i32, bool, u64); 35] = [
+    (-351, false, 0x3fc4_060b_67a8_537d),
+    (-342, false, 0x3fd3_c6ef_372f_e954),
+    (-284, true, 0x3fce_f74b_f2e4_b912),
+    (-239, true, 0xbfe0_7b31_20fd_df15),
+    (-224, false, 0x3fe6_3aa4_30e0_7310),
+    (-220, true, 0xbfe8_836f_a2cf_5039),
+    (-207, false, 0x3fdd_0e2e_2b44_ddfe),
+    (-137, false, 0xbfe5_d2ee_398c_9c2b),
+    (-113, true, 0xbfd9_01bd_2298_ffac),
+    (-63, true, 0x3fdd_0e2e_2b44_de01),
+    (-53, true, 0x3fe3_4211_9455_beb7),
+    (-45, false, 0xbfe6_a09e_667f_3bcd),
+    (-34, true, 0x3fea_8779_cda8_eea5),
+    (34, true, 0x3fea_8779_cda8_eea5),
+    (45, false, 0x3fe6_a09e_667f_3bcd),
+    (53, true, 0x3fe3_4211_9455_beb7),
+    (63, true, 0x3fdd_0e2e_2b44_de01),
+    (113, true, 0xbfd9_01bd_2298_ffac),
+    (137, false, 0x3fe5_d2ee_398c_9c2b),
+    (207, false, 0xbfdd_0e2e_2b44_ddfe),
+    (220, true, 0xbfe8_836f_a2cf_5039),
+    (224, false, 0xbfe6_3aa4_30e0_7310),
+    (239, true, 0xbfe0_7b31_20fd_df15),
+    (284, true, 0x3fce_f74b_f2e4_b912),
+    (342, false, 0xbfd3_c6ef_372f_e954),
+    (351, false, 0xbfc4_060b_67a8_537d),
+    (387, false, 0x3fdd_0e2e_2b44_ddfc),
+    (400, false, 0x3fe4_91b7_523c_161c),
+    (407, false, 0x3fe7_673f_e0c8_6983),
+    (459, true, 0xbfc4_060b_67a8_5389),
+    (502, false, 0x3fe3_b37f_b1bd_c939),
+    (551, false, 0xbfc8_6c6d_dd76_6253),
+    (587, true, 0xbfe5_d2ee_398c_9c2a),
+    (679, false, 0xbfe4_fe6f_8138_4fd6),
+    (688, false, 0xbfe0_f519_3eac_dd26),
+];
+
+/// `math.sin(math.radians(deg))` and `math.cos(math.radians(deg))` as the kit's camera gets them: through
+/// `bf_core::dmath`, and for the whole degrees of [`KIT_TRIG`] the reference PC's own value.
+fn sin_cos_deg(deg: f64) -> (f64, f64) {
+    let a = radians(deg);
+    let (mut s, mut c) = (dmath::sin(a), dmath::cos(a));
+    for &(d, cosine, bits) in &KIT_TRIG {
+        if f64::from(d) == deg {
+            *(if cosine { &mut c } else { &mut s }) = f64::from_bits(bits);
+        }
+    }
+    (s, c)
+}
+
 /// `sprites._Cam`: a narrow perspective looking at the origin from `DIST` away, `ELEV_DEG` above the horizon,
 /// with the model turned by yaw (about y) and then roll (about z).
 struct Cam {
@@ -117,11 +188,9 @@ struct Cam {
 
 impl Cam {
     fn new(yaw_deg: f64, radius_px: u32, cx: f64, cy: f64, roll_deg: f64) -> Cam {
-        let a = radians(yaw_deg);
-        let (c, s) = (dmath::cos(a), dmath::sin(a));
+        let (s, c) = sin_cos_deg(yaw_deg);
         let ry = [[c, 0.0, s], [0.0, 1.0, 0.0], [-s, 0.0, c]];
-        let b = radians(roll_deg);
-        let (cb, sb) = (dmath::cos(b), dmath::sin(b));
+        let (sb, cb) = sin_cos_deg(roll_deg);
         let rz = [[cb, -sb, 0.0], [sb, cb, 0.0], [0.0, 0.0, 1.0]];
         // Rz @ Ry: each element has one non-zero product at most, so it is that product whatever the order.
         let mut r = [[0.0; 3]; 3];
@@ -226,7 +295,11 @@ fn render_geo(mesh: &Mesh, cam: &Cam, cv: &mut Canvas) {
                 .iter()
                 .map(|&p| [dot3(p, cam.r[0]), dot3(p, cam.r[1]), dot3(p, cam.r[2])]),
         );
-        let mut nw = [dot3(cam.r[0], face.n), dot3(cam.r[1], face.n), dot3(cam.r[2], face.n)];
+        let mut nw = [
+            dot3_mv(cam.r[0], face.n),
+            dot3_mv(cam.r[1], face.n),
+            dot3_mv(cam.r[2], face.n),
+        ];
         // v: from the face's centre (the mean of its corners, summed in order) to the eye
         let mut sum = w[0];
         for p in &w[1..] {
@@ -247,10 +320,10 @@ fn render_geo(mesh: &Mesh, cam: &Cam, cv: &mut Canvas) {
         d.clear();
         for p in &w {
             let q = [p[0] - cam.eye[0], p[1] - cam.eye[1], p[2] - cam.eye[2]];
-            let dist = dot3(q, cam.fwd);
+            let dist = dot3_mv(q, cam.fwd);
             s.push([
-                cam.cx + cam.f * dot3(q, cam.right) / dist,
-                cam.cy - cam.f * dot3(q, cam.up) / dist,
+                cam.cx + cam.f * dot3_mv(q, cam.right) / dist,
+                cam.cy - cam.f * dot3_mv(q, cam.up) / dist,
             ]);
             d.push(dist);
         }
@@ -489,6 +562,66 @@ mod tests {
             LIGHT.map(f64::to_bits),
             [0x3fd7_0a3d_70a3_d70a, 0x3fe9_9999_9999_999a, 0x3fde_b851_eb85_1eb8]
         );
+    }
+
+    #[test]
+    fn products_are_fused_as_numpys_are() {
+        // (a, b, v) and, from numpy on the reference PC: (A @ R.T)[0, 0] and a @ b (a row of A against a row of
+        // R), (A @ v)[0], np.linalg.norm(a). In each case the plain sum and the two fused orders all differ.
+        let cases: [[[u64; 3]; 4]; 3] = [
+            [
+                [0x3fe4_ba25_6841_e09a, 0x3fd5_c587_d5c1_74b0, 0xbfa1_5f39_da71_52a0],
+                [0xbfd9_8a2b_605c_73d0, 0x3fe8_7a2a_4298_b058, 0x3fda_4274_5715_e6e0],
+                [0xbfdc_dacf_2936_909c, 0x3fed_c10f_ca8b_3ab0, 0xbfea_0841_ebac_74b0],
+                [0xbf88_f7f0_b48f_fce5, 0x3faa_8feb_ed22_28be, 0x3fe7_6fe0_192f_02f7],
+            ],
+            [
+                [0x3fe8_8472_242b_1964, 0x3fe9_389e_3580_8fc0, 0x3fe1_2c2d_833f_04ae],
+                [0x3fe6_b025_6f2d_dac0, 0xbfe6_9ad7_7fd1_be0c, 0x3fcd_43cd_9842_c068],
+                [0xbfe8_afa7_5805_0d12, 0xbfb3_d0e9_912d_cd40, 0xbfdf_7d14_5f13_c978],
+                [0x3fbb_f13c_432c_342c, 0xbfed_50a8_af1b_73ca, 0x3ff3_9230_f9ae_4d66],
+            ],
+            [
+                [0xbfd3_7530_93c0_093c, 0x3fe5_eb64_1fe3_23c4, 0x3fed_372d_6436_99f0],
+                [0x3fe7_8676_17e3_ab1e, 0x3fee_ec05_4d8e_ce02, 0xbfe1_e9db_2aca_d98c],
+                [0x3fe0_4307_3659_d794, 0xbfe7_724d_d3f0_b02c, 0x3fea_6919_ff13_4d2a],
+                [0xbfb2_9bb9_82d1_d301, 0x3fb8_dd06_5028_242b, 0x3ff2_e619_bb35_bbb6],
+            ],
+        ];
+        for [a, b, v, want] in cases {
+            let (a, b, v) = (a.map(f64::from_bits), b.map(f64::from_bits), v.map(f64::from_bits));
+            assert_eq!(
+                [dot3(a, b), dot3_mv(a, v), norm(a)].map(f64::to_bits),
+                want,
+                "{a:?} {b:?} {v:?}"
+            );
+        }
+        // ORGAN at radius 16, yaw 0: the first corner of the tin face under canvas pixel (26, 21), `Q @ cam.up`
+        // and its screen y. The plain sum is three steps away (0xbfdc_2da7_0f18_8fa8) and moved the depth there.
+        let cam = Cam::new(0.0, 16, 19.5, 19.5, 0.0);
+        let q = [0x3fbe_6b39_94a8_2ad4, 0xc007_16f3_a71c_1ad6, 0xc020_efa5_98e9_d28a].map(f64::from_bits);
+        let (qu, d) = (dot3_mv(q, cam.up), dot3_mv(q, cam.fwd));
+        assert_eq!(qu.to_bits(), 0xbfdc_2da7_0f18_8fab);
+        assert_eq!((cam.cy - cam.f * qu / d).to_bits(), 0x403a_986a_bfb0_c9e7);
+    }
+
+    #[test]
+    fn the_kits_sines_are_one_step_from_dmath() {
+        // every entry is needed (dmath differs there, by one step), and yaw 342 is Python's on the reference PC
+        for &(d, cosine, bits) in &KIT_TRIG {
+            let a = radians(f64::from(d));
+            let ours = if cosine { dmath::cos(a) } else { dmath::sin(a) };
+            assert_eq!(ours.to_bits().abs_diff(bits), 1, "{d} {cosine}");
+            let (s, c) = sin_cos_deg(f64::from(d));
+            assert_eq!((if cosine { c } else { s }).to_bits(), bits, "{d} {cosine}");
+        }
+        let (s, c) = sin_cos_deg(342.0);
+        assert_eq!(
+            (s.to_bits(), c.to_bits()),
+            (0xbfd3_c6ef_372f_e954, 0x3fee_6f0e_1344_54ff)
+        );
+        let (s, c) = sin_cos_deg(37.5);
+        assert_eq!((s, c), (dmath::sin(radians(37.5)), dmath::cos(radians(37.5))));
     }
 
     #[test]
