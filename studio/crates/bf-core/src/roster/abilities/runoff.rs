@@ -1,28 +1,36 @@
 //! Ability kind `runoff`, PIANO's 88 KEYS: its roster settings. `fight.py` `trigger` 2944 to 2945; `start_runoff` 5245
 //! to 5261.
 //!
-//! A stub until PIANO's port: [`PORTED`] is false, so an ability of kind `runoff` loads as
-//! `AbilityKind::Unsupported("runoff")` and no fight can have it. The port lists the numbers `fight.py` reads as
-//! `ab[name]` in [`REQUIRED`] and every key it reads in [`ALLOWED`], fills [`RunoffCfg`] (what is not a number: lists,
-//! tables), [`parse`] and [`check`], and sets [`PORTED`].
+//! The roll runs off its spool: `int(n)` shots, from lanes spread over the whole side (`margin` in from the posts,
+//! 0.25 unless given), fire at once straight across the ring at `speed`, `dmg` each; then no row fires for
+//! `reload_beats` beats (0 unless given) while a new roll is threaded.
 
 use serde_json::Value as Json;
 
-use crate::roster::{AbilityCfg, Entry, RosterError};
+use crate::roster::{AbilityCfg, Entry, RosterError, join};
 
 /// Whether the engine runs ability kind `runoff`. While false the roster reads it as
 /// `AbilityKind::Unsupported("runoff")`, which the engine refuses in words.
-pub const PORTED: bool = false;
+pub const PORTED: bool = true;
 
 /// The numbers `fight.py` reads as `ab[name]` for this kind (a group of names: one of them, as `dur` or `dur_beats`).
 /// An unlock's `every_bars` is checked for every kind.
-pub const REQUIRED: &[&[&str]] = &[];
+pub const REQUIRED: &[&[&str]] = &[&["n"], &["speed"], &["dmg"]];
 
 /// Every key `fight.py` reads from an ability of this kind; an entry holding another key loads as
 /// `Unsupported("runoff+<key>")`.
-pub const ALLOWED: &[&str] = &["name", "kind", "every_bars"];
+pub const ALLOWED: &[&str] = &[
+    "name",
+    "kind",
+    "every_bars",
+    "n",
+    "speed",
+    "dmg",
+    "margin",
+    "reload_beats",
+];
 
-/// What an ability of kind `runoff` holds besides its numbers (empty until the port).
+/// What an ability of kind `runoff` holds besides its numbers: nothing.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct RunoffCfg {}
 
@@ -32,7 +40,14 @@ pub(crate) fn parse(_e: &Entry, _prefix: &str, _ab: &Json) -> Result<RunoffCfg, 
     Ok(RunoffCfg {})
 }
 
-/// The kind's own checks on an entry's numbers, at load time and again in `FighterCfg::check`.
-pub(crate) fn check(_e: &Entry, _prefix: &str, _ab: &AbilityCfg) -> Result<(), RosterError> {
-    Ok(())
+/// The kind's own checks on an entry's numbers, at load time and again in `FighterCfg::check`: `n` is a finite
+/// number (`int(ab['n'])`, 5249, raises on any other).
+pub(crate) fn check(e: &Entry, prefix: &str, ab: &AbilityCfg) -> Result<(), RosterError> {
+    match ab.get("n") {
+        Some(n) if !n.is_finite() => Err(e.err(
+            &join(prefix, "n"),
+            format!("{n} is not a finite number (the roll fires that many shots at once)"),
+        )),
+        _ => Ok(()),
+    }
 }

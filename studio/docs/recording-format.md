@@ -328,26 +328,36 @@ reader keeps every key it finds, whatever this section says (6.3). The `shield` 
 <!-- kind:roll -->
 #### `roll` (weapon kind of PIANO)
 
-`fight.py` 5164 to 5283, 370 to 379, 3235 to 3278. Not ported yet: its port fills this section in (the meaning of each
-field, as 6.2 and 6.3 do for FLUTE and TROMBONE), from the lines below.
+`fight.py` 5164 to 5283, 370 to 379, 3235 to 3278; ported (milestone 3, Task 7; `kinds/roll.rs`). A paper roll lies
+along the side of the ring through the fighter's own corner; on every 8th the row under its read bar fires one shot
+per hole, from the hole's pitch lane, across the ring and turned toward the enemy. The rows are the fighter's line
+(the rule `roll_rows`, 6.1). The roll's module also flies and lands every projectile of the fight (its rows', the
+`runoff`'s and an `arc`'s).
 
-**Record keys.**
+**Record keys** (in `rec` when a fighter's weapon is a roll; `run()` 5887, `snap` 5621 to 5624).
 
-- `ROLL` (and `HOLD`): added to `rec` at `run()` 5887, written by `snap` 5621 to 5624:
+- `ROLL`: float, `(frames, 2, 3)`, per fighter `[n_vol, sustain, reload]`: how many holes a row fires (a float: a
+  landed row adds `grow`; a row fires `int(n_vol)`, at least 1), the seconds of SUSTAIN left, the seconds left until
+  the new roll is threaded (both 0.0 when none). A fighter without a roll has `[n_vol, 0.0, 0.0]`.
+- `HOLD`: ragged (`HOLD.json`), per frame the list of SUSTAIN's shots that have not flown on yet, in id order, each
+  `[id, t_stop, t_release]`: the projectile's id (a whole number), when it stops in the air and when it turns to the
+  enemy and flies on (seconds on the video clock).
+- `K` (6.3; every recording has it): a roll's fight is the first to fill it. Each of the first `min(72, shots)` rows
+  is `[x, y, heading, owner, id, index, volley]` of one projectile, in the order they were fired: the heading is
+  `atan2(vy, vx)` (0.0 for a hanging shot), the index is the shot's place in its volley (a row's or a runoff's shot:
+  its MIDI pitch; an arc's: its step along the fan), the volley is the row, runoff or arc it belongs to. Unused rows
+  are NaN.
 
-  ```python
-  if 'ROLL' in rec:                                   # #45, only recorded when a fighter uses the 'roll' kind
-      rec['ROLL'].append([[float(getattr(Bj, 'n_vol', 0.0)), max(0.0, getattr(Bj, 'sustain_until', -1.0) - self.t),
-                           max(0.0, getattr(Bj, 'reload_until', -1.0) - self.t)] for Bj in (B0, B1)])
-      rec['HOLD'].append([(int(i), h[0], h[1]) for i, h in sorted(getattr(self, 'khold', {}).items())])
-  ```
+**Events.**
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
-
-- 5243: `self.ev('roll', k, vol, int(abs8), int(sus), tuple(int(m) for m in pitches))`
-- 3243: `self.kill_keys(out, 'wall')`
-- 3256: `self.damage(att, k, float(self.kdmg[i]), 'key', float(self.kp[i, 0]), float(self.kp[i, 1]), int(self.kidx[i]))`
+- `roll`: `[t, "roll", fighter, volley, abs8, sustained, [pitch, ...]]` (5243): a row fired: the volley's number,
+  the absolute 8th of the video, 1 while the fighter's SUSTAIN holds else 0, and the pitches fired, in the row's
+  order (a list of whole numbers; Python's tuple).
+- `wall`: `[t, "wall", owner, -1, x, y, id]` (3243, `kill_keys`): a projectile left the ring: its owner, -1 (nobody
+  killed it), where it was and its id. (`parry`, 6.2, is the same event with the lance's owner in place of -1.)
+- a `hit` of kind `key` (3256): `[t, "hit", attacker, victim, damage, x, y, "key", index]`: a projectile landed, at
+  its own position; the sub-number is its index (above). The first landed shot of a roll's volley adds `grow` to
+  `n_vol` (up to `n_max`), and every landed shot nudges the victim's heading along the shot's flight.
 
 <!-- /kind:roll -->
 
@@ -901,42 +911,48 @@ which `SH` records (6.3) and the fight loop runs down (6097). While it holds, a 
 <!-- kind:sustain -->
 #### `sustain` (ability kind of PIANO)
 
-`fight.py` 2941 to 2943. Not ported yet: its port fills this section in (the meaning of each field, as 6.2 and 6.3 do
-for FLUTE and TROMBONE), from the lines below.
+`fight.py` 2941 to 2943, ported (milestone 3, Task 7; `abilities/sustain.rs`; the roll reads it in `fire_row` 5236 to
+5242 and `hold_step` 5262 to 5282). For the ability's time each shot of a fired row flies for `out16` 16ths (plus
+`step16` for each hole before it), stops, hangs for `hang_beats` beats, then turns to the enemy and flies on.
 
-**Record keys.** None of its own.
+**Record keys.** None of its own: the seconds left are `ROLL[.., 1]` and the hanging shots `HOLD` (the roll's).
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+**Events.**
 
-- 2943: `self.ev('sustain', k, B.sustain_until)`
+- `sustain`: `[t, "sustain", fighter, until]` (2943): the time (seconds on the video clock) the sustain ends.
+  A row fired before then has 1 as its `roll` event's `sustained`.
 
 <!-- /kind:sustain -->
 
 <!-- kind:arc -->
 #### `arc` (ability kind of PIANO)
 
-`fight.py` 2852 to 2858, 3099 to 3113. Not ported yet: its port fills this section in (the meaning of each field, as 6.2
-and 6.3 do for FLUTE and TROMBONE), from the lines below.
+`fight.py` 2852 to 2858, 3099 to 3113, ported (milestone 3, Task 7; `abilities/arc.rs`). Over `beats` beats the ball
+throws `n` projectiles one after another in a fan `sweep` degrees wide, centred on where the enemy stood when the
+ability fired. The whole arc is one volley, which no `roll` or `runoff` event names: a `K` row whose volley has no
+such event is an arc's shot, and its index is its step along the fan (0 to `n - 1`).
 
-**Record keys.** None of its own.
+**Record keys.** None of its own (its shots are in `K`).
 
-**Events and hits.** None of its own (an `ability` event, from `trigger`, as every ability has).
+**Events and hits.** None of its own (an `ability` event, from `trigger`, as every ability has; its shots' `wall`
+events and `key` hits are the projectiles', see `roll`).
 
 <!-- /kind:arc -->
 
 <!-- kind:runoff -->
 #### `runoff` (ability kind of PIANO)
 
-`fight.py` 2944 to 2945, 5245 to 5261. Not ported yet: its port fills this section in (the meaning of each field, as 6.2
-and 6.3 do for FLUTE and TROMBONE), from the lines below.
+`fight.py` 2944 to 2945, 5245 to 5261, ported (milestone 3, Task 7; `abilities/runoff.rs`, `kinds/roll.rs`
+`start_runoff`). The roll runs off its spool: `n` shots fire at once from lanes spread over the whole side, straight
+across the ring; then no row fires for `reload_beats` beats.
 
-**Record keys.** None of its own.
+**Record keys.** None of its own: the seconds until the new roll is threaded are `ROLL[.., 2]` (the roll's).
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+**Events.**
 
-- 5260: `self.ev('runoff', k, vol, n, tuple(ms))`
+- `runoff`: `[t, "runoff", fighter, volley, n, [pitch, ...]]` (5260): the volley's number, how many shots, and
+  each shot's pitch (its lane's note, rounded half to even), from the low end of the roll to the high end (a list of
+  whole numbers; Python's tuple).
 
 <!-- /kind:runoff -->
 
