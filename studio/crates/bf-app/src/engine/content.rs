@@ -174,7 +174,7 @@ fn ball(closeup: &bf_picture::img::Img<u8>, glass: [f64; 3], color: [u8; 3]) -> 
         &mut alpha,
         closeup,
         glass,
-        centre,
+        f64::from(centre),
         f64::from(centre),
         PORTRAIT_BALL,
         PORTRAIT_GLOW,
