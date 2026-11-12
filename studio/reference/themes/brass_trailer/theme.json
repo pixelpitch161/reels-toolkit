@@ -1,0 +1,90 @@
+{
+ "about": "brass_trailer: its reference configs, each with the kit's own recording of it and the bed alone (both fighters replaced at run time by kit/fighters/base.py Sound, which is silent): the SHA-256 of the 16-bit master's samples (little-endian int16, interleaved: what A.write writes after its header), the buses in the order the score made them, and the bed's class levels",
+ "cache_files": "cache files are under studio/reference/.cache/m3/ and pinned in pins.json",
+ "configs": [
+  {
+   "bed_alone": {
+    "bed": {
+     "buses": {
+      "braam": [1.0, 0.3],
+      "pad": [0.9, 0.35],
+      "strings": [0.85, 0.3],
+      "taiko": [1.2, 0.25],
+      "tremolo": [1.0, 0.6]
+     },
+     "comp": [0.22, 0.35],
+     "reverb": [2.4, 0.6, 0.22]
+    },
+    "buses": ["taiko", "braam", "fx", "strings", "tremolo"],
+    "master_sha256": "85f5ec1bcc72296530ed0fe3f10bee0b57bbfa1a7934b333036410b94a75a224",
+    "stems": ["taiko", "braam", "fx", "strings", "tremolo"]
+   },
+   "bpm": 122,
+   "chords": ["Dm", "A", "Dm", "Bb", "Gm", "A", "Dm", "Bb", "Gm", "A", "Dm", "Bb", "Gm", "A", "Dm", "Bb", "Gm", "A", "Dm", "Bb", "Gm", "A", "Dm", "Bb", "Gm", "A", "Dm", "Bb", "Gm", "A", "A"],
+   "config": "examples/trombone_vs_horn",
+   "fighters": ["TROMBONE", "HORN"],
+   "intro": ["Dm", "A"],
+   "key": "D",
+   "lines": {
+    "HORN": [62, 69, 65, 69, 62, 65, 70, 65, 62, 67, 70, 67, 61, 64, 69, 64],
+    "HORN THEME": [62, 69, 70, 65, 67, 70, 69, 73],
+    "TROMBONE": [50, 50, 57, 55, 46, 46, 53, 50, 55, 55, 58, 57, 57, 57, 61, 52]
+   },
+   "loop": ["Dm", "Bb", "Gm", "A"],
+   "loop_bpm": "0x1.e7de6d1d60865p+6",
+   "mood": "brass_trailer",
+   "n_bars": 31,
+   "recording": "themes/brass_trailer/trombone_vs_horn.bfrec",
+   "scale": "minor",
+   "seed": 140,
+   "t_ko": 49.218817204301075,
+   "tail": ["A"],
+   "theme_options": {},
+   "winner": 0
+  },
+  {
+   "bed_alone": {
+    "bed": {
+     "buses": {
+      "braam": [1.15, 0.32],
+      "pad": [0.9, 0.35],
+      "strings": [0.85, 0.3],
+      "taiko": [1.3, 0.25],
+      "tremolo": [1.0, 0.6]
+     },
+     "comp": [0.22, 0.35],
+     "reverb": [2.8, 0.62, 0.24]
+    },
+    "buses": ["taiko", "braam", "fx", "strings", "tremolo", "pad"],
+    "master_sha256": "826a753524d5edee837254a84b291c694a32bad2f7d2caea9d5e4e598f3fbfc1",
+    "stems": ["taiko", "braam", "fx", "strings", "tremolo", "pad"]
+   },
+   "bpm": 122,
+   "chords": ["Dm", "A", "Dm", "Bb", "Gm", "A", "Dm", "Bb", "Eb", "A", "Dm", "Bb", "Gm", "A", "Dm", "Bb", "Eb", "A", "Dm", "Bb", "Gm", "A", "Dm", "Bb", "Eb", "A", "Dm", "Bb", "Gm", "A", "A"],
+   "config": "ballfight_horn_vs_trombone_rematch",
+   "fighters": ["HORN", "TROMBONE"],
+   "intro": ["Dm", "A"],
+   "key": "D",
+   "lines": {
+    "HORN": [62, 69, 74, 72, 70, 65, 70, 74, 67, 70, 74, 72, 69, 73, 76, 73, 74, 72, 69, 65, 70, 74, 77, 74, 70, 67, 63, 67, 69, 64, 61, 64],
+    "HORN THEME": [62, 69, 70, 65, 67, 70, 69, 73, 74, 69, 70, 74, 67, 70, 69, 73],
+    "TROMBONE": [50, 50, 57, 55, 50, 62, 60, 57, 46, 46, 53, 51, 46, 58, 56, 53, 43, 43, 50, 48, 43, 55, 53, 50, 45, 45, 52, 50, 45, 57, 55, 49, 50, 50, 57, 55, 50, 62, 60, 57, 46, 46, 53, 51, 46, 58, 56, 53, 51, 51, 58, 56, 51, 63, 61, 58, 45, 45, 52, 50, 45, 57, 55, 49]
+   },
+   "loop": ["Dm", "Bb", "Gm", "A", "Dm", "Bb", "Eb", "A"],
+   "loop_bpm": "0x1.e7de6d1d60865p+6",
+   "mood": "brass_trailer",
+   "n_bars": 31,
+   "recording": "themes/brass_trailer/horn_vs_trombone_rematch.bfrec",
+   "scale": "minor",
+   "seed": 630,
+   "t_ko": 50.27715053763441,
+   "tail": ["Dm", "Bb", "Gm", "A", "A"],
+   "theme_options": {
+    "sequel": true
+   },
+   "winner": 0
+  }
+ ],
+ "theme": "brass_trailer",
+ "voicing_methods": ["trem", "pad_notes"]
+}
