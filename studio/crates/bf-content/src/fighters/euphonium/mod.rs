@@ -1,11 +1,9 @@
-//! EUPHONIUM: its look, instrument voice, part in the score and card, ported in milestone 3's Task 26
-//! (`kit/fighters/euphonium.py`). Until then every entry point here says it has none: the picture draws EUPHONIUM as the
-//! bare ball, the score has no part for it, the app has no card for it, and the app does not offer it (the
-//! registry's `PORTED`, which only a register task changes).
+//! EUPHONIUM: its look, instrument voice, part in the score and card (`kit/fighters/euphonium.py`, ported in milestone
+//! 3's Task 26). The app offers it once a register task adds it to the registry's `PORTED`.
 //!
-//! The port fills this folder only: `look.rs`, `sound.rs`, `voice.rs`, `card.rs`, `state.rs` (what the look and
-//! the part both derive from the recording) and the entry points below. Nothing outside it names EUPHONIUM's
-//! types, so nothing outside it changes.
+//! `look.rs` is its `Look` (with IDENTITY CRISIS's copy of the enemy's look), `sound.rs` its `Sound`, `voice.rs` its
+//! Pixel Pitch voice and the synth its part plays directly, `card.rs` its card; `state.rs` holds its salvos and
+//! landings, which its look and its part both derive from the recording.
 
 use std::sync::Arc;
 
@@ -22,25 +20,29 @@ pub mod voice;
 
 pub use card::{CARD, card};
 
-/// `fighters.look('EUPHONIUM', P, k)`: its look, or `None` while it is not ported (the bare ball is drawn then).
+pub use look::EuphoniumLook;
+pub use sound::EuphoniumSound;
+pub use voice::EuphoniumVoice;
+
+/// `fighters.look('EUPHONIUM', P, k)`: its look.
 pub fn look() -> Option<Box<dyn Look>> {
-    None
+    Some(Box::new(EuphoniumLook::default()))
 }
 
-/// Its instrument voice (`pp_bridge`'s entry), or `None` while it is not ported.
+/// Its instrument voice (`pp_bridge`'s entry).
 pub fn voice() -> Option<Arc<dyn Voice>> {
-    None
+    Some(Arc::new(EuphoniumVoice))
 }
 
-/// `fighters.sound('EUPHONIUM', M, k)`: its part on side `k` of the fight `ff`, or `None` while it is not ported.
+/// `fighters.sound('EUPHONIUM', M, k)`: its part on side `k` of the fight `ff` (the melody whatever its role: the
+/// kit's part never reads it).
 pub fn sound(k: usize, ff: &FightFile) -> Option<Box<dyn Sound>> {
-    let _ = (k, ff);
-    None
+    let _ = ff;
+    Some(Box::new(EuphoniumSound::new(k)))
 }
 
-/// Its model (`data/models/EUPHONIUM.json`, written by the export tool's `models` for one roster name), compiled in:
-/// `Some(include_str!("../../../data/models/EUPHONIUM.json"))` once ported, `None` until then.
-pub const MESH: Option<&str> = None;
+/// Its model (`data/models/EUPHONIUM.json`, written by its export), compiled in.
+pub const MESH: Option<&str> = Some(include_str!("../../../data/models/EUPHONIUM.json"));
 
 /// Whether its music settings (key, chord loop, its line) feed its fight. True only for PIANO, once ported.
 pub const MUSIC_FEEDS_FIGHT: bool = false;
