@@ -391,3 +391,6 @@ pub(crate) fn snap(f: &Fight, out: &mut Frames) {
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod kit_vectors;
