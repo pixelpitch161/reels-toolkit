@@ -75,7 +75,5 @@ pub fn start<'a>(f: &mut Fight<'a>, k: usize, _ab: &AbilityCfg) {
 
 /// `copy_source(k)` (2804 to 2806): the enemy's last ability if its kind is one of [`COPYABLE`], else none.
 pub fn source<'a>(f: &Fight<'a>, k: usize) -> Option<&'a AbilityCfg> {
-    f.balls[1 - k]
-        .last_ab
-        .filter(|src| COPYABLE.contains(&src.kind.name()))
+    f.balls[1 - k].last_ab.filter(|src| COPYABLE.contains(&src.kind.name()))
 }

@@ -214,7 +214,11 @@ mod tests {
         c["weapon"]["calibre"] = json!(1.0);
         let err = FighterCfg::from_json(&c).unwrap_err();
         assert_eq!(err.field, "weapon.calibre");
-        assert!(err.message.contains("not a setting of a mortar weapon"), "{}", err.message);
+        assert!(
+            err.message.contains("not a setting of a mortar weapon"),
+            "{}",
+            err.message
+        );
         let mut c = euphonium();
         c["weapon"]["every"] = json!(1e308);
         let err = FighterCfg::from_json(&c).unwrap_err();

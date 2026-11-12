@@ -15,14 +15,7 @@ pub const PORTED: bool = true;
 
 /// The numbers `fight.py` reads as `ab[name]` for this kind (a group of names: one of them, as `dur` or `dur_beats`).
 /// An unlock's `every_bars` is checked for every kind.
-pub const REQUIRED: &[&[&str]] = &[
-    &["n"],
-    &["beats"],
-    &["flight_beats"],
-    &["splash"],
-    &["dmg"],
-    &["knock"],
-];
+pub const REQUIRED: &[&[&str]] = &[&["n"], &["beats"], &["flight_beats"], &["splash"], &["dmg"], &["knock"]];
 
 /// Every key `fight.py` reads from an ability of this kind (`aimed` and `lead` through `ab.get`, defaults 0 and 1.0);
 /// an entry holding another key loads as `Unsupported("barrage+<key>")`.
