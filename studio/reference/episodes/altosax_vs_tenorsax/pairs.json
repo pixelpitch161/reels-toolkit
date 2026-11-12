@@ -1,0 +1,178 @@
+{
+ "about": "ballfight_altosax_vs_tenorsax: the pair's own links (plan Table S5): each item's first occurrence over the scenario fights (scenario, seed, time, event index, the event), within 20.0 s of FIGHT!",
+ "format": 1,
+ "links": [
+  {
+   "after_fight": 0.008333333333333748,
+   "event": [4.075, "spot", 0, 0, 0.2743031183614597, -1.1842159642709993, 2.75, -0.6298459778153338, 4.075, 4.8375, 0.42, 0],
+   "index": 0,
+   "item": "spot",
+   "scenario": "plain",
+   "seed": 1,
+   "t": 4.075
+  },
+  {
+   "after_fight": 0.38333333333333375,
+   "event": [4.45, "burn", 0, 0, 1.4817153898616526, -0.9138463848760635],
+   "index": 5,
+   "item": "burn",
+   "scenario": "plain",
+   "seed": 1,
+   "t": 4.45
+  },
+  {
+   "after_fight": 0.38333333333333375,
+   "event": [4.45, "hit", 0, 1, 0.9750000000000001, 1.7311033200034434, -1.483118060865274, "burn", 0],
+   "index": 4,
+   "item": "hit/burn",
+   "scenario": "plain",
+   "seed": 1,
+   "t": 4.45
+  },
+  {
+   "after_fight": 0.7750033333333333,
+   "event": [4.84167, "spot_end", 0, 0, 1],
+   "index": 8,
+   "item": "spot_end",
+   "scenario": "plain",
+   "seed": 1,
+   "t": 4.84167
+  },
+  {
+   "after_fight": 0.008333333333333748,
+   "event": [4.075, "pose", 1, 4.329166666666667, 3.0],
+   "index": 1,
+   "item": "pose",
+   "scenario": "plain",
+   "seed": 1,
+   "t": 4.075
+  },
+  {
+   "after_fight": 0.1416633333333337,
+   "event": [4.20833, "throw", 1, 0, -0.6301969441862092, 3.9, -0.48491556237686717, 1.1, 4.208333333333333, 4.970833333333333, 0, 0],
+   "index": 2,
+   "item": "throw",
+   "scenario": "plain",
+   "seed": 1,
+   "t": 4.20833
+  },
+  {
+   "after_fight": 0.9083333333333332,
+   "event": [4.975, "splat", 1, 0, -0.48491556237686717, 1.1, 0],
+   "index": 9,
+   "item": "splat",
+   "scenario": "plain",
+   "seed": 1,
+   "t": 4.975
+  },
+  {
+   "after_fight": 0.9083333333333332,
+   "event": [4.975, "hit", 1, 0, 1.4249999999999998, -1.1, -0.04918874430748593, "throw", 0],
+   "index": 9,
+   "item": "hit/throw",
+   "scenario": "plain",
+   "seed": 2,
+   "t": 4.975
+  },
+  {
+   "after_fight": 11.183333333333334,
+   "event": [15.25, "runway", 0, -1.6392746816941484, 1.5911904395654037, 1.5040812530522458, -2.4, 15.25, 17.28333333333333],
+   "index": 105,
+   "item": "runway",
+   "scenario": "swapped",
+   "seed": 1,
+   "t": 15.25
+  },
+  {
+   "after_fight": 12.033333333333335,
+   "event": [16.1, "strut_bump", 1, 1.001133495679158, -1.9809500745262996],
+   "index": 116,
+   "item": "strut_bump",
+   "scenario": "plain",
+   "seed": 2,
+   "t": 16.1
+  },
+  {
+   "after_fight": 12.033333333333335,
+   "event": [16.1, "hit", 1, 0, 3.0, 1.001133495679158, -1.9809500745262996, "strut", 0],
+   "index": 115,
+   "item": "hit/strut",
+   "scenario": "plain",
+   "seed": 2,
+   "t": 16.1
+  },
+  {
+   "after_fight": 19.825003333333335,
+   "event": [23.89167, "hush", 1, 24.90833333333333],
+   "index": 330,
+   "item": "hush",
+   "scenario": "plain",
+   "seed": 3,
+   "t": 23.89167
+  }
+ ],
+ "scenarios": [
+  {
+   "cache": ["episodes/altosax_vs_tenorsax/scenarios/plain_s1.bfrec", "episodes/altosax_vs_tenorsax/scenarios/plain_s2.bfrec", "episodes/altosax_vs_tenorsax/scenarios/plain_s3.bfrec"],
+   "fighters": ["ALTO SAX", "TENOR SAX"],
+   "handicap": [1.0, 1.0],
+   "hashes": ["5edc1853866d8fcd", "547cbbc57c84dcfb", "09e9f93b7c4f7440"],
+   "name": "plain",
+   "overrides": {},
+   "rules": {
+    "A": 3.0,
+    "DT": 0.008333333333333333,
+    "FPS": 30,
+    "HP": 100.0,
+    "KEY_R": 0.11,
+    "KNOCK_T": 0.38,
+    "LAUNCH_SPREAD": 38.0,
+    "LOW_HP": 25.0,
+    "LV_DMG": [14.0, 36.0],
+    "R": 0.6,
+    "ROPE_GIVE": 5.0,
+    "V": 2.6,
+    "beat": 0.5083333333333333,
+    "bpm": 118.0327868852459,
+    "dmg_scale": 0.75,
+    "t_fight": 4.066666666666666,
+    "t_max": 58.0
+   },
+   "seeds": [1, 2, 3],
+   "swapped": false
+  },
+  {
+   "cache": ["episodes/altosax_vs_tenorsax/scenarios/swapped_s1.bfrec", "episodes/altosax_vs_tenorsax/scenarios/swapped_s2.bfrec", "episodes/altosax_vs_tenorsax/scenarios/swapped_s3.bfrec"],
+   "fighters": ["TENOR SAX", "ALTO SAX"],
+   "handicap": [1.0, 1.0],
+   "hashes": ["4467214da19d25cd", "58dcfff4b1e14b16", "0654098d2628ff89"],
+   "name": "swapped",
+   "overrides": {},
+   "rules": {
+    "A": 3.0,
+    "DT": 0.008333333333333333,
+    "FPS": 30,
+    "HP": 100.0,
+    "KEY_R": 0.11,
+    "KNOCK_T": 0.38,
+    "LAUNCH_SPREAD": 38.0,
+    "LOW_HP": 25.0,
+    "LV_DMG": [14.0, 36.0],
+    "R": 0.6,
+    "ROPE_GIVE": 5.0,
+    "V": 2.6,
+    "beat": 0.5083333333333333,
+    "bpm": 118.0327868852459,
+    "dmg_scale": 0.75,
+    "dmg_side": [1.0, 1.0],
+    "t_fight": 4.066666666666666,
+    "t_max": 58.0
+   },
+   "seeds": [1, 2, 3],
+   "swapped": true
+  }
+ ],
+ "t_fight": 4.066666666666666,
+ "tool": "tools.studio_export.episode_altosax_vs_tenorsax",
+ "window": 20.0
+}
