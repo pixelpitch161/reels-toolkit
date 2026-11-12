@@ -138,13 +138,13 @@ mod tests {
         }
     }
 
-    /// `effects_step` 3078 to 3086: a ring with `clears` false leaves the enemy's projectiles alone (the walk's step
-    /// ring, the stampede's stomps, the crowd's honks), and a landed ring with `grow` calls its owner's growth (the
-    /// walk's code: a stub until CONTRABASS's port, which the trace shows is reached).
+    /// `effects_step` 3083 to 3086: a ring with `clears` false leaves the enemy's projectiles alone (the walk's step
+    /// ring, the stampede's stomps, the crowd's honks). A landed ring with `grow` (3078 to 3082) grows its owner's
+    /// reach: the walk's code, proven in `kinds::walk::kit_vectors::the_reach_grows_to_its_cap`.
     #[test]
     fn a_rings_clears_and_grow_follow_python() {
         let bare = testing::bare_pair();
-        for (grow, clears) in [(false, true), (false, false), (true, true)] {
+        for clears in [true, false] {
             let mut f = testing::fight(&testing::bare_setup(&bare, 1), false);
             f.trace_sockets = Some(std::cell::RefCell::new(Vec::new()));
             f.t = 5.0;
@@ -159,15 +159,15 @@ mod tests {
                 idx: 0,
                 dmg: 0.5,
             });
-            f.waves.push(ring(grow, clears));
+            f.waves.push(ring(false, clears));
             let dt = f.rules.dt;
             step(&mut f, dt);
             let trace = f.trace_sockets.take().expect("on").into_inner();
             let kinds: Vec<&str> = f.events.iter().map(|e| e.kind.as_str()).collect();
-            assert!(kinds.contains(&"hit"), "{grow} {clears}: {kinds:?}");
-            assert_eq!(f.keys.is_empty(), clears, "{grow} {clears}");
+            assert!(kinds.contains(&"hit"), "{clears}: {kinds:?}");
+            assert_eq!(f.keys.is_empty(), clears, "{clears}");
             assert_eq!(kinds.contains(&"cleared"), clears);
-            assert_eq!(trace.contains(&"stub:kinds::walk::ring_grow"), grow, "{trace:?}");
+            assert!(!trace.iter().any(|s| s.starts_with("stub:")), "{clears}: {trace:?}");
         }
     }
 }
