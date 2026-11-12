@@ -446,8 +446,9 @@ pub fn keys_move(f: &mut Fight, dt: f64) {
 /// `snap`, `K` (5509 to 5514): the first `min(KMAX, len(kp))` rows of this frame's `K` (72 x 7, all NaN on entry) from
 /// `fight.keys`: `[x, y, atan2(vy, vx), owner, id, idx, vol]`
 pub(crate) fn k_rows(f: &Fight, k: &mut [f64]) {
-    for (key, row) in f.keys.iter().take(KMAX).zip(k.chunks_exact_mut(7)) {
-        row.copy_from_slice(&[
+    let (rows, _) = k.as_chunks_mut::<7>();
+    for (key, row) in f.keys.iter().take(KMAX).zip(rows) {
+        *row = [
             key.p[0],
             key.p[1],
             dmath::atan2(key.v[1], key.v[0]),
@@ -455,7 +456,7 @@ pub(crate) fn k_rows(f: &Fight, k: &mut [f64]) {
             key.id as f64,
             key.idx as f64,
             key.vol as f64,
-        ]);
+        ];
     }
 }
 

@@ -105,3 +105,164 @@ pub fn ball_start(w: &RollCfg) -> BallStart {
 pub(crate) fn main16(_w: &RollCfg) -> Option<f64> {
     None
 }
+
+#[cfg(test)]
+mod tests {
+    use serde_json::{Value as Json, json};
+
+    use crate::roster::{AbilityKind, FighterCfg, WeaponCfg, parse_roster};
+
+    const ROSTER: &str = include_str!("../../../../bf-content/data/roster.json");
+
+    fn piano() -> FighterCfg {
+        let all = parse_roster(ROSTER).expect("the roster loads");
+        all.into_iter().find(|f| f.name == "PIANO").expect("in the roster")
+    }
+
+    /// PIANO's entry with one weapon key removed, or set.
+    fn weapon_with(key: &str, value: Option<Json>) -> Json {
+        let mut raw = piano().raw;
+        let w = raw["weapon"].as_object_mut().expect("a weapon");
+        match value {
+            Some(v) => _ = w.insert(key.into(), v),
+            None => _ = w.remove(key),
+        }
+        raw
+    }
+
+    fn roll(f: &FighterCfg) -> &super::RollCfg {
+        match &f.weapon {
+            WeaponCfg::Roll(w) => w,
+            other => panic!("{other:?}"),
+        }
+    }
+
+    /// The roster's numbers (`fighters.py`: PIANO v2, #45), and the three abilities typed with theirs.
+    #[test]
+    fn piano_is_a_roll_with_its_roster_numbers() {
+        let f = piano();
+        let w = roll(&f);
+        assert_eq!(
+            (w.n0, w.grow, w.n_max, w.speed, w.aim, w.dmg, w.margin),
+            (1.0, 0.25, 4.0, 5.2, 0.55, 0.5, 0.45)
+        );
+        assert_eq!(
+            (w.reg, w.style.as_str(), f.register),
+            (Some((48, 84)), "roll", (48, 84))
+        );
+        assert_eq!(f.weapon.kind(), "roll");
+        assert_eq!(f.weapon.ball_start().n0, 1.0);
+        assert_eq!(
+            [&f.unlock1.kind, &f.unlock2.kind, &f.low.kind],
+            [&AbilityKind::Sustain, &AbilityKind::Arc, &AbilityKind::Runoff]
+        );
+        assert_eq!(
+            (
+                f.unlock1.get("dur_beats"),
+                f.unlock1.get("out16"),
+                f.unlock1.get("step16")
+            ),
+            (Some(4.0), Some(2.0), Some(1.0))
+        );
+        assert_eq!(
+            (f.unlock2.get("n"), f.unlock2.get("sweep"), f.unlock2.get("beats")),
+            (Some(15.0), Some(150.0), Some(1.0))
+        );
+        assert_eq!(
+            (f.low.get("n"), f.low.get("margin"), f.low.get("reload_beats")),
+            (Some(40.0), Some(0.25), Some(4.0))
+        );
+    }
+
+    /// `w.get(name, default)`: `n0` 0, `margin` 0.45, `reg` the fighter's register; `w[name]` for the rest.
+    #[test]
+    fn missing_fields_take_fight_pys_defaults_or_are_named() {
+        let f = FighterCfg::from_json(&weapon_with("margin", None)).expect("loads");
+        assert_eq!(roll(&f).margin, 0.45);
+        let f = FighterCfg::from_json(&weapon_with("reg", None)).expect("loads");
+        assert_eq!(roll(&f).reg, None);
+        let f = FighterCfg::from_json(&weapon_with("n0", None)).expect("loads");
+        assert_eq!((roll(&f).n0, f.weapon.ball_start().n0), (0.0, 0.0));
+        for key in ["grow", "n_max", "speed", "aim", "dmg"] {
+            assert_eq!(
+                FighterCfg::from_json(&weapon_with(key, None)).unwrap_err().to_string(),
+                format!("roster: PIANO: weapon.{key}: missing")
+            );
+        }
+        assert_eq!(
+            FighterCfg::from_json(&weapon_with("reg", Some(json!([48]))))
+                .unwrap_err()
+                .to_string(),
+            "roster: PIANO: weapon.reg: must be a list of 2 notes"
+        );
+        assert_eq!(
+            FighterCfg::from_json(&weapon_with("reg", Some(json!([48.5, 84]))))
+                .unwrap_err()
+                .to_string(),
+            "roster: PIANO: weapon.reg: must be a whole number"
+        );
+        // a key the engine would ignore (`fight.py` reads `curve`, `bounce`, `hit_r` on a volley, not on a roll)
+        assert_eq!(
+            FighterCfg::from_json(&weapon_with("bounce", Some(json!(2))))
+                .unwrap_err()
+                .to_string(),
+            "roster: PIANO: weapon.bounce: not a setting of a roll weapon (the engine would ignore it)"
+        );
+    }
+
+    /// An ability entry with a key its kind does not read is not that kind (never typed with the key dropped), and
+    /// one without a number its kind reads as `ab[name]` is named.
+    #[test]
+    fn the_three_abilities_need_their_numbers_and_hold_nothing_else() {
+        for (slot, kind, missing) in [
+            ("unlock1", "sustain", vec!["dur_beats"]),
+            ("unlock2", "arc", vec!["beats", "sweep", "n", "speed", "dmg"]),
+            ("low", "runoff", vec!["n", "speed", "dmg"]),
+        ] {
+            for key in missing {
+                let mut raw = piano().raw;
+                raw["abilities"][slot].as_object_mut().expect("a table").remove(key);
+                let field = if key == "dur_beats" { "dur or dur_beats" } else { key };
+                assert_eq!(
+                    FighterCfg::from_json(&raw).unwrap_err().to_string(),
+                    format!("roster: PIANO: abilities.{slot}.{field}: missing")
+                );
+            }
+            let mut raw = piano().raw;
+            raw["abilities"][slot]["curve"] = json!(true);
+            let f = FighterCfg::from_json(&raw).expect("loads");
+            let ab = match slot {
+                "unlock1" => &f.unlock1,
+                "unlock2" => &f.unlock2,
+                _ => &f.low,
+            };
+            assert_eq!(ab.kind, AbilityKind::Unsupported(format!("{kind}+curve")));
+        }
+    }
+
+    /// `FighterCfg::check` on settings changed in code: a hole count or a shot count that is not a finite number.
+    #[test]
+    fn check_refuses_counts_that_are_not_numbers() {
+        let mut f = piano();
+        let WeaponCfg::Roll(w) = &mut f.weapon else {
+            panic!("a roll");
+        };
+        w.n_max = f64::INFINITY;
+        assert_eq!(
+            f.check().unwrap_err().to_string(),
+            "roster: PIANO: weapon.n_max: inf is not a finite number (a row fires a whole number of holes)"
+        );
+        let mut f = piano();
+        f.unlock2.params.insert("n".into(), f64::INFINITY);
+        assert_eq!(
+            f.check().unwrap_err().to_string(),
+            "roster: PIANO: abilities.unlock2.n: inf is not a finite number (an arc throws that many shots)"
+        );
+        let mut f = piano();
+        f.low.params.insert("n".into(), f64::NAN);
+        assert_eq!(
+            f.check().unwrap_err().to_string(),
+            "roster: PIANO: abilities.low.n: NaN is not a finite number (the roll fires that many shots at once)"
+        );
+    }
+}
