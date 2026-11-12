@@ -209,10 +209,66 @@ fn scrub_frames(frames: u32, drawn: &HashSet<u32>, n: usize) -> Vec<u32> {
     out
 }
 
-/// A player for the bench: `threads` drawing threads, no sound, the wall clock.
-fn bench_player(threads: usize) -> Player {
-    let origin = Instant::now();
-    let now: Now = Box::new(move || origin.elapsed());
+/// Time as the bench sees it. The measurements run on the wall clock. The tests of the bench's counting run on a
+/// clock moved by hand: each pause moves it on, then waits until the player's drawing threads have drawn what is
+/// wanted, so what is counted does not depend on how fast the machine draws.
+pub(crate) struct Clock {
+    now: Arc<dyn Fn() -> Duration + Send + Sync>,
+    pause: Pause,
+}
+
+/// What a pause of the bench does: wait for, or move the clock on by, a while.
+type Pause = Box<dyn Fn(&Player, Duration)>;
+
+impl Clock {
+    /// The wall clock: a pause is a sleep.
+    fn wall() -> Clock {
+        let origin = Instant::now();
+        Clock {
+            now: Arc::new(move || origin.elapsed()),
+            pause: Box::new(|_, d| std::thread::sleep(d)),
+        }
+    }
+
+    /// A clock moved by hand by each pause; the pause returns once the player has nothing left to draw (at most
+    /// `PATIENCE` of real time).
+    #[cfg(test)]
+    pub(crate) fn by_hand() -> Clock {
+        let at = Arc::new(Mutex::new(Duration::ZERO));
+        let read = at.clone();
+        Clock {
+            now: Arc::new(move || *read.lock().unwrap_or_else(PoisonError::into_inner)),
+            pause: Box::new(move |player, d| {
+                *at.lock().unwrap_or_else(PoisonError::into_inner) += d;
+                let until = Instant::now() + PATIENCE;
+                // A worker may not have taken the newest frames yet: look a few times, a moment apart.
+                let mut quiet = 0;
+                while quiet < 3 && Instant::now() < until {
+                    if player.drawing_idle() {
+                        quiet += 1;
+                    } else {
+                        quiet = 0;
+                    }
+                    std::thread::yield_now();
+                }
+            }),
+        }
+    }
+
+    fn now(&self) -> Duration {
+        (self.now)()
+    }
+
+    /// How long since `t` (a reading of `now`).
+    fn since(&self, t: Duration) -> Duration {
+        self.now().saturating_sub(t)
+    }
+}
+
+/// A player for the bench: `threads` drawing threads, no sound, `clock`'s time.
+fn bench_player(threads: usize, clock: &Clock) -> Player {
+    let read = clock.now.clone();
+    let now: Now = Box::new(move || read());
     Player::new(
         threads,
         Box::new(NoAudio::new("The bench plays without sound.")),
@@ -227,6 +283,30 @@ pub fn run(frames: Arc<dyn FrameSource>, start: u32, seconds: f32, threads: usiz
     run_after(None, frames, start, seconds, threads)
 }
 
+/// As [`run_after`] on `clock`.
+pub(crate) fn run_on(
+    clock: &Clock,
+    warm: Option<(Arc<dyn FrameSource>, u32)>,
+    frames: Arc<dyn FrameSource>,
+    start: u32,
+    seconds: f32,
+    threads: usize,
+) -> BenchReport {
+    let mut player = bench_player(threads, clock);
+    let mut take: TakeId = 1;
+    if let Some((warm, warm_start)) = warm {
+        player.run(PlayerCmd::Load {
+            take,
+            frames: warm,
+            start: warm_start,
+            autoplay: true,
+        });
+        play(clock, &mut player, WARM_UP);
+        take += 1;
+    }
+    measure(clock, &mut player, take, frames, start, seconds, threads)
+}
+
 /// As [`run`], but when `warm` is given the same player first plays that other take (`warm.1` its start frame)
 /// for [`WARM_UP`] after its clock starts, so the measured take is loaded on a player whose scheduler already knows
 /// its draw times: what the app does from the second seed on (the player lives as long as the app).
@@ -237,47 +317,36 @@ pub fn run_after(
     seconds: f32,
     threads: usize,
 ) -> BenchReport {
-    let mut player = bench_player(threads);
-    let mut take: TakeId = 1;
-    if let Some((warm, warm_start)) = warm {
-        player.run(PlayerCmd::Load {
-            take,
-            frames: warm,
-            start: warm_start,
-            autoplay: true,
-        });
-        play(&mut player, WARM_UP);
-        take += 1;
-    }
-    measure(&mut player, take, frames, start, seconds, threads)
+    run_on(&Clock::wall(), warm, frames, start, seconds, threads)
 }
 
 /// Ticks `player` every 4 ms until its clock has run for `length` (it starts with the first picture, ruling
 /// M2-R30); the time from the call until the clock started, if it did.
-fn play(player: &mut Player, length: Duration) -> Option<Duration> {
-    let began = Instant::now();
+fn play(time: &Clock, player: &mut Player, length: Duration) -> Option<Duration> {
+    let began = time.now();
     let mut clock: Option<Duration> = None;
     // The player ends its wait by itself within `FIRST_PICTURE_WAIT`; the margin only guards the bench.
     let most = FIRST_PICTURE_WAIT + Duration::from_secs(1);
     loop {
         player.tick();
         if clock.is_none() && !player.waiting() {
-            clock = Some(began.elapsed());
+            clock = Some(time.since(began));
         }
         let done = match clock {
-            Some(t) => began.elapsed() >= t + length,
-            None => began.elapsed() >= most + length,
+            Some(t) => time.since(began) >= t + length,
+            None => time.since(began) >= most + length,
         };
         if done {
             return clock;
         }
-        std::thread::sleep(TICK);
+        (time.pause)(player, TICK);
     }
 }
 
 /// Loads `frames` as take `take` with autoplay on `player`, plays it for `seconds` from when its clock starts, then
 /// scrubs.
 fn measure(
+    time: &Clock,
     player: &mut Player,
     take: TakeId,
     frames: Arc<dyn FrameSource>,
@@ -295,7 +364,7 @@ fn measure(
 
     // Playback, from `start`, as the app plays a take it has just been given.
     let length = Duration::from_secs_f32(if seconds.is_finite() { seconds.max(0.0) } else { 0.0 });
-    let began = Instant::now();
+    let began = time.now();
     player.run(PlayerCmd::Load {
         take,
         frames: timed.clone(),
@@ -310,19 +379,19 @@ fn measure(
         player.tick();
         let late = player.stats().late - before.late;
         if first.is_none() && player.has_picture() {
-            first = Some((began.elapsed(), late));
+            first = Some((time.since(began), late));
         }
         if clock.is_none() && !player.waiting() {
-            clock = Some(began.elapsed());
+            clock = Some(time.since(began));
         }
         let done = match clock {
-            Some(t) => began.elapsed() >= t + length,
-            None => began.elapsed() >= most + length,
+            Some(t) => time.since(began) >= t + length,
+            None => time.since(began) >= most + length,
         };
         if done {
             break;
         }
-        std::thread::sleep(TICK);
+        (time.pause)(player, TICK);
     }
     player.tick();
     let end_frame = player.view().frame;
@@ -348,19 +417,19 @@ fn measure(
     let mut waits = Vec::with_capacity(SCRUBS);
     for f in scrub_frames(count, &drawn, SCRUBS) {
         let shown = player.stats().shown;
-        let asked = Instant::now();
+        let asked = time.now();
         player.run(PlayerCmd::Transport(TransportAction::ScrubTo(
             (f as f32 + 0.5) / FPS as f32,
         )));
         loop {
             player.tick();
             let given = player.stats().shown > shown;
-            if given || player.failed_frame() == Some(f) || asked.elapsed() > PATIENCE {
+            if given || player.failed_frame() == Some(f) || time.since(asked) > PATIENCE {
                 break;
             }
-            std::thread::sleep(SCRUB_TICK);
+            (time.pause)(player, SCRUB_TICK);
         }
-        waits.push(asked.elapsed().as_secs_f32() * 1000.0);
+        waits.push(time.since(asked).as_secs_f32() * 1000.0);
     }
     player.run(PlayerCmd::Transport(TransportAction::ScrubEnd));
     settle(player, &timed);
@@ -535,12 +604,17 @@ mod tests {
     use super::*;
     use crate::preview::scheduler::testing::TestSource;
 
+    /// On the clock moved by hand, 2 s of playback from frame 0 pass every frame from 0 to 60 under a tick, so each
+    /// is counted once, shown or late, whatever the machine's speed; with every wanted frame drawn before the clock
+    /// moves on, none is late.
     #[test]
     fn the_bench_counts_frames() {
-        let r = run(TestSource::new(), 0, 2.0, 2);
+        let r = run_on(&Clock::by_hand(), None, TestSource::new(), 0, 2.0, 2);
         let counted = r.shown + r.late;
-        assert!((55..=61).contains(&counted), "{r:?}");
+        assert!((60..=61).contains(&counted), "{r:?}");
+        assert_eq!(r.late, 0, "{r:?}");
         assert_eq!(r.on_time, r.shown as f32 / counted as f32, "{r:?}");
+        assert!(r.end_frame.abs_diff(60) <= 1, "{r:?}");
     }
 
     #[test]
@@ -567,12 +641,34 @@ mod tests {
         assert_eq!(scrub_frames(1_830, &most, 50).len(), 5);
     }
 
+    /// A second take on a player that has played another starts from its own start frame and shows every frame
+    /// after it (the gap after the start frame, Task 32's fix round, would leave frames late here). On the clock
+    /// moved by hand.
     #[test]
     fn a_warm_player_plays_the_second_take_from_its_start_frame() {
-        let r = run_after(Some((TestSource::new(), 500)), TestSource::new(), 100, 1.0, 4);
+        // Draws of 60 ms, so a warm scheduler draws with a lead of 2 and a stride of 1 on 4 threads: the case where the
+        // gap showed.
+        let slow = || -> Arc<dyn FrameSource> { Arc::new(Slow(TestSource::new())) };
+        let r = run_on(&Clock::by_hand(), Some((slow(), 500)), slow(), 100, 1.0, 4);
+        assert!(r.lead > 1, "the scheduler drew ahead with a lead: {r:?}");
         assert_eq!(r.start, 100);
         assert!(r.end_frame.abs_diff(130) <= 1, "{r:?}");
-        assert!(r.shown >= 29, "{r:?}");
+        assert!(r.shown >= 30, "{r:?}");
+        assert_eq!(r.late, 0, "{r:?}");
+    }
+
+    /// The test source, with every draw taking 60 ms of real time.
+    struct Slow(Arc<TestSource>);
+
+    impl FrameSource for Slow {
+        fn frames(&self) -> u32 {
+            self.0.frames()
+        }
+
+        fn draw(&self, f: u32) -> Frame {
+            std::thread::sleep(Duration::from_millis(60));
+            self.0.draw(f)
+        }
     }
 
     /// The real takes on `workers` threads, shared by the two budget tests (two at once would measure each other):

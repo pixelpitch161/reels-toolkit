@@ -257,6 +257,12 @@ impl Player {
         self.picture
     }
 
+    /// Whether the drawing threads have nothing being drawn and nothing wanted left to draw (tests).
+    #[cfg(test)]
+    pub(crate) fn drawing_idle(&self) -> bool {
+        self.scheduler.idle()
+    }
+
     /// Whether playback is waiting for the loaded take's first picture: playing, with the clock not started yet.
     pub fn waiting(&self) -> bool {
         self.waiting.is_some()
