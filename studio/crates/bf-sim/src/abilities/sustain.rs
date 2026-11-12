@@ -1,21 +1,23 @@
 //! Ability kind `sustain` (PIANO's SUSTAIN): `fight.py` `trigger` 2941 to 2943.
 //!
-//! A stub until PIANO's port. [`start`] is already called from `trigger`'s dispatch (`abilities/mod.rs`), and every
-//! other function here where `Fight.run()` calls its Python namesake, behind a test that is false until the roster
-//! reads the kind (`roster::abilities::sustain::PORTED`). So a stub body is never reached in a fight; with
-//! `Fight::trace_sockets` on, one that is reached logs its name. The port fills the bodies with the Python (every draw
-//! from the fight's generator in Python's order and number) and touches no other engine file. A copied ability
-//! (IDENTITY CRISIS) runs this code for the copier's ball, so nothing here may assume which side has the kind.
+//! For the ability's time the roll's rows hang like mines: `kinds::roll::fire_row` reads `sustain_until` and gives
+//! each shot of a sustained row its stop and release times; `kinds::roll::hold_step` stops and releases them. Event
+//! `sustain`: the fighter and when the sustain ends.
 
+use bf_core::event::Value;
+
+use crate::abilities::ab_dur;
 use crate::fight::Fight;
 use crate::roster::AbilityCfg;
 
-/// This ability's per-fight state (`Fight::sustain`): what `fight.py` hangs on the ball or the fight for it, indexed by
-/// fighter where it is per ball. Empty until the port.
+/// This ability's per-fight state (`Fight::sustain`): none of its own. `B.sustain_until` is with the roll's state
+/// (`Fight::roll`), which reads it.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct State {}
 
 /// `trigger`, kind `sustain`: `trigger` 2941 to 2943.
-pub fn start(f: &mut Fight, _k: usize, _ab: &AbilityCfg) {
-    f.socket("stub:abilities::sustain::start");
+pub fn start(f: &mut Fight, k: usize, ab: &AbilityCfg) {
+    let until = f.t + ab_dur(f, ab);
+    f.roll.sustain_until[k] = until;
+    f.ev("sustain", k as i64, vec![Value::Float(until)]);
 }
