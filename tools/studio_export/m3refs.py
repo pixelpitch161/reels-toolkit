@@ -1526,9 +1526,10 @@ def read_config(config):
     """the kit config's values (episode.py executed on its own, without the kit), with the bar count the kit's
     timeline derives from its BPM (kit/episode.py build_timeline: loop_bpm, then round(DUR / BAR)) and its LINES
     (a rest as None, in the config's order); `theme_options` (THEME_OPTIONS: the mood's options it sets, under the
-    fight file's names) only when it sets one, so a config without options reads as before; `roles` (its ROLES)
-    only when it sets them (the theme gates' fight file takes the config's LINES and ROLES: dark_tango's bed plays
-    the melody fighter's line)"""
+    fight file's names) only when it sets one, so a config without options reads as before; and MUSIC_EXTRAS
+    (`roles`, `mix`, `solos`, `title_hits`: its ROLES, MIX, SOLO, TITLE_HITS), each only when it sets it: the theme
+    gates' fight file plays as the config does (dark_tango's bed plays the melody fighter's line, second_line's
+    MIX sets its bed buses' levels)"""
     import importlib.util
     from reelkit.config import loop_bpm
     spec = importlib.util.spec_from_file_location('m3refs_config', config_source(config))
@@ -1541,13 +1542,40 @@ def read_config(config):
     loop = list(getattr(cfg, 'LOOP', chords[start:start + 8]))
     whole = (len(chords) - start) // len(loop)
     assert start == 2 and chords[start:start + whole * len(loop)] == loop * whole, config
+    assert getattr(cfg, 'FIGHT_BAR', 2) == 2, f'{config}: FIGHT_BAR {cfg.FIGHT_BAR} (a fight file fights from bar 2)'
     assert len(chords) == n_bars, (config, len(chords), n_bars)
     return dict(config=config, fighters=list(cfg.FIGHTERS), mood=cfg.MOOD, bpm=cfg.BPM, loop_bpm=common.hexf(bpm),
                 n_bars=n_bars, key=cfg.KEY, scale=getattr(cfg, 'SCALE', 'minor'), intro=chords[:start], loop=loop,
                 tail=chords[start + whole * len(loop):], chords=chords,
                 lines={k: [None if n is None else int(n) for n in v] for k, v in getattr(cfg, 'LINES', {}).items()},
-                **_options_key(theme_options_of(cfg, cfg.MOOD, list(cfg.FIGHTERS), config)),
-                **({'roles': {k: str(v) for k, v in cfg.ROLES.items()}} if getattr(cfg, 'ROLES', None) else {}))
+                **_options_key(theme_options_of(cfg, cfg.MOOD, list(cfg.FIGHTERS), config)), **music_extras(cfg))
+
+
+# what else a kit config sets that the soundtrack reads (kit/episode.py's defaults; kit/music.py, the moods and the
+# fighters' parts read them from T) and a fight file holds, under the fight file's names (music.roles, .mix, .solos,
+# .title_hits); read_config records each only when the config sets it, so a config without one reads as before.
+# The rest of what the soundtrack reads from a config is the music read_config already records (BPM, KEY, SCALE,
+# CHORDS, LOOP, LINES), the theme options (THEME_OPTIONS), or fixed: LOOP_START (asserted 2) and FIGHT_BAR (asserted
+# 2, only a pre-card check config sets it)
+MUSIC_EXTRAS = ('roles', 'mix', 'solos', 'title_hits')
+
+
+def music_extras(cfg):
+    """{roles, mix, solos, title_hits} of a kit config module, each only when it sets it (MUSIC_EXTRAS)"""
+    out = {}
+    if getattr(cfg, 'ROLES', None):
+        out['roles'] = {k: str(v) for k, v in cfg.ROLES.items()}
+    if getattr(cfg, 'MIX', None):                        # bus: (gain, reverb send)
+        out['mix'] = {k: [float(g), float(r)] for k, (g, r) in cfg.MIX.items()}
+    # fighter: [(beat, midi, beats)]. A solo with chords in it (ACOUSTIC's strums: a tuple of notes) is one a fight
+    # file's music.solos cannot hold, so it is left out; the bed alone never plays a solo (it is the winner's voice)
+    solos = {k: [[float(b), int(n), float(d)] for b, n, d in v] for k, v in getattr(cfg, 'SOLO', {}).items()
+             if all(isinstance(n, int) for _, n, _ in v)}
+    if solos:
+        out['solos'] = solos
+    if getattr(cfg, 'TITLE_HITS', None):                 # fighter: notes as its name slams in
+        out['title_hits'] = {k: [int(n) for n in v] for k, v in cfg.TITLE_HITS.items()}
+    return out
 
 
 def _options_key(options):

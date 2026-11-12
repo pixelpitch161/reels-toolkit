@@ -40,9 +40,9 @@ KIT_CONFIGS = (
 
 def chord_lists(folder, export, module):
     """chords.json: every kit config's chords, split as format 2 of the fight file writes them"""
-    # the music only: read_config's theme_options and roles are not chords.json's (which stays as merged)
-    rows = [{k: v for k, v in m3refs.read_config(c).items() if k not in ('theme_options', 'roles')}
-            for c in KIT_CONFIGS]
+    # the music only: read_config's theme options and MUSIC_EXTRAS are not chords.json's (which stays as merged)
+    drop = ('theme_options',) + m3refs.MUSIC_EXTRAS
+    rows = [{k: v for k, v in m3refs.read_config(c).items() if k not in drop} for c in KIT_CONFIGS]
     roster = common.roster()
     for r in rows:
         assert all(n in roster for n in r['fighters']), r['config']

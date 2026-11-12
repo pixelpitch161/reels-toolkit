@@ -889,10 +889,10 @@ def theme_options_are_recorded_per_config():
             for c in json.load(f)['configs']:
                 facts = m3refs.read_config(c['config'])
                 assert 'theme_options' not in facts and 'theme_options' not in c, (theme, c['config'])
-                # `roles` is the one key a re-export adds (every merged config sets ROLES; committed before it was
-                # recorded): everything else reads exactly as committed
-                assert set(facts) - set(c) <= {'roles'}, (theme, c['config'], set(facts) - set(c))
-                same = {k: v for k, v in facts.items() if k != 'roles'}
+                # MUSIC_EXTRAS (roles, mix, solos, title_hits) are the keys a re-export adds (recorded after these
+                # folders were committed): everything else reads exactly as committed
+                assert set(facts) - set(c) <= set(m3refs.MUSIC_EXTRAS), (theme, c['config'], set(facts) - set(c))
+                same = {k: v for k, v in facts.items() if k not in m3refs.MUSIC_EXTRAS}
                 assert {k: c[k] for k in same} == json.loads(json.dumps(same)), (theme, c['config'])
     fighters = ['ELECTRIC', 'ACOUSTIC']
 
@@ -1071,6 +1071,38 @@ def a_configs_lines_and_roles_reach_theme_json():
     return 'ROLES and LINES reach theme.json (cello_vs_contrabass: melody and bass, 32 notes each); a config ' \
            'without ROLES records none'
 
+def every_config_name_the_soundtrack_reads_is_recorded():
+    """every config name kit/music.py, the moods and the fighters' parts read from T that kit/episode.py does not
+    derive itself is recorded by read_config (the music, LINES, MUSIC_EXTRAS, THEME_OPTIONS), asserted fixed
+    (LOOP_START), or a fighter part's own (OBBLIGATO: SOUSAPHONE's opt-in, which no kit config sets and no fight
+    file holds); MIX, SOLO and TITLE_HITS reach theme.json under the fight file's names"""
+    import re
+    kit = os.path.join(common.REPO, 'projects', 'ballfight', 'kit')
+    files = ['music.py'] + [os.path.join(d, f) for d in ('moods', 'fighters')
+                            for f in sorted(os.listdir(os.path.join(kit, d))) if f.endswith('.py')]
+    src = ''.join(open(os.path.join(kit, f), encoding='utf-8').read() for f in files)
+    read = set(re.findall(r"\bT\.([A-Z][A-Z_0-9]*)\b", src))
+    read |= set(re.findall(r"getattr\((?:self\.)?(?:M\.)?T, '([A-Z_]+)'", src))
+    with open(os.path.join(kit, 'episode.py'), encoding='utf-8') as fh:
+        derived = set(re.findall(r"\bT\.([A-Z][A-Z_0-9]*)\s*=", fh.read())) - {'SOLO'}   # T.SOLO = dict(T.SOLO)
+    recorded = {'BPM', 'KEY', 'SCALE', 'CHORDS', 'LOOP', 'FIGHTERS', 'MOOD', 'LINES', 'ROLES', 'MIX', 'SOLO',
+                'TITLE_HITS'} | set(m3refs.THEME_OPTIONS)
+    fixed, fighters_own = {'LOOP_START'}, {'OBBLIGATO'}
+    left = read - derived - recorded - fixed - fighters_own
+    assert not left, f'the soundtrack reads config names nothing records: {sorted(left)}'
+    common.kit()
+    roster = os.path.join(common.REPO, 'projects', 'ballfight')
+    if roster not in sys.path:
+        sys.path.append(roster)
+    assert not [c for c in m3refs.kit_configs() if hasattr(m3refs.config_module(c), 'OBBLIGATO')]
+    c = m3refs.read_config('ballfight_flute_vs_clarinet')
+    assert c['mix']['clarinet'] == [2.4, 0.35] and set(c['title_hits']) == {'FLUTE', 'CLARINET'}, c.get('mix')
+    assert all(len(n) == 3 and isinstance(n[1], int) for v in c['solos'].values() for n in v), c['solos']
+    c = m3refs.read_config('ballfight_electric_vs_acoustic')          # ACOUSTIC's solo strums chords: not held
+    assert set(c['solos']) == {'ELECTRIC'}, sorted(c['solos'])
+    return f"the soundtrack reads {', '.join(sorted(read - derived))} from a config: each is recorded, fixed " \
+           f"(LOOP_START) or a fighter part's own (OBBLIGATO)"
+
 
 CHECKS = (shard_takes_a_fighter_file, verify_finds_a_changed_byte_in_a_shard, check_pins_names_the_command,
           a_pin_never_moves_on_its_own, remake_makes_a_folder_again_whole, a_cache_run_writes_no_committed_file,
@@ -1084,7 +1116,8 @@ CHECKS = (shard_takes_a_fighter_file, verify_finds_a_changed_byte_in_a_shard, ch
           a_left_file_finish_wrote_is_kept, a_nan_rectangular_key_is_an_array,
           every_option_the_moods_read_is_listed, theme_options_are_recorded_per_config,
           every_hook_call_reaches_its_method, a_stem_window_past_the_end_is_cut, a_theme_recording_goes_to_the_cache,
-          the_key_variant_sets_its_loop, a_configs_lines_and_roles_reach_theme_json)
+          the_key_variant_sets_its_loop, a_configs_lines_and_roles_reach_theme_json,
+          every_config_name_the_soundtrack_reads_is_recorded)
 
 
 def main():

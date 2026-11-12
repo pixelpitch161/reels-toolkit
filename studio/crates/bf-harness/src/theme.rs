@@ -78,6 +78,35 @@ pub fn config_fight_file(c: &Value, rec: &Recording) -> FightFile {
     if let Some(roles) = c.get("roles").and_then(Value::as_object) {
         ff.music.roles = roles.iter().map(|(k, v)| (k.clone(), text(v).to_string())).collect();
     }
+    // and the rest a config sets that the soundtrack reads (m3refs.MUSIC_EXTRAS): its MIX (a bus's gain and reverb
+    // send: second_line's bed buses), SOLO and TITLE_HITS, each only when the config sets it
+    if let Some(mix) = c.get("mix").and_then(Value::as_object) {
+        ff.music.mix = mix
+            .iter()
+            .map(|(k, v)| (k.clone(), (num(&list(v)[0]), num(&list(v)[1]))))
+            .collect();
+    }
+    if let Some(solos) = c.get("solos").and_then(Value::as_object) {
+        for (k, v) in solos {
+            let notes = list(v)
+                .iter()
+                .map(|n| {
+                    let n = list(n);
+                    (num(&n[0]), n[1].as_i64().expect("a MIDI note") as i32, num(&n[2]))
+                })
+                .collect();
+            ff.music.solos.insert(k.clone(), notes);
+        }
+    }
+    if let Some(hits) = c.get("title_hits").and_then(Value::as_object) {
+        for (k, v) in hits {
+            let notes = list(v)
+                .iter()
+                .map(|n| n.as_i64().expect("a MIDI note") as i32)
+                .collect();
+            ff.music.title_hits.insert(k.clone(), notes);
+        }
+    }
     ff.music.title_hits.retain(|k, _| names.contains(k));
     ff
 }
@@ -533,6 +562,15 @@ mod tests {
             (ff.music.roles["FLUTE"].as_str(), ff.music.roles["TROMBONE"].as_str()),
             ("bass", "melody")
         );
+        // the MIX, SOLO and TITLE_HITS the config sets
+        c["mix"] = serde_json::json!({"sousa": [1.45, 0.10], "drums": [1.25, 0.14]});
+        c["solos"] = serde_json::json!({"TROMBONE": [[0.0, 40, 0.5], [0.5, 47, 1.0]]});
+        c["title_hits"] = serde_json::json!({"TROMBONE": [40, 52, 59]});
+        let ff = config_fight_file(&c, &rec);
+        assert_eq!(ff.music.mix.len(), 2);
+        assert_eq!(ff.music.mix["sousa"], (1.45, 0.10));
+        assert_eq!(ff.music.solos["TROMBONE"], vec![(0.0, 40, 0.5), (0.5, 47, 1.0)]);
+        assert_eq!(ff.music.title_hits["TROMBONE"], vec![40, 52, 59]);
         // without them: the base fight file's, for the config's fighters
         let (c, rec) = config(None);
         let base = config_fight_file(&c, &rec);
