@@ -113,6 +113,8 @@ pub struct BfApp {
     /// A note the status bar's right side shows in place of the roster's counts (`--fixtures`: "Sample data, not a
     /// real fight"). `None` shows the counts. It is not the status line, which `AppState::status` works out.
     pub status_note: Option<String>,
+    /// The graphics card the window draws with, in words, when the start-up said ([`start_with`]); else `None`.
+    pub adapter: Option<String>,
     link: Link,
     /// Effects waiting for the first `logic` (the start-up ones).
     pending: Vec<Effect>,
@@ -166,6 +168,28 @@ pub fn start(
     open_audio: impl FnOnce() -> Box<dyn AudioOut>,
     kind: EngineKind,
 ) -> BfApp {
+    start_with(cc, paths, open_audio, kind, Started::default())
+}
+
+/// What `main`'s start-up steps found before the app was built, for [`start_with`].
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct Started {
+    /// Notices the start-up has for the person (an update finished or taken back, a data folder that cannot be
+    /// written, drawing without a graphics card), shown after the ones loading the settings and the queue give.
+    pub notices: Vec<String>,
+    /// The graphics card the window draws with, in words (`startup::window_graphics`); kept as [`BfApp::adapter`].
+    pub adapter: Option<String>,
+}
+
+/// [`start`], with what the start-up found: its notices are shown after the settings' and the queue's, and the
+/// adapter line is kept in [`BfApp::adapter`].
+pub fn start_with(
+    cc: &eframe::CreationContext<'_>,
+    paths: Option<Paths>,
+    open_audio: impl FnOnce() -> Box<dyn AudioOut>,
+    kind: EngineKind,
+    started: Started,
+) -> BfApp {
     let cores = std::thread::available_parallelism().map_or(1, std::num::NonZero::get);
     let mut notices = Vec::new();
     let (settings, queue, writer) = match paths.clone() {
@@ -187,6 +211,7 @@ pub fn start(
         EngineKind::Real => engine::spawn(waker(&cc.egui_ctx), real_config(&settings, paths)),
         EngineKind::Sample => fake::spawn(waker(&cc.egui_ctx), Pace::Live),
     };
+    notices.extend(started.notices.into_iter().map(|text| Notice { text }));
     let boot = Boot {
         engine,
         writer,
@@ -196,7 +221,9 @@ pub fn start(
         notices,
         cores,
     };
-    BfApp::new(cc, boot)
+    let mut app = BfApp::new(cc, boot);
+    app.adapter = started.adapter;
+    app
 }
 
 /// Has the window draw with DirectX 12 alone on a PC that has a DirectX 12 graphics card, keeping wgpu's default
@@ -327,6 +354,7 @@ impl BfApp {
             log: Vec::new(),
             slowest_update_ms: 0.0,
             status_note: None,
+            adapter: None,
             link,
             pending,
             texture: None,
