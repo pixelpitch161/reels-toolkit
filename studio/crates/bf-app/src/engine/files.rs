@@ -185,7 +185,8 @@ fn scan(state: &mut State, ctx: &Ctx, root: PathBuf) {
         "engine: library",
         "reading the Library",
         move |ctx| {
-            clear_before_scan(&root, SystemTime::now(), &told, &mut |text| {
+            let stop = || stopped(&ctx, &mine);
+            clear_before_scan(&root, SystemTime::now(), &told, &stop, &mut |text| {
                 let send = !stopped(&ctx, &mine);
                 if send {
                     ctx.emit(problem(text));
@@ -280,10 +281,44 @@ pub struct Cleared {
     /// Each folder of the export's temporary form, old enough and of no running program, that was left as it is,
     /// with why and what to do, in words.
     pub left: Vec<(PathBuf, String)>,
+    /// True when another clearing of the same output folder was still going on, so this one looked at nothing
+    /// (the next Library scan clears it).
+    pub skipped: bool,
 }
 
-/// One clearing at a time in this program, so two Library scans never work on the same folder at once.
-static CLEARING: Mutex<()> = Mutex::new(());
+/// The output folders being cleared right now, one clearing per folder: two Library scans never work on the same
+/// folder at once, and a clearing that hangs on one folder's drive never holds up another folder. The lock is held
+/// only to add or take out a name, never across anything that touches a drive.
+static CLEARING: Mutex<Vec<String>> = Mutex::new(Vec::new());
+
+/// The claim on one output folder's clearing, given back when dropped.
+struct RootClaim(String);
+
+impl RootClaim {
+    /// The claim on `root`, or None while another clearing has it.
+    fn take(root: &Path) -> Option<RootClaim> {
+        let key = root_key(root);
+        let mut claims = lock(&CLEARING);
+        if claims.contains(&key) {
+            return None;
+        }
+        claims.push(key.clone());
+        Some(RootClaim(key))
+    }
+}
+
+impl Drop for RootClaim {
+    fn drop(&mut self) {
+        lock(&CLEARING).retain(|k| *k != self.0);
+    }
+}
+
+/// One spelling for each folder: absolute, without a trailing separator, in lower case (Windows' names ignore
+/// letter case). Worked out from the text alone, without touching the drive.
+fn root_key(root: &Path) -> String {
+    let full = std::path::absolute(root).unwrap_or_else(|_| root.to_path_buf());
+    full.components().collect::<PathBuf>().to_string_lossy().to_lowercase()
+}
 
 /// Removes what unfinished renders left in the output folder `root`: their hidden temporary folders.
 ///
@@ -293,7 +328,8 @@ static CLEARING: Mutex<()> = Mutex::new(());
 ///    `bf_export::output::temp_folder_owners`), where `<name>` holds `_vs_`;
 /// 3. no program with the pid in its name is running (every pid the name can be read with), or the pid is this
 ///    program's own and none of its jobs is using a folder of that name (`temp_folder_in_use`);
-/// 4. it is a real folder, not a link or junction, and holds no link, no junction and no folder;
+/// 4. it is a real folder, not a link, a junction or another special item (a cloud-synced one, say), and holds
+///    none of those and no folder;
 /// 5. its newest time (the folder's and each file's, modified or created, whichever is later) is at least
 ///    `older_than` before `now`; a time that cannot be read counts as new;
 /// 6. it holds no finished video (a file ending in `.mp4` in any letter case; a `.mp4.part` is not one) and no
@@ -308,9 +344,29 @@ static CLEARING: Mutex<()> = Mutex::new(());
 /// be removed is left as it is and named in [`Cleared::left`] with why and what to do. Elsewhere than Windows every
 /// pid counts as running, so nothing is ever removed.
 ///
+/// One clearing of each output folder at a time: while another clearing of `root` is going on, this one does
+/// nothing and says so (`Cleared::skipped`); clearings of other folders go on meanwhile. A folder that holds more
+/// entries than a render ever leaves ([`MAX_LEFTOVER_ENTRIES`]) is left at once, without reading the rest.
+///
 /// `Err` is the sentence for a `root` that cannot be listed (the Library says so in its own words too).
 pub fn clear_abandoned(root: &Path, older_than: Duration, now: SystemTime) -> Result<Cleared, String> {
-    let _one = CLEARING.lock().unwrap_or_else(|e| e.into_inner());
+    clear_abandoned_until(root, older_than, now, &|| false)
+}
+
+/// [`clear_abandoned`], stopping before the next folder once `stop` says so (a newer scan took over, or the engine
+/// is ending); what was done until then is given.
+fn clear_abandoned_until(
+    root: &Path,
+    older_than: Duration,
+    now: SystemTime,
+    stop: &dyn Fn() -> bool,
+) -> Result<Cleared, String> {
+    let Some(_claim) = RootClaim::take(root) else {
+        return Ok(Cleared {
+            skipped: true,
+            ..Cleared::default()
+        });
+    };
     let listing = fs::read_dir(root).map_err(|_| {
         format!(
             "The output folder {} could not be read, so what unfinished renders left in it was not looked at.",
@@ -319,6 +375,9 @@ pub fn clear_abandoned(root: &Path, older_than: Duration, now: SystemTime) -> Re
     })?;
     let mut cleared = Cleared::default();
     for entry in listing.filter_map(Result::ok) {
+        if stop() {
+            break;
+        }
         // A name that is not Unicode is not one the export makes.
         let Some(name) = entry.file_name().to_str().map(str::to_string) else {
             continue;
@@ -351,13 +410,26 @@ enum Verdict {
 }
 
 /// Why a folder is left, from the most to the least important to say.
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 enum Held {
     Video,
     FightFile,
-    Link,
+    Special(Special),
     Folder,
     Other,
+}
+
+impl Held {
+    /// The lower, the more important to say.
+    fn rank(self) -> u8 {
+        match self {
+            Held::Video => 0,
+            Held::FightFile => 1,
+            Held::Special(_) => 2,
+            Held::Folder => 3,
+            Held::Other => 4,
+        }
+    }
 }
 
 /// Whether the program with id `pid` might be using a temporary folder named `name`.
@@ -395,17 +467,70 @@ fn process_running(_pid: u32) -> bool {
     true
 }
 
-/// Whether `meta` (read without following links) is a link, a junction or any other reparse point.
-fn is_link(meta: &fs::Metadata) -> bool {
+/// The most entries a render ever leaves in its temporary folder: the five of `temp_folder_files`, the video and
+/// the fight file make seven. A folder with more is left at once, without reading the rest.
+pub const MAX_LEFTOVER_ENTRIES: usize = 8;
+
+/// A file or folder that is not a plain one, which clearing always leaves alone.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Special {
+    /// A link or a junction: it leads somewhere else.
+    Link,
+    /// Another reparse point, such as a file or folder kept in sync with a cloud service (OneDrive's are).
+    Other,
+}
+
+/// Whether `meta` (read without following links) is a link, a junction or any other reparse point. Std's
+/// `is_symlink` is true for the reparse points that name somewhere else (links and junctions); any other reparse
+/// point (a cloud-synced item, say) has only the attribute.
+fn special(meta: &fs::Metadata) -> Option<Special> {
+    if meta.file_type().is_symlink() {
+        return Some(Special::Link);
+    }
     #[cfg(windows)]
     {
         use std::os::windows::fs::MetadataExt as _;
         const FILE_ATTRIBUTE_REPARSE_POINT: u32 = 0x400;
         if meta.file_attributes() & FILE_ATTRIBUTE_REPARSE_POINT != 0 {
-            return true;
+            return Some(Special::Other);
         }
     }
-    meta.file_type().is_symlink()
+    None
+}
+
+/// Whether `meta` is anything but a plain file or folder.
+fn is_link(meta: &fs::Metadata) -> bool {
+    special(meta).is_some()
+}
+
+/// Why a hidden folder that is itself `kind` was left.
+fn special_folder_text(folder: &Path, kind: Special) -> String {
+    let f = folder.display();
+    match kind {
+        Special::Link => format!(
+            "The hidden folder {f} is a link to somewhere else, so BALLFIGHT Studio did not touch it or what it \
+             leads to. Delete it yourself if you do not need it."
+        ),
+        Special::Other => format!(
+            "The hidden folder {f} is a cloud-synced item or another special kind of folder, so BALLFIGHT Studio \
+             leaves it alone. Delete it yourself if you do not need it."
+        ),
+    }
+}
+
+/// Why a hidden folder that holds `what`, which is `kind`, was left.
+fn special_inside_text(folder: &Path, what: &str, kind: Special) -> String {
+    let f = folder.display();
+    match kind {
+        Special::Link => format!(
+            "The hidden folder {f} holds a link to somewhere else ({what}), so BALLFIGHT Studio left it as it is. \
+             Delete the folder yourself if you do not need it."
+        ),
+        Special::Other => format!(
+            "The hidden folder {f} holds a cloud-synced item or another special kind of file ({what}), so \
+             BALLFIGHT Studio leaves it alone. Delete the folder yourself if you do not need it."
+        ),
+    }
 }
 
 /// The later of `meta`'s modified and created times, or None when either cannot be read.
@@ -423,12 +548,8 @@ fn judge(folder: &Path, name: &str, owners: &[(String, u32)], older_than: Durati
     let Ok(meta) = fs::symlink_metadata(folder) else {
         return Verdict::PassOver;
     };
-    if is_link(&meta) {
-        return Verdict::Leave(format!(
-            "The hidden folder {} is a link to somewhere else, so BALLFIGHT Studio did not touch it or what it \
-             leads to. Delete it yourself if you do not need it.",
-            folder.display()
-        ));
+    if let Some(kind) = special(&meta) {
+        return Verdict::Leave(special_folder_text(folder, kind));
     }
     if !meta.is_dir() || owners.iter().any(|(_, pid)| owner_running(*pid, name)) {
         return Verdict::PassOver;
@@ -447,7 +568,22 @@ fn judge(folder: &Path, name: &str, owners: &[(String, u32)], older_than: Durati
     let mut newest = newest_time(&meta);
     let mut files = Vec::new();
     let mut held: Option<(Held, String)> = None;
-    for child in listing {
+    for (count, child) in listing.enumerate() {
+        if count == MAX_LEFTOVER_ENTRIES {
+            // More than a render leaves: not read further. A folder that is itself new is passed over as usual.
+            let folder_old = newest_time(&meta)
+                .and_then(|t| now.duration_since(t).ok())
+                .is_some_and(|age| age >= older_than);
+            if !folder_old {
+                return Verdict::PassOver;
+            }
+            return Verdict::Leave(format!(
+                "The hidden folder {} holds files BALLFIGHT Studio did not make (more than a render ever leaves \
+                 there), so it was left as it is. Look inside it, then delete it yourself if you do not need what \
+                 it holds.",
+                folder.display()
+            ));
+        }
         let Ok(child) = child else {
             return unreadable();
         };
@@ -459,8 +595,8 @@ fn judge(folder: &Path, name: &str, owners: &[(String, u32)], older_than: Durati
         };
         newest = newest.zip(newest_time(&m)).map(|(a, b)| a.max(b));
         let lower = shown.to_lowercase();
-        let kind = if is_link(&m) {
-            Some(Held::Link)
+        let kind = if let Some(special) = special(&m) {
+            Some(Held::Special(special))
         } else if m.is_dir() {
             Some(Held::Folder)
         } else if lower.ends_with(".mp4") {
@@ -475,7 +611,7 @@ fn judge(folder: &Path, name: &str, owners: &[(String, u32)], older_than: Durati
         match kind {
             None => files.push(path),
             Some(kind) => {
-                if held.as_ref().is_none_or(|(h, _)| kind < *h) {
+                if held.as_ref().is_none_or(|(h, _)| kind.rank() < h.rank()) {
                     held = Some((kind, shown));
                 }
             }
@@ -500,10 +636,7 @@ fn judge(folder: &Path, name: &str, owners: &[(String, u32)], older_than: Durati
             "The hidden folder {f} holds a fight file ({what}), so BALLFIGHT Studio left it as it is. Move the file \
              somewhere else if you want to keep it, then delete the folder yourself."
         ),
-        Held::Link => format!(
-            "The hidden folder {f} holds a link to somewhere else ({what}), so BALLFIGHT Studio left it as it is. \
-             Delete the folder yourself if you do not need it."
-        ),
+        Held::Special(special) => special_inside_text(folder, &what, special),
         Held::Folder => format!(
             "The hidden folder {f} holds a folder that BALLFIGHT Studio did not make ({what}), so it was left as it \
              is. Look inside it, then delete it yourself if you do not need what it holds."
@@ -570,9 +703,13 @@ fn clear_before_scan(
     root: &Path,
     now: SystemTime,
     told: &Mutex<HashSet<PathBuf>>,
+    stop: &dyn Fn() -> bool,
     send: &mut dyn FnMut(String) -> bool,
 ) {
-    let Ok(cleared) = clear_abandoned(root, ABANDONED_AFTER, now) else {
+    if stop() {
+        return;
+    }
+    let Ok(cleared) = clear_abandoned_until(root, ABANDONED_AFTER, now, stop) else {
         return;
     };
     if cleared.removed > 0 {
@@ -1741,45 +1878,54 @@ mod leftover_tests {
         let own = std::process::id();
         folder_with(
             &videos,
-            &format!(".tmp-flute_vs_trombone-{dead}"),
-            &[("audio.wav", b"sound"), (PART, b"part"), ("encoding.txt", b"faster")],
+            &format!(".tmp-clear_vs_test-{dead}"),
+            &[
+                ("audio.wav", b"sound"),
+                ("clear_vs_test.mp4.part", b"part"),
+                ("encoding.txt", b"faster"),
+            ],
         );
         folder_with(
             &videos,
-            &format!(".tmp-flute_vs_trombone_frames0-90-{dead}-2"),
-            &[("flute_vs_trombone_frames0-90.mp4.part", b"part")],
+            &format!(".tmp-clear_vs_test_frames0-90-{dead}-2"),
+            &[("clear_vs_test_frames0-90.mp4.part", b"part")],
         );
-        folder_with(&videos, &format!(".tmp-flute_vs_trombone_seed7-{dead}-3"), &[]);
+        folder_with(&videos, &format!(".tmp-clear_vs_test_seed7-{dead}-3"), &[]);
         // This program's own, which no job of it is using.
-        folder_with(&videos, &format!(".tmp-flute_vs_trombone-{own}"), &[(PART, b"part")]);
+        folder_with(
+            &videos,
+            &format!(".tmp-clear_vs_test-{own}"),
+            &[("clear_vs_test.mp4.part", b"part")],
+        );
         // A video, a folder of the person's, and a file with a leftover's name: all stay.
         folder_with(
             &videos,
-            "flute_vs_trombone",
-            &[("cover.png", b"c"), ("flute_vs_trombone.toml", b"f")],
+            "clear_vs_test",
+            &[("cover.png", b"c"), ("clear_vs_test.toml", b"f")],
         );
         folder_with(&videos, ".keep", &[("mine.txt", b"mine")]);
-        fs::write(videos.join(format!(".tmp-flute_vs_trombone-{dead}-4")), b"a file").unwrap();
+        fs::write(videos.join(format!(".tmp-clear_vs_test-{dead}-4")), b"a file").unwrap();
 
         let cleared = clear_abandoned(&videos, ABANDONED_AFTER, later()).unwrap();
         assert_eq!(
             cleared,
             Cleared {
                 removed: 4,
-                left: Vec::new()
+                left: Vec::new(),
+                skipped: false
             }
         );
         assert_eq!(
             files_in(&videos),
             [
                 ".keep".to_string(),
-                format!(".tmp-flute_vs_trombone-{dead}-4"),
-                "flute_vs_trombone".to_string()
+                format!(".tmp-clear_vs_test-{dead}-4"),
+                "clear_vs_test".to_string()
             ]
         );
         assert_eq!(
-            files_in(&videos.join("flute_vs_trombone")),
-            ["cover.png", "flute_vs_trombone.toml"]
+            files_in(&videos.join("clear_vs_test")),
+            ["clear_vs_test.toml", "cover.png"]
         );
         assert_eq!(fs::read(videos.join(".keep").join("mine.txt")).unwrap(), b"mine");
         // Nothing more to do the second time.
@@ -2063,7 +2209,7 @@ mod leftover_tests {
         let told = Mutex::new(HashSet::new());
         // Nothing could be sent (a newer scan took over): the folder left is not counted as told.
         let mut heard = Vec::new();
-        clear_before_scan(&videos, later(), &told, &mut |text| {
+        clear_before_scan(&videos, later(), &told, &|| false, &mut |text| {
             heard.push(text);
             false
         });
@@ -2071,22 +2217,159 @@ mod leftover_tests {
         assert!(lock(&told).is_empty());
         // Sent: told once, and never again in this run.
         let mut heard = Vec::new();
-        clear_before_scan(&videos, later(), &told, &mut |text| {
+        clear_before_scan(&videos, later(), &told, &|| false, &mut |text| {
             heard.push(text);
             true
         });
         assert_eq!(heard, [why]);
         let mut heard = Vec::new();
-        clear_before_scan(&videos, later(), &told, &mut |text| {
+        clear_before_scan(&videos, later(), &told, &|| false, &mut |text| {
             heard.push(text);
             true
         });
         assert_eq!(heard, Vec::<String>::new());
         // Nothing is said about an output folder that cannot be listed (the Library says that itself).
-        clear_before_scan(&videos.join("missing"), later(), &told, &mut |text| {
+        clear_before_scan(&videos.join("missing"), later(), &told, &|| false, &mut |text| {
             panic!("{text}");
         });
         assert_eq!(files_in(&kept), ["mine.txt"]);
+    }
+
+    /// A clearing that hangs on one output folder (here: its claim held by the test, as a clearing stuck on a slow
+    /// drive holds it) never holds up the Library of another folder, nor a new scan of the same one.
+    #[cfg(windows)]
+    #[test]
+    fn a_busy_folder_never_holds_up_another() {
+        use crate::engine::{test_engine, wait_for};
+        let (_ta, a) = output("a_busy_folder_never_holds_up_another a");
+        let (_tb, b) = output("a_busy_folder_never_holds_up_another b");
+        let dead = dead_pid();
+        let in_a = folder_with(&a, &format!(".tmp-busy_vs_a-{dead}"), &[("audio.wav", b"s")]);
+        folder_with(&b, &format!(".tmp-busy_vs_b-{dead}"), &[("audio.wav", b"s")]);
+        let held = RootClaim::take(&a).expect("free");
+        // The same folder written another way is the same claim.
+        let mut other_spelling = a.as_os_str().to_os_string();
+        other_spelling.push("\\");
+        assert!(RootClaim::take(Path::new(&other_spelling.to_string_lossy().to_uppercase())).is_none());
+        // A's clearing does nothing and says so; B's goes on.
+        let started = std::time::Instant::now();
+        assert_eq!(
+            clear_abandoned(&a, ABANDONED_AFTER, later()).unwrap(),
+            Cleared {
+                skipped: true,
+                ..Cleared::default()
+            }
+        );
+        assert_eq!(clear_abandoned(&b, ABANDONED_AFTER, later()).unwrap().removed, 1);
+        assert!(in_a.exists());
+        // Through the engine: both Libraries answer at once.
+        let (engine, root) = test_engine();
+        for folder in [&b, &a] {
+            engine.send(Command::ScanLibrary { root: folder.clone() });
+            wait_for(
+                &engine,
+                5.0,
+                |e| matches!(e, Event::Library { root: r, .. } if r == folder),
+            );
+        }
+        assert!(started.elapsed() < Duration::from_secs(5), "{:?}", started.elapsed());
+        engine.send(Command::Shutdown);
+        drop(engine);
+        fs::remove_dir(&root).unwrap();
+        // Given back, A is cleared again.
+        drop(held);
+        assert_eq!(clear_abandoned(&a, ABANDONED_AFTER, later()).unwrap().removed, 1);
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn a_stopped_scan_stops_clearing() {
+        let (_temp, videos) = output("a_stopped_scan_stops_clearing");
+        let dead = dead_pid();
+        for n in ["", "-2", "-3"] {
+            folder_with(&videos, &format!(".tmp-stop_vs_test-{dead}{n}"), &[("audio.wav", b"s")]);
+        }
+        // Stopped before it starts: nothing is touched, nothing is said.
+        let told = Mutex::new(HashSet::new());
+        clear_before_scan(&videos, later(), &told, &|| true, &mut |text| panic!("{text}"));
+        assert_eq!(files_in(&videos).len(), 3);
+        // Stopped after the first folder: one is removed, the others stay.
+        let looked = std::cell::Cell::new(0);
+        let stop = || {
+            looked.set(looked.get() + 1);
+            looked.get() > 1
+        };
+        let cleared = clear_abandoned_until(&videos, ABANDONED_AFTER, later(), &stop).unwrap();
+        assert_eq!(cleared.removed, 1);
+        assert_eq!(files_in(&videos).len(), 2);
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn a_folder_with_too_many_files_is_left_at_once() {
+        let (_temp, videos) = output("a_folder_with_too_many_files_is_left_at_once");
+        let dead = dead_pid();
+        let names: Vec<String> = (0..12).map(|i| format!("part {i}.bin")).collect();
+        let files: Vec<(&str, &[u8])> = names.iter().map(|n| (n.as_str(), &b"x"[..])).collect();
+        let many = folder_with(&videos, &format!(".tmp-many_vs_test-{dead}"), &files);
+        // Exactly the most a render leaves is still read one by one (and left for the person's files).
+        let eight: Vec<(&str, &[u8])> = files[..MAX_LEFTOVER_ENTRIES].to_vec();
+        let full = folder_with(&videos, &format!(".tmp-many_vs_test-{dead}-2"), &eight);
+        let cleared = clear_abandoned(&videos, ABANDONED_AFTER, later()).unwrap();
+        assert_eq!(cleared.removed, 0);
+        assert_eq!(
+            said(&cleared, &many),
+            format!(
+                "The hidden folder {} holds files BALLFIGHT Studio did not make (more than a render ever leaves \
+                 there), so it was left as it is. Look inside it, then delete it yourself if you do not need what it \
+                 holds.",
+                many.display()
+            )
+        );
+        assert!(said(&cleared, &full).contains("holds a file that BALLFIGHT Studio did not make (part "));
+        assert_eq!(files_in(&many).len(), 12);
+        assert_eq!(files_in(&full).len(), 8);
+        // A new folder is passed over without a word, as any new one is.
+        assert_eq!(
+            clear_abandoned(&videos, ABANDONED_AFTER, SystemTime::now()).unwrap(),
+            Cleared::default()
+        );
+    }
+
+    #[test]
+    fn special_items_are_named_truthfully() {
+        let f = Path::new(r"C:\Videos\BALLFIGHT\.tmp-a_vs_b-12");
+        assert_eq!(
+            special_folder_text(f, Special::Other),
+            format!(
+                "The hidden folder {} is a cloud-synced item or another special kind of folder, so BALLFIGHT Studio \
+                 leaves it alone. Delete it yourself if you do not need it.",
+                f.display()
+            )
+        );
+        assert_eq!(
+            special_inside_text(f, "audio.wav", Special::Other),
+            format!(
+                "The hidden folder {} holds a cloud-synced item or another special kind of file (audio.wav), so \
+                 BALLFIGHT Studio leaves it alone. Delete the folder yourself if you do not need it.",
+                f.display()
+            )
+        );
+        assert!(special_folder_text(f, Special::Link).contains("is a link to somewhere else"));
+        assert!(special_inside_text(f, "x", Special::Link).contains("holds a link to somewhere else (x)"));
+    }
+
+    /// A plain file and folder are not special; a junction is a link (std names it so), never "cloud-synced".
+    #[cfg(windows)]
+    #[test]
+    fn a_junction_is_a_link_and_a_plain_folder_is_not_special() {
+        let temp = TempRoot::new("a_junction_is_a_link_and_a_plain_folder_is_not_special");
+        let plain = folder_with(&temp.0, "plain", &[("f.txt", b"f")]);
+        let link = temp.0.join("link");
+        junction(&link, &plain);
+        assert_eq!(special(&fs::symlink_metadata(&plain).unwrap()), None);
+        assert_eq!(special(&fs::symlink_metadata(plain.join("f.txt")).unwrap()), None);
+        assert_eq!(special(&fs::symlink_metadata(&link).unwrap()), Some(Special::Link));
     }
 
     #[test]
