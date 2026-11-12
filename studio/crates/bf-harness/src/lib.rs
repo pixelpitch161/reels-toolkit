@@ -402,6 +402,26 @@ mod mutations {
     }
 
     #[test]
+    fn a_neutral_handicap_recorded_or_not_is_the_same_rules() {
+        let like = crate::fight::setup_like(&seed1());
+        let mut none = like.rules.clone();
+        none.dmg_side = None;
+        let mut neutral = none.clone();
+        neutral.dmg_side = Some([1.0, 1.0]);
+        let text = crate::fight::rules_text;
+        assert_ne!(format!("{none:?}"), format!("{neutral:?}"), "what the gates compared before");
+        assert_eq!(text(&none), text(&neutral));
+        for other in [[1.0, 2.0], [2.0, 1.0], [0.4, 0.4]] {
+            let mut r = none.clone();
+            r.dmg_side = Some(other);
+            assert_ne!(text(&none), text(&r), "{other:?}");
+        }
+        let mut faster = neutral.clone();
+        faster.bpm += 1.0;
+        assert_ne!(text(&neutral), text(&faster), "another rule must still differ");
+    }
+
+    #[test]
     fn a_hull_point_off_by_2e_12_fails_the_bar() {
         assert!(crate::look::point_gap((120.5, 33.25), (120.5, 33.25)) <= 1e-12);
         assert!(crate::look::point_gap((120.5, 33.25 + 2e-12), (120.5, 33.25)) > 1e-12);

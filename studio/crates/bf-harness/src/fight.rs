@@ -362,12 +362,26 @@ pub fn left_fight(sim: &Sim, name: &str) {
     let setup = setup_from(&ff, roster(), py.seed).expect("the fight file sets up");
     let like = setup_like(&py);
     assert_eq!(
-        format!("{:?}", setup.rules),
-        format!("{:?}", like.rules),
+        rules_text(&setup.rules),
+        rules_text(&like.rules),
         "{name}: the fight file's rules"
     );
     let rs = traced(sim, &setup, true, &format!("{name} left"));
     window_ok(sim, name, "left", &rs, &py, &setup);
+}
+
+/// The rules as the gates compare a fight file's with a recording's: their `Debug` text, with a handicap of 1.0 a
+/// side read as no handicap. The kit records `dmg_side = (1.0, 1.0)` for a config that sets `DMG_SIDE = (1.0,
+/// 1.0)` (the framework always sets it, so every fighter exported at the neutral handicap has it), while
+/// `setup_from` records none for a neutral handicap (`bf-sim/src/fight.rs`, `setup_from`'s doc): the same fight,
+/// since `damage` only multiplies by it. Only that one value is treated as equal; any other `dmg_side`, and every
+/// other rule, must be the same.
+pub fn rules_text(rules: &Rules) -> String {
+    let mut r = rules.clone();
+    if r.dmg_side == Some([1.0, 1.0]) {
+        r.dmg_side = None;
+    }
+    format!("{r:?}")
 }
 
 pub(crate) fn window_ok(sim: &Sim, name: &str, what: &str, rs: &Recording, py: &Recording, setup: &Setup) -> f64 {

@@ -196,8 +196,8 @@ pub fn recording(sim: &Sim, pair: &str) {
     let setup = setup_from(&ff, roster(), py.seed).unwrap_or_else(|e| panic!("{pair}: {e}"));
     let like = setup_like(&py);
     assert_eq!(
-        format!("{:?}", setup.rules),
-        format!("{:?}", like.rules),
+        crate::fight::rules_text(&setup.rules),
+        crate::fight::rules_text(&like.rules),
         "{pair}: the fight file's rules"
     );
     let rs = traced(sim, &setup, true, pair);
