@@ -1,0 +1,11 @@
+{
+ "format": 1,
+ "entries": [
+  {"path": "studio/reference/themes/dark_tango/bed.json", "sha256": "fcf4839f6530aa97e8fb739d4df536371ddb609c9eb1373abf3ea88cd802f676", "bytes": 45508, "tool": "tools.studio_export.theme_dark_tango", "commit": "0b15c066a07cf005e33cc5baebf88529647ac890", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"},
+  {"path": "studio/reference/themes/dark_tango/exceptions.toml", "sha256": "fa29a01e9c4b1693533f0e35589afb4df98031bb9be56d8a8cab7b69f89cf7f4", "bytes": 781, "tool": "tools.studio_export.theme_dark_tango", "commit": "6d28d4fcfb795437adfe705eb74dcd82c6ead0f5", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"},
+  {"path": "studio/reference/themes/dark_tango/pins.json", "sha256": "d30836a8426915498239f63bb7721b5e4431657b1e7a54ddbd90a8417b5c8438", "bytes": 2109, "tool": "tools.studio_export.m3refs", "commit": "0b15c066a07cf005e33cc5baebf88529647ac890", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"},
+  {"path": "studio/reference/themes/dark_tango/stops.json", "sha256": "3e5cbd75caa04d186027d436e99d61e504001a0648f970c7044b1abda5b9e18b", "bytes": 15721, "tool": "tools.studio_export.theme_dark_tango", "commit": "0b15c066a07cf005e33cc5baebf88529647ac890", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"},
+  {"path": "studio/reference/themes/dark_tango/theme.json", "sha256": "6f2e6b088098b64a731c0c713886dabac6f90d51e3b60b16d84e4251056c2caa", "bytes": 2991, "tool": "tools.studio_export.theme_dark_tango", "commit": "0b15c066a07cf005e33cc5baebf88529647ac890", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"},
+  {"path": "studio/reference/themes/dark_tango/voicings.json", "sha256": "adec64b425c1cd3f566599e17a50a234e3b1c54bbcbf6178cbf75bc5ce0fe3a6", "bytes": 5036, "tool": "tools.studio_export.theme_dark_tango", "commit": "6d28d4fcfb795437adfe705eb74dcd82c6ead0f5", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"}
+ ]
+}
