@@ -321,6 +321,41 @@ mod mutations {
         Recording::read(&crate::refs::reference("fights/flute_vs_trombone/seed1.bfrec")).expect("seed1")
     }
 
+    /// Ruling M3-R36: a left recording in the pinned cache is read from there, and a missing one fails with the
+    /// command that makes it (a gate never passes by comparing nothing).
+    #[test]
+    #[should_panic(expected = "python -m tools.studio_export")]
+    fn a_left_recording_missing_from_the_cache_fails_with_the_command() {
+        crate::refs::recording_of(&serde_json::json!({"cache": "fighters/nobody/left.bfrec"}), None);
+    }
+
+    #[test]
+    #[should_panic(expected = "exactly one of `file` and `cache`")]
+    fn a_recording_entry_names_a_file_or_the_cache() {
+        crate::refs::recording_of(
+            &serde_json::json!({"file": "fights/flute_vs_trombone/seed1.bfrec", "cache": "fighters/x/left.bfrec"}),
+            None,
+        );
+    }
+
+    #[test]
+    fn a_committed_recording_entry_reads_as_before() {
+        let entry = serde_json::json!({"file": "fights/flute_vs_trombone/seed1.bfrec"});
+        let rec = crate::refs::recording_of(&entry, Some(&seed1().hash()));
+        assert_eq!(rec.seed, 1);
+    }
+
+    #[test]
+    #[ignore = "reads the pinned cache: python -m tools.studio_export cache fighters/trombone"]
+    fn a_cached_recording_entry_reads_and_checks_its_hash() {
+        // TROMBONE's right fight is milestone 1's seed1.bfrec byte for byte (fight.json's same_as)
+        let entry = serde_json::json!({"cache": "fighters/trombone/right.bfrec"});
+        let rec = crate::refs::recording_of(&entry, Some(&seed1().hash()));
+        assert_eq!(rec.seed, 1);
+        let wrong = std::panic::catch_unwind(|| crate::refs::recording_of(&entry, Some("0000000000000000")));
+        assert!(wrong.is_err(), "a cached recording with another hash was taken");
+    }
+
     #[test]
     fn prefix_agrees_with_the_kits_own_fight() {
         let py = seed1();

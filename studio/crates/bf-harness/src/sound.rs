@@ -17,7 +17,7 @@ use serde_json::Value;
 
 use crate::fight;
 use crate::refs::{
-    cached_recording, committed_recording, fighter_folder, index, json, list, num, py_hex, report, sha, sha_lines, text,
+    cached_recording, fighter_folder, index, json, list, num, py_hex, recording_of, report, sha, sha_lines, text,
 };
 
 /// A 100 ms block's RMS against the kit's: within this many dB.
@@ -312,7 +312,7 @@ pub fn sound(name: &str) {
     let folder = fighter_folder(name);
     let doc = sound_doc(name);
     let fd = fight::doc(name);
-    let rec = committed_recording(text(&fd["left"]["file"]), Some(text(&fd["left"]["hash"])));
+    let rec = recording_of(&fd["left"], Some(text(&fd["left"]["hash"])));
     let mut failures = Vec::new();
     if let Err(why) = part_is_compared(name, &doc["left"]) {
         panic!("{folder}: {why}");
@@ -333,7 +333,7 @@ pub fn sound_stems(name: &str) {
     let doc = sound_doc(name);
     let fd = fight::doc(name);
     let mut failures = Vec::new();
-    let left = committed_recording(text(&fd["left"]["file"]), None);
+    let left = recording_of(&fd["left"], None);
     let right = cached_recording(text(&fd["right"]["cache"]));
     let r = fighter_soundtrack(name, &right, true, None);
     let mut n = compare("right", &r, &with_cached_rms(&doc["right"]), &mut failures);

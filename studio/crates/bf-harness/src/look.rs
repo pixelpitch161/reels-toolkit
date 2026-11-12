@@ -36,8 +36,8 @@ use serde_json::Value;
 
 use crate::fight;
 use crate::refs::{
-    cache_json, cached_recording, committed_recording, fighter_folder, hexf, index, json, list, num, report, sha,
-    sha_lines, text,
+    cache_json, cached_recording, fighter_folder, hexf, index, json, list, num, recording_of, report, sha, sha_lines,
+    text,
 };
 
 // ---------------------------------------------------------------- the looks
@@ -602,7 +602,7 @@ pub fn look_frames(name: &str) {
     let doc = look_doc(name);
     let fd = fight::doc(name);
     let left = &doc["left"];
-    let rec = committed_recording(text(&left["file"]), Some(text(&left["recording"]["hash"])));
+    let rec = recording_of(left, Some(text(&left["recording"]["hash"])));
     take_hooks();
     let pic = picture(name, rec, &fight::fight_file(&fd, false), true);
     build_hooks_against(name, &take_hooks(), left);
@@ -654,7 +654,7 @@ pub fn hull_points(name: &str) {
             text(&doc["hull_cache"]).to_string(),
             {
                 let l = &doc["left"];
-                committed_recording(text(&l["file"]), None)
+                recording_of(l, None)
             },
             false,
         ),
@@ -854,7 +854,7 @@ pub fn title(name: &str) {
     }
     // the cards, with the fighter on side 0 and on side 1
     let left = &doc["left"];
-    let rec = committed_recording(text(&left["file"]), None);
+    let rec = recording_of(left, None);
     let mut ff = fight::fight_file(&fd, false);
     ff.seed = Some(rec.seed);
     let show = Show::new(&rec, &ff).expect("the show");
@@ -988,7 +988,7 @@ pub fn setup_as(name: &str) {
     let doc = look_doc(name);
     let fd = fight::doc(name);
     let keys: Vec<String> = list(&doc["cfg_keys"]).iter().map(|k| text(k).to_string()).collect();
-    let rec = committed_recording(text(&doc["left"]["file"]), None);
+    let rec = recording_of(&doc["left"], None);
     let pic = picture(name, rec, &fight::fight_file(&fd, false), false);
     let p = pic.ctx();
     let (mut own, mut as_own, mut other) = (real_look(name), real_look(name), real_look(name));
@@ -1097,7 +1097,7 @@ pub fn stages(name: &str) {
         let rec = if swapped {
             cached_recording(text(&fd["right"]["cache"]))
         } else {
-            committed_recording(text(&fd["left"]["file"]), None)
+            recording_of(&fd["left"], None)
         };
         let pic = picture(name, rec, &fight::fight_file(&fd, swapped), false);
         for path in entries.flatten().map(|e| e.path()) {
@@ -1250,7 +1250,7 @@ mod hull_rows {
         let rows = &rows[..6];
         let fd = fight::doc("FLUTE");
         let left = &doc["left"];
-        let rec = committed_recording(text(&left["file"]), Some(text(&left["recording"]["hash"])));
+        let rec = recording_of(left, Some(text(&left["recording"]["hash"])));
         let pic = picture("FLUTE", rec, &fight::fight_file(&fd, false), true);
         let folder = fighter_folder("FLUTE");
         frames_against("FLUTE", &folder, &pic, rows, "left", HullRows::Inline);
@@ -1280,7 +1280,7 @@ mod hull_rows {
         let rows = &rows[..2];
         let fd = fight::doc("FLUTE");
         let left = &doc["left"];
-        let rec = committed_recording(text(&left["file"]), None);
+        let rec = recording_of(left, None);
         let pic = picture("FLUTE", rec, &fight::fight_file(&fd, false), true);
         let (stripped, mut summary) = as_format_2(rows);
         summary["sha256"] = Value::from("0".repeat(64));

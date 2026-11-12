@@ -16,7 +16,7 @@ use serde_json::Value;
 
 use crate::Sim;
 use crate::refs::{
-    cached_recording, committed_recording, fighter_folder, index, json, list, num, rules_map, slug, studio, text, value,
+    cached_recording, fighter_folder, index, json, list, num, recording_of, rules_map, slug, studio, text, value,
 };
 
 /// `bf_sim::run_traced`'s type.
@@ -357,7 +357,7 @@ pub fn record_flag(sim: &Sim, name: &str) {
 pub fn left_fight(sim: &Sim, name: &str) {
     let doc = doc(name);
     let left = &doc["left"];
-    let py = committed_recording(text(&left["file"]), Some(text(&left["hash"])));
+    let py = recording_of(left, Some(text(&left["hash"])));
     let ff = fight_file(&doc, false);
     let setup = setup_from(&ff, roster(), py.seed).expect("the fight file sets up");
     let like = setup_like(&py);
@@ -427,10 +427,7 @@ pub fn prefix(sim: &Sim, name: &str) {
     let doc = doc(name);
     let mut fights: Vec<(String, Recording)> = Vec::new();
     let left = &doc["left"];
-    fights.push((
-        "left".into(),
-        committed_recording(text(&left["file"]), Some(text(&left["hash"]))),
-    ));
+    fights.push(("left".into(), recording_of(left, Some(text(&left["hash"])))));
     let right = cached_recording(text(&doc["right"]["cache"]));
     assert_eq!(right.hash(), text(&doc["right"]["hash"]));
     fights.push(("right".into(), right));

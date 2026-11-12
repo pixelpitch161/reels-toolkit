@@ -261,16 +261,26 @@ fn build_picture_refuses_what_validate_refuses() {
         bf_content::validate(&ff).unwrap_err().to_string(),
         refusal(&EPISODE.rec, &ff).to_string()
     );
-    // A fighter of the roster that is not ported: the file is valid, but there is nothing to draw it with.
-    let mut ff = EPISODE.ff.clone();
-    ff.fighters[0] = "PIANO".into();
-    ff.music.lines.clear();
-    ff.music.solos.clear();
-    ff.music.title_hits.clear();
-    ff.music.roles.clear();
+    // A fighter of the roster that is not ported (found at run time): the file is valid, but there is nothing to
+    // draw it with. Once every fighter is ported, a name the registry does not know is refused the same way.
+    let name = common::unported(0).unwrap_or_else(|| {
+        println!("every roster fighter has its voice and part: refusing a name outside the roster instead");
+        "KAZOO"
+    });
+    let ff = common::with_fighter(0, name);
     let err = refusal(&EPISODE.rec, &ff);
     assert!(matches!(err, ContentError::FightFile(_)), "{err:?}");
-    assert_eq!(err.to_string(), "fighters[0]: PIANO has no part in the score yet");
+    assert_eq!(
+        err.to_string(),
+        bf_content::validate(&ff).unwrap_err().to_string(),
+        "build_picture refuses what validate refuses"
+    );
+    if name != "KAZOO" {
+        assert_eq!(
+            err.to_string(),
+            format!("fighters[0]: {name} has no part in the score yet")
+        );
+    }
 }
 
 #[test]
