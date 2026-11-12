@@ -799,12 +799,40 @@ for FLUTE and TROMBONE), from the lines below.
 <!-- kind:crowd -->
 #### `crowd` (weapon kind of TENOR SAX)
 
-`fight.py` 4513 to 4757. Not ported yet: its port fills this section in (the meaning of each field, as 6.2 and 6.3 do
-for FLUTE and TROMBONE), from the lines below.
+`fight.py` 4513 to 4757; ported in `bf-sim/src/kinds/crowd.rs` (`bf-core/src/roster/kinds/crowd.rs` for its roster
+numbers), with the three abilities `runway`, `subtone` and `stagedive`. Every `every` beats (`off16` 16ths later;
+haste divides the grid) the tenor strikes a pose for `pose16` 16ths (its speed x `pose_v`) and the crowd hurls
+`int(hype)` things at the enemy, one every `stagger16` 16ths from a 16th after the pose. Each throw leaves the stands
+beyond the rope nearest the enemy's predicted spot (`stand` outside it, spread `stand_spread` along it), flies
+`flight16` 16ths and lands on that spot (`lead` x the enemy's motion, +- `scatter`), but no further into the ring from
+that rope than the reach (`blade_len`). A landing within `splash` + 0.6 R of the enemy hits it and knocks it along the
+throw; the first landed throw of a volley grows the hype (`n0` + `grow`, up to `n_max`), the reach (`reach` +
+`reach_grow`, up to `reach_max`) and the damage (`dmg` + `dmg_grow`, up to `dmg_max`). No pose and no volley while a
+hush, a strut or a dive is live, or while it is stunned or smashed. Each throw launched draws from the fight's
+generator `uniform(-1, 1, 2)` (the scatter), then `uniform(-1, 1)` (the spread). Items cycle tomato (0), rose (1),
+foam finger (2) by volley and place in it; they change only the picture.
 
-**Record keys.**
+**Record keys.** Both are in a recording where a fighter's weapon is a `crowd` (`run()` 5899, `snap` 5682 to 5704),
+one entry a frame. Neither is in `story.REC_KEYS`, so the kit keeps them as lists and the export writes them as JSON.
 
-- `CROWD` (and `THROWS`): added to `rec` at `run()` 5899, written by `snap` 5682 to 5704:
+- `CROWD`: a `(2, 7)` array of floats a frame, one row per fighter; the row of a fighter that is not a crowd pleaser
+  is all -1.0.
+
+  | Column | Meaning |
+  | --- | --- |
+  | 0 | the hype (`n_vol`): the throws a volley, as a float |
+  | 1 | the pose's progress, 0 at the pose to 1 at its end; -1.0 with no pose |
+  | 2 | 1.0 while SUBTONE's hush is live, else 0.0 |
+  | 3 | WALK THE BAR's progress, 0 to 1; -1.0 with no strut |
+  | 4 | STAGE DIVE's phase: 0 none, 1 the leap, 2 the surf, 3 the cannonball |
+  | 5, 6 | the phase's start and end times (0.0, 0.0 with no dive) |
+
+- `THROWS`: a list a frame of every throw still held (in flight, or landed less than 0.7 s ago), each `(owner, x0,
+  y0, x1, y1, t0, t1, item, landed, id)`: the side it is thrown for (int), where it leaves the stands, where it lands,
+  its launch and landing times, the item (int), 0 while it flies / 1 a hit / 2 a miss (int), its id (int, from 0 in
+  launch order).
+
+The kit's lines (`snap`):
 
   ```python
   if 'CROWD' in rec:                                  # #51, only recorded when a fighter uses the 'crowd' kind
@@ -832,14 +860,17 @@ for FLUTE and TROMBONE), from the lines below.
                             for Th in self.throws])
   ```
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+**Events** (`who` is the tenor; coordinates are ring units; times are on the video clock):
 
-- 4585: `self.ev('throw', k, tid, float(o[0]), float(o[1]), float(tgt[0]), float(tgt[1]), self.t, self.t + fl, item, P_['vol'])`
-- 4596: `self.ev('subtone', k)`
-- 4607: `self.ev('pose', k, B.pose_until, float(B.n_vol))`
-- 4630: `self.damage(k, 1 - k, Th['dmg'], 'throw', float(Th['p1'][0]), float(Th['p1'][1]))`
-- 4641: `self.ev('splat', k, Th['id'], float(Th['p1'][0]), float(Th['p1'][1]), int(landed))`
+| Kind | Fields after `who` | When |
+| --- | --- | --- |
+| `pose` | the pose's end time, the hype (float) | a pose and its volley (4607) |
+| `throw` | the id (int), `x0, y0` (from the stands), `x1, y1` (the landing spot), the launch time, the landing time, the item (int), the volley (int) | a throw leaves the crowd (4585) |
+| `splat` | the id (int), `x, y` where it lands, 1 if it hit else 0 (int) | a throw lands (4641) |
+| `subtone` | none | SUBTONE's hush ends in its volley (4596) |
+
+**Hits** (`hit` events, 6.2; the sub-number is 0): `throw` (4630: the throw's damage, held when it was thrown; the
+enemy is knocked along the throw). A shield turns it into a `block`.
 
 <!-- /kind:crowd -->
 
@@ -1175,52 +1206,67 @@ Its hit is `front`, with `front_step`, `front_hit`, `trample_basket` and `front_
 <!-- kind:runway -->
 #### `runway` (ability kind of TENOR SAX)
 
-`fight.py` 2966 to 2968, 4648 to 4691. Not ported yet: its port fills this section in (the meaning of each field, as 6.2
-and 6.3 do for FLUTE and TROMBONE), from the lines below.
+`fight.py` 2966 to 2968, 4648 to 4691; ported in `bf-sim/src/kinds/crowd.rs` (`start_runway`, `strut_step`). WALK
+THE BAR: a runway from the ball through the enemy to the far ropes (at least 0.5 long); it struts down it at an even
+pace for `beats` beats, cannot be knocked and gives no way in a clash. It bumps the enemy aside on contact (`dmg`,
+`knock`, at most once every `cool` s) and honks a ring of kind `honk` on every beat (`honk_r` beyond its surface,
+`honk_dmg`, `honk_knock`). It does not start during a STAGE DIVE; a STAGE DIVE ends it.
 
-**Record keys.** None of its own.
+**Record keys.** None of its own: `CROWD` column 3 (the `crowd` section).
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+**Events.**
 
-- 4663: `self.ev('runway', k, float(B.p[0]), float(B.p[1]), float(p1[0]), float(p1[1]), self.t, t1)`
-- 4673: `self.ev('strut_end', k)`
-- 4683: `self.damage(k, 1 - k, ab['dmg'], 'strut', hx, hy)`
-- 4685: `self.ev('strut_bump', k, hx, hy)`
+| Kind | Fields after `who` | When |
+| --- | --- | --- |
+| `runway` | `x0, y0, x1, y1` (from, to), the start time, the end time | WALK THE BAR starts (4663) |
+| `strut_bump` | `x, y` on its surface toward the enemy | the strut touches the enemy (4685), landed or blocked |
+| `strut_end` | none | the strut reaches the runway's end (4673) |
+
+**Hits:** `strut` (4683: `dmg`, knocked aside), and its honk rings' hits as any ring's (6.2).
 
 <!-- /kind:runway -->
 
 <!-- kind:subtone -->
 #### `subtone` (ability kind of TENOR SAX)
 
-`fight.py` 2969 to 2972. Not ported yet: its port fills this section in (the meaning of each field, as 6.2 and 6.3 do
-for FLUTE and TROMBONE), from the lines below.
+`fight.py` 2969 to 2972; ported in `bf-sim/src/kinds/crowd.rs`. SUBTONE: the crowd hushes for `hush_beats` beats
+(its throws not yet launched are called off, and no pose comes), then throws one volley of `max(1, round(int(hype) x
+n_k))` throws at `mult` x the damage with `reach_k` x the reach. A STAGE DIVE ends the hush.
 
-**Record keys.** None of its own.
+**Record keys.** None of its own: `CROWD` column 2 (the `crowd` section).
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+**Events.**
 
-- 2972: `self.ev('hush', k, B.hush['t_throw'])`
+| Kind | Fields after `who` | When |
+| --- | --- | --- |
+| `hush` | the time of the volley | SUBTONE starts (2972) |
+
+The volley's end is the `subtone` event and its throws are `throw` events (the `crowd` section).
 
 <!-- /kind:subtone -->
 
 <!-- kind:stagedive -->
 #### `stagedive` (ability kind of TENOR SAX)
 
-`fight.py` 2973 to 2976, 4692 to 4757. Not ported yet: its port fills this section in (the meaning of each field, as 6.2
-and 6.3 do for FLUTE and TROMBONE), from the lines below.
+`fight.py` 2973 to 2976, 4692 to 4757; ported in `bf-sim/src/kinds/crowd.rs` (`start_dive`, `dive_step`). STAGE
+DIVE ends any strut or hush, then: the leap (`leap_beats`) beyond the nearest rope into the stands (0.9 outside it),
+the surf (`surf_beats`) along the stands to the spot nearest the enemy (0.4 short of the corners), and the
+cannonball at the enemy's spot predicted `lead` x its motion, at `speed` x the shared speed. Passing within 2 R +
+`hit_r` of the enemy hits it once (`dmg`, `knock`); where it lands a ring of kind `dive` spreads (`radius`,
+`ring_dmg`, `ring_knock`). From the leap to the landing it is airborne: no hit, no knock and no clash.
 
-**Record keys.** None of its own.
+**Record keys.** None of its own: `CROWD` columns 4 to 6 (the `crowd` section).
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+**Events.**
 
-- 4708: `self.ev('dive', k, float(out[0]), float(out[1]), t_surf, t_launch)`
-- 4737: `self.ev('dive_launch', k, float(B.p[0]), float(B.p[1]), float(tgt[0]), float(tgt[1]), Dv['t_land'])`
-- 4745: `self.damage(k, 1 - k, ab['dmg'], 'dive', float(O.p[0]), float(O.p[1]))`
-- 4748: `self.ev('dive_hit', k, float(O.p[0]), float(O.p[1]))`
-- 4756: `self.ev('dive_land', k, float(B.p[0]), float(B.p[1]))`
+| Kind | Fields after `who` | When |
+| --- | --- | --- |
+| `dive` | `x, y` where it lands in the stands, the time the surf starts, the time planned for the launch | the leap (4708) |
+| `dive_launch` | `x0, y0` (from the stands), `x1, y1` (the target), the landing time | the cannonball leaves the crowd (4737) |
+| `dive_hit` | `x, y` (the enemy's centre) | the cannonball passes the enemy (4748), landed or blocked |
+| `dive_land` | `x, y` | it lands (4756) |
+
+**Hits:** `dive` (4745: `dmg`, knocked mostly along the flight), and its ring's hits as any ring's (6.2).
 
 <!-- /kind:stagedive -->
 
