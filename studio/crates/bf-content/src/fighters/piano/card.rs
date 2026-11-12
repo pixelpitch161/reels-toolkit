@@ -10,7 +10,7 @@ use crate::cards::FighterCard;
 pub static CARD: Option<FighterCard> = Some(FighterCard {
     weapon: "Piano roll",
     text: "A paper roll along its side of the ring plays its melody. Every note fires a key across the ring. Every \
-           row that lands adds a note to the next rows.",
+           fourth hit adds a note to its rows, up to 4.",
     abilities: [
         "For 4 beats its keys stop, hang for a beat like mines, then fly at the enemy",
         "A fan of 15 keys from the ball, over 1 beat",
