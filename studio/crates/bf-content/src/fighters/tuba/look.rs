@@ -8,8 +8,9 @@
 //! the cannonball's streak trail) and the crack where the cannonball hits the ropes; BRASS WALL's dome; SUBSONIC's
 //! ripple on the canvas with its foam and shimmer; brass, tube and valve shards; the VS card's rings round its ball.
 //!
-//! The arithmetic keeps Python's order and dtypes: scalar maths through `bf_core::dmath`, the dome's blends in
-//! `float32` where numpy's are (a `float32` mask times a Python float stays `float32`).
+//! The arithmetic keeps Python's order and dtypes: scalar maths through `bf_core::dmath`, the 3-vector `np.dot` and
+//! `np.linalg.norm` fused as OpenBLAS adds them (ruling M3-R30), the dome's blends in `float32` where numpy's are
+//! (a `float32` mask times a Python float stays `float32`).
 
 use bf_core::dmath;
 use bf_core::event::{Event, Value};
@@ -57,12 +58,13 @@ fn sub(a: V3, b: V3) -> V3 {
     [a[0] - b[0], a[1] - b[1], a[2] - b[2]]
 }
 
-/// `np.dot(a, b)` as the plain sum.
+/// `np.dot(a, b)` of two 3-vectors: OpenBLAS `ddot` on the reference PC adds the products fused,
+/// `fma(a2, b2, fma(a1, b1, a0 * b0))` (as the sprite camera's dot product, ruling M3-R30).
 fn dot(a: V3, b: V3) -> f64 {
-    a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
+    dmath::fma(a[2], b[2], dmath::fma(a[1], b[1], a[0] * b[0]))
 }
 
-/// `np.linalg.norm(a)`.
+/// `np.linalg.norm(a)` of a 3-vector: the root of the same fused `a.dot(a)`.
 fn norm(a: V3) -> f64 {
     dot(a, a).sqrt()
 }
