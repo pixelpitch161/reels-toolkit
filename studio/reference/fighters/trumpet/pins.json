@@ -7,182 +7,182 @@
  "pins": [
   {
    "path": "fighters/trumpet/checks_rows.json",
-   "sha256": "29d6f1a9354dd511f131a95f9cec07a05d460abc002c381ba96204c898609831",
-   "bytes": 35203,
+   "sha256": "a5ebb8ef30fe588c116717aaddac603dff24e820b1a3761122ea26deac8cd1c8",
+   "bytes": 33423,
    "export": "fighter_trumpet"
   },
   {
    "path": "fighters/trumpet/hull_left.json",
-   "sha256": "5f8dc6665072cfd727166c01dead520f04b48de362ee4159ba6f04ec0634def6",
-   "bytes": 160250,
+   "sha256": "ee851894e8c798a7f70717573d374a7f95b705d8eaa6e54bf5c66e7e41f46def",
+   "bytes": 162278,
    "export": "fighter_trumpet"
   },
   {
    "path": "fighters/trumpet/hull_right.json",
-   "sha256": "c69236889533bfc5ad5e8690bc3d8fb6ad44332745847186bb0922b4e9a5d93c",
-   "bytes": 119732,
+   "sha256": "acbdc2dd1991b79c5e0d3d390404848857b40fd3f9f584ade30c4fa6dac8805a",
+   "bytes": 115674,
    "export": "fighter_trumpet"
   },
   {
    "path": "fighters/trumpet/look_right.json",
-   "sha256": "3f29cf23b0280d6aadb7f0673c7dff0227060decb38698cecb464c38340e9ceb",
-   "bytes": 28340,
+   "sha256": "9119c7ceede85b9c4e02b4611774b2162fcf7d91c9b497fd787b1e04e1bcc97a",
+   "bytes": 16401,
    "export": "fighter_trumpet"
   },
   {
    "path": "fighters/trumpet/right.bfrec",
-   "sha256": "db3dbc0102f0e3936daa3eb694eec7363c747a0310f9dbc234200fcd68d7145b",
-   "bytes": 149205,
+   "sha256": "23240696642ea4ecac335fef71302814082ea088ebcb1a919621de1b98923beb",
+   "bytes": 116933,
    "export": "fighter_trumpet"
   },
   {
    "path": "fighters/trumpet/scenarios/early_ko_s1.bfrec",
-   "sha256": "0b305836d156129bb589d5d52725208122ba666682189ea360366bfef1896e78",
-   "bytes": 60397,
+   "sha256": "b6fa96538e66f802741179eb078e9f79a87e6fdc8268cc1940054382b5a50e44",
+   "bytes": 35759,
    "export": "fighter_trumpet"
   },
   {
    "path": "fighters/trumpet/scenarios/early_ko_s2.bfrec",
-   "sha256": "921289105b337679b10c80e8241ecde90a6d92f0f5702c398fd6edbc7e718272",
-   "bytes": 55697,
+   "sha256": "482cd55f65b1af419a07149be76cf1dddaf7277a54888f53c0766f09d0202e3d",
+   "bytes": 54363,
    "export": "fighter_trumpet"
   },
   {
    "path": "fighters/trumpet/scenarios/early_ko_s3.bfrec",
-   "sha256": "e8e224cc200b38ceb30cadf3316b1bd09f538b10b56326bf82350eda310dee3a",
-   "bytes": 60867,
+   "sha256": "37f27fffc7400834c7c5f6909e4cbd225fc6bdfd6f85ba6dcd05a510a0196084",
+   "bytes": 32052,
    "export": "fighter_trumpet"
   },
   {
    "path": "fighters/trumpet/scenarios/early_levels_s1.bfrec",
-   "sha256": "def4656c8e209dd1514f1800641e4541c011c8b2a73bb815ad0429f9f6829c79",
-   "bytes": 161262,
+   "sha256": "c6190c8ee7e3b53aaac6e7bc08f0cc2415d5fd99647dbb0a8e85edd9695025b5",
+   "bytes": 120025,
    "export": "fighter_trumpet"
   },
   {
    "path": "fighters/trumpet/scenarios/early_levels_s2.bfrec",
-   "sha256": "7eb06f5f89156aabfc8c984580fbf8019ef7e24a653a7ea55a748814072c52a5",
-   "bytes": 119520,
+   "sha256": "3ff7766a8eed15f4e789c82f5a5c14f054e38c885d245b9c221ac85b09054d53",
+   "bytes": 111819,
    "export": "fighter_trumpet"
   },
   {
    "path": "fighters/trumpet/scenarios/early_levels_s3.bfrec",
-   "sha256": "c4257843992471e70a32018e9646a398786d5af4ac2e5be7b5367bc7df0c5394",
-   "bytes": 155539,
+   "sha256": "b9604ab9fc3de985d01878bd684805188107d5c6b5dbd9faa2ad654d4709c996",
+   "bytes": 136432,
    "export": "fighter_trumpet"
   },
   {
    "path": "fighters/trumpet/scenarios/early_low_s1.bfrec",
-   "sha256": "359ce762882181dd7a3620eab6de63b05f25fe77078c72f03dee5c81f4bf2906",
-   "bytes": 124990,
+   "sha256": "97ff2e95d28fa608ed325142e4bf258922655b862335ebf32fd57c617349a7be",
+   "bytes": 115274,
    "export": "fighter_trumpet"
   },
   {
    "path": "fighters/trumpet/scenarios/early_low_s2.bfrec",
-   "sha256": "c654ca8005cfa27e0bcbe250809802723a1f73cebd089d1663d527824d2bdac0",
-   "bytes": 115479,
+   "sha256": "193fdc194fa37bfc6e4854693bbcf25bc9c32f72f4223a80fa2c1899b1396474",
+   "bytes": 86750,
    "export": "fighter_trumpet"
   },
   {
    "path": "fighters/trumpet/scenarios/early_low_s3.bfrec",
-   "sha256": "0ecdb8e59e5c9edcc1e907c93afb3c5df320a6e30f0c965ef9bab87b62c7d2fb",
-   "bytes": 127932,
+   "sha256": "5a8a3939508e6a17b68c8a814da7bb2f46bb2d65986087aa1fbb40c78e31e74d",
+   "bytes": 124852,
    "export": "fighter_trumpet"
   },
   {
    "path": "fighters/trumpet/scenarios/plain_s7.bfrec",
-   "sha256": "fbc7ce27e61cf1f8f7bfafede76fe0383a2324922843bd7f87282d636287fcd8",
-   "bytes": 123425,
+   "sha256": "4e42817d0b6c0f031e512a087810d7b79854b1a02816d4bd7529f4843be6fae2",
+   "bytes": 89411,
    "export": "fighter_trumpet"
   },
   {
    "path": "fighters/trumpet/scenarios/plain_s8.bfrec",
-   "sha256": "c24e34d2dbace10c3d143abe6ff4606e3f8da76d8b9d37656e322563671563f8",
-   "bytes": 149228,
+   "sha256": "517976a1d80905c718c5840238183fa0ae9f83acda434f2e9cb5e143ddf47677",
+   "bytes": 136519,
    "export": "fighter_trumpet"
   },
   {
    "path": "fighters/trumpet/scenarios/plain_s9.bfrec",
-   "sha256": "b471a2ff89c170f1ded724b544b3378d9c86248f14c8526ec69df0f9217f96b0",
-   "bytes": 115150,
+   "sha256": "fa75d19dce491aecd279a53c53fda98591d325acd73c74b46003471d2be9245d",
+   "bytes": 100000,
    "export": "fighter_trumpet"
   },
   {
    "path": "fighters/trumpet/scenarios/swapped_s1.bfrec",
-   "sha256": "b6abe32ff10ddf38a854f9dd891344d6f4d6f82cdc6cdb32d6a3b5a244875601",
-   "bytes": 151918,
+   "sha256": "9e7bee01e5ea48fdac9393578c0ab16a0ad596c6253a8f33951e7a27158f67d1",
+   "bytes": 119604,
    "export": "fighter_trumpet"
   },
   {
    "path": "fighters/trumpet/scenarios/swapped_s2.bfrec",
-   "sha256": "f748e26af2679b235b0a11302abb1f5d0e471fc2c8d864bc5a659fb88a04950b",
-   "bytes": 152087,
+   "sha256": "dcc269ffeb5d245758bb69723a00f198fc925d0b1e448f1bab2dc89e237cc8e2",
+   "bytes": 152308,
    "export": "fighter_trumpet"
   },
   {
    "path": "fighters/trumpet/scenarios/swapped_s3.bfrec",
-   "sha256": "b049404c6107585c991f08e858da200ee51df62afefea0d457446ab7e39fbb09",
-   "bytes": 151314,
+   "sha256": "61db3de068e58907c102b58b9e5d42d2d4035aeb7e59e9b538037f232e4fe78a",
+   "bytes": 141389,
    "export": "fighter_trumpet"
   },
   {
    "path": "fighters/trumpet/scenarios/vs_trombone_s1.bfrec",
-   "sha256": "9b47405f4f943f0c9d372e3afcf22af7e24069a1801b546033e0a0fef7400ef3",
-   "bytes": 66005,
+   "sha256": "2bdab8d6a0fdb726072a28b624dff805cc3a1ba443eec403527f0b5b40027cfa",
+   "bytes": 66111,
    "export": "fighter_trumpet"
   },
   {
    "path": "fighters/trumpet/scenarios/vs_trombone_s2.bfrec",
-   "sha256": "affa3f20ff7ee6d928e0190b5afea142d3e94bc7034100727a54fb4ab86e19e0",
-   "bytes": 71441,
+   "sha256": "f57b7300bd130f5a2941c1a05ced949f8a0ac9f6367d56558bd70cdc6490c481",
+   "bytes": 75131,
    "export": "fighter_trumpet"
   },
   {
    "path": "fighters/trumpet/sound_line_rms.json",
-   "sha256": "168dc75d6d79e586228c6d7d50c58fd4279cdd28354f5515f95a95dae6ef2ef0",
-   "bytes": 37046,
+   "sha256": "0af9143471e2080c2b0f6cee137394cde2143aef340f800c09c23de78560e1dd",
+   "bytes": 36962,
    "export": "fighter_trumpet"
   },
   {
    "path": "fighters/trumpet/sound_right_rms.json",
-   "sha256": "1c9019100535463842c00b1e68244293239f20aaf1274d2dec8423f9e28e3175",
-   "bytes": 32084,
+   "sha256": "28abd3b3abc410635d6d8dae3b285fd7c12223e3377559b31e22c48e19ee0cc4",
+   "bytes": 31927,
    "export": "fighter_trumpet"
   },
   {
    "path": "fighters/trumpet/sprites.json",
-   "sha256": "ed2fe54e0d60e40878a2b76fde4b28512d93b8b269298fdffb55612921bcdb2c",
-   "bytes": 192724,
+   "sha256": "3c2dea54e696c0752bdda314a431bf72977864be907ac3f9fdaea8a8213bdb12",
+   "bytes": 184058,
    "export": "fighter_trumpet"
   },
   {
    "path": "fighters/trumpet/sprites.npz",
-   "sha256": "a849ab30f9bc4f3c945eee0fe836a58717eb5096dfc8897b4d459891a0add12b",
-   "bytes": 289003,
+   "sha256": "ecd2f7435447ef258ab4218cf9d1f4a960043d2e485083628cea06e7e661f33f",
+   "bytes": 275387,
    "export": "fighter_trumpet"
   },
   {
    "path": "fighters/trumpet/stats_rows.json",
-   "sha256": "c60da1d70b415d268428a4f61256d8c9fe80b2867a061861f13ead0d4ce90204",
-   "bytes": 457883,
+   "sha256": "d94c49c4a45bdf6b5f59f2222717bc63b740e27ec7d69ab12b11a521919e6b0b",
+   "bytes": 483675,
    "export": "fighter_trumpet"
   },
   {
    "path": "fighters/trumpet/stems_left.npz",
-   "sha256": "f5f4efa34c91666c59168a458e23f32e17483be9f88cdc5f94f1373a797ad49d",
-   "bytes": 5252666,
+   "sha256": "60c79b5ba9d86a44609831020cc182bba63f1cdcee8db7c83fd57e9ecfe923bd",
+   "bytes": 4814479,
    "export": "fighter_trumpet"
   },
   {
    "path": "fighters/trumpet/stems_line.npz",
-   "sha256": "fc31774fbbb48316f6a6f5eae363f8b540a6d6561da9c32400178379ed13ffb1",
-   "bytes": 5253259,
+   "sha256": "f0acb7b18169e6b984a385f9468858ff1c64fe03531e1e68fb518ad3d4981e45",
+   "bytes": 4814280,
    "export": "fighter_trumpet"
   },
   {
    "path": "fighters/trumpet/stems_right.npz",
-   "sha256": "14f5bae9e08b025f18b19f2dc6da63a5e9ba449f89beac4b846ebed8af2aa212",
-   "bytes": 4576357,
+   "sha256": "02a2a64caea6988a4793607645b5ccd7c76600101a381d7a9b215af9510df83e",
+   "bytes": 4510142,
    "export": "fighter_trumpet"
   },
   {

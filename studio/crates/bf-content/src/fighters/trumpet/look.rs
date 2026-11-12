@@ -154,9 +154,8 @@ fn wdir(d: P2) -> V3 {
     scene::to_world(d[0], d[1], 0.0)
 }
 
-/// The TRUMPET's model (`sprites.render_sprite(self.cfg['pp'], ...)`: the kit's `self.cfg` is the TRUMPET's own
-/// roster entry whenever this look is made, for its own side and for a copy of it).
-fn mesh() -> &'static Mesh {
+/// The TRUMPET's own model, compiled in: what a look that was never set up draws.
+fn own_mesh() -> &'static Mesh {
     static MESH: OnceLock<Mesh> = OnceLock::new();
     MESH.get_or_init(|| {
         let json = super::MESH.expect("the TRUMPET's model is compiled in");
@@ -676,6 +675,10 @@ pub struct TrumpetLook {
     view_roll: f64,
     /// `self.cfg['pp']`.
     pp: String,
+    /// The model `sprites.render_sprite(self.cfg['pp'], ...)` draws: the model of the roster entry the look was set
+    /// up with (its own, or another fighter's when it is made with that fighter's entry). `None` for an entry whose
+    /// model this app does not have: asking such a look for a sprite panics, saying so.
+    mesh: Option<Mesh>,
     /// `self.T.SOLO.get(self.name, [])`.
     solo: Vec<(f64, i32, f64)>,
     /// `_ATLAS`: the sprites drawn so far, by `(radius, roll)`.
@@ -973,6 +976,11 @@ impl Look for TrumpetLook {
         self.view_yaw = view(0);
         self.view_roll = view(2);
         self.pp = cfg.pp.clone();
+        // the kit's models are named by `pp`; the app's by the fighter whose roster entry holds that `pp`
+        self.mesh = crate::picture::mesh(&cfg.name);
+        // (the kit's atlas is one module-level table for every TRUMPET look of the process: a look set up again
+        // starts its own)
+        self.atlas.lock().unwrap_or_else(|e| e.into_inner()).clear();
         self.solo = p.solos[k].clone();
     }
 
@@ -1025,9 +1033,15 @@ impl Look for TrumpetLook {
     fn sprite(&self, r: u32, _yaw: f64, roll: f64) -> Option<Img<u8>> {
         let key = (r.clamp(SPR_RADII.0, SPR_RADII.1), roll as i64);
         let mut atlas = self.atlas.lock().unwrap_or_else(|e| e.into_inner());
+        // a look not set up yet (no roster entry given) draws the TRUMPET's own model, at its view's yaw 0
+        let mesh = match &self.mesh {
+            Some(mesh) => mesh,
+            None if self.pp.is_empty() => own_mesh(),
+            None => panic!("the TRUMPET's look has no model to draw for {:?}", self.pp),
+        };
         let sprite = atlas
             .entry(key)
-            .or_insert_with(|| render_sprite(mesh(), key.0, self.yaw_key() as f64, key.1 as f64));
+            .or_insert_with(|| render_sprite(mesh, key.0, self.yaw_key() as f64, key.1 as f64));
         Some(sprite.clone())
     }
 

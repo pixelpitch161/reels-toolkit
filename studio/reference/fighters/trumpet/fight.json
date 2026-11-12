@@ -7,7 +7,7 @@
   "bpm": 133.7704918032787,
   "dmg_scale": 1.0,
   "fighters": ["TRUMPET", "FLUTE"],
-  "handicap": [1.0, 1.0],
+  "handicap": [2.0, 1.0],
   "key": "E",
   "overrides": {},
   "rules": {
@@ -26,7 +26,7 @@
    "beat": 0.44852941176470584,
    "bpm": 133.7704918032787,
    "dmg_scale": 1.0,
-   "dmg_side": [1.0, 1.0],
+   "dmg_side": [2.0, 1.0],
    "t_fight": 3.5882352941176467,
    "t_max": 58.0
   },
@@ -38,70 +38,70 @@
   "required": ["ability", "ability/DOUBLE TONGUE", "ability/FANFARE", "ability/HIGH C", "basket", "beam", "charge", "clash", "combo", "hit", "hit/beam", "hit/fang", "hit/piston", "hit/shockwave", "hit/wave", "ko", "level", "punch", "rope", "strike"],
   "rows": [
    {
-    "after_fight": 1.3500047058823537,
-    "event": [4.93824, "ability", 0, "FANFARE", "shockwave", 1],
-    "index": 14,
+    "after_fight": 0.9000047058823535,
+    "event": [4.48824, "ability", 0, "FANFARE", "shockwave", 1],
+    "index": 10,
     "item": "ability",
     "required": true,
     "scenario": "early_levels",
-    "seed": 1,
+    "seed": 3,
     "stats_fights": 2000,
-    "t": 4.93824
-   },
-   {
-    "after_fight": 1.800004705882353,
-    "event": [5.38824, "ability", 0, "DOUBLE TONGUE", "haste", 1],
-    "index": 22,
-    "item": "ability/DOUBLE TONGUE",
-    "required": true,
-    "scenario": "early_levels",
-    "seed": 1,
-    "stats_fights": 1810,
-    "t": 5.38824
+    "t": 4.48824
    },
    {
     "after_fight": 1.3500047058823537,
-    "event": [4.93824, "ability", 0, "FANFARE", "shockwave", 1],
-    "index": 14,
-    "item": "ability/FANFARE",
+    "event": [4.93824, "ability", 0, "DOUBLE TONGUE", "haste", 1],
+    "index": 16,
+    "item": "ability/DOUBLE TONGUE",
     "required": true,
     "scenario": "early_levels",
-    "seed": 1,
+    "seed": 3,
     "stats_fights": 1997,
     "t": 4.93824
    },
    {
-    "after_fight": 4.941664705882353,
-    "event": [8.5299, "ability", 1, "FLUTTER TONGUE", "haste", 1],
-    "index": 65,
-    "item": "ability/FLUTTER TONGUE",
-    "required": false,
+    "after_fight": 0.9000047058823535,
+    "event": [4.48824, "ability", 0, "FANFARE", "shockwave", 1],
+    "index": 10,
+    "item": "ability/FANFARE",
+    "required": true,
     "scenario": "early_levels",
-    "seed": 1,
+    "seed": 3,
     "stats_fights": 2000,
-    "t": 8.5299
+    "t": 4.48824
    },
    {
-    "after_fight": 4.941664705882353,
-    "event": [8.5299, "ability", 0, "HIGH C", "beam", 1],
-    "index": 68,
+    "after_fight": 1.800004705882353,
+    "event": [5.38824, "ability", 1, "FLUTTER TONGUE", "haste", 1],
+    "index": 26,
+    "item": "ability/FLUTTER TONGUE",
+    "required": false,
+    "scenario": "early_low",
+    "seed": 3,
+    "stats_fights": 1996,
+    "t": 5.38824
+   },
+   {
+    "after_fight": 2.250004705882353,
+    "event": [5.83824, "ability", 0, "HIGH C", "beam", 1],
+    "index": 31,
     "item": "ability/HIGH C",
     "required": true,
     "scenario": "early_low",
     "seed": 1,
-    "stats_fights": 1843,
-    "t": 8.5299
+    "stats_fights": 1149,
+    "t": 5.83824
    },
    {
-    "after_fight": 4.491664705882354,
-    "event": [8.0799, "ability", 1, "PICCOLO", "wave", 1],
-    "index": 56,
+    "after_fight": 1.3500047058823537,
+    "event": [4.93824, "ability", 1, "PICCOLO", "wave", 1],
+    "index": 17,
     "item": "ability/PICCOLO",
     "required": false,
     "scenario": "early_low",
-    "seed": 1,
-    "stats_fights": 426,
-    "t": 8.0799
+    "seed": 3,
+    "stats_fights": 1846,
+    "t": 4.93824
    },
    {
     "after_fight": 13.458334705882352,
@@ -126,15 +126,15 @@
     "t": 11.66324
    },
    {
-    "after_fight": 5.383334705882353,
-    "event": [8.97157, "ability", 1, "SNAKE DANCE", "dance", 1],
-    "index": 77,
+    "after_fight": 2.250004705882353,
+    "event": [5.83824, "ability", 1, "SNAKE DANCE", "dance", 1],
+    "index": 32,
     "item": "ability/SNAKE DANCE",
     "required": false,
     "scenario": "early_low",
-    "seed": 1,
-    "stats_fights": 1999,
-    "t": 8.97157
+    "seed": 3,
+    "stats_fights": 1836,
+    "t": 5.83824
    },
    {
     "after_fight": 0.008334705882353077,
@@ -148,26 +148,26 @@
     "t": 3.59657
    },
    {
-    "after_fight": 5.391664705882354,
-    "event": [8.9799, "beam", 0, -0.7063417125015856, 1.8695431568507321, -0.6346261011442371, 7.0, 1.1],
-    "index": 78,
+    "after_fight": 2.7000047058823533,
+    "event": [6.28824, "beam", 0, -1.2220629015753381, 0.2982978972013933, -0.11432218087083044, 7.0, 1.1],
+    "index": 40,
     "item": "beam",
     "required": true,
     "scenario": "early_low",
     "seed": 1,
-    "stats_fights": 1831,
-    "t": 8.9799
+    "stats_fights": 1133,
+    "t": 6.28824
    },
    {
-    "after_fight": 4.941664705882353,
-    "event": [8.5299, "charge", 0, -0.6346261011442371, 0.44852941176470584, 7.0, 1.1],
-    "index": 69,
+    "after_fight": 2.250004705882353,
+    "event": [5.83824, "charge", 0, -0.11432218087083044, 0.44852941176470584, 7.0, 1.1],
+    "index": 32,
     "item": "charge",
     "required": true,
     "scenario": "early_low",
     "seed": 1,
-    "stats_fights": 1843,
-    "t": 8.5299
+    "stats_fights": 1149,
+    "t": 5.83824
    },
    {
     "after_fight": 0.8416647058823532,
@@ -177,7 +177,7 @@
     "required": true,
     "scenario": "early_levels",
     "seed": 2,
-    "stats_fights": 1639,
+    "stats_fights": 1586,
     "t": 4.4299
    },
    {
@@ -193,7 +193,7 @@
    },
    {
     "after_fight": 0.9000047058823535,
-    "event": [4.48824, "hit", 0, 1, 1.2, -0.8186782138449165, -0.8401067530611839, "piston", 0],
+    "event": [4.48824, "hit", 0, 1, 2.4, -0.8186782138449165, -0.8401067530611839, "piston", 0],
     "index": 8,
     "item": "hit",
     "required": true,
@@ -203,15 +203,15 @@
     "t": 4.48824
    },
    {
-    "after_fight": 5.400004705882353,
-    "event": [8.98824, "hit", 0, 1, 9.0, 2.389989618716174, -0.08499343498667633, "beam", 0],
-    "index": 79,
+    "after_fight": 2.7083347058823533,
+    "event": [6.29657, "hit", 0, 1, 18.0, 1.472817478366034, 0.2861714626664186, "beam", 0],
+    "index": 41,
     "item": "hit/beam",
     "required": true,
     "scenario": "early_low",
     "seed": 1,
-    "stats_fights": 1281,
-    "t": 8.98824
+    "stats_fights": 732,
+    "t": 6.29657
    },
    {
     "after_fight": 0.9000047058823535,
@@ -237,7 +237,7 @@
    },
    {
     "after_fight": 0.9000047058823535,
-    "event": [4.48824, "hit", 0, 1, 1.2, -0.8186782138449165, -0.8401067530611839, "piston", 0],
+    "event": [4.48824, "hit", 0, 1, 2.4, -0.8186782138449165, -0.8401067530611839, "piston", 0],
     "index": 8,
     "item": "hit/piston",
     "required": true,
@@ -247,48 +247,48 @@
     "t": 4.48824
    },
    {
-    "after_fight": 1.5250047058823535,
-    "event": [5.11324, "hit", 0, 1, 3.0, 1.5371435835752099, 0.7020572770132012, "shockwave", 0],
-    "index": 16,
+    "after_fight": 1.0000047058823531,
+    "event": [4.58824, "hit", 0, 1, 6.0, -0.4766651764275104, -0.894673405304272, "shockwave", 0],
+    "index": 11,
     "item": "hit/shockwave",
     "required": true,
     "scenario": "early_levels",
-    "seed": 1,
-    "stats_fights": 1800,
-    "t": 5.11324
+    "seed": 3,
+    "stats_fights": 1942,
+    "t": 4.58824
    },
    {
-    "after_fight": 4.608334705882353,
-    "event": [8.19657, "hit", 1, 0, 8.0, 0.39273173531652394, -1.3088930573416189, "wave", 0],
-    "index": 59,
+    "after_fight": 1.7166647058823532,
+    "event": [5.3049, "hit", 1, 0, 8.0, -0.7963985549517065, -0.8990137893413186, "wave", 0],
+    "index": 20,
     "item": "hit/wave",
     "required": true,
     "scenario": "early_low",
-    "seed": 1,
-    "stats_fights": 317,
-    "t": 8.19657
+    "seed": 3,
+    "stats_fights": 1510,
+    "t": 5.3049
    },
    {
-    "after_fight": 19.36666470588235,
-    "event": [22.9549, "ko", 0, 1],
-    "index": 240,
+    "after_fight": 11.250004705882354,
+    "event": [14.83824, "ko", 1, 0],
+    "index": 131,
     "item": "ko",
     "required": true,
     "scenario": "early_ko",
-    "seed": 2,
-    "stats_fights": 1108,
-    "t": 22.9549
+    "seed": 3,
+    "stats_fights": 1929,
+    "t": 14.83824
    },
    {
-    "after_fight": 1.1583347058823534,
-    "event": [4.74657, "level", 0, 2],
-    "index": 10,
+    "after_fight": 0.9000047058823535,
+    "event": [4.48824, "level", 0, 2],
+    "index": 9,
     "item": "level",
     "required": true,
     "scenario": "early_levels",
-    "seed": 1,
+    "seed": 3,
     "stats_fights": 2000,
-    "t": 4.74657
+    "t": 4.48824
    },
    {
     "after_fight": 0.008334705882353077,
@@ -353,25 +353,25 @@
  "fighter": "TRUMPET",
  "format": 1,
  "left": {
-  "events": 665,
+  "events": 568,
   "file": "fighters/trumpet/left.bfrec",
-  "frames": 1455,
-  "hash": "d24ddd847a806594",
+  "frames": 1361,
+  "hash": "c7411352c08a89ec",
   "names": ["TRUMPET", "FLUTE"],
-  "seed": 36,
-  "t_ko": 52.04656862745098,
+  "seed": 1,
+  "t_ko": 48.90490196078431,
   "why": "the lowest statistics seed with TRUMPET in the left corner winning and all three of its abilities firing",
   "winner": 0
  },
  "opponent": "FLUTE",
  "right": {
   "cache": "fighters/trumpet/right.bfrec",
-  "events": 663,
-  "frames": 1578,
-  "hash": "bdfccb9f7fa3ea67",
+  "events": 580,
+  "frames": 1234,
+  "hash": "08d7681dfcfbfb53",
   "names": ["FLUTE", "TRUMPET"],
-  "seed": 7,
-  "t_ko": 56.146568627450975,
+  "seed": 13,
+  "t_ko": 44.67156862745098,
   "why": "the lowest seed with FLUTE in the left corner winning (so TRUMPET is knocked out)",
   "winner": 0
  },
@@ -380,7 +380,7 @@
   {
    "cache": ["fighters/trumpet/scenarios/early_levels_s1.bfrec", "fighters/trumpet/scenarios/early_levels_s2.bfrec", "fighters/trumpet/scenarios/early_levels_s3.bfrec"],
    "fighters": ["TRUMPET", "FLUTE"],
-   "hashes": ["560d648e66c6ef34", "3fc9a745a5123a4b", "ed928cbe1b4dd5b1"],
+   "hashes": ["c02f802170cf9534", "b12e49af860c8484", "69154bfd3b01f3b9"],
    "name": "early_levels",
    "opponent": "FLUTE",
    "overrides": {
@@ -402,7 +402,7 @@
     "beat": 0.44852941176470584,
     "bpm": 133.7704918032787,
     "dmg_scale": 1.0,
-    "dmg_side": [1.0, 1.0],
+    "dmg_side": [2.0, 1.0],
     "t_fight": 3.5882352941176467,
     "t_max": 58.0
    },
@@ -412,7 +412,7 @@
   {
    "cache": ["fighters/trumpet/scenarios/early_low_s1.bfrec", "fighters/trumpet/scenarios/early_low_s2.bfrec", "fighters/trumpet/scenarios/early_low_s3.bfrec"],
    "fighters": ["TRUMPET", "FLUTE"],
-   "hashes": ["fc716374af10e3b0", "e632cd745816eaf0", "0ceb27898c8b72e8"],
+   "hashes": ["73cc03fd75e99bfe", "f93e169269cb5c6f", "99800ce709965eb5"],
    "name": "early_low",
    "opponent": "FLUTE",
    "overrides": {
@@ -435,7 +435,7 @@
     "beat": 0.44852941176470584,
     "bpm": 133.7704918032787,
     "dmg_scale": 1.0,
-    "dmg_side": [1.0, 1.0],
+    "dmg_side": [2.0, 1.0],
     "t_fight": 3.5882352941176467,
     "t_max": 58.0
    },
@@ -445,7 +445,7 @@
   {
    "cache": ["fighters/trumpet/scenarios/early_ko_s1.bfrec", "fighters/trumpet/scenarios/early_ko_s2.bfrec", "fighters/trumpet/scenarios/early_ko_s3.bfrec"],
    "fighters": ["TRUMPET", "FLUTE"],
-   "hashes": ["c80dea830a380382", "3a71b839f40f9261", "0bba21ec0741065e"],
+   "hashes": ["686014a33a516ffc", "0a833ee0c749e09c", "9351d819fa584269"],
    "name": "early_ko",
    "opponent": "FLUTE",
    "overrides": {
@@ -467,7 +467,7 @@
     "beat": 0.44852941176470584,
     "bpm": 133.7704918032787,
     "dmg_scale": 3.0,
-    "dmg_side": [1.0, 1.0],
+    "dmg_side": [2.0, 1.0],
     "t_fight": 3.5882352941176467,
     "t_max": 58.0
    },
@@ -477,7 +477,7 @@
   {
    "cache": ["fighters/trumpet/scenarios/plain_s7.bfrec", "fighters/trumpet/scenarios/plain_s8.bfrec", "fighters/trumpet/scenarios/plain_s9.bfrec"],
    "fighters": ["TRUMPET", "FLUTE"],
-   "hashes": ["c298b14ce66ce05b", "257f65b555a42210", "a3b0a271cb6adda4"],
+   "hashes": ["b3a0cd3b51618522", "06782ac952b2b15f", "0ca682e98df3f846"],
    "name": "plain",
    "opponent": "FLUTE",
    "overrides": {},
@@ -497,7 +497,7 @@
     "beat": 0.44852941176470584,
     "bpm": 133.7704918032787,
     "dmg_scale": 1.0,
-    "dmg_side": [1.0, 1.0],
+    "dmg_side": [2.0, 1.0],
     "t_fight": 3.5882352941176467,
     "t_max": 58.0
    },
@@ -507,7 +507,7 @@
   {
    "cache": ["fighters/trumpet/scenarios/swapped_s1.bfrec", "fighters/trumpet/scenarios/swapped_s2.bfrec", "fighters/trumpet/scenarios/swapped_s3.bfrec"],
    "fighters": ["FLUTE", "TRUMPET"],
-   "hashes": ["c19ba978a56be880", "421731a69ee5ce0e", "495bc063d053f0e7"],
+   "hashes": ["7bc054208fddbfb7", "1e3f99dde364dc0c", "9633faae66b73b0a"],
    "name": "swapped",
    "opponent": "FLUTE",
    "overrides": {},
@@ -527,7 +527,7 @@
     "beat": 0.44852941176470584,
     "bpm": 133.7704918032787,
     "dmg_scale": 1.0,
-    "dmg_side": [1.0, 1.0],
+    "dmg_side": [1.0, 2.0],
     "t_fight": 3.5882352941176467,
     "t_max": 58.0
    },
@@ -537,7 +537,7 @@
   {
    "cache": ["fighters/trumpet/scenarios/vs_trombone_s1.bfrec", "fighters/trumpet/scenarios/vs_trombone_s2.bfrec"],
    "fighters": ["TRUMPET", "TROMBONE"],
-   "hashes": ["d3c254edb8161781", "ad3455292d37f9ea"],
+   "hashes": ["d081e076fd4f4b72", "1729d8c36220010f"],
    "name": "vs_trombone",
    "opponent": "TROMBONE",
    "overrides": {},
@@ -557,7 +557,7 @@
     "beat": 0.44852941176470584,
     "bpm": 133.7704918032787,
     "dmg_scale": 1.0,
-    "dmg_side": [1.0, 1.0],
+    "dmg_side": [2.0, 1.0],
     "t_fight": 3.5882352941176467,
     "t_max": 58.0
    },
@@ -570,7 +570,7 @@
   "fights": {
    "base": "flute_vs_trombone",
    "dmg_scale": 1.0,
-   "handicap": [1.0, 1.0],
+   "handicap": [2.0, 1.0],
    "left": null,
    "must": [],
    "right": null,
@@ -638,6 +638,10 @@
     "swapped": false
    }
   ],
+  "sprite_size": {
+   "add": 7,
+   "clip": [12, 19]
+  },
   "voice_notes": {
    "durations": [0.12, 0.25, 1.0],
    "pitches": null,
@@ -667,52 +671,52 @@
   },
   "fights_with": {
    "ability": 2000,
-   "ability/DOUBLE TONGUE": 1810,
-   "ability/FANFARE": 1997,
-   "ability/FLUTTER TONGUE": 2000,
-   "ability/HIGH C": 1843,
-   "ability/PICCOLO": 426,
-   "ability/SNAKE DANCE": 1999,
+   "ability/DOUBLE TONGUE": 1997,
+   "ability/FANFARE": 2000,
+   "ability/FLUTTER TONGUE": 1996,
+   "ability/HIGH C": 1149,
+   "ability/PICCOLO": 1846,
+   "ability/SNAKE DANCE": 1836,
    "basket": 2000,
-   "beam": 1831,
-   "charge": 1843,
-   "clash": 1639,
+   "beam": 1133,
+   "charge": 1149,
+   "clash": 1586,
    "combo": 2000,
    "hit": 2000,
-   "hit/beam": 1281,
+   "hit/beam": 732,
    "hit/fang": 2000,
    "hit/piston": 2000,
-   "hit/shockwave": 1800,
-   "hit/wave": 317,
-   "ko": 1108,
+   "hit/shockwave": 1942,
+   "hit/wave": 1510,
+   "ko": 1929,
    "level": 2000,
    "punch": 2000,
    "rope": 2000,
    "strike": 2000
   },
   "pooled": {
-   "both_lows_share": 0.1925,
-   "decided": 1108,
-   "fit_rate": 0.0,
-   "fits": 0,
-   "ko_median": 57.03823529411764,
-   "ko_median_decided": 52.717401960784315,
-   "ko_p10": 47.36323529411764,
-   "ko_p90": 99.0,
-   "lead_changes_mean": 0.517,
-   "left_wins": 28,
+   "both_lows_share": 0.499,
+   "decided": 1929,
+   "fit_rate": 0.0035,
+   "fits": 7,
+   "ko_median": 44.47990196078431,
+   "ko_median_decided": 44.28823529411765,
+   "ko_p10": 35.22990196078431,
+   "ko_p90": 54.10156862745099,
+   "lead_changes_mean": 0.5335,
+   "left_wins": 1488,
    "n": 2000,
    "names": ["TRUMPET", "FLUTE"],
-   "no_ko": 892,
-   "no_ko_share": 0.446,
-   "win_share": 0.02527075812274368,
-   "winner_hp_median_decided": 45.29999999999994
+   "no_ko": 71,
+   "no_ko_share": 0.0355,
+   "win_share": 0.7713841368584758,
+   "winner_hp_median_decided": 24.79999999999997
   },
   "seeds": [1, 2000]
  },
  "swapped_config": {
   "fighters": ["FLUTE", "TRUMPET"],
-  "handicap": [1.0, 1.0]
+  "handicap": [1.0, 2.0]
  },
  "tool": "tools.studio_export.fighter_trumpet"
 }

@@ -59,34 +59,16 @@ fn run_combo(f: &mut Fight, steps: usize) -> Vec<(usize, Vec<Event>)> {
     out
 }
 
-/// Floats agree to 1e-12 (`fight.py`'s dot products are numpy's, fused on the reference PC; the engine's are plain
-/// sums, ruling R25, so a value after one can differ in its last bits).
-fn close(got: f64, want: f64) {
-    assert!((got - want).abs() <= 1e-12, "{got} vs Python's {want}");
+/// The steps' events equal Python's to the bit.
+fn same(got: &[(usize, Vec<Event>)], want: &[(usize, Vec<Event>)]) {
+    assert_eq!(got, want);
 }
 
-/// The steps' events equal Python's: the steps, the times, the kinds, every whole number and text exactly, floats
-/// to 1e-12.
-fn same(got: &[(usize, Vec<Event>)], want: &[(usize, Vec<Event>)]) {
-    let steps = |x: &[(usize, Vec<Event>)]| x.iter().map(|(i, e)| (*i, e.len())).collect::<Vec<_>>();
-    assert_eq!(steps(got), steps(want), "{got:?}");
-    for ((i, g), (_, w)) in got.iter().zip(want) {
-        for (g, w) in g.iter().zip(w) {
-            assert_eq!(
-                (g.t, &g.kind, g.fields.len()),
-                (w.t, &w.kind, w.fields.len()),
-                "step {i}: {g:?}"
-            );
-            for (a, b) in g.fields.iter().zip(&w.fields) {
-                match (a, b) {
-                    (Value::Float(x), Value::Float(y)) => {
-                        assert!((x - y).abs() <= 1e-12, "step {i}: {x} vs {y} in {g:?}")
-                    }
-                    _ => assert_eq!(a, b, "step {i}: {g:?}"),
-                }
-            }
-        }
-    }
+/// The one value here that is not Python's to the bit: the enemy's velocity after the blast's knock. The shared
+/// `Fight::knock` takes the length of `d + 0.3 n` (not a unit vector) as a plain sum where `fight.py` has
+/// `np.linalg.norm` (ruling R25), so the last bits can differ; 1e-12 holds it.
+fn close(got: f64, want: f64) {
+    assert!((got - want).abs() <= 1e-12, "{got} vs Python's {want}");
 }
 
 fn ev(t: f64, kind: &str, fields: Vec<Value>) -> Event {
@@ -167,8 +149,7 @@ fn three_punches_land_the_third_harder_and_the_reach_grows() {
     assert!(st.punches.is_empty() && st.punch_q.is_empty());
     assert_eq!(st.punch_i, 3);
     assert_eq!((o.hp, o.boost, b.dealt), (91.19999999999999, 1.0, 8.8));
-    close(o.v[0], 2.316237261294855);
-    close(o.v[1], 1.1811202095366027);
+    assert_eq!(o.v, [2.316237261294855, 1.1811202095366027]);
 }
 
 #[test]
