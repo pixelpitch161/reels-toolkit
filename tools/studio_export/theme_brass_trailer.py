@@ -23,7 +23,8 @@ Two run-time adaptations, both in this module only (nothing shared is edited):
   options the brass trailer reads, under the fight file's names. The harness's `config_fight_file` must apply them
   (reported to the controller as a shared-file addition).
 - `trailer_hit`: m3parts.HOOK_CALLS passes the braam's length as the keyword `braam`, but the kit's method names it
-  `braam_dur`, so m3parts.hook_child would raise TypeError. As theme_bossa_noir did for `hit`, the shared child runs
+  `braam_dur`, so m3parts.hook_child (which passes a hook only the arguments its method names) would drop the braam
+  and play the taiko alone. As theme_bossa_noir did for `hit`, the shared child runs
   through `_hook_child`, which first gives the kit's `Bed.trailer_hit` (run-time only, in that child process) a
   wrapper taking `braam=` and calling the kit's method with the same values in the same order.
 - stem windows: m3parts._soundtrack records every window as SR samples long (`n=SR`) but caches only the samples the
