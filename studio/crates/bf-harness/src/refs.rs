@@ -92,6 +92,25 @@ pub fn num(v: &Value) -> f64 {
     v.as_f64().unwrap_or_else(|| panic!("{v} is not a number"))
 }
 
+/// A solo as the export writes it (`m3refs.music_extras`): `[[beat, note, beats], ...]`, a chord's note a list of
+/// notes (`[beat, [note, ...], beats]`, the kit's tuple).
+pub fn solo(v: &Value) -> Vec<(f64, bf_core::fightfile::SoloNote, f64)> {
+    use bf_core::fightfile::SoloNote;
+    let midi = |n: &Value| n.as_i64().unwrap_or_else(|| panic!("{n} is not a MIDI note")) as i32;
+    list(v)
+        .iter()
+        .map(|e| {
+            let e = list(e);
+            assert_eq!(e.len(), 3, "a solo entry is [beat, note, beats]: {e:?}");
+            let note = match &e[1] {
+                Value::Array(ns) => SoloNote::Chord(ns.iter().map(midi).collect()),
+                n => SoloNote::Note(midi(n)),
+            };
+            (num(&e[0]), note, num(&e[2]))
+        })
+        .collect()
+}
+
 /// A float Python wrote as `float.hex()`.
 pub fn hexf(v: &Value) -> f64 {
     parse_hex_f64(text(v))

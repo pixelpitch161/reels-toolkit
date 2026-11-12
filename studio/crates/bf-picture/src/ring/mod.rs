@@ -35,7 +35,7 @@ use std::fmt;
 use std::sync::Arc;
 
 use bf_core::event::{Event, Value};
-use bf_core::fightfile::FightFile;
+use bf_core::fightfile::{FightFile, SOLO_CHORDS, SoloNote};
 use bf_core::harmony::{self, Harmony};
 use bf_core::recording::Recording;
 use bf_core::roster::FighterCfg;
@@ -124,7 +124,8 @@ pub struct PictureCtx {
     pub t_solo: f64,
     /// `SOLO_T`: the start of each note of the winner's solo.
     pub solo_t: Vec<f64>,
-    /// `T.SOLO[NAMES[k]]`: each fighter's solo as `(beat, midi note, beats)`.
+    /// `T.SOLO[NAMES[k]]`: each fighter's solo as `(beat, midi note, beats)`. A chord (only in the solo of a
+    /// fighter of `SOLO_CHORDS`, whose look reads the beats alone) stands as its first note.
     pub solos: [Vec<(f64, i32, f64)>; 2],
     /// `REST[k] = weapon.get('rest', 0.0)`.
     pub rest: [f64; 2],
@@ -432,7 +433,24 @@ impl Picture {
         let mut solos: [Vec<(f64, i32, f64)>; 2] = Default::default();
         for k in 0..2 {
             solos[k] = match ff.music.solos.get(&show.names[k]) {
-                Some(s) => s.clone(),
+                // A chord: only a fighter of SOLO_CHORDS has one (`validate`), and its look reads only the solo's
+                // beats (`SOLO_T`), so the chord stands as its first note here. Anyone else's chord stops the
+                // picture as it stops the kit (its look or part turns the entry into a number).
+                Some(s) => s
+                    .iter()
+                    .enumerate()
+                    .map(|(i, (b, n, d))| match (n, n.notes().first()) {
+                        (SoloNote::Note(m), _) => Ok((*b, *m, *d)),
+                        (SoloNote::Chord(_), Some(&m)) if SOLO_CHORDS.contains(&show.names[k].as_str()) => {
+                            Ok((*b, m, *d))
+                        }
+                        _ => Err(PictureError::Music(format!(
+                            "the fight file's music: {}'s solo: entry {i} is a chord, and only {} can play one",
+                            show.names[k],
+                            SOLO_CHORDS.join(", ")
+                        ))),
+                    })
+                    .collect::<Result<_, _>>()?,
                 None => {
                     let chords = ff.chords(g.n_bars);
                     let scale = harmony::scale(&ff.music.scale).map_err(music)?;

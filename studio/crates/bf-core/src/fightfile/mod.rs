@@ -6,8 +6,9 @@
 //! `SERIES` `series_tag`. Format 2 (milestone 3) adds what the kit's other episode configs use: a 4- or 8-chord
 //! `LOOP`, the bars after the last whole loop (`CHORDS[2 + n * len(LOOP):]`, `music.chords_tail`), `MIX`
 //! (`music.mix`), the theme's options (`TRAILER`, `DRUMLINE`, `PLUGGED`: `music.theme_options`, checked against the
-//! theme's schema by the content registry) and the title card's opt-ins (`TITLE_LINES`, `TITLE_BALLS`, `MIDDLE`:
-//! `[picture]`).
+//! theme's schema by the content registry), the title card's opt-ins (`TITLE_LINES`, `TITLE_BALLS`, `MIDDLE`:
+//! `[picture]`) and a chord in a solo (the kit's `SOLO` entry whose note is a tuple of notes, which ACOUSTIC strums:
+//! `[beat, [note, note, ...], beats]` beside the plain `[beat, note, beats]`; see [`SoloNote`] and [`SOLO_CHORDS`]).
 //!
 //! [`FightFile::parse`] reads the text and checks every value; [`FightFile::to_toml`] writes the canonical text: a
 //! fixed order of keys and sections, map entries sorted by name, and every float in Rust's shortest text that reads
@@ -19,7 +20,7 @@
 //! format above [`FIGHT_FORMAT`] is refused with "this app reads fight files up to format 2" before anything else in
 //! the file is looked at, since a newer file may hold settings this app does not know. A format 1 file (milestones 1
 //! and 2) reads with what format 1 could not say at its defaults (no tail, no mix overrides, no theme options, no
-//! title opt-ins), and a setting that format 2 added is refused in it. Reading never writes: a format 1 file stays as
+//! title opt-ins, no chord in a solo), and a setting that format 2 added is refused in it. Reading never writes: a format 1 file stays as
 //! it is on disk. The fight it reads to is a format 2 fight ([`FightFile::format`] is [`FIGHT_FORMAT`]), which
 //! [`FightFile::to_toml`] writes as format 2.
 //!
@@ -78,6 +79,13 @@ pub const MIX_GAIN_MAX: f64 = 10.0;
 
 /// The largest reverb send `music.mix` takes (the kit's configs go up to 0.45; 1 is all of it).
 pub const MIX_SEND_MAX: f64 = 1.0;
+
+/// The fighters whose part can play a chord in its solo ([`SoloNote::Chord`]): the kit's ACOUSTIC strums one
+/// (`acoustic.py` `solo`: "a tuple is a strum (up on the off-beats), a number a picked note"). Every other kit
+/// part turns the entry's note into a number (`int(m)`, `round(m, 3)`, `m < 24`, `m > hi`, `np.clip(m, ...)`, or
+/// ORGAN's `kind_, r = m` for its own `(chord name, root)` pairs) and stops with a `TypeError` or `ValueError` on
+/// a tuple of notes, so `validate` refuses a chord in any other fighter's solo.
+pub const SOLO_CHORDS: [&str; 1] = ["ACOUSTIC"];
 
 /// How [`Middle::Divider`] is written (the kit's word for it).
 pub const MIDDLE_DIVIDER: &str = "divider";
@@ -145,8 +153,9 @@ pub struct Music {
     /// fighter declares (its name, a space and more, such as `HORN THEME`); `None` is a rest. A line has the same
     /// whole number of notes for every bar of the loop.
     pub lines: BTreeMap<String, Vec<Option<i32>>>,
-    /// Victory solos as `(beat, midi note, beats)`, by fighter.
-    pub solos: BTreeMap<String, Vec<(f64, i32, f64)>>,
+    /// Victory solos as `(beat, note or chord, beats)`, by fighter. Only a fighter of [`SOLO_CHORDS`] may have a
+    /// chord in its solo.
+    pub solos: BTreeMap<String, Vec<(f64, SoloNote, f64)>>,
     /// The notes each fighter plays as its name slams in.
     pub title_hits: BTreeMap<String, Vec<i32>>,
     /// The kit's `MIX` (format 2): a bus's `(gain, reverb send)` in the master instead of its own, by bus name.
@@ -181,6 +190,47 @@ impl PartialEq for OptionValue {
             _ => false,
         }
     }
+}
+
+/// What one entry of a solo plays: one note (the kit's number, written `[beat, note, beats]`) or a chord (the kit's
+/// tuple of notes, written `[beat, [note, note, ...], beats]`, in the config's order: low string first for a
+/// strum).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum SoloNote {
+    /// One MIDI note.
+    Note(i32),
+    /// Several MIDI notes played together (at least one).
+    Chord(Vec<i32>),
+}
+
+impl SoloNote {
+    /// The entry's notes: the one note, or the chord's in order.
+    pub fn notes(&self) -> &[i32] {
+        match self {
+            SoloNote::Note(n) => std::slice::from_ref(n),
+            SoloNote::Chord(ns) => ns,
+        }
+    }
+
+    /// The single note, or `None` for a chord.
+    pub fn single(&self) -> Option<i32> {
+        match self {
+            SoloNote::Note(n) => Some(*n),
+            SoloNote::Chord(_) => None,
+        }
+    }
+}
+
+impl From<i32> for SoloNote {
+    fn from(n: i32) -> SoloNote {
+        SoloNote::Note(n)
+    }
+}
+
+/// A solo of single notes, `(beat, midi note, beats)` each, as solo entries (the kit's sketch, `default_solo`, and
+/// most fighters' solos are these).
+pub fn solo_of_notes(notes: &[(f64, i32, f64)]) -> Vec<(f64, SoloNote, f64)> {
+    notes.iter().map(|&(b, n, d)| (b, SoloNote::Note(n), d)).collect()
 }
 
 /// The picture's seeds and the title card's opt-ins.
@@ -450,12 +500,35 @@ impl Music {
         for (name, solo) in &self.solos {
             fighting("music.solos", name)?;
             let field = path("music.solos", name);
-            for (i, &(beat, note, beats)) in solo.iter().enumerate() {
+            for (i, (beat, note, beats)) in solo.iter().enumerate() {
+                let (beat, beats) = (*beat, *beats);
                 let f = format!("{field}[{i}]");
                 if !beat.is_finite() || beat < 0.0 {
                     return Err(err(f, format!("the beat must be 0 or more, found {beat:?}")));
                 }
-                check_midi(note, &f)?;
+                if let SoloNote::Chord(notes) = note {
+                    if !SOLO_CHORDS.contains(&name.as_str()) {
+                        return Err(err(
+                            f,
+                            format!(
+                                "a chord, but {name}'s solo plays one note at a time (the kit's {name} part stops \
+                                 on a chord; only {} can strum one)",
+                                SOLO_CHORDS.join(", ")
+                            ),
+                        ));
+                    }
+                    if notes.is_empty() {
+                        return Err(err(f, "a chord needs at least one note"));
+                    }
+                }
+                match note {
+                    SoloNote::Note(n) => check_midi(*n, &f)?,
+                    SoloNote::Chord(ns) => {
+                        for (j, &n) in ns.iter().enumerate() {
+                            check_chord_note(n, j, &f)?;
+                        }
+                    }
+                }
                 if !beats.is_finite() || beats <= 0.0 {
                     return Err(err(f, format!("the length must be above 0, found {beats:?}")));
                 }
@@ -586,6 +659,18 @@ fn check_midi(n: i32, field: &str) -> Result<(), FightFileError> {
         Ok(())
     } else {
         Err(err(field, format!("{n} is not a MIDI note (0 to 127)")))
+    }
+}
+
+/// Note `j` of a chord in a solo is a MIDI note (the field is the solo entry's; the message says which note).
+fn check_chord_note(n: i32, j: usize, field: &str) -> Result<(), FightFileError> {
+    if (0..=127).contains(&n) {
+        Ok(())
+    } else {
+        Err(err(
+            field,
+            format!("note {} of the chord: {n} is not a MIDI note (0 to 127)", j + 1),
+        ))
     }
 }
 

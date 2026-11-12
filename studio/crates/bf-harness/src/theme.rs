@@ -88,14 +88,8 @@ pub fn config_fight_file(c: &Value, rec: &Recording) -> FightFile {
     }
     if let Some(solos) = c.get("solos").and_then(Value::as_object) {
         for (k, v) in solos {
-            let notes = list(v)
-                .iter()
-                .map(|n| {
-                    let n = list(n);
-                    (num(&n[0]), n[1].as_i64().expect("a MIDI note") as i32, num(&n[2]))
-                })
-                .collect();
-            ff.music.solos.insert(k.clone(), notes);
+            // single notes, and a chord as a list of notes (ACOUSTIC's strums)
+            ff.music.solos.insert(k.clone(), crate::refs::solo(v));
         }
     }
     if let Some(hits) = c.get("title_hits").and_then(Value::as_object) {
@@ -569,8 +563,18 @@ mod tests {
         let ff = config_fight_file(&c, &rec);
         assert_eq!(ff.music.mix.len(), 2);
         assert_eq!(ff.music.mix["sousa"], (1.45, 0.10));
-        assert_eq!(ff.music.solos["TROMBONE"], vec![(0.0, 40, 0.5), (0.5, 47, 1.0)]);
+        assert_eq!(
+            ff.music.solos["TROMBONE"],
+            bf_core::fightfile::solo_of_notes(&[(0.0, 40, 0.5), (0.5, 47, 1.0)])
+        );
         assert_eq!(ff.music.title_hits["TROMBONE"], vec![40, 52, 59]);
+        // a chord in a solo (the export writes the kit's tuple as a list of notes) reaches the fight file as one
+        c["solos"] = serde_json::json!({"TROMBONE": [[0.0, 40, 0.5], [3.0, [40, 47, 52], 1.0]]});
+        let ff = config_fight_file(&c, &rec);
+        assert_eq!(
+            ff.music.solos["TROMBONE"][1],
+            (3.0, bf_core::fightfile::SoloNote::Chord(vec![40, 47, 52]), 1.0)
+        );
         // without them: the base fight file's, for the config's fighters
         let (c, rec) = config(None);
         let base = config_fight_file(&c, &rec);

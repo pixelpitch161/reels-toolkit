@@ -9,10 +9,11 @@
 //! giant slow strum over the low E. Every note is its Pixel Pitch voice through `M.note`. The part reads the run's
 //! events, nothing of its look.
 //!
-//! The kit's `solo` also strums a chord where the config's `SOLO` entry is a tuple; a fight file's solo holds single
-//! notes only (`music.solos`), so that branch has nothing to play here.
+//! The solo picks each single note and strums each chord (the config's `SOLO` entry whose note is a tuple: a fight
+//! file's `[beat, [note, ...], beats]`), down on the beat and up on the off-beats.
 
 use bf_core::dmath;
+use bf_core::fightfile::SoloNote;
 use bf_core::harmony::{HarmonyError, parse_chord};
 use bf_core::py::{py_max, py_min, round_half_even, round_nd};
 use bf_sound::SRF;
@@ -458,16 +459,27 @@ impl Sound for AcousticSound {
         Ok(())
     }
 
-    /// The fight file's solo: each number a picked note, up to the reassembly.
+    /// The fight file's solo, up to the reassembly: a chord is a strum (up on the off-beats), a number a picked
+    /// note.
     fn solo(&self, ctx: &MusicCtx, _: &dyn Bed, mix: &mut Mix, t0: f64) -> Played {
         let grid = &ctx.show.grid;
-        for (bt, m, d) in ctx.solo(self.name(ctx))? {
+        for (bt, m, d) in ctx.solo_entries(self.name(ctx))? {
             let ts = t0 + bt * grid.beat;
             if ts > grid.t_reassemble - 0.05 {
                 break;
             }
-            let x = self.note(ctx, f64::from(m), py_max(0.1, d * grid.beat * 0.9), 0.8, 0.9)?;
-            mix.place("solo", &Sig::Mono(x), ts, 0.48, 0.0);
+            match m {
+                // self.strum(m, 0.9, 0.010, up=(bt % 1) > 0.1, dur=max(0.12, d * T.BEAT), cap=1.0) at 0.40 (a
+                // beat is never negative, so Python's % is Rust's)
+                SoloNote::Chord(ch) => {
+                    let x = self.strum(ctx, &ch, 0.9, 0.010, (bt % 1.0) > 0.1, py_max(0.12, d * grid.beat), 1.0)?;
+                    mix.place("solo", &Sig::Mono(x), ts, 0.40, 0.0);
+                }
+                SoloNote::Note(m) => {
+                    let x = self.note(ctx, f64::from(m), py_max(0.1, d * grid.beat * 0.9), 0.8, 0.9)?;
+                    mix.place("solo", &Sig::Mono(x), ts, 0.48, 0.0);
+                }
+            }
         }
         Ok(())
     }

@@ -2,6 +2,7 @@
 //! `T.line_at` (with the override windows of #53), `T.SOLO` (the fight file's solo, else the kit's sketch) and
 //! the recorded per-frame values (`RUN[key][P.sim_i(t), k]`).
 
+use bf_core::fightfile::{SoloNote, solo_of_notes};
 use bf_core::harmony::HarmonyError;
 use bf_core::lines::DEFAULT_LINE_PER_BAR;
 use bf_core::recording::Array;
@@ -64,13 +65,37 @@ impl MusicCtx<'_> {
         }
     }
 
-    /// `T.SOLO[name]`: fighter `name`'s victory solo as `(beat, midi note, beats)`: the fight file's, else the
-    /// kit's sketch (`default_solo`: a 2-bar motif on the first bar's chord in the fighter's register).
+    /// `T.SOLO[name]` for a part that plays one note at a time: fighter `name`'s victory solo as `(beat, midi
+    /// note, beats)`: the fight file's, else the kit's sketch (`default_solo`: a 2-bar motif on the first bar's
+    /// chord in the fighter's register). A part that can strum a chord reads [`MusicCtx::solo_entries`].
+    ///
+    /// # Errors
+    /// Where Python raises: `name` is not a fighter of this fight, or its register holds no tone of the first
+    /// bar's chord; or the solo holds a chord (the kit's single-note parts stop on a tuple of notes; a fight file
+    /// that passed `validate` has a chord only in the solo of a fighter of
+    /// [`bf_core::fightfile::SOLO_CHORDS`]).
+    pub fn solo(&self, name: &str) -> Result<Vec<(f64, i32, f64)>, MusicError> {
+        const H: &str = "solo";
+        self.solo_entries(name)?
+            .into_iter()
+            .enumerate()
+            .map(|(i, (b, n, d))| match n.single() {
+                Some(n) => Ok((b, n, d)),
+                None => Err(MusicError::new(
+                    H,
+                    format!("{name}'s solo: entry {i} is a chord, and {name}'s part plays one note at a time"),
+                )),
+            })
+            .collect()
+    }
+
+    /// `T.SOLO[name]` as it is: each entry `(beat, note or chord, beats)`: the fight file's, else the kit's sketch
+    /// (single notes).
     ///
     /// # Errors
     /// Where Python raises: `name` is not a fighter of this fight, or its register holds no tone of the first
     /// bar's chord.
-    pub fn solo(&self, name: &str) -> Result<Vec<(f64, i32, f64)>, MusicError> {
+    pub fn solo_entries(&self, name: &str) -> Result<Vec<(f64, SoloNote, f64)>, MusicError> {
         const H: &str = "solo";
         let k = self.side(H, name)?;
         match self.ff.music.solos.get(name) {
@@ -78,6 +103,7 @@ impl MusicCtx<'_> {
             None => self
                 .harmony
                 .default_solo(self.cfg[k].register)
+                .map(|s| solo_of_notes(&s))
                 .map_err(|e| MusicError::new(H, format!("{name}'s solo: {e}"))),
         }
     }
@@ -108,6 +134,7 @@ impl MusicCtx<'_> {
 #[cfg(test)]
 mod tests {
     use bf_core::event::Value;
+    use bf_core::fightfile::{SoloNote, solo_of_notes};
     use bf_core::recording::Array;
 
     use crate::music::MusicCtx;
@@ -199,7 +226,8 @@ mod tests {
         let ep = episode();
         let (ctx, _) = context(&ep);
         let (cfg, voices) = (ctx.cfg, ctx.voices.clone());
-        assert_eq!(ctx.solo("FLUTE").unwrap(), ep.ff.music.solos["FLUTE"]);
+        assert_eq!(solo_of_notes(&ctx.solo("FLUTE").unwrap()), ep.ff.music.solos["FLUTE"]);
+        assert_eq!(ctx.solo_entries("FLUTE").unwrap(), ep.ff.music.solos["FLUTE"]);
         assert_eq!(ctx.solo("TROMBONE").unwrap().len(), 22);
         assert_eq!(
             ctx.solo("PIANO").unwrap_err().to_string(),
@@ -209,7 +237,7 @@ mod tests {
         // Without one in the fight file: `T.default_solo(name)`, as the kit printed it for the episode.
         let mut ff = ep.ff.clone();
         ff.music.solos.clear();
-        let ctx = MusicCtx::new(&ep.show, &ep.rec, &ff, cfg, voices, Vec::new()).unwrap();
+        let ctx = MusicCtx::new(&ep.show, &ep.rec, &ff, cfg, voices.clone(), Vec::new()).unwrap();
         let notes = |solo: Vec<(f64, i32, f64)>| solo.iter().map(|n| n.1).collect::<Vec<_>>();
         assert_eq!(
             notes(ctx.solo("FLUTE").unwrap()),
@@ -220,6 +248,19 @@ mod tests {
             [47, 52, 55, 59, 55, 52, 59, 55, 52, 47, 47]
         );
         assert_eq!(ctx.solo("FLUTE").unwrap()[6], (3.0, 91, 1.0));
+        drop(ctx);
+        // A chord: `solo_entries` has it as written, `solo` (the single-note parts) stops on it as the kit does.
+        let mut ff = ep.ff.clone();
+        ff.music.solos.get_mut("TROMBONE").unwrap()[2].1 = SoloNote::Chord(vec![40, 47, 52]);
+        let ctx = MusicCtx::new(&ep.show, &ep.rec, &ff, cfg, voices, Vec::new()).unwrap();
+        assert_eq!(
+            ctx.solo_entries("TROMBONE").unwrap()[2],
+            (1.0, SoloNote::Chord(vec![40, 47, 52]), 1.0)
+        );
+        assert_eq!(
+            ctx.solo("TROMBONE").unwrap_err().to_string(),
+            "solo: TROMBONE's solo: entry 2 is a chord, and TROMBONE's part plays one note at a time"
+        );
     }
 
     #[test]

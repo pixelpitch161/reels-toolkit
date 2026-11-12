@@ -361,11 +361,11 @@ impl Show {
         }
     }
 
-    /// picture.py `SOLO_T`: the start of each note of a solo `[(beat, midi, beats)]` (the winner's, from the fight
+    /// picture.py `SOLO_T`: the start of each entry of a solo `[(beat, note or chord, beats)]` (the winner's, from the fight
     /// file or the kit's default), `T_SOLO + beat * BEAT`.
-    pub fn solo_times(&self, solo: &[(f64, i32, f64)]) -> Vec<f64> {
+    pub fn solo_times<N>(&self, solo: &[(f64, N, f64)]) -> Vec<f64> {
         solo.iter()
-            .map(|&(bt, _, _)| self.t_solo + bt * self.grid.beat)
+            .map(|(bt, _, _)| self.t_solo + bt * self.grid.beat)
             .collect()
     }
 }
