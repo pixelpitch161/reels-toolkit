@@ -18,6 +18,12 @@
    "export": "theme_hot_jazz"
   },
   {
+   "path": "themes/hot_jazz/trumpet_vs_clarinet.bfrec",
+   "sha256": "dab138e6bc37afb83134e8838882ea2226fe838aac6d6fd86fb457a5c98a7b1a",
+   "bytes": 139040,
+   "export": "theme_hot_jazz"
+  },
+  {
    "path": "themes/hot_jazz/variants/key.bfrec",
    "sha256": "dab138e6bc37afb83134e8838882ea2226fe838aac6d6fd86fb457a5c98a7b1a",
    "bytes": 139040,

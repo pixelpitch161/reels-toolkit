@@ -203,7 +203,7 @@
    ]
   },
   {
-   "appended": "KEY = 'D'\nSCALE = 'minor'\nCHORDS = ['Dm', 'A', 'Dm', 'Gm', 'C', 'F', 'Bb', 'Gm', 'A', 'A', 'Dm', 'Gm', 'C', 'F', 'Bb', 'Gm', 'A', 'A', 'Dm', 'Gm', 'C', 'F', 'Bb', 'Gm', 'A', 'A', 'Dm', 'Gm', 'C', 'F', 'Bb', 'Gm', 'A', 'A', 'Dm', 'Gm']\n",
+   "appended": "KEY = 'D'\nSCALE = 'minor'\nLOOP = ['Dm', 'Gm', 'C', 'F', 'Bb', 'Gm', 'A', 'A']\nCHORDS = ['Dm', 'A', 'Dm', 'Gm', 'C', 'F', 'Bb', 'Gm', 'A', 'A', 'Dm', 'Gm', 'C', 'F', 'Bb', 'Gm', 'A', 'A', 'Dm', 'Gm', 'C', 'F', 'Bb', 'Gm', 'A', 'A', 'Dm', 'Gm', 'C', 'F', 'Bb', 'Gm', 'A', 'A', 'Dm', 'Gm']\n",
    "bpm": 141.63934426229508,
    "buses": ["tuba", "guitar", "drums", "fx"],
    "config": "ballfight_trumpet_vs_clarinet",

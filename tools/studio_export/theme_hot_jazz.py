@@ -18,6 +18,7 @@ SPEC = dict(
     name='hot_jazz',
     voicings=('voicing',),
     configs=('ballfight_trumpet_vs_clarinet',),
+    recordings_in_cache=True,
 )
 
 EXPORTS = {'theme_hot_jazz': lambda: m3refs.theme_refs(SPEC)}

@@ -82,8 +82,6 @@ pub const PLUCK_BRIGHT: f64 = 0.55;
 pub const PLUCK_RING: f64 = 0.994;
 /// `chop`'s default `dur`.
 pub const CHOP_DUR: f64 = 0.15;
-/// `tuba`'s default velocity.
-pub const TUBA_VEL: f64 = 0.9;
 
 /// Python's `int(x)` for a length: cut toward zero.
 fn length(x: f64) -> usize {
