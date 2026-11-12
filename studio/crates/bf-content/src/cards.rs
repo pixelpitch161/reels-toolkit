@@ -310,9 +310,27 @@ mod tests {
 
     #[test]
     fn every_theme_has_a_card() {
+        // every offered theme's card is filled in: a name, words, a key and scale, a tempo range, and every chord
+        // loop (its own and its presets') of 4 or 8 chords
         for name in theme_names() {
-            assert!(theme_card(name).is_some(), "{name} has no card");
+            let t = theme_card(name).unwrap_or_else(|| panic!("{name} has no card"));
+            assert!(!t.display.is_empty() && !t.text.is_empty(), "{name}");
+            assert!(!t.key.is_empty() && !t.scale.is_empty(), "{name}");
+            assert!(0 < t.bars.0 && t.bars.0 <= t.bars.1, "{name}: {:?}", t.bars);
+            assert!(!t.chord_loops.is_empty(), "{name} has no chord loop");
+            for l in t
+                .chord_loops
+                .iter()
+                .copied()
+                .chain(t.presets.iter().map(|p| p.chord_loop))
+            {
+                assert!([4, 8].contains(&l.len()), "{name}: {l:?}");
+            }
         }
+        let mut shown: Vec<&str> = theme_names().iter().map(|n| theme_card(n).unwrap().display).collect();
+        shown.sort_unstable();
+        shown.dedup();
+        assert_eq!(shown.len(), theme_names().len(), "two themes show the same name");
         let t = theme_card("big_top").expect("the big top");
         assert_eq!(t.display, "Big top");
         assert_eq!(

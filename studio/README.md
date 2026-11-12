@@ -119,7 +119,9 @@ ballfight bench   fights/flute_vs_trombone.toml [--out <folder>] [--only fights,
 `bf-app` is BALLFIGHT Studio itself. `cargo build --release -p bf-app` makes `target/release/ballfight-studio.exe`;
 double-click it (or start it with no option) for the real app on the real engine: pick the match-up, balance it,
 search seeds, choose one with its picture and sound, then queue the video. Videos go to `Videos\BALLFIGHT` unless
-Settings says otherwise. Today it offers all 20 kit fighters. There is no installer yet (milestone 6).
+Settings says otherwise. Today it offers all 20 kit fighters and all 14 kit themes; a pair is offered only the
+themes whose music has every hit its fighters' parts play (no Dark disco or Heist for a pair with the TROMBONE,
+ORGAN, TUBA, EUPHONIUM or HORN, which play a big drum hit those two lack). There is no installer yet (milestone 6).
 `--fixtures` runs the same window on sample data, `--data-dir <folder>` keeps its settings, queue and cache in
 another folder, and `--smoke` opens it, paints 30 frames and closes it. Details: `crates/bf-app/README.md`.
 ## Determinism

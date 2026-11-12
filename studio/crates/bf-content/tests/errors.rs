@@ -13,7 +13,9 @@ use common::EPISODE;
 
 #[test]
 fn the_registry_lists_the_themes() {
-    assert_eq!(theme_names(), ["big_top"]);
+    // every kit theme is offered, the big top (the starting pair's) first
+    let offered = theme_names();
+    assert_eq!((offered.len(), offered[0]), (14, "big_top"));
     assert_eq!(validate(&EPISODE.ff), Ok(()));
 }
 
