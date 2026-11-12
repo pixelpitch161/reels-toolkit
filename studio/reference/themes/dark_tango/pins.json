@@ -12,6 +12,12 @@
    "export": "theme_dark_tango"
   },
   {
+   "path": "themes/dark_tango/cello_vs_contrabass.bfrec",
+   "sha256": "d200903c65e751a98521118f1d4935c49cb0a3c42890218862cb0ed0fcf44d35",
+   "bytes": 107361,
+   "export": "theme_dark_tango"
+  },
+  {
    "path": "themes/dark_tango/hooks.npz",
    "sha256": "9108d2194d8ed3d2ef4281113588e936c667d0829bb62f060a27786e5dda209f",
    "bytes": 7073855,

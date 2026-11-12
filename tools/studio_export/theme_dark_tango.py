@@ -12,7 +12,7 @@ studio/reference/themes/dark_tango/ (python -m tools.studio_export theme_dark_ta
                     FIGHT!, on a beat, a repeat, two in one beat, one too close to the next beat to cut, one at the
                     K.O.), and the times CELLO's own `stops()` gives on the config's run (`cello`: its rope slams, on
                     the left side only); each with the 16-bit master's SHA-256, the buses, the master's RMS, the notes
-                    and the noise stream (stems cached); and the config's ROLES, which the bed's `theme()` reads
+                    and the noise stream (stems cached), and the fighter whose line the bed's `theme()` takes
     bed.json        the bed alone's RMS per bus; a second tempo and a second key (recordings cached); `boom` and `hit`
                     called directly at three times with three gains (vectors cached)
 
@@ -37,7 +37,7 @@ def fixed_stops(T, t_ko):
 def _stops_child(cfg_folder, stems_out, which):
     """in a fresh interpreter: the bed alone on the config in `cfg_folder` (both fighters the kit's base Sound),
     each Sound given a `stops()` returning the `which` variant's times; the soundtrack's summary, the times given,
-    the times the bed kept (Bed.stop_times) and the config's ROLES"""
+    the times the bed kept (Bed.stop_times) and the theme line (Bed.theme())"""
     MP.fresh_check(cfg_folder)
     E, _ = common.kit()
     E.load(cfg_folder)
@@ -63,14 +63,14 @@ def _stops_child(cfg_folder, stems_out, which):
     out = MP._soundtrack(M, B, D, stems_out)
     out.update(seed=int(M.EP.seed), names=list(M.NAMES), t_fight=common.hexf(float(M.T.T_FIGHT)),
                t_ko=common.hexf(float(M.T_KO)), given=[[common.hexf(float(t)) for t in g] for g in given],
-               kept=[common.hexf(float(t)) for t in kept], roles=dict(M.T.ROLES), theme_line=M.bed.theme())
+               kept=[common.hexf(float(t)) for t in kept], theme_line=M.bed.theme())
     return out
 
 
 def stops(folder, export, module):
     """stops.json: the bed alone under two base Sounds that ask for stops (the fixed times, then CELLO's own)"""
     cfg_folder = m3refs.theme_config_folder(NAME, CONFIG)
-    variants, roles = [], None
+    variants = []
     for which, why in (('fixed', 'fixed times on both sides: before FIGHT! and at the K.O. (dropped), FIGHT! itself, '
                                  'a time on a beat, a repeat, two in one beat, one 30 ms before a beat (cut skipped)'),
                        ('cello', "CELLO's own stops() on the config's run (its rope slams), on the left side")):
@@ -78,7 +78,6 @@ def stops(folder, export, module):
         got = MP.fresh(_stops_child, cfg_folder, path, which)
         m3refs.pin(path, export)
         assert got['kept'], f'{which}: the bed kept no stop'
-        roles = got.pop('roles') if roles is None else roles
         variants.append(dict(name=which, why=why, stems_cache=f'{folder}/stops/{which}.npz',
                              **{k: got[k] for k in ('given', 'kept', 'master_sha256', 'buses', 'stems', 'notes',
                                                     'noise', 'windows', 'theme_line')},
@@ -90,9 +89,9 @@ def stops(folder, export, module):
               f'fighters kit/fighters/base.py Sound, each given a stops() that returns `given` (left side, right side; '
               f'floats as float.hex()); `kept` is what stop_times() made of them (sorted, T_FIGHT <= t < T_KO); the '
               f'16-bit master\'s SHA-256, the buses, the stems, the master\'s RMS, the first-time notes and the noise '
-              f'stream as bed.json\'s variants (stem windows cached); `roles` is the config\'s ROLES (the bed\'s '
-              f'theme() takes the line of the fighter whose role is melody: `theme_line`)',
-        tool=module, format=1, theme=NAME, config=CONFIG, roles=roles, variants=variants), module)
+              f'stream as bed.json\'s variants (stem windows cached); `theme_line` is the fighter whose line the bed\'s '
+              f'theme() takes (the melody role: theme.json\'s `roles` and `lines`)',
+        tool=module, format=1, theme=NAME, config=CONFIG, variants=variants), module)
 
 
 SPEC = dict(
@@ -100,6 +99,7 @@ SPEC = dict(
     voicings=('voicing',),
     configs=(CONFIG,),
     extra=stops,
+    recordings_in_cache=True,
 )
 
 EXPORTS = {'theme_dark_tango': lambda: m3refs.theme_refs(SPEC)}

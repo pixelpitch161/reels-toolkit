@@ -10,7 +10,7 @@ use bf_content::themes::dark_tango::DarkTangoClassic;
 use bf_core::fightfile::FightFile;
 use bf_core::recording::Recording;
 use bf_core::show::Show;
-use bf_harness::refs::{committed_recording, hexf, json, list, report, text};
+use bf_harness::refs::{hexf, json, list, named_recording, report, text};
 use bf_harness::sound::{compare, summarise, windows_against};
 use bf_harness::theme::{bed_voices, config_fight_file};
 use bf_sound::music::MusicCtx;
@@ -38,32 +38,15 @@ fn times(v: &Value) -> Vec<f64> {
     list(v).iter().map(hexf).collect()
 }
 
-/// The reference config's recording and fight file, with the config's ROLES and LINES (the bed's `theme()` reads
-/// them; `stops.json` holds the roles, `theme.json` the lines).
+/// The reference config's recording and fight file (the harness's: with the config's LINES and ROLES, which the
+/// bed's `theme()` reads).
 fn config() -> (Value, Recording, FightFile) {
     let theme = json(FOLDER, "theme.json");
     let doc = json(FOLDER, "stops.json");
     let c = list(&theme["configs"])[0].clone();
     assert_eq!(c["config"], doc["config"]);
-    let rec = committed_recording(text(&c["recording"]), None);
-    let mut ff = config_fight_file(&c, &rec);
-    ff.music.roles = doc["roles"]
-        .as_object()
-        .expect("roles")
-        .iter()
-        .map(|(k, v)| (k.clone(), text(v).to_string()))
-        .collect();
-    ff.music.lines = c["lines"]
-        .as_object()
-        .expect("lines")
-        .iter()
-        .map(|(k, v)| {
-            (
-                k.clone(),
-                list(v).iter().map(|n| n.as_i64().map(|n| n as i32)).collect(),
-            )
-        })
-        .collect();
+    let rec = named_recording(&c["recording"], None);
+    let ff = config_fight_file(&c, &rec);
     (doc, rec, ff)
 }
 

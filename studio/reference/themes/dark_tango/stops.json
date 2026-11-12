@@ -1,11 +1,7 @@
 {
- "about": "kit/moods/dark_tango.py Bed.stop_times / apply_stops: the bed alone on ballfight_cello_vs_contrabass's recording with both fighters kit/fighters/base.py Sound, each given a stops() that returns `given` (left side, right side; floats as float.hex()); `kept` is what stop_times() made of them (sorted, T_FIGHT <= t < T_KO); the 16-bit master's SHA-256, the buses, the stems, the master's RMS, the first-time notes and the noise stream as bed.json's variants (stem windows cached); `roles` is the config's ROLES (the bed's theme() takes the line of the fighter whose role is melody: `theme_line`)",
+ "about": "kit/moods/dark_tango.py Bed.stop_times / apply_stops: the bed alone on ballfight_cello_vs_contrabass's recording with both fighters kit/fighters/base.py Sound, each given a stops() that returns `given` (left side, right side; floats as float.hex()); `kept` is what stop_times() made of them (sorted, T_FIGHT <= t < T_KO); the 16-bit master's SHA-256, the buses, the stems, the master's RMS, the first-time notes and the noise stream as bed.json's variants (stem windows cached); `theme_line` is the fighter whose line the bed's theme() takes (the melody role: theme.json's `roles` and `lines`)",
  "config": "ballfight_cello_vs_contrabass",
  "format": 1,
- "roles": {
-  "CELLO": "melody",
-  "CONTRABASS": "bass"
- },
  "theme": "dark_tango",
  "tool": "tools.studio_export.theme_dark_tango",
  "variants": [
