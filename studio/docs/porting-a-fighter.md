@@ -223,6 +223,21 @@ config's recording and its bed alone: the 16-bit master), `voicings.json` (12 ro
 the optional hooks the class defines, each called at three times with three gains, vectors cached),
 `exceptions.toml` and the cache. Then `cache themes/<name>`, `budget`, and `tests/theme_<name>.rs`.
 
+The framework does the rest, so a theme module needs no wrapper:
+- **Theme options.** A config's `TRAILER`, `DRUMLINE` or `PLUGGED` (`m3refs.THEME_OPTIONS`, every config name the
+  kit moods read besides the music) is recorded in theme.json as `theme_options` under the fight file's names
+  (`sequel`, `bass_drums`, `after_ko`, `plugged`), and `config_fight_file` applies it. A config without one has no
+  `theme_options` (the theme's defaults). A key or value the mood cannot take stops the export.
+- **Hooks.** Each `HOOK_CALLS` argument reaches the kit method under its own name (`m3parts.HOOK_KWARGS`: `chord` is
+  `ch`, `braam` is `braam_dur`). An argument the method does not take, or a parameter the call does not give, stops
+  the export unless `HOOK_OMITTED` lists it with why (`ring`, for the `hit` of dark_disco, heist and horror_trap).
+- **Stem windows** at the end of the soundtrack record the samples there are (`m3parts.window_length`).
+- **Big recordings (ruling M3-R43).** When the configs' kit recordings would take the folder over its budget, set
+  `recordings_in_cache=True`: each one not already committed elsewhere is the pinned cache file
+  `.cache/m3/themes/<name>/<config>.bfrec`, theme.json's `recording` is `{cache, sha256}`, and every gate (the
+  always-run ones too) reads it from the cache, failing with the `cache` command when it is absent. A pair gate
+  points at its theme's cached copy the same way, or sets `recording_in_cache=True` in its own SPEC.
+
 The bed alone never waits for fighters: a fighter whose voice is not ported yet gets a stand-in voice (it panics in
 plain words if the bed ever plays it), and `bed_alone_stand_ins` proves the bed plays no fighter voice at all. A theme
 whose bed itself plays a fighter's voice (hot jazz plays the TUBA's) waits for that fighter.

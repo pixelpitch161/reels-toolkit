@@ -836,6 +836,154 @@ def a_nan_rectangular_key_is_an_array():
            'it in JSON, which refuses the NaN'
 
 
+MOODS = ('baroque_storm', 'big_top', 'bossa_noir', 'brass_trailer', 'dark_disco', 'dark_drumline', 'dark_tango',
+         'heist', 'horror_trap', 'hot_jazz', 'mambo', 'prog_duel', 'second_line', 'stadium_rock')
+
+
+def _mood_source(mood):
+    with open(os.path.join(common.REPO, 'projects', 'ballfight', 'kit', 'moods', f'{mood}.py'), encoding='utf-8') as f:
+        return f.read()
+
+
+def every_option_the_moods_read_is_listed():
+    """m3refs.THEME_OPTIONS holds every config name a kit mood reads with getattr(T, '<NAME>', ...), under that
+    mood, and every key a dict option's mood reads from it"""
+    import re
+    moods = sorted(n[:-3] for n in os.listdir(os.path.join(common.REPO, 'projects', 'ballfight', 'kit', 'moods'))
+                   if n.endswith('.py') and n != '__init__.py')
+    assert tuple(moods) == MOODS, moods
+    read = {}
+    for mood in moods:
+        src = _mood_source(mood)
+        for name in re.findall(r"getattr\((?:self\.)?(?:M\.)?T, '([A-Z_]+)'", src):
+            read.setdefault(name, set()).add(mood)
+    assert set(read) == set(m3refs.THEME_OPTIONS), (sorted(read), sorted(m3refs.THEME_OPTIONS))
+    for name, (mood, names) in m3refs.THEME_OPTIONS.items():
+        assert read[name] == {mood}, (name, read[name])
+        if isinstance(names, dict):
+            src = _mood_source(mood)
+            var = re.findall(rf"(\w+) = getattr\(self\.T, '{name}', \{{\}}\)", src)
+            keys = set(re.findall(rf"getattr\(self\.T, '{name}', \{{\}}\)\.get\('(\w+)'", src))
+            for v in var:
+                keys |= set(re.findall(rf"\b{v}\.get\('(\w+)'", src))
+            assert keys == set(names), (name, keys, names)
+    return f"the 14 mood files read {', '.join(sorted(read))} besides the music; THEME_OPTIONS lists each with its " \
+           f"mood and keys"
+
+
+def theme_options_are_recorded_per_config():
+    """read_config records a config's theme options under the fight file's names (brass_trailer's rematch,
+    dark_drumline's bassdrum_vs_tuba, stadium_rock's electric_vs_acoustic); a config without any reads as before (no
+    key: the merged themes' theme.json keep their bytes); a key or value the mood cannot take stops the export"""
+    import json
+    import types
+    got = {c: m3refs.read_config(c).get('theme_options') for c in (
+        'ballfight_horn_vs_trombone_rematch', 'ballfight_bassdrum_vs_tuba', 'ballfight_electric_vs_acoustic',
+        'examples/trombone_vs_horn', 'ballfight_flute_vs_sousaphone')}
+    assert got == {'ballfight_horn_vs_trombone_rematch': {'sequel': True},
+                   'ballfight_bassdrum_vs_tuba': {'bass_drums': False, 'after_ko': True},
+                   'ballfight_electric_vs_acoustic': {'plugged': 'ELECTRIC'},
+                   'examples/trombone_vs_horn': None, 'ballfight_flute_vs_sousaphone': None}, got
+    for theme in ('big_top', 'baroque_storm', 'bossa_noir', 'dark_disco'):
+        with open(os.path.join(common.REFERENCE, 'themes', theme, 'theme.json'), encoding='utf-8') as f:
+            for c in json.load(f)['configs']:
+                facts = m3refs.read_config(c['config'])
+                assert 'theme_options' not in facts and 'theme_options' not in c, (theme, c['config'])
+                assert {k: c[k] for k in facts} == json.loads(json.dumps(facts)), (theme, c['config'])
+    fighters = ['ELECTRIC', 'ACOUSTIC']
+
+    def opts(mood, names):
+        return m3refs.theme_options_of(types.SimpleNamespace(**names), mood, fighters, 'a config')
+    assert opts('stadium_rock', dict(TRAILER=dict(sequel=True))) == {}, 'another mood\'s name: ignored, as by the kit'
+    assert opts('dark_drumline', dict(DRUMLINE=dict(after_ko=True))) == {'after_ko': True}
+    assert 'does not read' in exits(opts, 'dark_drumline', dict(DRUMLINE=dict(bass_drum=False)))
+    assert 'True or False' in exits(opts, 'brass_trailer', dict(TRAILER=dict(sequel=1)))
+    assert 'not a dict' in exits(opts, 'brass_trailer', dict(TRAILER=True))
+    assert 'not one of its fighters' in exits(opts, 'stadium_rock', dict(PLUGGED='FLUTE'))
+    return 'TRAILER, DRUMLINE and PLUGGED reach theme.json as sequel, bass_drums/after_ko and plugged; the merged ' \
+           'themes\' configs read exactly as committed'
+
+
+def every_hook_call_reaches_its_method():
+    """m3parts.hook_kwargs on every hook of the 14 kit moods: each recorded argument under the method's own name
+    (trailer_hit's braam as braam_dur, hit's chord as ch), nothing dropped but HOOK_OMITTED's (`ring` for the
+    moods whose hit has none), every parameter given; anything else stops the export"""
+    import importlib
+    from tools.studio_export import m3parts as MP
+    common.kit()
+    omitted = set()
+    n = 0
+    for mood in MOODS:
+        Bed = importlib.import_module(f'ballfight.kit.moods.{mood}').Bed
+        bed = Bed.__new__(Bed)
+        for hook in MP.HOOK_CALLS:
+            if not callable(getattr(bed, hook, None)):
+                continue
+            for args in MP.HOOK_CALLS[hook]:
+                kw = MP.hook_kwargs(hook, dict(args), getattr(bed, hook))
+                n += 1
+                dropped = {a for a in args if MP.HOOK_KWARGS.get(a, a) not in kw}
+                assert all((hook, a) in MP.HOOK_OMITTED for a in dropped), (mood, hook, dropped)
+                omitted |= {(mood, hook, a) for a in dropped}
+                if hook == 'trailer_hit':
+                    assert kw['braam_dur'] is args['braam'] and 'braam' not in kw, kw
+    assert omitted == {('dark_disco', 'hit', 'ring'), ('heist', 'hit', 'ring'), ('horror_trap', 'hit', 'ring')}, \
+        omitted
+
+    def hit(mix, t, ch, g=1.0):
+        pass
+
+    def two(mix, t, g, h):
+        pass
+    assert 'does not take' in exits(MP.hook_kwargs, 'boom', dict(t=1.0, g=0.5, extra=2), two)
+    assert 'gives no h' in exits(MP.hook_kwargs, 'boom', dict(t=1.0, g=0.5), two)
+    assert MP.hook_kwargs('hit', dict(t=1.0, chord='Em', g=0.5, ring=0.4), hit) == dict(t=1.0, ch='Em', g=0.5)
+    return f'{n} calls of the 14 moods\' hooks pass every argument (braam -> braam_dur, chord -> ch); only ring is ' \
+           f'dropped, for the hit of dark_disco, heist and horror_trap'
+
+
+def a_stem_window_past_the_end_is_cut():
+    """m3parts.window_length: a stem window records the samples the soundtrack has there (the cache keeps
+    x[i0:i0 + SR]): a whole second inside, fewer where the soundtrack ends inside it, none past the end"""
+    import numpy as np
+    from tools.studio_export import m3parts as MP
+    SR = MP.SR
+    na = 61 * SR
+    x = np.zeros((na, 2))
+    for i0 in (0, na - SR, na - SR + 1, int(round(60.7 * SR)), na, na + 5):
+        assert MP.window_length(i0, na) == len(x[i0:i0 + SR]), i0
+    assert MP.window_length(int(round(60.7 * SR)), na) == 14400 and MP.window_length(na - SR, na) == SR
+    return 'a window is SR samples long inside the soundtrack and as long as its cached slice at the end'
+
+
+def a_theme_recording_goes_to_the_cache():
+    """ruling M3-R43: SPEC.recordings_in_cache puts a theme config's kit recording in the pinned cache (theme.json:
+    dict(cache=, sha256=)); a pair gate points at its theme's cached copy (cached_copy) or, with
+    recording_in_cache, pins its own; specs without them are unchanged"""
+    import inspect
+    from tools.studio_export import theme_big_top
+    assert m3refs.theme_spec(theme_big_top.SPEC)['recordings_in_cache'] is False
+    assert m3refs.theme_spec(dict(name='x', recordings_in_cache=True))['recordings_in_cache'] is True
+    assert 'True or False' in exits(m3refs.theme_spec, dict(name='x', recordings_in_cache='yes'))
+    with scratch():
+        m3refs.set_run(m3refs.Run('export'))
+        folder = 'themes/brass_trailer'
+        path = m3refs.cache_bytes(folder, 'trombone_vs_horn.bfrec', b'a fight\n', 'theme_brass_trailer')
+        m3refs.finish(folder)
+        m3refs.set_run(None)
+        sha = manifest.sha256(path)
+        assert m3refs.cached_copy(sha, folder) == dict(cache=f'{folder}/trombone_vs_horn.bfrec', sha256=sha)
+        assert m3refs.cached_copy('0' * 64, folder) is None
+        assert m3refs.cached_copy(sha, 'themes/nobody') is None
+        assert not os.path.exists(m3refs.ref_dir(folder, 'trombone_vs_horn.bfrec'))
+    src = inspect.getsource(m3refs.theme_refs)
+    assert src.index("spec['recordings_in_cache']") < src.index('commit_bytes(folder, rec_name')
+    src = inspect.getsource(m3refs.episode_refs)
+    assert src.index("cached_copy(sha") < src.index("commit_bytes(folder, 'run.bfrec'")
+    return 'SPEC.recordings_in_cache pins a theme\'s config recordings (theme.json: cache and sha256); a pair ' \
+           'gate finds its theme\'s cached copy; no committed copy'
+
+
 CHECKS = (shard_takes_a_fighter_file, verify_finds_a_changed_byte_in_a_shard, check_pins_names_the_command,
           a_pin_never_moves_on_its_own, remake_makes_a_folder_again_whole, a_cache_run_writes_no_committed_file,
           a_port_never_points_at_another_port, budget_reports_an_overfull_fighter,
@@ -845,7 +993,9 @@ CHECKS = (shard_takes_a_fighter_file, verify_finds_a_changed_byte_in_a_shard, ch
           cfg_keys_follow_each_function, a_padded_sprite_is_declared_too,
           a_failed_part_ends_the_export_promptly, a_rolls_fight_goes_through_the_framework_alone,
           a_neutral_handicap_is_the_same_fight_either_way, a_big_left_recording_goes_to_the_cache,
-          a_left_file_finish_wrote_is_kept, a_nan_rectangular_key_is_an_array)
+          a_left_file_finish_wrote_is_kept, a_nan_rectangular_key_is_an_array,
+          every_option_the_moods_read_is_listed, theme_options_are_recorded_per_config,
+          every_hook_call_reaches_its_method, a_stem_window_past_the_end_is_cut, a_theme_recording_goes_to_the_cache)
 
 
 def main():
