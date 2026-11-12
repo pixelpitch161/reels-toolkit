@@ -15,7 +15,7 @@ const ROSTER_JSON: &str = include_str!("../data/roster.json");
 
 /// The fighters whose weapon and abilities the engine has ported, in no particular order (grows as fighters are
 /// ported).
-pub const PORTED: [&str; 14] = [
+pub const PORTED: [&str; 17] = [
     "FLUTE",
     "TROMBONE",
     "PIANO",
@@ -25,9 +25,12 @@ pub const PORTED: [&str; 14] = [
     "OBOE",
     "SOUSAPHONE",
     "TENOR SAX",
-    "BASSOON",
-    "TUBA",
+    "ALTO SAX",
     "BASS CLARINET",
+    "TUBA",
+    "CONTRABASS",
+    "BASSOON",
+    "HORN",
     "CELLO",
     "ACOUSTIC",
 ];
@@ -124,6 +127,7 @@ mod tests {
                 "TUBA",
                 "FLUTE",
                 "TROMBONE",
+                "HORN",
                 "ORGAN",
                 "ACOUSTIC",
                 "TRUMPET",
@@ -132,6 +136,8 @@ mod tests {
                 "BASS CLARINET",
                 "BASSOON",
                 "CELLO",
+                "CONTRABASS",
+                "ALTO SAX",
                 "TENOR SAX",
                 "SOUSAPHONE",
             ]

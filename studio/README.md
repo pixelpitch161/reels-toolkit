@@ -119,9 +119,9 @@ ballfight bench   fights/flute_vs_trombone.toml [--out <folder>] [--only fights,
 `bf-app` is BALLFIGHT Studio itself. `cargo build --release -p bf-app` makes `target/release/ballfight-studio.exe`;
 double-click it (or start it with no option) for the real app on the real engine: pick the match-up, balance it,
 search seeds, choose one with its picture and sound, then queue the video. Videos go to `Videos\BALLFIGHT` unless
-Settings says otherwise. Today it offers 14 of the 20 fighters (FLUTE, TROMBONE, PIANO, TUBA, ORGAN, ACOUSTIC,
-TRUMPET, CLARINET, OBOE, BASS CLARINET, BASSOON, CELLO, TENOR SAX, SOUSAPHONE); the others follow as they are
-ported. There is no installer yet (milestone 6).
+Settings says otherwise. Today it offers 17 of the 20 fighters (FLUTE, TROMBONE, PIANO, TUBA, HORN, ORGAN, ACOUSTIC,
+TRUMPET, CLARINET, OBOE, BASS CLARINET, BASSOON, CELLO, CONTRABASS, ALTO SAX, TENOR SAX, SOUSAPHONE); the others
+follow as they are ported. There is no installer yet (milestone 6).
 `--fixtures` runs the same window on sample data, `--data-dir <folder>` keeps its settings, queue and cache in
 another folder, and `--smoke` opens it, paints 30 frames and closes it. Details: `crates/bf-app/README.md`.
 ## Determinism
