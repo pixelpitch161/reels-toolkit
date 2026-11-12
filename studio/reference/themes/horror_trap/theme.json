@@ -1,0 +1,46 @@
+{
+ "about": "horror_trap: its reference configs, each with the kit's own recording of it and the bed alone (both fighters replaced at run time by kit/fighters/base.py Sound, which is silent): the SHA-256 of the 16-bit master's samples (little-endian int16, interleaved: what A.write writes after its header), the buses in the order the score made them, and the bed's class levels",
+ "cache_files": "cache files are under studio/reference/.cache/m3/ and pinned in pins.json",
+ "configs": [
+  {
+   "bed_alone": {
+    "bed": {
+     "buses": {
+      "808": [0.95, 0.04],
+      "drums": [1.2, 0.1],
+      "musicbox": [0.9, 0.5],
+      "strings": [0.6, 0.4],
+      "swell": [0.8, 0.35]
+     },
+     "comp": [0.17, 0.58],
+     "reverb": [2.4, 0.6, 0.18]
+    },
+    "buses": ["808", "drums", "musicbox", "fx", "strings", "swell"],
+    "master_sha256": "e4025fe88e6c9bb4f6988ac23621ea79dc4456f4a78a08ef44510dc2650f93c2",
+    "stems": ["808", "drums", "musicbox", "fx", "strings", "swell"]
+   },
+   "bpm": 140,
+   "chords": ["Em", "B", "Em", "Em", "C", "B", "Em", "Em", "Am", "B", "Em", "Em", "C", "B", "Em", "Em", "Am", "B", "Em", "Em", "C", "B", "Em", "Em", "Am", "B", "Em", "Em", "C", "B", "Em", "Em", "Am", "B", "C", "B"],
+   "config": "ballfight_bassclarinet_vs_bassoon",
+   "fighters": ["BASS CLARINET", "BASSOON"],
+   "intro": ["Em", "B"],
+   "key": "E",
+   "lines": {
+    "BASS CLARINET": [40, 40, 52, 40, 43, 40, 47, 40, 40, 40, 52, 40, 43, 46, 47, 48, 36, 36, 48, 36, 40, 36, 43, 42, 35, 35, 47, 35, 39, 42, 45, 39, 40, 40, 52, 40, 43, 40, 47, 40, 40, 40, 52, 47, 46, 45, 44, 44, 45, 45, 57, 45, 48, 45, 52, 51, 35, 35, 47, 35, 39, 41, 42, 39],
+    "BASSOON": [64, 67, 71, 67, 64, 63, 64, 67, 64, 67, 72, 71, 70, 69, 68, 67, 64, 67, 72, 67, 64, 67, 71, 72, 63, 66, 71, 66, 63, 66, 69, 71, 64, 67, 71, 67, 64, 63, 64, 67, 76, 75, 74, 73, 72, 71, 70, 71, 69, 72, 76, 72, 69, 68, 69, 72, 71, 69, 66, 63, 66, 69, 71, 63]
+   },
+   "loop": ["Em", "Em", "C", "B", "Em", "Em", "Am", "B"],
+   "loop_bpm": "0x1.1b47582192e2ap+7",
+   "mood": "horror_trap",
+   "n_bars": 36,
+   "recording": "themes/horror_trap/bassclarinet_vs_bassoon.bfrec",
+   "scale": "minor",
+   "seed": 4,
+   "t_ko": 50.20555555555555,
+   "tail": ["C", "B"],
+   "winner": 1
+  }
+ ],
+ "theme": "horror_trap",
+ "voicing_methods": []
+}

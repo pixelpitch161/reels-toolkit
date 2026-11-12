@@ -77,9 +77,28 @@ def _horn_ghosts(P, k, t, cam):
     return out
 
 
+def _euphonium_crisis(P, k, t, cam):
+    """kit/fighters/euphonium.py `Look.ball_sprite`: while IDENTITY CRISIS shows in its ball (`st['crisis']` above
+    0.5) the ball asks for the enemy's sprite at 0.8 x the ball's radius, at the ball's own yaw and the enemy's view
+    roll, instead of its own (which `asked` then skips)"""
+    S, R = P.S, P.R
+    st = P.fighter(k, t)
+    if not st['vis'] or st['scale'] < 0.05 or st.get('crisis', 0.0) <= 0.5:
+        return set()
+    sink = st.get('sink', 0.0)
+    pw = S.to_world(st['p'][0], st['p'][1], (R * (1 - 0.75 * sink) if sink else R) + st['lift'])
+    rp = R * cam.f / cam.to_cam(pw[None])[0][2] * st['scale']
+    if sink:
+        rp = rp * (1 - 0.35 * sink)
+    yc, sw, _ = P.CFG[k]['view']
+    yaw = yc + sw * math.sin(1.25 * st['p'][0] + 0.45 * st['p'][1])
+    e = 1 - k
+    return {(e, int(np.clip(round(rp * 0.80), 12, 30)), int(round(yaw / 6.0)) * 6, int(P.CFG[e]['view'][2]))}
+
+
 # by the module of a look's class (or of a class it derives from): fn(P, k, t, cam) -> the sprites its look asks kit.picture.sprite for at time t
-# beyond its ball's, as `asked` writes them (HORN's echo ghosts)
-LOOK_ASKS = dict(horn=_horn_ghosts)
+# beyond its ball's, as `asked` writes them (HORN's echo ghosts, EUPHONIUM's IDENTITY CRISIS)
+LOOK_ASKS = dict(horn=_horn_ghosts, euphonium=_euphonium_crisis)
 
 
 def really_asked(P, frames):

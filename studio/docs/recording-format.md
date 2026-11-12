@@ -667,12 +667,21 @@ just before a `lights_out` when LIGHTS OUT starts mid-whirl.
 <!-- kind:mortar -->
 #### `mortar` (weapon kind of EUPHONIUM)
 
-`fight.py` 2659 to 2766, 1243 to 1271. Not ported yet: its port fills this section in (the meaning of each field, as 6.2
-and 6.3 do for FLUTE and TROMBONE), from the lines below.
+`fight.py` 2659 to 2766 (`mortar_setup`, `predict`, `_shell`, `mortar_fire`, `mortar_tick`, `start_barrage`,
+`shells_step`), 1243 to 1271 (`shell_height`, `swat_shells`). Ported: `bf-sim/src/kinds/mortar.rs`, settings in
+`bf-core/src/roster/kinds/mortar.rs`.
 
 **Record keys.**
 
-- `SHELLS`: added to `rec` at `run()` 5817, written by `snap` 5564 to 5568:
+- `SHELLS` (only while a fighter shells: its weapon is a mortar, or either fighter has a `barrage` ability; `run()`
+  5810 and 5817): a ragged list a frame (not one of the kit's array keys) of every shell still in the air or landed
+  less than 0.6 s ago, in the order they were fired, each
+
+  `(owner, x0, y0, x1, y1, t0, t1, salvo, j, landed)` and, for a shell a lance swatted, its swat time `ts` as an 11th
+  field. `owner` the fighter that fired it (int); `x0, y0` where it was fired from (the owner's ball then); `x1, y1`
+  where it lands (clipped 0.2 inside the ropes); `t0` when it was fired, `t1` when it lands (s); `salvo` its salvo's
+  number (int, counted from 0 over the fight, a barrage's too); `j` its index in the salvo (int); `landed` 0 in the
+  air, 1 landed and missed, 2 landed and hit, 3 swatted (int).
 
   ```python
   if 'SHELLS' in rec:                                 # #38, only recorded when a fighter uses 'mortar' / 'barrage'
@@ -682,13 +691,18 @@ and 6.3 do for FLUTE and TROMBONE), from the lines below.
                             for Sh in self.shells])
   ```
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+**Events.**
 
-- 2710: `self.ev('mortar', k, n, salvo, float(tgt[0]), float(tgt[1]))`
-- 2754: `self.damage(Sh['owner'], o, Sh['dmg'], 'shell', float(O.p[0]), float(O.p[1]), Sh['j'])`
-- 2758: `self.ev('shell', Sh['owner'], float(Sh['p1'][0]), float(Sh['p1'][1]), int(landed), Sh['salvo'], Sh['j'], Sh['kind'])`
-- 1270: `self.ev('swat_shell', k, Sh['owner'], Sh['salvo'], Sh['j'], float(p[0]), float(p[1]))`
+| Kind | Fields after `who` | When |
+| --- | --- | --- |
+| `mortar` | shells (int), salvo (int), `x, y` the aim (shell 0's spot) | a salvo is fired (2710), on the grid or by a copy |
+| `shell` | `x, y` where it landed, 1 if it hit else 0, salvo (int), `j` (int), `mortar` or `barrage` | a shell lands (2758) |
+| `swat_shell` | the shell's owner (int), salvo (int), `j` (int), `x, y` where the lance met it | a lance swats a shell (1270; rule `swat_shells`) |
+
+`hit`, elements 7 and 8 (6.2): what hit is `shell`, sub is the shell's index `j`; contact x and y are the victim's
+centre (2754). A shielded victim gives a `block` (what blocked `shell`) and is still knocked away from the impact;
+a victim whirling round a peg is never knocked. The first landed hit of a
+mortar salvo grows the owner's volley (`n_vol`, by `grow` up to `n_max`) when the owner's weapon is a mortar.
 
 <!-- /kind:mortar -->
 
@@ -1044,47 +1058,50 @@ along the line and out of it sideways), `blast` (4925: `dmg`), `flash` (4943: HO
 <!-- kind:roll_charge -->
 #### `roll_charge` (weapon kind of BASS DRUM)
 
-`fight.py` 5284 to 5431. Not ported yet: its port fills this section in (the meaning of each field, as 6.2 and 6.3 do
-for FLUTE and TROMBONE), from the lines below.
+`fight.py` 5284 to 5431; ported in `bf-sim/src/kinds/roll_charge.rs` (`bf-core/src/roster/kinds/roll_charge.rs` for its
+roster numbers). The only roller. Every `every` beats on the 16th grid (`off16` later) the drum tips onto its side for
+`tip16` 16ths: it holds still at the start of its line while the line is set (aimed at the enemy's spot `lead` x the
+roll ahead, turned by a seeded jitter of up to `jitter` degrees). Then it rolls along the line like a wheel at `speed`
+x the shared speed, at most `span` long, stopping a radius short of the ropes (a line shorter than `min_len` is no
+roll). From the tip on it is rolling: a walker (it cannot be knocked and gives no way in a clash), and a TUBA's bell
+cannot gulp it unless the pair rule `swallow_rollers` is on. The first contact of a roll (centres within 2 R + the
+drum's size) is a BOOM; a landed one grows the roll's speed by `speed_grow` (to `speed_max`) and the drum's size by
+`size_grow` (to `size_max`, from `size0`; the size is `blade_len`, recorded in `BL` and in `RCHG` column 4). After a
+roll it glides on along its line. A held (gulped), stunned, grabbed or smashed drum starts no roll, and a roll in
+progress ends (`roll_off`). The generator is drawn once per roll line tried (the jitter: each roll that passes the
+grid, and each side a DRUM ROLL leg tries) and once per DRUM ROLL (its first side).
 
 **Record keys.**
 
-- `RCHG`: added to `rec` at `run()` 5911, written by `snap` 5713 to 5732:
+- `RCHG`: `<f8`, shape `(frames, 2, 9)`, in a recording where a fighter's weapon is a `roll_charge` (`run()` 5911,
+  `snap` 5713 to 5732). One row per fighter; the row of a fighter that is not a roller is all NaN. A column is NaN
+  while what it describes is not live.
 
-  ```python
-  if 'RCHG' in rec:                                   # #56, only recorded when a fighter uses the 'roll_charge' kind
-      Ro = np.full((2, 9), np.nan)
-      for j, Bj in enumerate((B0, B1)):
-          if not getattr(Bj, 'roller', False):
-              continue
-          L = Bj.rl
-          Ro[j, 0] = 0.0 if L is None else (1.0 if L['phase'] == 'tip' else 2.0)
-          if L is not None:
-              if L['phase'] == 'tip':
-                  Ro[j, 1] = (self.t - L['t_tip']) / max(1e-9, L['t0'] - L['t_tip'])
-              else:
-                  Ro[j, 1] = (self.t - L['t0']) / max(1e-9, L['t1'] - L['t0'])
-              Ro[j, 2] = math.atan2(L['u'][1], L['u'][0])
-              Ro[j, 8] = L['kind']
-          Ro[j, 3] = Bj.roll_ang
-          Ro[j, 4] = Bj.blade_len
-          Ro[j, 5] = Bj.roll_v
-          Ro[j, 6] = float(Bj.droll is not None)
-          Ro[j, 7] = float(Bj.rolling)
-      rec['RCHG'].append(Ro)
-  ```
+  | Column | Meaning |
+  | --- | --- |
+  | 0 | 0.0 no roll, 1.0 tipping, 2.0 rolling |
+  | 1 | the roll's progress: while tipping `(t - tip start) / (roll start - tip start)`, while rolling `(t - roll start) / (roll end - roll start)` (a roll only) |
+  | 2 | the direction of the roll's line in radians (a roll only) |
+  | 3 | how far the wheel has turned since FIGHT!, in radians (the distance rolled over R) |
+  | 4 | the drum's size now (`blade_len`) |
+  | 5 | the roll's speed now, a multiple of the shared speed |
+  | 6 | 1.0 while DRUM ROLL runs (also between its legs), else 0.0 |
+  | 7 | 1.0 while the drum is rolling, else 0.0 |
+  | 8 | the roll's kind: 0.0 the weapon's roll, 1.0 a DRUM ROLL leg (a roll only) |
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+**Events** (`who` is the roller; coordinates are ring units; times are on the video clock):
 
-- 5339: `self.ev('roll', k, float(B.p[0]), float(B.p[1]), float(p1[0]), float(p1[1]), self.t, t0, B.rl['t1'], kind)`
-- 5346: `self.ev('roll_off', k, off)`
-- 5348: `self.ev('roll_end', k, float(B.p[0]), float(B.p[1]))`
-- 5354: `self.ev('drum_roll_end', k)`
-- 5391: `self.ev('drum_roll_end', k)`
-- 5395: `self.ev('drum_roll_end', k)`
-- 5423: `self.damage(k, 1 - k, dmg, 'roll' if ab is None else 'drumroll', hx, hy)`
-- 5428: `self.ev('roll_boom', k, hx, hy, L['kind'])`
+| Kind | Fields after `who` | When |
+| --- | --- | --- |
+| `roll` | `x0, y0, x1, y1` (from, to), the tip's start time, the roll's start time, the time it reaches the end, the kind (int: 0 the weapon, 1 a DRUM ROLL leg) | a roll starts (5339) |
+| `roll_off` | why (text): `held`, `blocked` or `drum_roll` | a roll called off: the drum is held (a gulp), stunned, sunk in shadow, grabbed or in pieces (5398), or DRUM ROLL takes over (5470) |
+| `roll_end` | `x, y` where the ball is | a roll reaches its line's end (5348) |
+| `roll_boom` | `x, y` between the two balls, the roll's kind (int) | a BOOM: the roll touches the enemy (5428), landed or blocked |
+| `drum_roll_end` | none | DRUM ROLL is over, called off, or finds no room for a leg (5354, 5391, 5395) |
+
+**Hits** (`hit` events, 6.2; the sub-number is 0): `roll` (5423: the weapon's `dmg`; a landed one knocks the enemy
+`knock`, `fwd` of it on ahead along the line and the rest out to the side) and `drumroll` (5423: DRUM ROLL's `dmg`
+and `knock`, its own `fwd` or the weapon's). A shield turns each into a `block`.
 
 <!-- /kind:roll_charge -->
 
@@ -1776,77 +1793,97 @@ picture.
 <!-- kind:heartbeat -->
 #### `heartbeat` (ability kind of BASS DRUM)
 
-`fight.py` 2983 to 2984, 5432 to 5450. Not ported yet: its port fills this section in (the meaning of each field, as 6.2
-and 6.3 do for FLUTE and TROMBONE), from the lines below.
+`fight.py` 2983 to 2984, 5432 to 5450; ported in `bf-sim/src/kinds/roll_charge.rs` (`start_heartbeat`, `thump`; the
+second thump is stepped by `rollc_step`). HEARTBEAT is two shockwaves, lub-dub: one at once and one `gap16` 16ths
+later, each from the ball, spreading at `speed` to `radius` and hitting once (`dmg`, `knock`): rings of kind
+`shockwave` in `WAVES` (6.2), whose hits are `shockwave`.
 
-**Record keys.** None of its own.
+**Record keys.** None of its own (`WAVES`).
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+**Events.**
 
-- 5444: `self.ev('heartbeat', k, i, float(B.p[0]), float(B.p[1]))`
+| Kind | Fields after `who` | When |
+| --- | --- | --- |
+| `heartbeat` | `i` (int: 0 the lub, 1 the dub), `x, y` where the ring starts | each shockwave (5444) |
 
 <!-- /kind:heartbeat -->
 
 <!-- kind:drum_roll -->
 #### `drum_roll` (ability kind of BASS DRUM)
 
-`fight.py` 2985 to 2986, 5451 to 5476. Not ported yet: its port fills this section in (the meaning of each field, as 6.2
-and 6.3 do for FLUTE and TROMBONE), from the lines below.
+`fight.py` 2985 to 2986, 5451 to 5476; ported in `bf-sim/src/kinds/roll_charge.rs` (`start_drum_roll`, `next_leg`).
+For `beats` beats the drum rolls nonstop: a roll in progress gives way (`roll_off` with `drum_roll`), and legs of
+`leg16` 16ths follow one another with no tipping, each aimed at the enemy turned `zig` degrees to alternate sides (the
+first side drawn), at `speed_k` x the roll's speed; a leg touches the enemy at most every `cool` s (hits `drumroll`).
+Its legs are `roll` events of kind 1 and `RCHG` rows (`roll_charge` above); `RCHG` column 6 is 1.0 while it runs.
 
-**Record keys.** None of its own.
+**Record keys.** None of its own (`RCHG`).
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+**Events.**
 
-- 5470: `self.ev('roll_off', k, 'drum_roll')`
-- 5473: `self.ev('drum_roll', k, B.droll['t1'])`
+| Kind | Fields after `who` | When |
+| --- | --- | --- |
+| `drum_roll` | the time it ends | DRUM ROLL starts (5473) |
+| `roll_off` | `drum_roll` | the weapon's roll in progress gives way (5470) |
+
+and `roll`, `roll_end`, `roll_boom`, `drum_roll_end` as `roll_charge` lists them.
 
 <!-- /kind:drum_roll -->
 
 <!-- kind:cannons -->
 #### `cannons` (ability kind of BASS DRUM)
 
-`fight.py` 2987 to 2988, 5477 to 5494. Not ported yet: its port fills this section in (the meaning of each field, as 6.2
-and 6.3 do for FLUTE and TROMBONE), from the lines below.
+`fight.py` 2987 to 2988, 5477 to 5494; ported in `bf-sim/src/kinds/roll_charge.rs` (`start_cannons`, `cannon`; the
+cannons are stepped by `rollc_step`, the first at the step after the ability). 1812 OVERTURE fires `int(n)` cannons,
+one every `gap_beats` beats: each a slam (`SLAMS`, 6.2) at the enemy's spot 0.6 x `tele` beats ahead (inside the
+ropes), landing `tele` beats later with `radius`, `dmg` and `knock`; the slam's hit is a `cannon` (`Slam::how`, 3097),
+and its landing is the usual `slam` event.
 
-**Record keys.** None of its own.
+**Record keys.** None of its own (`SLAMS`).
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+**Events.**
 
-- 5489: `self.ev('cannon', k, C['i'], float(tgt[0]), float(tgt[1]), self.t + lead)`
+| Kind | Fields after `who` | When |
+| --- | --- | --- |
+| `cannon` | its number (int, from 0), `x, y` where it lands, the time it lands | each cannon is fired (5489) |
 
 <!-- /kind:cannons -->
 
 <!-- kind:copy -->
 #### `copy` (ability kind of EUPHONIUM)
 
-`fight.py` 2893 to 2894, 2801 to 2822. Not ported yet: its port fills this section in (the meaning of each field, as 6.2
-and 6.3 do for FLUTE and TROMBONE), from the lines below.
+`fight.py` 2893 to 2894, 2801 to 2822 (`COPYABLE`, `copy_source`, `start_copy`), the gate 3046 to 3049, `trigger`'s
+quiet path 2830 to 2840. Ported: `bf-sim/src/abilities/copy.rs`, settings in `bf-core/src/roster/abilities/copy.rs`.
 
-**Record keys.** None of its own.
+**Record keys.** None of its own. A copied kind records what its kind records only when a fighter has the kind in its
+own entry (a copied snip adds no `SNIP`, a copied whirl no `ANC`, a copied LIGHTS OUT no `LO`).
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+**Events.**
 
-- 2812: `self.ev('copy', k, src['name'], src['kind'])`
-- 2817: `self.ev('copy', k, O.cfg['weapon'].get('name', O.w['kind'].upper()), O.w['kind'])`
+| Kind | Fields after `who` | When |
+| --- | --- | --- |
+| `copy` | the name of what is copied, its kind | IDENTITY CRISIS fires (2812: the enemy's last ability, when its kind is copyable; 2817: else the enemy's weapon, named as `weapon.name` or the kind in capitals) |
+
+A copied ability gives no `ability` event of its own (`quiet`); its kind's own events follow under the copier's
+index (`shockwave`, `twin`, `lights_out`, `snip_open`, ...). A copied signature is one salvo (`mortar`) or one whirl
+(`anchor`, when the copier is not whirling already); any other weapon gives the `copy` event only.
 
 <!-- /kind:copy -->
 
 <!-- kind:barrage -->
 #### `barrage` (ability kind of EUPHONIUM)
 
-`fight.py` 2900 to 2901, 2721 to 2740. Not ported yet: its port fills this section in (the meaning of each field, as 6.2
-and 6.3 do for FLUTE and TROMBONE), from the lines below.
+`fight.py` 2900 to 2901, 2721 to 2740 (`start_barrage`). Ported: `bf-sim/src/kinds/mortar.rs` (the mortar's shells),
+settings in `bf-core/src/roster/abilities/barrage.rs`.
 
-**Record keys.** None of its own.
+**Record keys.** None of its own: its shells are in `SHELLS` (see `mortar`), and a fighter with the ability makes the
+fight a shelling one.
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+**Events.**
 
-- 2739: `self.ev('barrage', k, n, salvo)`
+| Kind | Fields after `who` | When |
+| --- | --- | --- |
+| `barrage` | shells (int), salvo (int) | the barrage is fired (2739); each shell's landing is a `shell` event of kind `barrage` |
 
 <!-- /kind:barrage -->
 
