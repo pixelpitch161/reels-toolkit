@@ -24,6 +24,12 @@
    "export": "fighter_horn"
   },
   {
+   "path": "fighters/horn/left.bfrec",
+   "sha256": "201b0f86215c315605411d9a5a8ea75373030395d8ca767bddd4eef4ebc5edfc",
+   "bytes": 229396,
+   "export": "fighter_horn"
+  },
+  {
    "path": "fighters/horn/look_right.json",
    "sha256": "29bb7b356cd334781b85fc0038f09efe3abca55bcc6c282a8685a3e876a492c5",
    "bytes": 16661,
@@ -145,8 +151,8 @@
   },
   {
    "path": "fighters/horn/sprites.json",
-   "sha256": "2934df8dc25356d041340f4a0917d11d80981ac0daeeb99f8b049e8fc1dbdf0d",
-   "bytes": 73758,
+   "sha256": "7858a57c14e9b8ac88af450c72d1777475b86da9358d0f69326087108d8eb03b",
+   "bytes": 73768,
    "export": "fighter_horn"
   },
   {

@@ -49,6 +49,7 @@
  "hull_cache": "fighters/horn/hull_left.json",
  "hull_note": "ruling M3-R29: each fight's hull calls are in the pinned cache (left: hull_cache, right: hull_cache under `right`; every call's points and vertices); `left.hull` and look_right.json's `hull` hold their counts and the SHA-256 of their exact part (`line`)",
  "left": {
+  "cache": "fighters/horn/left.bfrec",
   "cards": [
    [0, "1ec395b4ae8841893ab99060b2db68ce502c6f7e49887d91d819ef4ee18596f7"],
    [4, "9dc0214febd9fd2aeeca2654f40d553ff9b50c90dce16f53fe6bd50d465e731c"],
@@ -68,7 +69,6 @@
    [1829, "cec95b1a6a34d620d13a7fba59b07150bc9a6ffa748aa5186bd2a997966ab38f"]
   ],
   "fighters": ["HORN", "FLUTE"],
-  "file": "fighters/horn/left.bfrec",
   "frames": [
    [0, "884a951dfdc5f164fe0d5f3a4e9a1e0d7789113a7b6478035695505724d0a3d5", 38, "6d8bc6b7a5e68f423c56da2596de48cd5ce95d5600cf7aa2d01485a088287cf0", 0, "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", "spread"],
    [13, "92ab8425143168cf52314db1246d6646b14c849e569596f133788b2dfeb34edf", 38, "1d06738e4154afe68650a302798c0879b1dd67138d7125ba3fb3fafb731056e4", 1, "4c34de3ad19db76a78f0f86e954fbb5db470f8f4e42a4f471377d25bf15fd56a", "the title card, the doors and the count-in"],
@@ -167,6 +167,7 @@
    "winner": 0
   },
   "seed": 24,
+  "sha256": "201b0f86215c315605411d9a5a8ea75373030395d8ca767bddd4eef4ebc5edfc",
   "winner": "HORN"
  },
  "opponent": "FLUTE",
