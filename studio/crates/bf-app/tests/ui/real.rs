@@ -285,14 +285,29 @@ fn the_real_match_up_screen() {
     let _gpu = gpu();
     let temp = Temp::new("matchup");
     let (mut harness, watched) = real_app(&temp, 2);
+    // the counts follow the registry: every fighter it offers is ready
+    let roster = content::roster();
+    let ready = roster.fighters.iter().filter(|f| f.available).count();
+    assert!((2..=20).contains(&ready), "{ready} ready");
+    // the roster header: "20 fighters" once every fighter is built, else "N of 20 ready"
+    let ready_line = if ready == 20 {
+        "20 fighters".to_string()
+    } else {
+        format!("{ready} of 20 ready")
+    };
+    let themes = roster.themes.len();
+    let status_line = format!(
+        "{ready} fighters, {themes} {}",
+        if themes == 1 { "theme" } else { "themes" }
+    );
     let wanted = [
         "Snake charmer",
         "Slide lance",
         "C5 to A6",
         "E2 to F4",
-        "2 of 20 ready",
+        ready_line.as_str(),
         "A live lance knocks a risen cobra flat.",
-        "2 fighters, 1 theme",
+        status_line.as_str(),
     ];
     wait_until(&mut harness, "the real Match-up screen", 10, |h| {
         wanted.iter().all(|w| shows(h, w))
@@ -305,10 +320,26 @@ fn the_real_match_up_screen() {
     for w in wanted {
         assert!(shows(&harness, w), "{w:?} is on screen");
     }
-    // The 18 fighters not built yet are there, and cannot be picked.
-    let roster = content::roster();
+    // Every fighter offered can be picked (the two in the corners are named for their corner); the ones not built
+    // yet are there, and cannot be.
+    for f in roster.fighters.iter().filter(|f| f.available) {
+        let names = [
+            f.display.clone(),
+            format!("{}, left corner", f.display),
+            format!("{}, right corner", f.display),
+        ];
+        let chip = names
+            .iter()
+            .find_map(|name| {
+                harness
+                    .query_all_by_label(name)
+                    .find(|n| n.accesskit_node().role() == Role::Button)
+            })
+            .unwrap_or_else(|| panic!("a chip named {}", f.display));
+        assert!(!chip.accesskit_node().is_disabled(), "{} can be picked", f.display);
+    }
     let waiting: Vec<_> = roster.fighters.iter().filter(|f| !f.available).collect();
-    assert_eq!(waiting.len(), 18);
+    assert_eq!(waiting.len(), 20 - ready);
     for f in waiting {
         let chip = harness
             .query_all_by_label(&f.display)
