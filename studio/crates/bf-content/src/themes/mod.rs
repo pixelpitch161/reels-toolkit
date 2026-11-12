@@ -478,7 +478,7 @@ mod tests {
         assert_eq!(theme("hot_jazz").unwrap().voices, ["TUBA"]);
         assert_eq!(theme("second_line").unwrap().voices, ["TUBA"]);
         assert_eq!(theme("stadium_rock").unwrap().voices, ["ACOUSTIC"]);
-        assert_eq!(theme("mambo").unwrap().voices, ["CONTRABASS", "PIANO"]);
+        assert_eq!(theme("mambo").unwrap().voices, ["CONTRABASS", "PIANO", mambo::ALTO]);
     }
 
     /// `validate` refuses a ported theme whose bed plays a voice that is not ported, before anything else of the

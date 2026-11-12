@@ -98,6 +98,14 @@ pub fn no_hook(hook: BedHook) -> Played {
     ))
 }
 
+/// What a bed without a pit answers for [`Bed::timp`] or [`Bed::marimba`] (Python's `AttributeError`).
+fn no_pit(method: &'static str) -> MusicError {
+    MusicError::new(
+        method,
+        format!("this theme's bed has no pit (timpani and marimba), so no {method} to play"),
+    )
+}
+
 /// A fighter's part in the score: `kit/fighters/base.py` `Sound(M, k)`. A fighter implements [`Sound::k`] and
 /// overrides what it plays; every hook is optional, and the defaults play nothing.
 ///
@@ -386,6 +394,29 @@ pub trait Bed: Send + Sync {
         no_hook(BedHook::TrailerHit)
     }
 
+    /// `hasattr(bed, 'timp') and hasattr(bed, 'marimba')`: whether the bed has a pit, a timpani and a marimba that
+    /// a fighter's part may double on (BASS DRUM's `_pit` doubles its hymn there). Of the kit's moods only
+    /// `dark_drumline` has both (`baroque_storm` has a `timp` but no `marimba`, so it answers false). These are not
+    /// [`BedHook`]s: the one part that plays them asks first, so no fight is ever refused for their lack.
+    /// Default: false.
+    fn has_pit(&self) -> bool {
+        false
+    }
+
+    /// `timp(m)`: the pit's timpani stroke on MIDI note `m` at velocity 1, for [`Bed::has_pit`]. Default: an error
+    /// (the bed has no pit).
+    fn timp(&self, m: i32) -> Result<Vec<f64>, MusicError> {
+        let _ = m;
+        Err(no_pit("timp"))
+    }
+
+    /// `marimba(m)`: the pit's marimba stroke on MIDI note `m` at velocity 1, for [`Bed::has_pit`]. Default: an
+    /// error (the bed has no pit).
+    fn marimba(&self, m: i32) -> Result<Vec<f64>, MusicError> {
+        let _ = m;
+        Err(no_pit("marimba"))
+    }
+
     /// `clash(mix, t)`: the two balls clashing at `t` (`kit.music.shared_events` calls it for every `clash`
     /// event).
     fn clash(&self, ctx: &MusicCtx, mix: &mut Mix, t: f64) -> Played;
@@ -532,6 +563,13 @@ mod tests {
             b.trailer_hit(&ctx, &mut mix, 0.5, 1.0, 7, None, 0.0),
             no_hook(BedHook::TrailerHit)
         );
+        // and a bed has no pit unless it says so
+        assert!(!b.has_pit());
+        assert_eq!(
+            b.timp(36).unwrap_err().to_string(),
+            "timp: this theme's bed has no pit (timpani and marimba), so no timp to play"
+        );
+        assert!(b.marimba(84).is_err());
         assert!(mix.bus_names().is_empty());
         let names: Vec<&str> = BedHook::ALL.iter().map(|h| h.name()).collect();
         assert_eq!(names, ["boom", "hit", "press_roll", "erupt", "trailer_hit"]);
