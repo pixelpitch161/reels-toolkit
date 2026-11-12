@@ -7,8 +7,9 @@
 //! they are where CPUs legitimately differ.
 //!
 //! The file was blessed on the Windows reference PC (`BF_BLESS=1 cargo test -p bf-core --test dmath_bits` writes it
-//! instead of checking it). `dmath` is pure Rust (`libm` with `force-soft-floats`: no CPU intrinsics, no platform
-//! maths library), so the Linux CI job must reproduce exactly the same bits from the same file.
+//! instead of checking it). `dmath` is plain arithmetic in Rust (the reference PC's C runtime functions written out,
+//! and `libm` with `force-soft-floats`): no platform maths library, and the one CPU instruction it may use, the
+//! fused multiply-add, is exact, so the Linux CI job must reproduce exactly the same bits from the same file.
 
 use bf_core::dmath;
 use serde_json::Value;
@@ -273,7 +274,7 @@ fn runs() -> Vec<(&'static str, Run)> {
         F32(fn(f32) -> f32),
         F32x2(fn(f32, f32) -> f32),
     }
-    let table: [(&str, Func); 20] = [
+    let table: [(&str, Func); 21] = [
         ("sin", Func::F64(dmath::sin)),
         ("cos", Func::F64(dmath::cos)),
         ("tan", Func::F64(dmath::tan)),
@@ -288,6 +289,7 @@ fn runs() -> Vec<(&'static str, Run)> {
         ("log2", Func::F64(dmath::log2)),
         ("pow", Func::F64x2(dmath::pow)),
         ("tanh", Func::F64(dmath::tanh)),
+        ("np_tanh", Func::F64(dmath::np_tanh)),
         ("sinh", Func::F64(dmath::sinh)),
         ("fmod", Func::F64x2(dmath::fmod)),
         ("sinf", Func::F32(dmath::sinf)),

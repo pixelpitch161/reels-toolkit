@@ -115,60 +115,12 @@ fn radians(deg: f64) -> f64 {
     deg * (dmath::PI / 180.0)
 }
 
-/// The whole-degree angles from -360 to 720 whose sine or cosine `bf_core::dmath` gives one step away from
-/// Python's `math.sin` / `math.cos` on the reference PC (the Windows C runtime), with Python's value: (degrees,
-/// cosine?, bits). The other 2,127 of these 2,162 values are equal. A step here turns every corner of the model
-/// and, with faces that share a plane, reaches a pixel (ORGAN at radius 22, yaw 342), so the sprite's camera
-/// takes the kit's value for these angles (as rulings M3-R20 and M3-R22 do for the kit's constants).
-const KIT_TRIG: [(i32, bool, u64); 35] = [
-    (-351, false, 0x3fc4_060b_67a8_537d),
-    (-342, false, 0x3fd3_c6ef_372f_e954),
-    (-284, true, 0x3fce_f74b_f2e4_b912),
-    (-239, true, 0xbfe0_7b31_20fd_df15),
-    (-224, false, 0x3fe6_3aa4_30e0_7310),
-    (-220, true, 0xbfe8_836f_a2cf_5039),
-    (-207, false, 0x3fdd_0e2e_2b44_ddfe),
-    (-137, false, 0xbfe5_d2ee_398c_9c2b),
-    (-113, true, 0xbfd9_01bd_2298_ffac),
-    (-63, true, 0x3fdd_0e2e_2b44_de01),
-    (-53, true, 0x3fe3_4211_9455_beb7),
-    (-45, false, 0xbfe6_a09e_667f_3bcd),
-    (-34, true, 0x3fea_8779_cda8_eea5),
-    (34, true, 0x3fea_8779_cda8_eea5),
-    (45, false, 0x3fe6_a09e_667f_3bcd),
-    (53, true, 0x3fe3_4211_9455_beb7),
-    (63, true, 0x3fdd_0e2e_2b44_de01),
-    (113, true, 0xbfd9_01bd_2298_ffac),
-    (137, false, 0x3fe5_d2ee_398c_9c2b),
-    (207, false, 0xbfdd_0e2e_2b44_ddfe),
-    (220, true, 0xbfe8_836f_a2cf_5039),
-    (224, false, 0xbfe6_3aa4_30e0_7310),
-    (239, true, 0xbfe0_7b31_20fd_df15),
-    (284, true, 0x3fce_f74b_f2e4_b912),
-    (342, false, 0xbfd3_c6ef_372f_e954),
-    (351, false, 0xbfc4_060b_67a8_537d),
-    (387, false, 0x3fdd_0e2e_2b44_ddfc),
-    (400, false, 0x3fe4_91b7_523c_161c),
-    (407, false, 0x3fe7_673f_e0c8_6983),
-    (459, true, 0xbfc4_060b_67a8_5389),
-    (502, false, 0x3fe3_b37f_b1bd_c939),
-    (551, false, 0xbfc8_6c6d_dd76_6253),
-    (587, true, 0xbfe5_d2ee_398c_9c2a),
-    (679, false, 0xbfe4_fe6f_8138_4fd6),
-    (688, false, 0xbfe0_f519_3eac_dd26),
-];
-
-/// `math.sin(math.radians(deg))` and `math.cos(math.radians(deg))` as the kit's camera gets them: through
-/// `bf_core::dmath`, and for the whole degrees of [`KIT_TRIG`] the reference PC's own value.
+/// `math.sin(math.radians(deg))` and `math.cos(math.radians(deg))` as the kit's camera gets them: `bf_core::dmath`
+/// is Python's to the bit (ruling M3-R38; the table of 35 whole-degree values ruling M3-R31 kept here for the old
+/// sine and cosine is now only the test's).
 fn sin_cos_deg(deg: f64) -> (f64, f64) {
     let a = radians(deg);
-    let (mut s, mut c) = (dmath::sin(a), dmath::cos(a));
-    for &(d, cosine, bits) in &KIT_TRIG {
-        if f64::from(d) == deg {
-            *(if cosine { &mut c } else { &mut s }) = f64::from_bits(bits);
-        }
-    }
-    (s, c)
+    (dmath::sin(a), dmath::cos(a))
 }
 
 /// `sprites._Cam`: a narrow perspective looking at the origin from `DIST` away, `ELEV_DEG` above the horizon,
@@ -605,13 +557,50 @@ mod tests {
         assert_eq!((cam.cy - cam.f * qu / d).to_bits(), 0x403a_986a_bfb0_c9e7);
     }
 
+    /// (degrees, cosine?, bits): Python's `math.sin` / `math.cos` of `math.radians(d)` on the reference PC at the
+    /// 35 whole degrees in -360..720 where the old sine and cosine (musl's) were one step away. A step there
+    /// turned every corner of the model and reached a pixel (ORGAN at radius 22, yaw 342).
+    const PYTHON_TRIG: [(i32, bool, u64); 35] = [
+        (-351, false, 0x3fc4_060b_67a8_537d),
+        (-342, false, 0x3fd3_c6ef_372f_e954),
+        (-284, true, 0x3fce_f74b_f2e4_b912),
+        (-239, true, 0xbfe0_7b31_20fd_df15),
+        (-224, false, 0x3fe6_3aa4_30e0_7310),
+        (-220, true, 0xbfe8_836f_a2cf_5039),
+        (-207, false, 0x3fdd_0e2e_2b44_ddfe),
+        (-137, false, 0xbfe5_d2ee_398c_9c2b),
+        (-113, true, 0xbfd9_01bd_2298_ffac),
+        (-63, true, 0x3fdd_0e2e_2b44_de01),
+        (-53, true, 0x3fe3_4211_9455_beb7),
+        (-45, false, 0xbfe6_a09e_667f_3bcd),
+        (-34, true, 0x3fea_8779_cda8_eea5),
+        (34, true, 0x3fea_8779_cda8_eea5),
+        (45, false, 0x3fe6_a09e_667f_3bcd),
+        (53, true, 0x3fe3_4211_9455_beb7),
+        (63, true, 0x3fdd_0e2e_2b44_de01),
+        (113, true, 0xbfd9_01bd_2298_ffac),
+        (137, false, 0x3fe5_d2ee_398c_9c2b),
+        (207, false, 0xbfdd_0e2e_2b44_ddfe),
+        (220, true, 0xbfe8_836f_a2cf_5039),
+        (224, false, 0xbfe6_3aa4_30e0_7310),
+        (239, true, 0xbfe0_7b31_20fd_df15),
+        (284, true, 0x3fce_f74b_f2e4_b912),
+        (342, false, 0xbfd3_c6ef_372f_e954),
+        (351, false, 0xbfc4_060b_67a8_537d),
+        (387, false, 0x3fdd_0e2e_2b44_ddfc),
+        (400, false, 0x3fe4_91b7_523c_161c),
+        (407, false, 0x3fe7_673f_e0c8_6983),
+        (459, true, 0xbfc4_060b_67a8_5389),
+        (502, false, 0x3fe3_b37f_b1bd_c939),
+        (551, false, 0xbfc8_6c6d_dd76_6253),
+        (587, true, 0xbfe5_d2ee_398c_9c2a),
+        (679, false, 0xbfe4_fe6f_8138_4fd6),
+        (688, false, 0xbfe0_f519_3eac_dd26),
+    ];
+
     #[test]
-    fn the_kits_sines_are_one_step_from_dmath() {
-        // every entry is needed (dmath differs there, by one step), and yaw 342 is Python's on the reference PC
-        for &(d, cosine, bits) in &KIT_TRIG {
-            let a = radians(f64::from(d));
-            let ours = if cosine { dmath::cos(a) } else { dmath::sin(a) };
-            assert_eq!(ours.to_bits().abs_diff(bits), 1, "{d} {cosine}");
+    fn the_cameras_sines_are_pythons() {
+        for &(d, cosine, bits) in &PYTHON_TRIG {
             let (s, c) = sin_cos_deg(f64::from(d));
             assert_eq!((if cosine { c } else { s }).to_bits(), bits, "{d} {cosine}");
         }
@@ -620,8 +609,6 @@ mod tests {
             (s.to_bits(), c.to_bits()),
             (0xbfd3_c6ef_372f_e954, 0x3fee_6f0e_1344_54ff)
         );
-        let (s, c) = sin_cos_deg(37.5);
-        assert_eq!((s, c), (dmath::sin(radians(37.5)), dmath::cos(radians(37.5))));
     }
 
     #[test]

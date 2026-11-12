@@ -253,7 +253,7 @@ impl ClarinetSound {
                     let top = x.iter().fold(0.0f64, |p, v| if v.abs() > p { v.abs() } else { p }) + 1e-9;
                     let squeal: Vec<f64> = gliss(&x, -1.5, 0.05)?
                         .iter()
-                        .map(|v| dmath::tanh(3.0 * v / top) * 0.5)
+                        .map(|v| dmath::np_tanh(3.0 * v / top) * 0.5)
                         .collect();
                     mix.place(&bus, &Sig::Mono(squeal), tq, 0.34, -0.2);
                 } else if is(&cfg.unlock2.name)? {

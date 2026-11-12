@@ -459,20 +459,12 @@ fn a_ball_too_big_for_its_close_up_is_refused() {
 fn the_divider_angle_is_pythons() {
     // Python: math.degrees(math.atan2(470.0 - 170.0, 360.0)).hex() and math.atan2(300.0, 360.0).hex()
     let python = bf_testdata::parse_hex_f64("0x1.3e71cf41bf0e5p+5");
-    assert_eq!(title::layout::DIVIDER_DEG.to_bits(), python.to_bits());
     assert_eq!(title::layout::divider_deg().to_bits(), python.to_bits());
-    // the computed value is one unit in the last place off, from dmath's atan2
+    // the angle is computed as the kit computes it: dmath's atan2 is the C runtime's (the old one was one step up)
     let atan = bf_core::dmath::atan2(300.0, 360.0);
     assert_eq!(
         atan.to_bits(),
-        bf_testdata::parse_hex_f64("0x1.63b4bc3f16a8bp-1").to_bits()
-    );
-    assert_eq!(
-        (atan * (180.0 / bf_core::dmath::PI))
-            .to_bits()
-            .abs_diff(python.to_bits()),
-        1,
-        "dmath's angle is the next double"
+        bf_testdata::parse_hex_f64("0x1.63b4bc3f16a8ap-1").to_bits()
     );
     // the angle the rematch's card was fitted at is this one
     let doc = index();

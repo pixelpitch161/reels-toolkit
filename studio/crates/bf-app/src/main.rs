@@ -640,6 +640,7 @@ fn start(
     report::install_hook(paths.as_ref().map(|p| p.logs.clone()));
     let log = Arc::new(StartLog::new(paths.as_ref().map(|p| p.logs.clone())));
     log.add(version::version_text());
+    log.add(report::maths_line());
     let installed = update::installed();
     log.add(match &installed {
         Some(inst) => format!("This is the copy installed in {}.", inst.dir.display()),

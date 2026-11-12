@@ -149,7 +149,7 @@ fn organ(f: f64, dur: f64, v: f64, ranks: &[Rank], att: f64, rel: f64, chiff: f6
 fn v_sulp(f: f64, dur: f64, v: f64, seed: u64) -> Vec<f64> {
     organ(f, dur, v, &SULP, ATT, REL, CHIFF, seed)
         .iter()
-        .map(|&s| dmath::tanh(1.3 * s))
+        .map(|&s| dmath::np_tanh(1.3 * s))
         .collect()
 }
 
@@ -196,7 +196,7 @@ fn v_horn(dur: f64, v: f64) -> Vec<f64> {
             let mut s = band[i] * rise * hold;
             // x *= np.where((t > .3) & (t < .33), .4, 1.)
             s *= if t > 0.3 && t < 0.33 { 0.4 } else { 1.0 };
-            dmath::tanh(2.2 * s) * v
+            dmath::np_tanh(2.2 * s) * v
         })
         .collect()
 }

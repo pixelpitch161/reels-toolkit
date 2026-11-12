@@ -189,10 +189,10 @@ pub fn master(mix: &Mix, levels: &Levels, bed: &dyn Bed, ceiling: f64) -> Soundt
     let level: Vec<f64> = m.as_flattened().iter().map(|v| v.abs()).collect();
     let s1 = ceiling / (dsp::percentile(&level, 99.97) + 1e-9);
     drop(level);
-    let top = dmath::tanh(1.1);
+    let top = dmath::np_tanh(1.1);
     let mut peak = 0.0f64;
     for v in m.as_flattened_mut() {
-        *v = dmath::tanh(*v * s1 * 1.1) / top;
+        *v = dmath::np_tanh(*v * s1 * 1.1) / top;
         // np.abs(m).max(): a NaN stays.
         if v.abs() > peak || v.is_nan() {
             peak = v.abs();

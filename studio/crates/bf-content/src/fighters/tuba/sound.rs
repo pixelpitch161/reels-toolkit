@@ -104,9 +104,9 @@ pub fn sub_drone(dur: f64, f0: f64, f1: f64) -> Samples {
     Ok((0..n)
         .map(|i| {
             let ph = 2.0 * PI * ph[i] / SRF;
-            // x = np.sin(ph) + 0.4 * np.sin(2 * ph) * (0.5 + 0.5 * np.sin(2 * np.pi * 9 * tt))
+            // x = np.sin(ph) + 0.4 * np.sin(2 * ph) * (0.5 + 0.5 * np.sin(2 * np.pi * 9 * tt)); np.tanh(2 * x)
             let x = dmath::sin(ph) + 0.4 * dmath::sin(2.0 * ph) * (0.5 + 0.5 * dmath::sin(wobble * tt[i]));
-            dmath::tanh(2.0 * x) * clip(tt[i] / 0.1, 0.0, 1.0) * (0.4 + 0.6 * u[i])
+            dmath::np_tanh(2.0 * x) * clip(tt[i] / 0.1, 0.0, 1.0) * (0.4 + 0.6 * u[i])
         })
         .collect())
 }

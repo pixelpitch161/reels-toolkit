@@ -115,7 +115,7 @@ pub fn sousa_tone(f: f64, dur: f64, v: f64, blat: f64) -> Vec<f64> {
     }
     // x = np.tanh((x + buzz) * (1.2 + 1.3 * blat)) / np.tanh(1.2 + 1.3 * blat): a little edge, more on a blat
     let drive = 1.2 + 1.3 * blat;
-    let top = dmath::tanh(drive);
+    let top = dmath::np_tanh(drive);
     // body = np.sin(2 * np.pi * np.cumsum(fr) / SR): the round low end; x = x + .38 * body
     let rel = if dur < 0.3 { 0.025 } else { 0.05 };
     let seed = py::imod_py(whole(f * 7.0 + dur * 997.0), 100_003) as u64;
@@ -129,7 +129,7 @@ pub fn sousa_tone(f: f64, dur: f64, v: f64, blat: f64) -> Vec<f64> {
     (0..n)
         .map(|i| {
             let t = t[i];
-            let x = dmath::tanh((x[i] + buzz[i]) * drive) / top;
+            let x = dmath::np_tanh((x[i] + buzz[i]) * drive) / top;
             let x = x + 0.38 * dmath::sin(ph[i]);
             // env = np.minimum(1, t / .012) ** 1.2 * np.where(t < dur, 1, np.exp(-(t - dur) / rel))
             let rise = if t / 0.012 < 1.0 { t / 0.012 } else { 1.0 };

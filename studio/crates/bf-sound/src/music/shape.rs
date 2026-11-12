@@ -233,11 +233,11 @@ pub fn colour_hp(
         return Err(MusicError::new(H, "the note has no samples"));
     }
     let dr = 1.0 + args.drive * drive_k * (down * down);
-    let full = dmath::tanh(dr * 1.2);
+    let full = dmath::np_tanh(dr * 1.2);
     let level = 1.0 / (1.0 + 0.15 * (dr - 1.0));
     let y = synth::hp(x, cut, FILTER_O)
         .iter()
-        .map(|&v| dmath::tanh(dr * v * 1.2) / full * level)
+        .map(|&v| dmath::np_tanh(dr * v * 1.2) / full * level)
         .collect();
     let g = dmath::pow(10.0, clip(6.0 * lead, -4.0, 3.5) / 20.0);
     Ok((y, g, lead))
