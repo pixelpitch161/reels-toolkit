@@ -759,6 +759,11 @@
     "swapped": false
    }
   ],
+  "sprite_size": {
+   "add": 7,
+   "clip": null,
+   "pad": 1.22
+  },
   "voice_notes": {
    "durations": [0.12, 0.25, 1.0],
    "pitches": null,

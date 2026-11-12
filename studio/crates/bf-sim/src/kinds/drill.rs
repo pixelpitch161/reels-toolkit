@@ -152,14 +152,6 @@ pub struct March {
     pub kind: i64,
 }
 
-/// `float(np.hypot(*a))`: numpy's `hypot` is the C runtime's, which on the reference PC is the plain root of the
-/// sum of the squares (equal on 100,000 of 100,000 random pairs, for arrays and for scalars alike). `math.hypot`
-/// (and `bf_core::dmath::hypot`) is a more careful algorithm that differs from it in the last bit for about 17 %
-/// of pairs, so every `np.hypot` of this kind is this function.
-fn np_hypot(a: V2) -> f64 {
-    (a[0] * a[0] + a[1] * a[1]).sqrt()
-}
-
 /// `B.w['kind'] == 'drill'`: fighter `k`'s weapon is this kind.
 /// It is also Python's `hasattr(B, 'march')` (`trigger` 2978, 2981; `snap` 5648): only `drill_setup` gives a ball
 /// `march`.
@@ -285,11 +277,11 @@ pub fn tick(f: &mut Fight, k: usize, k16: i64) {
         geom::np_clip(op[1] + ov[1] * t_bl * w.lead, -lim, lim),
     ];
     let d = geom::sub(tgt, bp);
-    let dist = np_hypot(d);
+    let dist = geom::hypot(d);
     let u = if dist > 1e-6 {
         geom::div(d, dist)
     } else {
-        geom::div(bv, np_hypot(bv) + 1e-9)
+        geom::div(bv, geom::hypot(bv) + 1e-9)
     };
     let j = geom::radians(f.rng.uniform(-1.0, 1.0) * w.jitter);
     let (cj, sj) = (dmath::cos(j), dmath::sin(j));
@@ -387,14 +379,14 @@ fn capsule_hit(f: &Fight, o: V2, d: V2, ln: f64, wd: f64, p: V2, wd1: Option<f64
         None => wd,
         Some(wd1) => wd + (wd1 - wd) * s / py_max(ln, 1e-9),
     };
-    (np_hypot(off) < f.rules.r + w / 2.0, off)
+    (geom::hypot(off) < f.rules.r + w / 2.0, off)
 }
 
 /// `_trample_baskets(k, c, r)` (4876 to 4887): every enemy basket whose cobra is within `r` of `c` is gone (the
 /// striker drops new ones as usual). Event `trample_basket`: the basket's id and where its cobra was. Nothing
 /// happens when the enemy has no baskets (`getattr(O, 'baskets', None)`).
 fn trample_baskets(f: &mut Fight, k: usize, c: V2, r: f64) {
-    trample(f, k, |cp| np_hypot(geom::sub(cp, c)) < r);
+    trample(f, k, |cp| geom::hypot(geom::sub(cp, c)) < r);
 }
 
 /// The loop `_trample_baskets` and COMPANY FRONT's wall (4972 to 4980) share: the enemy's baskets that `gone` says
@@ -445,7 +437,7 @@ pub fn step(f: &mut Fight, k: usize, _dt: f64) {
         let p = [m.p0[0] + (m.p1[0] - m.p0[0]) * g, m.p0[1] + (m.p1[1] - m.p0[1]) * g];
         f.balls[k].p = p;
         let rel = geom::sub(f.balls[1 - k].p, p);
-        let dist = np_hypot(rel);
+        let dist = geom::hypot(rel);
         if dist < 2.0 * r + 0.04 && t - last >= w.cool {
             f.balls[k].march.as_mut().expect("marching").last = t;
             let mut side = [-u[1], u[0]];
@@ -472,7 +464,7 @@ pub fn step(f: &mut Fight, k: usize, _dt: f64) {
             let (hit, off) = capsule_hit(f, bl.o, bl.d, bl.len, bl.w, op, Some(bl.w1));
             if hit {
                 f.drill.blast[k].as_mut().expect("live").hit = true;
-                let dist = np_hypot(off);
+                let dist = geom::hypot(off);
                 let n = if dist > 1e-6 {
                     geom::div(off, dist)
                 } else {
@@ -503,7 +495,7 @@ pub fn step(f: &mut Fight, k: usize, _dt: f64) {
                 f.drill.flash[k].as_mut().expect("live").hit = true;
                 let rel = geom::sub(op, bp);
                 // hx, hy = (O.p - rel / max(float(np.hypot(*rel)), 1e-6) * R)
-                let md = py_max(np_hypot(rel), 1e-6);
+                let md = py_max(geom::hypot(rel), 1e-6);
                 let h = [op[0] - rel[0] / md * r, op[1] - rel[1] / md * r];
                 if f.damage(k, 1 - k, fl.dmg, "flash", h, 0) {
                     f.knock(1 - k, rel, fl.knock);
@@ -738,7 +730,7 @@ mod tests {
                 (blast.f(5) - dmath::atan2(dy, dx)).abs() < 1e-9,
                 "the blast fires along the line"
             );
-            let reach = dmath::hypot(blast.f(3) - halt.f(3), blast.f(4) - halt.f(4));
+            let reach = geom::hypot([blast.f(3) - halt.f(3), blast.f(4) - halt.f(4)]);
             assert!((reach - (setup.rules.r + 0.04)).abs() < 1e-9);
             // the blast is as long as the roster's base, plus what the set's tramples grew it by
             assert!((2.0..=3.6).contains(&blast.f(6)));
@@ -923,6 +915,542 @@ mod tests {
         assert_eq!(
             (e.kind.as_str(), e.f(3), e.f(4), e.f(5)),
             ("horn_flash", fl.a0, fl.t1, 2.0)
+        );
+    }
+}
+
+/// The kind against `fight.py` on hand-built state: every expected number is the output of
+/// `tools/studio_export/unit_checks/drill_unit_vectors.py` (floats as Python's `float.hex()`), compared to the bit.
+#[cfg(test)]
+mod kit_vectors {
+    use bf_core::event::{Event, Value};
+
+    use super::*;
+    use crate::fight::Setup;
+    use crate::kinds::striker;
+    use crate::roster::FighterCfg;
+    use crate::testing::{episode_rules, fight, fighter, roster};
+
+    /// Python's `float.hex()` of a normal number or zero.
+    fn hx(x: f64) -> String {
+        if x == 0.0 {
+            return if x.is_sign_negative() { "-0x0.0p+0" } else { "0x0.0p+0" }.to_string();
+        }
+        let bits = x.to_bits();
+        let exp = ((bits >> 52) & 0x7ff) as i64 - 1023;
+        let sign = if x < 0.0 { "-" } else { "" };
+        format!("{sign}0x1.{:013x}p{exp:+}", bits & ((1 << 52) - 1))
+    }
+
+    fn vec(v: &[f64]) -> String {
+        let parts: Vec<String> = v.iter().map(|&x| hx(x)).collect();
+        format!("[{}]", parts.join(", "))
+    }
+
+    /// An event as the script prints it: the time, the kind, then every field.
+    fn line(e: &Event) -> String {
+        let mut out = vec![hx(e.t), e.kind.clone()];
+        for v in &e.fields {
+            out.push(match v {
+                Value::Int(n) => n.to_string(),
+                Value::Float(x) => hx(*x),
+                Value::Str(s) => s.clone(),
+                other => format!("{other:?}"),
+            });
+        }
+        out.join(" ")
+    }
+
+    fn events(f: &Fight, from: usize) -> Vec<String> {
+        f.events[from..].iter().map(line).collect()
+    }
+
+    /// `new()`: SOUSAPHONE (left) against FLUTE, seed 392, the example episode's rules, both kinds set up, at
+    /// 12.5 s.
+    fn new<'a>(roster: &'a [FighterCfg]) -> Fight<'a> {
+        let mut f = fight(
+            &Setup {
+                fighters: [fighter(roster, "SOUSAPHONE"), fighter(roster, "FLUTE")],
+                rules: episode_rules(),
+                seed: 392,
+            },
+            false,
+        );
+        setup(&mut f, 0);
+        striker::setup(&mut f, 1);
+        f.t = 12.5;
+        f
+    }
+
+    fn place(f: &mut Fight, bp: V2, op: V2, ov: V2) {
+        f.balls[0].p = bp;
+        f.balls[1].p = op;
+        f.balls[1].v = ov;
+    }
+
+    fn march(f: &Fight) -> March {
+        f.balls[0].march.clone().expect("a set")
+    }
+
+    fn baskets(f: &mut Fight, at: &[V2]) {
+        f.striker[1].as_mut().expect("a striker").baskets = at
+            .iter()
+            .enumerate()
+            .map(|(j, &c)| striker::Basket {
+                id: j as i64,
+                home: c,
+                cp: c,
+                t_drop: 0.0,
+                strike: None,
+                down: None,
+            })
+            .collect();
+    }
+
+    fn floor(f: &Fight) -> Vec<i64> {
+        let st = f.striker[1].as_ref().expect("a striker");
+        st.baskets.iter().map(|b| b.id).collect()
+    }
+
+    /// The wall at a time: the beats in, its position, its steps so far, whether it has hit, the enemy's HP, the
+    /// baskets left and the step's events.
+    type WallStep = (
+        f64,
+        &'static str,
+        i64,
+        bool,
+        &'static str,
+        &'static [i64],
+        &'static [&'static str],
+    );
+
+    const T_STEPS: [&str; 8] = [
+        "0x1.972d2d2d2d2d3p+3",
+        "0x1.9e5a5a5a5a5a6p+3",
+        "0x1.a587878787878p+3",
+        "0x1.acb4b4b4b4b4bp+3",
+        "0x1.b3e1e1e1e1e1ep+3",
+        "0x1.bb0f0f0f0f0f1p+3",
+        "0x1.c23c3c3c3c3c4p+3",
+        "0x1.c969696969696p+3",
+    ];
+
+    fn hexes(v: &[f64]) -> Vec<String> {
+        v.iter().map(|&x| hx(x)).collect()
+    }
+
+    #[test]
+    fn a_set_starts_on_its_grid_with_the_kits_line() {
+        let roster = roster();
+        // A: off the grid nothing; on it the line, the footfalls, the blast time, the heading, one draw
+        let mut f = new(&roster);
+        place(&mut f, [-1.0, 0.5], [1.2, -0.7], [1.3, -2.0]);
+        tick(&mut f, 0, 5);
+        assert!(f.balls[0].march.is_none() && f.events.is_empty());
+        tick(&mut f, 0, 32);
+        let m = march(&f);
+        assert_eq!(vec(&m.p0), "[-0x1.0000000000000p+0, 0x1.0000000000000p-1]");
+        assert_eq!(vec(&m.p1), "[0x1.7380211abb718p+0, -0x1.821a35f308b82p+0]");
+        assert_eq!(vec(&m.u), "[0x1.8c0d3da33708bp-1, -0x1.447ac960124f4p-1]");
+        assert_eq!((m.n, m.kind), (8, 0));
+        assert_eq!(hexes(&m.t_steps), T_STEPS);
+        assert_eq!(hx(m.t_blast), "0x1.d096969696969p+3");
+        assert_eq!(vec(&f.balls[0].v), "[0x1.016f01aa16f8ep+1, -0x1.a5d2d2967e33dp+0]");
+        assert_eq!(
+            events(&f, 0),
+            [
+                "0x1.9000000000000p+3 drill 0 -0x1.0000000000000p+0 0x1.0000000000000p-1 0x1.7380211abb718p+0 \
+              -0x1.821a35f308b82p+0 0x1.9000000000000p+3 0x1.c969696969696p+3 8 0"
+            ]
+        );
+        assert_eq!(hx(f.rng.uniform(0.0, 1.0)), "0x1.9ae5e6ad6ce20p-4");
+
+        // B: under haste the set is every bar, on the 16ths
+        let mut f = new(&roster);
+        place(&mut f, [-1.0, 0.5], [1.2, -0.7], [1.3, -2.0]);
+        f.balls[0].haste = 1.0;
+        f.balls[0].haste_mult = 2.0;
+        tick(&mut f, 0, 16);
+        let m = march(&f);
+        assert_eq!(vec(&m.p1), "[0x1.01bb3212ad5dep+0, -0x1.0e1a943b387b3p+0]");
+        assert_eq!(vec(&m.u), "[0x1.94b4fb0657bafp-1, -0x1.399e386c17ca2p-1]");
+        assert_eq!((m.n, m.kind), (8, 1));
+        assert_eq!(
+            hexes(&m.t_steps),
+            [
+                "0x1.9396969696969p+3",
+                "0x1.972d2d2d2d2d3p+3",
+                "0x1.9ac3c3c3c3c3cp+3",
+                "0x1.9e5a5a5a5a5a6p+3",
+                "0x1.a1f0f0f0f0f0fp+3",
+                "0x1.a587878787878p+3",
+                "0x1.a91e1e1e1e1e2p+3",
+                "0x1.acb4b4b4b4b4bp+3"
+            ]
+        );
+        assert_eq!(hx(m.t_blast), "0x1.b04b4b4b4b4b4p+3");
+        assert_eq!(vec(&f.balls[0].v), "[0x1.070f3cc41f6ccp+1, -0x1.97b416261eed3p+0]");
+        assert_eq!(
+            events(&f, 0),
+            [
+                "0x1.9000000000000p+3 drill 0 -0x1.0000000000000p+0 0x1.0000000000000p-1 0x1.01bb3212ad5dep+0 \
+              -0x1.0e1a943b387b3p+0 0x1.9000000000000p+3 0x1.acb4b4b4b4b4bp+3 8 1"
+            ]
+        );
+
+        // C: a line cut short by the ropes, at its minimum length behind a near enemy
+        let mut f = new(&roster);
+        place(&mut f, [2.1, 2.2], [2.3, 2.35], [0.5, 2.5]);
+        tick(&mut f, 0, 0);
+        let m = march(&f);
+        assert_eq!(vec(&m.p0), "[0x1.0cccccccccccdp+1, 0x1.199999999999ap+1]");
+        assert_eq!(vec(&m.p1), "[0x1.31996aa8cd509p+1, 0x1.3333333333333p+1]");
+        assert_eq!(vec(&m.u), "[0x1.a44d00ee52e0fp-1, 0x1.24638bde3ae89p-1]");
+        assert_eq!(hexes(&m.t_steps), T_STEPS);
+        assert_eq!(vec(&f.balls[0].v), "[0x1.11320d67b5df0p+1, 0x1.7c1b02a0e62e6p+0]");
+    }
+
+    #[test]
+    fn the_march_tramples_with_the_kits_numbers() {
+        // D
+        let roster = roster();
+        let mut f = new(&roster);
+        place(&mut f, [-1.0, 0.5], [1.2, -0.7], [1.3, -2.0]);
+        tick(&mut f, 0, 0);
+        let n = f.events.len();
+        let dt = f.rules.dt;
+        f.t = 12.5 + 0.3;
+        step(&mut f, 0, dt);
+        assert_eq!(vec(&f.balls[0].p), "[-0x1.3989433f2e85ap-1, 0x1.759b00e0431a8p-3]");
+        assert_eq!(f.events.len(), n);
+        f.t = 12.5 + 0.4;
+        let bp = f.balls[0].p;
+        f.balls[1].p = [bp[0] + 0.9, bp[1] + 0.35];
+        f.balls[1].v = [-2.0, 1.0];
+        assert_eq!(hx(f.balls[1].hp), "0x1.9000000000000p+6");
+        step(&mut f, 0, dt);
+        assert_eq!(vec(&f.balls[0].p), "[-0x1.b2375b75afea2p-2, 0x1.ccc64f3a7b4e0p-6]");
+        assert_eq!(hx(f.balls[1].hp), "0x1.7333333333333p+6");
+        assert_eq!(vec(&f.balls[1].v), "[0x1.1f860e15ed9a0p+1, -0x1.4f2d70b47e181p+0]");
+        assert_eq!(hx(f.balls[1].boost), "0x1.4cccccccccccdp+0");
+        assert_eq!(hx(f.balls[0].blade_len), "0x1.0f5c28f5c28f6p+1");
+        assert_eq!(hx(march(&f).last), "0x1.9cccccccccccdp+3");
+        assert_eq!(
+            events(&f, n),
+            [
+                "0x1.9cccccccccccdp+3 hit 0 1 0x1.ccccccccccccdp+2 0x1.0c52c09acc18cp-4 0x1.80075f605fea4p-2 trample 0",
+                "0x1.9cccccccccccdp+3 drill_trample 0 0x1.0c52c09acc18cp-4 0x1.80075f605fea4p-2"
+            ]
+        );
+        // within `cool`: no second trample
+        let n = f.events.len();
+        f.t += dt;
+        step(&mut f, 0, dt);
+        assert_eq!(f.events.len(), n);
+        assert_eq!(hx(f.balls[1].hp), "0x1.7333333333333p+6");
+    }
+
+    #[test]
+    fn the_footfalls_the_halt_and_the_blast_are_the_kits() {
+        // E
+        let roster = roster();
+        let mut f = new(&roster);
+        place(&mut f, [-1.0, 0.5], [1.2, -0.7], [1.3, -2.0]);
+        tick(&mut f, 0, 0);
+        let m = march(&f);
+        let n = f.events.len();
+        f.t = m.t_steps[1];
+        tick(&mut f, 0, 4);
+        assert_eq!(
+            events(&f, n),
+            [
+                "0x1.9e5a5b9628cbdp+3 drill_step 0 1 -0x1.631ff7b95123ap-1 0x1.fde5ca0cf747ep-3",
+                "0x1.9e5a5b9628cbdp+3 drill_step 0 2 -0x1.8c7fdee5448e8p-2 -0x1.0d1af9845c100p-9"
+            ]
+        );
+        let now = march(&f);
+        assert_eq!((now.i, now.phase, f.balls[0].walking), (2, Phase::March, true));
+        let n = f.events.len();
+        f.t = m.t_steps[7];
+        tick(&mut f, 0, 16);
+        assert_eq!(
+            events(&f, n),
+            [
+                "0x1.c9696e58a32f4p+3 drill_step 0 3 -0x1.4aff395f9b570p-4 -0x1.032750ec8d144p-2",
+                "0x1.c9696e58a32f4p+3 drill_step 0 4 0x1.ce00846aedc60p-3 -0x1.021a35f308b82p-1",
+                "0x1.c9696e58a32f4p+3 drill_step 0 5 0x1.106029616a4dep-1 -0x1.82a0c36fcae62p-1",
+                "0x1.c9696e58a32f4p+3 drill_step 0 6 0x1.ad4031a8192a4p-1 -0x1.0193a876468a2p+0",
+                "0x1.c9696e58a32f4p+3 drill_step 0 7 0x1.25101cf764034p+0 -0x1.41d6ef34a7a12p+0",
+                "0x1.c9696e58a32f4p+3 drill_step 0 8 0x1.7380211abb718p+0 -0x1.821a35f308b82p+0",
+                "0x1.c9696e58a32f4p+3 drill_halt 0 0x1.7380211abb718p+0 -0x1.821a35f308b82p+0"
+            ]
+        );
+        assert_eq!((march(&f).phase, f.balls[0].walking), (Phase::Halt, false));
+        assert_eq!(vec(&f.balls[0].p), "[0x1.7380211abb718p+0, -0x1.821a35f308b82p+0]");
+        let n = f.events.len();
+        f.t = m.t_blast;
+        f.balls[0].blade_len = 2.24;
+        tick(&mut f, 0, 18);
+        // the blast's event: every field the kit's bits but its angle, an output of `math.atan2`, where `dmath::atan2`
+        // is one step off the C runtime's here (the kit: -0x1.5f6e95e3ac9c7p-1)
+        let e = &f.events[n];
+        assert_eq!(f.events.len(), n + 1);
+        assert_eq!((hx(e.t).as_str(), e.kind.as_str()), ("0x1.d09691a75cd0cp+3", "blast"));
+        assert_eq!(
+            hexes(&[e.f(3), e.f(4), e.f(6), e.f(7), e.f(8)]),
+            [
+                "0x1.f23cafb55c6a1p+0",
+                "-0x1.e9ef951c0456ap+0",
+                "0x1.1eb851eb851ecp+1",
+                "0x1.0000000000000p-1",
+                "0x1.999999999999ap+0"
+            ]
+        );
+        let kit_angle = -f64::from_bits(0x3fe5_f6e9_5e3a_c9c7);
+        assert_eq!(hx(kit_angle), "-0x1.5f6e95e3ac9c7p-1");
+        assert!(
+            (e.f(5).to_bits() as i64 - kit_angle.to_bits() as i64).abs() <= 1,
+            "{}",
+            hx(e.f(5))
+        );
+        assert!(f.balls[0].march.is_none());
+        let bl = f.drill.blast[0].clone().expect("the blast");
+        assert_eq!(vec(&bl.o), "[0x1.f23cafb55c6a1p+0, -0x1.e9ef951c0456ap+0]");
+        assert_eq!(vec(&bl.d), "[0x1.8c0d3da33708bp-1, -0x1.447ac960124f4p-1]");
+        assert_eq!(
+            hexes(&[bl.len, bl.w, bl.w1, bl.t1]),
+            [
+                "0x1.1eb851eb851ecp+1",
+                "0x1.0000000000000p-1",
+                "0x1.999999999999ap+0",
+                "0x1.d896969696969p+3"
+            ]
+        );
+        // the blast hits a ball 1.5 along it and 0.8 to its side
+        let nn = [-bl.d[1], bl.d[0]];
+        f.balls[1].p = [
+            bl.o[0] + bl.d[0] * 1.5 + nn[0] * 0.8,
+            bl.o[1] + bl.d[1] * 1.5 + nn[1] * 0.8,
+        ];
+        f.balls[1].v = [0.4, 2.5];
+        let n = f.events.len();
+        let dt = f.rules.dt;
+        step(&mut f, 0, dt);
+        assert_eq!(hx(f.balls[1].hp), "0x1.3000000000000p+6");
+        assert_eq!(vec(&f.balls[1].v), "[0x1.496fcf974433ep+1, -0x1.798d05aff0816p-2]");
+        assert_eq!(hx(f.balls[1].boost), "0x1.4cccccccccccdp+0");
+        assert_eq!(hx(f.balls[0].blade_len), "0x1.2e147ae147ae2p+1");
+        assert!(f.drill.blast[0].as_ref().is_some_and(|b| b.hit));
+        assert_eq!(
+            events(&f, n),
+            [
+                "0x1.d09691a75cd0cp+3 hit 0 1 0x1.8000000000000p+4 0x1.9ddca5d64a290p+1 -0x1.5ad85fc9dfe22p+1 blast 0",
+                "0x1.d09691a75cd0cp+3 blast_hit 0 0x1.9ddca5d64a290p+1 -0x1.5ad85fc9dfe22p+1"
+            ]
+        );
+        let n = f.events.len();
+        f.t = bl.t1;
+        step(&mut f, 0, dt);
+        assert!(f.drill.blast[0].is_none() && f.events.len() == n);
+    }
+
+    #[test]
+    fn the_cone_test_and_the_baskets_are_the_kits() {
+        // F: o = (0.25, -0.5), d at 0.6 rad, 2.24 long, 0.5 wide at the bell, 1.6 at the far end or 0.5 all along
+        let roster = roster();
+        let mut f = new(&roster);
+        let (o, d) = ([0.25, -0.5], [0.8253356149096783, 0.5646424733950354]);
+        let cases: [(V2, bool, bool, &str); 5] = [
+            ([1.0, 0.2], true, true, "[-0x1.64c0b3dd626e0p-4, 0x1.04bb65b02216cp-3]"),
+            ([2.4, 1.9], true, false, "[0x1.347a6a00386a8p-2, 0x1.229c86065a254p+0]"),
+            (
+                [0.1, -1.4],
+                false,
+                false,
+                "[-0x1.3333333333333p-3, -0x1.cccccccccccccp-1]",
+            ),
+            ([2.9, 0.9], true, true, "[0x1.9a3d35001c354p-1, 0x1.14e43032d12a0p-3]"),
+            ([0.25, -0.5], true, true, "[0x0.0p+0, 0x0.0p+0]"),
+        ];
+        // The verdicts are the kit's. The offset is the kit's bits when `rel @ d` is added as numpy adds it on the
+        // reference PC, with a fused multiply-add (shown here); the engine's dot products are plain sums (ruling
+        // M3-R30), which moves the offset by a few last bits of a small difference.
+        for (p, cone, lane, off) in cases {
+            let rel = geom::sub(p, o);
+            let s = py_min(2.24, py_max(0.0, dmath::fma(rel[1], d[1], rel[0] * d[0])));
+            assert_eq!(
+                vec(&[rel[0] - d[0] * s, rel[1] - d[1] * s]),
+                off,
+                "numpy's offset at {p:?}"
+            );
+            for (wd1, want) in [(Some(1.6), cone), (None, lane)] {
+                let (hit, got) = capsule_hit(&f, o, d, 2.24, 0.5, p, wd1);
+                assert_eq!(hit, want, "{p:?} {wd1:?}");
+                let kit = [rel[0] - d[0] * s, rel[1] - d[1] * s];
+                assert!(
+                    (got[0] - kit[0]).abs() < 1e-15 && (got[1] - kit[1]).abs() < 1e-15,
+                    "{p:?}: {got:?}"
+                );
+            }
+        }
+        // G: the cobras within r of c go, in the floor's order (the fourth is a hair outside)
+        baskets(
+            &mut f,
+            &[[0.5, 0.0], [2.0, 2.0], [-0.3, 0.4], [0.0, 0.8000000000000002]],
+        );
+        let reach = f.rules.r + 0.2;
+        trample_baskets(&mut f, 0, [0.0, 0.0], reach);
+        assert_eq!(floor(&f), [1, 3]);
+        assert_eq!(
+            events(&f, 0),
+            [
+                "0x1.9000000000000p+3 trample_basket 0 0 0x1.0000000000000p-1 0x0.0p+0",
+                "0x1.9000000000000p+3 trample_basket 0 2 -0x1.3333333333333p-2 0x1.999999999999ap-2"
+            ]
+        );
+    }
+
+    #[test]
+    fn horn_flash_is_the_kits() {
+        // H
+        let roster = roster();
+        let mut f = new(&roster);
+        place(&mut f, [-0.4, 0.3], [0.9, 1.1], [1.0, 1.0]);
+        let ab = &fighter(&roster, "SOUSAPHONE").unlock1;
+        f.balls[0].blade_len = 2.36;
+        start_flash(&mut f, 0, ab);
+        let fl = f.drill.flash[0].clone().expect("the flash");
+        assert_eq!(
+            hexes(&[fl.a0, fl.t1, fl.dir, fl.len, fl.w]),
+            [
+                "0x1.d8bc56aa942b9p+1",
+                "0x1.9e5a5a5a5a5a6p+3",
+                "-0x1.0000000000000p+0",
+                "0x1.2e147ae147ae1p+1",
+                "0x1.0000000000000p-1"
+            ]
+        );
+        assert_eq!(
+            events(&f, 0),
+            ["0x1.9000000000000p+3 horn_flash 0 0x1.d8bc56aa942b9p+1 0x1.9e5a5a5a5a5a6p+3 0x1.2e147ae147ae1p+1"]
+        );
+        let (beat, dt) = (f.rules.beat, f.rules.dt);
+        f.t = 12.5 + 0.1 * beat;
+        step(&mut f, 0, dt);
+        assert!(f.drill.flash[0].as_ref().is_some_and(|fl| !fl.hit) && f.events.len() == 1);
+        f.t = 12.5 + 0.5 * beat;
+        step(&mut f, 0, dt);
+        assert!(f.drill.flash[0].as_ref().is_some_and(|fl| fl.hit));
+        assert_eq!(hx(f.balls[1].hp), "0x1.6800000000000p+6");
+        assert_eq!(vec(&f.balls[1].v), "[0x1.13027d12d88cfp+1, 0x1.76d5ff6d38b05p+0]");
+        assert_eq!(hx(f.balls[1].boost), "0x1.3333333333333p+0");
+        assert_eq!(
+            events(&f, 1),
+            [
+                "0x1.972d234eb9a17p+3 hit 0 1 0x1.4000000000000p+3 0x1.8e57544f54868p-2 0x1.923280576cb74p-1 flash 0",
+                "0x1.972d234eb9a17p+3 flash_hit 0 0x1.8e57544f54868p-2 0x1.923280576cb74p-1"
+            ]
+        );
+        f.t = fl.t1;
+        step(&mut f, 0, dt);
+        assert!(f.drill.flash[0].is_none() && f.events.len() == 3);
+        // the draw after the flash's own is the kit's next one (one draw taken)
+        assert_eq!(hx(f.rng.uniform(0.0, 1.0)), "0x1.9ae5e6ad6ce20p-4");
+    }
+
+    #[test]
+    fn company_front_is_the_kits() {
+        // I
+        let roster = roster();
+        let mut f = new(&roster);
+        place(&mut f, [0.6, 1.9], [-0.2, -1.4], [1.0, 1.0]);
+        let ab = &fighter(&roster, "SOUSAPHONE").low;
+        start_front(&mut f, 0, ab);
+        let fr = f.drill.front[0].clone().expect("the wall");
+        assert_eq!((fr.ax, fr.n), (1, 8));
+        assert_eq!(
+            hexes(&[fr.sg, fr.a, fr.b, fr.t1]),
+            [
+                "-0x1.0000000000000p+0",
+                "0x1.8000000000000p+1",
+                "-0x1.8000000000000p+1",
+                "0x1.0169696969696p+4"
+            ]
+        );
+        assert_eq!(
+            events(&f, 0),
+            ["0x1.9000000000000p+3 company_front 0 1 -0x1.0000000000000p+0 0x1.9000000000000p+3 0x1.0169696969696p+4"]
+        );
+        baskets(&mut f, &[[0.5, 2.4], [2.0, 0.9], [-0.3, -2.9]]);
+        let (beat, dt) = (f.rules.beat, f.rules.dt);
+        let steps: [WallStep; 4] = [
+            (
+                0.3,
+                "0x1.6b4395810624dp+1",
+                0,
+                false,
+                "0x1.9000000000000p+6",
+                &[1, 2],
+                &["0x1.944e50c5eb314p+3 trample_basket 0 0 0x1.0000000000000p-1 0x1.3333333333333p+1"],
+            ),
+            (
+                1.25,
+                "0x1.1100000000000p+1",
+                1,
+                false,
+                "0x1.9000000000000p+6",
+                &[1, 2],
+                &["0x1.a1f0ed3d859c9p+3 front_step 0 1 0x1.1100000000000p+1"],
+            ),
+            (
+                2.7,
+                "0x1.d2f1a9fbe76c8p-1",
+                2,
+                false,
+                "0x1.9000000000000p+6",
+                &[2],
+                &[
+                    "0x1.b6c0c1fc8f323p+3 front_step 0 2 0x1.d2f1a9fbe76c8p-1",
+                    "0x1.b6c0c1fc8f323p+3 trample_basket 0 1 0x1.0000000000000p+1 0x1.ccccccccccccdp-1",
+                ],
+            ),
+            (
+                5.6,
+                "-0x1.3c6a7ef9db230p+0",
+                5,
+                true,
+                "0x1.2000000000000p+6",
+                &[2],
+                &[
+                    "0x1.e0605681ecd4bp+3 front_step 0 5 -0x1.3c6a7ef9db230p+0",
+                    "0x1.e0605681ecd4bp+3 hit 0 1 0x1.c000000000000p+4 -0x1.999999999999ap-3 -0x1.6666666666666p+0 front 0",
+                    "0x1.e0605681ecd4bp+3 front_hit 0 -0x1.999999999999ap-3 -0x1.6666666666666p+0",
+                ],
+            ),
+        ];
+        for (beats, pos, i, hit, hp, left, evs) in steps {
+            let n = f.events.len();
+            f.t = 12.5 + beats * beat;
+            step(&mut f, 0, dt);
+            let now = f.drill.front[0].clone().expect("the wall");
+            assert_eq!((hx(now.pos).as_str(), now.i, now.hit), (pos, i, hit), "{beats} beats");
+            assert_eq!(hx(f.balls[1].hp), hp, "{beats} beats");
+            assert_eq!(floor(&f), left, "{beats} beats");
+            assert_eq!(events(&f, n), evs, "{beats} beats");
+        }
+        assert_eq!(vec(&f.balls[1].v), "[0x1.177ca99f69085p-1, -0x1.4561ec6105b8ap+1]");
+        assert_eq!(hx(f.balls[1].boost), "0x1.ccccccccccccdp+0");
+        let n = f.events.len();
+        f.t = fr.t1;
+        step(&mut f, 0, dt);
+        assert!(f.drill.front[0].is_none());
+        assert_eq!(
+            events(&f, n),
+            [
+                "0x1.01696e58a32f4p+4 front_step 0 7 -0x1.8000000000000p+1",
+                "0x1.01696e58a32f4p+4 trample_basket 0 2 -0x1.3333333333333p-2 -0x1.7333333333333p+1",
+                "0x1.01696e58a32f4p+4 front_end 0"
+            ]
         );
     }
 }

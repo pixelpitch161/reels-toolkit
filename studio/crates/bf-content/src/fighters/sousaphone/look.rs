@@ -114,9 +114,9 @@ pub fn title_pattern(base: &mut RgbF) {
             let u = (x as f64 - da[0]) * dd[0] + (y as f64 - da[1]) * dd[1];
             let cu = py::fmod_py(u, 220.0) - 110.0;
             let cv = py::fmod_py(side.px(x, y)[0].abs(), 220.0) - 110.0;
-            let r = np::hypot(cu, cv);
+            let r = dmath::np_hypot(cu, cv);
             let coil = (r - 70.0).abs() < 9.0 || (r - 50.0).abs() < 5.0;
-            let rb = np::hypot(cu - 26.0, cv + 30.0);
+            let rb = dmath::np_hypot(cu - 26.0, cv + 30.0);
             // (np.hypot(..) < 40) & ~(np.hypot(..) < 18)
             let bell = (18.0..40.0).contains(&rb);
             for (ch, v) in base.px_mut(x, y).iter_mut().enumerate() {
@@ -576,7 +576,7 @@ impl Look for SousaphoneLook {
             // the drill line: a dashed chalk yard line
             let a = s.p0;
             let d = [s.p1[0] - a[0], s.p1[1] - a[1]];
-            let len = np::hypot(d[0], d[1]) + 1e-9;
+            let len = dmath::np_hypot(d[0], d[1]) + 1e-9;
             let d = [d[0] / len, d[1] / len];
             let end = s.end();
             let fade = py_min(1.0, (tc - s.t0) / 0.15) * (1.0 - py_max(0.0, (tc - end) / 0.45));
@@ -707,7 +707,7 @@ impl Look for SousaphoneLook {
                     let s = py::fmod_py(age / 0.45 * 1.6 + f64::from(j) / 3.0, 1.0) * reach;
                     let hw = hw0 + (hw1 - hw0) * s / py_max(reach, 1e-6);
                     let ang = dmath::atan2(hw, py_max(s, 0.05));
-                    let rr = dmath::hypot(s, hw);
+                    let rr = dmath::py_hypot(s, hw);
                     let world: Vec<V3> = linspace(-ang, ang, 9)
                         .iter()
                         .map(|&th| {
