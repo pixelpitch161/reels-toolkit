@@ -470,16 +470,27 @@ FLUTE and TROMBONE), from the lines below.
 <!-- kind:jump -->
 #### `jump` (weapon kind of CLARINET)
 
-`fight.py` 2338 to 2424. Not ported yet: its port fills this section in (the meaning of each field, as 6.2 and 6.3 do
-for FLUTE and TROMBONE), from the lines below.
+`fight.py` 2338 to 2424, ported (milestone 3, Task 10; `kinds/jump.rs`). TWELFTH JUMP: every `every` beats on the 16th
+grid, from the second beat of the fight (haste divides the grid), the ball vanishes and reappears `land` past the
+enemy, turned a seeded angle of at most `jitter` degrees off the line (one `uniform(-1, 1)` from the fight's generator
+per regular jump, drawn whatever `jitter` is), at most its reach from where it was, inside the ropes and never inside
+the enemy. The target locks `lock16` 16ths before the jump (the enemy's spot then, plus `lead` x its motion until the
+jump). A stunned jumper loses its lock and does not jump. The ball keeps its speed, heading along the jump.
 
-**Record keys.** None of its own.
+**Record keys.** None of its own. `BL` (6.3) is the jump's reach: `base` (2.6) at the start, `grow` (0.06) more per
+landed cut of a regular jump up to `max_reach` (4.2); a RHAPSODY jump grows nothing. `P` moves by a whole jump
+between two frames, and `V` turns along it.
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+**Events.**
 
-- 2390: `self.damage(k, 1 - k, dmg, 'cut', hx, hy, kind)`
-- 2394: `self.ev('jump', k, float(p0[0]), float(p0[1]), float(p1[0]), float(p1[1]), int(hit), kind)`
+| Kind | `who` (2) | 3 | 4 | 5 | 6 | 7 | 8 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `jump` | the jumper | x where it was (float) | y (float) | x where it lands (float) | y (float) | 1 if the zip line between the two spots cut the enemy, else 0 (int) | 0 for a jump on the grid, 1 for a jump of the RHAPSODY chain (int) |
+
+`hit`, elements 7 and 8 (6.2): what hit is `cut` (the zip line passed within a ball radius plus `cut` of the enemy's
+centre), sub is the same 0 or 1 as the jump's element 8; contact x and y are the point of the enemy's ball nearest
+the line. The `hit` (or the `block` of a shielded enemy, what blocked `cut`) comes just before its `jump`, at the
+same time. A blocked cut still knocks the enemy and grows no reach.
 
 <!-- /kind:jump -->
 
@@ -961,27 +972,39 @@ field, as 6.2 and 6.3 do for FLUTE and TROMBONE), from the lines below.
 <!-- kind:stun -->
 #### `stun` (ability kind of CLARINET)
 
-`fight.py` 2889 to 2892, 3072 to 3074. Not ported yet: its port fills this section in (the meaning of each field, as 6.2
-and 6.3 do for FLUTE and TROMBONE), from the lines below.
+`fight.py` 2889 to 2892, 3072 to 3074, ported (milestone 3, Task 10; `abilities/stun.rs`). SQUEAK: a ring like a
+wave's from where the fighter is (`speed`, `radius`, `dmg`, `knock`, no slow). The fighter its front passes takes a
+`hit` and, when that landed (not blocked) and the ability's `stun` is not 0, is stunned for `stun` seconds (the longer
+of that and a stun still running): it holds still, heading kept, and starts no attack (`_stunned`, asked by every
+weapon grid and the beat triggers; the timer runs down a step at a time). Only a clash can still shift a stunned
+ball, and the ropes do not hold it until the stun ends. COPYABLE: a copied SQUEAK runs for the copier's ball.
 
-**Record keys.** None of its own.
+**Record keys.** None of its own. The ring is a row of `WAVES` (6.3) whose kind (element 5) is `stun`.
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+**Events.**
 
-- 3074: `self.ev('stun', o, W['owner'], W['stun'])`
+| Kind | `who` (2) | 3 | 4 |
+| --- | --- | --- | --- |
+| `stun` | the fighter that is stunned | the ring's owner (int) | seconds the stun lasts (float): the ability's `stun` |
+
+`hit`, elements 7 and 8 (6.2): what hit is `stun`, sub 0; the `stun` event follows its `hit` at the same time. A
+`block` of the ring names `stun` as what was blocked, and no `stun` event follows.
 
 <!-- /kind:stun -->
 
 <!-- kind:rhapsody -->
 #### `rhapsody` (ability kind of CLARINET)
 
-`fight.py` 2930 to 2932. Not ported yet: its port fills this section in (the meaning of each field, as 6.2 and 6.3 do
-for FLUTE and TROMBONE), from the lines below.
+`fight.py` 2930 to 2932, ported (milestone 3, Task 10; in `kinds/jump.rs`, the chain runs in `jump_tick`). RHAPSODY:
+`n` jumps `step16` 16ths apart, the first on the next 16th, each through the enemy as it is then (no lock), turned
+`zig` degrees to one side and then the other, landing `land` past it, at most `reach` long, each a cut (`dmg`,
+`knock`, within a ball radius plus `cut`: the weapon's `cut` when the ability has none). Regular jumps pause while the
+chain runs and no number is drawn for it; a stunned jumper's chain waits. It grows no reach.
 
 **Record keys.** None of its own.
 
-**Events and hits.** None of its own (an `ability` event, from `trigger`, as every ability has).
+**Events and hits.** None of its own: an `ability` event (6.2), then the chain's `jump` events and `cut` hits with 1
+as their last element (see `jump` above).
 
 <!-- /kind:rhapsody -->
 
