@@ -171,9 +171,17 @@ impl Voice for StandIn {
 /// The voices of the two fighters of `show` for a bed-alone build: each fighter's own when it is in this app, a
 /// [`StandIn`] when not (or for both when `stand_ins`).
 pub fn bed_voices(show: &Show, stand_ins: bool) -> [Arc<dyn Voice>; 2] {
+    voices_keeping(&show.names, stand_ins, &[])
+}
+
+/// As [`bed_voices`] for the fighters `names`, except that with `stand_ins` a fighter whose `pp` is in `plays` (the
+/// theme's own `voices`: stadium_rock's strum plays the ACOUSTIC's) keeps its own voice: the bed plays it as the
+/// kit's `M.note` does, not as that fighter's part. The other fighter still gets the panicking [`StandIn`].
+fn voices_keeping(names: &[String; 2], stand_ins: bool, plays: &[&str]) -> [Arc<dyn Voice>; 2] {
     [0, 1].map(|k| {
-        let name = &show.names[k];
-        let own = if stand_ins {
+        let name = &names[k];
+        let keep = plays.contains(&crate::fight::fighter(name).pp.as_str());
+        let own = if stand_ins && !keep {
             None
         } else {
             bf_content::fighters::voice(name)
@@ -188,11 +196,13 @@ pub fn bed_voices(show: &Show, stand_ins: bool) -> [Arc<dyn Voice>; 2] {
     })
 }
 
-/// The bed alone on `rec` under `ff`: both fighters the kit's base `Sound`, their voices as [`bed_voices`] gives.
+/// The bed alone on `rec` under `ff`: both fighters the kit's base `Sound`, their voices as [`bed_voices`] gives,
+/// except that a fighter whose voice the theme's bed plays itself keeps it in the stand-ins run.
 fn bed_alone_of(rec: &Recording, ff: &FightFile, stand_ins: bool) -> Summary {
     let show = Show::new(rec, ff).unwrap_or_else(|e| panic!("the show: {e}"));
-    let build = SoundBuild::bed_alone(&show, rec, ff, bed_voices(&show, stand_ins))
-        .unwrap_or_else(|e| panic!("the bed-alone build: {e}"));
+    let plays = bf_content::themes::theme(&ff.music.theme).map_or(&[][..], |t| t.voices);
+    let voices = voices_keeping(&show.names, stand_ins, plays);
+    let build = SoundBuild::bed_alone(&show, rec, ff, voices).unwrap_or_else(|e| panic!("the bed-alone build: {e}"));
     summarise(&build)
 }
 
@@ -585,5 +595,33 @@ mod tests {
     fn a_config_without_theme_options_has_none() {
         let (c, rec) = config(None);
         assert!(config_fight_file(&c, &rec).music.theme_options.is_empty());
+    }
+
+    /// The stand-ins run: a fighter whose voice the theme's bed plays itself (stadium_rock's ACOUSTIC) keeps its own
+    /// voice; the other fighter still gets the stand-in, which panics if played.
+    #[test]
+    fn a_theme_voice_of_a_fighter_survives_the_stand_ins() {
+        let names = ["ELECTRIC".to_string(), "ACOUSTIC".to_string()];
+        let plays = bf_content::themes::theme("stadium_rock").unwrap().voices;
+        let [electric, acoustic] = voices_keeping(&names, true, plays);
+        // each under its roster `pp` (the ELECTRIC's is an internal id, M3-R9)
+        let pp = |n: &str| crate::fight::fighter(n).pp.clone();
+        assert_eq!(
+            (electric.name().to_string(), acoustic.name().to_string()),
+            (pp("ELECTRIC"), pp("ACOUSTIC"))
+        );
+        // the kept voice is the ported one: it makes a note
+        let note = acoustic.note(&mut PpNoise::start(), 64.0, 0.7, 0.2);
+        assert!(!note.is_empty() && note.iter().all(|v| v.is_finite()));
+        // the other is the stand-in
+        let played = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            electric.note(&mut PpNoise::start(), 64.0, 0.7, 0.2)
+        }));
+        assert!(played.is_err(), "the ELECTRIC's stand-in must panic when played");
+        // without the theme's voices both are stand-ins; without stand-ins both are the fighters' own
+        let [_, a] = voices_keeping(&names, true, &[]);
+        assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| a.register())).is_err());
+        let [e, _] = voices_keeping(&names, false, plays);
+        assert!(!e.note(&mut PpNoise::start(), 64.0, 0.7, 0.2).is_empty());
     }
 }
