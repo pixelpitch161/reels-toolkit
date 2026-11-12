@@ -41,8 +41,25 @@ pub mod stadium_rock;
 pub const CLASSIC: &str = "classic";
 
 /// The themes the app offers, by name (grows only in the register tasks). A theme that is ported but not listed
-/// here is tested, never offered.
-pub const PORTED_THEMES: [&str; 1] = ["big_top"];
+/// here is tested, never offered. The big top comes first, since a new match-up starts on the first theme offered
+/// (it is the starting pair's theme); the others follow in the kit's alphabetical order of moods. A theme is offered
+/// for a pair only when its bed has every hook both parts play ([`themes_for`], ruling M3-R2).
+pub const PORTED_THEMES: [&str; 14] = [
+    "big_top",
+    "baroque_storm",
+    "bossa_noir",
+    "brass_trailer",
+    "dark_disco",
+    "dark_drumline",
+    "dark_tango",
+    "heist",
+    "horror_trap",
+    "hot_jazz",
+    "mambo",
+    "prog_duel",
+    "second_line",
+    "stadium_rock",
+];
 
 /// A theme's options as one fight has them: every option of the theme's schema, by its name, with the fight
 /// file's value or the option's default (a fighter option's default is the left corner's fighter, as the kit's
@@ -267,7 +284,8 @@ static THEMES: [&Theme; 14] = [
     &stadium_rock::THEME,
 ];
 
-/// The names of the themes this app offers ([`PORTED_THEMES`], `big_top` until the register tasks add more).
+/// The names of the themes this app offers ([`PORTED_THEMES`]: every kit theme, the big top first). Which of them
+/// a pair may play is [`themes_for`].
 pub fn theme_names() -> Vec<&'static str> {
     PORTED_THEMES.to_vec()
 }
@@ -280,6 +298,47 @@ pub fn theme(name: &str) -> Option<&'static Theme> {
 /// Every kit theme, offered or not.
 pub fn all_themes() -> &'static [&'static Theme] {
     &THEMES
+}
+
+/// The offered themes the pair `a` (the left corner) and `b` can play, in [`PORTED_THEMES`]' order: those whose
+/// classic bed has every hook both parts call without asking, and every voice it plays. A theme left out is one the
+/// kit itself would crash on for this pair (ruling M3-R2: no `boom` under `dark_disco` or `heist` for a fighter
+/// whose part plays one, such as the TROMBONE's PEDAL TONE); [`crate::validate`] refuses it in the same terms. A
+/// name that is no kit fighter, or one whose part is not here, can play none.
+pub fn themes_for(a: &str, b: &str) -> Vec<&'static str> {
+    PORTED_THEMES
+        .iter()
+        .copied()
+        .filter(|name| theme(name).is_some_and(|t| t.plays([a, b])))
+        .collect()
+}
+
+/// The fight the compatibility check builds the parts from: the episode, with the asked fighters put in.
+fn base_fight() -> &'static FightFile {
+    static BASE: std::sync::OnceLock<FightFile> = std::sync::OnceLock::new();
+    BASE.get_or_init(|| {
+        FightFile::parse(include_str!("../../../../fights/flute_vs_trombone.toml")).expect("the episode parses")
+    })
+}
+
+impl Theme {
+    /// Whether this theme is ported, plays its voices, and has every hook the parts of `pair` (left corner
+    /// first) call without asking, with its default options.
+    fn plays(&self, pair: [&str; 2]) -> bool {
+        if !self.ported || self.bed_voices().is_err() {
+            return false;
+        }
+        let mut ff = base_fight().clone();
+        ff.fighters = pair.map(str::to_string).to_vec();
+        ff.music.theme = self.name.to_string();
+        ff.music.theme_options.clear();
+        let Ok(bed) = self.options_of(&ff).and_then(|o| self.bed(CLASSIC, &o)) else {
+            return false;
+        };
+        pair.iter().enumerate().all(|(k, name)| {
+            fighters::sound(name, k, &ff).is_some_and(|part| part.bed_calls().iter().all(|h| bed.has(*h)))
+        })
+    }
 }
 
 #[cfg(test)]
@@ -309,8 +368,13 @@ mod tests {
     }
 
     #[test]
-    fn the_registry_has_every_kit_theme_and_offers_the_big_top() {
-        assert_eq!(theme_names(), ["big_top"]);
+    fn the_registry_has_every_kit_theme_and_offers_them_all() {
+        // every kit theme is offered once, the big top (the starting pair's theme) first
+        let offered = theme_names();
+        assert_eq!(offered[0], "big_top");
+        let mut sorted = offered.clone();
+        sorted.sort_unstable();
+        assert_eq!(sorted, KIT_MOODS);
         let names: Vec<&str> = all_themes().iter().map(|t| t.name).collect();
         assert_eq!(names, KIT_MOODS);
         for name in PORTED_THEMES {
@@ -336,17 +400,95 @@ mod tests {
         assert!(t.bed("", &none).is_err());
     }
 
+    /// The fighters whose part plays the bed's `boom` without asking (the HORN only when the bed has no
+    /// `trailer_hit`): `dark_disco` and `heist` have neither, so the kit would crash on any pair with one of them.
+    const PLAYS_A_BOOM: [&str; 5] = ["TROMBONE", "ORGAN", "TUBA", "EUPHONIUM", "HORN"];
+
+    /// Ruling M3-R2: every ordered pair of kit fighters is offered every theme, except `dark_disco` and `heist` for a
+    /// pair with a fighter that plays a boom; a name that is no kit fighter is offered none.
+    #[test]
+    fn a_pair_is_offered_every_theme_its_parts_can_play() {
+        let names: Vec<&str> = roster().iter().map(|f| f.name.as_str()).collect();
+        assert_eq!(names.len(), 20);
+        for &a in &names {
+            for &b in &names {
+                let want: Vec<&str> = PORTED_THEMES
+                    .iter()
+                    .copied()
+                    .filter(|t| {
+                        !(["dark_disco", "heist"].contains(t)
+                            && (PLAYS_A_BOOM.contains(&a) || PLAYS_A_BOOM.contains(&b)))
+                    })
+                    .collect();
+                assert_eq!(themes_for(a, b), want, "{a} vs {b}");
+            }
+        }
+        assert!(themes_for("FLUTE", "KAZOO").is_empty());
+        assert!(themes_for("KAZOO", "FLUTE").is_empty());
+    }
+
+    /// `validate` agrees with [`themes_for`]: the starting pair validates under every theme it is offered, and each
+    /// theme left out is refused for the fighter's part, in words.
+    #[test]
+    fn validate_refuses_exactly_the_themes_a_pair_is_not_offered() {
+        let offered = themes_for("FLUTE", "TROMBONE");
+        assert_eq!(offered.len(), 12);
+        for name in PORTED_THEMES {
+            let mut ff = episode();
+            ff.music.theme = name.to_string();
+            let got = crate::validate(&ff);
+            if offered.contains(&name) {
+                assert_eq!(got, Ok(()), "{name}");
+            } else {
+                assert_eq!(
+                    got.unwrap_err().to_string(),
+                    format!(
+                        "music.theme: {} has no boom (a big drum hit), which the TROMBONE's part plays; pick another \
+                         theme",
+                        theme(name).unwrap().display()
+                    ),
+                    "{name}"
+                );
+            }
+        }
+    }
+
+    /// A kit theme whose port has not filled its folder, as the registry lists one: no card, no bed.
+    static NOT_PORTED: Theme = Theme {
+        name: "not_ported_yet",
+        ported: false,
+        card: &NOT_PORTED_CARD,
+        options: &[],
+        voices: &[],
+        own_voice: no_own_voice,
+        classic: |_| Err(not_ported("not_ported_yet")),
+    };
+
+    /// The kit themes not ported yet (found at run time, so this never names one a port makes whole) have no bed,
+    /// are not offered, and `validate` refuses them in words. Once every kit theme is ported, a stand-in theme that
+    /// is not takes their place, so the check never passes on nothing.
     #[test]
     fn a_theme_not_ported_yet_has_no_bed() {
-        for t in all_themes().iter().filter(|t| !t.ported) {
+        let mut left: Vec<&Theme> = all_themes().iter().copied().filter(|t| !t.ported).collect();
+        if left.is_empty() {
+            eprintln!("every kit theme is ported: checking a stand-in theme that is not");
+            left.push(&NOT_PORTED);
+        }
+        for t in left {
             assert!(!PORTED_THEMES.contains(&t.name), "{}", t.name);
             assert_eq!(t.display(), t.name);
+            let why = format!("music.theme: {:?} is not ported yet", t.name);
             let e = t
                 .bed(CLASSIC, &ThemeOptions::new())
                 .err()
                 .expect("no bed yet")
                 .to_string();
-            assert_eq!(e, format!("music.theme: {:?} is not ported yet", t.name));
+            assert_eq!(e, why);
+            assert!(!t.plays(["FLUTE", "TROMBONE"]), "{}", t.name);
+            assert_eq!(
+                crate::soundtrack::validate_with(&episode(), t).unwrap_err().to_string(),
+                why
+            );
         }
     }
 
