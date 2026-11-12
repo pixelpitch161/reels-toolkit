@@ -51,6 +51,30 @@ ballfight-pack install --exe <ballfight-studio.exe> --from <owner's clone> [--ro
   temp folder (same drive only) and the words say where; if that cannot be done, the exe (and so its folder) stays
   and the words name it. No other program is started. Only the installed exe itself may call it ("This copy of
   BALLFIGHT Studio is not the installed one in {folder}, so nothing was removed.").
+- **A package being made** holds `PACKING.txt` first: every name `package` may write in it, written and flushed
+  before anything else and removed once `MANIFEST.txt` is written. A package stopped part-way (a power cut) is
+  cleared by `package::clear_unfinished`, which removes only the names on that list, then the empty folders; anything
+  else in the folder stops it in words. `check_kept_package` is `check_package` for a version kept in `.previous`
+  (it may also hold the copy of `update.toml` kept with it).
+- **The update's swap** (`install::put_in_place(target, staged)`, run by the app's update engine, Task 12) is the
+  install's own swap with the program folder's `.next` as the staged folder: the marker, each file the installed
+  manifest lists into a fresh `.previous`, each new file in, the new manifest last, every step undone if one fails.
+  `update.toml` stays in place (a staged update brings none). A swap stopped part-way is finished by calling it again
+  (or by installing again); `install::swap_unfinished` says whether one is under way. A program of the installed
+  version that still runs stops it ("Close BALLFIGHT Studio first."), unless its file already holds the new bytes
+  (the new version finishing its own swap). The exe is never away from where the shortcuts point: the earlier one
+  gets a link (or copy) in `.previous` and stays put, the new one replaces it in one rename (first of the new files),
+  and taking that back works the same way. `install::undo_stopped` takes a stopped update back. Every swap (install,
+  update, "Go back", a start looking at a stopped one) holds the lock `BALLFIGHT Studio.update.lock` beside the
+  program folder (`install::swap_lock`; refused with "An update is being put in place. Start the app again in a
+  moment."). Removal deletes that empty lock file once the folder is gone.
+- **Remotes:** `config::check_remote` takes only `https://`, `ssh://` and ssh's `git@host:path`; `check_address` (the
+  user-name-and-password check alone) is what reads a local folder. The install clones with git limited to https and
+  ssh (`install::PROTOCOLS`, `http.sslVerify=true`); only its tests reach a local repository, through
+  `source_copy_with(.., true)`, which no command calls.
+- **Trust:** a build is from the owner's own repository, so whoever can push to it can run code as the owner (during
+  the build, before any "Restart now"). The checks of the built program's `--version` text are a sanity check, not a
+  security check.
 
 ## The ffmpeg pin
 
@@ -103,6 +127,14 @@ not the exes).
   console window, no input, its error output read on a thread, always waited for, stopped after a time limit or on
   cancel. `tests/scan.rs` fails on any other `Command::new`, `process::Command` or `Command as` in this crate and in
   the app's packaging modules.
+- `run::run_family` is `run` for a program that starts programs of its own (the update build): it can run in a
+  given folder with environment variables added and taken away (and every `GIT_` one, `scrub_git`), at below-normal priority (`BELOW_NORMAL_PRIORITY_CLASS`
+  with `CREATE_NO_WINDOW`), and it starts the program suspended, puts it in a Windows job, and only then lets it run (a
+  program that cannot be put in the job is ended before it ran, in words), so every program it starts joins the job and all of them stop together on cancel or the time limit (and when the job is closed). Each error
+  line goes to a callback as it comes. `run::start_detached` starts a program that is handed off on purpose (outside this program's job when Windows
+  allows it) (the
+  app started again after an update, `explorer.exe` opening the guide); `run::wait_for_exit` waits for a process id
+  to end.
 
 ## Tests
 

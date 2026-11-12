@@ -91,3 +91,30 @@ Making the package took 5 s (it reads and checks every file, then writes and che
   package. Without ffmpeg (what a download route would fetch on each update, D1 B) the package is about 142 MB.
 - A trial install of this package under a scratch folder (`install --root`, its source copy cloned from the lane's
   local `origin`, no network) took 14 s in all and left 722 MB there (the program folder plus the source copy).
+
+## 3. How long an update takes (Task 12, route A)
+
+Measured on 11 Nov 2026 by the ignored test `update::git::tests::a_real_update_on_this_pc` (run by name, 7 min 51 s
+in all), from `lane/app-c` at version 0.1.0, everything under one temp folder
+(`%TEMP%\bf-app-update-tests\real-update-<pid>-0`) that the test made and removed. The origin was a bare clone of the
+lane (a local path, so the fetch used no network); the app's copy was a `--no-checkout` clone of it, as the install
+makes. **The PC was busy:** other lanes were building and testing at the same time (processor 43 % to 100 % busy in
+the samples taken just before), so these are upper figures; a quiet PC should do better.
+
+| Step | Time | Notes |
+|---|---:|---|
+| Look for a newer version (fetch the tags, read them) | 0.5 s | local origin; over the internet add a few seconds |
+| Cold build (`cargo build --release --locked -p bf-app`, empty build folder) | 354 s (5 min 54 s) | toolchain and crates already on the PC |
+| Warm build after a one-line change in `bf-app` | 74 s | |
+| Staging (package into `.next`, 633 MB with ffmpeg) | 4.5 s | ffmpeg files of the real sizes; pin unchanged, no download |
+| Checking the staged package (every file's SHA-256) | 0.5 s | plus the exe's `--version`, under 1 s |
+| The swap at restart | 1.0 s | |
+
+- The build folder (`data\build`) held **2.2 GB** after both builds; the plan expected 5 to 10 GB, which would only be
+  reached with several toolchains or profiles. The release exe was 175.8 MB in this build.
+- The first update on the owner's PC is a cold build (about 6 minutes, longer if rustup must fetch a new toolchain or
+  cargo new crates); later updates with small changes in the app take 1 to 2 minutes, more when a change reaches the
+  crates below `bf-app`. Settings' "It takes about {m} minutes" uses the warm build rounded up: **2**.
+- `--version` printed nothing in this build: Task 9 wires it into `main`. Until then a staged real build fails its
+  check, in words, as it should.
+- The unit tests' stand-in project builds, stages and checks in a few seconds, with a build folder of a few MB.

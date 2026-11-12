@@ -206,15 +206,53 @@ mod tests {
             let m = mesh(name).unwrap_or_else(|| panic!("{name} has no model"));
             assert_eq!(Some(m), fighter(name, 0).ok().map(|(_, m)| m), "{name}");
         }
-        for name in ["PIANO", "KAZOO", "", "flute"] {
+        // a roster fighter's model is its folder's; a name outside the roster has none
+        for f in roster() {
+            assert_eq!(
+                mesh(&f.name).is_some(),
+                crate::fighters::mesh_json(&f.name).is_some(),
+                "{}",
+                f.name
+            );
+        }
+        for name in ["KAZOO", "", "flute", "NOT A FIGHTER"] {
             assert!(mesh(name).is_none(), "{name:?}");
         }
     }
 
     #[test]
     fn a_fighter_without_a_look_has_no_preview() {
-        let mut ff = starter("FLUTE", "TROMBONE").expect("the starter");
-        ff.fighters[1] = "PIANO".to_string();
+        // every roster fighter whose model is not in the app yet (found at run time: none once all are ported)
+        // has no preview, in words; a name outside the roster has none either
+        let mut base = starter("FLUTE", "TROMBONE").expect("the starter");
+        // the second fighter changes below: nothing of the file may name TROMBONE
+        base.music.roles.clear();
+        base.music.lines.clear();
+        base.music.solos.clear();
+        base.music.title_hits.clear();
+        base.pair_rules.clear();
+        let lookless: Vec<&str> = roster()
+            .iter()
+            .map(|f| f.name.as_str())
+            .filter(|n| mesh(n).is_none())
+            .collect();
+        for name in &lookless {
+            let mut ff = base.clone();
+            ff.fighters[1] = name.to_string();
+            let err = title_preview(&ff).expect_err("no model, no preview");
+            assert!(
+                err.to_string().contains(&format!("{name} has no look yet")),
+                "{name}: {err}"
+            );
+        }
+        let mut ff = base.clone();
+        ff.fighters[1] = "KAZOO".to_string();
         assert!(title_preview(&ff).is_err());
+        // and every fighter the app offers has one (with FLUTE on the other side)
+        for name in crate::PORTED.iter().filter(|&&n| n != "FLUTE") {
+            let mut ff = base.clone();
+            ff.fighters[1] = name.to_string();
+            assert!(title_preview(&ff).is_ok(), "{name}");
+        }
     }
 }

@@ -276,3 +276,16 @@ loosened. Making the interface never wait on that lock (or giving the drawing th
 playback failed (first take 82.5 % on time with `frame_ms` 188 ms; later take 99.8 %); at 100 % busy both failed
 (91.0 % / 89.1 %). Section 2 has their passing runs on a quieter PC; nothing they measure changed in this task.
 `this_pc_plays_silence` passed.
+
+### After ruling M2-R31 (the interface never waits on the scheduler's lock)
+
+`Player::tick` now asks and reads the scheduler in one call that never waits (`Scheduler::lookup`, a single
+`try_lock`); while a drawing thread holds the lock, the picture on screen stays and the next tick looks again.
+
+| Run | Busy before / after | Whole test | Slowest update | Result |
+| --- | --- | --- | --- | --- |
+| 6 | 100 % / 14 % | 142.6 s | **14.3 ms** | **passed**: every file check and the 20 ms bound (seed 469, row 1) |
+
+The preview budgets, one at a time, straight after it (busy 28 % before, 78 % after, other workers building):
+playback 95.1 % on time for the first take and 96.4 % for the later one (`frame_ms` 196 to 204 ms, about twice a
+quiet run's), so both budget tests failed under that load. A quiet-PC run is still to be scheduled.

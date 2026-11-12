@@ -311,8 +311,10 @@ fn int(x: f64) -> i32 {
 /// 40 px in steps of 4 if that lets it grow.
 ///
 /// # Errors
-/// [`TitleError::MiddleDoesNotFit`] when no scale fits (Python's `ValueError`), or when the word has no letter
-/// the font draws (Python fails on the empty mask).
+/// [`TitleError::MiddleDoesNotFit`] when no scale fits (Python's `ValueError`). Also for a word the font draws
+/// no letter of: its outline mask is empty, and where Python stops with numpy's own error (`X.min()` of a
+/// zero-size array, a `ValueError` with another text) this gives `MiddleDoesNotFit`, a refusal a fight file can
+/// act on.
 fn fit_middle(word: &str, turn: Middle, names: &[Word; 2]) -> Result<Word, TitleError> {
     let deg = match turn {
         Middle::Divider => divider_deg(),

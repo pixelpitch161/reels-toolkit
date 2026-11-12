@@ -6,7 +6,6 @@ use std::sync::Arc;
 
 use bf_content::{FighterCard as ContentCard, Section as ContentSection};
 use bf_core::roster::FighterCfg;
-use bf_picture::Img;
 
 use super::convert::{self, Unusable};
 use crate::model::Gen;
@@ -16,8 +15,16 @@ use crate::model::take::Frame;
 use crate::seam::Event;
 use crate::wording;
 
-/// The portrait on a corner card: the model at this radius, turned by this yaw and roll.
-const PORTRAIT: (u32, f64, f64) = (22, 30.0, 0.0);
+/// The corner card's portrait (ruling M2-R32): a picture this many pixels square, holding the fighter's ball of
+/// this radius, drawn as the VS title card draws its balls.
+const PORTRAIT_SIDE: u32 = 52;
+const PORTRAIT_BALL: f64 = 24.0;
+/// The glow of the title card's ball at rest (`0.25 + 0.5 * flare`, with no flare).
+const PORTRAIT_GLOW: f64 = 0.25;
+/// Fighters whose model, at the portrait's size, reads better turned another way than the title card's view:
+/// (name, yaw, roll, sprite radius). At the roster view the TROMBONE is an edge-on line at 52 px; turned 60 degrees
+/// and rolled 45 its slide and bell both show. A fighter with a close-up of its own (the FLUTE's) keeps it.
+const PORTRAIT_VIEWS: [(&str, f64, f64, u32); 1] = [("TROMBONE", 60.0, 45.0, 22)];
 
 /// The match-up a new draft starts from.
 const START: [&str; 2] = ["FLUTE", "TROMBONE"];
@@ -108,7 +115,6 @@ fn card(cfg: &FighterCfg, c: &ContentCard) -> FighterCard {
         key: name.to_string(),
     };
     let (lo, hi) = cfg.register;
-    let (radius, yaw, roll) = PORTRAIT;
     FighterCard {
         weapon: c.weapon.to_string(),
         text: c.text.to_string(),
@@ -123,16 +129,70 @@ fn card(cfg: &FighterCfg, c: &ContentCard) -> FighterCard {
         music_title: c.music_title.to_string(),
         music_text: c.music_text.to_string(),
         can_play_bass: c.can_play_bass,
-        portrait: bf_content::mesh(&cfg.name).map(|m| sprite(bf_picture::sprite::render_sprite(&m, radius, yaw, roll))),
+        portrait: ball_portrait(cfg),
     }
 }
 
-/// An RGBA picture as a portrait.
-fn sprite(img: Img<u8>) -> Sprite {
+/// The fighter's ball with its instrument inside, as the VS title card draws it (`draw_big_ball`, with the same
+/// close-up: the look's own, else the model at its roster view's yaw and roll at 0.8 of the ball's radius, or at
+/// its `PORTRAIT_VIEWS` entry; the
+/// look's glass and the fighter's colour), at rest, on a transparent square of `PORTRAIT_SIDE`. `None` for a
+/// fighter without a model or a view.
+fn ball_portrait(cfg: &FighterCfg) -> Option<Sprite> {
+    let mesh = bf_content::mesh(&cfg.name)?;
+    let view: Vec<f64> = cfg
+        .raw
+        .get("view")?
+        .as_array()?
+        .iter()
+        .filter_map(|v| v.as_f64())
+        .collect();
+    let [yaw, _, roll] = view[..] else {
+        return None;
+    };
+    let look = bf_content::look_for(&cfg.name);
+    let (yaw, roll, r) = PORTRAIT_VIEWS
+        .iter()
+        .find(|(name, ..)| *name == cfg.name)
+        .map_or((yaw, roll, (PORTRAIT_BALL * 0.8) as u32), |&(_, y, rl, r)| (y, rl, r));
+    let closeup = look
+        .title_closeup(r)
+        .unwrap_or_else(|| bf_picture::sprite::render_sprite(&mesh, r, yaw, roll));
+    Some(ball(&closeup, look.glass(), cfg.color))
+}
+
+/// A ball of `PORTRAIT_BALL` on a transparent square of `PORTRAIT_SIDE` with `closeup` inside, its glass `glass`
+/// and its rim `color` (see [`ball_portrait`]).
+fn ball(closeup: &bf_picture::img::Img<u8>, glass: [f64; 3], color: [u8; 3]) -> Sprite {
+    use bf_picture::img::Img as Pic;
+    let side = PORTRAIT_SIDE as usize;
+    let mut layer: Pic<f64> = Pic::new(side, side, 3);
+    let mut alpha: Pic<f64> = Pic::new(side, side, 1);
+    let centre = (PORTRAIT_SIDE / 2) as i32;
+    bf_picture::title::panels::draw_big_ball(
+        &mut layer,
+        &mut alpha,
+        closeup,
+        glass,
+        f64::from(centre),
+        f64::from(centre),
+        PORTRAIT_BALL,
+        PORTRAIT_GLOW,
+        color.map(f64::from),
+    );
+    let rgba: Vec<u8> = layer
+        .data
+        .chunks(3)
+        .zip(&alpha.data)
+        .flat_map(|(rgb, &a)| {
+            let px = |v: f64| v.clamp(0.0, 255.0).round() as u8;
+            [px(rgb[0]), px(rgb[1]), px(rgb[2]), px(a * 255.0)]
+        })
+        .collect();
     Sprite {
-        w: img.w,
-        h: img.h,
-        rgba: img.data.into(),
+        w: side,
+        h: side,
+        rgba: rgba.into(),
     }
 }
 
@@ -237,7 +297,7 @@ mod tests {
         );
         assert!(!fc.can_play_bass);
         let portrait = fc.portrait.as_ref().expect("the flute's portrait");
-        assert_eq!((portrait.w, portrait.h, portrait.rgba.len()), (51, 51, 51 * 51 * 4));
+        assert_eq!((portrait.w, portrait.h, portrait.rgba.len()), (52, 52, 52 * 52 * 4));
         assert!(
             portrait.rgba.chunks(4).any(|p| p[3] == 255),
             "the portrait shows something"
@@ -354,5 +414,38 @@ mod tests {
             text.starts_with("This fight cannot be used: ") && text.ends_with('.'),
             "{text}"
         );
+    }
+    #[test]
+    fn a_portrait_is_the_fighters_ball_with_its_instrument() {
+        let r = roster();
+        for name in ["FLUTE", "TROMBONE"] {
+            let f = r.fighters.iter().find(|f| f.name == name).expect("in the roster");
+            let p = f.card.as_ref().and_then(|c| c.portrait.as_ref()).expect("a portrait");
+            let px = |x: usize, y: usize| &p.rgba[(y * p.w + x) * 4..(y * p.w + x) * 4 + 4];
+            // round: the corners are clear, the centre and the ball's edge are drawn
+            assert_eq!(px(0, 0)[3], 0, "{name}");
+            assert_eq!(px(51, 51)[3], 0, "{name}");
+            assert_eq!(px(26, 26)[3], 255, "{name}");
+            let drawn = p.rgba.chunks(4).filter(|q| q[3] == 255).count();
+            // a disc of radius 24 or so: about 1,800 of the 2,704 pixels (the old sprite alone drew a thin line)
+            assert!((1_500..=2_300).contains(&drawn), "{name}: {drawn}");
+            // the rim is in the fighter's colour: some drawn pixel is close to it
+            let near = |q: &[u8]| (0..3).all(|c| q[c].abs_diff(f.color[c]) < 40);
+            assert!(p.rgba.chunks(4).any(|q| q[3] == 255 && near(q)), "{name}'s colour");
+            // the instrument is inside: against the same ball with nothing in it, many pixels differ
+            let empty = ball(
+                &bf_picture::img::Img::new(1, 1, 4),
+                bf_content::look_for(name).glass(),
+                f.color,
+            );
+            let differ = p
+                .rgba
+                .chunks(4)
+                .zip(empty.rgba.chunks(4))
+                .filter(|(a, b)| a != b)
+                .count();
+            // (the TROMBONE at the roster view showed 66; turned, 93; the FLUTE's close-up more)
+            assert!(differ > 80, "{name}: {differ} pixels show the instrument");
+        }
     }
 }

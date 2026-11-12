@@ -142,13 +142,33 @@ pub(crate) fn plan_folder(dir: &Path, r: &mut Removal, also: Option<&Manifest>) 
                     r.kept.append(&mut inner.kept);
                 } else {
                     let only_folders = walk(&path)?;
-                    if only_folders.iter().all(|(_, k)| *k == Kind::Dir) {
-                        r.dirs
-                            .extend(only_folders.iter().rev().map(|(d, _)| join_relative(&path, d)));
+                    // Without a manifest, a swap's own files (its marker, its copies' temp names, a running exe it
+                    // set aside) are still ours by name.
+                    let by_name = |rel: &str| {
+                        rel == crate::install::SWAP_MARKER
+                            || crate::install::COPY_PARTS.contains(&rel)
+                            || crate::package::is_set_aside_exe(rel)
+                    };
+                    let ours = |(rel, k): &(String, Kind)| *k == Kind::Dir || (*k == Kind::File && by_name(rel));
+                    if only_folders.iter().all(ours) {
+                        for (inner_rel, inner_kind) in &only_folders {
+                            if *inner_kind == Kind::File {
+                                let f = join_relative(&path, inner_rel);
+                                let now = sha256_file(&f).map_err(|e| io_error("read", &f, &e))?;
+                                r.files.push((f, now));
+                            }
+                        }
+                        r.dirs.extend(
+                            only_folders
+                                .iter()
+                                .rev()
+                                .filter(|(_, k)| *k == Kind::Dir)
+                                .map(|(d, _)| join_relative(&path, d)),
+                        );
                         r.dirs.push(path.clone());
                     }
                     for (inner_rel, inner_kind) in only_folders {
-                        if inner_kind != Kind::Dir {
+                        if inner_kind != Kind::Dir && !by_name(&inner_rel) {
                             r.kept.push((
                                 join_relative(&path, &inner_rel),
                                 "BALLFIGHT Studio cannot tell that it put it there".to_string(),
@@ -160,7 +180,12 @@ pub(crate) fn plan_folder(dir: &Path, r: &mut Removal, also: Option<&Manifest>) 
             Kind::Dir => dirs.push(path),
             Kind::File if rel == MANIFEST_NAME => {}
             // A swap's own marker and copy names (see `install::swap_in`) are ours by name, whatever they hold.
-            Kind::File if rel == crate::install::SWAP_MARKER || crate::install::COPY_PARTS.contains(&rel.as_str()) => {
+            // ... and so is a running exe a taken-back swap set aside (`ballfight-studio.exe.running-N`).
+            Kind::File
+                if rel == crate::install::SWAP_MARKER
+                    || crate::install::COPY_PARTS.contains(&rel.as_str())
+                    || crate::package::is_set_aside_exe(&rel) =>
+            {
                 let now = sha256_file(&path).map_err(|e| io_error("read", &path, &e))?;
                 r.files.push((path, now));
             }
@@ -318,6 +343,15 @@ pub(crate) fn remove_app_with(
     }
     let goes = plan.goes();
     done.stayed.extend(remove_now(&plan));
+    // The empty swap lock file beside the program folder goes too, once the folder is gone and nobody holds it.
+    let lock = crate::install::swap_lock_path(&layout.programs);
+    if fs::symlink_metadata(&layout.programs).is_err()
+        && !is_link(&lock)
+        && fs::metadata(&lock).is_ok_and(|m| m.is_file() && m.len() == 0)
+        && crate::install::swap_lock(&layout.programs).is_ok()
+    {
+        let _ = fs::remove_file(&lock);
+    }
     done.went
         .extend(goes.into_iter().filter(|p| fs::symlink_metadata(p).is_err()));
     Ok(done)

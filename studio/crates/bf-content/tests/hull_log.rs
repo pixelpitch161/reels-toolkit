@@ -65,7 +65,7 @@ fn the_hull_log_is_the_kits_call_for_call() {
             let gap = largest_gap(pts, &w["points"]).unwrap_or_else(|| panic!("frame {f}: the point counts differ"));
             // the screen points come from the camera's maths (dmath here, the C runtime in Python): equal to
             // rounding, as the renderer kit's notes say
-            assert!(gap < 1e-9, "frame {f}: a point {gap} px from the kit's");
+            assert!(gap < 1e-12, "frame {f}: a point {gap} px from the kit's");
             if gap == 0.0 {
                 exact += 1;
             }

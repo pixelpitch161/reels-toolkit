@@ -895,13 +895,14 @@ impl Look for FluteLook {
 
     fn setup_as(&mut self, p: &PictureCtx, k: usize, cfg: &FighterCfg) {
         self.k = k;
-        // self.cfg['view'][2] (p.view[k] is p.cfg[k]'s view, read the same way)
+        // self.cfg['view'][2]: Picture::new refuses a roster entry without a view (yaw, swing, roll), and a look
+        // made for another side is given one of the picture's entries
         self.roll = cfg
             .raw
             .get("view")
             .and_then(|v| v.get(2))
             .and_then(|r| r.as_f64())
-            .unwrap_or(p.view[k].2);
+            .expect("a roster entry the picture accepted has a view (yaw, swing, roll)");
         self.beat = p.show.grid.beat;
         self.rise = match &cfg.weapon {
             WeaponCfg::Striker(s) => s.rise,

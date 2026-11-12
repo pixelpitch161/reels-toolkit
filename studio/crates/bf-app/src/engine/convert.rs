@@ -83,7 +83,7 @@ fn unusable(e: &dyn std::fmt::Display) -> Unusable {
 /// music seed, captions and this app's version, checked against what this app has.
 ///
 /// # Errors
-/// Why the draft cannot be a fight, as a sentence for the screen ("This fight cannot be used: the left fighter's
+/// Why the draft cannot be a fight, as a sentence for the screen ("This fight cannot be used: The left fighter's
 /// handicap must be above 0, found 0.0.", or "No music is written for Flute vs Piano yet.").
 pub fn fight_file(draft: &Draft) -> Result<FightFile, String> {
     build(draft).map_err(|why| match why {
@@ -188,10 +188,12 @@ pub fn title_of(ff: &FightFile) -> String {
 /// Every error the engine sends to the interface goes through here.
 ///
 /// A fight file's field path is put in words: where the text (or a part of it after ": ") starts with a path such
-/// as `handicap[0]` followed by ": ", the path and its colon become the thing's name. A complaint that starts with
-/// "must" follows the name ("the left fighter's handicap must be above 0, found 0.0"); any other comes first, with
-/// the name after it in brackets ("3 texts needed (title, description, tags), found 1 (the Shorts text)"). A path
-/// inside the complaint, such as `fighters[0]`, is named too.
+/// as `handicap[0]` followed by ": ", the path and its colon become the thing's name, and the words start with a
+/// capital, as a reason after a colon does everywhere in the app. A complaint that starts with "must" follows the
+/// name ("The left fighter's handicap must be above 0, found 0.0"); a fighter that is already the other one, retired
+/// or not in the roster says so ("Flute is already the left fighter, so it cannot also be the right one."); any
+/// other follows the name and a colon ("The Shorts text: 3 texts needed (title, description, tags), found 1"). A
+/// quoted roster name is written as the screen writes it, and a path inside the complaint is named too.
 pub fn plain(e: &dyn std::fmt::Display) -> String {
     let text = in_words(e.to_string().trim());
     let text = text.trim();
@@ -216,16 +218,65 @@ fn in_words(text: &str) -> String {
         let Some(name) = field_name(path) else {
             continue;
         };
-        let complaint = complaint.replace("fighters[0]", "the left fighter");
-        let complaint = complaint.replace("fighters[1]", "the right fighter");
-        let words = match complaint.strip_prefix("must ") {
-            _ if name.is_empty() => complaint,
-            Some(rest) => format!("{name} must {rest}"),
-            None => format!("{} ({name})", complaint.trim_end_matches('.')),
+        let complaint = quoted_names(complaint)
+            .replace("fighters[0]", "the left fighter")
+            .replace("fighters[1]", "the right fighter");
+        let complaint = complaint.trim_end_matches('.');
+        let fighter = path.starts_with("fighters[");
+        let words = if name.is_empty() {
+            complaint.to_string()
+        } else if let Some(rest) = complaint.strip_prefix("must ") {
+            format!("{name} must {rest}")
+        } else if fighter && complaint.contains(" is already the ") {
+            // "Flute is already the left fighter, so it cannot also be the right one."
+            let side = name.trim_start_matches("the ").trim_end_matches(" fighter");
+            format!("{complaint}, so it cannot also be the {side} one")
+        } else if fighter {
+            // "Oboe is retired, so it cannot be the left fighter."
+            format!("{complaint}, so it cannot be {name}")
+        } else {
+            format!("{name}: {complaint}")
         };
-        return format!("{}{words}", &text[..at]);
+        // The words start a sentence of their own after the colon, as every reason the files handler gives.
+        return format!("{}{}", &text[..at], capitalised(&words));
     }
     text.to_string()
+}
+
+/// `text` with its first letter in capitals.
+fn capitalised(text: &str) -> String {
+    let mut chars = text.chars();
+    match chars.next() {
+        Some(first) => first.to_uppercase().chain(chars).collect(),
+        None => String::new(),
+    }
+}
+
+/// `text` with each quoted roster name (`"FLUTE"`, `"BASS DRUM"`, a retired one too) written as the screen writes it
+/// ("Flute", "Bass drum"), without the quotes. Any other quoted text is left as it is.
+fn quoted_names(text: &str) -> String {
+    let mut out = String::with_capacity(text.len());
+    let mut rest = text;
+    while let Some(open) = rest.find('"') {
+        let after = &rest[open + 1..];
+        let Some(close) = after.find('"') else {
+            break;
+        };
+        let inner = &after[..close];
+        out.push_str(&rest[..open]);
+        let is_name = !inner.is_empty()
+            && (bf_content::roster().iter().any(|f| f.name == inner) || bf_core::fightfile::RETIRED.contains(&inner));
+        if is_name {
+            out.push_str(&wording::display_name(inner));
+        } else {
+            out.push('"');
+            out.push_str(inner);
+            out.push('"');
+        }
+        rest = &after[close + 1..];
+    }
+    out.push_str(rest);
+    out
 }
 
 /// The words for a fight file's field path (`handicap[0]`, `music.chord_loop[2]`, `line 3`), or `None` when
@@ -496,11 +547,15 @@ mod tests {
         let cases = [
             (
                 "This fight cannot be used: handicap[1]: must be a finite number, found inf",
-                "This fight cannot be used: the right fighter's handicap must be a finite number, found inf.",
+                "This fight cannot be used: The right fighter's handicap must be a finite number, found inf.",
             ),
             (
                 "This fight cannot be opened: fighters[1]: \"FLUTE\" is already fighters[0]",
-                "This fight cannot be opened: \"FLUTE\" is already the left fighter (the right fighter).",
+                "This fight cannot be opened: Flute is already the left fighter, so it cannot also be the right one.",
+            ),
+            (
+                "fighters[0]: \"BASS DRUM\" is not in the roster",
+                "Bass drum is not in the roster, so it cannot be the left fighter.",
             ),
             (
                 "tempo_bpm: must be from 60 to 200, found 20.0",
@@ -508,23 +563,23 @@ mod tests {
             ),
             (
                 "This fight cannot be used: captions.shorts: 3 texts needed (title, description, tags), found 1",
-                "This fight cannot be used: 3 texts needed (title, description, tags), found 1 (the Shorts text).",
+                "This fight cannot be used: The Shorts text: 3 texts needed (title, description, tags), found 1.",
             ),
             (
                 "this video's fight file cannot be used: music.chord_loop[2]: big_top has no voicing for \"X\"",
-                "This video's fight file cannot be used: big_top has no voicing for \"X\" (chord 3 of the chord loop).",
+                "This video's fight file cannot be used: Chord 3 of the chord loop: big_top has no voicing for \"X\".",
             ),
             (
                 "music.title_hits.TROMBONE[0]: 300 is not a MIDI note (0 to 127)",
-                "300 is not a MIDI note (0 to 127) (Trombone's title hits).",
+                "Trombone's title hits: 300 is not a MIDI note (0 to 127).",
             ),
             (
                 "This fight cannot be opened: format: this app reads fight files up to format 2 (this file is format 3)",
-                "This fight cannot be opened: this app reads fight files up to format 2 (this file is format 3).",
+                "This fight cannot be opened: This app reads fight files up to format 2 (this file is format 3).",
             ),
             (
                 "line 3: expected a table",
-                "Expected a table (line 3 of the fight file).",
+                "Line 3 of the fight file: expected a table.",
             ),
         ];
         for (engine, screen) in cases {
@@ -542,14 +597,14 @@ mod tests {
 
     #[test]
     fn errors_are_sentences() {
-        assert_eq!(plain(&"fighters: two needed"), "Two needed (the fighters).");
+        assert_eq!(plain(&"fighters: two needed"), "The fighters: two needed.");
         assert_eq!(plain(&"Already one."), "Already one.");
         assert_eq!(plain(&"  "), "Something went wrong in the engine.");
         let mut d = starting_draft();
         d.handicap[0] = 0.0;
         assert_eq!(
             fight_file(&d).unwrap_err(),
-            "This fight cannot be used: the left fighter's handicap must be above 0, found 0.0."
+            "This fight cannot be used: The left fighter's handicap must be above 0, found 0.0."
         );
         d.handicap[0] = 1.0;
         d.base = Some("not a fight file".to_string());
