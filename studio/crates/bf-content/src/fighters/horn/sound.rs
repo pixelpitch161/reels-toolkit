@@ -120,7 +120,7 @@ pub fn stopped(x: &[f64]) -> Vec<f64> {
         .iter()
         .fold(f64::NEG_INFINITY, |m, v| if v.abs() > m { v.abs() } else { m })
         + 1e-9;
-    let y: Vec<f64> = y.iter().map(|&v| dmath::tanh(3.5 * v / top) * 0.5).collect();
+    let y: Vec<f64> = y.iter().map(|&v| dmath::np_tanh(3.5 * v / top) * 0.5).collect();
     let band = synth::bp(&y, 1800.0, 4200.0, FILTER_O);
     y.iter().zip(&band).map(|(a, b)| a + 0.6 * b).collect()
 }
