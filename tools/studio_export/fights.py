@@ -70,7 +70,7 @@ def replay_hash_of_values(r):
 
 
 # how deep the kit's per-entry tuples sit under each ragged record key (a list a frame of tuples: 2; HOLD is PIANO's)
-RAGGED_DEPTH = dict(WAVES=2, SLAMS=2, COB=3, HOLD=2)
+RAGGED_DEPTH = dict(WAVES=2, SLAMS=2, COB=3, HOLD=2, SPOT=2)
 
 
 def as_kit_run(rec):
