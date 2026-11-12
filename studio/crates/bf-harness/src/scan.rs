@@ -47,7 +47,7 @@ pub const COPY_FILE: (&str, &str) = ("euphonium", "look.rs");
 
 /// The two lines of [`COPY_FILE`]'s `setup_as` that make the copy.
 pub const COPY_LINES: [&str; 2] = [
-    "let enemy = &p.cfg[e];",
+    "let enemy = &p.cfg[1 - k];",
     "let mut dup = crate::fighters::look_for(&enemy.name);",
 ];
 

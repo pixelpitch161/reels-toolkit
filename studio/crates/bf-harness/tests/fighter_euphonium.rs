@@ -122,6 +122,11 @@ fn copy_sweep() {
             seen.entry(enemy.clone()).or_default().insert(kind);
         }
     }
+    assert_eq!(
+        (fights.len(), n_copies),
+        (52, 134),
+        "the sweep's fights and the kit's copy events in them"
+    );
     let mut rows = Vec::new();
     for (name, kinds) in COPY_TABLE {
         let got = seen.get(name).cloned().unwrap_or_default();

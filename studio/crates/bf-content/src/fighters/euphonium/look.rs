@@ -467,8 +467,7 @@ impl Look for EuphoniumLook {
             .copies
             .iter()
             .any(|c| c.t < p.t_ko && !OWN.contains(&c.kind.as_str()));
-        let e = 1 - k;
-        let enemy = &p.cfg[e];
+        let enemy = &p.cfg[1 - k];
         self.enemy_roll = enemy.raw["view"].get(2).and_then(|v| v.as_f64()).unwrap_or(0.0);
         self.dup = None;
         if copied {
