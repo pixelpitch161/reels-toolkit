@@ -72,10 +72,13 @@ fn along(a: [f64; 2], u: [f64; 2], s: f64) -> [f64; 2] {
     [a[0] + u[0] * s, a[1] + u[1] * s]
 }
 
+/// One polygon of the overlay: `(screen pts, rgb, alpha)`.
+type OverlayPoly = (Vec<(f64, f64)>, V3, f64);
+
 /// `overlay_polys(arr, polys, alpha_max=1.0)`: draws `[(screen pts, rgb, alpha)]` onto one RGBA overlay in order
 /// (no blending: a later polygon replaces an earlier one), then composites it once, all in `float32`. Nothing when
 /// `polys` is empty.
-fn overlay_polys(arr: &mut Img<f32>, polys: &[(Vec<(f64, f64)>, V3, f64)]) {
+fn overlay_polys(arr: &mut Img<f32>, polys: &[OverlayPoly]) {
     if polys.is_empty() {
         return;
     }
