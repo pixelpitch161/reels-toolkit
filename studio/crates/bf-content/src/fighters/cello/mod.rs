@@ -19,21 +19,23 @@ pub mod voice;
 
 pub use card::{CARD, card};
 pub use look::CelloLook;
+pub use sound::CelloSound;
+pub use voice::CelloVoice;
 
 /// `fighters.look('CELLO', P, k)`.
 pub fn look() -> Option<Box<dyn Look>> {
     Some(Box::new(CelloLook::new()))
 }
 
-/// Its instrument voice (`pp_bridge`'s entry), or `None` while it is not ported.
+/// Its instrument voice (`pp_bridge`'s entry).
 pub fn voice() -> Option<Arc<dyn Voice>> {
-    None
+    Some(Arc::new(CelloVoice))
 }
 
-/// `fighters.sound('CELLO', M, k)`: its part on side `k` of the fight `ff`, or `None` while it is not ported.
+/// `fighters.sound('CELLO', M, k)`: its part on side `k` of the fight `ff`.
 pub fn sound(k: usize, ff: &FightFile) -> Option<Box<dyn Sound>> {
-    let _ = (k, ff);
-    None
+    let _ = ff;
+    Some(Box::new(CelloSound::new(k)))
 }
 
 /// Its model (`data/models/CELLO.json`, written by its export), compiled in.
