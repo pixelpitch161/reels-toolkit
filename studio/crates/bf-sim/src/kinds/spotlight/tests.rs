@@ -9,9 +9,9 @@
 //! the burn, the abilities' ends, every light (its numbers, where it is now, its line), the phone lights, the
 //! enemy's HP, the damage dealt and the events since the line before.
 //!
-//! One thing is held to 1e-12 instead: the enemy's heading after a knock. It is made in the shared `Fight::knock`
-//! (`np.linalg.norm` in Python, whose sum is fused on the reference PC; a plain sum here), whose own test holds the
-//! same bar. The tests put the heading back by hand before anything reads it.
+//! The enemy's heading after a knock (made in the shared `Fight::knock`, `np.linalg.norm` in Python, whose sum is
+//! fused on the reference PC, as `geom::norm` is) is compared bit for bit too, on its own line after each state
+//! line. The tests put the heading back by hand before a call that reads it.
 
 use bf_core::event::Value;
 
@@ -190,7 +190,7 @@ impl<'a> Case<'a> {
         let o = &self.f.balls[1 - self.k];
         for (got, want) in [o.v[0], o.v[1], o.boost].into_iter().zip(v) {
             assert!(
-                (got - want).abs() <= 1e-12,
+                got.to_bits() == want.to_bits(),
                 "{name}: {label}: the enemy's heading or boost is {got:?}, Python's {want:?}"
             );
         }
