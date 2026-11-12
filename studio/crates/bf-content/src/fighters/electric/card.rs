@@ -8,7 +8,7 @@ pub static CARD: Option<FighterCard> = Some(FighterCard {
     weapon: "Lightning riff",
     text: "Every bar it plays a riff, and every note is an instant bolt of lightning: from its headstock when the \
            enemy is close, or from the corner post nearest the enemy, since the posts are lightning rods. The enemy \
-           is safe only away from both, and every riff that lands adds a note to the next one.",
+           is safe only away from both, and every two riffs that land add a note to the next one.",
     abilities: [
         "Distortion: for 8 beats the bolts fork and reach further",
         "Tapping: for a bar the second hand taps a bolt on every 8th",
