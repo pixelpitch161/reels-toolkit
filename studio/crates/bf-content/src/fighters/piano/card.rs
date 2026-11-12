@@ -12,7 +12,7 @@ pub static CARD: Option<FighterCard> = Some(FighterCard {
     text: "A paper roll along its side of the ring plays its melody. Every note fires a key across the ring. Every \
            row that lands adds a note to the next rows.",
     abilities: [
-        "Keys hang in the air like mines, then fly, for 4 beats",
+        "For 4 beats its keys stop, hang for a beat like mines, then fly at the enemy",
         "A fan of 15 keys from the ball, over 1 beat",
         "40 keys at once across the whole ring, below 25 HP",
     ],

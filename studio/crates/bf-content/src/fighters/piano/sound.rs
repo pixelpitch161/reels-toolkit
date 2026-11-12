@@ -75,6 +75,7 @@ pub fn keys(ctx: &MusicCtx, ms: &[i32], dur: f64, vel: f64, cap: Option<f64>) ->
             }
         }
     }
+    // `len(ms) ** 0.6` is CPython's `pow`: exact once `dmath::pow` is (ruling M3-R38; one step off for 6 notes today)
     let div = py_max(1.0, dmath::pow(ms.len() as f64, 0.6));
     Ok(x.into_iter().map(|s| s / div).collect())
 }
