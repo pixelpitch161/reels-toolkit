@@ -1043,6 +1043,7 @@ mod tests {
             shield: 0.0,
             haste: 0.0,
             glow: 0.0,
+            glow_np: false,
             scale: 1.0,
             th: 0.3,
             blen: 0.95,

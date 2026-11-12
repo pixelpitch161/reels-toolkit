@@ -169,21 +169,30 @@ impl PictureCtx {
             if ax1 > ax0 && ay1 > ay0 {
                 let (w, h) = ((ax1 - ax0) as usize, (ay1 - ay0) as usize);
                 // lit = sub[..., :3].astype(np.float32) * (1.06 + 0.3 * glow)
-                let gain = (1.06 + 0.3 * glow) as f32;
+                let tint = over.as_ref().and_then(|o| o.tint.as_ref());
+                // a numpy-scalar glow makes the whole of `lit` float64, the sink's factor too (ruling M3-R37); a
+                // tint is written for a float32 picture, so under one the float64 product is rounded to float32 first
+                let wide = st.glow_np && tint.is_none();
                 let mut lit: Img<f32> = Img::new(w, h, 3);
                 for yy in 0..h {
                     for xx in 0..w {
                         let src = spr.px((ax0 - sx0) as usize + xx, (ay0 - sy0) as usize + yy);
                         let dst = lit.px_mut(xx, yy);
                         for ch in 0..3 {
-                            dst[ch] = f32::from(src[ch]) * gain;
+                            dst[ch] = if wide {
+                                lit_wide(src[ch], glow, sink)
+                            } else if st.glow_np {
+                                lit_wide(src[ch], glow, 0.0)
+                            } else {
+                                lit_narrow(src[ch], glow)
+                            };
                         }
                     }
                 }
-                if let Some(tint) = over.as_ref().and_then(|o| o.tint.as_ref()) {
+                if let Some(tint) = tint {
                     tint(&mut lit);
                 }
-                if sunk {
+                if sunk && !wide {
                     let dark = (1.0 - 0.72 * sink) as f32;
                     for v in &mut lit.data {
                         *v *= dark;
@@ -233,5 +242,66 @@ impl PictureCtx {
             }
         }
         (s, rp)
+    }
+}
+
+/// One sample of `lit = sub[..., :3].astype(np.float32) * (1.06 + 0.3 * glow)` for a Python-float `glow`: numpy keeps
+/// the array's `float32`, so the gain is rounded to `float32` and the product is a `float32` one.
+fn lit_narrow(src: u8, glow: f64) -> f32 {
+    f32::from(src) * (1.06 + 0.3 * glow) as f32
+}
+
+/// The same sample for a `glow` that is a numpy `float64` scalar (`BallState::glow_np`, ruling M3-R37): the product
+/// is `float64`, so is `lit * (1 - 0.72 * sink)` when the ball is sunk (`sink` not 0), and the value is rounded to
+/// `float32` only when it is stored in the frame (`rg[ms] = np.clip(lit[ms], 0, 255)`, clipped again there).
+fn lit_wide(src: u8, glow: f64, sink: f64) -> f32 {
+    let mut v = f64::from(src) * (1.06 + 0.3 * glow);
+    if sink != 0.0 {
+        v *= 1.0 - 0.72 * sink;
+    }
+    v as f32
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // numpy 2.5.3 on the reference PC: `s = np.arange(256, dtype=np.float32)`; wide is
+    // `np.float32((s * (1.06 + 0.3 * np.float64(glow)))[i])`, narrow `(s * float(1.06 + 0.3 * glow))[i]`, as bits;
+    // sunk is the wide product times `(1 - 0.72 * 0.4)`; the last is how many of the 256 bytes agree at glow 0.3.
+    const WIDE_50: u32 = 0x42540000;
+    const NARROW_50: u32 = 0x4253ffff;
+    const WIDE_186: u32 = 0x434b0000;
+    const NARROW_186: u32 = 0x434affff;
+    const WIDE_186_SUNK: u32 = 0x43108937;
+    const SAME_AT_03: usize = 256;
+
+    /// The byte the frame holds for a lit sample (`np.clip(arr, 0, 255).astype(np.uint8)`).
+    fn byte(v: f32) -> u8 {
+        np::clip_f32(v, 0.0, 255.0) as u8
+    }
+
+    /// Ruling M3-R37: with a numpy glow of 0.0 (the frame a CLARINET jump lands on) the sprite byte 50 is 53 where the
+    /// Python-float rule gives 52, and likewise 100, 150, 200; with a glow of 0.10465939151547463 the byte 186 is
+    /// 203, not 202.
+    #[test]
+    fn a_numpy_glow_lights_the_sprite_in_float64() {
+        for (src, narrow, wide) in [(50, 52, 53), (100, 105, 106), (150, 158, 159), (200, 211, 212)] {
+            let got = (byte(lit_narrow(src, 0.0)), byte(lit_wide(src, 0.0, 0.0)));
+            assert_eq!(got, (narrow, wide), "{src}");
+        }
+        let g = 0.10465939151547463;
+        assert_eq!((byte(lit_narrow(186, g)), byte(lit_wide(186, g, 0.0))), (202, 203));
+        // the float32 values themselves, as numpy stores them
+        assert_eq!(lit_wide(50, 0.0, 0.0).to_bits(), WIDE_50);
+        assert_eq!(lit_narrow(50, 0.0).to_bits(), NARROW_50);
+        assert_eq!(lit_wide(186, g, 0.0).to_bits(), WIDE_186);
+        assert_eq!(lit_narrow(186, g).to_bits(), NARROW_186);
+        assert_eq!(lit_wide(186, g, 0.4).to_bits(), WIDE_186_SUNK);
+        // the two rules differ only next to a whole number
+        let same = (0..=255u8)
+            .filter(|&s| byte(lit_narrow(s, 0.3)) == byte(lit_wide(s, 0.3, 0.0)))
+            .count();
+        assert_eq!(same, SAME_AT_03);
     }
 }

@@ -103,7 +103,117 @@ impl Harmony {
         }
         Ok(line[self.loop_index(t, per_bar)])
     }
+
+    /// `roll_rows(name)` of `kit/story.py` (41 to 75): a roll fighter's rows, one per 8th of the loop. Its line
+    /// (`line`: the fight file's, 8 notes a bar, or 4 = beats with an 8th's rest after each; a rest is `None`;
+    /// without one the kit's sketch line for the fighter's `register`) with the harmony a denser row adds, in order:
+    /// the melody, its octave below, then the chord's tones under it (the nearest first, each at least a minor third
+    /// from every note already in the row), at most 4 notes, all inside the roll's range `reg`
+    /// (`weapon.reg`, else the register). A rest is an empty row. The engine fires the first holes of each row.
+    ///
+    /// # Errors
+    /// Where Python raises: a line that is not 8 or 4 notes a bar ([`RollRowsError::PerBar`], Python's `assert`), a
+    /// loop chord that is not one of the episode's chords, a register that holds no tone of a chord (the sketch
+    /// line).
+    pub fn roll_rows(
+        &self,
+        line: Option<&[Option<i32>]>,
+        reg: (i32, i32),
+        register: (i32, i32),
+    ) -> Result<Vec<Vec<i32>>, RollRowsError> {
+        let (lo, hi) = reg;
+        // line = list(T.LINES[name]) if name in T.LINES else T.default_line(name)
+        let mut line: Vec<Option<i32>> = match line {
+            Some(line) => line.to_vec(),
+            None => self
+                .default_line(register, DEFAULT_LINE_PER_BAR)?
+                .into_iter()
+                .map(Some)
+                .collect(),
+        };
+        let bars = self.loop_.len();
+        let mut per_bar = line.len() / bars;
+        if per_bar == 4 {
+            // line = [x for m in line for x in (m, None)]
+            line = line.into_iter().flat_map(|m| [m, None]).collect();
+            per_bar = 8;
+        }
+        if per_bar != 8 {
+            return Err(RollRowsError::PerBar {
+                notes: line.len(),
+                bars,
+            });
+        }
+        let notes = line.len();
+        let mut out = Vec::with_capacity(notes);
+        for (i, m) in line.into_iter().enumerate() {
+            let Some(mut m) = m else {
+                out.push(Vec::new());
+                continue;
+            };
+            while m > hi {
+                m -= 12;
+            }
+            while m < lo {
+                m += 12;
+            }
+            // T.LOOP[i // 8]: past the loop's end (spare notes of a line) Python raises IndexError
+            let ch = self.loop_.get(i / 8).ok_or(RollRowsError::PerBar { notes, bars })?;
+            let mut row = vec![m];
+            if m - 12 >= lo {
+                row.push(m - 12);
+            }
+            // sorted((c for c in chord_tones(lo, m - 3, ch) if c not in row and c != m - 12), reverse=True)
+            let tones = self.chord_tones(lo, m - 3, ch)?;
+            for c in tones.into_iter().rev().filter(|&c| c != m - 12) {
+                if row.len() >= 4 {
+                    break;
+                }
+                if row.iter().all(|r| (c - r).abs() >= 3) {
+                    row.push(c);
+                }
+            }
+            out.push(row);
+        }
+        Ok(out)
+    }
 }
+
+/// Why a roll fighter's rows cannot be made from its line ([`Harmony::roll_rows`]).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum RollRowsError {
+    /// The line is not 8 (or 4) notes a bar over the loop: the roll fires on the 8th grid.
+    PerBar {
+        /// How many notes the line has.
+        notes: usize,
+        /// How many chords the loop has.
+        bars: usize,
+    },
+    /// The harmony refused: an unknown chord, or a register with no tone of a chord.
+    Harmony(HarmonyError),
+}
+
+impl From<HarmonyError> for RollRowsError {
+    fn from(e: HarmonyError) -> RollRowsError {
+        RollRowsError::Harmony(e)
+    }
+}
+
+impl std::fmt::Display for RollRowsError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            RollRowsError::PerBar { notes, bars } => write!(
+                f,
+                "{notes} notes over the {bars}-chord loop: a roll's line has 8 notes a bar (or 4), so {} or {}",
+                8 * bars,
+                4 * bars
+            ),
+            RollRowsError::Harmony(e) => e.fmt(f),
+        }
+    }
+}
+
+impl std::error::Error for RollRowsError {}
 
 #[cfg(test)]
 mod tests {
