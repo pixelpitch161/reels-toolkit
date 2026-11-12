@@ -20,21 +20,23 @@ pub mod voice;
 
 pub use card::{CARD, card};
 pub use look::AcousticLook;
+pub use sound::AcousticSound;
+pub use voice::AcousticVoice;
 
 /// `fighters.look('ACOUSTIC', P, k)`.
 pub fn look() -> Option<Box<dyn Look>> {
     Some(Box::new(AcousticLook::new()))
 }
 
-/// Its instrument voice (`pp_bridge`'s entry), or `None` while it is not ported.
+/// Its instrument voice (`pp_bridge`'s entry); also the stadium rock bed's unplugged strums.
 pub fn voice() -> Option<Arc<dyn Voice>> {
-    None
+    Some(Arc::new(AcousticVoice))
 }
 
-/// `fighters.sound('ACOUSTIC', M, k)`: its part on side `k` of the fight `ff`, or `None` while it is not ported.
+/// `fighters.sound('ACOUSTIC', M, k)`: its part on side `k` of the fight `ff`.
 pub fn sound(k: usize, ff: &FightFile) -> Option<Box<dyn Sound>> {
-    let _ = (k, ff);
-    None
+    let _ = ff;
+    Some(Box::new(AcousticSound::new(k)))
 }
 
 /// Its model (`data/models/ACOUSTIC.json`, written by its export), compiled in.

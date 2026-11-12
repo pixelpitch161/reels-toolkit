@@ -897,7 +897,9 @@ mod tests {
     #[test]
     fn a_segment_is_clipped_to_the_square() {
         let (a, b) = clip_segment([-9.0, 0.5], [9.0, 0.5], 3.62).expect("crosses");
-        assert_eq!((a, b), ([-3.62, 0.5], [3.62, 0.5]));
+        // a + d * t1 with t1 = (3.62 + 9) / 18: the far end comes back one step above 3.62, as in Python
+        assert_eq!((a, b), ([-3.62, 0.5], [-9.0 + 18.0 * ((3.62 + 9.0) / 18.0), 0.5]));
+        assert_eq!(b[0], 3.620000000000001);
         assert_eq!(clip_segment([-9.0, 5.0], [9.0, 5.0], 3.62), None);
         assert_eq!(
             clip_segment([0.1, 0.2], [0.3, 0.4], 3.62),
