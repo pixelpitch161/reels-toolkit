@@ -54,15 +54,17 @@ fn a_fighter_without_a_part_is_an_error() {
     // the fight file is valid, but its part in the score is not here.
     for k in 0..2 {
         let Some(name) = common::unported(k) else {
-            // every fighter is ported: the build still refuses a name it has no part for (the registry's own
-            // path for one it does not know), in the same words
-            println!("every roster fighter has its voice and part on side {k}: no unported fighter to refuse");
+            // every kit fighter now has its voice and its part: what is left to refuse is a name the roster does
+            // not know, which the build refuses before it asks the score for a part
+            println!("every roster fighter has its voice and part on side {k}: checking an unknown name instead");
             let ff = common::with_fighter(k, "KAZOO");
             let mut rec = EPISODE.rec.clone();
             rec.names[k] = "KAZOO".into();
+            let got = build_soundtrack(&rec, &ff).unwrap_err().to_string();
             assert_eq!(
-                build_soundtrack(&rec, &ff).unwrap_err().to_string(),
-                format!("fighters[{k}]: KAZOO has no part in the score yet")
+                got,
+                format!("fighters[{k}]: \"KAZOO\" is not in the roster"),
+                "a fighter the roster does not know must be refused in plain words, naming it"
             );
             continue;
         };

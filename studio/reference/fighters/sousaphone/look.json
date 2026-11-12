@@ -49,6 +49,7 @@
  "hull_cache": "fighters/sousaphone/hull_left.json",
  "hull_note": "ruling M3-R29: each fight's hull calls are in the pinned cache (left: hull_cache, right: hull_cache under `right`; every call's points and vertices); `left.hull` and look_right.json's `hull` hold their counts and the SHA-256 of their exact part (`line`)",
  "left": {
+  "cache": "fighters/sousaphone/left.bfrec",
   "cards": [
    [0, "70a83d1c5db570508e4fccba5d07e70bf6253b6c1d9fce63235ff664bfe6cf23"],
    [4, "2f2d783ab11a6b4b64f3d124c18fcef0087f6da95a321fb65f05cadf9b009c74"],
@@ -68,7 +69,6 @@
    [1829, "379792f5576fa020654d92da866c198a226d4c7bdb1dcc9badbc80dd5febee02"]
   ],
   "fighters": ["SOUSAPHONE", "FLUTE"],
-  "file": "fighters/sousaphone/left.bfrec",
   "frames": [
    [0, "bdc0d68ce20cb5cc7804d61a22bf1b0001627606284857c9deb2f140c7f4a75c", 38, "6d8bc6b7a5e68f423c56da2596de48cd5ce95d5600cf7aa2d01485a088287cf0", 0, "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", "spread"],
    [13, "a5c6276c5343b0354805dd7207511876483bed4d4c425bf5ef969cb56878c550", 38, "1d06738e4154afe68650a302798c0879b1dd67138d7125ba3fb3fafb731056e4", 1, "79f96960a1190cdb08a1531f22d2db9a3bbdc659849d9109292110c0acfd2246", "the title card, the doors and the count-in"],
@@ -171,6 +171,7 @@
    "winner": 0
   },
   "seed": 5,
+  "sha256": "8c7334d431e10e499bad47e27930cfab2d1f2a677ba3ab4df93e667a9ef41828",
   "winner": "SOUSAPHONE"
  },
  "opponent": "FLUTE",

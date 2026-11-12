@@ -24,6 +24,12 @@
    "export": "fighter_cello"
   },
   {
+   "path": "fighters/cello/left.bfrec",
+   "sha256": "7d360594a3b3faa0f3dea37a7f9f16548e0b0b90c24d632384c20b12ca47f66c",
+   "bytes": 113173,
+   "export": "fighter_cello"
+  },
+  {
    "path": "fighters/cello/look_right.json",
    "sha256": "b910b8bd0ff9e2b1e119ce844226f335313ee26d6bc5279d20ad55111e38dd34",
    "bytes": 17459,
@@ -163,8 +169,8 @@
   },
   {
    "path": "fighters/cello/sprites.json",
-   "sha256": "270d20905e73653356d7042c8c51d5da7fa1d129609cbacf804a00928636c064",
-   "bytes": 137874,
+   "sha256": "bd8a30724a9e5d617e0432227f4dc89f8ed6104839658952afdcf7da02f3e629",
+   "bytes": 137884,
    "export": "fighter_cello"
   },
   {

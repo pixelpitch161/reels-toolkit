@@ -49,6 +49,7 @@
  "hull_cache": "fighters/organ/hull_left.json",
  "hull_note": "ruling M3-R29: each fight's hull calls are in the pinned cache (left: hull_cache, right: hull_cache under `right`; every call's points and vertices); `left.hull` and look_right.json's `hull` hold their counts and the SHA-256 of their exact part (`line`)",
  "left": {
+  "cache": "fighters/organ/left.bfrec",
   "cards": [
    [0, "0da4e80162d56415e3c782a26e0184a5d90c8be8cb48a5c16e7c02aaeb256542"],
    [4, "9c717322777e177a0838183d8ebccc617b42025102ec0073843708b5b9964257"],
@@ -68,7 +69,6 @@
    [1829, "bd90f1ee31c95eeb1b26481b8e273c8b4858b94fd64e02c1fb1eded11a8e53cd"]
   ],
   "fighters": ["ORGAN", "FLUTE"],
-  "file": "fighters/organ/left.bfrec",
   "frames": [
    [0, "5fd35500d39fd0f7891fb1edee8d8876919323037f4bf473b2089df79d6ce66b", 38, "6d8bc6b7a5e68f423c56da2596de48cd5ce95d5600cf7aa2d01485a088287cf0", 0, "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", "spread"],
    [13, "76005c18c3e58063b9bde2198ba63c55d60e4ba403aa38a284db2fbfbe23714f", 38, "1d06738e4154afe68650a302798c0879b1dd67138d7125ba3fb3fafb731056e4", 1, "89bea37407281375f6a2f3780ec4335f0aa8d5098ae19d8b2dec35c8203d7d71", "the title card, the doors and the count-in"],
@@ -169,6 +169,7 @@
    "winner": 0
   },
   "seed": 271,
+  "sha256": "2520853a0e2490b2633dce1d15f77fd0bac562f84b0cc7f5fbb3d43dd3d3af54",
   "winner": "ORGAN"
  },
  "opponent": "FLUTE",
