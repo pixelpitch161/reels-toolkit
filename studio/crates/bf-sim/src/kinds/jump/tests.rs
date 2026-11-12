@@ -5,10 +5,13 @@
 //! The script that prints them is `tools/studio_export/unit_checks/jump_unit_vectors.py`; the functions from
 //! [`cases`] to the end of the file are its output, pasted (and wrapped by `cargo fmt`).
 //!
-//! Tolerances, as the striker's tests: every number that passes through `hypot`, `cos` or `sin` (a jump's spots,
-//! headings and contact points) is held to 1e-12, because numpy's `hypot` is the C runtime's and `geom::hypot` is
-//! `dmath`'s (they differ in the last bit for about one pair in six: `lane-fight-notes.md`, "Numeric facts"); whole
-//! numbers, texts, times, damage, health, boosts, the reach and the generator's draws are compared exactly.
+//! What is compared how. numpy's `hypot` is the plain root and so is `geom::hypot` (ruling M3-R35), so everything that
+//! comes only through `hypot`, `cos` and `sin` is compared to the bit: where a jump lands, the `jump` and `stun`
+//! events, the lock, damage, health, boosts, the reach, the generator's draws. What comes through a dot product
+//! (`seg @ seg`, `(O.p - p0) @ seg`, `np.linalg.norm`) is held to 1e-12: numpy's dot of two 2-vectors is fused on the
+//! reference PC and the engine's is not (ruling R25; they differ in the last bit for about one pair in four). Those
+//! are the headings after a jump or a knock, a cut's contact point (the `hit` and `block` events' floats), and the
+//! landing of the one case that jumps along its own heading.
 
 use bf_core::event::Value::{self, Float as F, Int as I, Str as S};
 
@@ -108,6 +111,10 @@ fn fight<'a>(roster: &'a [FighterCfg], left: &str, right: &str) -> Fight<'a> {
     f
 }
 
+/// The one `_jump` case whose landing comes through `np.linalg.norm` (a target on the ball: the jump goes along
+/// `B.v / norm(B.v)`).
+const HEADING_CASE: &str = "a target on the ball jumps along its heading";
+
 /// A float within 1e-12 of Python's.
 #[track_caller]
 fn close(got: f64, want: f64, what: &str) {
@@ -130,7 +137,8 @@ fn assert_events(got: &[bf_core::event::Event], want: &[Ev], what: &str) {
         assert_eq!(g.fields.len(), fields.len(), "{what}: {g:?}");
         for (a, b) in g.fields.iter().zip(fields) {
             match (a, b) {
-                (Value::Float(x), Value::Float(y)) => close(*x, *y, what),
+                // a contact point comes through a dot product (the nearest point of the zip line)
+                (Value::Float(x), Value::Float(y)) if *kind == "hit" || *kind == "block" => close(*x, *y, what),
                 _ => assert_eq!(a, b, "{what}: {g:?}"),
             }
         }
@@ -176,7 +184,11 @@ fn a_jump_lands_where_pythons_does() {
         f.balls[o].shield = c.shield;
         f.balls[k].blade_len = c.blade;
         jump(&mut f, k, c.j);
-        close2(f.balls[k].p, c.p1, c.name);
+        if c.name == HEADING_CASE {
+            close2(f.balls[k].p, c.p1, c.name);
+        } else {
+            assert_eq!(f.balls[k].p, c.p1, "{}: where it lands", c.name);
+        }
         close2(f.balls[k].v, c.v1, c.name);
         assert_eq!(f.balls[o].p, c.op, "{}: the enemy stays", c.name);
         close2(f.balls[o].v, c.ov1, c.name);
@@ -215,7 +227,7 @@ fn drive<'a>(run: &Run, f: &mut Fight<'a>, k: usize, before: impl Fn(&mut Fight<
         tick(f, k, k16);
         // a lock is a sum and two products of the enemy's own numbers: exact
         assert_eq!(f.jump.jump_tgt[k], row.tgt, "16th {k16}: the locked target");
-        close2(f.balls[k].p, row.p, &format!("16th {k16}: its spot"));
+        assert_eq!(f.balls[k].p, row.p, "16th {k16}: its spot");
         close2(f.balls[k].v, row.v, &format!("16th {k16}: its heading"));
         assert_eq!(f.balls[k].blade_len, row.blade, "16th {k16}: the reach");
         let rhap = f.jump.rhap[k].as_ref().map(|r| (r.n, r.side, r.next));

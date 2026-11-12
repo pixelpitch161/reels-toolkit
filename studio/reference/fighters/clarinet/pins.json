@@ -25,8 +25,8 @@
   },
   {
    "path": "fighters/clarinet/look_right.json",
-   "sha256": "ea41ba2fc860e8c516ee4ca3f679b2f53c30fb9a3237cb3780deb34fd364b857",
-   "bytes": 27008,
+   "sha256": "e7ffaa17d7f397cba2fa187a41036fe0dffb37e7660a864d7e60a8f9eff3c56f",
+   "bytes": 16154,
    "export": "fighter_clarinet"
   },
   {
