@@ -861,7 +861,11 @@ def hook_child(cfg_folder, hooks, out_path):
                 args['chord'] = M.T.chord_at(args['t']) if hasattr(M.T, 'chord_at') else M.T.CHORDS[
                     int(args['t'] // M.T.BAR)]
             mix = M.A.Mix(M.T.DUR + 4.0)
-            getattr(M.bed, hook)(mix, **{('ch' if a == 'chord' else a): v for a, v in args.items()})  # the kit's hit names the chord `ch`
+            # the kit's hit names the chord `ch`, and some moods' hit takes no `ring`: pass only what the method takes
+            fn = getattr(M.bed, hook)
+            params = inspect.signature(fn).parameters
+            named = {('ch' if a == 'chord' else a): v for a, v in args.items()}
+            fn(mix, **{a: v for a, v in named.items() if a in params})
             buses = {}
             for bus, x in mix.buses.items():
                 arrays[f'{hook}{j}__{bus}'] = np.asarray(x, np.float64)

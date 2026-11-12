@@ -1,0 +1,9 @@
+{
+ "about": "BASS DRUM's rolling sprite model (kit/fighters/bass_drum.py `_nomallet_geo`: the drum without its mallet, centred and scaled like the full model) is the first `faces` faces of studio/crates/bf-content/data/models/BASS DRUM.json (of `of`), to the bit: the mallet is the last thing the model builder makes. sha256: the variant's faces (P and n as little-endian float64, then the whole-number colour, two, emit, group id 1 or 2 and spec)",
+ "faces": 382,
+ "fighter": "BASS DRUM",
+ "format": 1,
+ "of": 406,
+ "sha256": "d5087a3aa9040bf7d1060c39056124412bf126f9f214ec566a02565f4812877d",
+ "tool": "tools.studio_export.fighter_bass_drum"
+}

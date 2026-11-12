@@ -469,6 +469,7 @@ impl FighterCfg {
                 let prefix = format!("abilities.{slot}");
                 e.ability_numbers(&prefix, slot, &ab.kind, &ab.params)?;
                 abilities::kind_check(&e, &prefix, ab)?;
+                kinds::roll_charge::check_ability(&e, &prefix, ab, &self.weapon)?;
             }
         }
         // A haste divides the weapon's 16th grid by its factor (`int(round(main16 / ab_mult(k)))`): Python raises
