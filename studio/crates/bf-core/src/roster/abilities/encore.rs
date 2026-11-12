@@ -1,28 +1,47 @@
 //! Ability kind `encore`, ALTO SAX's ENCORE: its roster settings. `fight.py` `trigger` 2964 to 2965; `start_encore`
-//! 4501 to 4537.
+//! 4501 to 4512.
 //!
-//! A stub until ALTO SAX's port: [`PORTED`] is false, so an ability of kind `encore` loads as
-//! `AbilityKind::Unsupported("encore")` and no fight can have it. The port lists the numbers `fight.py` reads as
-//! `ab[name]` in [`REQUIRED`] and every key it reads in [`ALLOWED`], fills [`EncoreCfg`] (what is not a number: lists,
-//! tables), [`parse`] and [`check`], and sets [`PORTED`].
+//! For `beats` beats one light (the weapon's `max_r` x `r_k`, 1.0 when left out) chases the enemy at `speed` x the
+//! shared speed and burns `dmg` on every 16th; on every 8th `int(n_phone)` phone lights pick spots within `spread`
+//! of the enemy, and one within `phone_r` of it burns `phone_dmg` (`spot_tick` 4419 to 4427, `spot_step` 4474 to
+//! 4488). It holds only numbers.
 
 use serde_json::Value as Json;
 
 use crate::roster::{AbilityCfg, Entry, RosterError};
 
-/// Whether the engine runs ability kind `encore`. While false the roster reads it as
-/// `AbilityKind::Unsupported("encore")`, which the engine refuses in words.
-pub const PORTED: bool = false;
+/// Whether the engine runs ability kind `encore`.
+pub const PORTED: bool = true;
 
 /// The numbers `fight.py` reads as `ab[name]` for this kind (a group of names: one of them, as `dur` or `dur_beats`).
 /// An unlock's `every_bars` is checked for every kind.
-pub const REQUIRED: &[&[&str]] = &[];
+pub const REQUIRED: &[&[&str]] = &[
+    &["beats"],
+    &["dmg"],
+    &["speed"],
+    &["n_phone"],
+    &["spread"],
+    &["phone_r"],
+    &["phone_dmg"],
+];
 
 /// Every key `fight.py` reads from an ability of this kind; an entry holding another key loads as
 /// `Unsupported("encore+<key>")`.
-pub const ALLOWED: &[&str] = &["name", "kind", "every_bars"];
+pub const ALLOWED: &[&str] = &[
+    "name",
+    "kind",
+    "every_bars",
+    "beats",
+    "dmg",
+    "speed",
+    "r_k",
+    "n_phone",
+    "spread",
+    "phone_r",
+    "phone_dmg",
+];
 
-/// What an ability of kind `encore` holds besides its numbers (empty until the port).
+/// What an ability of kind `encore` holds besides its numbers: nothing.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct EncoreCfg {}
 
