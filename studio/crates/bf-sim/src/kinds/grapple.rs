@@ -426,8 +426,71 @@ pub(crate) fn snap(f: &Fight, out: &mut Frames) {
 
 #[cfg(test)]
 mod tests {
-    use super::nearest_rope_angle;
+    use super::*;
+    use crate::fight::Setup;
+    use crate::testing::{episode_rules, fight, fighter, roster};
     use bf_core::dmath::PI;
+
+    /// CELLO (left) against FLUTE, set up as `run()` sets a grappler up.
+    fn cello_fight(roster: &[crate::roster::FighterCfg]) -> Fight<'_> {
+        let mut f = fight(
+            &Setup {
+                fighters: [fighter(roster, "CELLO"), fighter(roster, "FLUTE")],
+                rules: episode_rules(),
+                seed: 3,
+            },
+            false,
+        );
+        setup(&mut f, 0);
+        f.t = 12.5;
+        f
+    }
+
+    fn gr(state: Phase) -> Gr {
+        Gr {
+            state,
+            t0: 12.0,
+            t1: 13.0,
+            a: 0.3,
+            a0: 0.3,
+            a1: 1.0,
+            sweep: 4.0,
+            c0: [0.0; 2],
+            c1: [0.0; 2],
+        }
+    }
+
+    /// `grapple_release(k, why)` (`fight.py` 4102 to 4111), which SLAP BASS and THE ELEPHANT call for the holder: a
+    /// hold frees both balls and says `release`; a rush only drops its speed factor, silently; nothing at all is
+    /// under way afterwards, and a fighter holding nothing is left as it was.
+    #[test]
+    fn release_lets_go_as_the_kit_does() {
+        let roster = roster();
+        let mut f = cello_fight(&roster);
+        f.grapple.gr[0] = Some(gr(Phase::Hold));
+        f.balls[0].pinned = true;
+        f.balls[1].grabbed = true;
+        let n = f.events.len();
+        release(&mut f, 0, "slap");
+        assert!(f.grapple.gr[0].is_none() && !f.balls[0].pinned && !f.balls[1].grabbed);
+        assert_eq!(f.events.len(), n + 1);
+        let e = &f.events[n];
+        assert_eq!(
+            (e.kind.as_str(), &e.fields[..]),
+            ("release", &[Value::Int(0), Value::Str("slap".into())][..])
+        );
+        // a rush: the speed factor goes, no event
+        f.grapple.gr[0] = Some(gr(Phase::Rush));
+        f.balls[0].vmul = Some(2.6);
+        release(&mut f, 0, "stampede");
+        assert!(f.grapple.gr[0].is_none() && f.balls[0].vmul.is_none());
+        assert_eq!(f.events.len(), n + 1);
+        // nothing under way (and the other side, no grappler): nothing changes
+        f.balls[1].vmul = Some(1.5);
+        release(&mut f, 1, "slap");
+        release(&mut f, 0, "swan");
+        assert_eq!((f.events.len(), f.balls[1].vmul), (n + 1, Some(1.5)));
+    }
 
     #[test]
     fn the_nearest_rope_is_pythons_min_of_tuples() {
