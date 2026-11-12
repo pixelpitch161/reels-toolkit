@@ -33,6 +33,42 @@ def replay_hash(r):
     return h.hexdigest()[:16]
 
 
+def plain_scalars(x):
+    """a copy of a run value with every numpy scalar replaced by the Python number of the same value: a numpy
+    float by the float of its exact value (float64: the same bits; float32: widened exactly, as the recording stores
+    it), a numpy integer by an int, a numpy bool by a bool. Tuples stay tuples, lists lists, dicts dicts, arrays
+    arrays. Anything else numpy (a complex, a string) stops with its place"""
+    if isinstance(x, np.ndarray):
+        return x
+    if isinstance(x, np.generic):
+        if isinstance(x, np.bool_):
+            return bool(x)
+        if isinstance(x, np.integer):
+            return int(x)
+        if isinstance(x, np.floating):
+            y = float(x)
+            assert type(x)(y).tobytes() == x.tobytes(), (x, y)    # the value, to the bit
+            return y
+        raise TypeError(f'a numpy {type(x).__name__} in a run: a recording has no such value')
+    if isinstance(x, tuple):
+        return tuple(plain_scalars(v) for v in x)
+    if isinstance(x, list):
+        return [plain_scalars(v) for v in x]
+    if isinstance(x, dict):
+        return {k: plain_scalars(v) for k, v in x.items()}
+    return x
+
+
+def replay_hash_of_values(r):
+    """replay_hash over the run's values rather than their Python types: replay_hash(plain_scalars(r)). It equals
+    replay_hash(r) for every run without a numpy scalar in it (FLUTE, TROMBONE and the finished episodes); a kit run
+    that leaves a numpy float in an event (ORGAN's `line` event, whose rope length `fight.py`'s `_to_ropes` returns
+    as a numpy float when a rope cuts the row short) reprs it as `np.float64(...)`, a word no file of one float type
+    can carry, so the guard that a recording holds everything compares this hash, of the same bits, with the file's.
+    The kit itself is never patched for it"""
+    return replay_hash(plain_scalars(r))
+
+
 def as_kit_run(rec):
     """a run dict shaped like the kit's, rebuilt from a recording that was read back: events and the entries of the
     ragged keys are tuples again, arrays are lists of frames"""

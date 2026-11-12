@@ -44,9 +44,69 @@ SAFE_STEP = 0.25
 
 
 # ---------------------------------------------------------------- fresh processes
+class _SerialPool:
+    """what the kit uses of a `fork` pool (with ... as pool: pool.map / starmap / imap), mapped in this process, in
+    order: the results are the pool's, since the kit only maps pure functions of their arguments over it"""
+
+    def __init__(self, processes=None, *args, **kwargs):
+        pass
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        return False
+
+    def map(self, fn, jobs, chunksize=None):
+        return [fn(j) for j in jobs]
+
+    def starmap(self, fn, jobs, chunksize=None):
+        return [fn(*j) for j in jobs]
+
+    def imap(self, fn, jobs, chunksize=1):
+        return (fn(j) for j in jobs)
+
+    def close(self):
+        pass
+
+    def join(self):
+        pass
+
+
+class _SerialFork:
+    """multiprocessing.get_context('fork') where Windows has no fork"""
+    Pool = _SerialPool
+
+
+def serial_fork():
+    """in this process, multiprocessing.get_context('fork') gives a context whose Pool maps serially, in order; every
+    other start method is the real one. Windows has no fork, and a look may build a sprite cache through a fork pool
+    when it is not a pool worker itself (kit/fighters/trumpet.py `Look.atlas`): every part's fresh process (_child)
+    and the checks' render workers install it, so no port wraps the parts. kit.checks' own fork pool is replaced by
+    checks.py (`_ForkShim`) as before. Idempotent"""
+    real = mp.get_context
+    if getattr(real, 'serial_fork', False):
+        return
+
+    def get_context(method=None):
+        return _SerialFork() if method == 'fork' else real(method)
+    get_context.serial_fork = True
+    mp.get_context = get_context
+
+
+def build_atlases(P):
+    """build every look's file-cached sprite atlas (a kit look's `atlas()`, TRUMPET's) in this process, before a pool
+    of render workers starts: the workers then read the file this process saved instead of three of them writing it
+    at once. The look's own method, so the atlas is the kit's"""
+    for look in P.LOOKS:
+        if callable(getattr(look, 'atlas', None)):
+            look.atlas()
+
+
 def _child(q, modname, fnname, args):
     for k in THREAD_VARS:
         os.environ[k] = '1'
+    serial_fork()
     try:
         from . import __main__ as entry
         assert hash(entry.HASH_PROBE[0]) == entry.HASH_PROBE[1], 'this process does not hash strings as the ' \
@@ -197,6 +257,33 @@ def _hull_patch(calls):
     scipy.spatial.ConvexHull = Noted
 
 
+HULL_COLUMN = 6                                       # a look row's compact hull calls (look.json format 1)
+HULL_LINE = ("'<frame> <points> <v0>,<v1>,...': one line per scipy.spatial.ConvexHull call, in frame order then "
+             "call order, with its number of input points and its vertices in scipy's order")
+
+
+def hull_lines(rows):
+    """the exact part of a fight's hull log (ruling M3-R29) from look rows that still hold their compact hull
+    calls (column HULL_COLUMN, `[points, vertices, sum of x, sum of y]`): HULL_LINE. The sums are left out: the
+    Studio's points agree within 1e-12 px, not to the bit, and the pinned hull cache holds every point"""
+    return [f"{row[0]} {call[0]} {','.join(str(int(v)) for v in call[1])}" for row in rows for call in row[HULL_COLUMN]]
+
+
+def hull_summary(rows, cache):
+    """what look.json format 2 commits of a fight's hull log in place of the per-frame rows (ruling M3-R29, as
+    sprites under M3-R18): the counts and the SHA-256 of hull_lines; `cache` is the pinned file with every call"""
+    lines = hull_lines(rows)
+    return dict(ruling='M3-R29', cache=cache, frames=len(rows), calls=len(lines),
+                points=sum(int(call[0]) for row in rows for call in row[HULL_COLUMN]),
+                sha256=sha_bytes('\n'.join(lines).encode()), line=HULL_LINE)
+
+
+def without_hull(rows):
+    """look rows without their hull column (look.json format 2): frame, frame SHA-256, hook calls, their SHA-256,
+    boxes, their SHA-256, why"""
+    return [row[:HULL_COLUMN] + row[HULL_COLUMN + 1:] for row in rows]
+
+
 def look_select(P, k, events, which, n_min, times):
     """[(frame, [reason, ...])] in frame order: a spread over the video, the card and the count-in, each of the
     fighter's abilities 0.2 and 0.6 s after its first two uses, the first hit of each kind it lands and the first it
@@ -255,8 +342,9 @@ def look_select(P, k, events, which, n_min, times):
     return sorted(picks.items())
 
 
-def look_child(cfg, name, which, rec_path, n_min, times, sprites_out, hull_out):
-    """one fight drawn with the fighter's real look and the base look for the other side"""
+def look_child(cfg, name, which, rec_path, n_min, times, sprites_out, hull_out, sprite_size=None):
+    """one fight drawn with the fighter's real look and the base look for the other side (`sprite_size`: the size
+    rule of the look's own sprites, sprites.own_size)"""
     import json
     import numpy as np
     from . import frames as F
@@ -328,7 +416,7 @@ def look_child(cfg, name, which, rec_path, n_min, times, sprites_out, hull_out):
     from . import sprites as SPR
     del LF.LOG[:]
     ready = SPR.prepare(P, rec_path)
-    got = SPR.run_one(name, ready, out=sprites_out)
+    got = SPR.run_one(name, ready, out=sprites_out, sprite_size=sprite_size)
     with open(sprites_out[1], encoding='utf-8') as fh:
         sdoc = json.load(fh)
     order = [c['id'] for c in sdoc['cases']]
@@ -460,6 +548,7 @@ def _checks_init(folder):
     from . import checks as CK
     for k in THREAD_VARS:
         os.environ[k] = '1'
+    serial_fork()
     E, _ = common.kit()
     E.load(folder)
     from ballfight.kit import picture
@@ -487,6 +576,7 @@ def checks_child(cfg, rec_path):
     out['band'] = CK.band(KC, M, M.EP.check)
     out['loudness'] = CK.loudness(KC, M, wav)
     P.render(0)
+    build_atlases(P)
     with mp.get_context('spawn').Pool(WORKERS, initializer=_checks_init, initargs=(cfg.folder,)) as pool:
         frames = CK.Frames(pool)
         out['safezone'] = CK.safezone(KC, P, frames)

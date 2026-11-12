@@ -63,7 +63,14 @@ A fighter's SPEC (fighter_<slug>.py; every key but `name` and `opponent` has the
         roles=(),                    # the roles its sound is exported in; () = its kit role (Task 6)
         voice_notes=dict(pitches=None, velocities=(0.6, 0.9), durations=(0.12, 0.25, 1.0)),   # its voice (Task 6)
         hooks=(),                    # the look and title hooks its picture gates log (Task 6)
+        sprite_size=None,            # the size of the sprites its look draws itself: None = 2 r + 5 (FLUTE's);
+                                     #   dict(add=7, clip=(12, 19)) = 2 * clip(r, 12, 19) + 7 (TRUMPET's); left out
+                                     #   of fight.json's spec when not given (sprites.own_size)
     )
+
+fighter_refs(spec, extra=None): `extra(spec, folder, export, module, main, left_seed, left_file)`, when given, makes
+a port's own additional committed and cache files after the template's parts (TRUMPET's sound_line.json), in the
+same run and stage, with left.bfrec on disk.
 
 What fighter_refs writes for it today (the fight half of Template F; Task 6 adds the picture, sound, voice and
 check parts, which read `frames`, `roles`, `voice_notes` and `hooks`; see the hand-over at the end):
@@ -72,9 +79,12 @@ check parts, which read `frames`, `roles`, `voice_notes` and `hooks`; see the ha
   scale, rules), the two look fights, every scenario with its full rules, the statistics' pooled figures and
   `fights_with` counts, and the coverage table: for every required item its first occurrence over the scenario
   fights (scenario, seed, time, event index, the event itself).
-- `fighters/<slug>/left.bfrec` (committed): X in the left corner and winning, all three of its abilities fired:
-  the lowest such seed among the statistics fights (or `fights.left`). When the bytes equal a recording the set
-  already holds, fight.json points at that file instead of copying it.
+- `fighters/<slug>/left.bfrec` (committed): X in the left corner and winning, all three of its abilities fired, and
+  the K.O. after 44 s (CHECKS_FROM: the checks part runs the kit's music.main(), which needs it): the lowest such
+  seed among the statistics fights (or `fights.left`, which must meet the K.O. rule too; the run stops at once,
+  saying so, when it does not or no seed does). When the bytes equal a recording the set already holds, fight.json
+  points at that file instead of copying it. The parts read it by its committed path while the run is still
+  staged (staged_on_disk), so no port needs a milestone 1 recording to point at.
 - cache: `right.bfrec` (the opponent in the left corner and winning: X's shards fly; the lowest such seed),
   `scenarios/<name>_s<seed>.bfrec`, `stats_rows.json` (one row per seed, the columns of `stats.py`). fight.json's
   `same_as` names every cache recording whose bytes equal a committed reference recording (for FLUTE and
@@ -93,9 +103,12 @@ git tracks or would track (`git ls-files --cached --others --exclude-standard`),
 written is measured before it is committed. bf-testdata's `budget` test applies the same numbers.
 The picture, sound, voice and check parts (Task 6, m3parts.py; fighter_parts below): look.json, sound.json,
 voice.json, checks.json and exceptions.toml committed; look_right.json, the hull logs, the sprites (ruling M3-R18),
-the stem windows and the voice notes cached. episode_refs writes a pair gate's folder (Template P) and theme_parts a
-theme's bed.json (Template T). The Rust gates are studio/crates/bf-harness; the manual
-studio/docs/porting-a-fighter.md."""
+the stem windows and the voice notes cached. The hull logs (ruling M3-R29): every ConvexHull call of each look frame
+is in the pinned hull_left.json / hull_right.json, and look.json (format 2) commits only each fight's counts and the
+SHA-256 of their exact part (look_docs; FLUTE and TROMBONE, merged before the ruling, keep format 1). episode_refs
+writes a pair gate's folder (Template P) and theme_parts a theme's bed.json (Template T). The Rust gates are
+studio/crates/bf-harness; the manual studio/docs/porting-a-fighter.md."""
+import contextlib
 import hashlib
 import json
 import multiprocessing as mp
@@ -397,7 +410,7 @@ def cache_json(folder, name, obj, export, sort_keys=True):
 
 
 # ---------------------------------------------------------------- the spec
-SPEC_KEYS = ('name', 'opponent', 'fights', 'scenarios', 'frames', 'roles', 'voice_notes', 'hooks')
+SPEC_KEYS = ('name', 'opponent', 'fights', 'scenarios', 'frames', 'roles', 'voice_notes', 'hooks', 'sprite_size')
 FIGHT_DEFAULTS = dict(base='flute_vs_trombone', handicap=(1.0, 1.0), dmg_scale=1.0, rules={}, stats=2000, scan=500,
                       left=None, right=None, must=())
 FRAME_DEFAULTS = dict(left=64, right=32, times=())
@@ -486,6 +499,15 @@ def normalize(spec):
     out['roles'] = tuple(spec.get('roles') or ())
     out['voice_notes'] = _merge('SPEC.voice_notes', spec.get('voice_notes'), VOICE_DEFAULTS)
     out['hooks'] = tuple(spec.get('hooks') or ())
+    size = spec.get('sprite_size')
+    if size is not None:                          # (absent, not None, when not given: fight.json's spec is unchanged)
+        ok = isinstance(size, dict) and set(size) <= {'add', 'clip'} and isinstance(size.get('add'), int)
+        clip = size.get('clip') if ok else None
+        ok = ok and (clip is None or (len(clip) == 2 and all(isinstance(v, int) for v in clip) and clip[0] <= clip[1]))
+        if not ok:
+            raise SystemExit("SPEC.sprite_size: dict(add=<int>, clip=(<lo>, <hi>) or None): the size of the look's own "
+                             "sprites is 2 * clip(radius, lo, hi) + add (sprites.own_size)")
+        out['sprite_size'] = dict(add=size['add'], clip=None if clip is None else tuple(clip))
     return out
 
 
@@ -615,8 +637,9 @@ def fighter_model(folder, name, P, tool):
 # ---------------------------------------------------------------- recordings
 def record(cfg, seed, over, path):
     """story.run_seed(seed, **over) under cfg, written to `path` (not listed anywhere), read back and checked as the
-    reference fights are: value for value, and the kit's replay-guard hash again from the file alone. Returns the
-    recording read back"""
+    reference fights are: value for value, and the kit's replay-guard hash again from the file alone, over the run's
+    values (fights.replay_hash_of_values: a numpy float64 the kit leaves in an event, ORGAN's rope length, hashes as
+    the Python float of the same bits it is in the file). Returns the recording read back"""
     from . import fights, recording
     _, story = cfg.load()
     rules = story.rules(**over)
@@ -624,7 +647,7 @@ def record(cfg, seed, over, path):
     recording.write_bfrec(r, rules, path, rect_keys=story.REC_KEYS, register=False)
     rec = recording.read_bfrec(path)
     fights.check(r, rules, rec, story.REC_KEYS)
-    assert fights.replay_hash(fights.as_kit_run(rec)) == fights.replay_hash(r), f'{seed}: the replay guard'
+    assert fights.replay_hash(fights.as_kit_run(rec)) == fights.replay_hash_of_values(r), f'{seed}: the replay guard'
     return rec
 
 
@@ -695,8 +718,89 @@ def ability_names(name):
     return [ab[s]['name'] for s in ('unlock1', 'unlock2', 'low')]
 
 
-def fighter_refs(spec):
-    """write fighters/<slug>/ (committed) and its cache files for a fighter_<slug>.py SPEC (module docstring)"""
+# The checks part runs the kit's music.main() on the `left` fight, which prints the level of the span from 44 s to
+# the K.O. (kit/music.py, `spans`) and raises when that span holds no sample (reelkit/audio.py section_levels: the
+# peak of an empty slice). So the left fight's K.O. must come after CHECKS_FROM s, by at least one sample.
+CHECKS_FROM = 44.0
+
+
+def checks_can_run(t_ko):
+    """the kit's checks can run on a fight with this K.O. time: the span CHECKS_FROM s to the K.O. holds a sample at
+    48 kHz (int(t_ko * SR) > int(CHECKS_FROM * SR), as section_levels slices it)"""
+    from . import m3parts as MP
+    return t_ko is not None and int(t_ko * MP.SR) > int(CHECKS_FROM * MP.SR)
+
+
+def checks_too_early(export, seed, t_ko):
+    return (f'{export}: fights.left = {seed}: its K.O. is at {t_ko} s, before {CHECKS_FROM:g} s. The checks part '
+            f'runs the kit\'s music.main(), which prints the level from {CHECKS_FROM:g} s to the K.O. and stops on a '
+            f'fight that ends before it; name a left seed whose K.O. is after {CHECKS_FROM:g} s (fight.json\'s '
+            f'stats rows: winner 0, all three abilities, t_ko > {CHECKS_FROM:g})')
+
+
+def choose_left(export, name, abilities, got, fixed):
+    """(the left seed, the lower seeds passed over for an early K.O.): `fixed` (spec fights.left) when given, else
+    the lowest statistics seed with the fighter left and winning, all three abilities fired and a K.O. late enough
+    for the checks (checks_can_run). Stops, saying which condition no seed meets, when there is none"""
+    if fixed is not None:
+        return fixed, []
+    want = {f'ability/{a}' for a in abilities}
+    early = []
+    for r, items in got:
+        if r['winner'] == 0 and want <= set(items):
+            if checks_can_run(r['t_ko']):
+                return r['seed'], early
+            early.append(r['seed'])
+    if early:
+        raise SystemExit(f'{export}: no statistics fight has {name} winning from the left with all three abilities '
+                         f'({", ".join(abilities)}) and a K.O. after {CHECKS_FROM:g} s: {len(early)} fights have the '
+                         f'rest but end too early for the kit\'s music.main(), which the checks part runs (it prints '
+                         f'the level from {CHECKS_FROM:g} s to the K.O.). Set fights.left to a seed whose fight ends '
+                         f'after {CHECKS_FROM:g} s (a higher fights.stats, or another handicap, finds more)')
+    raise SystemExit(f'{export}: no statistics fight has {name} winning from the left with all three abilities '
+                     f'({", ".join(abilities)}); set fights.left')
+
+
+def early_note(early):
+    """fight.json's `left.why` addition when choose_left passed seeds over (none for FLUTE and TROMBONE)"""
+    if not early:
+        return ''
+    return (f', and a K.O. after {CHECKS_FROM:g} s, which the kit\'s checks need (passed over for an earlier K.O.: '
+            f'seed{"s" if len(early) > 1 else ""} {", ".join(str(s) for s in early)})')
+
+
+@contextlib.contextmanager
+def staged_on_disk(folder, path):
+    """a committed file this run has staged (commit_path) on disk while the block runs, for the run's own child
+    processes, which read it by its committed path before finish() applies the stage (the parts read left.bfrec).
+    Nothing happens when the run staged nothing there (a pointer at another committed file, or a cache run, which
+    compared the file already). If the block stops, the file is put back as it was (its old bytes, or no file), so a
+    run that stops still leaves the committed state as it found it"""
+    run = run_state()
+    key = os.path.normcase(os.path.abspath(path))
+    staged = None
+    if run.mode != 'cache':
+        staged = next((v for p, v in run.stage(folder).commits.items() if os.path.normcase(p) == key), None)
+    if staged is None:
+        yield path
+        return
+    old = open(path, 'rb').read() if os.path.isfile(path) else None
+    if old != staged[0]:
+        common.write_bytes(path, staged[0])
+    try:
+        yield path
+    except BaseException:
+        if old is None:
+            if os.path.exists(path):
+                os.remove(path)
+        elif old != staged[0]:
+            common.write_bytes(path, old)
+        raise
+
+
+def fighter_refs(spec, extra=None):
+    """write fighters/<slug>/ (committed) and its cache files for a fighter_<slug>.py SPEC (module docstring);
+    `extra`: a port's own additional part, called after the template's parts in the same run"""
     from . import recording, scenarios as SC, stats
     module = sys._getframe(1).f_globals.get('__name__', __name__)
     spec = normalize(spec)
@@ -729,18 +833,14 @@ def fighter_refs(spec):
 
     # ---- the two look fights
     want = {f'ability/{a}' for a in abilities}
-    if f['left'] is None:
-        left_seed = next((r['seed'] for r, items in got if r['winner'] == 0 and want <= set(items)), None)
-        if left_seed is None:
-            raise SystemExit(f'{export}: no statistics fight has {name} winning from the left with all three '
-                             f'abilities ({", ".join(abilities)}); set fights.left')
-    else:
-        left_seed = f['left']
+    left_seed, early = choose_left(export, name, abilities, got, f['left'])
     tmp = cache_dir(folder, 'left.bfrec.tmp')
     rec_left = record(main, left_seed, {}, tmp)
     data = open(tmp, 'rb').read()
     os.remove(tmp)
     assert rec_left['winner'] == 0, f'{export}: left seed {left_seed}: {name} does not win'
+    if not checks_can_run(rec_left['t_ko']):
+        raise SystemExit(checks_too_early(export, left_seed, rec_left['t_ko']))
     copy = existing_copy(hashlib.sha256(data).hexdigest(), folder)
     if copy and not copy.startswith(f'{REF}/{folder}/'):
         left_file = copy[len(REF) + 1:]
@@ -835,7 +935,7 @@ def fighter_refs(spec):
         swapped_config=dict(fighters=list(swapped.fighters), handicap=list(swapped.handicap)),
         left=rec_note(rec_left, file=left_file,
                       why=f'the lowest statistics seed with {name} in the left corner winning and all three of its '
-                          f'abilities firing' if f['left'] is None else 'fixed by the spec'),
+                          f'abilities firing' + early_note(early) if f['left'] is None else 'fixed by the spec'),
         right=rec_note(rec_right, cache=f'{folder}/right.bfrec',
                        why=f'the lowest seed with {opp} in the left corner winning (so {name} is knocked out)'
                            if f['right'] is None else 'fixed by the spec'),
@@ -853,8 +953,13 @@ def fighter_refs(spec):
                       rows=rows_cov),
         cache_files='cache files are under ' + CACHE + '/ and pinned in pins.json')
     commit_json(folder, 'fight.json', doc, module)
-    fighter_parts(spec, folder, export, module, main, swapped, left_seed, right_seed, left_file, rpath)
-    finish(folder)
+    # the parts' child processes read left.bfrec by its committed path, so a copy this run staged is on disk while
+    # they run (and put back as it was if the run stops)
+    with staged_on_disk(folder, os.path.join(common.REPO, *f'{REF}/{left_file}'.split('/'))):
+        fighter_parts(spec, folder, export, module, main, swapped, left_seed, right_seed, left_file, rpath)
+        if extra is not None:
+            extra(spec, folder, export, module, main, left_seed, left_file)
+        finish(folder)
     print(f"{export}: {folder}: left seed {left_seed} ({len(rec_left['events'])} events, "
           f"K.O. {rec_left['t_ko']}), right seed {right_seed}, {len(recs)} scenario fights, {len(rows_cov)} coverage "
           f"rows ({len(required)} required), {len(read_pins(folder))} pins, {len(same_as)} cache recordings equal to "
@@ -900,6 +1005,69 @@ def _rms_of(summary, buses):
     return {b: summary['rms'][b] for b in buses if b in summary['rms']}
 
 
+# Ruling M3-R29: a look's per-frame hull rows go to the pinned cache (hull_left.json / hull_right.json, every call's
+# points and vertices) and look.json commits their counts and one SHA-256 (format 2), as the sprites do under M3-R18.
+# The two folders merged before the ruling keep their committed look.json as it is (format 1: the compact hull
+# calls in every frame row), because a merged folder's files are never re-made by a worker (M3-R1); every other
+# folder is written in format 2. No folder joins this list.
+INLINE_HULL_ROWS = ('fighters/flute', 'fighters/trombone')
+LOOK_COLUMNS = ['frame', 'sha256 of the frame', 'hook calls', 'sha256 of the hook calls', 'boxes drawn',
+                'sha256 of the boxes', 'hull calls: [points, vertices, sum of x, sum of y]', 'why']
+
+
+def look_format(folder):
+    """look.json's format for a folder: 1 (hull calls in the frame rows) for INLINE_HULL_ROWS, else 2 (M3-R29)"""
+    return 1 if folder in INLINE_HULL_ROWS else 2
+
+
+def look_docs(folder, name, opp, module, left_file, look_l, look_r):
+    """(look.json, look_right.json) of a fighter folder from the two look_child results. Format 2 (ruling M3-R29):
+    the frame rows lose their hull column and each fight gets `hull` (m3parts.hull_summary: the counts and the
+    SHA-256 of the exact part of its hull log, the pinned file that holds every call). Format 1 is the layout of the
+    folders in INLINE_HULL_ROWS, unchanged byte for byte"""
+    from . import m3parts as MP
+    from . import look_flute as LF
+    fmt = look_format(folder)
+    left, right = dict(look_l['doc'], file=left_file), dict(look_r['doc'])
+    columns = list(LOOK_COLUMNS)
+    if fmt == 2:
+        left['hull'] = MP.hull_summary(left['frames'], f'{folder}/hull_left.json')
+        right['hull'] = MP.hull_summary(right['frames'], f'{folder}/hull_right.json')
+        left['frames'], right['frames'] = MP.without_hull(left['frames']), MP.without_hull(right['frames'])
+        del columns[MP.HULL_COLUMN]
+    look_right = dict(
+        about=f"{name}'s look in the `right` fight ({opp} left and winning, so {name}'s shards fly), drawn with its "
+              f"real look and kit/fighters/base.py's Look for {opp}: the rows of look.json's `left`",
+        **right)
+    look = dict(
+        about=f"{name}'s look against the Python kit: the `left` fight drawn with its real look and "
+              f"kit/fighters/base.py's Look for {opp} (every hook of both spied, as look_flute does); the VS card "
+              f"alone on milestone 1's noise image with {name} on either side; its title hooks; its sprites",
+        tool=module, format=fmt, fighter=name, opponent=opp, other_look='kit/fighters/base.py Look',
+        cfg_keys=look_l['cfg_keys'],
+        cfg_keys_note="the roster keys the kit's Look class reads from self.cfg (m3parts.cfg_keys): the look takes "
+                      "them from setup_as's cfg and names exactly these in cfg_summary (EUPHONIUM's copies draw it "
+                      "with another fighter's numbers)",
+        hook_names=list(LF.HOOKS), hook_note="a hook call is '<side>.<hook>'; state adds '(ball,phase)', ball, "
+                                             "ball_sprite and hides_hp add '(ball)'; hooks_build leaves out rope",
+        frame_columns=columns,
+        left=left,
+        right=dict(cache=f'{folder}/look_right.json', hull_cache=f'{folder}/hull_right.json',
+                   frames=len(look_r['doc']['frames']), seed=look_r['doc']['seed'],
+                   recording=look_r['doc']['recording']),
+        cards=dict(left=look_l['doc']['cards'], right=look_r['doc']['cards'],
+                   call='hashlib.sha256(title.draw(noise, frame / 30).tobytes()), noise = '
+                        'studio/reference/frames/flute_vs_trombone/title/noise.png; left: the fighter on side 0, '
+                        'right: on side 1'),
+        hull_cache=f'{folder}/hull_left.json', title=look_l['title'],
+        sprites=dict(look_l['sprites'], cache=f'{folder}/sprites.npz'))
+    if fmt == 2:
+        look['hull_note'] = ("ruling M3-R29: each fight's hull calls are in the pinned cache (left: hull_cache, "
+                             "right: hull_cache under `right`; every call's points and vertices); `left.hull` and "
+                             "look_right.json's `hull` hold their counts and the SHA-256 of their exact part (`line`)")
+    return look, look_right
+
+
 def fighter_parts(spec, folder, export, module, main, swapped, left_seed, right_seed, left_file, rpath):
     """look.json, sound.json, voice.json, checks.json and exceptions.toml of fighters/<slug>/, and their cache files
     (look_right.json, hull_left.json, hull_right.json, sprites.npz / .json, stems_*.npz, voice_notes.npz). Each
@@ -917,7 +1085,7 @@ def fighter_parts(spec, folder, export, module, main, swapped, left_seed, right_
         return cache_dir(folder, n)
     os.makedirs(cache_dir(folder), exist_ok=True)
     h = [MP.start(MP.look_child, lcfg.part('look'), name, 'left', left_path, fr['left'], fr['times'],
-                  (cd('sprites.npz'), cd('sprites.json')), cd('hull_left.json')),
+                  (cd('sprites.npz'), cd('sprites.json')), cd('hull_left.json'), spec.get('sprite_size')),
          MP.start(MP.look_child, rcfg.part('look'), name, 'right', rpath, fr['right'], fr['times'], None,
                   cd('hull_right.json')),
          MP.start(MP.sound_child, lcfg.part('sound'), name, None, cd('stems_left.npz'), left_path)]
@@ -942,35 +1110,11 @@ def fighter_parts(spec, folder, export, module, main, swapped, left_seed, right_
     assert look_l['doc']['k'] == 0 and look_r['doc']['k'] == 1
     for p in (cd('hull_left.json'), cd('hull_right.json'), cd('sprites.npz'), cd('sprites.json')):
         pin(p, export)
-    cache_json(folder, 'look_right.json', dict(
-        about=f"{name}'s look in the `right` fight ({opp} left and winning, so {name}'s shards fly), drawn with its "
-              f"real look and kit/fighters/base.py's Look for {opp}: the rows of look.json's `left`",
-        **look_r['doc']), export)
+    look, look_right = look_docs(folder, name, opp, module, left_file, look_l, look_r)
+    cache_json(folder, 'look_right.json', look_right, export)
     if look_l['model']:
         commit_path(folder, look_l['model']['path'], look_l['model']['data'], 'tools.studio_export.models')
-    commit_json(folder, 'look.json', dict(
-        about=f"{name}'s look against the Python kit: the `left` fight drawn with its real look and "
-              f"kit/fighters/base.py's Look for {opp} (every hook of both spied, as look_flute does); the VS card "
-              f"alone on milestone 1's noise image with {name} on either side; its title hooks; its sprites",
-        tool=module, format=1, fighter=name, opponent=opp, other_look='kit/fighters/base.py Look',
-        cfg_keys=look_l['cfg_keys'],
-        cfg_keys_note="the roster keys the kit's Look class reads from self.cfg (m3parts.cfg_keys): the look takes "
-                      "them from setup_as's cfg and names exactly these in cfg_summary (EUPHONIUM's copies draw it "
-                      "with another fighter's numbers)",
-        hook_names=list(LF.HOOKS), hook_note="a hook call is '<side>.<hook>'; state adds '(ball,phase)', ball, "
-                                             "ball_sprite and hides_hp add '(ball)'; hooks_build leaves out rope",
-        frame_columns=['frame', 'sha256 of the frame', 'hook calls', 'sha256 of the hook calls', 'boxes drawn',
-                       'sha256 of the boxes', 'hull calls: [points, vertices, sum of x, sum of y]', 'why'],
-        left=dict(look_l['doc'], file=left_file),
-        right=dict(cache=f'{folder}/look_right.json', hull_cache=f'{folder}/hull_right.json',
-                   frames=len(look_r['doc']['frames']), seed=look_r['doc']['seed'],
-                   recording=look_r['doc']['recording']),
-        cards=dict(left=look_l['doc']['cards'], right=look_r['doc']['cards'],
-                   call='hashlib.sha256(title.draw(noise, frame / 30).tobytes()), noise = '
-                        'studio/reference/frames/flute_vs_trombone/title/noise.png; left: the fighter on side 0, '
-                        'right: on side 1'),
-        hull_cache=f'{folder}/hull_left.json', title=look_l['title'],
-        sprites=dict(look_l['sprites'], cache=f'{folder}/sprites.npz')), module)
+    commit_json(folder, 'look.json', look, module)
     # ---- the sound
     for p in [cd('stems_left.npz'), cd('stems_right.npz')] + [cd(f'stems_role_{r}.npz') for r in roles]:
         pin(p, export)
@@ -1082,6 +1226,10 @@ def episode_refs(spec):
     # ---- the kit's own recording of the config
     r = story.run_seed(seed)
     rules = story.rules()
+    if not checks_can_run(r['t_ko']):
+        raise SystemExit(f"{export}: the config's own fight (seed {seed}) ends at {r['t_ko']} s, before "
+                         f"{CHECKS_FROM:g} s: the kit's music.main(), which the checks part runs, prints the level "
+                         f"from {CHECKS_FROM:g} s to the K.O. and cannot run on it")
     os.makedirs(cache_dir(folder), exist_ok=True)
     tmp = cache_dir(folder, 'run.bfrec.tmp')
     recording.write_bfrec(r, rules, tmp, rect_keys=story.REC_KEYS, register=False)
