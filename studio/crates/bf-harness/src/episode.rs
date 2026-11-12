@@ -208,7 +208,9 @@ fn window(sim: &Sim, pair: &str, what: &str, rs: &Recording, py: &Recording, set
     let r = bf_sim::parity::prefix_window(rs, py);
     let t_fight = match py.rules.get("t_fight") {
         Some(Ev::Float(x)) => *x,
-        _ => 0.0,
+        other => {
+            panic!("{pair} {what}: the Python recording's rules.t_fight is {other:?}: the floor is measured from it")
+        }
     };
     let lasts = r.agree_until_s - t_fight;
     let mut words = r.first_break.clone().unwrap_or_default();
@@ -237,7 +239,7 @@ pub fn golden_frames(pair: &str) {
     let failures = on_threads(rows, |row| {
         let n = index(&row["frame"]);
         let ((img, log, rep), calls) = hull::logged(|| pic.frame_reported(n));
-        if rep.hull_fallbacks > 0 {
+        if rep.hull_fallbacks > 0 || calls.iter().any(|c| c.1.fallback.is_some()) {
             fallbacks.fetch_add(1, Ordering::Relaxed);
         }
         let boxes: Vec<String> = log
@@ -265,7 +267,7 @@ pub fn golden_frames(pair: &str) {
         0,
         "{pair}: a hull fallback: ruling M3-R4 stops the task; tell the controller"
     );
-    report(&f, "frames", "golden frames", failures, rows.len());
+    report(&f, "frames", "pair", "golden frames", failures, rows.len());
 }
 
 /// The picture's VS card on the noise backdrop at the 16 times of `frames.json`'s `cards`.
@@ -276,18 +278,19 @@ pub fn title_card(pair: &str) {
     ff.seed = Some(rec.seed);
     let pic = build_picture(Arc::new(rec), &ff).unwrap_or_else(|e| panic!("{pair}: the picture: {e}"));
     let backdrop = noise();
+    let fps = f64::from(pic.ctx().show.grid.fps);
     let rows = list(&doc["cards"]);
     assert!(rows.len() >= 16, "{f}: 16 card frames");
     let mut failures = Vec::new();
     for r in rows {
         let n = index(&r[0]);
         let mut img = backdrop.clone();
-        pic.card().draw(&mut img, n as f64 / 30.0);
+        pic.card().draw(&mut img, n as f64 / fps);
         if sha(&img.data) != text(&r[1]) {
             failures.push((format!("card frame {n}"), "its bytes".to_string()));
         }
     }
-    report(&f, "title", "card frames", failures, rows.len());
+    report(&f, "title", "pair", "card frames", failures, rows.len());
 }
 
 fn summary(pair: &str) -> crate::sound::Summary {
@@ -304,7 +307,7 @@ pub fn soundtrack(pair: &str) {
     let kit = json(&f, "sound.json");
     let mut failures = Vec::new();
     let n = compare("soundtrack", &summary(pair), &kit, &mut failures);
-    report(&f, "sound", "soundtrack facts", failures, n);
+    report(&f, "sound", "pair", "soundtrack facts", failures, n);
 }
 
 /// Every stem window against the cache at -120 dBFS. Ignored.
@@ -312,14 +315,17 @@ pub fn stems(pair: &str) {
     let f = folder(pair);
     let kit = json(&f, "sound.json");
     let mut failures = Vec::new();
-    let n = windows_against(
-        "soundtrack",
-        &summary(pair).st,
-        &kit["windows"],
-        text(&kit["cache"]),
-        &mut failures,
+    let s = summary(pair);
+    let mut n = compare("soundtrack", &s, &crate::sound::with_cached_rms(&kit), &mut failures);
+    n += windows_against("soundtrack", &s.st, &kit["windows"], text(&kit["cache"]), &mut failures);
+    report(
+        &f,
+        "stems",
+        "pair",
+        "soundtrack facts with the bed buses, and stem windows",
+        failures,
+        n,
     );
-    report(&f, "stems", "stem windows", failures, n);
 }
 
 /// Every link of `pairs.json` occurs in the Rust run of its scenario at its time with its fields.
@@ -327,6 +333,13 @@ pub fn pair_links(sim: &Sim, pair: &str) {
     let doc = json(&folder(pair), "pairs.json");
     let mut missing = Vec::new();
     let links = list(&doc["links"]);
+    let rules = json(&folder(pair), "episode.json")["rules"]
+        .as_object()
+        .map_or(0, |r| r.len());
+    assert!(
+        rules == 0 || !links.is_empty(),
+        "{pair}: the pair has {rules} pair rule(s) but pairs.json covers no link: name its events in the spec's `links`"
+    );
     for row in links {
         let scen = list(&doc["scenarios"])
             .iter()
@@ -353,6 +366,10 @@ pub fn prefix(sim: &Sim, pair: &str) {
     let rs = traced(sim, &setup, true, pair);
     window(sim, pair, "the kit's recording", &rs, &py, &setup);
     let doc = json(&folder(pair), "pairs.json");
+    assert!(
+        !list(&doc["scenarios"]).is_empty(),
+        "{pair}: pairs.json has no scenario fights"
+    );
     for s in list(&doc["scenarios"]) {
         for (file, hash) in list(&s["cache"]).iter().zip(list(&s["hashes"])) {
             let py = cached_recording(text(file));
@@ -431,6 +448,7 @@ pub fn native_render(pair: &str) {
     )
     .unwrap_or_else(|e| panic!("{pair}: the render of seed {}: {e}", fit.seed));
     let failed = failed.into_inner().unwrap();
+    std::fs::remove_dir_all(&opts.out_root).unwrap_or_else(|e| panic!("{}: {e}", opts.out_root.display()));
     println!(
         "{pair}: seed {} (K.O. {:?}) rendered in {:.1} s to {}",
         fit.seed,

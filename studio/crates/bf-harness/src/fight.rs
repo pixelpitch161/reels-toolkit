@@ -370,11 +370,13 @@ pub fn left_fight(sim: &Sim, name: &str) {
     window_ok(sim, name, "left", &rs, &py, &setup);
 }
 
-fn window_ok(sim: &Sim, name: &str, what: &str, rs: &Recording, py: &Recording, setup: &Setup) -> f64 {
+pub(crate) fn window_ok(sim: &Sim, name: &str, what: &str, rs: &Recording, py: &Recording, setup: &Setup) -> f64 {
     let report = prefix_window(rs, py);
     let t_fight = match py.rules.get("t_fight") {
         Some(Ev::Float(x)) => *x,
-        _ => 0.0,
+        other => {
+            panic!("{name} {what}: the Python recording's rules.t_fight is {other:?}: the floor is measured from it")
+        }
     };
     let lasts = report.agree_until_s - t_fight;
     let mut words = report.first_break.clone().unwrap_or_default();
@@ -426,6 +428,11 @@ pub fn prefix(sim: &Sim, name: &str) {
         }
     }
     let n = fights.len();
+    let scenario_fights: usize = list(&doc["scenarios"]).iter().map(|s| list(&s["cache"]).len()).sum();
+    assert!(
+        scenario_fights > 0 && n == 2 + scenario_fights,
+        "{name}: {n} fights to compare, fight.json lists {scenario_fights} scenario fights besides left and right"
+    );
     for (what, py) in &fights {
         let setup = setup_like(py);
         let rs = traced(sim, &setup, true, &format!("{name} {what}"));
@@ -500,6 +507,23 @@ pub fn assert_the_kits(what: &str, rs: &Stats, py: &Stats) {
         assert!(
             (rust - kit).abs() <= bar,
             "{what} {key}: Rust {rust}, the kit {kit}, more than {bar} apart"
+        );
+    }
+    // milestone 1's own check (stats_parity.rs): a fit rate of zero passes a bar of points, so where the kit has fits
+    // the port must have them, above 0.002 where the kit is (as milestone 1's pair is)
+    if py.fit_rate > 0.0 {
+        assert!(
+            rs.fit_rate > 0.0,
+            "{what}: the kit's fit rate is {}, the port has no fits at all",
+            py.fit_rate
+        );
+    }
+    if py.fit_rate > 0.002 {
+        assert!(
+            rs.fit_rate > 0.002,
+            "{what}: fit rate {}: the fits are missing (the kit's {})",
+            rs.fit_rate,
+            py.fit_rate
         );
     }
 }

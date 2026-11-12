@@ -185,19 +185,6 @@ fn folder_has(folder: &str, files: &[&str]) {
     }
 }
 
-/// The pins of a folder name only files that exist and match (each is hashed): the cache is the pinned one.
-pub fn cache_is_pinned(folder: &str) {
-    let pins = bf_testdata::pins(folder);
-    assert!(
-        !pins.is_empty(),
-        "studio/reference/{folder}/pins.json pins nothing: run `{}`",
-        export_of(folder)
-    );
-    for p in &pins {
-        bf_testdata::cache_file(&p.path);
-    }
-}
-
 /// `fighters/<slug>/` holds every file the suites read: `fight.json`, `look.json`, `sound.json`, `voice.json`,
 /// `checks.json`, `exceptions.toml`, `pins.json`, `manifest.json`; `left.bfrec` or the committed recording
 /// `fight.json` points at.
@@ -246,7 +233,7 @@ pub fn episode_folder_is_whole(pair: &str) {
 
 // ---------------------------------------------------------------- the exceptions list
 /// One entry of a folder's `exceptions.toml`: what a gate may miss, under a controller ruling.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Exception {
     pub gate: String,
     pub what: String,
@@ -259,9 +246,75 @@ pub const GATES: [&str; 8] = [
     "look", "title", "sprites", "sound", "stems", "voice", "checks", "frames",
 ];
 
-/// The entries of `studio/reference/<folder>/exceptions.toml`. Fails when the file is missing (the export writes it
-/// once) and on an entry without a ruling of the controller (`ruling = "M3-R<n>"`), a reason or a known gate: an
-/// exception is never a port's own decision.
+/// `(ruling, folder, gate, what)` rows of a rulings list (`studio/reference/rulings.toml`, the controller's alone).
+pub fn rulings_of(text: &str) -> Result<Vec<[String; 4]>, String> {
+    let doc: toml::Table = text.parse().map_err(|e| format!("not TOML: {e}"))?;
+    let rows = doc
+        .get("rulings")
+        .and_then(toml::Value::as_array)
+        .ok_or("no list `rulings`")?;
+    rows.iter()
+        .map(|r| {
+            let f = |k: &str| {
+                r.get(k)
+                    .and_then(toml::Value::as_str)
+                    .map(str::to_string)
+                    .ok_or_else(|| format!("a ruling row without {k}: {r}"))
+            };
+            Ok([f("ruling")?, f("folder")?, f("gate")?, f("what")?])
+        })
+        .collect()
+}
+
+/// The entries of a folder's `exceptions.toml` text, each checked: a ruling the controller's list holds for exactly
+/// this folder, gate and item (a port can never excuse itself), a known gate, what and why.
+pub fn check_exceptions(folder: &str, text: &str, rulings: &[[String; 4]]) -> Result<Vec<Exception>, String> {
+    let doc: toml::Table = text.parse().map_err(|e| format!("{folder}/exceptions.toml: {e}"))?;
+    let rows = doc
+        .get("exceptions")
+        .and_then(toml::Value::as_array)
+        .ok_or_else(|| format!("{folder}/exceptions.toml: no list `exceptions`"))?;
+    let mut out = Vec::new();
+    for e in rows {
+        let field = |k: &str| e.get(k).and_then(toml::Value::as_str).unwrap_or("").to_string();
+        let x = Exception {
+            gate: field("gate"),
+            what: field("what"),
+            ruling: field("ruling"),
+            reason: field("reason"),
+        };
+        if !GATES.contains(&x.gate.as_str()) {
+            return Err(format!(
+                "{folder}/exceptions.toml: unknown gate {:?} ({GATES:?})",
+                x.gate
+            ));
+        }
+        if x.what.is_empty() || x.reason.trim().len() < 20 {
+            return Err(format!("{folder}/exceptions.toml: say what and why: {e}"));
+        }
+        let row = [x.ruling.clone(), folder.to_string(), x.gate.clone(), x.what.clone()];
+        if !rulings.contains(&row) {
+            return Err(format!(
+                "{folder}/exceptions.toml: {e} is not a ruling of studio/reference/rulings.toml (ruling {:?}, folder \
+                 {folder:?}, gate {:?}, what {:?}): an exception is the controller's decision alone; report the \
+                 difference with its frame or sample, stage and numbers and ask the controller",
+                x.ruling, x.gate, x.what
+            ));
+        }
+        out.push(x);
+    }
+    Ok(out)
+}
+
+/// The controller's rulings list, `studio/reference/rulings.toml`.
+pub fn rulings() -> Vec<[String; 4]> {
+    let path = reference("rulings.toml");
+    let text = std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("studio/reference/rulings.toml: {e}"));
+    rulings_of(&text).unwrap_or_else(|e| panic!("studio/reference/rulings.toml: {e}"))
+}
+
+/// The entries of `studio/reference/<folder>/exceptions.toml`, checked by [`check_exceptions`] against the
+/// controller's `rulings.toml`. Fails when the file is missing (the export writes it once).
 pub fn exceptions(folder: &str) -> Vec<Exception> {
     let path = reference(&format!("{folder}/exceptions.toml"));
     let text = std::fs::read_to_string(&path).unwrap_or_else(|_| {
@@ -270,44 +323,7 @@ pub fn exceptions(folder: &str) -> Vec<Exception> {
             export_of(folder)
         )
     });
-    let doc: toml::Table = text
-        .parse()
-        .unwrap_or_else(|e| panic!("studio/reference/{folder}/exceptions.toml: {e}"));
-    let rows = doc
-        .get("exceptions")
-        .and_then(toml::Value::as_array)
-        .unwrap_or_else(|| panic!("studio/reference/{folder}/exceptions.toml: no list `exceptions`"));
-    rows.iter()
-        .map(|e| {
-            let field = |k: &str| e.get(k).and_then(toml::Value::as_str).unwrap_or("").to_string();
-            let x = Exception {
-                gate: field("gate"),
-                what: field("what"),
-                ruling: field("ruling"),
-                reason: field("reason"),
-            };
-            let ruled = x
-                .ruling
-                .strip_prefix("M3-R")
-                .is_some_and(|n| !n.is_empty() && n.chars().all(|c| c.is_ascii_digit()));
-            assert!(
-                ruled,
-                "studio/reference/{folder}/exceptions.toml: an entry without a controller ruling ({e}): an exception \
-                 needs the controller's ruling (`ruling = \"M3-R<n>\"`); report the difference with its frame or \
-                 sample, stage and numbers and ask the controller"
-            );
-            assert!(
-                GATES.contains(&x.gate.as_str()),
-                "{folder}/exceptions.toml: unknown gate {:?} ({GATES:?})",
-                x.gate
-            );
-            assert!(
-                !x.what.is_empty() && x.reason.trim().len() >= 20,
-                "{folder}/exceptions.toml: say what and why: {e}"
-            );
-            x
-        })
-        .collect()
+    check_exceptions(folder, &text, &rulings()).unwrap_or_else(|e| panic!("{e}"))
 }
 
 /// The always-run check of a folder's `exceptions.toml` (the macros' `exceptions` test); prints the entries.
@@ -320,19 +336,22 @@ pub fn exceptions_are_ruled(folder: &str) {
     }
 }
 
-/// The `what` of the folder's exceptions for one gate.
-pub fn excepted(folder: &str, gate: &str) -> Vec<String> {
-    exceptions(folder)
+/// Fails with the list when any item of one run of a gate failed and is not excepted, and when an exception of
+/// that run excuses nothing (stale). `scope` names the run (`left`, `right`, `pair`, ...): every failure's key is
+/// `<scope> <item>`, which is what an exception's `what` names.
+pub fn report(folder: &str, gate: &str, scope: &str, what: &str, failures: Vec<(String, String)>, total: usize) {
+    let failures: Vec<(String, String)> = failures.into_iter().map(|(k, w)| (format!("{scope} {k}"), w)).collect();
+    let mine: Vec<String> = exceptions(folder)
         .into_iter()
-        .filter(|e| e.gate == gate)
+        .filter(|e| e.gate == gate && e.what.starts_with(&format!("{scope} ")))
         .map(|e| e.what)
-        .collect()
-}
-
-/// Fails with the list when any item failed and is not excepted; prints the excepted ones.
-pub fn report(folder: &str, gate: &str, what: &str, failures: Vec<(String, String)>, total: usize) {
-    let allowed = excepted(folder, gate);
-    let (ok, bad): (Vec<_>, Vec<_>) = failures.into_iter().partition(|(key, _)| allowed.contains(key));
+        .collect();
+    let stale: Vec<&String> = mine.iter().filter(|w| !failures.iter().any(|(k, _)| k == *w)).collect();
+    assert!(
+        stale.is_empty(),
+        "{folder} {gate}: exceptions that excuse nothing any more: {stale:?}; the controller removes their rulings"
+    );
+    let (ok, bad): (Vec<_>, Vec<_>) = failures.into_iter().partition(|(key, _)| mine.contains(key));
     for (key, why) in &ok {
         println!("{folder} {gate}: {key} differs and is excepted: {why}");
     }
@@ -349,6 +368,16 @@ pub fn report(folder: &str, gate: &str, what: &str, failures: Vec<(String, Strin
             .collect::<Vec<_>>()
             .join("\n")
     );
+}
+
+/// The larger of two differences, a NaN counting as infinitely far (`f64::max` drops a NaN, which would let a
+/// NaN pass a bar).
+pub fn gap_max(a: f64, b: f64) -> f64 {
+    if a.is_nan() || b.is_nan() {
+        f64::INFINITY
+    } else {
+        a.max(b)
+    }
 }
 
 /// Python's `float.hex()` of `x`: `0x1.<13 hex digits>p<exp>` (every digit, as Python writes it).
@@ -374,6 +403,41 @@ pub fn py_hex(x: f64) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    const RULINGS: &str = "rulings = [\n  { ruling = \"M3-R30\", folder = \"fighters/tuba\", gate = \"look\", what = \"left frame 12\" },\n]\n";
+
+    fn entry(ruling: &str, what: &str) -> String {
+        format!(
+            "[[exceptions]]\ngate = \"look\"\nwhat = \"{what}\"\nruling = \"{ruling}\"\nreason = \"two levels on a few pixels of the glow\"\n"
+        )
+    }
+
+    #[test]
+    fn an_exception_needs_the_controllers_ruling_for_exactly_that_item() {
+        let rulings = rulings_of(RULINGS).unwrap();
+        assert!(
+            check_exceptions("fighters/tuba", "exceptions = []\n", &rulings)
+                .unwrap()
+                .is_empty()
+        );
+        let ok = entry("M3-R30", "left frame 12");
+        assert_eq!(check_exceptions("fighters/tuba", &ok, &rulings).unwrap().len(), 1);
+        // a well-formed ruling that is not in the list, another item, another folder: refused
+        for (folder, text) in [
+            ("fighters/tuba", entry("M3-R31", "left frame 12")),
+            ("fighters/tuba", entry("M3-R30", "left frame 13")),
+            ("fighters/oboe", entry("M3-R30", "left frame 12")),
+            ("fighters/tuba", entry("", "left frame 12")),
+        ] {
+            let e = check_exceptions(folder, &text, &rulings).unwrap_err();
+            assert!(e.contains("is not a ruling of studio/reference/rulings.toml"), "{e}");
+        }
+    }
+
+    #[test]
+    fn the_committed_rulings_list_reads() {
+        let _ = rulings();
+    }
 
     #[test]
     fn py_hex_is_pythons() {

@@ -5,7 +5,7 @@
 #   [[exceptions]]
 #   gate = "look"              # look, title, sprites, sound, stems, voice, checks, frames
 #   what = "frame 1234"        # the frame, the bus and window, the note or the check
-#   ruling = "M3-R99"          # the controller's ruling that allows it
+#   ruling = "M3-R<n>"         # the controller's ruling, as studio/reference/rulings.toml lists it
 #   reason = "why it cannot be made identical, with the stage and the numbers"
 #
 # Written once by the folder's export and never overwritten; edited only by hand after a ruling.

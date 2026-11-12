@@ -39,6 +39,8 @@
    [1829, "d1823f2ccece24691c460435f879e07918d6c84f098def2a9826d12dbe0412a0"]
   ]
  },
+ "cfg_keys": ["abilities.low.radius"],
+ "cfg_keys_note": "the roster keys the kit's Look class reads from self.cfg (m3parts.cfg_keys): the look takes them from setup_as's cfg and names exactly these in cfg_summary (EUPHONIUM's copies draw it with another fighter's numbers)",
  "fighter": "TROMBONE",
  "format": 1,
  "frame_columns": ["frame", "sha256 of the frame", "hook calls", "sha256 of the hook calls", "boxes drawn", "sha256 of the boxes", "hull calls: [points, vertices, sum of x, sum of y]", "why"],
@@ -1458,8 +1460,6 @@
  },
  "opponent": "FLUTE",
  "other_look": "kit/fighters/base.py Look",
- "reads_cfg": true,
- "reads_cfg_note": "whether kit/fighters/<slug>.py reads self.cfg (its roster numbers): such a look must take them from setup_as (EUPHONIUM's copies draw it with another fighter's numbers)",
  "right": {
   "cache": "fighters/trombone/look_right.json",
   "frames": 58,

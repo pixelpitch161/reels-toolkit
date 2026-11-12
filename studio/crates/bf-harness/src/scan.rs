@@ -2,14 +2,36 @@
 
 use crate::refs::studio;
 
-/// The one form in which a look's code may index the picture's roster entries: its `setup` handing its own
-/// numbers to `setup_as` (FLUTE's and TROMBONE's looks). Every other number a look reads from the roster comes
-/// from the `cfg` that `setup_as` is given, so EUPHONIUM's copy of a look (made for its own side with the copied
-/// fighter's numbers) draws with the copied fighter's numbers.
+/// The one form in which a fighter's picture code may read the picture's per-side roster entries: its look's
+/// `setup` handing its own side's entry to `setup_as` (FLUTE's and TROMBONE's looks). Every roster number a look,
+/// its card or its state reads comes from the `cfg` that `setup_as` is given, so EUPHONIUM's copy of a look (made for
+/// its own side with the copied fighter's numbers) draws with the copied fighter's numbers.
 pub const ALLOWED: &str = "self.setup_as(p, k, &p.cfg[k]);";
 
+/// What reads the picture's per-side config or view, or looks a fighter up by name: `p.cfg`, any `.cfg.` /
+/// `.cfg[` (a stored or borrowed roster entry, `.cfg.get(` among them), `p.view` / `.view[` (the per-side view,
+/// which is `p.cfg[k]`'s), the roster (`roster()`) and the registry's per-name lookups (`fighters::entry(`,
+/// `look_for(`, `mesh_json(`). `p.fighter(k, t)` (a ball's state) is not a roster lookup and is allowed.
+pub const FORBIDDEN: [&str; 9] = [
+    "p.cfg",
+    ".cfg.",
+    ".cfg[",
+    "p.view",
+    ".view[",
+    "roster()",
+    "fighters::entry(",
+    "look_for(",
+    "mesh_json(",
+];
+
+/// The files of a fighter folder the scan reads: every `.rs` but the sound half (`sound.rs`, `voice.rs`), which
+/// reads the music context, not the picture.
+pub fn scanned(file: &str) -> bool {
+    file.ends_with(".rs") && file != "sound.rs" && file != "voice.rs"
+}
+
 /// The code of a line, without a `//` comment (doc comments included); string literals are not looked into, as no
-/// look writes `cfg[` in one.
+/// fighter file writes these patterns in one.
 fn code(line: &str) -> &str {
     match line.find("//") {
         Some(i) => &line[..i],
@@ -17,37 +39,51 @@ fn code(line: &str) -> &str {
     }
 }
 
-/// The places in `text` (a look's source) that index `cfg[` other than [`ALLOWED`]: `(line number, line)`.
+/// The places in `text` (a fighter file's source) that read the picture's per-side config or view other than
+/// [`ALLOWED`]: `(line number, line)`.
 pub fn cfg_indexing(text: &str) -> Vec<(usize, String)> {
     text.lines()
         .enumerate()
-        .filter(|(_, l)| code(l).contains("cfg["))
         .filter(|(_, l)| code(l).trim() != ALLOWED)
+        .filter(|(_, l)| FORBIDDEN.iter().any(|f| code(l).contains(f)))
         .map(|(i, l)| (i + 1, l.trim().to_string()))
         .collect()
 }
 
-/// In `bf-content/src/fighters/*/look.rs`, an index into `cfg[` appears only as `self.setup_as(p, k,
-/// &p.cfg[k]);`: a look reads its roster numbers from the `cfg` of `setup_as`, never `p.cfg[self.k]`.
+/// In every scanned file of `bf-content/src/fighters/<slug>/` (not `shared/`), the picture's per-side config and
+/// view are read only in [`ALLOWED`]: a look reads its roster numbers from the `cfg` of `setup_as`.
 pub fn looks_take_numbers_from_setup_as() {
     let dir = studio("crates/bf-content/src/fighters");
     let mut bad = Vec::new();
-    let mut looks = 0;
+    let (mut folders, mut files) = (0, 0);
     for entry in std::fs::read_dir(&dir).unwrap_or_else(|e| panic!("{}: {e}", dir.display())) {
-        let path = entry.expect("a folder entry").path().join("look.rs");
-        let Ok(text) = std::fs::read_to_string(&path) else {
+        let folder = entry.expect("a folder entry").path();
+        if !folder.is_dir() || folder.file_name().is_some_and(|n| n == "shared") {
             continue;
-        };
-        looks += 1;
-        for (n, line) in cfg_indexing(&text) {
-            bad.push(format!("  {}:{n}: {line}", path.display()));
+        }
+        folders += 1;
+        for f in std::fs::read_dir(&folder).unwrap_or_else(|e| panic!("{}: {e}", folder.display())) {
+            let path = f.expect("a file entry").path();
+            let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("").to_string();
+            if !scanned(&name) {
+                continue;
+            }
+            files += 1;
+            let text = std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("{}: {e}", path.display()));
+            for (n, line) in cfg_indexing(&text) {
+                bad.push(format!("  {}:{n}: {line}", path.display()));
+            }
         }
     }
-    assert!(looks >= 20, "only {looks} look.rs files under {}", dir.display());
+    assert!(
+        folders >= 20 && files >= 40,
+        "only {folders} fighter folders, {files} files under {}",
+        dir.display()
+    );
     assert!(
         bad.is_empty(),
-        "a look reads the picture's roster entries directly; take the numbers from `cfg` in setup_as and make \
-         setup call `{ALLOWED}`:\n{}",
+        "a fighter's picture code reads the picture's per-side roster entries or view directly; take the numbers \
+         from `cfg` in setup_as and make setup exactly `{ALLOWED}`:\n{}",
         bad.join("\n")
     );
 }
@@ -59,11 +95,20 @@ mod tests {
     #[test]
     fn the_scan_finds_a_look_reading_its_own_side() {
         let good = "    fn setup(&mut self, p: &PictureCtx, k: usize) {\n        self.setup_as(p, k, &p.cfg[k]);\n    }\n\
-                    /// `cfg['view'][2]`: the roll\n        // self.cfg['view'][2] (p.view[k] is p.cfg[k]'s view)\n";
-        assert!(cfg_indexing(good).is_empty());
-        let bad = "        let rad = p.cfg[self.k].low.get(\"radius\");\n        let x = &p.cfg[1 - k];\n";
+                    /// `cfg['view'][2]`: the roll\n        // self.cfg['view'][2] (p.view[k] is p.cfg[k]'s view)\n\
+                    let at = p.fighter(kk, t).p;\n        self.low = cfg.low.get(\"radius\");\n";
+        assert!(cfg_indexing(good).is_empty(), "{:?}", cfg_indexing(good));
+        let bad = "        let rad = p.cfg[self.k].low.get(\"radius\");\n        let x = &p.cfg[1 - k];\n\
+                   let roll = p.view[k].2;\n        let r = self.cfg.low.get(\"radius\");\n\
+                   let f = bf_content::roster().iter().find(|f| f.name == \"TUBA\");\n\
+                   let m = crate::fighters::entry(\"TUBA\");\n";
         let found = cfg_indexing(bad);
-        assert_eq!(found.len(), 2);
-        assert_eq!(found[0].0, 1);
+        assert_eq!(
+            found.iter().map(|f| f.0).collect::<Vec<_>>(),
+            [1, 2, 3, 4, 5, 6],
+            "{found:?}"
+        );
+        assert!(scanned("look.rs") && scanned("state.rs") && scanned("card.rs") && scanned("mod.rs"));
+        assert!(!scanned("sound.rs") && !scanned("voice.rs"));
     }
 }

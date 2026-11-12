@@ -194,6 +194,40 @@ impl<'a> SoundBuild<'a> {
         })
     }
 
+    /// The bed alone: the build of the fight `rec` under `ff` with both parts the kit's base `Sound` (silent) and
+    /// the two fighters' instrument voices given (`voices`, left corner first). A theme's gate passes stand-ins for
+    /// fighters whose voices are not in this app yet: the bed alone plays no fighter's voice. The fighters' roster
+    /// entries, the theme and its own voices are this app's.
+    ///
+    /// # Errors
+    /// As [`SoundBuild::new`], but for the fighters' voices and parts.
+    pub fn bed_alone(
+        show: &'a Show,
+        rec: &'a Recording,
+        ff: &'a FightFile,
+        voices: [Arc<dyn Voice>; 2],
+    ) -> Result<SoundBuild<'a>, ContentError> {
+        let theme = theme_of(ff)?;
+        let bed = theme_bed(theme, ff)?;
+        let cfg = |k: usize| {
+            roster().iter().find(|f| f.name == show.names[k]).ok_or_else(|| {
+                ContentError::field(
+                    format!("fighters[{k}]"),
+                    format!("{} is not in the roster", show.names[k]),
+                )
+            })
+        };
+        let ctx = MusicCtx::new(show, rec, ff, [cfg(0)?, cfg(1)?], voices, theme.bed_voices()?)?;
+        Ok(SoundBuild {
+            ctx,
+            bed,
+            sounds: [
+                Box::new(bf_sound::traits::BaseSound { k: 0 }),
+                Box::new(bf_sound::traits::BaseSound { k: 1 }),
+            ],
+        })
+    }
+
     /// `kit.music.score()`: the whole soundtrack as a mix, before the master.
     ///
     /// # Errors

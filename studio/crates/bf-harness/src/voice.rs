@@ -56,10 +56,19 @@ pub fn voice(name: &str) {
     );
     let block = index(&d["block"]);
     let notes = list(&d["notes"]);
+    // the notes the spec asks for: its pitches (4 across the register when it names none) x velocities x lengths
+    let spec = &crate::fight::doc(name)["spec"]["voice_notes"];
+    let pitches = spec["pitches"].as_array().map_or(4, Vec::len);
+    let want = pitches * list(&spec["velocities"]).len() * list(&spec["durations"]).len();
+    assert!(
+        want > 0 && list(&d["pitches"]).len() == pitches,
+        "{folder}: the spec's voice notes"
+    );
     assert_eq!(
         notes.len(),
-        4 * list(&d["velocities"]).len() * list(&d["durations"]).len(),
-        "{folder}: the notes"
+        want,
+        "{folder}: voice.json holds {} notes, the spec asks for {want}",
+        notes.len()
     );
     let (mut failures, mut same_sha) = (Vec::new(), 0);
     let mut noise = PpNoise::start();
@@ -76,11 +85,16 @@ pub fn voice(name: &str) {
             failures.push((what, format!("{} samples, the kit {}", x.len(), index(&n["samples"]))));
             continue;
         }
+        let blocks = list(&n["rms"]).len();
+        if blocks != x.len().div_ceil(block) || blocks == 0 {
+            failures.push((what, format!("{blocks} RMS blocks for {} samples of {block}", x.len())));
+            continue;
+        }
         let peak = x.iter().fold(0.0f64, |m, v| m.max(v.abs()));
-        let mut worst = (peak - hexf(&n["peak"])).abs();
+        let mut worst = crate::refs::gap_max(0.0, (peak - hexf(&n["peak"])).abs());
         for (b, want) in x.chunks(block).zip(list(&n["rms"])) {
             let rms = (b.iter().map(|v| v * v).sum::<f64>() / b.len() as f64).sqrt();
-            worst = worst.max((rms - num(want)).abs());
+            worst = crate::refs::gap_max(worst, (rms - num(want)).abs());
         }
         if worst.is_nan() || worst > BAR {
             failures.push((what.clone(), format!("{worst:e} from the kit's (bar {BAR})")));
@@ -95,7 +109,15 @@ pub fn voice(name: &str) {
         "{name}: {same_sha} of {} notes are the kit's float64 bits to the last",
         notes.len()
     );
-    report(&folder, "voice", "notes", failures, notes.len());
+    report(&folder, "voice", "voice", "notes", failures, notes.len());
+}
+
+/// The largest sample difference of two notes of the same length (NaN counts as infinitely far).
+pub fn note_gap(got: &[f64], want: &[f64]) -> f64 {
+    got.iter()
+        .zip(want)
+        .map(|(a, b)| (a - b).abs())
+        .fold(0.0, crate::refs::gap_max)
 }
 
 /// Every note sample for sample against the cache's float64 notes, within -120 dBFS. Ignored: reads the cache.
@@ -104,6 +126,7 @@ pub fn voice_notes(name: &str) {
     let d = doc(name);
     let v = voice_of(name);
     let npz = Npz::open(&bf_testdata::cache_file(text(&d["cache"])));
+    assert!(!list(&d["notes"]).is_empty(), "{folder}: no note to compare");
     let mut noise = PpNoise::start();
     let (mut failures, mut worst_all) = (Vec::new(), 0.0f64);
     for n in list(&d["notes"]) {
@@ -116,7 +139,7 @@ pub fn voice_notes(name: &str) {
         );
         let want = npz.get(id).f64();
         let worst = if x.len() == want.len() {
-            x.iter().zip(want).map(|(a, b)| (a - b).abs()).fold(0.0, f64::max)
+            note_gap(&x, want)
         } else {
             f64::INFINITY
         };
@@ -126,5 +149,12 @@ pub fn voice_notes(name: &str) {
         }
     }
     println!("{name}: the largest sample difference {worst_all:e}");
-    report(&folder, "voice", "whole notes", failures, list(&d["notes"]).len());
+    report(
+        &folder,
+        "voice",
+        "notes",
+        "whole notes",
+        failures,
+        list(&d["notes"]).len(),
+    );
 }

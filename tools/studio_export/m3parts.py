@@ -82,6 +82,49 @@ def fresh(fn, *args):
 
 
 # ---------------------------------------------------------------- small helpers
+def fresh_check(folder):
+    """remove the kit's file caches of a config folder (check/: the run, the title sprites, the stems) before a
+    part starts, so no part reads back what another part of another kind left there"""
+    import shutil
+    shutil.rmtree(os.path.join(folder, 'check'), ignore_errors=True)
+
+
+def cfg_keys(cls):
+    """the roster keys a kit look class reads from self.cfg: each chain of literal subscripts and `.get(literal)`
+    from `self.cfg` (through a local name bound to such a chain), dotted ('view.2', 'abilities.low.speed'); only the
+    longest chains are kept"""
+    import ast
+    import textwrap
+    tree = ast.parse(textwrap.dedent(inspect.getsource(cls)))
+    alias = {}
+
+    def chain(node):
+        if isinstance(node, ast.Attribute) and node.attr == 'cfg' and isinstance(node.value, ast.Name) \
+                and node.value.id == 'self':
+            return []
+        if isinstance(node, ast.Name) and node.id in alias:
+            return alias[node.id]
+        if isinstance(node, ast.Subscript) and isinstance(node.slice, ast.Constant):
+            base = chain(node.value)
+            return None if base is None else base + [str(node.slice.value)]
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) and node.func.attr == 'get' \
+                and node.args and isinstance(node.args[0], ast.Constant):
+            base = chain(node.func.value)
+            return None if base is None else base + [str(node.args[0].value)]
+        return None
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Assign) and len(node.targets) == 1 and isinstance(node.targets[0], ast.Name):
+            c = chain(node.value)
+            if c:
+                alias[node.targets[0].id] = c
+    found = set()
+    for node in ast.walk(tree):
+        c = chain(node)
+        if c:
+            found.add('.'.join(c))
+    return sorted(k for k in found if not any(o != k and o.startswith(k + '.') for o in found))
+
+
 def sha_bytes(b):
     return hashlib.sha256(b).hexdigest()
 
@@ -221,10 +264,11 @@ def look_child(cfg, name, which, rec_path, n_min, times, sprites_out, hull_out):
     calls = []
     _hull_patch(calls)
     assert 'ballfight.kit.picture' not in sys.modules
+    fresh_check(cfg.folder)
     ep, _ = cfg.load()
     from ballfight.kit import fighters as FM
     cls = FM.module(name).Look
-    reads_cfg = 'self.cfg' in inspect.getsource(sys.modules[cls.__module__])
+    keys = cfg_keys(cls)
     real, bare = LF._spied(cls, 'RealSpy'), LF._spied(FM.base.Look, 'BareSpy')
     FM.look = lambda nm, P, k: (real if nm == name else bare)(P, k)
     from ballfight.kit import picture as P            # noqa: N812
@@ -256,7 +300,7 @@ def look_child(cfg, name, which, rec_path, n_min, times, sprites_out, hull_out):
                recording=dict(hash=rec['hash'], seed=rec['seed'], winner=rec['winner']),
                hooks_build=[len(build_log), LF.sha_lines(build_log)], hooks_build_head=build_log[:8],
                cards=card_rows(P), frames=rows)
-    out = dict(doc=doc, reads_cfg=reads_cfg)
+    out = dict(doc=doc, cfg_keys=keys)
     if which != 'left':
         return out
     # ---- the title hooks (the look's own close-up or the model's; the card's pattern) on the fixed base
@@ -336,12 +380,15 @@ def _soundtrack(M, B, D, stems_out):
                 windows=wins, windows_note='stem windows of 1 s (float32) in the cache file: member w<j>__<bus>')
 
 
-def sound_child(cfg, name, role, stems_out):
+def sound_child(cfg, name, role, stems_out, rec_path):
     """the soundtrack with the fighter's real part (as `role` when given) and the base Sound for the other side"""
+    from . import frames as F
+    fresh_check(cfg.folder)
     ep, _ = cfg.load()
     if role is not None:
         ep.T.ROLES[name] = role
     M, B, D = load_music(cfg, loaded=True)
+    F.check_recording(M.P, rec_path)
     k = list(M.NAMES).index(name)
     if role is not None:
         assert M.SOUNDS[k].role == role, (M.SOUNDS[k].role, role)
@@ -363,9 +410,12 @@ def _bed_calls(module):
     return out
 
 
-def full_sound_child(cfg, stems_out):
+def full_sound_child(cfg, stems_out, rec_path):
     """the soundtrack of the fight with both real parts (a pair gate: the kit's audio.wav, sample for sample)"""
+    from . import frames as F
+    fresh_check(cfg.folder)
     M, B, D = load_music(cfg)
+    F.check_recording(M.P, rec_path)
     out = _soundtrack(M, B, D, stems_out)
     out.update(fighters=list(M.NAMES), seed=int(M.EP.seed))
     return out
@@ -375,6 +425,7 @@ def full_sound_child(cfg, stems_out):
 def voice_child(cfg, name, pitches, vels, durs, notes_out):
     import numpy as np
     from . import voices as V
+    fresh_check(cfg.folder)
     M, B, D = load_music(cfg)
     k = list(M.NAMES).index(name)
     pp = M.CFG[k]['pp']
@@ -415,12 +466,15 @@ def _checks_init(folder):
     CK._PICTURE = picture
 
 
-def checks_child(cfg):
+def checks_child(cfg, rec_path):
     """every check of kit/checks.py on cfg's fight, through checks.py's own functions; compact for the budget"""
     import contextlib
     import io
     from . import checks as CK
+    from . import frames as F
+    fresh_check(cfg.folder)
     M, B, D = load_music(cfg)
+    F.check_recording(M.P, rec_path)
     with contextlib.redirect_stdout(io.StringIO()):
         wav = M.main()
     with open(wav, 'rb') as fh:
@@ -448,21 +502,22 @@ def checks_child(cfg):
                 frames_drawn=len(frames.got), checks=out)
 
 
-def compact_checks(doc):
-    """a checks_child result made small for a pair folder's 100 KB: the safe-zone boxes as [frame, boxes] rows and
-    one SHA-256 over the frames' box hashes (one a line, in frame order); the flash areas, the loop steps and the
-    levels windows rounded far inside their bars (0.001, 1 %, 0.01 dB). Returns doc, changed in place"""
+def split_checks(doc):
+    """(committed, rows): a checks_child result without its per-frame rows, which go to the cache (the safe-zone
+    boxes of each frame, the flash areas, the loop steps, the levels windows); the committed part keeps every
+    verdict, every headline number, the row counts and one SHA-256 over the frames' box hashes"""
     c = doc['checks']
     sz = c['safezone']
-    sz['boxes_sha256'] = sha_bytes('\n'.join(b[2] for b in sz['boxes']).encode())
-    sz['boxes'] = [[b[0], b[1]] for b in sz['boxes']]
-    sz['boxes_note'] = '[frame, boxes drawn]; boxes_sha256: the SHA-256 of the frames\' box SHA-256 values (each of ' \
-                       'the lines "x0,y0,x1,y1,kind,info"), one a line, in frame order'
-    c['flash']['area'] = [round(v, 6) for v in c['flash']['area']]
-    c['loop']['picture']['steps'] = [round(v, 6) for v in c['loop']['picture']['steps']]
-    for r in c['levels']['rows']:
-        r['dbfs'] = round(r['dbfs'], 6)
-    return doc
+    rows = dict(safezone_boxes=sz.pop('boxes'), flash_area=c['flash'].pop('area'),
+                loop_steps=c['loop']['picture'].pop('steps'), levels_rows=c['levels'].pop('rows'))
+    sz['boxes_sha256'] = sha_bytes('\n'.join(b[2] for b in rows['safezone_boxes']).encode())
+    sz.pop('boxes_note', None)
+    sz['frames_rows'] = len(rows['safezone_boxes'])
+    c['flash']['area_rows'] = len(rows['flash_area'])
+    c['loop']['picture']['steps_rows'] = len(rows['loop_steps'])
+    c['levels']['rows_count'] = len(rows['levels_rows'])
+    rows['boxes_note'] = '[frame, boxes drawn, SHA-256 of the boxes, one "x0,y0,x1,y1,kind,info" a line]'
+    return doc, rows
 
 
 # ---------------------------------------------------------------- a pair gate's golden frames
@@ -561,6 +616,7 @@ def frames_child(cfg, rec_path, weapon_hit):
     from . import look_flute as LF
     calls = []
     _hull_patch(calls)
+    fresh_check(cfg.folder)
     cfg.load()
     from ballfight.kit import picture as P            # noqa: N812
     rec = F.check_recording(P, rec_path)
@@ -583,6 +639,7 @@ def frames_child(cfg, rec_path, weapon_hit):
 # ---------------------------------------------------------------- a theme's bed alone and its hooks
 def bed_child(cfg_folder, stems_out):
     """the bed alone (both fighters the kit's base Sound) on the config in `cfg_folder`"""
+    fresh_check(cfg_folder)
     E, _ = common.kit()
     E.load(cfg_folder)
     from ballfight.kit import music as M              # noqa: N812
@@ -612,6 +669,7 @@ def hook_child(cfg_folder, hooks, out_path):
     """each optional hook of the bed called directly on an empty mix (the arguments of HOOK_CALLS; a `chord` of None
     is the chord at that time): {hook: [{args, buses: {bus: sha256}}]} and the buses in a cache npz"""
     import numpy as np
+    fresh_check(cfg_folder)
     E, _ = common.kit()
     E.load(cfg_folder)
     from ballfight.kit import music as M              # noqa: N812
@@ -645,6 +703,7 @@ def stages_child(cfg, name, rec_path, frames, out):
     from . import frames as F
     from . import stages as ST
     from . import look_flute as LF
+    fresh_check(cfg.folder)
     cfg.load()
     from ballfight.kit import fighters as FM
     real, bare = LF._spied(FM.module(name).Look, 'RealSpy'), LF._spied(FM.base.Look, 'BareSpy')

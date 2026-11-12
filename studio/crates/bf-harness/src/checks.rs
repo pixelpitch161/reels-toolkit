@@ -26,7 +26,7 @@ use serde_json::Value;
 
 use crate::fight;
 use crate::look::on_threads;
-use crate::refs::{committed_recording, fighter_folder, json, list, num, report, sha, text};
+use crate::refs::{cache_json, committed_recording, fighter_folder, index, json, list, num, report, sha, text};
 
 fn got(r: &CheckResult, key: &str) -> f64 {
     *r.numbers
@@ -60,7 +60,7 @@ pub fn wav_bytes(master: &[[f64; 2]]) -> Vec<u8> {
 
 /// Every check of the fight `rec` under `ff` (both real looks and parts, through `build_picture` and
 /// `build_soundtrack`) against the kit's `checks` (a `checks.json`).
-pub fn check_fight(folder: &str, rec: Recording, ff: &FightFile, kit_doc: &Value) {
+pub fn check_fight(folder: &str, scope: &str, rec: Recording, ff: &FightFile, kit_doc: &Value) {
     let mut ff = ff.clone();
     ff.seed = Some(rec.seed);
     let facts = &kit_doc["episode_facts"];
@@ -74,6 +74,8 @@ pub fn check_fight(folder: &str, rec: Recording, ff: &FightFile, kit_doc: &Value
     let pic = build_picture(Arc::clone(&rec), &ff).unwrap_or_else(|e| panic!("{folder}: the picture: {e}"));
     let st = build_soundtrack(&rec, &ff).unwrap_or_else(|e| panic!("{folder}: the soundtrack: {e}"));
     let kit = &kit_doc["checks"];
+    // the per-frame rows are in the cache (the safe-zone boxes, the flash areas, the loop steps, the levels windows)
+    let rows_doc = cache_json(text(&kit_doc["rows_cache"]));
     let mut failures: Vec<(String, String)> = Vec::new();
     let mut n = 0;
     let mut fail = |key: &str, ok: bool, why: String| {
@@ -98,7 +100,8 @@ pub fn check_fight(folder: &str, rec: Recording, ff: &FightFile, kit_doc: &Value
     let stry = story(&rec, &show.grid, &sheet, [&low[0], &low[1]]);
     let (f0, f1) = flash_span(&show, &stry, [&low[0], &low[1]]);
     let safe = safezone_frames(nf, show.grid.fps);
-    let loop_frames: Vec<usize> = (nf - 150..nf).chain(0..30).collect();
+    let (nt, nh) = (5 * show.grid.fps as usize, show.grid.fps as usize);
+    let loop_frames: Vec<usize> = (nf - nt..nf).chain(0..nh).collect();
     let want: Vec<usize> = safe
         .iter()
         .map(|&(_, f)| f)
@@ -116,6 +119,7 @@ pub fn check_fight(folder: &str, rec: Recording, ff: &FightFile, kit_doc: &Value
     let drawn = drawn.into_inner().unwrap();
     println!("{folder}: {} frames drawn for the checks", drawn.len());
     let verdict = |r: &CheckResult, k: &Value| Some(r.pass) == k["pass"].as_bool();
+    let fps = show.grid.fps as usize;
     // focus
     let r = focus(&pic);
     let k = &kit["focus"];
@@ -149,14 +153,15 @@ pub fn check_fight(folder: &str, rec: Recording, ff: &FightFile, kit_doc: &Value
         got(&r, "overlaps") == list(&k["overlaps"]).len() as f64,
         r.summary.clone(),
     );
-    let boxes = list(&k["boxes"]);
-    fail(
-        "safezone frames",
-        boxes.len() == safe.len(),
-        format!("{} frames, the kit {}", safe.len(), boxes.len()),
+    let boxes = list(&rows_doc["safezone_boxes"]);
+    assert!(
+        !boxes.is_empty() && boxes.len() == index(&k["frames_rows"]) && boxes.len() == safe.len(),
+        "{folder}: {} safe-zone frames in the cache, {} in checks.json, {} checked here",
+        boxes.len(),
+        k["frames_rows"],
+        safe.len()
     );
-    // per frame `[frame, boxes, SHA-256 of the boxes]`, or (a pair folder's compact form) `[frame, boxes]` and one
-    // SHA-256 over the frames' box hashes
+    // per frame `[frame, boxes, SHA-256 of the boxes]`, and one SHA-256 over the frames' box hashes
     let mut frame_shas = Vec::new();
     for (w, (_, log)) in boxes.iter().zip(&logs) {
         let f = w[0].as_u64().unwrap();
@@ -166,7 +171,7 @@ pub fn check_fight(folder: &str, rec: Recording, ff: &FightFile, kit_doc: &Value
             .map(|b| format!("{},{},{},{},{},{}", b.x0, b.y0, b.x1, b.y1, b.kind.as_str(), b.info))
             .collect();
         let mine = sha(lines.join("\n").as_bytes());
-        let same = lines.len() as u64 == w[1].as_u64().unwrap() && w.get(2).is_none_or(|s| text(s) == mine);
+        let same = lines.len() as u64 == w[1].as_u64().unwrap() && text(&w[2]) == mine;
         fail(
             &format!("safezone boxes of frame {f}"),
             same,
@@ -174,13 +179,11 @@ pub fn check_fight(folder: &str, rec: Recording, ff: &FightFile, kit_doc: &Value
         );
         frame_shas.push(mine);
     }
-    if let Some(all) = k.get("boxes_sha256").and_then(Value::as_str) {
-        fail(
-            "safezone boxes",
-            sha(frame_shas.join("\n").as_bytes()) == all,
-            "the boxes of some frame".into(),
-        );
-    }
+    fail(
+        "safezone boxes",
+        sha(frame_shas.join("\n").as_bytes()) == text(&k["boxes_sha256"]),
+        "the boxes of some frame".into(),
+    );
     // levels
     let r = levels(&w16);
     let k = &kit["levels"];
@@ -199,11 +202,13 @@ pub fn check_fight(folder: &str, rec: Recording, ff: &FightFile, kit_doc: &Value
     );
     let mono: Vec<f64> = w16.iter().map(|f| (f[0] + f[1]) / 2.0).collect();
     let rows = profile(&mono, 62.0);
-    let kr = list(&k["rows"]);
-    fail(
-        "levels windows",
-        rows.len() == kr.len(),
-        format!("{} windows", rows.len()),
+    let kr = list(&rows_doc["levels_rows"]);
+    assert!(
+        !kr.is_empty() && kr.len() == index(&k["rows_count"]) && rows.len() == kr.len(),
+        "{folder}: {} levels windows here, {} in the cache, {} in checks.json",
+        rows.len(),
+        kr.len(),
+        k["rows_count"]
     );
     for (row, w) in rows.iter().zip(kr) {
         let ok = row.t == num(&w["t"])
@@ -226,9 +231,12 @@ pub fn check_fight(folder: &str, rec: Recording, ff: &FightFile, kit_doc: &Value
     ];
     let r = band(&st, &show, sounds, &bed);
     fail("band verdict", verdict(&r, k), r.summary.clone());
-    for f in list(&k["fighters"]) {
+    let fighters = list(&k["fighters"]);
+    assert_eq!(fighters.len(), 2, "{folder}: the band check's fighters");
+    for f in fighters {
         let bus = text(&f["bus"]);
         for (kind, key) in [("section", "section"), ("while it sounds", "while_it_sounds")] {
+            assert_eq!(list(&f[key]).len(), 5, "{folder}: band {bus} {kind}: the five sections");
             for (i, w) in list(&f[key]).iter().enumerate() {
                 let g = got(&r, &format!("{bus} {kind} {}", i + 1));
                 fail(
@@ -266,9 +274,15 @@ pub fn check_fight(folder: &str, rec: Recording, ff: &FightFile, kit_doc: &Value
             format!("{}", got(&r, key)),
         );
     }
-    let a = analyse(&lum, 30);
-    let area = list(&k["area"]);
-    fail("flash frames", a.area.len() == area.len(), format!("{}", a.area.len()));
+    let a = analyse(&lum, fps);
+    let area = list(&rows_doc["flash_area"]);
+    assert!(
+        !area.is_empty() && area.len() == index(&k["area_rows"]) && a.area.len() == area.len(),
+        "{folder}: {} flash frames here, {} in the cache, {} in checks.json",
+        a.area.len(),
+        area.len(),
+        k["area_rows"]
+    );
     for (j, (g, w)) in a.area.iter().zip(area).enumerate() {
         fail(
             &format!("flash area of frame {}", f0 + j),
@@ -279,7 +293,7 @@ pub fn check_fight(folder: &str, rec: Recording, ff: &FightFile, kit_doc: &Value
     // loop
     let k = &kit["loop"];
     let pics: Vec<Rgb8> = loop_frames.iter().map(|f| drawn[f].0.clone()).collect();
-    let (tail, head) = pics.split_at(150);
+    let (tail, head) = pics.split_at(nt);
     let p = loop_picture(tail, head);
     let au = loop_audio(&w16);
     fail(
@@ -298,7 +312,14 @@ pub fn check_fight(folder: &str, rec: Recording, ff: &FightFile, kit_doc: &Value
         );
     }
     let steps = bf_export::checks::loopcheck::steps(tail, head);
-    for (i, (g, w)) in steps.iter().zip(list(&kp["steps"])).enumerate() {
+    let ksteps = list(&rows_doc["loop_steps"]);
+    assert!(
+        !ksteps.is_empty() && ksteps.len() == index(&kp["steps_rows"]) && steps.len() == ksteps.len(),
+        "{folder}: {} loop steps here, {} in the cache",
+        steps.len(),
+        ksteps.len()
+    );
+    for (i, (g, w)) in steps.iter().zip(ksteps).enumerate() {
         fail(&format!("loop step {i}"), pct(*g, num(w)), format!("{g}"));
     }
     let ka = &k["audio"];
@@ -314,7 +335,7 @@ pub fn check_fight(folder: &str, rec: Recording, ff: &FightFile, kit_doc: &Value
             format!("{}", got(&au, key)),
         );
     }
-    report(folder, "checks", "check verdicts and numbers", failures, n);
+    report(folder, "checks", scope, "check verdicts and numbers", failures, n);
 }
 
 /// The `left` fight's checks against `fighters/<slug>/checks.json`. Always runs.
@@ -323,12 +344,12 @@ pub fn fighter_checks(name: &str) {
     let fd = fight::doc(name);
     let rec = committed_recording(text(&fd["left"]["file"]), Some(text(&fd["left"]["hash"])));
     let kit = json(&folder, "checks.json");
-    check_fight(&folder, rec, &fight::fight_file(&fd, false), &kit);
+    check_fight(&folder, "left", rec, &fight::fight_file(&fd, false), &kit);
 }
 
 /// A pair gate's kit episode against `episodes/<pair>/checks.json`.
 pub fn episode_checks(pair: &str) {
     let folder = format!("episodes/{pair}");
     let (rec, ff) = crate::episode::episode(pair);
-    check_fight(&folder, rec, &ff, &json(&folder, "checks.json"));
+    check_fight(&folder, "pair", rec, &ff, &json(&folder, "checks.json"));
 }
