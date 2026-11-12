@@ -1671,4 +1671,8 @@ kinds and the same 19 keys as the reference recordings.
 
 This hash is the Studio's own. It is not the kit's replay-guard hash (`tools/ballfight_replay_hash.py` prints
 `a4235ac9d8e6286b` for seed 392), which is taken over Python `repr` text. The exporter checks that each file holds
-everything the replay guard covers by recomputing the guard's hash from the file alone.
+everything the replay guard covers by recomputing the guard's hash from the file alone. The guard is compared over
+the run's values (`fights.replay_hash_of_values`): a numpy float the kit leaves in an event (ORGAN's `line` event,
+whose rope length `fight.py`'s `_to_ropes` returns as a numpy float when a rope cuts the row short) is written as the
+float of the same bits, as every float is, and hashed as that float; the kit's own `repr` of it (`np.float64(...)`)
+names a Python type no file of one float type can carry. A run without numpy scalars hashes exactly as before.
