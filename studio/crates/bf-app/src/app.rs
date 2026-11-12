@@ -191,6 +191,7 @@ pub fn start_with(
     started: Started,
 ) -> BfApp {
     let cores = std::thread::available_parallelism().map_or(1, std::num::NonZero::get);
+    engine::files::set_parent_window(cc);
     let mut notices = Vec::new();
     let (settings, queue, writer) = match paths.clone() {
         Some(paths) => {

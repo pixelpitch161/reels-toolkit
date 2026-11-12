@@ -610,6 +610,53 @@ mod tests {
         );
     }
 
+    /// A finished video whose name was taken while it was made is saved as `<name>_kept-<k>` (bf-export's
+    /// `output.rs`), holding the files named after `<name>`: the Library lists it as a normal video, which reopens.
+    #[test]
+    fn a_kept_video_shows_as_a_normal_video() {
+        let root = TempRoot::new("a_kept_video_shows_as_a_normal_video");
+        let first = video(
+            &root.0,
+            "flute_vs_trombone",
+            &[("flute_vs_trombone.toml", b"Flute vs Trombone")],
+            1_794_000_000,
+        );
+        let kept = video(
+            &root.0,
+            "flute_vs_trombone_kept-1",
+            &[
+                ("flute_vs_trombone.toml", b"Flute vs Trombone again"),
+                ("flute_vs_trombone.mp4", b"video"),
+                ("caption.txt", b"caption"),
+            ],
+            1_794_000_100,
+        );
+        let entries = scan(&root.0, &read_title).unwrap();
+        assert_eq!(
+            entries,
+            vec![
+                LibraryEntry {
+                    folder: kept.clone(),
+                    title: "Flute vs Trombone again".to_string(),
+                    colors: COLORS,
+                    seed: Some(23),
+                    modified: 1_794_000_100,
+                    fight_path: Some(kept.join("flute_vs_trombone.toml")),
+                    problem: None,
+                },
+                LibraryEntry {
+                    folder: first.clone(),
+                    title: "Flute vs Trombone".to_string(),
+                    colors: COLORS,
+                    seed: Some(17),
+                    modified: 1_794_000_000,
+                    fight_path: Some(first.join("flute_vs_trombone.toml")),
+                    problem: None,
+                },
+            ]
+        );
+    }
+
     #[test]
     fn a_folder_without_a_fight_file_cannot_be_reopened() {
         let root = TempRoot::new("a_folder_without_a_fight_file_cannot_be_reopened");

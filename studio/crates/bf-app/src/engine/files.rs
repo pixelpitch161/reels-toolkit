@@ -3,7 +3,9 @@
 //!
 //! Every command is answered on a thread of its own, so a slow or unplugged drive never holds up the coordinator:
 //!
-//! - `ScanLibrary`: `Library` (the videos under the root, with each fight file read as the engine reads it; a root
+//! - `ScanLibrary`: first [`clear_abandoned`] on the root with [`ABANDONED_AFTER`] (one day), each of its answers
+//!   a `Problem` notice (how many hidden folders were removed; each folder left, and why, once per run of the
+//!   app); then `Library` (the videos under the root, with each fight file read as the engine reads it; a root
 //!   that is missing or cannot be listed gives no videos and the problem in words), then a `LibraryCover` for each
 //!   of the newest `MAX_COVERS` videos whose `cover.png` can be read. A newer scan silences an older one: nothing
 //!   more of the older is sent, and the older skips the fight files it has not read yet, but listing the folders
@@ -18,28 +20,34 @@
 //!   refused before anything is tried (relative or empty) is answered `Missing` without being checked.
 //! - A newer `CheckFolder` or `CreateFolder` silences the older one still running: its `Folder` is never sent.
 //! - `PickFolder`: the folder dialog, then `FolderPicked`. One dialog at a time: a `PickFolder` while one is open
-//!   is ignored (the open one answers).
+//!   is ignored (the open one answers). Once [`set_parent_window`] has been given the app's window, the dialog
+//!   belongs to it: it opens in front of the app, and the app's window takes no clicks while it is open.
 //! - `RevealFolder`: shows the folder in the PC's file browser without waiting for it; only a folder that is there
 //!   is shown (never a file, which the browser would open with its program), else a `Problem` in words.
 //!
-//! Nothing here deletes or overwrites anything. The two calls that touch the desktop (the dialog and starting the
-//! file browser) are the functions in `desktop`; tests replace them, so no test opens a window.
+//! Nothing here overwrites anything, and the one thing that deletes is [`clear_abandoned`]: only the files an
+//! unfinished render of this app wrote into its own hidden folder, by name, then that empty folder (its rules are
+//! on the function). The two calls that touch the desktop (the dialog and starting the file browser) are the
+//! functions in `desktop`; tests replace them, so no test opens a window.
 //!
 //! One gap is accepted: an older open that passed its last check a moment before a newer open finishes could still
 //! send its answer after the newer one. The newer open sets the older one's flag before it starts, so the older
 //! would have to stall between its check and its send for longer than the whole newer open takes.
 
+use std::collections::HashSet;
 use std::fmt::Display;
 use std::fs;
 use std::io::{self, Read as _};
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, Mutex, OnceLock};
+use std::time::{Duration, SystemTime};
 
 use bf_core::fightfile::FightFile;
+use bf_export::output;
 
 use super::convert::{draft_of, plain, title_of};
-use super::{Ctx, problem};
+use super::{Ctx, lock, problem};
 use crate::model::library::FolderState;
 use crate::model::take::Frame;
 use crate::seam::{Command, Event};
@@ -74,6 +82,8 @@ pub struct State {
     folder: Option<Arc<AtomicBool>>,
     /// True while a folder dialog is open.
     picking: Arc<AtomicBool>,
+    /// The hidden folders `clear_abandoned` left that the person has been told about in this run of the app.
+    told: Arc<Mutex<HashSet<PathBuf>>>,
 }
 
 /// Takes one command and returns at once; the work goes to its own thread (`Ctx::spawn`).
@@ -170,10 +180,20 @@ fn scan(state: &mut State, ctx: &Ctx, root: PathBuf) {
     let flag = ctx.cancel_flag();
     let mine = flag.clone();
     let r = root.clone();
+    let told = state.told.clone();
     let started = ctx.spawn(
         "engine: library",
         "reading the Library",
-        move |ctx| scan_library(&ctx, root, &mine, MAX_COVERS),
+        move |ctx| {
+            clear_before_scan(&root, SystemTime::now(), &told, &mut |text| {
+                let send = !stopped(&ctx, &mine);
+                if send {
+                    ctx.emit(problem(text));
+                }
+                send
+            });
+            scan_library(&ctx, root, &mine, MAX_COVERS);
+        },
         move |text| Event::Library {
             root: r,
             entries: Vec::new(),
@@ -247,6 +267,325 @@ fn cover_of(folder: &Path) -> Option<Frame> {
         return None;
     }
     library::thumbnail(&bytes).ok()
+}
+
+/// How old an unfinished render's hidden folder must be, by its newest file, before a Library scan clears it.
+pub const ABANDONED_AFTER: Duration = Duration::from_secs(24 * 60 * 60);
+
+/// What [`clear_abandoned`] did.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct Cleared {
+    /// How many hidden folders were removed.
+    pub removed: usize,
+    /// Each folder of the export's temporary form, old enough and of no running program, that was left as it is,
+    /// with why and what to do, in words.
+    pub left: Vec<(PathBuf, String)>,
+}
+
+/// One clearing at a time in this program, so two Library scans never work on the same folder at once.
+static CLEARING: Mutex<()> = Mutex::new(());
+
+/// Removes what unfinished renders left in the output folder `root`: their hidden temporary folders.
+///
+/// A folder is removed only when every one of these holds:
+/// 1. it sits directly in `root` (only `root`'s own list is read; nothing below a folder that is refused);
+/// 2. its name has exactly the export's form, `.tmp-<name>-<pid>` or `.tmp-<name>-<pid>-<n>` (n from 2 to 64;
+///    `bf_export::output::temp_folder_owners`), where `<name>` holds `_vs_`;
+/// 3. no program with the pid in its name is running (every pid the name can be read with), or the pid is this
+///    program's own and none of its jobs is using a folder of that name (`temp_folder_in_use`);
+/// 4. it is a real folder, not a link or junction, and holds no link, no junction and no folder;
+/// 5. its newest time (the folder's and each file's, modified or created, whichever is later) is at least
+///    `older_than` before `now`; a time that cannot be read counts as new;
+/// 6. it holds no finished video (a file ending in `.mp4` in any letter case; a `.mp4.part` is not one) and no
+///    fight file (ending in `.toml`);
+/// 7. every file in it is one the export writes there (`temp_folder_files`: `audio.wav`, `<name>.mp4.part`,
+///    `encoding.txt`, `cover.png`, `caption.txt`), with exactly that name.
+///
+/// Then those files are removed one by one by name, the folder is checked again before each, and the folder
+/// itself is removed with `remove_dir` (which only removes an empty folder). There is no recursive delete, and each
+/// removal is tried once. A folder that fails 2 or 3, or is too new, is passed over without a word: it is not this
+/// app's leftover, or a render may still be using it. A folder that fails 4, 6 or 7, cannot be read, or could not
+/// be removed is left as it is and named in [`Cleared::left`] with why and what to do. Elsewhere than Windows every
+/// pid counts as running, so nothing is ever removed.
+///
+/// `Err` is the sentence for a `root` that cannot be listed (the Library says so in its own words too).
+pub fn clear_abandoned(root: &Path, older_than: Duration, now: SystemTime) -> Result<Cleared, String> {
+    let _one = CLEARING.lock().unwrap_or_else(|e| e.into_inner());
+    let listing = fs::read_dir(root).map_err(|_| {
+        format!(
+            "The output folder {} could not be read, so what unfinished renders left in it was not looked at.",
+            root.display()
+        )
+    })?;
+    let mut cleared = Cleared::default();
+    for entry in listing.filter_map(Result::ok) {
+        // A name that is not Unicode is not one the export makes.
+        let Some(name) = entry.file_name().to_str().map(str::to_string) else {
+            continue;
+        };
+        let owners = output::temp_folder_owners(&name);
+        if owners.is_empty() {
+            continue;
+        }
+        let folder = root.join(&name);
+        match judge(&folder, &name, &owners, older_than, now) {
+            Verdict::PassOver => {}
+            Verdict::Leave(why) => cleared.left.push((folder, why)),
+            Verdict::Remove(files) => match remove_leftover(&folder, &files) {
+                Ok(()) => cleared.removed += 1,
+                Err(why) => cleared.left.push((folder, why)),
+            },
+        }
+    }
+    Ok(cleared)
+}
+
+/// What to do with one folder of the export's temporary form.
+enum Verdict {
+    /// Not this app's leftover, or perhaps still in use: not touched, not mentioned.
+    PassOver,
+    /// Left as it is, with why, in words.
+    Leave(String),
+    /// Abandoned: these files (all the export's own) and then the folder.
+    Remove(Vec<PathBuf>),
+}
+
+/// Why a folder is left, from the most to the least important to say.
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+enum Held {
+    Video,
+    FightFile,
+    Link,
+    Folder,
+    Other,
+}
+
+/// Whether the program with id `pid` might be using a temporary folder named `name`.
+fn owner_running(pid: u32, name: &str) -> bool {
+    if pid == std::process::id() {
+        output::temp_folder_in_use(name)
+    } else {
+        process_running(pid)
+    }
+}
+
+/// Whether a program with id `pid` is running. Anything but a clear "there is no such program" counts as running
+/// (a program of another account that this one may not look at, say).
+#[cfg(windows)]
+fn process_running(pid: u32) -> bool {
+    use windows_sys::Win32::Foundation::{CloseHandle, ERROR_INVALID_PARAMETER, GetLastError, WAIT_OBJECT_0};
+    use windows_sys::Win32::System::Threading::{OpenProcess, PROCESS_SYNCHRONIZE, WaitForSingleObject};
+    // SAFETY: OpenProcess and GetLastError take plain values. A handle that is not null is waited on with no wait
+    // at all and closed exactly once, right after; it is never used again.
+    unsafe {
+        let handle = OpenProcess(PROCESS_SYNCHRONIZE, 0, pid);
+        if handle.is_null() {
+            // Windows answers "the parameter is incorrect" for an id no program has.
+            return GetLastError() != ERROR_INVALID_PARAMETER;
+        }
+        let ended = WaitForSingleObject(handle, 0) == WAIT_OBJECT_0;
+        CloseHandle(handle);
+        !ended
+    }
+}
+
+/// Elsewhere (the app is for Windows) every program counts as running, so nothing is ever cleared.
+#[cfg(not(windows))]
+fn process_running(_pid: u32) -> bool {
+    true
+}
+
+/// Whether `meta` (read without following links) is a link, a junction or any other reparse point.
+fn is_link(meta: &fs::Metadata) -> bool {
+    #[cfg(windows)]
+    {
+        use std::os::windows::fs::MetadataExt as _;
+        const FILE_ATTRIBUTE_REPARSE_POINT: u32 = 0x400;
+        if meta.file_attributes() & FILE_ATTRIBUTE_REPARSE_POINT != 0 {
+            return true;
+        }
+    }
+    meta.file_type().is_symlink()
+}
+
+/// The later of `meta`'s modified and created times, or None when either cannot be read.
+fn newest_time(meta: &fs::Metadata) -> Option<SystemTime> {
+    Some(meta.modified().ok()?.max(meta.created().ok()?))
+}
+
+/// Whether `folder` is still a real folder, not a link, right now.
+fn real_folder(folder: &Path) -> bool {
+    fs::symlink_metadata(folder).is_ok_and(|m| m.is_dir() && !is_link(&m))
+}
+
+/// The verdict on the folder `folder`, named `name`, which reads as the temporary folder of each of `owners`.
+fn judge(folder: &Path, name: &str, owners: &[(String, u32)], older_than: Duration, now: SystemTime) -> Verdict {
+    let Ok(meta) = fs::symlink_metadata(folder) else {
+        return Verdict::PassOver;
+    };
+    if is_link(&meta) {
+        return Verdict::Leave(format!(
+            "The hidden folder {} is a link to somewhere else, so BALLFIGHT Studio did not touch it or what it \
+             leads to. Delete it yourself if you do not need it.",
+            folder.display()
+        ));
+    }
+    if !meta.is_dir() || owners.iter().any(|(_, pid)| owner_running(*pid, name)) {
+        return Verdict::PassOver;
+    }
+    let unreadable = || {
+        Verdict::Leave(format!(
+            "The hidden folder {}, left by an unfinished render, could not be read, so it was left as it is. \
+             Delete it yourself if you do not need it.",
+            folder.display()
+        ))
+    };
+    let Ok(listing) = fs::read_dir(folder) else {
+        return unreadable();
+    };
+    let ours: Vec<String> = owners.iter().flat_map(|(n, _)| output::temp_folder_files(n)).collect();
+    let mut newest = newest_time(&meta);
+    let mut files = Vec::new();
+    let mut held: Option<(Held, String)> = None;
+    for child in listing {
+        let Ok(child) = child else {
+            return unreadable();
+        };
+        let child_name = child.file_name();
+        let shown = child_name.to_string_lossy().into_owned();
+        let path = folder.join(&child_name);
+        let Ok(m) = fs::symlink_metadata(&path) else {
+            return unreadable();
+        };
+        newest = newest.zip(newest_time(&m)).map(|(a, b)| a.max(b));
+        let lower = shown.to_lowercase();
+        let kind = if is_link(&m) {
+            Some(Held::Link)
+        } else if m.is_dir() {
+            Some(Held::Folder)
+        } else if lower.ends_with(".mp4") {
+            Some(Held::Video)
+        } else if lower.ends_with(".toml") {
+            Some(Held::FightFile)
+        } else if m.is_file() && child_name.to_str().is_some_and(|n| ours.iter().any(|o| o == n)) {
+            None
+        } else {
+            Some(Held::Other)
+        };
+        match kind {
+            None => files.push(path),
+            Some(kind) => {
+                if held.as_ref().is_none_or(|(h, _)| kind < *h) {
+                    held = Some((kind, shown));
+                }
+            }
+        }
+    }
+    let old_enough = newest
+        .and_then(|newest| now.duration_since(newest).ok())
+        .is_some_and(|age| age >= older_than);
+    if !old_enough {
+        return Verdict::PassOver;
+    }
+    let Some((kind, what)) = held else {
+        return Verdict::Remove(files);
+    };
+    let f = folder.display();
+    Verdict::Leave(match kind {
+        Held::Video => format!(
+            "The hidden folder {f} holds a finished video ({what}), so BALLFIGHT Studio left it as it is. Move the \
+             video somewhere else, then delete the folder yourself."
+        ),
+        Held::FightFile => format!(
+            "The hidden folder {f} holds a fight file ({what}), so BALLFIGHT Studio left it as it is. Move the file \
+             somewhere else if you want to keep it, then delete the folder yourself."
+        ),
+        Held::Link => format!(
+            "The hidden folder {f} holds a link to somewhere else ({what}), so BALLFIGHT Studio left it as it is. \
+             Delete the folder yourself if you do not need it."
+        ),
+        Held::Folder => format!(
+            "The hidden folder {f} holds a folder that BALLFIGHT Studio did not make ({what}), so it was left as it \
+             is. Look inside it, then delete it yourself if you do not need what it holds."
+        ),
+        Held::Other => format!(
+            "The hidden folder {f} holds a file that BALLFIGHT Studio did not make ({what}), so it was left as it \
+             is. Look inside it, then delete it yourself if you do not need what it holds."
+        ),
+    })
+}
+
+/// Removes `files` (each by its name, once) and then the folder `folder`, which must be empty by then. The folder
+/// is checked again before each file. `Err` says what was left, in words.
+fn remove_leftover(folder: &Path, files: &[PathBuf]) -> Result<(), String> {
+    let f = folder.display();
+    for file in files {
+        if !real_folder(folder) {
+            return Err(format!(
+                "The hidden folder {f}, left by an unfinished render, changed while BALLFIGHT Studio cleared it, so \
+                 the rest of it was left. Delete it yourself if you do not need it."
+            ));
+        }
+        match fs::remove_file(file) {
+            Ok(()) => {}
+            Err(e) if e.kind() == io::ErrorKind::NotFound => {}
+            Err(_) => {
+                return Err(format!(
+                    "The file {} in the hidden folder {f}, left by an unfinished render, could not be removed, so \
+                     the rest of the folder was left. Delete it yourself; if Windows says the file is in use, try \
+                     again after restarting the PC.",
+                    file.file_name().unwrap_or_default().to_string_lossy()
+                ));
+            }
+        }
+    }
+    match fs::remove_dir(folder) {
+        Ok(()) => Ok(()),
+        Err(e) if e.kind() == io::ErrorKind::NotFound => Ok(()),
+        Err(_) => Err(format!(
+            "The hidden folder {f}, left by an unfinished render, was emptied but could not be removed (something \
+             may have been put in it meanwhile), so it was left. Look inside it, then delete it yourself."
+        )),
+    }
+}
+
+/// The sentence for `removed` hidden folders cleared.
+fn removed_text(removed: usize) -> String {
+    if removed == 1 {
+        "BALLFIGHT Studio removed 1 hidden folder that an unfinished render left in the output folder more than a \
+         day ago. It held no finished video."
+            .to_string()
+    } else {
+        format!(
+            "BALLFIGHT Studio removed {removed} hidden folders that unfinished renders left in the output folder \
+             more than a day ago. They held no finished video."
+        )
+    }
+}
+
+/// Clears `root` before a scan and hands each sentence for the person to `send`: how many folders were removed
+/// (when any were), then each folder left that this run of the app has not told about yet. A folder counts as told
+/// only when `send` says it was sent. Nothing is said when `root` cannot be listed: the scan says that itself.
+fn clear_before_scan(
+    root: &Path,
+    now: SystemTime,
+    told: &Mutex<HashSet<PathBuf>>,
+    send: &mut dyn FnMut(String) -> bool,
+) {
+    let Ok(cleared) = clear_abandoned(root, ABANDONED_AFTER, now) else {
+        return;
+    };
+    if cleared.removed > 0 {
+        send(removed_text(cleared.removed));
+    }
+    for (folder, why) in cleared.left {
+        if lock(told).contains(&folder) {
+            continue;
+        }
+        if send(why) {
+            lock(told).insert(folder);
+        }
+    }
 }
 
 /// A fight file's text read and checked as the engine reads it: parsed, then checked against what this app has
@@ -422,6 +761,36 @@ impl Drop for DialogOpen {
     }
 }
 
+/// Every folder dialog starts from this: a dialog builder whose parent is the app's window, once
+/// [`set_parent_window`] has been called.
+static PARENT: OnceLock<rfd::FileDialog> = OnceLock::new();
+
+/// Remembers the app's window as the folder dialog's parent, so the dialog opens in front of the app and the app
+/// takes no clicks while it is open. `app::start_with` calls it once with the window's creation context; later
+/// calls change nothing.
+///
+/// No unsafe code is needed: `rfd::FileDialog::set_parent` copies the window's handle (on Windows, its HWND, a
+/// number) out of `cc` here, on the interface thread, and `rfd` makes `FileDialog` `Send` itself. The dialog is
+/// still built from a clone of this and shown on the dialog's own thread, as `rfd`'s own `AsyncFileDialog` does on
+/// Windows. The window outlives every dialog: it is the app's one window, made before the engine can be asked for a
+/// dialog and closed only as the program ends, and while a dialog is open it takes no clicks, so it cannot be
+/// closed from the window meanwhile. Should the handle ever be stale, Windows refuses it as a handle (it is never
+/// read as memory) and the dialog shows no folder chosen. With no handle (a test's creation context) the dialog
+/// has no parent, as before.
+pub fn set_parent_window(cc: &eframe::CreationContext<'_>) {
+    let _ = PARENT.set(rfd::FileDialog::new().set_parent(cc));
+}
+
+/// The folder dialog, from `template` (the one with the window as parent) when there is one: titled, opening at
+/// `start` when given.
+fn dialog_builder(template: Option<&rfd::FileDialog>, start: Option<&Path>) -> rfd::FileDialog {
+    let dialog = template.cloned().unwrap_or_default().set_title(DIALOG_TITLE);
+    match start {
+        Some(start) => dialog.set_directory(start),
+        None => dialog,
+    }
+}
+
 /// Shows the folder dialog on its own thread, unless one is open already.
 fn pick(state: &State, ctx: &Ctx, start: PathBuf) {
     if state.picking.swap(true, Ordering::SeqCst) {
@@ -489,14 +858,10 @@ mod desktop {
     use std::io;
     use std::path::{Path, PathBuf};
 
-    /// The PC's folder dialog, opening at `start`; waits until the person closes it.
+    /// The PC's folder dialog, in front of the app's window once it is known, opening at `start`; waits until the
+    /// person closes it.
     pub fn pick_folder(start: Option<&Path>) -> Option<PathBuf> {
-        let dialog = rfd::FileDialog::new().set_title(super::DIALOG_TITLE);
-        match start {
-            Some(start) => dialog.set_directory(start),
-            None => dialog,
-        }
-        .pick_folder()
+        super::dialog_builder(super::PARENT.get(), start).pick_folder()
     }
 
     /// Starts File Explorer on `folder` and returns without waiting for it.
@@ -1272,5 +1637,496 @@ mod tests {
             Err(err) => eprintln!("file links are not allowed here ({err}); that part was not run"),
         }
         finish(engine, &root);
+    }
+}
+
+/// What an unfinished render leaves behind, and the folder dialog's parent. Every test works in a temp folder of its
+/// own; nothing here touches the PC's own Videos folder, and no dialog is opened.
+#[cfg(test)]
+mod leftover_tests {
+    #[cfg(windows)]
+    use std::process::{Child, Command as Process, Stdio};
+
+    use super::*;
+    #[cfg(windows)]
+    use crate::store::{TempRoot, files_in};
+
+    /// The export's own partial video name for the pair.
+    #[cfg(windows)]
+    const PART: &str = "flute_vs_trombone.mp4.part";
+
+    /// Two days after now: everything a test makes is "two days old" then.
+    #[cfg(windows)]
+    fn later() -> SystemTime {
+        SystemTime::now() + Duration::from_secs(2 * 24 * 60 * 60)
+    }
+
+    /// The id of a program that has ended (started, waited for, and its handle let go).
+    #[cfg(windows)]
+    fn dead_pid() -> u32 {
+        let mut child = Process::new("cmd")
+            .args(["/C", "exit 0"])
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .spawn()
+            .unwrap();
+        child.wait().unwrap();
+        let pid = child.id();
+        drop(child);
+        assert!(!process_running(pid), "pid {pid} still runs");
+        pid
+    }
+
+    /// A program that runs for up to two minutes; the test kills it.
+    #[cfg(windows)]
+    fn live_program() -> Child {
+        let child = Process::new("cmd")
+            .args(["/C", "ping -n 120 127.0.0.1"])
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .spawn()
+            .unwrap();
+        assert!(process_running(child.id()));
+        child
+    }
+
+    /// The folder `name` in `root`, holding the given files.
+    #[cfg(windows)]
+    fn folder_with(root: &Path, name: &str, files: &[(&str, &[u8])]) -> PathBuf {
+        let folder = root.join(name);
+        fs::create_dir(&folder).unwrap();
+        for (file, bytes) in files {
+            fs::write(folder.join(file), bytes).unwrap();
+        }
+        folder
+    }
+
+    /// An output folder inside a test's temp folder (with spaces, "!" and letters outside ASCII in its path).
+    #[cfg(windows)]
+    fn output(test: &str) -> (TempRoot, PathBuf) {
+        let temp = TempRoot::new(test);
+        let videos = temp.0.join("Vidéos ! BALLFIGHT");
+        fs::create_dir(&videos).unwrap();
+        (temp, videos)
+    }
+
+    /// Windows only: a junction at `link` to the folder `target` (no admin rights needed).
+    #[cfg(windows)]
+    fn junction(link: &Path, target: &Path) {
+        let made = Process::new("cmd")
+            .args(["/C", "mklink", "/J"])
+            .arg(link)
+            .arg(target)
+            .output()
+            .unwrap();
+        assert!(made.status.success(), "{made:?}");
+    }
+
+    /// What `cleared` says about `folder`.
+    #[cfg(windows)]
+    fn said(cleared: &Cleared, folder: &Path) -> String {
+        cleared
+            .left
+            .iter()
+            .find(|(f, _)| f == folder)
+            .map(|(_, why)| why.clone())
+            .unwrap_or_else(|| panic!("nothing said about {}: {cleared:?}", folder.display()))
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn old_leftovers_are_cleared_file_by_file() {
+        let (_temp, videos) = output("old_leftovers_are_cleared_file_by_file");
+        let dead = dead_pid();
+        let own = std::process::id();
+        folder_with(
+            &videos,
+            &format!(".tmp-flute_vs_trombone-{dead}"),
+            &[("audio.wav", b"sound"), (PART, b"part"), ("encoding.txt", b"faster")],
+        );
+        folder_with(
+            &videos,
+            &format!(".tmp-flute_vs_trombone_frames0-90-{dead}-2"),
+            &[("flute_vs_trombone_frames0-90.mp4.part", b"part")],
+        );
+        folder_with(&videos, &format!(".tmp-flute_vs_trombone_seed7-{dead}-3"), &[]);
+        // This program's own, which no job of it is using.
+        folder_with(&videos, &format!(".tmp-flute_vs_trombone-{own}"), &[(PART, b"part")]);
+        // A video, a folder of the person's, and a file with a leftover's name: all stay.
+        folder_with(
+            &videos,
+            "flute_vs_trombone",
+            &[("cover.png", b"c"), ("flute_vs_trombone.toml", b"f")],
+        );
+        folder_with(&videos, ".keep", &[("mine.txt", b"mine")]);
+        fs::write(videos.join(format!(".tmp-flute_vs_trombone-{dead}-4")), b"a file").unwrap();
+
+        let cleared = clear_abandoned(&videos, ABANDONED_AFTER, later()).unwrap();
+        assert_eq!(
+            cleared,
+            Cleared {
+                removed: 4,
+                left: Vec::new()
+            }
+        );
+        assert_eq!(
+            files_in(&videos),
+            [
+                ".keep".to_string(),
+                format!(".tmp-flute_vs_trombone-{dead}-4"),
+                "flute_vs_trombone".to_string()
+            ]
+        );
+        assert_eq!(
+            files_in(&videos.join("flute_vs_trombone")),
+            ["cover.png", "flute_vs_trombone.toml"]
+        );
+        assert_eq!(fs::read(videos.join(".keep").join("mine.txt")).unwrap(), b"mine");
+        // Nothing more to do the second time.
+        assert_eq!(
+            clear_abandoned(&videos, ABANDONED_AFTER, later()).unwrap(),
+            Cleared::default()
+        );
+        // An output folder that cannot be listed is said in words.
+        let missing = videos.join("missing");
+        assert_eq!(
+            clear_abandoned(&missing, ABANDONED_AFTER, later()).unwrap_err(),
+            format!(
+                "The output folder {} could not be read, so what unfinished renders left in it was not looked at.",
+                missing.display()
+            )
+        );
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn a_persons_own_file_keeps_the_folder() {
+        let (_temp, videos) = output("a_persons_own_file_keeps_the_folder");
+        let dead = dead_pid();
+        let notes = folder_with(
+            &videos,
+            &format!(".tmp-flute_vs_trombone-{dead}"),
+            &[("audio.wav", b"sound"), ("my notes.txt", b"mine")],
+        );
+        // The export's name in another letter case is not the export's file.
+        let cased = folder_with(
+            &videos,
+            &format!(".tmp-flute_vs_trombone-{dead}-2"),
+            &[("Audio.WAV", b"sound")],
+        );
+        // A folder inside.
+        let inner = folder_with(&videos, &format!(".tmp-flute_vs_trombone-{dead}-3"), &[(PART, b"part")]);
+        folder_with(&inner, "photos", &[("me.jpg", b"me")]);
+        // A file meant for another video's name.
+        let other = folder_with(
+            &videos,
+            &format!(".tmp-flute_vs_trombone_seed7-{dead}"),
+            &[("tuba_vs_horn.mp4.part", b"p")],
+        );
+
+        let cleared = clear_abandoned(&videos, ABANDONED_AFTER, later()).unwrap();
+        assert_eq!((cleared.removed, cleared.left.len()), (0, 4), "{cleared:?}");
+        assert_eq!(
+            said(&cleared, &notes),
+            format!(
+                "The hidden folder {} holds a file that BALLFIGHT Studio did not make (my notes.txt), so it was left \
+                 as it is. Look inside it, then delete it yourself if you do not need what it holds.",
+                notes.display()
+            )
+        );
+        assert!(said(&cleared, &cased).contains("(Audio.WAV)"));
+        assert!(said(&cleared, &inner).contains("holds a folder that BALLFIGHT Studio did not make (photos)"));
+        assert!(said(&cleared, &other).contains("(tuba_vs_horn.mp4.part)"));
+        // Nothing in them was touched, not even the export's own file beside the person's.
+        assert_eq!(files_in(&notes), ["audio.wav", "my notes.txt"]);
+        assert_eq!(fs::read(notes.join("my notes.txt")).unwrap(), b"mine");
+        assert_eq!(files_in(&cased), ["Audio.WAV"]);
+        assert_eq!(files_in(&inner), [PART, "photos"]);
+        assert_eq!(fs::read(inner.join("photos").join("me.jpg")).unwrap(), b"me");
+        assert_eq!(files_in(&other), ["tuba_vs_horn.mp4.part"]);
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn a_leftover_with_a_video_is_never_touched() {
+        let (_temp, videos) = output("a_leftover_with_a_video_is_never_touched");
+        let dead = dead_pid();
+        let video = folder_with(
+            &videos,
+            &format!(".tmp-flute_vs_trombone-{dead}"),
+            &[
+                ("flute_vs_trombone.mp4", b"video"),
+                ("audio.wav", b"sound"),
+                ("cover.png", b"c"),
+            ],
+        );
+        let upper = folder_with(
+            &videos,
+            &format!(".tmp-flute_vs_trombone-{dead}-2"),
+            &[("OTHER.MP4", b"video")],
+        );
+        let fight = folder_with(
+            &videos,
+            &format!(".tmp-flute_vs_trombone-{dead}-3"),
+            &[("flute_vs_trombone.toml", b"fight"), (PART, b"part")],
+        );
+        // A video and a person's file: the video is what is said.
+        let both = folder_with(
+            &videos,
+            &format!(".tmp-flute_vs_trombone_seed7-{dead}"),
+            &[("zz notes.txt", b"mine"), ("flute_vs_trombone.mp4", b"video")],
+        );
+
+        let cleared = clear_abandoned(&videos, ABANDONED_AFTER, later()).unwrap();
+        assert_eq!((cleared.removed, cleared.left.len()), (0, 4), "{cleared:?}");
+        assert_eq!(
+            said(&cleared, &video),
+            format!(
+                "The hidden folder {} holds a finished video (flute_vs_trombone.mp4), so BALLFIGHT Studio left it as \
+                 it is. Move the video somewhere else, then delete the folder yourself.",
+                video.display()
+            )
+        );
+        assert!(said(&cleared, &upper).contains("holds a finished video (OTHER.MP4)"));
+        assert!(said(&cleared, &fight).contains("holds a fight file (flute_vs_trombone.toml)"));
+        assert!(said(&cleared, &both).contains("holds a finished video (flute_vs_trombone.mp4)"));
+        assert_eq!(files_in(&video), ["audio.wav", "cover.png", "flute_vs_trombone.mp4"]);
+        assert_eq!(fs::read(video.join("flute_vs_trombone.mp4")).unwrap(), b"video");
+        assert_eq!(files_in(&upper), ["OTHER.MP4"]);
+        assert_eq!(files_in(&fight), [PART, "flute_vs_trombone.toml"]);
+        assert_eq!(files_in(&both), ["flute_vs_trombone.mp4", "zz notes.txt"]);
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn links_are_never_followed() {
+        let (temp, videos) = output("links_are_never_followed");
+        let dead = dead_pid();
+        // Outside the output folder, files with the export's own names.
+        let outside = folder_with(&temp.0, "outside", &[("audio.wav", b"keep"), (PART, b"keep")]);
+        // The leftover's name on a junction.
+        let link = videos.join(format!(".tmp-flute_vs_trombone-{dead}"));
+        junction(&link, &outside);
+        // A junction inside a leftover.
+        let holds = folder_with(
+            &videos,
+            &format!(".tmp-flute_vs_trombone-{dead}-2"),
+            &[("audio.wav", b"sound")],
+        );
+        junction(&holds.join("inner"), &outside);
+        // A file link with the export's name, when this account may make one.
+        let file_link = folder_with(&videos, &format!(".tmp-flute_vs_trombone-{dead}-3"), &[]);
+        let linked = std::os::windows::fs::symlink_file(outside.join("audio.wav"), file_link.join("audio.wav")).is_ok();
+
+        let cleared = clear_abandoned(&videos, ABANDONED_AFTER, later()).unwrap();
+        // Without a file link the third folder is empty, and an empty leftover is cleared.
+        assert_eq!(cleared.removed, usize::from(!linked), "{cleared:?}");
+        assert_eq!(
+            said(&cleared, &link),
+            format!(
+                "The hidden folder {} is a link to somewhere else, so BALLFIGHT Studio did not touch it or what it \
+                 leads to. Delete it yourself if you do not need it.",
+                link.display()
+            )
+        );
+        assert!(said(&cleared, &holds).contains("holds a link to somewhere else (inner)"));
+        if linked {
+            assert!(said(&cleared, &file_link).contains("holds a link to somewhere else (audio.wav)"));
+            assert_eq!(files_in(&file_link), ["audio.wav"]);
+        } else {
+            eprintln!("file links are not allowed here; that part was not run");
+        }
+        // The outside folder and its files stay, and so do the links and the leftover's own file.
+        assert_eq!(files_in(&outside), ["audio.wav", PART]);
+        assert_eq!(fs::read(outside.join("audio.wav")).unwrap(), b"keep");
+        assert_eq!(fs::read(outside.join(PART)).unwrap(), b"keep");
+        assert!(fs::symlink_metadata(&link).is_ok());
+        assert_eq!(files_in(&holds), ["audio.wav", "inner"]);
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn a_running_render_is_never_touched() {
+        let (_temp, videos) = output("a_running_render_is_never_touched");
+        let mut program = live_program();
+        let pid = program.id();
+        let busy = folder_with(&videos, &format!(".tmp-flute_vs_trombone-{pid}"), &[(PART, b"part")]);
+        let cleared = clear_abandoned(&videos, ABANDONED_AFTER, later()).unwrap();
+        let _ = program.kill();
+        let _ = program.wait();
+        drop(program);
+        assert_eq!(
+            cleared,
+            Cleared::default(),
+            "a running program's folder is passed over without a word"
+        );
+        assert_eq!(files_in(&busy), [PART]);
+        // The program's id was the only reason: once it has ended, the folder goes.
+        assert_eq!(clear_abandoned(&videos, ABANDONED_AFTER, later()).unwrap().removed, 1);
+        assert_eq!(files_in(&videos), Vec::<String>::new());
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn a_young_leftover_waits() {
+        let (_temp, videos) = output("a_young_leftover_waits");
+        let dead = dead_pid();
+        let young = folder_with(&videos, &format!(".tmp-flute_vs_trombone-{dead}"), &[(PART, b"part")]);
+        // Made just now: too young today, and too young for three days two days from now.
+        assert_eq!(
+            clear_abandoned(&videos, ABANDONED_AFTER, SystemTime::now()).unwrap(),
+            Cleared::default()
+        );
+        let three_days = Duration::from_secs(3 * 24 * 60 * 60);
+        assert_eq!(
+            clear_abandoned(&videos, three_days, later()).unwrap(),
+            Cleared::default()
+        );
+        // The newest file counts, not the folder: a file dated three days ahead keeps its folder young.
+        let newer = folder_with(
+            &videos,
+            &format!(".tmp-flute_vs_trombone-{dead}-2"),
+            &[("audio.wav", b"s")],
+        );
+        let file = fs::OpenOptions::new()
+            .write(true)
+            .open(newer.join("audio.wav"))
+            .unwrap();
+        file.set_modified(SystemTime::now() + three_days).unwrap();
+        drop(file);
+        // A person's file in a young folder is not mentioned yet either.
+        let mine = folder_with(
+            &videos,
+            &format!(".tmp-flute_vs_trombone-{dead}-3"),
+            &[("mine.txt", b"m")],
+        );
+        assert_eq!(
+            clear_abandoned(&videos, ABANDONED_AFTER, SystemTime::now()).unwrap(),
+            Cleared::default()
+        );
+        let cleared = clear_abandoned(&videos, ABANDONED_AFTER, later()).unwrap();
+        assert_eq!((cleared.removed, cleared.left.len()), (1, 1), "{cleared:?}");
+        assert_eq!(cleared.left[0].0, mine);
+        assert!(!young.exists());
+        assert_eq!(files_in(&newer), ["audio.wav"]);
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn names_that_only_look_alike_are_left() {
+        let (_temp, videos) = output("names_that_only_look_alike_are_left");
+        let dead = dead_pid();
+        let names = [
+            format!(".tmp-x-{dead}"),
+            ".tmp-flute_vs_trombone".to_string(),
+            format!(".tmp-flute_vs_trombone-0{dead}"),
+            format!(".tmp-flute_vs_trombone-{dead}a"),
+            format!(".tmp-flute_vs_trombone-{dead}.old"),
+            format!(".tmp-flute_vs_trombone-{dead} (2)"),
+            format!(".tmp-flute_vs_trombone-{dead}-01"),
+            format!(".TMP-flute_vs_trombone-{dead}"),
+            format!("tmp-flute_vs_trombone-{dead}"),
+            format!("x.tmp-flute_vs_trombone-{dead}"),
+            format!(".tmp--{dead}"),
+            "flute_vs_trombone_kept-1".to_string(),
+        ];
+        for name in &names {
+            folder_with(&videos, name, &[("audio.wav", b"sound"), (PART, b"part")]);
+        }
+        let cleared = clear_abandoned(&videos, ABANDONED_AFTER, later()).unwrap();
+        assert_eq!(cleared, Cleared::default());
+        let mut sorted = names.to_vec();
+        sorted.sort();
+        assert_eq!(files_in(&videos), sorted);
+        for name in &names {
+            assert_eq!(files_in(&videos.join(name)), ["audio.wav", PART], "{name}");
+        }
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn the_person_is_told_once() {
+        let (_temp, videos) = output("the_person_is_told_once");
+        let dead = dead_pid();
+        folder_with(&videos, &format!(".tmp-flute_vs_trombone-{dead}"), &[(PART, b"part")]);
+        folder_with(&videos, &format!(".tmp-flute_vs_trombone-{dead}-2"), &[(PART, b"part")]);
+        let kept = folder_with(
+            &videos,
+            &format!(".tmp-flute_vs_trombone-{dead}-3"),
+            &[("mine.txt", b"m")],
+        );
+        let why = format!(
+            "The hidden folder {} holds a file that BALLFIGHT Studio did not make (mine.txt), so it was left as it \
+             is. Look inside it, then delete it yourself if you do not need what it holds.",
+            kept.display()
+        );
+        let told = Mutex::new(HashSet::new());
+        // Nothing could be sent (a newer scan took over): the folder left is not counted as told.
+        let mut heard = Vec::new();
+        clear_before_scan(&videos, later(), &told, &mut |text| {
+            heard.push(text);
+            false
+        });
+        assert_eq!(heard, [removed_text(2), why.clone()]);
+        assert!(lock(&told).is_empty());
+        // Sent: told once, and never again in this run.
+        let mut heard = Vec::new();
+        clear_before_scan(&videos, later(), &told, &mut |text| {
+            heard.push(text);
+            true
+        });
+        assert_eq!(heard, [why]);
+        let mut heard = Vec::new();
+        clear_before_scan(&videos, later(), &told, &mut |text| {
+            heard.push(text);
+            true
+        });
+        assert_eq!(heard, Vec::<String>::new());
+        // Nothing is said about an output folder that cannot be listed (the Library says that itself).
+        clear_before_scan(&videos.join("missing"), later(), &told, &mut |text| {
+            panic!("{text}");
+        });
+        assert_eq!(files_in(&kept), ["mine.txt"]);
+    }
+
+    #[test]
+    fn the_words_are_whole_sentences() {
+        assert_eq!(
+            removed_text(1),
+            "BALLFIGHT Studio removed 1 hidden folder that an unfinished render left in the output folder more than \
+             a day ago. It held no finished video."
+        );
+        assert_eq!(
+            removed_text(3),
+            "BALLFIGHT Studio removed 3 hidden folders that unfinished renders left in the output folder more than a \
+             day ago. They held no finished video."
+        );
+    }
+
+    #[test]
+    fn the_dialog_has_a_parent_once_set() {
+        // What `set_parent_window` keeps is what every dialog is built from (a mark stands in for the window,
+        // which a test does not have).
+        let template = rfd::FileDialog::new().set_can_create_directories(true);
+        let start = std::env::temp_dir();
+        let built = format!("{:?}", dialog_builder(Some(&template), Some(&start)));
+        assert!(built.contains("can_create_directories: Some(true)"), "{built}");
+        assert!(built.contains(&format!("title: Some({DIALOG_TITLE:?})")), "{built}");
+        assert!(
+            built.contains(&format!("starting_directory: Some({start:?})")),
+            "{built}"
+        );
+        let plain = format!("{:?}", dialog_builder(None, None));
+        assert!(
+            plain.contains("parent: None") && plain.contains("starting_directory: None"),
+            "{plain}"
+        );
+        // A creation context with no window (as a test's) leaves the dialog without a parent, and the first call
+        // is the one kept.
+        let cc = eframe::CreationContext::_new_kittest(egui::Context::default());
+        set_parent_window(&cc);
+        set_parent_window(&cc);
+        let kept = format!("{:?}", PARENT.get().expect("set"));
+        assert!(kept.contains("parent: None") && kept.contains("title: None"), "{kept}");
     }
 }
