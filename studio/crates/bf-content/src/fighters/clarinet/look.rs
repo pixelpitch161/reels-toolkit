@@ -436,7 +436,11 @@ impl Look for ClarinetLook {
                 let (sc, ph) = self.jump_phase(p.t_ko, t);
                 st.scale = sc;
                 if ph.is_some() {
+                    // `sc` came from `ts[j]`, a numpy array's element, so this glow is a numpy float64 scalar and
+                    // the ball's sprite is lit in float64 (ruling M3-R37); outside a window the kit's glow is the
+                    // renderer's own Python float and this look leaves it alone
                     st.glow = 0.6 * (1.0 - (sc - 0.75).abs() / 0.25);
+                    st.glow_np = true;
                 }
             }
         } else if phase == Phase::Tail && kk == self.k {
