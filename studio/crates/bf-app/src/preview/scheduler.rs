@@ -881,22 +881,106 @@ mod tests {
         assert!(frame.rgb.iter().all(|&b| b == 49));
     }
 
+    /// A test source whose every byte is `tag`, so its frames can be told apart from another source's for the same
+    /// frame number. It draws through `gate` (a `TestSource`, gated or not), which holds the draw and counts it.
+    struct Tagged {
+        gate: Arc<TestSource>,
+        tag: u8,
+    }
+
+    impl Tagged {
+        fn new(gate: Arc<TestSource>, tag: u8) -> Arc<Tagged> {
+            Arc::new(Tagged { gate, tag })
+        }
+
+        fn frame(tag: u8) -> Frame {
+            Frame {
+                w: 360,
+                h: 640,
+                rgb: vec![tag; 360 * 640 * 3].into(),
+            }
+        }
+    }
+
+    impl FrameSource for Tagged {
+        fn frames(&self) -> u32 {
+            self.gate.frames()
+        }
+
+        fn draw(&self, f: u32) -> Frame {
+            self.gate.draw(f);
+            Tagged::frame(self.tag)
+        }
+    }
+
+    /// The tags of every kept frame, by frame number.
+    fn tags(s: &Scheduler) -> Vec<(u32, u8)> {
+        (0..NF).filter_map(|f| s.get(f).map(|fr| (f, fr.rgb[0]))).collect()
+    }
+
     #[test]
     fn another_take_forgets_the_old_frames() {
         let s = scheduler(2);
-        s.set_source(1, Some(TestSource::new()));
+        let first = TestSource::new();
+        s.set_source(1, Some(Tagged::new(first.clone(), 1)));
         s.want(10, false, true);
         wait_idle(&s);
-        assert!(s.get(10).is_some());
+        assert_eq!(tags(&s), [(10, 1)]);
         // The same take keeps its frames, with another source or with none.
-        s.set_source(1, Some(TestSource::new()));
-        assert!(s.get(10).is_some());
+        s.set_source(1, Some(Tagged::new(TestSource::new(), 3)));
+        assert_eq!(tags(&s), [(10, 1)]);
         s.set_source(1, None);
-        assert!(s.get(10).is_some());
+        assert_eq!(tags(&s), [(10, 1)]);
         assert_eq!(s.latest_at_or_before(NF).map(|(f, _)| f), Some(10));
-        s.set_source(2, Some(TestSource::new()));
+        // Another take: its draws are held, so what is kept right after the switch does not depend on how fast the
+        // new source draws. Nothing of the old take is left, and the old source draws nothing more.
+        let gate = TestSource::gated();
+        let _open = Opened(gate.clone());
+        s.set_source(2, Some(Tagged::new(gate.clone(), 2)));
         assert!(s.get(10).is_none());
         assert!(s.latest_at_or_before(NF).is_none());
+        // The wanted frames are kept across the switch, so the new take's frame 10 is drawn at once, from the new
+        // source (the player asks again on its next tick anyway). Once drawn it is the new source's.
+        wait_for("the new take's draw of frame 10", || gate.calls() == 1);
+        assert!(tags(&s).is_empty(), "nothing is kept while the new draw is held");
+        gate.open();
+        wait_idle(&s);
+        assert_eq!(tags(&s), [(10, 2)]);
+        assert_eq!(first.calls(), 1, "the old source drew nothing after the switch");
+    }
+
+    /// Opens a gated source when dropped, so a failing assertion cannot leave the scheduler's drop waiting.
+    struct Opened(Arc<TestSource>);
+
+    impl Drop for Opened {
+        fn drop(&mut self) {
+            self.0.open();
+        }
+    }
+
+    #[test]
+    fn a_draw_that_starts_after_the_switch_is_the_new_takes() {
+        // Two old draws are held on both workers while the take changes: when they end they are thrown away, and the
+        // workers then draw the surviving wanted frames from the new source only.
+        let old_gate = TestSource::gated();
+        let _open_old = Opened(old_gate.clone());
+        let s = scheduler(2);
+        s.set_source(1, Some(Tagged::new(old_gate.clone(), 1)));
+        s.want(20, true, true);
+        wait_for("both old draws to start", || old_gate.calls() == 2);
+        let new_gate = TestSource::gated();
+        let _open_new = Opened(new_gate.clone());
+        s.set_source(2, Some(Tagged::new(new_gate.clone(), 2)));
+        old_gate.open();
+        // The workers finish the old draws, throw them away and start on the new source.
+        wait_for("the new take's draws", || new_gate.calls() == 2);
+        assert!(tags(&s).is_empty(), "the old draws were thrown away");
+        assert_eq!(old_gate.calls(), 2, "no old draw started after the switch");
+        new_gate.open();
+        wait_idle(&s);
+        let kept = tags(&s);
+        assert!(!kept.is_empty());
+        assert!(kept.iter().all(|&(_, tag)| tag == 2), "{kept:?}");
     }
 
     #[test]

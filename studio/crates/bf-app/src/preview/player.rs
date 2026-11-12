@@ -165,6 +165,8 @@ impl Player {
                 self.scrub = None;
                 self.shown = None;
                 self.late_at = None;
+                // What an earlier take's tick found failed is not this take's.
+                self.failed_at = None;
                 self.picture = false;
                 if autoplay {
                     // The clock starts with the first picture (`tick`).
@@ -375,6 +377,7 @@ impl Player {
         self.scrub = None;
         self.shown = None;
         self.late_at = None;
+        self.failed_at = None;
         self.picture = false;
     }
 
@@ -928,6 +931,9 @@ mod tests {
         wait_for("frame 5 to fail and 6 to be drawn", || {
             p.scheduler.failed(5) && p.scheduler.get(6).is_some()
         });
+        // `failed_frame` never waits on the scheduler's lock (a busy lock answers what the last tick found), so the
+        // drawing threads are let finish first: what it answers then does not depend on the machine's speed.
+        wait_for("the drawing threads", || p.scheduler.idle());
         assert_eq!(p.failed_frame(), None);
         log.lock().unwrap().position = Some(pos_of(5) + 100);
         assert_eq!(p.tick(), None);
@@ -950,9 +956,28 @@ mod tests {
 
         // Back on it, and then a new take clears it.
         act(&mut p, TransportAction::Step(-1));
+        wait_for("the drawing threads", || p.scheduler.idle());
         assert_eq!(p.failed_frame(), Some(5));
         load(&mut p, 2, TestSource::new(), 5, false);
+        wait_for("the drawing threads", || p.scheduler.idle());
         assert_eq!(p.failed_frame(), None);
+    }
+
+    #[test]
+    fn a_new_take_does_not_report_the_old_takes_failed_frame() {
+        // Take 1's frame 5 fails and a tick finds it. Take 2 is loaded on the same frame; while the scheduler's lock
+        // is busy, `failed_frame` answers what the last tick found, which must not be the old take's failure.
+        let (mut p, _hand, _log) = faked();
+        load(&mut p, 1, TestSource::panicking_at(5), 5, false);
+        wait_for("frame 5 to fail", || p.scheduler.failed(5));
+        assert_eq!(p.tick(), None);
+        assert_eq!(p.failed_frame(), Some(5));
+        let gate = TestSource::gated();
+        let _open = Opens(gate.clone());
+        load(&mut p, 2, gate.clone(), 5, false);
+        let held = p.scheduler.hold_lock();
+        assert_eq!(p.failed_frame(), None);
+        drop(held);
     }
 
     /// A test source that remembers which frames it drew, so a kept frame can be told apart from another take's
@@ -1304,6 +1329,12 @@ mod tests {
         }
         load(&mut p, 1, TestSource::new(), 100, true);
         assert!(p.waiting());
+        // While it waits, the start frame and the twelve after it are asked for. Waiting until they are all drawn,
+        // before the tick that starts the clock, keeps the test from depending on how fast this machine's workers
+        // wake: with the frames between the start and the lead left out (the gap this test guards), they never are.
+        wait_for("frames 100 to 112", || {
+            (100..=112).all(|f| p.scheduler.get(f).is_some())
+        });
         started(&mut p);
         assert!(!p.waiting());
         assert_eq!(p.stats(), PlayerStats { shown: 1, late: 0 });
