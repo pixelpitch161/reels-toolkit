@@ -15,10 +15,10 @@
 use bf_core::dmath;
 use bf_core::event::Value;
 
-use crate::abilities::{param, slap};
+use crate::abilities::param;
 use crate::fight::{Fight, Wave};
 use crate::geom::{self, V2, py_max, py_min};
-use crate::kinds::walk;
+use crate::kinds::{grapple, walk};
 use crate::roster::AbilityCfg;
 
 /// THE ELEPHANT's charge (`B.stamp`, `start_stampede` 4320). Python keeps the ability's dict (`St['ab']`) and reads
@@ -65,7 +65,7 @@ pub struct State {
 /// `trigger`, kind `stampede`: `trigger` 2953 to 2954, `start_stampede(k, ab)` (4309 to 4321).
 pub fn start(f: &mut Fight, k: usize, ab: &AbilityCfg) {
     if f.balls[k].grabbed {
-        slap::grapple_release(f, 1 - k, "stampede");
+        grapple::release(f, 1 - k, "stampede");
     }
     // `if getattr(B, 'wstep', None) is not None`: a step under way stops where it is (only a walking bass has one)
     if walk::is(f, k) {

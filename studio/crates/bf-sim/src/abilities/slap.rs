@@ -11,24 +11,18 @@ use bf_core::event::Value;
 use crate::abilities::param;
 use crate::fight::{Fight, Wave};
 use crate::geom;
+use crate::kinds::grapple;
 use crate::roster::AbilityCfg;
 
 /// This ability's per-fight state (`Fight::slap`): a slap keeps none (its ring is one of `Fight::waves`).
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct State {}
 
-/// `grapple_release(k, why)` (`fight.py` 4102 to 4111): the grappler `k` lets go of the ball it holds. The grapple is
-/// CELLO's kind (Task 24) and not ported: no fight can have a grappler yet, so no ball is ever `grabbed` and this is
-/// never reached. With `Fight::trace_sockets` on it logs the stub.
-pub(crate) fn grapple_release(f: &mut Fight, _k: usize, _why: &str) {
-    f.socket("stub:kinds::grapple::grapple_release");
-}
-
 /// `trigger`, kind `slap`: `trigger` 2946 to 2947, `start_slap(k, ab)` (4211 to 4218).
 pub fn start(f: &mut Fight, k: usize, ab: &AbilityCfg) {
     let broke = i64::from(f.balls[k].grabbed);
     if broke != 0 {
-        grapple_release(f, 1 - k, "slap");
+        grapple::release(f, 1 - k, "slap");
     }
     let wave = Wave {
         owner: k,
