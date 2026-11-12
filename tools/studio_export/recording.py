@@ -27,11 +27,24 @@ HASH_TAG = b'BFREC-HASH-1\n'
 META_KEYS = ('seed', 'winner', 't_ko', 'events', 'names', 'corner', 'f0')     # the run's keys that are not per-frame
 
 
+# the kit kinds' record keys that are rectangular arrays in every fight but missing from the kit's own list
+# (story.REC_KEYS): BASSOON's HOOK (NaN where no hook is out, which JSON cannot hold) and HOP, two rows of three a frame
+KIT_RECT_KEYS = ('HOOK', 'HOP')
+
+
+def rect_keys(story):
+    """the keys written as .npy when rectangular and numeric: the kit's story.REC_KEYS, then KIT_RECT_KEYS"""
+    return tuple(story.REC_KEYS) + tuple(k for k in KIT_RECT_KEYS if k not in story.REC_KEYS)
+
+
+_rect_keys_of = rect_keys                            # (write_bfrec's argument of that name hides the function)
+
+
 # ---------------------------------------------------------------- write
 def _array(key, v, frames, rect_keys):
     """one per-frame key as ('npy', bytes) or ('json', bytes). A key the kit itself turns into an array
-    (story.REC_KEYS) is stored as .npy when it is rectangular and numeric; every other key (WAVES, SLAMS, COB, ...)
-    is always JSON, so a key's kind does not depend on what happened in the fight"""
+    (story.REC_KEYS, plus KIT_RECT_KEYS: rect_keys) is stored as .npy when it is rectangular and numeric; every other
+    key (WAVES, SLAMS, COB, ...) is always JSON, so a key's kind does not depend on what happened in the fight"""
     if not isinstance(v, (list, np.ndarray)) or len(v) != frames:
         n = len(v) if hasattr(v, '__len__') else type(v).__name__
         raise ValueError(f'{key}: not a per-frame list of {frames} frames ({n}); format {FORMAT} has no place for it')
@@ -50,11 +63,11 @@ def write_bfrec(run, rules, path, source=None, rect_keys=None, register=True):
     fight.Rules object or a dict of its attributes) to `path`, and list the file in the manifest under the calling
     module's name (`register=False`: write only, for a caller that checks the file before it calls manifest.add).
     `source` defaults to this Python kit at its current commit; `rect_keys` to the kit's own list of array keys
-    (story.REC_KEYS). Returns the path"""
+    and the kit kinds' (rect_keys(story)). Returns the path"""
     tool = sys._getframe(1).f_globals.get('__name__', '?')
     if rect_keys is None:
         _, story = common.kit()
-        rect_keys = story.REC_KEYS
+        rect_keys = _rect_keys_of(story)
     rules = dict(rules) if isinstance(rules, dict) else dict(vars(rules))
     if isinstance(rules.get('roll_rows'), dict):
         # ruling M3-R19: PIANO's rows {fighter index: [row, ...]} as [index, [[note, ...], ...]] pairs in index order

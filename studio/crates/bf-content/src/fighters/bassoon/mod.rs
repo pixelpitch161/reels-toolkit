@@ -1,11 +1,7 @@
-//! BASSOON: its look, instrument voice, part in the score and card, ported in milestone 3's Task 19
-//! (`kit/fighters/bassoon.py`). Until then every entry point here says it has none: the picture draws BASSOON as the
-//! bare ball, the score has no part for it, the app has no card for it, and the app does not offer it (the
-//! registry's `PORTED`, which only a register task changes).
+//! BASSOON: its look, instrument voice, part in the score and card (`kit/fighters/bassoon.py`, ported in milestone
+//! 3's Task 19). The app does not offer it until a register task adds it to the registry's `PORTED`.
 //!
-//! The port fills this folder only: `look.rs`, `sound.rs`, `voice.rs`, `card.rs`, `state.rs` (what the look and
-//! the part both derive from the recording) and the entry points below. Nothing outside it names BASSOON's
-//! types, so nothing outside it changes.
+//! Nothing outside this folder names BASSOON's types, so nothing outside it changes.
 
 use std::sync::Arc;
 
@@ -21,29 +17,31 @@ pub mod state;
 pub mod voice;
 
 pub use card::{CARD, card};
+pub use look::BassoonLook;
+pub use sound::BassoonSound;
+pub use voice::BassoonVoice;
 
-/// `fighters.look('BASSOON', P, k)`: its look, or `None` while it is not ported (the bare ball is drawn then).
+/// `fighters.look('BASSOON', P, k)`.
 pub fn look() -> Option<Box<dyn Look>> {
-    None
+    Some(Box::new(BassoonLook::default()))
 }
 
-/// Its instrument voice (`pp_bridge`'s entry), or `None` while it is not ported.
+/// Its instrument voice (`pp_bridge`'s entry: the double reed of `bassoon_lowpoly`).
 pub fn voice() -> Option<Arc<dyn Voice>> {
-    None
+    Some(Arc::new(BassoonVoice))
 }
 
-/// `fighters.sound('BASSOON', M, k)`: its part on side `k` of the fight `ff`, or `None` while it is not ported.
+/// `fighters.sound('BASSOON', M, k)`: its part on side `k`.
 pub fn sound(k: usize, ff: &FightFile) -> Option<Box<dyn Sound>> {
-    let _ = (k, ff);
-    None
+    let _ = ff;
+    Some(Box::new(BassoonSound::new(k)))
 }
 
-/// Its model (`data/models/BASSOON.json`, written by the export tool's `models` for one roster name), compiled in:
-/// `Some(include_str!("../../../data/models/BASSOON.json"))` once ported, `None` until then.
-pub const MESH: Option<&str> = None;
+/// Its model (`data/models/BASSOON.json`, written by its export), compiled in.
+pub const MESH: Option<&str> = Some(include_str!("../../../data/models/BASSOON.json"));
 
-/// Whether its music settings (key, chord loop, its line) feed its fight. True only for PIANO, once ported.
+/// Its music does not feed its fight.
 pub const MUSIC_FEEDS_FIGHT: bool = false;
 
-/// The extra lines its part declares beside its own (HORN: `HORN THEME`).
+/// No extra lines.
 pub const EXTRA_LINES: &[&str] = &[];

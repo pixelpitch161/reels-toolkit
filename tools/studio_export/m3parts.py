@@ -607,6 +607,9 @@ def voice_child(cfg, name, pitches, vels, durs, notes_out):
     start = V.noise_state()
     assert (int(start['state']), int(start['inc'])) == (fresh_state['state'], fresh_state['inc']), \
         'something drew from the shared noise before the first note'
+    alto = sys.modules.get('altosax60_lowpoly')       # the ALTO SAX's part measures its level when it is made
+    if alto is not None:                              # (alto_sax.py Sound.__init__), a note drawn from this module's
+        alto._RN = np.random.default_rng(23)          # own generator: the notes start from a fresh one (ModuleNoise)
     rows, arrays = [], {}
     for midi in pitches:
         for vel in vels:
