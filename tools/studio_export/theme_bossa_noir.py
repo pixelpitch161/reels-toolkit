@@ -4,7 +4,7 @@ studio/reference/themes/bossa_noir/ (python -m tools.studio_export theme_bossa_n
 
     theme.json      the reference config (ballfight_flute_vs_clarinet, #49): the kit's own recording of it and the bed
                     alone under two kit base Sounds: the 16-bit master's SHA-256 and the buses
-    voicings.json   Bed.voicing (the nylon guitar's four-note shape, E3 up) for the 12 roots x 13 qualities
+    voicings.json   Bed.voicing (the nylon strings' four-note shape, E3 up) for the 12 roots x 13 qualities
     bed.json        the bed alone's RMS per bus; a second tempo and a second key (recordings cached); `boom` and `hit`
                     called directly at three times with three gains (vectors cached)
 

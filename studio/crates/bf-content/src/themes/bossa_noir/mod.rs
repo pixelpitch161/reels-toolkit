@@ -1,5 +1,5 @@
 //! Theme: minor bossa noir (`projects/ballfight/kit/moods/bossa_noir.py`, #49 Flute vs Clarinet). A sly, smoky
-//! late-night bossa nova with no woodwinds of its own (the fighters are the front line): a nylon-string guitar
+//! late-night bossa nova with no woodwinds of its own (the fighters are the front line): nylon strings
 //! comping the 2-bar "3-2" bossa figure on the 8ths with the thumb's bass under every chord, a soft upright-style
 //! bass (root on 1, fifth on the and of 2, fifth on 3, a pickup on the and of 4), brushes on every 8th with a felt
 //! bass drum and cross-stick rim clicks on the clave, and a dark Rhodes pad holding each bar's chord; the back half
@@ -109,7 +109,7 @@ pub fn fifth(harmony: &Harmony, ch: &str) -> Result<i32, HarmonyError> {
     Ok(if f <= 47 { f } else { f - 12 })
 }
 
-/// `Bed.voicing(ch)`: the guitar's four-note shape from E3 up ([`voicing_from`] at `lo = 52`).
+/// `Bed.voicing(ch)`: the nylon strings' four-note shape from E3 up ([`voicing_from`] at `lo = 52`).
 ///
 /// # Errors
 /// Where Python raises: `ch` is not one of the episode's chords.

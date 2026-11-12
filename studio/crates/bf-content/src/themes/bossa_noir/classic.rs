@@ -26,6 +26,10 @@ use super::{CLAVE, COMP_ROLL, PLUCK_RING, choke, fifth, kick_felt, pluck, root, 
 /// The name the bed's errors carry.
 const H: &str = "bossa_noir";
 
+/// The nylon strings' bus: the kit mood's own bus id, kept as the kit spells it (the master adds the buses' reverb
+/// sends in the bed's order and the references name the buses by these ids). An internal id: no screen shows it.
+const NYLON: &str = "guitar";
+
 /// A key of the kit's `self._c`: the method's tag and its key fields, a duration as `round(dur, 3)` (by its bits;
 /// a rounded zero is +0.0, as Python's `-0.0 == 0.0`), other floats as they are.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -134,7 +138,7 @@ impl BossaNoirClassic {
         })
     }
 
-    /// `self.comp_chord(ch, v, dur, ghost, roll)`: the guitar's bossa stroke: the fingers pluck the voicing
+    /// `self.comp_chord(ch, v, dur, ghost, roll)`: the nylon strings' bossa stroke: the fingers pluck the voicing
     /// together (a hair rolled), damped after `dur`; a ghost stroke is short and soft.
     fn comp_chord(
         &self,
@@ -178,7 +182,7 @@ impl BossaNoirClassic {
         Ok(scaled(&x, v))
     }
 
-    /// `self.thumb(m, dur, v)`: the guitar's thumb on the bass string (soft, round).
+    /// `self.thumb(m, dur, v)`: the thumb on the nylon's bass string (soft, round).
     fn thumb(&self, m: i32, dur: f64, v: f64) -> Result<Vec<f64>, MusicError> {
         let x = self.cached(Key::Thumb(m, r3(dur)), || {
             Ok(synth::lp(&self.pluck(m, dur, 9, 0.18, 0.995)?, 1400.0, FILTER_O))
@@ -212,7 +216,7 @@ impl BossaNoirClassic {
         Ok(scaled(&x, v))
     }
 
-    /// `self.tremolo(ch, dur, v)` (never cached): the nylon guitar's tremolo, soft strokes on the 16ths.
+    /// `self.tremolo(ch, dur, v)` (never cached): the nylon strings' tremolo, soft strokes on the 16ths.
     fn tremolo(&self, ctx: &MusicCtx, ch: &str, dur: f64, v: f64) -> Result<Vec<f64>, MusicError> {
         let n = length((dur + 0.3) * SRF);
         let mut out = vec![0.0; n];
@@ -330,7 +334,7 @@ impl BossaNoirClassic {
     }
 
     /// `Bed.bar(mix, b, intensity, light)`: one bar of the bossa (bar index `b`): the bass's dotted quarter and
-    /// eighth, the guitar on the clave with the thumb on 1 and 3, the Rhodes holding the chord, brushes on the
+    /// eighth, the nylon strings on the clave with the thumb on 1 and 3, the Rhodes holding the chord, brushes on the
     /// 8ths, the kick and rim clicks; the back half (`intensity` above 1.25) adds the shaker, ghost strokes, the
     /// Rhodes' upper voicing and bass pickups. Python's defaults are `intensity = 1.0` and `light = False`.
     ///
@@ -375,10 +379,10 @@ impl BossaNoirClassic {
             pk_gain,
             0.0,
         );
-        put(mix, "guitar", self.thumb(r + 12, 0.9 * beat, 1.0)?, t0, 0.36, 0.2);
+        put(mix, NYLON, self.thumb(r + 12, 0.9 * beat, 1.0)?, t0, 0.36, 0.2);
         put(
             mix,
-            "guitar",
+            NYLON,
             self.thumb(f5 + 12, 0.9 * beat, 1.0)?,
             t0 + 2.0 * beat,
             0.32,
@@ -387,13 +391,13 @@ impl BossaNoirClassic {
         let hits = CLAVE[b % 2];
         for &j in hits {
             let s = self.comp_chord(ctx, ch, 1.0, 0.30, false, COMP_ROLL)?;
-            put(mix, "guitar", s, t0 + j as f64 * e8, 0.50, 0.2);
+            put(mix, NYLON, s, t0 + j as f64 * e8, 0.50, 0.2);
         }
         if big {
             for j in 0..8usize {
                 if !hits.contains(&j) && j % 2 == 1 {
                     let s = self.comp_chord(ctx, ch, 1.0, super::COMP_DUR, true, COMP_ROLL)?;
-                    put(mix, "guitar", s, t0 + j as f64 * e8, 0.34, 0.2);
+                    put(mix, NYLON, s, t0 + j as f64 * e8, 0.34, 0.2);
                 }
             }
         }
@@ -447,12 +451,12 @@ impl Bed for BossaNoirClassic {
         &[BedHook::Boom, BedHook::Hit]
     }
 
-    /// `buses = {'drums': (1.70, 0.14), 'bass': (1.9, 0.10), 'guitar': (1.35, 0.26), 'keys': (0.95, 0.34)}`.
+    /// `buses = {'drums': (1.70, 0.14), 'bass': (1.9, 0.10), NYLON: (1.35, 0.26), 'keys': (0.95, 0.34)}`.
     fn buses(&self) -> &[(&'static str, (f64, f64))] {
         &[
             ("drums", (1.70, 0.14)),
             ("bass", (1.9, 0.10)),
-            ("guitar", (1.35, 0.26)),
+            (NYLON, (1.35, 0.26)),
             ("keys", (0.95, 0.34)),
         ]
     }
@@ -494,7 +498,7 @@ impl Bed for BossaNoirClassic {
     fn hit(&self, ctx: &MusicCtx, mix: &mut Mix, t: f64, ch: &str, g: f64, ring: f64) -> Played {
         let r = self.root(ctx, ch)?;
         put(mix, "bass", self.upright(r, ring, 1.0)?, t, 0.66 * g, 0.0);
-        put(mix, "guitar", self.roll_ring(ctx, ch, ring, 1.0)?, t, 0.62 * g, 0.2);
+        put(mix, NYLON, self.roll_ring(ctx, ch, ring, 1.0)?, t, 0.62 * g, 0.2);
         put(mix, "keys", self.rhodes(ctx, ch, ring, 1.0, 0)?, t, 0.34 * g, -0.2);
         put(mix, "drums", self.kick(1.0)?, t, 0.60 * g, 0.0);
         put(mix, "drums", choke(1.0, noise_seed(H, t * 10.0)?), t, 0.14 * g, 0.0);
@@ -533,7 +537,7 @@ impl Bed for BossaNoirClassic {
         let ch = chord(ctx, 0)?;
         put(
             mix,
-            "guitar",
+            NYLON,
             self.tremolo(ctx, ch, 3.0 * beat - 0.1, 1.0)?,
             0.08,
             0.42,
@@ -617,7 +621,7 @@ impl Bed for BossaNoirClassic {
         let rise = riser(bar, 0.0, 12)?.iter().map(|v| v * 0.6).collect();
         put(mix, "fx", rise, t_half - bar, 0.08, 0.0);
         put(mix, "drums", synth::crash(2.0), t_half, 0.10, 0.0);
-        for bus in ["drums", "bass", "guitar", "keys"] {
+        for bus in ["drums", "bass", NYLON, "keys"] {
             if let Some(x) = mix.bus(bus) {
                 let stopped = synth::tape_stop(x, ctx.show.t_ko, 0.42);
                 *mix.bus_mut(bus) = stopped;
@@ -662,7 +666,7 @@ impl Bed for BossaNoirClassic {
     }
 
     /// The last bar builds into the title slam on sample 0: rim clicks rolling up to the seam, the bass walking up
-    /// chromatically into the tonic, the guitar on every 8th, the kick on every beat, the Rhodes, a riser.
+    /// chromatically into the tonic, the nylon strings on every 8th, the kick on every beat, the Rhodes, a riser.
     fn last_bars(&self, ctx: &MusicCtx, mix: &mut Mix) -> Played {
         let grid = &ctx.show.grid;
         let (beat, bar, s16, dur) = (grid.beat, grid.bar, grid.s16, grid.dur);
@@ -678,7 +682,7 @@ impl Bed for BossaNoirClassic {
             put(mix, "drums", self.brush(1.0, bt as u64, true)?, tb, 0.07, -0.15);
             for h in 0..2 {
                 let s = self.comp_chord(ctx, ch, 1.0, 0.18, false, COMP_ROLL)?;
-                put(mix, "guitar", s, tb + f64::from(h) * beat / 2.0, 0.46, 0.2);
+                put(mix, NYLON, s, tb + f64::from(h) * beat / 2.0, 0.46, 0.2);
             }
         }
         let n16 = length((dur - t_last) / s16 + 1e-6);
