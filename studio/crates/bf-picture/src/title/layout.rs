@@ -71,18 +71,12 @@ pub fn side() -> &'static Img<f64> {
 }
 
 /// `DIVIDER_DEG = math.degrees(math.atan2(470.0 - 170.0, 360.0))`: the crack's own angle, about 39.8 degrees
-/// anticlockwise, as Python computes it on the reference PC (`0x1.3e71cf41bf0e5p+5`).
-///
-/// This one value is kept as Python's bits rather than computed: the C runtime's `atan2(300, 360)` is
-/// `0x1.63b4bc3f16a8ap-1` and `dmath::atan2` gives the next double up (`...8bp-1`, which is also the C runtime's
-/// `atan(5 / 6)`), and `math.degrees` (a product with `180 / pi`) carries the difference into the angle's last bit.
-/// The angle turns the middle word's letters, which a last bit can move by a pixel, and its arguments never
-/// change, so the constant is exactly the kit's. The test `the_divider_angle_is_pythons` holds both values.
-pub const DIVIDER_DEG: f64 = f64::from_bits(0x4043_e71c_f41b_f0e5);
-
-/// [`DIVIDER_DEG`].
+/// anticlockwise (`0x1.3e71cf41bf0e5p+5` in Python on the reference PC). `math.degrees` is a product with
+/// `180 / pi`. `dmath::atan2` is Python's to the bit (ruling M3-R38), so the angle is computed as the kit computes
+/// it; the test `the_divider_angle_is_pythons` holds Python's value (ruling M3-R20 kept it here as a constant
+/// while the old `atan2` was one step above).
 pub fn divider_deg() -> f64 {
-    DIVIDER_DEG
+    dmath::atan2(470.0 - 170.0, 360.0) * (180.0 / dmath::PI)
 }
 
 /// `math.radians`: CPython multiplies by the constant `pi / 180`.

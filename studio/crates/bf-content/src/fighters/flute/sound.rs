@@ -112,7 +112,7 @@ pub fn shriek(dur: f64, f0: f64) -> Samples {
         .map(|((&c, &t), &air)| {
             let ph = 2.0 * PI * c / SRF;
             let x = dmath::sin(ph) + 0.3 * dmath::sin(2.0 * ph) + 0.12 * dmath::sin(3.0 * ph);
-            let x = dmath::tanh(1.8 * x) * clip(t / 0.02, 0.0, 1.0) * dmath::exp(-t / (dur * 0.6));
+            let x = dmath::np_tanh(1.8 * x) * clip(t / 0.02, 0.0, 1.0) * dmath::exp(-t / (dur * 0.6));
             x + 0.25 * air
         })
         .collect())

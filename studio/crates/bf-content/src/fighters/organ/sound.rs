@@ -41,29 +41,10 @@ fn bad(e: HarmonyError) -> MusicError {
     MusicError::new(H, e.to_string())
 }
 
-/// `n ** 0.6` for a chord of 1 to 9 notes, as Python computes it on the reference PC (CPython 3.13: the C runtime's
-/// `pow`), bit for bit: `(n ** 0.6).hex()`. They are constants of the kit (its chords have 1, 2, 3, 6, 7 or 8
-/// notes), held here because `bf_core::dmath::pow(6.0, 0.6)` is one step above the C runtime's
-/// (`0x1.770f5a7edd25cp+1` against `0x1.770f5a7edd25bp+1`); for the other eight the two agree.
-const BALANCE: [u64; 9] = [
-    0x3FF0_0000_0000_0000,
-    0x3FF8_4060_03B2_AE5C,
-    0x3FFE_EE50_4BC3_2424,
-    0x4002_6111_86BA_E674,
-    0x4005_0321_026F_9746,
-    0x4007_70F5_A7ED_D25B,
-    0x4009_B677_E285_EAF0,
-    0x400B_DB8C_DADB_E120,
-    0x400D_E5C5_593E_5600,
-];
-
-/// `len(ms) ** 0.6`: [`BALANCE`] for the chords the kit plays, `dmath::pow` for a longer list (a fight file's
-/// title hits can be one).
+/// `len(ms) ** 0.6`: Python's float power, which `dmath::pow` is to the bit (ruling M3-R38; the table of Python's
+/// bits that ruling M3-R27 kept here for the old `pow` is now only the test's).
 fn balance(n: usize) -> f64 {
-    match n.checked_sub(1).and_then(|i| BALANCE.get(i)) {
-        Some(&bits) => f64::from_bits(bits),
-        None => dmath::pow(n as f64, 0.6),
-    }
+    dmath::pow(n as f64, 0.6)
 }
 
 /// `clank(seed, vel)`: a tin pipe clattering on the canvas (#35): four decaying partials of 620 Hz, each up to
@@ -518,18 +499,25 @@ impl Sound for OrganSound {
 mod tests {
     use super::*;
 
-    /// `n ** 0.6` balances a chord of `n` notes. The table holds Python's bits; `dmath::pow` gives the same for
-    /// every size but 6, where it is one step above.
+    /// `n ** 0.6` balances a chord of `n` notes: Python's bits on the reference PC (`(n ** 0.6).hex()`, CPython
+    /// 3.13.18) for 1 to 9 notes. The old `pow` was one step above at 6.
     #[test]
     fn the_chord_balance_is_pythons() {
-        for (i, bits) in BALANCE.into_iter().enumerate() {
-            let n = i + 1;
-            assert_eq!(balance(n).to_bits(), bits, "{n} ** 0.6");
-            let ours = dmath::pow(n as f64, 0.6).to_bits();
-            assert_eq!(ours, if n == 6 { bits + 1 } else { bits }, "dmath::pow({n}, 0.6)");
+        const PYTHON: [u64; 9] = [
+            0x3FF0_0000_0000_0000,
+            0x3FF8_4060_03B2_AE5C,
+            0x3FFE_EE50_4BC3_2424,
+            0x4002_6111_86BA_E674,
+            0x4005_0321_026F_9746,
+            0x4007_70F5_A7ED_D25B,
+            0x4009_B677_E285_EAF0,
+            0x400B_DB8C_DADB_E120,
+            0x400D_E5C5_593E_5600,
+        ];
+        for (i, bits) in PYTHON.into_iter().enumerate() {
+            assert_eq!(balance(i + 1).to_bits(), bits, "{} ** 0.6", i + 1);
         }
-        assert_eq!(balance(10), dmath::pow(10.0, 0.6));
-        assert!(balance(0).is_nan() || balance(0) == 0.0);
+        assert_eq!(balance(0), 0.0);
         // 0.30 / 2 ** 0.6 (a landed row in the bass role)
         assert_eq!((0.30 / dmath::pow(2.0, 0.6)).to_bits(), 0x3FC9_55A5_3144_CA82);
     }

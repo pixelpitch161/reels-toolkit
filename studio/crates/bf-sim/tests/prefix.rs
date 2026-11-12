@@ -6,19 +6,20 @@
 //! exactly, floats to 1e-6) and EVERY per-frame key (whole numbers and the layout of rows exactly, floats to 1e-6).
 //! The window must last [`PREFIX_FLOOR_S`] seconds of fighting, or the whole fight when that is shorter.
 //!
-//! The two engines are not equal bit for bit (the maths differ in the last bit now and then, and a fight is
-//! chaotic), so every window ends somewhere unless the fight ends first. What ends it is printed for every fight:
-//! run with `--nocapture`. A window that ends before the floor fails the test with the numbers, whatever ended it; a
-//! knife-edge on a `clash` is reported with the margin of the comparison that decided it.
+//! Since rulings M3-R35, M3-R38 and M3-R39 the engine's arithmetic is the kit's on the reference PC (its `hypot`,
+//! its maths library, its fused 2-vector products), and every one of these fights agrees with the kit's to its
+//! end with no difference at all (`max |d| 0.0e0`). The window is still measured the old way, so a change that
+//! brings a last-bit difference back shows as a window that ends: what ends it is printed for every fight (run
+//! with `--nocapture`), and a window that ends before the floor fails the test with the numbers, whatever ended it.
 //!
 //! `prefix_before_abilities.rs` is the tighter test of the span before the first ability (exact event totals); this
 //! one adds everything after it: the six abilities, their waves, slams, slows and hastes.
 //!
-//! No window of the 21 fights is ended by a knife-edge or a logic break: every one that ends, ends on drift (a float
-//! passing 1e-6 where it was already past 1e-7 a frame before), and the test holds that. The last test shows what a
-//! knife-edge looks like on a real fight: a
-//! core-only Python recording (`studio/reference/fights/knife_edge/`, the `knife_edge` export) in which the balls
-//! travel side by side exactly `R + R` apart.
+//! No window of the 21 fights may be ended by a knife-edge or a logic break (only by drift, a float passing 1e-6
+//! where it was already past 1e-7 a frame before), and the test holds that. The last test shows what a knife-edge
+//! looks like: a core-only Python recording (`studio/reference/fights/knife_edge/`, the `knife_edge` export) in
+//! which the balls travel side by side exactly `R + R` apart, against a Rust recording that lacks one of its
+//! clashes.
 
 mod support;
 
@@ -206,15 +207,17 @@ fn the_windows_hold_every_ability() {
     }
 }
 
-/// A real knife-edge is called one, with the event and the margin of the comparison that decided it. In the
-/// core-only fight of `studio/reference/fights/knife_edge/` the balls clash and then fly on side by side, `R + R`
-/// apart to rounding, so on every following step `dist < R + R` is decided by the last bit of the distance: Python
-/// makes a `clash` on 49 steps in a row, the Rust engine on some of them, while every position of the two agrees far
-/// inside the bar. That is not a mistake of the port, and it must not look like one (nor a mistake like it).
+/// A knife-edge is called one, with the event and the margin of the comparison that decided it. In the core-only
+/// fight of `studio/reference/fights/knife_edge/` the balls clash and then fly on side by side, `R + R` apart to
+/// rounding, so on every following step `dist < R + R` is decided by the last bit of the distance: Python makes a
+/// `clash` on 49 steps in a row. While the engine's distance was a last bit from the kit's it made a clash on only
+/// some of those steps, with every position far inside the bar: not a mistake of the port, and it must not look
+/// like one (nor a mistake like it).
 ///
-/// What is pinned is the kind of break and the size of its numbers, not the step it falls on: that step depends on
-/// the last bits of this engine's arithmetic. If a change to the arithmetic makes this fight agree throughout, the
-/// sample no longer shows a knife-edge: pick another seed in the export (`tools/studio_export/knife_edge.py`).
+/// The engine's arithmetic is now the kit's (rulings M3-R35, M3-R38, M3-R39), so this fight agrees bit for bit to
+/// its end, which the test holds first. What a knife-edge looks like is then shown on the same fight with one
+/// clash of the side-by-side run taken out of the Rust recording, as the old arithmetic lost it: the kind of break,
+/// its words, and the margin of the comparison at that step (a last bit of `R + R`).
 #[test]
 fn a_knife_edge_clash_is_told_from_a_logic_break() {
     let path = support::reference("knife_edge/index.json");
@@ -232,11 +235,31 @@ fn a_knife_edge_clash_is_told_from_a_logic_break() {
 
     let setup = support::setup_like(&py, &bags);
     let rs = run_with_unported(&setup, true).expect("the engine runs the bags (kinds not ported)");
+    let exact = prefix_window(&rs, &py);
+    assert_eq!(
+        (exact.first_break.as_deref(), exact.worst),
+        (None, 0.0),
+        "the engine and the kit differ in this fight"
+    );
+    assert_eq!(rs.events.len(), py.events.len());
+    // the same fight with one clash of the side-by-side run lost, as a last bit of the distance used to lose it:
+    // the first one that hangs on the last bit (the run's opening clash is a real collision)
+    let lost = rs
+        .events
+        .iter()
+        .enumerate()
+        .position(|(i, e)| {
+            i >= 40
+                && e.kind == "clash"
+                && side_by_side("first") < e.t
+                && e.t <= side_by_side("last")
+                && clash_margin(&setup, e.t).is_some_and(|m| m.abs() <= 4.0 * f64::EPSILON)
+        })
+        .expect("a clash of the side-by-side run");
+    let mut rs = rs;
+    rs.events.remove(lost);
     let report = prefix_window(&rs, &py);
-    let words = report
-        .first_break
-        .clone()
-        .expect("the two engines differ in this fight");
+    let words = report.first_break.clone().expect("a lost clash is a break");
     println!("knife_edge/core_s4: {words}");
     assert_eq!(report.kind, Some(BreakKind::KnifeEdge), "{words}");
     assert!(words.starts_with("knife-edge ("), "{words}");
@@ -252,17 +275,13 @@ fn a_knife_edge_clash_is_told_from_a_logic_break() {
         report.frames,
         report.events
     );
-    // the margin of the comparison that decided it, `dist < R + R` in the Rust fight at that step: a last bit (the
-    // spacing of doubles at R + R = 1.2 is 2.2e-16), on the side that fits who made the clash
+    // the margin of the comparison that decides a clash at that step, `dist < R + R` in the Rust fight: a last bit
+    // (the spacing of doubles at R + R = 1.2 is 2.2e-16), and on the clash's side, since the real engine makes it
     let margin = clash_margin(&setup, t).expect("a step of the Rust fight");
     println!("knife_edge/core_s4: in the Rust fight the balls are {margin:e} from R + R after the flight of that step");
     assert!(margin.abs() <= 4.0 * f64::EPSILON, "{margin:e}");
-    if words.contains("Python has it and Rust has not") {
-        assert!(margin >= 0.0, "Rust made no clash there: {margin:e}");
-    } else {
-        assert!(words.contains("Rust has it and Python has not"), "{words}");
-        assert!(margin < 0.0, "Rust made a clash there: {margin:e}");
-    }
+    assert!(words.contains("Python has it and Rust has not"), "{words}");
+    assert!(margin < 0.0, "the engine makes a clash there: {margin:e}");
     // and the words carry the distance in the frames around it, as far as the recordings show it
     assert!(
         words.contains("the balls' distance less R + R: in the frame before, "),

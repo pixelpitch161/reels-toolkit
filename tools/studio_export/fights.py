@@ -70,7 +70,10 @@ def replay_hash_of_values(r):
 
 
 # how deep the kit's per-entry tuples sit under each ragged record key (a list a frame of tuples: 2; HOLD is PIANO's)
-RAGGED_DEPTH = dict(WAVES=2, SLAMS=2, COB=3, HOLD=2, SPOT=2)
+RAGGED_DEPTH = dict(WAVES=2, SLAMS=2, COB=3, HOLD=2, SPOT=2, THROWS=2)
+# keys the kit appends one float array a frame to without listing them in story.REC_KEYS (TENOR SAX's CROWD, a (2, 7)
+# array a frame): stored as JSON like every key outside REC_KEYS, and an array a frame again for the replay guard
+FRAME_ARRAYS = ('CROWD',)
 
 
 def as_kit_run(rec):
@@ -88,6 +91,8 @@ def as_kit_run(rec):
             r[k] = list(a)
         elif k in RAGGED_DEPTH:
             r[k] = tuples(a, RAGGED_DEPTH[k])
+        elif k in FRAME_ARRAYS:
+            r[k] = [np.array(f, float) for f in a]
         else:
             raise SystemExit(f"fights.as_kit_run: the ragged record key {k!r} has no entry in fights.RAGGED_DEPTH (how "
                              f"deep the kit's per-entry tuples sit under it): add it there")
