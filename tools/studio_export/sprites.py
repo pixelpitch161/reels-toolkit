@@ -160,8 +160,25 @@ def build(P, k, episode_keys):
     return cases, arrays, facts
 
 
-def check_cases(P, k, cases, episode_keys):
-    """the file has what the brief asks for and what the episode draws"""
+def own_size(rule, radius):
+    """the size of a sprite a look draws itself (`picture` and `episode` cases) at `radius`, by the fighter's
+    declared rule (its SPEC's `sprite_size`, m3refs.normalize): None is FLUTE's flute, 2 * radius + 5;
+    dict(add=a, clip=(lo, hi), pad=s) is 2 * int(round(clip(radius, lo, hi) * s)) + a; `clip` and `pad` may be None
+    or left out. TRUMPET (its model at a radius held to 12..19): dict(add=7, clip=(12, 19)); a padded sprite
+    (kit/fighters/contrabass.py `padded_sprite`, R0 = int(round(r * pad)), centre R0 + 3: SOUSAPHONE's PAD 1.22,
+    CONTRABASS's 1.25, BASS DRUM's 1.18): dict(add=7, pad=1.22)"""
+    if rule is None:
+        return 2 * radius + 5
+    lo_hi = rule.get('clip')
+    r = radius if lo_hi is None else min(lo_hi[1], max(lo_hi[0], radius))
+    if rule.get('pad') is not None:
+        r = int(round(r * rule['pad']))
+    return 2 * r + rule['add']
+
+
+def check_cases(P, k, cases, episode_keys, sprite_size=None):
+    """the file has what the brief asks for and what the episode draws; every sprite has its size: the model
+    renderer's 2 * radius + 7, or for a look's own sprites the fighter's declared rule (own_size)"""
     pic = {(c['args']['radius'], c['args']['yaw'], c['args']['roll']) for c in cases
            if c['args']['group'] in ('picture', 'episode')}
     want = {(r, yaw, roll) for r in RADII for yaw in YAWS for roll in rolls(P, k)}
@@ -169,7 +186,7 @@ def check_cases(P, k, cases, episode_keys):
     assert 0 in rolls(P, k) and int(P.CFG[k]['view'][2]) in rolls(P, k)
     assert set(episode_keys) <= pic, f'{P.NAMES[k]}: the frames ask for {sorted(set(episode_keys) - pic)[:8]}'
     assert sum(c['args']['group'] == 'title' for c in cases) == 1, 'the title close-up'
-    side = 5 if P.LOOKS[k].sprite(12, 0.0, 0.0) is not None else 7
+    own = P.LOOKS[k].sprite(12, 0.0, 0.0) is not None
     for c in cases:
         a = c['args']
         if a['group'] == 'title':                     # says how it is made, and names only what was passed
@@ -177,8 +194,9 @@ def check_cases(P, k, cases, episode_keys):
                 (a['drawn_by'] == 'model'), (c['id'], a)
             if a['drawn_by'] == 'closeup':
                 continue                              # (its size is the look's own business)
-        by_model = a['group'] == 'model' or a.get('drawn_by') == 'model'
-        assert a['size'] == 2 * a['radius'] + (7 if by_model else side), (c['id'], a)
+        by_model = a['group'] == 'model' or a.get('drawn_by') == 'model' or not own
+        want = 2 * a['radius'] + 7 if by_model else own_size(sprite_size, a['radius'])
+        assert a['size'] == want, (c['id'], a, want)
 
 
 def prepare(P=None, recording_path=None):
@@ -208,7 +226,7 @@ def prepare(P=None, recording_path=None):
     return P, rec, per_frame, recording_path or F.RECORDING
 
 
-def run_one(name, ready=None, out=None):
+def run_one(name, ready=None, out=None, sprite_size=None):
     """write one fighter's sprite file and its sidecar, and only those: by default
     studio/reference/sprites/<name>.npz and .json, listed in the manifest (milestone 1's FLUTE and TROMBONE). A
     port passes `out` = (npz path, json path) under its cache folder: the files are written and not listed (the
@@ -220,7 +238,7 @@ def run_one(name, ready=None, out=None):
     try:
         keys = {x[1:] for s in per_frame.values() for x in s if x[0] == k}
         cases, arrays, facts = build(P, k, keys)
-        check_cases(P, k, cases, keys)
+        check_cases(P, k, cases, keys, sprite_size)
         npz, js = out or (os.path.join(OUT, f'{name}.npz'), os.path.join(OUT, f'{name}.json'))
         common.write_npz(npz, arrays, register=False)
         doc = dict(

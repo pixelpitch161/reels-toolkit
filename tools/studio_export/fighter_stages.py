@@ -30,7 +30,7 @@ def run(args):
     cfgs = m3refs.fighter_configs(spec)
     if fight == 'left':
         cfg = cfgs[(spec['opponent'], False)].with_seed(doc['left']['seed'])
-        rec = os.path.join(common.REPO, *f"{m3refs.REF}/{doc['left']['file']}".split('/'))
+        rec = m3refs.left_path_of(doc['left'])               # committed, or in the cache (ruling M3-R36)
     else:
         cfg = cfgs[(spec['opponent'], True)].with_seed(doc['right']['seed'])
         rec = m3refs.cache_dir(folder, 'right.bfrec')
