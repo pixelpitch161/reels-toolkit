@@ -1,0 +1,437 @@
+{
+ "about": "contrabass.padded_sprite (the CONTRABASS and the SOUSAPHONE) and bass_drum._render, each call as the kit made it while the fighter drew a fight against FLUTE, replayed on the models the Studio has (TROMBONE, FLUTE): the SHA-256 of the RGBA bytes",
+ "cases": [
+  {
+   "args": {
+    "caller": "padded_sprite",
+    "own": "a325fc58e4fad45240820ce01292674c6022cd7bd25d47746a55b9a14716665b",
+    "pad": "0x1.4000000000000p+0",
+    "r": 18,
+    "replay": {
+     "FLUTE": "01be98da1305be42fedfc3ec5cc0df9b763c864f511006c3d1d8fce034ad0796",
+     "TROMBONE": "a325fc58e4fad45240820ce01292674c6022cd7bd25d47746a55b9a14716665b"
+    },
+    "roll": "0x1.c000000000000p+3",
+    "yaw": "0x0.0p+0"
+   },
+   "arrays": {
+    "side": "padded.side.i8"
+   },
+   "at": {
+    "side": [0, 1]
+   },
+   "call": "padded",
+   "fighter": "CONTRABASS",
+   "id": "c000"
+  },
+  {
+   "args": {
+    "caller": "padded_sprite",
+    "own": "a325fc58e4fad45240820ce01292674c6022cd7bd25d47746a55b9a14716665b",
+    "pad": "0x1.4000000000000p+0",
+    "r": 18,
+    "replay": {
+     "FLUTE": "01be98da1305be42fedfc3ec5cc0df9b763c864f511006c3d1d8fce034ad0796",
+     "TROMBONE": "a325fc58e4fad45240820ce01292674c6022cd7bd25d47746a55b9a14716665b"
+    },
+    "roll": "0x1.c000000000000p+3",
+    "yaw": "0x0.0p+0"
+   },
+   "arrays": {
+    "side": "padded.side.i8"
+   },
+   "at": {
+    "side": [1, 1]
+   },
+   "call": "padded",
+   "fighter": "CONTRABASS",
+   "id": "c001"
+  },
+  {
+   "args": {
+    "caller": "padded_sprite",
+    "own": "a325fc58e4fad45240820ce01292674c6022cd7bd25d47746a55b9a14716665b",
+    "pad": "0x1.4000000000000p+0",
+    "r": 18,
+    "replay": {
+     "FLUTE": "01be98da1305be42fedfc3ec5cc0df9b763c864f511006c3d1d8fce034ad0796",
+     "TROMBONE": "a325fc58e4fad45240820ce01292674c6022cd7bd25d47746a55b9a14716665b"
+    },
+    "roll": "0x1.c000000000000p+3",
+    "yaw": "0x0.0p+0"
+   },
+   "arrays": {
+    "side": "padded.side.i8"
+   },
+   "at": {
+    "side": [2, 1]
+   },
+   "call": "padded",
+   "fighter": "CONTRABASS",
+   "id": "c002"
+  },
+  {
+   "args": {
+    "caller": "padded_sprite",
+    "own": "3cf4355f34ef3d56346cd75dfeee2aa5e64bcb90bd9cf7e901f52314b4f94c52",
+    "pad": "0x1.4000000000000p+0",
+    "r": 18,
+    "replay": {
+     "FLUTE": "01be98da1305be42fedfc3ec5cc0df9b763c864f511006c3d1d8fce034ad0796",
+     "TROMBONE": "a325fc58e4fad45240820ce01292674c6022cd7bd25d47746a55b9a14716665b"
+    },
+    "roll": "0x1.c000000000000p+3",
+    "yaw": "0x0.0p+0"
+   },
+   "arrays": {
+    "side": "padded.side.i8"
+   },
+   "at": {
+    "side": [3, 1]
+   },
+   "call": "padded",
+   "fighter": "CONTRABASS",
+   "id": "c003"
+  },
+  {
+   "args": {
+    "caller": "padded_sprite",
+    "own": "6ada46476830d1202fda3a8f41476a7640b90a6ea5bb443376b6f420c632f396",
+    "pad": "0x1.3851eb851eb85p+0",
+    "r": 19,
+    "replay": {
+     "FLUTE": "beec4714bb7f2511c9ed2b3ec4722d56f18016f2ce01efe3b7555e6e890f6b96",
+     "TROMBONE": "183202ce7ae37486166514572a05a83babf49cef2877f3448531100426943e3a"
+    },
+    "roll": "0x0.0p+0",
+    "yaw": "0x1.8000000000000p+2"
+   },
+   "arrays": {
+    "side": "padded.side.i8"
+   },
+   "at": {
+    "side": [4, 1]
+   },
+   "call": "padded",
+   "fighter": "SOUSAPHONE",
+   "id": "c004"
+  },
+  {
+   "args": {
+    "caller": "padded_sprite",
+    "own": "83b01576b40e6791f65838d242f518f9d09ad35b2188a72486cb780a8cfbdf04",
+    "pad": "0x1.3851eb851eb85p+0",
+    "r": 44,
+    "replay": {
+     "FLUTE": "e17bf18b1329f13681c268b231d43d2e048a7d17c2b0dcc236f4434b444da8ce",
+     "TROMBONE": "90557e4394a41cd6250b38fa5d2f2c8f7b5ade88e6d160ccfcc7bc175011ebeb"
+    },
+    "roll": "0x0.0p+0",
+    "yaw": "0x1.4000000000000p+4"
+   },
+   "arrays": {
+    "side": "padded.side.i8"
+   },
+   "at": {
+    "side": [5, 1]
+   },
+   "call": "padded",
+   "fighter": "SOUSAPHONE",
+   "id": "c005"
+  },
+  {
+   "args": {
+    "caller": "padded_sprite",
+    "own": "858507266fb840745d374736a7ff117935360d0ff5933b4d102daa5b3df7e1fb",
+    "pad": "0x1.3851eb851eb85p+0",
+    "r": 19,
+    "replay": {
+     "FLUTE": "851a19bd66691653ff55b1b26de28bfa9314f72ece24f7c0c16af5e10e818f4c",
+     "TROMBONE": "926145b6162b3036c7159b31ca1e8406a63c34eec45659721352f5861c63a621"
+    },
+    "roll": "0x0.0p+0",
+    "yaw": "0x1.8000000000000p+3"
+   },
+   "arrays": {
+    "side": "padded.side.i8"
+   },
+   "at": {
+    "side": [6, 1]
+   },
+   "call": "padded",
+   "fighter": "SOUSAPHONE",
+   "id": "c006"
+  },
+  {
+   "args": {
+    "caller": "padded_sprite",
+    "own": "f116039f19b8cd29a09adfaa4adf11440ee79f6ddc123c27a3bf22d78d6c050d",
+    "pad": "0x1.3851eb851eb85p+0",
+    "r": 19,
+    "replay": {
+     "FLUTE": "a3845106f9b1d92b76eb48108bacfefad3a05babaa850b9e66bbe3007a1be504",
+     "TROMBONE": "84da9def096a1b75c9ba75af224985b8dffbfde35fb799d26d86a763eb55f02d"
+    },
+    "roll": "0x0.0p+0",
+    "yaw": "0x1.8000000000000p+4"
+   },
+   "arrays": {
+    "side": "padded.side.i8"
+   },
+   "at": {
+    "side": [7, 1]
+   },
+   "call": "padded",
+   "fighter": "SOUSAPHONE",
+   "id": "c007"
+  },
+  {
+   "args": {
+    "caller": "_render",
+    "own": "c17aee8939b01bdd828dc8576bb062fba7b70f6f4792f14980cbd16266bb94a0",
+    "pad": "0x1.2e147ae147ae1p+0",
+    "r": 17,
+    "replay": {
+     "FLUTE": "aa5c1ad827ff15c337dd86605f2e29d53294a686c67f59fecb31267397260e83",
+     "TROMBONE": "be1fa2289ae3220e38851cc3d4ee665bb7e7434058066a29311ab9010d2a8110"
+    },
+    "roll": "0x0.0p+0",
+    "yaw": "-0x1.2000000000000p+4"
+   },
+   "arrays": {
+    "side": "padded.side.i8"
+   },
+   "at": {
+    "side": [8, 1]
+   },
+   "call": "padded",
+   "fighter": "BASS DRUM",
+   "id": "c008"
+  },
+  {
+   "args": {
+    "caller": "_render",
+    "own": "23362ff91983c6e709ad4dfe46653521992d8d8ef918fd883cbf9a0b057790b3",
+    "pad": "0x1.2e147ae147ae1p+0",
+    "r": 44,
+    "replay": {
+     "FLUTE": "47cba200b560f00334344007f9ce9393e2d7e4000732def2a4c9e832a28192d7",
+     "TROMBONE": "031f7b617457ba5f2ad8629b690a612cc0c8f432afb98b364c461353d740d0e3"
+    },
+    "roll": "0x0.0p+0",
+    "yaw": "0x0.0p+0"
+   },
+   "arrays": {
+    "side": "padded.side.i8"
+   },
+   "at": {
+    "side": [9, 1]
+   },
+   "call": "padded",
+   "fighter": "BASS DRUM",
+   "id": "c009"
+  },
+  {
+   "args": {
+    "caller": "_render",
+    "own": "1e6e1f1f4fbc88c2224a1dcceb697be88360eb835ad0b3012c23e82aaa5ce7a9",
+    "pad": "0x1.2e147ae147ae1p+0",
+    "r": 18,
+    "replay": {
+     "FLUTE": "8a8e4c71d8fc6b8a5cfa635bd5c308368e632ad45214e87faf78be7e4f9b1e34",
+     "TROMBONE": "2c4db6cdbdd5d42dd1eb7a43271a8d3b03215e0e9abfa8f84395dfed9fbebc24"
+    },
+    "roll": "0x1.4a00000000000p+8",
+    "yaw": "0x1.4000000000000p+3"
+   },
+   "arrays": {
+    "side": "padded.side.i8"
+   },
+   "at": {
+    "side": [10, 1]
+   },
+   "call": "padded",
+   "fighter": "BASS DRUM",
+   "id": "c010"
+  },
+  {
+   "args": {
+    "caller": "_render",
+    "own": "53c6ac4029ca271f01bc562adef0687137d1864efe31c331ed81ee0dcc70a3e6",
+    "pad": "0x1.2e147ae147ae1p+0",
+    "r": 18,
+    "replay": {
+     "FLUTE": "6f7b4505f17a6d721204b9cf199aff8404d1ef4d5588091dbbb82d6d6a31ea87",
+     "TROMBONE": "633045c73511aafeafb36f55114e8e92cd70477900531245b5be48c1b2d4894e"
+    },
+    "roll": "0x1.6800000000000p+5",
+    "yaw": "0x1.2000000000000p+4"
+   },
+   "arrays": {
+    "side": "padded.side.i8"
+   },
+   "at": {
+    "side": [11, 1]
+   },
+   "call": "padded",
+   "fighter": "BASS DRUM",
+   "id": "c011"
+  },
+  {
+   "args": {
+    "caller": "_render",
+    "own": "99aaf044d8de39629ef8d8cd5c85372b223abd748c4c1b7f27a5c973e6482779",
+    "pad": "0x1.2e147ae147ae1p+0",
+    "r": 18,
+    "replay": {
+     "FLUTE": "99fcfcc296dc6be6625a335d93b3e8c6c35277e65aa4186fae8401e95905a0f3",
+     "TROMBONE": "5ac7122d2e0df4492f0d789fa90885a45c629ce8bc35f2db303c9fbb435d21a3"
+    },
+    "roll": "0x0.0p+0",
+    "yaw": "0x1.8000000000000p+2"
+   },
+   "arrays": {
+    "side": "padded.side.i8"
+   },
+   "at": {
+    "side": [12, 1]
+   },
+   "call": "padded",
+   "fighter": "BASS DRUM",
+   "id": "c012"
+  },
+  {
+   "args": {
+    "caller": "edge",
+    "pad": "0x1.4000000000000p+0",
+    "r": 12,
+    "replay": {
+     "FLUTE": "a38b8fd4d42ab925fecb6424090149b6cc3e0759b53e8acd544c8a7ddbc62f81",
+     "TROMBONE": "51b1d1e8402aa15d1b01968a1c787b7fbd415611c19e70b9ac60db997abfcc17"
+    },
+    "roll": "0x0.0p+0",
+    "yaw": "0x0.0p+0"
+   },
+   "arrays": {
+    "side": "padded.side.i8"
+   },
+   "at": {
+    "side": [13, 1]
+   },
+   "call": "padded",
+   "fighter": "edge",
+   "id": "c013"
+  },
+  {
+   "args": {
+    "caller": "edge",
+    "pad": "0x1.3851eb851eb85p+0",
+    "r": 20,
+    "replay": {
+     "FLUTE": "8b241e05b89cab9aeb76100365f32582056a3befc5ed6a007dc129b97c14e50d",
+     "TROMBONE": "4b3791632d182e694451e933448db9f8cbe12afc91f39384afa4db99b3a9fe91"
+    },
+    "roll": "-0x1.8000000000000p+3",
+    "yaw": "0x1.e000000000000p+4"
+   },
+   "arrays": {
+    "side": "padded.side.i8"
+   },
+   "at": {
+    "side": [14, 1]
+   },
+   "call": "padded",
+   "fighter": "edge",
+   "id": "c014"
+  },
+  {
+   "args": {
+    "caller": "edge",
+    "pad": "0x1.0000000000000p+0",
+    "r": 16,
+    "replay": {
+     "FLUTE": "f502259fe9fe7222019bda5ec0a218ac65701ea7d15d200698fc7f7f8f08247c",
+     "TROMBONE": "bd4b13cc672508b82c57f69a3adbdb675e6ab76bac7d3a78ee741be1259559bf"
+    },
+    "roll": "0x1.4000000000000p+2",
+    "yaw": "-0x1.6800000000000p+5"
+   },
+   "arrays": {
+    "side": "padded.side.i8"
+   },
+   "at": {
+    "side": [15, 1]
+   },
+   "call": "padded",
+   "fighter": "edge",
+   "id": "c015"
+  },
+  {
+   "args": {
+    "caller": "edge",
+    "pad": "0x1.199999999999ap+0",
+    "r": 24,
+    "replay": {
+     "FLUTE": "891ef9af35618892fa5ec4d3dba258cb1312ab45a32076a21b0f6a1c315c1897",
+     "TROMBONE": "62711ad553a168fe4f676d7571609298510850bb72d831b8965675fc756c99df"
+    },
+    "roll": "0x0.0p+0",
+    "yaw": "0x1.9000000000000p+7"
+   },
+   "arrays": {
+    "side": "padded.side.i8"
+   },
+   "at": {
+    "side": [16, 1]
+   },
+   "call": "padded",
+   "fighter": "edge",
+   "id": "c016"
+  },
+  {
+   "args": {
+    "caller": "edge",
+    "pad": "0x1.4000000000000p+0",
+    "r": 18,
+    "replay": {
+     "FLUTE": "342dbdb91656b3fef89400561c2cfb0f48f3521a6fc84e640c618338ddf77f59",
+     "TROMBONE": "a3f9f09b5e12af6aaddf0bb1b2f27c3ccabf6ae92edd75f6716c0a2c0fe04778"
+    },
+    "roll": "0x1.6800000000000p+6",
+    "yaw": "0x1.4000000000000p+3"
+   },
+   "arrays": {
+    "side": "padded.side.i8"
+   },
+   "at": {
+    "side": [17, 1]
+   },
+   "call": "padded",
+   "fighter": "edge",
+   "id": "c017"
+  },
+  {
+   "args": {
+    "caller": "edge",
+    "pad": "0x1.3851eb851eb85p+0",
+    "r": 12,
+    "replay": {
+     "FLUTE": "b88a31e2d9558f4531bf67549d413aba3b15965ef74520dca42b5cc8293c55a4",
+     "TROMBONE": "7fc2584eed01fc54b4fd4e57856e32888b66dc83be5e786d4e56fb0d29a9c127"
+    },
+    "roll": "0x0.0p+0",
+    "yaw": "0x1.4000000000000p+4"
+   },
+   "arrays": {
+    "side": "padded.side.i8"
+   },
+   "at": {
+    "side": [18, 1]
+   },
+   "call": "padded",
+   "fighter": "edge",
+   "id": "c018"
+  }
+ ],
+ "tool": "shared"
+}
