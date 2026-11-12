@@ -691,6 +691,28 @@ def existing_copy(sha, folder, also=()):
     return None
 
 
+def place_recording(folder, name, data, in_cache, export, module, also=(), cached_from=None):
+    """where a theme's or pair's kit recording (`data`, to be the folder's `name`) lives, as its reference file names
+    it: a committed copy elsewhere (existing_copy: milestone 1's, or the `also` folders') as its path; else a pinned
+    cache copy of `cached_from` (a pair's theme folder) as dict(cache=, sha256=); else, with `in_cache` (ruling
+    M3-R43), the folder's own pinned cache file as dict(cache=, sha256=); else the committed file `<folder>/<name>`.
+    Every branch but the last removes a committed copy an earlier run made"""
+    sha = hashlib.sha256(data).hexdigest()
+    copy = existing_copy(sha, folder, also=also)
+    cached = cached_copy(sha, cached_from) if cached_from else None
+    if copy and not copy.startswith(f'{REF}/{folder}/'):
+        delete_committed(folder, name)
+        return copy[len(REF) + 1:]
+    if cached or in_cache:
+        delete_committed(folder, name)
+        if cached:
+            return cached
+        path = cache_bytes(folder, name, data, export)
+        return dict(cache=cache_rel(path), sha256=manifest.sha256(path))
+    commit_bytes(folder, name, data, module)
+    return f'{folder}/{name}'
+
+
 def cached_copy(sha, folder):
     """dict(cache=, sha256=) of a recording the folder (a pair gate's theme folder) pins in the cache with these
     bytes (ruling M3-R43), or None"""
@@ -1303,18 +1325,9 @@ def episode_refs(spec):
     rec = recording.read_bfrec(tmp)
     fights.check(r, rules, rec, recording.rect_keys(story))
     data = open(tmp, 'rb').read()
-    sha = hashlib.sha256(data).hexdigest()
-    copy = existing_copy(sha, folder, also=(f"themes/{facts['mood']}",))
-    cached = cached_copy(sha, f"themes/{facts['mood']}")
-    if copy and not copy.startswith(f'{REF}/{folder}/'):
-        rec_file = copy[len(REF) + 1:]
-        delete_committed(folder, 'run.bfrec')
-    elif cached or spec['recording_in_cache']:      # ruling M3-R43
-        rec_file = cached or dict(cache=cache_rel(cache_bytes(folder, 'run.bfrec', data, export)), sha256=sha)
-        delete_committed(folder, 'run.bfrec')
-    else:
-        commit_bytes(folder, 'run.bfrec', data, module)
-        rec_file = f'{folder}/run.bfrec'
+    theme = f"themes/{facts['mood']}"
+    rec_file = place_recording(folder, 'run.bfrec', data, spec['recording_in_cache'], export, module, also=(theme,),
+                               cached_from=theme)
     rec_path = tmp                                  # the same bytes; the parts read it before finish() applies them
     cfg = Loaded(cfg_folder, facts['fighters'], seed)
     # ---- the parts in fresh processes
@@ -1720,18 +1733,8 @@ def theme_refs(spec):
         fights.check(r, rules, rec, recording.rect_keys(story))
         data = open(tmp, 'rb').read()
         os.remove(tmp)
-        copy = existing_copy(hashlib.sha256(data).hexdigest(), folder)
-        rec_name = f'{config_slug(config)}.bfrec'
-        if copy and not copy.startswith(f'{REF}/{folder}/'):
-            rec_file = copy[len(REF) + 1:]
-            delete_committed(folder, rec_name)
-        elif spec['recordings_in_cache']:             # ruling M3-R43: pinned, its SHA-256 committed in theme.json
-            path = cache_bytes(folder, rec_name, data, export)
-            delete_committed(folder, rec_name)
-            rec_file = dict(cache=cache_rel(path), sha256=manifest.sha256(path))
-        else:
-            commit_bytes(folder, rec_name, data, module)
-            rec_file = f'{folder}/{rec_name}'
+        rec_file = place_recording(folder, f'{config_slug(config)}.bfrec', data, spec['recordings_in_cache'], export,
+                                   module)
         with mp.get_context('spawn').Pool(1) as pool:
             got = pool.apply(_theme_child, (cfg_folder, list(spec['voicings']), chords if voicings is None else []))
         if voicings is None:

@@ -198,6 +198,33 @@ pub fn window_db(got: &[[f64; 2]], want: &[f32]) -> f64 {
 }
 
 /// The stem windows of a soundtrack against the cache file `rel` (members `w<j>__<bus>`, float32 `(n, 2)`).
+/// The samples of a recorded stem window (`i0`, `n`) in a stem of `x_len` samples. A whole second (`n` = SR) lies
+/// inside; a shorter one is cut by the soundtrack's end, so it must end exactly there; an empty one (`n` = 0) starts
+/// at or past the end and is not compared (`Ok(None)`). Anything else is the recording and the Studio disagreeing on
+/// the soundtrack's length.
+pub fn window_range(x_len: usize, i0: usize, n: usize) -> Result<Option<std::ops::Range<usize>>, String> {
+    let sr = bf_sound::SR;
+    if n == 0 {
+        return if i0 >= x_len {
+            Ok(None)
+        } else {
+            Err(format!(
+                "an empty window at sample {i0}, but the soundtrack runs to {x_len}"
+            ))
+        };
+    }
+    if n < sr && x_len != i0 + n {
+        return Err(format!(
+            "a window cut to {n} samples at {i0} must end where the soundtrack does ({x_len}), not at {}",
+            i0 + n
+        ));
+    }
+    if n > sr || i0 + n > x_len {
+        return Err(format!("a window of {n} samples at {i0} in a soundtrack of {x_len}"));
+    }
+    Ok(Some(i0..i0 + n))
+}
+
 pub fn windows_against(
     what: &str,
     st: &Soundtrack,
@@ -214,11 +241,16 @@ pub fn windows_against(
     for (j, w) in list(windows).iter().enumerate() {
         let (i0, len) = (index(&w["i0"]), index(&w["n"]));
         for (bus, x) in &st.stems {
+            let Some(range) = window_range(x.len(), i0, len)
+                .unwrap_or_else(|e| panic!("{what} stem {bus} window {}: {e}", text(&w["window"])))
+            else {
+                continue;
+            };
             let member = format!("w{j}__{bus}");
             assert!(npz.has(&member), "{rel}: no window {member}");
             let a = npz.get(&member);
             assert_eq!(a.shape, [len, 2], "{rel} {member}");
-            let db = window_db(&x[i0..i0 + len], a.f32());
+            let db = window_db(&x[range], a.f32());
             n += 1;
             if db.is_nan() || db >= DB {
                 failures.push((
@@ -384,4 +416,41 @@ pub fn bed_calls(name: &str) {
     got.sort_unstable();
     let want: Vec<&str> = list(&doc["bed_calls"]).iter().map(text).collect();
     assert_eq!(got, want, "{name}: the bed hooks its part calls unguarded");
+}
+
+#[cfg(test)]
+mod tests {
+    use super::window_range;
+
+    const SR: usize = bf_sound::SR;
+
+    #[test]
+    fn a_whole_window_lies_inside() {
+        assert_eq!(window_range(61 * SR, 12 * SR, SR), Ok(Some(12 * SR..13 * SR)));
+        assert_eq!(window_range(61 * SR, 60 * SR, SR), Ok(Some(60 * SR..61 * SR)));
+        assert!(
+            window_range(61 * SR, 60 * SR + 1, SR).is_err(),
+            "a whole second past the end"
+        );
+    }
+
+    #[test]
+    fn a_cut_window_ends_where_the_soundtrack_does() {
+        let (na, i0) = (61 * SR, 2_913_600); // 60.7 s: 14,400 samples left
+        assert_eq!(window_range(na, i0, 14_400), Ok(Some(i0..na)));
+        let e = window_range(na, i0, 14_000).unwrap_err();
+        assert!(e.contains("must end where the soundtrack does"), "{e}");
+        assert!(
+            window_range(na + 10, i0, 14_400).is_err(),
+            "the Studio's soundtrack is longer"
+        );
+    }
+
+    #[test]
+    fn an_empty_window_is_past_the_end_and_not_compared() {
+        assert_eq!(window_range(61 * SR, 61 * SR, 0), Ok(None));
+        assert_eq!(window_range(61 * SR, 61 * SR + 500, 0), Ok(None));
+        let e = window_range(61 * SR, 60 * SR, 0).unwrap_err();
+        assert!(e.contains("an empty window at sample"), "{e}");
+    }
 }

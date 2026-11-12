@@ -531,6 +531,24 @@ def window_length(i0, na):
     return max(0, min(SR, na - i0))
 
 
+def stem_windows(t_ko, na, st):
+    """(the windows' records, the cache members w<j>__<bus>) of the stems `st` of a soundtrack of `na` samples: each
+    STEM_WINDOWS window with the samples it holds (window_length); a window wholly past the end holds none and is
+    left out (no record, no member), so j counts the recorded windows only"""
+    import numpy as np
+    arrays, wins = {}, []
+    for label, t in _windows(t_ko):
+        i0 = int(round(t * SR))
+        n = window_length(i0, na)
+        if n == 0:
+            continue
+        j = len(wins)
+        wins.append(dict(window=str(label), t=common.hexf(float(t)), i0=i0, n=n))
+        for bus, x in st.items():
+            arrays[f'w{j}__{bus}'] = x[i0:i0 + SR].astype(np.float32)
+    return wins, arrays
+
+
 def _soundtrack(M, B, D, stems_out):
     """score (notes logged) and master: the summary and the cache file of stem windows"""
     import numpy as np
@@ -542,12 +560,7 @@ def _soundtrack(M, B, D, stems_out):
     assert m.shape == (M.NA, 2)
     lines = [f"{c['name']} {c['midi']} {common.hexf(c['dur'])} {common.hexf(c['cap'])} {common.hexf(c['vel'])}"
              for c in log.calls]
-    arrays, wins = {}, []
-    for j, (label, t) in enumerate(_windows(M.T_KO)):
-        i0 = int(round(t * SR))
-        wins.append(dict(window=str(label), t=common.hexf(float(t)), i0=i0, n=window_length(i0, M.NA)))
-        for bus, x in st.items():
-            arrays[f'w{j}__{bus}'] = x[i0:i0 + SR].astype(np.float32)
+    wins, arrays = stem_windows(M.T_KO, M.NA, st)
     common.write_npz(stems_out, arrays, register=False)
     return dict(master_sha256=pcm_sha(m), buses=list(mix.buses), stems=sorted(st),
                 rms=dict({bus: block_db3(x) for bus, x in st.items()}, master=block_db3(m)),

@@ -953,35 +953,79 @@ def a_stem_window_past_the_end_is_cut():
     for i0 in (0, na - SR, na - SR + 1, int(round(60.7 * SR)), na, na + 5):
         assert MP.window_length(i0, na) == len(x[i0:i0 + SR]), i0
     assert MP.window_length(int(round(60.7 * SR)), na) == 14400 and MP.window_length(na - SR, na) == SR
-    return 'a window is SR samples long inside the soundtrack and as long as its cached slice at the end'
+    st = dict(master=np.arange(na * 2, dtype=float).reshape(na, 2), drums=np.ones((na, 2)))
+    wins, arrays = MP.stem_windows(57.7, na, st)                 # T_KO + 3.0 = 60.7 s: cut to 14,400 samples
+    assert [w['n'] for w in wins] == [SR, SR, SR, SR, 14400], wins
+    assert sorted(arrays) == sorted(f'w{j}__{b}' for j in range(5) for b in st)
+    assert all(arrays[f'w{j}__{b}'].shape == (w['n'], 2) for j, w in enumerate(wins) for b in st)
+    assert np.array_equal(arrays['w4__master'], st['master'][wins[4]['i0']:].astype(np.float32))
+    wins, arrays = MP.stem_windows(58.5, na, st)                 # T_KO + 3.0 = 61.5 s: past the end, left out
+    assert [w['window'] for w in wins] == ['0.0', '12.0', '30.0', 'T_KO - 1.0'], wins
+    assert sorted(arrays) == sorted(f'w{j}__{b}' for j in range(4) for b in st), sorted(arrays)
+    return 'a window is SR samples long inside the soundtrack, as long as its cached slice at the end, and left ' \
+           'out (no record, no member) when it starts past the end'
 
 
 def a_theme_recording_goes_to_the_cache():
-    """ruling M3-R43: SPEC.recordings_in_cache puts a theme config's kit recording in the pinned cache (theme.json:
-    dict(cache=, sha256=)); a pair gate points at its theme's cached copy (cached_copy) or, with
-    recording_in_cache, pins its own; specs without them are unchanged"""
+    """ruling M3-R43, end to end in a scratch folder through m3refs.place_recording (what theme_refs and episode_refs
+    call): a theme's recording with recordings_in_cache is the pinned cache file, its entry {cache, sha256}, and the
+    committed copy an earlier export made is gone after finish(); a pair gate points at its theme's cached copy
+    (cached_copy), or with recording_in_cache pins its own run.bfrec; without the flags the file is committed as
+    before"""
+    import hashlib
     import inspect
+    import json
     from tools.studio_export import theme_big_top
     assert m3refs.theme_spec(theme_big_top.SPEC)['recordings_in_cache'] is False
     assert m3refs.theme_spec(dict(name='x', recordings_in_cache=True))['recordings_in_cache'] is True
     assert 'True or False' in exits(m3refs.theme_spec, dict(name='x', recordings_in_cache='yes'))
+    theme, pair = 'themes/brass_trailer', 'episodes/trombone_vs_horn'
+    tool, data = 'tools.studio_export.theme_brass_trailer', b'a kit fight\n'
+    sha = hashlib.sha256(data).hexdigest()
     with scratch():
+        # an earlier export committed the recording in the theme folder
         m3refs.set_run(m3refs.Run('export'))
-        folder = 'themes/brass_trailer'
-        path = m3refs.cache_bytes(folder, 'trombone_vs_horn.bfrec', b'a fight\n', 'theme_brass_trailer')
-        m3refs.finish(folder)
+        assert m3refs.place_recording(theme, 'trombone_vs_horn.bfrec', data, False, 'theme_brass_trailer',
+                                      tool) == f'{theme}/trombone_vs_horn.bfrec'
+        m3refs.commit_json(theme, 'theme.json', dict(recording=f'{theme}/trombone_vs_horn.bfrec'), tool)
+        m3refs.finish(theme)
+        assert read(f'studio/reference/{theme}/trombone_vs_horn.bfrec') == data
+        # the remake with recordings_in_cache: the same bytes move to the cache
+        m3refs.set_run(m3refs.Run('export'))
+        entry = m3refs.place_recording(theme, 'trombone_vs_horn.bfrec', data, True, 'theme_brass_trailer', tool)
+        assert entry == dict(cache=f'{theme}/trombone_vs_horn.bfrec', sha256=sha), entry
+        m3refs.commit_json(theme, 'theme.json', dict(recording=entry), tool)
+        m3refs.finish(theme)
+        assert not os.path.exists(m3refs.ref_dir(theme, 'trombone_vs_horn.bfrec')), 'the committed copy is still there'
+        assert f'studio/reference/{theme}/trombone_vs_horn.bfrec' not in entries_of(f'studio/reference/{theme}/'
+                                                                                    'manifest.json')
+        pins = m3refs.read_pins(theme)
+        assert pins[f'{theme}/trombone_vs_horn.bfrec']['sha256'] == sha and len(pins) == 1, pins
+        assert json.loads(read(f'studio/reference/{theme}/theme.json'))['recording'] == entry
+        assert read(f'studio/reference/.cache/m3/{theme}/trombone_vs_horn.bfrec') == data
+        # a pair on the theme's config points at the theme's cached copy: nothing of its own
+        m3refs.set_run(m3refs.Run('export'))
+        got = m3refs.place_recording(pair, 'run.bfrec', data, False, 'episode_trombone_vs_horn', tool,
+                                     also=(theme,), cached_from=theme)
+        assert got == entry, got
+        assert m3refs.cached_copy('0' * 64, theme) is None and m3refs.cached_copy(sha, 'themes/nobody') is None
+        # a pair whose recording is no theme's, with recording_in_cache: its own pinned run.bfrec
+        other = b'another kit fight\n'
+        own = m3refs.place_recording(pair, 'run.bfrec', other, True, 'episode_trombone_vs_horn', tool, also=(theme,),
+                                     cached_from=theme)
+        assert own['cache'] == f'{pair}/run.bfrec', own
+        m3refs.commit_json(pair, 'episode.json', dict(recording=own), tool)
+        m3refs.finish(pair)
+        assert list(m3refs.read_pins(pair)) == [f'{pair}/run.bfrec']
+        assert m3refs.read_pins(pair)[f'{pair}/run.bfrec']['sha256'] == own['sha256']
+        assert not os.path.exists(m3refs.ref_dir(pair, 'run.bfrec'))
         m3refs.set_run(None)
-        sha = manifest.sha256(path)
-        assert m3refs.cached_copy(sha, folder) == dict(cache=f'{folder}/trombone_vs_horn.bfrec', sha256=sha)
-        assert m3refs.cached_copy('0' * 64, folder) is None
-        assert m3refs.cached_copy(sha, 'themes/nobody') is None
-        assert not os.path.exists(m3refs.ref_dir(folder, 'trombone_vs_horn.bfrec'))
     src = inspect.getsource(m3refs.theme_refs)
-    assert src.index("spec['recordings_in_cache']") < src.index('commit_bytes(folder, rec_name')
+    assert "place_recording(folder, f'{config_slug(config)}.bfrec', data, spec['recordings_in_cache']" in src
     src = inspect.getsource(m3refs.episode_refs)
-    assert src.index("cached_copy(sha") < src.index("commit_bytes(folder, 'run.bfrec'")
-    return 'SPEC.recordings_in_cache pins a theme\'s config recordings (theme.json: cache and sha256); a pair ' \
-           'gate finds its theme\'s cached copy; no committed copy'
+    assert "place_recording(folder, 'run.bfrec', data, spec['recording_in_cache']" in src and 'cached_from=theme' in src
+    return 'with recordings_in_cache a theme\'s recording moves from its folder to the pinned cache (entry, pin, ' \
+           'committed copy gone); a pair takes its theme\'s cached copy, or pins its own with recording_in_cache'
 
 
 CHECKS = (shard_takes_a_fighter_file, verify_finds_a_changed_byte_in_a_shard, check_pins_names_the_command,
