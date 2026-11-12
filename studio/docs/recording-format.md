@@ -779,64 +779,56 @@ for FLUTE and TROMBONE), from the lines below.
 <!-- kind:drill -->
 #### `drill` (weapon kind of SOUSAPHONE)
 
-`fight.py` 4758 to 5005. Not ported yet: its port fills this section in (the meaning of each field, as 6.2 and 6.3 do
-for FLUTE and TROMBONE), from the lines below.
+`fight.py` 4758 to 5005; ported in `bf-sim/src/kinds/drill.rs` (`bf-core/src/roster/kinds/drill.rs` for its roster
+numbers). The marcher never glides: it is a walker (it stands planted between sets and only slides when knocked).
+Every `every` beats on the 16th grid (haste divides the grid) it marches a drill set: `steps` steps of `step16` 16ths
+along one straight line toward where the enemy will be at the blast, at most `span` long, stopping a radius short of
+the ropes and `stop` short of that spot. While it marches it cannot be knocked and gives no way in a clash; it
+tramples the enemy on contact (at most once every `cool` s) and every enemy basket near its rim. `halt16` 16ths after
+the last footfall the bell blast fires straight ahead: a cone that hits once. A landed trample or blast lengthens the
+blast (`blade_len`, recorded in `BL` and in `DRILL` column 3). The generator is drawn once per set started (the
+line's jitter) and once per HORN FLASH (the way it turns).
 
 **Record keys.**
 
-- `DRILL`: added to `rec` at `run()` 5905, written by `snap` 5643 to 5670:
+- `DRILL`: `<f8`, shape `(frames, 2, 16)`, in a recording where a fighter's weapon is a `drill` (`run()` 5905,
+  `snap` 5643 to 5670). One row per fighter; the row of a fighter that is not a driller is all NaN. A column is NaN
+  while what it describes is not live.
 
-  ```python
-  if 'DRILL' in rec:                                  # #53, only recorded when a fighter uses the 'drill' kind
-      Dr = np.full((2, 16), np.nan)
-      for j, Bj in enumerate((B0, B1)):
-          if not hasattr(Bj, 'march'):
-              continue
-          M = Bj.march
-          Dr[j, 0] = 0.0 if M is None else (1.0 if M['phase'] == 'march' else 2.0)
-          if M is not None:
-              Dr[j, 1] = (self.t - M['t0']) / max(1e-9, M['t1'] - M['t0'])
-              Dr[j, 2] = math.atan2(M['u'][1], M['u'][0])
-              Dr[j, 14] = M['i']
-          Dr[j, 3] = Bj.blade_len
-          Bl = Bj.blast
-          if Bl is not None:
-              Dr[j, 4] = (self.t - Bl['t0']) / max(1e-9, Bl['t1'] - Bl['t0'])
-              Dr[j, 5], Dr[j, 6] = Bl['len'], Bl['w']
-              Dr[j, 12], Dr[j, 13] = Bl['o']
-              Dr[j, 2] = math.atan2(Bl['d'][1], Bl['d'][0])
-          Fl = Bj.flash
-          if Fl is not None:
-              u_ = min(1.0, (self.t - Fl['t0']) / max(1e-9, Fl['t1'] - Fl['t0']))
-              Dr[j, 7] = Fl['a0'] + 2 * math.pi * u_ * Fl['dir']
-              Dr[j, 8] = Fl['len']
-          Fr = Bj.front
-          if Fr is not None:
-              Dr[j, 9], Dr[j, 10], Dr[j, 11] = Fr['pos'], Fr['ax'], Fr['sg']
-              Dr[j, 15] = (self.t - Fr['t0']) / max(1e-9, Fr['t1'] - Fr['t0'])
-      rec['DRILL'].append(Dr)
-  ```
+  | Column | Meaning |
+  | --- | --- |
+  | 0 | 0.0 between sets, 1.0 marching, 2.0 halted before the blast |
+  | 1 | the set's progress: `(t - set start) / (last footfall - set start)`, past 1 during the halt (a set only) |
+  | 2 | the direction of the set's line in radians; while a blast is live, the blast's direction |
+  | 3 | the blast's length now (`blade_len`) |
+  | 4 | the live blast's progress, 0 at the shot to (just under) 1 at the end of its hold |
+  | 5, 6 | the live blast's length and its width at the bell |
+  | 7, 8 | HORN FLASH: the lane's angle now, and its length |
+  | 9, 10, 11 | COMPANY FRONT: the wall's position along its axis, the axis (0.0 = x, 1.0 = y), the way it marches (1.0 or -1.0) |
+  | 12, 13 | the live blast's origin (the bell), x and y |
+  | 14 | the footfalls of the set so far (a set only) |
+  | 15 | COMPANY FRONT's progress, 0 to 1 |
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+**Events** (`who` is the marcher; coordinates are ring units; times are on the video clock):
 
-- 4808: `self.ev('drill_off', k)`
-- 4814: `self.ev('drill_step', k, M['i'], float(q[0]), float(q[1]))`
-- 4819: `self.ev('drill_halt', k, float(B.p[0]), float(B.p[1]))`
-- 4856: `self.ev('drill', k, float(B.p[0]), float(B.p[1]), float(p1[0]), float(p1[1]), self.t, t_steps[-1], n, B.march['kind'])`
-- 4866: `self.ev('blast', k, float(o[0]), float(o[1]), a, float(B.blade_len), float(w['width']), B.blast['w1'])`
-- 4884: `self.ev('trample_basket', k, bk['id'], float(bk['cp'][0]), float(bk['cp'][1]))`
-- 4910: `self.damage(k, 1 - k, w['trample_dmg'], 'trample', hx, hy)`
-- 4914: `self.ev('drill_trample', k, hx, hy)`
-- 4925: `self.damage(k, 1 - k, w['dmg'], 'blast', hx, hy)`
-- 4928: `self.ev('blast_hit', k, hx, hy)`
-- 4943: `self.damage(k, 1 - k, Fl['dmg'], 'flash', hx, hy)`
-- 4945: `self.ev('flash_hit', k, hx, hy)`
-- 4958: `self.ev('front_step', k, Fr['i'], float(pos))`
-- 4965: `self.damage(k, 1 - k, ab['dmg'], 'front', hx, hy)`
-- 4969: `self.ev('front_hit', k, hx, hy)`
-- 4977: `self.ev('trample_basket', k, bk['id'], float(bk['cp'][0]), float(bk['cp'][1]))`
-- 4983: `self.ev('front_end', k)`
+| Kind | Fields after `who` | When |
+| --- | --- | --- |
+| `drill` | `x0, y0, x1, y1` (from, to), the set's start time, the time of its last footfall, the steps (int), 1 under haste else 0 (int) | a set starts (4856) |
+| `drill_step` | the footfall's number from 1 (int), `x, y` where it lands | each footfall, on the grid (4814) |
+| `drill_halt` | `x, y` | after the last footfall: the ball stands at the line's end (4819) |
+| `drill_off` | none | a set called off: the marcher is stunned, sunk in shadow, grabbed or in pieces (4808); no blast follows |
+| `blast` | `x, y` (the bell), the angle, the length, the width at the bell, the width at the far end | the bell blast fires (4866) |
+| `blast_hit` | `x, y` on the enemy's surface | the blast touches the enemy (4928), whether the hit landed or a shield blocked it |
+| `drill_trample` | `x, y` between the two balls | the march touches the enemy (4914), landed or blocked |
+| `trample_basket` | the basket's id (int), `x, y` of its cobra | a basket of the enemy's is trampled by the march (4884) or by COMPANY FRONT's wall (4977); the basket is gone |
+| `flash_hit` | `x, y` on the enemy's surface | HORN FLASH's lane touches the enemy (4945) |
+| `front_step` | the step's number from 1 (int), the wall's position | each beat of COMPANY FRONT (4958) |
+| `front_hit` | `x, y` (the enemy's centre) | the wall meets the enemy (4969) |
+| `front_end` | none | the wall has crossed the ring (4983) |
+
+**Hits** (`hit` events, 6.2; the sub-number is 0): `trample` (4910: `trample_dmg`; the enemy is knocked on ahead
+along the line and out of it sideways), `blast` (4925: `dmg`), `flash` (4943: HORN FLASH's `dmg`, knocked outward),
+`front` (4965: COMPANY FRONT's `dmg`, knocked on ahead of the wall). A shield turns each into a `block`.
 
 <!-- /kind:drill -->
 
@@ -1032,30 +1024,41 @@ for FLUTE and TROMBONE), from the lines below.
 <!-- kind:flash_spin -->
 #### `flash_spin` (ability kind of SOUSAPHONE)
 
-`fight.py` 2977 to 2979, 4985 to 4994. Not ported yet: its port fills this section in (the meaning of each field, as 6.2
-and 6.3 do for FLUTE and TROMBONE), from the lines below.
+`fight.py` 2977 to 2979, 4985 to 4994; ported in `bf-sim/src/kinds/drill.rs` (`start_flash`). HORN FLASH: the whole
+horn spins once over `beats` beats, its blast (`len_k` x the blast's length, `width` wide) sweeping all round from
+facing away from the enemy; it hits once (`dmg`, `knock`, outward). The way it turns is drawn from the fight's
+generator. It does something only on a driller's ball (`hasattr(B, 'march')`).
 
-**Record keys.** None of its own.
+**Record keys.** None of its own: `DRILL` columns 7 and 8 (the `drill` section).
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+**Events.**
 
-- 4993: `self.ev('horn_flash', k, a0, t1, B.flash['len'])`
+| Kind | Fields after `who` | When |
+| --- | --- | --- |
+| `horn_flash` | the angle it starts at, the time it ends, the lane's length | HORN FLASH starts (4993) |
+
+Its hit is `flash`, with a `flash_hit` event (the `drill` section).
 
 <!-- /kind:flash_spin -->
 
 <!-- kind:company_front -->
 #### `company_front` (ability kind of SOUSAPHONE)
 
-`fight.py` 2980 to 2982, 4995 to 5005. Not ported yet: its port fills this section in (the meaning of each field, as 6.2
-and 6.3 do for FLUTE and TROMBONE), from the lines below.
+`fight.py` 2980 to 2982, 4995 to 5005; ported in `bf-sim/src/kinds/drill.rs` (`start_front`). COMPANY FRONT: a wall
+across the whole ring marches from the rope behind the marcher to the rope beyond the enemy, along whichever axis
+parts the two balls most, one step a beat for `int(beats)` beats; the enemy it meets (within half of `thick` of the
+wall, `thick` 0.35 unless given) takes `dmg` and is knocked on ahead (`knock`); it tramples the enemy's baskets as it
+goes. It does something only on a driller's ball (`hasattr(B, 'march')`).
 
-**Record keys.** None of its own.
+**Record keys.** None of its own: `DRILL` columns 9, 10, 11 and 15 (the `drill` section).
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+**Events.**
 
-- 5004: `self.ev('company_front', k, ax, sg, self.t, t1)`
+| Kind | Fields after `who` | When |
+| --- | --- | --- |
+| `company_front` | the axis (int: 0 = x, 1 = y), the way (1.0 or -1.0), the start time, the end time | COMPANY FRONT starts (5004) |
+
+Its hit is `front`, with `front_step`, `front_hit`, `trample_basket` and `front_end` events (the `drill` section).
 
 <!-- /kind:company_front -->
 
