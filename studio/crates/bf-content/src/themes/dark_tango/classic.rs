@@ -717,7 +717,7 @@ mod tests {
         // a duration is keyed by round(dur, 3): the first call's length wins, and the velocity scales it
         let a = bed.reed(62, 0.5004, 1.0, REED_ATT, REED_BARK).unwrap();
         assert_eq!(bed.reed(62, 0.4996, 1.0, REED_ATT, REED_BARK).unwrap(), a);
-        assert_eq!(bed.reed(62, 0.5, 0.5, 0.0055, REED_BARK).unwrap(), scaled(&a, 0.5));
+        assert_eq!(bed.reed(62, 0.5, 0.5, 0.0062, REED_BARK).unwrap(), scaled(&a, 0.5));
         assert_ne!(bed.reed(62, 0.5, 1.0, REED_ATT, 0.6).unwrap(), a);
         // a pluck is not scaled; its seed and brightness are in its key
         let p = bed.pluck(50, 0.17, 0, 0.4, PLUCK_RING).unwrap();
