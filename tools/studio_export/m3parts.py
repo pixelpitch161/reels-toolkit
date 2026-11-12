@@ -152,11 +152,15 @@ def fresh_check(folder):
 def cfg_keys(cls):
     """the roster keys a kit look class reads from self.cfg: each chain of literal subscripts and `.get(literal)`
     from `self.cfg` (through a local name bound to such a chain), dotted ('view.2', 'abilities.low.speed'); only the
-    longest chains are kept"""
+    longest chains are kept. A local name stands for the chain it was last bound to, in the function that binds it
+    and from that statement on (source order); a nested function starts from its parent's names. So two methods'
+    `ab = self.cfg['abilities'][...]` (OBOE's unlock1 and unlock2) are two names, and a rebinding replaces the old
+    chain (or drops it when the new value is no chain)"""
     import ast
     import textwrap
     tree = ast.parse(textwrap.dedent(inspect.getsource(cls)))
     alias = {}
+    found = set()
 
     def chain(node):
         if isinstance(node, ast.Attribute) and node.attr == 'cfg' and isinstance(node.value, ast.Name) \
@@ -172,16 +176,37 @@ def cfg_keys(cls):
             base = chain(node.func.value)
             return None if base is None else base + [str(node.args[0].value)]
         return None
-    for node in ast.walk(tree):
-        if isinstance(node, ast.Assign) and len(node.targets) == 1 and isinstance(node.targets[0], ast.Name):
-            c = chain(node.value)
-            if c:
-                alias[node.targets[0].id] = c
-    found = set()
-    for node in ast.walk(tree):
-        c = chain(node)
-        if c:
-            found.add('.'.join(c))
+
+    class Reads(ast.NodeVisitor):
+        """every chain read, with the names bound so far in the function being read (source order)"""
+
+        def visit(self, node):
+            if isinstance(node, ast.expr):
+                c = chain(node)
+                if c:
+                    found.add('.'.join(c))
+            return super().visit(node)
+
+        def visit_FunctionDef(self, node):
+            nonlocal alias
+            outer, alias = alias, dict(alias)
+            try:
+                self.generic_visit(node)
+            finally:
+                alias = outer
+        visit_AsyncFunctionDef = visit_FunctionDef
+
+        def visit_Assign(self, node):
+            self.visit(node.value)
+            if len(node.targets) == 1 and isinstance(node.targets[0], ast.Name):
+                c = chain(node.value)
+                if c:
+                    alias[node.targets[0].id] = c
+                else:
+                    alias.pop(node.targets[0].id, None)
+            for t in node.targets:
+                self.visit(t)
+    Reads().visit(tree)
     return sorted(k for k in found if not any(o != k and o.startswith(k + '.') for o in found))
 
 

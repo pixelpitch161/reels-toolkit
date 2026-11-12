@@ -549,12 +549,63 @@ def windows_has_a_fork_stand_in():
            f'it equals the kit\'s own serial build, in the file it saves too'
 
 
+class _Rebinds:
+    """made up: two methods bind `ab` to two entries, one rebinds it to something else, a nested function reads
+    its parent's name, and a read before a binding is not the alias"""
+
+    def one(self):
+        ab = self.cfg['abilities']['unlock1']
+        return ab['half'] + ab['reach']
+
+    def two(self):
+        x = ab['ghost']                              # noqa: F821  (not bound here yet: no key)
+        ab = self.cfg['abilities']['unlock2']
+        y = ab['len']
+        ab = 3
+        return x + y + ab['not_a_key']
+
+    def three(self):
+        w = self.cfg.get('weapon')
+
+        def inner():
+            return w['hold']
+        return inner()
+
+
+def _kit_cfg_keys(names):
+    """(in a part's fresh process) the kit look classes' cfg_keys"""
+    from tools.studio_export import m3parts as MP
+    cfg = m3refs.Config('m3refs_checks_keys', 'flute_vs_trombone', ('FLUTE', 'TROMBONE'), (2.0, 0.40), 1.0,
+                        m3refs.pair_rules('FLUTE', 'TROMBONE'))
+    cfg.load()
+    from ballfight.kit import fighters as FM
+    return {n: MP.cfg_keys(FM.module(n).Look) for n in names}
+
+
+def cfg_keys_follow_each_function():
+    import json
+    from tools.studio_export import m3parts as MP
+    got = MP.cfg_keys(_Rebinds)
+    assert got == ['abilities.unlock1.half', 'abilities.unlock1.reach', 'abilities.unlock2.len', 'weapon.hold'], got
+    kit = MP.fresh(_kit_cfg_keys, ('OBOE', 'FLUTE', 'TROMBONE'))
+    oboe = kit['OBOE']
+    assert {'abilities.unlock1.half', 'abilities.unlock1.reach', 'abilities.unlock2.len', 'abilities.unlock2.width',
+            'weapon.hold'} <= set(oboe) and 'abilities.unlock2.half' not in oboe, oboe
+    for name in ('FLUTE', 'TROMBONE'):
+        with open(m3refs.ref_dir(f'fighters/{name.lower()}', 'look.json'), encoding='utf-8') as fh:
+            listed = json.load(fh)['cfg_keys']
+        assert kit[name] == listed, (name, kit[name], listed)
+    return f"an alias holds in its own function from its binding on; OBOE's keys are {', '.join(oboe)}; FLUTE's " \
+           f"and TROMBONE's are look.json's as committed"
+
+
 CHECKS = (shard_takes_a_fighter_file, verify_finds_a_changed_byte_in_a_shard, check_pins_names_the_command,
           a_pin_never_moves_on_its_own, remake_makes_a_folder_again_whole, a_cache_run_writes_no_committed_file,
           a_port_never_points_at_another_port, budget_reports_an_overfull_fighter,
           the_command_line_parses, the_framework_records_milestone_1s_fights, hull_rows_go_to_the_cache,
           the_left_file_is_on_disk_for_the_parts, the_replay_guard_compares_values, the_checks_fight_ends_after_44_s,
-          a_port_declares_its_sprite_size, windows_has_a_fork_stand_in)
+          a_port_declares_its_sprite_size, windows_has_a_fork_stand_in,
+          cfg_keys_follow_each_function)
 
 
 def main():
