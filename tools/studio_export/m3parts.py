@@ -44,9 +44,69 @@ SAFE_STEP = 0.25
 
 
 # ---------------------------------------------------------------- fresh processes
+class _SerialPool:
+    """what the kit uses of a `fork` pool (with ... as pool: pool.map / starmap / imap), mapped in this process, in
+    order: the results are the pool's, since the kit only maps pure functions of their arguments over it"""
+
+    def __init__(self, processes=None, *args, **kwargs):
+        pass
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        return False
+
+    def map(self, fn, jobs, chunksize=None):
+        return [fn(j) for j in jobs]
+
+    def starmap(self, fn, jobs, chunksize=None):
+        return [fn(*j) for j in jobs]
+
+    def imap(self, fn, jobs, chunksize=1):
+        return (fn(j) for j in jobs)
+
+    def close(self):
+        pass
+
+    def join(self):
+        pass
+
+
+class _SerialFork:
+    """multiprocessing.get_context('fork') where Windows has no fork"""
+    Pool = _SerialPool
+
+
+def serial_fork():
+    """in this process, multiprocessing.get_context('fork') gives a context whose Pool maps serially, in order; every
+    other start method is the real one. Windows has no fork, and a look may build a sprite cache through a fork pool
+    when it is not a pool worker itself (kit/fighters/trumpet.py `Look.atlas`): every part's fresh process (_child)
+    and the checks' render workers install it, so no port wraps the parts. kit.checks' own fork pool is replaced by
+    checks.py (`_ForkShim`) as before. Idempotent"""
+    real = mp.get_context
+    if getattr(real, 'serial_fork', False):
+        return
+
+    def get_context(method=None):
+        return _SerialFork() if method == 'fork' else real(method)
+    get_context.serial_fork = True
+    mp.get_context = get_context
+
+
+def build_atlases(P):
+    """build every look's file-cached sprite atlas (a kit look's `atlas()`, TRUMPET's) in this process, before a pool
+    of render workers starts: the workers then read the file this process saved instead of three of them writing it
+    at once. The look's own method, so the atlas is the kit's"""
+    for look in P.LOOKS:
+        if callable(getattr(look, 'atlas', None)):
+            look.atlas()
+
+
 def _child(q, modname, fnname, args):
     for k in THREAD_VARS:
         os.environ[k] = '1'
+    serial_fork()
     try:
         from . import __main__ as entry
         assert hash(entry.HASH_PROBE[0]) == entry.HASH_PROBE[1], 'this process does not hash strings as the ' \
@@ -65,16 +125,74 @@ def start(fn, *args):
     q = ctx.Queue()
     p = ctx.Process(target=_child, args=(q, fn.__module__, fn.__name__, args))
     p.start()
-    return p, q, fn.__name__
+    handle = (p, q, fn.__name__)
+    _LIVE.append(handle)
+    return handle
+
+
+_LIVE = []                                # the parts started and not yet waited for, in start order
+_DONE = {}                                # a live part's (status, value), read early while waiting for another
+POLL = 0.5                                # s between looks at the parts while waiting
+
+
+def _result(handle):
+    """the part's (status, value) if it has one now, else None; a part that ended without one is an error"""
+    p, q, name = handle
+    if id(p) in _DONE:
+        return _DONE[id(p)]
+    import queue
+    try:
+        got = q.get_nowait()
+    except queue.Empty:
+        if p.is_alive():
+            return None
+        try:                                  # it may have put its result just before it ended
+            got = q.get(timeout=POLL)
+        except queue.Empty:
+            got = ('error', f'the process ended (exit code {p.exitcode}) without handing back a result')
+    _DONE[id(p)] = got
+    return got
+
+
+def stop_parts():
+    """end every part still running (terminate, then kill one that does not go), so a failed export does not wait
+    for them: a child blocked handing back a large result nobody reads would otherwise keep the interpreter from
+    exiting. Returns the names of the parts it stopped"""
+    stopped = []
+    for p, q, name in list(_LIVE):
+        if p.is_alive():
+            p.terminate()
+            p.join(5)
+            if p.is_alive():
+                p.kill()
+                p.join(5)
+            stopped.append(name)
+        q.cancel_join_thread()
+        _LIVE.remove((p, q, name))
+        _DONE.pop(id(p), None)
+    return stopped
 
 
 def wait(handle):
-    p, q, name = handle
-    status, value = q.get()
-    p.join()
-    if status != 'ok':
-        raise SystemExit(f'{name} (in a fresh process) stopped:\n{value}')
-    return value
+    """the part's result. While waiting, every other running part is watched too: the first that fails (or ends
+    without a result) stops all of them (stop_parts) and the export with the failed part's name and error; the
+    SystemExit unwinds fighter_refs, so staged_on_disk puts left.bfrec back and nothing committed is written"""
+    while True:
+        for other in [h for h in _LIVE if h is not handle] + [handle]:
+            got = _result(other)
+            if got is not None and got[0] != 'ok':
+                stopped = stop_parts()
+                more = f" (stopped the other parts still running: {', '.join(stopped)})" if stopped else ''
+                raise SystemExit(f'{other[2]} (in a fresh process) stopped{more}:\n{got[1]}')
+        got = _result(handle)
+        if got is not None:
+            p = handle[0]
+            p.join()
+            if handle in _LIVE:
+                _LIVE.remove(handle)
+            _DONE.pop(id(p), None)
+            return got[1]
+        handle[0].join(POLL)
 
 
 def fresh(fn, *args):
@@ -92,11 +210,15 @@ def fresh_check(folder):
 def cfg_keys(cls):
     """the roster keys a kit look class reads from self.cfg: each chain of literal subscripts and `.get(literal)`
     from `self.cfg` (through a local name bound to such a chain), dotted ('view.2', 'abilities.low.speed'); only the
-    longest chains are kept"""
+    longest chains are kept. A local name stands for the chain it was last bound to, in the function that binds it
+    and from that statement on (source order); a nested function starts from its parent's names. So two methods'
+    `ab = self.cfg['abilities'][...]` (OBOE's unlock1 and unlock2) are two names, and a rebinding replaces the old
+    chain (or drops it when the new value is no chain)"""
     import ast
     import textwrap
     tree = ast.parse(textwrap.dedent(inspect.getsource(cls)))
     alias = {}
+    found = set()
 
     def chain(node):
         if isinstance(node, ast.Attribute) and node.attr == 'cfg' and isinstance(node.value, ast.Name) \
@@ -112,16 +234,37 @@ def cfg_keys(cls):
             base = chain(node.func.value)
             return None if base is None else base + [str(node.args[0].value)]
         return None
-    for node in ast.walk(tree):
-        if isinstance(node, ast.Assign) and len(node.targets) == 1 and isinstance(node.targets[0], ast.Name):
-            c = chain(node.value)
-            if c:
-                alias[node.targets[0].id] = c
-    found = set()
-    for node in ast.walk(tree):
-        c = chain(node)
-        if c:
-            found.add('.'.join(c))
+
+    class Reads(ast.NodeVisitor):
+        """every chain read, with the names bound so far in the function being read (source order)"""
+
+        def visit(self, node):
+            if isinstance(node, ast.expr):
+                c = chain(node)
+                if c:
+                    found.add('.'.join(c))
+            return super().visit(node)
+
+        def visit_FunctionDef(self, node):
+            nonlocal alias
+            outer, alias = alias, dict(alias)
+            try:
+                self.generic_visit(node)
+            finally:
+                alias = outer
+        visit_AsyncFunctionDef = visit_FunctionDef
+
+        def visit_Assign(self, node):
+            self.visit(node.value)
+            if len(node.targets) == 1 and isinstance(node.targets[0], ast.Name):
+                c = chain(node.value)
+                if c:
+                    alias[node.targets[0].id] = c
+                else:
+                    alias.pop(node.targets[0].id, None)
+            for t in node.targets:
+                self.visit(t)
+    Reads().visit(tree)
     return sorted(k for k in found if not any(o != k and o.startswith(k + '.') for o in found))
 
 
@@ -197,6 +340,33 @@ def _hull_patch(calls):
     scipy.spatial.ConvexHull = Noted
 
 
+HULL_COLUMN = 6                                       # a look row's compact hull calls (look.json format 1)
+HULL_LINE = ("'<frame> <points> <v0>,<v1>,...': one line per scipy.spatial.ConvexHull call, in frame order then "
+             "call order, with its number of input points and its vertices in scipy's order")
+
+
+def hull_lines(rows):
+    """the exact part of a fight's hull log (ruling M3-R29) from look rows that still hold their compact hull
+    calls (column HULL_COLUMN, `[points, vertices, sum of x, sum of y]`): HULL_LINE. The sums are left out: the
+    Studio's points agree within 1e-12 px, not to the bit, and the pinned hull cache holds every point"""
+    return [f"{row[0]} {call[0]} {','.join(str(int(v)) for v in call[1])}" for row in rows for call in row[HULL_COLUMN]]
+
+
+def hull_summary(rows, cache):
+    """what look.json format 2 commits of a fight's hull log in place of the per-frame rows (ruling M3-R29, as
+    sprites under M3-R18): the counts and the SHA-256 of hull_lines; `cache` is the pinned file with every call"""
+    lines = hull_lines(rows)
+    return dict(ruling='M3-R29', cache=cache, frames=len(rows), calls=len(lines),
+                points=sum(int(call[0]) for row in rows for call in row[HULL_COLUMN]),
+                sha256=sha_bytes('\n'.join(lines).encode()), line=HULL_LINE)
+
+
+def without_hull(rows):
+    """look rows without their hull column (look.json format 2): frame, frame SHA-256, hook calls, their SHA-256,
+    boxes, their SHA-256, why"""
+    return [row[:HULL_COLUMN] + row[HULL_COLUMN + 1:] for row in rows]
+
+
 def look_select(P, k, events, which, n_min, times):
     """[(frame, [reason, ...])] in frame order: a spread over the video, the card and the count-in, each of the
     fighter's abilities 0.2 and 0.6 s after its first two uses, the first hit of each kind it lands and the first it
@@ -255,8 +425,9 @@ def look_select(P, k, events, which, n_min, times):
     return sorted(picks.items())
 
 
-def look_child(cfg, name, which, rec_path, n_min, times, sprites_out, hull_out):
-    """one fight drawn with the fighter's real look and the base look for the other side"""
+def look_child(cfg, name, which, rec_path, n_min, times, sprites_out, hull_out, sprite_size=None):
+    """one fight drawn with the fighter's real look and the base look for the other side (`sprite_size`: the size
+    rule of the look's own sprites, sprites.own_size)"""
     import json
     import numpy as np
     from . import frames as F
@@ -328,7 +499,7 @@ def look_child(cfg, name, which, rec_path, n_min, times, sprites_out, hull_out):
     from . import sprites as SPR
     del LF.LOG[:]
     ready = SPR.prepare(P, rec_path)
-    got = SPR.run_one(name, ready, out=sprites_out)
+    got = SPR.run_one(name, ready, out=sprites_out, sprite_size=sprite_size)
     with open(sprites_out[1], encoding='utf-8') as fh:
         sdoc = json.load(fh)
     order = [c['id'] for c in sdoc['cases']]
@@ -460,6 +631,7 @@ def _checks_init(folder):
     from . import checks as CK
     for k in THREAD_VARS:
         os.environ[k] = '1'
+    serial_fork()
     E, _ = common.kit()
     E.load(folder)
     from ballfight.kit import picture
@@ -487,6 +659,7 @@ def checks_child(cfg, rec_path):
     out['band'] = CK.band(KC, M, M.EP.check)
     out['loudness'] = CK.loudness(KC, M, wav)
     P.render(0)
+    build_atlases(P)
     with mp.get_context('spawn').Pool(WORKERS, initializer=_checks_init, initargs=(cfg.folder,)) as pool:
         frames = CK.Frames(pool)
         out['safezone'] = CK.safezone(KC, P, frames)
