@@ -44,11 +44,36 @@ struct ConfigFile {
 pub const REMOTE_WITH_SECRET: &str = "The repository's address holds a user name or password, so BALLFIGHT Studio does \
      not use or save it. Take the name and password out of the address of the copy on this PC, then try again.";
 
-/// Refuses a repository address that could hold a secret: a user name or password before the host
-/// (`https://name:secret@host/...`, `https://name@host/...`), except `git@` for ssh, which is how ssh names its
-/// user and can hold no password. Also refuses an empty address and one with spaces or control characters. The
+/// The sentence for an address that is not an https or ssh one.
+pub const REMOTE_NOT_HTTPS_OR_SSH: &str = "The repository's address is not an https or ssh address, so BALLFIGHT \
+     Studio does not use it for updates.";
+
+/// The addresses updates come from: `https://...`, `ssh://...` or ssh's short form `git@host:path`, and nothing
+/// else (no local folder, no `file://`, `git://` or plain `http://`), checked as `check_address` checks them too. The
 /// error never repeats the address.
 pub fn check_remote(url: &str) -> Result<(), PackError> {
+    check_address(url)?;
+    let lower = url.to_ascii_lowercase();
+    let scp_form = !url.contains("://")
+        && url.as_bytes().get(1) != Some(&b':')
+        && !url.starts_with(['\\', '/', '.'])
+        && url
+            .split('/')
+            .next()
+            .is_some_and(|head| head.contains('@') && head.contains(':'));
+    if lower.starts_with("https://") || lower.starts_with("ssh://") || scp_form {
+        Ok(())
+    } else {
+        Err(PackError::Refused(REMOTE_NOT_HTTPS_OR_SSH.to_string()))
+    }
+}
+
+/// Refuses a repository address that could hold a secret: a user name or password before the host
+/// (`https://name:secret@host/...`, `https://name@host/...`), except `git@` for ssh, which is how ssh names its
+/// user and can hold no password. Also refuses an empty address and one with spaces or control characters. A local
+/// folder passes this check (tests, and the install's own reading of the owner's clone); `check_remote` does not take
+/// it. The error never repeats the address.
+pub fn check_address(url: &str) -> Result<(), PackError> {
     // A folder on this PC may have spaces in its name; a web address may not.
     let spaced_url = url.contains("://") && url.contains(' ');
     if url.is_empty() || url.starts_with('-') || spaced_url || url.chars().any(char::is_control) {
@@ -195,17 +220,45 @@ mod tests {
     fn plain_addresses_are_taken() {
         for fine in [
             "https://github.com/someone/repo.git",
+            "HTTPS://github.com/someone/repo.git",
             "git@github.com:someone/repo.git",
             "ssh://git@github.com/someone/repo.git",
-            r"F:\!Ai Stuff\InstrumentBattleMachine",
-            "F:/!Ai Stuff/InstrumentBattleMachine",
-            r"\\server\share\repo",
         ] {
             check_remote(fine).unwrap_or_else(|e| panic!("{fine}: {e}"));
         }
         for bad in ["", "https://github.com/a b", "https://github.com/a\nb"] {
             assert!(check_remote(bad).is_err(), "{bad:?}");
         }
+    }
+
+    #[test]
+    fn only_https_and_ssh_remotes_are_taken() {
+        for local_or_plain in [
+            r"F:\!Ai Stuff\InstrumentBattleMachine",
+            "F:/!Ai Stuff/InstrumentBattleMachine",
+            r"\\server\share\repo",
+            "/c/repos/x",
+            "./x",
+            "file:///C:/repos/x",
+            "git://example.org/x.git",
+            "http://example.org/x.git",
+            "ext::sh -c touch% x",
+        ] {
+            assert_eq!(
+                check_remote(local_or_plain),
+                Err(PackError::Refused(REMOTE_NOT_HTTPS_OR_SSH.to_string())),
+                "{local_or_plain}"
+            );
+            // A config naming one is refused when written and when read.
+            let dir = TempDir::new("config-local");
+            let path = dir.path().join(CONFIG_NAME);
+            let mut c = sample(dir.path());
+            c.remote = local_or_plain.to_string();
+            assert!(write_config(&path, &c).is_err());
+            assert!(!path.exists());
+        }
+        // The address form check alone still takes a local folder (the owner's clone is read that way).
+        check_address(r"F:\!Ai Stuff\InstrumentBattleMachine").unwrap();
     }
 
     #[test]
