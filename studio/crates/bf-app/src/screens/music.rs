@@ -180,9 +180,16 @@ fn controls(ui: &mut Ui, vm: &ViewModel, inner_h: f32, out: &mut Vec<Action>) {
     let theme = vm.theme();
 
     group_label(ui, "Theme");
-    let themes = vm.roster.as_ref().map_or(&[][..], |r| &r.themes[..]);
+    // only the themes this pair can be set in (ruling M3-R2)
+    let themes = vm
+        .roster
+        .as_ref()
+        .map_or_else(Vec::new, |r| r.themes_for(&vm.draft.fighters));
     let options: Vec<String> = themes.iter().map(|t| t.display.clone()).collect();
-    let chosen = themes.iter().position(|t| t.name == vm.draft.theme).unwrap_or(0);
+    let chosen = themes
+        .iter()
+        .position(|t| t.name == vm.draft.theme)
+        .unwrap_or(usize::MAX);
     if let Some(i) = buttons::dropdown(ui, "Theme", &options, chosen, width)
         && let Some(picked) = themes.get(i)
         && picked.name != vm.draft.theme

@@ -219,6 +219,7 @@ pub fn roster() -> Roster {
             scale: "harmonic minor".to_string(),
             chord_loops: vec![chords("Em Am B7 Em C Am B7 B7"), chords("Em C Am B7 Em C Am B7")],
             bars: (24, 42),
+            refuses: Vec::new(),
         }],
         vs: mask("VS"),
         start: ["FLUTE".to_string(), "TROMBONE".to_string()],

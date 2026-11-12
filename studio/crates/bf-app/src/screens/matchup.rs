@@ -450,14 +450,12 @@ fn bottom_strip(ui: &mut Ui, vm: &ViewModel, roster: &Roster, out: &mut Vec<Acti
 
     strip_row(ui, |ui| {
         cell(ui, LABEL_W, CONTROL_H, RichText::new("Theme").font(body()).color(MUTED));
-        let options: Vec<String> = roster.themes.iter().map(|t| t.display.clone()).collect();
-        let chosen = roster
-            .themes
-            .iter()
-            .position(|t| t.name == draft.theme)
-            .unwrap_or(usize::MAX);
+        // only the themes this pair can be set in (ruling M3-R2)
+        let themes = roster.themes_for(&draft.fighters);
+        let options: Vec<String> = themes.iter().map(|t| t.display.clone()).collect();
+        let chosen = themes.iter().position(|t| t.name == draft.theme).unwrap_or(usize::MAX);
         if let Some(i) = buttons::dropdown(ui, "Theme", &options, chosen, THEME_W)
-            && let Some(picked) = roster.themes.get(i)
+            && let Some(picked) = themes.get(i)
             && picked.name != draft.theme
         {
             out.push(Action::SetTheme(picked.name.clone()));
