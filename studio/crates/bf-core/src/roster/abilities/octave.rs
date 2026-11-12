@@ -1,27 +1,24 @@
 //! Ability kind `octave`, ALTO SAX's OCTAVE KEY: its roster settings. `fight.py` `trigger` 2958 to 2960.
 //!
-//! A stub until ALTO SAX's port: [`PORTED`] is false, so an ability of kind `octave` loads as
-//! `AbilityKind::Unsupported("octave")` and no fight can have it. The port lists the numbers `fight.py` reads as
-//! `ab[name]` in [`REQUIRED`] and every key it reads in [`ALLOWED`], fills [`OctaveCfg`] (what is not a number: lists,
-//! tables), [`parse`] and [`check`], and sets [`PORTED`].
+//! For `dur` seconds (or `dur_beats` beats) every sweep brings a second light, square to the first through the same
+//! point, sweeping there and back at twice the speed (`spot_tick` 4453 to 4459). It holds only numbers.
 
 use serde_json::Value as Json;
 
 use crate::roster::{AbilityCfg, Entry, RosterError};
 
-/// Whether the engine runs ability kind `octave`. While false the roster reads it as
-/// `AbilityKind::Unsupported("octave")`, which the engine refuses in words.
-pub const PORTED: bool = false;
+/// Whether the engine runs ability kind `octave`.
+pub const PORTED: bool = true;
 
 /// The numbers `fight.py` reads as `ab[name]` for this kind (a group of names: one of them, as `dur` or `dur_beats`).
 /// An unlock's `every_bars` is checked for every kind.
-pub const REQUIRED: &[&[&str]] = &[];
+pub const REQUIRED: &[&[&str]] = &[&["dur", "dur_beats"]];
 
 /// Every key `fight.py` reads from an ability of this kind; an entry holding another key loads as
 /// `Unsupported("octave+<key>")`.
-pub const ALLOWED: &[&str] = &["name", "kind", "every_bars"];
+pub const ALLOWED: &[&str] = &["name", "kind", "every_bars", "dur", "dur_beats"];
 
-/// What an ability of kind `octave` holds besides its numbers (empty until the port).
+/// What an ability of kind `octave` holds besides its numbers: nothing.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct OctaveCfg {}
 
