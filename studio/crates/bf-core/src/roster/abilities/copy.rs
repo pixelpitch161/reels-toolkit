@@ -2,10 +2,9 @@
 //! 2822 (`COPYABLE`, `copy_source`, `start_copy`); the gate in `abilities_step` 3046 to 3049; `trigger`'s quiet path
 //! 2830 to 2840.
 //!
-//! A stub until EUPHONIUM's port: [`PORTED`] is false, so an ability of kind `copy` loads as
-//! `AbilityKind::Unsupported("copy")` and no fight can have it. The port lists the numbers `fight.py` reads as
-//! `ab[name]` in [`REQUIRED`] and every key it reads in [`ALLOWED`], fills [`CopyCfg`] (what is not a number: lists,
-//! tables), [`parse`] and [`check`], and sets [`PORTED`].
+//! The fighter fires the enemy's last ability back as its own (same kind and numbers) when its kind is one of
+//! `COPYABLE`, else one round of the enemy's signature. The entry has no numbers of its own beyond an unlock's
+//! `every_bars`.
 
 use serde_json::Value as Json;
 
@@ -13,17 +12,16 @@ use crate::roster::{AbilityCfg, Entry, RosterError};
 
 /// Whether the engine runs ability kind `copy`. While false the roster reads it as `AbilityKind::Unsupported("copy")`,
 /// which the engine refuses in words.
-pub const PORTED: bool = false;
+pub const PORTED: bool = true;
 
-/// The numbers `fight.py` reads as `ab[name]` for this kind (a group of names: one of them, as `dur` or `dur_beats`).
-/// An unlock's `every_bars` is checked for every kind.
+/// The numbers `fight.py` reads as `ab[name]` for this kind: none.
 pub const REQUIRED: &[&[&str]] = &[];
 
 /// Every key `fight.py` reads from an ability of this kind; an entry holding another key loads as
 /// `Unsupported("copy+<key>")`.
 pub const ALLOWED: &[&str] = &["name", "kind", "every_bars"];
 
-/// What an ability of kind `copy` holds besides its numbers (empty until the port).
+/// What an ability of kind `copy` holds besides its numbers: nothing.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct CopyCfg {}
 
@@ -33,7 +31,7 @@ pub(crate) fn parse(_e: &Entry, _prefix: &str, _ab: &Json) -> Result<CopyCfg, Ro
     Ok(CopyCfg {})
 }
 
-/// The kind's own checks on an entry's numbers, at load time and again in `FighterCfg::check`.
+/// The kind's own checks on an entry's numbers, at load time and again in `FighterCfg::check`: none.
 pub(crate) fn check(_e: &Entry, _prefix: &str, _ab: &AbilityCfg) -> Result<(), RosterError> {
     Ok(())
 }
