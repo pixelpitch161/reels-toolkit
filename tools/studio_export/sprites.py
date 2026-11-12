@@ -163,12 +163,16 @@ def build(P, k, episode_keys):
 def own_size(rule, radius):
     """the size of a sprite a look draws itself (`picture` and `episode` cases) at `radius`, by the fighter's
     declared rule (its SPEC's `sprite_size`, m3refs.normalize): None is FLUTE's flute, 2 * radius + 5;
-    dict(add=a, clip=(lo, hi)) is 2 * clip(radius, lo, hi) + a (TRUMPET: its model at a radius held to 12..19,
-    dict(add=7, clip=(12, 19))); `clip` may be None"""
+    dict(add=a, clip=(lo, hi), pad=s) is 2 * int(round(clip(radius, lo, hi) * s)) + a; `clip` and `pad` may be None
+    or left out. TRUMPET (its model at a radius held to 12..19): dict(add=7, clip=(12, 19)); a padded sprite
+    (kit/fighters/contrabass.py `padded_sprite`, R0 = int(round(r * pad)), centre R0 + 3: SOUSAPHONE's PAD 1.22,
+    CONTRABASS's 1.25, BASS DRUM's 1.18): dict(add=7, pad=1.22)"""
     if rule is None:
         return 2 * radius + 5
     lo_hi = rule.get('clip')
     r = radius if lo_hi is None else min(lo_hi[1], max(lo_hi[0], radius))
+    if rule.get('pad') is not None:
+        r = int(round(r * rule['pad']))
     return 2 * r + rule['add']
 
 

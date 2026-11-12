@@ -69,16 +69,28 @@ def replay_hash_of_values(r):
     return replay_hash(plain_scalars(r))
 
 
+# how deep the kit's per-entry tuples sit under each ragged record key (a list a frame of tuples: 2; HOLD is PIANO's)
+RAGGED_DEPTH = dict(WAVES=2, SLAMS=2, COB=3, HOLD=2)
+
+
 def as_kit_run(rec):
     """a run dict shaped like the kit's, rebuilt from a recording that was read back: events and the entries of the
     ragged keys are tuples again, arrays are lists of frames"""
     def tuples(x, depth):
         return tuple(x) if depth == 0 else [tuples(v, depth - 1) for v in x]
-    depth = dict(WAVES=2, SLAMS=2, COB=3)                 # how deep the per-entry tuples sit under the key
+
+    def event(e):                                         # the kit's events are tuples, and so is any sequence in
+        return tuple(event(v) if isinstance(v, list) else v for v in e)   # one (PIANO's pitches in roll, runoff)
     r = dict(seed=rec['seed'], winner=rec['winner'], t_ko=rec['t_ko'], names=rec['names'], corner=rec['corner'],
-             f0=rec['f0'], events=[tuple(e) for e in rec['events']])
+             f0=rec['f0'], events=[event(e) for e in rec['events']])
     for k, a in rec['arrays'].items():
-        r[k] = list(a) if isinstance(a, np.ndarray) else tuples(a, depth[k])
+        if isinstance(a, np.ndarray):
+            r[k] = list(a)
+        elif k in RAGGED_DEPTH:
+            r[k] = tuples(a, RAGGED_DEPTH[k])
+        else:
+            raise SystemExit(f"fights.as_kit_run: the ragged record key {k!r} has no entry in fights.RAGGED_DEPTH (how "
+                             f"deep the kit's per-entry tuples sit under it): add it there")
     return r
 
 

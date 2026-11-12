@@ -78,7 +78,12 @@ bf_harness::episode_suite!("oboe_vs_bassoon");
    `fights` (handicap, rules, a fixed `left` / `right` seed, `must` coverage items), `scenarios`, `frames` (`left` 64,
    `right` 32, extra `times`), `roles` (the roles its part branches on, Table S3), `voice_notes` (`pitches`,
    `velocities`, `durations`), `sprite_size` (when the look draws its own sprites at another size than FLUTE's
-   2 r + 5: `dict(add=7, clip=(12, 19))` is 2 clip(r, 12, 19) + 7, TRUMPET's). A file of its own beyond the
+   2 r + 5: `dict(add=7, clip=(12, 19))` is 2 clip(r, 12, 19) + 7, TRUMPET's; a padded sprite adds `pad`:
+   `dict(add=7, pad=1.22)` is 2 int(round(r 1.22)) + 7, SOUSAPHONE's), `left_in_cache=True` (ruling M3-R36: only
+   when the left recording alone would take the folder over 300 KB, PIANO's; it then lives in the pinned cache with
+   its SHA-256 committed, and every gate that reads it needs the cache). A neutral handicap may be the template's
+   `DMG_SIDE = (1.0, 1.0)` or `None`: the kit's fights are bit-identical, and the gates read both as the same rules.
+   A file of its own beyond the
    template's is made by an `extra` part: `m3refs.fighter_refs(SPEC, extra=<fn>)`, called with `(spec, folder,
    export, module, main, left_seed, left_file)` after the template's parts, in the same run. Never wrap or patch
    the framework or the kit: a `fork` pool the kit asks for maps serially in every part's process
@@ -91,7 +96,7 @@ bf_harness::episode_suite!("oboe_vs_bassoon");
    | File | What it holds | Read by |
    | --- | --- | --- |
    | `fight.json` | the config, the two look fights, every scenario with its full rules, the pooled statistics, the coverage table | `coverage`, `replay`, `left_fight`, `prefix`, `stats` |
-   | `left.bfrec` (or a pointer in fight.json) | the fighter left, winning, all three abilities fired, the K.O. after 44 s (the checks run the kit's `music.main()`, which needs it; a `fights.left` that ends earlier stops the export at once, saying so) | every always-run gate |
+   | `left.bfrec` (or a pointer in fight.json; with `left_in_cache`, the pinned cache file `left.bfrec` and its SHA-256 in fight.json, M3-R36) | the fighter left, winning, all three abilities fired, the K.O. after 44 s (the checks run the kit's `music.main()`, which needs it; a `fights.left` that ends earlier stops the export at once, saying so) | every always-run gate |
    | `look.json` | the left fight's frames (SHA-256 of the bytes, the hook calls, the draw log), its hull calls as counts and one SHA-256 (`left.hull`, ruling M3-R29: the calls themselves are in the cache), the VS card at 16 times on either side, the title hooks, the sprites' digest, the roster keys the kit look reads (`cfg_keys`) | `look_frames`, `title`, `sprites`, `setup_as` |
    | `sound.json` | the left soundtrack (real part, the kit's base `Sound` for the opponent): the 16-bit master's SHA-256, the buses, every stem's RMS per 100 ms, the first-time notes, the noise stream's end; the right soundtrack's facts (its RMS is cached); each role (its own bus and the master); the bed hooks its part calls | `sound`, `sound_stems`, `bed_calls` |
    | `voice.json` | the spec's notes (24 by default): length, peak, 10 ms block RMS, the noise state before and after | `voice` |

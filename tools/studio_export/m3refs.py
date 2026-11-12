@@ -65,8 +65,17 @@ A fighter's SPEC (fighter_<slug>.py; every key but `name` and `opponent` has the
         hooks=(),                    # the look and title hooks its picture gates log (Task 6)
         sprite_size=None,            # the size of the sprites its look draws itself: None = 2 r + 5 (FLUTE's);
                                      #   dict(add=7, clip=(12, 19)) = 2 * clip(r, 12, 19) + 7 (TRUMPET's); left out
-                                     #   of fight.json's spec when not given (sprites.own_size)
+                                     #   of fight.json's spec when not given (sprites.own_size); a padded sprite
+                                     #   adds pad=<float>: 2 * int(round(r * pad)) + add (SOUSAPHONE: add=7, pad=1.22)
+        left_in_cache=False,         # ruling M3-R36: True when the left recording alone would take the folder over
+                                     #   its budget (PIANO's roll, 487 KB): it goes to the pinned cache, its SHA-256
+                                     #   committed, and the gates read it from there; left out of fight.json when False
     )
+
+A neutral handicap is written DMG_SIDE = (1.0, 1.0) (config_text), so the kit records the rule dmg_side; the Studio
+records none for a neutral fight file. Both are accepted as the same rules (bf_harness::fight::rules_text), and the
+kit's fights are bit-identical either way (m3refs_checks `a_neutral_handicap_is_the_same_fight_either_way`), so a
+port may also write DMG_SIDE = None in its own module; config_text stays as it is so no merged pin changes.
 
 fighter_refs(spec, extra=None): `extra(spec, folder, export, module, main, left_seed, left_file)`, when given, makes
 a port's own additional committed and cache files after the template's parts (TRUMPET's sound_line.json), in the
@@ -410,7 +419,8 @@ def cache_json(folder, name, obj, export, sort_keys=True):
 
 
 # ---------------------------------------------------------------- the spec
-SPEC_KEYS = ('name', 'opponent', 'fights', 'scenarios', 'frames', 'roles', 'voice_notes', 'hooks', 'sprite_size')
+SPEC_KEYS = ('name', 'opponent', 'fights', 'scenarios', 'frames', 'roles', 'voice_notes', 'hooks', 'sprite_size',
+             'left_in_cache')
 FIGHT_DEFAULTS = dict(base='flute_vs_trombone', handicap=(1.0, 1.0), dmg_scale=1.0, rules={}, stats=2000, scan=500,
                       left=None, right=None, must=())
 FRAME_DEFAULTS = dict(left=64, right=32, times=())
@@ -501,13 +511,23 @@ def normalize(spec):
     out['hooks'] = tuple(spec.get('hooks') or ())
     size = spec.get('sprite_size')
     if size is not None:                          # (absent, not None, when not given: fight.json's spec is unchanged)
-        ok = isinstance(size, dict) and set(size) <= {'add', 'clip'} and isinstance(size.get('add'), int)
+        ok = isinstance(size, dict) and set(size) <= {'add', 'clip', 'pad'} and isinstance(size.get('add'), int)
         clip = size.get('clip') if ok else None
+        pad = size.get('pad') if ok else None
         ok = ok and (clip is None or (len(clip) == 2 and all(isinstance(v, int) for v in clip) and clip[0] <= clip[1]))
+        ok = ok and (pad is None or (isinstance(pad, float) and pad > 0))
         if not ok:
-            raise SystemExit("SPEC.sprite_size: dict(add=<int>, clip=(<lo>, <hi>) or None): the size of the look's own "
-                             "sprites is 2 * clip(radius, lo, hi) + add (sprites.own_size)")
+            raise SystemExit("SPEC.sprite_size: dict(add=<int>, clip=(<lo>, <hi>) or None, pad=<float> or None): the "
+                             "size of the look's own sprites is 2 * int(round(clip(radius, lo, hi) * pad)) + add "
+                             "(sprites.own_size)")
         out['sprite_size'] = dict(add=size['add'], clip=None if clip is None else tuple(clip))
+        if pad is not None:                       # (left out when not given)
+            out['sprite_size']['pad'] = pad
+    if spec.get('left_in_cache') is not None:     # (ruling M3-R36; left out when not given)
+        if not isinstance(spec['left_in_cache'], bool):
+            raise SystemExit('SPEC.left_in_cache: True or False')
+        if spec['left_in_cache']:
+            out['left_in_cache'] = True
     return out
 
 
@@ -769,6 +789,30 @@ def early_note(early):
             f'seed{"s" if len(early) > 1 else ""} {", ".join(str(s) for s in early)})')
 
 
+# Ruling M3-R36: a fighter whose own left recording would take its folder over the budget declares
+# SPEC.left_in_cache = True; the recording is then the pinned cache file .cache/m3/<folder>/left.bfrec (its SHA-256
+# committed in pins.json and fight.json), and every gate reads it from the cache (bf_harness::refs::recording_of),
+# failing with the cache command when it is missing. `left_file` (below studio/reference/) is then
+# LEFT_IN_CACHE + its cache path, which is where the file is, so a part joins it to REF as for a committed file.
+LEFT_IN_CACHE = '.cache/m3/'
+
+
+def left_ref(left_file):
+    """what fight.json and look.json say of the left recording: dict(file=<below studio/reference/>) for a committed
+    one, dict(cache=<below .cache/m3/>, sha256=) for one in the cache (ruling M3-R36)"""
+    if left_file.startswith(LEFT_IN_CACHE):
+        rel = left_file[len(LEFT_IN_CACHE):]
+        return dict(cache=rel, sha256=manifest.sha256(os.path.join(cache_root(), *rel.split('/'))))
+    return dict(file=left_file)
+
+
+def left_path_of(entry):
+    """the absolute path of the recording a fight.json / look.json entry names (`file` or `cache`)"""
+    if 'cache' in entry:
+        return os.path.join(cache_root(), *entry['cache'].split('/'))
+    return os.path.join(common.REFERENCE, *entry['file'].split('/'))
+
+
 @contextlib.contextmanager
 def staged_on_disk(folder, path):
     """a committed file this run has staged (commit_path) on disk while the block runs, for the run's own child
@@ -842,7 +886,12 @@ def fighter_refs(spec, extra=None):
     if not checks_can_run(rec_left['t_ko']):
         raise SystemExit(checks_too_early(export, left_seed, rec_left['t_ko']))
     copy = existing_copy(hashlib.sha256(data).hexdigest(), folder)
-    if copy and not copy.startswith(f'{REF}/{folder}/'):
+    if spec.get('left_in_cache'):                 # ruling M3-R36: too big for the folder; pinned, its SHA committed
+        left_file = cache_bytes(folder, 'left.bfrec', data, export)
+        left_file = LEFT_IN_CACHE + cache_rel(left_file)
+        delete_committed(folder, 'left.bfrec')                  # a copy an earlier run wrote, if any
+        print(f'{export}: left seed {left_seed}: {len(data):,} bytes, in the pinned cache (SPEC.left_in_cache)')
+    elif copy and not copy.startswith(f'{REF}/{folder}/'):
         left_file = copy[len(REF) + 1:]
         print(f'{export}: left seed {left_seed} is {copy} byte for byte: pointing at it')
         delete_committed(folder, 'left.bfrec')                  # a copy an earlier run wrote, if any
@@ -933,7 +982,7 @@ def fighter_refs(spec, extra=None):
         spec=spec,
         config=main.facts(story),
         swapped_config=dict(fighters=list(swapped.fighters), handicap=list(swapped.handicap)),
-        left=rec_note(rec_left, file=left_file,
+        left=rec_note(rec_left, **left_ref(left_file),
                       why=f'the lowest statistics seed with {name} in the left corner winning and all three of its '
                           f'abilities firing' + early_note(early) if f['left'] is None else 'fixed by the spec'),
         right=rec_note(rec_right, cache=f'{folder}/right.bfrec',
@@ -1028,7 +1077,7 @@ def look_docs(folder, name, opp, module, left_file, look_l, look_r):
     from . import m3parts as MP
     from . import look_flute as LF
     fmt = look_format(folder)
-    left, right = dict(look_l['doc'], file=left_file), dict(look_r['doc'])
+    left, right = dict(look_l['doc'], **left_ref(left_file)), dict(look_r['doc'])
     columns = list(LOOK_COLUMNS)
     if fmt == 2:
         left['hull'] = MP.hull_summary(left['frames'], f'{folder}/hull_left.json')

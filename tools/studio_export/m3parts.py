@@ -125,16 +125,74 @@ def start(fn, *args):
     q = ctx.Queue()
     p = ctx.Process(target=_child, args=(q, fn.__module__, fn.__name__, args))
     p.start()
-    return p, q, fn.__name__
+    handle = (p, q, fn.__name__)
+    _LIVE.append(handle)
+    return handle
+
+
+_LIVE = []                                # the parts started and not yet waited for, in start order
+_DONE = {}                                # a live part's (status, value), read early while waiting for another
+POLL = 0.5                                # s between looks at the parts while waiting
+
+
+def _result(handle):
+    """the part's (status, value) if it has one now, else None; a part that ended without one is an error"""
+    p, q, name = handle
+    if id(p) in _DONE:
+        return _DONE[id(p)]
+    import queue
+    try:
+        got = q.get_nowait()
+    except queue.Empty:
+        if p.is_alive():
+            return None
+        try:                                  # it may have put its result just before it ended
+            got = q.get(timeout=POLL)
+        except queue.Empty:
+            got = ('error', f'the process ended (exit code {p.exitcode}) without handing back a result')
+    _DONE[id(p)] = got
+    return got
+
+
+def stop_parts():
+    """end every part still running (terminate, then kill one that does not go), so a failed export does not wait
+    for them: a child blocked handing back a large result nobody reads would otherwise keep the interpreter from
+    exiting. Returns the names of the parts it stopped"""
+    stopped = []
+    for p, q, name in list(_LIVE):
+        if p.is_alive():
+            p.terminate()
+            p.join(5)
+            if p.is_alive():
+                p.kill()
+                p.join(5)
+            stopped.append(name)
+        q.cancel_join_thread()
+        _LIVE.remove((p, q, name))
+        _DONE.pop(id(p), None)
+    return stopped
 
 
 def wait(handle):
-    p, q, name = handle
-    status, value = q.get()
-    p.join()
-    if status != 'ok':
-        raise SystemExit(f'{name} (in a fresh process) stopped:\n{value}')
-    return value
+    """the part's result. While waiting, every other running part is watched too: the first that fails (or ends
+    without a result) stops all of them (stop_parts) and the export with the failed part's name and error; the
+    SystemExit unwinds fighter_refs, so staged_on_disk puts left.bfrec back and nothing committed is written"""
+    while True:
+        for other in [h for h in _LIVE if h is not handle] + [handle]:
+            got = _result(other)
+            if got is not None and got[0] != 'ok':
+                stopped = stop_parts()
+                more = f" (stopped the other parts still running: {', '.join(stopped)})" if stopped else ''
+                raise SystemExit(f'{other[2]} (in a fresh process) stopped{more}:\n{got[1]}')
+        got = _result(handle)
+        if got is not None:
+            p = handle[0]
+            p.join()
+            if handle in _LIVE:
+                _LIVE.remove(handle)
+            _DONE.pop(id(p), None)
+            return got[1]
+        handle[0].join(POLL)
 
 
 def fresh(fn, *args):

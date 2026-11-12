@@ -98,6 +98,10 @@ def plain(x, where='value'):
         return float(x)
     if isinstance(x, (list, tuple)):
         return [plain(v, f'{where}[{i}]') for i, v in enumerate(x)]
+    if isinstance(x, dict) and x and all(isinstance(k, numbers.Integral) and not isinstance(k, bool) for k in x):
+        # a dict keyed by whole numbers (the rule roll_rows: {fighter index: rows}, ruling M3-R19) is the list of
+        # [key, value] pairs in key order, as recording.write_bfrec writes it and the Rust side reads it
+        return [[plain(k, f'{where} key'), plain(v, f'{where}[{k}]')] for k, v in sorted(x.items())]
     if isinstance(x, dict):
         for k in x:
             if not isinstance(k, str):

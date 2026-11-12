@@ -599,13 +599,196 @@ def cfg_keys_follow_each_function():
            f"and TROMBONE's are look.json's as committed"
 
 
+def a_padded_sprite_is_declared_too():
+    from tools.studio_export import sprites
+    pad = dict(add=7, pad=1.22)                                    # SOUSAPHONE (kit/fighters/sousaphone.py PAD)
+    assert [sprites.own_size(pad, r) for r in (12, 16, 22, 30)] == [2 * int(round(r * 1.22)) + 7
+                                                                     for r in (12, 16, 22, 30)] == [37, 47, 61, 81]
+    assert sprites.own_size(dict(add=7, clip=(12, 19), pad=2.0), 30) == 2 * 38 + 7
+
+    def cases(size_of):
+        out = [dict(id=f'c{i}', args=dict(group='picture', k=0, radius=r, yaw=y, roll=0, size=size_of(r)))
+               for i, (r, y) in enumerate((r, y) for r in sprites.RADII for y in sprites.YAWS)]
+        return out + [dict(id='t', args=dict(group='title', k=0, radius=44, drawn_by='closeup', size=99))]
+    padded = cases(lambda r: 2 * int(round(r * 1.22)) + 7)
+    sprites.check_cases(_P(), 0, padded, set(), pad)
+    for rule in (None, dict(add=7), dict(add=7, pad=1.25)):          # FLUTE's, unpadded, CONTRABASS's pad
+        refused = False
+        try:
+            sprites.check_cases(_P(), 0, padded, set(), rule)
+        except AssertionError:
+            refused = True
+        assert refused, rule
+    got = m3refs.normalize(dict(name='SOUSAPHONE', opponent='FLUTE', sprite_size=dict(add=7, pad=1.22)))
+    assert got['sprite_size'] == dict(add=7, clip=None, pad=1.22), got
+    got = m3refs.normalize(dict(name='TRUMPET', opponent='FLUTE', sprite_size=dict(add=7, clip=(12, 19))))
+    assert got['sprite_size'] == dict(add=7, clip=(12, 19)), 'a rule without pad is written as before'
+    for bad in (dict(add=7, pad=1), dict(add=7, pad=-1.2), dict(add=7, pad='1.22')):
+        exits(m3refs.normalize, dict(name='SOUSAPHONE', opponent='FLUTE', sprite_size=bad))
+    return 'a padded sprite\'s size is declared (SOUSAPHONE: dict(add=7, pad=1.22), 2 int(round(r 1.22)) + 7) and ' \
+           'checked exactly: another pad or none is refused'
+
+
+def _part_fails():
+    raise ValueError('a part that stops')
+
+
+def _part_sleeps():
+    import time
+    time.sleep(300)
+
+
+def _part_big():
+    return b'x' * (64 * 1000 * 1000)                       # blocks handing it back until someone reads it
+
+
+def _part_dies():
+    os._exit(3)
+
+
+def a_failed_part_ends_the_export_promptly():
+    import time
+    from tools.studio_export import m3parts as MP
+    t0 = time.time()
+    slow, big, bad = MP.start(_part_sleeps), MP.start(_part_big), MP.start(_part_fails)
+    text = exits(MP.wait, slow)                            # waiting for the slow one: the failed one ends it all
+    took = time.time() - t0
+    assert '_part_fails (in a fresh process) stopped' in text and 'a part that stops' in text, text
+    assert '_part_sleeps' in text.split('\n')[0], text
+    assert not any(h[0].is_alive() for h in (slow, big, bad)) and MP._LIVE == [], 'a part still runs'
+    assert took < 60, f'{took:.0f} s'
+    text = exits(MP.wait, MP.start(_part_dies))
+    assert 'without handing back a result' in text and 'exit code 3' in text, text
+    a, b = MP.start(_part_big), MP.start(abs, -4)
+    assert MP.wait(b) == 4 and len(MP.wait(a)) == 64 * 1000 * 1000 and MP._LIVE == []
+    with scratch():                                         # and the staged left.bfrec goes as staged_on_disk says
+        m3refs.set_run(m3refs.Run('export'))
+        path = m3refs.commit_bytes('fighters/oboe', 'left.bfrec', b'new\n', 'tools.studio_export.fighter_oboe')
+
+        def run():
+            with m3refs.staged_on_disk('fighters/oboe', path):
+                assert os.path.isfile(path)
+                MP.wait(MP.start(_part_fails))
+        assert 'a part that stops' in exits(run) and not os.path.exists(path)
+        m3refs.set_run(None)
+    return f'a failed part stops the others (one sleeping, one blocked on a 64 MB result) and the export in ' \
+           f'{took:.0f} s, naming it; a part that dies says so; the staged left.bfrec is taken away'
+
+
+def _piano_recording(seed):
+    """(in a part's fresh process) PIANO's left fight recorded by the framework alone (no adapter): roll_rows,
+    HOLD and the pitches inside its events go through write, read back, check and the replay guard; then the kit's
+    renderer for it accepts the file (frames.check_recording)"""
+    from tools.studio_export import frames as F
+    cfg = m3refs.Config('m3refs_checks_piano', 'flute_vs_trombone', ('PIANO', 'FLUTE'), (1.0, 1.0), 1.0, {})
+    tmp = os.path.join(common.CACHE, 'm3refs_checks')
+    os.makedirs(tmp, exist_ok=True)
+    out = os.path.join(tmp, f'piano_s{seed}.bfrec')
+    rec = m3refs.record(cfg, seed, {}, out)
+    kinds = {e[1] for e in rec['events']}
+    held = sum(len(f) for f in rec['arrays']['HOLD'])
+    rows = rec['rules']['roll_rows']
+    P = m3refs.fighter_picture(cfg.with_seed(seed))
+    F.check_recording(P, out)
+    return sorted(kinds & {'roll', 'runoff'}), held, rows[0][0], len(rows)
+
+
+def a_rolls_fight_goes_through_the_framework_alone():
+    """real kit: PIANO's left fight (seed 41) without any of PIANO's adapters"""
+    from tools.studio_export import fights, m3parts as MP
+    assert common.plain({'roll_rows': {1: [(60, 64)], 0: [[48]]}, 'bpm': 132.0}) == \
+        {'roll_rows': [[0, [[48]]], [1, [[60, 64]]]], 'bpm': 132.0}
+    assert 'not a string' in str(_raises(TypeError, common.plain, {'a': 1, 2: 3}))
+    rec = dict(seed=1, winner=0, t_ko=50.0, names=['A', 'B'], corner=[0, 1], f0=0,
+               events=[[1.0, 'roll', 0, 1, 2.0, 3, [60, 64, 67]], [2.0, 'hit', 0, 1, 5.0]],
+               arrays=dict(HOLD=[[[1, 2.0, 3.0]], []]))
+    run = fights.as_kit_run(rec)
+    assert run['events'][0] == (1.0, 'roll', 0, 1, 2.0, 3, (60, 64, 67)) and run['HOLD'] == [[(1, 2.0, 3.0)], []]
+    assert 'RAGGED_DEPTH' in exits(fights.as_kit_run, dict(rec, arrays=dict(NEW=[[1]])))
+    kinds, held, first, n = MP.fresh(_piano_recording, 41)
+    assert kinds == ['roll', 'runoff'] and held > 0 and first == 0, (kinds, held, first)
+    shutil.rmtree(os.path.join(common.CACHE, 'm3refs_checks'), ignore_errors=True)
+    return f'PIANO\'s seed 41 ({", ".join(kinds)} events, {held} HOLD entries, roll_rows for {n} side(s)) records, ' \
+           f'reads back, passes the replay guard and the renderer\'s check with the framework alone'
+
+
+def _raises(kind, fn, *args):
+    try:
+        fn(*args)
+    except kind as ex:
+        return ex
+    raise AssertionError(f'{fn.__name__} did not raise {kind.__name__}')
+
+
+def _neutral_both_ways(fighters, seeds):
+    """(in a part's fresh process) the same fights with DMG_SIDE = (1.0, 1.0) (config_text) and DMG_SIDE = None"""
+    from tools.studio_export import fights
+    tag = 'm3refs_checks_neutral_' + '_'.join(m3refs.slug(f) for f in fighters)
+    text = m3refs.config_text('flute_vs_trombone', fighters, (1.0, 1.0), 1.0, {})
+    assert text.count('DMG_SIDE = (1.0, 1.0)\n') == 1
+    folders = (m3refs.config_folder(tag, 'flute_vs_trombone', text),
+               m3refs.config_folder(tag + '_none', 'flute_vs_trombone',
+                                    text.replace('DMG_SIDE = (1.0, 1.0)\n', 'DMG_SIDE = None\n')))
+    runs, rules = {}, {}
+    for which, folder in zip(('tuple', 'none'), folders):
+        _, story = m3refs.load_config(folder)
+        rules[which] = dict(vars(story.rules()))
+        runs[which] = [story.run_seed(s) for s in seeds]
+    assert rules['tuple'].pop('dmg_side') == (1.0, 1.0) and 'dmg_side' not in rules['none'], rules['none']
+    assert rules['tuple'] == rules['none'], 'another rule differs'
+    for a, b in zip(runs['tuple'], runs['none']):
+        assert sorted(a) == sorted(b) and fights.replay_hash_of_values(a) == fights.replay_hash_of_values(b), a['seed']
+        common.same(common.plain(a['events']), common.plain(b['events']), f"seed {a['seed']} events")
+    return len(seeds)
+
+
+def a_neutral_handicap_is_the_same_fight_either_way():
+    """real kit: DMG_SIDE = (1.0, 1.0) and DMG_SIDE = None give bit-identical fights (rules apart from dmg_side)"""
+    from tools.studio_export import m3parts as MP
+    n = MP.fresh(_neutral_both_ways, ('PIANO', 'FLUTE'), tuple(range(1, 21)) + (41,))
+    m = MP.fresh(_neutral_both_ways, ('FLUTE', 'TROMBONE'), tuple(range(1, 11)))
+    return f'with DMG_SIDE (1.0, 1.0) and None the kit\'s fights are bit-identical ({n} PIANO and {m} FLUTE seeds: ' \
+           f'events, every per-frame value, the replay guard); only the rule dmg_side differs'
+
+
+def a_big_left_recording_goes_to_the_cache():
+    """ruling M3-R36: SPEC.left_in_cache; fight.json then names the pinned cache file and its SHA-256"""
+    import inspect
+    from tools.studio_export import fighter_flute
+    assert 'left_in_cache' not in m3refs.normalize(fighter_flute.SPEC), 'fight.json\'s spec would change'
+    assert m3refs.normalize(dict(name='PIANO', opponent='FLUTE', left_in_cache=True))['left_in_cache'] is True
+    assert 'left_in_cache' not in m3refs.normalize(dict(name='PIANO', opponent='FLUTE', left_in_cache=False))
+    exits(m3refs.normalize, dict(name='PIANO', opponent='FLUTE', left_in_cache='yes'))
+    with scratch():
+        m3refs.set_run(m3refs.Run('export'))
+        path = m3refs.cache_bytes('fighters/piano', 'left.bfrec', b'a roll\n', 'fighter_piano')
+        left_file = m3refs.LEFT_IN_CACHE + m3refs.cache_rel(path)
+        assert os.path.join(common.REFERENCE, *left_file.split('/')) == path, 'a part joins it to REF as before'
+        ref = m3refs.left_ref(left_file)
+        assert ref == dict(cache='fighters/piano/left.bfrec', sha256=manifest.sha256(path)), ref
+        assert m3refs.left_path_of(ref) == path
+        assert m3refs.left_ref('fights/x/seed3.bfrec') == dict(file='fights/x/seed3.bfrec')
+        assert m3refs.left_path_of(dict(file='fights/x/seed3.bfrec')) == os.path.join(common.REFERENCE, 'fights', 'x',
+                                                                                      'seed3.bfrec')
+        m3refs.finish('fighters/piano')
+        assert list(m3refs.read_pins('fighters/piano')) == ['fighters/piano/left.bfrec'], 'not pinned'
+        assert not os.path.exists(m3refs.ref_dir('fighters/piano', 'left.bfrec')), 'a committed copy was written'
+        m3refs.set_run(None)
+    src = inspect.getsource(m3refs.fighter_refs)
+    assert src.index("spec.get('left_in_cache')") < src.index("commit_bytes(folder, 'left.bfrec'")
+    return 'SPEC.left_in_cache puts the left recording in the pinned cache (fight.json: cache and sha256), never ' \
+           'a committed copy; specs without it are unchanged'
+
+
 CHECKS = (shard_takes_a_fighter_file, verify_finds_a_changed_byte_in_a_shard, check_pins_names_the_command,
           a_pin_never_moves_on_its_own, remake_makes_a_folder_again_whole, a_cache_run_writes_no_committed_file,
           a_port_never_points_at_another_port, budget_reports_an_overfull_fighter,
           the_command_line_parses, the_framework_records_milestone_1s_fights, hull_rows_go_to_the_cache,
           the_left_file_is_on_disk_for_the_parts, the_replay_guard_compares_values, the_checks_fight_ends_after_44_s,
           a_port_declares_its_sprite_size, windows_has_a_fork_stand_in,
-          cfg_keys_follow_each_function)
+          cfg_keys_follow_each_function, a_padded_sprite_is_declared_too,
+          a_failed_part_ends_the_export_promptly, a_rolls_fight_goes_through_the_framework_alone,
+          a_neutral_handicap_is_the_same_fight_either_way, a_big_left_recording_goes_to_the_cache)
 
 
 def main():
