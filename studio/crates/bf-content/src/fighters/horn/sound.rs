@@ -116,7 +116,10 @@ pub fn boing(seed: u64) -> Vec<f64> {
 pub fn stopped(x: &[f64]) -> Vec<f64> {
     let y = synth::hp(x, 500.0, FILTER_O);
     // np.abs(y).max() + 1e-9
-    let top = y.iter().fold(f64::NEG_INFINITY, |m, v| if v.abs() > m { v.abs() } else { m }) + 1e-9;
+    let top = y
+        .iter()
+        .fold(f64::NEG_INFINITY, |m, v| if v.abs() > m { v.abs() } else { m })
+        + 1e-9;
     let y: Vec<f64> = y.iter().map(|&v| dmath::tanh(3.5 * v / top) * 0.5).collect();
     let band = synth::bp(&y, 1800.0, 4200.0, FILTER_O);
     y.iter().zip(&band).map(|(a, b)| a + 0.6 * b).collect()
@@ -159,7 +162,9 @@ impl HornSound {
             Some(c) if c != 0.0 => c,
             _ => round_nd(dur + 0.35, 2),
         };
-        Ok(ctx.note("HORN", f64::from(m), round_nd(dur, 3), cap, round_nd(vel, 1))?.to_vec())
+        Ok(ctx
+            .note("HORN", f64::from(m), round_nd(dur, 3), cap, round_nd(vel, 1))?
+            .to_vec())
     }
 
     /// `tonic(lo=60)`: the key's tonic at or above MIDI `lo` (D: D4 = 62, #34's calls).
@@ -292,7 +297,13 @@ impl Sound for HornSound {
         let third = r + (p1 - p0).rem_euclid(12);
         for (tc, _) in ctx.show.grid.count.iter().take(3) {
             mix.place(&bus, &Sig::Mono(self.horn(ctx, r, 0.22, 1.0, None)?), *tc, 0.22, 0.0);
-            mix.place(&bus, &Sig::Mono(self.horn(ctx, third, 0.22, 0.9, None)?), *tc, 0.14, 0.0);
+            mix.place(
+                &bus,
+                &Sig::Mono(self.horn(ctx, third, 0.22, 0.9, None)?),
+                *tc,
+                0.14,
+                0.0,
+            );
         }
         Ok(())
     }
@@ -331,7 +342,10 @@ impl Sound for HornSound {
                         mix.place(&bus, &Sig::Mono(sig), tq, 0.24 * g, pan);
                         if lead > 0.04 {
                             // the leader: a horn a sixth below (its own harmony)
-                            let under = ctx.harmony.chord_tones(m - 9, m - 3, ctx.harmony.chord_at(tq)).map_err(bad)?;
+                            let under = ctx
+                                .harmony
+                                .chord_tones(m - 9, m - 3, ctx.harmony.chord_at(tq))
+                                .map_err(bad)?;
                             if let Some(&low) = under.last() {
                                 let x = self.horn(ctx, low, 0.55 * beat, 0.65, None)?;
                                 let sig = self.tone(ctx, &x, t, 1.0)?.0;
@@ -396,7 +410,13 @@ impl Sound for HornSound {
                     let pan = pan_of(event_number(H, e, 5)?);
                     mix.place("fx", &Sig::Mono(synth::thud(0.6, 85.0, 36.0, THUD_SEED)), ts, 0.55, pan);
                     self.heavy(ctx, bed, mix, ts, 0.45, 83, None, 0.0)?;
-                    mix.place("fx", &Sig::Mono(clank(70.0, 12, CLANK_DUR, &CLANK_DECAYS)?), ts, 0.08, 0.0);
+                    mix.place(
+                        "fx",
+                        &Sig::Mono(clank(70.0, 12, CLANK_DUR, &CLANK_DECAYS)?),
+                        ts,
+                        0.08,
+                        0.0,
+                    );
                 }
                 "ability" if mine => {
                     let tq = ctx.q16(t);
@@ -440,7 +460,13 @@ impl Sound for HornSound {
                             let at = tq + bt * beat;
                             mix.place(&bus, &Sig::Mono(self.horn(ctx, m, d * beat, 1.0, None)?), at, 0.28, 0.0);
                             let low = if m - 5 >= 57 { m - 5 } else { m };
-                            mix.place(&bus, &Sig::Mono(self.horn(ctx, low, d * beat, 0.8, None)?), at, 0.13, 0.0);
+                            mix.place(
+                                &bus,
+                                &Sig::Mono(self.horn(ctx, low, d * beat, 0.8, None)?),
+                                at,
+                                0.13,
+                                0.0,
+                            );
                         }
                     }
                 }

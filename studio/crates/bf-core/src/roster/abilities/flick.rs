@@ -104,7 +104,10 @@ mod tests {
             let f = low_with(key, None).expect("loads");
             assert_eq!((&f.low.kind, f.low.get(key)), (&AbilityKind::Flick, None), "{key}");
         }
-        assert_eq!(low_with("show", Some(Json::from(0.8))).expect("loads").low.get("show"), Some(0.8));
+        assert_eq!(
+            low_with("show", Some(Json::from(0.8))).expect("loads").low.get("show"),
+            Some(0.8)
+        );
         // a key fight.py does not read for a flick: not a flick the engine runs
         let f = low_with("radius", Some(Json::from(2.0))).expect("loads");
         assert_eq!(f.low.kind, AbilityKind::Unsupported("flick+radius".into()));

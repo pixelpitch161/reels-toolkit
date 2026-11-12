@@ -85,7 +85,7 @@ fn not_zero(e: &Entry, field: &str, x: f64, what: &str) -> Result<f64, RosterErr
 
 /// `n_max`: at most [`EMAX`] ghosts (the look reads ghost j from the record's four slots; Python raises beyond).
 fn n_max_value(e: &Entry, x: f64) -> Result<f64, RosterError> {
-    if !(x <= EMAX as f64) {
+    if x.is_nan() || x > EMAX as f64 {
         return Err(e.err(
             "weapon.n_max",
             format!("{x} ghosts are more than the {EMAX} slots the record and the look hold"),
@@ -196,9 +196,15 @@ mod tests {
         let WeaponCfg::Echo(w) = &roster[0].weapon else {
             panic!("not an echo")
         };
-        assert_eq!((w.style.as_str(), w.ghosts0(), w.decay, w.echo_reach), ("echo", 1.0, 0.8, 1.0));
+        assert_eq!(
+            (w.style.as_str(), w.ghosts0(), w.decay, w.echo_reach),
+            ("echo", 1.0, 0.8, 1.0)
+        );
         assert_eq!(roster[0].weapon.ball_start().n0, 0.0);
-        let with = KIT.replace(r#""n0": 0"#, r#""n0": 0, "max_reach": 2.5, "reach_grow": 0.1, "ease": 0.4"#);
+        let with = KIT.replace(
+            r#""n0": 0"#,
+            r#""n0": 0, "max_reach": 2.5, "reach_grow": 0.1, "ease": 0.4"#,
+        );
         let roster = parse_roster(&horn(&with)).expect("with the options");
         let WeaponCfg::Echo(w) = &roster[0].weapon else {
             panic!("not an echo")

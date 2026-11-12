@@ -63,7 +63,13 @@ const HAND_FINGERS: [(f64, f64, f64, f64); 4] = [
     (0.32, -0.10, 0.15, 0.52),
 ];
 /// `HAND_THUMB`.
-const HAND_THUMB: [(f64, f64); 5] = [(-0.42, 0.34), (-0.70, 0.06), (-0.80, -0.08), (-0.68, -0.14), (-0.44, 0.08)];
+const HAND_THUMB: [(f64, f64); 5] = [
+    (-0.42, 0.34),
+    (-0.70, 0.06),
+    (-0.80, -0.08),
+    (-0.68, -0.14),
+    (-0.44, 0.08),
+];
 
 /// `GLOVE_CUFF` (the glove's local frame: u forward toward the enemy, v left; 1 unit = 1 ring unit).
 const GLOVE_CUFF: [(f64, f64); 8] = [
@@ -92,7 +98,14 @@ const GLOVE_KNUCKLES: [(f64, f64); 4] = [(-0.19, 0.10), (-0.065, 0.12), (0.065, 
 /// `FLICKER`: the middle finger.
 const FLICKER: usize = 1;
 /// The thumb relaxed at the side (pose 1).
-const THUMB_OPEN: [(f64, f64); 6] = [(-0.20, 0.22), (-0.02, 0.34), (0.08, 0.40), (0.14, 0.36), (0.06, 0.26), (-0.10, 0.16)];
+const THUMB_OPEN: [(f64, f64); 6] = [
+    (-0.20, 0.22),
+    (-0.02, 0.34),
+    (0.08, 0.40),
+    (0.14, 0.36),
+    (0.06, 0.26),
+    (-0.10, 0.16),
+];
 /// The thumb curled forward over the middle finger (pose 0).
 const THUMB_COCKED: [(f64, f64); 7] = [
     (-0.20, 0.22),
@@ -170,7 +183,12 @@ fn ints(c: V3) -> [u8; 3] {
 
 /// `Image.fromarray(np.clip(arr, 0, 255).astype(np.uint8))`.
 fn to_bytes(arr: &Img<f32>) -> Img<u8> {
-    Img::from_vec(arr.w, arr.h, arr.c, arr.data.iter().map(|&v| np::clip_u8_f32(v)).collect())
+    Img::from_vec(
+        arr.w,
+        arr.h,
+        arr.c,
+        arr.data.iter().map(|&v| np::clip_u8_f32(v)).collect(),
+    )
 }
 
 /// `arr += (np.clip(col, 0, 255)[None, None] - arr) * (m * a)[..., None]`, `m` an `L` picture over `255.0` in
@@ -200,7 +218,10 @@ fn draw_ghost(arr: &mut Img<f32>, s: (f64, f64), rp: f64, spr: Option<&Img<u8>>,
         return;
     }
     let ri = np::f64_to_i64(rp.ceil()) + 2;
-    let (cx, cy) = (np::f64_to_i64(round_half_even(s.0)), np::f64_to_i64(round_half_even(s.1)));
+    let (cx, cy) = (
+        np::f64_to_i64(round_half_even(s.0)),
+        np::f64_to_i64(round_half_even(s.1)),
+    );
     let (x0, y0) = (cx - ri, cy - ri);
     let (xa, ya) = (x0.max(0), y0.max(0));
     let (xb, yb) = ((W as i64).min(x0 + 2 * ri + 1), (H as i64).min(y0 + 2 * ri + 1));
@@ -383,9 +404,12 @@ fn bump(u0: f64, v: f64, w: f64, ln: f64) -> Vec<(f64, f64)> {
     pts
 }
 
+/// A part of the glove in its local frame: its points, its shade and its kind.
+type LocalPart = (Vec<(f64, f64)>, f64, Part);
+
 /// `glove_parts(pose)`: `(local points, shade, kind)` back to front. Pose 0 is cocked (the middle finger curled
 /// under the thumb), 1 flicked (the middle finger straight out).
-fn glove_parts(pose: f64) -> Vec<(Vec<(f64, f64)>, f64, Part)> {
+fn glove_parts(pose: f64) -> Vec<LocalPart> {
     let mut out = vec![(GLOVE_CUFF.to_vec(), 0.86, Part::Cuff)];
     for (j, &(v, w)) in GLOVE_KNUCKLES.iter().enumerate() {
         if j == FLICKER && pose > 0.5 {
@@ -617,7 +641,11 @@ impl HornLook {
     /// `GROW_T.get(n, T.T_FIGHT)`.
     fn grow_t(&self, n: i64, t_fight: f64) -> f64 {
         // a dict built in event order: the last entry of a key wins
-        self.grow_t.iter().rev().find(|&&(m, _)| m == n).map_or(t_fight, |&(_, t)| t)
+        self.grow_t
+            .iter()
+            .rev()
+            .find(|&&(m, _)| m == n)
+            .map_or(t_fight, |&(_, t)| t)
     }
 
     /// `ghosts_at(t)`: its echo ghosts at `t`. In the fight, the run's ghosts on its own past path (frozen through
@@ -634,7 +662,11 @@ impl HornLook {
         let n = np::f64_to_i64(p.run.f("ECHO_N", i, k).unwrap_or(0.0) + 1e-9).max(0) as usize;
         let mut out_k = 1.0;
         if t >= p.t_hs {
-            out_k = if k == p.lose { 0.0 } else { 1.0 - ss(p.t_hs, p.t_hs + 0.8, t) };
+            out_k = if k == p.lose {
+                0.0
+            } else {
+                1.0 - ss(p.t_hs, p.t_hs + 0.8, t)
+            };
             if out_k <= 0.0 {
                 return Vec::new();
             }
@@ -891,7 +923,11 @@ impl Look for HornLook {
 
     fn hit_glow(&self, _p: &PictureCtx, e: &Event) -> Option<(f64, f64)> {
         let wide = ["flick", "flick_rope", "slam", "wave", "shockwave"];
-        if wide.contains(&how(e)) { Some((14.0, 0.35)) } else { None }
+        if wide.contains(&how(e)) {
+            Some((14.0, 0.35))
+        } else {
+            None
+        }
     }
 
     fn fx_event(&self, p: &PictureCtx, fx: &mut Fx, e: &Event) {
@@ -906,9 +942,11 @@ impl Look for HornLook {
                 match how(e) {
                     "echo" => {
                         // a blast lands: copper embers, a soft scorch ring
-                        fx.bu.add(t, pos, p.col[att], if call { 0.5 } else { 0.35 }, None, false);
+                        fx.bu
+                            .add(t, pos, p.col[att], if call { 0.5 } else { 0.35 }, None, false);
                         fx.fl.add(t, pos, p.fl_col[att], 1.1, 0.45, 0.03, 0.2, 0.0);
-                        fx.pa.emit(t, pos, "embers", &emit(if call { 6 } else { 4 }, None, None));
+                        fx.pa
+                            .emit(t, pos, "embers", &emit(if call { 6 } else { 4 }, None, None));
                     }
                     "flick" => {
                         // FINAL FLICK lands: the big one
@@ -921,7 +959,8 @@ impl Look for HornLook {
                         // ... and the enemy slams into the ropes
                         fx.bu.add(t, pos, p.col[att], 1.8, None, true);
                         fx.fl.add(t, pos, p.fl_col[att], 2.0, 0.9, 0.03, 0.4, 0.0);
-                        fx.pa.emit(t, up(x, z, 0.1), "dust", &emit(18, Some(160.0), Some((0.6, 1.6))));
+                        fx.pa
+                            .emit(t, up(x, z, 0.1), "dust", &emit(18, Some(160.0), Some((0.6, 1.6))));
                         fx.pa.emit(t, pos, "brass", &emit(8, Some(140.0), None));
                     }
                     _ => {}
@@ -952,8 +991,14 @@ impl Look for HornLook {
                 // a new ghost peels off the horn
                 let Some(who) = e.who() else { return };
                 let q = p.fighter(who, t).p;
-                fx.pa.emit(t, up(q[0], q[1], 0.5), "embers", &emit(8, Some(180.0), Some((0.5, 1.4))));
-                fx.fl.add(t, up(q[0], q[1], 0.6), p.fl_col[who], 1.2, 0.35, 0.03, 0.3, 0.0);
+                fx.pa.emit(
+                    t,
+                    up(q[0], q[1], 0.5),
+                    "embers",
+                    &emit(8, Some(180.0), Some((0.5, 1.4))),
+                );
+                fx.fl
+                    .add(t, up(q[0], q[1], 0.6), p.fl_col[who], 1.2, 0.35, 0.03, 0.3, 0.0);
             }
             "flick_wind" => {
                 // the glove bursts out of the bell
@@ -977,13 +1022,15 @@ impl Look for HornLook {
         if self.k == p.lose {
             for gh in self.ghosts_at(p, p.t_hs - 1e-3) {
                 let burst = emit(10, Some(180.0), Some((0.8, 2.0)));
-                fx.pa.emit(p.fx_clock(p.t_hs), scene::to_world(gh.x, gh.z, R), "embers", &burst);
+                fx.pa
+                    .emit(p.fx_clock(p.t_hs), scene::to_world(gh.x, gh.z, R), "embers", &burst);
             }
         }
     }
 
     fn ko_fx(&self, p: &PictureCtx, fx: &mut Fx, pos: V3) {
-        fx.pa.emit(p.t_ko, pos, "embers", &emit(30, Some(180.0), Some((0.8, 2.2))));
+        fx.pa
+            .emit(p.t_ko, pos, "embers", &emit(30, Some(180.0), Some((0.8, 2.2))));
     }
 
     // ------------------------------------------------------------ the canvas
@@ -1107,7 +1154,9 @@ impl Look for HornLook {
 
     fn draw_item(&self, p: &PictureCtx, f: &FrameCtx<'_>, fr: &mut Frame, payload: &Payload) {
         let (k, cam, t) = (self.k, f.cam, f.t);
-        let Some(item) = payload.downcast_ref::<Item>() else { return };
+        let Some(item) = payload.downcast_ref::<Item>() else {
+            return;
+        };
         let (mut arr, depth) = (fr.array(), fr.depth());
         match item {
             Item::Rings => {
@@ -1253,7 +1302,13 @@ impl Look for HornLook {
         // a copper aura on every ghost, brighter as it echoes
         for gh in self.ghosts_at(p, f.t) {
             let s = f.cam.wp(&[scene::to_world(gh.x, gh.z, R)])[0];
-            fr.glow(s.0, s.1, 12.0, self.col.map(|c| c * 0.7 + 60.0), (0.10 + 0.28 * gh.fl) * gh.a);
+            fr.glow(
+                s.0,
+                s.1,
+                12.0,
+                self.col.map(|c| c * 0.7 + 60.0),
+                (0.10 + 0.28 * gh.fl) * gh.a,
+            );
         }
     }
 

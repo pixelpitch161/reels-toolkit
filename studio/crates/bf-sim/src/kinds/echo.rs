@@ -286,7 +286,13 @@ pub(crate) fn snap(f: &Fight, out: &mut Frames) {
     }
     out.push_f64("ECHO_G", &[2, EMAX, 3], &g);
     // getattr(B, 'n_echo', 0.0)
-    let n = [0, 1].map(|j| if f.echo.balls[j].set_up { f.echo.balls[j].n_echo } else { 0.0 });
+    let n = [0, 1].map(|j| {
+        if f.echo.balls[j].set_up {
+            f.echo.balls[j].n_echo
+        } else {
+            0.0
+        }
+    });
     out.push_f64("ECHO_N", &[2], &n);
     let rings = f.echo.rings.iter().map(|e| {
         Value::List(vec![
