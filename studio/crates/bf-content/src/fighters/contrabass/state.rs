@@ -118,9 +118,19 @@ mod tests {
     fn the_steps_and_footfalls_are_its_own_events_fields() {
         let f = Value::Float;
         let events = vec![
-            ev(1.0, "step", 0, &[f(0.1), f(0.2), f(0.3), f(0.4), f(1.25), Value::Int(1)]),
+            ev(
+                1.0,
+                "step",
+                0,
+                &[f(0.1), f(0.2), f(0.3), f(0.4), f(1.25), Value::Int(1)],
+            ),
             ev(1.25, "step_land", 0, &[f(0.3), f(0.4), f(0.71), Value::Int(1)]),
-            ev(1.5, "step", 1, &[f(0.0), f(0.0), f(0.0), f(0.0), f(1.75), Value::Int(0)]),
+            ev(
+                1.5,
+                "step",
+                1,
+                &[f(0.0), f(0.0), f(0.0), f(0.0), f(1.75), Value::Int(0)],
+            ),
             ev(2.0, "slap", 0, &[Value::Int(1)]),
             ev(3.0, "stampede", 0, &[f(5.7)]),
             ev(3.0, "stampede_stomp", 0, &[f(0.5), f(0.6), f(1.5)]),
@@ -128,9 +138,15 @@ mod tests {
         ];
         let s = steps(&events, 0);
         assert_eq!(s.len(), 1);
-        assert_eq!((s[0].t0, s[0].t1, s[0].p0, s[0].p1, s[0].kind), (1.0, 1.25, [0.1, 0.2], [0.3, 0.4], 1));
+        assert_eq!(
+            (s[0].t0, s[0].t1, s[0].p0, s[0].p1, s[0].kind),
+            (1.0, 1.25, [0.1, 0.2], [0.3, 0.4], 1)
+        );
         let l = lands(&events, 0);
-        assert_eq!((l[0].t, l[0].x, l[0].y, l[0].reach, l[0].kind), (1.25, 0.3, 0.4, 0.71, 1));
+        assert_eq!(
+            (l[0].t, l[0].x, l[0].y, l[0].reach, l[0].kind),
+            (1.25, 0.3, 0.4, 0.71, 1)
+        );
         assert_eq!(slaps(&events, 0), vec![(2.0, true)]);
         assert_eq!(stamps(&events, 0), vec![(3.0, 5.7)]);
         assert_eq!(stomps(&events, 0), vec![(3.0, 0.5, 0.6, 1.5)]);

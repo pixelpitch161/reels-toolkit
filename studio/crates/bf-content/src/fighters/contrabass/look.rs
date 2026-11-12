@@ -406,7 +406,16 @@ impl Look for ContrabassLook {
                     ..Mark::new(MarkKind::Dust, l.x, l.y)
                 },
             );
-            fx.fl.add(l.t, up(l.x, l.y, R * 0.5), col, 1.0 + 0.4 * l.reach, 0.3, 0.03, 0.14, 0.0);
+            fx.fl.add(
+                l.t,
+                up(l.x, l.y, R * 0.5),
+                col,
+                1.0 + 0.4 * l.reach,
+                0.3,
+                0.03,
+                0.14,
+                0.0,
+            );
         }
         for &(t0, broke) in &self.slaps {
             if t0 > p.t_ko {
@@ -414,11 +423,22 @@ impl Look for ContrabassLook {
             }
             let at = p.run.p(p.sim_i(t0), k);
             let pos = up(at[0], at[1], R);
-            fx.bu.add(t0, pos, [220.0, 236.0, 255.0], if broke { 1.3 } else { 1.0 }, None, true);
+            fx.bu.add(
+                t0,
+                pos,
+                [220.0, 236.0, 255.0],
+                if broke { 1.3 } else { 1.0 },
+                None,
+                true,
+            );
             fx.fl.add(t0, pos, col, 2.0, 0.8, 0.03, 0.22, 0.0);
             let emit = Emit {
                 n: Some(14),
-                col: Some(vec![[230.0, 240.0, 255.0], [150.0, 180.0, 240.0], [255.0, 255.0, 255.0]]),
+                col: Some(vec![
+                    [230.0, 240.0, 255.0],
+                    [150.0, 180.0, 240.0],
+                    [255.0, 255.0, 255.0],
+                ]),
                 ..Emit::default()
             };
             fx.pa.emit(t0, pos, "sparks", &emit);
@@ -557,7 +577,12 @@ impl Look for ContrabassLook {
                             )
                         })
                         .collect();
-                    reeds::blend(&mut arr, &reeds::mask(std::slice::from_ref(&pts), &[], 1), INK, Num::Py(0.8));
+                    reeds::blend(
+                        &mut arr,
+                        &reeds::mask(std::slice::from_ref(&pts), &[], 1),
+                        INK,
+                        Num::Py(0.8),
+                    );
                     let inner: Vec<(f64, f64)> = pts
                         .iter()
                         .map(|&(x, y)| (c.0 + (x - c.0) * 0.92, c.1 + (y - c.1) * 0.92))
@@ -593,10 +618,25 @@ impl Look for ContrabassLook {
                     })
                     .collect();
                 let sp = cam.wp(&world);
-                reeds::blend(&mut arr, &reeds::mask(&[], std::slice::from_ref(&sp), 9), INK, Num::Py(0.85));
-                reeds::blend(&mut arr, &reeds::mask(&[], std::slice::from_ref(&sp), 6), EAR, Num::Py(1.0));
+                reeds::blend(
+                    &mut arr,
+                    &reeds::mask(&[], std::slice::from_ref(&sp), 9),
+                    INK,
+                    Num::Py(0.85),
+                );
+                reeds::blend(
+                    &mut arr,
+                    &reeds::mask(&[], std::slice::from_ref(&sp), 6),
+                    EAR,
+                    Num::Py(1.0),
+                );
                 let tip = sp[1..].to_vec();
-                reeds::blend(&mut arr, &reeds::mask(&[], &[tip], 1), EAR.map(|v| v * 0.75), Num::Py(0.8));
+                reeds::blend(
+                    &mut arr,
+                    &reeds::mask(&[], &[tip], 1),
+                    EAR.map(|v| v * 0.75),
+                    Num::Py(0.8),
+                );
             }
         }
         fr.set_array(&arr, Some(&depth));
@@ -619,7 +659,12 @@ impl Look for ContrabassLook {
                 let ring = jag_ring(w.cx, w.cz, w.r, seed, 0.05, 56, amp);
                 let world: Vec<V3> = ring.iter().map(|q| scene::to_world(q[0], q[1], q[2])).collect();
                 let sp = cam.wp(&world);
-                reeds::blend(arr, &reeds::mask(&[], std::slice::from_ref(&sp), 3), INK, Num::Py(0.5 * kk));
+                reeds::blend(
+                    arr,
+                    &reeds::mask(&[], std::slice::from_ref(&sp), 3),
+                    INK,
+                    Num::Py(0.5 * kk),
+                );
                 let lc = if w.kind != "slap" {
                     col.map(|v| np::clip(v * 0.6 + 100.0, 0.0, 255.0))
                 } else {
@@ -633,7 +678,7 @@ impl Look for ContrabassLook {
         for &(t0, _broke) in &self.slaps {
             // SLAP BASS: a string snapping across the glass
             let age = tc - t0;
-            if 0.0 <= age && age < 0.16 && st.vis {
+            if (0.0..0.16).contains(&age) && st.vis {
                 let at = st.p;
                 let kk = 1.0 - age / 0.16;
                 let wob = 0.12 * dmath::sin(age * 120.0) * kk;
@@ -643,7 +688,12 @@ impl Look for ContrabassLook {
                     scene::to_world(at[0] + R * 0.9, at[1] + wob, R * 1.2),
                 ];
                 let sp = cam.wp(&z);
-                reeds::blend(arr, &reeds::mask(&[], std::slice::from_ref(&sp), 3), INK, Num::Py(0.6 * kk));
+                reeds::blend(
+                    arr,
+                    &reeds::mask(&[], std::slice::from_ref(&sp), 3),
+                    INK,
+                    Num::Py(0.6 * kk),
+                );
                 reeds::blend(arr, &reeds::mask(&[], &[sp], 1), WHITE, Num::Py(kk));
             }
         }
@@ -688,7 +738,12 @@ impl Look for ContrabassLook {
                         ]
                     })
                     .collect();
-                reeds::blend(arr, &reeds::mask(&[], &[on_screen(&pts)], 1), [206.0, 200.0, 188.0], Num::Py(0.9));
+                reeds::blend(
+                    arr,
+                    &reeds::mask(&[], &[on_screen(&pts)], 1),
+                    [206.0, 200.0, 188.0],
+                    Num::Py(0.9),
+                );
             }
             "endpin" => {
                 let pts = [
@@ -707,7 +762,12 @@ impl Look for ContrabassLook {
                         [c[0] + u[0] * r_, c[1] + u[1] * r_]
                     })
                     .collect();
-                reeds::blend(arr, &reeds::mask(&[], &[on_screen(&pts)], 2), [152.0, 92.0, 50.0], Num::Py(1.0));
+                reeds::blend(
+                    arr,
+                    &reeds::mask(&[], &[on_screen(&pts)], 2),
+                    [152.0, 92.0, 50.0],
+                    Num::Py(1.0),
+                );
             }
             _ => {
                 let sz = size * 1.7;
@@ -743,7 +803,13 @@ mod tests {
         let parts = ContrabassLook::new().shards();
         let count = |kind: &str| parts.iter().filter(|p| *p == kind).count();
         assert_eq!(
-            (parts.len(), count("body"), count("scroll"), count("endpin"), count("string")),
+            (
+                parts.len(),
+                count("body"),
+                count("scroll"),
+                count("endpin"),
+                count("string")
+            ),
             (13, 6, 1, 2, 4)
         );
     }

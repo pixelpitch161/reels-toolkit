@@ -164,10 +164,7 @@ pub fn step(f: &mut Fight, k: usize, _dt: f64) {
     }
     let u = (f.t - s.t0) / py_max(1e-9, s.t1 - s.t0);
     let e = u * u * (3.0 - 2.0 * u);
-    f.balls[k].p = [
-        s.p0[0] + (s.p1[0] - s.p0[0]) * e,
-        s.p0[1] + (s.p1[1] - s.p0[1]) * e,
-    ];
+    f.balls[k].p = [s.p0[0] + (s.p1[0] - s.p0[0]) * e, s.p0[1] + (s.p1[1] - s.p0[1]) * e];
 }
 
 /// `_step_land(k)` (4030 to 4039): the ball is planted where the step lands and a quake ring of kind `step` leaves the
@@ -199,7 +196,12 @@ fn land(f: &mut Fight, k: usize) {
         grow: true,
         clears: false,
     });
-    let data = vec![Value::Float(p[0]), Value::Float(p[1]), Value::Float(reach), Value::Int(s.kind)];
+    let data = vec![
+        Value::Float(p[0]),
+        Value::Float(p[1]),
+        Value::Float(reach),
+        Value::Int(s.kind),
+    ];
     f.ev("step_land", k as i64, data);
 }
 

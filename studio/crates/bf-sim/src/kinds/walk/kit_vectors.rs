@@ -61,7 +61,9 @@ impl std::str::FromStr for HexF {
     type Err = String;
     fn from_str(t: &str) -> Result<HexF, String> {
         let (neg, t) = t.strip_prefix('-').map_or((false, t), |r| (true, r));
-        let body = t.strip_prefix("0x1.").ok_or_else(|| format!("{t}: not a normal number"))?;
+        let body = t
+            .strip_prefix("0x1.")
+            .ok_or_else(|| format!("{t}: not a normal number"))?;
         let (mant, exp) = body.split_once('p').ok_or_else(|| format!("{t}: no exponent"))?;
         let mant = u64::from_str_radix(mant, 16).map_err(|e| e.to_string())?;
         let exp: i64 = exp.parse().map_err(|e: std::num::ParseIntError| e.to_string())?;
@@ -190,8 +192,10 @@ fn a_step_starts_on_its_grid_with_the_kits_numbers() {
     );
     assert_eq!(
         events(&f, 0),
-        ["0x1.9000000000000p+3 step 0 -0x1.0000000000000p+0 0x1.0000000000000p-1 -0x1.5ea793eb769f2p-2 \
-          0x1.1d457cb962e3ep-3 0x1.9396969696969p+3 1"]
+        [
+            "0x1.9000000000000p+3 step 0 -0x1.0000000000000p+0 0x1.0000000000000p-1 -0x1.5ea793eb769f2p-2 \
+          0x1.1d457cb962e3ep-3 0x1.9396969696969p+3 1"
+        ]
     );
 }
 
@@ -302,7 +306,10 @@ fn the_swing_the_landing_and_its_quake() {
             s("0x1.999999999999ap-3")
         )
     );
-    assert_eq!((hx(f.balls[0].blade_len), f.waves.len()), (s("0x1.6b851eb851eb9p-1"), 0));
+    assert_eq!(
+        (hx(f.balls[0].blade_len), f.waves.len()),
+        (s("0x1.6b851eb851eb9p-1"), 0)
+    );
     assert_eq!(
         events(&f, n),
         ["0x1.97b5b2d4d4025p+3 hit 0 1 0x1.999999999999ap+2 0x1.a7f1f638c7ab0p-6 0x1.ef1843a970bf7p-3 step 0"]
@@ -448,7 +455,11 @@ fn the_elephant_charges_tramples_stomps_and_ends() {
     // the heading after the turn: `math.atan2`, `math.cos` and `math.sin` are the C runtime's in the kit and
     // `dmath`'s here, one step apart on this value (ruling M3-R38: the audit that makes `dmath` the C runtime's is
     // not merged yet). Held to one step; exact once it is.
-    for (got, want) in f.balls[0].v.iter().zip(["0x1.b63ed71f31418p+1", "-0x1.de1601f37b8d3p+0"]) {
+    for (got, want) in f.balls[0]
+        .v
+        .iter()
+        .zip(["0x1.b63ed71f31418p+1", "-0x1.de1601f37b8d3p+0"])
+    {
         assert!(ulps(*got, want) <= 1, "{} against the kit's {want}", hx(*got));
     }
     assert_eq!(
@@ -471,12 +482,12 @@ fn the_elephant_charges_tramples_stomps_and_ends() {
         &[vec(&f.balls[0].p), vec(&f.balls[0].v)],
         &[
             s("[0x1.2fb504e23ede4p+1, 0x1.e57e790974be7p-9]"),
-            s("[-0x1.eff282bf54981p+1, 0x1.c7269178dd729p-2]")
-        ]
+            s("[-0x1.eff282bf54981p+1, 0x1.c7269178dd729p-2]"),
+        ],
     );
     near(
         &events(&f, n),
-        ["0x1.90443d46b26c0p+3 rope 0 0 1 0x1.2fb504e23ede4p+1 0x1.e57e790974be7p-9 0x1.f333333333334p+1"]
+        ["0x1.90443d46b26c0p+3 rope 0 0 1 0x1.2fb504e23ede4p+1 0x1.e57e790974be7p-9 0x1.f333333333334p+1"],
     );
     // a trample: the hit, the knock, the heading reflected off the contact
     let n = f.events.len();
@@ -491,22 +502,22 @@ fn the_elephant_charges_tramples_stomps_and_ends() {
         &[
             s("0x1.7000000000000p+6"),
             s("[0x1.3ced1e319d1a7p+1, 0x1.9639391b47354p-1]"),
-            s("0x1.ccccccccccccdp+0")
-        ]
+            s("0x1.ccccccccccccdp+0"),
+        ],
     );
     near(
         &[vec(&f.balls[0].v), hx(st(&f).last)],
         &[
             s("[-0x1.c1b0532c7aff9p+1, -0x1.b1801abbd68ccp+0]"),
-            s("0x1.9088888888888p+3")
-        ]
+            s("0x1.9088888888888p+3"),
+        ],
     );
     near(
         &events(&f, n),
         [
             "0x1.90888f861a60dp+3 hit 0 1 0x1.0000000000000p+3 0x1.3b7bcb72e751cp-1 0x1.1dd498c9f9c10p-3 trample 0",
-            "0x1.90888f861a60dp+3 trample 0 0x1.3b7bcb72e751cp-1 0x1.1dd498c9f9c10p-3"
-        ]
+            "0x1.90888f861a60dp+3 trample 0 0x1.3b7bcb72e751cp-1 0x1.1dd498c9f9c10p-3",
+        ],
     );
     // within `cool`: no second trample
     let n = f.events.len();
@@ -519,7 +530,7 @@ fn the_elephant_charges_tramples_stomps_and_ends() {
     assert_eq!(hx(st(&f).next), "0x1.9e5a5a5a5a5a6p+3");
     near(
         &events(&f, n),
-        ["0x1.972d234eb9a17p+3 stampede_stomp 0 -0x1.9dd421520cc68p-6 -0x1.ded2683445394p-6 0x1.b333333333334p+0"]
+        ["0x1.972d234eb9a17p+3 stampede_stomp 0 -0x1.9dd421520cc68p-6 -0x1.ded2683445394p-6 0x1.b333333333334p+0"],
     );
     // the end
     let n = f.events.len();

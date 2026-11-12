@@ -160,7 +160,11 @@ pub fn bowed(f: f64, dur: f64, vel: f64) -> Vec<f64> {
         .iter()
         .map(|&t| {
             // np.minimum(1, t / att) ** 1.5 * np.where(t < dur, 1.0, np.exp(-(t - dur) / (rel / 4)))
-            let tail = if t < dur { 1.0 } else { dmath::exp(-(t - dur) / (rel / 4.0)) };
+            let tail = if t < dur {
+                1.0
+            } else {
+                dmath::exp(-(t - dur) / (rel / 4.0))
+            };
             let env = dmath::pow(min1(t / att), 1.5) * tail;
             env * (0.84 + 0.16 * min1(t / held))
         })

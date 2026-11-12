@@ -142,8 +142,14 @@ mod tests {
         let WeaponCfg::Walk(w) = &f.weapon else {
             panic!("the CONTRABASS's weapon is a walk: {:?}", f.weapon)
         };
-        assert_eq!((w.every, w.step16, w.stride, w.gap, w.lead), (1.0, 2.0, 0.75, 0.04, 0.6));
-        assert_eq!((w.jitter, w.stagger, w.base, w.grow, w.max_reach), (8.0, 0.6, 0.66, 0.05, 1.5));
+        assert_eq!(
+            (w.every, w.step16, w.stride, w.gap, w.lead),
+            (1.0, 2.0, 0.75, 0.04, 0.6)
+        );
+        assert_eq!(
+            (w.jitter, w.stagger, w.base, w.grow, w.max_reach),
+            (8.0, 0.6, 0.66, 0.05, 1.5)
+        );
         assert_eq!((w.speed, w.dmg, w.knock), (9.0, 3.2, 0.2));
         assert_eq!(w.name, "WALKING BASS");
         assert_eq!(f.weapon.ball_start().base, 0.66);
@@ -176,7 +182,11 @@ mod tests {
             let mut v = contrabass();
             v["weapon"][key] = value;
             let err = FighterCfg::from_json(&v).expect_err(key);
-            assert_eq!((err.fighter.as_str(), err.field.as_str()), ("CONTRABASS", field), "{err:?}");
+            assert_eq!(
+                (err.fighter.as_str(), err.field.as_str()),
+                ("CONTRABASS", field),
+                "{err:?}"
+            );
         }
         let mut v = contrabass();
         v["weapon"].as_object_mut().expect("a table").remove("max_reach");

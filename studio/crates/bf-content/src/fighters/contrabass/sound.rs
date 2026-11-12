@@ -186,7 +186,12 @@ impl ContrabassSound {
         let lo = self.register(ctx).0;
         let tonic = self.root_of(ctx, 0.0)?;
         let pc = i64::from(ctx.harmony.key_pc);
-        let scale: Vec<i64> = ctx.harmony.scale.iter().map(|&s| imod_py(pc + i64::from(s), 12)).collect();
+        let scale: Vec<i64> = ctx
+            .harmony
+            .scale
+            .iter()
+            .map(|&s| imod_py(pc + i64::from(s), 12))
+            .collect();
         let in_scale = |semi: i64| scale.contains(&imod_py(pc + semi, 12));
         let mut out = Vec::new();
         for (bt, semi, d) in ELEPHANT {
@@ -258,14 +263,32 @@ impl Sound for ContrabassSound {
             mix.place(&bus, &self.sig(ctx, How::Pizz, Some(m), 0.12, 0.9)?, at, 0.32, pan);
         }
         for j in [1.0, 2.0] {
-            mix.place(&bus, &self.sig(ctx, How::Slap, None, 0.08, 0.8)?, t + j * grid.s16, 0.22, pan);
+            mix.place(
+                &bus,
+                &self.sig(ctx, How::Slap, None, 0.08, 0.8)?,
+                t + j * grid.s16,
+                0.22,
+                pan,
+            );
         }
         if t + grid.beat < grid.bar - 0.05 {
             // it keeps walking under the card's last beat
             let r = hits[0];
             let d = grid.beat * 0.45;
-            mix.place(&bus, &self.sig(ctx, How::Pizz, Some(r + 7), d, 0.9)?, t + grid.beat, 0.42, pan);
-            mix.place(&bus, &self.sig(ctx, How::Pizz, Some(r + 11), d, 0.9)?, t + 1.5 * grid.beat, 0.42, pan);
+            mix.place(
+                &bus,
+                &self.sig(ctx, How::Pizz, Some(r + 7), d, 0.9)?,
+                t + grid.beat,
+                0.42,
+                pan,
+            );
+            mix.place(
+                &bus,
+                &self.sig(ctx, How::Pizz, Some(r + 11), d, 0.9)?,
+                t + 1.5 * grid.beat,
+                0.42,
+                pan,
+            );
         }
         Ok(())
     }

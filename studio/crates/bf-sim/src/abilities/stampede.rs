@@ -146,7 +146,11 @@ pub fn stampede_step(f: &mut Fight, k: usize, dt: f64) {
     let rel = geom::sub(f.balls[1 - k].p, f.balls[k].p);
     let dist = geom::hypot(rel);
     if dist < 2.0 * r + 0.04 && f.t - last >= st.cool {
-        let n = if dist > 1e-6 { geom::div(rel, dist) } else { geom::div(f.balls[k].v, sp) };
+        let n = if dist > 1e-6 {
+            geom::div(rel, dist)
+        } else {
+            geom::div(f.balls[k].v, sp)
+        };
         let bp = f.balls[k].p;
         let h = [bp[0] + n[0] * r, bp[1] + n[1] * r];
         if f.damage(k, 1 - k, st.dmg, "trample", h, 0) {

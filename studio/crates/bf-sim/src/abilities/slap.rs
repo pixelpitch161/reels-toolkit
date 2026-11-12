@@ -56,6 +56,5 @@ pub fn start(f: &mut Fight, k: usize, ab: &AbilityCfg) {
 /// `slap_ready(k, ab)` (4207 to 4209): the gate in `abilities_step` 3043 to 3045. Held, or the enemy within `ready`
 /// beyond contact (`float(np.hypot(*(O.p - B.p))) - 2 * R <= ab['ready']`).
 pub fn ready(f: &Fight, k: usize, ab: &AbilityCfg) -> bool {
-    f.balls[k].grabbed
-        || geom::hypot(geom::sub(f.balls[1 - k].p, f.balls[k].p)) - 2.0 * f.rules.r <= param(ab, "ready")
+    f.balls[k].grabbed || geom::hypot(geom::sub(f.balls[1 - k].p, f.balls[k].p)) - 2.0 * f.rules.r <= param(ab, "ready")
 }
