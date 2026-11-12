@@ -6,7 +6,7 @@
 //! (Am F Dm E7 | Am F G E7); any chord works (roots and voicings by rule).
 //!
 //! Here: the theme's harmony helpers and its instruments as the kit computes them. The arrangement that reproduces
-//! the kit's bed is `DarkDiscoClassic`, in `classic.rs`; it also holds the kit's per-bed cache of sounds (keyed
+//! the kit's bed is [`DarkDiscoClassic`], in `classic.rs`; it also holds the kit's per-bed cache of sounds (keyed
 //! loosely: a duration is `round(dur, 3)`, a clap's noise is its seed modulo 3, a hat's modulo 4).
 //!
 //! **Voicings.** The mood has no table: [`voicing`] is its rule for every chord the harmony parses (the chord's
@@ -23,18 +23,19 @@ use bf_core::rng::Generator;
 use bf_sound::SRF;
 use bf_sound::synth::{self, FILTER_O, clip};
 
-use super::{NOT_PORTED_CARD, Preset, Theme};
+pub use self::classic::DarkDiscoClassic;
+use super::{Preset, Theme};
 use crate::cards::ThemeCard;
 
-/// The theme as the registry lists it.
+/// The theme as the registry lists it: no options, no voice of a fighter in its bed.
 pub static THEME: Theme = Theme {
     name: "dark_disco",
-    ported: false,
-    card: &NOT_PORTED_CARD,
+    ported: true,
+    card: &CARD,
     options: &[],
     voices: &[],
     own_voice: super::no_own_voice,
-    classic: classic::classic,
+    classic: |_| Ok(Box::new(DarkDiscoClassic::new())),
 };
 
 /// #51's loop in A minor.
