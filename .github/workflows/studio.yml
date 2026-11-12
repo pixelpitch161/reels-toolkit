@@ -127,9 +127,10 @@ jobs:
         run: cargo test --release --locked -p bf-cli --test e2e -- --exact render_is_reproducible --nocapture
 
       # The 3 s clip of the example episode, encoded by the pinned ffmpeg with the default setting and with Faster, is
-      # byte for byte its line in studio/replay/encode_hashes.txt. BF_NEED_PINNED_FFMPEG=1 makes "this is not the
-      # pinned ffmpeg" a failure instead of a notice, so the comparison is really made here. The step also fails when
-      # not exactly these two tests ran (a renamed test would otherwise pass by running nothing).
+      # byte for byte its line in studio/replay/encode_hashes.txt for the x264 thread count used here (1.5 times the
+      # runner's logical processors). BF_NEED_PINNED_FFMPEG=1 makes "this is not the pinned ffmpeg" and "no pinned
+      # line for this thread count" failures instead of notices, so the comparison is really made here. The step
+      # also fails when not exactly these two tests ran (a renamed test would otherwise pass by running nothing).
       - name: Test that the encode is pinned
         id: encode
         env:
