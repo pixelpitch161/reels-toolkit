@@ -49,6 +49,7 @@
  "hull_cache": "fighters/oboe/hull_left.json",
  "hull_note": "ruling M3-R29: each fight's hull calls are in the pinned cache (left: hull_cache, right: hull_cache under `right`; every call's points and vertices); `left.hull` and look_right.json's `hull` hold their counts and the SHA-256 of their exact part (`line`)",
  "left": {
+  "cache": "fighters/oboe/left.bfrec",
   "cards": [
    [0, "f1508e931f27bde32a8123e98da45a171b902884403b21baa3cadcc73621d1a3"],
    [4, "6e4b21d7bebf38ec3be8041d9268a910672bf97440a68dd320f034eb871faf94"],
@@ -68,7 +69,6 @@
    [1829, "3284ae5e2576138af00cf1c411049883ef55c4833510e82c0c980e21497a1550"]
   ],
   "fighters": ["OBOE", "FLUTE"],
-  "file": "fighters/oboe/left.bfrec",
   "frames": [
    [0, "fc6292dea05d292d9c39b4eb7b880d3b8b87fd37c755c233304087e64332edc8", 39, "b9a7297416614af4b245bd6516b82787c2b6fea786fbe7772bc94d48619a3876", 0, "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", "spread"],
    [13, "947aca4db19afae42a8f5b5330896f204aa505b9d58c0b9a0fe20912de21e79f", 39, "847b9f2b490df62e36677af0f807c8efba4a06d20949fe522f71622b63811501", 1, "1ca67a3c9d0277778422b19e1e879def6e5d25a7bb4d0978d992637e8d8f17ea", "the title card, the doors and the count-in"],
@@ -172,6 +172,7 @@
    "winner": 0
   },
   "seed": 3,
+  "sha256": "a10aa46fab0b984168fc36e0a6e4503a6f70dc830d2f4692cfd2e0d369ed1171",
   "winner": "OBOE"
  },
  "opponent": "FLUTE",

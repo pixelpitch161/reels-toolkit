@@ -18,6 +18,7 @@ SPEC = dict(
     name='baroque_storm',
     voicings=('harp_rh', 'vln'),
     configs=('examples/clarinet_vs_oboe',),
+    recordings_in_cache=True,  # storage plan B (M3-R43): its kit recording is the pinned cache file
 )
 
 EXPORTS = {'theme_baroque_storm': lambda: m3refs.theme_refs(SPEC)}

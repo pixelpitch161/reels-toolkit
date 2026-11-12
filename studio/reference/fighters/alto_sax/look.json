@@ -49,6 +49,7 @@
  "hull_cache": "fighters/alto_sax/hull_left.json",
  "hull_note": "ruling M3-R29: each fight's hull calls are in the pinned cache (left: hull_cache, right: hull_cache under `right`; every call's points and vertices); `left.hull` and look_right.json's `hull` hold their counts and the SHA-256 of their exact part (`line`)",
  "left": {
+  "cache": "fighters/alto_sax/left.bfrec",
   "cards": [
    [0, "e43930dbe05a579b63174cb0fb2b323007c05969f186451a4bf6e8a9a24e48e0"],
    [4, "4023bee99e8588019b88d72ceab37326c3d10515377f6e51a1a66d73868cf6d9"],
@@ -68,7 +69,6 @@
    [1829, "b6e95aef1ed6cd6a631d5338af051fda1b56527e3cf7a1cd16ed531248981dab"]
   ],
   "fighters": ["ALTO SAX", "FLUTE"],
-  "file": "fighters/alto_sax/left.bfrec",
   "frames": [
    [0, "5a965c10108407e79b18f41f7e5cc172d3f78e36baf4e808e5218742d63ec892", 38, "6d8bc6b7a5e68f423c56da2596de48cd5ce95d5600cf7aa2d01485a088287cf0", 0, "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", "spread"],
    [13, "343b0ca48953b3bf29d0e096cc71df5bd766d390ff882d21de0b96de1f02a17e", 38, "1d06738e4154afe68650a302798c0879b1dd67138d7125ba3fb3fafb731056e4", 1, "82f641eba0aa03eee35824fcbeeea2043a137ed125100768f0946deb11c87818", "the title card, the doors and the count-in"],
@@ -167,6 +167,7 @@
    "winner": 0
   },
   "seed": 4,
+  "sha256": "f1b3127839ecdbec507d32e770e5c684f103b51df8602e1c748818b5d9469960",
   "winner": "ALTO SAX"
  },
  "opponent": "FLUTE",

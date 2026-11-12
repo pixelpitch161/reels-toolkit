@@ -24,6 +24,12 @@
    "export": "fighter_sousaphone"
   },
   {
+   "path": "fighters/sousaphone/left.bfrec",
+   "sha256": "8c7334d431e10e499bad47e27930cfab2d1f2a677ba3ab4df93e667a9ef41828",
+   "bytes": 105669,
+   "export": "fighter_sousaphone"
+  },
+  {
    "path": "fighters/sousaphone/look_right.json",
    "sha256": "eaf87536e95e41031d43f6eb173d75bdcbf8c2525a11438ded29e4c7b91e417e",
    "bytes": 17467,
@@ -145,8 +151,8 @@
   },
   {
    "path": "fighters/sousaphone/sprites.json",
-   "sha256": "c0d64ed520698ced830f9335878da36f5ac838896ae6dea08adfb7f08b42a5f1",
-   "bytes": 135374,
+   "sha256": "36d44225ed0f3884bbc64a7c6ec5ebb8dcc88f8bdb0df2d26b7e6cee38c92834",
+   "bytes": 135384,
    "export": "fighter_sousaphone"
   },
   {

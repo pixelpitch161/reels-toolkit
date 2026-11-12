@@ -17,7 +17,7 @@ use bf_sound::voice::{PpNoise, Voice};
 use bf_testdata::Npz;
 use serde_json::Value;
 
-use crate::refs::{cached_recording, committed_recording, hexf, json, list, num, report, studio, text};
+use crate::refs::{cached_recording, hexf, json, list, named_recording, num, report, studio, text};
 use crate::sound::{Summary, compare, summarise, windows_against};
 
 fn folder(name: &str) -> String {
@@ -35,7 +35,9 @@ fn strings(v: &Value) -> Vec<String> {
 }
 
 /// The fight file of a reference config: its pair gate's `studio/fights/<pair>.toml` when there is one, else the
-/// milestone 1 example's with the config's fighters, tempo, key, scale and chords (all the bed alone reads).
+/// milestone 1 example's with the config's fighters, tempo, key, scale and chords (all the bed alone reads), and the
+/// theme options the config sets (theme.json's `theme_options`, under the fight file's names; absent: none, the
+/// theme's defaults).
 pub fn config_fight_file(c: &Value, rec: &Recording) -> FightFile {
     let pair = studio(&format!("fights/{}.toml", config_slug(text(&c["config"]))));
     let path = if pair.is_file() {
@@ -54,14 +56,79 @@ pub fn config_fight_file(c: &Value, rec: &Recording) -> FightFile {
     ff.music.chord_loop = strings(&c["loop"]);
     ff.music.chords_tail = strings(&c["tail"]);
     ff.seed = Some(rec.seed);
+    if let Some(o) = c.get("theme_options") {
+        apply(&mut ff, &serde_json::json!({ "theme_options": o }));
+    }
     let names = ff.fighters.clone();
     ff.music.roles.retain(|k, _| names.contains(k));
     ff.music
         .lines
         .retain(|k, _| names.iter().any(|f| k == f || bf_core::fightfile::is_extra_line(k, f)));
     ff.music.solos.retain(|k, _| names.contains(k));
+    // the config's own LINES (theme.json's `lines`, a rest as null) and ROLES (`roles`, when it sets them): a bed may
+    // play a fighter's line or read who plays what (dark_tango's `Bed.theme()` plays the melody fighter's line)
+    if let Some(lines) = c.get("lines").and_then(Value::as_object) {
+        for (k, v) in lines {
+            ff.music.lines.insert(
+                k.clone(),
+                list(v).iter().map(|n| n.as_i64().map(|n| n as i32)).collect(),
+            );
+        }
+    }
+    if let Some(roles) = c.get("roles").and_then(Value::as_object) {
+        ff.music.roles = roles.iter().map(|(k, v)| (k.clone(), text(v).to_string())).collect();
+    }
+    // and the rest a config sets that the soundtrack reads (m3refs.MUSIC_EXTRAS): its MIX (a bus's gain and reverb
+    // send: second_line's bed buses), SOLO and TITLE_HITS, each only when the config sets it
+    if let Some(mix) = c.get("mix").and_then(Value::as_object) {
+        ff.music.mix = mix
+            .iter()
+            .map(|(k, v)| (k.clone(), (num(&list(v)[0]), num(&list(v)[1]))))
+            .collect();
+    }
+    if let Some(solos) = c.get("solos").and_then(Value::as_object) {
+        for (k, v) in solos {
+            let notes = list(v)
+                .iter()
+                .map(|n| {
+                    let n = list(n);
+                    (num(&n[0]), n[1].as_i64().expect("a MIDI note") as i32, num(&n[2]))
+                })
+                .collect();
+            ff.music.solos.insert(k.clone(), notes);
+        }
+    }
+    if let Some(hits) = c.get("title_hits").and_then(Value::as_object) {
+        for (k, v) in hits {
+            let notes = list(v)
+                .iter()
+                .map(|n| n.as_i64().expect("a MIDI note") as i32)
+                .collect();
+            ff.music.title_hits.insert(k.clone(), notes);
+        }
+    }
     ff.music.title_hits.retain(|k, _| names.contains(k));
     ff
+}
+
+/// Theme options as a reference file writes them (`{"sequel": true}`, `{"plugged": "ELECTRIC"}`), as a fight file
+/// holds them.
+pub fn option_values(v: &Value) -> std::collections::BTreeMap<String, bf_core::fightfile::OptionValue> {
+    use bf_core::fightfile::OptionValue as O;
+    v.as_object()
+        .unwrap_or_else(|| panic!("theme options: {v} is not a table"))
+        .iter()
+        .map(|(o, x)| {
+            let val = match x {
+                Value::Bool(b) => O::Bool(*b),
+                Value::Number(n) if n.is_i64() => O::Int(n.as_i64().unwrap()),
+                Value::Number(n) => O::Float(n.as_f64().unwrap()),
+                Value::String(s) => O::Str(s.clone()),
+                other => panic!("a theme option's value {other}"),
+            };
+            (o.clone(), val)
+        })
+        .collect()
 }
 
 /// A variant's changes (bed.json's `ff`) on a fight file.
@@ -74,19 +141,7 @@ fn apply(ff: &mut FightFile, changes: &Value) {
             "chords_intro" => ff.music.chords_intro = strings(v),
             "chord_loop" => ff.music.chord_loop = strings(v),
             "chords_tail" => ff.music.chords_tail = strings(v),
-            "theme_options" => {
-                use bf_core::fightfile::OptionValue as O;
-                for (o, x) in v.as_object().expect("options") {
-                    let val = match x {
-                        Value::Bool(b) => O::Bool(*b),
-                        Value::Number(n) if n.is_i64() => O::Int(n.as_i64().unwrap()),
-                        Value::Number(n) => O::Float(n.as_f64().unwrap()),
-                        Value::String(s) => O::Str(s.clone()),
-                        other => panic!("a theme option's value {other}"),
-                    };
-                    ff.music.theme_options.insert(o.clone(), val);
-                }
-            }
+            "theme_options" => ff.music.theme_options.extend(option_values(v)),
             other => panic!("bed.json: a variant changes {other}, which the harness does not know"),
         }
     }
@@ -159,7 +214,7 @@ fn configs(name: &str) -> Vec<(Value, Value, Recording)> {
         .zip(bs)
         .map(|(c, b)| {
             assert_eq!(c["config"], b["config"]);
-            let rec = committed_recording(text(&c["recording"]), None);
+            let rec = named_recording(&c["recording"], None);
             (c.clone(), b.clone(), rec)
         })
         .collect()
@@ -388,8 +443,18 @@ pub fn hook_vectors(name: &str) {
 /// `voicings.json`, each chord in a harmony that holds it, as the kit's episode does.
 pub type Voicing = fn(&Harmony, &str) -> Result<Vec<i32>, HarmonyError>;
 
+/// The theme's `voicings.json`, or nothing (`Value::Null`) when it has no voicing method: such a theme needs no file
+/// (theme.json's `voicing_methods` must then be empty too, which [`voicings`] checks).
+fn voicings_doc(name: &str, methods: &[(&str, Voicing)]) -> Value {
+    if methods.is_empty() {
+        Value::Null
+    } else {
+        json(&folder(name), "voicings.json")
+    }
+}
+
 pub fn voicings(name: &str, methods: &[(&str, Voicing)]) {
-    let doc = json(&folder(name), "voicings.json");
+    let doc = voicings_doc(name, methods);
     let v = &doc["voicings"];
     let g = Grid::new(132.0);
     let mut n = 0;
@@ -429,4 +494,92 @@ pub fn voicings(name: &str, methods: &[(&str, Voicing)]) {
     );
     assert!(n > 0 || kit.is_empty(), "{name}: no voicing compared");
     println!("{name}: {n} voicings equal the kit's");
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use bf_core::fightfile::OptionValue;
+
+    /// A reference config as theme.json writes it (brass_trailer's rematch, dark_drumline's
+    /// `ballfight_bassdrum_vs_tuba`), on milestone 1's seed 1.
+    fn config(options: Option<Value>) -> (Value, Recording) {
+        let mut c = serde_json::json!({
+            "config": "ballfight_nobody_vs_nobody", "fighters": ["FLUTE", "TROMBONE"], "bpm": 132.0,
+            "mood": "brass_trailer", "key": "E", "scale": "minor", "intro": ["Em", "Em"], "loop": ["Em", "C"],
+            "tail": [],
+        });
+        if let Some(o) = options {
+            c["theme_options"] = o;
+        }
+        let rec = crate::refs::committed_recording("fights/flute_vs_trombone/seed1.bfrec", None);
+        (c, rec)
+    }
+
+    #[test]
+    fn a_configs_theme_options_reach_its_fight_file() {
+        let (c, rec) = config(Some(serde_json::json!({"sequel": true})));
+        let ff = config_fight_file(&c, &rec);
+        assert_eq!(ff.music.theme_options["sequel"], OptionValue::Bool(true));
+        let (c, rec) = config(Some(serde_json::json!({"bass_drums": false, "after_ko": true})));
+        let ff = config_fight_file(&c, &rec);
+        assert_eq!(
+            (
+                ff.music.theme_options["bass_drums"].clone(),
+                ff.music.theme_options["after_ko"].clone()
+            ),
+            (OptionValue::Bool(false), OptionValue::Bool(true))
+        );
+        let (c, rec) = config(Some(serde_json::json!({"plugged": "TROMBONE"})));
+        assert_eq!(
+            config_fight_file(&c, &rec).music.theme_options["plugged"],
+            OptionValue::Str("TROMBONE".into())
+        );
+    }
+
+    #[test]
+    fn a_theme_without_voicing_methods_needs_no_voicings_file() {
+        assert_eq!(voicings_doc("no_such_theme", &[]), Value::Null);
+    }
+
+    #[test]
+    #[should_panic(expected = "studio/reference/themes/no_such_theme/voicings.json is missing")]
+    fn a_theme_with_voicing_methods_reads_its_file() {
+        fn none(_: &Harmony, _: &str) -> Result<Vec<i32>, HarmonyError> {
+            Ok(vec![])
+        }
+        voicings_doc("no_such_theme", &[("root", none)]);
+    }
+
+    #[test]
+    fn a_configs_lines_and_roles_reach_its_fight_file() {
+        let (mut c, rec) = config(None);
+        c["lines"] = serde_json::json!({"FLUTE": [76, null, 79]});
+        c["roles"] = serde_json::json!({"FLUTE": "bass", "TROMBONE": "melody"});
+        let ff = config_fight_file(&c, &rec);
+        assert_eq!(ff.music.lines["FLUTE"], vec![Some(76), None, Some(79)]);
+        assert_eq!(
+            (ff.music.roles["FLUTE"].as_str(), ff.music.roles["TROMBONE"].as_str()),
+            ("bass", "melody")
+        );
+        // the MIX, SOLO and TITLE_HITS the config sets
+        c["mix"] = serde_json::json!({"sousa": [1.45, 0.10], "drums": [1.25, 0.14]});
+        c["solos"] = serde_json::json!({"TROMBONE": [[0.0, 40, 0.5], [0.5, 47, 1.0]]});
+        c["title_hits"] = serde_json::json!({"TROMBONE": [40, 52, 59]});
+        let ff = config_fight_file(&c, &rec);
+        assert_eq!(ff.music.mix.len(), 2);
+        assert_eq!(ff.music.mix["sousa"], (1.45, 0.10));
+        assert_eq!(ff.music.solos["TROMBONE"], vec![(0.0, 40, 0.5), (0.5, 47, 1.0)]);
+        assert_eq!(ff.music.title_hits["TROMBONE"], vec![40, 52, 59]);
+        // without them: the base fight file's, for the config's fighters
+        let (c, rec) = config(None);
+        let base = config_fight_file(&c, &rec);
+        assert_eq!(base.music.roles["FLUTE"], "melody");
+    }
+
+    #[test]
+    fn a_config_without_theme_options_has_none() {
+        let (c, rec) = config(None);
+        assert!(config_fight_file(&c, &rec).music.theme_options.is_empty());
+    }
 }

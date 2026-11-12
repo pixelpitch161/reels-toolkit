@@ -24,6 +24,12 @@
    "export": "fighter_bass_clarinet"
   },
   {
+   "path": "fighters/bass_clarinet/left.bfrec",
+   "sha256": "c9fd0a2101ad041790196ffd2e9cef11ecc84fadedddd98e360e91da41140bc9",
+   "bytes": 121934,
+   "export": "fighter_bass_clarinet"
+  },
+  {
    "path": "fighters/bass_clarinet/look_right.json",
    "sha256": "2f82188f3bfbaa4c61240bdb3aa9f8f23da356cff02432dccf862885fe749c56",
    "bytes": 16970,
@@ -253,8 +259,8 @@
   },
   {
    "path": "fighters/bass_clarinet/sprites.json",
-   "sha256": "0b685be26e6a727a4a6766f4f8378fbf3b47be006fd72da0e79af52b24bd8cbc",
-   "bytes": 80582,
+   "sha256": "7d4b9364dd45678f10e8026ea300835751ae482f2c1a77433cc5955dbf2f22ee",
+   "bytes": 80592,
    "export": "fighter_bass_clarinet"
   },
   {

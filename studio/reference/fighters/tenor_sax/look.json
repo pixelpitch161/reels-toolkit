@@ -49,6 +49,7 @@
  "hull_cache": "fighters/tenor_sax/hull_left.json",
  "hull_note": "ruling M3-R29: each fight's hull calls are in the pinned cache (left: hull_cache, right: hull_cache under `right`; every call's points and vertices); `left.hull` and look_right.json's `hull` hold their counts and the SHA-256 of their exact part (`line`)",
  "left": {
+  "cache": "fighters/tenor_sax/left.bfrec",
   "cards": [
    [0, "ac599806209f7076da4b32b53acfab0a0d6dd2869f7c6f484fa727579f9f04f4"],
    [4, "a3c2bf6cef246f14895a3ad880cfe9297f58fd2d57b981b3625a298684ba5b00"],
@@ -68,7 +69,6 @@
    [1829, "818ad302b9023b01d50ffe857ce73e31a02c8ed79a1f79ad406fd539b8b46a11"]
   ],
   "fighters": ["TENOR SAX", "FLUTE"],
-  "file": "fighters/tenor_sax/left.bfrec",
   "frames": [
    [0, "be51b3789c401deb520cf1ab49cea299bc82144bd3038a9b579fd753653d0ffd", 38, "6d8bc6b7a5e68f423c56da2596de48cd5ce95d5600cf7aa2d01485a088287cf0", 0, "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", "spread"],
    [13, "8d594d95873642ae748eb1bc66e00ef3b38d9eae64fc494fcd15c6ffa275c4e8", 38, "1d06738e4154afe68650a302798c0879b1dd67138d7125ba3fb3fafb731056e4", 1, "f8da86fb3b0519ffa93041a607a97b071449dac3d9f0a078ffeea70561cbf442", "the title card, the doors and the count-in"],
@@ -170,6 +170,7 @@
    "winner": 0
   },
   "seed": 171,
+  "sha256": "0b97b6af264c7b48248d3a14a7ff5ba2fa8682664d4e61d4e5c7981b71d4335c",
   "winner": "TENOR SAX"
  },
  "opponent": "FLUTE",

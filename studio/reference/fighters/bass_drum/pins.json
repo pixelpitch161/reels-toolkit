@@ -24,6 +24,12 @@
    "export": "fighter_bass_drum"
   },
   {
+   "path": "fighters/bass_drum/left.bfrec",
+   "sha256": "007a19f77e28f1a61d6b58b009a8b8c1bb19dc5f1e8b0b5bea8060ebfb8ce25d",
+   "bytes": 117907,
+   "export": "fighter_bass_drum"
+  },
+  {
    "path": "fighters/bass_drum/look_right.json",
    "sha256": "365fdeabc27b0a06bb4e59020ba91ece9763c48282847146025a080b8de99d8d",
    "bytes": 17465,
@@ -157,8 +163,8 @@
   },
   {
    "path": "fighters/bass_drum/sprites.json",
-   "sha256": "5bd71092b4aac420c2d1d20295dde37fc152a9f6d153b96a2891fc34785c60d1",
-   "bytes": 132265,
+   "sha256": "17ea1ca9979654f7afc648c5ba5ea274b9182d6ab53f91d24c46c6a3268a7a67",
+   "bytes": 132275,
    "export": "fighter_bass_drum"
   },
   {

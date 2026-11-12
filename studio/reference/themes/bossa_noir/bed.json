@@ -207,7 +207,7 @@
    ]
   },
   {
-   "appended": "KEY = 'D'\nSCALE = 'minor'\nCHORDS = ['Dm', 'A', 'Dm', 'Gm', 'C', 'F', 'Bb', 'Gm', 'A', 'A', 'Dm', 'Gm', 'C', 'F', 'Bb', 'Gm', 'A', 'A', 'Dm', 'Gm', 'C', 'F', 'Bb', 'Gm', 'A', 'A', 'Dm', 'Gm', 'C', 'F', 'Bb', 'Gm', 'A', 'A']\n",
+   "appended": "KEY = 'D'\nSCALE = 'minor'\nLOOP = ['Dm', 'Gm', 'C', 'F', 'Bb', 'Gm', 'A', 'A']\nCHORDS = ['Dm', 'A', 'Dm', 'Gm', 'C', 'F', 'Bb', 'Gm', 'A', 'A', 'Dm', 'Gm', 'C', 'F', 'Bb', 'Gm', 'A', 'A', 'Dm', 'Gm', 'C', 'F', 'Bb', 'Gm', 'A', 'A', 'Dm', 'Gm', 'C', 'F', 'Bb', 'Gm', 'A', 'A']\n",
    "bpm": 133.7704918032787,
    "buses": ["bass", "guitar", "keys", "drums", "fx"],
    "config": "ballfight_flute_vs_clarinet",
