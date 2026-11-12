@@ -20,6 +20,7 @@ pub mod voice;
 
 pub use card::{CARD, card};
 pub use look::ElectricLook;
+pub use sound::ElectricSound;
 pub use voice::ElectricVoice;
 
 /// Its roster name.
@@ -35,10 +36,10 @@ pub fn voice() -> Option<Arc<dyn Voice>> {
     Some(Arc::new(ElectricVoice))
 }
 
-/// `fighters.sound('ELECTRIC', M, k)`: its part on side `k` of the fight `ff`, or `None` while it is not ported.
+/// `fighters.sound('ELECTRIC', M, k)`: its part on side `k` of the fight `ff`.
 pub fn sound(k: usize, ff: &FightFile) -> Option<Box<dyn Sound>> {
-    let _ = (k, ff);
-    None
+    let _ = ff;
+    Some(Box::new(ElectricSound::new(k)))
 }
 
 /// Its model (`data/models/ELECTRIC.json`, written by its export), compiled in.
