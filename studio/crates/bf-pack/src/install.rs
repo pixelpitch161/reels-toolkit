@@ -208,6 +208,7 @@ fn install_stopping(
     check_layout(layout)?;
     let new = check_package(package)?;
     let target = &layout.programs;
+    let _lock = swap_lock(target)?;
     let parent = target
         .parent()
         .ok_or_else(|| PackError::Refused("The program folder has no parent folder.".to_string()))?;
@@ -275,7 +276,7 @@ fn install_stopping(
             }
             let cleared_any = !housekeeping.is_empty();
             cleared.and_then(|()| {
-                swap_in(target, old, &new, &staging, stop_after).map_err(|e| match e {
+                swap_in(target, old, &new, &staging, stop_after, AGAIN_INSTALL).map_err(|e| match e {
                     PackError::Io(text) if cleared_any && text != STOPPED => {
                         PackError::Io(format!("{text} The copy kept from the version before it was cleared."))
                     }
@@ -436,7 +437,8 @@ fn plan_clear(dir: &Path) -> Result<crate::remove::Removal, PackError> {
     }
     let entries = crate::package::walk(dir)?;
     // Only folders, and perhaps the marker and copy names of a swap stopped before it copied anything.
-    let swap_name = |rel: &str| rel == SWAP_MARKER || COPY_PARTS.contains(&rel);
+    let swap_name =
+        |rel: &str| rel == SWAP_MARKER || COPY_PARTS.contains(&rel) || crate::package::is_set_aside_exe(rel);
     let nearly_empty = entries.iter().all(|(rel, kind)| {
         *kind == crate::package::Kind::Dir || (*kind == crate::package::Kind::File && swap_name(rel))
     });
@@ -578,6 +580,83 @@ enum Undo {
     Moved(PathBuf, PathBuf),
     /// A file replaced by a newer one; the second is a copy of the one it replaced: copied back.
     Replaced(PathBuf, PathBuf),
+    /// The new exe put over the earlier one in one replacing rename (staged, in place, the earlier one's copy in
+    /// `.previous`): the new one goes back to staging and the earlier one comes back from `.previous`, each by a link
+    /// and a replacing rename, so an exe is at its place at every moment.
+    PutExe(PathBuf, PathBuf, PathBuf),
+}
+
+/// Makes `to` (which must not exist) the same file as `from`: a hard link, or a whole copy (through a temp name) where
+/// links are not possible. A copy must have the SHA-256 `sha` when that is given, or it is removed and this fails.
+fn link_or_copy(from: &Path, to: &Path, sha: Option<&str>) -> std::io::Result<()> {
+    if fs::hard_link(from, to).is_ok() {
+        return Ok(());
+    }
+    let mut part = to.as_os_str().to_os_string();
+    part.push(".part");
+    let part = PathBuf::from(part);
+    let copied = fs::copy(from, &part).and_then(|_| match sha {
+        Some(want) if sha256_file(&part)? != want => Err(std::io::Error::other(
+            "the copy does not have the bytes it was made from",
+        )),
+        _ => fs::rename(&part, to),
+    });
+    if copied.is_err() {
+        let _ = fs::remove_file(&part);
+    }
+    copied
+}
+
+#[cfg(test)]
+thread_local! {
+    /// For tests: refuse to rename over a file that a running program holds, as Windows does where a replacing
+    /// rename has no POSIX meaning (older Windows, other file systems). On NTFS on Windows 10 and 11, Rust's rename
+    /// replaces even a running program's file.
+    pub(crate) static NO_REPLACE_WHILE_RUNNING: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+}
+
+/// `fs::rename`, which may replace `to`.
+fn rename_over(from: &Path, to: &Path) -> std::io::Result<()> {
+    #[cfg(test)]
+    if NO_REPLACE_WHILE_RUNNING.with(|n| n.get()) && to.is_file() && in_use(to) {
+        return Err(std::io::Error::from_raw_os_error(5));
+    }
+    fs::rename(from, to)
+}
+
+/// Puts the exe `from` (the earlier one, kept in `.previous`) at the exe's place `to` in one replacing rename, by way
+/// of a link (or a checked copy) beside it, so an exe is at the place at every moment. When the file at `to` is a
+/// running program that Windows will not let be replaced, it is first renamed aside, into `aside_dir`, as
+/// `ballfight-studio.exe.running-N` (renaming a running exe is allowed); a later swap or removal clears it by that
+/// name once it is no longer running. `from` stays as it is.
+fn replace_exe(from: &Path, to: &Path, aside_dir: &Path, sha: Option<&str>) -> std::io::Result<()> {
+    let mut name = std::ffi::OsString::from(".");
+    name.push(to.file_name().unwrap_or_default());
+    name.push(".restore");
+    let part = to.with_file_name(name);
+    let _ = fs::remove_file(&part);
+    link_or_copy(from, &part, sha)?;
+    let put = rename_over(&part, to).or_else(|first| {
+        if fs::symlink_metadata(to).is_err() {
+            return Err(first);
+        }
+        let aside = (1..100_000)
+            .map(|n| aside_dir.join(crate::package::set_aside_exe_name(n)))
+            .find(|p| fs::symlink_metadata(p).is_err())
+            .ok_or(first)?;
+        fs::rename(to, &aside)?;
+        fs::rename(&part, to).inspect_err(|_| {
+            let _ = fs::rename(&aside, to);
+        })
+    });
+    if put.is_err() {
+        let _ = fs::remove_file(&part);
+    }
+    put
+}
+/// Whether `rel` (a manifest path) is the program itself, the file the shortcuts open.
+fn is_the_exe(rel: &str) -> bool {
+    rel.eq_ignore_ascii_case(EXE_NAME)
 }
 
 /// Counts a swap's steps, and stops after the number a test asks for.
@@ -605,12 +684,18 @@ impl Steps {
 /// replaced. If any step fails, every step is taken back in reverse. A swap stopped from outside (a power cut) is
 /// finished by the next install: listed names are ours, new files already in place have the new bytes, and staging
 /// is cleared by its own manifest.
+///
+/// **The exe is never away from its place** (where the shortcuts point): the earlier exe gets a hard link (or a copy)
+/// in `.previous` and stays where it is; the new exe is the first new file put in, by one rename that replaces the
+/// earlier one; taking that back puts the earlier one back the same way. Every stop leaves the whole earlier or the
+/// whole new exe there. `again` says what finishes a swap that could not be taken back.
 fn swap_in(
     target: &Path,
     old: &Manifest,
     new: &Manifest,
     staging: &Path,
     stop_after: Option<usize>,
+    again: &str,
 ) -> Result<(), PackError> {
     let prev = target.join(".previous");
     let mut undo: Vec<Undo> = Vec::new();
@@ -652,19 +737,32 @@ fn swap_in(
                 undo.push(Undo::Copied(to));
             }
         }
-        for (rel, _, _) in &old.files {
+        for (rel, _, sha) in &old.files {
             let from = join_relative(target, rel);
             let to = join_relative(&prev, rel);
             let already_kept = fs::symlink_metadata(&to).is_ok();
             if already_kept || path_has_link(target, rel) || path_has_link(&prev, rel) || !from.is_file() {
                 continue;
             }
+            // Only the whole earlier exe is kept (by a link or a copy) and it is left at its place.
+            if is_the_exe(rel) && sha256_file(&from).ok().as_ref() != Some(sha) {
+                continue;
+            }
             make_parents(&to, &prev, &mut undo)?;
             steps.next()?;
-            fs::rename(&from, &to).map_err(|e| io_error("move the earlier version's", &from, &e))?;
-            undo.push(Undo::Moved(from, to));
+            if is_the_exe(rel) {
+                link_or_copy(&from, &to, Some(sha))
+                    .map_err(|e| io_error("keep a copy of the earlier version's", &from, &e))?;
+                undo.push(Undo::Copied(to));
+            } else {
+                fs::rename(&from, &to).map_err(|e| io_error("move the earlier version's", &from, &e))?;
+                undo.push(Undo::Moved(from, to));
+            }
         }
-        for (rel, _, sha) in &new.files {
+        // The exe first, so the earlier files' going leaves the new exe (or the earlier one) in place.
+        let mut order: Vec<&(String, u64, String)> = new.files.iter().collect();
+        order.sort_by_key(|(rel, _, _)| !is_the_exe(rel));
+        for (rel, _, sha) in order {
             let from = join_relative(staging, rel);
             let to = join_relative(target, rel);
             let in_place = !is_link(&to) && to.is_file() && sha256_file(&to).is_ok_and(|now| &now == sha);
@@ -674,16 +772,23 @@ fn swap_in(
             make_parents(&to, target, &mut undo)?;
             steps.next()?;
             fs::rename(&from, &to).map_err(|e| io_error("put in place", &to, &e))?;
-            undo.push(Undo::Moved(from, to));
+            if is_the_exe(rel) {
+                undo.push(Undo::PutExe(from, to, join_relative(&prev, rel)));
+            } else {
+                undo.push(Undo::Moved(from, to));
+            }
         }
-        let config = target.join(CONFIG_NAME);
-        steps.next()?;
-        let kept_config = prev.join(CONFIG_NAME);
-        fs::rename(staging.join(CONFIG_NAME), &config).map_err(|e| io_error("put in place", &config, &e))?;
-        if kept_config.is_file() {
-            undo.push(Undo::Replaced(config, kept_config));
-        } else {
-            undo.push(Undo::Moved(staging.join(CONFIG_NAME), config));
+        // An install brings its `update.toml`; an update (`put_in_place`) brings none, and the one in place stays.
+        if staging.join(CONFIG_NAME).is_file() {
+            let config = target.join(CONFIG_NAME);
+            steps.next()?;
+            let kept_config = prev.join(CONFIG_NAME);
+            fs::rename(staging.join(CONFIG_NAME), &config).map_err(|e| io_error("put in place", &config, &e))?;
+            if kept_config.is_file() {
+                undo.push(Undo::Replaced(config, kept_config));
+            } else {
+                undo.push(Undo::Moved(staging.join(CONFIG_NAME), config));
+            }
         }
         // The last step, and the one that makes the new version the installed one.
         let manifest = target.join(MANIFEST_NAME);
@@ -702,6 +807,12 @@ fn swap_in(
         }
         let mut not_back = Vec::new();
         for step in undo.iter().rev() {
+            // When something could not be put back, the marker stays (the swap is not finished, and the next start
+            // or install finishes or takes it back), and so do the copies in `.previous` (the earlier exe's, the
+            // manifest's), since taking the swap back later needs them.
+            if !not_back.is_empty() && matches!(step, Undo::Copied(_) | Undo::Made(_)) {
+                continue;
+            }
             let back = match step {
                 Undo::Made(d) => {
                     let _ = fs::remove_dir(d);
@@ -710,11 +821,12 @@ fn swap_in(
                 Undo::Copied(f) => fs::remove_file(f).map(|_| ()),
                 Undo::Moved(from, to) => fs::rename(to, from),
                 Undo::Replaced(f, copy) => fs::copy(copy, f).map(|_| ()),
+                Undo::PutExe(staged, placed, kept) => put_exe_back(staged, placed, kept),
             };
             if back.is_err() {
                 let p = match step {
                     Undo::Made(p) | Undo::Copied(p) | Undo::Replaced(p, _) => p,
-                    Undo::Moved(from, _) => from,
+                    Undo::Moved(from, _) | Undo::PutExe(from, _, _) => from,
                 };
                 not_back.push(p.display().to_string());
             }
@@ -723,7 +835,7 @@ fn swap_in(
             format!("{e} So nothing changed: version {} is still installed.", old.version)
         } else {
             format!(
-                "{e} Putting the earlier version back failed for {}; installing again finishes the install.",
+                "{e} Putting the earlier version back failed for {}; {again}.",
                 not_back.join(", ")
             )
         };
@@ -749,6 +861,298 @@ fn swap_in(
     }
     let _ = clear_leftover_staging(staging, Some(new));
     Ok(())
+}
+
+#[cfg(test)]
+thread_local! {
+    /// For a test: putting the earlier exe back fails, as it would if its kept copy could not be read.
+    pub(crate) static FAIL_EXE_BACK: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+}
+
+/// Takes back the placing of the new exe: the new one returns to `staged` by a link (the place keeps it meanwhile),
+/// then the earlier one comes back from its copy in `.previous` by one replacing rename (`replace_exe`).
+fn put_exe_back(staged: &Path, placed: &Path, kept: &Path) -> std::io::Result<()> {
+    #[cfg(test)]
+    if FAIL_EXE_BACK.with(|f| f.get()) {
+        return Err(std::io::Error::other("putting it back failed for a test"));
+    }
+    if fs::symlink_metadata(staged).is_err() {
+        link_or_copy(placed, staged, None)?;
+    }
+    replace_exe(kept, placed, kept.parent().unwrap_or(kept), None)
+}
+
+/// What finishes an install that could not be taken back.
+const AGAIN_INSTALL: &str = "installing again finishes the install";
+/// What finishes or undoes an update that could not be taken back.
+pub const AGAIN_UPDATE: &str = "starting BALLFIGHT Studio again finishes or undoes the update by itself";
+
+/// The words when another program is putting a version in place in the same folder right now.
+pub const SWAP_BUSY: &str = "An update is being put in place. Start the app again in a moment.";
+
+/// The lock that keeps two swaps (an install's, an update's, "Go back", a start finishing a stopped one) out of one
+/// program folder at the same time: an exclusive lock on `BALLFIGHT Studio.update.lock` beside the folder, held
+/// until this is dropped.
+pub struct SwapLock {
+    _file: fs::File,
+}
+
+/// The lock file of `target`'s swaps, beside it.
+pub fn swap_lock_path(target: &Path) -> PathBuf {
+    let mut name = target.file_name().unwrap_or_default().to_os_string();
+    name.push(".update.lock");
+    target.with_file_name(name)
+}
+
+/// Takes the swap lock of `target`, or refuses with `SWAP_BUSY` when another program holds it.
+pub fn swap_lock(target: &Path) -> Result<SwapLock, PackError> {
+    let path = swap_lock_path(target);
+    if let Some(dir) = path.parent() {
+        fs::create_dir_all(dir).map_err(|e| io_error("make the folder", dir, &e))?;
+    }
+    if is_link(&path) {
+        return Err(PackError::Refused(format!(
+            "{} is a link, so it is not used.",
+            path.display()
+        )));
+    }
+    let file = fs::OpenOptions::new()
+        .create(true)
+        .truncate(false)
+        .write(true)
+        .open(&path)
+        .map_err(|e| match e.raw_os_error() {
+            // Held open by another program without sharing.
+            Some(32) | Some(33) => PackError::Refused(SWAP_BUSY.to_string()),
+            _ => io_error("open", &path, &e),
+        })?;
+    match file.try_lock() {
+        Ok(()) => Ok(SwapLock { _file: file }),
+        Err(fs::TryLockError::WouldBlock) => Err(PackError::Refused(SWAP_BUSY.to_string())),
+        Err(fs::TryLockError::Error(e)) => Err(io_error("lock", &path, &e)),
+    }
+}
+
+/// Whether a swap into `target` (an install's or an update's) was stopped before it finished: its marker is still in
+/// `.previous`. Starting the app finishes or undoes an update's; installing again finishes an install's.
+pub fn swap_unfinished(target: &Path) -> bool {
+    swap_state(target) != SwapState::Done
+}
+
+/// The update's swap (plan M6, Task 12): puts the checked package in `staged` (the program folder's `.next`, made by
+/// the update engine) in place of the version installed in `target`, by the same steps as an install over an earlier
+/// one (`swap_in`): the marker first, each file the installed manifest lists into a fresh `.previous` (kept for "Go
+/// back"), each new file in, the new manifest last. A person's files are never moved; `update.toml` stays as it is.
+/// If a step fails, every step is undone and the earlier version stays installed, whole. A swap that was stopped from
+/// outside (a power cut) is finished by calling this again (or by installing again). Gives the new manifest.
+///
+/// Refused, with nothing changed: no version of ours in `target`; a staged folder that is not a whole package by its
+/// manifest; a new file that would land on something that is not ours; and, as `CLOSE_FIRST`, a program of the
+/// installed version that is still running (a program already replaced by its new bytes, such as the new version
+/// finishing its own swap, does not count). An earlier `.previous` is cleared first, only by its own manifest.
+///
+/// It takes the swap lock (`SWAP_BUSY` when another program holds it); `put_in_place_held` is for a caller that
+/// already holds it.
+pub fn put_in_place(target: &Path, staged: &Path) -> Result<Manifest, PackError> {
+    let _lock = swap_lock(target)?;
+    put_in_place_stopping(target, staged, None)
+}
+
+/// `put_in_place` for a caller holding the swap lock.
+pub fn put_in_place_held(target: &Path, staged: &Path, _lock: &SwapLock) -> Result<Manifest, PackError> {
+    put_in_place_stopping(target, staged, None)
+}
+
+/// Takes back an update's swap that was stopped part-way (its marker is there and the installed manifest is still the
+/// earlier one): each new file goes back to `staged` (when `staged` has its manifest), each earlier file comes back
+/// from `.previous`, the exe by one replacing rename, and the swap's own files in `.previous` (its marker and copies)
+/// go. The earlier version is then installed as it was; the version kept before the update is not, since the swap
+/// had cleared it. Nothing a person put anywhere moves. For a caller holding the swap lock.
+pub fn undo_stopped(target: &Path, staged: &Path, _lock: &SwapLock) -> Result<Manifest, PackError> {
+    let Some(old) = installed_manifest(target)? else {
+        return Err(PackError::Refused(format!(
+            "No version of BALLFIGHT Studio is installed in {}, so nothing was put back.",
+            target.display()
+        )));
+    };
+    if swap_state(target) != SwapState::Stopped {
+        return Err(PackError::Refused(
+            "No update is part-way in place, so there is nothing to put back.".to_string(),
+        ));
+    }
+    let prev = target.join(".previous");
+    let whole = |f: &Path, sha: &str| !is_link(f) && f.is_file() && sha256_file(f).is_ok_and(|now| now == sha);
+    // The new files back where they were staged (only those the staged manifest names, with its bytes).
+    if let Ok(new) = read_manifest(&staged.join(MANIFEST_NAME)) {
+        for (rel, _, sha) in &new.files {
+            let placed = join_relative(target, rel);
+            let back = join_relative(staged, rel);
+            // A file of the same bytes in both versions that never moved is the earlier one: it stays.
+            let same_never_moved =
+                old.find(rel).is_some_and(|(_, _, s)| s == sha) && !whole(&join_relative(&prev, rel), sha);
+            if !whole(&placed, sha) || same_never_moved || fs::symlink_metadata(&back).is_ok() {
+                continue;
+            }
+            if let Some(dir) = back.parent() {
+                fs::create_dir_all(dir).map_err(|e| io_error("make the folder", dir, &e))?;
+            }
+            if is_the_exe(rel) {
+                // The place keeps an exe: the new one is linked back first, the earlier one replaces it below.
+                link_or_copy(&placed, &back, Some(sha)).map_err(|e| io_error("put back", &placed, &e))?;
+            } else {
+                fs::rename(&placed, &back).map_err(|e| io_error("put back", &placed, &e))?;
+            }
+        }
+    }
+    // The earlier files back from .previous.
+    for (rel, _, sha) in &old.files {
+        let here = join_relative(target, rel);
+        let kept = join_relative(&prev, rel);
+        if whole(&here, sha) || !whole(&kept, sha) || path_has_link(target, rel) {
+            continue;
+        }
+        if let Some(dir) = here.parent() {
+            fs::create_dir_all(dir).map_err(|e| io_error("make the folder", dir, &e))?;
+        }
+        if is_the_exe(rel) {
+            replace_exe(&kept, &here, &prev, Some(sha)).map_err(|e| io_error("put back", &here, &e))?;
+        } else {
+            fs::rename(&kept, &here).map_err(|e| io_error("put back", &here, &e))?;
+        }
+    }
+    // The swap's own files in .previous go; the marker last.
+    for (rel, _, sha) in &old.files {
+        let kept = join_relative(&prev, rel);
+        if is_the_exe(rel) && whole(&kept, sha) && whole(&join_relative(target, rel), sha) {
+            fs::remove_file(&kept).map_err(|e| io_error("remove", &kept, &e))?;
+        }
+    }
+    for name in [MANIFEST_NAME, CONFIG_NAME, COPY_PARTS[0], COPY_PARTS[1]] {
+        let f = prev.join(name);
+        if !is_link(&f) && f.is_file() {
+            fs::remove_file(&f).map_err(|e| io_error("remove", &f, &e))?;
+        }
+    }
+    let marker = prev.join(SWAP_MARKER);
+    fs::remove_file(&marker).map_err(|e| io_error("remove", &marker, &e))?;
+    if let Ok(entries) = crate::package::walk(&prev) {
+        for (rel, kind) in entries.iter().rev() {
+            if *kind == crate::package::Kind::Dir {
+                let _ = fs::remove_dir(join_relative(&prev, rel));
+            }
+        }
+    }
+    let _ = fs::remove_dir(&prev);
+    Ok(old)
+}
+
+/// `put_in_place`, which for a test stops after `stop_after` steps of the swap and leaves everything as it is then.
+pub(crate) fn put_in_place_stopping(
+    target: &Path,
+    staged: &Path,
+    stop_after: Option<usize>,
+) -> Result<Manifest, PackError> {
+    let Some(old) = installed_manifest(target)? else {
+        return Err(PackError::Refused(format!(
+            "No version of BALLFIGHT Studio is installed in {}, so nothing was put in place.",
+            target.display()
+        )));
+    };
+    match swap_state(target) {
+        SwapState::Committed => {
+            // Stopped after its last real step: only the marker (and perhaps empty folders) are left.
+            let marker = target.join(".previous").join(SWAP_MARKER);
+            fs::remove_file(&marker).map_err(|e| io_error("remove", &marker, &e))?;
+            let _ = clear_leftover_staging(staged, Some(&old));
+            Ok(old)
+        }
+        SwapState::Stopped => {
+            // Some files may already have moved: each new one must be in `staged` or in place, with its bytes.
+            let new = read_manifest(&staged.join(MANIFEST_NAME))?;
+            for (rel, _, sha) in &new.files {
+                let whole = |root: &Path| {
+                    let f = join_relative(root, rel);
+                    !is_link(&f) && f.is_file() && sha256_file(&f).is_ok_and(|now| &now == sha)
+                };
+                if !whole(staged) && !whole(target) {
+                    return Err(PackError::Refused(format!(
+                        "{rel} of version {} is missing from {} and from the program folder, so the update cannot be \
+                         finished.",
+                        new.version,
+                        staged.display()
+                    )));
+                }
+            }
+            refuse_running_old(target, &old, &new)?;
+            swap_in(target, &old, &new, staged, stop_after, AGAIN_UPDATE)?;
+            Ok(new)
+        }
+        SwapState::Done => {
+            if is_link(staged) || !staged.is_dir() {
+                return Err(PackError::Refused(format!(
+                    "{} is not a folder, so nothing was put in place.",
+                    staged.display()
+                )));
+            }
+            // A copy of `update.toml` kept with an earlier version (when it comes back by "Go back") is ours by its
+            // text, and the one in place stays, so it goes.
+            let copy = staged.join(CONFIG_NAME);
+            if fs::symlink_metadata(&copy).is_ok() {
+                if is_link(&copy) || crate::config::read_config(&copy).is_err() {
+                    return Err(PackError::Refused(format!(
+                        "{} is not an update.toml that BALLFIGHT Studio wrote, so nothing was put in place.",
+                        copy.display()
+                    )));
+                }
+                fs::remove_file(&copy).map_err(|e| io_error("remove", &copy, &e))?;
+            }
+            let new = check_package(staged)?;
+            refuse_running_old(target, &old, &new)?;
+            check_conflicts(target, &old, &new)?;
+            let prev = target.join(".previous");
+            let cleared_any = fs::symlink_metadata(&prev).is_ok();
+            if cleared_any {
+                let r = plan_clear(&prev)?;
+                if let Some((p, why)) = crate::remove::remove_now(&r).first() {
+                    return Err(PackError::Io(format!(
+                        "A file of the copy kept from before, {}, could not be cleared away ({why}), so nothing was \
+                         put in place; version {} is still installed, and the copy kept from before it may be \
+                         incomplete.",
+                        p.display(),
+                        old.version
+                    )));
+                }
+            }
+            swap_in(target, &old, &new, staged, stop_after, AGAIN_UPDATE).map_err(|e| match e {
+                PackError::Io(text) if cleared_any && text != STOPPED => {
+                    PackError::Io(format!("{text} The copy kept from the version before it was cleared."))
+                }
+                other => other,
+            })?;
+            Ok(new)
+        }
+    }
+}
+
+/// `refuse_running` for an update: a program of the installed version that is still running stops it, unless the
+/// file at that place already holds the new version's bytes (the new version, finishing its own swap).
+fn refuse_running_old(target: &Path, old: &Manifest, new: &Manifest) -> Result<(), PackError> {
+    let running = old
+        .files
+        .iter()
+        .filter(|(p, _, _)| p.to_ascii_lowercase().ends_with(".exe"))
+        .any(|(p, _, _)| {
+            let f = join_relative(target, p);
+            let replaced = new
+                .find(p)
+                .is_some_and(|(_, _, sha)| sha256_file(&f).is_ok_and(|now| &now == sha));
+            in_use(&f) && !replaced
+        });
+    if running {
+        Err(PackError::Refused(CLOSE_FIRST.to_string()))
+    } else {
+        Ok(())
+    }
 }
 
 /// Makes the two shortcuts (Start menu and desktop) to the installed exe, with its icon and its folder as the
@@ -834,7 +1238,21 @@ const CLONE_LIMIT: std::time::Duration = std::time::Duration::from_secs(30 * 60)
 /// already there (kept). A folder there that is a copy of another repository, or not a finished copy, is refused in
 /// words and never deleted. Git is only ever pointed at a folder that holds its own `.git`, so it never walks up to
 /// a repository around it. Git handles its own sign-in.
+///
+/// Only an https or ssh address is taken (`check_remote`), and the clone may use only those two protocols.
 pub fn source_copy(git: &Path, from: &Path, data: &Path, say: &dyn Fn(&str)) -> Result<UpdateConfig, PackError> {
+    source_copy_with(git, from, data, say, false)
+}
+
+/// `source_copy`; `local` (tests only, through their own calls: no command or app path passes `true`) also takes a
+/// local repository and lets the clone read it.
+pub(crate) fn source_copy_with(
+    git: &Path,
+    from: &Path,
+    data: &Path,
+    say: &dyn Fn(&str),
+    local: bool,
+) -> Result<UpdateConfig, PackError> {
     let o = OsStr::new;
     let no_clone = |dir: &Path| {
         PackError::Refused(format!(
@@ -849,9 +1267,14 @@ pub fn source_copy(git: &Path, from: &Path, data: &Path, say: &dyn Fn(&str)) -> 
         git,
         from,
         &[o("-C"), from.as_os_str(), o("remote"), o("get-url"), o("origin")],
+        data,
     )
     .map_err(|_| no_clone(from))?;
-    check_remote(&remote)?;
+    if local {
+        crate::config::check_address(&remote)?;
+    } else {
+        check_remote(&remote)?;
+    }
     let source = data.join("source");
     let unfinished = || {
         PackError::Refused(format!(
@@ -867,6 +1290,7 @@ pub fn source_copy(git: &Path, from: &Path, data: &Path, say: &dyn Fn(&str)) -> 
             git,
             &source,
             &[o("-C"), source.as_os_str(), o("remote"), o("get-url"), o("origin")],
+            data,
         );
         match theirs {
             Ok(t) if t == remote => {}
@@ -890,6 +1314,7 @@ pub fn source_copy(git: &Path, from: &Path, data: &Path, say: &dyn Fn(&str)) -> 
                 o("--count=1"),
                 o("refs/remotes/origin"),
             ],
+            data,
         );
         if !refs.is_ok_and(|r| !r.is_empty()) {
             return Err(unfinished());
@@ -899,20 +1324,24 @@ pub fn source_copy(git: &Path, from: &Path, data: &Path, say: &dyn Fn(&str)) -> 
         say(COPYING_SOURCE);
         // `--` ends the options, so the address can never be read as one.
         let never = std::sync::atomic::AtomicBool::new(false);
-        let ran = crate::run::run_with_env(
-            git,
-            &[
-                o("clone"),
-                o("--no-checkout"),
-                o("--quiet"),
-                o("--"),
-                o(&remote),
-                source.as_os_str(),
-            ],
-            &[("GIT_TERMINAL_PROMPT", o("0"))],
-            CLONE_LIMIT,
-            &never,
-        );
+        let args = [
+            o("clone"),
+            o("--no-checkout"),
+            o("--quiet"),
+            o("--"),
+            o(&remote),
+            source.as_os_str(),
+        ];
+        let hooks = no_hooks(data);
+        let how = crate::run::GitRun {
+            dir: data,
+            no_hooks: &hooks,
+            local,
+            env: &[],
+            limit: CLONE_LIMIT,
+            cancel: &never,
+        };
+        let ran = crate::run::git(git, &args, &how);
         let failed = match ran {
             Ok(r) if r.status.success() => None,
             Ok(r) => Some(r.tail.last().cloned().unwrap_or_else(|| "no reason given".to_string())),
@@ -946,21 +1375,25 @@ fn has_own_git(dir: &Path) -> bool {
     !is_link(dir) && !is_link(&g) && fs::symlink_metadata(&g).is_ok()
 }
 
-/// Git run with its arguments in `dir` through the one way to start a program and waited for, never waiting on a
-/// console prompt (git's own sign-in window may still open for the owner), and never looking for a repository above
-/// `dir`'s parent.
-fn git_output(git: &Path, dir: &Path, args: &[&OsStr]) -> std::io::Result<std::process::Output> {
-    let mut c = crate::run::quiet(git, args);
-    c.env("GIT_TERMINAL_PROMPT", "0");
-    if let Some(parent) = dir.parent() {
-        c.env("GIT_CEILING_DIRECTORIES", parent);
-    }
-    c.output()
+/// The folder the install's git runs are told holds their hooks: `<data>\build\no-hooks`, the same empty folder the
+/// update engine uses (a missing one means no hooks as well).
+fn no_hooks(data: &Path) -> PathBuf {
+    data.join("build").join("no-hooks")
 }
 
-/// What git printed, trimmed, when it ended well.
-fn git_says(git: &Path, dir: &Path, args: &[&OsStr]) -> Result<String, ()> {
-    let out = git_output(git, dir, args).map_err(|_| ())?;
+/// What git printed, trimmed, when it ended well; run through `run::git`, the one way git is started.
+fn git_says(git: &Path, dir: &Path, args: &[&OsStr], data: &Path) -> Result<String, ()> {
+    let never = std::sync::atomic::AtomicBool::new(false);
+    let hooks = no_hooks(data);
+    let how = crate::run::GitRun {
+        dir,
+        no_hooks: &hooks,
+        local: false,
+        env: &[],
+        limit: std::time::Duration::from_secs(120),
+        cancel: &never,
+    };
+    let out = crate::run::git(git, args, &how).map_err(|_| ())?;
     if out.status.success() {
         Ok(String::from_utf8_lossy(&out.stdout).trim().to_string())
     } else {
@@ -968,6 +1401,8 @@ fn git_says(git: &Path, dir: &Path, args: &[&OsStr]) -> Result<String, ()> {
     }
 }
 
+/// The protocols git may use to reach an update's repository: https and ssh only, and TLS checked.
+pub const PROTOCOLS: [&str; 8] = crate::run::GIT_PROTOCOLS;
 /// Git on this PC: the first `git.exe` on `PATH`, else `%ProgramFiles%\Git\cmd\git.exe`.
 pub fn find_git() -> Option<PathBuf> {
     let on_path = std::env::var_os("PATH").and_then(|path| {
@@ -1600,6 +2035,9 @@ pub(crate) mod tests {
                     // Stopped anywhere, the folder is still one of ours, and removal could still plan it.
                     assert!(read_manifest(&layout.programs.join(MANIFEST_NAME)).is_ok(), "step {n}");
                     assert!(crate::remove::removal_plan(&layout).is_ok(), "step {n}");
+                    // And the shortcut always finds a whole exe, the earlier one or the new one.
+                    let exe = read(&layout.exe());
+                    assert!(exe == b"pretend exe 0.6.0" || exe == b"pretend exe 0.6.1", "step {n}");
                     true
                 }
                 Ok(()) => {
@@ -2050,7 +2488,14 @@ pub(crate) mod tests {
     /// Runs git with fixed arguments in a test (local repositories only, no network).
     fn git(git: &Path, args: &[&OsStr]) {
         let never = std::sync::atomic::AtomicBool::new(false);
-        let ran = crate::run::run(git, args, std::time::Duration::from_secs(60), &never).unwrap();
+        // Every GIT_ variable of the test's own environment goes, so a test run from a git hook never acts on the
+        // repository around it.
+        let how = crate::run::Family {
+            scrub_git: true,
+            ..Default::default()
+        };
+        let ran =
+            crate::run::run_family(git, args, &how, std::time::Duration::from_secs(60), &never, &mut |_| {}).unwrap();
         assert!(ran.status.success(), "git {args:?}: {:?}", ran.tail);
     }
 
@@ -2086,7 +2531,7 @@ pub(crate) mod tests {
         let data = dir.path().join("data");
         let said = std::cell::RefCell::new(Vec::new());
         let say = |l: &str| said.borrow_mut().push(l.to_string());
-        let c = source_copy(&g, &clone, &data, &say).unwrap();
+        let c = source_copy_with(&g, &clone, &data, &say, true).unwrap();
         assert_eq!(*said.borrow(), [COPYING_SOURCE]);
         assert_eq!(c.source, data.join("source"));
         assert_eq!(c.build_dir, data.join("build"));
@@ -2096,7 +2541,7 @@ pub(crate) mod tests {
         assert!(data.join("source").join(".git").is_dir());
         assert!(!data.join("source").join("a.txt").exists(), "no checkout");
         // Again: the copy is kept.
-        assert_eq!(source_copy(&g, &clone, &data, &say).unwrap(), c);
+        assert_eq!(source_copy_with(&g, &clone, &data, &say, true).unwrap(), c);
         assert_eq!(said.borrow().len(), 1, "nothing is copied again");
         // A copy of another repository there is refused and left alone.
         let other = dir.path().join("other");
@@ -2106,7 +2551,9 @@ pub(crate) mod tests {
             &g,
             &[o("clone"), o("-q"), other.as_os_str(), data2.join("source").as_os_str()],
         );
-        let err = source_copy(&g, &clone, &data2, &say).unwrap_err().to_string();
+        let err = source_copy_with(&g, &clone, &data2, &say, true)
+            .unwrap_err()
+            .to_string();
         assert!(err.contains("another repository"), "{err}");
 
         // A source folder without its own .git (git would walk up to the repository around it), and one with the
@@ -2114,7 +2561,9 @@ pub(crate) mod tests {
         let data3 = dir.path().join("data3");
         fs::create_dir_all(data3.join("source")).unwrap();
         fs::write(data3.join("source").join("half.txt"), b"x").unwrap();
-        let err = source_copy(&g, &clone, &data3, &say).unwrap_err().to_string();
+        let err = source_copy_with(&g, &clone, &data3, &say, true)
+            .unwrap_err()
+            .to_string();
         assert!(
             err.contains("is not a finished copy of the source; delete it, then install again."),
             "{err}"
@@ -2134,7 +2583,9 @@ pub(crate) mod tests {
                 upstream.as_os_str(),
             ],
         );
-        let err = source_copy(&g, &clone, &data4, &say).unwrap_err().to_string();
+        let err = source_copy_with(&g, &clone, &data4, &say, true)
+            .unwrap_err()
+            .to_string();
         assert!(err.contains("is not a finished copy"), "{err}");
         assert!(half.join(".git").is_dir());
         // A clone that fails says why and leaves nothing it did not make.
@@ -2151,13 +2602,451 @@ pub(crate) mod tests {
             ],
         );
         let data5 = dir.path().join("data5");
-        let err = source_copy(&g, &clone, &data5, &say).unwrap_err().to_string();
+        let err = source_copy_with(&g, &clone, &data5, &say, true)
+            .unwrap_err()
+            .to_string();
         assert!(err.contains("Git could not copy the repository"), "{err}");
         // The folder the clone was owed: no source copy.
         assert!(!data5.join("source").join(".git").exists());
         // The owner's clone itself must have its own .git.
+        // Outside tests, a local repository is never taken as where updates come from.
+        let err = source_copy(&g, &clone, &dir.path().join("data-real"), &say).unwrap_err();
+        assert_eq!(
+            err,
+            PackError::Refused(crate::config::REMOTE_NOT_HTTPS_OR_SSH.to_string())
+        );
+        assert!(!dir.path().join("data-real").exists());
         let plain = dir.path().join("plain folder");
         fs::create_dir_all(&plain).unwrap();
-        assert!(source_copy(&g, &plain, &dir.path().join("data6"), &say).is_err());
+        assert!(source_copy_with(&g, &plain, &dir.path().join("data6"), &say, true).is_err());
+    }
+
+    /// A copy of the folder `from` (files and folders) at `to`.
+    fn copy_tree(from: &Path, to: &Path) {
+        fs::create_dir_all(to).unwrap();
+        for e in fs::read_dir(from).unwrap() {
+            let e = e.unwrap();
+            if e.file_type().unwrap().is_dir() {
+                copy_tree(&e.path(), &to.join(e.file_name()));
+            } else {
+                fs::copy(e.path(), to.join(e.file_name())).unwrap();
+            }
+        }
+    }
+
+    /// Version `old` installed under `root\pc` with a person's file in it, and version `new` staged in its `.next`
+    /// (as the update engine stages one). Gives the layout.
+    fn installed_with_next(root: &Path, old: &str, new: &str) -> Layout {
+        let layout = Layout::under(&root.join("pc"));
+        install(&package_of(root, old), &layout, &config_for(&layout)).unwrap();
+        fs::write(layout.programs.join("my notes.txt"), b"mine").unwrap();
+        copy_tree(&package_of(root, new), &layout.programs.join(".next"));
+        layout
+    }
+
+    #[test]
+    fn an_update_is_put_in_place_and_the_earlier_one_kept() {
+        let dir = TempDir::new("update-swap");
+        let layout = installed_with_next(dir.path(), "0.6.0", "0.6.1");
+        let p = &layout.programs;
+        let config_before = read(&p.join(CONFIG_NAME));
+        assert!(!swap_unfinished(p));
+        let m = put_in_place(p, &p.join(".next")).unwrap();
+        assert_eq!(m.version, "0.6.1");
+        assert_eq!(read(&layout.exe()), b"pretend exe 0.6.1");
+        check_installed(p);
+        assert_eq!(read(&p.join(CONFIG_NAME)), config_before, "update.toml stays as it is");
+        assert_eq!(read(&p.join("my notes.txt")), b"mine");
+        assert!(!p.join(".next").exists(), "the staged folder is used up");
+        let prev = p.join(".previous");
+        assert_eq!(read(&prev.join(EXE_NAME)), b"pretend exe 0.6.0");
+        check_installed(&prev);
+        assert!(prev.join(CONFIG_NAME).is_file() && !prev.join(SWAP_MARKER).exists());
+        assert!(!swap_unfinished(p));
+
+        // "Go back": the kept version comes back as the next one, by the same swap.
+        fs::rename(&prev, p.join(".next")).unwrap();
+        let m = put_in_place(p, &p.join(".next")).unwrap();
+        assert_eq!(m.version, "0.6.0");
+        assert_eq!(read(&layout.exe()), b"pretend exe 0.6.0");
+        check_installed(p);
+        assert_eq!(read(&p.join(CONFIG_NAME)), config_before);
+        assert_eq!(read(&prev.join(EXE_NAME)), b"pretend exe 0.6.1");
+        assert!(!p.join(".next").exists());
+        assert_eq!(read(&p.join("my notes.txt")), b"mine");
+        // Removal still knows every file.
+        let r = crate::remove::removal_plan(&layout).unwrap();
+        assert!(r.kept.iter().all(|(f, _)| f.ends_with("my notes.txt")), "{:?}", r.kept);
+    }
+
+    /// The exe at the shortcut's target is there, and is the whole earlier or the whole new one.
+    fn exe_is_whole(layout: &Layout, n: usize) {
+        let now = read(&layout.exe());
+        assert!(
+            now == b"pretend exe 0.6.0" || now == b"pretend exe 0.6.1",
+            "n = {n}: the exe is {:?}",
+            String::from_utf8_lossy(&now)
+        );
+    }
+
+    #[test]
+    fn an_update_stopped_anywhere_is_finished_by_trying_again() {
+        let dir = TempDir::new("update-stops");
+        let mut stops = 0;
+        for n in 0..30 {
+            let root = dir.path().join(format!("n{n}"));
+            let layout = installed_with_next(&root, "0.6.0", "0.6.1");
+            let p = &layout.programs;
+            match put_in_place_stopping(p, &p.join(".next"), Some(n)) {
+                Err(PackError::Io(t)) if t == STOPPED => {
+                    stops += 1;
+                    // The folder is always one of ours, removal can always plan it, and the exe is always there.
+                    assert!(read_manifest(&p.join(MANIFEST_NAME)).is_ok(), "n = {n}");
+                    crate::remove::removal_plan(&layout).unwrap();
+                    exe_is_whole(&layout, n);
+                    // Stopped after making `.previous` and before its marker, nothing has changed yet.
+                    if n > 1 {
+                        assert!(swap_unfinished(p), "n = {n}");
+                    }
+                    let m = put_in_place(p, &p.join(".next")).unwrap();
+                    assert_eq!(m.version, "0.6.1", "n = {n}");
+                }
+                Ok(_) => {}
+                Err(e) => panic!("n = {n}: {e}"),
+            }
+            assert_eq!(read(&layout.exe()), b"pretend exe 0.6.1", "n = {n}");
+            check_installed(p);
+            check_installed(&p.join(".previous"));
+            assert_eq!(read(&p.join(".previous").join(EXE_NAME)), b"pretend exe 0.6.0");
+            assert!(!swap_unfinished(p), "n = {n}");
+            assert!(!p.join(".next").exists(), "n = {n}");
+            assert_eq!(read(&p.join("my notes.txt")), b"mine");
+        }
+        assert!(stops >= 15, "{stops}");
+    }
+
+    #[test]
+    fn an_update_stopped_anywhere_can_be_taken_back() {
+        let dir = TempDir::new("update-undo");
+        let mut undone = 0;
+        for n in 2..30 {
+            let root = dir.path().join(format!("n{n}"));
+            let layout = installed_with_next(&root, "0.6.0", "0.6.1");
+            let p = &layout.programs;
+            let before = names_in(p);
+            match put_in_place_stopping(p, &p.join(".next"), Some(n)) {
+                Err(PackError::Io(t)) if t == STOPPED && swap_state(p) == SwapState::Stopped => {
+                    let lock = swap_lock(p).unwrap();
+                    let m = undo_stopped(p, &p.join(".next"), &lock).unwrap();
+                    drop(lock);
+                    undone += 1;
+                    assert_eq!(m.version, "0.6.0");
+                    assert_eq!(read(&layout.exe()), b"pretend exe 0.6.0", "n = {n}");
+                    check_installed(p);
+                    assert!(!swap_unfinished(p), "n = {n}");
+                    assert_eq!(names_in(p), before, "n = {n}");
+                    check_package(&p.join(".next")).unwrap();
+                    assert_eq!(read(&p.join("my notes.txt")), b"mine");
+                    // And the update can then go ahead as if nothing happened.
+                    put_in_place(p, &p.join(".next")).unwrap();
+                    assert_eq!(read(&layout.exe()), b"pretend exe 0.6.1");
+                }
+                _ => {}
+            }
+        }
+        assert!(undone >= 10, "{undone}");
+    }
+
+    fn ping_exe() -> PathBuf {
+        PathBuf::from(std::env::var_os("SystemRoot").unwrap())
+            .join("System32")
+            .join("PING.EXE")
+    }
+
+    /// Version 0.6.0 installed (a pretend exe) and version 0.6.1 staged in `.next` whose exe is a real program (a
+    /// copy of Windows' ping), so a test can run "the new version".
+    fn installed_with_runnable_next(root: &Path) -> Layout {
+        let layout = Layout::under(&root.join("pc"));
+        install(&package_of(root, "0.6.0"), &layout, &config_for(&layout)).unwrap();
+        let inputs = root.join("runnable-inputs");
+        let (exe, tree, checked) = crate::package::tests::fake_inputs(&inputs, "0.6.1");
+        fs::copy(ping_exe(), &exe).unwrap();
+        crate::package::package(&exe, &tree, &checked, &layout.programs.join(".next")).unwrap();
+        layout
+    }
+
+    /// Runs the program at `exe` (a copy of ping) for about half a minute.
+    fn run(exe: &Path) -> std::process::Child {
+        let child = crate::run::quiet(exe, &[OsStr::new("-n"), OsStr::new("30"), OsStr::new("127.0.0.1")])
+            .spawn()
+            .unwrap();
+        std::thread::sleep(std::time::Duration::from_millis(300));
+        child
+    }
+
+    /// The set-aside running exes in `.previous`.
+    fn set_aside_exes(p: &Path) -> Vec<String> {
+        names_in(&p.join(".previous"))
+            .into_iter()
+            .filter(|n| crate::package::is_set_aside_exe(n))
+            .collect()
+    }
+
+    /// Whether the program `child` still runs.
+    fn still_runs(child: &mut std::process::Child) -> bool {
+        child.try_wait().is_ok_and(|s| s.is_none())
+    }
+
+    // Each take-back runs twice: as Windows 10 and 11 on NTFS behave (a replacing rename may replace a running
+    // program's file), and as Windows behaves where it may not (the running exe is then set aside by name).
+
+    #[test]
+    fn a_failed_update_is_taken_back_while_the_new_exe_runs() {
+        for refuse in [false, true] {
+            NO_REPLACE_WHILE_RUNNING.with(|n| n.set(refuse));
+            let dir = TempDir::new("update-undo-running");
+            let layout = installed_with_runnable_next(dir.path());
+            let p = &layout.programs;
+            let next = p.join(".next");
+            let ping_bytes = read(&ping_exe());
+            // The new version runs from .next (as the finishing program does); its exe moves into place first, then
+            // a later new file cannot move (held), so the swap is taken back with the new exe running at its place.
+            let mut finisher = run(&next.join(EXE_NAME));
+            let held = hold(&next.join("ffmpeg").join("ffprobe.exe"));
+            let err = put_in_place(p, &next).unwrap_err().to_string();
+            drop(held);
+            assert!(still_runs(&mut finisher), "the new program ran all along");
+            assert!(
+                err.contains("So nothing changed: version 0.6.0 is still installed."),
+                "{refuse}: {err}"
+            );
+            assert_eq!(
+                read(&layout.exe()),
+                b"pretend exe 0.6.0",
+                "the earlier exe is back at its place"
+            );
+            assert!(!swap_unfinished(p));
+            check_installed(p);
+            assert_eq!(set_aside_exes(p).len(), usize::from(refuse), "{refuse}");
+            let _ = finisher.kill();
+            let _ = finisher.wait();
+            // Once it has ended, the next swap clears it by its name and goes ahead.
+            put_in_place(p, &next).unwrap();
+            assert_eq!(read(&layout.exe()), ping_bytes);
+            assert!(set_aside_exes(p).is_empty());
+            check_installed(p);
+        }
+        NO_REPLACE_WHILE_RUNNING.with(|n| n.set(false));
+    }
+
+    #[test]
+    fn a_stopped_update_is_taken_back_while_the_new_exe_runs_at_its_place() {
+        let ping_bytes = read(&ping_exe());
+        for refuse in [false, true] {
+            NO_REPLACE_WHILE_RUNNING.with(|n| n.set(refuse));
+            let dir = TempDir::new("update-undo-place");
+            let mut ran_new = 0;
+            for n in 2..30 {
+                let root = dir.path().join(format!("n{n}"));
+                let layout = installed_with_runnable_next(&root);
+                let p = &layout.programs;
+                let next = p.join(".next");
+                let stopped = matches!(put_in_place_stopping(p, &next, Some(n)), Err(PackError::Io(t)) if t == STOPPED);
+                if !stopped || swap_state(p) != SwapState::Stopped {
+                    continue;
+                }
+                // Where the new exe is already at its place, it is the one running (the new version, started by a
+                // double-click, taking the update back).
+                let new_running = read(&layout.exe()) == ping_bytes;
+                let mut child = new_running.then(|| run(&layout.exe()));
+                let lock = swap_lock(p).unwrap();
+                let undone = undo_stopped(p, &next, &lock);
+                drop(lock);
+                if let Some(c) = &mut child {
+                    assert!(still_runs(c), "n = {n}: the new program ran all along");
+                    let _ = c.kill();
+                    let _ = c.wait();
+                    ran_new += 1;
+                }
+                let m = undone.unwrap_or_else(|e| panic!("{refuse} n = {n}: {e}"));
+                assert_eq!(m.version, "0.6.0");
+                assert_eq!(read(&layout.exe()), b"pretend exe 0.6.0", "{refuse} n = {n}");
+                check_installed(p);
+                assert!(!swap_unfinished(p), "n = {n}");
+                check_package(&next).unwrap();
+                assert_eq!(
+                    set_aside_exes(p).len(),
+                    usize::from(refuse && new_running),
+                    "{refuse} n = {n}"
+                );
+                // Removal plans every file of ours, the set-aside ones included.
+                let r = crate::remove::removal_plan(&layout).unwrap();
+                assert!(r.kept.is_empty(), "{refuse} n = {n}: {:?}", r.kept);
+                // And the update can go ahead afterwards; the set-aside file goes with it.
+                put_in_place(p, &next).unwrap_or_else(|e| panic!("{refuse} n = {n}: {e}"));
+                assert_eq!(read(&layout.exe()), ping_bytes);
+                assert!(set_aside_exes(p).is_empty(), "n = {n}");
+            }
+            assert!(ran_new >= 5, "{ran_new}");
+        }
+        NO_REPLACE_WHILE_RUNNING.with(|n| n.set(false));
+    }
+
+    #[test]
+    fn a_take_back_that_cannot_finish_keeps_the_marker_and_says_so() {
+        let dir = TempDir::new("update-undo-stuck");
+        let layout = installed_with_runnable_next(dir.path());
+        let p = &layout.programs;
+        let next = p.join(".next");
+        let held_new = hold(&next.join("ffmpeg").join("ffprobe.exe"));
+        FAIL_EXE_BACK.with(|f| f.set(true));
+        let err = put_in_place(p, &next).unwrap_err().to_string();
+        FAIL_EXE_BACK.with(|f| f.set(false));
+        drop(held_new);
+        // Never "nothing changed" here: the words say a start finishes or takes it back, and the marker says so too.
+        assert!(!err.contains("nothing changed"), "{err}");
+        assert!(err.contains(AGAIN_UPDATE), "{err}");
+        assert!(swap_unfinished(p));
+        let exe = read(&layout.exe());
+        assert!(exe == read(&ping_exe()) || exe == b"pretend exe 0.6.0");
+        // A start takes it back.
+        let lock = swap_lock(p).unwrap();
+        assert_eq!(undo_stopped(p, &next, &lock).unwrap().version, "0.6.0");
+        drop(lock);
+        assert_eq!(read(&layout.exe()), b"pretend exe 0.6.0");
+        assert!(!swap_unfinished(p));
+        check_installed(p);
+    }
+    #[test]
+    fn two_swaps_never_run_at_once() {
+        let dir = TempDir::new("update-lock");
+        let layout = installed_with_next(dir.path(), "0.6.0", "0.6.1");
+        let p = &layout.programs;
+        let held = swap_lock(p).unwrap();
+        assert_eq!(swap_lock(p).err(), Some(PackError::Refused(SWAP_BUSY.to_string())));
+        assert_eq!(
+            put_in_place(p, &p.join(".next")).unwrap_err(),
+            PackError::Refused(SWAP_BUSY.to_string())
+        );
+        let pkg = package_of(dir.path(), "0.6.2");
+        assert_eq!(
+            install(&pkg, &layout, &config_for(&layout)).unwrap_err(),
+            PackError::Refused(SWAP_BUSY.to_string())
+        );
+        assert_eq!(read(&layout.exe()), b"pretend exe 0.6.0", "nothing moved");
+        drop(held);
+        put_in_place(p, &p.join(".next")).unwrap();
+        assert_eq!(read(&layout.exe()), b"pretend exe 0.6.1");
+    }
+    #[test]
+    fn a_failed_update_puts_everything_back() {
+        let dir = TempDir::new("update-fail");
+        let layout = installed_with_next(dir.path(), "0.6.0", "0.6.1");
+        let p = &layout.programs;
+        // An earlier file held open without sharing delete cannot move into .previous.
+        let held = hold(&p.join("ffmpeg").join("ffprobe.exe"));
+        let err = put_in_place(p, &p.join(".next")).unwrap_err().to_string();
+        drop(held);
+        assert!(err.contains("0.6.0 is still installed"), "{err}");
+        assert_eq!(read(&layout.exe()), b"pretend exe 0.6.0");
+        check_installed(p);
+        assert!(!swap_unfinished(p));
+        // The staged version is whole again, so it can be tried again.
+        check_package(&p.join(".next")).unwrap();
+        put_in_place(p, &p.join(".next")).unwrap();
+        assert_eq!(read(&layout.exe()), b"pretend exe 0.6.1");
+    }
+
+    #[test]
+    fn an_update_waits_for_the_earlier_version_to_close() {
+        let dir = TempDir::new("update-running");
+        let layout = installed_with_next(dir.path(), "0.6.0", "0.6.1");
+        let p = &layout.programs;
+        let ping = PathBuf::from(std::env::var_os("SystemRoot").unwrap())
+            .join("System32")
+            .join("PING.EXE");
+        // The earlier version's exe is a real running program (a copy of ping): the update is refused.
+        let old_manifest = read_manifest(&p.join(MANIFEST_NAME)).unwrap();
+        fs::remove_file(layout.exe()).unwrap();
+        fs::copy(&ping, layout.exe()).unwrap();
+        let ping_sha = sha256_file(&layout.exe()).unwrap();
+        let mut m = old_manifest.clone();
+        for f in &mut m.files {
+            if f.0 == EXE_NAME {
+                f.1 = fs::metadata(layout.exe()).unwrap().len();
+                f.2 = ping_sha.clone();
+            }
+        }
+        fs::write(p.join(MANIFEST_NAME), m.text()).unwrap();
+        let mut child = crate::run::quiet(
+            &layout.exe(),
+            &[OsStr::new("-n"), OsStr::new("9"), OsStr::new("127.0.0.1")],
+        )
+        .spawn()
+        .unwrap();
+        std::thread::sleep(std::time::Duration::from_millis(300));
+        let err = put_in_place(p, &p.join(".next"));
+        let _ = child.kill();
+        let _ = child.wait();
+        assert_eq!(err.unwrap_err().to_string(), CLOSE_FIRST);
+        assert_eq!(
+            sha256_file(&layout.exe()).unwrap(),
+            ping_sha,
+            "the running copy is untouched"
+        );
+        assert!(!p.join(".previous").exists());
+        check_package(&p.join(".next")).unwrap();
+    }
+
+    #[test]
+    fn the_new_version_finishing_its_own_swap_is_not_refused() {
+        let dir = TempDir::new("update-own");
+        let root = dir.path();
+        let layout = Layout::under(&root.join("pc"));
+        install(&package_of(root, "0.6.0"), &layout, &config_for(&layout)).unwrap();
+        // Version 0.6.1's exe is a real program (a copy of ping).
+        let inputs = root.join("ping-inputs");
+        let (exe, tree, checked) = crate::package::tests::fake_inputs(&inputs, "0.6.1");
+        let ping = PathBuf::from(std::env::var_os("SystemRoot").unwrap())
+            .join("System32")
+            .join("PING.EXE");
+        fs::copy(&ping, &exe).unwrap();
+        let next = layout.programs.join(".next");
+        crate::package::package(&exe, &tree, &checked, &next).unwrap();
+        // Stopped right after the new exe moved in (marker, two copies, the earlier files, then the exe).
+        let p = &layout.programs;
+        let old_files = read_manifest(&p.join(MANIFEST_NAME)).unwrap().files.len();
+        let err = put_in_place_stopping(p, &next, Some(4 + old_files + 1)).unwrap_err();
+        assert_eq!(err, PackError::Io(STOPPED.to_string()));
+        assert_eq!(sha256_file(&layout.exe()).unwrap(), sha256_file(&ping).unwrap());
+        // The new exe runs from its place (as the new version does while it finishes the swap): not refused.
+        let mut child = crate::run::quiet(
+            &layout.exe(),
+            &[OsStr::new("-n"), OsStr::new("9"), OsStr::new("127.0.0.1")],
+        )
+        .spawn()
+        .unwrap();
+        std::thread::sleep(std::time::Duration::from_millis(300));
+        let done = put_in_place(p, &next);
+        let _ = child.kill();
+        let _ = child.wait();
+        assert_eq!(done.unwrap().version, "0.6.1");
+        check_installed(p);
+        assert!(!swap_unfinished(p));
+    }
+
+    #[test]
+    fn an_update_needs_a_whole_staged_package() {
+        let dir = TempDir::new("update-whole");
+        let layout = installed_with_next(dir.path(), "0.6.0", "0.6.1");
+        let p = &layout.programs;
+        fs::write(p.join(".next").join("ballfight.ico"), b"changed").unwrap();
+        assert!(put_in_place(p, &p.join(".next")).is_err());
+        assert_eq!(read(&layout.exe()), b"pretend exe 0.6.0");
+        assert!(!p.join(".previous").exists());
+        // Nothing installed: refused in words.
+        let empty = dir.path().join("none").join(APP_NAME);
+        let err = put_in_place(&empty, &p.join(".next")).unwrap_err().to_string();
+        assert!(err.contains("No version of BALLFIGHT Studio is installed"), "{err}");
     }
 }

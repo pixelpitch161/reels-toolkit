@@ -141,9 +141,16 @@ mod tests {
     }
 
     #[test]
-    fn music_feeds_no_fight_in_m1() {
+    fn only_pianos_music_can_feed_its_fight() {
+        // PIANO's roll is its music (once its folder says so); no other fighter's music feeds its fight, and no
+        // name outside the roster
         for f in roster() {
-            assert!(!music_feeds_fight(&f.name), "{}", f.name);
+            if f.name != "PIANO" {
+                assert!(!music_feeds_fight(&f.name), "{}", f.name);
+            }
+        }
+        for name in RETIRED.iter().chain(&["KAZOO", "", "piano"]) {
+            assert!(!music_feeds_fight(name), "{name:?}");
         }
     }
 

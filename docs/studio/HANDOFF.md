@@ -23,7 +23,7 @@ fight, not the kit's (that is by design).
   own. The goal is under 60 s; most of the remaining time is the video encoder itself.
 - Searching seeds: about **6,000 to 7,000 fights a second**, so 200 fitting seeds take about 5 seconds.
 - After choosing a seed its picture is on screen in about a quarter of a second, and its sound joins about 7
-  seconds later; on a PC not busy with other heavy work the preview plays every frame on time.
+  seconds later; on a quiet PC the preview keeps to its speed budget.
 
 **How it is started today.** There is no installer yet (that is milestone 6), so the program is still built from
 the code: `cargo build --release -p bf-app` in the `studio` folder makes `studio\target\release\ballfight-studio.exe`,

@@ -109,8 +109,51 @@ jobs:
       # file, among them the real engine's with the ffmpeg installed above; the command line's; and the saved-file
       # compatibility tests). The interface tests (`--test ui`) draw through DirectX 12 only (ruling M2-R27) and are
       # not run here: a hosted runner is not known to offer a DirectX 12 adapter. They run on the owner's PC.
+      # The build's output is kept the same way as the tests' below, so a failed build names itself too (the step that
+      # reads the log runs on any failure). The step still fails with cargo's own exit code.
       - name: Build the app
-        run: cargo build --release --locked -p bf-app
+        run: |
+          set -o pipefail
+          log="$(cygpath -u '${{ runner.temp }}')/app-tests.log"
+          df -h . | tail -n 1
+          cargo build --release --locked -p bf-app 2>&1 | tee "$log"
 
+      # The output is kept as well as shown, so a failure can be read without the log (the step after this one). The
+      # job's steps run in Git Bash (`defaults.run.shell: bash`) in `studio/`; the log is written by absolute path in
+      # the runner's temp folder, the same path the next step reads. stderr joins stdout before the pipe (cargo's
+      # compile errors and the harness's failures are on different streams), and pipefail (which GitHub's bash also
+      # sets) keeps cargo's own exit code, so the step fails exactly as the tests do. `--no-fail-fast` lets one run
+      # name every failing test.
       - name: Test the app (no window)
-        run: cargo test --release --locked -p bf-app --lib --bins --test compat
+        run: |
+          set -o pipefail
+          log="$(cygpath -u '${{ runner.temp }}')/app-tests.log"
+          echo "the test output is kept in $log"
+          cargo test --release --locked --no-fail-fast -p bf-app --lib --bins --test compat 2>&1 | tee "$log"
+
+      # Only when something failed: the failed tests, each panic with the two lines after it, compile errors, and the
+      # first and last 30 lines, as annotations (each cut to about 300 characters, 40 at most). When there is no log,
+      # what is known instead: the shell, the folder, and what the temp folder holds.
+      - name: Name what failed in the app's tests
+        if: failure()
+        run: |
+          log="$(cygpath -u '${{ runner.temp }}')/app-tests.log"
+          note() {
+            local line="${1:0:300}"
+            line="${line//'%'/'%25'}"
+            line="${line//$'\r'/}"
+            echo "::error title=app tests::${line}"
+          }
+          if [ ! -s "$log" ]; then
+            note "no test output at $log"
+            note "shell: $BASH ($BASH_VERSION), folder: $(pwd), RUNNER_TEMP: $RUNNER_TEMP"
+            { ls -la "$(dirname "$log")" 2>&1 || true; } | head -n 20 | while IFS= read -r line; do note "temp: $line"; done
+            exit 0
+          fi
+          {
+            grep -E 'test .* FAILED|^failures:$|^    [A-Za-z0-9_:]+$' "$log" | sed 's/^/failed: /'
+            grep -E -A2 'panicked at' "$log" | grep -v '^--$' | paste -d ' ' - - - | sed 's/^/panic: /'
+            grep -E '^error(\[E[0-9]+\])?:' "$log" | sed 's/^/compile: /'
+            head -n 30 "$log" | grep -v '^\s*$' | sed 's/^/head: /'
+            tail -n 30 "$log" | grep -v '^\s*$' | sed 's/^/tail: /'
+          } | head -n 40 | while IFS= read -r line; do note "$line"; done

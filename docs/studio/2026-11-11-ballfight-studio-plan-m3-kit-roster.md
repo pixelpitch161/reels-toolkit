@@ -186,6 +186,8 @@ absent or differs. Re-pinning (`cache --repin`) is a controller decision, record
 - **`episodes/<pair>/`** Holds: `episode`, `frames`, `sound`, `checks`, `stats`, `pairs`, `pins`, `manifest`;
   `exceptions.toml`; Budget: 100 KB (260 KB for Tasks 45, 46).
 - **everything tracked under `studio/reference/`** Budget: 147 MB.
+- **`picture_title_optins/`** (Task 5: the title opt-in cards and the beam's hull log, about 110 KB, top-level
+  manifest) has no budget of its own: it is counted in the row above, the whole set.
 
 If every folder used its whole budget the set would end at 133.5 + 18 x 0.3 + 13 x 0.12 + 15 x 0.16 + 17 x 0.1 +
 2 x 0.16 = about 145 MB (FLUTE's and TROMBONE's folders point at milestone 1's recordings instead of copying them,

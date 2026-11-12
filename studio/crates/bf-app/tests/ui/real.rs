@@ -33,6 +33,15 @@ use crate::common::{REF, app_harness, gpu};
 
 /// How often a wait looks again.
 const TICK: Duration = Duration::from_millis(20);
+/// How long the relay waits for a command before it passes the engine's events on.
+const RELAY_TICK: Duration = Duration::from_millis(5);
+
+thread_local! {
+    /// The commands the relay of this test's app held back, looked at by every wait.
+    static HELD: std::cell::RefCell<Option<Refused>> = const { std::cell::RefCell::new(None) };
+    /// When this test must have ended, at the latest.
+    static DEADLINE: std::cell::Cell<Option<Instant>> = const { std::cell::Cell::new(None) };
+}
 
 /// A fresh folder under the system temp folder, removed when dropped: the settings, the queue, the shortlists and
 /// the videos of these tests live here, never in the owner's own folders.
@@ -80,7 +89,7 @@ impl Watched {
         let held = refused.clone();
         let relay = std::thread::spawn(move || {
             loop {
-                match side.commands.recv_timeout(Duration::from_millis(1)) {
+                match side.commands.recv_timeout(RELAY_TICK) {
                     Ok(c @ (Command::PickFolder { .. } | Command::RevealFolder { .. })) => {
                         held.lock().unwrap().push(c);
                     }
@@ -145,6 +154,8 @@ fn real_app<'a>(temp: &Temp, workers: usize) -> (Harness<'a, BfApp>, Relay) {
             search_limit: None,
         };
         let (engine, w) = Watched::start(Arc::new(move || ctx.request_repaint()), config);
+        let refused = w.refused.clone();
+        HELD.with(|h| *h.borrow_mut() = Some(refused));
         *keep.lock().unwrap() = Some(w);
         BfApp::new(
             cc,
@@ -175,10 +186,26 @@ fn close(mut harness: Harness<'_, BfApp>, watched: &Relay) {
     w.assert_nothing_refused();
 }
 
-/// Steps the app, looking again every 20 ms, until `done` holds; fails with `what` after `seconds`.
+/// Steps the app, looking again every 20 ms, until `done` holds; fails with `what` after `seconds`, at once when the
+/// app asked for a window outside it (the relay held the command back), and when the test's own deadline has passed.
 fn wait_until(harness: &mut Harness<'_, BfApp>, what: &str, seconds: u64, done: impl Fn(&Harness<'_, BfApp>) -> bool) {
     let deadline = Instant::now() + Duration::from_secs(seconds);
     while !done(harness) {
+        HELD.with(|h| {
+            if let Some(refused) = &*h.borrow() {
+                let refused = refused.lock().unwrap();
+                assert!(
+                    refused.is_empty(),
+                    "while waiting for {what}, the app asked for a window outside it: {refused:?}"
+                );
+            }
+        });
+        if let Some(end) = DEADLINE.with(std::cell::Cell::get) {
+            assert!(
+                Instant::now() < end,
+                "the test ran past its deadline while waiting for {what}"
+            );
+        }
         assert!(Instant::now() < deadline, "waited {seconds} s for {what}");
         harness.step();
         std::thread::sleep(TICK);
@@ -269,7 +296,10 @@ fn the_real_match_up_screen() {
     wait_until(&mut harness, "the real Match-up screen", 10, |h| {
         wanted.iter().all(|w| shows(h, w))
     });
-    // The pair rules came with the title card, which the player now shows; let it settle.
+    // The pair rules came with the title card: wait until the stage shows it.
+    wait_until(&mut harness, "the title card on the stage", 10, |h| {
+        h.state().has_picture()
+    });
     harness.run_ok();
     for w in wanted {
         assert!(shows(&harness, w), "{w:?} is on screen");
@@ -300,6 +330,8 @@ fn the_real_match_up_screen() {
 fn a_whole_video_with_the_real_engine() {
     let _gpu = gpu();
     let began = Instant::now();
+    // The whole test, at most: about twice what it takes on a busy PC.
+    DEADLINE.with(|d| d.set(Some(began + Duration::from_secs(20 * 60))));
     let temp = Temp::new("whole");
     let workers = default_settings(cores()).workers;
     let (mut harness, watched) = real_app(&temp, workers);

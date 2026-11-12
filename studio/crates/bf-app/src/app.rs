@@ -121,6 +121,8 @@ pub struct BfApp {
     ctx: egui::Context,
     /// `shutdown` has run.
     closed: bool,
+    /// `close` has run: whether the engine stopped in time.
+    engine_stopped: Option<bool>,
 }
 
 /// Which engine the app runs on.
@@ -138,6 +140,18 @@ pub const ENGINE_STOP: Duration = Duration::from_millis(STOP_WAIT.as_millis() as
 /// Where the real engine keeps its shortlists when the PC gives the app no folder of its own.
 fn fallback_paths() -> Paths {
     Paths::under(&std::env::temp_dir().join("BALLFIGHT Studio"))
+}
+
+/// What the real engine is started with: the settings' workers, the app's storage `paths` (or, when the PC gives the
+/// app none, a folder under the system temp folder for the shortlists), every frame of a video and no limit on a
+/// search.
+pub fn real_config(settings: &Settings, paths: Option<Paths>) -> EngineConfig {
+    EngineConfig {
+        workers: settings.workers,
+        paths: paths.unwrap_or_else(fallback_paths),
+        clip: None,
+        search_limit: None,
+    }
 }
 
 /// Builds the real app in the creator passed to `eframe::run_native`: the settings and the queue, read once
@@ -170,15 +184,7 @@ pub fn start(
         }
     };
     let engine = match kind {
-        EngineKind::Real => engine::spawn(
-            waker(&cc.egui_ctx),
-            EngineConfig {
-                workers: settings.workers,
-                paths: paths.unwrap_or_else(fallback_paths),
-                clip: None,
-                search_limit: None,
-            },
-        ),
+        EngineKind::Real => engine::spawn(waker(&cc.egui_ctx), real_config(&settings, paths)),
         EngineKind::Sample => fake::spawn(waker(&cc.egui_ctx), Pace::Live),
     };
     let boot = Boot {
@@ -326,6 +332,7 @@ impl BfApp {
             texture: None,
             ctx: cc.egui_ctx.clone(),
             closed: false,
+            engine_stopped: None,
         }
     }
 
@@ -366,13 +373,18 @@ impl BfApp {
 
     /// The app's exit (`on_exit`): [`BfApp::shutdown`], then a wait of up to [`ENGINE_STOP`] for the engine to
     /// stop, so a render, and the ffmpeg it started, never outlives the window. Returns whether the engine stopped
-    /// in time (always true when the app has no engine).
+    /// in time (always true when the app has no engine). It does its work once; `Drop` calls it too.
     pub fn close(&mut self) -> bool {
+        if let Some(stopped) = self.engine_stopped {
+            return stopped;
+        }
         self.shutdown();
-        match &self.link {
+        let stopped = match &self.link {
             Link::Live(live) => live.engine.stop(ENGINE_STOP),
             _ => true,
-        }
+        };
+        self.engine_stopped = Some(stopped);
+        stopped
     }
 
     /// Tells the engine the app is closing and waits until everything asked to be saved is on disk. `close` calls
@@ -395,6 +407,11 @@ impl BfApp {
             Link::Showing { sent } => sent.push(Command::Shutdown),
             Link::Blank => {}
         }
+    }
+
+    /// Whether the stage shows a picture now (a title card, or a frame of the take).
+    pub fn has_picture(&self) -> bool {
+        self.picture().is_some()
     }
 
     /// The picture to show: the texture once something is to be shown (the player says so; in `showing` mode once
@@ -536,6 +553,15 @@ fn panels(
     }
 }
 
+impl Drop for BfApp {
+    /// A dropped app closes as its window would (`close`, which does its work once): also when the interface thread
+    /// panicked or the window ended without `on_exit`, the engine is stopped, and waited for, before the process
+    /// exits.
+    fn drop(&mut self) {
+        self.close();
+    }
+}
+
 impl eframe::App for BfApp {
     fn logic(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         let began = Instant::now();
@@ -602,6 +628,32 @@ impl eframe::App for BfApp {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_real_engine_renders_whole_videos_with_the_settings_workers() {
+        let settings = Settings {
+            output_folder: std::path::PathBuf::from("Videos"),
+            workers: 7,
+        };
+        let paths = Paths::under(std::path::Path::new("studio data"));
+        let config = real_config(&settings, Some(paths.clone()));
+        assert_eq!(
+            config,
+            EngineConfig {
+                workers: 7,
+                paths,
+                clip: None,
+                search_limit: None,
+            }
+        );
+        // No folder from the PC: the shortlists go under the temp folder.
+        let config = real_config(&settings, None);
+        assert_eq!(
+            config.paths,
+            Paths::under(&std::env::temp_dir().join("BALLFIGHT Studio"))
+        );
+        assert_eq!((config.clip, config.search_limit, config.workers), (None, None, 7));
+    }
 
     #[cfg(windows)]
     #[test]

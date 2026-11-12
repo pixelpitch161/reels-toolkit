@@ -119,16 +119,52 @@ impl State {
     }
 
     /// Drops frames beyond `KEEP`, never one that is wanted now (at the loop point, frames 0 to 11 are wanted while
-    /// being "behind" a playhead near 1,829 by number).
-    fn trim(&mut self) {
+    /// being "behind" a playhead near 1,829 by number). Returns the dropped frames, so the caller frees them after it
+    /// lets go of the lock.
+    fn trim(&mut self) -> Vec<Frame> {
         if self.cache.len() <= KEEP {
-            return;
+            return Vec::new();
         }
         let spare: Vec<u32> = self.cache.keys().copied().filter(|f| !self.queue.contains(f)).collect();
         let keep = KEEP.saturating_sub(self.cache.len() - spare.len());
-        for f in evict(&spare, self.playhead, keep) {
-            self.cache.remove(&f);
+        evict(&spare, self.playhead, keep)
+            .into_iter()
+            .filter_map(|f| self.cache.remove(&f))
+            .collect()
+    }
+
+    /// Sets the wanted frames for `playhead` as [`Scheduler::want`] (or, when `starting`, [`Scheduler::want_start`])
+    /// works them out. Returns whether they changed, so the workers are woken only then.
+    fn ask(&mut self, playhead: u32, playing: bool, looping: bool, starting: bool, threads: usize) -> bool {
+        let (lead, stride) = pace(mean(&self.times), threads);
+        let queue = if starting {
+            wanted_from(playhead, looping, stride)
+        } else {
+            wanted(playhead, playing, looping, lead, stride)
+        };
+        self.playhead = playhead;
+        if queue == self.queue {
+            return false;
         }
+        self.queue = queue;
+        true
+    }
+}
+
+/// What [`Scheduler::lookup`] found for the playhead.
+#[derive(Clone, Debug)]
+pub struct Lookup {
+    /// The playhead's frame when it is kept, else the latest kept frame before it, with its number; `None` when
+    /// nothing at or before the playhead is kept.
+    pub frame: Option<(u32, Frame)>,
+    /// The playhead's frame could not be drawn (its source panicked).
+    pub failed: bool,
+}
+
+impl Lookup {
+    /// Whether the playhead's own frame is kept.
+    pub fn exact(&self, playhead: u32) -> bool {
+        self.frame.as_ref().is_some_and(|(n, _)| *n == playhead)
     }
 }
 
@@ -138,9 +174,19 @@ struct Shared {
     /// When set (tests only), every draw is recorded as taking this many milliseconds instead of its measured time,
     /// so the feedback from `frame_ms` through `pace` into `want` does not depend on the machine.
     draw_ms: Option<f32>,
+    /// How many times an ask woke the workers (tests: an unchanged ask wakes nobody).
+    #[cfg(test)]
+    asks_woken: std::sync::atomic::AtomicUsize,
 }
 
 impl Shared {
+    /// Wakes the workers after the wanted frames changed.
+    fn wake_for_ask(&self) {
+        #[cfg(test)]
+        self.asks_woken.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        self.work.notify_all();
+    }
+
     /// The state. A worker never panics while holding the lock (draws happen outside it and are caught), so a
     /// poisoned lock still holds consistent state and is used as it is.
     fn lock(&self) -> MutexGuard<'_, State> {
@@ -192,6 +238,8 @@ impl Scheduler {
             }),
             work: Condvar::new(),
             draw_ms,
+            #[cfg(test)]
+            asks_woken: Default::default(),
         });
         let workers = (0..threads.max(1))
             .map(|i| {
@@ -214,10 +262,11 @@ impl Scheduler {
         // Asked outside the lock; the workers read the cached count.
         let count = frames.as_ref().map_or(0, |s| s.frames());
         let mut st = self.shared.lock();
+        let mut old_frames = BTreeMap::new();
         if take != st.take {
             st.take = take;
             st.epoch += 1;
-            st.cache.clear();
+            old_frames = std::mem::take(&mut st.cache);
             st.drawing.clear();
         }
         st.failed.clear();
@@ -225,31 +274,89 @@ impl Scheduler {
         let old = std::mem::replace(&mut st.source, frames);
         drop(st);
         self.shared.work.notify_all();
-        // A large old source is freed here, outside the lock.
+        // A large old source and the old take's frames are freed here, outside the lock.
         drop(old);
+        drop(old_frames);
     }
 
     /// Asks for the frames around `playhead`; replaces what was asked before, so older scrubs are skipped.
+    /// The workers are woken only when the wanted frames changed.
     pub fn want(&self, playhead: u32, playing: bool, looping: bool) {
         let threads = self.workers.len();
-        let mut st = self.shared.lock();
-        let (lead, stride) = pace(mean(&st.times), threads);
-        st.queue = wanted(playhead, playing, looping, lead, stride);
-        st.playhead = playhead;
-        drop(st);
-        self.shared.work.notify_all();
+        let changed = self.shared.lock().ask(playhead, playing, looping, false, threads);
+        if changed {
+            self.shared.wake_for_ask();
+        }
     }
 
     /// Asks for `playhead`'s own frame first and then the frames playback from it will want ([`wanted_from`]):
     /// what the player asks while it waits for a take's first picture. Replaces what was asked before.
+    /// The workers are woken only when the wanted frames changed.
     pub fn want_start(&self, playhead: u32, looping: bool) {
         let threads = self.workers.len();
-        let mut st = self.shared.lock();
-        let (_, stride) = pace(mean(&st.times), threads);
-        st.queue = wanted_from(playhead, looping, stride);
-        st.playhead = playhead;
+        let changed = self.shared.lock().ask(playhead, true, looping, true, threads);
+        if changed {
+            self.shared.wake_for_ask();
+        }
+    }
+
+    /// The interface's one call per tick (ruling M2-R31), which never waits: under a single `try_lock` it asks for
+    /// the frames around `playhead` (as [`Scheduler::want`], or [`Scheduler::want_start`] when `starting`) and
+    /// returns what is kept for it. `None` when a worker holds the lock at that moment: nothing was asked or read,
+    /// and the caller keeps what it shows and looks again on its next tick. An idle scheduler's lock is always free.
+    pub fn lookup(&self, playhead: u32, playing: bool, looping: bool, starting: bool) -> Option<Lookup> {
+        let threads = self.workers.len();
+        let mut st = match self.shared.state.try_lock() {
+            Ok(st) => st,
+            Err(std::sync::TryLockError::Poisoned(p)) => p.into_inner(),
+            Err(std::sync::TryLockError::WouldBlock) => return None,
+        };
+        let changed = st.ask(playhead, playing, looping, starting, threads);
+        let frame = st
+            .cache
+            .range(..=playhead)
+            .next_back()
+            .map(|(&n, frame)| (n, frame.clone()));
+        let failed = st.failed.contains(&playhead);
         drop(st);
-        self.shared.work.notify_all();
+        if changed {
+            self.shared.wake_for_ask();
+        }
+        Some(Lookup { frame, failed })
+    }
+
+    /// Whether frame `f` could not be drawn, without waiting: `None` when the lock is busy at that moment.
+    pub fn try_failed(&self, f: u32) -> Option<bool> {
+        match self.shared.state.try_lock() {
+            Ok(st) => Some(st.failed.contains(&f)),
+            Err(std::sync::TryLockError::Poisoned(p)) => Some(p.into_inner().failed.contains(&f)),
+            Err(std::sync::TryLockError::WouldBlock) => None,
+        }
+    }
+
+    /// How many asks have woken the workers.
+    #[cfg(test)]
+    pub(crate) fn asks_woken(&self) -> usize {
+        self.shared.asks_woken.load(std::sync::atomic::Ordering::SeqCst)
+    }
+
+    /// Holds the lock as a busy worker would, until the guard is dropped (tests of `lookup`).
+    #[cfg(test)]
+    pub(crate) fn hold_lock(&self) -> testing::Held {
+        let shared = self.shared.clone();
+        let (locked_tx, locked_rx) = std::sync::mpsc::channel();
+        let (release_tx, release_rx) = std::sync::mpsc::channel::<()>();
+        let holder = std::thread::spawn(move || {
+            let guard = shared.lock();
+            _ = locked_tx.send(());
+            _ = release_rx.recv();
+            drop(guard);
+        });
+        _ = locked_rx.recv();
+        testing::Held {
+            release: Some(release_tx),
+            holder: Some(holder),
+        }
     }
 
     /// Frame `f` of the current take, if it is kept.
@@ -351,6 +458,7 @@ fn work(shared: &Shared, waker: &Waker) {
             .unwrap_or_else(|| started.elapsed().as_secs_f32() * 1000.0);
         drop(source);
 
+        let mut evicted = Vec::new();
         let mut st = shared.lock();
         st.busy -= 1;
         // Whether the interface should look again: a frame was kept, or one failed.
@@ -359,7 +467,7 @@ fn work(shared: &Shared, waker: &Waker) {
             record(&mut st.times, ms);
             if epoch == st.epoch {
                 st.cache.insert(f, frame.clone());
-                st.trim();
+                evicted = st.trim();
                 wake = true;
             }
         }
@@ -371,7 +479,8 @@ fn work(shared: &Shared, waker: &Waker) {
             }
         }
         drop(st);
-        // A panic payload is freed outside the lock too.
+        // The dropped frames and a panic payload are freed outside the lock too.
+        drop(evicted);
         drop(drawn);
         if wake {
             _ = catch_unwind(AssertUnwindSafe(|| waker()));
@@ -465,6 +574,21 @@ pub(crate) mod testing {
                 panic!("the test source fails on frame {f}");
             }
             TestSource::frame(f)
+        }
+    }
+
+    /// The scheduler's lock held by another thread, as a busy worker holds it, until this is dropped.
+    pub(crate) struct Held {
+        pub(super) release: Option<std::sync::mpsc::Sender<()>>,
+        pub(super) holder: Option<std::thread::JoinHandle<()>>,
+    }
+
+    impl Drop for Held {
+        fn drop(&mut self) {
+            drop(self.release.take());
+            if let Some(h) = self.holder.take() {
+                _ = h.join();
+            }
         }
     }
 
@@ -626,6 +750,77 @@ mod tests {
         assert_eq!(evict(&[1, 2, 3, 50, 51], 50, 5), Vec::<u32>::new());
         assert_eq!(evict(&[60, 50, 70, 40], 50, 2), [40, 70]);
         assert_eq!(evict(&[52, 50, 51], 50, 1), [52, 51]);
+    }
+
+    /// `lookup`, looked at again until no worker holds the lock at that moment (bounded).
+    fn look(s: &Scheduler, playhead: u32, playing: bool, starting: bool) -> Lookup {
+        let mut found = None;
+        wait_for("a free lock", || {
+            found = s.lookup(playhead, playing, true, starting);
+            found.is_some()
+        });
+        found.unwrap()
+    }
+
+    #[test]
+    fn lookup_asks_and_answers_in_one_call() {
+        let s = scheduler(4);
+        s.set_source(1, Some(TestSource::new()));
+        // Nothing kept yet: no frame, and it asks for the playhead (paused: a scrub).
+        let found = look(&s, 500, false, false);
+        assert!(found.frame.is_none() && !found.failed);
+        wait_idle(&s);
+        assert_eq!(kept(&s), [500]);
+        let found = look(&s, 500, false, false);
+        assert!(found.exact(500));
+        assert_eq!(found.frame.unwrap().1, TestSource::frame(500));
+        // A frame not kept holds the latest kept one before it, as `latest_at_or_before` does.
+        s.want(700, false, true);
+        let held = look(&s, 600, true, false);
+        assert_eq!(held.frame.as_ref().map(|(n, _)| *n), Some(500));
+        assert!(!held.exact(600));
+        // Starting asks as `want_start` does: the playhead's own frame is drawn.
+        let s = scheduler(2);
+        s.set_source(1, Some(TestSource::new()));
+        look(&s, 100, true, true);
+        wait_idle(&s);
+        assert!(s.get(100).is_some());
+    }
+
+    #[test]
+    fn lookup_never_waits_on_a_busy_lock() {
+        let s = scheduler(2);
+        s.set_source(1, Some(TestSource::new()));
+        s.want(10, false, true);
+        wait_idle(&s);
+        let held = s.hold_lock();
+        let began = std::time::Instant::now();
+        assert!(
+            s.lookup(10, false, true, false).is_none(),
+            "busy: nothing asked, nothing read"
+        );
+        assert!(s.try_failed(10).is_none());
+        assert!(began.elapsed() < Duration::from_millis(100));
+        drop(held);
+        assert!(s.lookup(10, false, true, false).unwrap().exact(10));
+    }
+
+    #[test]
+    fn an_unchanged_ask_wakes_nobody() {
+        let s = scheduler(2);
+        s.set_source(1, Some(TestSource::new()));
+        s.want(100, true, true);
+        let after_first = s.asks_woken();
+        assert_eq!(after_first, 1);
+        s.want(100, true, true);
+        look(&s, 100, true, false);
+        assert_eq!(s.asks_woken(), after_first, "the same wanted frames: no wake");
+        s.want(101, true, true);
+        assert_eq!(s.asks_woken(), after_first + 1);
+        s.want_start(101, true);
+        assert_eq!(s.asks_woken(), after_first + 2, "the start's frames differ");
+        s.want_start(101, true);
+        assert_eq!(s.asks_woken(), after_first + 2);
     }
 
     #[test]
