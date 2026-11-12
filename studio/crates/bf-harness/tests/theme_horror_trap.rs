@@ -14,7 +14,9 @@ fn box_motif() {
     let path = bf_testdata::reference("themes/horror_trap/voicings.json");
     let text = std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("{}: {e}", path.display()));
     let doc: serde_json::Value = serde_json::from_str(&text).expect("voicings.json");
-    let table = doc["box_motif"].as_object().expect("voicings.json has a box_motif table");
+    let table = doc["box_motif"]
+        .as_object()
+        .expect("voicings.json has a box_motif table");
     assert_eq!(table.len(), 12 * 13, "a lullaby for every chord");
     let g = Grid::new(132.0);
     for (ch, row) in table {
