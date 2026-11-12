@@ -223,7 +223,7 @@ EXPORTS = {'fighter_tuba': lambda: m3refs.fighter_refs(SPEC)}
 `handicap=(1.0, 1.0)`, `dmg_scale=1.0`, `rules={}`, `stats=2000`, `scan=500`, `left=None`, `right=None` (fixed
 seeds instead of the scan) and `must=()` (coverage items to require besides the automatic ones).
 
-What `fighter_refs` writes today (the fight half; Task 6 adds the picture, sound, voice and check parts):
+What `fighter_refs` writes for the fight (the picture, sound, voice and check parts follow below):
 
 | File | Where | What |
 | --- | --- | --- |
@@ -256,14 +256,33 @@ example's handicap the framework's recordings are milestone 1's own where the se
    `python -m tools.studio_export remake fighters/<slug>` makes the unmerged folder again in one run. Never remake a
    merged folder on your own: if a regenerated file differs, report it.
 
-### Hand-over to Task 6 (the proving harness)
+### The parts the proving harness reads (Task 6, `m3parts.py`)
 
-`m3refs.py`'s docstring ends with it: `fighter_refs` calls `fighter_model` (`models.model` through `commit_path`);
-each picture part runs in a fresh process with `fighter_picture(cfg.with_seed(seed))`; sprites go to the pinned
-cache through `fighter_sprites` (`.cache/m3/fighters/<slug>/sprites.{npz,json}`, ruling M3-R18) with only their
-hashes committed; the committed files Template F implies are `look.json`, `sound.json`, `voice.json`, `checks.json`
-and `exceptions.toml`; `right`'s frame hashes are cached while `left`'s are committed; a pair folder is the kit
-config's name without its `ballfight_` prefix (`LARGE_EPISODES` relies on it).
+`fighter_refs` ends with `fighter_parts`: each part runs in a fresh spawn process (`m3parts.fresh`; `kit.picture`
+and `kit.music` build themselves once per process), at most three at once, the checks (with their own pool of three)
+alone. It adds to `fighters/<slug>/`:
+
+| File | Where | What |
+| --- | --- | --- |
+| `look.json` | committed | the `left` fight drawn with the fighter's real look and `kit/fighters/base.py`'s Look for the other side, every hook of both spied (`look_flute._spied`): per frame the SHA-256 of the frame, of the hook calls and of the draw log, and the hull calls (points, vertices, the sums of x and y); the build's hook calls; the VS card alone on milestone 1's `title/noise.png` at 16 times with the fighter on side 0 and on side 1; the title hooks (glass, flare scale, shatter parts, the close-up, the card's pattern on the fixed base); the sprites' facts and digest; `reads_cfg` (the kit look reads `self.cfg`) |
+| `look_right.json`, `hull_left.json`, `hull_right.json` | cache | the `right` fight's rows; every hull call's points in full |
+| `sprites.npz`, `sprites.json` | cache | `sprites.run_one` of the left picture (ruling M3-R18) |
+| `sound.json` | committed | the `left` and `right` soundtracks with the real part and the kit's base `Sound` for the other side: the 16-bit master's SHA-256, the buses, every stem's and the master's RMS per 100 ms (dB, 3 decimals), the first-time notes (count, SHA-256, the first eight), the noise stream's start and end; each role of `SPEC.roles` (its own bus and the master); the bed hooks the part calls unguarded |
+| `stems_left.npz`, `stems_right.npz`, `stems_role_<r>.npz` | cache | every stem in five windows of 1 s (float32) |
+| `voice.json` | committed | `pp_bridge.voice` at 4 pitches across the register (`SPEC.voice_notes`) x 2 velocities x 3 lengths, each from the shared noise state the one before left: length, peak, RMS of every 10 ms block, the noise state before and after, the SHA-256 |
+| `voice_notes.npz` | cache | the 24 notes, float64 |
+| `checks.json` | committed | every check of `kit/checks.py` on the `left` fight (both real looks and parts), by `checks.py`'s own functions; the safe-zone boxes as one SHA-256 per frame |
+| `exceptions.toml` | committed | written once, empty; only controller rulings go in it |
+
+`episode_refs(spec)` (`episode_<pair>.py`, Template P) writes `episodes/<pair>/`: `episode.json` (the config's
+values), `frames.json` (milestone 1's golden-frame rules for any pair, both real looks; 16 card frames),
+`sound.json` (the kit's soundtrack), `checks.json`, `stats.json` (4,000 seeds; rows cached), `pairs.json` (the
+pair's own links in scenario fights, cached), `exceptions.toml`; the kit recording is pointed at when milestone 1
+or the theme folder holds it. `theme_refs` adds `bed.json` (`theme_parts`): the bed alone's buses, RMS and notes;
+a second tempo, a second key and each option of `SPEC.options` with their recordings cached; the bed's optional
+hooks called directly (vectors cached). `python -m tools.studio_export fighter_stages <slug> [left | right]
+<frame>...` writes stage dumps of a look fight. The Rust side of all of it is `studio/crates/bf-harness`; the
+manual is `studio/docs/porting-a-fighter.md`.
 
 ## What each export writes
 

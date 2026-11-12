@@ -6,6 +6,24 @@
  "command": "python -m tools.studio_export cache fighters/trombone",
  "pins": [
   {
+   "path": "fighters/trombone/hull_left.json",
+   "sha256": "6f2f743daec13f2a68eb1128d5887f9387f16ecec2916ae92a98da43780b8445",
+   "bytes": 164306,
+   "export": "fighter_trombone"
+  },
+  {
+   "path": "fighters/trombone/hull_right.json",
+   "sha256": "bfde444c7282dad5cdad1df83eae1b5a1984b9ade5b609090777ff005b88be7e",
+   "bytes": 117696,
+   "export": "fighter_trombone"
+  },
+  {
+   "path": "fighters/trombone/look_right.json",
+   "sha256": "158783f87e52c9eeaaf34d3eefa22afada2643a87ccd272795c47f54209081c4",
+   "bytes": 27943,
+   "export": "fighter_trombone"
+  },
+  {
    "path": "fighters/trombone/right.bfrec",
    "sha256": "aa904a6208c7e04ee6957ad0034a3f3c4fb74260aa1a0fd55d069d7db49283be",
    "bytes": 106122,
@@ -102,9 +120,39 @@
    "export": "fighter_trombone"
   },
   {
+   "path": "fighters/trombone/sprites.json",
+   "sha256": "5866e96a229a56b1697b4fd58880e56e7e13928d5fdd43aef677d1e37c03a0de",
+   "bytes": 141118,
+   "export": "fighter_trombone"
+  },
+  {
+   "path": "fighters/trombone/sprites.npz",
+   "sha256": "085a8e298e3a02810b2fb6b114c6a79477d3f5d41788e987450c0ca044867667",
+   "bytes": 190592,
+   "export": "fighter_trombone"
+  },
+  {
    "path": "fighters/trombone/stats_rows.json",
    "sha256": "1769ae1bcc5916499cc9cdc250b44907957fbda08f5d45631f7479b94a35cc32",
    "bytes": 489217,
+   "export": "fighter_trombone"
+  },
+  {
+   "path": "fighters/trombone/stems_left.npz",
+   "sha256": "086a73587dec6414c9f339bb16f7b2b779868ffadadb2a23e80b363f475b9cd1",
+   "bytes": 4769670,
+   "export": "fighter_trombone"
+  },
+  {
+   "path": "fighters/trombone/stems_right.npz",
+   "sha256": "4386163536a90b6e75f5c707bd14df2d0bbb0a9d5920cbd9bd8bc955333d4679",
+   "bytes": 4669201,
+   "export": "fighter_trombone"
+  },
+  {
+   "path": "fighters/trombone/voice_notes.npz",
+   "sha256": "8a87cd63e0dca4e63ae299cb5167a9dca3dce5e2028543d4da33d8767d75f2df",
+   "bytes": 5248856,
    "export": "fighter_trombone"
   }
  ]

@@ -556,6 +556,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "bf-harness"
+version = "0.1.0"
+dependencies = [
+ "bf-content",
+ "bf-core",
+ "bf-export",
+ "bf-picture",
+ "bf-sim",
+ "bf-sound",
+ "bf-story",
+ "bf-testdata",
+ "serde_json",
+ "sha2",
+ "toml",
+]
+
+[[package]]
 name = "bf-pack"
 version = "0.1.0"
 dependencies = [

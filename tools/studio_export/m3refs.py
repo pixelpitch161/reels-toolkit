@@ -91,29 +91,11 @@ fighters/<slug>/ 300 KB; themes/<name>/ 120 KB + 160 KB per .bfrec in it; episod
 trombone_vs_tuba and bassclarinet_vs_euphonium); everything under studio/reference/ 147 MB. Counted over the files
 git tracks or would track (`git ls-files --cached --others --exclude-standard`), so a folder an export has just
 written is measured before it is committed. bf-testdata's `budget` test applies the same numbers.
-Hand-over to Task 6 (the proving harness), which adds the picture, sound, voice and check parts to fighter_refs:
-
-- The model: fighter_refs calls fighter_model(folder, NAME, P, tool) (models.model through commit_path) in the
-  process that built the fighter's picture, so the model's entry goes to the fighter's shard and a cache run only
-  compares it.
-- The picture: kit.picture builds itself once per process from the current episode, so each picture part runs in a
-  fresh process (a spawn worker): fighter_picture(cfg.with_seed(seed)) with the `left` (or `right`) seed, which
-  appends SEED to the config.
-- Sprites (ruling M3-R18): fighter_sprites(folder, NAME, P, left recording, export) writes
-  .cache/m3/fighters/<slug>/sprites.npz and sprites.json (pinned) and returns {case id: SHA-256}; only those hashes
-  are committed (in look.json). It works for any roster name (proven on TUBA against FLUTE: 282 sprites, model 1,054
-  faces). Milestone 1's studio/reference/sprites/{FLUTE,TROMBONE}.{npz,json} stay where they are.
-- The committed files Template F implies, all in fighters/<slug>/: look.json (left's frame, hook-log and draw-log
-  SHA-256, the hull log, title-card and title-hook hashes, the sprite hashes), sound.json (the 16-bit master's
-  SHA-256, per-bus RMS, the note order, for left and right), voice.json (the fingerprints), checks.json (the kit's
-  check numbers for left) and exceptions.toml (frames the Studio may miss, with reasons; written empty once, then
-  adopted by hand, as frames/exceptions.toml). `right`'s frame hashes are cached (look_right.json, pinned) while
-  left's are committed; stems and whole voice notes are cached too.
-- Pair folders (episode_refs): episodes/<pair>/ is named after the kit config without its `ballfight_` prefix and
-  its examples/ folder (`examples/trombone_vs_tuba` -> trombone_vs_tuba, `ballfight_horn_vs_trombone_rematch` ->
-  horn_vs_trombone_rematch); LARGE_EPISODES relies on that rule. Theme folders are the mood's name (themes/big_top).
-- Every part stages its committed files with commit_bytes / commit_json / commit_path and its cache files with
-  cache_bytes / cache_json / pin, and fighter_refs calls finish(folder) once, at the end."""
+The picture, sound, voice and check parts (Task 6, m3parts.py; fighter_parts below): look.json, sound.json,
+voice.json, checks.json and exceptions.toml committed; look_right.json, the hull logs, the sprites (ruling M3-R18),
+the stem windows and the voice notes cached. episode_refs writes a pair gate's folder (Template P) and theme_parts a
+theme's bed.json (Template T). The Rust gates are studio/crates/bf-harness; the manual
+studio/docs/porting-a-fighter.md."""
 import hashlib
 import json
 import multiprocessing as mp
@@ -557,6 +539,13 @@ class Config:
         return Config(f'{self.tag}_s{seed}', self.base, self.fighters, self.handicap, self.dmg_scale, self.rules,
                       seed)
 
+    def part(self, name):
+        """the same setup in a folder of its own for one part (m3parts): the kit keeps file caches in its episode
+        folder (check/sprites_title.npz, the run, the stems), so a part drawn with one real look must never leave
+        them to a part drawn with both, whichever ran first"""
+        return Config(f'{self.tag}_{name}', self.base, self.fighters, self.handicap, self.dmg_scale, self.rules,
+                      self.seed)
+
     def load(self):
         ep, story = load_config(self.folder)
         assert tuple(ep.T.FIGHTERS) == self.fighters, (ep.T.FIGHTERS, self.fighters)
@@ -643,11 +632,12 @@ def rec_note(rec, **more):
                 events=len(rec['events']), frames=len(rec['arrays']['HP']), hash=recording.rec_hash(rec), **more)
 
 
-def existing_copy(sha, folder):
+def existing_copy(sha, folder, also=()):
     """the repo-relative path of a committed reference recording with these bytes, or None. Only the top-level
-    manifest (milestones 0 to 2) and the folder's own shard are searched, never another port's folder, so one port's
+    manifest (milestones 0 to 2), the folder's own shard and the folders named in `also` (a pair gate's theme
+    folder, which holds the kit recording of its config) are searched, never another port's folder, so one port's
     files never depend on another's"""
-    for shard in (manifest.top(), ref_dir(folder, manifest.NAME)):
+    for shard in (manifest.top(), ref_dir(folder, manifest.NAME), *(ref_dir(a, manifest.NAME) for a in also)):
         for e in manifest.load(shard):
             if e['sha256'] == sha and e['path'].endswith('.bfrec'):
                 return e['path']
@@ -861,6 +851,7 @@ def fighter_refs(spec):
                       rows=rows_cov),
         cache_files='cache files are under ' + CACHE + '/ and pinned in pins.json')
     commit_json(folder, 'fight.json', doc, module)
+    fighter_parts(spec, folder, export, module, main, swapped, left_seed, right_seed, left_file, rpath)
     finish(folder)
     print(f"{export}: {folder}: left seed {left_seed} ({len(rec_left['events'])} events, "
           f"K.O. {rec_left['t_ko']}), right seed {right_seed}, {len(recs)} scenario fights, {len(rows_cov)} coverage "
@@ -870,8 +861,318 @@ def fighter_refs(spec):
         print(f'{export}:   {CACHE}/{k} = {v}')
 
 
+# ---------------------------------------------------------------- the picture, sound, voice and check parts (Task 6)
+EXCEPTIONS = 'exceptions.toml'
+EXCEPTIONS_TEXT = """\
+# What this folder's gates may miss (plan section 2, "The bars, never loosened"). Empty unless the controller has
+# ruled on a difference that survived real investigation; the proving harness FAILS on any entry without a ruling.
+# One table per difference, replacing the empty list below:
+#
+#   [[exceptions]]
+#   gate = "look"              # look, title, sprites, sound, stems, voice, checks, frames
+#   what = "frame 1234"        # the frame, the bus and window, the note or the check
+#   ruling = "M3-R99"          # the controller's ruling that allows it
+#   reason = "why it cannot be made identical, with the stage and the numbers"
+#
+# Written once by the folder's export and never overwritten; edited only by hand after a ruling.
+exceptions = []
+"""
+
+
+def keep_or_write(folder, name, text, tool):
+    """a committed file written once and then edited only by hand: its bytes on disk when it exists, else `text`"""
+    path = ref_dir(folder, name)
+    data = open(path, 'rb').read() if os.path.isfile(path) else text.encode('utf-8')
+    return commit_bytes(folder, name, data, tool)
+
+
+def _rms_of(summary, buses):
+    return {b: summary['rms'][b] for b in buses if b in summary['rms']}
+
+
+def fighter_parts(spec, folder, export, module, main, swapped, left_seed, right_seed, left_file, rpath):
+    """look.json, sound.json, voice.json, checks.json and exceptions.toml of fighters/<slug>/, and their cache files
+    (look_right.json, hull_left.json, hull_right.json, sprites.npz / .json, stems_*.npz, voice_notes.npz). Each
+    part runs in a fresh process (m3parts); at most three run at once, the checks (which start their own pool of
+    three) alone"""
+    from . import m3parts as MP
+    from . import look_flute as LF
+    t0 = time.time()
+    name, opp = spec['name'], spec['opponent']
+    fr, vn = spec['frames'], spec['voice_notes']
+    lcfg, rcfg = main.with_seed(left_seed), swapped.with_seed(right_seed)
+    left_path = os.path.join(common.REPO, *f'{REF}/{left_file}'.split('/'))
+
+    def cd(n):
+        return cache_dir(folder, n)
+    os.makedirs(cache_dir(folder), exist_ok=True)
+    h = [MP.start(MP.look_child, lcfg.part('look'), name, 'left', left_path, fr['left'], fr['times'],
+                  (cd('sprites.npz'), cd('sprites.json')), cd('hull_left.json')),
+         MP.start(MP.look_child, rcfg.part('look'), name, 'right', rpath, fr['right'], fr['times'], None,
+                  cd('hull_right.json')),
+         MP.start(MP.sound_child, lcfg.part('sound'), name, None, cd('stems_left.npz'))]
+    look_l, look_r, sound_l = [MP.wait(x) for x in h]
+    roles = list(spec['roles'])
+    h = [MP.start(MP.sound_child, rcfg.part('sound'), name, None, cd('stems_right.npz')),
+         MP.start(MP.voice_child, lcfg.part('voice'), name, vn['pitches'], tuple(vn['velocities']),
+                  tuple(vn['durations']), cd('voice_notes.npz'))]
+    h += [MP.start(MP.sound_child, lcfg.part(f'role_{r}'), name, r, cd(f'stems_role_{r}.npz')) for r in roles[:1]]
+    sound_r, voice = MP.wait(h[0]), MP.wait(h[1])
+    role_docs = {roles[0]: MP.wait(h[2])} if roles else {}
+    for r in roles[1:]:
+        role_docs[r] = MP.fresh(MP.sound_child, lcfg.part(f'role_{r}'), name, r, cd(f'stems_role_{r}.npz'))
+    checks = MP.fresh(MP.checks_child, lcfg.part('checks'))
+    print(f'{export}: the picture, sound, voice and check parts in {time.time() - t0:.1f} s')
+    # ---- the look
+    for which, got in (('left', look_l), ('right', look_r)):
+        need = fr[which]
+        assert len(got['doc']['frames']) >= need, f"{export}: {which}: {len(got['doc']['frames'])} frames, {need} asked"
+    assert look_l['doc']['k'] == 0 and look_r['doc']['k'] == 1
+    for p in (cd('hull_left.json'), cd('hull_right.json'), cd('sprites.npz'), cd('sprites.json')):
+        pin(p, export)
+    cache_json(folder, 'look_right.json', dict(
+        about=f"{name}'s look in the `right` fight ({opp} left and winning, so {name}'s shards fly), drawn with its "
+              f"real look and kit/fighters/base.py's Look for {opp}: the rows of look.json's `left`",
+        **look_r['doc']), export)
+    if look_l['model']:
+        commit_path(folder, look_l['model']['path'], look_l['model']['data'], 'tools.studio_export.models')
+    commit_json(folder, 'look.json', dict(
+        about=f"{name}'s look against the Python kit: the `left` fight drawn with its real look and "
+              f"kit/fighters/base.py's Look for {opp} (every hook of both spied, as look_flute does); the VS card "
+              f"alone on milestone 1's noise image with {name} on either side; its title hooks; its sprites",
+        tool=module, format=1, fighter=name, opponent=opp, other_look='kit/fighters/base.py Look',
+        reads_cfg=look_l['reads_cfg'],
+        reads_cfg_note="whether kit/fighters/<slug>.py reads self.cfg (its roster numbers): such a look must take "
+                       "them from setup_as (EUPHONIUM's copies draw it with another fighter's numbers)",
+        hook_names=list(LF.HOOKS), hook_note="a hook call is '<side>.<hook>'; state adds '(ball,phase)', ball, "
+                                             "ball_sprite and hides_hp add '(ball)'; hooks_build leaves out rope",
+        frame_columns=['frame', 'sha256 of the frame', 'hook calls', 'sha256 of the hook calls', 'boxes drawn',
+                       'sha256 of the boxes', 'hull calls: [points, vertices, sum of x, sum of y]', 'why'],
+        left=dict(look_l['doc'], file=left_file),
+        right=dict(cache=f'{folder}/look_right.json', hull_cache=f'{folder}/hull_right.json',
+                   frames=len(look_r['doc']['frames']), seed=look_r['doc']['seed'],
+                   recording=look_r['doc']['recording']),
+        cards=dict(left=look_l['doc']['cards'], right=look_r['doc']['cards'],
+                   call='hashlib.sha256(title.draw(noise, frame / 30).tobytes()), noise = '
+                        'studio/reference/frames/flute_vs_trombone/title/noise.png; left: the fighter on side 0, '
+                        'right: on side 1'),
+        hull_cache=f'{folder}/hull_left.json', title=look_l['title'],
+        sprites=dict(look_l['sprites'], cache=f'{folder}/sprites.npz')), module)
+    # ---- the sound
+    for p in [cd('stems_left.npz'), cd('stems_right.npz')] + [cd(f'stems_role_{r}.npz') for r in roles]:
+        pin(p, export)
+    k_bus = name.lower()
+    commit_json(folder, 'sound.json', dict(
+        about=f"{name}'s part against the kit: the soundtrack of the `left` and `right` fights with its real part "
+              f"and kit/fighters/base.py's Sound for {opp} (silent), over the base config's theme",
+        tool=module, format=1, fighter=name, opponent=opp, bed_calls=sound_l['bed_calls'],
+        rms_note="every stem's and the master's RMS per 100 ms block, in dB to 3 decimals: 20 log10(sqrt(mean(x "
+                 "** 2)) + 1e-12) over both channels",
+        left=dict(sound_l, cache=f'{folder}/stems_left.npz'), right=dict(sound_r, cache=f'{folder}/stems_right.npz'),
+        roles={r: dict({k: v for k, v in d.items() if k != 'rms'}, rms=_rms_of(d, (k_bus, 'master')),
+                       cache=f'{folder}/stems_role_{r}.npz') for r, d in role_docs.items()}), module)
+    # ---- the voice
+    pin(cd('voice_notes.npz'), export)
+    commit_json(folder, 'voice.json', dict(
+        about=f"{name}'s instrument voice (pp_bridge.voice) against the kit: each note from the shared noise state "
+              f"the one before left (the first from a fresh default_rng(77)); per note its length, its peak (float.hex()) "
+              f"and the RMS of every 10 ms block (rounded to 1e-9; the bar is 1e-6), the noise state after it and the SHA-256 of its float64 samples; "
+              f"the notes themselves are in the cache",
+        tool=module, format=1, block=MP.VBLOCK, velocities=list(vn['velocities']), durations=list(vn['durations']),
+        cache=f'{folder}/voice_notes.npz', **voice), module)
+    # ---- the checks, and the exceptions list
+    commit_json(folder, 'checks.json', dict(
+        about=f"what each check of kit/checks.py gives for the `left` fight ({name} against {opp}, both real looks "
+              f"and parts): the verdicts, the printed lines and the numbers (tools/studio_export/checks.py's "
+              f"functions); the safe-zone boxes as one SHA-256 per checked frame",
+        tool=module, format=1, **checks), module)
+    keep_or_write(folder, EXCEPTIONS, EXCEPTIONS_TEXT, module)
+    print(f"{export}: look {len(look_l['doc']['frames'])} + {len(look_r['doc']['frames'])} frames, "
+          f"{look_l['sprites']['count']} sprites; sound {sound_l['notes']['count']} + {sound_r['notes']['count']} "
+          f"first-time notes; voice {len(voice['notes'])} notes; checks "
+          + ', '.join(f"{c} {d.get('pass')}" for c, d in checks['checks'].items()))
+
+
+# ---------------------------------------------------------------- a pair gate's references (Template P)
+EPISODE_SPEC_KEYS = ('config', 'stats', 'links', 'scenarios', 'weapon_hit', 'frames')
+
+
+class Loaded:
+    """a config folder already written (a kit config's private copy): what the parts and statistics() need"""
+
+    def __init__(self, folder, fighters, seed):
+        self.folder, self.fighters, self.seed = folder, tuple(fighters), seed
+
+    def load(self):
+        return load_config(self.folder)
+
+
+def config_module(config):
+    import importlib.util
+    spec = importlib.util.spec_from_file_location('m3refs_config_values', config_source(config))
+    cfg = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(cfg)
+    return cfg
+
+
+def episode_facts(config):
+    """read_config's values and the rest of what a pair's fight file holds"""
+    facts = read_config(config)
+    c = config_module(config)
+
+    def g(k, d=None):
+        return getattr(c, k, d)
+    side = g('DMG_SIDE')
+    facts.update(seed=g('SEED'), dmg_scale=float(g('DMG_SCALE', 1.0)),
+                 handicap=[1.0, 1.0] if side is None else [float(x) for x in side], rules=dict(g('RULES', {})),
+                 roles=dict(g('ROLES', {})), title_hits={k: list(v) for k, v in g('TITLE_HITS', {}).items()},
+                 solos={k: [list(n) for n in v] for k, v in g('SOLOS', {}).items()},
+                 mix={k: list(v) for k, v in g('MIX', {}).items()}, series=g('SERIES', None),
+                 shard_seed=g('SHARD_SEED', 271), fx_seed=g('FX_SEED', None), music_seed=g('MUSIC_SEED', None))
+    return facts
+
+
+def episode_refs(spec):
+    """episodes/<pair>/ (committed) + cache for an episode_<pair>.py SPEC: dict(config= the kit config
+    (`examples/<x>` or `ballfight_<pair>`), stats=4000, links=() the items of the pair's own events to cover (event
+    kinds, "hit/<what>", "ability/<name>"), scenarios=None (default: plain and swapped, seeds 1 to 3), weapon_hit={}
+    (fighter -> the `how` of its weapon's hits, for the golden frames), frames=40 (at least)). Writes episode.json
+    (the config's values), frames.json (the golden frames, both real looks, and 16 card frames), sound.json (the
+    kit's soundtrack: its 16-bit master's SHA-256 = audio.wav's samples, the buses' RMS, the notes), checks.json,
+    stats.json (pooled; rows cached), pairs.json (the links' coverage), exceptions.toml; the kit's recording of the
+    config is pointed at when a committed file (milestone 1's, or the theme folder's) has its bytes, else copied as
+    run.bfrec"""
+    from . import fights, m3parts as MP, recording, scenarios as SC, stats as ST
+    module = sys._getframe(1).f_globals.get('__name__', __name__)
+    unknown = sorted(set(spec) - set(EPISODE_SPEC_KEYS))
+    if unknown:
+        raise SystemExit(f"episode spec: unknown keys {', '.join(unknown)} (it has {', '.join(EPISODE_SPEC_KEYS)})")
+    spec = dict(dict(stats=4000, links=(), scenarios=None, weapon_hit={}, frames=40), **spec)
+    config = spec['config']
+    pair = config_slug(config)
+    folder, export = f'episodes/{pair}', f'episode_{pair}'
+    run = run_state()
+    run.stages.pop(folder, None)
+    t_all = time.time()
+    facts = episode_facts(config)
+    with open(config_source(config), encoding='utf-8', newline='') as fh:
+        text = fh.read()
+    cfg_folder = config_folder(f'episode_{pair}', pair, text)
+    ep, story = load_config(cfg_folder)
+    seed = ep.seed
+    # ---- the kit's own recording of the config
+    r = story.run_seed(seed)
+    rules = story.rules()
+    os.makedirs(cache_dir(folder), exist_ok=True)
+    tmp = cache_dir(folder, 'run.bfrec.tmp')
+    recording.write_bfrec(r, rules, tmp, rect_keys=story.REC_KEYS, register=False)
+    rec = recording.read_bfrec(tmp)
+    fights.check(r, rules, rec, story.REC_KEYS)
+    data = open(tmp, 'rb').read()
+    copy = existing_copy(hashlib.sha256(data).hexdigest(), folder, also=(f"themes/{facts['mood']}",))
+    if copy and not copy.startswith(f'{REF}/{folder}/'):
+        rec_file = copy[len(REF) + 1:]
+        delete_committed(folder, 'run.bfrec')
+    else:
+        commit_bytes(folder, 'run.bfrec', data, module)
+        rec_file = f'{folder}/run.bfrec'
+    rec_path = tmp                                  # the same bytes; the parts read it before finish() applies them
+    cfg = Loaded(cfg_folder, facts['fighters'], seed)
+    # ---- the parts in fresh processes
+    def part(n):
+        return Loaded(config_folder(f'episode_{pair}_{n}', pair, text), facts['fighters'], seed)
+    h = [MP.start(MP.frames_child, part('frames'), rec_path, dict(spec['weapon_hit'])),
+         MP.start(MP.full_sound_child, part('sound'), cache_dir(folder, 'stems.npz'))]
+    frames_doc, sound = MP.wait(h[0]), MP.wait(h[1])
+    checks = MP.compact_checks(MP.fresh(MP.checks_child, part('checks')))
+    os.remove(tmp)
+    pin(cache_dir(folder, 'stems.npz'), export)
+    assert len(frames_doc['frames']) >= spec['frames'], f"{export}: {len(frames_doc['frames'])} golden frames"
+    assert sound['master_sha256'] and checks['episode_facts']['audio_wav_sha256']
+    # ---- statistics at the config's own handicap
+    got = statistics(cfg, spec['stats'])
+    rows = [g[0] for g in got]
+    counts = {}
+    for _, items in got:
+        for k in items:
+            counts[k] = counts.get(k, 0) + 1
+    pooled = ST.pooled(rows, tuple(facts['fighters']))
+    cache_json(folder, 'stats_rows.json', dict(about=f'{config}: one row per seed 1..{spec["stats"]}',
+                                               columns=list(ST.ROW_KEYS), rows=rows), export)
+    # ---- the pair's links in scenario fights
+    groups = spec['scenarios'] or [dict(name='plain', seeds=[1, 2, 3], swapped=False),
+                                   dict(name='swapped', seeds=[1, 2, 3], swapped=True)]
+    groups = [dict(dict(overrides={}, swapped=False), **dict(g, seeds=list(g['seeds']))) for g in groups]
+    a, b = facts['fighters']
+    swapped_folder = config_folder(f'episode_{pair}_swapped', pair, text + (
+        '\n# ---------------------------------------------------------------- tools/studio_export m3refs\n'
+        f"FIGHTERS = {(b, a)!r}\nDMG_SIDE = {tuple(reversed(facts['handicap']))!r}\n"))
+    recs, done, best = [], set(), {}
+    missing = list(spec['links'])
+    for rnd in range(EXTRA_ROUNDS + 1):
+        for g in groups:
+            fold = swapped_folder if g['swapped'] else cfg_folder
+            for s_ in g['seeds']:
+                if (g['name'], s_) in done:
+                    continue
+                done.add((g['name'], s_))
+                rel_name = f"scenarios/{g['name']}_s{s_}.bfrec"
+                path = cache_dir(folder, *rel_name.split('/'))
+                rec_ = record(Loaded(fold, (b, a) if g['swapped'] else (a, b), None), s_, g['overrides'], path)
+                pin(path, export)
+                recs.append(((g['name'], s_, f'{folder}/{rel_name}'), rec_))
+        best = SC.first_uses(recs, ep.T.T_FIGHT)
+        missing = [k for k in spec['links'] if k not in best or best[k]['after_fight'] > WINDOW]
+        if not missing or rnd == EXTRA_ROUNDS:
+            break
+        for g in groups:
+            top = max(g['seeds'])
+            g['seeds'] += list(range(top + 1, top + 1 + EXTRA_SEEDS))
+    if missing:
+        raise SystemExit(f"{export}: links not covered within {WINDOW} s of FIGHT!: {', '.join(missing)}")
+    scen_doc = []
+    for g in groups:
+        _, story_ = load_config(swapped_folder if g['swapped'] else cfg_folder)
+        scen_doc.append(dict(name=g['name'], swapped=g['swapped'], overrides=dict(g['overrides']),
+                             fighters=[b, a] if g['swapped'] else [a, b], seeds=list(g['seeds']),
+                             handicap=list(reversed(facts['handicap'])) if g['swapped'] else facts['handicap'],
+                             cache=[f"{folder}/scenarios/{g['name']}_s{x}.bfrec" for x in g['seeds']],
+                             hashes=[recording.rec_hash(rr) for (n_, x_, _), rr in recs if n_ == g['name']],
+                             rules=dict(vars(story_.rules(**g['overrides'])))))
+    links = [dict(item=k, scenario=best[k]['scenario'], seed=best[k]['seed'], t=best[k]['t'],
+                  after_fight=best[k]['after_fight'], index=best[k]['index'], event=best[k]['event'])
+             for k in spec['links']]
+    # ---- the committed files
+    commit_json(folder, 'episode.json', dict(
+        about=f"{config}: the kit config's values, which studio/fights/{pair}.toml must hold, and its recording",
+        tool=module, format=1, config=config, pair=pair, recording=rec_file, rec_hash=recording.rec_hash(rec),
+        winner=rec['winner'], t_ko=rec['t_ko'], **{k: v for k, v in facts.items() if k != 'config'}), module)
+    commit_json(folder, 'frames.json', dict(
+        about=f"{config}: the golden frames (milestone 1's rules of frames.py for any pair) with both real looks: "
+              f"each frame's SHA-256, its draw log and its hull calls; and the VS card alone on milestone 1's "
+              f"noise image at 16 times", tool=module, format=1, **frames_doc), module)
+    commit_json(folder, 'sound.json', dict(
+        about=f"{config}: the kit's soundtrack (both real parts): the 16-bit master's SHA-256 (audio.wav's "
+              f"samples), the buses, every stem's RMS per 100 ms (dB, 3 decimals), the first-time notes",
+        tool=module, format=1, cache=f'{folder}/stems.npz', **sound), module)
+    commit_json(folder, 'checks.json', dict(about=f'{config}: what each check of kit/checks.py gives',
+                                            tool=module, format=1, **checks), module)
+    commit_json(folder, 'stats.json', dict(
+        about=f"{config}: the kit's statistics at the config's own handicap, seeds 1 to {spec['stats']}",
+        tool=module, format=1, seeds=[1, spec['stats']], cache=f'{folder}/stats_rows.json', pooled=pooled,
+        definitions=ST.DEFINITIONS, fights_with=dict(sorted(counts.items()))), module)
+    commit_json(folder, 'pairs.json', dict(
+        about=f"{config}: the pair's own links (plan Table S5): each item's first occurrence over the scenario "
+              f"fights (scenario, seed, time, event index, the event), within {WINDOW} s of FIGHT!",
+        tool=module, format=1, window=WINDOW, t_fight=ep.T.T_FIGHT, links=links, scenarios=scen_doc), module)
+    keep_or_write(folder, EXCEPTIONS, EXCEPTIONS_TEXT, module)
+    finish(folder)
+    print(f"{export}: {folder}: {len(frames_doc['frames'])} golden frames, {len(links)} links, "
+          f"{spec['stats']} statistics fights, {len(read_pins(folder))} pins, {time.time() - t_all:.1f} s")
+
+
 # ---------------------------------------------------------------- a theme's references (Task 2; Template T adds)
-THEME_SPEC_KEYS = ('name', 'voicings', 'configs', 'extra')
+THEME_SPEC_KEYS = ('name', 'voicings', 'configs', 'extra', 'variants', 'key_from', 'options', 'hooks')
 # the 12 roots (the kit's spellings: a sharp or a flat, as its configs write them) and the 13 qualities of QUALITY
 ROOTS = ('C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B')
 
@@ -880,11 +1181,15 @@ def theme_spec(spec):
     """a theme_<name>.py SPEC with its defaults: name (the mood), voicings (the Bed methods that voice a chord, each
     called for the 12 roots x 13 qualities), configs (the reference kit configs, `examples/<name>` or
     `ballfight_<pair>`: the bed alone under each one's own recording), extra (a function(folder, export, module)
-    the theme's own module runs before finish, for files only that theme writes)"""
+    the theme's own module runs before finish, for files only that theme writes); for bed.json (Task 6, Template
+    T): variants (True: a second tempo and a second key), key_from (the config whose key and loop the key variant
+    takes; None: the first kit config with a loop of the same length in another key), options (one variant per
+    theme option value: dict(name=, text= the config lines it appends, ff= {option: value} for the fight file,
+    why=)), hooks (the optional bed hooks to call directly; None: every one the bed class defines)"""
     unknown = sorted(set(spec) - set(THEME_SPEC_KEYS))
     if unknown:
         raise SystemExit(f"theme spec: unknown keys {', '.join(unknown)} (it has {', '.join(THEME_SPEC_KEYS)})")
-    out = dict(voicings=(), configs=(), extra=None)
+    out = dict(voicings=(), configs=(), extra=None, variants=True, key_from=None, options=(), hooks=None)
     out.update(spec)
     if not out.get('name'):
         raise SystemExit('theme spec: a name (the kit mood) is needed')
@@ -976,6 +1281,114 @@ def _theme_child(folder, voicings, chords):
     return out
 
 
+def kit_configs():
+    """every kit config with an episode.py, as config names (`examples/<x>`, `ballfight_<pair>`), sorted"""
+    out = []
+    ex = os.path.join(common.REPO, 'projects', 'ballfight', 'examples')
+    out += [f'examples/{n}' for n in sorted(os.listdir(ex)) if os.path.isfile(os.path.join(ex, n, 'episode.py'))]
+    pr = os.path.join(common.REPO, 'projects')
+    out += [n for n in sorted(os.listdir(pr)) if n.startswith('ballfight_')
+            and os.path.isfile(os.path.join(pr, n, 'episode.py'))]
+    return out
+
+
+def chords_at(intro, loop, tail, n_bars):
+    """bf_core::harmony::chords_for: the intro, the loop repeated (the last repeat may stop part-way), the tail on
+    the last bars"""
+    body = max(0, n_bars - len(intro) - len(tail))
+    out = list(intro) + (list(loop) * (body // max(1, len(loop)) + 1))[:body] + list(tail)
+    return out[:n_bars]
+
+
+def key_variant(facts, key_from):
+    """(the config whose key, scale and loop the key variant takes, the text it appends): `key_from`, or the first
+    kit config (sorted) with a loop of the same length in another key"""
+    names = [key_from] if key_from else kit_configs()
+    for c in names:
+        if c == facts['config']:
+            continue
+        try:
+            o = read_config(c)
+        except (AssertionError, AttributeError, ValueError):
+            continue
+        if len(o['loop']) == len(facts['loop']) and (o['key'], o['scale']) != (facts['key'], facts['scale']):
+            chords = chords_at(o['intro'], o['loop'], [], facts['n_bars'])
+            text = f"KEY = {o['key']!r}\nSCALE = {o['scale']!r}\nCHORDS = {chords!r}\n"
+            return c, text, dict(key=o['key'], scale=o['scale'], chords_intro=list(o['intro']),
+                                 chord_loop=list(o['loop']), chords_tail=[])
+    raise SystemExit(f"theme variants: no kit config has a {len(facts['loop'])}-chord loop in another key; set key_from")
+
+
+def theme_parts(spec, folder, export, module, configs):
+    """bed.json (committed): for each reference config the bed alone's RMS per bus and its notes; the variants (a
+    second tempo, a second key, each option of spec.options): the recording (cache), the master's SHA-256, the buses,
+    the RMS; the optional hooks the bed class defines, each called directly at three times with three gains (the
+    buses' SHA-256 committed, the vectors cached). Each runs in a fresh process"""
+    from . import fights, m3parts as MP, recording
+    from reelkit.config import loop_bpm
+    out_cfg, variants, hooks = [], [], None
+    for c in configs:
+        facts = read_config(c['config'])
+        cfg_folder = theme_config_folder(spec['name'], c['config'])
+        stems = cache_dir(folder, f"bed_{config_slug(c['config'])}.npz")
+        got = MP.fresh(MP.bed_child, cfg_folder, stems)
+        pin(stems, export)
+        assert got['master_sha256'] == c['bed_alone']['master_sha256'], 'the bed alone differs between two runs'
+        hooks = got['hooks'] if hooks is None else hooks
+        out_cfg.append(dict(config=c['config'], stems_cache=f"{folder}/bed_{config_slug(c['config'])}.npz",
+                            **{k: got[k] for k in ('master_sha256', 'buses', 'stems', 'rms', 'notes', 'noise', 'windows')}))
+        if not spec['variants'] or variants:
+            continue
+        with open(config_source(c['config']), encoding='utf-8', newline='') as fh:
+            text = fh.read()
+        bpm2 = facts['bpm'] + 14
+        kc, ktext, kff = key_variant(facts, spec['key_from'])
+        n2 = int(round(61.0 / (4 * (60.0 / loop_bpm(bpm2, 61.0)))))
+        tempo_chords = chords_at(facts['intro'], facts['loop'], facts['tail'], n2)
+        todo = [('tempo', f'BPM = {bpm2!r}\nCHORDS = {tempo_chords!r}\n', dict(tempo_bpm=float(bpm2)),
+                 f"the config's BPM plus 14 ({bpm2}; the grid snaps it to {loop_bpm(bpm2, 61.0)!r})"),
+                ('key', ktext, kff, f"the key, scale and loop of {kc}")]
+        todo += [(o['name'], o['text'], dict(theme_options=o['ff']), o.get('why', o['name'])) for o in spec['options']]
+        for vname, vtext, ff, why in todo:
+            vfold = config_folder(f"theme_{spec['name']}_{vname}", config_slug(c['config']), text + (
+                '\n# ---------------------------------------------------------------- tools/studio_export m3refs\n'
+                + vtext))
+            ep, story = load_config(vfold)
+            r = story.run_seed(ep.seed)
+            rules = story.rules()
+            rpath = cache_dir(folder, 'variants', f'{vname}.bfrec')
+            recording.write_bfrec(r, rules, rpath, rect_keys=story.REC_KEYS, register=False)
+            rec = recording.read_bfrec(rpath)
+            fights.check(r, rules, rec, story.REC_KEYS)
+            pin(rpath, export)
+            vstems = cache_dir(folder, 'variants', f'{vname}.npz')
+            vg = MP.fresh(MP.bed_child, vfold, vstems)
+            pin(vstems, export)
+            variants.append(dict(name=vname, config=c['config'], why=why, appended=vtext, ff=ff,
+                                 recording=f'{folder}/variants/{vname}.bfrec', rec_hash=recording.rec_hash(rec),
+                                 stems_cache=f'{folder}/variants/{vname}.npz', bpm=vg['bpm'], key=vg['key'],
+                                 master_sha256=vg['master_sha256'], buses=vg['buses'], stems=vg['stems'],
+                                 notes=vg['notes'], noise=vg['noise'], windows=vg['windows'],
+                                 rms=dict(master=vg['rms']['master'])))
+    hooks = list(spec['hooks']) if spec['hooks'] is not None else (hooks or [])
+    hook_doc = {}
+    if hooks and configs:
+        hpath = cache_dir(folder, 'hooks.npz')
+        hook_doc = MP.fresh(MP.hook_child, theme_config_folder(spec['name'], configs[0]['config']), hooks, hpath)
+        pin(hpath, export)
+    commit_json(folder, 'bed.json', dict(
+        about=f"{spec['name']}'s bed alone (both fighters kit/fighters/base.py's Sound, silent) beyond theme.json: each "
+              f"reference config's RMS per bus (100 ms, dB to 3 decimals) and first-time notes; the variants (a "
+              f"second tempo, a second key, the theme's options), each with its own recording in the cache; the "
+              f"optional hooks the bed class defines, each called directly on an empty mix",
+        tool=module, format=1, theme=spec['name'], hooks=hooks, configs=out_cfg, variants=variants,
+        hook_calls=hook_doc, hook_cache=f'{folder}/hooks.npz' if hook_doc else None,
+        hook_note='a call\'s args as given (floats as float.hex()); `buses` the SHA-256 of each bus\'s float64 samples '
+                  'after the call; a hit\'s chord of None is the chord at its time'), module)
+    keep_or_write(folder, EXCEPTIONS, EXCEPTIONS_TEXT, module)
+    print(f"{export}: bed.json: {len(out_cfg)} configs, {len(variants)} variants, hooks {', '.join(hooks) or 'none'}")
+
+
 def theme_refs(spec):
     """themes/<name>/ (committed) for a theme_<name>.py SPEC (theme_spec): theme.json (each reference config: its
     recording, the bed alone under two base Sounds: the 16-bit master's SHA-256 and the buses) and voicings.json
@@ -1038,6 +1451,7 @@ def theme_refs(spec):
             theme=name, roots=list(ROOTS), qualities=list(common.kit()[0].QUALITY), voicings=voicings), module)
     if spec['extra'] is not None:
         spec['extra'](folder, export, module)
+    theme_parts(spec, folder, export, module, configs)
     commit_json(folder, 'theme.json', dict(
         about=f'{name}: its reference configs, each with the kit\'s own recording of it and the bed alone (both '
               f'fighters replaced at run time by kit/fighters/base.py Sound, which is silent): the SHA-256 of the '
@@ -1048,11 +1462,6 @@ def theme_refs(spec):
     finish(folder)
     print(f"{export}: {folder}: {len(configs)} reference configs, {len(chords)} chords x {len(spec['voicings'])} "
           f"voicings, {len(read_pins(folder))} pins, {time.time() - t_all:.1f} s")
-
-
-def episode_refs(spec):
-    """episodes/<pair>/ + cache: Task 6 and Template P fill it"""
-    raise SystemExit('episode_refs: not written yet (Task 6 and the pair gates fill it)')
 
 
 # ---------------------------------------------------------------- the budget

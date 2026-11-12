@@ -12,6 +12,7 @@ members = [
     "crates/bf-testdata",
     "crates/bf-app",
     "crates/bf-pack",
+    "crates/bf-harness",
 ]
 
 [workspace.package]

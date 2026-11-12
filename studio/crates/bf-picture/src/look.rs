@@ -288,6 +288,16 @@ pub trait Look: Send + Sync {
         self.setup(p, k)
     }
 
+    /// What the look took from the roster numbers it was set up with (`cfg` of [`Look::setup_as`]: the values the
+    /// kit's look reads from `self.cfg`), as text in any fixed form; `None` (the default) for a look that reads
+    /// none. The proving harness sets the look up for its side with its own numbers and with the other fighter's
+    /// and requires the two to differ, so a look that reads `p.cfg[self.k]` instead of `cfg` (and would draw
+    /// EUPHONIUM's copy with the copier's numbers) fails its own test. A port whose kit look reads `self.cfg`
+    /// returns, for example, `Some(format!("{:?}", (&self.roll, &self.low)))` of exactly those fields.
+    fn cfg_summary(&self) -> Option<String> {
+        None
+    }
+
     /// `title_closeup(r)`: the look's own close-up sprite for the VS card, RGBA and square, for a ball of radius
     /// `r` pixels; `None` (the default) for the fighter's model.
     fn title_closeup(&self, r: u32) -> Option<Img<u8>> {
