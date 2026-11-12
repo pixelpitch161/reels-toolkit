@@ -524,12 +524,38 @@ enum Item {
 /// The number of the next look set up ([`OrganLook::id`]).
 static NEXT_ID: AtomicU64 = AtomicU64::new(1);
 
+/// How many looks' last answers a thread keeps ([`LAST_PIPES`]): a fight has two looks at most, and a look that
+/// draws another's (EUPHONIUM's copy) one more; older entries only cost a recomputation.
+const KEPT_LOOKS: usize = 8;
+
 thread_local! {
-    /// `_pipes`: the last answer of `pipes_at`, with the look it is of and its time. Python keeps one per look, so
-    /// a frame works its pipes out once (and asks `P.fighter` for the champion's place once per solo pipe). A frame
-    /// is drawn on one thread, so one entry per thread does the same when frames are drawn on several threads at
-    /// once; the answer itself is a pure function of the look and the time.
-    static LAST_PIPES: RefCell<Option<(u64, f64, Vec<Pipe>)>> = const { RefCell::new(None) };
+    /// `_pipes`: the last answer of `pipes_at` of each look, with its time. Python keeps one per look, so a frame
+    /// works its pipes out once (and asks `P.fighter` for the champion's place once per solo pipe), also when both
+    /// fighters are ORGANs. A frame is drawn on one thread, so one entry per look and thread does the same when
+    /// frames are drawn on several threads at once; the answer itself is a pure function of the look and the time.
+    static LAST_PIPES: RefCell<Vec<(u64, f64, Vec<Pipe>)>> = const { RefCell::new(Vec::new()) };
+}
+
+/// `if self._pipes[0] == t: return self._pipes[1]`, else `compute()` kept as look `id`'s last answer.
+fn last_pipes(id: u64, t: f64, compute: impl FnOnce() -> Vec<Pipe>) -> Vec<Pipe> {
+    let kept = LAST_PIPES.with_borrow(|last| {
+        last.iter()
+            .find(|(look, at, _)| *look == id && *at == t)
+            .map(|(_, _, pipes)| pipes.clone())
+    });
+    if let Some(pipes) = kept {
+        return pipes;
+    }
+    // (not borrowed here: `compute` asks the picture, which may ask another look)
+    let out = compute();
+    LAST_PIPES.with_borrow_mut(|last| {
+        last.retain(|(look, _, _)| *look != id);
+        if last.len() >= KEPT_LOOKS {
+            last.remove(0);
+        }
+        last.push((id, t, out.clone()));
+    });
+    out
 }
 
 /// ORGAN's look: `Look` of `kit/fighters/organ.py`.
@@ -599,17 +625,7 @@ impl OrganLook {
 
     /// `pipes_at(t)`: its pipes out of the floor (the rows, the TOCCATA forest, the solo ring).
     fn pipes_at(&self, p: &PictureCtx, t: f64) -> Vec<Pipe> {
-        // if self._pipes[0] == t: return self._pipes[1]
-        let kept = LAST_PIPES.with_borrow(|last| match last {
-            Some((id, at, pipes)) if *id == self.id && *at == t => Some(pipes.clone()),
-            _ => None,
-        });
-        if let Some(pipes) = kept {
-            return pipes;
-        }
-        let out = self.pipes_now(p, t);
-        LAST_PIPES.set(Some((self.id, t, out.clone())));
-        out
+        last_pipes(self.id, t, || self.pipes_now(p, t))
     }
 
     /// The body of `pipes_at(t)`.
@@ -1324,6 +1340,48 @@ mod tests {
         }
         let card = pipe_shadow_quad(0.3, -0.2, 1.2, PIPE_R);
         assert_eq!((card[0][1], card[3][1]), (0.0, 1.2));
+    }
+
+    /// Two ORGAN looks drawn turn about on one thread (an ORGAN against an ORGAN) each keep their own last
+    /// answer: neither works its pipes out again (which would ask `P.fighter` again) while the time stays.
+    #[test]
+    fn two_looks_interleaved_each_keep_their_pipes() {
+        use std::cell::Cell;
+        let made = Cell::new(0);
+        let pipe = |sx: f64| Pipe {
+            sx,
+            sz: 0.0,
+            h: 1.0,
+            glow: 0.5,
+            owner: 0,
+            r: PIPE_R,
+        };
+        let ask = |id: u64, t: f64| {
+            last_pipes(id, t, || {
+                made.set(made.get() + 1);
+                vec![pipe(id as f64 + t)]
+            })
+        };
+        let (a, b) = (u64::MAX - 1, u64::MAX);
+        // one frame: shadows, canvas, items, glows of both looks, turn about
+        for _ in 0..4 {
+            assert_eq!(ask(a, 50.0), vec![pipe(a as f64 + 50.0)]);
+            assert_eq!(ask(b, 50.0), vec![pipe(b as f64 + 50.0)]);
+        }
+        assert_eq!(made.get(), 2, "each look worked its pipes out once");
+        // the next frame: once more each, and Python's one entry per look forgets the frame before
+        for _ in 0..3 {
+            ask(a, 50.5);
+            ask(b, 50.5);
+        }
+        assert_eq!(made.get(), 4);
+        ask(a, 50.0);
+        assert_eq!(made.get(), 5);
+        // more looks than a thread keeps only cost a recomputation
+        for id in 0..2 * KEPT_LOOKS as u64 {
+            ask(id, 1.0);
+        }
+        assert_eq!(LAST_PIPES.with_borrow(Vec::len), KEPT_LOOKS);
     }
 
     /// Where scipy raises, the kit draws nothing: a flat set of points has no outline.

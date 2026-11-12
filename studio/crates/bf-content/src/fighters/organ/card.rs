@@ -18,7 +18,7 @@ pub static CARD: Option<FighterCard> = Some(FighterCard {
     abilities: [
         "A dome that blocks every hit for 6 beats",
         "A row on every beat for 8 beats",
-        "A forest of pipes slams down, below 25 HP",
+        "A forest of pipes bursts up from the floor in a target circle, below 25 HP.",
     ],
     colour: "Wine",
     usually_plays: "Bass",
