@@ -4,7 +4,8 @@
 use bf_core::event::Value;
 use bf_core::recording::{Array, Recording};
 use bf_harness::fight::{doc, setup_of, traced};
-use bf_harness::refs::{cached_recording, list, text};
+use bf_harness::refs::{cached_recording, committed_recording, fighter_folder, index, json, list, num, report, text};
+use bf_harness::sound::{compare, fighter_soundtrack};
 
 bf_harness::fighter_suite!("CLARINET");
 
@@ -113,4 +114,46 @@ fn a_stunned_flute_starts_no_strike_and_does_not_move() {
         "{NAME}: {windows} stuns of the FLUTE in {fights} scenario fights: no basket, no strike, {still} frame steps \
          still ({pushed} with a clash left out)"
     );
+}
+
+/// The suite's `sound` gate without its minimum of one first-time note: the same comparisons (`sound::compare`: the
+/// 16-bit master, the buses, the stems, every 100 ms block of every bus, the note log, the noise stream's end) of
+/// the same soundtrack (the `left` fight, CLARINET's real part, the kit's base `Sound` for FLUTE).
+///
+/// The suite's gate requires `sound.json`'s `left.notes.count` to be above 0, and CLARINET's is 0 by the kit's own
+/// design: the note log lists the first-time notes of `kit.music.note` (the Pixel Pitch voices through
+/// `pp_bridge.voice`), and `clarinet.py`'s `Sound` never calls it. It overrides `voice` and makes every note with
+/// `clarinet60_lowpoly.reed` through a cache of its own (`clar`). So that gate cannot pass for this fighter as
+/// written (reported to the controller), and this test holds the part to the kit with another minimum: the kit's
+/// clarinet bus sounds in at least 150 of its 100 ms blocks.
+#[test]
+fn sound_through_its_own_reed() {
+    let folder = fighter_folder(NAME);
+    let doc = json(&folder, "sound.json");
+    let fd = doc_of_fight();
+    let rec = committed_recording(text(&fd["left"]["file"]), Some(text(&fd["left"]["hash"])));
+    let left = &doc["left"];
+    assert_eq!(
+        index(&left["notes"]["count"]),
+        0,
+        "the kit's CLARINET part now plays Pixel Pitch notes: the suite's `sound` gate covers it"
+    );
+    let loud = list(&left["rms"]["clarinet"]).iter().filter(|b| num(b) > -60.0).count();
+    assert!(
+        loud >= 150,
+        "{folder}: the kit's clarinet bus sounds in {loud} blocks: too few to compare"
+    );
+    let s = fighter_soundtrack(NAME, &rec, false, None);
+    let mut failures = Vec::new();
+    let n = compare("left", &s, left, &mut failures);
+    assert!(
+        doc["roles"].as_object().expect("roles").is_empty(),
+        "a role variant to compare too"
+    );
+    report(&folder, "sound", "sound", "soundtrack facts", failures, n);
+}
+
+/// CLARINET's `fight.json`.
+fn doc_of_fight() -> serde_json::Value {
+    doc(NAME)
 }
