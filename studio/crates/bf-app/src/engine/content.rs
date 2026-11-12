@@ -57,6 +57,11 @@ pub fn roster() -> Roster {
             })
         })
         .collect();
+    // each roster fighter with the themes it can be played in (against itself: see `refused_by`)
+    let plays: Vec<(&str, Vec<&str>)> = cfgs
+        .iter()
+        .map(|f| (f.name.as_str(), bf_content::themes_for(&f.name, &f.name)))
+        .collect();
     let themes = bf_content::theme_names()
         .into_iter()
         .filter_map(|name| {
@@ -73,6 +78,7 @@ pub fn roster() -> Roster {
                     .map(|l| l.iter().map(|c| c.to_string()).collect())
                     .collect(),
                 bars: t.bars,
+                refuses: refused_by(name, &plays),
             })
         })
         .collect();
@@ -83,6 +89,18 @@ pub fn roster() -> Roster {
         start: START.map(str::to_string),
         app_version: env!("CARGO_PKG_VERSION").to_string(),
     }
+}
+
+/// The roster fighters the theme `theme` cannot be played with (ruling M3-R2), in the roster's order. Whether a
+/// theme fits a pair is a question about each fighter's part alone (its bed hooks), so a fighter is refused when
+/// [`bf_content::themes_for`] leaves the theme out of the fighter against itself; the tests prove this gives
+/// `themes_for` for every pair.
+fn refused_by(theme: &str, plays: &[(&str, Vec<&str>)]) -> Vec<String> {
+    plays
+        .iter()
+        .filter(|(_, themes)| !themes.contains(&theme))
+        .map(|(name, _)| name.to_string())
+        .collect()
 }
 
 /// The interface's section of a content section.
@@ -337,6 +355,45 @@ mod tests {
         assert_eq!(t.chord_loops, [["Em", "Am", "B7", "Em", "C", "Am", "B7", "B7"]]);
         assert_eq!(r.start, ["FLUTE", "TROMBONE"]);
         assert_eq!(r.app_version, env!("CARGO_PKG_VERSION"));
+    }
+
+    /// Ruling M3-R2: the themes the interface offers a pair are the engine's `themes_for` that pair, for every
+    /// ordered pair of offered fighters; the starting pair is not offered the two themes without a boom.
+    #[test]
+    fn the_roster_offers_each_pair_the_themes_it_can_play() {
+        let r = roster();
+        let offered: Vec<&str> = r
+            .fighters
+            .iter()
+            .filter(|f| f.available)
+            .map(|f| f.name.as_str())
+            .collect();
+        assert!(offered.len() >= 2);
+        for &a in &offered {
+            for &b in &offered {
+                let got: Vec<&str> = r
+                    .themes_for(&[a.to_string(), b.to_string()])
+                    .iter()
+                    .map(|t| t.name.as_str())
+                    .collect();
+                assert_eq!(got, bf_content::themes_for(a, b), "{a} vs {b}");
+            }
+        }
+        let start: Vec<&str> = r.themes_for(&r.start).iter().map(|t| t.name.as_str()).collect();
+        assert!(!start.contains(&"heist") && !start.contains(&"dark_disco"), "{start:?}");
+        assert_eq!(start[0], "big_top");
+        let heist = r.themes.iter().find(|t| t.name == "heist").expect("heist is offered");
+        let mut refuses = heist.refuses.clone();
+        refuses.sort();
+        assert_eq!(refuses, ["EUPHONIUM", "HORN", "ORGAN", "TROMBONE", "TUBA"]);
+        assert!(
+            r.themes
+                .iter()
+                .find(|t| t.name == "big_top")
+                .unwrap()
+                .refuses
+                .is_empty()
+        );
     }
 
     #[test]

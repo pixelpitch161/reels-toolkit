@@ -262,6 +262,55 @@ fn choosing_a_theme_pushes() {
     assert_eq!(harness.state().log, vec![Action::SetTheme("dark_disco".to_string())]);
 }
 
+/// Ruling M3-R2: a theme whose music lacks a hit one of the pair's parts plays is not offered for that pair, on
+/// the Music screen or on Match-up; the same theme is offered to a pair it does not refuse.
+#[test]
+fn a_theme_the_pair_cannot_play_is_not_offered() {
+    let _gpu = gpu();
+    let with_themes = |mut vm: ViewModel| {
+        let roster = vm.roster.as_mut().unwrap();
+        let mut refusing = roster.themes[0].clone();
+        refusing.name = "heist".to_string();
+        refusing.display = "Heist".to_string();
+        refusing.refuses = vec!["TROMBONE".to_string(), "TUBA".to_string()];
+        let mut open = roster.themes[0].clone();
+        open.name = "mambo".to_string();
+        open.display = "Mambo".to_string();
+        roster.themes.extend([refusing, open]);
+        vm
+    };
+    for (vm, step) in [
+        (with_themes(music::vm()), "Music"),
+        (with_themes(bf_app::fixtures::matchup::vm()), "Match-up"),
+    ] {
+        assert_eq!(vm.draft.fighters[1], "TROMBONE", "{step}");
+        let mut harness = showing(REF, vm);
+        by_role(&harness, "Theme", Role::ComboBox).click();
+        harness.run();
+        assert!(
+            harness
+                .query_all_by_label("Mambo")
+                .any(|n| n.accesskit_node().role() == Role::ListBoxOption),
+            "{step}: a theme the pair can play is offered"
+        );
+        assert!(
+            !harness
+                .query_all_by_label("Heist")
+                .any(|n| n.accesskit_node().role() == Role::ListBoxOption),
+            "{step}: a theme that refuses the TROMBONE is not offered"
+        );
+    }
+    // without the TROMBONE (or the TUBA) in the pair, the same theme is offered
+    let mut vm = with_themes(music::vm());
+    vm.draft.fighters[1] = "OBOE".to_string();
+    let mut harness = showing(REF, vm);
+    by_role(&harness, "Theme", Role::ComboBox).click();
+    harness.run();
+    by_role(&harness, "Heist", Role::ListBoxOption).click();
+    harness.run();
+    assert_eq!(harness.state().log, vec![Action::SetTheme("heist".to_string())]);
+}
+
 #[test]
 fn loudness_lines_show_pass_and_fail() {
     let _gpu = gpu();
