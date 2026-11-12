@@ -731,40 +731,49 @@ for FLUTE and TROMBONE), from the lines below.
 <!-- kind:grapple -->
 #### `grapple` (weapon kind of CELLO)
 
-`fight.py` 4041 to 4201. Not ported yet: its port fills this section in (the meaning of each field, as 6.2 and 6.3 do
-for FLUTE and TROMBONE), from the lines below.
+`fight.py` 4041 to 4201; ported in `bf-sim/src/kinds/grapple.rs` (`bf-core/src/roster/kinds/grapple.rs` for its roster
+numbers). Every `every` beats on the 16th grid, `off16` 16ths after the bar line (a haste divides the grid), the
+grappler RUSHES, unless a rush or hold is under way or it is stunned, smashed or airborne: for `rush16` 16ths it flies
+at `rush_speed` x the shared speed, aimed at the enemy's spot `lead` x its motion over the rush ahead and steered
+toward it at `track` rad/s. When the enemy's surface comes within the reach (`blade_len`, recorded in `BL` and in
+`GRAB`) of its own, and the enemy is not in shadow, smashed, mid-hop or airborne, it GRABS: a walking enemy slips it,
+a shield blocks it, a grab that lands (`dmg`) plants the grappler and holds the enemy at arm's length for
+`hold_beats` beats. Over the hold the enemy is swung round (at least `turns` of a turn in the grappler's spin
+direction, the angle growing as `u ** 1.6`) to face the rope nearest the grappler (that angle +- `jitter` degrees,
+seeded: the one draw of the generator per grab), while the grappler shuffles in (eased over the first 35 %) to at
+least 3 R + 0.05 off every rope. Then it THROWS: the enemy leaves two radii and 0.03 out along that angle at the
+shared speed with a knock boost of at least `power` (`dmg_throw`); a landed throw adds `grow` to the reach (up to
+`max_reach`) and `power_grow` to the power (up to `power_max`). A `rope` event of the thrown enemy within `rope_t` s
+of the throw is the rope slam (`dmg_rope`). A held enemy (`grabbed`) and the holder (`pinned`) do not move on their
+own or clash. SWAN SONG taking off, SLAP BASS and THE ELEPHANT let go without a throw (`release`). VIBRATO's shakes
+(`vibrato`) are dealt from the grapple's 16th grid.
 
 **Record keys.**
 
-- `GRAB`: added to `rec` at `run()` 5869, written by `snap` 5625 to 5633:
+- `GRAB` (a 2 x 6 float array a frame, `.npy`; only when a fighter is a grappler): per ball, the state (0 idle, 1
+  rush, 2 hold), the arm's angle in radians (the rush's heading, the swing's angle; not reduced to a turn), the
+  state's start and end times, then the reach and the throw's power (a grappler's, zeros for the other ball).
 
-  ```python
-  if 'GRAB' in rec:                                   # #47, only recorded when a fighter uses the 'grapple' kind
-      Gb = np.zeros((2, 6))
-      for j, Bj in enumerate((B0, B1)):
-          G_ = getattr(Bj, 'gr', None)
-          if G_ is not None:
-              Gb[j, :4] = (self.GRAB_STATES[G_['state']], G_['a'], G_['t0'], G_['t1'])
-          if hasattr(Bj, 'power'):
-              Gb[j, 4:] = (Bj.blade_len, Bj.power)
-      rec['GRAB'].append(Gb)
-  ```
+**Events** (`who` is the grappler unless said; coordinates are ring units; times are on the video clock):
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+| Kind | Fields after `who` | When |
+| --- | --- | --- |
+| `rush` | the aim in radians, the time the rush ends (floats) | a rush starts (4089) |
+| `grab` | how (int: 1 grabbed, 0 missed or the grab did not land, 2 slipped off a walking enemy, 3 blocked), `x, y` (the grappler's rim toward the enemy, or its centre when the rush ran out), the reach | the rush ends (4095, 4171) |
+| `hold` | the swing's start angle, the throw angle, the time of the throw, the signed sweep (floats) | right after a `grab` with 1 (4172) |
+| `throw` | the angle, the power after its growth, `x, y` (where the enemy is let go) | the hold ends (4192), after the `throw` hit |
+| `ropeslam` | `x, y` of the thrown enemy's `rope` event | the rope slam (4121), after its hit |
+| `release` | why (`swan`, `slap`, `stampede`) | a hold let go without a throw (4108) |
+| `block` | `who` is the shielded enemy; then the grappler (int), `x, y`, `grab` | the grab met a shield (4151), before `grab` with 3 |
 
-- 4076: `self.damage(k, 1 - k, ab['dmg'], 'vibrato', float(O.p[0]), float(O.p[1]))`
-- 4089: `self.ev('rush', k, aim, B.gr['t1'])`
-- 4095: `self.ev('grab', k, how, x, y, float(B.blade_len))`
-- 4108: `self.ev('release', k, why)`
-- 4120: `self.damage(k, 1 - k, w['dmg_rope'], 'ropeslam', e[5], e[6])`
-- 4121: `self.ev('ropeslam', k, e[5], e[6])`
-- 4151: `self.ev('block', 1 - k, k, hx, hy, 'grab')`
-- 4154: `self.damage(k, 1 - k, w['dmg'], 'grab', hx, hy)`
-- 4171: `self.ev('grab', k, 1, hx, hy, float(B.blade_len))`
-- 4172: `self.ev('hold', k, a0, a1, B.gr['t1'], delta * sd)`
-- 4189: `self.damage(k, 1 - k, w['dmg_throw'], 'throw', hx, hy)`
-- 4192: `self.ev('throw', k, a, float(B.power), hx, hy)`
+**Hits** (`hit` events of the grappler; the sub-number is 0):
+
+| What | Damage | Where | When |
+| --- | --- | --- | --- |
+| `grab` | `dmg` | the grappler's rim toward the enemy | the grab (4154) |
+| `throw` | `dmg_throw` | where the enemy is let go | the throw (4189) |
+| `ropeslam` | `dmg_rope` | the `x, y` of the enemy's `rope` event | the rope slam (4120) |
+| `vibrato` | VIBRATO's `dmg` | the held enemy's centre | every 16th of a hold while VIBRATO lasts (4076) |
 
 <!-- /kind:grapple -->
 
@@ -1612,48 +1621,55 @@ field, as 6.2 and 6.3 do for FLUTE and TROMBONE), from the lines below.
 <!-- kind:vibrato -->
 #### `vibrato` (ability kind of CELLO)
 
-`fight.py` 2955 to 2957. Not ported yet: its port fills this section in (the meaning of each field, as 6.2 and 6.3 do
-for FLUTE and TROMBONE), from the lines below.
+`fight.py` 2955 to 2957; ported in `bf-sim/src/abilities/vibrato.rs`. For `dur` s or `dur_beats` beats an enemy its
+fighter holds in THE EMBRACE (`grapple`) shakes and takes `dmg` on every 16th of the hold (the hit `vibrato`, dealt
+by the grapple: see `grapple`). It holds only numbers.
 
 **Record keys.** None of its own.
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
-
-- 2957: `self.ev('vibrato', k, B.vib_until)`
+**Events:** `vibrato`, `who` the fighter, then the time it ends (float) (2957).
 
 <!-- /kind:vibrato -->
 
 <!-- kind:prelude -->
 #### `prelude` (ability kind of CELLO)
 
-`fight.py` 2948 to 2950, 4220 to 4243. Not ported yet: its port fills this section in (the meaning of each field, as 6.2
-and 6.3 do for FLUTE and TROMBONE), from the lines below.
+`fight.py` 2948 to 2950, 4220 to 4243; ported in `bf-sim/src/abilities/prelude.rs`. For `beats` beats from the
+trigger, on every 16th (`int(round(beats * 4))` rings in all), a note-wave ring of kind `prelude` leaves the
+fighter's centre (`speed`, `dmg`, `knock`, clearing enemy projectiles; recorded in `WAVES`), out to `pattern[j %
+len]` beyond the ball's surface. Each ring hits once (the hit `prelude`, at the near side of the enemy, as every ring hits).
 
-**Record keys.** None of its own.
+**Record keys.** None of its own (its rings are in `WAVES`, kind `prelude`).
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+**Events** (`who` the fighter):
 
-- 2950: `self.ev('prelude', k, self.t + ab['beats'] * self.R.beat)`
-- 4239: `self.ev('prelude_note', k, j, float(B.p[0]), float(B.p[1]), rmax)`
+| Kind | Fields after `who` | When |
+| --- | --- | --- |
+| `prelude` | the time it ends (float) | it fires (2950) |
+| `prelude_note` | the ring's number `j` (int), `x, y` of its centre, its final radius (floats) | each ring (4239) |
 
 <!-- /kind:prelude -->
 
 <!-- kind:swan -->
 #### `swan` (ability kind of CELLO)
 
-`fight.py` 2951 to 2952, 4244 to 4301. Not ported yet: its port fills this section in (the meaning of each field, as 6.2
-and 6.3 do for FLUTE and TROMBONE), from the lines below.
+`fight.py` 2951 to 2952, 4244 to 4301; ported in `bf-sim/src/abilities/swan.rs`. The fighter lets go of anything it
+holds (`release`, `swan`), rises for `rise_beats` (it stays where it rose), glides for `glide_beats` along a quadratic
+Bezier from there to the enemy's spot predicted 0.6 x `lead` (default 1.0) of its motion to the landing (the control
+point `bow` from the middle toward the ring's centre; both clipped inside the ropes), eased, its heading along the
+curve, then dives for `dive_beats` over the landing spot and lands: an enemy within `radius` + 0.6 R takes `dmg`
+(the hit `swan`, at the enemy's centre) and is knocked away (`knock`). From the rise to the landing it is airborne:
+it cannot be hit or knocked, does not clash, its weapon rests. `height` (default 1.5) is only recorded, for the
+picture.
 
-**Record keys.** None of its own.
+**Record keys.** None of its own (the flight shows in `P`).
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+**Events** (`who` the fighter):
 
-- 4271: `self.ev('swan', k, self.t, tg, td, tl, float(p0[0]), float(p0[1]), float(c[0]), float(c[1]), float(p1[0]), float(p1[1]), float(ab.get('height', 1.5)))`
-- 4298: `self.damage(k, 1 - k, ab['dmg'], 'swan', float(O.p[0]), float(O.p[1]))`
-- 4300: `self.ev('swan_land', k, float(B.p[0]), float(B.p[1]), hit)`
+| Kind | Fields after `who` | When |
+| --- | --- | --- |
+| `swan` | now, the glide's, the dive's and the landing's times, `x0, y0` (where it rose), `cx, cy` (the control point), `x1, y1` (the landing spot), `height` (floats) | it rises (4271) |
+| `swan_land` | `x, y`, 1 if it hit else 0 (int) | it lands (4300), after the `swan` hit |
 
 <!-- /kind:swan -->
 

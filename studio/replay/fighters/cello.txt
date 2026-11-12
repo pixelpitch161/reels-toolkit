@@ -1,0 +1,14 @@
+# The engine's self-replay hashes of CELLO (studio/reference/fighters/cello/fight.json's config): both side orders,
+# seeds 1, 2, 3, 500 and 1 << 40. Written by the proving harness with BF_BLESS=1 on the Windows reference PC;
+# every PC and every build must give the same lines. Do not edit by hand.
+# left right seed winner t_ko n_events hash
+CELLO FLUTE 1 0 32.92156862745098 434 d87d39dc7f3b2baa
+CELLO FLUTE 2 0 43.59656862745098 432 856c528929239b28
+CELLO FLUTE 3 0 32.85490196078431 449 94a63d9dea9ebe18
+CELLO FLUTE 500 0 40.60490196078431 487 0b415e9bfbc96f12
+CELLO FLUTE 1099511627776 1 45.121568627450976 530 1a51031f33e950c7
+FLUTE CELLO 1 1 25.76323529411765 321 0d8db69b0ca3514e
+FLUTE CELLO 2 1 37.463235294117645 423 a677cf441af31274
+FLUTE CELLO 3 0 48.97156862745098 598 8e9d036ba78d3a49
+FLUTE CELLO 500 1 45.313235294117646 513 1b5a56c06e5eb64a
+FLUTE CELLO 1099511627776 1 41.04656862745098 482 b89a02fb1d87891a
