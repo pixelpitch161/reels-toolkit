@@ -281,6 +281,11 @@ mod tests {
             assert_eq!(f.music_feeds_fight, declared, "{}", f.name);
         }
         let get = |name: &str| r.fighters.iter().find(|f| f.name == name).expect(name);
+        // and the facts known: FLUTE's and TROMBONE's music never feeds their fights; PIANO's roll does, once ported
+        assert!(!get("FLUTE").music_feeds_fight && !get("TROMBONE").music_feeds_fight);
+        if bf_content::PORTED.contains(&"PIANO") {
+            assert!(get("PIANO").music_feeds_fight, "PIANO's roll is its music");
+        }
         let flute = get("FLUTE");
         assert_eq!((flute.section, flute.display.as_str()), (Section::Woodwinds, "Flute"));
         let fc = flute.card.as_ref().expect("the flute's card");
