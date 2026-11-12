@@ -131,29 +131,41 @@ jobs:
           echo "the test output is kept in $log"
           cargo test --release --locked --no-fail-fast -p bf-app --lib --bins --test compat 2>&1 | tee "$log"
 
-      # Only when something failed: the failed tests, each panic with the two lines after it, compile errors, and the
-      # first and last 30 lines, as annotations (each cut to about 300 characters, 40 at most). When there is no log,
-      # what is known instead: the shell, the folder, and what the temp folder holds.
+      # Only when something failed. GitHub shows at most 10 annotations of each kind per step, so the most useful
+      # come first and each kind holds its own: the panics (with the two lines after each) as errors; the failed
+      # tests' names and compile errors as warnings; the first and last lines of the output as notices. Each is cut
+      # to about 300 characters. When there is no log, what is known instead: the shell, the folder, and what the
+      # temp folder holds.
       - name: Name what failed in the app's tests
         if: failure()
         run: |
+          # This step only reports: nothing in it may stop it early (a pattern that finds nothing, a pipe cut short).
+          set +e +o pipefail
           log="$(cygpath -u '${{ runner.temp }}')/app-tests.log"
           note() {
-            local line="${1:0:300}"
+            local line="${2:0:300}"
             line="${line//'%'/'%25'}"
             line="${line//$'\r'/}"
-            echo "::error title=app tests::${line}"
+            echo "::$1 title=app tests::${line}"
           }
           if [ ! -s "$log" ]; then
-            note "no test output at $log"
-            note "shell: $BASH ($BASH_VERSION), folder: $(pwd), RUNNER_TEMP: $RUNNER_TEMP"
-            { ls -la "$(dirname "$log")" 2>&1 || true; } | head -n 20 | while IFS= read -r line; do note "temp: $line"; done
+            note error "no test output at $log"
+            note error "shell: $BASH ($BASH_VERSION), folder: $(pwd), RUNNER_TEMP: $RUNNER_TEMP"
+            { ls -la "$(dirname "$log")" 2>&1 || true; } | head -n 8 | while IFS= read -r line; do note error "temp: $line"; done
             exit 0
           fi
+          # colour codes out, so the patterns see plain text
+          plain="$(dirname "$log")/app-tests.plain.log"
+          sed -E 's/\x1b\[[0-9;]*m//g; s/\r$//' "$log" > "$plain"
+          { grep -E -A2 'panicked at' "$plain" || true; } | grep -v '^--$' | paste -d ' ' - - - | head -n 10 \
+            | while IFS= read -r line; do note error "panic: $line"; done
           {
-            grep -E 'test .* FAILED|^failures:$|^    [A-Za-z0-9_:]+$' "$log" | sed 's/^/failed: /'
-            grep -E -A2 'panicked at' "$log" | grep -v '^--$' | paste -d ' ' - - - | sed 's/^/panic: /'
-            grep -E '^error(\[E[0-9]+\])?:' "$log" | sed 's/^/compile: /'
-            head -n 30 "$log" | grep -v '^\s*$' | sed 's/^/head: /'
-            tail -n 30 "$log" | grep -v '^\s*$' | sed 's/^/tail: /'
-          } | head -n 40 | while IFS= read -r line; do note "$line"; done
+            { grep -E 'test .* FAILED' "$plain" || true; } | sed 's/^/failed: /'
+            { grep -E '^error(\[E[0-9]+\])?:' "$plain" || true; } | sed 's/^/compile: /'
+          } | awk '!seen[$0]++' | head -n 10 | while IFS= read -r line; do note warning "$line"; done
+          {
+            head -n 30 "$plain" | grep -v '^\s*$' | head -n 5 | sed 's/^/head: /'
+            tail -n 30 "$plain" | grep -v '^\s*$' | tail -n 5 | sed 's/^/tail: /'
+          } | while IFS= read -r line; do note notice "$line"; done
+          # The whole of the failures, on the run's summary page as well.
+          { echo '### The app tests that failed'; echo '```'; grep -E -A4 'panicked at|test .* FAILED' "$plain" | head -n 200; echo '```'; } >> "$GITHUB_STEP_SUMMARY" || true
