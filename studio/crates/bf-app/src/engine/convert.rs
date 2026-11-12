@@ -454,6 +454,30 @@ mod tests {
         assert_eq!(title_of(&back), "Flute vs Trombone, seed 392");
     }
 
+    /// The app neither shows nor edits a solo: a file's solos come back as they were, a chord (ACOUSTIC's strum)
+    /// too, and a chord where the kit's part cannot play one is refused in plain words.
+    #[test]
+    fn a_chord_in_a_solo_is_kept_and_a_wrong_one_named() {
+        let text = EPISODE.replace("TROMBONE", "ACOUSTIC").replacen(
+            "[0.0, 40, 0.5]",
+            "[0.0, [40, 47, 52, 55, 59, 64], 0.5]",
+            1,
+        );
+        let ff = FightFile::parse(&text).expect("a chord in the ACOUSTIC's solo");
+        let back = fight_file(&draft_of(&ff, &text)).expect("the fight file again");
+        assert_eq!(back.music.solos, ff.music.solos);
+        assert!(
+            back.to_toml()
+                .contains("ACOUSTIC = [\n    [0.0, [40, 47, 52, 55, 59, 64], 0.5],")
+        );
+        let wrong = EPISODE.replacen("[0.0, 83, 0.5]", "[0.0, [83, 88], 0.5]", 1);
+        assert_eq!(
+            plain(&FightFile::parse(&wrong).unwrap_err()),
+            "Flute's solo: a chord, but FLUTE's solo plays one note at a time (the kit's FLUTE part stops on a chord; \
+             only ACOUSTIC can strum one)."
+        );
+    }
+
     #[test]
     fn a_file_the_app_wrote_round_trips() {
         let mut d = starting_draft();

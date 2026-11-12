@@ -83,12 +83,12 @@ fn parses_the_episode() {
     assert_eq!(line.iter().map(|n| n.unwrap()).sum::<i32>(), 5087); // Python: sum(LINES["FLUTE"])
     let flute = &m.solos["FLUTE"];
     assert_eq!(flute.len(), 15);
-    assert_eq!(flute[0], (0.0, 83, 0.5));
-    assert_eq!(flute[14], (6.0, 76, 1.5));
+    assert_eq!(flute[0], (0.0, SoloNote::Note(83), 0.5));
+    assert_eq!(flute[14], (6.0, SoloNote::Note(76), 1.5));
     let trombone = &m.solos["TROMBONE"];
     assert_eq!(trombone.len(), 22);
-    assert_eq!(trombone[9], (5.0, 60, 0.75));
-    assert_eq!(trombone[21], (11.0, 45, 1.0));
+    assert_eq!(trombone[9], (5.0, SoloNote::Note(60), 0.75));
+    assert_eq!(trombone[21], (11.0, SoloNote::Note(45), 1.0));
     assert_eq!(m.title_hits["FLUTE"], vec![76, 79, 83, 84, 86, 87, 88]);
     assert_eq!(m.title_hits["TROMBONE"], vec![40, 52]);
     assert_eq!(ff.picture.shard_seed, 271);
@@ -155,7 +155,7 @@ fn floats_round_trip_bit_for_bit() {
     ff.handicap = vec![0.1 + 0.2, 1.0 / 3.0];
     ff.dmg_scale = 0.7000000000000001;
     ff.tempo_bpm = 133.7704918032787;
-    ff.music.solos.get_mut("FLUTE").unwrap()[3] = (1e-7, 81, 2.0 / 3.0);
+    ff.music.solos.get_mut("FLUTE").unwrap()[3] = (1e-7, SoloNote::Note(81), 2.0 / 3.0);
     let back = FightFile::parse(&ff.to_toml()).expect("parses");
     assert_eq!(back, ff);
     for (i, x) in odd.iter().enumerate() {
@@ -175,7 +175,7 @@ fn a_whole_number_is_accepted_where_a_decimal_is_expected() {
     let ff = FightFile::parse(&with("handicap = [2.0, 0.4]", "handicap = [2, 0.4]")).expect("parses");
     assert_eq!(ff.handicap[0].to_bits(), 2.0f64.to_bits());
     let ff = FightFile::parse(&with("[0.0, 83, 0.5]", "[0, 83, 0.5]")).expect("parses");
-    assert_eq!(ff.music.solos["FLUTE"][0], (0.0, 83, 0.5));
+    assert_eq!(ff.music.solos["FLUTE"][0], (0.0, SoloNote::Note(83), 0.5));
     // the canonical text writes it back as a decimal
     assert_eq!(ff.to_toml(), EPISODE);
 }
@@ -478,7 +478,7 @@ fn a_wrong_type() {
     );
     assert_eq!(
         parse_err(&with("[0.0, 83, 0.5]", "[0.0, 83]")),
-        "music.solos.FLUTE[0]: must be [beat, note, beats]"
+        "music.solos.FLUTE[0]: must be [beat, note, beats] or, for a chord, [beat, [note, ...], beats]"
     );
     assert_eq!(
         parse_err(&with(
@@ -952,4 +952,140 @@ d = \"ELECTRIC\"
 "
     ));
     assert_eq!(FightFile::parse(&text), Ok(ff));
+}
+
+// ---------------------------------------------------------------- a chord in a solo
+
+/// The ACOUSTIC's fingerpicked solo of `projects/ballfight_electric_vs_acoustic/episode.py`: picked notes, and the
+/// open shapes `EM`, `C`, `D` (tuples of notes) strummed.
+fn acoustic_solo() -> Vec<(f64, SoloNote, f64)> {
+    let em = || SoloNote::Chord(vec![40, 47, 52, 55, 59, 64]);
+    let c = SoloNote::Chord(vec![48, 52, 55, 60, 64]);
+    let d = SoloNote::Chord(vec![50, 57, 62, 66]);
+    let n = SoloNote::Note;
+    vec![
+        (0.0, n(40), 0.5),
+        (0.5, n(55), 0.5),
+        (1.0, n(59), 0.5),
+        (1.5, n(64), 0.5),
+        (2.0, n(52), 0.5),
+        (2.5, n(59), 0.5),
+        (3.0, em(), 1.0),
+        (4.0, n(48), 0.5),
+        (4.5, n(55), 0.5),
+        (5.0, n(60), 0.5),
+        (5.5, n(64), 0.5),
+        (6.0, c, 0.5),
+        (6.5, n(67), 0.5),
+        (7.0, n(64), 0.5),
+        (7.5, n(60), 0.5),
+        (8.0, n(43), 0.5),
+        (8.5, n(55), 0.5),
+        (9.0, n(59), 0.5),
+        (9.5, n(67), 0.5),
+        (10.0, d, 0.5),
+        (10.5, n(66), 0.5),
+        (11.0, n(62), 0.5),
+        (11.5, n(57), 0.5),
+        (12.0, em(), 2.0),
+    ]
+}
+
+/// The example with the TROMBONE's place taken by the ACOUSTIC (its line, solo, role and title hits renamed).
+fn with_acoustic() -> FightFile {
+    FightFile::parse(&EPISODE.replace("TROMBONE", "ACOUSTIC")).expect("parses")
+}
+
+#[test]
+fn a_chord_in_a_solo_writes_plainly_and_reads_back() {
+    let mut ff = with_acoustic();
+    ff.music.solos.insert("ACOUSTIC".into(), acoustic_solo());
+    let text = ff.to_toml();
+    assert!(
+        text.contains(
+            "ACOUSTIC = [
+    [0.0, 40, 0.5], [0.5, 55, 0.5], [1.0, 59, 0.5], [1.5, 64, 0.5],
+    [2.0, 52, 0.5], [2.5, 59, 0.5], [3.0, [40, 47, 52, 55, 59, 64], 1.0], [4.0, 48, 0.5],
+    [4.5, 55, 0.5], [5.0, 60, 0.5], [5.5, 64, 0.5], [6.0, [48, 52, 55, 60, 64], 0.5],
+    [6.5, 67, 0.5], [7.0, 64, 0.5], [7.5, 60, 0.5], [8.0, 43, 0.5],
+    [8.5, 55, 0.5], [9.0, 59, 0.5], [9.5, 67, 0.5], [10.0, [50, 57, 62, 66], 0.5],
+    [10.5, 66, 0.5], [11.0, 62, 0.5], [11.5, 57, 0.5], [12.0, [40, 47, 52, 55, 59, 64], 2.0],
+]
+"
+        ),
+        "{text}"
+    );
+    let back = FightFile::parse(&text).expect("parses");
+    assert_eq!(back, ff);
+    assert_eq!(back.to_toml(), text);
+    assert_eq!(back.music.solos["ACOUSTIC"][6].1.notes(), &[40, 47, 52, 55, 59, 64]);
+    assert_eq!(back.music.solos["ACOUSTIC"][6].1.single(), None);
+    assert_eq!(back.music.solos["ACOUSTIC"][0].1.single(), Some(40));
+    // a one-note chord stays a chord (the kit strums a one-tuple; it does not pick it)
+    ff.music.solos.get_mut("ACOUSTIC").unwrap()[0].1 = SoloNote::Chord(vec![40]);
+    let text = ff.to_toml();
+    assert!(text.contains("[0.0, [40], 0.5]"), "{text}");
+    assert_eq!(FightFile::parse(&text), Ok(ff));
+    // a solo of single notes is written as before: the example, byte for byte
+    assert_eq!(episode().to_toml(), EPISODE);
+    assert_eq!(FightFile::parse(FORMAT1).unwrap().to_toml(), EPISODE);
+}
+
+#[test]
+fn a_chord_only_where_the_fighters_part_can_strum_it() {
+    // the FLUTE's part stops on a tuple of notes (`M.note('FLUTE', m, ...)`: `int(m)`)
+    let text = with("[1.0, 81, 0.5],", "[1.0, [81, 84], 0.5],");
+    assert_eq!(
+        parse_err(&text),
+        "music.solos.FLUTE[3]: a chord, but FLUTE's solo plays one note at a time (the kit's FLUTE part stops on a \
+         chord; only ACOUSTIC can strum one)"
+    );
+    let mut ff = episode();
+    ff.music.solos.get_mut("TROMBONE").unwrap()[0].1 = SoloNote::Chord(vec![40, 47]);
+    assert!(validate_err(&ff).starts_with("music.solos.TROMBONE[0]: a chord, but TROMBONE's solo"));
+    // the ACOUSTIC's: every note a MIDI note, at least one
+    let text = EPISODE
+        .replace("TROMBONE", "ACOUSTIC")
+        .replacen("[0.0, 40, 0.5]", "[0.0, [40, 140], 0.5]", 1);
+    assert_eq!(
+        parse_err(&text),
+        "music.solos.ACOUSTIC[0]: note 2 of the chord: 140 is not a MIDI note (0 to 127)"
+    );
+    let text = EPISODE
+        .replace("TROMBONE", "ACOUSTIC")
+        .replacen("[0.0, 40, 0.5]", "[0.0, [], 0.5]", 1);
+    assert_eq!(
+        parse_err(&text),
+        "music.solos.ACOUSTIC[0]: a chord needs at least one note"
+    );
+    let text = EPISODE
+        .replace("TROMBONE", "ACOUSTIC")
+        .replacen("[0.0, 40, 0.5]", "[0.0, [40, 4.5], 0.5]", 1);
+    assert_eq!(
+        parse_err(&text),
+        "music.solos.ACOUSTIC[0]: must be [beat, note, beats] or, for a chord, [beat, [note, ...], beats]"
+    );
+    let mut ff = with_acoustic();
+    ff.music.solos.insert("ACOUSTIC".into(), acoustic_solo());
+    assert_eq!(ff.music.check(&ff.fighters), Ok(()));
+    ff.music.solos.get_mut("ACOUSTIC").unwrap()[6].1 = SoloNote::Chord(vec![40, 200]);
+    assert_eq!(
+        ff.music.check(&ff.fighters).unwrap_err().to_string(),
+        "music.solos.ACOUSTIC[6]: note 2 of the chord: 200 is not a MIDI note (0 to 127)"
+    );
+    ff.music.solos.get_mut("ACOUSTIC").unwrap()[6].1 = SoloNote::Chord(Vec::new());
+    assert_eq!(
+        ff.music.check(&ff.fighters).unwrap_err().to_string(),
+        "music.solos.ACOUSTIC[6]: a chord needs at least one note"
+    );
+}
+
+#[test]
+fn a_format_1_file_cannot_hold_a_chord_in_a_solo() {
+    let text = with1("[0.0, 83, 0.5]", "[0.0, [83, 88], 0.5]");
+    assert_eq!(
+        parse_err(&text),
+        "music.solos.FLUTE[0]: a chord in a solo is not a setting of format 1 fight files (it came in format 2: a \
+         file with it says format = 2)"
+    );
 }

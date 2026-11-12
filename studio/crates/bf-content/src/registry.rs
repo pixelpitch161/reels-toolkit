@@ -15,7 +15,28 @@ const ROSTER_JSON: &str = include_str!("../data/roster.json");
 
 /// The fighters whose weapon and abilities the engine has ported, in no particular order (grows as fighters are
 /// ported).
-pub const PORTED: [&str; 2] = ["FLUTE", "TROMBONE"];
+pub const PORTED: [&str; 20] = [
+    "FLUTE",
+    "TROMBONE",
+    "PIANO",
+    "TRUMPET",
+    "ORGAN",
+    "CLARINET",
+    "OBOE",
+    "SOUSAPHONE",
+    "TENOR SAX",
+    "ALTO SAX",
+    "BASS CLARINET",
+    "TUBA",
+    "CONTRABASS",
+    "BASSOON",
+    "HORN",
+    "CELLO",
+    "ACOUSTIC",
+    "ELECTRIC",
+    "BASS DRUM",
+    "EUPHONIUM",
+];
 
 /// Every kit fighter's roster entry, in `fighters.py`'s order, every number as exported.
 ///
@@ -36,7 +57,7 @@ pub fn available() -> Vec<&'static str> {
 }
 
 /// Whether a fighter's music settings (key, chord loop, music seed, its line) feed its fight: true for a fighter
-/// whose notes are its weapon (PIANO's roll, once it is ported). False for every fighter in Milestone 1.
+/// whose notes are its weapon (PIANO's roll). False for every other fighter.
 pub fn music_feeds_fight(name: &str) -> bool {
     crate::fighters::music_feeds_fight(name)
 }
@@ -100,9 +121,34 @@ mod tests {
     }
 
     #[test]
-    fn available_is_flute_and_trombone() {
-        // roster order: FLUTE comes before TROMBONE in fighters.py
-        assert_eq!(available(), vec!["FLUTE", "TROMBONE"]);
+    fn available_is_the_ported_fighters_in_roster_order() {
+        // every kit fighter, in fighters.py's order whatever the order of `PORTED`; no fighter twice
+        assert_eq!(
+            available(),
+            vec![
+                "PIANO",
+                "TUBA",
+                "FLUTE",
+                "TROMBONE",
+                "HORN",
+                "ORGAN",
+                "ACOUSTIC",
+                "TRUMPET",
+                "CLARINET",
+                "OBOE",
+                "BASS CLARINET",
+                "EUPHONIUM",
+                "BASSOON",
+                "ELECTRIC",
+                "CELLO",
+                "CONTRABASS",
+                "ALTO SAX",
+                "TENOR SAX",
+                "SOUSAPHONE",
+                "BASS DRUM",
+            ]
+        );
+        assert_eq!(available().len(), PORTED.len());
     }
 
     #[test]
@@ -130,8 +176,10 @@ mod tests {
         assert_eq!(name_status("TROMBONE"), NameStatus::Known);
         assert_eq!(name_status("KAZOO"), NameStatus::Unknown);
         assert_eq!(name_status("flute"), NameStatus::Unknown);
-        // in the roster but not ported yet: a fight file may name it (the app does not offer it, see available())
-        assert_eq!(name_status("PIANO"), NameStatus::Known);
+        // every roster fighter, ported or not: a fight file may name it (what the app offers is available())
+        for f in roster() {
+            assert_eq!(name_status(&f.name), NameStatus::Known, "{}", f.name);
+        }
         for r in RETIRED {
             assert_eq!(name_status(r), NameStatus::Retired);
         }

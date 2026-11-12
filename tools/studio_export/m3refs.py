@@ -1275,8 +1275,8 @@ def episode_facts(config):
     facts.update(seed=g('SEED'), dmg_scale=float(g('DMG_SCALE', 1.0)),
                  handicap=[1.0, 1.0] if side is None else [float(x) for x in side], rules=dict(g('RULES', {})),
                  roles=dict(g('ROLES', {})), title_hits={k: list(v) for k, v in g('TITLE_HITS', {}).items()},
-                 # the kit's name is SOLO (kit/episode.py); read_config's music_extras already read it, leaving out
-                 # a fighter whose solo holds a chord (a tuple of notes: a fight file's music.solos cannot hold it)
+                 # the kit's name is SOLO (kit/episode.py); read_config's music_extras already read it, a chord (a
+                 # tuple of notes, ACOUSTIC's strums) as a list of notes, as a fight file's music.solos holds it
                  solos=facts.get('solos', {}),
                  mix={k: list(v) for k, v in g('MIX', {}).items()}, series=g('SERIES', None),
                  shard_seed=g('SHARD_SEED', 271), fx_seed=g('FX_SEED', None), music_seed=g('MUSIC_SEED', None))
@@ -1569,15 +1569,22 @@ def music_extras(cfg):
         out['roles'] = {k: str(v) for k, v in cfg.ROLES.items()}
     if getattr(cfg, 'MIX', None):                        # bus: (gain, reverb send)
         out['mix'] = {k: [float(g), float(r)] for k, (g, r) in cfg.MIX.items()}
-    # fighter: [(beat, midi, beats)]. A solo with chords in it (ACOUSTIC's strums: a tuple of notes) is one a fight
-    # file's music.solos cannot hold, so it is left out; the bed alone never plays a solo (it is the winner's voice)
-    solos = {k: [[float(b), int(n), float(d)] for b, n, d in v] for k, v in getattr(cfg, 'SOLO', {}).items()
-             if all(isinstance(n, int) for _, n, _ in v)}
+    # fighter: [(beat, midi, beats)], a chord's midi a tuple of notes (ACOUSTIC's strums), written as a fight file's
+    # music.solos holds it: [beat, [note, ...], beats]
+    solos = {k: [solo_entry(e) for e in v] for k, v in getattr(cfg, 'SOLO', {}).items()}
     if solos:
         out['solos'] = solos
     if getattr(cfg, 'TITLE_HITS', None):                 # fighter: notes as its name slams in
         out['title_hits'] = {k: [int(n) for n in v] for k, v in cfg.TITLE_HITS.items()}
     return out
+
+
+def solo_entry(e):
+    """one SOLO entry (beat, midi, beats) as theme.json and a fight file's music.solos hold it: [beat, note, beats], or
+    [beat, [note, ...], beats] for a chord (a tuple or list of notes, which the kit's ACOUSTIC strums)"""
+    b, n, d = e
+    note = [int(x) for x in n] if isinstance(n, (tuple, list)) else int(n)
+    return [float(b), note, float(d)]
 
 
 def _options_key(options):

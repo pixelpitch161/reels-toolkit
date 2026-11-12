@@ -1,0 +1,152 @@
+{
+ "about": "examples/trombone_vs_tuba: the pair's own links (plan Table S5): each item's first occurrence over the scenario fights (scenario, seed, time, event index, the event), within 20.0 s of FIGHT!",
+ "format": 1,
+ "links": [
+  {
+   "after_fight": 0.008329999999999949,
+   "event": [3.82083, "thrust", 0, 0.95],
+   "index": 1,
+   "item": "thrust",
+   "scenario": "plain",
+   "seed": 1,
+   "t": 3.82083
+  },
+  {
+   "after_fight": 0.9583300000000001,
+   "event": [4.77083, "hit", 0, 1, 1.2249999999999999, 0.5578655776668052, 0.28217308578748, "blade", 1],
+   "index": 5,
+   "item": "hit/blade",
+   "scenario": "plain",
+   "seed": 1,
+   "t": 4.77083
+  },
+  {
+   "after_fight": 11.93333,
+   "event": [15.74583, "block", 1, 0, -0.7595246148085999, -0.4503037860546413, "blade"],
+   "index": 100,
+   "item": "block",
+   "scenario": "plain",
+   "seed": 3,
+   "t": 15.74583
+  },
+  {
+   "after_fight": 0.008329999999999949,
+   "event": [3.82083, "oom", 1, 4.297395833333333, 4.773958333333333, 1.8],
+   "index": 0,
+   "item": "oom",
+   "scenario": "plain",
+   "seed": 1,
+   "t": 3.82083
+  },
+  {
+   "after_fight": 2.2833300000000003,
+   "event": [6.09583, "gulp", 1, 0.73045477034799, -1.2025012583963177, 1.92],
+   "index": 14,
+   "item": "gulp",
+   "scenario": "plain",
+   "seed": 3,
+   "t": 6.09583
+  },
+  {
+   "after_fight": 2.2833300000000003,
+   "event": [6.09583, "hit", 1, 0, 4.65, 0.73045477034799, -1.2025012583963177, "gulp", 0],
+   "index": 13,
+   "item": "hit/gulp",
+   "scenario": "plain",
+   "seed": 3,
+   "t": 6.09583
+  },
+  {
+   "after_fight": 0.9666699999999997,
+   "event": [4.77917, "pah", 1, 0, 3.4841434266401676],
+   "index": 6,
+   "item": "pah",
+   "scenario": "plain",
+   "seed": 1,
+   "t": 4.77917
+  },
+  {
+   "after_fight": 2.86667,
+   "event": [6.67917, "hit", 1, 0, 7.75, 0.6780760949022764, -0.6020320450011524, "spit", 0],
+   "index": 21,
+   "item": "hit/spit",
+   "scenario": "plain",
+   "seed": 3,
+   "t": 6.67917
+  },
+  {
+   "after_fight": 3.45,
+   "event": [7.2625, "hit", 1, 0, 7.75, -2.369850788435617, 0.1728672622751936, "cannon", 0],
+   "index": 25,
+   "item": "hit/cannon",
+   "scenario": "plain",
+   "seed": 3,
+   "t": 7.2625
+  }
+ ],
+ "scenarios": [
+  {
+   "cache": ["episodes/trombone_vs_tuba/scenarios/plain_s1.bfrec", "episodes/trombone_vs_tuba/scenarios/plain_s2.bfrec", "episodes/trombone_vs_tuba/scenarios/plain_s3.bfrec"],
+   "fighters": ["TROMBONE", "TUBA"],
+   "handicap": [0.35, 1.55],
+   "hashes": ["cb522d59f49f4789", "ba6495efc8a73766", "a47204aff2b7e349"],
+   "name": "plain",
+   "overrides": {},
+   "rules": {
+    "A": 3.0,
+    "DT": 0.008333333333333333,
+    "FPS": 30,
+    "HP": 100.0,
+    "KEY_R": 0.11,
+    "KNOCK_T": 0.38,
+    "LAUNCH_SPREAD": 38.0,
+    "LOW_HP": 25.0,
+    "LV_DMG": [14.0, 36.0],
+    "R": 0.6,
+    "ROPE_GIVE": 5.0,
+    "V": 2.6,
+    "beat": 0.4765625,
+    "bpm": 125.90163934426229,
+    "dmg_scale": 1.0,
+    "dmg_side": [0.35, 1.55],
+    "t_fight": 3.8125,
+    "t_max": 58.0
+   },
+   "seeds": [1, 2, 3],
+   "swapped": false
+  },
+  {
+   "cache": ["episodes/trombone_vs_tuba/scenarios/swapped_s1.bfrec", "episodes/trombone_vs_tuba/scenarios/swapped_s2.bfrec", "episodes/trombone_vs_tuba/scenarios/swapped_s3.bfrec"],
+   "fighters": ["TUBA", "TROMBONE"],
+   "handicap": [1.55, 0.35],
+   "hashes": ["7aa906588ed0a79f", "8f9333e33da7695c", "dd78392af06e468f"],
+   "name": "swapped",
+   "overrides": {},
+   "rules": {
+    "A": 3.0,
+    "DT": 0.008333333333333333,
+    "FPS": 30,
+    "HP": 100.0,
+    "KEY_R": 0.11,
+    "KNOCK_T": 0.38,
+    "LAUNCH_SPREAD": 38.0,
+    "LOW_HP": 25.0,
+    "LV_DMG": [14.0, 36.0],
+    "R": 0.6,
+    "ROPE_GIVE": 5.0,
+    "V": 2.6,
+    "beat": 0.4765625,
+    "bpm": 125.90163934426229,
+    "dmg_scale": 1.0,
+    "dmg_side": [1.55, 0.35],
+    "t_fight": 3.8125,
+    "t_max": 58.0
+   },
+   "seeds": [1, 2, 3],
+   "swapped": true
+  }
+ ],
+ "t_fight": 3.8125,
+ "tool": "tools.studio_export.episode_trombone_vs_tuba",
+ "window": 20.0
+}
