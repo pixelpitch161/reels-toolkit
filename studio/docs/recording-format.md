@@ -173,8 +173,10 @@ reader must not depend on either and must accept any valid UTF-8 JSON. In Rust t
 `Array::Nested(Value::List(...))`.
 
 `WAVES`, `SLAMS` and `COB` are always JSON, in every recording, even when every frame happens to hold the same
-number of things. In general: a key that the kit's `story.REC_KEYS` lists is `.npy` whenever its values form a
-rectangular array of integers or floats, and every other key is JSON.
+number of things. In general: a key that the kit's `story.REC_KEYS` lists, or one of the kit kinds' rectangular
+keys that list leaves out (`recording.KIT_RECT_KEYS`: BASSOON's `HOOK` and `HOP`, two rows of three a frame, `HOOK`
+NaN where no hook is out), is `.npy` whenever its values form a rectangular array of integers or floats, and every
+other key is JSON.
 
 ## 6. What the fields mean (FLUTE and TROMBONE)
 
