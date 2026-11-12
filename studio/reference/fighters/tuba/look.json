@@ -49,6 +49,7 @@
  "hull_cache": "fighters/tuba/hull_left.json",
  "hull_note": "ruling M3-R29: each fight's hull calls are in the pinned cache (left: hull_cache, right: hull_cache under `right`; every call's points and vertices); `left.hull` and look_right.json's `hull` hold their counts and the SHA-256 of their exact part (`line`)",
  "left": {
+  "cache": "fighters/tuba/left.bfrec",
   "cards": [
    [0, "e32ddbb2e93afa0210fe58a2ed6ae80bcc4cb32f88b7f8aafd5d77e04a31cc8e"],
    [4, "219855e905bad72923afa2eed66cda62cbfec83d77cc80319a3ac94bf074d9c9"],
@@ -68,7 +69,6 @@
    [1829, "b8fb123a869d24c99cd0a921e1baddd90101560393ad979a26b8007bc285ea61"]
   ],
   "fighters": ["TUBA", "FLUTE"],
-  "file": "fighters/tuba/left.bfrec",
   "frames": [
    [0, "f0ba9031ef2bfdc26975a13a8c02870583db24be77d8d7190c69cf60128f17eb", 39, "5847df7c4caf48a0bae7c74c60cfc905d364598e4e4d1bebdeb9797809d64406", 0, "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", "spread"],
    [13, "887f2f9bc9b1bc6299a03cf5207637bbcc79ae33cdd5ddfba6fbf52703490a43", 39, "baea5ac5bce25fcbda37042090802f406317eda68de6bfd0b038dbfb3df012af", 1, "04306e7fa65da6324eb024d51c4ef5e2e90cddc5c166d3b532f986e2274d4186", "the title card, the doors and the count-in"],
@@ -168,6 +168,7 @@
    "winner": 0
   },
   "seed": 9,
+  "sha256": "fbc0cd87b58601bbe40bc89672caa96f72bea33c217c5f667755d79e8848a1a9",
   "winner": "TUBA"
  },
  "opponent": "FLUTE",

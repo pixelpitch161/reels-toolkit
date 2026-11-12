@@ -474,12 +474,13 @@
  "fighter": "SOUSAPHONE",
  "format": 1,
  "left": {
+  "cache": "fighters/sousaphone/left.bfrec",
   "events": 441,
-  "file": "fighters/sousaphone/left.bfrec",
   "frames": 1230,
   "hash": "8297e5ee92dff046",
   "names": ["SOUSAPHONE", "FLUTE"],
   "seed": 5,
+  "sha256": "8c7334d431e10e499bad47e27930cfab2d1f2a677ba3ab4df93e667a9ef41828",
   "t_ko": 44.54656862745098,
   "why": "fixed by the spec",
   "winner": 0
@@ -705,6 +706,7 @@
    "times": []
   },
   "hooks": [],
+  "left_in_cache": true,
   "name": "SOUSAPHONE",
   "opponent": "FLUTE",
   "roles": [],

@@ -12,6 +12,12 @@
    "export": "theme_bossa_noir"
   },
   {
+   "path": "themes/bossa_noir/flute_vs_clarinet.bfrec",
+   "sha256": "a16c44dfc56e53ed841378d3d3ef39b5d7090eb68ec3551aca8b9f9729afe308",
+   "bytes": 124891,
+   "export": "theme_bossa_noir"
+  },
+  {
    "path": "themes/bossa_noir/hooks.npz",
    "sha256": "f87aadcfc354497e9731dc031ea6f47229025c4fca6ca4325bdd6982aca54c65",
    "bytes": 9796970,

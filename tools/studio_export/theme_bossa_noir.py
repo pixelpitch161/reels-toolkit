@@ -15,6 +15,7 @@ SPEC = dict(
     name='bossa_noir',
     voicings=('voicing',),
     configs=('ballfight_flute_vs_clarinet',),
+    recordings_in_cache=True,  # storage plan B (M3-R43): its kit recording is the pinned cache file
 )
 
 EXPORTS = {'theme_bossa_noir': lambda: m3refs.theme_refs(SPEC)}

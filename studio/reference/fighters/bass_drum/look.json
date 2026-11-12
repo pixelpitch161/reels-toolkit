@@ -49,6 +49,7 @@
  "hull_cache": "fighters/bass_drum/hull_left.json",
  "hull_note": "ruling M3-R29: each fight's hull calls are in the pinned cache (left: hull_cache, right: hull_cache under `right`; every call's points and vertices); `left.hull` and look_right.json's `hull` hold their counts and the SHA-256 of their exact part (`line`)",
  "left": {
+  "cache": "fighters/bass_drum/left.bfrec",
   "cards": [
    [0, "11a0a2e81c434630eb929edd45c43bb9ef40aae21e13939276837917087b1d33"],
    [4, "da4411a4b4e241115d3af4bb775225ac06e769ca7a96e53b9f49e991ff4fe004"],
@@ -68,7 +69,6 @@
    [1829, "bdc8e31b64d44ff11a2550367f62a7ac2c904b6bc59a2fbe92e175b519fc1555"]
   ],
   "fighters": ["BASS DRUM", "FLUTE"],
-  "file": "fighters/bass_drum/left.bfrec",
   "frames": [
    [0, "cdda589af4b5b32a05c789479cf50c78f3221c2623ab789160be1649af74ee38", 38, "6d8bc6b7a5e68f423c56da2596de48cd5ce95d5600cf7aa2d01485a088287cf0", 0, "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", "spread"],
    [13, "dbee338818c1e4d9ab4d767de0b9de846d7c12e49c6e2ae73cfa16c6983b24ae", 38, "1d06738e4154afe68650a302798c0879b1dd67138d7125ba3fb3fafb731056e4", 1, "ac65fc738d7859baecaa331f5c3caf83e7c152316085ad8b7fe5a18d9e9c3000", "the title card, the doors and the count-in"],
@@ -170,6 +170,7 @@
    "winner": 0
   },
   "seed": 7,
+  "sha256": "007a19f77e28f1a61d6b58b009a8b8c1bb19dc5f1e8b0b5bea8060ebfb8ce25d",
   "winner": "BASS DRUM"
  },
  "opponent": "FLUTE",

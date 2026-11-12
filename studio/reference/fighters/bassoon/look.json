@@ -49,6 +49,7 @@
  "hull_cache": "fighters/bassoon/hull_left.json",
  "hull_note": "ruling M3-R29: each fight's hull calls are in the pinned cache (left: hull_cache, right: hull_cache under `right`; every call's points and vertices); `left.hull` and look_right.json's `hull` hold their counts and the SHA-256 of their exact part (`line`)",
  "left": {
+  "cache": "fighters/bassoon/left.bfrec",
   "cards": [
    [0, "fab872a91fcbd8e59b7890c494e22f76e7c69d0c1395f1fe06a0315e2175cfe7"],
    [4, "e711b9bbb353953e0d65d8747ed3f6d57649539fc26b6610e74912f9ae8a57af"],
@@ -68,7 +69,6 @@
    [1829, "935fb6cfd84ac815232292beb6fad4dcc6faa06d054b9f363f63611ea029ded3"]
   ],
   "fighters": ["BASSOON", "FLUTE"],
-  "file": "fighters/bassoon/left.bfrec",
   "frames": [
    [0, "be06f23c675f8c91348793f1debbc47cf90110b9b1a802c9215708988c3abc59", 38, "6d8bc6b7a5e68f423c56da2596de48cd5ce95d5600cf7aa2d01485a088287cf0", 0, "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", "spread"],
    [13, "59c858abef051c8ff40dbb8b62363488306b0245bf232774b6d80ec31fd2d43a", 38, "1d06738e4154afe68650a302798c0879b1dd67138d7125ba3fb3fafb731056e4", 1, "a556b931747b48c2f30f72d0bbca3a61cada12fe24e0c3af41f326371c0e3335", "the title card, the doors and the count-in"],
@@ -165,6 +165,7 @@
    "winner": 0
   },
   "seed": 9,
+  "sha256": "651b80de14682df03c82931b37303b11e77d1b3a726d65448db6d3b1e3d9b761",
   "winner": "BASSOON"
  },
  "opponent": "FLUTE",
