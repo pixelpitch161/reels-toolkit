@@ -1,0 +1,203 @@
+{
+ "about": "ballfight_bassclarinet_vs_bassoon: the pair's own links (plan Table S5): each item's first occurrence over the scenario fights (scenario, seed, time, event index, the event), within 20.0 s of FIGHT!",
+ "format": 1,
+ "links": [
+  {
+   "after_fight": 1.7000011111111113,
+   "event": [5.08889, "anchor", 0, -1.43, 1.2384663254862116, 0.95, 5.936111111111111],
+   "index": 13,
+   "item": "anchor",
+   "scenario": "plain",
+   "seed": 1,
+   "t": 5.08889
+  },
+  {
+   "after_fight": 2.550001111111111,
+   "event": [5.93889, "pull", 0, -0.656305356750125, 0.6871981520837843, 1.5087339482592748, 2.1174800762628156],
+   "index": 86,
+   "item": "pull",
+   "scenario": "plain",
+   "seed": 1,
+   "t": 5.93889
+  },
+  {
+   "after_fight": 1.7166711111111108,
+   "event": [5.10556, "hit", 0, 1, 2.61, -1.1960529261099313, 1.5690920938199624, "anchor", 0],
+   "index": 15,
+   "item": "hit/anchor",
+   "scenario": "plain",
+   "seed": 1,
+   "t": 5.10556
+  },
+  {
+   "after_fight": 0.008331111111111067,
+   "event": [3.39722, "hop", 1, 1.85, -1.85, 0.7638538577007496, -0.6751440268831008, 3.6090277777777775, 0],
+   "index": 0,
+   "item": "hop",
+   "scenario": "plain",
+   "seed": 1,
+   "t": 3.39722
+  },
+  {
+   "after_fight": 0.6416711111111115,
+   "event": [4.03056, "hit", 1, 0, 0.84, -0.18592490073481138, 0.34616342675401784, "stomp", 0],
+   "index": 3,
+   "item": "hit/stomp",
+   "scenario": "plain",
+   "seed": 1,
+   "t": 4.03056
+  },
+  {
+   "after_fight": 3.8166711111111113,
+   "event": [7.20556, "hook_open", 1, 7.417361111111111, -2.72712558655746],
+   "index": 87,
+   "item": "hook_open",
+   "scenario": "early_low",
+   "seed": 2,
+   "t": 7.20556
+  },
+  {
+   "after_fight": 4.033331111111112,
+   "event": [7.42222, "hook", 1, 1, -2.82672666771028, 1.1],
+   "index": 129,
+   "item": "hook",
+   "scenario": "early_low",
+   "seed": 2,
+   "t": 7.42222
+  },
+  {
+   "after_fight": 4.033331111111112,
+   "event": [7.42222, "hit", 1, 0, 2.8, 1.5770066084348686, 1.9444706358977997, "hook", 0],
+   "index": 128,
+   "item": "hit/hook",
+   "scenario": "early_low",
+   "seed": 2,
+   "t": 7.42222
+  },
+  {
+   "after_fight": 4.241671111111112,
+   "event": [7.63056, "lights_out", 0, 9.325],
+   "index": 134,
+   "item": "lights_out",
+   "scenario": "early_low",
+   "seed": 2,
+   "t": 7.63056
+  },
+  {
+   "after_fight": 5.941671111111111,
+   "event": [9.33056, "erupt", 0, 0.9575071067942968, 0.25192320081412906, 1],
+   "index": 153,
+   "item": "erupt",
+   "scenario": "early_low",
+   "seed": 2,
+   "t": 9.33056
+  },
+  {
+   "after_fight": 5.941671111111111,
+   "event": [9.33056, "hit", 0, 1, 6.959999999999999, 0.45025894503900454, 1.3911221774529208, "erupt", 0],
+   "index": 152,
+   "item": "hit/erupt",
+   "scenario": "early_low",
+   "seed": 2,
+   "t": 9.33056
+  }
+ ],
+ "scenarios": [
+  {
+   "cache": ["episodes/bassclarinet_vs_bassoon/scenarios/plain_s1.bfrec", "episodes/bassclarinet_vs_bassoon/scenarios/plain_s2.bfrec", "episodes/bassclarinet_vs_bassoon/scenarios/plain_s3.bfrec"],
+   "fighters": ["BASS CLARINET", "BASSOON"],
+   "handicap": [0.58, 0.7],
+   "hashes": ["d8732ed240f56c99", "c45b98c0ae258b3f", "f4349230c5f0f8cc"],
+   "name": "plain",
+   "overrides": {},
+   "rules": {
+    "A": 3.0,
+    "DT": 0.008333333333333333,
+    "FPS": 30,
+    "HP": 100.0,
+    "KEY_R": 0.11,
+    "KNOCK_T": 0.38,
+    "LAUNCH_SPREAD": 38.0,
+    "LOW_HP": 25.0,
+    "LV_DMG": [14.0, 36.0],
+    "R": 0.6,
+    "ROPE_GIVE": 5.0,
+    "V": 2.6,
+    "beat": 0.4236111111111111,
+    "bpm": 141.63934426229508,
+    "dmg_scale": 1.0,
+    "dmg_side": [0.58, 0.7],
+    "t_fight": 3.388888888888889,
+    "t_max": 58.0
+   },
+   "seeds": [1, 2, 3],
+   "swapped": false
+  },
+  {
+   "cache": ["episodes/bassclarinet_vs_bassoon/scenarios/swapped_s1.bfrec", "episodes/bassclarinet_vs_bassoon/scenarios/swapped_s2.bfrec", "episodes/bassclarinet_vs_bassoon/scenarios/swapped_s3.bfrec"],
+   "fighters": ["BASSOON", "BASS CLARINET"],
+   "handicap": [0.7, 0.58],
+   "hashes": ["9de8f32d6698b8a5", "f4d50073a52d7da2", "2cc7e0614c40436e"],
+   "name": "swapped",
+   "overrides": {},
+   "rules": {
+    "A": 3.0,
+    "DT": 0.008333333333333333,
+    "FPS": 30,
+    "HP": 100.0,
+    "KEY_R": 0.11,
+    "KNOCK_T": 0.38,
+    "LAUNCH_SPREAD": 38.0,
+    "LOW_HP": 25.0,
+    "LV_DMG": [14.0, 36.0],
+    "R": 0.6,
+    "ROPE_GIVE": 5.0,
+    "V": 2.6,
+    "beat": 0.4236111111111111,
+    "bpm": 141.63934426229508,
+    "dmg_scale": 1.0,
+    "dmg_side": [0.7, 0.58],
+    "t_fight": 3.388888888888889,
+    "t_max": 58.0
+   },
+   "seeds": [1, 2, 3],
+   "swapped": true
+  },
+  {
+   "cache": ["episodes/bassclarinet_vs_bassoon/scenarios/early_low_s1.bfrec", "episodes/bassclarinet_vs_bassoon/scenarios/early_low_s2.bfrec", "episodes/bassclarinet_vs_bassoon/scenarios/early_low_s3.bfrec"],
+   "fighters": ["BASS CLARINET", "BASSOON"],
+   "handicap": [0.58, 0.7],
+   "hashes": ["c59b137c595c5333", "cb6c17985f894db4", "f539bda21d81ff4f"],
+   "name": "early_low",
+   "overrides": {
+    "LOW_HP": 92.0,
+    "LV_DMG": [2.0, 5.0]
+   },
+   "rules": {
+    "A": 3.0,
+    "DT": 0.008333333333333333,
+    "FPS": 30,
+    "HP": 100.0,
+    "KEY_R": 0.11,
+    "KNOCK_T": 0.38,
+    "LAUNCH_SPREAD": 38.0,
+    "LOW_HP": 92.0,
+    "LV_DMG": [2.0, 5.0],
+    "R": 0.6,
+    "ROPE_GIVE": 5.0,
+    "V": 2.6,
+    "beat": 0.4236111111111111,
+    "bpm": 141.63934426229508,
+    "dmg_scale": 1.0,
+    "dmg_side": [0.58, 0.7],
+    "t_fight": 3.388888888888889,
+    "t_max": 58.0
+   },
+   "seeds": [1, 2, 3],
+   "swapped": false
+  }
+ ],
+ "t_fight": 3.388888888888889,
+ "tool": "tools.studio_export.episode_bassclarinet_vs_bassoon",
+ "window": 20.0
+}
