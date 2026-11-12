@@ -808,6 +808,34 @@ def a_left_file_finish_wrote_is_kept():
     return 'a stop after finish() applied the stage leaves the new left.bfrec with the new fight.json'
 
 
+def a_nan_rectangular_key_is_an_array():
+    """BASSOON's HOOK (rectangular, NaN where no hook is out) is a .npy member through recording.rect_keys, NaN and
+    all; through the kit's own list alone it would be JSON, which refuses the NaN; a ragged key stays JSON"""
+    import types
+    import numpy as np
+    from tools.studio_export import recording
+    _, story = common.kit()
+    assert 'HOOK' not in story.REC_KEYS and 'HOP' not in story.REC_KEYS, 'the kit lists them now: drop KIT_RECT_KEYS'
+    keys = recording.rect_keys(story)
+    assert keys[:len(story.REC_KEYS)] == tuple(story.REC_KEYS) and {'HOOK', 'HOP'} <= set(keys)
+    assert recording.rect_keys(types.SimpleNamespace(REC_KEYS=('P', 'HOOK'))) == ('P', 'HOOK', 'HOP')
+    nan = float('nan')
+    hook = [[[nan, nan, nan], [nan, nan, nan]], [[1.0, 0.5, 12.75], [nan, nan, nan]]]
+    kind, data = recording._array('HOOK', hook, 2, keys)
+    assert kind == 'npy', kind
+    back = np.load(io.BytesIO(data))
+    assert back.dtype == np.dtype('<f8') and back.shape == (2, 2, 3)
+    assert np.array_equal(back, np.array(hook), equal_nan=True) and np.isnan(back[0]).all()
+    try:
+        recording._array('HOOK', hook, 2, tuple(story.REC_KEYS))
+        raise AssertionError('HOOK went to JSON with its NaN')
+    except ValueError as ex:
+        assert 'nan' in str(ex), ex
+    assert recording._array('HOOK', [[[1.0, 2.0, 3.0]], [[1.0, 2.0]]], 2, keys)[0] == 'json'
+    return 'HOOK with NaN is a (frames, 2, 3) <f8 .npy member through rect_keys; the kit\'s list alone would put ' \
+           'it in JSON, which refuses the NaN'
+
+
 CHECKS = (shard_takes_a_fighter_file, verify_finds_a_changed_byte_in_a_shard, check_pins_names_the_command,
           a_pin_never_moves_on_its_own, remake_makes_a_folder_again_whole, a_cache_run_writes_no_committed_file,
           a_port_never_points_at_another_port, budget_reports_an_overfull_fighter,
@@ -817,7 +845,7 @@ CHECKS = (shard_takes_a_fighter_file, verify_finds_a_changed_byte_in_a_shard, ch
           cfg_keys_follow_each_function, a_padded_sprite_is_declared_too,
           a_failed_part_ends_the_export_promptly, a_rolls_fight_goes_through_the_framework_alone,
           a_neutral_handicap_is_the_same_fight_either_way, a_big_left_recording_goes_to_the_cache,
-          a_left_file_finish_wrote_is_kept)
+          a_left_file_finish_wrote_is_kept, a_nan_rectangular_key_is_an_array)
 
 
 def main():
