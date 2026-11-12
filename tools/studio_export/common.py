@@ -25,7 +25,7 @@ I64_MIN, I64_MAX = -2 ** 63, 2 ** 63 - 1
 ZIP_DATE = (1980, 1, 1, 0, 0, 0)                       # every zip member's timestamp
 ZIP_LEVEL = 9                                          # deflate level of every zip member
 NPZ_DTYPES = ('|u1', '|b1', '<i4', '<i8', '<f4', '<f8')
-NPZ_NAME = re.compile(r'[A-Za-z0-9_][A-Za-z0-9_.-]*\Z')
+NPZ_NAME = re.compile(r'[A-Za-z0-9_](?:[A-Za-z0-9_. -]*[A-Za-z0-9_.-])?\Z')
 
 
 # ---------------------------------------------------------------- paths
@@ -248,7 +248,7 @@ def write_npz(path, arrays, register=True):
     members = {}
     for name, a in arrays.items():
         if not isinstance(name, str) or not NPZ_NAME.match(name):
-            raise ValueError(f'{path}: {name!r} cannot name a member (letters, digits, _ . - only)')
+            raise ValueError(f'{path}: {name!r} cannot name a member (letters, digits, _ . - and a space inside only)')
         if not isinstance(a, np.ndarray):
             raise TypeError(f'{path}: {name} is a {type(a).__name__}, not a numpy array (convert it yourself, so '
                             f'the dtype is a choice)')
