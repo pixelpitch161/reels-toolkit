@@ -172,10 +172,10 @@ mod tests {
             attack: 0.002,
             ..Additive::default()
         };
-        let plain: Vec<f64> = additive(f, DUR, 0.8, &grand).iter().map(|s| s * 0.5 * 1.2).collect();
+        let plain: Vec<f64> = additive(f, DUR, 0.8, &grand).iter().map(|s| s * 0.5 * (0.4 + 0.8)).collect();
         assert_ne!(inst_note(36.0, 0.8), plain);
         let f = pp::midi_hz(40.0);
-        let plain: Vec<f64> = additive(f, DUR, 0.8, &grand).iter().map(|s| s * 0.5 * 1.2).collect();
+        let plain: Vec<f64> = additive(f, DUR, 0.8, &grand).iter().map(|s| s * 0.5 * (0.4 + 0.8)).collect();
         assert_eq!(inst_note(40.0, 0.8), plain);
         // a harmonic above SR / 2.2 is left out: at 8 kHz only two are summed, at 30 kHz none
         assert!(peak(&additive(8000.0, 0.1, 0.8, &grand)) > 0.1);
