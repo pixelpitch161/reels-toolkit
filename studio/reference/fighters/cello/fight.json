@@ -474,12 +474,13 @@
  "fighter": "CELLO",
  "format": 1,
  "left": {
+  "cache": "fighters/cello/left.bfrec",
   "events": 595,
-  "file": "fighters/cello/left.bfrec",
   "frames": 1253,
   "hash": "37651b7a80ddb879",
   "names": ["CELLO", "FLUTE"],
   "seed": 21,
+  "sha256": "7d360594a3b3faa0f3dea37a7f9f16548e0b0b90c24d632384c20b12ca47f66c",
   "t_ko": 45.30490196078431,
   "why": "the lowest statistics seed with CELLO in the left corner winning and all three of its abilities firing, and a K.O. after 44 s, which the kit's checks need (passed over for an earlier K.O.: seeds 4, 6, 7, 11)",
   "winner": 0
@@ -738,6 +739,7 @@
    "times": []
   },
   "hooks": [],
+  "left_in_cache": true,
   "name": "CELLO",
   "opponent": "FLUTE",
   "roles": [],

@@ -24,6 +24,12 @@
    "export": "fighter_tuba"
   },
   {
+   "path": "fighters/tuba/left.bfrec",
+   "sha256": "fbc0cd87b58601bbe40bc89672caa96f72bea33c217c5f667755d79e8848a1a9",
+   "bytes": 109740,
+   "export": "fighter_tuba"
+  },
+  {
    "path": "fighters/tuba/look_right.json",
    "sha256": "10ff2733cc3a5e718a7fd71f01d70e1c883f7c4fe266b31ca841237d868b8b7c",
    "bytes": 17386,
@@ -145,8 +151,8 @@
   },
   {
    "path": "fighters/tuba/sprites.json",
-   "sha256": "4c79f5c74c6bae6cec8d1aa14fd4ad72e7167a90c568f4c23287c49b80b2602a",
-   "bytes": 82382,
+   "sha256": "60abe15bf71e91836e402657f294f21c46a52dbbac3c1cbc6b6f5b5dd30a5007",
+   "bytes": 82392,
    "export": "fighter_tuba"
   },
   {

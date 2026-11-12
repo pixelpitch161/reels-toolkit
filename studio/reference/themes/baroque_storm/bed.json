@@ -159,7 +159,7 @@
    ]
   },
   {
-   "appended": "KEY = 'E'\nSCALE = 'harmonic minor'\nCHORDS = ['Em', 'B7', 'Em', 'Am', 'B7', 'Em', 'C', 'Am', 'B7', 'B7', 'Em', 'Am', 'B7', 'Em', 'C', 'Am', 'B7', 'B7', 'Em', 'Am', 'B7', 'Em', 'C', 'Am', 'B7', 'B7', 'Em', 'Am', 'B7', 'Em', 'C', 'Am', 'B7', 'B7', 'Em', 'Am']\n",
+   "appended": "KEY = 'E'\nSCALE = 'harmonic minor'\nLOOP = ['Em', 'Am', 'B7', 'Em', 'C', 'Am', 'B7', 'B7']\nCHORDS = ['Em', 'B7', 'Em', 'Am', 'B7', 'Em', 'C', 'Am', 'B7', 'B7', 'Em', 'Am', 'B7', 'Em', 'C', 'Am', 'B7', 'B7', 'Em', 'Am', 'B7', 'Em', 'C', 'Am', 'B7', 'B7', 'Em', 'Am', 'B7', 'Em', 'C', 'Am', 'B7', 'B7', 'Em', 'Am']\n",
    "bpm": 141.63934426229508,
    "buses": ["harpsi", "strings", "drums", "fx"],
    "config": "examples/clarinet_vs_oboe",

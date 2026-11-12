@@ -24,6 +24,12 @@
    "export": "fighter_clarinet"
   },
   {
+   "path": "fighters/clarinet/left.bfrec",
+   "sha256": "f9c2eb6a5f11803b220800bc217d8ac195b195cad4a16bef0cc6009c4d8b4e63",
+   "bytes": 115441,
+   "export": "fighter_clarinet"
+  },
+  {
    "path": "fighters/clarinet/look_right.json",
    "sha256": "e7ffaa17d7f397cba2fa187a41036fe0dffb37e7660a864d7e60a8f9eff3c56f",
    "bytes": 16154,
@@ -145,8 +151,8 @@
   },
   {
    "path": "fighters/clarinet/sprites.json",
-   "sha256": "b568baf59478666c54c233fb0ccbe41a5d7053298db93c188f82f759bdec1b48",
-   "bytes": 86832,
+   "sha256": "00348b7ce595a104b282441b6a4180817197ed774463f817cc3486ed1bc3dd82",
+   "bytes": 86842,
    "export": "fighter_clarinet"
   },
   {

@@ -441,12 +441,13 @@
  "fighter": "OBOE",
  "format": 1,
  "left": {
+  "cache": "fighters/oboe/left.bfrec",
   "events": 642,
-  "file": "fighters/oboe/left.bfrec",
   "frames": 1293,
   "hash": "6649d3437e6ba975",
   "names": ["OBOE", "FLUTE"],
   "seed": 3,
+  "sha256": "a10aa46fab0b984168fc36e0a6e4503a6f70dc830d2f4692cfd2e0d369ed1171",
   "t_ko": 46.65490196078431,
   "why": "the lowest statistics seed with OBOE in the left corner winning and all three of its abilities firing",
   "winner": 0
@@ -705,6 +706,7 @@
    "times": []
   },
   "hooks": [],
+  "left_in_cache": true,
   "name": "OBOE",
   "opponent": "FLUTE",
   "roles": [],

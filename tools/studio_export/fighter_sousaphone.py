@@ -25,6 +25,7 @@ SPEC = dict(
         left=5,                                  # fixed (the framework checks its K.O. is after 44 s)
     ),
     sprite_size=dict(add=7, pad=1.22),           # kit/fighters/sousaphone.py PAD
+    left_in_cache=True,  # storage plan B (M3-R43): its kit recording is the pinned cache file
 )
 
 EXPORTS = {'fighter_sousaphone': lambda: m3refs.fighter_refs(SPEC)}

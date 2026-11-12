@@ -20,7 +20,7 @@ use crate::Sim;
 use crate::fight::{self, fighter, roster, row_occurs, setup_like, setup_of, traced};
 use crate::look::{hull_differs, noise, on_threads};
 use crate::refs::{
-    cached_recording, committed_recording, index, json, list, num, report, sha, sha_lines, studio, text, value,
+    cached_recording, index, json, list, named_recording, num, report, sha, sha_lines, studio, text, value,
 };
 use crate::sound::{compare, summarise, windows_against};
 
@@ -39,7 +39,7 @@ pub fn fight_file(pair: &str) -> FightFile {
 /// The kit's recording of the config and the pair's fight file.
 pub fn episode(pair: &str) -> (Recording, FightFile) {
     let doc = json(&folder(pair), "episode.json");
-    let rec = committed_recording(text(&doc["recording"]), Some(text(&doc["rec_hash"])));
+    let rec = named_recording(&doc["recording"], Some(text(&doc["rec_hash"])));
     (rec, fight_file(pair))
 }
 
@@ -122,6 +122,16 @@ pub fn fight_file_is_the_config(pair: &str) {
         })
         .collect();
     eq("lines", ff.music.lines == lines, format!("{:?}", ff.music.lines.keys()));
+    // the theme options the config sets (absent: none, so a config without any reads as before)
+    let options = d
+        .get("theme_options")
+        .map(crate::theme::option_values)
+        .unwrap_or_default();
+    eq(
+        "theme_options",
+        ff.music.theme_options == options,
+        format!("{:?}", ff.music.theme_options),
+    );
     let roles: std::collections::BTreeMap<String, String> = d["roles"]
         .as_object()
         .expect("roles")

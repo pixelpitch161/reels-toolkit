@@ -375,12 +375,13 @@
  "fighter": "BASSOON",
  "format": 1,
  "left": {
+  "cache": "fighters/bassoon/left.bfrec",
   "events": 914,
-  "file": "fighters/bassoon/left.bfrec",
   "frames": 1461,
   "hash": "dc026b4228f36e38",
   "names": ["BASSOON", "FLUTE"],
   "seed": 9,
+  "sha256": "651b80de14682df03c82931b37303b11e77d1b3a726d65448db6d3b1e3d9b761",
   "t_ko": 52.25490196078431,
   "why": "the lowest statistics seed with BASSOON in the left corner winning and all three of its abilities firing",
   "winner": 0
@@ -608,6 +609,7 @@
    "times": []
   },
   "hooks": [],
+  "left_in_cache": true,
   "name": "BASSOON",
   "opponent": "FLUTE",
   "roles": [],

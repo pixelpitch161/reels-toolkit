@@ -25,6 +25,7 @@ SPEC = dict(
     opponent='FLUTE',
     fights=dict(handicap=(2.0, 1.0)),            # M3-R34: the reference handicap, TRUMPET left
     sprite_size=dict(add=7, clip=(12, 19)),
+    left_in_cache=True,  # storage plan B (M3-R43): its kit recording is the pinned cache file
 )
 
 

@@ -9,6 +9,6 @@ band ruling M3-R34 asks for, so no reference handicap is needed and both look fi
     python -m tools.studio_export cache fighters/tenor_sax   regenerates the cache and checks the pins"""
 from . import m3refs
 
-SPEC = dict(name='TENOR SAX', opponent='FLUTE')
+SPEC = dict(name='TENOR SAX', opponent='FLUTE', left_in_cache=True)
 
 EXPORTS = {'fighter_tenor_sax': lambda: m3refs.fighter_refs(SPEC)}

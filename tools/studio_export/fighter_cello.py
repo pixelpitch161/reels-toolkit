@@ -19,6 +19,7 @@ SPEC = dict(
         # fight within 20 s of FIGHT!; these early_low seeds have it 4.0, 7.2 and 3.6 s in
         dict(name='swan_release', seeds=(29, 74, 144), overrides=dict(LV_DMG=m3refs.LV, LOW_HP=92.0)),
     ],
+    left_in_cache=True,  # storage plan B (M3-R43): its kit recording is the pinned cache file
 )
 
 EXPORTS = {'fighter_cello': lambda: m3refs.fighter_refs(SPEC)}

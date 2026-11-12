@@ -386,12 +386,13 @@
  "fighter": "TUBA",
  "format": 1,
  "left": {
+  "cache": "fighters/tuba/left.bfrec",
   "events": 404,
-  "file": "fighters/tuba/left.bfrec",
   "frames": 1226,
   "hash": "e05931cbb0b133c7",
   "names": ["TUBA", "FLUTE"],
   "seed": 9,
+  "sha256": "fbc0cd87b58601bbe40bc89672caa96f72bea33c217c5f667755d79e8848a1a9",
   "t_ko": 44.41323529411765,
   "why": "the lowest statistics seed with TUBA in the left corner winning and all three of its abilities firing, and a K.O. after 44 s, which the kit's checks need (passed over for an earlier K.O.: seed 3)",
   "winner": 0
@@ -619,6 +620,7 @@
    "times": []
   },
   "hooks": [],
+  "left_in_cache": true,
   "name": "TUBA",
   "opponent": "FLUTE",
   "roles": [],
