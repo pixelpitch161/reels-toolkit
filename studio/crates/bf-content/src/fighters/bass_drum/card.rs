@@ -7,7 +7,7 @@ use crate::cards::FighterCard;
 pub static CARD: Option<FighterCard> = Some(FighterCard {
     weapon: "Steamroller",
     text: "Every bar it tips onto its side and rolls across the ring like a wheel at the enemy, a dust trail \
-           showing the line first. Nothing knocks it off a roll, and the first contact is a huge BOOM. Every BOOM \
+           showing the line first. Nothing knocks it off a roll, and the first contact is a huge BOOM. Every STEAMROLLER BOOM \
            that lands makes it roll faster and grow bigger.",
     abilities: [
         "Two quick booms, lub-dub: two shockwaves back to back",

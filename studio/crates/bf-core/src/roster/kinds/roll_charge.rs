@@ -6,7 +6,7 @@
 
 use serde_json::Value as Json;
 
-use crate::roster::{BallStart, Entry, RosterError};
+use crate::roster::{AbilityCfg, AbilityKind, BallStart, Entry, RosterError, WeaponCfg, abilities};
 
 /// Whether the engine runs weapon kind `roll_charge`.
 pub const PORTED: bool = true;
@@ -129,6 +129,17 @@ pub(crate) fn check(e: &Entry, w: &RollChargeCfg) -> Result<(), RosterError> {
         }
     }
     Ok(())
+}
+
+/// An ability's check against its fighter's weapon: HEARTBEAT (`heartbeat`) and DRUM ROLL (`drum_roll`) need a
+/// `roll_charge` weapon (each kind's own `check_weapon`); every other kind passes. `FighterCfg::check` calls it for
+/// every ported ability slot, after the kind's own checks.
+pub(crate) fn check_ability(e: &Entry, prefix: &str, ab: &AbilityCfg, weapon: &WeaponCfg) -> Result<(), RosterError> {
+    match ab.kind {
+        AbilityKind::Heartbeat => abilities::heartbeat::check_weapon(e, prefix, weapon),
+        AbilityKind::DrumRoll => abilities::drum_roll::check_weapon(e, prefix, weapon),
+        _ => Ok(()),
+    }
 }
 
 /// What `Ball.__init__` reads from this weapon (`fight.py` 231 to 258): nothing of its own (`rollc_setup` sets the
@@ -262,5 +273,39 @@ mod tests {
         v["abilities"]["unlock1"]["pause"] = 1.into();
         let f = FighterCfg::from_json(&v).expect("an unknown key makes the kind one the engine has not ported");
         assert!(!f.unlock1.kind.is_ported(), "{:?}", f.unlock1.kind);
+    }
+
+    /// HEARTBEAT and DRUM ROLL on a fighter that is no roller: Python raises (only `rollc_setup` gives a ball its
+    /// thumps and its roll), so the entry is refused at load; 1812 OVERTURE runs on any ball.
+    #[test]
+    fn heartbeat_and_drum_roll_are_refused_on_a_fighter_that_is_no_roller() {
+        let all: serde_json::Value = serde_json::from_str(ROSTER).expect("the roster is JSON");
+        let list = all["fighters"].as_array().expect("a list of fighters");
+        let flute = list
+            .iter()
+            .find(|f| f["name"] == "FLUTE")
+            .expect("in the roster")
+            .clone();
+        let drum = bass_drum();
+        for (slot, field) in [
+            ("unlock1", "abilities.unlock1.kind"),
+            ("unlock2", "abilities.unlock2.kind"),
+        ] {
+            let mut v = flute.clone();
+            v["abilities"][slot] = drum["abilities"][slot].clone();
+            let err = FighterCfg::from_json(&v).expect_err("refused at load");
+            assert_eq!((err.fighter.as_str(), err.field.as_str()), ("FLUTE", field));
+            assert!(
+                err.message.contains("needs a roll_charge weapon, not striker"),
+                "{}",
+                err.message
+            );
+        }
+        let mut v = flute;
+        v["abilities"]["low"] = drum["abilities"]["low"].clone();
+        assert!(
+            FighterCfg::from_json(&v).is_ok(),
+            "Python runs 1812 OVERTURE on any ball (only a roller steps its cannons)"
+        );
     }
 }

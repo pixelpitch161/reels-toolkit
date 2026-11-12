@@ -13,8 +13,9 @@
 //!
 //! What the Python part reads off its look (`M.P.LOOKS[k].SEGS`, `.DROLLS`, `.CANNONS`) it gets here from the
 //! recording's events (`state.rs`). The pit's timpani and marimba double the hymn only when the bed has both
-//! (`hasattr(b, 'timp') and hasattr(b, 'marimba')`, `_pit`): no bed of the Studio has them yet (the kit's
-//! `dark_drumline` and `baroque_storm` do), so that branch plays nothing here and the tubular bell plays alone.
+//! (`hasattr(b, 'timp') and hasattr(b, 'marimba')`, `_pit`): of the kit's beds only `dark_drumline` has both
+//! (`baroque_storm` has `timp` but no `marimba`, so there the kit's hymn is the bell alone), and no bed of the Studio
+//! has them yet, so that branch plays nothing here and the tubular bell plays alone.
 
 use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex};
@@ -75,6 +76,19 @@ pub fn fit_reg(mut m: i32, lo: i32, hi: i32) -> i32 {
     }
     while m < lo {
         m += 12;
+    }
+    m
+}
+
+/// `fit_reg(m)` of a note that need not be whole (the enemy's sour twin, OBOE's, plays a quarter tone off):
+/// moved by whole octaves into `lo..=hi`, as the Python loops do on a float.
+pub fn fit_reg_f(mut m: f64, lo: i32, hi: i32) -> f64 {
+    let (lo, hi) = (f64::from(lo), f64::from(hi));
+    while m > hi {
+        m -= 12.0;
+    }
+    while m < lo {
+        m += 12.0;
     }
     m
 }
@@ -420,8 +434,8 @@ impl Sound for BassDrumSound {
     /// `voice(m, dur, vel=0.85)`: `self.hit(self.fit_reg(m), vel, boom=vel >= 0.9, dur=dur)`.
     fn voice(&self, ctx: &MusicCtx, m: f64, dur: f64, vel: f64) -> Result<Arc<[f64]>, MusicError> {
         let (lo, hi) = self.register(ctx);
-        let m = fit_reg(whole(m)?, lo, hi);
-        self.hit(ctx, f64::from(m), vel, vel >= 0.9, dur)
+        // self.hit(self.fit_reg(m), ...): the note is moved by octaves as it is (a float), and `hit` cuts it
+        self.hit(ctx, fit_reg_f(m, lo, hi), vel, vel >= 0.9, dur)
     }
 
     /// A huge boom on the tonic, then a short roll into the next word.
@@ -573,5 +587,17 @@ mod tests {
         assert_eq!(fit_reg(14, 28, 50), 38);
         assert_eq!(fit_reg(28, 28, 50), 28);
         assert_eq!(HYMN.iter().max(), Some(&9));
+    }
+
+    /// `self.hit(self.fit_reg(m), ...)` then `int(m)`: OBOE's sour twin, 68.5 with a register topping at 56, is
+    /// moved to 44.5 and cut to 44. The order matters at the top of the register: 56.5 moves to 44.5 (44), where
+    /// cutting first would keep 56.
+    #[test]
+    fn a_note_is_moved_into_the_register_before_it_is_cut() {
+        assert_eq!(fit_reg_f(68.5, 28, 56), 44.5);
+        assert_eq!(whole(fit_reg_f(68.5, 28, 56)).unwrap(), 44);
+        assert_eq!(whole(fit_reg_f(56.5, 28, 56)).unwrap(), 44);
+        assert_eq!(fit_reg(whole(56.5).unwrap(), 28, 56), 56);
+        assert_eq!(fit_reg_f(14.0, 28, 50), 38.0);
     }
 }
