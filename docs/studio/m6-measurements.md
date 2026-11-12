@@ -118,3 +118,18 @@ the samples taken just before), so these are upper figures; a quiet PC should do
 - `--version` printed nothing in this build: Task 9 wires it into `main`. Until then a staged real build fails its
   check, in words, as it should.
 - The unit tests' stand-in project builds, stages and checks in a few seconds, with a build folder of a few MB.
+
+## Quiet-PC run of the two encoder settings (12 Nov 2026)
+
+Six whole renders of the example episode (`fights/flute_vs_trombone.toml` with `ep392.bfrec`), Best quality and
+Faster by turns, three each, with no build or test running beside them. The PC was 23 to 41 % busy before each
+run (other programs on the PC, not this build). Times are wall-clock for the whole `ballfight render` command.
+
+| Setting | Runs (s) | Median | mp4 size | Checks |
+|---|---|---|---|---|
+| Best quality (x264 `slow`) | 77 / 73 / 76 | 76 | 59.3 MB | 15 of 15, every run |
+| Faster (x264 `fast`) | 55 / 52 / 55 | 55 | 75.4 MB (+27 %) | 15 of 15, every run |
+
+- Faster meets the 60 s goal on this PC; Best quality does not (73 s at best).
+- The saving, median against median, is 21 s: "about 20 seconds a video" is the figure the Settings description may
+  state. The three Best quality files are identical to each other, and so are the three Faster files.

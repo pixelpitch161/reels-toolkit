@@ -289,3 +289,15 @@ playback failed (first take 82.5 % on time with `frame_ms` 188 ms; later take 99
 The preview budgets, one at a time, straight after it (busy 28 % before, 78 % after, other workers building):
 playback 95.1 % on time for the first take and 96.4 % for the later one (`frame_ms` 196 to 204 ms, about twice a
 quiet run's), so both budget tests failed under that load. A quiet-PC run is still to be scheduled.
+## Quiet-PC run after the last preview changes (12 Nov 2026)
+
+With no build or test running beside it (the PC 31 to 50 % busy from other programs), the two preview budget tests
+and the whole-video test all pass:
+
+- Playback from FIGHT!, first take (seed 255): 601 frames shown, 0 late (100 %); first picture after 263 ms; one
+  frame 104 ms; lead 4; stride 1.
+- Playback, a later take on a warm player (seed 542): 601 shown, 2 late (99.67 %, the budget is 99 %); first picture
+  after 268 ms.
+- Scrubbing: median 79 to 81 ms, worst 92 to 112 ms, inside the budget.
+- A whole video made by clicks in the real app (seed 469): 133.5 s from the first click to the saved video, and the
+  slowest interface update was 12.55 ms (the bound is 20 ms).
