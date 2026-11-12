@@ -1,0 +1,14 @@
+# The engine's self-replay hashes of OBOE (studio/reference/fighters/oboe/fight.json's config): both side orders,
+# seeds 1, 2, 3, 500 and 1 << 40. Written by the proving harness with BF_BLESS=1 on the Windows reference PC;
+# every PC and every build must give the same lines. Do not edit by hand.
+# left right seed winner t_ko n_events hash
+OBOE FLUTE 1 0 38.35490196078431 432 73217a0039484fbb
+OBOE FLUTE 2 0 38.35490196078431 534 23d0eb994b6c0c32
+OBOE FLUTE 3 0 32.07156862745098 376 aa9415c28bae7ec1
+OBOE FLUTE 500 0 28.938235294117646 372 66135379b3a7f767
+OBOE FLUTE 1099511627776 0 31.621568627450976 410 c65ff9ad82f4a1ca
+FLUTE OBOE 1 1 31.179901960784314 394 dd3d776acb1daf8b
+FLUTE OBOE 2 1 29.60490196078431 411 6545b11f611bd752
+FLUTE OBOE 3 1 34.42990196078431 428 10a11454bc08b710
+FLUTE OBOE 500 1 33.871568627450976 381 da44508950babd67
+FLUTE OBOE 1099511627776 1 34.313235294117646 452 256a52dfc9aaae3f
