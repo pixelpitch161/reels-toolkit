@@ -1,21 +1,90 @@
 //! Ability kind `twin` (BASS CLARINET's MULTIPHONICS): `fight.py` `trigger` 2897 to 2899.
 //!
-//! A stub until BASS CLARINET's port. [`start`] is already called from `trigger`'s dispatch (`abilities/mod.rs`), and
-//! every other function here where `Fight.run()` calls its Python namesake, behind a test that is false until the
-//! roster reads the kind (`roster::abilities::twin::PORTED`). So a stub body is never reached in a fight; with
-//! `Fight::trace_sockets` on, one that is reached logs its name. The port fills the bodies with the Python (every draw
-//! from the fight's generator in Python's order and number) and touches no other engine file. A copied ability
-//! (IDENTITY CRISIS) runs this code for the copier's ball, so nothing here may assume which side has the kind.
+//! Two notes at once: for the ability's duration a ghost twin doubles the fighter's signature. An anchor whirl gets
+//! a second arm on the far side of the peg (`kinds::anchor::step`, which reads [`State::until`]; `ANC` records it), a
+//! mortar salvo doubles. Event `twin`: the owner, the time it ends.
+//!
+//! The twin is ball `k`'s, whichever fighter it is and whoever's ability started it (IDENTITY CRISIS copies it), so
+//! nothing here reads ball `k`'s own roster entry. No draw from the fight's generator.
 
+use bf_core::event::Value;
+
+use crate::abilities::ab_dur;
 use crate::fight::Fight;
 use crate::roster::AbilityCfg;
 
-/// This ability's per-fight state (`Fight::twin`): what `fight.py` hangs on the ball or the fight for it, indexed by
-/// fighter where it is per ball. Empty until the port.
-#[derive(Clone, Debug, Default, PartialEq)]
-pub struct State {}
+/// This ability's per-fight state (`Fight::twin`): each ball's `B.twin_until`.
+#[derive(Clone, Debug, PartialEq)]
+pub struct State {
+    /// By ball: the time its twin ends (`getattr(B, 'twin_until', -1.0)`: -1.0 for a ball that never had one).
+    pub until: [f64; 2],
+}
 
-/// `trigger`, kind `twin`: `trigger` 2897 to 2899.
-pub fn start(f: &mut Fight, _k: usize, _ab: &AbilityCfg) {
-    f.socket("stub:abilities::twin::start");
+impl Default for State {
+    fn default() -> State {
+        State { until: [-1.0; 2] }
+    }
+}
+
+/// `trigger`, kind `twin`: `trigger` 2897 to 2899: ball `k` has a twin until the ability's duration has passed.
+pub fn start(f: &mut Fight, k: usize, ab: &AbilityCfg) {
+    let until = f.t + ab_dur(f, ab);
+    f.twin.until[k] = until;
+    f.ev("twin", k as i64, vec![Value::Float(until)]);
+}
+
+#[cfg(test)]
+mod tests {
+    //! Numbers from `tools/studio_export/unit_checks/anchor_unit_vectors.py` (the kit's `fight.py` on the same
+    //! hand-built state), pasted as printed.
+    use bf_core::event::Event;
+
+    use super::*;
+    use crate::abilities::trigger;
+    use crate::ball::Slot;
+    use crate::fight::Setup;
+    use crate::rules::Rules;
+    use crate::testing;
+
+    /// A ball has no twin until one starts; MULTIPHONICS lasts its 8 beats on either side's ball, and a copied one
+    /// (started with another fighter's ability on a ball whose fighter has none) is the same twin.
+    #[test]
+    fn a_twin_lasts_its_beats_on_whichever_ball() {
+        let roster = testing::roster();
+        let ep = testing::episode_rules();
+        for k in 0..2 {
+            let names = if k == 0 {
+                ["BASS CLARINET", "FLUTE"]
+            } else {
+                ["FLUTE", "BASS CLARINET"]
+            };
+            let setup = Setup {
+                fighters: names.map(|n| testing::fighter(&roster, n)),
+                rules: Rules::new(ep.bpm, ep.t_fight),
+                seed: 392,
+            };
+            let mut f = testing::fight(&setup, false);
+            assert_eq!(f.twin.until, [-1.0, -1.0]);
+            f.t = 12.5;
+            trigger(&mut f, k, Slot::Unlock2);
+            let until = 16.088235294117645;
+            assert_eq!(f.twin.until[k], until);
+            assert_eq!(f.twin.until[1 - k], -1.0);
+            assert_eq!(
+                f.events[1],
+                Event {
+                    t: 12.5,
+                    kind: "twin".into(),
+                    fields: vec![Value::Int(k as i64), Value::Float(until)],
+                }
+            );
+            // the copy: FLUTE's ball takes the twin, with no `ability` event
+            let ab = &testing::fighter(&roster, "BASS CLARINET").unlock2;
+            let n = f.events.len();
+            f.t = 13.0;
+            start(&mut f, 1 - k, ab);
+            assert_eq!(f.twin.until[1 - k], 13.0 + 8.0 * f.rules.beat);
+            assert_eq!((f.events.len(), f.events[n].kind.as_str()), (n + 1, "twin"));
+        }
+    }
 }

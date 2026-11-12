@@ -366,22 +366,41 @@ per hole, from the hole's pitch lane, across the ring and turned toward the enem
 <!-- kind:swallow -->
 #### `swallow` (weapon kind of TUBA)
 
-`fight.py` 1045 to 1130. Not ported yet: its port fills this section in (the meaning of each field, as 6.2 and 6.3 do
-for FLUTE and TROMBONE), from the lines below.
+`fight.py` 1045 to 1130; ported in `bf-sim/src/kinds/swallow.rs` (`bf-core/src/roster/kinds/swallow.rs` for its roster
+numbers). Every `every` beats on the beat grid (haste divides the grid and both times below) the bell goes "oom": it
+inhales for `inhale` beats, and "pah" comes `pah` beats after the oom. One oom-pah runs at a time. The bell turns
+toward the enemy at `aim_rate` (the swallower's `th`, recorded in `TH`). While the bell inhales, an enemy whose
+surface is within the reach (`blade_len`, recorded in `BL`) has its heading turned toward the bell (`suck`; its speed
+is kept); when the two centres are closer than two radii plus `catch` it is gulped: it rides at the swallower's
+centre (its `P` row equals the swallower's), does not move on its own and does not clash, until the pah spits it out
+toward the middle of the ring (the bell's aim when the swallower stands within 0.3 of the middle), turned by up to
+`jitter` degrees either way, at the shared speed with a boost of at least `spit_boost`. If it then hits a rope
+within `spit_t` seconds it takes `dmg_rope` more. A landed gulp lengthens the reach by `grow` up to `max_reach`. A
+rolling enemy (`roll_charge`) is steered but not gulped unless the rule `swallow_rollers` is on. The generator is
+drawn once per spit (the jitter) and never otherwise.
 
-**Record keys.** None of its own.
+**Record keys.** None of its own: the aim is `TH`, the reach `BL`; the ride inside shows only as equal `P` rows.
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+**Events** (`who` is the swallower unless said; coordinates are ring units; times are on the video clock):
 
-- 1062: `self.ev('oom', k, B.sw['t_in'], B.sw['t_pah'], float(B.blade_len))`
-- 1082: `self.damage(k, 1 - k, w['dmg_rope'], 'cannon', e[5], e[6])`
-- 1104: `self.ev('block', 1 - k, k, hx, hy, 'swallow')`
-- 1107: `self.damage(k, 1 - k, w['dmg'], 'gulp', hx, hy)`
-- 1113: `self.ev('gulp', k, hx, hy, float(B.blade_len))`
-- 1117: `self.ev('pah', k, 0, float(B.th))`
-- 1127: `self.ev('pah', k, 1, a)`
-- 1128: `self.damage(k, 1 - k, w['dmg_spit'], 'spit', float(O.p[0]), float(O.p[1]))`
+| Kind | Fields after `who` | When |
+| --- | --- | --- |
+| `oom` | the time the inhale ends, the time the pah is due, the reach now (floats) | the bell starts an oom-pah (1062) |
+| `gulp` | `x, y` (the point of the swallower's rim toward the enemy), the reach after its growth | the enemy is swallowed (1113), right after the `gulp` hit |
+| `pah` | 0 (int), the bell's aim in radians | the pah with nothing caught (1117) |
+| `pah` | 1 (int), the spit's direction in radians (not reduced to a turn) | the pah that spits the enemy out (1127), before the `spit` hit |
+| `block` | `who` is the shielded enemy; then the swallower (int), `x, y`, `swallow` | the gulp met a shield (1104): nothing is caught and the inhale ends at once |
+
+**Hits** (`hit` events of the swallower; the sub-number is 0):
+
+| What | Damage | Where | When |
+| --- | --- | --- | --- |
+| `gulp` | `dmg` | the point of the swallower's rim toward the enemy | the enemy is swallowed (1107) |
+| `spit` | `dmg_spit` | where the enemy lands when spat, two radii and 0.02 from the swallower | the pah (1128) |
+| `cannon` | `dmg_rope` | the `x, y` of the enemy's `rope` event | the spat enemy hits a rope within `spit_t` s (1082) |
+
+A hit on a shielded enemy is the `block` of 6.2 with the hit's name (`gulp` never: the kind tests the shield itself
+and says `swallow`; `spit` and `cannon` can be).
 
 <!-- /kind:swallow -->
 
@@ -586,30 +605,37 @@ if 'DET' in rec:                                    # #37, only recorded when a 
 <!-- kind:anchor -->
 #### `anchor` (weapon kind of BASS CLARINET)
 
-`fight.py` 2568 to 2658. Not ported yet: its port fills this section in (the meaning of each field, as 6.2 and 6.3 do
-for FLUTE and TROMBONE), from the lines below.
+`fight.py` 2568 to 2658, ported (milestone 3, Task 16; `kinds/anchor.rs`). ENDPIN ANCHOR: every `every` beats on the
+16th grid (haste divides the grid; never on the fight's first 16th) a fighter that is neither stunned, sunk in shadow
+nor whirling drives its floor peg into the canvas an orbit ahead of it, toward the enemy's spot `lead` x half a whirl
+ahead, the peg clipped so the circle stays inside the ropes. It then whirls round the peg, `turns` turns in
+`whirl_beats` beats, the radius easing from where the ball was to the orbit over `settle` s; `move` leaves a whirling
+ball alone. The arm sweeps the circle: an enemy within the orbit plus two ball radii of the peg, not sunk in shadow,
+that the arm's angle crosses is smashed and knocked along the swing and outward, and that arm rests `cool` s. With a
+twin (`twin`, below) a second arm sweeps the far side of the peg. When the whirl's time is up the peg is pulled and
+the ball flies off along the tangent at the shared speed with at least the `release` boost. The fight's generator is
+never drawn from.
 
 **Record keys.**
 
-- `ANC`: added to `rec` at `run()` 5826, written by `snap` 5569 to 5576:
+- `ANC` (float64, frames x 2 x 6; only when a fighter's weapon is an anchor): per ball `[1.0, peg x, peg y, the
+  ball's angle round the peg in radians (never wrapped), the ball's distance from the peg, 1.0 while the ball has a
+  twin else 0.0]`, and six NaN for a ball that does not whirl. A whirl IDENTITY CRISIS copied onto the other ball is
+  recorded in that ball's row.
+- `BL` (6.3) is the orbit: `base` (0.95) at the start, `grow` (0.06) more per landed smash of the fighter's own
+  whirl, up to `max_orbit` (1.8). A copied whirl grows nobody's.
 
-  ```python
-  if 'ANC' in rec:                                    # #38, only recorded when a fighter uses the 'anchor' kind
-      Ac = np.full((2, 6), np.nan)
-      for j, Bj in enumerate((B0, B1)):
-          An = getattr(Bj, 'anc', None)
-          if An is not None:
-              Ac[j] = (1.0, An['c'][0], An['c'][1], An['th'], float(np.hypot(*(Bj.p - An['c']))),
-                       float(getattr(Bj, 'twin_until', -1.0) > self.t))
-      rec['ANC'].append(Ac)
-  ```
+**Events.**
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+| Kind | `who` (2) | 3 | 4 | 5 | 6 |
+| --- | --- | --- | --- | --- | --- |
+| `anchor` | the ball that whirls | peg x (float) | peg y (float) | the orbit the whirl eases to (float) | the time the peg is pulled (float) |
+| `pull` | the ball | x where it is (float) | y (float) | its velocity x (float) | its velocity y (float) |
 
-- 2600: `self.ev('anchor', k, float(c[0]), float(c[1]), float(orbit), B.anc['t_end'])`
-- 2609: `self.ev('pull', k, float(B.p[0]), float(B.p[1]), float(B.v[0]), float(B.v[1]))`
-- 2649: `self.damage(k, 1 - k, dmg, 'anchor', hx, hy, ghost)`
+`hit`, elements 7 and 8 (6.2): what hit is `anchor`, sub is 0 for the arm and 1 for the twin's arm (`twin_dmg` x the
+damage); contact x and y are the point of the enemy's ball nearest the peg. A shielded enemy gives a `block` (what
+blocked `anchor`), is still knocked, the arm still rests, and no orbit grows. A `pull` comes at the whirl's end, and
+just before a `lights_out` when LIGHTS OUT starts mid-whirl.
 
 <!-- /kind:anchor -->
 
@@ -1343,39 +1369,45 @@ and 6.3 do for FLUTE and TROMBONE), from the lines below.
 <!-- kind:twin -->
 #### `twin` (ability kind of BASS CLARINET)
 
-`fight.py` 2897 to 2899. Not ported yet: its port fills this section in (the meaning of each field, as 6.2 and 6.3 do
-for FLUTE and TROMBONE), from the lines below.
+`fight.py` 2897 to 2899, ported (milestone 3, Task 16; `abilities/twin.rs`). MULTIPHONICS: for `dur` s or `dur_beats`
+beats the ball has a ghost twin that doubles its signature: an anchor whirl gets a second arm on the far side of the
+peg, a mortar salvo doubles. The time it ends is kept per ball (`Fight::twin`), so a copied twin works on a ball
+whose fighter has none.
 
-**Record keys.** None of its own.
+**Record keys.** None of its own. `ANC`'s sixth number (above) is 1.0 while a whirling ball has a twin.
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+**Events.**
 
-- 2899: `self.ev('twin', k, B.twin_until)`
+| Kind | `who` (2) | 3 |
+| --- | --- | --- |
+| `twin` | the ball that has the twin | the time it ends (float) |
 
 <!-- /kind:twin -->
 
 <!-- kind:lights_out -->
 #### `lights_out` (ability kind of BASS CLARINET)
 
-`fight.py` 2767 to 2800, 2895 to 2896. Not ported yet: its port fills this section in (the meaning of each field, as 6.2
-and 6.3 do for FLUTE and TROMBONE), from the lines below.
+`fight.py` 2767 to 2800 and 2895 to 2896, ported (milestone 3, Task 16; `abilities/lights_out.rs`). LIGHTS OUT: a
+whirl in progress is pulled first (a `pull` event); then for `dur` s or `dur_beats` beats the ball is sunk in shadow:
+no hit lands on it (not even a `block`), it clashes with nothing, starts no attack (`_stunned`), and before every
+`move` its heading turns toward the enemy by at most `turn` radians a second, with a boost of at least `home` - 1.
+At the end it erupts where it is: an enemy whose centre is within `radius` plus 0.6 of a ball radius takes `dmg` and
+is knocked away by `knock` (along its own heading when the two centres are within 0.001).
 
 **Record keys.**
 
-- `LO`: added to `rec` at `run()` 5808, written by `snap` 5562 to 5563:
+- `LO` (float64, frames x 2; only when a fighter has a `lights_out` ability of its own): each ball's seconds of
+  shadow left, 0.0 when it is not sunk (at least 1e-6 while it is).
 
-  ```python
-  if 'LO' in rec:                                     # #38, only recorded when a fighter has 'lights_out'
-      rec['LO'].append([getattr(B0, 'shadow', 0.0), getattr(B1, 'shadow', 0.0)])
-  ```
+**Events.**
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+| Kind | `who` (2) | 3 | 4 | 5 |
+| --- | --- | --- | --- | --- |
+| `lights_out` | the ball that sinks | the time it erupts (float) | | |
+| `erupt` | the ball | x where it erupts (float) | y (float) | 1 if the eruption hit the enemy, else 0 (int) |
 
-- 2774: `self.ev('lights_out', k, B.lo['t_end'])`
-- 2790: `self.damage(k, 1 - k, ab['dmg'], 'erupt', float(O.p[0]), float(O.p[1]))`
-- 2792: `self.ev('erupt', k, float(B.p[0]), float(B.p[1]), int(hit))`
+`hit`, elements 7 and 8 (6.2): what hit is `erupt`, sub 0; contact x and y are the enemy's centre. The `hit` (or the
+`block` of a shielded enemy) comes just before its `erupt`, at the same time.
 
 <!-- /kind:lights_out -->
 
