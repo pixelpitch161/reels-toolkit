@@ -269,7 +269,14 @@ mod tests {
             .filter(|f| f.available)
             .map(|f| f.name.as_str())
             .collect();
-        assert_eq!(on, ["FLUTE", "TROMBONE"]);
+        // every fighter the registry offers, in the score order the roster is shown in
+        let offered: Vec<&str> = bf_content::shown_order()
+            .into_iter()
+            .filter(|n| bf_content::PORTED.contains(n))
+            .collect();
+        assert_eq!(on, offered);
+        assert_eq!(on.len(), bf_content::PORTED.len());
+        assert!(on.contains(&"FLUTE") && on.contains(&"TROMBONE"));
         for f in &r.fighters {
             assert!(!bf_core::fightfile::RETIRED.contains(&f.name.as_str()), "{}", f.name);
             assert_eq!(f.card.is_some(), f.available, "{}", f.name);
@@ -281,11 +288,12 @@ mod tests {
             assert_eq!(f.music_feeds_fight, declared, "{}", f.name);
         }
         let get = |name: &str| r.fighters.iter().find(|f| f.name == name).expect(name);
-        // and the facts known: FLUTE's and TROMBONE's music never feeds their fights; PIANO's roll does, once ported
+        // and the facts known: FLUTE's and TROMBONE's music never feeds their fights; PIANO's roll does
         assert!(!get("FLUTE").music_feeds_fight && !get("TROMBONE").music_feeds_fight);
-        if bf_content::PORTED.contains(&"PIANO") {
-            assert!(get("PIANO").music_feeds_fight, "PIANO's roll is its music");
-        }
+        assert!(
+            get("PIANO").available && get("PIANO").music_feeds_fight,
+            "PIANO's roll is its music"
+        );
         let flute = get("FLUTE");
         assert_eq!((flute.section, flute.display.as_str()), (Section::Woodwinds, "Flute"));
         let fc = flute.card.as_ref().expect("the flute's card");

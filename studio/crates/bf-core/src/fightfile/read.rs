@@ -142,19 +142,51 @@ impl Music {
             lines.insert(k.clone(), line);
         }
         let mut solos = BTreeMap::new();
+        let format = v.0;
         for (k, v) in opt_table(t, p, "solos")? {
             let field = path("music.solos", k);
             let mut solo = Vec::new();
             for (i, n) in as_list(v, &field)?.iter().enumerate() {
                 let f = format!("{field}[{i}]");
-                let shape = || err(f.clone(), "must be [beat, note, beats]");
+                let shape = || {
+                    err(
+                        f.clone(),
+                        "must be [beat, note, beats] or, for a chord, [beat, [note, ...], beats]",
+                    )
+                };
                 let triple = match n {
                     toml::Value::Array(a) if a.len() == 3 => a,
                     _ => return Err(shape()),
                 };
                 let beat = number(&triple[0]).ok_or_else(shape)?;
                 let note = match &triple[1] {
-                    toml::Value::Integer(m) => midi(*m, &f)?,
+                    toml::Value::Integer(m) => SoloNote::Note(midi(*m, &f)?),
+                    // a chord (format 2): the kit's tuple of notes
+                    toml::Value::Array(ns) => {
+                        if format < 2 {
+                            return Err(err(
+                                f,
+                                "a chord in a solo is not a setting of format 1 fight files (it came in format 2: a \
+                                 file with it says format = 2)",
+                            ));
+                        }
+                        let mut chord = Vec::new();
+                        for (j, m) in ns.iter().enumerate() {
+                            match m {
+                                toml::Value::Integer(m) => match i32::try_from(*m) {
+                                    Ok(n) if (0..=127).contains(&n) => chord.push(n),
+                                    _ => {
+                                        return Err(err(
+                                            f,
+                                            format!("note {} of the chord: {m} is not a MIDI note (0 to 127)", j + 1),
+                                        ));
+                                    }
+                                },
+                                _ => return Err(shape()),
+                            }
+                        }
+                        SoloNote::Chord(chord)
+                    }
                     _ => return Err(shape()),
                 };
                 let beats = number(&triple[2]).ok_or_else(shape)?;
