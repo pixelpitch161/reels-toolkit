@@ -400,9 +400,15 @@ pub fn statistics(pair: &str) {
     fight::assert_the_kits(pair, &rs, &py);
 }
 
+/// How many of the search's fits `native_render` renders before it turns to the kit's verdicts (ruling M3-R47).
+pub const NATIVE_FITS: usize = 10;
+
 /// A Studio-native fight of the pair from the command line's path: the search (`ballfight search --stop 10`) on
-/// the fight file with its seed removed, then the render of the first fit, which must pass every check. Prints the
-/// seed, the K.O. and the render time. Ignored (long; needs ffmpeg).
+/// the fight file with its seed removed, then the render of its fits in order (at most [`NATIVE_FITS`]) until one
+/// passes every check; it prints that fit's seed, K.O. and render time. When none of them passes (ruling M3-R47),
+/// the kit's own checks of the first of those seeds (`native_checks.json`, exported with the spec's `native_seeds`)
+/// must give the Studio's verdicts and numbers (`checks_parity`'s bars, through [`crate::checks::check_fight`]),
+/// with at least one check failing in the kit too. Ignored (long; needs ffmpeg).
 pub fn native_render(pair: &str) {
     let mut ff = fight_file(pair);
     ff.seed = None;
@@ -410,7 +416,7 @@ pub fn native_render(pair: &str) {
     let sheet = BeatSheet::series([fighter(&ff.fighters[0]), fighter(&ff.fighters[1])]);
     let opts = SearchOpts {
         from: 1,
-        stop_fits: 10,
+        stop_fits: NATIVE_FITS,
         max_seeds: Some(5_000),
         workers: 3,
     };
@@ -421,13 +427,46 @@ pub fn native_render(pair: &str) {
         &|_| {},
         &AtomicBool::new(false),
     );
-    let fit = found
+    let fits: Vec<_> = found
         .candidates
         .iter()
-        .find(|c| c.verdict.fits)
-        .unwrap_or_else(|| panic!("{pair}: no fit in {} seeds", found.checked));
-    ff.seed = Some(fit.seed);
-    let setup = setup_from(&ff, roster(), fit.seed).expect("the setup");
+        .filter(|c| c.verdict.fits)
+        .take(NATIVE_FITS)
+        .collect();
+    assert!(!fits.is_empty(), "{pair}: no fit in {} seeds", found.checked);
+    let mut refused = Vec::new();
+    for fit in fits {
+        match render_fit(pair, &ff, fit.seed) {
+            Ok((secs, out)) => {
+                let after = if refused.is_empty() {
+                    String::new()
+                } else {
+                    format!(" (after {} fits that did not: {refused:?})", refused.len())
+                };
+                println!(
+                    "{pair}: seed {} (K.O. {:?}) rendered in {secs:.1} s to {out}, every check passed{after}",
+                    fit.seed, fit.story.t_ko
+                );
+                return;
+            }
+            Err(why) => {
+                println!(
+                    "{pair}: seed {} (K.O. {:?}) does not pass every check: {why}",
+                    fit.seed, fit.story.t_ko
+                );
+                refused.push(fit.seed);
+            }
+        }
+    }
+    native_parity(pair, &ff, &refused);
+}
+
+/// The render of one fit of the search: `Ok((seconds, the video's path))` when every check passes, else why not
+/// (the job's refusal, or the checks that failed).
+fn render_fit(pair: &str, ff: &FightFile, seed: u64) -> Result<(f64, String), String> {
+    let mut ff = ff.clone();
+    ff.seed = Some(seed);
+    let setup = setup_from(&ff, roster(), seed).expect("the setup");
     let rec = bf_sim::run(&setup, true).expect("the fight");
     let out = std::env::temp_dir().join(format!("bf-harness-{pair}"));
     let started = Instant::now();
@@ -450,16 +489,105 @@ pub fn native_render(pair: &str) {
             }
         },
         &AtomicBool::new(false),
-    )
-    .unwrap_or_else(|e| panic!("{pair}: the render of seed {}: {e}", fit.seed));
-    let failed = failed.into_inner().unwrap();
-    std::fs::remove_dir_all(&opts.out_root).unwrap_or_else(|e| panic!("{}: {e}", opts.out_root.display()));
-    println!(
-        "{pair}: seed {} (K.O. {:?}) rendered in {:.1} s to {}",
-        fit.seed,
-        fit.story.t_ko,
-        started.elapsed().as_secs_f64(),
-        done.display()
     );
-    assert!(failed.is_empty(), "{pair}: checks that failed: {failed:?}");
+    let secs = started.elapsed().as_secs_f64();
+    if opts.out_root.exists() {
+        std::fs::remove_dir_all(&opts.out_root).unwrap_or_else(|e| panic!("{}: {e}", opts.out_root.display()));
+    }
+    let done = done.map_err(|e| e.to_string())?;
+    let failed = failed.into_inner().unwrap();
+    if failed.is_empty() {
+        Ok((secs, done.display().to_string()))
+    } else {
+        Err(format!("checks that failed: {failed:?}"))
+    }
+}
+
+/// Why the kit's seeds of `native_checks.json` cannot stand for the rendered fits: they must be the first of them,
+/// in the search's order. `None` when they are.
+pub fn native_seeds_differ(rendered: &[u64], kit: &[u64]) -> Option<String> {
+    if kit.is_empty() {
+        return Some("native_checks.json names no seed".into());
+    }
+    (kit.len() > rendered.len() || rendered[..kit.len()] != *kit).then(|| {
+        format!(
+            "the kit's seeds {kit:?} are not the first fits the Studio rendered, {rendered:?}: export again with the \
+             spec's native_seeds set to the first of these"
+        )
+    })
+}
+
+/// The checks of a kit checks document (a `checks.json`'s `checks`) that fail, by name.
+pub fn failing_checks(checks: &Value) -> Vec<String> {
+    checks
+        .as_object()
+        .map(|m| {
+            m.iter()
+                .filter(|(_, v)| v["pass"].as_bool() == Some(false))
+                .map(|(k, _)| k.clone())
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+/// Ruling M3-R47: no rendered fit passed every check; the kit's own checks of the first of them give the Studio's
+/// verdicts and numbers, and the kit fails at least one check on each of them too.
+fn native_parity(pair: &str, ff: &FightFile, rendered: &[u64]) {
+    let f = folder(pair);
+    assert!(
+        crate::refs::reference(&format!("{f}/native_checks.json")).exists(),
+        "{pair}: none of the {} fits {rendered:?} passes every check, and {f}/native_checks.json is missing: set \
+         native_seeds in tools/studio_export/episode_{pair}.py to the first of them and export again (M3-R47)",
+        rendered.len()
+    );
+    let doc = json(&f, "native_checks.json");
+    let kit: Vec<u64> = list(&doc["seeds"])
+        .iter()
+        .map(|s| s.as_u64().expect("a seed"))
+        .collect();
+    if let Some(why) = native_seeds_differ(rendered, &kit) {
+        panic!("{pair}: {why}");
+    }
+    for row in list(&doc["fights"]) {
+        let seed = row["seed"].as_u64().expect("a seed");
+        let kit_doc = crate::refs::cache_json(text(&row["checks"]));
+        let fails = failing_checks(&kit_doc["checks"]);
+        assert!(
+            !fails.is_empty(),
+            "{pair}: seed {seed} fails a check in the Studio but passes every check in the kit"
+        );
+        let mut one = ff.clone();
+        one.seed = Some(seed);
+        let setup = setup_from(&one, roster(), seed).expect("the setup");
+        let rec = bf_sim::run(&setup, true).expect("the fight");
+        crate::checks::check_fight(&f, &format!("native s{seed}"), rec, &one, &kit_doc);
+        println!("{pair}: seed {seed}: the kit's checks are the Studio's; both fail {fails:?}");
+    }
+    println!(
+        "{pair}: no fit passed every check, in the kit too: the {} rendered fits {rendered:?}; the kit's checks of \
+         {kit:?} give the Studio's verdicts and numbers",
+        rendered.len()
+    );
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{failing_checks, native_seeds_differ};
+
+    #[test]
+    fn the_kit_seeds_are_the_first_rendered_fits() {
+        assert_eq!(native_seeds_differ(&[820, 75, 983, 203], &[820, 75, 983]), None);
+        assert_eq!(native_seeds_differ(&[820, 75], &[820, 75]), None);
+        assert!(native_seeds_differ(&[820, 75, 983], &[75, 820]).is_some());
+        assert!(native_seeds_differ(&[820, 75, 983], &[820, 983]).is_some());
+        assert!(native_seeds_differ(&[820], &[820, 75]).is_some());
+        assert!(native_seeds_differ(&[820], &[]).is_some());
+    }
+
+    #[test]
+    fn failing_checks_reads_the_verdicts() {
+        let doc = serde_json::json!({"levels": {"pass": false}, "band": {"pass": true}, "flash": {"pass": false}});
+        assert_eq!(failing_checks(&doc), ["flash", "levels"]);
+        assert!(failing_checks(&serde_json::json!({"band": {"pass": true}})).is_empty());
+    }
 }

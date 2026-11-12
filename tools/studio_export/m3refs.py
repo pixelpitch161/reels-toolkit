@@ -1243,7 +1243,8 @@ def fighter_parts(spec, folder, export, module, main, swapped, left_seed, right_
 
 
 # ---------------------------------------------------------------- a pair gate's references (Template P)
-EPISODE_SPEC_KEYS = ('config', 'stats', 'links', 'scenarios', 'weapon_hit', 'frames', 'recording_in_cache')
+EPISODE_SPEC_KEYS = ('config', 'stats', 'links', 'scenarios', 'weapon_hit', 'frames', 'recording_in_cache',
+                     'native_seeds')
 
 
 class Loaded:
@@ -1293,13 +1294,17 @@ def episode_refs(spec):
     stats.json (pooled; rows cached), pairs.json (the links' coverage), exceptions.toml; the kit's recording of the
     config is pointed at when a committed file (milestone 1's, or the theme folder's) has its bytes, or a pinned
     cache file of the theme folder (ruling M3-R43: dict(cache=, sha256=)); else copied as run.bfrec, or with
-    recording_in_cache=True (M3-R43: it would take the folder over its budget) pinned as the cache's run.bfrec"""
+    recording_in_cache=True (M3-R43: it would take the folder over its budget) pinned as the cache's run.bfrec;
+    native_seeds=() (ruling M3-R47: the first fits of the Studio's search, in its order, when none of them passes
+    every check: the kit's own checks of each such seed's fight, pinned in the cache as native/s<seed>_checks.json
+    with its rows, listed in native_checks.json, so native_render can show the kit gives the same verdicts)"""
     from . import fights, m3parts as MP, recording, scenarios as SC, stats as ST
     module = sys._getframe(1).f_globals.get('__name__', __name__)
     unknown = sorted(set(spec) - set(EPISODE_SPEC_KEYS))
     if unknown:
         raise SystemExit(f"episode spec: unknown keys {', '.join(unknown)} (it has {', '.join(EPISODE_SPEC_KEYS)})")
-    spec = dict(dict(stats=4000, links=(), scenarios=None, weapon_hit={}, frames=40, recording_in_cache=False), **spec)
+    spec = dict(dict(stats=4000, links=(), scenarios=None, weapon_hit={}, frames=40, recording_in_cache=False,
+                     native_seeds=()), **spec)
     if not isinstance(spec['recording_in_cache'], bool):
         raise SystemExit('episode spec: recording_in_cache is True or False')
     config = spec['config']
@@ -1349,6 +1354,28 @@ def episode_refs(spec):
     pin(cache_dir(folder, 'stems.npz'), export)
     assert len(frames_doc['frames']) >= spec['frames'], f"{export}: {len(frames_doc['frames'])} golden frames"
     assert sound['master_sha256'] and checks['episode_facts']['audio_wav_sha256']
+    # ---- M3-R47: the kit's own checks on the native render's fits (seeds the Studio's search finds), when asked
+    native = []
+    for s_ in spec['native_seeds']:
+        s_ = int(s_)
+        n_cfg = Loaded(config_folder(f'episode_{pair}_native_s{s_}', pair, text + (
+            '\n# ---------------------------------------------------------------- tools/studio_export m3refs\n'
+            f'SEED = {s_}\n')), facts['fighters'], s_)
+        n_tmp = cache_dir(folder, 'native', f's{s_}.bfrec.tmp')
+        os.makedirs(os.path.dirname(n_tmp), exist_ok=True)
+        n_rec = record(n_cfg, s_, {}, n_tmp)
+        n_doc, n_rows = MP.split_checks(MP.fresh(MP.checks_child, n_cfg, n_tmp))
+        os.remove(n_tmp)
+        assert n_doc['episode_facts']['seed'] == s_, (s_, n_doc['episode_facts'])
+        rows_name = f'native/s{s_}_checks_rows.json'
+        cache_json(folder, rows_name, dict(about=f'the per-frame rows of native/s{s_}_checks.json', **n_rows), export)
+        cache_json(folder, f'native/s{s_}_checks.json', dict(
+            about=f"{config} at seed {s_}: what each check of kit/checks.py gives", format=1,
+            rows_cache=f'{folder}/{rows_name}', **n_doc), export)
+        native.append(dict(seed=s_, t_ko=n_rec['t_ko'], winner=n_rec['winner'], rec_hash=recording.rec_hash(n_rec),
+                           checks=f'{folder}/native/s{s_}_checks.json',
+                           verdicts={k: v['pass'] for k, v in sorted(n_doc['checks'].items())
+                                     if isinstance(v, dict) and 'pass' in v}))
     # ---- statistics at the config's own handicap
     got = statistics(cfg, spec['stats'])
     rows = [g[0] for g in got]
@@ -1427,6 +1454,12 @@ def episode_refs(spec):
         about=f"{config}: the pair's own links (plan Table S5): each item's first occurrence over the scenario "
               f"fights (scenario, seed, time, event index, the event), within {WINDOW} s of FIGHT!",
         tool=module, format=1, window=WINDOW, t_fight=ep.T.T_FIGHT, links=links, scenarios=scen_doc), module)
+    if native:
+        commit_json(folder, 'native_checks.json', dict(
+            about=f"{config}: the kit's own checks on the first fits of the Studio's search (ruling M3-R47), for "
+                  f"native_render when none of them passes every check: each seed's verdicts, and its whole checks "
+                  f"document in the cache", tool=module, format=1, seeds=[n['seed'] for n in native],
+            fights=native), module)
     keep_or_write(folder, EXCEPTIONS, EXCEPTIONS_TEXT, module)
     finish(folder)
     print(f"{export}: {folder}: {len(frames_doc['frames'])} golden frames, {len(links)} links, "

@@ -12,6 +12,42 @@
    "export": "episode_trombone_vs_horn"
   },
   {
+   "path": "episodes/trombone_vs_horn/native/s75_checks.json",
+   "sha256": "5ef93f408d699f763db55b454ed41fd772f7063ef631417ee29b7b7c27dd0dbc",
+   "bytes": 11141,
+   "export": "episode_trombone_vs_horn"
+  },
+  {
+   "path": "episodes/trombone_vs_horn/native/s75_checks_rows.json",
+   "sha256": "0e9339b10e4ef1f66e60f9913de13788a890bb73a1d6280fb220119fbeadfb54",
+   "bytes": 34709,
+   "export": "episode_trombone_vs_horn"
+  },
+  {
+   "path": "episodes/trombone_vs_horn/native/s820_checks.json",
+   "sha256": "9a74f8c7ea3e9dd1140463cd46e37cedd2bcdd381a91fdd3012c0254121f83fc",
+   "bytes": 11493,
+   "export": "episode_trombone_vs_horn"
+  },
+  {
+   "path": "episodes/trombone_vs_horn/native/s820_checks_rows.json",
+   "sha256": "a39d2bf4f5537e30f76fa13028dbad8ed6835738a560d5a63fcaa10abc6f6bef",
+   "bytes": 32381,
+   "export": "episode_trombone_vs_horn"
+  },
+  {
+   "path": "episodes/trombone_vs_horn/native/s983_checks.json",
+   "sha256": "021d48d6f26530269ea99b059e84cee673bc372b84815879ad01760497c58d5e",
+   "bytes": 11542,
+   "export": "episode_trombone_vs_horn"
+  },
+  {
+   "path": "episodes/trombone_vs_horn/native/s983_checks_rows.json",
+   "sha256": "73bc243756a91b20c6347bf8afae9a96cc62260ef51eb344f801c3352215c923",
+   "bytes": 32894,
+   "export": "episode_trombone_vs_horn"
+  },
+  {
    "path": "episodes/trombone_vs_horn/scenarios/early_low_s1.bfrec",
    "sha256": "56c94647b9e1a9deebea5d601a93bbe6e1bcf2e688087cd1263e8b5a63b31055",
    "bytes": 215560,
