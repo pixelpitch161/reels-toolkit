@@ -13,9 +13,8 @@
 //!
 //! What the Python part reads off its look (`M.P.LOOKS[k].SEGS`, `.DROLLS`, `.CANNONS`) it gets here from the
 //! recording's events (`state.rs`). The pit's timpani and marimba double the hymn only when the bed has both
-//! (`hasattr(b, 'timp') and hasattr(b, 'marimba')`, `_pit`): of the kit's beds only `dark_drumline` has both
-//! (`baroque_storm` has `timp` but no `marimba`, so there the kit's hymn is the bell alone), and no bed of the Studio
-//! has them yet, so that branch plays nothing here and the tubular bell plays alone.
+//! (`hasattr(b, 'timp') and hasattr(b, 'marimba')`, `_pit`: [`Bed::has_pit`]): of the kit's beds only
+//! `dark_drumline` has both (`baroque_storm` has `timp` but no `marimba`, so there the kit's hymn is the bell alone).
 
 use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex};
@@ -257,12 +256,36 @@ impl BassDrumSound {
         self.hymn_tonic(ctx) + HYMN.get(i).copied().unwrap_or(0)
     }
 
-    /// `_pit(mix, t, m)`: the hymn note doubled by the pit's timpani and marimba when the bed has them (none of the
-    /// Studio's beds does), and a tubular bell over it.
-    fn pit(&self, mix: &mut Mix, t: f64, m: i32) -> Played {
+    /// `_pit(mix, t, m)`: the hymn note doubled by the pit's timpani (moved into C2 to D3) and a 32nd-note marimba
+    /// roll on it and its octave when the bed has a pit ([`Bed::has_pit`]), and a tubular bell over it. `s16` is
+    /// `T.S16`.
+    fn pit(&self, bed: &dyn Bed, mix: &mut Mix, t: f64, m: i32, s16: f64) -> Played {
         let mut hm = m;
         while hm < 72 {
             hm += 12;
+        }
+        if bed.has_pit() {
+            let mut tm = m;
+            while tm < 36 {
+                tm += 12;
+            }
+            while tm > 50 {
+                tm -= 12;
+            }
+            mix.place("pit", &Sig::Mono(bed.timp(tm)?), t, 0.42, 0.0);
+            for dm in [0, 12] {
+                for r in 0..6usize {
+                    // 0.05 + 0.01 * (r_ == 0)
+                    let g = 0.05 + 0.01 * if r == 0 { 1.0 } else { 0.0 };
+                    mix.place(
+                        "pit",
+                        &Sig::Mono(bed.marimba(hm + dm)?),
+                        t + r as f64 * s16 / 2.0,
+                        g,
+                        0.0,
+                    );
+                }
+            }
         }
         mix.place("fx", &Self::sig(&self.bell(hm + 12)?), t, 0.10, 0.0);
         Ok(())
@@ -343,9 +366,9 @@ impl BassDrumSound {
     }
 
     /// The BOOMs, HEARTBEAT and the cannons (bass_drum.py 536 to 564).
-    fn events(&self, ctx: &MusicCtx, mix: &mut Mix, cannons: &[(f64, i64, f64, f64, f64)]) -> Played {
+    fn events(&self, ctx: &MusicCtx, bed: &dyn Bed, mix: &mut Mix, cannons: &[(f64, i64, f64, f64, f64)]) -> Played {
         let (k, bus, pan) = (self.k, self.bus(ctx), self.pan());
-        let beat = ctx.show.grid.beat;
+        let (beat, s16) = (ctx.show.grid.beat, ctx.show.grid.s16);
         for e in &ctx.rec.events {
             let t = e.t;
             if t > ctx.show.t_ko + 0.01 {
@@ -386,14 +409,14 @@ impl BassDrumSound {
                     mix.place("fx", &Sig::Mono(roar), tq, 0.30, 0.0);
                     let thud = synth::thud(0.8, 120.0, 26.0, (70 + i) as u64);
                     mix.place("fx", &Sig::Mono(thud), tq, 0.34, 0.0);
-                    self.pit(mix, tq, m)?;
+                    self.pit(bed, mix, tq, m, s16)?;
                     if i == HYMN.len() as i64 - 1 {
                         // the resolution: the tonic on the next beat
                         let tn = tq + beat;
                         let tonic = self.hymn_note(ctx, HYMN.len());
                         let x = self.hit(ctx, f64::from(tonic), 1.0, true, 0.2)?;
                         mix.place(&bus, &Self::sig(&x), tn, 0.6, pan);
-                        self.pit(mix, tn, tonic)?;
+                        self.pit(bed, mix, tn, tonic, s16)?;
                     }
                 }
                 _ => {}
@@ -470,7 +493,7 @@ impl Sound for BassDrumSound {
         Ok(())
     }
 
-    fn play(&self, ctx: &MusicCtx, _: &dyn Bed, mix: &mut Mix) -> Played {
+    fn play(&self, ctx: &MusicCtx, bed: &dyn Bed, mix: &mut Mix) -> Played {
         let ev = &ctx.rec.events;
         let segs = state::segs(ev, self.k);
         let drolls = state::drolls(ev, self.k);
@@ -482,7 +505,7 @@ impl Sound for BassDrumSound {
             .collect();
         self.kick(ctx, mix, &busy)?;
         self.rolls(ctx, mix, &segs, &drolls)?;
-        self.events(ctx, mix, &state::cannons(ev, self.k))
+        self.events(ctx, bed, mix, &state::cannons(ev, self.k))
     }
 
     /// The drum caves in: a dying roll, a last flat thud, the rods rattling.
@@ -599,5 +622,118 @@ mod tests {
         assert_eq!(whole(fit_reg_f(56.5, 28, 56)).unwrap(), 44);
         assert_eq!(fit_reg(whole(56.5).unwrap(), 28, 56), 56);
         assert_eq!(fit_reg_f(14.0, 28, 50), 38.0);
+    }
+
+    /// A bed that plays nothing, with a pit or without one: its timpani stroke on `m` is ten samples of `m`, its
+    /// marimba stroke five of `1000 + m`.
+    struct PitBed(bool);
+
+    impl Bed for PitBed {
+        fn hooks(&self) -> &'static [bf_sound::traits::BedHook] {
+            &[]
+        }
+        fn has_pit(&self) -> bool {
+            self.0
+        }
+        fn timp(&self, m: i32) -> Result<Vec<f64>, MusicError> {
+            assert!(self.0, "timp asked of a bed without a pit");
+            Ok(vec![f64::from(m); 10])
+        }
+        fn marimba(&self, m: i32) -> Result<Vec<f64>, MusicError> {
+            assert!(self.0, "marimba asked of a bed without a pit");
+            Ok(vec![1000.0 + f64::from(m); 5])
+        }
+        fn buses(&self) -> &[(&'static str, (f64, f64))] {
+            &[]
+        }
+        fn reverb(&self) -> (f64, f64, f64) {
+            (1.0, 0.5, 0.2)
+        }
+        fn comp(&self) -> (f64, f64) {
+            (0.2, 0.5)
+        }
+        fn roar_gain(&self) -> f64 {
+            0.2
+        }
+        fn doors_gain(&self) -> f64 {
+            0.5
+        }
+        fn landing(&self) -> (f64, f64) {
+            (0.08, 0.06)
+        }
+        fn pop(&self) -> (f64, f64, f64) {
+            (95.0, 102.0, 0.12)
+        }
+        fn boom(&self, _: &MusicCtx, _: &mut Mix, _: f64, _: f64) -> Played {
+            Ok(())
+        }
+        fn clash(&self, _: &MusicCtx, _: &mut Mix, _: f64) -> Played {
+            Ok(())
+        }
+        fn title(&self, _: &MusicCtx, _: &mut Mix, _: [f64; 3]) -> Played {
+            Ok(())
+        }
+        fn vs(&self, _: &MusicCtx, _: &mut Mix, _: f64) -> Played {
+            Ok(())
+        }
+        fn title_rest(&self, _: &MusicCtx, _: &mut Mix) -> Played {
+            Ok(())
+        }
+        fn count_in(&self, _: &MusicCtx, _: &mut Mix) -> Played {
+            Ok(())
+        }
+        fn fight_start(&self, _: &MusicCtx, _: &mut Mix) -> Played {
+            Ok(())
+        }
+        fn fight(&self, _: &MusicCtx, _: &mut Mix, _: usize) -> Played {
+            Ok(())
+        }
+        fn ko(&self, _: &MusicCtx, _: &mut Mix) -> Played {
+            Ok(())
+        }
+        fn stinger(&self, _: &MusicCtx, _: &mut Mix, _: f64) -> Played {
+            Ok(())
+        }
+        fn after_ko(&self, _: &MusicCtx, _: &mut Mix, _: usize, _: f64, _: f64) -> Played {
+            Ok(())
+        }
+        fn victory(&self, _: &MusicCtx, _: &mut Mix, _: usize) -> Played {
+            Ok(())
+        }
+        fn last_bars(&self, _: &MusicCtx, _: &mut Mix) -> Played {
+            Ok(())
+        }
+    }
+
+    /// `_pit(mix, t, m)` (bass_drum.py 566 to 582): on a bed with a pit, the timpani on the note moved into C2 to D3
+    /// at 0.42, then a six-stroke marimba roll on 32nds (0.06, then 0.05) on the note moved up to C5 or above and
+    /// on its octave, then the bell on the fx bus; on a bed without one, the bell alone.
+    #[test]
+    fn the_hymn_is_doubled_in_the_pit_when_the_bed_has_one() {
+        let (t, s16) = (10.0, 0.119);
+        let part = BassDrumSound::new(0);
+        // the pit bus the kit's `_pit` makes for the timpani note `tm` and the marimba note `hm`
+        let want = |tm: i32, hm: i32| {
+            let mut mix = Mix::new(12.0);
+            mix.place("pit", &Sig::Mono(vec![f64::from(tm); 10]), t, 0.42, 0.0);
+            for dm in [0, 12] {
+                for r in 0..6usize {
+                    let g = if r == 0 { 0.05 + 0.01 } else { 0.05 };
+                    let x = Sig::Mono(vec![1000.0 + f64::from(hm + dm); 5]);
+                    mix.place("pit", &x, t + r as f64 * s16 / 2.0, g, 0.0);
+                }
+            }
+            mix.bus("pit").unwrap().to_vec()
+        };
+        for (m, tm, hm) in [(27, 39, 75), (64, 40, 76), (48, 48, 72)] {
+            let mut plain = Mix::new(12.0);
+            part.pit(&PitBed(false), &mut plain, t, m, s16).unwrap();
+            assert!(plain.bus("pit").is_none(), "no pit, no pit bus");
+            let mut mix = Mix::new(12.0);
+            part.pit(&PitBed(true), &mut mix, t, m, s16).unwrap();
+            assert_eq!(mix.bus("pit").unwrap(), &want(tm, hm)[..], "the pit on {m}");
+            assert_eq!(mix.bus("fx"), plain.bus("fx"), "the same bell over it");
+            assert!(mix.bus("fx").is_some());
+        }
     }
 }

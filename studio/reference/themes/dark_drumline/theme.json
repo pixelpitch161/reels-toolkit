@@ -1,0 +1,181 @@
+{
+ "about": "dark_drumline: its reference configs, each with the kit's own recording of it and the bed alone (both fighters replaced at run time by kit/fighters/base.py Sound, which is silent): the SHA-256 of the 16-bit master's samples (little-endian int16, interleaved: what A.write writes after its header), the buses in the order the score made them, and the bed's class levels",
+ "cache_files": "cache files are under studio/reference/.cache/m3/ and pinned in pins.json",
+ "configs": [
+  {
+   "bed_alone": {
+    "bed": {
+     "buses": {
+      "drums": [1.0, 0.18],
+      "pit": [0.9, 0.3]
+     },
+     "comp": [0.2, 0.5],
+     "reverb": [2.0, 0.5, 0.22]
+    },
+    "buses": ["drums", "pit", "fx"],
+    "master_sha256": "dcecfd82023a5ca0c9caedb4a7df31b57cfbca2550d0264a7fccc5a38bf7c9c4",
+    "stems": ["drums", "pit", "fx"]
+   },
+   "bpm": 126,
+   "chords": ["Cm", "G", "Cm", "Ab", "Fm", "G", "Cm", "Ab", "Fm", "G", "Cm", "Ab", "Fm", "G", "Cm", "Ab", "Fm", "G", "Cm", "Ab", "Fm", "G", "Cm", "Ab", "Fm", "G", "Cm", "Ab", "Fm", "G", "Ab", "G"],
+   "config": "ballfight_flute_vs_sousaphone",
+   "fighters": ["FLUTE", "SOUSAPHONE"],
+   "intro": ["Cm", "G"],
+   "key": "C",
+   "lines": {
+    "FLUTE": [79, 79, 84, 79, 75, 79, 84, 86, 87, 84, 80, 84, 87, 89, 87, 84, 77, 80, 84, 80, 89, 87, 84, 80, 79, 83, 86, 83, 91, 89, 87, 83],
+    "SOUSAPHONE": [36, 43, 36, 43, 36, 43, 39, 41, 44, 39, 44, 39, 44, 39, 48, 46, 41, 48, 41, 48, 41, 48, 44, 43, 43, 50, 43, 50, 43, 47, 50, 47]
+   },
+   "loop": ["Cm", "Ab", "Fm", "G"],
+   "loop_bpm": "0x1.f79b47582192ep+6",
+   "mood": "dark_drumline",
+   "n_bars": 32,
+   "recording": {
+    "cache": "themes/dark_drumline/flute_vs_sousaphone.bfrec",
+    "sha256": "57b9e72f1a5363ec88b0556b75dc19dba14d3641c4ab6ed9a48ab720fcc1964e"
+   },
+   "roles": {
+    "FLUTE": "melody",
+    "SOUSAPHONE": "bass"
+   },
+   "scale": "minor",
+   "seed": 146,
+   "solos": {
+    "FLUTE": [
+     [0.0, 84, 0.5],
+     [0.5, 87, 0.5],
+     [1.0, 91, 1.0],
+     [2.0, 89, 0.5],
+     [2.5, 87, 0.5],
+     [3.0, 86, 0.5],
+     [3.5, 83, 0.5],
+     [4.0, 84, 0.5],
+     [4.5, 79, 0.5],
+     [5.0, 80, 0.5],
+     [5.5, 83, 0.5],
+     [6.0, 84, 2.0]
+    ],
+    "SOUSAPHONE": [
+     [0.0, 36, 0.5],
+     [0.5, 43, 0.5],
+     [1.0, 48, 0.5],
+     [1.5, 43, 0.5],
+     [2.0, 46, 0.5],
+     [2.5, 44, 0.5],
+     [3.0, 43, 1.0],
+     [4.0, 41, 0.5],
+     [4.5, 44, 0.5],
+     [5.0, 47, 0.5],
+     [5.5, 50, 0.5],
+     [6.0, 48, 2.0]
+    ]
+   },
+   "t_ko": 54.15416666666667,
+   "tail": ["Ab", "G"],
+   "title_hits": {
+    "FLUTE": [72, 75, 79, 84, 87, 89, 91],
+    "SOUSAPHONE": [36, 43, 46, 48]
+   },
+   "winner": 1
+  },
+  {
+   "bed_alone": {
+    "bed": {
+     "buses": {
+      "drums": [1.0, 0.18],
+      "pit": [0.9, 0.3]
+     },
+     "comp": [0.2, 0.5],
+     "reverb": [2.0, 0.5, 0.22]
+    },
+    "buses": ["drums", "pit", "fx"],
+    "master_sha256": "cbfcca0457c5991a2647cde819a78e1f5d518b9f1f1f6af15e2e340c3888ab01",
+    "stems": ["drums", "pit", "fx"]
+   },
+   "bpm": 126,
+   "chords": ["Cm", "G", "Cm", "Ab", "Fm", "G", "Cm", "Ab", "Fm", "G", "Cm", "Ab", "Fm", "G", "Cm", "Ab", "Fm", "G", "Cm", "Ab", "Fm", "G", "Cm", "Ab", "Fm", "G", "Cm", "Ab", "Fm", "G", "Ab", "G"],
+   "config": "ballfight_bassdrum_vs_tuba",
+   "fighters": ["BASS DRUM", "TUBA"],
+   "intro": ["Cm", "G"],
+   "key": "C",
+   "lines": {
+    "TUBA": [36, 43, 36, 43, 36, 43, 36, 43, 44, 39, 44, 39, 44, 39, 44, 39, 41, 48, 41, 48, 41, 48, 41, 48, 43, 50, 43, 50, 43, 50, 47, 50]
+   },
+   "loop": ["Cm", "Ab", "Fm", "G"],
+   "loop_bpm": "0x1.f79b47582192ep+6",
+   "mix": {
+    "solo": [2.7, 0.4]
+   },
+   "mood": "dark_drumline",
+   "n_bars": 32,
+   "recording": {
+    "cache": "themes/dark_drumline/bassdrum_vs_tuba.bfrec",
+    "sha256": "1fae44b157c325f8170ac8e075e616281ae89cbdb2a919d7aa199141171ff6a5"
+   },
+   "roles": {
+    "BASS DRUM": "drums",
+    "TUBA": "bass"
+   },
+   "scale": "minor",
+   "seed": 132,
+   "solos": {
+    "BASS DRUM": [
+     [0.0, 36, 1.0],
+     [1.0, 36, 0.5],
+     [1.5, 36, 0.5],
+     [2.0, 12, 1.0],
+     [3.0, 36, 1.0],
+     [4.0, 36, 0.5],
+     [4.5, 36, 0.25],
+     [4.75, 36, 0.25],
+     [5.0, 36, 1.0],
+     [6.0, 12, 1.5],
+     [7.5, 36, 1.0],
+     [8.5, 36, 0.5],
+     [9.0, 36, 1.0],
+     [10.0, 12, 1.0],
+     [11.0, 36, 0.5],
+     [11.5, 36, 0.5],
+     [12.0, 36, 2.0]
+    ],
+    "TUBA": [
+     [0.0, 36, 0.5],
+     [0.5, 43, 0.5],
+     [1.0, 48, 0.5],
+     [1.5, 43, 0.5],
+     [2.0, 46, 0.5],
+     [2.5, 44, 0.5],
+     [3.0, 43, 1.0],
+     [4.0, 41, 0.5],
+     [4.5, 44, 0.5],
+     [5.0, 47, 0.5],
+     [5.5, 50, 0.5],
+     [6.0, 48, 1.5],
+     [7.5, 43, 0.5],
+     [8.0, 36, 0.5],
+     [8.5, 43, 0.5],
+     [9.0, 44, 0.5],
+     [9.5, 43, 0.5],
+     [10.0, 41, 0.5],
+     [10.5, 43, 0.5],
+     [11.0, 47, 0.5],
+     [11.5, 50, 0.5],
+     [12.0, 48, 2.0]
+    ]
+   },
+   "t_ko": 51.854166666666664,
+   "tail": ["Ab", "G"],
+   "theme_options": {
+    "after_ko": true,
+    "bass_drums": false
+   },
+   "title_hits": {
+    "BASS DRUM": [36],
+    "TUBA": [36, 43, 36, 43]
+   },
+   "winner": 0
+  }
+ ],
+ "theme": "dark_drumline",
+ "voicing_methods": ["bd_notes"]
+}
