@@ -171,6 +171,7 @@ pub fn compare(what: &str, s: &Summary, kit: &Value, failures: &mut Vec<(String,
             block_db3(x)
         } else {
             failures.push((format!("{what} rms {bus}"), "no such stem".into()));
+            n += 1;
             continue;
         };
         blocks += profile(&format!("{what} rms {bus}"), &got, list(want), failures);
