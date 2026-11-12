@@ -35,7 +35,7 @@ fn the_hook_waits_opens_hooks_and_sets_up_a_hop() {
         for (o, h) in opens.iter().zip(&hooks) {
             // the frame at the opening holds the positions it opened on (to within a frame's travel)
             let i = frame(o.t);
-            let d = ((p[i * 4 + 2] - p[i * 4]).powi(2) + (p[i * 4 + 3] - p[i * 4 + 1]).powi(2)).sqrt();
+            let d = crate::geom::hypot([p[i * 4 + 2] - p[i * 4], p[i * 4 + 3] - p[i * 4 + 1]]);
             assert!(
                 d - 2.0 * r <= 1.0 + 0.3,
                 "seed {seed}: opened at {} s with the enemy {d} away",
