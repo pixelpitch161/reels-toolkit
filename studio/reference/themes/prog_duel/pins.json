@@ -18,6 +18,12 @@
    "export": "theme_prog_duel"
   },
   {
+   "path": "themes/prog_duel/piano_vs_organ.bfrec",
+   "sha256": "b9cdf1349c96762ef7ecd8e23dead33e7af2fe689faff604c67d19ed06786039",
+   "bytes": 391704,
+   "export": "theme_prog_duel"
+  },
+  {
    "path": "themes/prog_duel/variants/key.bfrec",
    "sha256": "0a89b865dd303147e00344a393a9d6381abadb3607e089dfce91f5a507147150",
    "bytes": 344732,
