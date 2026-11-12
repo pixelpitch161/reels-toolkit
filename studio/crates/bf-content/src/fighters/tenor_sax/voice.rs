@@ -188,7 +188,9 @@ mod tests {
         assert_eq!(synth(46.0, 0.8, 0.12).len(), 13230);
         assert_eq!(synth(46.0, 0.8, 1.0).len(), 52038);
         let x = tenor_tone(116.54, 0.5, 0.9, 0.0, 0.0);
-        assert_eq!(x.len(), pp::len(0.68));
+        // .5 + .18 is just under .68 in float64: int(29987.99...) = 29,987, one short of int(.68 * 44100)
+        assert_eq!(x.len(), pp::len(0.5 + 0.18));
+        assert_eq!(x.len(), 29_987);
         // it starts from nothing (the attack is a power of t) and has died away by its end
         assert_eq!(x[0], 0.0);
         assert!(peak(&x[x.len() - 441..]) < 0.05, "{}", peak(&x[x.len() - 441..]));
