@@ -13,7 +13,7 @@
 //! - [`slap`]: `bassclarinet_lowpoly.slap`, the slap-tongue pop the BASS CLARINET's part plays and the EUPHONIUM's
 //!   plays for a copied SLAP TONGUE.
 //!
-//! The Pixel Pitch voice blocks several voices share are in `bf_sound::voice::pp` (`brass`, `pluck`, `sax`), and
+//! The Pixel Pitch voice blocks several voices share are in `bf_sound::voice::pp` (`brass`, `pluck`, `alto`), and
 //! `scipy.ndimage.gaussian_filter` (TRUMPET) in `bf_picture::ndimage`.
 
 pub mod hash;

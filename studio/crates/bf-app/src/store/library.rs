@@ -442,8 +442,10 @@ mod tests {
         [frame.rgb[at], frame.rgb[at + 1], frame.rgb[at + 2]]
     }
 
-    /// Windows only: denies this user some rights on a folder, and gives them back when dropped (before the test's
-    /// temp folder is removed). Needs no admin rights: the owner of a folder may change who can use it.
+    /// Windows only: denies everyone (the well-known SID `S-1-1-0`, whatever the system's language) some rights on a
+    /// folder, and gives them back when dropped (before the test's temp folder is removed). A deny for everyone binds
+    /// an administrator too (a deny for the user's name alone did not on a hosted runner's administrator account).
+    /// Needs no admin rights: the owner of a folder may always change who can use it, so the rights always come back.
     #[cfg(windows)]
     struct Denied {
         path: PathBuf,
@@ -453,11 +455,7 @@ mod tests {
     #[cfg(windows)]
     impl Denied {
         fn new(path: &Path, rights: &str) -> Denied {
-            let user = format!(
-                "{}\\{}",
-                std::env::var("USERDOMAIN").unwrap(),
-                std::env::var("USERNAME").unwrap()
-            );
+            let user = "*S-1-1-0".to_string();
             let out = std::process::Command::new("icacls")
                 .arg(path)
                 .arg("/deny")
@@ -492,6 +490,21 @@ mod tests {
                 Err(err) => eprintln!("could not run icacls for {}: {err}", self.path.display()),
             }
         }
+    }
+
+    /// Whether the deny on `path` holds for this account. An account that can still list a folder everyone was
+    /// denied (one that reads past permissions, as an administrator with backup rights can) cannot show the case:
+    /// the test says so in its output and checks nothing more.
+    #[cfg(windows)]
+    fn denied_binds(path: &Path) -> bool {
+        let binds = fs::read_dir(path).is_err();
+        if !binds {
+            eprintln!(
+                "not run here: this account can read a folder it was denied (an administrator account): {}",
+                path.display()
+            );
+        }
+        binds
     }
 
     /// Windows only: a junction at `link` pointing at the folder `target` (no admin rights needed).
@@ -765,7 +778,9 @@ mod tests {
         video(&root.0, "readable", &[("readable.toml", b"Readable")], 1_794_000_001);
         let locked = video(&root.0, "locked", &[("locked.toml", b"Locked")], 1_794_000_000);
         let _denied = Denied::new(&locked, "RD");
-        assert!(fs::read_dir(&locked).is_err(), "the folder can still be listed");
+        if !denied_binds(&locked) {
+            return;
+        }
         let entries = scan(&root.0, &read_title).unwrap();
         assert_eq!(entries.len(), 2);
         assert_eq!(entries[0].title, "Readable");
@@ -819,7 +834,9 @@ mod tests {
             1_794_000_000,
         );
         let denied = Denied::new(&videos, "RD");
-        assert!(fs::read_dir(&videos).is_err(), "the folder can still be listed");
+        if !denied_binds(&videos) {
+            return;
+        }
         let result = scan(&videos, &read_title);
         drop(denied);
         let text = result.unwrap_err();

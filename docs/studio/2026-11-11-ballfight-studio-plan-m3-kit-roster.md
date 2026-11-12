@@ -124,8 +124,10 @@ reports and lane notes is `.superpowers/sdd/2026-11-11-ballfight-studio-plan-m3-
    27, 41) and the integration tasks (59 to 63) edit them, one commit each.
 3. **Shared engine files** (`bf-sim/src/{fight,schedule,record,ball}.rs`, `bf-sim/src/{kinds,abilities}/mod.rs`,
    `bf-core/src/roster/mod.rs`, `bf-sound/src/{traits,score,mix}.rs`, `bf-picture/src/{look.rs,ring/*,title/*}`,
-   `bf-content/src/{lib,fighters/mod,themes/mod,cards,picture,soundtrack}.rs`, `tools/studio_export/{__main__,
-   manifest,common,m3refs}.py`): changed only by the foundation tasks. A port that finds a socket's signature wrong
+   `bf-content/src/{lib,fighters/mod,themes/mod,cards,picture,soundtrack}.rs`, the shared helpers of Task 4
+   (`bf-content/src/fighters/shared/*`, `bf-picture/src/ndimage.rs`, `bf-sound/src/voice/**`), `bf-sound/src/music/**`,
+   `tools/studio_export/{__main__,manifest,common,m3refs}.py`): changed only by the foundation tasks; a port never
+   edits them (it stops and reports NEEDS_CONTEXT with the exact addition it needs). A port that finds a socket's signature wrong
    may change that one call line and its stub in its own file, says so in its report, and the controller merges it
    by hand. A port that needs anything else in a shared file (a renderer helper the context lacks, a new trait
    method) stops with NEEDS_CONTEXT naming it; the controller adds it in a small "helper" commit on the build branch,

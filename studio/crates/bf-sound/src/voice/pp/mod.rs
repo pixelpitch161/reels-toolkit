@@ -1,13 +1,13 @@
 //! What the Pixel Pitch voices share: `pp_framework`'s sample rate and pitch, `drums60_lowpoly`'s filters, and
-//! `pp_bridge`'s resampling; and the synthesis blocks several kit voices call ([`brass`], [`pluck`], [`sax`]).
+//! `pp_bridge`'s resampling; and the synthesis blocks several kit voices call ([`brass`], [`pluck`], [`alto`]).
 
 use bf_core::dmath;
 
 use crate::dsp::{self, FilterKind};
 
+pub mod alto;
 pub mod brass;
 pub mod pluck;
-pub mod sax;
 
 /// The series' sample rate (`pp_framework.SR`, `pp_bridge.PP_SR`), in Hz.
 pub const SR: usize = 44_100;
