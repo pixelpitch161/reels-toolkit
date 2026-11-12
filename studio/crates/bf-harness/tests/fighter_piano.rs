@@ -38,7 +38,7 @@ fn music_changes(ff: &FightFile) -> Vec<(&'static str, FightFile)> {
 /// fight (on either side) and the rows its roll fires; it changes neither for a fight without PIANO.
 #[test]
 fn a_music_change_changes_a_piano_fights_search_key_and_no_other_fights() {
-    assert!(bf_content::fighters::piano::MUSIC_FEEDS_FIGHT);
+    const { assert!(bf_content::fighters::piano::MUSIC_FEEDS_FIGHT) };
     assert!(bf_content::music_feeds_fight(NAME));
     let d = doc(NAME);
     for swapped in [false, true] {
