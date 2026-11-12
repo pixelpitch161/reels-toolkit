@@ -6,6 +6,12 @@
  "command": "python -m tools.studio_export cache episodes/flute_vs_trombone",
  "pins": [
   {
+   "path": "episodes/flute_vs_trombone/checks_rows.json",
+   "sha256": "4fcceb4e89b42dab0ed98352f7e16eb3c549c32b58d83bd9298c3461e561a327",
+   "bytes": 32351,
+   "export": "episode_flute_vs_trombone"
+  },
+  {
    "path": "episodes/flute_vs_trombone/scenarios/plain_s1.bfrec",
    "sha256": "aa904a6208c7e04ee6957ad0034a3f3c4fb74260aa1a0fd55d069d7db49283be",
    "bytes": 106122,
@@ -39,6 +45,12 @@
    "path": "episodes/flute_vs_trombone/scenarios/swapped_s3.bfrec",
    "sha256": "4db80eae8560687b6d20519a0657860a50cc5bd5ed06f80dd5dd9cacf6da8630",
    "bytes": 110436,
+   "export": "episode_flute_vs_trombone"
+  },
+  {
+   "path": "episodes/flute_vs_trombone/sound_bed_rms.json",
+   "sha256": "4935eb58ceaae3c8e1a2fbb6730262d8a25282d60af9e0d84784604be681e606",
+   "bytes": 26208,
    "export": "episode_flute_vs_trombone"
   },
   {

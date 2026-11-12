@@ -6,6 +6,12 @@
  "command": "python -m tools.studio_export cache fighters/flute",
  "pins": [
   {
+   "path": "fighters/flute/checks_rows.json",
+   "sha256": "2182d75b767dca68c6eda1dc1f4e69bbc9db978d0f74f4e412d6c1feb1e1cfc9",
+   "bytes": 32547,
+   "export": "fighter_flute"
+  },
+  {
    "path": "fighters/flute/hull_left.json",
    "sha256": "e16c2c8befd57aaa1fffbeb098232353b55a9f0b76d06b5fab14661bb2bd71db",
    "bytes": 160250,
@@ -117,6 +123,12 @@
    "path": "fighters/flute/scenarios/swapped_s3.bfrec",
    "sha256": "4db80eae8560687b6d20519a0657860a50cc5bd5ed06f80dd5dd9cacf6da8630",
    "bytes": 110436,
+   "export": "fighter_flute"
+  },
+  {
+   "path": "fighters/flute/sound_right_rms.json",
+   "sha256": "ca4995473e5baa9d45403da47f92e75c79c0693e16463db22597c0c16dd2c04c",
+   "bytes": 32033,
    "export": "fighter_flute"
   },
   {

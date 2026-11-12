@@ -264,19 +264,20 @@ alone. It adds to `fighters/<slug>/`:
 
 | File | Where | What |
 | --- | --- | --- |
-| `look.json` | committed | the `left` fight drawn with the fighter's real look and `kit/fighters/base.py`'s Look for the other side, every hook of both spied (`look_flute._spied`): per frame the SHA-256 of the frame, of the hook calls and of the draw log, and the hull calls (points, vertices, the sums of x and y); the build's hook calls; the VS card alone on milestone 1's `title/noise.png` at 16 times with the fighter on side 0 and on side 1; the title hooks (glass, flare scale, shatter parts, the close-up, the card's pattern on the fixed base); the sprites' facts and digest; `reads_cfg` (the kit look reads `self.cfg`) |
+| `look.json` | committed | the `left` fight drawn with the fighter's real look and `kit/fighters/base.py`'s Look for the other side, every hook of both spied (`look_flute._spied`): per frame the SHA-256 of the frame, of the hook calls and of the draw log, and the hull calls (points, vertices, the sums of x and y); the build's hook calls; the VS card alone on milestone 1's `title/noise.png` at 16 times with the fighter on side 0 and on side 1; the title hooks (glass, flare scale, shatter parts, the close-up, the card's pattern on the fixed base); the sprites' facts and digest; `cfg_keys` (the roster keys the kit's Look reads from `self.cfg`, `m3parts.cfg_keys`) |
 | `look_right.json`, `hull_left.json`, `hull_right.json` | cache | the `right` fight's rows; every hull call's points in full |
 | `sprites.npz`, `sprites.json` | cache | `sprites.run_one` of the left picture (ruling M3-R18) |
-| `sound.json` | committed | the `left` and `right` soundtracks with the real part and the kit's base `Sound` for the other side: the 16-bit master's SHA-256, the buses, every stem's and the master's RMS per 100 ms (dB, 3 decimals), the first-time notes (count, SHA-256, the first eight), the noise stream's start and end; each role of `SPEC.roles` (its own bus and the master); the bed hooks the part calls unguarded |
+| `sound.json` | committed | the `left` and `right` soundtracks with the real part and the kit's base `Sound` for the other side: the 16-bit master's SHA-256, the buses, every stem's and the master's RMS per 100 ms (dB, 3 decimals; the right soundtrack's RMS in the cache, `sound_right_rms.json`), the first-time notes (count, SHA-256, the first eight), the noise stream's start and end; each role of `SPEC.roles` (its own bus and the master); the bed hooks the part calls unguarded |
 | `stems_left.npz`, `stems_right.npz`, `stems_role_<r>.npz` | cache | every stem in five windows of 1 s (float32) |
 | `voice.json` | committed | `pp_bridge.voice` at 4 pitches across the register (`SPEC.voice_notes`) x 2 velocities x 3 lengths, each from the shared noise state the one before left: length, peak, RMS of every 10 ms block, the noise state before and after, the SHA-256 |
 | `voice_notes.npz` | cache | the 24 notes, float64 |
-| `checks.json` | committed | every check of `kit/checks.py` on the `left` fight (both real looks and parts), by `checks.py`'s own functions; the safe-zone boxes as one SHA-256 per frame |
+| `checks.json` | committed | every check of `kit/checks.py` on the `left` fight (both real looks and parts), by `checks.py`'s own functions: every verdict and headline number, the row counts and one SHA-256 over the frames' box hashes; the per-frame rows (safe-zone boxes, flash areas, loop steps, levels windows) in the cache, `checks_rows.json` |
 | `exceptions.toml` | committed | written once, empty; only controller rulings go in it |
 
 `episode_refs(spec)` (`episode_<pair>.py`, Template P) writes `episodes/<pair>/`: `episode.json` (the config's
 values), `frames.json` (milestone 1's golden-frame rules for any pair, both real looks; 16 card frames),
-`sound.json` (the kit's soundtrack), `checks.json`, `stats.json` (4,000 seeds; rows cached), `pairs.json` (the
+`sound.json` (the kit's soundtrack: the master's SHA-256 and RMS and the two fighters' buses; the bed buses' RMS
+in the cache), `checks.json` (rows cached), `stats.json` (4,000 seeds; rows cached), `pairs.json` (the
 pair's own links in scenario fights, cached), `exceptions.toml`; the kit recording is pointed at when milestone 1
 or the theme folder holds it. `theme_refs` adds `bed.json` (`theme_parts`): the bed alone's buses, RMS and notes;
 a second tempo, a second key and each option of `SPEC.options` with their recordings cached; the bed's optional

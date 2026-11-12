@@ -6,6 +6,12 @@
  "command": "python -m tools.studio_export cache fighters/trombone",
  "pins": [
   {
+   "path": "fighters/trombone/checks_rows.json",
+   "sha256": "d04d05dd1661dd2382b657924609e8fa80f31c78c0a8fa609150196b198c84ac",
+   "bytes": 32383,
+   "export": "fighter_trombone"
+  },
+  {
    "path": "fighters/trombone/hull_left.json",
    "sha256": "6f2f743daec13f2a68eb1128d5887f9387f16ecec2916ae92a98da43780b8445",
    "bytes": 164306,
@@ -117,6 +123,12 @@
    "path": "fighters/trombone/scenarios/swapped_s3.bfrec",
    "sha256": "f678b830484f74c70049239d272729742b920df59c44a6e1bfe545bb03ad7b8e",
    "bytes": 131584,
+   "export": "fighter_trombone"
+  },
+  {
+   "path": "fighters/trombone/sound_right_rms.json",
+   "sha256": "c1927ca4447ad6ba773ed8e0188203c30daa05ad0f8545fe6e28310113d3e129",
+   "bytes": 31882,
    "export": "fighter_trombone"
   },
   {

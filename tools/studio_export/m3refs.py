@@ -515,6 +515,8 @@ def config_folder(tag, base, text):
     dst = os.path.join(folder, 'episode.py')
     data = text.encode('utf-8')
     if not (os.path.exists(dst) and open(dst, 'rb').read() == data):
+        import shutil
+        shutil.rmtree(os.path.join(folder, 'check'), ignore_errors=True)   # its caches belong to the old config
         common.write_bytes(dst, data)
     return folder
 
@@ -871,7 +873,7 @@ EXCEPTIONS_TEXT = """\
 #   [[exceptions]]
 #   gate = "look"              # look, title, sprites, sound, stems, voice, checks, frames
 #   what = "frame 1234"        # the frame, the bus and window, the note or the check
-#   ruling = "M3-R99"          # the controller's ruling that allows it
+#   ruling = "M3-R<n>"         # the controller's ruling, as studio/reference/rulings.toml lists it
 #   reason = "why it cannot be made identical, with the stage and the numbers"
 #
 # Written once by the folder's export and never overwritten; edited only by hand after a ruling.
@@ -879,10 +881,18 @@ exceptions = []
 """
 
 
+OLD_TEMPLATES = (EXCEPTIONS_TEXT.replace('"M3-R<n>"         # the controller\'s ruling, as studio/reference/'
+                                         'rulings.toml lists it',
+                                         '"M3-R99"          # the controller\'s ruling that allows it'),)
+
+
 def keep_or_write(folder, name, text, tool):
-    """a committed file written once and then edited only by hand: its bytes on disk when it exists, else `text`"""
+    """a committed file written once and then edited only by hand: its bytes on disk when it exists (an untouched
+    copy of an older template is replaced by the current one), else `text`"""
     path = ref_dir(folder, name)
     data = open(path, 'rb').read() if os.path.isfile(path) else text.encode('utf-8')
+    if data.decode('utf-8') in OLD_TEMPLATES:
+        data = text.encode('utf-8')
     return commit_bytes(folder, name, data, tool)
 
 
@@ -910,18 +920,20 @@ def fighter_parts(spec, folder, export, module, main, swapped, left_seed, right_
                   (cd('sprites.npz'), cd('sprites.json')), cd('hull_left.json')),
          MP.start(MP.look_child, rcfg.part('look'), name, 'right', rpath, fr['right'], fr['times'], None,
                   cd('hull_right.json')),
-         MP.start(MP.sound_child, lcfg.part('sound'), name, None, cd('stems_left.npz'))]
+         MP.start(MP.sound_child, lcfg.part('sound'), name, None, cd('stems_left.npz'), left_path)]
     look_l, look_r, sound_l = [MP.wait(x) for x in h]
     roles = list(spec['roles'])
-    h = [MP.start(MP.sound_child, rcfg.part('sound'), name, None, cd('stems_right.npz')),
+    h = [MP.start(MP.sound_child, rcfg.part('sound'), name, None, cd('stems_right.npz'), rpath),
          MP.start(MP.voice_child, lcfg.part('voice'), name, vn['pitches'], tuple(vn['velocities']),
                   tuple(vn['durations']), cd('voice_notes.npz'))]
-    h += [MP.start(MP.sound_child, lcfg.part(f'role_{r}'), name, r, cd(f'stems_role_{r}.npz')) for r in roles[:1]]
+    h += [MP.start(MP.sound_child, lcfg.part(f'role_{r}'), name, r, cd(f'stems_role_{r}.npz'), left_path)
+          for r in roles[:1]]
     sound_r, voice = MP.wait(h[0]), MP.wait(h[1])
     role_docs = {roles[0]: MP.wait(h[2])} if roles else {}
     for r in roles[1:]:
-        role_docs[r] = MP.fresh(MP.sound_child, lcfg.part(f'role_{r}'), name, r, cd(f'stems_role_{r}.npz'))
-    checks = MP.fresh(MP.checks_child, lcfg.part('checks'))
+        role_docs[r] = MP.fresh(MP.sound_child, lcfg.part(f'role_{r}'), name, r, cd(f'stems_role_{r}.npz'),
+                                left_path)
+    checks, checks_rows = MP.split_checks(MP.fresh(MP.checks_child, lcfg.part('checks'), left_path))
     print(f'{export}: the picture, sound, voice and check parts in {time.time() - t0:.1f} s')
     # ---- the look
     for which, got in (('left', look_l), ('right', look_r)):
@@ -941,9 +953,10 @@ def fighter_parts(spec, folder, export, module, main, swapped, left_seed, right_
               f"kit/fighters/base.py's Look for {opp} (every hook of both spied, as look_flute does); the VS card "
               f"alone on milestone 1's noise image with {name} on either side; its title hooks; its sprites",
         tool=module, format=1, fighter=name, opponent=opp, other_look='kit/fighters/base.py Look',
-        reads_cfg=look_l['reads_cfg'],
-        reads_cfg_note="whether kit/fighters/<slug>.py reads self.cfg (its roster numbers): such a look must take "
-                       "them from setup_as (EUPHONIUM's copies draw it with another fighter's numbers)",
+        cfg_keys=look_l['cfg_keys'],
+        cfg_keys_note="the roster keys the kit's Look class reads from self.cfg (m3parts.cfg_keys): the look takes "
+                      "them from setup_as's cfg and names exactly these in cfg_summary (EUPHONIUM's copies draw it "
+                      "with another fighter's numbers)",
         hook_names=list(LF.HOOKS), hook_note="a hook call is '<side>.<hook>'; state adds '(ball,phase)', ball, "
                                              "ball_sprite and hides_hp add '(ball)'; hooks_build leaves out rope",
         frame_columns=['frame', 'sha256 of the frame', 'hook calls', 'sha256 of the hook calls', 'boxes drawn',
@@ -968,9 +981,13 @@ def fighter_parts(spec, folder, export, module, main, swapped, left_seed, right_
         tool=module, format=1, fighter=name, opponent=opp, bed_calls=sound_l['bed_calls'],
         rms_note="every stem's and the master's RMS per 100 ms block, in dB to 3 decimals: 20 log10(sqrt(mean(x "
                  "** 2)) + 1e-12) over both channels",
-        left=dict(sound_l, cache=f'{folder}/stems_left.npz'), right=dict(sound_r, cache=f'{folder}/stems_right.npz'),
+        left=dict(sound_l, cache=f'{folder}/stems_left.npz'),
+        right=dict({k: v for k, v in sound_r.items() if k != 'rms'}, cache=f'{folder}/stems_right.npz',
+                   rms_cache=f'{folder}/sound_right_rms.json'),
         roles={r: dict({k: v for k, v in d.items() if k != 'rms'}, rms=_rms_of(d, (k_bus, 'master')),
                        cache=f'{folder}/stems_role_{r}.npz') for r, d in role_docs.items()}), module)
+    cache_json(folder, 'sound_right_rms.json', dict(about="the right soundtrack's RMS per 100 ms of every stem and "
+                                                        "the master (dB, 3 decimals)", rms=sound_r['rms']), export)
     # ---- the voice
     pin(cd('voice_notes.npz'), export)
     commit_json(folder, 'voice.json', dict(
@@ -984,8 +1001,10 @@ def fighter_parts(spec, folder, export, module, main, swapped, left_seed, right_
     commit_json(folder, 'checks.json', dict(
         about=f"what each check of kit/checks.py gives for the `left` fight ({name} against {opp}, both real looks "
               f"and parts): the verdicts, the printed lines and the numbers (tools/studio_export/checks.py's "
-              f"functions); the safe-zone boxes as one SHA-256 per checked frame",
-        tool=module, format=1, **checks), module)
+              f"functions); the per-frame rows (the safe-zone boxes, the flash areas, the loop steps, the levels "
+              f"windows) are in the cache",
+        tool=module, format=1, rows_cache=f'{folder}/checks_rows.json', **checks), module)
+    cache_json(folder, 'checks_rows.json', dict(about='the per-frame rows of checks.json', **checks_rows), export)
     keep_or_write(folder, EXCEPTIONS, EXCEPTIONS_TEXT, module)
     print(f"{export}: look {len(look_l['doc']['frames'])} + {len(look_r['doc']['frames'])} frames, "
           f"{look_l['sprites']['count']} sprites; sound {sound_l['notes']['count']} + {sound_r['notes']['count']} "
@@ -1082,9 +1101,15 @@ def episode_refs(spec):
     def part(n):
         return Loaded(config_folder(f'episode_{pair}_{n}', pair, text), facts['fighters'], seed)
     h = [MP.start(MP.frames_child, part('frames'), rec_path, dict(spec['weapon_hit'])),
-         MP.start(MP.full_sound_child, part('sound'), cache_dir(folder, 'stems.npz'))]
+         MP.start(MP.full_sound_child, part('sound'), cache_dir(folder, 'stems.npz'), rec_path)]
     frames_doc, sound = MP.wait(h[0]), MP.wait(h[1])
-    checks = MP.compact_checks(MP.fresh(MP.checks_child, part('checks')))
+    checks, checks_rows = MP.split_checks(MP.fresh(MP.checks_child, part('checks'), rec_path))
+    own = ('master',) + tuple(n.lower() for n in facts['fighters'])
+    bed_rms = {b: v for b, v in sound['rms'].items() if b not in own}
+    sound['rms'] = {b: v for b, v in sound['rms'].items() if b in own}
+    cache_json(folder, 'sound_bed_rms.json', dict(about="the bed buses' RMS per 100 ms (dB, 3 decimals)",
+                                                  rms=bed_rms), export)
+    cache_json(folder, 'checks_rows.json', dict(about='the per-frame rows of checks.json', **checks_rows), export)
     os.remove(tmp)
     pin(cache_dir(folder, 'stems.npz'), export)
     assert len(frames_doc['frames']) >= spec['frames'], f"{export}: {len(frames_doc['frames'])} golden frames"
@@ -1154,9 +1179,11 @@ def episode_refs(spec):
     commit_json(folder, 'sound.json', dict(
         about=f"{config}: the kit's soundtrack (both real parts): the 16-bit master's SHA-256 (audio.wav's "
               f"samples), the buses, every stem's RMS per 100 ms (dB, 3 decimals), the first-time notes",
-        tool=module, format=1, cache=f'{folder}/stems.npz', **sound), module)
+        tool=module, format=1, cache=f'{folder}/stems.npz', rms_cache=f'{folder}/sound_bed_rms.json', **sound),
+        module)
     commit_json(folder, 'checks.json', dict(about=f'{config}: what each check of kit/checks.py gives',
-                                            tool=module, format=1, **checks), module)
+                                            tool=module, format=1, rows_cache=f'{folder}/checks_rows.json',
+                                            **checks), module)
     commit_json(folder, 'stats.json', dict(
         about=f"{config}: the kit's statistics at the config's own handicap, seeds 1 to {spec['stats']}",
         tool=module, format=1, seeds=[1, spec['stats']], cache=f'{folder}/stats_rows.json', pooled=pooled,
