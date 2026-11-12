@@ -17,6 +17,7 @@ fn settings() -> Settings {
     Settings {
         output_folder: root(),
         workers: 7,
+        encode: crate::model::EncodeChoice::Best,
     }
 }
 
@@ -223,7 +224,7 @@ fn frames(done: u32, total: u32, seconds: f32) -> JobUpdate {
 }
 
 fn is_run(c: &Command, want: JobId) -> bool {
-    matches!(c, Command::RunJob { id, fight_toml, out_root }
+    matches!(c, Command::RunJob { id, fight_toml, out_root, .. }
         if *id == want && fight_toml.contains("seed = 9120") && out_root == &root())
 }
 
@@ -1047,4 +1048,342 @@ fn a_folder_answer_without_a_name_keeps_the_pairs_taken() {
     });
     s.apply(folder("", FolderState::Ok { taken: false }));
     assert_eq!(s.vm.folder, FolderState::Ok { taken: false });
+}
+
+/// The `speed` of each `RunJob` among `effects`.
+fn speeds(effects: &[Effect]) -> Vec<crate::model::EncodeChoice> {
+    sent(effects)
+        .iter()
+        .filter_map(|c| match c {
+            Command::RunJob { speed, .. } => Some(*speed),
+            _ => None,
+        })
+        .collect()
+}
+
+#[test]
+fn a_job_starts_with_the_setting() {
+    use crate::model::EncodeChoice::{Best, Faster};
+    let mut s = ready();
+    assert_eq!(s.vm.settings.encode, Best);
+    let fx = s.dispatch(Action::SetEncode(Faster));
+    assert_eq!(s.vm.settings.encode, Faster);
+    assert_eq!(
+        settings_saves(&fx),
+        [Settings {
+            encode: Faster,
+            ..settings()
+        }],
+        "the choice is saved"
+    );
+    // Choosing what is chosen already saves nothing.
+    assert!(settings_saves(&s.dispatch(Action::SetEncode(Faster))).is_empty());
+    // The next job starts with it.
+    let fx = s.apply(enqueued("Tuba vs Bass drum"));
+    assert_eq!(speeds(&fx), [Faster]);
+    // A change while it renders is for the next job only.
+    let fx = s.dispatch(Action::SetEncode(Best));
+    assert!(speeds(&fx).is_empty(), "the job rendering is left as it started");
+    s.apply(enqueued("Flute vs Trombone"));
+    let fx = s.apply(job(1, done()));
+    assert_eq!(speeds(&fx), [Best]);
+}
+
+mod upkeep {
+    use super::*;
+    use crate::seam::upkeep::{SAMPLE_KEPT, SampleUpkeep, Upkeep, sample_removal_words};
+    use crate::state::upkeep::{
+        CLOSING, NOTHING_TO_REMOVE, REMOVE_RENDERING, RemovalView, WAIT_FOR_BUILD, why_not_go_back, why_not_remove,
+        why_not_restart,
+    };
+    use crate::update::worker::Request;
+    use crate::update::{RENDERING, UpdateState, UpdateView};
+
+    fn view(state: UpdateState) -> UpdateView {
+        UpdateView {
+            state,
+            previous: Some("0.0.9".to_string()),
+            previous_button: Some("Go back to version 0.0.9".to_string()),
+            reports: Some(PathBuf::from("logs")),
+            guide: None,
+            close: None,
+            note: None,
+        }
+    }
+
+    /// An app whose upkeep is a sample showing `state`.
+    fn with(state: UpdateState) -> AppState {
+        let mut s = ready();
+        s.dispatch(Action::Go(View::Settings));
+        s.set_upkeep(Box::new(SampleUpkeep::showing(view(state))));
+        s
+    }
+
+    fn ready_to_restart() -> UpdateState {
+        UpdateState::Ready {
+            version: "0.2.0".to_string(),
+        }
+    }
+
+    #[test]
+    fn a_new_state_is_not_installed_and_never_asks_anything() {
+        let mut s = ready();
+        assert_eq!(s.vm.update.state, UpdateState::NotInstalled);
+        assert_eq!(s.vm.app_line, crate::version::line());
+        assert_eq!(why_not_remove(&s.vm), Some(NOTHING_TO_REMOVE));
+        s.dispatch(Action::AskRemove);
+        assert_eq!(s.vm.removal, RemovalView::Closed, "nothing to remove");
+        s.dispatch(Action::Upkeep(Request::Remove));
+        assert!(!s.upkeep_sent().contains(&Request::Remove));
+    }
+
+    #[test]
+    fn requests_reach_the_upkeep() {
+        let mut s = with(UpdateState::UpToDate);
+        for r in [
+            Request::Check,
+            Request::Build,
+            Request::StopBuild,
+            Request::OpenGuide,
+            Request::GoBack,
+        ] {
+            s.dispatch(Action::Upkeep(r));
+        }
+        assert_eq!(
+            s.upkeep_sent(),
+            [
+                Request::Check,
+                Request::Build,
+                Request::StopBuild,
+                Request::OpenGuide,
+                Request::GoBack
+            ]
+        );
+        let fx = s.dispatch(Action::OpenReports);
+        assert_eq!(
+            sent(&fx),
+            [Command::RevealFolder {
+                path: PathBuf::from("logs")
+            }]
+        );
+    }
+
+    #[test]
+    fn restart_waits_for_a_render() {
+        let mut s = with(ready_to_restart());
+        s.apply(enqueued("Tuba vs Bass drum"));
+        assert_eq!(why_not_restart(&s.vm), Some(RENDERING));
+        assert_eq!(why_not_go_back(&s.vm), Some(RENDERING));
+        assert_eq!(why_not_remove(&s.vm), Some(REMOVE_RENDERING));
+        s.dispatch(Action::Upkeep(Request::Restart));
+        s.dispatch(Action::Upkeep(Request::GoBack));
+        assert!(s.upkeep_sent().is_empty(), "{:?}", s.upkeep_sent());
+        // Once the video is done, they go.
+        s.apply(job(1, done()));
+        assert_eq!(why_not_restart(&s.vm), None);
+        s.dispatch(Action::Upkeep(Request::Restart));
+        assert_eq!(s.upkeep_sent(), [Request::Restart]);
+    }
+
+    #[test]
+    fn going_back_and_removing_wait_for_a_build() {
+        let mut s = with(UpdateState::Building {
+            version: "0.2.0".to_string(),
+            seconds: 4,
+            doing: String::new(),
+        });
+        assert_eq!(why_not_go_back(&s.vm), Some(WAIT_FOR_BUILD));
+        assert_eq!(why_not_remove(&s.vm), Some(WAIT_FOR_BUILD));
+        s.dispatch(Action::Upkeep(Request::GoBack));
+        s.dispatch(Action::AskRemove);
+        assert_eq!(s.vm.removal, RemovalView::Closed);
+        assert!(s.upkeep_sent().is_empty());
+    }
+
+    #[test]
+    fn remove_asks_first() {
+        let mut s = with(UpdateState::UpToDate);
+        // Without the question shown, nothing is removed.
+        s.dispatch(Action::Upkeep(Request::Remove));
+        assert!(s.upkeep_sent().is_empty());
+        s.dispatch(Action::AskRemove);
+        assert_eq!(s.vm.removal, RemovalView::asking(sample_removal_words()));
+        assert!(s.upkeep_sent().is_empty(), "asking sends nothing");
+        s.dispatch(Action::KeepApp);
+        assert_eq!(s.vm.removal, RemovalView::Closed);
+        s.dispatch(Action::Upkeep(Request::Remove));
+        assert!(s.upkeep_sent().is_empty(), "kept: nothing is removed");
+        // Asked again, then confirmed: one removal, which the sample answers without doing it.
+        s.dispatch(Action::AskRemove);
+        s.dispatch(Action::Upkeep(Request::Remove));
+        assert_eq!(s.upkeep_sent(), [Request::Remove]);
+        assert_eq!(
+            s.vm.removal,
+            RemovalView::Asking {
+                words: sample_removal_words(),
+                problem: Some(SAMPLE_KEPT.to_string())
+            },
+            "the sample never leaves it on Removing"
+        );
+        // A video that starts while the question is shown holds the removal back.
+        let mut s = with(UpdateState::UpToDate);
+        s.dispatch(Action::AskRemove);
+        s.apply(enqueued("Tuba vs Bass drum"));
+        s.dispatch(Action::Upkeep(Request::Remove));
+        assert!(s.upkeep_sent().is_empty());
+    }
+
+    /// An upkeep whose removal answers as the test says, counting its answers like the worker.
+    #[derive(Debug)]
+    struct Scripted {
+        view: UpdateView,
+        answered: u64,
+        removal: Result<Vec<String>, String>,
+        sent: Vec<Request>,
+        hold: bool,
+    }
+
+    impl Scripted {
+        fn new(removal: Result<Vec<String>, String>) -> Scripted {
+            Scripted {
+                view: view(UpdateState::UpToDate),
+                answered: 0,
+                removal,
+                sent: Vec::new(),
+                hold: false,
+            }
+        }
+
+        /// Answers what was sent but not yet answered.
+        fn answer(&mut self) {
+            for r in self.sent.iter().skip(self.answered as usize) {
+                self.view.note = None;
+                if *r == Request::Remove {
+                    match &self.removal {
+                        Ok(words) => self.view.close = Some(words.clone()),
+                        Err(text) => self.view.note = Some(text.clone()),
+                    }
+                }
+            }
+            self.answered = self.sent.len() as u64;
+        }
+    }
+
+    impl Upkeep for Scripted {
+        fn send(&mut self, r: Request) {
+            // After a removal the real worker lets everything go; this one keeps only what it was sent.
+            self.sent.push(r);
+            if !self.hold {
+                self.answer();
+            }
+        }
+        fn view(&self) -> UpdateView {
+            self.view.clone()
+        }
+        fn answered(&self) -> u64 {
+            self.answered
+        }
+        fn set_rendering(&mut self, _on: bool) {}
+        fn plan_removal(&mut self) {}
+        fn removal(&self) -> Option<Result<Vec<String>, String>> {
+            Some(Ok(vec!["Removing takes away the program.".to_string()]))
+        }
+        fn sent(&self) -> Vec<Request> {
+            self.sent.clone()
+        }
+    }
+
+    fn scripted(removal: Result<Vec<String>, String>) -> AppState {
+        let mut s = ready();
+        s.dispatch(Action::Go(View::Settings));
+        s.set_upkeep(Box::new(Scripted::new(removal)));
+        s
+    }
+
+    #[test]
+    fn two_refusals_with_the_same_sentence_each_return_to_the_question() {
+        let why = "A file is held open, so nothing was removed.";
+        let mut s = scripted(Err(why.to_string()));
+        s.dispatch(Action::AskRemove);
+        for n in 1..=2 {
+            s.dispatch(Action::Upkeep(Request::Remove));
+            assert_eq!(
+                s.vm.removal,
+                RemovalView::Asking {
+                    words: vec!["Removing takes away the program.".to_string()],
+                    problem: Some(why.to_string())
+                },
+                "refusal {n}"
+            );
+        }
+        assert_eq!(s.upkeep_sent(), [Request::Remove, Request::Remove]);
+    }
+
+    #[test]
+    fn a_removal_waits_for_its_own_answer() {
+        let mut s = scripted(Err("Not now.".to_string()));
+        s.dispatch(Action::AskRemove);
+        // An earlier answer with a note is still on the view: the removal waits for its own.
+        let mut held = Scripted::new(Err("Not now.".to_string()));
+        held.hold = true;
+        held.view.note = Some("Not now.".to_string());
+        s.set_upkeep(Box::new(held));
+        s.dispatch(Action::Upkeep(Request::Remove));
+        assert!(
+            matches!(s.vm.removal, RemovalView::Removing { .. }),
+            "{:?}",
+            s.vm.removal
+        );
+        s.poll_upkeep();
+        assert!(
+            matches!(s.vm.removal, RemovalView::Removing { .. }),
+            "still its own answer to wait for"
+        );
+    }
+
+    #[test]
+    fn after_a_removal_nothing_else_is_sent() {
+        let words = vec!["BALLFIGHT Studio was removed from here.".to_string()];
+        let mut s = scripted(Ok(words.clone()));
+        s.dispatch(Action::AskRemove);
+        s.dispatch(Action::Upkeep(Request::Remove));
+        assert_eq!(s.vm.update.close, Some(words));
+        assert_eq!(why_not_remove(&s.vm), Some(CLOSING));
+        assert_eq!(why_not_restart(&s.vm), Some(CLOSING));
+        for r in [
+            Request::Check,
+            Request::Build,
+            Request::Restart,
+            Request::GoBack,
+            Request::OpenGuide,
+            Request::Remove,
+        ] {
+            s.dispatch(Action::Upkeep(r));
+        }
+        s.dispatch(Action::AskRemove);
+        assert_eq!(s.upkeep_sent(), [Request::Remove], "nothing after the removal");
+    }
+
+    #[test]
+    fn leaving_settings_closes_the_question() {
+        let mut s = with(UpdateState::UpToDate);
+        s.dispatch(Action::AskRemove);
+        assert!(matches!(s.vm.removal, RemovalView::Asking { .. }));
+        s.dispatch(Action::Go(View::Library));
+        assert_eq!(s.vm.removal, RemovalView::Closed);
+        s.dispatch(Action::Go(View::Settings));
+        assert_eq!(s.vm.removal, RemovalView::Closed, "asked afresh with the button");
+        s.dispatch(Action::AskRemove);
+        assert!(matches!(s.vm.removal, RemovalView::Asking { .. }));
+    }
+
+    #[test]
+    fn closing_words_open_settings() {
+        let mut s = with(UpdateState::UpToDate);
+        s.dispatch(Action::Go(View::Step(Step::Matchup)));
+        let mut v = view(UpdateState::UpToDate);
+        v.close = Some(vec!["BALLFIGHT Studio was removed from here.".to_string()]);
+        s.set_upkeep(Box::new(SampleUpkeep::showing(v)));
+        assert_eq!(s.vm.view, View::Settings);
+    }
 }

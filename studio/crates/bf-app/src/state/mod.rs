@@ -10,6 +10,7 @@ pub mod events;
 pub mod fight;
 pub mod queue_run;
 pub mod seeds;
+pub mod upkeep;
 
 use std::collections::BTreeMap;
 use std::path::PathBuf;
@@ -22,8 +23,11 @@ use crate::model::roster::{Roster, RosterEntry, ThemeEntry};
 use crate::model::shortlist::{FilterSpec, SearchState, Shortlist};
 use crate::model::story::StoryView;
 use crate::model::take::{Frame, MusicView, PlayerCmd, SoundState, TransportAction, TransportView};
-use crate::model::{Gen, JobId, Notice, Platform, Settings, Step, TakeId, View};
+use crate::model::{EncodeChoice, Gen, JobId, Notice, Platform, Settings, Step, TakeId, View};
+use crate::seam::upkeep::{SampleUpkeep, Upkeep};
 use crate::seam::{Command, Event};
+use crate::update::UpdateView;
+use crate::update::worker::Request;
 use crate::wording;
 use crate::wording::NO_DEVICE;
 
@@ -86,6 +90,13 @@ pub struct ViewModel {
     pub notices: Vec<Notice>,
     /// The left side of the status bar: what the app is doing or last did.
     pub status: String,
+    /// Updates, the guide, the fault reports and the closing words, as the upkeep seam last said
+    /// (`seam::upkeep`; copied in by `upkeep::sync_upkeep`).
+    pub update: UpdateView,
+    /// Settings' "Version" row: `version::line()`, such as "0.6.0 (a842e11, 12 Nov 2026)".
+    pub app_line: String,
+    /// Settings' "Remove" row: the button, the question, or the removal on its way.
+    pub removal: upkeep::RemovalView,
 }
 
 /// A neutral grey for a fighter the roster does not know (yet).
@@ -176,6 +187,17 @@ pub enum Action {
     OpenVideoFolder(PathBuf),
     SetWorkers(usize),
     Dismiss(usize),
+    /// Settings' "Video encoding": applies to the next video that starts.
+    SetEncode(EncodeChoice),
+    /// A request for the upkeep seam ("Look again", "Build version {v}", "Restart now", "Remove the app", ...),
+    /// unless the rules of `upkeep.rs` refuse it.
+    Upkeep(Request),
+    /// "Remove BALLFIGHT Studio from this PC": shows what would be removed, and asks.
+    AskRemove,
+    /// "Keep it": the question goes away and nothing is removed.
+    KeepApp,
+    /// "Open the reports folder": the fault reports folder in the PC's file browser (`RevealFolder`).
+    OpenReports,
 }
 
 /// What the state asks for in return.
@@ -241,6 +263,9 @@ pub struct AppState {
     run: queue_run::QueueRun,
     /// The playhead's frame when the preview could not draw it, as the player last said (`player_view`).
     failed_frame: Option<u32>,
+    /// What updates and removal go through: a sample that is always what `vm.update` was when the state was made,
+    /// until `set_upkeep` gives the real one (`seam::upkeep`).
+    upkeep: Box<dyn Upkeep>,
 }
 
 impl AppState {
@@ -283,6 +308,9 @@ impl AppState {
             cores,
             notices,
             status: String::new(),
+            update: SampleUpkeep::not_installed(None).view(),
+            app_line: crate::version::line(),
+            removal: upkeep::RemovalView::Closed,
         };
         let mut state = AppState::bare(vm);
         state.after_restart();
@@ -310,7 +338,9 @@ impl AppState {
     }
 
     fn bare(vm: ViewModel) -> AppState {
+        let upkeep = Box::new(SampleUpkeep::showing(vm.update.clone()));
         AppState {
+            upkeep,
             vm,
             generation: 0,
             fed: None,
@@ -366,9 +396,20 @@ impl AppState {
             a @ Action::OpenVideoFolder(_) => self.queue_action(a, &mut fx),
             a @ Action::SetWorkers(_) => self.queue_action(a, &mut fx),
             a @ Action::Dismiss(_) => self.queue_action(a, &mut fx),
+            a @ Action::SetEncode(_) => self.queue_action(a, &mut fx),
+            // Updates, the guide and removal (`upkeep.rs`).
+            Action::Upkeep(r) => self.upkeep_request(r),
+            Action::AskRemove => self.ask_remove(),
+            Action::KeepApp => self.keep_app(),
+            Action::OpenReports => {
+                if let Some(path) = self.vm.update.reports.clone() {
+                    fx.push(Effect::Send(Command::RevealFolder { path }));
+                }
+            }
         }
         self.settle(&mut fx);
         self.after_queue_run(Some(generation), &mut fx);
+        self.poll_upkeep();
         self.vm.status = self.status();
         fx
     }
@@ -379,6 +420,7 @@ impl AppState {
         self.on_event(event, &mut fx);
         self.settle(&mut fx);
         self.after_queue_run(None, &mut fx);
+        self.poll_upkeep();
         self.vm.status = self.status();
         fx
     }

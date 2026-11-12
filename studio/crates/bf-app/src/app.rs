@@ -343,6 +343,7 @@ impl BfApp {
         let settings = Settings {
             output_folder: std::path::PathBuf::new(),
             workers: 1,
+            encode: crate::model::EncodeChoice::Best,
         };
         let (state, _) = AppState::new(settings, Queue::new(), Vec::new(), 1);
         BfApp::with(cc, state, Link::Blank, Vec::new())
@@ -611,6 +612,7 @@ impl eframe::App for BfApp {
                 live.engine.send(Command::PreviewBusy(view.playing));
             }
             self.state.player_view(view, live.player.failed_frame());
+            self.state.poll_upkeep();
             if let Some(writer) = &live.writer {
                 for text in writer.problems() {
                     self.state.vm.notices.push(Notice { text });
@@ -663,6 +665,7 @@ mod tests {
         let settings = Settings {
             output_folder: std::path::PathBuf::from("Videos"),
             workers: 7,
+            encode: crate::model::EncodeChoice::Best,
         };
         let paths = Paths::under(std::path::Path::new("studio data"));
         let config = real_config(&settings, Some(paths.clone()));

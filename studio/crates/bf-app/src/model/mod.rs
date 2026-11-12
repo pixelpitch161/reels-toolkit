@@ -73,4 +73,45 @@ pub struct Settings {
     pub output_folder: std::path::PathBuf,
     /// Threads the engine may use for searching, balancing and rendering.
     pub workers: usize,
+    /// How videos are encoded (Settings' "Video encoding"); a change applies to the next video that starts.
+    #[serde(default)]
+    pub encode: EncodeChoice,
+}
+
+/// How a video is encoded (plan M6, decision D4): the series' own setting, or one that makes the video sooner and
+/// the file about a quarter larger. Only the encoder's preset differs; every frame and sample is the same. The
+/// engine maps it to `bf_export::EncodeSpeed` (`engine::jobs::encode_speed`).
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum EncodeChoice {
+    /// "Best quality": the series' own setting, the default.
+    #[default]
+    Best,
+    /// "Faster".
+    Faster,
+}
+
+impl EncodeChoice {
+    /// Both, in the order Settings shows them.
+    pub const ALL: [EncodeChoice; 2] = [EncodeChoice::Best, EncodeChoice::Faster];
+
+    /// The name the settings file keeps it by: "best" or "faster" (the names `bf_export::EncodeSpeed` uses too).
+    pub fn name(self) -> &'static str {
+        match self {
+            EncodeChoice::Best => "best",
+            EncodeChoice::Faster => "faster",
+        }
+    }
+
+    /// The choice a settings file names; `None` for any other text.
+    pub fn from_name(name: &str) -> Option<EncodeChoice> {
+        EncodeChoice::ALL.into_iter().find(|c| c.name() == name)
+    }
+
+    /// What Settings calls it: "Best quality" or "Faster".
+    pub fn label(self) -> &'static str {
+        match self {
+            EncodeChoice::Best => "Best quality",
+            EncodeChoice::Faster => "Faster",
+        }
+    }
 }

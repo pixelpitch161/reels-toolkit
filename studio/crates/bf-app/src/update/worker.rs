@@ -157,6 +157,10 @@ struct Inner {
     previous: Option<String>,
     close: Option<Vec<String>>,
     note: Option<String>,
+    /// Requests answered so far (`Worker::answered`).
+    answered: u64,
+    /// The app was removed: every later request is let go.
+    removed: bool,
 }
 
 /// The update worker: one thread, its requests, and what it shows.
@@ -186,6 +190,8 @@ impl Worker {
                 .and_then(|i| super::swap::previous_version(&i.dir)),
             close: None,
             note: None,
+            answered: 0,
+            removed: false,
         }));
         let cancel = Arc::new(AtomicBool::new(false));
         let guide = setup
@@ -232,6 +238,12 @@ impl Worker {
             self.cancel.store(true, Ordering::Relaxed);
         }
         let _ = self.requests.send((r, Instant::now()));
+    }
+
+    /// How many requests the worker has answered: it rises by one after each, whatever came of it (a refusal with
+    /// the same sentence as the last one too), so the interface can tell every answer apart. Never waits.
+    pub fn answered(&self) -> u64 {
+        self.inner.lock().unwrap_or_else(|p| p.into_inner()).answered
     }
 
     /// What to show now.
@@ -302,146 +314,157 @@ fn work(
     // A "Build" sent while a build was running (a second click) is not a new request once that build has ended.
     let mut build_ended: Option<Instant> = None;
     for (r, sent) in rx {
-        set(&|i| i.note = None);
-        if r == Request::Build && build_ended.is_some_and(|ended| sent < ended) {
-            continue;
-        }
-        match r {
-            Request::Check => {
-                if matches!(state(), State::Building { .. }) {
-                    continue;
-                }
-                set(&|i| i.state = State::Checking);
-                let found = match &setup.source {
-                    Err(text) => State::Failed(text.clone()),
-                    Ok(source) => match source.newest(&setup.current) {
-                        Ok(None) => State::UpToDate,
-                        Ok(Some(r)) => {
-                            let v = r.version.to_string();
-                            // A version built earlier and staged whole is offered for a restart again; so is the
-                            // version kept in .previous (after going back), when it still verifies.
-                            let staged = staged_version(&inst.dir) == Some(v.clone())
-                                && check_staged(&inst.dir.join(NEXT), &r).is_ok();
-                            let kept = !staged
-                                && super::swap::previous_version(&inst.dir) == Some(v.clone())
-                                && super::stage::check_named(
-                                    &inst.dir.join(super::swap::PREVIOUS),
-                                    &v,
-                                    r.commit.get(..7),
-                                    true,
-                                )
-                                .is_ok();
-                            if staged {
-                                State::Ready(r)
-                            } else if kept {
-                                State::ReadyKept(r)
-                            } else {
-                                State::Available(r)
-                            }
-                        }
-                        Err(e) => State::Failed(check_failed(&e)),
-                    },
-                };
-                let previous = super::swap::previous_version(&inst.dir);
-                set(&|i| {
-                    i.state = found.clone();
-                    i.previous = previous.clone();
-                });
+        'req: {
+            // After a removal the app only closes: nothing else may act on the folders that were removed.
+            if inner.lock().unwrap_or_else(|p| p.into_inner()).removed {
+                break 'req;
             }
-            Request::Build => {
-                let State::Available(release) = state() else { continue };
-                let Ok(source) = &setup.source else { continue };
-                cancel.store(false, Ordering::Relaxed);
-                let begun = State::Building {
-                    release: release.clone(),
-                    started: Instant::now(),
-                    doing: "Getting ready.".to_string(),
-                };
-                set(&|i| i.state = begun.clone());
-                let progress = |text: String| {
-                    set(&|i| {
-                        if let State::Building { doing, .. } = &mut i.state {
-                            doing.clone_from(&text);
-                        }
-                    })
-                };
-                let (v, w) = (release.version.to_string(), setup.current.to_string());
-                let built = source.build(&release, &progress, cancel);
-                let stopped = cancel.load(Ordering::Relaxed);
-                let after = match built {
-                    Err(_) if stopped => State::Available(release.clone()),
-                    Err(e) => State::Failed(build_failed(&v, &w, &e)),
-                    Ok(built) => {
-                        progress("Checking the new program.".to_string());
-                        let notes = built.notes.join(" ");
-                        if !notes.is_empty() {
-                            set(&|i| i.note = Some(notes.clone()));
-                        }
-                        // `built` (and with it the source's lock) is held until the stage is done.
-                        let staged = (setup.stage)(inst, &built, &release, &setup.current);
-                        drop(built);
-                        match staged {
-                            Ok(()) if cancel.load(Ordering::Relaxed) => {
-                                let _ = super::stage::clear_next(&inst.dir);
-                                State::Available(release.clone())
-                            }
-                            Ok(()) => State::Ready(release.clone()),
-                            Err(text) => State::Failed(text),
-                        }
+            set(&|i| i.note = None);
+            if r == Request::Build && build_ended.is_some_and(|ended| sent < ended) {
+                break 'req;
+            }
+            match r {
+                Request::Check => {
+                    if matches!(state(), State::Building { .. }) {
+                        break 'req;
                     }
-                };
-                cancel.store(false, Ordering::Relaxed);
-                build_ended = Some(Instant::now());
-                set(&|i| i.state = after.clone());
-            }
-            Request::StopBuild => {}
-            Request::Restart => {
-                let kept = matches!(state(), State::ReadyKept(_));
-                if !matches!(state(), State::Ready(_) | State::ReadyKept(_)) {
-                    continue;
+                    set(&|i| i.state = State::Checking);
+                    let found = match &setup.source {
+                        Err(text) => State::Failed(text.clone()),
+                        Ok(source) => match source.newest(&setup.current) {
+                            Ok(None) => State::UpToDate,
+                            Ok(Some(r)) => {
+                                let v = r.version.to_string();
+                                // A version built earlier and staged whole is offered for a restart again; so is the
+                                // version kept in .previous (after going back), when it still verifies.
+                                let staged = staged_version(&inst.dir) == Some(v.clone())
+                                    && check_staged(&inst.dir.join(NEXT), &r).is_ok();
+                                let kept = !staged
+                                    && super::swap::previous_version(&inst.dir) == Some(v.clone())
+                                    && super::stage::check_named(
+                                        &inst.dir.join(super::swap::PREVIOUS),
+                                        &v,
+                                        r.commit.get(..7),
+                                        true,
+                                    )
+                                    .is_ok();
+                                if staged {
+                                    State::Ready(r)
+                                } else if kept {
+                                    State::ReadyKept(r)
+                                } else {
+                                    State::Available(r)
+                                }
+                            }
+                            Err(e) => State::Failed(check_failed(&e)),
+                        },
+                    };
+                    let previous = super::swap::previous_version(&inst.dir);
+                    set(&|i| {
+                        i.state = found.clone();
+                        i.previous = previous.clone();
+                    });
                 }
-                if setup.rendering.load(Ordering::Relaxed) {
+                Request::Build => {
+                    let State::Available(release) = state() else { break 'req };
+                    let Ok(source) = &setup.source else { break 'req };
+                    cancel.store(false, Ordering::Relaxed);
+                    let begun = State::Building {
+                        release: release.clone(),
+                        started: Instant::now(),
+                        doing: "Getting ready.".to_string(),
+                    };
+                    set(&|i| i.state = begun.clone());
+                    let progress = |text: String| {
+                        set(&|i| {
+                            if let State::Building { doing, .. } = &mut i.state {
+                                doing.clone_from(&text);
+                            }
+                        })
+                    };
+                    let (v, w) = (release.version.to_string(), setup.current.to_string());
+                    let built = source.build(&release, &progress, cancel);
+                    let stopped = cancel.load(Ordering::Relaxed);
+                    let after = match built {
+                        Err(_) if stopped => State::Available(release.clone()),
+                        Err(e) => State::Failed(build_failed(&v, &w, &e)),
+                        Ok(built) => {
+                            progress("Checking the new program.".to_string());
+                            let notes = built.notes.join(" ");
+                            if !notes.is_empty() {
+                                set(&|i| i.note = Some(notes.clone()));
+                            }
+                            // `built` (and with it the source's lock) is held until the stage is done.
+                            let staged = (setup.stage)(inst, &built, &release, &setup.current);
+                            drop(built);
+                            match staged {
+                                Ok(()) if cancel.load(Ordering::Relaxed) => {
+                                    let _ = super::stage::clear_next(&inst.dir);
+                                    State::Available(release.clone())
+                                }
+                                Ok(()) => State::Ready(release.clone()),
+                                Err(text) => State::Failed(text),
+                            }
+                        }
+                    };
+                    cancel.store(false, Ordering::Relaxed);
+                    build_ended = Some(Instant::now());
+                    set(&|i| i.state = after.clone());
+                }
+                Request::StopBuild => {}
+                Request::Restart => {
+                    let kept = matches!(state(), State::ReadyKept(_));
+                    if !matches!(state(), State::Ready(_) | State::ReadyKept(_)) {
+                        break 'req;
+                    }
+                    if setup.rendering.load(Ordering::Relaxed) {
+                        set(&|i| i.note = Some(super::RENDERING.to_string()));
+                        break 'req;
+                    }
+                    let step = if kept { &setup.go_back } else { &setup.restart };
+                    match step(inst) {
+                        Ok(()) => set(&|i| i.close = Some(Vec::new())),
+                        Err(text) => set(&|i| i.state = State::Failed(text.clone())),
+                    }
+                }
+                Request::GoBack => {
+                    if inner.lock().unwrap_or_else(|p| p.into_inner()).previous.is_none()
+                        || matches!(state(), State::Building { .. })
+                    {
+                        break 'req;
+                    }
+                    if setup.rendering.load(Ordering::Relaxed) {
+                        set(&|i| i.note = Some(super::RENDERING.to_string()));
+                        break 'req;
+                    }
+                    match (setup.go_back)(inst) {
+                        Ok(()) => set(&|i| i.close = Some(Vec::new())),
+                        Err(text) => set(&|i| i.note = Some(text.clone())),
+                    }
+                }
+                Request::OpenGuide => {
+                    let opened = match guide {
+                        Some(g) => (setup.open)(g),
+                        None => Err("This copy has no guide.".to_string()),
+                    };
+                    if let Err(text) = opened {
+                        set(&|i| i.note = Some(text.clone()));
+                    }
+                }
+                Request::Remove if setup.rendering.load(Ordering::Relaxed) => {
                     set(&|i| i.note = Some(super::RENDERING.to_string()));
-                    continue;
                 }
-                let step = if kept { &setup.go_back } else { &setup.restart };
-                match step(inst) {
-                    Ok(()) => set(&|i| i.close = Some(Vec::new())),
-                    Err(text) => set(&|i| i.state = State::Failed(text.clone())),
-                }
-            }
-            Request::GoBack => {
-                if inner.lock().unwrap_or_else(|p| p.into_inner()).previous.is_none()
-                    || matches!(state(), State::Building { .. })
-                {
-                    continue;
-                }
-                if setup.rendering.load(Ordering::Relaxed) {
-                    set(&|i| i.note = Some(super::RENDERING.to_string()));
-                    continue;
-                }
-                match (setup.go_back)(inst) {
-                    Ok(()) => set(&|i| i.close = Some(Vec::new())),
+                Request::Remove => match (setup.remove)() {
+                    Ok(words) => set(&|i| {
+                        i.removed = true;
+                        i.close = Some(words.clone());
+                    }),
                     Err(text) => set(&|i| i.note = Some(text.clone())),
-                }
+                },
             }
-            Request::OpenGuide => {
-                let opened = match guide {
-                    Some(g) => (setup.open)(g),
-                    None => Err("This copy has no guide.".to_string()),
-                };
-                if let Err(text) = opened {
-                    set(&|i| i.note = Some(text.clone()));
-                }
-            }
-            Request::Remove if setup.rendering.load(Ordering::Relaxed) => {
-                set(&|i| i.note = Some(super::RENDERING.to_string()));
-            }
-            Request::Remove => match (setup.remove)() {
-                Ok(words) => set(&|i| i.close = Some(words.clone())),
-                Err(text) => set(&|i| i.note = Some(text.clone())),
-            },
         }
+        // Every request is answered once, whatever came of it, so the interface can tell two answers apart.
+        set(&|i| i.answered += 1);
     }
 }
 
@@ -972,5 +995,67 @@ mod tests {
         );
         assert!(!inst.dir.join(NEXT).exists());
         assert_eq!(snapshot(&inst.dir), before, "the install folder is unchanged");
+    }
+
+    /// After a removal nothing else acts: a look, a build (which would make `.next` again in the removed folder),
+    /// a restart, going back, the guide and a second removal are all let go.
+    #[test]
+    fn after_a_removal_nothing_else_acts() {
+        let dir = TempDir::new("worker-removed");
+        let log = Arc::new(Mutex::new(Vec::new()));
+        let (src, counts) = fake(Ok(Some(release("0.6.1"))), quick_build());
+        let w = Worker::start(setup(Some(a_fake_install(dir.path())), Ok(src), log.clone()), no_wake());
+        until(&w, 10, |v| v.state != UpdateState::Checking);
+        w.send(Request::Remove);
+        let view = until(&w, 10, |v| v.close.is_some());
+        assert_eq!(view.close, Some(vec!["BALLFIGHT Studio was removed.".to_string()]));
+        let before = w.answered();
+        for r in [
+            Request::Check,
+            Request::Build,
+            Request::Restart,
+            Request::GoBack,
+            Request::OpenGuide,
+            Request::Remove,
+        ] {
+            w.send(r);
+        }
+        until(&w, 10, |_| w.answered() == before + 6);
+        assert_eq!(w.answered(), before + 6, "each was answered, by being let go");
+        assert_eq!(counts.builds.load(Ordering::SeqCst), 0, "nothing was built");
+        assert_eq!(*log.lock().unwrap(), ["remove"], "nothing else ran");
+        assert!(
+            !dir.path()
+                .join("pc")
+                .join("Programs")
+                .join("BALLFIGHT Studio")
+                .join(NEXT)
+                .exists()
+        );
+        assert_eq!(w.view().close, view.close);
+    }
+
+    /// Two removals refused with the same sentence are two answers: the count tells them apart.
+    #[test]
+    fn every_answer_counts_even_with_the_same_sentence() {
+        let dir = TempDir::new("worker-answers");
+        let log = Arc::new(Mutex::new(Vec::new()));
+        let (src, _) = fake(Ok(None), quick_build());
+        let mut s = setup(Some(a_fake_install(dir.path())), Ok(src), log);
+        s.remove = Box::new(|| Err("A file is held open, so nothing was removed.".to_string()));
+        let w = Worker::start(s, no_wake());
+        until(&w, 10, |v| v.state != UpdateState::Checking);
+        let start = w.answered();
+        for n in 1..=2 {
+            w.send(Request::Remove);
+            until(&w, 10, |_| w.answered() == start + n);
+            assert_eq!(w.answered(), start + n);
+            let view = w.view();
+            assert_eq!(
+                view.note.as_deref(),
+                Some("A file is held open, so nothing was removed.")
+            );
+            assert_eq!(view.close, None);
+        }
     }
 }

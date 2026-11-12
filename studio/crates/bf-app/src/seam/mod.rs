@@ -13,6 +13,7 @@
 
 pub mod fake;
 pub mod sample;
+pub mod upkeep;
 
 use std::path::PathBuf;
 use std::sync::mpsc::{Receiver, Sender};
@@ -27,7 +28,7 @@ use crate::model::roster::Roster;
 use crate::model::shortlist::{FilterSpec, Shortlist};
 use crate::model::story::StoryView;
 use crate::model::take::{AudioTake, Frame, FrameSource, MusicView};
-use crate::model::{Gen, JobId, TakeId};
+use crate::model::{EncodeChoice, Gen, JobId, TakeId};
 
 /// What the interface asks of the engine.
 #[derive(Clone, Debug, PartialEq)]
@@ -77,11 +78,13 @@ pub enum Command {
         draft: Draft,
         out_root: PathBuf,
     },
-    /// Render one queued video: a stream of `Event::Job`.
+    /// Render one queued video: a stream of `Event::Job`. `speed` is Settings' "Video encoding" as it stood when the
+    /// job started.
     RunJob {
         id: JobId,
         fight_toml: String,
         out_root: PathBuf,
+        speed: EncodeChoice,
     },
     CancelJob {
         id: JobId,

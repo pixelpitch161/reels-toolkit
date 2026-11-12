@@ -11,6 +11,7 @@ fn settings() -> Settings {
     Settings {
         output_folder: PathBuf::from("Videos").join("BALLFIGHT"),
         workers: 7,
+        encode: crate::model::EncodeChoice::Best,
     }
 }
 

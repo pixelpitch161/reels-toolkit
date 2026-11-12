@@ -142,6 +142,7 @@ fn real_app<'a>(temp: &Temp, workers: usize) -> (Harness<'a, BfApp>, Relay) {
     let settings = Settings {
         output_folder: temp.videos(),
         workers,
+        encode: bf_app::model::EncodeChoice::Best,
     };
     let watched: Relay = Arc::default();
     let keep = watched.clone();

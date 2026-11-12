@@ -13,12 +13,16 @@ use crate::common::{REF, app_harness, gpu};
 
 /// Words that keep their capital letter anywhere in a line: first three that the interface reference and the plan
 /// use and the brief's list left out (named in the task report), then the brief's list. "LU" (loudness units, "0.4 LU under
-/// the fight"), "HUD" ("Captions and HUD clear of the apps' buttons") and the toolbar button "Update" ("The Update
-/// button starts working in a later version.").
-const NAMES: [&str; 22] = [
+/// the fight"), "HUD" ("Captions and HUD clear of the apps' buttons") and the toolbar button "Update". Then the
+/// programs and places the update and removal texts name (plan M6, Task 13): "Git" and "Rust" ("because Git (or
+/// Rust) is not installed") and the Start menu ("its Start menu and desktop shortcuts").
+const NAMES: [&str; 25] = [
     "LU",
     "HUD",
     "Update",
+    "Git",
+    "Rust",
+    "Start",
     "BALLFIGHT",
     "Studio",
     "K.O.",
@@ -44,8 +48,18 @@ const MONTHS: [&str; 12] = [
     "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
 ];
 
-/// Every fixture view model of the screens (Tasks 17 to 24), with a name for the failure message.
+/// Every fixture view model of the screens (Tasks 17 to 24, and Settings' update and removal states of milestone 6
+/// Task 13), with a name for the failure message.
 fn fixtures() -> Vec<(&'static str, ViewModel)> {
+    let mut all = screens();
+    all.extend(settings::each_update_state());
+    all.push(("settings asking to remove", settings::asking_removal()));
+    all.push(("settings after a removal", settings::removed()));
+    all
+}
+
+/// Every screen's own fixture view models.
+fn screens() -> Vec<(&'static str, ViewModel)> {
     vec![
         ("base", base::vm()),
         ("base with a take", base::with_take()),
@@ -266,4 +280,80 @@ fn the_start_up_texts_are_in_sentence_case() {
         let first = text.trim_start_matches('-').chars().next().unwrap();
         assert!(first.is_uppercase() || text.starts_with("--"), "{text:?}");
     }
+}
+
+/// The update, removal and Settings texts of milestone 6 (Task 13) that no fixture shows on its own: the update
+/// engine's sentences (Task 12), the refusals, and the encoder's missing line. Folder paths are the made-up
+/// install's, whose words hold a backslash.
+fn upkeep_texts() -> Vec<String> {
+    use bf_app::screens::settings as screen;
+    use bf_app::state::upkeep;
+    use bf_app::update;
+    vec![
+        update::NO_TOOLS.to_string(),
+        update::RENDERING.to_string(),
+        update::ANOTHER_COPY.to_string(),
+        update::check_failed("git could not reach the repository"),
+        update::build_failed("0.6.1", "0.6.0", "error: could not compile the app"),
+        update::stage_failed("0.6.1", "0.6.0", "the disk is full"),
+        update::check_staged_failed("0.6.1", "0.6.0", "the new program named another version"),
+        update::swap_failed("0.6.1", "0.6.0"),
+        update::restart_failed("it could not be started"),
+        upkeep::NOT_INSTALLED.to_string(),
+        upkeep::NOTHING_TO_REMOVE.to_string(),
+        upkeep::REMOVE_RENDERING.to_string(),
+        upkeep::WAIT_FOR_BUILD.to_string(),
+        upkeep::CHECKING.to_string(),
+        upkeep::UP_TO_DATE.to_string(),
+        upkeep::LOOKING_AT_REMOVAL.to_string(),
+        upkeep::REMOVING.to_string(),
+        upkeep::available("0.6.1"),
+        upkeep::building("0.6.1", 754),
+        upkeep::ready("0.6.1"),
+        screen::FFMPEG_MISSING.to_string(),
+        screen::ENCODING_NOTE.to_string(),
+        screen::REPORTS_SOMEWHERE.to_string(),
+        screen::NO_REPORTS_FOLDER.to_string(),
+        screen::NO_GUIDE.to_string(),
+        upkeep::CLOSING.to_string(),
+        upkeep::NOT_REMOVED.to_string(),
+        bf_app::seam::upkeep::SAMPLE_KEPT.to_string(),
+        bf_app::seam::upkeep::NO_FOLDERS.to_string(),
+        bf_app::seam::upkeep::NO_PLAN.to_string(),
+        // The reports line, its folder a made-up one (a path is words with a backslash).
+        screen::reports_line(&bf_app::fixtures::settings::reports()),
+        // A removal plan refused for an install that is not there (Task 11's words, nothing on the PC is touched).
+        removal_refused(),
+    ]
+    .into_iter()
+    .chain(bf_app::seam::upkeep::sample_removal_words())
+    .chain(bf_app::seam::upkeep::sample_removed_words())
+    .collect()
+}
+
+#[test]
+fn the_update_texts_are_in_sentence_case() {
+    let texts = upkeep_texts();
+    assert!(texts.len() > 25);
+    for text in texts {
+        assert!(breaks(&text, &[]).is_empty(), "{text:?} has {:?}", breaks(&text, &[]));
+        assert!(text.ends_with('.'), "{text:?} is a whole sentence");
+        assert!(
+            text.chars().next().is_some_and(char::is_uppercase) || text.starts_with("ffmpeg "),
+            "{text:?}"
+        );
+        assert!(
+            !text.contains("NaN") && !text.contains("Some(") && !text.contains("Err("),
+            "{text:?}"
+        );
+    }
+    // The rule bites on these words too.
+    assert_eq!(breaks("Ask for Rust and Cargo", &[]), ["Cargo"]);
+}
+
+/// Task 11's refusal for a made-up install that is not on this PC, as Settings would show it.
+fn removal_refused() -> String {
+    let layout = bf_pack::install::Layout::under(std::path::Path::new(r"C:\Users\owner\AppData\Local\Not here"));
+    let refused = bf_pack::remove::removal_plan(&layout).expect_err("nothing is there");
+    bf_app::seam::upkeep::without_os_errors(&refused.to_string())
 }

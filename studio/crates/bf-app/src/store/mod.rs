@@ -669,6 +669,7 @@ mod tests {
         Settings {
             output_folder: PathBuf::from(r"D:\Vidéos du studio\BALLFIGHT"),
             workers,
+            encode: crate::model::EncodeChoice::Best,
         }
     }
 

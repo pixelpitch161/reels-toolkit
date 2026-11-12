@@ -332,6 +332,7 @@ impl Engine {
                 id,
                 fight_toml,
                 out_root,
+                ..
             } => {
                 if let Some((old, _)) = self.job.take() {
                     self.side.emit(Event::Job {
@@ -1218,6 +1219,7 @@ mod tests {
             id: 7,
             fight_toml: spec.fight_toml.clone(),
             out_root: root.clone(),
+            speed: crate::model::EncodeChoice::Best,
         });
         let events = drain_until(&handle, |e| {
             matches!(
@@ -1301,6 +1303,7 @@ mod tests {
             id: 2,
             fight_toml: spec.fight_toml,
             out_root: root.clone(),
+            speed: crate::model::EncodeChoice::Best,
         });
         let events = drain_until(&handle, |e| {
             matches!(
@@ -1363,6 +1366,7 @@ mod tests {
             id: 4,
             fight_toml: spec.fight_toml,
             out_root: root.clone(),
+            speed: crate::model::EncodeChoice::Best,
         });
         drain_until(&handle, |e| {
             matches!(
@@ -1568,6 +1572,7 @@ mod tests {
             id: 5,
             fight_toml: "not = [a fight".to_string(),
             out_root: temp_root("odd"),
+            speed: crate::model::EncodeChoice::Best,
         });
         let events = drain_until(&handle, |e| {
             matches!(
@@ -1733,6 +1738,7 @@ mod tests {
         let settings = Settings {
             output_folder: root.clone(),
             workers: 7,
+            encode: crate::model::EncodeChoice::Best,
         };
         let (mut s, fx) = AppState::new(settings, Queue::new(), Vec::new(), 8);
         pump(&handle, &mut s, fx);
@@ -1784,6 +1790,7 @@ mod tests {
             id: 1,
             fight_toml: spec.fight_toml,
             out_root: root,
+            speed: crate::model::EncodeChoice::Best,
         });
         handle.send(Command::StartSearch {
             r#gen: 1,
