@@ -37,7 +37,8 @@ left it; "after" is with the three speed-ups of section 3, which change no bit o
 | A full 1,830-frame render under 60 s | **94.8 s best, 97.0 s median** (108.7 / 94.8 / 97.0 s at 84 / 45 / 76 % busy) | **81.4 s best, 82.9 s median** (81.4 / 83.3 / 82.9 s at 51 / 40 / 69 % busy) | **no** (see the speed plan) |
 
 Every render here passed all 15 checks and gave the same mp4, byte for byte (SHA-256 `308fb903...c169`, 59.3 MB),
-before and after.
+before and after. That is on this PC: x264's bytes depend on its thread count, which follows the number of logical
+processors, so another PC's mp4 can differ although its frames and sound do not (`m6-measurements.md` section 4).
 
 ### The render by stage (`bench --out`, 15 workers, the example episode)
 
@@ -337,7 +338,8 @@ is one Windows job (it builds `bf-cli`, tests `bf-core`, `bf-sim` and `render_is
 - **The render misses its 60 s target** (81.4 s at best, 82.9 s median, after the speed-ups; 94.8 / 97.0 s before): section 3 says what was done and what is left.
 - **Other machines.** All numbers are from this PC. "Bit-identical on any PC" rests on the rules (no fused
   multiply-add, `dmath` for every transcendental, no hash-map order, no thread-count dependence) and on CI's one
-  Windows runner, not on a second PC of a different make.
+  Windows runner, not on a second PC of a different make. It holds for the fights, the frames and the sound; the
+  encoded mp4 is the same only on PCs where x264 uses the same number of threads (`m6-measurements.md` section 4).
 - **The kit's replay guard on Windows.** `tools/ballfight_replay_hash.py` drops the kit-episode lines on Windows (it
   compares paths with forward slashes); the kit episodes were checked by running the same child commands one by
   one (on Nov 11 the tool printed its 95 lines exactly as before the milestone, and the 100 kit-episode lines run one by one are unchanged too; `git status --short projects reelkit series` stays empty). Whether to make the guard Windows-safe is a milestone 6 decision.
