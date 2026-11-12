@@ -408,7 +408,9 @@
   "why": "the lowest seed with FLUTE in the left corner winning (so TUBA is knocked out)",
   "winner": 0
  },
- "same_as": {},
+ "same_as": {
+  "fighters/tuba/scenarios/plain_s9.bfrec": "studio/reference/fighters/tuba/left.bfrec"
+ },
  "scenarios": [
   {
    "cache": ["fighters/tuba/scenarios/early_levels_s1.bfrec", "fighters/tuba/scenarios/early_levels_s2.bfrec", "fighters/tuba/scenarios/early_levels_s3.bfrec"],
