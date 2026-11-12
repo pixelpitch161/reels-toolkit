@@ -7,11 +7,19 @@
 //! pad kept low (the old Pixel Pitch alto's voice). Built for G minor (Gm Cm D7 Eb7); any chord works (voicings by
 //! rule).
 //!
-//! Here: the theme's harmony helpers and its synthesised percussion as the kit computes them.
+//! Here: the theme's harmony helpers and its synthesised percussion as the kit computes them. The arrangement that
+//! reproduces the kit's bed is [`MamboClassic`], in `classic.rs`; it also holds the kit's per-bed cache of sounds
+//! (the sax pad is built there from the alto's notes, as the kit builds it).
 //!
 //! **Voicings.** The mood has no table: [`tones`] (the chord's tones from G3 up, one octave, rising) is its rule
 //! for every chord the harmony parses; the montuno takes them from G4, the pad from A3.
+//!
+//! **The voices.** The bed plays three Pixel Pitch voices itself through `M.note`: the CONTRABASS's and the PIANO's
+//! (from their merged ports, `fighters::contrabass` and `fighters::piano`) and the old alto's, whose `pp_bridge` id
+//! is [`ALTO`] (`RETIRED[1]`, an internal id only: never shown). The alto is a voice of the theme, never a fighter
+//! ([`alto`]); [`Theme::own_voice`] hands it to the build.
 
+pub mod alto;
 mod classic;
 
 use bf_core::dmath::{self, PI};
@@ -21,18 +29,23 @@ use bf_sound::SRF;
 use bf_sound::dsp;
 use bf_sound::synth::{self, FILTER_O, clip, noise};
 
-use super::{NOT_PORTED_CARD, Preset, Theme};
+pub use self::classic::MamboClassic;
+use super::{Preset, Theme};
 use crate::cards::ThemeCard;
 
-/// The theme as the registry lists it.
+/// The old alto's `pp_bridge` id, the voice of the sax pad: `RETIRED[1]`, an internal id (rulings R14, M3-R9).
+pub const ALTO: &str = bf_core::fightfile::RETIRED[1];
+
+/// The theme as the registry lists it: no options; its bed plays the CONTRABASS's and the PIANO's voices and the
+/// old alto's, its own.
 pub static THEME: Theme = Theme {
     name: "mambo",
-    ported: false,
-    card: &NOT_PORTED_CARD,
+    ported: true,
+    card: &CARD,
     options: &[],
-    voices: &["CONTRABASS", "PIANO"],
-    own_voice: super::no_own_voice,
-    classic: classic::classic,
+    voices: &["CONTRABASS", "PIANO", ALTO],
+    own_voice: alto::own_voice,
+    classic: |_| Ok(Box::new(MamboClassic::new())),
 };
 
 /// #50's loop: i - iv - V7 - i - i - iv - bVI7 - V7 in G minor.
