@@ -9,7 +9,7 @@
 //!
 //! Every function is the Python one of the same name, with its operation order. Where the Python calls `math.sin`
 //! or a numpy function the port calls `bf_core::dmath`; `np.hypot` is the plain root ([`bf_picture::np::hypot`]),
-//! `math.hypot` is `dmath`'s.
+//! `math.hypot` is `dmath::py_hypot` (ruling M3-R35).
 //!
 //! The roster numbers the kit's look reads from `self.cfg` (the roll's range and margin, SUSTAIN's `out16` and
 //! `hang_beats`, 88 KEYS' `reload_beats`) come from the `cfg` that `setup_as` is given, never from the picture's
@@ -939,7 +939,7 @@ impl Look for PianoLook {
             for b in [1, 2] {
                 if let Some(q) = self.trail_pos(p, f.t, s.sid, b) {
                     let last = pts[pts.len() - 1];
-                    if dmath::hypot(q.0 - last.0, q.1 - last.1) < 0.6 {
+                    if dmath::py_hypot(q.0 - last.0, q.1 - last.1) < 0.6 {
                         pts.push(q);
                     }
                 }

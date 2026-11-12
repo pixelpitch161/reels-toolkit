@@ -137,12 +137,6 @@ fn reg(cfg: &FighterCfg, w: &RollCfg) -> (i64, i64) {
     (i64::from(lo), i64::from(hi))
 }
 
-/// `float(np.hypot(x, y))`: numpy's `hypot` is the C runtime's, which on the reference PC is the plain root of the
-/// sum of the squares (`bf_picture::np::hypot` has the proof).
-fn np_hypot(a: V2) -> f64 {
-    (a[0] * a[0] + a[1] * a[1]).sqrt()
-}
-
 /// One projectile to fire: `spawn_key`'s arguments after the owner.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Shot {
@@ -369,7 +363,7 @@ pub fn hold_step(f: &mut Fight) {
         } else if h.stopped && f.t + 1e-9 >= h.t_rel {
             let o_p = f.balls[1 - f.keys[j].own].p;
             let d = geom::sub(o_p, f.keys[j].p);
-            let n = np_hypot(d);
+            let n = geom::hypot(d);
             let d = if n > 1e-9 { geom::div(d, n) } else { [1.0, 0.0] };
             f.keys[j].v = geom::scale(d, h.sp);
             f.roll.khold.remove(&i);
@@ -410,7 +404,7 @@ pub fn keys_move(f: &mut Fight, dt: f64) {
         let m: Vec<bool> = f
             .keys
             .iter()
-            .map(|key| key.own != k && np_hypot(geom::sub(key.p, b_p)) < reach)
+            .map(|key| key.own != k && geom::hypot(geom::sub(key.p, b_p)) < reach)
             .collect();
         if !m.contains(&true) {
             continue;
