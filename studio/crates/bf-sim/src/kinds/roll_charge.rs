@@ -420,7 +420,11 @@ fn thump(f: &mut Fight, k: usize, ab: &AbilityCfg, i: i64) {
         clears: true,
     };
     f.waves.push(wave);
-    f.ev("heartbeat", k as i64, vec![Value::Int(i), Value::Float(c[0]), Value::Float(c[1])]);
+    f.ev(
+        "heartbeat",
+        k as i64,
+        vec![Value::Int(i), Value::Float(c[0]), Value::Float(c[1])],
+    );
 }
 
 /// `trigger`, kind `heartbeat` (2983 to 2984): `start_heartbeat(k, ab)` (5446 to 5450): the lub now, the dub
@@ -703,7 +707,12 @@ mod tests {
         step(&mut f, 0, dt);
         assert_eq!(f.waves.len(), 2);
         assert!(f.roll_charge.thumps[0].is_empty());
-        let beats: Vec<i64> = f.events.iter().filter(|e| e.kind == "heartbeat").map(|e| e.i(3)).collect();
+        let beats: Vec<i64> = f
+            .events
+            .iter()
+            .filter(|e| e.kind == "heartbeat")
+            .map(|e| e.i(3))
+            .collect();
         assert_eq!(beats, [0, 1]);
         // 1812 OVERTURE: five cannon slams a beat apart, the first at the next step
         start_cannons(&mut f, 0, &cfg.low);

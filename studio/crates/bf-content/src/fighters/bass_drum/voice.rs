@@ -206,6 +206,9 @@ mod tests {
         assert_eq!(synth(14.0, 0.8, 1.0).len(), pp::len(2.4));
         assert!(BassDrumVoice.can_hold(0.0) && !BassDrumVoice.can_hold(f64::NAN));
         assert!(!BassDrumVoice.can_hold(-1.5));
-        assert_eq!((BassDrumVoice.register(), BassDrumVoice.name()), (REGISTER, "BASS DRUM"));
+        assert_eq!(
+            (BassDrumVoice.register(), BassDrumVoice.name()),
+            (REGISTER, "BASS DRUM")
+        );
     }
 }

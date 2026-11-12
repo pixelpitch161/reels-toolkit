@@ -59,12 +59,16 @@ pub fn segs(events: &[Event], k: usize) -> Vec<Seg> {
 
 /// `self.BOOMS`: `(t, x, y, kind)` of fighter `k`'s BOOMs (`roll_boom`).
 pub fn booms(events: &[Event], k: usize) -> Vec<(f64, f64, f64, i64)> {
-    mine(events, "roll_boom", k).map(|e| (e.t, e.f(3), e.f(4), e.i(5))).collect()
+    mine(events, "roll_boom", k)
+        .map(|e| (e.t, e.f(3), e.f(4), e.i(5)))
+        .collect()
 }
 
 /// `self.BEATS`: `(t, i, x, y)` of fighter `k`'s HEARTBEAT thumps (`heartbeat`).
 pub fn beats(events: &[Event], k: usize) -> Vec<(f64, i64, f64, f64)> {
-    mine(events, "heartbeat", k).map(|e| (e.t, e.i(3), e.f(4), e.f(5))).collect()
+    mine(events, "heartbeat", k)
+        .map(|e| (e.t, e.i(3), e.f(4), e.f(5)))
+        .collect()
 }
 
 /// `self.CANNONS`: `(t, i, x, y, t_land)` of fighter `k`'s cannons (`cannon`).
@@ -111,7 +115,16 @@ mod tests {
     fn a_roll_ends_at_its_own_end_or_off_and_never_after_its_plan() {
         let f = Value::Float;
         let roll = |t: f64| {
-            let rest = [f(0.0), f(0.0), f(1.0), f(0.0), f(t), f(t + 0.2), f(t + 1.0), Value::Int(0)];
+            let rest = [
+                f(0.0),
+                f(0.0),
+                f(1.0),
+                f(0.0),
+                f(t),
+                f(t + 0.2),
+                f(t + 1.0),
+                Value::Int(0),
+            ];
             rest.to_vec()
         };
         let events = vec![

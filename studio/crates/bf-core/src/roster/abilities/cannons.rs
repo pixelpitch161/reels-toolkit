@@ -17,7 +17,17 @@ pub const REQUIRED: &[&[&str]] = &[&["n"], &["tele"], &["radius"], &["dmg"], &["
 
 /// Every key `fight.py` reads from an ability of this kind (`gap_beats` with `ab.get('gap_beats', 1)`); an entry
 /// holding another key loads as `Unsupported("cannons+<key>")`.
-pub const ALLOWED: &[&str] = &["name", "kind", "every_bars", "n", "gap_beats", "tele", "radius", "dmg", "knock"];
+pub const ALLOWED: &[&str] = &[
+    "name",
+    "kind",
+    "every_bars",
+    "n",
+    "gap_beats",
+    "tele",
+    "radius",
+    "dmg",
+    "knock",
+];
 
 /// What an ability of kind `cannons` holds besides its numbers: nothing.
 #[derive(Clone, Debug, Default, PartialEq)]

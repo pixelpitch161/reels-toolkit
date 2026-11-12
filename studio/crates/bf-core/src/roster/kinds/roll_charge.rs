@@ -167,7 +167,10 @@ mod tests {
         };
         assert_eq!((w.every, w.off16, w.tip16, w.lead, w.jitter), (4.0, 0.0, 2.0, 0.5, 8.0));
         assert_eq!((w.span, w.min_len, w.speed, w.speed_grow), (5.2, 0.6, 2.4, 0.06));
-        assert_eq!((w.speed_max, w.size0, w.size_grow, w.size_max), (Some(3.4), 0.0, 0.025, Some(0.25)));
+        assert_eq!(
+            (w.speed_max, w.size0, w.size_grow, w.size_max),
+            (Some(3.4), 0.0, 0.025, Some(0.25))
+        );
         assert_eq!((w.dmg, w.knock, w.fwd), (7.0, 1.8, 0.35));
         assert_eq!(f.weapon.ball_start(), crate::roster::BallStart::default());
         assert!(f.unlock1.kind.is_ported() && f.unlock2.kind.is_ported() && f.low.kind.is_ported());
@@ -200,7 +203,10 @@ mod tests {
         let WeaponCfg::RollCharge(w) = &f.weapon else {
             panic!("a roll_charge")
         };
-        assert_eq!((w.off16, w.tip16, w.lead, w.jitter, w.min_len), (0.0, 2.0, 0.0, 0.0, 0.6));
+        assert_eq!(
+            (w.off16, w.tip16, w.lead, w.jitter, w.min_len),
+            (0.0, 2.0, 0.0, 0.0, 0.6)
+        );
         assert_eq!((w.speed_grow, w.speed_max, w.size0, w.size_grow), (0.0, None, 0.0, 0.0));
         assert_eq!((w.size_max, w.fwd), (None, 0.4));
     }

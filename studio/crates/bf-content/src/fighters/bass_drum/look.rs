@@ -182,8 +182,7 @@ pub fn title_pattern(base: &mut RgbF) {
             let a = dmath::atan2(cv, cu);
             let head = r < 62.0;
             let hoop = (62.0..74.0).contains(&r);
-            let rods = (74.0..96.0).contains(&r)
-                && (py::fmod_py(a / (2.0 * dmath::PI) * 10.0, 1.0) - 0.5).abs() < 0.09;
+            let rods = (74.0..96.0).contains(&r) && (py::fmod_py(a / (2.0 * dmath::PI) * 10.0, 1.0) - 0.5).abs() < 0.09;
             for (ch, v) in base.px_mut(x, y).iter_mut().enumerate() {
                 let b = *v;
                 let out = if head { b * 0.45 + head_col[ch] } else { b };
@@ -545,7 +544,8 @@ impl Look for BassDrumLook {
             let big = kind == 0;
             let (radius, peak) = if big { (2.8, 1.1) } else { (2.0, 0.6) };
             fx.fl.add(t0, pos, flare, radius, peak, 0.03, 0.3, 0.0);
-            fx.bu.add(t0, pos, [246.0, 244.0, 236.0], if big { 1.3 } else { 0.8 }, None, true);
+            fx.bu
+                .add(t0, pos, [246.0, 244.0, 236.0], if big { 1.3 } else { 0.8 }, None, true);
             let emit = Emit {
                 n: Some(if big { 14 } else { 6 }),
                 col: dust(),
@@ -648,7 +648,10 @@ impl Look for BassDrumLook {
             let out = py_max(0.0, (tc - s.t_end) / 0.6);
             let telegraph = tc < s.t0 + 0.05 && s.kind == 0;
             let fin = py_min(1.0, (tc - s.t_tip) / py_max(1e-3, s.t0 - s.t_tip));
-            let u = py_min(1.0, py_max(0.0, (py_min(tc, s.t_end) - s.t0) / py_max(1e-9, s.t1 - s.t0)));
+            let u = py_min(
+                1.0,
+                py_max(0.0, (py_min(tc, s.t_end) - s.t0) / py_max(1e-9, s.t1 - s.t0)),
+            );
             for (j, light) in ic.iter_mut().enumerate() {
                 let (rx, rz) = (c.sxp[j] - a[0], c.szp[j] - a[1]);
                 let along = rx * d[0] + rz * d[1];
@@ -754,7 +757,7 @@ impl Look for BassDrumLook {
         }
         for &(t0, x, y, kind) in &self.booms {
             let age = t - t0;
-            if !(0.0 <= age && age < 0.35) || t0 > p.t_ko {
+            if !(0.0..0.35).contains(&age) || t0 > p.t_ko {
                 continue;
             }
             let kk = 1.0 - age / 0.35;
@@ -820,7 +823,12 @@ impl Look for BassDrumLook {
                     })
                     .collect();
                 let sp = on_screen(&pts);
-                reeds::blend(arr, &reeds::mask(&[], std::slice::from_ref(&sp), 3), HOOPC, Num::Py(1.0));
+                reeds::blend(
+                    arr,
+                    &reeds::mask(&[], std::slice::from_ref(&sp), 3),
+                    HOOPC,
+                    Num::Py(1.0),
+                );
                 reeds::blend(arr, &reeds::mask(&[], &[sp], 1), [140.0, 140.0, 156.0], Num::Py(0.8));
             }
             _ => {
@@ -862,10 +870,7 @@ mod tests {
     fn its_shatter_is_fourteen_parts_of_three_kinds() {
         let parts = BassDrumLook::new().shards();
         let count = |kind: &str| parts.iter().filter(|p| *p == kind).count();
-        assert_eq!(
-            (parts.len(), count("head"), count("hoop"), count("rod")),
-            (14, 6, 4, 4)
-        );
+        assert_eq!((parts.len(), count("head"), count("hoop"), count("rod")), (14, 6, 4, 4));
     }
 
     /// The rolling drum is the model without its mallet: the first faces of the model file, fewer of them.

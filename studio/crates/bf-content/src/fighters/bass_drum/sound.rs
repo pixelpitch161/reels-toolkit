@@ -146,7 +146,13 @@ impl BassDrumSound {
         let g0 = ctx.inst_gain(&ctx.cfg[self.k].pp)?;
         let key = Key::Hit(m, bits(round_nd(vel, 2)), boom, bits(round_nd(dur, 3)));
         self.kept(key, || {
-            let x = bd_hit(pp::midi_hz(f64::from(m)), vel, boom, 0, if boom { None } else { Some(dur) });
+            let x = bd_hit(
+                pp::midi_hz(f64::from(m)),
+                vel,
+                boom,
+                0,
+                if boom { None } else { Some(dur) },
+            );
             pp::to_48k(&x).iter().map(|v| v * g0).collect()
         })
     }
@@ -184,7 +190,10 @@ impl BassDrumSound {
                     *x += amp * dmath::sin(w * t) * dmath::exp(-t / dk);
                 }
             }
-            x.iter().zip(&t).map(|(x, &t)| x * clip(t / 0.002, 0.0, 1.0) * 0.35).collect()
+            x.iter()
+                .zip(&t)
+                .map(|(x, &t)| x * clip(t / 0.002, 0.0, 1.0) * 0.35)
+                .collect()
         })
     }
 
@@ -302,7 +311,13 @@ impl BassDrumSound {
             let (a, b) = (ctx.q16(t0), py_min(ctx.q16(t1), t_ko));
             if b > a {
                 let r = self.root_of(ctx, a)?;
-                mix.place(&bus, &Self::sig(&self.roll(ctx, f64::from(r), b - a, 0.95)?), a, 0.50, pan);
+                mix.place(
+                    &bus,
+                    &Self::sig(&self.roll(ctx, f64::from(r), b - a, 0.95)?),
+                    a,
+                    0.50,
+                    pan,
+                );
                 let under = if r - 12 >= lo - 12 { r - 12 } else { r };
                 let x = self.roll(ctx, f64::from(under), b - a, 0.8)?;
                 mix.place(&bus, &Self::sig(&x), a + 0.012, 0.28, -pan);
@@ -460,7 +475,13 @@ impl Sound for BassDrumSound {
     fn fall_apart(&self, ctx: &MusicCtx, _: &dyn Bed, mix: &mut Mix) -> Played {
         let t0 = ctx.show.t_hs;
         let r = f64::from(self.root_of(ctx, t0)?);
-        mix.place(&self.bus(ctx), &Self::sig(&self.roll(ctx, r, 0.8, 0.6)?), t0, 0.32, self.pan());
+        mix.place(
+            &self.bus(ctx),
+            &Self::sig(&self.roll(ctx, r, 0.8, 0.6)?),
+            t0,
+            0.32,
+            self.pan(),
+        );
         mix.place("fx", &Sig::Mono(synth::thud(0.5, 80.0, 30.0, 81)), t0 + 0.8, 0.22, 0.0);
         for j in 0..6u64 {
             let rattle = synth::thud(0.05, 1400.0, 900.0, 90 + j);
@@ -473,8 +494,20 @@ impl Sound for BassDrumSound {
         let r = f64::from(self.root_of(ctx, 0.0)?);
         let s16 = ctx.show.grid.s16;
         mix.place("solo", &Self::sig(&self.hit(ctx, r, 0.95, true, 0.2)?), tw, 0.5, 0.0);
-        mix.place("solo", &Self::sig(&self.hit(ctx, r, 0.9, true, 0.2)?), tw + 2.0 * s16, 0.46, 0.0);
-        mix.place("solo", &Self::sig(&self.hit(ctx, r, 1.0, true, 0.2)?), tw + 4.0 * s16, 0.6, 0.0);
+        mix.place(
+            "solo",
+            &Self::sig(&self.hit(ctx, r, 0.9, true, 0.2)?),
+            tw + 2.0 * s16,
+            0.46,
+            0.0,
+        );
+        mix.place(
+            "solo",
+            &Self::sig(&self.hit(ctx, r, 1.0, true, 0.2)?),
+            tw + 4.0 * s16,
+            0.6,
+            0.0,
+        );
         Ok(())
     }
 
