@@ -24,6 +24,18 @@
    "export": "theme_brass_trailer"
   },
   {
+   "path": "themes/brass_trailer/horn_vs_trombone_rematch.bfrec",
+   "sha256": "61237dec4be1f764fbf1adaf31cda542b7d2bc1ff2507da539951bbf25e03255",
+   "bytes": 252106,
+   "export": "theme_brass_trailer"
+  },
+  {
+   "path": "themes/brass_trailer/trombone_vs_horn.bfrec",
+   "sha256": "f058f606fdf7f6699c1278431f9106e214525b2d768e73d4b39669ae3663b554",
+   "bytes": 244309,
+   "export": "theme_brass_trailer"
+  },
+  {
    "path": "themes/brass_trailer/variants/key.bfrec",
    "sha256": "f058f606fdf7f6699c1278431f9106e214525b2d768e73d4b39669ae3663b554",
    "bytes": 244309,

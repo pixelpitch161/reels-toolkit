@@ -261,7 +261,7 @@
    ]
   },
   {
-   "appended": "KEY = 'G'\nSCALE = 'minor'\nCHORDS = ['Gm', 'D', 'Gm', 'Eb', 'Cm', 'D', 'Gm', 'Eb', 'Cm', 'D', 'Gm', 'Eb', 'Cm', 'D', 'Gm', 'Eb', 'Cm', 'D', 'Gm', 'Eb', 'Cm', 'D', 'Gm', 'Eb', 'Cm', 'D', 'Gm', 'Eb', 'Cm', 'D', 'Gm']\n",
+   "appended": "KEY = 'G'\nSCALE = 'minor'\nLOOP = ['Gm', 'Eb', 'Cm', 'D']\nCHORDS = ['Gm', 'D', 'Gm', 'Eb', 'Cm', 'D', 'Gm', 'Eb', 'Cm', 'D', 'Gm', 'Eb', 'Cm', 'D', 'Gm', 'Eb', 'Cm', 'D', 'Gm', 'Eb', 'Cm', 'D', 'Gm', 'Eb', 'Cm', 'D', 'Gm', 'Eb', 'Cm', 'D', 'Gm']\n",
    "bpm": 121.9672131147541,
    "buses": ["taiko", "braam", "fx", "strings", "tremolo"],
    "config": "examples/trombone_vs_horn",
