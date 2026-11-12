@@ -20,9 +20,9 @@
 //! format above [`FIGHT_FORMAT`] is refused with "this app reads fight files up to format 2" before anything else in
 //! the file is looked at, since a newer file may hold settings this app does not know. A format 1 file (milestones 1
 //! and 2) reads with what format 1 could not say at its defaults (no tail, no mix overrides, no theme options, no
-//! title opt-ins, no chord in a solo), and a setting that format 2 added is refused in it. Reading never writes: a format 1 file stays as
-//! it is on disk. The fight it reads to is a format 2 fight ([`FightFile::format`] is [`FIGHT_FORMAT`]), which
-//! [`FightFile::to_toml`] writes as format 2.
+//! title opt-ins, no chord in a solo), and a setting that format 2 added is refused in it. Reading never writes: a
+//! format 1 file stays as it is on disk. The fight it reads to is a format 2 fight ([`FightFile::format`] is
+//! [`FIGHT_FORMAT`]), which [`FightFile::to_toml`] writes as format 2.
 //!
 //! This file holds the types and the checks; `read.rs` is the TOML reader, `write.rs` the canonical writer, `key.rs`
 //! the search key, `tests.rs` the tests.

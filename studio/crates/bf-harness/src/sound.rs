@@ -520,6 +520,23 @@ mod tests {
         let setup = bf_sim::setup_from(&base, fight::roster(), 418).expect("the setup");
         let rec = bf_sim::run(&setup, true).expect("the fight");
         let hex = bf_testdata::parse_hex_f64;
+        // the whole 'solo' bus of the ACOUSTIC's solo from t0, from a fresh build: its SHA-256 (float64, little-endian)
+        let solo_sha = |ff: &FightFile, t0: f64| -> String {
+            let show = Show::new(&rec, ff).expect("the show");
+            let b = SoundBuild::new(&show, &rec, ff).expect("the build");
+            let mut mix = Mix::new(show.grid.dur + 4.0);
+            b.sounds[1]
+                .solo(&b.ctx, b.bed.as_ref(), &mut mix, t0)
+                .expect("the solo");
+            assert_eq!(mix.bus_names(), ["solo"], "the buses");
+            let x = mix.bus("solo").expect("the solo bus");
+            assert_eq!(x.len(), 3_408_000, "the bus length");
+            let mut h = Sha256::new();
+            for v in x.as_flattened() {
+                h.update(v.to_le_bytes());
+            }
+            h.finalize().iter().map(|b| format!("{b:02x}")).collect()
+        };
         for (what, solo, t0, played, sha) in cases {
             let mut ff = base.clone();
             ff.music.solos.insert("ACOUSTIC".into(), solo.clone());
@@ -547,20 +564,14 @@ mod tests {
                 .filter(|(bt, _, _)| t0 + bt * g.beat <= g.t_reassemble - 0.05)
                 .count();
             assert_eq!(before, played, "{what}: the entries before the reassembly");
-            let b = SoundBuild::new(&show, &rec, &ff).expect("the build");
-            let mut mix = Mix::new(g.dur + 4.0);
-            b.sounds[1]
-                .solo(&b.ctx, b.bed.as_ref(), &mut mix, t0)
-                .expect("the solo");
-            assert_eq!(mix.bus_names(), ["solo"], "{what}: the buses");
-            let x = mix.bus("solo").expect("the solo bus");
-            assert_eq!(x.len(), 3_408_000, "{what}: the bus length");
-            let mut h = Sha256::new();
-            for v in x.as_flattened() {
-                h.update(v.to_le_bytes());
+            assert_eq!(solo_sha(&ff, t0), sha, "{what}: the solo bus");
+            // negative control: every chord picked as its first note instead must not give the kit's bus
+            if what == "ukulele" {
+                let picked: Vec<(f64, SoloNote, f64)> =
+                    solo.iter().map(|(b, n, d)| (*b, Note(n.notes()[0]), *d)).collect();
+                ff.music.solos.insert("ACOUSTIC".into(), picked);
+                assert_ne!(solo_sha(&ff, t0), sha, "{what}: chords picked as single notes");
             }
-            let got: String = h.finalize().iter().map(|b| format!("{b:02x}")).collect();
-            assert_eq!(got, sha, "{what}: the solo bus");
         }
     }
 }
