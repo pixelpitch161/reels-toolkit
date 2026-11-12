@@ -410,17 +410,34 @@ for FLUTE and TROMBONE), from the lines below.
 <!-- kind:line -->
 #### `line` (weapon kind of ORGAN)
 
-`fight.py` 1323 to 1362, 1393 to 1434. Not ported yet: its port fills this section in (the meaning of each field, as 6.2
-and 6.3 do for FLUTE and TROMBONE), from the lines below.
+`fight.py` 1323 to 1362 (`hazard_beat`, `_to_ropes`, `fire_line`) and 1393 to 1416 (the lines' half of
+`hazards_step`). Ported: `bf-sim/src/kinds/line.rs`, settings in `bf-core/src/roster/kinds/line.rs`. `lay_string` and
+the strings' half of `hazards_step` (1364 to 1391, 1417 to 1434) belong to the older `trap` kind, which `line` never
+reaches; they are not ported.
 
-**Record keys.** None of its own.
+**Record keys.** None of its own. The rows live only in the events: a look rebuilds them from `line`. The row's length
+for the next row is the ball's `BL` (`blade_len`), which starts at the weapon's `base` and grows by `grow` per landed
+row up to `max_len`.
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+**Events.**
 
-- 1360: `self.ev('line', k, hid, float(p0[0]), float(p0[1]), float(u[0]), float(u[1]), L, w['speed'], w['linger'], w['width'])`
-- 1411: `self.damage(k, 1 - k, Ln['dmg'], 'pipe', hx, hy, Ln['id'])`
-- 1425: `self.damage(k, 1 - k, S['dmg'], 'string', hx, hy, S['id'])`
+| Kind | `who` (2) | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `line` | the row's owner | hazard id (int, counts up from 0 over the fight) | x where the row starts (float): the ball's surface plus `gap` toward the enemy | y (float) | x of its direction, a unit vector at the enemy as it stood (float) | y of its direction (float) | its length (float): `BL`, or as far as the ropes | `speed`: units a second the eruption front runs out (float) | `linger`: seconds a pipe stays up (float) | `width` (float) |
+
+A row is fired on a beat of the fight, every `max(1, int(round(every / mult)))` beats, where `mult` is the haste factor
+while a haste lasts (PULL ALL STOPS: every beat) and 1 otherwise. In the kit the length (element 8) is a numpy float
+whenever a rope cut the row short and a Python float otherwise; a recording has one float type, and the value is the
+same.
+
+`hit`, elements 7 and 8:
+
+| What hit (7) | Cause | Sub (8) |
+| --- | --- | --- |
+| `pipe` | a row of pipes: the enemy's centre came within its radius plus half the row's `width` of the part of the row that is up (from `max(0, (el - linger) * speed)` to `min(length, el * speed)` along it, `el` seconds after it was fired). A row hits once. x and y are the point of the enemy's surface nearest the row | the row's hazard id |
+
+A `pipe` on a shielded enemy is a `block` (element 6 `pipe`), and the row is spent all the same. The knock is away from
+the row plus 0.4 of its direction, strength `knock`.
 
 <!-- /kind:line -->
 
