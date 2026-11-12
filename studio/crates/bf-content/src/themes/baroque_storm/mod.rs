@@ -7,7 +7,7 @@
 //! episode's key.
 //!
 //! Here: the theme's voicings and its instruments, with the kit's names. The arrangement that reproduces the kit's
-//! bed is `BaroqueStormClassic`, in `classic.rs`.
+//! bed is [`BaroqueStormClassic`], in `classic.rs`.
 //!
 //! **Voicings.** The kit has two tables for the six chords of #37: the harpsichord's right hand ([`HARP_RH`]) and
 //! violin I's 16th cell per beat ([`VLN`]: top, mid, peak, mid). Any other chord is voiced by rule: the chord's
@@ -34,18 +34,43 @@ use bf_sound::SRF;
 use bf_sound::dsp;
 use bf_sound::synth::{self, FILTER_O, clip, noise};
 
-use super::{NOT_PORTED_CARD, Theme};
+pub use self::classic::BaroqueStormClassic;
+use super::{Preset, Theme};
+use crate::cards::ThemeCard;
 
-/// The theme as the registry lists it.
+/// The theme as the registry lists it: no options, no voice of a fighter in its bed.
 pub static THEME: Theme = Theme {
     name: "baroque_storm",
-    ported: false,
-    card: &NOT_PORTED_CARD,
+    ported: true,
+    card: &CARD,
     options: &[],
     voices: &[],
     own_voice: super::no_own_voice,
-    classic: classic::classic,
+    classic: |_| Ok(Box::new(BaroqueStormClassic::new())),
 };
+
+/// What the interface says about the baroque storm.
+pub static CARD: ThemeCard = ThemeCard {
+    display: "Baroque storm",
+    text: "A stormy presto: harpsichord, racing strings, timpani and thunder. No woodwinds of its own.",
+    key: "D",
+    scale: "minor",
+    chord_loops: &[&["Dm", "Gm", "C", "F", "Bb", "Gm", "A", "A"]],
+    presets: &PRESETS,
+    bars: (24, 42),
+};
+
+/// The kit configs that play the baroque storm (Table S4): their music as each `episode.py` sets it.
+pub static PRESETS: [Preset; 1] = [Preset {
+    config: "examples/clarinet_vs_oboe",
+    fighters: ["CLARINET", "OBOE"],
+    bpm: 140.0,
+    key: "D",
+    scale: "minor",
+    intro: ["Dm", "A"],
+    chord_loop: &["Dm", "Gm", "C", "F", "Bb", "Gm", "A", "A"],
+    tail: &["Gm", "A"],
+}];
 
 /// `HARP_RH`: the harpsichord's right hand, as #37 voiced it.
 pub const HARP_RH: [(&str, [i32; 4]); 6] = [
@@ -281,7 +306,10 @@ mod tests {
     #[test]
     fn instrument_lengths_follow_pythons_int() {
         assert_eq!(harpsi(50, 0.5).len(), 24000);
-        assert_eq!(strng(50, 0.17, 900.0, STRNG_VIB, STRNG_ATT).len(), length((0.17 + 0.08) * SRF));
+        assert_eq!(
+            strng(50, 0.17, 900.0, STRNG_VIB, STRNG_ATT).len(),
+            length((0.17 + 0.08) * SRF)
+        );
         assert_eq!(timp(26).len(), 52800);
         assert_eq!(punch().len(), 12000);
         // a high note: the partials stop below 12 kHz
