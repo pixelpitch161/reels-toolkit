@@ -17,7 +17,10 @@
 //! `the_encode_is_pinned` compares the mp4 of a 3 s clip with `studio/replay/encode_hashes.txt`, but only when the
 //! ffmpeg in use is the pinned build of `studio/packaging/ffmpeg.toml` (its exe's SHA-256 and its version line);
 //! with another ffmpeg it prints "not compared: this ffmpeg is not the pinned build" and passes, unless
-//! `BF_NEED_PINNED_FFMPEG=1` (as CI sets it), which makes that a failure.
+//! `BF_NEED_PINNED_FFMPEG=1` (as CI sets it), which makes that a failure. x264's bytes also depend on its thread
+//! count (1.5 times the logical processors the process may use), so the clip is compared with the line for the count
+//! x264 used on this machine; with no line for that count it prints "not compared: no pinned line for N threads",
+//! or fails under `BF_NEED_PINNED_FFMPEG=1`, starting the message with the whole line the clip gave.
 
 use std::io::Read;
 use std::path::{Path, PathBuf};
@@ -436,45 +439,134 @@ const ENCODE_HASHES_HEADER: &str = "\
 # pinned ffmpeg (studio/packaging/ffmpeg.toml): clip0-90.mp4 is `--frames 0:90`, video.mp4 the whole video, and
 # clip0-90-faster.mp4 is `--frames 0:90 --encode faster` (the Faster setting). The `ffmpeg` line is the first line
 # that ffmpeg's `-version` prints; the bytes of an mp4 depend on the ffmpeg build, so the hashes are compared only
-# when the ffmpeg in use is the pinned one. Written by crates/bf-cli/tests/e2e.rs (the_encode_is_pinned,
-# the_whole_video_is_pinned, the_faster_clip_is_pinned) with BF_BLESS=1 on the Windows reference PC. Do not edit by
-# hand.
-# file sha256
+# when the ffmpeg in use is the pinned one.
+#
+# What this proves, and what it does not: the same ffmpeg build with the same number of x264 threads makes the same
+# file. x264 picks its thread count itself, 1.5 times the logical processors the process may use (24 on the
+# reference PC's 16, 6 on a 4-processor CI runner), and its output bytes depend on that count, so a video made on a
+# PC with another number of processor threads is not byte-identical, although every frame and every sound sample fed
+# to the encoder is (render_is_reproducible checks those against render_hashes.txt on every PC). So each line names
+# the thread count it was made with (`threads=N`, read from the settings x264 writes into the stream), and a machine
+# is compared only against the line for its own count. A line for a count is added only after two machines (or the
+# reference PC limited to that many processors) gave the same hash.
+#
+# Written by crates/bf-cli/tests/e2e.rs (the_encode_is_pinned, the_whole_video_is_pinned, the_faster_clip_is_pinned)
+# with BF_BLESS=1 on the Windows reference PC. Do not edit by hand.
+# file x264-threads sha256
 ";
 
-/// The ffmpeg's line and the `file sha256` lines of `encode_hashes.txt`.
+/// One `file threads=N sha256` line of `encode_hashes.txt`.
+#[derive(Clone, Debug, PartialEq)]
+struct EncodeLine {
+    key: String,
+    threads: u32,
+    sha: String,
+}
+
+impl EncodeLine {
+    fn text(&self) -> String {
+        format!("{} threads={} {}", self.key, self.threads, self.sha)
+    }
+}
+
+/// The ffmpeg's line and the `file threads=N sha256` lines of `encode_hashes.txt`.
 struct EncodeHashes {
     ffmpeg: String,
-    files: Vec<(String, String)>,
+    files: Vec<EncodeLine>,
 }
 
 impl EncodeHashes {
-    fn read() -> Option<EncodeHashes> {
-        let text = std::fs::read_to_string(encode_hashes_file()).ok()?;
+    /// The file, if there is one. `bless`: a line in another form (one without its thread count, as the file had
+    /// before the counts were known) is dropped, since a bless writes the lines anew; otherwise it panics.
+    fn read(bless: bool) -> Option<EncodeHashes> {
+        Some(EncodeHashes::parse(
+            &std::fs::read_to_string(encode_hashes_file()).ok()?,
+            bless,
+        ))
+    }
+
+    /// Reads the file's text; a line that is not `ffmpeg ...` or `file threads=N sha256` panics, naming it, unless
+    /// `drop_others`, which leaves it out.
+    fn parse(text: &str, drop_others: bool) -> EncodeHashes {
         let mut ffmpeg = String::new();
         let mut files = Vec::new();
         for line in text.lines().filter(|l| !l.starts_with('#') && !l.trim().is_empty()) {
-            let (key, value) = line.split_once(' ').unwrap_or((line, ""));
-            if key == "ffmpeg" {
-                ffmpeg = value.to_string();
-            } else {
-                files.push((key.to_string(), value.to_string()));
+            if let Some(v) = line.strip_prefix("ffmpeg ") {
+                ffmpeg = v.to_string();
+                continue;
             }
+            let parts: Vec<&str> = line.split(' ').collect();
+            let threads = match parts.as_slice() {
+                [_, t, sha] if sha.len() == 64 => t.strip_prefix("threads=").and_then(|n| n.parse().ok()),
+                _ => None,
+            };
+            let Some(threads) = threads else {
+                assert!(
+                    drop_others,
+                    "encode_hashes.txt: the line \"{line}\" is not `file threads=N sha256`"
+                );
+                continue;
+            };
+            files.push(EncodeLine {
+                key: parts[0].to_string(),
+                threads,
+                sha: parts[2].to_string(),
+            });
         }
-        Some(EncodeHashes { ffmpeg, files })
+        EncodeHashes { ffmpeg, files }
     }
 
-    fn get(&self, key: &str) -> Option<&str> {
-        self.files.iter().find(|(k, _)| k == key).map(|(_, v)| v.as_str())
+    fn get(&self, key: &str, threads: u32) -> Option<&str> {
+        self.files
+            .iter()
+            .find(|l| l.key == key && l.threads == threads)
+            .map(|l| l.sha.as_str())
+    }
+
+    fn has(&self, key: &str) -> bool {
+        self.files.iter().any(|l| l.key == key)
+    }
+
+    /// Sets the line for `key` and `threads`, keeping every other line; the lines are kept sorted.
+    fn set(&mut self, key: &str, threads: u32, sha: String) {
+        self.files.retain(|l| !(l.key == key && l.threads == threads));
+        self.files.push(EncodeLine {
+            key: key.to_string(),
+            threads,
+            sha,
+        });
+        self.files
+            .sort_by(|a, b| a.key.cmp(&b.key).then(b.threads.cmp(&a.threads)));
     }
 
     fn text(&self) -> String {
         let mut text = format!("{ENCODE_HASHES_HEADER}ffmpeg {}\n", self.ffmpeg);
-        for (k, v) in &self.files {
-            text.push_str(&format!("{k} {v}\n"));
+        for l in &self.files {
+            text.push_str(&l.text());
+            text.push('\n');
         }
         text
     }
+}
+
+/// The number of threads x264 used for the video stream of `mp4`: its `threads=N` option in the settings text that
+/// x264 writes into every stream it makes ("x264 - core ... options: ... threads=N lookahead_threads=...").
+fn x264_threads(mp4: &Path) -> u32 {
+    let bytes = std::fs::read(mp4).unwrap_or_else(|e| panic!("{}: {e}", mp4.display()));
+    let start = bytes
+        .windows(11)
+        .position(|w| w == b"x264 - core")
+        .unwrap_or_else(|| panic!("{} holds no x264 settings text", mp4.display()));
+    let end = bytes[start..]
+        .iter()
+        .position(|&b| b == 0)
+        .map_or(bytes.len(), |n| start + n);
+    let settings = String::from_utf8_lossy(&bytes[start..end]);
+    settings
+        .split(' ')
+        .find_map(|o| o.strip_prefix("threads="))
+        .and_then(|n| n.parse().ok())
+        .unwrap_or_else(|| panic!("{}: the x264 settings name no threads: {settings}", mp4.display()))
 }
 
 /// The pinned version and `ffmpeg.exe`'s SHA-256, read from `studio/packaging/ffmpeg.toml` (its `version` line and
@@ -556,7 +648,8 @@ fn env_is_1(name: &str) -> bool {
 }
 
 /// Renders the example episode (`frames`: a `--frames` range, or the whole video) with the ffmpeg the program finds
-/// and compares the mp4's SHA-256 with the line `key` of `encode_hashes.txt`, or writes that line with `BF_BLESS=1`.
+/// and compares the mp4's SHA-256 with the line `key` of `encode_hashes.txt` for the x264 thread count it was made
+/// with ([`compare_encode`]), or writes that line with `BF_BLESS=1`, keeping the lines of other counts.
 ///
 /// When the ffmpeg in use is not the pinned build, nothing is compared: the test prints "not compared: this ffmpeg is
 /// not the pinned build" and passes, except with `BF_NEED_PINNED_FFMPEG=1` (as CI sets it), where it fails naming
@@ -570,14 +663,14 @@ fn encode_is_pinned(test: &str, frames: Option<&str>, key: &str) {
 fn encode_is_pinned_with(test: &str, frames: Option<&str>, key: &str, more: &[&str]) {
     let bless = env_is_1("BF_BLESS");
     let need_pinned = env_is_1("BF_NEED_PINNED_FFMPEG");
-    let file = EncodeHashes::read();
+    let file = EncodeHashes::read(bless);
     if !bless {
         let path = encode_hashes_file();
         let file = file
             .as_ref()
             .unwrap_or_else(|| panic!("cannot read {} (bless it with BF_BLESS=1)", path.display()));
         assert!(
-            file.get(key).is_some() && !file.ffmpeg.is_empty(),
+            file.has(key) && !file.ffmpeg.is_empty(),
             "{} has no `ffmpeg` line or no `{key}` line (bless it with BF_BLESS=1)",
             path.display()
         );
@@ -638,8 +731,12 @@ fn encode_is_pinned_with(test: &str, frames: Option<&str>, key: &str, more: &[&s
     };
     assert_eq!(entries(&out), [name.as_str()]);
     let mp4 = out.join(&name).join(format!("{name}.mp4"));
-    let got = sha256(&mp4);
-    println!("{test}: {key} {got} (the render took {took:.1} s)");
+    let got = EncodeLine {
+        key: key.to_string(),
+        threads: x264_threads(&mp4),
+        sha: sha256(&mp4),
+    };
+    println!("{test}: {} (the render took {took:.1} s)", got.text());
 
     let path = encode_hashes_file();
     if bless {
@@ -652,20 +749,42 @@ fn encode_is_pinned_with(test: &str, frames: Option<&str>, key: &str, more: &[&s
             file.files.clear();
             file.ffmpeg = found_line;
         }
-        match file.files.iter_mut().find(|(k, _)| k == key) {
-            Some(line) => line.1 = got,
-            None => file.files.push((key.to_string(), got)),
-        }
+        file.set(key, got.threads, got.sha.clone());
         std::fs::write(&path, file.text()).expect("write encode_hashes.txt");
-        eprintln!("blessed {} ({key})", path.display());
+        eprintln!("blessed {} ({})", path.display(), got.text());
     } else {
-        let want = file.as_ref().and_then(|f| f.get(key)).expect("read above");
-        assert_eq!(
-            got,
-            want,
-            "{test}: the mp4 made by the pinned ffmpeg differs from {}",
-            path.display()
-        );
+        let file = file.as_ref().expect("read above");
+        match compare_encode(file, &got, need_pinned) {
+            Ok(None) => {}
+            Ok(Some(notice)) => println!("{test}: {notice}"),
+            Err(failure) => panic!("{test}: {failure}"),
+        }
+    }
+}
+
+/// The verdict on an encoded clip `got` against the file: `Ok(None)` when it equals the line for its thread count,
+/// `Ok(Some(notice))` when the file has no line for that count (nothing is compared), and `Err` when its hash differs
+/// from that line, or when the line is missing and `need_pinned` (CI). Each message starts with the whole line the
+/// clip gave, on a line of its own, so it survives a CI annotation cut at 300 characters.
+fn compare_encode(file: &EncodeHashes, got: &EncodeLine, need_pinned: bool) -> Result<Option<String>, String> {
+    let n = got.threads;
+    match file.get(&got.key, n) {
+        Some(want) if want == got.sha => Ok(None),
+        Some(want) => Err(format!(
+            "\n{}\nthe mp4 made by the pinned ffmpeg with {n} x264 threads differs from encode_hashes.txt, which has \
+             {want}",
+            got.text()
+        )),
+        None if need_pinned => Err(format!(
+            "\n{}\nno pinned line for {n} x264 threads in encode_hashes.txt: the line above is what this machine \
+             made; add it only after a second machine (or the reference PC limited to that many processors) gives \
+             the same hash",
+            got.text()
+        )),
+        None => Ok(Some(format!(
+            "not compared: no pinned line for {n} threads (this machine made: {})",
+            got.text()
+        ))),
     }
 }
 
@@ -775,6 +894,48 @@ fn another_ffmpeg_is_not_the_pinned_build() {
     assert!(why.contains(&pin) && why.contains(&other), "{why}");
     let why = is_the_pinned_build("ffmpeg version 8.1", &pin, line, &pin).unwrap_err();
     assert!(why.contains("ffmpeg version 8.1") && why.contains(line), "{why}");
+}
+
+/// A clip is compared only with the line for its own x264 thread count: equal passes, different fails, and a count
+/// with no line is "not compared" (a failure in CI) with the whole line it made at the start of the message. The
+/// committed file reads, and a line without its count is refused.
+#[test]
+fn a_clip_is_compared_for_its_thread_count() {
+    let (a, b) = ("a".repeat(64), "b".repeat(64));
+    let file = EncodeHashes::parse(
+        &format!("# header\nffmpeg ffmpeg version 9.0.2\nclip0-90.mp4 threads=24 {a}\nclip0-90.mp4 threads=6 {b}\n"),
+        false,
+    );
+    let clip = |threads: u32, sha: &str| EncodeLine {
+        key: "clip0-90.mp4".into(),
+        threads,
+        sha: sha.into(),
+    };
+    assert_eq!(compare_encode(&file, &clip(24, &a), true), Ok(None));
+    assert_eq!(compare_encode(&file, &clip(6, &b), true), Ok(None));
+    let why = compare_encode(&file, &clip(6, &a), false).unwrap_err();
+    assert!(
+        why.starts_with(&format!("\nclip0-90.mp4 threads=6 {a}\n")) && why.contains(&b),
+        "{why}"
+    );
+    let notice = compare_encode(&file, &clip(3, &a), false).unwrap().unwrap();
+    assert!(
+        notice.starts_with("not compared: no pinned line for 3 threads"),
+        "{notice}"
+    );
+    let why = compare_encode(&file, &clip(3, &a), true).unwrap_err();
+    assert!(why.starts_with(&format!("\nclip0-90.mp4 threads=3 {a}\n")), "{why}");
+    assert!(why.contains("no pinned line for 3 x264 threads"), "{why}");
+
+    let committed = EncodeHashes::read(false).expect("encode_hashes.txt");
+    assert!(committed.has("clip0-90.mp4") && committed.has("clip0-90-faster.mp4"));
+    let old_form = std::panic::catch_unwind(|| EncodeHashes::parse(&format!("clip0-90.mp4 {a}\n"), false));
+    assert!(old_form.is_err(), "a line without its thread count is refused");
+    assert!(
+        EncodeHashes::parse(&format!("clip0-90.mp4 {a}\n"), true)
+            .files
+            .is_empty()
+    );
 }
 
 /// Review Focus 1: a seed without a K.O. (found by scanning with handicap [0.05, 0.05]) is refused by `render`
