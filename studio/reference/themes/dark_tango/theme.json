@@ -1,0 +1,44 @@
+{
+ "about": "dark_tango: its reference configs, each with the kit's own recording of it and the bed alone (both fighters replaced at run time by kit/fighters/base.py Sound, which is silent): the SHA-256 of the 16-bit master's samples (little-endian int16, interleaved: what A.write writes after its header), the buses in the order the score made them, and the bed's class levels",
+ "cache_files": "cache files are under studio/reference/.cache/m3/ and pinned in pins.json",
+ "configs": [
+  {
+   "bed_alone": {
+    "bed": {
+     "buses": {
+      "bandoneon": [1.55, 0.26],
+      "guitar": [1.25, 0.2],
+      "perc": [1.3, 0.12]
+     },
+     "comp": [0.18, 0.55],
+     "reverb": [1.6, 0.5, 0.17]
+    },
+    "buses": ["bandoneon", "guitar", "perc", "fx"],
+    "master_sha256": "d0aeec4f82ce1cd12b599feb6cdf7704fe40e657b6176ae1bc71a240deddc2af",
+    "stems": ["bandoneon", "guitar", "perc", "fx"]
+   },
+   "bpm": 118,
+   "chords": ["Dm", "A7", "Dm", "A7", "A7", "Dm", "Gm", "Dm", "E7", "A7", "Dm", "A7", "A7", "Dm", "Gm", "Dm", "E7", "A7", "Dm", "A7", "A7", "Dm", "Gm", "Dm", "E7", "A7", "Gm", "Dm", "E7", "A7"],
+   "config": "ballfight_cello_vs_contrabass",
+   "fighters": ["CELLO", "CONTRABASS"],
+   "intro": ["Dm", "A7"],
+   "key": "D",
+   "lines": {
+    "CELLO": [62, 62, 62, 64, 65, 65, 64, 61, 64, 64, 64, 57, 65, 64, 62, 62, 67, 67, 65, 64, 62, 62, 65, 69, 68, 68, 65, 62, 61, 61, 64, 64],
+    "CONTRABASS": [38, 40, 41, 44, 33, 37, 40, 43, 45, 43, 40, 37, 38, 45, 41, 42, 43, 46, 50, 49, 50, 45, 41, 39, 40, 44, 47, 46, 45, 43, 40, 37]
+   },
+   "loop": ["Dm", "A7", "A7", "Dm", "Gm", "Dm", "E7", "A7"],
+   "loop_bpm": "0x1.d82192e29f79bp+6",
+   "mood": "dark_tango",
+   "n_bars": 30,
+   "recording": "themes/dark_tango/cello_vs_contrabass.bfrec",
+   "scale": "harmonic minor",
+   "seed": 2455,
+   "t_ko": 50.875,
+   "tail": ["Gm", "Dm", "E7", "A7"],
+   "winner": 1
+  }
+ ],
+ "theme": "dark_tango",
+ "voicing_methods": ["voicing"]
+}
