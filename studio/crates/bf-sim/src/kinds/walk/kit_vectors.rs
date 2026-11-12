@@ -22,54 +22,11 @@ fn hx(x: f64) -> String {
     format!("{sign}0x1.{:013x}p{exp:+}", bits & ((1 << 52) - 1))
 }
 
-/// How many representable steps `x` is from the number Python printed as `hex` (both finite, same sign).
-fn ulps(x: f64, hex: &str) -> u64 {
-    let want = hex.parse::<HexF>().expect("a float.hex()").0;
-    x.to_bits().abs_diff(want.to_bits())
-}
-
-/// The lines `got` against the script's `want`, word by word: every number (a `float.hex()`, with or without the
-/// brackets and commas of a vector) within one representable step of the kit's, every other word equal. Only for
-/// THE ELEPHANT's turn, whose `math.atan2`, `math.cos` and `math.sin` are the C runtime's in the kit and `dmath`'s
-/// here (ruling M3-R38; the audit that makes them the same is not merged yet).
-fn near<S: AsRef<str>, W: AsRef<str>>(got: &[S], want: impl AsRef<[W]>) {
-    let want = want.as_ref();
-    assert_eq!(got.len(), want.len(), "lines");
-    let words = |l: &str| -> Vec<String> {
-        l.split([' ', ',', '[', ']'])
-            .filter(|w| !w.is_empty())
-            .map(str::to_string)
-            .collect()
-    };
-    for (g, w) in got.iter().zip(want) {
-        let (g, w) = (g.as_ref(), w.as_ref());
-        let (gw, ww) = (words(g), words(w));
-        assert_eq!(gw.len(), ww.len(), "{g} against the kit's {w}");
-        for (a, b) in gw.iter().zip(&ww) {
-            match (a.parse::<HexF>(), b.parse::<HexF>()) {
-                (Ok(x), Ok(_)) => assert!(ulps(x.0, b) <= 1, "{g} against the kit's {w}"),
-                _ => assert_eq!(a, b, "{g} against the kit's {w}"),
-            }
-        }
-    }
-}
-
-/// A number read back from Python's `float.hex()` of a normal number (the only ones the script prints here).
-struct HexF(f64);
-
-impl std::str::FromStr for HexF {
-    type Err = String;
-    fn from_str(t: &str) -> Result<HexF, String> {
-        let (neg, t) = t.strip_prefix('-').map_or((false, t), |r| (true, r));
-        let body = t
-            .strip_prefix("0x1.")
-            .ok_or_else(|| format!("{t}: not a normal number"))?;
-        let (mant, exp) = body.split_once('p').ok_or_else(|| format!("{t}: no exponent"))?;
-        let mant = u64::from_str_radix(mant, 16).map_err(|e| e.to_string())?;
-        let exp: i64 = exp.parse().map_err(|e: std::num::ParseIntError| e.to_string())?;
-        let bits = (((exp + 1023) as u64) << 52) | mant | (u64::from(neg) << 63);
-        Ok(HexF(f64::from_bits(bits)))
-    }
+/// The lines `got` against the script's `want`, exactly.
+fn same<S: AsRef<str>, W: AsRef<str>>(got: &[S], want: impl AsRef<[W]>) {
+    let got: Vec<&str> = got.iter().map(AsRef::as_ref).collect();
+    let want: Vec<&str> = want.as_ref().iter().map(AsRef::as_ref).collect();
+    assert_eq!(got, want);
 }
 
 fn vec(v: &[f64]) -> String {
@@ -452,16 +409,8 @@ fn the_elephant_charges_tramples_stomps_and_ends() {
             s("0x1.972d2d2d2d2d3p+3")
         )
     );
-    // the heading after the turn: `math.atan2`, `math.cos` and `math.sin` are the C runtime's in the kit and
-    // `dmath`'s here, one step apart on this value (ruling M3-R38: the audit that makes `dmath` the C runtime's is
-    // not merged yet). Held to one step; exact once it is.
-    for (got, want) in f.balls[0]
-        .v
-        .iter()
-        .zip(["0x1.b63ed71f31418p+1", "-0x1.de1601f37b8d3p+0"])
-    {
-        assert!(ulps(*got, want) <= 1, "{} against the kit's {want}", hx(*got));
-    }
+    // the heading after the turn (`math.atan2`, `math.cos`, `math.sin`: the C runtime's, M3-R38)
+    assert_eq!(vec(&f.balls[0].v), "[0x1.b63ed71f31418p+1, -0x1.de1601f37b8d3p+0]");
     assert_eq!(
         show_wave(f.waves.last().expect("a stomp")),
         "c [-0x1.f1644e29a07ddp-1, 0x1.f0105544af14ep-2] r 0x1.3333333333333p-1 speed 0x1.2000000000000p+3 rmax \
@@ -472,20 +421,20 @@ fn the_elephant_charges_tramples_stomps_and_ends() {
         events(&f, n),
         ["0x1.9000000000000p+3 stampede_stomp 0 -0x1.f1644e29a07ddp-1 0x1.f0105544af14ep-2 0x1.b333333333334p+0"]
     );
-    // the rope (from here on the turn's atan2, cos and sin are one step apart now and then: `near`)
+    // the rope
     let n = f.events.len();
     f.t += dt;
     f.balls[0].p = [2.395, 0.0];
     f.balls[0].v = [3.0, 0.4];
     stampede::stampede_step(&mut f, 0, dt);
-    near(
+    same(
         &[vec(&f.balls[0].p), vec(&f.balls[0].v)],
         &[
             s("[0x1.2fb504e23ede4p+1, 0x1.e57e790974be7p-9]"),
             s("[-0x1.eff282bf54981p+1, 0x1.c7269178dd729p-2]"),
         ],
     );
-    near(
+    same(
         &events(&f, n),
         ["0x1.90443d46b26c0p+3 rope 0 0 1 0x1.2fb504e23ede4p+1 0x1.e57e790974be7p-9 0x1.f333333333334p+1"],
     );
@@ -497,7 +446,7 @@ fn the_elephant_charges_tramples_stomps_and_ends() {
     f.balls[1].p = [0.45, 0.1];
     f.balls[1].v = [-1.0, 0.0];
     stampede::stampede_step(&mut f, 0, dt);
-    near(
+    same(
         &[hx(f.balls[1].hp), vec(&f.balls[1].v), hx(f.balls[1].boost)],
         &[
             s("0x1.7000000000000p+6"),
@@ -505,14 +454,14 @@ fn the_elephant_charges_tramples_stomps_and_ends() {
             s("0x1.ccccccccccccdp+0"),
         ],
     );
-    near(
+    same(
         &[vec(&f.balls[0].v), hx(st(&f).last)],
         &[
             s("[-0x1.c1b0532c7aff9p+1, -0x1.b1801abbd68ccp+0]"),
             s("0x1.9088888888888p+3"),
         ],
     );
-    near(
+    same(
         &events(&f, n),
         [
             "0x1.90888f861a60dp+3 hit 0 1 0x1.0000000000000p+3 0x1.3b7bcb72e751cp-1 0x1.1dd498c9f9c10p-3 trample 0",
@@ -528,7 +477,7 @@ fn the_elephant_charges_tramples_stomps_and_ends() {
     f.t = st(&f).next;
     stampede::stampede_step(&mut f, 0, dt);
     assert_eq!(hx(st(&f).next), "0x1.9e5a5a5a5a5a6p+3");
-    near(
+    same(
         &events(&f, n),
         ["0x1.972d234eb9a17p+3 stampede_stomp 0 -0x1.9dd421520cc68p-6 -0x1.ded2683445394p-6 0x1.b333333333334p+0"],
     );

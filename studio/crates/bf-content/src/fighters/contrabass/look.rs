@@ -527,7 +527,7 @@ impl Look for ContrabassLook {
             [0.85, 0.92, 1.0]
         };
         for (j, light) in ic.iter_mut().enumerate() {
-            let rd = np::hypot(c.sxp[j] - w.cx, c.szp[j] - w.cz);
+            let rd = dmath::np_hypot(c.sxp[j] - w.cx, c.szp[j] - w.cz);
             let band = np::clip(1.0 - (rd - w.r).abs() / wid, 0.0, 1.0) * fade;
             let band = (band * 3.0 + bayer(c.xs[j], c.ys[j]) * 0.9).floor() / 3.0;
             let v = band * gain;
