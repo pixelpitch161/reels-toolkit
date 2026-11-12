@@ -732,17 +732,29 @@ either way, and only a landed stomp grows the reach and the radius.
 <!-- kind:lightning -->
 #### `lightning` (weapon kind of ELECTRIC)
 
-`fight.py` 3845 to 3922. Not ported yet: its port fills this section in (the meaning of each field, as 6.2 and 6.3 do
-for FLUTE and TROMBONE), from the lines below.
+`fight.py` 3845 to 3922; ported in `bf-sim/src/kinds/lightning.rs` (`bf-core/src/roster/kinds/lightning.rs` for its
+roster numbers). Every `every` beats on the 16th grid (a haste does not divide it) the fighter starts a riff of
+`int(n_vol)` notes (`n0`, default 2; `grow` more after a riff one of whose bolts landed, up to `n_max`; recorded in
+`NV`) on the 16th slots `slots`: the first `int(n_vol)` of them, sorted, so the note number is the slot's place in
+time. Every note is an instant bolt. It strikes from the headstock (source -1) when the enemy's surface is within
+`reach` of the ball's, else from the corner post nearest the enemy (source 0 to 3, `POSTS`: (-1, 1), (1, 1),
+(1, -1), (-1, -1) x the ring's half width) when the enemy's centre is within `post_r` of it, else it misses and
+crackles out `reach` beyond the ball's surface toward the enemy (source -1 in the event, `hit` 0). A bolt that hits
+ends on the enemy's glass (its near side seen from the source), deals `dmg` (the hit `bolt`, sub the source + 1) and
+knocks the enemy away from the source (`knock`). DISTORTION (`fork`) multiplies `reach` and `post_r` by its
+`reach_k`; TAPPING (`tapping`) adds a bolt (note -1) on every 8th of the fight, `dmg` x its `dmg_k`, that never
+grows the riff. A stunned or smashed fighter plays no notes (and starts no riff).
 
-**Record keys.** None of its own.
+**Record keys.** None of its own (the note count is `NV`).
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+**Events** (`who` the fighter; coordinates are ring units):
 
-- 3876: `self.ev('riff', k, B.riff_id, B.riff_n)`
-- 3912: `self.ev('bolt', k, int(note), -1 if src is None else int(src), x0, y0, float(x1), float(y1), int(hit), int(B.riff_id), int(fork), int(tap))`
-- 3917: `self.damage(k, 1 - k, dmg, 'bolt', x1, y1, int(src) + 1)`
+| Kind | Fields after `who` | When |
+| --- | --- | --- |
+| `riff` | the riff's number (from 0), its notes (ints) | on the riff's bar line (3876) |
+| `bolt` | the note (its slot's place in the riff, -1 for a tap), the source (-1 headstock or miss, 0 to 3 a post) (ints), `x0, y0` where it leaves, `x1, y1` where it ends (floats), hit (0 or 1), the riff's number, DISTORTION on (0 or 1), a tap (0 or 1) (ints) | each bolt (3912) |
+
+A bolt that hits also gives a `hit` of kind `bolt` (3917), or a `block` when the enemy is shielded.
 
 <!-- /kind:lightning -->
 
@@ -1598,50 +1610,52 @@ The line 583 (`spout`) is an older kind's.
 <!-- kind:fork -->
 #### `fork` (ability kind of ELECTRIC)
 
-`fight.py` 2933 to 2935. Not ported yet: its port fills this section in (the meaning of each field, as 6.2 and 6.3 do
-for FLUTE and TROMBONE), from the lines below.
+`fight.py` 2933 to 2935; ported in `bf-sim/src/kinds/lightning.rs` (`start_fork`). For `dur` s or `dur_beats` beats
+every bolt of the LIGHTNING RIFF forks: the headstock's `reach` and the posts' `post_r` (and a miss's reach) are
+times `reach_k` (default 1.0), and the bolt's event says so. It holds only numbers.
 
 **Record keys.** None of its own.
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
-
-- 2935: `self.ev('fork', k, B.fork_until)`
+**Events:** `fork`, `who` the fighter, then the time it ends (float) (2935).
 
 <!-- /kind:fork -->
 
 <!-- kind:tapping -->
 #### `tapping` (ability kind of ELECTRIC)
 
-`fight.py` 2936 to 2938. Not ported yet: its port fills this section in (the meaning of each field, as 6.2 and 6.3 do
-for FLUTE and TROMBONE), from the lines below.
+`fight.py` 2936 to 2938; ported in `bf-sim/src/kinds/lightning.rs` (`start_tapping`). For `beats` beats the second
+hand taps a bolt (note -1, `tap` 1 in its event) on every 8th of the fight on top of the riff, each `dmg_k` (default
+1.0) x the weapon's damage; taps never grow the riff. It holds only numbers.
 
 **Record keys.** None of its own.
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
-
-- 2938: `self.ev('tapping', k, B.tap_until)`
+**Events:** `tapping`, `who` the fighter, then the time it ends (float) (2938).
 
 <!-- /kind:tapping -->
 
 <!-- kind:smash -->
 #### `smash` (ability kind of ELECTRIC)
 
-`fight.py` 2939 to 2940, 3923 to 3964, 6104 to 6107. Not ported yet: its port fills this section in (the meaning of each
-field, as 6.2 and 6.3 do for FLUTE and TROMBONE), from the lines below.
+`fight.py` 2939 to 2940, 3923 to 3964, 6104 to 6107; ported in `bf-sim/src/abilities/smash.rs` (the timer in
+`schedule.rs`). The fighter smashes itself on the floor: a ring of kind `smash` leaves its centre (`speed`, out to
+`radius`, `dmg`, `knock`; recorded in `WAVES`; it hits once, as every ring does) and `n` splinters fly out from it
+at `splinter_speed`: the first aimed at the enemy, splinter `j` at `2 pi j / n` from it, each but the first turned
+by up to 0.25 rad from a generator of its own (`default_rng([seed, 44, round(t * 1000)])`, never the fight's). A
+splinter whose point comes within R + 0.08 of the enemy's centre hits it (`splinter_dmg`, the hit `splinter`, sub
+its number, at the enemy's near side along the splinter; knock `splinter_knock`, default 0.4) and ends; one that
+reaches the ropes ends. The fighter then lies in pieces for `rebuild_beats` beats (`smashed`): it holds still,
+cannot be hit or knocked into a clash, starts nothing and plays no notes; when the time runs out it is `rebuild`.
 
-**Record keys.** None of its own.
+**Record keys.** None of its own (the ring is in `WAVES`, kind `smash`).
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+**Events** (`who` the fighter):
 
-- 3934: `self.ev('smash', k, float(B.p[0]), float(B.p[1]), float(ab['radius']), float(B.smashed), int(ab['n']))`
-- 3946: `self.ev('splinter', k, j, float(a), float(ab['splinter_speed']))`
-- 3956: `self.damage(Sp['owner'], o, Sp['dmg'], 'splinter', hx, hy, Sp['j'])`
-- 3959: `self.ev('splinter_end', Sp['owner'], Sp['j'], hx, hy, 1)`
-- 3962: `self.ev('splinter_end', Sp['owner'], Sp['j'], float(p[0]), float(p[1]), 0)`
-- 6107: `self.ev('rebuild', k)`
+| Kind | Fields after `who` | When |
+| --- | --- | --- |
+| `smash` | `x, y` where it smashed, the ring's radius, the seconds in pieces (floats), the splinters (int) | it smashes (3934) |
+| `splinter` | the splinter's number (int), its angle in radians, its speed (floats) | each splinter (3946) |
+| `splinter_end` | the splinter's number (int), `x, y` where it ended (floats), 1 for a hit, 0 at the ropes (int) | it ends (3959, 3962) |
+| `rebuild` | nothing | the pieces snap back together (6107) |
 
 <!-- /kind:smash -->
 
