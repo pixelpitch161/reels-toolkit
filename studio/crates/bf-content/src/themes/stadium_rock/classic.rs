@@ -32,7 +32,9 @@ use bf_sound::music::{
 use bf_sound::synth::{self, HAT_OPEN};
 use bf_sound::traits::{Bed, BedHook, Played};
 
-use super::{BUILD_BARS, BUSES, PLUG, UNPLUG, cajon, kick, lufs, pbass, pgtr, root, shaker, snare, strum_tones, tamb, tom, ubass};
+use super::{
+    BUILD_BARS, BUSES, PLUG, UNPLUG, cajon, kick, lufs, pbass, pgtr, root, shaker, snare, strum_tones, tamb, tom, ubass,
+};
 
 /// The name the bed's errors carry.
 const H: &str = "stadium_rock";
@@ -158,7 +160,10 @@ impl StadiumRockClassic {
     /// `self.ubass(m, dur)`.
     fn ubass(&self, m: i32, dur: f64) -> Result<Vec<f64>, MusicError> {
         if m < 0 {
-            return Err(MusicError::new(H, format!("the upright bass's note {m} is no noise seed")));
+            return Err(MusicError::new(
+                H,
+                format!("the upright bass's note {m} is no noise seed"),
+            ));
         }
         let x = self.cached(Key::Ubass(m, r3(dur)), || Ok(ubass(m, dur)))?;
         Ok(x.to_vec())
@@ -227,10 +232,12 @@ impl StadiumRockClassic {
                 }
             }
             let k = (ns.len() as f64).sqrt();
-            Ok(synth::lp(&synth::hp(&out, 250.0, synth::FILTER_O), 3200.0, synth::FILTER_O)
-                .iter()
-                .map(|v| v / k)
-                .collect())
+            Ok(
+                synth::lp(&synth::hp(&out, 250.0, synth::FILTER_O), 3200.0, synth::FILTER_O)
+                    .iter()
+                    .map(|v| v / k)
+                    .collect(),
+            )
         })?;
         Ok(scaled(&x, v))
     }
@@ -304,9 +311,9 @@ impl StadiumRockClassic {
             put(mix, "u_gtr", s, t0 + j as f64 * e8, g);
         }
         let walk = [rb, rb + 7, rb + 12, rb + 7];
-        for bt in 0..4usize {
+        for (bt, &step) in walk.iter().enumerate() {
             let m = if dense > 0.3 {
-                walk[bt]
+                step
             } else if bt % 2 == 0 {
                 rb
             } else {
@@ -482,11 +489,7 @@ impl StadiumRockClassic {
         for (keys, gain) in [(&PLUG, &gp), (&UNPLUG, &gu)] {
             for &k in keys {
                 if let Some(x) = mix.bus(k) {
-                    let y: Vec<[f64; 2]> = x
-                        .iter()
-                        .zip(gain.iter())
-                        .map(|(v, g)| [v[0] * g, v[1] * g])
-                        .collect();
+                    let y: Vec<[f64; 2]> = x.iter().zip(gain.iter()).map(|(v, g)| [v[0] * g, v[1] * g]).collect();
                     if y.len() != x.len() {
                         return Err(MusicError::new(H, format!("the bus {k} is longer than the envelope")));
                     }
