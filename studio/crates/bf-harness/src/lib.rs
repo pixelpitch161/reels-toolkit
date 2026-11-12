@@ -25,6 +25,12 @@
 //! The comparisons are milestone 1's: [`bf_sim::parity::prefix_window`] for the fights, the hashes and draw logs of
 //! `flute_look.rs` for the looks, the RMS profile and the -120 dBFS windows of `stems.rs`, the 16-bit master of
 //! `master_matches`, the voice bars of `voices.rs`, the bars of `checks_parity.rs` and of `stats_parity.rs`.
+//!
+//! Two minimums are stated as rules rather than counts. The fits ([`fight::fits_present`], ruling M3-R32): where
+//! the kit's statistics have fits the port must have at least one, and wherever either has fits the two counts must
+//! agree under a two-proportion test, |z| within [`fight::FIT_Z`] = 3, on top of the fit-rate bar. A part's sound
+//! ([`sound::part_is_compared`]): the kit's soundtrack has first-time notes of the part, or (a part that plays only
+//! through its own synth, the kit's count 0) its own bus is a stem sounding above -60 dBFS in at least 100 blocks.
 
 pub mod checks;
 pub mod episode;
@@ -315,6 +321,41 @@ mod mutations {
         Recording::read(&crate::refs::reference("fights/flute_vs_trombone/seed1.bfrec")).expect("seed1")
     }
 
+    /// Ruling M3-R36: a left recording in the pinned cache is read from there, and a missing one fails with the
+    /// command that makes it (a gate never passes by comparing nothing).
+    #[test]
+    #[should_panic(expected = "python -m tools.studio_export")]
+    fn a_left_recording_missing_from_the_cache_fails_with_the_command() {
+        crate::refs::recording_of(&serde_json::json!({"cache": "fighters/nobody/left.bfrec"}), None);
+    }
+
+    #[test]
+    #[should_panic(expected = "exactly one of `file` and `cache`")]
+    fn a_recording_entry_names_a_file_or_the_cache() {
+        crate::refs::recording_of(
+            &serde_json::json!({"file": "fights/flute_vs_trombone/seed1.bfrec", "cache": "fighters/x/left.bfrec"}),
+            None,
+        );
+    }
+
+    #[test]
+    fn a_committed_recording_entry_reads_as_before() {
+        let entry = serde_json::json!({"file": "fights/flute_vs_trombone/seed1.bfrec"});
+        let rec = crate::refs::recording_of(&entry, Some(&seed1().hash()));
+        assert_eq!(rec.seed, 1);
+    }
+
+    #[test]
+    #[ignore = "reads the pinned cache: python -m tools.studio_export cache fighters/trombone"]
+    fn a_cached_recording_entry_reads_and_checks_its_hash() {
+        // TROMBONE's right fight is milestone 1's seed1.bfrec byte for byte (fight.json's same_as)
+        let entry = serde_json::json!({"cache": "fighters/trombone/right.bfrec"});
+        let rec = crate::refs::recording_of(&entry, Some(&seed1().hash()));
+        assert_eq!(rec.seed, 1);
+        let wrong = std::panic::catch_unwind(|| crate::refs::recording_of(&entry, Some("0000000000000000")));
+        assert!(wrong.is_err(), "a cached recording with another hash was taken");
+    }
+
     #[test]
     fn prefix_agrees_with_the_kits_own_fight() {
         let py = seed1();
@@ -372,13 +413,71 @@ mod mutations {
     }
 
     #[test]
-    #[should_panic(expected = "fits are missing")]
+    #[should_panic(expected = "no fits at all")]
     fn statistics_refuse_no_fits_where_the_kit_has_them() {
         let mut rs = stats();
-        rs.fit_rate = 0.001;
+        rs.n = 20000;
+        rs.fit_rate = 0.0;
         let mut py = stats();
-        py.fit_rate = 0.0045;
+        py.fit_rate = 0.0025;
         crate::fight::assert_the_kits("mutation", &rs, &py);
+    }
+
+    #[test]
+    fn a_part_with_no_kit_note_is_compared_by_its_own_bus() {
+        use crate::sound::part_is_compared;
+        let doc = crate::refs::json("fighters/flute", "sound.json");
+        let left = &doc["left"];
+        assert!(crate::refs::index(&left["notes"]["count"]) > 0);
+        assert!(part_is_compared("FLUTE", left).is_ok());
+        // the kit's count 0 (CLARINET: every note through its own reed cache): its bus sounds, so it passes
+        let mut none = left.clone();
+        none["notes"]["count"] = 0.into();
+        assert!(part_is_compared("FLUTE", &none).is_ok());
+        // ... but not when the bus is silent, missing from the stems or has no profile: nothing would be compared
+        let mut silent = none.clone();
+        let blocks = silent["rms"]["flute"].as_array().expect("flute rms").len();
+        silent["rms"]["flute"] = serde_json::json!(vec![-120.0; blocks]);
+        assert!(part_is_compared("FLUTE", &silent).unwrap_err().contains("fewer than"));
+        let mut gone = none.clone();
+        gone["stems"] = serde_json::json!(["master", "drums"]);
+        assert!(
+            part_is_compared("FLUTE", &gone)
+                .unwrap_err()
+                .contains("not one of its stems")
+        );
+        let mut unprofiled = none.clone();
+        unprofiled["rms"].as_object_mut().expect("rms").remove("flute");
+        assert!(part_is_compared("FLUTE", &unprofiled).is_err());
+    }
+
+    /// Ruling M3-R32 on the fit counts alone (n fights, fits).
+    fn fits(n: usize, fits: usize) -> bf_story::Stats {
+        bf_story::Stats {
+            n,
+            fit_rate: fits as f64 / n as f64,
+            ..stats()
+        }
+    }
+
+    #[test]
+    fn rare_fits_are_compared_as_samples_of_one_rate() {
+        use crate::fight::{fit_z, fits_present};
+        // CLARINET (task 10): the kit's 5 in 2,000 against the port's 2 in 2,000 and 25 in 20,000: noise, passes
+        assert!(fits_present(&fits(2000, 2), &fits(2000, 5)).is_ok());
+        assert!(fits_present(&fits(20000, 25), &fits(2000, 5)).is_ok());
+        assert!((fit_z(&fits(20000, 25), &fits(2000, 5)).abs() - 1.44).abs() < 0.01);
+        // (milestone 1's fixed threshold, above 0.002 where the kit is, refused that: 25 / 20,000 = 0.00125)
+        // no fits at all where the kit has them always fails, however rare
+        assert!(fits_present(&fits(20000, 0), &fits(2000, 1)).is_err());
+        assert!(fits_present(&fits(2000, 0), &fits(2000, 5)).is_err());
+        // a rate several standard errors away fails, either way round
+        assert!(fits_present(&fits(20000, 10), &fits(2000, 9)).is_err());
+        assert!(fits_present(&fits(20000, 200), &fits(2000, 4)).is_err());
+        assert!(fits_present(&fits(20000, 120), &fits(2000, 0)).is_err());
+        // equal rates and no fits on either side pass
+        assert!(fits_present(&fits(2000, 17), &fits(2000, 17)).is_ok());
+        assert!(fits_present(&fits(20000, 0), &fits(2000, 0)).is_ok());
     }
 
     #[test]
@@ -399,6 +498,30 @@ mod mutations {
         assert!(crate::voice::note_gap(&got, &want) > crate::voice::BAR);
         got[100] = f64::NAN;
         assert!(crate::voice::note_gap(&got, &want) > crate::voice::BAR);
+    }
+
+    #[test]
+    fn a_neutral_handicap_recorded_or_not_is_the_same_rules() {
+        let like = crate::fight::setup_like(&seed1());
+        let mut none = like.rules.clone();
+        none.dmg_side = None;
+        let mut neutral = none.clone();
+        neutral.dmg_side = Some([1.0, 1.0]);
+        let text = crate::fight::rules_text;
+        assert_ne!(
+            format!("{none:?}"),
+            format!("{neutral:?}"),
+            "what the gates compared before"
+        );
+        assert_eq!(text(&none), text(&neutral));
+        for other in [[1.0, 2.0], [2.0, 1.0], [0.4, 0.4]] {
+            let mut r = none.clone();
+            r.dmg_side = Some(other);
+            assert_ne!(text(&none), text(&r), "{other:?}");
+        }
+        let mut faster = neutral.clone();
+        faster.bpm += 1.0;
+        assert_ne!(text(&neutral), text(&faster), "another rule must still differ");
     }
 
     #[test]

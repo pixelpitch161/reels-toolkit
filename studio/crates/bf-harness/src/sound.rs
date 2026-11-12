@@ -17,7 +17,7 @@ use serde_json::Value;
 
 use crate::fight;
 use crate::refs::{
-    cached_recording, committed_recording, fighter_folder, index, json, list, num, py_hex, report, sha, sha_lines, text,
+    cached_recording, fighter_folder, index, json, list, num, py_hex, recording_of, report, sha, sha_lines, text,
 };
 
 /// A 100 ms block's RMS against the kit's: within this many dB.
@@ -266,6 +266,40 @@ pub fn fighter_soundtrack(
     summarise(&build)
 }
 
+/// Blocks of 100 ms above this many dBFS count as the part's bus sounding.
+pub const LOUD_DB: f64 = -60.0;
+/// A part with no first-time note must sound in at least this many blocks of its own bus (10 s).
+pub const LOUD_BLOCKS: usize = 100;
+
+/// The `sound` gate compares something of the fighter's part (a suite that compared nothing must not pass): the
+/// kit's soundtrack has first-time notes of it (`kit.music.note`), or, when the kit's own count is 0 (a part that
+/// makes every note through its own synth, CLARINET's reed cache, never calling `M.note`), its own bus is one of the
+/// kit's stems, has an RMS profile, and sounds above [`LOUD_DB`] in at least [`LOUD_BLOCKS`] blocks, so the bus
+/// profile and the 16-bit master the gate compares carry the part.
+pub fn part_is_compared(name: &str, kit: &Value) -> Result<(), String> {
+    if index(&kit["notes"]["count"]) > 0 {
+        return Ok(());
+    }
+    let bus = name.to_lowercase();
+    let in_stems = list(&kit["stems"]).iter().any(|s| text(s) == bus);
+    let loud = kit["rms"][bus.as_str()]
+        .as_array()
+        .map_or(0, |blocks| blocks.iter().filter(|b| num(b) > LOUD_DB).count());
+    if in_stems && loud >= LOUD_BLOCKS {
+        Ok(())
+    } else {
+        Err(format!(
+            "the kit's left soundtrack has no first-time note of {name}'s part and its bus `{bus}` {}: nothing of the \
+             part to compare",
+            if in_stems {
+                format!("sounds above {LOUD_DB} dBFS in {loud} blocks, fewer than {LOUD_BLOCKS}")
+            } else {
+                "is not one of its stems".to_string()
+            }
+        ))
+    }
+}
+
 fn sound_doc(name: &str) -> Value {
     let d = json(&fighter_folder(name), "sound.json");
     assert_eq!(text(&d["fighter"]), name);
@@ -278,12 +312,11 @@ pub fn sound(name: &str) {
     let folder = fighter_folder(name);
     let doc = sound_doc(name);
     let fd = fight::doc(name);
-    let rec = committed_recording(text(&fd["left"]["file"]), Some(text(&fd["left"]["hash"])));
+    let rec = recording_of(&fd["left"], Some(text(&fd["left"]["hash"])));
     let mut failures = Vec::new();
-    assert!(
-        index(&doc["left"]["notes"]["count"]) > 0,
-        "{folder}: the kit's left soundtrack has no note of {name}'s part: nothing to compare"
-    );
+    if let Err(why) = part_is_compared(name, &doc["left"]) {
+        panic!("{folder}: {why}");
+    }
     let s = fighter_soundtrack(name, &rec, false, None);
     let mut n = compare("left", &s, &doc["left"], &mut failures);
     for (role, kit) in doc["roles"].as_object().expect("roles") {
@@ -300,7 +333,7 @@ pub fn sound_stems(name: &str) {
     let doc = sound_doc(name);
     let fd = fight::doc(name);
     let mut failures = Vec::new();
-    let left = committed_recording(text(&fd["left"]["file"]), None);
+    let left = recording_of(&fd["left"], None);
     let right = cached_recording(text(&fd["right"]["cache"]));
     let r = fighter_soundtrack(name, &right, true, None);
     let mut n = compare("right", &r, &with_cached_rms(&doc["right"]), &mut failures);

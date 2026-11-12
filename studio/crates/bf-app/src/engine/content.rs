@@ -276,7 +276,9 @@ mod tests {
             assert_eq!(f.display, wording::display_name(&f.name));
             assert_eq!(f.mask.on.len(), f.mask.w * f.mask.h);
             assert_eq!(f.mask.h, 7);
-            assert!(!f.music_feeds_fight);
+            // what the fighter's own folder declares (`MUSIC_FEEDS_FIGHT`: PIANO's roll), not a fixed list
+            let declared = bf_content::fighters::entry(&f.name).is_some_and(|e| e.music_feeds_fight);
+            assert_eq!(f.music_feeds_fight, declared, "{}", f.name);
         }
         let get = |name: &str| r.fighters.iter().find(|f| f.name == name).expect(name);
         let flute = get("FLUTE");
