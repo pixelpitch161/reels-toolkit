@@ -409,7 +409,11 @@ mod mutations {
         let mut neutral = none.clone();
         neutral.dmg_side = Some([1.0, 1.0]);
         let text = crate::fight::rules_text;
-        assert_ne!(format!("{none:?}"), format!("{neutral:?}"), "what the gates compared before");
+        assert_ne!(
+            format!("{none:?}"),
+            format!("{neutral:?}"),
+            "what the gates compared before"
+        );
         assert_eq!(text(&none), text(&neutral));
         for other in [[1.0, 2.0], [2.0, 1.0], [0.4, 0.4]] {
             let mut r = none.clone();
