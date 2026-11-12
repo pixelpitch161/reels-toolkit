@@ -42,7 +42,10 @@ cargo test --workspace
   When the app's tests fail, a step after them repeats the failed tests, the panics, compile errors and the last 30
   lines of their output as annotations on the run, so the failure can be read without opening the log. A test that
   needs something a hosted runner may lack says "not run here: <reason>" in its output instead of passing quietly
-  (today: the render tests when no usable ffmpeg is found).
+  (today: the render tests when no usable ffmpeg is found, and the two `store::library` tests of a folder that
+  cannot be read, `a_folder_that_cannot_be_read_is_named` and `an_output_folder_that_cannot_be_read_is_named`, when
+  the account can still list a folder everyone was denied, as an administrator account may; on the owner's PC
+  they run fully).
 - Ignored tests, run by name on the owner's PC (each needs minutes, ffmpeg, a sound device or a quiet PC):
   `cargo test -p bf-app --release --test ui real::a_whole_video_with_the_real_engine -- --ignored` (a whole video,
   by clicks, on the real engine), `cargo test -p bf-app --release --lib preview:: -- --ignored` (the preview's
