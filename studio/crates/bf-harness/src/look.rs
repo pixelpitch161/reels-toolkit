@@ -4,7 +4,10 @@
 //! `Look` for the other side; here the same fight is drawn with the fighter's look (`fighters::entry(name).look`,
 //! never the registry) and [`DefaultLook`]. Every frame is compared by its bytes' SHA-256, the look hooks called in
 //! it (both looks spied as `flute_look.rs` does), its draw log and its hull calls (vertices exactly, every input
-//! point within 1e-12 px); a hull fallback stops the task (ruling M3-R4).
+//! point within 1e-12 px); a hull fallback stops the task (ruling M3-R4). Ruling M3-R29: a look's per-frame hull
+//! rows are in the pinned cache, and look.json (format 2) commits each fight's call and point counts and the SHA-256
+//! of their exact part ([`hull_lines`]); `look_frames` checks that, `hull_points` every point and vertex. FLUTE and
+//! TROMBONE ([`INLINE_HULL_ROWS`]) keep format 1, the compact calls in every frame row.
 
 use std::cell::RefCell;
 use std::sync::Arc;
@@ -33,8 +36,8 @@ use serde_json::Value;
 
 use crate::fight;
 use crate::refs::{
-    cache_json, cached_recording, committed_recording, fighter_folder, hexf, index, json, list, num, report, sha,
-    sha_lines, text,
+    cache_json, cached_recording, fighter_folder, hexf, index, json, list, num, recording_of, report, sha, sha_lines,
+    text,
 };
 
 // ---------------------------------------------------------------- the looks
@@ -386,13 +389,105 @@ pub fn hull_differs(calls: &[HullCall], want: &Value) -> Option<String> {
     None
 }
 
+/// The fighters whose committed `look.json` keeps format 1 (each frame row's compact hull calls), merged before
+/// ruling M3-R29 and never re-made by a worker (M3-R1): `m3refs.INLINE_HULL_ROWS`. Every other fighter's is format
+/// 2. No fighter joins this list.
+pub const INLINE_HULL_ROWS: [&str; 2] = ["FLUTE", "TROMBONE"];
+
+/// Where a fight's hull calls are compared from (ruling M3-R29).
+#[derive(Clone, Copy, Debug)]
+pub enum HullRows<'a> {
+    /// look.json format 1: column 6 of every frame row, `[points, vertices, sum of x, sum of y]` a call.
+    Inline,
+    /// Format 2: the fight's `hull` (the counts and the SHA-256 of its [`hull_lines`]); the rows have no hull
+    /// column, the pinned cache file `hull.cache` holds every call (`hull_points`).
+    Cached(&'a Value),
+}
+
+impl HullRows<'_> {
+    /// The column of a frame row that says why the frame was chosen.
+    fn why(self) -> usize {
+        match self {
+            HullRows::Inline => 7,
+            HullRows::Cached(_) => 6,
+        }
+    }
+}
+
+/// The hull rows of one fight's doc (`look.json`'s `left`, or `look_right.json`) under look.json's format.
+pub fn hull_rows<'a>(name: &str, format: u64, fight: &'a Value) -> HullRows<'a> {
+    match format {
+        1 => HullRows::Inline,
+        2 => {
+            let h = &fight["hull"];
+            assert_eq!(
+                h["ruling"], "M3-R29",
+                "{name}: look.json format 2 without its `hull` summary: re-run the export"
+            );
+            HullRows::Cached(h)
+        }
+        n => panic!("{name}: look.json format {n}: this harness reads formats 1 and 2"),
+    }
+}
+
+/// The exact part of a frame's hull calls (ruling M3-R29, the export's `m3parts.hull_lines`): one line a call,
+/// `<frame> <points> <v0>,<v1>,...`, its number of input points and its vertices in scipy's order.
+pub fn hull_lines(frame: usize, calls: &[HullCall]) -> Vec<String> {
+    calls
+        .iter()
+        .map(|(pts, h)| {
+            let v: Vec<String> = h.vertices.iter().map(|v| v.to_string()).collect();
+            format!("{frame} {} {}", pts.len(), v.join(","))
+        })
+        .collect()
+}
+
+/// The same lines from format 1 rows (column 6) or from a cached hull log's frames (`{frame, calls: [{points,
+/// vertices}]}`).
+pub fn hull_lines_of(rows: &[Value]) -> Vec<String> {
+    let mut out = Vec::new();
+    for row in rows {
+        let (f, calls) = if row.is_array() {
+            (index(&row[0]), list(&row[6]))
+        } else {
+            (index(&row["frame"]), list(&row["calls"]))
+        };
+        for c in calls {
+            let (n, v) = if c.is_array() {
+                (index(&c[0]), list(&c[1]))
+            } else {
+                (list(&c["points"]).len(), list(&c["vertices"]))
+            };
+            let v: Vec<String> = v.iter().map(|x| index(x).to_string()).collect();
+            out.push(format!("{f} {n} {}", v.join(",")));
+        }
+    }
+    out
+}
+
+/// A fight's hull lines (in frame order) and input points against its committed `hull` summary: the number of
+/// calls, of points and the SHA-256 of the lines.
+pub fn hull_summary_differs(lines: &[String], points: usize, want: &Value) -> Option<String> {
+    let (calls, kit_points, kit_sha) = (index(&want["calls"]), index(&want["points"]), text(&want["sha256"]));
+    let sha = sha_lines(lines);
+    (lines.len() != calls || points != kit_points || sha != kit_sha).then(|| {
+        format!(
+            "{} hull calls with {points} points (SHA-256 {sha}); the kit {calls} calls with {kit_points} points ({kit_sha}). \
+             The frame is named by the ignored gate `hull_points`, which reads the pinned rows ({})",
+            lines.len(),
+            text(&want["cache"])
+        )
+    })
+}
+
 /// Every frame of `rows` (look.json's frame rows) drawn by `pic` (spied) against the kit: frame bytes, hooks, draw
-/// log, hull calls. A hull fallback stops the task.
-fn frames_against(name: &str, folder: &str, pic: &Picture, rows: &[Value], which: &str) {
+/// log, hull calls (in the rows, or as the fight's summary: `hull`). A hull fallback stops the task.
+fn frames_against(name: &str, folder: &str, pic: &Picture, rows: &[Value], which: &str, hull: HullRows<'_>) {
     let what = format!("the {which} fight");
     assert!(!rows.is_empty(), "{folder}: no frames in {what}");
     let fallbacks = AtomicUsize::new(0);
-    let failures = on_threads(rows, |row| {
+    let why = hull.why();
+    let drawn = on_threads(rows, |row| {
         let f = index(&row[0]);
         take_hooks();
         let ((img, log, rep), calls) = hull::logged(|| pic.frame_reported(f));
@@ -419,15 +514,19 @@ fn frames_against(name: &str, folder: &str, pic: &Picture, rows: &[Value], which
         if (boxes.len(), sha_lines(&boxes)) != (index(&row[4]), text(&row[5]).to_string()) {
             wrong.push("the draw log".to_string());
         }
-        if let Some(h) = hull_differs(&calls, &row[6]) {
+        if let HullRows::Inline = hull
+            && let Some(h) = hull_differs(&calls, &row[6])
+        {
             wrong.push(h);
         }
-        (!wrong.is_empty()).then(|| {
+        let failure = (!wrong.is_empty()).then(|| {
             (
                 format!("frame {f}"),
-                format!("{} ({})", wrong.join("; "), text(&row[7])),
+                format!("{} ({})", wrong.join("; "), text(&row[why])),
             )
-        })
+        });
+        let points: usize = calls.iter().map(|c| c.0.len()).sum();
+        Some((f, hull_lines(f, &calls), points, failure))
     });
     assert_eq!(
         fallbacks.load(Ordering::Relaxed),
@@ -435,14 +534,28 @@ fn frames_against(name: &str, folder: &str, pic: &Picture, rows: &[Value], which
         "{name} ({what}): a hull fell back to the plain scan (a Qhull merge). Ruling M3-R4: this STOPS the task; report \
          it to the controller, who opens the task that ports Qhull's 2-D merge"
     );
-    report(
-        folder,
-        "look",
-        which,
-        &format!("frames of {what}"),
-        failures,
-        rows.len(),
-    );
+    let mut drawn = drawn;
+    drawn.sort_by_key(|d| d.0);
+    let mut failures: Vec<(String, String)> = Vec::new();
+    if let HullRows::Cached(want) = hull {
+        let lines: Vec<String> = drawn.iter().flat_map(|d| d.1.iter().cloned()).collect();
+        let points = drawn.iter().map(|d| d.2).sum();
+        assert_eq!(
+            index(&want["frames"]),
+            rows.len(),
+            "{folder}: {what}'s hull summary counts other frames"
+        );
+        if let Some(h) = hull_summary_differs(&lines, points, want) {
+            failures.push(("hull calls".to_string(), h));
+        }
+    }
+    failures.extend(drawn.into_iter().filter_map(|d| d.3));
+    // format 2's hull summary is one item more than the frames
+    let (items, of) = match hull {
+        HullRows::Inline => (rows.len(), format!("frames of {what}")),
+        HullRows::Cached(_) => (rows.len() + 1, format!("frames and hull summary of {what}")),
+    };
+    report(folder, "look", which, &of, failures, items);
 }
 
 /// The hook calls made while the picture is built are the kit's.
@@ -461,10 +574,25 @@ fn build_hooks_against(name: &str, build: &[String], doc: &Value) {
     );
 }
 
+/// `look.json` of the fighter, in its format: 1 only for [`INLINE_HULL_ROWS`], else 2 (ruling M3-R29).
 fn look_doc(name: &str) -> Value {
     let d = json(&fighter_folder(name), "look.json");
     assert_eq!(text(&d["fighter"]), name);
+    look_format(name, &d);
     d
+}
+
+/// look.json's format: 2, or 1 for a fighter of [`INLINE_HULL_ROWS`] (any other in format 1 fails: its hull rows
+/// belong in the cache, ruling M3-R29).
+pub fn look_format(name: &str, doc: &Value) -> u64 {
+    let format = doc["format"].as_u64().unwrap_or(0);
+    assert!(
+        format == 2 || (format == 1 && INLINE_HULL_ROWS.contains(&name)),
+        "{name}: look.json format {format}: ruling M3-R29 puts a look's hull rows in the pinned cache (format 2); \
+         re-run the export `{}` (a port's own unmerged folder: `remake`)",
+        crate::refs::export_of(&fighter_folder(name))
+    );
+    format
 }
 
 /// The committed `left` fight's frames with the real look and the default look for the other side: every frame's
@@ -474,7 +602,7 @@ pub fn look_frames(name: &str) {
     let doc = look_doc(name);
     let fd = fight::doc(name);
     let left = &doc["left"];
-    let rec = committed_recording(text(&left["file"]), Some(text(&left["recording"]["hash"])));
+    let rec = recording_of(left, Some(text(&left["recording"]["hash"])));
     take_hooks();
     let pic = picture(name, rec, &fight::fight_file(&fd, false), true);
     build_hooks_against(name, &take_hooks(), left);
@@ -486,7 +614,8 @@ pub fn look_frames(name: &str) {
         rows.len()
     );
     assert_eq!(index(&left["k"]), 0);
-    frames_against(name, &folder, &pic, rows, "left");
+    let hull = hull_rows(name, look_format(name, &doc), left);
+    frames_against(name, &folder, &pic, rows, "left", hull);
 }
 
 /// The same for the cached `right` fight (the fighter on side 1, losing: its shards). Ignored: reads the cache.
@@ -503,7 +632,8 @@ pub fn look_frames_cached(name: &str) {
     assert_eq!(index(&right["k"]), 1);
     let rows = list(&right["frames"]);
     assert_eq!(rows.len(), index(&doc["right"]["frames"]));
-    frames_against(name, &folder, &pic, rows, "right");
+    let hull = hull_rows(name, look_format(name, &doc), &right);
+    frames_against(name, &folder, &pic, rows, "right", hull);
 }
 
 /// How far a hull point is from the kit's, in pixels (the larger coordinate difference; NaN is infinitely far).
@@ -511,17 +641,20 @@ pub fn point_gap(got: (f64, f64), kit: (f64, f64)) -> f64 {
     crate::refs::gap_max((got.0 - kit.0).abs(), (got.1 - kit.1).abs())
 }
 
-/// Every hull call's input points of both fights (the cache's full log) within 1e-12 px of the kit's. Ignored.
+/// Every hull call's input points of both fights (the cache's full log) within 1e-12 px of the kit's, its vertices
+/// the kit's, and the log the one look.json describes (format 1: its rows' calls; format 2: the counts and SHA-256
+/// of `hull`, ruling M3-R29). Ignored.
 pub fn hull_points(name: &str) {
     let fd = fight::doc(name);
     let doc = look_doc(name);
+    let format = look_format(name, &doc);
     for (which, cache, rec, swapped) in [
         (
             "left",
             text(&doc["hull_cache"]).to_string(),
             {
                 let l = &doc["left"];
-                committed_recording(text(&l["file"]), None)
+                recording_of(l, None)
             },
             false,
         ),
@@ -533,13 +666,32 @@ pub fn hull_points(name: &str) {
         ),
     ] {
         let kit = cache_json(&cache);
-        // the committed (or cached right) frame rows, whose compact hull calls these are in full
-        let rows = if swapped {
-            list(&cache_json(text(&doc["right"]["cache"]))["frames"]).clone()
+        // the committed (or cached right) fight doc, whose hull calls (compact, or summed up) these are in full
+        let fight_doc = if swapped {
+            cache_json(text(&doc["right"]["cache"]))
         } else {
-            list(&doc["left"]["frames"]).clone()
+            doc["left"].clone()
         };
-        let committed_calls: usize = rows.iter().map(|r| list(&r[6]).len()).sum();
+        let rows = list(&fight_doc["frames"]).clone();
+        let committed_calls: usize = match hull_rows(name, format, &fight_doc) {
+            HullRows::Inline => rows.iter().map(|r| list(&r[6]).len()).sum(),
+            HullRows::Cached(want) => {
+                let lines = hull_lines_of(list(&kit["frames"]));
+                let points = list(&kit["frames"])
+                    .iter()
+                    .flat_map(|r| list(&r["calls"]).iter().map(|c| list(&c["points"]).len()))
+                    .sum();
+                assert_eq!(
+                    text(&want["cache"]),
+                    cache,
+                    "{name} {which}: the hull summary names another cache file"
+                );
+                if let Some(h) = hull_summary_differs(&lines, points, want) {
+                    panic!("{name} {which}: the cache's hull log is not the one look.json describes: {h}");
+                }
+                index(&want["calls"])
+            }
+        };
         assert_eq!(
             list(&kit["frames"]).len(),
             rows.len(),
@@ -702,7 +854,7 @@ pub fn title(name: &str) {
     }
     // the cards, with the fighter on side 0 and on side 1
     let left = &doc["left"];
-    let rec = committed_recording(text(&left["file"]), None);
+    let rec = recording_of(left, None);
     let mut ff = fight::fight_file(&fd, false);
     ff.seed = Some(rec.seed);
     let show = Show::new(&rec, &ff).expect("the show");
@@ -836,7 +988,7 @@ pub fn setup_as(name: &str) {
     let doc = look_doc(name);
     let fd = fight::doc(name);
     let keys: Vec<String> = list(&doc["cfg_keys"]).iter().map(|k| text(k).to_string()).collect();
-    let rec = committed_recording(text(&doc["left"]["file"]), None);
+    let rec = recording_of(&doc["left"], None);
     let pic = picture(name, rec, &fight::fight_file(&fd, false), false);
     let p = pic.ctx();
     let (mut own, mut as_own, mut other) = (real_look(name), real_look(name), real_look(name));
@@ -945,7 +1097,7 @@ pub fn stages(name: &str) {
         let rec = if swapped {
             cached_recording(text(&fd["right"]["cache"]))
         } else {
-            committed_recording(text(&fd["left"]["file"]), None)
+            recording_of(&fd["left"], None)
         };
         let pic = picture(name, rec, &fight::fight_file(&fd, swapped), false);
         for path in entries.flatten().map(|e| e.path()) {
@@ -1047,4 +1199,106 @@ pub fn scenarios_draw(name: &str, step: usize) {
     }
     assert!(fights > 0, "{name}: no scenario fight drew");
     println!("{name}: {fights} scenario fights draw every {step}th frame without a panic or a hull fallback");
+}
+
+/// Ruling M3-R29 on real data: FLUTE's committed format 1 rows read as format 2 (the hull column dropped, the
+/// fight's summary made from it) give the same verdicts, and the lines are the export's.
+#[cfg(test)]
+mod hull_rows {
+    use super::*;
+
+    /// `m3parts.hull_lines` of FLUTE's left rows, SHA-256 (the Python check `hull_rows_go_to_the_cache` holds it too)
+    const FLUTE_LEFT_HULL_SHA: &str = "8ba8b6f534bbd307eac7d709cc34cf967ae4925c1a13e68f27fd3bfee0b3cadb";
+
+    fn flute() -> (Value, Vec<Value>) {
+        let doc = look_doc("FLUTE");
+        let rows = list(&doc["left"]["frames"]).clone();
+        (doc, rows)
+    }
+
+    /// FLUTE's rows as format 2 has them, and their summary.
+    fn as_format_2(rows: &[Value]) -> (Vec<Value>, Value) {
+        let lines = hull_lines_of(rows);
+        let points: usize = rows.iter().flat_map(|r| list(&r[6]).iter().map(|c| index(&c[0]))).sum();
+        let stripped = rows
+            .iter()
+            .map(|r| {
+                let mut r = list(r).clone();
+                r.remove(6);
+                Value::Array(r)
+            })
+            .collect();
+        let summary = serde_json::json!({
+            "ruling": "M3-R29", "cache": "fighters/flute/hull_left.json", "frames": rows.len(),
+            "calls": lines.len(), "points": points, "sha256": sha_lines(&lines),
+        });
+        (stripped, summary)
+    }
+
+    #[test]
+    fn hull_lines_are_the_exports() {
+        let (_, rows) = flute();
+        let lines = hull_lines_of(&rows);
+        assert_eq!(lines.len(), 79);
+        assert_eq!(lines[0], "0 33 19,0,31,32,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18");
+        assert_eq!(sha_lines(&lines), FLUTE_LEFT_HULL_SHA);
+    }
+
+    #[test]
+    fn format_2_reads_a_fight_as_format_1_does() {
+        let (doc, rows) = flute();
+        let rows = &rows[..6];
+        let fd = fight::doc("FLUTE");
+        let left = &doc["left"];
+        let rec = recording_of(left, Some(text(&left["recording"]["hash"])));
+        let pic = picture("FLUTE", rec, &fight::fight_file(&fd, false), true);
+        let folder = fighter_folder("FLUTE");
+        frames_against("FLUTE", &folder, &pic, rows, "left", HullRows::Inline);
+        let (stripped, summary) = as_format_2(rows);
+        frames_against("FLUTE", &folder, &pic, &stripped, "left", HullRows::Cached(&summary));
+        // what the drawn calls give: equal to the summary, and a vertex or a call more is caught
+        let mut lines = Vec::new();
+        let mut points = 0;
+        for r in rows {
+            let f = index(&r[0]);
+            let (_, calls) = hull::logged(|| pic.frame_reported(f));
+            points += calls.iter().map(|c| c.0.len()).sum::<usize>();
+            lines.extend(hull_lines(f, &calls));
+        }
+        assert_eq!(hull_summary_differs(&lines, points, &summary), None);
+        let mut moved = lines.clone();
+        moved[3] = moved[3].replacen(" 19,0,", " 0,19,", 1);
+        assert!(hull_summary_differs(&moved, points, &summary).is_some());
+        assert!(hull_summary_differs(&lines[1..], points, &summary).is_some());
+        assert!(hull_summary_differs(&lines, points + 1, &summary).is_some());
+    }
+
+    #[test]
+    #[should_panic(expected = "hull calls")]
+    fn format_2_fails_on_a_hull_digest_that_is_not_the_drawn_one() {
+        let (doc, rows) = flute();
+        let rows = &rows[..2];
+        let fd = fight::doc("FLUTE");
+        let left = &doc["left"];
+        let rec = recording_of(left, None);
+        let pic = picture("FLUTE", rec, &fight::fight_file(&fd, false), true);
+        let (stripped, mut summary) = as_format_2(rows);
+        summary["sha256"] = Value::from("0".repeat(64));
+        frames_against(
+            "FLUTE",
+            &fighter_folder("FLUTE"),
+            &pic,
+            &stripped,
+            "left",
+            HullRows::Cached(&summary),
+        );
+    }
+
+    #[test]
+    #[should_panic(expected = "ruling M3-R29")]
+    fn only_the_two_merged_folders_keep_format_1() {
+        assert_eq!(look_format("FLUTE", &serde_json::json!({"format": 1})), 1);
+        assert_eq!(look_format("ORGAN", &serde_json::json!({"format": 2})), 2);
+        look_format("ORGAN", &serde_json::json!({"format": 1}));
+    }
 }

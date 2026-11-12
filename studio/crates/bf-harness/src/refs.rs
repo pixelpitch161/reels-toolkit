@@ -203,7 +203,42 @@ pub fn fighter_folder_is_whole(name: &str) {
     let doc = json(&folder, "fight.json");
     assert_eq!(text(&doc["fighter"]), name, "{folder}/fight.json is another fighter's");
     let left = &doc["left"];
-    committed_recording(text(&left["file"]), Some(text(&left["hash"])));
+    if left.get("cache").is_some() {
+        // ruling M3-R36: the recording is in the pinned cache; the folder must pin it with the committed SHA-256
+        let rel = text(&left["cache"]);
+        let pin = bf_testdata::pins(&folder)
+            .into_iter()
+            .find(|p| p.path == rel)
+            .unwrap_or_else(|| panic!("{folder}: fight.json's left recording {rel} is not pinned in pins.json"));
+        assert_eq!(
+            pin.sha256,
+            text(&left["sha256"]),
+            "{folder}: the left recording's pin is not fight.json's"
+        );
+    } else {
+        recording_of(left, Some(text(&left["hash"])));
+    }
+}
+
+/// The recording a reference entry names: `file` (a committed file below `studio/reference/`) or `cache` (ruling
+/// M3-R36: a fighter's own recording too big for its folder's budget, in the pinned cache, its SHA-256 committed
+/// in pins.json; a missing or changed cache file fails with the command that makes it, so a gate that reads it
+/// never passes by comparing nothing). Checked to be the recording described when `hash` is given.
+pub fn recording_of(entry: &Value, hash: Option<&str>) -> Recording {
+    let rec = match (entry.get("file"), entry.get("cache")) {
+        (Some(f), None) => return committed_recording(text(f), hash),
+        (None, Some(c)) => cached_recording(text(c)),
+        _ => panic!("a recording entry names exactly one of `file` and `cache`: {entry}"),
+    };
+    if let Some(h) = hash {
+        assert_eq!(
+            rec.hash(),
+            h,
+            "the cached recording {} is not the one the reference file describes",
+            text(&entry["cache"])
+        );
+    }
+    rec
 }
 
 /// `themes/<name>/` holds `theme.json`, `bed.json`, `exceptions.toml`, `pins.json`.

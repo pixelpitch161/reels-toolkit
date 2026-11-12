@@ -77,15 +77,27 @@ bf_harness::episode_suite!("oboe_vs_bassoon");
    Only the keys that differ from the defaults (`m3refs.py`'s docstring and `tools/studio_export/README.md`):
    `fights` (handicap, rules, a fixed `left` / `right` seed, `must` coverage items), `scenarios`, `frames` (`left` 64,
    `right` 32, extra `times`), `roles` (the roles its part branches on, Table S3), `voice_notes` (`pitches`,
-   `velocities`, `durations`). Then `python -m tools.studio_export fighter_<slug>`: about 7 minutes of fights and
+   `velocities`, `durations`), `sprite_size` (when the look draws its own sprites at another size than FLUTE's
+   2 r + 5: `dict(add=7, clip=(12, 19))` is 2 clip(r, 12, 19) + 7, TRUMPET's; a padded sprite adds `pad`:
+   `dict(add=7, pad=1.22)` is 2 int(round(r 1.22)) + 7, SOUSAPHONE's), `left_in_cache=True` (ruling M3-R36: only
+   when the left recording alone would take the folder over 300 KB, PIANO's; it then lives in the pinned cache with
+   its SHA-256 committed, and every gate that reads it needs the cache). A neutral handicap may be the template's
+   `DMG_SIDE = (1.0, 1.0)` or `None`: the kit's fights are bit-identical, and the gates read both as the same rules.
+   A file of its own beyond the
+   template's is made by an `extra` part: `m3refs.fighter_refs(SPEC, extra=<fn>)`, called with `(spec, folder,
+   export, module, main, left_seed, left_file)` after the template's parts, in the same run. Never wrap or patch
+   the framework or the kit: a `fork` pool the kit asks for maps serially in every part's process
+   (`m3parts.serial_fork`), the left recording is on disk for the parts, numpy floats in the kit's events pass the
+   replay guard by value, and the left fight is chosen to end after 44 s (the checks need it). Then
+   `python -m tools.studio_export fighter_<slug>`: about 7 minutes of fights and
    statistics (3 workers) and 3 to 5 of picture, sound, voice and checks, each part in a fresh process and kit folder
    of its own. It writes `studio/reference/fighters/<slug>/`:
 
    | File | What it holds | Read by |
    | --- | --- | --- |
    | `fight.json` | the config, the two look fights, every scenario with its full rules, the pooled statistics, the coverage table | `coverage`, `replay`, `left_fight`, `prefix`, `stats` |
-   | `left.bfrec` (or a pointer in fight.json) | the fighter left, winning, all three abilities fired | every always-run gate |
-   | `look.json` | the left fight's frames (SHA-256 of the bytes, the hook calls, the draw log, the hull calls), the VS card at 16 times on either side, the title hooks, the sprites' digest, the roster keys the kit look reads (`cfg_keys`) | `look_frames`, `title`, `sprites`, `setup_as` |
+   | `left.bfrec` (or a pointer in fight.json; with `left_in_cache`, the pinned cache file `left.bfrec` and its SHA-256 in fight.json, M3-R36) | the fighter left, winning, all three abilities fired, the K.O. after 44 s (the checks run the kit's `music.main()`, which needs it; a `fights.left` that ends earlier stops the export at once, saying so) | every always-run gate |
+   | `look.json` | the left fight's frames (SHA-256 of the bytes, the hook calls, the draw log), its hull calls as counts and one SHA-256 (`left.hull`, ruling M3-R29: the calls themselves are in the cache), the VS card at 16 times on either side, the title hooks, the sprites' digest, the roster keys the kit look reads (`cfg_keys`) | `look_frames`, `title`, `sprites`, `setup_as` |
    | `sound.json` | the left soundtrack (real part, the kit's base `Sound` for the opponent): the 16-bit master's SHA-256, the buses, every stem's RMS per 100 ms, the first-time notes, the noise stream's end; the right soundtrack's facts (its RMS is cached); each role (its own bus and the master); the bed hooks its part calls | `sound`, `sound_stems`, `bed_calls` |
    | `voice.json` | the spec's notes (24 by default): length, peak, 10 ms block RMS, the noise state before and after | `voice` |
    | `checks.json` | every check of `kit/checks.py` on the left fight (both real looks and parts); the per-frame rows are cached | `checks` |
@@ -93,7 +105,7 @@ bf_harness::episode_suite!("oboe_vs_bassoon");
    | `pins.json`, `manifest.json` | the cache's pins, the folder's manifest shard | `reference_folder` |
 
    The cache, `studio/reference/.cache/m3/fighters/<slug>/` (git-ignored, pinned): `right.bfrec`, the scenario
-   recordings, `stats_rows.json`, `look_right.json`, `hull_left.json` / `hull_right.json` (every hull point),
+   recordings, `stats_rows.json`, `look_right.json`, `hull_left.json` / `hull_right.json` (every hull call of every frame: its points and vertices, ruling M3-R29),
    `sprites.npz` / `.json` (ruling M3-R18), the stem windows `stems_*.npz`, `sound_right_rms.json`,
    `voice_notes.npz`, `checks_rows.json`.
 2. **The cache.** `python -m tools.studio_export cache fighters/<slug>`: regenerates every cache file and must match
@@ -163,12 +175,12 @@ on an empty input: the minimum column says what it requires.
 | `coverage` | always | every coverage row occurs in the Rust run of its scenario (seed and full rules; no cache), at its index, with its fields to 1e-6, as the first of its item; every required item and ability covered | a row per required item, at least 4 |
 | `replay` | always | `studio/replay/fighters/<slug>.txt`: both side orders, seeds 1, 2, 3, 500, 1 << 40 | 10 lines |
 | `record_flag` | always | events, winner and K.O. equal with the recording on and off | 10 fights |
-| `left_fight` | always | the fight file's rules are the recording's; the Rust fight agrees with the left fight for the 10 s floor | 1 fight |
+| `left_fight` | always | the fight file's rules are the recording's (a recorded `dmg_side` of `[1.0, 1.0]` counts as none, which is what the Studio records for a neutral handicap; `fight::rules_text`); the Rust fight agrees with the left fight for the 10 s floor | 1 fight |
 | `prefix` | ignored | left, right and every scenario agree for `PREFIX_FLOOR_S` = 10 s of fighting from `t_fight`, or to the end (M3-R5) | 2 + every scenario fight |
-| `stats` / `stats_wide` | release | 2,000 / 20,000 Rust fights against the kit's pooled figures, milestone 1's bars; the fits present where the kit has them | the seeds |
-| `look_frames` | always | the left fight with the real look and `DefaultLook`: frame bytes, hook calls, draw log, hull calls (vertices, points within 1e-12 px); the build's hooks; a hull fallback STOPS the task (M3-R4) | the spec's frames (64) |
+| `stats` / `stats_wide` | release | 2,000 / 20,000 Rust fights against the kit's pooled figures, milestone 1's bars; the fits (ruling M3-R32): where the kit has fits the port has at least one, and wherever either has fits the two counts agree under a two-proportion test, \|z\| at most 3 (`fight::fits_present`; it replaces milestone 1's fixed "above 0.002", which refused sampling noise at rare rates) | the seeds |
+| `look_frames` | always | the left fight with the real look and `DefaultLook`: frame bytes, hook calls, draw log; hull calls: every call's point count and vertices, as the SHA-256 of `<frame> <points> <v0>,<v1>,...` lines against `left.hull` (M3-R29; FLUTE and TROMBONE, format 1: each row's calls, the point sums within 1e-12 px a point); the build's hooks; a hull fallback STOPS the task (M3-R4) | the spec's frames (64) |
 | `look_frames_cached` | ignored | the same for the right fight | the cache's rows |
-| `hull_points` | ignored | every hull point of both fights within 1e-12 px | the frames and calls of look.json |
+| `hull_points` | ignored | every hull point of both fights within 1e-12 px and every vertex, from the pinned hull logs; the logs are the ones look.json's `hull` describes (counts, SHA-256). A `look_frames` hull failure is named frame by frame here | the frames and calls of look.json |
 | `stages` | ignored (dumps) | step 8 | a dump |
 | `scenarios_draw` | ignored | every scenario fight drawn with both real looks (EUPHONIUM's copy sweep, M3-R3): no panic, no hull fallback; only a fight without a K.O. has no video | 1 fight |
 | `title` | always | the VS card alone on the fixed noise image (16 frames a side), the close-up, the panel pattern, glass, flare scale, shatter parts | 16 + 16 frames |
@@ -177,7 +189,7 @@ on an empty input: the minimum column says what it requires.
 | `looks_take_numbers_from_setup_as` | always | the source scan (below) | 20 folders |
 | `voice` | always | the spec's notes from their noise states: length exact, peak and every 10 ms block RMS within 1e-6, the noise where the kit's stood | the spec's count |
 | `voice_notes` | ignored | every sample within 1e-6 | the notes |
-| `sound` | always | the left soundtrack and each role: 16-bit master SHA-256, buses, stems, every 100 ms block within 0.01 dB above -90 dBFS, notes, noise end | a note of its part |
+| `sound` | always | the left soundtrack and each role: 16-bit master SHA-256, buses, stems, every 100 ms block within 0.01 dB above -90 dBFS, notes, noise end | a first-time note of its part, or, when the kit's own count is 0 (a part that plays only through its own synth, CLARINET), its own bus a stem above -60 dBFS in at least 100 blocks (`sound::part_is_compared`) |
 | `sound_stems` | ignored | the right soundtrack likewise (cached RMS), every stem window within -120 dBFS | a window a soundtrack |
 | `bed_calls` | always | `Sound::bed_calls()` is every `bed.<hook>(` of the Python part not under `hasattr` | |
 | `checks` | ignored (M3-R24) | every check of the left fight: the soundtrack is the kit's `audio.wav`; verdicts and numbers within `checks_parity.rs`'s bars | the cached rows |
