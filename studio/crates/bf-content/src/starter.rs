@@ -203,12 +203,40 @@ mod tests {
 
     #[test]
     fn captions_for_fighters_without_cards() {
-        let c = draft_captions("ALTO SAX", "BASS DRUM");
-        assert_eq!(c.caption, "Alto sax vs Bass drum Comment the next match-up \u{1F447}");
+        // the two names are found at run time (roster fighters with no card yet), so a port never breaks this test;
+        // once fewer than two are left, names the registry does not know take the same path (no card either)
+        let mut names: Vec<&str> = crate::roster()
+            .iter()
+            .map(|f| f.name.as_str())
+            .filter(|n| card(n).is_none())
+            .take(2)
+            .collect();
+        if names.len() < 2 {
+            println!(
+                "only {} roster fighter(s) without a card: names the registry does not know fill in",
+                names.len()
+            );
+            for unknown in ["NOT A FIGHTER", "NOR THIS ONE"] {
+                assert!(card(unknown).is_none() && !crate::roster().iter().any(|f| f.name == unknown));
+                if names.len() < 2 {
+                    names.push(unknown);
+                }
+            }
+        }
+        let (l, r) = (names[0], names[1]);
+        // the name forms the drafts use, on a fixed example
+        assert_eq!(
+            (sentence_case("ALTO SAX"), name_tag("ALTO SAX")),
+            ("Alto sax".to_string(), "#altosax".to_string())
+        );
+        let (ls, rs, lt, rt) = (sentence_case(l), sentence_case(r), name_tag(l), name_tag(r));
+        let c = draft_captions(l, r);
+        // no emoji and no tags of their own
+        assert_eq!(c.caption, format!("{ls} vs {rs} Comment the next match-up \u{1F447}"));
         assert_eq!(
             c.instagram,
-            "#ballfight #altosax #bassdrum #musicmemes #musician #pixelart #lowpoly #gamedev #satisfying #music"
+            format!("#ballfight {lt} {rt} #musicmemes #musician #pixelart #lowpoly #gamedev #satisfying #music")
         );
-        assert_eq!(c.shorts[2], "#shorts #ballfight #altosax #bassdrum #music #pixelart");
+        assert_eq!(c.shorts[2], format!("#shorts #ballfight {lt} {rt} #music #pixelart"));
     }
 }
