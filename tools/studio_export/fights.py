@@ -69,8 +69,9 @@ def replay_hash_of_values(r):
     return replay_hash(plain_scalars(r))
 
 
-# how deep the kit's per-entry tuples sit under each ragged record key (a list a frame of tuples: 2; HOLD is PIANO's)
-RAGGED_DEPTH = dict(WAVES=2, SLAMS=2, COB=3, HOLD=2, SPOT=2, THROWS=2)
+# how deep the kit's per-entry tuples sit under each ragged record key (a list a frame of tuples: 2; HOLD is PIANO's;
+# ECHO_R, HORN's live blast rings)
+RAGGED_DEPTH = dict(WAVES=2, SLAMS=2, COB=3, HOLD=2, SPOT=2, THROWS=2, ECHO_R=2)
 # keys the kit appends one float array a frame to without listing them in story.REC_KEYS (TENOR SAX's CROWD, a (2, 7)
 # array a frame): stored as JSON like every key outside REC_KEYS, and an array a frame again for the replay guard
 FRAME_ARRAYS = ('CROWD',)
