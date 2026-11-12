@@ -22,9 +22,11 @@ pub mod voice;
 
 pub use card::{CARD, card};
 
-/// `fighters.look('CLARINET', P, k)`: its look, or `None` while it is not ported (the bare ball is drawn then).
+pub use look::ClarinetLook;
+
+/// `fighters.look('CLARINET', P, k)`: its look.
 pub fn look() -> Option<Box<dyn Look>> {
-    None
+    Some(Box::new(ClarinetLook::default()))
 }
 
 /// Its instrument voice (`pp_bridge`'s entry), or `None` while it is not ported.
@@ -38,9 +40,8 @@ pub fn sound(k: usize, ff: &FightFile) -> Option<Box<dyn Sound>> {
     None
 }
 
-/// Its model (`data/models/CLARINET.json`, written by the export tool's `models` for one roster name), compiled in:
-/// `Some(include_str!("../../../data/models/CLARINET.json"))` once ported, `None` until then.
-pub const MESH: Option<&str> = None;
+/// Its model (`data/models/CLARINET.json`, written by its export), compiled in.
+pub const MESH: Option<&str> = Some(include_str!("../../../data/models/CLARINET.json"));
 
 /// Whether its music settings (key, chord loop, its line) feed its fight. True only for PIANO, once ported.
 pub const MUSIC_FEEDS_FIGHT: bool = false;
