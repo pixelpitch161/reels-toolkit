@@ -592,30 +592,44 @@ and 6.3 do for FLUTE and TROMBONE), from the lines below.
 <!-- kind:tiptoe -->
 #### `tiptoe` (weapon kind of BASSOON)
 
-`fight.py` 3280 to 3429. Not ported yet: its port fills this section in (the meaning of each field, as 6.2 and 6.3 do
-for FLUTE and TROMBONE), from the lines below.
+`fight.py` 3280 to 3429 (`tiptoe_setup`, `_behind`, `_hop_launch`, `_hop_land`, `tiptoe_tick`, `tiptoe_step`).
+Ported: `bf-sim/src/kinds/tiptoe.rs`, settings in `bf-core/src/roster/kinds/tiptoe.rs`.
 
 **Record keys.**
 
-- `HOP`: added to `rec` at `run()` 5835, written by `snap` 5609 to 5615:
+- `HOP`, `<f8` of shape `(n, 2, 3)`, present when a fighter's weapon is a `tiptoe`. Per ball: the progress of the
+  hop it is in (0 to 1: `(t - t0) / max(1e-9, t1 - t0)`), the time `t0` it left the floor and the time `t1` it
+  lands; three times -1.0 for a ball on the ground (and for a ball that is no hopper). While a ball is in the air
+  its `P` is the point that far along the straight line from the hop's start to its landing spot.
+- A hopper's `BL` is its longest hop (`blade_len`: `base`, plus `grow` per landed stomp of an ordinary or follow-up
+  hop, up to `max_reach`). Its `V` is its heading: a hopper stands still between hops and only slides when knocked
+  (at the shared speed times its knock boost), so `V` is not its speed.
 
-  ```python
-  if 'HOP' in rec:                                    # #39, only recorded when a fighter uses the 'tiptoe' kind
-      Hp = np.full((2, 3), -1.0)
-      for j, Bj in enumerate((B0, B1)):
-          H = getattr(Bj, 'hop', None)
-          if H is not None:
-              Hp[j] = ((self.t - H['t0']) / max(1e-9, H['t1'] - H['t0']), H['t0'], H['t1'])
-      rec['HOP'].append(Hp)
-  ```
+**Events.**
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+| Kind | `who` (2) | 3 | 4 | 5 | 6 | 7 | 8 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `hop` | the hopper | x where it leaves the floor (float) | y (float) | x of the landing spot (float), inside the ropes | y (float) | the time it lands (float) | kind (int): 0 an ordinary hop, 1 the follow-up after a BOCAL HOOK that landed, 2 a hop of MOUNTAIN KING |
+| `stomp` | the hopper | x where it landed (float): the landing spot, or stepped out to `2 R + 0.02` from the enemy's centre if that was nearer | y (float) | hit (int 0 / 1): the enemy was within the stomp radius beyond contact | back (int 0 / 1): a hit from within `back_half` degrees of straight behind the enemy (the backstab) | the stomp radius after this stomp (float): `stomp`, plus `stomp_grow` per landed stomp of an ordinary or follow-up hop, up to `stomp_max` | the hop's kind (int, as above) |
+| `mountain_end` | the hopper | | | | | | |
 
-- 3329: `self.ev('hop', k, float(p0[0]), float(p0[1]), float(p1[0]), float(p1[1]), self.t + air, kind)`
-- 3358: `self.damage(k, 1 - k, dmg * (w['back'] if back else 1.0), 'stomp', hx, hy, int(back))`
-- 3363: `self.ev('stomp', k, float(B.p[0]), float(B.p[1]), int(hit), int(back), float(B.stomp_r), H['kind'])`
-- 3379: `self.ev('mountain_end', k)`
+An ordinary hop starts on the fight's 16th grid, every `max(1, int(round(int(round(4 * every)) / mult)))` 16ths
+(`mult` is the haste factor while a haste lasts, 1 otherwise), and is in the air `max(1, int(round(air16 / mult)))`
+16ths; none starts while the hopper is in the air, stunned, dancing MOUNTAIN KING or tumbling (its knock boost above
+`stagger`). It aims `gap` beyond contact behind the enemy (against its direction of travel) where the enemy will be
+at the landing (`lead` times its motion over the air time), turned by up to `jitter` degrees (one draw of the
+fight's generator per ordinary hop, the only draw of the kind), at most `BL` away. A hop due within one substep of a
+16th lands on that 16th (before the next hop is launched); otherwise it lands in the step its time comes.
+`mountain_end` is the 16th MOUNTAIN KING finds its hops used up.
+
+`hit`, elements 7 and 8:
+
+| What hit (7) | Cause | Sub (8) |
+| --- | --- | --- |
+| `stomp` | a landing with the enemy within the stomp radius beyond contact: `dmg` (MOUNTAIN KING's hops: the ability's `dmg`), times `back` from behind. x and y are the point of the enemy's surface nearest the hopper | 1 for a backstab, else 0 |
+
+A `stomp` on a shielded enemy is a `block` (element 6 `stomp`); the knock (`knock`, away from the hopper) is given
+either way, and only a landed stomp grows the reach and the radius.
 
 <!-- /kind:tiptoe -->
 
@@ -1250,44 +1264,59 @@ and 6.3 do for FLUTE and TROMBONE), from the lines below.
 <!-- kind:hook -->
 #### `hook` (ability kind of BASSOON)
 
-`fight.py` 2915 to 2916, 3430 to 3476. Not ported yet: its port fills this section in (the meaning of each field, as 6.2
-and 6.3 do for FLUTE and TROMBONE), from the lines below.
+`fight.py` 2915 to 2916, 3430 to 3476 (`hook_ready`, `start_hook`, `hook_step`); the gate in `abilities_step` 3040 to
+3042. Ported: `bf-sim/src/abilities/hook.rs`, settings in `bf-core/src/roster/abilities/hook.rs`.
 
 **Record keys.**
 
-- `HOOK`: added to `rec` at `run()` 5853, written by `snap` 5602 to 5608:
+- `HOOK`, `<f8` of shape `(n, 2, 3)`, present when a fighter has a `hook` among its abilities. Per ball: the hook's
+  state (1.0 swinging out, 2.0 hooked: it stays out 0.3 s after it hooks, hit or not), its aim (an angle in
+  [-pi, pi)) and the time it hooks; three NaN for a ball with no hook out.
 
-  ```python
-  if 'HOOK' in rec:                                   # #39, only recorded when a fighter has a 'hook' ability
-      Hq = np.full((2, 3), np.nan)
-      for j, Bj in enumerate((B0, B1)):
-          Hk = getattr(Bj, 'hook', None)
-          if Hk is not None:
-              Hq[j] = (Hk['state'], Hk['aim'], Hk['t_hook'])
-      rec['HOOK'].append(Hq)
-  ```
+**Events.**
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+| Kind | `who` (2) | 3 | 4 | 5 |
+| --- | --- | --- | --- | --- |
+| `hook_open` | the owner | the time it hooks (float): `open16` 16ths after it starts | the aim (float): the angle to the enemy as it stands | |
+| `hook` | the owner | hit (int 0 / 1): the enemy within `reach` beyond contact and `half` degrees of the aim | the aim then (float): while it swings out the aim turns to the enemy, at most `track` rad a second | `reach` (float) |
 
-- 3446: `self.ev('hook_open', k, B.hook['t_hook'], aim)`
-- 3466: `self.damage(k, 1 - k, ab['dmg'], 'hook', hx, hy)`
-- 3472: `self.ev('hook', k, int(hit), Hk['aim'], float(ab['reach']))`
+An unlock of this kind waits for its moment: when it is ready it fires on the first beat the owner is on the ground
+(not mid-hop) with the enemy within `ready` beyond contact. A hook that lands (not blocked) spins the enemy round: its
+`V` becomes its speed along the direction away from the owner, its knock boost is raised to `knock`, and an owner
+whose weapon is a `tiptoe` gets a follow-up hop (`hop` kind 1) on the next 16th.
+
+`hit`, elements 7 and 8:
+
+| What hit (7) | Cause | Sub (8) |
+| --- | --- | --- |
+| `hook` | the hook, at its time, with the enemy in reach and in the aim's cone: `dmg`. x and y are the point of the enemy's surface nearest the owner | 0 |
+
+A `hook` on a shielded enemy is a `block` (element 6 `hook`): the enemy is not spun and no follow-up hop is given; the
+`hook` event still says hit 1.
 
 <!-- /kind:hook -->
 
 <!-- kind:mountain -->
 #### `mountain` (ability kind of BASSOON)
 
-`fight.py` 2917 to 2918, 3423 to 3429. Not ported yet: its port fills this section in (the meaning of each field, as 6.2
-and 6.3 do for FLUTE and TROMBONE), from the lines below.
+`fight.py` 2917 to 2918, 3423 to 3428 (`start_mountain`), and the dance in `tiptoe_tick` (3374 to 3391). Ported: in
+the weapon's module, `bf-sim/src/kinds/tiptoe.rs`; settings in `bf-core/src/roster/abilities/mountain.rs`.
 
-**Record keys.** None of its own.
+**Record keys.** None of its own: its hops are in `HOP` like any other.
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+**Events.**
 
-- 3428: `self.ev('mountain', k, len(ab['seq16']))`
+| Kind | `who` (2) | 3 |
+| --- | --- | --- |
+| `mountain` | the owner | the number of hops (int): the length of `seq16` |
+
+Hop `i` of the dance is launched on the first 16th that is `seq16[i - 1]` 16ths after the launch of the one before
+(the first on the next 16th the hopper is on the ground and not stunned), is in the air `min(int(air16), seq16[i])`
+16ths, and aims `gap` beyond contact from where the enemy will be, `step` degrees further round it per hop from
+straight behind it (the angle is fixed at the first hop), at most `reach` away. Each is a `hop` of kind 2 and each
+landing a `stomp` of kind 2 with the ability's `dmg` and `knock` (times the weapon's `back` from behind); these
+stomps do not grow the weapon. Ordinary hops pause meanwhile and the dance ignores the stagger. `mountain_end`
+(the weapon's event) ends it.
 
 <!-- /kind:mountain -->
 
