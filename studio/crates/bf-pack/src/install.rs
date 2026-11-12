@@ -107,11 +107,50 @@ impl Layout {
     }
 }
 
-/// The names of a path, lower-cased, without `.` parts; `None` for a relative path or one with `..`.
+/// `p` in the one form paths are compared in: the longest part of it that exists, as Windows itself names it (long
+/// names rather than 8.3 short ones such as `RUNNER~1`, links followed), then the rest as given, without the `\\?\`
+/// that Windows puts in front. A path given in short form and the same path read back from Windows in long form
+/// then compare equal. A path whose start cannot be looked up is given back as it is.
+pub(crate) fn long_form(p: &Path) -> PathBuf {
+    let mut existing = p;
+    let mut rest = Vec::new();
+    loop {
+        if let Ok(full) = fs::canonicalize(existing) {
+            let mut out = without_verbatim(full);
+            for name in rest.iter().rev() {
+                out.push(name);
+            }
+            return out;
+        }
+        match (existing.parent(), existing.file_name()) {
+            (Some(parent), Some(name)) => {
+                rest.push(name.to_os_string());
+                existing = parent;
+            }
+            _ => return p.to_path_buf(),
+        }
+    }
+}
+
+/// `\\?\C:\x` as `C:\x`, and `\\?\UNC\server\share` as `\\server\share`.
+fn without_verbatim(p: PathBuf) -> PathBuf {
+    let Some(text) = p.to_str() else { return p };
+    if let Some(unc) = text.strip_prefix(r"\\?\UNC\") {
+        PathBuf::from(format!(r"\\{unc}"))
+    } else if let Some(local) = text.strip_prefix(r"\\?\") {
+        PathBuf::from(local)
+    } else {
+        p
+    }
+}
+
+/// The names of a path in its long form (`long_form`), lower-cased, without `.` parts; `None` for a relative path or
+/// one with `..`.
 fn names(p: &Path) -> Option<Vec<String>> {
-    if !p.is_absolute() {
+    if !p.is_absolute() || p.components().any(|c| c == Component::ParentDir) {
         return None;
     }
+    let p = long_form(p);
     let mut out = Vec::new();
     for c in p.components() {
         match c {
@@ -1221,7 +1260,8 @@ pub fn opens_the_app(link: &Path, layout: &Layout) -> bool {
     let Ok(bytes) = fs::read(link) else {
         return false;
     };
-    lnk::target(&bytes).is_some_and(|t| names(&t).is_some() && names(&t) == names(&layout.exe()))
+    let Some(dir) = link.parent() else { return false };
+    lnk::target_at(&bytes, dir).is_some_and(|t| names(&t).is_some() && names(&t) == names(&layout.exe()))
 }
 
 /// The line printed before the source is copied.
@@ -1649,6 +1689,75 @@ pub mod lnk {
             ascii_at(info, get32(info, 16)? as usize)? + &ascii_at(info, get32(info, 24)? as usize)?
         };
         (!path.is_empty()).then(|| PathBuf::from(path))
+    }
+
+    /// The target of the link file in `link_dir` with these bytes: the LinkInfo path when there is one, else its
+    /// relative path (which Windows writes when it leaves the LinkInfo out, as it can for a path given partly in 8.3
+    /// short form) taken from `link_dir`. `None` when neither can be read.
+    pub fn target_at(bytes: &[u8], link_dir: &Path) -> Option<PathBuf> {
+        if let Some(t) = target(bytes) {
+            return Some(t);
+        }
+        let flags = get32(bytes, 20)?;
+        let relative = string_data(bytes, flags)?.relative?;
+        if relative.is_empty() {
+            return None;
+        }
+        // `..` taken away name by name; one that would climb above the drive gives nothing.
+        let mut out = PathBuf::new();
+        for c in link_dir.join(relative).components() {
+            match c {
+                std::path::Component::ParentDir => {
+                    if out.file_name().is_none() || !out.pop() {
+                        return None;
+                    }
+                }
+                std::path::Component::CurDir => {}
+                other => out.push(other.as_os_str()),
+            }
+        }
+        Some(out)
+    }
+
+    /// The strings a link holds after its item id list and LinkInfo.
+    struct StringData {
+        relative: Option<String>,
+    }
+
+    fn string_data(bytes: &[u8], flags: u32) -> Option<StringData> {
+        const HAS_RELATIVE_PATH: u32 = 0x8;
+        if get32(bytes, 0)? != HEADER_SIZE || bytes.get(4..20)? != CLSID {
+            return None;
+        }
+        let mut at = HEADER_SIZE as usize;
+        if flags & HAS_ID_LIST != 0 {
+            at = at.checked_add(2 + usize::from(u16::from_le_bytes(bytes.get(at..at + 2)?.try_into().ok()?)))?;
+        }
+        if flags & HAS_LINK_INFO != 0 {
+            at = at.checked_add(get32(bytes, at)? as usize)?;
+        }
+        let unicode = flags & IS_UNICODE != 0;
+        let mut read = |present: bool| -> Option<Option<String>> {
+            if !present {
+                return Some(None);
+            }
+            let count = usize::from(u16::from_le_bytes(bytes.get(at..at + 2)?.try_into().ok()?));
+            at += 2;
+            let text = if unicode {
+                let raw = bytes.get(at..at.checked_add(count * 2)?)?;
+                at += count * 2;
+                let units: Vec<u16> = raw.as_chunks::<2>().0.iter().map(|c| u16::from_le_bytes(*c)).collect();
+                String::from_utf16(&units).ok()?
+            } else {
+                let raw = bytes.get(at..at.checked_add(count)?)?;
+                at += count;
+                raw.is_ascii().then(|| String::from_utf8_lossy(raw).into_owned())?
+            };
+            Some(Some(text))
+        };
+        read(flags & HAS_NAME != 0)?;
+        let relative = read(flags & HAS_RELATIVE_PATH != 0)?;
+        Some(StringData { relative })
     }
 
     /// Windows' item id list for the existing file at `path` (a full path), made by the shell itself.
@@ -2350,10 +2459,13 @@ pub(crate) mod tests {
         install(&pkg, &layout, &config_for(&layout)).unwrap();
         shortcuts(&layout).unwrap();
         for link in [layout.start_menu_link(), layout.desktop_link()] {
+            // Windows may read a path back in its long form while the temp folder was given in short form (as on
+            // a hosted build machine), so the paths are compared as places, not as text.
             let back = read_back(&link);
-            assert_eq!(back[0], layout.exe().display().to_string(), "{back:?}");
-            assert_eq!(back[1], format!("{},0", layout.icon().display()), "{back:?}");
-            assert_eq!(back[2], layout.programs.display().to_string(), "{back:?}");
+            assert!(same_place(Path::new(&back[0]), &layout.exe()), "{back:?}");
+            let icon = back[1].strip_suffix(",0").unwrap_or_else(|| panic!("{back:?}"));
+            assert!(same_place(Path::new(icon), &layout.icon()), "{back:?}");
+            assert!(same_place(Path::new(&back[2]), &layout.programs), "{back:?}");
             assert_eq!(back[3], "BALLFIGHT Studio", "{back:?}");
             assert!(opens_the_app(&link, &layout));
         }
@@ -2362,7 +2474,10 @@ pub(crate) mod tests {
         // Made again (the item id list holds folder times, so the bytes may differ), they still open the app.
         shortcuts(&layout).unwrap();
         assert!(opens_the_app(&layout.desktop_link(), &layout));
-        assert_eq!(read_back(&layout.desktop_link())[0], layout.exe().display().to_string());
+        assert!(same_place(
+            Path::new(&read_back(&layout.desktop_link())[0]),
+            &layout.exe()
+        ));
     }
 
     #[test]
@@ -2391,35 +2506,140 @@ pub(crate) mod tests {
         assert_eq!(fs::read(layout.desktop_link()).unwrap(), other);
     }
 
-    #[test]
-    fn a_link_windows_wrote_reads_too() {
-        // If Windows ever rewrites one of our shortcuts, removal must still know it. A link written by Windows' own
-        // shell object in a temp folder (the paths come in environment variables, never in the script).
-        const SCRIPT: &str = "$s = (New-Object -ComObject WScript.Shell).CreateShortcut($env:BF_TEST_LINK)\n\
-             $s.TargetPath = $env:BF_TEST_TARGET\n$s.Save()\n";
-        let dir = TempDir::new("install-winlink");
-        let layout = Layout::under(&dir.path().join("pc"));
-        fs::create_dir_all(&layout.programs).unwrap();
-        fs::create_dir_all(&layout.desktop).unwrap();
-        fs::write(layout.exe(), b"pretend exe").unwrap();
-        let out = crate::run::quiet(
+    /// Runs a fixed PowerShell script in a test, with its values in environment variables, never in the script.
+    /// Gives what it printed.
+    fn test_script(script: &str, env: &[(&str, &OsStr)]) -> String {
+        let mut c = crate::run::quiet(
             &powershell().unwrap(),
             &[
                 OsStr::new("-NoLogo"),
                 OsStr::new("-NoProfile"),
                 OsStr::new("-NonInteractive"),
                 OsStr::new("-EncodedCommand"),
-                OsStr::new(&encoded_command(SCRIPT)),
+                OsStr::new(&encoded_command(script)),
             ],
-        )
-        .env("BF_TEST_LINK", layout.desktop_link())
-        .env("BF_TEST_TARGET", layout.exe())
-        .output()
-        .unwrap();
+        );
+        for (k, v) in env {
+            c.env(k, v);
+        }
+        let out = c.output().unwrap();
         assert!(out.status.success(), "{}", String::from_utf8_lossy(&out.stderr));
+        String::from_utf8_lossy(&out.stdout).trim().to_string()
+    }
+
+    /// Windows' own shell object writes a shortcut at `link` to `target`.
+    fn windows_writes_link(link: &Path, target: &Path) {
+        const SCRIPT: &str = "$s = (New-Object -ComObject WScript.Shell).CreateShortcut($env:BF_TEST_LINK)\n\
+             $s.TargetPath = $env:BF_TEST_TARGET\n$s.Save()\n";
+        test_script(
+            SCRIPT,
+            &[
+                ("BF_TEST_LINK", link.as_os_str()),
+                ("BF_TEST_TARGET", target.as_os_str()),
+            ],
+        );
+    }
+
+    /// The 8.3 short form of an existing folder, as Windows gives it.
+    fn short_form(dir: &Path) -> PathBuf {
+        const SCRIPT: &str = "$f = (New-Object -ComObject Scripting.FileSystemObject).GetFolder($env:BF_TEST_DIR)\n\
+             [Console]::Out.WriteLine($f.ShortPath)\n";
+        PathBuf::from(test_script(SCRIPT, &[("BF_TEST_DIR", dir.as_os_str())]))
+    }
+
+    /// Whether two paths are the same place, in whichever form each is written.
+    fn same_place(a: &Path, b: &Path) -> bool {
+        same_or_inside(a, b) && same_or_inside(b, a)
+    }
+
+    #[test]
+    fn a_link_windows_wrote_reads_too() {
+        // If Windows ever rewrites one of our shortcuts, removal must still know it.
+        let dir = TempDir::new("install-winlink");
+        let layout = Layout::under(&dir.path().join("pc"));
+        fs::create_dir_all(&layout.programs).unwrap();
+        fs::create_dir_all(&layout.desktop).unwrap();
+        fs::write(layout.exe(), b"pretend exe").unwrap();
+        windows_writes_link(&layout.desktop_link(), &layout.exe());
         let bytes = fs::read(layout.desktop_link()).unwrap();
-        assert_eq!(lnk::target(&bytes).unwrap(), layout.exe());
+        // Windows writes the long form, whatever form the temp folder was given in.
+        assert!(same_place(&lnk::target(&bytes).unwrap(), &layout.exe()));
         assert!(opens_the_app(&layout.desktop_link(), &layout));
+    }
+
+    #[test]
+    fn a_path_in_short_form_is_the_same_place() {
+        let dir = TempDir::new("install-short");
+        let long_root = dir.path().join("a folder with a long name");
+        fs::create_dir_all(&long_root).unwrap();
+        let short_root = short_form(&long_root);
+        let short_name = short_root.file_name().unwrap().to_string_lossy().into_owned();
+        if short_name.eq_ignore_ascii_case("a folder with a long name") {
+            eprintln!("note: this volume makes no 8.3 short names, so the short-form case cannot be tried here");
+            return;
+        }
+        assert!(short_name.contains('~'), "{}", short_root.display());
+        assert_eq!(long_form(&short_root), long_form(&long_root));
+        assert!(same_place(
+            &short_root.join("not there yet").join("x.exe"),
+            &long_root.join("not there yet").join("x.exe")
+        ));
+
+        // Installed through the short form, as a program given a short %TEMP% would.
+        let short = Layout::under(&short_root);
+        let long = Layout::under(&long_root);
+        install(&package_of(dir.path(), "0.6.0"), &short, &config_for(&short)).unwrap();
+        shortcuts(&short).unwrap();
+        // Read back by Windows in long form, the shortcut is still ours, under either layout.
+        assert!(same_place(Path::new(&read_back(&short.desktop_link())[0]), &long.exe()));
+        for layout in [&short, &long] {
+            assert!(opens_the_app(&short.start_menu_link(), layout));
+        }
+        // A shortcut Windows itself wrote is ours too, so removal takes it. (With a path partly in short form,
+        // Windows may write it with no LinkInfo, only its item id list and a relative path.)
+        windows_writes_link(&short.desktop_link(), &long.exe());
+        assert!(opens_the_app(&short.desktop_link(), &short));
+        let plan = crate::remove::removal_plan(&short).unwrap();
+        assert!(
+            plan.files.iter().any(|(f, _)| f == &short.desktop_link()),
+            "{:?}",
+            plan.kept
+        );
+        assert!(plan.kept.is_empty(), "{:?}", plan.kept);
+        // The installed exe named in long form is the installed one: it may remove the install made in short form.
+        let temp = dir.path().join("temp");
+        fs::create_dir_all(&temp).unwrap();
+        let done = crate::remove::remove_app_with(&short, &long.exe(), &temp, &|a, b| fs::rename(a, b)).unwrap();
+        assert!(done.moved_exe.is_some(), "{done:?}");
+        assert!(!long.programs.exists() && !long.desktop_link().exists() && !long.start_menu_link().exists());
+    }
+
+    #[test]
+    fn a_link_without_link_info_is_read_by_its_relative_path() {
+        // The shape Windows writes when it leaves the LinkInfo out: header, item id list, then the strings, with a
+        // name and a relative path (flags HasLinkTargetIDList | HasName | HasRelativePath | IsUnicode).
+        let mut b = Vec::new();
+        b.extend_from_slice(&0x4Cu32.to_le_bytes());
+        b.extend_from_slice(&[
+            0x01, 0x14, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46,
+        ]);
+        b.extend_from_slice(&(0x1u32 | 0x4 | 0x8 | 0x80).to_le_bytes());
+        b.resize(76, 0);
+        b.extend_from_slice(&[6, 0, 4, 0, 0xAA, 0xBB, 0, 0]);
+        for s in ["BALLFIGHT Studio", r"..\Programs\BALLFIGHT Studio\ballfight-studio.exe"] {
+            let units: Vec<u16> = s.encode_utf16().collect();
+            b.extend_from_slice(&(units.len() as u16).to_le_bytes());
+            b.extend(units.iter().flat_map(|u| u.to_le_bytes()));
+        }
+        b.extend_from_slice(&[0; 4]);
+        assert!(lnk::target(&b).is_none());
+        assert_eq!(
+            lnk::target_at(&b, Path::new(r"C:\Users\Someone\Desktop")).unwrap(),
+            PathBuf::from(r"C:\Users\Someone\Programs\BALLFIGHT Studio\ballfight-studio.exe")
+        );
+        // Climbing above the drive gives nothing; cut-short bytes give nothing.
+        assert!(lnk::target_at(&b, Path::new(r"C:\")).is_none());
+        assert!(lnk::target_at(&b[..b.len() - 20], Path::new(r"C:\x")).is_none());
     }
 
     #[test]
@@ -2537,7 +2757,7 @@ pub(crate) mod tests {
         assert_eq!(c.build_dir, data.join("build"));
         assert_eq!(c.downloads, data.join("downloads"));
         assert_eq!(c.tag_prefix, "studio-v");
-        assert_eq!(PathBuf::from(&c.remote), upstream);
+        assert!(same_place(Path::new(&c.remote), &upstream), "{}", c.remote);
         assert!(data.join("source").join(".git").is_dir());
         assert!(!data.join("source").join("a.txt").exists(), "no checkout");
         // Again: the copy is kept.

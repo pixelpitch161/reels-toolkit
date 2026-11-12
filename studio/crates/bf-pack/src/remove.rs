@@ -281,9 +281,9 @@ pub fn remove_by_manifest(dir: &Path) -> Result<Vec<(PathBuf, String)>, PackErro
     Ok(remove_now(&r))
 }
 
-/// The drive (or share) a full path is on, in lower case.
+/// The drive (or share) a full path is on, in lower case, read from its long form.
 fn volume(p: &Path) -> Option<String> {
-    match p.components().next()? {
+    match crate::install::long_form(p).components().next()? {
         Component::Prefix(x) => Some(x.as_os_str().to_string_lossy().to_lowercase()),
         _ => None,
     }
@@ -321,7 +321,8 @@ pub(crate) fn remove_app_with(
         programs: layout.programs.clone(),
         ..Removed::default()
     };
-    let same = |a: &Path, b: &Path| a.to_string_lossy().eq_ignore_ascii_case(&b.to_string_lossy());
+    // The same file, whichever form (long or short names) each path is written in.
+    let same = |a: &Path, b: &Path| same_or_inside(a, b) && same_or_inside(b, a);
     if let Some(at) = plan.files.iter().position(|(f, _)| same(f, running_exe)) {
         let (exe, sha) = plan.files.remove(at);
         let matches = sha256_file(&exe).is_ok_and(|now| now == sha);
