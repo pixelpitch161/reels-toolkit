@@ -330,8 +330,21 @@ mod tests {
         {
             assert!([4, 8].contains(&l.len()), "{l:?}");
         }
-        // a kit theme that is not offered yet has no card
-        assert!(theme_card("heist").is_none() && theme_card("brass_trailer").is_none());
+        // a kit theme that is not offered yet has no card (whichever are left; once every theme is offered, a name the
+        // registry does not know stands in, so the check never passes on nothing)
+        let unoffered: Vec<&str> = themes::all_themes()
+            .iter()
+            .map(|t| t.name)
+            .filter(|n| !PORTED_THEMES.contains(n))
+            .collect();
+        if unoffered.is_empty() {
+            assert!(themes::theme("not_a_kit_theme").is_none());
+            assert!(theme_card("not_a_kit_theme").is_none());
+        }
+        for name in unoffered {
+            assert!(themes::theme(name).is_some(), "{name}");
+            assert!(theme_card(name).is_none(), "{name} has a card but is not offered");
+        }
         for name in ["", "polka", "Big top", "big top"] {
             assert!(theme_card(name).is_none(), "{name:?}");
         }

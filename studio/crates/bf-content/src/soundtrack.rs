@@ -401,7 +401,7 @@ mod tests {
         bars: (24, 42),
     };
 
-    /// A ported theme whose bed has no boom (a stand-in for `heist`, which is not ported yet).
+    /// A ported theme whose bed has no boom (a stand-in for `heist`).
     static NO_BOOM: Theme = Theme {
         name: "heist",
         ported: true,
@@ -424,10 +424,10 @@ mod tests {
         );
         // the same theme under two fighters that never call it is fine (FLUTE calls no hook)
         assert!(crate::fighters::sound("FLUTE", 0, &ff).unwrap().bed_calls().is_empty());
-        // the real heist is not ported yet: that is said first
+        // the real heist (Task 34) is refused in the same words
         assert_eq!(
             validate(&ff).unwrap_err().to_string(),
-            r#"music.theme: "heist" is not ported yet"#
+            "music.theme: Heist has no boom (a big drum hit), which the TROMBONE's part plays; pick another theme"
         );
         // the big top has a boom
         assert_eq!(validate(&episode()), Ok(()));
