@@ -14,12 +14,10 @@
 //!   `x[0] * w[0]` plus `(x[-j] + x[j]) * w[j]` for `j` from `r` down to 1, in `float64` (the symmetric branch:
 //!   the kernel is exactly symmetric).
 //!
-//! The kernel's `exp` is `bf_core::dmath::exp`; numpy's gives the C library's bits, and the two differ in the last
-//! bit now and then: of the twelve sigmas the vectors hold, at 2.4 (4 of 21 weights) and 6 (2 of 49). 2.4 is the
-//! sigma of TRUMPET's halo, a literal of the kit (`trumpet.py` `draw_beam`), so its kernel is a constant of the
-//! kit and is held here as scipy's exact weights ([`KIT_KERNELS`], as `title::layout::DIVIDER_DEG` holds the
-//! kit's angle); every other sigma computes its kernel. The correlation itself is scipy's to the bit: with
-//! scipy's weights every value of every case is equal.
+//! The kernel's `exp` is `bf_core::dmath::exp`, which is numpy's `np.exp` to the bit (the C runtime's: ruling
+//! M3-R38), so every kernel is computed and is scipy's to the bit, and with it every value of every case. (Ruling
+//! M3-R22 held the kernel of sigma 2.4, TRUMPET's halo, as a table while the old `exp` was a bit off on 4 of its
+//! 21 weights.)
 
 use bf_core::dmath;
 
@@ -66,43 +64,9 @@ pub fn radius(sigma: f64, truncate: f64) -> usize {
     lw as usize
 }
 
-/// The half kernels (centre last) scipy makes for the sigmas a kit look passes where `dmath::exp` would give a
-/// weight one bit off: sigma 2.4, radius 10 (TRUMPET's halo). Bits of `_gaussian_kernel1d(2.4, 0, 10)[::-1]`,
-/// scipy 1.18.1 on the reference PC (`studio/reference/shared/ndimage.npz` holds them too).
-pub const KIT_KERNELS: [(u64, usize, [u64; 11]); 1] = [(
-    0x4003_3333_3333_3333, // 2.4
-    10,
-    [
-        0x3efd_9b3e_7bc5_0724,
-        0x3f23_41b2_609c_808a,
-        0x3f45_0eb6_6685_b2d0,
-        0x3f63_5b57_ff6d_8e9d,
-        0x3f7d_ea4f_d80f_ac2b,
-        0x3f93_6eaa_9e96_1e56,
-        0x3fa5_38d5_d50c_afcb,
-        0x3fb3_7b97_141f_dd31,
-        0x3fbe_1227_928b_e957,
-        0x3fc3_8210_87a8_edd9,
-        0x3fc5_46f3_0075_011f,
-    ],
-)];
-
 /// `_gaussian_kernel1d(sigma, 0, radius)[::-1]`: the `2 * radius + 1` weights (symmetric, so the reversal
-/// changes nothing). A sigma and radius of [`KIT_KERNELS`] give scipy's weights from there.
+/// changes nothing).
 pub fn gaussian_kernel1d(sigma: f64, radius: usize) -> Vec<f64> {
-    if let Some((_, _, half)) = KIT_KERNELS
-        .iter()
-        .find(|(s, r, _)| *s == sigma.to_bits() && *r == radius)
-    {
-        let mut w: Vec<f64> = half.iter().map(|&b| f64::from_bits(b)).collect();
-        w.extend(half[..radius].iter().rev().map(|&b| f64::from_bits(b)));
-        return w;
-    }
-    computed_kernel1d(sigma, radius)
-}
-
-/// [`gaussian_kernel1d`] computed, never from [`KIT_KERNELS`] (`dmath::exp`; a test compares the two).
-pub fn computed_kernel1d(sigma: f64, radius: usize) -> Vec<f64> {
     let sigma2 = sigma * sigma;
     let c = -0.5 / sigma2;
     let r = radius as i64;

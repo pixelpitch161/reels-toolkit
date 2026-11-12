@@ -808,7 +808,7 @@ fn ufuncs() {
             "np.sin(x)" | "python: math.sin(x)" => dmath::sin,
             "np.cos(x)" | "python: math.cos(x)" => dmath::cos,
             "np.exp(x)" | "python: math.exp(x)" => dmath::exp,
-            "np.tanh(x)" => dmath::tanh,
+            "np.tanh(x)" => dmath::np_tanh,
             "np.log10(x)" => dmath::log10,
             // numpy takes a square root for the power 0.5 and multiplies for the power 2.
             "np.sqrt(x)" | "x ** 0.5" => f64::sqrt,
