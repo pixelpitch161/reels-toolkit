@@ -20,21 +20,23 @@ pub mod voice;
 
 pub use card::{CARD, card};
 pub use look::BassDrumLook;
+pub use sound::BassDrumSound;
+pub use voice::BassDrumVoice;
 
 /// `fighters.look('BASS DRUM', P, k)`.
 pub fn look() -> Option<Box<dyn Look>> {
     Some(Box::new(BassDrumLook::new()))
 }
 
-/// Its instrument voice (`pp_bridge`'s entry), or `None` while it is not ported.
+/// Its instrument voice (`pp_bridge`'s entry).
 pub fn voice() -> Option<Arc<dyn Voice>> {
-    None
+    Some(Arc::new(BassDrumVoice))
 }
 
-/// `fighters.sound('BASS DRUM', M, k)`: its part on side `k` of the fight `ff`, or `None` while it is not ported.
+/// `fighters.sound('BASS DRUM', M, k)`: its part on side `k` of the fight `ff`.
 pub fn sound(k: usize, ff: &FightFile) -> Option<Box<dyn Sound>> {
-    let _ = (k, ff);
-    None
+    let _ = ff;
+    Some(Box::new(BassDrumSound::new(k)))
 }
 
 /// Its model (`data/models/BASS DRUM.json`, written by its export), compiled in. The rolling drum is its first
