@@ -1,0 +1,592 @@
+{
+ "about": "ballfight_electric_vs_acoustic: the golden frames (milestone 1's rules of frames.py for any pair) with both real looks: each frame's SHA-256, its draw log and its hull calls; and the VS card alone on milestone 1's noise image at 16 times",
+ "absent": [],
+ "cards": [
+  [0, "ca6cc9423fdf1b6652b2f00f9276ebc7582e8b97e3a1f93660245dba1d92f6ff"],
+  [4, "f8cc8f95b013ec4aacc6e6c091ca63dd95086b4b6bacbaa58e7e61a0436da2fb"],
+  [9, "e8350b8b9908a8996a4a29ec3910aac58852a10eb0ee77e5ae73052c5ea50274"],
+  [13, "50acc7ee6f9fda2feab645f1d6484fd34fe79021803352465856272243e9ec1e"],
+  [17, "3c7a5c6adb36c6e3490ae1698f619713dc962e6e1f7a16a64c2864a753081f8d"],
+  [21, "a3ec34b12583dae8a65046f138296ea30e67200fb9e557fae8bdbaa3ccccc790"],
+  [26, "92389e303d9836c87367f610bd8fd5aee6feb70e10ea6cd1cf354cf3e5cd785c"],
+  [30, "7beb09e3edf1244af70ab579b4e00c8f05601df479cf1a099c9edf9f3a4a0c46"],
+  [34, "f03a05a14d9baf5bf20dca7fd74cfe0b0ee1c4eac50b9c474be51f362905e3f1"],
+  [38, "5c42e335ffa9c029adb69a525c9443019e23e9f4cd6a9317f1ef2c83880f35d1"],
+  [43, "fa09ece42e1ac13fd8ed0b73b9987cb9a64ff4b17f452bccc8ede7f8893021ad"],
+  [47, "5141f2adf55f05e6a7212aaf6631e22e7d396c0567a34b0e0a75344a87f15e62"],
+  [51, "32c526072591bff0c00469406bb0a34edc71a692d94a31deb39936bd1a4321da"],
+  [55, "cff0224db953c66e943a7193c8ece233e739ce21f61b51b4c183327c001e703b"],
+  [1825, "aca23309cfaa6acfaec4648dad659d9a0d2b031472ce10587aa994494f8a5fa4"],
+  [1829, "47ce404e95ac582a3737db64f1cc3391cd747c11d079ab1c034f926536e27824"]
+ ],
+ "fighters": ["ELECTRIC", "ACOUSTIC"],
+ "format": 1,
+ "frames": [
+  {
+   "boxes": [0, "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"],
+   "frame": 0,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a53d0d9b81d4p+12",
+     "0x1.2a48ab7bd62c6p+13"
+    ]
+   ],
+   "rules": ["frame_0"],
+   "sha256": "1ef10df7534b326b79b28afd15565e20e0af57316cbfd86fdbfaf6322d56d7c1"
+  },
+  {
+   "boxes": [1, "7bea2cb06aa14864dd4381799f5d51476115809b88341d2ce464ec1038d36808"],
+   "frame": 13,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a53ce57bbf3ep+12",
+     "0x1.2a48ab9a12537p+13"
+    ]
+   ],
+   "rules": ["frame_13"],
+   "sha256": "01d6aff8daa39fc3e0af476379528721617f085f80de867ff10f7c86d75f164d"
+  },
+  {
+   "boxes": [2, "325e08f7a38caa8bffa7d432b0c6c8ad912736c725f4e558f1f3217b54e215cf"],
+   "frame": 27,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a53bc62566dap+12",
+     "0x1.2a48ac735b3cdp+13"
+    ]
+   ],
+   "rules": ["frame_27"],
+   "sha256": "74b4e44c4a61622ad0175b8c4309c4d4ad7941e2d373968088725c795960686f"
+  },
+  {
+   "boxes": [3, "9b90ba829169a87219cbc8b7174ca08dfd530f43526c47cbf7f88c6ac41bfee5"],
+   "frame": 45,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a537d637ba29p+12",
+     "0x1.2a48af783587cp+13"
+    ]
+   ],
+   "rules": ["doors_last_closed"],
+   "sha256": "bdaf50d9ad3b4164130b3cccc003750f5bdcca69980b585e0ace87a0d45703e7"
+  },
+  {
+   "boxes": [22, "58f37c1363efcf8c6cb4739559734193a719bcd82c09b6075cee7f3c94b672da"],
+   "frame": 51,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a535c9aff5cep+12",
+     "0x1.2a48b110fec29p+13"
+    ]
+   ],
+   "rules": ["doors_mid"],
+   "sha256": "fdbcbbaa619ed9136748339050825e09f30e02fe725bfbd457c3ef550030c066"
+  },
+  {
+   "boxes": [23, "e94f015af77bbb439522eb7c0bd511f12b044e24dc5a4ccdfea6a8aec572520e"],
+   "frame": 58,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a532eaa00f0dp+12",
+     "0x1.2a48b3557d549p+13"
+    ]
+   ],
+   "rules": ["count_3"],
+   "sha256": "ad908cf50283bfa2f6623a4061934423022580031c24e06dc213cfee754ec083"
+  },
+  {
+   "boxes": [23, "42ce1ef599973e798b099d4eebb6fa70d5708e3dee3251b04249e498afb2add4"],
+   "frame": 72,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a52badf3ffdfp+12",
+     "0x1.2a48b93469d2ep+13"
+    ]
+   ],
+   "rules": ["count_2"],
+   "sha256": "c5d296217c3b475b6af668c7ef582791980cb39a53569c009763a334356ad0e0"
+  },
+  {
+   "boxes": [23, "c576c76555d366b6cbd36b4fe2c690b2ffc1e31736436e80432e3554b886c390"],
+   "frame": 86,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a522af579e92p+12",
+     "0x1.2a48c0d0cb587p+13"
+    ]
+   ],
+   "rules": ["count_1"],
+   "sha256": "65a30d87836bae457162859cf673b16087996790e6b85d97b3c56d7e7b692129"
+  },
+  {
+   "boxes": [21, "1116bdf0946c256a399d15df5e6e06a96635f4b7563035f82982ebd73b8856c9"],
+   "frame": 115,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6aeff5785cc55p+12",
+     "0x1.2a68ffa82404ap+13"
+    ]
+   ],
+   "rules": ["count_fight", "ELECTRIC_weapon_hit"],
+   "sha256": "09e08375ef7c7c8367692bca66bd504af75b6f9d461796130e3c5b934a9379cb"
+  },
+  {
+   "boxes": [22, "6e354e8c92a6d2fe7f2a23216d333ce54cc2840bd6cad91f3bbd6826a3387001"],
+   "frame": 174,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6ad53ab27662cp+12",
+     "0x1.2a61db261a4aep+13"
+    ]
+   ],
+   "rules": ["ACOUSTIC_weapon_hit"],
+   "sha256": "910844ded84c120eede5c1114787f6c6dce38727172600908954d4c1ffb0c44f"
+  },
+  {
+   "boxes": [22, "8689f00d55d80620cf14a039202e12eb98fdb66fe77898a879ed01195d674e95"],
+   "frame": 434,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a0f24dc4ee33p+12",
+     "0x1.2a309a29e5493p+13"
+    ]
+   ],
+   "rules": ["extra_level_ACOUSTIC"],
+   "sha256": "5b2e3981bdcb99d1a6034d1ff2320fe34e614af570e5daffd2c45421dc0a874a"
+  },
+  {
+   "boxes": [24, "2ef718ad08caaad81bd06655c4bbeb8207088edc5d7195473747a616e656df06"],
+   "frame": 447,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a12e719f3f69p+12",
+     "0x1.2a5ba4a5310cap+13"
+    ]
+   ],
+   "rules": ["extra_caption_punch"],
+   "sha256": "37cb5d08803b25226778a23f1ab0e850a08392cf4a61151508daa1f5835e1679"
+  },
+  {
+   "boxes": [24, "3c10dac3288b47d3c41a3aef3eef2c284227d0e4dd065ed27b288e290e5d0bc7"],
+   "frame": 450,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a54a714cd96ep+12",
+     "0x1.2a500b64d0e35p+13"
+    ]
+   ],
+   "rules": ["ACOUSTIC_unlock1_0.2s"],
+   "sha256": "39512fb7f60869b4c86ec8c206468bd77bc4fde34acf8238488cd136aee20d5d"
+  },
+  {
+   "boxes": [25, "391cc653a6fcb73272c0ec614ffc4e3c7a8ab56d12a4175740b7ec653ad98ac2"],
+   "frame": 461,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a64a849df7d4p+12",
+     "0x1.2a3f2cfe645a7p+13"
+    ]
+   ],
+   "rules": ["extra_level_ELECTRIC"],
+   "sha256": "90a82960c7da8ec066b23744aefe0f779a3e706bfd6f08bc2b47ac06cf6dfcfb"
+  },
+  {
+   "boxes": [25, "063e6f1fe64a508230406bea1a1a7c6650e26adc06987a0d9ac1b7a7a3ddb4d6"],
+   "frame": 462,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a6e2a600f68ep+12",
+     "0x1.2a40a2050e51cp+13"
+    ]
+   ],
+   "rules": ["ACOUSTIC_unlock1_0.6s"],
+   "sha256": "b7a0008e2245e19f87ebbaf201d3657b8cdf052e1bdfa7a24d3e0f364829bd3e"
+  },
+  {
+   "boxes": [25, "462fe5451790782f46022901b841690b30ef6e6fcbd7f605d0424583706820ad"],
+   "frame": 464,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a490ea9dc3bbp+12",
+     "0x1.2a43c0dadc299p+13"
+    ]
+   ],
+   "rules": ["ELECTRIC_unlock1_0.2s"],
+   "sha256": "60fe543e9281a4f438b967de486aacda5119ae313402b19f67d3fab4a2c0c690"
+  },
+  {
+   "boxes": [25, "80c13857baf49a94dd2edff1922d1f057c55733c1f652766a71f697682fc768c"],
+   "frame": 476,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a50f89709a27p+12",
+     "0x1.2a4ae2f47e8d2p+13"
+    ]
+   ],
+   "rules": ["ELECTRIC_unlock1_0.6s"],
+   "sha256": "39db633e4a12e5ad7fef56a384215577e2c3b05099d1ef976998f51f06973c14"
+  },
+  {
+   "boxes": [26, "9f1cd0a21576892c517b36c4b1310d1dc0a76f81dc1c79bceec58bae97d1b7f3"],
+   "frame": 764,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a51e4581c315p+12",
+     "0x1.2a4a4a3516d74p+13"
+    ]
+   ],
+   "rules": ["ELECTRIC_unlock2_0.2s"],
+   "sha256": "3a25b41767303d32b70c5d20504c07330b3cb931c6894cdde29dfa06e6801c0e"
+  },
+  {
+   "boxes": [26, "a475f8a63ec9185f458dfe00aeba4ade060f436c491be22c384cb53ac298fa56"],
+   "frame": 776,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a37510762e17p+12",
+     "0x1.2a5966944f661p+13"
+    ]
+   ],
+   "rules": ["ELECTRIC_unlock2_0.6s"],
+   "sha256": "fc60909f26b751bec85206a0c80ffb8fc2a187e82a5ab34d5a8b1cdfebbeee32"
+  },
+  {
+   "boxes": [24, "35a0b46d3d2779f2d5c42f095b2286576d9db4856dc6d55847084367e8061a33"],
+   "frame": 922,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a395b3abe568p+12",
+     "0x1.2a4d312250144p+13"
+    ]
+   ],
+   "rules": ["ACOUSTIC_unlock2_0.2s"],
+   "sha256": "7e85bd702c074b962215297a4fdd110f93d23bcf87199ead8d6b79616a42ee74"
+  },
+  {
+   "boxes": [23, "1333143437cbfea07597d2040663dfcf9637babfda1366d3bf6c7583c151c652"],
+   "frame": 934,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a48a11dbcc77p+12",
+     "0x1.2a4dfddfc071ap+13"
+    ]
+   ],
+   "rules": ["ACOUSTIC_unlock2_0.6s"],
+   "sha256": "4b1fc8bec3bbab938073c65fa2041e82040e01156a41a24db9fafbe6ceddc9fc"
+  },
+  {
+   "boxes": [25, "5462f36ef33350818d42238102d617d0fced4809d6214c82b00bc1b20976d7d9"],
+   "frame": 1155,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a3163aa430bep+12",
+     "0x1.2a1711c3972c6p+13"
+    ]
+   ],
+   "rules": ["ACOUSTIC_low_hp"],
+   "sha256": "535cd8ff5c5e9c0b0eff052fdbe73896948b4cce96b6a9b5581b2bd6d39a955e"
+  },
+  {
+   "boxes": [26, "4237eb0b714b1a3fddb2b6d4b9eaebc0610b9187801d2f9a3175ccf9b6bfd53c"],
+   "frame": 1165,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a333ff49fd55p+12",
+     "0x1.2a590b3482fadp+13"
+    ]
+   ],
+   "rules": ["ACOUSTIC_low_0.2s"],
+   "sha256": "1c36e2f8210303c92bbcecd70cca26c4e4e8910b7475b57da4dd14f2403fec90"
+  },
+  {
+   "boxes": [24, "e164b9f2c26de9ed58377515e21f9e6b08df4bd02baaedd7c29784bc867ec576"],
+   "frame": 1177,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a4e59ae876f6p+12",
+     "0x1.2a5ae1ec03623p+13"
+    ]
+   ],
+   "rules": ["ACOUSTIC_low_0.6s"],
+   "sha256": "ab1f15b38e6203a2bee4a26803e669fbe7192cbde9f278f26ca5414367dc362a"
+  },
+  {
+   "boxes": [23, "322b7cef44c618a05dbc0f0dd51170c081c9ff7a4548b10a6539620402b589c9"],
+   "frame": 1277,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a20b9261d366p+12",
+     "0x1.2a5e521a48772p+13"
+    ]
+   ],
+   "rules": ["ELECTRIC_low_hp"],
+   "sha256": "bf2102b97dfe0dd9c760c72d325ce34d07dd757be0da9b6d83328a5faaed29af"
+  },
+  {
+   "boxes": [23, "dba5316d7881044537b56a6bc726694aec1f68825a863dbec8594c0ee8423436"],
+   "frame": 1293,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6aa22e6f682b9p+12",
+     "0x1.2a852b8b83e27p+13"
+    ]
+   ],
+   "rules": ["ELECTRIC_low_0.2s"],
+   "sha256": "b20ffdcc9c204402704ef0ba91281d6a900a83ab965e01d1ede9360ccd73ad34"
+  },
+  {
+   "boxes": [24, "ab9aac008c989521919b680561e6899c554ab0e8ced091e0e59c7cfcfbb52d1d"],
+   "frame": 1305,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a202b6cbf158p+12",
+     "0x1.2a5e8d8930c68p+13"
+    ]
+   ],
+   "rules": ["ELECTRIC_low_0.6s"],
+   "sha256": "59681e7e22158dac4d0d8d866c775bac988d0c7fe1d278adcc2b6714964b6124"
+  },
+  {
+   "boxes": [23, "8c72102e2a6743a26751da580288ad00dd58931992b905d25419cb5c47577bc9"],
+   "frame": 1546,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6ef9b914fd988p+12",
+     "0x1.28b177ebcb0c5p+13"
+    ]
+   ],
+   "rules": ["ko"],
+   "sha256": "ad943c384265a6591c1205348b117d0d350064cc272a9c7d47bc1f6738e9974a"
+  },
+  {
+   "boxes": [23, "1affa8c175081a42b644f30d7b37da7b3a6f400fa57d9377f37221ad332b42c2"],
+   "frame": 1549,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.696ba3314adf7p+12",
+     "0x1.29ffbdf93ddddp+13"
+    ]
+   ],
+   "rules": ["extra_ko_caption_punch"],
+   "sha256": "44f0a3690d31d59666514002e2abab38c9c8d53a50171a6df6113137af77831c"
+  },
+  {
+   "boxes": [23, "bf2422dda85c88e3f392c9fc111672d64fe1062bb381c814d1f4daf3cc3d8e3d"],
+   "frame": 1552,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.69af1e0573dfdp+12",
+     "0x1.2a5bc3645f39cp+13"
+    ]
+   ],
+   "rules": ["ko_0.2s"],
+   "sha256": "c11b442f6812e8a80e991bf38f5591f64259ef75581cce6ef6fabac45a9f878a"
+  },
+  {
+   "boxes": [22, "109da88cf1bbe140e7e5394890ca5a10c5e93331084fcb31e5dce993283838b3"],
+   "frame": 1564,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.69be1aacd65bap+12",
+     "0x1.29c87905a6cf4p+13"
+    ]
+   ],
+   "rules": ["ko_0.6s"],
+   "sha256": "4c1abebf9be802951ddf94e41dc9e4b9acca17a2e214d5a75df6216706c342af"
+  },
+  {
+   "boxes": [22, "75bc95794627158e9d151b17a4de82de58c52432c67dcd2591665b76f64629b7"],
+   "frame": 1591,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6c2d2f48491c2p+12",
+     "0x1.2907c0832a269p+13"
+    ]
+   ],
+   "rules": ["ko_1.5s"],
+   "sha256": "4e5d49b0e09408f81231a8dc3eb41dd9c3b110a341788b224bab06faea25e856"
+  },
+  {
+   "boxes": [23, "12400b6e3c25577375926e59a7d367ea8ae8aca20aafb5a7fdaf0422b13f0da9"],
+   "frame": 1595,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6c7f3fc3679f8p+12",
+     "0x1.298d771724d48p+13"
+    ]
+   ],
+   "rules": ["extra_wins_second_line"],
+   "sha256": "3d190f158604d4859289ed36ad7290252cf88bba387ae4df6e4c26fb42b04f6c"
+  },
+  {
+   "boxes": [22, "a3d99c6bcb68b2ba8e888130cd46d1a2f3796aeef90ff0d0b5cfb1bc31637b21"],
+   "frame": 1659,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.68477a9b51c46p+12",
+     "0x1.2a3e95c73623ep+13"
+    ]
+   ],
+   "rules": ["solo_mid"],
+   "sha256": "49dae3f46ff5c9c23e07ebd87a18f07caa2b640523f03af0f158693c7027293b"
+  },
+  {
+   "boxes": [23, "32e4581fe2050d9f166b732bbd5ce2cb68835aecca20dcb828f55ff6544f451f"],
+   "frame": 1674,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6ae4b24835aacp+12",
+     "0x1.2a415f9af9236p+13"
+    ]
+   ],
+   "rules": ["comment"],
+   "sha256": "273e89b5900c1aa5f6fccc90c9650e6fbe308c4c3912db86316ad158c3af17f2"
+  },
+  {
+   "boxes": [21, "e1c47e240a9f4b5978c6751a830d416598bf6fd4b3d0a1068b9a89ea9531dfac"],
+   "frame": 1745,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.679ddca742045p+12",
+     "0x1.2a42e47df7d49p+13"
+    ]
+   ],
+   "rules": ["reassembly_mid"],
+   "sha256": "a92555074aeff9c8f6f008fe475357da777db301adf8c9c0ba04d52ea17b3899"
+  },
+  {
+   "boxes": [22, "3c959c5ba4656cadc90fdd1b1fc0f40091e64fff2bae8d9b0a5cc34237de059b"],
+   "frame": 1789,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.8465ba8c5239dp+12",
+     "0x1.2ae56ad375c49p+13"
+    ]
+   ],
+   "rules": ["glide_mid"],
+   "sha256": "678c1a581f7c09de87d6383de81adcf79bcd2f4c3a36caa86dd8a7c0183fb8c7"
+  },
+  {
+   "boxes": [22, "58f37c1363efcf8c6cb4739559734193a719bcd82c09b6075cee7f3c94b672da"],
+   "frame": 1824,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a53cdb4056cap+12",
+     "0x1.2a48a84460f10p+13"
+    ]
+   ],
+   "rules": ["extra_doors_closing"],
+   "sha256": "834e2d4b1ef287b3f0f46688bf3813020876a28081f6d647fa38ec01fdab3f50"
+  },
+  {
+   "boxes": [22, "8a6df5198a90493f1f4e97ddd7fb4c6d51bd737e301f460ebe68a36db5898a60"],
+   "frame": 1828,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a53d0b9c0beap+12",
+     "0x1.2a48ab5b2ab22p+13"
+    ]
+   ],
+   "rules": ["frame_last_but_one"],
+   "sha256": "3a0b200f8b0180548eb7a5ee4148a8c4e6663f7db63e75c26fa0e63bd80ad47e"
+  },
+  {
+   "boxes": [0, "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"],
+   "frame": 1829,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a53d0d5a7cc1p+12",
+     "0x1.2a48ab77aef5fp+13"
+    ]
+   ],
+   "rules": ["frame_last"],
+   "sha256": "b48c7484d186d81334146accc33b02cc168b818d16586cd09970ef00f3bf2c2f"
+  }
+ ],
+ "recording": {
+  "hash": "e1a1fa0e20d3b38b",
+  "seed": 418,
+  "winner": 1
+ },
+ "tool": "tools.studio_export.episode_electric_vs_acoustic"
+}

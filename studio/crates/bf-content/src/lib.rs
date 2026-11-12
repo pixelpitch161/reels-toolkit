@@ -26,4 +26,4 @@ pub use picture::{build_picture, mesh, title_preview};
 pub use registry::{PORTED, RETIRED, available, music_feeds_fight, name_status, roster};
 pub use soundtrack::{SoundBuild, build_soundtrack, validate};
 pub use starter::{draft_captions, starter};
-pub use themes::theme_names;
+pub use themes::{theme_names, themes_for};
