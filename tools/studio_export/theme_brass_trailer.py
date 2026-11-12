@@ -25,7 +25,12 @@ Two run-time adaptations, both in this module only (nothing shared is edited):
 - `trailer_hit`: m3parts.HOOK_CALLS passes the braam's length as the keyword `braam`, but the kit's method names it
   `braam_dur`, so m3parts.hook_child would raise TypeError. As theme_bossa_noir did for `hit`, the shared child runs
   through `_hook_child`, which first gives the kit's `Bed.trailer_hit` (run-time only, in that child process) a
-  wrapper taking `braam=` and calling the kit's method with the same values in the same order."""
+  wrapper taking `braam=` and calling the kit's method with the same values in the same order.
+- stem windows: m3parts._soundtrack records every window as SR samples long (`n=SR`) but caches only the samples the
+  stem has (`x[i0:i0 + SR]`), so a window that runs past the end of the soundtrack (the tempo variant's
+  `T_KO + 3.0`: its K.O. is at 57.7 s) has a cached length other than its recorded one. `_bed_child` runs the shared
+  child and records each window's `n` as the samples there are (`min(SR, NA - i0)`); a window of a whole second is
+  unchanged. Reported to the controller as a shared-file fix (then the wrapper changes nothing)."""
 from . import m3refs
 
 SPEC = dict(
@@ -65,17 +70,27 @@ def _hook_child(cfg_folder, hooks, out_path):
     return MP.hook_child(cfg_folder, hooks, out_path)
 
 
+def _bed_child(cfg_folder, stems_out):
+    """m3parts.bed_child, each stem window's `n` the samples the soundtrack has there"""
+    from . import m3parts as MP
+    out = MP.bed_child(cfg_folder, stems_out)
+    from ballfight.kit import music as M              # noqa: N812  (loaded by the shared child)
+    for w in out['windows']:
+        w['n'] = max(0, min(w['n'], M.NA - w['i0']))
+    return out
+
+
 def export():
     from . import m3parts as MP
-    shared_child, shared_read = MP.hook_child, m3refs.read_config
+    shared = MP.hook_child, MP.bed_child, m3refs.read_config
 
     def read_config(config):
-        return dict(shared_read(config), theme_options=_options_of(config))
-    MP.hook_child, m3refs.read_config = _hook_child, read_config
+        return dict(shared[2](config), theme_options=_options_of(config))
+    MP.hook_child, MP.bed_child, m3refs.read_config = _hook_child, _bed_child, read_config
     try:
         m3refs.theme_refs(SPEC)
     finally:
-        MP.hook_child, m3refs.read_config = shared_child, shared_read
+        MP.hook_child, MP.bed_child, m3refs.read_config = shared
 
 
 EXPORTS = {'theme_brass_trailer': export}
