@@ -20,21 +20,23 @@ pub mod voice;
 
 pub use card::{CARD, card};
 pub use look::TubaLook;
+pub use sound::TubaSound;
+pub use voice::TubaVoice;
 
 /// `fighters.look('TUBA', P, k)`.
 pub fn look() -> Option<Box<dyn Look>> {
     Some(Box::new(TubaLook::new()))
 }
 
-/// Its instrument voice (`pp_bridge`'s entry), or `None` while it is not ported.
+/// Its instrument voice (`pp_bridge`'s entry).
 pub fn voice() -> Option<Arc<dyn Voice>> {
-    None
+    Some(Arc::new(TubaVoice))
 }
 
-/// `fighters.sound('TUBA', M, k)`: its part on side `k` of the fight `ff`, or `None` while it is not ported.
+/// `fighters.sound('TUBA', M, k)`: its part on side `k` of the fight `ff`.
 pub fn sound(k: usize, ff: &FightFile) -> Option<Box<dyn Sound>> {
-    let _ = (k, ff);
-    None
+    let _ = ff;
+    Some(Box::new(TubaSound::new(k)))
 }
 
 /// Its model (`data/models/TUBA.json`, written by its export), compiled in.
