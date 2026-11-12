@@ -1075,7 +1075,7 @@ def every_config_name_the_soundtrack_reads_is_recorded():
     """every config name kit/music.py, the moods and the fighters' parts read from T that kit/episode.py does not
     derive itself is recorded by read_config (the music, LINES, MUSIC_EXTRAS, THEME_OPTIONS), asserted fixed
     (LOOP_START), or a fighter part's own (OBBLIGATO: SOUSAPHONE's opt-in, which no kit config sets and no fight
-    file holds); MIX, SOLO and TITLE_HITS reach theme.json under the fight file's names"""
+    file holds); MIX, SOLO (a chord as a list of notes) and TITLE_HITS reach theme.json under the fight file's names"""
     import re
     kit = os.path.join(common.REPO, 'projects', 'ballfight', 'kit')
     files = ['music.py'] + [os.path.join(d, f) for d in ('moods', 'fighters')
@@ -1098,8 +1098,11 @@ def every_config_name_the_soundtrack_reads_is_recorded():
     c = m3refs.read_config('ballfight_flute_vs_clarinet')
     assert c['mix']['clarinet'] == [2.4, 0.35] and set(c['title_hits']) == {'FLUTE', 'CLARINET'}, c.get('mix')
     assert all(len(n) == 3 and isinstance(n[1], int) for v in c['solos'].values() for n in v), c['solos']
-    c = m3refs.read_config('ballfight_electric_vs_acoustic')          # ACOUSTIC's solo strums chords: not held
-    assert set(c['solos']) == {'ELECTRIC'}, sorted(c['solos'])
+    c = m3refs.read_config('ballfight_electric_vs_acoustic')          # ACOUSTIC's solo strums chords: held as lists
+    assert set(c['solos']) == {'ELECTRIC', 'ACOUSTIC'}, sorted(c['solos'])
+    acoustic = c['solos']['ACOUSTIC']
+    assert acoustic[6] == [3.0, [40, 47, 52, 55, 59, 64], 1.0] and acoustic[0] == [0.0, 40, 0.5], acoustic[:7]
+    assert [e[0] for e in acoustic if isinstance(e[1], list)] == [3.0, 6.0, 10.0, 12.0], acoustic
     return f"the soundtrack reads {', '.join(sorted(read - derived))} from a config: each is recorded, fixed " \
            f"(LOOP_START) or a fighter part's own (OBBLIGATO)"
 

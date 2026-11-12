@@ -453,4 +453,125 @@ mod tests {
         let e = window_range(61 * SR, 60 * SR, 0).unwrap_err();
         assert!(e.contains("an empty window at sample"), "{e}");
     }
+
+    /// The ACOUSTIC's solo with chords in it (a chord is a strum, down on the beat, up on the off-beats; a number
+    /// a picked note), against the kit's `Sound.solo` on an empty mix: the whole 'solo' bus's SHA-256 (float64,
+    /// little-endian), as `tools/studio_export/unit_checks/acoustic_solo_vectors.py` printed it. The fight is the
+    /// kit config `ballfight_electric_vs_acoustic` (seed 418, its handicap, 126 BPM) fought by the engine: the kit's
+    /// `T.BEAT`, `T_REASSEMBLE` and `P.T_SOLO` bit for bit. Each case from a fresh build (an empty note cache, the
+    /// noise stream at its start), as the script resets the kit.
+    #[test]
+    fn the_acoustic_strums_the_chords_of_its_solo() {
+        use super::{Mix, Show, SoundBuild, fight};
+        use bf_core::fightfile::FightFile;
+        use bf_core::fightfile::SoloNote::{self, Chord, Note};
+        use sha2::{Digest, Sha256};
+        let em = || Chord(vec![40, 47, 52, 55, 59, 64]);
+        // projects/ballfight_electric_vs_acoustic/episode.py SOLO['ACOUSTIC']
+        #[rustfmt::skip]
+        let config: Vec<(f64, SoloNote, f64)> = vec![
+            (0.0, Note(40), 0.5), (0.5, Note(55), 0.5), (1.0, Note(59), 0.5), (1.5, Note(64), 0.5),
+            (2.0, Note(52), 0.5), (2.5, Note(59), 0.5), (3.0, em(), 1.0), (4.0, Note(48), 0.5), (4.5, Note(55), 0.5),
+            (5.0, Note(60), 0.5), (5.5, Note(64), 0.5), (6.0, Chord(vec![48, 52, 55, 60, 64]), 0.5),
+            (6.5, Note(67), 0.5), (7.0, Note(64), 0.5), (7.5, Note(60), 0.5), (8.0, Note(43), 0.5),
+            (8.5, Note(55), 0.5), (9.0, Note(59), 0.5), (9.5, Note(67), 0.5), (10.0, Chord(vec![50, 57, 62, 66]), 0.5),
+            (10.5, Note(66), 0.5), (11.0, Note(62), 0.5), (11.5, Note(57), 0.5), (12.0, em(), 2.0),
+        ];
+        // projects/ballfight/examples/ukulele_vs_acoustic/episode.py SOLO['ACOUSTIC']: strums on the off-beats too
+        let am = || Chord(vec![45, 52, 57, 60, 64]);
+        let g = || Chord(vec![43, 47, 50, 55, 59, 67]);
+        let e = || Chord(vec![40, 47, 52, 56, 59, 64]);
+        #[rustfmt::skip]
+        let ukulele: Vec<(f64, SoloNote, f64)> = vec![
+            (0.0, am(), 0.5), (0.5, Note(64), 0.25), (0.75, Note(65), 0.25), (1.0, Note(64), 0.25),
+            (1.25, Note(62), 0.25), (1.5, Note(60), 0.5), (2.0, g(), 0.25), (2.25, g(), 0.25), (2.5, g(), 0.25),
+            (2.75, g(), 0.25), (3.0, Note(59), 0.5), (3.5, Note(57), 0.5),
+            (4.0, Chord(vec![41, 48, 53, 57, 60, 65]), 0.5), (4.5, Note(57), 0.25), (4.75, Note(60), 0.25),
+            (5.0, Note(65), 0.5), (5.5, Note(64), 0.5), (6.0, e(), 0.25), (6.25, e(), 0.25), (6.5, e(), 0.25),
+            (6.75, e(), 0.25), (7.0, Note(52), 0.25), (7.25, Note(53), 0.25), (7.5, Note(56), 0.25),
+            (7.75, Note(59), 0.25), (8.0, am(), 0.5), (8.5, Note(69), 0.25), (8.75, Note(72), 0.25),
+            (9.0, Note(76), 0.5), (9.5, Note(72), 0.25), (9.75, Note(69), 0.25), (10.0, e(), 0.25),
+            (10.25, e(), 0.25), (10.5, Note(64), 0.25), (10.75, Note(68), 0.25),
+            (11.0, Chord(vec![45, 52, 57, 60, 64, 69]), 1.0),
+        ];
+        // (case, solo, t0, entries before the reassembly, SHA-256), as the script printed them; every bus is
+        // 3,408,000 frames (the mix's 65 s and the six seconds a bus has more)
+        let t_solo = "0x1.ab00000000000p+5";
+        #[rustfmt::skip]
+        let cases = [
+            ("config", &config, t_solo, 15, "17cd661cdf54d034fa2d35e019259608bcff6a0959f9d4d37c90e7935ee63313"),
+            ("config_early", &config, "0x1.6e00000000000p+5", 24,
+             "1bb1185535d379e703421f2765ddc5d955a517490fd51fd0081063bf1ea2d0c5"),
+            ("ukulele", &ukulele, t_solo, 25, "bcf291bff7f02ccf65b63e72619643515c4ed8e636bc54c412cef32d58d839ad"),
+        ];
+        // the config's fight on the example's fight file: ELECTRIC left, ACOUSTIC right, DMG_SIDE, BPM, SEED
+        let text = std::fs::read_to_string(bf_testdata::repo_root().join("studio/fights/flute_vs_trombone.toml"))
+            .expect("the example fight file");
+        let mut base = FightFile::parse(&text).expect("it parses");
+        base.fighters = vec!["ELECTRIC".into(), "ACOUSTIC".into()];
+        base.handicap = vec![0.92, 1.33];
+        base.tempo_bpm = 126.0;
+        base.seed = Some(418);
+        base.pair_rules.clear();
+        base.music.lines.clear();
+        base.music.roles.clear();
+        base.music.title_hits.clear();
+        base.music.solos.clear();
+        let setup = bf_sim::setup_from(&base, fight::roster(), 418).expect("the setup");
+        let rec = bf_sim::run(&setup, true).expect("the fight");
+        let hex = bf_testdata::parse_hex_f64;
+        // the whole 'solo' bus of the ACOUSTIC's solo from t0, from a fresh build: its SHA-256 (float64, little-endian)
+        let solo_sha = |ff: &FightFile, t0: f64| -> String {
+            let show = Show::new(&rec, ff).expect("the show");
+            let b = SoundBuild::new(&show, &rec, ff).expect("the build");
+            let mut mix = Mix::new(show.grid.dur + 4.0);
+            b.sounds[1]
+                .solo(&b.ctx, b.bed.as_ref(), &mut mix, t0)
+                .expect("the solo");
+            assert_eq!(mix.bus_names(), ["solo"], "the buses");
+            let x = mix.bus("solo").expect("the solo bus");
+            assert_eq!(x.len(), 3_408_000, "the bus length");
+            let mut h = Sha256::new();
+            for v in x.as_flattened() {
+                h.update(v.to_le_bytes());
+            }
+            h.finalize().iter().map(|b| format!("{b:02x}")).collect()
+        };
+        for (what, solo, t0, played, sha) in cases {
+            let mut ff = base.clone();
+            ff.music.solos.insert("ACOUSTIC".into(), solo.clone());
+            ff.validate(&bf_content::name_status).expect("a valid fight file");
+            let show = Show::new(&rec, &ff).expect("the show");
+            let g = &show.grid;
+            assert_eq!(
+                (
+                    g.beat.to_bits(),
+                    g.t_reassemble.to_bits(),
+                    show.win,
+                    show.t_solo.to_bits()
+                ),
+                (
+                    hex("0x1.e800000000000p-2").to_bits(),
+                    hex("0x1.c980000000000p+5").to_bits(),
+                    1,
+                    hex(t_solo).to_bits()
+                ),
+                "the kit's T.BEAT, T_REASSEMBLE, WIN and T_SOLO"
+            );
+            let t0 = hex(t0);
+            let before = solo
+                .iter()
+                .filter(|(bt, _, _)| t0 + bt * g.beat <= g.t_reassemble - 0.05)
+                .count();
+            assert_eq!(before, played, "{what}: the entries before the reassembly");
+            assert_eq!(solo_sha(&ff, t0), sha, "{what}: the solo bus");
+            // negative control: every chord picked as its first note instead must not give the kit's bus
+            if what == "ukulele" {
+                let picked: Vec<(f64, SoloNote, f64)> =
+                    solo.iter().map(|(b, n, d)| (*b, Note(n.notes()[0]), *d)).collect();
+                ff.music.solos.insert("ACOUSTIC".into(), picked);
+                assert_ne!(solo_sha(&ff, t0), sha, "{what}: chords picked as single notes");
+            }
+        }
+    }
 }
