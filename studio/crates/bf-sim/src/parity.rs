@@ -238,7 +238,7 @@ fn apart(rec: &Recording, i: usize) -> Option<f64> {
         return None;
     };
     let p = data.get(4 * i..4 * i + 4)?;
-    Some(dmath::hypot(p[2] - p[0], p[3] - p[1]) - 2.0 * rule(rec, "R")?)
+    Some(dmath::np_hypot(p[2] - p[0], p[3] - p[1]) - 2.0 * rule(rec, "R")?)
 }
 
 /// A report that ends at `t` with a break.
@@ -680,7 +680,7 @@ pub fn clash_margin(setup: &crate::fight::Setup, t: f64) -> Option<f64> {
                 alone.balls[k].p
             };
             let (p, q) = (flown(0), flown(1));
-            return Some(dmath::hypot(q[0] - p[0], q[1] - p[1]) - 2.0 * fight.rules.r);
+            return Some(dmath::np_hypot(q[0] - p[0], q[1] - p[1]) - 2.0 * fight.rules.r);
         }
         if fight.balls.iter().any(|b| b.hp <= 0.0) {
             return None;

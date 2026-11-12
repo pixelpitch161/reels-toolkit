@@ -144,7 +144,10 @@ def check_recording(P, path=None):
             else:
                 common.same(common.plain(run[k]), a, k)
         # what the renderer itself took from the run
-        assert rec['events'] == [list(e) for e in P.EV] and rec['t_ko'] == P.T_KO and rec['winner'] == P.WIN
+        # (value for value: an event may hold a tuple, PIANO's pitches in `roll` and `runoff`, which a recording
+        # reads back as a list, so `==` on the two would refuse the same fight)
+        common.same([list(e) for e in P.EV], rec['events'], 'the renderer\'s events')
+        assert rec['t_ko'] == P.T_KO and rec['winner'] == P.WIN
         assert rec['names'] == list(P.NAMES) and len(rec['arrays']['HP']) == P.NSIM
     except AssertionError as ex:
         raise SystemExit(f'{where} is not the fight the kit draws (differs at: {ex}). Export the recording again '

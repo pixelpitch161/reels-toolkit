@@ -26,7 +26,7 @@ use serde_json::Value;
 
 use crate::fight;
 use crate::look::on_threads;
-use crate::refs::{cache_json, committed_recording, fighter_folder, index, json, list, num, report, sha, text};
+use crate::refs::{cache_json, fighter_folder, index, json, list, num, recording_of, report, sha, text};
 
 fn got(r: &CheckResult, key: &str) -> f64 {
     *r.numbers
@@ -342,7 +342,7 @@ pub fn check_fight(folder: &str, scope: &str, rec: Recording, ff: &FightFile, ki
 pub fn fighter_checks(name: &str) {
     let folder = fighter_folder(name);
     let fd = fight::doc(name);
-    let rec = committed_recording(text(&fd["left"]["file"]), Some(text(&fd["left"]["hash"])));
+    let rec = recording_of(&fd["left"], Some(text(&fd["left"]["hash"])));
     let kit = json(&folder, "checks.json");
     check_fight(&folder, "left", rec, &fight::fight_file(&fd, false), &kit);
 }
