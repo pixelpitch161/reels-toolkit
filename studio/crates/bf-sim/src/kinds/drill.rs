@@ -1191,8 +1191,8 @@ mod kit_vectors {
         f.t = m.t_blast;
         f.balls[0].blade_len = 2.24;
         tick(&mut f, 0, 18);
-        // the blast's event: every field the kit's bits but its angle, an output of `math.atan2`, where `dmath::atan2`
-        // is one step off the C runtime's here (the kit: -0x1.5f6e95e3ac9c7p-1)
+        // the blast's event: every field the kit's bits, its angle too (an output of `math.atan2`, where the old
+        // `dmath::atan2` was one step off the C runtime's: ruling M3-R38)
         let e = &f.events[n];
         assert_eq!(f.events.len(), n + 1);
         assert_eq!((hx(e.t).as_str(), e.kind.as_str()), ("0x1.d09691a75cd0cp+3", "blast"));
@@ -1208,11 +1208,7 @@ mod kit_vectors {
         );
         let kit_angle = -f64::from_bits(0x3fe5_f6e9_5e3a_c9c7);
         assert_eq!(hx(kit_angle), "-0x1.5f6e95e3ac9c7p-1");
-        assert!(
-            (e.f(5).to_bits() as i64 - kit_angle.to_bits() as i64).abs() <= 1,
-            "{}",
-            hx(e.f(5))
-        );
+        assert_eq!(hx(e.f(5)), hx(kit_angle));
         assert!(f.balls[0].march.is_none());
         let bl = f.drill.blast[0].clone().expect("the blast");
         assert_eq!(vec(&bl.o), "[0x1.f23cafb55c6a1p+0, -0x1.e9ef951c0456ap+0]");
@@ -1273,8 +1269,7 @@ mod kit_vectors {
             ([0.25, -0.5], true, true, "[0x0.0p+0, 0x0.0p+0]"),
         ];
         // The verdicts are the kit's. The offset is the kit's bits when `rel @ d` is added as numpy adds it on the
-        // reference PC, with a fused multiply-add (shown here); the engine's dot products are plain sums (ruling
-        // M3-R30), which moves the offset by a few last bits of a small difference.
+        // reference PC, with a fused multiply-add (shown here), which is what `geom::dot` does (ruling M3-R39).
         for (p, cone, lane, off) in cases {
             let rel = geom::sub(p, o);
             let s = py_min(2.24, py_max(0.0, dmath::fma(rel[1], d[1], rel[0] * d[0])));

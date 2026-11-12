@@ -1,8 +1,10 @@
 //! Parity with the Python kit: how long this engine's fight and the Python recording of the same fight agree.
 //!
-//! The two engines are not equal bit for bit: the maths differ in the last bit now and then (numpy's dot product of
-//! two 2-vectors is fused on the reference PC, the engine's is the plain sum), and a fight is chaotic, so the two
-//! drift apart. The bar is a window: from frame `f0`, every event and every per-frame value agree to
+//! The engine's arithmetic is the kit's on the reference PC (its maths library, its two hypots, numpy's fused dot
+//! product of two 2-vectors: rulings M3-R35, M3-R38, M3-R39), and the merged fighters' fights agree with the kit's
+//! to their ends with no difference at all. A port that takes another function than its kit line calls is a last
+//! bit away somewhere, and a fight is chaotic, so the two then drift apart: this is the measure that shows it.
+//! The bar is a window: from frame `f0`, every event and every per-frame value agree to
 //! [`PREFIX_TOL`] for at least [`PREFIX_FLOOR_S`] seconds of fighting. [`prefix_window`] measures the window of one
 //! fight and says in words what ended it:
 //!

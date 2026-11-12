@@ -230,7 +230,7 @@ fn colour_thins_and_drives_with_the_hp() {
     let plain = synth::hp(&x, 90.0, FILTER_O);
     let want: Vec<f64> = plain
         .iter()
-        .map(|&v| dmath::tanh(1.0 * v * 1.2) / dmath::tanh(1.2) * 1.0)
+        .map(|&v| dmath::np_tanh(1.0 * v * 1.2) / dmath::np_tanh(1.2) * 1.0)
         .collect();
     assert_eq!(y, want);
     // The gain follows the lead: 6 dB for a full bar, kept between -4 and +3.5 dB.
@@ -244,7 +244,7 @@ fn colour_thins_and_drives_with_the_hp() {
         colour_hp(&x, 100.0, 100.0, 1.0, &low).unwrap().0,
         synth::hp(&x, 30.0, FILTER_O)
             .iter()
-            .map(|&v| dmath::tanh(v * 1.2) / dmath::tanh(1.2))
+            .map(|&v| dmath::np_tanh(v * 1.2) / dmath::np_tanh(1.2))
             .collect::<Vec<_>>()
     );
     assert_eq!(

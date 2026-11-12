@@ -90,7 +90,8 @@ pub fn thrust_step(fight: &mut Fight, k: usize, dt: f64) {
     let live = if u < t_out {
         let e = u / t_out;
         // rest + (B.blade_len - rest) * (1 - (1 - e) ** 2)
-        b.ext = rest + (b.blade_len - rest) * (1.0 - (1.0 - e) * (1.0 - e));
+        // a Python float squared with `**` is the C runtime's pow(x, 2.0), one step from the product now and then
+        b.ext = rest + (b.blade_len - rest) * (1.0 - dmath::pow(1.0 - e, 2.0));
         true
     } else if u < t_out + t_hold {
         b.ext = b.blade_len;
@@ -114,13 +115,15 @@ pub fn thrust_step(fight: &mut Fight, k: usize, dt: f64) {
         let reach = fight.rules.key_r + 0.04;
         let enemy = |own: usize| own != k;
         if fight.keys.iter().any(|key| enemy(key.own)) {
+            let rows = fight.keys.len();
             let hit: Vec<bool> = fight
                 .keys
                 .iter()
                 .map(|key| {
                     let rel = geom::sub(key.p, a);
-                    // s_ = np.clip(rel @ d, 0, L_); dd = np.hypot(*(rel - s_[:, None] * d[None]).T)
-                    let s = geom::np_clip(geom::dot(rel, d), 0.0, l);
+                    // s_ = np.clip(rel @ d, 0, L_); dd = np.hypot(*(rel - s_[:, None] * d[None]).T): `rel` is the
+                    // array of every key, so the product is a matrix times a vector
+                    let s = geom::np_clip(geom::dot_mv(rel, d, rows), 0.0, l);
                     let dd = geom::hypot([rel[0] - s * d[0], rel[1] - s * d[1]]);
                     enemy(key.own) && dd < reach
                 })

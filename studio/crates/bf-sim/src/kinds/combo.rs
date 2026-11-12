@@ -159,8 +159,9 @@ pub fn step(f: &mut Fight, k: usize, dt: f64) {
         }
         let e = geom::py_min(1.0, u / t_out);
         let b_p = f.balls[k].p;
-        // ext = B.blade_len * (1 - (1 - e) ** 2)
-        let ext = f.balls[k].blade_len * (1.0 - (1.0 - e) * (1.0 - e));
+        // ext = B.blade_len * (1 - (1 - e) ** 2): a Python float squared with `**` is the C runtime's pow(x, 2.0),
+        // one step from the product now and then
+        let ext = f.balls[k].blade_len * (1.0 - dmath::pow(1.0 - e, 2.0));
         let d = [dmath::cos(p.th), dmath::sin(p.th)];
         // a0 = B.p + d * R * 0.8 + np.array([-d[1], d[0]]) * P['off']
         let a0 = [

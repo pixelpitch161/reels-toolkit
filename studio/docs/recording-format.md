@@ -475,13 +475,31 @@ the row plus 0.4 of its direction, strength `knock`.
 <!-- kind:rake -->
 #### `rake` (weapon kind of ACOUSTIC)
 
-`fight.py` 528 to 565, 457 to 501, 585 to 700. Not ported yet: its port fills this section in (the meaning of each
-field, as 6.2 and 6.3 do for FLUTE and TROMBONE), from the lines below.
+`fight.py` 528 to 564 (`fire_rake`, `aim_blend`, `rake_lateral`, `sweep_front`), the rake branch of
+`surf_rake_step` (610 to 629) and the `dc` 16th block of `run()` (5964 to 5974); the engine's
+`bf-sim/src/kinds/rake.rs` and `bf-core/src/roster/kinds/rake.rs` (the two closed-form motions, which a look calls
+too). Every `every` beats on the dash / cone 16th grid (haste divides it) six strings `blade_len` long sweep across the
+ring in front of the ball in `stroke` s, alternating down (+1) and up (-1), the first a down; one hit per stroke.
 
-**Record keys.** None of its own.
+**Record keys.** None of its own. What a recording of a rake shows of it, in the shared keys:
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+- `BL`: the strings' length: `base` (1.2), plus `grow` (0.03) per landed stroke on the weapon's own grid, up to
+  `max_len` (3.0).
+- `TH` stays at its start (the rake has no aim of its own between strokes), `FR` stays 0.
+
+**Events and hits** (`e[0]` is the time, `e[1]` the kind, `e[2]` the ACOUSTIC's side):
+
+- `rake` (542): a stroke starts. `e[3]` 1 on the weapon's own grid, 0 for a haste's extra stroke (int); `e[4]` the
+  strings' length; `e[5]`, `e[6]` where the ball is (the stroke's origin `c`); `e[7]` the aim in radians (-pi to pi:
+  `aim_blend` of the enemy's direction and the ball's heading, `aim_k`); `e[8]` the direction, 1.0 down or -1.0 up;
+  `e[9]` the sweep to either side (`sweep`); `e[10]` the stroke's seconds (`stroke`). The bundle's middle is
+  `rake_lateral(t - e[0], e[10], e[9], e[8])` across the aim, from `-dir * sweep` to `dir * sweep`.
+- `hit` with `e[7] = "rake"` (624): a stroke lands. As every hit: `e[3]` the victim, `e[4]` the damage (`dmg`, or
+  `dmg` x `sub_dmg` off the grid, x the scales), `e[5]`, `e[6]` where the strings cross the enemy; `e[8]` 1 for a
+  down stroke, 0 for an up (int).
+
+The lines below that belong to the older kinds sharing these functions (`dash`, `cone`, `surf`, the ability `spout`)
+are not ported; the whip and sweep lines are the abilities `whip` and `sweep` (their sections).
 
 - 542: `self.ev('rake', k, int(main), float(B.blade_len), float(B.p[0]), float(B.p[1]), float(aim), float(B.rake_dir), float(S), float(w['stroke']))`
 - 472: `self.damage(k, 1 - k, w['dmg'] * (1.0 if B.dash_main else w.get('sub_dmg', 0.5)), 'dash', hx, hy, int(B.dash_main))`
@@ -1560,32 +1578,41 @@ and 6.3 do for FLUTE and TROMBONE), from the lines below.
 <!-- kind:whip -->
 #### `whip` (ability kind of ACOUSTIC)
 
-`fight.py` 2872 to 2873, 566 to 584. Not ported yet: its port fills this section in (the meaning of each field, as 6.2
-and 6.3 do for FLUTE and TROMBONE), from the lines below.
+`fight.py` 2872 to 2873, `ab_x33` 566 to 572, the whips of `surf_rake_step` 630 to 658; the engine's
+`bf-sim/src/abilities/x33.rs`. FINGERPICK: `n` strings flick out over `beats` beats, each aimed at the enemy then,
+reaching `len` beyond the surface in `t_ext` s and snapping back as fast; each hits once.
 
 **Record keys.** None of its own.
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+**Events and hits** (`e[2]` the owner's side; the ability's own `ability` event comes first, from `trigger`):
 
-- 577: `self.ev('sweep', k, float(B.p[0]), float(B.p[1]), float(aim), float(ab['reach']), float(ab['beats'] * self.R.beat))`
-- 583: `self.ev('spout', k, float(p[0]), float(p[1]), float(aim))`
+- `whip` (641): a string goes out. `e[3]` its place in the whip, from 0 (int); `e[4]` its aim in radians (-pi to pi);
+  `e[5]` its length (`len`).
+- `hit` with `e[7] = "whip"` (655): a string lands. As every hit: `e[3]` the victim, `e[4]` the damage, `e[5]`,
+  `e[6]` the point on the string nearest the enemy; `e[8]` the string's place (int).
+
+The lines the stub listed (577 `sweep`, 583 `spout`) are the sweep's (its section) and an older kind's.
 
 <!-- /kind:whip -->
 
 <!-- kind:sweep -->
 #### `sweep` (ability kind of ACOUSTIC)
 
-`fight.py` 2872 to 2873, 566 to 584. Not ported yet: its port fills this section in (the meaning of each field, as 6.2
-and 6.3 do for FLUTE and TROMBONE), from the lines below.
+`fight.py` 2872 to 2873, `ab_x33` 573 to 577, the sweeps of `surf_rake_step` 659 to 670; the engine's
+`bf-sim/src/abilities/x33.rs`. BIG STRUM: all six strings sweep the whole ring from the ball along its aim at the
+enemy, the front at `R + reach * x ** 1.5` (`sweep_front`, x the share of `beats` beats gone); it hits once.
 
 **Record keys.** None of its own.
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+**Events and hits** (`e[2]` the owner's side; after the ability's `ability` event):
 
-- 577: `self.ev('sweep', k, float(B.p[0]), float(B.p[1]), float(aim), float(ab['reach']), float(ab['beats'] * self.R.beat))`
-- 583: `self.ev('spout', k, float(p[0]), float(p[1]), float(aim))`
+- `sweep` (577): the strum. `e[3]`, `e[4]` where the ball is (the origin `c`); `e[5]` the aim in radians (-pi to
+  pi); `e[6]` the reach (`reach`); `e[7]` its seconds (`beats` x the beat).
+- `hit` with `e[7] = "sweep"` (668): the front passes the enemy (its centre within -1.2 R to R of it). As every hit:
+  `e[3]` the victim, `e[4]` the damage, `e[5]`, `e[6]` the enemy's near side (its centre less R along the aim);
+  `e[8]` 0.
+
+The line 583 (`spout`) is an older kind's.
 
 <!-- /kind:sweep -->
 

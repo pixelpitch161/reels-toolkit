@@ -8,11 +8,12 @@
 //! turns it into a sentence on screen (`engine::Ctx::spawn`), and the hook runs once per panic, before that catch,
 //! so the fault is recorded once. The hook never ends the process itself.
 //!
-//! **What a report holds:** the app's version and commit, Windows' version numbers, the time (in UTC, which also
+//! **What a report holds:** the app's version and commit, Windows' version numbers, the maths check's line
+//! ([`maths_line`]: whether this PC's maths gives the reference PC's bits), the time (in UTC, which also
 //! names the file, with the PC's clock time beside it), the thread's name, the
 //! panic's message (at most [`MAX_MESSAGE`] characters), its file and line, and the stack. **What it never holds:**
 //! settings values, file contents, environment variables, captions or anything else typed into the app: the hook
-//! adds nothing but those seven things. A message or stack that names a path under the owner's user folder
+//! adds nothing but those eight things. A message or stack that names a path under the owner's user folder
 //! (`%USERPROFILE%`) has that folder written as `%USERPROFILE%`, so the owner's user name does not appear. A report
 //! is at most [`MAX_BYTES`] long, and only the newest [`KEEP`] are kept.
 //!
@@ -62,6 +63,15 @@ struct Hook {
 
 static HOOK: OnceLock<Hook> = OnceLock::new();
 
+/// [`bf_core::dmath::check`]'s line, worked out once (by [`install_hook`], so the hook itself only reads it).
+static MATHS: OnceLock<String> = OnceLock::new();
+
+/// One plain line saying whether this PC's maths gives the reference PC's bits (`bf_core::dmath::check`), for the
+/// start log and every fault report. A warning here means fights on this PC can differ slightly from the reference.
+pub fn maths_line() -> &'static str {
+    MATHS.get_or_init(|| bf_core::dmath::check().text)
+}
+
 thread_local! {
     /// Whether this thread is inside the hook already.
     static IN_HOOK: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
@@ -71,6 +81,7 @@ thread_local! {
 /// the message box. The thread that calls it is the interface thread. Only the first call counts; a second does
 /// nothing.
 pub fn install_hook(logs: Option<PathBuf>) {
+    maths_line();
     let hook = Hook {
         logs,
         home: home_forms(user_folder().as_deref()),
@@ -215,6 +226,7 @@ pub fn crash_text(message: &str, location: &str, thread: &str, backtrace: &str, 
     _ = writeln!(text);
     _ = writeln!(text, "App: {}", crate::version::version_text());
     _ = writeln!(text, "Windows: {}", windows_version());
+    _ = writeln!(text, "{}", maths_line());
     _ = writeln!(text, "Time: {when}");
     _ = writeln!(text, "Thread: {thread}");
     _ = writeln!(text, "Place: {location}");
@@ -590,6 +602,7 @@ mod tests {
             "bf_app::thing",
             "2026-11-12 09:30:05",
             "Windows",
+            "Maths",
         ] {
             assert!(text.contains(wanted), "{wanted:?} is missing from:\n{text}");
         }

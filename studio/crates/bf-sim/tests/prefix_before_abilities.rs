@@ -10,9 +10,9 @@
 //! The window ends at the first `ability` event (the abilities are the next task's): the events before it in the
 //! list, and the frames recorded before its step.
 //!
-//! The bar is a tolerance, not equal bits: the two engines' maths differ in the last bit now and then (the
-//! transcendentals, and numpy's fused dot product of two 2-vectors on the reference PC, where the engine takes the
-//! plain sum). Each test prints, per recording, how long the window is, what ended it, how many events of each kind
+//! The bar is a tolerance, though the two engines now agree to the bit here (the engine's maths library and its
+//! 2-vector products are the kit's on the reference PC: rulings M3-R38, M3-R39). Each test prints, per recording,
+//! how long the window is, what ended it, how many events of each kind
 //! it holds and the largest differences seen: run with `--nocapture` to read them.
 
 mod support;

@@ -832,12 +832,9 @@ fn the_gradient_before_the_dither_is_pythons() {
     // Python: the array title._panel_rgb hands to PATTERNS[name] (the gradient, not yet dithered) for the FLUTE's
     // and for the TROMBONE's colours, at [y, x].
     //
-    // The gradient's `k ** 1.3` is the C runtime's pow in Python and dmath's here, and the two differ in the last
-    // bit for 21,097 of the frame's 230,400 pixels (9 %). Where they agree the gradient is Python's to the bit
-    // (measured on the whole frame for both panels, and with Python's k on every pixel): that is what the
-    // pixels here test, the order of the gradient's products and sums. The pixel (311, 17) is one where the two
-    // pows differ; the gradient is then one unit in the last place away, and the dither still gives Python's
-    // band there, as on every pixel of every panel compared.
+    // The gradient's `k ** 1.3` is the C runtime's pow in Python, and `dmath::pow` is that to the bit (ruling
+    // M3-R38), so every pixel here is Python's to the bit. The pixel (311, 17) is one of the 21,097 of the frame's
+    // 230,400 (9 %) where the old pow (musl's) was one unit in the last place away.
     const OTHER_POW: (usize, usize) = (311, 17);
     #[rustfmt::skip]
     let cases: [(usize, usize, [&str; 3], [&str; 3]); 10] = [
@@ -868,21 +865,15 @@ fn the_gradient_before_the_dither_is_pythons() {
         seen.expect("the pattern is handed the gradient")
     };
     let (flute, trombone) = (gradient(FLUTE.0, FLUTE.1), gradient(TROMBONE.0, TROMBONE.1));
-    let mut last_bits = 0;
     for (x, y, a, b) in cases {
         for c in 0..3 {
             for (name, got, want) in [("FLUTE", &flute, a[c]), ("TROMBONE", &trombone, b[c])] {
                 let (got, want) = (got.px(x, y)[c], parse_hex_f64(want));
-                if (x, y) == OTHER_POW {
-                    near(got, want);
-                    last_bits += usize::from(got.to_bits() != want.to_bits());
-                } else {
-                    assert_eq!(got.to_bits(), want.to_bits(), "{name} [{y}, {x}, {c}]");
-                }
+                assert_eq!(got.to_bits(), want.to_bits(), "{name} [{y}, {x}, {c}]");
             }
         }
     }
-    assert!(last_bits > 0, "the pixel where the two pows differ no longer shows it");
+    assert!(cases.iter().any(|c| (c.0, c.1) == OTHER_POW));
     // and there, too, the finished panel is Python's: title._panel_rgb(...)[17, 311] with the FLUTE's colours
     let plain = panels::panel_rgb(FLUTE.0, FLUTE.1, |_| {});
     assert_eq!(plain.px(OTHER_POW.0, OTHER_POW.1), &[153.0, 178.5, 204.0]);

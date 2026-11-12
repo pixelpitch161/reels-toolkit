@@ -174,13 +174,15 @@ pub fn beams_step(f: &mut Fight, _dt: f64) {
         // True (`roster` refuses the key on a ported weapon)
         if !f.keys.is_empty() {
             let rk = f.rules.key_r;
+            let rows = f.keys.len();
             let mask: Vec<bool> = f
                 .keys
                 .iter()
                 .map(|key| {
                     let relk = geom::sub(key.p, bm.o);
-                    // sk = np.clip(relk @ Bm['d'], 0.0, Bm['len'])
-                    let sk = geom::np_clip(geom::dot(relk, bm.d), 0.0, bm.len);
+                    // sk = np.clip(relk @ Bm['d'], 0.0, Bm['len']): `relk` is the array of every key, so the
+                    // product is a matrix times a vector
+                    let sk = geom::np_clip(geom::dot_mv(relk, bm.d, rows), 0.0, bm.len);
                     let dk = geom::hypot([relk[0] - sk * bm.d[0], relk[1] - sk * bm.d[1]]);
                     key.own == o && dk < bm.w / 2.0 + rk
                 })
