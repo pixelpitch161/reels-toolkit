@@ -1,0 +1,14 @@
+# The engine's self-replay hashes of TRUMPET (studio/reference/fighters/trumpet/fight.json's config): both side orders,
+# seeds 1, 2, 3, 500 and 1 << 40. Written by the proving harness with BF_BLESS=1 on the Windows reference PC;
+# every PC and every build must give the same lines. Do not edit by hand.
+# left right seed winner t_ko n_events hash
+TRUMPET FLUTE 1 1 54.42156862745098 689 a1e9d3a95b3421c5
+TRUMPET FLUTE 2 1 55.66323529411764 683 5efe738936020065
+TRUMPET FLUTE 3 - - 642 f43e35b5cf76bc88
+TRUMPET FLUTE 500 - - 616 f8a55106b6300912
+TRUMPET FLUTE 1099511627776 0 52.521568627450975 698 acff5bf79ad9966b
+FLUTE TRUMPET 1 - - 660 cb051cb0e3aea223
+FLUTE TRUMPET 2 - - 640 f878dd6180dbf74c
+FLUTE TRUMPET 3 - - 655 03287ba3bcb29617
+FLUTE TRUMPET 500 0 55.92990196078431 710 782410b193573619
+FLUTE TRUMPET 1099511627776 - - 674 1f44e6b7dfac8524
