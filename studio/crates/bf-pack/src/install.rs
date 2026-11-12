@@ -1252,7 +1252,17 @@ pub fn shortcuts_said(layout: &Layout) -> String {
     }
 }
 
-/// Whether the file at `link` is a shortcut that opens this layout's installed exe.
+/// Whether `p` is a full path on a local drive letter (`C:\...`), read from its text alone: no `\\host\share`, no
+/// `\\?\` or `\\.\` form, nothing relative.
+pub(crate) fn on_a_drive_letter(p: &Path) -> bool {
+    let Some(text) = p.to_str() else { return false };
+    let b = text.as_bytes();
+    b.len() >= 3 && b[0].is_ascii_alphabetic() && b[1] == b':' && b[2] == b'\\'
+}
+
+/// Whether the file at `link` is a shortcut that opens this layout's installed exe. A shortcut whose target is not a
+/// path on a local drive letter is not ours, decided from its bytes before any lookup, so a planted shortcut to
+/// `\\host\share\...` never makes install or removal contact that host.
 pub fn opens_the_app(link: &Path, layout: &Layout) -> bool {
     if is_link(link) || !link.is_file() {
         return false;
@@ -1261,7 +1271,9 @@ pub fn opens_the_app(link: &Path, layout: &Layout) -> bool {
         return false;
     };
     let Some(dir) = link.parent() else { return false };
-    lnk::target_at(&bytes, dir).is_some_and(|t| names(&t).is_some() && names(&t) == names(&layout.exe()))
+    lnk::target_at(&bytes, dir)
+        .filter(|t| on_a_drive_letter(t))
+        .is_some_and(|t| names(&t).is_some() && names(&t) == names(&layout.exe()))
 }
 
 /// The line printed before the source is copied.
@@ -1691,14 +1703,16 @@ pub mod lnk {
         (!path.is_empty()).then(|| PathBuf::from(path))
     }
 
-    /// The target of the link file in `link_dir` with these bytes: the LinkInfo path when there is one, else its
-    /// relative path (which Windows writes when it leaves the LinkInfo out, as it can for a path given partly in 8.3
-    /// short form) taken from `link_dir`. `None` when neither can be read.
+    /// The target of the link file in `link_dir` with these bytes: when the link has a LinkInfo section, its local path
+    /// (or `None`, as for a network link); only when it has none, its relative path (which Windows writes when it
+    /// leaves the LinkInfo out, as it can for a path given partly in 8.3 short form) taken from `link_dir`.
     pub fn target_at(bytes: &[u8], link_dir: &Path) -> Option<PathBuf> {
-        if let Some(t) = target(bytes) {
-            return Some(t);
-        }
         let flags = get32(bytes, 20)?;
+        // A link with a LinkInfo is read from it alone (one without a local path, such as a network link, gives
+        // nothing); the relative path is trusted only when the link has nothing else.
+        if flags & HAS_LINK_INFO != 0 {
+            return target(bytes);
+        }
         let relative = string_data(bytes, flags)?.relative?;
         if relative.is_empty() {
             return None;
@@ -2567,6 +2581,9 @@ pub(crate) mod tests {
         assert!(opens_the_app(&layout.desktop_link(), &layout));
     }
 
+    /// Needs a volume that makes 8.3 short names (the system drive normally does). On one that does not, there is
+    /// nothing to compare, so it passes early: the reason is printed on the error output, which the test runner
+    /// shows only with `--nocapture` or when a test fails.
     #[test]
     fn a_path_in_short_form_is_the_same_place() {
         let dir = TempDir::new("install-short");
@@ -2640,6 +2657,106 @@ pub(crate) mod tests {
         // Climbing above the drive gives nothing; cut-short bytes give nothing.
         assert!(lnk::target_at(&b, Path::new(r"C:\")).is_none());
         assert!(lnk::target_at(&b[..b.len() - 20], Path::new(r"C:\x")).is_none());
+    }
+
+    /// A link put together by hand: the header with `flags`, then `link_info` as given, then Unicode `strings`.
+    fn hand_link(flags: u32, link_info: &[u8], strings: &[&str]) -> Vec<u8> {
+        let mut b = Vec::new();
+        b.extend_from_slice(&0x4Cu32.to_le_bytes());
+        b.extend_from_slice(&[
+            0x01, 0x14, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46,
+        ]);
+        b.extend_from_slice(&flags.to_le_bytes());
+        b.resize(76, 0);
+        b.extend_from_slice(link_info);
+        for s in strings {
+            let units: Vec<u16> = s.encode_utf16().collect();
+            b.extend_from_slice(&(units.len() as u16).to_le_bytes());
+            b.extend(units.iter().flat_map(|u| u.to_le_bytes()));
+        }
+        b.extend_from_slice(&[0; 4]);
+        b
+    }
+
+    /// A LinkInfo whose local path (Unicode) is `path`.
+    fn link_info_with_local_path(path: &str) -> Vec<u8> {
+        let unicode: Vec<u8> = path.encode_utf16().chain([0]).flat_map(u16::to_le_bytes).collect();
+        let (vol, base, suffix, base_u) = (0x24u32, 0x24 + 17, 0x24 + 18, 0x24 + 19);
+        let suffix_u = base_u + unicode.len() as u32;
+        let mut li = Vec::new();
+        for n in [suffix_u + 2, 0x24, 1, vol, base, 0, suffix, base_u, suffix_u] {
+            li.extend_from_slice(&n.to_le_bytes());
+        }
+        for n in [17u32, 3, 0, 16] {
+            li.extend_from_slice(&n.to_le_bytes());
+        }
+        li.extend_from_slice(&[0, 0, 0]); // empty label, empty ANSI path, empty ANSI suffix
+        li.extend_from_slice(&unicode);
+        li.extend_from_slice(&[0, 0]);
+        li
+    }
+
+    #[test]
+    fn a_relative_path_is_used_only_when_there_is_no_link_info() {
+        const LINK_INFO_NAME_RELATIVE_UNICODE: u32 = 0x2 | 0x4 | 0x8 | 0x80;
+        // A network-only LinkInfo (no local base path) plus a relative path that would lead somewhere local.
+        let mut network_only = Vec::new();
+        for n in [0x1Cu32, 0x1C, 2, 0, 0, 0x1C, 0] {
+            network_only.extend_from_slice(&n.to_le_bytes());
+        }
+        let b = hand_link(
+            LINK_INFO_NAME_RELATIVE_UNICODE,
+            &network_only,
+            &["BALLFIGHT Studio", r"..\Programs\BALLFIGHT Studio\ballfight-studio.exe"],
+        );
+        assert_eq!(lnk::target_at(&b, Path::new(r"C:\Users\Someone\Desktop")), None);
+        // With a local LinkInfo path, that path is the answer, not the relative one.
+        let local = link_info_with_local_path(r"C:\Apps\ballfight-studio.exe");
+        let b = hand_link(
+            LINK_INFO_NAME_RELATIVE_UNICODE,
+            &local,
+            &["x", r"..\Elsewhere\other.exe"],
+        );
+        assert_eq!(
+            lnk::target_at(&b, Path::new(r"C:\Users\Someone\Desktop")),
+            Some(PathBuf::from(r"C:\Apps\ballfight-studio.exe"))
+        );
+    }
+
+    #[test]
+    fn a_shortcut_to_another_computer_is_not_ours_without_asking_it() {
+        let dir = TempDir::new("install-unc");
+        let layout = Layout::under(&dir.path().join("pc"));
+        fs::create_dir_all(&layout.programs).unwrap();
+        fs::create_dir_all(&layout.desktop).unwrap();
+        fs::write(layout.exe(), b"pretend exe").unwrap();
+        // `.invalid` names no host anywhere; a lookup of it would take seconds to fail.
+        for target in [
+            r"\\bf-test-host.invalid\share\ballfight-studio.exe",
+            r"\\?\UNC\bf-test-host.invalid\share\ballfight-studio.exe",
+            r"\\.\C:\ballfight-studio.exe",
+        ] {
+            let b = hand_link(0x2 | 0x80, &link_info_with_local_path(target), &[]);
+            assert_eq!(lnk::target(&b), Some(PathBuf::from(target)));
+            fs::write(layout.desktop_link(), &b).unwrap();
+            let started = std::time::Instant::now();
+            assert!(!opens_the_app(&layout.desktop_link(), &layout), "{target}");
+            assert!(
+                started.elapsed() < std::time::Duration::from_millis(500),
+                "{target}: {:?}",
+                started.elapsed()
+            );
+        }
+        for (p, ok) in [
+            (r"C:\x.exe", true),
+            (r"c:\x", true),
+            (r"\\host\share\x.exe", false),
+            (r"\\?\C:\x.exe", false),
+            (r"C:x.exe", false),
+            (r"x.exe", false),
+        ] {
+            assert_eq!(on_a_drive_letter(Path::new(p)), ok, "{p}");
+        }
     }
 
     #[test]
