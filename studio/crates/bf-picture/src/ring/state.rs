@@ -231,6 +231,11 @@ pub struct BallState {
     pub shield: f64,
     pub haste: f64,
     pub glow: f64,
+    /// Whether `st['glow']` is a numpy `float64` scalar in the kit (a look computed it from an array element), not a
+    /// Python float: numpy then lights the ball's sprite in `float64` (`draw_ball`, ruling M3-R37). A look sets it
+    /// together with `glow`, exactly where the kit's value is a numpy scalar; the renderer's own glows are Python
+    /// floats.
+    pub glow_np: bool,
     pub scale: f64,
     pub th: f64,
     pub blen: f64,
@@ -341,6 +346,7 @@ impl PictureCtx {
             shield: 0.0,
             haste: 0.0,
             glow: 0.0,
+            glow_np: false,
             scale: 1.0,
             th: 0.0,
             blen: self.base_len[k],
@@ -408,6 +414,7 @@ impl PictureCtx {
             }
             if t >= self.t_ko && k == self.lose {
                 st.glow = 1.0;
+                st.glow_np = false;
             }
             return st;
         }
