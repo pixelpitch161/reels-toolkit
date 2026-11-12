@@ -6,7 +6,7 @@
 //! (Dm Dm Bb A7 | Dm Gm Bb A7); any chord works (roots and voicings by rule).
 //!
 //! Here: the theme's harmony helpers and its instruments as the kit computes them. The arrangement that reproduces
-//! the kit's bed is `HeistClassic`, in `classic.rs`; it also holds the kit's per-bed cache of sounds (keyed
+//! the kit's bed is [`HeistClassic`], in `classic.rs`; it also holds the kit's per-bed cache of sounds (keyed
 //! loosely: a duration is `round(dur, 3)`, a brush's noise is its seed modulo 3, a rim's modulo 2).
 //!
 //! **Voicings.** The mood has no table: [`voicing`] is its rule for every chord the harmony parses (the chord's
@@ -22,18 +22,47 @@ use bf_core::harmony::{Harmony, HarmonyError};
 use bf_sound::SRF;
 use bf_sound::synth::{self, FILTER_O, clip};
 
-use super::{NOT_PORTED_CARD, Theme};
+pub use self::classic::HeistClassic;
+use super::{Preset, Theme};
+use crate::cards::ThemeCard;
 
-/// The theme as the registry lists it.
+/// The theme as the registry lists it: no options, no voice of a fighter in its bed.
 pub static THEME: Theme = Theme {
     name: "heist",
-    ported: false,
-    card: &NOT_PORTED_CARD,
+    ported: true,
+    card: &CARD,
     options: &[],
     voices: &[],
     own_voice: super::no_own_voice,
-    classic: classic::classic,
+    classic: |_| Ok(Box::new(HeistClassic::new())),
 };
+
+/// #52's loop in D minor.
+const LOOP: [&str; 8] = ["Dm", "Dm", "Bb", "A7", "Dm", "Gm", "Bb", "A7"];
+
+/// What the interface says about the heist.
+pub static CARD: ThemeCard = ThemeCard {
+    display: "Heist",
+    text: "A sneaky minor caper: brushes and rim clicks, a walking upright, pizzicato plucks, muted vibes and a \
+           tiptoe tremolo. Leaves the leads to the fighters.",
+    key: "D",
+    scale: "minor",
+    chord_loops: &[&LOOP],
+    presets: &PRESETS,
+    bars: (24, 42),
+};
+
+/// The kit configs that play the heist (Table S4): their music as each `episode.py` sets it.
+pub static PRESETS: [Preset; 1] = [Preset {
+    config: "ballfight_oboe_vs_bassoon",
+    fighters: ["OBOE", "BASSOON"],
+    bpm: 118.0,
+    key: "D",
+    scale: "minor",
+    intro: ["Dm", "A7"],
+    chord_loop: &LOOP,
+    tail: &["Dm", "Dm", "Bb", "A7"],
+}];
 
 /// `voicing`'s defaults: `lo = 57`, `n = 4`.
 pub const VOICING_LO: i32 = 57;
@@ -296,7 +325,10 @@ mod tests {
     #[test]
     fn instrument_lengths_follow_pythons_int() {
         assert_eq!(kick().len(), 14400);
-        assert_eq!((brush(0).len(), rim(0).len(), ride().len(), tick().len()), (11520, 2880, 24000, 1440));
+        assert_eq!(
+            (brush(0).len(), rim(0).len(), ride().len(), tick().len()),
+            (11520, 2880, 24000, 1440)
+        );
         assert_eq!(upright(38, 0.5).len(), 28800);
         assert_eq!(pizz(&[57, 62]).len(), 16800);
         assert_eq!(vibes(&[62, 65, 69], 0.4).len(), 28800);
