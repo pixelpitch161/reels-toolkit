@@ -1,0 +1,620 @@
+{
+ "about": "ballfight_horn_vs_trombone_rematch: the golden frames (milestone 1's rules of frames.py for any pair) with both real looks: each frame's SHA-256, its draw log and its hull calls; and the VS card alone on milestone 1's noise image at 16 times",
+ "absent": [],
+ "cards": [
+  [0, "2bf43ba4f03ee8d54dd4d6d6ff8d806f56fe65f153f89a150f63f3db38eaa53e"],
+  [4, "35ce0cd35b9910fbf6966b1a4aa1ee839b72d8ebbacd1b57e5d504b6c114bf5d"],
+  [9, "bde970e5d31851ed5ff1e871d478a8469df8ea1c2e11a758237e60f27cc89938"],
+  [13, "c8bea68862edcaae4aebb5785ea46443f4efce84028213c93fe9d62018d5cba2"],
+  [18, "ea99e08a3c4f9f1fb3093253e9f3512a08b92a4dfdb734c6d3dddce439042c5c"],
+  [22, "2652a5f130e6ffef09a835535cf0195f92c939897b78470dfd618c208ca02e09"],
+  [26, "327876761bedaff89e63b5e015c545788a87fbe9ebc4605d5400270aa962ed30"],
+  [31, "1c17f77e8a378976b2b8caefc54892721b787e0c0b5c83921a7e7a24e34340ed"],
+  [35, "03d5ca07992101317bb842d15f7f2730561456e7f0a834793ba4618eb7624078"],
+  [40, "231b2dd432e482b9ff35d92264a4fd4782d5a11473a3540c3606bb917a22bac1"],
+  [44, "267a641eab72c33e2fdc34bcfcebb73f193a417169144a103a7b5a7a0b166ee5"],
+  [48, "3a6c01d8add9a854fae627511f53a0c5e8bb20da58b9e26dfbf4a68b99d3df84"],
+  [53, "14a41c72399fdca4eeb607fd6b00d4f7cb635d8fc84249fc675e7fb6a560be25"],
+  [57, "cff0224db953c66e943a7193c8ece233e739ce21f61b51b4c183327c001e703b"],
+  [1825, "eed9513b44d35b2af2fc207d4520fcb7e0cb1721b517a9aae6c0996676fd230d"],
+  [1829, "151035c4dc9dce776ecc9e337abb2efdff915f28d23086b897ba9a99e68b6848"]
+ ],
+ "fighters": ["HORN", "TROMBONE"],
+ "format": 1,
+ "frames": [
+  {
+   "boxes": [0, "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"],
+   "frame": 0,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a53d0d9b81d4p+12",
+     "0x1.2a48ab7bd62c6p+13"
+    ]
+   ],
+   "rules": ["frame_0"],
+   "sha256": "a47d5b61d4f8192a9ad6ac58451c8a382233963b88036c776f42c58843b202e7"
+  },
+  {
+   "boxes": [1, "4c34de3ad19db76a78f0f86e954fbb5db470f8f4e42a4f471377d25bf15fd56a"],
+   "frame": 13,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a53ce57bbf3ep+12",
+     "0x1.2a48ab9a12537p+13"
+    ]
+   ],
+   "rules": ["frame_13"],
+   "sha256": "9be9fc19b00c4e760e0d39f7dfd48b736dece719f1191fce204bdfed84ebe0f7"
+  },
+  {
+   "boxes": [23, "da850ffc9d5d22c16a573521c2d0155fd7c3a904feda83806b2be6017d9d404b"],
+   "frame": 27,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a53bc62566dap+12",
+     "0x1.2a48ac735b3cdp+13"
+    ]
+   ],
+   "rules": ["frame_27"],
+   "sha256": "135c913be2d31790bc1a898cfbaccfb7db1d1a3b2d31fc7ba4627911ffb97c5d"
+  },
+  {
+   "boxes": [25, "c25dfbe8a7d340e213f84ae726ae561f43f728297df8ff1f7b99158ee90926cd"],
+   "frame": 47,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a53732369331p+12",
+     "0x1.2a48aff789abbp+13"
+    ]
+   ],
+   "rules": ["doors_last_closed"],
+   "sha256": "07ff9ab809c6de96a3301d70772cb3ab0e8a894d3a96a92e1e362f9572e92246"
+  },
+  {
+   "boxes": [22, "8b55ff80f072adf9261c8e2abc6d4427df0d7c191716c59bcaf82b561c2593d4"],
+   "frame": 53,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a5350525f36fp+12",
+     "0x1.2a48b1ab550bcp+13"
+    ]
+   ],
+   "rules": ["doors_mid"],
+   "sha256": "d046910adf4758900baeea231e9f71f1329c806e149aa7f7cba5ac592bea22ae"
+  },
+  {
+   "boxes": [23, "24478ed768d617fed67d6a27ca820de36117e94d056a610a8f8c1d66c04f5e57"],
+   "frame": 60,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a532008edc3fp+12",
+     "0x1.2a48b41036e76p+13"
+    ]
+   ],
+   "rules": ["count_3"],
+   "sha256": "8cd81e9738bc4dce3963e4306c51c906caa3ed0573e395a3603e1a0bb8bd40f0"
+  },
+  {
+   "boxes": [23, "1fcc0ff2b7f0f4eb79998a9e5374091951a088999af7c415ecd995678950542d"],
+   "frame": 74,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a52a7e66d2ecp+12",
+     "0x1.2a48ba3023066p+13"
+    ]
+   ],
+   "rules": ["count_2"],
+   "sha256": "f4d103a61cca806cbe2501ed14ac1313af3b08387b6a4c2d4906b4608568330e"
+  },
+  {
+   "boxes": [23, "394ac3ee2c6801c226fd8c9d9c96b351437a6ac336e1877e7bb99735e2d16bb3"],
+   "frame": 89,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a520914f110dp+12",
+     "0x1.2a48c2a88f975p+13"
+    ]
+   ],
+   "rules": ["count_1"],
+   "sha256": "3b0de2004e1d05d12765a0a8be35e393428d6f6f9faa3abb78ecb00f23df3d87"
+  },
+  {
+   "boxes": [21, "35182b4515f8b140b0ed5f4dab6f1dae567e475f6a338520b2e07543f1fb8bc7"],
+   "frame": 119,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a50938c7eaa9p+12",
+     "0x1.2a48d84d49643p+13"
+    ]
+   ],
+   "rules": ["count_fight"],
+   "sha256": "44f72e5a5e0787cce43f9de5f95a214f1a43cd16d6a25c147f2b21774092d6b8"
+  },
+  {
+   "boxes": [22, "37b54b3b81f243834ad585991f2f4b25caa9a1c8dcedaef910a7483285552137"],
+   "frame": 148,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a878a9e1b140p+12",
+     "0x1.2a9f9f85b9d2bp+13"
+    ]
+   ],
+   "rules": ["TROMBONE_weapon_hit"],
+   "sha256": "9e2d180c73f6dfa8178ba91100f14b13cc1b627f20726aca44aa8f3dd5d82364"
+  },
+  {
+   "boxes": [22, "579602389d62e550b33738378a404aec17fae8158da451fe4252634f31c62013"],
+   "frame": 149,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6b094df05ca14p+12",
+     "0x1.2a8906f81b722p+13"
+    ]
+   ],
+   "rules": ["HORN_weapon_hit"],
+   "sha256": "6fab1bf87071909e2b23df7f53a1651923e919b7ecc2754f87c47a7a20d6e5c0"
+  },
+  {
+   "boxes": [22, "253a29407b852231d1fd59006ac0f3e0fc232ffb8a17ebaaf262c13fdf89674d"],
+   "frame": 346,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a79d061d779cp+12",
+     "0x1.2a3a15d695ac5p+13"
+    ]
+   ],
+   "rules": ["extra_level_HORN"],
+   "sha256": "721d31723b8ce229e1393556a9e8b4d35fa6aa5eeeb4211e8bc97cc779894950"
+  },
+  {
+   "boxes": [24, "ac75745bdf989253c265f6416de4960f1ed9db9c936cdafc1933c89821ba4e1b"],
+   "frame": 358,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a4f87d7e8ca2p+12",
+     "0x1.2a48bdd4840c2p+13"
+    ]
+   ],
+   "rules": ["extra_caption_punch"],
+   "sha256": "58a4433cac17534ba8e052aafb89cfa7a3b56c47261c0d7e4ff23079904c4529"
+  },
+  {
+   "boxes": [24, "f29577cac10af0fcc8db371f325bbbef0a1c52c04f52fd70fc7c62940413c4f7"],
+   "frame": 361,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a4faa6341334p+12",
+     "0x1.2a48b8f2f5d55p+13"
+    ]
+   ],
+   "rules": ["HORN_unlock1_0.2s"],
+   "sha256": "bc81b6849f9bba591097fd3bde6b324509ae9fe6c11c30270be42a8bebd05f37"
+  },
+  {
+   "boxes": [24, "89da9247d14c75c390c84516e73cc6fa553e72106dfc40370618a4bbd0491133"],
+   "frame": 373,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a503d7de7159p+12",
+     "0x1.2a48a484d8842p+13"
+    ]
+   ],
+   "rules": ["HORN_unlock1_0.6s"],
+   "sha256": "7120c8bcc77bfbaf608b1734147410542a15f962a33ceffddeaf8b76515ac602"
+  },
+  {
+   "boxes": [22, "e23f02390d351869ac4ad1cef5ad6bd54c72a9856cfaec2f47d067696f733b7f"],
+   "frame": 553,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a492c0487b2fp+12",
+     "0x1.2a2fffa874590p+13"
+    ]
+   ],
+   "rules": ["extra_level_TROMBONE"],
+   "sha256": "83fbeb63e83ffbcb99e1c2131f3a30051a6edf77ec1ee2e26a1f761e61b6e274"
+  },
+  {
+   "boxes": [24, "a251fb2b1975e5eea08b0b5cc91362dc528c2483b9ca4893f32ec743b3cc3a86"],
+   "frame": 567,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a58bb23aeb18p+12",
+     "0x1.2a47b2bcd2007p+13"
+    ]
+   ],
+   "rules": ["TROMBONE_unlock1_0.2s"],
+   "sha256": "8b82aa07c7cf1e8cd6fcf504be21d8eddd5bcf8b54dd2d1688b22bb62d4ac459"
+  },
+  {
+   "boxes": [23, "278f48248686613b5ac21450ce69977a66e163545e360043dd572fb02e88111a"],
+   "frame": 579,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a58ca71d9542p+12",
+     "0x1.2a47b164dff2ep+13"
+    ]
+   ],
+   "rules": ["TROMBONE_unlock1_0.6s"],
+   "sha256": "361a6b79c294992ae91dffbe5b401c078345b2b85eb480fff8d65cc6e1666f3e"
+  },
+  {
+   "boxes": [25, "9c852d0e88fee415d703b38c0b665ece65236fcc575c7de755355e9c9d97a0b3"],
+   "frame": 730,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a549855e9560p+12",
+     "0x1.2a49423cbf4f3p+13"
+    ]
+   ],
+   "rules": ["HORN_unlock2_0.2s"],
+   "sha256": "2a9d0140321a922c607bc9067e2ef64f583261428bc7cfd373e4e81cf94d3f1d"
+  },
+  {
+   "boxes": [25, "bbb03a6bac4475b761645ebee92ca3dbd91600227e55ff408a26e473322c86fc"],
+   "frame": 742,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a53af0689678p+12",
+     "0x1.2a499aa1e6dc3p+13"
+    ]
+   ],
+   "rules": ["HORN_unlock2_0.6s"],
+   "sha256": "104a0134cd5d1480354448f962bc4926d47630a77052a90a63bea596fbde1a58"
+  },
+  {
+   "boxes": [25, "4aafee70cdbf5db51599ff9196e26b9005ed412afba676dd166200871849bc39"],
+   "frame": 1173,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a2db8f668d79p+12",
+     "0x1.2a58e9e3a8544p+13"
+    ]
+   ],
+   "rules": ["TROMBONE_unlock2_0.2s"],
+   "sha256": "c52ba0c12a4f4084f1dd986c4a1f1837d57ceca976b2e53d3c699f2814400fb8"
+  },
+  {
+   "boxes": [25, "2b913a0d0b7f420ead289f614163be17ff29494ce899dd5a665810dc1d5281c6"],
+   "frame": 1185,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a2b69af2299ap+12",
+     "0x1.2a37999bee3f5p+13"
+    ]
+   ],
+   "rules": ["TROMBONE_unlock2_0.6s"],
+   "sha256": "0d0d3a9ec353282d89a41efa9f9eec9004787538b8902ccac56a5d7351e985a9"
+  },
+  {
+   "boxes": [22, "eec834ef4d553ff8600cbd57b91c2e725c9e878721aca6aad29439a494a5932a"],
+   "frame": 1344,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6ab1341b0ece7p+12",
+     "0x1.2a79553491fe3p+13"
+    ]
+   ],
+   "rules": ["HORN_low_hp"],
+   "sha256": "3ef21950353dbd8ed7414f2994a02643562cf3defa1db28ed51ce03177477760"
+  },
+  {
+   "boxes": [24, "af2249b83cb7f8918be22ff70bfca602d70c070dd0332e19ddf54dc29614a618"],
+   "frame": 1364,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.69f88b5a0f5ccp+12",
+     "0x1.2a517d0239ac6p+13"
+    ]
+   ],
+   "rules": ["HORN_low_0.2s"],
+   "sha256": "e2fec9d41964331b60bf01095519e7c2356b3a03b5bb562807a03ecb2d9b8589"
+  },
+  {
+   "boxes": [24, "6e59dd231bf5b6c75dac6e1b8d8775f249834a919ce22ea1f2dc476f377173a7"],
+   "frame": 1373,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.668ab7888ecbfp+12",
+     "0x1.2a8bf91dd5a6cp+13"
+    ]
+   ],
+   "rules": ["TROMBONE_low_hp"],
+   "sha256": "12abbc965214bb369117333771d22183a3557712befe4cf67804ffabfeaeed02"
+  },
+  {
+   "boxes": [24, "055f2db34fb206b2614bbf7f76a65bde040f59ec802b244a862ca50f6e3105c4"],
+   "frame": 1376,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.697943ad5b050p+12",
+     "0x1.2abdf12424ac3p+13"
+    ]
+   ],
+   "rules": ["HORN_low_0.6s"],
+   "sha256": "dac14bf8dff5e6828c4359fdf5156ad683cd4b24b2e1212f34047bfd45962732"
+  },
+  {
+   "boxes": [24, "d63df19d4320b020477bf8ef5cb1620b94e8bfdaeb158596e8e929fa174efda2"],
+   "frame": 1394,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a1c8c79970dep+12",
+     "0x1.2a5f47026067cp+13"
+    ]
+   ],
+   "rules": ["TROMBONE_low_0.2s"],
+   "sha256": "98f2b01295d0cf587202b557a60f804b5b05560d8c0a121dd4c55eae9a311548"
+  },
+  {
+   "boxes": [24, "d0f5c47f4f5170b528bc77723e3c129a365757e853ac39f1b30f7788bcb1ca26"],
+   "frame": 1406,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a0802c2e4283p+12",
+     "0x1.2a6a9925ccd7ep+13"
+    ]
+   ],
+   "rules": ["TROMBONE_low_0.6s"],
+   "sha256": "f72390df1ec26c38b05a181a3c583c57fddb15e1cd3fab305a89d2429c1bdab3"
+  },
+  {
+   "boxes": [23, "a5c8be5c14e2a095f0264b4e6d3e990e9000e31482b7132a0cbb43cfabc26d38"],
+   "frame": 1418,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6ccf7a871ca00p+12",
+     "0x1.2a3dad3796588p+13"
+    ]
+   ],
+   "rules": ["extra_slam"],
+   "sha256": "dbb5de1306336c228c985792b90b344223a33ae2861550a288ab63d27749162f"
+  },
+  {
+   "boxes": [25, "4011280bb5b08f72ecc760beffafc15304b708040b907be3d7b4cf99bdb7f58c"],
+   "frame": 1509,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.67ba6f13ad99ep+12",
+     "0x1.29f22c2a314ffp+13"
+    ]
+   ],
+   "rules": ["ko"],
+   "sha256": "a8f637886c1beed9c13740ee15f6f69a3156cd2aff23e5d2c18bf1cac419afae"
+  },
+  {
+   "boxes": [25, "f1f30404a0a08c696e8bf0bed618d88c068f3bbfbbd02ba21e87fbf5cf369b78"],
+   "frame": 1512,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6b5502f8ac2cfp+12",
+     "0x1.2a016fb3114ebp+13"
+    ]
+   ],
+   "rules": ["extra_ko_caption_punch"],
+   "sha256": "2cf50d387372187e9e20381215830a51e1ca3862fd13ee9cc0accde35646a2dc"
+  },
+  {
+   "boxes": [25, "23b77b2fb256ffedc722d1e94503256ed5fe4109418f41f15e0b041df17e1f28"],
+   "frame": 1515,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a14b00efb052p+12",
+     "0x1.2a39df1c22102p+13"
+    ]
+   ],
+   "rules": ["ko_0.2s"],
+   "sha256": "9cf4d78bfbfbfa2820b1952fe41da7cae9b388cd891c40b30a7847f2534dc673"
+  },
+  {
+   "boxes": [24, "6fa1926c07b81e15d25a4fd89063e0d2f0483d1d8ecd71a61e2f79c0a26d949f"],
+   "frame": 1527,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6499b7494b369p+12",
+     "0x1.2af995a51ec6bp+13"
+    ]
+   ],
+   "rules": ["ko_0.6s"],
+   "sha256": "4b09398765c8d893e3b172d377e9f48d164258806c6e8ea24d6cf10a84ab67bf"
+  },
+  {
+   "boxes": [24, "71e60653f7b692607f000c8ea3d7c6d677208ac316c87e50eba255da1719fe06"],
+   "frame": 1554,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.632a57f0a298ep+12",
+     "0x1.2b62805fe8a82p+13"
+    ]
+   ],
+   "rules": ["ko_1.5s"],
+   "sha256": "27d25f8a558f965fd61974a052afca0a8c1c8814d0701e6cca3097a4e0988d6e"
+  },
+  {
+   "boxes": [24, "6f973fd83c42db74e6d8c45a39b85ce45d48b4e58204ce0ada5dcabaafca4012"],
+   "frame": 1557,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.668a6fd7c0eccp+12",
+     "0x1.2b017c7806dedp+13"
+    ]
+   ],
+   "rules": ["extra_wins_second_line"],
+   "sha256": "20bf38ff5cd79e3e5f158a11a5bfe96b7d5ca5a549a60dc6c368843ab542f4aa"
+  },
+  {
+   "boxes": [23, "8daab12844ca03435c776b8707a83042d8c2f0c295f89b3756a1a35a448b6819"],
+   "frame": 1636,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a23838b9b985p+12",
+     "0x1.2a3ffeb5f1bcep+13"
+    ]
+   ],
+   "rules": ["comment"],
+   "sha256": "4a629fb1aad577031f0906ad0c55bad0d5f04f022331b4bf405902e8693701cd"
+  },
+  {
+   "boxes": [23, "0b45744f82ccdf3ec2e18c70e996ab6f0a51be9eea2baa2dd0bf15b60037c3e4"],
+   "frame": 1653,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6cd4e6b9a36e1p+12",
+     "0x1.2a428e75aab9ap+13"
+    ]
+   ],
+   "rules": ["solo_mid"],
+   "sha256": "51c0ba599199e3413c0f591baad225aba32e6a0f37a3dbcb47dda9a10b153432"
+  },
+  {
+   "boxes": [21, "91efc993392cc01a165ad3adc8d2f73fdf8c87d6404dcf77db48e707f97552f4"],
+   "frame": 1742,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.682f8ca3068e8p+12",
+     "0x1.2a431a2e68a64p+13"
+    ]
+   ],
+   "rules": ["reassembly_mid"],
+   "sha256": "1840e6d1b955f5b06b469d709af7ffb2ebc35f7a08d8fde3a47587db15aa745f"
+  },
+  {
+   "boxes": [22, "87a188310ac633e27cc35494d5bd3221d2710fb90464ec119d0d615a88eb0324"],
+   "frame": 1787,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.5129128438e4bp+12",
+     "0x1.2d8a49bfac1dcp+13"
+    ]
+   ],
+   "rules": ["glide_mid"],
+   "sha256": "15362eb96aba4163c3ed70e338772841b765dc5edf1a7f8c2e3405eb0ec8d0cb"
+  },
+  {
+   "boxes": [22, "9fc5f756617e5871b29e8e648948c4e4e04a29d67290352d529fa0153bb1ed3c"],
+   "frame": 1824,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a53cdb4056cap+12",
+     "0x1.2a48a84460f10p+13"
+    ]
+   ],
+   "rules": ["extra_doors_closing"],
+   "sha256": "59213dc0bdcae784ce154ad40a997715564f2796a1cf6a5b19abc68f5fc00f00"
+  },
+  {
+   "boxes": [22, "1ffff9ad3a2b8da8f552d4edbe51507d0ea0fe89cd6c473646c426483c2fe42b"],
+   "frame": 1828,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a53d0b9c0beap+12",
+     "0x1.2a48ab5b2ab22p+13"
+    ]
+   ],
+   "rules": ["frame_last_but_one"],
+   "sha256": "d2436849e47dca4690ec39c63cb4178ea2dee81869fefa320ee8e1904ffbb5c2"
+  },
+  {
+   "boxes": [0, "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"],
+   "frame": 1829,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a53d0d5a7cc1p+12",
+     "0x1.2a48ab77aef5fp+13"
+    ]
+   ],
+   "rules": ["frame_last"],
+   "sha256": "d099a48c418d8a206d1c2b4fce6ccf884446c7a1a2c9fc6245e376f753dbb045"
+  }
+ ],
+ "recording": {
+  "hash": "686209165d74383e",
+  "seed": 630,
+  "winner": 0
+ },
+ "tool": "tools.studio_export.episode_horn_vs_trombone_rematch"
+}
