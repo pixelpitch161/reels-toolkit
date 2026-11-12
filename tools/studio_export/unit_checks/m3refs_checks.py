@@ -884,12 +884,16 @@ def theme_options_are_recorded_per_config():
                    'ballfight_bassdrum_vs_tuba': {'bass_drums': False, 'after_ko': True},
                    'ballfight_electric_vs_acoustic': {'plugged': 'ELECTRIC'},
                    'examples/trombone_vs_horn': None, 'ballfight_flute_vs_sousaphone': None}, got
-    for theme in ('big_top', 'baroque_storm', 'bossa_noir', 'dark_disco'):
+    for theme in ('big_top', 'baroque_storm', 'bossa_noir', 'dark_disco', 'heist', 'horror_trap'):
         with open(os.path.join(common.REFERENCE, 'themes', theme, 'theme.json'), encoding='utf-8') as f:
             for c in json.load(f)['configs']:
                 facts = m3refs.read_config(c['config'])
                 assert 'theme_options' not in facts and 'theme_options' not in c, (theme, c['config'])
-                assert {k: c[k] for k in facts} == json.loads(json.dumps(facts)), (theme, c['config'])
+                # `roles` is the one key a re-export adds (every merged config sets ROLES; committed before it was
+                # recorded): everything else reads exactly as committed
+                assert set(facts) - set(c) <= {'roles'}, (theme, c['config'], set(facts) - set(c))
+                same = {k: v for k, v in facts.items() if k != 'roles'}
+                assert {k: c[k] for k in same} == json.loads(json.dumps(same)), (theme, c['config'])
     fighters = ['ELECTRIC', 'ACOUSTIC']
 
     def opts(mood, names):
@@ -1046,6 +1050,27 @@ def the_key_variant_sets_its_loop():
         assert (ns['KEY'], ns['SCALE']) == (ff['key'], ff['scale']), config
     return 'the key variant sets KEY, SCALE, LOOP and CHORDS together, LOOP being the fight file\'s chord_loop'
 
+def a_configs_lines_and_roles_reach_theme_json():
+    """read_config records the config's ROLES as `roles` (absent when it sets none) beside its LINES (`lines`), so the
+    theme gates' fight file plays as the config does (dark_tango's bed plays the melody fighter's line)"""
+    common.kit()
+    c = m3refs.read_config('ballfight_cello_vs_contrabass')
+    assert c['roles'] == {'CELLO': 'melody', 'CONTRABASS': 'bass'}, c.get('roles')
+    assert set(c['lines']) == {'CELLO', 'CONTRABASS'} and all(len(v) == 32 for v in c['lines'].values()), c['lines']
+    src = open(m3refs.config_source('ballfight_cello_vs_contrabass'), encoding='utf-8').read()
+    assert "\nROLES = " in src
+    saved = m3refs.config_source
+    try:                                                # the same config without its ROLES line: no `roles`
+        tmp = os.path.join(tempfile.mkdtemp(prefix='m3refs_roles_'), 'episode.py')
+        with open(tmp, 'w', encoding='utf-8') as fh:
+            fh.write("\n".join(ln for ln in src.split("\n") if not ln.startswith("ROLES = ")))
+        m3refs.config_source = lambda config: tmp
+        assert 'roles' not in m3refs.read_config('ballfight_cello_vs_contrabass')
+    finally:
+        m3refs.config_source = saved
+    return 'ROLES and LINES reach theme.json (cello_vs_contrabass: melody and bass, 32 notes each); a config ' \
+           'without ROLES records none'
+
 
 CHECKS = (shard_takes_a_fighter_file, verify_finds_a_changed_byte_in_a_shard, check_pins_names_the_command,
           a_pin_never_moves_on_its_own, remake_makes_a_folder_again_whole, a_cache_run_writes_no_committed_file,
@@ -1059,7 +1084,7 @@ CHECKS = (shard_takes_a_fighter_file, verify_finds_a_changed_byte_in_a_shard, ch
           a_left_file_finish_wrote_is_kept, a_nan_rectangular_key_is_an_array,
           every_option_the_moods_read_is_listed, theme_options_are_recorded_per_config,
           every_hook_call_reaches_its_method, a_stem_window_past_the_end_is_cut, a_theme_recording_goes_to_the_cache,
-          the_key_variant_sets_its_loop)
+          the_key_variant_sets_its_loop, a_configs_lines_and_roles_reach_theme_json)
 
 
 def main():

@@ -65,6 +65,19 @@ pub fn config_fight_file(c: &Value, rec: &Recording) -> FightFile {
         .lines
         .retain(|k, _| names.iter().any(|f| k == f || bf_core::fightfile::is_extra_line(k, f)));
     ff.music.solos.retain(|k, _| names.contains(k));
+    // the config's own LINES (theme.json's `lines`, a rest as null) and ROLES (`roles`, when it sets them): a bed may
+    // play a fighter's line or read who plays what (dark_tango's `Bed.theme()` plays the melody fighter's line)
+    if let Some(lines) = c.get("lines").and_then(Value::as_object) {
+        for (k, v) in lines {
+            ff.music.lines.insert(
+                k.clone(),
+                list(v).iter().map(|n| n.as_i64().map(|n| n as i32)).collect(),
+            );
+        }
+    }
+    if let Some(roles) = c.get("roles").and_then(Value::as_object) {
+        ff.music.roles = roles.iter().map(|(k, v)| (k.clone(), text(v).to_string())).collect();
+    }
     ff.music.title_hits.retain(|k, _| names.contains(k));
     ff
 }
@@ -507,6 +520,23 @@ mod tests {
             Ok(vec![])
         }
         voicings_doc("no_such_theme", &[("root", none)]);
+    }
+
+    #[test]
+    fn a_configs_lines_and_roles_reach_its_fight_file() {
+        let (mut c, rec) = config(None);
+        c["lines"] = serde_json::json!({"FLUTE": [76, null, 79]});
+        c["roles"] = serde_json::json!({"FLUTE": "bass", "TROMBONE": "melody"});
+        let ff = config_fight_file(&c, &rec);
+        assert_eq!(ff.music.lines["FLUTE"], vec![Some(76), None, Some(79)]);
+        assert_eq!(
+            (ff.music.roles["FLUTE"].as_str(), ff.music.roles["TROMBONE"].as_str()),
+            ("bass", "melody")
+        );
+        // without them: the base fight file's, for the config's fighters
+        let (c, rec) = config(None);
+        let base = config_fight_file(&c, &rec);
+        assert_eq!(base.music.roles["FLUTE"], "melody");
     }
 
     #[test]

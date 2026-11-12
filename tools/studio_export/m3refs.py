@@ -1526,7 +1526,9 @@ def read_config(config):
     """the kit config's values (episode.py executed on its own, without the kit), with the bar count the kit's
     timeline derives from its BPM (kit/episode.py build_timeline: loop_bpm, then round(DUR / BAR)) and its LINES
     (a rest as None, in the config's order); `theme_options` (THEME_OPTIONS: the mood's options it sets, under the
-    fight file's names) only when it sets one, so a config without options reads as before"""
+    fight file's names) only when it sets one, so a config without options reads as before; `roles` (its ROLES)
+    only when it sets them (the theme gates' fight file takes the config's LINES and ROLES: dark_tango's bed plays
+    the melody fighter's line)"""
     import importlib.util
     from reelkit.config import loop_bpm
     spec = importlib.util.spec_from_file_location('m3refs_config', config_source(config))
@@ -1544,7 +1546,8 @@ def read_config(config):
                 n_bars=n_bars, key=cfg.KEY, scale=getattr(cfg, 'SCALE', 'minor'), intro=chords[:start], loop=loop,
                 tail=chords[start + whole * len(loop):], chords=chords,
                 lines={k: [None if n is None else int(n) for n in v] for k, v in getattr(cfg, 'LINES', {}).items()},
-                **_options_key(theme_options_of(cfg, cfg.MOOD, list(cfg.FIGHTERS), config)))
+                **_options_key(theme_options_of(cfg, cfg.MOOD, list(cfg.FIGHTERS), config)),
+                **({'roles': {k: str(v) for k, v in cfg.ROLES.items()}} if getattr(cfg, 'ROLES', None) else {}))
 
 
 def _options_key(options):
