@@ -328,26 +328,36 @@ reader keeps every key it finds, whatever this section says (6.3). The `shield` 
 <!-- kind:roll -->
 #### `roll` (weapon kind of PIANO)
 
-`fight.py` 5164 to 5283, 370 to 379, 3235 to 3278. Not ported yet: its port fills this section in (the meaning of each
-field, as 6.2 and 6.3 do for FLUTE and TROMBONE), from the lines below.
+`fight.py` 5164 to 5283, 370 to 379, 3235 to 3278; ported (milestone 3, Task 7; `kinds/roll.rs`). A paper roll lies
+along the side of the ring through the fighter's own corner; on every 8th the row under its read bar fires one shot
+per hole, from the hole's pitch lane, across the ring and turned toward the enemy. The rows are the fighter's line
+(the rule `roll_rows`, 6.1). The roll's module also flies and lands every projectile of the fight (its rows', the
+`runoff`'s and an `arc`'s).
 
-**Record keys.**
+**Record keys** (in `rec` when a fighter's weapon is a roll; `run()` 5887, `snap` 5621 to 5624).
 
-- `ROLL` (and `HOLD`): added to `rec` at `run()` 5887, written by `snap` 5621 to 5624:
+- `ROLL`: float, `(frames, 2, 3)`, per fighter `[n_vol, sustain, reload]`: how many holes a row fires (a float: a
+  landed row adds `grow`; a row fires `int(n_vol)`, at least 1), the seconds of SUSTAIN left, the seconds left until
+  the new roll is threaded (both 0.0 when none). A fighter without a roll has `[n_vol, 0.0, 0.0]`.
+- `HOLD`: ragged (`HOLD.json`), per frame the list of SUSTAIN's shots that have not flown on yet, in id order, each
+  `[id, t_stop, t_release]`: the projectile's id (a whole number), when it stops in the air and when it turns to the
+  enemy and flies on (seconds on the video clock).
+- `K` (6.3; every recording has it): a roll's fight is the first to fill it. Each of the first `min(72, shots)` rows
+  is `[x, y, heading, owner, id, index, volley]` of one projectile, in the order they were fired: the heading is
+  `atan2(vy, vx)` (0.0 for a hanging shot), the index is the shot's place in its volley (a row's or a runoff's shot:
+  its MIDI pitch; an arc's: its step along the fan), the volley is the row, runoff or arc it belongs to. Unused rows
+  are NaN.
 
-  ```python
-  if 'ROLL' in rec:                                   # #45, only recorded when a fighter uses the 'roll' kind
-      rec['ROLL'].append([[float(getattr(Bj, 'n_vol', 0.0)), max(0.0, getattr(Bj, 'sustain_until', -1.0) - self.t),
-                           max(0.0, getattr(Bj, 'reload_until', -1.0) - self.t)] for Bj in (B0, B1)])
-      rec['HOLD'].append([(int(i), h[0], h[1]) for i, h in sorted(getattr(self, 'khold', {}).items())])
-  ```
+**Events.**
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
-
-- 5243: `self.ev('roll', k, vol, int(abs8), int(sus), tuple(int(m) for m in pitches))`
-- 3243: `self.kill_keys(out, 'wall')`
-- 3256: `self.damage(att, k, float(self.kdmg[i]), 'key', float(self.kp[i, 0]), float(self.kp[i, 1]), int(self.kidx[i]))`
+- `roll`: `[t, "roll", fighter, volley, abs8, sustained, [pitch, ...]]` (5243): a row fired: the volley's number,
+  the absolute 8th of the video, 1 while the fighter's SUSTAIN holds else 0, and the pitches fired, in the row's
+  order (a list of whole numbers; Python's tuple).
+- `wall`: `[t, "wall", owner, -1, x, y, id]` (3243, `kill_keys`): a projectile left the ring: its owner, -1 (nobody
+  killed it), where it was and its id. (`parry`, 6.2, is the same event with the lance's owner in place of -1.)
+- a `hit` of kind `key` (3256): `[t, "hit", attacker, victim, damage, x, y, "key", index]`: a projectile landed, at
+  its own position; the sub-number is its index (above). The first landed shot of a roll's volley adds `grow` to
+  `n_vol` (up to `n_max`), and every landed shot nudges the victim's heading along the shot's flight.
 
 <!-- /kind:roll -->
 
@@ -469,18 +479,29 @@ field, as 6.2 and 6.3 do for FLUTE and TROMBONE), from the lines below.
 <!-- kind:combo -->
 #### `combo` (weapon kind of TRUMPET)
 
-`fight.py` 898 to 966. Not ported yet: its port fills this section in (the meaning of each field, as 6.2 and 6.3 do for
-FLUTE and TROMBONE), from the lines below.
+`fight.py` 898 to 966 (`combo_setup`, `combo_beat`, `combo_step`); the engine's `bf-sim/src/kinds/combo.rs`. Every
+`every` beats (haste divides it) the TRUMPET queues `punches` pistons, `gap` beats apart; each aims where the enemy
+is when it starts, shoots out to the reach, holds and pulls back, and hits once.
 
-**Record keys.** None of its own.
+**Record keys.** None of its own. What a recording of a combo shows of it, in the shared keys:
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+- `TH`: the valves' aim, 0 to 2 pi. It starts facing the enemy and turns toward it at `aim_rate` at most, every step.
+- `BL`: the pistons' reach beyond the ball's surface: `base` (0.6), plus `grow` (0.05) per landed punch, up to
+  `max_len` (1.7).
+- `FR` stays 0, `EXT` is absent (the pistons' lengths are not recorded: a look works them out from the `punch`
+  events).
 
-- 916: `self.ev('combo', k, B.combo_n, n, g)`
-- 936: `self.ev('punch', k, i, want, float(B.blade_len), B.combo_n)`
-- 957: `self.ev('block', 1 - k, k, hx, hy, 'piston')`
-- 961: `self.damage(k, 1 - k, w['dmg3'] if last else w['dmg'], 'piston', hx, hy, P['i'])`
+**Events and hits** (`e[0]` is the time, `e[1]` the kind, `e[2]` the TRUMPET's side):
+
+- `combo` (916): a combo starts on its beat. `e[3]` its number, counting from 1 (int); `e[4]` its punches (int, 3);
+  `e[5]` the seconds between two punches (`gap` x the beat / the haste factor).
+- `punch` (936): a piston starts. `e[3]` its place in its combo, from 0 (int); `e[4]` its aim in radians (-pi to pi:
+  where the enemy was at that step); `e[5]` the reach then; `e[6]` its combo's number (int).
+- `hit` with `e[7] = "piston"` (961): a punch lands. As every hit: `e[3]` the victim, `e[4]` the damage (`dmg`, or
+  `dmg3` for the last punch of a combo, x the scales), `e[5]`, `e[6]` where on the enemy's surface; `e[8]` the
+  punch's place in its combo (int).
+- `block` with `e[6] = "piston"` (957): a punch met a shield. `e[2]` the shielded fighter, `e[3]` the TRUMPET,
+  `e[4]`, `e[5]` where. The piston pulls straight back.
 
 <!-- /kind:combo -->
 
@@ -503,31 +524,49 @@ for FLUTE and TROMBONE), from the lines below.
 <!-- kind:tune -->
 #### `tune` (weapon kind of OBOE)
 
-`fight.py` 2425 to 2525. Not ported yet: its port fills this section in (the meaning of each field, as 6.2 and 6.3 do
-for FLUTE and TROMBONE), from the lines below.
+`fight.py` 2425 to 2525, ported (milestone 3, Task 11; `kinds/tune.rs`): TUNING A. Every `every` beats the oboe
+sounds its A as a narrow beam: the aim locks `lock16` 16ths before the shot, the beam fires `off16` 16ths after the
+grid's line, `len` long and `width` wide, and stays live for `hold` seconds, hitting once. A landed beam puts the enemy
+OUT OF TUNE for `dur_beats` beats at the oboe's depth (`depth0`, plus `grow` per landed beam, up to `depth_max`): the
+detuned fighter's own hits land `weak` x depth weaker (`damage` 344 to 346), and every note of the oboe's `sting16`
+grid stings it. Between shots `TH` (the oboe's aim) turns to the enemy at `track` radians a second; a locked aim holds
+`TH` until the shot. A wave with the option `detune` (ILL WIND) puts the enemy out of tune when it lands, through the
+same `_detune` (`effects_step` 3069 to 3071).
 
-**Record keys.**
+**Record keys** (only in a fight where a fighter has the `tune` weapon; both keys together):
 
-- `DET` (and `TUNE`): added to `rec` at `run()` 5802, written by `snap` 5550 to 5554:
+| Key | Stored as | Shape | Meaning |
+| --- | --- | --- | --- |
+| `DET` | `<f8` | (frames, 2, 2) | per fighter `[seconds left out of tune, depth]`. The seconds run down to 0 each step; the depth stays at its last value after they run out, so "out of tune" is seconds above 0. |
+| `TUNE` | `<f8` | (frames, 2, 2) | per fighter `[1.0 while it has a live beam, 1.0 while it holds ENDLESS NOTE's beam]`, else 0.0. |
 
-  ```python
-  if 'DET' in rec:                                    # #37, only recorded when a fighter uses the 'tune' kind
-      rec['DET'].append([[getattr(B0, 'detune_t', 0.0), getattr(B0, 'detune_d', 0.0)],
-                         [getattr(B1, 'detune_t', 0.0), getattr(B1, 'detune_d', 0.0)]])
-      rec['TUNE'].append([[float(bool(getattr(Bj, 'tbeams', None))), float(getattr(Bj, 'endless', None) is not None)]
-                          for Bj in (B0, B1)])
-  ```
+```python
+if 'DET' in rec:                                    # #37, only recorded when a fighter uses the 'tune' kind
+    rec['DET'].append([[getattr(B0, 'detune_t', 0.0), getattr(B0, 'detune_d', 0.0)],
+                       [getattr(B1, 'detune_t', 0.0), getattr(B1, 'detune_d', 0.0)]])
+    rec['TUNE'].append([[float(bool(getattr(Bj, 'tbeams', None))), float(getattr(Bj, 'endless', None) is not None)]
+                        for Bj in (B0, B1)])
+```
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+**Events** (positions as in 6.2):
 
-- 2450: `self.ev('detune', vic, att, float(depth), float(dur))`
-- 2460: `self.ev('endless_end', k)`
-- 2471: `self.damage(k, 1 - k, ab['dmg'], 'endless', hx, hy)`
-- 2481: `self.ev('tune_lock', k, B.tune_lock)`
-- 2491: `self.ev('tune', k, float(o[0]), float(o[1]), a, float(w['len']), float(w['width']))`
-- 2494: `self.damage(k, 1 - k, w['sting'] * O.detune_d, 'sting', float(O.p[0]), float(O.p[1]))`
-- 2519: `self.damage(k, 1 - k, w['dmg'], 'tune', hx, hy)`
+| Kind | `who` (2) | 3 | 4 | 5 | 6 | 7 |
+| --- | --- | --- | --- | --- | --- | --- |
+| `tune_lock` | the oboe | the locked aim, 0 to 2 pi (float) | | | | |
+| `tune` | the oboe | x where the beam leaves the ball (float) | y (float) | its aim (float) | its length (float) | its width (float) |
+| `detune` | the fighter put out of tune | who did it (int) | the depth (float) | the seconds it lasts (float) | | |
+| `endless_end` | the oboe (ENDLESS NOTE ran out; nothing more) | | | | | |
+
+**Hits** (`hit`, elements 7 and 8):
+
+| What hit (7) | Cause | Sub (8) |
+| --- | --- | --- |
+| `tune` | a beam of TUNING A; x and y are the near side of the victim's ball | 0 |
+| `sting` | a note of the oboe's `sting16` grid while the enemy is out of tune: `sting` x the depth; x and y are the victim's position | 0 |
+| `endless` | ENDLESS NOTE's held beam, on an 8th; x and y are the victim's side toward the oboe's aim | 0 |
+
+`fight.py` lines: 2450 `detune`, 2460 `endless_end`, 2471 `endless`, 2481 `tune_lock`, 2491 `tune`, 2494 `sting`,
+2519 `tune`.
 
 <!-- /kind:tune -->
 
@@ -810,64 +849,56 @@ for FLUTE and TROMBONE), from the lines below.
 <!-- kind:drill -->
 #### `drill` (weapon kind of SOUSAPHONE)
 
-`fight.py` 4758 to 5005. Not ported yet: its port fills this section in (the meaning of each field, as 6.2 and 6.3 do
-for FLUTE and TROMBONE), from the lines below.
+`fight.py` 4758 to 5005; ported in `bf-sim/src/kinds/drill.rs` (`bf-core/src/roster/kinds/drill.rs` for its roster
+numbers). The marcher never glides: it is a walker (it stands planted between sets and only slides when knocked).
+Every `every` beats on the 16th grid (haste divides the grid) it marches a drill set: `steps` steps of `step16` 16ths
+along one straight line toward where the enemy will be at the blast, at most `span` long, stopping a radius short of
+the ropes and `stop` short of that spot. While it marches it cannot be knocked and gives no way in a clash; it
+tramples the enemy on contact (at most once every `cool` s) and every enemy basket near its rim. `halt16` 16ths after
+the last footfall the bell blast fires straight ahead: a cone that hits once. A landed trample or blast lengthens the
+blast (`blade_len`, recorded in `BL` and in `DRILL` column 3). The generator is drawn once per set started (the
+line's jitter) and once per HORN FLASH (the way it turns).
 
 **Record keys.**
 
-- `DRILL`: added to `rec` at `run()` 5905, written by `snap` 5643 to 5670:
+- `DRILL`: `<f8`, shape `(frames, 2, 16)`, in a recording where a fighter's weapon is a `drill` (`run()` 5905,
+  `snap` 5643 to 5670). One row per fighter; the row of a fighter that is not a driller is all NaN. A column is NaN
+  while what it describes is not live.
 
-  ```python
-  if 'DRILL' in rec:                                  # #53, only recorded when a fighter uses the 'drill' kind
-      Dr = np.full((2, 16), np.nan)
-      for j, Bj in enumerate((B0, B1)):
-          if not hasattr(Bj, 'march'):
-              continue
-          M = Bj.march
-          Dr[j, 0] = 0.0 if M is None else (1.0 if M['phase'] == 'march' else 2.0)
-          if M is not None:
-              Dr[j, 1] = (self.t - M['t0']) / max(1e-9, M['t1'] - M['t0'])
-              Dr[j, 2] = math.atan2(M['u'][1], M['u'][0])
-              Dr[j, 14] = M['i']
-          Dr[j, 3] = Bj.blade_len
-          Bl = Bj.blast
-          if Bl is not None:
-              Dr[j, 4] = (self.t - Bl['t0']) / max(1e-9, Bl['t1'] - Bl['t0'])
-              Dr[j, 5], Dr[j, 6] = Bl['len'], Bl['w']
-              Dr[j, 12], Dr[j, 13] = Bl['o']
-              Dr[j, 2] = math.atan2(Bl['d'][1], Bl['d'][0])
-          Fl = Bj.flash
-          if Fl is not None:
-              u_ = min(1.0, (self.t - Fl['t0']) / max(1e-9, Fl['t1'] - Fl['t0']))
-              Dr[j, 7] = Fl['a0'] + 2 * math.pi * u_ * Fl['dir']
-              Dr[j, 8] = Fl['len']
-          Fr = Bj.front
-          if Fr is not None:
-              Dr[j, 9], Dr[j, 10], Dr[j, 11] = Fr['pos'], Fr['ax'], Fr['sg']
-              Dr[j, 15] = (self.t - Fr['t0']) / max(1e-9, Fr['t1'] - Fr['t0'])
-      rec['DRILL'].append(Dr)
-  ```
+  | Column | Meaning |
+  | --- | --- |
+  | 0 | 0.0 between sets, 1.0 marching, 2.0 halted before the blast |
+  | 1 | the set's progress: `(t - set start) / (last footfall - set start)`, past 1 during the halt (a set only) |
+  | 2 | the direction of the set's line in radians; while a blast is live, the blast's direction |
+  | 3 | the blast's length now (`blade_len`) |
+  | 4 | the live blast's progress, 0 at the shot to (just under) 1 at the end of its hold |
+  | 5, 6 | the live blast's length and its width at the bell |
+  | 7, 8 | HORN FLASH: the lane's angle now, and its length |
+  | 9, 10, 11 | COMPANY FRONT: the wall's position along its axis, the axis (0.0 = x, 1.0 = y), the way it marches (1.0 or -1.0) |
+  | 12, 13 | the live blast's origin (the bell), x and y |
+  | 14 | the footfalls of the set so far (a set only) |
+  | 15 | COMPANY FRONT's progress, 0 to 1 |
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+**Events** (`who` is the marcher; coordinates are ring units; times are on the video clock):
 
-- 4808: `self.ev('drill_off', k)`
-- 4814: `self.ev('drill_step', k, M['i'], float(q[0]), float(q[1]))`
-- 4819: `self.ev('drill_halt', k, float(B.p[0]), float(B.p[1]))`
-- 4856: `self.ev('drill', k, float(B.p[0]), float(B.p[1]), float(p1[0]), float(p1[1]), self.t, t_steps[-1], n, B.march['kind'])`
-- 4866: `self.ev('blast', k, float(o[0]), float(o[1]), a, float(B.blade_len), float(w['width']), B.blast['w1'])`
-- 4884: `self.ev('trample_basket', k, bk['id'], float(bk['cp'][0]), float(bk['cp'][1]))`
-- 4910: `self.damage(k, 1 - k, w['trample_dmg'], 'trample', hx, hy)`
-- 4914: `self.ev('drill_trample', k, hx, hy)`
-- 4925: `self.damage(k, 1 - k, w['dmg'], 'blast', hx, hy)`
-- 4928: `self.ev('blast_hit', k, hx, hy)`
-- 4943: `self.damage(k, 1 - k, Fl['dmg'], 'flash', hx, hy)`
-- 4945: `self.ev('flash_hit', k, hx, hy)`
-- 4958: `self.ev('front_step', k, Fr['i'], float(pos))`
-- 4965: `self.damage(k, 1 - k, ab['dmg'], 'front', hx, hy)`
-- 4969: `self.ev('front_hit', k, hx, hy)`
-- 4977: `self.ev('trample_basket', k, bk['id'], float(bk['cp'][0]), float(bk['cp'][1]))`
-- 4983: `self.ev('front_end', k)`
+| Kind | Fields after `who` | When |
+| --- | --- | --- |
+| `drill` | `x0, y0, x1, y1` (from, to), the set's start time, the time of its last footfall, the steps (int), 1 under haste else 0 (int) | a set starts (4856) |
+| `drill_step` | the footfall's number from 1 (int), `x, y` where it lands | each footfall, on the grid (4814) |
+| `drill_halt` | `x, y` | after the last footfall: the ball stands at the line's end (4819) |
+| `drill_off` | none | a set called off: the marcher is stunned, sunk in shadow, grabbed or in pieces (4808); no blast follows |
+| `blast` | `x, y` (the bell), the angle, the length, the width at the bell, the width at the far end | the bell blast fires (4866) |
+| `blast_hit` | `x, y` on the enemy's surface | the blast touches the enemy (4928), whether the hit landed or a shield blocked it |
+| `drill_trample` | `x, y` between the two balls | the march touches the enemy (4914), landed or blocked |
+| `trample_basket` | the basket's id (int), `x, y` of its cobra | a basket of the enemy's is trampled by the march (4884) or by COMPANY FRONT's wall (4977); the basket is gone |
+| `flash_hit` | `x, y` on the enemy's surface | HORN FLASH's lane touches the enemy (4945) |
+| `front_step` | the step's number from 1 (int), the wall's position | each beat of COMPANY FRONT (4958) |
+| `front_hit` | `x, y` (the enemy's centre) | the wall meets the enemy (4969) |
+| `front_end` | none | the wall has crossed the ring (4983) |
+
+**Hits** (`hit` events, 6.2; the sub-number is 0): `trample` (4910: `trample_dmg`; the enemy is knocked on ahead
+along the line and out of it sideways), `blast` (4925: `dmg`), `flash` (4943: HORN FLASH's `dmg`, knocked outward),
+`front` (4965: COMPANY FRONT's `dmg`, knocked on ahead of the wall). A shield turns each into a `block`.
 
 <!-- /kind:drill -->
 
@@ -932,60 +963,75 @@ which `SH` records (6.3) and the fight loop runs down (6097). While it holds, a 
 <!-- kind:sustain -->
 #### `sustain` (ability kind of PIANO)
 
-`fight.py` 2941 to 2943. Not ported yet: its port fills this section in (the meaning of each field, as 6.2 and 6.3 do
-for FLUTE and TROMBONE), from the lines below.
+`fight.py` 2941 to 2943, ported (milestone 3, Task 7; `abilities/sustain.rs`; the roll reads it in `fire_row` 5236 to
+5242 and `hold_step` 5262 to 5282). For the ability's time each shot of a fired row flies for `out16` 16ths (plus
+`step16` for each hole before it), stops, hangs for `hang_beats` beats, then turns to the enemy and flies on.
 
-**Record keys.** None of its own.
+**Record keys.** None of its own: the seconds left are `ROLL[.., 1]` and the hanging shots `HOLD` (the roll's).
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+**Events.**
 
-- 2943: `self.ev('sustain', k, B.sustain_until)`
+- `sustain`: `[t, "sustain", fighter, until]` (2943): the time (seconds on the video clock) the sustain ends.
+  A row fired before then has 1 as its `roll` event's `sustained`.
 
 <!-- /kind:sustain -->
 
 <!-- kind:arc -->
 #### `arc` (ability kind of PIANO)
 
-`fight.py` 2852 to 2858, 3099 to 3113. Not ported yet: its port fills this section in (the meaning of each field, as 6.2
-and 6.3 do for FLUTE and TROMBONE), from the lines below.
+`fight.py` 2852 to 2858, 3099 to 3113, ported (milestone 3, Task 7; `abilities/arc.rs`). Over `beats` beats the ball
+throws `n` projectiles one after another in a fan `sweep` degrees wide, centred on where the enemy stood when the
+ability fired. The whole arc is one volley, which no `roll` or `runoff` event names: a `K` row whose volley has no
+such event is an arc's shot, and its index is its step along the fan (0 to `n - 1`).
 
-**Record keys.** None of its own.
+**Record keys.** None of its own (its shots are in `K`).
 
-**Events and hits.** None of its own (an `ability` event, from `trigger`, as every ability has).
+**Events and hits.** None of its own (an `ability` event, from `trigger`, as every ability has; its shots' `wall`
+events and `key` hits are the projectiles', see `roll`).
 
 <!-- /kind:arc -->
 
 <!-- kind:runoff -->
 #### `runoff` (ability kind of PIANO)
 
-`fight.py` 2944 to 2945, 5245 to 5261. Not ported yet: its port fills this section in (the meaning of each field, as 6.2
-and 6.3 do for FLUTE and TROMBONE), from the lines below.
+`fight.py` 2944 to 2945, 5245 to 5261, ported (milestone 3, Task 7; `abilities/runoff.rs`, `kinds/roll.rs`
+`start_runoff`). The roll runs off its spool: `n` shots fire at once from lanes spread over the whole side, straight
+across the ring; then no row fires for `reload_beats` beats.
 
-**Record keys.** None of its own.
+**Record keys.** None of its own: the seconds until the new roll is threaded are `ROLL[.., 2]` (the roll's).
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+**Events.**
 
-- 5260: `self.ev('runoff', k, vol, n, tuple(ms))`
+- `runoff`: `[t, "runoff", fighter, volley, n, [pitch, ...]]` (5260): the volley's number, how many shots, and
+  each shot's pitch (its lane's note, rounded half to even), from the low end of the roll to the high end (a list of
+  whole numbers; Python's tuple).
 
 <!-- /kind:runoff -->
 
 <!-- kind:beam -->
 #### `beam` (ability kind of TRUMPET)
 
-`fight.py` 2870 to 2871, 2990 to 3010, 857 to 897. Not ported yet: its port fills this section in (the meaning of each
-field, as 6.2 and 6.3 do for FLUTE and TROMBONE), from the lines below.
+`fight.py` 2870 to 2871, 2990 to 3010, 3013 to 3016, 857 to 897 (`ab_beam_charge`, `ab_beam_fire`, the charged beam
+in `abilities_step`, the ability beams of `beams_step`); the engine's `bf-sim/src/abilities/beam.rs`. HIGH C: the
+fighter charges for `charge_beats` beats with its aim locked on where the enemy is predicted to be, then fires one
+blast that is live for `hold` seconds, hits once and clears the enemy's projectiles in its path. It grows no weapon.
 
-**Record keys.** None of its own.
+**Record keys.** None of its own: neither the charge nor the live blast is recorded per frame (a look reads the
+`charge` and `beam` events).
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+**Events and hits** (`e[2]` is the fighter):
 
-- 2999: `self.ev('charge', k, aim, tc, float(ab['len']), float(ab['width']))`
-- 3009: `self.ev('beam', k, float(o[0]), float(o[1]), a, float(ab['len']), float(ab['width']))`
-- 884: `self.damage(k, o, Bm['dmg'], 'beam', hx, hy)`
-- 895: `self.kill_keys((self.kown == o) & (dk < Bm['w'] / 2 + rk), 'cleared', k)`
+- `ability` (2839): as every ability, with `e[4] = "beam"`.
+- `charge` (2999): the charge starts. `e[3]` the locked aim in radians (-pi to pi); `e[4]` the seconds of charge
+  (`charge_beats` x the beat); `e[5]` the blast's length; `e[6]` its width.
+- `beam` (3009): the blast fires, in the first step at or after the charge's end. `e[3]`, `e[4]` where it starts
+  (the ball's centre then, `R + 0.04` out along the aim); `e[5]` the aim; `e[6]` its length; `e[7]` its width.
+- `hit` with `e[7] = "beam"` (884): the blast reaches the enemy (the enemy's centre within `R + width / 2` of the
+  blast's line). `e[4]` the damage (`dmg` x the scales), `e[5]`, `e[6]` the point of the enemy's surface nearest
+  the line, `e[8]` 0. A shielded enemy gives `block` with `e[6] = "beam"` instead; either way it is knocked along
+  the blast.
+- `cleared` (895): an enemy projectile within `width / 2 + KEY_R` of the blast's line is taken out. `e[2]` the
+  projectile's owner, `e[3]` the fighter that fired the blast, `e[4]`, `e[5]` where it was, `e[6]` its id (int).
 
 <!-- /kind:beam -->
 
@@ -1019,74 +1065,101 @@ for FLUTE and TROMBONE), from the lines below.
 <!-- kind:snip -->
 #### `snip` (ability kind of OBOE (and BASS CLARINET))
 
-`fight.py` 2526 to 2567, 2882 to 2883. Not ported yet: its port fills this section in (the meaning of each field, as 6.2
-and 6.3 do for FLUTE and TROMBONE), from the lines below.
+`fight.py` 2526 to 2567, 2882 to 2883, ported (milestone 3, Task 11; `abilities/snip.rs`): DOUBLE REED (and BASS
+CLARINET's SLAP TONGUE, and a snip IDENTITY CRISIS copies). Two blades scissor out of the ball at the enemy, turning
+to it at `track` radians a second while they open over `open16` 16ths, and snap shut: a hit when the enemy is then
+within `reach` beyond the two surfaces and `half` degrees of the aim (`dmg`, `knock`). The unlock waits in
+`abilities_step` (3037 to 3039; 3046 to 3049 for a copy) until the enemy is within `ready` beyond the surfaces. The
+shut blades stay for 0.25 s.
 
-**Record keys.**
+**Record keys** (only in a fight where a fighter has a `snip` ability of its own; a copied snip alone adds none):
 
-- `SNIP`: added to `rec` at `run()` 5805, written by `snap` 5555 to 5561:
+| Key | Stored as | Shape | Meaning |
+| --- | --- | --- | --- |
+| `SNIP` | `<f8` | (frames, 2, 3) | per fighter `[state, aim, time of the snap]`: state 1.0 while the blades open, 2.0 once shut; the aim in radians, -pi to pi (it follows the enemy while they open); all three NaN for a fighter with no blades out. |
 
-  ```python
-  if 'SNIP' in rec:                                   # #37, only recorded when a fighter has a 'snip' ability
-      Sp = np.full((2, 3), np.nan)
-      for j, Bj in enumerate((B0, B1)):
-          Sn = getattr(Bj, 'snip', None)
-          if Sn is not None:
-              Sp[j] = (Sn['state'], Sn['aim'], Sn['t_snap'])
-      rec['SNIP'].append(Sp)
-  ```
+```python
+if 'SNIP' in rec:                                   # #37, only recorded when a fighter has a 'snip' ability
+    Sp = np.full((2, 3), np.nan)
+    for j, Bj in enumerate((B0, B1)):
+        Sn = getattr(Bj, 'snip', None)
+        if Sn is not None:
+            Sp[j] = (Sn['state'], Sn['aim'], Sn['t_snap'])
+    rec['SNIP'].append(Sp)
+```
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+**Events** (positions as in 6.2):
 
-- 2541: `self.ev('snip_open', k, B.snip['t_snap'], aim)`
-- 2561: `self.damage(k, 1 - k, ab['dmg'], 'snip', hx, hy)`
-- 2563: `self.ev('snip', k, int(hit), Sn['aim'], float(ab['reach']))`
+| Kind | `who` (2) | 3 | 4 | 5 |
+| --- | --- | --- | --- | --- |
+| `snip_open` | the snipper | the time the blades will snap (float) | the aim they open at, -pi to pi (float) | |
+| `snip` | the snipper | 1 if the snap hit, else 0 (int) | the aim at the snap (float) | the reach (float) |
+
+**Hits** (`hit`, elements 7 and 8): `snip`, the snap landing; x and y are the near side of the victim's ball; sub 0.
+
+`fight.py` lines: 2541 `snip_open`, 2561 the hit, 2563 `snip`.
 
 <!-- /kind:snip -->
 
 <!-- kind:endless -->
 #### `endless` (ability kind of OBOE)
 
-`fight.py` 2884 to 2888. Not ported yet: its port fills this section in (the meaning of each field, as 6.2 and 6.3 do
-for FLUTE and TROMBONE), from the lines below.
+`fight.py` 2884 to 2888, ported (milestone 3, Task 11; `kinds::tune::start_endless`): ENDLESS NOTE. The oboe's
+beam is held for the ability's `dur_beats` (its live beams and its aim lock are dropped, and the normal shots pause):
+`len` long and `width` wide, its aim (`TH`) turning to the enemy at the ability's `track` radians a second. On every
+8th the enemy touches it: `dmg` (a `hit` of kind `endless`, see `tune`), and out of tune again at the oboe's depth.
+When the time is up the tune's grid emits `endless_end`.
 
-**Record keys.** None of its own.
+**Record keys.** None of its own (`TUNE`'s second number, see `tune`).
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+**Events** (positions as in 6.2):
 
-- 2888: `self.ev('endless', k, B.endless['until'])`
+| Kind | `who` (2) | 3 |
+| --- | --- | --- |
+| `endless` | the oboe | the time the held beam ends (float) |
+
+`fight.py` line: 2888.
 
 <!-- /kind:endless -->
 
 <!-- kind:flash_spin -->
 #### `flash_spin` (ability kind of SOUSAPHONE)
 
-`fight.py` 2977 to 2979, 4985 to 4994. Not ported yet: its port fills this section in (the meaning of each field, as 6.2
-and 6.3 do for FLUTE and TROMBONE), from the lines below.
+`fight.py` 2977 to 2979, 4985 to 4994; ported in `bf-sim/src/kinds/drill.rs` (`start_flash`). HORN FLASH: the whole
+horn spins once over `beats` beats, its blast (`len_k` x the blast's length, `width` wide) sweeping all round from
+facing away from the enemy; it hits once (`dmg`, `knock`, outward). The way it turns is drawn from the fight's
+generator. It does something only on a driller's ball (`hasattr(B, 'march')`).
 
-**Record keys.** None of its own.
+**Record keys.** None of its own: `DRILL` columns 7 and 8 (the `drill` section).
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+**Events.**
 
-- 4993: `self.ev('horn_flash', k, a0, t1, B.flash['len'])`
+| Kind | Fields after `who` | When |
+| --- | --- | --- |
+| `horn_flash` | the angle it starts at, the time it ends, the lane's length | HORN FLASH starts (4993) |
+
+Its hit is `flash`, with a `flash_hit` event (the `drill` section).
 
 <!-- /kind:flash_spin -->
 
 <!-- kind:company_front -->
 #### `company_front` (ability kind of SOUSAPHONE)
 
-`fight.py` 2980 to 2982, 4995 to 5005. Not ported yet: its port fills this section in (the meaning of each field, as 6.2
-and 6.3 do for FLUTE and TROMBONE), from the lines below.
+`fight.py` 2980 to 2982, 4995 to 5005; ported in `bf-sim/src/kinds/drill.rs` (`start_front`). COMPANY FRONT: a wall
+across the whole ring marches from the rope behind the marcher to the rope beyond the enemy, along whichever axis
+parts the two balls most, one step a beat for `int(beats)` beats; the enemy it meets (within half of `thick` of the
+wall, `thick` 0.35 unless given) takes `dmg` and is knocked on ahead (`knock`); it tramples the enemy's baskets as it
+goes. It does something only on a driller's ball (`hasattr(B, 'march')`).
 
-**Record keys.** None of its own.
+**Record keys.** None of its own: `DRILL` columns 9, 10, 11 and 15 (the `drill` section).
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+**Events.**
 
-- 5004: `self.ev('company_front', k, ax, sg, self.t, t1)`
+| Kind | Fields after `who` | When |
+| --- | --- | --- |
+| `company_front` | the axis (int: 0 = x, 1 = y), the way (1.0 or -1.0), the start time, the end time | COMPANY FRONT starts (5004) |
+
+Its hit is `front`, with `front_step`, `front_hit`, `trample_basket` and `front_end` events (the `drill` section).
 
 <!-- /kind:company_front -->
 

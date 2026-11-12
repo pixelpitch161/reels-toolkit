@@ -652,7 +652,11 @@ impl<'a> Fight<'a> {
                     let wb = &mut self.balls[w];
                     wb.p = geom::sub(wb.p, back);
                     self.socket("move.walker_pinned");
-                    kinds::walk::clash_pinned(self, w);
+                    // S_ = getattr(W_, 'wstep', None): only a walking bass has a step to restart (a marching
+                    // sousaphone and a strutting tenor are walkers without one)
+                    if kinds::walk::is(self, w) {
+                        kinds::walk::clash_pinned(self, w);
+                    }
                 }
                 // vo = float(O_.v @ n) * sg_; if vo < 0: O_.v = O_.v - 2 * vo * sg_ * n
                 let ob = &mut self.balls[o];
