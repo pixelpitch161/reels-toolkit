@@ -7,7 +7,7 @@
 //! (Dm Gm Bb7 A7); any chord works (voicings by rule).
 //!
 //! Here: the theme's harmony helpers and its instruments as the kit computes them. The arrangement that reproduces
-//! the kit's bed is `HotJazzClassic`, in `classic.rs`; it also holds the kit's per-bed cache of sounds (the
+//! the kit's bed is [`HotJazzClassic`], in `classic.rs`; it also holds the kit's per-bed cache of sounds (the
 //! guitar's chop and strum are built there from the cached plucks, as the kit builds them).
 //!
 //! **Voicings.** The mood has no table: [`voicing`] is its rule for every chord the harmony parses (the root low,
@@ -31,19 +31,20 @@ use bf_core::rng::Generator;
 use bf_sound::SRF;
 use bf_sound::synth::{self, FILTER_O, clip, noise};
 
+pub use self::classic::HotJazzClassic;
 use super::bossa_noir::{karplus_strong, loop_length};
-use super::{NOT_PORTED_CARD, Preset, Theme};
+use super::{Preset, Theme};
 use crate::cards::ThemeCard;
 
 /// The theme as the registry lists it: no options; its bed plays the TUBA's voice.
 pub static THEME: Theme = Theme {
     name: "hot_jazz",
-    ported: false,
-    card: &NOT_PORTED_CARD,
+    ported: true,
+    card: &CARD,
     options: &[],
     voices: &["TUBA"],
     own_voice: super::no_own_voice,
-    classic: classic::classic,
+    classic: |_| Ok(Box::new(HotJazzClassic::new())),
 };
 
 /// #46's loop: i - iv - bVI7 - V7 in D minor.
