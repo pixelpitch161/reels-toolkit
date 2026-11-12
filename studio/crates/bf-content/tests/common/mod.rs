@@ -227,3 +227,25 @@ pub fn rms_i16(x: &[[i16; 2]]) -> f64 {
     let sum: f64 = flat.iter().map(|&v| f64::from(v) * f64::from(v)).sum();
     db((sum / flat.len() as f64).sqrt() / 32767.0)
 }
+
+// ---------------------------------------------------------------- a fighter that is not ported
+/// The episode's fight file with `name` on side `k` and nothing of the music that names a fighter (lines, solos,
+/// title hits, roles), so only the fighter's own part can make it fail.
+pub fn with_fighter(k: usize, name: &str) -> FightFile {
+    let mut ff = EPISODE.ff.clone();
+    ff.fighters[k] = name.into();
+    ff.music.lines.clear();
+    ff.music.solos.clear();
+    ff.music.title_hits.clear();
+    ff.music.roles.clear();
+    ff
+}
+
+/// A roster fighter whose voice or part on side `k` is not ported yet (the first in the roster's order), read
+/// from the fighters' own folders at run time, so the tests that need one never name a fighter a port will make
+/// whole. `None` once every fighter has both: the caller then says so and checks what it still can.
+pub fn unported(k: usize) -> Option<&'static str> {
+    bf_content::roster().iter().map(|f| f.name.as_str()).find(|n| {
+        bf_content::fighters::voice(n).is_none() || bf_content::fighters::sound(n, k, &with_fighter(k, n)).is_none()
+    })
+}
