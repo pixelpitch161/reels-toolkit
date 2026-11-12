@@ -1298,7 +1298,7 @@ mod tests {
         assert_ne!(a, forest(0.5, -0.5, 1.5, 21_346));
         assert_eq!(a.len(), 13);
         for &(x, z, hmax, lag, r) in &a {
-            assert!(dmath::hypot(x - 0.5, z + 0.5) <= 1.5 + 1e-12);
+            assert!(np::hypot(x - 0.5, z + 0.5) <= 1.5 + 1e-12);
             assert!((1.1..2.5).contains(&hmax) && (0.0..0.12).contains(&lag) && (0.14..0.20).contains(&r));
         }
         assert!(forest_pipes(9.99, 10.0, 0.5, -0.5, 1.5, 21_345).is_empty());
