@@ -1275,8 +1275,8 @@ def episode_facts(config):
     facts.update(seed=g('SEED'), dmg_scale=float(g('DMG_SCALE', 1.0)),
                  handicap=[1.0, 1.0] if side is None else [float(x) for x in side], rules=dict(g('RULES', {})),
                  roles=dict(g('ROLES', {})), title_hits={k: list(v) for k, v in g('TITLE_HITS', {}).items()},
-                 # the kit's name is SOLO (kit/episode.py); read_config's music_extras already read it, leaving out
-                 # a fighter whose solo holds a chord (a tuple of notes: a fight file's music.solos cannot hold it)
+                 # the kit's name is SOLO (kit/episode.py); read_config's music_extras already read it, a chord (a
+                 # tuple of notes, ACOUSTIC's strums) as a list of notes, as a fight file's music.solos holds it
                  solos=facts.get('solos', {}),
                  mix={k: list(v) for k, v in g('MIX', {}).items()}, series=g('SERIES', None),
                  shard_seed=g('SHARD_SEED', 271), fx_seed=g('FX_SEED', None), music_seed=g('MUSIC_SEED', None))
