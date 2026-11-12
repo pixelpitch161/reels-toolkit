@@ -219,7 +219,18 @@ mod tests {
     fn ported_fighters_have_cards() {
         for name in PORTED {
             let c = card(name).unwrap_or_else(|| panic!("{name} has no card"));
-            assert_eq!(c.tags, ["#bandkids", "#marchingband"], "{name}");
+            // each fighter's own hashtags (the caption's), one word each
+            assert!(!c.tags.is_empty(), "{name} has no tags");
+            for tag in c.tags {
+                assert!(
+                    tag.len() > 1 && tag.starts_with('#') && !tag.contains(char::is_whitespace),
+                    "{name}: {tag:?}"
+                );
+            }
+        }
+        // the two band fighters carry the band's tags
+        for name in ["FLUTE", "TROMBONE"] {
+            assert_eq!(card(name).expect(name).tags, ["#bandkids", "#marchingband"], "{name}");
         }
         let flute = card("FLUTE").expect("flute");
         assert_eq!(flute.weapon, "Snake charmer");
