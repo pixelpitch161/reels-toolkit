@@ -32,15 +32,25 @@ cargo test --workspace
 - `cargo test --workspace` runs every crate's unit tests and the parity tests. The parity tests read `reference/`
   through the dev-only crate `bf-testdata` and need nothing else: no Python, no network. `cargo test -p <crate>` runs
   one crate, `cargo test -p bf-core --test rng_vectors` one test file. CI
-  (`.github/workflows/studio.yml`, one Windows job) builds `bf-cli`, tests `bf-core`, `bf-sim` and the command line's
-  `render_is_reproducible`, renders a 3 s clip of the example episode, builds the app (`bf-app`) and runs the app's
+  (`.github/workflows/studio.yml`, one Windows job) builds `bf-cli`, tests `bf-core`, `bf-sim` and `bf-pack`, fetches
+  the app's own pinned ffmpeg with `ballfight-pack fetch-ffmpeg` (the archive named in `packaging/ffmpeg.toml`, about
+  258 MB, downloaded only when the runner's cache does not hold it; every checksum is checked on each run), checks
+  that it has the `libx264` and `aac` encoders, runs the command line's `render_is_reproducible` and, with
+  `BF_NEED_PINNED_FFMPEG=1`, `the_encode_is_pinned` and `the_faster_clip_is_pinned` (the 3 s clip with each encoder
+  setting must be byte for byte its line in `replay/encode_hashes.txt`), renders a 3 s clip of the example episode,
+  builds the app (`bf-app`) and runs the app's
   tests that need no window: `cargo test --release -p bf-app --lib --bins --test compat` (the unit tests inside each
   file, the real engine's among them, the command line's and the saved-file tests). The app's interface tests
   (`--test ui`) are not run on CI: they draw through DirectX 12 only, and a hosted runner is not known to offer a
   DirectX 12 adapter. They run on the owner's PC, with the ignored ones below. The app's two steps add about 11 minutes or more to
   the job: the first run on GitHub took 6 min 44 s to build the app, and its tests ran 4 min 23 s before they failed.
+  Last, it makes the package with `ballfight-pack package` in the runner's temp folder and checks every file in it
+  against its `MANIFEST.txt`, the exe against the build and the ffmpeg files against the pin; the package (about
+  600 MB) is not uploaded anywhere.
   When the app's tests fail, a step after them repeats the failed tests, the panics, compile errors and the last 30
-  lines of their output as annotations on the run, so the failure can be read without opening the log. A test that
+  lines of their output as annotations on the run, so the failure can be read without opening the log; a second such
+  step does the same for the `bf-core`/`bf-sim`/`bf-pack` tests, the ffmpeg fetch, the pinned encode and the package,
+  titled with the failed step's id. A test that
   needs something a hosted runner may lack says "not run here: <reason>" in its output instead of passing quietly
   (today: the render tests when no usable ffmpeg is found, and the two `store::library` tests of a folder that
   cannot be read, `a_folder_that_cannot_be_read_is_named` and `an_output_folder_that_cannot_be_read_is_named`, when
