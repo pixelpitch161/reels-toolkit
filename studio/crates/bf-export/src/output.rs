@@ -7,14 +7,24 @@
 //! names that start with "."), and moved into place only when every check has passed. Nothing that exists is
 //! ever overwritten or deleted: the target name is decided before any work and must be free, and the move is
 //! one that cannot replace anything (`MoveFileExW` without `MOVEFILE_REPLACE_EXISTING`): if the name was taken
-//! meanwhile, the finished folder stays where it is and the error names it. A failed or cancelled job removes
-//! only the files it wrote into its own temporary folder (by their exact paths) and then that folder, which must
-//! be empty by then (never a recursive delete, never through a link).
+//! meanwhile, the finished folder is shown (no longer hidden) and moved, with the same move, to
+//! `<name>_kept-<k>` beside it (k from 1 to [`MAX_TEMP_TRIES`]), and the error names that folder. So a
+//! temporary folder never keeps a finished video, unless every one of those names is taken too: then it stays
+//! where it is, shown, and the error says so. A failed or cancelled job removes only the files it wrote into its
+//! own temporary folder (by their exact paths) and then that folder, which must be empty by then (never a
+//! recursive delete, never through a link).
+//!
+//! The temporary folder's name, exactly: `.tmp-<name>-<pid>` or `.tmp-<name>-<pid>-<n>`, where `<name>` is the
+//! video's folder name, `<pid>` is the process id of the program that made it (in decimal, no leading zero) and
+//! `<n>` runs from 2 to [`MAX_TEMP_TRIES`] when the plain name was taken. [`temp_folder_owners`] reads it back and
+//! [`temp_folder_files`] lists the files a job writes into it, so that the app can clear what an abandoned render
+//! left (`bf-app`'s `engine::files::clear_abandoned`).
 
 use std::fs;
 use std::io;
 use std::ops::Range;
 use std::path::{Path, PathBuf};
+use std::sync::Mutex;
 use std::time::Duration;
 
 use bf_core::fightfile::FightFile;
@@ -197,12 +207,123 @@ pub(crate) fn prepare_root(root: &Path) -> Result<(), ExportError> {
     }
 }
 
+/// How a temporary folder's name starts.
+pub const TEMP_PREFIX: &str = ".tmp-";
+
+/// How many names a job tries for its temporary folder (`-2` to `-64` after the plain one), and how many
+/// `_kept-<k>` names for a finished folder whose name was taken meanwhile.
+pub const MAX_TEMP_TRIES: u32 = 64;
+
+/// The names of this program's temporary folders that a job is still using (made and not yet dropped).
+static IN_USE: Mutex<Vec<String>> = Mutex::new(Vec::new());
+
+fn in_use() -> std::sync::MutexGuard<'static, Vec<String>> {
+    IN_USE.lock().unwrap_or_else(|e| e.into_inner())
+}
+
+/// Whether a job of this program is still using a temporary folder named `folder_name` (in any output folder).
+pub fn temp_folder_in_use(folder_name: &str) -> bool {
+    in_use().iter().any(|n| n == folder_name)
+}
+
+/// A decimal number as this program writes one: digits only, no leading zero, no sign.
+fn plain_number(text: &str) -> Option<u32> {
+    let first = text.bytes().next()?;
+    if first == b'0' || !text.bytes().all(|b| b.is_ascii_digit()) {
+        return None;
+    }
+    text.parse().ok()
+}
+
+/// Every way `folder_name` reads as one of this program's temporary folders, as (the video's folder name, the
+/// pid of the program that made it); empty when it is not one. The form is exactly `.tmp-<name>-<pid>` or
+/// `.tmp-<name>-<pid>-<n>` with n from 2 to [`MAX_TEMP_TRIES`]; `<name>` holds `_vs_` (every video's and clip's
+/// folder name does, [`folder_stem`]) and no path separator; `<pid>` and `<n>` are written without a leading zero.
+/// A name with a try number, such as `.tmp-a_vs_b-1234-2`, can be read two ways (pid 1234 and try 2, or pid 2 of
+/// the name `a_vs_b-1234`): both are given, so a caller can refuse when either program is running and accept only
+/// the files of either name.
+pub fn temp_folder_owners(folder_name: &str) -> Vec<(String, u32)> {
+    let Some(rest) = folder_name.strip_prefix(TEMP_PREFIX) else {
+        return Vec::new();
+    };
+    let usable = |name: &str| name.contains("_vs_") && !name.contains(['/', '\\', ':']);
+    let mut owners = Vec::new();
+    // `.tmp-<name>-<pid>`
+    if let Some((name, pid)) = rest.rsplit_once('-')
+        && let Some(pid) = plain_number(pid)
+        && usable(name)
+    {
+        owners.push((name.to_string(), pid));
+    }
+    // `.tmp-<name>-<pid>-<n>`
+    if let Some((front, n)) = rest.rsplit_once('-')
+        && plain_number(n).is_some_and(|n| (2..=MAX_TEMP_TRIES).contains(&n))
+        && let Some((name, pid)) = front.rsplit_once('-')
+        && let Some(pid) = plain_number(pid)
+        && usable(name)
+    {
+        owners.push((name.to_string(), pid));
+    }
+    owners
+}
+
+/// The files a job writes into the temporary folder of the video folder `name`, other than the finished video
+/// `<name>.mp4` and the fight file `<name>.toml` (which mean the folder holds a finished video). These are all the
+/// names `job.rs`'s `make` gives to `TempFolder::write`, `file` and `rename` (a test reads `job.rs` to hold this
+/// list to it): the sound for the encode, the video while it is made, the Faster setting's note, the cover and the
+/// caption.
+pub fn temp_folder_files(name: &str) -> [String; 5] {
+    [
+        "audio.wav".to_string(),
+        format!("{name}.mp4.part"),
+        crate::encode::ENCODING_NOTE.to_string(),
+        "cover.png".to_string(),
+        "caption.txt".to_string(),
+    ]
+}
+
+/// Takes one mark of `folder_name` out of [`IN_USE`].
+fn release(folder_name: &str) {
+    let mut marks = in_use();
+    if let Some(at) = marks.iter().position(|n| n == folder_name) {
+        marks.swap_remove(at);
+    }
+}
+
+/// `<target>_kept-<k>`, beside `target`.
+fn kept_name(target: &Path, k: u32) -> PathBuf {
+    let mut name = target.file_name().unwrap_or_default().to_os_string();
+    name.push(format!("_kept-{k}"));
+    target.with_file_name(name)
+}
+
+/// Moves the folder `from` to the first free `<target>_kept-<k>` (k from 1 to [`MAX_TEMP_TRIES`]) with the move
+/// that never replaces anything, and gives that name; or why not, as a clause. Each name is tried once; a refusal
+/// other than "the name is taken" stops at once.
+fn keep_beside(from: &Path, target: &Path) -> Result<PathBuf, String> {
+    for k in 1..=MAX_TEMP_TRIES {
+        let kept = kept_name(target, k);
+        match retry(|| move_no_replace(from, &kept)) {
+            Ok(()) => return Ok(kept),
+            Err(e) if e.kind() == io::ErrorKind::AlreadyExists => continue,
+            Err(e) => return Err(format!("{} could not be used ({})", kept.display(), reason(&e))),
+        }
+    }
+    Err(format!(
+        "{} to {} are all taken",
+        kept_name(target, 1).display(),
+        kept_name(target, MAX_TEMP_TRIES).display()
+    ))
+}
+
 /// A job's temporary folder: made by the job itself, hidden, holding only the files it registered.
 pub(crate) struct TempFolder {
     path: PathBuf,
     files: Vec<PathBuf>,
     /// Moved into place, kept on purpose or already removed: nothing to clean up.
     done: bool,
+    /// The folder's name in [`IN_USE`] until this is dropped.
+    name: String,
 }
 
 impl TempFolder {
@@ -210,9 +331,12 @@ impl TempFolder {
     /// there is never touched) and hides it.
     pub fn create(root: &Path, name: &str) -> Result<TempFolder, ExportError> {
         let pid = std::process::id();
-        for n in 1..=64u32 {
-            let base = format!(".tmp-{name}-{pid}");
-            let path = root.join(if n == 1 { base } else { format!("{base}-{n}") });
+        for n in 1..=MAX_TEMP_TRIES {
+            let base = format!("{TEMP_PREFIX}{name}-{pid}");
+            let folder_name = if n == 1 { base } else { format!("{base}-{n}") };
+            let path = root.join(&folder_name);
+            // Marked in use before it exists, so nothing of this program ever takes it for an abandoned one.
+            in_use().push(folder_name.clone());
             match fs::create_dir(&path) {
                 Ok(()) => {
                     set_hidden(&path, true);
@@ -220,10 +344,16 @@ impl TempFolder {
                         path,
                         files: Vec::new(),
                         done: false,
+                        name: folder_name,
                     });
                 }
-                Err(e) if e.kind() == io::ErrorKind::AlreadyExists => continue,
-                Err(e) => return Err(cannot_write(root, &e)),
+                Err(e) => {
+                    release(&folder_name);
+                    if e.kind() == io::ErrorKind::AlreadyExists {
+                        continue;
+                    }
+                    return Err(cannot_write(root, &e));
+                }
             }
         }
         Err(ExportError::Folder(format!(
@@ -280,8 +410,9 @@ impl TempFolder {
     }
 
     /// Moves the folder to `target` with a move that cannot replace anything. If anything is at `target` by
-    /// then, the finished folder is kept where it is (shown again, not hidden) and the error names both; that is
-    /// never tried again.
+    /// then, the finished folder (shown, not hidden) goes to the first free `<target>_kept-<k>` beside it with the
+    /// same move, and the error names it; if none of those names can be used, it stays where it is, shown, and the
+    /// error names it there. Nothing is ever replaced, and none of this is tried again.
     pub fn move_to(&mut self, target: &Path) -> Result<(), ExportError> {
         set_hidden(&self.path, false);
         match retry(|| move_no_replace(&self.path, target)) {
@@ -291,12 +422,20 @@ impl TempFolder {
             }
             Err(e) if e.kind() == io::ErrorKind::AlreadyExists => {
                 self.done = true; // kept: nothing is lost
-                Err(ExportError::Folder(format!(
-                    "A folder named {} appeared in the output folder while the video was made, so the finished \
-                     video was left in {}; move it out of there yourself.",
-                    target.display(),
-                    self.path.display()
-                )))
+                Err(ExportError::Folder(match keep_beside(&self.path, target) {
+                    Ok(kept) => format!(
+                        "A folder named {} appeared in the output folder while the video was made, so the \
+                         finished video was saved in {} beside it instead; nothing was replaced.",
+                        target.display(),
+                        kept.display()
+                    ),
+                    Err(why) => format!(
+                        "A folder named {} appeared in the output folder while the video was made, and {why}, so \
+                         the finished video was left in {}; move it out of there yourself.",
+                        target.display(),
+                        self.path.display()
+                    ),
+                }))
             }
             Err(e) => {
                 set_hidden(&self.path, true);
@@ -342,6 +481,7 @@ impl TempFolder {
 impl Drop for TempFolder {
     fn drop(&mut self) {
         let _ = self.discard();
+        release(&self.name);
     }
 }
 
@@ -458,7 +598,7 @@ mod tests {
         let err = t.move_to(&target).unwrap_err();
         assert!(matches!(err, ExportError::Folder(_)));
         assert!(
-            err.to_string().contains("appeared") && err.to_string().contains(".tmp-x-"),
+            err.to_string().contains("appeared") && err.to_string().contains("x_kept-1"),
             "{err}"
         );
         assert_eq!(
@@ -466,13 +606,13 @@ mod tests {
             0,
             "the empty folder is untouched"
         );
-        let kept = t.path.clone();
         drop(t);
         assert_eq!(
-            fs::read(kept.join("v.mp4")).unwrap(),
+            fs::read(root.join("x_kept-1").join("v.mp4")).unwrap(),
             b"new",
             "the finished video is kept"
         );
+        fs::remove_dir_all(root.join("x_kept-1")).unwrap();
 
         let mut t = TempFolder::create(&root, "y").unwrap();
         t.write("v.mp4", b"new").unwrap();
@@ -496,5 +636,213 @@ mod tests {
             root.join("x_vs_y_seed7_frames0-90")
         );
         fs::remove_dir_all(&root).unwrap();
+    }
+
+    /// The names directly in `root`, sorted.
+    fn names_in(root: &Path) -> Vec<String> {
+        let mut names: Vec<String> = fs::read_dir(root)
+            .unwrap()
+            .map(|e| e.unwrap().file_name().to_string_lossy().into_owned())
+            .collect();
+        names.sort();
+        names
+    }
+
+    #[test]
+    fn a_kept_video_is_visible_and_named() {
+        let root = temp("kept");
+        let name = "flute_vs_trombone";
+        let target = root.join(name);
+        // The name is taken while the video is made: the finished folder goes to `<name>_kept-1`, shown.
+        let mut t = TempFolder::create(&root, name).unwrap();
+        t.write(&format!("{name}.mp4"), b"video").unwrap();
+        t.write(&format!("{name}.toml"), b"fight").unwrap();
+        fs::create_dir(&target).unwrap();
+        fs::write(target.join("theirs.txt"), b"theirs").unwrap();
+        let err = t.move_to(&target).unwrap_err().to_string();
+        drop(t);
+        let kept = root.join(format!("{name}_kept-1"));
+        assert_eq!(
+            err,
+            format!(
+                "A folder named {} appeared in the output folder while the video was made, so the finished video \
+                 was saved in {} beside it instead; nothing was replaced.",
+                target.display(),
+                kept.display()
+            )
+        );
+        assert_eq!(names_in(&root), [name.to_string(), format!("{name}_kept-1")]);
+        assert_eq!(fs::read(kept.join(format!("{name}.mp4"))).unwrap(), b"video");
+        assert_eq!(fs::read(kept.join(format!("{name}.toml"))).unwrap(), b"fight");
+        assert_eq!(fs::read(target.join("theirs.txt")).unwrap(), b"theirs");
+        #[cfg(windows)]
+        assert!(!hidden(&kept), "the kept folder is not hidden");
+
+        // `_kept-1` is taken as well (by a file, here): the next free number, and nothing is replaced.
+        fs::write(root.join(format!("{name}_kept-2")), b"a file").unwrap();
+        let mut t = TempFolder::create(&root, name).unwrap();
+        t.write(&format!("{name}.mp4"), b"second").unwrap();
+        let err = t.move_to(&target).unwrap_err().to_string();
+        drop(t);
+        assert!(err.contains(&format!("{name}_kept-3")), "{err}");
+        assert_eq!(fs::read(kept.join(format!("{name}.mp4"))).unwrap(), b"video");
+        assert_eq!(fs::read(root.join(format!("{name}_kept-2"))).unwrap(), b"a file");
+        assert_eq!(
+            fs::read(root.join(format!("{name}_kept-3")).join(format!("{name}.mp4"))).unwrap(),
+            b"second"
+        );
+
+        // Every kept name taken: the finished folder stays, shown, and the words say where.
+        for k in 1..=MAX_TEMP_TRIES {
+            let _ = fs::create_dir(kept_name(&target, k));
+        }
+        let mut t = TempFolder::create(&root, name).unwrap();
+        t.write(&format!("{name}.mp4"), b"third").unwrap();
+        let err = t.move_to(&target).unwrap_err().to_string();
+        let left = t.path.clone();
+        drop(t);
+        assert!(
+            err.contains("_kept-64 are all taken") && err.contains(&left.display().to_string()),
+            "{err}"
+        );
+        assert_eq!(fs::read(left.join(format!("{name}.mp4"))).unwrap(), b"third");
+        #[cfg(windows)]
+        assert!(!hidden(&left), "a folder that keeps a video is not hidden");
+        fs::remove_dir_all(&root).unwrap();
+    }
+
+    #[test]
+    fn the_temporary_folder_name_reads_back() {
+        let ab = "flute_vs_trombone".to_string();
+        assert_eq!(temp_folder_owners(".tmp-flute_vs_trombone-4242"), [(ab.clone(), 4242)]);
+        // With a try number every name also reads as pid <n> of the name `<name>-<pid>`: both are given.
+        let other = "flute_vs_trombone-4242".to_string();
+        assert_eq!(
+            temp_folder_owners(".tmp-flute_vs_trombone-4242-2"),
+            [(other.clone(), 2), (ab.clone(), 4242)]
+        );
+        assert_eq!(
+            temp_folder_owners(".tmp-flute_vs_trombone-4242-64"),
+            [(other.clone(), 64), (ab.clone(), 4242)]
+        );
+        assert_eq!(
+            temp_folder_owners(".tmp-flute_vs_trombone_seed7-12"),
+            [("flute_vs_trombone_seed7".to_string(), 12)]
+        );
+        // A clip's name holds a hyphen; with a try number it reads two ways.
+        assert_eq!(
+            temp_folder_owners(".tmp-a_vs_b_frames0-90-77"),
+            [("a_vs_b_frames0-90".to_string(), 77)]
+        );
+        assert_eq!(
+            temp_folder_owners(".tmp-a_vs_b_frames0-90-77-3"),
+            [
+                ("a_vs_b_frames0-90-77".to_string(), 3),
+                ("a_vs_b_frames0-90".to_string(), 77)
+            ]
+        );
+        // What this program makes reads back as itself.
+        let root = temp("names");
+        let t = TempFolder::create(&root, "flute_vs_trombone").unwrap();
+        let made = t.path.file_name().unwrap().to_string_lossy().into_owned();
+        assert_eq!(temp_folder_owners(&made), [(ab.clone(), std::process::id())]);
+        drop(t);
+        fs::remove_dir_all(&root).unwrap();
+        // Names that only look alike.
+        for name in [
+            ".tmp-x-4242",
+            ".tmp-flute_vs_trombone",
+            ".tmp-flute_vs_trombone-",
+            ".tmp-flute_vs_trombone-0",
+            ".tmp-flute_vs_trombone-04242",
+            ".tmp-flute_vs_trombone-+4242",
+            ".tmp-flute_vs_trombone-42a",
+            ".tmp-flute_vs_trombone-99999999999",
+            ".tmp-flute_vs_trombone-4242.old",
+            ".tmp-flute_vs_trombone-4242 (2)",
+            ".tmp--4242",
+            ".tmp-_vs_-",
+            ".TMP-flute_vs_trombone-4242",
+            "tmp-flute_vs_trombone-4242",
+            "x.tmp-flute_vs_trombone-4242",
+            " .tmp-flute_vs_trombone-4242",
+            "flute_vs_trombone",
+        ] {
+            assert_eq!(temp_folder_owners(name), [], "{name}");
+        }
+        // A try number outside 2 to 64 is not a try number (the name then reads only one way, or none).
+        assert_eq!(
+            temp_folder_owners(".tmp-flute_vs_trombone-4242-65"),
+            [("flute_vs_trombone-4242".to_string(), 65)]
+        );
+        assert_eq!(temp_folder_owners(".tmp-flute_vs_trombone-4242-01"), []);
+    }
+
+    #[test]
+    fn a_temporary_folder_is_in_use_until_dropped() {
+        // A name no other test uses: the marks are this whole test program's.
+        let video = "in_use_vs_test";
+        let root = temp("in use");
+        let t = TempFolder::create(&root, video).unwrap();
+        let name = t.path.file_name().unwrap().to_string_lossy().into_owned();
+        assert!(temp_folder_in_use(&name));
+        let mut u = TempFolder::create(&root, video).unwrap();
+        let second = u.path.file_name().unwrap().to_string_lossy().into_owned();
+        assert_eq!(second, format!("{name}-2"));
+        assert!(temp_folder_in_use(&second));
+        u.write("x.txt", b"x").unwrap();
+        // Moved into place or thrown away: in use until dropped, then not.
+        u.move_to(&root.join(video)).unwrap();
+        assert!(temp_folder_in_use(&second));
+        drop(u);
+        assert!(!temp_folder_in_use(&second));
+        assert!(temp_folder_in_use(&name));
+        drop(t);
+        assert!(!temp_folder_in_use(&name));
+        // A name that could not be made is never left marked.
+        fs::write(root.join("a file"), b"x").unwrap();
+        assert!(TempFolder::create(&root.join("a file"), video).is_err());
+        assert!(!temp_folder_in_use(&name));
+        fs::remove_dir_all(&root).unwrap();
+    }
+
+    /// The list of files `temp_folder_files` gives is held to what `job.rs` writes into a temporary folder: every
+    /// call that names a file in it, with the names those calls take.
+    #[test]
+    fn the_temporary_files_are_the_jobs() {
+        let job = include_str!("job.rs");
+        let mut calls: Vec<&str> = Vec::new();
+        for call in ["tmp.write(", "tmp.file(", "tmp.rename("] {
+            for (at, _) in job.match_indices(call) {
+                let rest = &job[at + call.len()..];
+                calls.push(&rest[..rest.find(')').unwrap() + 1]);
+            }
+        }
+        calls.sort_unstable();
+        assert_eq!(
+            calls,
+            [
+                "\"audio.wav\", &wav16_bytes(&st.master)",
+                "\"caption.txt\", caption_text(ff)",
+                "\"cover.png\", &png_bytes(&upscale3(&cover)",
+                "&format!(\"{name}.toml\")",
+                "&part)",
+                "&part, &mp4)",
+                "ENCODING_NOTE, note.as_bytes()",
+            ],
+            "job.rs writes another file into its temporary folder: add it to temp_folder_files (or, if it holds a \
+             finished video, to the files clear_abandoned refuses)"
+        );
+        assert!(job.contains("let (part, mp4) = (format!(\"{name}.mp4.part\"), format!(\"{name}.mp4\"));"));
+        assert_eq!(
+            temp_folder_files("a_vs_b"),
+            [
+                "audio.wav",
+                "a_vs_b.mp4.part",
+                "encoding.txt",
+                "cover.png",
+                "caption.txt"
+            ]
+        );
     }
 }

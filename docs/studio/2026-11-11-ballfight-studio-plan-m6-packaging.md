@@ -258,9 +258,11 @@ Each with what it costs if it is wrong.
   certain on both.
 - **f.** Removing the app also deletes the app's rebuildable data (`data\source`, `data\build`, `data\downloads`,
   `cache`) and keeps settings, the queue, fault reports and every video. *If wrong:* keep more, one list.
-- **g.** Day-old abandoned `.tmp-` render folders go to the Recycle Bin when the Library is scanned, never deleted
-  outright; a `.tmp-` folder that holds a finished `.mp4` is never touched, and from Task 10 on a finished video is
-  never left in one. *If wrong:* turn it off, one call.
+- **g.** (Ruling M6-R4, replacing the Recycle Bin.) When the Library is scanned, a day-old abandoned `.tmp-` render
+  folder is removed file by file, under strict rules: only the export's own file names, then the empty folder.
+  Such a folder holds only a partial render. One recursive shell operation could follow whatever it finds, show
+  a window, and fill the bin with gigabytes. A `.tmp-` folder that holds a finished `.mp4` is never touched, and
+  from Task 10 on a finished video is never left in one. *If wrong:* turn it off, one call.
 
 ## Order of work
 
