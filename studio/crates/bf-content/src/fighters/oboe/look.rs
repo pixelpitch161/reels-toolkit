@@ -305,9 +305,6 @@ pub struct OboeLook {
     endless_len: Option<f64>,
     /// `self.cfg['abilities']['unlock2']['width']`: ENDLESS NOTE's width.
     endless_width: Option<f64>,
-    /// `half` and `reach` of `cfg`'s `unlock2`, which no hook reads: only [`Look::cfg_summary`] names them (the
-    /// export lists them among the look's keys).
-    unlock2_half_reach: (Option<f64>, Option<f64>),
 }
 
 impl OboeLook {
@@ -453,22 +450,12 @@ impl Look for OboeLook {
         self.setup_as(p, k, &p.cfg[k]);
     }
 
-    /// What `setup_as` took from `cfg`, under the keys the export lists for `oboe.py` (look.json `cfg_keys`). The
-    /// export's scan follows the local name `ab`, which `oboe.py` binds to `unlock1` in `snip_state` and to `unlock2`
-    /// in `live_beams`, so it lists DOUBLE REED's `half` and `reach` under `unlock2` and `unlock1` whole: here
-    /// `abilities.unlock1` holds the two numbers the look reads of it (half, reach), and `abilities.unlock2.half` and
-    /// `.reach` what `cfg` holds under those names (nothing, for the oboe's own entry).
+    /// What `setup_as` took from `cfg`, by the keys `oboe.py` reads from `self.cfg`.
     fn cfg_summary(&self) -> Option<String> {
         Some(format!(
-            "abilities.unlock1=({:?},{:?}); abilities.unlock2.half={:?}; abilities.unlock2.len={:?}; \
-             abilities.unlock2.reach={:?}; abilities.unlock2.width={:?}; weapon.hold={:?}",
-            self.snip_half,
-            self.snip_reach,
-            self.unlock2_half_reach.0,
-            self.endless_len,
-            self.unlock2_half_reach.1,
-            self.endless_width,
-            self.hold
+            "abilities.unlock1.half={:?}; abilities.unlock1.reach={:?}; abilities.unlock2.len={:?}; \
+             abilities.unlock2.width={:?}; weapon.hold={:?}",
+            self.snip_half, self.snip_reach, self.endless_len, self.endless_width, self.hold
         ))
     }
 
@@ -484,7 +471,6 @@ impl Look for OboeLook {
         self.snip_reach = cfg.unlock1.get("reach");
         self.endless_len = cfg.unlock2.get("len");
         self.endless_width = cfg.unlock2.get("width");
-        self.unlock2_half_reach = (cfg.unlock2.get("half"), cfg.unlock2.get("reach"));
         let ev = &p.rec.events;
         let mine = |e: &&Event, kind: &str| e.kind == kind && e.who() == Some(k);
         // (e[0], e[2], np.array([e[3], e[4]]), e[5], e[6], e[7])

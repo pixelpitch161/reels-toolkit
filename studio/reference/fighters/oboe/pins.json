@@ -7,170 +7,182 @@
  "pins": [
   {
    "path": "fighters/oboe/checks_rows.json",
-   "sha256": "1039351a4b6a2c211e366feb9828ef4485cb2c07e8b81bdde383008b5ca0f76e",
-   "bytes": 32346,
+   "sha256": "5fdbe60ccec09954f6f9511fec135a539fedc56200903273180b594e43da6373",
+   "bytes": 32295,
    "export": "fighter_oboe"
   },
   {
    "path": "fighters/oboe/hull_left.json",
-   "sha256": "1677ca8e2f53d81f57723d7a77a5c9975ab1733db973f5546b9f18ca057ada83",
-   "bytes": 164304,
+   "sha256": "df884cc91e791907bdcbb0e249bb92019c9622d401ad02a5dce7ae5badcc7b9d",
+   "bytes": 168354,
    "export": "fighter_oboe"
   },
   {
    "path": "fighters/oboe/hull_right.json",
-   "sha256": "5bac82cfcd86a4a4db5ae4d08c62cdc32b49275743cd70e7e90b6a16da529c4f",
-   "bytes": 117698,
+   "sha256": "10d9b26f856fc6bb3f4517266696b1e46393a82bff4d7c06bdbd1c6efb2aafac",
+   "bytes": 127827,
    "export": "fighter_oboe"
   },
   {
    "path": "fighters/oboe/look_right.json",
-   "sha256": "0f4c35c0c65310831fc1b5bd22c7bdc434d0c1e5e84c73644417a2351804c966",
-   "bytes": 27970,
+   "sha256": "04a79af22adc644f452e9c732ae6bf19180f0ae0f30a2645499d2d2de94958a3",
+   "bytes": 17927,
    "export": "fighter_oboe"
   },
   {
    "path": "fighters/oboe/right.bfrec",
-   "sha256": "269a257dfa23bd077507b5eb300f686f74ea7f49ddbe7fc28edf4bbb1b9ae1c2",
-   "bytes": 119344,
+   "sha256": "c75fb599a6a50a475144d4d18a1551367bfa1021c4c105c44fee38e0beaa61f3",
+   "bytes": 128997,
    "export": "fighter_oboe"
   },
   {
    "path": "fighters/oboe/scenarios/early_ko_s1.bfrec",
-   "sha256": "1551b75f745bd65cc4a744b9aff8b7012ac2b93a042661c365e396a779e625b2",
-   "bytes": 48964,
+   "sha256": "23286775be3225f801ac4eff642ad1ab6def4658d723be6ab1980ee272edaac0",
+   "bytes": 52114,
    "export": "fighter_oboe"
   },
   {
    "path": "fighters/oboe/scenarios/early_ko_s2.bfrec",
-   "sha256": "ffe08e01a4b26c5408996e26a940af865aae65592733e5ad271e727aa2e88504",
-   "bytes": 39387,
+   "sha256": "1d1d9997ec7c1e846513fb8242f95624cb1a1b613c6bbe5899ea8a5672c48fe2",
+   "bytes": 44085,
    "export": "fighter_oboe"
   },
   {
    "path": "fighters/oboe/scenarios/early_ko_s3.bfrec",
-   "sha256": "f1a4649870513ad10cf5828f47590a5ec4a62bc3b80feb14651f34f564773252",
-   "bytes": 29727,
+   "sha256": "53d31aff182a575d403f5cd8769cf2a5dc46fa768660995093d927c72a5c2338",
+   "bytes": 43898,
    "export": "fighter_oboe"
   },
   {
    "path": "fighters/oboe/scenarios/early_levels_s1.bfrec",
-   "sha256": "2f935ae41c52714b62af20f8017de8fba5abc95aa5ed15a102f68bad5f516f32",
-   "bytes": 84099,
+   "sha256": "f60a11ec3f73341b76393d085350a31d1b919ee6498df7b663a589bbe31af8b7",
+   "bytes": 135067,
    "export": "fighter_oboe"
   },
   {
    "path": "fighters/oboe/scenarios/early_levels_s2.bfrec",
-   "sha256": "db09c389361c5fb00a7a984c709df903dfa6ea9dd40474a17db79dd81c62a32c",
-   "bytes": 83176,
+   "sha256": "07dfd38bf68bd93186ddf9fb37619a1aa699a533afeed0ab14dffa2b9671c9c7",
+   "bytes": 149494,
    "export": "fighter_oboe"
   },
   {
    "path": "fighters/oboe/scenarios/early_levels_s3.bfrec",
-   "sha256": "81a79edd047dfbec6d171a974ad5f9e11ca837c9fc2fd6f3ed2e7a75b9d716fd",
-   "bytes": 89635,
+   "sha256": "6f38f07a8ba09705a0003742399b25144e21e4ec5c5d850bc20f39b83c7faf71",
+   "bytes": 123173,
    "export": "fighter_oboe"
   },
   {
    "path": "fighters/oboe/scenarios/early_low_s1.bfrec",
-   "sha256": "21370da5074fd7bcadecd738d972f7ab6f7c6da6e81f8d171f308b2dc90f1753",
-   "bytes": 85617,
+   "sha256": "7df689d9e7555b90573eeb8af5319484a0dd16fb612b69c347ed60411c2a57c7",
+   "bytes": 109771,
    "export": "fighter_oboe"
   },
   {
    "path": "fighters/oboe/scenarios/early_low_s2.bfrec",
-   "sha256": "861ae820600777d0aef02f286ba0cca3bcb7ab2b2ca324f3a1685b03036535e0",
-   "bytes": 88757,
+   "sha256": "544e2b88010c962e6de05d906b6e34b2c35a1bbf0c97c911af738e63fb2b19bf",
+   "bytes": 127034,
    "export": "fighter_oboe"
   },
   {
    "path": "fighters/oboe/scenarios/early_low_s3.bfrec",
-   "sha256": "7ffdbca3fc48d147b9d7ddbe946064500b071a82efc6fb47faddd86586387646",
-   "bytes": 86715,
+   "sha256": "92a516c31b10a38ec020845adaaaed3ad5f238a0522dc32c97732fb5c2774129",
+   "bytes": 133286,
    "export": "fighter_oboe"
   },
   {
    "path": "fighters/oboe/scenarios/plain_s7.bfrec",
-   "sha256": "14dd7d7bb99069657d60d46dce705beb6e084130040401429f3b42ad2576af48",
-   "bytes": 74495,
+   "sha256": "fc5f81d54879281d248dba41ac26ac4ac2e912c2e33595a50c656698684e8592",
+   "bytes": 123521,
    "export": "fighter_oboe"
   },
   {
    "path": "fighters/oboe/scenarios/plain_s8.bfrec",
-   "sha256": "1a2fe8c95d1465085f32126f26168ec41b5f31291a4a857d19372f48a1f5ff87",
-   "bytes": 109456,
+   "sha256": "4c1e37da1594f884ff0b0ebbe96cbeef11dafeac5799aed0eca3229da773b439",
+   "bytes": 152503,
    "export": "fighter_oboe"
   },
   {
    "path": "fighters/oboe/scenarios/plain_s9.bfrec",
-   "sha256": "5875dd647d1a69d129a7420c686bb5dd3ff17d68027953fce6b78f2837eeb728",
-   "bytes": 132862,
+   "sha256": "05f0287ebdec35062eb97973fe59d8890f7a102624eb7df86fa7fa74ed266f92",
+   "bytes": 114655,
    "export": "fighter_oboe"
   },
   {
    "path": "fighters/oboe/scenarios/swapped_s1.bfrec",
-   "sha256": "f13e0f5c0d7470dc6b74722e2b6076a0b3a2437f3d293cb9049c63e6b63fa60d",
-   "bytes": 80595,
+   "sha256": "c75fb599a6a50a475144d4d18a1551367bfa1021c4c105c44fee38e0beaa61f3",
+   "bytes": 128997,
    "export": "fighter_oboe"
   },
   {
    "path": "fighters/oboe/scenarios/swapped_s2.bfrec",
-   "sha256": "de96f9a4c1187c1a198c737c84aed8aa78569e39ff3db5308fcfbcecbf8d71a9",
-   "bytes": 79493,
+   "sha256": "b183d925cc86335a1bc88fef73eedb9a6c8d66aab224a79db812e9745ba61160",
+   "bytes": 128004,
    "export": "fighter_oboe"
   },
   {
    "path": "fighters/oboe/scenarios/swapped_s3.bfrec",
-   "sha256": "e1171440c63b8d1e76eecaa1749df1c3e103e97d64ed9aacf53c597236a4aae2",
-   "bytes": 89783,
+   "sha256": "a9d669d6cdc41bcdcf0e65f891385ba65c7d7be97ec2fe186b99c9db0c7d8fb7",
+   "bytes": 127210,
+   "export": "fighter_oboe"
+  },
+  {
+   "path": "fighters/oboe/scenarios/vs_trombone_low_s1.bfrec",
+   "sha256": "32f305527f764ac6d8817ee97e18e6a7b265924a0889b699829ef15dd8666fda",
+   "bytes": 55923,
+   "export": "fighter_oboe"
+  },
+  {
+   "path": "fighters/oboe/scenarios/vs_trombone_low_s2.bfrec",
+   "sha256": "bb845eb51a5842700257313ff2f0eed1206217c76d372f4de4e7cfddec135892",
+   "bytes": 66300,
    "export": "fighter_oboe"
   },
   {
    "path": "fighters/oboe/scenarios/vs_trombone_s1.bfrec",
-   "sha256": "4868dd9216801a0bb1c0b1d46a27467c56dae49572512f61e04b59bf703accad",
-   "bytes": 81979,
+   "sha256": "be4998644d3ad8a04c2e9586ec3bf0bb95d30802f51989fe4b0600864d6f2eac",
+   "bytes": 94320,
    "export": "fighter_oboe"
   },
   {
    "path": "fighters/oboe/scenarios/vs_trombone_s2.bfrec",
-   "sha256": "9925296933ccae7ae74668d9e19b2cd1009eca72592f7b85f535754e2523e3e7",
-   "bytes": 89467,
+   "sha256": "b82e0acf89c511f47dd7947e48569266c7b6ffbbb0794fa5e359cecb96e38e7d",
+   "bytes": 100520,
    "export": "fighter_oboe"
   },
   {
    "path": "fighters/oboe/sound_right_rms.json",
-   "sha256": "dff8206359d775587938860e93b9adebf8e6d71b21b6705e501455f971bea5b9",
-   "bytes": 36686,
+   "sha256": "3175d0cdd584085bf04e58d4acfd2a90e37cecde10aa465df78bdaaec860c1cf",
+   "bytes": 36798,
    "export": "fighter_oboe"
   },
   {
    "path": "fighters/oboe/sprites.json",
-   "sha256": "72a97143eee62a13459df1b967d963c5ad45dc744184bf379b57fcc8335ce07c",
-   "bytes": 74858,
+   "sha256": "049f27c6b1a5edf549c9c122be5c9c6436e69a15a5b5b1904ed89e06c189ce28",
+   "bytes": 74619,
    "export": "fighter_oboe"
   },
   {
    "path": "fighters/oboe/sprites.npz",
-   "sha256": "433ac95cf11198e111787842168998f5607dc055b61be6013206437a45e203af",
-   "bytes": 100814,
+   "sha256": "03b82832d4adc8776c96aedc5d06b7ddf430c4d0c035592caa3bc2c9b431d9ee",
+   "bytes": 100403,
    "export": "fighter_oboe"
   },
   {
    "path": "fighters/oboe/stats_rows.json",
-   "sha256": "38a55d6fd15926db53d85f61fb51a854c4355c4d16f361dec7a6bbbeddebeaa4",
-   "bytes": 477315,
+   "sha256": "a37f3ce0c75a327544220375f27f93dffdd5edb99926a4d3f0d3902cbd7635db",
+   "bytes": 491835,
    "export": "fighter_oboe"
   },
   {
    "path": "fighters/oboe/stems_left.npz",
-   "sha256": "d3cb23321b406eebb3d9f7e7164450ecfe5a62151913180e477dc2c2ba5f8647",
-   "bytes": 3914922,
+   "sha256": "3b3582745af3b3e34d30176dd5d3f8e6bc7bf79d0388b1b45c995f274ae3f6ec",
+   "bytes": 4765274,
    "export": "fighter_oboe"
   },
   {
    "path": "fighters/oboe/stems_right.npz",
-   "sha256": "a807a5300bfca24901ac6d7c1ba47171ce4d3ce694e78a213d5322fe1fb3e1c0",
-   "bytes": 4073133,
+   "sha256": "e51a48f4260e282000b93eaf393ed4cdc84bda4659ae7689e9cf79441f5ca846",
+   "bytes": 4302775,
    "export": "fighter_oboe"
   },
   {

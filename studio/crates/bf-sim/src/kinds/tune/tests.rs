@@ -66,29 +66,15 @@ impl<const N: usize> Events for [Event; N] {
     }
 }
 
-/// The events are Python's: the times, the kinds, every whole number and text exactly, every float to 1e-12 (as the
-/// blade's tests compare: where `fight.py` takes a dot product, numpy's is fused on the reference PC and the engine's
-/// is the plain sum, ruling R25, so a contact point or a knocked heading can differ in its last bits).
+/// The events are Python's, bit for bit.
 #[track_caller]
 fn same(got: impl Events, want: impl Events) {
-    let (got, want) = (got.list(), want.list());
-    assert_eq!(got.len(), want.len(), "{got:?} vs Python's {want:?}");
-    for (g, w) in got.iter().zip(&want) {
-        assert_eq!(
-            (g.t, &g.kind, g.fields.len()),
-            (w.t, &w.kind, w.fields.len()),
-            "{g:?} vs {w:?}"
-        );
-        for (a, b) in g.fields.iter().zip(&w.fields) {
-            match (a, b) {
-                (Value::Float(x), Value::Float(y)) => assert!((x - y).abs() <= 1e-12, "{x} vs {y} in {g:?}"),
-                _ => assert_eq!(a, b, "{g:?} vs {w:?}"),
-            }
-        }
-    }
+    assert_eq!(got.list(), want.list());
 }
 
-/// A heading is Python's to 1e-12 (`knock` takes a norm and a dot product).
+/// A heading is Python's to 1e-12: the one number of these tests that is not Python's to the bit, the enemy's heading
+/// after ILL WIND's knock (`-0.7222199464008384` here, `...389` in Python). It is made in the shared `Fight::knock`
+/// (two `np.linalg.norm` calls in Python, plain sums here, ruling R25), whose own test holds the same bar.
 #[track_caller]
 fn near(got: [f64; 2], want: [f64; 2]) {
     assert!(
@@ -291,7 +277,7 @@ fn a_beam_lands_once_knocks_detunes_and_deepens() {
     );
     let o = &f.balls[1];
     assert_eq!((o.hp, o.boost, f.balls[0].dealt), (98.0, 0.35, 2.0));
-    near(o.v, KNOCKED);
+    assert_eq!(o.v, KNOCKED);
     assert_eq!((o.detune_t, o.detune_d, o.detune_w), (DETUNE_S, 0.4, 0.6));
     // a beam hits once
     step(&mut f, 0, DT);
@@ -340,7 +326,7 @@ fn a_shielded_enemy_blocks_the_beam_and_is_still_knocked() {
     assert_eq!((f.tune.balls[0].depth, f.tune.balls[0].tbeams[0].hit), (0.4, true));
     let o = &f.balls[1];
     assert_eq!((o.hp, o.boost, f.balls[0].dealt), (100.0, 0.35, 0.0));
-    near(o.v, KNOCKED);
+    assert_eq!(o.v, KNOCKED);
     assert_eq!((o.detune_t, o.detune_d, o.detune_w), (0.0, 0.0, 0.0));
 }
 
@@ -363,7 +349,7 @@ fn a_beam_through_the_centre_pushes_along_itself() {
             ev(12.5, "detune", vec![I(1), I(0), F(0.4), F(DETUNE_S)]),
         ],
     );
-    near(f.balls[1].v, [2.517444142412154, 0.6499807611132181]);
+    assert_eq!(f.balls[1].v, [2.517444142412154, 0.6499807611132181]);
 }
 
 /// `trigger`, kind `endless` (2884 to 2888), and the held beam in `tune_tick` (2458 to 2475) and `tune_step` (2505):
