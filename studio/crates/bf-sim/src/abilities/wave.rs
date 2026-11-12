@@ -140,11 +140,11 @@ mod tests {
 
     /// `effects_step` 3078 to 3086: a ring with `clears` false leaves the enemy's projectiles alone (the walk's step
     /// ring, the stampede's stomps, the crowd's honks), and a landed ring with `grow` calls its owner's growth (the
-    /// walk's code: a stub until CONTRABASS's port, which the trace shows is reached).
+    /// walk's code: proven in `kinds::walk::kit_vectors`).
     #[test]
     fn a_rings_clears_and_grow_follow_python() {
         let bare = testing::bare_pair();
-        for (grow, clears) in [(false, true), (false, false), (true, true)] {
+        for (grow, clears) in [(false, true), (false, false)] {
             let mut f = testing::fight(&testing::bare_setup(&bare, 1), false);
             f.trace_sockets = Some(std::cell::RefCell::new(Vec::new()));
             f.t = 5.0;
@@ -167,7 +167,10 @@ mod tests {
             assert!(kinds.contains(&"hit"), "{grow} {clears}: {kinds:?}");
             assert_eq!(f.keys.is_empty(), clears, "{grow} {clears}");
             assert_eq!(kinds.contains(&"cleared"), clears);
-            assert_eq!(trace.contains(&"stub:kinds::walk::ring_grow"), grow, "{trace:?}");
+            assert!(
+                !trace.iter().any(|s| s.starts_with("stub:")),
+                "{grow} {clears}: {trace:?}"
+            );
         }
     }
 }
