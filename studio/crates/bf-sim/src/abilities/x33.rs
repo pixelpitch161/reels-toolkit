@@ -2,9 +2,10 @@
 //! `ab_x33` 566 to 577 and the whips and sweeps of `surf_rake_step` (630 to 670), which `kinds::rake::surf_rake_step`
 //! calls. The third kind of the branch, `spout` (578 to 583, 671 to 699), is older than the kit's: SLOT.
 //!
-//! Python keeps both on the fight (`self.whips`, `self.sweeps`); here they are [`State`], `Fight::x33`. A copied
-//! ability (IDENTITY CRISIS) runs this code for the copier's ball: nothing here assumes which side has the kind.
-//! The generator is never drawn.
+//! Python keeps both on the fight (`self.whips`, `self.sweeps`); here they are [`State`], `Fight::x33`. No copier
+//! runs this code: `whip` and `sweep` are not in IDENTITY CRISIS's `COPYABLE` (2802), and the copy of the rake as a
+//! signature weapon (`start_copy` 2817 to 2821) only logs its `copy` event (it plants or fires only an anchor or a
+//! mortar). The owner is read from each whip and sweep all the same. The generator is never drawn.
 
 use bf_core::dmath;
 use bf_core::event::Value;

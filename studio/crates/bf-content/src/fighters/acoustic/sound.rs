@@ -1,5 +1,6 @@
 //! ACOUSTIC's part in the score: the `Sound` class of `projects/ballfight/kit/fighters/acoustic.py` (#33), with the
-//! module's chord helpers (`guitar_chord`, `h01_33`, `bass_pair`).
+//! module's chord helpers ([`strum_shape`]: the chord as a strummed six-string shape, `acoustic.py` 187; `h01_33`;
+//! `bass_pair`).
 //!
 //! Every stroke is a strum in the stroke's own direction (down: the full chord low to high; up: the top strings high
 //! to low), CAPO's extra strokes bright and short; a landed stroke adds a bass-string pop and the strings' slap; the
@@ -64,12 +65,12 @@ fn shape<'a>(table: &'a [(&str, &'a [i32])], key: &str) -> Option<&'a [i32]> {
     table.iter().find(|(k, _)| *k == key).map(|(_, v)| *v)
 }
 
-/// `guitar_chord(ch)`: the chord as a strummed guitar shape (MIDI, low string first): the open shape if it has one,
+/// The chord as a strummed six-string shape (`acoustic.py` 187; MIDI, low string first): the open shape if it has one,
 /// else the E- or A-shape barre lower on the neck, else its tones stacked from the low strings.
 ///
 /// # Errors
 /// `ch` is not a chord name (Python's `parse_chord` raises).
-pub fn guitar_chord(ch: &str) -> Result<Vec<i32>, MusicError> {
+pub fn strum_shape(ch: &str) -> Result<Vec<i32>, MusicError> {
     if let Some(open) = shape(OPEN, ch) {
         return Ok(open.to_vec());
     }
@@ -202,14 +203,14 @@ impl AcousticSound {
         self.colour(ctx, x, t, drive_k, &self.colour_args())
     }
 
-    /// `guitar_chord(T.CHORDS[i])`.
+    /// Bar `i`'s chord (`T.CHORDS[i]`) as a strummed six-string shape ([`strum_shape`]).
     fn chord_of_bar(&self, ctx: &MusicCtx, i: usize) -> Result<Vec<i32>, MusicError> {
         let ch = ctx
             .harmony
             .chords
             .get(i)
             .ok_or_else(|| MusicError::new(H, format!("the episode has no bar {i}")))?;
-        guitar_chord(ch)
+        strum_shape(ch)
     }
 
     /// `tuple(ch) + ((ch[-1] + 5,) if len(ch) < 6 else ())`: a shape of fewer than six strings gets a fourth over
@@ -312,7 +313,7 @@ impl Sound for AcousticSound {
                 let tq = ctx.q16(t);
                 let hp = ctx.hp_at(k, t);
                 let ch = ctx.harmony.chord_at(tq);
-                let full = guitar_chord(ch)?;
+                let full = strum_shape(ch)?;
                 // vo = full[:max(3, self.strings_left(hp) - (6 - len(full)))]: broken strings go from the top
                 let keep = (strings_left(hp) as i64 - (6 - full.len() as i64)).max(3) as usize;
                 let vo = &full[..keep.min(full.len())];
@@ -361,7 +362,7 @@ impl Sound for AcousticSound {
             } else if kind == "whip" && event_is(H, e, 2, k)? {
                 // FINGERPICK: one picked note per whip, up the chord
                 let tq = ctx.q16(t);
-                let ch = guitar_chord(ctx.harmony.chord_at(tq))?;
+                let ch = strum_shape(ctx.harmony.chord_at(tq))?;
                 // ms = list(ch[2:]) + [ch[-1] + 12, ch[-2] + 12]
                 let n_ = ch.len();
                 let mut ms: Vec<i32> = ch[2.min(n_)..].to_vec();
@@ -397,7 +398,7 @@ impl Sound for AcousticSound {
                 // BIG STRUM: one giant slow strum across the ring
                 let ts = ctx.q16(e.t);
                 let dur = event_number(H, e, 7)?;
-                let ch = guitar_chord(ctx.harmony.chord_at(ts))?;
+                let ch = strum_shape(ctx.harmony.chord_at(ts))?;
                 let strum = self.strum(ctx, &ch, 1.0, py_min(0.09, dur / 7.0), false, 1.0, 2.0)?;
                 mix.place(&bus, &Sig::Mono(strum), ts, 0.62, pan);
                 mix.place(&bus, &Sig::Mono(self.note(ctx, 40.0, 1.0, 1.8, 1.0)?), ts, 0.40, pan);
@@ -496,19 +497,19 @@ mod tests {
     /// The shapes: open where there is one, else an E- or A-shape barre, else the chord's tones stacked.
     #[test]
     fn chords_are_open_shapes_then_barres() {
-        assert_eq!(guitar_chord("Am").unwrap(), vec![45, 52, 57, 60, 64]);
+        assert_eq!(strum_shape("Am").unwrap(), vec![45, 52, 57, 60, 64]);
         // F#m: root 6, fe 2 <= fa 9: the E shape at the 2nd fret
-        assert_eq!(guitar_chord("F#m").unwrap(), vec![42, 49, 54, 57, 61, 66]);
+        assert_eq!(strum_shape("F#m").unwrap(), vec![42, 49, 54, 57, 61, 66]);
         // Cm: root 0, fe 8 > fa 3: the A shape at the 3rd fret
-        assert_eq!(guitar_chord("Cm").unwrap(), vec![48, 55, 60, 63, 67]);
+        assert_eq!(strum_shape("Cm").unwrap(), vec![48, 55, 60, 63, 67]);
         // Bdim: no shape: B (43, the low E string's 7th fret) and the next four tones of B D F
-        assert_eq!(guitar_chord("Bdim").unwrap(), vec![47, 50, 53, 59, 62]);
+        assert_eq!(strum_shape("Bdim").unwrap(), vec![47, 50, 53, 59, 62]);
         // more, as acoustic.py gives them
-        assert_eq!(guitar_chord("Bb").unwrap(), vec![46, 53, 58, 62, 65]);
-        assert_eq!(guitar_chord("G7").unwrap(), vec![43, 50, 53, 59, 62, 67]);
-        assert_eq!(guitar_chord("Ebm7").unwrap(), vec![51, 58, 61, 66, 70]);
-        assert_eq!(guitar_chord("Csus4").unwrap(), vec![48, 53, 55, 60, 65]);
-        assert!(guitar_chord("H").is_err());
+        assert_eq!(strum_shape("Bb").unwrap(), vec![46, 53, 58, 62, 65]);
+        assert_eq!(strum_shape("G7").unwrap(), vec![43, 50, 53, 59, 62, 67]);
+        assert_eq!(strum_shape("Ebm7").unwrap(), vec![51, 58, 61, 66, 70]);
+        assert_eq!(strum_shape("Csus4").unwrap(), vec![48, 53, 55, 60, 65]);
+        assert!(strum_shape("H").is_err());
         assert_eq!(bass_pair("Am").unwrap(), (45, 52));
         assert_eq!(bass_pair("E").unwrap(), (40, 47));
         assert_eq!(strings_left(61.0), 6);

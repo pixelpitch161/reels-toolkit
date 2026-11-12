@@ -8,7 +8,7 @@ pub static CARD: Option<FighterCard> = Some(FighterCard {
     weapon: "Six-string rake",
     text: "On every beat six glowing strings sweep across the ring in front of the ball, a down-stroke then an \
            up-stroke, like a giant strum. A stroke that catches the enemy hits once and flicks it along the strings, \
-           and every stroke that lands makes the strings a little longer.",
+           and every on-beat stroke that lands makes the strings a little longer.",
     abilities: [
         "A capo clamps on: it strums twice as fast for 8 beats",
         "Six single strings flick out at the enemy like whips, one after another",

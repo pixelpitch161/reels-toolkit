@@ -309,6 +309,20 @@ fn how(e: &Event) -> &str {
     }
 }
 
+/// `self.cfg['weapon'].get('gap')`, whatever the weapon's kind (TRUMPET's combo, ORGAN's line, BASSOON's tiptoe and
+/// CONTRABASS's walk have a `gap` of their own): a rake's typed setting, else the entry's number as exported, else
+/// `None` (the look then takes 0.085).
+fn weapon_gap(cfg: &FighterCfg) -> Option<f64> {
+    match &cfg.weapon {
+        WeaponCfg::Rake(w) => Some(w.gap),
+        _ => cfg
+            .raw
+            .get("weapon")
+            .and_then(|w| w.get("gap"))
+            .and_then(|g| g.as_f64()),
+    }
+}
+
 /// A stroke showing at a time: `(j, rake, s_now, s_prev, k)` of `rakes_at`.
 #[derive(Clone, Copy, Debug, PartialEq)]
 struct Showing {
@@ -479,11 +493,7 @@ impl Look for AcousticLook {
         let ev = &p.rec.events;
         self.rakes = state::rakes(ev, k);
         self.rake_hit = state::rake_hits(ev, k, &self.rakes);
-        // self.cfg['weapon'].get('gap', 0.085): a weapon of another kind has no gap
-        self.cfg_gap = match &cfg.weapon {
-            WeaponCfg::Rake(w) => Some(w.gap),
-            _ => None,
-        };
+        self.cfg_gap = weapon_gap(cfg);
         self.gap = self.cfg_gap.unwrap_or(0.085);
         self.whips = state::whips(ev, k);
         self.cfg_t_ext = cfg.unlock2.get("t_ext");
@@ -895,6 +905,17 @@ impl Look for AcousticLook {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// `self.cfg['weapon'].get('gap', 0.085)` reads any weapon's `gap`: the rake's own, TRUMPET's combo's 0.5; a
+    /// weapon without one (FLUTE's striker) leaves the default.
+    #[test]
+    fn the_gap_is_read_from_any_weapon() {
+        let all = bf_core::roster::parse_roster(include_str!("../../../data/roster.json")).expect("the roster loads");
+        let of = |name: &str| all.iter().find(|f| f.name == name).expect("in the roster");
+        assert_eq!(weapon_gap(of("ACOUSTIC")), Some(0.085));
+        assert_eq!(weapon_gap(of("TRUMPET")), Some(0.5));
+        assert_eq!(weapon_gap(of("FLUTE")), None);
+    }
 
     /// Liang-Barsky: a segment across the square is cut at its sides; one outside is none; one inside is whole.
     #[test]
