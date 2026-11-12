@@ -158,7 +158,10 @@ fn seed_of(m: i32, what: &str) -> u64 {
 
 /// `np.sin(2 * np.pi * np.cumsum(fr) / SR)` for a gliding pitch `fr`.
 fn glide(fr: &[f64]) -> Vec<f64> {
-    dsp::cumsum(fr).iter().map(|&c| dmath::sin(2.0 * PI * c / SRF)).collect()
+    dsp::cumsum(fr)
+        .iter()
+        .map(|&c| dmath::sin(2.0 * PI * c / SRF))
+        .collect()
 }
 
 /// `Bed.msnare(kind)` before the cache: a marching snare (a high-tension crack, tight wires, a little ring) of the
@@ -341,8 +344,12 @@ mod tests {
             (got["bass_drums"].clone(), got["after_ko"].clone()),
             (OptionValue::Bool(true), OptionValue::Bool(false))
         );
-        ff.music.theme_options.insert("bass_drums".into(), OptionValue::Bool(false));
-        ff.music.theme_options.insert("after_ko".into(), OptionValue::Bool(true));
+        ff.music
+            .theme_options
+            .insert("bass_drums".into(), OptionValue::Bool(false));
+        ff.music
+            .theme_options
+            .insert("after_ko".into(), OptionValue::Bool(true));
         let got = THEME.options_of(&ff).unwrap();
         assert_eq!(
             (got["bass_drums"].clone(), got["after_ko"].clone()),
