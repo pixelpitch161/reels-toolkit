@@ -10,6 +10,7 @@
 //! sprites), [`lighting`] (lights and flat shading), [`shadows`] (planar shadow masks), [`lens`] (depth of
 //! field, on the FFT convolution of [`fft`]), [`post`] (bloom, grade, vignette, top scrim) and [`hull`] (the
 //! convex hull in scipy's order). Each module's documentation says how close to Python it is and why.
+//! [`ndimage`] is `scipy.ndimage.gaussian_filter` as a fighter's look calls it.
 //!
 //! [`fx`] is the effects kit (`reelkit/fx.py`): attack lights, impact bursts, camera shake, heat shimmer,
 //! chromatic fringing, particles, marks on the floor and the ability moments.
@@ -30,6 +31,7 @@ pub mod img;
 pub mod lens;
 pub mod lighting;
 pub mod look;
+pub mod ndimage;
 pub mod np;
 pub mod pil;
 pub mod post;
