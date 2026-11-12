@@ -175,8 +175,8 @@
   },
   {
    "path": "fighters/acoustic/voice_notes.npz",
-   "sha256": "5c2edf26084fd477e0fbf3b7c43791025ccb46659ebbe1be9db69014a655d372",
-   "bytes": 15881899,
+   "sha256": "2e6d52a5d1794a7e15cd2bf72c86021487bee19845f9709e6cf8360170108838",
+   "bytes": 10587940,
    "export": "fighter_acoustic"
   }
  ]
