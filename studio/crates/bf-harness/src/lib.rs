@@ -6,7 +6,7 @@
 //! // tests/fighter_tuba.rs
 //! bf_harness::fighter_suite!("TUBA");
 //! // tests/theme_heist.rs
-//! bf_harness::theme_suite!("heist");
+//! bf_harness::theme_suite!("heist", [("voice", bf_content::themes::heist::voice)]);
 //! // tests/episode_oboe_vs_bassoon.rs
 //! bf_harness::episode_suite!("oboe_vs_bassoon");
 //! ```
@@ -180,8 +180,17 @@ macro_rules! fighter_suite {
 /// theme's own test (its functions are its own): `bf_harness::theme::voicings(NAME, &[("voice", f), ...])`.
 #[macro_export]
 macro_rules! theme_suite {
-    ($name:literal) => {
+    ($name:literal, [$(($method:literal, $f:path)),* $(,)?]) => {
         const NAME: &str = $name;
+
+        #[test]
+        fn voicings() {
+            $crate::theme::voicings(NAME, &[$(($method, $f)),*]);
+        }
+        #[test]
+        fn bed_alone_stand_ins() {
+            $crate::theme::bed_alone_stand_ins(NAME);
+        }
 
         #[test]
         fn reference_folder() {
@@ -286,4 +295,116 @@ macro_rules! episode_suite {
             $crate::episode::native_render(PAIR);
         }
     };
+}
+
+/// Mutations of the gates that read the cache or need a whole run, made on their comparison itself: each changes
+/// one value the kit gave and the gate's comparison must refuse it.
+#[cfg(test)]
+mod mutations {
+    use bf_core::event::Value;
+    use bf_core::recording::Recording;
+
+    fn sim() -> crate::Sim {
+        crate::Sim {
+            run_traced: bf_sim::run_traced,
+            clash_margin: bf_sim::parity::clash_margin,
+        }
+    }
+
+    fn seed1() -> Recording {
+        Recording::read(&crate::refs::reference("fights/flute_vs_trombone/seed1.bfrec")).expect("seed1")
+    }
+
+    #[test]
+    fn prefix_agrees_with_the_kits_own_fight() {
+        let py = seed1();
+        let setup = crate::fight::setup_like(&py);
+        let rs = crate::fight::traced(&sim(), &setup, true, "seed1");
+        assert!(crate::fight::window_ok(&sim(), "FLUTE", "seed1", &rs, &py, &setup) >= 10.0);
+    }
+
+    #[test]
+    #[should_panic(expected = "before the floor")]
+    fn prefix_refuses_one_event_moved() {
+        let mut py = seed1();
+        let i = py
+            .events
+            .iter()
+            .position(|e| e.kind == "clash" && e.t > 6.0)
+            .expect("an early clash");
+        py.events[i].t += 1.0 / 240.0;
+        let setup = crate::fight::setup_like(&py);
+        let rs = crate::fight::traced(&sim(), &setup, true, "seed1");
+        crate::fight::window_ok(&sim(), "FLUTE", "seed1 with one event moved", &rs, &py, &setup);
+    }
+
+    #[test]
+    #[should_panic(expected = "rules.t_fight")]
+    fn prefix_refuses_a_recording_without_t_fight() {
+        let mut py = seed1();
+        let setup = crate::fight::setup_like(&py);
+        let rs = crate::fight::traced(&sim(), &setup, true, "seed1");
+        py.rules.insert("t_fight".into(), Value::Null);
+        crate::fight::window_ok(&sim(), "FLUTE", "seed1", &rs, &py, &setup);
+    }
+
+    fn stats() -> bf_story::Stats {
+        bf_story::Stats {
+            n: 2000,
+            decided: 1850,
+            win_share: 0.48,
+            ko_median: 49.9,
+            ko_p10: 42.6,
+            ko_p90: 57.0,
+            no_ko_share: 0.074,
+            lead_changes_mean: 0.58,
+            fit_rate: 0.0085,
+            ko_hist: Default::default(),
+        }
+    }
+
+    #[test]
+    #[should_panic(expected = "win share")]
+    fn statistics_refuse_a_pooled_figure_moved() {
+        let mut rs = stats();
+        rs.win_share += 0.031;
+        crate::fight::assert_the_kits("mutation", &rs, &stats());
+    }
+
+    #[test]
+    #[should_panic(expected = "fits are missing")]
+    fn statistics_refuse_no_fits_where_the_kit_has_them() {
+        let mut rs = stats();
+        rs.fit_rate = 0.001;
+        let mut py = stats();
+        py.fit_rate = 0.0045;
+        crate::fight::assert_the_kits("mutation", &rs, &py);
+    }
+
+    #[test]
+    fn a_stem_window_off_by_1e_5_fails_the_bar() {
+        let want: Vec<f32> = (0..96).map(|i| (i as f32 * 0.01).sin()).collect();
+        let mut got: Vec<[f64; 2]> = want.chunks(2).map(|c| [f64::from(c[0]), f64::from(c[1])]).collect();
+        assert_eq!(crate::sound::window_db(&got, &want), f64::NEG_INFINITY);
+        got[7][1] += 1e-5;
+        assert!(crate::sound::window_db(&got, &want) >= crate::sound::DB);
+    }
+
+    #[test]
+    fn a_voice_note_off_by_2e_6_fails_the_bar() {
+        let want: Vec<f64> = (0..480).map(|i| (f64::from(i) * 0.05).sin() * 0.3).collect();
+        let mut got = want.clone();
+        assert_eq!(crate::voice::note_gap(&got, &want), 0.0);
+        got[100] += 2e-6;
+        assert!(crate::voice::note_gap(&got, &want) > crate::voice::BAR);
+        got[100] = f64::NAN;
+        assert!(crate::voice::note_gap(&got, &want) > crate::voice::BAR);
+    }
+
+    #[test]
+    fn a_hull_point_off_by_2e_12_fails_the_bar() {
+        assert!(crate::look::point_gap((120.5, 33.25), (120.5, 33.25)) <= 1e-12);
+        assert!(crate::look::point_gap((120.5, 33.25 + 2e-12), (120.5, 33.25)) > 1e-12);
+        assert!(crate::look::point_gap((f64::NAN, 0.0), (1.0, 0.0)) > 1e-12);
+    }
 }

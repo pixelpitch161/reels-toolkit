@@ -378,7 +378,8 @@ pub fn hull_differs(calls: &[HullCall], want: &Value) -> Option<String> {
         }
         let (sx, sy) = pts.iter().fold((0.0, 0.0), |(a, b), &(x, y)| (a + x, b + y));
         let bar = 1e-12 * n as f64 + 1e-12;
-        if (sx - hexf(&w[2])).abs() > bar || (sy - hexf(&w[3])).abs() > bar {
+        let d = crate::refs::gap_max((sx - hexf(&w[2])).abs(), (sy - hexf(&w[3])).abs());
+        if d > bar {
             return Some(format!("hull call {j}: its points are not the kit's (sums {sx}, {sy})"));
         }
     }
@@ -387,7 +388,8 @@ pub fn hull_differs(calls: &[HullCall], want: &Value) -> Option<String> {
 
 /// Every frame of `rows` (look.json's frame rows) drawn by `pic` (spied) against the kit: frame bytes, hooks, draw
 /// log, hull calls. A hull fallback stops the task.
-fn frames_against(name: &str, folder: &str, pic: &Picture, rows: &[Value], what: &str) {
+fn frames_against(name: &str, folder: &str, pic: &Picture, rows: &[Value], which: &str) {
+    let what = format!("the {which} fight");
     assert!(!rows.is_empty(), "{folder}: no frames in {what}");
     let fallbacks = AtomicUsize::new(0);
     let failures = on_threads(rows, |row| {
@@ -433,7 +435,14 @@ fn frames_against(name: &str, folder: &str, pic: &Picture, rows: &[Value], what:
         "{name} ({what}): a hull fell back to the plain scan (a Qhull merge). Ruling M3-R4: this STOPS the task; report \
          it to the controller, who opens the task that ports Qhull's 2-D merge"
     );
-    report(folder, "look", &format!("frames of {what}"), failures, rows.len());
+    report(
+        folder,
+        "look",
+        which,
+        &format!("frames of {what}"),
+        failures,
+        rows.len(),
+    );
 }
 
 /// The hook calls made while the picture is built are the kit's.
@@ -477,7 +486,7 @@ pub fn look_frames(name: &str) {
         rows.len()
     );
     assert_eq!(index(&left["k"]), 0);
-    frames_against(name, &folder, &pic, rows, "the left fight");
+    frames_against(name, &folder, &pic, rows, "left");
 }
 
 /// The same for the cached `right` fight (the fighter on side 1, losing: its shards). Ignored: reads the cache.
@@ -494,7 +503,12 @@ pub fn look_frames_cached(name: &str) {
     assert_eq!(index(&right["k"]), 1);
     let rows = list(&right["frames"]);
     assert_eq!(rows.len(), index(&doc["right"]["frames"]));
-    frames_against(name, &folder, &pic, rows, "the right fight");
+    frames_against(name, &folder, &pic, rows, "right");
+}
+
+/// How far a hull point is from the kit's, in pixels (the larger coordinate difference; NaN is infinitely far).
+pub fn point_gap(got: (f64, f64), kit: (f64, f64)) -> f64 {
+    crate::refs::gap_max((got.0 - kit.0).abs(), (got.1 - kit.1).abs())
 }
 
 /// Every hull call's input points of both fights (the cache's full log) within 1e-12 px of the kit's. Ignored.
@@ -519,6 +533,18 @@ pub fn hull_points(name: &str) {
         ),
     ] {
         let kit = cache_json(&cache);
+        // the committed (or cached right) frame rows, whose compact hull calls these are in full
+        let rows = if swapped {
+            list(&cache_json(text(&doc["right"]["cache"]))["frames"]).clone()
+        } else {
+            list(&doc["left"]["frames"]).clone()
+        };
+        let committed_calls: usize = rows.iter().map(|r| list(&r[6]).len()).sum();
+        assert_eq!(
+            list(&kit["frames"]).len(),
+            rows.len(),
+            "{name} {which}: the cache's hull log has another number of frames than look.json"
+        );
         let pic = picture(name, rec, &fight::fight_file(&fd, swapped), false);
         let (mut calls_n, mut worst) = (0, 0.0f64);
         for row in list(&kit["frames"]) {
@@ -530,7 +556,7 @@ pub fn hull_points(name: &str) {
                 let kp = list(&w["points"]);
                 assert_eq!(pts.len(), kp.len(), "{name} {which} frame {f}");
                 for (&(x, y), k) in pts.iter().zip(kp) {
-                    let d = (x - hexf(&k[0])).abs().max((y - hexf(&k[1])).abs());
+                    let d = point_gap((x, y), (hexf(&k[0]), hexf(&k[1])));
                     assert!(
                         d <= 1e-12,
                         "{name} {which} frame {f}: a hull point {d:e} px from the kit's"
@@ -542,6 +568,11 @@ pub fn hull_points(name: &str) {
                 calls_n += 1;
             }
         }
+        assert_eq!(
+            calls_n, committed_calls,
+            "{name} {which}: the hull calls of the cache and of look.json"
+        );
+        assert!(calls_n > 0, "{name} {which}: no hull call to compare");
         println!("{name} {which}: {calls_n} hull calls, every point within {worst:e} px of the kit's");
     }
 }
@@ -698,7 +729,7 @@ pub fn title(name: &str) {
         list(&cards["left"]).len() >= 16 && list(&cards["right"]).len() >= 16,
         "{folder}: 16 card frames a side"
     );
-    report(&folder, "title", "card frames and title hooks", failures, n);
+    report(&folder, "title", "title", "card frames and title hooks", failures, n);
 }
 
 // ---------------------------------------------------------------- the sprites
@@ -762,6 +793,11 @@ pub fn sprites(name: &str) {
         index(&s["count"]),
         "{folder}: the number of sprites (the case list)"
     );
+    assert!(
+        drawn.len() > 60 * radii.len() && !radii.is_empty() && !rolls.is_empty(),
+        "{folder}: {} sprites: the export's case list is empty",
+        drawn.len()
+    );
     let digest = sha(shas.join("\n").as_bytes());
     if digest != text(&s["digest"]) {
         // which: the cache's sidecar has each case's own hash
@@ -781,13 +817,25 @@ pub fn sprites(name: &str) {
 }
 
 // ---------------------------------------------------------------- setup_as
-/// A look whose kit class reads `self.cfg` takes its roster numbers from `setup_as`: set up for its side with the
-/// other fighter's numbers it differs (`cfg_summary`) from the look set up with its own, which equals `setup`.
-/// (EUPHONIUM's copies draw a look with the copier's side and the copied fighter's numbers.)
+/// The keys of a `cfg_summary`: `key=value` pairs separated by `; ` (`view.2=32.0; weapon.rise=1.0`).
+pub fn summary_keys(summary: &str) -> Result<Vec<String>, String> {
+    summary
+        .split("; ")
+        .map(|pair| match pair.split_once('=') {
+            Some((k, _)) if !k.is_empty() && !k.contains(' ') => Ok(k.to_string()),
+            _ => Err(format!("{pair:?} is not key=value")),
+        })
+        .collect()
+}
+
+/// A look takes its roster numbers from `setup_as`: `cfg_summary` names, as `key=value` pairs, exactly the keys the
+/// kit's look class reads from `self.cfg` (look.json `cfg_keys`, `m3parts.cfg_keys`); `setup(p, k)` equals
+/// `setup_as(p, k, &p.cfg[k])`; set up for its side with the other fighter's numbers it differs. (EUPHONIUM's
+/// copies draw a look with the copier's side and the copied fighter's numbers.)
 pub fn setup_as(name: &str) {
     let doc = look_doc(name);
     let fd = fight::doc(name);
-    let reads = doc["reads_cfg"].as_bool().expect("look.json reads_cfg");
+    let keys: Vec<String> = list(&doc["cfg_keys"]).iter().map(|k| text(k).to_string()).collect();
     let rec = committed_recording(text(&doc["left"]["file"]), None);
     let pic = picture(name, rec, &fight::fight_file(&fd, false), false);
     let p = pic.ctx();
@@ -800,16 +848,28 @@ pub fn setup_as(name: &str) {
         as_own.cfg_summary(),
         "{name}: setup(p, k) is not setup_as(p, k, &p.cfg[k])"
     );
-    if !reads {
+    if keys.is_empty() {
+        assert_eq!(
+            own.cfg_summary(),
+            None,
+            "{name}: the kit's look reads no roster number; cfg_summary must be None"
+        );
         println!("{name}: its kit look reads no roster numbers (self.cfg)");
         return;
     }
     let mine = own.cfg_summary().unwrap_or_else(|| {
         panic!(
-            "{name}: the kit's look reads its roster numbers (self.cfg), so its Look must return them from \
-             cfg_summary() (the fields setup_as takes from `cfg`)"
+            "{name}: the kit's look reads the roster keys {keys:?} from self.cfg, so its Look's cfg_summary() must name \
+             each as key=value (`{}=...`), taken from setup_as's `cfg`",
+            keys[0]
         )
     });
+    let mut got = summary_keys(&mine).unwrap_or_else(|e| panic!("{name}: cfg_summary: {e}"));
+    got.sort();
+    assert_eq!(
+        got, keys,
+        "{name}: cfg_summary names {got:?}, the kit's look reads {keys:?}"
+    );
     let theirs = other.cfg_summary().expect("a summary");
     assert_ne!(
         mine, theirs,
@@ -818,7 +878,7 @@ pub fn setup_as(name: &str) {
         p.cfg[1].name
     );
     println!(
-        "{name}: setup_as takes its numbers from cfg: own {mine}; {}'s {theirs}",
+        "{name}: setup_as takes {keys:?} from cfg: own {mine}; {}'s {theirs}",
         p.cfg[1].name
     );
 }
@@ -962,10 +1022,11 @@ pub fn scenarios_draw(name: &str, step: usize) {
             let rec = cached_recording(text(file));
             let mut ff = fight::fight_file_of(&fd, &fighters);
             ff.seed = Some(rec.seed);
-            let ko = rec.t_ko.map(|t| (t * 30.0) as usize);
+            let fps = f64::from(bf_core::grid::Grid::new(ff.tempo_bpm).fps);
+            let ko = rec.t_ko.map(|t| (t * fps) as usize);
             let pic = match bf_content::build_picture(Arc::new(rec), &ff) {
                 Ok(p) => p,
-                Err(e) if ko.is_none() => {
+                Err(e @ bf_content::ContentError::Show(bf_core::show::ShowError::NoKo)) if ko.is_none() => {
                     println!("{name}: {} has no K.O., no video: {e}", text(file));
                     continue;
                 }

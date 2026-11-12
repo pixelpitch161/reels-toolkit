@@ -4,6 +4,8 @@
 //! second tempo, in a second key and with each theme option (cached recordings); and each optional hook called
 //! directly.
 
+use std::sync::Arc;
+
 use bf_content::SoundBuild;
 use bf_core::fightfile::FightFile;
 use bf_core::grid::Grid;
@@ -11,7 +13,7 @@ use bf_core::harmony::{Harmony, HarmonyError, chords_for, scale};
 use bf_core::recording::Recording;
 use bf_core::show::Show;
 use bf_sound::mix::Mix;
-use bf_sound::traits::BaseSound;
+use bf_sound::voice::{PpNoise, Voice};
 use bf_testdata::Npz;
 use serde_json::Value;
 
@@ -90,16 +92,58 @@ fn apply(ff: &mut FightFile, changes: &Value) {
     }
 }
 
-/// The bed alone on `rec` under `ff`: both fighters the kit's base `Sound`.
-fn bed_alone_of(rec: &Recording, ff: &FightFile) -> Summary {
-    let show = Show::new(rec, ff).unwrap_or_else(|e| panic!("the show: {e}"));
-    let mut build = SoundBuild::new(&show, rec, ff).unwrap_or_else(|e| {
+/// A fighter's voice in a theme gate when its own is not in this app yet: the roster's voice id, and a panic in
+/// plain words if anything ever plays it (the bed alone plays no fighter's voice; a bed that does fails its gate).
+/// It lives only here, never in `bf-content`'s registry.
+pub struct StandIn {
+    pub fighter: String,
+    pub pp: String,
+}
+
+impl Voice for StandIn {
+    fn note(&self, _: &mut PpNoise, midi: f64, _: f64, _: f64) -> Vec<f64> {
         panic!(
-            "the sound build: {e} (the bed alone needs the config's fighters' voices and parts in this app: a theme \
-             gate runs once they are ported)"
+            "the bed played {}'s voice (MIDI {midi}), which is a stand-in of the theme gate: the bed alone must play no \
+             fighter's voice, or the theme waits for that fighter's port",
+            self.fighter
         )
-    });
-    build.sounds = [Box::new(BaseSound { k: 0 }), Box::new(BaseSound { k: 1 })];
+    }
+    fn name(&self) -> &str {
+        &self.pp
+    }
+    fn register(&self) -> (i32, i32) {
+        panic!(
+            "the bed asked for {}'s register, a stand-in of the theme gate",
+            self.fighter
+        )
+    }
+}
+
+/// The voices of the two fighters of `show` for a bed-alone build: each fighter's own when it is in this app, a
+/// [`StandIn`] when not (or for both when `stand_ins`).
+pub fn bed_voices(show: &Show, stand_ins: bool) -> [Arc<dyn Voice>; 2] {
+    [0, 1].map(|k| {
+        let name = &show.names[k];
+        let own = if stand_ins {
+            None
+        } else {
+            bf_content::fighters::voice(name)
+        };
+        own.unwrap_or_else(|| {
+            let pp = crate::fight::fighter(name).pp.clone();
+            Arc::new(StandIn {
+                fighter: name.clone(),
+                pp,
+            }) as Arc<dyn Voice>
+        })
+    })
+}
+
+/// The bed alone on `rec` under `ff`: both fighters the kit's base `Sound`, their voices as [`bed_voices`] gives.
+fn bed_alone_of(rec: &Recording, ff: &FightFile, stand_ins: bool) -> Summary {
+    let show = Show::new(rec, ff).unwrap_or_else(|e| panic!("the show: {e}"));
+    let build = SoundBuild::bed_alone(&show, rec, ff, bed_voices(&show, stand_ins))
+        .unwrap_or_else(|e| panic!("the bed-alone build: {e}"));
     summarise(&build)
 }
 
@@ -129,11 +173,29 @@ pub fn bed_alone(name: &str) {
     let mut n = 0;
     for (c, b, rec) in configs(name) {
         let ff = config_fight_file(&c, &rec);
-        let s = bed_alone_of(&rec, &ff);
+        let s = bed_alone_of(&rec, &ff, false);
         assert_eq!(text(&b["master_sha256"]), text(&c["bed_alone"]["master_sha256"]));
         n += compare(text(&c["config"]), &s, &b, &mut failures);
     }
-    report(&f, "sound", "bed-alone facts", failures, n);
+    report(&f, "sound", "bed", "bed-alone facts", failures, n);
+}
+
+/// The bed alone with stand-ins for BOTH fighters' voices: the same 16-bit master as theme.json's. It proves that
+/// the bed plays no fighter voice, so a theme gate never waits for a fighter's port.
+pub fn bed_alone_stand_ins(name: &str) {
+    for (c, b, rec) in configs(name) {
+        let s = bed_alone_of(&rec, &config_fight_file(&c, &rec), true);
+        assert_eq!(
+            crate::sound::pcm_sha(&s.st.master),
+            text(&b["master_sha256"]),
+            "{name} {}: the bed alone with stand-in voices",
+            c["config"]
+        );
+        println!(
+            "{name} {}: the bed alone with two stand-in voices is the kit's master",
+            c["config"]
+        );
+    }
 }
 
 /// The variants (a second tempo, a second key, each option) on their cached recordings. Ignored.
@@ -154,14 +216,15 @@ pub fn bed_variants(name: &str) {
         let mut ff = config_fight_file(c, rec0);
         ff.seed = Some(rec.seed);
         apply(&mut ff, &v["ff"]);
-        let s = bed_alone_of(&rec, &ff);
+        let s = bed_alone_of(&rec, &ff, false);
         n += compare(&format!("variant {}", text(&v["name"])), &s, v, &mut failures);
     }
     assert!(
-        variants.len() >= 2 || !bed["variants"].is_array(),
-        "{f}: a second tempo and a second key"
+        variants.len() >= 2,
+        "{f}: {} variants; at least a second tempo and a second key",
+        variants.len()
     );
-    report(&f, "sound", "variant facts", failures, n);
+    report(&f, "sound", "variants", "variant facts", failures, n);
 }
 
 /// Every stem window of the bed alone (configs and variants) against the cache at -120 dBFS. Ignored.
@@ -172,7 +235,7 @@ pub fn bed_stems(name: &str) {
     let mut n = 0;
     let cs = configs(name);
     for (c, b, rec) in &cs {
-        let s = bed_alone_of(rec, &config_fight_file(c, rec));
+        let s = bed_alone_of(rec, &config_fight_file(c, rec), false);
         n += windows_against(
             text(&c["config"]),
             &s.st,
@@ -190,7 +253,7 @@ pub fn bed_stems(name: &str) {
         let mut ff = config_fight_file(c, rec0);
         ff.seed = Some(rec.seed);
         apply(&mut ff, &v["ff"]);
-        let s = bed_alone_of(&rec, &ff);
+        let s = bed_alone_of(&rec, &ff, false);
         n += windows_against(
             &format!("variant {}", text(&v["name"])),
             &s.st,
@@ -199,7 +262,7 @@ pub fn bed_stems(name: &str) {
             &mut failures,
         );
     }
-    report(&f, "stems", "stem windows", failures, n);
+    report(&f, "stems", "stems", "stem windows", failures, n);
 }
 
 /// The optional hooks the theme's bed has (`Bed::hooks`) are the methods its kit class defines.
@@ -244,15 +307,23 @@ pub fn card(name: &str) {
 pub fn hook_vectors(name: &str) {
     let f = folder(name);
     let bed = json(&f, "bed.json");
-    if bed["hook_calls"].as_object().is_none_or(|m| m.is_empty()) {
-        assert!(list(&bed["hooks"]).is_empty(), "{f}: hooks without vectors");
+    let hooks: Vec<&str> = list(&bed["hooks"]).iter().map(text).collect();
+    let calls = bed["hook_calls"].as_object().cloned().unwrap_or_default();
+    let mut called: Vec<&str> = calls.keys().map(String::as_str).collect();
+    called.sort_unstable();
+    assert_eq!(called, hooks, "{f}: every optional hook has its calls");
+    if hooks.is_empty() {
+        println!("{name}: its bed has no optional hook");
         return;
+    }
+    for (hook, c) in &calls {
+        assert_eq!(list(c).len(), 3, "{f}: {hook}: three calls");
     }
     let npz = Npz::open(&bf_testdata::cache_file(text(&bed["hook_cache"])));
     let (c, _, rec) = configs(name).into_iter().next().expect("a config");
     let ff = config_fight_file(&c, &rec);
     let show = Show::new(&rec, &ff).expect("the show");
-    let build = SoundBuild::new(&show, &rec, &ff).expect("the build");
+    let build = SoundBuild::bed_alone(&show, &rec, &ff, bed_voices(&show, false)).expect("the build");
     let dur = Grid::new(ff.tempo_bpm).dur;
     let mut failures = Vec::new();
     let mut n = 0;
@@ -297,7 +368,10 @@ pub fn hook_vectors(name: &str) {
                 let want = npz.get(&format!("{hook}{j}__{bus}")).f64();
                 let got = mix.bus(bus).map(|x| x.as_flattened().to_vec()).unwrap_or_default();
                 let worst = if got.len() == want.len() {
-                    got.iter().zip(want).map(|(g, w)| (g - w).abs()).fold(0.0, f64::max)
+                    got.iter()
+                        .zip(want)
+                        .map(|(g, w)| (g - w).abs())
+                        .fold(0.0, crate::refs::gap_max)
                 } else {
                     f64::INFINITY
                 };
@@ -307,7 +381,7 @@ pub fn hook_vectors(name: &str) {
             }
         }
     }
-    report(&f, "sound", "hook buses", failures, n);
+    report(&f, "sound", "hooks", "hook buses", failures, n);
 }
 
 /// The voicing functions of a theme (its own: a theme port passes them) for the 12 roots x 13 qualities of
@@ -344,10 +418,15 @@ pub fn voicings(name: &str, methods: &[(&str, Voicing)]) {
             n += 1;
         }
     }
+    let mut given: Vec<&str> = methods.iter().map(|m| m.0).collect();
+    let theme_doc = json(&folder(name), "theme.json");
+    let mut kit: Vec<&str> = list(&theme_doc["voicing_methods"]).iter().map(text).collect();
+    given.sort_unstable();
+    kit.sort_unstable();
     assert_eq!(
-        methods.len(),
-        list(&json(&folder(name), "theme.json")["voicing_methods"]).len(),
-        "{name}: every voicing method"
+        given, kit,
+        "{name}: the voicing functions given against the kit bed's voicing methods"
     );
+    assert!(n > 0 || kit.is_empty(), "{name}: no voicing compared");
     println!("{name}: {n} voicings equal the kit's");
 }

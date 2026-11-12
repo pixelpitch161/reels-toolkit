@@ -595,6 +595,8 @@ pub struct FluteLook {
     rise: f64,
     /// `cfg['abilities']['low']`: PICCOLO's name and the speed of its ring.
     low: (String, f64),
+    /// `cfg['abilities']['unlock2'].get('dur_beats', 4)`: the beats a SNAKE DANCE lasts.
+    dance_beats: f64,
     /// `T.BEAT`.
     beat: f64,
     /// `STRIKES`: basket id -> its strikes.
@@ -669,6 +671,7 @@ impl FluteLook {
             roll: VIEW_ROLL,
             rise: 1.0,
             low: (String::new(), 1.0),
+            dance_beats: 4.0,
             beat: 0.5,
             strikes: BTreeMap::new(),
             baskets: Vec::new(),
@@ -888,9 +891,13 @@ impl Look for FluteLook {
     /// `Look(P, k)` with `self.cfg = cfg`, then `setup()`: everything `flute.py` reads from `self.cfg` (the view's
     /// roll, the striker's `rise`, SNAKE DANCE's `dur_beats`, PICCOLO's name and speed) comes from `cfg`, the rest
     /// from side `k`. For its own side `cfg` is `p.cfg[k]`, and this is `setup`.
-    /// The view's roll, the striker's `rise`, PICCOLO's name and speed: what `setup_as` took from `cfg`.
+    /// What `setup_as` took from `cfg`, by the keys `flute.py` reads from `self.cfg`.
     fn cfg_summary(&self) -> Option<String> {
-        Some(format!("roll {:?} rise {:?} low {:?}", self.roll, self.rise, self.low))
+        Some(format!(
+            "abilities.low.name={}; abilities.low.speed={:?}; abilities.unlock2.dur_beats={:?}; view.2={:?}; \
+             weapon.rise={:?}",
+            self.low.0, self.low.1, self.dance_beats, self.roll, self.rise
+        ))
     }
 
     fn setup_as(&mut self, p: &PictureCtx, k: usize, cfg: &FighterCfg) {
@@ -945,7 +952,8 @@ impl Look for FluteLook {
                 slot.1.t_gone = e.t;
             }
         }
-        let dur_beats = cfg.unlock2.get("dur_beats").unwrap_or(4.0);
+        self.dance_beats = cfg.unlock2.get("dur_beats").unwrap_or(4.0);
+        let dur_beats = self.dance_beats;
         self.dances = ev
             .iter()
             .filter(|e| e.kind == "ability" && text(e, 4) == "dance" && me(int(e, 2)))

@@ -206,6 +206,10 @@ pub fn windows_against(
 ) -> usize {
     let npz = Npz::open(&bf_testdata::cache_file(rel));
     let mut n = 0;
+    assert!(
+        !list(windows).is_empty() && !st.stems.is_empty(),
+        "{what}: no stem window to compare ({rel})"
+    );
     for (j, w) in list(windows).iter().enumerate() {
         let (i0, len) = (index(&w["i0"]), index(&w["n"]));
         for (bus, x) in &st.stems {
@@ -223,7 +227,21 @@ pub fn windows_against(
             }
         }
     }
+    assert!(n > 0, "{what}: no stem window compared ({rel})");
     n
+}
+
+/// A kit summary with the RMS its folder keeps in the cache (`rms_cache`) put back beside the committed RMS.
+pub fn with_cached_rms(kit: &Value) -> Value {
+    let mut out = kit.clone();
+    if let Some(rel) = kit.get("rms_cache").and_then(Value::as_str) {
+        let cached = crate::refs::cache_json(rel);
+        let rms = out["rms"].as_object_mut().map(std::mem::take).unwrap_or_default();
+        let mut all = cached["rms"].as_object().expect("the cached rms").clone();
+        all.extend(rms);
+        out["rms"] = Value::Object(all);
+    }
+    out
 }
 
 /// The soundtrack of a fighter's fight (left or swapped) with its real part (in `role` when given) and the kit's
@@ -262,13 +280,17 @@ pub fn sound(name: &str) {
     let fd = fight::doc(name);
     let rec = committed_recording(text(&fd["left"]["file"]), Some(text(&fd["left"]["hash"])));
     let mut failures = Vec::new();
+    assert!(
+        index(&doc["left"]["notes"]["count"]) > 0,
+        "{folder}: the kit's left soundtrack has no note of {name}'s part: nothing to compare"
+    );
     let s = fighter_soundtrack(name, &rec, false, None);
     let mut n = compare("left", &s, &doc["left"], &mut failures);
     for (role, kit) in doc["roles"].as_object().expect("roles") {
         let s = fighter_soundtrack(name, &rec, false, Some(role));
         n += compare(&format!("role {role}"), &s, kit, &mut failures);
     }
-    report(&folder, "sound", "soundtrack facts", failures, n);
+    report(&folder, "sound", "sound", "soundtrack facts", failures, n);
 }
 
 /// The `right` fight's soundtrack (cached recording) as `sound` compares the left's, and every stem window of the
@@ -281,7 +303,7 @@ pub fn sound_stems(name: &str) {
     let left = committed_recording(text(&fd["left"]["file"]), None);
     let right = cached_recording(text(&fd["right"]["cache"]));
     let r = fighter_soundtrack(name, &right, true, None);
-    let mut n = compare("right", &r, &doc["right"], &mut failures);
+    let mut n = compare("right", &r, &with_cached_rms(&doc["right"]), &mut failures);
     n += windows_against(
         "right",
         &r.st,
@@ -307,7 +329,14 @@ pub fn sound_stems(name: &str) {
             &mut failures,
         );
     }
-    report(&folder, "stems", "soundtrack facts and stem windows", failures, n);
+    report(
+        &folder,
+        "stems",
+        "stems",
+        "soundtrack facts and stem windows",
+        failures,
+        n,
+    );
 }
 
 /// The hooks the fighter's part calls on the bed without checking (`bf_sound::traits::Sound::bed_calls`) are the

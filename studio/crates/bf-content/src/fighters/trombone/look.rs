@@ -485,7 +485,7 @@ impl Look for TromboneLook {
     /// this is `setup`.
     /// PEDAL TONE's radius: what `setup_as` took from `cfg`.
     fn cfg_summary(&self) -> Option<String> {
-        Some(format!("low_radius {:?}", self.low_radius))
+        Some(format!("abilities.low.radius={:?}", self.low_radius))
     }
 
     fn setup_as(&mut self, p: &PictureCtx, k: usize, cfg: &FighterCfg) {
