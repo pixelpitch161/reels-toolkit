@@ -469,18 +469,29 @@ field, as 6.2 and 6.3 do for FLUTE and TROMBONE), from the lines below.
 <!-- kind:combo -->
 #### `combo` (weapon kind of TRUMPET)
 
-`fight.py` 898 to 966. Not ported yet: its port fills this section in (the meaning of each field, as 6.2 and 6.3 do for
-FLUTE and TROMBONE), from the lines below.
+`fight.py` 898 to 966 (`combo_setup`, `combo_beat`, `combo_step`); the engine's `bf-sim/src/kinds/combo.rs`. Every
+`every` beats (haste divides it) the TRUMPET queues `punches` pistons, `gap` beats apart; each aims where the enemy
+is when it starts, shoots out to the reach, holds and pulls back, and hits once.
 
-**Record keys.** None of its own.
+**Record keys.** None of its own. What a recording of a combo shows of it, in the shared keys:
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+- `TH`: the valves' aim, 0 to 2 pi. It starts facing the enemy and turns toward it at `aim_rate` at most, every step.
+- `BL`: the pistons' reach beyond the ball's surface: `base` (0.6), plus `grow` (0.05) per landed punch, up to
+  `max_len` (1.7).
+- `FR` stays 0, `EXT` is absent (the pistons' lengths are not recorded: a look works them out from the `punch`
+  events).
 
-- 916: `self.ev('combo', k, B.combo_n, n, g)`
-- 936: `self.ev('punch', k, i, want, float(B.blade_len), B.combo_n)`
-- 957: `self.ev('block', 1 - k, k, hx, hy, 'piston')`
-- 961: `self.damage(k, 1 - k, w['dmg3'] if last else w['dmg'], 'piston', hx, hy, P['i'])`
+**Events and hits** (`e[0]` is the time, `e[1]` the kind, `e[2]` the TRUMPET's side):
+
+- `combo` (916): a combo starts on its beat. `e[3]` its number, counting from 1 (int); `e[4]` its punches (int, 3);
+  `e[5]` the seconds between two punches (`gap` x the beat / the haste factor).
+- `punch` (936): a piston starts. `e[3]` its place in its combo, from 0 (int); `e[4]` its aim in radians (-pi to pi:
+  where the enemy was at that step); `e[5]` the reach then; `e[6]` its combo's number (int).
+- `hit` with `e[7] = "piston"` (961): a punch lands. As every hit: `e[3]` the victim, `e[4]` the damage (`dmg`, or
+  `dmg3` for the last punch of a combo, x the scales), `e[5]`, `e[6]` where on the enemy's surface; `e[8]` the
+  punch's place in its combo (int).
+- `block` with `e[6] = "piston"` (957): a punch met a shield. `e[2]` the shielded fighter, `e[3]` the TRUMPET,
+  `e[4]`, `e[5]` where. The piston pulls straight back.
 
 <!-- /kind:combo -->
 
@@ -952,18 +963,27 @@ and 6.3 do for FLUTE and TROMBONE), from the lines below.
 <!-- kind:beam -->
 #### `beam` (ability kind of TRUMPET)
 
-`fight.py` 2870 to 2871, 2990 to 3010, 857 to 897. Not ported yet: its port fills this section in (the meaning of each
-field, as 6.2 and 6.3 do for FLUTE and TROMBONE), from the lines below.
+`fight.py` 2870 to 2871, 2990 to 3010, 3013 to 3016, 857 to 897 (`ab_beam_charge`, `ab_beam_fire`, the charged beam
+in `abilities_step`, the ability beams of `beams_step`); the engine's `bf-sim/src/abilities/beam.rs`. HIGH C: the
+fighter charges for `charge_beats` beats with its aim locked on where the enemy is predicted to be, then fires one
+blast that is live for `hold` seconds, hits once and clears the enemy's projectiles in its path. It grows no weapon.
 
-**Record keys.** None of its own.
+**Record keys.** None of its own: neither the charge nor the live blast is recorded per frame (a look reads the
+`charge` and `beam` events).
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+**Events and hits** (`e[2]` is the fighter):
 
-- 2999: `self.ev('charge', k, aim, tc, float(ab['len']), float(ab['width']))`
-- 3009: `self.ev('beam', k, float(o[0]), float(o[1]), a, float(ab['len']), float(ab['width']))`
-- 884: `self.damage(k, o, Bm['dmg'], 'beam', hx, hy)`
-- 895: `self.kill_keys((self.kown == o) & (dk < Bm['w'] / 2 + rk), 'cleared', k)`
+- `ability` (2839): as every ability, with `e[4] = "beam"`.
+- `charge` (2999): the charge starts. `e[3]` the locked aim in radians (-pi to pi); `e[4]` the seconds of charge
+  (`charge_beats` x the beat); `e[5]` the blast's length; `e[6]` its width.
+- `beam` (3009): the blast fires, in the first step at or after the charge's end. `e[3]`, `e[4]` where it starts
+  (the ball's centre then, `R + 0.04` out along the aim); `e[5]` the aim; `e[6]` its length; `e[7]` its width.
+- `hit` with `e[7] = "beam"` (884): the blast reaches the enemy (the enemy's centre within `R + width / 2` of the
+  blast's line). `e[4]` the damage (`dmg` x the scales), `e[5]`, `e[6]` the point of the enemy's surface nearest
+  the line, `e[8]` 0. A shielded enemy gives `block` with `e[6] = "beam"` instead; either way it is knocked along
+  the blast.
+- `cleared` (895): an enemy projectile within `width / 2 + KEY_R` of the blast's line is taken out. `e[2]` the
+  projectile's owner, `e[3]` the fighter that fired the blast, `e[4]`, `e[5]` where it was, `e[6]` its id (int).
 
 <!-- /kind:beam -->
 
