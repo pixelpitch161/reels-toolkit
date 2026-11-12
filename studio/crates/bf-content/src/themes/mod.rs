@@ -456,6 +456,22 @@ mod tests {
         }
     }
 
+    /// A roster fighter whose voice is not ported yet (the first in the roster's order) as (its name, its `pp`
+    /// id), read from the fighters' own folders at run time, so these tests never name a fighter a port will make
+    /// whole. `None` once every fighter has its voice: the caller then says so and checks the refusal of an id the
+    /// registry does not know.
+    fn unported_voice() -> Option<(&'static str, &'static str)> {
+        roster()
+            .iter()
+            .find(|f| fighters::voice(&f.name).is_none())
+            .map(|f| (f.name.as_str(), f.pp.as_str()))
+    }
+
+    /// `voices` for a test theme, as the theme's `'static` list.
+    fn listed(voices: Vec<&'static str>) -> &'static [&'static str] {
+        Box::leak(voices.into_boxed_slice())
+    }
+
     #[test]
     fn a_themes_voices_come_from_the_fighters_registry_or_its_own() {
         // none: the big top
@@ -465,13 +481,25 @@ mod tests {
         let names: Vec<&str> = got.iter().map(|v| v.name()).collect();
         assert_eq!(names, ["TROMBONE", "OWN VOICE", "FLUTE"]);
         // a fighter's voice that is not ported yet, in words
-        assert_eq!(
-            voiced(&["TROMBONE", "TUBA"]).bed_voices().err().unwrap().to_string(),
-            "music.theme: voiced plays the TUBA's voice, which is not ported yet"
-        );
-        // an id nobody has: not named
+        if let Some((name, pp)) = unported_voice() {
+            assert_eq!(
+                voiced(listed(vec!["TROMBONE", pp]))
+                    .bed_voices()
+                    .err()
+                    .unwrap()
+                    .to_string(),
+                format!("music.theme: voiced plays the {name}'s voice, which is not ported yet")
+            );
+        } else {
+            eprintln!("every roster fighter's voice is ported: only an id nobody has is refused below");
+        }
+        // an id nobody has: not named (also after a voice the registry has)
         assert_eq!(
             voiced(&["NOBODY"]).bed_voices().err().unwrap().to_string(),
+            "music.theme: voiced plays a voice of its own that is not ported yet"
+        );
+        assert_eq!(
+            voiced(&["TROMBONE", "NOBODY"]).bed_voices().err().unwrap().to_string(),
             "music.theme: voiced plays a voice of its own that is not ported yet"
         );
         // the kit themes that play a fighter's voice list it (their ports add the rest)
@@ -482,23 +510,37 @@ mod tests {
     }
 
     /// `validate` refuses a ported theme whose bed plays a voice that is not ported, before anything else of the
-    /// theme's.
+    /// theme's: a roster fighter's voice not ported yet, named; once every fighter's voice is, an id the registry
+    /// does not know.
     #[test]
     fn validate_refuses_a_theme_voice_not_ported() {
-        static TUBA_BED: Theme = Theme {
-            name: "tuba_bed",
+        let (voices, why) = match unported_voice() {
+            Some((name, pp)) => (
+                listed(vec![pp]),
+                format!("music.theme: unported_bed plays the {name}'s voice, which is not ported yet"),
+            ),
+            None => {
+                eprintln!("every roster fighter's voice is ported: an id the registry does not know is refused");
+                (
+                    listed(vec!["NOBODY"]),
+                    "music.theme: unported_bed plays a voice of its own that is not ported yet".to_string(),
+                )
+            }
+        };
+        let bed = Theme {
+            name: "unported_bed",
             ported: true,
             card: &NOT_PORTED_CARD,
             options: &[],
-            voices: &["TUBA"],
+            voices,
             own_voice: no_own_voice,
-            classic: |_| Err(not_ported("tuba_bed")),
+            classic: |_| Err(not_ported("unported_bed")),
         };
         assert_eq!(
-            crate::soundtrack::validate_with(&episode(), &TUBA_BED)
+            crate::soundtrack::validate_with(&episode(), &bed)
                 .unwrap_err()
                 .to_string(),
-            "music.theme: tuba_bed plays the TUBA's voice, which is not ported yet"
+            why
         );
     }
 }

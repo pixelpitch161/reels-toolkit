@@ -78,6 +78,29 @@ fn fight_file(dir: &TempRoot, name: &str, edit: impl Fn(String) -> String) -> Pa
     path
 }
 
+/// A roster fighter whose weapon or an ability the engine has not ported (the first in the roster's order), read
+/// at run time so the test never names a fighter a port will make whole; once every fighter is ported, a name the
+/// registry does not know. The program refuses either in one line that names it.
+fn unported_fighter() -> &'static str {
+    let found = bf_content::roster().iter().find(|f| {
+        matches!(f.weapon, bf_core::roster::WeaponCfg::Unsupported(_))
+            || [&f.unlock1, &f.unlock2, &f.low].iter().any(|ab| !ab.kind.is_ported())
+    });
+    match found {
+        Some(f) => f.name.as_str(),
+        None => {
+            eprintln!("every roster fighter is ported: a name the registry does not know is refused instead");
+            "KAZOO"
+        }
+    }
+}
+
+/// The example fight file with `name` fighting in TROMBONE's corner (its roles, lines and range keyed by it).
+fn with_right_fighter(text: String, name: &str) -> String {
+    text.replace("\"TROMBONE\"", &format!("\"{name}\""))
+        .replace("\nTROMBONE =", &format!("\n\"{name}\" ="))
+}
+
 /// The text without its `seed = ...` line: a fight the Studio searches itself.
 fn without_seed(text: String) -> String {
     let out: Vec<&str> = text.lines().filter(|l| !l.starts_with("seed = ")).collect();
@@ -1141,7 +1164,8 @@ fn balance_writes_only_the_handicap() {
 fn bad_input_is_one_line() {
     let root = TempRoot::new("bad input");
     let ff = example();
-    let tuba = fight_file(&root, "tuba.toml", |t| t.replace("TROMBONE", "TUBA"));
+    let unported = unported_fighter();
+    let unported_ff = fight_file(&root, "unported.toml", |t| with_right_fighter(t, unported));
     let broken = fight_file(&root, "broken.toml", |t| {
         t.replace("tempo_bpm = 132.0", "tempo_bpm = \"fast\"")
     });
@@ -1160,8 +1184,8 @@ fn bad_input_is_one_line() {
         (vec![], "a command"),
         (vec![&"dance"], "dance"),
         (vec![&"story", &"no such file.toml"], "no such file.toml"),
-        (vec![&"story", &tuba], "TUBA"),
-        (vec![&"hash", &tuba, &"--seeds", &"1"], "TUBA"),
+        (vec![&"story", &unported_ff], unported),
+        (vec![&"hash", &unported_ff, &"--seeds", &"1"], unported),
         (vec![&"story", &broken], "tempo_bpm"),
         (vec![&"story", &ff, &"--rec", &"missing.bfrec"], "missing.bfrec"),
         (vec![&"story", &ff, &"--rec", &not_rec], "not a recording.bfrec"),
@@ -1207,7 +1231,7 @@ fn bad_input_is_one_line() {
     let mut left = entries(&root.0);
     left.retain(|n| {
         ![
-            "tuba.toml",
+            "unported.toml",
             "broken.toml",
             "taken.png",
             "not a recording.bfrec",
