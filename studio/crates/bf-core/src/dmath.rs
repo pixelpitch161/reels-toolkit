@@ -91,6 +91,13 @@ pub fn fmod(x: f64, y: f64) -> f64 {
     libm::fmod(x, y)
 }
 
+/// `x * y + z` rounded once (C `fma`), in software like everything here, so the same bits on every PC. The engine
+/// does not fuse its own arithmetic; this is only for a port of a numpy product that OpenBLAS computes with fused
+/// multiply-add on the reference PC and whose last bit reaches a pixel (see `bf_picture::sprite`).
+pub fn fma(x: f64, y: f64, z: f64) -> f64 {
+    libm::fma(x, y, z)
+}
+
 /// Single-precision sine (numpy `float32` arrays).
 pub fn sinf(x: f32) -> f32 {
     libm::sinf(x)
