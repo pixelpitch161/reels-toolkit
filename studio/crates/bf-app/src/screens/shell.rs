@@ -8,10 +8,10 @@ use egui::{
 };
 
 use crate::model::{Step, View};
-use crate::state::upkeep::{CHECKING, NOT_INSTALLED};
+use crate::state::upkeep::{CHECKING, CLOSING, NOT_INSTALLED};
 use crate::state::{Action, ViewModel};
 use crate::theme::{CONTROL_H, HOVER, MUTED, RADIUS, TEXT, body, section, small, value};
-use crate::update::UpdateState;
+use crate::update::{UpdateState, UpdateView};
 use crate::widgets::buttons::{self, focus_ring};
 use crate::widgets::chips::fighter_bar;
 use crate::widgets::pixel::pixel_text;
@@ -79,7 +79,7 @@ pub fn toolbar(ui: &mut Ui, vm: &ViewModel, out: &mut Vec<Action>) {
             if buttons::toggle(ui, "Settings", vm.view == View::Settings).clicked() {
                 out.push(Action::Go(View::Settings));
             }
-            if update(ui, &vm.update.state).clicked() {
+            if update(ui, &vm.update).clicked() {
                 out.push(Action::Go(View::Settings));
             }
             let (rendering, waiting) = vm.queue.counts();
@@ -93,25 +93,28 @@ pub fn toolbar(ui: &mut Ui, vm: &ViewModel, out: &mut Vec<Action>) {
     });
 }
 
-/// What hovering the disabled "Update" button says in `state`, when it is disabled: while the app looks for a newer
-/// version, and in a copy that was not installed.
-pub fn update_why(state: &UpdateState) -> Option<&'static str> {
-    match state {
+/// What hovering the disabled "Update" button says, when it is disabled: once the app is to close (after a removal,
+/// say), while the app looks for a newer version, and in a copy that was not installed.
+pub fn update_why(view: &UpdateView) -> Option<&'static str> {
+    if view.close.is_some() {
+        return Some(CLOSING);
+    }
+    match view.state {
         UpdateState::NotInstalled => Some(NOT_INSTALLED),
         UpdateState::Checking => Some(CHECKING),
         _ => None,
     }
 }
 
-/// The toolbar's "Update" by the state: drawn disabled exactly as before updates worked, with the state's hover
-/// text, while the app looks and in a copy that was not installed; the primary look when a version is ready to be
-/// built or to restart into; a box button otherwise (up to date, building, failed). A click goes to Settings, where
-/// the "Updates" row is.
-fn update(ui: &mut Ui, state: &UpdateState) -> Response {
-    if let Some(why) = update_why(state) {
+/// The toolbar's "Update" by the update's view: drawn disabled exactly as before updates worked, with its hover
+/// text, while the app looks, in a copy that was not installed and once the app is to close; the primary look when a
+/// version is ready to be built or to restart into; a box button otherwise (up to date, building, failed). A click
+/// goes to Settings, where the "Updates" row is.
+fn update(ui: &mut Ui, view: &UpdateView) -> Response {
+    if let Some(why) = update_why(view) {
         return buttons::disabled(ui, "Update", why);
     }
-    match state {
+    match view.state {
         UpdateState::Available { .. } | UpdateState::Ready { .. } => buttons::primary(ui, "Update"),
         _ => buttons::boxed(ui, "Update"),
     }

@@ -308,7 +308,7 @@ impl AppState {
             cores,
             notices,
             status: String::new(),
-            update: SampleUpkeep::not_installed().view(),
+            update: SampleUpkeep::not_installed(None).view(),
             app_line: crate::version::line(),
             removal: upkeep::RemovalView::Closed,
         };
@@ -409,7 +409,7 @@ impl AppState {
         }
         self.settle(&mut fx);
         self.after_queue_run(Some(generation), &mut fx);
-        self.sync_upkeep();
+        self.poll_upkeep();
         self.vm.status = self.status();
         fx
     }
@@ -420,17 +420,15 @@ impl AppState {
         self.on_event(event, &mut fx);
         self.settle(&mut fx);
         self.after_queue_run(None, &mut fx);
-        self.sync_upkeep();
+        self.poll_upkeep();
         self.vm.status = self.status();
         fx
     }
 
     /// What the preview player says, once per frame (the shell copies it): the transport as it stands and the
     /// playhead's frame when it could not be drawn. Only the player knows these, so they come in here rather than
-    /// through an event; the status line follows them like any other change. The upkeep seam's view is copied in
-    /// here too, once a frame, since its work (a look, a build, a removal plan) ends on threads of its own.
+    /// through an event; the status line follows them like any other change.
     pub fn player_view(&mut self, transport: TransportView, failed_frame: Option<u32>) {
-        self.sync_upkeep();
         if self.vm.transport == transport && self.failed_frame == failed_frame {
             return;
         }

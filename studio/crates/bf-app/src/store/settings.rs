@@ -83,6 +83,8 @@ fn parse(bytes: &[u8], cores: usize) -> Read {
     let most = i64::try_from(cores.max(1)).unwrap_or(i64::MAX);
     let workers = usize::try_from(workers.clamp(1, most)).unwrap_or(1);
     // Not a required key: a file without it (from 0.1.0), or with a value this app does not know, is Best.
+    // An unknown value is not kept (the next save writes "best"), so a version that adds a value must raise
+    // SETTINGS_FORMAT, which moves its file aside here instead of losing the value.
     let encode = table
         .get("encode")
         .and_then(toml::Value::as_str)

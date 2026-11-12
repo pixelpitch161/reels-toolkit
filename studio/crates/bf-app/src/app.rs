@@ -611,6 +611,7 @@ impl eframe::App for BfApp {
                 live.engine.send(Command::PreviewBusy(view.playing));
             }
             self.state.player_view(view, live.player.failed_frame());
+            self.state.poll_upkeep();
             if let Some(writer) = &live.writer {
                 for text in writer.problems() {
                     self.state.vm.notices.push(Notice { text });

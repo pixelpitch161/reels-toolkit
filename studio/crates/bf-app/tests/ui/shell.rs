@@ -306,6 +306,26 @@ fn update_is_disabled_and_says_why() {
     assert!(harness.state().log.is_empty(), "it does nothing");
 }
 
+/// After a removal the toolbar's "Update" is disabled and says why, whatever the update stood at.
+#[test]
+fn after_a_removal_update_is_disabled() {
+    let _gpu = gpu();
+    let vm = bf_app::fixtures::settings::removed();
+    assert_eq!(vm.update.state, bf_app::update::UpdateState::UpToDate);
+    let mut harness = showing(REF, vm);
+    harness.run();
+    assert!(harness.get_by_label("Update").accesskit_node().is_disabled());
+    harness.get_by_label("Update").hover();
+    harness.run();
+    assert!(
+        harness.query_by_label(bf_app::state::upkeep::CLOSING).is_some(),
+        "hovering says why"
+    );
+    harness.get_by_label("Update").click();
+    harness.run();
+    assert!(harness.state().log.is_empty(), "it does nothing");
+}
+
 /// The toolbar's "Update" in each update state: disabled as before (with the state's hover text) while the app looks
 /// and in a copy that was not installed; the primary look when a version can be built or restarted into; a box
 /// button otherwise. A click on a usable one opens Settings.
@@ -350,7 +370,8 @@ fn update_follows_the_state() {
             Some(fill) => assert_eq!(seen, rgb(fill), "{state:?}: its look"),
             None => assert_eq!(seen, rgb(theme::PANEL), "{state:?}: no fill, as before"),
         }
-        if let Some(why) = shell::update_why(&state) {
+        let view = harness.state().state.vm.update.clone();
+        if let Some(why) = shell::update_why(&view) {
             harness.get_by_label("Update").hover();
             harness.run();
             assert!(harness.query_by_label(why).is_some(), "{state:?}: hovering says why");

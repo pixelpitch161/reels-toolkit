@@ -760,6 +760,7 @@ fn start(
             // The theme is installed, and the settings and the queue are read, here, before the first frame; the
             // engine is made here too, where the window's context exists for its waker.
             let kind = if fixtures { EngineKind::Sample } else { EngineKind::Real };
+            let reports = paths.as_ref().map(|p| p.logs.clone());
             let mut app = if smoke {
                 app::start_with(cc, paths, || Box::new(NoAudio::new(NO_DEVICE)), kind, started)
             } else {
@@ -768,11 +769,9 @@ fn start(
             if fixtures {
                 app.status_note = Some(SAMPLE_NOTE.to_string());
             }
-            if !(smoke || fixtures)
-                && let Some(u) = bf_app::seam::upkeep::for_installed_copy(&cc.egui_ctx)
-            {
-                app.state.set_upkeep(u);
-            }
+            let real = !(smoke || fixtures);
+            app.state
+                .set_upkeep(bf_app::seam::upkeep::for_this_start(&cc.egui_ctx, real, reports));
             // ffmpeg and the output folder, off the interface thread: each a line in start.txt when it answers.
             let output = app.state.vm.settings.output_folder.clone();
             let late_log = Arc::clone(&window_log);

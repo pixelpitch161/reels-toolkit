@@ -287,7 +287,7 @@ fn the_start_up_texts_are_in_sentence_case() {
 /// install's, whose words hold a backslash.
 fn upkeep_texts() -> Vec<String> {
     use bf_app::screens::settings as screen;
-    use bf_app::state::upkeep as rules;
+    use bf_app::state::upkeep;
     use bf_app::update;
     vec![
         update::NO_TOOLS.to_string(),
@@ -299,22 +299,31 @@ fn upkeep_texts() -> Vec<String> {
         update::check_staged_failed("0.6.1", "0.6.0", "the new program named another version"),
         update::swap_failed("0.6.1", "0.6.0"),
         update::restart_failed("it could not be started"),
-        rules::NOT_INSTALLED.to_string(),
-        rules::NOTHING_TO_REMOVE.to_string(),
-        rules::REMOVE_RENDERING.to_string(),
-        rules::WAIT_FOR_BUILD.to_string(),
-        rules::CHECKING.to_string(),
-        rules::UP_TO_DATE.to_string(),
-        rules::LOOKING_AT_REMOVAL.to_string(),
-        rules::REMOVING.to_string(),
-        rules::available("0.6.1"),
-        rules::building("0.6.1", 754),
-        rules::ready("0.6.1"),
+        upkeep::NOT_INSTALLED.to_string(),
+        upkeep::NOTHING_TO_REMOVE.to_string(),
+        upkeep::REMOVE_RENDERING.to_string(),
+        upkeep::WAIT_FOR_BUILD.to_string(),
+        upkeep::CHECKING.to_string(),
+        upkeep::UP_TO_DATE.to_string(),
+        upkeep::LOOKING_AT_REMOVAL.to_string(),
+        upkeep::REMOVING.to_string(),
+        upkeep::available("0.6.1"),
+        upkeep::building("0.6.1", 754),
+        upkeep::ready("0.6.1"),
         screen::FFMPEG_MISSING.to_string(),
         screen::ENCODING_NOTE.to_string(),
         screen::REPORTS_SOMEWHERE.to_string(),
         screen::NO_REPORTS_FOLDER.to_string(),
         screen::NO_GUIDE.to_string(),
+        upkeep::CLOSING.to_string(),
+        upkeep::NOT_REMOVED.to_string(),
+        bf_app::seam::upkeep::SAMPLE_KEPT.to_string(),
+        bf_app::seam::upkeep::NO_FOLDERS.to_string(),
+        bf_app::seam::upkeep::NO_PLAN.to_string(),
+        // The reports line, its folder a made-up one (a path is words with a backslash).
+        screen::reports_line(&bf_app::fixtures::settings::reports()),
+        // A removal plan refused for an install that is not there (Task 11's words, nothing on the PC is touched).
+        removal_refused(),
     ]
     .into_iter()
     .chain(bf_app::seam::upkeep::sample_removal_words())
@@ -340,4 +349,11 @@ fn the_update_texts_are_in_sentence_case() {
     }
     // The rule bites on these words too.
     assert_eq!(breaks("Ask for Rust and Cargo", &[]), ["Cargo"]);
+}
+
+/// Task 11's refusal for a made-up install that is not on this PC, as Settings would show it.
+fn removal_refused() -> String {
+    let layout = bf_pack::install::Layout::under(std::path::Path::new(r"C:\Users\owner\AppData\Local\Not here"));
+    let refused = bf_pack::remove::removal_plan(&layout).expect_err("nothing is there");
+    bf_app::seam::upkeep::without_os_errors(&refused.to_string())
 }

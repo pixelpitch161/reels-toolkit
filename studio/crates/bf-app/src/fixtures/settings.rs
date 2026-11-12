@@ -93,7 +93,7 @@ pub fn vm_not_installed() -> ViewModel {
 /// An installed, up-to-date copy asking whether to remove it.
 pub fn asking_removal() -> ViewModel {
     let mut vm = with_update(UpdateState::UpToDate);
-    vm.removal = RemovalView::Asking(sample_removal_words());
+    vm.removal = RemovalView::asking(sample_removal_words());
     vm
 }
 

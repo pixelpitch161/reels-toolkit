@@ -42,8 +42,8 @@ pub const FFMPEG_MISSING: &str =
 pub const LOOKING_FOR_FFMPEG: &str = "Looking for ffmpeg.";
 /// What the two encoder settings mean (no saving in seconds is promised: it was measured on a busy PC).
 pub const ENCODING_NOTE: &str = "Best quality is the series' own setting. Faster makes the video sooner and the file \
-                                 about a quarter larger.";
-/// The "Problems" row when this copy does not know its reports folder.
+                                 about a quarter larger. A change applies to the next video that starts.";
+/// The "Problems" row when the PC gave the app no folder for its files (so none for its reports either).
 pub const REPORTS_SOMEWHERE: &str = "If something goes wrong, a report is saved in the app's logs folder.";
 /// Why "Open the reports folder" cannot be used then.
 pub const NO_REPORTS_FOLDER: &str = "This copy does not know where its reports folder is.";
@@ -95,8 +95,15 @@ pub fn show(ui: &mut Ui, vm: &ViewModel, out: &mut Vec<Action>) {
     });
 }
 
-/// The rows, top to bottom.
+/// The rows, top to bottom. Once the app is to close, every row but "Remove" (which then holds the closing words and
+/// "Close BALLFIGHT Studio") is shown disabled.
 fn column(ui: &mut Ui, vm: &ViewModel, out: &mut Vec<Action>) {
+    ui.add_enabled_ui(!upkeep::closing(vm), |ui| settings_rows(ui, vm, out));
+    row(ui, "Remove", |ui| remove(ui, vm, out));
+}
+
+/// Every row above "Remove".
+fn settings_rows(ui: &mut Ui, vm: &ViewModel, out: &mut Vec<Action>) {
     row(ui, "Output folder", |ui| output_folder(ui, vm, out));
     row(ui, "Worker threads", |ui| worker_threads(ui, vm, out));
     row(ui, "Video encoding", |ui| encoding(ui, vm, out));
@@ -123,7 +130,6 @@ fn column(ui: &mut Ui, vm: &ViewModel, out: &mut Vec<Action>) {
             out.push(Action::Upkeep(Request::OpenGuide));
         }
     });
-    row(ui, "Remove", |ui| remove(ui, vm, out));
 }
 
 /// One row: `label` (body `MUTED`) in a cell 150 wide and 26 tall, then `add` in the rest of the column, laid out
@@ -274,10 +280,12 @@ fn updates(ui: &mut Ui, vm: &ViewModel, out: &mut Vec<Action>) {
         _ => None,
     };
     let installed = u.state != UpdateState::NotInstalled;
-    let has_buttons = button.is_some()
-        || build.is_some()
-        || matches!(u.state, UpdateState::Ready { .. })
-        || (installed && u.previous_button.is_some());
+    // Once the app is to close, nothing here moves it on: no button is shown.
+    let has_buttons = !upkeep::closing(vm)
+        && (button.is_some()
+            || build.is_some()
+            || matches!(u.state, UpdateState::Ready { .. })
+            || (installed && u.previous_button.is_some()));
     if has_buttons {
         buttons_row(ui, |ui| {
             if let Some(label) = &build
@@ -337,7 +345,7 @@ fn problems(ui: &mut Ui, vm: &ViewModel, out: &mut Vec<Action>) {
 fn remove(ui: &mut Ui, vm: &ViewModel, out: &mut Vec<Action>) {
     // Whether the question has had its first frame, so the keyboard starts on "Keep it" once.
     let asked_key = ui.scope_id().with("removal question shown");
-    let asking = matches!(vm.removal, RemovalView::Asking(_));
+    let asking = matches!(vm.removal, RemovalView::Asking { .. });
     if !asking {
         ui.data_mut(|d| d.insert_temp(asked_key, false));
     }
@@ -375,9 +383,13 @@ fn remove(ui: &mut Ui, vm: &ViewModel, out: &mut Vec<Action>) {
             words(ui, text.clone());
             keep(ui, out);
         }
-        RemovalView::Asking(lines) => {
+        RemovalView::Asking { words: lines, problem } => {
             for line in lines {
                 words(ui, line.clone());
+            }
+            // Why the last "Remove the app" did not remove it.
+            if let Some(why) = problem {
+                words(ui, why.clone());
             }
             buttons_row(ui, |ui| {
                 let go = match why_not_remove(vm) {

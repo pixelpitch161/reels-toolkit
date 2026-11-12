@@ -502,7 +502,7 @@ fn remove_asks_first() {
     assert_eq!(harness.state().log, vec![Action::AskRemove]);
     assert_eq!(
         harness.state().state.vm.removal,
-        RemovalView::Asking(sample_removal_words())
+        RemovalView::asking(sample_removal_words())
     );
     for line in sample_removal_words() {
         assert!(has(&harness, &line), "{line}");
@@ -531,7 +531,17 @@ fn remove_asks_first() {
     button(&harness, "Remove the app").click();
     harness.run();
     assert_eq!(upkeep_sent(&harness), vec![Request::Remove]);
-    assert!(has(&harness, upkeep::REMOVING));
+    // The sample answers without removing anything: the question again, with why.
+    assert!(has(&harness, bf_app::seam::upkeep::SAMPLE_KEPT), "the answer is shown");
+    assert!(usable(&harness, "Remove the app") && usable(&harness, "Keep it"));
+    assert!(!has(&harness, upkeep::REMOVING), "never left on Removing");
+    button(&harness, "Remove the app").click();
+    harness.run();
+    assert_eq!(upkeep_sent(&harness), vec![Request::Remove, Request::Remove]);
+    assert!(
+        has(&harness, bf_app::seam::upkeep::SAMPLE_KEPT),
+        "the same answer again is shown again"
+    );
 }
 
 #[test]
@@ -556,6 +566,22 @@ fn after_a_removal_the_words_show_and_the_app_closes_on_a_click() {
     for line in sample_removed_words() {
         assert!(has(&harness, &line), "{line}");
     }
+    // Nothing else can be used: no update button, every other row disabled, the toolbar's Update too.
+    for gone in ["Look again", "Go back to version 0.0.9", "Remove the app", REMOVE] {
+        assert!(harness.query_all_by_label(gone).next().is_none(), "{gone} is not shown");
+    }
+    for label in ["Change folder", "Open the reports folder", "Open the guide", "Update"] {
+        assert!(!usable(&harness, label), "{label} cannot be used");
+    }
+    assert!(
+        control(&harness, "Faster", Role::RadioButton)
+            .accesskit_node()
+            .is_disabled()
+    );
+    ring_after_focus(&mut harness, "Close BALLFIGHT Studio", Role::Button, 2, REF);
+    button(&harness, "Change folder").click();
+    harness.run();
+    assert!(harness.state().log.is_empty(), "{:?}", harness.state().log);
     let closes = |harness: &Harness<'_, BfApp>| {
         harness.output().viewport_output[&ViewportId::ROOT]
             .commands
@@ -655,10 +681,6 @@ fn more_controls() -> Vec<(ViewModel, Vec<&'static str>)> {
         (
             settings::asking_removal(),
             vec!["Look again", BACK, REPORTS, GUIDE, "Remove the app", "Keep it"],
-        ),
-        (
-            settings::removed(),
-            vec!["Look again", BACK, REPORTS, GUIDE, "Close BALLFIGHT Studio"],
         ),
     ]
 }
