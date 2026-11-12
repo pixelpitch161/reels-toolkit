@@ -90,6 +90,9 @@ pub struct ThemeEntry {
     pub chord_loops: Vec<Vec<String>>,
     /// The tempo range as bars that fill 61 s, lowest and highest.
     pub bars: (u32, u32),
+    /// The roster fighters it cannot be played with (roster names): each one's part plays a hit its music lacks, so
+    /// the kit would crash on any pair with it (ruling M3-R2). Empty for most themes.
+    pub refuses: Vec<String>,
 }
 
 /// Everything the engine offers to fight with.
@@ -102,4 +105,15 @@ pub struct Roster {
     /// The match-up a new draft starts from (roster names, left then right).
     pub start: [String; 2],
     pub app_version: String,
+}
+
+impl Roster {
+    /// The themes the pair `fighters` (left corner first) may be set in, in the order they are offered: those that
+    /// refuse neither fighter (ruling M3-R2). The pickers list only these.
+    pub fn themes_for(&self, fighters: &[String; 2]) -> Vec<&ThemeEntry> {
+        self.themes
+            .iter()
+            .filter(|t| !fighters.iter().any(|f| t.refuses.contains(f)))
+            .collect()
+    }
 }
