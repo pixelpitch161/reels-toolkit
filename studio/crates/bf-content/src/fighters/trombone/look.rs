@@ -483,6 +483,11 @@ impl Look for TromboneLook {
     /// `Look(P, k)` with `self.cfg = cfg`, then `setup()`: the one number `trombone.py` reads from `self.cfg`
     /// (PEDAL TONE's radius) comes from `cfg`, the rest from side `k`. For its own side `cfg` is `p.cfg[k]`, and
     /// this is `setup`.
+    /// PEDAL TONE's radius: what `setup_as` took from `cfg`.
+    fn cfg_summary(&self) -> Option<String> {
+        Some(format!("low_radius {:?}", self.low_radius))
+    }
+
     fn setup_as(&mut self, p: &PictureCtx, k: usize, cfg: &FighterCfg) {
         self.k = k;
         self.low_radius = cfg.low.get("radius");

@@ -1,0 +1,82 @@
+{
+ "about": "examples/flute_vs_trombone: the pair's own links (plan Table S5): each item's first occurrence over the scenario fights (scenario, seed, time, event index, the event), within 20.0 s of FIGHT!",
+ "format": 1,
+ "links": [
+  {
+   "after_fight": 2.3333347058823533,
+   "event": [5.92157, "swat", 0, 1, 0, 0.8610295097297793, -1.2851944842609426],
+   "index": 15,
+   "item": "swat",
+   "scenario": "swapped",
+   "seed": 3,
+   "t": 5.92157
+  }
+ ],
+ "scenarios": [
+  {
+   "cache": ["episodes/flute_vs_trombone/scenarios/plain_s1.bfrec", "episodes/flute_vs_trombone/scenarios/plain_s2.bfrec", "episodes/flute_vs_trombone/scenarios/plain_s3.bfrec"],
+   "fighters": ["FLUTE", "TROMBONE"],
+   "handicap": [2.0, 0.4],
+   "hashes": ["8689c1af755ed173", "ec9e2ac0d1ca33fc", "9bff0f539177070e"],
+   "name": "plain",
+   "overrides": {},
+   "rules": {
+    "A": 3.0,
+    "DT": 0.008333333333333333,
+    "FPS": 30,
+    "HP": 100.0,
+    "KEY_R": 0.11,
+    "KNOCK_T": 0.38,
+    "LAUNCH_SPREAD": 38.0,
+    "LOW_HP": 25.0,
+    "LV_DMG": [14.0, 36.0],
+    "R": 0.6,
+    "ROPE_GIVE": 5.0,
+    "V": 2.6,
+    "beat": 0.44852941176470584,
+    "bpm": 133.7704918032787,
+    "dmg_scale": 1.0,
+    "dmg_side": [2.0, 0.4],
+    "swat_cobras": true,
+    "t_fight": 3.5882352941176467,
+    "t_max": 58.0
+   },
+   "seeds": [1, 2, 3],
+   "swapped": false
+  },
+  {
+   "cache": ["episodes/flute_vs_trombone/scenarios/swapped_s1.bfrec", "episodes/flute_vs_trombone/scenarios/swapped_s2.bfrec", "episodes/flute_vs_trombone/scenarios/swapped_s3.bfrec"],
+   "fighters": ["TROMBONE", "FLUTE"],
+   "handicap": [0.4, 2.0],
+   "hashes": ["5e305859c8c761c6", "de3d586f83f4a4c9", "319c0f76b52bc029"],
+   "name": "swapped",
+   "overrides": {},
+   "rules": {
+    "A": 3.0,
+    "DT": 0.008333333333333333,
+    "FPS": 30,
+    "HP": 100.0,
+    "KEY_R": 0.11,
+    "KNOCK_T": 0.38,
+    "LAUNCH_SPREAD": 38.0,
+    "LOW_HP": 25.0,
+    "LV_DMG": [14.0, 36.0],
+    "R": 0.6,
+    "ROPE_GIVE": 5.0,
+    "V": 2.6,
+    "beat": 0.44852941176470584,
+    "bpm": 133.7704918032787,
+    "dmg_scale": 1.0,
+    "dmg_side": [0.4, 2.0],
+    "swat_cobras": true,
+    "t_fight": 3.5882352941176467,
+    "t_max": 58.0
+   },
+   "seeds": [1, 2, 3],
+   "swapped": true
+  }
+ ],
+ "t_fight": 3.5882352941176467,
+ "tool": "tools.studio_export.episode_flute_vs_trombone",
+ "window": 20.0
+}

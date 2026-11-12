@@ -1,0 +1,45 @@
+{
+ "about": "examples/flute_vs_trombone: the kit config's values, which studio/fights/flute_vs_trombone.toml must hold, and its recording",
+ "bpm": 132,
+ "chords": ["Em", "B7", "Em", "Am", "B7", "Em", "C", "Am", "B7", "B7", "Em", "Am", "B7", "Em", "C", "Am", "B7", "B7", "Em", "Am", "B7", "Em", "C", "Am", "B7", "B7", "Em", "Am", "B7", "Em", "C", "Am", "B7", "B7"],
+ "config": "examples/flute_vs_trombone",
+ "dmg_scale": 1.0,
+ "fighters": ["FLUTE", "TROMBONE"],
+ "format": 1,
+ "fx_seed": 41,
+ "handicap": [2.0, 0.4],
+ "intro": ["Em", "B7"],
+ "key": "E",
+ "lines": {
+  "FLUTE": [76, 79, 83, 79, 76, 75, 76, 71, 81, 84, 83, 81, 79, 76, 77, 76, 75, 78, 81, 78, 83, 81, 78, 75, 76, 71, 76, 79, 83, 84, 83, 79, 84, 83, 79, 76, 72, 76, 79, 84, 81, 76, 72, 76, 81, 84, 88, 84, 83, 87, 86, 87, 90, 87, 83, 81, 78, 75, 71, 75, 78, 81, 83, 75]
+ },
+ "loop": ["Em", "Am", "B7", "Em", "C", "Am", "B7", "B7"],
+ "loop_bpm": "0x1.0b8a7de6d1d61p+7",
+ "mix": {},
+ "mood": "big_top",
+ "music_seed": null,
+ "n_bars": 34,
+ "pair": "flute_vs_trombone",
+ "rec_hash": "038e1f40fc3373eb",
+ "recording": "fights/flute_vs_trombone/ep392.bfrec",
+ "roles": {
+  "FLUTE": "melody",
+  "TROMBONE": "bass"
+ },
+ "rules": {
+  "swat_cobras": true
+ },
+ "scale": "harmonic minor",
+ "seed": 392,
+ "series": "BALLFIGHT #15",
+ "shard_seed": 271,
+ "solos": {},
+ "t_ko": 50.021568627450975,
+ "tail": [],
+ "title_hits": {
+  "FLUTE": [76, 79, 83, 84, 86, 87, 88],
+  "TROMBONE": [40, 52]
+ },
+ "tool": "tools.studio_export.episode_flute_vs_trombone",
+ "winner": 1
+}

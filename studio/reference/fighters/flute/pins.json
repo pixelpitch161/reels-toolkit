@@ -6,6 +6,24 @@
  "command": "python -m tools.studio_export cache fighters/flute",
  "pins": [
   {
+   "path": "fighters/flute/hull_left.json",
+   "sha256": "e16c2c8befd57aaa1fffbeb098232353b55a9f0b76d06b5fab14661bb2bd71db",
+   "bytes": 160250,
+   "export": "fighter_flute"
+  },
+  {
+   "path": "fighters/flute/hull_right.json",
+   "sha256": "adfbe17930053fe359de5b02d67be7a918afa49d5a14a691ec2103a687d5405e",
+   "bytes": 119723,
+   "export": "fighter_flute"
+  },
+  {
+   "path": "fighters/flute/look_right.json",
+   "sha256": "9f61244e8e3dea32d33f0e8124900c704953c093b3a9df95436575a5d14b9df3",
+   "bytes": 28403,
+   "export": "fighter_flute"
+  },
+  {
    "path": "fighters/flute/right.bfrec",
    "sha256": "55c0dd4e710ee838fdec98377d03735e5ad04dfa5e0ce496ab57dff2e6e4dcf8",
    "bytes": 131716,
@@ -102,9 +120,39 @@
    "export": "fighter_flute"
   },
   {
+   "path": "fighters/flute/sprites.json",
+   "sha256": "5faed32d023b3cdc586b40dccc1786067024fc394ba8b23342d26c49a038f2f2",
+   "bytes": 264317,
+   "export": "fighter_flute"
+  },
+  {
+   "path": "fighters/flute/sprites.npz",
+   "sha256": "28e4f914d53e4492effb7ec72beb8f746a0c26db9e65576bb8ba4b96c118de6d",
+   "bytes": 344562,
+   "export": "fighter_flute"
+  },
+  {
    "path": "fighters/flute/stats_rows.json",
    "sha256": "444fdcf5bbe27441c48115c89da86e7400f7e74aea248e3c8e6b3a49beda30a1",
    "bytes": 489670,
+   "export": "fighter_flute"
+  },
+  {
+   "path": "fighters/flute/stems_left.npz",
+   "sha256": "2b8d8ed8eda3ebcada7c9960c6b36d74fd2c9e829f7ce69bc8a1adc037ee24ad",
+   "bytes": 5064498,
+   "export": "fighter_flute"
+  },
+  {
+   "path": "fighters/flute/stems_right.npz",
+   "sha256": "597c56db1c818e3784134796f09e7136de07de16e6cd069d1330fe83411678ed",
+   "bytes": 4606988,
+   "export": "fighter_flute"
+  },
+  {
+   "path": "fighters/flute/voice_notes.npz",
+   "sha256": "3230aba9825ad8cc9de87133b4300990405c2d7f4dee49feeceecc7f2db63bc2",
+   "bytes": 12059100,
    "export": "fighter_flute"
   }
  ]

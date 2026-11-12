@@ -888,6 +888,11 @@ impl Look for FluteLook {
     /// `Look(P, k)` with `self.cfg = cfg`, then `setup()`: everything `flute.py` reads from `self.cfg` (the view's
     /// roll, the striker's `rise`, SNAKE DANCE's `dur_beats`, PICCOLO's name and speed) comes from `cfg`, the rest
     /// from side `k`. For its own side `cfg` is `p.cfg[k]`, and this is `setup`.
+    /// The view's roll, the striker's `rise`, PICCOLO's name and speed: what `setup_as` took from `cfg`.
+    fn cfg_summary(&self) -> Option<String> {
+        Some(format!("roll {:?} rise {:?} low {:?}", self.roll, self.rise, self.low))
+    }
+
     fn setup_as(&mut self, p: &PictureCtx, k: usize, cfg: &FighterCfg) {
         self.k = k;
         // self.cfg['view'][2] (p.view[k] is p.cfg[k]'s view, read the same way)
