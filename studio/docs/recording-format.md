@@ -407,34 +407,41 @@ and says `swallow`; `spit` and `cannon` can be).
 <!-- kind:echo -->
 #### `echo` (weapon kind of HORN)
 
-`fight.py` 2196 to 2281. Not ported yet: its port fills this section in (the meaning of each field, as 6.2 and 6.3 do
-for FLUTE and TROMBONE), from the lines below.
+`fight.py` 2196 to 2281 (`echo_setup`, `echo_pos`, `_echo_blast`, `echo_tick`, `echo_step`). Ported:
+`bf-sim/src/kinds/echo.rs`, settings in `bf-core/src/roster/kinds/echo.rs`.
 
-**Record keys.**
+**Record keys** (present when a fighter's weapon is an `echo`).
 
-- `ECHO_G` (and `ECHO_N`, `ECHO_R`): added to `rec` at `run()` 5792, written by `snap` 5539 to 5549:
+- `ECHO_G`, `<f8` of shape `(n, 2, 4, 3)` (one of the kit's own array keys): per ball, each of the four ghost slots
+  (`EMAX`) as where the ball was that long ago (x, y in the ring frame, interpolated between substeps; before the
+  fight, its start) and the lag itself in seconds, `(i + 1) x` the ghosts' spacing (a beat, eased toward a beat over
+  the haste factor while a haste lasts). Every slot is written whether the ghost is earned or not (the look fades
+  the others); NaN for a ball whose weapon is not an echo.
+- `ECHO_N`, `<f8` of shape `(n, 2)`: the ghosts each ball has earned (a float: its whole part counts; 0.0 for a ball
+  whose weapon is not an echo).
+- `ECHO_R`, ragged (`ECHO_R.json`, one list a frame): every live blast ring as `[owner (int), x, y, r, rmax, j (int),
+  t0, call (int), hit (int 0 / 1)]`: its centre, its radius now (it spreads at `speed` from the ball's surface for the
+  call, from half the ball's radius for an echo, to `rmax`), the ghost that sounded it (0 the call), when, the call
+  it belongs to and whether it has reached the enemy. A ring lives `(rmax - r0) / speed + linger` seconds.
 
-  ```python
-  if 'ECHO_G' in rec:                                 # #34 v5, only recorded when a fighter uses the 'echo' kind
-      G = np.full((2, self.EMAX, 3), np.nan)
-      for j, Bj in enumerate((B0, B1)):
-          if hasattr(Bj, 'echo_hist'):
-              for i in range(self.EMAX):              # every slot (the renderer fades the inactive ones)
-                  G[j, i, :2] = self.echo_pos(Bj, (i + 1) * Bj.echo_sp)
-                  G[j, i, 2] = (i + 1) * Bj.echo_sp
-      rec['ECHO_G'].append(G)
-      rec['ECHO_N'].append([getattr(B0, 'n_echo', 0.0), getattr(B1, 'n_echo', 0.0)])
-      rec['ECHO_R'].append([(E['owner'], float(E['c'][0]), float(E['c'][1]), E['r'], E['rmax'], E['j'], E['t0'],
-                             E['call'], int(E['hit'])) for E in self.echoes])
-  ```
+**Events.**
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+| Kind | `who` (2) | 3 | 4 | 5 | 6 | 7 |
+| --- | --- | --- | --- | --- | --- | --- |
+| `echo` | the owner | j (int): 0 the call, 1 to 4 the ghost that repeats it | the call's id (int, from 1) | x (float) | y (float) | `rmax` (float): the ball's radius plus the reach beyond it (x `echo_reach` for an echo) |
+| `echo_call` | the owner | the call's id (int) | the ghosts that will repeat it (int) | their spacing in 16ths (int): `max(1, int(round(4 / mult)))` | | |
+| `echo_grow` | the owner | the ghosts it has now (int) | | | | |
 
-- 2234: `self.ev('echo', k, j, call, float(c[0]), float(c[1]), float(rmax))`
-- 2251: `self.ev('echo_call', k, B.echo_calls, n, sp16)`
-- 2273: `self.damage(k, 1 - k, E['dmg'], 'echo', hx, hy, E['j'])`
-- 2279: `self.ev('echo_grow', k, int(B.n_echo + 1e-9))`
+A call sounds on the 16th grid every `every` beats (a stunned fighter skips the tick). Ghost j repeats call c `j x`
+the spacing 16ths after it, from where the ball was `j x` the ghosts' spacing ago at that moment, with `decay ** j`
+of the call's damage and knockback. A ring hits once, when its radius reaches the enemy's near surface; a landed
+blast (not blocked) adds `grow` ghosts (up to `n_max`) and `reach_grow` to the reach (up to `max_reach`).
+
+`hit`, elements 7 and 8:
+
+| What hit (7) | Cause | Sub (8) |
+| --- | --- | --- |
+| `echo` | a blast ring reaching the enemy: `dmg x decay ** j`. x and y are where the ring meets the enemy's near surface on the line from the ring's centre | j: 0 the call, 1 to 4 a ghost's repeat |
 
 <!-- /kind:echo -->
 
@@ -1575,31 +1582,34 @@ stomps do not grow the weapon. Ordinary hops pause meanwhile and the dance ignor
 <!-- kind:flick -->
 #### `flick` (ability kind of HORN)
 
-`fight.py` 2880 to 2881, 2282 to 2337. Not ported yet: its port fills this section in (the meaning of each field, as 6.2
-and 6.3 do for FLUTE and TROMBONE), from the lines below.
+`fight.py` 2880 to 2881, 2282 to 2337 (`FLICK_STATES`, `start_flick`, `flick_step`). Ported:
+`bf-sim/src/abilities/flick.rs`, settings in `bf-core/src/roster/abilities/flick.rs`.
 
 **Record keys.**
 
-- `FLICK`: added to `rec` at `run()` 5829, written by `snap` 5705 to 5711:
+- `FLICK`, `<f8` of shape `(n, 2, 6)` (one of the kit's own array keys), present when a fighter has a `flick` among
+  its abilities. Per ball: the glove's state (1.0 winding up, 2.0 flicked: it stays out `show` s, 0.6 by default),
+  its aim (an angle in [-pi, pi]: it tracks the enemy while it winds up), how far beyond contact it reached (0.0
+  while it winds up), when it burst out, when it flicks (`wind_beats` beats later) and hit (1.0 when it touched the
+  enemy); six NaN for a ball with no glove out.
 
-  ```python
-  if 'FLICK' in rec:                                  # #34 v5, only recorded when a fighter has a 'flick' ability
-      Fl = np.full((2, 6), np.nan)
-      for j, Bj in enumerate((B0, B1)):
-          F = getattr(Bj, 'flick', None)
-          if F is not None:
-              Fl[j] = (self.FLICK_STATES[F['state']], F['aim'], F['ext'], F['t0'], F['t_hit'], F['hit'])
-      rec['FLICK'].append(Fl)
-  ```
+**Events.**
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+| Kind | `who` (2) | 3 | 4 | 5 | 6 |
+| --- | --- | --- | --- | --- | --- |
+| `flick_wind` | the owner | the time it flicks (float) | the aim (float): the angle to the enemy as it stands | | |
+| `flick` | the owner | hit (int 0 / 1): the enemy within `reach + glove_r` beyond contact | the aim then (float) | how far it reached (float): the gap to the enemy on a hit, else `reach` | landed (int 0 / 1): the hit was not blocked |
 
-- 2295: `self.ev('flick_wind', k, B.flick['t_hit'], aim)`
-- 2304: `self.damage(k, 1 - k, Fr['dmg'], 'flick_rope', e[5], e[6])`
-- 2327: `self.damage(k, 1 - k, ab['dmg'], 'flick', hx, hy)`
-- 2330: `self.ev('flick', k, 1, F['aim'], float(F['ext']), int(landed))`
-- 2334: `self.ev('flick', k, 0, F['aim'], float(reach), 0)`
+A flick that touches the enemy flings it straight along the aim at the shared speed and raises its knock boost to
+`boost` (also when the hit is blocked). For `rope_t` s after (0.9 by default) the first `rope` event of the enemy
+deals `dmg_rope` more.
+
+`hit`, elements 7 and 8:
+
+| What hit (7) | Cause | Sub (8) |
+| --- | --- | --- |
+| `flick` | the glove at its time, with the enemy in reach: `dmg`. x and y are the point of the enemy's surface toward the owner along the aim | 0 |
+| `flick_rope` | the flung enemy hitting a rope within `rope_t` s: `dmg_rope`. x and y are the rope event's (the enemy's centre) | 0 |
 
 <!-- /kind:flick -->
 
