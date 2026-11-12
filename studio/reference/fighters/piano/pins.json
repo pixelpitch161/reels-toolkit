@@ -7,170 +7,176 @@
  "pins": [
   {
    "path": "fighters/piano/checks_rows.json",
-   "sha256": "c4c9081a4bbf8d250263ab23688ce2ce8575744195d0c031d6f8cc41e4a2a79c",
-   "bytes": 33996,
+   "sha256": "d60071f8fdff916369b98f83c4057ec1dbe78a26ff9736a98cf098af70934c58",
+   "bytes": 34010,
    "export": "fighter_piano"
   },
   {
    "path": "fighters/piano/hull_left.json",
-   "sha256": "58dcae00b8dd19284d032194719b8dcecbbaef0375e81748b228ee4c6a63246d",
-   "bytes": 158222,
+   "sha256": "6c633089c94b5074915bb261923294b1cfe30d2b3a8834f009a7dfd165aca684",
+   "bytes": 156195,
    "export": "fighter_piano"
   },
   {
    "path": "fighters/piano/hull_right.json",
-   "sha256": "a4e46b68a321c7568853a3a5d262b127ee9ef5089dbf5bdc336048e85b2c067f",
-   "bytes": 119721,
+   "sha256": "1551ec54b3056a98d9ed2f904c74c8f3933f9d4b273ae8b2ced2d5c85105e10e",
+   "bytes": 117696,
+   "export": "fighter_piano"
+  },
+  {
+   "path": "fighters/piano/left.bfrec",
+   "sha256": "92e6d63eba08c6b3c9ae5d5474eeaf0b7bff937f110e3f94d4cc9b1b48f1303c",
+   "bytes": 493947,
    "export": "fighter_piano"
   },
   {
    "path": "fighters/piano/look_right.json",
-   "sha256": "5566a22f5c57f100d709fa30ded35f4d60a27ba65657676e3d9a21b52913a86f",
-   "bytes": 28328,
+   "sha256": "e1a5eea6853acb0ff643675ea9a41c7a05b2346a3d94c5648bd48157f8818b2e",
+   "bytes": 16642,
    "export": "fighter_piano"
   },
   {
    "path": "fighters/piano/right.bfrec",
-   "sha256": "5361be8ca3ccf73a6dd349d9e62da27a222fa6716ba9b783193aac68b2871335",
-   "bytes": 425809,
+   "sha256": "1b71473369b6821efafbcb8f407d61ca6c8405f2f7c87e46ad38d1bbd16ce43f",
+   "bytes": 464981,
    "export": "fighter_piano"
   },
   {
    "path": "fighters/piano/scenarios/early_ko_s1.bfrec",
-   "sha256": "d88949174bec09bdce7346804aa385c06208b327013551154079df960419d322",
-   "bytes": 175992,
+   "sha256": "4e18b2e5a9461b480e2c23aedaa9537dc1da6f7427245cbb565dab4e88077adc",
+   "bytes": 191477,
    "export": "fighter_piano"
   },
   {
    "path": "fighters/piano/scenarios/early_ko_s2.bfrec",
-   "sha256": "f5297b425f4a27582306876c123b39e03a52edd81cb47e903509315758a78bc4",
-   "bytes": 131355,
+   "sha256": "56034623939441b7ce142c01127f81e14dcd1e1d483dcb9031ff79569041ea1c",
+   "bytes": 188080,
    "export": "fighter_piano"
   },
   {
    "path": "fighters/piano/scenarios/early_ko_s3.bfrec",
-   "sha256": "e93e01b38c409a30fe0a84e0d0d5f00da27ce2565f41640431e073bd6fe4f997",
-   "bytes": 134486,
+   "sha256": "edfd5efc710ea5df5d8ff5e092b691f7c446225f66da048f8dda47a83484fe0a",
+   "bytes": 146437,
    "export": "fighter_piano"
   },
   {
    "path": "fighters/piano/scenarios/early_levels_s1.bfrec",
-   "sha256": "dac8f7f7318acaa8c8c17d38e83e99591b7e36e243757194ef4d765fa0d92b1f",
-   "bytes": 506587,
+   "sha256": "7a9e9796da6f1d219ba984c70e529cc8602fdee806fdf59a963fe20302742da7",
+   "bytes": 570483,
    "export": "fighter_piano"
   },
   {
    "path": "fighters/piano/scenarios/early_levels_s2.bfrec",
-   "sha256": "285ffdab7edd171316f0d217d8183a35e270003e32425a34657225de7b0760e5",
-   "bytes": 396206,
+   "sha256": "f84ee061fe99e4376bb0f888fcc3224db2adf7ee7003861f22f139b88f0f5f78",
+   "bytes": 370826,
    "export": "fighter_piano"
   },
   {
    "path": "fighters/piano/scenarios/early_levels_s3.bfrec",
-   "sha256": "9d76f858c831eca87a15aa48cdc3a7fec1498d2c367b1cf8c6f9d826e4d2b18a",
-   "bytes": 268023,
+   "sha256": "3856e6d39aa4f104da7e590be8beebab1df2661a0330532701179f9617225c8b",
+   "bytes": 502083,
    "export": "fighter_piano"
   },
   {
    "path": "fighters/piano/scenarios/early_low_s1.bfrec",
-   "sha256": "fdd4c65864be96fb7216b4f823e201d70878fc34788e2f638ca53af495b5dd8d",
-   "bytes": 388238,
+   "sha256": "1113137f646586494910b7465309a41de39b56d38b57daa3b2e4f0219a88e04c",
+   "bytes": 434573,
    "export": "fighter_piano"
   },
   {
    "path": "fighters/piano/scenarios/early_low_s2.bfrec",
-   "sha256": "836f289fbc0af4d31974616a699a6566576b07b4cbb971566a2bb655c50e8249",
-   "bytes": 373855,
+   "sha256": "3dbf3d25898ec80e84d25f0cb6052f8fd3887138691c31baf59db601913a32d3",
+   "bytes": 456485,
    "export": "fighter_piano"
   },
   {
    "path": "fighters/piano/scenarios/early_low_s3.bfrec",
-   "sha256": "46fc99a8326f3a7f631fe0055dce63c896b8f110bb08ebbe361c2a17c0c5e588",
-   "bytes": 399392,
+   "sha256": "21097a3938bc6da02a6f07063ad9ac45bf317c64ae5082e712c5c829413fb343",
+   "bytes": 476975,
    "export": "fighter_piano"
   },
   {
    "path": "fighters/piano/scenarios/plain_s7.bfrec",
-   "sha256": "9ed16967df545c49e5b473f372abd734943156e4e7d42a70ef6d9bbc06c436e3",
-   "bytes": 347257,
+   "sha256": "744282fbfc308624ee67743fcd120388fdfba3749454ed6d3ca4b0f63b9e6673",
+   "bytes": 509673,
    "export": "fighter_piano"
   },
   {
    "path": "fighters/piano/scenarios/plain_s8.bfrec",
-   "sha256": "430777c46af92aec9ceded690bcf441a37c9f9174745a5cea6e396e85dfee153",
-   "bytes": 341443,
+   "sha256": "8ea214b0bc98b127eeb541069efc2c6540dbdf371db3606c520900be46a71f1f",
+   "bytes": 656116,
    "export": "fighter_piano"
   },
   {
    "path": "fighters/piano/scenarios/plain_s9.bfrec",
-   "sha256": "cc0f0365d06970ecc215a19e9389ee5e05f5745571b080ddf63c3b49cfc95170",
-   "bytes": 386521,
+   "sha256": "b1b59962863e743ca5276b6ed02eefc8c5af94437c43342aa5ece9b566563857",
+   "bytes": 440297,
    "export": "fighter_piano"
   },
   {
    "path": "fighters/piano/scenarios/swapped_s1.bfrec",
-   "sha256": "f03ae33474aee4084b4ff4e9e671310f44336ae8f879cbf457c7d770928c10a4",
-   "bytes": 338076,
+   "sha256": "5176239de9f99ad6979075647785240c26ff3ae8f562bf0db938360368305b12",
+   "bytes": 502346,
    "export": "fighter_piano"
   },
   {
    "path": "fighters/piano/scenarios/swapped_s2.bfrec",
-   "sha256": "1c4ac5034eadee5d5ee342623cbb9f3493eee0db4a0ff636484954700d0a8498",
-   "bytes": 328236,
+   "sha256": "1752ea05b0d840eacbdf9eead8fefa50dc17934edf27c9a155e81a499cc89fad",
+   "bytes": 550940,
    "export": "fighter_piano"
   },
   {
    "path": "fighters/piano/scenarios/swapped_s3.bfrec",
-   "sha256": "af912e4b68dce5166de0194e03cc46520fda8ea7e6361c52d46a76f9065bfc1b",
-   "bytes": 246499,
+   "sha256": "befe2bbd9752f0dfc6428d29a3f6713fb0fd7bea803e6c02df87e88dda5742a1",
+   "bytes": 577523,
    "export": "fighter_piano"
   },
   {
    "path": "fighters/piano/scenarios/vs_trombone_s1.bfrec",
-   "sha256": "ebb0eaf4fbe826136ff440ea85a6ea35920a20ce750f40e181e1e78fea2b72be",
-   "bytes": 186661,
+   "sha256": "92d226dfe3a0c2c50515fee2afe9abbf05bb939e2b672347a6b3a31be6468aeb",
+   "bytes": 180705,
    "export": "fighter_piano"
   },
   {
    "path": "fighters/piano/scenarios/vs_trombone_s2.bfrec",
-   "sha256": "489184ddcbaa602ae1ad4638de23c8279ecd700292859830092cc6e6702325d3",
-   "bytes": 171207,
+   "sha256": "c7239987e4369384703fae5506789c455622159c96039fc90191718fce16f26c",
+   "bytes": 167703,
    "export": "fighter_piano"
   },
   {
    "path": "fighters/piano/sound_right_rms.json",
-   "sha256": "442eb93d943887c87d3b1b558f72001e2e26f6de04373d0c237ad69875b265b4",
-   "bytes": 31886,
+   "sha256": "d707fab6a5939430d599e3604a78949487aca7630253bacca6fc3ce9f5741fef",
+   "bytes": 31968,
    "export": "fighter_piano"
   },
   {
    "path": "fighters/piano/sprites.json",
-   "sha256": "d280dd8c855e5f942bc6d4787a374d782b0fb312fd5ec58c2749f572b8d9e791",
-   "bytes": 73223,
+   "sha256": "3ef867788fa1978e2e57d713a316448d0c6bb678d43921caa7497a234cf44200",
+   "bytes": 74038,
    "export": "fighter_piano"
   },
   {
    "path": "fighters/piano/sprites.npz",
-   "sha256": "3519a7182f276469ad6333327d06f3707efd5586fec9334ed187f748208fb973",
-   "bytes": 113684,
+   "sha256": "753e130b88c37e983cc6c03b94e7f7a3783add46ffc02dd24c0e3114b2d204b4",
+   "bytes": 115128,
    "export": "fighter_piano"
   },
   {
    "path": "fighters/piano/stats_rows.json",
-   "sha256": "83e575286edb846b9112bf246cf1dca75faa9849c8d0261a3f1d3bd67f3966a4",
-   "bytes": 479500,
+   "sha256": "fc0d1802514a86092c92ce8e45ed8351ea1e8aef76dcdcc40007c9604a0b37a0",
+   "bytes": 490577,
    "export": "fighter_piano"
   },
   {
    "path": "fighters/piano/stems_left.npz",
-   "sha256": "b19d679d3138ff6d4b3220eafc9720fd7efff9e6d901b3837abfd0ffabe236d9",
-   "bytes": 4995163,
+   "sha256": "1b8502cf557edc3ffc7d6fbbd3b7a046b2ce9ef29b8c16251764426e91664add",
+   "bytes": 4730459,
    "export": "fighter_piano"
   },
   {
    "path": "fighters/piano/stems_right.npz",
-   "sha256": "07e3e67c87ffaee9332fd8682389cfd3dbe9efa054cfa063c5ef1c0d2910db48",
-   "bytes": 4544154,
+   "sha256": "ac23e8d0871647eef350305aeca0faf3a30c9649e6db96f0415cdfd902784393",
+   "bytes": 4712495,
    "export": "fighter_piano"
   },
   {
