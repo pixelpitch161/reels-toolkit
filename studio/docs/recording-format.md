@@ -524,31 +524,49 @@ for FLUTE and TROMBONE), from the lines below.
 <!-- kind:tune -->
 #### `tune` (weapon kind of OBOE)
 
-`fight.py` 2425 to 2525. Not ported yet: its port fills this section in (the meaning of each field, as 6.2 and 6.3 do
-for FLUTE and TROMBONE), from the lines below.
+`fight.py` 2425 to 2525, ported (milestone 3, Task 11; `kinds/tune.rs`): TUNING A. Every `every` beats the oboe
+sounds its A as a narrow beam: the aim locks `lock16` 16ths before the shot, the beam fires `off16` 16ths after the
+grid's line, `len` long and `width` wide, and stays live for `hold` seconds, hitting once. A landed beam puts the enemy
+OUT OF TUNE for `dur_beats` beats at the oboe's depth (`depth0`, plus `grow` per landed beam, up to `depth_max`): the
+detuned fighter's own hits land `weak` x depth weaker (`damage` 344 to 346), and every note of the oboe's `sting16`
+grid stings it. Between shots `TH` (the oboe's aim) turns to the enemy at `track` radians a second; a locked aim holds
+`TH` until the shot. A wave with the option `detune` (ILL WIND) puts the enemy out of tune when it lands, through the
+same `_detune` (`effects_step` 3069 to 3071).
 
-**Record keys.**
+**Record keys** (only in a fight where a fighter has the `tune` weapon; both keys together):
 
-- `DET` (and `TUNE`): added to `rec` at `run()` 5802, written by `snap` 5550 to 5554:
+| Key | Stored as | Shape | Meaning |
+| --- | --- | --- | --- |
+| `DET` | `<f8` | (frames, 2, 2) | per fighter `[seconds left out of tune, depth]`. The seconds run down to 0 each step; the depth stays at its last value after they run out, so "out of tune" is seconds above 0. |
+| `TUNE` | `<f8` | (frames, 2, 2) | per fighter `[1.0 while it has a live beam, 1.0 while it holds ENDLESS NOTE's beam]`, else 0.0. |
 
-  ```python
-  if 'DET' in rec:                                    # #37, only recorded when a fighter uses the 'tune' kind
-      rec['DET'].append([[getattr(B0, 'detune_t', 0.0), getattr(B0, 'detune_d', 0.0)],
-                         [getattr(B1, 'detune_t', 0.0), getattr(B1, 'detune_d', 0.0)]])
-      rec['TUNE'].append([[float(bool(getattr(Bj, 'tbeams', None))), float(getattr(Bj, 'endless', None) is not None)]
-                          for Bj in (B0, B1)])
-  ```
+```python
+if 'DET' in rec:                                    # #37, only recorded when a fighter uses the 'tune' kind
+    rec['DET'].append([[getattr(B0, 'detune_t', 0.0), getattr(B0, 'detune_d', 0.0)],
+                       [getattr(B1, 'detune_t', 0.0), getattr(B1, 'detune_d', 0.0)]])
+    rec['TUNE'].append([[float(bool(getattr(Bj, 'tbeams', None))), float(getattr(Bj, 'endless', None) is not None)]
+                        for Bj in (B0, B1)])
+```
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+**Events** (positions as in 6.2):
 
-- 2450: `self.ev('detune', vic, att, float(depth), float(dur))`
-- 2460: `self.ev('endless_end', k)`
-- 2471: `self.damage(k, 1 - k, ab['dmg'], 'endless', hx, hy)`
-- 2481: `self.ev('tune_lock', k, B.tune_lock)`
-- 2491: `self.ev('tune', k, float(o[0]), float(o[1]), a, float(w['len']), float(w['width']))`
-- 2494: `self.damage(k, 1 - k, w['sting'] * O.detune_d, 'sting', float(O.p[0]), float(O.p[1]))`
-- 2519: `self.damage(k, 1 - k, w['dmg'], 'tune', hx, hy)`
+| Kind | `who` (2) | 3 | 4 | 5 | 6 | 7 |
+| --- | --- | --- | --- | --- | --- | --- |
+| `tune_lock` | the oboe | the locked aim, 0 to 2 pi (float) | | | | |
+| `tune` | the oboe | x where the beam leaves the ball (float) | y (float) | its aim (float) | its length (float) | its width (float) |
+| `detune` | the fighter put out of tune | who did it (int) | the depth (float) | the seconds it lasts (float) | | |
+| `endless_end` | the oboe (ENDLESS NOTE ran out; nothing more) | | | | | |
+
+**Hits** (`hit`, elements 7 and 8):
+
+| What hit (7) | Cause | Sub (8) |
+| --- | --- | --- |
+| `tune` | a beam of TUNING A; x and y are the near side of the victim's ball | 0 |
+| `sting` | a note of the oboe's `sting16` grid while the enemy is out of tune: `sting` x the depth; x and y are the victim's position | 0 |
+| `endless` | ENDLESS NOTE's held beam, on an 8th; x and y are the victim's side toward the oboe's aim | 0 |
+
+`fight.py` lines: 2450 `detune`, 2460 `endless_end`, 2471 `endless`, 2481 `tune_lock`, 2491 `tune`, 2494 `sting`,
+2519 `tune`.
 
 <!-- /kind:tune -->
 
@@ -1033,44 +1051,60 @@ for FLUTE and TROMBONE), from the lines below.
 <!-- kind:snip -->
 #### `snip` (ability kind of OBOE (and BASS CLARINET))
 
-`fight.py` 2526 to 2567, 2882 to 2883. Not ported yet: its port fills this section in (the meaning of each field, as 6.2
-and 6.3 do for FLUTE and TROMBONE), from the lines below.
+`fight.py` 2526 to 2567, 2882 to 2883, ported (milestone 3, Task 11; `abilities/snip.rs`): DOUBLE REED (and BASS
+CLARINET's SLAP TONGUE, and a snip IDENTITY CRISIS copies). Two blades scissor out of the ball at the enemy, turning
+to it at `track` radians a second while they open over `open16` 16ths, and snap shut: a hit when the enemy is then
+within `reach` beyond the two surfaces and `half` degrees of the aim (`dmg`, `knock`). The unlock waits in
+`abilities_step` (3037 to 3039; 3046 to 3049 for a copy) until the enemy is within `ready` beyond the surfaces. The
+shut blades stay for 0.25 s.
 
-**Record keys.**
+**Record keys** (only in a fight where a fighter has a `snip` ability of its own; a copied snip alone adds none):
 
-- `SNIP`: added to `rec` at `run()` 5805, written by `snap` 5555 to 5561:
+| Key | Stored as | Shape | Meaning |
+| --- | --- | --- | --- |
+| `SNIP` | `<f8` | (frames, 2, 3) | per fighter `[state, aim, time of the snap]`: state 1.0 while the blades open, 2.0 once shut; the aim in radians, -pi to pi (it follows the enemy while they open); all three NaN for a fighter with no blades out. |
 
-  ```python
-  if 'SNIP' in rec:                                   # #37, only recorded when a fighter has a 'snip' ability
-      Sp = np.full((2, 3), np.nan)
-      for j, Bj in enumerate((B0, B1)):
-          Sn = getattr(Bj, 'snip', None)
-          if Sn is not None:
-              Sp[j] = (Sn['state'], Sn['aim'], Sn['t_snap'])
-      rec['SNIP'].append(Sp)
-  ```
+```python
+if 'SNIP' in rec:                                   # #37, only recorded when a fighter has a 'snip' ability
+    Sp = np.full((2, 3), np.nan)
+    for j, Bj in enumerate((B0, B1)):
+        Sn = getattr(Bj, 'snip', None)
+        if Sn is not None:
+            Sp[j] = (Sn['state'], Sn['aim'], Sn['t_snap'])
+    rec['SNIP'].append(Sp)
+```
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+**Events** (positions as in 6.2):
 
-- 2541: `self.ev('snip_open', k, B.snip['t_snap'], aim)`
-- 2561: `self.damage(k, 1 - k, ab['dmg'], 'snip', hx, hy)`
-- 2563: `self.ev('snip', k, int(hit), Sn['aim'], float(ab['reach']))`
+| Kind | `who` (2) | 3 | 4 | 5 |
+| --- | --- | --- | --- | --- |
+| `snip_open` | the snipper | the time the blades will snap (float) | the aim they open at, -pi to pi (float) | |
+| `snip` | the snipper | 1 if the snap hit, else 0 (int) | the aim at the snap (float) | the reach (float) |
+
+**Hits** (`hit`, elements 7 and 8): `snip`, the snap landing; x and y are the near side of the victim's ball; sub 0.
+
+`fight.py` lines: 2541 `snip_open`, 2561 the hit, 2563 `snip`.
 
 <!-- /kind:snip -->
 
 <!-- kind:endless -->
 #### `endless` (ability kind of OBOE)
 
-`fight.py` 2884 to 2888. Not ported yet: its port fills this section in (the meaning of each field, as 6.2 and 6.3 do
-for FLUTE and TROMBONE), from the lines below.
+`fight.py` 2884 to 2888, ported (milestone 3, Task 11; `kinds::tune::start_endless`): ENDLESS NOTE. The oboe's
+beam is held for the ability's `dur_beats` (its live beams and its aim lock are dropped, and the normal shots pause):
+`len` long and `width` wide, its aim (`TH`) turning to the enemy at the ability's `track` radians a second. On every
+8th the enemy touches it: `dmg` (a `hit` of kind `endless`, see `tune`), and out of tune again at the oboe's depth.
+When the time is up the tune's grid emits `endless_end`.
 
-**Record keys.** None of its own.
+**Record keys.** None of its own (`TUNE`'s second number, see `tune`).
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+**Events** (positions as in 6.2):
 
-- 2888: `self.ev('endless', k, B.endless['until'])`
+| Kind | `who` (2) | 3 |
+| --- | --- | --- |
+| `endless` | the oboe | the time the held beam ends (float) |
+
+`fight.py` line: 2888.
 
 <!-- /kind:endless -->
 
