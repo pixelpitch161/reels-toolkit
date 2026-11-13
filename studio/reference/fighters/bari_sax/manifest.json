@@ -1,0 +1,6 @@
+{
+ "format": 1,
+ "entries": [
+  {"path": "studio/reference/fighters/bari_sax/origin.json", "sha256": "d23746191539df4cc488cf74e4ac6c0d1557915ffc4386a232eaa5648b9f6d55", "bytes": 31524, "tool": "tools.studio_export.older.origin", "commit": "be730a8fd23d87ee75eb6966504fb079c13988a0", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"}
+ ]
+}

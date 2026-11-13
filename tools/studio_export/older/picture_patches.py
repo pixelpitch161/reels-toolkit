@@ -269,3 +269,36 @@ def _after_post():
           "    for Lk in LOOKS:                                                  # (older opt-in after_post)\n"
           "        if hasattr(Lk, 'after_post'):\n"
           "            img = Lk.after_post(img, F, drawn)\n")
+
+
+# ---------------------------------------------------------------- BARI SAX's opt-ins (plan m4 Task 9)
+# ball_under(kk, st, t, arr, cam)   draws on ball kk's frame array (in place) right before the ball is drawn into it,
+#                                  with no 8-bit round trip between (an items_ball item has one): BARI SAX's swing
+#                                  smear and coral trail under the ball (#39 draw_swing_fx before draw_ball)
+# ability_hold(slot) -> s or None  how long its HUD row stays lit after a use, for an ability kind the kit's _hold()
+#                                  does not list (None: the kit's): BARI SAX's SKANK (offbeat) and CABLE SNAP (snap)
+@register('ball_under')
+def _ball_under():
+    _text('ball_under', 'draw_ball',
+          "    sink = st.get('sink', 0.0)",
+          "    for L_ in LOOKS:                                                 # (older opt-in ball_under)\n"
+          "        if hasattr(L_, 'ball_under'):\n"
+          "            L_.ball_under(k, st, t, arr, cam)\n"
+          "    sink = st.get('sink', 0.0)")
+
+
+def _ability_holds(P):
+    if any(hasattr(L, 'ability_hold') for L in P.LOOKS):
+        P.ABIL_HOLD = [{slot: P._hold(k, slot) for slot, _ in P.SLOTS} for k in (0, 1)]
+
+
+@register('ability_hold')
+def _ability_hold():
+    _text('ability_hold', '_hold',
+          "    ab = CFG[k]['abilities'][slot]\n",
+          "    ab = CFG[k]['abilities'][slot]\n"
+          "    if hasattr(LOOKS[k], 'ability_hold'):                            # (older opt-in ability_hold)\n"
+          "        h_ = LOOKS[k].ability_hold(slot)\n"
+          "        if h_ is not None:\n"
+          "            return h_\n")
+    POST.append(('ability_hold', _ability_holds))
