@@ -1101,7 +1101,14 @@ fn line_on_bytes(arr: &mut Img<f32>, pts: &[(f64, f64)], fill: [u8; 3], width: u
     }
 }
 
+/// The VIOLA's view in the kit's roster `(yaw centre, roll)` (its `view` is `(34, 16, 24)`), for a look that was never
+/// set up (the VS card's close-up is asked of one); `setup_as` replaces it with the numbers it is given.
+const VIEW: (f64, f64) = (34.0, 24.0);
+
 /// VIOLA's look, ready for the ring.
 pub fn look() -> Box<dyn Look> {
-    Box::new(ViolaLook::default())
+    Box::new(ViolaLook {
+        view: VIEW,
+        ..ViolaLook::default()
+    })
 }
