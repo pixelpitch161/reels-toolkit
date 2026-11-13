@@ -92,7 +92,7 @@ requirements include this section.
 - **Storage.** Section 4. Every new folder keeps its recordings in the pinned cache (M3-R44, here the default).
 - **Lanes.** Six clones as milestone 3's Section 3, with this plan's scratch folder
   `.superpowers/sdd/2026-11-12-ballfight-studio-plan-m4-older-fighters/` for briefs, reports and the ledger.
-- **Commits.** Each task's subjects are given in its entry. No model or AI names anywhere; no co-author lines.
+- **Commits.** Each task's subjects are given in its entry. No model names in commits, code or docs; no co-author lines.
 
 ## 3. Ownership in this milestone
 
