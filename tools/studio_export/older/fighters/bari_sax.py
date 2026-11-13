@@ -299,10 +299,10 @@ class Look(base.Look):
         if t in self._over:
             return self._over[t]
         out = []
-        if self.wrecker and self.T.T_FIGHT <= t < self.P.T_HS:
-            st = self.P.fighter(self.k, t)
-            if st['vis'] and st['lift'] > 0.02 and max(abs(st['p'][0]), abs(st['p'][1])) > S.A - R * 1.05:
-                out.append((np.asarray(st['p'], float), float(st['lift'])))
+        if self.wrecker and self.T.T_FIGHT <= t < self.P.T_HS:      # its picture state's p and lift in the fight:
+            ap = self.air_pose(min(t, self.P.T_KO - 1e-4))           # #39 fighter() (visible, its air pose)
+            if ap is not None and ap[1] > 0.02 and max(abs(ap[0][0]), abs(ap[0][1])) > S.A - R * 1.05:
+                out.append((np.asarray(ap[0], float), float(ap[1])))
         if len(self._over) > 64:
             self._over.clear()
         self._over[t] = out
