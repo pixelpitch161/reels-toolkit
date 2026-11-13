@@ -27,9 +27,20 @@ Draw functions come from the episode's own styles.py (read from its scratch copy
 origin/, never retyped: the episodes' rule "styles live there so crossovers can import them"). Nothing under
 projects/ is read for writing. Plan m4 Task 10; Gate O: python -m tools.studio_export origin fighters/synth.
 
-The arpeggio table (#31 timeline.py ARP) and #31's fixed note tables (title blast, count-in, stinger, fall-apart, the
-reassembly run) are #31's for #31's chords and key; for another chord the arp is the chord's tones climbing from E4, and
-the fixed tables move with the tonic chord's root (a whole-step rule that gives #31's notes for F minor)."""
+This module's own rules (the reference's, accepted at its Gate O review, plan m4 Task 10):
+- harmony: the arpeggio table (#31 timeline.py ARP) is #31's for its four chord names (Fm, Db, Bbm, C); any other
+  chord's arp is that chord's tones climbing from E4 (64), eight of them. #31's fixed notes (the title blast, the
+  count-in, the stinger, the fall-apart, the reassembly run) move by the semitones from F to the tonic chord's root
+  (CHORDS[0]), wrapped to -6..5: #31's own notes in F minor. The LFO wobble's root is root_above(chord, 24) + 12
+  (#31's BASS_ROOT);
+- order: its chromatic fringes (big hits and snaps, in event order) are drawn in after_grade, before the other
+  fighter's hit fringes; a missed plug's sparks in over_ring, before every hit's sparks (#31 interleaves both with the
+  other fighter's by event time; the kit's hooks cannot, and the module is the reference for later fights);
+- setup_as(P, k, cfg): setup() with another fighter's numbers (EUPHONIUM's copy sets cfg and calls setup()).
+
+Gate O (fighters/synth/origin.json, origin_extra.json): #31's seed 1339 (TURNTABLES wins) and seed 415 of the same
+config (SYNTH wins: its stinger, solo and solo rings); every frame's contribution equal, the synth bus bit-identical,
+its contributions to fx, bass and solo equal to -313 dBFS (the last bit of the subtraction)."""
 PORTED = True
 
 import importlib.util
