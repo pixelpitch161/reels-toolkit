@@ -1159,3 +1159,56 @@ fn a_flag_and_a_joined_sequence_keep_every_character_through_an_edit() {
         other => panic!("SetCaption was pushed: {other:?}"),
     }
 }
+
+/// Note (c) of Task 60: a take whose soundtrack fails a check would stop at that check when it renders, so "Add to
+/// queue" says so and offers the next fight that fits.
+#[test]
+fn a_take_that_fails_a_check_is_not_queued_and_offers_the_next_fit() {
+    let _gpu = gpu();
+    let mut vm = render::vm();
+    assert_eq!(why_not_add(&vm), None);
+    vm.shortlist.rows = bf_app::seam::sample::stories();
+    let seed = vm.draft.seed.expect("a seed");
+    let at = vm
+        .shortlist
+        .rows
+        .iter()
+        .position(|r| r.seed == seed)
+        .expect("on the list");
+    let next = vm.shortlist.rows[(at + 1) % vm.shortlist.rows.len()].seed;
+    vm.take.music.as_mut().expect("its sound").checks[2].pass = false;
+    let title = vm.take.music.as_ref().unwrap().checks[2].title.clone();
+    let words = format!(
+        "Seed {seed} fails the check \"{title}\", so its video would stop there and nothing would be saved. Try seed {next}, the next fight that fits."
+    );
+    assert_eq!(why_not_add(&vm).as_deref(), Some(words.as_str()));
+    let mut harness = showing(REF, vm);
+    assert!(
+        harness
+            .query_all_by_label("Add to queue")
+            .any(|n| n.accesskit_node().is_disabled())
+    );
+    assert!(harness.query_all_by_label(&words).next().is_some(), "{words}");
+    harness.get_by_label(&format!("Use seed {next}")).click();
+    harness.run();
+    assert_eq!(harness.state().log, vec![Action::SelectSeed(next)]);
+    assert_eq!(harness.unnamed_widgets(), Vec::<String>::new());
+}
+
+/// The Render screen of the kit's BASS DRUM against TUBA, its own seed 132 and take: its captions, its folder.
+#[test]
+fn render_matches_for_bassdrum_vs_tuba() {
+    let _gpu = gpu();
+    let kit = crate::music::kit_vm("bassdrum_vs_tuba", Step::Render, true);
+    let mut vm = render::vm();
+    vm.roster = kit.roster;
+    vm.draft = kit.draft;
+    vm.pair_rules = kit.pair_rules;
+    vm.pair_music = kit.pair_music;
+    vm.take = kit.take;
+    vm.status = kit.status;
+    assert_eq!(vm.draft.seed, Some(132));
+    assert_eq!(why_not_add(&vm), None, "its take passes every check");
+    let mut harness = showing(REF, vm);
+    harness.snapshot("render_bassdrum_vs_tuba_1440x900");
+}

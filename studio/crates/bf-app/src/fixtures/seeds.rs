@@ -22,7 +22,7 @@ pub fn vm() -> ViewModel {
 }
 
 /// Seeds with an empty shortlist in `state`: the base on Seeds with handicap `[2.0, 0.4]`, no seed chosen, no fits
-/// from 18,240 checked, 7 workers.
+/// from 2,048 checked (fewer than `screens::seeds::NO_FIT_AFTER`, so the search may still find one), 7 workers.
 pub fn empty(state: SearchState) -> ViewModel {
     let mut vm = base::vm();
     vm.view = View::Step(Step::Seeds);
@@ -33,10 +33,19 @@ pub fn empty(state: SearchState) -> ViewModel {
     vm.shortlist = Shortlist {
         rows: Vec::new(),
         fits_total: 0,
-        checked: 18_240,
+        checked: 2_048,
         state,
         workers: 7,
     };
+    vm.status = AppState::showing(vm.clone()).status();
+    vm
+}
+
+/// Seeds when the search found no fight that fits in 5,120 seeds, still searching: the match-up is likely too uneven
+/// at its handicap (milestone 3 Task 60, note (a)).
+pub fn uneven() -> ViewModel {
+    let mut vm = empty(SearchState::Searching);
+    vm.shortlist.checked = 5_120;
     vm.status = AppState::showing(vm.clone()).status();
     vm
 }

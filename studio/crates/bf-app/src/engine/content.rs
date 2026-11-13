@@ -2,15 +2,20 @@
 //! the themes, and the description of a match-up (its pair rules, drafted captions, VS title card, or why it cannot
 //! fight).
 
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 
+use bf_content::themes::OptionKind;
 use bf_content::{FighterCard as ContentCard, Section as ContentSection};
+use bf_core::fightfile::{FightFile, OptionValue};
 use bf_core::roster::FighterCfg;
 
 use super::convert::{self, Unusable};
 use crate::model::Gen;
 use crate::model::draft::{CaptionTexts, Draft};
-use crate::model::roster::{AbilityLine, FighterCard, PixelMask, Roster, RosterEntry, Section, Sprite, ThemeEntry};
+use crate::model::roster::{
+    AbilityLine, FighterCard, Home, KitPair, OptionSet, OptionShape, PairMusic, PixelMask, Roster, RosterEntry,
+    Section, Sprite, ThemeEntry, ThemeOptionEntry,
+};
 use crate::model::take::Frame;
 use crate::seam::Event;
 use crate::wording;
@@ -30,9 +35,18 @@ const PORTRAIT_VIEWS: [(&str, f64, f64, u32); 1] = [("TROMBONE", 60.0, 45.0, 22)
 const START: [&str; 2] = ["FLUTE", "TROMBONE"];
 
 /// The roster as the interface shows it: every roster fighter in score order with its section, colour and name in
-/// pixel letters; the card (weapon, abilities, range, music, portrait) of each fighter the app offers; the themes;
-/// "VS" in pixel letters; the starting match-up and this app's version.
+/// pixel letters; the card (weapon, abilities, range, music, portrait) and home config of each fighter the app
+/// offers; the themes with their options; "VS" in pixel letters; the starting match-up, the series' kit pairs and
+/// this app's version.
+///
+/// It is made once and kept (making it takes about a tenth of a second: each fighter's themes and portrait), so
+/// every later call is a copy.
 pub fn roster() -> Roster {
+    static ROSTER: OnceLock<Roster> = OnceLock::new();
+    ROSTER.get_or_init(make_roster).clone()
+}
+
+fn make_roster() -> Roster {
     let cfgs = bf_content::roster();
     let available = bf_content::available();
     let fighters = bf_content::shown_order()
@@ -54,6 +68,8 @@ pub fn roster() -> Roster {
                 } else {
                     None
                 },
+                home: if on { home(name) } else { None },
+                parts: parts_of(name),
             })
         })
         .collect();
@@ -77,8 +93,33 @@ pub fn roster() -> Roster {
                     .iter()
                     .map(|l| l.iter().map(|c| c.to_string()).collect())
                     .collect(),
+                loop_keys: t
+                    .chord_loops
+                    .iter()
+                    .map(|l| {
+                        t.presets
+                            .iter()
+                            .find(|p| p.chord_loop == *l)
+                            .map_or((t.key, t.scale), |p| (p.key, p.scale))
+                    })
+                    .map(|(k, s)| (k.to_string(), s.to_string()))
+                    .collect(),
                 bars: t.bars,
                 refuses: refused_by(name, &plays),
+                options: theme_options(name),
+            })
+        })
+        .collect();
+    let kit_pairs = bf_content::kit_pair_fights()
+        .into_iter()
+        .filter_map(|(_, ff)| {
+            let fighters = [ff.fighters.first()?.clone(), ff.fighters.get(1)?.clone()];
+            Some(KitPair {
+                roles: convert::written_parts(ff, &fighters),
+                handicap: [*ff.handicap.first()?, *ff.handicap.get(1)?],
+                fighters,
+                theme: ff.music.theme.clone(),
+                chord_loop: ff.music.chord_loop.clone(),
             })
         })
         .collect();
@@ -88,6 +129,98 @@ pub fn roster() -> Roster {
         vs: mask("VS"),
         start: START.map(str::to_string),
         app_version: env!("CARGO_PKG_VERSION").to_string(),
+        kit_pairs,
+    }
+}
+
+/// The parts `name` plays in the series' kit configs, in the configs' order, each once.
+fn parts_of(name: &str) -> Vec<String> {
+    let mut parts: Vec<String> = Vec::new();
+    for (_, ff) in bf_content::kit_pair_fights() {
+        if let Some(role) = ff.music.roles.get(name)
+            && !parts.contains(role)
+        {
+            parts.push(role.clone());
+        }
+    }
+    parts
+}
+
+/// A fighter's home config (`bf_content::home_config`): its theme, chord loop and its own part there.
+fn home(name: &str) -> Option<Home> {
+    let pair = bf_content::home_config(name)?;
+    let (_, ff) = bf_content::kit_pair_fights().into_iter().find(|(p, _)| *p == pair)?;
+    Some(Home {
+        theme: ff.music.theme.clone(),
+        chord_loop: ff.music.chord_loop.clone(),
+        role: ff
+            .music
+            .roles
+            .get(name)
+            .cloned()
+            .unwrap_or_else(|| "melody".to_string()),
+    })
+}
+
+/// A theme's options as the Music screen words them. The words are the app's: "The sequel" (the brass trailer's
+/// second episode), "No bass drums" and "Bass drums back after the K.O." (the drumline's), "Plugged: {Name}" (the
+/// stadium rock's plugged fighter). An option this app has no words for is shown by its name when it is on.
+fn theme_options(theme: &str) -> Vec<ThemeOptionEntry> {
+    let Some(t) = bf_content::themes::theme(theme) else {
+        return Vec::new();
+    };
+    t.options
+        .iter()
+        .map(|o| {
+            let words = |w: &str| Some(w.to_string());
+            let shape = match (o.kind, o.key) {
+                (OptionKind::Fighter, "plugged") => OptionShape::Fighter {
+                    label: "Plugged".to_string(),
+                },
+                (OptionKind::Fighter, key) => OptionShape::Fighter {
+                    label: wording::display_name(&key.replace('_', " ")),
+                },
+                (OptionKind::Bool, key) => {
+                    let default = !matches!(o.default, Some(OptionValue::Bool(false)));
+                    let (on, off) = match key {
+                        "sequel" => (words("The sequel"), None),
+                        "bass_drums" => (None, words("No bass drums")),
+                        "after_ko" => (words("Bass drums back after the K.O."), None),
+                        other => (Some(wording::display_name(&other.replace('_', " "))), None),
+                    };
+                    OptionShape::Switch { default, on, off }
+                }
+            };
+            ThemeOptionEntry {
+                key: o.key.to_string(),
+                shape,
+            }
+        })
+        .collect()
+}
+
+/// What the fight file `base` says about its music for a draft of `fighters`: its theme, chord loop, the parts of
+/// the two fighters as it writes them, and the theme options it sets.
+pub fn pair_music(base: &FightFile, fighters: &[String; 2]) -> PairMusic {
+    PairMusic {
+        theme: base.music.theme.clone(),
+        chord_loop: base.music.chord_loop.clone(),
+        key: base.music.key.clone(),
+        scale: base.music.scale.clone(),
+        roles: convert::written_parts(base, fighters),
+        options: base
+            .music
+            .theme_options
+            .iter()
+            .filter_map(|(key, value)| {
+                let set = match value {
+                    OptionValue::Bool(b) => OptionSet::Switch(*b),
+                    OptionValue::Str(name) => OptionSet::Fighter(name.clone()),
+                    OptionValue::Int(_) | OptionValue::Float(_) => return None,
+                };
+                Some((key.clone(), set))
+            })
+            .collect(),
     }
 }
 
@@ -228,6 +361,9 @@ pub fn describe(r#gen: Gen, draft: &Draft) -> Event {
     let [left, right] = [draft.fighters[0].as_str(), draft.fighters[1].as_str()];
     match convert::build(draft) {
         Ok(ff) => Event::FightInfo {
+            music: convert::base_of(draft)
+                .ok()
+                .map(|base| pair_music(&base, &draft.fighters)),
             r#gen,
             pair_rules: ff
                 .pair_rules
@@ -266,6 +402,7 @@ pub fn cannot_fight(r#gen: Gen, problem: String) -> Event {
         },
         title_card: None,
         problem: Some(problem),
+        music: None,
     }
 }
 
@@ -436,6 +573,7 @@ mod tests {
             captions,
             title_card,
             problem,
+            music: _,
         } = describe(3, &d)
         else {
             panic!("not a description");
@@ -451,6 +589,173 @@ mod tests {
         assert_eq!(problem, None);
     }
 
+    /// The description carries what the fight file says about its music: the kit config's parts and theme options
+    /// for a kit pair (in the draft's order), the starter's for any other pair, and nothing for a pair that cannot
+    /// fight.
+    #[test]
+    fn a_description_says_what_the_fight_file_plays() {
+        let music_of = |d: &Draft| match describe(1, d) {
+            Event::FightInfo { music, .. } => music,
+            other => panic!("not a description: {other:?}"),
+        };
+        let mut d = starting_draft();
+        let m = music_of(&d).expect("the starting pair's music");
+        assert_eq!(m.theme, "big_top");
+        assert_eq!(m.roles, ["melody", "bass"]);
+        assert!(m.options.is_empty());
+        let pair = |a: &str, b: &str| [a.to_string(), b.to_string()];
+        let set = |k: &str, v: OptionSet| (k.to_string(), v);
+        for (fighters, theme, roles, options) in [
+            (
+                pair("BASS DRUM", "TUBA"),
+                "dark_drumline",
+                ["drums", "bass"],
+                vec![
+                    set("after_ko", OptionSet::Switch(true)),
+                    set("bass_drums", OptionSet::Switch(false)),
+                ],
+            ),
+            (
+                pair("ACOUSTIC", "ELECTRIC"),
+                "stadium_rock",
+                ["rhythm", "riff"],
+                vec![set("plugged", OptionSet::Fighter("ELECTRIC".to_string()))],
+            ),
+            (
+                pair("HORN", "TROMBONE"),
+                "brass_trailer",
+                ["melody", "riff"],
+                vec![set("sequel", OptionSet::Switch(true))],
+            ),
+        ] {
+            d.fighters = fighters.clone();
+            let m = music_of(&d).unwrap_or_else(|| panic!("{fighters:?}"));
+            assert_eq!(
+                (m.theme.as_str(), m.roles.clone(), m.options),
+                (theme, roles.map(str::to_string), options)
+            );
+        }
+        // a pair with no kit config: the left fighter's home config, and the parts of the starter's rule
+        d.fighters = pair("CELLO", "FLUTE");
+        let m = music_of(&d).expect("a crossover's music");
+        let starter = bf_content::starter("CELLO", "FLUTE").expect("its starter");
+        assert_eq!(m.theme, starter.music.theme);
+        assert_eq!(m.chord_loop, starter.music.chord_loop);
+        assert_eq!(m.roles, ["melody", "line"]);
+        d.fighters[1] = "CELLO".to_string();
+        assert_eq!(music_of(&d), None, "a fighter against itself cannot fight");
+    }
+
+    /// The roster knows how every new match-up starts exactly as the engine's starter makes it (theme, the place
+    /// of its chord loop, handicap, parts), for all 380 ordered pairs of offered fighters, so the interface can set
+    /// the draft at once when a fighter is picked.
+    #[test]
+    fn the_roster_starts_every_pair_as_the_engine_does() {
+        let r = roster();
+        let offered: Vec<String> = r
+            .fighters
+            .iter()
+            .filter(|f| f.available)
+            .map(|f| f.name.clone())
+            .collect();
+        assert_eq!(offered.len(), 20);
+        assert_eq!(r.kit_pairs.len(), 18);
+        let mut pairs = 0;
+        for a in &offered {
+            for b in &offered {
+                if a == b {
+                    continue;
+                }
+                pairs += 1;
+                let fighters = [a.clone(), b.clone()];
+                let ff = bf_content::starter(a, b).unwrap_or_else(|e| panic!("{a} vs {b}: {e}"));
+                let theme = r
+                    .themes
+                    .iter()
+                    .find(|t| t.name == ff.music.theme)
+                    .expect("an offered theme");
+                let place = theme
+                    .chord_loops
+                    .iter()
+                    .position(|l| *l == ff.music.chord_loop)
+                    .unwrap_or(theme.chord_loops.len());
+                let want = crate::model::roster::PairStart {
+                    theme: ff.music.theme.clone(),
+                    chord_loop: place,
+                    handicap: [ff.handicap[0], ff.handicap[1]],
+                    roles: convert::written_parts(&ff, &fighters),
+                };
+                assert_eq!(r.start_of(&fighters), Some(want), "{a} vs {b}");
+            }
+        }
+        assert_eq!(pairs, 380);
+        // the kit's frozen handicaps, swapped with the sides
+        let start = |a: &str, b: &str| r.start_of(&[a.to_string(), b.to_string()]).expect("a start");
+        assert_eq!(start("FLUTE", "TROMBONE").handicap, [2.0, 0.4]);
+        assert_eq!(start("TROMBONE", "FLUTE").handicap, [0.4, 2.0]);
+        assert_eq!(start("CELLO", "FLUTE").handicap, [1.0, 1.0]);
+    }
+
+    /// The themes' options in the Music screen's words: those three kit themes have options, and each kit config
+    /// that sets one reads as the plan's examples ("The sequel", "No bass drums", "Plugged: Electric").
+    #[test]
+    fn theme_options_are_in_words() {
+        let r = roster();
+        let with: Vec<&str> = r
+            .themes
+            .iter()
+            .filter(|t| !t.options.is_empty())
+            .map(|t| t.name.as_str())
+            .collect();
+        assert_eq!(with, ["brass_trailer", "dark_drumline", "stadium_rock"]);
+        for t in &r.themes {
+            let schema = bf_content::themes::theme(&t.name).expect("a theme").options;
+            assert_eq!(t.options.len(), schema.len(), "{}", t.name);
+        }
+        let words = |pair: &str| {
+            let (_, ff) = bf_content::kit_pair_fights()
+                .into_iter()
+                .find(|(p, _)| *p == pair)
+                .expect(pair);
+            let fighters = [ff.fighters[0].clone(), ff.fighters[1].clone()];
+            let m = pair_music(ff, &fighters);
+            let theme = r.themes.iter().find(|t| t.name == m.theme).expect("its theme");
+            theme.option_words(&m.options, &fighters)
+        };
+        assert_eq!(words("horn_vs_trombone_rematch"), ["The sequel"]);
+        assert!(words("trombone_vs_horn").is_empty());
+        assert_eq!(
+            words("bassdrum_vs_tuba"),
+            ["No bass drums", "Bass drums back after the K.O."]
+        );
+        assert!(words("flute_vs_sousaphone").is_empty());
+        assert_eq!(words("electric_vs_acoustic"), ["Plugged: Electric"]);
+        // a fighter option left out is the left corner's fighter
+        let rock = r
+            .themes
+            .iter()
+            .find(|t| t.name == "stadium_rock")
+            .expect("stadium rock");
+        let pair = ["ACOUSTIC".to_string(), "ELECTRIC".to_string()];
+        assert_eq!(rock.option_words(&[], &pair), ["Plugged: Acoustic"]);
+        for words in r.themes.iter().flat_map(|t| t.option_words(&[], &pair)) {
+            assert!(!words.contains('\u{2014}') && !words.contains('_'), "{words}");
+        }
+    }
+
+    /// Ruling note (e) of Task 60: the roster takes about a tenth of a second to make, so it is made once.
+    #[test]
+    fn the_roster_is_made_once() {
+        let first = roster();
+        let asked = std::time::Instant::now();
+        for _ in 0..20 {
+            assert_eq!(roster(), first);
+        }
+        let took = asked.elapsed();
+        // twenty copies take well under the time of making one (about 0.1 s)
+        assert!(took < std::time::Duration::from_millis(500), "{took:?}");
+    }
+
     #[test]
     fn a_pair_without_music_is_a_plain_problem() {
         // every pair of two kit fighters has music now (Task 59); a fighter against itself has none
@@ -462,6 +767,7 @@ mod tests {
             captions,
             title_card,
             problem,
+            music: _,
         } = describe(5, &d)
         else {
             panic!("not a description");
