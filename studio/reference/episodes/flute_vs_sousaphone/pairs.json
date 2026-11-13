@@ -1,0 +1,219 @@
+{
+ "about": "ballfight_flute_vs_sousaphone: the pair's own links (plan Table S5): each item's first occurrence over the scenario fights (scenario, seed, time, event index, the event), within 20.0 s of FIGHT!",
+ "format": 1,
+ "links": [
+  {
+   "after_fight": 0.008329999999999949,
+   "event": [3.82083, "basket", 0, 0, -1.85, 1.85, -1],
+   "index": 0,
+   "item": "basket",
+   "scenario": "plain",
+   "seed": 1,
+   "t": 3.82083
+  },
+  {
+   "after_fight": 2.86667,
+   "event": [6.67917, "strike", 0, 1, 0.3014761184902327, 1.1871400218726116, 0.12],
+   "index": 20,
+   "item": "strike",
+   "scenario": "plain",
+   "seed": 3,
+   "t": 6.67917
+  },
+  {
+   "after_fight": 2.99167,
+   "event": [6.80417, "hit", 0, 1, 0.756, -0.3292721605234955, -1.6401356207260085, "fang", 1],
+   "index": 23,
+   "item": "hit/fang",
+   "scenario": "plain",
+   "seed": 3,
+   "t": 6.80417
+  },
+  {
+   "after_fight": 0.008329999999999949,
+   "event": [3.82083, "drill", 1, 1.85, -1.85, 0.7971468146098972, -0.6452177914602515, 3.8208333333333333, 5.727083333333333, 8, 0],
+   "index": 1,
+   "item": "drill",
+   "scenario": "plain",
+   "seed": 1,
+   "t": 3.82083
+  },
+  {
+   "after_fight": 0.24167000000000005,
+   "event": [4.05417, "drill_step", 1, 1, 1.7183933518262373, -1.6994022239325315],
+   "index": 2,
+   "item": "drill_step",
+   "scenario": "plain",
+   "seed": 1,
+   "t": 4.05417
+  },
+  {
+   "after_fight": 1.1583300000000003,
+   "event": [4.97083, "drill_trample", 1, 0.7718432275512452, -0.6913074801613137],
+   "index": 7,
+   "item": "drill_trample",
+   "scenario": "plain",
+   "seed": 1,
+   "t": 4.97083
+  },
+  {
+   "after_fight": 1.1583300000000003,
+   "event": [4.97083, "hit", 1, 0, 2.52, 0.7718432275512452, -0.6913074801613137, "trample", 0],
+   "index": 6,
+   "item": "hit/trample",
+   "scenario": "plain",
+   "seed": 1,
+   "t": 4.97083
+  },
+  {
+   "after_fight": 4.30833,
+   "event": [8.12083, "trample_basket", 1, 2, -0.3953602270930986, -1.2983344973321704],
+   "index": 34,
+   "item": "trample_basket",
+   "scenario": "plain",
+   "seed": 3,
+   "t": 8.12083
+  },
+  {
+   "after_fight": 2.1500000000000004,
+   "event": [5.9625, "blast", 1, 0.37600554045385604, -0.1633049080443521, 2.2890001604200134, 2.12, 0.5, 1.6],
+   "index": 15,
+   "item": "blast",
+   "scenario": "plain",
+   "seed": 1,
+   "t": 5.9625
+  },
+  {
+   "after_fight": 2.1500000000000004,
+   "event": [5.9625, "hit", 1, 0, 8.399999999999999, -1.5935180010016516, 1.7414238929667385, "blast", 0],
+   "index": 16,
+   "item": "hit/blast",
+   "scenario": "plain",
+   "seed": 1,
+   "t": 5.9625
+  },
+  {
+   "after_fight": 4.7666699999999995,
+   "event": [8.57917, "company_front", 1, 1, 1.0, 8.579166666666666, 12.391666666666666],
+   "index": 58,
+   "item": "company_front",
+   "scenario": "early_low",
+   "seed": 2,
+   "t": 8.57917
+  },
+  {
+   "after_fight": 5.25,
+   "event": [9.0625, "front_step", 1, 1, -2.249550122893301],
+   "index": 67,
+   "item": "front_step",
+   "scenario": "early_low",
+   "seed": 2,
+   "t": 9.0625
+  },
+  {
+   "after_fight": 5.8916699999999995,
+   "event": [9.70417, "hit", 1, 0, 9.799999999999999, -1.6127721011943645, -0.5203719527118597, "front", 0],
+   "index": 76,
+   "item": "hit/front",
+   "scenario": "early_low",
+   "seed": 2,
+   "t": 9.70417
+  }
+ ],
+ "scenarios": [
+  {
+   "cache": ["episodes/flute_vs_sousaphone/scenarios/plain_s1.bfrec", "episodes/flute_vs_sousaphone/scenarios/plain_s2.bfrec", "episodes/flute_vs_sousaphone/scenarios/plain_s3.bfrec"],
+   "fighters": ["FLUTE", "SOUSAPHONE"],
+   "handicap": [1.0, 1.0],
+   "hashes": ["5a706d20aca7e5d1", "bcd2635c7c3c7dbf", "8e40b9a1e07df508"],
+   "name": "plain",
+   "overrides": {},
+   "rules": {
+    "A": 3.0,
+    "DT": 0.008333333333333333,
+    "FPS": 30,
+    "HP": 100.0,
+    "KEY_R": 0.11,
+    "KNOCK_T": 0.38,
+    "LAUNCH_SPREAD": 38.0,
+    "LOW_HP": 25.0,
+    "LV_DMG": [14.0, 36.0],
+    "R": 0.6,
+    "ROPE_GIVE": 5.0,
+    "V": 2.6,
+    "beat": 0.4765625,
+    "bpm": 125.90163934426229,
+    "dmg_scale": 0.7,
+    "t_fight": 3.8125,
+    "t_max": 58.0
+   },
+   "seeds": [1, 2, 3],
+   "swapped": false
+  },
+  {
+   "cache": ["episodes/flute_vs_sousaphone/scenarios/swapped_s1.bfrec", "episodes/flute_vs_sousaphone/scenarios/swapped_s2.bfrec", "episodes/flute_vs_sousaphone/scenarios/swapped_s3.bfrec"],
+   "fighters": ["SOUSAPHONE", "FLUTE"],
+   "handicap": [1.0, 1.0],
+   "hashes": ["8d0d8c4f6103172c", "41ed5c50fc53c250", "e3c236e449473a48"],
+   "name": "swapped",
+   "overrides": {},
+   "rules": {
+    "A": 3.0,
+    "DT": 0.008333333333333333,
+    "FPS": 30,
+    "HP": 100.0,
+    "KEY_R": 0.11,
+    "KNOCK_T": 0.38,
+    "LAUNCH_SPREAD": 38.0,
+    "LOW_HP": 25.0,
+    "LV_DMG": [14.0, 36.0],
+    "R": 0.6,
+    "ROPE_GIVE": 5.0,
+    "V": 2.6,
+    "beat": 0.4765625,
+    "bpm": 125.90163934426229,
+    "dmg_scale": 0.7,
+    "dmg_side": [1.0, 1.0],
+    "t_fight": 3.8125,
+    "t_max": 58.0
+   },
+   "seeds": [1, 2, 3],
+   "swapped": true
+  },
+  {
+   "cache": ["episodes/flute_vs_sousaphone/scenarios/early_low_s1.bfrec", "episodes/flute_vs_sousaphone/scenarios/early_low_s2.bfrec", "episodes/flute_vs_sousaphone/scenarios/early_low_s3.bfrec"],
+   "fighters": ["FLUTE", "SOUSAPHONE"],
+   "handicap": [1.0, 1.0],
+   "hashes": ["dcdb808764d8e77c", "42e3ecf96dab113f", "48352707bd1c5fea"],
+   "name": "early_low",
+   "overrides": {
+    "LOW_HP": 92.0,
+    "LV_DMG": [2.0, 5.0]
+   },
+   "rules": {
+    "A": 3.0,
+    "DT": 0.008333333333333333,
+    "FPS": 30,
+    "HP": 100.0,
+    "KEY_R": 0.11,
+    "KNOCK_T": 0.38,
+    "LAUNCH_SPREAD": 38.0,
+    "LOW_HP": 92.0,
+    "LV_DMG": [2.0, 5.0],
+    "R": 0.6,
+    "ROPE_GIVE": 5.0,
+    "V": 2.6,
+    "beat": 0.4765625,
+    "bpm": 125.90163934426229,
+    "dmg_scale": 0.7,
+    "t_fight": 3.8125,
+    "t_max": 58.0
+   },
+   "seeds": [1, 2, 3],
+   "swapped": false
+  }
+ ],
+ "t_fight": 3.8125,
+ "tool": "tools.studio_export.episode_flute_vs_sousaphone",
+ "window": 20.0
+}

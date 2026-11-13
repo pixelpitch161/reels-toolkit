@@ -1,0 +1,76 @@
+{
+ "about": "ballfight_flute_vs_sousaphone: the kit config's values, which studio/fights/flute_vs_sousaphone.toml must hold, and its recording",
+ "bpm": 126,
+ "chords": ["Cm", "G", "Cm", "Ab", "Fm", "G", "Cm", "Ab", "Fm", "G", "Cm", "Ab", "Fm", "G", "Cm", "Ab", "Fm", "G", "Cm", "Ab", "Fm", "G", "Cm", "Ab", "Fm", "G", "Cm", "Ab", "Fm", "G", "Ab", "G"],
+ "config": "ballfight_flute_vs_sousaphone",
+ "dmg_scale": 0.7,
+ "fighters": ["FLUTE", "SOUSAPHONE"],
+ "format": 1,
+ "fx_seed": null,
+ "handicap": [1.0, 1.0],
+ "intro": ["Cm", "G"],
+ "key": "C",
+ "lines": {
+  "FLUTE": [79, 79, 84, 79, 75, 79, 84, 86, 87, 84, 80, 84, 87, 89, 87, 84, 77, 80, 84, 80, 89, 87, 84, 80, 79, 83, 86, 83, 91, 89, 87, 83],
+  "SOUSAPHONE": [36, 43, 36, 43, 36, 43, 39, 41, 44, 39, 44, 39, 44, 39, 48, 46, 41, 48, 41, 48, 41, 48, 44, 43, 43, 50, 43, 50, 43, 47, 50, 47]
+ },
+ "loop": ["Cm", "Ab", "Fm", "G"],
+ "loop_bpm": "0x1.f79b47582192ep+6",
+ "mix": {},
+ "mood": "dark_drumline",
+ "music_seed": null,
+ "n_bars": 32,
+ "pair": "flute_vs_sousaphone",
+ "rec_hash": "37f9dd75fa892c6c",
+ "recording": {
+  "cache": "themes/dark_drumline/flute_vs_sousaphone.bfrec",
+  "sha256": "57b9e72f1a5363ec88b0556b75dc19dba14d3641c4ab6ed9a48ab720fcc1964e"
+ },
+ "roles": {
+  "FLUTE": "melody",
+  "SOUSAPHONE": "bass"
+ },
+ "rules": {},
+ "scale": "minor",
+ "seed": 146,
+ "series": null,
+ "shard_seed": 271,
+ "solos": {
+  "FLUTE": [
+   [0.0, 84, 0.5],
+   [0.5, 87, 0.5],
+   [1.0, 91, 1.0],
+   [2.0, 89, 0.5],
+   [2.5, 87, 0.5],
+   [3.0, 86, 0.5],
+   [3.5, 83, 0.5],
+   [4.0, 84, 0.5],
+   [4.5, 79, 0.5],
+   [5.0, 80, 0.5],
+   [5.5, 83, 0.5],
+   [6.0, 84, 2.0]
+  ],
+  "SOUSAPHONE": [
+   [0.0, 36, 0.5],
+   [0.5, 43, 0.5],
+   [1.0, 48, 0.5],
+   [1.5, 43, 0.5],
+   [2.0, 46, 0.5],
+   [2.5, 44, 0.5],
+   [3.0, 43, 1.0],
+   [4.0, 41, 0.5],
+   [4.5, 44, 0.5],
+   [5.0, 47, 0.5],
+   [5.5, 50, 0.5],
+   [6.0, 48, 2.0]
+  ]
+ },
+ "t_ko": 54.15416666666667,
+ "tail": ["Ab", "G"],
+ "title_hits": {
+  "FLUTE": [72, 75, 79, 84, 87, 89, 91],
+  "SOUSAPHONE": [36, 43, 46, 48]
+ },
+ "tool": "tools.studio_export.episode_flute_vs_sousaphone",
+ "winner": 1
+}
