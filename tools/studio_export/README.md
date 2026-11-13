@@ -328,6 +328,12 @@ proves the Studio against the module. The manual is `studio/docs/porting-an-olde
   `fighter_origin(spec)` and `mood_origin(spec)` are Gate O (the fight's replay-guard line, the layers' contributions
   on minus off per pixel on at least 24 frames, the module's state, the buses sample for sample in float64 against
   -120 dBFS) and write `origin.json`; every run checks `git status --short projects reelkit series` is empty after.
+- `older/configs/<name>/episode.py` (plan m4 Task 5): the ten older episodes of Table O3 as kit configs with the
+  series-standard beat sheet and today's roster (every value named with the episode file and line it is read from),
+  and the four stand-ins of `drift_phonk` and `noir_jazz` (whose episodes fought a retired fighter). The kit loads each
+  from a path (`episode.load(<folder>)`); `unit_checks/older_configs_checks.py` loads copies in the cache, checks every
+  value is a format 2 fight-file field (its `GAPS` lists the six that are not, for a ruling), runs each fight to a K.O.
+  and compares the replay-guard line with the episode's (eight replay; #28 and #40 are new fights, `NOT_REPLAYED`).
 - A SPEC's `origin` key (fighters, themes; a pair's is the list of folders whose Gate O it rests on) is checked by
   `m3refs`, kept out of `fight.json` and `theme.json` (so no merged folder drifts), and `fighter_refs` / `theme_refs`
   refuse to run until the folder's `origin.json` is Gate O's for that spec.
