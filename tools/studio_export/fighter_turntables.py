@@ -18,12 +18,12 @@ The episode is switched with exact text patches of its scratch copy (never proje
   wiggling instrument, its effects, sparks, flashbulbs, glows, fringes and jerk ropes;
 - `harness`: its beat ramp (0.07 s); by older/fighters/turntables.py:origin_harness the kit HUD without the ability
   list (#31 predates it), the decks' bus under #31's name `decks` (the kit's is `turntables`), and on the shared buses
-  fx and bass only the module's own placements.
+  fx and bass (the framework's silence_kit) only the module's own placements.
 
-SILENCE: the episode's audio.py with every fx / bass placement removed but the decks' part's own (by line), ready for
-the shared buses' comparison (fx, bass) once fighter_origin applies a fighter spec's `silence` to the episode's stems
-(this task's report, NEEDS_CONTEXT); measured meanwhile with the same patch and harness: both bit-identical.
-The config keeps only the champion's solo (the SYNTH loses: its solo never plays)."""
+`silence`: the stems' scratch copy of audio.py with every fx / bass placement removed but the decks' part's own (by
+line), so the shared buses are compared too (the kit side keeps the module's own placements, `silence_kit`).
+Two fights (`fights`): #31's own seed 1339 (TURNTABLES wins: its stinger, solo and solo rings) and seed 6 (it loses
+at 52.7 s: its shards, its K.O. spray, its fall-apart and its reassembly)."""
 from . import m3refs
 
 R = 'render.py'
@@ -59,6 +59,9 @@ OTHER = [
      "        cache[key] = ST.render_sprite(nm, r, float(yk), float(roll), float(pitch)) if NAMES[k] == 'TURNTABLES' "
      "else __import__('sprites').render_sprite(nm, r, float(yk), float(roll))"),
     (R, "            if e[3] == k and e[7] not in ('volt',):", "            if e[3] == k and e[7] != 'key':"),
+    # its solo's groove rings (the SYNTH's when it wins: none of base.Look's)
+    (R, "    rings = solo_rings(t) if t >= T_SOLO - 0.01 else []",
+     "    rings = solo_rings(t) if t >= T_SOLO - 0.01 and NAMES[WIN] == 'TURNTABLES' else []"),
     # its shatter (glass only), cables, WHITE NOISE's static ring and shimmer
     (R, "['key'] * 7 + ['bkey'] * 4 + ['knob'] * 4 + ['jack'] * 4)", "[])"),
     (R, "    jacks = draw_cables(arr, cam, t, fs, glows)\n", "    jacks = []\n"),
@@ -97,12 +100,17 @@ OTHER = [
 LAYERS = [
     dict(name='record', patches=[(R, "        alb, on_rec = ST.record_albedo(alb, sxp, szp, phi, COL[DJ])",
                                   "        on_rec = np.zeros(len(sxp), bool)")]),
-    dict(name='solo_rings', patches=[(R, "    rings = solo_rings(t) if t >= T_SOLO - 0.01 else []", "    rings = []")]),
+    dict(name='solo_rings', patches=[(R, "and NAMES[WIN] == 'TURNTABLES' else []", "and False else []")]),
     dict(name='bass_drop', patches=[
         (R, "        sl = RUN['SLAMS'][i] if in_fight else []", "        sl = []"),
         (R, "draw_drop(arr, cam, t, i, in_fight, falling=False)", "None"),
         (R, "draw_drop(arr, cam, t, i, in_fight, falling=True)", "None"),
         (R, "        if e[1] == 'slam':\n            u = (tc - e[0]) / 0.6", "        if False:\n            u = (tc - e[0]) / 0.6")]),
+    dict(name='shatter', patches=[                                    # when it loses: base.Look's glass and spray
+        (R, "['vinyl'] * 8 + ['label'] * 3 + ['arm'] * 2 + ['plinth'] * 3 if loser == 'TURNTABLES'",
+         "[] if loser == 'TURNTABLES'"),
+        (R, "    else:\n        PA.emit(T_KO, pos, 'shards', n=24, spread=180, speed=(0.8, 2.6))",
+         "    else:\n        PA.emit(T_KO, pos, 'sparks', n=30, spread=180, speed=(0.8, 2.2))")]),
     dict(name='tonearm', patches=[(R, "    draw_tonearm(fr, cam, L, arm, t)\n", ""),
                                   (R, "    for kind, Q in ST.tonearm(PIVOT, tip, h):", "    for kind, Q in []:")]),
     dict(name='rewind', patches=[
@@ -142,13 +150,6 @@ SILENCE = [
 ]
 SHARED_BUSES = ['fx', 'bass']
 
-SOLO_TURNTABLES = [(0, 'stab', 0.5), (0, 'back', 1.0), (1, 'baby', 0.5), (1.5, 'baby', 0.5), (2, 'chirp', 0.25),
-                   (2.25, 'chirp', 0.25), (2.5, 'trans', 0.5), (3, 'stab', 0.25), (3.25, 'stab', 0.25),
-                   (3.5, 'flare', 0.5), (4, 'stab', 0.5), (4.5, 'tear', 0.5), (5, 'scrib', 0.5), (5.5, 'chirp', 0.25),
-                   (5.75, 'chirp', 0.25), (6, 'trans', 1.0), (7, 'stab', 0.25), (7.5, 'stab', 0.25), (8, 'stab', 0.5),
-                   (8, 'flare', 0.5), (8.5, 'baby', 0.25), (8.75, 'baby', 0.25), (9, 'tear', 0.5), (9.5, 'chirp', 0.25),
-                   (9.75, 'chirp', 0.25), (10, 'scrib', 0.5), (10.5, 'trans', 0.5), (11, 'stab', 1.0),
-                   (11, 'back', 1.0)]                    # timeline.py 116-123, as it is
 
 # origin.choose_frames' 24 for this run, with two of its even spread (35.4 s, 35.9 s) traded for BASS DROP's record
 # lying on the canvas under its stomp ring (42.0 s) and fading as the third REWIND starts (42.37 s: ghosts, tape look)
@@ -163,16 +164,16 @@ SPEC = dict(
     left_in_cache=True,
     origin=dict(
         episode=EPISODE,
-        config=dict(MOOD='big_top',               # #31's dark breakbeat is not a kit mood yet: the decks' own buses only
-                    SHARD_SEED=271, FX_SEED=31,   # render.py's own seeds (default_rng(271), fx.Particles(seed=31))
-                    SOLO={'TURNTABLES': SOLO_TURNTABLES}),   # the champion's (the SYNTH loses: its solo never plays)
-        frames=FRAMES,
+        config=dict(MOOD='big_top',               # #31's dark breakbeat is not a kit mood yet: its buses as the part's
+                    SHARD_SEED=271, FX_SEED=31),  # render.py's own seeds (default_rng(271), fx.Particles(seed=31))
+        silence=SILENCE,
+        fights=[dict(seed=1339, frames=FRAMES, buses=['decks', 'solo', 'fx', 'bass']),     # #31's: TURNTABLES wins
+                dict(seed=6, frames=14, buses=['decks', 'fx', 'bass'])],                   # it loses (K.O. 52.7 s)
         other=OTHER,
         layers=LAYERS,
         harness=[dict(name="#31's beat ramp (0.07 s)", beat_pulse_pre=0.07),
-                 dict(name="#31's HUD (no ability list); its bus name decks; the shared buses its part's only",
+                 dict(name="#31's HUD (no ability list); its bus name decks",
                       call='ballfight.kit.fighters.turntables:origin_harness')],
-        buses=['decks', 'solo'],
     ),
 )
 

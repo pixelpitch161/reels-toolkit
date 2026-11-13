@@ -1,6 +1,6 @@
 {
  "format": 1,
  "entries": [
-  {"path": "studio/reference/fighters/turntables/origin.json", "sha256": "44fb353596d6fe797dfca529c23ae87bf135e5aa46bce9866a48890c69d8320f", "bytes": 24916, "tool": "tools.studio_export.older.origin", "commit": "5a3b4c37e22301543483f8dd2805cf1ea91a72c5", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"}
+  {"path": "studio/reference/fighters/turntables/origin.json", "sha256": "0791a9d29ec04e311329f7a84eb808dfc9652623e3d934ab85da6612891598da", "bytes": 25670, "tool": "tools.studio_export.older.origin", "commit": "965c032af21261a0d5a35a1b52fe8845c72a60f5", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"}
  ]
 }

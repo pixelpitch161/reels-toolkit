@@ -527,17 +527,29 @@ class Sound(base.Sound):
 
     def __init__(self, M, k):
         super().__init__(M, k)
-        self._vc, self._scr, self._src = {}, {}, None
+        self._vc, self._gain, self._scr, self._src = {}, {}, {}, None
         self.rec = Record(M.P, k)
         ab = M.CFG[k]['abilities']
         self.names = {slot: ab[slot]['name'] for slot in ab}
         self.rewind = next((a for a in ab.values() if a['kind'] == 'rewind'), None)
 
     # ---------------------------------------------------------------- voices (#31's note / _fit: a 30 ms fade)
-    def note(self, midi, dur=0.18, cap=0.5, vel=0.85):
+    note_helper = dict(note='note', gain='inst_gain', fade=0.03)   # (voices.NoteLog logs its notes as the kit's)
+
+    def inst_gain(self, name):
+        """#31's inst_gain: the voice's level match, measured once, on the part's own table"""
         import pp_bridge as B
         from reelkit import audio as A
-        name = self.M.CFG[self.k]['pp']
+        if name not in self._gain:
+            lo, hi = B.entrant(name)[3]
+            x = B.voice(name, (lo + hi) // 2, 0.8, 0.2)[:int(0.3 * A.SR)]
+            self._gain[name] = min(4.0, 0.16 / (np.sqrt((A.hp(x, 120) ** 2).mean()) + 1e-6))
+        return self._gain[name]
+
+    def note(self, name, midi, dur=0.18, cap=0.5, vel=0.85):
+        """#31's note: _fit (a 30 ms fade) of the Pixel Pitch voice, times inst_gain, cached"""
+        import pp_bridge as B
+        from reelkit import audio as A
         key = (name, int(midi), round(dur, 3), cap, round(vel, 2))
         if key not in self._vc:
             x = B.voice(name, int(midi), vel, dur)
@@ -547,12 +559,12 @@ class Sound(base.Sound):
                 x = np.pad(x, (0, n - len(x)))
             fd = min(len(x) // 3, int(0.03 * A.SR))
             x[-fd:] *= np.linspace(1, 0, fd)
-            self._vc[key] = x * self.M.inst_gain(name)
+            self._vc[key] = x * self.inst_gain(name)
         return self._vc[key]
 
     def stab(self, m, vel=0.85, dur=0.12):
         """an organ stab in the decks' voice"""
-        return self.note(m, dur, 0.4, vel)
+        return self.note(self.M.CFG[self.k]['pp'], m, dur, 0.4, vel)
 
     # ---------------------------------------------------------------- scratches (the decks' motions, a stab)
     def src(self):
@@ -756,9 +768,7 @@ class Sound(base.Sound):
 # ---------------------------------------------------------------- Gate O's harness (tools/studio_export/fighter_turntables.py)
 def origin_harness(stage, mod):
     """the kit matched to #31's own series rules inside Gate O's window: no ability list in the HUD (#31 predates it,
-    Oct 25), the decks' bus under #31's name `decks` (the kit's is `turntables`), and on the shared buses (fx, bass)
-    only this module's placements (the bed's, the shared events' and the other side's silenced, as the episode's are
-    by the spec's `silence`)"""
+    Oct 25), and the decks' bus under #31's name `decks` (the kit's is `turntables`)"""
     if stage == 'picture':
         real = mod.fight_hud
 
@@ -769,14 +779,3 @@ def origin_harness(stage, mod):
         for s in mod.SOUNDS:
             if isinstance(s, Sound):
                 s.bus = 'decks'
-        real = mod.A.Mix.place                                     # the shared buses: this module's placements only
-
-        def place(self, name, sig, t, gain=1.0, pan=0.0):
-            if name in SHARED_BUSES and sys._getframe(1).f_code.co_filename != __file__:
-                self.bus(name)
-                return None
-            return real(self, name, sig, t, gain, pan)
-        mod.A.Mix.place = place
-
-
-SHARED_BUSES = ('fx', 'bass')                                       # the shared buses the decks' part places on
