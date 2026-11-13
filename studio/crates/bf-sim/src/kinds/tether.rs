@@ -189,7 +189,11 @@ pub fn step(f: &mut Fight, k: usize, dt: f64) {
         }
         if py::py_max(p[0].abs(), p[1].abs()) > a {
             state(f, k).plugs.retain(|q| q.id != pl.id);
-            f.ev("plug_miss", k as i64, vec![Value::Int(pl.id), Value::Float(p[0]), Value::Float(p[1])]);
+            f.ev(
+                "plug_miss",
+                k as i64,
+                vec![Value::Int(pl.id), Value::Float(p[0]), Value::Float(p[1])],
+            );
         } else if !ghost && geom::hypot(geom::sub(f.balls[o].p, p)) < r_o + w.plug_r {
             state(f, k).plugs.retain(|q| q.id != pl.id);
             if f.damage(k, o, w.plug_dmg, "plug", p, pl.id) {
@@ -199,7 +203,11 @@ pub fn step(f: &mut Fight, k: usize, dt: f64) {
                 st.slots = py::py_min(w.n_max, st.slots + w.grow);
                 let slots = st.slots;
                 f.balls[k].n_vol = slots;
-                f.ev("plug", k as i64, vec![Value::Int(pl.id), Value::Float(p[0]), Value::Float(p[1])]);
+                f.ev(
+                    "plug",
+                    k as i64,
+                    vec![Value::Int(pl.id), Value::Float(p[0]), Value::Float(p[1])],
+                );
             }
         }
     }

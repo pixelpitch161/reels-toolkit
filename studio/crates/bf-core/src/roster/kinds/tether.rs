@@ -145,12 +145,23 @@ mod tests {
         let WeaponCfg::Tether(w) = &roster[0].weapon else {
             panic!("not a tether: {:?}", roster[0].weapon)
         };
-        assert_eq!((w.style.as_str(), w.every, w.n0, w.grow, w.n_max), ("cables", 2.0, 1.0, 0.5, 4.0));
-        assert_eq!((w.plug_speed, w.plug_r, w.plug_dmg, w.life_beats), (6.0, 0.14, 1.0, 8.0));
-        assert_eq!((w.volt16, w.volt_speed, w.volt_dmg, w.length, w.snap), (2.0, 9.0, 0.17, 2.4, 0.15));
+        assert_eq!(
+            (w.style.as_str(), w.every, w.n0, w.grow, w.n_max),
+            ("cables", 2.0, 1.0, 0.5, 4.0)
+        );
+        assert_eq!(
+            (w.plug_speed, w.plug_r, w.plug_dmg, w.life_beats),
+            (6.0, 0.14, 1.0, 8.0)
+        );
+        assert_eq!(
+            (w.volt16, w.volt_speed, w.volt_dmg, w.length, w.snap),
+            (2.0, 9.0, 0.17, 2.4, 0.15)
+        );
         assert_eq!(roster[0].weapon.ball_start().n0, 1.0);
-        let bare = parse_roster(&synth(&KIT.replace(r#""plug_r": 0.14, "#, "").replace(r#""n0": 1, "#, "")))
-            .expect("defaults");
+        let bare = parse_roster(&synth(
+            &KIT.replace(r#""plug_r": 0.14, "#, "").replace(r#""n0": 1, "#, ""),
+        ))
+        .expect("defaults");
         let WeaponCfg::Tether(w) = &bare[0].weapon else {
             panic!("not a tether")
         };

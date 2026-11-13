@@ -55,7 +55,10 @@ pub(crate) fn parse(_e: &Entry, _prefix: &str, _ab: &Json) -> Result<LashCfg, Ro
 /// The kind's own checks: `lash_angle` divides by the period (`period_beats` x the beat), which Python refuses at 0.
 pub(crate) fn check(e: &Entry, prefix: &str, ab: &AbilityCfg) -> Result<(), RosterError> {
     if ab.get("period_beats") == Some(0.0) {
-        return Err(e.err(&format!("{prefix}.period_beats"), "0 is not a period (the arms sweep once per period)"));
+        return Err(e.err(
+            &format!("{prefix}.period_beats"),
+            "0 is not a period (the arms sweep once per period)",
+        ));
     }
     Ok(())
 }
