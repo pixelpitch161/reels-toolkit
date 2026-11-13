@@ -94,6 +94,7 @@ impl AppState {
             // The pair rules, the problem and the title card were the other pair's (or the other order's).
             self.title_card = None;
             self.vm.pair_rules.clear();
+            self.vm.pair_music = None;
             self.vm.fight_problem = None;
             self.described = self.generation;
         }
@@ -167,6 +168,80 @@ impl AppState {
         d.base = None;
         d.captions_edited = false;
         self.vm.draft.bass = self.first_bass();
+        self.start_pair();
+    }
+
+    /// The draft's two fighters begin a new match-up from their starter (`Roster::start_of`, the engine's own
+    /// rule): the kit pair's handicap (ruling M3-R6), the fighter whose part is the bass on bass, and, while the
+    /// draft is in the starter's theme, the starter's chord loop. When the draft's theme cannot be played by the
+    /// two (ruling M3-R2), the draft moves to the starter's theme, and a notice says so. A pair the roster knows no
+    /// start for keeps the even handicap and the first fighter that can play bass, and moves to the first theme it
+    /// can play if it must.
+    pub(super) fn start_pair(&mut self) {
+        let Some(roster) = self.vm.roster.as_ref() else {
+            return;
+        };
+        let fighters = self.vm.draft.fighters.clone();
+        let start = roster.start_of(&fighters);
+        // What was said about the other pair's music is not this pair's.
+        self.vm.pair_music = None;
+        let offered: Vec<String> = roster.themes_for(&fighters).iter().map(|t| t.name.clone()).collect();
+        let old = self.vm.draft.theme.clone();
+        let mut notice = None;
+        if !offered.contains(&old) {
+            let new = start
+                .as_ref()
+                .map(|s| s.theme.clone())
+                .filter(|t| offered.contains(t))
+                .or_else(|| offered.first().cloned());
+            if let Some(new) = new {
+                let display = |name: &str| {
+                    roster
+                        .themes
+                        .iter()
+                        .find(|t| t.name == name)
+                        .map_or_else(|| name.to_string(), |t| t.display.clone())
+                };
+                let refused: Vec<String> = roster
+                    .themes
+                    .iter()
+                    .find(|t| t.name == old)
+                    .map(|t| {
+                        fighters
+                            .iter()
+                            .filter(|f| t.refuses.contains(f))
+                            .map(|f| crate::wording::display_name(f))
+                            .collect()
+                    })
+                    .unwrap_or_default();
+                let who = if refused.is_empty() {
+                    crate::wording::versus(&fighters)
+                } else {
+                    refused.join(" and ")
+                };
+                notice = Some(format!(
+                    "{who} cannot play in {}, so the theme is now {}.",
+                    display(&old),
+                    display(&new)
+                ));
+                self.set_theme(&new);
+            }
+        }
+        if let Some(start) = start {
+            let d = &mut self.vm.draft;
+            d.handicap = start.handicap;
+            if let Some(side) = start.roles.iter().position(|r| r == crate::model::roster::BASS_ROLE) {
+                d.bass = Some(side);
+            } else {
+                d.bass = None;
+            }
+            if d.theme == start.theme {
+                d.chord_loop = start.chord_loop;
+            }
+        }
+        if let Some(text) = notice {
+            self.vm.notices.push(crate::model::Notice { text });
+        }
     }
 
     /// The fighters change corners; each keeps its handicap and, if it plays bass, the bass.
@@ -187,10 +262,20 @@ impl AppState {
             return;
         };
         let (bars, loops) = (theme.bars, theme.chord_loops.len());
+        // Back in the fight file's own theme, its own chord loop is the one chosen.
+        let own = self.vm.pair_music.as_ref().filter(|m| m.theme == name).map(|m| {
+            theme
+                .chord_loops
+                .iter()
+                .position(|l| *l == m.chord_loop)
+                .unwrap_or(loops)
+        });
         let d = &mut self.vm.draft;
         d.theme = name.to_string();
         d.bars = d.bars.max(bars.0).min(bars.1);
-        if d.chord_loop >= loops {
+        if let Some(own) = own {
+            d.chord_loop = own;
+        } else if d.chord_loop >= loops {
             d.chord_loop = 0;
         }
     }

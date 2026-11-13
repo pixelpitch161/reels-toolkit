@@ -2,11 +2,16 @@
 //! controls column, the arrangement lanes, the loudness lines and the footer.
 
 use bf_app::app::BfApp;
+use bf_app::engine::{self, EngineConfig, content, convert};
 use bf_app::fixtures::music;
+use bf_app::model::queue::Queue;
+use bf_app::model::shortlist::{SearchState, Shortlist};
 use bf_app::model::take::CheckLine;
-use bf_app::model::{Step, View};
+use bf_app::model::{EncodeChoice, Settings, Step, View};
 use bf_app::screens::music::{CONTROLS_W, NAMES_W};
-use bf_app::state::{Action, ViewModel};
+use bf_app::seam::{Command, Event};
+use bf_app::state::{Action, AppState, ViewModel};
+use bf_app::store::Paths;
 use bf_app::theme::{LINE_SOFT, ON_LIGHT, PANEL, TEXT, large_fill};
 use bf_app::widgets::ribbon::x_of;
 use egui::Rect;
@@ -63,8 +68,9 @@ fn the_words_that_stay() {
         "Key",
         "harmonic minor, from the theme",
         "Chord loop",
-        "Who plays bass",
-        "The other fighter takes the melody.",
+        "Parts",
+        "Flute plays the melody.",
+        "Trombone plays the bass.",
         "This take",
         "Music seed",
         "Re-roll music",
@@ -93,6 +99,9 @@ fn the_words_that_stay() {
     ] {
         assert!(has(&harness, text), "{text}");
     }
+    // the FLUTE cannot play bass, so who plays it is not asked (Task 60), and the big top has no options
+    assert!(!has(&harness, "Who plays bass"));
+    assert!(!has(&harness, "Theme options"));
     for lane in [
         "Flute",
         "Trombone",
@@ -191,39 +200,54 @@ fn placeholders_are_disabled_and_say_why() {
     assert!(harness.state().log.is_empty(), "{:?}", harness.state().log);
 }
 
+/// The Music fixture with the sample FLUTE's card able to play bass, so both fighters can (only then is "Who plays
+/// bass" asked, Task 60).
+fn both_play_bass() -> ViewModel {
+    let mut vm = music::vm();
+    let roster = vm.roster.as_mut().unwrap();
+    let flute = roster.fighters.iter_mut().find(|f| f.name == "FLUTE").unwrap();
+    flute.card.as_mut().unwrap().can_play_bass = true;
+    vm
+}
+
+/// With a fighter that cannot play bass the parts are shown as the fight file writes them, read-only.
 #[test]
 fn the_flute_cannot_take_the_bass() {
     let _gpu = gpu();
     let mut harness = showing(REF, music::vm());
-    let flute = by_role(&harness, "Flute", Role::RadioButton);
-    assert!(flute.accesskit_node().is_disabled());
-    flute.click();
+    assert!(!harness.query_all_by_role(Role::RadioButton).any(|n| {
+        let label = n.accesskit_node().label().unwrap_or_default();
+        label == "Flute" || label == "Trombone"
+    }));
+    assert!(has(&harness, "Flute plays the melody."));
+    harness.get_by_label("Trombone plays the bass.").click();
     harness.run();
     assert!(harness.state().log.is_empty(), "{:?}", harness.state().log);
+}
+
+#[test]
+fn a_fighter_that_can_take_the_bass_is_pushed() {
+    let _gpu = gpu();
+    let mut harness = showing(REF, both_play_bass());
+    assert!(has(&harness, "Who plays bass"));
+    assert!(has(&harness, "The other fighter takes the melody."));
     let trombone = by_role(&harness, "Trombone", Role::RadioButton);
     assert_eq!(
         trombone.accesskit_node().toggled(),
         Some(Toggled::True),
         "the chosen one"
     );
-    assert!(!trombone.accesskit_node().is_disabled());
-    by_role(&harness, "Flute", Role::RadioButton).hover();
-    harness.run();
-    assert!(has(&harness, "Flute has no bass part in this version"));
-    by_role(&harness, "Trombone", Role::RadioButton).click();
+    trombone.click();
     harness.run();
     assert!(harness.state().log.is_empty(), "the chosen one is not asked for again");
-}
-
-#[test]
-fn a_fighter_that_can_take_the_bass_is_pushed() {
-    let _gpu = gpu();
-    let mut vm = music::vm();
-    vm.draft.bass = None;
-    let mut harness = showing(REF, vm);
-    by_role(&harness, "Trombone", Role::RadioButton).click();
+    let flute = by_role(&harness, "Flute", Role::RadioButton);
+    assert!(!flute.accesskit_node().is_disabled());
+    flute.click();
     harness.run();
-    assert_eq!(harness.state().log, vec![Action::SetBass(1)]);
+    assert_eq!(harness.state().log, vec![Action::SetBass(0)]);
+    // the parts follow: the FLUTE takes the bass, the TROMBONE the melody
+    assert!(has(&harness, "Flute plays the bass."));
+    assert!(has(&harness, "Trombone plays the melody."));
 }
 
 #[test]
@@ -397,7 +421,7 @@ fn go_to_render_pushes() {
 #[test]
 fn inverted_controls_have_dark_labels() {
     let _gpu = gpu();
-    let mut harness = showing(REF, music::vm());
+    let mut harness = showing(REF, both_play_bass());
     for (label, role) in [("Trombone", Role::RadioButton), ("Go to render", Role::Button)] {
         let rect = by_role(&harness, label, role).rect();
         let inside: Vec<(u32, u32)> = (rect.min.x as u32 + 2..rect.max.x as u32 - 2)
@@ -432,11 +456,10 @@ fn assert_ring(harness: &mut Harness<'_, BfApp>, rect: Rect, sides: &str, what: 
 }
 
 /// The controls Tab reaches on the screen with a take, in reading order, with their roles.
-const FOCUSABLE: [(&str, Role); 5] = [
+const FOCUSABLE: [(&str, Role); 4] = [
     ("Theme", Role::ComboBox),
     (FIRST_LOOP, Role::Button),
     (SECOND_LOOP, Role::Button),
-    ("Trombone", Role::RadioButton),
     ("Go to render", Role::Button),
 ];
 
@@ -679,7 +702,7 @@ fn rings_in_the_scrolled_controls_column_at_the_minimum_size() {
     let workspace = harness.state().layout.workspace;
     let tempo = harness.get_by_label(TEMPO_LINE).rect();
     assert!(workspace.contains_rect(tempo), "scrolled to the bottom: {tempo:?}");
-    for (label, role) in &FOCUSABLE[..4] {
+    for (label, role) in &FOCUSABLE[..3] {
         by_role(&harness, label, *role).focus();
         harness.run();
         assert!(by_role(&harness, label, *role).is_focused(), "{label}");
@@ -712,4 +735,225 @@ fn the_controls_column_shows_its_scroll_bar_when_it_overflows() {
         theme.max.x < x as f32 - 4.0,
         "the controls keep clear of the bar: {theme:?}"
     );
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// The whole kit (milestone 3, Task 60): real pairs, their themes, options and parts
+// ---------------------------------------------------------------------------------------------------------------
+
+/// The app's state with the engine's roster and `pair`'s kit fight file opened, described by the engine, on
+/// `step`; with `take`, the real take of the file's own seed (its picture's story and its sound's lanes and checks).
+pub fn kit_vm(pair: &str, step: Step, take: bool) -> ViewModel {
+    let (_, ff) = bf_content::kit_pair_fights()
+        .into_iter()
+        .find(|(p, _)| *p == pair)
+        .unwrap_or_else(|| panic!("{pair}"));
+    let toml = ff.to_toml();
+    let draft = convert::draft_of(ff, &toml);
+    let settings = Settings {
+        output_folder: std::path::PathBuf::from("Videos").join("BALLFIGHT"),
+        workers: 7,
+        encode: EncodeChoice::Best,
+    };
+    let (mut state, _) = AppState::new(settings, Queue::new(), Vec::new(), 8);
+    state.apply(Event::Roster(content::roster()));
+    // the draft and the engine's description of it laid in as the state would hold them (applying them would begin
+    // a new generation, which clears the seed)
+    let mut vm = state.vm;
+    vm.draft = draft.clone();
+    let Event::FightInfo {
+        pair_rules,
+        problem,
+        music,
+        ..
+    } = content::describe(1, &draft)
+    else {
+        panic!("{pair}: not a description");
+    };
+    assert_eq!(problem, None, "{pair}");
+    vm.pair_rules = pair_rules;
+    vm.pair_music = music;
+    vm.view = View::Step(step);
+    vm.step = step;
+    if take {
+        let root = std::env::temp_dir().join(format!("bf-app kit take {pair} {}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&root);
+        let config = EngineConfig {
+            workers: 4,
+            paths: Paths::under(&root),
+            clip: None,
+            search_limit: None,
+        };
+        let engine = engine::spawn(std::sync::Arc::new(|| {}), config);
+        engine.send(Command::LoadTake { take: 1, draft });
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(180);
+        while vm.take.music.is_none() {
+            assert!(std::time::Instant::now() < deadline, "{pair}: no take in 180 s");
+            while let Some(e) = engine.poll() {
+                match e {
+                    Event::TakePicture { story, .. } => vm.take.story = Some(story),
+                    Event::TakeSound { music, .. } => vm.take.music = Some(music),
+                    Event::TakeFailed { problem, .. } => panic!("{pair}: {problem}"),
+                    _ => {}
+                }
+            }
+            std::thread::sleep(std::time::Duration::from_millis(10));
+        }
+        engine.send(Command::Shutdown);
+        drop(engine);
+        let _ = std::fs::remove_dir_all(&root);
+    }
+    // the status line as the state words it for such a draft
+    vm.status = match (take, vm.draft.seed) {
+        (true, Some(seed)) => format!("Seed {seed} is ready"),
+        _ => format!("{}, not balanced yet", bf_app::wording::versus(&vm.draft.fighters)),
+    };
+    vm
+}
+
+/// The Music screen of a kit pair: its theme's chord loops, its theme options read-only and its parts as the kit
+/// writes them; "Who plays bass" only where both fighters' cards can play bass.
+#[test]
+fn kit_pairs_show_their_options_and_parts() {
+    let _gpu = gpu();
+    for (pair, options, parts, bass) in [
+        (
+            "electric_vs_acoustic",
+            &["Plugged: Electric"][..],
+            ["Electric plays the riff.", "Acoustic plays the rhythm."],
+            false,
+        ),
+        (
+            "cello_vs_contrabass",
+            &[][..],
+            ["Cello plays the melody.", "Contrabass plays the bass."],
+            false,
+        ),
+        (
+            "bassdrum_vs_tuba",
+            &["No bass drums", "Bass drums back after the K.O."][..],
+            ["Bass drum plays the drums.", "Tuba plays the bass."],
+            false,
+        ),
+        (
+            "horn_vs_trombone_rematch",
+            &["The sequel"][..],
+            ["Horn plays the melody.", "Trombone plays the riff."],
+            false,
+        ),
+        (
+            "trombone_vs_tuba",
+            &[][..],
+            ["Trombone plays the riff.", "Tuba plays the bass."],
+            true,
+        ),
+    ] {
+        let vm = kit_vm(pair, Step::Music, false);
+        let theme = vm.theme().expect("an offered theme").clone();
+        let harness = showing(REF, vm);
+        for words in options.iter().chain(&parts) {
+            assert!(has(&harness, words), "{pair}: {words}");
+        }
+        assert_eq!(has(&harness, "Theme options"), !options.is_empty(), "{pair}");
+        assert_eq!(has(&harness, "Who plays bass"), bass, "{pair}");
+        for chords in &theme.chord_loops {
+            let label = chords.join("  ");
+            assert!(
+                harness
+                    .query_all_by_label(&label)
+                    .any(|n| n.accesskit_node().role() == Role::Button),
+                "{pair}: {label}"
+            );
+        }
+        assert_eq!(
+            by_role(&harness, "Theme", Role::ComboBox).value().as_deref(),
+            Some(theme.display.as_str()),
+            "{pair}"
+        );
+        assert_eq!(harness.unnamed_widgets(), Vec::<String>::new(), "{pair}");
+    }
+}
+
+/// Where both can play bass the parts swap: the TUBA's bass goes to the TROMBONE, which then plays it, and the
+/// TUBA takes the TROMBONE's riff.
+#[test]
+fn the_bass_moves_between_two_who_can_play_it() {
+    let _gpu = gpu();
+    let mut harness = showing(REF, kit_vm("trombone_vs_tuba", Step::Music, false));
+    by_role(&harness, "Trombone", Role::RadioButton).click();
+    harness.run();
+    assert_eq!(harness.state().log, vec![Action::SetBass(0)]);
+    assert!(has(&harness, "Trombone plays the bass."));
+    assert!(has(&harness, "Tuba plays the riff."));
+    assert!(has(&harness, "The other fighter takes the riff."));
+}
+
+/// Note (c) of Task 60: a fit whose soundtrack fails a check (the search does not listen to the music) says that
+/// its video would stop there and offers the next fight that fits.
+#[test]
+fn a_take_that_fails_a_check_offers_the_next_fit() {
+    let _gpu = gpu();
+    let mut vm = music::vm();
+    vm.shortlist = Shortlist {
+        rows: bf_app::seam::sample::stories(),
+        fits_total: 14,
+        checked: 18_240,
+        state: SearchState::Searching,
+        workers: 7,
+    };
+    let seed = vm.draft.seed.expect("a seed");
+    let at = vm
+        .shortlist
+        .rows
+        .iter()
+        .position(|r| r.seed == seed)
+        .expect("the seed is on the list");
+    let next = vm.shortlist.rows[(at + 1) % vm.shortlist.rows.len()].seed;
+    let failing = |mut vm: ViewModel| {
+        vm.take.music.as_mut().unwrap().checks[0] = CheckLine {
+            title: "Loudness".to_string(),
+            pass: false,
+            note: FAILING.to_string(),
+        };
+        vm
+    };
+    let words = format!(
+        "Seed {seed} fails the check \"Loudness\", so its video would stop there and nothing would be saved. Try seed \
+         {next}, the next fight that fits."
+    );
+    let passing = showing(REF, vm.clone());
+    assert!(!has(&passing, &words) && !has(&passing, &format!("Use seed {next}")));
+    drop(passing);
+    let mut harness = showing(REF, failing(vm.clone()));
+    assert!(has(&harness, &words), "{words}");
+    harness.get_by_label(&format!("Use seed {next}")).click();
+    harness.run();
+    assert_eq!(harness.state().log, vec![Action::SelectSeed(next)]);
+    // with no other fight that fits, it sends the owner to Seeds
+    let mut alone = failing(vm);
+    alone.shortlist.rows.retain(|r| r.seed == seed);
+    let mut harness = showing(REF, alone);
+    assert!(has(
+        &harness,
+        &format!(
+            "Seed {seed} fails the check \"Loudness\", so its video would stop there and nothing would be saved. Try another seed."
+        )
+    ));
+    harness.get_by_label("Go to seeds").click();
+    harness.run();
+    assert_eq!(harness.state().log, vec![Action::Go(View::Step(Step::Seeds))]);
+}
+
+#[test]
+fn music_matches_for_cello_vs_contrabass() {
+    let _gpu = gpu();
+    let mut harness = showing(REF, kit_vm("cello_vs_contrabass", Step::Music, true));
+    harness.snapshot("music_cello_vs_contrabass_1440x900");
+}
+
+#[test]
+fn music_matches_for_electric_vs_acoustic() {
+    let _gpu = gpu();
+    let mut harness = showing(REF, kit_vm("electric_vs_acoustic", Step::Music, true));
+    harness.snapshot("music_electric_vs_acoustic_1440x900");
 }

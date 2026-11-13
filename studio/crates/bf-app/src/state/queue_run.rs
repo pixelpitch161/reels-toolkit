@@ -70,8 +70,9 @@ enum OpenWhat {
 }
 
 /// Why "Add to queue" cannot do anything now, in words; `None` when it can. The first of these that holds: a fight
-/// problem; no seed; a take problem; the take still being drawn; the output folder not checked yet, missing or not
-/// writable; ffmpeg not answered yet, not found, or the app's own copy broken (its own sentence).
+/// problem; no seed; a take problem; the take still being drawn; the take's soundtrack failing a check, so its video
+/// would stop there (`ViewModel::failed_take_words`); the output folder not checked yet, missing or not writable;
+/// ffmpeg not answered yet, not found, or the app's own copy broken (its own sentence).
 pub fn why_not_add(vm: &ViewModel) -> Option<String> {
     if let Some(problem) = &vm.fight_problem {
         return Some(problem.clone());
@@ -84,6 +85,9 @@ pub fn why_not_add(vm: &ViewModel) -> Option<String> {
     }
     if vm.take.story.is_none() {
         return Some(format!("Seed {seed} is still being drawn."));
+    }
+    if let Some(words) = vm.failed_take_words() {
+        return Some(words);
     }
     let path = vm.settings.output_folder.display();
     match &vm.folder {

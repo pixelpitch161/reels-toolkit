@@ -9,9 +9,9 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use crate::model::balance::BalanceStats;
-use crate::model::draft::CaptionTexts;
+use crate::model::draft::{CaptionTexts, Draft};
 use crate::model::library::LibraryEntry;
-use crate::model::roster::{AbilityLine, FighterCard, PixelMask, Roster, RosterEntry, Section, ThemeEntry};
+use crate::model::roster::{AbilityLine, FighterCard, PairMusic, PixelMask, Roster, RosterEntry, Section, ThemeEntry};
 use crate::model::story::{AbilityMark, StoryView};
 use crate::model::take::{AudioTake, CheckLine, Frame, FrameSource, Lane, LaneGroup, MusicView};
 use crate::model::{NA, NF, SR};
@@ -204,6 +204,7 @@ pub fn roster() -> Roster {
                 music_feeds_fight: name == "PIANO",
                 mask: mask(&name),
                 card: Some(card(&name, display)),
+                home: None,
                 name,
             }
         })
@@ -220,10 +221,25 @@ pub fn roster() -> Roster {
             chord_loops: vec![chords("Em Am B7 Em C Am B7 B7"), chords("Em C Am B7 Em C Am B7")],
             bars: (24, 42),
             refuses: Vec::new(),
+            options: Vec::new(),
         }],
         vs: mask("VS"),
         start: ["FLUTE".to_string(), "TROMBONE".to_string()],
         app_version: "0.1.0".to_string(),
+        kit_pairs: Vec::new(),
+    }
+}
+
+/// What the sample engine says about a draft's music: its theme and first chord loop, the fighter on bass plays
+/// the bass and the other the melody, and no theme options.
+pub fn pair_music(draft: &Draft) -> PairMusic {
+    let r = roster();
+    let theme = r.themes.iter().find(|t| t.name == draft.theme);
+    PairMusic {
+        theme: draft.theme.clone(),
+        chord_loop: theme.and_then(|t| t.chord_loops.first().cloned()).unwrap_or_default(),
+        roles: [0, 1].map(|side| if draft.bass == Some(side) { "bass" } else { "melody" }.to_string()),
+        options: Vec::new(),
     }
 }
 

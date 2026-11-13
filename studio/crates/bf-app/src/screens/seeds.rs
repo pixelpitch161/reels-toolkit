@@ -13,14 +13,16 @@
 use egui::text::LayoutJob;
 use egui::{
     Align, EventFilter, Id, Key, Label, Layout, Modifiers, Painter, Rect, RichText, ScrollArea, Sense, Stroke,
-    StrokeKind, Ui, UiBuilder, vec2,
+    StrokeKind, Ui, UiBuilder, pos2, vec2,
 };
 
 use crate::model::shortlist::{FilterSpec, Finish, SearchState};
 use crate::model::story::StoryView;
+use crate::model::{Step, View};
 use crate::state::{Action, ViewModel};
 use crate::theme::{
-    LINE_SOFT, MUTED, RADIUS_ROW, TEXT, TEXT_STRONG, VALUE_W, body, rgb, section, small, strong, value as mono,
+    CONTROL_H, LINE_SOFT, MUTED, RADIUS_ROW, TEXT, TEXT_STRONG, VALUE_W, body, rgb, section, small, strong,
+    value as mono,
 };
 use crate::widgets::buttons;
 use crate::widgets::chips::{fighter_bar, object_row};
@@ -86,6 +88,24 @@ pub const PICK_FIRST: &str = "Pick a fight first";
 pub const WHOLE_NUMBER: &str = "Type a whole number";
 /// The empty list while the search runs.
 pub const EMPTY_SEARCHING: &str = "No fights fit the beat sheet yet. The search is still running.";
+/// After this many seeds with no fight that fits, the screen says the match-up is uneven and offers Auto-balance
+/// (the kit's own search gives up at 5,000 seeds; milestone 3 Task 59 found pairs with none there at an even
+/// handicap, such as Cello against Flute).
+pub const NO_FIT_AFTER: u64 = 5_000;
+
+/// What the empty list says when [`NO_FIT_AFTER`] seeds gave no fight that fits.
+pub fn no_fit_words(checked: u64) -> String {
+    format!(
+        "No fight fits the beat sheet in {} checked, so this match-up is likely too uneven at this handicap. \
+         Auto-balance finds a handicap that gives closer fights.",
+        wording::thousands(checked)
+    )
+}
+
+/// The search has checked [`NO_FIT_AFTER`] seeds or more and found no fight that fits.
+pub fn finds_no_fit(vm: &ViewModel) -> bool {
+    vm.shortlist.fits_total == 0 && vm.shortlist.checked >= NO_FIT_AFTER
+}
 /// What stands in for a value that is not there: a rank outside the beat sheet, a missing K.O.
 const NONE: &str = "–";
 
@@ -436,7 +456,7 @@ fn shortlist_column(ui: &mut Ui, vm: &ViewModel, out: &mut Vec<Action>) {
     let header_inside = Rect::from_min_max(header_inside.min, header_inside.max - vec2(bar, 0.0));
     header_row(ui, vm, header_inside, cols);
     if vm.shortlist.rows.is_empty() {
-        empty_list(ui, vm, list);
+        empty_list(ui, vm, list, out);
     } else {
         rows(ui, vm, rows_rect, cols, out);
     }
@@ -468,9 +488,13 @@ fn header_row(ui: &mut Ui, vm: &ViewModel, inside: Rect, cols: SeedColumns) {
     cell(ui, story, 6, true, |ui| word(ui, "Story"));
 }
 
-/// The list with no rows: one centred `MUTED` line that says what to do.
-fn empty_list(ui: &mut Ui, vm: &ViewModel, list: Rect) {
+/// The list with no rows: one centred `MUTED` line that says what to do; once the search has found no fight that
+/// fits in [`NO_FIT_AFTER`] seeds, that the match-up is likely too uneven, with "Auto-balance" under it (it opens
+/// Balance and starts a run).
+fn empty_list(ui: &mut Ui, vm: &ViewModel, list: Rect, out: &mut Vec<Action>) {
+    let uneven = finds_no_fit(vm) && vm.fight_problem.is_none();
     let text = match vm.shortlist.state {
+        _ if uneven => no_fit_words(vm.shortlist.checked),
         SearchState::Searching | SearchState::Idle => EMPTY_SEARCHING.to_string(),
         SearchState::Stopped | SearchState::Full => format!(
             "No fights fit the beat sheet in {} checked. Keep searching, or use the switch on the left to show \
@@ -482,7 +506,24 @@ fn empty_list(ui: &mut Ui, vm: &ViewModel, list: Rect) {
     let mut job = LayoutJob::simple(text.clone(), body(), MUTED, wrap);
     job.halign = Align::Center;
     let height = ui.painter().layout_job(job).size().y;
-    let rect = Rect::from_center_size(list.center(), vec2(wrap, height));
+    let button = if uneven { 8.0 + CONTROL_H } else { 0.0 };
+    let rect = Rect::from_center_size(list.center(), vec2(wrap, height + button)).round();
+    if uneven {
+        let label = "Auto-balance";
+        let w = (ui.painter().layout_no_wrap(label.to_owned(), body(), TEXT).size().x + 20.0).ceil();
+        let at = pos2((rect.center().x - w / 2.0).round(), rect.max.y - CONTROL_H);
+        let mut child = ui.new_child(
+            UiBuilder::new()
+                .id_salt("uneven")
+                .max_rect(Rect::from_min_size(at, vec2(w, CONTROL_H)))
+                .layout(Layout::left_to_right(Align::Min)),
+        );
+        if buttons::primary(&mut child, label).clicked() {
+            out.push(Action::Go(View::Step(Step::Balance)));
+            out.push(Action::AutoBalance);
+        }
+    }
+    let rect = Rect::from_min_size(rect.min, vec2(wrap, height));
     let mut child = ui.new_child(
         UiBuilder::new()
             .id_salt("empty")

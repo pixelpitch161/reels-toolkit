@@ -94,6 +94,7 @@ fn fight_info(generation: Gen, captions: CaptionTexts) -> Event {
         captions,
         title_card: None,
         problem: None,
+        music: None,
     }
 }
 
@@ -795,6 +796,7 @@ fn a_fight_problem_holds_every_request() {
         captions: sample::captions(),
         title_card: None,
         problem: Some("These two cannot fight yet.".to_string()),
+        music: None,
     });
     assert_eq!(s.vm.fight_problem.as_deref(), Some("These two cannot fight yet."));
     assert_eq!(s.vm.status, "These two cannot fight yet.");
@@ -820,6 +822,7 @@ fn the_title_card_shows_while_there_is_no_take() {
         captions: sample::captions(),
         title_card: Some(card.clone()),
         problem: None,
+        music: None,
     });
     assert!(matches!(&played(&fx)[..], [PlayerCmd::Still(f)] if *f == card));
     let fx = s.dispatch(handicap(0, 2.0, false));
@@ -1054,6 +1057,7 @@ fn a_fight_problem_stops_what_runs() {
         captions: sample::captions(),
         title_card: None,
         problem: Some("These two cannot fight yet.".to_string()),
+        music: None,
     });
     assert_eq!(count(&fx, |c| matches!(c, Command::StopSearch)), 1);
     assert_eq!(count(&fx, |c| matches!(c, Command::StopBalance)), 1);
@@ -1116,6 +1120,7 @@ fn the_status_follows_one_order() {
         captions: sample::captions(),
         title_card: None,
         problem: Some("These two cannot fight yet.".to_string()),
+        music: None,
     });
     assert_eq!(s.vm.status, "These two cannot fight yet.");
 
@@ -1256,4 +1261,101 @@ fn the_same_view_again_changes_nothing() {
     let before = s.vm.clone();
     s.player_view(transport(10, SoundState::None), None);
     assert_eq!(s.vm, before);
+}
+
+/// A new app with the engine's own roster (milestone 3: the 20 kit fighters and 14 themes).
+fn real() -> AppState {
+    ready_with(crate::engine::content::roster())
+}
+
+/// Ruling M3-R6: a kit pair starts from the kit's frozen handicap, and the fighter whose part is the bass is on
+/// bass; the starting pair is one too. A pair with no kit config starts even.
+#[test]
+fn a_kit_pair_starts_from_its_kit_handicap() {
+    let mut s = real();
+    assert_eq!(s.vm.draft.fighters, ["FLUTE".to_string(), "TROMBONE".to_string()]);
+    assert_eq!(s.vm.draft.handicap, [2.0, 0.4]);
+    assert_eq!(s.vm.draft.bass, Some(1));
+    s.dispatch(pick(0, "BASS DRUM"));
+    assert_eq!(
+        s.vm.draft.handicap,
+        [1.0, 1.0],
+        "BASS DRUM vs TROMBONE has no kit config"
+    );
+    s.dispatch(pick(1, "TUBA"));
+    assert_eq!(s.vm.draft.handicap, [0.86, 1.0]);
+    assert_eq!(s.vm.draft.bass, Some(1), "the TUBA plays the bass");
+    // the other order is the same config, swapped
+    s.dispatch(pick(0, "CELLO"));
+    s.dispatch(pick(1, "BASS DRUM"));
+    s.dispatch(pick(0, "TUBA"));
+    assert_eq!(s.vm.draft.fighters, ["TUBA".to_string(), "BASS DRUM".to_string()]);
+    assert_eq!(s.vm.draft.handicap, [1.0, 0.86]);
+    assert_eq!(s.vm.draft.bass, Some(0));
+}
+
+/// Note (b) of Task 60: when a new pair cannot play the draft's theme (ruling M3-R2), the draft moves to the pair's
+/// starter theme and a notice says so; a theme the new pair can play stays.
+#[test]
+fn a_theme_the_new_pair_cannot_play_moves_to_the_starters() {
+    let mut s = real();
+    s.dispatch(pick(1, "CLARINET"));
+    s.dispatch(Action::SetTheme("heist".to_string()));
+    assert_eq!(s.vm.draft.theme, "heist");
+    let before = s.vm.notices.len();
+    s.dispatch(pick(1, "TROMBONE"));
+    assert_eq!(s.vm.draft.theme, "big_top", "FLUTE vs TROMBONE's own theme");
+    assert_eq!(s.vm.notices.len(), before + 1);
+    assert_eq!(
+        s.vm.notices.last().map(|n| n.text.as_str()),
+        Some("Trombone cannot play in Heist, so the theme is now Big top.")
+    );
+    // a pair with no kit config moves to the theme its starter has: ALTO SAX's home is the dark disco, which
+    // ORGAN cannot play, so the ORGAN's home theme
+    s.dispatch(pick(0, "ALTO SAX"));
+    s.dispatch(pick(1, "TENOR SAX"));
+    s.dispatch(Action::SetTheme("dark_disco".to_string()));
+    s.dispatch(pick(1, "ORGAN"));
+    let starter = bf_content::starter("ALTO SAX", "ORGAN").expect("a starter");
+    assert_eq!(s.vm.draft.theme, starter.music.theme);
+    assert_eq!(
+        s.vm.notices.last().map(|n| n.text.as_str()),
+        Some("Organ cannot play in Dark disco, so the theme is now Prog duel.")
+    );
+    // a theme both can play stays, with no notice
+    s.dispatch(Action::SetTheme("dark_tango".to_string()));
+    let before = s.vm.notices.len();
+    s.dispatch(pick(1, "OBOE"));
+    assert_eq!(s.vm.draft.theme, "dark_tango");
+    assert_eq!(s.vm.notices.len(), before);
+}
+
+/// Review Focus 7: for a PIANO pair a theme (so its key) or loop change is a new fight, so the search starts over;
+/// for any other pair it is not.
+#[test]
+fn only_a_piano_pairs_music_restarts_its_search() {
+    let mut s = real();
+    for (pair, restarts) in [(["PIANO", "ORGAN"], true), (["FLUTE", "TROMBONE"], false)] {
+        s.dispatch(pick(0, pair[0]));
+        s.dispatch(pick(1, pair[1]));
+        s.dispatch(Action::SetTheme("big_top".to_string()));
+        go(&mut s, Step::Seeds);
+        let generation = s.generation();
+        let fx = s.dispatch(Action::SetTheme("brass_trailer".to_string()));
+        assert_eq!(s.generation() != generation, restarts, "{pair:?}: another theme");
+        assert_eq!(
+            count(&fx, is_start_search),
+            usize::from(restarts),
+            "{pair:?}: another theme"
+        );
+        let generation = s.generation();
+        let fx = s.dispatch(Action::SetChordLoop(1));
+        assert_eq!(s.vm.draft.chord_loop, 1);
+        assert_eq!(s.generation() != generation, restarts, "{pair:?}: another loop");
+        assert_eq!(
+            count(&fx, is_start_search),
+            usize::from(restarts),
+            "{pair:?}: another loop"
+        );
+    }
 }

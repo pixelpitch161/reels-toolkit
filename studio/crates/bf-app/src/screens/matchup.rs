@@ -19,7 +19,7 @@
 use egui::{Align, Frame, Label, Layout, Margin, Rect, RichText, ScrollArea, Sense, Stroke, Ui, UiBuilder, pos2, vec2};
 
 use crate::model::draft::Draft;
-use crate::model::roster::{Roster, RosterEntry, Section};
+use crate::model::roster::{PixelMask, Roster, RosterEntry, Section};
 use crate::model::{Step, View};
 use crate::state::{Action, ViewModel};
 use crate::theme::{
@@ -40,8 +40,13 @@ const CARD_GAP: f32 = 14.0;
 /// The portrait's size and the gap after it.
 const PORTRAIT: f32 = 52.0;
 const PORTRAIT_GAP: f32 = 12.0;
-/// The largest pixel scale of a corner card's name (28 tall), and the one it drops to when that does not fit.
+/// The largest pixel scale of a corner card's name (28 tall), and the one it drops to when that does not fit (21
+/// tall): every roster name is drawn at one of the two.
 const NAME_SCALE: u32 = 4;
+const NAME_SMALL: u32 = 3;
+/// The pixel letters' advance (5 wide and a gap of 1) and the gap between the two lines of a name, in font pixels.
+const LETTER_ADV: usize = 6;
+const LINE_GAP: usize = 1;
 /// The width of an ability's tag column and of a fact's label column.
 const TAG_W: f32 = 30.0;
 const FACT_W: f32 = 92.0;
@@ -307,9 +312,81 @@ fn corner_card(ui: &mut Ui, vm: &ViewModel, side: usize) {
     });
 }
 
-/// The portrait (a 52 disc, or the sprite) and the name in pixel letters, 28 tall when it fits beside it, else the
-/// largest whole scale that does.
+/// How a corner card draws a fighter's name in `beside` points beside the portrait or `under` points on a line of
+/// its own: the mask, its scale, and whether it goes under the portrait.
+#[derive(Clone, Debug, PartialEq)]
+pub struct NameLayout {
+    pub mask: PixelMask,
+    pub scale: u32,
+    pub under: bool,
+}
+
+/// The corner card's name (interface reference 5.1: 28 tall when it fits, 21 when it does not): on one line beside
+/// the portrait at 28 or 21; else, for a name of two words or more, on two lines beside it at 21 (split at the space
+/// nearest its middle: "BASS" over "CLARINET"); else on a line of its own under the portrait, at 21 when that fits.
+/// `name` is the roster name the mask spells, one mask column group of `LETTER_ADV` per letter.
+pub fn name_layout(mask: &PixelMask, name: &str, beside: f32, under: f32) -> NameLayout {
+    let fits = |w: usize, scale: u32, room: f32| (w * scale as usize) as f32 <= room;
+    for scale in [NAME_SCALE, NAME_SMALL] {
+        if fits(mask.w, scale, beside) {
+            return NameLayout {
+                mask: mask.clone(),
+                scale,
+                under: false,
+            };
+        }
+    }
+    let chars: Vec<char> = name.chars().collect();
+    let middle = chars.len() as f32 / 2.0;
+    let split = chars
+        .iter()
+        .enumerate()
+        .filter(|(_, c)| **c == ' ')
+        .map(|(i, _)| i)
+        .min_by(|a, b| (*a as f32 - middle).abs().total_cmp(&(*b as f32 - middle).abs()));
+    if let Some(at) = split {
+        let two = two_lines(mask, at, chars.len() - at - 1);
+        if fits(two.w, NAME_SMALL, beside) && two.h * NAME_SMALL as usize <= PORTRAIT as usize {
+            return NameLayout {
+                mask: two,
+                scale: NAME_SMALL,
+                under: false,
+            };
+        }
+    }
+    NameLayout {
+        scale: fit_scale(mask.w, NAME_SMALL, under),
+        mask: mask.clone(),
+        under: true,
+    }
+}
+
+/// `mask` (one line of pixel letters) as two lines: the `first` letters, then the `rest` after the space that
+/// follows them, `LINE_GAP` font pixels apart, both from the left.
+fn two_lines(mask: &PixelMask, first: usize, rest: usize) -> PixelMask {
+    let line_w = |n: usize| (n * LETTER_ADV).saturating_sub(1);
+    let (w1, w2) = (line_w(first), line_w(rest));
+    let from2 = (first + 1) * LETTER_ADV;
+    let w = w1.max(w2).max(1);
+    let h = 2 * mask.h + LINE_GAP;
+    let at = |x: usize, y: usize| x < mask.w && mask.on.get(y * mask.w + x).copied().unwrap_or(false);
+    let mut on = vec![false; w * h];
+    for y in 0..mask.h {
+        for x in 0..w1 {
+            on[y * w + x] = at(x, y);
+        }
+        for x in 0..w2 {
+            on[(y + mask.h + LINE_GAP) * w + x] = at(from2 + x, y);
+        }
+    }
+    PixelMask { w, h, on }
+}
+
+/// The portrait (a 52 disc, or the sprite) and the name in pixel letters as [`name_layout`] places it.
 fn name_row(ui: &mut Ui, fighter: &RosterEntry) {
+    let under = ui.available_width();
+    let beside = (under - PORTRAIT - PORTRAIT_GAP).max(0.0);
+    let layout = name_layout(&fighter.mask, &fighter.name, beside, under);
     ui.allocate_ui_with_layout(
         vec2(ui.available_width(), PORTRAIT),
         Layout::left_to_right(Align::Center),
@@ -318,10 +395,15 @@ fn name_row(ui: &mut Ui, fighter: &RosterEntry) {
             let sprite = fighter.card.as_ref().and_then(|c| c.portrait.as_ref());
             let name = format!("Portrait of {}", fighter.display);
             portrait(ui, fighter.color, sprite, PORTRAIT, &name);
-            let scale = fit_scale(fighter.mask.w, NAME_SCALE, ui.available_width());
-            pixel_text(ui, &fighter.mask, scale, TEXT, &fighter.display);
+            if !layout.under {
+                pixel_text(ui, &layout.mask, layout.scale, TEXT, &fighter.display);
+            }
         },
     );
+    if layout.under {
+        ui.add_space(SMALL_GAP);
+        pixel_text(ui, &layout.mask, layout.scale, TEXT, &fighter.display);
+    }
 }
 
 /// A fact row: `label` in `MUTED`, 92 wide, then what `add` lays out.
@@ -574,6 +656,57 @@ fn tempo_controls(ui: &mut Ui, draft: &Draft, range: (u32, u32), keep: f32, out:
 mod tests {
     use super::*;
     use crate::fixtures::base;
+
+    /// The room a corner card gives a name: 250 less 12 of padding each side, and beside the portrait 52 and its
+    /// gap of 12 less again.
+    const UNDER: f32 = CARD_W - 24.0;
+    const BESIDE: f32 = UNDER - PORTRAIT - PORTRAIT_GAP;
+
+    /// Every roster name is drawn 28 or 21 tall (scale 4 or 3) in a corner card: the 13-letter BASS CLARINET on two
+    /// lines of 21 beside the portrait, the 10-letter single words (CONTRABASS, SOUSAPHONE) at 21 under it.
+    #[test]
+    fn every_name_fits_a_corner_card_at_21_or_more() {
+        let r = crate::engine::content::roster();
+        for f in &r.fighters {
+            let l = name_layout(&f.mask, &f.name, BESIDE, UNDER);
+            assert!(l.scale >= NAME_SMALL, "{}: scale {}", f.name, l.scale);
+            let room = if l.under { UNDER } else { BESIDE };
+            assert!((l.mask.w * l.scale as usize) as f32 <= room, "{} fits", f.name);
+            assert!(
+                l.under || (l.mask.h * l.scale as usize) as f32 <= PORTRAIT,
+                "{}",
+                f.name
+            );
+            assert_eq!(l.mask.on.len(), l.mask.w * l.mask.h);
+        }
+        let get = |name: &str| {
+            let f = r.fighters.iter().find(|f| f.name == name).expect(name);
+            (f.mask.clone(), name_layout(&f.mask, name, BESIDE, UNDER))
+        };
+        let (_, flute) = get("FLUTE");
+        assert_eq!((flute.scale, flute.under), (NAME_SCALE, false));
+        let (one, bass_clarinet) = get("BASS CLARINET");
+        assert_eq!(one.w, 13 * 6 - 1);
+        assert_eq!((bass_clarinet.scale, bass_clarinet.under), (NAME_SMALL, false));
+        assert_eq!(
+            (bass_clarinet.mask.w, bass_clarinet.mask.h),
+            (8 * 6 - 1, 15),
+            "BASS over CLARINET"
+        );
+        // the lines are the letters of the one-line name: BASS from the left, CLARINET from column 30
+        let lit = |m: &PixelMask, x: usize, y: usize| m.on[y * m.w + x];
+        for y in 0..7 {
+            for x in 0..23 {
+                assert_eq!(lit(&bass_clarinet.mask, x, y), lit(&one, x, y));
+            }
+            for x in 0..47 {
+                assert_eq!(lit(&bass_clarinet.mask, x, y + 8), lit(&one, 30 + x, y));
+            }
+            assert!((0..47).all(|x| !lit(&bass_clarinet.mask, x, 7)), "a blank line between");
+        }
+        let (_, contrabass) = get("CONTRABASS");
+        assert_eq!((contrabass.scale, contrabass.under), (NAME_SMALL, true));
+    }
 
     #[test]
     fn columns_for_follows_its_rule() {

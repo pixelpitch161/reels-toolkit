@@ -34,6 +34,7 @@ pub fn vm() -> ViewModel {
         captions: sample::captions(),
         title_card: Some(card),
         problem: None,
+        music: Some(sample::pair_music(&state.vm.draft)),
     });
     state.vm
 }

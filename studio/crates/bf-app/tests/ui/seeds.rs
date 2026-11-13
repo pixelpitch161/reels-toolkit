@@ -17,7 +17,7 @@ use crate::common::{MIN, REF, app_harness, gpu, pixels};
 const FOOTER: &str = "212 fights fit the beat sheet, from 18,240 checked. Still searching.";
 const SHOW_OUTSIDE: &str = "Show fights outside the beat sheet";
 const EMPTY_SEARCHING: &str = "No fights fit the beat sheet yet. The search is still running.";
-const EMPTY_STOPPED: &str = "No fights fit the beat sheet in 18,240 checked. Keep searching, or use the switch on the \
+const EMPTY_STOPPED: &str = "No fights fit the beat sheet in 2,048 checked. Keep searching, or use the switch on the \
                              left to show fights outside the beat sheet.";
 const MISS: &str = "K.O. at 47.20 s (needs 49 to 53 s)";
 
@@ -821,4 +821,44 @@ fn the_list_shows_its_scroll_bar_when_it_overflows() {
     let mut harness = showing(REF, seeds::vm());
     let px = pixels(&mut harness, &column);
     assert!(!px.contains(&[0x77, 0x77, 0x77]), "no bar where nothing overflows");
+}
+
+/// Note (a) of Task 60: when the search has found no fight that fits in 5,000 seeds (many pairs at an even handicap
+/// have none: CELLO against FLUTE, BASS DRUM against HORN), the screen says the match-up is likely too uneven and
+/// offers Auto-balance, which opens Balance and starts a run. Before that, it waits as before.
+#[test]
+fn no_fit_in_five_thousand_offers_auto_balance() {
+    let _gpu = gpu();
+    let words = bf_app::screens::seeds::no_fit_words(5_120);
+    assert_eq!(
+        words,
+        "No fight fits the beat sheet in 5,120 checked, so this match-up is likely too uneven at this handicap. Auto-balance finds a handicap that gives closer fights."
+    );
+    let mut harness = showing(REF, seeds::uneven());
+    assert!(has(&harness, &words), "{words}");
+    assert!(!has(&harness, EMPTY_SEARCHING));
+    let text = harness.get_by_label(&words).rect();
+    let button = by_role(&harness, "Auto-balance", Role::Button).rect();
+    assert!(
+        button.min.y > text.max.y,
+        "the button under the words: {button:?} {text:?}"
+    );
+    let workspace = harness.state().layout.workspace;
+    assert!(workspace.contains_rect(button));
+    by_role(&harness, "Auto-balance", Role::Button).click();
+    harness.run();
+    assert_eq!(
+        harness.state().log,
+        vec![Action::Go(View::Step(Step::Balance)), Action::AutoBalance]
+    );
+    assert_eq!(harness.state().state.vm.view, View::Step(Step::Balance));
+    drop(harness);
+    // fewer seeds checked: no such words yet
+    let harness = showing(REF, seeds::empty(SearchState::Searching));
+    assert!(
+        !harness
+            .query_all_by_label("Auto-balance")
+            .any(|n| n.accesskit_node().role() == Role::Button)
+    );
+    assert_eq!(harness.unnamed_widgets(), Vec::<String>::new());
 }

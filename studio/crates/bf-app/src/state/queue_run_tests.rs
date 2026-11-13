@@ -108,6 +108,7 @@ fn each_stage(mut at: impl FnMut(&mut AppState, Option<String>)) {
         captions: sample::captions(),
         title_card: None,
         problem: Some("These two cannot fight yet.".to_string()),
+        music: None,
     });
     at(&mut s, Some("These two cannot fight yet.".to_string()));
 
@@ -454,6 +455,7 @@ fn the_rendering_line_outranks_the_search_but_not_a_problem() {
         captions: sample::captions(),
         title_card: None,
         problem: Some("These two cannot fight yet.".to_string()),
+        music: None,
     });
     assert_eq!(s.vm.status, "These two cannot fight yet.");
 }
