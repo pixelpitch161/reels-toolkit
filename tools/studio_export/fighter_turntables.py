@@ -156,10 +156,18 @@ SHARED_BUSES = ['fx', 'bass']
 FRAMES = [110, 375, 385, 397, 429, 510, 645, 647, 659, 753, 915, 1185, 1235, 1247, 1260, 1271, 1320, 1401, 1452, 1455,
           1470, 1492, 1537, 1582]
 
+# Template F' (plan m4 Review Focus 1, Table O4: a rewinding ball is intangible to every kind): TURNTABLES against each
+# of the 20 kit fighters, three seeds each side (FLUTE's are the template's own); EUPHONIUM's are the copy sweep
+KIT = ('PIANO', 'TUBA', 'TROMBONE', 'HORN', 'ORGAN', 'ACOUSTIC', 'TRUMPET', 'CLARINET', 'OBOE', 'BASS CLARINET',
+       'EUPHONIUM', 'BASSOON', 'ELECTRIC', 'CELLO', 'CONTRABASS', 'ALTO SAX', 'TENOR SAX', 'SOUSAPHONE', 'BASS DRUM')
+VERSUS = [dict(name=f"kit_{o.lower().replace(' ', '_')}{'_swapped' if sw else ''}", seeds=(1, 2, 3), opponent=o,
+               swapped=sw) for o in KIT for sw in (False, True)]
+
 SPEC = dict(
     name='TURNTABLES',
     opponent='FLUTE',
     fights=dict(handicap=(0.8, 1.0)),   # M3-R34: at neutral TURNTABLES wins 96.8 %; FLUTE at x2 19.8 %; 0.8 ~ 77 %
+    scenarios=m3refs.default_scenarios('TURNTABLES', 'FLUTE') + VERSUS,
     sprite_size=dict(add=7, clip=(12, 30)),     # its own sprites: #31's render_sprite, 2 r + 7 at r in 12..30
     left_in_cache=True,
     origin=dict(
