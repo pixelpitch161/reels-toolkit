@@ -1,0 +1,72 @@
+format = 2
+app_version = "0.1.0"
+fighters = ["TROMBONE", "HORN"]
+arena = "ring"
+handicap = [1.0, 1.0]
+dmg_scale = 0.72
+tempo_bpm = 122.0
+seed = 140
+series_tag = "BALLFIGHT #8"
+
+[pair_rules]
+
+[music]
+theme = "brass_trailer"
+arrangement = "classic"
+key = "D"
+scale = "minor"
+chords_intro = ["Dm", "A"]
+chord_loop = ["Dm", "Bb", "Gm", "A"]
+chords_tail = ["A"]
+music_seed = 1
+
+[music.roles]
+TROMBONE = "riff"
+HORN = "melody"
+
+[music.lines]
+TROMBONE = [
+    50, 50, 57, 55,
+    46, 46, 53, 50,
+    55, 55, 58, 57,
+    57, 57, 61, 52,
+]
+HORN = [
+    62, 69, 65, 69,
+    62, 65, 70, 65,
+    62, 67, 70, 67,
+    61, 64, 69, 64,
+]
+"HORN THEME" = [62, 69, 70, 65, 67, 70, 69, 73]
+
+[music.solos]
+TROMBONE = [
+    [0.0, 50, 0.5], [0.5, 53, 0.5], [1.0, 57, 1.0], [2.0, 55, 0.5],
+    [2.5, 53, 0.5], [3.0, 50, 1.0], [4.0, 45, 0.5], [4.5, 48, 0.5],
+    [5.0, 50, 0.75], [5.75, 53, 0.25], [6.0, 57, 1.0], [7.0, 60, 0.5],
+    [7.5, 58, 0.5], [8.0, 57, 0.5], [8.5, 53, 0.5], [9.0, 50, 1.5],
+]
+HORN = [
+    [0.0, 62, 0.5], [0.5, 69, 0.5], [1.0, 74, 1.0], [2.0, 72, 0.5],
+    [2.5, 70, 0.5], [3.0, 69, 1.0], [4.0, 65, 0.5], [4.5, 69, 0.5],
+    [5.0, 74, 0.75], [5.75, 72, 0.25], [6.0, 70, 0.5], [6.5, 69, 0.5],
+    [7.0, 73, 1.0], [8.0, 74, 2.0],
+]
+
+[music.title_hits]
+
+[music.mix]
+
+[music.theme_options]
+
+[picture]
+shard_seed = 271
+fx_seed = 34
+
+[picture.title_lines]
+
+[captions]
+caption = "The brass section pecking order 🎺📯 Comment the next match-up 👇"
+instagram = ""
+tiktok = ""
+shorts = []

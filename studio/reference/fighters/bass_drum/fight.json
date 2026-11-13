@@ -552,9 +552,7 @@
   "why": "the lowest seed with FLUTE in the left corner winning (so BASS DRUM is knocked out)",
   "winner": 0
  },
- "same_as": {
-  "fighters/bass_drum/scenarios/plain_s7.bfrec": "studio/reference/fighters/bass_drum/left.bfrec"
- },
+ "same_as": {},
  "scenarios": [
   {
    "cache": ["fighters/bass_drum/scenarios/early_levels_s1.bfrec", "fighters/bass_drum/scenarios/early_levels_s2.bfrec", "fighters/bass_drum/scenarios/early_levels_s3.bfrec"],

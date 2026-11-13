@@ -398,9 +398,7 @@
   "why": "the lowest seed with FLUTE in the left corner winning (so BASSOON is knocked out)",
   "winner": 0
  },
- "same_as": {
-  "fighters/bassoon/scenarios/plain_s9.bfrec": "studio/reference/fighters/bassoon/left.bfrec"
- },
+ "same_as": {},
  "scenarios": [
   {
    "cache": ["fighters/bassoon/scenarios/early_levels_s1.bfrec", "fighters/bassoon/scenarios/early_levels_s2.bfrec", "fighters/bassoon/scenarios/early_levels_s3.bfrec"],
