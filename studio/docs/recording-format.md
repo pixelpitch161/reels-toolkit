@@ -2026,8 +2026,16 @@ meaning of each field, as 6.2 and 6.3 do for FLUTE and TROMBONE), from the lines
 <!-- kind:wrecking -->
 #### `wrecking` (weapon kind of BARI SAX)
 
-`fight.py` 3594 to 3786. Not ported yet (milestone 4, Task 3 made its sockets): its port fills this section in (the
-meaning of each field, as 6.2 and 6.3 do for FLUTE and TROMBONE), from the lines below.
+`fight.py` 3594 to 3786 (BARI SAX's WRECKING BALL, ported in milestone 4 Task 9: `bf-sim/src/kinds/wrecking.rs`).
+
+`WRECK` is a `(frames, 2, 9)` float array, one row a ball: `[phase, h, L, bottom x, bottom z, hook x, hook z, t0,
+t1]`. `phase` is 0 between cycles (only `L` = the cable's length `blade_len` is set then), 1 the cable dropping, 2
+hoisted back, 3 the swing, 4 dropped on the ropes and slung back in; `h` the ball's height off the canvas (0 until the
+lift starts); `L` the cable's length (`blade_len` until the hook bites, then the swing's); the swing's bottom and the
+point the hook bit (the ball's own position until the hook bites); the phase's start and end times.
+`cable` (t_hook), `swing` (start x, z, end x, z, bottom x, z, L, theta, t0, t1, kind 0 / 1 SKANK), `smash` (x, z,
+speed 0 to 1), `wreck_out` (x0, z0, x1, z1, t0, t1), `wreck_in` (x, z); hits of kind `wreck` (sub 0). SKANK (ability
+kind `offbeat`) adds `skank` (until).
 
 **Record keys.**
 
@@ -2185,8 +2193,9 @@ this section in (the meaning of each field, as 6.2 and 6.3 do for FLUTE and TROM
 <!-- kind:offbeat -->
 #### `offbeat` (ability kind of BARI SAX)
 
-`fight.py` 2911 to 2914, 3666 to 3684. Not ported yet (milestone 4, Task 3 made its sockets): its port fills this
-section in (the meaning of each field, as 6.2 and 6.3 do for FLUTE and TROMBONE), from the lines below.
+`fight.py` 2911 to 2914, 3666 to 3684 (BARI SAX's SKANK, ported in milestone 4 Task 9, in
+`bf-sim/src/kinds/wrecking.rs`): `skank` (the time it lasts until); while it lasts a cable drops every bar on the
+weapon's `skank_off16`, its swing a `swing` event of kind 1.
 
 **Record keys.** None of its own.
 
@@ -2201,8 +2210,13 @@ section in (the meaning of each field, as 6.2 and 6.3 do for FLUTE and TROMBONE)
 <!-- kind:snap -->
 #### `snap` (ability kind of BARI SAX)
 
-`fight.py` 2919 to 2920, 3787 to 3856. Not ported yet (milestone 4, Task 3 made its sockets): its port fills this
-section in (the meaning of each field, as 6.2 and 6.3 do for FLUTE and TROMBONE), from the lines below.
+`fight.py` 2919 to 2920, 3787 to 3856 (BARI SAX's CABLE SNAP, ported in milestone 4 Task 9:
+`bf-sim/src/abilities/snap.rs`).
+
+`SNAP` is a `(frames, 2, 8)` float array, one row a ball: `[on, h, spot x, spot z, t0, t_snap, t_crash, radius]`, all
+zeros when no CABLE SNAP is under way: 1 while one is, the ball's height, the spot it falls on, its start, the snap and
+the crash, the crater's reach beyond contact. `snap_aim` (spot x, z, t_snap, t_crash, radius), `cable_snap`, `crater`
+(x, z, radius, hit 0 / 1); hits of kind `crash` (sub 0).
 
 **Record keys.**
 
