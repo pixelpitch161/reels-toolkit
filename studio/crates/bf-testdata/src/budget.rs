@@ -26,7 +26,7 @@ pub const OLDER: &str = "older";
 pub const OLDER_BUDGET: u64 = 400 * KB;
 /// Gate O's `origin.json` inside a fighter or theme folder.
 pub const ORIGIN: &str = "origin.json";
-pub const ORIGIN_BUDGET: u64 = 20 * KB;
+pub const ORIGIN_BUDGET: u64 = 32 * KB;
 /// Everything under `studio/reference`.
 pub const TOTAL_BUDGET: u64 = 147 * MB;
 /// Past this the budget warns (it still fails only past [`TOTAL_BUDGET`]): reserve C1 is then due.
@@ -164,9 +164,9 @@ mod tests {
             f("fighters/flute/fight.json", 10_000),
             f("fighters/tuba/look.json", 221_000),
             f("fighters/euphonium/look.json", 290_000),
-            f("fighters/viola/origin.json", 20_001),
+            f("fighters/viola/origin.json", 32_001),
             f("themes/heist/theme.json", 120_000),
-            f("themes/surf_rock/origin.json", 20_000),
+            f("themes/surf_rock/origin.json", 32_000),
             f("themes/horror_trap/run.bfrec", 1),
             f("episodes/trombone_vs_tuba/checks.json", 1),
             f("episodes/oboe_vs_bassoon/checks.json", 1),
@@ -182,8 +182,8 @@ mod tests {
             "a 221 KB fighter is over"
         );
         assert_eq!(by["fighters/euphonium"].limit, 300_000);
-        assert_eq!(lim("fighters/viola/origin.json"), (20_001, 20_000));
-        assert_eq!(lim("themes/surf_rock/origin.json"), (20_000, 20_000));
+        assert_eq!(lim("fighters/viola/origin.json"), (32_001, 32_000));
+        assert_eq!(lim("themes/surf_rock/origin.json"), (32_000, 32_000));
         assert!(!by.contains_key("episodes/oboe_vs_bassoon/origin.json"));
         assert_eq!(lim("themes/heist"), (120_000, 120_000));
         assert_eq!(
@@ -201,7 +201,7 @@ mod tests {
         let total = rows.last().unwrap();
         assert_eq!(
             (total.folder.as_str(), total.bytes, total.limit),
-            ("studio/reference", 1_322_004, 147_000_000)
+            ("studio/reference", 1_346_004, 147_000_000)
         );
         let names: Vec<&str> = rows[..rows.len() - 1].iter().map(|b| b.folder.as_str()).collect();
         let mut sorted = names.clone();

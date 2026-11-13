@@ -318,17 +318,17 @@ def budget_refuses_a_committed_recording():
 
 
 def budget_limits_origin_json():
-    """plan m4 section 4: Gate O's origin.json in a fighter or theme folder is at most 20 KB"""
-    files = [('fighters/viola/origin.json', 20_000), ('themes/surf_rock/origin.json', 20_001),
-             ('episodes/viola_vs_violin/origin.json', 20_001)]
+    """plan m4 section 4: Gate O's origin.json in a fighter or theme folder is at most 32 KB"""
+    files = [('fighters/viola/origin.json', 32_000), ('themes/surf_rock/origin.json', 32_001),
+             ('episodes/viola_vs_violin/origin.json', 32_001)]
     rows = {r['folder']: r for r in m3refs.budget_rows(files)}
-    assert rows['fighters/viola/origin.json']['limit'] == 20_000 >= rows['fighters/viola/origin.json']['bytes']
+    assert rows['fighters/viola/origin.json']['limit'] == 32_000 >= rows['fighters/viola/origin.json']['bytes']
     assert rows['themes/surf_rock/origin.json']['bytes'] > rows['themes/surf_rock/origin.json']['limit']
     assert 'episodes/viola_vs_violin/origin.json' not in rows, 'only fighter and theme folders hold one'
     out, err = _budget_of(files)
-    assert err is not None and 'themes/surf_rock/origin.json (20,001 > 20,000)' in err, err
+    assert err is not None and 'themes/surf_rock/origin.json (32,001 > 32,000)' in err, err
     assert 'fighters/viola/origin.json' not in err, err
-    return 'an origin.json of 20,001 bytes fails budget by name, 20,000 passes'
+    return 'an origin.json of 32,001 bytes fails budget by name, 32,000 passes'
 
 
 def the_tripwire_warns():

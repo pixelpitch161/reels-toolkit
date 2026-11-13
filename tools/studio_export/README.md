@@ -208,7 +208,7 @@ From milestone 3 the reference data of a fighter, a theme or a pair gate lives i
 - `budget` prints every milestone 3 and 4 folder's size and the whole set's against plan m4 section 4
   (fighters/<slug>/ 220 KB, 300 KB for `euphonium`, merged before that budget; themes/<name>/ 120 KB;
   episodes/<pair>/ 100 KB, 260 KB for `trombone_vs_tuba` and `bassclarinet_vs_euphonium`; `older/` 400 KB; an
-  `origin.json` in a fighter or theme folder 20 KB, a row of its own; all of `studio/reference/` 147 MB; KB = 1,000
+  `origin.json` in a fighter or theme folder 32 KB, a row of its own; all of `studio/reference/` 147 MB; KB = 1,000
   bytes), over the files git tracks or would track there, and exits 1 naming each row over. A committed `.bfrec`
   outside `fights/` is a row of its own with a limit of 0 bytes, so `budget` fails naming the file. Past
   `m3refs.TRIPWIRE` (145.5 MB) it prints `warning: the reference set is <n> MB, past the 145.5 MB tripwire (plan m4

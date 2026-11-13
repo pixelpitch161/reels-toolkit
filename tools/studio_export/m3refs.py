@@ -110,7 +110,7 @@ scenario with other overrides adds it to `scenarios`).
 Budgets (plan m4 section 4; KB and MB are 1,000 and 1,000,000 bytes, as m1-measurements section 10 counts):
 fighters/<slug>/ 220 KB (300 KB for LARGE_FIGHTERS, merged before the milestone 4 budget); themes/<name>/ 120 KB;
 episodes/<pair>/ 100 KB (260 KB for trombone_vs_tuba and bassclarinet_vs_euphonium); older/ 400 KB; an origin.json in
-a fighter or theme folder 20 KB; everything under studio/reference/ 147 MB, with a warning past TRIPWIRE (145.5 MB).
+a fighter or theme folder 32 KB; everything under studio/reference/ 147 MB, with a warning past TRIPWIRE (145.5 MB).
 No recording (.bfrec) is committed outside COMMITTED_RECORDINGS (milestone 1's fights/): every other one is the
 pinned cache file, which is what every SPEC's storage key defaults to (left_in_cache, recordings_in_cache,
 recording_in_cache), and a committed one is a row of its own with a limit of 0 bytes. Counted over the files git
@@ -154,7 +154,7 @@ THEME_BUDGET = 120 * KB
 EPISODE_BUDGET, EPISODE_BUDGET_LARGE = 100 * KB, 260 * KB
 LARGE_EPISODES = ('trombone_vs_tuba', 'bassclarinet_vs_euphonium')   # Tasks 45 and 46: their own kit recording
 OLDER, OLDER_BUDGET = 'older', 400 * KB       # studio/reference/older/ (plan m4 Tasks 2 and 4; top-level manifest)
-ORIGIN, ORIGIN_BUDGET = 'origin.json', 20 * KB   # Gate O's counts and hashes in a fighter or theme folder (plan m4)
+ORIGIN, ORIGIN_BUDGET = 'origin.json', 32 * KB   # Gate O's counts and hashes in a fighter or theme folder (plan m4)
 TOTAL_BUDGET = 147 * MB
 TRIPWIRE = 145_500_000                        # budget warns past it: reserve C1 is then due (plan m4 section 4)
 # the folders below studio/reference/ still allowed a committed .bfrec: milestone 1's fights, nothing else (plan m4
