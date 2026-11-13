@@ -121,6 +121,51 @@ What it does, every part in a fresh process (three at a time):
    episode's `audio.py`, both taken as placed, before the master (the master is the series' own in the kit), sample
    for sample in float64 over the window, against the -120 dBFS bar.
 
+### Shared buses: `silence`
+
+A fighter's part often lands on buses it shares with the bed and the other fighter (`fx`, `bass`, `solo`). To gate
+them, give the spec `silence`: exact text patches of a **separate scratch copy the stems come from** (`other` +
+`silence`, a folder of its own; the pictures never see them) that remove every placement on those buses but the
+fighter's own (the bed's, the other fighter's, the shared events': ropes, roar, whooshes, caption thuds). Each patch
+must match once, else the gate stops before any part runs, naming it (`Gate O: X: silence patch 1 (audio.py) matches
+4 times, not once: ...`). The kit side then keeps only the module Sound's own placements on `buses` (`silence_kit`,
+on by default with `silence`; `False` turns it off): `Mix.place` is wrapped while that Sound's methods run (play,
+count_in, fall_apart, stinger, solo, reassemble, last_bar, any hook or helper), and a placement made through `M.bed`
+(even from the Sound) or by the score itself leaves the bus silent. Name the shared buses in `buses` beside its own.
+A worked patch (keep the fighter's own lines by number, one replaced line so the numbers stay as delivered):
+
+```python
+KEEP = (400, 455, 468)        # #35 audio.py: the ORGAN's own fx placements
+silence=[('audio.py', "    mix = A.Mix(T.DUR + 4.0)\n",
+          "    mix = A.Mix(T.DUR + 4.0); _place = mix.place; mix.place = lambda bus, *a, **kw: mix.bus(bus) if bus == "
+          f"'fx' and sys._getframe(1).f_lineno not in {KEEP!r} else _place(bus, *a, **kw)\n")],
+buses=['organ', 'solo', 'fx'],
+```
+
+(`unit_checks/origin_checks.py` runs exactly this: fx bit-identical with the ORGAN winning and losing.)
+
+### Several fights: `fights`
+
+One seed shows the fighter either winning (stinger, solo, solo rings) or losing (shards, K.O. spray, fall-apart,
+reassembly). Prove both with `fights`, each a seed of the same episode config:
+
+```python
+origin=dict(episode=..., config=..., other=..., layers=..., harness=..., silence=...,
+            fights=[dict(seed=237, buses=['organ', 'solo', 'fx']),                   # it wins: 24 frames
+                    dict(seed=11, frames=12, buses=['organ', 'fx'])])                # it loses (no solo of its own)
+```
+
+A fight takes `seed`, `frames`, `layers`, `other`, `harness`, `buses`, `window`, `exceptions` and `config` (a dict
+merged over the spec's) over the spec's own values. Each fight must reproduce the replay guard's line on both sides
+(the kit config gets the fight's `SEED`; a named kit config gets a `SEED =` line appended); every scratch copy of a
+fight whose seed is not the episode's `seed.txt` has that seed written into its `seed.txt` (in a folder of its own),
+so the episode's `render.py`, `sim.load()` and `audio.py` all run that fight. The **first fight needs at least 24
+frames; each later one at least 12**, chosen (or listed) for what the first cannot show: when the first is a win, the
+second's frames are its shards, K.O. spray, fall-apart and reassembly (`choose_frames` puts those first for a loss).
+A failure names the fight: `Gate O: ORGAN fight 2 (seed 11) frame 1440 (t = 48.000 s) ...`. Find a seed for the
+other outcome by running the kit config's `story.run_seed` over a few seeds (any seed with a K.O. will do; the
+episode's own `seed_search.py` ranking does not matter here).
+
 ### Reading a failure
 
 A failing frame stops the gate with one line, for example:
@@ -148,13 +193,22 @@ the episode [0, -24, -25], the kit [-40, -24, -25] (on: episode [255, 231, 230],
 
 ### What goes into `origin.json`
 
-`studio/reference/fighters/<slug>/origin.json` (committed; at most 20 KB, a `budget` row of its own): the episode and
+`studio/reference/fighters/<slug>/origin.json` (committed; at most 32 KB, ruling M4-R7, a `budget` row of its own): the episode and
 the commit its folder is at, the seed, the kit config (its text and SHA-256), the fight line (equal on both sides), the
 window, every frame compared (its time, the SHA-256 of the contribution, which is equal on both sides, and of the four
 pictures, and whether the whole frames were equal too), every patch of `other` and `layers` and every harness entry
 (the SHA-256 of each text), the state keys compared, each bus's peak difference ('bit-identical' or its dBFS, over the
 window and over the whole buffer), every exception with its ruling and reason, and the SHA-256 of the origin spec
 (`m3refs.fighter_refs` checks it is the spec's). The pictures and stems stay in the cache; only hashes are committed.
+With `silence`, a `silence` entry lists its patches (each text's SHA-256), their joint SHA-256 and whether the kit side
+kept only the module's own placements. With `fights`, the episode, config (the first fight's text), `layers`, `other`
+and `harness` are written once and each fight gets a section in `fights`: its seed, line, winner and `wins`, K.O. time,
+window, config SHA-256 (and the lines that differ from the first's), state keys, buses with their peak differences,
+exceptions, the layer names (full patch lists only where a fight overrides them), and its frames as compact rows
+(`frame_columns`: frame, t, the contribution's SHA-256 and the four pictures', whole frame equal; a kit picture's hash
+is `"="` when it equals the episode's same picture's), one line each. #35's ORGAN (22 + 11 patch groups) with 24 + 14
+frames is 22.8 KB (two fights of 24 about 25 KB); if a longer patch list would pass the 32 KB, give the second fight
+12-16 frames chosen for what the first cannot show.
 
 **Checkpoint:** the controller reviews the module and its `origin.json` before Step 1 (plan m4 section 7, "Gate O
 checkpoint"). Then follow `porting-a-fighter.md` from step 1, against the module, with Template F''s additions: the
@@ -197,4 +251,7 @@ they were ported from, and on one made unfaithful at run time:
 
 Its hashes and failure lines are in `studio/reference/older/selfproof/` (`organ.json`, `brass_trailer.json`,
 `summary.json`). `python -m tools.studio_export.unit_checks.origin_checks` checks the scratch copy, the refusals, an
-episode run leaving the kit folders clean, `install()`, and the two mutations (about 1.5 minutes).
+episode run leaving the kit folders clean, `install()`, the two mutations, and the two optional keys: a `silence`
+patch matching twice or never, a silenced `fx` bit-identical and a one-sample change inside the silenced copy failing,
+a two-fight spec (the ORGAN winning and losing) writing both sections and a one-pixel change in its second fight
+failing, naming that fight and frame (12 to 30 minutes, with the other lanes running).
