@@ -5,9 +5,10 @@
 //! Nothing passes for want of cases: a file with no case fails, a file that has no case for one of the functions
 //! it is there to prove fails, and so does a vector file in the folder that no test here walks.
 //! The bars are the plan's: second-order sections within 1e-12 relative; the filters, the resampler, `interp`,
-//! `percentile`, `convolve` and every generator below -120 dBFS of difference (`20 log10(max |a - b|) < -120`);
+//! `percentile` and every generator below -120 dBFS of difference (`20 log10(max |a - b|) < -120`);
 //! `fftconvolve` and `reverb` below -100 dBFS. Results that are plain IEEE arithmetic in the library's order must
-//! have the same bits: the filters on scipy's own coefficients, `upfirdn` on scipy's own filter, running sums,
+//! have the same bits: `np.convolve` and the BLAS dot product under it (to the sign of a zero), the filters on scipy's
+//! own coefficients, `upfirdn` on scipy's own filter, running sums,
 //! numpy's pairwise sums, `linspace`, `interp`, `percentile` and the 16-bit conversion. `find_peaks` must give
 //! scipy's peaks; where two equal peaks are too close, which one scipy keeps hangs on numpy's sort, and the test
 //! then asks that some order of those equal peaks gives scipy's peaks (see `find_peaks_case`). `ufuncs` measures
@@ -218,8 +219,9 @@ fn a_function_without_a_case_fails() {
 }
 
 /// The vector files under `studio/reference/dsp`: each has one test here that walks all of its cases.
-const FILES: [&str; 7] = [
+const FILES: [&str; 8] = [
     "butter",
+    "convolve",
     "fftconvolve",
     "filters",
     "generators",
@@ -526,6 +528,45 @@ fn resample() {
     ]);
 }
 
+// ---------------------------------------------------------------- convolve
+
+/// Every bit, the sign of a zero too.
+fn bits(x: &[f64]) -> Vec<u64> {
+    x.iter().map(|v| v.to_bits()).collect()
+}
+
+#[test]
+fn convolve() {
+    let v = open("convolve");
+    let mut t = Tally::new("convolve", Unit::Db);
+    for case in &v.index.cases {
+        let id = case.id.as_str();
+        let want = v.array(case, "out").f64();
+        let get = |role: &str| v.array(case, role).f64();
+        let (function, got) = match case.call.as_str() {
+            "np.dot(x, y)" => {
+                assert_eq!(
+                    want,
+                    [hex_arg(extra_by_id(&v, case, "result"))],
+                    "{id}: `result` and `out`"
+                );
+                ("blas_dot", vec![dsp::blas_dot(get("x"), get("y"))])
+            }
+            "np.convolve(a, v, 'same')" => ("convolve_same", dsp::convolve_same(get("a"), get("v"))),
+            "np.convolve(a, v)" => ("convolve_full", dsp::convolve_full(get("a"), get("v"))),
+            other => {
+                t.fail(id, other, "a call this test does not know".into());
+                continue;
+            }
+        };
+        t.same(id, function, &got, want);
+        if got.len() == want.len() && bits(&got) != bits(want) {
+            t.fail(id, function, "a zero of the other sign".into());
+        }
+    }
+    t.finish(&["blas_dot", "convolve_same", "convolve_full"]);
+}
+
 // ---------------------------------------------------------------- fftconvolve
 
 #[test]
@@ -596,7 +637,7 @@ fn numpy() {
             }
             "np.convolve(f ** 2, np.ones(w) / w, 'same')" => {
                 let squared: Vec<f64> = get("f").iter().map(|s| s * s).collect();
-                t.db(id, "convolve same", &dsp::convolve_same(&squared, get("k")), want, DB);
+                t.same(id, "convolve same", &dsp::convolve_same(&squared, get("k")), want);
             }
             "np.cumsum(f)" => t.same(id, "cumsum", &dsp::cumsum(get("f")), want),
             "np.linspace(a, b, n)" => {
