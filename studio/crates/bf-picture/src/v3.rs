@@ -1,10 +1,12 @@
 //! Three-component vectors as numpy computes them, for the 3D modules (`camera`, `geometry`, `lighting`,
 //! `shadows`).
 //!
-//! Each function is one numpy expression with numpy's operation order. Two of them cannot be bit-identical to the
-//! reference PC: `np.dot`, `@` and `np.linalg.norm` of a 1-D array go through OpenBLAS, whose kernels are fused
-//! (`fma(c, c, fma(b, b, a * a))`), and the Studio does not fuse. [`dot`] and [`norm`] are the plain sums, so
-//! they can differ from Python's in the last bit; everything else here is exact.
+//! Each function is one numpy expression with numpy's operation order. `np.dot`, `@` and `np.linalg.norm` of a 1-D
+//! array go through OpenBLAS, whose kernels are fused (`fma(c, c, fma(b, b, a * a))`): [`dot_blas`],
+//! [`dot_blas_mv`] and [`norm_blas`] are those kernels to the bit. [`dot`] and [`norm`] are the plain sums, so where
+//! they stand for a BLAS product they can differ from Python's in the last bit; everything else here is exact.
+
+use bf_core::dmath;
 
 /// A point or a vector: `[x, y, z]`.
 pub type V3 = [f64; 3];
@@ -38,6 +40,28 @@ pub(crate) fn neg(a: V3) -> V3 {
 /// documentation.
 pub(crate) fn dot(a: V3, b: V3) -> f64 {
     a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
+}
+
+/// One element of a numpy matrix product with three terms as OpenBLAS's matrix-matrix kernel computes it on the
+/// reference PC: the first product rounded, the other two added with one rounding each, `fma(a2, b2, fma(a1, b1,
+/// a0 * b0))`. numpy takes this kernel for `X @ M.T` with two rows or more, for `X @ M` with any number of rows (one
+/// included), and for `np.dot(a, b)` / `np.linalg.norm(a)` of 3-vectors (measured there on random values: every
+/// element equal, ruling M3-R30).
+pub(crate) fn dot_blas(a: V3, b: V3) -> f64 {
+    dmath::fma(a[2], b[2], dmath::fma(a[1], b[1], a[0] * b[0]))
+}
+
+/// One element of a numpy matrix-vector product as OpenBLAS's matrix-vector kernel computes it on the reference PC:
+/// the second product is the rounded one, `fma(a2, b2, fma(a0, b0, a1 * b1))`. numpy takes this kernel for `M @ v`
+/// and for `x @ M.T` when `x` is one row (`(3,)` or `(1, 3)`, measured as for [`dot_blas`]).
+pub(crate) fn dot_blas_mv(a: V3, b: V3) -> f64 {
+    dmath::fma(a[2], b[2], dmath::fma(a[0], b[0], a[1] * b[1]))
+}
+
+/// `np.linalg.norm(a)` of one 3-vector: the square root of the fused [`dot_blas`]`(a, a)` (equal on 200,000 of
+/// 200,000 random vectors on the reference PC; the plain [`norm`] on about 89 %).
+pub(crate) fn norm_blas(a: V3) -> f64 {
+    dot_blas(a, a).sqrt()
 }
 
 /// The length of `a`: the square root of [`dot`]`(a, a)`, a plain sum. It stands for two numpy expressions:

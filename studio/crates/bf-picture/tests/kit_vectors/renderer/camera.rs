@@ -1,5 +1,5 @@
-//! `reelkit.camera` (`picture_kit/camera.npz`): the camera's fields and every projection are float results (a
-//! dot product or a tangent is in each), `clip_near` is exact.
+//! `reelkit.camera` (`picture_kit/camera.npz`): every field and every projection to the bit. The camera's norms and
+//! matrix products are numpy's fused BLAS kernels (`v3::dot_blas`, `dot_blas_mv`, `norm_blas`).
 
 use super::*;
 use bf_picture::camera::{self, Key};
@@ -21,10 +21,10 @@ fn cam_fields(cam: &Cam, v: &Vectors, case: &Case) -> Found {
     let f = |role: &str| v.array(case, role).f64();
     let s = f("scalars");
     worst_of(&[
-        close_rows(&cam.pos, f("pos"), 3),
-        close_rows(&cam.m.concat(), f("M"), 3),
+        exact(&cam.pos, f("pos")),
+        exact(&cam.m.concat(), f("M")),
         exact(&cam.target, f("target")),
-        close(&[cam.f], &s[..1]),
+        exact(&[cam.f], &s[..1]),
         exact(&[cam.cx, cam.cy, cam.near], &s[1..]),
     ])
 }
@@ -36,13 +36,13 @@ pub(super) fn run(v: &Vectors, case: &Case) -> Found {
     match case.call.as_str() {
         "Cam(**cam)" => {
             let cam = cam_of(args)?;
-            worst_of(&[cam_fields(&cam, v, case), close_rows(&cam.view(), f("view"), 3)])
+            worst_of(&[cam_fields(&cam, v, case), exact(&cam.view(), f("view"))])
         }
-        "Cam(**cam).to_cam(P)" => close_rows(&flat3(&cam_of(args)?.to_cam(&rows3(arr("P"))?)), f("out"), 3),
-        "Cam(**cam).wp(P)" => close_rows(&flat2(&cam_of(args)?.wp(&rows3(arr("P"))?)), f("out"), 2),
-        "Cam(**cam).depth(P)" => close(&cam_of(args)?.depth(&rows3(arr("P"))?), f("out")),
-        "Cam(**cam).proj(Pc)" => close_rows(&flat2(&cam_of(args)?.proj(&rows3(arr("Pc"))?)), f("out"), 2),
-        "Cam(**cam).pixel_rays(xs, ys)" => close_rows(&flat3(&cam_of(args)?.pixel_rays(f("xs"), f("ys"))), f("out"), 3),
+        "Cam(**cam).to_cam(P)" => exact(&flat3(&cam_of(args)?.to_cam(&rows3(arr("P"))?)), f("out")),
+        "Cam(**cam).wp(P)" => exact(&flat2(&cam_of(args)?.wp(&rows3(arr("P"))?)), f("out")),
+        "Cam(**cam).depth(P)" => exact(&cam_of(args)?.depth(&rows3(arr("P"))?), f("out")),
+        "Cam(**cam).proj(Pc)" => exact(&flat2(&cam_of(args)?.proj(&rows3(arr("Pc"))?)), f("out")),
+        "Cam(**cam).pixel_rays(xs, ys)" => exact(&flat3(&cam_of(args)?.pixel_rays(f("xs"), f("ys"))), f("out")),
         "Cam(**cam).ground_hit(xs, ys, y0)" => {
             let (x, z, t) = cam_of(args)?.ground_hit(f("xs"), f("ys"), float_arg(args, "y0")?);
             let zip = |a: &[f64], b: &[f64]| -> Vec<f64> { a.iter().zip(b).flat_map(|(&p, &q)| [p, q]).collect() };
@@ -54,7 +54,7 @@ pub(super) fn run(v: &Vectors, case: &Case) -> Found {
                     f("X").len()
                 ));
             }
-            worst_of(&[close_rows(&zip(&x, &z), &zip(f("X"), f("Z")), 2), close(&t, f("t"))])
+            worst_of(&[exact(&zip(&x, &z), &zip(f("X"), f("Z"))), exact(&t, f("t"))])
         }
         "reelkit.camera.clip_near(Pc, near)" => {
             let got = camera::clip_near(&rows3(arr("Pc"))?, float_arg(args, "near")?);
