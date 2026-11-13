@@ -1,0 +1,76 @@
+format = 2
+app_version = "0.1.0"
+fighters = ["BASS DRUM", "TUBA"]
+arena = "ring"
+handicap = [0.86, 1.0]
+dmg_scale = 0.66
+tempo_bpm = 126.0
+seed = 132
+
+[pair_rules]
+swallow_rollers = true
+
+[music]
+theme = "dark_drumline"
+arrangement = "classic"
+key = "C"
+scale = "minor"
+chords_intro = ["Cm", "G"]
+chord_loop = ["Cm", "Ab", "Fm", "G"]
+chords_tail = ["Ab", "G"]
+music_seed = 1
+
+[music.roles]
+"BASS DRUM" = "drums"
+TUBA = "bass"
+
+[music.lines]
+TUBA = [
+    36, 43, 36, 43, 36, 43, 36, 43,
+    44, 39, 44, 39, 44, 39, 44, 39,
+    41, 48, 41, 48, 41, 48, 41, 48,
+    43, 50, 43, 50, 43, 50, 47, 50,
+]
+
+[music.solos]
+"BASS DRUM" = [
+    [0.0, 36, 1.0], [1.0, 36, 0.5], [1.5, 36, 0.5], [2.0, 12, 1.0],
+    [3.0, 36, 1.0], [4.0, 36, 0.5], [4.5, 36, 0.25], [4.75, 36, 0.25],
+    [5.0, 36, 1.0], [6.0, 12, 1.5], [7.5, 36, 1.0], [8.5, 36, 0.5],
+    [9.0, 36, 1.0], [10.0, 12, 1.0], [11.0, 36, 0.5], [11.5, 36, 0.5],
+    [12.0, 36, 2.0],
+]
+TUBA = [
+    [0.0, 36, 0.5], [0.5, 43, 0.5], [1.0, 48, 0.5], [1.5, 43, 0.5],
+    [2.0, 46, 0.5], [2.5, 44, 0.5], [3.0, 43, 1.0], [4.0, 41, 0.5],
+    [4.5, 44, 0.5], [5.0, 47, 0.5], [5.5, 50, 0.5], [6.0, 48, 1.5],
+    [7.5, 43, 0.5], [8.0, 36, 0.5], [8.5, 43, 0.5], [9.0, 44, 0.5],
+    [9.5, 43, 0.5], [10.0, 41, 0.5], [10.5, 43, 0.5], [11.0, 47, 0.5],
+    [11.5, 50, 0.5], [12.0, 48, 2.0],
+]
+
+[music.title_hits]
+"BASS DRUM" = [36]
+TUBA = [36, 43, 36, 43]
+
+[music.mix]
+solo = [2.7, 0.4]
+
+[music.theme_options]
+after_ko = true
+bass_drums = false
+
+[picture]
+shard_seed = 271
+
+[picture.title_lines]
+
+[captions]
+caption = "Who owns the low end? 🥁📯 Comment the next match-up 👇"
+instagram = "#ballfight #bassdrum #tuba #marchingband #drumline #band #percussion #brass #musicmemes #pixelart #lowpoly #satisfying"
+tiktok = "#fyp #ballfight #bassdrum #tuba #marchingband #bandtok #drumline #musictok #pixelart #satisfying"
+shorts = [
+    "Bass Drum vs Tuba: who owns the BOOM?",
+    "The bass drum rolls like a steamroller, the tuba swallows and spits - every hit in key over a dark drumline. Who wins?",
+    "#shorts #ballfight #bassdrum #tuba #marchingband #music #pixelart",
+]
