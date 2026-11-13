@@ -671,9 +671,11 @@ def checks_child(cfg, rec_path):
     F.check_recording(M.P, rec_path)
     levels = M.A.section_levels                       # main() prints each span's level after writing the wav:
     M.A.section_levels = lambda path, spans: levels(path, [(a, b) for a, b in spans if int(b * SR) > int(a * SR)])
-    with contextlib.redirect_stdout(io.StringIO()):   # an empty span (a solo the reassembly leaves no time for)
-        wav = M.main()                                # is left out of that print, which nothing reads
-    M.A.section_levels = levels
+    try:
+        with contextlib.redirect_stdout(io.StringIO()):   # an empty span (a solo the reassembly leaves no time for)
+            wav = M.main()                                # is left out of that print, which nothing reads
+    finally:
+        M.A.section_levels = levels
     with open(wav, 'rb') as fh:
         wav_sha = sha_bytes(fh.read())
     from ballfight.kit import checks as KC
