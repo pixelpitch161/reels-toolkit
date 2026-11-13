@@ -2044,6 +2044,9 @@ def episode_drift(folder, episode=None):
 def drift(folder):
     """what a cache run of the folder would find changed that can be told without the kit ([] when nothing)"""
     area = check_folder(folder).split('/')[0]
+    if folder == 'episodes/crossovers':               # Task 59's six crossovers: their own export's drift
+        from . import crossovers
+        return crossovers.drift(folder)
     return dict(fighters=fighter_drift, themes=theme_drift, episodes=episode_drift)[area](folder)
 
 
