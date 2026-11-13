@@ -21,11 +21,11 @@ use bf_picture::config;
 use bf_picture::fx::{Emit, Mark, MarkKind};
 use bf_picture::img::Img;
 use bf_picture::look::{CanvasCtx, DefaultLook, DrawnBall, FrameCtx, Fx, GlassPx, Look, Payload, Phase, Pic, Spark};
+use bf_picture::np;
 use bf_picture::raster::Frame;
 use bf_picture::ring::state::{BallState, Wave};
 use bf_picture::ring::{self, PictureCtx, layer_blend, screen};
 use bf_picture::scene::{self, R_BALL as R};
-use bf_picture::np;
 
 use crate::fighters::shared::older::{blend_into, mask_of_lines};
 use crate::fighters::shared::reeds::Num;
@@ -267,7 +267,8 @@ impl Look for BagpipesLook {
             return;
         };
         st.extra.insert("phase".into(), ph);
-        st.extra.insert("infl".into(), (st.scale - 1.0) / py_max(1e-6, c.s - 1.0));
+        st.extra
+            .insert("infl".into(), (st.scale - 1.0) / py_max(1e-6, c.s - 1.0));
         if ph == SWELL {
             // a shiver just before it lets go
             let u = (tc - c.t0) / py_max(1e-6, c.t_rel - c.t0);
@@ -287,7 +288,11 @@ impl Look for BagpipesLook {
             return;
         }
         let on = st.extra.get("phase").is_some_and(|&ph| ph != 0.0);
-        let infl = if on { st.extra.get("infl").copied().unwrap_or(0.0) } else { 0.0 };
+        let infl = if on {
+            st.extra.get("infl").copied().unwrap_or(0.0)
+        } else {
+            0.0
+        };
         if infl > 0.02 {
             let tart = sc(tartan_rgb(px.dx, px.dy, 1.0 + 0.5 * infl), 0.62 + 0.42 * px.band);
             let w_t = np::clip(infl * 1.15, 0.0, 0.92) * (0.75 + 0.25 * px.nz);
@@ -385,7 +390,8 @@ impl Look for BagpipesLook {
                     }
                     "shockwave" => {
                         fx.bu.add(t0, pos, c, 1.0, None, true);
-                        fx.fl.add(t0, scene::to_world(x, z, 1.0), sc(c, 0.9), 1.6, 0.7, 0.03, 0.3, 0.0);
+                        fx.fl
+                            .add(t0, scene::to_world(x, z, 1.0), sc(c, 0.9), 1.6, 0.7, 0.03, 0.3, 0.0);
                     }
                     _ => {}
                 }
@@ -423,7 +429,8 @@ impl Look for BagpipesLook {
                         ..Emit::default()
                     };
                     fx.pa.emit(t0, scene::to_world(q[0], q[1], R), "puffs", &puffs);
-                    fx.fl.add(t0, scene::to_world(q[0], q[1], 1.2), p.col[k], 2.6, 1.1, 0.03, 0.5, 0.0);
+                    fx.fl
+                        .add(t0, scene::to_world(q[0], q[1], 1.2), p.col[k], 2.6, 1.1, 0.03, 0.5, 0.0);
                     fx.mk.add(
                         t0,
                         Mark {
@@ -435,7 +442,8 @@ impl Look for BagpipesLook {
                         },
                     );
                 } else if e.s(4) == "shockwave" {
-                    fx.fl.add(t0, scene::to_world(q[0], q[1], 1.0), p.col[k], 2.2, 0.8, 0.03, 0.4, 0.0);
+                    fx.fl
+                        .add(t0, scene::to_world(q[0], q[1], 1.0), p.col[k], 2.2, 0.8, 0.03, 0.4, 0.0);
                     let shreds = Emit {
                         n: Some(10),
                         spread: Some(180.0),
@@ -473,7 +481,8 @@ impl Look for BagpipesLook {
                     vel: [a[0] - b[0], a[1] - b[1], a[2] - b[2]],
                     ..Emit::default()
                 };
-                fx.pa.emit(tj, scene::to_world(back[0], back[1], R * 0.8), "puffs", &puff);
+                fx.pa
+                    .emit(tj, scene::to_world(back[0], back[1], R * 0.8), "puffs", &puff);
             }
         }
     }
@@ -532,7 +541,12 @@ impl Look for BagpipesLook {
             return;
         }
         let bayer = config::bayer_full();
-        for w in p.run.waves(c.i).iter().filter(|w| w.owner == self.k && w.kind == "shockwave") {
+        for w in p
+            .run
+            .waves(c.i)
+            .iter()
+            .filter(|w| w.owner == self.k && w.kind == "shockwave")
+        {
             let k_ = 1.0 - w.r / w.rmax;
             for (j, out) in col.iter_mut().enumerate() {
                 let b = bayer.px(c.xs[j], c.ys[j])[0];
@@ -638,8 +652,14 @@ impl Look for BagpipesLook {
                 let s = size;
                 let tri = [
                     [sx + d[0] * s, sz + d[1] * s],
-                    [sx - d[0] * s * 0.7 + nn[0] * s * 0.8, sz - d[1] * s * 0.7 + nn[1] * s * 0.8],
-                    [sx - d[0] * s * 0.4 - nn[0] * s * 0.7, sz - d[1] * s * 0.4 - nn[1] * s * 0.7],
+                    [
+                        sx - d[0] * s * 0.7 + nn[0] * s * 0.8,
+                        sz - d[1] * s * 0.7 + nn[1] * s * 0.8,
+                    ],
+                    [
+                        sx - d[0] * s * 0.4 - nn[0] * s * 0.7,
+                        sz - d[1] * s * 0.4 - nn[1] * s * 0.7,
+                    ],
                 ];
                 let shade_k = 0.75 + 0.25 * dmath::cos(rot * 2.0);
                 let col = col.map(|c| np::clip(c * shade_k, 0.0, 255.0));

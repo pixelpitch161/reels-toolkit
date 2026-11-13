@@ -12,8 +12,8 @@
 //! drones' three, each in a bucket of its own), so two different frequencies never share a key and the cache is a
 //! pure function's: the port computes each table once per exact frequency.
 //!
-//! The noise is each note's own: `np.random.default_rng(seed)`, one `random()` for the chanter's phase (`seed = 7 idx
-//! + m`, here `m`), three for the drones' phases (`default_rng(len('ghb'))`). The series' shared noise stream is not
+//! The noise is each note's own: `np.random.default_rng(seed)`, one `random()` for the chanter's phase (`seed = 7 * idx
+//! plus m`, here `m`), three for the drones' phases (`default_rng(len('ghb'))`). The series' shared noise stream is not
 //! touched.
 
 use std::collections::HashMap;
@@ -113,7 +113,14 @@ type WtKey = (u64, u64, u64, u64, u64, u64);
 /// `k ** -tilt` with a formant bump, the even ones cut by `odd`, at the phases `_PH`, normalised to a peak of 1.
 pub fn wt(f: f64, tilt: f64, form: f64, fbw: f64, fgain: f64, odd: f64) -> Arc<Vec<f64>> {
     static MEMO: OnceLock<Mutex<HashMap<WtKey, Arc<Vec<f64>>>>> = OnceLock::new();
-    let key = (f.to_bits(), tilt.to_bits(), form.to_bits(), fbw.to_bits(), fgain.to_bits(), odd.to_bits());
+    let key = (
+        f.to_bits(),
+        tilt.to_bits(),
+        form.to_bits(),
+        fbw.to_bits(),
+        fgain.to_bits(),
+        odd.to_bits(),
+    );
     let memo = MEMO.get_or_init(Default::default);
     if let Some(tb) = memo.lock().expect("the wavetable memo").get(&key) {
         return tb.clone();
@@ -122,7 +129,7 @@ pub fn wt(f: f64, tilt: f64, form: f64, fbw: f64, fgain: f64, odd: f64) -> Arc<V
     let kk = py_max(1.0, py_min(64.0, 11000.0 / f)) as usize;
     let ph = phases();
     let mut tb = vec![0.0; N_WT];
-    for j in 0..kk {
+    for (j, &phj) in ph.iter().enumerate().take(kk) {
         let k = (j + 1) as f64;
         let fk = k * f;
         // amp = k ** (-tilt) * (1 + fgain * np.exp(-((fk - form) / fbw) ** 2))
@@ -135,7 +142,7 @@ pub fn wt(f: f64, tilt: f64, form: f64, fbw: f64, fgain: f64, odd: f64) -> Arc<V
         let w = 2.0 * PI * k;
         for (i, o) in tb.iter_mut().enumerate() {
             let x = i as f64 / N_WT as f64;
-            let row = amp * dmath::sin(w * x + ph[j]);
+            let row = amp * dmath::sin(w * x + phj);
             *o = if j == 0 { row } else { *o + row };
         }
     }
@@ -225,7 +232,14 @@ fn grace_for(m: f64) -> Option<f64> {
 /// `synth(fake, 0)` as `pp_bridge.voice` calls it: the chanter's note (`seed = 0 * 7 + m`) and, the event being the
 /// scene's first, the drones over the whole scene, added into the longer of the two; at 44,100 Hz.
 pub fn synth(midi: f64, vel: f64, dur: f64) -> Vec<f64> {
-    let x = chanter(pp::midi_hz(midi), dur, vel, &HIGHLAND, grace_for(midi), midi as i64 as u64);
+    let x = chanter(
+        pp::midi_hz(midi),
+        dur,
+        vel,
+        &HIGHLAND,
+        grace_for(midi),
+        midi as i64 as u64,
+    );
     let dr = drone_voice(SCENE_LEN - 0.0 + 0.03);
     let mut y = vec![0.0; x.len().max(dr.len())];
     for (o, v) in y.iter_mut().zip(&x) {

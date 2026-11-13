@@ -17,13 +17,13 @@ use bf_core::event::{Event, Value};
 use bf_core::py::{py_min, round_half_even};
 use bf_core::recording::Array;
 use bf_picture::scene::R_BALL as R;
+use bf_sound::SRF;
 use bf_sound::dsp;
 use bf_sound::mix::{Mix, Sig};
 use bf_sound::music::{MusicCtx, MusicError, noise_seed};
 use bf_sound::synth::{self, FILTER_O, THUD_SEED, WHOOSH_SEED, clip};
 use bf_sound::traits::{Bed, Played, Sound};
 use bf_sound::voice::pp;
-use bf_sound::SRF;
 
 use super::voice::{self as bag, GHB_DRONES, HIGHLAND, look_up};
 
@@ -188,9 +188,7 @@ pub fn squeal(dur: f64, f0: f64, t0: f64) -> Result<Vec<f64>, MusicError> {
     let tb = bag::wt(f0, tn.tilt, tn.form, tn.fbw, tn.fgain, tn.odd);
     let ph = dsp::cumsum(&f);
     let env: Vec<f64> = (0..n)
-        .map(|i| {
-            clip(t[i] / 0.02, 0.0, 1.0) * (1.0 - 0.55 * u[i]) * clip((dur + 0.05 - t[i]) / 0.05, 0.0, 1.0)
-        })
+        .map(|i| clip(t[i] / 0.02, 0.0, 1.0) * (1.0 - 0.55 * u[i]) * clip((dur + 0.05 - t[i]) / 0.05, 0.0, 1.0))
         .collect();
     let xe: Vec<f64> = (0..n).map(|i| look_up(&tb, ph[i] / SRF) * env[i]).collect();
     // air = A.bp(np.random.default_rng(int(t0 * 100)).normal(0, 1, n), 2000, 8000) * 0.35 * u
@@ -260,7 +258,10 @@ impl BagpipesSound {
     fn melody_at(&self, ctx: &MusicCtx, t: f64) -> Result<f64, MusicError> {
         match ctx.line_at(self.name(ctx), t)? {
             Some(m) => Ok(f64::from(m)),
-            None => Err(MusicError::new(H, format!("its line has a rest at {t} s (the chanter has no rest)"))),
+            None => Err(MusicError::new(
+                H,
+                format!("its line has a rest at {t} s (the chanter has no rest)"),
+            )),
         }
     }
 
@@ -442,7 +443,13 @@ impl Sound for BagpipesSound {
                 continue;
             }
             if e.kind == "hit" && matches!(how(e), "shockwave" | "wave") {
-                mix.place("fx", &Sig::Mono(synth::thud(0.45, 110.0, 40.0, THUD_SEED)), ctx.q16(t), 0.30, 0.0);
+                mix.place(
+                    "fx",
+                    &Sig::Mono(synth::thud(0.45, 110.0, 40.0, THUD_SEED)),
+                    ctx.q16(t),
+                    0.30,
+                    0.0,
+                );
             } else if e.kind == "ability" {
                 let tq = ctx.q16(t);
                 match e.s(3) {
@@ -461,7 +468,13 @@ impl Sound for BagpipesSound {
                             let x = self.tone(ctx, &chanter(m, s16 * 0.85, 0.95, j % 4 == 0), t, 1.0)?.0;
                             mix.place(&bus, &Sig::Mono(x), tq + j as f64 * s16, 0.22, 0.0);
                         }
-                        mix.place(CHOIR, &Sig::Mono(choir_o(&[57.0, 60.0, 64.0], 0.18, 0.01, 0.12)), tq, 0.14, 0.0);
+                        mix.place(
+                            CHOIR,
+                            &Sig::Mono(choir_o(&[57.0, 60.0, 64.0], 0.18, 0.01, 0.12)),
+                            tq,
+                            0.14,
+                            0.0,
+                        );
                     }
                     "BAG BURST" => {
                         // the bag pops, then deflates
@@ -475,7 +488,13 @@ impl Sound for BagpipesSound {
                         mix.place("fx", &Sig::Mono(pop), tq, 0.55, 0.0);
                         let df = deflate(1.8, pp::midi_hz(81.0), 160.0, 21);
                         mix.place(&bus, &Sig::Mono(df), tq + 0.03, 0.34, 0.0);
-                        mix.place("fx", &Sig::Mono(synth::thud(0.7, 100.0, 32.0, THUD_SEED)), tq, 0.45, 0.0);
+                        mix.place(
+                            "fx",
+                            &Sig::Mono(synth::thud(0.7, 100.0, 32.0, THUD_SEED)),
+                            tq,
+                            0.45,
+                            0.0,
+                        );
                     }
                     _ => {}
                 }
@@ -507,7 +526,13 @@ impl Sound for BagpipesSound {
                 break;
             }
             let dur = d * grid.beat * 0.95;
-            mix.place("solo", &Sig::Mono(chanter(f64::from(m), dur, 0.95, d >= 0.75)), ts, 0.46, 0.0);
+            mix.place(
+                "solo",
+                &Sig::Mono(chanter(f64::from(m), dur, 0.95, d >= 0.75)),
+                ts,
+                0.46,
+                0.0,
+            );
         }
         Ok(())
     }

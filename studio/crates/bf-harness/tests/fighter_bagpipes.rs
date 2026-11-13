@@ -85,7 +85,10 @@ fn contacts_against_a_swollen_bag() {
     }
     assert_eq!(fights.len(), 19 * 6, "19 kit fighters, three seeds a side");
     let none: Vec<&String> = swollen.iter().filter(|(_, n)| **n == 0).map(|(e, _)| e).collect();
-    assert!(none.is_empty(), "no hit of theirs on a swollen bag: {none:?} ({swollen:?})");
+    assert!(
+        none.is_empty(),
+        "no hit of theirs on a swollen bag: {none:?} ({swollen:?})"
+    );
 }
 
 /// The copy sweep (Template F'): EUPHONIUM against BAGPIPES, three seeds each side at the early levels and low turn:
@@ -105,14 +108,20 @@ fn copy_sweep() {
             rs.events.iter().filter(|e| e.kind == "copy").collect(),
             py.events.iter().filter(|e| e.kind == "copy").collect(),
         );
-        assert_eq!(a.len(), b.len(), "{group} {file}: the engine's copies {a:?}, the kit's {b:?}");
+        assert_eq!(
+            a.len(),
+            b.len(),
+            "{group} {file}: the engine's copies {a:?}, the kit's {b:?}"
+        );
         for (x, y) in a.iter().zip(&b) {
             assert!(same_event(x, y), "{group} {file}: the engine's {x:?}, the kit's {y:?}");
             kinds.push(y.s(4).to_string());
         }
     }
     assert!(
-        kinds.iter().any(|k| ["shockwave", "haste", "wave"].contains(&k.as_str())),
+        kinds
+            .iter()
+            .any(|k| ["shockwave", "haste", "wave"].contains(&k.as_str())),
         "IDENTITY CRISIS copied none of BAGPIPES's kinds: {kinds:?}"
     );
 }
