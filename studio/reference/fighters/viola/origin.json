@@ -1,0 +1,433 @@
+{
+ "about": "Gate O (plan m4 Task 2): VIOLA's reference kit module against projects/ballfight_viola_vs_violin, its layers pixel for pixel (the contribution, on minus off, in int16) and its buses sample for sample (float64) from FIGHT! to the end of the shatter",
+ "buses": [
+  {
+   "bus": "viola",
+   "peak": "bit-identical",
+   "sha256_episode": "e603601f102080e00373c024a5870ca01bb191d24b111e035663a2f47b4b280f",
+   "sha256_kit": "e603601f102080e00373c024a5870ca01bb191d24b111e035663a2f47b4b280f",
+   "whole": "bit-identical",
+   "window": [162667, 2765333]
+  },
+  {
+   "bus": "laugh",
+   "peak": "bit-identical",
+   "sha256_episode": "fa50964227b2ae025e22f061dcba49318cef2ad465d25f086637dd7f7967075c",
+   "sha256_kit": "fa50964227b2ae025e22f061dcba49318cef2ad465d25f086637dd7f7967075c",
+   "whole": "bit-identical",
+   "window": [162667, 2765333]
+  }
+ ],
+ "cache": "studio/reference/.cache/m4/origin/out/ballfight_viola_vs_violin/viola",
+ "config": {
+  "sha256": "99599bcea8399e7db98d76827d31786d1538ca195ec4c1ad1840dcd5f364116a",
+  "text": ["\"\"\"Gate O: the kit config of projects/ballfight_viola_vs_violin (made by tools/studio_export/older/origin.py).\"\"\"", "BPM = 141.63934426229508", "CHORDS = ['Cm', 'G', 'Cm', 'Cm', 'Ab', 'Ab', 'Fm', 'Fm', 'G', 'G', 'Cm', 'Cm', 'Ab', 'Ab', 'Fm', 'Fm', 'G', 'G', 'Cm', 'Cm', 'Ab', 'Ab', 'Fm', 'Fm', 'G', 'G', 'Cm', 'Cm', 'Ab', 'Ab', 'Fm', 'Fm', 'G', 'G', 'Ab', 'G']", "DMG_SCALE = 1.0", "DMG_SIDE = [0.75, 2.1]", "FIGHTERS = ('VIOLA', 'VIOLIN')", "FX_SEED = 42", "KEY = 'C'", "LINES = {'VIOLIN': [72, 72, 72, 75, 75, 75, 74, 74, 72, 72, 71, 71, 72, 72, 67, 67, 75, 75, 75, 79, 79, 79, 77, 77, 75, 75, 74, 74, 73, 73, 72, 72, 68, 68, 68, 72, 72, 72, 75, 75, 80, 80, 77, 77, 77, 77, 75, 75, 73, 73, 73, 70, 70, 70, 73, 73, 77, 77, 77, 77, 82, 82, 84, 84, 72, 72, 72, 75, 75, 75, 73, 73, 72, 72, 70, 70, 72, 72, 65, 65, 75, 75, 75, 77, 77, 77, 77, 77, 75, 75, 73, 73, 73, 73, 72, 72, 68, 68, 68, 72, 72, 72, 75, 75, 80, 80, 79, 79, 77, 77, 75, 75, 74, 74, 74, 71, 71, 71, 74, 74, 77, 77, 79, 79, 83, 83, 84, 84]}", "MOOD = 'big_top'", "SCALE = (0, 2, 3, 5, 7, 8, 11)", "SEED = 8219", "SERIES = 'BALLFIGHT #16'", "SHARD_SEED = 271", "SOLO = {'VIOLA': [(0, 67, 1.0), (1, 68, 0.5), (1.5, 67, 0.5), (2, 72, 1.5), (3.5, 70, 0.5), (4, 68, 1.0), (5, 67, 0.5), (5.5, 65, 0.5), (6, 63, 1.0), (7, 62, 0.5), (7.5, 59, 0.5), (8, 60, 1.0), (9, 55, 1.0), (10, 48, 2.0)], 'VIOLIN': [(0, 72, 0.25), (0.25, 74, 0.25), (0.5, 75, 0.25), (0.75, 77, 0.25), (1, 79, 0.5), (1.5, 80, 0.25), (1.75, 83, 0.25), (2, 84, 0.75), (2.75, 83, 0.25), (3, 80, 0.5), (3.5, 79, 0.5), (4, 77, 0.25), (4.25, 79, 0.25), (4.5, 77, 0.25), (4.75, 75, 0.25), (5, 74, 0.5), (5.5, 71, 0.5), (6, 72, 0.25), (6.25, 74, 0.25), (6.5, 72, 0.25), (6.75, 74, 0.25), (7, 75, 0.5), (7.5, 74, 0.25), (7.75, 71, 0.25), (8, 68, 0.5), (8.5, 67, 0.5), (9, 71, 0.25), (9.25, 74, 0.25), (9.5, 77, 0.25), (9.75, 80, 0.25), (10, 83, 0.5), (10.5, 79, 0.5), (11, 67, 1.0)]}"]
+ },
+ "episode": "ballfight_viola_vs_violin",
+ "episode_commit": "920fe853123ca284fc675ce4cfd9a261d596fc75",
+ "exceptions": {},
+ "fight": {
+  "equal": true,
+  "line": "8219 1 50.30555555555555 418 9da8b309d7eb5b6d",
+  "t_ko": 50.30555555555555,
+  "winner": 1
+ },
+ "frames": [
+  {
+   "contribution_sha256": "2a20fcf7f342b3f6e65e895a33527d341e8b975d7a964b01f80758438470bfe8",
+   "frame": 160,
+   "sha256": {
+    "episode_off": "c9e3b01e5b3f483065b5efe2d2d75be053b7245d5a2a3264c1ab3b0db7fec9fe",
+    "episode_on": "423ab6ebc2d97b4e949055ee8126b90a2c04c6065bb223c8da9b472ab87ebb62",
+    "kit_off": "c9e3b01e5b3f483065b5efe2d2d75be053b7245d5a2a3264c1ab3b0db7fec9fe",
+    "kit_on": "423ab6ebc2d97b4e949055ee8126b90a2c04c6065bb223c8da9b472ab87ebb62"
+   },
+   "t": 5.333333,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "e73eb211d60f6e53c9ad1ffb38568ca08e5ada7dbb44b06e954488f0572c7798",
+   "frame": 373,
+   "sha256": {
+    "episode_off": "38d70b4198d05354e11eb7e61dbe94b53711883d9829ace27444523f685c95ff",
+    "episode_on": "0d2cd1cef02a73e865ce4924463c888b7b6b74e1b450d3ad4ef0d2e8822ee7bd",
+    "kit_off": "38d70b4198d05354e11eb7e61dbe94b53711883d9829ace27444523f685c95ff",
+    "kit_on": "0d2cd1cef02a73e865ce4924463c888b7b6b74e1b450d3ad4ef0d2e8822ee7bd"
+   },
+   "t": 12.433333,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "829993e62d7086974c572e6d2dbcc8625f1ca888dacef4932d920dab24b9d7a0",
+   "frame": 427,
+   "sha256": {
+    "episode_off": "868972dfce072df71ea04b0bebb9c19c5ac515f2ac5310f3e7fdca794781f6ff",
+    "episode_on": "e133fb319b20dfab396783e4a41bd5e0f1ad57d83994036326a538887c30af5f",
+    "kit_off": "868972dfce072df71ea04b0bebb9c19c5ac515f2ac5310f3e7fdca794781f6ff",
+    "kit_on": "e133fb319b20dfab396783e4a41bd5e0f1ad57d83994036326a538887c30af5f"
+   },
+   "t": 14.233333,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "a68e7c2882908fa0dc470cd83e4e05ad33539ff1147d67953b360a822d2daef1",
+   "frame": 451,
+   "sha256": {
+    "episode_off": "fedc343453bca2c4a071229760a4d417f65a16642b4e82dce83a7d26e86caa0d",
+    "episode_on": "6e1d925d7e9f5cf0509dad55fa10c7841f2b448c64540c3c9c10e31fa7e0ac43",
+    "kit_off": "fedc343453bca2c4a071229760a4d417f65a16642b4e82dce83a7d26e86caa0d",
+    "kit_on": "6e1d925d7e9f5cf0509dad55fa10c7841f2b448c64540c3c9c10e31fa7e0ac43"
+   },
+   "t": 15.033333,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "b7edc1c70f629c036fa5852a62b4874c63911f288b08880586dd97e2c01e5a27",
+   "frame": 463,
+   "sha256": {
+    "episode_off": "53c8f175389e6f809ed1317128def589bbf29c7c6bf44db1bc5dfd4d52bac488",
+    "episode_on": "ebbddda351b1e134e9e2503971338706c42e6061146bb626c32dee7177848b2f",
+    "kit_off": "53c8f175389e6f809ed1317128def589bbf29c7c6bf44db1bc5dfd4d52bac488",
+    "kit_on": "ebbddda351b1e134e9e2503971338706c42e6061146bb626c32dee7177848b2f"
+   },
+   "t": 15.433333,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "0c6ac41c42cd141c7c6ada2e2c4bee0a7be905cc93f61b97fefb28158cc9de9a",
+   "frame": 508,
+   "sha256": {
+    "episode_off": "e11f62b5f0e2ec559a01ad9e4cd04db96d0f1bbd65cb06a9131a1e9441c35667",
+    "episode_on": "2dcb42fbac2cdf43ae0890b14f8bc47fc939ffc99f5333d98d2affea87bd26ac",
+    "kit_off": "e11f62b5f0e2ec559a01ad9e4cd04db96d0f1bbd65cb06a9131a1e9441c35667",
+    "kit_on": "2dcb42fbac2cdf43ae0890b14f8bc47fc939ffc99f5333d98d2affea87bd26ac"
+   },
+   "t": 16.933333,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "95a195562ad2167b0bfd05fae0e6d7b62844f48bdf99f6172e0fc54535d9b32e",
+   "frame": 644,
+   "sha256": {
+    "episode_off": "2217be1cb631adfcb26e644f7c0618f2bdb0d898ee99b9b556f5648d44bf519c",
+    "episode_on": "3d75903ac4aacbf5d23d6fc15eb34fc69738e17c9087e8f345e14cb43db7753f",
+    "kit_off": "2217be1cb631adfcb26e644f7c0618f2bdb0d898ee99b9b556f5648d44bf519c",
+    "kit_on": "3d75903ac4aacbf5d23d6fc15eb34fc69738e17c9087e8f345e14cb43db7753f"
+   },
+   "t": 21.466667,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "670c049b1fdd0289d36fd05e0d94cddb6f5ffa5cd757eb0835a078f965634eba",
+   "frame": 730,
+   "sha256": {
+    "episode_off": "74d463d8f10e98243d21462de671fd604c9ba30d6a7132b4a2b4a5086c4f8738",
+    "episode_on": "d771a083a6dc4d15fc234949da80dbad0727c4e78028e2b993d7c1fc60904037",
+    "kit_off": "74d463d8f10e98243d21462de671fd604c9ba30d6a7132b4a2b4a5086c4f8738",
+    "kit_on": "d771a083a6dc4d15fc234949da80dbad0727c4e78028e2b993d7c1fc60904037"
+   },
+   "t": 24.333333,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "d85039dc398834d926f1e5a4c64bae34eb54f45974749f779586d01439ed15d5",
+   "frame": 742,
+   "sha256": {
+    "episode_off": "99eae2c0f0fcdfbbc7fe327e9e2527b6ac4cfc71f064eb4b00f92ad499247599",
+    "episode_on": "548047b9dcc015dbf0544df416ad2a44173d1d6b0f9bc60563e7cb385a19bd1a",
+    "kit_off": "99eae2c0f0fcdfbbc7fe327e9e2527b6ac4cfc71f064eb4b00f92ad499247599",
+    "kit_on": "548047b9dcc015dbf0544df416ad2a44173d1d6b0f9bc60563e7cb385a19bd1a"
+   },
+   "t": 24.733333,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "2eefd8174fedf6753f2a00064354d9c6acd260ac953d74520c8045ac821c8477",
+   "frame": 752,
+   "sha256": {
+    "episode_off": "45cd6f324137dec9729923c06c8358ff14f149c35c1a450736efbd46f6aa341c",
+    "episode_on": "8b7636e0935ece63e1c67102d17d233566af2f08ef8f425b48fbfb861ef6bcc6",
+    "kit_off": "45cd6f324137dec9729923c06c8358ff14f149c35c1a450736efbd46f6aa341c",
+    "kit_on": "8b7636e0935ece63e1c67102d17d233566af2f08ef8f425b48fbfb861ef6bcc6"
+   },
+   "t": 25.066667,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "5866543e4a4852bfac2914b6214518de4b65e7def28ecde60782f91ab0e5be09",
+   "frame": 915,
+   "sha256": {
+    "episode_off": "1d3586a003372ff266eecd6cfe156123b8cfb8c249b3028881aa61a8d1df401d",
+    "episode_on": "dfedbb674f19c66b5deec6651a298f41b108e230b9adf1bb15fc619709de9e31",
+    "kit_off": "1d3586a003372ff266eecd6cfe156123b8cfb8c249b3028881aa61a8d1df401d",
+    "kit_on": "dfedbb674f19c66b5deec6651a298f41b108e230b9adf1bb15fc619709de9e31"
+   },
+   "t": 30.5,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "0e9e205ecb285a682d07b3ca1e09141e229667ee5de5af34c47e9df47fc46be5",
+   "frame": 1077,
+   "sha256": {
+    "episode_off": "24072b66209fd57121dadd1b734fe570e606dce0d37d335f153c3e18531a0e32",
+    "episode_on": "9977b6abb330f46f042d454f29ccc54df45931d993d4f2d4df401e6255eb1b9b",
+    "kit_off": "24072b66209fd57121dadd1b734fe570e606dce0d37d335f153c3e18531a0e32",
+    "kit_on": "9977b6abb330f46f042d454f29ccc54df45931d993d4f2d4df401e6255eb1b9b"
+   },
+   "t": 35.9,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "066f41c3cfeae9eef3b34865b0fefb67405da3d68312334071956cfce76b5a3e",
+   "frame": 1186,
+   "sha256": {
+    "episode_off": "d515f23b1d3663900219a1e84a72b47f1505856d9123a712f33b007868f7fb56",
+    "episode_on": "583e51fac7845736491477e21b0226e54b5ce8c52c06d58e14d4099d2554232d",
+    "kit_off": "d515f23b1d3663900219a1e84a72b47f1505856d9123a712f33b007868f7fb56",
+    "kit_on": "583e51fac7845736491477e21b0226e54b5ce8c52c06d58e14d4099d2554232d"
+   },
+   "t": 39.533333,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "b70385767bbbb52c4ce1170ec43ac8e69a4b4a92c997914ee2ca2aa2bcfcbe53",
+   "frame": 1237,
+   "sha256": {
+    "episode_off": "5e72dd547af6cf2ef5b47025b3a32057cd260f01b78eef5405c3e6dddce53dc7",
+    "episode_on": "b9b95dd1f7486a81e9df8d4248fddf2ceb8008fc216a38a17718e79acf42d230",
+    "kit_off": "5e72dd547af6cf2ef5b47025b3a32057cd260f01b78eef5405c3e6dddce53dc7",
+    "kit_on": "b9b95dd1f7486a81e9df8d4248fddf2ceb8008fc216a38a17718e79acf42d230"
+   },
+   "t": 41.233333,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "1475e7d9b8ad5391133331d5a41ed18afe7554f60f1a296b201ea3ea9bb6f5f0",
+   "frame": 1251,
+   "sha256": {
+    "episode_off": "087b3740da7f9a4438f0b9ee1da2b686c1d907e108cd762dfc14f2602ffaf4c4",
+    "episode_on": "5d67ddf6c033c8d28c215971260e3d30b1c9abf563ce00a9575c4247741af2a6",
+    "kit_off": "087b3740da7f9a4438f0b9ee1da2b686c1d907e108cd762dfc14f2602ffaf4c4",
+    "kit_on": "5d67ddf6c033c8d28c215971260e3d30b1c9abf563ce00a9575c4247741af2a6"
+   },
+   "t": 41.7,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "4bbdd197c348f37cd3ab1f46aede5d7e005bdda381262b81ddb61a9ac6c56ecb",
+   "frame": 1263,
+   "sha256": {
+    "episode_off": "b85049406e416147f53c3923c9d90ea0827c48cac9adf9ca6f4a0af77ecd385f",
+    "episode_on": "fc57bb55ae2201b249126f8115701b26e20245655adfc59bd086a93738b125ab",
+    "kit_off": "b85049406e416147f53c3923c9d90ea0827c48cac9adf9ca6f4a0af77ecd385f",
+    "kit_on": "fc57bb55ae2201b249126f8115701b26e20245655adfc59bd086a93738b125ab"
+   },
+   "t": 42.1,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "6d8c893f47d4dc77f226987b182fdcafba89d66f3132895622b48e0d37b1a440",
+   "frame": 1321,
+   "sha256": {
+    "episode_off": "f735389f6f27152c59d1a42705414aeb4c7209223b4c45f10c67838fb11eca06",
+    "episode_on": "57318020f4099d60a21aba2b30190620e377d0005f86145ce323557915a14589",
+    "kit_off": "f735389f6f27152c59d1a42705414aeb4c7209223b4c45f10c67838fb11eca06",
+    "kit_on": "57318020f4099d60a21aba2b30190620e377d0005f86145ce323557915a14589"
+   },
+   "t": 44.033333,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "8be2e0423dc702b710c34c581e30cdfc81e3a18f2233ddec1242e8c0b30748e4",
+   "frame": 1402,
+   "sha256": {
+    "episode_off": "81a41aaaf8bec229c204f3be75d6a4bca81fa487e07bad94afac332407bad4f6",
+    "episode_on": "47e8fa8e0e2a5b5d0ee3aa873f4cea52272081b3b57459c68096f0b9f232e611",
+    "kit_off": "81a41aaaf8bec229c204f3be75d6a4bca81fa487e07bad94afac332407bad4f6",
+    "kit_on": "47e8fa8e0e2a5b5d0ee3aa873f4cea52272081b3b57459c68096f0b9f232e611"
+   },
+   "t": 46.733333,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "6f15b22c199c37bbb09283763cae81451567069f73dc918b83efbb653401f430",
+   "frame": 1494,
+   "sha256": {
+    "episode_off": "e075afd21b758b4f1dcfbd8bf99e3ac8243b317656620f072644b5e32a15b26c",
+    "episode_on": "8ba69f308924510e08f6a0c1fed00c88ae789c7e6bb535fa62b7c28c83c361e7",
+    "kit_off": "e075afd21b758b4f1dcfbd8bf99e3ac8243b317656620f072644b5e32a15b26c",
+    "kit_on": "8ba69f308924510e08f6a0c1fed00c88ae789c7e6bb535fa62b7c28c83c361e7"
+   },
+   "t": 49.8,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "7d3fa64cc9d8966984c0f5156ddca902f72edf152558db9fdccb82e2ffe85449",
+   "frame": 1512,
+   "sha256": {
+    "episode_off": "9b24d6e63613df6e667d68c38ef6a94032e8b53d7450cbab87cecb3a0ea7726a",
+    "episode_on": "fe0bf773a511498465c140af4a83729aa4a493c60f620ef70c260f77830402db",
+    "kit_off": "9b24d6e63613df6e667d68c38ef6a94032e8b53d7450cbab87cecb3a0ea7726a",
+    "kit_on": "fe0bf773a511498465c140af4a83729aa4a493c60f620ef70c260f77830402db"
+   },
+   "t": 50.4,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "3e6ca88fedb2c155141fb56fee2153f8e27e71efb81367de19dd48b48839cc53",
+   "frame": 1523,
+   "sha256": {
+    "episode_off": "d7bcbc51619bc99f6804f8d6fd28bdce7aa343d879431863f95d138e9d034917",
+    "episode_on": "dea9a5df05165dd59d31275c7ca6025b6c16ded7415367dc0876e6a2d8febfbe",
+    "kit_off": "d7bcbc51619bc99f6804f8d6fd28bdce7aa343d879431863f95d138e9d034917",
+    "kit_on": "dea9a5df05165dd59d31275c7ca6025b6c16ded7415367dc0876e6a2d8febfbe"
+   },
+   "t": 50.766667,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "03202ec087b2ab9cfcc3d78b34bbaa9159a4964a2b3004bc8d9aaf428720d7f7",
+   "frame": 1538,
+   "sha256": {
+    "episode_off": "58115d1f74b84eaa049d0e5c3a972be9cd1f27351049b62ccdac263cee31ec82",
+    "episode_on": "3d7b2a8670529d584e9d037cee498b6c282bedad420b0935c64b59a44449c316",
+    "kit_off": "58115d1f74b84eaa049d0e5c3a972be9cd1f27351049b62ccdac263cee31ec82",
+    "kit_on": "3d7b2a8670529d584e9d037cee498b6c282bedad420b0935c64b59a44449c316"
+   },
+   "t": 51.266667,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "ca65a257ca8c69c43e86cf031ccad494a23af630c3d7a141fa0a797fb87eda21",
+   "frame": 1565,
+   "sha256": {
+    "episode_off": "923790daab8baab07922c4d4b0f7ed2b4526d996bf2f02a05903ed8395ac977d",
+    "episode_on": "3dba7778ec0e48b7abc73da98ec9837beef372cc3bfdcc662cf3d7a024dbbb63",
+    "kit_off": "923790daab8baab07922c4d4b0f7ed2b4526d996bf2f02a05903ed8395ac977d",
+    "kit_on": "3dba7778ec0e48b7abc73da98ec9837beef372cc3bfdcc662cf3d7a024dbbb63"
+   },
+   "t": 52.166667,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "9db35d79b651b2ba7f662c6b1b7edc24a1df622ad11673655564e4354cb0b736",
+   "frame": 1610,
+   "sha256": {
+    "episode_off": "9c7a80fe573282a6a1ef3c31f889d9a6cec5d08c1a71b8972f0a880cccbb630f",
+    "episode_on": "914b5a5db06797e23450d5fefce43a9df080a10758320a0ab32d484a16edda96",
+    "kit_off": "9c7a80fe573282a6a1ef3c31f889d9a6cec5d08c1a71b8972f0a880cccbb630f",
+    "kit_on": "914b5a5db06797e23450d5fefce43a9df080a10758320a0ab32d484a16edda96"
+   },
+   "t": 53.666667,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "3ca681d1719b8877f8a3c8df1fd78b37f47824cd109ecb3d68d4042017df448d",
+   "frame": 598,
+   "sha256": {
+    "episode_off": "80f7f1371855585dd8a35d6b2947647e318985788a0c7f029d1349151e5ebfab",
+    "episode_on": "50ffd85f8d1b71e771d909424413aeaa909da6551e156e0dbde9caa44ff1ccba",
+    "kit_off": "80f7f1371855585dd8a35d6b2947647e318985788a0c7f029d1349151e5ebfab",
+    "kit_on": "50ffd85f8d1b71e771d909424413aeaa909da6551e156e0dbde9caa44ff1ccba"
+   },
+   "t": 19.933333,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "0cd60df930f6e805bed3d3a9ae7f0a115f85e2ea8d4d083f78c65dec406fbff0",
+   "frame": 750,
+   "sha256": {
+    "episode_off": "b429b6e754e9c7fc197c0938483680fa56ff4c88932e7bbedc0961eafe829c58",
+    "episode_on": "a0d4567cfb0d50a2e3095d3eec3a90e57686c9713da6e9a34ddd0314b9288596",
+    "kit_off": "b429b6e754e9c7fc197c0938483680fa56ff4c88932e7bbedc0961eafe829c58",
+    "kit_on": "a0d4567cfb0d50a2e3095d3eec3a90e57686c9713da6e9a34ddd0314b9288596"
+   },
+   "t": 25.0,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "eef19d0797fd2a841d56457192d673cf0943dd648809cae0f553a4d6d4ee8751",
+   "frame": 903,
+   "sha256": {
+    "episode_off": "0f8df386aa4e2a762448f92c2413d151862b21d47b6f9c18be2519ddf71581cf",
+    "episode_on": "d7af524d3e4e1cf441ca6cd5154729f4554f12781d8dfdbfea65cd8e8f246365",
+    "kit_off": "0f8df386aa4e2a762448f92c2413d151862b21d47b6f9c18be2519ddf71581cf",
+    "kit_on": "d7af524d3e4e1cf441ca6cd5154729f4554f12781d8dfdbfea65cd8e8f246365"
+   },
+   "t": 30.1,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "34309f87349114b5c933afd9907c4865a439c3c7c907c0053be99f09a5945fa0",
+   "frame": 1259,
+   "sha256": {
+    "episode_off": "a7bdf296e64e497bfe232e70f4afb92954cbca4d0b6d974678fae6340a059265",
+    "episode_on": "c10d4555541d17badd8b7b20ab9ad8fc596aec37fb51d448f7e09e50b3f794fd",
+    "kit_off": "a7bdf296e64e497bfe232e70f4afb92954cbca4d0b6d974678fae6340a059265",
+    "kit_on": "c10d4555541d17badd8b7b20ab9ad8fc596aec37fb51d448f7e09e50b3f794fd"
+   },
+   "t": 41.966667,
+   "whole_frame_equal": true
+  }
+ ],
+ "harness": [],
+ "layers": [
+  {
+   "name": "halo, shake, shards, frozen enemy, padded sprite",
+   "patches": [
+    {
+     "file": "render.py",
+     "old": "def fighter(k, t):",
+     "sha256": "eabfd7d97285f71e65f8068bd951f8c566404ceeed2ad41ea74be93e6d517ad1"
+    }
+   ]
+  },
+  {
+   "name": "flashbulbs, laugh, sparks, effects, shimmer, fringe",
+   "patches": [
+    {
+     "file": "render.py",
+     "old": "STAND_N = np.array([n for Q, n, c, am in S.STANDS])",
+     "sha256": "ca2274e48fd9bfd447f4376550d2e908db73eb6c88d9b590aff36a5286dc702e"
+    }
+   ]
+  },
+  {
+   "name": "notes, pool, target, hit glow, rests",
+   "patches": [
+    {
+     "file": "render.py",
+     "old": "def render(f):",
+     "sha256": "9d55fe4cd271d4921edc138f1088bff44fa188d67805f6fbab9c3e3b72162647"
+    }
+   ]
+  }
+ ],
+ "name": "VIOLA",
+ "other": [
+  {
+   "file": "render.py",
+   "old": "def fighter(k, t):",
+   "sha256": "6330f5e958cb8275d6fb8db843fe689237cb4313ba52812ef1bef08e760e7a3d"
+  },
+  {
+   "file": "render.py",
+   "old": "STAND_N = np.array([n for Q, n, c, am in S.STANDS])",
+   "sha256": "c8c854487aa02f819cf96d9243267ada11db20881425054fdae860e2670ae05d"
+  },
+  {
+   "file": "render.py",
+   "old": "def render(f):",
+   "sha256": "ef605a38fe8363ca92ea6bdbb4af5ba34f47f6552b64e1ee4562145f56b9c8a6"
+  }
+ ],
+ "seed": 8219,
+ "side": 0,
+ "spec_sha256": "83e512b7d561c3f3ecc0041b6069f4b59057c159ea131e3df42678181586e0fd",
+ "state_keys": ["glow"],
+ "window": {
+  "frames": [102, 1729],
+  "t0": 3.388888888888889,
+  "t1": 57.61111111111111
+ }
+}

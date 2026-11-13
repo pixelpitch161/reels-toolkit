@@ -269,3 +269,90 @@ def _after_post():
           "    for Lk in LOOKS:                                                  # (older opt-in after_post)\n"
           "        if hasattr(Lk, 'after_post'):\n"
           "            img = Lk.after_post(img, F, drawn)\n")
+
+
+# ---------------------------------------------------------------- VIOLA (plan m4 Task 11): three more opt-ins
+# (#42's render.py draws three things of the VIOLA that neither a Look hook nor the ten opt-ins above can express;
+# each is off unless a look defines it, and without such a look the kit computes exactly what it computed before)
+#
+#   crowd_laugh(t) -> lk             the crowd's laugh (0..1) at t: heads bob "ha-ha-ha", bodies rock and lean, brighter,
+#                                    every third one's arms up (#42 arena(), VIOLA JOKE)
+#   flash_hit(e) -> bool             does this hit of the look's set off the crowd's flashbulbs (instead of the
+#                                    `e[7] in flash_hits` test): #42 flashes only VIOLA JOKE's note (`e[8] == 2`), a test
+#                                    the kind alone cannot make
+#   spark_events                     (attribute) more event kinds that throw the default spark spray (#42's sparks() also
+#                                    sparks 'crushed': a pizzicato dart flattened by a rolling note)
+@register('crowd_laugh')
+def _crowd_laugh():
+    _text('crowd_laugh', 'arena',
+          "    wk = win_k(t)\n    items = []\n",
+          "    wk = win_k(t)\n"
+          "    lk = 0.0                                                          # (older opt-in crowd_laugh)\n"
+          "    for L_ in LOOKS:\n"
+          "        if hasattr(L_, 'crowd_laugh'):\n"
+          "            lk = max(lk, L_.crowd_laugh(t))\n"
+          "    items = []\n")
+    _text('crowd_laugh', 'arena',
+          "            rh = 0.15 * cam.f / dh[j]\n",
+          "            rh = 0.15 * cam.f / dh[j]\n"
+          "            sway = 0.0                                                # (older opt-in crowd_laugh)\n"
+          "            if lk > 0:\n"
+          "                ph = CROWD_PH[j] * 6.28\n"
+          "                y -= lk * (1.2 + 1.2 * abs(math.sin(2 * math.pi * 5.2 * t + ph))) * max(1.0, rh * 0.8)\n"
+          "                sway = lk * 1.3 * math.sin(2 * math.pi * 1.7 * t + ph) * max(1.0, rh * 0.6)\n")
+    _text('crowd_laugh', 'arena',
+          "            body = np.clip(S.CROWD_COLS[CROWD_CI[j]] * tint * spill * crowd_lit[j], 0, 255)\n",
+          "            if lk > 0:                                                # (older opt-in crowd_laugh)\n"
+          "                body = np.clip(S.CROWD_COLS[CROWD_CI[j]] * tint * spill * crowd_lit[j] * (1 + 0.25 * lk), 0, 255)\n"
+          "            else:\n"
+          "                body = np.clip(S.CROWD_COLS[CROWD_CI[j]] * tint * spill * crowd_lit[j], 0, 255)\n")
+    _text('crowd_laugh', 'arena',
+          "            draw.ellipse([x - rh, y - rh, x + rh, y + rh], fill=tuple(int(v) for v in body * 0.62))\n",
+          "            if lk > 0:                                                # (older opt-in crowd_laugh)\n"
+          "                draw.ellipse([x - rh + sway, y - rh, x + rh + sway, y + rh], fill=tuple(int(v) for v in body * 0.62))\n"
+          "            else:\n"
+          "                draw.ellipse([x - rh, y - rh, x + rh, y + rh], fill=tuple(int(v) for v in body * 0.62))\n")
+    _text('crowd_laugh', 'arena',
+          "                draw.line([x - rh * 0.6, y - rh * 0.8, x + rh * 0.6, y - rh * 0.8], "
+          "fill=tuple(int(v) for v in np.clip(body * 1.5 + 30, 0, 255)))\n"
+          "            ph = CROWD_PH[j]\n",
+          "                if lk > 0:                                            # (older opt-in crowd_laugh)\n"
+          "                    draw.line([x - rh * 0.6 + sway, y - rh * 0.8, x + rh * 0.6 + sway, y - rh * 0.8],\n"
+          "                              fill=tuple(int(v) for v in np.clip(body * 1.5 + 30, 0, 255)))\n"
+          "                else:\n"
+          "                    draw.line([x - rh * 0.6, y - rh * 0.8, x + rh * 0.6, y - rh * 0.8], "
+          "fill=tuple(int(v) for v in np.clip(body * 1.5 + 30, 0, 255)))\n"
+          "            if lk > 0.3 and rh >= 1.2 and (j % 3 == 0):              # (older opt-in crowd_laugh): arms up\n"
+          "                ya_ = y + 0.9 * rh\n"
+          "                draw.line([x - 1.6 * rh, ya_, x - 2.1 * rh + sway, ya_ - 1.6 * rh * lk], "
+          "fill=tuple(int(v) for v in body * 0.8))\n"
+          "                draw.line([x + 1.6 * rh, ya_, x + 2.1 * rh + sway, ya_ - 1.6 * rh * lk], "
+          "fill=tuple(int(v) for v in body * 0.8))\n"
+          "            ph = CROWD_PH[j]\n")
+
+
+def _flash_by_hit(P):
+    if not any(hasattr(L, 'flash_hit') for L in P.LOOKS):
+        return
+    import numpy as np
+
+    def flashes(e):
+        L = P.LOOKS[e[2]]
+        return L.flash_hit(e) if hasattr(L, 'flash_hit') else e[7] in L.flash_hits
+    P.FLASH_EV = [e[0] for e in P.EV if (e[1] == 'hit' and flashes(e)) or e[1] == 'ability'] + \
+                 [P.T_KO + 0.03 * j for j in range(16)]
+    P.FLASH_T = np.array(sorted(P.FLASH_EV))
+
+
+@register('flash_hit')
+def _flash_hit():
+    POST.append(('flash_hit', _flash_by_hit))
+
+
+@register('spark_events')
+def _spark_events():
+    _text('spark_events', 'sparks',
+          "('hit', 'parry', 'block', 'wall', 'cleared', 'fade')):",
+          "('hit', 'parry', 'block', 'wall', 'cleared', 'fade')\n"
+          "                                  + tuple(x for L_ in LOOKS for x in getattr(L_, 'spark_events', ()))):"
+          "   # (older opt-in spark_events)")
