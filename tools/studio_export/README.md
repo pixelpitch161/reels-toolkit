@@ -307,6 +307,45 @@ hooks called directly (vectors cached). `python -m tools.studio_export fighter_s
 <frame>...` writes stage dumps of a look fight. The Rust side of all of it is `studio/crates/bf-harness`; the
 manual is `studio/docs/porting-a-fighter.md`.
 
+## Milestone 4: the older fighters' reference kit modules and Gate O (`older/`)
+
+The kit has no look, sound or mood for the ten older fighters or the beds of the older episodes: they live only in
+their episode folders. A port writes the **reference kit module** (`older/fighters/<slug>.py`, `older/moods/<name>.py`)
+and proves it against the episode with **Gate O** (`older/origin.py`) before any Rust; milestone 3's harness then
+proves the Studio against the module. The manual is `studio/docs/porting-an-older-fighter.md`.
+
+- `older/__init__.py`: `FIGHTERS` and `MOODS` (plan m4 Tables O1 and O2: each one's episode folder), `EPISODES`, and
+  `install()`: every module there whose source sets `PORTED = True` becomes importable under the kit's name
+  (`ballfight.kit.fighters.<slug>`, `ballfight.kit.moods.<name>`: an import hook, so `kit.fighters.module(name)` and
+  the music's mood import find it), and `older/picture_patches.py`'s registered patches (none until Task 4) are applied
+  once. Idempotent, writes nothing, imports nothing of the kit; an older module never shadows a kit module.
+  `m3refs.load_config`, its theme child and `m3parts`' fresh processes call it before the kit is imported, so every
+  export sees the installed modules; with none ported it changes nothing.
+- `older/origin.py`: `scratch(episode)` copies `projects/<episode>/`'s delivered sources (its top-level `*.py` but
+  the `*_backup*.py` snapshots, and `seed.txt`) to `studio/reference/.cache/m4/origin/<episode>/` (a patched variant
+  to `<episode>~<variant>/`); the episode runs only there (every runner refuses another working folder), its shared
+  modules read where they are; `episode_frames`, `episode_stems` run its own `render.py` / `audio.py` there;
+  `fighter_origin(spec)` and `mood_origin(spec)` are Gate O (the fight's replay-guard line, the layers' contributions
+  on minus off per pixel on at least 24 frames, the module's state, the buses sample for sample in float64 against
+  -120 dBFS) and write `origin.json`; every run checks `git status --short projects reelkit series` is empty after.
+- A SPEC's `origin` key (fighters, themes; a pair's is the list of folders whose Gate O it rests on) is checked by
+  `m3refs`, kept out of `fight.json` and `theme.json` (so no merged folder drifts), and `fighter_refs` / `theme_refs`
+  refuse to run until the folder's `origin.json` is Gate O's for that spec.
+
+```
+.studio-tools\py313\Scripts\python.exe -m tools.studio_export origin fighters/<slug>    # Gate O -> origin.json
+.studio-tools\py313\Scripts\python.exe -m tools.studio_export origin themes/<name>
+.studio-tools\py313\Scripts\python.exe -m tools.studio_export origin_selfproof          # ORGAN, brass_trailer, mutations
+.studio-tools\py313\Scripts\python.exe -m tools.studio_export.unit_checks.origin_checks
+```
+
+`origin` is in `m3refs.TAKES_ARGS` (`all` leaves it out). The self-proof (`origin_selfproof.py`, about 3.5 minutes)
+runs Gate O on the kit's ORGAN against #35 v4 and the `brass_trailer` mood against #34 v5's audio (both must pass) and
+on the ORGAN module changed at run time by one pixel and by one sample (both must fail, naming the frame and pixel or
+the bus and sample); it writes `studio/reference/older/selfproof/{organ,brass_trailer,summary}.json` (top-level
+manifest; the `older/` budget row is 400 KB). The pictures and stems of every Gate O run are in the cache under
+`studio/reference/.cache/m4/origin/out/` and are never committed.
+
 ## What each export writes
 
 | Name | Module | Files |
@@ -325,6 +364,8 @@ manual is `studio/docs/porting-a-fighter.md`.
 | `look_trombone` | `look_trombone.py` | `studio/reference/picture_looks/trombone_frames.json`: the episode drawn with the TROMBONE's own look and the kit's base-class look for the FLUTE (replaced in the worker process only), for two fights, each in a process of its own: the episode's (seed 392, the TROMBONE wins) and seed 3 (it loses): per frame the SHA-256 of the frame, of the hook calls and of the draw log, 181 frames (about 1 minute). `look_trombone_stages <fight> <frame>...` is no reference export: it writes the stage dumps of those frames for the same two looks under `studio/reference/.cache/stages_look_trombone/<fight>/` |
 | `models` | `models.py` | `studio/crates/bf-content/data/models/{FLUTE,TROMBONE}.json` (`models.model(name)` writes one roster name's file only) |
 | `cache`, `remake`, `budget` | `m3refs.py` | no reference export: see "Milestone 3" |
+| `origin` | `m3refs.py` | Gate O for one fighter or theme folder's SPEC: its `origin.json` (see "Milestone 4") |
+| `origin_selfproof` | `origin_selfproof.py` | `studio/reference/older/selfproof/{organ,brass_trailer,summary}.json`: Gate O on the kit's ORGAN against #35 v4 and on `brass_trailer` against #34 v5 (both pass), and on two run-time mutations of the ORGAN (both fail); order 95, about 3.5 minutes |
 | `pillow` | `pillow_vectors.py` | `studio/reference/pillow/calls.json` and 18 vector files, each `.npz` with its sidecar `.json` (about 4 minutes: it draws all 1,830 frames in 8 worker processes) |
 | `py` | `py_vectors.py` | `studio/reference/py/vectors.json` |
 | `pyhash` | `pyhash_vectors.py` | `studio/reference/pyhash/vectors.json` |

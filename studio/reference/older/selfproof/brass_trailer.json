@@ -1,0 +1,72 @@
+{
+ "about": "Gate O (plan m4 Task 2): the brass_trailer mood against projects/ballfight_trombone_vs_horn's bed: its buses with both fighters' parts silent, sample for sample (float64), over the whole buffer",
+ "buses": [
+  {
+   "bus": "strings",
+   "peak": "bit-identical",
+   "sha256_episode": "2332815edc1dc7393c552ef6d4cc3b9f2a0b4992195f28cd96d74d5f03fb43ed",
+   "sha256_kit": "2332815edc1dc7393c552ef6d4cc3b9f2a0b4992195f28cd96d74d5f03fb43ed",
+   "whole": "bit-identical",
+   "window": [0, 3408000]
+  },
+  {
+   "bus": "taiko",
+   "peak": "bit-identical",
+   "sha256_episode": "447216ec65202a06a12097d121a242779307484695972215abf6805e2cea5686",
+   "sha256_kit": "447216ec65202a06a12097d121a242779307484695972215abf6805e2cea5686",
+   "whole": "bit-identical",
+   "window": [0, 3408000]
+  },
+  {
+   "bus": "braam",
+   "peak": "bit-identical",
+   "sha256_episode": "573e3df72715655251f3df0073a1ced209f0cf6015a9e3e37e0b200d52ffe62d",
+   "sha256_kit": "573e3df72715655251f3df0073a1ced209f0cf6015a9e3e37e0b200d52ffe62d",
+   "whole": "bit-identical",
+   "window": [0, 3408000]
+  },
+  {
+   "bus": "tremolo",
+   "peak": "bit-identical",
+   "sha256_episode": "3491323cb2d720572b70b314f9a7b3564d9e7e4b098818ed89d1c88bf2eb20cd",
+   "sha256_kit": "3491323cb2d720572b70b314f9a7b3564d9e7e4b098818ed89d1c88bf2eb20cd",
+   "whole": "bit-identical",
+   "window": [0, 3408000]
+  }
+ ],
+ "cache": "studio/reference/.cache/m4/origin/out/ballfight_trombone_vs_horn/mood_brass_trailer",
+ "config": {
+  "sha256": "f44789caa0742bf10c343be2c50a38ba443badc98351e72087f025d23b019378",
+  "source": "examples/trombone_vs_horn"
+ },
+ "episode": "ballfight_trombone_vs_horn",
+ "episode_buses": ["braam", "fx", "horn", "solo", "strings", "taiko", "tremolo", "trombone"],
+ "episode_commit": "e5d43b3c24757173efbec9de521eecb169c0ba4b",
+ "exceptions": {},
+ "fight": {
+  "equal": true,
+  "line": "140 0 49.218817204301075 818 bab3793f4843147b"
+ },
+ "harness": [],
+ "kit_buses": ["braam", "fx", "strings", "taiko", "tremolo"],
+ "name": "brass_trailer",
+ "seed": 140,
+ "silence": [
+  {
+   "file": "audio.py",
+   "old": "if e[3]:",
+   "sha256": "96e02fd0bb922c5d56e5793ad4039cd57f38e0f58dc6a8dd5d68967bdeb09063"
+  },
+  {
+   "file": "audio.py",
+   "old": "mix.place('taiko', taiko(1.0, True, 83), ts, 0.45)",
+   "sha256": "7cc7d7461ef5c8730895aac16718248417f69372033411d47bf89b75eca15838"
+  },
+  {
+   "file": "audio.py",
+   "old": "mix.place('taiko', taiko(1.0, True, 90), ts, 0.7)",
+   "sha256": "db642fd62e07e7d37c983a93bafdb005376c40e5922a619e940429b3921a4752"
+  }
+ ],
+ "spec_sha256": "2a060dc81dbda900c5adf50f76c41982e0d1d3526aacc7a92128382ff1a791c5"
+}

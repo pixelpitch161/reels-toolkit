@@ -435,7 +435,7 @@ def cache_json(folder, name, obj, export, sort_keys=True):
 
 # ---------------------------------------------------------------- the spec
 SPEC_KEYS = ('name', 'opponent', 'fights', 'scenarios', 'frames', 'roles', 'voice_notes', 'hooks', 'sprite_size',
-             'left_in_cache')
+             'left_in_cache', 'origin')
 FIGHT_DEFAULTS = dict(base='flute_vs_trombone', handicap=(1.0, 1.0), dmg_scale=1.0, rules={}, stats=2000, scan=500,
                       left=None, right=None, must=())
 FRAME_DEFAULTS = dict(left=64, right=32, times=())
@@ -538,6 +538,9 @@ def normalize(spec):
         out['sprite_size'] = dict(add=size['add'], clip=None if clip is None else tuple(clip))
         if pad is not None:                       # (left out when not given)
             out['sprite_size']['pad'] = pad
+    if 'origin' in spec:                          # an older fighter's Gate O (plan m4 Task 2): checked here, kept out
+        from .older import origin as O            # of fight.json (its own origin.json holds it)
+        O.origin_spec(spec['origin'])
     in_cache = spec.get('left_in_cache', True)    # (rulings M3-R36, R44; the default from plan m4 Task 1)
     if not isinstance(in_cache, bool):
         raise SystemExit('SPEC.left_in_cache: True or False')
@@ -579,7 +582,11 @@ def config_folder(tag, base, text):
 
 
 def load_config(folder):
-    """make the config in `folder` the kit's current episode; returns (episode, story)"""
+    """make the config in `folder` the kit's current episode; returns (episode, story). The older fighters' and
+    themes' reference kit modules are installed first (plan m4 Task 2: older.install(), idempotent, a no-op until a
+    port sets PORTED = True)"""
+    from . import older
+    older.install()
     E, story = common.kit()
     ep = E.load(folder)
     return ep, story
@@ -903,10 +910,16 @@ def fighter_refs(spec, extra=None):
     `extra`: a port's own additional part, called after the template's parts in the same run"""
     from . import recording, scenarios as SC, stats
     module = sys._getframe(1).f_globals.get('__name__', __name__)
+    origin = spec.get('origin')
     spec = normalize(spec)
     name, opp, f = spec['name'], spec['opponent'], spec['fights']
     folder = f'fighters/{slug(name)}'
     export = f'fighter_{slug(name)}'
+    if origin is not None:                        # an older fighter: its Gate O first (plan m4 Template F', Step 0)
+        from .older import origin as O
+        problem = O.origin_done(folder, origin)
+        if problem:
+            raise SystemExit(f'{export}: {problem}')
     run = run_state()
     run.stages.pop(folder, None)
     t_all = time.time()
@@ -1263,7 +1276,7 @@ def fighter_parts(spec, folder, export, module, main, swapped, left_seed, right_
 
 # ---------------------------------------------------------------- a pair gate's references (Template P)
 EPISODE_SPEC_KEYS = ('config', 'stats', 'links', 'scenarios', 'weapon_hit', 'frames', 'recording_in_cache',
-                     'native_seeds')
+                     'native_seeds', 'origin')
 
 
 class Loaded:
@@ -1314,6 +1327,10 @@ def episode_spec(spec):
                      native_seeds=()), **spec)
     if not isinstance(spec['recording_in_cache'], bool):
         raise SystemExit('episode spec: recording_in_cache is True or False')
+    origin = spec.get('origin', ())               # an older pair (plan m4 Template P'): the fighter and theme
+    if not (isinstance(origin, (list, tuple))      # folders whose Gate O it rests on
+            and all(isinstance(x, str) and x.split('/')[0] in ('fighters', 'themes') for x in origin)):
+        raise SystemExit("episode spec: origin is a list of 'fighters/<slug>' / 'themes/<name>' folders")
     return spec
 
 
@@ -1334,6 +1351,9 @@ def episode_refs(spec):
     from . import fights, m3parts as MP, recording, scenarios as SC, stats as ST
     module = sys._getframe(1).f_globals.get('__name__', __name__)
     spec = episode_spec(spec)
+    for f_ in spec.get('origin', ()):             # each older fighter's and theme's Gate O must be done first
+        if not os.path.exists(common.ref(*f_.split('/'), 'origin.json')):
+            raise SystemExit(f'episode_refs: {f_}/origin.json is missing: run python -m tools.studio_export origin {f_}')
     config = spec['config']
     pair = config_slug(config)
     folder, export = f'episodes/{pair}', f'episode_{pair}'
@@ -1495,7 +1515,7 @@ def episode_refs(spec):
 
 # ---------------------------------------------------------------- a theme's references (Task 2; Template T adds)
 THEME_SPEC_KEYS = ('name', 'voicings', 'configs', 'extra', 'variants', 'key_from', 'options', 'hooks',
-                   'recordings_in_cache')
+                   'recordings_in_cache', 'origin')
 # the 12 roots (the kit's spellings: a sharp or a flat, as its configs write them) and the 13 qualities of QUALITY
 ROOTS = ('C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B')
 
@@ -1522,6 +1542,9 @@ def theme_spec(spec):
         raise SystemExit('theme spec: recordings_in_cache is True or False')
     if not out.get('name'):
         raise SystemExit('theme spec: a name (the kit mood) is needed')
+    if out.get('origin') is not None:             # an older theme's Gate O (plan m4 Task 2; Template T', Step 0)
+        from .older import origin as O
+        O.origin_spec(out['origin'])
     return out
 
 
@@ -1665,6 +1688,8 @@ def _theme_child(folder, voicings, chords):
     for k in THREAD_VARS:
         os.environ.setdefault(k, '1')
     assert 'ballfight.kit.music' not in sys.modules
+    from . import older
+    older.install()
     E, _ = common.kit()
     E.load(folder)
     from ballfight.kit import music as M                  # noqa: N812  (the kit's own short name for it)
@@ -1810,6 +1835,11 @@ def theme_refs(spec):
     spec = theme_spec(spec)
     name = spec['name']
     folder, export = f'themes/{name}', f'theme_{name}'
+    if spec.get('origin') is not None:            # an older theme: its Gate O first (plan m4 Template T', Step 0)
+        from .older import origin as O
+        problem = O.origin_done(folder, spec['origin'])
+        if problem:
+            raise SystemExit(f'{export}: {problem}')
     run = run_state()
     run.stages.pop(folder, None)
     t_all = time.time()
@@ -2173,5 +2203,24 @@ def remake_cmd(args, found=None):
         print(f'[remake {folder}: {export_for(folder)}, {n} pins, {time.time() - t0:.1f} s]')
 
 
-EXPORTS = {'cache': cache_cmd, 'remake': remake_cmd, 'budget': budget_cmd}
-TAKES_ARGS = ('cache', 'remake', 'budget')
+def origin_cmd(args):
+    """python -m tools.studio_export origin fighters/<slug> | themes/<name>: Gate O for the folder's SPEC (its `origin`
+    key; plan m4 Task 2), writing its origin.json"""
+    from .older import origin as O
+    if len(args) != 1:
+        raise SystemExit('origin: name one folder, fighters/<slug> or themes/<name>')
+    folder = check_folder(args[0])
+    area = folder.split('/')[0]
+    spec = _spec_of(folder)
+    if not spec.get('origin'):
+        raise SystemExit(f'origin: {export_for(folder)}.SPEC has no origin key')
+    if area == 'fighters':
+        O.fighter_origin(spec)
+    elif area == 'themes':
+        O.mood_origin(spec)
+    else:
+        raise SystemExit('origin: a fighter or a theme folder (a pair gate rests on theirs)')
+
+
+EXPORTS = {'cache': cache_cmd, 'remake': remake_cmd, 'budget': budget_cmd, 'origin': origin_cmd}
+TAKES_ARGS = ('cache', 'remake', 'budget', 'origin')
