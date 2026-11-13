@@ -1,8 +1,7 @@
 //! SYNTH: one of the older fighters (milestone 4), ported in its Task 10 against its reference kit module
 //! (`tools/studio_export/older/fighters/synth.py`, the reference kit module moved from
-//! `projects/ballfight_turntables_vs_synth/` (#31 v3)). Until then every entry point here says it has none: the
-//! picture draws SYNTH as the bare ball, the score has no part for it, the app has no card for it, and the app does
-//! not offer it (the registry's `PORTED`, which only a register task changes).
+//! `projects/ballfight_turntables_vs_synth/` (#31 v3)): its look, part, voice, card and model. The app does not
+//! offer it until a register task sets the registry's `PORTED`.
 //!
 //! The port fills this folder only: `look.rs`, `sound.rs`, `voice.rs`, `card.rs`, `state.rs` (what the look and the
 //! part both derive from the recording) and the entry points below. Nothing outside it names SYNTH's types, so
@@ -23,10 +22,11 @@ pub mod state;
 pub mod voice;
 
 pub use card::{CARD, card};
+pub use look::SynthLook;
 
 /// `fighters.look('SYNTH', P, k)`: its look, or `None` while it is not ported (the bare ball is drawn then).
 pub fn look() -> Option<Box<dyn Look>> {
-    None
+    Some(Box::new(SynthLook::default()))
 }
 
 /// Its instrument voice (its `pp_bridge` entry, or its episode's own synth), or `None` while it is not ported.

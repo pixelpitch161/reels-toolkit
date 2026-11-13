@@ -235,7 +235,11 @@ impl SynthSound {
 
     /// The semitones from F to the tonic chord's root, in -6..5.
     pub fn shift(&self, ctx: &MusicCtx) -> Result<i32, MusicError> {
-        let ch = ctx.harmony.chords.first().ok_or_else(|| MusicError::new(H, "no bars"))?;
+        let ch = ctx
+            .harmony
+            .chords
+            .first()
+            .ok_or_else(|| MusicError::new(H, "no bars"))?;
         let r = bf_core::harmony::parse_chord(ch).map_err(bad)?.root;
         Ok((r - 5 + 6).rem_euclid(12) - 6)
     }
@@ -305,7 +309,11 @@ impl Sound for SynthSound {
         let t_ko = ctx.show.t_ko;
         let args = self.colour_args();
         let cfg = ctx.cfg[k];
-        let names = [cfg.unlock1.name.as_str(), cfg.unlock2.name.as_str(), cfg.low.name.as_str()];
+        let names = [
+            cfg.unlock1.name.as_str(),
+            cfg.unlock2.name.as_str(),
+            cfg.low.name.as_str(),
+        ];
         // the pulses, by 16th (in slot order)
         let mut by_tick: std::collections::BTreeMap<i64, Vec<&bf_core::event::Event>> = Default::default();
         for e in &ctx.rec.events {
@@ -361,7 +369,13 @@ impl Sound for SynthSound {
                             mix.place("fx", &Sig::Mono(th), tq, 0.10, 0.0);
                         }
                         "wave" => {
-                            mix.place("fx", &Sig::Mono(synth::thud(0.45, 110.0, 40.0, THUD_SEED)), tq, 0.36, 0.0);
+                            mix.place(
+                                "fx",
+                                &Sig::Mono(synth::thud(0.45, 110.0, 40.0, THUD_SEED)),
+                                tq,
+                                0.36,
+                                0.0,
+                            );
                         }
                         _ => {}
                     }
@@ -380,12 +394,21 @@ impl Sound for SynthSound {
                     let name = e.s(3);
                     let tq = ctx.q16(t);
                     if name == names[0] {
-                        let dur = cfg.unlock1.get("dur").ok_or_else(|| MusicError::new(H, "LFO has no dur"))?;
+                        let dur = cfg
+                            .unlock1
+                            .get("dur")
+                            .ok_or_else(|| MusicError::new(H, "LFO has no dur"))?;
                         let root = ctx.harmony.root_above(ctx.harmony.chord_at(tq), 24).map_err(bad)?;
                         let x = wobble(f64::from(root + 12), dur, ctx.show.grid.beat);
                         mix.place("bass", &Sig::Mono(x), tq, 0.20, 0.0);
                     } else if name == names[1] {
-                        mix.place(&bus, &Sig::Mono(supersaw_sweep(ctx.show.grid.beat, 53.0, 89.0)), tq, 0.16, 0.0);
+                        mix.place(
+                            &bus,
+                            &Sig::Mono(supersaw_sweep(ctx.show.grid.beat, 53.0, 89.0)),
+                            tq,
+                            0.16,
+                            0.0,
+                        );
                     } else if name == names[2] {
                         mix.place("fx", &Sig::Mono(noise_blast(1.6)), tq, 0.20, 0.0);
                         let x = self.arp_note(ctx, 89.0, 1.0, 0.3)?;
@@ -409,7 +432,13 @@ impl Sound for SynthSound {
                 .map(|v| dmath::np_tanh(3.0 * v))
                 .collect();
             let jf = j as f64;
-            mix.place(&bus, &Sig::Mono(x), ctx.show.t_hs + 0.07 * jf, 0.20 * (1.0 - jf / 10.0), (jf - 3.5) / 8.0);
+            mix.place(
+                &bus,
+                &Sig::Mono(x),
+                ctx.show.t_hs + 0.07 * jf,
+                0.20 * (1.0 - jf / 10.0),
+                (jf - 3.5) / 8.0,
+            );
         }
         Ok(())
     }
@@ -454,7 +483,10 @@ mod tests {
     fn h01_31_is_31s_linear_hash() {
         // python: h01(1.25, 3) with #31's audio.py
         let v = ((1_000_003i64 * 0 + 1250 + 7) % 2_147_483_647 * 1_000_003 + 3000 + 7) % 2_147_483_647;
-        assert_eq!(h01_31(&[1.25, 3.0]), ((v * 48271) % 2_147_483_647) as f64 / 2_147_483_647.0);
+        assert_eq!(
+            h01_31(&[1.25, 3.0]),
+            ((v * 48271) % 2_147_483_647) as f64 / 2_147_483_647.0
+        );
         assert!((0.0..1.0).contains(&h01_31(&[52.1, 3.0])));
     }
 

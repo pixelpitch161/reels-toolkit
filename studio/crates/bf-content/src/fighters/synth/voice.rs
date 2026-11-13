@@ -60,7 +60,11 @@ fn svf_lp(x: &[f64], fc: &[f64], q: f64) -> Vec<f64> {
 
 /// `adsr(t, dur, a, d, s, r)` of the module.
 fn adsr(t: f64, dur: f64, a: f64, d: f64, s: f64, r: f64) -> f64 {
-    let e = if t < a { t / a } else { s + (1.0 - s) * dmath::exp(-(t - a) / d) };
+    let e = if t < a {
+        t / a
+    } else {
+        s + (1.0 - s) * dmath::exp(-(t - a) / d)
+    };
     e * if t < dur { 1.0 } else { dmath::exp(-(t - dur) / r) }
 }
 
