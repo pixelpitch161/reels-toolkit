@@ -330,6 +330,10 @@
   {
    "call": "tools.studio_export.fighter_bagpipes:no_ability_list",
    "name": "#30's HUD: no ability list"
+  },
+  {
+   "call": "tools.studio_export.fighter_bagpipes:episode_bus_names",
+   "name": "#30's bus names (M4-R9)"
   }
  ],
  "layers": [
@@ -505,11 +509,16 @@
    "file": "render.py",
    "old": "'puffs', n=24, spread=180, speed=(1.2, 3.0), scale=1.3)",
    "sha256": "b7cc91e95ad4e1e1405d59243079f4e972853dbc7ff45a0d720a596b1b05bde2"
+  },
+  {
+   "file": "audio.py",
+   "old": "mix.place('solo', chanter(81, 1.2, 1.0, grace=True), tw, 0.36)",
+   "sha256": "5347883a730dcdda9b7da289bfe2ea40856ca1f33da6513d150eac6d290decf6"
   }
  ],
  "seed": 1442,
  "side": 0,
- "spec_sha256": "fd4215b7a06d0b04009aef81866034fdc469cc2738106f6a67497e6886b3e161",
+ "spec_sha256": "34186067119c85e0d248375fba6fb3212a322d4a7dbc263cc67276f1174bcccd",
  "state_keys": ["glow", "infl", "p", "phase", "scale"],
  "window": {
   "frames": [118, 1712],

@@ -25,7 +25,7 @@ of projects/), and the kit matched to the episode's own series rules inside the 
     python -m tools.studio_export fighter_bagpipes        writes studio/reference/fighters/bagpipes/ (after Gate O)"""
 from . import m3refs
 
-RD = 'render.py'
+RD, AU = 'render.py', 'audio.py'
 
 # ---------------------------------------------------------------- #30: its ACCORDION bare, and the kit's renderer
 ACCORDION_BARE = [
@@ -62,6 +62,12 @@ ACCORDION_BARE = [
     # when it loses: base.Look's shards (glass only) and K.O. spray (sparks)
     (RD, "['button'] * 6 + ['pleat'] * 6 + ['key'] * 4)", "[])"),
     (RD, "'puffs', n=24, spread=180, speed=(1.2, 3.0), scale=1.3)", "'sparks', n=30, spread=180, speed=(0.8, 2.2))"),
+    # the episode's own bug (ruling M4-R11): main() overwrites its stinger time `tw` with the title card's loop
+    # (`for tw in (t1, t2, t3)`); BAGPIPES's stinger lands on "(WINNER) WINS" at q16(T_KO + 1.3), as the kit's
+    (AU, "        mix.place('solo', chanter(81, 1.2, 1.0, grace=True), tw, 0.36)\n"
+         "        mix.place('solo', chanter(69, 1.2, 0.8), tw, 0.18)\n",
+     "        mix.place('solo', chanter(81, 1.2, 1.0, grace=True), q16(T_KO + 1.3), 0.36)\n"
+     "        mix.place('solo', chanter(69, 1.2, 0.8), q16(T_KO + 1.3), 0.18)\n"),
 ]
 
 # ---------------------------------------------------------------- #30: its BAGPIPES's layers (all off = base.Look)
@@ -138,6 +144,26 @@ def no_ability_list(stage, module):
         module.fight_hud = fight_hud
 
 
+GATE_O_BUSES = {'bagpipes': 'chanter', 'bagpipes stomp': 'stomp', 'bagpipes choir': 'choir'}
+
+
+def episode_bus_names(stage, module):
+    """(Gate O harness, ruling M4-R9) the module's own buses under #30's names: 'bagpipes' was #30's 'chanter', its
+    'bagpipes stomp' / 'bagpipes choir' #30's bed buses 'stomp' / 'choir' (the kit's score, before the master)"""
+    if stage == 'music':
+        real = module.score
+
+        def score():
+            mix = real()
+            for own, ep in GATE_O_BUSES.items():
+                if own in mix.buses:
+                    if ep in mix.buses:
+                        raise SystemExit(f'Gate O: the kit score already has a bus {ep!r} (renaming {own!r})')
+                    mix.buses[ep] = mix.buses.pop(own)
+            return mix
+        module.score = score
+
+
 ORIGIN = dict(
     episode='ballfight_bagpipes_vs_accordion',
     config=dict(MOOD='big_top',                       # #30's sea shanty is not a kit mood yet: BAGPIPES's own buses only
@@ -149,7 +175,8 @@ ORIGIN = dict(
     other=ACCORDION_BARE,
     layers=BAGPIPES_LAYERS,
     harness=[dict(name="#30's beat ramp (0.07 s; the kit's 0.12 s)", beat_pulse_pre=0.07),
-             dict(name="#30's HUD: no ability list", call='tools.studio_export.fighter_bagpipes:no_ability_list')],
+             dict(name="#30's HUD: no ability list", call='tools.studio_export.fighter_bagpipes:no_ability_list'),
+             dict(name="#30's bus names (M4-R9)", call='tools.studio_export.fighter_bagpipes:episode_bus_names')],
     buses=['chanter', 'drone'],
 )
 

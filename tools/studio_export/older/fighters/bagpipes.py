@@ -19,8 +19,8 @@ drones, whole cycles in the file): low at rest, swelling as the bag fills, souri
 K.O.; the flight squeals up about an octave; a landed flight is a grace-note squeal and a thud, a body slam a drone
 blat, a stomp and a thud; WAR CRY skirls up to high A, HIGHLAND FLING throws a reel flourish (and the choir's 'oh'),
 BAG BURST pops and deflates; it falls apart deflating, its stinger and solo on the chanter, its pieces fly home as a
-chanter run. Buses as #30 placed them: 'chanter' (its own bus), 'drone', and the episode's shared 'fx', 'stomp',
-'choir' and 'solo'.
+chanter run. Buses (ruling M4-R9): its own 'bagpipes' (#30's 'chanter') and 'drone', its own 'bagpipes stomp' and
+'bagpipes choir' (#30 placed these on its bed's 'stomp' and 'choir'), and the shared 'fx' and 'solo'.
 
 #30's renderer drew both fighters inline; Gate O (tools/studio_export/fighter_bagpipes.py, SPEC.origin) proves this
 module against it, layer by layer and bus by bus."""
@@ -419,12 +419,14 @@ def squeal(dur, f0, t0):
     return A.lp(x * env, 5200) + air * env
 
 
+STOMP, CHOIR = 'bagpipes stomp', 'bagpipes choir'
+
+
 class Sound(base.Sound):
     bus_gain, send = 1.0, 0.45                                     # #30's chanter bus (BUS_GAIN, the reverb send)
-
-    def __init__(self, M, k):
-        super().__init__(M, k)
-        self.bus = 'chanter'                                       # #30's bus names: 'chanter', 'drone'
+    # buses (ruling M4-R9): its own bus 'bagpipes' (#30's 'chanter'), 'drone' (#30's own), and its own copies of
+    # #30's bed buses: STOMP (#30's 'stomp': a body slam's stamp) and CHOIR (#30's 'choir': HIGHLAND FLING's 'oh'),
+    # so no theme's bed level ever applies to them; Gate O renames them back (fighter_bagpipes.py's harness)
 
     def melody_at(self, t):
         """#30's melody_at: the chanter line (config LINES) at t"""
@@ -435,13 +437,13 @@ class Sound(base.Sound):
         B, BAG = _bag()
         blast = B._resample(np.asarray(BAG.drone_voice('ghb', 0.75), float)) * 3.2
         mix.place('drone', np.stack([blast, blast], 1), t, 0.55)
-        mix.place('chanter', chanter(81, 0.62, 1.0, grace=True), t, 0.46)
-        mix.place('chanter', chanter(69, 0.62, 0.9), t, 0.26)
+        mix.place(self.bus, chanter(81, 0.62, 1.0, grace=True), t, 0.46)
+        mix.place(self.bus, chanter(69, 0.62, 0.9), t, 0.26)
 
     def count_in(self, mix):
         T = self.T
         for j, (tc, txt) in enumerate(T.COUNT[:3]):
-            mix.place('chanter', chanter((71, 74, 76)[j], 0.30, 0.9, grace=True), tc, 0.40)
+            mix.place(self.bus, chanter((71, 74, 76)[j], 0.30, 0.9, grace=True), tc, 0.40)
 
     def play(self, mix):
         """the drone is the bag's air; the flight squeals; its hits and abilities (#30 main(), in its order)"""
@@ -480,7 +482,7 @@ class Sound(base.Sound):
             m0 = self.melody_at(q16(c['t_rel']))
             sig = squeal(d, BAG.midi_hz(m0), c['t_rel'])
             sg, gg, _ = self.colour(sig, c['t_rel'], 1.0)
-            mix.place('chanter', sg, c['t_rel'], 0.24 * gg, pan=-0.15)
+            mix.place(self.bus, sg, c['t_rel'], 0.24 * gg, pan=-0.15)
         for e in EV:
             t, kind = e[0], e[1]
             if t > T_KO + 0.01:
@@ -491,11 +493,11 @@ class Sound(base.Sound):
                 if e[7] == 'flight':                                   # a squealing grace note + the hit
                     m = self.melody_at(tq) + 12 if self.melody_at(tq) < 72 else self.melody_at(tq)
                     sig, gg, lead = self.colour(chanter(m, 0.22, 1.0, grace=True), tq, 1.0)
-                    mix.place('chanter', sig, tq, 0.34 * gg, pan=pan)
+                    mix.place(self.bus, sig, tq, 0.34 * gg, pan=pan)
                     mix.place('fx', A.thud(0.32, 150, 55, seed=int(t * 7)), tq, 0.18)
                 else:                                                  # a body slam: a drone blat + a stomp
-                    mix.place('chanter', A.lp(self.colour(chanter(57, 0.3, 1.0), tq)[0], 1800), tq, 0.30, pan=pan)
-                    mix.place('stomp', stomp(1.0, int(t * 3)), tq, 0.40)
+                    mix.place(self.bus, A.lp(self.colour(chanter(57, 0.3, 1.0), tq)[0], 1800), tq, 0.30, pan=pan)
+                    mix.place(STOMP, stomp(1.0, int(t * 3)), tq, 0.40)
                     mix.place('fx', A.thud(0.4, 110, 40, seed=int(t * 5)), tq, 0.22)
         for e in EV:
             t, kind = e[0], e[1]
@@ -508,20 +510,20 @@ class Sound(base.Sound):
                 tq = q16(t)
                 if name == 'WAR CRY':                                  # the skirl: a run up to high A, held
                     for j, m in enumerate((69, 71, 72, 74, 76, 79)):
-                        mix.place('chanter', self.colour(chanter(m, T.S16 * 0.9, 1.0, grace=(j == 0)), t)[0],
+                        mix.place(self.bus, self.colour(chanter(m, T.S16 * 0.9, 1.0, grace=(j == 0)), t)[0],
                                   tq + j * T.S16 / 2, 0.26)
-                    mix.place('chanter', self.colour(chanter(81, 2 * T.BEAT, 1.0, grace=True), t)[0], tq + 3 * T.S16,
+                    mix.place(self.bus, self.colour(chanter(81, 2 * T.BEAT, 1.0, grace=True), t)[0], tq + 3 * T.S16,
                               0.34)
                 elif name == 'HIGHLAND FLING':                         # a reel flourish
                     for j, m in enumerate((76, 74, 72, 74, 76, 79, 81, 79)):
-                        mix.place('chanter', self.colour(chanter(m, T.S16 * 0.85, 0.95, grace=(j % 4 == 0)), t)[0],
+                        mix.place(self.bus, self.colour(chanter(m, T.S16 * 0.85, 0.95, grace=(j % 4 == 0)), t)[0],
                                   tq + j * T.S16, 0.22)
-                    mix.place('choir', choir((57, 60, 64), 0.18, att=0.01, rel=0.12, vowel='o'), tq, 0.14)
+                    mix.place(CHOIR, choir((57, 60, 64), 0.18, att=0.01, rel=0.12, vowel='o'), tq, 0.14)
                 elif name == 'BAG BURST':                              # the bag pops, then deflates
                     pop = A.bp(np.random.default_rng(29).normal(0, 1, int(0.12 * SR)), 300, 9000) * \
                         np.exp(-A.tt(int(0.12 * SR)) / 0.02)
                     mix.place('fx', pop, tq, 0.55)
-                    mix.place('chanter', deflate(1.8, BAG.midi_hz(81), 160.0), tq + 0.03, 0.34)
+                    mix.place(self.bus, deflate(1.8, BAG.midi_hz(81), 160.0), tq + 0.03, 0.34)
                     mix.place('fx', A.thud(0.7, 100, 32), tq, 0.45)
 
     def _cycles(self):
@@ -544,15 +546,13 @@ class Sound(base.Sound):
     def fall_apart(self, mix):
         """the bag gives out: the chanter sliding down and choking"""
         B, BAG = _bag()
-        mix.place('chanter', deflate(2.2, BAG.midi_hz(76), 120.0, 27), self.M.P.T_HS, 0.36)
+        mix.place(self.bus, deflate(2.2, BAG.midi_hz(76), 120.0, 27), self.M.P.T_HS, 0.36)
 
     def stinger(self, mix, tw):
-        """#30's stinger lands where #30's main() placed it: its `tw` (q16(T_KO + 1.3)) is overwritten by the title
-        card's loop (`for tw in (t1, t2, t3)`), so the stinger sounds on the card's third word, 2 beats in, not on
-        "(WINNER) WINS" (as delivered; the kit's `tw` is not used)"""
-        t3 = 2 * self.T.BEAT
-        mix.place('solo', chanter(81, 1.2, 1.0, grace=True), t3, 0.36)
-        mix.place('solo', chanter(69, 1.2, 0.8), t3, 0.18)
+        """on "(WINNER) WINS" at the kit's `tw` (ruling M4-R11: #30's main() overwrote its `tw` with the title card's
+        loop by accident; Gate O restores it in the episode's copy)"""
+        mix.place('solo', chanter(81, 1.2, 1.0, grace=True), tw, 0.36)
+        mix.place('solo', chanter(69, 1.2, 0.8), tw, 0.18)
 
     def solo(self, mix, t0):
         T = self.T
@@ -569,4 +569,4 @@ class Sound(base.Sound):
         run = [57, 60, 62, 64, 67, 69, 72, 76]
         for j, m in enumerate(run):
             tj = q16(T.T_REASSEMBLE + (T.T_GLIDE - T.T_REASSEMBLE) * j / len(run))
-            mix.place('chanter', chanter(m + 12 if m < 67 else m, T.S16 * 1.6, 0.6), tj, 0.16)
+            mix.place(self.bus, chanter(m + 12 if m < 67 else m, T.S16 * 1.6, 0.6), tj, 0.16)
