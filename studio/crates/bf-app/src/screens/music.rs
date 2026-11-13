@@ -2,10 +2,13 @@
 //! live and what waits"): the controls on the left, the arrangement of the take's soundtrack in the rest, with the
 //! take's loudness checks under the lanes and a footer that leads on to Render.
 //!
-//! Live: the theme, the chord loop and who plays bass. Drawn but disabled, each saying why when hovered: the key
-//! (it follows the theme), the music seed and "Re-roll music" (new takes arrive with the music system). The lanes
-//! are plain blocks showing where each part of the built soundtrack sounds; they carry no names until the music
-//! system gives the parts names (section 9).
+//! Live: the theme, the chord loop (each of the theme's loops, and the fight file's own when it is none of them) and,
+//! when both fighters' cards can play bass and one of them does, who plays bass. Read-only: the theme's options as
+//! the fight file sets them ("The sequel", "No bass drums", "Plugged: Electric") and each fighter's part (ruling
+//! M3-R8). Drawn but disabled, each saying why when hovered: the key (it follows the theme), the music seed and
+//! "Re-roll music" (new takes arrive with the music system). The lanes are plain blocks showing where each part of
+//! the built soundtrack sounds; they carry no names until the music system gives the parts names (section 9). A
+//! take whose loudness checks fail says that its video would stop there, and offers the next fight that fits.
 //!
 //! The screen is drawn from the view model alone and pushes what the owner does; the only things it remembers are
 //! egui's own (where the two scroll areas are scrolled, which control has the keyboard, whether the theme's list is
@@ -18,6 +21,7 @@ use egui::{
     UiBuilder, WidgetInfo, pos2, vec2,
 };
 
+use crate::model::roster::{BASS_ROLE, part_words};
 use crate::model::take::{Lane, LaneGroup, MusicView};
 use crate::model::{Step, View};
 use crate::state::{Action, ViewModel};
@@ -84,11 +88,15 @@ const ICON: f32 = 12.0;
 const RING_ROOM: f32 = 4.0;
 
 /// Why the key cannot be changed.
-pub const KEY_WHY: &str = "The key follows the theme in this version.";
+pub const KEY_WHY: &str = "The key comes with the chord loop in this version.";
 /// Why the music seed and "Re-roll music" cannot be used.
 pub const TAKES_WHY: &str = "New takes arrive with the music system.";
 /// The line under them.
 pub const TAKES_LINE: &str = "New takes arrive with the music system. This version plays the series' own arrangement.";
+/// Under the fight file's own chord loop.
+pub const OWN_LOOP: &str = "The last loop is this match-up's own, from the series.";
+/// Under the theme's options.
+pub const OPTIONS_LINE: &str = "Set by the fight file. A new theme starts them at its own settings.";
 /// The screen before a seed is picked.
 pub const NO_SEED: &str = "Pick a seed first. The music is built for the fight you choose.";
 /// What stands in for a value that is not there.
@@ -200,10 +208,11 @@ fn controls(ui: &mut Ui, vm: &ViewModel, inner_h: f32, out: &mut Vec<Action>) {
 
     group_label(ui, "Key");
     ui.horizontal(|ui| {
-        let key = theme.map_or(NONE, |t| t.key.as_str());
+        let key_scale = vm.key_scale();
+        let key = key_scale.as_ref().map_or(NONE, |(k, _)| k.as_str());
         buttons::dropdown_disabled(ui, "Key", key, KEY_W, KEY_WHY);
-        if let Some(theme) = theme {
-            let line = format!("{}, from the theme", theme.scale);
+        if let Some((_, scale)) = &key_scale {
+            let line = format!("{scale}, from the theme");
             plain(ui, RichText::new(line).font(body()).color(MUTED));
         }
     });
@@ -211,7 +220,10 @@ fn controls(ui: &mut Ui, vm: &ViewModel, inner_h: f32, out: &mut Vec<Action>) {
 
     group_label(ui, "Chord loop");
     let loops = theme.map_or(&[][..], |t| &t.chord_loops[..]);
-    for (i, chords) in loops.iter().enumerate() {
+    // the theme's loops, then the fight file's own when it is none of them (one past the theme's last)
+    let own = vm.own_loop();
+    let all = loops.iter().map(|l| &l[..]).chain(own);
+    for (i, chords) in all.enumerate() {
         if i > 0 {
             ui.add_space(LOOP_GAP);
         }
@@ -221,33 +233,56 @@ fn controls(ui: &mut Ui, vm: &ViewModel, inner_h: f32, out: &mut Vec<Action>) {
             out.push(Action::SetChordLoop(i));
         }
     }
+    if own.is_some() {
+        ui.add_space(LABEL_GAP);
+        hint(ui, OWN_LOOP);
+    }
     ui.add_space(GROUP_GAP);
 
-    group_label(ui, "Who plays bass");
-    let names = vm.names();
-    let reasons: Vec<Option<String>> = [0, 1]
-        .map(|side| {
-            let can = vm
-                .fighter(side)
-                .and_then(|f| f.card.as_ref())
-                .is_some_and(|card| card.can_play_bass);
-            (!can).then(|| format!("{} has no bass part in this version", names[side]))
-        })
-        .into();
-    let options: Vec<(&str, Option<&str>)> = names
-        .iter()
-        .zip(&reasons)
-        .map(|(name, reason)| (name.as_str(), reason.as_deref()))
-        .collect();
-    let bass = vm.draft.bass.filter(|&side| side < 2);
-    if let Some(side) = buttons::segmented(ui, "Who plays bass", &options, bass, width)
-        && Some(side) != bass
-    {
-        out.push(Action::SetBass(side));
+    let options = vm.option_words();
+    if !options.is_empty() {
+        group_label(ui, "Theme options");
+        for (i, words) in options.iter().enumerate() {
+            if i > 0 {
+                ui.add_space(LABEL_GAP);
+            }
+            plain(ui, RichText::new(words).font(body()).color(TEXT));
+        }
+        ui.add_space(LABEL_GAP);
+        hint(ui, OPTIONS_LINE);
+        ui.add_space(GROUP_GAP);
     }
-    ui.add_space(LABEL_GAP);
-    hint(ui, "The other fighter takes the melody.");
+
+    let names = vm.names();
+    let parts = vm.parts();
+    let known = vm.known_parts();
+    group_label(ui, "Parts");
+    for side in [0, 1] {
+        if side > 0 {
+            ui.add_space(LABEL_GAP);
+        }
+        let line = format!("{} plays {}.", names[side], part_words(&parts[side], &known[side]));
+        plain(ui, RichText::new(line).font(body()).color(TEXT));
+    }
     ui.add_space(GROUP_GAP);
+
+    if vm.bass_can_move() {
+        group_label(ui, "Who plays bass");
+        let options: Vec<(&str, Option<&str>)> = names.iter().map(|name| (name.as_str(), None)).collect();
+        let bass = parts.iter().position(|p| p == BASS_ROLE);
+        if let Some(side) = buttons::segmented(ui, "Who plays bass", &options, bass, width)
+            && Some(side) != bass
+        {
+            out.push(Action::SetBass(side));
+        }
+        ui.add_space(LABEL_GAP);
+        let other = bass.map_or(0, |side| 1 - side);
+        hint(
+            ui,
+            &format!("The other fighter takes {}.", part_words(&parts[other], &known[other])),
+        );
+        ui.add_space(GROUP_GAP);
+    }
 
     divider(ui);
     ui.add_space(GROUP_GAP);
@@ -374,7 +409,7 @@ fn arrangement_column(ui: &mut Ui, vm: &ViewModel, out: &mut Vec<Action>) {
                     });
             }
         }
-        loudness(ui, vm.take.music.as_ref());
+        loudness(ui, vm, out);
     });
 
     ui.painter().rect_filled(
@@ -529,8 +564,10 @@ fn markers(ui: &mut Ui, row: Rect, left: f32, width: f32, markers: &[(f32, Strin
     }
 }
 
-/// The block under the lanes: "Loudness", what it is, one row per check, and what arrives later.
-fn loudness(ui: &mut Ui, music: Option<&MusicView>) {
+/// The block under the lanes: "Loudness", what it is, one row per check, what a failed check means with the next
+/// fight that fits ("Use seed 7731", or "Go to seeds" when no other fits), and what arrives later.
+fn loudness(ui: &mut Ui, vm: &ViewModel, out: &mut Vec<Action>) {
+    let music = vm.take.music.as_ref();
     Frame::new()
         .inner_margin(Margin::symmetric(UNDER_PAD.0, UNDER_PAD.1))
         .show(ui, |ui| {
@@ -562,6 +599,23 @@ fn loudness(ui: &mut Ui, music: Option<&MusicView>) {
                         wrapped(ui, RichText::new(&check.note).font(body()).color(TEXT));
                     });
                 });
+            }
+            if let Some(words) = vm.failed_take_words() {
+                ui.add_space(UNDER_GAP);
+                wrapped(ui, RichText::new(words).font(body()).color(TEXT_STRONG));
+                ui.add_space(UNDER_GAP);
+                match vm.next_fit() {
+                    Some(next) => {
+                        if buttons::boxed(ui, &format!("Use seed {next}")).clicked() {
+                            out.push(Action::SelectSeed(next));
+                        }
+                    }
+                    None => {
+                        if buttons::boxed(ui, "Go to seeds").clicked() {
+                            out.push(Action::Go(View::Step(Step::Seeds)));
+                        }
+                    }
+                }
             }
             ui.add_space(UNDER_GAP);
             hint(

@@ -994,3 +994,54 @@ fn a_column_scrolled_to_a_chosen_chip_does_not_fade_it_and_shows_its_bar() {
         "the roster's bar shows while it overflows"
     );
 }
+
+/// Task 60: the real roster's Match-up (the 20 kit fighters, every one offered, and the 14 kit themes): no chip says
+/// "not built", the status bar counts what the app has, and the 13-letter BASS CLARINET fits its corner card at 21
+/// tall on two lines (the 10-letter CONTRABASS at 21 under the portrait).
+#[test]
+fn the_whole_kit_roster() {
+    let _gpu = gpu();
+    let mut vm = crate::music::kit_vm("bassclarinet_vs_bassoon", Step::Matchup, false);
+    let mut harness = showing(REF, vm.clone());
+    harness.run();
+    assert!(
+        harness.query_by_label("20 fighters, 14 themes").is_some(),
+        "the status bar"
+    );
+    assert!(harness.query_all_by_label(NOT_BUILT).next().is_none());
+    let roster = vm.roster.clone().expect("the roster");
+    for f in &roster.fighters {
+        let chip = harness
+            .query_all_by_role(Role::Button)
+            .find(|n| n.accesskit_node().label().is_some_and(|l| l.starts_with(&f.display)))
+            .unwrap_or_else(|| panic!("a chip for {}", f.display));
+        assert!(!chip.accesskit_node().is_disabled(), "{} is offered", f.display);
+    }
+    let card = Rect::from_min_max(workspace(&harness).min, egui::pos2(250.0, workspace(&harness).max.y));
+    let name = harness
+        .query_all_by_label("Bass clarinet")
+        .find(|n| n.accesskit_node().role() == Role::Image && card.contains_rect(n.rect()))
+        .expect("the left card's name")
+        .rect();
+    assert_eq!(
+        (name.width(), name.height()),
+        (47.0 * 3.0, 15.0 * 3.0),
+        "two lines of 21"
+    );
+    let portrait = harness.get_by_label("Portrait of Bass clarinet").rect();
+    assert_eq!(name.min.x, portrait.max.x + 12.0, "beside the portrait");
+    drop(harness);
+    vm.draft.fighters = ["CONTRABASS".to_string(), "BASSOON".to_string()];
+    let mut harness = showing(REF, vm);
+    harness.run();
+    let card = Rect::from_min_max(workspace(&harness).min, egui::pos2(250.0, workspace(&harness).max.y));
+    let name = harness
+        .query_all_by_label("Contrabass")
+        .find(|n| n.accesskit_node().role() == Role::Image && card.contains_rect(n.rect()))
+        .expect("the left card's name")
+        .rect();
+    assert_eq!(name.height(), 21.0);
+    let portrait = harness.get_by_label("Portrait of Contrabass").rect();
+    assert!(name.min.y > portrait.max.y, "under the portrait");
+    assert_eq!(harness.unnamed_widgets(), Vec::<String>::new());
+}

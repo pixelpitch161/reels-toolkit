@@ -494,6 +494,7 @@ pub(crate) mod tests {
             captions,
             title_card,
             problem,
+            music: _,
         } = wait_for(&engine, 5.0, |e| matches!(e, Event::FightInfo { .. }))
         else {
             unreachable!()
@@ -665,6 +666,7 @@ pub(crate) mod tests {
             captions,
             title_card,
             problem,
+            music: _,
         } = described(9, || panic!("on purpose"))
         else {
             panic!("not a description");

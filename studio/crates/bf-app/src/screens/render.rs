@@ -322,6 +322,9 @@ fn waiting_to_add(ui: &mut Ui, vm: &ViewModel, rect: Rect, reason: &str, out: &m
     if create {
         buttons_w += GAP + button_w(ui, "Create folder");
     }
+    if let Some(next) = vm.failed_take_words().and(vm.next_fit()) {
+        buttons_w += GAP + button_w(ui, &format!("Use seed {next}"));
+    }
     let words_w = (rect.width() - buttons_w - LABEL_GAP).max(0.0);
     let words_h = wrapped_h(ui, reason, body(), words_w);
     let height = words_h.max(CONTROL_H);
@@ -332,6 +335,12 @@ fn waiting_to_add(ui: &mut Ui, vm: &ViewModel, rect: Rect, reason: &str, out: &m
         out.push(Action::CreateFolder);
     }
     buttons::disabled(&mut c, "Add to queue", reason);
+    // a take whose soundtrack fails a check: the next fight that fits, a click away
+    if let Some(next) = vm.failed_take_words().and(vm.next_fit())
+        && buttons::boxed(&mut c, &format!("Use seed {next}")).clicked()
+    {
+        out.push(Action::SelectSeed(next));
+    }
     let top = if words_h < CONTROL_H {
         rect.min.y + (CONTROL_H - words_h) / 2.0
     } else {

@@ -19,7 +19,7 @@ use crate::model::balance::BalanceStats;
 use crate::model::draft::{CaptionTexts, Draft};
 use crate::model::library::{FolderState, LibraryEntry};
 use crate::model::queue::Queue;
-use crate::model::roster::{Roster, RosterEntry, ThemeEntry};
+use crate::model::roster::{BASS_ROLE, PairMusic, Roster, RosterEntry, ThemeEntry, bass_can_move, parts_with_bass};
 use crate::model::shortlist::{FilterSpec, SearchState, Shortlist};
 use crate::model::story::StoryView;
 use crate::model::take::{Frame, MusicView, PlayerCmd, SoundState, TransportAction, TransportView};
@@ -72,6 +72,9 @@ pub struct ViewModel {
     pub pair_rules: Vec<String>,
     /// Why these two cannot fight, in words.
     pub fight_problem: Option<String>,
+    /// What the fight file the draft is laid over says about its music, as the engine last described the two
+    /// fighters (`None` until it has).
+    pub pair_music: Option<PairMusic>,
     pub balance: BalanceView,
     pub filters: FilterSpec,
     pub shortlist: Shortlist,
@@ -119,6 +122,130 @@ impl ViewModel {
         self.roster.as_ref()?.themes.iter().find(|t| t.name == self.draft.theme)
     }
 
+    /// Whether each fighter's card can play the bass line, left then right.
+    pub fn can_play_bass(&self) -> [bool; 2] {
+        [0, 1].map(|side| {
+            self.fighter(side)
+                .and_then(|f| f.card.as_ref())
+                .is_some_and(|card| card.can_play_bass)
+        })
+    }
+
+    /// Each fighter's part as the fight file writes it, left then right: the engine's description, or, before
+    /// there is one, the bass for the fighter the draft puts on bass and the melody for the other.
+    pub fn written_parts(&self) -> [String; 2] {
+        match &self.pair_music {
+            Some(m) => m.roles.clone(),
+            None => [0, 1].map(|side| {
+                if self.draft.bass == Some(side) {
+                    BASS_ROLE
+                } else {
+                    "melody"
+                }
+                .to_string()
+            }),
+        }
+    }
+
+    /// Each fighter's part in the fight as the draft makes it, left then right: the written parts, swapped when
+    /// the draft moves the bass (ruling M3-R8; the engine's `convert::build` applies the same rule).
+    pub fn parts(&self) -> [String; 2] {
+        parts_with_bass(&self.written_parts(), self.draft.bass, self.can_play_bass())
+    }
+
+    /// Whether the owner may say who plays bass: both cards can play it and one of the written parts is the bass.
+    pub fn bass_can_move(&self) -> bool {
+        bass_can_move(&self.written_parts(), self.can_play_bass())
+    }
+
+    /// The draft's theme options in words, read-only: the fight file's own while the draft is in the file's
+    /// theme, else the theme's defaults (a plugged fighter is then the left corner's).
+    pub fn option_words(&self) -> Vec<String> {
+        let Some(theme) = self.theme() else {
+            return Vec::new();
+        };
+        let set = match &self.pair_music {
+            Some(m) if m.theme == self.draft.theme => &m.options[..],
+            _ => &[],
+        };
+        theme.option_words(set, &self.draft.fighters)
+    }
+
+    /// The key and scale the draft's music is in (`convert::set_music`'s rule): the fight file's own while the draft
+    /// is in its theme on its loop, else those the chosen loop comes with. `None` before the roster is here.
+    pub fn key_scale(&self) -> Option<(String, String)> {
+        let theme = self.theme()?;
+        if let Some(m) = self.pair_music.as_ref().filter(|m| m.theme == self.draft.theme) {
+            let own = match theme.chord_loops.get(self.draft.chord_loop) {
+                Some(chords) => *chords == m.chord_loop,
+                None => true,
+            };
+            if own {
+                return Some((m.key.clone(), m.scale.clone()));
+            }
+        }
+        let at = if self.draft.chord_loop < theme.chord_loops.len() {
+            self.draft.chord_loop
+        } else {
+            0
+        };
+        Some(
+            theme
+                .loop_keys
+                .get(at)
+                .cloned()
+                .unwrap_or_else(|| (theme.key.clone(), theme.scale.clone())),
+        )
+    }
+
+    /// The parts each fighter plays in the series' kit configs, left then right (for [`part_words`]).
+    ///
+    /// [`part_words`]: crate::model::roster::part_words
+    pub fn known_parts(&self) -> [Vec<String>; 2] {
+        [0, 1].map(|side| self.fighter(side).map(|f| f.parts.clone()).unwrap_or_default())
+    }
+
+    /// The fight file's own chord loop when the draft is in the file's theme and that loop is none of the
+    /// theme's: the Music screen offers it after the theme's loops (the draft's chord loop one past the last).
+    pub fn own_loop(&self) -> Option<&[String]> {
+        let theme = self.theme()?;
+        let m = self.pair_music.as_ref()?;
+        (m.theme == self.draft.theme && !theme.chord_loops.contains(&m.chord_loop)).then_some(&m.chord_loop[..])
+    }
+
+    /// The next fight on the shortlist that fits the beat sheet after the draft's seed, in the shortlist's order
+    /// (from the top again after the last; the first that fits when the seed is not on it). `None` when no other
+    /// fight on it fits.
+    pub fn next_fit(&self) -> Option<u64> {
+        let fits: Vec<u64> = self.shortlist.rows.iter().filter(|r| r.fits).map(|r| r.seed).collect();
+        let at = self.draft.seed.and_then(|s| fits.iter().position(|&f| f == s));
+        let (after, before) = match at {
+            Some(i) => (&fits[i + 1..], &fits[..i]),
+            None => (&fits[..], &[][..]),
+        };
+        after
+            .iter()
+            .chain(before)
+            .copied()
+            .find(|&s| Some(s) != self.draft.seed)
+    }
+
+    /// When the take's soundtrack fails one of its checks (a fit can: the search does not listen to the music,
+    /// milestone 3 Task 43), what that means in words: its video would stop at that check, and what to try
+    /// instead ("Try seed 7731, the next fight that fits."). `None` while the take passes, or has no sound yet.
+    pub fn failed_take_words(&self) -> Option<String> {
+        let seed = self.draft.seed?;
+        let failed = self.take.music.as_ref()?.checks.iter().find(|c| !c.pass)?;
+        let next = match self.next_fit() {
+            Some(n) => format!("Try seed {n}, the next fight that fits."),
+            None => "Try another seed.".to_string(),
+        };
+        Some(format!(
+            "Seed {seed} fails the check \"{}\", so its video would stop there and nothing would be saved. {next}",
+            failed.title
+        ))
+    }
+
     /// The two fighters' names as shown: "Flute", "Trombone".
     pub fn names(&self) -> [String; 2] {
         [0, 1].map(|side| {
@@ -161,6 +288,8 @@ pub enum Action {
         released: bool,
     },
     ResetHandicap,
+    /// Back to the series' frozen handicap of a kit pair (ruling M3-R6).
+    UseSeriesHandicap,
     AutoBalance,
     StopBalance,
     SetFilters(FilterSpec),
@@ -286,6 +415,7 @@ impl AppState {
             draft: empty_draft(),
             pair_rules: Vec::new(),
             fight_problem: None,
+            pair_music: None,
             balance: BalanceView::default(),
             filters: FilterSpec::default(),
             shortlist: idle_shortlist(settings.workers),
@@ -373,6 +503,7 @@ impl AppState {
             Action::SetBars(bars) => self.set_bars(bars),
             Action::SetHandicap { side, value, released } => self.set_handicap(side, value, released, &mut fx),
             Action::ResetHandicap => self.reset_handicap(&mut fx),
+            Action::UseSeriesHandicap => self.use_series_handicap(&mut fx),
             Action::AutoBalance => self.auto_balance(&mut fx),
             Action::StopBalance => self.stop_balance(&mut fx),
             Action::SetFilters(filters) => self.set_filters(filters, &mut fx),

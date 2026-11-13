@@ -743,3 +743,35 @@ fn balance_matches() {
     harness.run();
     harness.snapshot("balance_1440x900");
 }
+
+/// A kit pair's Balance screen names the series' handicap for the match-up (ruling M3-R6) and, once the handicap
+/// has moved from it, offers the way back.
+#[test]
+fn a_kit_pair_names_its_series_handicap() {
+    let _gpu = gpu();
+    let mut vm = crate::music::kit_vm("bassdrum_vs_tuba", bf_app::model::Step::Balance, false);
+    let words = bf_app::screens::balance::series_words([0.86, 1.0]);
+    assert_eq!(words, "The series' handicap for this match-up: ×0.86 and ×1.00.");
+    let harness = showing_vm(vm.clone());
+    assert!(harness.query_all_by_label(&words).next().is_some(), "{words}");
+    assert!(
+        harness
+            .query_all_by_label(bf_app::screens::balance::USE_SERIES)
+            .next()
+            .is_none(),
+        "already on it"
+    );
+    drop(harness);
+    vm.draft.handicap = [1.2, 1.0];
+    let mut harness = showing_vm(vm);
+    harness.get_by_label(bf_app::screens::balance::USE_SERIES).click();
+    harness.run();
+    assert_eq!(harness.state().log, vec![bf_app::state::Action::UseSeriesHandicap]);
+    assert_eq!(harness.unnamed_widgets(), Vec::<String>::new());
+}
+
+fn showing_vm<'a>(vm: bf_app::state::ViewModel) -> egui_kittest::Harness<'a, bf_app::app::BfApp> {
+    let mut harness = crate::common::app_harness(crate::common::REF, move |cc| bf_app::app::BfApp::showing(cc, vm));
+    harness.run();
+    harness
+}

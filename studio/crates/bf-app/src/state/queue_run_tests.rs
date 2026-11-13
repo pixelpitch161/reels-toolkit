@@ -89,6 +89,17 @@ fn picture(take: TakeId, seed: u64) -> Event {
     }
 }
 
+/// The take's sound, with the sample music and its passing checks.
+fn sound(take: TakeId) -> Event {
+    Event::TakeSound {
+        take,
+        audio: crate::model::take::AudioTake {
+            samples: std::sync::Arc::from(vec![[0.0f32; 2]; 4]),
+        },
+        music: sample::music(),
+    }
+}
+
 fn missing_text() -> String {
     format!(
         "The output folder {} is missing. Create it, or choose another folder.",
@@ -108,6 +119,7 @@ fn each_stage(mut at: impl FnMut(&mut AppState, Option<String>)) {
         captions: sample::captions(),
         title_card: None,
         problem: Some("These two cannot fight yet.".to_string()),
+        music: None,
     });
     at(&mut s, Some("These two cannot fight yet.".to_string()));
 
@@ -128,8 +140,12 @@ fn each_stage(mut at: impl FnMut(&mut AppState, Option<String>)) {
     let take = take_of(&fx);
     at(&mut s, Some("Seed 20418 is still being drawn.".to_string()));
 
-    // 5. The folder not checked yet.
+    // 5. The take's sound (and so its checks) not there yet.
     s.apply(picture(take, 20418));
+    at(&mut s, Some("Seed 20418's sound is still being built.".to_string()));
+
+    // 6. The folder not checked yet.
+    s.apply(sound(take));
     at(&mut s, Some("Checking the output folder.".to_string()));
 
     // 6. Missing.
@@ -177,6 +193,7 @@ fn all_well() -> AppState {
     let mut s = ready();
     let fx = s.dispatch(Action::SelectSeed(20418));
     s.apply(picture(take_of(&fx), 20418));
+    s.apply(sound(take_of(&fx)));
     s.apply(folder("flute_vs_trombone", FolderState::Ok { taken: false }));
     s.apply(Event::Tools {
         ffmpeg: Ok("ffmpeg 9.0.2".to_string()),
@@ -258,7 +275,7 @@ fn why_not_add_has_nine_reasons_in_order() {
         stages += 1;
         assert_eq!(why_not_add(&s.vm), expected, "stage {stages}");
     });
-    assert_eq!(stages, 10);
+    assert_eq!(stages, 11);
 }
 
 #[test]
@@ -454,6 +471,7 @@ fn the_rendering_line_outranks_the_search_but_not_a_problem() {
         captions: sample::captions(),
         title_card: None,
         problem: Some("These two cannot fight yet.".to_string()),
+        music: None,
     });
     assert_eq!(s.vm.status, "These two cannot fight yet.");
 }
