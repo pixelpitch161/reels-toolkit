@@ -1,0 +1,636 @@
+{
+ "about": "Gate O (plan m4 Task 2): SYNTH's reference kit module against projects/ballfight_turntables_vs_synth, its layers pixel for pixel (the contribution, on minus off, in int16) and its buses sample for sample (float64) from FIGHT! to the end of the shatter",
+ "buses": [
+  {
+   "bus": "synth",
+   "peak": "bit-identical",
+   "sha256_episode": "cf03242c9fc883904d639c3e1a6196d50689209f203d8281482ba6bd089147e3",
+   "sha256_kit": "cf03242c9fc883904d639c3e1a6196d50689209f203d8281482ba6bd089147e3",
+   "whole": "-17.4 dBFS",
+   "window": [167314, 2760686]
+  }
+ ],
+ "cache": "studio/reference/.cache/m4/origin/out/ballfight_turntables_vs_synth/synth",
+ "config": {
+  "sha256": "e9fafe30bc80510fcca351769b53be9bb60d169667ca8fe80ac6914d27bac7c5",
+  "text": ["\"\"\"Gate O: the kit config of projects/ballfight_turntables_vs_synth (made by tools/studio_export/older/origin.py).\"\"\"", "BPM = 137.70491803278688", "CHORDS = ['Fm', 'C', 'Fm', 'Db', 'Bbm', 'C', 'Fm', 'Db', 'Bbm', 'C', 'Fm', 'Db', 'Bbm', 'C', 'Fm', 'Db', 'Bbm', 'C', 'Fm', 'Db', 'Bbm', 'C', 'Fm', 'Db', 'Bbm', 'C', 'Fm', 'Db', 'Bbm', 'C', 'Fm', 'Db', 'Bbm', 'C', 'C']", "DMG_SCALE = 0.6", "FIGHTERS = ('TURNTABLES', 'SYNTH')", "FX_SEED = 31", "KEY = 'F'", "MOOD = 'big_top'", "SCALE = (0, 2, 3, 5, 7, 8, 10)", "SEED = 1339", "SERIES = 'BALLFIGHT #5'", "SHARD_SEED = 271", "SOLO = {'SYNTH': [(0, 72, 0.5), (0.5, 75, 0.25), (0.75, 77, 0.25), (1, 80, 0.5), (1.5, 79, 0.5), (2, 77, 0.25), (2.25, 75, 0.25), (2.5, 77, 1.0), (3.5, 72, 0.5), (4, 73, 0.5), (4.5, 77, 0.25), (4.75, 80, 0.25), (5, 85, 1.0), (6, 84, 0.5), (6.5, 80, 0.5), (7, 82, 0.25), (7.25, 80, 0.25), (7.5, 79, 0.5), (8, 76, 0.5), (8.5, 79, 0.25), (8.75, 82, 0.25), (9, 84, 0.75), (9.75, 82, 0.25), (10, 79, 0.5), (10.5, 76, 0.5), (11, 77, 1.0)], 'TURNTABLES': [(0, 'stab', 0.5), (0, 'back', 1.0), (1, 'baby', 0.5), (1.5, 'baby', 0.5), (2, 'chirp', 0.25), (2.25, 'chirp', 0.25), (2.5, 'trans', 0.5), (3, 'stab', 0.25), (3.25, 'stab', 0.25), (3.5, 'flare', 0.5), (4, 'stab', 0.5), (4.5, 'tear', 0.5), (5, 'scrib', 0.5), (5.5, 'chirp', 0.25), (5.75, 'chirp', 0.25), (6, 'trans', 1.0), (7, 'stab', 0.25), (7.5, 'stab', 0.25), (8, 'stab', 0.5), (8, 'flare', 0.5), (8.5, 'baby', 0.25), (8.75, 'baby', 0.25), (9, 'tear', 0.5), (9.5, 'chirp', 0.25), (9.75, 'chirp', 0.25), (10, 'scrib', 0.5), (10.5, 'trans', 0.5), (11, 'stab', 1.0), (11, 'back', 1.0)]}"]
+ },
+ "episode": "ballfight_turntables_vs_synth",
+ "episode_commit": "745ec70a653770cf4c3869179417f899ecc8c5b1",
+ "exceptions": {},
+ "fight": {
+  "equal": true,
+  "line": "1339 0 48.885714285714286 1660 ba6db42cc4e0470a",
+  "t_ko": 48.885714285714286,
+  "winner": 0
+ },
+ "frames": [
+  {
+   "contribution_sha256": "20bb6ffe752c8d7f049e8818c51e73a44ec43cbe51a5d0e1aa2fe121a08fd739",
+   "frame": 120,
+   "sha256": {
+    "episode_off": "bcc2934d0d125fe0e1eb7799fe4c7e6d90b53494316b0302e19fb3a5b39f82e3",
+    "episode_on": "c8925fe1b367fe453d494a7f93d21c8beb1d516e143df7439ee40ff0e72f12f4",
+    "kit_off": "bcc2934d0d125fe0e1eb7799fe4c7e6d90b53494316b0302e19fb3a5b39f82e3",
+    "kit_on": "c8925fe1b367fe453d494a7f93d21c8beb1d516e143df7439ee40ff0e72f12f4"
+   },
+   "t": 4.0,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "1f187dd9b878f55273a82a9e93b2d3670b47c97ca6643ef3b9876e8e7bc44b65",
+   "frame": 375,
+   "sha256": {
+    "episode_off": "d91fec47b08b41b2afbeceb23c0f76b9199dc60e1e390f5022d2675c87dcda76",
+    "episode_on": "87acc85f05438f6346438ab05012371a85e4e7708f7327ed106e6e9a681dbfab",
+    "kit_off": "d91fec47b08b41b2afbeceb23c0f76b9199dc60e1e390f5022d2675c87dcda76",
+    "kit_on": "87acc85f05438f6346438ab05012371a85e4e7708f7327ed106e6e9a681dbfab"
+   },
+   "t": 12.5,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "f01a4e8b05485d87ab34da59e53683977941c537118dd97108527cb5e49e23c2",
+   "frame": 429,
+   "sha256": {
+    "episode_off": "4d3d727800cd456e98f7d6f6932cfe91540ac77a318b0765872cdc84ff258bc6",
+    "episode_on": "015c3f7b57f119025f4efc5f57178e55c0fa267cd097186f60dc0f418a23f3d8",
+    "kit_off": "4d3d727800cd456e98f7d6f6932cfe91540ac77a318b0765872cdc84ff258bc6",
+    "kit_on": "015c3f7b57f119025f4efc5f57178e55c0fa267cd097186f60dc0f418a23f3d8"
+   },
+   "t": 14.3,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "b9b4501c9989a2d5231dfe4cc6102c6938e7b99e9e8ce5f3e58c68211c120cf9",
+   "frame": 510,
+   "sha256": {
+    "episode_off": "d33b62bc083c61d6ee66a099f4e018b9f929ac6572e037e190f4615449bd9a0d",
+    "episode_on": "0e0d13fafc6dd4e7696ba2751ffd4a4bef6fea21ace851594e8c6b2c4e408d71",
+    "kit_off": "d33b62bc083c61d6ee66a099f4e018b9f929ac6572e037e190f4615449bd9a0d",
+    "kit_on": "0e0d13fafc6dd4e7696ba2751ffd4a4bef6fea21ace851594e8c6b2c4e408d71"
+   },
+   "t": 17.0,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "6eb5de9faeb373477f9ea54d34f2d26c5de3d8abf7d7ab381d2dfd253c622289",
+   "frame": 516,
+   "sha256": {
+    "episode_off": "15656348b5857041626358cb56f8e8c66da507d37870fe38c3df1eb28df27ffe",
+    "episode_on": "4517677d1b0567cb5c3b42bea63519172cddebfcf3488d610922c6034ba608da",
+    "kit_off": "15656348b5857041626358cb56f8e8c66da507d37870fe38c3df1eb28df27ffe",
+    "kit_on": "4517677d1b0567cb5c3b42bea63519172cddebfcf3488d610922c6034ba608da"
+   },
+   "t": 17.2,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "cad38cb5d2f6e6b8022f4ba37d6c41a93dcd07e09e89c19c91ad96218248f094",
+   "frame": 528,
+   "sha256": {
+    "episode_off": "734877a5bfa2b16bfc58add7571b5ff4077c9a73d04d09962eea7edba305164d",
+    "episode_on": "f67cec17775f62da97f307bfa885f99797c3de4791fcfac0a0ba907b8a4b3fc3",
+    "kit_off": "734877a5bfa2b16bfc58add7571b5ff4077c9a73d04d09962eea7edba305164d",
+    "kit_on": "f67cec17775f62da97f307bfa885f99797c3de4791fcfac0a0ba907b8a4b3fc3"
+   },
+   "t": 17.6,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "eab3c8ed1beb1a265584f5afe7d1c2728fde549d1d6affe42aa0ba1b9fe4c9c1",
+   "frame": 645,
+   "sha256": {
+    "episode_off": "c98ed928f8780180d14bef5ba266bad1fd0351b0c05633789b2e7b0a5afb3a2f",
+    "episode_on": "a2b6df6ddd31719969fe7c7b84c09abcce8c2b325f87cee3008df725f489a6e4",
+    "kit_off": "c98ed928f8780180d14bef5ba266bad1fd0351b0c05633789b2e7b0a5afb3a2f",
+    "kit_on": "a2b6df6ddd31719969fe7c7b84c09abcce8c2b325f87cee3008df725f489a6e4"
+   },
+   "t": 21.5,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "fe4bfcb27edfab054671e37406fde0faa2ab4e0c498de10f90c6c7fc8f37f949",
+   "frame": 753,
+   "sha256": {
+    "episode_off": "5e696f2dd39aabc168514a81f280773039d9de156c50c2a5fb38ab1ad16c9a1a",
+    "episode_on": "970d64e59acb09f0612f9efe47a17a9e7922aa4f8cd62037faf1bddfd0797ec2",
+    "kit_off": "5e696f2dd39aabc168514a81f280773039d9de156c50c2a5fb38ab1ad16c9a1a",
+    "kit_on": "970d64e59acb09f0612f9efe47a17a9e7922aa4f8cd62037faf1bddfd0797ec2"
+   },
+   "t": 25.1,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "3443b4a8e4a87560df404fd4ca0fd0133231c8c8004ea0e2b037010b4488bf9c",
+   "frame": 790,
+   "sha256": {
+    "episode_off": "78a308fb3b5b8269c4ae08bf914bb0abe3e188e6ac5f9ad6609cf10594c3ee17",
+    "episode_on": "1c294354769d1542cee2d584b602ffe9f8ea73be556f762ee7a266f1b1aa3abc",
+    "kit_off": "78a308fb3b5b8269c4ae08bf914bb0abe3e188e6ac5f9ad6609cf10594c3ee17",
+    "kit_on": "1c294354769d1542cee2d584b602ffe9f8ea73be556f762ee7a266f1b1aa3abc"
+   },
+   "t": 26.333333,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "ad648928f9bca4507862a6a68a98085e9702079da8d42a7f7c0e58a7eb9bfcee",
+   "frame": 802,
+   "sha256": {
+    "episode_off": "0fb67db8acba34015624bfbe9da86c3fb82ae67cd84eddba8934762452d5eda4",
+    "episode_on": "7f98b35f57e8a5eb8fb79beb664d93e346400d260013ff0992c133f1dfd98164",
+    "kit_off": "0fb67db8acba34015624bfbe9da86c3fb82ae67cd84eddba8934762452d5eda4",
+    "kit_on": "7f98b35f57e8a5eb8fb79beb664d93e346400d260013ff0992c133f1dfd98164"
+   },
+   "t": 26.733333,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "ea05fb7626f74f9198384098c41ce0553e36b84ffa194aa18568cca7e32abfe4",
+   "frame": 915,
+   "sha256": {
+    "episode_off": "59fc55838ef1942f4893a73254e3ae0cca1bb0a4fb1ffd1f5efd197201906d64",
+    "episode_on": "891a68b1fc41b5c6b323826d48895eb5e43ea9eed644baa0ce0a2afa42060404",
+    "kit_off": "59fc55838ef1942f4893a73254e3ae0cca1bb0a4fb1ffd1f5efd197201906d64",
+    "kit_on": "891a68b1fc41b5c6b323826d48895eb5e43ea9eed644baa0ce0a2afa42060404"
+   },
+   "t": 30.5,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "a50b8bc2ec301685f56270392ea33471eada8f4afcea14fca36a707bac0a60ee",
+   "frame": 1077,
+   "sha256": {
+    "episode_off": "f1fbc7992496ccc96033da695c9122d479110acf3361179c3b43c31c12565c4e",
+    "episode_on": "0032c949ba87de0870a0565d84f509882b7f656d1d2eda00c483682b8ebcfc01",
+    "kit_off": "f1fbc7992496ccc96033da695c9122d479110acf3361179c3b43c31c12565c4e",
+    "kit_on": "0032c949ba87de0870a0565d84f509882b7f656d1d2eda00c483682b8ebcfc01"
+   },
+   "t": 35.9,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "f95f5856c175993b75f1dbd081c883213e3a0209ac9c5d96c511fd2bc705bff6",
+   "frame": 1185,
+   "sha256": {
+    "episode_off": "a184b3dc293df48d1fb098637e16d816cd6abfe4d0cc8fada021f7b789a1321d",
+    "episode_on": "ef6c50fbef4a4da12d61b915afd040928b133b969ffa9359ca4ec5dc72c8465c",
+    "kit_off": "a184b3dc293df48d1fb098637e16d816cd6abfe4d0cc8fada021f7b789a1321d",
+    "kit_on": "ef6c50fbef4a4da12d61b915afd040928b133b969ffa9359ca4ec5dc72c8465c"
+   },
+   "t": 39.5,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "3a4713bb86acdc274a51cd2e5740250f252e1dba788fb909308881066428e47d",
+   "frame": 1213,
+   "sha256": {
+    "episode_off": "ae92ff39da0c90dac0ac68aadaae98bb00cc3be6776fdfcd1ec2923c693821af",
+    "episode_on": "f8848516f243d7d9ff90458cd476ba116b8be1b9aa111f466671498fadb6ee43",
+    "kit_off": "ae92ff39da0c90dac0ac68aadaae98bb00cc3be6776fdfcd1ec2923c693821af",
+    "kit_on": "f8848516f243d7d9ff90458cd476ba116b8be1b9aa111f466671498fadb6ee43"
+   },
+   "t": 40.433333,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "65d01c26b2056f94314d5bd255b337065c612f32cf122a49b36350bd09e60eec",
+   "frame": 1222,
+   "sha256": {
+    "episode_off": "8a273560c16ec529b84a800e467aa64d6be01b96fd3d71d2feb14d74b4394063",
+    "episode_on": "10226fc34c59529c6bad4bbefee53d62cf390de3835de411bfe79f8015fb37b6",
+    "kit_off": "8a273560c16ec529b84a800e467aa64d6be01b96fd3d71d2feb14d74b4394063",
+    "kit_on": "10226fc34c59529c6bad4bbefee53d62cf390de3835de411bfe79f8015fb37b6"
+   },
+   "t": 40.733333,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "dc609df8d81faadf7095dc0a0e58d84eee55292d4ce9483b23a0b869dae98ade",
+   "frame": 1234,
+   "sha256": {
+    "episode_off": "0e3392b8156478e00f631860b359973db8e9ea0192942c22bac12a1c4a166997",
+    "episode_on": "69ad16ca6a0080a6797eda945e40b731acd55013c96632bf6f9a1fc9fdf38de0",
+    "kit_off": "0e3392b8156478e00f631860b359973db8e9ea0192942c22bac12a1c4a166997",
+    "kit_on": "69ad16ca6a0080a6797eda945e40b731acd55013c96632bf6f9a1fc9fdf38de0"
+   },
+   "t": 41.133333,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "e9c00c4cd2d9a48ed6bedee6713bc23997b828cefd6bf1f1b1c5bc8cbe445365",
+   "frame": 1320,
+   "sha256": {
+    "episode_off": "ac4c2205c8016bed3b9fae51ca5aa631a1d9d32c2386647a89bd55fd1fcfa19e",
+    "episode_on": "20175c6dee33b4f2c4c2067bbaca1a037eb53554f445c4f91d83f26d963ecfee",
+    "kit_off": "ac4c2205c8016bed3b9fae51ca5aa631a1d9d32c2386647a89bd55fd1fcfa19e",
+    "kit_on": "20175c6dee33b4f2c4c2067bbaca1a037eb53554f445c4f91d83f26d963ecfee"
+   },
+   "t": 44.0,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "711231226e6cd94f062aa9eed155f690cb6ae701fa526114f7b67da63a549c8a",
+   "frame": 1401,
+   "sha256": {
+    "episode_off": "0a702e1ad25f811c02a66b111e5d0e13bd5343168b60187e8114181feab8fdb7",
+    "episode_on": "cc7b86cd2f13e05836481645ef957a208482e57cea9f8fdea60b316cb38cee76",
+    "kit_off": "0a702e1ad25f811c02a66b111e5d0e13bd5343168b60187e8114181feab8fdb7",
+    "kit_on": "cc7b86cd2f13e05836481645ef957a208482e57cea9f8fdea60b316cb38cee76"
+   },
+   "t": 46.7,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "1bb617f97dacb1682f8733eb05325c7c84f5f8d8376549fab5f33acc7426a181",
+   "frame": 1452,
+   "sha256": {
+    "episode_off": "d7d2d3f09749f3b33045285ceb8bf50f231355358aa0fabed26f91f7eeb2503a",
+    "episode_on": "7a8e58688ae351dd2dda0c4876d42966402791bf7c09b50a78185c5c7d6426ac",
+    "kit_off": "d7d2d3f09749f3b33045285ceb8bf50f231355358aa0fabed26f91f7eeb2503a",
+    "kit_on": "7a8e58688ae351dd2dda0c4876d42966402791bf7c09b50a78185c5c7d6426ac"
+   },
+   "t": 48.4,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "ff675ac91086bd42b7fabe65df385a905224edeaa2bb2b6214315327ede82422",
+   "frame": 1470,
+   "sha256": {
+    "episode_off": "aafed32e998c4c927e0b85b7c8c1a4488de9ca7f31fc252dc01bd1f8190d0383",
+    "episode_on": "c97edb0b01fe48b4443e39f45edd307376e6c40c25db1fb2321d961d419d80fa",
+    "kit_off": "aafed32e998c4c927e0b85b7c8c1a4488de9ca7f31fc252dc01bd1f8190d0383",
+    "kit_on": "c97edb0b01fe48b4443e39f45edd307376e6c40c25db1fb2321d961d419d80fa"
+   },
+   "t": 49.0,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "5927aae1d939bb4dbc5378b3c4cc752ce6257db3be79cfe2c439de44db375816",
+   "frame": 1480,
+   "sha256": {
+    "episode_off": "1ca2b5702b91eec5477def87558f3e7e9d52ee029291e11239685465428ed385",
+    "episode_on": "caef3fb69144a14f38799ae357d822967826783319bc713931fdb6acf3b266ab",
+    "kit_off": "1ca2b5702b91eec5477def87558f3e7e9d52ee029291e11239685465428ed385",
+    "kit_on": "caef3fb69144a14f38799ae357d822967826783319bc713931fdb6acf3b266ab"
+   },
+   "t": 49.333333,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "8a160463cdcf948649eccd2f89da863879c6201c89d611ad7e73487eecb689ae",
+   "frame": 1495,
+   "sha256": {
+    "episode_off": "1de2c7785fadddbaedad0e3a80015b998b99a1eaf5e1cd53702221395e291696",
+    "episode_on": "249cff5c41fab0fbc97143ff08b1bd2d0eb96163b0e610c0c867f87acdd1fce9",
+    "kit_off": "1de2c7785fadddbaedad0e3a80015b998b99a1eaf5e1cd53702221395e291696",
+    "kit_on": "249cff5c41fab0fbc97143ff08b1bd2d0eb96163b0e610c0c867f87acdd1fce9"
+   },
+   "t": 49.833333,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "ea7833e59d929a990e5d7a3fa8e79952ff097aaa3e6677b242c406cbc0dc6119",
+   "frame": 1522,
+   "sha256": {
+    "episode_off": "31709f3ee6862090d0b7c975b2a1212f5077f0b4d45244861c1625cbd9cfa7d5",
+    "episode_on": "b0583a49f7c0df22b81d806d6e04f3c48264c5cd6384ddedff88980b5d330848",
+    "kit_off": "31709f3ee6862090d0b7c975b2a1212f5077f0b4d45244861c1625cbd9cfa7d5",
+    "kit_on": "b0583a49f7c0df22b81d806d6e04f3c48264c5cd6384ddedff88980b5d330848"
+   },
+   "t": 50.733333,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "02537552f90c57cc8dc05235ce2b76f6bc10f84daed58c3c4a8c053d8f4f72f3",
+   "frame": 1567,
+   "sha256": {
+    "episode_off": "ea54f5ca35d1f689061c30248362e427e06508b61f814727cc65c34a5dd2031d",
+    "episode_on": "e3298ae4737695df8a9dd20b889a925731f8c91ba89d97014a3d06c22a7e50f7",
+    "kit_off": "ea54f5ca35d1f689061c30248362e427e06508b61f814727cc65c34a5dd2031d",
+    "kit_on": "e3298ae4737695df8a9dd20b889a925731f8c91ba89d97014a3d06c22a7e50f7"
+   },
+   "t": 52.233333,
+   "whole_frame_equal": true
+  }
+ ],
+ "harness": [
+  {
+   "beat_pulse_pre": 0.07,
+   "name": "#31's beat ramp (0.07 s; the kit's 0.12 s)"
+  },
+  {
+   "call": "tools.studio_export.fighter_synth:harness",
+   "name": "#31's HUD (no ability list: the series rule of Oct 25 came after #31)"
+  }
+ ],
+ "layers": [
+  {
+   "name": "sprite",
+   "patches": [
+    {
+     "file": "render.py",
+     "old": "if NAMES[k] == 'SYNTH':",
+     "sha256": "c743f41abc15d4eeb50d66256929af8cb5309c3f07e6288def8ef4573c7bcd1f"
+    }
+   ]
+  },
+  {
+   "name": "cables",
+   "patches": [
+    {
+     "file": "render.py",
+     "old": "jacks = draw_cables(arr, cam, t, fs, glows)",
+     "sha256": "1d15d63499b2b8824c7f3253be6458bc30e6d6556d412d2d2ee33e1ebcf496ab"
+    }
+   ]
+  },
+  {
+   "name": "effects",
+   "patches": [
+    {
+     "file": "render.py",
+     "old": "if att != SY:",
+     "sha256": "27c61fad9b40698d219919e5dc88c667b4df6727dd004a97d1125f851f523e10"
+    },
+    {
+     "file": "render.py",
+     "old": "elif kind == 'snap':",
+     "sha256": "10f20716b5b536ca666584a429d7f878b06255a3ad77e6978fe7f5aa88cc34f6"
+    },
+    {
+     "file": "render.py",
+     "old": "elif kind == 'leash':",
+     "sha256": "e33ddc6f8a7a3906c04159030be965add798c61ef859c9be245b820b213cf06a"
+    },
+    {
+     "file": "render.py",
+     "old": "elif kind == 'ability' and e[4] == 'wave':",
+     "sha256": "f2674b43e4b39f481a59ffeb97d01489e85556bb41ae39c218864ae35ae249ce"
+    },
+    {
+     "file": "render.py",
+     "old": "if NAMES[LOSE] == 'SYNTH':",
+     "sha256": "7182b8157dc140810f1db122ea7234845a70e1eb748cf9480dffd37ca5427de3"
+    }
+   ]
+  },
+  {
+   "name": "sparks",
+   "patches": [
+    {
+     "file": "render.py",
+     "old": "if how == 'volt':",
+     "sha256": "a7d1bd70ada04d51cbd77f0d4e0c3094a35b0effd6ed28673e96f5cdaa744765"
+    },
+    {
+     "file": "render.py",
+     "old": "((16, 3.2, 0.3) if how in ('slam', 'wave', 'scratch') else ((9, 2.6, 0.24) if how in ('lash', 'plug'",
+     "sha256": "b8bce5c82fe3cc338221febb0379e9735317b4a52a928b9772e68b12fb61d9af"
+    },
+    {
+     "file": "render.py",
+     "old": "events_between(t - 0.32, t, ('hit', 'plug_miss'))",
+     "sha256": "44550090c8de49c17181b3434e8d9bae45acb6482b986656d074961b517e957a"
+    }
+   ]
+  },
+  {
+   "name": "flashbulbs",
+   "patches": [
+    {
+     "file": "render.py",
+     "old": "('slam', 'wave', 'scratch', 'lash') if e[2] == SY else",
+     "sha256": "12f69d238add651f979faa0cd17f67a7cfd77adf48bd5fa6a2ed7ab6ef95ceab"
+    }
+   ]
+  },
+  {
+   "name": "hit_glow",
+   "patches": [
+    {
+     "file": "render.py",
+     "old": "if e[2] == SY and e[7] in ('slam', 'wave', 'scratch', 'lash'):",
+     "sha256": "362d468a56f6177069b434acdef19c91147cb05259e6eb9b7aa13b383cd0517d"
+    }
+   ]
+  },
+  {
+   "name": "fringe",
+   "patches": [
+    {
+     "file": "render.py",
+     "old": "((e[1] == 'snap' or e[7] in ('slam', 'wave', 'scratch')) if e[2] == SY else",
+     "sha256": "6a24a2ef88d5825fb97a5709e87fe07f21197313f6ccef962a5c48b0c32a4d62"
+    }
+   ]
+  },
+  {
+   "name": "white_noise",
+   "patches": [
+    {
+     "file": "render.py",
+     "old": "wav = RUN['WAVES'][i] if in_fight else []",
+     "sha256": "d1fab43f224ca7278a39d2ceea6cf6e042ff332af04d52ea8e83317816ec54e3"
+    },
+    {
+     "file": "render.py",
+     "old": "for owner, cx, cz, r, rmax, kind, t0 in RUN['WAVES'][sim_i(t)]:",
+     "sha256": "5055f3459ecf815b0a1302dcfc5bd4368e4696bbdee4216c655c8be33418b4ac"
+    }
+   ]
+  },
+  {
+   "name": "solo_rings",
+   "patches": [
+    {
+     "file": "render.py",
+     "old": "and NAMES[WIN] == 'SYNTH' else []",
+     "sha256": "bac883b03e82b62ec6532d9f5e885368b23231e6bda638ec88d3bd1a7d4aab0c"
+    }
+   ]
+  },
+  {
+   "name": "shards",
+   "patches": [
+    {
+     "file": "render.py",
+     "old": "['key'] * 7 + ['bkey'] * 4 + ['knob'] * 4 + ['jack'] * 4)",
+     "sha256": "719df3d4039812c577c00c0b4618410196e3f4161f42c4aff2a37e1411e56e84"
+    }
+   ]
+  },
+  {
+   "name": "quiet_pulses",
+   "patches": [
+    {
+     "file": "render.py",
+     "old": "if e[3] == k and e[7] not in ('volt',):",
+     "sha256": "a69138d28c208d89b11de672685d669cea600cc3d4dc0ed0c3a7f4f2bd25e250"
+    }
+   ]
+  }
+ ],
+ "name": "SYNTH",
+ "other": [
+  {
+   "file": "render.py",
+   "old": "if key not in cache:",
+   "sha256": "108a38345006f29525e05b94f9b8098313f5ec199dde91773330c06443da638c"
+  },
+  {
+   "file": "render.py",
+   "old": "lit = sub[..., :3].astype(np.float32) * (1.12 + 0.3 * glow) + LIFT.get(NAMES[k], 10)",
+   "sha256": "ce0276976aa8833602a61ac4141ec8262c3b793b0cceb49db889e9f5e9fea1a5"
+  },
+  {
+   "file": "render.py",
+   "old": "if k in REC and (st['haste'] > 0 or (k == WIN and solo_env(t) > 0.2 and t > T_SOLO)):",
+   "sha256": "ba70768054ae5e0ce69da5d8897e6fd9b7bbd7a4547b2e56ed1328f0147aafe4"
+  },
+  {
+   "file": "render.py",
+   "old": "if k == DJ and len(JERK_T):",
+   "sha256": "05b23313fd01370311c742d4df18ce2cd84a77c36264a885240cd14565c335e0"
+  },
+  {
+   "file": "render.py",
+   "old": "alb, on_rec = ST.record_albedo(alb, sxp, szp, phi, COL[DJ])",
+   "sha256": "2640e2e45452f18ecced9cbe4e998a76f58bca83c4974491cfdc763c6088fcb7"
+  },
+  {
+   "file": "render.py",
+   "old": "Ic[on_rec] *= 1.12",
+   "sha256": "a52b3d857174de63a43288474e89ea33ac519e550fdd03d52eed9ad4fac8f131"
+  },
+  {
+   "file": "render.py",
+   "old": "tip, h, on = arm",
+   "sha256": "695515f5686d5a085b96d4efe921aff8f1a90eb4004d4fd93caa894a1459bd69"
+  },
+  {
+   "file": "render.py",
+   "old": "rings = solo_rings(t) if t >= T_SOLO - 0.01 else []",
+   "sha256": "4e22ed6320a9918ad275d872c6df52950a74b8f512117c67510136d3b9430ed3"
+  },
+  {
+   "file": "render.py",
+   "old": "sl = RUN['SLAMS'][i] if in_fight else []",
+   "sha256": "0728e43750a5dcd0aa467801004d8c928fcf97b47d322229014576c18dda9792"
+  },
+  {
+   "file": "render.py",
+   "old": "draw_drop(arr, cam, t, i, in_fight, falling=False)",
+   "sha256": "3a59a377ae1164bac910ff0d0bd62d23d2c4706185d02914482b07084e8176c8"
+  },
+  {
+   "file": "render.py",
+   "old": "draw_drop(arr, cam, t, i, in_fight, falling=True)",
+   "sha256": "daf32b9960e0d0129a51f2a9dba152fb87fbb0d5cd1651b9b432cf2101794cc0"
+  },
+  {
+   "file": "render.py",
+   "old": "for e in EV:",
+   "sha256": "73c80831044936b5106d1bbbbaf0129275dbcfec5eac2b883934f47c2f900623"
+  },
+  {
+   "file": "render.py",
+   "old": "if 0.0 < dt < 1.2:",
+   "sha256": "840b5575a328fd819dc39748f5647f1667d68cc4d4599b0dca5bdfe440c19739"
+  },
+  {
+   "file": "render.py",
+   "old": "WAVE_EV += [(e[0], 0.35) for e in EV if e[1] == 'jerk']",
+   "sha256": "ec55806da2a1e74f30266a2908733174e71fabdc300efb04716b66257faf22b7"
+  },
+  {
+   "file": "render.py",
+   "old": "if rk > 0 and win_ is not None and fs[k]['vis']:",
+   "sha256": "1262ef6b1d01c323f3dc1f5112d4a19c02b719cba7a0681438b3062afdd237c7"
+  },
+  {
+   "file": "render.py",
+   "old": "draw_tonearm(fr, cam, L, arm, t)",
+   "sha256": "4836ea20f818a0d750b8e3e1b569714ecdf7672c4545504e8760cea06b3b170e"
+  },
+  {
+   "file": "render.py",
+   "old": "if rk > 0:",
+   "sha256": "76f5fa3902095da438de00536222394ebc0b5a2914949b8299966dc9c240cce2"
+  },
+  {
+   "file": "render.py",
+   "old": "['glass'] * 24 + (['vinyl'] * 8 + ['label'] * 3 + ['arm'] * 2 + ['plinth'] * 3 if loser == 'TURNTABL",
+   "sha256": "581bd76e140a08e2df8b962034962c0df5a253bcd82b5e7cb173f0fc160e91ea"
+  },
+  {
+   "file": "render.py",
+   "old": "(e[1] == 'hit' and e[7] in ('slam', 'wave', 'scratch', 'lash'))",
+   "sha256": "da969181c1f101d2c8f064e5bad8cf99dd759e7639fa63bd324aaa26f3889bc5"
+  },
+  {
+   "file": "render.py",
+   "old": "if how == 'scratch':                                       # a rope slam",
+   "sha256": "b6cab576998a213b780c1705d14db19d3d469518afd63c80728cef2f04f92149"
+  },
+  {
+   "file": "render.py",
+   "old": "elif kind == 'jerk':",
+   "sha256": "7ea6705afae34917123de72398bb5615efb8739143a615c328f040ebb0d42878"
+  },
+  {
+   "file": "render.py",
+   "old": "FL.add(ts, S.to_world(cx, cz, 1.2), COL[owner], radius=2.6, peak=1.2, decay=0.5)",
+   "sha256": "fe1b29f67bd3b50e4aac367e3a5fe066d364b45add17d16facd9c4a262c4a4ae"
+  },
+  {
+   "file": "render.py",
+   "old": "PA.emit(T_KO, pos, 'shards', n=24, spread=180, speed=(0.8, 2.6))",
+   "sha256": "10f3ceaf0343dfc81b3717e9d79e7f840fddd42d122775feaf46b5f0ba55ad56"
+  },
+  {
+   "file": "render.py",
+   "old": "n, sp, life = (16, 3.2, 0.3) if how in ('slam', 'wave', 'scratch') else \\",
+   "sha256": "536beb21c864c1fa29c280b19ad8352cb1a573ca6b8eb351a73fd27b25b81ed5"
+  },
+  {
+   "file": "render.py",
+   "old": "img = dof(img, coc_map(depth, zf, 26.0, sharp=0.17))",
+   "sha256": "b4c5f047bf15e7ce3161dfa82a737e5cbee38b7b6268e7e424f8e9480c4db3a0"
+  },
+  {
+   "file": "render.py",
+   "old": "img = shimmers(img, cam, t)",
+   "sha256": "54f5b2026160b09439e95128045edc747a2c555df79e7e7a0853d351ebedfa50"
+  },
+  {
+   "file": "render.py",
+   "old": "if e[7] in ('slam', 'wave', 'scratch', 'lash'):",
+   "sha256": "f0e91f04536dcb0752d1f2e28a156efcf6f863faba3381c102d10cb6d625312c"
+  },
+  {
+   "file": "render.py",
+   "old": "fr.glow(s_[0], s_[1], 40, (255, 240, 220), 0.7 * (1 - ss(T_KO, T_HS + 0.25, t)))",
+   "sha256": "e3badac729936d03fd7d854baaf643c49f48314c6ad42ce1c2d808607b6ac790"
+  },
+  {
+   "file": "render.py",
+   "old": "if e[1] == 'snap' or e[7] in ('slam', 'wave', 'scratch'):",
+   "sha256": "a795e2cf75f117b99e34a52d34a38035a6f89463ceb0dd4df4b393bf12ed3388"
+  },
+  {
+   "file": "render.py",
+   "old": "punch = 1 + (0.25 if txt != 'FIGHT!' else 0.12) * max(0.0, 1 - u / 0.12) ** 2",
+   "sha256": "7c7ae5e3c68f734ef8fe926485d1c399b3b9bb166fed2cb94087b4704a2d47b9"
+  }
+ ],
+ "seed": 1339,
+ "side": 1,
+ "spec_sha256": "4975381c5d303f50cf6a7d94d39f0c0c90356e6d54866fea97c04b36b05a6b64",
+ "state_keys": [],
+ "window": {
+  "frames": [105, 1726],
+  "t0": 3.4857142857142858,
+  "t1": 57.51428571428571
+ }
+}

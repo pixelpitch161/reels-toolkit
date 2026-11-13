@@ -1,0 +1,6 @@
+{
+ "format": 1,
+ "entries": [
+  {"path": "studio/reference/fighters/synth/origin.json", "sha256": "773edc72ea5ada5ccd9f56bd992cfeac699a1b330fa35b2a63a4392a91b68bdb", "bytes": 24867, "tool": "tools.studio_export.older.origin", "commit": "1871c4fd7d95d34191ff94a81f9f8c1a135178cc", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"}
+ ]
+}
