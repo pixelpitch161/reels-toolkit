@@ -21,19 +21,24 @@
 
 pub mod arc;
 pub mod beam;
+pub mod clamp;
 pub mod copy;
 pub mod dance;
 pub mod flick;
 pub mod haste;
 pub mod hook;
+pub mod joke;
+pub mod lash;
 pub mod lights_out;
 pub mod prelude;
+pub mod rewind;
 pub mod runoff;
 pub mod shield;
 pub mod shockwave;
 pub mod slam;
 pub mod slap;
 pub mod smash;
+pub mod snap;
 pub mod snip;
 pub mod stampede;
 pub mod stun;
@@ -48,7 +53,7 @@ use bf_core::event::Value;
 
 use crate::ball::Slot;
 use crate::fight::Fight;
-use crate::kinds::{crowd, drill, jump, lightning, mortar, roll_charge, spotlight, tiptoe, tune};
+use crate::kinds::{crowd, drill, jump, lightning, mortar, rests, roll_charge, spotlight, tiptoe, tune, wrecking};
 use crate::roster::{AbilityCfg, AbilityKind};
 
 /// `ab[name]`: a number of an ability's roster entry that its kind cannot do without.
@@ -129,13 +134,19 @@ pub fn fire<'a>(fight: &mut Fight<'a>, k: usize, ab: &'a AbilityCfg) {
         AbilityKind::Arc => arc::start(fight, k, ab),
         // 2859 to 2865
         AbilityKind::Slam => slam::fire(fight, k, ab),
-        // 2866 to 2869: rewind, lash (kinds older than the kit's). SLOT.
+        // 2866 to 2867 (milestone 4: TURNTABLES)
+        AbilityKind::Rewind => rewind::start(fight, k, ab),
+        // 2868 to 2869 (milestone 4: SYNTH)
+        AbilityKind::Lash => lash::start(fight, k, ab),
         // 2870 to 2871
         AbilityKind::Beam => beam::start(fight, k, ab),
-        // 2872 to 2873 (`spout`, the third kind of this branch, is older than the kit's)
+        // 2872 to 2873 (`spout`, the third kind of this branch: milestone 4, UKULELE)
         AbilityKind::Whip => x33::start(fight, k, ab, "whip"),
         AbilityKind::Sweep => x33::start(fight, k, ab, "sweep"),
-        // 2874 to 2877: charge, clamp (kinds older than the kit's). SLOT.
+        AbilityKind::Spout => x33::start(fight, k, ab, "spout"),
+        // 2874 to 2875: charge (a frozen version's kind: SLOT)
+        // 2876 to 2877 (milestone 4: ACCORDION)
+        AbilityKind::Clamp => clamp::start(fight, k, ab),
         // 2878 to 2879
         AbilityKind::Dance => dance::fire(fight, k, ab),
         // 2880 to 2881
@@ -154,12 +165,21 @@ pub fn fire<'a>(fight: &mut Fight<'a>, k: usize, ab: &'a AbilityCfg) {
         AbilityKind::Twin => twin::start(fight, k, ab),
         // 2900 to 2901
         AbilityKind::Barrage => mortar::start_barrage(fight, k, ab),
-        // 2902 to 2914: quake, offbeat (kinds older than the kit's). SLOT.
+        // 2902 to 2910: quake (a frozen version's kind: SLOT)
+        // 2911 to 2914 (milestone 4: BARI SAX's SKANK, in its weapon's module)
+        AbilityKind::Offbeat => wrecking::start_offbeat(fight, k, ab),
         // 2915 to 2916
         AbilityKind::Hook => hook::start(fight, k, ab),
         // 2917 to 2918
         AbilityKind::Mountain => tiptoe::start_mountain(fight, k, ab),
-        // 2919 to 2929: snap, joke, melody, double_stop (kinds older than the kit's). SLOT.
+        // 2919 to 2920 (milestone 4: BARI SAX)
+        AbilityKind::Snap => snap::start(fight, k, ab),
+        // 2921 to 2922 (milestone 4: VIOLA)
+        AbilityKind::Joke => joke::start(fight, k, ab),
+        // 2923 to 2927 (milestone 4: VIOLA's MELODY AT LAST, in its weapon's module)
+        AbilityKind::Melody => rests::start_melody(fight, k, ab),
+        // 2928 to 2929 (milestone 4: VIOLA's DOUBLE STOP, in its weapon's module)
+        AbilityKind::DoubleStop => rests::start_double_stop(fight, k, ab),
         // 2930 to 2932
         AbilityKind::Rhapsody => jump::start_rhapsody(fight, k, ab),
         // 2933 to 2935

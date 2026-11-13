@@ -28,6 +28,10 @@ pub use kinds::{
     roll_charge::RollChargeCfg, spotlight::SpotlightCfg, swallow::SwallowCfg, tiptoe::TiptoeCfg, tune::TuneCfg,
     walk::WalkCfg,
 };
+pub use kinds::{
+    bite::BiteCfg, inflate::InflateCfg, pulse::PulseCfg, rests::RestsCfg, scratch_floor::ScratchFloorCfg,
+    surf::SurfCfg, tether::TetherCfg, trap::TrapCfg, wrecking::WreckingCfg,
+};
 pub use striker::StrikerCfg;
 
 /// The kit's further weapon kinds, each with its module's `PORTED`: a kind loads as `WeaponCfg::Unsupported` exactly
@@ -92,6 +96,34 @@ pub const KIT_ABILITY_KINDS: [(&str, bool); 36] = [
     ("twin", abilities::twin::PORTED),
     ("vibrato", abilities::vibrato::PORTED),
     ("whip", abilities::whip::PORTED),
+];
+
+/// The older ten fighters' weapon kinds (milestone 4, plan Table O1), each with its module's `PORTED`, as
+/// [`KIT_WEAPON_KINDS`]. A spinning blade (a `blade` with no `mode`, VIOLIN's bow) is [`blade::SPIN_PORTED`].
+pub const OLDER_WEAPON_KINDS: [(&str, bool); 9] = [
+    ("pulse", kinds::pulse::PORTED),
+    ("inflate", kinds::inflate::PORTED),
+    ("bite", kinds::bite::PORTED),
+    ("trap", kinds::trap::PORTED),
+    ("surf", kinds::surf::PORTED),
+    ("scratch_floor", kinds::scratch_floor::PORTED),
+    ("tether", kinds::tether::PORTED),
+    ("wrecking", kinds::wrecking::PORTED),
+    ("rests", kinds::rests::PORTED),
+];
+
+/// The older ten fighters' ability kinds (milestone 4, plan Table O1), each with its module's `PORTED`, as
+/// [`KIT_ABILITY_KINDS`].
+pub const OLDER_ABILITY_KINDS: [(&str, bool); 9] = [
+    ("clamp", abilities::clamp::PORTED),
+    ("rewind", abilities::rewind::PORTED),
+    ("lash", abilities::lash::PORTED),
+    ("spout", abilities::spout::PORTED),
+    ("offbeat", abilities::offbeat::PORTED),
+    ("snap", abilities::snap::PORTED),
+    ("double_stop", abilities::double_stop::PORTED),
+    ("melody", abilities::melody::PORTED),
+    ("joke", abilities::joke::PORTED),
 ];
 
 /// One fighter's roster entry.
@@ -164,7 +196,27 @@ pub enum WeaponCfg {
     Drill(kinds::drill::DrillCfg),
     /// Kind `roll_charge` (BASS DRUM's STEAMROLLER), typed by `roster::kinds::roll_charge`.
     RollCharge(kinds::roll_charge::RollChargeCfg),
-    /// A kind the engine has not ported yet (a spinning blade, with no `mode`, is `"blade"`).
+    /// Kind `pulse` (DRUMS's the drumhead; milestone 4), typed by `roster::kinds::pulse`.
+    Pulse(kinds::pulse::PulseCfg),
+    /// Kind `inflate` (BAGPIPES's BAG INFLATE; milestone 4), typed by `roster::kinds::inflate`.
+    Inflate(kinds::inflate::InflateCfg),
+    /// Kind `bite` (ACCORDION's BELLOWS BITE; milestone 4), typed by `roster::kinds::bite`.
+    Bite(kinds::bite::BiteCfg),
+    /// Kind `trap` (HARP's the strings; milestone 4), typed by `roster::kinds::trap`.
+    Trap(kinds::trap::TrapCfg),
+    /// Kind `surf` (UKULELE's SURF'S UP; milestone 4), typed by `roster::kinds::surf`.
+    Surf(kinds::surf::SurfCfg),
+    /// Kind `scratch_floor` (TURNTABLES's THE RING IS THE RECORD; milestone 4), typed by
+    /// `roster::kinds::scratch_floor`.
+    ScratchFloor(kinds::scratch_floor::ScratchFloorCfg),
+    /// Kind `tether` (SYNTH's the cables; milestone 4), typed by `roster::kinds::tether`.
+    Tether(kinds::tether::TetherCfg),
+    /// Kind `wrecking` (BARI SAX's WRECKING BALL; milestone 4), typed by `roster::kinds::wrecking`.
+    Wrecking(kinds::wrecking::WreckingCfg),
+    /// Kind `rests` (VIOLA's COUNTING RESTS; milestone 4), typed by `roster::kinds::rests`.
+    Rests(kinds::rests::RestsCfg),
+    /// A kind the engine has not ported yet (a spinning blade, with no `mode`, is `"blade"` until
+    /// [`blade::SPIN_PORTED`]).
     Unsupported(String),
 }
 
@@ -351,6 +403,10 @@ impl Entry<'_> {
             "blade" if w.get("mode").and_then(Json::as_str) == Some("thrust") => {
                 Ok(WeaponCfg::Blade(blade::parse(self, w, style)?))
             }
+            // a blade with no `mode` spins (VIOLIN's bow, milestone 4)
+            "blade" if w.get("mode").is_none() && blade::SPIN_PORTED => {
+                Ok(WeaponCfg::Blade(blade::parse_spin(self, w, style)?))
+            }
             "roll" if kinds::roll::PORTED => Ok(WeaponCfg::Roll(kinds::roll::parse(self, w)?)),
             "swallow" if kinds::swallow::PORTED => Ok(WeaponCfg::Swallow(kinds::swallow::parse(self, w)?)),
             "echo" if kinds::echo::PORTED => Ok(WeaponCfg::Echo(kinds::echo::parse(self, w)?)),
@@ -371,6 +427,17 @@ impl Entry<'_> {
             "roll_charge" if kinds::roll_charge::PORTED => {
                 Ok(WeaponCfg::RollCharge(kinds::roll_charge::parse(self, w)?))
             }
+            "pulse" if kinds::pulse::PORTED => Ok(WeaponCfg::Pulse(kinds::pulse::parse(self, w)?)),
+            "inflate" if kinds::inflate::PORTED => Ok(WeaponCfg::Inflate(kinds::inflate::parse(self, w)?)),
+            "bite" if kinds::bite::PORTED => Ok(WeaponCfg::Bite(kinds::bite::parse(self, w)?)),
+            "trap" if kinds::trap::PORTED => Ok(WeaponCfg::Trap(kinds::trap::parse(self, w)?)),
+            "surf" if kinds::surf::PORTED => Ok(WeaponCfg::Surf(kinds::surf::parse(self, w)?)),
+            "scratch_floor" if kinds::scratch_floor::PORTED => {
+                Ok(WeaponCfg::ScratchFloor(kinds::scratch_floor::parse(self, w)?))
+            }
+            "tether" if kinds::tether::PORTED => Ok(WeaponCfg::Tether(kinds::tether::parse(self, w)?)),
+            "wrecking" if kinds::wrecking::PORTED => Ok(WeaponCfg::Wrecking(kinds::wrecking::parse(self, w)?)),
+            "rests" if kinds::rests::PORTED => Ok(WeaponCfg::Rests(kinds::rests::parse(self, w)?)),
             _ => Ok(WeaponCfg::Unsupported(kind)),
         }
     }
@@ -457,6 +524,15 @@ impl FighterCfg {
             WeaponCfg::Crowd(w) => kinds::crowd::check(&e, w)?,
             WeaponCfg::Drill(w) => kinds::drill::check(&e, w)?,
             WeaponCfg::RollCharge(w) => kinds::roll_charge::check(&e, w)?,
+            WeaponCfg::Pulse(w) => kinds::pulse::check(&e, w)?,
+            WeaponCfg::Inflate(w) => kinds::inflate::check(&e, w)?,
+            WeaponCfg::Bite(w) => kinds::bite::check(&e, w)?,
+            WeaponCfg::Trap(w) => kinds::trap::check(&e, w)?,
+            WeaponCfg::Surf(w) => kinds::surf::check(&e, w)?,
+            WeaponCfg::ScratchFloor(w) => kinds::scratch_floor::check(&e, w)?,
+            WeaponCfg::Tether(w) => kinds::tether::check(&e, w)?,
+            WeaponCfg::Wrecking(w) => kinds::wrecking::check(&e, w)?,
+            WeaponCfg::Rests(w) => kinds::rests::check(&e, w)?,
             WeaponCfg::Unsupported(_) => {}
         }
         let slots = [
@@ -499,7 +575,9 @@ impl WeaponCfg {
     fn main16(&self) -> Option<f64> {
         let every = match self {
             WeaponCfg::Striker(w) => w.every,
-            WeaponCfg::Blade(w) => w.every,
+            WeaponCfg::Blade(w) if w.mode == BladeMode::Thrust => w.every,
+            // a spinning blade has no grid (`blade_step` turns it every step)
+            WeaponCfg::Blade(_) => return None,
             WeaponCfg::Roll(w) => return kinds::roll::main16(w),
             WeaponCfg::Swallow(w) => return kinds::swallow::main16(w),
             WeaponCfg::Echo(w) => return kinds::echo::main16(w),
@@ -518,6 +596,15 @@ impl WeaponCfg {
             WeaponCfg::Crowd(w) => return kinds::crowd::main16(w),
             WeaponCfg::Drill(w) => return kinds::drill::main16(w),
             WeaponCfg::RollCharge(w) => return kinds::roll_charge::main16(w),
+            WeaponCfg::Pulse(w) => return kinds::pulse::main16(w),
+            WeaponCfg::Inflate(w) => return kinds::inflate::main16(w),
+            WeaponCfg::Bite(w) => return kinds::bite::main16(w),
+            WeaponCfg::Trap(w) => return kinds::trap::main16(w),
+            WeaponCfg::Surf(w) => return kinds::surf::main16(w),
+            WeaponCfg::ScratchFloor(w) => return kinds::scratch_floor::main16(w),
+            WeaponCfg::Tether(w) => return kinds::tether::main16(w),
+            WeaponCfg::Wrecking(w) => return kinds::wrecking::main16(w),
+            WeaponCfg::Rests(w) => return kinds::rests::main16(w),
             WeaponCfg::Unsupported(_) => return None,
         };
         Some(crate::py::round_half_even(4.0 * every))
@@ -554,6 +641,15 @@ impl WeaponCfg {
             WeaponCfg::Crowd(w) => kinds::crowd::ball_start(w),
             WeaponCfg::Drill(w) => kinds::drill::ball_start(w),
             WeaponCfg::RollCharge(w) => kinds::roll_charge::ball_start(w),
+            WeaponCfg::Pulse(w) => kinds::pulse::ball_start(w),
+            WeaponCfg::Inflate(w) => kinds::inflate::ball_start(w),
+            WeaponCfg::Bite(w) => kinds::bite::ball_start(w),
+            WeaponCfg::Trap(w) => kinds::trap::ball_start(w),
+            WeaponCfg::Surf(w) => kinds::surf::ball_start(w),
+            WeaponCfg::ScratchFloor(w) => kinds::scratch_floor::ball_start(w),
+            WeaponCfg::Tether(w) => kinds::tether::ball_start(w),
+            WeaponCfg::Wrecking(w) => kinds::wrecking::ball_start(w),
+            WeaponCfg::Rests(w) => kinds::rests::ball_start(w),
             WeaponCfg::Unsupported(_) => BallStart::default(),
         }
     }
@@ -581,6 +677,15 @@ impl WeaponCfg {
             WeaponCfg::Crowd(_) => "crowd",
             WeaponCfg::Drill(_) => "drill",
             WeaponCfg::RollCharge(_) => "roll_charge",
+            WeaponCfg::Pulse(_) => "pulse",
+            WeaponCfg::Inflate(_) => "inflate",
+            WeaponCfg::Bite(_) => "bite",
+            WeaponCfg::Trap(_) => "trap",
+            WeaponCfg::Surf(_) => "surf",
+            WeaponCfg::ScratchFloor(_) => "scratch_floor",
+            WeaponCfg::Tether(_) => "tether",
+            WeaponCfg::Wrecking(_) => "wrecking",
+            WeaponCfg::Rests(_) => "rests",
             WeaponCfg::Unsupported(kind) => kind,
         }
     }

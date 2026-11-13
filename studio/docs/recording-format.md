@@ -1887,6 +1887,393 @@ fight a shelling one.
 
 <!-- /kind:barrage -->
 
+The older ten fighters' kinds (milestone 4, plan Table O1) follow, one section each, in the same form; their sockets are
+Task 3's.
+
+<!-- kind:pulse -->
+#### `pulse` (weapon kind of DRUMS)
+
+`fight.py` 411 to 424, 5946 to 5963. Not ported yet (milestone 4, Task 3 made its sockets): its port fills this section
+in (the meaning of each field, as 6.2 and 6.3 do for FLUTE and TROMBONE), from the lines below.
+
+**Record keys.** None of its own.
+
+**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
+`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+
+- 421: `self.ev('pulse', k, int(main), float(B.blade_len))`
+
+<!-- /kind:pulse -->
+
+<!-- kind:inflate -->
+#### `inflate` (weapon kind of BAGPIPES)
+
+`fight.py` 1763 to 1867, 1487 to 1507, 3209 to 3216, 3233 to 3234. Not ported yet (milestone 4, Task 3 made its
+sockets): its port fills this section in (the meaning of each field, as 6.2 and 6.3 do for FLUTE and TROMBONE), from the
+lines below.
+
+**Record keys.**
+
+- `RAD`: added to `rec` at `run()` 5763 to 5764, written by `snap` 5520 to 5521:
+
+  ```python
+  if 'RAD' in rec:                                    # #30 v2, only recorded when a fighter changes size
+      rec['RAD'].append([getattr(B0, 'rad', self.R.R), getattr(B1, 'rad', self.R.R)])
+  ```
+
+**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
+`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+
+- 1790: `self.ev('inflate', k, float(B.inf_scale), dur_i, dur_f)`
+- 1815: `self.ev('release', k, float(s), C['dur_f'], float(B.p[0]), float(B.p[1]))`
+- 1837: `self.ev('land', k, float(B.p[0]), float(B.p[1]))`
+- 1859: `landed = self.damage(k, 1 - k, dmg, how, hx, hy)`
+
+<!-- /kind:inflate -->
+
+<!-- kind:bite -->
+#### `bite` (weapon kind of ACCORDION)
+
+`fight.py` 1868 to 1904, 1487 to 1507. Not ported yet (milestone 4, Task 3 made its sockets): its port fills this
+section in (the meaning of each field, as 6.2 and 6.3 do for FLUTE and TROMBONE), from the lines below.
+
+**Record keys.** None of its own.
+
+**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
+`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+
+- 1878: `self.ev('bite', k, int(main), aim, float(B.blade_len), t_open)`
+- 1897: `landed = self.damage(k, 1 - k, w['dmg'] * (1.0 if Bt['main'] else w.get('sub_dmg', 0.5)), 'bite', hx, hy, int(Bt['main']))`
+- 1902: `self.ev('snap', k, int(inside), int(landed), Bt['aim'], Bt['reach'])`
+
+<!-- /kind:bite -->
+
+<!-- kind:trap -->
+#### `trap` (weapon kind of HARP)
+
+`fight.py` 1324 to 1332, 1363 to 1392, 1417 to 1434. Not ported yet (milestone 4, Task 3 made its sockets): its port
+fills this section in (the meaning of each field, as 6.2 and 6.3 do for FLUTE and TROMBONE), from the lines below.
+
+**Record keys.** None of its own.
+
+**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
+`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+
+- 1386: `self.ev('string', k, hid, float(a[0]), float(a[1]), float(b[0]), float(b[1]))`
+- 1391: `self.ev('string_off', k, S['id'])`
+- 1425: `landed = self.damage(k, 1 - k, S['dmg'], 'string', hx, hy, S['id'])`
+
+<!-- /kind:trap -->
+
+<!-- kind:surf -->
+#### `surf` (weapon kind of UKULELE)
+
+`fight.py` 502 to 527, 588 to 609. Not ported yet (milestone 4, Task 3 made its sockets): its port fills this section in
+(the meaning of each field, as 6.2 and 6.3 do for FLUTE and TROMBONE), from the lines below.
+
+**Record keys.** None of its own.
+
+**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
+`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+
+- 526: `self.ev('surf', k, int(main), float(h), float(o[0]), float(o[1]), float(ang), float(power), float(hw))`
+- 593: `self.ev('surf_end', Sf['owner'], float(c[0]), float(c[1]), int(tau < Sf['life']))`
+- 604: `landed = self.damage(Sf['owner'], o, Sf['dmg'], 'surf', hx, hy, int(Sf['grow']))`
+
+<!-- /kind:surf -->
+
+<!-- kind:scratch_floor -->
+#### `scratch_floor` (weapon kind of TURNTABLES)
+
+`fight.py` 1713 to 1762. Not ported yet (milestone 4, Task 3 made its sockets): its port fills this section in (the
+meaning of each field, as 6.2 and 6.3 do for FLUTE and TROMBONE), from the lines below.
+
+**Record keys.** None of its own.
+
+**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
+`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+
+- 1729: `self.ev('scratch', k, d, float(B.blade_len), sgn)`
+- 1750: `self.ev('jerk', k, sgn, float(O.p[0]), float(O.p[1]), float(B.blade_len))`
+- 1756: `if self.damage(k, 1 - k, dmg, 'scratch', e[5], e[6]):`
+
+<!-- /kind:scratch_floor -->
+
+<!-- kind:tether -->
+#### `tether` (weapon kind of SYNTH)
+
+`fight.py` 1572 to 1660. Not ported yet (milestone 4, Task 3 made its sockets): its port fills this section in (the
+meaning of each field, as 6.2 and 6.3 do for FLUTE and TROMBONE), from the lines below.
+
+**Record keys.** None of its own.
+
+**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
+`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+
+- 1591: `self.ev('plug_fire', k, tc['next'], float(pos[0]), float(pos[1]), a, float(w['plug_speed']))`
+- 1605: `self.ev('volt', k, C['id'], tc['pulse'])`
+- 1624: `self.ev('plug_miss', k, P['id'], float(P['p'][0]), float(P['p'][1]))`
+- 1628: `if self.damage(k, 1 - k, w['plug_dmg'], 'plug', x, y, P['id']):`
+- 1632: `self.ev('plug', k, P['id'], x, y)`
+- 1636: `self.ev('unplug', k, C['id'], 0)`
+- 1642: `self.damage(k, 1 - k, w['volt_dmg'], 'volt', float(O.p[0]), float(O.p[1]), V['n'])`
+- 1649: `self.ev('snap', k, len(tc['cables']), float(O.p[0]), float(O.p[1]))`
+- 1651: `self.ev('unplug', k, C['id'], 1)`
+- 1658: `self.ev('leash', k, float(O.p[0]), float(O.p[1]))`
+
+<!-- /kind:tether -->
+
+<!-- kind:wrecking -->
+#### `wrecking` (weapon kind of BARI SAX)
+
+`fight.py` 3594 to 3786. Not ported yet (milestone 4, Task 3 made its sockets): its port fills this section in (the
+meaning of each field, as 6.2 and 6.3 do for FLUTE and TROMBONE), from the lines below.
+
+**Record keys.**
+
+- `WRECK`: added to `rec` at `run()` 5846 to 5847, written by `snap` 5577 to 5587:
+
+  ```python
+  if 'WRECK' in rec:                                  # #39 v2, only recorded when a fighter uses the 'wrecking' kind
+      Wr = np.zeros((2, 9))
+      for j, Bj in enumerate((B0, B1)):
+          W_ = getattr(Bj, 'wreck', None)
+          Wr[j, 2] = getattr(Bj, 'blade_len', 0.0)
+          if W_ is not None:
+              bx, by = W_.get('bottom', Bj.p)
+              sx, sy = W_.get('p0', Bj.p)                  # where the hook bit
+              Wr[j] = (self.WRECK_PHASES[W_['phase']], W_.get('h', 0.0), W_.get('L', Wr[j, 2]), bx, by, sx, sy,
+                       W_['t0'], W_['t1'])
+      rec['WRECK'].append(Wr)
+  ```
+
+**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
+`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+
+- 3683: `self.ev('cable', k, t_hook)`
+- 3722: `self.ev('wreck_in', k, float(B.p[0]), float(B.p[1]))`
+- 3734: `self.ev('swing', k, float(W_['ps'][0]), float(W_['ps'][1]), float(p1[0]), float(p1[1]), float(W_['bottom'][0]), float(W_['bottom'][1]), float(W_['L']), float(W_['th']), W_['t0'], W_['t1'], W_['kind'])`
+- 3757: `landed = self.damage(k, 1 - k, dmg, 'wreck', hx, hy)`
+- 3759: `self.ev('smash', k, hx, hy, sp)`
+- 3772: `self.ev('wreck_out', k, float(B.p[0]), float(B.p[1]), float(q[0]), float(q[1]), self.t, t1)`
+
+<!-- /kind:wrecking -->
+
+<!-- kind:rests -->
+#### `rests` (weapon kind of VIOLA)
+
+`fight.py` 5021 to 5107, 5137 to 5181, 342 to 343. Not ported yet (milestone 4, Task 3 made its sockets): its port fills
+this section in (the meaning of each field, as 6.2 and 6.3 do for FLUTE and TROMBONE), from the lines below.
+
+**Record keys.**
+
+- `REST`: added to `rec` at `run()` 5862 to 5863, written by `snap` 5616 to 5620:
+
+  ```python
+  if 'REST' in rec:                                   # #42, only recorded when a fighter uses the 'rests' kind
+      rec['REST'].append([[float(getattr(Bj, 'resting', False)), getattr(Bj, 'rest_count', 0),
+                           float(self.t < getattr(Bj, 'melody_until', -1.0))] for Bj in (B0, B1)])
+      rec['NOTES'].append([(N['owner'], float(N['c'][0]), float(N['c'][1]), N['r'], N['t0'], N['t1'], N['t_land'],
+                            N['id'], N['kind'], int(N['hit'])) for N in self.notes])
+  ```
+- `NOTES`: added to `rec` at `run()` 5862 to 5863, written by `snap` 5616 to 5620:
+
+  ```python
+  if 'REST' in rec:                                   # #42, only recorded when a fighter uses the 'rests' kind
+      rec['REST'].append([[float(getattr(Bj, 'resting', False)), getattr(Bj, 'rest_count', 0),
+                           float(self.t < getattr(Bj, 'melody_until', -1.0))] for Bj in (B0, B1)])
+      rec['NOTES'].append([(N['owner'], float(N['c'][0]), float(N['c'][1]), N['r'], N['t0'], N['t1'], N['t_land'],
+                            N['id'], N['kind'], int(N['hit'])) for N in self.notes])
+  ```
+
+**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
+`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+
+- 5061: `self.ev('note', k, N['id'], float(c[0]), float(c[1]), aim, N['r'], kind, N['t_land'], N['t1'])`
+- 5082: `self.ev('rest', k, j + 1, int(mel))`
+- 5099: `self.ev('crush', k, N['id'], hx, hy)`
+- 5100: `landed = self.damage(k, o, N['dmg'], 'note', hx, hy, N['kind'])`
+- 5161: `self.kill_keys(m, 'crushed', N['owner'])`
+
+<!-- /kind:rests -->
+
+<!-- kind:blade_spin -->
+#### the spinning `blade` (weapon kind of VIOLIN)
+
+`fight.py` 780 to 825. Not ported yet (milestone 4, Task 3 made its sockets): its port fills this section in (the
+meaning of each field, as 6.2 and 6.3 do for FLUTE and TROMBONE), from the lines below.
+
+**Record keys.** None of its own.
+
+**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
+`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+
+- 801: `self.kill_keys(hit, 'parry', k)`
+- 812: `self.ev('block', 1 - k, k, hx, hy, 'blade')`
+- 816: `landed = self.damage(k, 1 - k, w['dmg'], 'blade', hx, hy, B.frets)`
+
+<!-- /kind:blade_spin -->
+
+<!-- kind:clamp -->
+#### `clamp` (ability kind of ACCORDION)
+
+`fight.py` 2876 to 2877, 1905 to 1926. Not ported yet (milestone 4, Task 3 made its sockets): its port fills this
+section in (the meaning of each field, as 6.2 and 6.3 do for FLUTE and TROMBONE), from the lines below.
+
+**Record keys.** None of its own.
+
+**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
+`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+
+- 1913: `self.ev('clamp', k, axis, t_snap - self.t, float(B.p[0]), float(B.p[1]))`
+- 1922: `landed = self.damage(k, 1 - k, C['dmg'], 'clamp', float(O.p[0]), float(O.p[1]))`
+- 1924: `self.ev('clamp_snap', k, int(landed), float(O.p[0]), float(O.p[1]))`
+
+<!-- /kind:clamp -->
+
+<!-- kind:rewind -->
+#### `rewind` (ability kind of TURNTABLES)
+
+`fight.py` 2866 to 2867, 1927 to 1998, 3035 to 3036. Not ported yet (milestone 4, Task 3 made its sockets): its port
+fills this section in (the meaning of each field, as 6.2 and 6.3 do for FLUTE and TROMBONE), from the lines below.
+
+**Record keys.** None of its own.
+
+**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
+`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+
+- 1961: `self.ev('heal', k, heal, then[0])`
+- 1982: `self.ev('rewound', k, float(B.p[0]), float(B.p[1]))`
+
+<!-- /kind:rewind -->
+
+<!-- kind:lash -->
+#### `lash` (ability kind of SYNTH)
+
+`fight.py` 2868 to 2869, 1661 to 1712. Not ported yet (milestone 4, Task 3 made its sockets): its port fills this
+section in (the meaning of each field, as 6.2 and 6.3 do for FLUTE and TROMBONE), from the lines below.
+
+**Record keys.** None of its own.
+
+**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
+`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+
+- 1678: `self.ev('lash', k, aim, n, float(ab['len']), float(L['t1'] - L['t0']), float(L['period']), float(L['sweep']), float(L['spread']), float(L['lag']))`
+- 1707: `self.damage(k, 1 - k, L['dmg'], 'lash', hx, hy, j)`
+
+<!-- /kind:lash -->
+
+<!-- kind:spout -->
+#### `spout` (ability kind of UKULELE)
+
+`fight.py` 2872 to 2873, 578 to 583, 671 to 699. Not ported yet (milestone 4, Task 3 made its sockets): its port fills
+this section in (the meaning of each field, as 6.2 and 6.3 do for FLUTE and TROMBONE), from the lines below.
+
+**Record keys.**
+
+- `X33_SPOUT`: `run()` 6220 to 6221 (returned by `run()`, not per frame).
+
+**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
+`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+
+- 583: `self.ev('spout', k, float(p[0]), float(p[1]), float(aim))`
+- 694: `self.damage(Sp['owner'], 1 - Sp['owner'], Sp['dmg'], 'spout', hx, hy, Sp['ticks'])`
+- 698: `self.ev('spout_end', Sp['owner'], float(Sp['p'][0]), float(Sp['p'][1]))`
+
+<!-- /kind:spout -->
+
+<!-- kind:offbeat -->
+#### `offbeat` (ability kind of BARI SAX)
+
+`fight.py` 2911 to 2914, 3666 to 3684. Not ported yet (milestone 4, Task 3 made its sockets): its port fills this
+section in (the meaning of each field, as 6.2 and 6.3 do for FLUTE and TROMBONE), from the lines below.
+
+**Record keys.** None of its own.
+
+**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
+`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+
+- 2914: `self.ev('skank', k, B.skank_until)`
+- 3683: `self.ev('cable', k, t_hook)`
+
+<!-- /kind:offbeat -->
+
+<!-- kind:snap -->
+#### `snap` (ability kind of BARI SAX)
+
+`fight.py` 2919 to 2920, 3787 to 3856. Not ported yet (milestone 4, Task 3 made its sockets): its port fills this
+section in (the meaning of each field, as 6.2 and 6.3 do for FLUTE and TROMBONE), from the lines below.
+
+**Record keys.**
+
+- `SNAP`: added to `rec` at `run()` 5849 to 5850, written by `snap` 5588 to 5594:
+
+  ```python
+  if 'SNAP' in rec:                                   # #39 v2, only recorded when a fighter has a 'snap' ability
+      Sp = np.zeros((2, 8))
+      for j, Bj in enumerate((B0, B1)):
+          Sn = getattr(Bj, 'wsnap', None)
+          if Sn is not None:
+              Sp[j] = (1, Sn['h'], Sn['tgt'][0], Sn['tgt'][1], Sn['t0'], Sn['ts'], Sn['t1'], Sn['ab']['radius'])
+      rec['SNAP'].append(Sp)
+  ```
+
+**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
+`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+
+- 3805: `self.ev('snap_aim', k, float(tgt[0]), float(tgt[1]), ts, self.t + T_, float(ab['radius']))`
+- 3824: `self.ev('cable_snap', k)`
+- 3837: `self.damage(k, 1 - k, ab['dmg'], 'crash', hx, hy)`
+- 3839: `self.ev('crater', k, float(B.p[0]), float(B.p[1]), float(ab['radius']), int(hit))`
+
+<!-- /kind:snap -->
+
+<!-- kind:double_stop -->
+#### `double_stop` (ability kind of VIOLA)
+
+`fight.py` 2928 to 2929, 5108 to 5117. Not ported yet (milestone 4, Task 3 made its sockets): its port fills this
+section in (the meaning of each field, as 6.2 and 6.3 do for FLUTE and TROMBONE), from the lines below.
+
+**Record keys.** None of its own.
+
+**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
+`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+
+- 5116: `self.ev('double', k)`
+
+<!-- /kind:double_stop -->
+
+<!-- kind:melody -->
+#### `melody` (ability kind of VIOLA)
+
+`fight.py` 2923 to 2927. Not ported yet (milestone 4, Task 3 made its sockets): its port fills this section in (the
+meaning of each field, as 6.2 and 6.3 do for FLUTE and TROMBONE), from the lines below.
+
+**Record keys.** None of its own.
+
+**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
+`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+
+- 2927: `self.ev('melody', k, B.melody_until)`
+
+<!-- /kind:melody -->
+
+<!-- kind:joke -->
+#### `joke` (ability kind of VIOLA)
+
+`fight.py` 2921 to 2922, 5118 to 5136. Not ported yet (milestone 4, Task 3 made its sockets): its port fills this
+section in (the meaning of each field, as 6.2 and 6.3 do for FLUTE and TROMBONE), from the lines below.
+
+**Record keys.** None of its own.
+
+**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
+`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+
+- 5129: `self.ev('stun', o, k, st)`
+- 5135: `self.ev('joke', k, o, N['t_land'], float(N['c'][0]), float(N['c'][1]))`
+
+<!-- /kind:joke -->
+
 ## 7. The content hash
 
 `Recording::hash()` (Python: `recording.rec_hash`) identifies what happened in the fight. It does not depend on who

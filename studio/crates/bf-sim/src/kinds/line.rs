@@ -6,8 +6,9 @@
 //! the row stops at the ropes. A row hits once (a capsule test, half-width `width / 2`); a landed row grows the next
 //! rows' length (`blade_len`) by `grow` up to `max_len`.
 //!
-//! `lay_string` and `strings` (1364 to 1391, 1417 to 1434) belong to the older `trap` kind: `line` never reaches
-//! them (`hazard_beat` lays a string only for a weapon that is not a `line`), so they are not ported.
+//! `lay_string` and `strings` (1364 to 1391, 1417 to 1434) belong to HARP's `trap` kind (milestone 4,
+//! `kinds::trap`): `line` never reaches them (`hazard_beat` lays a string only for a weapon that is not a `line`),
+//! and the schedule runs the strings' half of `hazards_step` after this one.
 //!
 //! Python keeps the rows in `Fight.lines` and their ids in `Fight.next_hz`; here they are [`State`], `Fight::line`.
 //! None of this code draws from the generator.
@@ -146,16 +147,16 @@ pub fn fire_line(f: &mut Fight, k: usize) {
     f.ev("line", k as i64, data);
 }
 
-/// Whether `self.lines` holds anything: the test before `hazards_step` (`run()` 6141; `strings` are the older `trap`
-/// kind's).
+/// Whether `self.lines` holds anything: half of the test before `hazards_step` (`run()` 6141; the strings are
+/// `kinds::trap::live`).
 pub fn live(f: &Fight) -> bool {
     !f.line.lines.is_empty()
 }
 
-/// `hazards_step(dt)` (1393 to 1416; the strings' half, 1417 to 1434, is the older `trap` kind's), from `run()` 6141
-/// to 6142, while [`live`]: each row that has not hit tests the enemy against the part of it that is up (a capsule),
-/// hits once (`pipe`, with the row's id; the knock is away from the row and 0.4 along it), and a landed row grows
-/// its owner's `blade_len`. Rows whose last pipe has sunk are dropped.
+/// `hazards_step(dt)` (1393 to 1416; the strings' half, 1417 to 1434, is `kinds::trap::strings_step`), from `run()`
+/// 6141 to 6142, while [`live`]: each row that has not hit tests the enemy against the part of it that is up (a
+/// capsule), hits once (`pipe`, with the row's id; the knock is away from the row and 0.4 along it), and a landed row
+/// grows its owner's `blade_len`. Rows whose last pipe has sunk are dropped.
 pub fn hazards_step(f: &mut Fight, _dt: f64) {
     let r = f.rules.r;
     for i in 0..f.line.lines.len() {

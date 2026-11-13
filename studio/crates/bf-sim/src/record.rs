@@ -17,11 +17,12 @@ use std::collections::BTreeMap;
 use bf_core::event::Value;
 use bf_core::recording::{Array, RECORDING_FORMAT, Recording, Source};
 
-use crate::abilities::{flick, hook, lights_out, snip};
+use crate::abilities::{flick, hook, lights_out, snap, snip, x33};
 use crate::fight::Fight;
 use crate::geom;
 use crate::kinds::{
-    anchor, crowd, drill, echo, grapple, mortar, roll, roll_charge, spotlight, striker, tiptoe, tune, walk,
+    anchor, crowd, drill, echo, grapple, inflate, mortar, rests, roll, roll_charge, spotlight, striker, tiptoe, tune,
+    walk, wrecking,
 };
 
 /// `KMAX`: the most projectiles a frame records.
@@ -85,8 +86,10 @@ impl Frames {
     /// The empty record of a fight: the keys `run()` starts `rec` with (`fight.py` 5737), plus the opt-in keys this
     /// fight's fighters bring (`COB`, 5773 to 5774; `EXT`, `SLW` and `CRV`, 5779 to 5780).
     pub(crate) fn new(fight: &Fight) -> Frames {
-        // the kit's other kinds, in the order `run()` adds their keys (5791 to 5911)
+        // the kit's other kinds, in the order `run()` adds their keys (5763 to 5911; the older ten fighters' too,
+        // milestone 4: `RAD`, `WRECK`, `SNAP`, `REST` and `NOTES`)
         let kinds = [
+            inflate::record_keys(fight),
             echo::record_keys(fight),
             tune::record_keys(fight),
             snip::record_keys(fight),
@@ -95,7 +98,10 @@ impl Frames {
             anchor::record_keys(fight),
             flick::record_keys(fight),
             tiptoe::record_keys(fight),
+            wrecking::record_keys(fight),
+            snap::record_keys(fight),
             hook::record_keys(fight),
+            rests::record_keys(fight),
             grapple::record_keys(fight),
             walk::record_keys(fight),
             roll::record_keys(fight),
@@ -238,7 +244,11 @@ impl Frames {
             ])
         });
         self.slams.push(Value::List(slams.collect()));
-        // fight.py 5520 to 5521: `RAD` (inflate). Kind not ported.
+        // fight.py 5520 to 5521: `RAD` (BAGPIPES' inflate, milestone 4)
+        fight.socket("snap.RAD");
+        if inflate::record_keys(fight).iter().any(|key| self.has(key)) {
+            inflate::snap(fight, self);
+        }
         if let Some(cob) = &mut self.cob {
             // #32 v2, 5522 to 5524: for each fighter the list of its baskets (none for a fighter without `baskets`),
             // each (id, home x, home y, cobra x, cobra y, t_drop)
@@ -266,16 +276,20 @@ impl Frames {
             }
         }
         // fight.py 5529 to 5732: the kit's other kinds' keys, each written by its kind while the record has it, in
-        // `snap`'s order (HOUNDS 5529, WRECK 5577, SNAP 5588, RATTLE 5595 and REST 5616 are older kinds': SLOT)
-        let kinds: [KindSnap; 16] = [
+        // `snap`'s order (WRECK 5577, SNAP 5588 and REST 5616 are the older ten fighters', milestone 4; HOUNDS 5529
+        // and RATTLE 5595 are frozen kinds': SLOT)
+        let kinds: [KindSnap; 19] = [
             ("snap.ECHO", echo::record_keys, echo::snap),               // 5539 to 5549
             ("snap.DET", tune::record_keys, tune::snap),                // 5550 to 5554
             ("snap.SNIP", snip::record_keys, snip::snap),               // 5555 to 5561
             ("snap.LO", lights_out::record_keys, lights_out::snap),     // 5562 to 5563
             ("snap.SHELLS", mortar::record_keys, mortar::snap),         // 5564 to 5568
             ("snap.ANC", anchor::record_keys, anchor::snap),            // 5569 to 5576
+            ("snap.WRECK", wrecking::record_keys, wrecking::snap),      // 5577 to 5587
+            ("snap.SNAP", snap::record_keys, snap::snap),               // 5588 to 5594
             ("snap.HOOK", hook::record_keys, hook::snap),               // 5602 to 5608
             ("snap.HOP", tiptoe::record_keys, tiptoe::snap),            // 5609 to 5615
+            ("snap.REST", rests::record_keys, rests::snap),             // 5616 to 5620
             ("snap.ROLL", roll::record_keys, roll::snap),               // 5621 to 5624
             ("snap.GRAB", grapple::record_keys, grapple::snap),         // 5625 to 5633
             ("snap.WALK", walk::record_keys, walk::snap),               // 5634 to 5642
@@ -375,6 +389,13 @@ impl Frames {
 /// The finished fight as a recording made by this app: what `run()` returns (`fight.py` 6216 to 6222), with the
 /// rules it was fought under. Without frames (a fight that did not record) the recording has no arrays.
 pub(crate) fn recording(fight: Fight, frames: Option<Frames>) -> Recording {
+    let mut arrays = frames.map(Frames::into_arrays).unwrap_or_default();
+    // fight.py 6220 to 6221: `if self.x33_log: out['X33_SPOUT'] = self.x33_log` (UKULELE's UKE-NADO, milestone 4)
+    if !fight.x33.x33_log.is_empty()
+        && let Some(log) = x33::spout_log(&fight)
+    {
+        arrays.insert("X33_SPOUT".to_string(), log);
+    }
     Recording {
         format: RECORDING_FORMAT,
         source: Source::studio(),
@@ -387,7 +408,7 @@ pub(crate) fn recording(fight: Fight, frames: Option<Frames>) -> Recording {
         corner: fight.corner.to_vec(),
         rules: fight.rules.to_values(),
         events: fight.events,
-        arrays: frames.map(Frames::into_arrays).unwrap_or_default(),
+        arrays,
     }
 }
 

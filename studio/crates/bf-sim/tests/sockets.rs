@@ -123,8 +123,8 @@ fn the_order_file_names_every_socket_once_per_place() {
     }
     // per-fighter places are listed for fighter 0, then fighter 1
     let names = |when: &str| of(&order, &[when]);
-    assert_eq!(names("setup").len(), 16);
-    assert_eq!(names("frame").len(), 17);
+    assert_eq!(names("setup").len(), 19);
+    assert_eq!(names("frame").len(), 21);
     assert_eq!(names("beat").iter().filter(|n| *n == "beat.stunned").count(), 2);
 }
 
@@ -196,7 +196,7 @@ fn flute_against_trombone_reaches_the_sockets_in_fight_py_order() {
             let get = |name: &str| n.get(name).copied().unwrap_or(0);
             // `damage` on every hit (no shield, shadow, smash or flight in this pair: every call lands), then
             // `knock`; a ring that passes its enemy, then its detune and stun; a slam that lands on the enemy
-            blocks(&trace, &["damage.skips", "damage.detuned"], &what);
+            blocks(&trace, &["damage.skips", "damage.guard", "damage.detuned"], &what);
             assert_eq!(
                 get("damage.skips"),
                 count(&rec, "hit", None),
@@ -221,7 +221,7 @@ fn flute_against_trombone_reaches_the_sockets_in_fight_py_order() {
             }
             assert_eq!(get("effects.slam.how"), slam_hits, "{what}: a slam's hit");
             // a clash: no walker in this pair, so every overlap is announced
-            blocks(&trace, &["move.walker", "move.wclash"], &what);
+            blocks(&trace, &["move.walker", "move.wclash", "move.clash_hooks"], &what);
             assert_eq!(
                 get("move.walker"),
                 count(&rec, "clash", None),
