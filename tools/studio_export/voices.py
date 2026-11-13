@@ -168,11 +168,61 @@ class NoteLog:
         for obj, name, new in ((M, 'note', note), (M, 'inst_gain', inst_gain), (B, 'voice', voice), (D, 'nz', nz)):
             self._undo.append((obj, name, getattr(obj, name)))
             setattr(obj, name, new)
+        for side, s in enumerate(getattr(M, 'SOUNDS', ())):
+            self._own_helper(side, s)
         return self
+
+    def _own_helper(self, side, s):
+        """a part's own note helper (plan m4 Task 10: an older episode's `_fit` with its own fade), declared on its
+        Sound as `note_helper = dict(note='<method>', gain='<method>', fade=<s>)`: `note(name, midi, dur, cap, vel)`
+        caches by kit.music.note's key in a cache of the part's own and calls pp_bridge.voice, then `gain(name)`
+        (the part's own level matching). Each first-time note is logged as kit.music.note's are, with `fade` and
+        `side`; a Sound without one (every kit fighter) is left alone"""
+        h = getattr(type(s), 'note_helper', None)
+        if h is None:
+            return
+        if not (isinstance(h, dict) and set(h) == {'note', 'gain', 'fade'} and isinstance(h['fade'], float)):
+            raise SystemExit(f'{type(s).__module__}.Sound.note_helper: dict(note=<method>, gain=<method>, fade=<float>)')
+        note0, gain0, fade = getattr(s, h['note']), getattr(s, h['gain']), h['fade']
+        seen = set()
+
+        def gain(name):
+            self._in_gain += 1
+            try:
+                return gain0(name)
+            finally:
+                self._in_gain -= 1
+
+        def note(name, midi, dur=0.18, cap=0.6, vel=0.85):
+            key = ('own', side, fade, name, int(midi), round(dur, 3), cap, round(vel, 2))
+            self.total += 1
+            if key in seen:
+                self.uses[key] += 1
+                return note0(name, midi, dur, cap, vel)
+            rec = dict(name=name, midi=int(midi), dur=float(dur), cap=float(cap), vel=float(vel), key=key,
+                       voice_calls=[], before=noise_state()['state'], fade=float(fade), side=side)
+            self._note = rec
+            try:
+                out = note0(name, midi, dur, cap, vel)
+            finally:
+                self._note = None
+            rec.update(after=noise_state()['state'], samples=len(out), sha256=sha(out), gain=float(gain0(name)))
+            if len(self.calls) < self.keep:
+                rec['out'] = out
+            seen.add(key)
+            self.uses[key] = 1
+            self.calls.append(rec)
+            return out
+        for name, new in ((h['note'], note), (h['gain'], gain)):
+            self._undo.append((s, name, None))
+            setattr(s, name, new)
 
     def remove(self):
         for obj, name, old in reversed(self._undo):
-            setattr(obj, name, old)
+            if old is None:
+                delattr(obj, name)                          # a part's own helper: its method again
+            else:
+                setattr(obj, name, old)
         self._undo = []
 
     def rows(self):

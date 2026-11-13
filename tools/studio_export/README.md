@@ -327,6 +327,14 @@ proves the Studio against the module. The manual is `studio/docs/porting-an-olde
   `fighter_origin(spec)` and `mood_origin(spec)` are Gate O (the fight's replay-guard line, the layers' contributions
   on minus off per pixel on at least 24 frames, the module's state, the buses sample for sample in float64 against
   -120 dBFS) and write `origin.json`; every run checks `git status --short projects reelkit series` is empty after.
+  Two optional SPEC keys (absent: the gate and its `origin.json` exactly as before): a fighter's **`silence`** patches
+  the separate scratch copy its stems come from (`other` + `silence`: every placement on a shared bus such as `fx`,
+  `bass`, `solo` removed but the fighter's own; each patch matches once), and the kit side of `buses` then keeps only
+  the module Sound's own placements (`silence_kit`, default on with `silence`: `Mix.place` wrapped while that Sound's
+  methods run, never through `M.bed`), so `buses` may name the shared buses; **`fights`**
+  (`[dict(seed=, frames=, layers=, buses=, ...), ...]`) gates several seeds of the same config (the fighter winning and
+  losing), each reproducing the replay-guard line, the episode's copies given that seed in `seed.txt`, each its own
+  section in `origin.json` (compact frame rows, every hash kept); the first fight needs 24 frames, the others 12.
 - `older/configs/<name>/episode.py` (plan m4 Task 5): the ten older episodes of Table O3 as kit configs with the
   series-standard beat sheet and today's roster (every value named with the episode file and line it is read from),
   and the four stand-ins of `drift_phonk` and `noir_jazz` (whose episodes fought a retired fighter). The kit loads each
