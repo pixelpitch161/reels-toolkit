@@ -22,7 +22,10 @@
  "n_bars": 30,
  "pair": "oboe_vs_bassoon",
  "rec_hash": "d9a89a2385ca9331",
- "recording": "themes/heist/oboe_vs_bassoon.bfrec",
+ "recording": {
+  "cache": "themes/heist/oboe_vs_bassoon.bfrec",
+  "sha256": "f7f5bb372764b8f3989e0356218aaca6fc10e955550404a329326fcc00d15820"
+ },
  "roles": {
   "BASSOON": "line",
   "OBOE": "melody"

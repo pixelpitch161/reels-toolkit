@@ -17,13 +17,26 @@
 #   copy     when IDENTITY CRISIS fires a copied ability (`trigger(..., quiet=True)`)
 #
 # Lines that run once per fighter appear twice, fighter 0's first. Existing calls (striker, blade, effects,
-# abilities) are listed among the sockets, so the order of the new ones against them is checked too. The kinds
-# older than the kit's (volley, pulse, pack, rattle, ...) have no socket: they stay `SLOT` comments in the code.
+# abilities) are listed among the sockets, so the order of the new ones against them is checked too. The older ten
+# fighters' kinds (milestone 4, Task 3: pulse, inflate, bite, trap, surf, scratch_floor, tether, wrecking, rests, the
+# spinning blade, and the abilities clamp, rewind, lash, spout, offbeat, snap, double_stop, melody, joke) have their
+# sockets too, at the lines below (`tests/sockets_older.rs` runs each of them against FLUTE). The kinds of frozen
+# versions and of the retired fighters (volley, orbit, the beam weapon, flail, aura, bellows, dash, cone, pack, rattle,
+# quake, charge, pull) have no socket: they stay `SLOT` comments in the code.
+#
+# Sockets that live inside a kind's own step are not traced and not listed here: the bite's and the inflate's branches
+# of `grid16_fire` (1487 to 1507) are behind `tick.grid16`, `hazard_beat`'s trap branch (1324 to 1332) behind
+# `beat.line`, the surf's `fire_surf` (5970 to 5974) behind `tick.rake`, the strings' half of `hazards_step` (1417 to
+# 1434) behind `stage9.hazards`, the surfs (588 to 609) and the spouts (671 to 699) of `surf_rake_step` behind
+# `later.surf_rake`, the spinning branch of `blade_step` (780 to 825) behind `weapon.blade`, the rewind gate (3035 to
+# 3036) behind `abilities.gates`, the new branches of `trigger` (2866, 2868, 2872, 2876, 2911, 2919, 2921, 2923, 2928)
+# behind `trigger.dispatch`, and `X33_SPOUT` (6220 to 6221) at the end of the run.
 #
 # name                     fight.py      when
 
-# ---- setup: run() 5756 to 5911, in order
+# ---- setup: run() 5746 to 5911, in order
 setup.combo                5756-5762     setup
+setup.inflate              5761-5762     setup
 setup.swallow_striker      5765-5774     setup
 setup.echo                 5787-5792     setup
 setup.jump                 5793-5796     setup
@@ -31,7 +44,9 @@ setup.tune                 5797-5802     setup
 setup.mortar               5809-5817     setup
 setup.anchor               5818-5826     setup
 setup.tiptoe               5830-5835     setup
+setup.wrecking             5842-5846     setup
 setup.lightning            5854-5857     setup
+setup.rests                5858-5863     setup
 setup.grapple              5864-5869     setup
 setup.walk                 5876-5881     setup
 setup.roll                 5882-5887     setup
@@ -42,14 +57,18 @@ setup.roll_charge          5906-5911     setup
 
 # ---- a frame: snap 5509 to 5732, in order
 snap.K                     5509-5514     frame
+snap.RAD                   5520-5521     frame
 snap.ECHO                  5539-5549     frame
 snap.DET                   5550-5554     frame
 snap.SNIP                  5555-5561     frame
 snap.LO                    5562-5563     frame
 snap.SHELLS                5564-5568     frame
 snap.ANC                   5569-5576     frame
+snap.WRECK                 5577-5587     frame
+snap.SNAP                  5588-5594     frame
 snap.HOOK                  5602-5608     frame
 snap.HOP                   5609-5615     frame
+snap.REST                  5616-5620     frame
 snap.ROLL                  5621-5624     frame
 snap.GRAB                  5625-5633     frame
 snap.WALK                  5634-5642     frame
@@ -67,13 +86,20 @@ beat.combo                 5934-5935     beat
 beat.swallow               5936-5937     beat
 beat.striker               5938-5939     beat
 beat.line                  5940-5941     beat
+beat.scratch_floor         5942-5943     beat
+beat.tether                5944-5945     beat
 beat.stunned               5926-5927     beat
 beat.combo                 5934-5935     beat
 beat.swallow               5936-5937     beat
 beat.striker               5938-5939     beat
 beat.line                  5940-5941     beat
+beat.scratch_floor         5942-5943     beat
+beat.tether                5944-5945     beat
 # the 16th counters (5946 to 6095)
+tick.pulse                 5946-5963     step
 tick.rake                  5964-5974     step
+tick.grid16                5975-5980     step
+tick.tether                5981-5986     step
 tick.striker               5987-5993     step
 tick.thrust                5994-6000     step
 tick.echo                  6009-6014     step
@@ -81,6 +107,8 @@ tick.jump                  6015-6019     step
 tick.tune                  6020-6024     step
 tick.mortar                6025-6029     step
 tick.anchor                6030-6034     step
+tick.wrecking              6040-6044     step
+tick.rests                 6045-6049     step
 tick.lightning             6050-6054     step
 tick.tiptoe                6055-6059     step
 tick.grapple               6060-6064     step
@@ -105,19 +133,29 @@ move.clash                 3180-3187     step
 move.walker                3190-3193     clash
 move.walker_pinned         3203-3205     clash
 move.wclash                3227-3232     clash
+move.clash_hooks           3233-3234     clash
 move.keys                  3235-3278     step
+# the rewind step, right after move (6116 to 6117)
+rewind.step                6116-6117     step
 # the weapon steps, fighter 0 then fighter 1 (6118 to 6136)
 weapon.blade               6119-6120     step
 lance.swat_shells          755-756       lance
 weapon.combo               6123-6124     step
+weapon.scratch_floor       6127-6128     step
+weapon.tether              6129-6130     step
+weapon.inflate             6131-6132     step
 weapon.swallow             6133-6134     step
 weapon.striker             6135-6136     step
 weapon.blade               6119-6120     step
 lance.swat_shells          755-756       lance
 weapon.combo               6123-6124     step
+weapon.scratch_floor       6127-6128     step
+weapon.tether              6129-6130     step
+weapon.inflate             6131-6132     step
 weapon.swallow             6133-6134     step
 weapon.striker             6135-6136     step
 # beams and hazards (6139 to 6142)
+stage9.lashes              6137-6138     step
 stage9.beams               6139-6140     step
 stage9.hazards             6141-6142     step
 # effects_step (6143; 3055 to 3113)
@@ -137,6 +175,8 @@ later.extra_snip           6154-6156     step
 later.shells               6157-6158     step
 later.anchor               6159-6162     step
 later.hook                 6163-6164     step
+later.wrecking             6167-6168     step
+later.snap                 6169-6170     step
 later.tiptoe               6171-6172     step
 later.walk                 6173-6174     step
 later.grapple              6175-6176     step
@@ -147,9 +187,11 @@ later.spotlight            6183-6184     step
 later.crowd                6185-6186     step
 later.drill                6187-6188     step
 later.roll_charge          6189-6190     step
+later.notes                6191-6192     step
 later.splinters            6193-6194     step
 later.dash_cone            6195-6196     step
 later.surf_rake            6197-6198     step
+later.clamps               6201-6202     step
 # abilities_step (6203; 3012 to 3053): the charged beams, then fighter 0's turn, then fighter 1's
 abilities                  6203          step
 abilities.charged_beam     3013-3016     step
@@ -169,5 +211,6 @@ trigger.quiet              2830-2835     copy
 
 # ---- damage (322 to 351) and knock (353 to 368)
 damage.skips               325-334       hit
+damage.guard               342-343       hit
 damage.detuned             344-346       hit
 knock.skips                355-360       knock

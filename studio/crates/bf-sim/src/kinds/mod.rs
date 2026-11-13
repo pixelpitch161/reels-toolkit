@@ -8,22 +8,31 @@
 //! the roster reads the kind.
 
 pub mod anchor;
+pub mod bite;
 pub mod blade;
 pub mod combo;
 pub mod crowd;
 pub mod drill;
 pub mod echo;
 pub mod grapple;
+pub mod inflate;
 pub mod jump;
 pub mod lightning;
 pub mod line;
 pub mod mortar;
+pub mod pulse;
 pub mod rake;
+pub mod rests;
 pub mod roll;
 pub mod roll_charge;
+pub mod scratch_floor;
 pub mod spotlight;
 pub mod striker;
+pub mod surf;
 pub mod swallow;
+pub mod tether;
 pub mod tiptoe;
+pub mod trap;
 pub mod tune;
 pub mod walk;
+pub mod wrecking;

@@ -111,6 +111,8 @@ def _child(q, modname, fnname, args):
         from . import __main__ as entry
         assert hash(entry.HASH_PROBE[0]) == entry.HASH_PROBE[1], 'this process does not hash strings as the ' \
                                                                  'reference does (PYTHONHASHSEED=0)'
+        from . import older                           # the older reference kit modules (plan m4 Task 2), before
+        older.install()                               # the kit is imported
         import importlib
         fn = getattr(importlib.import_module(modname), fnname)
         q.put(('ok', fn(*args)))

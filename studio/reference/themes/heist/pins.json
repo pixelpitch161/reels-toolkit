@@ -18,6 +18,12 @@
    "export": "theme_heist"
   },
   {
+   "path": "themes/heist/oboe_vs_bassoon.bfrec",
+   "sha256": "f7f5bb372764b8f3989e0356218aaca6fc10e955550404a329326fcc00d15820",
+   "bytes": 132879,
+   "export": "theme_heist"
+  },
+  {
    "path": "themes/heist/variants/key.bfrec",
    "sha256": "f7f5bb372764b8f3989e0356218aaca6fc10e955550404a329326fcc00d15820",
    "bytes": 132879,

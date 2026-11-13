@@ -167,6 +167,31 @@ pub struct Ball<'a> {
     pub vmul: Option<f64>,
     /// The last ability it fired (`B.last_ab`, `trigger` 2840): what IDENTITY CRISIS copies (`copy_source`).
     pub last_ab: Option<&'a AbilityCfg>,
+    // The older ten fighters' per-ball states (milestone 4), at Python's `getattr` defaults: no kit kind sets them.
+    /// The ball's own radius (#30 v2, BAG INFLATE; `getattr(B, 'rad', R)`): `None` = the shared `Rules::r`. Read
+    /// through [`crate::fight::radius`] at every site `fight.py` reads it.
+    pub rad: Option<f64>,
+    /// The ball's mass (#30 v2; `getattr(B, 'mass', 1.0)`): `None` for a ball that never had one. Whether either ball
+    /// has one (`hasattr(P, 'mass')`) picks `move`'s unequal-mass clash (3209 to 3216); read through
+    /// [`crate::fight::mass`].
+    pub mass: Option<f64>,
+    /// Seconds left of a rewind (#31, REWIND; `getattr(B, 'rw_left', 0.0)`): while above 0 the ball is intangible and
+    /// `rewind_step` drives it (`damage` 325, `move` 3131, 3180); read through [`crate::fight::rewinding`].
+    pub rw_left: f64,
+    /// Resting (#42, COUNTING RESTS; `getattr(V, 'resting', False)`): a hit on it takes [`Ball::guard`] times the
+    /// damage (`damage` 342 to 343).
+    pub resting: bool,
+    /// What a hit on a resting ball is multiplied by: its weapon's `w.get('guard', 1.0)` (the `rests` kind's port
+    /// sets it).
+    pub guard: f64,
+    /// The beat a resting fighter last counted (`getattr(B, 'cur_kb', -1)`, read by MELODY AT LAST, `trigger` 2925).
+    pub cur_kb: i64,
+    /// When MELODY AT LAST ends (`B.melody_until`; `rests_setup`'s -1.0).
+    pub melody_until: f64,
+    /// The beat MELODY AT LAST's shorter rests count from (`B.melody_k0`; `rests_setup`'s 0).
+    pub melody_k0: i64,
+    /// MELODY AT LAST's rests per note (`B.melody_rest`; `rests_setup`'s 1).
+    pub melody_rest: i64,
 }
 
 impl<'a> Ball<'a> {
@@ -189,7 +214,11 @@ impl<'a> Ball<'a> {
             v: [0.0, 0.0],
             th: 0.0,
             spin_dir: if side == 0 { 1.0 } else { -1.0 },
-            spin: 0.0,
+            // w.get('spin', 0.0): a blade's (0.0 for a thrust lance); every other kind refuses the key
+            spin: match &cfg.weapon {
+                WeaponCfg::Blade(w) => w.spin,
+                _ => 0.0,
+            },
             blade_len: start.base,
             frets: start.frets0,
             n_vol: start.n0,
@@ -227,6 +256,15 @@ impl<'a> Ball<'a> {
             rolling: false,
             vmul: None,
             last_ab: None,
+            rad: None,
+            mass: None,
+            rw_left: 0.0,
+            resting: false,
+            guard: 1.0,
+            cur_kb: -1,
+            melody_until: -1.0,
+            melody_k0: 0,
+            melody_rest: 1,
         }
     }
 
@@ -290,6 +328,15 @@ mod tests {
             assert!(!(b.held || b.air || b.hopper || b.walking || b.walker || b.grabbed || b.pinned || b.rolling));
             assert!(b.anc.is_none() && b.swan.is_none() && b.strut.is_none() && b.dive.is_none());
             assert!(b.march.is_none() && b.last_ab.is_none() && b.vmul.is_none());
+            // the older kinds' (milestone 4)
+            assert!(b.rad.is_none() && b.mass.is_none() && !b.resting, "{}", cfg.name);
+            assert_eq!((b.rw_left, b.guard, b.cur_kb), (0.0, 1.0, -1), "{}", cfg.name);
+            assert_eq!(
+                (b.melody_until, b.melody_k0, b.melody_rest),
+                (-1.0, 0, 1),
+                "{}",
+                cfg.name
+            );
         }
     }
 

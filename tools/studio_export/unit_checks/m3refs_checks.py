@@ -256,22 +256,119 @@ def a_port_never_points_at_another_port():
 
 
 def budget_reports_an_overfull_fighter():
-    files = [('fighters/flute/left.bfrec', 290_000), ('fighters/flute/fight.json', 10_000),
-             ('fighters/tuba/left.bfrec', 291_000), ('fighters/tuba/fight.json', 10_000),
-             ('themes/heist/a.bfrec', 150_000), ('themes/heist/theme.json', 130_000),
-             ('episodes/trombone_vs_tuba/run.bfrec', 255_000), ('episodes/oboe_vs_bassoon/checks.json', 100_001),
+    files = [('fighters/flute/look.json', 210_000), ('fighters/flute/fight.json', 10_000),
+             ('fighters/tuba/look.json', 211_000), ('fighters/tuba/fight.json', 10_000),
+             ('fighters/euphonium/look.json', 290_000),
+             ('themes/heist/bed.json', 50_000), ('themes/heist/theme.json', 70_000),
+             ('themes/mambo/bed.json', 120_001),
+             ('episodes/trombone_vs_tuba/checks.json', 255_000), ('episodes/oboe_vs_bassoon/checks.json', 100_001),
+             ('older/vectors.json', 400_000),
              ('fights/flute_vs_trombone/ep392.bfrec', 146_000_000)]
     rows = {r['folder']: r for r in m3refs.budget_rows(files)}
-    assert rows['fighters/flute']['bytes'] == 300_000 and rows['fighters/flute']['limit'] == 300_000
-    assert rows['fighters/tuba']['bytes'] == 301_000 > rows['fighters/tuba']['limit'], rows['fighters/tuba']
-    assert rows['themes/heist']['limit'] == 280_000 >= rows['themes/heist']['bytes']
+    assert rows['fighters/flute']['bytes'] == 220_000 and rows['fighters/flute']['limit'] == 220_000
+    assert rows['fighters/tuba']['bytes'] == 221_000 > rows['fighters/tuba']['limit'], rows['fighters/tuba']
+    assert rows['fighters/euphonium']['limit'] == 300_000, 'merged at 227 KB, before the milestone 4 budget'
+    assert rows['themes/heist']['limit'] == 120_000 >= rows['themes/heist']['bytes']
+    assert rows['themes/mambo']['bytes'] > rows['themes/mambo']['limit'] == 120_000
     assert rows['episodes/trombone_vs_tuba']['limit'] == 260_000
     assert rows['episodes/oboe_vs_bassoon']['bytes'] > rows['episodes/oboe_vs_bassoon']['limit'] == 100_000
+    assert rows['older'] == dict(folder='older', bytes=400_000, limit=400_000, files=1), rows['older']
+    assert 'fights/flute_vs_trombone/ep392.bfrec' not in rows, 'milestone 1\'s fights may commit recordings'
     total = rows['studio/reference']
     assert total['limit'] == 147_000_000 and total['bytes'] == sum(b for _, b in files) > total['limit']
     over = sorted(r['folder'] for r in rows.values() if r['bytes'] > r['limit'])
-    assert over == ['episodes/oboe_vs_bassoon', 'fighters/tuba', 'studio/reference'], over
-    return 'budget: a 301 KB fighter folder is over, 300 KB is not; theme, episode and total limits as section 4'
+    assert over == ['episodes/oboe_vs_bassoon', 'fighters/tuba', 'studio/reference', 'themes/mambo'], over
+    names = [r['folder'] for r in m3refs.budget_rows(files)]
+    assert names[:-1] == sorted(names[:-1]) and names[-1] == 'studio/reference', names
+    return 'budget: a 221 KB fighter folder is over, 220 KB is not (EUPHONIUM keeps 300 KB); themes 120 KB, ' \
+           'older/ 400 KB, episode and total limits as plan m4 section 4'
+
+
+def _budget_of(files):
+    """(stdout, the SystemExit text or None) of the `budget` command over `files` instead of git's list"""
+    saved = m3refs.tracked_files
+    m3refs.tracked_files = lambda: sorted(files)
+    out = io.StringIO()
+    try:
+        with contextlib.redirect_stdout(out):
+            m3refs.budget_cmd([])
+        return out.getvalue(), None
+    except SystemExit as ex:
+        return out.getvalue(), str(ex)
+    finally:
+        m3refs.tracked_files = saved
+
+
+def budget_refuses_a_committed_recording():
+    """plan m4 Task 1: a .bfrec committed in a fighter, theme or episode folder (anywhere outside milestone 1's
+    fights/, m3refs.COMMITTED_RECORDINGS) fails `budget` naming the file, however small the folder"""
+    assert m3refs.COMMITTED_RECORDINGS == ('fights',), m3refs.COMMITTED_RECORDINGS
+    base = [('fights/flute_vs_trombone/ep392.bfrec', 146_000), ('themes/heist/theme.json', 1_000)]
+    out, err = _budget_of(base)
+    assert err is None and 'OVER' not in out, (out, err)
+    for rel in ('fighters/tuba/left.bfrec', 'themes/heist/oboe_vs_bassoon.bfrec', 'episodes/oboe_vs_bassoon/run.bfrec',
+                'shared/x.bfrec'):
+        out, err = _budget_of(base + [(rel, 10)])
+        assert err is not None and rel in err, (rel, err)
+        assert 'committed recordings outside fights/' in out and rel in out, out
+        row = next(r for r in m3refs.budget_rows(base + [(rel, 10)]) if r['folder'] == rel)
+        assert row['limit'] == 0, row
+    return 'a committed .bfrec outside fights/ (a fighter, theme, episode or other folder) fails budget by name; ' \
+           'fights/ may commit them'
+
+
+def budget_limits_origin_json():
+    """plan m4 section 4: Gate O's origin.json in a fighter or theme folder is at most 20 KB"""
+    files = [('fighters/viola/origin.json', 20_000), ('themes/surf_rock/origin.json', 20_001),
+             ('episodes/viola_vs_violin/origin.json', 20_001)]
+    rows = {r['folder']: r for r in m3refs.budget_rows(files)}
+    assert rows['fighters/viola/origin.json']['limit'] == 20_000 >= rows['fighters/viola/origin.json']['bytes']
+    assert rows['themes/surf_rock/origin.json']['bytes'] > rows['themes/surf_rock/origin.json']['limit']
+    assert 'episodes/viola_vs_violin/origin.json' not in rows, 'only fighter and theme folders hold one'
+    out, err = _budget_of(files)
+    assert err is not None and 'themes/surf_rock/origin.json (20,001 > 20,000)' in err, err
+    assert 'fighters/viola/origin.json' not in err, err
+    return 'an origin.json of 20,001 bytes fails budget by name, 20,000 passes'
+
+
+def the_tripwire_warns():
+    """plan m4 section 4: past 145.5 MB `budget` prints the warning and still passes; it fails only past 147 MB"""
+    assert m3refs.TRIPWIRE == 145_500_000
+    assert m3refs.tripwire_warning(145_500_000) is None
+    want = 'warning: the reference set is 145.60 MB, past the 145.5 MB tripwire (plan m4 Section 4)'
+    assert m3refs.tripwire_warning(145_600_000) == want, m3refs.tripwire_warning(145_600_000)
+    out, err = _budget_of([('fights/flute_vs_trombone/ep392.bfrec', 145_600_000)])
+    assert err is None and want in out, (out, err)
+    out, err = _budget_of([('fights/flute_vs_trombone/ep392.bfrec', 145_400_000)])
+    assert err is None and 'tripwire' not in out, (out, err)
+    out, err = _budget_of([('fights/flute_vs_trombone/ep392.bfrec', 147_000_001)])
+    assert err is not None and 'studio/reference' in err and 'tripwire' in out, (out, err)
+    return '145.6 MB prints the tripwire warning and passes; 145.4 MB is silent; 147 MB + 1 byte fails'
+
+
+def recordings_go_to_the_cache_by_default():
+    """plan m4 Task 1: a fighter, theme or pair SPEC with no storage key keeps its kit recording in the pinned cache
+    (left_in_cache, recordings_in_cache, recording_in_cache default to True in code), so no new spec can forget it;
+    FLUTE and TROMBONE say False (their left fights are milestone 1's committed recordings, pointed at)"""
+    import inspect
+    from tools.studio_export import fighter_flute, fighter_trombone
+    assert m3refs.normalize(dict(name='TUBA', opponent='FLUTE'))['left_in_cache'] is True
+    assert m3refs.normalize(dict(name='TUBA', opponent='FLUTE', fights=dict(stats=10)))['left_in_cache'] is True
+    for spec in (fighter_flute.SPEC, fighter_trombone.SPEC):
+        assert spec.get('left_in_cache') is False and 'left_in_cache' not in m3refs.normalize(spec), spec
+    assert m3refs.theme_spec(dict(name='x'))['recordings_in_cache'] is True
+    assert m3refs.episode_spec(dict(config='examples/x'))['recording_in_cache'] is True
+    assert m3refs.episode_spec(dict(config='examples/x', recording_in_cache=False))['recording_in_cache'] is False
+    assert 'True or False' in exits(m3refs.episode_spec, dict(config='x', recording_in_cache=1))
+    assert 'unknown keys' in exits(m3refs.episode_spec, dict(config='x', recordings_in_cache=True))
+    src = inspect.getsource(m3refs.episode_refs)
+    assert 'spec = episode_spec(spec)' in src and "spec['recording_in_cache']" in src
+    assert 'episode_spec(_spec_of(folder))' in inspect.getsource(m3refs.episode_drift)
+    src = inspect.getsource(m3refs.fighter_refs)
+    assert 'spec = normalize(spec)' in src and "spec.get('left_in_cache')" in src
+    assert 'theme_spec(spec)' in inspect.getsource(m3refs.theme_refs)
+    return 'a fighter, theme and pair SPEC with no storage key put the recording in the pinned cache; FLUTE and ' \
+           'TROMBONE say False'
 
 
 def the_command_line_parses():
@@ -989,7 +1086,8 @@ def a_theme_recording_goes_to_the_cache():
     import inspect
     import json
     from tools.studio_export import theme_big_top
-    assert m3refs.theme_spec(theme_big_top.SPEC)['recordings_in_cache'] is False
+    assert m3refs.theme_spec(theme_big_top.SPEC)['recordings_in_cache'] is True   # (plan m4 Task 1: the default;
+    # big_top's recording is milestone 1's committed fight, which place_recording points at before the cache)
     assert m3refs.theme_spec(dict(name='x', recordings_in_cache=True))['recordings_in_cache'] is True
     assert 'True or False' in exits(m3refs.theme_spec, dict(name='x', recordings_in_cache='yes'))
     theme, pair = 'themes/brass_trailer', 'episodes/trombone_vs_horn'
@@ -1173,6 +1271,8 @@ def drift_finds_what_a_cache_run_would_stop_on():
 CHECKS = (shard_takes_a_fighter_file, verify_finds_a_changed_byte_in_a_shard, check_pins_names_the_command,
           a_pin_never_moves_on_its_own, remake_makes_a_folder_again_whole, a_cache_run_writes_no_committed_file,
           a_port_never_points_at_another_port, budget_reports_an_overfull_fighter,
+          budget_refuses_a_committed_recording, budget_limits_origin_json, the_tripwire_warns,
+          recordings_go_to_the_cache_by_default,
           the_command_line_parses, the_framework_records_milestone_1s_fights, hull_rows_go_to_the_cache,
           the_left_file_is_on_disk_for_the_parts, the_replay_guard_compares_values, the_checks_fight_ends_after_44_s,
           a_port_declares_its_sprite_size, windows_has_a_fork_stand_in,

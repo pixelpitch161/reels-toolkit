@@ -13,8 +13,9 @@
 //! ball now), `thr` (when the thrust in progress started), `thr_hit`, `thr_k` (the thrust's time scale), with the
 //! reach in `blade_len` and the growth count in `frets`. None of this code draws from the generator.
 //!
-//! A blade without `mode = 'thrust'` spins (the rest of `blade_step`, 780 to 825): a kind not ported, which the
-//! roster reads as unsupported, so every [`BladeCfg`] here is a thrust blade.
+//! A blade without `mode = 'thrust'` spins (the rest of `blade_step`, 780 to 825: VIOLIN's bow, milestone 4):
+//! [`spin_step`], a stub until VIOLIN's port, which the roster reads as unsupported until then
+//! (`roster::blade::SPIN_PORTED`).
 
 use bf_core::dmath;
 use bf_core::event::Value;
@@ -177,14 +178,21 @@ pub fn thrust_step(fight: &mut Fight, k: usize, dt: f64) {
 }
 
 /// `blade_step(k, dt)`: the blade's step in the fight loop. A thrust blade's is [`thrust_step`] (`fight.py` 778 to
-/// 779); the rest of `blade_step` is the spinning blade.
+/// 779); the rest of `blade_step` is the spinning blade's ([`spin_step`]).
 ///
 /// # Panics
 /// When fighter `k` has no blade.
 pub fn step(fight: &mut Fight, k: usize, dt: f64) {
     match weapon(fight, k).mode {
         BladeMode::Thrust => thrust_step(fight, k, dt),
+        BladeMode::Spin => spin_step(fight, k, dt),
     }
+}
+
+/// The spinning branch of `blade_step(k, dt)` (780 to 825, with `spin_grow` and `spin_max`): VIOLIN's bow. A stub
+/// until VIOLIN's port (milestone 4): no fighter has a spinning blade before `roster::blade::SPIN_PORTED`.
+pub fn spin_step(fight: &mut Fight, _k: usize, _dt: f64) {
+    fight.socket("stub:kinds::blade::spin_step");
 }
 
 #[cfg(test)]

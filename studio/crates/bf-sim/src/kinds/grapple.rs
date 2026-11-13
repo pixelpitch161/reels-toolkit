@@ -18,7 +18,7 @@ use bf_core::dmath;
 use bf_core::event::Value;
 use bf_core::py;
 
-use crate::fight::{self, Fight};
+use crate::fight::{self, Fight, rewinding};
 use crate::geom::{self, V2};
 use crate::record::Frames;
 use crate::roster::{GrappleCfg, WeaponCfg};
@@ -279,8 +279,8 @@ pub fn step(f: &mut Fight, k: usize, dt: f64) {
         g.a = a;
         f.grapple.gr[k] = Some(g.clone());
         let o = &f.balls[1 - k];
-        // 4142 to 4143 (`rw_left`: the kind `rewind`, older than the kit's; never set)
-        let free = o.shadow <= 0.0 && o.smashed <= 0.0 && !o.air && o.swan.is_none();
+        // 4142 to 4143: a rewinding enemy (TURNTABLES' REWIND, milestone 4) cannot be grabbed
+        let free = !rewinding(f, 1 - k) && o.shadow <= 0.0 && o.smashed <= 0.0 && !o.air && o.swan.is_none();
         if free && dist - 2.0 * r <= f.balls[k].blade_len {
             let n = if dist > 1e-6 {
                 geom::div(rel, dist)
