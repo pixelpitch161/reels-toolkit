@@ -1,7 +1,9 @@
 //! The content registry (Task 7): the roster and which fighters the app offers.
 //!
 //! The roster is `data/roster.json` (exported by `tools/studio_export/roster.py`), compiled into the app and read
-//! once. The retired fighters (`RETIRED`) are never in it, never offered and refused in a fight file.
+//! once. It holds the kit's 20 fighters and the ten older fighters of milestone 4; the app offers only those in
+//! [`PORTED`] ([`available`]), so an older fighter is in the roster (its port can load its entry) long before it is
+//! offered. The retired fighters (`RETIRED`) are never in it, never offered and refused in a fight file.
 
 use std::sync::OnceLock;
 
@@ -38,7 +40,8 @@ pub const PORTED: [&str; 20] = [
     "EUPHONIUM",
 ];
 
-/// Every kit fighter's roster entry, in `fighters.py`'s order, every number as exported.
+/// Every roster entry (the kit's 20 and the older ten, offered or not), in `fighters.py`'s order, every number as
+/// exported. What the app offers is [`available`].
 ///
 /// # Panics
 /// When the compiled-in roster cannot be read (a broken export; the tests read it on every build).
@@ -104,14 +107,23 @@ mod tests {
     ];
 
     #[test]
-    fn roster_has_20_and_no_retired() {
+    fn roster_has_the_kit_20_and_the_older_10_and_no_retired() {
         let r = roster();
-        assert_eq!(r.len(), 20);
-        let mut names: Vec<&str> = r.iter().map(|f| f.name.as_str()).collect();
+        assert_eq!(r.len(), 30);
         // fighters.py's order, which starts with the first fighters the kit had
-        assert_eq!(&names[..4], &["PIANO", "TUBA", "FLUTE", "TROMBONE"]);
-        names.sort_unstable();
-        assert_eq!(names, KIT);
+        let names: Vec<&str> = r.iter().map(|f| f.name.as_str()).collect();
+        assert_eq!(&names[..4], &["PIANO", "DRUMS", "VIOLIN", "BAGPIPES"]);
+        let (older, mut kit): (Vec<&str>, Vec<&str>) = names.iter().partition(|n| crate::fighters::OLDER.contains(n));
+        assert_eq!(&kit[..4], &["PIANO", "TUBA", "FLUTE", "TROMBONE"]);
+        kit.sort_unstable();
+        assert_eq!(kit, KIT);
+        let mut older_sorted = older.clone();
+        older_sorted.sort_unstable();
+        assert_eq!(older_sorted, crate::fighters::OLDER);
+        // the older ten are in the roster for their ports, and offered only once a register task lists them
+        for name in &older {
+            assert_eq!(available().contains(name), PORTED.contains(name), "{name}");
+        }
         for f in r {
             assert!(!RETIRED.contains(&f.name.as_str()), "{} is retired", f.name);
         }

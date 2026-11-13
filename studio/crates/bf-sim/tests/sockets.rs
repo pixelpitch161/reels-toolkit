@@ -316,6 +316,7 @@ fn every_fighter_not_ported_is_refused_in_words() {
             passed += 1;
         }
     }
-    assert_eq!(refused + passed, 20);
+    // the whole roster: the kit's 20 and the older ten (milestone 4)
+    assert_eq!(refused + passed, 30);
     assert!(passed >= 2, "FLUTE and TROMBONE at least");
 }
