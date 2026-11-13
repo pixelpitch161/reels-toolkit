@@ -1090,16 +1090,22 @@ mod tests {
     #[test]
     #[cfg_attr(debug_assertions, ignore = "slow in debug; run with --release --include-ignored")]
     fn the_newest_take_wins() {
-        let seeds = seeds_where(&draft(None), true, 3);
+        // Every draft is made before the first take is asked for: making one reads the whole roster (about 0.1 s,
+        // longer than the first take needs for its picture), so making the second between the two `LoadTake`s
+        // would let the first send its picture before the second was even asked for.
+        let drafts: Vec<Draft> = seeds_where(&draft(None), true, 3)
+            .into_iter()
+            .map(|s| draft(Some(s)))
+            .collect();
         let (engine, root) = test_engine();
         // two in a row: once the second is heard from, the first is silent
-        load(&engine, 1, &draft(Some(seeds[0])));
-        load(&engine, 2, &draft(Some(seeds[1])));
+        load(&engine, 1, &drafts[0]);
+        load(&engine, 2, &drafts[1]);
         let first = wait_for(&engine, 60.0, |e| take_of(e).is_some());
         assert_eq!(take_of(&first), Some(2), "{first:?}");
         assert!(matches!(first, Event::TakePicture { .. }), "{first:?}");
         // a third while the second builds its soundtrack: the second's sound never comes
-        load(&engine, 3, &draft(Some(seeds[2])));
+        load(&engine, 3, &drafts[2]);
         let third = wait_for(&engine, 60.0, |e| take_of(e).is_some());
         assert_eq!(take_of(&third), Some(3), "{third:?}");
         let late = gather(&engine, 3.0, |_| false);
