@@ -67,9 +67,11 @@ A fighter's SPEC (fighter_<slug>.py; every key but `name` and `opponent` has the
                                      #   dict(add=7, clip=(12, 19)) = 2 * clip(r, 12, 19) + 7 (TRUMPET's); left out
                                      #   of fight.json's spec when not given (sprites.own_size); a padded sprite
                                      #   adds pad=<float>: 2 * int(round(r * pad)) + add (SOUSAPHONE: add=7, pad=1.22)
-        left_in_cache=False,         # ruling M3-R36: True when the left recording alone would take the folder over
-                                     #   its budget (PIANO's roll, 487 KB): it goes to the pinned cache, its SHA-256
-                                     #   committed, and the gates read it from there; left out of fight.json when False
+        left_in_cache=True,          # rulings M3-R36, R44 and plan m4 section 4: the left recording is the pinned
+                                     #   cache file, its SHA-256 committed, and the gates read it from there (the
+                                     #   default from milestone 4; fight.json's spec then says left_in_cache: true).
+                                     #   False only for FLUTE and TROMBONE, whose left fights are milestone 1's
+                                     #   committed recordings (pointed at); left out of fight.json when False
     )
 
 A neutral handicap is written DMG_SIDE = (1.0, 1.0) (config_text), so the kit records the rule dmg_side; the Studio
@@ -105,11 +107,15 @@ fight. If one does not, every scenario group gets EXTRA_SEEDS more seeds, up to 
 stops naming any item it still cannot reach (it never lowers a threshold of its own accord: a port that needs a
 scenario with other overrides adds it to `scenarios`).
 
-Budgets (plan section 4; KB and MB are 1,000 and 1,000,000 bytes, as m1-measurements section 10 counts):
-fighters/<slug>/ 300 KB; themes/<name>/ 120 KB + 160 KB per .bfrec in it; episodes/<pair>/ 100 KB (260 KB for
-trombone_vs_tuba and bassclarinet_vs_euphonium); everything under studio/reference/ 147 MB. Counted over the files
-git tracks or would track (`git ls-files --cached --others --exclude-standard`), so a folder an export has just
-written is measured before it is committed. bf-testdata's `budget` test applies the same numbers.
+Budgets (plan m4 section 4; KB and MB are 1,000 and 1,000,000 bytes, as m1-measurements section 10 counts):
+fighters/<slug>/ 220 KB (300 KB for LARGE_FIGHTERS, merged before the milestone 4 budget); themes/<name>/ 120 KB;
+episodes/<pair>/ 100 KB (260 KB for trombone_vs_tuba and bassclarinet_vs_euphonium); older/ 400 KB; an origin.json in
+a fighter or theme folder 20 KB; everything under studio/reference/ 147 MB, with a warning past TRIPWIRE (145.5 MB).
+No recording (.bfrec) is committed outside COMMITTED_RECORDINGS (milestone 1's fights/): every other one is the
+pinned cache file, which is what every SPEC's storage key defaults to (left_in_cache, recordings_in_cache,
+recording_in_cache), and a committed one is a row of its own with a limit of 0 bytes. Counted over the files git
+tracks or would track (`git ls-files --cached --others --exclude-standard`), so a folder an export has just written
+is measured before it is committed. bf-testdata's `budget` test applies the same numbers.
 The picture, sound, voice and check parts (Task 6, m3parts.py; fighter_parts below): look.json, sound.json,
 voice.json, checks.json and exceptions.toml committed; look_right.json, the hull logs, the sprites (ruling M3-R18),
 the stem windows and the voice notes cached. The hull logs (ruling M3-R29): every ConvexHull call of each look frame
@@ -142,11 +148,18 @@ PAIR_RULES = (('FLUTE', 'TROMBONE', 'swat_cobras'), ('EUPHONIUM', 'TROMBONE', 's
               ('BASS DRUM', 'TUBA', 'swallow_rollers'))
 
 KB, MB = 1000, 1000 * 1000
-FIGHTER_BUDGET = 300 * KB
-THEME_BUDGET, THEME_PER_RECORDING = 120 * KB, 160 * KB
+FIGHTER_BUDGET, FIGHTER_BUDGET_LARGE = 220 * KB, 300 * KB
+LARGE_FIGHTERS = ('euphonium',)               # merged at 227 KB, before the milestone 4 budget (plan m4 section 4)
+THEME_BUDGET = 120 * KB
 EPISODE_BUDGET, EPISODE_BUDGET_LARGE = 100 * KB, 260 * KB
 LARGE_EPISODES = ('trombone_vs_tuba', 'bassclarinet_vs_euphonium')   # Tasks 45 and 46: their own kit recording
+OLDER, OLDER_BUDGET = 'older', 400 * KB       # studio/reference/older/ (plan m4 Tasks 2 and 4; top-level manifest)
+ORIGIN, ORIGIN_BUDGET = 'origin.json', 20 * KB   # Gate O's counts and hashes in a fighter or theme folder (plan m4)
 TOTAL_BUDGET = 147 * MB
+TRIPWIRE = 145_500_000                        # budget warns past it: reserve C1 is then due (plan m4 section 4)
+# the folders below studio/reference/ still allowed a committed .bfrec: milestone 1's fights, nothing else (plan m4
+# Task 1); every other recording is the pinned cache file with its SHA-256 committed
+COMMITTED_RECORDINGS = ('fights',)
 
 
 # ---------------------------------------------------------------- paths
@@ -525,11 +538,11 @@ def normalize(spec):
         out['sprite_size'] = dict(add=size['add'], clip=None if clip is None else tuple(clip))
         if pad is not None:                       # (left out when not given)
             out['sprite_size']['pad'] = pad
-    if spec.get('left_in_cache') is not None:     # (ruling M3-R36; left out when not given)
-        if not isinstance(spec['left_in_cache'], bool):
-            raise SystemExit('SPEC.left_in_cache: True or False')
-        if spec['left_in_cache']:
-            out['left_in_cache'] = True
+    in_cache = spec.get('left_in_cache', True)    # (rulings M3-R36, R44; the default from plan m4 Task 1)
+    if not isinstance(in_cache, bool):
+        raise SystemExit('SPEC.left_in_cache: True or False')
+    if in_cache:                                  # (left out of fight.json's spec when False)
+        out['left_in_cache'] = True
     return out
 
 
@@ -1290,6 +1303,20 @@ def episode_facts(config):
     return facts
 
 
+def episode_spec(spec):
+    """an episode_<pair>.py SPEC with its defaults (episode_refs); recording_in_cache is True by default (rulings
+    M3-R43, R44, plan m4 Task 1): a recording no committed file and no theme's cache holds is the folder's own pinned
+    run.bfrec, never a committed copy"""
+    unknown = sorted(set(spec) - set(EPISODE_SPEC_KEYS))
+    if unknown:
+        raise SystemExit(f"episode spec: unknown keys {', '.join(unknown)} (it has {', '.join(EPISODE_SPEC_KEYS)})")
+    spec = dict(dict(stats=4000, links=(), scenarios=None, weapon_hit={}, frames=40, recording_in_cache=True,
+                     native_seeds=()), **spec)
+    if not isinstance(spec['recording_in_cache'], bool):
+        raise SystemExit('episode spec: recording_in_cache is True or False')
+    return spec
+
+
 def episode_refs(spec):
     """episodes/<pair>/ (committed) + cache for an episode_<pair>.py SPEC: dict(config= the kit config
     (`examples/<x>` or `ballfight_<pair>`), stats=4000, links=() the items of the pair's own events to cover (event
@@ -1300,19 +1327,13 @@ def episode_refs(spec):
     stats.json (pooled; rows cached), pairs.json (the links' coverage), exceptions.toml; the kit's recording of the
     config is pointed at when a committed file (milestone 1's, or the theme folder's) has its bytes, or a pinned
     cache file of the theme folder (ruling M3-R43: dict(cache=, sha256=)); else copied as run.bfrec, or with
-    recording_in_cache=True (M3-R43: it would take the folder over its budget) pinned as the cache's run.bfrec;
+    with recording_in_cache (M3-R43; the default, episode_spec) pinned as the cache's run.bfrec;
     native_seeds=() (ruling M3-R47: the first fits of the Studio's search, in its order, when none of them passes
     every check: the kit's own checks of each such seed's fight, pinned in the cache as native/s<seed>_checks.json
     with its rows, listed in native_checks.json, so native_render can show the kit gives the same verdicts)"""
     from . import fights, m3parts as MP, recording, scenarios as SC, stats as ST
     module = sys._getframe(1).f_globals.get('__name__', __name__)
-    unknown = sorted(set(spec) - set(EPISODE_SPEC_KEYS))
-    if unknown:
-        raise SystemExit(f"episode spec: unknown keys {', '.join(unknown)} (it has {', '.join(EPISODE_SPEC_KEYS)})")
-    spec = dict(dict(stats=4000, links=(), scenarios=None, weapon_hit={}, frames=40, recording_in_cache=False,
-                     native_seeds=()), **spec)
-    if not isinstance(spec['recording_in_cache'], bool):
-        raise SystemExit('episode spec: recording_in_cache is True or False')
+    spec = episode_spec(spec)
     config = spec['config']
     pair = config_slug(config)
     folder, export = f'episodes/{pair}', f'episode_{pair}'
@@ -1488,14 +1509,14 @@ def theme_spec(spec):
     takes; None: the first kit config with a loop of the same length in another key), options (one variant per
     theme option value: dict(name=, text= the config lines it appends, ff= {option: value} for the fight file,
     why=)), hooks (the optional bed hooks to call directly; None: every one the bed class defines);
-    recordings_in_cache (ruling M3-R43, R36 extended to themes: True when the configs' kit recordings would take the
-    folder over its budget: each one not already committed elsewhere goes to the pinned cache, theme.json's
-    `recording` then dict(cache=, sha256=) instead of a committed path)"""
+    recordings_in_cache (rulings M3-R43, R44; True by default from plan m4 Task 1: each config's kit recording not
+    already committed elsewhere (milestone 1's fights) goes to the pinned cache, theme.json's `recording` then
+    dict(cache=, sha256=) instead of a committed path; False would commit it, which `budget` refuses)"""
     unknown = sorted(set(spec) - set(THEME_SPEC_KEYS))
     if unknown:
         raise SystemExit(f"theme spec: unknown keys {', '.join(unknown)} (it has {', '.join(THEME_SPEC_KEYS)})")
     out = dict(voicings=(), configs=(), extra=None, variants=True, key_from=None, options=(), hooks=None,
-               recordings_in_cache=False)
+               recordings_in_cache=True)
     out.update(spec)
     if not isinstance(out['recordings_in_cache'], bool):
         raise SystemExit('theme spec: recordings_in_cache is True or False')
@@ -1852,30 +1873,51 @@ def theme_refs(spec):
 
 # ---------------------------------------------------------------- the budget
 def budget_rows(files):
-    """[{folder, bytes, limit, files}] for every milestone 3 folder that has files, then the whole set
-    ('studio/reference'), from `files`: (path below studio/reference/, bytes) pairs"""
-    per, total = {}, 0
+    """[{folder, bytes, limit, files}] from `files`, (path below studio/reference/, bytes) pairs, in row order: one
+    row per milestone 3 or 4 folder that has files (fighters/<slug>, themes/<name>, episodes/<pair>, older), one per
+    origin.json in a fighter or theme folder (ORIGIN_BUDGET) and one per committed recording outside
+    COMMITTED_RECORDINGS (limit 0: it belongs in the pinned cache), sorted by name; then the whole set
+    ('studio/reference')"""
+    per, extra, total = {}, {}, 0
     for rel_path, size in files:
         total += size
         parts = rel_path.split('/')
+        key = None
         if len(parts) >= 3 and parts[0] in AREAS:
-            row = per.setdefault(f'{parts[0]}/{parts[1]}', dict(bytes=0, files=0, recordings=0))
+            key = f'{parts[0]}/{parts[1]}'
+        elif len(parts) >= 2 and parts[0] == OLDER:
+            key = OLDER
+        if key is not None:
+            row = per.setdefault(key, dict(bytes=0, files=0))
             row['bytes'] += size
             row['files'] += 1
-            row['recordings'] += rel_path.endswith('.bfrec')
-    out = []
-    for folder in sorted(per):
-        area, name = folder.split('/')
-        row = per[folder]
+        if len(parts) == 3 and parts[0] in ('fighters', 'themes') and parts[2] == ORIGIN:
+            extra[rel_path] = dict(folder=rel_path, bytes=size, limit=ORIGIN_BUDGET, files=1)
+        if rel_path.endswith('.bfrec') and parts[0] not in COMMITTED_RECORDINGS:
+            extra[rel_path] = dict(folder=rel_path, bytes=size, limit=0, files=1)
+    rows = dict(extra)
+    for folder, row in per.items():
+        area, _, name = folder.partition('/')
         if area == 'fighters':
-            limit = FIGHTER_BUDGET
+            limit = FIGHTER_BUDGET_LARGE if name in LARGE_FIGHTERS else FIGHTER_BUDGET
         elif area == 'themes':
-            limit = THEME_BUDGET + THEME_PER_RECORDING * row['recordings']
-        else:
+            limit = THEME_BUDGET
+        elif area == 'episodes':
             limit = EPISODE_BUDGET_LARGE if name in LARGE_EPISODES else EPISODE_BUDGET
-        out.append(dict(folder=folder, bytes=row['bytes'], limit=limit, files=row['files']))
+        else:
+            limit = OLDER_BUDGET
+        rows[folder] = dict(folder=folder, bytes=row['bytes'], limit=limit, files=row['files'])
+    out = [rows[k] for k in sorted(rows)]
     out.append(dict(folder=REF, bytes=total, limit=TOTAL_BUDGET, files=len(files)))
     return out
+
+
+def tripwire_warning(total):
+    """the warning `budget` prints when the whole set passes TRIPWIRE (plan m4 section 4), else None"""
+    if total <= TRIPWIRE:
+        return None
+    return (f'warning: the reference set is {total / MB:.2f} MB, past the {TRIPWIRE / MB:g} MB tripwire '
+            f'(plan m4 Section 4)')
 
 
 def tracked_files():
@@ -1901,6 +1943,13 @@ def budget_cmd(args):
         mark = 'OVER' if r['bytes'] > r['limit'] else 'ok'
         print(f"budget: {r['folder']:40s} {r['bytes']:>12,d} of {r['limit']:>12,d} bytes  {r['files']:4d} files  "
               f"{mark}")
+    warning = tripwire_warning(rows[-1]['bytes'])
+    if warning:
+        print(warning)
+    stray = [r['folder'] for r in over if r['folder'].endswith('.bfrec')]
+    if stray:
+        print(f"budget: committed recordings outside {', '.join(c + '/' for c in COMMITTED_RECORDINGS)} (every "
+              f"other recording is the pinned cache file: plan m4 section 4): {', '.join(stray)}")
     if over:
         raise SystemExit('budget: over: ' + ', '.join(f"{r['folder']} ({r['bytes']:,d} > {r['limit']:,d})"
                                                       for r in over))
@@ -2028,7 +2077,7 @@ def theme_drift(folder, theme=None):
 def episode_drift(folder, episode=None):
     """drift of episodes/<pair>/ (`episode`: episode.json as read, by default from disk)"""
     episode = _read_json(folder, 'episode.json') if episode is None else episode
-    spec = _spec_of(folder)
+    spec = episode_spec(_spec_of(folder))
     facts = _plain(episode_facts(spec['config']))
     out = []
     diff = sorted(k for k in facts if episode.get(k, '<absent>') != facts[k])
@@ -2037,7 +2086,7 @@ def episode_drift(folder, episode=None):
                    f"(missing: {', '.join(k for k in diff if k not in episode) or 'none'})")
     theme = f"themes/{facts['mood']}"
     out += _recording_drift(folder, f'{folder}/episode.json: recording', episode['recording'], read_pins(folder),
-                            bool(spec.get('recording_in_cache')), cached_from=theme)
+                            spec['recording_in_cache'], cached_from=theme)
     return out
 
 

@@ -4,8 +4,9 @@ plan Task 55).
     python -m tools.studio_export episode_oboe_vs_bassoon        writes studio/reference/episodes/oboe_vs_bassoon/
     python -m tools.studio_export cache episodes/oboe_vs_bassoon regenerates the cache and checks the pins
 
-The kit's recording of the config (seed 954) is the theme folder's copy (themes/heist/oboe_vs_bassoon.bfrec: pointed
-at, never copied; recording_in_cache keeps it out of the committed folder if those bytes ever change, ruling M3-R44);
+The kit's recording of the config (seed 954) is the theme folder's pinned cache copy
+(themes/heist/oboe_vs_bassoon.bfrec, in the cache since plan m4 Task 1: pointed at, never copied; recording_in_cache
+keeps it out of the committed folder if those bytes ever change, ruling M3-R44);
 the fight file is studio/fights/oboe_vs_bassoon.toml. The config sets no pair rule; its own links (plan Task 55,
 Table S5 "a hook spins a hopper, which follows up") are the two fighters' kinds meeting: OBOE's TUNING A beam
 (`tune`) knocks the hopper OUT OF TUNE (`detune`) while BASSOON hops (`hop`, a landed stomp as `hit/stomp`); OBOE's

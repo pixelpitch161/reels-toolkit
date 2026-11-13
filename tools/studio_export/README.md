@@ -197,10 +197,23 @@ From milestone 3 the reference data of a fighter, a theme or a pair gate lives i
   process; `cache_bytes` hashes the bytes it hands out) and panics with `run: python -m tools.studio_export cache
   fighters/flute` when the file is missing, unpinned or changed, or with the export command when the folder has no
   `pins.json` at all: a cache-backed test fails, it never skips.
-- `budget` prints every milestone 3 folder's size and the whole set's against section 4 (fighters/<slug>/ 300 KB;
-  themes/<name>/ 120 KB + 160 KB per `.bfrec` in it; episodes/<pair>/ 100 KB, 260 KB for `trombone_vs_tuba` and
-  `bassclarinet_vs_euphonium`; all of `studio/reference/` 147 MB; KB = 1,000 bytes), over the files git tracks or
-  would track there, and exits 1 naming each folder over. `bf-testdata`'s test `budget` applies the same numbers.
+- **Recordings live in the pinned cache** (rulings M3-R36, R43, R44; the default in code from milestone 4, plan m4
+  section 4): every kit recording of a fighter, theme or pair folder is a pinned cache file with its SHA-256
+  committed (`{cache, sha256}` in the folder's JSON, and in `pins.json`). `SPEC.left_in_cache`,
+  `SPEC.recordings_in_cache` and `SPEC.recording_in_cache` default to `True`, so a new spec need not (and cannot
+  forget to) say so; a recording that is already a committed file elsewhere (milestone 1's `fights/`) is pointed at
+  instead. Only `fighter_flute` and `fighter_trombone` say `left_in_cache=False`: their left fights are milestone
+  1's committed recordings. `m3refs.COMMITTED_RECORDINGS` names the folders still allowed a committed `.bfrec`:
+  milestone 1's `fights/`, nothing else.
+- `budget` prints every milestone 3 and 4 folder's size and the whole set's against plan m4 section 4
+  (fighters/<slug>/ 220 KB, 300 KB for `euphonium`, merged before that budget; themes/<name>/ 120 KB;
+  episodes/<pair>/ 100 KB, 260 KB for `trombone_vs_tuba` and `bassclarinet_vs_euphonium`; `older/` 400 KB; an
+  `origin.json` in a fighter or theme folder 20 KB, a row of its own; all of `studio/reference/` 147 MB; KB = 1,000
+  bytes), over the files git tracks or would track there, and exits 1 naming each row over. A committed `.bfrec`
+  outside `fights/` is a row of its own with a limit of 0 bytes, so `budget` fails naming the file. Past
+  `m3refs.TRIPWIRE` (145.5 MB) it prints `warning: the reference set is <n> MB, past the 145.5 MB tripwire (plan m4
+  Section 4)` and still passes (the controller then applies reserve C1 of milestone 3's storage plan).
+  `bf-testdata`'s test `budget` applies the same numbers (`bf_testdata::budget::TRIPWIRE`, `tripwire_warning`).
 - `cache`, `remake` and `budget` are in `m3refs.TAKES_ARGS`, so `all` leaves them out.
 - Per-fighter, theme and pair exports (`fighter_<slug>`, `theme_<name>`, `episode_<pair>`) add no row to the
   table "What each export writes" below: their module docstrings and this section document them.
@@ -225,6 +238,7 @@ EXPORTS = {'fighter_tuba': lambda: m3refs.fighter_refs(SPEC)}
 | `roles` | `()` | the roles its part is exported in; `()` = its kit role (Task 6) |
 | `voice_notes` | `dict(pitches=None, velocities=(0.6, 0.9), durations=(0.12, 0.25, 1.0))` | the voice notes (Task 6) |
 | `hooks` | `()` | the look and title hooks its picture gates log (Task 6) |
+| `left_in_cache` | `True` | the left recording is the pinned cache file (rulings M3-R36, R44; the default from milestone 4); `False` only for FLUTE and TROMBONE, whose left fights are milestone 1's committed recordings |
 
 `fights`: `base='flute_vs_trombone'` (the kit example the configs are copied from, with the fight's own
 `FIGHTERS`, `DMG_SCALE`, `DMG_SIDE` and `RULES` appended; the series' pair rules come from `m3refs.PAIR_RULES`),
@@ -236,7 +250,7 @@ What `fighter_refs` writes for the fight (the picture, sound, voice and check pa
 | File | Where | What |
 | --- | --- | --- |
 | `fight.json` | committed | the normalised spec, the config, the two look fights, each scenario with its full rules, the pooled statistics and `fights_with` counts, `same_as`, and the coverage table: each required item's first occurrence over the scenarios (scenario, seed, `t`, `after_fight`, event index, the event) |
-| `left.bfrec` | committed | X in the left corner, winning, all three abilities fired, the K.O. after 44 s (`m3refs.CHECKS_FROM`: the checks part runs the kit's `music.main()`, which prints the level from 44 s to the K.O. and stops on a shorter fight): the lowest such statistics seed (seeds passed over for an early K.O. are named in `left.why`), or `fights.left`, which must end after 44 s too (the run stops at once, saying so). If the bytes equal a recording the set already has, `left.file` points at it and no copy is written; a copy is on disk for the parts while the run is still staged (`staged_on_disk`) and put back as it was if the run stops |
+| `left.bfrec` | cache (`left_in_cache`, the default; FLUTE and TROMBONE point at milestone 1's committed fights) | X in the left corner, winning, all three abilities fired, the K.O. after 44 s (`m3refs.CHECKS_FROM`: the checks part runs the kit's `music.main()`, which prints the level from 44 s to the K.O. and stops on a shorter fight): the lowest such statistics seed (seeds passed over for an early K.O. are named in `left.why`), or `fights.left`, which must end after 44 s too (the run stops at once, saying so). If the bytes equal a recording the set already has, `left.file` points at it and no copy is written; a copy is on disk for the parts while the run is still staged (`staged_on_disk`) and put back as it was if the run stops |
 | `right.bfrec` | cache | the opponent in the left corner and winning (X's shards fly): the lowest such seed |
 | `scenarios/<name>_s<seed>.bfrec` | cache | the scenario fights; when an item is not covered within 20 s of FIGHT!, every group gets 3 more seeds (up to 3 times), then the export stops naming what it cannot reach |
 | `stats_rows.json` | cache | one row per seed (the columns of `stats.py`), X left |

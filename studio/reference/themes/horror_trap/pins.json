@@ -6,6 +6,12 @@
  "command": "python -m tools.studio_export cache themes/horror_trap",
  "pins": [
   {
+   "path": "themes/horror_trap/bassclarinet_vs_bassoon.bfrec",
+   "sha256": "5b5bcfaed48c582da258ac1f01b61f45b729b6c8cc7b8f837498f2be684f02f9",
+   "bytes": 137093,
+   "export": "theme_horror_trap"
+  },
+  {
    "path": "themes/horror_trap/bed_bassclarinet_vs_bassoon.npz",
    "sha256": "f26aa097c9ea0dc381d633bbe17056febf3a1a79515a71225d392c86adcf0955",
    "bytes": 5831728,
