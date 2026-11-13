@@ -1,0 +1,469 @@
+{
+ "about": "Gate O (plan m4 Task 2): TURNTABLES's reference kit module against projects/ballfight_turntables_vs_synth, its layers pixel for pixel (the contribution, on minus off, in int16) and its buses sample for sample (float64) from FIGHT! to the end of the shatter",
+ "buses": [
+  {
+   "bus": "decks",
+   "peak": "bit-identical",
+   "sha256_episode": "b89d132cda7019b98c689cbd8bdfaa528a538d3704d8ef2115b90304f6eb0541",
+   "sha256_kit": "b89d132cda7019b98c689cbd8bdfaa528a538d3704d8ef2115b90304f6eb0541",
+   "whole": "bit-identical",
+   "window": [167314, 2760686]
+  },
+  {
+   "bus": "solo",
+   "peak": "bit-identical",
+   "sha256_episode": "7373b40dc89b745237863c5ddf42ef4b6bdf1ae2ca97fb132fefe2b3001858cd",
+   "sha256_kit": "7373b40dc89b745237863c5ddf42ef4b6bdf1ae2ca97fb132fefe2b3001858cd",
+   "whole": "bit-identical",
+   "window": [167314, 2760686]
+  }
+ ],
+ "cache": "studio/reference/.cache/m4/origin/out/ballfight_turntables_vs_synth/turntables",
+ "config": {
+  "sha256": "682f7156cecea0c5e0c244537379acaf7af16c99505775a5b52cf60001a5795f",
+  "text": ["\"\"\"Gate O: the kit config of projects/ballfight_turntables_vs_synth (made by tools/studio_export/older/origin.py).\"\"\"", "BPM = 137.70491803278688", "CHORDS = ['Fm', 'C', 'Fm', 'Db', 'Bbm', 'C', 'Fm', 'Db', 'Bbm', 'C', 'Fm', 'Db', 'Bbm', 'C', 'Fm', 'Db', 'Bbm', 'C', 'Fm', 'Db', 'Bbm', 'C', 'Fm', 'Db', 'Bbm', 'C', 'Fm', 'Db', 'Bbm', 'C', 'Fm', 'Db', 'Bbm', 'C', 'C']", "DMG_SCALE = 0.6", "FIGHTERS = ('TURNTABLES', 'SYNTH')", "FX_SEED = 31", "KEY = 'F'", "MOOD = 'big_top'", "SCALE = (0, 2, 3, 5, 7, 8, 10)", "SEED = 1339", "SERIES = 'BALLFIGHT #5'", "SHARD_SEED = 271", "SOLO = {'TURNTABLES': [(0, 'stab', 0.5), (0, 'back', 1.0), (1, 'baby', 0.5), (1.5, 'baby', 0.5), (2, 'chirp', 0.25), (2.25, 'chirp', 0.25), (2.5, 'trans', 0.5), (3, 'stab', 0.25), (3.25, 'stab', 0.25), (3.5, 'flare', 0.5), (4, 'stab', 0.5), (4.5, 'tear', 0.5), (5, 'scrib', 0.5), (5.5, 'chirp', 0.25), (5.75, 'chirp', 0.25), (6, 'trans', 1.0), (7, 'stab', 0.25), (7.5, 'stab', 0.25), (8, 'stab', 0.5), (8, 'flare', 0.5), (8.5, 'baby', 0.25), (8.75, 'baby', 0.25), (9, 'tear', 0.5), (9.5, 'chirp', 0.25), (9.75, 'chirp', 0.25), (10, 'scrib', 0.5), (10.5, 'trans', 0.5), (11, 'stab', 1.0), (11, 'back', 1.0)]}"]
+ },
+ "episode": "ballfight_turntables_vs_synth",
+ "episode_commit": "745ec70a653770cf4c3869179417f899ecc8c5b1",
+ "exceptions": {},
+ "fight": {
+  "equal": true,
+  "line": "1339 0 48.885714285714286 1660 ba6db42cc4e0470a",
+  "t_ko": 48.885714285714286,
+  "winner": 0
+ },
+ "frames": [
+  {
+   "contribution_sha256": "44c066f484359f926440262af418d0e535c4519c10c062c3a11bc2845a354a84",
+   "frame": 110,
+   "sha256": {
+    "episode_off": "bbdf118a19c44f062e92ccedd49ef087b22aec4160bf5c66698ffe8f6713da9b",
+    "episode_on": "21f0b5aed1aea178ea1723c209a3885c8c9e39c7f65f82e32687ab4a4abb105f",
+    "kit_off": "bbdf118a19c44f062e92ccedd49ef087b22aec4160bf5c66698ffe8f6713da9b",
+    "kit_on": "21f0b5aed1aea178ea1723c209a3885c8c9e39c7f65f82e32687ab4a4abb105f"
+   },
+   "t": 3.666667,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "ee6ca913d9f8ab612bd072e77365b24b615973b67ff2ea5ed100d611f061e97b",
+   "frame": 375,
+   "sha256": {
+    "episode_off": "d91fec47b08b41b2afbeceb23c0f76b9199dc60e1e390f5022d2675c87dcda76",
+    "episode_on": "cf6b97dfab721ca511d4524acdd3ca62203d2a3b650be52c726e3df30915ee91",
+    "kit_off": "d91fec47b08b41b2afbeceb23c0f76b9199dc60e1e390f5022d2675c87dcda76",
+    "kit_on": "cf6b97dfab721ca511d4524acdd3ca62203d2a3b650be52c726e3df30915ee91"
+   },
+   "t": 12.5,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "d6e30f6014fa731a164842fb16b184395baf1604a72950b52bc5b779cbd1bcd1",
+   "frame": 385,
+   "sha256": {
+    "episode_off": "7b039098785083471f5424e59318f6a39492398b4300ec9fbc2b97080d346c14",
+    "episode_on": "b4c927f22a6dc6a435294bdc569ac69303c468f805b799742cbe635e7824da43",
+    "kit_off": "7b039098785083471f5424e59318f6a39492398b4300ec9fbc2b97080d346c14",
+    "kit_on": "b4c927f22a6dc6a435294bdc569ac69303c468f805b799742cbe635e7824da43"
+   },
+   "t": 12.833333,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "73c0352338eefa480838391b04b8f5e2f928ef9e4aa320249499ca5c8ad9527c",
+   "frame": 397,
+   "sha256": {
+    "episode_off": "b71afc8ef81d18cc648e6eb65fab3e6192299092cdd9a8499e577b9c6484a390",
+    "episode_on": "1cb946d4881d7aff3b5a73ff258b63e16252d433057e0e1a04062d5293d30fb3",
+    "kit_off": "b71afc8ef81d18cc648e6eb65fab3e6192299092cdd9a8499e577b9c6484a390",
+    "kit_on": "1cb946d4881d7aff3b5a73ff258b63e16252d433057e0e1a04062d5293d30fb3"
+   },
+   "t": 13.233333,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "ce39f1aa17af04a48732bd5d3f2c6a95f11ddec4de394f9773dde02abcde86ff",
+   "frame": 429,
+   "sha256": {
+    "episode_off": "4d3d727800cd456e98f7d6f6932cfe91540ac77a318b0765872cdc84ff258bc6",
+    "episode_on": "5fc1267a5b247376bae39425ec851e6b2b76be9418321e095615d30458e82945",
+    "kit_off": "4d3d727800cd456e98f7d6f6932cfe91540ac77a318b0765872cdc84ff258bc6",
+    "kit_on": "5fc1267a5b247376bae39425ec851e6b2b76be9418321e095615d30458e82945"
+   },
+   "t": 14.3,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "80a402696e17503c4dbad3c989579471bfcad7c360104411a1c89f1daa1453b5",
+   "frame": 510,
+   "sha256": {
+    "episode_off": "d33b62bc083c61d6ee66a099f4e018b9f929ac6572e037e190f4615449bd9a0d",
+    "episode_on": "77b8e1d6cf59c9599a89c24afb8e4b2d9873cc13289e19f366a46cde8a4ced0b",
+    "kit_off": "d33b62bc083c61d6ee66a099f4e018b9f929ac6572e037e190f4615449bd9a0d",
+    "kit_on": "77b8e1d6cf59c9599a89c24afb8e4b2d9873cc13289e19f366a46cde8a4ced0b"
+   },
+   "t": 17.0,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "7bdaa045901596d105bdae3b4804678bb6ec1226c3854685f909e72ee7011178",
+   "frame": 645,
+   "sha256": {
+    "episode_off": "c98ed928f8780180d14bef5ba266bad1fd0351b0c05633789b2e7b0a5afb3a2f",
+    "episode_on": "6ca494006ab06a2be52237996141af0f6df20654b66198714f6ed14b53040f30",
+    "kit_off": "c98ed928f8780180d14bef5ba266bad1fd0351b0c05633789b2e7b0a5afb3a2f",
+    "kit_on": "6ca494006ab06a2be52237996141af0f6df20654b66198714f6ed14b53040f30"
+   },
+   "t": 21.5,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "10d89ea06dd5d9c425204976a72c6742f591e3cecd3e2042906b0a80ad820cbf",
+   "frame": 647,
+   "sha256": {
+    "episode_off": "bd329925ce26702c8bcf5b401627c0afcc98881257ee7f0fd73d2b4cb068afe4",
+    "episode_on": "fc80cf55a8de0e4d8569e7e0f12fb4aef779390df656b8702ad3ea1727744d4d",
+    "kit_off": "bd329925ce26702c8bcf5b401627c0afcc98881257ee7f0fd73d2b4cb068afe4",
+    "kit_on": "fc80cf55a8de0e4d8569e7e0f12fb4aef779390df656b8702ad3ea1727744d4d"
+   },
+   "t": 21.566667,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "96cd47d9ed17c68fa36aae90e0f1670c6537ee74169cadf6718b0f627b0e21e4",
+   "frame": 659,
+   "sha256": {
+    "episode_off": "9ad9bbc3dda47d0d9058001a3f12ecaf5b5786c9cfe29cb9174ce351dc1bc9f5",
+    "episode_on": "d26a36db316a1fe0d880d1a335448afa4e42a6e9f605a4652896783f5b115581",
+    "kit_off": "9ad9bbc3dda47d0d9058001a3f12ecaf5b5786c9cfe29cb9174ce351dc1bc9f5",
+    "kit_on": "d26a36db316a1fe0d880d1a335448afa4e42a6e9f605a4652896783f5b115581"
+   },
+   "t": 21.966667,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "9ff95b472784ab986ac2438212736e8601782030ba35264fb8ada2d742b720f2",
+   "frame": 753,
+   "sha256": {
+    "episode_off": "5e696f2dd39aabc168514a81f280773039d9de156c50c2a5fb38ab1ad16c9a1a",
+    "episode_on": "0a387182d971416dc366509cf742eb634e63e11a7ad5c081a569729c8c4155dc",
+    "kit_off": "5e696f2dd39aabc168514a81f280773039d9de156c50c2a5fb38ab1ad16c9a1a",
+    "kit_on": "0a387182d971416dc366509cf742eb634e63e11a7ad5c081a569729c8c4155dc"
+   },
+   "t": 25.1,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "65759bedc0c6a075d87adaeecbc04a07be31edeca3ab29c54eb826d6797c073a",
+   "frame": 915,
+   "sha256": {
+    "episode_off": "59fc55838ef1942f4893a73254e3ae0cca1bb0a4fb1ffd1f5efd197201906d64",
+    "episode_on": "57c0daf4614cc84fbc207b1045d4a5ab14fcf10eec1b466d76c13186d9ed703e",
+    "kit_off": "59fc55838ef1942f4893a73254e3ae0cca1bb0a4fb1ffd1f5efd197201906d64",
+    "kit_on": "57c0daf4614cc84fbc207b1045d4a5ab14fcf10eec1b466d76c13186d9ed703e"
+   },
+   "t": 30.5,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "c70c6a9a9b7aa50857a66e936f6c75ea599d1778e896778caac2d33bd190ac94",
+   "frame": 1185,
+   "sha256": {
+    "episode_off": "a184b3dc293df48d1fb098637e16d816cd6abfe4d0cc8fada021f7b789a1321d",
+    "episode_on": "a95515806df8cefe2cf24fb98a276ca71e4e7b189b9ce22ce66f084a65d20281",
+    "kit_off": "a184b3dc293df48d1fb098637e16d816cd6abfe4d0cc8fada021f7b789a1321d",
+    "kit_on": "a95515806df8cefe2cf24fb98a276ca71e4e7b189b9ce22ce66f084a65d20281"
+   },
+   "t": 39.5,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "46fed533632838e28f30b76217aca068e9c17982d5ba789c941d4edacb5e9ea2",
+   "frame": 1235,
+   "sha256": {
+    "episode_off": "36cdb0762185fc584d37f42af954de6ba1f2a281a6a0cb60c096af513cc672c6",
+    "episode_on": "fb9c8ab4f101adf340785f929c24c79acb0b73c1232b348875f6cc0da5b31ee9",
+    "kit_off": "36cdb0762185fc584d37f42af954de6ba1f2a281a6a0cb60c096af513cc672c6",
+    "kit_on": "fb9c8ab4f101adf340785f929c24c79acb0b73c1232b348875f6cc0da5b31ee9"
+   },
+   "t": 41.166667,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "35afa70ea2199a668c76cabdb384e0938d47d99e1b94ef26fab35649f492eaf2",
+   "frame": 1247,
+   "sha256": {
+    "episode_off": "d85e09da5ee8986b8929ef7b82555c3eb7b958e6b499771a77d8eab9f2c8b3d0",
+    "episode_on": "901abe580a34aae49c9573d226c357071d926ae3f1f7da84109e19d56c69726d",
+    "kit_off": "d85e09da5ee8986b8929ef7b82555c3eb7b958e6b499771a77d8eab9f2c8b3d0",
+    "kit_on": "901abe580a34aae49c9573d226c357071d926ae3f1f7da84109e19d56c69726d"
+   },
+   "t": 41.566667,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "25649476327b08d72e196776ba249969b7232317c95972f97bb292faf872713b",
+   "frame": 1260,
+   "sha256": {
+    "episode_off": "5108f00f3d233188504d979f6e4c7ec2c8ad38e4561abe0e755138c584a7f5d5",
+    "episode_on": "33843b495086bafd98fa0581af155b060bbc6fe830bff354608a8722e3ba481a",
+    "kit_off": "5108f00f3d233188504d979f6e4c7ec2c8ad38e4561abe0e755138c584a7f5d5",
+    "kit_on": "33843b495086bafd98fa0581af155b060bbc6fe830bff354608a8722e3ba481a"
+   },
+   "t": 42.0,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "b1ddd5b368ae8bead842b8ecd6122845b4fc2569b3a850d67d0b75d2935a8bb8",
+   "frame": 1271,
+   "sha256": {
+    "episode_off": "50b8153117fc56df18ea3b4273cffcd88c55d0c24c22b7435ae3835c0ccc4a34",
+    "episode_on": "57eebbed5a68d11a7766f09d92b109cb21b909ab88096c951158e685061ae3f0",
+    "kit_off": "50b8153117fc56df18ea3b4273cffcd88c55d0c24c22b7435ae3835c0ccc4a34",
+    "kit_on": "57eebbed5a68d11a7766f09d92b109cb21b909ab88096c951158e685061ae3f0"
+   },
+   "t": 42.366667,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "adb47c57bd996b10593838b9155729e4acd0e6f6c2a59e8aef57e1b496abc6f9",
+   "frame": 1320,
+   "sha256": {
+    "episode_off": "ac4c2205c8016bed3b9fae51ca5aa631a1d9d32c2386647a89bd55fd1fcfa19e",
+    "episode_on": "bef997f46b50e786e88174a391dcd295d688c04770fd8076589b263a884a17d2",
+    "kit_off": "ac4c2205c8016bed3b9fae51ca5aa631a1d9d32c2386647a89bd55fd1fcfa19e",
+    "kit_on": "bef997f46b50e786e88174a391dcd295d688c04770fd8076589b263a884a17d2"
+   },
+   "t": 44.0,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "046cbe359fb6f9dac4c0cf67caab1e4bb5904570212299f393a476e088404c45",
+   "frame": 1401,
+   "sha256": {
+    "episode_off": "0a702e1ad25f811c02a66b111e5d0e13bd5343168b60187e8114181feab8fdb7",
+    "episode_on": "50fe23acd40f4a50bb9a26ab7fbea89fa3d96ac72fa4b8cb72c2b297a4532d7b",
+    "kit_off": "0a702e1ad25f811c02a66b111e5d0e13bd5343168b60187e8114181feab8fdb7",
+    "kit_on": "50fe23acd40f4a50bb9a26ab7fbea89fa3d96ac72fa4b8cb72c2b297a4532d7b"
+   },
+   "t": 46.7,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "55e30f5dbc1cae615f6a58efd71d3f54588c3ec3ffce221ce44434d5cf197e21",
+   "frame": 1452,
+   "sha256": {
+    "episode_off": "d7d2d3f09749f3b33045285ceb8bf50f231355358aa0fabed26f91f7eeb2503a",
+    "episode_on": "27a036b0d026be1ef76f7bd64d86fdabb5b783f450bbb6b2de41ba7dc48e5cf8",
+    "kit_off": "d7d2d3f09749f3b33045285ceb8bf50f231355358aa0fabed26f91f7eeb2503a",
+    "kit_on": "27a036b0d026be1ef76f7bd64d86fdabb5b783f450bbb6b2de41ba7dc48e5cf8"
+   },
+   "t": 48.4,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "774f2d2d3c4c11f2951e63e44cf1db6c7c8e99d6d121e9255138fd8ef4eb294e",
+   "frame": 1455,
+   "sha256": {
+    "episode_off": "e785c828e19a48ba7e593202dd4967b8af51a522febc4481bea093b2da75b750",
+    "episode_on": "86c604cb6b21b3581e5ac2deb976d399d2e74da375377b1313ae8c163bedc6db",
+    "kit_off": "e785c828e19a48ba7e593202dd4967b8af51a522febc4481bea093b2da75b750",
+    "kit_on": "86c604cb6b21b3581e5ac2deb976d399d2e74da375377b1313ae8c163bedc6db"
+   },
+   "t": 48.5,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "7b594e9671b7d317b0d7c398a24c1ac0bf4df9c65dcb6319cc324fea93d6765d",
+   "frame": 1470,
+   "sha256": {
+    "episode_off": "aafed32e998c4c927e0b85b7c8c1a4488de9ca7f31fc252dc01bd1f8190d0383",
+    "episode_on": "0569dc9e70121b2a23e83cf844b8236ab73c112fd91df909f9e5f6b67ebfb943",
+    "kit_off": "aafed32e998c4c927e0b85b7c8c1a4488de9ca7f31fc252dc01bd1f8190d0383",
+    "kit_on": "0569dc9e70121b2a23e83cf844b8236ab73c112fd91df909f9e5f6b67ebfb943"
+   },
+   "t": 49.0,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "178df3e1728acd5b4fdc8c08ce01f1258cf0c6edcec5080ac74aacc7c91a24c1",
+   "frame": 1492,
+   "sha256": {
+    "episode_off": "459709c6a959f97ee2e1ec553ec60658132508aa7d262440d186ba76c67edc2e",
+    "episode_on": "c0b5ee8d27d1b5d3fe27e06ffe864c6a112dfd1843dacf56b533f645a588759f",
+    "kit_off": "459709c6a959f97ee2e1ec553ec60658132508aa7d262440d186ba76c67edc2e",
+    "kit_on": "c0b5ee8d27d1b5d3fe27e06ffe864c6a112dfd1843dacf56b533f645a588759f"
+   },
+   "t": 49.733333,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "1ae4ac8812fdfd8ee459a6d1367b9017a4322740fec6d33f7628db26c6316f39",
+   "frame": 1537,
+   "sha256": {
+    "episode_off": "77292b2ce2dd9b1c8d099ebb55a905c7cbf9bfece97d615b82e607a49b78527a",
+    "episode_on": "249bb47d230026a33b5700d9bc15e2a9fca2b22cbf7a6099cf31e82f3a6f3fe2",
+    "kit_off": "77292b2ce2dd9b1c8d099ebb55a905c7cbf9bfece97d615b82e607a49b78527a",
+    "kit_on": "249bb47d230026a33b5700d9bc15e2a9fca2b22cbf7a6099cf31e82f3a6f3fe2"
+   },
+   "t": 51.233333,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "97c3b0708a07ff642ec68bb1e7b52df21817d0c7de7544c413907c1a08facc9d",
+   "frame": 1582,
+   "sha256": {
+    "episode_off": "82487cbb413b27e47887156698ea9fe3fa8d15ba11c95d18ab34221333568120",
+    "episode_on": "a1f2fc2d8b4c89c70c8ecffe2f908eda2bd3559ec3bb9406058cecb95a773244",
+    "kit_off": "82487cbb413b27e47887156698ea9fe3fa8d15ba11c95d18ab34221333568120",
+    "kit_on": "a1f2fc2d8b4c89c70c8ecffe2f908eda2bd3559ec3bb9406058cecb95a773244"
+   },
+   "t": 52.733333,
+   "whole_frame_equal": true
+  }
+ ],
+ "harness": [
+  {
+   "beat_pulse_pre": 0.07,
+   "name": "#31's beat ramp (0.07 s)"
+  },
+  {
+   "call": "ballfight.kit.fighters.turntables:origin_harness",
+   "name": "#31's HUD (no ability list), its bus name decks"
+  }
+ ],
+ "layers": [
+  {
+   "name": "thump",
+   "patches": [
+    {
+     "file": "render.py",
+     "old": "if k == DJ and len(JERK_T):                                   # the decks thump on every jerk of the",
+     "sha256": "0a235bf6fbf73c9da5cf74498edf178c43833c6b15f59f7680d5e1a47328bc02"
+    }
+   ]
+  },
+  {
+   "name": "ropes",
+   "patches": [
+    {
+     "file": "render.py",
+     "old": "WAVE_EV += [(e[0], 0.9 if e[1] == 'slam' else 0.35) for e in EV if e[1] in ('slam', 'jerk')]        ",
+     "sha256": "c1f417520bf9dab87bf487a4d6fdb26b3e9c8f3eb330952235b810ce4d62f0f3"
+    }
+   ]
+  },
+  {
+   "name": "instrument",
+   "patches": [
+    {
+     "file": "render.py",
+     "old": "cache[key] = ST.render_sprite(nm, r, float(yk), float(roll), float(pitch)) if NAMES[k] == 'TURNTABLE",
+     "sha256": "a9f455c2a8462450a567c7276073434462a583dc4d1132370d7b90237bd64aa4"
+    }
+   ]
+  },
+  {
+   "name": "effects",
+   "patches": [
+    {
+     "file": "render.py",
+     "old": "if how == 'scratch':                                       # a rope slam",
+     "sha256": "1051d798bcc9f964f8aca4314ccd08746b72b6e0019cb6817703c7733cdde753"
+    }
+   ]
+  },
+  {
+   "name": "tonearm",
+   "patches": [
+    {
+     "file": "render.py",
+     "old": "for kind, Q in ST.tonearm(PIVOT, tip, h):",
+     "sha256": "f84a775400ab8c65bce0ba93d5c22f5c3aafcef372863fb0ec37a32509239a78"
+    }
+   ]
+  },
+  {
+   "name": "record",
+   "patches": [
+    {
+     "file": "render.py",
+     "old": "rings = solo_rings(t) if t >= T_SOLO - 0.01 else []",
+     "sha256": "70a1845bb6540de5cb048309ddb75c8293b452fc308fe2f5ae0cd0952ddf94a3"
+    }
+   ]
+  },
+  {
+   "name": "bass_drop",
+   "patches": [
+    {
+     "file": "render.py",
+     "old": "sl = RUN['SLAMS'][i] if in_fight else []",
+     "sha256": "272d4efc6245d0bf44ae440ff40e1dbeaedda84513e984312be56b89b6be7774"
+    }
+   ]
+  },
+  {
+   "name": "rewind",
+   "patches": [
+    {
+     "file": "render.py",
+     "old": "if rk > 0 and win_ is not None and fs[k]['vis']:",
+     "sha256": "6a659fa808d056b5bf3f6a28313724d0650b084d91b263915b4fe11122b003dd"
+    }
+   ]
+  },
+  {
+   "name": "hits",
+   "patches": [
+    {
+     "file": "render.py",
+     "old": "FLASH_EV = [e[0] for e in EV if (e[1] == 'hit' and e[7] in ('slam', 'wave', 'shockwave', 'scratch'))",
+     "sha256": "84966eb047f009fb61254255a8f9f600bf89a09f9fdb57b3f7e9dfb00ea23b0e"
+    }
+   ]
+  }
+ ],
+ "name": "TURNTABLES",
+ "other": [
+  {
+   "file": "render.py",
+   "old": "WAVE_EV += [(e[0], 0.9) for e in EV if e[1] == 'slam']",
+   "sha256": "f339272f6fdc213195573c2028f957e222caefbcac1ee5723d779b9d1b825836"
+  },
+  {
+   "file": "render.py",
+   "old": "['key'] * 7 + ['bkey'] * 4 + ['knob'] * 4 + ['jack'] * 4)",
+   "sha256": "3d0046d36a6ce10ddf57bd7fda55db2553e20bff5d57993bd3809f7e43808190"
+  },
+  {
+   "file": "render.py",
+   "old": "cache[key] = ST.render_sprite(nm, r, float(yk), float(roll), float(pitch))",
+   "sha256": "5677f34c8872bf3a1ca7728090c61bb1f77353fb4383797a415b79bbe736d6bb"
+  },
+  {
+   "file": "render.py",
+   "old": "punch = 1 + (0.25 if txt != 'FIGHT!' else 0.12) * max(0.0, 1 - u / 0.12) ** 2",
+   "sha256": "59cb319415ccdda5828609321cee6c0801e97066e7bd87bcc3103758762753fa"
+  },
+  {
+   "file": "render.py",
+   "old": "for i, e in events_between(t - 0.32, t, ('hit', 'plug_miss')):",
+   "sha256": "6a35cd4281a0f9a397acdb4ea8fc4f08b3928274b4151c7d67c42cc019eb225d"
+  },
+  {
+   "file": "render.py",
+   "old": "wav = RUN['WAVES'][i] if in_fight else []",
+   "sha256": "49c19846af48f812f09cf2de20cafa9c8d56830201ef4e940cfa0cad4436a876"
+  }
+ ],
+ "seed": 1339,
+ "side": 0,
+ "spec_sha256": "dd6179c0a847da3d05a1ff5b39e9ac45ef3f58cd2b8fd028a8e9604b3eb69f5a",
+ "state_keys": ["glow"],
+ "window": {
+  "frames": [105, 1726],
+  "t0": 3.4857142857142858,
+  "t1": 57.51428571428571
+ }
+}

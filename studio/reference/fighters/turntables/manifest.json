@@ -1,0 +1,6 @@
+{
+ "format": 1,
+ "entries": [
+  {"path": "studio/reference/fighters/turntables/origin.json", "sha256": "b4232342b915114d669c72824731a62be8ff7e7197b39e2a6c3037cef11e6ece", "bytes": 19085, "tool": "tools.studio_export.older.origin", "commit": "1871c4fd7d95d34191ff94a81f9f8c1a135178cc", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"}
+ ]
+}
