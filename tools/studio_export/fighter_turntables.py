@@ -24,6 +24,8 @@ SILENCE: the episode's audio.py with every fx / bass placement removed but the d
 the shared buses' comparison (fx, bass) once fighter_origin applies a fighter spec's `silence` to the episode's stems
 (this task's report, NEEDS_CONTEXT); measured meanwhile with the same patch and harness: both bit-identical.
 The config keeps only the champion's solo (the SYNTH loses: its solo never plays)."""
+from . import m3refs
+
 R = 'render.py'
 EPISODE = 'ballfight_turntables_vs_synth'
 
@@ -156,6 +158,8 @@ FRAMES = [110, 375, 385, 397, 429, 510, 645, 647, 659, 753, 915, 1185, 1235, 124
 SPEC = dict(
     name='TURNTABLES',
     opponent='FLUTE',
+    fights=dict(handicap=(0.8, 1.0)),   # M3-R34: at neutral TURNTABLES wins 96.8 %; FLUTE at x2 19.8 %; 0.8 ~ 77 %
+    sprite_size=dict(add=7, clip=(12, 30)),     # its own sprites: #31's render_sprite, 2 r + 7 at r in 12..30
     left_in_cache=True,
     origin=dict(
         episode=EPISODE,
@@ -172,4 +176,4 @@ SPEC = dict(
     ),
 )
 
-EXPORTS = {}
+EXPORTS = {'fighter_turntables': lambda: m3refs.fighter_refs(SPEC)}

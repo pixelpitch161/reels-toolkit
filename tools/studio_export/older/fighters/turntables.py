@@ -126,7 +126,7 @@ class Record:
         for e in self.solo_ev:
             t0, kind, ln = e[0], e[1], e[2]
             d = ln * P.T.BEAT * 0.95
-            if kind != 'stab' and t0 <= t < t0 + d:
+            if isinstance(kind, str) and kind != 'stab' and t0 <= t < t0 + d:     # (a note: a stab)
                 q, g = pp_turntables().qmotion(scratch_kind(kind), np.array([t - t0]), d)
                 return float(q[0]) * (0.35 if kind == 'back' else 1.0)
         return 0.0
@@ -310,7 +310,7 @@ class Look(base.Look):
         for e in self.rec.solo_ev:
             t0 = e[0]
             if t0 <= t < t0 + 0.6:
-                out.append((t0, 1.9 if e[1] == 'stab' else 1.1))
+                out.append((t0, 1.9 if not isinstance(e[1], str) or e[1] == 'stab' else 1.1))   # (a note: a stab)
         return out
 
     def canvas(self, Ic, C):
@@ -729,11 +729,14 @@ class Sound(base.Sound):
             mix.place('solo', self.stab(m, 1.0, 0.4), tw, 0.20)
 
     def solo(self, mix, t0):
-        """the scratch routine (config SOLO: (beat, kind, beats), kind a scratch or 'stab' (an organ stab chord))"""
+        """the scratch routine (config SOLO: (beat, kind, beats), kind a scratch or 'stab' (an organ stab chord); a
+        MIDI note instead of a kind, as the kit's default solo gives, is one organ stab of that note)"""
         T = self.T
         for bt, kind, ln in T.SOLO.get(self.name, []):
             ts = t0 + bt * T.BEAT
-            if kind == 'stab':
+            if not isinstance(kind, str):
+                mix.place('solo', self.stab(int(kind), 0.95, min(0.3, ln * T.BEAT)), ts, 0.16)
+            elif kind == 'stab':
                 ch = T.chord_at(ts)
                 for m in sorted(T.scale_notes(60, 72, ch), key=lambda x: (x % 12 not in T.CHORD_PCS[ch], x))[:3]:
                     mix.place('solo', self.stab(m, 0.95, min(0.3, ln * T.BEAT)), ts, 0.16)
