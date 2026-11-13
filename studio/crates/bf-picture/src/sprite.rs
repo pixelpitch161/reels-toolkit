@@ -373,8 +373,56 @@ pub fn render_sprite_padded(mesh: &Mesh, radius_px: u32, yaw_deg: f64, roll_deg:
     );
     let c = f64::from(half + 3) + 0.5;
     let cam = Cam::new(yaw_deg, radius_px, c, c, roll_deg);
+    draw_crop(mesh, &cam, half)
+}
+
+/// The model tipped toward the camera by `pitch_deg` about its x axis, as #31's `styles.render_sprite(name,
+/// radius_px, yaw_deg, roll_deg, pitch_deg)` draws it (SYNTH's keys, TURNTABLES' platter; plan m4 Task 10): the
+/// kit's camera with its turn replaced by `Rz @ Rx @ Ry` (roll, pitch, yaw), side `2 * radius_px + 7`. At pitch 0 it
+/// is [`render_sprite`].
+///
+/// Panics as [`render_sprite`] does.
+pub fn render_sprite_pitched(mesh: &Mesh, radius_px: u32, yaw_deg: f64, roll_deg: f64, pitch_deg: f64) -> Img<u8> {
+    assert!(
+        radius_px <= MAX_RADIUS,
+        "a sprite of radius {radius_px} does not fit the {RW} x {RH} canvas"
+    );
+    let c = f64::from(radius_px + 3) + 0.5;
+    let mut cam = Cam::new(yaw_deg, radius_px, c, c, roll_deg);
+    cam.r = pitched_turn(yaw_deg, roll_deg, pitch_deg);
+    draw_crop(mesh, &cam, radius_px)
+}
+
+/// `Rz @ Rx @ Ry` of #31's `styles.render_sprite` (`a, b, y = radians(pitch), radians(roll), radians(yaw)`), each
+/// product as numpy's 3 x 3 matmul computes it on the reference PC: every element `fma(a2, b2, fma(a1, b1, a0 *
+/// b0))`, measured on 3,040 angle sets (every element of `Rz @ Rx @ Ry` to the bit; the plain sum matched 1,173),
+/// the fused products of rulings M3-R30 / R39.
+fn pitched_turn(yaw_deg: f64, roll_deg: f64, pitch_deg: f64) -> [V3; 3] {
+    let (sa, ca) = sin_cos_deg(pitch_deg);
+    let (sb, cb) = sin_cos_deg(roll_deg);
+    let (sy, cy) = sin_cos_deg(yaw_deg);
+    let rx = [[1.0, 0.0, 0.0], [0.0, ca, -sa], [0.0, sa, ca]];
+    let ry = [[cy, 0.0, sy], [0.0, 1.0, 0.0], [-sy, 0.0, cy]];
+    let rz = [[cb, -sb, 0.0], [sb, cb, 0.0], [0.0, 0.0, 1.0]];
+    matmul3(matmul3(rz, rx), ry)
+}
+
+/// numpy's `A @ B` of two 3 x 3 `float64` matrices on the reference PC (its BLAS): `fma(a[i][2], b[2][j],
+/// fma(a[i][1], b[1][j], a[i][0] * b[0][j]))`.
+fn matmul3(a: [V3; 3], b: [V3; 3]) -> [V3; 3] {
+    let mut out = [[0.0; 3]; 3];
+    for (i, row) in out.iter_mut().enumerate() {
+        for (j, o) in row.iter_mut().enumerate() {
+            *o = dmath::fma(a[i][2], b[2][j], dmath::fma(a[i][1], b[1][j], a[i][0] * b[0][j]));
+        }
+    }
+    out
+}
+
+/// The model drawn with `cam` and cropped round the square of half side `half` (`img[:n, :n]`, `n = 2 half + 7`).
+fn draw_crop(mesh: &Mesh, cam: &Cam, half: u32) -> Img<u8> {
     let mut cv = Canvas::new();
-    render_geo(mesh, &cam, &mut cv);
+    render_geo(mesh, cam, &mut cv);
     outline(&mut cv);
     let n = 2 * half as usize + 7;
     let mut data = Vec::with_capacity(n * n * 4);

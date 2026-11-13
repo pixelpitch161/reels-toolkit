@@ -526,18 +526,22 @@ def normalize(spec):
     out['hooks'] = tuple(spec.get('hooks') or ())
     size = spec.get('sprite_size')
     if size is not None:                          # (absent, not None, when not given: fight.json's spec is unchanged)
-        ok = isinstance(size, dict) and set(size) <= {'add', 'clip', 'pad'} and isinstance(size.get('add'), int)
+        ok = isinstance(size, dict) and set(size) <= {'add', 'clip', 'pad', 'ceil'} and isinstance(size.get('add'), int)
         clip = size.get('clip') if ok else None
         pad = size.get('pad') if ok else None
         ok = ok and (clip is None or (len(clip) == 2 and all(isinstance(v, int) for v in clip) and clip[0] <= clip[1]))
         ok = ok and (pad is None or (isinstance(pad, float) and pad > 0))
+        ok = ok and ('ceil' not in size or (size['ceil'] is True and pad is not None))
         if not ok:
-            raise SystemExit("SPEC.sprite_size: dict(add=<int>, clip=(<lo>, <hi>) or None, pad=<float> or None): the "
-                             "size of the look's own sprites is 2 * int(round(clip(radius, lo, hi) * pad)) + add "
+            raise SystemExit("SPEC.sprite_size: dict(add=<int>, clip=(<lo>, <hi>) or None, pad=<float> or None, "
+                             "ceil=True or left out): the size of the look's own sprites is "
+                             "2 * int(round(clip(radius, lo, hi) * pad)) + add, rounding up with ceil "
                              "(sprites.own_size)")
         out['sprite_size'] = dict(add=size['add'], clip=None if clip is None else tuple(clip))
         if pad is not None:                       # (left out when not given)
             out['sprite_size']['pad'] = pad
+        if size.get('ceil'):                      # (left out when not given)
+            out['sprite_size']['ceil'] = True
     if 'origin' in spec:                          # an older fighter's Gate O (plan m4 Task 2): checked here, kept out
         from .older import origin as O            # of fight.json (its own origin.json holds it)
         O.origin_spec(spec['origin'])
