@@ -7,8 +7,8 @@
  "pins": [
   {
    "path": "fighters/viola/checks_rows.json",
-   "sha256": "af55d62ef75509ae26fad9552b4ee9e613c628d7dee59200eabf5f2fde2e5467",
-   "bytes": 32371,
+   "sha256": "812b353c8da70bcc12c786ac7d7e1169b30f633588bab30d0e6be58f7918af47",
+   "bytes": 32326,
    "export": "fighter_viola"
   },
   {

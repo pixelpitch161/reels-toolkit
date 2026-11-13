@@ -55,20 +55,14 @@ fn whole_fights_are_the_kits() {
     println!("{n} whole fights agree with the kit's ({crushes} crushes, {jokes} jokes)");
 }
 
-/// `fight::setup_like` with VIOLA's roster entry from `bf-sim/tests/older_roster.json` (the compiled-in roster has
-/// the older ten only from their register task on), the other fighter from the compiled-in roster.
+/// The setup of the recording `py`: both fighters from the compiled-in roster, its rules, its seed.
 fn setup_of(py: &bf_core::recording::Recording) -> bf_sim::Setup<'static> {
     use bf_core::event::Value as Ev;
-    static OLDER: std::sync::OnceLock<Vec<bf_core::roster::FighterCfg>> = std::sync::OnceLock::new();
-    let older = OLDER.get_or_init(|| {
-        bf_core::roster::parse_roster(include_str!("../../bf-sim/tests/older_roster.json")).expect("the older roster")
-    });
     let find = |name: &str| -> &'static bf_core::roster::FighterCfg {
         bf_harness::fight::roster()
             .iter()
-            .chain(older)
             .find(|f| f.name == name)
-            .unwrap_or_else(|| panic!("{name} is in neither roster"))
+            .unwrap_or_else(|| panic!("{name} is not in the roster"))
     };
     let rule = |k: &str| match py.rules.get(k) {
         Some(Ev::Float(x)) => *x,

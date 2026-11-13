@@ -357,6 +357,16 @@ impl Look for Spy {
     fn after_post(&self, p: &PictureCtx, img: &mut Img<u8>, log: &mut DrawLog, f: &FrameCtx<'_>, drawn: &[DrawnBall]) {
         self.inner.after_post(p, img, log, f, drawn);
     }
+    // VIOLA's three opt-ins (plan m4 Task 11), forwarded unlogged as Task 4's
+    fn crowd_laugh(&self, p: &PictureCtx, t: f64) -> Option<f64> {
+        self.inner.crowd_laugh(p, t)
+    }
+    fn flash_hit(&self, e: &Event) -> Option<bool> {
+        self.inner.flash_hit(e)
+    }
+    fn spark_events(&self) -> &[&str] {
+        self.inner.spark_events()
+    }
 }
 
 // ---------------------------------------------------------------- the fights
