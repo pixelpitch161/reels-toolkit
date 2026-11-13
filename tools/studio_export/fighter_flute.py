@@ -17,6 +17,7 @@ SPEC = dict(
     name='FLUTE',
     opponent='TROMBONE',
     fights=dict(handicap=(2.0, 0.40)),           # the kit's frozen handicap for this pair, FLUTE left
+    left_in_cache=False,                         # its left fight is milestone 1's committed recording
 )
 
 EXPORTS = {'fighter_flute': lambda: m3refs.fighter_refs(SPEC)}

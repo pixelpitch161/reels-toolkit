@@ -36,7 +36,10 @@
    },
    "mood": "horror_trap",
    "n_bars": 36,
-   "recording": "themes/horror_trap/bassclarinet_vs_bassoon.bfrec",
+   "recording": {
+    "cache": "themes/horror_trap/bassclarinet_vs_bassoon.bfrec",
+    "sha256": "5b5bcfaed48c582da258ac1f01b61f45b729b6c8cc7b8f837498f2be684f02f9"
+   },
    "roles": {
     "BASS CLARINET": "bass",
     "BASSOON": "line"
