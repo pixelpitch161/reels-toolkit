@@ -23,13 +23,17 @@ use bf_picture::camera::{Cam, V3};
 use bf_picture::hull::{self, HullCall};
 use bf_picture::img::{Img, RgbF};
 use bf_picture::lighting::Lights;
-use bf_picture::look::{BallSprite, CanvasCtx, DefaultLook, DrawnBall, FrameCtx, Fx, Look, Payload, Phase, Pic, Spark};
+use bf_picture::look::{
+    BallSprite, CanvasCtx, DefaultLook, DrawnBall, FrameCtx, Fx, GlassPx, Look, Payload, Phase, Pic, Spark, Tint,
+};
 use bf_picture::raster::Frame;
+use bf_picture::ring::ropes::RopeEv;
 use bf_picture::ring::state::{BallState, Wave};
 use bf_picture::ring::{Picture, PictureCtx};
 use bf_picture::sprite::{Mesh, render_sprite};
 use bf_picture::title::layout::Layout;
 use bf_picture::title::{CardLook, TitleCard};
+use bf_picture::ui::DrawLog;
 use bf_picture::{Rgb8, title};
 use bf_testdata::read_png;
 use serde_json::Value;
@@ -312,6 +316,46 @@ impl Look for Spy {
     }
     fn focus_points(&self, p: &PictureCtx, t: f64, st: &BallState) -> Vec<(V3, String)> {
         self.inner.focus_points(p, t, st)
+    }
+    // the older looks' opt-ins (plan m4 Task 4), forwarded unlogged (the kit's hook log has no entry for them)
+    fn canvas_albedo(&self, p: &PictureCtx, alb: &mut [V3], c: &CanvasCtx<'_>) {
+        self.inner.canvas_albedo(p, alb, c);
+    }
+    fn canvas_paint(&self, p: &PictureCtx, col: &mut [V3], ic: &[V3], c: &CanvasCtx<'_>) {
+        self.inner.canvas_paint(p, col, ic, c);
+    }
+    fn ball_tint(&self, p: &PictureCtx, kk: usize, st: &BallState, t: f64, col: V3) -> V3 {
+        self.inner.ball_tint(p, kk, st, t, col)
+    }
+    fn ball_glass(&self, p: &PictureCtx, kk: usize, st: &BallState, t: f64, px: &GlassPx, inner: &mut V3) {
+        self.inner.ball_glass(p, kk, st, t, px, inner);
+    }
+    fn ball_lit<'a>(&'a self, p: &'a PictureCtx, kk: usize, st: &BallState, t: f64) -> Option<Tint<'a>> {
+        self.inner.ball_lit(p, kk, st, t)
+    }
+    fn ball_after_sprite(
+        &self,
+        p: &PictureCtx,
+        kk: usize,
+        st: &BallState,
+        t: f64,
+        arr: &mut Img<f32>,
+        s: (f64, f64),
+        rp: f64,
+    ) {
+        self.inner.ball_after_sprite(p, kk, st, t, arr, s, rp);
+    }
+    fn ball_late(&self, p: &PictureCtx, kk: usize, f: &FrameCtx<'_>, st: &BallState) -> bool {
+        self.inner.ball_late(p, kk, f, st)
+    }
+    fn rope_press(&self, p: &PictureCtx, s: usize, y: f64, t: f64, pts: &[[f64; 2]], yy: &mut [f64]) {
+        self.inner.rope_press(p, s, y, t, pts, yy);
+    }
+    fn rope_events(&self, p: &PictureCtx) -> Vec<RopeEv> {
+        self.inner.rope_events(p)
+    }
+    fn after_post(&self, p: &PictureCtx, img: &mut Img<u8>, log: &mut DrawLog, f: &FrameCtx<'_>, drawn: &[DrawnBall]) {
+        self.inner.after_post(p, img, log, f, drawn);
     }
 }
 
