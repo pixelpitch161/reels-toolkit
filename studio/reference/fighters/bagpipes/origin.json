@@ -1,0 +1,519 @@
+{
+ "about": "Gate O (plan m4 Task 2): BAGPIPES's reference kit module against projects/ballfight_bagpipes_vs_accordion, its layers pixel for pixel (the contribution, on minus off, in int16) and its buses sample for sample (float64) from FIGHT! to the end of the shatter",
+ "buses": [
+  {
+   "bus": "chanter",
+   "peak": "bit-identical",
+   "sha256_episode": "825ea87961e3f4cc3c0c7d4c37b20abc4a9544473c87859ef5bf6baa60286c74",
+   "sha256_kit": "825ea87961e3f4cc3c0c7d4c37b20abc4a9544473c87859ef5bf6baa60286c74",
+   "whole": "-20.5 dBFS",
+   "window": [188903, 2739097]
+  },
+  {
+   "bus": "drone",
+   "peak": "bit-identical",
+   "sha256_episode": "2d996353237986ced4f82a1b5268c46bed88cc52e690538e7a348413db06c08f",
+   "sha256_kit": "2d996353237986ced4f82a1b5268c46bed88cc52e690538e7a348413db06c08f",
+   "whole": "bit-identical",
+   "window": [188903, 2739097]
+  }
+ ],
+ "cache": "studio/reference/.cache/m4/origin/out/ballfight_bagpipes_vs_accordion/bagpipes",
+ "config": {
+  "sha256": "e4b4f322182615afd644ba9eb3e67a85a820ab863ade881634203a82099046f4",
+  "text": ["\"\"\"Gate O: the kit config of projects/ballfight_bagpipes_vs_accordion (made by tools/studio_export/older/origin.py).\"\"\"", "BPM = 121.9672131147541", "CHORDS = ['Am', 'E', 'Am', 'G', 'Am', 'Em', 'Am', 'G', 'Am', 'Em', 'Am', 'G', 'Am', 'Em', 'Am', 'G', 'Am', 'Em', 'Am', 'G', 'Am', 'Em', 'Am', 'G', 'Am', 'Em', 'Am', 'G', 'Am', 'Em', 'E']", "DMG_SCALE = 0.76", "FIGHTERS = ('BAGPIPES', 'ACCORDION')", "FX_SEED = 30", "KEY = 'A'", "LINES = {'BAGPIPES': [69, 69, 72, 74, 76, 74, 72, 71, 67, 67, 71, 74, 79, 78, 74, 71, 69, 72, 76, 81, 79, 76, 74, 72, 71, 71, 67, 71, 76, 74, 71, 68]}", "LOOP = ['Am', 'G', 'Am', 'Em']", "MOOD = 'big_top'", "SCALE = (0, 2, 3, 5, 7, 9, 10)", "SEED = 1442", "SERIES = 'BALLFIGHT #4'", "SOLO = {'BAGPIPES': [(0, 69, 1.0), (1, 71, 0.5), (1.5, 72, 0.5), (2, 74, 0.75), (2.75, 76, 0.25), (3, 76, 1.0), (4, 81, 1.5), (5.5, 79, 0.5), (6, 78, 0.75), (6.75, 76, 0.25), (7, 74, 0.5), (7.5, 72, 0.5), (8, 71, 0.75), (8.75, 72, 0.25), (9, 74, 0.5), (9.5, 71, 0.5), (10, 69, 2.0)], 'ACCORDION': [(0, 69, 0.5), (0.5, 72, 0.5), (1, 76, 0.5), (1.5, 81, 0.5), (2, 80, 0.25), (2.25, 81, 0.25), (2.5, 83, 0.5), (3, 84, 1.0), (4, 83, 0.25), (4.25, 81, 0.25), (4.5, 79, 0.25), (4.75, 78, 0.25), (5, 76, 0.5), (5.5, 74, 0.5), (6, 72, 0.5), (6.5, 74, 0.25), (6.75, 72, 0.25), (7, 71, 0.5), (7.5, 68, 0.5), (8, 69, 0.5), (8.5, 72, 0.5), (9, 76, 0.5), (9.5, 71, 0.5), (10, 69, 2.0)]}"]
+ },
+ "episode": "ballfight_bagpipes_vs_accordion",
+ "episode_commit": "220ebc661d10c9bae11b3feda647cc6793f2bc2a",
+ "exceptions": {},
+ "fight": {
+  "equal": true,
+  "line": "1442 1 52.39381720430108 481 c2e0d04ed48710b0",
+  "t_ko": 52.39381720430108,
+  "winner": 1
+ },
+ "frames": [
+  {
+   "contribution_sha256": "a9819754a379bcb1df0af45ac82a37b6267baa8dd84ba10b3fdeebed6994b756",
+   "frame": 151,
+   "sha256": {
+    "episode_off": "bc2facfc2432099dfc1c2d12992f35630818841cf73d5a83c95a2bcfa060d71d",
+    "episode_on": "db33b720118c1a2c069b417cfdb4ee95603ec329a7064f317b28d97a9feeda4e",
+    "kit_off": "bc2facfc2432099dfc1c2d12992f35630818841cf73d5a83c95a2bcfa060d71d",
+    "kit_on": "db33b720118c1a2c069b417cfdb4ee95603ec329a7064f317b28d97a9feeda4e"
+   },
+   "t": 5.033333,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "00f8b00af496b726282c94482b55541436592e01fdbbb21840cdf1fe36d49478",
+   "frame": 346,
+   "sha256": {
+    "episode_off": "b158bd68df2d0e196009d136d07e9ca3eb0a4acc7377a296cf86493b2bca540b",
+    "episode_on": "d9df04442476314387420889ccd7e2a3b4131cd36fcb0db4a7073dcbe97db995",
+    "kit_off": "b158bd68df2d0e196009d136d07e9ca3eb0a4acc7377a296cf86493b2bca540b",
+    "kit_on": "d9df04442476314387420889ccd7e2a3b4131cd36fcb0db4a7073dcbe97db995"
+   },
+   "t": 11.533333,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "865f3ab09f909ba9f2fccc748321dacf560636b4d2bcaa6368e646f3e469249a",
+   "frame": 358,
+   "sha256": {
+    "episode_off": "808304831ef05d3dd232f91ec3a63fbbf3b93cb629f7e80cf851ff7fed25fe0a",
+    "episode_on": "4d8422f15b210ddf290f8154f94cbb3472a87e4e8858d6cefcd39ac099987eea",
+    "kit_off": "808304831ef05d3dd232f91ec3a63fbbf3b93cb629f7e80cf851ff7fed25fe0a",
+    "kit_on": "4d8422f15b210ddf290f8154f94cbb3472a87e4e8858d6cefcd39ac099987eea"
+   },
+   "t": 11.933333,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "b95760fed3f6094b47a925f27563647560ce53226af9b833552c040cbd14222e",
+   "frame": 384,
+   "sha256": {
+    "episode_off": "bf24ad9099fb38f97ea0d2715650b6a9dd4a39040436ba3ebe4f56cbac458ded",
+    "episode_on": "8a2427b9de50c3d6f1464d09a666759c5127156cfc6de8fd7583a501072f7d49",
+    "kit_off": "bf24ad9099fb38f97ea0d2715650b6a9dd4a39040436ba3ebe4f56cbac458ded",
+    "kit_on": "8a2427b9de50c3d6f1464d09a666759c5127156cfc6de8fd7583a501072f7d49"
+   },
+   "t": 12.8,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "f300322156f0b17a4bbc65273f0cbdd3b67427cf22aa0d2e2d56f8484d308363",
+   "frame": 437,
+   "sha256": {
+    "episode_off": "411915de995ab3ee2ecd891b67f01da81e8d440add5a42e113bf264e53f9fc12",
+    "episode_on": "37fe0934d9062a36c442c2b12ea75b4025202e349afeaf9337bbfdc2f577c9f7",
+    "kit_off": "411915de995ab3ee2ecd891b67f01da81e8d440add5a42e113bf264e53f9fc12",
+    "kit_on": "37fe0934d9062a36c442c2b12ea75b4025202e349afeaf9337bbfdc2f577c9f7"
+   },
+   "t": 14.566667,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "d902be3ff68621f3d86d4d2d294a82a6f51a02ee151fb0531d1dd74e0a44d78d",
+   "frame": 517,
+   "sha256": {
+    "episode_off": "201bf01038b1794c5f9e79efbf39e1a057caa380930c8469250494c5d3604feb",
+    "episode_on": "12c06a8fd25e94d48a44364b0d0d168694aa1e79db3dcf4205526fae42fffd0f",
+    "kit_off": "201bf01038b1794c5f9e79efbf39e1a057caa380930c8469250494c5d3604feb",
+    "kit_on": "12c06a8fd25e94d48a44364b0d0d168694aa1e79db3dcf4205526fae42fffd0f"
+   },
+   "t": 17.233333,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "3a934dab7769b92b2c610a82beaacf11953eaaa05fb782f96966f1701aa642f2",
+   "frame": 649,
+   "sha256": {
+    "episode_off": "877b703504fc87fe6c7783ccd8e9ebc8cc6541fe78ff01369acc293051b8833a",
+    "episode_on": "854266e480c1f0fd64a42fc97111e5c039aefff707e4fee78313b6ea011530db",
+    "kit_off": "877b703504fc87fe6c7783ccd8e9ebc8cc6541fe78ff01369acc293051b8833a",
+    "kit_on": "854266e480c1f0fd64a42fc97111e5c039aefff707e4fee78313b6ea011530db"
+   },
+   "t": 21.633333,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "8f2687e860078ced96e629f6f052ba55718346adb0a1cec9483f6b9e55b787f4",
+   "frame": 656,
+   "sha256": {
+    "episode_off": "8977d5412dcf09752820402f4b370a82f38ced7120be4b438f916c6615b8101a",
+    "episode_on": "92897adb2fa1bcedcd0ad86b8c68e754f86a9d7bbb80b9311c0e76381fc48302",
+    "kit_off": "8977d5412dcf09752820402f4b370a82f38ced7120be4b438f916c6615b8101a",
+    "kit_on": "92897adb2fa1bcedcd0ad86b8c68e754f86a9d7bbb80b9311c0e76381fc48302"
+   },
+   "t": 21.866667,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "0a9e2cab1387fd7d5aa13dda6618a8901adb8a7c9358baef94c9c14875206156",
+   "frame": 668,
+   "sha256": {
+    "episode_off": "8c31dd9c975e7d01535a835af463b0d9207b9081ad6e7c1090923742556261ab",
+    "episode_on": "941d93bffff4ccfe3b5d95cb35d9f36775ae2d6d7494a82d24a1bee7718da944",
+    "kit_off": "8c31dd9c975e7d01535a835af463b0d9207b9081ad6e7c1090923742556261ab",
+    "kit_on": "941d93bffff4ccfe3b5d95cb35d9f36775ae2d6d7494a82d24a1bee7718da944"
+   },
+   "t": 22.266667,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "c296c77f7009cf7de95138640a246392124ff03e4f586efa0cd24671043a376b",
+   "frame": 755,
+   "sha256": {
+    "episode_off": "53d7e06348b6924cd5b4080191650fcac1fcbd22a484d3af448f1df2e391b85d",
+    "episode_on": "ead9cf73e13fca6fba5bce1ceef662d9a198733caa5905bdaf659a9788cae2a7",
+    "kit_off": "53d7e06348b6924cd5b4080191650fcac1fcbd22a484d3af448f1df2e391b85d",
+    "kit_on": "ead9cf73e13fca6fba5bce1ceef662d9a198733caa5905bdaf659a9788cae2a7"
+   },
+   "t": 25.166667,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "2fe57f96a9a238b76fc0c77223cbb66d6a868833e120ad48a09c924960174a08",
+   "frame": 915,
+   "sha256": {
+    "episode_off": "fb07a869500429f61f910f181334c5f18a9493bc1cbb92543f0f3fd96e8183fb",
+    "episode_on": "5226d46e8c6986f809b733071944a9dfbb86a3fcf757ce685e352e29103b404d",
+    "kit_off": "fb07a869500429f61f910f181334c5f18a9493bc1cbb92543f0f3fd96e8183fb",
+    "kit_on": "5226d46e8c6986f809b733071944a9dfbb86a3fcf757ce685e352e29103b404d"
+   },
+   "t": 30.5,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "ea82facd446b08a00928bb65062f6e6fd3ec442d20e362284f12e7454c5d123f",
+   "frame": 1074,
+   "sha256": {
+    "episode_off": "c90badc18554c1c1a5455ae7322bc76bee9c9bb52a23c639cd1d1f3095f5eb66",
+    "episode_on": "532a02d70a9529586cd3f5d56dd7cf6bb30940ae7bee648a7464cb15176df679",
+    "kit_off": "c90badc18554c1c1a5455ae7322bc76bee9c9bb52a23c639cd1d1f3095f5eb66",
+    "kit_on": "532a02d70a9529586cd3f5d56dd7cf6bb30940ae7bee648a7464cb15176df679"
+   },
+   "t": 35.8,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "f60d2d793cedf866ba05b5f6708b31c8486ed959e1c0c24fc24ab2b4790f6f5b",
+   "frame": 1180,
+   "sha256": {
+    "episode_off": "e6af98dbf2e6038e1b1003a6e4358934731a72f3ac2400fcda7bef21279e991a",
+    "episode_on": "ec9711861bc770939d5e88f883231ed61c09d7db4fc5b0cbe95c0e314ab055a1",
+    "kit_off": "e6af98dbf2e6038e1b1003a6e4358934731a72f3ac2400fcda7bef21279e991a",
+    "kit_on": "ec9711861bc770939d5e88f883231ed61c09d7db4fc5b0cbe95c0e314ab055a1"
+   },
+   "t": 39.333333,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "06ba50a36cd54a5730e4c8405a8a9da1a87524371edc85c7e7b861064e0d043c",
+   "frame": 1313,
+   "sha256": {
+    "episode_off": "cfab89a919f4622712861ee564f38842b72a081a1760a083314eec55439c6962",
+    "episode_on": "0d2b00b2638ac1572522b21e861b43d9665d96d7141929bf03f162fd976e6c7a",
+    "kit_off": "cfab89a919f4622712861ee564f38842b72a081a1760a083314eec55439c6962",
+    "kit_on": "0d2b00b2638ac1572522b21e861b43d9665d96d7141929bf03f162fd976e6c7a"
+   },
+   "t": 43.766667,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "88369c5f5b85c86aa54b0fb7bcf9620a27942c0a7d24ddda6790e6989b9806d7",
+   "frame": 1368,
+   "sha256": {
+    "episode_off": "b235aaa9c830d5005cc8147c1f71ac7d6d8169c8af7c1a26d04375669432966f",
+    "episode_on": "f07b9fd36b19c316a67011386ac739c1d525e1ab226a4704883911d41ecb3dff",
+    "kit_off": "b235aaa9c830d5005cc8147c1f71ac7d6d8169c8af7c1a26d04375669432966f",
+    "kit_on": "f07b9fd36b19c316a67011386ac739c1d525e1ab226a4704883911d41ecb3dff"
+   },
+   "t": 45.6,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "dbddcb923929c6bcda39769dfb4de65239eaa0d567d2cab5a557dfd8a066a2d0",
+   "frame": 1379,
+   "sha256": {
+    "episode_off": "0d942313c2c5f282ba614f55d05f5f0fc782fe3121a5c5ad3b677580507fc194",
+    "episode_on": "7ba221992769f640d18f19d8e60e9c32277ecfc26636fa9b5b57dc4fc26e5b82",
+    "kit_off": "0d942313c2c5f282ba614f55d05f5f0fc782fe3121a5c5ad3b677580507fc194",
+    "kit_on": "7ba221992769f640d18f19d8e60e9c32277ecfc26636fa9b5b57dc4fc26e5b82"
+   },
+   "t": 45.966667,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "577537c10ff1710090ba4490bf56fdf07cf16278adbff6f36597907b7e618a8c",
+   "frame": 1391,
+   "sha256": {
+    "episode_off": "ade9867f320ecca2ae326f0467878c748211b9bfb8fdb820710178d0855be6ab",
+    "episode_on": "c812dcf009ad4b552e04c63f1fb0fd1448dddc077ceaeb8bfd50b177ef1d8040",
+    "kit_off": "ade9867f320ecca2ae326f0467878c748211b9bfb8fdb820710178d0855be6ab",
+    "kit_on": "c812dcf009ad4b552e04c63f1fb0fd1448dddc077ceaeb8bfd50b177ef1d8040"
+   },
+   "t": 46.366667,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "1d8eaae29a7ec9c7fb3e26a0dd3f572e0603624a4968e352a6d30e3afdd7c056",
+   "frame": 1392,
+   "sha256": {
+    "episode_off": "8823d5f90f3c7a713a694abd82575f6378ec1bd0f0dd5fef5e4b7025516a04fa",
+    "episode_on": "5462b085d1fed30b9684f064000236b172cab03c0fe0daa6640a6556e5253d3e",
+    "kit_off": "8823d5f90f3c7a713a694abd82575f6378ec1bd0f0dd5fef5e4b7025516a04fa",
+    "kit_on": "5462b085d1fed30b9684f064000236b172cab03c0fe0daa6640a6556e5253d3e"
+   },
+   "t": 46.4,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "6dc3deebf131c41d99952e9c80a24e528ce19b792f93b4731147a5261205031d",
+   "frame": 1557,
+   "sha256": {
+    "episode_off": "a6ba75bb1edca8d049881419785a08a9b0f0064934e88afc4b1aea96613839fe",
+    "episode_on": "d1bb16ae0ee0f73929301ce5b5e3f6d79f00415147567abf51ce7454c713c21a",
+    "kit_off": "a6ba75bb1edca8d049881419785a08a9b0f0064934e88afc4b1aea96613839fe",
+    "kit_on": "d1bb16ae0ee0f73929301ce5b5e3f6d79f00415147567abf51ce7454c713c21a"
+   },
+   "t": 51.9,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "6794a5700446e2537f6d514769c1f33ccbfe5309e134e908095a4ceebdde19d3",
+   "frame": 1575,
+   "sha256": {
+    "episode_off": "df2b539a65651e7366b3d44098b2c160215622f5875f6db62e9dc18113147bf3",
+    "episode_on": "48a2d1dc5f5e94b8bea079efbaefaad3a0b2f9e288990e1cc805d112351ac728",
+    "kit_off": "df2b539a65651e7366b3d44098b2c160215622f5875f6db62e9dc18113147bf3",
+    "kit_on": "48a2d1dc5f5e94b8bea079efbaefaad3a0b2f9e288990e1cc805d112351ac728"
+   },
+   "t": 52.5,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "9e38940f3d9d4936333e19d84feda215a5daf91e51e9f7679fb62d736a95ae09",
+   "frame": 1585,
+   "sha256": {
+    "episode_off": "0a5b217bc7001d11e71d4499b30c0ae705eff75a8a15e3b2802d4b4a4682ab91",
+    "episode_on": "17638900341f06c64cc1f4510bfab36fd31b0378fa4ec47f31268d0c39d35be8",
+    "kit_off": "0a5b217bc7001d11e71d4499b30c0ae705eff75a8a15e3b2802d4b4a4682ab91",
+    "kit_on": "17638900341f06c64cc1f4510bfab36fd31b0378fa4ec47f31268d0c39d35be8"
+   },
+   "t": 52.833333,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "4f6996f6d35907f48e271c672478ba0e14886c30dbf508ef7cb6feb552c32078",
+   "frame": 1600,
+   "sha256": {
+    "episode_off": "55f593edf32e02d344cad7dbe65351f15305e37626ba645d5be6e7abaf48229d",
+    "episode_on": "7ceb7e8c3cf78f6a1bd6bbafe9ea2d04a7895f36dc1037b39677f516e79b60f6",
+    "kit_off": "55f593edf32e02d344cad7dbe65351f15305e37626ba645d5be6e7abaf48229d",
+    "kit_on": "7ceb7e8c3cf78f6a1bd6bbafe9ea2d04a7895f36dc1037b39677f516e79b60f6"
+   },
+   "t": 53.333333,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "84680a3a0cdc8f775e7b5d77fe883db22c972d3dc08dc667c8caa873643a5f07",
+   "frame": 1627,
+   "sha256": {
+    "episode_off": "e0be563f2f20b6c91eae8fcaacf3d20f81d395b0d436eb214ee614bbfce16a07",
+    "episode_on": "3787e44c79709832152dd0b1dcb755ac2a6e74ed03b60e97d074dee242a2daa6",
+    "kit_off": "e0be563f2f20b6c91eae8fcaacf3d20f81d395b0d436eb214ee614bbfce16a07",
+    "kit_on": "3787e44c79709832152dd0b1dcb755ac2a6e74ed03b60e97d074dee242a2daa6"
+   },
+   "t": 54.233333,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "c6908f7c6b7a98eb440de19e4fed6d5d9af03852f0b78cfc272ee0e16353edb1",
+   "frame": 1672,
+   "sha256": {
+    "episode_off": "c5ce75a4312d3281835dc6514e46bcda0aa504d003ea3d55c3c9df54456fdbbf",
+    "episode_on": "74aad06fde8373bfd130e92788266ad5b083276ec1b0466763d79e581d5873b9",
+    "kit_off": "c5ce75a4312d3281835dc6514e46bcda0aa504d003ea3d55c3c9df54456fdbbf",
+    "kit_on": "74aad06fde8373bfd130e92788266ad5b083276ec1b0466763d79e581d5873b9"
+   },
+   "t": 55.733333,
+   "whole_frame_equal": true
+  }
+ ],
+ "harness": [
+  {
+   "beat_pulse_pre": 0.07,
+   "name": "#30's beat ramp (0.07 s; the kit's 0.12 s)"
+  },
+  {
+   "call": "tools.studio_export.fighter_bagpipes:no_ability_list",
+   "name": "#30's HUD: no ability list"
+  }
+ ],
+ "layers": [
+  {
+   "name": "swell",
+   "patches": [
+    {
+     "file": "render.py",
+     "old": "if k in INFL:",
+     "sha256": "9e2ca966e3662b6003c13950376d4dd354cbbe226efb509f4dda162d600aaa15"
+    }
+   ]
+  },
+  {
+   "name": "shake",
+   "patches": [
+    {
+     "file": "render.py",
+     "old": "'clamp', 'wave', 'shockwave'):",
+     "sha256": "5d3b0be574c102e9a6b6f2b62c3a905f2eba3f3f8213933c96277fe6a82fac87"
+    }
+   ]
+  },
+  {
+   "name": "flashbulbs",
+   "patches": [
+    {
+     "file": "render.py",
+     "old": "'clamp', 'wave', 'shockwave')) or",
+     "sha256": "8af7c759f30642b9063f821792df291ba3f65e9a891b09f02d8d5765e658d5a4"
+    }
+   ]
+  },
+  {
+   "name": "sparks",
+   "patches": [
+    {
+     "file": "render.py",
+     "old": "bp = NAMES[att] == 'BAGPIPES'",
+     "sha256": "b496c9d40873cdd57f2439e0132162a3439fbe930ef448766c237476b4bd9194"
+    },
+    {
+     "file": "render.py",
+     "old": "'clamp') and dt < 0.08",
+     "sha256": "850f489ede31b4b638631df8a5b2922dd7a3105ad64dab095c22136953f44a75"
+    }
+   ]
+  },
+  {
+   "name": "hit_glow",
+   "patches": [
+    {
+     "file": "render.py",
+     "old": "'shockwave', 'bite'):",
+     "sha256": "14756d516fcc4f2350e8cec26890037b93e6d3374b7e240501bf34f1d6ea9c19"
+    }
+   ]
+  },
+  {
+   "name": "fringe",
+   "patches": [
+    {
+     "file": "render.py",
+     "old": "t - 0.1, t, ('hit',)):              # chromatic fringing on the big hits (local)",
+     "sha256": "c1c7e77ea030496fd19c1cdafabb759d04182f6aa4b6f7f51f3123de863e59ff"
+    }
+   ]
+  },
+  {
+   "name": "effects",
+   "patches": [
+    {
+     "file": "render.py",
+     "old": "if t0 > T_KO + 0.01:",
+     "sha256": "da082ccdeee5cfd7be76032a668507545caabc72beda8b05ad56cd8b599fc657"
+    },
+    {
+     "file": "render.py",
+     "old": "if c['t_land'] > T_KO + 1:",
+     "sha256": "656286e46f0840349a283590647a2f9c54c54dbc72a8723c7c012d0023902953"
+    }
+   ]
+  },
+  {
+   "name": "canvas",
+   "patches": [
+    {
+     "file": "render.py",
+     "old": "wav = RUN['WAVES'][i] if in_fight else []",
+     "sha256": "d9d25a1f4e701aa8bee214761f23f3ba206fb05d801ccf34ed0bac474e9b8318"
+    }
+   ]
+  },
+  {
+   "name": "shimmer",
+   "patches": [
+    {
+     "file": "render.py",
+     "old": "if in_fight:",
+     "sha256": "8b0e023a8bc7099839e5df2ea696f6646336e5a438fa28dab79e0b9fbde4f9db"
+    }
+   ]
+  },
+  {
+   "name": "shards",
+   "patches": [
+    {
+     "file": "render.py",
+     "old": "['pipe'] * 5 + ['tartan'] * 7 + ['reed'] * 2 if",
+     "sha256": "124012f0b70f215cadc01671127c689a6e484ebe22bff7a2ae23e40566ea4da7"
+    }
+   ]
+  }
+ ],
+ "name": "BAGPIPES",
+ "other": [
+  {
+   "file": "render.py",
+   "old": "EV = RUN['events']",
+   "sha256": "3aaa9c66b54f8f98edc3cd0c749549a82bb676bd4d0b4fe1ad6b501b8b3f1faa"
+  },
+  {
+   "file": "render.py",
+   "old": "FL.apply(L, t)",
+   "sha256": "0ade0f25013e1e10a44dd7543d3deec330bfa421363961f623f2a13a729ae7f7"
+  },
+  {
+   "file": "render.py",
+   "old": "FL.tint(heads, t)",
+   "sha256": "b04cfd87291078efc783c6134695d447754e07466598d7f8ae86dad94144c3e8"
+  },
+  {
+   "file": "render.py",
+   "old": "MK.apply(alb, sxp, szp, t,",
+   "sha256": "8a168fd23d1f1deba705bd3de7e50d5e0803e405b7d0263e340ba28dd16d7895"
+  },
+  {
+   "file": "render.py",
+   "old": "cam, t, light=lambda P: 1.0 + 0.6 * FL.tint(P, t))",
+   "sha256": "179e768cc83faeb9e0ccb74bb6afc7ac2e5b6d654dce20a5065a64eab222ac16"
+  },
+  {
+   "file": "render.py",
+   "old": "pk[1], 1.2), COL",
+   "sha256": "6e04724b3d268c5bed4b3f27d8fdbe7c808ac19e5cf4d2379e8de8faa6f3b509"
+  },
+  {
+   "file": "render.py",
+   "old": "t - 0.1))['p']",
+   "sha256": "2a7f680b1544d02316e1ba827eb73d9960139bed0eafe824ea515cae09642ff1"
+  },
+  {
+   "file": "render.py",
+   "old": "col = COL[att] * 0.6 + 100",
+   "sha256": "d8127029d3aee78fb7f7467df0f61a85211a40e879cf150db594fd1a2725be4f"
+  },
+  {
+   "file": "render.py",
+   "old": "(255, 214, 250), 0.6, bright=False)",
+   "sha256": "33b5fa069d567ca7c738a83064ab64d53a0396da69fe772839196453974c8471"
+  },
+  {
+   "file": "render.py",
+   "old": "if st['shield'] > 0:",
+   "sha256": "789f8c2c6188cfff1dc7b605de53957ccaa4beb49577545277b65f5a5f79be22"
+  },
+  {
+   "file": "render.py",
+   "old": "['button'] * 6 + ['pleat'] * 6 + ['key'] * 4)",
+   "sha256": "99ee3c16fe66d0bd701fd593e14906b578d9b8461a105cabc1e31f7739a33cf3"
+  },
+  {
+   "file": "render.py",
+   "old": "'puffs', n=24, spread=180, speed=(1.2, 3.0), scale=1.3)",
+   "sha256": "b7cc91e95ad4e1e1405d59243079f4e972853dbc7ff45a0d720a596b1b05bde2"
+  }
+ ],
+ "seed": 1442,
+ "side": 0,
+ "spec_sha256": "fd4215b7a06d0b04009aef81866034fdc469cc2738106f6a67497e6886b3e161",
+ "state_keys": ["glow", "infl", "p", "phase", "scale"],
+ "window": {
+  "frames": [118, 1712],
+  "t0": 3.935483870967742,
+  "t1": 57.064516129032256
+ }
+}
