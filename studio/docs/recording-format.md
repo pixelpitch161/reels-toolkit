@@ -1908,13 +1908,16 @@ in (the meaning of each field, as 6.2 and 6.3 do for FLUTE and TROMBONE), from t
 <!-- kind:inflate -->
 #### `inflate` (weapon kind of BAGPIPES)
 
-`fight.py` 1763 to 1867, 1487 to 1507, 3209 to 3216, 3233 to 3234. Not ported yet (milestone 4, Task 3 made its
-sockets): its port fills this section in (the meaning of each field, as 6.2 and 6.3 do for FLUTE and TROMBONE), from the
-lines below.
+`fight.py` 1763 to 1867, 1487 to 1507, 3209 to 3216, 3233 to 3234. Ported (milestone 4, Task 7:
+`bf-sim/src/kinds/inflate.rs`).
 
 **Record keys.**
 
-- `RAD`: added to `rec` at `run()` 5763 to 5764, written by `snap` 5520 to 5521:
+- `RAD` (only when a fighter inflates): one entry a frame, `[rad0, rad1]`, each ball's radius in ring units
+  (`getattr(B, 'rad', R)`: the shared `R` for a ball that never swells; an inflater's grows to `inf_scale` x R over
+  the swell and falls back over the flight). It is not one of the kit's array keys (`story.REC_KEYS`), so a recording
+  holds it as a ragged list (`RAD.json`), as the kit's run does. Added to `rec` at `run()` 5763 to 5764, written by
+  `snap` 5520 to 5521:
 
   ```python
   if 'RAD' in rec:                                    # #30 v2, only recorded when a fighter changes size
@@ -1924,10 +1927,14 @@ lines below.
 **Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
 `self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
 
-- 1790: `self.ev('inflate', k, float(B.inf_scale), dur_i, dur_f)`
-- 1815: `self.ev('release', k, float(s), C['dur_f'], float(B.p[0]), float(B.p[1]))`
-- 1837: `self.ev('land', k, float(B.p[0]), float(B.p[1]))`
-- 1859: `landed = self.damage(k, 1 - k, dmg, how, hx, hy)`
+- 1790: `self.ev('inflate', k, float(B.inf_scale), dur_i, dur_f)`: a cycle starts: the size it swells to (x R), the
+  seconds of the swell and of the flight.
+- 1815: `self.ev('release', k, float(s), C['dur_f'], float(B.p[0]), float(B.p[1]))`: the bag lets go: its size, the
+  flight's seconds, where it is.
+- 1837: `self.ev('land', k, float(B.p[0]), float(B.p[1]))`: the flight is over (back to R), where it is.
+- 1859: `landed = self.damage(k, 1 - k, dmg, how, hx, hy)`: a contact hit after a clash, `how` `bodyslam` (while it
+  swells, at least `slam_min` of the way; `slam_dmg` x how swollen) or `flight` (`fly_dmg`), at the point of the
+  swollen ball's surface toward the enemy; `sub` 0.
 
 <!-- /kind:inflate -->
 
