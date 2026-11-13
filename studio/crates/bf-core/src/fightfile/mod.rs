@@ -16,6 +16,11 @@
 //!
 //! Errors are one line, `field: what is wrong`, and nothing here panics on any input text.
 //!
+//! An old episode's timeline has no place in a fight file: FIGHT! on another bar than 2, a per-fight roster pin and
+//! an episode without the VS card are no setting of any format, and a file that names one (`fight_bar`, `roster`,
+//! `vs_card`) is refused with the reason in [`OLD_TIMELINE`] (milestone 4: the older episodes become fight files
+//! with the series-standard beat sheet and today's roster).
+//!
 //! The format number: a file without `format` is refused ("missing"); `format = 0` is refused (formats start at 1); a
 //! format above [`FIGHT_FORMAT`] is refused with "this app reads fight files up to format 2" before anything else in
 //! the file is looked at, since a newer file may hold settings this app does not know. A format 1 file (milestones 1
@@ -86,6 +91,31 @@ pub const MIX_SEND_MAX: f64 = 1.0;
 /// ORGAN's `kind_, r = m` for its own `(chord name, root)` pairs) and stops with a `TypeError` or `ValueError` on
 /// a tuple of notes, so `validate` refuses a chord in any other fighter's solo.
 pub const SOLO_CHORDS: [&str; 1] = ["ACOUSTIC"];
+
+/// What an old episode's timeline could ask for and a fight file cannot (milestone 4, Review Focus 6): the Studio
+/// has one beat sheet (the VS card on bar 0, the count-in on bar 1, FIGHT! on bar 2) and one roster. None of these
+/// is a setting of any format, so a file that names one is refused with this one-line reason and the value found,
+/// instead of "unknown setting" (the kit's `FIGHT_BAR`, a per-episode roster pin like #40's `steer`, an episode
+/// without the VS card). Each is the setting's path in the file and why.
+pub const OLD_TIMELINE: [(&str, &str); 4] = [
+    (
+        "fight_bar",
+        "FIGHT! is on bar 2 in every fight (the VS card on bar 0, the count-in on bar 1); an old episode's FIGHT! bar \
+         is not a setting",
+    ),
+    (
+        "roster",
+        "every fight uses today's roster; a fight file cannot pin a fighter's numbers",
+    ),
+    (
+        "vs_card",
+        "every fight opens on the VS card (bar 0); it cannot be left out",
+    ),
+    (
+        "picture.vs_card",
+        "every fight opens on the VS card (bar 0); it cannot be left out",
+    ),
+];
 
 /// How [`Middle::Divider`] is written (the kit's word for it).
 pub const MIDDLE_DIVIDER: &str = "divider";

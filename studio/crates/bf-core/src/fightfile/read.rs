@@ -380,11 +380,30 @@ fn kind(v: &toml::Value) -> &'static str {
     }
 }
 
-/// Every key of `t` is one of `allowed` and came in the file's format or before it.
+/// A value as an error names it, on one line: a number, true or false, or a text as written; any other value by its
+/// kind ("a table").
+fn found(v: &toml::Value) -> String {
+    match v {
+        toml::Value::Integer(i) => i.to_string(),
+        toml::Value::Float(x) => format!("{x:?}"),
+        toml::Value::Boolean(b) => b.to_string(),
+        toml::Value::String(s) => format!("{s:?}"),
+        other => kind(other).to_string(),
+    }
+}
+
+/// Every key of `t` is one of `allowed` and came in the file's format or before it. A key of an old episode's
+/// timeline ([`OLD_TIMELINE`]) is refused with its own reason and the value found.
 fn check_keys(t: &toml::Table, prefix: &str, allowed: &[(&str, u32)], v: Version) -> Result<(), FightFileError> {
-    for k in t.keys() {
+    for (k, value) in t {
         match allowed.iter().find(|(name, _)| name == k) {
-            None => return Err(err(path(prefix, k), "unknown setting (check the spelling)")),
+            None => {
+                let field = path(prefix, k);
+                if let Some((_, why)) = OLD_TIMELINE.iter().find(|(old, _)| *old == field) {
+                    return Err(err(field, format!("{why} (found {})", found(value))));
+                }
+                return Err(err(field, "unknown setting (check the spelling)"));
+            }
             Some(&(_, since)) if since > v.0 => {
                 return Err(err(
                     path(prefix, k),

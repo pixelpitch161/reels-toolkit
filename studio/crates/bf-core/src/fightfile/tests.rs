@@ -549,6 +549,47 @@ fn unknown_settings_are_named() {
 }
 
 #[test]
+fn an_old_fight_bar_is_refused_by_name() {
+    // #28 and #29 fought from bar 1 (no VS card): the Studio has one beat sheet, FIGHT! on bar 2
+    assert_eq!(
+        parse_err(&with("seed = 392", "seed = 392\nfight_bar = 1")),
+        "fight_bar: FIGHT! is on bar 2 in every fight (the VS card on bar 0, the count-in on bar 1); an old \
+         episode's FIGHT! bar is not a setting (found 1)"
+    );
+    assert!(parse_err(&with("seed = 392", "seed = 392\nfight_bar = 2")).starts_with("fight_bar: FIGHT! is on bar 2"));
+    assert!(parse_err(&with("seed = 392", "seed = 392\nfight_bar = \"1\"")).ends_with("(found \"1\")"));
+}
+
+#[test]
+fn a_roster_pin_is_refused_by_name() {
+    // #40's sim pinned the BARI SAX's `steer` off for its own process: a fight file has today's roster only
+    let text = with(
+        "seed = 392",
+        "seed = 392\nroster = { \"BARI SAX\" = { steer = false } }",
+    );
+    assert_eq!(
+        parse_err(&text),
+        "roster: every fight uses today's roster; a fight file cannot pin a fighter's numbers (found a table)"
+    );
+}
+
+#[test]
+fn a_missing_vs_card_is_refused_by_name() {
+    let msg = "every fight opens on the VS card (bar 0); it cannot be left out (found false)";
+    assert_eq!(
+        parse_err(&with("[picture]", "[picture]\nvs_card = false")),
+        format!("picture.vs_card: {msg}")
+    );
+    assert_eq!(
+        parse_err(&with("seed = 392", "seed = 392\nvs_card = false")),
+        format!("vs_card: {msg}")
+    );
+    // a format 1 file is refused the same way (an old timeline is no format's setting)
+    let text = FORMAT1.replacen("seed = 392", "seed = 392\nfight_bar = 1", 1);
+    assert!(parse_err(&text).starts_with("fight_bar: FIGHT! is on bar 2"));
+}
+
+#[test]
 fn music_for_someone_not_fighting() {
     let text = with("FLUTE = \"melody\"", "TUBA = \"melody\"");
     assert_eq!(parse_err(&text), "music.roles.TUBA: TUBA is not one of the fighters");
