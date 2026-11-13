@@ -50,6 +50,18 @@ pub(super) fn rope_events(ev: &[Event]) -> Vec<RopeEv> {
         .collect()
 }
 
+/// Python's order of two `ROPE_EV` tuples `(t, side, x, z, speed)`: element by element, a float compared as
+/// Python compares floats (so `-0.0` and `0.0` are equal and the next element decides; `sorted` is stable).
+pub(super) fn tuple_order(a: &RopeEv, b: &RopeEv) -> std::cmp::Ordering {
+    use std::cmp::Ordering::Equal;
+    let f = |x: f64, y: f64| x.partial_cmp(&y).unwrap_or(Equal);
+    f(a.t, b.t)
+        .then(a.side.cmp(&b.side))
+        .then(f(a.x, b.x))
+        .then(f(a.z, b.z))
+        .then(f(a.spd, b.spd))
+}
+
 /// `WAVE_EV`: `(time, strength)` of every event that shakes the ropes: the abilities first, then the others (the
 /// order `kit/picture.py` builds the list in; the list is not sorted by time).
 pub(super) fn wave_events(p: &PictureCtx, looks: &[Box<dyn Look>]) -> Vec<(f64, f64)> {
@@ -131,16 +143,18 @@ impl PictureCtx {
         }
         // the bass thud
         let thud = 0.012 * self.show.grid.beat_pulse(t, 0.1, 0.12);
+        // P = a + (b - a) * u; yy = y - sag, then the looks' press (opt-in `rope_press`); P = P + outn * disp
+        let base: Vec<[f64; 2]> = u.iter().map(|&uv| [a[0] + ab[0] * uv, a[1] + ab[1] * uv]).collect();
+        let mut yy: Vec<f64> = u.iter().map(|&uv| y - 0.035 * dmath::sin(dmath::PI * uv)).collect();
+        for look in &self.looks {
+            look.rope_press(self, s, y, t, &base, &mut yy);
+        }
         u.iter()
             .zip(&disp)
-            .map(|(&uv, &dv)| {
-                let wave = dmath::sin(dmath::PI * uv);
-                let dv = dv + thud * wave;
-                let sag = 0.035 * wave;
-                // P = a + (b - a) * u; P = P + outn * disp
-                let px = a[0] + ab[0] * uv + outn[0] * dv;
-                let pz = a[1] + ab[1] * uv + outn[1] * dv;
-                scene::to_world(px, pz, y - sag)
+            .zip(base.iter().zip(&yy))
+            .map(|((&uv, &dv), (q, &h))| {
+                let dv = dv + thud * dmath::sin(dmath::PI * uv);
+                scene::to_world(q[0] + outn[0] * dv, q[1] + outn[1] * dv, h)
             })
             .collect()
     }

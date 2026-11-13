@@ -2,11 +2,12 @@
 //! its instrument voice (`voice.rs`), its part in the score (`sound.rs`), its look (`look.rs`), its card
 //! (`card.rs`) and what the look and the part both derive from the recording (`state.rs`), and offers the same
 //! entry points from its `mod.rs`: `look()`, `voice()`, `sound(k, ff)`, `card()`, `MESH`, `MUSIC_FEEDS_FIGHT`
-//! and `EXTRA_LINES`. FLUTE and TROMBONE are ported; the other eighteen folders are stubs whose entry points say
-//! "none" until their port fills them. [`entry`] is the one place that names every folder, so a port changes only
-//! its own folder.
+//! and `EXTRA_LINES`. The twenty kit fighters' folders are filled (milestone 3); the ten older fighters' folders
+//! ([`OLDER`], milestone 4) are stubs whose entry points say "none" until their port fills them. [`entry`] is the
+//! one place that names every folder, so a port changes only its own folder.
 //!
-//! [`shared`] holds the helpers several fighters' looks and voices call (milestone 3's Task 4).
+//! [`shared`] holds the helpers several fighters' looks and voices call (milestone 3's Task 4; the older looks',
+//! milestone 4's Task 4: [`shared::older`]).
 
 use std::sync::Arc;
 
@@ -39,6 +40,33 @@ pub mod tenor_sax;
 pub mod trombone;
 pub mod trumpet;
 pub mod tuba;
+
+// the older fighters (milestone 4)
+pub mod accordion;
+pub mod bagpipes;
+pub mod bari_sax;
+pub mod drums;
+pub mod harp;
+pub mod synth;
+pub mod turntables;
+pub mod ukulele;
+pub mod viola;
+pub mod violin;
+
+/// The ten older fighters (spec section 10, plan m4 Table O1), in alphabetical order: each has its folder here, a
+/// stub until its port, offered only once a register task lists it in `PORTED`.
+pub const OLDER: [&str; 10] = [
+    "ACCORDION",
+    "BAGPIPES",
+    "BARI SAX",
+    "DRUMS",
+    "HARP",
+    "SYNTH",
+    "TURNTABLES",
+    "UKULELE",
+    "VIOLA",
+    "VIOLIN",
+];
 
 /// What one fighter's folder offers: its `mod.rs`'s entry points.
 #[derive(Clone, Copy)]
@@ -74,8 +102,8 @@ macro_rules! entry {
     };
 }
 
-/// The folder of the kit fighter `fighter` (its name in the roster, such as `BASS CLARINET`), or `None` for a name
-/// that is not one of the twenty kit fighters (the retired ones, the older fighters, another spelling).
+/// The folder of the fighter `fighter` (its name in the roster, such as `BASS CLARINET`, or one of the [`OLDER`]
+/// ten), or `None` for a name that is not one of the thirty (the retired ones, another spelling).
 pub fn entry(fighter: &str) -> Option<Entry> {
     Some(match fighter {
         "ACOUSTIC" => entry!(acoustic),
@@ -98,6 +126,16 @@ pub fn entry(fighter: &str) -> Option<Entry> {
         "TROMBONE" => entry!(trombone),
         "TRUMPET" => entry!(trumpet),
         "TUBA" => entry!(tuba),
+        "ACCORDION" => entry!(accordion),
+        "BAGPIPES" => entry!(bagpipes),
+        "BARI SAX" => entry!(bari_sax),
+        "DRUMS" => entry!(drums),
+        "HARP" => entry!(harp),
+        "SYNTH" => entry!(synth),
+        "TURNTABLES" => entry!(turntables),
+        "UKULELE" => entry!(ukulele),
+        "VIOLA" => entry!(viola),
+        "VIOLIN" => entry!(violin),
         _ => return None,
     })
 }
@@ -256,6 +294,35 @@ mod tests {
                 "{name:?}"
             );
             assert!(!music_feeds_fight(name) && extra_lines(name).is_empty(), "{name:?}");
+        }
+    }
+
+    /// Every older fighter has its folder (milestone 4, Task 4). While a folder is a stub it says "none" everywhere
+    /// and the picture draws the fighter as the bare ball; none of the ten feeds its fight from the music, and a
+    /// fighter is offered only with everything in its folder.
+    #[test]
+    fn every_older_fighter_has_a_folder() {
+        let names: Vec<&str> = roster().iter().map(|f| f.name.as_str()).collect();
+        let mut sorted = OLDER;
+        sorted.sort_unstable();
+        assert_eq!(sorted, OLDER);
+        for name in OLDER {
+            assert!(!RETIRED.contains(&name), "{name}");
+            assert!(!names.contains(&name), "{name} is in the kit roster");
+            let e = entry(name).unwrap_or_else(|| panic!("{name} has no folder"));
+            assert!(!e.music_feeds_fight && e.extra_lines.is_empty(), "{name}");
+            assert_eq!(mesh_json(name), e.mesh, "{name}");
+            assert_eq!(card(name).is_some(), (e.card)().is_some(), "{name}");
+            if PORTED.contains(&name) {
+                assert!(
+                    (e.look)().is_some() && (e.voice)().is_some() && (e.card)().is_some(),
+                    "{name}"
+                );
+                assert!(e.mesh.is_some(), "{name}");
+            } else if (e.look)().is_none() {
+                assert_eq!(look_for(name).glass(), DefaultLook.glass(), "{name}");
+                assert!(look_for(name).shards().is_empty(), "{name}");
+            }
         }
     }
 

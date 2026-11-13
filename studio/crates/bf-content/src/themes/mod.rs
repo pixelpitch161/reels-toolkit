@@ -37,6 +37,20 @@ pub mod prog_duel;
 pub mod second_line;
 pub mod stadium_rock;
 
+// the older episodes' themes (milestone 4)
+pub mod balkan_fire;
+pub mod brass_house;
+pub mod dark_breakbeat;
+pub mod drift_phonk;
+pub mod gothic_horror;
+pub mod industrial;
+pub mod noir_jazz;
+pub mod orchestral_drill;
+pub mod sea_shanty;
+pub mod ska_punk;
+pub mod spaghetti_western;
+pub mod villain_march;
+
 /// The arrangement every theme has: the one that reproduces the kit's bed.
 pub const CLASSIC: &str = "classic";
 
@@ -266,22 +280,35 @@ pub(crate) fn not_ported(name: &str) -> ContentError {
     ContentError::field("music.theme", format!("{name:?} is not ported yet"))
 }
 
-/// Every kit theme, in the kit's alphabetical order of moods (the ported and the not yet ported).
-static THEMES: [&Theme; 14] = [
+/// Every theme, in alphabetical order (the ported and the not yet ported): the kit's fourteen moods and the twelve
+/// beds of the older episodes (milestone 4, plan m4 Table O2), each a stub until its port.
+static THEMES: [&Theme; 26] = [
+    &balkan_fire::THEME,
     &baroque_storm::THEME,
     &big_top::THEME,
     &bossa_noir::THEME,
+    &brass_house::THEME,
     &brass_trailer::THEME,
+    &dark_breakbeat::THEME,
     &dark_disco::THEME,
     &dark_drumline::THEME,
     &dark_tango::THEME,
+    &drift_phonk::THEME,
+    &gothic_horror::THEME,
     &heist::THEME,
     &horror_trap::THEME,
     &hot_jazz::THEME,
+    &industrial::THEME,
     &mambo::THEME,
+    &noir_jazz::THEME,
+    &orchestral_drill::THEME,
     &prog_duel::THEME,
+    &sea_shanty::THEME,
     &second_line::THEME,
+    &ska_punk::THEME,
+    &spaghetti_western::THEME,
     &stadium_rock::THEME,
+    &villain_march::THEME,
 ];
 
 /// The names of the themes this app offers ([`PORTED_THEMES`]: every kit theme, the big top first). Which of them
@@ -290,12 +317,12 @@ pub fn theme_names() -> Vec<&'static str> {
     PORTED_THEMES.to_vec()
 }
 
-/// The theme `name` (offered or not), or `None` for a name that is no kit theme.
+/// The theme `name` (offered or not), or `None` for a name that is none of the 26.
 pub fn theme(name: &str) -> Option<&'static Theme> {
     THEMES.iter().copied().find(|t| t.name == name)
 }
 
-/// Every kit theme, offered or not.
+/// Every theme, offered or not (the kit's and the older episodes').
 pub fn all_themes() -> &'static [&'static Theme] {
     &THEMES
 }
@@ -367,6 +394,22 @@ mod tests {
         FightFile::parse(include_str!("../../../../fights/flute_vs_trombone.toml")).expect("the episode")
     }
 
+    /// The older episodes' beds (plan m4 Table O2).
+    const OLDER_MOODS: [&str; 12] = [
+        "balkan_fire",
+        "brass_house",
+        "dark_breakbeat",
+        "drift_phonk",
+        "gothic_horror",
+        "industrial",
+        "noir_jazz",
+        "orchestral_drill",
+        "sea_shanty",
+        "ska_punk",
+        "spaghetti_western",
+        "villain_march",
+    ];
+
     #[test]
     fn the_registry_has_every_kit_theme_and_offers_them_all() {
         // every kit theme is offered once, the big top (the starting pair's theme) first
@@ -375,8 +418,11 @@ mod tests {
         let mut sorted = offered.clone();
         sorted.sort_unstable();
         assert_eq!(sorted, KIT_MOODS);
+        // the registry lists the 26 in alphabetical order: the kit's and the older episodes'
         let names: Vec<&str> = all_themes().iter().map(|t| t.name).collect();
-        assert_eq!(names, KIT_MOODS);
+        let mut all: Vec<&str> = KIT_MOODS.iter().chain(&OLDER_MOODS).copied().collect();
+        all.sort_unstable();
+        assert_eq!(names, all);
         for name in PORTED_THEMES {
             assert!(
                 theme(name).is_some_and(|t| t.ported),
@@ -463,6 +509,19 @@ mod tests {
         own_voice: no_own_voice,
         classic: |_| Err(not_ported("not_ported_yet")),
     };
+
+    /// The older episodes' themes are listed and, while their stub is not ported, never offered.
+    #[test]
+    fn the_older_themes_are_listed_and_not_offered_until_ported() {
+        for name in OLDER_MOODS {
+            let t = theme(name).unwrap_or_else(|| panic!("{name} is not listed"));
+            assert_eq!(PORTED_THEMES.contains(&name), t.ported, "{name}");
+            if !t.ported {
+                assert!(!theme_names().contains(&name), "{name}");
+                assert!(themes_for("FLUTE", "TROMBONE").iter().all(|n| *n != name), "{name}");
+            }
+        }
+    }
 
     /// The kit themes not ported yet (found at run time, so this never names one a port makes whole) have no bed,
     /// are not offered, and `validate` refuses them in words. Once every kit theme is ported, a stand-in theme that

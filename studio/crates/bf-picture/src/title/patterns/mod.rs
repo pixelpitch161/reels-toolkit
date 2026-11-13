@@ -9,6 +9,10 @@
 //! Adding a pattern needs no edit here: the table below names every file once, and a port changes only its own
 //! file (the body of `pattern` and its `PORTED`). A fighter whose look carries its own pattern (FLUTE, TUBA, ...)
 //! is not in this table at all: its look's [`crate::look::Look::title_pattern_with`] draws it.
+//!
+//! Three older fighters' panels are not in `title.py`'s `PATTERNS` either and so not in the table: [`drums`] (none
+//! found yet), [`synth`] (#31's `_circuit`) and [`turntables`] (#31's `_grooves`). Each has its stub file here; its
+//! port fills it and its look draws it (`title_pattern_with`), as the episode registers it.
 
 pub mod accordion;
 pub mod acoustic;
@@ -17,11 +21,14 @@ pub mod bari_sax;
 pub mod bass_clarinet;
 pub mod bassoon;
 pub mod clarinet;
+pub mod drums;
 pub mod euphonium;
 pub mod harp;
 pub mod horn;
 pub mod oboe;
 pub mod organ;
+pub mod synth;
+pub mod turntables;
 pub mod ukulele;
 pub mod viola;
 pub mod violin;
@@ -66,7 +73,29 @@ pub fn names() -> [&'static str; 16] {
     TABLE.map(|row| row.0)
 }
 
+/// The older fighters' own panels outside `PATTERNS` (drawn by their looks): each name, whether it is ported, and
+/// its pattern.
+pub const OLDER: [(&str, bool, Pattern); 3] = [
+    ("DRUMS", drums::PORTED, drums::pattern),
+    ("SYNTH", synth::PORTED, synth::pattern),
+    ("TURNTABLES", turntables::PORTED, turntables::pattern),
+];
+
 /// The names whose pattern is not ported yet, in `PATTERNS`' order.
 pub fn unported() -> Vec<&'static str> {
     TABLE.iter().filter(|row| !row.1).map(|row| row.0).collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// The older fighters' own panels are not the card's: the card has no pattern for them (their looks draw it).
+    #[test]
+    fn the_older_panels_are_not_in_the_table() {
+        for (name, _, _) in OLDER {
+            assert!(!names().contains(&name), "{name}");
+            assert!(matches!(builtin(name), Ok(None)), "{name}");
+        }
+    }
 }

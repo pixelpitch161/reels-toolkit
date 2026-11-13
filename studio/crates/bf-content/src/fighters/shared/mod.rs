@@ -13,10 +13,14 @@
 //! - [`slap`]: `bassclarinet_lowpoly.slap`, the slap-tongue pop the BASS CLARINET's part plays and the EUPHONIUM's
 //!   plays for a copied SLAP TONGUE.
 //!
+//! - [`older`]: the episode helpers more than one older fighter's look calls (milestone 4, Task 4): the episodes'
+//!   masks and blends (the same code as [`reeds`]'), `annulus_polys`, `dart_quads` and `draw_dart`.
+//!
 //! The Pixel Pitch voice blocks several voices share are in `bf_sound::voice::pp` (`brass`, `pluck`, `alto`), and
 //! `scipy.ndimage.gaussian_filter` (TRUMPET) in `bf_picture::ndimage`.
 
 pub mod hash;
+pub mod older;
 pub mod padded;
 pub mod reeds;
 pub mod slap;

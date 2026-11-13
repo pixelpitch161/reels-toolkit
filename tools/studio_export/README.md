@@ -317,8 +317,7 @@ proves the Studio against the module. The manual is `studio/docs/porting-an-olde
 - `older/__init__.py`: `FIGHTERS` and `MOODS` (plan m4 Tables O1 and O2: each one's episode folder), `EPISODES`, and
   `install()`: every module there whose source sets `PORTED = True` becomes importable under the kit's name
   (`ballfight.kit.fighters.<slug>`, `ballfight.kit.moods.<name>`: an import hook, so `kit.fighters.module(name)` and
-  the music's mood import find it), and `older/picture_patches.py`'s registered patches (none until Task 4) are applied
-  once. Idempotent, writes nothing, imports nothing of the kit; an older module never shadows a kit module.
+  the music's mood import find it), and `older/picture_patches.py`'s registered patches (below) are applied once. Idempotent, writes nothing, imports nothing of the kit; an older module never shadows a kit module.
   `m3refs.load_config`, its theme child and `m3parts`' fresh processes call it before the kit is imported, so every
   export sees the installed modules; with none ported it changes nothing.
 - `older/origin.py`: `scratch(episode)` copies `projects/<episode>/`'s delivered sources (its top-level `*.py` but
@@ -346,6 +345,18 @@ the bus and sample); it writes `studio/reference/older/selfproof/{organ,brass_tr
 manifest; the `older/` budget row is 400 KB). The pictures and stems of every Gate O run are in the cache under
 `studio/reference/.cache/m4/origin/out/` and are never committed.
 
+**Picture opt-ins (Task 4).** An older layer no Look hook can express has one named opt-in: a method an older look
+may define, and a run-time patch of `kit/picture.py` in `older/picture_patches.py` that calls it (only on a look that
+has it, so the kit draws exactly what it drew before; the Rust `Look` method of the same name has a default that does
+nothing). When `ballfight.kit.picture` is imported (after `install()`), the source of `render`, `draw_ball` and
+`rope_points` is read from the kit's file, the exact text patches are applied (each must match once) and the patched
+functions replace the module's own. The ten: `canvas_albedo` (TURNTABLES' turning record), `canvas_paint` (BAGPIPES'
+WAR CRY tartan), `ball_tint` and `ball_lit` (VIOLA JOKE's frozen ball), `ball_glass` (the tartan over BAGPIPES'
+swollen ball), `ball_after_sprite` (BARI SAX's harness), `ball_late` (BARI SAX up over a front rope), `rope_press` and
+`rope_events` (the ropes the swing presses down and their spring back), `after_post` (TURNTABLES' VHS rewind,
+VIOLA's rests); each one's signature is in the module's docstring. `older_vectors` proves them off (the kit's frames
+unchanged) and on (a stub look that uses all ten, against the Rust test's copy of it).
+
 ## What each export writes
 
 | Name | Module | Files |
@@ -365,6 +376,7 @@ manifest; the `older/` budget row is 400 KB). The pictures and stems of every Ga
 | `models` | `models.py` | `studio/crates/bf-content/data/models/{FLUTE,TROMBONE}.json` (`models.model(name)` writes one roster name's file only) |
 | `cache`, `remake`, `budget` | `m3refs.py` | no reference export: see "Milestone 3" |
 | `origin` | `m3refs.py` | Gate O for one fighter or theme folder's SPEC: its `origin.json` (see "Milestone 4") |
+| `older_vectors` | `older_vectors.py` | `studio/reference/older/vectors/helpers.json`: the episode helpers several older looks call (`mask_of`, `blend` in their three families each, `annulus_polys`, `dart_quads`, `draw_dart`), each call as an episode's own `render.py` made it while drawing a frame a second in its scratch copy (7 episodes, 3 processes at a time), plus edge cases. `optins.json`: the picture opt-ins off (the base-class looks give `picture_ring/unit.json`'s frames with the patches installed; three kit examples draw the same frames patched and unpatched) and on (a stub look that uses all ten: each frame's bytes and draw log, the rope events). About 4 minutes; `crates/bf-content/tests/older_helpers.rs` and `crates/bf-picture/tests/older_optins.rs` read them |
 | `origin_selfproof` | `origin_selfproof.py` | `studio/reference/older/selfproof/{organ,brass_trailer,summary}.json`: Gate O on the kit's ORGAN against #35 v4 and on `brass_trailer` against #34 v5 (both pass), and on two run-time mutations of the ORGAN (both fail); order 95, about 3.5 minutes |
 | `pillow` | `pillow_vectors.py` | `studio/reference/pillow/calls.json` and 18 vector files, each `.npz` with its sidecar `.json` (about 4 minutes: it draws all 1,830 frames in 8 worker processes) |
 | `py` | `py_vectors.py` | `studio/reference/py/vectors.json` |

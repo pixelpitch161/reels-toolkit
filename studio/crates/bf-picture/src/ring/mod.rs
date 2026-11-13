@@ -549,6 +549,12 @@ impl Picture {
         let mut fx = std::mem::replace(&mut p.fx, Fx::new(fx_seed));
         effects::fx_build(&p, &mut fx);
         p.fx = fx;
+        // the looks' rope events (opt-in `rope_events`), sorted with the recording's as Python sorts the tuples
+        let more: Vec<ropes::RopeEv> = p.looks.iter().flat_map(|l| l.rope_events(&p)).collect();
+        if !more.is_empty() {
+            p.rope_ev.extend(more);
+            p.rope_ev.sort_by(ropes::tuple_order);
+        }
         let card = TitleCard::with_layout(
             &p.show,
             p.col,
