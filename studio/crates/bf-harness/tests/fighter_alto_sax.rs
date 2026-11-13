@@ -28,3 +28,29 @@ fn the_first_sweep_is_the_kits_to_the_last_bit() {
     // `Event`'s equality is bit for bit
     assert_eq!(rs.events[..=first_burn], py.events[..=first_burn]);
 }
+
+/// The kit makes the ALTO SAX's part before the score, and its `__init__` measures the voice's level
+/// (`self.g0 = M.inst_gain(...)`: a note of the alto, drawn from the alto generator). So a build has drawn that note
+/// once the parts are made, before any bed method; with the ALTO SAX as the silent stand-in it has not.
+#[test]
+fn the_part_measures_its_level_when_it_is_made() {
+    use bf_content::SoundBuild;
+    use bf_core::show::Show;
+    use bf_harness::fight::{doc, fight_file};
+    use bf_harness::refs::{recording_of, text};
+
+    let d = doc(NAME);
+    let left = &d["left"];
+    let rec = recording_of(left, Some(text(&left["hash"])));
+    let mut ff = fight_file(&d, false);
+    ff.seed = Some(rec.seed);
+    let show = Show::new(&rec, &ff).expect("the show");
+    let k = show.names.iter().position(|n| n == NAME).expect("the ALTO SAX fights");
+    let next = |b: SoundBuild| b.ctx.noise().expect("the noise").1.alto.random();
+    let fresh = bf_sound::voice::PpNoise::start().1.alto.random();
+    assert_ne!(next(SoundBuild::new(&show, &rec, &ff).expect("the build")), fresh);
+    let other = SoundBuild::with_stand_in(&show, &rec, &ff, 1 - k).expect("the build");
+    assert_ne!(next(other), fresh);
+    let silent = SoundBuild::with_stand_in(&show, &rec, &ff, k).expect("the build");
+    assert_eq!(next(silent), fresh);
+}

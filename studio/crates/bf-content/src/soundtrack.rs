@@ -18,7 +18,7 @@ use bf_core::roster::FighterCfg;
 use bf_core::show::Show;
 use bf_sound::master::{Levels, MASTER_CEILING, Soundtrack, master};
 use bf_sound::mix::Mix;
-use bf_sound::music::MusicCtx;
+use bf_sound::music::{MusicCtx, MusicError};
 use bf_sound::score::score;
 use bf_sound::traits::{Bed, Sound};
 use bf_sound::voice::Voice;
@@ -178,11 +178,40 @@ impl<'a> SoundBuild<'a> {
     /// It does not run [`validate`] (the tests build fight files outside the theme's voicings), but refuses in
     /// the same words what it cannot build at all.
     ///
+    /// The two parts are made as the kit makes them, after the bed and before the score: [`Sound::made`] for the
+    /// left corner, then the right, stopping at the first error.
+    ///
     /// # Errors
     /// The fight file names a theme or an arrangement this app does not have, or a fighter whose voice or part
     /// is not ported, or a voice the theme's bed plays that is not; or the music context cannot be made (see
-    /// [`MusicCtx::new`]).
+    /// [`MusicCtx::new`]); or a part reports an error as it is made.
     pub fn new(show: &'a Show, rec: &'a Recording, ff: &'a FightFile) -> Result<SoundBuild<'a>, ContentError> {
+        SoundBuild::unmade(show, rec, ff)?.made()
+    }
+
+    /// The build of [`SoundBuild::new`] with side `silent` (0 or 1) the kit's base `Sound`, which plays nothing: a
+    /// fighter's sound gate, whose other side is a silent stand-in. The stand-in takes its place before the parts
+    /// are made, so only the real part's [`Sound::made`] runs (a stand-in measures no level).
+    ///
+    /// # Errors
+    /// As [`SoundBuild::new`].
+    ///
+    /// # Panics
+    /// `silent` is not 0 or 1.
+    pub fn with_stand_in(
+        show: &'a Show,
+        rec: &'a Recording,
+        ff: &'a FightFile,
+        silent: usize,
+    ) -> Result<SoundBuild<'a>, ContentError> {
+        assert!(silent < 2, "a side is 0 or 1, not {silent}");
+        let mut build = SoundBuild::unmade(show, rec, ff)?;
+        build.sounds[silent] = Box::new(bf_sound::traits::BaseSound { k: silent });
+        build.made()
+    }
+
+    /// The build before its parts are made.
+    fn unmade(show: &'a Show, rec: &'a Recording, ff: &'a FightFile) -> Result<SoundBuild<'a>, ContentError> {
         let theme = theme_of(ff)?;
         let bed = theme_bed(theme, ff)?;
         let [a, b] = [player(&show.names[0], 0, ff)?, player(&show.names[1], 1, ff)?];
@@ -192,6 +221,12 @@ impl<'a> SoundBuild<'a> {
             bed,
             sounds: [a.part, b.part],
         })
+    }
+
+    /// The build with both parts made (`make_parts`).
+    fn made(self) -> Result<SoundBuild<'a>, ContentError> {
+        make_parts(&self.ctx, [self.sounds[0].as_ref(), self.sounds[1].as_ref()])?;
+        Ok(self)
     }
 
     /// The bed alone: the build of the fight `rec` under `ff` with both parts the kit's base `Sound` (silent) and
@@ -218,14 +253,15 @@ impl<'a> SoundBuild<'a> {
             })
         };
         let ctx = MusicCtx::new(show, rec, ff, [cfg(0)?, cfg(1)?], voices, theme.bed_voices()?)?;
-        Ok(SoundBuild {
+        SoundBuild {
             ctx,
             bed,
             sounds: [
                 Box::new(bf_sound::traits::BaseSound { k: 0 }),
                 Box::new(bf_sound::traits::BaseSound { k: 1 }),
             ],
-        })
+        }
+        .made()
     }
 
     /// `kit.music.score()`: the whole soundtrack as a mix, before the master.
@@ -264,6 +300,19 @@ impl<'a> SoundBuild<'a> {
     pub fn master(&self, mix: &Mix) -> Soundtrack {
         master(mix, &self.levels(), self.bed.as_ref(), MASTER_CEILING)
     }
+}
+
+/// The kit making the two parts (`kit/music.py`: `SOUNDS = [FIGHTER_MODULES.sound(NAMES[k], M, k) for k in (0,
+/// 1)]`, after the bed and before `score()`): each part's [`Sound::made`], the left corner first, stopping at the
+/// first error (Python raises out of that `__init__`).
+///
+/// # Errors
+/// What a part's `made` reports.
+fn make_parts(ctx: &MusicCtx, sounds: [&dyn Sound; 2]) -> Result<(), MusicError> {
+    for s in sounds {
+        s.made(ctx)?;
+    }
+    Ok(())
 }
 
 /// What a caught panic said.
@@ -483,5 +532,52 @@ mod tests {
         for (bus, level) in plain.iter().filter(|(b, _)| *b != "trombone") {
             assert_eq!(mixed.get(bus), Some(level), "{bus}");
         }
+    }
+
+    /// A part that notes when it is made, and refuses to be made when `refuse` is set.
+    struct Noting {
+        k: usize,
+        log: Arc<std::sync::Mutex<Vec<usize>>>,
+        refuse: bool,
+    }
+
+    impl Sound for Noting {
+        fn k(&self) -> usize {
+            self.k
+        }
+        fn made(&self, _: &MusicCtx) -> Played {
+            self.log.lock().unwrap().push(self.k);
+            if self.refuse {
+                return Err(bf_sound::music::MusicError::new("made", "refused"));
+            }
+            Ok(())
+        }
+    }
+
+    /// The kit makes the left part, then the right (`SOUNDS = [... for k in (0, 1)]`), and an error in the left
+    /// one's `__init__` stops it before the right one is made.
+    #[test]
+    fn parts_are_made_left_then_right() {
+        let rec = bf_core::recording::Recording::read(&bf_testdata::reference("fights/flute_vs_trombone/ep392.bfrec"))
+            .expect("the recording");
+        let ff = episode();
+        let show = Show::new(&rec, &ff).expect("a show");
+        let build = SoundBuild::new(&show, &rec, &ff).unwrap();
+        let log = Arc::new(std::sync::Mutex::new(Vec::new()));
+        let part = |k, refuse| Noting {
+            k,
+            log: log.clone(),
+            refuse,
+        };
+        let (a, b) = (part(0, false), part(1, false));
+        make_parts(&build.ctx, [&a, &b]).unwrap();
+        assert_eq!(*log.lock().unwrap(), [0, 1]);
+        log.lock().unwrap().clear();
+        let (a, b) = (part(0, true), part(1, false));
+        assert_eq!(
+            make_parts(&build.ctx, [&a, &b]).unwrap_err().to_string(),
+            "made: refused"
+        );
+        assert_eq!(*log.lock().unwrap(), [0]);
     }
 }
