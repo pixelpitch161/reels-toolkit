@@ -22,7 +22,7 @@ use bf_core::roster::AbilityKind;
 use bf_sound::SRF;
 use bf_sound::dsp;
 use bf_sound::mix::{Mix, Sig};
-use bf_sound::music::{MusicCtx, MusicError, Samples, event_is_str, event_number, noise_seed};
+use bf_sound::music::{MusicCtx, MusicError, OwnNote, Samples, event_is_str, event_number, noise_seed};
 use bf_sound::synth::{self, clip, noise};
 use bf_sound::traits::{Bed, Played, Sound};
 
@@ -34,6 +34,8 @@ const O: usize = 2;
 const ANG_PER_SEC: f64 = 2.0 * PI / 1.8;
 /// `SCR_AMP`: the floor angle (rad) of a scratch at strength 1.3.
 const SCR_AMP: f64 = 0.40;
+/// #31's `_fit` fade: 30 ms.
+const NOTE_FADE: f64 = 0.03;
 /// `turntables60_lowpoly.BEAT_S`: the deck's scene tempo, 130 BPM.
 const BEAT_S: f64 = 60.0 / 130.0;
 
@@ -380,12 +382,15 @@ impl TurntablesSound {
         TurntablesSound { k }
     }
 
-    /// `stab(m, vel, dur)`: an organ stab in the decks' voice, `note(m, dur, 0.4, vel)`.
+    /// `stab(m, vel, dur)`: an organ stab in the decks' voice, `note(pp, m, dur, 0.4, vel)`: #31's own note helper
+    /// (its `_fit` fades the end over 30 ms, the kit's over 40 ms; its own cache and level match).
     fn stab(&self, ctx: &MusicCtx, m: i32, vel: f64, dur: f64) -> Samples {
         let pp = ctx.cfg[self.k].pp.as_str();
-        // (#31's note fits its notes with a 30 ms fade, the kit's 40 ms: the note helper with a fade of its own
-        // comes with the shared note accounting, Task 8's NEEDS_CONTEXT item 4b)
-        Ok(ctx.note(pp, f64::from(m), dur, 0.4, vel)?.to_vec())
+        let own = OwnNote {
+            side: self.k,
+            fade: NOTE_FADE,
+        };
+        Ok(ctx.own_note(own, pp, f64::from(m), dur, 0.4, vel)?.to_vec())
     }
 }
 

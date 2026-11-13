@@ -23,12 +23,13 @@ pub mod state;
 pub mod voice;
 
 pub use card::{CARD, card};
+pub use look::TurntablesLook;
 pub use sound::TurntablesSound;
 pub use voice::TurntablesVoice;
 
 /// `fighters.look('TURNTABLES', P, k)`: its look, or `None` while it is not ported (the bare ball is drawn then).
 pub fn look() -> Option<Box<dyn Look>> {
-    None
+    Some(Box::new(TurntablesLook::default()))
 }
 
 /// Its instrument voice (its `pp_bridge` entry, or its episode's own synth), or `None` while it is not ported.
@@ -44,7 +45,7 @@ pub fn sound(k: usize, ff: &FightFile) -> Option<Box<dyn Sound>> {
 
 /// Its model (`data/models/TURNTABLES.json`, written by the export tool's `models` for one roster name), compiled in:
 /// `Some(include_str!("../../../data/models/TURNTABLES.json"))` once ported, `None` until then.
-pub const MESH: Option<&str> = None;
+pub const MESH: Option<&str> = Some(include_str!("../../../data/models/TURNTABLES.json"));
 
 /// Whether its music settings (key, chord loop, its line) feed its fight: false for every older fighter.
 pub const MUSIC_FEEDS_FIGHT: bool = false;
