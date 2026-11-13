@@ -438,6 +438,10 @@
   {
    "beat_pulse_pre": 0.1,
    "name": "#39's beat ramp (0.10 s; the kit's 0.12 s)"
+  },
+  {
+   "call": "ballfight.kit.fighters.bari_sax:origin_harness",
+   "name": "#39's bus name: the kit's 'bari sax' is #39's 'bari' (ruling M4-R9)"
   }
  ],
  "layers": [
@@ -807,7 +811,7 @@
  ],
  "seed": 77,
  "side": 1,
- "spec_sha256": "3fbbeeecf48b1683809c88bf2e19a857785d131537ff9f03c9fadff4b88185be",
+ "spec_sha256": "29d26bf1b796619ae950ae9c456edf3eb1ab2d6cf0bdc6f8a980c2af8222b0a5",
  "state_keys": ["air_bias", "lift", "p", "paint_h"],
  "window": {
   "frames": [85, 1724],

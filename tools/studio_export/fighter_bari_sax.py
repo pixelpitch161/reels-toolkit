@@ -14,7 +14,7 @@ plan m4 Task 5). Every patch below is one exact text replacement in the episode'
   harness, the swing's smear and trail, the crane, the ball over a front rope, the pressed ropes and their spring-back,
   the canvas rings and CABLE SNAP's target, the shimmer, GROWL's fronts, its shards, its effects, shakes, sparks, hit
   glows, fringes, flashbulbs, rope wobble strength and its HUD holds.
-- `harness`: #39's beat ramp (0.10 s; the kit's 0.12 s).
+- `harness`: #39's beat ramp (0.10 s; the kit's 0.12 s) and #39's bus name ('bari'; the kit's 'bari sax', M4-R9).
 
     python -m tools.studio_export origin fighters/bari_sax     Gate O: writes studio/reference/fighters/bari_sax/origin.json"""
 from . import m3refs
@@ -166,7 +166,9 @@ SPEC = dict(
         # the ropes and back in (458, 465), SKANK's HUD hold (592), the cable parting (1299), the crater (1321)
         other=BASSOON_BARE,
         layers=BARI_LAYERS,
-        harness=[dict(name="#39's beat ramp (0.10 s; the kit's 0.12 s)", beat_pulse_pre=0.10)],
+        harness=[dict(name="#39's beat ramp (0.10 s; the kit's 0.12 s)", beat_pulse_pre=0.10),
+                 dict(name="#39's bus name: the kit's 'bari sax' is #39's 'bari' (ruling M4-R9)",
+                      call='ballfight.kit.fighters.bari_sax:origin_harness')],
         buses=['bari'],
     ),
 )

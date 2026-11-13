@@ -1,6 +1,6 @@
 """BARI SAX (coral), the reference kit module, moved from #39 v4 Bassoon vs Bari Sax
-(projects/ballfight_bassoon_vs_barisax, Oct 27: the roster's BARI SAX with `steer`; owner default Q3). Plan m4 Task 9, Template F' Step 0: proven against that
-episode by Gate O (studio/reference/fighters/bari_sax/origin.json) before any Rust is written.
+(projects/ballfight_bassoon_vs_barisax, Oct 27: the roster's BARI SAX with `steer`; owner default Q3). Plan m4 Task 9,
+Template F' Step 0: proven against that episode by Gate O (studio/reference/fighters/bari_sax/origin.json) before any Rust is written.
 
 Look (#39's styles.py, imported from the episode's scratch copy, never retyped; #39 render.py's BARI SAX layers moved
 into the kit's hooks with their names): the ball wears a leather harness (straps + a steel ring on the side facing the
@@ -26,7 +26,8 @@ and rope_events (the pressed ropes and their spring-back), and two this port add
 trail, drawn into the ball's own frame array right before the glass: #39 drew them with no 8-bit round trip between) and
 ability_hold (SKANK's and CABLE SNAP's HUD hold, kinds the kit's `_hold` does not list).
 
-Sound (#39 audio.py's BARI SAX part, unchanged; bus 'bari' (#39's name, not the kit's 'bari sax'), gain 1.3, send 0.2,
+Sound (#39 audio.py's BARI SAX part, unchanged; bus 'bari sax', #39's 'bari': Gate O's harness renames it, M4-R9;
+ gain 1.3, send 0.2,
 #39's colour()):
 every swing one huge honk on the bass root of the bar it bottoms out in (SKANK's swings up the octave, their bottoms on
 the off-beats), let go a 16th early, swelling to the bottom and bent like a doppler pass, the leader's octave on top,
@@ -663,6 +664,16 @@ class Look(base.Look):
         return [(S.to_world(p[0], p[1], 0.0), 'bari sax'), (S.to_world(p[0], p[1], 2 * R + st['lift']), 'bari sax')]
 
 
+# ===================================================================================================== Gate O
+def origin_harness(stage, mod):
+    """the kit matched to #39 inside Gate O's window: the bari's bus under #39's name `bari` (the kit's is the
+    fighter's name lowercased, `bari sax`: ruling M4-R9)"""
+    if stage == 'music':
+        for s in mod.SOUNDS:
+            if isinstance(s, Sound):
+                s.bus = 'bari'
+
+
 # ===================================================================================================== sound
 def thunder(dur=1.6, seed=0, crack=True):
     """#39's thunder (no rumble wobble)"""
@@ -727,7 +738,6 @@ class Sound(base.Sound):
 
     def __init__(self, M, k):
         super().__init__(M, k)
-        self.bus = 'bari'                                       # #39's bus name (Gate O compares it by name)
         self.BXM = M.B.module('barisax_lowpoly')                 # the Pixel Pitch bari's honk (read-only)
         self._vc = {}
         self._bc = {}
