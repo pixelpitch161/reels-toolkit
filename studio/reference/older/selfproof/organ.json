@@ -1,0 +1,624 @@
+{
+ "about": "Gate O (plan m4 Task 2): ORGAN's reference kit module against projects/ballfight_organ_vs_harp, its layers pixel for pixel (the contribution, on minus off, in int16) and its buses sample for sample (float64) from FIGHT! to the end of the shatter",
+ "buses": [
+  {
+   "bus": "organ",
+   "peak": "bit-identical",
+   "sha256_episode": "93526aa48fd6be546af8b6aa2f98d7432074c40d6cb1a771d53f5e41385ad5e9",
+   "sha256_kit": "93526aa48fd6be546af8b6aa2f98d7432074c40d6cb1a771d53f5e41385ad5e9",
+   "whole": "bit-identical",
+   "window": [183000, 2745000]
+  },
+  {
+   "bus": "solo",
+   "peak": "bit-identical",
+   "sha256_episode": "45c2b2283443207eade6932d6d15e22c9a532a78b7bd1bd13b9af85a119f5f4e",
+   "sha256_kit": "45c2b2283443207eade6932d6d15e22c9a532a78b7bd1bd13b9af85a119f5f4e",
+   "whole": "-20.4 dBFS",
+   "window": [183000, 2745000]
+  }
+ ],
+ "cache": "studio/reference/.cache/m4/origin/out/ballfight_organ_vs_harp/organ",
+ "config": {
+  "sha256": "8c83a915c54ce71c66043ca01f2d15b21f5e4b4c02af4c2f140c0bb55a086b77",
+  "text": ["\"\"\"Gate O: the kit config of projects/ballfight_organ_vs_harp (made by tools/studio_export/older/origin.py).\"\"\"", "BPM = 125.90163934426229", "CHORDS = ['Dm', 'A', 'Dm', 'Dm', 'Bb', 'A', 'Dm', 'Dm', 'Bb', 'A', 'Dm', 'Dm', 'Bb', 'A', 'Dm', 'Gm', 'Bb', 'A', 'Dm', 'Gm', 'Bb', 'A', 'Dm', 'Bb', 'Gm', 'A', 'Dm', 'Bb', 'Gm', 'A', 'Dm', 'A']", "DMG_SCALE = 0.6", "FIGHTERS = ('ORGAN', 'HARP')", "FX_SEED = 35", "KEY = 'D'", "MOOD = 'big_top'", "SCALE = (0, 2, 3, 5, 7, 8, 10)", "SEED = 237", "SERIES = 'BALLFIGHT #9'", "SHARD_SEED = 271", "SOLO = {'ORGAN': [(0, 69, 0.25), (0.25, 67, 0.25), (0.5, 69, 1.0), (1.5, 67, 0.25), (1.75, 65, 0.25), (2, 64, 0.25), (2.25, 62, 0.25), (2.5, 61, 0.75), (3.25, 62, 0.75), (4, ('dim', 61), 1.0), (5, ('dim', 64), 1.0), (6, ('dim', 67), 0.5), (6.5, ('dim', 70), 0.5), (7, ('Dm', 62), 1.0), (8, ('Dm', 50), 2.5)], 'HARP': [(0, 50, 0.25), (0.25, 57, 0.25), (0.5, 62, 0.25), (0.75, 65, 0.25), (1, 69, 0.25), (1.25, 74, 0.25), (1.5, 77, 0.5), (2, 81, 0.5), (2.5, 79, 0.25), (2.75, 77, 0.25), (3, 76, 0.25), (3.25, 74, 0.25), (3.5, 73, 0.5), (4, 46, 0.25), (4.25, 53, 0.25), (4.5, 58, 0.25), (4.75, 62, 0.25), (5, 65, 0.25), (5.25, 70, 0.25), (5.5, 74, 0.5), (6, ('gliss', 86), 1.0), (7, 74, 0.5), (7.5, 81, 0.5), (8, 86, 2.5)]}"]
+ },
+ "episode": "ballfight_organ_vs_harp",
+ "episode_commit": "72fd3d07df0dd41ace3b4f8fed6943756fe5c3bf",
+ "exceptions": {},
+ "fight": {
+  "equal": true,
+  "line": "237 0 51.1375 501 138837bd930b1947",
+  "t_ko": 51.1375,
+  "winner": 0
+ },
+ "frames": [
+  {
+   "contribution_sha256": "4f8d3a01a44791659d8ba71883ed3674c6e536bf555c70bcdd0c7909bfeb5aa3",
+   "frame": 144,
+   "sha256": {
+    "episode_off": "e9fdb48148c4347034c1e0686b58f68fae3b65b2524b687432cfe2ba32f8d0c9",
+    "episode_on": "f1d9335ce7560b02bd64c2c4044141d25f35ba4b3f73fd21e99caa202c1a5aa5",
+    "kit_off": "e9fdb48148c4347034c1e0686b58f68fae3b65b2524b687432cfe2ba32f8d0c9",
+    "kit_on": "f1d9335ce7560b02bd64c2c4044141d25f35ba4b3f73fd21e99caa202c1a5aa5"
+   },
+   "t": 4.8,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "95fb251fb8410057ef887716b2b4a8e6a5609fe6c30fc99f4198d8580ed76ba7",
+   "frame": 364,
+   "sha256": {
+    "episode_off": "3d329155b8288aa0b5484f2a431c2ea06b42a346421d7b89bac536acab420590",
+    "episode_on": "d49f62e80c531ca835a603888161fe3199cc1ec9feb2033c73e849776f51413b",
+    "kit_off": "3d329155b8288aa0b5484f2a431c2ea06b42a346421d7b89bac536acab420590",
+    "kit_on": "d49f62e80c531ca835a603888161fe3199cc1ec9feb2033c73e849776f51413b"
+   },
+   "t": 12.133333,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "7c151269e5cc0b0e5ba97c11b163444ad2a2d1af294209f7e62ae32b31a91f29",
+   "frame": 376,
+   "sha256": {
+    "episode_off": "c064cbec166fefb205fa77b6b6769cc5dc2d4fdf26975b51481aff954c259a74",
+    "episode_on": "6d350e911ba7d636a8d997af6dc6bdf9620031e0c1165e0b1684cf7847026fb6",
+    "kit_off": "c064cbec166fefb205fa77b6b6769cc5dc2d4fdf26975b51481aff954c259a74",
+    "kit_on": "6d350e911ba7d636a8d997af6dc6bdf9620031e0c1165e0b1684cf7847026fb6"
+   },
+   "t": 12.533333,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "42a2eaf9afd43b69c6fd3d1eb814abbf44da8b3a159e7aca354949abd37f3948",
+   "frame": 381,
+   "sha256": {
+    "episode_off": "552f51d9e99a575ba9d46b4b079cbb8573bafe9ee952a0fe1a6beb8132c020e9",
+    "episode_on": "c228fb5d32c10cca78e22373b2a459deb8c577aa9c02c2b9d83b14ae4dae74a5",
+    "kit_off": "552f51d9e99a575ba9d46b4b079cbb8573bafe9ee952a0fe1a6beb8132c020e9",
+    "kit_on": "c228fb5d32c10cca78e22373b2a459deb8c577aa9c02c2b9d83b14ae4dae74a5"
+   },
+   "t": 12.7,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "8482b7b938d60e69d374a7fac5a04f4144d07915821f5e5e973ef842a7c23587",
+   "frame": 435,
+   "sha256": {
+    "episode_off": "9112e28903529685bc736579f3eb78c2c0bd190f8cfee897b1a270e98fcc4bc9",
+    "episode_on": "b203d91de4b41e5aef26b398b18463290d988b5a2c6195756e165661af64cbd2",
+    "kit_off": "9112e28903529685bc736579f3eb78c2c0bd190f8cfee897b1a270e98fcc4bc9",
+    "kit_on": "b203d91de4b41e5aef26b398b18463290d988b5a2c6195756e165661af64cbd2"
+   },
+   "t": 14.5,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "2cf70f10e65d61a4fa755c61921f052ec30dcf1320d602d82b2b8e0818f390cf",
+   "frame": 515,
+   "sha256": {
+    "episode_off": "14aa454dd03fe8f8d620956acfe2098a1919ae2a6b9bb002db9357a2ea29bd21",
+    "episode_on": "71a3b0cf5cc5bad8bdfe53a518f0fa158b833bbbf47499ecad40840bb395db2a",
+    "kit_off": "14aa454dd03fe8f8d620956acfe2098a1919ae2a6b9bb002db9357a2ea29bd21",
+    "kit_on": "71a3b0cf5cc5bad8bdfe53a518f0fa158b833bbbf47499ecad40840bb395db2a"
+   },
+   "t": 17.166667,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "e766b983ae2de378b40dfdd5dd20e86fe82b6b4c9232bdf5e0b5feb2e826eae6",
+   "frame": 648,
+   "sha256": {
+    "episode_off": "de46b224100c2cbf18a167dac4af07f2ce5740a62f77fa09502deea81962bc8a",
+    "episode_on": "419e2754e9a06d8b357239d64a289073bba4aac090a22d7e8f5c5e7f14a79104",
+    "kit_off": "de46b224100c2cbf18a167dac4af07f2ce5740a62f77fa09502deea81962bc8a",
+    "kit_on": "419e2754e9a06d8b357239d64a289073bba4aac090a22d7e8f5c5e7f14a79104"
+   },
+   "t": 21.6,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "53c90710a0dadd9900b260eaec5b45dcb39791fdffde3da741d3b2acd003741c",
+   "frame": 735,
+   "sha256": {
+    "episode_off": "676e34140594cf6e27648ed08194bb94423304acebca7d32bf39f898f897f61c",
+    "episode_on": "ef9397879206c8d7e4f6528ed38ce0c1c8761371ef237ba468fe143700d696d7",
+    "kit_off": "676e34140594cf6e27648ed08194bb94423304acebca7d32bf39f898f897f61c",
+    "kit_on": "ef9397879206c8d7e4f6528ed38ce0c1c8761371ef237ba468fe143700d696d7"
+   },
+   "t": 24.5,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "d018ef2265a770bf6986d44ccf0bdaf025bfcd5d65f3c13e306c3e3bb5b5af17",
+   "frame": 747,
+   "sha256": {
+    "episode_off": "318c41ecd01e8167acbc6c4b5700e6f7290a739c9a427b6dab0535d80956c054",
+    "episode_on": "b545c9e0294f645469f370d42fae807ce3d7c05fdc740a87a871c5d2835821d1",
+    "kit_off": "318c41ecd01e8167acbc6c4b5700e6f7290a739c9a427b6dab0535d80956c054",
+    "kit_on": "b545c9e0294f645469f370d42fae807ce3d7c05fdc740a87a871c5d2835821d1"
+   },
+   "t": 24.9,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "0b5db5165b625c0e18ab2424d94c711233deb8da4132c2661ebfcaafedda6739",
+   "frame": 755,
+   "sha256": {
+    "episode_off": "7259ffc3f18179c5b9ed50679569ceabe273f06f33dd38daa64764cc29e0508d",
+    "episode_on": "696933d2960e85c09c784a89a61f85dffb391c556a6ecf2a2143fbf6766053e8",
+    "kit_off": "7259ffc3f18179c5b9ed50679569ceabe273f06f33dd38daa64764cc29e0508d",
+    "kit_on": "696933d2960e85c09c784a89a61f85dffb391c556a6ecf2a2143fbf6766053e8"
+   },
+   "t": 25.166667,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "aacba0406984d506d095c557706fc051c5b64b502fe70c8778b6632bd2562788",
+   "frame": 915,
+   "sha256": {
+    "episode_off": "b9d47cbff2289c3493d6e83a67f92cb5911938442b8380e4890f51253bdc738e",
+    "episode_on": "cde3d087209d09237d8ebb0c5528a39b32dedd42e47666a52bb9282bfe53227e",
+    "kit_off": "b9d47cbff2289c3493d6e83a67f92cb5911938442b8380e4890f51253bdc738e",
+    "kit_on": "cde3d087209d09237d8ebb0c5528a39b32dedd42e47666a52bb9282bfe53227e"
+   },
+   "t": 30.5,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "f0bb3ee5a472aee9eb90be2473923be6a0ed79e55c3174182600b4013df054da",
+   "frame": 1075,
+   "sha256": {
+    "episode_off": "7f53e1a8a9a6326b770844131b4a9e08d8e66baa6e05c1a6ac6aaf07b76abf66",
+    "episode_on": "ba52785e000c97f3151dd5bac357f5b5a9bdbb89a03f94785410c304c54790a0",
+    "kit_off": "7f53e1a8a9a6326b770844131b4a9e08d8e66baa6e05c1a6ac6aaf07b76abf66",
+    "kit_on": "ba52785e000c97f3151dd5bac357f5b5a9bdbb89a03f94785410c304c54790a0"
+   },
+   "t": 35.833333,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "800ddb934f36d2ea5911faaf6b8de3987307c6e5682fcbfd7472cfccb96c3032",
+   "frame": 1181,
+   "sha256": {
+    "episode_off": "2bdf44260343100a98a40800da1e7d339f898c72c866a0a9bba99ffbb9932166",
+    "episode_on": "ca63eafcf4791c2be91eede8c30fb3a881b6262892e347636d44b8800042a0bf",
+    "kit_off": "2bdf44260343100a98a40800da1e7d339f898c72c866a0a9bba99ffbb9932166",
+    "kit_on": "ca63eafcf4791c2be91eede8c30fb3a881b6262892e347636d44b8800042a0bf"
+   },
+   "t": 39.366667,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "49de6e12da23fedc66460dc4cdd268a57e4f1f00dc7160ff0c881ce06634061e",
+   "frame": 1296,
+   "sha256": {
+    "episode_off": "f6f75de8b05f3d358ef123c4dfea6fea3c5b091e1761aedcae4e5e1949b344b2",
+    "episode_on": "c66c7aabf65605327822cb055c61c075760ce85f5cad298d3b7fe3c04cd4f95c",
+    "kit_off": "f6f75de8b05f3d358ef123c4dfea6fea3c5b091e1761aedcae4e5e1949b344b2",
+    "kit_on": "c66c7aabf65605327822cb055c61c075760ce85f5cad298d3b7fe3c04cd4f95c"
+   },
+   "t": 43.2,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "3e144dff1d6eb3944ef1bc2d0d32f4b4552100ff7aa18fc58f2bb35384d949f0",
+   "frame": 1307,
+   "sha256": {
+    "episode_off": "ab930d081bf4d6a90caf9e7a6307effdd71fb643465b82ad2128904b1d754118",
+    "episode_on": "0c816ed953e6a54f00e32ab68e40aaf9527d15667ccc3a99dae0e4ce34754fe3",
+    "kit_off": "ab930d081bf4d6a90caf9e7a6307effdd71fb643465b82ad2128904b1d754118",
+    "kit_on": "0c816ed953e6a54f00e32ab68e40aaf9527d15667ccc3a99dae0e4ce34754fe3"
+   },
+   "t": 43.566667,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "978ac11f5202d33577f8ad89d600d3b59f67e58a99afb50595e5d90406347372",
+   "frame": 1315,
+   "sha256": {
+    "episode_off": "6468fd450acd70cef2a6b07f5ac1ec399885025d172acd267811e6735f7f6c84",
+    "episode_on": "7fabe3cbe87f9eaeaea3c30778be17191272c70d4ff14f2ed6077764ff413637",
+    "kit_off": "6468fd450acd70cef2a6b07f5ac1ec399885025d172acd267811e6735f7f6c84",
+    "kit_on": "7fabe3cbe87f9eaeaea3c30778be17191272c70d4ff14f2ed6077764ff413637"
+   },
+   "t": 43.833333,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "e50018dcf59408762ef05049ffe850a58b8b0346817e11f27714f3941758a8f2",
+   "frame": 1319,
+   "sha256": {
+    "episode_off": "c12a2f38bf394cf73949871a995edbca69e0737836684923096bf5c4889b243d",
+    "episode_on": "676cd4d8da8b8b2ec5c6ed510dcd56b3e8a8dc063b1be8837a3452bff2692012",
+    "kit_off": "c12a2f38bf394cf73949871a995edbca69e0737836684923096bf5c4889b243d",
+    "kit_on": "676cd4d8da8b8b2ec5c6ed510dcd56b3e8a8dc063b1be8837a3452bff2692012"
+   },
+   "t": 43.966667,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "20d3d0146d507e01ca7792ed99a29ce280f99920999d3909f65011f87a84afd3",
+   "frame": 1395,
+   "sha256": {
+    "episode_off": "80cac586203490932269ef899cb64f979f4abd7e41f929f2035daebcc5520a13",
+    "episode_on": "a76bc119c7d6b79f320df8ee9f71e91a7bb39eafbc5c3d8c30c13a1edd8a0421",
+    "kit_off": "80cac586203490932269ef899cb64f979f4abd7e41f929f2035daebcc5520a13",
+    "kit_on": "a76bc119c7d6b79f320df8ee9f71e91a7bb39eafbc5c3d8c30c13a1edd8a0421"
+   },
+   "t": 46.5,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "9a59f456f4ab8ec688689f6c6067ecfe91e39098c366c3e358c6950f42a7ef25",
+   "frame": 1448,
+   "sha256": {
+    "episode_off": "e9d77ed2147220a1f445977b657ad7a933fa802f988e75784292558ffa93d0d2",
+    "episode_on": "e152605d2cce4b0f2b37196898eab3eb6032030806d408ba0f2108a313f7363c",
+    "kit_off": "e9d77ed2147220a1f445977b657ad7a933fa802f988e75784292558ffa93d0d2",
+    "kit_on": "e152605d2cce4b0f2b37196898eab3eb6032030806d408ba0f2108a313f7363c"
+   },
+   "t": 48.266667,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "215c8b65f1a3232f2fd69022236d2d024383c943056f47b74675a0587406bf7f",
+   "frame": 1519,
+   "sha256": {
+    "episode_off": "295afb35a986f82d65ba174c5640e5040dd781d80911647e09b1626640d670cf",
+    "episode_on": "fab9801af185401066530c3a2eaf888d500c21765debadabf724332bc3bccb94",
+    "kit_off": "295afb35a986f82d65ba174c5640e5040dd781d80911647e09b1626640d670cf",
+    "kit_on": "fab9801af185401066530c3a2eaf888d500c21765debadabf724332bc3bccb94"
+   },
+   "t": 50.633333,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "dd857ec27501d3005d4a8709a7ffd30ce9d422c7797fd8f539ee6386e424d54b",
+   "frame": 1537,
+   "sha256": {
+    "episode_off": "5bfda3dc8ca8cb0bcd1b6816a0455ada35107205c47deab8a9c0e9be74531c7a",
+    "episode_on": "df8547330d0003ccc96815058f598d34863bbb1390ee9fc5c89bd35fee569651",
+    "kit_off": "5bfda3dc8ca8cb0bcd1b6816a0455ada35107205c47deab8a9c0e9be74531c7a",
+    "kit_on": "df8547330d0003ccc96815058f598d34863bbb1390ee9fc5c89bd35fee569651"
+   },
+   "t": 51.233333,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "d8bd1fd2f543634efe875270f08de1fcd0b068fe7be31d872ebc7c5f5ba5c8bc",
+   "frame": 1560,
+   "sha256": {
+    "episode_off": "935329e0eaa7070a6539ed61aaa682098e431b26aa366314f5f12e7eaa11a380",
+    "episode_on": "f7d94b413813060e2d8a7d4d9c1a904c72f15890487d60e750b72a74ac88e5ea",
+    "kit_off": "935329e0eaa7070a6539ed61aaa682098e431b26aa366314f5f12e7eaa11a380",
+    "kit_on": "f7d94b413813060e2d8a7d4d9c1a904c72f15890487d60e750b72a74ac88e5ea"
+   },
+   "t": 52.0,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "987457bea54c6a99967e1ec07423108e9cd789f7df911c14b607e48dbb789d07",
+   "frame": 1605,
+   "sha256": {
+    "episode_off": "9fe6c0c614f4835e1da36872bdea6d6a17a59ffc789b638f0c4df9fbb73af1ad",
+    "episode_on": "275d3e98bac7f9cd47acfe4b4144487379a55cfe0803a560a2bf99a842c9f794",
+    "kit_off": "9fe6c0c614f4835e1da36872bdea6d6a17a59ffc789b638f0c4df9fbb73af1ad",
+    "kit_on": "275d3e98bac7f9cd47acfe4b4144487379a55cfe0803a560a2bf99a842c9f794"
+   },
+   "t": 53.5,
+   "whole_frame_equal": true
+  },
+  {
+   "contribution_sha256": "3cf92b3badb2819a3f42474803df04496585453768521c6204218f40caa444f0",
+   "frame": 1650,
+   "sha256": {
+    "episode_off": "218723f192c5819d481cb14dadb4c2b7ccec195b94649f14b12f20677e37829b",
+    "episode_on": "2b45986cc909f240f23d430392b1731243d2fdbe45d703002583e23234968618",
+    "kit_off": "218723f192c5819d481cb14dadb4c2b7ccec195b94649f14b12f20677e37829b",
+    "kit_on": "2b45986cc909f240f23d430392b1731243d2fdbe45d703002583e23234968618"
+   },
+   "t": 55.0,
+   "whole_frame_equal": true
+  }
+ ],
+ "harness": [
+  {
+   "camera_sy": 280,
+   "name": "#35's camera (SY 280: the ring 8 px higher; the kit's 288)"
+  },
+  {
+   "beat_pulse_pre": 0.16,
+   "name": "#35's beat ramp (0.16 s; the kit's 0.12 s)"
+  }
+ ],
+ "layers": [
+  {
+   "name": "thump",
+   "patches": [
+    {
+     "file": "render.py",
+     "old": "evt = LINE_T if k in LINE_K else None",
+     "sha256": "6a2a1bbfa644512acabc8dd6337250593da4935bff4535fa9aafab7e8e486f73"
+    }
+   ]
+  },
+  {
+   "name": "shake",
+   "patches": [
+    {
+     "file": "render.py",
+     "old": "if e[1] == 'hit' and e[7] in ('pipe', 'slam'):",
+     "sha256": "c5067378eb5435014bb1b8965126b36d3cbe2d18355fbffc6500d8f9b1c89813"
+    }
+   ]
+  },
+  {
+   "name": "cathedral",
+   "patches": [
+    {
+     "file": "render.py",
+     "old": "if _ab['kind'] == 'shield' and NAMES[_k] != 'HARP':",
+     "sha256": "3157349b2aee11d53b98de4ae1a1b4963d042a6dddbe4f1edab7f1534f74b1de"
+    }
+   ]
+  },
+  {
+   "name": "flashbulbs",
+   "patches": [
+    {
+     "file": "render.py",
+     "old": "(e[1] == 'hit' and e[7] in ('pipe', 'slam', 'wave', 'shockwave'))",
+     "sha256": "db8be780dd27e2c4fca78adf66391096fb6ac60d0a94be226e500e8c501e84df"
+    }
+   ]
+  },
+  {
+   "name": "shards",
+   "patches": [
+    {
+     "file": "render.py",
+     "old": "['pipe'] * 7 + ['case'] * 6 + ['gold'] * 2)",
+     "sha256": "ae1cf3b279da4857ea6f928eb55688e8a9d8b2d444aa163e07c8d42021cd808b"
+    }
+   ]
+  },
+  {
+   "name": "pipes",
+   "patches": [
+    {
+     "file": "render.py",
+     "old": "out = []",
+     "sha256": "2ea95ec9464ac7fbafe55d6e79a386c309c9dcfc6e2904d58be8ee3ca3ba92ff"
+    },
+    {
+     "file": "render.py",
+     "old": "if NAMES[WIN] != 'ORGAN':",
+     "sha256": "64d3e75ca6b8241e4e5f9ad9462cd2881d9be22ee2e356fcde8714c43e23b376"
+    }
+   ]
+  },
+  {
+   "name": "effects",
+   "patches": [
+    {
+     "file": "render.py",
+     "old": "for l in LINES:",
+     "sha256": "8c749c3f1e76c23272eaba25c738d343e685900e4f0203870b7f587fe544b8a9"
+    },
+    {
+     "file": "render.py",
+     "old": "if how == 'pipe':",
+     "sha256": "f45da96db37658ee9037fa87c661e9db9e0b305338464636bdc698d7ee20194f"
+    },
+    {
+     "file": "render.py",
+     "old": "elif how == 'slam':",
+     "sha256": "ac7248f69f54887076e9f4547df232e6b0950714ba1da90760387b81a4d62046"
+    },
+    {
+     "file": "render.py",
+     "old": "(220, 230, 255) if e[2] == ORG else (255, 226, 150)",
+     "sha256": "77a831c8294c6a70de5f5ff84ecb035cdf0b60a4176dacee68645160194dc44d"
+    },
+    {
+     "file": "render.py",
+     "old": "if e[2] == ORG:",
+     "sha256": "caa10ef17cdf1fb01abb3e723403eb5bdd6b68f040c6a9a5d67645b977e15751"
+    },
+    {
+     "file": "render.py",
+     "old": "for ts, owner, cx, cz in SLAM_EV:",
+     "sha256": "457094ac55b3d67d41cb4eceb7cb0d54a98adca99d48008e55440f86029dd49d"
+    },
+    {
+     "file": "render.py",
+     "old": "'sparks' if NAMES[LOSE] == 'HARP' else 'dust', n=30, spread=180, speed=(0.8, 2.2),",
+     "sha256": "a76c1a6555e76df6144687d44bdc579e840d3b4a75c561d1501cdb3d132fec04"
+    },
+    {
+     "file": "render.py",
+     "old": "if NAMES[WIN] == 'ORGAN':",
+     "sha256": "473dd6ff1c80a1e4a08da202c655cf0b87630935d05d09a279a4480a3e3db911"
+    }
+   ]
+  },
+  {
+   "name": "toccata",
+   "patches": [
+    {
+     "file": "render.py",
+     "old": "for ts, owner, cx, cz in SLAM_EV:",
+     "sha256": "5cc7bdb02a45e41f63c5e33197451b52a85f874cfe76e51238e3d3b90cd2d04a"
+    },
+    {
+     "file": "render.py",
+     "old": "sl = RUN['SLAMS'][i] if in_fight else []",
+     "sha256": "0728e43750a5dcd0aa467801004d8c928fcf97b47d322229014576c18dda9792"
+    }
+   ]
+  },
+  {
+   "name": "fringe",
+   "patches": [
+    {
+     "file": "render.py",
+     "old": "if e[7] in ('pipe', 'slam', 'wave'):",
+     "sha256": "629ed0a4a1404046f1d22250b9d68aa59ce9bc43e0c15bbc307c385e749f93d1"
+    }
+   ]
+  },
+  {
+   "name": "sparks",
+   "patches": [
+    {
+     "file": "render.py",
+     "old": "BIG_HITS = ('pipe', 'slam', 'wave', 'shockwave')",
+     "sha256": "398714fc316e331d109bc7444aff69fabe573f30de39a1ef7500aa62a117deab"
+    },
+    {
+     "file": "render.py",
+     "old": "np.array([255, 226, 170]) if e[2] == ORG else",
+     "sha256": "ad2dee50337c87c1cf0c9d9b7a4d6d25c25ab3cefced9cb675e0dddf8edbeaea"
+    },
+    {
+     "file": "render.py",
+     "old": "if kind == 'hit' and e[7] in ('pipe', 'slam') and dt < 0.08:",
+     "sha256": "60b477137fcfd75d7ba17f2385d4899c71c3bc3a2f7e61a9ea7d4bedc53b58b3"
+    }
+   ]
+  },
+  {
+   "name": "hit_glow",
+   "patches": [
+    {
+     "file": "render.py",
+     "old": "if e[2] == ORG and e[7] in BIG_HITS:",
+     "sha256": "368e69e8fa125b0707fbfeb9d96c732909bf83a3fdf69182e69c3a8a1a77bb43"
+    }
+   ]
+  }
+ ],
+ "name": "ORGAN",
+ "other": [
+  {
+   "file": "render.py",
+   "old": "evt = LINE_T if k in LINE_K else (STR_T if k in TRAP_K else None)",
+   "sha256": "4276a337fea28866b692822ff0454b4b369cee3746bc806f51b87d3861f07495"
+  },
+  {
+   "file": "render.py",
+   "old": "if e[1] == 'hit' and e[7] in ('pipe', 'slam', 'wave'):",
+   "sha256": "eb86972c1433ec778f580c045e54542ed52579f18ca694c7d3d3ac508562c78d"
+  },
+  {
+   "file": "render.py",
+   "old": "if _ab['kind'] == 'shield':",
+   "sha256": "0410af73f5610d581c036a91c5780a13d818efe3e460c750394d43fa980a6a31"
+  },
+  {
+   "file": "render.py",
+   "old": "['string'] * 7 + ['maple'] * 5 + ['gold'] * 4 if loser == 'HARP'",
+   "sha256": "a7058b074c2bb4075fb793deddb22ec53555bdd34e77f656435c549be9aa0e26"
+  },
+  {
+   "file": "render.py",
+   "old": "out = []",
+   "sha256": "8253c5bd44796f98a9bde565be461839475114aecbd6e56c4560dd2dc8f9d8d0"
+  },
+  {
+   "file": "render.py",
+   "old": "if NAMES[WIN] != 'HARP':",
+   "sha256": "50ce8bc062e5763b9cf40ac7b81d6f80332ce0f3b28e13524e3082156c22468e"
+  },
+  {
+   "file": "render.py",
+   "old": "for sid, q in STRINGS.items():",
+   "sha256": "f286a80fc04da1692a9b0bab2effb46163da96a6e0e6dc812431e1df4b20d910"
+  },
+  {
+   "file": "render.py",
+   "old": "while tb < T_KO:",
+   "sha256": "ce3d88650ec256c39d2c019fbaf65d88bd1cb67b4eb7c52fe92764df87b9d10b"
+  },
+  {
+   "file": "render.py",
+   "old": "elif how == 'string':",
+   "sha256": "fb1fba8c623f7056d8c20fc5d88fea063daebbaeaefe63bedcb94aa04810b162"
+  },
+  {
+   "file": "render.py",
+   "old": "elif how == 'key':",
+   "sha256": "29419f519683dd6867564fbc1354735a763976644468fdbf116f8e49b4b4c22b"
+  },
+  {
+   "file": "render.py",
+   "old": "elif how == 'wave':",
+   "sha256": "22a1317eacbbd97a47bbafba443296275523199e82bd22eda0b0695a9593fc3e"
+  },
+  {
+   "file": "render.py",
+   "old": "BU.add(e[0], S.to_world(e[4], e[5], R), (220, 230, 255), 0.6, bright=False)",
+   "sha256": "baf5c0810c2b69f641f287f76b5d12731e0b55f11cee37d118fe581ca51ea87b"
+  },
+  {
+   "file": "render.py",
+   "old": "if e[1] == 'ability' and e[3] == '47 STRINGS':",
+   "sha256": "1359835554c39af3cf9cd4000a4b18a20f06f79330384d40fc0c07657201647e"
+  },
+  {
+   "file": "render.py",
+   "old": "'motes' if NAMES[LOSE] == 'HARP' else 'dust'",
+   "sha256": "d06692d8e0b41fbef31ae976b58ad5b0c4ccb488dccf3c15d9cda6c9d56df473"
+  },
+  {
+   "file": "render.py",
+   "old": "if T.T_FIGHT <= t < T_HS:",
+   "sha256": "31d2a65cdb4505a92817277d850c3c5049b1b14e6d2fc62435e498ac416b8b67"
+  },
+  {
+   "file": "render.py",
+   "old": "pipes = pipes_at(t)",
+   "sha256": "28b810e596a6fa8fe5a48bca058da12a669abe24665d53c646ad437c00cbb4b1"
+  },
+  {
+   "file": "render.py",
+   "old": "(16, 3.2, 0.3) if how in BIG_HITS else ((9, 2.6, 0.24) if how == 'string' else (5, 1.8, 0.18))",
+   "sha256": "a5e972b309aa2538dbf2396eb198e02cd6731586611ea9d54afcb3122478aecd"
+  },
+  {
+   "file": "render.py",
+   "old": "col, n, sp, life = np.array([255, 226, 170]), 12, 2.6, 0.3",
+   "sha256": "67c8f5e4045bf963bd7e91026d5144cf2341994da00cd32c5627c72ea7a51469"
+  },
+  {
+   "file": "render.py",
+   "old": "wav = RUN['WAVES'][i] if in_fight else []",
+   "sha256": "5e826575f14d6cc7b2752e33f4b3278203982441de97f71f11ea942b62e45139"
+  },
+  {
+   "file": "render.py",
+   "old": "if kind == 'wave' and NAMES[owner] == 'HARP':",
+   "sha256": "be51b0f797c2633bc7edef8c1829f2f48a987a22cf8e318cb1775d0094112b55"
+  },
+  {
+   "file": "render.py",
+   "old": "if e[7] in BIG_HITS or e[7] == 'string':",
+   "sha256": "a335c85051e7faff1f85be79c76a8d033b64ec1d168d692067846d3312abdef6"
+  },
+  {
+   "file": "render.py",
+   "old": "if e[3] == k and e[7] not in ('key', 'string'):",
+   "sha256": "33fd7bbc18745e19622fb59845c47d9437d42c3a5305b89f78049ec96d29dd06"
+  }
+ ],
+ "seed": 237,
+ "side": 0,
+ "spec_sha256": "d1bd8c440c6b135cb908fadc778d0de27c6121ea1e9204b030f2690b4f27e42a",
+ "state_keys": ["glow"],
+ "window": {
+  "frames": [114, 1716],
+  "t0": 3.8125,
+  "t1": 57.1875
+ }
+}
