@@ -164,6 +164,9 @@ def episode_bus_names(stage, module):
         module.score = score
 
 
+SHARED = ('fx', 'stomp', 'choir', 'solo')
+KEEP = (404, 424, 427, 428, 466, 477, 480, 482, 509, 510, 525)   # #30 audio.py: BAGPIPES's own placements on them
+
 ORIGIN = dict(
     episode='ballfight_bagpipes_vs_accordion',
     config=dict(MOOD='big_top',                       # #30's sea shanty is not a kit mood yet: BAGPIPES's own buses only
@@ -177,13 +180,41 @@ ORIGIN = dict(
     harness=[dict(name="#30's beat ramp (0.07 s; the kit's 0.12 s)", beat_pulse_pre=0.07),
              dict(name="#30's HUD: no ability list", call='tools.studio_export.fighter_bagpipes:no_ability_list'),
              dict(name="#30's bus names (M4-R9)", call='tools.studio_export.fighter_bagpipes:episode_bus_names')],
-    buses=['chanter', 'drone'],
+    buses=['chanter', 'drone', 'fx', 'stomp', 'choir', 'solo'],
+    # the shared buses: the stems' copy keeps only BAGPIPES's own placements on fx, stomp, choir and solo (#30 audio.py
+    # lines, the line count unchanged); the kit side keeps only the module Sound's own (silence_kit)
+    silence=[(AU, "    mix = A.Mix(T.DUR + 4.0)\n",
+              "    mix = A.Mix(T.DUR + 4.0); _place = mix.place; mix.place = lambda bus, *a, **kw: mix.bus(bus) if bus in "
+              f"{SHARED!r} and sys._getframe(1).f_lineno not in {KEEP!r} else _place(bus, *a, **kw)\n")],
+    # seed 1442 (#30's own: ACCORDION wins, BAGPIPES shatters); seed 628 (the first fit of the config BAGPIPES wins,
+    # by the kit's search: its stinger, solo and the champion's glow)
+    fights=[dict(seed=1442, buses=['chanter', 'drone', 'fx', 'stomp', 'choir']),
+            dict(seed=628, frames=12)],
 )
+
+# Table O4 (a per-ball radius and mass) and Review Focus 1: BAGPIPES against every kit fighter, three seeds with
+# BAGPIPES left and three swapped; and the copy sweep (Template F'): EUPHONIUM against BAGPIPES, three seeds each side,
+# at the early levels and low turn so IDENTITY CRISIS copies soon (WAR CRY, HIGHLAND FLING, BAG BURST are shockwave,
+# haste and wave, all copyable), every copied kind drawn by BAGPIPES's look through setup_as
+KIT = ('ACOUSTIC', 'ALTO SAX', 'BASS CLARINET', 'BASS DRUM', 'BASSOON', 'CELLO', 'CLARINET', 'CONTRABASS',
+       'ELECTRIC', 'EUPHONIUM', 'HORN', 'OBOE', 'ORGAN', 'PIANO', 'SOUSAPHONE', 'TENOR SAX', 'TROMBONE', 'TRUMPET',
+       'TUBA')                                   # (FLUTE: the template's own scenarios)
+LOW = dict(LV_DMG=m3refs.LV, LOW_HP=92.0)
+SCENARIOS = (m3refs.default_scenarios('BAGPIPES', 'FLUTE')
+             + [dict(name=f'with_{m3refs.slug(o)}', seeds=(1, 2, 3), opponent=o) for o in KIT]
+             + [dict(name=f'with_{m3refs.slug(o)}_swapped', seeds=(1, 2, 3), opponent=o, swapped=True) for o in KIT]
+             + [dict(name='copy_sweep', seeds=(1, 2, 3), opponent='EUPHONIUM', overrides=dict(LOW)),
+                dict(name='copy_sweep_swapped', seeds=(1, 2, 3), opponent='EUPHONIUM', overrides=dict(LOW),
+                     swapped=True)])
 
 SPEC = dict(
     name='BAGPIPES',
     opponent='FLUTE',
+    scenarios=SCENARIOS,
     origin=ORIGIN,
+    # pp_bridge's BAGPIPES note is the chanter plus the scene's three drones held 9.77 s (its first event): three notes
+    # (under G5 with the high-G grace, G5 with the high A, A5 with none) keep voice.json inside the folder's budget
+    voice_notes=dict(pitches=(67, 79, 81), velocities=(0.9,), durations=(0.25,)),
 )
 
 EXPORTS = {'fighter_bagpipes': lambda: m3refs.fighter_refs(SPEC)}
