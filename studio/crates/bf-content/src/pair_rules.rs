@@ -51,10 +51,15 @@ mod tests {
         }
     }
 
-    /// Every other pair of the 20 kit fighters (a fighter against itself too) has no rule.
+    /// Every other pair of the 20 kit fighters (a fighter against itself too) has no rule. (The roster's older ten
+    /// are `tests/older_pair_rules.rs`'s.)
     #[test]
     fn other_pairs_have_no_rules() {
         let roster = bf_core::roster::parse_roster(include_str!("../data/roster.json")).expect("the roster loads");
+        let roster: Vec<_> = roster
+            .into_iter()
+            .filter(|f| !crate::fighters::OLDER.contains(&f.name.as_str()))
+            .collect();
         assert_eq!(roster.len(), 20);
         let mut with_rules = 0;
         for a in &roster {

@@ -697,6 +697,31 @@ mod tests {
 
     const ROSTER: &str = include_str!("../../../bf-content/data/roster.json");
 
+    /// The roster's ten older fighters (milestone 4): their kinds are the [`OLDER_WEAPON_KINDS`] and
+    /// [`OLDER_ABILITY_KINDS`], checked by `bf-sim/tests/sockets_older.rs`; the kit kinds' tests here read the
+    /// other 20.
+    const OLDER: [&str; 10] = [
+        "ACCORDION",
+        "BAGPIPES",
+        "BARI SAX",
+        "DRUMS",
+        "HARP",
+        "SYNTH",
+        "TURNTABLES",
+        "UKULELE",
+        "VIOLA",
+        "VIOLIN",
+    ];
+
+    /// The kit's 20 fighters: the roster without the older ten.
+    fn kit_roster() -> Vec<FighterCfg> {
+        let all = parse_roster(ROSTER).expect("the roster loads");
+        assert_eq!(all.iter().filter(|f| OLDER.contains(&f.name.as_str())).count(), 10);
+        let kit: Vec<FighterCfg> = all.into_iter().filter(|f| !OLDER.contains(&f.name.as_str())).collect();
+        assert_eq!(kit.len(), 20);
+        kit
+    }
+
     fn fighter(name: &str) -> FighterCfg {
         parse_roster(ROSTER)
             .expect("the roster loads")
@@ -724,10 +749,14 @@ mod tests {
     #[test]
     fn the_whole_roster_loads_in_order() {
         let r = parse_roster(ROSTER).expect("loads");
-        assert_eq!(r.len(), 20);
+        assert_eq!(r.len(), 30);
         assert_eq!(r[0].name, "PIANO");
-        assert_eq!(r[2].name, "FLUTE");
-        assert_eq!(r[3].name, "TROMBONE");
+        assert_eq!(r[1].name, "DRUMS");
+        // the kit's 20 keep their own order among the 30
+        let kit = kit_roster();
+        assert_eq!(kit[0].name, "PIANO");
+        assert_eq!(kit[2].name, "FLUTE");
+        assert_eq!(kit[3].name, "TROMBONE");
         let doc: Json = serde_json::from_str(ROSTER).unwrap();
         for (f, raw) in r.iter().zip(doc["fighters"].as_array().unwrap()) {
             assert_eq!(&f.raw, raw, "{} keeps its entry untouched", f.name);
@@ -890,7 +919,7 @@ mod tests {
     #[test]
     fn every_kit_weapon_kind_loads_as_unsupported_until_ported() {
         let mut seen = Vec::new();
-        for f in parse_roster(ROSTER).expect("loads") {
+        for f in kit_roster() {
             let kind = f.raw["weapon"]["kind"].as_str().expect("a kind").to_string();
             assert_eq!(f.weapon.kind(), kind, "{}", f.name);
             match kit_weapon(&kind) {
@@ -916,7 +945,7 @@ mod tests {
     /// while `detune::PORTED` is false).
     #[test]
     fn the_shield_is_typed_and_the_other_kit_ability_kinds_wait_for_their_ports() {
-        let roster = parse_roster(ROSTER).expect("loads");
+        let roster = kit_roster();
         let mut shields = Vec::new();
         let mut kinds = Vec::new();
         for f in &roster {
@@ -1404,8 +1433,8 @@ mod tests {
 
     #[test]
     fn flute_and_trombone_hold_only_typed_keys() {
-        // the real roster loads (all 20), and the two ported fighters pass the unknown-key check
-        assert_eq!(parse_roster(ROSTER).expect("loads").len(), 20);
+        // the real roster loads (all 30), and the two ported fighters pass the unknown-key check
+        assert_eq!(parse_roster(ROSTER).expect("loads").len(), 30);
         for name in ["FLUTE", "TROMBONE"] {
             let f = fighter(name);
             assert!(!matches!(f.weapon, WeaponCfg::Unsupported(_)), "{name}");

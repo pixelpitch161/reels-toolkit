@@ -172,15 +172,16 @@ mod tests {
     use crate::{PORTED, roster, theme_names};
 
     #[test]
-    fn every_roster_fighter_has_a_section() {
-        let r = roster();
+    fn every_offered_fighter_has_a_section() {
+        // the fighters the app offers (the roster's older ten are not offered until their ports)
+        let r: Vec<_> = roster().iter().filter(|f| PORTED.contains(&f.name.as_str())).collect();
         assert_eq!(r.len(), 20);
-        for f in r {
+        for f in &r {
             assert!(section(&f.name).is_some(), "{} has no section", f.name);
         }
         let order = shown_order();
         assert_eq!(order.len(), 20);
-        for f in r {
+        for f in &r {
             assert_eq!(order.iter().filter(|n| **n == f.name).count(), 1, "{}", f.name);
         }
         let count = |s: Section| order.iter().filter(|n| section(n) == Some(s)).count();
@@ -290,7 +291,7 @@ mod tests {
     #[test]
     fn nobody_else_does() {
         // a name that is not a roster fighter has no card; a roster fighter offered has one
-        for name in ["", "flute", "Flute", "KAZOO", "BARI SAX", "NOT A FIGHTER"] {
+        for name in ["", "flute", "Flute", "KAZOO", "NOT A FIGHTER"] {
             assert!(roster().iter().all(|f| f.name != name), "{name:?} is in the roster");
             assert!(card(name).is_none(), "{name:?}");
         }
