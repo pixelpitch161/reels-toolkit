@@ -13,10 +13,9 @@
 //! `default_rng(int(m) * 1000 + int(round(dur * 1000)))`, so a tone's breath depends only on its note and length
 //! ("deterministic breath"), and it keeps the tones by `(int(m), round(dur, 3), round(vel, 2), growl)`.
 //!
-//! The kit measures the voice's level (`M.inst_gain`) when the part is made, before the score starts. Here it is
-//! measured at the part's first tone: the same number whenever nothing else has drawn from the alto generator by
-//! then (no kit theme's title or count-in does; the mambo bed, whose alto shares that generator, is not one of
-//! this fighter's kit themes).
+//! The kit measures the voice's level (`M.inst_gain`) when the part is made, before the score starts: a note of the
+//! alto drawn from the alto generator. So does this part, in `made`, which the build calls before any bed method;
+//! a bed whose alto shares that generator (the mambo's) draws its first note after it, as in the kit.
 
 use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex};
@@ -111,7 +110,7 @@ impl AltoSaxSound {
         if let Some(x) = self.tones.lock().map_err(held)?.get(&key) {
             return Ok(x.clone());
         }
-        // self.g0 = M.inst_gain(M.CFG[k]['pp']): the kit measures it when the part is made
+        // self.g0: the level `made` measured (the context keeps it)
         let g0 = ctx.inst_gain(&ctx.cfg[self.k].pp)?;
         let seed_ms = round_half_even(dur * 1000.0);
         if mi < 0.0 || mi * 1000.0 + seed_ms < 0.0 || !pp::has_len(dur + TAIL) {
@@ -195,6 +194,12 @@ impl AltoSaxSound {
 impl Sound for AltoSaxSound {
     fn k(&self) -> usize {
         self.k
+    }
+
+    /// `__init__`: `self.g0 = M.inst_gain(M.CFG[k]['pp'])`, its voice's level, measured when the part is made
+    /// (the music context keeps it for every later call).
+    fn made(&self, ctx: &MusicCtx) -> Played {
+        ctx.inst_gain(&ctx.cfg[self.k].pp).map(|_| ())
     }
 
     fn bus_gain(&self) -> f64 {

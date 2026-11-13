@@ -232,6 +232,16 @@ pub trait Sound: Send + Sync {
         Vec::new()
     }
 
+    /// What its `__init__` does with the music beyond keeping attributes. The kit makes both parts after the bed
+    /// and before `score()` (`kit/music.py`: `SOUNDS = [FIGHTER_MODULES.sound(NAMES[k], M, k) for k in (0, 1)]`),
+    /// so a build calls this for side 0, then side 1, before any bed method. The ALTO SAX, BASS DRUM, CONTRABASS,
+    /// SOUSAPHONE and TENOR SAX measure their voice's level here (`self.g0 = M.inst_gain(M.CFG[k]['pp'])`), a note
+    /// that may draw from a shared generator (the ALTO SAX's: the alto one). Default: nothing.
+    fn made(&self, ctx: &MusicCtx) -> Played {
+        let _ = ctx;
+        Ok(())
+    }
+
     // The score, in the order kit.music calls it.
 
     /// `prepare()`: before any fighter's part: cross-fighter set-up (#53: a line override for the enemy, see

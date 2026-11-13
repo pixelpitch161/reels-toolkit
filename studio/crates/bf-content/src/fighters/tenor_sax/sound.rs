@@ -131,8 +131,7 @@ impl TenorSaxSound {
                 return Err(MusicError::new(H, format!("a tone's {what} is {v}, not a number")));
             }
         }
-        // self.g0 = M.inst_gain(M.CFG[k]['pp']), measured when the part is made: the voice draws no shared noise,
-        // so measuring it here (once: the context keeps it) gives the same soundtrack
+        // self.g0: the level `made` measured (the context keeps it)
         let g0 = ctx.inst_gain(&ctx.cfg[self.k].pp)?;
         let key = (
             m,
@@ -215,6 +214,12 @@ impl TenorSaxSound {
 impl Sound for TenorSaxSound {
     fn k(&self) -> usize {
         self.k
+    }
+
+    /// `__init__`: `self.g0 = M.inst_gain(M.CFG[k]['pp'])`, its voice's level, measured when the part is made
+    /// (the music context keeps it for every later call).
+    fn made(&self, ctx: &MusicCtx) -> Played {
+        ctx.inst_gain(&ctx.cfg[self.k].pp).map(|_| ())
     }
 
     fn bus_gain(&self) -> f64 {
