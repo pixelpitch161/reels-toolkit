@@ -7,8 +7,8 @@
  "pins": [
   {
    "path": "fighters/synth/checks_rows.json",
-   "sha256": "7e9bbd9dfafd2edb046f1049229b8f6ec209e65958a34c95f82db759b8761489",
-   "bytes": 34533,
+   "sha256": "173927f8c39f49734c650590d84b66c1d4702f4b040bf341d4b01583e5ff61f1",
+   "bytes": 34542,
    "export": "fighter_synth"
   },
   {
