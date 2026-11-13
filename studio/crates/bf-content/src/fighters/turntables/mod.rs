@@ -23,6 +23,8 @@ pub mod state;
 pub mod voice;
 
 pub use card::{CARD, card};
+pub use sound::TurntablesSound;
+pub use voice::TurntablesVoice;
 
 /// `fighters.look('TURNTABLES', P, k)`: its look, or `None` while it is not ported (the bare ball is drawn then).
 pub fn look() -> Option<Box<dyn Look>> {
@@ -31,13 +33,13 @@ pub fn look() -> Option<Box<dyn Look>> {
 
 /// Its instrument voice (its `pp_bridge` entry, or its episode's own synth), or `None` while it is not ported.
 pub fn voice() -> Option<Arc<dyn Voice>> {
-    None
+    Some(Arc::new(TurntablesVoice))
 }
 
 /// `fighters.sound('TURNTABLES', M, k)`: its part on side `k` of the fight `ff`, or `None` while it is not ported.
 pub fn sound(k: usize, ff: &FightFile) -> Option<Box<dyn Sound>> {
-    let _ = (k, ff);
-    None
+    let _ = ff;
+    Some(Box::new(TurntablesSound::new(k)))
 }
 
 /// Its model (`data/models/TURNTABLES.json`, written by the export tool's `models` for one roster name), compiled in:
