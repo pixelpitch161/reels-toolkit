@@ -288,7 +288,8 @@ pub fn fmod(x: f64, y: f64) -> f64 {
 /// `x * y + z` rounded once (C `fma`): exact by definition, so the same bits on every PC whether the processor
 /// does it (where it has the instruction) or the `libm` crate's software does. For a port of a numpy product that
 /// the BLAS computes with fused multiply-add on the reference PC: the fight's 2-vector products (`bf_sim::geom`,
-/// ruling M3-R39) and the sprite camera's (`bf_picture::sprite`, ruling M3-R30). The engine fuses nothing else.
+/// ruling M3-R39), the sprite camera's (`bf_picture::sprite`, ruling M3-R30) and the dot products under
+/// `np.convolve` (`bf_sound::dsp::conv`, and `np.poly`'s in `bf_sound::dsp::butter`). The engine fuses nothing else.
 pub fn fma(x: f64, y: f64, z: f64) -> f64 {
     #[cfg(target_arch = "x86_64")]
     if has_fma() {
