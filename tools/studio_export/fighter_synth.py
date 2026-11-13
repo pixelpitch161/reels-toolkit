@@ -145,7 +145,25 @@ def harness(stage, module):
     module.fight_hud = fight_hud
 
 
-SPEC = dict(name='SYNTH', opponent='FLUTE', origin=dict(
+LOW = dict(LV_DMG=m3refs.LV, LOW_HP=92.0)       # the levels and the low turn come early
+
+# Template F's scenarios, plus (plan m4 Table O4, Task 10): the leash against TUBA's and HORN's big knocks (every seed
+# here snaps the cables at least once), and the copy sweep: EUPHONIUM against SYNTH from either corner (seeds 1 to 3
+# copy LFO's haste, WHITE NOISE's wave and the tether's signature: found with the kit, `scenarios` below)
+SCENARIOS = m3refs.default_scenarios('SYNTH', 'FLUTE') + [
+    dict(name='vs_tuba', seeds=(1, 2, 3), overrides=LOW, opponent='TUBA'),
+    dict(name='vs_horn', seeds=(1, 2, 3), overrides=LOW, opponent='HORN'),
+    dict(name='copy_euphonium', seeds=(1, 2, 3), overrides=LOW, opponent='EUPHONIUM'),
+    dict(name='copy_euphonium_swapped', seeds=(1, 2, 3), overrides=LOW, opponent='EUPHONIUM', swapped=True),
+]
+
+# A reference handicap (ruling M3-R34's method): at (1.0, 1.0) SYNTH wins 31.0 % of 2,000 fights from the left with a
+# median K.O. at 29.4 s, and none of its wins with all three abilities ends after 44 s (the checks' music.main()
+# needs one). Trials of 60 seeds a corner (SYNTH left / right wins of decided, K.O.s): (0.5, 0.5) 2 / 2 of 48 / 53;
+# (0.5, 0.45) 12 / 12 of 32 / 39; (0.6, 0.35) 58 / 58 of 58; (0.55, 0.45) 50 / 46 of 58 / 58, 46 / 42 late full wins.
+SPEC = dict(name='SYNTH', opponent='FLUTE', scenarios=SCENARIOS, fights=dict(handicap=(0.55, 0.45)),
+            sprite_size=dict(add=7, clip=None),     # its own sprites: #31's render_sprite, 2 r + 7
+            origin=dict(
     episode='ballfight_turntables_vs_synth',
     config=dict(MOOD='big_top',                 # #31's dark breakbeat is not a kit mood yet: the SYNTH's own bus only
                 SHARD_SEED=271, FX_SEED=31),    # render.py's own seeds (default_rng(271), fx.Particles(seed=31))
