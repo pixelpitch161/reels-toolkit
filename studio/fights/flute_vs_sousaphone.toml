@@ -1,0 +1,73 @@
+format = 2
+app_version = "0.1.0"
+fighters = ["FLUTE", "SOUSAPHONE"]
+arena = "ring"
+handicap = [1.0, 1.0]
+dmg_scale = 0.7
+tempo_bpm = 126.0
+seed = 146
+
+[pair_rules]
+
+[music]
+theme = "dark_drumline"
+arrangement = "classic"
+key = "C"
+scale = "minor"
+chords_intro = ["Cm", "G"]
+chord_loop = ["Cm", "Ab", "Fm", "G"]
+chords_tail = ["Ab", "G"]
+music_seed = 1
+
+[music.roles]
+FLUTE = "melody"
+SOUSAPHONE = "bass"
+
+[music.lines]
+FLUTE = [
+    79, 79, 84, 79, 75, 79, 84, 86,
+    87, 84, 80, 84, 87, 89, 87, 84,
+    77, 80, 84, 80, 89, 87, 84, 80,
+    79, 83, 86, 83, 91, 89, 87, 83,
+]
+SOUSAPHONE = [
+    36, 43, 36, 43, 36, 43, 39, 41,
+    44, 39, 44, 39, 44, 39, 48, 46,
+    41, 48, 41, 48, 41, 48, 44, 43,
+    43, 50, 43, 50, 43, 47, 50, 47,
+]
+
+[music.solos]
+FLUTE = [
+    [0.0, 84, 0.5], [0.5, 87, 0.5], [1.0, 91, 1.0], [2.0, 89, 0.5],
+    [2.5, 87, 0.5], [3.0, 86, 0.5], [3.5, 83, 0.5], [4.0, 84, 0.5],
+    [4.5, 79, 0.5], [5.0, 80, 0.5], [5.5, 83, 0.5], [6.0, 84, 2.0],
+]
+SOUSAPHONE = [
+    [0.0, 36, 0.5], [0.5, 43, 0.5], [1.0, 48, 0.5], [1.5, 43, 0.5],
+    [2.0, 46, 0.5], [2.5, 44, 0.5], [3.0, 43, 1.0], [4.0, 41, 0.5],
+    [4.5, 44, 0.5], [5.0, 47, 0.5], [5.5, 50, 0.5], [6.0, 48, 2.0],
+]
+
+[music.title_hits]
+FLUTE = [72, 75, 79, 84, 87, 89, 91]
+SOUSAPHONE = [36, 43, 46, 48]
+
+[music.mix]
+
+[music.theme_options]
+
+[picture]
+shard_seed = 271
+
+[picture.title_lines]
+
+[captions]
+caption = "You asked for it 👀 Flute vs Sousaphone. Comment the next match-up 👇"
+instagram = "#ballfight #flute #sousaphone #marchingband #band #drumline #tuba #flutist #musicmemes #pixelart #lowpoly #satisfying"
+tiktok = "#fyp #ballfight #flute #sousaphone #marchingband #bandtok #drumline #musictok #pixelart #satisfying"
+shorts = [
+    "Flute vs Sousaphone: smallest vs biggest in the band",
+    "The flute charms snakes, the sousaphone marches drill and blasts - every hit in key over a dark drumline. Who wins?",
+    "#shorts #ballfight #flute #sousaphone #marchingband #music #pixelart",
+]
