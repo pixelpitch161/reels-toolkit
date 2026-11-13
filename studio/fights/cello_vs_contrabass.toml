@@ -1,0 +1,84 @@
+format = 2
+app_version = "0.1.0"
+fighters = ["CELLO", "CONTRABASS"]
+arena = "ring"
+handicap = [1.0, 1.0]
+dmg_scale = 0.85
+tempo_bpm = 118.0
+seed = 2455
+
+[pair_rules]
+
+[music]
+theme = "dark_tango"
+arrangement = "classic"
+key = "D"
+scale = "harmonic minor"
+chords_intro = ["Dm", "A7"]
+chord_loop = ["Dm", "A7", "A7", "Dm", "Gm", "Dm", "E7", "A7"]
+chords_tail = ["Gm", "Dm", "E7", "A7"]
+music_seed = 1
+
+[music.roles]
+CELLO = "melody"
+CONTRABASS = "bass"
+
+[music.lines]
+CELLO = [
+    62, 62, 62, 64,
+    65, 65, 64, 61,
+    64, 64, 64, 57,
+    65, 64, 62, 62,
+    67, 67, 65, 64,
+    62, 62, 65, 69,
+    68, 68, 65, 62,
+    61, 61, 64, 64,
+]
+CONTRABASS = [
+    38, 40, 41, 44,
+    33, 37, 40, 43,
+    45, 43, 40, 37,
+    38, 45, 41, 42,
+    43, 46, 50, 49,
+    50, 45, 41, 39,
+    40, 44, 47, 46,
+    45, 43, 40, 37,
+]
+
+[music.solos]
+CELLO = [
+    [0.0, 62, 0.5], [0.5, 65, 0.5], [1.0, 69, 1.5], [2.5, 68, 0.5],
+    [3.0, 65, 1.0], [4.0, 64, 0.5], [4.5, 65, 0.5], [5.0, 67, 0.5],
+    [5.5, 69, 0.5], [6.0, 70, 1.5], [7.5, 69, 0.5], [8.0, 68, 0.5],
+    [8.5, 65, 0.5], [9.0, 64, 0.5], [9.5, 61, 0.5], [10.0, 62, 2.0],
+]
+CONTRABASS = [
+    [0.0, 38, 0.5], [0.5, 45, 0.5], [1.0, 50, 0.5], [1.5, 49, 0.5],
+    [2.0, 48, 0.5], [2.5, 47, 0.5], [3.0, 46, 1.0], [4.0, 45, 0.5],
+    [4.5, 41, 0.5], [5.0, 38, 0.5], [5.5, 40, 0.5], [6.0, 41, 0.5],
+    [6.5, 44, 0.5], [7.0, 45, 1.0], [8.0, 50, 0.5], [8.5, 49, 0.5],
+    [9.0, 45, 0.5], [9.5, 40, 0.5], [10.0, 38, 2.0],
+]
+
+[music.title_hits]
+CELLO = [50, 57, 62]
+CONTRABASS = [38, 45, 50]
+
+[music.mix]
+
+[music.theme_options]
+
+[picture]
+shard_seed = 271
+
+[picture.title_lines]
+
+[captions]
+caption = "The swan vs the elephant 🦢🐘 Comment the next match-up 👇"
+instagram = "#ballfight #cello #doublebass #contrabass #upright #tango #carnivaloftheanimals #orchestra #musicmemes #pixelart #lowpoly #satisfying"
+tiktok = "#fyp #ballfight #cello #doublebass #tango #orchestratok #musictok #pixelart #satisfying #music"
+shorts = [
+    "Cello vs Double Bass: the swan vs the elephant",
+    "The grappler that throws you into the ropes vs the juggernaut that walks on every beat, every hit in key over a dark tango. Who wins?",
+    "#shorts #ballfight #cello #doublebass #tango #music #pixelart",
+]
