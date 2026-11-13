@@ -26,23 +26,23 @@ pub use card::{CARD, card};
 
 /// `fighters.look('BAGPIPES', P, k)`: its look, or `None` while it is not ported (the bare ball is drawn then).
 pub fn look() -> Option<Box<dyn Look>> {
-    None
+    Some(Box::new(look::BagpipesLook::default()))
 }
 
 /// Its instrument voice (its `pp_bridge` entry, or its episode's own synth), or `None` while it is not ported.
 pub fn voice() -> Option<Arc<dyn Voice>> {
-    None
+    Some(Arc::new(voice::BagpipesVoice))
 }
 
 /// `fighters.sound('BAGPIPES', M, k)`: its part on side `k` of the fight `ff`, or `None` while it is not ported.
 pub fn sound(k: usize, ff: &FightFile) -> Option<Box<dyn Sound>> {
-    let _ = (k, ff);
-    None
+    let _ = ff;
+    Some(Box::new(sound::BagpipesSound::new(k)))
 }
 
 /// Its model (`data/models/BAGPIPES.json`, written by the export tool's `models` for one roster name), compiled in:
 /// `Some(include_str!("../../../data/models/BAGPIPES.json"))` once ported, `None` until then.
-pub const MESH: Option<&str> = None;
+pub const MESH: Option<&str> = Some(include_str!("../../../data/models/BAGPIPES.json"));
 
 /// Whether its music settings (key, chord loop, its line) feed its fight: false for every older fighter.
 pub const MUSIC_FEEDS_FIGHT: bool = false;
