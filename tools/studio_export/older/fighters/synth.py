@@ -38,9 +38,9 @@ This module's own rules (the reference's, accepted at its Gate O review, plan m4
   other fighter's by event time; the kit's hooks cannot, and the module is the reference for later fights);
 - setup_as(P, k, cfg): setup() with another fighter's numbers (EUPHONIUM's copy sets cfg and calls setup()).
 
-Gate O (fighters/synth/origin.json, origin_extra.json): #31's seed 1339 (TURNTABLES wins) and seed 415 of the same
-config (SYNTH wins: its stinger, solo and solo rings); every frame's contribution equal, the synth bus bit-identical,
-its contributions to fx, bass and solo equal to -313 dBFS (the last bit of the subtraction)."""
+Gate O (fighters/synth/origin.json): #31's seed 1339 (TURNTABLES wins) and seed 415 of the same config (SYNTH wins:
+its stinger, solo and solo rings), its layers and its buses synth, fx, bass and solo (the shared buses with every
+placement but its own silenced on both sides)."""
 PORTED = True
 
 import importlib.util
@@ -507,6 +507,7 @@ RUN_31 = (65, 68, 72, 75, 77, 80, 84, 89)         # its pieces flying home (591)
 class Sound(base.Sound):
     bus_gain = 2.0                   # #31 BUS_GAIN['synth']
     send = 0.5                       # #31's reverb send for 'synth'
+    note_helper = dict(note='_note', gain='_inst_gain', fade=0.03)   # #31's own note / _fit (voices.NoteLog logs it)
 
     def __init__(self, M, k):
         super().__init__(M, k)

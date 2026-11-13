@@ -157,6 +157,20 @@ SCENARIOS = m3refs.default_scenarios('SYNTH', 'FLUTE') + [
     dict(name='copy_euphonium_swapped', seeds=(1, 2, 3), overrides=LOW, opponent='EUPHONIUM', swapped=True),
 ]
 
+# ---------------------------------------------------------------- Gate O on every bus it plays, in two fights
+# `silence` (a scratch copy of its own for the stems): every placement on fx, bass and solo but the SYNTH's own is
+# dropped, by its line in #31's audio.py as delivered (one line replaced, so the numbers stay); the kit side keeps the
+# module's own placements on those buses (silence_kit, the default). The SYNTH's own: the jack click (504), a cut's thud
+# (509), WHITE NOISE's thud (511), the zip (513), the snap (515), the leash's thrum (517), LFO's wobble (536), WHITE
+# NOISE's blast (540), the stinger (568), the solo (589).
+KEEP = (504, 509, 511, 513, 515, 517, 536, 540, 568, 589)
+SILENCE = [('audio.py', "    mix = A.Mix(T.DUR + 4.0)\n",
+            "    mix = A.Mix(T.DUR + 4.0); _place = mix.place; mix.place = lambda bus, *a, **kw: mix.bus(bus) if bus in "
+            f"('fx', 'bass', 'solo') and sys._getframe(1).f_lineno not in {KEEP!r} else _place(bus, *a, **kw)\n")]
+# seed 415 (`search.one` over #31's config from seed 1: the first fit SYNTH wins, K.O. 52.34 s, HP 6.6): its two
+# abilities in the fight, its K.O. hit, the hit-stop, its stinger and its solo up to the reassembly
+FRAMES_415 = [1320, 1401, 1570, 1573, 1580, 1596, 1625, 1641, 1660, 1686, 1700, 1715]
+
 # A reference handicap (ruling M3-R34's method): at (1.0, 1.0) SYNTH wins 31.0 % of 2,000 fights from the left with a
 # median K.O. at 29.4 s, and none of its wins with all three abilities ends after 44 s (the checks' music.main()
 # needs one). Trials of 60 seeds a corner (SYNTH left / right wins of decided, K.O.s): (0.5, 0.5) 2 / 2 of 48 / 53;
@@ -173,169 +187,11 @@ SPEC = dict(name='SYNTH', opponent='FLUTE', scenarios=SCENARIOS, fights=dict(han
     harness=[dict(name="#31's beat ramp (0.07 s; the kit's 0.12 s)", beat_pulse_pre=0.07),
              dict(name="#31's HUD (no ability list: the series rule of Oct 25 came after #31)",
                   call='tools.studio_export.fighter_synth:harness')],
-    buses=['synth'],
+    buses=['synth', 'fx', 'bass', 'solo'],
+    silence=SILENCE,
+    fights=[dict(seed=1339, buses=['synth', 'fx', 'bass']),     # #31's own seed (no solo of SYNTH's): TURNTABLES wins (SYNTH's shards, K.O. spray, fall-apart)
+            dict(seed=415, frames=FRAMES_415)],  # the kit's first fit with SYNTH winning: its stinger, solo, solo rings
 ))
 
-# ---------------------------------------------------------------- Gate O, more of it (the controller's asks after the
-# first review): SYNTH's placements on every bus it plays on, and a second fight of #31's config that SYNTH wins
-#
-#   python -m tools.studio_export fighter_synth_origin search   the first seed from 1 of #31's config that fits the
-#                                                              kit's beat sheet (search.one) with SYNTH winning
-#   python -m tools.studio_export fighter_synth_origin run      writes fighters/synth/origin_extra.json
-#
-# Buses: SYNTH's contribution to each of synth, fx, bass, solo: the episode's (audio.py as delivered minus audio.py
-# with SYNTH's placements removed, SILENCE) against the kit's (the module's Sound minus base.Sound), sample for sample in
-# float64, over the window and the whole buffer. The bed's and TURNTABLES' placements are on both sides of each
-# difference and cancel (a Gate O for a fighter cannot silence the kit's bed, and the kit's shared fx differ from #31's).
-# Second fight: SECOND_SEED, the episode switched to it by one patch of render.py (its sim.load() reads seed.txt);
-# frames and state through older.origin.fighter_origin, buses as above.
-A_ = 'audio.py'
-SILENCE = [
-    (A_, "    for m in (65, 72, 77, 80):\n        mix.place('synth', arp_lv(m, 3, 1.0), t3, 0.16, pan=0.2)\n"
-         "    mix.place('synth', supersaw_sweep(0.45, 65, 89), t3, 0.14, pan=0.2)\n", ""),            # its title blast
-    (A_, "        for m in (60, 64, 67):\n            mix.place('synth', arp_note(m, 0.9, 0.18), tc, 0.20, pan=0.2)\n",
-     ""),                                                                                          # its count-in
-    (A_, "    for slot, evs in sorted(by_tick.items()):", "    for slot, evs in []:"),             # the pulses' arp
-    (A_, "        if kind == 'hit' and e[2] == KS:", "        if kind == 'hit' and False:"),     # plug, cut, noise hit
-    (A_, "        elif kind == 'plug_fire' and e[2] == KS:", "        elif kind == 'plug_fire' and False:"),
-    (A_, "        elif kind == 'snap':", "        elif kind == 'snap' and False:"),
-    (A_, "        elif kind == 'leash':", "        elif kind == 'leash' and False:"),
-    (A_, "            elif name == 'LFO':", "            elif name == 'LFO' and False:"),
-    (A_, "            elif name == 'SAWTOOTH':", "            elif name == 'SAWTOOTH' and False:"),
-    (A_, "            elif name == 'WHITE NOISE':", "            elif name == 'WHITE NOISE' and False:"),
-    (A_, "            mix.place('synth', x, RD.T_HS + 0.07 * j, 0.20 * (1 - j / 10), pan=(j - 3.5) / 8)",
-     "            pass"),                                                                         # it falls apart
-    (A_, "            mix.place('solo', arp_note(m, 1.0, 0.4), tw, 0.20)", "            pass"),  # its stinger
-    (A_, "            mix.place('solo', arp_note(m, 0.95, max(0.1, d * T.BEAT * 0.9)), solo0 + bt * T.BEAT, 0.34)",
-     "            pass"),                                                                         # its solo
-    (A_, "            mix.place('synth', arp_note(m, 0.7), tj, 0.18)", "            pass"),      # its reassembly run
-]
-EXTRA_BUSES = ('synth', 'fx', 'bass', 'solo')
-SECOND_SEED = 415                      # `fighter_synth_origin search`: the first fit with SYNTH winning (415 seeds)
 
-
-def seed_patch(seed):
-    return (R, "RUN = sim.load()", f"RUN = sim.load({int(seed)})")
-
-
-def _search_child(cfg_folder, harness, a, b):
-    from .older import origin as O
-    O._kit_load(cfg_folder, harness)
-    from ballfight.kit import search
-    for seed in range(a, b):
-        st = search.one(seed)
-        if st['fits'] and st['winner'] == 1:
-            return dict(seed=seed, t_ko=st['t_ko'], winner_hp=st['winner_hp'], caps=st['caps'], searched=seed - a + 1)
-    return None
-
-
-def _kit_buses_all_child(cfg_folder, harness, name, out_npz):
-    """the kit's score before the master, every bus: SYNTH by its module (name) or both by base.Sound (None)"""
-    import numpy as np
-    from . import common
-    from .older import origin as O
-    ep, _ = O._kit_load(cfg_folder, harness)
-    O._bare({n for n in ep.T.FIGHTERS if n != name})
-    from ballfight.kit import music as M              # noqa: N812
-    O._harness(harness, 'music', M)
-    import pp_bridge as B
-    for k in (0, 1):
-        B.scene(M.CFG[k]['pp'])
-    import drums60_lowpoly  # noqa: F401
-    M.SOUNDS = [M.SOUNDS[k] if M.NAMES[k] == name else M.FIGHTER_MODULES.base.Sound(M, k) for k in (0, 1)]
-    mix = M.score()
-    common.write_npz(out_npz, {k: np.array(v, np.float64, copy=True) for k, v in mix.buses.items()}, register=False)
-    return sorted(mix.buses)
-
-
-def _config_for(o, seed, tag):
-    from .older import origin as O
-    facts = O._run_parts([(O.episode_facts_child, (O.scratch(o['episode']), seed))])[0]
-    folder, text, timeline = O._config(dict(o, seed=seed), facts, tag)
-    return folder, text, timeline, facts
-
-
-def _bus_contributions(seed):
-    """SYNTH's contribution to each of EXTRA_BUSES on the episode's and the kit's run of `seed`"""
-    import os
-    import numpy as np
-    from .older import origin as O
-    o = O.origin_spec(SPEC['origin'])
-    ep = o['episode']
-    cfg_dir, cfg_text, timeline, facts = _config_for(o, seed, f'synth_buses_{seed}')
-    kf = O._run_parts([(O.kit_facts_child, (cfg_dir, o['harness'], 1))])[0]
-    if kf['raw_line'] != facts['line']:
-        raise SystemExit(f'fighter_synth_origin: seed {seed}: the kit {kf["raw_line"]!r}, the episode {facts["line"]!r}')
-    full = [] if seed == 1339 else [seed_patch(seed)]
-    e_full = O.scratch(ep, full, f'buses_{seed}') if full else O.scratch(ep)
-    e_sil = O.scratch(ep, full + SILENCE, f'buses_{seed}_silent')
-    od = os.path.join(O.ROOT, 'out', ep, f'synth_buses_{seed}')
-    paths = {w: os.path.join(od, f'{w}.npz') for w in ('e_full', 'e_sil', 'k_mod', 'k_base')}
-    cfg_mod = O.kit_config_folder(ep, f'synth_buses_{seed}_mod', cfg_text)
-    cfg_base = O.kit_config_folder(ep, f'synth_buses_{seed}_base', cfg_text)
-    O._run_parts([(O.episode_stems_child, (e_full, paths['e_full'], None)),
-                  (O.episode_stems_child, (e_sil, paths['e_sil'], None)),
-                  (_kit_buses_all_child, (cfg_mod, o['harness'], 'SYNTH', paths['k_mod'])),
-                  (_kit_buses_all_child, (cfg_base, o['harness'], None, paths['k_base']))])
-    O.check_kit_clean(f'projects/{ep}/audio.py')
-    got = {w: O._load_npz(p) for w, p in paths.items()}
-    n = len(next(iter(got['e_full'].values())))
-    i0 = int(round(kf['t_fight'] * O.SR))
-    i1 = int(round(min(kf['t_reassemble'], float(timeline['T_REASSEMBLE'])) * O.SR))
-
-    def bus(w, b):
-        return got[w][b] if b in got[w] else np.zeros((n, 2))
-    rows, failures = [], []
-    for b in EXTRA_BUSES:
-        ec, kc = bus('e_full', b) - bus('e_sil', b), bus('k_mod', b) - bus('k_base', b)
-        summary, bad = O.compare_bus('SYNTH', b, ec, kc, i0, i1, o['bar_db'])
-        mx = float(np.abs(ec[i0:i1]).max())
-        summary['contribution_peak'] = f'{O.db(mx):.1f} dBFS' if mx else 'silent'
-        rows.append(summary)
-        if bad:
-            failures.append(f'seed {seed}: ' + bad.replace("bus '", "contribution to bus '"))
-    return dict(seed=seed, fight=kf['raw_line'], winner=kf['winner'], window=[i0, i1], buses=rows), failures
-
-
-def origin_extra(args):
-    import json
-    from . import common
-    from .older import install, origin as O
-    install()
-    o = O.origin_spec(SPEC['origin'])
-    if args == ['search']:
-        cfg_dir, *_ = _config_for(o, 1339, 'synth_search')
-        hit = O._run_parts([(_search_child, (cfg_dir, o['harness'], 1, 4000))])[0]
-        print(f'fighter_synth_origin: first fit with SYNTH winning: {hit}')
-        return
-    if args != ['run'] or SECOND_SEED is None:
-        raise SystemExit('fighter_synth_origin: search | run (run needs SECOND_SEED)')
-    failures, out = [], dict(about="Gate O, more of it (plan m4 Task 10, the Gate O review): SYNTH's contribution to "
-                                   "each bus it plays on (the episode's audio.py minus its SILENCE patches, the kit's "
-                                   "module minus base.Sound) on #31's seed and on a second seed of its config that "
-                                   "SYNTH wins (the first fit of the kit's search with SYNTH winning); that fight's "
-                                   "frames and state through older.origin.fighter_origin")
-    out['silence'] = O._patch_doc(SILENCE)
-    for seed in (1339, SECOND_SEED):
-        doc, bad = _bus_contributions(seed)
-        out[f'buses_{seed}'] = doc
-        failures += bad
-    spec2 = dict(SPEC, origin=dict(SPEC['origin'], seed=SECOND_SEED, other=OTHER + [seed_patch(SECOND_SEED)],
-                                   buses=[]))
-    d2 = O.fighter_origin(spec2, out=False)
-    out['second_fight'] = dict(
-        seed=SECOND_SEED, fight=d2['fight'], window=d2['window'], state_keys=d2['state_keys'],
-        seed_patch=O._patch_doc([seed_patch(SECOND_SEED)]),
-        frames=[[r['frame'], r['contribution_sha256'][:16], r['whole_frame_equal'],
-                 r['sha256']['kit_on'] != r['sha256']['kit_off']] for r in d2['frames']],
-        frame_columns=['frame', 'contribution sha256 (16 hex)', 'whole frames equal', 'SYNTH draws'])
-    if failures:
-        raise SystemExit(failures[0] + (f' (and {len(failures) - 1} more)' if len(failures) > 1 else ''))
-    common.write_json(common.ref('fighters', 'synth', 'origin_extra.json'), out)
-    print('fighter_synth_origin: PASS', json.dumps({k: [(b['bus'], b['peak'], b['whole'], b['contribution_peak'])
-                                                        for b in v['buses']] for k, v in out.items()
-                                                    if k.startswith('buses_')}))
-
-
-EXPORTS = {'fighter_synth': lambda: m3refs.fighter_refs(SPEC), 'fighter_synth_origin': origin_extra}
-TAKES_ARGS = ('fighter_synth_origin',)
+EXPORTS = {'fighter_synth': lambda: m3refs.fighter_refs(SPEC)}
