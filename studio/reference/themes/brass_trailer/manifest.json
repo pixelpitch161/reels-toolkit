@@ -1,0 +1,10 @@
+{
+ "format": 1,
+ "entries": [
+  {"path": "studio/reference/themes/brass_trailer/bed.json", "sha256": "fcf36d58d4bc773f4f25c10d3d988417eafbc73cade454b132eca3ae2aed93ec", "bytes": 96199, "tool": "tools.studio_export.theme_brass_trailer", "commit": "e91aa3cfa04993566dad45c68702e6f1ae8cce2c", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"},
+  {"path": "studio/reference/themes/brass_trailer/exceptions.toml", "sha256": "fa29a01e9c4b1693533f0e35589afb4df98031bb9be56d8a8cab7b69f89cf7f4", "bytes": 781, "tool": "tools.studio_export.theme_brass_trailer", "commit": "d295e2404bea23a4302818658668ebeb3dcf500f", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"},
+  {"path": "studio/reference/themes/brass_trailer/pins.json", "sha256": "557c136e78eed84106598c3431c8d376d3438f042dfd5c070181ee18b888cf78", "bytes": 2601, "tool": "tools.studio_export.m3refs", "commit": "e91aa3cfa04993566dad45c68702e6f1ae8cce2c", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"},
+  {"path": "studio/reference/themes/brass_trailer/theme.json", "sha256": "64d4dcf16e047c0b8a7d9b5b85392d8b1c25c8104534459129ec76cda3100923", "bytes": 5480, "tool": "tools.studio_export.theme_brass_trailer", "commit": "e91aa3cfa04993566dad45c68702e6f1ae8cce2c", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"},
+  {"path": "studio/reference/themes/brass_trailer/voicings.json", "sha256": "6d95c242c34729012fe05b894e9ca0e6d08d70cc1c094f255aa3e16b92a6bfbf", "bytes": 8329, "tool": "tools.studio_export.theme_brass_trailer", "commit": "d295e2404bea23a4302818658668ebeb3dcf500f", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"}
+ ]
+}

@@ -1,0 +1,10 @@
+{
+ "format": 1,
+ "entries": [
+  {"path": "studio/reference/themes/hot_jazz/bed.json", "sha256": "6add628d7d7704ca48a9d1b933a28b24afb5aa21c7612783feab8a7a6146ab90", "bytes": 46711, "tool": "tools.studio_export.theme_hot_jazz", "commit": "792f8caf0849dda29fe58d2e17177b75b57d76d6", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"},
+  {"path": "studio/reference/themes/hot_jazz/exceptions.toml", "sha256": "fa29a01e9c4b1693533f0e35589afb4df98031bb9be56d8a8cab7b69f89cf7f4", "bytes": 781, "tool": "tools.studio_export.theme_hot_jazz", "commit": "b5c2dc7fa1d8f59b71db1dff7469829a5fce88a9", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"},
+  {"path": "studio/reference/themes/hot_jazz/pins.json", "sha256": "3610146befc1bc9efa0b51981dd8b908dcb3286bf616a5d17f9db2ea6ce6767f", "bytes": 1694, "tool": "tools.studio_export.m3refs", "commit": "792f8caf0849dda29fe58d2e17177b75b57d76d6", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"},
+  {"path": "studio/reference/themes/hot_jazz/theme.json", "sha256": "878527cb654f15c6c57e5907f544beada2e0931ca850f1522d9e60064684740c", "bytes": 3545, "tool": "tools.studio_export.theme_hot_jazz", "commit": "792f8caf0849dda29fe58d2e17177b75b57d76d6", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"},
+  {"path": "studio/reference/themes/hot_jazz/voicings.json", "sha256": "fa28b49b70612d6f74eae3ec48a9897ac78acbd7e133cdfebffe715c26cec055", "bytes": 5032, "tool": "tools.studio_export.theme_hot_jazz", "commit": "b5c2dc7fa1d8f59b71db1dff7469829a5fce88a9", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"}
+ ]
+}

@@ -1,0 +1,9 @@
+{
+ "format": 1,
+ "entries": [
+  {"path": "studio/reference/themes/prog_duel/bed.json", "sha256": "ed1887b25f9cb2b91b15fe7a02ee04197fc4de92587c336a4c741741d8664129", "bytes": 38329, "tool": "tools.studio_export.theme_prog_duel", "commit": "4197a9da919e77b0ccc46f858a6e30f2cacb1848", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"},
+  {"path": "studio/reference/themes/prog_duel/exceptions.toml", "sha256": "fa29a01e9c4b1693533f0e35589afb4df98031bb9be56d8a8cab7b69f89cf7f4", "bytes": 781, "tool": "tools.studio_export.theme_prog_duel", "commit": "1b5c5c26f2522ae669b68ef7fdee7add9c7349b5", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"},
+  {"path": "studio/reference/themes/prog_duel/pins.json", "sha256": "e7f2a4388054173c874e32f32f409823a7a8431ac9e375db5da67aa13375ec81", "bytes": 1700, "tool": "tools.studio_export.m3refs", "commit": "4197a9da919e77b0ccc46f858a6e30f2cacb1848", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"},
+  {"path": "studio/reference/themes/prog_duel/theme.json", "sha256": "f91ce307262a7529c183f137f17ec9e799163d8e449e66705f8d883abc7ca38c", "bytes": 2925, "tool": "tools.studio_export.theme_prog_duel", "commit": "4197a9da919e77b0ccc46f858a6e30f2cacb1848", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"}
+ ]
+}

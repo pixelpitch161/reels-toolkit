@@ -12,3 +12,9 @@ check/
 frames_raw.rgb
 *.raw
 series/instrument-history/*.png
+
+# BALLFIGHT Studio: build folders are ignored; the reference set is tracked even where the rules above
+# (*.npz, *.wav, *.raw, check/, ...) would ignore it, except its local cache.
+studio/target*/
+!studio/reference/**
+studio/reference/.cache/

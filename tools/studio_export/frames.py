@@ -1,0 +1,748 @@
+"""frames, title: what the example episode looks like, frame by frame, as the Python kit draws it.
+
+    frames   studio/reference/frames/flute_vs_trombone/f<frame>.png + frames.json: kit.picture.render(frame) for the
+             frames `select` picks from the recording (the title card, the doors, the count-in, every ability, weapon
+             hits, low HP, a cobra swat, the K.O. and the scripted tail); frames.json gives each frame's number, time,
+             the reason it was chosen and tags that say which layers it shows. Also studio/reference/frames/
+             exceptions.toml, written once with an empty list and never overwritten (the Rust lane owns it after).
+    title    .../title/f<frame>.png + noise.png + title.json: title.draw(noise, t) over one fixed seeded-noise image.
+             The card is 94 % opaque over a dimmed arena, so the full frames alone cannot test it.
+
+Both exports first read the committed recording (fights/flute_vs_trombone/ep392.bfrec) and stop unless it is, value
+for value, the fight the kit's renderer was built from; its content hash goes into both indexes. They then check
+what they are about to write before any file is listed (the required reasons are all present, at least 40 frames,
+every PNG reads back as the array that was drawn) and stop with a message if a check fails.
+
+`picture(tag)` and `first_at(t)` are shared with the other picture exports (pillow_vectors, sprites, stages)."""
+import io
+import math
+import os
+import sys
+
+import numpy as np
+
+from . import common, manifest, recording
+
+EPISODE = 'flute_vs_trombone'
+W, H, FPS, NF = 360, 640, 30, 1830
+OUT = common.ref('frames', EPISODE)
+INDEX = os.path.join(OUT, 'frames.json')
+TITLE_OUT = os.path.join(OUT, 'title')
+TITLE_INDEX = os.path.join(TITLE_OUT, 'title.json')
+EXCEPTIONS = common.ref('frames', 'exceptions.toml')
+RECORDING = common.ref('fights', EPISODE, 'ep392.bfrec')
+MIN_FRAMES = 40
+NOISE_SEED = 20261110                                  # the title vectors' backdrop
+NOISE_CALL = 'np.random.default_rng(seed).integers(0, 256, size=(640, 360, 3), dtype=np.uint8)'
+WEAPON_HIT = {'striker': 'fang', 'blade': 'blade'}     # weapon kind -> the `how` of the hits it lands
+SLOTS = ('unlock1', 'unlock2', 'low')
+EXCEPTIONS_TEXT = '''\
+# Golden frames the Studio does not reproduce bit for bit (spec section 7, "Proving the look").
+# The bar: a listed frame differs by at most 2 levels on at most 0.5 % of its pixels, and every entry has a reason.
+# An entry is one table per frame, replacing the empty list below:
+#
+#   [[exceptions]]
+#   episode = "flute_vs_trombone"
+#   frame = 1234
+#   reason = "why this frame cannot be made identical"
+#
+# Written once by `python -m tools.studio_export frames` and never overwritten. After an edit, record the new bytes
+# with `python -m tools.studio_export adopt studio/reference/frames/exceptions.toml`.
+exceptions = []
+'''
+
+
+# ---------------------------------------------------------------- the kit's renderer
+def picture(tag):
+    """the kit's renderer (ballfight.kit.picture) for the example episode. It builds everything at import: the run
+    (seed 392), every effect, both looks. `tag` names the private copy of the episode the first export of this
+    process loads (its caches land there); a later export in the same process gets the same module"""
+    P = sys.modules.get('ballfight.kit.picture')
+    if P is None:
+        common.episode(EPISODE, tag)
+        from ballfight.kit import picture as P            # noqa: N812  (the kit's own short name for it)
+    assert P.EP.name == EPISODE and P.EP.seed == 392, (P.EP.name, P.EP.seed)
+    assert tuple(P.NAMES) == ('FLUTE', 'TROMBONE') and (P.W, P.H, P.FPS, P.T.NF) == (W, H, FPS, NF)
+    return P
+
+
+def first_at(t):
+    """the first frame whose time (frame / 30) is at or after t"""
+    f = int(math.ceil(t * FPS))
+    while f > 0 and (f - 1) / FPS >= t:
+        f -= 1
+    while f / FPS < t:
+        f += 1
+    return f
+
+
+def png_bytes(arr):
+    """an (H, W, 3) uint8 array as the bytes of an RGB PNG, written by Pillow with its default settings"""
+    from PIL import Image
+    assert arr.dtype == np.uint8 and arr.ndim == 3 and arr.shape[2] == 3, (arr.dtype, arr.shape)
+    buf = io.BytesIO()
+    Image.fromarray(arr).save(buf, 'PNG')
+    return buf.getvalue()
+
+
+def read_png(path):
+    """(mode, array) of a PNG on disk"""
+    from PIL import Image
+    with Image.open(path) as im:
+        return im.mode, np.array(im)
+
+
+def write_png(path, arr):
+    """write the array as an RGB PNG, read it back, compare, then list it in the manifest"""
+    common.write_bytes(path, png_bytes(arr))
+    mode, back = read_png(path)
+    assert mode == 'RGB' and back.dtype == np.uint8 and np.array_equal(back, arr), f'{common.rel(path)} read back'
+    manifest.add(path, tool=__name__)
+
+
+def forget_stale(folder, keep, prefix='f'):
+    """remove the PNGs of an earlier selection (f*.png in `folder` that `keep` does not name) and their manifest
+    lines, so the folder holds exactly what its index lists"""
+    stale = [n for n in sorted(os.listdir(folder)) if n.startswith(prefix) and n.endswith('.png') and n not in keep] \
+        if os.path.isdir(folder) else []
+    if not stale:
+        return
+    gone = {common.rel(os.path.join(folder, n)) for n in stale}
+    for n in stale:
+        os.remove(os.path.join(folder, n))
+    manifest.remove(gone)
+    print(f"{__name__}: removed {len(stale)} PNGs of an earlier selection: {', '.join(stale)}")
+
+
+# ---------------------------------------------------------------- the fight the frames are of
+def check_recording(P, path=None):
+    """read the committed recording and prove it is the fight the kit's renderer drew its effects from
+    (P.RUN): the same seed, names, corners, first fight frame, winner and K.O. time, the same rules, every event
+    value for value and type for type, every per-frame array bit for bit. The Studio draws its frames from this
+    file, so the golden frames are only worth something if it is the same fight. Returns the recording, with its
+    content hash under 'hash'"""
+    path = RECORDING if path is None else path
+    where = common.rel(path)
+    if not os.path.isfile(path):
+        raise SystemExit(f'{where} is missing: run `python -m tools.studio_export fights` first')
+    rec = recording.read_bfrec(path)
+    run = P.RUN
+    from ballfight.kit import story
+    try:
+        for k in ('seed', 'winner', 't_ko', 'f0', 'names', 'corner'):
+            common.same(run[k], rec[k], k)
+        assert rec['fps'] == FPS, 'fps'
+        common.same(common.plain(dict(vars(story.rules()))), rec['rules'], 'rules')
+        common.same([list(e) for e in run['events']], rec['events'], 'events')
+        keys = sorted(k for k in run if k not in recording.META_KEYS)
+        assert keys == sorted(rec['arrays']), f"arrays: {keys} != {sorted(rec['arrays'])}"
+        for k in keys:
+            a = rec['arrays'][k]
+            if isinstance(a, np.ndarray):
+                src = np.array(run[k])
+                assert src.dtype.str == a.dtype.str and src.shape == a.shape and src.tobytes() == a.tobytes(), k
+            else:
+                common.same(common.plain(run[k]), a, k)
+        # what the renderer itself took from the run
+        # (value for value: an event may hold a tuple, PIANO's pitches in `roll` and `runoff`, which a recording
+        # reads back as a list, so `==` on the two would refuse the same fight)
+        common.same([list(e) for e in P.EV], rec['events'], 'the renderer\'s events')
+        assert rec['t_ko'] == P.T_KO and rec['winner'] == P.WIN
+        assert rec['names'] == list(P.NAMES) and len(rec['arrays']['HP']) == P.NSIM
+    except AssertionError as ex:
+        raise SystemExit(f'{where} is not the fight the kit draws (differs at: {ex}). Export the recording again '
+                         f'(`python -m tools.studio_export fights`), then the frames') from None
+    rec['hash'] = recording.rec_hash(rec)
+    return rec
+
+
+def recording_note(rec, what):
+    """the index's `recording` entry: which file, which fight, and what was compared"""
+    return dict(file=common.rel(RECORDING), hash=rec['hash'], seed=rec['seed'], winner=rec['winner'],
+                t_ko=common.hexf(rec['t_ko']), events=len(rec['events']), frames=len(rec['arrays']['HP']),
+                checked=what)
+
+
+# ---------------------------------------------------------------- which frames
+def doors_moving(TT, frames):
+    """the frames of `frames` on which the title card is drawn with its doors part-way (neither shut nor gone)"""
+    out = []
+    for f in frames:
+        off = TT.door_offset(f / FPS)
+        if off is not None and 0.0 < off < TT.OPEN_PX - 1:
+            out.append(f)
+    return out
+
+
+def select(P, events):
+    """(frames, absent): the golden frames, chosen by fixed rules from `events`, the event list of the committed
+    recording (check_recording has shown it is the kit's own). `frames` is a list of dict(frame, rules, reasons) in
+    frame order (a frame two rules pick is listed once, with both); `absent` lists the brief's rules that this fight
+    cannot satisfy, with the reason"""
+    T, TT, EV, names = P.T, P.TT, events, P.NAMES
+    picks, absent = [], []
+
+    def add(f, rule, reason):
+        assert 0 <= f < NF, (f, rule)
+        picks.append((int(f), rule, reason))
+
+    def first_event(test):
+        return next((e for e in EV if test(e)), None)
+
+    f_vs = first_at(T.TITLE[1][0])
+    add(0, 'frame_0', f'frame 0: the title card as {T.TITLE[0][1]} slams in (the loop point)')
+    add(13, 'frame_13', f'frame 13: the title card with {T.TITLE[0][1]} landed, before VS slams in on frame {f_vs}')
+    add(27, 'frame_27', f'frame 27: the title card as {T.TITLE[2][1]} slams in')
+    closed = [f for f in range(first_at(T.T_DOORS[1])) if TT.door_offset(f / FPS) == 0.0]
+    opening = doors_moving(TT, range(first_at(T.T_DOORS[1])))
+    add(closed[-1], 'doors_last_closed', 'the last frame with the title card shut (the VS pulse on beat 4)')
+    add(opening[len(opening) // 2], 'doors_mid', 'the doors half-way through sliding open')
+    for tc, txt in T.COUNT:
+        add(first_at(tc), 'count_' + txt.strip('!').lower(), f'the first frame of the count-in\'s "{txt}"')
+    for k in (0, 1):
+        for slot in SLOTS:
+            ab = P.CFG[k]['abilities'][slot]['name']
+            e = first_event(lambda e: e[1] == 'ability' and e[2] == k and e[3] == ab)
+            for d in (0.2, 0.6):
+                rule = f'{names[k]}_{slot}_{d}s'
+                if e is None:
+                    absent.append(dict(rule=rule, why=f'{names[k]} never uses {ab} in this fight'))
+                else:
+                    add(first_at(e[0] + d), rule, f"{d} s after {names[k]}'s first {ab} (at {e[0]} s)")
+        how = WEAPON_HIT[P.CFG[k]['weapon']['kind']]
+        e = first_event(lambda e: e[1] == 'hit' and e[2] == k and e[7] == how)
+        add(first_at(e[0]), f'{names[k]}_weapon_hit', f"on {names[k]}'s first weapon hit ('{how}', at {e[0]} s)")
+        low = [f for f in range(first_at(T.T_FIGHT), first_at(P.T_KO)) if P.hp_at(k, f / FPS) < 25.0]
+        add(low[0], f'{names[k]}_low_hp', f"the first frame with {names[k]}'s HP below 25 "
+                                          f"({P.hp_at(k, low[0] / FPS):.2f})")
+    for kind, what in (('parry', 'parry'), ('swat', 'cobra swat')):
+        e = first_event(lambda e: e[1] == kind)
+        if e is None:
+            absent.append(dict(rule=kind, why=f"the recording has no '{kind}' event"))
+        else:
+            add(first_at(e[0]), kind, f'on the first {what} (at {e[0]} s)')
+    add(first_at(P.T_KO), 'ko', 'the K.O. frame (the first frame of the hit-stop)')
+    for d, more in ((0.2, ''), (0.6, ''), (1.5, ' (the WINS caption)')):
+        add(first_at(P.T_KO + d), f'ko_{d}s', f'{d} s after the K.O.{more}')
+    add(first_at((P.T_SOLO + T.T_REASSEMBLE) / 2), 'solo_mid', "the middle of the winner's solo")
+    add(first_at(P.CAP_COMMENT[0][0] + 0.6), 'comment', '0.6 s into the COMMENT caption (both lines landed)')
+    add(first_at((T.T_REASSEMBLE + T.T_GLIDE) / 2), 'reassembly_mid', "the loser's pieces half-way home")
+    add(first_at((T.T_GLIDE + T.T_REV) / 2), 'glide_mid', 'both balls half-way through the glide to their corners')
+    add(1828, 'frame_1828', 'frame 1828: the doors almost shut, name A falling in as a ghost')
+    add(1829, 'frame_1829', 'frame 1829: the last frame, the card shut (the loop seam)')
+    # more than the brief lists (it asks for at least 40): states its own picks leave out
+    t0, who, name = P.STORY['caps'][0]
+    add(first_at(t0 + 0.1), 'extra_caption_punch',
+        f'extra: the first ability caption on the frame it lands ({name}: the scale punch, the shake, the sand puff)')
+    for k in (0, 1):
+        e = first_event(lambda e: e[1] == 'level' and e[2] == k and e[3] == 2)
+        add(first_at(e[0] + 0.1), f'extra_level_{names[k]}',
+            f"extra: 0.1 s after {names[k]} reaches level 2 (the unlock glow sweeping its ability's name)")
+    e = first_event(lambda e: e[1] == 'slam')
+    if e is not None:
+        add(first_at(e[0]), 'extra_slam', f'extra: on the slam of {names[e[2]]} (at {e[0]} s): the bell on the canvas')
+    add(first_at(P.T_KO + 0.1), 'extra_ko_caption_punch', 'extra: the K.O. caption on the frame it lands')
+    add(first_at(P.CAP_WINS[0][0] + 0.22 + 0.1), 'extra_wins_second_line',
+        "extra: the WINS caption's second line on the frame it lands")
+    closing = doors_moving(TT, range(first_at(T.DUR - T.T_CLOSE), NF))
+    add(closing[len(closing) // 2 - 1], 'extra_doors_closing', 'extra: the doors sliding shut over the last bar')
+    frames = []
+    for f in sorted({p[0] for p in picks}):
+        mine = [p for p in picks if p[0] == f]
+        frames.append(dict(frame=f, rules=[p[1] for p in mine], reasons=[p[2] for p in mine]))
+    return frames, absent
+
+
+def required_rules(P):
+    """every rule the brief asks for, by id"""
+    names = P.NAMES
+    out = ['frame_0', 'frame_13', 'frame_27', 'doors_last_closed', 'doors_mid', 'count_3', 'count_2', 'count_1',
+           'count_fight', 'parry', 'swat', 'ko', 'ko_0.2s', 'ko_0.6s', 'ko_1.5s', 'solo_mid', 'comment',
+           'reassembly_mid', 'glide_mid', 'frame_1828', 'frame_1829']
+    for n in names:
+        out += [f'{n}_{slot}_{d}s' for slot in SLOTS for d in (0.2, 0.6)] + [f'{n}_weapon_hit', f'{n}_low_hp']
+    return out
+
+
+def cannot_have(P, events):
+    """the brief's rules that the recorded fight has no event for, worked out from the recording's events alone
+    (not through `select`): an event kind that never occurs, an ability that is never used"""
+    kinds = {e[1] for e in events}
+    used = {(e[2], e[3]) for e in events if e[1] == 'ability'}
+    out = [kind for kind in ('parry', 'swat') if kind not in kinds]
+    for k in (0, 1):
+        for slot in SLOTS:
+            if (k, P.CFG[k]['abilities'][slot]['name']) not in used:
+                out += [f'{P.NAMES[k]}_{slot}_{d}s' for d in (0.2, 0.6)]
+    return sorted(out)
+
+
+def check_selection(P, frames, absent, events):
+    """the selection has what the brief asks for; what it lacks is exactly what the recorded fight (`events`:
+    the recording's event list) cannot have"""
+    have = {r for fr in frames for r in fr['rules']}
+    missing = [r for r in required_rules(P) if r not in have]
+    gone = sorted(a['rule'] for a in absent)
+    assert sorted(missing) == gone, f'required frames missing without a reason: {sorted(set(missing) - set(gone))}'
+    assert gone == cannot_have(P, events), \
+        f'absent rules {gone}, but the recording lacks the events of exactly {cannot_have(P, events)}'
+    # A parry is the lance cutting a projectile (fight.py kill_keys); neither of these two fighters shoots any, so
+    # the engine cannot log one for this pair. Any other absence is a mistake.
+    assert set(gone) <= {'parry'}, f'frames this fight should have: {gone}'
+    assert len(frames) >= MIN_FRAMES, f'{len(frames)} frames, the brief asks for at least {MIN_FRAMES}'
+    assert [fr['frame'] for fr in frames] == sorted({fr['frame'] for fr in frames})
+
+
+# ---------------------------------------------------------------- what a frame shows
+TAG_MEANINGS = {
+    'FLUTE': "an action layer of FLUTE's look is drawn (any FLUTE:* tag but FLUTE:ball and FLUTE:sprite)",
+    'TROMBONE': "an action layer of TROMBONE's look is drawn (any TROMBONE:* tag but TROMBONE:ball and "
+                "TROMBONE:slide)",
+    'FLUTE:ball': 'its glass ball is drawn (its own cool glass tint)',
+    'FLUTE:sprite': "its look's own pixel-art flute is drawn in the ball (not the Pixel Pitch model)",
+    'FLUTE:basket': 'at least one basket is on the canvas',
+    'FLUTE:cobra': 'at least one cobra is up',
+    'FLUTE:strike': 'a cobra is lunging or recoiling',
+    'FLUTE:swatted': 'a cobra was slapped flat by the lance and is still down or curling back up',
+    'FLUTE:dance': 'SNAKE DANCE is running (the cobras leave their baskets)',
+    'FLUTE:haste': 'FLUTTER TONGUE is running',
+    'FLUTE:wave': "PICCOLO's ring is crossing the canvas",
+    'FLUTE:shards': 'its silver shards are flying (it lost)',
+    'TROMBONE:ball': 'its glass ball is drawn',
+    'TROMBONE:slide': 'its slide lance is drawn (always, while its ball is whole: at rest it still shows)',
+    'TROMBONE:thrust': 'the lance is thrusting: the lit lane on the canvas, the thumping ball, the flaring crook',
+    'TROMBONE:trail': 'the streak a fast thrust leaves',
+    'TROMBONE:wave': "SAD TROMBONE's ring is crossing the canvas",
+    'TROMBONE:slow': 'the slowed enemy drags its droopy wobble',
+    'TROMBONE:haste': 'POWER SLIDE is running',
+    'TROMBONE:slam_decal': "PEDAL TONE's target or stomp ring is on the canvas",
+    'TROMBONE:bell': "PEDAL TONE's giant bell is in the frame",
+    'TROMBONE:solo': 'it plays its victory solo on the slide',
+    'TROMBONE:shards': 'its brass shards are flying (it lost)',
+    'card': 'the VS title card is drawn', 'card_closed': 'the card is shut (no HUD under it)',
+    'doors': 'the card is sliding open or shut',
+    'rev': 'before FIGHT!: both balls rev in their corners', 'fight': 'the fight, up to the K.O.',
+    'hitstop': 'the 0.35 s hit-stop on the K.O.', 'tail': 'after the hit-stop', 'solo': "the winner's solo",
+    'reassembly': "the loser's pieces fly home", 'glide': 'the last bar: both balls glide to their corners',
+    'countdown': 'a count-in number or FIGHT! is on screen',
+    'hud': 'the fight HUD and the ability lists are drawn', 'hud:low_hp': 'an HP bar is in its low-HP pulse',
+    'hud:sweep': 'an unlock glow sweeps an ability name', 'hud:pill': 'an ability in use glows on its pill',
+    'hud:flash': 'an HP bar flashes on a fresh hit', 'hp_numbers': 'at least one HP number is drawn on a ball',
+    'caption:ability': 'an ability caption is up', 'caption:ko': 'the K.O. caption is up',
+    'caption:wins': 'the WINS caption is up', 'caption:comment': 'the COMMENT caption is up',
+    'burst': 'an ink starburst is drawn', 'fringe': 'chromatic fringing on a big hit or the K.O.',
+    'moment': 'an ability moment dims the frame (and draws speed lines)',
+    'particles': 'reelkit.fx particles are alive', 'marks': 'fading marks are on the canvas',
+    'flares': 'an attack light is lit', 'sparks': 'hit sparks are flying', 'shimmer': 'a heat shimmer warps the frame',
+    'glass_shards': 'the K.O. shatter is on screen', 'flashbulbs': 'the crowd may fire flashbulbs',
+}
+
+
+def tags(P, f):
+    """the tags of frame f (TAG_MEANINGS), read off the kit's own state functions at that frame's time"""
+    T, TT, RUN = P.T, P.TT, P.RUN
+    t = f / FPS
+    fs = [P.fighter(k, t) for k in (0, 1)]
+    i = P.sim_i(t)
+    in_fight = T.T_FIGHT <= t < P.T_HS
+    tc = P.fx_clock(t)
+    out = set()
+    off = TT.door_offset(t)
+    card = off is not None and off < TT.OPEN_PX - 1
+    closed = card and off == 0.0
+    if card:
+        out |= {'card', 'card_closed' if closed else 'doors'}
+    out.add('rev' if t < T.T_FIGHT else 'fight' if t < P.T_KO else 'hitstop' if t < P.T_HS else 'tail')
+    if P.T_SOLO <= t < T.T_REASSEMBLE:
+        out.add('solo')
+    if T.T_REASSEMBLE <= t < T.T_GLIDE:
+        out.add('reassembly')
+    if t >= T.T_GLIDE:
+        out.add('glide')
+    count = list(T.COUNT)
+    if any(tc_ <= t < (count[j + 1][0] if j + 1 < len(count) else tc_ + 0.85) for j, (tc_, _) in enumerate(count)):
+        out.add('countdown')
+    waves = RUN['WAVES'][i] if in_fight else []
+    slams = RUN['SLAMS'][i] if in_fight else []
+    shown = [st['vis'] and st['scale'] >= 0.05 for st in fs]
+    for k, n in enumerate(P.NAMES):
+        if shown[k]:
+            out.add(f'{n}:ball')
+        if in_fight and t < P.T_KO and fs[k]['haste'] > 0:
+            out.add(f'{n}:haste')
+        if any(w[0] == k for w in waves):
+            out.add(f'{n}:wave')
+    parts = P.parts_at(t)
+    if parts:
+        out.add('glass_shards')
+        if len(P.LOOKS[P.LOSE].shards):
+            out.add(f'{P.NAMES[P.LOSE]}:shards')
+    k = P.NAMES.index('FLUTE')
+    L = P.LOOKS[k]
+    if shown[k]:
+        out.add('FLUTE:sprite')
+    cobs = L.cobras_at(t, fs)
+    if any(bk > 0.02 for home, bk, cp, t_drop, strike, aim, bid in cobs):
+        out.add('FLUTE:basket')
+    for home, bk, cp, t_drop, strike, aim, bid in cobs:
+        if bk > 0.02 and t > t_drop:
+            out.add('FLUTE:cobra')
+        if strike is not None:
+            out.add('FLUTE:strike')
+        if bid < 100 and L.swat_lean(bid, min(t, P.T_KO)) is not None:
+            out.add('FLUTE:swatted')
+    if t < P.T_KO and L.dancing_k(t) > 0:
+        out.add('FLUTE:dance')
+    k = P.NAMES.index('TROMBONE')
+    L, st = P.LOOKS[k], fs[k]
+    if shown[k] and not st['shattered']:
+        out.add('TROMBONE:slide')
+        prev = P.fighter(k, max(0.0, t - 1.0 / FPS))
+        if st['ext'] - prev['ext'] > 0.12 and abs((st['th'] - prev['th'] + math.pi) % (2 * math.pi) - math.pi) < 0.3:
+            out.add('TROMBONE:trail')
+    if in_fight and st['thr_k'] > 0.05:
+        out.add('TROMBONE:thrust')
+    if in_fight and fs[1 - k]['slow'] > 0:
+        out.add('TROMBONE:slow')
+    if any(s[0] == k for s in slams):
+        out.add('TROMBONE:slam_decal')
+    from ballfight.kit.fighters import trombone
+    if any(s[0] == k and trombone.bell_height(t, s[3], s[4]) is not None for s in slams):
+        out.add('TROMBONE:bell')
+    if P.WIN == k and P.T_SOLO <= t < T.T_REASSEMBLE:
+        out.add('TROMBONE:solo')
+    for n, rest in (('FLUTE', ('FLUTE:ball', 'FLUTE:sprite')), ('TROMBONE', ('TROMBONE:ball', 'TROMBONE:slide'))):
+        if any(x.startswith(n + ':') and x not in rest for x in out):
+            out.add(n)
+    # the shared layers
+    if not closed:
+        out.add('hud')
+        rows = [r for k in (0, 1) for r in P.ability_rows(k, t)]
+        if any(r['state'] == 'unlocked' and r['sweep'] is not None and 0.0 <= r['sweep'] < 1.0 for r in rows):
+            out.add('hud:sweep')
+        if any(r['state'] == 'unlocked' and r['glow'] > 0.004 for r in rows):
+            out.add('hud:pill')
+        ko = [k == P.LOSE and P.T_KO <= t < T.T_GLIDE for k in (0, 1)]
+        if any(P.hp_at(k, t) <= 25.0 and not ko[k] for k in (0, 1)):
+            out.add('hud:low_hp')
+        if any(e[7] != 'key' and e[7] not in P.LOOKS[e[2]].quiet_hits
+               for _, e in P.events_between(t - 0.12, t, ('hit',))):
+            out.add('hud:flash')
+        if any(shown[k] and fs[k]['scale'] >= 0.95 and not (T.T_FIGHT - 0.05 <= t < T.T_FIGHT + 0.85)
+               and not P.under_something(k, t) for k in (0, 1)):
+            out.add('hp_numbers')
+    for name, caps in (('ability', P.CAP_ABIL[0] + P.CAP_ABIL[1]), ('ko', P.CAP_KO), ('wins', P.CAP_WINS),
+                       ('comment', P.CAP_COMMENT)):
+        if any(t0 <= t < t1 for t0, t1, lines in caps):
+            out.add('caption:' + name)
+    P.BU._assign()
+    if any(int((t - t0) * FPS + 1e-6) < P.BU.frames for t0, e in P.BU.tl.alive(t)):
+        out.add('burst')
+    if any(P.LOOKS[e[2]].fringe(e) for _, e in P.events_between(t - 0.12, t, ('hit',))) or P.T_KO <= t < P.T_HS + 0.3:
+        out.add('fringe')
+    if P.MO.dim_k(t) > 0.005:
+        out.add('moment')
+    if len(P.PA.alive(tc)[1]):
+        out.add('particles')
+    if P.MK.live(tc):
+        out.add('marks')
+    if P.FL.at(tc):
+        out.add('flares')
+    if P.events_between(t - 0.32, t, ('hit', 'parry', 'block', 'wall', 'cleared', 'fade')):
+        out.add('sparks')
+    if (T.T_FIGHT <= t < P.T_HS and RUN['WAVES'][P.sim_i(min(t, P.T_KO))]) or \
+            any(e[1] == 'slam' and 0 <= t - e[0] < 0.6 and t < P.T_HS for e in P.EV):
+        out.add('shimmer')
+    if len(P.FLASH_T[(P.FLASH_T <= t) & (P.FLASH_T > t - 0.1)]):
+        out.add('flashbulbs')
+    unknown = out - set(TAG_MEANINGS)
+    assert not unknown, unknown
+    return sorted(out)
+
+
+# ---------------------------------------------------------------- frames
+def timeline(P):
+    """the times the selection rules read, as exact floats"""
+    T = P.T
+    h = common.hexf
+    return dict(beat=h(T.BEAT), bar=h(T.BAR), t_fight=h(T.T_FIGHT), t_ko=h(P.T_KO), t_hitstop_end=h(P.T_HS),
+                t_solo=h(P.T_SOLO), t_reassemble=h(T.T_REASSEMBLE), t_glide=h(T.T_GLIDE), t_rev=h(T.T_REV),
+                t_doors=[h(T.T_DOORS[0]), h(T.T_DOORS[1])], t_close=h(T.T_CLOSE), dur=h(T.DUR),
+                count=[[h(tc), txt] for tc, txt in T.COUNT], title=[[h(t0), w] for t0, w in T.TITLE])
+
+
+def run():
+    P = picture('frames')
+    rec = check_recording(P)
+    print(f"frames: {common.rel(RECORDING)} (hash {rec['hash']}) is the fight the kit draws: seed, winner, K.O. "
+          f"time, rules, {len(rec['events'])} events and {len(rec['arrays'])} per-frame arrays are the same")
+    frames, absent = select(P, rec['events'])
+    check_selection(P, frames, absent, rec['events'])
+    names = {f'f{fr["frame"]:04d}.png' for fr in frames}
+    forget_stale(OUT, names)
+    rows, shots = [], {}
+    for fr in frames:
+        f = fr['frame']
+        img = P.render(f)
+        assert img.shape == (H, W, 3) and img.dtype == np.uint8, (f, img.shape, img.dtype)
+        shots[f] = img
+        write_png(os.path.join(OUT, f'f{f:04d}.png'), img)
+        rows.append(dict(frame=f, t=f / FPS, file=f'f{f:04d}.png', rules=fr['rules'],
+                         reason='; '.join(fr['reasons']), tags=tags(P, f)))
+        print(f"frames: f{f:04d}  {rows[-1]['reason']}")
+    # a frame is a pure function of its number: drawn again, last to first, the same pixels
+    again = [frames[j]['frame'] for j in sorted({0, len(frames) // 2, len(frames) - 1}, reverse=True)]
+    for f in again:
+        assert np.array_equal(P.render(f), shots[f]), f'frame {f} drawn a second time differs'
+    doc = dict(
+        about='golden frames of the example episode as the Python kit draws them: kit.picture.render(frame), '
+              'internal size, RGB',
+        tool='frames', episode=EPISODE, seed=P.EP.seed, fighters=list(P.NAMES), winner=P.NAMES[P.WIN],
+        call='kit.picture.render(frame)', fps=FPS, size=[W, H], mode='RGB', nf=NF,
+        recording=recording_note(rec, 'before any frame was drawn the export read this file and found it equal to '
+                                      'the run the kit drew from: seed, names, corners, first fight frame, winner, '
+                                      'K.O. time, rules, every event and every per-frame array. The frames were '
+                                      'chosen from its events. hash is its content hash (Recording::hash in the '
+                                      'Studio, recording.rec_hash here)'),
+        timeline=timeline(P),
+        rule_notes=dict(
+            first_at='a frame "at" or "after" a time t is the first frame whose time frame / 30 is at or after t',
+            extra='rules named extra_* are picks beyond the brief\'s list (it asks for at least 40 frames)'),
+        absent=absent,
+        tag_notes='Every frame shows something only FLUTE\'s look and something only TROMBONE\'s look draw (its '
+                  'pixel-art sprite and glass, the slide lance at rest; on the title card its panel and close-up), '
+                  'so no frame here is drawable with a default look for either fighter. The plain tags FLUTE and '
+                  'TROMBONE therefore mark action layers only; the always-on layers have tags of their own.',
+        tags=TAG_MEANINGS, frames=rows)
+    common.write_json(INDEX, doc)
+    if not os.path.exists(EXCEPTIONS):                    # the Rust lane owns it from here on: never overwritten
+        common.write_text(EXCEPTIONS, EXCEPTIONS_TEXT)
+        manifest.adopt(EXCEPTIONS)
+        print(f'frames: wrote {common.rel(EXCEPTIONS)} (an empty list)')
+    size = sum(os.path.getsize(os.path.join(OUT, n)) for n in names)
+    print(f'frames: {len(rows)} frames, {size / 1e6:.2f} MB of PNG -> {common.rel(OUT)}')
+    if absent:
+        print('frames: not in this fight: ' + '; '.join(f"{a['rule']} ({a['why']})" for a in absent))
+
+
+# ---------------------------------------------------------------- the title card's own vectors
+def title_cases(P):
+    """[(frame, rule, reason)]: each word's slam (its first frame, +2 and +5 frames), the hold, four frames of the
+    doors opening and four of them closing"""
+    T, TT = P.T, P.TT
+    out = []
+    for j, (t0, word) in enumerate(T.TITLE):
+        f0 = first_at(t0)
+        for d in (0, 2, 5):
+            out.append((f0 + d, f'slam_{j}_{d}', f'{word} slams in on frame {f0}: {d} frames after'))
+    end_open = first_at(T.T_DOORS[1])
+    # the hold: the last word has settled (title.slam_k is 1 from 0.26 s after its slam) and its shake has died
+    still = [f for f in range(first_at(T.TITLE[-1][0] + 0.26), end_open)
+             if TT.door_offset(f / FPS) == 0.0 and TT.shake(f / FPS) == (0.0, 0.0)]
+    out.append((still[len(still) // 2], 'hold', 'the hold: every word landed, no shake, the doors shut'))
+    opening = doors_moving(TT, range(end_open))
+    closing = sorted(set(doors_moving(TT, range(first_at(T.DUR - T.T_CLOSE), NF))) | {NF - 1})   # the last: shut
+    for name, fl in (('opening', opening), ('closing', closing)):
+        for n, j in enumerate(np.linspace(0, len(fl) - 1, 5)[1:]):
+            f = fl[int(round(float(j)))]
+            out.append((f, f'{name}_{n}', f'the doors {name}: frame {f} of {fl[0]}..{fl[-1]}'))
+    return out
+
+
+def check_title(cases):
+    rules = [r for f, r, why in cases]
+    want = [f'slam_{j}_{d}' for j in (0, 1, 2) for d in (0, 2, 5)] + ['hold'] + \
+           [f'{n}_{j}' for n in ('opening', 'closing') for j in range(4)]
+    assert sorted(rules) == sorted(want), sorted(set(want) ^ set(rules))
+    assert len({f for f, r, why in cases}) == len(cases), 'two title cases share a frame'
+
+
+def run_title():
+    P = picture('title')
+    TT = P.TT
+    rec = check_recording(P)                              # (the card takes the fighters' names from the run)
+    cases = title_cases(P)
+    check_title(cases)
+    noise = np.random.default_rng(NOISE_SEED).integers(0, 256, size=(H, W, 3), dtype=np.uint8)
+    names = {f'f{f:04d}.png' for f, rule, why in cases}
+    forget_stale(TITLE_OUT, names)
+    write_png(os.path.join(TITLE_OUT, 'noise.png'), noise)
+    rows = []
+    for n, (f, rule, why) in enumerate(sorted(cases)):
+        t = f / FPS
+        src = noise.copy()
+        out = TT.draw(src, t)
+        assert np.array_equal(src, noise), 'title.draw changed its input'
+        assert out.shape == (H, W, 3) and out.dtype == np.uint8
+        assert not np.array_equal(out, noise), f'frame {f}: the card drew nothing'
+        write_png(os.path.join(TITLE_OUT, f'f{f:04d}.png'), out)
+        off, (sx, sy) = TT.door_offset(t), TT.shake(t)
+        rows.append(dict(id=f'c{n:03d}', call='title.draw(noise, t)', args=dict(frame=f, t=common.hexf(t)),
+                         file=f'f{f:04d}.png', rule=rule, reason=why,
+                         expect=dict(door_offset=common.hexf(off), shake=[common.hexf(sx), common.hexf(sy)])))
+        print(f'title: f{f:04d}  {why}')
+    doc = dict(
+        about='the VS title card alone: title.draw(noise, t) over one fixed seeded-noise image, at the times that '
+              'show each word slamming in, the hold, and the doors opening and closing',
+        tool='title', episode=EPISODE, seed=P.EP.seed, fps=FPS, size=[W, H], mode='RGB',
+        noise=dict(file='noise.png', seed=NOISE_SEED, call=NOISE_CALL),
+        recording=recording_note(rec, 'the export read this file and found it equal to the run the kit drew from. '
+                                      'The card takes only the two names from the fight (and with them the '
+                                      'roster\'s colours and views); its times, words and series tag come from '
+                                      'the episode\'s config, and nothing on it depends on who wins'),
+        note='t is frame / 30. title.draw returns uint8 for a uint8 image. expect.door_offset and expect.shake are '
+             'title.door_offset(t) and title.shake(t) at that time.',
+        cases=rows)
+    common.write_json(TITLE_INDEX, doc)
+    size = sum(os.path.getsize(os.path.join(TITLE_OUT, n)) for n in names | {'noise.png'})
+    print(f'title: {len(rows)} cards + noise.png, {size / 1e6:.2f} MB of PNG -> {common.rel(TITLE_OUT)}')
+    title_hashes(P, rec, noise)
+
+
+# ---------------------------------------------------------------- every card frame, by its hash
+# The 18 cards above are PNGs (350 to 690 KB each); every other frame on which the card is drawn is pinned by the
+# SHA-256 of its RGB bytes, for the episode and for three other timelines of the same two fighters. Each other
+# timeline is the example config with FIGHTERS, BPM or SERIES changed, and nothing else the card reads: a test can
+# build the same card from the roster, the models and the FLUTE's close-up already in the reference set.
+TITLE_HASHES = os.path.join(TITLE_OUT, 'hashes.npz')
+TITLE_EPISODE = dict(fighters=('FLUTE', 'TROMBONE'), bpm=132, series='BALLFIGHT #15')   # the example config's
+TITLE_TIMELINES = {                                    # name -> FIGHTERS, BPM, SERIES of the config
+    'episode': TITLE_EPISODE,
+    'swapped': dict(fighters=('TROMBONE', 'FLUTE'), bpm=132, series='BALLFIGHT #15'),
+    'bpm96': dict(fighters=('FLUTE', 'TROMBONE'), bpm=96, series=None),
+    'bpm200': dict(fighters=('FLUTE', 'TROMBONE'), bpm=200, series='BALLFIGHT #15'),
+}
+
+
+def card_hashes(TT, T, noise):
+    """(frames, sha256): every frame of the timeline on which title.draw draws (door_offset not None and below
+    OPEN_PX - 1, its own test), and the SHA-256 of the bytes of title.draw(noise, frame / 30) for each, as an
+    (n, 32) uint8 array"""
+    import hashlib
+    frames, digests = [], []
+    for f in range(T.NF):
+        off = TT.door_offset(f / FPS)
+        if off is None or off >= TT.OPEN_PX - 1:
+            continue
+        src = noise.copy()
+        out = TT.draw(src, f / FPS)
+        assert np.array_equal(src, noise) and out.shape == (H, W, 3) and out.dtype == np.uint8, f
+        assert out.flags.c_contiguous, f
+        frames.append(f)
+        digests.append(np.frombuffer(hashlib.sha256(out.tobytes()).digest(), np.uint8))
+    return np.array(frames, np.int32), np.stack(digests)
+
+
+def timeline_note(T):
+    """what the test checks its own timeline against, as float.hex() strings"""
+    return dict(bpm=common.hexf(float(T.BPM)), beat=common.hexf(T.BEAT), bar=common.hexf(T.BAR),
+                title=[common.hexf(float(t0)) for t0, w in T.TITLE],
+                t_doors=[common.hexf(T.T_DOORS[0]), common.hexf(T.T_DOORS[1])], t_close=common.hexf(T.T_CLOSE),
+                dur=common.hexf(T.DUR), nf=T.NF)
+
+
+def _timeline_hashes(name):
+    """pool worker (a fresh process for each timeline: title.py keeps module-level state): the card of the
+    example episode with TITLE_TIMELINES[name] applied, as kit.picture would build it, and card_hashes of it.
+    No fight is run: the card reads only the timeline and, through `render`, the two fighters' names, roster
+    entries and colours, which a stand-in module gives (`kit.picture` is `render` in the kit). The looks' title
+    hooks are registered with kit.picture's own lines"""
+    import importlib.util
+    import types
+    conf = TITLE_TIMELINES[name]
+    E, _ = common.kit()
+    E.activate_paths()
+    src = os.path.join(common.REPO, 'projects', 'ballfight', 'examples', EPISODE, 'episode.py')
+    folder = os.path.join(common.CACHE, 'episodes', f'title_{name}', EPISODE)
+    with open(src, 'rb') as fh:
+        data = fh.read()
+    common.write_bytes(os.path.join(folder, 'episode.py'), data)
+    stale = os.path.join(folder, 'check', 'sprites_title.npz')   # title.big_sprite's cache, keyed by side
+    if os.path.exists(stale):
+        os.remove(stale)
+    spec = importlib.util.spec_from_file_location('title_timeline_config', os.path.join(folder, 'episode.py'))
+    cfg = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(cfg)
+    cfg.FIGHTERS = tuple(conf['fighters'])
+    cfg.BPM = conf['bpm']
+    if conf['series'] is None:
+        del cfg.SERIES
+    else:
+        cfg.SERIES = conf['series']
+    from reelkit.config import loop_bpm
+    cfg.CHORDS = ['Em'] * int(round(61.0 / (4 * 60.0 / loop_bpm(conf['bpm'], 61.0))))   # one chord a bar
+    ep = E.load(folder, cfg)
+    T = ep.T
+    assert (T.FPS, T.NF) == (FPS, NF) and T.SERIES == (conf['series'] or '')
+    from fighters import FIGHTERS
+    RD = types.ModuleType('render')                     # what title.py and the looks read of kit.picture
+    RD.T = T
+    RD.NAMES = list(conf['fighters'])
+    RD.CFG = [FIGHTERS[n] for n in RD.NAMES]
+    RD.COL = [np.array(c['color'], float) for c in RD.CFG]
+    RD.DARK = [np.array(c['dark'], float) for c in RD.CFG]
+    sys.modules['render'] = RD
+    import title as TT
+    from ballfight.kit import fighters as FIGHTER_MODULES
+    if not T.SERIES:                                     # kit.picture: no episode tag on the card
+        TT.ui_tag = lambda layer, alpha: None
+    for _L in [FIGHTER_MODULES.look(RD.NAMES[k], RD, k) for k in (0, 1)]:   # kit.picture's lines, without setup()
+        if _L.title_pattern is not None:
+            TT.PATTERNS.setdefault(_L.name, _L.title_pattern)
+        if type(_L).title_closeup is not FIGHTER_MODULES.base.Look.title_closeup:
+            TT.CLOSEUP.setdefault(_L.name, _L.title_closeup)
+        if tuple(_L.glass) != tuple(FIGHTER_MODULES.base.Look.glass):
+            TT.GLASS.setdefault(_L.name, tuple(_L.glass))
+    noise = np.random.default_rng(NOISE_SEED).integers(0, 256, size=(H, W, 3), dtype=np.uint8)
+    frames, digests = card_hashes(TT, T, noise)
+    return name, frames, digests, timeline_note(T)
+
+
+def title_hashes(P, rec, noise):
+    """write title/hashes.npz + hashes.json: card_hashes for the episode (this process's kit.picture) and for the
+    other TITLE_TIMELINES (each in a fresh spawned process). The episode is drawn both ways, and the two must
+    agree: the worker's stand-in for kit.picture builds the card kit.picture builds"""
+    import multiprocessing as mp
+    want = TITLE_EPISODE
+    assert (tuple(P.NAMES), P.EP.cfg.BPM, P.T.SERIES) == (want['fighters'], want['bpm'], want['series']), want
+    here = ('episode',) + card_hashes(P.TT, P.T, noise) + (timeline_note(P.T),)
+    results = {}
+    with mp.get_context('spawn').Pool(len(TITLE_TIMELINES), maxtasksperchild=1) as pool:
+        for r in pool.map(_timeline_hashes, list(TITLE_TIMELINES), chunksize=1):
+            results[r[0]] = r
+    w = results['episode']
+    assert np.array_equal(w[1], here[1]) and np.array_equal(w[2], here[2]) and w[3] == here[3], \
+        "the episode's card drawn by the worker differs from the one kit.picture draws"
+    arrays, rows = {}, []
+    for n, name in enumerate(TITLE_TIMELINES):
+        _, frames, digests, note = results[name]
+        conf = TITLE_TIMELINES[name]
+        cid = f'c{n:03d}'
+        arrays[f'{cid}__frames'], arrays[f'{cid}__sha256'] = frames, digests
+        rows.append(dict(id=cid, call='hashlib.sha256(title.draw(noise, frame / 30).tobytes()).digest()',
+                         args=dict(timeline=name, fighters=list(conf['fighters']), bpm=conf['bpm'],
+                                   series=conf['series'], cards=int(len(frames)), timeline_values=note),
+                         arrays={'frames': f'{cid}__frames', 'sha256': f'{cid}__sha256'}))
+        print(f'title: {name}: {len(frames)} card frames hashed ({frames[0]}..{frames[-1]})')
+    assert rows[0]['args']['cards'] == 61 and rows[0]['args']['series'] == 'BALLFIGHT #15', rows[0]['args']
+    common.write_npz(TITLE_HASHES, arrays)
+    common.write_json(os.path.splitext(TITLE_HASHES)[0] + '.json', dict(
+        about='every frame on which the VS title card is drawn, pinned by the SHA-256 of title.draw(noise, '
+              'frame / 30) (its (640, 360, 3) uint8 bytes in C order), for the episode and three other timelines',
+        tool='title', episode=EPISODE, fps=FPS, size=[W, H], mode='RGB',
+        noise=dict(file='noise.png', seed=NOISE_SEED, call=NOISE_CALL),
+        recording=recording_note(rec, 'as in title.json; the other timelines run no fight'),
+        note='Each case is one timeline: the example episode (c000, as kit.picture draws it) or its config with '
+             'FIGHTERS, BPM (the base tempo; loop_bpm snaps it to whole bars) and SERIES (None: no tag) as args '
+             'give them and nothing else changed but CHORDS (one a bar, which the card does not read). The looks '
+             'are the kit\'s (FLUTE: flute_keys, its close-up and glass; TROMBONE: the card\'s _slide_tubes and '
+             'its model), registered as kit.picture does. frames (int32) lists every frame with door_offset not '
+             'None and below OPEN_PX - 1, sha256 (uint8, n x 32) their digests in the same order; '
+             'args.timeline_values the timeline\'s values, the floats as float.hex().',
+        cases=rows))
+    size = sum(os.path.getsize(p) for p in (TITLE_HASHES, os.path.splitext(TITLE_HASHES)[0] + '.json'))
+    print(f'title: {sum(len(r[1]) for r in results.values())} card hashes, {size / 1e3:.1f} KB -> '
+          f'{common.rel(TITLE_HASHES)} + .json')
+
+
+EXPORTS = {'frames': run, 'title': run_title}

@@ -1,0 +1,34 @@
+{
+ "about": "Gate O on two modules the kit already holds (they must pass) and on the ORGAN module changed at run time (each change must fail, naming its frame and pixel or its bus and sample): plan m4 Task 2",
+ "brass_trailer": {
+  "buses": {
+   "braam": "bit-identical",
+   "strings": "bit-identical",
+   "taiko": "bit-identical",
+   "tremolo": "bit-identical"
+  },
+  "file": "older/selfproof/brass_trailer.json",
+  "verdict": "PASS"
+ },
+ "mutations": [
+  {
+   "change": "one pixel (x=180, y=300, red channel +-40) of frame 144, after the ORGAN look's after_grade",
+   "line": "Gate O: ORGAN frame 144 (t = 4.800 s), layers thump, shake, cathedral, flashbulbs, shards, pipes, effects, toccata, fringe, sparks, hit_glow: the contributions differ at pixel (x=180, y=301): the episode [0, -24, -25], the kit [-40, -24, -25] (on: episode [255, 231, 230], kit [215, 231, 230]; off: episode [255, 255, 255], kit [255, 255, 255]); 1 pixels differ; the two off frames differ in 0 pixels",
+   "verdict": "FAIL"
+  },
+  {
+   "change": "sample 1440000 of the 'organ' bus + 1e-3, after the ORGAN sound's play()",
+   "line": "Gate O: ORGAN bus 'organ' differs from the episode's at sample 1440000 (t = 30.000000 s, channel 0): the episode 0.0, the kit 0.001; the peak difference over the window is -60.0 dBFS, the bar -120 dBFS",
+   "verdict": "FAIL"
+  }
+ ],
+ "organ": {
+  "buses": {
+   "organ": "bit-identical",
+   "solo": "bit-identical"
+  },
+  "file": "older/selfproof/organ.json",
+  "frames": 24,
+  "verdict": "PASS"
+ }
+}

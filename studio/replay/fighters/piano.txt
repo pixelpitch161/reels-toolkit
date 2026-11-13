@@ -1,0 +1,14 @@
+# The engine's self-replay hashes of PIANO (studio/reference/fighters/piano/fight.json's config): both side orders,
+# seeds 1, 2, 3, 500 and 1 << 40. Written by the proving harness with BF_BLESS=1 on the Windows reference PC;
+# every PC and every build must give the same lines. Do not edit by hand.
+# left right seed winner t_ko n_events hash
+PIANO FLUTE 1 1 38.17156862745098 1046 51792f43b228ff54
+PIANO FLUTE 2 0 41.713235294117645 1162 f71563ef2dfb753f
+PIANO FLUTE 3 0 46.51323529411764 1308 eff19a1df641384f
+PIANO FLUTE 500 1 49.16323529411765 1385 ac34b6eb3db70492
+PIANO FLUTE 1099511627776 0 54.75490196078431 1457 425264164f0b7b66
+FLUTE PIANO 1 1 46.438235294117646 1233 cad0bb0f8bcc723f
+FLUTE PIANO 2 1 48.521568627450975 1249 b01a00d48cfb0e82
+FLUTE PIANO 3 1 50.66323529411765 1315 ffc6910f71bb9250
+FLUTE PIANO 500 0 44.22990196078431 1258 9e5387c957a96f9e
+FLUTE PIANO 1099511627776 1 51.463235294117645 1393 dee9b32a61fc9b0f

@@ -1,0 +1,14 @@
+# The engine's self-replay hashes of TUBA (studio/reference/fighters/tuba/fight.json's config): both side orders,
+# seeds 1, 2, 3, 500 and 1 << 40. Written by the proving harness with BF_BLESS=1 on the Windows reference PC;
+# every PC and every build must give the same lines. Do not edit by hand.
+# left right seed winner t_ko n_events hash
+TUBA FLUTE 1 1 52.521568627450975 493 187de1c72fc3edaf
+TUBA FLUTE 2 0 41.72990196078431 376 8ac3c60c2c1e92b3
+TUBA FLUTE 3 0 38.07990196078431 450 203a221fec5d1eec
+TUBA FLUTE 500 0 47.73823529411764 421 0c164b21a1594507
+TUBA FLUTE 1099511627776 1 49.37990196078431 525 50a2cf76151737f7
+FLUTE TUBA 1 1 49.72156862745098 464 c49cc88ac1f86269
+FLUTE TUBA 2 1 53.338235294117645 476 45de5f09ee0360c6
+FLUTE TUBA 3 0 53.646568627450975 536 aced94b6cf7b0cec
+FLUTE TUBA 500 0 56.78823529411764 482 e7800774d53b334c
+FLUTE TUBA 1099511627776 0 52.55490196078431 476 4e183714d2cf8866

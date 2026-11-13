@@ -1,0 +1,135 @@
+{
+ "about": "reelkit.config: the dither tables as they are and the scalar helpers on fixed inputs",
+ "cases": [
+  {
+   "args": {},
+   "arrays": {
+    "out": "c000__out"
+   },
+   "call": "reelkit.config.BAYER",
+   "id": "c000"
+  },
+  {
+   "args": {},
+   "arrays": {
+    "out": "c001__out"
+   },
+   "call": "reelkit.config.BAYER_FULL",
+   "id": "c001"
+  },
+  {
+   "args": {},
+   "arrays": {
+    "out": "c002__out"
+   },
+   "call": "reelkit.config.XX",
+   "id": "c002"
+  },
+  {
+   "args": {},
+   "arrays": {
+    "out": "c003__out"
+   },
+   "call": "reelkit.config.YY",
+   "id": "c003"
+  },
+  {
+   "args": {},
+   "arrays": {
+    "a": "c004__a",
+    "b": "c004__b",
+    "out": "c004__out",
+    "x": "c004__x"
+   },
+   "call": "reelkit.config.ss(a, b, x)",
+   "id": "c004"
+  },
+  {
+   "args": {},
+   "arrays": {
+    "out": "c005__out",
+    "x": "c005__x"
+   },
+   "call": "reelkit.config.ease(x)",
+   "id": "c005"
+  },
+  {
+   "args": {},
+   "arrays": {
+    "a": "c006__a",
+    "b": "c006__b",
+    "out": "c006__out",
+    "u": "c006__u"
+   },
+   "call": "reelkit.config.lerp(a, b, u)",
+   "id": "c006"
+  },
+  {
+   "args": {},
+   "arrays": {
+    "a": "c007__a",
+    "b": "c007__b",
+    "out": "c007__out",
+    "u": "c007__u"
+   },
+   "call": "reelkit.config.mixc(a, b, u)",
+   "id": "c007"
+  },
+  {
+   "args": {},
+   "arrays": {
+    "dur": "c008__dur",
+    "out": "c008__out",
+    "period": "c008__period"
+   },
+   "call": "reelkit.config.whole_period(period, dur)",
+   "id": "c008"
+  },
+  {
+   "args": {},
+   "arrays": {
+    "beats_per_bar": "c009__beats_per_bar",
+    "bpm": "c009__bpm",
+    "dur": "c009__dur",
+    "out": "c009__out"
+   },
+   "call": "reelkit.config.loop_bpm(bpm, dur, beats_per_bar)",
+   "id": "c009"
+  },
+  {
+   "args": {},
+   "arrays": {
+    "out": "c010__out",
+    "y0": "c010__y0",
+    "y1": "c010__y1"
+   },
+   "call": "reelkit.config.safe_x1(y0, y1)",
+   "id": "c010"
+  },
+  {
+   "args": {},
+   "arrays": {
+    "out": "c011__out",
+    "x0": "c011__x0",
+    "x1": "c011__x1",
+    "y0": "c011__y0",
+    "y1": "c011__y1"
+   },
+   "call": "reelkit.config.safe_overshoot(x0, y0, x1, y1)",
+   "id": "c011"
+  }
+ ],
+ "constants": {
+  "DUR": "0x1.e800000000000p+5",
+  "FPS": 30,
+  "H": 640,
+  "NF": 1830,
+  "SAFE": [20, 96, 340, 500],
+  "SAFE_BUTTONS": [300, 290, 360, 640],
+  "SAFE_CX": 180,
+  "UP": 3,
+  "W": 360
+ },
+ "note": "Scalar helpers: one Python call per row, with Python floats (ints for the safe-zone helpers); the inputs are the arrays named by the argument names, \"out\" the results. BAYER_FULL, XX and YY are (640, 360): (height, width).",
+ "tool": "kit"
+}

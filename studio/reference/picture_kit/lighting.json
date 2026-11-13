@@ -1,0 +1,959 @@
+{
+ "about": "reelkit.lighting: Lights and shade on seeded inputs",
+ "cases": [
+  {
+   "args": {},
+   "arrays": {
+    "amb": "c000__amb",
+    "fill_d": "c000__fill_d",
+    "fill_rgb": "c000__fill_rgb",
+    "fills_out": "c000__fills_out",
+    "key_d": "c000__key_d",
+    "key_rgb": "c000__key_rgb",
+    "keys_out": "c000__keys_out",
+    "point_pos": "c000__point_pos",
+    "point_radius": "c000__point_radius",
+    "point_rgb": "c000__point_rgb",
+    "sky": "c000__sky",
+    "view": "c000__view"
+   },
+   "call": "Lights(amb, sky) with key(name, d, rgb), fill(d, rgb), point(pos, rgb, radius)",
+   "id": "c000"
+  },
+  {
+   "args": {},
+   "arrays": {
+    "amb": "c001__amb",
+    "fill_d": "c001__fill_d",
+    "fill_rgb": "c001__fill_rgb",
+    "fills_out": "c001__fills_out",
+    "key_d": "c001__key_d",
+    "key_rgb": "c001__key_rgb",
+    "keys_out": "c001__keys_out",
+    "point_pos": "c001__point_pos",
+    "point_radius": "c001__point_radius",
+    "point_rgb": "c001__point_rgb",
+    "sky": "c001__sky",
+    "view": "c001__view"
+   },
+   "call": "Lights(amb, sky) with key(name, d, rgb), fill(d, rgb), point(pos, rgb, radius)",
+   "id": "c001"
+  },
+  {
+   "args": {},
+   "arrays": {
+    "amb": "c002__amb",
+    "fill_d": "c002__fill_d",
+    "fill_rgb": "c002__fill_rgb",
+    "fills_out": "c002__fills_out",
+    "key_d": "c002__key_d",
+    "key_rgb": "c002__key_rgb",
+    "keys_out": "c002__keys_out",
+    "point_pos": "c002__point_pos",
+    "point_radius": "c002__point_radius",
+    "point_rgb": "c002__point_rgb",
+    "sky": "c002__sky",
+    "view": "c002__view"
+   },
+   "call": "Lights(amb, sky) with key(name, d, rgb), fill(d, rgb), point(pos, rgb, radius)",
+   "id": "c002"
+  },
+  {
+   "args": {},
+   "arrays": {
+    "amb": "c003__amb",
+    "fill_d": "c003__fill_d",
+    "fill_rgb": "c003__fill_rgb",
+    "fills_out": "c003__fills_out",
+    "key_d": "c003__key_d",
+    "key_rgb": "c003__key_rgb",
+    "keys_out": "c003__keys_out",
+    "point_pos": "c003__point_pos",
+    "point_radius": "c003__point_radius",
+    "point_rgb": "c003__point_rgb",
+    "sky": "c003__sky",
+    "view": "c003__view"
+   },
+   "call": "Lights(amb, sky) with key(name, d, rgb), fill(d, rgb), point(pos, rgb, radius)",
+   "id": "c003"
+  },
+  {
+   "args": {},
+   "arrays": {
+    "amb": "c004__amb",
+    "fill_d": "c004__fill_d",
+    "fill_rgb": "c004__fill_rgb",
+    "fills_out": "c004__fills_out",
+    "key_d": "c004__key_d",
+    "key_rgb": "c004__key_rgb",
+    "keys_out": "c004__keys_out",
+    "point_pos": "c004__point_pos",
+    "point_radius": "c004__point_radius",
+    "point_rgb": "c004__point_rgb",
+    "sky": "c004__sky",
+    "view": "c004__view"
+   },
+   "call": "Lights(amb, sky) with key(name, d, rgb), fill(d, rgb), point(pos, rgb, radius)",
+   "id": "c004"
+  },
+  {
+   "args": {},
+   "arrays": {
+    "amb": "c005__amb",
+    "fill_d": "c005__fill_d",
+    "fill_rgb": "c005__fill_rgb",
+    "fills_out": "c005__fills_out",
+    "key_d": "c005__key_d",
+    "key_rgb": "c005__key_rgb",
+    "keys_out": "c005__keys_out",
+    "point_pos": "c005__point_pos",
+    "point_radius": "c005__point_radius",
+    "point_rgb": "c005__point_rgb",
+    "sky": "c005__sky",
+    "view": "c005__view"
+   },
+   "call": "Lights(amb, sky) with key(name, d, rgb), fill(d, rgb), point(pos, rgb, radius)",
+   "id": "c005"
+  },
+  {
+   "args": {
+    "emit": "0x0.0p+0",
+    "rimk": "0x1.999999999999ap-3",
+    "step": 5,
+    "trans": "0x0.0p+0"
+   },
+   "arrays": {
+    "amb": "c006__amb",
+    "base": "c006__base",
+    "ctr": "c006__ctr",
+    "fill_d": "c006__fill_d",
+    "fill_rgb": "c006__fill_rgb",
+    "key_d": "c006__key_d",
+    "key_rgb": "c006__key_rgb",
+    "nrm": "c006__nrm",
+    "out": "c006__out",
+    "point_pos": "c006__point_pos",
+    "point_radius": "c006__point_radius",
+    "point_rgb": "c006__point_rgb",
+    "sky": "c006__sky",
+    "view": "c006__view"
+   },
+   "call": "reelkit.lighting.shade(L, nrm, ctr, base, kvis, rimk, trans, emit, step)",
+   "id": "c006"
+  },
+  {
+   "args": {
+    "emit": "0x0.0p+0",
+    "rimk": "0x1.3333333333333p-2",
+    "step": 5,
+    "trans": "0x0.0p+0"
+   },
+   "arrays": {
+    "amb": "c007__amb",
+    "base": "c007__base",
+    "ctr": "c007__ctr",
+    "fill_d": "c007__fill_d",
+    "fill_rgb": "c007__fill_rgb",
+    "key_d": "c007__key_d",
+    "key_rgb": "c007__key_rgb",
+    "nrm": "c007__nrm",
+    "out": "c007__out",
+    "point_pos": "c007__point_pos",
+    "point_radius": "c007__point_radius",
+    "point_rgb": "c007__point_rgb",
+    "sky": "c007__sky",
+    "view": "c007__view"
+   },
+   "call": "reelkit.lighting.shade(L, nrm, ctr, base, kvis, rimk, trans, emit, step)",
+   "id": "c007"
+  },
+  {
+   "args": {
+    "emit": "0x0.0p+0",
+    "rimk": "0x1.3333333333333p-2",
+    "step": 5,
+    "trans": "0x0.0p+0"
+   },
+   "arrays": {
+    "amb": "c008__amb",
+    "base": "c008__base",
+    "ctr": "c008__ctr",
+    "fill_d": "c008__fill_d",
+    "fill_rgb": "c008__fill_rgb",
+    "key_d": "c008__key_d",
+    "key_rgb": "c008__key_rgb",
+    "nrm": "c008__nrm",
+    "out": "c008__out",
+    "point_pos": "c008__point_pos",
+    "point_radius": "c008__point_radius",
+    "point_rgb": "c008__point_rgb",
+    "sky": "c008__sky",
+    "view": "c008__view"
+   },
+   "call": "reelkit.lighting.shade(L, nrm, ctr, base, kvis, rimk, trans, emit, step)",
+   "id": "c008"
+  },
+  {
+   "args": {
+    "emit": "0x0.0p+0",
+    "rimk": "0x1.3333333333333p-2",
+    "step": 5,
+    "trans": "0x0.0p+0"
+   },
+   "arrays": {
+    "amb": "c009__amb",
+    "base": "c009__base",
+    "ctr": "c009__ctr",
+    "fill_d": "c009__fill_d",
+    "fill_rgb": "c009__fill_rgb",
+    "key_d": "c009__key_d",
+    "key_rgb": "c009__key_rgb",
+    "nrm": "c009__nrm",
+    "out": "c009__out",
+    "point_pos": "c009__point_pos",
+    "point_radius": "c009__point_radius",
+    "point_rgb": "c009__point_rgb",
+    "sky": "c009__sky",
+    "view": "c009__view"
+   },
+   "call": "reelkit.lighting.shade(L, nrm, ctr, base, kvis, rimk, trans, emit, step)",
+   "id": "c009"
+  },
+  {
+   "args": {
+    "emit": "0x0.0p+0",
+    "rimk": "0x1.3333333333333p-2",
+    "step": 5,
+    "trans": "0x0.0p+0"
+   },
+   "arrays": {
+    "amb": "c010__amb",
+    "base": "c010__base",
+    "ctr": "c010__ctr",
+    "fill_d": "c010__fill_d",
+    "fill_rgb": "c010__fill_rgb",
+    "key_d": "c010__key_d",
+    "key_rgb": "c010__key_rgb",
+    "nrm": "c010__nrm",
+    "out": "c010__out",
+    "point_pos": "c010__point_pos",
+    "point_radius": "c010__point_radius",
+    "point_rgb": "c010__point_rgb",
+    "sky": "c010__sky",
+    "view": "c010__view"
+   },
+   "call": "reelkit.lighting.shade(L, nrm, ctr, base, kvis, rimk, trans, emit, step)",
+   "id": "c010"
+  },
+  {
+   "args": {
+    "emit": "0x0.0p+0",
+    "rimk": "0x1.3333333333333p-1",
+    "step": 5,
+    "trans": "0x0.0p+0"
+   },
+   "arrays": {
+    "amb": "c011__amb",
+    "base": "c011__base",
+    "ctr": "c011__ctr",
+    "fill_d": "c011__fill_d",
+    "fill_rgb": "c011__fill_rgb",
+    "key_d": "c011__key_d",
+    "key_rgb": "c011__key_rgb",
+    "nrm": "c011__nrm",
+    "out": "c011__out",
+    "point_pos": "c011__point_pos",
+    "point_radius": "c011__point_radius",
+    "point_rgb": "c011__point_rgb",
+    "sky": "c011__sky",
+    "view": "c011__view"
+   },
+   "call": "reelkit.lighting.shade(L, nrm, ctr, base, kvis, rimk, trans, emit, step)",
+   "id": "c011"
+  },
+  {
+   "args": {
+    "emit": "0x0.0p+0",
+    "rimk": "0x1.3333333333333p-1",
+    "step": 5,
+    "trans": "0x0.0p+0"
+   },
+   "arrays": {
+    "amb": "c012__amb",
+    "base": "c012__base",
+    "ctr": "c012__ctr",
+    "fill_d": "c012__fill_d",
+    "fill_rgb": "c012__fill_rgb",
+    "key_d": "c012__key_d",
+    "key_rgb": "c012__key_rgb",
+    "nrm": "c012__nrm",
+    "out": "c012__out",
+    "point_pos": "c012__point_pos",
+    "point_radius": "c012__point_radius",
+    "point_rgb": "c012__point_rgb",
+    "sky": "c012__sky",
+    "view": "c012__view"
+   },
+   "call": "reelkit.lighting.shade(L, nrm, ctr, base, kvis, rimk, trans, emit, step)",
+   "id": "c012"
+  },
+  {
+   "args": {
+    "emit": "0x0.0p+0",
+    "rimk": "0x1.3333333333333p-1",
+    "step": 5,
+    "trans": "0x0.0p+0"
+   },
+   "arrays": {
+    "amb": "c013__amb",
+    "base": "c013__base",
+    "ctr": "c013__ctr",
+    "fill_d": "c013__fill_d",
+    "fill_rgb": "c013__fill_rgb",
+    "key_d": "c013__key_d",
+    "key_rgb": "c013__key_rgb",
+    "nrm": "c013__nrm",
+    "out": "c013__out",
+    "point_pos": "c013__point_pos",
+    "point_radius": "c013__point_radius",
+    "point_rgb": "c013__point_rgb",
+    "sky": "c013__sky",
+    "view": "c013__view"
+   },
+   "call": "reelkit.lighting.shade(L, nrm, ctr, base, kvis, rimk, trans, emit, step)",
+   "id": "c013"
+  },
+  {
+   "args": {
+    "emit": "0x0.0p+0",
+    "rimk": "0x1.3333333333333p-1",
+    "step": 5,
+    "trans": "0x0.0p+0"
+   },
+   "arrays": {
+    "amb": "c014__amb",
+    "base": "c014__base",
+    "ctr": "c014__ctr",
+    "fill_d": "c014__fill_d",
+    "fill_rgb": "c014__fill_rgb",
+    "key_d": "c014__key_d",
+    "key_rgb": "c014__key_rgb",
+    "nrm": "c014__nrm",
+    "out": "c014__out",
+    "point_pos": "c014__point_pos",
+    "point_radius": "c014__point_radius",
+    "point_rgb": "c014__point_rgb",
+    "sky": "c014__sky",
+    "view": "c014__view"
+   },
+   "call": "reelkit.lighting.shade(L, nrm, ctr, base, kvis, rimk, trans, emit, step)",
+   "id": "c014"
+  },
+  {
+   "args": {
+    "emit": "0x0.0p+0",
+    "rimk": "0x1.3333333333333p-1",
+    "step": 5,
+    "trans": "0x0.0p+0"
+   },
+   "arrays": {
+    "amb": "c015__amb",
+    "base": "c015__base",
+    "ctr": "c015__ctr",
+    "fill_d": "c015__fill_d",
+    "fill_rgb": "c015__fill_rgb",
+    "key_d": "c015__key_d",
+    "key_rgb": "c015__key_rgb",
+    "nrm": "c015__nrm",
+    "out": "c015__out",
+    "point_pos": "c015__point_pos",
+    "point_radius": "c015__point_radius",
+    "point_rgb": "c015__point_rgb",
+    "sky": "c015__sky",
+    "view": "c015__view"
+   },
+   "call": "reelkit.lighting.shade(L, nrm, ctr, base, kvis, rimk, trans, emit, step)",
+   "id": "c015"
+  },
+  {
+   "args": {
+    "emit": "0x0.0p+0",
+    "rimk": "0x1.3333333333333p-1",
+    "step": 5,
+    "trans": "0x0.0p+0"
+   },
+   "arrays": {
+    "amb": "c016__amb",
+    "base": "c016__base",
+    "ctr": "c016__ctr",
+    "fill_d": "c016__fill_d",
+    "fill_rgb": "c016__fill_rgb",
+    "key_d": "c016__key_d",
+    "key_rgb": "c016__key_rgb",
+    "nrm": "c016__nrm",
+    "out": "c016__out",
+    "point_pos": "c016__point_pos",
+    "point_radius": "c016__point_radius",
+    "point_rgb": "c016__point_rgb",
+    "sky": "c016__sky",
+    "view": "c016__view"
+   },
+   "call": "reelkit.lighting.shade(L, nrm, ctr, base, kvis, rimk, trans, emit, step)",
+   "id": "c016"
+  },
+  {
+   "args": {
+    "emit": "0x0.0p+0",
+    "rimk": "0x1.3333333333333p-1",
+    "step": 5,
+    "trans": "0x0.0p+0"
+   },
+   "arrays": {
+    "amb": "c017__amb",
+    "base": "c017__base",
+    "ctr": "c017__ctr",
+    "fill_d": "c017__fill_d",
+    "fill_rgb": "c017__fill_rgb",
+    "key_d": "c017__key_d",
+    "key_rgb": "c017__key_rgb",
+    "nrm": "c017__nrm",
+    "out": "c017__out",
+    "point_pos": "c017__point_pos",
+    "point_radius": "c017__point_radius",
+    "point_rgb": "c017__point_rgb",
+    "sky": "c017__sky",
+    "view": "c017__view"
+   },
+   "call": "reelkit.lighting.shade(L, nrm, ctr, base, kvis, rimk, trans, emit, step)",
+   "id": "c017"
+  },
+  {
+   "args": {
+    "emit": "0x0.0p+0",
+    "rimk": "0x1.3333333333333p-1",
+    "step": 5,
+    "trans": "0x0.0p+0"
+   },
+   "arrays": {
+    "amb": "c018__amb",
+    "base": "c018__base",
+    "ctr": "c018__ctr",
+    "fill_d": "c018__fill_d",
+    "fill_rgb": "c018__fill_rgb",
+    "key_d": "c018__key_d",
+    "key_rgb": "c018__key_rgb",
+    "nrm": "c018__nrm",
+    "out": "c018__out",
+    "point_pos": "c018__point_pos",
+    "point_radius": "c018__point_radius",
+    "point_rgb": "c018__point_rgb",
+    "sky": "c018__sky",
+    "view": "c018__view"
+   },
+   "call": "reelkit.lighting.shade(L, nrm, ctr, base, kvis, rimk, trans, emit, step)",
+   "id": "c018"
+  },
+  {
+   "args": {
+    "emit": "0x0.0p+0",
+    "rimk": "0x1.3333333333333p-1",
+    "step": 5,
+    "trans": "0x0.0p+0"
+   },
+   "arrays": {
+    "amb": "c019__amb",
+    "base": "c019__base",
+    "ctr": "c019__ctr",
+    "fill_d": "c019__fill_d",
+    "fill_rgb": "c019__fill_rgb",
+    "key_d": "c019__key_d",
+    "key_rgb": "c019__key_rgb",
+    "nrm": "c019__nrm",
+    "out": "c019__out",
+    "point_pos": "c019__point_pos",
+    "point_radius": "c019__point_radius",
+    "point_rgb": "c019__point_rgb",
+    "sky": "c019__sky",
+    "view": "c019__view"
+   },
+   "call": "reelkit.lighting.shade(L, nrm, ctr, base, kvis, rimk, trans, emit, step)",
+   "id": "c019"
+  },
+  {
+   "args": {
+    "emit": "0x0.0p+0",
+    "rimk": "0x1.3333333333333p-1",
+    "step": 5,
+    "trans": "0x0.0p+0"
+   },
+   "arrays": {
+    "amb": "c020__amb",
+    "base": "c020__base",
+    "ctr": "c020__ctr",
+    "fill_d": "c020__fill_d",
+    "fill_rgb": "c020__fill_rgb",
+    "key_d": "c020__key_d",
+    "key_rgb": "c020__key_rgb",
+    "nrm": "c020__nrm",
+    "out": "c020__out",
+    "point_pos": "c020__point_pos",
+    "point_radius": "c020__point_radius",
+    "point_rgb": "c020__point_rgb",
+    "sky": "c020__sky",
+    "view": "c020__view"
+   },
+   "call": "reelkit.lighting.shade(L, nrm, ctr, base, kvis, rimk, trans, emit, step)",
+   "id": "c020"
+  },
+  {
+   "args": {
+    "emit": "0x0.0p+0",
+    "rimk": "0x1.3333333333333p-1",
+    "step": 5,
+    "trans": "0x0.0p+0"
+   },
+   "arrays": {
+    "amb": "c021__amb",
+    "base": "c021__base",
+    "ctr": "c021__ctr",
+    "fill_d": "c021__fill_d",
+    "fill_rgb": "c021__fill_rgb",
+    "key_d": "c021__key_d",
+    "key_rgb": "c021__key_rgb",
+    "nrm": "c021__nrm",
+    "out": "c021__out",
+    "point_pos": "c021__point_pos",
+    "point_radius": "c021__point_radius",
+    "point_rgb": "c021__point_rgb",
+    "sky": "c021__sky",
+    "view": "c021__view"
+   },
+   "call": "reelkit.lighting.shade(L, nrm, ctr, base, kvis, rimk, trans, emit, step)",
+   "id": "c021"
+  },
+  {
+   "args": {
+    "emit": "0x0.0p+0",
+    "rimk": "0x1.3333333333333p-1",
+    "step": 5,
+    "trans": "0x0.0p+0"
+   },
+   "arrays": {
+    "amb": "c022__amb",
+    "base": "c022__base",
+    "ctr": "c022__ctr",
+    "fill_d": "c022__fill_d",
+    "fill_rgb": "c022__fill_rgb",
+    "key_d": "c022__key_d",
+    "key_rgb": "c022__key_rgb",
+    "nrm": "c022__nrm",
+    "out": "c022__out",
+    "point_pos": "c022__point_pos",
+    "point_radius": "c022__point_radius",
+    "point_rgb": "c022__point_rgb",
+    "sky": "c022__sky",
+    "view": "c022__view"
+   },
+   "call": "reelkit.lighting.shade(L, nrm, ctr, base, kvis, rimk, trans, emit, step)",
+   "id": "c022"
+  },
+  {
+   "args": {
+    "emit": "0x0.0p+0",
+    "rimk": "0x1.3333333333333p-1",
+    "step": 5,
+    "trans": "0x0.0p+0"
+   },
+   "arrays": {
+    "amb": "c023__amb",
+    "base": "c023__base",
+    "ctr": "c023__ctr",
+    "fill_d": "c023__fill_d",
+    "fill_rgb": "c023__fill_rgb",
+    "key_d": "c023__key_d",
+    "key_rgb": "c023__key_rgb",
+    "nrm": "c023__nrm",
+    "out": "c023__out",
+    "point_pos": "c023__point_pos",
+    "point_radius": "c023__point_radius",
+    "point_rgb": "c023__point_rgb",
+    "sky": "c023__sky",
+    "view": "c023__view"
+   },
+   "call": "reelkit.lighting.shade(L, nrm, ctr, base, kvis, rimk, trans, emit, step)",
+   "id": "c023"
+  },
+  {
+   "args": {
+    "emit": "0x0.0p+0",
+    "rimk": "0x1.3333333333333p-1",
+    "step": 5,
+    "trans": "0x0.0p+0"
+   },
+   "arrays": {
+    "amb": "c024__amb",
+    "base": "c024__base",
+    "ctr": "c024__ctr",
+    "fill_d": "c024__fill_d",
+    "fill_rgb": "c024__fill_rgb",
+    "key_d": "c024__key_d",
+    "key_rgb": "c024__key_rgb",
+    "nrm": "c024__nrm",
+    "out": "c024__out",
+    "point_pos": "c024__point_pos",
+    "point_radius": "c024__point_radius",
+    "point_rgb": "c024__point_rgb",
+    "sky": "c024__sky",
+    "view": "c024__view"
+   },
+   "call": "reelkit.lighting.shade(L, nrm, ctr, base, kvis, rimk, trans, emit, step)",
+   "id": "c024"
+  },
+  {
+   "args": {
+    "emit": "0x0.0p+0",
+    "rimk": "0x1.0000000000000p-1",
+    "step": 5,
+    "trans": "0x0.0p+0"
+   },
+   "arrays": {
+    "amb": "c025__amb",
+    "base": "c025__base",
+    "ctr": "c025__ctr",
+    "fill_d": "c025__fill_d",
+    "fill_rgb": "c025__fill_rgb",
+    "key_d": "c025__key_d",
+    "key_rgb": "c025__key_rgb",
+    "nrm": "c025__nrm",
+    "out": "c025__out",
+    "point_pos": "c025__point_pos",
+    "point_radius": "c025__point_radius",
+    "point_rgb": "c025__point_rgb",
+    "sky": "c025__sky",
+    "view": "c025__view"
+   },
+   "call": "reelkit.lighting.shade(L, nrm, ctr, base, kvis, rimk, trans, emit, step)",
+   "id": "c025"
+  },
+  {
+   "args": {
+    "emit": "0x0.0p+0",
+    "rimk": "0x1.5e7e4b98c9651p-1",
+    "step": 5,
+    "trans": "0x0.0p+0"
+   },
+   "arrays": {
+    "amb": "c026__amb",
+    "base": "c026__base",
+    "ctr": "c026__ctr",
+    "fill_d": "c026__fill_d",
+    "fill_rgb": "c026__fill_rgb",
+    "key_d": "c026__key_d",
+    "key_rgb": "c026__key_rgb",
+    "nrm": "c026__nrm",
+    "out": "c026__out",
+    "point_pos": "c026__point_pos",
+    "point_radius": "c026__point_radius",
+    "point_rgb": "c026__point_rgb",
+    "sky": "c026__sky",
+    "view": "c026__view"
+   },
+   "call": "reelkit.lighting.shade(L, nrm, ctr, base, kvis, rimk, trans, emit, step)",
+   "id": "c026"
+  },
+  {
+   "args": {
+    "emit": "0x0.0p+0",
+    "rimk": "0x1.0ab9f78423fdap-5",
+    "step": 5,
+    "trans": "0x0.0p+0"
+   },
+   "arrays": {
+    "amb": "c027__amb",
+    "base": "c027__base",
+    "ctr": "c027__ctr",
+    "fill_d": "c027__fill_d",
+    "fill_rgb": "c027__fill_rgb",
+    "key_d": "c027__key_d",
+    "key_rgb": "c027__key_rgb",
+    "kvis": "c027__kvis",
+    "nrm": "c027__nrm",
+    "out": "c027__out",
+    "point_pos": "c027__point_pos",
+    "point_radius": "c027__point_radius",
+    "point_rgb": "c027__point_rgb",
+    "sky": "c027__sky",
+    "view": "c027__view"
+   },
+   "call": "reelkit.lighting.shade(L, nrm, ctr, base, kvis, rimk, trans, emit, step)",
+   "id": "c027"
+  },
+  {
+   "args": {
+    "emit": "0x1.0000000000000p-2",
+    "rimk": "0x1.89252b52adebap-3",
+    "step": "0x1.0000000000000p+3",
+    "trans": "0x1.999999999999ap-2"
+   },
+   "arrays": {
+    "amb": "c028__amb",
+    "base": "c028__base",
+    "ctr": "c028__ctr",
+    "fill_d": "c028__fill_d",
+    "fill_rgb": "c028__fill_rgb",
+    "key_d": "c028__key_d",
+    "key_rgb": "c028__key_rgb",
+    "kvis": "c028__kvis",
+    "nrm": "c028__nrm",
+    "out": "c028__out",
+    "point_pos": "c028__point_pos",
+    "point_radius": "c028__point_radius",
+    "point_rgb": "c028__point_rgb",
+    "sky": "c028__sky",
+    "view": "c028__view"
+   },
+   "call": "reelkit.lighting.shade(L, nrm, ctr, base, kvis, rimk, trans, emit, step)",
+   "id": "c028"
+  },
+  {
+   "args": {
+    "emit": "0x0.0p+0",
+    "rimk": "0x1.04c880864c5d3p-1",
+    "step": 1,
+    "trans": "0x0.0p+0"
+   },
+   "arrays": {
+    "amb": "c029__amb",
+    "base": "c029__base",
+    "ctr": "c029__ctr",
+    "fill_d": "c029__fill_d",
+    "fill_rgb": "c029__fill_rgb",
+    "key_d": "c029__key_d",
+    "key_rgb": "c029__key_rgb",
+    "nrm": "c029__nrm",
+    "out": "c029__out",
+    "point_pos": "c029__point_pos",
+    "point_radius": "c029__point_radius",
+    "point_rgb": "c029__point_rgb",
+    "sky": "c029__sky",
+    "view": "c029__view"
+   },
+   "call": "reelkit.lighting.shade(L, nrm, ctr, base, kvis, rimk, trans, emit, step)",
+   "id": "c029"
+  },
+  {
+   "args": {
+    "emit": "0x0.0p+0",
+    "rimk": "0x1.a8dd185d6b767p-4",
+    "step": "0x1.4000000000000p+1",
+    "trans": "0x0.0p+0"
+   },
+   "arrays": {
+    "amb": "c030__amb",
+    "base": "c030__base",
+    "ctr": "c030__ctr",
+    "fill_d": "c030__fill_d",
+    "fill_rgb": "c030__fill_rgb",
+    "key_d": "c030__key_d",
+    "key_rgb": "c030__key_rgb",
+    "nrm": "c030__nrm",
+    "out": "c030__out",
+    "point_pos": "c030__point_pos",
+    "point_radius": "c030__point_radius",
+    "point_rgb": "c030__point_rgb",
+    "sky": "c030__sky",
+    "view": "c030__view"
+   },
+   "call": "reelkit.lighting.shade(L, nrm, ctr, base, kvis, rimk, trans, emit, step)",
+   "id": "c030"
+  },
+  {
+   "args": {
+    "emit": "0x1.0000000000000p-2",
+    "rimk": "0x1.0958d2e59ad50p-1",
+    "step": 5,
+    "trans": "0x0.0p+0"
+   },
+   "arrays": {
+    "amb": "c031__amb",
+    "base": "c031__base",
+    "ctr": "c031__ctr",
+    "fill_d": "c031__fill_d",
+    "fill_rgb": "c031__fill_rgb",
+    "key_d": "c031__key_d",
+    "key_rgb": "c031__key_rgb",
+    "kvis": "c031__kvis",
+    "nrm": "c031__nrm",
+    "out": "c031__out",
+    "point_pos": "c031__point_pos",
+    "point_radius": "c031__point_radius",
+    "point_rgb": "c031__point_rgb",
+    "sky": "c031__sky",
+    "view": "c031__view"
+   },
+   "call": "reelkit.lighting.shade(L, nrm, ctr, base, kvis, rimk, trans, emit, step)",
+   "id": "c031"
+  },
+  {
+   "args": {
+    "emit": "0x0.0p+0",
+    "rimk": "0x1.448a53d5ce9ddp-1",
+    "step": 5,
+    "trans": "0x1.999999999999ap-2"
+   },
+   "arrays": {
+    "amb": "c032__amb",
+    "base": "c032__base",
+    "ctr": "c032__ctr",
+    "fill_d": "c032__fill_d",
+    "fill_rgb": "c032__fill_rgb",
+    "key_d": "c032__key_d",
+    "key_rgb": "c032__key_rgb",
+    "kvis": "c032__kvis",
+    "nrm": "c032__nrm",
+    "out": "c032__out",
+    "point_pos": "c032__point_pos",
+    "point_radius": "c032__point_radius",
+    "point_rgb": "c032__point_rgb",
+    "sky": "c032__sky",
+    "view": "c032__view"
+   },
+   "call": "reelkit.lighting.shade(L, nrm, ctr, base, kvis, rimk, trans, emit, step)",
+   "id": "c032"
+  },
+  {
+   "args": {
+    "emit": "0x0.0p+0",
+    "rimk": "0x1.9a933bb1d8f6ap-2",
+    "step": "0x1.0000000000000p+3",
+    "trans": "0x0.0p+0"
+   },
+   "arrays": {
+    "amb": "c033__amb",
+    "base": "c033__base",
+    "ctr": "c033__ctr",
+    "fill_d": "c033__fill_d",
+    "fill_rgb": "c033__fill_rgb",
+    "key_d": "c033__key_d",
+    "key_rgb": "c033__key_rgb",
+    "nrm": "c033__nrm",
+    "out": "c033__out",
+    "point_pos": "c033__point_pos",
+    "point_radius": "c033__point_radius",
+    "point_rgb": "c033__point_rgb",
+    "sky": "c033__sky",
+    "view": "c033__view"
+   },
+   "call": "reelkit.lighting.shade(L, nrm, ctr, base, kvis, rimk, trans, emit, step)",
+   "id": "c033"
+  },
+  {
+   "args": {
+    "emit": "0x1.0000000000000p-2",
+    "rimk": "0x1.22f0b80f98da0p-4",
+    "step": 1,
+    "trans": "0x0.0p+0"
+   },
+   "arrays": {
+    "amb": "c034__amb",
+    "base": "c034__base",
+    "ctr": "c034__ctr",
+    "fill_d": "c034__fill_d",
+    "fill_rgb": "c034__fill_rgb",
+    "key_d": "c034__key_d",
+    "key_rgb": "c034__key_rgb",
+    "nrm": "c034__nrm",
+    "out": "c034__out",
+    "point_pos": "c034__point_pos",
+    "point_radius": "c034__point_radius",
+    "point_rgb": "c034__point_rgb",
+    "sky": "c034__sky",
+    "view": "c034__view"
+   },
+   "call": "reelkit.lighting.shade(L, nrm, ctr, base, kvis, rimk, trans, emit, step)",
+   "id": "c034"
+  },
+  {
+   "args": {
+    "emit": "0x0.0p+0",
+    "rimk": "0x1.42fcae1d6369ep-1",
+    "step": "0x1.4000000000000p+1",
+    "trans": "0x0.0p+0"
+   },
+   "arrays": {
+    "amb": "c035__amb",
+    "base": "c035__base",
+    "ctr": "c035__ctr",
+    "fill_d": "c035__fill_d",
+    "fill_rgb": "c035__fill_rgb",
+    "key_d": "c035__key_d",
+    "key_rgb": "c035__key_rgb",
+    "kvis": "c035__kvis",
+    "nrm": "c035__nrm",
+    "out": "c035__out",
+    "point_pos": "c035__point_pos",
+    "point_radius": "c035__point_radius",
+    "point_rgb": "c035__point_rgb",
+    "sky": "c035__sky",
+    "view": "c035__view"
+   },
+   "call": "reelkit.lighting.shade(L, nrm, ctr, base, kvis, rimk, trans, emit, step)",
+   "id": "c035"
+  },
+  {
+   "args": {
+    "emit": "0x0.0p+0",
+    "rimk": "0x1.aa972845b2500p-7",
+    "step": 5,
+    "trans": "0x1.999999999999ap-2"
+   },
+   "arrays": {
+    "amb": "c036__amb",
+    "base": "c036__base",
+    "ctr": "c036__ctr",
+    "fill_d": "c036__fill_d",
+    "fill_rgb": "c036__fill_rgb",
+    "key_d": "c036__key_d",
+    "key_rgb": "c036__key_rgb",
+    "kvis": "c036__kvis",
+    "nrm": "c036__nrm",
+    "out": "c036__out",
+    "point_pos": "c036__point_pos",
+    "point_radius": "c036__point_radius",
+    "point_rgb": "c036__point_rgb",
+    "sky": "c036__sky",
+    "view": "c036__view"
+   },
+   "call": "reelkit.lighting.shade(L, nrm, ctr, base, kvis, rimk, trans, emit, step)",
+   "id": "c036"
+  },
+  {
+   "args": {
+    "emit": "0x1.0000000000000p-2",
+    "rimk": "0x1.6b2b1cd6d05dfp-2",
+    "step": 5,
+    "trans": "0x0.0p+0"
+   },
+   "arrays": {
+    "amb": "c037__amb",
+    "base": "c037__base",
+    "ctr": "c037__ctr",
+    "fill_d": "c037__fill_d",
+    "fill_rgb": "c037__fill_rgb",
+    "key_d": "c037__key_d",
+    "key_rgb": "c037__key_rgb",
+    "nrm": "c037__nrm",
+    "out": "c037__out",
+    "point_pos": "c037__point_pos",
+    "point_radius": "c037__point_radius",
+    "point_rgb": "c037__point_rgb",
+    "sky": "c037__sky",
+    "view": "c037__view"
+   },
+   "call": "reelkit.lighting.shade(L, nrm, ctr, base, kvis, rimk, trans, emit, step)",
+   "id": "c037"
+  }
+ ],
+ "note": "The lights of a case are arrays: amb, sky, view (3,), and one row per light in key_d, key_rgb, fill_d, fill_rgb, point_pos, point_rgb and point_radius; key_d and fill_d are the directions as passed to Lights.key and Lights.fill (not yet unit length). \"Lights\": keys_out and fills_out are the unit directions the object then holds. shade: nrm and ctr are (N, 3), base (3,) or (N, 3), kvis (N, keys) where the case has one (else None); rimk, trans, emit and step are in args.",
+ "tool": "kit"
+}

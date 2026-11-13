@@ -1,0 +1,2836 @@
+{
+ "about": "Image.filter(ImageFilter.GaussianBlur(radius)): three passes of an extended box blur (BoxBlur.c). The renderer blurs its L shadow masks by 0.7 and the RGB bloom source (90 x 160) by 3.0",
+ "cases": [
+  {
+   "args": {
+    "kind": "mask",
+    "mode": "L",
+    "radius": "0x1.6666666666666p-1",
+    "size": [94, 7]
+   },
+   "arrays": {
+    "in": "c000__in",
+    "out": "c000__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c000"
+  },
+  {
+   "args": {
+    "kind": "mask",
+    "mode": "L",
+    "radius": "0x1.6666666666666p-1",
+    "size": [37, 16]
+   },
+   "arrays": {
+    "in": "c001__in",
+    "out": "c001__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c001"
+  },
+  {
+   "args": {
+    "kind": "mask",
+    "mode": "L",
+    "radius": "0x1.6666666666666p-1",
+    "size": [96, 65]
+   },
+   "arrays": {
+    "in": "c002__in",
+    "out": "c002__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c002"
+  },
+  {
+   "args": {
+    "kind": "impulse",
+    "mode": "L",
+    "radius": "0x1.6666666666666p-1",
+    "size": [80, 67]
+   },
+   "arrays": {
+    "in": "c003__in",
+    "out": "c003__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c003"
+  },
+  {
+   "args": {
+    "kind": "noise",
+    "mode": "L",
+    "radius": "0x1.6666666666666p-1",
+    "size": [32, 17]
+   },
+   "arrays": {
+    "in": "c004__in",
+    "out": "c004__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c004"
+  },
+  {
+   "args": {
+    "kind": "step",
+    "mode": "L",
+    "radius": "0x1.6666666666666p-1",
+    "size": [70, 65]
+   },
+   "arrays": {
+    "in": "c005__in",
+    "out": "c005__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c005"
+  },
+  {
+   "args": {
+    "kind": "checker",
+    "mode": "L",
+    "radius": "0x1.6666666666666p-1",
+    "size": [1, 1]
+   },
+   "arrays": {
+    "in": "c006__in",
+    "out": "c006__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c006"
+  },
+  {
+   "args": {
+    "kind": "flat",
+    "mode": "L",
+    "radius": "0x1.6666666666666p-1",
+    "size": [96, 96]
+   },
+   "arrays": {
+    "in": "c007__in",
+    "out": "c007__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c007"
+  },
+  {
+   "args": {
+    "kind": "mask",
+    "mode": "L",
+    "radius": "0x1.6666666666666p-1",
+    "size": [96, 96]
+   },
+   "arrays": {
+    "in": "c008__in",
+    "out": "c008__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c008"
+  },
+  {
+   "args": {
+    "kind": "mask",
+    "mode": "L",
+    "radius": "0x1.6666666666666p-1",
+    "size": [64, 48]
+   },
+   "arrays": {
+    "in": "c009__in",
+    "out": "c009__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c009"
+  },
+  {
+   "args": {
+    "kind": "mask",
+    "mode": "L",
+    "radius": "0x1.6666666666666p-1",
+    "size": [64, 48]
+   },
+   "arrays": {
+    "in": "c010__in",
+    "out": "c010__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c010"
+  },
+  {
+   "args": {
+    "kind": "impulse",
+    "mode": "L",
+    "radius": "0x1.6666666666666p-1",
+    "size": [32, 32]
+   },
+   "arrays": {
+    "in": "c011__in",
+    "out": "c011__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c011"
+  },
+  {
+   "args": {
+    "kind": "noise",
+    "mode": "L",
+    "radius": "0x1.6666666666666p-1",
+    "size": [32, 32]
+   },
+   "arrays": {
+    "in": "c012__in",
+    "out": "c012__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c012"
+  },
+  {
+   "args": {
+    "kind": "step",
+    "mode": "L",
+    "radius": "0x1.6666666666666p-1",
+    "size": [1, 7]
+   },
+   "arrays": {
+    "in": "c013__in",
+    "out": "c013__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c013"
+  },
+  {
+   "args": {
+    "kind": "checker",
+    "mode": "L",
+    "radius": "0x1.6666666666666p-1",
+    "size": [24, 40]
+   },
+   "arrays": {
+    "in": "c014__in",
+    "out": "c014__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c014"
+  },
+  {
+   "args": {
+    "kind": "flat",
+    "mode": "L",
+    "radius": "0x1.6666666666666p-1",
+    "size": [16, 14]
+   },
+   "arrays": {
+    "in": "c015__in",
+    "out": "c015__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c015"
+  },
+  {
+   "args": {
+    "kind": "mask",
+    "mode": "L",
+    "radius": "0x1.6666666666666p-1",
+    "size": [96, 96]
+   },
+   "arrays": {
+    "in": "c016__in",
+    "out": "c016__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c016"
+  },
+  {
+   "args": {
+    "kind": "mask",
+    "mode": "L",
+    "radius": "0x1.6666666666666p-1",
+    "size": [32, 32]
+   },
+   "arrays": {
+    "in": "c017__in",
+    "out": "c017__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c017"
+  },
+  {
+   "args": {
+    "kind": "mask",
+    "mode": "L",
+    "radius": "0x1.6666666666666p-1",
+    "size": [32, 32]
+   },
+   "arrays": {
+    "in": "c018__in",
+    "out": "c018__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c018"
+  },
+  {
+   "args": {
+    "kind": "impulse",
+    "mode": "L",
+    "radius": "0x1.6666666666666p-1",
+    "size": [17, 34]
+   },
+   "arrays": {
+    "in": "c019__in",
+    "out": "c019__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c019"
+  },
+  {
+   "args": {
+    "kind": "noise",
+    "mode": "L",
+    "radius": "0x1.6666666666666p-1",
+    "size": [7, 1]
+   },
+   "arrays": {
+    "in": "c020__in",
+    "out": "c020__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c020"
+  },
+  {
+   "args": {
+    "kind": "step",
+    "mode": "L",
+    "radius": "0x1.6666666666666p-1",
+    "size": [64, 48]
+   },
+   "arrays": {
+    "in": "c021__in",
+    "out": "c021__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c021"
+  },
+  {
+   "args": {
+    "kind": "checker",
+    "mode": "L",
+    "radius": "0x1.6666666666666p-1",
+    "size": [72, 43]
+   },
+   "arrays": {
+    "in": "c022__in",
+    "out": "c022__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c022"
+  },
+  {
+   "args": {
+    "kind": "flat",
+    "mode": "L",
+    "radius": "0x1.6666666666666p-1",
+    "size": [96, 96]
+   },
+   "arrays": {
+    "in": "c023__in",
+    "out": "c023__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c023"
+  },
+  {
+   "args": {
+    "kind": "mask",
+    "mode": "L",
+    "radius": "0x1.6666666666666p-1",
+    "size": [32, 50]
+   },
+   "arrays": {
+    "in": "c024__in",
+    "out": "c024__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c024"
+  },
+  {
+   "args": {
+    "kind": "mask",
+    "mode": "L",
+    "radius": "0x1.6666666666666p-1",
+    "size": [83, 94]
+   },
+   "arrays": {
+    "in": "c025__in",
+    "out": "c025__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c025"
+  },
+  {
+   "args": {
+    "kind": "mask",
+    "mode": "L",
+    "radius": "0x1.6666666666666p-1",
+    "size": [28, 77]
+   },
+   "arrays": {
+    "in": "c026__in",
+    "out": "c026__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c026"
+  },
+  {
+   "args": {
+    "kind": "impulse",
+    "mode": "L",
+    "radius": "0x1.6666666666666p-1",
+    "size": [2, 2]
+   },
+   "arrays": {
+    "in": "c027__in",
+    "out": "c027__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c027"
+  },
+  {
+   "args": {
+    "kind": "noise",
+    "mode": "L",
+    "radius": "0x1.6666666666666p-1",
+    "size": [21, 10]
+   },
+   "arrays": {
+    "in": "c028__in",
+    "out": "c028__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c028"
+  },
+  {
+   "args": {
+    "kind": "step",
+    "mode": "L",
+    "radius": "0x1.6666666666666p-1",
+    "size": [32, 32]
+   },
+   "arrays": {
+    "in": "c029__in",
+    "out": "c029__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c029"
+  },
+  {
+   "args": {
+    "kind": "checker",
+    "mode": "L",
+    "radius": "0x1.6666666666666p-1",
+    "size": [64, 48]
+   },
+   "arrays": {
+    "in": "c030__in",
+    "out": "c030__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c030"
+  },
+  {
+   "args": {
+    "kind": "flat",
+    "mode": "L",
+    "radius": "0x1.6666666666666p-1",
+    "size": [32, 32]
+   },
+   "arrays": {
+    "in": "c031__in",
+    "out": "c031__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c031"
+  },
+  {
+   "args": {
+    "kind": "mask",
+    "mode": "L",
+    "radius": "0x1.6666666666666p-1",
+    "size": [32, 32]
+   },
+   "arrays": {
+    "in": "c032__in",
+    "out": "c032__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c032"
+  },
+  {
+   "args": {
+    "kind": "mask",
+    "mode": "L",
+    "radius": "0x1.6666666666666p-1",
+    "size": [63, 71]
+   },
+   "arrays": {
+    "in": "c033__in",
+    "out": "c033__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c033"
+  },
+  {
+   "args": {
+    "kind": "mask",
+    "mode": "L",
+    "radius": "0x1.6666666666666p-1",
+    "size": [3, 2]
+   },
+   "arrays": {
+    "in": "c034__in",
+    "out": "c034__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c034"
+  },
+  {
+   "args": {
+    "kind": "impulse",
+    "mode": "L",
+    "radius": "0x1.6666666666666p-1",
+    "size": [48, 64]
+   },
+   "arrays": {
+    "in": "c035__in",
+    "out": "c035__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c035"
+  },
+  {
+   "args": {
+    "kind": "noise",
+    "mode": "L",
+    "radius": "0x1.6666666666666p-1",
+    "size": [24, 32]
+   },
+   "arrays": {
+    "in": "c036__in",
+    "out": "c036__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c036"
+  },
+  {
+   "args": {
+    "kind": "step",
+    "mode": "L",
+    "radius": "0x1.6666666666666p-1",
+    "size": [31, 7]
+   },
+   "arrays": {
+    "in": "c037__in",
+    "out": "c037__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c037"
+  },
+  {
+   "args": {
+    "kind": "checker",
+    "mode": "L",
+    "radius": "0x1.6666666666666p-1",
+    "size": [24, 40]
+   },
+   "arrays": {
+    "in": "c038__in",
+    "out": "c038__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c038"
+  },
+  {
+   "args": {
+    "kind": "flat",
+    "mode": "L",
+    "radius": "0x1.6666666666666p-1",
+    "size": [64, 48]
+   },
+   "arrays": {
+    "in": "c039__in",
+    "out": "c039__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c039"
+  },
+  {
+   "args": {
+    "kind": "mask",
+    "mode": "L",
+    "radius": "0x1.6666666666666p-1",
+    "size": [31, 15]
+   },
+   "arrays": {
+    "in": "c040__in",
+    "out": "c040__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c040"
+  },
+  {
+   "args": {
+    "kind": "mask",
+    "mode": "L",
+    "radius": "0x1.6666666666666p-1",
+    "size": [2, 5]
+   },
+   "arrays": {
+    "in": "c041__in",
+    "out": "c041__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c041"
+  },
+  {
+   "args": {
+    "kind": "mask",
+    "mode": "L",
+    "radius": "0x1.6666666666666p-1",
+    "size": [32, 32]
+   },
+   "arrays": {
+    "in": "c042__in",
+    "out": "c042__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c042"
+  },
+  {
+   "args": {
+    "kind": "impulse",
+    "mode": "L",
+    "radius": "0x1.6666666666666p-1",
+    "size": [25, 36]
+   },
+   "arrays": {
+    "in": "c043__in",
+    "out": "c043__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c043"
+  },
+  {
+   "args": {
+    "kind": "noise",
+    "mode": "L",
+    "radius": "0x1.6666666666666p-1",
+    "size": [24, 32]
+   },
+   "arrays": {
+    "in": "c044__in",
+    "out": "c044__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c044"
+  },
+  {
+   "args": {
+    "kind": "step",
+    "mode": "L",
+    "radius": "0x1.6666666666666p-1",
+    "size": [96, 96]
+   },
+   "arrays": {
+    "in": "c045__in",
+    "out": "c045__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c045"
+  },
+  {
+   "args": {
+    "kind": "checker",
+    "mode": "L",
+    "radius": "0x1.6666666666666p-1",
+    "size": [64, 48]
+   },
+   "arrays": {
+    "in": "c046__in",
+    "out": "c046__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c046"
+  },
+  {
+   "args": {
+    "kind": "flat",
+    "mode": "L",
+    "radius": "0x1.6666666666666p-1",
+    "size": [32, 32]
+   },
+   "arrays": {
+    "in": "c047__in",
+    "out": "c047__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c047"
+  },
+  {
+   "args": {
+    "kind": "spots",
+    "mode": "RGB",
+    "radius": "0x1.8000000000000p+1",
+    "size": [4, 4]
+   },
+   "arrays": {
+    "in": "c048__in",
+    "out": "c048__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c048"
+  },
+  {
+   "args": {
+    "kind": "spots",
+    "mode": "RGB",
+    "radius": "0x1.8000000000000p+1",
+    "size": [48, 64]
+   },
+   "arrays": {
+    "in": "c049__in",
+    "out": "c049__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c049"
+  },
+  {
+   "args": {
+    "kind": "impulse",
+    "mode": "RGB",
+    "radius": "0x1.8000000000000p+1",
+    "size": [96, 96]
+   },
+   "arrays": {
+    "in": "c050__in",
+    "out": "c050__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c050"
+  },
+  {
+   "args": {
+    "kind": "noise",
+    "mode": "RGB",
+    "radius": "0x1.8000000000000p+1",
+    "size": [21, 14]
+   },
+   "arrays": {
+    "in": "c051__in",
+    "out": "c051__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c051"
+  },
+  {
+   "args": {
+    "kind": "step",
+    "mode": "RGB",
+    "radius": "0x1.8000000000000p+1",
+    "size": [24, 40]
+   },
+   "arrays": {
+    "in": "c052__in",
+    "out": "c052__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c052"
+  },
+  {
+   "args": {
+    "kind": "gradient",
+    "mode": "RGB",
+    "radius": "0x1.8000000000000p+1",
+    "size": [64, 48]
+   },
+   "arrays": {
+    "in": "c053__in",
+    "out": "c053__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c053"
+  },
+  {
+   "args": {
+    "kind": "flat",
+    "mode": "RGB",
+    "radius": "0x1.8000000000000p+1",
+    "size": [74, 75]
+   },
+   "arrays": {
+    "in": "c054__in",
+    "out": "c054__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c054"
+  },
+  {
+   "args": {
+    "kind": "spots",
+    "mode": "RGB",
+    "radius": "0x1.8000000000000p+1",
+    "size": [5, 3]
+   },
+   "arrays": {
+    "in": "c055__in",
+    "out": "c055__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c055"
+  },
+  {
+   "args": {
+    "kind": "spots",
+    "mode": "RGB",
+    "radius": "0x1.8000000000000p+1",
+    "size": [24, 40]
+   },
+   "arrays": {
+    "in": "c056__in",
+    "out": "c056__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c056"
+  },
+  {
+   "args": {
+    "kind": "impulse",
+    "mode": "RGB",
+    "radius": "0x1.8000000000000p+1",
+    "size": [32, 32]
+   },
+   "arrays": {
+    "in": "c057__in",
+    "out": "c057__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c057"
+  },
+  {
+   "args": {
+    "kind": "noise",
+    "mode": "RGB",
+    "radius": "0x1.8000000000000p+1",
+    "size": [9, 30]
+   },
+   "arrays": {
+    "in": "c058__in",
+    "out": "c058__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c058"
+  },
+  {
+   "args": {
+    "kind": "step",
+    "mode": "RGB",
+    "radius": "0x1.8000000000000p+1",
+    "size": [24, 40]
+   },
+   "arrays": {
+    "in": "c059__in",
+    "out": "c059__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c059"
+  },
+  {
+   "args": {
+    "kind": "gradient",
+    "mode": "RGB",
+    "radius": "0x1.8000000000000p+1",
+    "size": [96, 96]
+   },
+   "arrays": {
+    "in": "c060__in",
+    "out": "c060__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c060"
+  },
+  {
+   "args": {
+    "kind": "flat",
+    "mode": "RGB",
+    "radius": "0x1.8000000000000p+1",
+    "size": [48, 64]
+   },
+   "arrays": {
+    "in": "c061__in",
+    "out": "c061__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c061"
+  },
+  {
+   "args": {
+    "kind": "spots",
+    "mode": "RGB",
+    "radius": "0x1.8000000000000p+1",
+    "size": [1, 1]
+   },
+   "arrays": {
+    "in": "c062__in",
+    "out": "c062__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c062"
+  },
+  {
+   "args": {
+    "kind": "spots",
+    "mode": "RGB",
+    "radius": "0x1.8000000000000p+1",
+    "size": [51, 82]
+   },
+   "arrays": {
+    "in": "c063__in",
+    "out": "c063__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c063"
+  },
+  {
+   "args": {
+    "kind": "impulse",
+    "mode": "RGB",
+    "radius": "0x1.8000000000000p+1",
+    "size": [96, 96]
+   },
+   "arrays": {
+    "in": "c064__in",
+    "out": "c064__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c064"
+  },
+  {
+   "args": {
+    "kind": "noise",
+    "mode": "RGB",
+    "radius": "0x1.8000000000000p+1",
+    "size": [32, 32]
+   },
+   "arrays": {
+    "in": "c065__in",
+    "out": "c065__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c065"
+  },
+  {
+   "args": {
+    "kind": "step",
+    "mode": "RGB",
+    "radius": "0x1.8000000000000p+1",
+    "size": [89, 75]
+   },
+   "arrays": {
+    "in": "c066__in",
+    "out": "c066__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c066"
+  },
+  {
+   "args": {
+    "kind": "gradient",
+    "mode": "RGB",
+    "radius": "0x1.8000000000000p+1",
+    "size": [48, 64]
+   },
+   "arrays": {
+    "in": "c067__in",
+    "out": "c067__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c067"
+  },
+  {
+   "args": {
+    "kind": "flat",
+    "mode": "RGB",
+    "radius": "0x1.8000000000000p+1",
+    "size": [96, 96]
+   },
+   "arrays": {
+    "in": "c068__in",
+    "out": "c068__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c068"
+  },
+  {
+   "args": {
+    "kind": "spots",
+    "mode": "RGB",
+    "radius": "0x1.8000000000000p+1",
+    "size": [1, 7]
+   },
+   "arrays": {
+    "in": "c069__in",
+    "out": "c069__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c069"
+  },
+  {
+   "args": {
+    "kind": "spots",
+    "mode": "RGB",
+    "radius": "0x1.8000000000000p+1",
+    "size": [24, 40]
+   },
+   "arrays": {
+    "in": "c070__in",
+    "out": "c070__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c070"
+  },
+  {
+   "args": {
+    "kind": "impulse",
+    "mode": "RGB",
+    "radius": "0x1.8000000000000p+1",
+    "size": [42, 80]
+   },
+   "arrays": {
+    "in": "c071__in",
+    "out": "c071__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c071"
+  },
+  {
+   "args": {
+    "kind": "noise",
+    "mode": "RGB",
+    "radius": "0x1.8000000000000p+1",
+    "size": [24, 32]
+   },
+   "arrays": {
+    "in": "c072__in",
+    "out": "c072__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c072"
+  },
+  {
+   "args": {
+    "kind": "step",
+    "mode": "RGB",
+    "radius": "0x1.8000000000000p+1",
+    "size": [32, 32]
+   },
+   "arrays": {
+    "in": "c073__in",
+    "out": "c073__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c073"
+  },
+  {
+   "args": {
+    "kind": "gradient",
+    "mode": "RGB",
+    "radius": "0x1.8000000000000p+1",
+    "size": [13, 23]
+   },
+   "arrays": {
+    "in": "c074__in",
+    "out": "c074__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c074"
+  },
+  {
+   "args": {
+    "kind": "flat",
+    "mode": "RGB",
+    "radius": "0x1.8000000000000p+1",
+    "size": [32, 32]
+   },
+   "arrays": {
+    "in": "c075__in",
+    "out": "c075__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c075"
+  },
+  {
+   "args": {
+    "kind": "spots",
+    "mode": "RGB",
+    "radius": "0x1.8000000000000p+1",
+    "size": [7, 1]
+   },
+   "arrays": {
+    "in": "c076__in",
+    "out": "c076__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c076"
+  },
+  {
+   "args": {
+    "kind": "spots",
+    "mode": "RGB",
+    "radius": "0x1.8000000000000p+1",
+    "size": [96, 96]
+   },
+   "arrays": {
+    "in": "c077__in",
+    "out": "c077__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c077"
+  },
+  {
+   "args": {
+    "kind": "impulse",
+    "mode": "RGB",
+    "radius": "0x1.8000000000000p+1",
+    "size": [88, 96]
+   },
+   "arrays": {
+    "in": "c078__in",
+    "out": "c078__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c078"
+  },
+  {
+   "args": {
+    "kind": "noise",
+    "mode": "RGB",
+    "radius": "0x1.8000000000000p+1",
+    "size": [32, 32]
+   },
+   "arrays": {
+    "in": "c079__in",
+    "out": "c079__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c079"
+  },
+  {
+   "args": {
+    "kind": "step",
+    "mode": "RGB",
+    "radius": "0x1.8000000000000p+1",
+    "size": [48, 64]
+   },
+   "arrays": {
+    "in": "c080__in",
+    "out": "c080__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c080"
+  },
+  {
+   "args": {
+    "kind": "gradient",
+    "mode": "RGB",
+    "radius": "0x1.8000000000000p+1",
+    "size": [64, 48]
+   },
+   "arrays": {
+    "in": "c081__in",
+    "out": "c081__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c081"
+  },
+  {
+   "args": {
+    "kind": "flat",
+    "mode": "RGB",
+    "radius": "0x1.8000000000000p+1",
+    "size": [12, 28]
+   },
+   "arrays": {
+    "in": "c082__in",
+    "out": "c082__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c082"
+  },
+  {
+   "args": {
+    "kind": "spots",
+    "mode": "RGB",
+    "radius": "0x1.8000000000000p+1",
+    "size": [2, 2]
+   },
+   "arrays": {
+    "in": "c083__in",
+    "out": "c083__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c083"
+  },
+  {
+   "args": {
+    "kind": "spots",
+    "mode": "RGB",
+    "radius": "0x1.8000000000000p+1",
+    "size": [64, 48]
+   },
+   "arrays": {
+    "in": "c084__in",
+    "out": "c084__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c084"
+  },
+  {
+   "args": {
+    "kind": "impulse",
+    "mode": "RGB",
+    "radius": "0x1.8000000000000p+1",
+    "size": [48, 64]
+   },
+   "arrays": {
+    "in": "c085__in",
+    "out": "c085__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c085"
+  },
+  {
+   "args": {
+    "kind": "noise",
+    "mode": "RGB",
+    "radius": "0x1.8000000000000p+1",
+    "size": [32, 32]
+   },
+   "arrays": {
+    "in": "c086__in",
+    "out": "c086__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c086"
+  },
+  {
+   "args": {
+    "kind": "step",
+    "mode": "RGB",
+    "radius": "0x1.8000000000000p+1",
+    "size": [96, 96]
+   },
+   "arrays": {
+    "in": "c087__in",
+    "out": "c087__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c087"
+  },
+  {
+   "args": {
+    "kind": "gradient",
+    "mode": "RGB",
+    "radius": "0x1.8000000000000p+1",
+    "size": [48, 64]
+   },
+   "arrays": {
+    "in": "c088__in",
+    "out": "c088__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c088"
+  },
+  {
+   "args": {
+    "kind": "flat",
+    "mode": "RGB",
+    "radius": "0x1.8000000000000p+1",
+    "size": [64, 48]
+   },
+   "arrays": {
+    "in": "c089__in",
+    "out": "c089__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c089"
+  },
+  {
+   "args": {
+    "kind": "impulse",
+    "mode": "L",
+    "radius": "0x1.3333333333333p-2",
+    "size": [3, 2]
+   },
+   "arrays": {
+    "in": "c090__in",
+    "out": "c090__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c090"
+  },
+  {
+   "args": {
+    "kind": "noise",
+    "mode": "L",
+    "radius": "0x1.3333333333333p-2",
+    "size": [24, 32]
+   },
+   "arrays": {
+    "in": "c091__in",
+    "out": "c091__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c091"
+  },
+  {
+   "args": {
+    "kind": "mask",
+    "mode": "L",
+    "radius": "0x1.3333333333333p-2",
+    "size": [64, 48]
+   },
+   "arrays": {
+    "in": "c092__in",
+    "out": "c092__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c092"
+  },
+  {
+   "args": {
+    "kind": "spots",
+    "mode": "L",
+    "radius": "0x1.3333333333333p-2",
+    "size": [64, 48]
+   },
+   "arrays": {
+    "in": "c093__in",
+    "out": "c093__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c093"
+  },
+  {
+   "args": {
+    "kind": "step",
+    "mode": "L",
+    "radius": "0x1.3333333333333p-2",
+    "size": [64, 60]
+   },
+   "arrays": {
+    "in": "c094__in",
+    "out": "c094__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c094"
+  },
+  {
+   "args": {
+    "kind": "impulse",
+    "mode": "L",
+    "radius": "0x1.0000000000000p-1",
+    "size": [24, 40]
+   },
+   "arrays": {
+    "in": "c095__in",
+    "out": "c095__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c095"
+  },
+  {
+   "args": {
+    "kind": "noise",
+    "mode": "L",
+    "radius": "0x1.0000000000000p-1",
+    "size": [32, 32]
+   },
+   "arrays": {
+    "in": "c096__in",
+    "out": "c096__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c096"
+  },
+  {
+   "args": {
+    "kind": "mask",
+    "mode": "L",
+    "radius": "0x1.0000000000000p-1",
+    "size": [2, 5]
+   },
+   "arrays": {
+    "in": "c097__in",
+    "out": "c097__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c097"
+  },
+  {
+   "args": {
+    "kind": "spots",
+    "mode": "L",
+    "radius": "0x1.0000000000000p-1",
+    "size": [33, 60]
+   },
+   "arrays": {
+    "in": "c098__in",
+    "out": "c098__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c098"
+  },
+  {
+   "args": {
+    "kind": "step",
+    "mode": "L",
+    "radius": "0x1.0000000000000p-1",
+    "size": [32, 32]
+   },
+   "arrays": {
+    "in": "c099__in",
+    "out": "c099__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c099"
+  },
+  {
+   "args": {
+    "kind": "impulse",
+    "mode": "L",
+    "radius": "0x1.0000000000000p+0",
+    "size": [29, 43]
+   },
+   "arrays": {
+    "in": "c100__in",
+    "out": "c100__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c100"
+  },
+  {
+   "args": {
+    "kind": "noise",
+    "mode": "L",
+    "radius": "0x1.0000000000000p+0",
+    "size": [18, 21]
+   },
+   "arrays": {
+    "in": "c101__in",
+    "out": "c101__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c101"
+  },
+  {
+   "args": {
+    "kind": "mask",
+    "mode": "L",
+    "radius": "0x1.0000000000000p+0",
+    "size": [73, 19]
+   },
+   "arrays": {
+    "in": "c102__in",
+    "out": "c102__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c102"
+  },
+  {
+   "args": {
+    "kind": "spots",
+    "mode": "L",
+    "radius": "0x1.0000000000000p+0",
+    "size": [38, 14]
+   },
+   "arrays": {
+    "in": "c103__in",
+    "out": "c103__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c103"
+  },
+  {
+   "args": {
+    "kind": "step",
+    "mode": "L",
+    "radius": "0x1.0000000000000p+0",
+    "size": [4, 4]
+   },
+   "arrays": {
+    "in": "c104__in",
+    "out": "c104__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c104"
+  },
+  {
+   "args": {
+    "kind": "impulse",
+    "mode": "L",
+    "radius": "0x1.8000000000000p+0",
+    "size": [17, 43]
+   },
+   "arrays": {
+    "in": "c105__in",
+    "out": "c105__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c105"
+  },
+  {
+   "args": {
+    "kind": "noise",
+    "mode": "L",
+    "radius": "0x1.8000000000000p+0",
+    "size": [24, 29]
+   },
+   "arrays": {
+    "in": "c106__in",
+    "out": "c106__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c106"
+  },
+  {
+   "args": {
+    "kind": "mask",
+    "mode": "L",
+    "radius": "0x1.8000000000000p+0",
+    "size": [96, 96]
+   },
+   "arrays": {
+    "in": "c107__in",
+    "out": "c107__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c107"
+  },
+  {
+   "args": {
+    "kind": "spots",
+    "mode": "L",
+    "radius": "0x1.8000000000000p+0",
+    "size": [64, 48]
+   },
+   "arrays": {
+    "in": "c108__in",
+    "out": "c108__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c108"
+  },
+  {
+   "args": {
+    "kind": "step",
+    "mode": "L",
+    "radius": "0x1.8000000000000p+0",
+    "size": [57, 64]
+   },
+   "arrays": {
+    "in": "c109__in",
+    "out": "c109__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c109"
+  },
+  {
+   "args": {
+    "kind": "impulse",
+    "mode": "L",
+    "radius": "0x1.0000000000000p+1",
+    "size": [79, 25]
+   },
+   "arrays": {
+    "in": "c110__in",
+    "out": "c110__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c110"
+  },
+  {
+   "args": {
+    "kind": "noise",
+    "mode": "L",
+    "radius": "0x1.0000000000000p+1",
+    "size": [5, 3]
+   },
+   "arrays": {
+    "in": "c111__in",
+    "out": "c111__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c111"
+  },
+  {
+   "args": {
+    "kind": "mask",
+    "mode": "L",
+    "radius": "0x1.0000000000000p+1",
+    "size": [96, 96]
+   },
+   "arrays": {
+    "in": "c112__in",
+    "out": "c112__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c112"
+  },
+  {
+   "args": {
+    "kind": "spots",
+    "mode": "L",
+    "radius": "0x1.0000000000000p+1",
+    "size": [60, 92]
+   },
+   "arrays": {
+    "in": "c113__in",
+    "out": "c113__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c113"
+  },
+  {
+   "args": {
+    "kind": "step",
+    "mode": "L",
+    "radius": "0x1.0000000000000p+1",
+    "size": [83, 85]
+   },
+   "arrays": {
+    "in": "c114__in",
+    "out": "c114__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c114"
+  },
+  {
+   "args": {
+    "kind": "impulse",
+    "mode": "L",
+    "radius": "0x1.4000000000000p+1",
+    "size": [96, 96]
+   },
+   "arrays": {
+    "in": "c115__in",
+    "out": "c115__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c115"
+  },
+  {
+   "args": {
+    "kind": "noise",
+    "mode": "L",
+    "radius": "0x1.4000000000000p+1",
+    "size": [24, 32]
+   },
+   "arrays": {
+    "in": "c116__in",
+    "out": "c116__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c116"
+  },
+  {
+   "args": {
+    "kind": "mask",
+    "mode": "L",
+    "radius": "0x1.4000000000000p+1",
+    "size": [24, 40]
+   },
+   "arrays": {
+    "in": "c117__in",
+    "out": "c117__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c117"
+  },
+  {
+   "args": {
+    "kind": "spots",
+    "mode": "L",
+    "radius": "0x1.4000000000000p+1",
+    "size": [1, 1]
+   },
+   "arrays": {
+    "in": "c118__in",
+    "out": "c118__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c118"
+  },
+  {
+   "args": {
+    "kind": "step",
+    "mode": "L",
+    "radius": "0x1.4000000000000p+1",
+    "size": [96, 96]
+   },
+   "arrays": {
+    "in": "c119__in",
+    "out": "c119__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c119"
+  },
+  {
+   "args": {
+    "kind": "impulse",
+    "mode": "L",
+    "radius": "0x1.0000000000000p+2",
+    "size": [96, 96]
+   },
+   "arrays": {
+    "in": "c120__in",
+    "out": "c120__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c120"
+  },
+  {
+   "args": {
+    "kind": "noise",
+    "mode": "L",
+    "radius": "0x1.0000000000000p+2",
+    "size": [32, 32]
+   },
+   "arrays": {
+    "in": "c121__in",
+    "out": "c121__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c121"
+  },
+  {
+   "args": {
+    "kind": "mask",
+    "mode": "L",
+    "radius": "0x1.0000000000000p+2",
+    "size": [32, 32]
+   },
+   "arrays": {
+    "in": "c122__in",
+    "out": "c122__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c122"
+  },
+  {
+   "args": {
+    "kind": "spots",
+    "mode": "L",
+    "radius": "0x1.0000000000000p+2",
+    "size": [48, 64]
+   },
+   "arrays": {
+    "in": "c123__in",
+    "out": "c123__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c123"
+  },
+  {
+   "args": {
+    "kind": "step",
+    "mode": "L",
+    "radius": "0x1.0000000000000p+2",
+    "size": [64, 48]
+   },
+   "arrays": {
+    "in": "c124__in",
+    "out": "c124__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c124"
+  },
+  {
+   "args": {
+    "kind": "impulse",
+    "mode": "L",
+    "radius": "0x1.4000000000000p+2",
+    "size": [1, 7]
+   },
+   "arrays": {
+    "in": "c125__in",
+    "out": "c125__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c125"
+  },
+  {
+   "args": {
+    "kind": "noise",
+    "mode": "L",
+    "radius": "0x1.4000000000000p+2",
+    "size": [7, 19]
+   },
+   "arrays": {
+    "in": "c126__in",
+    "out": "c126__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c126"
+  },
+  {
+   "args": {
+    "kind": "mask",
+    "mode": "L",
+    "radius": "0x1.4000000000000p+2",
+    "size": [32, 32]
+   },
+   "arrays": {
+    "in": "c127__in",
+    "out": "c127__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c127"
+  },
+  {
+   "args": {
+    "kind": "spots",
+    "mode": "L",
+    "radius": "0x1.4000000000000p+2",
+    "size": [96, 96]
+   },
+   "arrays": {
+    "in": "c128__in",
+    "out": "c128__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c128"
+  },
+  {
+   "args": {
+    "kind": "step",
+    "mode": "L",
+    "radius": "0x1.4000000000000p+2",
+    "size": [96, 96]
+   },
+   "arrays": {
+    "in": "c129__in",
+    "out": "c129__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c129"
+  },
+  {
+   "args": {
+    "kind": "impulse",
+    "mode": "L",
+    "radius": "0x1.0000000000000p+3",
+    "size": [9, 8]
+   },
+   "arrays": {
+    "in": "c130__in",
+    "out": "c130__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c130"
+  },
+  {
+   "args": {
+    "kind": "noise",
+    "mode": "L",
+    "radius": "0x1.0000000000000p+3",
+    "size": [32, 32]
+   },
+   "arrays": {
+    "in": "c131__in",
+    "out": "c131__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c131"
+  },
+  {
+   "args": {
+    "kind": "mask",
+    "mode": "L",
+    "radius": "0x1.0000000000000p+3",
+    "size": [7, 1]
+   },
+   "arrays": {
+    "in": "c132__in",
+    "out": "c132__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c132"
+  },
+  {
+   "args": {
+    "kind": "spots",
+    "mode": "L",
+    "radius": "0x1.0000000000000p+3",
+    "size": [96, 96]
+   },
+   "arrays": {
+    "in": "c133__in",
+    "out": "c133__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c133"
+  },
+  {
+   "args": {
+    "kind": "step",
+    "mode": "L",
+    "radius": "0x1.0000000000000p+3",
+    "size": [69, 89]
+   },
+   "arrays": {
+    "in": "c134__in",
+    "out": "c134__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c134"
+  },
+  {
+   "args": {
+    "kind": "impulse",
+    "mode": "L",
+    "radius": "0x1.999999999999ap-5",
+    "size": [49, 96]
+   },
+   "arrays": {
+    "in": "c135__in",
+    "out": "c135__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c135"
+  },
+  {
+   "args": {
+    "kind": "noise",
+    "mode": "L",
+    "radius": "0x1.999999999999ap-5",
+    "size": [32, 32]
+   },
+   "arrays": {
+    "in": "c136__in",
+    "out": "c136__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c136"
+  },
+  {
+   "args": {
+    "kind": "mask",
+    "mode": "L",
+    "radius": "0x1.999999999999ap-5",
+    "size": [64, 48]
+   },
+   "arrays": {
+    "in": "c137__in",
+    "out": "c137__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c137"
+  },
+  {
+   "args": {
+    "kind": "spots",
+    "mode": "L",
+    "radius": "0x1.999999999999ap-5",
+    "size": [48, 64]
+   },
+   "arrays": {
+    "in": "c138__in",
+    "out": "c138__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c138"
+  },
+  {
+   "args": {
+    "kind": "step",
+    "mode": "L",
+    "radius": "0x1.999999999999ap-5",
+    "size": [2, 2]
+   },
+   "arrays": {
+    "in": "c139__in",
+    "out": "c139__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c139"
+  },
+  {
+   "args": {
+    "kind": "impulse",
+    "mode": "RGB",
+    "radius": "0x1.3333333333333p-2",
+    "size": [48, 64]
+   },
+   "arrays": {
+    "in": "c140__in",
+    "out": "c140__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c140"
+  },
+  {
+   "args": {
+    "kind": "noise",
+    "mode": "RGB",
+    "radius": "0x1.3333333333333p-2",
+    "size": [32, 32]
+   },
+   "arrays": {
+    "in": "c141__in",
+    "out": "c141__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c141"
+  },
+  {
+   "args": {
+    "kind": "mask",
+    "mode": "RGB",
+    "radius": "0x1.3333333333333p-2",
+    "size": [64, 48]
+   },
+   "arrays": {
+    "in": "c142__in",
+    "out": "c142__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c142"
+  },
+  {
+   "args": {
+    "kind": "spots",
+    "mode": "RGB",
+    "radius": "0x1.3333333333333p-2",
+    "size": [32, 32]
+   },
+   "arrays": {
+    "in": "c143__in",
+    "out": "c143__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c143"
+  },
+  {
+   "args": {
+    "kind": "step",
+    "mode": "RGB",
+    "radius": "0x1.3333333333333p-2",
+    "size": [48, 64]
+   },
+   "arrays": {
+    "in": "c144__in",
+    "out": "c144__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c144"
+  },
+  {
+   "args": {
+    "kind": "impulse",
+    "mode": "RGB",
+    "radius": "0x1.0000000000000p-1",
+    "size": [48, 64]
+   },
+   "arrays": {
+    "in": "c145__in",
+    "out": "c145__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c145"
+  },
+  {
+   "args": {
+    "kind": "noise",
+    "mode": "RGB",
+    "radius": "0x1.0000000000000p-1",
+    "size": [3, 2]
+   },
+   "arrays": {
+    "in": "c146__in",
+    "out": "c146__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c146"
+  },
+  {
+   "args": {
+    "kind": "mask",
+    "mode": "RGB",
+    "radius": "0x1.0000000000000p-1",
+    "size": [96, 96]
+   },
+   "arrays": {
+    "in": "c147__in",
+    "out": "c147__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c147"
+  },
+  {
+   "args": {
+    "kind": "spots",
+    "mode": "RGB",
+    "radius": "0x1.0000000000000p-1",
+    "size": [32, 32]
+   },
+   "arrays": {
+    "in": "c148__in",
+    "out": "c148__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c148"
+  },
+  {
+   "args": {
+    "kind": "step",
+    "mode": "RGB",
+    "radius": "0x1.0000000000000p-1",
+    "size": [39, 24]
+   },
+   "arrays": {
+    "in": "c149__in",
+    "out": "c149__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c149"
+  },
+  {
+   "args": {
+    "kind": "impulse",
+    "mode": "RGB",
+    "radius": "0x1.0000000000000p+0",
+    "size": [21, 35]
+   },
+   "arrays": {
+    "in": "c150__in",
+    "out": "c150__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c150"
+  },
+  {
+   "args": {
+    "kind": "noise",
+    "mode": "RGB",
+    "radius": "0x1.0000000000000p+0",
+    "size": [32, 32]
+   },
+   "arrays": {
+    "in": "c151__in",
+    "out": "c151__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c151"
+  },
+  {
+   "args": {
+    "kind": "mask",
+    "mode": "RGB",
+    "radius": "0x1.0000000000000p+0",
+    "size": [24, 40]
+   },
+   "arrays": {
+    "in": "c152__in",
+    "out": "c152__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c152"
+  },
+  {
+   "args": {
+    "kind": "spots",
+    "mode": "RGB",
+    "radius": "0x1.0000000000000p+0",
+    "size": [2, 5]
+   },
+   "arrays": {
+    "in": "c153__in",
+    "out": "c153__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c153"
+  },
+  {
+   "args": {
+    "kind": "step",
+    "mode": "RGB",
+    "radius": "0x1.0000000000000p+0",
+    "size": [21, 21]
+   },
+   "arrays": {
+    "in": "c154__in",
+    "out": "c154__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c154"
+  },
+  {
+   "args": {
+    "kind": "impulse",
+    "mode": "RGB",
+    "radius": "0x1.8000000000000p+0",
+    "size": [33, 45]
+   },
+   "arrays": {
+    "in": "c155__in",
+    "out": "c155__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c155"
+  },
+  {
+   "args": {
+    "kind": "noise",
+    "mode": "RGB",
+    "radius": "0x1.8000000000000p+0",
+    "size": [32, 32]
+   },
+   "arrays": {
+    "in": "c156__in",
+    "out": "c156__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c156"
+  },
+  {
+   "args": {
+    "kind": "mask",
+    "mode": "RGB",
+    "radius": "0x1.8000000000000p+0",
+    "size": [24, 40]
+   },
+   "arrays": {
+    "in": "c157__in",
+    "out": "c157__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c157"
+  },
+  {
+   "args": {
+    "kind": "spots",
+    "mode": "RGB",
+    "radius": "0x1.8000000000000p+0",
+    "size": [91, 14]
+   },
+   "arrays": {
+    "in": "c158__in",
+    "out": "c158__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c158"
+  },
+  {
+   "args": {
+    "kind": "step",
+    "mode": "RGB",
+    "radius": "0x1.8000000000000p+0",
+    "size": [23, 8]
+   },
+   "arrays": {
+    "in": "c159__in",
+    "out": "c159__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c159"
+  },
+  {
+   "args": {
+    "kind": "impulse",
+    "mode": "RGB",
+    "radius": "0x1.0000000000000p+1",
+    "size": [4, 4]
+   },
+   "arrays": {
+    "in": "c160__in",
+    "out": "c160__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c160"
+  },
+  {
+   "args": {
+    "kind": "noise",
+    "mode": "RGB",
+    "radius": "0x1.0000000000000p+1",
+    "size": [32, 32]
+   },
+   "arrays": {
+    "in": "c161__in",
+    "out": "c161__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c161"
+  },
+  {
+   "args": {
+    "kind": "mask",
+    "mode": "RGB",
+    "radius": "0x1.0000000000000p+1",
+    "size": [96, 96]
+   },
+   "arrays": {
+    "in": "c162__in",
+    "out": "c162__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c162"
+  },
+  {
+   "args": {
+    "kind": "spots",
+    "mode": "RGB",
+    "radius": "0x1.0000000000000p+1",
+    "size": [24, 40]
+   },
+   "arrays": {
+    "in": "c163__in",
+    "out": "c163__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c163"
+  },
+  {
+   "args": {
+    "kind": "step",
+    "mode": "RGB",
+    "radius": "0x1.0000000000000p+1",
+    "size": [64, 48]
+   },
+   "arrays": {
+    "in": "c164__in",
+    "out": "c164__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c164"
+  },
+  {
+   "args": {
+    "kind": "impulse",
+    "mode": "RGB",
+    "radius": "0x1.4000000000000p+1",
+    "size": [20, 16]
+   },
+   "arrays": {
+    "in": "c165__in",
+    "out": "c165__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c165"
+  },
+  {
+   "args": {
+    "kind": "noise",
+    "mode": "RGB",
+    "radius": "0x1.4000000000000p+1",
+    "size": [32, 32]
+   },
+   "arrays": {
+    "in": "c166__in",
+    "out": "c166__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c166"
+  },
+  {
+   "args": {
+    "kind": "mask",
+    "mode": "RGB",
+    "radius": "0x1.4000000000000p+1",
+    "size": [5, 3]
+   },
+   "arrays": {
+    "in": "c167__in",
+    "out": "c167__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c167"
+  },
+  {
+   "args": {
+    "kind": "spots",
+    "mode": "RGB",
+    "radius": "0x1.4000000000000p+1",
+    "size": [48, 64]
+   },
+   "arrays": {
+    "in": "c168__in",
+    "out": "c168__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c168"
+  },
+  {
+   "args": {
+    "kind": "step",
+    "mode": "RGB",
+    "radius": "0x1.4000000000000p+1",
+    "size": [58, 10]
+   },
+   "arrays": {
+    "in": "c169__in",
+    "out": "c169__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c169"
+  },
+  {
+   "args": {
+    "kind": "impulse",
+    "mode": "RGB",
+    "radius": "0x1.0000000000000p+2",
+    "size": [96, 96]
+   },
+   "arrays": {
+    "in": "c170__in",
+    "out": "c170__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c170"
+  },
+  {
+   "args": {
+    "kind": "noise",
+    "mode": "RGB",
+    "radius": "0x1.0000000000000p+2",
+    "size": [32, 32]
+   },
+   "arrays": {
+    "in": "c171__in",
+    "out": "c171__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c171"
+  },
+  {
+   "args": {
+    "kind": "mask",
+    "mode": "RGB",
+    "radius": "0x1.0000000000000p+2",
+    "size": [32, 32]
+   },
+   "arrays": {
+    "in": "c172__in",
+    "out": "c172__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c172"
+  },
+  {
+   "args": {
+    "kind": "spots",
+    "mode": "RGB",
+    "radius": "0x1.0000000000000p+2",
+    "size": [32, 32]
+   },
+   "arrays": {
+    "in": "c173__in",
+    "out": "c173__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c173"
+  },
+  {
+   "args": {
+    "kind": "step",
+    "mode": "RGB",
+    "radius": "0x1.0000000000000p+2",
+    "size": [1, 1]
+   },
+   "arrays": {
+    "in": "c174__in",
+    "out": "c174__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c174"
+  },
+  {
+   "args": {
+    "kind": "impulse",
+    "mode": "RGB",
+    "radius": "0x1.4000000000000p+2",
+    "size": [74, 86]
+   },
+   "arrays": {
+    "in": "c175__in",
+    "out": "c175__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c175"
+  },
+  {
+   "args": {
+    "kind": "noise",
+    "mode": "RGB",
+    "radius": "0x1.4000000000000p+2",
+    "size": [32, 32]
+   },
+   "arrays": {
+    "in": "c176__in",
+    "out": "c176__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c176"
+  },
+  {
+   "args": {
+    "kind": "mask",
+    "mode": "RGB",
+    "radius": "0x1.4000000000000p+2",
+    "size": [96, 96]
+   },
+   "arrays": {
+    "in": "c177__in",
+    "out": "c177__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c177"
+  },
+  {
+   "args": {
+    "kind": "spots",
+    "mode": "RGB",
+    "radius": "0x1.4000000000000p+2",
+    "size": [48, 64]
+   },
+   "arrays": {
+    "in": "c178__in",
+    "out": "c178__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c178"
+  },
+  {
+   "args": {
+    "kind": "step",
+    "mode": "RGB",
+    "radius": "0x1.4000000000000p+2",
+    "size": [32, 32]
+   },
+   "arrays": {
+    "in": "c179__in",
+    "out": "c179__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c179"
+  },
+  {
+   "args": {
+    "kind": "impulse",
+    "mode": "RGB",
+    "radius": "0x1.0000000000000p+3",
+    "size": [49, 25]
+   },
+   "arrays": {
+    "in": "c180__in",
+    "out": "c180__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c180"
+  },
+  {
+   "args": {
+    "kind": "noise",
+    "mode": "RGB",
+    "radius": "0x1.0000000000000p+3",
+    "size": [1, 7]
+   },
+   "arrays": {
+    "in": "c181__in",
+    "out": "c181__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c181"
+  },
+  {
+   "args": {
+    "kind": "mask",
+    "mode": "RGB",
+    "radius": "0x1.0000000000000p+3",
+    "size": [24, 40]
+   },
+   "arrays": {
+    "in": "c182__in",
+    "out": "c182__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c182"
+  },
+  {
+   "args": {
+    "kind": "spots",
+    "mode": "RGB",
+    "radius": "0x1.0000000000000p+3",
+    "size": [48, 64]
+   },
+   "arrays": {
+    "in": "c183__in",
+    "out": "c183__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c183"
+  },
+  {
+   "args": {
+    "kind": "step",
+    "mode": "RGB",
+    "radius": "0x1.0000000000000p+3",
+    "size": [64, 48]
+   },
+   "arrays": {
+    "in": "c184__in",
+    "out": "c184__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c184"
+  },
+  {
+   "args": {
+    "kind": "impulse",
+    "mode": "RGB",
+    "radius": "0x1.999999999999ap-5",
+    "size": [43, 81]
+   },
+   "arrays": {
+    "in": "c185__in",
+    "out": "c185__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c185"
+  },
+  {
+   "args": {
+    "kind": "noise",
+    "mode": "RGB",
+    "radius": "0x1.999999999999ap-5",
+    "size": [28, 11]
+   },
+   "arrays": {
+    "in": "c186__in",
+    "out": "c186__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c186"
+  },
+  {
+   "args": {
+    "kind": "mask",
+    "mode": "RGB",
+    "radius": "0x1.999999999999ap-5",
+    "size": [48, 64]
+   },
+   "arrays": {
+    "in": "c187__in",
+    "out": "c187__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c187"
+  },
+  {
+   "args": {
+    "kind": "spots",
+    "mode": "RGB",
+    "radius": "0x1.999999999999ap-5",
+    "size": [7, 1]
+   },
+   "arrays": {
+    "in": "c188__in",
+    "out": "c188__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c188"
+  },
+  {
+   "args": {
+    "kind": "step",
+    "mode": "RGB",
+    "radius": "0x1.999999999999ap-5",
+    "size": [96, 96]
+   },
+   "arrays": {
+    "in": "c189__in",
+    "out": "c189__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c189"
+  },
+  {
+   "args": {
+    "kind": "impulse",
+    "mode": "L",
+    "radius": "0x1.6666666666666p-1",
+    "size": [19, 11]
+   },
+   "arrays": {
+    "in": "c190__in",
+    "out": "c190__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c190"
+  },
+  {
+   "args": {
+    "kind": "noise",
+    "mode": "L",
+    "radius": "0x1.6666666666666p-1",
+    "size": [32, 25]
+   },
+   "arrays": {
+    "in": "c191__in",
+    "out": "c191__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c191"
+  },
+  {
+   "args": {
+    "kind": "impulse",
+    "mode": "RGB",
+    "radius": "0x1.8000000000000p+1",
+    "size": [62, 26]
+   },
+   "arrays": {
+    "in": "c192__in",
+    "out": "c192__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c192"
+  },
+  {
+   "args": {
+    "kind": "noise",
+    "mode": "RGB",
+    "radius": "0x1.8000000000000p+1",
+    "size": [32, 32]
+   },
+   "arrays": {
+    "in": "c193__in",
+    "out": "c193__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c193"
+  },
+  {
+   "args": {
+    "kind": "impulse",
+    "mode": "L",
+    "radius": "0x1.6666666666666p-1",
+    "size": [18, 38]
+   },
+   "arrays": {
+    "in": "c194__in",
+    "out": "c194__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c194"
+  },
+  {
+   "args": {
+    "kind": "noise",
+    "mode": "L",
+    "radius": "0x1.6666666666666p-1",
+    "size": [2, 2]
+   },
+   "arrays": {
+    "in": "c195__in",
+    "out": "c195__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c195"
+  },
+  {
+   "args": {
+    "kind": "impulse",
+    "mode": "RGB",
+    "radius": "0x1.8000000000000p+1",
+    "size": [11, 18]
+   },
+   "arrays": {
+    "in": "c196__in",
+    "out": "c196__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c196"
+  },
+  {
+   "args": {
+    "kind": "noise",
+    "mode": "RGB",
+    "radius": "0x1.8000000000000p+1",
+    "size": [24, 32]
+   },
+   "arrays": {
+    "in": "c197__in",
+    "out": "c197__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c197"
+  },
+  {
+   "args": {
+    "kind": "impulse",
+    "mode": "L",
+    "radius": "0x1.6666666666666p-1",
+    "size": [48, 64]
+   },
+   "arrays": {
+    "in": "c198__in",
+    "out": "c198__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c198"
+  },
+  {
+   "args": {
+    "kind": "noise",
+    "mode": "L",
+    "radius": "0x1.6666666666666p-1",
+    "size": [32, 32]
+   },
+   "arrays": {
+    "in": "c199__in",
+    "out": "c199__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c199"
+  },
+  {
+   "args": {
+    "kind": "impulse",
+    "mode": "RGB",
+    "radius": "0x1.8000000000000p+1",
+    "size": [48, 64]
+   },
+   "arrays": {
+    "in": "c200__in",
+    "out": "c200__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c200"
+  },
+  {
+   "args": {
+    "kind": "noise",
+    "mode": "RGB",
+    "radius": "0x1.8000000000000p+1",
+    "size": [32, 32]
+   },
+   "arrays": {
+    "in": "c201__in",
+    "out": "c201__out"
+   },
+   "call": "Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius))",
+   "id": "c201"
+  }
+ ],
+ "note": "args: mode, size (width, height), radius as passed (a float.hex() string; Pillow reads it as a C float). Arrays \"in\" and \"out\" are (height, width) for L, (height, width, 3) for RGB.",
+ "pillow": "12.3.0",
+ "tool": "pillow"
+}

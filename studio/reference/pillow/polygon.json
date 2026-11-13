@@ -1,0 +1,4785 @@
+{
+ "about": "ImageDraw.polygon(xy, fill=...): filled polygons on L, RGB, F and RGBA images",
+ "cases": [
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "quad",
+    "mode": "L",
+    "size": [24, 40],
+    "xy": [
+     ["0x1.6cc8c110c1972p+1", "0x1.23dcd7accb18fp+5"],
+     ["0x1.c53e9583652c1p+3", "0x1.45ea0e93620e3p+5"],
+     ["0x1.a7d651192fc6cp+4", "0x1.44082cf75b607p+4"],
+     ["0x1.9f4b0c59cf03cp+4", "0x1.57c916cd5fcd0p-1"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c000__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c000"
+  },
+  {
+   "args": {
+    "background": [78, 28, 159],
+    "fill": [169, 7, 171],
+    "kind": "triangle",
+    "mode": "RGB",
+    "size": [96, 96],
+    "xy": [
+     ["0x1.5025bfe58d160p+6", "0x1.7d95aa839adbcp+4"],
+     ["0x1.85e171cd57080p+6", "0x1.2debbc3a0a45ep+5"],
+     ["-0x1.88c396a1a0e20p+3", "0x1.681b5c583acb0p+6"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c001__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c001"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.803f0ead1bae1p+16",
+    "kind": "ngon",
+    "mode": "F",
+    "size": [27, 16],
+    "xy": [
+     ["0x1.51680897548bap+4", "0x1.2cbf1fc21c4dep+3"],
+     ["0x1.ed22f44102ad4p+3", "0x1.0500cda6006fep+3"],
+     ["0x1.4248e83f42ce2p+4", "0x1.380ba4bd0ab25p+2"],
+     ["0x1.5f3a98e0b1c79p+4", "0x1.2ac657aae04d8p+2"],
+     ["0x1.79df3a5e9dadcp+4", "-0x1.9d91f2bc31e00p-1"],
+     ["0x1.c00703b353d16p+4", "0x1.e38a3742b0b84p+0"],
+     ["0x1.777e0c87d57bcp+4", "0x1.534ea48883c02p+2"],
+     ["0x1.70d63b5598678p+4", "0x1.951c65c98abf0p+3"],
+     ["0x1.5d69121290508p+4", "0x1.a41709df71f1ep+3"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c002__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c002"
+  },
+  {
+   "args": {
+    "background": [0, 0, 0, 0],
+    "fill": [47, 84, 2, 128],
+    "kind": "circle",
+    "mode": "RGBA",
+    "size": [22, 21],
+    "xy": [
+     ["0x1.afe2bd5801c6cp+2", "0x1.ddcbbf48fad5cp+0"],
+     ["0x1.3c42061ddbe9fp+3", "0x1.24f2966fd1b2cp+0"],
+     ["0x1.a3c396d42fa55p+3", "0x1.74fb894301e64p+0"],
+     ["0x1.feb40d32105eap+3", "0x1.60dbab0653d00p+1"],
+     ["0x1.1f9d95f8775dbp+4", "0x1.361f88a5b3455p+2"],
+     ["0x1.2dc308167a3abp+4", "0x1.d9f96e45c9007p+2"],
+     ["0x1.27a307e21aa5bp+4", "0x1.4184d23988113p+3"],
+     ["0x1.0e2c4c1e00738p+4", "0x1.8bc9930b32844p+3"],
+     ["0x1.ca7e7fa286c21p+3", "0x1.c07c74a580816p+3"],
+     ["0x1.662dd830abbb8p+3", "0x1.d79799c0a5a5cp+3"],
+     ["0x1.fd588ef4b000bp+2", "0x1.cd967b663f9f7p+3"],
+     ["0x1.4777a238ee8d8p+2", "0x1.a3ff01cd0ae82p+3"],
+     ["0x1.8cd2c97663a80p+1", "0x1.6126283bc6398p+3"],
+     ["0x1.1ba738864cc00p+1", "0x1.0f39356bbb5bfp+3"],
+     ["0x1.4ca73a2949684p+1", "0x1.756234aa2f959p+2"],
+     ["0x1.0c2e8c250d7cdp+2", "0x1.c1b1660db55f8p+1"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c003__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c003"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "star",
+    "mode": "L",
+    "size": [24, 40],
+    "xy": [
+     ["0x1.76e7865d79368p+3", "0x1.725ed4264fa66p+4"],
+     ["0x1.6ae22c091b7bbp+3", "0x1.5368cf6349f65p+4"],
+     ["0x1.2c65808a9bcb5p+3", "0x1.65e42128f5737p+4"],
+     ["0x1.51914331d0881p+3", "0x1.485739c5cf77fp+4"],
+     ["0x1.24a998486241cp+3", "0x1.466dbbe8792ccp+4"],
+     ["0x1.5127e6fe14b9fp+3", "0x1.395ce6da9eccdp+4"],
+     ["0x1.33cf133d8e472p+3", "0x1.242ddb958a558p+4"],
+     ["0x1.695e05aca0d78p+3", "0x1.2c48595fe92d4p+4"],
+     ["0x1.591b604f56b5ep+3", "0x1.1385b619e6151p+4"],
+     ["0x1.851c9b57cc1cap+3", "0x1.2560bb31a56a1p+4"],
+     ["0x1.9e6a2b48bbf1ep+3", "0x1.0be7c7bc4c3e1p+4"],
+     ["0x1.a128c1f2f4095p+3", "0x1.2c74659ebae91p+4"],
+     ["0x1.dd59c31ddb697p+3", "0x1.2a27140c1d795p+4"],
+     ["0x1.ae639220b5f0ep+3", "0x1.3bacabe561a6bp+4"],
+     ["0x1.e0fa67d031aacp+3", "0x1.4c533fc65e533p+4"],
+     ["0x1.a92c0546d4c1ep+3", "0x1.4c377305b2e1ap+4"],
+     ["0x1.b3e67a667b6b2p+3", "0x1.6b4b2cd6eb87fp+4"],
+     ["0x1.8acd0f1e2309fp+3", "0x1.56bb7f1786c7ep+4"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c004__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c004"
+  },
+  {
+   "args": {
+    "background": [82, 92, 187],
+    "fill": [162, 216, 31],
+    "kind": "int",
+    "mode": "RGB",
+    "size": [48, 64],
+    "xy": [
+     [48, 68],
+     [24, 48],
+     [2, -4],
+     [41, 52],
+     [49, 6],
+     [43, 3],
+     [16, 21]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c005__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c005"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.95e0bbc4c7e62p+13",
+    "kind": "outside_partly",
+    "mode": "F",
+    "size": [81, 36],
+    "xy": [
+     ["0x1.4e7dac2aa5ccap+6", "0x1.21a62ca8f3910p+3"],
+     ["0x1.55b63df7ffe60p+6", "0x1.d12850281d950p+3"],
+     ["0x1.7015a5ee2c607p+6", "0x1.359fc5e571997p+5"],
+     ["0x1.6ea91bfc8ccb2p+6", "0x1.2b845bd26ecd5p+5"],
+     ["0x1.5f482639e33eap+6", "0x1.389bb1e55bf9ep+5"],
+     ["0x1.c813d7377b236p+5", "0x1.b6b8099ba3e86p+4"],
+     ["0x1.0d5db2f173504p+6", "0x1.7e6b8465cd109p+4"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c006__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c006"
+  },
+  {
+   "args": {
+    "background": [0, 0, 0, 0],
+    "fill": [218, 203, 241, 218],
+    "kind": "outside_far",
+    "mode": "RGBA",
+    "size": [19, 37],
+    "xy": [
+     ["-0x1.6b089ced62adfp+6", "0x1.39fc4c3b8bbb8p+7"],
+     ["0x1.6da394abb2268p+6", "0x1.5597ebf3449e0p+6"],
+     ["0x1.9d795952ce41cp+5", "-0x1.18e34370eff00p+5"],
+     ["0x1.28075d79e61c8p+6", "0x1.6356530a00408p+7"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c007__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c007"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "outside_all",
+    "mode": "L",
+    "size": [48, 64],
+    "xy": [
+     ["0x1.dccc4f356b074p+1", "-0x1.85a7f95a56645p+6"],
+     ["0x1.960f573abc01cp+4", "-0x1.52a9fce1ba490p+6"],
+     ["0x1.07aaf8389e2ffp+3", "-0x1.87a0da676b71cp+6"],
+     ["0x1.e2315414f8f98p+1", "-0x1.dc663a47a02e5p+6"],
+     ["0x1.6c6360b5a2afcp+1", "-0x1.bda3f34d361c6p+6"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c008__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c008"
+  },
+  {
+   "args": {
+    "background": [71, 66, 119],
+    "fill": [141, 39, 116],
+    "kind": "cover_all",
+    "mode": "RGB",
+    "size": [70, 12],
+    "xy": [
+     ["-0x1.0508090a32b85p+5", "-0x1.212c2251c0305p+2"],
+     ["0x1.384896404946ep+6", "-0x1.3c9a6473f6fddp+5"],
+     ["0x1.7aa01b90f9111p+6", "0x1.dc4652534f0cap+3"],
+     ["-0x1.981c87038e302p+4", "0x1.3f457d9ec7764p+5"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c009__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c009"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.26b34f70e56d6p+16",
+    "kind": "two_points",
+    "mode": "F",
+    "size": [16, 83],
+    "xy": [
+     ["0x1.7b77fc25f0fddp+3", "0x1.6dc91ebbae9d5p+6"],
+     ["0x1.5aec8552bfe72p+2", "0x1.b24c3ae76d73cp+2"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c010__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c010"
+  },
+  {
+   "args": {
+    "background": [0, 0, 0, 0],
+    "fill": [55, 191, 3, 43],
+    "kind": "collinear",
+    "mode": "RGBA",
+    "size": [34, 20],
+    "xy": [
+     ["0x1.d4fefc956cb46p+3", "-0x1.9bf847e761400p-8"],
+     ["0x1.e0b42880a74d7p+3", "0x1.d628dbd3bb66fp+0"],
+     ["0x1.e700ba8f711a6p+3", "0x1.69fe2dbcad654p+1"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c011__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c011"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "repeated",
+    "mode": "L",
+    "size": [64, 48],
+    "xy": [
+     ["0x1.780105a43fac0p+3", "0x1.84c0821c83718p+5"],
+     ["0x1.780105a43fac0p+3", "0x1.84c0821c83718p+5"],
+     ["0x1.780105a43fac0p+3", "0x1.84c0821c83718p+5"],
+     ["0x1.18e20d8245822p+2", "0x1.3c151c4118490p+5"],
+     ["0x1.18e20d8245822p+2", "0x1.3c151c4118490p+5"],
+     ["0x1.18e20d8245822p+2", "0x1.3c151c4118490p+5"],
+     ["0x1.be8f75605caa2p+2", "0x1.10f58369f3996p+4"],
+     ["0x1.be8f75605caa2p+2", "0x1.10f58369f3996p+4"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c012__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c012"
+  },
+  {
+   "args": {
+    "background": [82, 29, 240],
+    "fill": [113, 254, 24],
+    "kind": "same_point",
+    "mode": "RGB",
+    "size": [64, 48],
+    "xy": [
+     ["0x1.71e464912140ep+4", "0x1.1dea638a6b13bp+5"],
+     ["0x1.71e464912140ep+4", "0x1.1dea638a6b13bp+5"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c013__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c013"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.08ef99b4ad258p+9",
+    "kind": "closed",
+    "mode": "F",
+    "size": [37, 66],
+    "xy": [
+     ["0x1.fd418072d9fa6p+3", "0x1.8434aa80b5843p+3"],
+     ["0x1.39143bdf143bep+4", "0x1.080460e5b5e3ep+3"],
+     ["0x1.6eabcdf16cecdp+4", "0x1.dad8ee830b668p+2"],
+     ["0x1.1f7ba2d935547p+4", "0x1.d3882eb00d7d6p+4"],
+     ["0x1.fd418072d9fa6p+3", "0x1.8434aa80b5843p+3"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c014__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c014"
+  },
+  {
+   "args": {
+    "background": [0, 0, 0, 0],
+    "fill": [44, 108, 112, 44],
+    "kind": "bowtie",
+    "mode": "RGBA",
+    "size": [61, 54],
+    "xy": [
+     ["0x1.d5cc758c40612p+4", "0x1.9f7475a365f85p+5"],
+     ["0x1.a2f61b2fffd2cp+4", "0x1.24112fe9f5880p+3"],
+     ["0x1.6568bb1cfe0cap+4", "0x1.e803814f692d2p+4"],
+     ["0x1.03f91a5ebfffep+6", "0x1.ae428c4e02728p+4"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c015__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c015"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "pentagram",
+    "mode": "L",
+    "size": [96, 96],
+    "xy": [
+     ["0x1.572256c129530p+6", "0x1.4f22ee129fb86p+5"],
+     ["0x1.c291c22a8dc00p-3", "0x1.052fa10794614p+6"],
+     ["0x1.0d99cc371f548p+6", "0x1.e5f87a8fb96c8p+2"],
+     ["0x1.012eec4806992p+5", "0x1.6227144f3a4c0p+6"],
+     ["0x1.bccb6c119918cp+4", "-0x1.9776196785b60p+0"],
+     ["0x1.1b9c92f15d4f5p+6", "0x1.3be4127d6ffc9p+6"],
+     ["-0x1.fe10ea5420280p+0", "0x1.9e5456166f830p+4"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c016__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c016"
+  },
+  {
+   "args": {
+    "background": [1, 55, 186],
+    "fill": [31, 236, 38],
+    "kind": "scrambled",
+    "mode": "RGB",
+    "size": [32, 32],
+    "xy": [
+     ["0x1.090dab75498fbp+5", "0x1.9db0b7c858478p+3"],
+     ["0x1.151bd527f8261p+3", "0x1.3f24d4ecf0921p+4"],
+     ["0x1.890668c8af480p+4", "0x1.652ec2d71efeap+4"],
+     ["0x1.905e3db198641p+4", "0x1.559594bebf3fbp+4"],
+     ["0x1.57f6b9092d078p+2", "0x1.2890db3d4c595p+4"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c017__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c017"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.1253a86fa7554p+15",
+    "kind": "axis_rect",
+    "mode": "F",
+    "size": [38, 64],
+    "xy": [
+     ["0x1.1a34154f33868p+4", "0x1.c6b49b7cceb98p+4"],
+     ["0x1.e4cd67134433ap+4", "0x1.c6b49b7cceb98p+4"],
+     ["0x1.e4cd67134433ap+4", "0x1.05b0ac1b1a3d2p+6"],
+     ["0x1.1a34154f33868p+4", "0x1.05b0ac1b1a3d2p+6"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c018__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c018"
+  },
+  {
+   "args": {
+    "background": [0, 0, 0, 0],
+    "fill": [78, 95, 245, 37],
+    "kind": "staircase",
+    "mode": "RGBA",
+    "size": [96, 96],
+    "xy": [
+     [18, 49],
+     [45, 49],
+     [45, 58],
+     [46, 58],
+     [46, 64],
+     [60, 64],
+     [60, 65],
+     [69, 65],
+     [69, 69],
+     [93, 69],
+     [93, 94],
+     [18, 94]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c019__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c019"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "horizontal_runs",
+    "mode": "L",
+    "size": [16, 85],
+    "xy": [
+     ["0x1.57a587e483c00p-3", "0x1.f000000000000p+4"],
+     ["0x1.7ae1d727f0524p+3", "0x1.f942eb4ef12afp+4"],
+     ["0x1.a9c7d898b8bfbp+3", "0x1.f000000000000p+4"],
+     ["0x1.f61d5585ce0aep+3", "0x1.f942eb4ef12afp+4"],
+     ["0x1.f61d5585ce0aep+3", "0x1.4250bad3bc4acp+6"],
+     ["0x1.a9c7d898b8bfbp+3", "0x1.4250bad3bc4acp+6"],
+     ["0x1.7ae1d727f0524p+3", "0x1.4250bad3bc4acp+6"],
+     ["0x1.57a587e483c00p-3", "0x1.4250bad3bc4acp+6"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c020__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c020"
+  },
+  {
+   "args": {
+    "background": [96, 165, 67],
+    "fill": [138, 18, 141],
+    "kind": "flat_top",
+    "mode": "RGB",
+    "size": [24, 40],
+    "xy": [
+     ["0x1.6e19a2f825e75p+3", "0x1.c3e2e4b6ca4b5p+4"],
+     ["0x1.4eacccba82eb6p+4", "0x1.cc7a9afac092cp+4"],
+     ["0x1.6ba8e6430b828p+4", "0x1.a86dcdd8799ecp+2"],
+     ["0x1.3fced13e8627fp+3", "0x1.036269eef26a4p+5"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c021__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c021"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.570045783d958p+15",
+    "kind": "sliver_subpixel",
+    "mode": "F",
+    "size": [42, 80],
+    "xy": [
+     ["0x1.caeb810d48c86p-1", "0x1.7f4e0973c5268p+5"],
+     ["0x1.816b718f1f5d0p-1", "0x1.7865106f76db6p+5"],
+     ["0x1.06494c480c17bp-2", "0x1.7e50414f2a560p+5"],
+     ["0x1.f0e0807f92492p-1", "0x1.7da363cea0d5cp+5"],
+     ["0x1.50f72d2187144p-1", "0x1.7aea73e55ad1ep+5"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c022__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c022"
+  },
+  {
+   "args": {
+    "background": [0, 0, 0, 0],
+    "fill": [85, 106, 173, 180],
+    "kind": "sliver_thin",
+    "mode": "RGBA",
+    "size": [96, 96],
+    "xy": [
+     ["0x1.4aecbfa4d2e9dp+6", "0x1.81faaab323890p+5"],
+     ["0x1.06338433da26ep+6", "0x1.f9698d98937e0p+0"],
+     ["0x1.08e77092188cep+6", "0x1.b92f8c9776060p+0"],
+     ["0x1.4da0ac03114fdp+6", "0x1.7ff8daab1a9d4p+5"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c023__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c023"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "negative_fraction",
+    "mode": "L",
+    "size": [24, 40],
+    "xy": [
+     ["-0x1.1f02485766d44p-2", "0x1.2c877a0995650p+5"],
+     ["0x1.62b90c6a0b927p+4", "-0x1.bd912d1529808p-3"],
+     ["0x1.f143a338331f6p+3", "0x1.6d4b4d6214102p+3"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c024__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c024"
+  },
+  {
+   "args": {
+    "background": [25, 66, 227],
+    "fill": [8, 98, 54],
+    "kind": "half_pixel",
+    "mode": "RGB",
+    "size": [24, 40],
+    "xy": [
+     ["0x1.4000000000000p+1", "0x1.3400000000000p+5"],
+     ["0x1.2000000000000p+3", "0x1.0800000000000p+4"],
+     ["0x1.3800000000000p+4", "0x1.47fffffff920cp+4"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c025__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c025"
+  },
+  {
+   "args": {
+    "background": [223, 200, 64],
+    "fill": [115, 168, 153],
+    "kind": "quad",
+    "mode": "RGB",
+    "size": [32, 32],
+    "xy": [
+     ["0x1.0c38e5bfde843p+5", "0x1.43f4318ca080bp+4"],
+     ["0x1.1b3f9da1eace8p+5", "0x1.40756fd8e5dfep+3"],
+     ["0x1.9399ffbd2a237p+4", "0x1.853edbc15dfbcp+4"],
+     ["0x1.5eba64d82c864p+3", "-0x1.709040009f620p-1"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c026__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c026"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.2b101857e5f6cp+5",
+    "kind": "triangle",
+    "mode": "F",
+    "size": [61, 68],
+    "xy": [
+     ["0x1.b55448ffdbf0bp+5", "0x1.f05a3a8409da3p+4"],
+     ["0x1.e1dae39d7cfafp+5", "0x1.bad726f7c9e63p+4"],
+     ["0x1.301de36782557p+3", "0x1.e750c21805342p+5"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c027__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c027"
+  },
+  {
+   "args": {
+    "background": [0, 0, 0, 0],
+    "fill": [252, 113, 195, 222],
+    "kind": "ngon",
+    "mode": "RGBA",
+    "size": [33, 20],
+    "xy": [
+     ["0x1.ba73c4ea29a6ep+3", "0x1.4f55b6a2e8d16p+1"],
+     ["0x1.3b7fd3ed4adfap+4", "0x1.a952d22efbc32p+2"],
+     ["0x1.37f03c69ed95dp+4", "0x1.56e7402ad9a8fp+3"],
+     ["0x1.3a3473e766c02p+4", "0x1.9c6d5b04fbb91p+3"],
+     ["0x1.32468f8c9a5afp+2", "0x1.13ae4443d708dp+3"],
+     ["0x1.41cb0a7429496p+3", "0x1.233a84726d9eap+2"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c028__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c028"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 133,
+    "kind": "circle",
+    "mode": "L",
+    "size": [24, 40],
+    "xy": [
+     ["0x1.5f3df2dd87b9dp+4", "0x1.e3f4207ce2067p+2"],
+     ["0x1.604c051426f8dp+4", "0x1.4f0fc9e880503p+3"],
+     ["0x1.48eb62e8d3a81p+4", "0x1.a0afab07a4f5fp+3"],
+     ["0x1.1f5fa0401c3f9p+4", "0x1.d0faaae74b05ep+3"],
+     ["0x1.dd952a06fdaa2p+3", "0x1.d30021a947a76p+3"],
+     ["0x1.88618048505b4p+3", "0x1.a63567dede6a8p+3"],
+     ["0x1.55f8ae25bc27fp+3", "0x1.569afd81b6664p+3"],
+     ["0x1.53dc89b87da9ep+3", "0x1.f30a87af4e322p+2"],
+     ["0x1.829dce0f244b6p+3", "0x1.4fcac57104e6bp+2"],
+     ["0x1.d5b55360931c8p+3", "0x1.de698b63718d2p+1"],
+     ["0x1.1b6fb4ece6f8bp+4", "0x1.d653b05b7f078p+1"],
+     ["0x1.460989cc3da02p+4", "0x1.44bf4bc291fd8p+2"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c029__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c029"
+  },
+  {
+   "args": {
+    "background": [51, 125, 121],
+    "fill": [63, 36, 208],
+    "kind": "star",
+    "mode": "RGB",
+    "size": [48, 64],
+    "xy": [
+     ["0x1.79d16c0155c89p+4", "0x1.99efa580288f5p+4"],
+     ["0x1.902596e24f052p+4", "0x1.d34871e504396p+4"],
+     ["0x1.b644358db4c89p+4", "0x1.934c1c6d49ef3p+4"],
+     ["0x1.a4b09ed099ceap+4", "0x1.e8d2bac6ac664p+4"],
+     ["0x1.df70fbf998264p+4", "0x1.eacd9a5b6d1fep+4"],
+     ["0x1.b8096c6f5e326p+4", "0x1.0310894cbd982p+5"],
+     ["0x1.e982f5cf27610p+4", "0x1.17260ab6d2c86p+5"],
+     ["0x1.a6898a78ae630p+4", "0x1.10cd38d1ff8b5p+5"],
+     ["0x1.a9a3a72c75288p+4", "0x1.2d5fd3a7e8593p+5"],
+     ["0x1.83e9e44340b04p+4", "0x1.18d1eb7c4312dp+5"],
+     ["0x1.6a29e2825eaf9p+4", "0x1.3281cca5c2dd8p+5"],
+     ["0x1.66683d1037abap+4", "0x1.16060e5dd662cp+5"],
+     ["0x1.2ebe36f0e3f7cp+4", "0x1.1b6b8d8ff5266p+5"],
+     ["0x1.582a114603d62p+4", "0x1.09704f0099b77p+5"],
+     ["0x1.1063035ac174ap+4", "0x1.f4053399ee9afp+4"],
+     ["0x1.50820fe9fe406p+4", "0x1.f1c046ca16662p+4"],
+     ["0x1.2a77ccba06de6p+4", "0x1.bde305524a043p+4"],
+     ["0x1.6b57a8122c998p+4", "0x1.d52be498db7a6p+4"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c030__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c030"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.2819dd9a94271p+5",
+    "kind": "int",
+    "mode": "F",
+    "size": [72, 66],
+    "xy": [
+     [4, 57],
+     [-4, 30],
+     [32, -3],
+     [64, -3],
+     [47, -5]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c031__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c031"
+  },
+  {
+   "args": {
+    "background": [0, 0, 0, 0],
+    "fill": [177, 66, 37, 98],
+    "kind": "outside_partly",
+    "mode": "RGBA",
+    "size": [32, 32],
+    "xy": [
+     ["0x1.0baf365809d6dp-7", "-0x1.82032c8d83ac6p+3"],
+     ["0x1.8a12178fcb725p-1", "-0x1.482b23644af9dp+4"],
+     ["0x1.83e2ccaeed34cp+3", "-0x1.8580474445959p+3"],
+     ["-0x1.1ac4fae7ee757p+4", "0x1.3451c55f0531fp+3"],
+     ["-0x1.3b79c051b25c2p+4", "0x1.ab11762e330f4p+1"],
+     ["-0x1.0fe861af2f2e7p+4", "-0x1.21d04d237ffe5p+3"],
+     ["-0x1.33cef6f6c9eb9p+3", "-0x1.24e9a2fcbf8eap+3"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c032__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c032"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 124,
+    "kind": "outside_far",
+    "mode": "L",
+    "size": [16, 31],
+    "xy": [
+     ["0x1.e9aaaaba3d3a4p+4", "0x1.6ada428c5ed2cp+5"],
+     ["0x1.149749d5c2040p+6", "-0x1.46008233abc50p+3"],
+     ["-0x1.00bec7ebe76c9p+6", "0x1.4e32c10d5b558p+4"],
+     ["0x1.d2cff2db71a08p+5", "0x1.aecce4b0d37b0p+3"],
+     ["0x1.0003d69869a56p+6", "-0x1.43241e151d433p+6"],
+     ["0x1.7f87df3209b60p+2", "-0x1.419446335cb2ep+5"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c033__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c033"
+  },
+  {
+   "args": {
+    "background": [9, 138, 206],
+    "fill": [250, 180, 75],
+    "kind": "outside_all",
+    "mode": "RGB",
+    "size": [48, 64],
+    "xy": [
+     ["-0x1.1ce1fa1aca8f0p+4", "-0x1.1250409340a3cp+3"],
+     ["-0x1.69f976981411ap+4", "-0x1.dbd5bd7f6046dp+5"],
+     ["-0x1.eb3dd06aa4296p+4", "-0x1.043d82b62fbc6p+4"],
+     ["-0x1.439bc3238e978p+3", "-0x1.0568c0ded803cp+3"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c034__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c034"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.b7006a061e985p+4",
+    "kind": "cover_all",
+    "mode": "F",
+    "size": [96, 96],
+    "xy": [
+     ["-0x1.c2b4e50b2bf53p+3", "-0x1.1634d24a3847cp+5"],
+     ["0x1.98162fd76f55bp+6", "-0x1.83ff9658022f0p+5"],
+     ["0x1.b2df26a7b8a9fp+6", "0x1.942959dbffe81p+6"],
+     ["-0x1.724996c8ed826p+3", "0x1.9428560e06e79p+6"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c035__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c035"
+  },
+  {
+   "args": {
+    "background": [0, 0, 0, 0],
+    "fill": [45, 59, 58, 95],
+    "kind": "two_points",
+    "mode": "RGBA",
+    "size": [24, 40],
+    "xy": [
+     ["0x1.ce0663ce92b68p-1", "0x1.8b96b68cd042ap+4"],
+     ["-0x1.7ec791911cb24p+1", "0x1.0d260fef0268bp+3"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c036__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c036"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 190,
+    "kind": "collinear",
+    "mode": "L",
+    "size": [64, 48],
+    "xy": [
+     ["0x1.1b9fdf7a39d8cp+4", "0x1.0122227915613p+5"],
+     ["0x1.9789dbbc9f83ap+3", "0x1.6e6026047d495p+4"],
+     ["0x1.0d9671fe09718p+3", "0x1.dd44844364b4dp+3"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c037__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c037"
+  },
+  {
+   "args": {
+    "background": [75, 190, 134],
+    "fill": [156, 3, 255],
+    "kind": "repeated",
+    "mode": "RGB",
+    "size": [32, 32],
+    "xy": [
+     ["0x1.220cd27760867p+4", "0x1.909e6d002e842p+4"],
+     ["0x1.220cd27760867p+4", "0x1.909e6d002e842p+4"],
+     ["0x1.220cd27760867p+4", "0x1.909e6d002e842p+4"],
+     ["0x1.60dcab4b35c08p+2", "0x1.0526a2b4b3f74p+4"],
+     ["0x1.e1a83edde2cc0p+4", "0x1.86ffa16d715dep+3"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c038__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c038"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.317c1d7fa43c8p+3",
+    "kind": "same_point",
+    "mode": "F",
+    "size": [64, 48],
+    "xy": [
+     ["0x1.5e71d5380de5ep+4", "0x1.c8c0a6c4cc6a0p+4"],
+     ["0x1.5e71d5380de5ep+4", "0x1.c8c0a6c4cc6a0p+4"],
+     ["0x1.5e71d5380de5ep+4", "0x1.c8c0a6c4cc6a0p+4"],
+     ["0x1.5e71d5380de5ep+4", "0x1.c8c0a6c4cc6a0p+4"],
+     ["0x1.5e71d5380de5ep+4", "0x1.c8c0a6c4cc6a0p+4"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c039__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c039"
+  },
+  {
+   "args": {
+    "background": [0, 0, 0, 0],
+    "fill": [2, 35, 33, 243],
+    "kind": "closed",
+    "mode": "RGBA",
+    "size": [64, 48],
+    "xy": [
+     ["0x1.b830fab23b91bp+4", "0x1.7f4a0a1009584p+4"],
+     ["0x1.f61f90c6ac6b2p+4", "0x1.1b2d1c2e12659p+5"],
+     ["0x1.05cea8506a0f5p+3", "0x1.16faabc3bdd73p+5"],
+     ["0x1.b830fab23b91bp+4", "0x1.7f4a0a1009584p+4"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c040__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c040"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 82,
+    "kind": "bowtie",
+    "mode": "L",
+    "size": [24, 40],
+    "xy": [
+     ["0x1.2da9d350473c6p+2", "0x1.0ab67554c9c10p+3"],
+     ["0x1.9b43f59df3da6p+4", "0x1.08737b572a43bp+3"],
+     ["0x1.6133fba24239ap+4", "0x1.118aab090e5c0p+2"],
+     ["0x1.09d78f82bb2e6p+3", "0x1.23c9b56eb9eb8p+4"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c041__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c041"
+  },
+  {
+   "args": {
+    "background": [90, 21, 34],
+    "fill": [254, 163, 253],
+    "kind": "pentagram",
+    "mode": "RGB",
+    "size": [23, 10],
+    "xy": [
+     ["0x1.b9a632f5f3f67p+3", "0x1.43063368a9880p-3"],
+     ["0x1.39ce88b8211aap+4", "0x1.e746005999b75p+2"],
+     ["0x1.6dfccd41aebaep+3", "0x1.60b7808fbfcbfp+1"],
+     ["0x1.49f478c84bde4p+4", "0x1.20654855c914dp+2"],
+     ["0x1.7402ac442f477p+3", "0x1.7f919e90195fep+2"],
+     ["0x1.3b765a33f64bfp+4", "0x1.73e3f3802e686p+0"],
+     ["0x1.b218f5f50d0a8p+3", "0x1.150986b720e78p+3"],
+     ["0x1.0feacf9652294p+4", "-0x1.b3370cb5478f0p-2"],
+     ["0x1.0dcecf8704b7bp+4", "0x1.1f61facaebe6dp+3"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c042__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c042"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.101f33e552636p+5",
+    "kind": "scrambled",
+    "mode": "F",
+    "size": [48, 64],
+    "xy": [
+     ["0x1.7b9c233992beap+4", "0x1.5fae02d55c5e8p+3"],
+     ["0x1.c37355f7ade50p+4", "0x1.191bb6fb2898fp+5"],
+     ["0x1.196cf342bafaap+5", "0x1.fb4d550e8eaeap+5"],
+     ["-0x1.55c993dbe0bdap-1", "0x1.f2cbc2d9a8f4cp+5"],
+     ["0x1.7942239077392p+5", "0x1.168ef1284933cp+3"],
+     ["-0x1.24c67a71f7864p-1", "0x1.222897147587ep+3"],
+     ["0x1.1e6149c9252cdp+5", "0x1.20bda6157b9acp+5"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c043__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c043"
+  },
+  {
+   "args": {
+    "background": [0, 0, 0, 0],
+    "fill": [236, 149, 113, 219],
+    "kind": "axis_rect",
+    "mode": "RGBA",
+    "size": [96, 96],
+    "xy": [
+     ["0x1.07e0938fb80a4p+3", "0x1.1826bf5470952p+5"],
+     ["0x1.3761ae4a08acfp+5", "0x1.1826bf5470952p+5"],
+     ["0x1.3761ae4a08acfp+5", "0x1.3e582a47c7b9cp+5"],
+     ["0x1.07e0938fb80a4p+3", "0x1.3e582a47c7b9cp+5"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c044__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c044"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 168,
+    "kind": "staircase",
+    "mode": "L",
+    "size": [64, 48],
+    "xy": [
+     [15, 8],
+     [39, 8],
+     [39, 29],
+     [56, 29],
+     [56, 36],
+     [15, 36]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c045__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c045"
+  },
+  {
+   "args": {
+    "background": [6, 210, 28],
+    "fill": [11, 225, 230],
+    "kind": "horizontal_runs",
+    "mode": "RGB",
+    "size": [96, 96],
+    "xy": [
+     ["0x1.1d5c6952cfaf8p+5", "0x1.8800000000000p+5"],
+     ["0x1.7d9601b360348p+5", "0x1.8818aaec9d56cp+5"],
+     ["0x1.830c739bc57aep+5", "0x1.8800000000000p+5"],
+     ["0x1.be4fcced53a56p+5", "0x1.8818aaec9d56cp+5"],
+     ["0x1.be4fcced53a56p+5", "0x1.b018aaec9d56cp+5"],
+     ["0x1.830c739bc57aep+5", "0x1.b018aaec9d56cp+5"],
+     ["0x1.7d9601b360348p+5", "0x1.b018aaec9d56cp+5"],
+     ["0x1.1d5c6952cfaf8p+5", "0x1.b018aaec9d56cp+5"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c046__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c046"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.499e38e3aeb37p+4",
+    "kind": "flat_top",
+    "mode": "F",
+    "size": [96, 96],
+    "xy": [
+     ["0x1.9114e210455dcp+2", "0x1.81a67731c5bd2p+5"],
+     ["0x1.2ff37d7d22430p+6", "0x1.8157761a1f8bap+5"],
+     ["0x1.297e4edda665cp+5", "0x1.4e40557514cfcp+5"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c047__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c047"
+  },
+  {
+   "args": {
+    "background": [0, 0, 0, 0],
+    "fill": [115, 92, 92, 146],
+    "kind": "sliver_subpixel",
+    "mode": "RGBA",
+    "size": [39, 65],
+    "xy": [
+     ["0x1.1b6eda2ce45bfp+5", "0x1.7cbfd54021df1p+5"],
+     ["0x1.1a895f41f3f00p+5", "0x1.7f9a59defc42fp+5"],
+     ["0x1.199e608d37541p+5", "0x1.7cc1f063c787ap+5"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c048__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c048"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 56,
+    "kind": "sliver_thin",
+    "mode": "L",
+    "size": [32, 32],
+    "xy": [
+     ["0x1.434ad580d7590p+2", "0x1.7ab2d9121ca59p+4"],
+     ["0x1.feb07a7f8361ap+3", "0x1.0e8ed4dac7b22p+4"],
+     ["0x1.05c382965f5a5p+4", "0x1.18eace205314ep+4"],
+     ["0x1.5cf7eadb4dff1p+2", "0x1.850ed257a8085p+4"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c049__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c049"
+  },
+  {
+   "args": {
+    "background": [103, 21, 90],
+    "fill": [31, 50, 143],
+    "kind": "negative_fraction",
+    "mode": "RGB",
+    "size": [40, 56],
+    "xy": [
+     ["-0x1.3407aed5627c2p-1", "0x1.3cd49f467a70cp+5"],
+     ["0x1.0d9c5c884789ap+4", "-0x1.634af38ebe7dfp-4"],
+     ["0x1.07d02a7638702p+5", "0x1.6f14403772e43p+5"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c050__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c050"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.21cc91428e819p+5",
+    "kind": "half_pixel",
+    "mode": "F",
+    "size": [64, 48],
+    "xy": [
+     ["0x1.000000044b830p+0", "0x1.e000000000000p+2"],
+     ["0x1.40000000225c1p+5", "0x1.37fffffff920cp+4"],
+     ["0x1.68000000225c1p+5", "0x1.0000000089706p+3"],
+     ["0x1.1800000000000p+4", "0x1.fffff79c842fap+1"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c051__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c051"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.06c6630980a93p+5",
+    "kind": "quad",
+    "mode": "F",
+    "size": [32, 32],
+    "xy": [
+     ["0x1.07b1a04b4bca2p+4", "0x1.78f280cc9ef10p+4"],
+     ["0x1.a6e8645df0dc8p+4", "0x1.efc6ca721d47ap+3"],
+     ["0x1.99b6f1e8a1ad8p+4", "0x1.0b0e821fa6608p+5"],
+     ["0x1.4b8aa77fedbc0p+3", "0x1.82d717e67980ep+4"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c052__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c052"
+  },
+  {
+   "args": {
+    "background": [0, 0, 0, 0],
+    "fill": [64, 204, 32, 190],
+    "kind": "triangle",
+    "mode": "RGBA",
+    "size": [32, 32],
+    "xy": [
+     ["0x1.90bb593bacbc8p+4", "0x1.5009e45b9b2e5p+4"],
+     ["0x1.dd5b87e9cd856p+1", "0x1.0b9cd6318bb24p+3"],
+     ["0x1.29424cbd42602p+3", "0x1.15871e7502c71p+4"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c053__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c053"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "ngon",
+    "mode": "L",
+    "size": [24, 40],
+    "xy": [
+     ["0x1.3f54e7ba23f34p+4", "0x1.6b6e9c4eca1b4p+4"],
+     ["0x1.64ffdc3c78c1ap+4", "0x1.77f64d378a021p+4"],
+     ["0x1.da5a624a2362ep+3", "0x1.7a9a5753d8b16p+4"],
+     ["0x1.47409dda3f176p+4", "0x1.eab130d45d626p+4"],
+     ["0x1.15a0cdc28dfd6p+3", "0x1.e6f009a57632cp+4"],
+     ["0x1.28735684cdfd0p+3", "0x1.234107c95a89ep+4"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c054__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c054"
+  },
+  {
+   "args": {
+    "background": [75, 21, 144],
+    "fill": [73, 239, 128],
+    "kind": "circle",
+    "mode": "RGB",
+    "size": [53, 25],
+    "xy": [
+     ["0x1.ef5255605a6edp+3", "0x1.81b4c4ec89321p+4"],
+     ["0x1.baa1467015c30p+3", "0x1.79e6e9ac8c498p+4"],
+     ["0x1.8dd939dea1526p+3", "0x1.633f75f76ba92p+4"],
+     ["0x1.6fcb7bd8682e4p+3", "0x1.413153c88b81fp+4"],
+     ["0x1.650b59cf4582ap+3", "0x1.18ebc4dd88ed2p+4"],
+     ["0x1.6f3bd082824b0p+3", "0x1.e120a54304cbep+3"],
+     ["0x1.8ccfc284dd449p+3", "0x1.9c87b71ae4c2fp+3"],
+     ["0x1.b9466d4464818p+3", "0x1.6e7e3d53c2afcp+3"],
+     ["0x1.eddae8574c050p+3", "0x1.5e0673476a53ep+3"],
+     ["0x1.1145fba3c8586p+4", "0x1.6da229c764250p+3"],
+     ["0x1.27aa01ec8290ap+4", "0x1.9af11131a565ap+3"],
+     ["0x1.36b0e0ef9f22cp+4", "0x1.df0d558f65b42p+3"],
+     ["0x1.3c10f1f430789p+4", "0x1.17cc39b2b56eep+4"],
+     ["0x1.36f8b69a92146p+4", "0x1.4027abeebbf62p+4"],
+     ["0x1.282ebd996497ap+4", "0x1.62742302cbfa8p+4"],
+     ["0x1.11f36839a0f92p+4", "0x1.7978dfe65d042p+4"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c055__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c055"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.a0e57bee85d07p+4",
+    "kind": "star",
+    "mode": "F",
+    "size": [32, 32],
+    "xy": [
+     ["0x1.525be3ed2edcdp+4", "0x1.cdf2604cc0870p+3"],
+     ["0x1.2280f8b7efbaep+4", "0x1.0235dfc93ba6dp+4"],
+     ["0x1.472e90b7adfaap+4", "0x1.258f82ce4ccdbp+4"],
+     ["0x1.1d5f82baa5100p+4", "0x1.192d3ebbebe27p+4"],
+     ["0x1.1beaf14e50cd0p+4", "0x1.545648246abafp+4"],
+     ["0x1.0632abe6f2509p+4", "0x1.27ee7cbd94ba5p+4"],
+     ["0x1.e10a8e1186950p+3", "0x1.541e7f65b1ee9p+4"],
+     ["0x1.df0a4c4188fc2p+3", "0x1.1cf8e147e055cp+4"],
+     ["0x1.68c91eb353a3ep+3", "0x1.3276b18b58e09p+4"],
+     ["0x1.c40aaa9492844p+3", "0x1.07be716281a16p+4"],
+     ["0x1.3d96d58fde3f4p+3", "0x1.f74a052192334p+3"],
+     ["0x1.c117d5748000cp+3", "0x1.ead88bb019678p+3"],
+     ["0x1.70e406faa85b0p+3", "0x1.7da190a8ac96cp+3"],
+     ["0x1.e3905bc95f5b5p+3", "0x1.bc186ac36fe20p+3"],
+     ["0x1.ebd86129874bdp+3", "0x1.42ae7e3399f19p+3"],
+     ["0x1.0c2d470b405b6p+4", "0x1.b1b22e98cfd19p+3"],
+     ["0x1.31b84bb518b03p+4", "0x1.7d614cc3ce7efp+3"],
+     ["0x1.1ca0524494d79p+4", "0x1.d11292b80b8b9p+3"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c056__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c056"
+  },
+  {
+   "args": {
+    "background": [0, 0, 0, 0],
+    "fill": [149, 38, 41, 176],
+    "kind": "int",
+    "mode": "RGBA",
+    "size": [96, 96],
+    "xy": [
+     [46, 87],
+     [23, 65],
+     [55, 39]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c057__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c057"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "outside_partly",
+    "mode": "L",
+    "size": [27, 27],
+    "xy": [
+     ["0x1.0854c6d945fadp+5", "0x1.24db671b900b4p+2"],
+     ["0x1.1cd1734f0ec11p+5", "0x1.3a77decf1d67ap+3"],
+     ["0x1.132a6fc1b296ap+5", "0x1.6d4dba6f928ecp+3"],
+     ["0x1.37d975350841dp+4", "0x1.ece5553b9cd01p+4"],
+     ["0x1.401bcb585885bp+4", "0x1.8b4c7394100c7p+4"],
+     ["0x1.259b3b0513c54p+3", "0x1.729fcaf0aa10bp+4"],
+     ["0x1.196bf2278aa1ap+4", "0x1.c0f080dfc61a7p+3"],
+     ["0x1.67a793af251d9p+4", "0x1.744191aca77d5p+3"],
+     ["0x1.7aa3e8ab9b841p+4", "0x1.9848d7abddaf6p+3"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c058__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c058"
+  },
+  {
+   "args": {
+    "background": [97, 160, 149],
+    "fill": [114, 175, 205],
+    "kind": "outside_far",
+    "mode": "RGB",
+    "size": [88, 44],
+    "xy": [
+     ["0x1.217c7d59d9dbap+8", "-0x1.2a5690805fa88p+6"],
+     ["0x1.e62bc7bca9bc2p+8", "0x1.eb46ad004b0acp+6"],
+     ["0x1.71ad4da7153f6p+8", "-0x1.323cfe6f6fddep+7"],
+     ["0x1.29c6693882eb8p+6", "-0x1.086173f3ae506p+7"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c059__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c059"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.ded2c0b8366a1p+4",
+    "kind": "outside_all",
+    "mode": "F",
+    "size": [13, 36],
+    "xy": [
+     ["0x1.359522b54ea19p+5", "0x1.93bcbd30b0a73p+6"],
+     ["0x1.20646fb19eec2p+5", "0x1.993a660e55c63p+6"],
+     ["0x1.c30c09536c3bcp+4", "0x1.3d5396e670ae0p+6"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c060__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c060"
+  },
+  {
+   "args": {
+    "background": [0, 0, 0, 0],
+    "fill": [187, 173, 74, 170],
+    "kind": "cover_all",
+    "mode": "RGBA",
+    "size": [18, 30],
+    "xy": [
+     ["-0x1.dcec462556261p+3", "-0x1.3b526d84042d4p+3"],
+     ["0x1.a2496509e3760p+4", "-0x1.1e81fd326abeep+5"],
+     ["0x1.35df98189dc72p+4", "0x1.13ace5c727498p+6"],
+     ["-0x1.8259220239426p+5", "0x1.2d72874b81600p+5"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c061__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c061"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "two_points",
+    "mode": "L",
+    "size": [22, 21],
+    "xy": [
+     ["0x1.6b41b21b66bbcp+3", "0x1.5d87097f552cfp+1"],
+     ["0x1.744c565e939f8p+3", "-0x1.7c55c7d5488dbp+1"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c062__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c062"
+  },
+  {
+   "args": {
+    "background": [197, 77, 221],
+    "fill": [10, 201, 250],
+    "kind": "collinear",
+    "mode": "RGB",
+    "size": [96, 96],
+    "xy": [
+     ["0x1.08101fb2f21e8p+4", "0x1.0908e0e1d62f0p+6"],
+     ["0x1.f8c0803f54880p+3", "0x1.ed269f0d9a448p+5"],
+     ["0x1.b217fc643c74ep+2", "0x1.35d6d077e59d0p+2"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c063__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c063"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.72fb378c382d6p+2",
+    "kind": "repeated",
+    "mode": "F",
+    "size": [64, 48],
+    "xy": [
+     ["0x1.4e281c4ce08d7p+5", "0x1.41604c56df330p+3"],
+     ["0x1.4e281c4ce08d7p+5", "0x1.41604c56df330p+3"],
+     ["0x1.4e281c4ce08d7p+5", "0x1.41604c56df330p+3"],
+     ["0x1.5ba18dd1879e5p+5", "0x1.9535b46a8eccep+2"],
+     ["0x1.c2ccc5c757bb8p+5", "0x1.07868987ebf76p+4"],
+     ["0x1.c2ccc5c757bb8p+5", "0x1.07868987ebf76p+4"],
+     ["0x1.abe4fdc5319f6p+5", "0x1.0eb52e14de071p+5"],
+     ["0x1.abe4fdc5319f6p+5", "0x1.0eb52e14de071p+5"],
+     ["0x1.abe4fdc5319f6p+5", "0x1.0eb52e14de071p+5"],
+     ["0x1.b6949f3097564p+4", "0x1.26e8b08002c42p+2"],
+     ["0x1.b6949f3097564p+4", "0x1.26e8b08002c42p+2"],
+     ["0x1.b6949f3097564p+4", "0x1.26e8b08002c42p+2"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c064__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c064"
+  },
+  {
+   "args": {
+    "background": [0, 0, 0, 0],
+    "fill": [81, 34, 158, 16],
+    "kind": "same_point",
+    "mode": "RGBA",
+    "size": [32, 32],
+    "xy": [
+     ["0x1.efd3e5255f078p+3", "0x1.23c32377d1dd4p+3"],
+     ["0x1.efd3e5255f078p+3", "0x1.23c32377d1dd4p+3"],
+     ["0x1.efd3e5255f078p+3", "0x1.23c32377d1dd4p+3"],
+     ["0x1.efd3e5255f078p+3", "0x1.23c32377d1dd4p+3"],
+     ["0x1.efd3e5255f078p+3", "0x1.23c32377d1dd4p+3"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c065__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c065"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "closed",
+    "mode": "L",
+    "size": [51, 85],
+    "xy": [
+     ["0x1.12e9e16e9c90ep+5", "0x1.0f35df393124bp+6"],
+     ["0x1.79964234e1192p+3", "0x1.2e67f48f31527p+6"],
+     ["0x1.0bd9938d9caf8p+1", "0x1.d7985b15a9d13p+5"],
+     ["0x1.3a6e808b51f8cp+2", "0x1.cb079c3ba2c5ep+5"],
+     ["0x1.a7b24f1ce1a2cp+2", "0x1.a4267393c6f51p+5"],
+     ["0x1.a7170a81afedbp+3", "0x1.a0a36da643846p+5"],
+     ["0x1.84a34f4cff1bcp+5", "0x1.b4e306cb0ce93p+5"],
+     ["0x1.12e9e16e9c90ep+5", "0x1.0f35df393124bp+6"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c066__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c066"
+  },
+  {
+   "args": {
+    "background": [180, 152, 102],
+    "fill": [246, 85, 10],
+    "kind": "bowtie",
+    "mode": "RGB",
+    "size": [48, 64],
+    "xy": [
+     ["-0x1.4a0ded62e9658p+1", "0x1.5cb55ea84eb7bp+5"],
+     ["0x1.52cf8697137cap+2", "0x1.8c9b96b8b2074p+4"],
+     ["-0x1.81dca07b17eacp+3", "0x1.480c3588bd8bcp+5"],
+     ["0x1.6d8fa902a73dep+4", "0x1.a5188bc7f3b63p+5"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c067__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c067"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.490c662482742p+3",
+    "kind": "pentagram",
+    "mode": "F",
+    "size": [24, 40],
+    "xy": [
+     ["0x1.b2a146fb9d1e4p+3", "0x1.d4964d613596bp+4"],
+     ["-0x1.20a821775c7cep+2", "0x1.3229e992b2606p+4"],
+     ["0x1.0364b105fa636p+4", "0x1.06b03b6f53cbdp+4"],
+     ["0x1.f2f7de8ad12b0p-2", "0x1.f64c62f2f9df8p+4"],
+     ["0x1.37b002e07e8fbp+2", "0x1.4398a53e6473ep+3"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c068__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c068"
+  },
+  {
+   "args": {
+    "background": [0, 0, 0, 0],
+    "fill": [120, 117, 38, 169],
+    "kind": "scrambled",
+    "mode": "RGBA",
+    "size": [48, 64],
+    "xy": [
+     ["0x1.d5694d4355d5ep+4", "-0x1.0cf7f3421fee2p+1"],
+     ["0x1.838321b7814a4p+4", "0x1.008e6b87d0d37p+6"],
+     ["0x1.5aa97fff561f9p+3", "0x1.d2266c1197487p+5"],
+     ["0x1.245b254d0cb7cp+4", "0x1.e3ff3f2d7a5a2p+5"],
+     ["0x1.19f292ff408cfp+5", "0x1.014e012516784p+6"],
+     ["0x1.2071d04d39e20p+3", "-0x1.8658b4a9a4335p+1"],
+     ["0x1.415e1d1affdc1p+5", "0x1.d67579f968d77p+4"],
+     ["0x1.34079c45e3ba8p+5", "0x1.282025de10425p+5"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c069__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c069"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "axis_rect",
+    "mode": "L",
+    "size": [17, 85],
+    "xy": [
+     ["0x1.d11d4634744bcp+2", "0x1.4e7e16601133dp+5"],
+     ["0x1.f62f6cb12c486p+3", "0x1.4e7e16601133dp+5"],
+     ["0x1.f62f6cb12c486p+3", "0x1.2db71ccfd5817p+6"],
+     ["0x1.d11d4634744bcp+2", "0x1.2db71ccfd5817p+6"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c070__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c070"
+  },
+  {
+   "args": {
+    "background": [194, 244, 49],
+    "fill": [55, 168, 219],
+    "kind": "staircase",
+    "mode": "RGB",
+    "size": [60, 94],
+    "xy": [
+     [1, 5],
+     [24, 5],
+     [24, 31],
+     [46, 31],
+     [46, 34],
+     [59, 34],
+     [59, 41],
+     [1, 41]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c071__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c071"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.a69d1c491e1f5p+4",
+    "kind": "horizontal_runs",
+    "mode": "F",
+    "size": [24, 40],
+    "xy": [
+     ["0x1.574e90adbec59p+2", "0x1.0000000000000p+0"],
+     ["0x1.aa134f09f7384p+2", "0x1.2c7c0306068cfp+0"],
+     ["0x1.ffdbe10010776p+3", "0x1.0000000000000p+0"],
+     ["0x1.795923226b964p+4", "0x1.2c7c0306068cfp+0"],
+     ["0x1.795923226b964p+4", "0x1.858f8060c0d1ap+3"],
+     ["0x1.ffdbe10010776p+3", "0x1.858f8060c0d1ap+3"],
+     ["0x1.aa134f09f7384p+2", "0x1.858f8060c0d1ap+3"],
+     ["0x1.574e90adbec59p+2", "0x1.858f8060c0d1ap+3"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c072__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c072"
+  },
+  {
+   "args": {
+    "background": [0, 0, 0, 0],
+    "fill": [179, 238, 223, 224],
+    "kind": "flat_top",
+    "mode": "RGBA",
+    "size": [64, 48],
+    "xy": [
+     ["0x1.8a233bc435608p+3", "0x1.01590a93afb9dp+5"],
+     ["0x1.28250bbc7b990p+5", "0x1.01732069e259fp+5"],
+     ["0x1.7fd0724100958p+2", "0x1.3608c13b6cff6p+5"],
+     ["0x1.137e55f2483e0p+5", "0x1.0e63c93e93d9fp+3"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c073__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c073"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "sliver_subpixel",
+    "mode": "L",
+    "size": [96, 96],
+    "xy": [
+     ["0x1.8bd51f6ca38fdp+5", "0x1.1466d04255d66p+6"],
+     ["0x1.8a9001cd29f87p+5", "0x1.17f7b4fa2be0fp+6"],
+     ["0x1.8ff9f79aa3c37p+5", "0x1.1455ddb332a5ep+6"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c074__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c074"
+  },
+  {
+   "args": {
+    "background": [33, 25, 33],
+    "fill": [20, 46, 126],
+    "kind": "sliver_thin",
+    "mode": "RGB",
+    "size": [96, 96],
+    "xy": [
+     ["0x1.74c2984b06200p+0", "0x1.6091095cb2f92p+6"],
+     ["0x1.52f6a535b0b25p+5", "0x1.d1e3b81281aefp+5"],
+     ["0x1.56d649807aac3p+5", "0x1.d7306840ebabdp+5"],
+     ["0x1.f0b721a4455b7p+0", "0x1.63376173e7f79p+6"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c075__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c075"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.c0353c9cfd469p+4",
+    "kind": "negative_fraction",
+    "mode": "F",
+    "size": [22, 21],
+    "xy": [
+     ["-0x1.f3054bcfd16edp-1", "0x1.98410ff97a47cp+3"],
+     ["0x1.1b8faf89f5091p+4", "-0x1.a55a379fdf9fdp-1"],
+     ["0x1.5ca22480378a1p+1", "0x1.c6fb05e063185p+3"],
+     ["-0x1.478fac4593b64p-1", "-0x1.343ee22eb3e85p-2"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c076__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c076"
+  },
+  {
+   "args": {
+    "background": [0, 0, 0, 0],
+    "fill": [210, 215, 175, 83],
+    "kind": "half_pixel",
+    "mode": "RGBA",
+    "size": [96, 96],
+    "xy": [
+     ["0x1.3400000000000p+5", "0x1.77fffffff920cp+4"],
+     ["0x1.6000000000000p+5", "0x1.2dfffffffe483p+6"],
+     ["0x1.3000000000000p+4", "0x1.68000000112e1p+6"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c077__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c077"
+  },
+  {
+   "args": {
+    "background": [0, 0, 0, 0],
+    "fill": [89, 138, 133, 240],
+    "kind": "quad",
+    "mode": "RGBA",
+    "size": [48, 64],
+    "xy": [
+     ["0x1.021d94f8328dfp+3", "0x1.0d26d57549a79p+6"],
+     ["0x1.26dd58d57a2d9p+4", "0x1.44d30b92f0f78p+4"],
+     ["0x1.337a3f5cdbf24p+2", "0x1.54e233f2d54f0p+0"],
+     ["0x1.947d3a98d65e0p+5", "0x1.d9e1dd439c76fp+5"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c078__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c078"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 159,
+    "kind": "triangle",
+    "mode": "L",
+    "size": [37, 29],
+    "xy": [
+     ["-0x1.0b7dc9a865a73p+1", "0x1.b81c7c7adec86p+4"],
+     ["0x1.47ae843cb64b9p+5", "0x1.d091450d40b74p+4"],
+     ["0x1.74755edd10ae8p+3", "0x1.3bf8c74389858p+4"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c079__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c079"
+  },
+  {
+   "args": {
+    "background": [174, 242, 134],
+    "fill": [111, 61, 211],
+    "kind": "ngon",
+    "mode": "RGB",
+    "size": [9, 29],
+    "xy": [
+     ["-0x1.8833932796664p-1", "0x1.94be8bf09d42ep+3"],
+     ["-0x1.89e85e4aafb00p-6", "0x1.68db6b1b938e4p+3"],
+     ["0x1.c68636e018d32p+2", "0x1.d42fdffa46feep+3"],
+     ["0x1.e6bcc24e31180p+1", "0x1.1cc5b35cdf189p+4"],
+     ["0x1.b474d9e69f551p+0", "0x1.1238a9a3ffd56p+4"],
+     ["0x1.9c9c555981a24p-1", "0x1.1bfcaf2fbd4a8p+4"],
+     ["0x1.1b8991ddbab44p-1", "0x1.e98b7c60a10f9p+3"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c080__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c080"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.2f88118359199p+15",
+    "kind": "circle",
+    "mode": "F",
+    "size": [90, 94],
+    "xy": [
+     ["0x1.11e491124c680p-2", "0x1.294783f2c5c89p+4"],
+     ["0x1.abca67a494bb0p+1", "0x1.225cce7da995bp+4"],
+     ["0x1.b47390c31f394p+2", "0x1.1cb63fa0bed1ap+4"],
+     ["0x1.53a73d03419f6p+3", "0x1.187775d6c101ep+4"],
+     ["0x1.d43d8a78e4dc6p+3", "0x1.15bb33c4e3b28p+4"],
+     ["0x1.2c6910f9501bap+4", "0x1.1492b78b4d6d2p+4"],
+     ["0x1.6f10a44741b28p+4", "0x1.15054e1458404p+4"],
+     ["0x1.b07155b6cc335p+4", "0x1.1710250fbb135p+4"],
+     ["0x1.eeef085ef0d92p+4", "0x1.1aa65cbbb11dcp+4"],
+     ["0x1.147fe8d2c0fc5p+5", "0x1.1fb1590c0260bp+4"],
+     ["0x1.2e9ad629c0083p+5", "0x1.2611502f60461p+4"],
+     ["0x1.4523bde89da11p+5", "0x1.2d9e12f0b25fap+4"],
+     ["0x1.578c935d3430ep+5", "0x1.36280a05372cdp+4"],
+     ["0x1.65614ada74d8cp+5", "0x1.3f79620abed22p+4"],
+     ["0x1.6e4ab538ced1ep+5", "0x1.49575ed2f8c5ep+4"],
+     ["0x1.7210a568879d6p+5", "0x1.5383cda110c7ep+4"],
+     ["0x1.709b528dc0a12p+5", "0x1.5dbe8d3bc4a50p+4"],
+     ["0x1.69f3edee02dd2p+5", "0x1.67c7222c80f4dp+4"],
+     ["0x1.5e4468fe3bfa6p+5", "0x1.715e4d37529a6p+4"],
+     ["0x1.4dd66cfe6feccp+5", "0x1.7a479a097925bp+4"],
+     ["0x1.39118aa5bbe46p+5", "0x1.824adc4d7b8f7p+4"],
+     ["0x1.2078ad4d97318p+5", "0x1.893591c297c24p+4"],
+     ["0x1.04a6e1af7c963p+5", "0x1.8edc209f82865p+4"],
+     ["0x1.cc97090e202aap+4", "0x1.931aea6980562p+4"],
+     ["0x1.8c4be2534e8c2p+4", "0x1.95d72c7b5da58p+4"],
+     ["0x1.4a01969670debp+4", "0x1.96ffa8b4f3eaep+4"],
+     ["0x1.075a03487f47dp+4", "0x1.968d122be917cp+4"],
+     ["0x1.8bf2a3b1e98e0p+3", "0x1.94823b308644bp+4"],
+     ["0x1.0ef73e61a0418p+3", "0x1.90ec0384903a4p+4"],
+     ["0x1.35ab57a8fc06ap+2", "0x1.8be107343ef75p+4"],
+     ["0x1.934fb3c40ea30p+0", "0x1.85811010e1120p+4"],
+     ["-0x1.3dcd4417a47d0p+0", "0x1.7df44d4f8ef86p+4"],
+     ["-0x1.c573f9553b3d0p+1", "0x1.756a563b0a2b3p+4"],
+     ["-0x1.515fb894a2dccp+2", "0x1.6c18fe358285ep+4"],
+     ["-0x1.98ab0b8772a5cp+2", "0x1.623b016d48924p+4"],
+     ["-0x1.b6da8d0539024p+2", "0x1.580e929f30902p+4"],
+     ["-0x1.ab2ff62f01200p+2", "0x1.4dd3d3047cb30p+4"],
+     ["-0x1.75f4d13113004p+2", "0x1.43cb3e13c0634p+4"],
+     ["-0x1.1878a9b2dbeacp+2", "0x1.3a341308eebdbp+4"],
+     ["-0x1.2a119368f6fa8p+1", "0x1.314ac636c8325p+4"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c081__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c081"
+  },
+  {
+   "args": {
+    "background": [0, 0, 0, 0],
+    "fill": [111, 200, 146, 189],
+    "kind": "star",
+    "mode": "RGBA",
+    "size": [48, 64],
+    "xy": [
+     ["0x1.e1c7265cbff40p+4", "0x1.16d752da30b6ep+4"],
+     ["0x1.c39d6545c550fp+4", "0x1.b53980fdcb175p+4"],
+     ["0x1.276bb7df23a2cp+5", "0x1.82a4f6bd4b58ap+4"],
+     ["0x1.fab6d37eec40dp+4", "0x1.f5f94625dfbd0p+4"],
+     ["0x1.3d4bf9b45dce1p+5", "0x1.283e8c97f23b6p+5"],
+     ["0x1.ddabb1678e422p+4", "0x1.269374e76af0dp+5"],
+     ["0x1.f8462116f98c2p+4", "0x1.55fc60f942664p+5"],
+     ["0x1.af446d56984fep+4", "0x1.31435280876fap+5"],
+     ["0x1.6d3af5a23f762p+4", "0x1.6deca818c51fap+5"],
+     ["0x1.5bc2cd6c5297dp+4", "0x1.393edef9251fep+5"],
+     ["0x1.b2bc081ddcdb9p+3", "0x1.60d7f6551972fp+5"],
+     ["0x1.276fa947f72e8p+4", "0x1.1dbd1175014eep+5"],
+     ["0x1.33b394ee45811p+3", "0x1.20d6bb003364dp+5"],
+     ["0x1.07e0a7b3d5c32p+4", "0x1.e98e3850d261ep+4"],
+     ["0x1.5cdcba4848c2cp+3", "0x1.8f1122519b003p+4"],
+     ["0x1.35a457e101463p+4", "0x1.b2961fdf17267p+4"],
+     ["0x1.305feb2486f65p+4", "0x1.19a506cf7415fp+4"],
+     ["0x1.9035977044544p+4", "0x1.97c036f2ee350p+4"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c082__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c082"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 175,
+    "kind": "int",
+    "mode": "L",
+    "size": [64, 48],
+    "xy": [
+     [15, 19],
+     [24, 23],
+     [57, 33]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c083__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c083"
+  },
+  {
+   "args": {
+    "background": [133, 27, 108],
+    "fill": [209, 211, 161],
+    "kind": "outside_partly",
+    "mode": "RGB",
+    "size": [48, 64],
+    "xy": [
+     ["-0x1.b1a046b794368p+1", "0x1.a507f79da129ap+3"],
+     ["-0x1.04a38884d8ee2p+4", "0x1.b97fdafafe9cfp+2"],
+     ["-0x1.a4a578bd51360p+0", "-0x1.ac7c9f1697408p+3"],
+     ["-0x1.0e8907f4d41f0p-1", "-0x1.6e2b9686cd843p+3"],
+     ["0x1.a33879f3db082p+4", "-0x1.028c0124ee9f9p+3"],
+     ["0x1.7c790463dc704p+4", "-0x1.f1e3e4d6e718bp+3"],
+     ["0x1.a312a4227f5dcp+4", "0x1.be163ce3c7489p+1"],
+     ["0x1.c0cce884df502p+4", "0x1.44503f9647e25p+2"],
+     ["0x1.f1e78822b61e0p+2", "0x1.458851ea8a274p+3"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c084__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c084"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.c5c82c1a4c963p+14",
+    "kind": "outside_far",
+    "mode": "F",
+    "size": [32, 32],
+    "xy": [
+     ["0x1.1adda6e290a90p+5", "0x1.616b3fa559920p+3"],
+     ["0x1.7d406b6af9038p+6", "0x1.141ff7ded0290p+5"],
+     ["0x1.c48755e3fc524p+6", "-0x1.0a6fb389fcf18p+5"],
+     ["-0x1.02b627698d298p+7", "0x1.fcc1df9afad40p+1"],
+     ["-0x1.362ed63d8a90fp+7", "-0x1.2f4b38cb8b58ap+5"],
+     ["-0x1.38a0fab38b861p+7", "0x1.27e9d313851aap+7"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c085__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c085"
+  },
+  {
+   "args": {
+    "background": [0, 0, 0, 0],
+    "fill": [100, 206, 65, 172],
+    "kind": "outside_all",
+    "mode": "RGBA",
+    "size": [18, 15],
+    "xy": [
+     ["0x1.69f42205744abp+5", "0x1.2665c962784dbp+2"],
+     ["0x1.3655a6811f704p+5", "0x1.03682864a7aa6p+3"],
+     ["0x1.5abf7792d656ep+5", "0x1.22e01c9293983p-1"],
+     ["0x1.2214378bd526bp+5", "0x1.2be8e7b8800c0p+2"],
+     ["0x1.49e9bb0a14f2bp+5", "0x1.6493fdf536292p+3"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c086__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c086"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 228,
+    "kind": "cover_all",
+    "mode": "L",
+    "size": [38, 62],
+    "xy": [
+     ["-0x1.cdf609b06b02bp+4", "-0x1.325c67e96e5a5p+5"],
+     ["0x1.5bbfa41f9ff23p+6", "-0x1.89430f3d80df9p+3"],
+     ["0x1.3e632a23951b4p+6", "0x1.b18af3cbd3bc0p+6"],
+     ["-0x1.6d9b4eb2d50cap+3", "0x1.48cac48825716p+6"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c087__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c087"
+  },
+  {
+   "args": {
+    "background": [169, 71, 158],
+    "fill": [151, 178, 175],
+    "kind": "two_points",
+    "mode": "RGB",
+    "size": [48, 64],
+    "xy": [
+     ["0x1.2707830f60c38p+5", "0x1.085411f271f8bp+6"],
+     ["0x1.5ff3e6ea608d4p+3", "0x1.511d5b6f2a55ep+5"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c088__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c088"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.bc5619ec428bfp+15",
+    "kind": "collinear",
+    "mode": "F",
+    "size": [32, 32],
+    "xy": [
+     ["0x1.b50ab2d0d92e1p+2", "0x1.1da3b97e9bcd2p+5"],
+     ["0x1.a5426bb742634p+2", "0x1.1b6d00ac2c23ap+5"],
+     ["0x1.9ec3574d27623p+2", "0x1.1a83b9c39859ep+5"],
+     ["0x1.9e70da79d49d0p+2", "0x1.1a7827bf6830ep+5"],
+     ["0x1.8717c0cd358e0p-1", "0x1.ce6335bba4722p+4"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c089__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c089"
+  },
+  {
+   "args": {
+    "background": [0, 0, 0, 0],
+    "fill": [216, 225, 149, 229],
+    "kind": "repeated",
+    "mode": "RGBA",
+    "size": [16, 19],
+    "xy": [
+     ["-0x1.1ed9b15edb3f8p+0", "0x1.43ed9f61b6a16p+3"],
+     ["-0x1.1ed9b15edb3f8p+0", "0x1.43ed9f61b6a16p+3"],
+     ["-0x1.378f8901f3b24p+0", "0x1.16a79daed03b4p+3"],
+     ["-0x1.378f8901f3b24p+0", "0x1.16a79daed03b4p+3"],
+     ["0x1.5751bd09effd4p+2", "0x1.bdb04d2401d6ep+2"],
+     ["0x1.5751bd09effd4p+2", "0x1.bdb04d2401d6ep+2"],
+     ["0x1.5751bd09effd4p+2", "0x1.bdb04d2401d6ep+2"],
+     ["0x1.62dae18c098aep+2", "0x1.eb35a16087b06p+1"],
+     ["0x1.62dae18c098aep+2", "0x1.eb35a16087b06p+1"],
+     ["0x1.10d11e75823d0p+3", "0x1.54ac6e4e1b4b6p+3"],
+     ["0x1.19736230e940ap+3", "0x1.c7b82558a38dcp+3"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c090__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c090"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 232,
+    "kind": "same_point",
+    "mode": "L",
+    "size": [48, 64],
+    "xy": [
+     ["0x1.4082d52b195a0p+4", "0x1.11be9f3b4fa33p+5"],
+     ["0x1.4082d52b195a0p+4", "0x1.11be9f3b4fa33p+5"],
+     ["0x1.4082d52b195a0p+4", "0x1.11be9f3b4fa33p+5"],
+     ["0x1.4082d52b195a0p+4", "0x1.11be9f3b4fa33p+5"],
+     ["0x1.4082d52b195a0p+4", "0x1.11be9f3b4fa33p+5"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c091__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c091"
+  },
+  {
+   "args": {
+    "background": [90, 18, 67],
+    "fill": [86, 49, 112],
+    "kind": "closed",
+    "mode": "RGB",
+    "size": [64, 48],
+    "xy": [
+     ["0x1.1c7f2acca14c5p+5", "0x1.b19cb75aab7c4p+3"],
+     ["0x1.5ab34bbdb7c7ap+5", "0x1.8d0a355e8a3bcp+4"],
+     ["0x1.4ef46011ca30bp+5", "0x1.255b1e20ead37p+5"],
+     ["0x1.eba55844b3ea6p+4", "0x1.856a89e648302p+5"],
+     ["0x1.210c65af7f04ep+4", "0x1.a6f9afb69c267p+4"],
+     ["0x1.65156f6e64db4p+4", "0x1.479e817c2beffp+4"],
+     ["0x1.7e4e41849275bp+4", "0x1.7c3279c866dc9p+3"],
+     ["0x1.1c7f2acca14c5p+5", "0x1.b19cb75aab7c4p+3"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c092__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c092"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.cc20e96e1d89dp+15",
+    "kind": "bowtie",
+    "mode": "F",
+    "size": [84, 75],
+    "xy": [
+     ["0x1.d6020fa95b268p+4", "0x1.1096ac98d4c98p+6"],
+     ["0x1.c660dd8246ed9p+5", "0x1.46dfd5fecd3cbp+4"],
+     ["0x1.fb3e3f48fea80p+3", "0x1.01fc9fb5bc36dp+6"],
+     ["0x1.1ef7be8cc7954p+6", "0x1.459dff687a88ep+5"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c093__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c093"
+  },
+  {
+   "args": {
+    "background": [0, 0, 0, 0],
+    "fill": [211, 15, 25, 238],
+    "kind": "pentagram",
+    "mode": "RGBA",
+    "size": [32, 32],
+    "xy": [
+     ["0x1.2ff9edc1c193fp+5", "0x1.a9d604105a1bbp+3"],
+     ["0x1.acfd94b2ebb68p+3", "0x1.d51d4e4612010p+4"],
+     ["0x1.73b436e9d8153p+4", "0x1.5a637061327fcp+1"],
+     ["0x1.ed81be4bfb530p+4", "0x1.e96aae051c6d8p+4"],
+     ["0x1.14d98e6d6fbedp+3", "0x1.8472f9cfa7087p+3"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c094__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c094"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 237,
+    "kind": "scrambled",
+    "mode": "L",
+    "size": [66, 34],
+    "xy": [
+     ["0x1.bb71f7ec01f6bp+4", "0x1.d65097b5f6c87p+2"],
+     ["0x1.3c0e9d83e5d85p+5", "0x1.02d3680f0e70cp+5"],
+     ["0x1.bdb5fc384c006p+3", "0x1.7cd732ad333d0p+3"],
+     ["0x1.e6f8738c501e4p+5", "0x1.25a7069fd7294p+2"],
+     ["0x1.a476bf150dab6p+4", "0x1.13824c3d1000ap+4"],
+     ["0x1.d21787dbe9511p+1", "0x1.eff60459268e9p+4"],
+     ["0x1.ac9009c87e26ep+5", "0x1.dc5ba684ccde1p+4"],
+     ["0x1.cac5608d8d10ep+5", "0x1.76e2a5f15b28ep+3"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c095__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c095"
+  },
+  {
+   "args": {
+    "background": [65, 66, 3],
+    "fill": [42, 250, 145],
+    "kind": "axis_rect",
+    "mode": "RGB",
+    "size": [24, 40],
+    "xy": [
+     ["0x1.eec9367a4601cp+2", "0x1.24fe15e19b663p+4"],
+     ["0x1.21781795546fep+4", "0x1.24fe15e19b663p+4"],
+     ["0x1.21781795546fep+4", "0x1.161ff421c3238p+4"],
+     ["0x1.eec9367a4601cp+2", "0x1.161ff421c3238p+4"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c096__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c096"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.a7d236fc11ab5p+15",
+    "kind": "staircase",
+    "mode": "F",
+    "size": [96, 96],
+    "xy": [
+     [31, 4],
+     [65, 4],
+     [65, 65],
+     [79, 65],
+     [79, 66],
+     [31, 66]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c097__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c097"
+  },
+  {
+   "args": {
+    "background": [0, 0, 0, 0],
+    "fill": [130, 104, 159, 254],
+    "kind": "horizontal_runs",
+    "mode": "RGBA",
+    "size": [48, 64],
+    "xy": [
+     ["0x1.5b1fb0b6fa34cp+3", "0x1.b000000000000p+5"],
+     ["0x1.4b1b942ac8bb7p+4", "0x1.b2931877f2ef8p+5"],
+     ["0x1.380d0291d3182p+5", "0x1.b000000000000p+5"],
+     ["0x1.3c50db417d954p+5", "0x1.b2931877f2ef8p+5"],
+     ["0x1.3c50db417d954p+5", "0x1.da931877f2ef8p+5"],
+     ["0x1.380d0291d3182p+5", "0x1.da931877f2ef8p+5"],
+     ["0x1.4b1b942ac8bb7p+4", "0x1.da931877f2ef8p+5"],
+     ["0x1.5b1fb0b6fa34cp+3", "0x1.da931877f2ef8p+5"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c098__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c098"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 203,
+    "kind": "flat_top",
+    "mode": "L",
+    "size": [33, 13],
+    "xy": [
+     ["0x1.c30a1720b57d4p+1", "0x1.108cb6b3bb5b9p+3"],
+     ["0x1.a1a817c5ed14ep+4", "0x1.1886c32e6d601p+3"],
+     ["0x1.c7a95a2e3b1f3p+4", "0x1.4c7e2dc1ff92fp+2"],
+     ["0x1.4e13377b73d28p+4", "0x1.7727a5c52bfe0p+1"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c099__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c099"
+  },
+  {
+   "args": {
+    "background": [167, 179, 76],
+    "fill": [18, 162, 18],
+    "kind": "sliver_subpixel",
+    "mode": "RGB",
+    "size": [24, 40],
+    "xy": [
+     ["0x1.a6d06aad55b08p+3", "0x1.cf744c8466dfap+3"],
+     ["0x1.ad5c017dac70ap+3", "0x1.d23241f6a6ce9p+3"],
+     ["0x1.a52ea3095ee72p+3", "0x1.dcc0a3ff6886dp+3"],
+     ["0x1.ab1b0d091c3bdp+3", "0x1.dd208d5710d45p+3"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c100__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c100"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.cdb5c6b109446p+14",
+    "kind": "sliver_thin",
+    "mode": "F",
+    "size": [48, 64],
+    "xy": [
+     ["0x1.14cc874f5ba68p+5", "0x1.506cf82920154p+4"],
+     ["0x1.6493437cdec26p+5", "0x1.e20a15b8450d5p+5"],
+     ["0x1.618b89942e367p+5", "0x1.e2cf4744a3808p+5"],
+     ["0x1.11c4cd66ab1a9p+5", "0x1.51f75b41dcfbbp+4"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c101__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c101"
+  },
+  {
+   "args": {
+    "background": [0, 0, 0, 0],
+    "fill": [168, 199, 188, 217],
+    "kind": "negative_fraction",
+    "mode": "RGBA",
+    "size": [96, 96],
+    "xy": [
+     ["-0x1.8701a10d64346p-1", "0x1.f77b3ef902e14p+5"],
+     ["0x1.6304350fbe16fp+4", "-0x1.8c3ea1996891cp-1"],
+     ["0x1.2259619903c61p+6", "0x1.0fe4fd56292fdp+6"],
+     ["-0x1.33a7ca15fdbb2p-1", "-0x1.0cc540a2f0a4dp-1"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c102__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c102"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 103,
+    "kind": "half_pixel",
+    "mode": "L",
+    "size": [48, 64],
+    "xy": [
+     ["0x1.4000000000000p+2", "0x1.3fffff79c8430p+5"],
+     ["0x1.c000000000000p+3", "0x1.1000000000000p+3"],
+     ["0x1.28000000225c1p+5", "0x1.4ffffef39085fp+4"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c103__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c103"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "quad",
+    "mode": "L",
+    "size": [9, 22],
+    "xy": [
+     ["-0x1.ddeb95216b618p-2", "0x1.03f803060b80dp+4"],
+     ["0x1.fff92905ae9f0p+1", "0x1.15d4d74a2fe89p+4"],
+     ["0x1.d3a88234b5018p+2", "0x1.34e5b715f1e06p+3"],
+     ["0x1.0475492b0139bp+2", "0x1.71ae682e2f610p+3"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c104__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c104"
+  },
+  {
+   "args": {
+    "background": [116, 99, 54],
+    "fill": [7, 136, 109],
+    "kind": "triangle",
+    "mode": "RGB",
+    "size": [32, 32],
+    "xy": [
+     ["0x1.05d2920f15852p+5", "0x1.b97760a3e603fp+4"],
+     ["0x1.3f07156ff56d7p+2", "0x1.0ad91fe9f16d6p+5"],
+     ["0x1.3fb3943c4f09cp+0", "0x1.040fd5a86770ap+4"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c105__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c105"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.c1f2195150694p+2",
+    "kind": "ngon",
+    "mode": "F",
+    "size": [37, 42],
+    "xy": [
+     ["0x1.9aa9d7e49eb56p+3", "0x1.424405312ec09p+5"],
+     ["0x1.866adfb7a3be4p+2", "0x1.fcc91f50aebb6p+4"],
+     ["0x1.2b3631f235b02p+4", "0x1.6a7fcf425906fp+4"],
+     ["0x1.d13336b917d2bp+4", "0x1.ed7fc6c110e0cp+3"],
+     ["0x1.cdd30323ee352p+4", "0x1.587a1f6068b40p+4"],
+     ["0x1.1d2c022eeb55bp+5", "0x1.b8c19d8c281c0p+4"],
+     ["0x1.33d718301cf83p+5", "0x1.8feb9e7490d6ap+4"],
+     ["0x1.24a2d9e5e5b0dp+5", "0x1.67ad98881974ap+5"],
+     ["0x1.ea4ba01e6ba08p+4", "0x1.661b57ef2c943p+5"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c106__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c106"
+  },
+  {
+   "args": {
+    "background": [0, 0, 0, 0],
+    "fill": [204, 210, 184, 31],
+    "kind": "circle",
+    "mode": "RGBA",
+    "size": [24, 40],
+    "xy": [
+     ["0x1.d1ef9c4e32fb8p+3", "0x1.3a23ef2f27fd0p+4"],
+     ["0x1.076a310fee180p+4", "0x1.3f7f8ce3c0ce3p+4"],
+     ["0x1.2162f41c1e082p+4", "0x1.4f8578e16356ep+4"],
+     ["0x1.32ede094bacc0p+4", "0x1.67c5382b85419p+4"],
+     ["0x1.395f42a79ea8ep+4", "0x1.848db8022ffb5p+4"],
+     ["0x1.33bbffcd98067p+4", "0x1.a17d2edd43541p+4"],
+     ["0x1.22dfd1390cd48p+4", "0x1.ba2be4997faffp+4"],
+     ["0x1.095bd067d0e6bp+4", "0x1.cad7e1d73982cp+4"],
+     ["0x1.d624db1924fd7p+3", "0x1.d0f763581cd34p+4"],
+     ["0x1.994015477bc8ep+3", "0x1.cb9bc5a384022p+4"],
+     ["0x1.654e8f2f1be8bp+3", "0x1.bb95d9a5e1796p+4"],
+     ["0x1.4238b63de2610p+3", "0x1.a3561a5bbf8edp+4"],
+     ["0x1.3555f2181aa72p+3", "0x1.868d9a8514d4ep+4"],
+     ["0x1.409c77cc27ec0p+3", "0x1.699e23aa017c4p+4"],
+     ["0x1.6254d4f53e4fep+3", "0x1.50ef6dedc5206p+4"],
+     ["0x1.955cd697b62b8p+3", "0x1.404370b00b4d8p+4"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c107__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c107"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "star",
+    "mode": "L",
+    "size": [96, 96],
+    "xy": [
+     ["0x1.cffe44779fc15p+4", "0x1.98eabbd0b0971p+5"],
+     ["0x1.3d81b916c4dfcp+5", "0x1.6ff9c6e6eaa5dp+5"],
+     ["0x1.f27cb54dfada1p+4", "0x1.2608106ce1928p+5"],
+     ["0x1.4bd9ae1d56808p+5", "0x1.4c50c54eb97c0p+5"],
+     ["0x1.3bb87a86f2440p+5", "0x1.a6c216f659547p+4"],
+     ["0x1.88325bf78fcbdp+5", "0x1.2bbf911ea38b0p+5"],
+     ["0x1.b6a6759b72851p+5", "0x1.eb7e5d409d6dcp+4"],
+     ["0x1.bbc43b77de2f3p+5", "0x1.453174b26d3d3p+5"],
+     ["0x1.064b95bc2c80bp+6", "0x1.2c8b7ed9a0a00p+5"],
+     ["0x1.d3fe1afb865d7p+5", "0x1.7a51b580862c9p+5"],
+     ["0x1.1c95a372ecf8cp+6", "0x1.9d69162301fc6p+5"],
+     ["0x1.c2fdfb89fb822p+5", "0x1.aaeb882519ef7p+5"],
+     ["0x1.ddee714b37a06p+5", "0x1.03d7b5cd8dd22p+6"],
+     ["0x1.9b3cb1270c0d4p+5", "0x1.d1dfff1e9778bp+5"],
+     ["0x1.6a2150b51b539p+5", "0x1.119376a468782p+6"],
+     ["0x1.69810f4d6676ap+5", "0x1.b992939872427p+5"],
+     ["0x1.10dc8489107bep+5", "0x1.f941f6f673324p+5"],
+     ["0x1.488166309ebd8p+5", "0x1.9c060b584c2c5p+5"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c108__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c108"
+  },
+  {
+   "args": {
+    "background": [113, 107, 5],
+    "fill": [171, 202, 173],
+    "kind": "int",
+    "mode": "RGB",
+    "size": [19, 22],
+    "xy": [
+     [7, 21],
+     [4, 2],
+     [24, -3],
+     [22, 24],
+     [22, 24],
+     [2, 16],
+     [3, 26],
+     [22, -3]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c109__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c109"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.00bc6d439aae0p+5",
+    "kind": "outside_partly",
+    "mode": "F",
+    "size": [67, 74],
+    "xy": [
+     ["0x1.c63f4b2e72ddfp+4", "0x1.303a5ccf156b1p+5"],
+     ["0x1.714192750ee9cp+3", "0x1.b7ee858314283p+3"],
+     ["0x1.18949bcbc4400p-1", "0x1.591db6cb5a713p+4"],
+     ["0x1.511a38c49441ap+5", "-0x1.3d86c787bb138p+5"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c110__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c110"
+  },
+  {
+   "args": {
+    "background": [0, 0, 0, 0],
+    "fill": [69, 30, 234, 182],
+    "kind": "outside_far",
+    "mode": "RGBA",
+    "size": [40, 78],
+    "xy": [
+     ["-0x1.f8bc573b20253p+6", "0x1.91a65ce79e58cp+8"],
+     ["-0x1.633b35a0ea263p+6", "0x1.b7382c795afa0p+5"],
+     ["-0x1.da907e6422318p+5", "0x1.8b92368843d18p+7"],
+     ["0x1.3ba911a6bcfdcp+7", "-0x1.9354da3da70d0p+5"],
+     ["-0x1.0297a5269ecdfp+7", "0x1.bc0c9e4ce5c50p+6"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c111__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c111"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "outside_all",
+    "mode": "L",
+    "size": [96, 96],
+    "xy": [
+     ["0x1.31117ef53aa86p+6", "0x1.a952f10b2b549p+7"],
+     ["0x1.649ec9b478311p+5", "0x1.18270c2cdea74p+8"],
+     ["0x1.0e355e114a5a6p+6", "0x1.e62d6d33163c8p+7"],
+     ["0x1.1332f35400a68p+6", "0x1.ca2ed4a007deap+7"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c112__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c112"
+  },
+  {
+   "args": {
+    "background": [107, 99, 113],
+    "fill": [211, 164, 183],
+    "kind": "cover_all",
+    "mode": "RGB",
+    "size": [64, 48],
+    "xy": [
+     ["-0x1.6c8c61a290a52p+5", "-0x1.8da309b29d2abp+5"],
+     ["0x1.0f46d0f49754cp+6", "-0x1.5d24c954517f2p+5"],
+     ["0x1.c03f5ad7ea108p+6", "0x1.e6f3d7ac3f4e9p+5"],
+     ["-0x1.847c2f3d6cb7ap+4", "0x1.4df6fc07d1d90p+6"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c113__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c113"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.6cfb5faa94a64p+4",
+    "kind": "two_points",
+    "mode": "F",
+    "size": [64, 48],
+    "xy": [
+     ["0x1.e5f0f073645c0p-3", "0x1.0fbc2813b5b24p+5"],
+     ["0x1.8d3e34a471b9dp+5", "0x1.f93730d9ab7dfp+4"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c114__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c114"
+  },
+  {
+   "args": {
+    "background": [0, 0, 0, 0],
+    "fill": [119, 233, 210, 178],
+    "kind": "collinear",
+    "mode": "RGBA",
+    "size": [40, 19],
+    "xy": [
+     ["0x1.05b870565f980p+5", "0x1.9abd7a1d14ad2p+2"],
+     ["0x1.00423ab265af3p+5", "0x1.4d9e65fb63f5cp+2"],
+     ["0x1.fee02b81df612p+4", "0x1.42071b4aa6aaap+2"],
+     ["0x1.dcac287d44395p+4", "0x1.423224f0771c8p+0"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c115__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c115"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "repeated",
+    "mode": "L",
+    "size": [24, 40],
+    "xy": [
+     ["0x1.c09a1ab176882p+3", "0x1.6f490d9d74c27p+4"],
+     ["0x1.c09a1ab176882p+3", "0x1.6f490d9d74c27p+4"],
+     ["0x1.a901b2240325fp+3", "0x1.048b4d91692d2p+3"],
+     ["0x1.dfdb196f102f7p+3", "0x1.ac3b272351314p+1"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c116__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c116"
+  },
+  {
+   "args": {
+    "background": [154, 255, 44],
+    "fill": [161, 244, 250],
+    "kind": "same_point",
+    "mode": "RGB",
+    "size": [24, 17],
+    "xy": [
+     ["0x1.d920bbbc6d5dbp+3", "0x1.9fb52b9b7cc65p+3"],
+     ["0x1.d920bbbc6d5dbp+3", "0x1.9fb52b9b7cc65p+3"],
+     ["0x1.d920bbbc6d5dbp+3", "0x1.9fb52b9b7cc65p+3"],
+     ["0x1.d920bbbc6d5dbp+3", "0x1.9fb52b9b7cc65p+3"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c117__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c117"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.1095fee53fa3ep+4",
+    "kind": "closed",
+    "mode": "F",
+    "size": [96, 96],
+    "xy": [
+     ["0x1.475156991c0b9p+5", "0x1.2ae7e42b7b18cp+5"],
+     ["0x1.4ac0120f4e039p+6", "0x1.3f0c6d268ca19p+5"],
+     ["0x1.49c466d8f1c19p+6", "0x1.19f151d40f06dp+6"],
+     ["0x1.1124ab3018711p+6", "0x1.29b58a28dce4fp+6"],
+     ["0x1.33d6aad7b7accp+5", "0x1.3f851639807aap+6"],
+     ["0x1.1330f57d17264p+4", "0x1.e52761ef5f9cdp+5"],
+     ["0x1.475156991c0b9p+5", "0x1.2ae7e42b7b18cp+5"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c118__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c118"
+  },
+  {
+   "args": {
+    "background": [0, 0, 0, 0],
+    "fill": [219, 130, 74, 218],
+    "kind": "bowtie",
+    "mode": "RGBA",
+    "size": [48, 64],
+    "xy": [
+     ["0x1.c044a6ae5d108p+4", "0x1.31edf678e2e56p+5"],
+     ["0x1.bbdcb40ff446ep+4", "-0x1.613fed47de094p+1"],
+     ["0x1.55ed675df55b6p+4", "0x1.14b453b01dfbbp+4"],
+     ["0x1.e5f55dec9f9e8p+5", "0x1.2074c0ea13539p+4"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c119__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c119"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "pentagram",
+    "mode": "L",
+    "size": [12, 29],
+    "xy": [
+     ["0x1.c551668268e1ap+1", "0x1.2d762ed7d5b2ep+3"],
+     ["0x1.78133640d018ap+3", "0x1.103f789a022fcp+4"],
+     ["0x1.9bc4dfd328728p-1", "0x1.b4c0539f7c010p+3"],
+     ["0x1.81553d52d6f80p+3", "0x1.8488637b8d648p+3"],
+     ["0x1.4d50ed0b0a220p+1", "0x1.2642c196f37f4p+4"],
+     ["0x1.0c4edeaf376b2p+3", "0x1.13cdf8fa54790p+3"],
+     ["0x1.dc3821e757216p+2", "0x1.3db4162e4411cp+4"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c120__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c120"
+  },
+  {
+   "args": {
+    "background": [196, 229, 218],
+    "fill": [30, 170, 215],
+    "kind": "scrambled",
+    "mode": "RGB",
+    "size": [96, 96],
+    "xy": [
+     ["0x1.a5e8fa73ff820p-2", "0x1.668d1d6d5efa0p+5"],
+     ["0x1.1b35968d167c7p+6", "0x1.a7ad656b9a456p+4"],
+     ["0x1.71e6de5048e4ep+6", "0x1.a79f4ed6488bap+5"],
+     ["0x1.decf03dc1e1eep+5", "0x1.e40de6533ad84p+3"],
+     ["0x1.3aa9777c422a1p+6", "0x1.e0880cfa5229cp+3"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c121__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c121"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.bd03e772afc25p+2",
+    "kind": "axis_rect",
+    "mode": "F",
+    "size": [64, 48],
+    "xy": [
+     ["0x1.5c86d0691b597p+4", "-0x1.922f0b7cabf50p-3"],
+     ["0x1.0d09fbbaab589p+6", "-0x1.922f0b7cabf50p-3"],
+     ["0x1.0d09fbbaab589p+6", "0x1.5642350f609c0p+4"],
+     ["0x1.5c86d0691b597p+4", "0x1.5642350f609c0p+4"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c122__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c122"
+  },
+  {
+   "args": {
+    "background": [0, 0, 0, 0],
+    "fill": [76, 228, 26, 161],
+    "kind": "staircase",
+    "mode": "RGBA",
+    "size": [18, 21],
+    "xy": [
+     [6, 3],
+     [7, 3],
+     [7, 4],
+     [14, 4],
+     [14, 14],
+     [6, 14]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c123__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c123"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "horizontal_runs",
+    "mode": "L",
+    "size": [32, 32],
+    "xy": [
+     ["0x1.7259700d68e00p+1", "0x1.e000000000000p+3"],
+     ["0x1.df19e986e2ad8p+3", "0x1.f099aff1e784dp+3"],
+     ["0x1.360eb1570865ap+4", "0x1.e000000000000p+3"],
+     ["0x1.bac7800627d30p+4", "0x1.f099aff1e784dp+3"],
+     ["0x1.be0109d323806p+4", "0x1.e000000000000p+3"],
+     ["0x1.be0109d323806p+4", "0x1.284cd7f8f3c26p+4"],
+     ["0x1.bac7800627d30p+4", "0x1.284cd7f8f3c26p+4"],
+     ["0x1.360eb1570865ap+4", "0x1.284cd7f8f3c26p+4"],
+     ["0x1.df19e986e2ad8p+3", "0x1.284cd7f8f3c26p+4"],
+     ["0x1.7259700d68e00p+1", "0x1.284cd7f8f3c26p+4"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c124__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c124"
+  },
+  {
+   "args": {
+    "background": [189, 33, 96],
+    "fill": [237, 153, 174],
+    "kind": "flat_top",
+    "mode": "RGB",
+    "size": [96, 96],
+    "xy": [
+     ["0x1.4f90dac701acbp+3", "0x1.8fc8cadf0f1bfp+4"],
+     ["0x1.dfa0d6438e059p+5", "0x1.8118691c6b7dbp+4"],
+     ["0x1.68edaa063dce4p+2", "0x1.9dc8fa7668c58p+3"],
+     ["0x1.2bfb61027470fp+6", "0x1.ca44bddd05e04p+5"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c125__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c125"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.40a6507fbf581p+4",
+    "kind": "sliver_subpixel",
+    "mode": "F",
+    "size": [24, 40],
+    "xy": [
+     ["0x1.d08fc63803506p+0", "0x1.bd8574261e27fp+3"],
+     ["0x1.f6aa83e7033e8p+0", "0x1.bb880e516fb20p+3"],
+     ["0x1.c68b8215382a8p+0", "0x1.a27e19d24abcdp+3"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c126__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c126"
+  },
+  {
+   "args": {
+    "background": [0, 0, 0, 0],
+    "fill": [20, 75, 124, 41],
+    "kind": "sliver_thin",
+    "mode": "RGBA",
+    "size": [48, 64],
+    "xy": [
+     ["0x1.13ddacae181a2p+2", "0x1.06a5193819cccp+3"],
+     ["0x1.3de7e884691b6p+4", "0x1.be84e88738c9cp+3"],
+     ["0x1.3b3e68a9432c8p+4", "0x1.ccef84d662cb5p+3"],
+     ["0x1.0937ad41805ebp+2", "0x1.150fb58743ce5p+3"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c127__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c127"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "negative_fraction",
+    "mode": "L",
+    "size": [64, 48],
+    "xy": [
+     ["-0x1.ad9fd7ab0627cp-2", "0x1.3c6bfa4ab3e18p+5"],
+     ["0x1.80261d70b417fp+5", "-0x1.9608f38f5c4f4p-1"],
+     ["0x1.f66774797a368p+4", "0x1.21849818cb346p+3"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c128__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c128"
+  },
+  {
+   "args": {
+    "background": [63, 212, 240],
+    "fill": [14, 167, 136],
+    "kind": "half_pixel",
+    "mode": "RGB",
+    "size": [96, 96],
+    "xy": [
+     ["0x1.1ffffef39085fp+4", "0x1.57ffffbce4218p+6"],
+     ["0x1.0ffffffff2419p+3", "0x1.2800000000000p+4"],
+     ["0x1.67ffffbce4218p+6", "0x1.c800000000000p+5"],
+     ["0x1.efffff79c8430p+5", "0x1.7ffffbce4217dp+2"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c129__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c129"
+  },
+  {
+   "args": {
+    "background": [51, 176, 75],
+    "fill": [172, 131, 214],
+    "kind": "quad",
+    "mode": "RGB",
+    "size": [32, 32],
+    "xy": [
+     ["0x1.a8721e197f896p+3", "0x1.389d52f50d05bp+4"],
+     ["0x1.d6c21dd886764p+0", "0x1.a2617d6ac01dbp+2"],
+     ["0x1.b74a7f9add5c3p+4", "0x1.0e3dfd345efd0p+5"],
+     ["0x1.e2dc2bc44a8b7p+4", "-0x1.95383e08f2ec0p-2"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c130__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c130"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.6562d3c0d4114p+4",
+    "kind": "triangle",
+    "mode": "F",
+    "size": [72, 41],
+    "xy": [
+     ["0x1.f145dfdc58faep+4", "0x1.9f20d73bc77dep+4"],
+     ["0x1.a519d43b0b868p+5", "0x1.8bddfdc11f5dcp+3"],
+     ["0x1.365e01a4429a1p+5", "0x1.1a4c1a49e4de2p+1"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c131__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c131"
+  },
+  {
+   "args": {
+    "background": [0, 0, 0, 0],
+    "fill": [61, 11, 87, 210],
+    "kind": "ngon",
+    "mode": "RGBA",
+    "size": [32, 32],
+    "xy": [
+     ["0x1.84b8889e19342p+3", "0x1.4fc4289f59578p+3"],
+     ["0x1.1ea192a11f2a1p+3", "0x1.609bc5f43fe03p+4"],
+     ["0x1.bb6bb821fa494p+1", "0x1.a870815fe5602p+3"],
+     ["0x1.ab691a33a3a5ep+2", "0x1.0e47868f0ef24p+4"],
+     ["0x1.1c5acfce3dc6ep+3", "-0x1.6d23241634ef0p+1"],
+     ["0x1.f586169cefe2ap+3", "-0x1.88469b31f0734p+1"],
+     ["0x1.435bb0542a2ddp+4", "0x1.0b5625bc60d18p-1"],
+     ["0x1.be68319d10da6p+4", "-0x1.47893c6bd0130p+0"],
+     ["0x1.b0f3b287a4742p+4", "0x1.9438c996fa2d2p+3"],
+     ["0x1.22ddf482ee488p+4", "0x1.b50f82b1efb17p+3"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c132__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c132"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 74,
+    "kind": "circle",
+    "mode": "L",
+    "size": [78, 60],
+    "xy": [
+     ["0x1.c458df83ffe59p+5", "0x1.18d563d34f612p+4"],
+     ["0x1.0b77ee63b9657p+6", "0x1.637c66100dca9p+4"],
+     ["0x1.1462ef61f628cp+6", "0x1.c0d8a6227825dp+4"],
+     ["0x1.f5137033ef164p+5", "0x1.0bf30b44620c5p+5"],
+     ["0x1.89b2b8db90c12p+5", "0x1.28a8acdc10edep+5"],
+     ["0x1.03694d0820a05p+5", "0x1.2edbe3f0d7b29p+5"],
+     ["0x1.0c6527669188fp+4", "0x1.1ce3657f51667p+5"],
+     ["0x1.9cdcb37eaefa0p+2", "0x1.ef1fc8c1e463ap+4"],
+     ["0x1.0e2ca39ae2c38p+2", "0x1.91c388af7a086p+4"],
+     ["0x1.55e00c0d664eep+3", "0x1.3ab618492e156p+4"],
+     ["0x1.81b174b76fd2ap+4", "0x1.014ad519d0523p+4"],
+     ["0x1.4722262f2809bp+5", "0x1.e9c8cde08591cp+3"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c133__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c133"
+  },
+  {
+   "args": {
+    "background": [147, 128, 173],
+    "fill": [127, 149, 35],
+    "kind": "star",
+    "mode": "RGB",
+    "size": [33, 18],
+    "xy": [
+     ["0x1.9d8745e367817p+3", "0x1.50b18e65a6104p+2"],
+     ["0x1.e9937c58173c6p+3", "0x1.d0f79f1663f14p+2"],
+     ["0x1.03b1fa8600689p+4", "0x1.0139a04b920fap+2"],
+     ["0x1.14ba8c739b61ep+4", "0x1.c0c4f440ae879p+2"],
+     ["0x1.35f855828238fp+4", "0x1.6ab798ddc348ap+2"],
+     ["0x1.2242292c21d21p+4", "0x1.dccd2f44894aap+2"],
+     ["0x1.52ffac02d316cp+4", "0x1.e23c30037fdf8p+2"],
+     ["0x1.24e80890dfb1fp+4", "0x1.2bc0014bb2b10p+3"],
+     ["0x1.557eb28129fa3p+4", "0x1.6bb593a0a5d76p+3"],
+     ["0x1.1ebca3c8ccdd8p+4", "0x1.4db238086d540p+3"],
+     ["0x1.1c180353912acp+4", "0x1.bcabc82fc9700p+3"],
+     ["0x1.0832ee6aa4a17p+4", "0x1.60c230cd5e314p+3"],
+     ["0x1.e27d4a777ef5ap+3", "0x1.a194ff9c183e7p+3"],
+     ["0x1.eb5d10ae3ece6p+3", "0x1.590abf3561b55p+3"],
+     ["0x1.968890e3ceca6p+3", "0x1.878d09ad5d582p+3"],
+     ["0x1.d59234e98810cp+3", "0x1.2db7ac29f2f10p+3"],
+     ["0x1.647e0a50f1958p+3", "0x1.0408e83165480p+3"],
+     ["0x1.db970ed51bb17p+3", "0x1.ee5bf8686226bp+2"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c134__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c134"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.42e4878fdc170p+4",
+    "kind": "int",
+    "mode": "F",
+    "size": [60, 96],
+    "xy": [
+     [13, 76],
+     [49, 48],
+     [46, 19],
+     [21, 87]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c135__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c135"
+  },
+  {
+   "args": {
+    "background": [0, 0, 0, 0],
+    "fill": [122, 102, 40, 30],
+    "kind": "outside_partly",
+    "mode": "RGBA",
+    "size": [32, 32],
+    "xy": [
+     ["0x1.8f21da5894628p+3", "-0x1.84ef61877870dp-3"],
+     ["-0x1.64472aaa62f71p+4", "0x1.efc0308d01df0p-1"],
+     ["-0x1.5a02761ffd605p+3", "-0x1.1baa5862b48cfp+3"],
+     ["-0x1.cdfe202bbd04fp+2", "-0x1.10111dc0b06cep+4"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c136__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c136"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 90,
+    "kind": "outside_far",
+    "mode": "L",
+    "size": [64, 48],
+    "xy": [
+     ["-0x1.3bfcd88cf1002p+8", "-0x1.f73e6ab3d6040p+3"],
+     ["0x1.f11eee5b7fa20p+4", "0x1.c26eedd905c0ap+7"],
+     ["0x1.75a5339dc0c80p+4", "0x1.385368ce36410p+5"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c137__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c137"
+  },
+  {
+   "args": {
+    "background": [17, 176, 203],
+    "fill": [136, 236, 18],
+    "kind": "outside_all",
+    "mode": "RGB",
+    "size": [32, 32],
+    "xy": [
+     ["-0x1.b0a860b985282p+5", "0x1.19b56c3e4c619p+4"],
+     ["-0x1.7a839446004efp+5", "0x1.43ba29864bb1cp+2"],
+     ["-0x1.96c675862d120p+5", "0x1.3455e95fa59ccp+2"],
+     ["-0x1.094dafbc47beep+5", "0x1.d55f04b039fcep+4"],
+     ["-0x1.35cacdc76b7f8p+5", "0x1.b51ed6c9e2020p-1"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c138__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c138"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.5b4caa0a8ed4ep+3",
+    "kind": "cover_all",
+    "mode": "F",
+    "size": [86, 17],
+    "xy": [
+     ["-0x1.136e87da60665p+5", "-0x1.53b587eaa4d9fp+5"],
+     ["0x1.e17636a070956p+6", "-0x1.304e6fcfdcad8p+4"],
+     ["0x1.a76444639faa4p+6", "0x1.6630e8bfcda4ap+4"],
+     ["-0x1.35c5436dfee73p+4", "0x1.4a96ccd2c8ca2p+5"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c139__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c139"
+  },
+  {
+   "args": {
+    "background": [0, 0, 0, 0],
+    "fill": [103, 210, 91, 117],
+    "kind": "two_points",
+    "mode": "RGBA",
+    "size": [96, 96],
+    "xy": [
+     ["0x1.67559f94d29b0p+6", "-0x1.0850e2a4c2fd6p+3"],
+     ["0x1.964b477b881f6p+6", "0x1.ca3ae0bc82268p+4"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c140__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c140"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 233,
+    "kind": "collinear",
+    "mode": "L",
+    "size": [60, 58],
+    "xy": [
+     ["0x1.e0d54c952c013p+2", "0x1.5ecfe0c63e290p+5"],
+     ["0x1.71ff0ebbfa12ep+3", "0x1.2e3e86bd94d7bp+5"],
+     ["0x1.647afd1da5068p+4", "0x1.5b6537f58731ap+4"],
+     ["0x1.39ca217b8ab2ap+5", "-0x1.d85fa9d7a3590p+1"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c141__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c141"
+  },
+  {
+   "args": {
+    "background": [175, 56, 229],
+    "fill": [163, 105, 10],
+    "kind": "repeated",
+    "mode": "RGB",
+    "size": [48, 64],
+    "xy": [
+     ["0x1.f47b59bca1518p+3", "0x1.f74099b51392bp+4"],
+     ["0x1.f47b59bca1518p+3", "0x1.f74099b51392bp+4"],
+     ["0x1.1e62bdc2d2750p+5", "0x1.e1f1f420952fcp+5"],
+     ["0x1.1e62bdc2d2750p+5", "0x1.e1f1f420952fcp+5"],
+     ["0x1.1e62bdc2d2750p+5", "0x1.e1f1f420952fcp+5"],
+     ["0x1.6aee6850fd600p+2", "0x1.c05857d341fb4p+5"],
+     ["0x1.6aee6850fd600p+2", "0x1.c05857d341fb4p+5"],
+     ["0x1.6aee6850fd600p+2", "0x1.c05857d341fb4p+5"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c142__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c142"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.e16f6dbe77008p+4",
+    "kind": "same_point",
+    "mode": "F",
+    "size": [32, 32],
+    "xy": [
+     ["0x1.928d0350f0db6p+4", "0x1.d44dad20d20e7p+3"],
+     ["0x1.928d0350f0db6p+4", "0x1.d44dad20d20e7p+3"],
+     ["0x1.928d0350f0db6p+4", "0x1.d44dad20d20e7p+3"],
+     ["0x1.928d0350f0db6p+4", "0x1.d44dad20d20e7p+3"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c143__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c143"
+  },
+  {
+   "args": {
+    "background": [0, 0, 0, 0],
+    "fill": [93, 58, 155, 147],
+    "kind": "closed",
+    "mode": "RGBA",
+    "size": [64, 48],
+    "xy": [
+     ["0x1.5ee0d9f599d52p+2", "0x1.131a016390b15p+4"],
+     ["0x1.06f0b437601efp+5", "0x1.378d0e5b210b2p+4"],
+     ["0x1.d79071f9399ccp+4", "0x1.dbad3135551eap+4"],
+     ["0x1.d67cf817ab720p+4", "0x1.347db749ed4aap+5"],
+     ["0x1.c1dc71391e18cp+4", "0x1.5865d7dfc09cap+5"],
+     ["0x1.32bb674ec33cap+4", "0x1.594b4483c3209p+5"],
+     ["0x1.8c3520f20f14dp+3", "0x1.72d16efe83e42p+5"],
+     ["0x1.d3b2d031ac340p-2", "0x1.068a4e5d7a795p+5"],
+     ["0x1.5ee0d9f599d52p+2", "0x1.131a016390b15p+4"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c144__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c144"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 113,
+    "kind": "bowtie",
+    "mode": "L",
+    "size": [96, 96],
+    "xy": [
+     ["0x1.1aaa27bf8163ap+5", "0x1.027b326a51106p+5"],
+     ["0x1.9cdf582362556p+6", "0x1.00365a4f65402p+5"],
+     ["0x1.933ecbf2cddc4p+6", "0x1.8a5cf684bac54p+3"],
+     ["0x1.8dd2d88345cd0p+6", "0x1.bbdf593fc8c27p+4"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c145__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c145"
+  },
+  {
+   "args": {
+    "background": [83, 128, 238],
+    "fill": [230, 120, 156],
+    "kind": "pentagram",
+    "mode": "RGB",
+    "size": [96, 96],
+    "xy": [
+     ["0x1.48ca5b52a0ee9p+5", "0x1.2a2918dbe23f0p+6"],
+     ["0x1.169a549f78918p+5", "-0x1.d92e1a5110e68p+3"],
+     ["0x1.3ac7a44efcd09p+6", "0x1.0707bbe4db3f4p+6"],
+     ["0x1.e1fd3f1736bc0p+2", "0x1.9db19bb6d8a20p+3"],
+     ["0x1.747cd2d62d192p+6", "0x1.b9b4643413916p+4"],
+     ["0x1.cfdd4989d7678p+2", "0x1.aa5c5915aae50p+5"],
+     ["0x1.2789fc06a90dcp+6", "-0x1.690b716f61808p+2"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c146__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c146"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.b07e29416b114p+3",
+    "kind": "scrambled",
+    "mode": "F",
+    "size": [48, 64],
+    "xy": [
+     ["0x1.7508152d94d54p+4", "0x1.edbf640596fc8p+5"],
+     ["0x1.7b910aed3b252p+5", "-0x1.9002ca18bdf63p+0"],
+     ["0x1.582219f61ff4ap+5", "0x1.62264eb2a4a80p+3"],
+     ["0x1.7afd66f62d379p+5", "0x1.bd969913fd4a9p+5"],
+     ["0x1.37546d48e6110p+5", "0x1.e19fe72b57b37p+5"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c147__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c147"
+  },
+  {
+   "args": {
+    "background": [0, 0, 0, 0],
+    "fill": [248, 216, 243, 124],
+    "kind": "axis_rect",
+    "mode": "RGBA",
+    "size": [50, 68],
+    "xy": [
+     ["-0x1.6927b7aad6000p-11", "0x1.8d77d73161eeep+1"],
+     ["0x1.098f04e63026bp+5", "0x1.8d77d73161eeep+1"],
+     ["0x1.098f04e63026bp+5", "0x1.b88a2259e6e50p+5"],
+     ["-0x1.6927b7aad6000p-11", "0x1.b88a2259e6e50p+5"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c148__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c148"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 43,
+    "kind": "staircase",
+    "mode": "L",
+    "size": [48, 64],
+    "xy": [
+     [5, 5],
+     [36, 5],
+     [36, 8],
+     [37, 8],
+     [37, 9],
+     [37, 9],
+     [37, 30],
+     [5, 30]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c149__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c149"
+  },
+  {
+   "args": {
+    "background": [36, 14, 236],
+    "fill": [4, 146, 211],
+    "kind": "horizontal_runs",
+    "mode": "RGB",
+    "size": [32, 32],
+    "xy": [
+     ["0x1.b70fb69fa4c08p+1", "0x1.0000000000000p+0"],
+     ["0x1.066b7f6a99ee4p+4", "0x1.a4662419e3f96p+0"],
+     ["0x1.72a8baf011abcp+4", "0x1.0000000000000p+0"],
+     ["0x1.9b2310d4c2729p+4", "0x1.a4662419e3f96p+0"],
+     ["0x1.9b2310d4c2729p+4", "0x1.aa4662419e3f9p+4"],
+     ["0x1.72a8baf011abcp+4", "0x1.aa4662419e3f9p+4"],
+     ["0x1.066b7f6a99ee4p+4", "0x1.aa4662419e3f9p+4"],
+     ["0x1.b70fb69fa4c08p+1", "0x1.aa4662419e3f9p+4"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c150__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c150"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.1a979aec5582fp+5",
+    "kind": "flat_top",
+    "mode": "F",
+    "size": [64, 48],
+    "xy": [
+     ["0x1.1ce591673e0ccp+3", "0x1.2bd705ba4c5b4p+3"],
+     ["0x1.2d96b1610a138p+5", "0x1.386c51c62770dp+3"],
+     ["0x1.b7c08e8fc857ap+4", "0x1.4d4b57b2dcae1p+3"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c151__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c151"
+  },
+  {
+   "args": {
+    "background": [0, 0, 0, 0],
+    "fill": [177, 69, 175, 220],
+    "kind": "sliver_subpixel",
+    "mode": "RGBA",
+    "size": [32, 11],
+    "xy": [
+     ["0x1.debfb7ab8218ep+2", "0x1.cf1195ba48cbcp+2"],
+     ["0x1.dbfc037377af2p+2", "0x1.ff148483b79fep+2"],
+     ["0x1.c2e84b0fdd854p+2", "0x1.e6fc2f8ad371dp+2"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c152__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c152"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 29,
+    "kind": "sliver_thin",
+    "mode": "L",
+    "size": [32, 32],
+    "xy": [
+     ["0x1.7e8494284af50p+3", "0x1.c3692b2f19722p+3"],
+     ["0x1.db40d01ec08d8p+2", "0x1.b43e6bc76fef9p+4"],
+     ["0x1.c2af14c46388bp+2", "0x1.b22159fabc1dap+4"],
+     ["0x1.723bb67b1c729p+3", "0x1.bf2f0795b1ce3p+3"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c153__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c153"
+  },
+  {
+   "args": {
+    "background": [178, 170, 40],
+    "fill": [56, 117, 158],
+    "kind": "negative_fraction",
+    "mode": "RGB",
+    "size": [24, 40],
+    "xy": [
+     ["-0x1.2e413ec0968abp-1", "0x1.af526e009a206p+4"],
+     ["0x1.aedb37cab63e8p+0", "-0x1.602cd512882efp-2"],
+     ["0x1.964506c915956p+3", "0x1.030d875f8c782p+5"],
+     ["-0x1.de6a9d9ef2f88p-2", "-0x1.b5e3043354a12p-1"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c154__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c154"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.8be382ff50b45p+3",
+    "kind": "half_pixel",
+    "mode": "F",
+    "size": [32, 32],
+    "xy": [
+     ["0x1.e000000089706p+3", "0x1.8000000000000p+2"],
+     ["0x1.9800000000000p+4", "0x1.f000000044b83p+4"],
+     ["0x1.7000000000000p+4", "0x1.3000000000000p+4"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c155__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c155"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.54d4fd031ebcbp+15",
+    "kind": "quad",
+    "mode": "F",
+    "size": [48, 64],
+    "xy": [
+     ["0x1.09413739283bep+5", "0x1.f1f159e1cef69p+5"],
+     ["0x1.6b73be6d3ab14p+5", "0x1.dfe3750c77b31p+3"],
+     ["0x1.1977c11ff0200p-3", "0x1.9cd22f29fac76p+5"],
+     ["-0x1.5d4b447b75618p+1", "0x1.02853d78dd1aep+5"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c156__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c156"
+  },
+  {
+   "args": {
+    "background": [0, 0, 0, 0],
+    "fill": [148, 43, 203, 30],
+    "kind": "triangle",
+    "mode": "RGBA",
+    "size": [24, 40],
+    "xy": [
+     ["0x1.16ab436a270b4p+0", "0x1.486f77f099606p+3"],
+     ["0x1.1f737248913aep+2", "0x1.9d8973a0c5376p+3"],
+     ["0x1.e09d2654c17c4p+2", "0x1.43878dbf45e2ep+5"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c157__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c157"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "ngon",
+    "mode": "L",
+    "size": [32, 32],
+    "xy": [
+     ["0x1.ec6b26e7defdep+4", "0x1.2c2531c296f8fp+4"],
+     ["0x1.4a9f1e10a95c2p+5", "0x1.addc6dad39b4ep+4"],
+     ["0x1.1d1359875be7ep+5", "0x1.172f0ce227f08p+5"],
+     ["0x1.f2e69e510998cp+4", "0x1.23a36a0299d0ap+5"],
+     ["0x1.4002679fbfb52p+4", "0x1.47c6b488b2375p+4"],
+     ["0x1.cec3e49ce33a5p+4", "0x1.0775e38f35824p+3"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c158__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c158"
+  },
+  {
+   "args": {
+    "background": [120, 130, 213],
+    "fill": [125, 33, 87],
+    "kind": "circle",
+    "mode": "RGB",
+    "size": [24, 40],
+    "xy": [
+     ["0x1.bbdebeec736ccp+2", "0x1.c44b2fe4cad9ap+2"],
+     ["0x1.0b18e1e200812p+3", "0x1.5f57273e59b97p+2"],
+     ["0x1.49c58c8684243p+3", "0x1.3849227ced5bbp+2"],
+     ["0x1.892a37982188ap+3", "0x1.599817a4d85d0p+2"],
+     ["0x1.b84a6db369cdcp+3", "0x1.ba573c1c05634p+2"],
+     ["0x1.ca85965940678p+3", "0x1.204d1cf530c27p+3"],
+     ["0x1.baf921d005099p+3", "0x1.6433b1917d746p+3"],
+     ["0x1.8dcf9f643e3edp+3", "0x1.96adb5e4b6048p+3"],
+     ["0x1.4f22f4bfba9bbp+3", "0x1.aa34b8456c336p+3"],
+     ["0x1.0fbe49ae1d375p+3", "0x1.998d3db176b2cp+3"],
+     ["0x1.c13c2725a9e42p+2", "0x1.692dab75e02f9p+3"],
+     ["0x1.9cc5d5d9fcb0dp+2", "0x1.260c2c8eb21edp+3"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c159__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c159"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.580ecf7aa2a93p+14",
+    "kind": "star",
+    "mode": "F",
+    "size": [96, 96],
+    "xy": [
+     ["0x1.21d9682905d7dp+6", "0x1.a8d3b237513ccp+5"],
+     ["0x1.db5a659fc244dp+5", "0x1.a9cb3ca6fa1dbp+5"],
+     ["0x1.180ffb1524a1ap+6", "0x1.0f7a3963a241bp+6"],
+     ["0x1.a720f91c24147p+5", "0x1.da4eb5c2a7a29p+5"],
+     ["0x1.9171175325472p+5", "0x1.21f5d3c5ff2d8p+6"],
+     ["0x1.652dd673d0aa2p+5", "0x1.d29b363941d74p+5"],
+     ["0x1.12ac3afc10c22p+5", "0x1.143f92029e34ep+6"],
+     ["0x1.2e7359733156ep+5", "0x1.c0f2cb4b7201ap+5"],
+     ["0x1.7d86b9bb49ceep+4", "0x1.b9307a58e3eafp+5"],
+     ["0x1.1c1bad453c7e8p+5", "0x1.71e450ece6382p+5"],
+     ["0x1.68a35e12b1d21p+4", "0x1.13adc9bde31e4p+5"],
+     ["0x1.3a9f6d9d83ec3p+5", "0x1.3bb922c9a3da9p+5"],
+     ["0x1.1161da3365dcep+5", "0x1.6b8adb948c0e2p+4"],
+     ["0x1.7f95cf68056eep+5", "0x1.2200d003b61d8p+5"],
+     ["0x1.bba2b0fb1bdc1p+5", "0x1.87d156ab4a43dp+4"],
+     ["0x1.b0d1296e27d11p+5", "0x1.3524a97c89a5dp+5"],
+     ["0x1.1e63d0c4b434ep+6", "0x1.e258c1ba55a29p+4"],
+     ["0x1.e1304ee365e1ep+5", "0x1.61f5c6d282f29p+5"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c160__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c160"
+  },
+  {
+   "args": {
+    "background": [0, 0, 0, 0],
+    "fill": [9, 186, 240, 42],
+    "kind": "int",
+    "mode": "RGBA",
+    "size": [64, 48],
+    "xy": [
+     [41, 44],
+     [35, 49],
+     [34, 30]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c161__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c161"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "outside_partly",
+    "mode": "L",
+    "size": [96, 96],
+    "xy": [
+     ["0x1.3d2aee8e05da1p+7", "0x1.1500df505cb57p+5"],
+     ["0x1.320379cd8ad3cp+7", "0x1.53f36fcd52efcp+5"],
+     ["0x1.3f40f29752fbep+7", "0x1.75a13d8ce71fcp+5"],
+     ["0x1.d406ba868e5f3p+6", "0x1.0bb82595f4c7dp+6"],
+     ["0x1.1a3825ee9f63dp+5", "0x1.c5719889eda60p+5"],
+     ["0x1.058e9f65aca32p+5", "0x1.84e2ff7982dc9p+5"],
+     ["0x1.a6a2003ec16d9p+5", "0x1.2e26b57abca0dp+5"],
+     ["0x1.93c4adbe1bb4ep+5", "0x1.39cef11cafc06p+4"],
+     ["0x1.782145cc67e2ap+6", "-0x1.5f42efe58c330p+2"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c162__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c162"
+  },
+  {
+   "args": {
+    "background": [0, 192, 164],
+    "fill": [205, 197, 193],
+    "kind": "outside_far",
+    "mode": "RGB",
+    "size": [12, 15],
+    "xy": [
+     ["0x1.0fc86930bcd94p+4", "0x1.260a9a1d1e540p+1"],
+     ["0x1.1fe9311d388bcp+4", "0x1.bc76858faabc8p+5"],
+     ["-0x1.482f8e818707ep+4", "0x1.2c7abfda27b90p+2"],
+     ["0x1.5bb4eb347b420p+4", "0x1.20c634233acb2p+6"],
+     ["0x1.52b94cee30060p+4", "-0x1.cdcb57f57e05cp+3"],
+     ["0x1.9bc840c0ec844p+5", "0x1.09f52a5ff1aecp+4"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c163__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c163"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.80e3eaa6c6eabp+14",
+    "kind": "outside_all",
+    "mode": "F",
+    "size": [24, 40],
+    "xy": [
+     ["-0x1.e435badd28980p+4", "0x1.bc2b65528e9d1p+2"],
+     ["-0x1.4ef73908dcc90p+5", "0x1.232b9992261b2p+4"],
+     ["-0x1.4b413a1dd884bp+5", "0x1.262f6ffc4cfc9p+5"],
+     ["-0x1.301afc3de3986p+5", "0x1.0a39d74165e72p+5"],
+     ["-0x1.68717cc6f37cep+5", "0x1.22473e313e12dp+4"],
+     ["-0x1.f8b650acb30bap+4", "0x1.80e34b76dfa30p+4"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c164__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c164"
+  },
+  {
+   "args": {
+    "background": [0, 0, 0, 0],
+    "fill": [182, 89, 60, 191],
+    "kind": "cover_all",
+    "mode": "RGBA",
+    "size": [96, 96],
+    "xy": [
+     ["-0x1.040013f8a09a8p+5", "-0x1.1b74ce6c3f5e4p+2"],
+     ["0x1.cef361d4bead8p+6", "-0x1.5c480574abfd1p+5"],
+     ["0x1.10c6ceaa4b036p+7", "0x1.0000bb800a1e5p+7"],
+     ["-0x1.7bb34bd69043ep+1", "0x1.13431dfe0a134p+7"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c165__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c165"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "two_points",
+    "mode": "L",
+    "size": [68, 84],
+    "xy": [
+     ["0x1.fd4eb39d5f7f4p+2", "0x1.190722693342fp+6"],
+     ["0x1.96c0b416ae508p+3", "0x1.d46ae71340bd3p+5"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c166__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c166"
+  },
+  {
+   "args": {
+    "background": [47, 195, 181],
+    "fill": [45, 76, 15],
+    "kind": "collinear",
+    "mode": "RGB",
+    "size": [32, 33],
+    "xy": [
+     ["0x1.3c5dd36d2aaa5p+4", "0x1.6823417ac4aa2p+3"],
+     ["0x1.5dfe25db099b0p+4", "0x1.36358f98aaa96p+4"],
+     ["0x1.61dfdf10f1ed2p+4", "0x1.453b785b101bcp+4"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c167__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c167"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.4be97285339cdp+14",
+    "kind": "repeated",
+    "mode": "F",
+    "size": [22, 13],
+    "xy": [
+     ["0x1.07889ccbdf61ap+3", "0x1.af22e76856fd2p+3"],
+     ["0x1.56e914e25a9aap+2", "0x1.900035a31c94dp+2"],
+     ["0x1.d72ba95ae056bp+2", "0x1.532b746052124p+1"],
+     ["0x1.2d34610d79888p+3", "0x1.ce8a94efe7c58p+1"],
+     ["0x1.2d34610d79888p+3", "0x1.ce8a94efe7c58p+1"],
+     ["0x1.71ad484cf7bccp+3", "0x1.173d0dafaf3d4p+3"],
+     ["0x1.71ad484cf7bccp+3", "0x1.173d0dafaf3d4p+3"],
+     ["0x1.71ad484cf7bccp+3", "0x1.173d0dafaf3d4p+3"],
+     ["0x1.b2cba7dda14cbp+3", "0x1.35649316028d7p+3"],
+     ["0x1.b2cba7dda14cbp+3", "0x1.35649316028d7p+3"],
+     ["0x1.b2cba7dda14cbp+3", "0x1.35649316028d7p+3"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c168__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c168"
+  },
+  {
+   "args": {
+    "background": [0, 0, 0, 0],
+    "fill": [145, 245, 217, 97],
+    "kind": "same_point",
+    "mode": "RGBA",
+    "size": [24, 40],
+    "xy": [
+     ["0x1.a650173a39c17p+3", "0x1.fa27931878282p+3"],
+     ["0x1.a650173a39c17p+3", "0x1.fa27931878282p+3"],
+     ["0x1.a650173a39c17p+3", "0x1.fa27931878282p+3"],
+     ["0x1.a650173a39c17p+3", "0x1.fa27931878282p+3"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c169__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c169"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "closed",
+    "mode": "L",
+    "size": [96, 96],
+    "xy": [
+     ["0x1.1ef360fd7940cp+5", "0x1.65156286f1906p+6"],
+     ["0x1.33ca9cf54e39ap+3", "0x1.433c53929e7d4p+6"],
+     ["0x1.cef3dd8d4fa20p+0", "0x1.ed339e318c6f4p+5"],
+     ["0x1.155970a8e2472p+6", "0x1.234a5d3230793p+5"],
+     ["0x1.1ef360fd7940cp+5", "0x1.65156286f1906p+6"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c170__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c170"
+  },
+  {
+   "args": {
+    "background": [97, 144, 155],
+    "fill": [206, 33, 3],
+    "kind": "bowtie",
+    "mode": "RGB",
+    "size": [76, 30],
+    "xy": [
+     ["0x1.c9ab3d7ceaf17p+5", "0x1.8e40abd87c97ep+3"],
+     ["0x1.92912a288b09fp+5", "0x1.bdbdbde64d52ep+3"],
+     ["0x1.995b6163ccd61p+5", "0x1.84bf19462285cp+4"],
+     ["0x1.91d6228a625edp+5", "-0x1.d52d018929f47p+2"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c171__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c171"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.034df322cf3bcp+16",
+    "kind": "pentagram",
+    "mode": "F",
+    "size": [32, 85],
+    "xy": [
+     ["0x1.1a6ea50735148p+5", "0x1.516ae353bb0fep+4"],
+     ["0x1.2dff71117a61ep+3", "0x1.0fee7ded2421cp+5"],
+     ["0x1.b3fe335256becp+4", "0x1.6393508ea0c72p+3"],
+     ["0x1.4cb5d0dc1e2e3p+4", "0x1.3c8b0b4f99e6ep+5"],
+     ["0x1.c06b27f23d0fbp+3", "0x1.66da28d1ee321p+3"],
+     ["0x1.0484bf167cc99p+5", "0x1.1268cb14626b7p+5"],
+     ["0x1.5ce4bce0d8098p+2", "0x1.559fba892d0d9p+4"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c172__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c172"
+  },
+  {
+   "args": {
+    "background": [0, 0, 0, 0],
+    "fill": [136, 47, 115, 30],
+    "kind": "scrambled",
+    "mode": "RGBA",
+    "size": [16, 16],
+    "xy": [
+     ["0x1.b31e600c93b3bp+0", "0x1.1182b1157658ep+1"],
+     ["0x1.3d9e943a760c0p+3", "0x1.4ebac464f042dp+0"],
+     ["0x1.c0a84bcd4f9ffp+3", "-0x1.8bdd3697614b0p-1"],
+     ["0x1.eefd3bcbe16fbp+2", "0x1.5718ea73198e8p+3"],
+     ["0x1.44e9201fd357dp+3", "0x1.28085a4bd2690p+3"],
+     ["0x1.14315ccee09a4p+2", "0x1.982b41a5de49cp-2"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c173__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c173"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "axis_rect",
+    "mode": "L",
+    "size": [82, 74],
+    "xy": [
+     ["0x1.3c187bda5314ep+2", "0x1.5ef8cfccbc7dbp+5"],
+     ["0x1.1405032d41957p+6", "0x1.5ef8cfccbc7dbp+5"],
+     ["0x1.1405032d41957p+6", "0x1.2eef5bc3c5492p+5"],
+     ["0x1.3c187bda5314ep+2", "0x1.2eef5bc3c5492p+5"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c174__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c174"
+  },
+  {
+   "args": {
+    "background": [86, 184, 49],
+    "fill": [252, 216, 175],
+    "kind": "staircase",
+    "mode": "RGB",
+    "size": [31, 16],
+    "xy": [
+     [8, 5],
+     [11, 5],
+     [11, 6],
+     [20, 6],
+     [20, 9],
+     [23, 9],
+     [23, 12],
+     [29, 12],
+     [29, 14],
+     [8, 14]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c175__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c175"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.a2a1cff769ae4p+15",
+    "kind": "horizontal_runs",
+    "mode": "F",
+    "size": [96, 96],
+    "xy": [
+     ["0x1.66fb8a924a7a9p+5", "0x1.4800000000000p+5"],
+     ["0x1.277b2547574c5p+6", "0x1.4b16a9428aa16p+5"],
+     ["0x1.7b4e5f6b11ca8p+6", "0x1.4800000000000p+5"],
+     ["0x1.7be8d6efd0af4p+6", "0x1.4b16a9428aa16p+5"],
+     ["0x1.7be8d6efd0af4p+6", "0x1.058b54a14550bp+6"],
+     ["0x1.7b4e5f6b11ca8p+6", "0x1.058b54a14550bp+6"],
+     ["0x1.277b2547574c5p+6", "0x1.058b54a14550bp+6"],
+     ["0x1.66fb8a924a7a9p+5", "0x1.058b54a14550bp+6"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c176__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c176"
+  },
+  {
+   "args": {
+    "background": [0, 0, 0, 0],
+    "fill": [24, 20, 74, 38],
+    "kind": "flat_top",
+    "mode": "RGBA",
+    "size": [85, 78],
+    "xy": [
+     ["0x1.06ee4edea9ab8p+5", "0x1.2ad082e871813p+4"],
+     ["0x1.310cdbfe896ecp+6", "0x1.2f3998c9801fep+4"],
+     ["0x1.64548e7106d2bp+5", "0x1.a23d2a4f50411p+5"],
+     ["0x1.db42dead80506p+4", "0x1.a4771ef276709p+3"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c177__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c177"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "sliver_subpixel",
+    "mode": "L",
+    "size": [62, 22],
+    "xy": [
+     ["0x1.da4959e1968f0p+5", "0x1.1c187ee6ae856p+4"],
+     ["0x1.da28a1da4dc8fp+5", "0x1.1e39660e6dcadp+4"],
+     ["0x1.dc17382428671p+5", "0x1.1ba957e0d7b23p+4"],
+     ["0x1.db70952613747p+5", "0x1.1c092c659a385p+4"],
+     ["0x1.dd1db5d6bf1b2p+5", "0x1.1a7a75ec0722cp+4"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c178__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c178"
+  },
+  {
+   "args": {
+    "background": [66, 86, 187],
+    "fill": [240, 247, 8],
+    "kind": "sliver_thin",
+    "mode": "RGB",
+    "size": [40, 22],
+    "xy": [
+     ["0x1.82a20c17c2b5ap+3", "0x1.5801c7f35c6bap+3"],
+     ["0x1.088939f67c985p+4", "0x1.3c3b137d1701cp+3"],
+     ["0x1.09038c2f0f0ffp+4", "0x1.4121a0661729cp+3"],
+     ["0x1.8396b088e7a4ep+3", "0x1.5ce854dc5c93ap+3"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c179__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c179"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.80fb188c268b0p+15",
+    "kind": "negative_fraction",
+    "mode": "F",
+    "size": [24, 40],
+    "xy": [
+     ["-0x1.9d817214b0440p-4", "0x1.379f903570398p+4"],
+     ["0x1.c900f9258ecb0p+3", "-0x1.fef5bff91b406p-4"],
+     ["0x1.9cc5ad1ee8ec1p+2", "0x1.f0b5ca5c0c516p+3"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c180__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c180"
+  },
+  {
+   "args": {
+    "background": [0, 0, 0, 0],
+    "fill": [15, 63, 10, 252],
+    "kind": "half_pixel",
+    "mode": "RGBA",
+    "size": [64, 48],
+    "xy": [
+     ["0x1.5000000044b83p+4", "0x1.6800000000000p+5"],
+     ["0x1.6800000000000p+4", "0x1.5000000000000p+3"],
+     ["0x1.affffef39085fp+4", "0x1.a000000000000p+4"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c181__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c181"
+  },
+  {
+   "args": {
+    "background": [0, 0, 0, 0],
+    "fill": [203, 2, 186, 126],
+    "kind": "quad",
+    "mode": "RGBA",
+    "size": [32, 32],
+    "xy": [
+     ["0x1.c46b254abd4dep+3", "0x1.e171b466e3b5dp+4"],
+     ["0x1.3f57fafe0c406p+3", "0x1.7fced1757dd4cp+3"],
+     ["0x1.e51e45e0ef8c0p+3", "0x1.14090004c85b3p+4"],
+     ["0x1.6ec1ebeae086cp+4", "0x1.02a5f4f87dfc0p+5"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c182__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c182"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 48,
+    "kind": "triangle",
+    "mode": "L",
+    "size": [24, 40],
+    "xy": [
+     ["0x1.c40e53146ed40p+0", "0x1.8e01f0dbb060bp+4"],
+     ["0x1.20610754bad80p+4", "0x1.3ff7cf7f6dd40p+5"],
+     ["-0x1.b0316292fee8cp+1", "0x1.2e92abf1a1251p+5"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c183__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c183"
+  },
+  {
+   "args": {
+    "background": [104, 223, 221],
+    "fill": [242, 113, 112],
+    "kind": "ngon",
+    "mode": "RGB",
+    "size": [24, 40],
+    "xy": [
+     ["0x1.77efe3e675716p+4", "0x1.3fd2a0878f02dp+3"],
+     ["0x1.c1a70ef05d821p+4", "0x1.6ca68696465c8p+3"],
+     ["0x1.402c32bf5605cp+4", "0x1.b0c5017fa1e79p+3"],
+     ["0x1.2fd44cbf313d1p+4", "0x1.9983522c39616p+3"],
+     ["0x1.56d83453de4cbp+4", "0x1.0a9fe6b7d893bp+4"],
+     ["0x1.51da6be26ae4ep+3", "0x1.654f56c8c432ap+4"],
+     ["0x1.2346b9d83dcefp+3", "0x1.4015b5aeefe80p+0"],
+     ["0x1.3b120d16f7b26p+3", "0x1.feff132129000p-4"],
+     ["0x1.c5e329fbea03ap+3", "0x1.f848e0f07f258p+0"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c184__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c184"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.83ce00d78a92ep+4",
+    "kind": "circle",
+    "mode": "F",
+    "size": [32, 32],
+    "xy": [
+     ["0x1.ae471e09562f8p+4", "-0x1.0332385af6614p+0"],
+     ["0x1.bf73c74416aa0p+4", "0x1.cd5696bce29b0p+1"],
+     ["0x1.c36d90edfb4e0p+4", "0x1.26ef4f0ddb042p+3"],
+     ["0x1.b94b5152b5331p+4", "0x1.d141c77336ed5p+3"],
+     ["0x1.a35f5813d1044p+4", "0x1.25a420f99427bp+4"],
+     ["0x1.86af47e2fe9f0p+4", "0x1.3c87315455901p+4"],
+     ["0x1.69cd9077185d5p+4", "0x1.280bd71c81719p+4"],
+     ["0x1.535801845b024p+4", "0x1.d9c68554fcbc7p+3"],
+     ["0x1.4873c29a90514p+4", "0x1.3135c9a49e292p+3"],
+     ["0x1.4b9f949f1fe8bp+4", "0x1.f40d0240209c0p+1"],
+     ["0x1.5c217d2265199p+4", "-0x1.98922c6691bf8p-1"],
+     ["0x1.76316159d5042p+4", "-0x1.bfc8f3b84c3b6p+1"],
+     ["0x1.93d6ce16c27efp+4", "-0x1.c9b1816b9610ap+1"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c185__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c185"
+  },
+  {
+   "args": {
+    "background": [0, 0, 0, 0],
+    "fill": [37, 45, 27, 108],
+    "kind": "star",
+    "mode": "RGBA",
+    "size": [64, 34],
+    "xy": [
+     ["0x1.d61384aaea8f9p+4", "0x1.68a7c15803330p+3"],
+     ["0x1.f5faeab4ecc9ep+4", "0x1.b3517c9219b8ep+3"],
+     ["0x1.09f927ccef7fap+5", "0x1.4f4f4ab0088f8p+3"],
+     ["0x1.0cdf55fc241f1p+5", "0x1.c8b2a92c176fbp+3"],
+     ["0x1.313abfbab5f87p+5", "0x1.986bfcd41e444p+3"],
+     ["0x1.185a38951b784p+5", "0x1.0392dfd457e16p+4"],
+     ["0x1.3a94773b5cb97p+5", "0x1.0c2617f605944p+4"],
+     ["0x1.165b1b1ec4403p+5", "0x1.2a1148e8d36f8p+4"],
+     ["0x1.31a2a473484c7p+5", "0x1.58f7128ff3948p+4"],
+     ["0x1.0c5971ef8bc2ap+5", "0x1.3b7231ed57fb8p+4"],
+     ["0x1.fe815b3d83ddep+4", "0x1.866c4f8ba8c33p+4"],
+     ["0x1.ef1836d7a3737p+4", "0x1.44e04e073b296p+4"],
+     ["0x1.b182fc02c9719p+4", "0x1.76f996edad766p+4"],
+     ["0x1.cf92761c6222ep+4", "0x1.36e9cbc344d99p+4"],
+     ["0x1.9c1ed0275b420p+4", "0x1.290c801fba6acp+4"],
+     ["0x1.c44943221fa35p+4", "0x1.0b0c812bc7fa9p+4"],
+     ["0x1.a12a86931bc97p+4", "0x1.baf0d44fba862p+3"],
+     ["0x1.ddda33eb1a5f4p+4", "0x1.d2fc2a13920b7p+3"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c186__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c186"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 162,
+    "kind": "int",
+    "mode": "L",
+    "size": [32, 32],
+    "xy": [
+     [13, 31],
+     [26, 13],
+     [24, 6],
+     [23, 6],
+     [1, 17]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c187__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c187"
+  },
+  {
+   "args": {
+    "background": [4, 206, 138],
+    "fill": [80, 46, 23],
+    "kind": "outside_partly",
+    "mode": "RGB",
+    "size": [32, 32],
+    "xy": [
+     ["0x1.21b305d6cec9ap+2", "-0x1.3594e893e06d6p+3"],
+     ["0x1.55651fe82eeeep+4", "-0x1.8860365e389fdp+3"],
+     ["0x1.08e1368b0deccp+5", "-0x1.a2d7713b6cf1bp+3"],
+     ["0x1.d383fc79de88ap+4", "0x1.62da40fffafdfp+2"],
+     ["0x1.0aabffb3cac51p+5", "0x1.568503044a190p+3"],
+     ["0x1.04ec2692a5130p+5", "0x1.b067fdfbcb78ap+2"],
+     ["0x1.69f59036df95cp+4", "0x1.f6a17f3dd9fd1p+3"],
+     ["0x1.397226528ee48p+4", "0x1.14dc2b2d85317p+4"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c188__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c188"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.b25a43591e6dep+4",
+    "kind": "outside_far",
+    "mode": "F",
+    "size": [32, 77],
+    "xy": [
+     ["-0x1.d5618e9b0db98p+6", "-0x1.437d0babdab73p+7"],
+     ["0x1.00385abc94b18p+6", "0x1.76e80a03b4248p+8"],
+     ["0x1.1171bbb1bdc16p+6", "0x1.abd85d23c8558p+7"],
+     ["-0x1.1d047b1397e0cp+6", "0x1.05d4ecb59b1e0p+4"],
+     ["0x1.1524f03471682p+7", "-0x1.a787f2b9e780ap+7"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c189__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c189"
+  },
+  {
+   "args": {
+    "background": [0, 0, 0, 0],
+    "fill": [84, 183, 159, 7],
+    "kind": "outside_all",
+    "mode": "RGBA",
+    "size": [24, 40],
+    "xy": [
+     ["0x1.a64baa9385172p+5", "0x1.7879cea34125cp+0"],
+     ["0x1.d3bd73c838431p+5", "0x1.3bab288c90f02p+5"],
+     ["0x1.be31e560d5b7cp+5", "0x1.7a1860fb50a5cp+4"],
+     ["0x1.b91badc5a0d8cp+5", "0x1.5e41b41d3f146p+3"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c190__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c190"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 230,
+    "kind": "cover_all",
+    "mode": "L",
+    "size": [96, 96],
+    "xy": [
+     ["-0x1.3bab4a2e5888ap+5", "-0x1.ae5d910d0a03ep+4"],
+     ["0x1.9ed0baf4251adp+6", "-0x1.77f5a8f021f43p+5"],
+     ["0x1.c5b99585e155bp+6", "0x1.15bfbb567e795p+7"],
+     ["-0x1.01e7ce03680b7p+5", "0x1.06f0956810842p+7"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c191__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c191"
+  },
+  {
+   "args": {
+    "background": [150, 188, 28],
+    "fill": [220, 74, 169],
+    "kind": "two_points",
+    "mode": "RGB",
+    "size": [59, 43],
+    "xy": [
+     ["-0x1.d8c0a9eddb584p+1", "0x1.704868911d572p+5"],
+     ["0x1.3e049c30bc3ccp+1", "0x1.a3cd23259311bp+4"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c192__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c192"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.e5ab6c338b2ebp+3",
+    "kind": "collinear",
+    "mode": "F",
+    "size": [96, 96],
+    "xy": [
+     ["0x1.4567ed43dbde1p+6", "0x1.e8669144096e4p+4"],
+     ["0x1.36fd68325c650p+6", "0x1.d722e434158ffp+4"],
+     ["0x1.3581ba8f1f85ep+6", "0x1.d55c32b21c002p+4"],
+     ["0x1.24735c19bd7a0p+6", "0x1.c0ef243fc2998p+4"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c193__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c193"
+  },
+  {
+   "args": {
+    "background": [0, 0, 0, 0],
+    "fill": [188, 113, 77, 167],
+    "kind": "repeated",
+    "mode": "RGBA",
+    "size": [36, 96],
+    "xy": [
+     ["0x1.06cb774551d7fp+3", "0x1.41164ce2fae13p+6"],
+     ["0x1.06cb774551d7fp+3", "0x1.41164ce2fae13p+6"],
+     ["0x1.06cb774551d7fp+3", "0x1.41164ce2fae13p+6"],
+     ["0x1.a3d348b0c70f9p+3", "0x1.427e57dcab112p+6"],
+     ["0x1.a3d348b0c70f9p+3", "0x1.427e57dcab112p+6"],
+     ["0x1.a3d348b0c70f9p+3", "0x1.427e57dcab112p+6"],
+     ["0x1.e2b96fdfa75aap+4", "0x1.155e0427dbed3p+6"],
+     ["0x1.e2b96fdfa75aap+4", "0x1.155e0427dbed3p+6"],
+     ["0x1.e2b96fdfa75aap+4", "0x1.155e0427dbed3p+6"],
+     ["0x1.f3882f245275fp+4", "0x1.5dbf66048fb46p+6"],
+     ["0x1.f3882f245275fp+4", "0x1.5dbf66048fb46p+6"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c194__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c194"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 253,
+    "kind": "same_point",
+    "mode": "L",
+    "size": [35, 88],
+    "xy": [
+     ["0x1.7d307ee0bdfc6p+4", "0x1.83abbba3984dep+5"],
+     ["0x1.7d307ee0bdfc6p+4", "0x1.83abbba3984dep+5"],
+     ["0x1.7d307ee0bdfc6p+4", "0x1.83abbba3984dep+5"],
+     ["0x1.7d307ee0bdfc6p+4", "0x1.83abbba3984dep+5"],
+     ["0x1.7d307ee0bdfc6p+4", "0x1.83abbba3984dep+5"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c195__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c195"
+  },
+  {
+   "args": {
+    "background": [143, 75, 174],
+    "fill": [186, 217, 170],
+    "kind": "closed",
+    "mode": "RGB",
+    "size": [20, 27],
+    "xy": [
+     ["0x1.256ac4d6e873ep+4", "0x1.377bc2cfbc280p+4"],
+     ["0x1.21f155ff68393p+4", "0x1.5f26afc218638p+4"],
+     ["0x1.e78331d3960f2p+3", "0x1.6579020ba3ec7p+4"],
+     ["0x1.256ac4d6e873ep+4", "0x1.377bc2cfbc280p+4"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c196__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c196"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.19245564e681cp+5",
+    "kind": "bowtie",
+    "mode": "F",
+    "size": [96, 96],
+    "xy": [
+     ["0x1.2b388f4682e6dp+4", "0x1.030c3de93fe58p+5"],
+     ["0x1.714d97d77fa09p+5", "0x1.793aff5cde7d6p+6"],
+     ["0x1.053e72bc73863p+6", "0x1.1107f76627478p+5"],
+     ["0x1.80103fcc9a924p+2", "0x1.448477728bc6dp+6"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c197__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c197"
+  },
+  {
+   "args": {
+    "background": [0, 0, 0, 0],
+    "fill": [233, 205, 93, 140],
+    "kind": "pentagram",
+    "mode": "RGBA",
+    "size": [32, 32],
+    "xy": [
+     ["-0x1.f567b67853e60p+1", "0x1.7f091ccdc5c70p+0"],
+     ["0x1.71cf77b4cfcd0p+4", "0x1.ab5a469d10601p+3"],
+     ["-0x1.891927bc9621cp+2", "0x1.27607b2ebaf04p+4"],
+     ["0x1.c4ee56d453afep+3", "-0x1.61759eba1147cp+1"],
+     ["0x1.42b670ce4c233p+3", "0x1.a99a78e18c4e0p+4"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c198__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c198"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 164,
+    "kind": "scrambled",
+    "mode": "L",
+    "size": [64, 48],
+    "xy": [
+     ["0x1.a7297383a5e09p+5", "0x1.19ada348fa6b8p+5"],
+     ["-0x1.5ee1030b88e20p+1", "0x1.c7f35db46d0e3p+3"],
+     ["0x1.4c03371d86211p+4", "0x1.fe56b321a9426p+4"],
+     ["0x1.3abc869e69cb1p+2", "0x1.9d497ec2ed598p+4"],
+     ["0x1.eb1a0c19e942bp+4", "0x1.40001c8c68c4fp+5"],
+     ["0x1.bbcba16d50691p+4", "0x1.8e452db723cf7p+5"],
+     ["0x1.0f0d05c2ecb19p+5", "0x1.9173a2dd10366p+4"],
+     ["0x1.1b8e5539bfb59p+5", "0x1.339ea28cdd542p+4"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c199__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c199"
+  },
+  {
+   "args": {
+    "background": [243, 77, 34],
+    "fill": [125, 150, 80],
+    "kind": "axis_rect",
+    "mode": "RGB",
+    "size": [96, 96],
+    "xy": [
+     ["0x1.3d88894732425p+3", "0x1.a7b4b32a55e0cp+3"],
+     ["0x1.7dd8137942d7bp+6", "0x1.a7b4b32a55e0cp+3"],
+     ["0x1.7dd8137942d7bp+6", "0x1.ce7055bedac62p+5"],
+     ["0x1.3d88894732425p+3", "0x1.ce7055bedac62p+5"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c200__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c200"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.303f7da780c4cp+4",
+    "kind": "staircase",
+    "mode": "F",
+    "size": [32, 32],
+    "xy": [
+     [2, 3],
+     [12, 3],
+     [12, 7],
+     [27, 7],
+     [27, 7],
+     [2, 7]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c201__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c201"
+  },
+  {
+   "args": {
+    "background": [0, 0, 0, 0],
+    "fill": [15, 114, 229, 22],
+    "kind": "horizontal_runs",
+    "mode": "RGBA",
+    "size": [64, 48],
+    "xy": [
+     ["0x1.0b35cff070e6dp+5", "0x1.5000000000000p+4"],
+     ["0x1.6a39c8a7333b6p+5", "0x1.5391fb877b411p+4"],
+     ["0x1.9e58dff708700p+5", "0x1.5000000000000p+4"],
+     ["0x1.9e58dff708700p+5", "0x1.19c8fdc3bda08p+5"],
+     ["0x1.6a39c8a7333b6p+5", "0x1.19c8fdc3bda08p+5"],
+     ["0x1.0b35cff070e6dp+5", "0x1.19c8fdc3bda08p+5"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c202__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c202"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 4,
+    "kind": "flat_top",
+    "mode": "L",
+    "size": [13, 8],
+    "xy": [
+     ["0x1.200fd40b33f90p-1", "0x1.7bdcc6ac09859p+2"],
+     ["0x1.8bb5009a36a00p+3", "0x1.5eee59950d585p+2"],
+     ["0x1.39144be12075ep+2", "0x1.c79096271b8a4p+1"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c203__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c203"
+  },
+  {
+   "args": {
+    "background": [47, 141, 127],
+    "fill": [241, 47, 78],
+    "kind": "sliver_subpixel",
+    "mode": "RGB",
+    "size": [69, 93],
+    "xy": [
+     ["0x1.3e914f7d7b486p+5", "0x1.4aa5441fffb08p+4"],
+     ["0x1.3a1651d2332c6p+5", "0x1.4b18adb6dd265p+4"],
+     ["0x1.3f72b73213752p+5", "0x1.4b3bcf1c13271p+4"],
+     ["0x1.3b73b45105acfp+5", "0x1.4a784e59acd2fp+4"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c204__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c204"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.237e3865575eep+4",
+    "kind": "sliver_thin",
+    "mode": "F",
+    "size": [26, 34],
+    "xy": [
+     ["0x1.786e0e2e763bep+4", "0x1.7fdf09993f52cp+2"],
+     ["0x1.0ab132e9d69f3p+1", "0x1.c747ed5937978p+4"],
+     ["0x1.055448fde7af8p+1", "0x1.c6a40f4d115e5p+4"],
+     ["0x1.77c270f0f85dfp+4", "0x1.7d4f9168a66e0p+2"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c205__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c205"
+  },
+  {
+   "args": {
+    "background": [0, 0, 0, 0],
+    "fill": [124, 110, 62, 36],
+    "kind": "negative_fraction",
+    "mode": "RGBA",
+    "size": [22, 23],
+    "xy": [
+     ["-0x1.4131fcdc588e2p-1", "0x1.c55a492cff79fp+3"],
+     ["0x1.54dab7943501bp+3", "-0x1.2a911b09f52f8p-1"],
+     ["0x1.2ecf5d4ac6882p+3", "0x1.039da189c0518p-2"],
+     ["-0x1.2ef30364ec310p-1", "-0x1.82b14b46f22d4p-4"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c206__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c206"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 171,
+    "kind": "half_pixel",
+    "mode": "L",
+    "size": [12, 20],
+    "xy": [
+     ["0x1.ffffde7210be9p-1", "0x1.8000000000000p+1"],
+     ["0x1.2000000000000p+3", "0x1.17fffffff920cp+4"],
+     ["0x1.3ffffde7210bfp+3", "0x1.3ffffef39085fp+4"],
+     ["0x1.8000000112e0cp+2", "0x1.5fffffffe4832p+2"],
+     ["0x1.3ffffbce4217dp+2", "0x1.8000000225c18p+1"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c207__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c207"
+  }
+ ],
+ "note": "args: mode and size (width, height) of the image, background (its one colour before the call) or the array \"in\", xy as passed (xy_form \"pairs\": a list of (x, y) tuples; \"flat\": one list x0, y0, x1, y1, ...), then the keyword arguments of the call exactly as passed (a keyword that is absent was not passed). Floats are float.hex() strings. Arrays are (height, width) for L and F, (height, width, 3) for RGB, (height, width, 4) for RGBA; F is float32. Pillow truncates every coordinate toward zero to a C int before drawing, and an F ink to float32.",
+ "pillow": "12.3.0",
+ "tool": "pillow"
+}

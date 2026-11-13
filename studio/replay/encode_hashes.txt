@@ -1,0 +1,24 @@
+# The SHA-256 of the mp4 that `ballfight render` writes for the example episode (FLUTE against TROMBONE,
+# studio/fights/flute_vs_trombone.toml, recording studio/reference/fights/flute_vs_trombone/ep392.bfrec) with the
+# pinned ffmpeg (studio/packaging/ffmpeg.toml): clip0-90.mp4 is `--frames 0:90`, video.mp4 the whole video, and
+# clip0-90-faster.mp4 is `--frames 0:90 --encode faster` (the Faster setting). The `ffmpeg` line is the first line
+# that ffmpeg's `-version` prints; the bytes of an mp4 depend on the ffmpeg build, so the hashes are compared only
+# when the ffmpeg in use is the pinned one.
+#
+# What this proves, and what it does not: the same ffmpeg build with the same number of x264 threads makes the same
+# file. x264 picks its thread count itself, 1.5 times the logical processors the process may use (24 on the
+# reference PC's 16, 6 on a 4-processor CI runner), and its output bytes depend on that count, so a video made on a
+# PC with another number of processor threads is not byte-identical, although every frame and every sound sample fed
+# to the encoder is (render_is_reproducible checks those against render_hashes.txt on every PC). So each line names
+# the thread count it was made with (`threads=N`, read from the settings x264 writes into the stream), and a machine
+# is compared only against the line for its own count. A line for a count is added only after two machines (or the
+# reference PC limited to that many processors) gave the same hash.
+#
+# Written by crates/bf-cli/tests/e2e.rs (the_encode_is_pinned, the_whole_video_is_pinned, the_faster_clip_is_pinned)
+# with BF_BLESS=1 on the Windows reference PC. Do not edit by hand.
+# file x264-threads sha256
+ffmpeg ffmpeg version 9.0.2-full_build-www.gyan.dev Copyright (c) 2000-2026 the FFmpeg developers
+clip0-90-faster.mp4 threads=24 7f6d68fa93daa73f2bc75b3d531a6668280dfe8bbd687ff320a1d6c6f4c3b139
+clip0-90-faster.mp4 threads=6 c587dd1978b4f3774291336e3bfc67e2737a17af0ba78ec517c33434f663d60b
+clip0-90.mp4 threads=24 2a647d2919ab318d7b5bcf6966c099f71e8f13e1d2c3b646d3420f1b9470a07b
+clip0-90.mp4 threads=6 871ced7adbf1d1ef9a22657d599924501c2be15cc3f14b985e41d42192f3f7ac

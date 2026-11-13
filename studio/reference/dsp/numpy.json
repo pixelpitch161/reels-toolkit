@@ -1,0 +1,351 @@
+{
+ "about": "the numpy calls of the sound code whose result is more than one rounding: interp, percentile, convolve, cumsum, linspace, and sums and means (numpy adds a long 1-D array pairwise); and scipy.signal.find_peaks as the levels check uses it",
+ "cases": [
+  {
+   "args": {
+    "n": 2400,
+    "right": "0x0.0p+0"
+   },
+   "arrays": {
+    "out": "c000__out",
+    "pos": "c000__pos",
+    "x": "c000__x"
+   },
+   "call": "np.interp(pos, np.arange(n), x, right=0.0)",
+   "id": "c000",
+   "what": "kit.music.gliss(x, 3.0, 0.05): a slide up into the note"
+  },
+  {
+   "args": {
+    "n": 2400,
+    "right": "0x0.0p+0"
+   },
+   "arrays": {
+    "out": "c001__out",
+    "pos": "c001__pos",
+    "x": "c001__x"
+   },
+   "call": "np.interp(pos, np.arange(n), x, right=0.0)",
+   "id": "c001",
+   "what": "kit.music.gliss(x, -10, 0.9): a fall, read past the end (right=0.0)"
+  },
+  {
+   "args": {
+    "n": 2400
+   },
+   "arrays": {
+    "out": "c002__out",
+    "pos": "c002__pos",
+    "x": "c002__x"
+   },
+   "call": "np.interp(pos, np.arange(n), x)",
+   "id": "c002",
+   "what": "reelkit.audio.tape_stop: pos = cumsum(linspace(1, 0, 1200) ** 1.5)"
+  },
+  {
+   "args": {},
+   "arrays": {
+    "fp": "c003__fp",
+    "out": "c003__out",
+    "q": "c003__q",
+    "xp": "c003__xp"
+   },
+   "call": "np.interp(q, xp, fp)",
+   "id": "c003",
+   "what": "a few points, queries below, between, on and above them (the ends are held; xp repeats once)"
+  },
+  {
+   "args": {
+    "q": "0x1.8fe147ae147aep+6"
+   },
+   "arrays": {
+    "out": "c004__out",
+    "x": "c004__x"
+   },
+   "call": "np.percentile(x, 99.97)",
+   "id": "c004",
+   "result": "0x1.20ce6ed0a6c54p+0",
+   "what": "1-D, 10,000 values"
+  },
+  {
+   "args": {
+    "q": "0x1.8fe147ae147aep+6"
+   },
+   "arrays": {
+    "out": "c005__out",
+    "x": "c005__x"
+   },
+   "call": "np.percentile(x, 99.97)",
+   "id": "c005",
+   "result": "0x1.0e2827174a625p+0",
+   "what": "2-D (4800, 2): flattened first, as on the master's |mix|"
+  },
+  {
+   "args": {
+    "q": "0x1.8fe147ae147aep+6"
+   },
+   "arrays": {
+    "out": "c006__out",
+    "x": "c006__x"
+   },
+   "call": "np.percentile(x, 99.97)",
+   "id": "c006",
+   "result": "0x1.162685ea69435p+0",
+   "what": "1-D, 10,001 values: (n - 1) * 0.9997 is a whole number"
+  },
+  {
+   "args": {
+    "n": 4800,
+    "w": 960
+   },
+   "arrays": {
+    "f": "c007__f",
+    "k": "c007__k",
+    "out": "c007__out"
+   },
+   "call": "np.convolve(f ** 2, np.ones(w) / w, 'same')",
+   "id": "c007",
+   "what": "kit/checks.py band: the gate's 20 ms moving mean square"
+  },
+  {
+   "args": {
+    "n": 101,
+    "w": 10
+   },
+   "arrays": {
+    "f": "c008__f",
+    "k": "c008__k",
+    "out": "c008__out"
+   },
+   "call": "np.convolve(f ** 2, np.ones(w) / w, 'same')",
+   "id": "c008",
+   "what": "a short case: where an even and an odd window sit"
+  },
+  {
+   "args": {
+    "n": 100,
+    "w": 7
+   },
+   "arrays": {
+    "f": "c009__f",
+    "k": "c009__k",
+    "out": "c009__out"
+   },
+   "call": "np.convolve(f ** 2, np.ones(w) / w, 'same')",
+   "id": "c009",
+   "what": "a short case: where an even and an odd window sit"
+  },
+  {
+   "args": {
+    "n": 4800
+   },
+   "arrays": {
+    "f": "c010__f",
+    "out": "c010__out"
+   },
+   "call": "np.cumsum(f)",
+   "id": "c010",
+   "what": "reelkit.audio.kick's frequency sweep: a running sum, one add per sample"
+  },
+  {
+   "args": {
+    "a": "0x0.0p+0",
+    "b": "0x1.0000000000000p+0",
+    "n": 240
+   },
+   "arrays": {
+    "out": "c011__out"
+   },
+   "call": "np.linspace(a, b, n)",
+   "id": "c011",
+   "what": "np.linspace(0, 1, 240)"
+  },
+  {
+   "args": {
+    "a": "0x1.0000000000000p+0",
+    "b": "0x0.0p+0",
+    "n": 20160
+   },
+   "arrays": {
+    "out": "c012__out"
+   },
+   "call": "np.linspace(a, b, n)",
+   "id": "c012",
+   "what": "np.linspace(1, 0, 20160)"
+  },
+  {
+   "args": {
+    "a": "0x0.0p+0",
+    "b": "0x1.921fb54442d18p+1",
+    "n": 4801
+   },
+   "arrays": {
+    "out": "c013__out"
+   },
+   "call": "np.linspace(a, b, n)",
+   "id": "c013",
+   "what": "np.linspace(0, 3.141592653589793, 4801)"
+  },
+  {
+   "args": {
+    "a": "0x1.3333333333333p-1",
+    "b": "0x1.0000000000000p+0",
+    "n": 1000
+   },
+   "arrays": {
+    "out": "c014__out"
+   },
+   "call": "np.linspace(a, b, n)",
+   "id": "c014",
+   "what": "np.linspace(0.6, 1.0, 1000)"
+  },
+  {
+   "args": {
+    "a": "0x1.0000000000000p+0",
+    "b": "0x0.0p+0",
+    "n": 1
+   },
+   "arrays": {
+    "out": "c015__out"
+   },
+   "call": "np.linspace(a, b, n)",
+   "id": "c015",
+   "what": "np.linspace(1, 0, 1)"
+  },
+  {
+   "args": {
+    "n": 4800
+   },
+   "arrays": {
+    "out": "c016__out",
+    "x": "c016__x"
+   },
+   "call": "(x ** 2).mean()",
+   "id": "c016",
+   "result": "0x1.3c487f218a2dap-5",
+   "what": "the mean square of a 1-D array (numpy sums it pairwise)"
+  },
+  {
+   "args": {
+    "n": 20001
+   },
+   "arrays": {
+    "out": "c017__out",
+    "x": "c017__x"
+   },
+   "call": "(x ** 2).mean()",
+   "id": "c017",
+   "result": "0x1.4c86972c4d367p-5",
+   "what": "the mean square of a 1-D array (numpy sums it pairwise)"
+  },
+  {
+   "args": {
+    "shape": [4800, 2]
+   },
+   "arrays": {
+    "out": "c018__out",
+    "x": "c018__x"
+   },
+   "call": "(x ** 2).mean()",
+   "id": "c018",
+   "result": "0x1.3f01d22108f50p-5",
+   "what": "the mean square of a stereo array, all values (the RMS of a block)"
+  },
+  {
+   "args": {
+    "shape": [4800, 2]
+   },
+   "arrays": {
+    "out": "c019__out",
+    "x": "c019__x"
+   },
+   "call": "(x ** 2).mean(1)",
+   "id": "c019",
+   "what": "the mean square of each row (the compressor's input)"
+  },
+  {
+   "args": {
+    "shape": [4800, 2]
+   },
+   "arrays": {
+    "out": "c020__out",
+    "x": "c020__x"
+   },
+   "call": "(x ** 2).sum(0)",
+   "id": "c020",
+   "what": "the sum of squares of each column (the reverb's normalisation)"
+  },
+  {
+   "args": {
+    "shape": [4800, 2]
+   },
+   "arrays": {
+    "out": "c021__out",
+    "x": "c021__x"
+   },
+   "call": "(x ** 2).mean(0).sum()",
+   "id": "c021",
+   "result": "0x1.3f01d22108f49p-4",
+   "what": "the loudness check's power: the mean square of each column, added"
+  },
+  {
+   "args": {
+    "shape": [4800, 2]
+   },
+   "arrays": {
+    "out": "c022__out",
+    "x": "c022__x"
+   },
+   "call": "np.abs(x).max()",
+   "id": "c022",
+   "result": "0x1.9eb9ae08b00cfp-1",
+   "what": "the peak"
+  },
+  {
+   "args": {
+    "shape": [4800, 2]
+   },
+   "arrays": {
+    "out": "c023__out",
+    "x": "c023__x"
+   },
+   "call": "(np.clip(x, -1, 1) * 32767).astype(np.int16)",
+   "id": "c023",
+   "what": "reelkit.audio.write: clip, scale, cut toward zero. The int16 values are stored as float64 (exact); some inputs are beyond +-1"
+  },
+  {
+   "args": {
+    "distance": 4,
+    "height": "0x1.8000000000000p+2"
+   },
+   "arrays": {
+    "heights": "c024__heights",
+    "out": "c024__out",
+    "x": "c024__x"
+   },
+   "call": "scipy.signal.find_peaks(x, height=6.0, distance=4)",
+   "id": "c024",
+   "note": "out: the peak indices, stored as float64 (exact); heights: x at each peak",
+   "what": "the real input: reelkit.levels.profile on the episode's audio.wav hands it the level of each 10 ms frame minus the lowest of the five before it (dB)"
+  },
+  {
+   "args": {
+    "distance": 4,
+    "height": "0x1.8000000000000p+2"
+   },
+   "arrays": {
+    "heights": "c025__heights",
+    "out": "c025__out",
+    "x": "c025__x"
+   },
+   "call": "scipy.signal.find_peaks(x, height=6.0, distance=4)",
+   "id": "c025",
+   "note": "out: the peak indices, stored as float64 (exact); heights: x at each peak",
+   "what": "np.round(default_rng(6100).normal(0, 5, 2000)): whole numbers, so there are flat tops and equal peaks closer than 4 samples"
+  }
+ ],
+ "notes": {
+  "out": "a scalar result is stored as a 1-element float64 array, and as float.hex() in `result`"
+ },
+ "tool": "dsp"
+}

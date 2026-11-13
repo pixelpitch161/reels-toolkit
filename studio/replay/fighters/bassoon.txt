@@ -1,0 +1,14 @@
+# The engine's self-replay hashes of BASSOON (studio/reference/fighters/bassoon/fight.json's config): both side orders,
+# seeds 1, 2, 3, 500 and 1 << 40. Written by the proving harness with BF_BLESS=1 on the Windows reference PC;
+# every PC and every build must give the same lines. Do not edit by hand.
+# left right seed winner t_ko n_events hash
+BASSOON FLUTE 1 1 49.82990196078431 882 9b5ed21fa98f2f6b
+BASSOON FLUTE 2 0 49.121568627450976 858 1e885b284536ac3c
+BASSOON FLUTE 3 0 42.50490196078431 732 cdb1cac5ebdcdab9
+BASSOON FLUTE 500 0 52.70490196078431 968 f9df121b63673cf8
+BASSOON FLUTE 1099511627776 0 50.01323529411764 864 0ef2edd2b3451c1b
+FLUTE BASSOON 1 1 43.17156862745098 732 5d77e528ce99b594
+FLUTE BASSOON 2 1 47.771568627450975 912 5f7cd680e359f532
+FLUTE BASSOON 3 1 43.84656862745098 759 4a13b14594d1c8ff
+FLUTE BASSOON 500 1 48.55490196078431 809 236f0a9c948326cd
+FLUTE BASSOON 1099511627776 1 55.72990196078431 996 c5f1dc9a7076cf12

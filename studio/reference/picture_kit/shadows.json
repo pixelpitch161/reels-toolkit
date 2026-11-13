@@ -1,0 +1,421 @@
+{
+ "about": "reelkit.shadows: MaskGrid and proj_point on seeded inputs",
+ "cases": [
+  {
+   "args": {
+    "ext": ["-0x1.599999999999ap+2", "0x1.599999999999ap+2", "-0x1.599999999999ap+2", "0x1.599999999999ap+2", "0x1.eb851eb851eb8p-6"]
+   },
+   "arrays": {
+    "out": "c000__out"
+   },
+   "call": "reelkit.shadows.MaskGrid(ext)",
+   "id": "c000"
+  },
+  {
+   "args": {
+    "ext": ["-0x1.0000000000000p+1", "0x1.0000000000000p+1", "-0x1.8000000000000p+0", "0x1.8000000000000p+0", "0x1.999999999999ap-5"]
+   },
+   "arrays": {
+    "out": "c001__out"
+   },
+   "call": "reelkit.shadows.MaskGrid(ext)",
+   "id": "c001"
+  },
+  {
+   "args": {
+    "ext": ["0x0.0p+0", "0x1.0000000000000p+0", "0x0.0p+0", "0x1.0000000000000p+0", "0x1.999999999999ap-4"]
+   },
+   "arrays": {
+    "out": "c002__out"
+   },
+   "call": "reelkit.shadows.MaskGrid(ext)",
+   "id": "c002"
+  },
+  {
+   "args": {
+    "ext": ["-0x1.8000000000000p+1", "0x1.8000000000000p+1", "-0x1.8000000000000p+1", "0x1.8000000000000p+1", "0x1.1eb851eb851ecp-4"]
+   },
+   "arrays": {
+    "out": "c003__out"
+   },
+   "call": "reelkit.shadows.MaskGrid(ext)",
+   "id": "c003"
+  },
+  {
+   "args": {
+    "ext": ["0x0.0p+0", "0x1.4000000000000p+3", "0x0.0p+0", "0x1.4000000000000p+2", "0x1.3333333333333p-2"]
+   },
+   "arrays": {
+    "out": "c004__out"
+   },
+   "call": "reelkit.shadows.MaskGrid(ext)",
+   "id": "c004"
+  },
+  {
+   "args": {
+    "ext": ["-0x1.0000000000000p+0", "0x1.0000000000000p+0", "-0x1.0000000000000p+1", "0x1.0000000000000p+1", "0x1.a9fbe76c8b439p-7"]
+   },
+   "arrays": {
+    "out": "c005__out"
+   },
+   "call": "reelkit.shadows.MaskGrid(ext)",
+   "id": "c005"
+  },
+  {
+   "args": {
+    "blur": "0x0.0p+0",
+    "ext": ["-0x1.0000000000000p+1", "0x1.0000000000000p+1", "-0x1.8000000000000p+0", "0x1.8000000000000p+0", "0x1.999999999999ap-5"]
+   },
+   "arrays": {
+    "counts": "c006__counts",
+    "out": "c006__out",
+    "pts": "c006__pts"
+   },
+   "call": "reelkit.shadows.MaskGrid(ext).raster(polys_xz, blur)",
+   "id": "c006"
+  },
+  {
+   "args": {
+    "blur": "0x1.6666666666666p-1",
+    "ext": ["0x0.0p+0", "0x1.0000000000000p+0", "0x0.0p+0", "0x1.0000000000000p+0", "0x1.999999999999ap-4"]
+   },
+   "arrays": {
+    "counts": "c007__counts",
+    "out": "c007__out",
+    "pts": "c007__pts"
+   },
+   "call": "reelkit.shadows.MaskGrid(ext).raster(polys_xz, blur)",
+   "id": "c007"
+  },
+  {
+   "args": {
+    "blur": "0x1.0000000000000p+1",
+    "ext": ["-0x1.8000000000000p+1", "0x1.8000000000000p+1", "-0x1.8000000000000p+1", "0x1.8000000000000p+1", "0x1.1eb851eb851ecp-4"]
+   },
+   "arrays": {
+    "counts": "c008__counts",
+    "out": "c008__out",
+    "pts": "c008__pts"
+   },
+   "call": "reelkit.shadows.MaskGrid(ext).raster(polys_xz, blur)",
+   "id": "c008"
+  },
+  {
+   "args": {
+    "blur": "0x1.8000000000000p+1",
+    "ext": ["0x0.0p+0", "0x1.4000000000000p+3", "0x0.0p+0", "0x1.4000000000000p+2", "0x1.3333333333333p-2"]
+   },
+   "arrays": {
+    "counts": "c009__counts",
+    "out": "c009__out",
+    "pts": "c009__pts"
+   },
+   "call": "reelkit.shadows.MaskGrid(ext).raster(polys_xz, blur)",
+   "id": "c009"
+  },
+  {
+   "args": {
+    "blur": "0x1.6666666666666p-1",
+    "ext": ["-0x1.0000000000000p+0", "0x1.0000000000000p+0", "-0x1.0000000000000p+1", "0x1.0000000000000p+1", "0x1.a9fbe76c8b439p-7"]
+   },
+   "arrays": {
+    "counts": "c010__counts",
+    "out": "c010__out",
+    "pts": "c010__pts"
+   },
+   "call": "reelkit.shadows.MaskGrid(ext).raster(polys_xz, blur)",
+   "id": "c010"
+  },
+  {
+   "args": {
+    "blur": "0x0.0p+0",
+    "ext": ["-0x1.0000000000000p+1", "0x1.0000000000000p+1", "-0x1.8000000000000p+0", "0x1.8000000000000p+0", "0x1.999999999999ap-5"]
+   },
+   "arrays": {
+    "counts": "c011__counts",
+    "out": "c011__out",
+    "pts": "c011__pts"
+   },
+   "call": "reelkit.shadows.MaskGrid(ext).raster(polys_xz, blur)",
+   "id": "c011"
+  },
+  {
+   "args": {
+    "blur": "0x1.6666666666666p-1",
+    "ext": ["0x0.0p+0", "0x1.0000000000000p+0", "0x0.0p+0", "0x1.0000000000000p+0", "0x1.999999999999ap-4"]
+   },
+   "arrays": {
+    "counts": "c012__counts",
+    "out": "c012__out",
+    "pts": "c012__pts"
+   },
+   "call": "reelkit.shadows.MaskGrid(ext).raster(polys_xz, blur)",
+   "id": "c012"
+  },
+  {
+   "args": {
+    "blur": "0x1.0000000000000p+1",
+    "ext": ["-0x1.8000000000000p+1", "0x1.8000000000000p+1", "-0x1.8000000000000p+1", "0x1.8000000000000p+1", "0x1.1eb851eb851ecp-4"]
+   },
+   "arrays": {
+    "counts": "c013__counts",
+    "out": "c013__out",
+    "pts": "c013__pts"
+   },
+   "call": "reelkit.shadows.MaskGrid(ext).raster(polys_xz, blur)",
+   "id": "c013"
+  },
+  {
+   "args": {
+    "blur": "0x1.8000000000000p+1",
+    "ext": ["0x0.0p+0", "0x1.4000000000000p+3", "0x0.0p+0", "0x1.4000000000000p+2", "0x1.3333333333333p-2"]
+   },
+   "arrays": {
+    "counts": "c014__counts",
+    "out": "c014__out",
+    "pts": "c014__pts"
+   },
+   "call": "reelkit.shadows.MaskGrid(ext).raster(polys_xz, blur)",
+   "id": "c014"
+  },
+  {
+   "args": {
+    "blur": "0x1.6666666666666p-1",
+    "ext": ["-0x1.0000000000000p+0", "0x1.0000000000000p+0", "-0x1.0000000000000p+1", "0x1.0000000000000p+1", "0x1.a9fbe76c8b439p-7"]
+   },
+   "arrays": {
+    "counts": "c015__counts",
+    "out": "c015__out",
+    "pts": "c015__pts"
+   },
+   "call": "reelkit.shadows.MaskGrid(ext).raster(polys_xz, blur)",
+   "id": "c015"
+  },
+  {
+   "args": {
+    "blur": "0x1.6666666666666p-1",
+    "ext": ["-0x1.599999999999ap+2", "0x1.599999999999ap+2", "-0x1.599999999999ap+2", "0x1.599999999999ap+2", "0x1.eb851eb851eb8p-6"]
+   },
+   "arrays": {
+    "counts": "c016__counts",
+    "out": "c016__out",
+    "pts": "c016__pts"
+   },
+   "call": "reelkit.shadows.MaskGrid(ext).raster(polys_xz, blur)",
+   "id": "c016"
+  },
+  {
+   "args": {
+    "blur": "0x1.6666666666666p-1",
+    "ext": ["-0x1.599999999999ap+2", "0x1.599999999999ap+2", "-0x1.599999999999ap+2", "0x1.599999999999ap+2", "0x1.eb851eb851eb8p-6"]
+   },
+   "arrays": {
+    "counts": "c017__counts",
+    "out": "c017__out",
+    "pts": "c017__pts"
+   },
+   "call": "reelkit.shadows.MaskGrid(ext).raster(polys_xz, blur)",
+   "id": "c017"
+  },
+  {
+   "args": {
+    "ext": ["0x0.0p+0", "0x1.0000000000000p+0", "0x0.0p+0", "0x1.0000000000000p+0", "0x1.999999999999ap-4"]
+   },
+   "arrays": {
+    "X": "c018__X",
+    "Z": "c018__Z",
+    "mask": "c018__mask",
+    "out": "c018__out"
+   },
+   "call": "reelkit.shadows.MaskGrid(ext).sample(mask, X, Z)",
+   "id": "c018"
+  },
+  {
+   "args": {
+    "ext": ["0x0.0p+0", "0x1.4000000000000p+3", "0x0.0p+0", "0x1.4000000000000p+2", "0x1.3333333333333p-2"]
+   },
+   "arrays": {
+    "X": "c019__X",
+    "Z": "c019__Z",
+    "mask": "c019__mask",
+    "out": "c019__out"
+   },
+   "call": "reelkit.shadows.MaskGrid(ext).sample(mask, X, Z)",
+   "id": "c019"
+  },
+  {
+   "args": {
+    "ext": ["-0x1.0000000000000p+1", "0x1.0000000000000p+1", "-0x1.8000000000000p+0", "0x1.8000000000000p+0", "0x1.999999999999ap-5"]
+   },
+   "arrays": {
+    "X": "c020__X",
+    "Z": "c020__Z",
+    "mask": "c020__mask",
+    "out": "c020__out"
+   },
+   "call": "reelkit.shadows.MaskGrid(ext).sample(mask, X, Z)",
+   "id": "c020"
+  },
+  {
+   "args": {
+    "ext": ["-0x1.8000000000000p+1", "0x1.8000000000000p+1", "-0x1.8000000000000p+1", "0x1.8000000000000p+1", "0x1.1eb851eb851ecp-4"]
+   },
+   "arrays": {
+    "X": "c021__X",
+    "Z": "c021__Z",
+    "mask": "c021__mask",
+    "out": "c021__out"
+   },
+   "call": "reelkit.shadows.MaskGrid(ext).sample(mask, X, Z)",
+   "id": "c021"
+  },
+  {
+   "args": {
+    "ext": ["-0x1.0000000000000p+0", "0x1.0000000000000p+0", "-0x1.0000000000000p+1", "0x1.0000000000000p+1", "0x1.a9fbe76c8b439p-7"]
+   },
+   "arrays": {
+    "X": "c022__X",
+    "Z": "c022__Z",
+    "mask": "c022__mask",
+    "out": "c022__out"
+   },
+   "call": "reelkit.shadows.MaskGrid(ext).sample(mask, X, Z)",
+   "id": "c022"
+  },
+  {
+   "args": {
+    "ext": ["-0x1.599999999999ap+2", "0x1.599999999999ap+2", "-0x1.599999999999ap+2", "0x1.599999999999ap+2", "0x1.eb851eb851eb8p-6"]
+   },
+   "arrays": {
+    "X": "c023__X",
+    "Z": "c023__Z",
+    "mask": "c023__mask",
+    "out": "c023__out"
+   },
+   "call": "reelkit.shadows.MaskGrid(ext).sample(mask, X, Z)",
+   "id": "c023"
+  },
+  {
+   "args": {
+    "lp": ["0x0.0p+0", "0x1.3000000000000p+3", "-0x1.6666666666666p+0"],
+    "max_scale": "0x1.dc28f5c28f5c3p-1"
+   },
+   "arrays": {
+    "Q": "c024__Q",
+    "out": "c024__out"
+   },
+   "call": "reelkit.shadows.proj_point(Q, lp, max_scale)",
+   "id": "c024"
+  },
+  {
+   "args": {
+    "lp": ["0x1.3aa1144a4dd48p-1", "0x1.27845dcc8e07ep+2", "-0x1.0f31749942cb0p-2"],
+    "max_scale": "0x1.dc28f5c28f5c3p-1"
+   },
+   "arrays": {
+    "Q": "c025__Q",
+    "out": "c025__out"
+   },
+   "call": "reelkit.shadows.proj_point(Q, lp, max_scale)",
+   "id": "c025"
+  },
+  {
+   "args": {
+    "lp": ["0x1.0c58a4dbe4840p+1", "0x1.5ed9e9927b15cp+2", "0x1.8c84c06178e00p-5"],
+    "max_scale": "0x1.0000000000000p-1"
+   },
+   "arrays": {
+    "Q": "c026__Q",
+    "out": "c026__out"
+   },
+   "call": "reelkit.shadows.proj_point(Q, lp, max_scale)",
+   "id": "c026"
+  },
+  {
+   "args": {
+    "lp": ["0x1.1ef0a284fc530p+0", "0x1.3bb27bbcca3b4p+3", "0x1.4f49631f7f878p+0"],
+    "max_scale": "0x1.fae147ae147aep-1"
+   },
+   "arrays": {
+    "Q": "c027__Q",
+    "out": "c027__out"
+   },
+   "call": "reelkit.shadows.proj_point(Q, lp, max_scale)",
+   "id": "c027"
+  },
+  {
+   "args": {
+    "lp": ["-0x1.56fefa52091b8p+0", "0x1.cd227539b3cf7p+2", "-0x1.6a339e2f83cd3p+0"],
+    "max_scale": "0x1.dc28f5c28f5c3p-1"
+   },
+   "arrays": {
+    "Q": "c028__Q",
+    "out": "c028__out"
+   },
+   "call": "reelkit.shadows.proj_point(Q, lp, max_scale)",
+   "id": "c028"
+  },
+  {
+   "args": {
+    "lp": ["-0x1.085b19e83da08p+1", "0x1.713c9d34cd8acp+1", "0x1.8e44c9b6b9f80p+0"],
+    "max_scale": "0x1.dc28f5c28f5c3p-1"
+   },
+   "arrays": {
+    "Q": "c029__Q",
+    "out": "c029__out"
+   },
+   "call": "reelkit.shadows.proj_point(Q, lp, max_scale)",
+   "id": "c029"
+  },
+  {
+   "args": {
+    "lp": ["-0x1.f7592ae4f84c8p-2", "0x1.83fd6ae9d2834p+1", "0x1.befb1c3d436d0p+0"],
+    "max_scale": "0x1.0000000000000p-1"
+   },
+   "arrays": {
+    "Q": "c030__Q",
+    "out": "c030__out"
+   },
+   "call": "reelkit.shadows.proj_point(Q, lp, max_scale)",
+   "id": "c030"
+  },
+  {
+   "args": {
+    "lp": ["-0x1.718ee5dfd4ec0p-3", "0x1.ac52d7696fd06p+1", "0x1.3869dba8e1210p-3"],
+    "max_scale": "0x1.fae147ae147aep-1"
+   },
+   "arrays": {
+    "Q": "c031__Q",
+    "out": "c031__out"
+   },
+   "call": "reelkit.shadows.proj_point(Q, lp, max_scale)",
+   "id": "c031"
+  },
+  {
+   "args": {
+    "lp": ["0x1.45e3a6f1bc220p+1", "0x1.8d81fcea5c078p+2", "0x1.3a9f75f784960p-4"],
+    "max_scale": "0x1.dc28f5c28f5c3p-1"
+   },
+   "arrays": {
+    "Q": "c032__Q",
+    "out": "c032__out"
+   },
+   "call": "reelkit.shadows.proj_point(Q, lp, max_scale)",
+   "id": "c032"
+  },
+  {
+   "args": {
+    "lp": ["-0x1.3406364a4a38dp+1", "0x1.e1095f37e0164p+2", "0x1.c0991ec662828p-2"],
+    "max_scale": "0x1.dc28f5c28f5c3p-1"
+   },
+   "arrays": {
+    "Q": "c033__Q",
+    "out": "c033__out"
+   },
+   "call": "reelkit.shadows.proj_point(Q, lp, max_scale)",
+   "id": "c033"
+  }
+ ],
+ "note": "args.ext is the grid (x0, x1, z0, z1, units per pixel). MaskGrid(ext): out = [W, H]. raster: pts holds the polygons one after another ((x, z) rows), counts the corners of each; out is the float32 mask (H, W). sample: X and Z are float64, out float32.",
+ "tool": "kit"
+}

@@ -1,0 +1,8022 @@
+{
+ "about": "TROMBONE's sprites as the Python kit draws them, RGBA: the instrument inside its glass ball (kit.picture.sprite), the VS card's close-up, and the Pixel Pitch model where the look draws its own",
+ "cases": [
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_0_0",
+    "radius": 12,
+    "roll": 0,
+    "size": 31,
+    "yaw": 0
+   },
+   "arrays": {
+    "out": "c0000__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0000"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_6_0",
+    "radius": 12,
+    "roll": 0,
+    "size": 31,
+    "yaw": 6
+   },
+   "arrays": {
+    "out": "c0001__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0001"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_12_0",
+    "radius": 12,
+    "roll": 0,
+    "size": 31,
+    "yaw": 12
+   },
+   "arrays": {
+    "out": "c0002__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0002"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_18_0",
+    "radius": 12,
+    "roll": 0,
+    "size": 31,
+    "yaw": 18
+   },
+   "arrays": {
+    "out": "c0003__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0003"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_24_0",
+    "radius": 12,
+    "roll": 0,
+    "size": 31,
+    "yaw": 24
+   },
+   "arrays": {
+    "out": "c0004__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0004"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_30_0",
+    "radius": 12,
+    "roll": 0,
+    "size": 31,
+    "yaw": 30
+   },
+   "arrays": {
+    "out": "c0005__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0005"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_36_0",
+    "radius": 12,
+    "roll": 0,
+    "size": 31,
+    "yaw": 36
+   },
+   "arrays": {
+    "out": "c0006__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0006"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_42_0",
+    "radius": 12,
+    "roll": 0,
+    "size": 31,
+    "yaw": 42
+   },
+   "arrays": {
+    "out": "c0007__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0007"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_48_0",
+    "radius": 12,
+    "roll": 0,
+    "size": 31,
+    "yaw": 48
+   },
+   "arrays": {
+    "out": "c0008__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0008"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_54_0",
+    "radius": 12,
+    "roll": 0,
+    "size": 31,
+    "yaw": 54
+   },
+   "arrays": {
+    "out": "c0009__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0009"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_60_0",
+    "radius": 12,
+    "roll": 0,
+    "size": 31,
+    "yaw": 60
+   },
+   "arrays": {
+    "out": "c0010__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0010"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_66_0",
+    "radius": 12,
+    "roll": 0,
+    "size": 31,
+    "yaw": 66
+   },
+   "arrays": {
+    "out": "c0011__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0011"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_72_0",
+    "radius": 12,
+    "roll": 0,
+    "size": 31,
+    "yaw": 72
+   },
+   "arrays": {
+    "out": "c0012__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0012"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_78_0",
+    "radius": 12,
+    "roll": 0,
+    "size": 31,
+    "yaw": 78
+   },
+   "arrays": {
+    "out": "c0013__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0013"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_84_0",
+    "radius": 12,
+    "roll": 0,
+    "size": 31,
+    "yaw": 84
+   },
+   "arrays": {
+    "out": "c0014__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0014"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_90_0",
+    "radius": 12,
+    "roll": 0,
+    "size": 31,
+    "yaw": 90
+   },
+   "arrays": {
+    "out": "c0015__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0015"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_96_0",
+    "radius": 12,
+    "roll": 0,
+    "size": 31,
+    "yaw": 96
+   },
+   "arrays": {
+    "out": "c0016__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0016"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_102_0",
+    "radius": 12,
+    "roll": 0,
+    "size": 31,
+    "yaw": 102
+   },
+   "arrays": {
+    "out": "c0017__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0017"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_108_0",
+    "radius": 12,
+    "roll": 0,
+    "size": 31,
+    "yaw": 108
+   },
+   "arrays": {
+    "out": "c0018__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0018"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_114_0",
+    "radius": 12,
+    "roll": 0,
+    "size": 31,
+    "yaw": 114
+   },
+   "arrays": {
+    "out": "c0019__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0019"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_120_0",
+    "radius": 12,
+    "roll": 0,
+    "size": 31,
+    "yaw": 120
+   },
+   "arrays": {
+    "out": "c0020__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0020"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_126_0",
+    "radius": 12,
+    "roll": 0,
+    "size": 31,
+    "yaw": 126
+   },
+   "arrays": {
+    "out": "c0021__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0021"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_132_0",
+    "radius": 12,
+    "roll": 0,
+    "size": 31,
+    "yaw": 132
+   },
+   "arrays": {
+    "out": "c0022__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0022"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_138_0",
+    "radius": 12,
+    "roll": 0,
+    "size": 31,
+    "yaw": 138
+   },
+   "arrays": {
+    "out": "c0023__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0023"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_144_0",
+    "radius": 12,
+    "roll": 0,
+    "size": 31,
+    "yaw": 144
+   },
+   "arrays": {
+    "out": "c0024__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0024"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_150_0",
+    "radius": 12,
+    "roll": 0,
+    "size": 31,
+    "yaw": 150
+   },
+   "arrays": {
+    "out": "c0025__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0025"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_156_0",
+    "radius": 12,
+    "roll": 0,
+    "size": 31,
+    "yaw": 156
+   },
+   "arrays": {
+    "out": "c0026__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0026"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_162_0",
+    "radius": 12,
+    "roll": 0,
+    "size": 31,
+    "yaw": 162
+   },
+   "arrays": {
+    "out": "c0027__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0027"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_168_0",
+    "radius": 12,
+    "roll": 0,
+    "size": 31,
+    "yaw": 168
+   },
+   "arrays": {
+    "out": "c0028__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0028"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_174_0",
+    "radius": 12,
+    "roll": 0,
+    "size": 31,
+    "yaw": 174
+   },
+   "arrays": {
+    "out": "c0029__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0029"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_180_0",
+    "radius": 12,
+    "roll": 0,
+    "size": 31,
+    "yaw": 180
+   },
+   "arrays": {
+    "out": "c0030__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0030"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_186_0",
+    "radius": 12,
+    "roll": 0,
+    "size": 31,
+    "yaw": 186
+   },
+   "arrays": {
+    "out": "c0031__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0031"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_192_0",
+    "radius": 12,
+    "roll": 0,
+    "size": 31,
+    "yaw": 192
+   },
+   "arrays": {
+    "out": "c0032__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0032"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_198_0",
+    "radius": 12,
+    "roll": 0,
+    "size": 31,
+    "yaw": 198
+   },
+   "arrays": {
+    "out": "c0033__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0033"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_204_0",
+    "radius": 12,
+    "roll": 0,
+    "size": 31,
+    "yaw": 204
+   },
+   "arrays": {
+    "out": "c0034__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0034"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_210_0",
+    "radius": 12,
+    "roll": 0,
+    "size": 31,
+    "yaw": 210
+   },
+   "arrays": {
+    "out": "c0035__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0035"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_216_0",
+    "radius": 12,
+    "roll": 0,
+    "size": 31,
+    "yaw": 216
+   },
+   "arrays": {
+    "out": "c0036__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0036"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_222_0",
+    "radius": 12,
+    "roll": 0,
+    "size": 31,
+    "yaw": 222
+   },
+   "arrays": {
+    "out": "c0037__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0037"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_228_0",
+    "radius": 12,
+    "roll": 0,
+    "size": 31,
+    "yaw": 228
+   },
+   "arrays": {
+    "out": "c0038__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0038"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_234_0",
+    "radius": 12,
+    "roll": 0,
+    "size": 31,
+    "yaw": 234
+   },
+   "arrays": {
+    "out": "c0039__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0039"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_240_0",
+    "radius": 12,
+    "roll": 0,
+    "size": 31,
+    "yaw": 240
+   },
+   "arrays": {
+    "out": "c0040__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0040"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_246_0",
+    "radius": 12,
+    "roll": 0,
+    "size": 31,
+    "yaw": 246
+   },
+   "arrays": {
+    "out": "c0041__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0041"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_252_0",
+    "radius": 12,
+    "roll": 0,
+    "size": 31,
+    "yaw": 252
+   },
+   "arrays": {
+    "out": "c0042__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0042"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_258_0",
+    "radius": 12,
+    "roll": 0,
+    "size": 31,
+    "yaw": 258
+   },
+   "arrays": {
+    "out": "c0043__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0043"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_264_0",
+    "radius": 12,
+    "roll": 0,
+    "size": 31,
+    "yaw": 264
+   },
+   "arrays": {
+    "out": "c0044__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0044"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_270_0",
+    "radius": 12,
+    "roll": 0,
+    "size": 31,
+    "yaw": 270
+   },
+   "arrays": {
+    "out": "c0045__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0045"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_276_0",
+    "radius": 12,
+    "roll": 0,
+    "size": 31,
+    "yaw": 276
+   },
+   "arrays": {
+    "out": "c0046__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0046"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_282_0",
+    "radius": 12,
+    "roll": 0,
+    "size": 31,
+    "yaw": 282
+   },
+   "arrays": {
+    "out": "c0047__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0047"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_288_0",
+    "radius": 12,
+    "roll": 0,
+    "size": 31,
+    "yaw": 288
+   },
+   "arrays": {
+    "out": "c0048__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0048"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_294_0",
+    "radius": 12,
+    "roll": 0,
+    "size": 31,
+    "yaw": 294
+   },
+   "arrays": {
+    "out": "c0049__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0049"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_300_0",
+    "radius": 12,
+    "roll": 0,
+    "size": 31,
+    "yaw": 300
+   },
+   "arrays": {
+    "out": "c0050__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0050"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_306_0",
+    "radius": 12,
+    "roll": 0,
+    "size": 31,
+    "yaw": 306
+   },
+   "arrays": {
+    "out": "c0051__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0051"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_312_0",
+    "radius": 12,
+    "roll": 0,
+    "size": 31,
+    "yaw": 312
+   },
+   "arrays": {
+    "out": "c0052__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0052"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_318_0",
+    "radius": 12,
+    "roll": 0,
+    "size": 31,
+    "yaw": 318
+   },
+   "arrays": {
+    "out": "c0053__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0053"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_324_0",
+    "radius": 12,
+    "roll": 0,
+    "size": 31,
+    "yaw": 324
+   },
+   "arrays": {
+    "out": "c0054__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0054"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_330_0",
+    "radius": 12,
+    "roll": 0,
+    "size": 31,
+    "yaw": 330
+   },
+   "arrays": {
+    "out": "c0055__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0055"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_336_0",
+    "radius": 12,
+    "roll": 0,
+    "size": 31,
+    "yaw": 336
+   },
+   "arrays": {
+    "out": "c0056__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0056"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_342_0",
+    "radius": 12,
+    "roll": 0,
+    "size": 31,
+    "yaw": 342
+   },
+   "arrays": {
+    "out": "c0057__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0057"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_348_0",
+    "radius": 12,
+    "roll": 0,
+    "size": 31,
+    "yaw": 348
+   },
+   "arrays": {
+    "out": "c0058__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0058"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_354_0",
+    "radius": 12,
+    "roll": 0,
+    "size": 31,
+    "yaw": 354
+   },
+   "arrays": {
+    "out": "c0059__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0059"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_0_0",
+    "radius": 16,
+    "roll": 0,
+    "size": 39,
+    "yaw": 0
+   },
+   "arrays": {
+    "out": "c0060__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0060"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_6_0",
+    "radius": 16,
+    "roll": 0,
+    "size": 39,
+    "yaw": 6
+   },
+   "arrays": {
+    "out": "c0061__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0061"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_12_0",
+    "radius": 16,
+    "roll": 0,
+    "size": 39,
+    "yaw": 12
+   },
+   "arrays": {
+    "out": "c0062__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0062"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_18_0",
+    "radius": 16,
+    "roll": 0,
+    "size": 39,
+    "yaw": 18
+   },
+   "arrays": {
+    "out": "c0063__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0063"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_24_0",
+    "radius": 16,
+    "roll": 0,
+    "size": 39,
+    "yaw": 24
+   },
+   "arrays": {
+    "out": "c0064__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0064"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_30_0",
+    "radius": 16,
+    "roll": 0,
+    "size": 39,
+    "yaw": 30
+   },
+   "arrays": {
+    "out": "c0065__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0065"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_36_0",
+    "radius": 16,
+    "roll": 0,
+    "size": 39,
+    "yaw": 36
+   },
+   "arrays": {
+    "out": "c0066__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0066"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_42_0",
+    "radius": 16,
+    "roll": 0,
+    "size": 39,
+    "yaw": 42
+   },
+   "arrays": {
+    "out": "c0067__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0067"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_48_0",
+    "radius": 16,
+    "roll": 0,
+    "size": 39,
+    "yaw": 48
+   },
+   "arrays": {
+    "out": "c0068__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0068"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_54_0",
+    "radius": 16,
+    "roll": 0,
+    "size": 39,
+    "yaw": 54
+   },
+   "arrays": {
+    "out": "c0069__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0069"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_60_0",
+    "radius": 16,
+    "roll": 0,
+    "size": 39,
+    "yaw": 60
+   },
+   "arrays": {
+    "out": "c0070__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0070"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_66_0",
+    "radius": 16,
+    "roll": 0,
+    "size": 39,
+    "yaw": 66
+   },
+   "arrays": {
+    "out": "c0071__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0071"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_72_0",
+    "radius": 16,
+    "roll": 0,
+    "size": 39,
+    "yaw": 72
+   },
+   "arrays": {
+    "out": "c0072__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0072"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_78_0",
+    "radius": 16,
+    "roll": 0,
+    "size": 39,
+    "yaw": 78
+   },
+   "arrays": {
+    "out": "c0073__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0073"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_84_0",
+    "radius": 16,
+    "roll": 0,
+    "size": 39,
+    "yaw": 84
+   },
+   "arrays": {
+    "out": "c0074__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0074"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_90_0",
+    "radius": 16,
+    "roll": 0,
+    "size": 39,
+    "yaw": 90
+   },
+   "arrays": {
+    "out": "c0075__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0075"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_96_0",
+    "radius": 16,
+    "roll": 0,
+    "size": 39,
+    "yaw": 96
+   },
+   "arrays": {
+    "out": "c0076__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0076"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_102_0",
+    "radius": 16,
+    "roll": 0,
+    "size": 39,
+    "yaw": 102
+   },
+   "arrays": {
+    "out": "c0077__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0077"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_108_0",
+    "radius": 16,
+    "roll": 0,
+    "size": 39,
+    "yaw": 108
+   },
+   "arrays": {
+    "out": "c0078__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0078"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_114_0",
+    "radius": 16,
+    "roll": 0,
+    "size": 39,
+    "yaw": 114
+   },
+   "arrays": {
+    "out": "c0079__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0079"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_120_0",
+    "radius": 16,
+    "roll": 0,
+    "size": 39,
+    "yaw": 120
+   },
+   "arrays": {
+    "out": "c0080__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0080"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_126_0",
+    "radius": 16,
+    "roll": 0,
+    "size": 39,
+    "yaw": 126
+   },
+   "arrays": {
+    "out": "c0081__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0081"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_132_0",
+    "radius": 16,
+    "roll": 0,
+    "size": 39,
+    "yaw": 132
+   },
+   "arrays": {
+    "out": "c0082__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0082"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_138_0",
+    "radius": 16,
+    "roll": 0,
+    "size": 39,
+    "yaw": 138
+   },
+   "arrays": {
+    "out": "c0083__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0083"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_144_0",
+    "radius": 16,
+    "roll": 0,
+    "size": 39,
+    "yaw": 144
+   },
+   "arrays": {
+    "out": "c0084__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0084"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_150_0",
+    "radius": 16,
+    "roll": 0,
+    "size": 39,
+    "yaw": 150
+   },
+   "arrays": {
+    "out": "c0085__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0085"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_156_0",
+    "radius": 16,
+    "roll": 0,
+    "size": 39,
+    "yaw": 156
+   },
+   "arrays": {
+    "out": "c0086__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0086"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_162_0",
+    "radius": 16,
+    "roll": 0,
+    "size": 39,
+    "yaw": 162
+   },
+   "arrays": {
+    "out": "c0087__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0087"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_168_0",
+    "radius": 16,
+    "roll": 0,
+    "size": 39,
+    "yaw": 168
+   },
+   "arrays": {
+    "out": "c0088__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0088"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_174_0",
+    "radius": 16,
+    "roll": 0,
+    "size": 39,
+    "yaw": 174
+   },
+   "arrays": {
+    "out": "c0089__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0089"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_180_0",
+    "radius": 16,
+    "roll": 0,
+    "size": 39,
+    "yaw": 180
+   },
+   "arrays": {
+    "out": "c0090__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0090"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_186_0",
+    "radius": 16,
+    "roll": 0,
+    "size": 39,
+    "yaw": 186
+   },
+   "arrays": {
+    "out": "c0091__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0091"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_192_0",
+    "radius": 16,
+    "roll": 0,
+    "size": 39,
+    "yaw": 192
+   },
+   "arrays": {
+    "out": "c0092__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0092"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_198_0",
+    "radius": 16,
+    "roll": 0,
+    "size": 39,
+    "yaw": 198
+   },
+   "arrays": {
+    "out": "c0093__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0093"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_204_0",
+    "radius": 16,
+    "roll": 0,
+    "size": 39,
+    "yaw": 204
+   },
+   "arrays": {
+    "out": "c0094__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0094"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_210_0",
+    "radius": 16,
+    "roll": 0,
+    "size": 39,
+    "yaw": 210
+   },
+   "arrays": {
+    "out": "c0095__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0095"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_216_0",
+    "radius": 16,
+    "roll": 0,
+    "size": 39,
+    "yaw": 216
+   },
+   "arrays": {
+    "out": "c0096__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0096"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_222_0",
+    "radius": 16,
+    "roll": 0,
+    "size": 39,
+    "yaw": 222
+   },
+   "arrays": {
+    "out": "c0097__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0097"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_228_0",
+    "radius": 16,
+    "roll": 0,
+    "size": 39,
+    "yaw": 228
+   },
+   "arrays": {
+    "out": "c0098__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0098"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_234_0",
+    "radius": 16,
+    "roll": 0,
+    "size": 39,
+    "yaw": 234
+   },
+   "arrays": {
+    "out": "c0099__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0099"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_240_0",
+    "radius": 16,
+    "roll": 0,
+    "size": 39,
+    "yaw": 240
+   },
+   "arrays": {
+    "out": "c0100__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0100"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_246_0",
+    "radius": 16,
+    "roll": 0,
+    "size": 39,
+    "yaw": 246
+   },
+   "arrays": {
+    "out": "c0101__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0101"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_252_0",
+    "radius": 16,
+    "roll": 0,
+    "size": 39,
+    "yaw": 252
+   },
+   "arrays": {
+    "out": "c0102__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0102"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_258_0",
+    "radius": 16,
+    "roll": 0,
+    "size": 39,
+    "yaw": 258
+   },
+   "arrays": {
+    "out": "c0103__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0103"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_264_0",
+    "radius": 16,
+    "roll": 0,
+    "size": 39,
+    "yaw": 264
+   },
+   "arrays": {
+    "out": "c0104__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0104"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_270_0",
+    "radius": 16,
+    "roll": 0,
+    "size": 39,
+    "yaw": 270
+   },
+   "arrays": {
+    "out": "c0105__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0105"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_276_0",
+    "radius": 16,
+    "roll": 0,
+    "size": 39,
+    "yaw": 276
+   },
+   "arrays": {
+    "out": "c0106__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0106"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_282_0",
+    "radius": 16,
+    "roll": 0,
+    "size": 39,
+    "yaw": 282
+   },
+   "arrays": {
+    "out": "c0107__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0107"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_288_0",
+    "radius": 16,
+    "roll": 0,
+    "size": 39,
+    "yaw": 288
+   },
+   "arrays": {
+    "out": "c0108__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0108"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_294_0",
+    "radius": 16,
+    "roll": 0,
+    "size": 39,
+    "yaw": 294
+   },
+   "arrays": {
+    "out": "c0109__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0109"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_300_0",
+    "radius": 16,
+    "roll": 0,
+    "size": 39,
+    "yaw": 300
+   },
+   "arrays": {
+    "out": "c0110__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0110"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_306_0",
+    "radius": 16,
+    "roll": 0,
+    "size": 39,
+    "yaw": 306
+   },
+   "arrays": {
+    "out": "c0111__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0111"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_312_0",
+    "radius": 16,
+    "roll": 0,
+    "size": 39,
+    "yaw": 312
+   },
+   "arrays": {
+    "out": "c0112__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0112"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_318_0",
+    "radius": 16,
+    "roll": 0,
+    "size": 39,
+    "yaw": 318
+   },
+   "arrays": {
+    "out": "c0113__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0113"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_324_0",
+    "radius": 16,
+    "roll": 0,
+    "size": 39,
+    "yaw": 324
+   },
+   "arrays": {
+    "out": "c0114__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0114"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_330_0",
+    "radius": 16,
+    "roll": 0,
+    "size": 39,
+    "yaw": 330
+   },
+   "arrays": {
+    "out": "c0115__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0115"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_336_0",
+    "radius": 16,
+    "roll": 0,
+    "size": 39,
+    "yaw": 336
+   },
+   "arrays": {
+    "out": "c0116__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0116"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_342_0",
+    "radius": 16,
+    "roll": 0,
+    "size": 39,
+    "yaw": 342
+   },
+   "arrays": {
+    "out": "c0117__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0117"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_348_0",
+    "radius": 16,
+    "roll": 0,
+    "size": 39,
+    "yaw": 348
+   },
+   "arrays": {
+    "out": "c0118__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0118"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_354_0",
+    "radius": 16,
+    "roll": 0,
+    "size": 39,
+    "yaw": 354
+   },
+   "arrays": {
+    "out": "c0119__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0119"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_0_0",
+    "radius": 22,
+    "roll": 0,
+    "size": 51,
+    "yaw": 0
+   },
+   "arrays": {
+    "out": "c0120__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0120"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_6_0",
+    "radius": 22,
+    "roll": 0,
+    "size": 51,
+    "yaw": 6
+   },
+   "arrays": {
+    "out": "c0121__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0121"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_12_0",
+    "radius": 22,
+    "roll": 0,
+    "size": 51,
+    "yaw": 12
+   },
+   "arrays": {
+    "out": "c0122__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0122"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_18_0",
+    "radius": 22,
+    "roll": 0,
+    "size": 51,
+    "yaw": 18
+   },
+   "arrays": {
+    "out": "c0123__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0123"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_24_0",
+    "radius": 22,
+    "roll": 0,
+    "size": 51,
+    "yaw": 24
+   },
+   "arrays": {
+    "out": "c0124__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0124"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_30_0",
+    "radius": 22,
+    "roll": 0,
+    "size": 51,
+    "yaw": 30
+   },
+   "arrays": {
+    "out": "c0125__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0125"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_36_0",
+    "radius": 22,
+    "roll": 0,
+    "size": 51,
+    "yaw": 36
+   },
+   "arrays": {
+    "out": "c0126__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0126"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_42_0",
+    "radius": 22,
+    "roll": 0,
+    "size": 51,
+    "yaw": 42
+   },
+   "arrays": {
+    "out": "c0127__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0127"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_48_0",
+    "radius": 22,
+    "roll": 0,
+    "size": 51,
+    "yaw": 48
+   },
+   "arrays": {
+    "out": "c0128__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0128"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_54_0",
+    "radius": 22,
+    "roll": 0,
+    "size": 51,
+    "yaw": 54
+   },
+   "arrays": {
+    "out": "c0129__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0129"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_60_0",
+    "radius": 22,
+    "roll": 0,
+    "size": 51,
+    "yaw": 60
+   },
+   "arrays": {
+    "out": "c0130__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0130"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_66_0",
+    "radius": 22,
+    "roll": 0,
+    "size": 51,
+    "yaw": 66
+   },
+   "arrays": {
+    "out": "c0131__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0131"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_72_0",
+    "radius": 22,
+    "roll": 0,
+    "size": 51,
+    "yaw": 72
+   },
+   "arrays": {
+    "out": "c0132__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0132"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_78_0",
+    "radius": 22,
+    "roll": 0,
+    "size": 51,
+    "yaw": 78
+   },
+   "arrays": {
+    "out": "c0133__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0133"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_84_0",
+    "radius": 22,
+    "roll": 0,
+    "size": 51,
+    "yaw": 84
+   },
+   "arrays": {
+    "out": "c0134__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0134"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_90_0",
+    "radius": 22,
+    "roll": 0,
+    "size": 51,
+    "yaw": 90
+   },
+   "arrays": {
+    "out": "c0135__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0135"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_96_0",
+    "radius": 22,
+    "roll": 0,
+    "size": 51,
+    "yaw": 96
+   },
+   "arrays": {
+    "out": "c0136__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0136"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_102_0",
+    "radius": 22,
+    "roll": 0,
+    "size": 51,
+    "yaw": 102
+   },
+   "arrays": {
+    "out": "c0137__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0137"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_108_0",
+    "radius": 22,
+    "roll": 0,
+    "size": 51,
+    "yaw": 108
+   },
+   "arrays": {
+    "out": "c0138__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0138"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_114_0",
+    "radius": 22,
+    "roll": 0,
+    "size": 51,
+    "yaw": 114
+   },
+   "arrays": {
+    "out": "c0139__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0139"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_120_0",
+    "radius": 22,
+    "roll": 0,
+    "size": 51,
+    "yaw": 120
+   },
+   "arrays": {
+    "out": "c0140__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0140"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_126_0",
+    "radius": 22,
+    "roll": 0,
+    "size": 51,
+    "yaw": 126
+   },
+   "arrays": {
+    "out": "c0141__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0141"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_132_0",
+    "radius": 22,
+    "roll": 0,
+    "size": 51,
+    "yaw": 132
+   },
+   "arrays": {
+    "out": "c0142__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0142"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_138_0",
+    "radius": 22,
+    "roll": 0,
+    "size": 51,
+    "yaw": 138
+   },
+   "arrays": {
+    "out": "c0143__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0143"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_144_0",
+    "radius": 22,
+    "roll": 0,
+    "size": 51,
+    "yaw": 144
+   },
+   "arrays": {
+    "out": "c0144__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0144"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_150_0",
+    "radius": 22,
+    "roll": 0,
+    "size": 51,
+    "yaw": 150
+   },
+   "arrays": {
+    "out": "c0145__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0145"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_156_0",
+    "radius": 22,
+    "roll": 0,
+    "size": 51,
+    "yaw": 156
+   },
+   "arrays": {
+    "out": "c0146__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0146"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_162_0",
+    "radius": 22,
+    "roll": 0,
+    "size": 51,
+    "yaw": 162
+   },
+   "arrays": {
+    "out": "c0147__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0147"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_168_0",
+    "radius": 22,
+    "roll": 0,
+    "size": 51,
+    "yaw": 168
+   },
+   "arrays": {
+    "out": "c0148__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0148"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_174_0",
+    "radius": 22,
+    "roll": 0,
+    "size": 51,
+    "yaw": 174
+   },
+   "arrays": {
+    "out": "c0149__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0149"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_180_0",
+    "radius": 22,
+    "roll": 0,
+    "size": 51,
+    "yaw": 180
+   },
+   "arrays": {
+    "out": "c0150__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0150"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_186_0",
+    "radius": 22,
+    "roll": 0,
+    "size": 51,
+    "yaw": 186
+   },
+   "arrays": {
+    "out": "c0151__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0151"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_192_0",
+    "radius": 22,
+    "roll": 0,
+    "size": 51,
+    "yaw": 192
+   },
+   "arrays": {
+    "out": "c0152__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0152"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_198_0",
+    "radius": 22,
+    "roll": 0,
+    "size": 51,
+    "yaw": 198
+   },
+   "arrays": {
+    "out": "c0153__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0153"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_204_0",
+    "radius": 22,
+    "roll": 0,
+    "size": 51,
+    "yaw": 204
+   },
+   "arrays": {
+    "out": "c0154__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0154"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_210_0",
+    "radius": 22,
+    "roll": 0,
+    "size": 51,
+    "yaw": 210
+   },
+   "arrays": {
+    "out": "c0155__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0155"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_216_0",
+    "radius": 22,
+    "roll": 0,
+    "size": 51,
+    "yaw": 216
+   },
+   "arrays": {
+    "out": "c0156__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0156"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_222_0",
+    "radius": 22,
+    "roll": 0,
+    "size": 51,
+    "yaw": 222
+   },
+   "arrays": {
+    "out": "c0157__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0157"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_228_0",
+    "radius": 22,
+    "roll": 0,
+    "size": 51,
+    "yaw": 228
+   },
+   "arrays": {
+    "out": "c0158__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0158"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_234_0",
+    "radius": 22,
+    "roll": 0,
+    "size": 51,
+    "yaw": 234
+   },
+   "arrays": {
+    "out": "c0159__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0159"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_240_0",
+    "radius": 22,
+    "roll": 0,
+    "size": 51,
+    "yaw": 240
+   },
+   "arrays": {
+    "out": "c0160__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0160"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_246_0",
+    "radius": 22,
+    "roll": 0,
+    "size": 51,
+    "yaw": 246
+   },
+   "arrays": {
+    "out": "c0161__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0161"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_252_0",
+    "radius": 22,
+    "roll": 0,
+    "size": 51,
+    "yaw": 252
+   },
+   "arrays": {
+    "out": "c0162__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0162"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_258_0",
+    "radius": 22,
+    "roll": 0,
+    "size": 51,
+    "yaw": 258
+   },
+   "arrays": {
+    "out": "c0163__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0163"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_264_0",
+    "radius": 22,
+    "roll": 0,
+    "size": 51,
+    "yaw": 264
+   },
+   "arrays": {
+    "out": "c0164__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0164"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_270_0",
+    "radius": 22,
+    "roll": 0,
+    "size": 51,
+    "yaw": 270
+   },
+   "arrays": {
+    "out": "c0165__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0165"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_276_0",
+    "radius": 22,
+    "roll": 0,
+    "size": 51,
+    "yaw": 276
+   },
+   "arrays": {
+    "out": "c0166__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0166"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_282_0",
+    "radius": 22,
+    "roll": 0,
+    "size": 51,
+    "yaw": 282
+   },
+   "arrays": {
+    "out": "c0167__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0167"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_288_0",
+    "radius": 22,
+    "roll": 0,
+    "size": 51,
+    "yaw": 288
+   },
+   "arrays": {
+    "out": "c0168__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0168"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_294_0",
+    "radius": 22,
+    "roll": 0,
+    "size": 51,
+    "yaw": 294
+   },
+   "arrays": {
+    "out": "c0169__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0169"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_300_0",
+    "radius": 22,
+    "roll": 0,
+    "size": 51,
+    "yaw": 300
+   },
+   "arrays": {
+    "out": "c0170__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0170"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_306_0",
+    "radius": 22,
+    "roll": 0,
+    "size": 51,
+    "yaw": 306
+   },
+   "arrays": {
+    "out": "c0171__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0171"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_312_0",
+    "radius": 22,
+    "roll": 0,
+    "size": 51,
+    "yaw": 312
+   },
+   "arrays": {
+    "out": "c0172__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0172"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_318_0",
+    "radius": 22,
+    "roll": 0,
+    "size": 51,
+    "yaw": 318
+   },
+   "arrays": {
+    "out": "c0173__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0173"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_324_0",
+    "radius": 22,
+    "roll": 0,
+    "size": 51,
+    "yaw": 324
+   },
+   "arrays": {
+    "out": "c0174__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0174"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_330_0",
+    "radius": 22,
+    "roll": 0,
+    "size": 51,
+    "yaw": 330
+   },
+   "arrays": {
+    "out": "c0175__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0175"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_336_0",
+    "radius": 22,
+    "roll": 0,
+    "size": 51,
+    "yaw": 336
+   },
+   "arrays": {
+    "out": "c0176__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0176"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_342_0",
+    "radius": 22,
+    "roll": 0,
+    "size": 51,
+    "yaw": 342
+   },
+   "arrays": {
+    "out": "c0177__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0177"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_348_0",
+    "radius": 22,
+    "roll": 0,
+    "size": 51,
+    "yaw": 348
+   },
+   "arrays": {
+    "out": "c0178__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0178"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_354_0",
+    "radius": 22,
+    "roll": 0,
+    "size": 51,
+    "yaw": 354
+   },
+   "arrays": {
+    "out": "c0179__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0179"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_0_0",
+    "radius": 30,
+    "roll": 0,
+    "size": 67,
+    "yaw": 0
+   },
+   "arrays": {
+    "out": "c0180__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0180"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_6_0",
+    "radius": 30,
+    "roll": 0,
+    "size": 67,
+    "yaw": 6
+   },
+   "arrays": {
+    "out": "c0181__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0181"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_12_0",
+    "radius": 30,
+    "roll": 0,
+    "size": 67,
+    "yaw": 12
+   },
+   "arrays": {
+    "out": "c0182__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0182"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_18_0",
+    "radius": 30,
+    "roll": 0,
+    "size": 67,
+    "yaw": 18
+   },
+   "arrays": {
+    "out": "c0183__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0183"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_24_0",
+    "radius": 30,
+    "roll": 0,
+    "size": 67,
+    "yaw": 24
+   },
+   "arrays": {
+    "out": "c0184__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0184"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_30_0",
+    "radius": 30,
+    "roll": 0,
+    "size": 67,
+    "yaw": 30
+   },
+   "arrays": {
+    "out": "c0185__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0185"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_36_0",
+    "radius": 30,
+    "roll": 0,
+    "size": 67,
+    "yaw": 36
+   },
+   "arrays": {
+    "out": "c0186__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0186"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_42_0",
+    "radius": 30,
+    "roll": 0,
+    "size": 67,
+    "yaw": 42
+   },
+   "arrays": {
+    "out": "c0187__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0187"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_48_0",
+    "radius": 30,
+    "roll": 0,
+    "size": 67,
+    "yaw": 48
+   },
+   "arrays": {
+    "out": "c0188__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0188"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_54_0",
+    "radius": 30,
+    "roll": 0,
+    "size": 67,
+    "yaw": 54
+   },
+   "arrays": {
+    "out": "c0189__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0189"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_60_0",
+    "radius": 30,
+    "roll": 0,
+    "size": 67,
+    "yaw": 60
+   },
+   "arrays": {
+    "out": "c0190__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0190"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_66_0",
+    "radius": 30,
+    "roll": 0,
+    "size": 67,
+    "yaw": 66
+   },
+   "arrays": {
+    "out": "c0191__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0191"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_72_0",
+    "radius": 30,
+    "roll": 0,
+    "size": 67,
+    "yaw": 72
+   },
+   "arrays": {
+    "out": "c0192__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0192"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_78_0",
+    "radius": 30,
+    "roll": 0,
+    "size": 67,
+    "yaw": 78
+   },
+   "arrays": {
+    "out": "c0193__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0193"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_84_0",
+    "radius": 30,
+    "roll": 0,
+    "size": 67,
+    "yaw": 84
+   },
+   "arrays": {
+    "out": "c0194__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0194"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_90_0",
+    "radius": 30,
+    "roll": 0,
+    "size": 67,
+    "yaw": 90
+   },
+   "arrays": {
+    "out": "c0195__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0195"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_96_0",
+    "radius": 30,
+    "roll": 0,
+    "size": 67,
+    "yaw": 96
+   },
+   "arrays": {
+    "out": "c0196__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0196"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_102_0",
+    "radius": 30,
+    "roll": 0,
+    "size": 67,
+    "yaw": 102
+   },
+   "arrays": {
+    "out": "c0197__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0197"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_108_0",
+    "radius": 30,
+    "roll": 0,
+    "size": 67,
+    "yaw": 108
+   },
+   "arrays": {
+    "out": "c0198__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0198"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_114_0",
+    "radius": 30,
+    "roll": 0,
+    "size": 67,
+    "yaw": 114
+   },
+   "arrays": {
+    "out": "c0199__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0199"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_120_0",
+    "radius": 30,
+    "roll": 0,
+    "size": 67,
+    "yaw": 120
+   },
+   "arrays": {
+    "out": "c0200__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0200"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_126_0",
+    "radius": 30,
+    "roll": 0,
+    "size": 67,
+    "yaw": 126
+   },
+   "arrays": {
+    "out": "c0201__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0201"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_132_0",
+    "radius": 30,
+    "roll": 0,
+    "size": 67,
+    "yaw": 132
+   },
+   "arrays": {
+    "out": "c0202__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0202"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_138_0",
+    "radius": 30,
+    "roll": 0,
+    "size": 67,
+    "yaw": 138
+   },
+   "arrays": {
+    "out": "c0203__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0203"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_144_0",
+    "radius": 30,
+    "roll": 0,
+    "size": 67,
+    "yaw": 144
+   },
+   "arrays": {
+    "out": "c0204__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0204"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_150_0",
+    "radius": 30,
+    "roll": 0,
+    "size": 67,
+    "yaw": 150
+   },
+   "arrays": {
+    "out": "c0205__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0205"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_156_0",
+    "radius": 30,
+    "roll": 0,
+    "size": 67,
+    "yaw": 156
+   },
+   "arrays": {
+    "out": "c0206__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0206"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_162_0",
+    "radius": 30,
+    "roll": 0,
+    "size": 67,
+    "yaw": 162
+   },
+   "arrays": {
+    "out": "c0207__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0207"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_168_0",
+    "radius": 30,
+    "roll": 0,
+    "size": 67,
+    "yaw": 168
+   },
+   "arrays": {
+    "out": "c0208__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0208"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_174_0",
+    "radius": 30,
+    "roll": 0,
+    "size": 67,
+    "yaw": 174
+   },
+   "arrays": {
+    "out": "c0209__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0209"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_180_0",
+    "radius": 30,
+    "roll": 0,
+    "size": 67,
+    "yaw": 180
+   },
+   "arrays": {
+    "out": "c0210__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0210"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_186_0",
+    "radius": 30,
+    "roll": 0,
+    "size": 67,
+    "yaw": 186
+   },
+   "arrays": {
+    "out": "c0211__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0211"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_192_0",
+    "radius": 30,
+    "roll": 0,
+    "size": 67,
+    "yaw": 192
+   },
+   "arrays": {
+    "out": "c0212__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0212"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_198_0",
+    "radius": 30,
+    "roll": 0,
+    "size": 67,
+    "yaw": 198
+   },
+   "arrays": {
+    "out": "c0213__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0213"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_204_0",
+    "radius": 30,
+    "roll": 0,
+    "size": 67,
+    "yaw": 204
+   },
+   "arrays": {
+    "out": "c0214__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0214"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_210_0",
+    "radius": 30,
+    "roll": 0,
+    "size": 67,
+    "yaw": 210
+   },
+   "arrays": {
+    "out": "c0215__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0215"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_216_0",
+    "radius": 30,
+    "roll": 0,
+    "size": 67,
+    "yaw": 216
+   },
+   "arrays": {
+    "out": "c0216__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0216"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_222_0",
+    "radius": 30,
+    "roll": 0,
+    "size": 67,
+    "yaw": 222
+   },
+   "arrays": {
+    "out": "c0217__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0217"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_228_0",
+    "radius": 30,
+    "roll": 0,
+    "size": 67,
+    "yaw": 228
+   },
+   "arrays": {
+    "out": "c0218__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0218"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_234_0",
+    "radius": 30,
+    "roll": 0,
+    "size": 67,
+    "yaw": 234
+   },
+   "arrays": {
+    "out": "c0219__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0219"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_240_0",
+    "radius": 30,
+    "roll": 0,
+    "size": 67,
+    "yaw": 240
+   },
+   "arrays": {
+    "out": "c0220__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0220"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_246_0",
+    "radius": 30,
+    "roll": 0,
+    "size": 67,
+    "yaw": 246
+   },
+   "arrays": {
+    "out": "c0221__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0221"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_252_0",
+    "radius": 30,
+    "roll": 0,
+    "size": 67,
+    "yaw": 252
+   },
+   "arrays": {
+    "out": "c0222__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0222"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_258_0",
+    "radius": 30,
+    "roll": 0,
+    "size": 67,
+    "yaw": 258
+   },
+   "arrays": {
+    "out": "c0223__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0223"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_264_0",
+    "radius": 30,
+    "roll": 0,
+    "size": 67,
+    "yaw": 264
+   },
+   "arrays": {
+    "out": "c0224__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0224"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_270_0",
+    "radius": 30,
+    "roll": 0,
+    "size": 67,
+    "yaw": 270
+   },
+   "arrays": {
+    "out": "c0225__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0225"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_276_0",
+    "radius": 30,
+    "roll": 0,
+    "size": 67,
+    "yaw": 276
+   },
+   "arrays": {
+    "out": "c0226__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0226"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_282_0",
+    "radius": 30,
+    "roll": 0,
+    "size": 67,
+    "yaw": 282
+   },
+   "arrays": {
+    "out": "c0227__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0227"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_288_0",
+    "radius": 30,
+    "roll": 0,
+    "size": 67,
+    "yaw": 288
+   },
+   "arrays": {
+    "out": "c0228__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0228"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_294_0",
+    "radius": 30,
+    "roll": 0,
+    "size": 67,
+    "yaw": 294
+   },
+   "arrays": {
+    "out": "c0229__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0229"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_300_0",
+    "radius": 30,
+    "roll": 0,
+    "size": 67,
+    "yaw": 300
+   },
+   "arrays": {
+    "out": "c0230__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0230"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_306_0",
+    "radius": 30,
+    "roll": 0,
+    "size": 67,
+    "yaw": 306
+   },
+   "arrays": {
+    "out": "c0231__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0231"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_312_0",
+    "radius": 30,
+    "roll": 0,
+    "size": 67,
+    "yaw": 312
+   },
+   "arrays": {
+    "out": "c0232__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0232"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_318_0",
+    "radius": 30,
+    "roll": 0,
+    "size": 67,
+    "yaw": 318
+   },
+   "arrays": {
+    "out": "c0233__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0233"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_324_0",
+    "radius": 30,
+    "roll": 0,
+    "size": 67,
+    "yaw": 324
+   },
+   "arrays": {
+    "out": "c0234__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0234"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_330_0",
+    "radius": 30,
+    "roll": 0,
+    "size": 67,
+    "yaw": 330
+   },
+   "arrays": {
+    "out": "c0235__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0235"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_336_0",
+    "radius": 30,
+    "roll": 0,
+    "size": 67,
+    "yaw": 336
+   },
+   "arrays": {
+    "out": "c0236__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0236"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_342_0",
+    "radius": 30,
+    "roll": 0,
+    "size": 67,
+    "yaw": 342
+   },
+   "arrays": {
+    "out": "c0237__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0237"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_348_0",
+    "radius": 30,
+    "roll": 0,
+    "size": 67,
+    "yaw": 348
+   },
+   "arrays": {
+    "out": "c0238__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0238"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_354_0",
+    "radius": 30,
+    "roll": 0,
+    "size": 67,
+    "yaw": 354
+   },
+   "arrays": {
+    "out": "c0239__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0239"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_0_30",
+    "radius": 12,
+    "roll": 30,
+    "size": 31,
+    "yaw": 0
+   },
+   "arrays": {
+    "out": "c0240__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0240"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_6_30",
+    "radius": 12,
+    "roll": 30,
+    "size": 31,
+    "yaw": 6
+   },
+   "arrays": {
+    "out": "c0241__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0241"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_12_30",
+    "radius": 12,
+    "roll": 30,
+    "size": 31,
+    "yaw": 12
+   },
+   "arrays": {
+    "out": "c0242__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0242"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_18_30",
+    "radius": 12,
+    "roll": 30,
+    "size": 31,
+    "yaw": 18
+   },
+   "arrays": {
+    "out": "c0243__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0243"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_24_30",
+    "radius": 12,
+    "roll": 30,
+    "size": 31,
+    "yaw": 24
+   },
+   "arrays": {
+    "out": "c0244__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0244"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_30_30",
+    "radius": 12,
+    "roll": 30,
+    "size": 31,
+    "yaw": 30
+   },
+   "arrays": {
+    "out": "c0245__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0245"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_36_30",
+    "radius": 12,
+    "roll": 30,
+    "size": 31,
+    "yaw": 36
+   },
+   "arrays": {
+    "out": "c0246__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0246"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_42_30",
+    "radius": 12,
+    "roll": 30,
+    "size": 31,
+    "yaw": 42
+   },
+   "arrays": {
+    "out": "c0247__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0247"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_48_30",
+    "radius": 12,
+    "roll": 30,
+    "size": 31,
+    "yaw": 48
+   },
+   "arrays": {
+    "out": "c0248__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0248"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_54_30",
+    "radius": 12,
+    "roll": 30,
+    "size": 31,
+    "yaw": 54
+   },
+   "arrays": {
+    "out": "c0249__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0249"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_60_30",
+    "radius": 12,
+    "roll": 30,
+    "size": 31,
+    "yaw": 60
+   },
+   "arrays": {
+    "out": "c0250__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0250"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_66_30",
+    "radius": 12,
+    "roll": 30,
+    "size": 31,
+    "yaw": 66
+   },
+   "arrays": {
+    "out": "c0251__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0251"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_72_30",
+    "radius": 12,
+    "roll": 30,
+    "size": 31,
+    "yaw": 72
+   },
+   "arrays": {
+    "out": "c0252__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0252"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_78_30",
+    "radius": 12,
+    "roll": 30,
+    "size": 31,
+    "yaw": 78
+   },
+   "arrays": {
+    "out": "c0253__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0253"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_84_30",
+    "radius": 12,
+    "roll": 30,
+    "size": 31,
+    "yaw": 84
+   },
+   "arrays": {
+    "out": "c0254__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0254"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_90_30",
+    "radius": 12,
+    "roll": 30,
+    "size": 31,
+    "yaw": 90
+   },
+   "arrays": {
+    "out": "c0255__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0255"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_96_30",
+    "radius": 12,
+    "roll": 30,
+    "size": 31,
+    "yaw": 96
+   },
+   "arrays": {
+    "out": "c0256__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0256"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_102_30",
+    "radius": 12,
+    "roll": 30,
+    "size": 31,
+    "yaw": 102
+   },
+   "arrays": {
+    "out": "c0257__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0257"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_108_30",
+    "radius": 12,
+    "roll": 30,
+    "size": 31,
+    "yaw": 108
+   },
+   "arrays": {
+    "out": "c0258__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0258"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_114_30",
+    "radius": 12,
+    "roll": 30,
+    "size": 31,
+    "yaw": 114
+   },
+   "arrays": {
+    "out": "c0259__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0259"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_120_30",
+    "radius": 12,
+    "roll": 30,
+    "size": 31,
+    "yaw": 120
+   },
+   "arrays": {
+    "out": "c0260__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0260"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_126_30",
+    "radius": 12,
+    "roll": 30,
+    "size": 31,
+    "yaw": 126
+   },
+   "arrays": {
+    "out": "c0261__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0261"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_132_30",
+    "radius": 12,
+    "roll": 30,
+    "size": 31,
+    "yaw": 132
+   },
+   "arrays": {
+    "out": "c0262__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0262"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_138_30",
+    "radius": 12,
+    "roll": 30,
+    "size": 31,
+    "yaw": 138
+   },
+   "arrays": {
+    "out": "c0263__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0263"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_144_30",
+    "radius": 12,
+    "roll": 30,
+    "size": 31,
+    "yaw": 144
+   },
+   "arrays": {
+    "out": "c0264__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0264"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_150_30",
+    "radius": 12,
+    "roll": 30,
+    "size": 31,
+    "yaw": 150
+   },
+   "arrays": {
+    "out": "c0265__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0265"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_156_30",
+    "radius": 12,
+    "roll": 30,
+    "size": 31,
+    "yaw": 156
+   },
+   "arrays": {
+    "out": "c0266__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0266"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_162_30",
+    "radius": 12,
+    "roll": 30,
+    "size": 31,
+    "yaw": 162
+   },
+   "arrays": {
+    "out": "c0267__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0267"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_168_30",
+    "radius": 12,
+    "roll": 30,
+    "size": 31,
+    "yaw": 168
+   },
+   "arrays": {
+    "out": "c0268__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0268"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_174_30",
+    "radius": 12,
+    "roll": 30,
+    "size": 31,
+    "yaw": 174
+   },
+   "arrays": {
+    "out": "c0269__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0269"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_180_30",
+    "radius": 12,
+    "roll": 30,
+    "size": 31,
+    "yaw": 180
+   },
+   "arrays": {
+    "out": "c0270__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0270"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_186_30",
+    "radius": 12,
+    "roll": 30,
+    "size": 31,
+    "yaw": 186
+   },
+   "arrays": {
+    "out": "c0271__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0271"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_192_30",
+    "radius": 12,
+    "roll": 30,
+    "size": 31,
+    "yaw": 192
+   },
+   "arrays": {
+    "out": "c0272__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0272"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_198_30",
+    "radius": 12,
+    "roll": 30,
+    "size": 31,
+    "yaw": 198
+   },
+   "arrays": {
+    "out": "c0273__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0273"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_204_30",
+    "radius": 12,
+    "roll": 30,
+    "size": 31,
+    "yaw": 204
+   },
+   "arrays": {
+    "out": "c0274__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0274"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_210_30",
+    "radius": 12,
+    "roll": 30,
+    "size": 31,
+    "yaw": 210
+   },
+   "arrays": {
+    "out": "c0275__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0275"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_216_30",
+    "radius": 12,
+    "roll": 30,
+    "size": 31,
+    "yaw": 216
+   },
+   "arrays": {
+    "out": "c0276__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0276"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_222_30",
+    "radius": 12,
+    "roll": 30,
+    "size": 31,
+    "yaw": 222
+   },
+   "arrays": {
+    "out": "c0277__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0277"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_228_30",
+    "radius": 12,
+    "roll": 30,
+    "size": 31,
+    "yaw": 228
+   },
+   "arrays": {
+    "out": "c0278__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0278"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_234_30",
+    "radius": 12,
+    "roll": 30,
+    "size": 31,
+    "yaw": 234
+   },
+   "arrays": {
+    "out": "c0279__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0279"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_240_30",
+    "radius": 12,
+    "roll": 30,
+    "size": 31,
+    "yaw": 240
+   },
+   "arrays": {
+    "out": "c0280__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0280"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_246_30",
+    "radius": 12,
+    "roll": 30,
+    "size": 31,
+    "yaw": 246
+   },
+   "arrays": {
+    "out": "c0281__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0281"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_252_30",
+    "radius": 12,
+    "roll": 30,
+    "size": 31,
+    "yaw": 252
+   },
+   "arrays": {
+    "out": "c0282__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0282"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_258_30",
+    "radius": 12,
+    "roll": 30,
+    "size": 31,
+    "yaw": 258
+   },
+   "arrays": {
+    "out": "c0283__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0283"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_264_30",
+    "radius": 12,
+    "roll": 30,
+    "size": 31,
+    "yaw": 264
+   },
+   "arrays": {
+    "out": "c0284__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0284"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_270_30",
+    "radius": 12,
+    "roll": 30,
+    "size": 31,
+    "yaw": 270
+   },
+   "arrays": {
+    "out": "c0285__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0285"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_276_30",
+    "radius": 12,
+    "roll": 30,
+    "size": 31,
+    "yaw": 276
+   },
+   "arrays": {
+    "out": "c0286__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0286"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_282_30",
+    "radius": 12,
+    "roll": 30,
+    "size": 31,
+    "yaw": 282
+   },
+   "arrays": {
+    "out": "c0287__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0287"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_288_30",
+    "radius": 12,
+    "roll": 30,
+    "size": 31,
+    "yaw": 288
+   },
+   "arrays": {
+    "out": "c0288__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0288"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_294_30",
+    "radius": 12,
+    "roll": 30,
+    "size": 31,
+    "yaw": 294
+   },
+   "arrays": {
+    "out": "c0289__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0289"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_300_30",
+    "radius": 12,
+    "roll": 30,
+    "size": 31,
+    "yaw": 300
+   },
+   "arrays": {
+    "out": "c0290__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0290"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_306_30",
+    "radius": 12,
+    "roll": 30,
+    "size": 31,
+    "yaw": 306
+   },
+   "arrays": {
+    "out": "c0291__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0291"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_312_30",
+    "radius": 12,
+    "roll": 30,
+    "size": 31,
+    "yaw": 312
+   },
+   "arrays": {
+    "out": "c0292__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0292"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_318_30",
+    "radius": 12,
+    "roll": 30,
+    "size": 31,
+    "yaw": 318
+   },
+   "arrays": {
+    "out": "c0293__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0293"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_324_30",
+    "radius": 12,
+    "roll": 30,
+    "size": 31,
+    "yaw": 324
+   },
+   "arrays": {
+    "out": "c0294__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0294"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_330_30",
+    "radius": 12,
+    "roll": 30,
+    "size": 31,
+    "yaw": 330
+   },
+   "arrays": {
+    "out": "c0295__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0295"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_336_30",
+    "radius": 12,
+    "roll": 30,
+    "size": 31,
+    "yaw": 336
+   },
+   "arrays": {
+    "out": "c0296__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0296"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_342_30",
+    "radius": 12,
+    "roll": 30,
+    "size": 31,
+    "yaw": 342
+   },
+   "arrays": {
+    "out": "c0297__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0297"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_348_30",
+    "radius": 12,
+    "roll": 30,
+    "size": 31,
+    "yaw": 348
+   },
+   "arrays": {
+    "out": "c0298__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0298"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_12_354_30",
+    "radius": 12,
+    "roll": 30,
+    "size": 31,
+    "yaw": 354
+   },
+   "arrays": {
+    "out": "c0299__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0299"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_0_30",
+    "radius": 16,
+    "roll": 30,
+    "size": 39,
+    "yaw": 0
+   },
+   "arrays": {
+    "out": "c0300__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0300"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_6_30",
+    "radius": 16,
+    "roll": 30,
+    "size": 39,
+    "yaw": 6
+   },
+   "arrays": {
+    "out": "c0301__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0301"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_12_30",
+    "radius": 16,
+    "roll": 30,
+    "size": 39,
+    "yaw": 12
+   },
+   "arrays": {
+    "out": "c0302__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0302"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_18_30",
+    "radius": 16,
+    "roll": 30,
+    "size": 39,
+    "yaw": 18
+   },
+   "arrays": {
+    "out": "c0303__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0303"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_24_30",
+    "radius": 16,
+    "roll": 30,
+    "size": 39,
+    "yaw": 24
+   },
+   "arrays": {
+    "out": "c0304__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0304"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_30_30",
+    "radius": 16,
+    "roll": 30,
+    "size": 39,
+    "yaw": 30
+   },
+   "arrays": {
+    "out": "c0305__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0305"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_36_30",
+    "radius": 16,
+    "roll": 30,
+    "size": 39,
+    "yaw": 36
+   },
+   "arrays": {
+    "out": "c0306__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0306"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_42_30",
+    "radius": 16,
+    "roll": 30,
+    "size": 39,
+    "yaw": 42
+   },
+   "arrays": {
+    "out": "c0307__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0307"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_48_30",
+    "radius": 16,
+    "roll": 30,
+    "size": 39,
+    "yaw": 48
+   },
+   "arrays": {
+    "out": "c0308__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0308"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_54_30",
+    "radius": 16,
+    "roll": 30,
+    "size": 39,
+    "yaw": 54
+   },
+   "arrays": {
+    "out": "c0309__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0309"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_60_30",
+    "radius": 16,
+    "roll": 30,
+    "size": 39,
+    "yaw": 60
+   },
+   "arrays": {
+    "out": "c0310__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0310"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_66_30",
+    "radius": 16,
+    "roll": 30,
+    "size": 39,
+    "yaw": 66
+   },
+   "arrays": {
+    "out": "c0311__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0311"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_72_30",
+    "radius": 16,
+    "roll": 30,
+    "size": 39,
+    "yaw": 72
+   },
+   "arrays": {
+    "out": "c0312__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0312"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_78_30",
+    "radius": 16,
+    "roll": 30,
+    "size": 39,
+    "yaw": 78
+   },
+   "arrays": {
+    "out": "c0313__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0313"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_84_30",
+    "radius": 16,
+    "roll": 30,
+    "size": 39,
+    "yaw": 84
+   },
+   "arrays": {
+    "out": "c0314__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0314"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_90_30",
+    "radius": 16,
+    "roll": 30,
+    "size": 39,
+    "yaw": 90
+   },
+   "arrays": {
+    "out": "c0315__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0315"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_96_30",
+    "radius": 16,
+    "roll": 30,
+    "size": 39,
+    "yaw": 96
+   },
+   "arrays": {
+    "out": "c0316__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0316"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_102_30",
+    "radius": 16,
+    "roll": 30,
+    "size": 39,
+    "yaw": 102
+   },
+   "arrays": {
+    "out": "c0317__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0317"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_108_30",
+    "radius": 16,
+    "roll": 30,
+    "size": 39,
+    "yaw": 108
+   },
+   "arrays": {
+    "out": "c0318__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0318"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_114_30",
+    "radius": 16,
+    "roll": 30,
+    "size": 39,
+    "yaw": 114
+   },
+   "arrays": {
+    "out": "c0319__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0319"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_120_30",
+    "radius": 16,
+    "roll": 30,
+    "size": 39,
+    "yaw": 120
+   },
+   "arrays": {
+    "out": "c0320__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0320"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_126_30",
+    "radius": 16,
+    "roll": 30,
+    "size": 39,
+    "yaw": 126
+   },
+   "arrays": {
+    "out": "c0321__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0321"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_132_30",
+    "radius": 16,
+    "roll": 30,
+    "size": 39,
+    "yaw": 132
+   },
+   "arrays": {
+    "out": "c0322__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0322"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_138_30",
+    "radius": 16,
+    "roll": 30,
+    "size": 39,
+    "yaw": 138
+   },
+   "arrays": {
+    "out": "c0323__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0323"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_144_30",
+    "radius": 16,
+    "roll": 30,
+    "size": 39,
+    "yaw": 144
+   },
+   "arrays": {
+    "out": "c0324__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0324"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_150_30",
+    "radius": 16,
+    "roll": 30,
+    "size": 39,
+    "yaw": 150
+   },
+   "arrays": {
+    "out": "c0325__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0325"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_156_30",
+    "radius": 16,
+    "roll": 30,
+    "size": 39,
+    "yaw": 156
+   },
+   "arrays": {
+    "out": "c0326__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0326"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_162_30",
+    "radius": 16,
+    "roll": 30,
+    "size": 39,
+    "yaw": 162
+   },
+   "arrays": {
+    "out": "c0327__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0327"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_168_30",
+    "radius": 16,
+    "roll": 30,
+    "size": 39,
+    "yaw": 168
+   },
+   "arrays": {
+    "out": "c0328__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0328"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_174_30",
+    "radius": 16,
+    "roll": 30,
+    "size": 39,
+    "yaw": 174
+   },
+   "arrays": {
+    "out": "c0329__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0329"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_180_30",
+    "radius": 16,
+    "roll": 30,
+    "size": 39,
+    "yaw": 180
+   },
+   "arrays": {
+    "out": "c0330__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0330"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_186_30",
+    "radius": 16,
+    "roll": 30,
+    "size": 39,
+    "yaw": 186
+   },
+   "arrays": {
+    "out": "c0331__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0331"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_192_30",
+    "radius": 16,
+    "roll": 30,
+    "size": 39,
+    "yaw": 192
+   },
+   "arrays": {
+    "out": "c0332__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0332"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_198_30",
+    "radius": 16,
+    "roll": 30,
+    "size": 39,
+    "yaw": 198
+   },
+   "arrays": {
+    "out": "c0333__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0333"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_204_30",
+    "radius": 16,
+    "roll": 30,
+    "size": 39,
+    "yaw": 204
+   },
+   "arrays": {
+    "out": "c0334__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0334"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_210_30",
+    "radius": 16,
+    "roll": 30,
+    "size": 39,
+    "yaw": 210
+   },
+   "arrays": {
+    "out": "c0335__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0335"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_216_30",
+    "radius": 16,
+    "roll": 30,
+    "size": 39,
+    "yaw": 216
+   },
+   "arrays": {
+    "out": "c0336__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0336"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_222_30",
+    "radius": 16,
+    "roll": 30,
+    "size": 39,
+    "yaw": 222
+   },
+   "arrays": {
+    "out": "c0337__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0337"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_228_30",
+    "radius": 16,
+    "roll": 30,
+    "size": 39,
+    "yaw": 228
+   },
+   "arrays": {
+    "out": "c0338__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0338"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_234_30",
+    "radius": 16,
+    "roll": 30,
+    "size": 39,
+    "yaw": 234
+   },
+   "arrays": {
+    "out": "c0339__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0339"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_240_30",
+    "radius": 16,
+    "roll": 30,
+    "size": 39,
+    "yaw": 240
+   },
+   "arrays": {
+    "out": "c0340__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0340"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_246_30",
+    "radius": 16,
+    "roll": 30,
+    "size": 39,
+    "yaw": 246
+   },
+   "arrays": {
+    "out": "c0341__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0341"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_252_30",
+    "radius": 16,
+    "roll": 30,
+    "size": 39,
+    "yaw": 252
+   },
+   "arrays": {
+    "out": "c0342__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0342"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_258_30",
+    "radius": 16,
+    "roll": 30,
+    "size": 39,
+    "yaw": 258
+   },
+   "arrays": {
+    "out": "c0343__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0343"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_264_30",
+    "radius": 16,
+    "roll": 30,
+    "size": 39,
+    "yaw": 264
+   },
+   "arrays": {
+    "out": "c0344__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0344"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_270_30",
+    "radius": 16,
+    "roll": 30,
+    "size": 39,
+    "yaw": 270
+   },
+   "arrays": {
+    "out": "c0345__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0345"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_276_30",
+    "radius": 16,
+    "roll": 30,
+    "size": 39,
+    "yaw": 276
+   },
+   "arrays": {
+    "out": "c0346__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0346"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_282_30",
+    "radius": 16,
+    "roll": 30,
+    "size": 39,
+    "yaw": 282
+   },
+   "arrays": {
+    "out": "c0347__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0347"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_288_30",
+    "radius": 16,
+    "roll": 30,
+    "size": 39,
+    "yaw": 288
+   },
+   "arrays": {
+    "out": "c0348__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0348"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_294_30",
+    "radius": 16,
+    "roll": 30,
+    "size": 39,
+    "yaw": 294
+   },
+   "arrays": {
+    "out": "c0349__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0349"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_300_30",
+    "radius": 16,
+    "roll": 30,
+    "size": 39,
+    "yaw": 300
+   },
+   "arrays": {
+    "out": "c0350__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0350"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_306_30",
+    "radius": 16,
+    "roll": 30,
+    "size": 39,
+    "yaw": 306
+   },
+   "arrays": {
+    "out": "c0351__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0351"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_312_30",
+    "radius": 16,
+    "roll": 30,
+    "size": 39,
+    "yaw": 312
+   },
+   "arrays": {
+    "out": "c0352__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0352"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_318_30",
+    "radius": 16,
+    "roll": 30,
+    "size": 39,
+    "yaw": 318
+   },
+   "arrays": {
+    "out": "c0353__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0353"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_324_30",
+    "radius": 16,
+    "roll": 30,
+    "size": 39,
+    "yaw": 324
+   },
+   "arrays": {
+    "out": "c0354__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0354"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_330_30",
+    "radius": 16,
+    "roll": 30,
+    "size": 39,
+    "yaw": 330
+   },
+   "arrays": {
+    "out": "c0355__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0355"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_336_30",
+    "radius": 16,
+    "roll": 30,
+    "size": 39,
+    "yaw": 336
+   },
+   "arrays": {
+    "out": "c0356__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0356"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_342_30",
+    "radius": 16,
+    "roll": 30,
+    "size": 39,
+    "yaw": 342
+   },
+   "arrays": {
+    "out": "c0357__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0357"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_348_30",
+    "radius": 16,
+    "roll": 30,
+    "size": 39,
+    "yaw": 348
+   },
+   "arrays": {
+    "out": "c0358__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0358"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_16_354_30",
+    "radius": 16,
+    "roll": 30,
+    "size": 39,
+    "yaw": 354
+   },
+   "arrays": {
+    "out": "c0359__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0359"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_0_30",
+    "radius": 22,
+    "roll": 30,
+    "size": 51,
+    "yaw": 0
+   },
+   "arrays": {
+    "out": "c0360__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0360"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_6_30",
+    "radius": 22,
+    "roll": 30,
+    "size": 51,
+    "yaw": 6
+   },
+   "arrays": {
+    "out": "c0361__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0361"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_12_30",
+    "radius": 22,
+    "roll": 30,
+    "size": 51,
+    "yaw": 12
+   },
+   "arrays": {
+    "out": "c0362__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0362"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_18_30",
+    "radius": 22,
+    "roll": 30,
+    "size": 51,
+    "yaw": 18
+   },
+   "arrays": {
+    "out": "c0363__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0363"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_24_30",
+    "radius": 22,
+    "roll": 30,
+    "size": 51,
+    "yaw": 24
+   },
+   "arrays": {
+    "out": "c0364__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0364"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_30_30",
+    "radius": 22,
+    "roll": 30,
+    "size": 51,
+    "yaw": 30
+   },
+   "arrays": {
+    "out": "c0365__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0365"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_36_30",
+    "radius": 22,
+    "roll": 30,
+    "size": 51,
+    "yaw": 36
+   },
+   "arrays": {
+    "out": "c0366__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0366"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_42_30",
+    "radius": 22,
+    "roll": 30,
+    "size": 51,
+    "yaw": 42
+   },
+   "arrays": {
+    "out": "c0367__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0367"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_48_30",
+    "radius": 22,
+    "roll": 30,
+    "size": 51,
+    "yaw": 48
+   },
+   "arrays": {
+    "out": "c0368__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0368"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_54_30",
+    "radius": 22,
+    "roll": 30,
+    "size": 51,
+    "yaw": 54
+   },
+   "arrays": {
+    "out": "c0369__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0369"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_60_30",
+    "radius": 22,
+    "roll": 30,
+    "size": 51,
+    "yaw": 60
+   },
+   "arrays": {
+    "out": "c0370__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0370"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_66_30",
+    "radius": 22,
+    "roll": 30,
+    "size": 51,
+    "yaw": 66
+   },
+   "arrays": {
+    "out": "c0371__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0371"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_72_30",
+    "radius": 22,
+    "roll": 30,
+    "size": 51,
+    "yaw": 72
+   },
+   "arrays": {
+    "out": "c0372__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0372"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_78_30",
+    "radius": 22,
+    "roll": 30,
+    "size": 51,
+    "yaw": 78
+   },
+   "arrays": {
+    "out": "c0373__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0373"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_84_30",
+    "radius": 22,
+    "roll": 30,
+    "size": 51,
+    "yaw": 84
+   },
+   "arrays": {
+    "out": "c0374__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0374"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_90_30",
+    "radius": 22,
+    "roll": 30,
+    "size": 51,
+    "yaw": 90
+   },
+   "arrays": {
+    "out": "c0375__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0375"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_96_30",
+    "radius": 22,
+    "roll": 30,
+    "size": 51,
+    "yaw": 96
+   },
+   "arrays": {
+    "out": "c0376__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0376"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_102_30",
+    "radius": 22,
+    "roll": 30,
+    "size": 51,
+    "yaw": 102
+   },
+   "arrays": {
+    "out": "c0377__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0377"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_108_30",
+    "radius": 22,
+    "roll": 30,
+    "size": 51,
+    "yaw": 108
+   },
+   "arrays": {
+    "out": "c0378__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0378"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_114_30",
+    "radius": 22,
+    "roll": 30,
+    "size": 51,
+    "yaw": 114
+   },
+   "arrays": {
+    "out": "c0379__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0379"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_120_30",
+    "radius": 22,
+    "roll": 30,
+    "size": 51,
+    "yaw": 120
+   },
+   "arrays": {
+    "out": "c0380__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0380"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_126_30",
+    "radius": 22,
+    "roll": 30,
+    "size": 51,
+    "yaw": 126
+   },
+   "arrays": {
+    "out": "c0381__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0381"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_132_30",
+    "radius": 22,
+    "roll": 30,
+    "size": 51,
+    "yaw": 132
+   },
+   "arrays": {
+    "out": "c0382__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0382"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_138_30",
+    "radius": 22,
+    "roll": 30,
+    "size": 51,
+    "yaw": 138
+   },
+   "arrays": {
+    "out": "c0383__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0383"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_144_30",
+    "radius": 22,
+    "roll": 30,
+    "size": 51,
+    "yaw": 144
+   },
+   "arrays": {
+    "out": "c0384__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0384"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_150_30",
+    "radius": 22,
+    "roll": 30,
+    "size": 51,
+    "yaw": 150
+   },
+   "arrays": {
+    "out": "c0385__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0385"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_156_30",
+    "radius": 22,
+    "roll": 30,
+    "size": 51,
+    "yaw": 156
+   },
+   "arrays": {
+    "out": "c0386__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0386"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_162_30",
+    "radius": 22,
+    "roll": 30,
+    "size": 51,
+    "yaw": 162
+   },
+   "arrays": {
+    "out": "c0387__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0387"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_168_30",
+    "radius": 22,
+    "roll": 30,
+    "size": 51,
+    "yaw": 168
+   },
+   "arrays": {
+    "out": "c0388__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0388"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_174_30",
+    "radius": 22,
+    "roll": 30,
+    "size": 51,
+    "yaw": 174
+   },
+   "arrays": {
+    "out": "c0389__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0389"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_180_30",
+    "radius": 22,
+    "roll": 30,
+    "size": 51,
+    "yaw": 180
+   },
+   "arrays": {
+    "out": "c0390__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0390"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_186_30",
+    "radius": 22,
+    "roll": 30,
+    "size": 51,
+    "yaw": 186
+   },
+   "arrays": {
+    "out": "c0391__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0391"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_192_30",
+    "radius": 22,
+    "roll": 30,
+    "size": 51,
+    "yaw": 192
+   },
+   "arrays": {
+    "out": "c0392__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0392"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_198_30",
+    "radius": 22,
+    "roll": 30,
+    "size": 51,
+    "yaw": 198
+   },
+   "arrays": {
+    "out": "c0393__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0393"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_204_30",
+    "radius": 22,
+    "roll": 30,
+    "size": 51,
+    "yaw": 204
+   },
+   "arrays": {
+    "out": "c0394__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0394"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_210_30",
+    "radius": 22,
+    "roll": 30,
+    "size": 51,
+    "yaw": 210
+   },
+   "arrays": {
+    "out": "c0395__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0395"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_216_30",
+    "radius": 22,
+    "roll": 30,
+    "size": 51,
+    "yaw": 216
+   },
+   "arrays": {
+    "out": "c0396__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0396"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_222_30",
+    "radius": 22,
+    "roll": 30,
+    "size": 51,
+    "yaw": 222
+   },
+   "arrays": {
+    "out": "c0397__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0397"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_228_30",
+    "radius": 22,
+    "roll": 30,
+    "size": 51,
+    "yaw": 228
+   },
+   "arrays": {
+    "out": "c0398__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0398"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_234_30",
+    "radius": 22,
+    "roll": 30,
+    "size": 51,
+    "yaw": 234
+   },
+   "arrays": {
+    "out": "c0399__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0399"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_240_30",
+    "radius": 22,
+    "roll": 30,
+    "size": 51,
+    "yaw": 240
+   },
+   "arrays": {
+    "out": "c0400__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0400"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_246_30",
+    "radius": 22,
+    "roll": 30,
+    "size": 51,
+    "yaw": 246
+   },
+   "arrays": {
+    "out": "c0401__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0401"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_252_30",
+    "radius": 22,
+    "roll": 30,
+    "size": 51,
+    "yaw": 252
+   },
+   "arrays": {
+    "out": "c0402__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0402"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_258_30",
+    "radius": 22,
+    "roll": 30,
+    "size": 51,
+    "yaw": 258
+   },
+   "arrays": {
+    "out": "c0403__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0403"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_264_30",
+    "radius": 22,
+    "roll": 30,
+    "size": 51,
+    "yaw": 264
+   },
+   "arrays": {
+    "out": "c0404__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0404"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_270_30",
+    "radius": 22,
+    "roll": 30,
+    "size": 51,
+    "yaw": 270
+   },
+   "arrays": {
+    "out": "c0405__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0405"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_276_30",
+    "radius": 22,
+    "roll": 30,
+    "size": 51,
+    "yaw": 276
+   },
+   "arrays": {
+    "out": "c0406__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0406"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_282_30",
+    "radius": 22,
+    "roll": 30,
+    "size": 51,
+    "yaw": 282
+   },
+   "arrays": {
+    "out": "c0407__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0407"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_288_30",
+    "radius": 22,
+    "roll": 30,
+    "size": 51,
+    "yaw": 288
+   },
+   "arrays": {
+    "out": "c0408__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0408"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_294_30",
+    "radius": 22,
+    "roll": 30,
+    "size": 51,
+    "yaw": 294
+   },
+   "arrays": {
+    "out": "c0409__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0409"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_300_30",
+    "radius": 22,
+    "roll": 30,
+    "size": 51,
+    "yaw": 300
+   },
+   "arrays": {
+    "out": "c0410__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0410"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_306_30",
+    "radius": 22,
+    "roll": 30,
+    "size": 51,
+    "yaw": 306
+   },
+   "arrays": {
+    "out": "c0411__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0411"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_312_30",
+    "radius": 22,
+    "roll": 30,
+    "size": 51,
+    "yaw": 312
+   },
+   "arrays": {
+    "out": "c0412__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0412"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_318_30",
+    "radius": 22,
+    "roll": 30,
+    "size": 51,
+    "yaw": 318
+   },
+   "arrays": {
+    "out": "c0413__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0413"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_324_30",
+    "radius": 22,
+    "roll": 30,
+    "size": 51,
+    "yaw": 324
+   },
+   "arrays": {
+    "out": "c0414__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0414"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_330_30",
+    "radius": 22,
+    "roll": 30,
+    "size": 51,
+    "yaw": 330
+   },
+   "arrays": {
+    "out": "c0415__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0415"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_336_30",
+    "radius": 22,
+    "roll": 30,
+    "size": 51,
+    "yaw": 336
+   },
+   "arrays": {
+    "out": "c0416__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0416"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_342_30",
+    "radius": 22,
+    "roll": 30,
+    "size": 51,
+    "yaw": 342
+   },
+   "arrays": {
+    "out": "c0417__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0417"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_348_30",
+    "radius": 22,
+    "roll": 30,
+    "size": 51,
+    "yaw": 348
+   },
+   "arrays": {
+    "out": "c0418__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0418"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_22_354_30",
+    "radius": 22,
+    "roll": 30,
+    "size": 51,
+    "yaw": 354
+   },
+   "arrays": {
+    "out": "c0419__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0419"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_0_30",
+    "radius": 30,
+    "roll": 30,
+    "size": 67,
+    "yaw": 0
+   },
+   "arrays": {
+    "out": "c0420__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0420"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_6_30",
+    "radius": 30,
+    "roll": 30,
+    "size": 67,
+    "yaw": 6
+   },
+   "arrays": {
+    "out": "c0421__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0421"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_12_30",
+    "radius": 30,
+    "roll": 30,
+    "size": 67,
+    "yaw": 12
+   },
+   "arrays": {
+    "out": "c0422__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0422"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_18_30",
+    "radius": 30,
+    "roll": 30,
+    "size": 67,
+    "yaw": 18
+   },
+   "arrays": {
+    "out": "c0423__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0423"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_24_30",
+    "radius": 30,
+    "roll": 30,
+    "size": 67,
+    "yaw": 24
+   },
+   "arrays": {
+    "out": "c0424__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0424"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_30_30",
+    "radius": 30,
+    "roll": 30,
+    "size": 67,
+    "yaw": 30
+   },
+   "arrays": {
+    "out": "c0425__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0425"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_36_30",
+    "radius": 30,
+    "roll": 30,
+    "size": 67,
+    "yaw": 36
+   },
+   "arrays": {
+    "out": "c0426__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0426"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_42_30",
+    "radius": 30,
+    "roll": 30,
+    "size": 67,
+    "yaw": 42
+   },
+   "arrays": {
+    "out": "c0427__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0427"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_48_30",
+    "radius": 30,
+    "roll": 30,
+    "size": 67,
+    "yaw": 48
+   },
+   "arrays": {
+    "out": "c0428__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0428"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_54_30",
+    "radius": 30,
+    "roll": 30,
+    "size": 67,
+    "yaw": 54
+   },
+   "arrays": {
+    "out": "c0429__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0429"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_60_30",
+    "radius": 30,
+    "roll": 30,
+    "size": 67,
+    "yaw": 60
+   },
+   "arrays": {
+    "out": "c0430__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0430"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_66_30",
+    "radius": 30,
+    "roll": 30,
+    "size": 67,
+    "yaw": 66
+   },
+   "arrays": {
+    "out": "c0431__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0431"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_72_30",
+    "radius": 30,
+    "roll": 30,
+    "size": 67,
+    "yaw": 72
+   },
+   "arrays": {
+    "out": "c0432__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0432"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_78_30",
+    "radius": 30,
+    "roll": 30,
+    "size": 67,
+    "yaw": 78
+   },
+   "arrays": {
+    "out": "c0433__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0433"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_84_30",
+    "radius": 30,
+    "roll": 30,
+    "size": 67,
+    "yaw": 84
+   },
+   "arrays": {
+    "out": "c0434__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0434"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_90_30",
+    "radius": 30,
+    "roll": 30,
+    "size": 67,
+    "yaw": 90
+   },
+   "arrays": {
+    "out": "c0435__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0435"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_96_30",
+    "radius": 30,
+    "roll": 30,
+    "size": 67,
+    "yaw": 96
+   },
+   "arrays": {
+    "out": "c0436__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0436"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_102_30",
+    "radius": 30,
+    "roll": 30,
+    "size": 67,
+    "yaw": 102
+   },
+   "arrays": {
+    "out": "c0437__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0437"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_108_30",
+    "radius": 30,
+    "roll": 30,
+    "size": 67,
+    "yaw": 108
+   },
+   "arrays": {
+    "out": "c0438__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0438"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_114_30",
+    "radius": 30,
+    "roll": 30,
+    "size": 67,
+    "yaw": 114
+   },
+   "arrays": {
+    "out": "c0439__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0439"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_120_30",
+    "radius": 30,
+    "roll": 30,
+    "size": 67,
+    "yaw": 120
+   },
+   "arrays": {
+    "out": "c0440__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0440"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_126_30",
+    "radius": 30,
+    "roll": 30,
+    "size": 67,
+    "yaw": 126
+   },
+   "arrays": {
+    "out": "c0441__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0441"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_132_30",
+    "radius": 30,
+    "roll": 30,
+    "size": 67,
+    "yaw": 132
+   },
+   "arrays": {
+    "out": "c0442__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0442"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_138_30",
+    "radius": 30,
+    "roll": 30,
+    "size": 67,
+    "yaw": 138
+   },
+   "arrays": {
+    "out": "c0443__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0443"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_144_30",
+    "radius": 30,
+    "roll": 30,
+    "size": 67,
+    "yaw": 144
+   },
+   "arrays": {
+    "out": "c0444__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0444"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_150_30",
+    "radius": 30,
+    "roll": 30,
+    "size": 67,
+    "yaw": 150
+   },
+   "arrays": {
+    "out": "c0445__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0445"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_156_30",
+    "radius": 30,
+    "roll": 30,
+    "size": 67,
+    "yaw": 156
+   },
+   "arrays": {
+    "out": "c0446__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0446"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_162_30",
+    "radius": 30,
+    "roll": 30,
+    "size": 67,
+    "yaw": 162
+   },
+   "arrays": {
+    "out": "c0447__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0447"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_168_30",
+    "radius": 30,
+    "roll": 30,
+    "size": 67,
+    "yaw": 168
+   },
+   "arrays": {
+    "out": "c0448__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0448"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_174_30",
+    "radius": 30,
+    "roll": 30,
+    "size": 67,
+    "yaw": 174
+   },
+   "arrays": {
+    "out": "c0449__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0449"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_180_30",
+    "radius": 30,
+    "roll": 30,
+    "size": 67,
+    "yaw": 180
+   },
+   "arrays": {
+    "out": "c0450__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0450"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_186_30",
+    "radius": 30,
+    "roll": 30,
+    "size": 67,
+    "yaw": 186
+   },
+   "arrays": {
+    "out": "c0451__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0451"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_192_30",
+    "radius": 30,
+    "roll": 30,
+    "size": 67,
+    "yaw": 192
+   },
+   "arrays": {
+    "out": "c0452__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0452"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_198_30",
+    "radius": 30,
+    "roll": 30,
+    "size": 67,
+    "yaw": 198
+   },
+   "arrays": {
+    "out": "c0453__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0453"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_204_30",
+    "radius": 30,
+    "roll": 30,
+    "size": 67,
+    "yaw": 204
+   },
+   "arrays": {
+    "out": "c0454__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0454"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_210_30",
+    "radius": 30,
+    "roll": 30,
+    "size": 67,
+    "yaw": 210
+   },
+   "arrays": {
+    "out": "c0455__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0455"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_216_30",
+    "radius": 30,
+    "roll": 30,
+    "size": 67,
+    "yaw": 216
+   },
+   "arrays": {
+    "out": "c0456__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0456"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_222_30",
+    "radius": 30,
+    "roll": 30,
+    "size": 67,
+    "yaw": 222
+   },
+   "arrays": {
+    "out": "c0457__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0457"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_228_30",
+    "radius": 30,
+    "roll": 30,
+    "size": 67,
+    "yaw": 228
+   },
+   "arrays": {
+    "out": "c0458__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0458"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_234_30",
+    "radius": 30,
+    "roll": 30,
+    "size": 67,
+    "yaw": 234
+   },
+   "arrays": {
+    "out": "c0459__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0459"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_240_30",
+    "radius": 30,
+    "roll": 30,
+    "size": 67,
+    "yaw": 240
+   },
+   "arrays": {
+    "out": "c0460__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0460"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_246_30",
+    "radius": 30,
+    "roll": 30,
+    "size": 67,
+    "yaw": 246
+   },
+   "arrays": {
+    "out": "c0461__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0461"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_252_30",
+    "radius": 30,
+    "roll": 30,
+    "size": 67,
+    "yaw": 252
+   },
+   "arrays": {
+    "out": "c0462__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0462"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_258_30",
+    "radius": 30,
+    "roll": 30,
+    "size": 67,
+    "yaw": 258
+   },
+   "arrays": {
+    "out": "c0463__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0463"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_264_30",
+    "radius": 30,
+    "roll": 30,
+    "size": 67,
+    "yaw": 264
+   },
+   "arrays": {
+    "out": "c0464__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0464"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_270_30",
+    "radius": 30,
+    "roll": 30,
+    "size": 67,
+    "yaw": 270
+   },
+   "arrays": {
+    "out": "c0465__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0465"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_276_30",
+    "radius": 30,
+    "roll": 30,
+    "size": 67,
+    "yaw": 276
+   },
+   "arrays": {
+    "out": "c0466__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0466"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_282_30",
+    "radius": 30,
+    "roll": 30,
+    "size": 67,
+    "yaw": 282
+   },
+   "arrays": {
+    "out": "c0467__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0467"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_288_30",
+    "radius": 30,
+    "roll": 30,
+    "size": 67,
+    "yaw": 288
+   },
+   "arrays": {
+    "out": "c0468__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0468"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_294_30",
+    "radius": 30,
+    "roll": 30,
+    "size": 67,
+    "yaw": 294
+   },
+   "arrays": {
+    "out": "c0469__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0469"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_300_30",
+    "radius": 30,
+    "roll": 30,
+    "size": 67,
+    "yaw": 300
+   },
+   "arrays": {
+    "out": "c0470__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0470"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_306_30",
+    "radius": 30,
+    "roll": 30,
+    "size": 67,
+    "yaw": 306
+   },
+   "arrays": {
+    "out": "c0471__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0471"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_312_30",
+    "radius": 30,
+    "roll": 30,
+    "size": 67,
+    "yaw": 312
+   },
+   "arrays": {
+    "out": "c0472__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0472"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_318_30",
+    "radius": 30,
+    "roll": 30,
+    "size": 67,
+    "yaw": 318
+   },
+   "arrays": {
+    "out": "c0473__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0473"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_324_30",
+    "radius": 30,
+    "roll": 30,
+    "size": 67,
+    "yaw": 324
+   },
+   "arrays": {
+    "out": "c0474__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0474"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_330_30",
+    "radius": 30,
+    "roll": 30,
+    "size": 67,
+    "yaw": 330
+   },
+   "arrays": {
+    "out": "c0475__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0475"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_336_30",
+    "radius": 30,
+    "roll": 30,
+    "size": 67,
+    "yaw": 336
+   },
+   "arrays": {
+    "out": "c0476__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0476"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_342_30",
+    "radius": 30,
+    "roll": 30,
+    "size": 67,
+    "yaw": 342
+   },
+   "arrays": {
+    "out": "c0477__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0477"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_348_30",
+    "radius": 30,
+    "roll": 30,
+    "size": 67,
+    "yaw": 348
+   },
+   "arrays": {
+    "out": "c0478__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0478"
+  },
+  {
+   "args": {
+    "group": "picture",
+    "k": 1,
+    "key": "TROMBONE_30_354_30",
+    "radius": 30,
+    "roll": 30,
+    "size": 67,
+    "yaw": 354
+   },
+   "arrays": {
+    "out": "c0479__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0479"
+  },
+  {
+   "args": {
+    "group": "episode",
+    "k": 1,
+    "key": "TROMBONE_17_186_30",
+    "radius": 17,
+    "roll": 30,
+    "size": 41,
+    "yaw": 186
+   },
+   "arrays": {
+    "out": "c0480__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0480"
+  },
+  {
+   "args": {
+    "group": "episode",
+    "k": 1,
+    "key": "TROMBONE_17_192_30",
+    "radius": 17,
+    "roll": 30,
+    "size": 41,
+    "yaw": 192
+   },
+   "arrays": {
+    "out": "c0481__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0481"
+  },
+  {
+   "args": {
+    "group": "episode",
+    "k": 1,
+    "key": "TROMBONE_17_198_30",
+    "radius": 17,
+    "roll": 30,
+    "size": 41,
+    "yaw": 198
+   },
+   "arrays": {
+    "out": "c0482__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0482"
+  },
+  {
+   "args": {
+    "group": "episode",
+    "k": 1,
+    "key": "TROMBONE_17_204_30",
+    "radius": 17,
+    "roll": 30,
+    "size": 41,
+    "yaw": 204
+   },
+   "arrays": {
+    "out": "c0483__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0483"
+  },
+  {
+   "args": {
+    "group": "episode",
+    "k": 1,
+    "key": "TROMBONE_17_210_30",
+    "radius": 17,
+    "roll": 30,
+    "size": 41,
+    "yaw": 210
+   },
+   "arrays": {
+    "out": "c0484__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0484"
+  },
+  {
+   "args": {
+    "group": "episode",
+    "k": 1,
+    "key": "TROMBONE_17_216_30",
+    "radius": 17,
+    "roll": 30,
+    "size": 41,
+    "yaw": 216
+   },
+   "arrays": {
+    "out": "c0485__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0485"
+  },
+  {
+   "args": {
+    "group": "episode",
+    "k": 1,
+    "key": "TROMBONE_17_222_30",
+    "radius": 17,
+    "roll": 30,
+    "size": 41,
+    "yaw": 222
+   },
+   "arrays": {
+    "out": "c0486__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0486"
+  },
+  {
+   "args": {
+    "group": "episode",
+    "k": 1,
+    "key": "TROMBONE_18_186_30",
+    "radius": 18,
+    "roll": 30,
+    "size": 43,
+    "yaw": 186
+   },
+   "arrays": {
+    "out": "c0487__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0487"
+  },
+  {
+   "args": {
+    "group": "episode",
+    "k": 1,
+    "key": "TROMBONE_18_192_30",
+    "radius": 18,
+    "roll": 30,
+    "size": 43,
+    "yaw": 192
+   },
+   "arrays": {
+    "out": "c0488__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0488"
+  },
+  {
+   "args": {
+    "group": "episode",
+    "k": 1,
+    "key": "TROMBONE_18_198_30",
+    "radius": 18,
+    "roll": 30,
+    "size": 43,
+    "yaw": 198
+   },
+   "arrays": {
+    "out": "c0489__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0489"
+  },
+  {
+   "args": {
+    "group": "episode",
+    "k": 1,
+    "key": "TROMBONE_18_204_30",
+    "radius": 18,
+    "roll": 30,
+    "size": 43,
+    "yaw": 204
+   },
+   "arrays": {
+    "out": "c0490__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0490"
+  },
+  {
+   "args": {
+    "group": "episode",
+    "k": 1,
+    "key": "TROMBONE_18_210_30",
+    "radius": 18,
+    "roll": 30,
+    "size": 43,
+    "yaw": 210
+   },
+   "arrays": {
+    "out": "c0491__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0491"
+  },
+  {
+   "args": {
+    "group": "episode",
+    "k": 1,
+    "key": "TROMBONE_18_216_30",
+    "radius": 18,
+    "roll": 30,
+    "size": 43,
+    "yaw": 216
+   },
+   "arrays": {
+    "out": "c0492__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0492"
+  },
+  {
+   "args": {
+    "group": "episode",
+    "k": 1,
+    "key": "TROMBONE_18_222_30",
+    "radius": 18,
+    "roll": 30,
+    "size": 43,
+    "yaw": 222
+   },
+   "arrays": {
+    "out": "c0493__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0493"
+  },
+  {
+   "args": {
+    "group": "episode",
+    "k": 1,
+    "key": "TROMBONE_19_192_30",
+    "radius": 19,
+    "roll": 30,
+    "size": 45,
+    "yaw": 192
+   },
+   "arrays": {
+    "out": "c0494__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0494"
+  },
+  {
+   "args": {
+    "group": "episode",
+    "k": 1,
+    "key": "TROMBONE_19_198_30",
+    "radius": 19,
+    "roll": 30,
+    "size": 45,
+    "yaw": 198
+   },
+   "arrays": {
+    "out": "c0495__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0495"
+  },
+  {
+   "args": {
+    "group": "episode",
+    "k": 1,
+    "key": "TROMBONE_19_210_30",
+    "radius": 19,
+    "roll": 30,
+    "size": 45,
+    "yaw": 210
+   },
+   "arrays": {
+    "out": "c0496__out"
+   },
+   "call": "kit.picture.sprite(k, radius, yaw, roll)",
+   "id": "c0496"
+  },
+  {
+   "args": {
+    "drawn_by": "model",
+    "group": "title",
+    "k": 1,
+    "radius": 44,
+    "roll": 30,
+    "size": 95,
+    "yaw": 205
+   },
+   "arrays": {
+    "out": "c0497__out"
+   },
+   "call": "title.big_sprite(k)",
+   "id": "c0497"
+  }
+ ],
+ "drawn_by": "model",
+ "episode": "flute_vs_trombone",
+ "episode_keys": [
+  [16, 210, 30],
+  [16, 216, 30],
+  [17, 186, 30],
+  [17, 192, 30],
+  [17, 198, 30],
+  [17, 204, 30],
+  [17, 210, 30],
+  [17, 216, 30],
+  [17, 222, 30],
+  [18, 186, 30],
+  [18, 192, 30],
+  [18, 198, 30],
+  [18, 204, 30],
+  [18, 210, 30],
+  [18, 216, 30],
+  [18, 222, 30],
+  [19, 192, 30],
+  [19, 198, 30],
+  [19, 210, 30]
+ ],
+ "fighter": "TROMBONE",
+ "groups": {
+  "episode": "the same call for each of `episode_keys` (what the frames ask for) that `picture` does not already hold",
+  "model": "sprites.render_sprite(name, radius, yaw, roll): the Pixel Pitch model, for a fighter whose look draws its own sprite",
+  "picture": "kit.picture.sprite at the four radii, 60 yaws, and each roll in `rolls`",
+  "title": "title.big_sprite(k), the VS card's close-up. args.drawn_by says how it is made: 'closeup' = the look's own close-up function, called with the radius alone (FLUTE: Look.title_closeup of kit/fighters/flute.py), so the case has no yaw or roll; 'model' = sprites.render_sprite(pp, radius, float(yaw), float(roll)) at the view's yaw and roll"
+ },
+ "k": 1,
+ "note": "Every picture, episode and model case is the call on an empty sprite cache. A title case is title.big_sprite(k) with the title module's in-memory cache emptied first; for a model close-up big_sprite may still read its file cache (check/sprites_title.npz), so the export also compares every close-up with a fresh draw. kit.picture.sprite rounds the radius, clips it to 12..30 and rounds the yaw to a multiple of 6 (yk), then calls the look's own sprite(r, float(yk), float(roll)) or, when the look has none, sprites.render_sprite(pp, r, float(yk), float(roll)). Its cache key is \"<pp>_<r>_<yk % 360>_<int(roll)>\" (`key`): the yaw is wrapped in the key but not in the call, so a look's sprite at yaw -6 and at yaw 354 share a key though they are drawn differently; the first one asked for stays. episode_keys lists (radius, yk, roll) with yk as the frames give it (negative for FLUTE). Arrays are (size, size, 4) uint8: size is 2 * radius + 7 for the model renderer, 2 * radius + 5 for FLUTE's own sprite and close-up. A pixel is part of the sprite where alpha > 0.",
+ "pp": "TROMBONE",
+ "radii": [12, 16, 22, 30],
+ "recording": {
+  "checked": "the export read this file and found it equal to the run the kit drew from. episode_keys and the `episode` cases follow from where the balls are in this fight; the other groups do not depend on it",
+  "events": 522,
+  "file": "studio/reference/fights/flute_vs_trombone/ep392.bfrec",
+  "frames": 1394,
+  "hash": "038e1f40fc3373eb",
+  "seed": 392,
+  "t_ko": "0x1.902c2c2c2c2c2p+5",
+  "winner": 1
+ },
+ "rolls": [0, 30],
+ "sprite_k": 0.8,
+ "tool": "sprites",
+ "view": [205, 18, 30],
+ "yaw_step": 6
+}

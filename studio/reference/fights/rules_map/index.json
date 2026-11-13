@@ -1,0 +1,41 @@
+{
+ "about": "Two short Python fights of the example episode with one config line changed each, for the recorded rules map (vars(rules)) of a fight file with no handicap and of one with the pair rule swat_cobras = false; made by tools/studio_export/rules_map.py (its docstring has the rules); do not edit by hand. Each fight is the first \"window\" seconds after \"t_fight\".",
+ "tool": "rules_map",
+ "format": 1,
+ "episode": "flute_vs_trombone",
+ "window": 3.0,
+ "fights": [
+  {
+   "name": "no_handicap",
+   "file": "fights/rules_map/no_handicap.bfrec",
+   "changed": {
+    "old": "DMG_SIDE = (2.0, 0.40)",
+    "new": "DMG_SIDE = None"
+   },
+   "seed": 1,
+   "overrides": {
+    "t_max": 6.588235294117647
+   },
+   "frames": 91,
+   "events": 16,
+   "hash": "43dd2bf3d6a93724",
+   "rules": ["A", "DT", "FPS", "HP", "KEY_R", "KNOCK_T", "LAUNCH_SPREAD", "LOW_HP", "LV_DMG", "R", "ROPE_GIVE", "V", "beat", "bpm", "dmg_scale", "swat_cobras", "t_fight", "t_max"]
+  },
+  {
+   "name": "swat_off",
+   "file": "fights/rules_map/swat_off.bfrec",
+   "changed": {
+    "old": "RULES = dict(swat_cobras=True)",
+    "new": "RULES = dict(swat_cobras=False)"
+   },
+   "seed": 1,
+   "overrides": {
+    "t_max": 6.588235294117647
+   },
+   "frames": 91,
+   "events": 16,
+   "hash": "5a987a5071e1af4d",
+   "rules": ["A", "DT", "FPS", "HP", "KEY_R", "KNOCK_T", "LAUNCH_SPREAD", "LOW_HP", "LV_DMG", "R", "ROPE_GIVE", "V", "beat", "bpm", "dmg_scale", "dmg_side", "swat_cobras", "t_fight", "t_max"]
+  }
+ ]
+}

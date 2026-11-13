@@ -1,5 +1,42 @@
 # BALLFIGHT Studio: handoff brief for a new Claude Code project (Nov 10)
 
+## Status (Nov 11): the Studio app runs on the real engine
+
+**What exists.** BALLFIGHT Studio is a native Windows program in the `studio/` folder of this repo: the engine (the
+fight, the story and seed search, the balance, the picture, the sound, the quality checks and the video encode)
+and, since milestone 2, the app's window on top of it. The window has the five steps (Match-up, Balance, Seeds,
+Music, Render), a live preview with sound, the shortlist of seeds, the render queue, the Library of finished videos
+and Settings, and it runs on the real engine: the fights, pictures, sounds and videos it shows and saves are real.
+Today it knows one match-up, FLUTE against TROMBONE with the big top music; the other 18 kit fighters are shown in
+the roster but cannot be picked yet.
+
+**It makes the same video as the Python kit.** For the example episode (`projects/ballfight/examples/
+flute_vs_trombone`, seed 392) the Studio draws all 43 checked frames of the video byte for byte as the kit does,
+and its sound file is the kit's sound file sample for sample. Every quality check (loudness, levels, band, flashes,
+loop point, safe zone, focus) gives the kit's verdict. A fight the Studio runs itself matches the kit's fight for at
+least the first 25 seconds of fighting; after that tiny rounding differences take over, so a Studio seed is its own
+fight, not the kit's (that is by design).
+
+**How fast it is** (this PC; details in `docs/studio/m1-measurements.md` and `docs/studio/m2-measurements.md`):
+
+- A whole 61 s video, from the fight to the checked mp4 with its cover and caption: about **82 seconds** on its
+  own. The goal is under 60 s; most of the remaining time is the video encoder itself.
+- Searching seeds: about **6,000 to 7,000 fights a second**, so 200 fitting seeds take about 5 seconds.
+- After choosing a seed its picture is on screen in about a quarter of a second, and its sound joins about 7
+  seconds later; on a quiet PC the preview keeps to its speed budget.
+
+**How it is started today.** There is no installer yet (that is milestone 6), so the program is still built from
+the code: `cargo build --release -p bf-app` in the `studio` folder makes `studio\target\release\ballfight-studio.exe`,
+and that exe is the app (double-click it). Its settings and queue live in `%APPDATA%\BALLFIGHT Studio`, its
+shortlist cache in `%LOCALAPPDATA%\BALLFIGHT Studio`, and videos go to `Videos\BALLFIGHT` unless Settings says
+otherwise. It needs ffmpeg on the PC to save videos (Settings says whether it found it). Started with `--fixtures`
+it shows the same window on sample data instead (nothing real, nothing saved), which is how the interface was built
+and tested. The `ballfight` command line (crate `bf-cli`, listed in `studio/README.md`) still runs every step without
+the window.
+
+**What comes next.** Milestone 3 brings the other 18 kit fighters and 13 themes into the app (its plan is
+`docs/studio/2026-11-11-ballfight-studio-plan-m3-kit-roster.md`); then the older ten fighters (4), the music system
+(5), and packaging with an installer and the Update button (6, `docs/studio/2026-11-11-ballfight-studio-plan-m6-packaging.md`).
 The user is building the BALLFIGHT software themselves in a Claude Code project. **Start here, then read the files
 below in this order.** Everything about how a fight is simulated, drawn, scored and rendered already exists in this repo
 as the episode kit; the software is a front end + packaging on top of it, not a rewrite.

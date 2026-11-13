@@ -1,0 +1,13 @@
+{
+ "about": "the Pixel Pitch voices' shared noise generator (drums60_lowpoly._rng, numpy PCG64) after every import and before the first note: where a soundtrack build starts",
+ "draws_before_start": 0,
+ "episode": "flute_vs_trombone",
+ "generator": "np.random.default_rng(77) in series/instrument-history/drums60_lowpoly.py; every nz(n) = _rng.normal(0, 1, n) advances it",
+ "has_uint32": 0,
+ "inc": "336983293413220778415499640756163231851",
+ "note": "this is the state of a fresh np.random.default_rng(77): importing kit.music, pp_bridge and the FLUTE's and TROMBONE's Pixel Pitch modules draws nothing from it",
+ "seed": 77,
+ "state": "289533129354323354318955456298181112347",
+ "tool": "voices",
+ "uinteger": 0
+}

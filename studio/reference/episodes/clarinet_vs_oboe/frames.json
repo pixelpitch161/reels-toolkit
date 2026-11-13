@@ -1,0 +1,592 @@
+{
+ "about": "examples/clarinet_vs_oboe: the golden frames (milestone 1's rules of frames.py for any pair) with both real looks: each frame's SHA-256, its draw log and its hull calls; and the VS card alone on milestone 1's noise image at 16 times",
+ "absent": [],
+ "cards": [
+  [0, "76a4b985e2b0160f3db713a87ae4ce3512b8f5415e36ab688f6190bae9a38db2"],
+  [4, "328f084f5827112a20287102fb79d59d476b7cdf4983d71538dc8469969c80ed"],
+  [8, "7e278d087e3ea7ff6c53150b353e22f7817cdeecf150ab7df8e55025a676f7be"],
+  [11, "30b40fa29898dbaee8a8fdd9c6a4a09b1df045466c049c5b9c7a69a232f3a3ca"],
+  [15, "e50df90a6c4b572043541477ae45ebe580f071856612e95cb5d13f396e239660"],
+  [19, "2cf65c523cd563c2f8bd499761c98f3ff2d3a6cccee277e002b61a6530cc08ba"],
+  [23, "573a14634bbf073cfb88d808abd4974e3d2e67b5ecc1fc8412d6588b6fc0cb86"],
+  [27, "920b28e7c9a5ba121af6faf04a2845219f5bb430bf5c00bf0777a8cf799de4d9"],
+  [30, "dd669fe0c784517b2aae533431ea2959487f5ca0ba224f2aaec269e67fbcf88b"],
+  [34, "281d551d0975391f6db16c168d7f4a263eced436357c58e90ee33fa6438c1226"],
+  [38, "661f80725efab5c23c4c4eee12f31b73b80f6737a04340e15a08147e5d1595d4"],
+  [42, "e9e5234575caaa57942d848b2b26c6741fba2045dca3fda72f22e459629ebc42"],
+  [46, "f195789d8f368f21723e9f376515a0f26ef7cd37df06ad3972f2630946fc59b0"],
+  [49, "cff0224db953c66e943a7193c8ece233e739ce21f61b51b4c183327c001e703b"],
+  [1825, "1e7f37ec96a16bcf93229d6ccfae3911eb67ae4eb91a59bc580983de9c6a8256"],
+  [1829, "23d03c3f63a10e11b8fa24dbb5801b308f137e180184193e03a4387d659f0bcc"]
+ ],
+ "fighters": ["CLARINET", "OBOE"],
+ "format": 1,
+ "frames": [
+  {
+   "boxes": [0, "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"],
+   "frame": 0,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a53d0d9b81d4p+12",
+     "0x1.2a48ab7bd62c6p+13"
+    ]
+   ],
+   "rules": ["frame_0"],
+   "sha256": "44dbf8e3bfd0a399ccb72a8d60227d476ba5ec9ff4adc51ed01a1d60fede15b4"
+  },
+  {
+   "boxes": [1, "99c49beb7618e9e52ed22921146f8c257dd0c06c6e5f5ad1599f8d4ba6f3a9a6"],
+   "frame": 13,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a53ce57bbf3ep+12",
+     "0x1.2a48ab9a12537p+13"
+    ]
+   ],
+   "rules": ["frame_13"],
+   "sha256": "edcbd511b17478dd6030e32dea8ad9f90d62479c6cba5b3ae64ad61509e9a474"
+  },
+  {
+   "boxes": [2, "0aa4e00b66cbfdc6b50704a4200f3d5ad57e298618ac282b3b83b122c5f1317b"],
+   "frame": 27,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a53bc62566dap+12",
+     "0x1.2a48ac735b3cdp+13"
+    ]
+   ],
+   "rules": ["frame_27"],
+   "sha256": "0839a5364ce99aa2f956d322a24599ac5d0a23ee7f9ca1543e1f77fe6ef88db3"
+  },
+  {
+   "boxes": [3, "da0c9731ee9cf5ec514c7375e4dd41ecb0393d74abb9b66e4b7b736f16f33824"],
+   "frame": 41,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a538fdfa170ep+12",
+     "0x1.2a48ae93b494cp+13"
+    ]
+   ],
+   "rules": ["doors_last_closed"],
+   "sha256": "83fda05fc49d6b08c0ab93509cef32297d814c834ed20abbd669dff57cb40b4b"
+  },
+  {
+   "boxes": [22, "7f0c93d8e661c889cde30eb2cc25431ecd9c5651c115fb652b29c7d9affe4a0f"],
+   "frame": 46,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a537859113ddp+12",
+     "0x1.2a48afb6c4e5ep+13"
+    ]
+   ],
+   "rules": ["doors_mid"],
+   "sha256": "5d8741c07f02b69dd78a32840804e1a1b686e7ca7c2bb903bd7bc60eeaa4d1a0"
+  },
+  {
+   "boxes": [23, "99c46c1fab525da1cce3b4190fbd0f05b9733de7ce48e35b9df6088d335fa397"],
+   "frame": 51,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a535c9aff5cep+12",
+     "0x1.2a48b110fec29p+13"
+    ]
+   ],
+   "rules": ["count_3"],
+   "sha256": "6d814301dca4539e54bec0684da7eeacee44f522d044e159e382155eb6f937f9"
+  },
+  {
+   "boxes": [23, "b2682a14a103276cd6ce4f26ef15641a2a8c96820e94292fd7cd5818f217f208"],
+   "frame": 64,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a5300d1c5060p+12",
+     "0x1.2a48b5a1afb3cp+13"
+    ]
+   ],
+   "rules": ["count_2"],
+   "sha256": "fed2c5f9a945b84dfa3f135a22c80cc94a10bbbf91b813116e86115a6f561f3b"
+  },
+  {
+   "boxes": [23, "d35b8262c9f665bbb7d786f52ecee709e6ff715f001a5861e4a019dd9e3d612a"],
+   "frame": 77,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a528a6534df0p+12",
+     "0x1.2a48bbbab1efdp+13"
+    ]
+   ],
+   "rules": ["count_1"],
+   "sha256": "788a31c9644e465b89596b57824fa77759b65c45a39aee5484edfc2b3dc8090a"
+  },
+  {
+   "boxes": [21, "7a751a9f88bff511a4a61ddd9416a702f4519df97922975d4e8451376c3a6fea"],
+   "frame": 102,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a516cfb6d7c3p+12",
+     "0x1.2a48cb67d898cp+13"
+    ]
+   ],
+   "rules": ["count_fight"],
+   "sha256": "ea4330beef5587d41b46cb9e3c91ad664c847da1b26e6dc80c35c19f43ce5eb3"
+  },
+  {
+   "boxes": [21, "cc9fd1cdbd554380ee7467eba1bcef3036e5a654fff067d8185a8d7adbbd7e6d"],
+   "frame": 115,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a8d6b30b3180p+12",
+     "0x1.2a55161df1d22p+13"
+    ]
+   ],
+   "rules": ["OBOE_weapon_hit"],
+   "sha256": "cbdc227c454a78645b769cb4a21211b60ddfc8f94b327ae42b08a12f7dd002db"
+  },
+  {
+   "boxes": [20, "89143abc27a15ebfeb51e1f63f8ad2c6e69e8b9bd070c9fcd0dba30370285703"],
+   "frame": 140,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6b598fc64f03dp+12",
+     "0x1.2a1327bc3cf8bp+13"
+    ]
+   ],
+   "rules": ["CLARINET_weapon_hit"],
+   "sha256": "1f969622679a03a0df6e8ed99ed3468bc8dc9c504b0aab3223f964e33029a647"
+  },
+  {
+   "boxes": [24, "8ce892f6fda975b90afb51c4b02fd165faa40ccfd41071498b3e6bb85bdf2af5"],
+   "frame": 372,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6b09e7dbf249fp+12",
+     "0x1.2a115b5b2f896p+13"
+    ]
+   ],
+   "rules": ["extra_caption_punch", "extra_level_CLARINET"],
+   "sha256": "45affc63c340b0b12c5c82f97b10d474bfd51b5933820cfeee54d5e7267fdf38"
+  },
+  {
+   "boxes": [24, "54a081a4f165a42e7ea525dbb1c450612206b4703fab9351e900ffc4810e5e7c"],
+   "frame": 375,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a50574e2bfa2p+12",
+     "0x1.2a322149dccfep+13"
+    ]
+   ],
+   "rules": ["CLARINET_unlock1_0.2s"],
+   "sha256": "35e5825dd1b17c2b4d8fd24c0481d13352f3db57a1183873c0e16b805d55751c"
+  },
+  {
+   "boxes": [24, "f1739bdbc936f430e1c05999c2208c7de49390d934719dd535be08dfe845072f"],
+   "frame": 387,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a2adf8dc4301p+12",
+     "0x1.2a53e32bcbc8ep+13"
+    ]
+   ],
+   "rules": ["CLARINET_unlock1_0.6s"],
+   "sha256": "23c69b48d4a4de1d7cc4483fbd07e7fea11b9976f6ee6b04cf11ce0c7b693cf5"
+  },
+  {
+   "boxes": [24, "745104910c5bb5044d2db867a0315deba7be44d6a17ae7596b157faa0dc711a7"],
+   "frame": 512,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a462680a91b3p+12",
+     "0x1.2a62aa1bb1babp+13"
+    ]
+   ],
+   "rules": ["extra_level_OBOE"],
+   "sha256": "f5898e4decb7db117914e1595e9f0d365e85fb8067201ce669278dfc651d6fa2"
+  },
+  {
+   "boxes": [24, "27f86d3ca48e4b90ca9a2387f9fabc853c51e591798a093036818757def5646a"],
+   "frame": 515,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6817572a041e7p+12",
+     "0x1.2abc42a03ea0cp+13"
+    ]
+   ],
+   "rules": ["OBOE_unlock1_0.2s"],
+   "sha256": "6db26b793b8863105a42c496736eb05f1f7b89d0350efb224de2303f75ddf8e2"
+  },
+  {
+   "boxes": [24, "8d7f78904a43e41f5f77f2c16e74b8690a922955e9c0d74348583be9befb8252"],
+   "frame": 527,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a5fab79be150p+12",
+     "0x1.2a3c14be96526p+13"
+    ]
+   ],
+   "rules": ["OBOE_unlock1_0.6s"],
+   "sha256": "9a087041ff2253f06c05f39d0ef739ca58ada0c61a770e5b5b16d47adbb806cf"
+  },
+  {
+   "boxes": [24, "c8ff96f1cd2e8950a65b7a00012df704f3ffe7b8887f8776c223ab9349ab45b4"],
+   "frame": 718,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a5bbf8111c21p+12",
+     "0x1.2a52a492b8dd3p+13"
+    ]
+   ],
+   "rules": ["OBOE_unlock2_0.2s"],
+   "sha256": "de8dc4080a38bfb2710414e331c7dc8b0856faa3237bdda419f8b408fc7155b7"
+  },
+  {
+   "boxes": [24, "613ef9330d30023a04ebe4e075ac9651b62dea704b24d3343bf8201cc3cd7128"],
+   "frame": 730,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a31e73b4f988p+12",
+     "0x1.2a423f9c0df36p+13"
+    ]
+   ],
+   "rules": ["OBOE_unlock2_0.6s"],
+   "sha256": "de3c023b200b0d697a2ecea94023279602296b6dd6f09decbf3567635b31b7a0"
+  },
+  {
+   "boxes": [23, "704808fc985f5f4817179848a837779c71e8279a497d801792cb5444f9322c73"],
+   "frame": 858,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6926ac5b155a2p+12",
+     "0x1.29f61f7a53b1bp+13"
+    ]
+   ],
+   "rules": ["CLARINET_unlock2_0.2s"],
+   "sha256": "b1ef346770b0087b97e578ddab83941337ed37f0a97f607b76a3864c7b217b16"
+  },
+  {
+   "boxes": [23, "5b7623807094298bf32d9f89909a4c198884cd17620a8d9446aec154c76dc0be"],
+   "frame": 870,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a4a3359df551p+12",
+     "0x1.2a5a204538249p+13"
+    ]
+   ],
+   "rules": ["CLARINET_unlock2_0.6s"],
+   "sha256": "3a5c113bd0bb6968afee42d2a29650399729df1a7df457fd333f57f3904f5b1c"
+  },
+  {
+   "boxes": [23, "1895de8991704ff5dc3d306d88c175256e5d63d1cec72075f21829b93d4bf01a"],
+   "frame": 1297,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6addecc244abfp+12",
+     "0x1.2a67dcabfba29p+13"
+    ]
+   ],
+   "rules": ["CLARINET_low_hp"],
+   "sha256": "5060cf82a8979f6938bb26b157f0a386a755ed77d9e610bd90ff922ee1e6426b"
+  },
+  {
+   "boxes": [24, "a2ab5788db884ff7d8574e778a119bf5b2fcd4b3ccde3cc1e0b1e7ef70e6a84a"],
+   "frame": 1303,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.69f9da99cebcdp+12",
+     "0x1.2a239aa539e18p+13"
+    ]
+   ],
+   "rules": ["CLARINET_low_0.2s"],
+   "sha256": "1a08cfd6c55e9d181b63c515ba3dd048b5fb76dd825e27e0a6a4dfbcf4dd2290"
+  },
+  {
+   "boxes": [24, "94d4b51e336940032b59f60060aff8193195d1c310e02f9bf14657b9446c898d"],
+   "frame": 1315,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6ae04782bb46dp+12",
+     "0x1.2a8563c2000c0p+13"
+    ]
+   ],
+   "rules": ["CLARINET_low_0.6s"],
+   "sha256": "c905bf1b5151a2de2c222d079e92824f42a97df80c403822be99b5db3dd2afd8"
+  },
+  {
+   "boxes": [22, "d006e93e0ec6510d76a1580a49e2a3545c6279713a9b888bf1395bca87cf6859"],
+   "frame": 1469,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6aeb693409420p+12",
+     "0x1.2aa8b59c70f84p+13"
+    ]
+   ],
+   "rules": ["OBOE_low_hp"],
+   "sha256": "62c43e32ae8cd8c6ef28705a4c2b4eea6251a907138d1784831e87101fe3e78b"
+  },
+  {
+   "boxes": [24, "d012e8429f278b3738f1c80ddb823b85afa0f8957893cd2f330dcb7703de0094"],
+   "frame": 1481,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a896a439647bp+12",
+     "0x1.2a1eb4a6754b3p+13"
+    ]
+   ],
+   "rules": ["OBOE_low_0.2s"],
+   "sha256": "9250acee84a3a1232c3c1471690cfeced9ba93a661c5b6cc76e7ee52cf279a88"
+  },
+  {
+   "boxes": [23, "de77d9d5697bec326d12af76d73bc2ba7d3f5605e7c78c758deef97c17a8cb82"],
+   "frame": 1493,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.69fdedd5bdffcp+12",
+     "0x1.2a61ace9c254bp+13"
+    ]
+   ],
+   "rules": ["OBOE_low_0.6s"],
+   "sha256": "5409750d9b77f71e3aa2429a4078d7df9b4fcb724b3c98f1510b8e68205f3d4d"
+  },
+  {
+   "boxes": [24, "7c8bf45154179b890024d0ec61566f56070d1fa724f58336e3504bb9bb2918eb"],
+   "frame": 1576,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6f0d371a361a4p+12",
+     "0x1.28aac22b5e631p+13"
+    ]
+   ],
+   "rules": ["ko"],
+   "sha256": "014235e76cec563a7321530dd25e93547cb3c3425502a1eda5960608fb63d3b1"
+  },
+  {
+   "boxes": [24, "56e2a3d88540b62507ca8b1fd1297c3d55e9c2e097526588b87b1c2eee4df335"],
+   "frame": 1579,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6969030043010p+12",
+     "0x1.29fe3b619d763p+13"
+    ]
+   ],
+   "rules": ["extra_ko_caption_punch"],
+   "sha256": "116115a27a8847fc087d750f1fb18e9119bc5d059dbe936ef03a60aa604b9200"
+  },
+  {
+   "boxes": [24, "ad5561fc8c520dd99f19abb9f8715317a12876da5b999c4e0e6029cc62efc7da"],
+   "frame": 1582,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.69ad889ef912cp+12",
+     "0x1.2a5bb055c3f44p+13"
+    ]
+   ],
+   "rules": ["ko_0.2s"],
+   "sha256": "a10b3c60c5762f4b44764f3692b7aedfc9a17e584629f6f6585419e935744039"
+  },
+  {
+   "boxes": [22, "d2d6f840ddc7dda425785cc7571ab6d1c8ee3e49346d7c3673df3f1fc07da1b4"],
+   "frame": 1594,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6ff9054336b1fp+12",
+     "0x1.26d25d942934ep+13"
+    ]
+   ],
+   "rules": ["ko_0.6s"],
+   "sha256": "72bb145c20a4dc7ec6b7e7cce3eff7e5195e5642c7ca7190a5c64a1e591bf120"
+  },
+  {
+   "boxes": [22, "49de7c3883670145ab3ba90520d4a217d8d8c728956cfd3f9e9a85c65b2144dc"],
+   "frame": 1621,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.798586f2cabaap+12",
+     "0x1.228455a4b85ddp+13"
+    ]
+   ],
+   "rules": ["ko_1.5s"],
+   "sha256": "23405f54bed29a2d3be16e96586d9b4d4a61b5582d86c7b7c9992fd2b3e2b338"
+  },
+  {
+   "boxes": [23, "a731cd01058e9464d927504789c31a919630f1be03d6959a9d8dd2769a3efc61"],
+   "frame": 1625,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.73e1d2e083da4p+12",
+     "0x1.25c5613f0d989p+13"
+    ]
+   ],
+   "rules": ["extra_wins_second_line"],
+   "sha256": "e4b24cbffcded920c00f0c33d872b864fdee29c3bd42591b02732de5d913d555"
+  },
+  {
+   "boxes": [23, "4ef7ec6f61aacd40779703287dac4db6ba79e8767d49eb0fc73c4178aadd1ce9"],
+   "frame": 1678,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6856c1e3b9b7dp+12",
+     "0x1.2a3e806831d67p+13"
+    ]
+   ],
+   "rules": ["solo_mid"],
+   "sha256": "9770ce685aebcdd3e33c41a0b4ceefb86cfbae3b6a77821b342993e1d48f5888"
+  },
+  {
+   "boxes": [23, "b1f7071b271a9fc60b43c721ee9e3956e4828f79c5359ba75ed65681b014d399"],
+   "frame": 1704,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6d16a836e7b2bp+12",
+     "0x1.2a43c3fbb1cb5p+13"
+    ]
+   ],
+   "rules": ["comment"],
+   "sha256": "8525918073bcd4d57ba7366bb8445eae43928897c9e802258f600cea72957b36"
+  },
+  {
+   "boxes": [21, "d8539e5f73a5ac822f1b065dbc8ae71ac9c84eebf0a168c68f508137d7c41394"],
+   "frame": 1754,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.67a0ac9acc572p+12",
+     "0x1.2a430f1e183d6p+13"
+    ]
+   ],
+   "rules": ["reassembly_mid"],
+   "sha256": "96bd74897a3508820a0143700e9e9ae92c21e6a30bbd006b0edffbe84918c21d"
+  },
+  {
+   "boxes": [22, "f26fae82cc01292276ef0c819fc63683fad167a75d549f76a6e1331eac25df0e"],
+   "frame": 1795,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.5097ef1ddfa1fp+12",
+     "0x1.34c63b5b87495p+13"
+    ]
+   ],
+   "rules": ["glide_mid"],
+   "sha256": "04bcf0f68c932ea420ca38df942875256d81192c43164689834b7c9f0b5204b7"
+  },
+  {
+   "boxes": [22, "bf4e2ddb84a4a2ce115f8178e2287c9a139ec2576a222bdade48eb876641c14b"],
+   "frame": 1824,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a53cdb4056cap+12",
+     "0x1.2a48a84460f10p+13"
+    ]
+   ],
+   "rules": ["extra_doors_closing"],
+   "sha256": "93afaecca0c71c359bede38679123f9dce452e06d58847919b3437fb630bc9a2"
+  },
+  {
+   "boxes": [22, "805a2fc4cfb7afdf8f0d3edf1183e85ad26a1c05d9215dc74c3c91a33a9e821d"],
+   "frame": 1828,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a53d0b9c0beap+12",
+     "0x1.2a48ab5b2ab22p+13"
+    ]
+   ],
+   "rules": ["frame_last_but_one"],
+   "sha256": "b72e37e2c2f15ddfc475c22f7fa5f33eba7c647f6d786a842422f16842d1c920"
+  },
+  {
+   "boxes": [0, "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"],
+   "frame": 1829,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a53d0d5a7cc1p+12",
+     "0x1.2a48ab77aef5fp+13"
+    ]
+   ],
+   "rules": ["frame_last"],
+   "sha256": "aa2326ed490d64d082ebc5061f77b66cce408083c7111e1df3ed8f9e1ca07ca7"
+  }
+ ],
+ "recording": {
+  "hash": "d3e772c421ab268e",
+  "seed": 654,
+  "winner": 0
+ },
+ "tool": "tools.studio_export.episode_clarinet_vs_oboe"
+}

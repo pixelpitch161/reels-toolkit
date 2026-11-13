@@ -1,0 +1,14 @@
+# The engine's self-replay hashes of ORGAN (studio/reference/fighters/organ/fight.json's config): both side orders,
+# seeds 1, 2, 3, 500 and 1 << 40. Written by the proving harness with BF_BLESS=1 on the Windows reference PC;
+# every PC and every build must give the same lines. Do not edit by hand.
+# left right seed winner t_ko n_events hash
+ORGAN FLUTE 1 1 29.871568627450976 268 390457c5093fdee6
+ORGAN FLUTE 2 0 36.55490196078431 304 63d32d0861d4c99e
+ORGAN FLUTE 3 0 36.82156862745098 331 e324919d7512dfe9
+ORGAN FLUTE 500 0 37.19656862745098 312 f49db28b19e5cfb0
+ORGAN FLUTE 1099511627776 0 35.279901960784315 289 6040fdbbb880bec3
+FLUTE ORGAN 1 0 30.504901960784316 278 1e5af99cd2b24f34
+FLUTE ORGAN 2 1 30.82156862745098 239 83440943d1ae44b0
+FLUTE ORGAN 3 0 27.438235294117646 277 c80195ebca615d37
+FLUTE ORGAN 500 1 33.20490196078431 292 6a721a46b9aea3eb
+FLUTE ORGAN 1099511627776 1 41.47990196078431 343 960a879f8771f207
