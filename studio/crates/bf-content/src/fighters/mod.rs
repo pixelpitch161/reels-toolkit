@@ -273,7 +273,12 @@ mod tests {
     fn every_kit_fighter_has_a_folder() {
         // every roster fighter has its folder, and a fighter the app offers has everything in it; a folder a port
         // has filled before the register task offers it may hold anything (nothing here names its state)
-        assert_eq!(roster().len(), 20);
+        // the roster holds the kit's 20 and the older ten (milestone 4), each once
+        assert_eq!(roster().len(), 30);
+        assert_eq!(
+            roster().iter().filter(|f| !OLDER.contains(&f.name.as_str())).count(),
+            20
+        );
         for f in roster() {
             let e = entry(&f.name).unwrap_or_else(|| panic!("{} has no folder", f.name));
             if PORTED.contains(&f.name.as_str()) {
@@ -308,7 +313,11 @@ mod tests {
         assert_eq!(sorted, OLDER);
         for name in OLDER {
             assert!(!RETIRED.contains(&name), "{name}");
-            assert!(!names.contains(&name), "{name} is in the kit roster");
+            assert_eq!(
+                names.iter().filter(|n| **n == name).count(),
+                1,
+                "{name} is not in the roster once"
+            );
             let e = entry(name).unwrap_or_else(|| panic!("{name} has no folder"));
             assert!(!e.music_feeds_fight && e.extra_lines.is_empty(), "{name}");
             assert_eq!(mesh_json(name), e.mesh, "{name}");
