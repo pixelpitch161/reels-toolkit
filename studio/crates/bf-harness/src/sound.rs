@@ -60,7 +60,7 @@ pub fn pcm_sha(master: &[[f64; 2]]) -> String {
 }
 
 /// Score and master a build; the notes as the export writes them (`name midi dur cap vel`, floats as
-/// `float.hex()`).
+/// `float.hex()`; a part's own helper's notes add its fade).
 pub fn summarise(build: &SoundBuild) -> Summary {
     let mix: Mix = build.score().unwrap_or_else(|e| panic!("the score: {e}"));
     let buses = mix.bus_names().iter().map(|b| b.to_string()).collect();
@@ -70,14 +70,19 @@ pub fn summarise(build: &SoundBuild) -> Summary {
         .expect("the note log")
         .iter()
         .map(|c| {
-            format!(
+            let line = format!(
                 "{} {} {} {} {}",
                 c.name,
                 c.midi,
                 py_hex(c.dur),
                 py_hex(c.cap),
                 py_hex(c.vel)
-            )
+            );
+            // a part's own note helper: its fade too (voices.NoteLog, `Sound.note_helper`)
+            match c.own {
+                Some(o) => format!("{line} {}", py_hex(o.fade)),
+                None => line,
+            }
         })
         .collect();
     let noise = build.ctx.noise().expect("the noise stream");

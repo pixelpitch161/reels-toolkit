@@ -561,7 +561,7 @@ def _soundtrack(M, B, D, stems_out):
     m, st = M.master(mix)
     assert m.shape == (M.NA, 2)
     lines = [f"{c['name']} {c['midi']} {common.hexf(c['dur'])} {common.hexf(c['cap'])} {common.hexf(c['vel'])}"
-             for c in log.calls]
+             + (f" {common.hexf(c['fade'])}" if 'fade' in c else '') for c in log.calls]   # (a part's own helper)
     wins, arrays = stem_windows(M.T_KO, M.NA, st)
     common.write_npz(stems_out, arrays, register=False)
     return dict(master_sha256=pcm_sha(m), buses=list(mix.buses), stems=sorted(st),

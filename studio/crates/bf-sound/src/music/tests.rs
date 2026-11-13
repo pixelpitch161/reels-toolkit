@@ -467,7 +467,8 @@ fn a_note_is_made_once_and_its_gain_after_it() {
             midi: 76,
             dur: 0.2,
             cap: 0.3,
-            vel: 0.8
+            vel: 0.8,
+            own: None
         }
     );
     assert_eq!(
@@ -485,6 +486,50 @@ fn a_note_is_made_once_and_its_gain_after_it() {
     ctx.restart(start).unwrap();
     ctx.inst_gain("FLUTE").unwrap();
     assert!(ctx.note("FLUTE", 76.9, 0.2, 0.3, 0.8).unwrap() != x);
+}
+
+#[test]
+fn a_parts_own_note_helper_has_its_fade_cache_and_gain() {
+    // An older part's own `_fit` (Sound.note_helper, #31's SYNTH: a 0.03 s fade): its own cache and its own gain
+    // table, the voice called first and its gain measured after it, logged with its fade.
+    let ep = episode();
+    let (ctx, voices) = context(&ep);
+    let start = ctx.noise().unwrap();
+    let own = OwnNote { side: 0, fade: 0.03 };
+    let x = ctx.own_note(own, "FLUTE", 76.9, 0.2, 0.3, 0.8).unwrap();
+    assert_eq!(voices[0].calls(), [(76.0, 0.8, 0.2), (66.0, 0.8, 0.2)]);
+    let mut noise = start.clone();
+    let raw = voices[0].note(&mut noise, 76.0, 0.8, 0.2);
+    let level = voices[0].note(&mut noise, 66.0, 0.8, 0.2);
+    let squares: Vec<f64> = synth::hp(&level[..14400], 120.0, FILTER_O)
+        .iter()
+        .map(|v| v * v)
+        .collect();
+    let gain = py_min(4.0, 0.16 / (dsp::mean(&squares).sqrt() + 1e-6));
+    let want: Vec<f64> = fit(&raw, 0.3, 0.03).unwrap().iter().map(|v| v * gain).collect();
+    assert_eq!(x.to_vec(), want);
+    assert_ne!(fit(&raw, 0.3, 0.03).unwrap(), fit(&raw, 0.3, FIT_FADE).unwrap());
+    // its own cache: the same key again is the same note, no voice call
+    let again = ctx.own_note(own, "FLUTE", 76.0, 0.2, 0.3, 0.8).unwrap();
+    assert!(Arc::ptr_eq(&again, &x));
+    assert_eq!(voices[0].calls().len(), 4); // (2 of the build's, 2 of this test's own above)
+    // the kit's note of the same key is another note, with its own gain measured again (two gain tables)
+    ctx.note("FLUTE", 76.9, 0.2, 0.3, 0.8).unwrap();
+    assert_eq!(voices[0].calls().len(), 6);
+    // the other side's helper has its own cache and gain too
+    ctx.own_note(OwnNote { side: 1, fade: 0.03 }, "FLUTE", 76.0, 0.2, 0.3, 0.8)
+        .unwrap();
+    assert_eq!(voices[0].calls().len(), 8);
+    let log = ctx.first_notes().unwrap();
+    assert_eq!(
+        log.iter().map(|c| c.own).collect::<Vec<_>>(),
+        [Some(own), None, Some(OwnNote { side: 1, fade: 0.03 })]
+    );
+    let bad = OwnNote {
+        side: 0,
+        fade: f64::NAN,
+    };
+    assert!(ctx.own_note(bad, "FLUTE", 70.0, 0.2, 0.3, 0.8).is_err());
 }
 
 #[test]

@@ -95,6 +95,20 @@ pub struct NoteCall {
     pub cap: f64,
     /// The velocity, as passed.
     pub vel: f64,
+    /// A part's own note helper (an older episode's `_fit` with its own fade, `Sound.note_helper` in the kit
+    /// module): the side whose helper made it and the helper's fade, in seconds. `None` for `kit.music.note`.
+    pub own: Option<OwnNote>,
+}
+
+/// A part's own note helper (`Sound.note_helper` of a reference kit module, plan m4 Task 10): its notes are
+/// `fit(voice(name, int(midi), vel, dur), cap, fade) * gain`, cached and level-matched by the helper itself (one
+/// cache and one gain table per part, as the Python part's own `_vc` and `_gain`), in the build's one noise stream.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct OwnNote {
+    /// The side whose part the helper is.
+    pub side: usize,
+    /// The helper's fade at the note's end, in seconds (`kit.music.fit`'s is [`FIT_FADE`]).
+    pub fade: f64,
 }
 
 /// One window registered with [`MusicCtx::line_override`]: from `t0` to `t1` the fighter's line plays `notes`
@@ -111,6 +125,8 @@ pub struct LineOverride {
 /// (`-0.0` as `0.0`, which Python's dict takes for the same key).
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 struct NoteKey {
+    /// `None` for `kit.music.note`'s cache; a part's own helper's cache: its side and its fade's bits.
+    own: Option<(usize, u64)>,
     name: String,
     midi: i64,
     dur: u64,
@@ -128,6 +144,8 @@ struct State {
     noise: PpNoise,
     notes: BTreeMap<NoteKey, Arc<[f64]>>,
     gains: BTreeMap<String, f64>,
+    /// The parts' own helpers' gains (`self._gain` of each part), by (side, fade bits, name).
+    own_gains: BTreeMap<(usize, u64, String), f64>,
     first: Vec<NoteCall>,
     line_overrides: BTreeMap<String, Vec<LineOverride>>,
     fighter_stops: Vec<f64>,
@@ -139,6 +157,7 @@ impl State {
             noise,
             notes: BTreeMap::new(),
             gains: BTreeMap::new(),
+            own_gains: BTreeMap::new(),
             first: Vec::new(),
             line_overrides: BTreeMap::new(),
             fighter_stops: Vec::new(),
@@ -421,6 +440,24 @@ impl<'a> MusicCtx<'a> {
         if let Some(&g) = st.gains.get(name) {
             return Ok(g);
         }
+        let g = self.measure_gain(st, helper, name)?;
+        st.gains.insert(name.to_string(), g);
+        Ok(g)
+    }
+
+    /// A part's own helper's gain table (`self._inst_gain(name)`): measured as `inst_gain` measures, once per part.
+    fn own_gain(&self, st: &mut State, own: OwnNote, helper: &'static str, name: &str) -> Result<f64, MusicError> {
+        let key = (own.side, key_bits(own.fade), name.to_string());
+        if let Some(&g) = st.own_gains.get(&key) {
+            return Ok(g);
+        }
+        let g = self.measure_gain(st, helper, name)?;
+        st.own_gains.insert(key, g);
+        Ok(g)
+    }
+
+    /// `min(4.0, 0.16 / (rms(hp(voice(name, middle, 0.8, 0.2)[:0.3 s], 120)) + 1e-6))`.
+    fn measure_gain(&self, st: &mut State, helper: &'static str, name: &str) -> Result<f64, MusicError> {
         let voice = self.voice_of(helper, name)?;
         let (lo, hi) = voice.register();
         let middle = ifloor_div(i64::from(lo) + i64::from(hi), 2) as f64;
@@ -433,9 +470,7 @@ impl<'a> MusicCtx<'a> {
             ));
         }
         let squares: Vec<f64> = synth::hp(x, 120.0, FILTER_O).iter().map(|v| v * v).collect();
-        let g = py_min(4.0, 0.16 / (dsp::mean(&squares).sqrt() + 1e-6));
-        st.gains.insert(name.to_string(), g);
-        Ok(g)
+        Ok(py_min(4.0, 0.16 / (dsp::mean(&squares).sqrt() + 1e-6)))
     }
 
     /// `note(name, midi, dur, cap, vel)`: one note in the Pixel Pitch voice `name` (a fighter's `pp` roster
@@ -459,7 +494,42 @@ impl<'a> MusicCtx<'a> {
     /// what a MIDI note far outside what the voice can make gives (Python plays the NaN); and a negative `cap`
     /// that leaves 1 or 2 samples of the note (Python raises there too, after the voice has drawn its noise).
     pub fn note(&self, name: &str, midi: f64, dur: f64, cap: f64, vel: f64) -> Result<Arc<[f64]>, MusicError> {
+        self.note_in(None, name, midi, dur, cap, vel)
+    }
+
+    /// A part's own note helper (`Sound.note_helper`): [`MusicCtx::note`] with the helper's own fade, its own cache
+    /// and its own gain table (side `own.side`'s), in the build's one noise stream and note log. The voice is called
+    /// first, then the gain is measured (on the helper's first note of that voice), as `self._fit(B.voice(...), cap)
+    /// * self._inst_gain(name)` evaluates. The errors are [`MusicError`]s of `note`'s.
+    ///
+    /// # Errors
+    /// As [`MusicCtx::note`].
+    pub fn own_note(
+        &self,
+        own: OwnNote,
+        name: &str,
+        midi: f64,
+        dur: f64,
+        cap: f64,
+        vel: f64,
+    ) -> Result<Arc<[f64]>, MusicError> {
+        if !own.fade.is_finite() || own.fade < 0.0 {
+            return Err(MusicError::new("note", format!("a helper's fade of {} s", own.fade)));
+        }
+        self.note_in(Some(own), name, midi, dur, cap, vel)
+    }
+
+    fn note_in(
+        &self,
+        own: Option<OwnNote>,
+        name: &str,
+        midi: f64,
+        dur: f64,
+        cap: f64,
+        vel: f64,
+    ) -> Result<Arc<[f64]>, MusicError> {
         const H: &str = "note";
+        let fade = own.map_or(FIT_FADE, |o| o.fade);
         for (what, v) in [("midi", midi), ("dur", dur), ("cap", cap), ("vel", vel)] {
             if !v.is_finite() {
                 return Err(MusicError::new(H, format!("{what} is {v}, not a number")));
@@ -473,6 +543,7 @@ impl<'a> MusicCtx<'a> {
         }
         let midi = midi.trunc();
         let key = NoteKey {
+            own: own.map(|o| (o.side, key_bits(o.fade))),
             name: name.to_string(),
             midi: midi as i64,
             dur: key_bits(round_nd(dur, 3)),
@@ -488,7 +559,7 @@ impl<'a> MusicCtx<'a> {
         // samples long whatever the voice gives): find out before the voice draws any noise.
         let n = int(H, "cap", cap * SRF)?;
         if n == 1 || n == 2 {
-            return Err(MusicError::new(H, no_room(n as usize, FIT_FADE)));
+            return Err(MusicError::new(H, no_room(n as usize, fade)));
         }
         if !voice.can_hold(dur) {
             return Err(MusicError::new(
@@ -506,8 +577,11 @@ impl<'a> MusicCtx<'a> {
                 ),
             ));
         }
-        let fitted = fit(&x, cap, FIT_FADE).map_err(|e| MusicError::new(H, e.problem))?;
-        let gain = self.gain(&mut st, H, name)?;
+        let fitted = fit(&x, cap, fade).map_err(|e| MusicError::new(H, e.problem))?;
+        let gain = match own {
+            None => self.gain(&mut st, H, name)?,
+            Some(o) => self.own_gain(&mut st, o, H, name)?,
+        };
         let out: Arc<[f64]> = fitted.iter().map(|v| v * gain).collect();
         st.notes.insert(key, Arc::clone(&out));
         st.first.push(NoteCall {
@@ -516,6 +590,7 @@ impl<'a> MusicCtx<'a> {
             dur,
             cap,
             vel,
+            own,
         });
         Ok(out)
     }
