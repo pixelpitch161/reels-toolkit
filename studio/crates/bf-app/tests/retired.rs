@@ -52,10 +52,15 @@ impl Drop for Temp {
 
 /// The roster names and ability names that hold a retired name as a word of their own ("ALTO SAX", "GUITAR
 /// SMASH"), in every form the app writes them: as the roster has them, as shown ("Alto sax"), and as a file name
-/// part ("alto_sax", "altosax").
+/// part ("alto_sax", "altosax"). Only the fighters the app offers count: a roster fighter not offered yet (an older
+/// fighter before its port) is never written, so its names excuse nothing.
 fn longer_names() -> Vec<String> {
     let mut names = Vec::new();
-    for f in bf_content::roster() {
+    let offered = bf_content::available();
+    for f in bf_content::roster()
+        .iter()
+        .filter(|f| offered.contains(&f.name.as_str()))
+    {
         for n in [&f.name, &f.unlock1.name, &f.unlock2.name, &f.low.name] {
             if n.split(' ').any(|w| RETIRED.contains(&w)) && !RETIRED.contains(&n.as_str()) {
                 let lower = n.to_lowercase();

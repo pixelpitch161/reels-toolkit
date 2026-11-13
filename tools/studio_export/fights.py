@@ -73,9 +73,9 @@ def replay_hash_of_values(r):
 # ECHO_R, HORN's live blast rings; REST and NOTES, VIOLA's per-ball rests and its notes)
 RAGGED_DEPTH = dict(WAVES=2, SLAMS=2, COB=3, HOLD=2, SPOT=2, THROWS=2, ECHO_R=2, SHELLS=2, REST=2, NOTES=2)
 # keys the kit appends one float array a frame to without listing them in story.REC_KEYS (TENOR SAX's CROWD, a (2, 7)
-# array a frame; BAGPIPES's RAD, the balls' radii): stored as JSON like every key outside REC_KEYS, and an array a
-# frame again for the replay guard
-FRAME_ARRAYS = ('CROWD', 'RAD')
+# array a frame; BAGPIPES's RAD, the balls' radii; BARI SAX's WRECK (2, 9) and SNAP (2, 8)): stored as JSON like
+# every key outside REC_KEYS, and an array a frame again for the replay guard
+FRAME_ARRAYS = ('CROWD', 'RAD', 'WRECK', 'SNAP')
 
 
 def as_kit_run(rec):

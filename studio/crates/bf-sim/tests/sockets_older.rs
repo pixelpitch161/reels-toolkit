@@ -4,7 +4,7 @@
 //! `joke`), or reads the per-ball radius, mass or rewind it brings, has its call in the shared engine files, in
 //! Python's order, calling stubs; and none of them changes a fight.
 //!
-//! The older ten fighters' entries are `tests/older_roster.json` (exported from `fighters.py` as `roster.json` is).
+//! The older ten fighters' entries are in `bf-content/data/roster.json` (not offered by the app until ported).
 //! Their kinds are stubs, so they load as `Unsupported` and fight only through the test entry `with_unported`: an
 //! unported weapon does nothing, an unported ability is announced and does nothing, and every kind already ported
 //! (their waves, hastes, shields, slams and arcs) runs. With `Fight::trace_sockets` on, each of them fights FLUTE
@@ -52,12 +52,29 @@ fn of(order: &[Socket], when: &[&str]) -> Vec<String> {
         .collect()
 }
 
-fn kit() -> Vec<FighterCfg> {
+/// The whole roster (the kit's 20 and the older ten).
+fn roster() -> Vec<FighterCfg> {
     parse_roster(include_str!("../../bf-content/data/roster.json")).expect("the roster loads")
 }
 
+/// The kit's 20: every roster fighter but the older ten.
+fn kit() -> Vec<FighterCfg> {
+    let kit: Vec<FighterCfg> = roster()
+        .into_iter()
+        .filter(|f| !OLDER.contains(&f.name.as_str()))
+        .collect();
+    assert_eq!(kit.len(), 20);
+    kit
+}
+
+/// The older ten, in `fighters.py`'s order.
 fn older() -> Vec<FighterCfg> {
-    parse_roster(include_str!("older_roster.json")).expect("the older roster loads")
+    let older: Vec<FighterCfg> = roster()
+        .into_iter()
+        .filter(|f| OLDER.contains(&f.name.as_str()))
+        .collect();
+    assert_eq!(older.iter().map(|f| f.name.as_str()).collect::<Vec<_>>(), OLDER);
+    older
 }
 
 /// The older ten, in `fighters.py`'s order.
@@ -73,6 +90,35 @@ const OLDER: [&str; 10] = [
     "BARI SAX",
     "VIOLA",
 ];
+
+/// Whether a fighter runs one of the older kinds its port has filled: its weapon is an older kind (or VIOLIN's
+/// spinning blade, a blade with no `mode`) that loads typed, or one of its abilities is an older kind that is ported.
+/// Read at run time from each kind's `PORTED`, so a port never has to edit these tests: a fighter that runs an older
+/// kind may make its kind's events, and only the still-unported ones are held to "does nothing".
+fn runs_an_older_kind(f: &FighterCfg) -> bool {
+    let kind = f.raw["weapon"]["kind"].as_str().expect("a kind");
+    let older_weapon = OLDER_WEAPON_KINDS.iter().any(|(k, _)| *k == kind)
+        || (kind == "blade" && f.raw["weapon"].get("mode").is_none());
+    let weapon = older_weapon && !matches!(f.weapon, WeaponCfg::Unsupported(_));
+    let ability = [&f.unlock1, &f.unlock2, &f.low]
+        .into_iter()
+        .any(|ab| ab.kind.is_ported() && OLDER_ABILITY_KINDS.iter().any(|(k, _)| *k == ab.kind.name()));
+    weapon || ability
+}
+
+/// Whether a fighter has a ported ability of kind `rewind` (TURNTABLES's REWIND): its ball can be rewinding, which
+/// `move` skips (`fight.py` 3131) and `damage` and the clash pass over.
+fn may_rewind(f: &FighterCfg) -> bool {
+    [&f.unlock1, &f.unlock2, &f.low]
+        .iter()
+        .any(|ab| ab.kind.is_ported() && ab.kind.name() == "rewind")
+}
+
+/// Whether the engine has ported every kind of a fighter (its weapon and its three abilities).
+fn fully_ported(f: &FighterCfg) -> bool {
+    !matches!(f.weapon, WeaponCfg::Unsupported(_))
+        && [&f.unlock1, &f.unlock2, &f.low].iter().all(|ab| ab.kind.is_ported())
+}
 
 /// The sockets this task adds, each with its `fight.py` lines (the pre-flight scan's list).
 const NEW: [(&str, &str); 25] = [
@@ -148,7 +194,9 @@ fn the_order_file_lists_the_new_sockets_at_their_lines() {
 
 /// Each older fighter against FLUTE, both corners, seeds 1 and 2: the trace follows `sockets_order.txt` exactly (the
 /// setup, frame `f0`, every step's unconditional sockets, every frame's), the conditional ones come in their blocks
-/// and as often as the events say, no stub is ever reached, and tracing changes nothing.
+/// and as often as the events say, no stub is ever reached, and tracing changes nothing. A fighter none of whose
+/// older kinds is ported yet makes no event of an older kind; one whose port has filled a kind
+/// ([`runs_an_older_kind`]) may make its kind's events, and is held to everything else.
 #[test]
 fn each_older_fighter_against_flute_reaches_the_sockets_in_fight_py_order() {
     let order = order();
@@ -166,12 +214,27 @@ fn each_older_fighter_against_flute_reaches_the_sockets_in_fight_py_order() {
     };
     let step_with_beat = of(&order, &["step", "beat"]);
     let step_alone = of(&order, &["step"]);
+    // a step with ball `k`'s `move.speeds` left out: `move` skips a rewinding ball (fight.py 3131), and only then
+    let without_speeds = |want: &[String], k: usize| -> Vec<String> {
+        let at = want
+            .iter()
+            .enumerate()
+            .filter(|(_, t)| *t == "move.speeds")
+            .nth(k)
+            .map(|(i, _)| i)
+            .expect("move.speeds twice in a step");
+        want.iter()
+            .enumerate()
+            .filter(|(i, _)| *i != at)
+            .map(|(_, t)| t.clone())
+            .collect()
+    };
     let (kit, older) = (kit(), older());
     let flute = kit.iter().find(|f| f.name == "FLUTE").expect("FLUTE");
     let mut seen = BTreeSet::new();
     let mut fights = 0;
     for name in OLDER {
-        let x = older.iter().find(|f| f.name == name).expect("in older_roster.json");
+        let x = older.iter().find(|f| f.name == name).expect("in roster.json");
         for k in 0..2 {
             for seed in [1, 2] {
                 let mut fighters = [flute, flute];
@@ -211,7 +274,11 @@ fn each_older_fighter_against_flute_reaches_the_sockets_in_fight_py_order() {
                     } else {
                         &step_alone
                     };
-                    assert_eq!(got, *want, "{what}: step {}", step + 1);
+                    if may_rewind(x) && got != *want {
+                        assert_eq!(got, without_speeds(want, k), "{what}: step {}", step + 1);
+                    } else {
+                        assert_eq!(got, *want, "{what}: step {}", step + 1);
+                    }
                     step += 1;
                     at = end;
                 }
@@ -243,7 +310,8 @@ fn each_older_fighter_against_flute_reaches_the_sockets_in_fight_py_order() {
                         assert_eq!(trace[i - 1], "move.clash", "{what}: at trace entry {i}");
                     }
                 }
-                // the older kinds' sockets are reached and do nothing: no event of theirs
+                // the older kinds' sockets are reached and do nothing while unported: no event of theirs
+                let unported = !runs_an_older_kind(x);
                 for kind in [
                     "inflate",
                     "bite",
@@ -255,10 +323,10 @@ fn each_older_fighter_against_flute_reaches_the_sockets_in_fight_py_order() {
                     "note",
                     "heal",
                 ] {
-                    assert_eq!(count(&rec, kind), 0, "{what}: {kind}");
+                    assert!(!unported || count(&rec, kind) == 0, "{what}: {kind}");
                 }
                 assert!(
-                    !rec.arrays.contains_key("RAD") && !rec.arrays.contains_key("X33_SPOUT"),
+                    !unported || (!rec.arrays.contains_key("RAD") && !rec.arrays.contains_key("X33_SPOUT")),
                     "{what}"
                 );
                 fights += 1;
@@ -329,7 +397,8 @@ fn the_older_kinds_load_as_unsupported_until_ported() {
         table(&OLDER_ABILITY_KINDS),
         "one older fighter for each ability kind"
     );
-    // and the engine refuses each older fighter outside the test entry, naming it
+    // and the engine refuses each older fighter with a kind not ported yet outside the test entry, naming it; one
+    // whose port has filled every kind passes
     let kit = kit();
     let flute = kit.iter().find(|f| f.name == "FLUTE").expect("FLUTE");
     for f in older() {
@@ -338,6 +407,10 @@ fn the_older_kinds_load_as_unsupported_until_ported() {
             rules: Rules::new(132.0, 3.5),
             seed: 1,
         };
+        if fully_ported(&f) {
+            assert_eq!(setup.check().map_err(|e| e.to_string()), Ok(()), "{}", f.name);
+            continue;
+        }
         let err = setup.check().expect_err("refused").to_string();
         assert!(
             err.starts_with(&format!("fighters[0]: the engine has not ported {}'s", f.name)),
@@ -347,7 +420,9 @@ fn the_older_kinds_load_as_unsupported_until_ported() {
 }
 
 /// `radius`, `mass` and `rewinding` give the shared `Rules::r`, 1.0 and false for every ball of the 30, all fight
-/// long: no kind the engine runs sets a ball's own radius, mass or rewind, so no fight of milestone 1 or 3 changes.
+/// long, except the ball of an older fighter whose port has filled one of its kinds ([`runs_an_older_kind`]: an
+/// inflate or a rewind sets them, and the port's own tests check its values): no kit kind sets a ball's own
+/// radius, mass or rewind, so no fight of milestone 1 or 3 changes.
 #[test]
 fn every_ball_has_the_shared_radius_and_mass_and_never_rewinds() {
     let (kit, older) = (kit(), older());
@@ -362,9 +437,11 @@ fn every_ball_has_the_shared_radius_and_mass_and_never_rewinds() {
         let r = fight.rules.r;
         let mut sched = bf_sim::schedule::Schedule::new(&mut fight);
         let mut steps = 0;
+        // ball 0 is `f`'s; FLUTE's ball 1 is checked in every fight
+        let own = !runs_an_older_kind(f);
         while fight.t < fight.rules.t_max && fight.winner.is_none() && steps < 3000 {
             sched.step(&mut fight);
-            for k in 0..2 {
+            for k in (if own { 0 } else { 1 })..2 {
                 assert_eq!(radius(&fight, k).to_bits(), r.to_bits(), "{} {k}", f.name);
                 assert_eq!(mass(&fight, k).to_bits(), 1.0f64.to_bits(), "{} {k}", f.name);
                 assert!(!rewinding(&fight, k), "{} {k}", f.name);
