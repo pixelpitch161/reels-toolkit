@@ -1,6 +1,7 @@
 {
  "format": 1,
  "entries": [
-  {"path": "studio/reference/fighters/synth/origin.json", "sha256": "773edc72ea5ada5ccd9f56bd992cfeac699a1b330fa35b2a63a4392a91b68bdb", "bytes": 24867, "tool": "tools.studio_export.older.origin", "commit": "1871c4fd7d95d34191ff94a81f9f8c1a135178cc", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"}
+  {"path": "studio/reference/fighters/synth/origin.json", "sha256": "773edc72ea5ada5ccd9f56bd992cfeac699a1b330fa35b2a63a4392a91b68bdb", "bytes": 24867, "tool": "tools.studio_export.older.origin", "commit": "1871c4fd7d95d34191ff94a81f9f8c1a135178cc", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"},
+  {"path": "studio/reference/fighters/synth/origin_extra.json", "sha256": "5685a064527747cc1f13016cbe6e9ea2a1a447f6d13c6a1e12805027d59482b4", "bytes": 7295, "tool": "tools.studio_export.fighter_synth", "commit": "ed24c58c4bc59a45ba74bbf368f92387b27b2afe", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"}
  ]
 }
