@@ -537,7 +537,8 @@ impl Look for SynthLook {
             .get("weapon")
             .and_then(|w| w.get("volt_speed"))
             .and_then(|v| v.as_f64())
-            .expect("the weapon's volt_speed");
+            // a weapon without one (Python raises) keeps the SYNTH's own, so any fighter's numbers make the look
+            .unwrap_or(9.0);
         self.pitch = cfg
             .raw
             .get("pitch")
