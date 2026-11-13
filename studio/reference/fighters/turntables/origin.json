@@ -329,67 +329,27 @@
   },
   {
    "call": "ballfight.kit.fighters.turntables:origin_harness",
-   "name": "#31's HUD (no ability list), its bus name decks"
+   "name": "#31's HUD (no ability list); its bus name decks; the shared buses its part's only"
   }
  ],
  "layers": [
-  {
-   "name": "thump",
-   "patches": [
-    {
-     "file": "render.py",
-     "old": "if k == DJ and len(JERK_T):                                   # the decks thump on every jerk of the",
-     "sha256": "0a235bf6fbf73c9da5cf74498edf178c43833c6b15f59f7680d5e1a47328bc02"
-    }
-   ]
-  },
-  {
-   "name": "ropes",
-   "patches": [
-    {
-     "file": "render.py",
-     "old": "WAVE_EV += [(e[0], 0.9 if e[1] == 'slam' else 0.35) for e in EV if e[1] in ('slam', 'jerk')]        ",
-     "sha256": "c1f417520bf9dab87bf487a4d6fdb26b3e9c8f3eb330952235b810ce4d62f0f3"
-    }
-   ]
-  },
-  {
-   "name": "instrument",
-   "patches": [
-    {
-     "file": "render.py",
-     "old": "cache[key] = ST.render_sprite(nm, r, float(yk), float(roll), float(pitch)) if NAMES[k] == 'TURNTABLE",
-     "sha256": "a9f455c2a8462450a567c7276073434462a583dc4d1132370d7b90237bd64aa4"
-    }
-   ]
-  },
-  {
-   "name": "effects",
-   "patches": [
-    {
-     "file": "render.py",
-     "old": "if how == 'scratch':                                       # a rope slam",
-     "sha256": "1051d798bcc9f964f8aca4314ccd08746b72b6e0019cb6817703c7733cdde753"
-    }
-   ]
-  },
-  {
-   "name": "tonearm",
-   "patches": [
-    {
-     "file": "render.py",
-     "old": "for kind, Q in ST.tonearm(PIVOT, tip, h):",
-     "sha256": "f84a775400ab8c65bce0ba93d5c22f5c3aafcef372863fb0ec37a32509239a78"
-    }
-   ]
-  },
   {
    "name": "record",
    "patches": [
     {
      "file": "render.py",
+     "old": "alb, on_rec = ST.record_albedo(alb, sxp, szp, phi, COL[DJ])",
+     "sha256": "3d002fabcc31272cd967b8081fed72a9b795756cdecb53b0939a9fa6a0a92f3c"
+    }
+   ]
+  },
+  {
+   "name": "solo_rings",
+   "patches": [
+    {
+     "file": "render.py",
      "old": "rings = solo_rings(t) if t >= T_SOLO - 0.01 else []",
-     "sha256": "70a1845bb6540de5cb048309ddb75c8293b452fc308fe2f5ae0cd0952ddf94a3"
+     "sha256": "5981aebc39566eae0beda7ee78e232324a0e1934620a52a95f085f808f5db00f"
     }
    ]
   },
@@ -399,7 +359,37 @@
     {
      "file": "render.py",
      "old": "sl = RUN['SLAMS'][i] if in_fight else []",
-     "sha256": "272d4efc6245d0bf44ae440ff40e1dbeaedda84513e984312be56b89b6be7774"
+     "sha256": "0728e43750a5dcd0aa467801004d8c928fcf97b47d322229014576c18dda9792"
+    },
+    {
+     "file": "render.py",
+     "old": "draw_drop(arr, cam, t, i, in_fight, falling=False)",
+     "sha256": "895d811d8fb1568df05c157baee94ca65241fb0b3286d58ecd664b4a93ff5ba2"
+    },
+    {
+     "file": "render.py",
+     "old": "draw_drop(arr, cam, t, i, in_fight, falling=True)",
+     "sha256": "8e023bd8cb44d2448fcf2a4d2fd56deb50f6be2359d9a1ee8cb0caeb3918cae9"
+    },
+    {
+     "file": "render.py",
+     "old": "if e[1] == 'slam':",
+     "sha256": "27a1a8ea0051bae696e5838417848db099828ef2878eea88b61318afe30a8364"
+    }
+   ]
+  },
+  {
+   "name": "tonearm",
+   "patches": [
+    {
+     "file": "render.py",
+     "old": "draw_tonearm(fr, cam, L, arm, t)",
+     "sha256": "4836ea20f818a0d750b8e3e1b569714ecdf7672c4545504e8760cea06b3b170e"
+    },
+    {
+     "file": "render.py",
+     "old": "for kind, Q in ST.tonearm(PIVOT, tip, h):",
+     "sha256": "b743b8ba78e9d351353c00baad63aa8348783c2a9bac028412fe691ca8a8e115"
     }
    ]
   },
@@ -409,17 +399,112 @@
     {
      "file": "render.py",
      "old": "if rk > 0 and win_ is not None and fs[k]['vis']:",
-     "sha256": "6a659fa808d056b5bf3f6a28313724d0650b084d91b263915b4fe11122b003dd"
+     "sha256": "1262ef6b1d01c323f3dc1f5112d4a19c02b719cba7a0681438b3062afdd237c7"
+    },
+    {
+     "file": "render.py",
+     "old": "if rk > 0:",
+     "sha256": "62cfdc16208cbc2e95735544dab0e3f8def3b4027073997b1dc2c9d3a35a614c"
     }
    ]
   },
   {
-   "name": "hits",
+   "name": "thump",
    "patches": [
     {
      "file": "render.py",
-     "old": "FLASH_EV = [e[0] for e in EV if (e[1] == 'hit' and e[7] in ('slam', 'wave', 'shockwave', 'scratch'))",
-     "sha256": "84966eb047f009fb61254255a8f9f600bf89a09f9fdb57b3f7e9dfb00ea23b0e"
+     "old": "if k == DJ and len(JERK_T):",
+     "sha256": "05b23313fd01370311c742d4df18ce2cd84a77c36264a885240cd14565c335e0"
+    }
+   ]
+  },
+  {
+   "name": "instrument",
+   "patches": [
+    {
+     "file": "render.py",
+     "old": "if k in REC and (st['haste']",
+     "sha256": "8618516c698053448dfd22789b37aeba7f3502c4a11bb0986d07751023d3e634"
+    },
+    {
+     "file": "render.py",
+     "old": "if NAMES[k] == 'TURNTABLES' else __import__",
+     "sha256": "0e2c031d9268fbd03a38a2bec15caebb0edeba2e0776ec627c447441a7f0597c"
+    }
+   ]
+  },
+  {
+   "name": "effects",
+   "patches": [
+    {
+     "file": "render.py",
+     "old": "if how == 'scratch':",
+     "sha256": "838a8f20e2d5dc9ff97d03030b3bd3d46b8be19afb02d6acfd7368325e9a3f5f"
+    },
+    {
+     "file": "render.py",
+     "old": "elif how == 'slam':",
+     "sha256": "ac7248f69f54887076e9f4547df232e6b0950714ba1da90760387b81a4d62046"
+    },
+    {
+     "file": "render.py",
+     "old": "elif kind == 'jerk':",
+     "sha256": "7ea6705afae34917123de72398bb5615efb8739143a615c328f040ebb0d42878"
+    },
+    {
+     "file": "render.py",
+     "old": "elif kind == 'slam':",
+     "sha256": "f0f5ac5e3cde77e2633d671d45608a960c09c488f3dd5f490cc85724002727a7"
+    }
+   ]
+  },
+  {
+   "name": "sparks",
+   "patches": [
+    {
+     "file": "render.py",
+     "old": "(16, 3.2, 0.3) if how in ('slam', 'wave', 'scratch') else",
+     "sha256": "eb79678b922bbd9579ca5c534459c17f83f987f21a4978b533c17e3aa3671aa8"
+    }
+   ]
+  },
+  {
+   "name": "flashbulbs",
+   "patches": [
+    {
+     "file": "render.py",
+     "old": "e[7] in ('slam', 'wave', 'shockwave', 'scratch')) or",
+     "sha256": "43de7225d9b76c9a5dd18b8c77bb8eae6c1103f7b1fd26ee882f0cf10ee5fa4c"
+    }
+   ]
+  },
+  {
+   "name": "hit_glow",
+   "patches": [
+    {
+     "file": "render.py",
+     "old": "if e[7] in ('slam', 'scratch'):",
+     "sha256": "f09d14558e8d318b981e9233490828828ff330d959787867ab21bd199fe91a4b"
+    }
+   ]
+  },
+  {
+   "name": "fringe",
+   "patches": [
+    {
+     "file": "render.py",
+     "old": "if e[7] in ('slam', 'wave', 'scratch'):",
+     "sha256": "2176fe1e4f45e7999bb400bbc22d3e52421dfe514ebbae44608368c7c4b8593f"
+    }
+   ]
+  },
+  {
+   "name": "ropes",
+   "patches": [
+    {
+     "file": "render.py",
+     "old": "for e in EV if e[1] in ('slam', 'jerk')]",
+     "sha256": "25ef10c60d57d4c9203148bd43a3f9500685f57757a002ac61e1c9e36d872c40"
     }
    ]
   }
@@ -428,38 +513,148 @@
  "other": [
   {
    "file": "render.py",
+   "old": "lit = sub[..., :3].astype(np.float32) * (1.12 + 0.3 * glow) + LIFT.get(NAMES[k], 10)",
+   "sha256": "ce0276976aa8833602a61ac4141ec8262c3b793b0cceb49db889e9f5e9fea1a5"
+  },
+  {
+   "file": "render.py",
+   "old": "if 0.0 < dt < 1.2:",
+   "sha256": "840b5575a328fd819dc39748f5647f1667d68cc4d4599b0dca5bdfe440c19739"
+  },
+  {
+   "file": "render.py",
    "old": "WAVE_EV += [(e[0], 0.9) for e in EV if e[1] == 'slam']",
-   "sha256": "f339272f6fdc213195573c2028f957e222caefbcac1ee5723d779b9d1b825836"
+   "sha256": "e4ef5bed6f8afc27de0a2a6b0da69aeae6530be632dae71c38073d3fd8c84174"
   },
   {
    "file": "render.py",
-   "old": "['key'] * 7 + ['bkey'] * 4 + ['knob'] * 4 + ['jack'] * 4)",
-   "sha256": "3d0046d36a6ce10ddf57bd7fda55db2553e20bff5d57993bd3809f7e43808190"
+   "old": "img = dof(img, coc_map(depth, zf, 26.0, sharp=0.17))",
+   "sha256": "b4c5f047bf15e7ce3161dfa82a737e5cbee38b7b6268e7e424f8e9480c4db3a0"
   },
   {
    "file": "render.py",
-   "old": "cache[key] = ST.render_sprite(nm, r, float(yk), float(roll), float(pitch))",
-   "sha256": "5677f34c8872bf3a1ca7728090c61bb1f77353fb4383797a415b79bbe736d6bb"
+   "old": "img = shimmers(img, cam, t)",
+   "sha256": "54f5b2026160b09439e95128045edc747a2c555df79e7e7a0853d351ebedfa50"
+  },
+  {
+   "file": "render.py",
+   "old": "fr.glow(s_[0], s_[1], 40, (255, 240, 220), 0.7 * (1 - ss(T_KO, T_HS + 0.25, t)))",
+   "sha256": "e3badac729936d03fd7d854baaf643c49f48314c6ad42ce1c2d808607b6ac790"
   },
   {
    "file": "render.py",
    "old": "punch = 1 + (0.25 if txt != 'FIGHT!' else 0.12) * max(0.0, 1 - u / 0.12) ** 2",
-   "sha256": "59cb319415ccdda5828609321cee6c0801e97066e7bd87bcc3103758762753fa"
+   "sha256": "7c7ae5e3c68f734ef8fe926485d1c399b3b9bb166fed2cb94087b4704a2d47b9"
   },
   {
    "file": "render.py",
-   "old": "for i, e in events_between(t - 0.32, t, ('hit', 'plug_miss')):",
-   "sha256": "6a35cd4281a0f9a397acdb4ea8fc4f08b3928274b4151c7d67c42cc019eb225d"
+   "old": "cache[key] = ST.render_sprite(nm, r, float(yk), float(roll), float(pitch))",
+   "sha256": "555260e678a204bca700d375e6f355685bf03d8514fdef85759f1fdd0f844279"
+  },
+  {
+   "file": "render.py",
+   "old": "if e[3] == k and e[7] not in ('volt',):",
+   "sha256": "3f40f3956aba3223bb89d99eca1e7eab6b6e56cf3aa8fd10a74934edb96f5d9e"
+  },
+  {
+   "file": "render.py",
+   "old": "['key'] * 7 + ['bkey'] * 4 + ['knob'] * 4 + ['jack'] * 4)",
+   "sha256": "719df3d4039812c577c00c0b4618410196e3f4161f42c4aff2a37e1411e56e84"
+  },
+  {
+   "file": "render.py",
+   "old": "jacks = draw_cables(arr, cam, t, fs, glows)",
+   "sha256": "1d15d63499b2b8824c7f3253be6458bc30e6d6556d412d2d2ee33e1ebcf496ab"
   },
   {
    "file": "render.py",
    "old": "wav = RUN['WAVES'][i] if in_fight else []",
-   "sha256": "49c19846af48f812f09cf2de20cafa9c8d56830201ef4e940cfa0cad4436a876"
+   "sha256": "d1fab43f224ca7278a39d2ceea6cf6e042ff332af04d52ea8e83317816ec54e3"
+  },
+  {
+   "file": "render.py",
+   "old": "for owner, cx, cz, r, rmax, kind, t0 in RUN['WAVES'][sim_i(t)]:",
+   "sha256": "5055f3459ecf815b0a1302dcfc5bd4368e4696bbdee4216c655c8be33418b4ac"
+  },
+  {
+   "file": "render.py",
+   "old": "elif how == 'plug':",
+   "sha256": "aaab4637fe0dfc5c4d91426d1e96b1badeb387ef8f7a6e9376b1ef3d8eca4371"
+  },
+  {
+   "file": "render.py",
+   "old": "elif how == 'volt':",
+   "sha256": "a83e2b8679134e5bd9955bb28cfe250e252c989d4028fc2cea1afe5b4b315bba"
+  },
+  {
+   "file": "render.py",
+   "old": "elif how == 'lash':",
+   "sha256": "3e83f28316cc6a22e3a06550eec26ffe8d0b2584dfc22ef125baf08aef20550e"
+  },
+  {
+   "file": "render.py",
+   "old": "elif how == 'wave':",
+   "sha256": "22a1317eacbbd97a47bbafba443296275523199e82bd22eda0b0695a9593fc3e"
+  },
+  {
+   "file": "render.py",
+   "old": "elif kind == 'snap':",
+   "sha256": "10f20716b5b536ca666584a429d7f878b06255a3ad77e6978fe7f5aa88cc34f6"
+  },
+  {
+   "file": "render.py",
+   "old": "elif kind == 'leash':",
+   "sha256": "e33ddc6f8a7a3906c04159030be965add798c61ef859c9be245b820b213cf06a"
+  },
+  {
+   "file": "render.py",
+   "old": "elif kind == 'ability' and e[4] == 'wave':",
+   "sha256": "f2674b43e4b39f481a59ffeb97d01489e85556bb41ae39c218864ae35ae249ce"
+  },
+  {
+   "file": "render.py",
+   "old": "if NAMES[LOSE] == 'SYNTH':",
+   "sha256": "03537c127fb90ef88dc6dc983466a94039f0b85cf6092a1612998da3142f105f"
+  },
+  {
+   "file": "render.py",
+   "old": "events_between(t - 0.32, t, ('hit', 'plug_miss'))",
+   "sha256": "44550090c8de49c17181b3434e8d9bae45acb6482b986656d074961b517e957a"
+  },
+  {
+   "file": "render.py",
+   "old": "if how == 'volt':",
+   "sha256": "a7d1bd70ada04d51cbd77f0d4e0c3094a35b0effd6ed28673e96f5cdaa744765"
+  },
+  {
+   "file": "render.py",
+   "old": "(16, 3.2, 0.3) if how in ('slam', 'wave', 'scratch') else \\",
+   "sha256": "a8b2c95a45b42e2b74f9fc7a09eebe40787008d93838b9ed4d979cc3988f2c26"
+  },
+  {
+   "file": "render.py",
+   "old": "e[7] in ('slam', 'wave', 'scratch', 'lash')) or e[1] == 'ability'",
+   "sha256": "b3189e9b61f93e80f8dd09f240b6efe36a4af171e2e182a2d4f0ce5a175fa648"
+  },
+  {
+   "file": "render.py",
+   "old": "if e[7] in ('slam', 'wave', 'scratch', 'lash'):",
+   "sha256": "746fffb48504caaccfbb2cbb35aab5bc208475df1faaa3c50692f7d80b7098a5"
+  },
+  {
+   "file": "render.py",
+   "old": "events_between(t - 0.12, t, ('hit', 'snap'))",
+   "sha256": "377e4698952f32e0197a129e9bc671465e297c07ba701a4d46b0a9c512ce612f"
+  },
+  {
+   "file": "render.py",
+   "old": "if e[1] == 'snap' or e[7] in ('slam', 'wave', 'scratch'):",
+   "sha256": "acb13f5636fc7861c8e4bb5a601ba66acea1454dd23136b07dbb919a9c7df79a"
   }
  ],
  "seed": 1339,
  "side": 0,
- "spec_sha256": "dd6179c0a847da3d05a1ff5b39e9ac45ef3f58cd2b8fd028a8e9604b3eb69f5a",
+ "spec_sha256": "2fee1b51a58c89bc8259b26240c2246dd178cfd5f2c375c7ed7badbdafe01402",
  "state_keys": ["glow"],
  "window": {
   "frames": [105, 1726],

@@ -46,7 +46,8 @@ from . import base
 PORTED = True
 EPISODE = 'ballfight_turntables_vs_synth'
 R = S.R_BALL
-BIG = 1e9                                      # items_free depth: drawn first in the painter pass (#31: under the balls)
+GHOST_Z = 2e9                                  # items_free depths, drawn first in the painter pass (#31: under the balls):
+UNDER_Z = 5e8                                  # REWIND's ghosts, then (SYNTH's cables at 1e9), the lying record, the arm
 
 
 # ---------------------------------------------------------------- #31's styles.py, from its scratch copy
@@ -427,17 +428,17 @@ class Look(base.Look):
                 layer_blend(arr, [s_], np.clip(c, 0, 255), a)
 
     def items_free(self, F):
-        """under the balls, after the back ropes (#31 render 1256-1270): REWIND's ghosts and the record lying after
-        BASS DROP (one pass over the frame), then the tonearm"""
-        return [(BIG, 'under'), (BIG, 'arm')]
+        """under the balls, after the back ropes (#31 render 1256-1270, in its order): REWIND's ghosts, (SYNTH's
+        patch cables at depth 1e9,) the record lying after BASS DROP, then the tonearm"""
+        return [(GHOST_Z, 'ghosts'), (UNDER_Z, 'drop'), (UNDER_Z, 'arm')]
 
     def draw_item(self, F, payload):
         P, k = self.P, self.k
         t, cam = F.t, F.cam
-        if payload == 'under':
-            arr, depth = F.fr.array(), F.fr.depth()
+        if payload == 'ghosts':
             rk, win_ = self.rewinding(t)
             if rk > 0 and win_ is not None and F.fs[k]['vis']:
+                arr, depth = F.fr.array(), F.fr.depth()
                 for g in range(1, 6):
                     tg = max(win_[0], t - 0.035 * g)
                     if tg >= t - 1e-6:
@@ -445,7 +446,10 @@ class Look(base.Look):
                     pg = P.RUN['P'][P.sim_i(tg), k]
                     ring_outline(arr, cam, pg[0], pg[1], R * (1 - 0.06 * g), R, P.COL[k] * 0.7 + 70,
                                  0.55 * rk * (1 - g / 6.5), 2)
-            self.draw_drop(arr, cam, t, F.i, F.in_fight, falling=False)   # once down, the record lies under the balls
+                F.fr.set_array(arr, depth)
+        elif payload == 'drop':                                     # once down, the record lies under the balls
+            arr, depth = F.fr.array(), F.fr.depth()
+            self.draw_drop(arr, cam, t, F.i, F.in_fight, falling=False)
             F.fr.set_array(arr, depth)
         elif payload == 'arm':
             self.draw_tonearm(F.fr, cam, F.L, self.arm_state(t))
@@ -749,7 +753,9 @@ class Sound(base.Sound):
 # ---------------------------------------------------------------- Gate O's harness (tools/studio_export/fighter_turntables.py)
 def origin_harness(stage, mod):
     """the kit matched to #31's own series rules inside Gate O's window: no ability list in the HUD (#31 predates it,
-    Oct 25), and the decks' bus under #31's name `decks` (the kit's is `turntables`)"""
+    Oct 25), the decks' bus under #31's name `decks` (the kit's is `turntables`), and on the shared buses (fx, bass)
+    only this module's placements (the bed's, the shared events' and the other side's silenced, as the episode's are
+    by the spec's `silence`)"""
     if stage == 'picture':
         real = mod.fight_hud
 
@@ -760,3 +766,14 @@ def origin_harness(stage, mod):
         for s in mod.SOUNDS:
             if isinstance(s, Sound):
                 s.bus = 'decks'
+        real = mod.A.Mix.place                                     # the shared buses: this module's placements only
+
+        def place(self, name, sig, t, gain=1.0, pan=0.0):
+            if name in SHARED_BUSES and sys._getframe(1).f_code.co_filename != __file__:
+                self.bus(name)
+                return None
+            return real(self, name, sig, t, gain, pan)
+        mod.A.Mix.place = place
+
+
+SHARED_BUSES = ('fx', 'bass')                                       # the shared buses the decks' part places on
