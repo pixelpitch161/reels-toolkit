@@ -547,7 +547,9 @@ pub(crate) fn snap(f: &Fight, out: &mut Frames) {
         }
     }
     // not one of the kit's array keys (`story.REC_KEYS`): a ragged list in a recording, each ball's row of nine floats
-    let rows = row.chunks(9).map(|r| Value::List(r.iter().copied().map(Value::Float).collect()));
+    let rows = row
+        .chunks(9)
+        .map(|r| Value::List(r.iter().copied().map(Value::Float).collect()));
     out.push_nested("WRECK", Value::List(rows.collect()));
 }
 
