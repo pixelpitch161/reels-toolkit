@@ -58,6 +58,13 @@ pub fn wav_bytes(master: &[[f64; 2]]) -> Vec<u8> {
     b
 }
 
+/// The bed buses the kit's band check lists (`kit/checks.py` 117: the bed's own and `fx`, each only when its stem
+/// file exists): the declared ones the soundtrack has. A bus a bed declares but does not play, such as brass_trailer's
+/// `pad` outside the sequel, has no stem, so the kit leaves it out.
+pub fn bed_buses_played(declared: &[String], has: impl Fn(&str) -> bool) -> Vec<&str> {
+    declared.iter().map(String::as_str).filter(|b| has(b)).collect()
+}
+
 /// Every check of the fight `rec` under `ff` (both real looks and parts, through `build_picture` and
 /// `build_soundtrack`) against the kit's `checks` (a `checks.json`).
 pub fn check_fight(folder: &str, scope: &str, rec: Recording, ff: &FightFile, kit_doc: &Value) {
@@ -224,7 +231,8 @@ pub fn check_fight(folder: &str, scope: &str, rec: Recording, ff: &FightFile, ki
     let plan = BandPlan::of(&ff).unwrap_or_else(|e| panic!("{folder}: {e}"));
     let k = &kit["band"];
     let bed: Vec<&str> = list(&k["bed_buses"]).iter().map(text).collect();
-    fail("band bed buses", bed == plan.bed_buses, format!("{:?}", plan.bed_buses));
+    let have = bed_buses_played(&plan.bed_buses, |b| st.stems.contains_key(b));
+    fail("band bed buses", bed == have, format!("{have:?}"));
     let sounds = [
         (plan.sounds[0].0.as_str(), plan.sounds[0].1),
         (plan.sounds[1].0.as_str(), plan.sounds[1].1),
@@ -352,4 +360,26 @@ pub fn episode_checks(pair: &str) {
     let folder = format!("episodes/{pair}");
     let (rec, ff) = crate::episode::episode(pair);
     check_fight(&folder, "pair", rec, &ff, &json(&folder, "checks.json"));
+}
+
+#[cfg(test)]
+mod tests {
+    use super::bed_buses_played;
+
+    #[test]
+    fn a_declared_bus_without_a_stem_is_not_listed() {
+        // brass_trailer's plain bed declares `pad` (the sequel's) and never plays it: the kit lists five buses
+        let declared: Vec<String> = ["strings", "taiko", "braam", "tremolo", "pad", "fx"]
+            .iter()
+            .map(|s| s.to_string())
+            .collect();
+        let has = |b: &str| b != "pad";
+        assert_eq!(
+            bed_buses_played(&declared, has),
+            ["strings", "taiko", "braam", "tremolo", "fx"]
+        );
+        // a bed that plays every bus it declares keeps them all, in its order
+        assert_eq!(bed_buses_played(&declared, |_| true), declared);
+        assert!(bed_buses_played(&declared, |_| false).is_empty());
+    }
 }
