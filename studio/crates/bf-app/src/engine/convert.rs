@@ -638,10 +638,18 @@ mod tests {
             "{text}"
         );
         d.base = None;
-        d.fighters[1] = "PIANO".to_string();
+        // a theme the pair cannot play (ruling M3-R2: the heist has no boom for the TROMBONE's slam)
+        d.theme = "heist".to_string();
         assert_eq!(
             fight_file(&d).unwrap_err(),
-            "No music is written for Flute vs Piano yet."
+            "This fight cannot be used: The theme: Heist has no boom (a big drum hit), which the TROMBONE's part plays; pick another theme."
+        );
+        d.theme = "big_top".to_string();
+        // every pair of two kit fighters has music now (Task 59); a fighter against itself has none
+        d.fighters[1] = "FLUTE".to_string();
+        assert_eq!(
+            fight_file(&d).unwrap_err(),
+            "No music is written for Flute vs Flute yet."
         );
     }
 }

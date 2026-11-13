@@ -453,8 +453,9 @@ mod tests {
 
     #[test]
     fn a_pair_without_music_is_a_plain_problem() {
+        // every pair of two kit fighters has music now (Task 59); a fighter against itself has none
         let mut d = starting_draft();
-        d.fighters[1] = "PIANO".to_string();
+        d.fighters[1] = "FLUTE".to_string();
         let Event::FightInfo {
             r#gen,
             pair_rules,
@@ -475,13 +476,24 @@ mod tests {
         assert_eq!(
             problem.as_deref(),
             Some(
-                "No music is written for Flute vs Piano yet, so it cannot be balanced or rendered. Pick another pair."
+                "No music is written for Flute vs Flute yet, so it cannot be balanced or rendered. Pick another pair."
             )
         );
-        // any other refusal is a sentence too
+        // any other refusal is a sentence too: a theme the pair cannot play (ruling M3-R2) in its own words
         d.fighters[1] = "TROMBONE".to_string();
-        d.base = Some("format = 1".to_string());
+        d.theme = "heist".to_string();
         let Event::FightInfo { problem, .. } = describe(6, &d) else {
+            panic!("not a description");
+        };
+        assert_eq!(
+            problem.as_deref(),
+            Some(
+                "This fight cannot be used: The theme: Heist has no boom (a big drum hit), which the TROMBONE's part plays; pick another theme."
+            )
+        );
+        d.theme = "big_top".to_string();
+        d.base = Some("format = 1".to_string());
+        let Event::FightInfo { problem, .. } = describe(7, &d) else {
             panic!("not a description");
         };
         let text = problem.expect("a problem");
