@@ -4,13 +4,13 @@
 //! Every method keeps the Python's operation order. Points are rows `[x, y, z]`; a screen position is `(x, y)` in
 //! internal pixels, unrounded (the drawing calls of [`crate::pil`] truncate them, as Pillow does).
 //!
-//! How close to Python: `clip_near` and the interpolation in `interp_keys` are plain arithmetic and exact. The
-//! rest goes through a sine, a norm or a matrix product, so a result can differ from Python's in its last bit
-//! (`math.sin` on the reference PC is the Windows C runtime, numpy's products are fused, see [`crate::np`]);
-//! `studio/reference/picture_kit/camera.npz` holds every value to 1e-9 of itself, or to 1e-12 of the largest
-//! coordinate of its point where that is wider; they agree to about 1e-15 of the point's size.
-//! One consequence to know: a component that is zero by geometry (the camera-space x of the look-at point) comes
-//! out as rounding noise of either sign, here and in Python, and not the same noise.
+//! How close to Python: to the bit. `clip_near` and the interpolation in `interp_keys` are plain arithmetic. The
+//! rest goes through a sine, a norm or a matrix product: the sines are [`dmath`]'s, and numpy's norms and matrix
+//! products are OpenBLAS kernels, fused on the reference PC, which [`v3::dot_blas`], [`v3::dot_blas_mv`] and
+//! [`v3::norm_blas`] are to the bit (`studio/reference/picture_kit/camera.npz` checks every value exactly). Which
+//! kernel `to_cam` takes depends on its number of rows, as numpy's does: see [`Cam::to_cam`].
+//! A component that is zero by geometry (the camera-space x of the look-at point) comes out as rounding noise,
+//! the same noise as Python's.
 
 use crate::config::{self, H, W};
 use crate::np;
@@ -65,9 +65,10 @@ impl Cam {
         ];
         let pos = v3::add(target, v3::scale(offset, dist));
         let fwd = v3::sub(target, pos);
-        let fwd = v3::div(fwd, v3::norm(fwd));
+        // `np.linalg.norm` of one vector: BLAS, fused.
+        let fwd = v3::div(fwd, v3::norm_blas(fwd));
         let right = v3::cross(fwd, [0.0, 1.0, 0.0]);
-        let mut right = v3::div(right, v3::norm(right));
+        let mut right = v3::div(right, v3::norm_blas(right));
         let mut up = v3::cross(right, fwd);
         if roll != 0.0 {
             let (c, s) = (dmath::cos(radians(roll)), dmath::sin(radians(roll)));
@@ -94,11 +95,18 @@ impl Cam {
     }
 
     /// `to_cam(P)`: world points into camera space (x right, y up, z forward), `(P - pos) @ M.T`.
+    ///
+    /// numpy hands the product to OpenBLAS, and which kernel it takes depends on the number of rows: one row (`P` of
+    /// shape `(3,)` or `(1, 3)`) goes to the matrix-vector kernel ([`v3::dot_blas_mv`]), two or more to the
+    /// matrix-matrix one ([`v3::dot_blas`]). Both are fused, in different orders; measured on the reference PC for
+    /// 1 to 1,000 rows, every element equal. So `p` must have the rows the Python call has: `cam.wp(a[None])` is
+    /// `cam.wp(&[a])`, and two points projected in one Python call are one call here.
     pub fn to_cam(&self, p: &[V3]) -> Vec<V3> {
+        let dot = if p.len() == 1 { v3::dot_blas_mv } else { v3::dot_blas };
         p.iter()
             .map(|&p| {
                 let d = v3::sub(p, self.pos);
-                [v3::dot(d, self.m[0]), v3::dot(d, self.m[1]), v3::dot(d, self.m[2])]
+                [dot(d, self.m[0]), dot(d, self.m[1]), dot(d, self.m[2])]
             })
             .collect()
     }
@@ -133,11 +141,13 @@ impl Cam {
             .zip(ys)
             .map(|(&x, &y)| {
                 let d = [(x - self.cx) / self.f, -(y - self.cy) / self.f, 1.0];
-                // d @ M: column j of M against d.
+                // d @ M: column j of M against d. numpy's BLAS takes its fused matrix-matrix order here for any
+                // shape of `xs` (a scalar, one row, a grid), measured on the reference PC.
+                let col = |j: usize| [m[0][j], m[1][j], m[2][j]];
                 [
-                    d[0] * m[0][0] + d[1] * m[1][0] + d[2] * m[2][0],
-                    d[0] * m[0][1] + d[1] * m[1][1] + d[2] * m[2][1],
-                    d[0] * m[0][2] + d[1] * m[1][2] + d[2] * m[2][2],
+                    v3::dot_blas(d, col(0)),
+                    v3::dot_blas(d, col(1)),
+                    v3::dot_blas(d, col(2)),
                 ]
             })
             .collect()
