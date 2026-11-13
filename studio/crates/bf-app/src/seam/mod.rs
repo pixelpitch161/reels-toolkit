@@ -135,6 +135,9 @@ pub enum Event {
         title_card: Option<Frame>,
         /// Why this pair cannot fight, in words.
         problem: Option<String>,
+        /// What the fight file the draft is laid over says about its music (its parts and theme options), or
+        /// `None` when there is none to say (the pair cannot fight, or the sample engine).
+        music: Option<crate::model::roster::PairMusic>,
     },
     BalanceProgress {
         r#gen: Gen,

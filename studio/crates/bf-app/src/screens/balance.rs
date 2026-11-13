@@ -54,6 +54,17 @@ pub const FOOTER: &str = "Changing the handicap gives a new set of fights, so th
 pub const WAIT: &str = "Wait for the balance run to finish, or stop it.";
 /// The reset button's label.
 const RESET: &str = "Reset both to ×1.00";
+/// The button that goes back to a kit pair's own handicap.
+pub const USE_SERIES: &str = "Use the series' handicap";
+
+/// The line under the handicap rows for a kit pair: "The series' handicap for this match-up: ×0.86 and ×1.00."
+pub fn series_words(series: [f64; 2]) -> String {
+    format!(
+        "The series' handicap for this match-up: {} and {}.",
+        wording::times(series[0]),
+        wording::times(series[1])
+    )
+}
 
 /// The column's width and the padding above and below it.
 const COLUMN_W: f32 = 780.0;
@@ -450,6 +461,26 @@ fn handicap(ui: &mut Ui, vm: &ViewModel, w: f32, out: &mut Vec<Action>) {
     ui.add_space(ROW_GAP);
     let note = take(ui, w, SMALL_H);
     text_in(ui, note, Align::Min, NOTE, small(), MUTED);
+    // a kit pair: its series handicap, and the way back to it
+    let series = vm.roster.as_ref().and_then(|r| r.series_handicap(&vm.draft.fighters));
+    if let Some(series) = series {
+        ui.add_space(ROW_GAP);
+        let row = take(ui, w, CONTROL_H);
+        let back = vm.draft.handicap != series && !running;
+        let button = if back { button_w(ui, USE_SERIES) } else { 0.0 };
+        let words = span(row.min.x, row.max.x - button - GAP, row.min.y, row.max.y);
+        text_in(ui, words, Align::Min, series_words(series), small(), MUTED);
+        if back {
+            let mut cell = child(
+                ui,
+                span(row.max.x - button, row.max.x, row.min.y, row.max.y),
+                Layout::left_to_right(Align::Center),
+            );
+            if buttons::boxed(&mut cell, USE_SERIES).clicked() {
+                out.push(Action::UseSeriesHandicap);
+            }
+        }
+    }
 }
 
 /// One fighter's row: its bar, "{Name} damage", a slider and a value field, in a `ui` that is disabled while a

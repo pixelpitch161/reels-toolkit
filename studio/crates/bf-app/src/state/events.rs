@@ -19,6 +19,7 @@ impl AppState {
                 captions,
                 title_card,
                 problem,
+                music,
             } => {
                 // The description is of the fighters and their order only (`Command::DescribeFight`, ruling
                 // M2-R15), so any generation since they were last described is theirs.
@@ -26,6 +27,7 @@ impl AppState {
                     return;
                 }
                 self.vm.pair_rules = pair_rules;
+                self.vm.pair_music = music;
                 if !self.vm.draft.captions_edited {
                     self.vm.draft.captions = captions;
                 }
@@ -155,6 +157,8 @@ impl AppState {
         };
         self.vm.roster = Some(roster);
         self.vm.draft.bass = self.first_bass();
+        // The starting pair starts as any new match-up of it does (the kit pair's handicap, its theme's loop).
+        self.start_pair();
         self.open_draft(self.vm.draft.clone(), fx);
     }
 }

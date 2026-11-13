@@ -9,7 +9,7 @@ mod flows;
 mod fonts;
 mod library;
 mod matchup;
-mod music;
+pub mod music;
 mod pixel;
 mod real;
 mod render;

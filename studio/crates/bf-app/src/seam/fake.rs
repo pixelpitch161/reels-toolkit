@@ -412,6 +412,7 @@ impl Engine {
             captions: sample::captions(),
             title_card: Some(sample::title_card(self.colors(f), [&masks[0], &masks[1]])),
             problem: None,
+            music: Some(sample::pair_music(draft)),
         });
     }
 
@@ -923,6 +924,7 @@ mod tests {
             captions,
             title_card,
             problem,
+            music: _,
         } = &events[0]
         else {
             panic!("{:?}", events[0]);

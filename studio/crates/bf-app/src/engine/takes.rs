@@ -1159,4 +1159,34 @@ mod tests {
         assert_eq!(*music, was_music);
         close(engine, root);
     }
+    /// Note (d) of Task 60 (milestone 3 Task 54): a K.O. late enough leaves the winner no time for its solo (FLUTE
+    /// vs SOUSAPHONE's own fight, seed 146: the SOUSAPHONE wins at 54.15 s and its solo would start where the reset
+    /// does). That is how the kit plays it, and the take is made all the same: its picture, its sound, its checks.
+    #[test]
+    fn a_late_ko_that_leaves_no_solo_is_a_take() {
+        const TEXT: &str = include_str!("../../../../fights/flute_vs_sousaphone.toml");
+        let ff = bf_core::fightfile::FightFile::parse(TEXT).expect("the kit's fight file");
+        let d = convert::draft_of(&ff, TEXT);
+        assert_eq!(d.seed, Some(146));
+        let (engine, root) = test_engine();
+        load(&engine, 1, &d);
+        let events = gather(&engine, 180.0, |e| {
+            matches!(e, Event::TakeSound { .. } | Event::TakeFailed { .. })
+        });
+        let [
+            Event::TakePicture { take: 1, story, .. },
+            Event::TakeSound { take: 1, music, .. },
+        ] = &events[..]
+        else {
+            panic!("a picture and a sound: {events:?}");
+        };
+        assert_eq!(story.winner, Some(1), "the SOUSAPHONE wins");
+        let ko = story.t_ko.expect("a K.O.");
+        assert!((54.0..54.3).contains(&ko), "{ko}");
+        let marks: Vec<&str> = music.markers.iter().map(|(_, name)| name.as_str()).collect();
+        assert!(marks.contains(&"K.O.") && marks.contains(&"Reset"), "{marks:?}");
+        assert_eq!(music.checks.len(), 3, "{:?}", music.checks);
+        assert!(!music.lanes.is_empty());
+        close(engine, root);
+    }
 }

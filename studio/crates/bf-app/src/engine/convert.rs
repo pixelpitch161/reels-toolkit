@@ -9,13 +9,13 @@
 //! (its last text is empty), and an opened file whose `caption` holds a line break moves its second line into the
 //! Instagram tags when it is saved again (the Instagram text's first line is the caption).
 
-use bf_core::fightfile::{Captions, FightFile};
+use bf_core::fightfile::{Captions, FightFile, Music};
 
 use crate::model::draft::{CaptionTexts, Draft};
+use crate::model::roster::{BASS_ROLE, parts_with_bass};
 use crate::wording;
 
-/// The role of the fighter that plays bass, and of every other fighter.
-const BASS: &str = "bass";
+/// The part a fighter plays when its fight file names none (the kit's `T.ROLES.get(name, 'melody')`).
 const MELODY: &str = "melody";
 
 /// Why a draft has no fight file.
@@ -26,15 +26,15 @@ pub(crate) enum Unusable {
     Other(String),
 }
 
-/// The fight file of a draft, as [`fight_file`] makes it, keeping apart the pair that has no music.
-pub(crate) fn build(draft: &Draft) -> Result<FightFile, Unusable> {
+/// The fight file a draft is laid over: the file it was opened from (its `base`) while that is a fight of these two
+/// fighters (either way round), since its lines, solos and title hits are written for them by name; else the
+/// pair's starter (`bf_content::starter`: the kit config of a kit pair, the left fighter's home config otherwise).
+pub(crate) fn base_of(draft: &Draft) -> Result<FightFile, Unusable> {
     let [left, right] = [draft.fighters[0].as_str(), draft.fighters[1].as_str()];
     let base = match &draft.base {
         Some(text) => Some(FightFile::parse(text).map_err(|e| unusable(&e))?),
         None => None,
     };
-    // The base is used only while it is a fight of these two fighters (either way round): its lines, solos and
-    // title hits are written for them by name.
     let same_pair = |ff: &FightFile| {
         let mut a: Vec<&str> = ff.fighters.iter().map(String::as_str).collect();
         let mut b = vec![left, right];
@@ -42,29 +42,91 @@ pub(crate) fn build(draft: &Draft) -> Result<FightFile, Unusable> {
         b.sort_unstable();
         a == b
     };
-    let mut ff = match base.filter(same_pair) {
-        Some(ff) => ff,
+    match base.filter(same_pair) {
+        Some(ff) => Ok(ff),
         None => bf_content::starter(left, right).map_err(|e| match e {
             bf_content::ContentError::NoMusic { .. } => Unusable::NoMusic,
             other => unusable(&other),
-        })?,
+        }),
+    }
+}
+
+/// The part each of `fighters` plays in `ff`, left then right, as the fight file writes it (the melody when it
+/// names none, as the kit reads it).
+pub(crate) fn written_parts(ff: &FightFile, fighters: &[String; 2]) -> [String; 2] {
+    fighters
+        .clone()
+        .map(|name| ff.music.roles.get(&name).cloned().unwrap_or_else(|| MELODY.to_string()))
+}
+
+/// The music of `m` set in `theme` with the theme's chord loop `chord_loop`. The loop's key, scale, opening chords
+/// and tail come with it, from the kit config the theme ships that loop in (or the theme's own key and scale, with no
+/// opening chords and no tail, when none does), and any hand-written lines, solos and title hits are dropped, since
+/// they were written over other chords in another key (the kit then plays its sketch line, solo and title hits, as a
+/// starter of a pair with no kit config does). The file's own
+/// music is kept as it is while the theme is its own and the loop is its own: the same loop of the theme, or one
+/// past the theme's last loop when its loop is none of them. In another theme the file's theme options and mix
+/// (the old theme's) are dropped, so the new theme plays at its defaults.
+pub(crate) fn set_music(m: &mut Music, theme: &str, chord_loop: usize) {
+    let same_theme = m.theme == theme;
+    let card = bf_content::theme_card(theme);
+    let loops = card.map_or(&[][..], |c| c.chord_loops);
+    let chosen = match loops.get(chord_loop) {
+        Some(chords) => Some(*chords),
+        None if same_theme => None,
+        None => loops.first().copied(),
     };
+    if let (Some(card), Some(chords)) = (card, chosen) {
+        let own = m.chord_loop.len() == chords.len() && m.chord_loop.iter().zip(chords).all(|(a, b)| a == b);
+        if !(same_theme && own) {
+            let strings = |list: &[&str]| list.iter().map(|c| c.to_string()).collect::<Vec<_>>();
+            match card.presets.iter().find(|p| p.chord_loop == chords) {
+                Some(p) => {
+                    m.key = p.key.to_string();
+                    m.scale = p.scale.to_string();
+                    m.chords_intro = strings(&p.intro);
+                    m.chords_tail = strings(p.tail);
+                }
+                None => {
+                    m.key = card.key.to_string();
+                    m.scale = card.scale.to_string();
+                    m.chords_intro.clear();
+                    m.chords_tail.clear();
+                }
+            }
+            m.chord_loop = strings(chords);
+            // written over the old chords, in the old key: the kit's sketch line, solo and title hits play instead
+            m.lines.clear();
+            m.solos.clear();
+            m.title_hits.clear();
+        }
+    }
+    if !same_theme {
+        m.theme = theme.to_string();
+        m.theme_options.clear();
+        m.mix.clear();
+    }
+}
+
+/// The fight file of a draft, as [`fight_file`] makes it, keeping apart the pair that has no music.
+pub(crate) fn build(draft: &Draft) -> Result<FightFile, Unusable> {
+    let [left, right] = [draft.fighters[0].as_str(), draft.fighters[1].as_str()];
+    let mut ff = base_of(draft)?;
+    let written = written_parts(&ff, &draft.fighters);
     ff.fighters = vec![left.to_string(), right.to_string()];
     ff.handicap = draft.handicap.to_vec();
     ff.tempo_bpm = draft.tempo_bpm();
     ff.pair_rules = bf_content::pair_rules(left, right);
     ff.seed = draft.seed;
-    ff.music.theme = draft.theme.clone();
-    if let Some(chords) = bf_content::theme_card(&draft.theme).and_then(|t| t.chord_loops.get(draft.chord_loop)) {
-        ff.music.chord_loop = chords.iter().map(|c| c.to_string()).collect();
-    }
-    let bass = draft
-        .bass
-        .filter(|&i| i < 2 && bf_content::card(&draft.fighters[i]).is_some_and(|c| c.can_play_bass));
-    ff.music.roles.clear();
-    for (i, name) in draft.fighters.iter().enumerate() {
-        let role = if bass == Some(i) { BASS } else { MELODY };
-        ff.music.roles.insert(name.clone(), role.to_string());
+    set_music(&mut ff.music, &draft.theme, draft.chord_loop);
+    // The parts are the file's own; the one change the app makes is who plays bass (ruling M3-R8).
+    let can = draft
+        .fighters
+        .clone()
+        .map(|name| bf_content::card(&name).is_some_and(|c| c.can_play_bass));
+    let parts = parts_with_bass(&written, draft.bass, can);
+    for (name, part) in draft.fighters.iter().zip(parts) {
+        ff.music.roles.insert(name.clone(), part);
     }
     ff.music.music_seed = draft.music_seed;
     ff.captions = captions(&draft.captions);
@@ -106,22 +168,24 @@ pub(crate) fn no_music_problem(fighters: &[String; 2]) -> String {
 }
 
 /// The draft of a fight file read from `toml`: its fighters, theme, tempo as bars, handicap, seed, chord loop (its
-/// place among the theme's loops, 0 when it is none of them), who plays bass, music seed and captions; the
-/// captions count as the owner's own, and the text is kept as the draft's base.
+/// place among the theme's loops; one past the last when it is none of them, so the file's own loop is kept), who
+/// plays bass, music seed and captions; the captions count as the owner's own, and the text is kept as the draft's
+/// base.
 pub fn draft_of(ff: &FightFile, toml: &str) -> Draft {
     let name = |i: usize| ff.fighters.get(i).cloned().unwrap_or_default();
     let fighters = [name(0), name(1)];
     let handicap = |i: usize| ff.handicap.get(i).copied().unwrap_or(1.0);
-    let chord_loop = bf_content::theme_card(&ff.music.theme)
-        .and_then(|t| {
-            t.chord_loops.iter().position(|l| {
+    let chord_loop = bf_content::theme_card(&ff.music.theme).map_or(0, |t| {
+        t.chord_loops
+            .iter()
+            .position(|l| {
                 l.len() == ff.music.chord_loop.len() && l.iter().zip(&ff.music.chord_loop).all(|(a, b)| a == b)
             })
-        })
-        .unwrap_or(0);
+            .unwrap_or(t.chord_loops.len())
+    });
     let bass = fighters
         .iter()
-        .position(|f| ff.music.roles.get(f).is_some_and(|r| r == BASS));
+        .position(|f| ff.music.roles.get(f).is_some_and(|r| r == BASS_ROLE));
     Draft {
         theme: ff.music.theme.clone(),
         bars: u32::try_from(ff.grid().n_bars).unwrap_or(u32::MAX),
@@ -378,7 +442,8 @@ mod tests {
         assert_eq!(ff.pair_rules.get("swat_cobras"), Some(&Value::Bool(true)));
         assert_eq!(ff.seed, Some(7));
         assert_eq!(ff.fighters, ["FLUTE", "TROMBONE"]);
-        assert_eq!(ff.handicap, [1.0, 1.0]);
+        // the starting pair is a kit pair: it starts from the kit's frozen handicap (ruling M3-R6)
+        assert_eq!(ff.handicap, [2.0, 0.4]);
         assert_eq!(ff.music.theme, "big_top");
         assert_eq!(ff.music.roles.get("TROMBONE").map(String::as_str), Some("bass"));
         assert_eq!(ff.music.roles.get("FLUTE").map(String::as_str), Some("melody"));
@@ -617,6 +682,322 @@ mod tests {
         d.handicap = [f64::NAN, 1.0];
         let text = fight_file(&d).unwrap_err();
         assert!(!text.contains("handicap[") && !text.contains("]: "), "{text}");
+    }
+
+    /// A draft of `fighters` as the interface starts it (`Roster::start_of`): the starter's theme, chord loop,
+    /// handicap and the fighter on bass.
+    fn started(fighters: [&str; 2]) -> Draft {
+        let r = crate::engine::content::roster();
+        let fighters = fighters.map(str::to_string);
+        let start = r.start_of(&fighters).expect("a start");
+        Draft {
+            theme: start.theme.clone(),
+            chord_loop: start.chord_loop,
+            handicap: start.handicap,
+            bass: start.roles.iter().position(|p| p == BASS_ROLE),
+            fighters,
+            seed: None,
+            base: None,
+            ..starting_draft()
+        }
+    }
+
+    /// The fight file of a draft opened from `pair`'s kit fight file.
+    fn kit_draft(pair: &str) -> (FightFile, Draft) {
+        let (_, ff) = bf_content::kit_pair_fights()
+            .into_iter()
+            .find(|(p, _)| *p == pair)
+            .expect(pair);
+        let toml = ff.to_toml();
+        (ff.clone(), draft_of(ff, &toml))
+    }
+
+    /// Every kit pair, in both orders, started as the interface starts it, plays the kit's own music: the same
+    /// theme, key, scale, chords, lines, parts, options and mix as the engine's starter, with its handicap and
+    /// damage scale (ruling M3-R6). The parts are the file's own, not "bass and melody".
+    #[test]
+    fn a_kit_pair_plays_its_kit_music() {
+        for (pair, ff) in bf_content::kit_pair_fights() {
+            for order in [[0, 1], [1, 0]] {
+                let fighters = order.map(|i| ff.fighters[i].as_str());
+                let d = started(fighters);
+                let built = fight_file(&d).unwrap_or_else(|e| panic!("{pair} {fighters:?}: {e}"));
+                let starter = bf_content::starter(fighters[0], fighters[1]).expect("a starter");
+                let mut want = starter.music.clone();
+                want.music_seed = built.music.music_seed;
+                assert_eq!(built.music, want, "{pair} {fighters:?}");
+                assert_eq!(built.handicap, starter.handicap, "{pair} {fighters:?}");
+                assert_eq!(built.dmg_scale.to_bits(), starter.dmg_scale.to_bits(), "{pair}");
+            }
+        }
+        // the parts as written: CELLO's melody and CONTRABASS's bass, TROMBONE's riff over TUBA's bass
+        let parts = |a: &str, b: &str| {
+            let ff = fight_file(&started([a, b])).expect("a fight file");
+            [a, b].map(|n| ff.music.roles[n].clone())
+        };
+        assert_eq!(parts("CELLO", "CONTRABASS"), ["melody", "bass"]);
+        assert_eq!(parts("TUBA", "TROMBONE"), ["bass", "riff"]);
+        assert_eq!(parts("BASS DRUM", "TUBA"), ["drums", "bass"]);
+    }
+
+    /// In another theme the music is that theme's: its loop with the key, scale, opening chords and tail of the
+    /// kit config it ships that loop in; the old theme's lines, options and mix are gone. Back in its own theme,
+    /// the fight file's own music returns. Each of these is a fight file the engine accepts.
+    #[test]
+    fn a_theme_change_brings_its_own_key_and_chords() {
+        let (kit, mut d) = kit_draft("bassdrum_vs_tuba");
+        let own = fight_file(&d).expect("the kit's own");
+        assert_eq!(own.music.theme_options, kit.music.theme_options);
+        d.theme = "big_top".to_string();
+        d.chord_loop = 0;
+        let big = fight_file(&d).expect("in the big top");
+        let card = bf_content::theme_card("big_top").expect("the big top");
+        let preset = &card.presets[0];
+        assert_eq!(big.music.theme, "big_top");
+        assert_eq!(
+            (big.music.key.as_str(), big.music.scale.as_str()),
+            (preset.key, preset.scale)
+        );
+        assert_eq!(big.music.chords_intro, preset.intro);
+        assert_eq!(big.music.chord_loop, preset.chord_loop);
+        assert_eq!(big.music.chords_tail, preset.tail);
+        assert!(big.music.theme_options.is_empty() && big.music.mix.is_empty() && big.music.lines.is_empty());
+        // the parts stay the file's own; its solos and title hits (notes in the old key) go, so the kit plays its
+        // sketch solo and title hits, as a starter of a pair with no kit config does
+        assert_eq!(big.music.roles, kit.music.roles);
+        assert!(
+            !kit.music.solos.is_empty() && !kit.music.title_hits.is_empty(),
+            "the kit's own has both"
+        );
+        assert!(big.music.solos.is_empty() && big.music.title_hits.is_empty());
+        let crossover = bf_content::starter("CELLO", "FLUTE").expect("a crossover");
+        assert!(crossover.music.solos.is_empty() && crossover.music.title_hits.is_empty());
+        d.theme = kit.music.theme.clone();
+        let back = fight_file(&d).expect("back home");
+        assert_eq!(back.music, own.music);
+        // the brass trailer's two loops each bring their own kit config's music
+        let (_, mut d) = kit_draft("trombone_vs_horn");
+        for (i, preset) in bf_content::theme_card("brass_trailer")
+            .unwrap()
+            .presets
+            .iter()
+            .enumerate()
+        {
+            let place = bf_content::theme_card("brass_trailer")
+                .unwrap()
+                .chord_loops
+                .iter()
+                .position(|l| *l == preset.chord_loop)
+                .expect("a preset's loop is on the card");
+            d.chord_loop = place;
+            let ff = fight_file(&d).unwrap_or_else(|e| panic!("preset {i}: {e}"));
+            assert_eq!(ff.music.chord_loop, preset.chord_loop, "preset {i}");
+            assert_eq!(ff.music.key, preset.key, "preset {i}");
+        }
+    }
+
+    /// Note 1 of the Task 60 review: the key and scale the Music screen shows (`ViewModel::key_scale`, from the
+    /// description and the roster) are the fight file's, for every kit pair in both orders, in every theme it can
+    /// play and every loop of it, and on the file's own loop.
+    #[test]
+    fn the_key_shown_is_the_fights() {
+        let roster = crate::engine::content::roster();
+        let (mut state, _) = crate::state::AppState::new(
+            crate::model::Settings {
+                output_folder: std::path::PathBuf::from("Videos"),
+                workers: 4,
+                encode: crate::model::EncodeChoice::Best,
+            },
+            crate::model::queue::Queue::new(),
+            Vec::new(),
+            8,
+        );
+        state.apply(crate::seam::Event::Roster(roster));
+        let mut vm = state.vm;
+        let mut checked = 0;
+        for (pair, _) in bf_content::kit_pair_fights() {
+            let (_, d) = kit_draft(pair);
+            vm.pair_music = Some(crate::engine::content::pair_music(
+                &base_of(&d).ok().expect("a base"),
+                &d.fighters,
+            ));
+            for theme in bf_content::themes_for(&d.fighters[0], &d.fighters[1]) {
+                let loops = bf_content::theme_card(theme).unwrap().chord_loops.len();
+                for chord_loop in 0..=loops {
+                    vm.draft = Draft {
+                        theme: theme.to_string(),
+                        chord_loop,
+                        ..d.clone()
+                    };
+                    let ff = fight_file(&vm.draft).unwrap_or_else(|e| panic!("{pair} {theme} {chord_loop}: {e}"));
+                    let shown = vm.key_scale().expect("a key");
+                    assert_eq!(
+                        shown,
+                        (ff.music.key.clone(), ff.music.scale.clone()),
+                        "{pair} {theme} {chord_loop}"
+                    );
+                    checked += 1;
+                }
+            }
+        }
+        assert!(checked > 300, "{checked}");
+    }
+
+    /// Every chord loop on every offered theme's card is shipped in a kit config, so a loop always brings a key
+    /// the kit played it in.
+    #[test]
+    fn every_loop_on_a_card_has_its_kit_config() {
+        for name in bf_content::theme_names() {
+            let card = bf_content::theme_card(name).expect("a card");
+            for chords in card.chord_loops {
+                assert!(
+                    card.presets.iter().any(|p| p.chord_loop == *chords),
+                    "{name}: {chords:?}"
+                );
+            }
+        }
+    }
+
+    /// Every kit pair (both orders) and the six crossovers of Task 59, in every theme they can play and every
+    /// loop of it, and with the bass moved where both can play it: a fight file the engine accepts.
+    #[test]
+    fn every_pair_in_every_theme_it_can_play_is_a_fight() {
+        let mut pairs: Vec<[String; 2]> = Vec::new();
+        for (_, ff) in bf_content::kit_pair_fights() {
+            pairs.push([ff.fighters[0].clone(), ff.fighters[1].clone()]);
+            pairs.push([ff.fighters[1].clone(), ff.fighters[0].clone()]);
+        }
+        for (a, b) in [
+            ("PIANO", "TUBA"),
+            ("CELLO", "FLUTE"),
+            ("BASS DRUM", "HORN"),
+            ("ALTO SAX", "ORGAN"),
+            ("EUPHONIUM", "CLARINET"),
+            ("ELECTRIC", "BASSOON"),
+            ("CONTRABASS", "TUBA"),
+        ] {
+            pairs.push([a.to_string(), b.to_string()]);
+        }
+        let mut checked = 0;
+        for fighters in &pairs {
+            let base = started([fighters[0].as_str(), fighters[1].as_str()]);
+            for theme in bf_content::themes_for(&fighters[0], &fighters[1]) {
+                let loops = bf_content::theme_card(theme).unwrap().chord_loops.len();
+                for chord_loop in 0..loops {
+                    for bass in [Some(0), Some(1)] {
+                        let d = Draft {
+                            theme: theme.to_string(),
+                            chord_loop,
+                            bass,
+                            ..base.clone()
+                        };
+                        fight_file(&d).unwrap_or_else(|e| panic!("{fighters:?} {theme} {chord_loop} {bass:?}: {e}"));
+                        checked += 1;
+                    }
+                }
+            }
+        }
+        assert!(checked > 1_000, "{checked}");
+    }
+
+    /// Who plays bass swaps the two parts when both cards can play bass and one of them is the bass; in any other
+    /// pair the parts stay as the file writes them.
+    #[test]
+    fn the_bass_moves_only_between_two_who_can_play_it() {
+        let mut d = started(["TROMBONE", "TUBA"]);
+        assert_eq!(d.bass, Some(1));
+        let ff = fight_file(&d).expect("as written");
+        assert_eq!(
+            (ff.music.roles["TROMBONE"].as_str(), ff.music.roles["TUBA"].as_str()),
+            ("riff", "bass")
+        );
+        d.bass = Some(0);
+        let ff = fight_file(&d).expect("swapped");
+        assert_eq!(
+            (ff.music.roles["TROMBONE"].as_str(), ff.music.roles["TUBA"].as_str()),
+            ("bass", "riff")
+        );
+        // CELLO cannot play bass: asking it to changes nothing
+        let mut d = started(["CELLO", "CONTRABASS"]);
+        d.bass = Some(0);
+        let ff = fight_file(&d).expect("as written");
+        assert_eq!(
+            (ff.music.roles["CELLO"].as_str(), ff.music.roles["CONTRABASS"].as_str()),
+            ("melody", "bass")
+        );
+    }
+
+    /// A fight file whose chord loop is none of its theme's keeps it: the draft holds it one past the theme's last
+    /// loop, and the file comes back the same.
+    #[test]
+    fn a_loop_of_the_files_own_is_kept() {
+        let text = EPISODE.replace(
+            "chord_loop = [\"Em\", \"Am\", \"B7\", \"Em\", \"C\", \"Am\", \"B7\", \"B7\"]",
+            "chord_loop = [\"Em\", \"C\", \"Am\", \"B7\"]",
+        );
+        assert_ne!(text, EPISODE, "the loop was replaced");
+        let ff = FightFile::parse(&text).expect("a fight file");
+        let d = draft_of(&ff, &text);
+        assert_eq!(d.chord_loop, 1, "one past the big top's one loop");
+        let back = fight_file(&d).expect("kept");
+        assert_eq!(back.music.chord_loop, ["Em", "C", "Am", "B7"]);
+        assert_eq!(back.music.key, ff.music.key);
+        // choosing the theme's own loop brings the theme's music
+        let mut theirs = d.clone();
+        theirs.chord_loop = 0;
+        assert_eq!(
+            fight_file(&theirs).expect("the theme's loop").music.chord_loop,
+            ["Em", "Am", "B7", "Em", "C", "Am", "B7", "B7"]
+        );
+    }
+
+    /// Review Focus 7: for a PIANO pair (its notes are its weapon) a change of key (with the theme), loop or of
+    /// PIANO's own line is a new fight, so a new search; for any other pair, and for the other fighter's line, it
+    /// is not.
+    #[test]
+    fn only_a_piano_pairs_music_changes_its_fight() {
+        let key = |d: &Draft| {
+            let ff = fight_file(d).expect("a fight file");
+            let feeds: Vec<bool> = ff.fighters.iter().map(|n| bf_content::music_feeds_fight(n)).collect();
+            ff.search_key(&feeds)
+        };
+        for (pair, feeds) in [
+            ("piano_vs_organ", true),
+            ("flute_vs_trombone", false),
+            ("trombone_vs_horn", false),
+        ] {
+            let (kit, d) = kit_draft(pair);
+            let k = key(&d);
+            let mut theme = d.clone();
+            theme.theme = if kit.music.theme == "big_top" {
+                "dark_tango"
+            } else {
+                "big_top"
+            }
+            .to_string();
+            theme.chord_loop = 0;
+            assert_eq!(key(&theme) != k, feeds, "{pair}: another theme's key and loop");
+            if pair == "trombone_vs_horn" {
+                let mut other = d.clone();
+                other.chord_loop = 1 - d.chord_loop;
+                assert_eq!(key(&other), k, "{pair}: another loop of the brass trailer");
+            }
+        }
+        // PIANO's own line feeds its fight; a line written for the ORGAN (an octave under PIANO's) does not
+        let (kit, d) = kit_draft("piano_vs_organ");
+        let k = key(&d);
+        let mut piano = kit.clone();
+        let line = piano.music.lines.get_mut("PIANO").expect("PIANO has a line");
+        let first = line.iter_mut().find_map(Option::as_mut).expect("a note");
+        *first += 12;
+        let mut organ = kit.clone();
+        let under: Vec<Option<i32>> = kit.music.lines["PIANO"].iter().map(|n| n.map(|n| n - 12)).collect();
+        organ.music.lines.insert("ORGAN".to_string(), under);
+        for (name, ff, changes) in [("PIANO", piano, true), ("ORGAN", organ, false)] {
+            let text = ff.to_toml();
+            let changed = draft_of(&FightFile::parse(&text).expect("still a fight file"), &text);
+            assert_eq!(key(&changed) != k, changes, "{name}'s line");
+        }
     }
 
     #[test]

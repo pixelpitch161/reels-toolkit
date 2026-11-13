@@ -16,7 +16,7 @@ cargo build --release -p bf-app
 ```
 
 The program is `target/release/ballfight-studio.exe`. Started with no option it is the real app on the real engine
-(`engine::spawn`), today for FLUTE against TROMBONE:
+(`engine::spawn`), with the 20 kit fighters and the 14 kit themes (it opens on FLUTE against TROMBONE):
 
 - Its settings and queue are in `%APPDATA%\BALLFIGHT Studio\config` and its shortlist cache in
   `%LOCALAPPDATA%\BALLFIGHT Studio\cache` (`store::Paths::system`). They are read once, before the first frame;
