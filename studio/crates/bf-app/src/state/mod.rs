@@ -171,6 +171,40 @@ impl ViewModel {
         theme.option_words(set, &self.draft.fighters)
     }
 
+    /// The key and scale the draft's music is in (`convert::set_music`'s rule): the fight file's own while the draft
+    /// is in its theme on its loop, else those the chosen loop comes with. `None` before the roster is here.
+    pub fn key_scale(&self) -> Option<(String, String)> {
+        let theme = self.theme()?;
+        if let Some(m) = self.pair_music.as_ref().filter(|m| m.theme == self.draft.theme) {
+            let own = match theme.chord_loops.get(self.draft.chord_loop) {
+                Some(chords) => *chords == m.chord_loop,
+                None => true,
+            };
+            if own {
+                return Some((m.key.clone(), m.scale.clone()));
+            }
+        }
+        let at = if self.draft.chord_loop < theme.chord_loops.len() {
+            self.draft.chord_loop
+        } else {
+            0
+        };
+        Some(
+            theme
+                .loop_keys
+                .get(at)
+                .cloned()
+                .unwrap_or_else(|| (theme.key.clone(), theme.scale.clone())),
+        )
+    }
+
+    /// The parts each fighter plays in the series' kit configs, left then right (for [`part_words`]).
+    ///
+    /// [`part_words`]: crate::model::roster::part_words
+    pub fn known_parts(&self) -> [Vec<String>; 2] {
+        [0, 1].map(|side| self.fighter(side).map(|f| f.parts.clone()).unwrap_or_default())
+    }
+
     /// The fight file's own chord loop when the draft is in the file's theme and that loop is none of the
     /// theme's: the Music screen offers it after the theme's loops (the draft's chord loop one past the last).
     pub fn own_loop(&self) -> Option<&[String]> {
@@ -254,6 +288,8 @@ pub enum Action {
         released: bool,
     },
     ResetHandicap,
+    /// Back to the series' frozen handicap of a kit pair (ruling M3-R6).
+    UseSeriesHandicap,
     AutoBalance,
     StopBalance,
     SetFilters(FilterSpec),
@@ -467,6 +503,7 @@ impl AppState {
             Action::SetBars(bars) => self.set_bars(bars),
             Action::SetHandicap { side, value, released } => self.set_handicap(side, value, released, &mut fx),
             Action::ResetHandicap => self.reset_handicap(&mut fx),
+            Action::UseSeriesHandicap => self.use_series_handicap(&mut fx),
             Action::AutoBalance => self.auto_balance(&mut fx),
             Action::StopBalance => self.stop_balance(&mut fx),
             Action::SetFilters(filters) => self.set_filters(filters, &mut fx),

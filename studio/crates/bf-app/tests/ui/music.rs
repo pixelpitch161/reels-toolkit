@@ -182,7 +182,11 @@ fn placeholders_are_disabled_and_say_why() {
     ));
 
     for (label, role, why) in [
-        ("Key", Role::ComboBox, "The key follows the theme in this version."),
+        (
+            "Key",
+            Role::ComboBox,
+            "The key comes with the chord loop in this version.",
+        ),
         ("Music seed", Role::TextInput, "New takes arrive with the music system."),
         ("Re-roll music", Role::Button, "New takes arrive with the music system."),
     ] {
@@ -850,7 +854,20 @@ fn kit_pairs_show_their_options_and_parts() {
     ] {
         let vm = kit_vm(pair, Step::Music, false);
         let theme = vm.theme().expect("an offered theme").clone();
+        let (key, scale) = vm.key_scale().expect("a key");
+        let ff = convert::fight_file(&vm.draft).expect("a fight file");
+        assert_eq!(
+            (key.as_str(), scale.as_str()),
+            (ff.music.key.as_str(), ff.music.scale.as_str()),
+            "{pair}"
+        );
         let harness = showing(REF, vm);
+        assert_eq!(
+            by_role(&harness, "Key", Role::ComboBox).value().as_deref(),
+            Some(key.as_str()),
+            "{pair}"
+        );
+        assert!(has(&harness, &format!("{scale}, from the theme")), "{pair}");
         for words in options.iter().chain(&parts) {
             assert!(has(&harness, words), "{pair}: {words}");
         }
@@ -884,8 +901,10 @@ fn the_bass_moves_between_two_who_can_play_it() {
     harness.run();
     assert_eq!(harness.state().log, vec![Action::SetBass(0)]);
     assert!(has(&harness, "Trombone plays the bass."));
-    assert!(has(&harness, "Tuba plays the riff."));
-    assert!(has(&harness, "The other fighter takes the riff."));
+    // the TUBA has no riff of its own: it plays the TROMBONE's part as its top line, and is said to
+    assert!(has(&harness, "Tuba plays the top line."));
+    assert!(has(&harness, "The other fighter takes the top line."));
+    assert!(!has(&harness, "Tuba plays the riff."));
 }
 
 /// Note (c) of Task 60: a fit whose soundtrack fails a check (the search does not listen to the music) says that
@@ -956,4 +975,56 @@ fn music_matches_for_electric_vs_acoustic() {
     let _gpu = gpu();
     let mut harness = showing(REF, kit_vm("electric_vs_acoustic", Step::Music, true));
     harness.snapshot("music_electric_vs_acoustic_1440x900");
+}
+
+/// The Music screen with both fighters able to play bass and a take that fails a check: Tab reaches the theme, the
+/// loops, both bass segments, the next fit's button and "Go to render" in that order, each with its ring; with no
+/// other fit, "Go to seeds" takes the next fit's place.
+#[test]
+fn tab_walks_the_bass_and_the_next_fit() {
+    let _gpu = gpu();
+    let mut vm = both_play_bass();
+    vm.shortlist = Shortlist {
+        rows: bf_app::seam::sample::stories(),
+        fits_total: 14,
+        checked: 18_240,
+        state: SearchState::Searching,
+        workers: 7,
+    };
+    vm.take.music.as_mut().unwrap().checks[0].pass = false;
+    let next = vm.next_fit().expect("a next fit");
+    let use_next = format!("Use seed {next}");
+    let mut alone = vm.clone();
+    alone.shortlist.rows.retain(|r| Some(r.seed) == alone.draft.seed);
+    for (vm, offer) in [(vm, use_next.as_str()), (alone, "Go to seeds")] {
+        let order = [
+            ("Theme", Role::ComboBox),
+            (FIRST_LOOP, Role::Button),
+            (SECOND_LOOP, Role::Button),
+            ("Flute", Role::RadioButton),
+            ("Trombone", Role::RadioButton),
+            (offer, Role::Button),
+            ("Go to render", Role::Button),
+        ];
+        let mut harness = showing(REF, vm);
+        by_role(&harness, order[0].0, order[0].1).focus();
+        harness.run();
+        for pair in order.windows(2) {
+            let (from, to) = (pair[0], pair[1]);
+            assert!(
+                by_role(&harness, from.0, from.1).is_focused(),
+                "{} has the keyboard",
+                from.0
+            );
+            harness.key_press(egui::Key::Tab);
+            harness.run();
+            let node = by_role(&harness, to.0, to.1);
+            assert!(node.is_focused(), "Tab from {} goes to {}", from.0, to.0);
+            node.scroll_to_me();
+            harness.run();
+            let rect = by_role(&harness, to.0, to.1).rect();
+            assert_ring(&mut harness, rect, "ltrb", to.0);
+        }
+        assert!(harness.state().log.is_empty(), "walking through changes nothing");
+    }
 }

@@ -1330,6 +1330,61 @@ fn a_theme_the_new_pair_cannot_play_moves_to_the_starters() {
     assert_eq!(s.vm.notices.len(), before);
 }
 
+/// A new theme starts on its own first loop, whatever loop the old theme was on.
+#[test]
+fn a_new_theme_starts_on_its_first_loop() {
+    let mut s = real();
+    s.dispatch(Action::SetTheme("brass_trailer".to_string()));
+    s.dispatch(Action::SetChordLoop(1));
+    assert_eq!(s.vm.draft.chord_loop, 1);
+    s.dispatch(Action::SetTheme("dark_tango".to_string()));
+    assert_eq!(s.vm.draft.chord_loop, 0);
+}
+
+/// HORN against TROMBONE has a kit config for each order: swapping sides starts from the other one (its handicap,
+/// its parts and, in its theme, its loop); a pair with one config just swaps.
+#[test]
+fn swapping_a_pair_with_a_config_for_each_order_starts_from_the_other() {
+    let mut s = real();
+    s.dispatch(pick(0, "HORN"));
+    assert_eq!(s.vm.draft.fighters, ["HORN".to_string(), "TROMBONE".to_string()]);
+    let r = crate::engine::content::roster();
+    let rematch = r.start_of(&s.vm.draft.fighters.clone()).expect("a start");
+    s.dispatch(Action::SetTheme(rematch.theme.clone()));
+    s.dispatch(Action::SwapSides);
+    let first = r
+        .start_of(&["TROMBONE".to_string(), "HORN".to_string()])
+        .expect("a start");
+    assert_eq!(s.vm.draft.fighters, ["TROMBONE".to_string(), "HORN".to_string()]);
+    assert_eq!(s.vm.draft.handicap, first.handicap);
+    assert_eq!(s.vm.draft.chord_loop, first.chord_loop);
+    assert_ne!(
+        rematch.chord_loop, first.chord_loop,
+        "the two configs play the two loops"
+    );
+    // FLUTE vs TROMBONE has one config: a swap keeps each fighter's handicap
+    s.dispatch(pick(1, "FLUTE"));
+    assert_eq!(s.vm.draft.handicap, [0.4, 2.0]);
+    s.dispatch(handicap(0, 1.5, false));
+    s.dispatch(Action::SwapSides);
+    assert_eq!(s.vm.draft.handicap, [2.0, 1.5]);
+}
+
+/// The way back to a kit pair's own handicap (ruling M3-R6), measured at once; a pair with none ignores it.
+#[test]
+fn the_series_handicap_comes_back() {
+    let mut s = real();
+    s.dispatch(handicap(0, 1.0, true));
+    assert_eq!(s.vm.draft.handicap, [1.0, 0.4]);
+    let fx = s.dispatch(Action::UseSeriesHandicap);
+    assert_eq!(s.vm.draft.handicap, [2.0, 0.4]);
+    assert!(sent(&fx).iter().any(|c| matches!(c, Command::Measure { .. })));
+    s.dispatch(pick(1, "OBOE"));
+    s.dispatch(handicap(0, 1.3, true));
+    s.dispatch(Action::UseSeriesHandicap);
+    assert_eq!(s.vm.draft.handicap, [1.3, 1.0]);
+}
+
 /// Review Focus 7: for a PIANO pair a theme (so its key) or loop change is a new fight, so the search starts over;
 /// for any other pair it is not.
 #[test]

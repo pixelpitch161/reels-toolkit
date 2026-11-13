@@ -88,9 +88,11 @@ pub const PICK_FIRST: &str = "Pick a fight first";
 pub const WHOLE_NUMBER: &str = "Type a whole number";
 /// The empty list while the search runs.
 pub const EMPTY_SEARCHING: &str = "No fights fit the beat sheet yet. The search is still running.";
-/// After this many seeds with no fight that fits, the screen says the match-up is uneven and offers Auto-balance
-/// (the kit's own search gives up at 5,000 seeds; milestone 3 Task 59 found pairs with none there at an even
-/// handicap, such as Cello against Flute).
+/// After this many seeds with no fight that fits, the screen says the match-up is likely uneven and offers
+/// Auto-balance. The kit's own search tries seeds 1 to 4,000; 5,000 is the budget milestone 3 Task 59 searched the
+/// crossovers with, and found pairs with no fit there at an even handicap (Cello against Flute: none in 20,000). A
+/// pair that does fit, at a rate `p` a seed, shows the words wrongly with chance `(1 - p)^5000`: under 1 in 100 at
+/// `p` = 0.1 % (a fit in 1,000 fights), about 1 in 12 at 0.05 %.
 pub const NO_FIT_AFTER: u64 = 5_000;
 
 /// What the empty list says when [`NO_FIT_AFTER`] seeds gave no fight that fits.

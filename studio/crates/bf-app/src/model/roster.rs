@@ -75,6 +75,8 @@ pub struct RosterEntry {
     /// The music a match-up with it in the left corner starts from when the pair has no kit config of its own (its
     /// home config), or `None` when the app knows none.
     pub home: Option<Home>,
+    /// The parts it plays in the series' kit configs ("bass", "riff"), each once; empty when the app knows none.
+    pub parts: Vec<String>,
 }
 
 /// A fighter's home config, as far as a new match-up needs it (milestone 3 Task 59: its newest kit config).
@@ -150,6 +152,9 @@ pub struct PairMusic {
     pub theme: String,
     /// Its chord loop.
     pub chord_loop: Vec<String>,
+    /// Its key's note name and its scale.
+    pub key: String,
+    pub scale: String,
     /// Each fighter's part as it writes it, left then right of the draft it was described for.
     pub roles: [String; 2],
     /// The theme options it sets, by name; an option it leaves out is at the theme's default.
@@ -180,8 +185,13 @@ pub fn bass_can_move(written: &[String; 2], can: [bool; 2]) -> bool {
 }
 
 /// A part in words, for "Flute plays the melody.": "the melody", "the bass", "the answering line", "the riff".
-pub fn part_words(role: &str) -> String {
+/// `known` are the parts the fighter plays in the series' kit configs: a part it has no music of its own for (the
+/// TUBA given the TROMBONE's riff by a bass swap) is played as its top line, so it reads "the top line". The melody
+/// and the bass are every part's own; with nothing known (the sample roster) the part is named as it is.
+pub fn part_words(role: &str, known: &[String]) -> String {
+    let own = known.is_empty() || matches!(role, "melody" | "bass" | "") || known.iter().any(|k| k == role);
     match role {
+        _ if !own => "the top line".to_string(),
         "line" => "the answering line".to_string(),
         "" => "the melody".to_string(),
         other => format!("the {}", other.replace('_', " ")),
@@ -202,6 +212,9 @@ pub struct ThemeEntry {
     pub scale: String,
     /// Each chord loop as its chord names.
     pub chord_loops: Vec<Vec<String>>,
+    /// The key and scale each chord loop comes with (those of the kit config the theme ships it in, else the
+    /// theme's own), in the order of `chord_loops`.
+    pub loop_keys: Vec<(String, String)>,
     /// The tempo range as bars that fill 61 s, lowest and highest.
     pub bars: (u32, u32),
     /// The roster fighters it cannot be played with (roster names): each one's part plays a hit its music lacks, so
@@ -264,6 +277,23 @@ impl Roster {
             .iter()
             .filter(|t| !fighters.iter().any(|f| t.refuses.contains(f)))
             .collect()
+    }
+
+    /// The series' frozen handicap of `fighters` (ruling M3-R6), left then right: their kit config's, swapped for the
+    /// other order; `None` for a pair with no kit config.
+    pub fn series_handicap(&self, fighters: &[String; 2]) -> Option<[f64; 2]> {
+        let swapped = [fighters[1].clone(), fighters[0].clone()];
+        if let Some(kit) = self.kit_pairs.iter().find(|k| k.fighters == *fighters) {
+            return Some(kit.handicap);
+        }
+        let kit = self.kit_pairs.iter().find(|k| k.fighters == swapped)?;
+        Some([kit.handicap[1], kit.handicap[0]])
+    }
+
+    /// Whether `fighters`, in this order, have a kit config of their own (HORN against TROMBONE has one for each
+    /// order).
+    pub fn has_own_config(&self, fighters: &[String; 2]) -> bool {
+        self.kit_pairs.iter().any(|k| k.fighters == *fighters)
     }
 
     /// How a new match-up of `fighters` starts, as the engine's starter makes it (`bf_content::starter`): a kit

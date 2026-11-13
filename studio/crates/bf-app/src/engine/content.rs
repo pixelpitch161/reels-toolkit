@@ -69,6 +69,7 @@ fn make_roster() -> Roster {
                     None
                 },
                 home: if on { home(name) } else { None },
+                parts: parts_of(name),
             })
         })
         .collect();
@@ -91,6 +92,17 @@ fn make_roster() -> Roster {
                     .chord_loops
                     .iter()
                     .map(|l| l.iter().map(|c| c.to_string()).collect())
+                    .collect(),
+                loop_keys: t
+                    .chord_loops
+                    .iter()
+                    .map(|l| {
+                        t.presets
+                            .iter()
+                            .find(|p| p.chord_loop == *l)
+                            .map_or((t.key, t.scale), |p| (p.key, p.scale))
+                    })
+                    .map(|(k, s)| (k.to_string(), s.to_string()))
                     .collect(),
                 bars: t.bars,
                 refuses: refused_by(name, &plays),
@@ -119,6 +131,19 @@ fn make_roster() -> Roster {
         app_version: env!("CARGO_PKG_VERSION").to_string(),
         kit_pairs,
     }
+}
+
+/// The parts `name` plays in the series' kit configs, in the configs' order, each once.
+fn parts_of(name: &str) -> Vec<String> {
+    let mut parts: Vec<String> = Vec::new();
+    for (_, ff) in bf_content::kit_pair_fights() {
+        if let Some(role) = ff.music.roles.get(name)
+            && !parts.contains(role)
+        {
+            parts.push(role.clone());
+        }
+    }
+    parts
 }
 
 /// A fighter's home config (`bf_content::home_config`): its theme, chord loop and its own part there.
@@ -180,6 +205,8 @@ pub fn pair_music(base: &FightFile, fighters: &[String; 2]) -> PairMusic {
     PairMusic {
         theme: base.music.theme.clone(),
         chord_loop: base.music.chord_loop.clone(),
+        key: base.music.key.clone(),
+        scale: base.music.scale.clone(),
         roles: convert::written_parts(base, fighters),
         options: base
             .music

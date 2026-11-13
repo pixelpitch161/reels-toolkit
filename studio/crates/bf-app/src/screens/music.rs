@@ -88,15 +88,15 @@ const ICON: f32 = 12.0;
 const RING_ROOM: f32 = 4.0;
 
 /// Why the key cannot be changed.
-pub const KEY_WHY: &str = "The key follows the theme in this version.";
+pub const KEY_WHY: &str = "The key comes with the chord loop in this version.";
 /// Why the music seed and "Re-roll music" cannot be used.
 pub const TAKES_WHY: &str = "New takes arrive with the music system.";
 /// The line under them.
 pub const TAKES_LINE: &str = "New takes arrive with the music system. This version plays the series' own arrangement.";
 /// Under the fight file's own chord loop.
-pub const OWN_LOOP: &str = "The last loop is the fight file's own.";
+pub const OWN_LOOP: &str = "The last loop is this match-up's own, from the series.";
 /// Under the theme's options.
-pub const OPTIONS_LINE: &str = "Set by the fight file. They change with the theme.";
+pub const OPTIONS_LINE: &str = "Set by the fight file. A new theme starts them at its own settings.";
 /// The screen before a seed is picked.
 pub const NO_SEED: &str = "Pick a seed first. The music is built for the fight you choose.";
 /// What stands in for a value that is not there.
@@ -208,10 +208,11 @@ fn controls(ui: &mut Ui, vm: &ViewModel, inner_h: f32, out: &mut Vec<Action>) {
 
     group_label(ui, "Key");
     ui.horizontal(|ui| {
-        let key = theme.map_or(NONE, |t| t.key.as_str());
+        let key_scale = vm.key_scale();
+        let key = key_scale.as_ref().map_or(NONE, |(k, _)| k.as_str());
         buttons::dropdown_disabled(ui, "Key", key, KEY_W, KEY_WHY);
-        if let Some(theme) = theme {
-            let line = format!("{}, from the theme", theme.scale);
+        if let Some((_, scale)) = &key_scale {
+            let line = format!("{scale}, from the theme");
             plain(ui, RichText::new(line).font(body()).color(MUTED));
         }
     });
@@ -254,12 +255,13 @@ fn controls(ui: &mut Ui, vm: &ViewModel, inner_h: f32, out: &mut Vec<Action>) {
 
     let names = vm.names();
     let parts = vm.parts();
+    let known = vm.known_parts();
     group_label(ui, "Parts");
     for side in [0, 1] {
         if side > 0 {
             ui.add_space(LABEL_GAP);
         }
-        let line = format!("{} plays {}.", names[side], part_words(&parts[side]));
+        let line = format!("{} plays {}.", names[side], part_words(&parts[side], &known[side]));
         plain(ui, RichText::new(line).font(body()).color(TEXT));
     }
     ui.add_space(GROUP_GAP);
@@ -274,8 +276,11 @@ fn controls(ui: &mut Ui, vm: &ViewModel, inner_h: f32, out: &mut Vec<Action>) {
             out.push(Action::SetBass(side));
         }
         ui.add_space(LABEL_GAP);
-        let other = bass.map_or_else(|| "melody".to_string(), |side| parts[1 - side].clone());
-        hint(ui, &format!("The other fighter takes {}.", part_words(&other)));
+        let other = bass.map_or(0, |side| 1 - side);
+        hint(
+            ui,
+            &format!("The other fighter takes {}.", part_words(&parts[other], &known[other])),
+        );
         ui.add_space(GROUP_GAP);
     }
 

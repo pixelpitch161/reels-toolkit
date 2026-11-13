@@ -60,8 +60,10 @@ pub(crate) fn written_parts(ff: &FightFile, fighters: &[String; 2]) -> [String; 
 }
 
 /// The music of `m` set in `theme` with the theme's chord loop `chord_loop`. The loop's key, scale, opening chords
-/// and tail come with it, from the kit config the theme ships that loop in (or the theme's own key and scale when
-/// none does), and any hand-written lines are dropped, since they were written over other chords. The file's own
+/// and tail come with it, from the kit config the theme ships that loop in (or the theme's own key and scale, with no
+/// opening chords and no tail, when none does), and any hand-written lines, solos and title hits are dropped, since
+/// they were written over other chords in another key (the kit then plays its sketch line, solo and title hits, as a
+/// starter of a pair with no kit config does). The file's own
 /// music is kept as it is while the theme is its own and the loop is its own: the same loop of the theme, or one
 /// past the theme's last loop when its loop is none of them. In another theme the file's theme options and mix
 /// (the old theme's) are dropped, so the new theme plays at its defaults.
@@ -88,11 +90,15 @@ pub(crate) fn set_music(m: &mut Music, theme: &str, chord_loop: usize) {
                 None => {
                     m.key = card.key.to_string();
                     m.scale = card.scale.to_string();
+                    m.chords_intro.clear();
                     m.chords_tail.clear();
                 }
             }
             m.chord_loop = strings(chords);
+            // written over the old chords, in the old key: the kit's sketch line, solo and title hits play instead
             m.lines.clear();
+            m.solos.clear();
+            m.title_hits.clear();
         }
     }
     if !same_theme {
@@ -756,9 +762,16 @@ mod tests {
         assert_eq!(big.music.chord_loop, preset.chord_loop);
         assert_eq!(big.music.chords_tail, preset.tail);
         assert!(big.music.theme_options.is_empty() && big.music.mix.is_empty() && big.music.lines.is_empty());
-        // the parts and solos stay the file's own
+        // the parts stay the file's own; its solos and title hits (notes in the old key) go, so the kit plays its
+        // sketch solo and title hits, as a starter of a pair with no kit config does
         assert_eq!(big.music.roles, kit.music.roles);
-        assert_eq!(big.music.solos, kit.music.solos);
+        assert!(
+            !kit.music.solos.is_empty() && !kit.music.title_hits.is_empty(),
+            "the kit's own has both"
+        );
+        assert!(big.music.solos.is_empty() && big.music.title_hits.is_empty());
+        let crossover = bf_content::starter("CELLO", "FLUTE").expect("a crossover");
+        assert!(crossover.music.solos.is_empty() && crossover.music.title_hits.is_empty());
         d.theme = kit.music.theme.clone();
         let back = fight_file(&d).expect("back home");
         assert_eq!(back.music, own.music);
@@ -781,6 +794,53 @@ mod tests {
             assert_eq!(ff.music.chord_loop, preset.chord_loop, "preset {i}");
             assert_eq!(ff.music.key, preset.key, "preset {i}");
         }
+    }
+
+    /// Note 1 of the Task 60 review: the key and scale the Music screen shows (`ViewModel::key_scale`, from the
+    /// description and the roster) are the fight file's, for every kit pair in both orders, in every theme it can
+    /// play and every loop of it, and on the file's own loop.
+    #[test]
+    fn the_key_shown_is_the_fights() {
+        let roster = crate::engine::content::roster();
+        let (mut state, _) = crate::state::AppState::new(
+            crate::model::Settings {
+                output_folder: std::path::PathBuf::from("Videos"),
+                workers: 4,
+                encode: crate::model::EncodeChoice::Best,
+            },
+            crate::model::queue::Queue::new(),
+            Vec::new(),
+            8,
+        );
+        state.apply(crate::seam::Event::Roster(roster));
+        let mut vm = state.vm;
+        let mut checked = 0;
+        for (pair, _) in bf_content::kit_pair_fights() {
+            let (_, d) = kit_draft(pair);
+            vm.pair_music = Some(crate::engine::content::pair_music(
+                &base_of(&d).ok().expect("a base"),
+                &d.fighters,
+            ));
+            for theme in bf_content::themes_for(&d.fighters[0], &d.fighters[1]) {
+                let loops = bf_content::theme_card(theme).unwrap().chord_loops.len();
+                for chord_loop in 0..=loops {
+                    vm.draft = Draft {
+                        theme: theme.to_string(),
+                        chord_loop,
+                        ..d.clone()
+                    };
+                    let ff = fight_file(&vm.draft).unwrap_or_else(|e| panic!("{pair} {theme} {chord_loop}: {e}"));
+                    let shown = vm.key_scale().expect("a key");
+                    assert_eq!(
+                        shown,
+                        (ff.music.key.clone(), ff.music.scale.clone()),
+                        "{pair} {theme} {chord_loop}"
+                    );
+                    checked += 1;
+                }
+            }
+        }
+        assert!(checked > 300, "{checked}");
     }
 
     /// Every chord loop on every offered theme's card is shipped in a kit config, so a loop always brings a key

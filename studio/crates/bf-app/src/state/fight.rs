@@ -244,12 +244,25 @@ impl AppState {
         }
     }
 
-    /// The fighters change corners; each keeps its handicap and, if it plays bass, the bass.
+    /// The fighters change corners; each keeps its handicap and, if it plays bass, the bass. When each order has a kit
+    /// config of its own (HORN against TROMBONE) and the draft is not a file that was opened, the match-up starts from
+    /// the new order's config instead (its handicap, parts and loop).
     pub(super) fn swap_sides(&mut self) {
         let d = &mut self.vm.draft;
         d.fighters.swap(0, 1);
         d.handicap.swap(0, 1);
         d.bass = d.bass.map(|side| 1 - side);
+        let now = self.vm.draft.fighters.clone();
+        let before = [now[1].clone(), now[0].clone()];
+        // both orders written apart: the other order is another kit config, not this one swapped
+        let own = self
+            .vm
+            .roster
+            .as_ref()
+            .is_some_and(|r| r.has_own_config(&now) && r.has_own_config(&before));
+        if own && self.vm.draft.base.is_none() {
+            self.start_pair();
+        }
     }
 
     pub(super) fn set_theme(&mut self, name: &str) {
@@ -271,11 +284,13 @@ impl AppState {
                 .unwrap_or(loops)
         });
         let d = &mut self.vm.draft;
+        let other = d.theme != name;
         d.theme = name.to_string();
         d.bars = d.bars.max(bars.0).min(bars.1);
         if let Some(own) = own {
             d.chord_loop = own;
-        } else if d.chord_loop >= loops {
+        } else if other || d.chord_loop >= loops {
+            // a new theme starts on its own first loop
             d.chord_loop = 0;
         }
     }
@@ -299,6 +314,21 @@ impl AppState {
             self.settle(fx);
             self.measure(fx);
         }
+    }
+
+    /// The kit pair's own handicap again (ruling M3-R6); nothing for a pair with no kit config.
+    pub(super) fn use_series_handicap(&mut self, fx: &mut Vec<Effect>) {
+        let Some(series) = self
+            .vm
+            .roster
+            .as_ref()
+            .and_then(|r| r.series_handicap(&self.vm.draft.fighters))
+        else {
+            return;
+        };
+        self.vm.draft.handicap = series;
+        self.settle(fx);
+        self.measure(fx);
     }
 
     pub(super) fn reset_handicap(&mut self, fx: &mut Vec<Effect>) {

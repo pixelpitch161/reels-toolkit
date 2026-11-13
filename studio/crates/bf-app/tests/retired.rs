@@ -161,24 +161,8 @@ fn until(engine: &EngineHandle, seconds: f64, said: &mut Vec<String>, mut stop: 
 /// Every text an event carries (its words, names and files), without its pictures and sound.
 fn texts_of(e: &Event) -> Vec<String> {
     match e {
-        Event::Roster(r) => r
-            .fighters
-            .iter()
-            .flat_map(|f| {
-                let mut t = vec![f.name.clone(), f.display.clone()];
-                if let Some(c) = &f.card {
-                    t.extend([
-                        c.weapon.clone(),
-                        c.text.clone(),
-                        c.music_title.clone(),
-                        c.music_text.clone(),
-                    ]);
-                    t.extend(c.abilities.iter().flat_map(|a| [a.name.clone(), a.text.clone()]));
-                }
-                t
-            })
-            .chain(r.themes.iter().flat_map(|t| [t.display.clone(), t.text.clone()]))
-            .collect(),
+        // the whole roster as the interface gets it (its portraits and pixel masks are numbers, which hold no names)
+        Event::Roster(r) => vec![format!("{r:?}")],
         Event::FightInfo {
             pair_rules,
             captions,
@@ -328,9 +312,21 @@ fn no_kit_pair_writes_a_retired_name() {
             take,
             draft: draft.clone(),
         });
-        until(&engine, 180.0, &mut said, |e| {
+        let sound = until(&engine, 180.0, &mut said, |e| {
             matches!(e, Event::TakeSound { .. } | Event::TakeFailed { .. })
         });
+        // and the positive side: each fighter's lane (its stem) is named by its roster name as shown
+        let Event::TakeSound { music, .. } = sound else {
+            panic!("{pair}: {sound:?}");
+        };
+        let lanes: Vec<&str> = music
+            .lanes
+            .iter()
+            .filter(|l| l.group == bf_app::model::take::LaneGroup::Fighters)
+            .map(|l| l.name.as_str())
+            .collect();
+        let shown = draft.fighters.clone().map(|n| bf_app::wording::display_name(&n));
+        assert_eq!(lanes, shown.iter().map(String::as_str).collect::<Vec<_>>(), "{pair}");
         let out_root = temp.0.join("Videos");
         engine.send(Command::Enqueue {
             draft: draft.clone(),

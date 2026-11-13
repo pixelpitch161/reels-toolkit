@@ -205,6 +205,7 @@ pub fn roster() -> Roster {
                 mask: mask(&name),
                 card: Some(card(&name, display)),
                 home: None,
+                parts: Vec::new(),
                 name,
             }
         })
@@ -219,6 +220,7 @@ pub fn roster() -> Roster {
             key: "E".to_string(),
             scale: "harmonic minor".to_string(),
             chord_loops: vec![chords("Em Am B7 Em C Am B7 B7"), chords("Em C Am B7 Em C Am B7")],
+            loop_keys: vec![("E".to_string(), "harmonic minor".to_string()); 2],
             bars: (24, 42),
             refuses: Vec::new(),
             options: Vec::new(),
@@ -238,6 +240,8 @@ pub fn pair_music(draft: &Draft) -> PairMusic {
     PairMusic {
         theme: draft.theme.clone(),
         chord_loop: theme.and_then(|t| t.chord_loops.first().cloned()).unwrap_or_default(),
+        key: theme.map_or_else(String::new, |t| t.key.clone()),
+        scale: theme.map_or_else(String::new, |t| t.scale.clone()),
         roles: [0, 1].map(|side| if draft.bass == Some(side) { "bass" } else { "melody" }.to_string()),
         options: Vec::new(),
     }
