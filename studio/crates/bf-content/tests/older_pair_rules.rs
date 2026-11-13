@@ -3,15 +3,15 @@
 //! `swat_cobras`, `swat_shells`, `swat_shell_h`, `swat_shell_r`, `swat_beats`), so the pair-rule table stays as it is:
 //! every pair with an older fighter in it, either way round and against each of the 30, has no rule.
 
+use bf_content::fighters::OLDER;
 use bf_content::pair_rules;
 
 #[test]
 fn every_pair_with_an_older_fighter_has_no_pair_rule() {
-    let kit = bf_core::roster::parse_roster(include_str!("../data/roster.json")).expect("the roster loads");
-    let older =
-        bf_core::roster::parse_roster(include_str!("../../bf-sim/tests/older_roster.json")).expect("the older roster");
+    let roster = bf_core::roster::parse_roster(include_str!("../data/roster.json")).expect("the roster loads");
+    let (older, kit): (Vec<_>, Vec<_>) = roster.iter().partition(|f| OLDER.contains(&f.name.as_str()));
     assert_eq!((kit.len(), older.len()), (20, 10));
-    let all: Vec<&str> = kit.iter().chain(older.iter()).map(|f| f.name.as_str()).collect();
+    let all: Vec<&str> = roster.iter().map(|f| f.name.as_str()).collect();
     let mut pairs = 0;
     for a in older.iter().map(|f| f.name.as_str()) {
         for &b in &all {
