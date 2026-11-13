@@ -1,18 +1,179 @@
-//! The fight a new match-up begins from, and the caption drafts (Task 26; spec sections 3, 4 and 9).
+//! The fight a new match-up begins from, and the caption drafts (Task 26, milestone 3 Task 59; spec sections 3, 4
+//! and 9).
 //!
-//! The fight file is the whole recipe, so a match-up starts from a written one: for a pair whose music is written,
-//! its example fight with the fighters in the asked order, no handicap, no seed and no episode number.
+//! The fight file is the whole recipe, so a match-up starts from a written one. A kit pair (one of the series' kit
+//! configs, written as `studio/fights/<pair>.toml`) starts from its fight file with the kit's frozen handicap and
+//! damage scale (plan section 8, Q6; ruling M3-R6), swapped with the sides for the other order. Any other pair of two
+//! kit fighters starts from the left fighter's home config: its theme, tempo, key, scale, chords and options, the
+//! kit's sketch lines and solos, roles from both homes, a neutral handicap (ruling M3-R7). Both are configs the kit
+//! itself plays, and `studio/reference/episodes/crossovers/` proves six of the second kind against the kit.
 
-use bf_core::fightfile::{Captions, FightFile};
+use std::sync::OnceLock;
 
-use crate::{ContentError, card, pair_rules};
+use bf_core::fightfile::{Captions, FightFile, OptionValue};
 
-/// The pairs whose music is written, either way round, with the fight file each starts from.
-const STARTERS: [(&str, &str, &str); 1] = [(
-    "FLUTE",
-    "TROMBONE",
-    include_str!("../../../fights/flute_vs_trombone.toml"),
-)];
+use crate::themes::themes_for;
+use crate::{ContentError, available, card, pair_rules};
+
+/// The series' kit configs as fight files (plan Table S4 and milestone 1's `flute_vs_trombone`): the pair's folder
+/// name, the episode number of the kit config (the first line of its notes), whether it is a kit example (a config
+/// rebuilt to check a port, which is a fighter's home only when it has no other) and the fight file.
+const KIT_PAIRS: [(&str, u32, bool, &str); 18] = [
+    (
+        "altosax_vs_tenorsax",
+        51,
+        false,
+        include_str!("../../../fights/altosax_vs_tenorsax.toml"),
+    ),
+    (
+        "bassclarinet_vs_bassoon",
+        55,
+        false,
+        include_str!("../../../fights/bassclarinet_vs_bassoon.toml"),
+    ),
+    (
+        "bassclarinet_vs_euphonium",
+        38,
+        true,
+        include_str!("../../../fights/bassclarinet_vs_euphonium.toml"),
+    ),
+    (
+        "bassdrum_vs_tuba",
+        56,
+        false,
+        include_str!("../../../fights/bassdrum_vs_tuba.toml"),
+    ),
+    (
+        "cello_vs_contrabass",
+        47,
+        false,
+        include_str!("../../../fights/cello_vs_contrabass.toml"),
+    ),
+    (
+        "clarinet_vs_oboe",
+        37,
+        true,
+        include_str!("../../../fights/clarinet_vs_oboe.toml"),
+    ),
+    (
+        "electric_vs_acoustic",
+        44,
+        false,
+        include_str!("../../../fights/electric_vs_acoustic.toml"),
+    ),
+    (
+        "euphonium_vs_trombone",
+        48,
+        false,
+        include_str!("../../../fights/euphonium_vs_trombone.toml"),
+    ),
+    (
+        "flute_vs_clarinet",
+        49,
+        false,
+        include_str!("../../../fights/flute_vs_clarinet.toml"),
+    ),
+    (
+        "flute_vs_sousaphone",
+        53,
+        false,
+        include_str!("../../../fights/flute_vs_sousaphone.toml"),
+    ),
+    (
+        "flute_vs_trombone",
+        41,
+        true,
+        include_str!("../../../fights/flute_vs_trombone.toml"),
+    ),
+    (
+        "horn_vs_trombone_rematch",
+        54,
+        false,
+        include_str!("../../../fights/horn_vs_trombone_rematch.toml"),
+    ),
+    (
+        "oboe_vs_bassoon",
+        52,
+        false,
+        include_str!("../../../fights/oboe_vs_bassoon.toml"),
+    ),
+    (
+        "piano_vs_organ",
+        45,
+        false,
+        include_str!("../../../fights/piano_vs_organ.toml"),
+    ),
+    (
+        "trombone_vs_horn",
+        34,
+        true,
+        include_str!("../../../fights/trombone_vs_horn.toml"),
+    ),
+    (
+        "trombone_vs_tuba",
+        36,
+        true,
+        include_str!("../../../fights/trombone_vs_tuba.toml"),
+    ),
+    (
+        "trumpet_vs_clarinet",
+        46,
+        false,
+        include_str!("../../../fights/trumpet_vs_clarinet.toml"),
+    ),
+    (
+        "trumpet_vs_trombone",
+        50,
+        false,
+        include_str!("../../../fights/trumpet_vs_trombone.toml"),
+    ),
+];
+
+/// The theme a crossover falls back to when neither fighter's home theme has every bed hook both parts play.
+const FALLBACK_THEME: &str = "big_top";
+
+/// A kit config as a fight file: its pair's folder name, episode number, example flag and fight.
+struct KitPair {
+    pair: &'static str,
+    episode: u32,
+    example: bool,
+    ff: FightFile,
+}
+
+fn kit_pairs() -> &'static [KitPair] {
+    static PAIRS: OnceLock<Vec<KitPair>> = OnceLock::new();
+    PAIRS.get_or_init(|| {
+        KIT_PAIRS
+            .iter()
+            .map(|&(pair, episode, example, text)| KitPair {
+                pair,
+                episode,
+                example,
+                ff: FightFile::parse(text).unwrap_or_else(|e| panic!("studio/fights/{pair}.toml: {e}")),
+            })
+            .collect()
+    })
+}
+
+/// The kit configs the pair gates prove, as `(pair folder name, fight file)`: every pair with written music.
+pub fn kit_pair_fights() -> Vec<(&'static str, &'static FightFile)> {
+    kit_pairs().iter().map(|p| (p.pair, &p.ff)).collect()
+}
+
+/// A fighter's home config (the music a crossover with it on the left starts from), by its pair folder name: its
+/// newest kit config by episode number, an example only when it has no other. `None` for a name no kit config has.
+pub fn home_config(name: &str) -> Option<&'static str> {
+    kit_pairs()
+        .iter()
+        .filter(|p| p.ff.fighters.iter().any(|f| f == name))
+        .max_by_key(|p| (!p.example, p.episode))
+        .map(|p| p.pair)
+}
+
+fn home(name: &str) -> Option<&'static FightFile> {
+    let pair = home_config(name)?;
+    kit_pairs().iter().find(|p| p.pair == pair).map(|p| &p.ff)
+}
 
 /// The tags every Instagram draft ends with.
 const INSTAGRAM_TAGS: &str = "#musicmemes #musician #pixelart #lowpoly #gamedev #satisfying #music";
@@ -23,31 +184,106 @@ const TIKTOK_TAGS: &str = "#bandkid #musictok #pixelart #satisfying #bandtok #mu
 /// The tags every Shorts draft ends with.
 const SHORTS_TAGS: &str = "#music #pixelart";
 
-/// The fight a new match-up of `left` (the left corner) and `right` begins from: the pair's written fight with the
-/// fighters in this order, handicap 1.0 each, no seed, no series tag, the kit's default particle seed, the pair's
-/// rules, drafted captions and this app's version.
+/// The fight a new match-up of `left` (the left corner) and `right` begins from, for any ordered pair of two kit
+/// fighters ([`available`]):
+///
+/// - a kit pair starts from its fight file (for HORN and TROMBONE, which have two, the one whose left fighter is
+///   `left`); the other order swaps the fighters and the handicap, and every field that names a fighter keeps its
+///   name. The handicap and damage scale are the kit's frozen `DMG_SIDE` and `DMG_SCALE` (the series' handicap);
+/// - any other pair starts from the left fighter's home config ([`home_config`]): its theme (or, when the theme lacks
+///   a bed hook a part plays, the right fighter's home theme, else the big top), tempo, key, scale, chords and that
+///   theme's options (one that names a fighter not in the pair names the left fighter); both play the kit's sketch
+///   line and solo, no title hits, no mix, no title-card opt-ins; the left keeps its home role, the right takes its
+///   own unless that is the same, then `bass` if its card can play bass and the left's is not `bass`, else `melody`
+///   unless the left plays the melody, else `line`; handicap 1.0 each, damage scale 1.0.
+///
+/// Either way: no seed, no series tag, the kit's default particle seed, the pair's rules, drafted captions and this
+/// app's version.
 ///
 /// # Errors
-/// For a pair with no music written yet (every pair but FLUTE and TROMBONE), [`ContentError::NoMusic`], which reads
-/// "No music is written for {Left} vs {Right} yet." with both names in sentence case.
+/// For two names that are not two different kit fighters, [`ContentError::NoMusic`], which reads "No music is
+/// written for {Left} vs {Right} yet." with both names in sentence case.
 pub fn starter(left: &str, right: &str) -> Result<FightFile, ContentError> {
-    let text = STARTERS
-        .iter()
-        .find(|(a, b, _)| (left == *a && right == *b) || (left == *b && right == *a))
-        .map(|(_, _, text)| *text)
-        .ok_or_else(|| ContentError::NoMusic {
-            left: sentence_case(left),
-            right: sentence_case(right),
-        })?;
-    let mut ff = FightFile::parse(text)?;
+    let offered = available();
+    if left == right || !offered.contains(&left) || !offered.contains(&right) {
+        return Err(no_music(left, right));
+    }
+    let written = |a: &str, b: &str| kit_pairs().iter().find(|p| p.ff.fighters == [a, b]);
+    let mut ff = if let Some(p) = written(left, right) {
+        p.ff.clone()
+    } else if let Some(p) = written(right, left) {
+        let mut ff = p.ff.clone();
+        ff.fighters.reverse();
+        ff.handicap.reverse();
+        ff
+    } else {
+        crossover(left, right)?
+    };
     ff.app_version = env!("CARGO_PKG_VERSION").to_string();
-    ff.fighters = vec![left.to_string(), right.to_string()];
-    ff.handicap = vec![1.0, 1.0];
     ff.seed = None;
     ff.series_tag = None;
     ff.picture.fx_seed = None;
     ff.pair_rules = pair_rules(left, right);
     ff.captions = draft_captions(left, right);
+    Ok(ff)
+}
+
+fn no_music(left: &str, right: &str) -> ContentError {
+    ContentError::NoMusic {
+        left: sentence_case(left),
+        right: sentence_case(right),
+    }
+}
+
+/// The fight file of a pair without a kit config (see [`starter`]), before what every starter sets.
+fn crossover(left: &str, right: &str) -> Result<FightFile, ContentError> {
+    let (Some(hl), Some(hr)) = (home(left), home(right)) else {
+        return Err(no_music(left, right));
+    };
+    let offered = themes_for(left, right);
+    let theme = [hl.music.theme.as_str(), hr.music.theme.as_str()]
+        .into_iter()
+        .find(|t| offered.contains(t))
+        .unwrap_or(FALLBACK_THEME);
+    let role_of = |h: &FightFile, name: &str| h.music.roles.get(name).cloned().ok_or_else(|| no_music(left, right));
+    let rl = role_of(hl, left)?;
+    let mut rr = role_of(hr, right)?;
+    if rr == rl {
+        rr = if card(right).is_some_and(|c| c.can_play_bass) && rl != "bass" {
+            "bass"
+        } else if rl != "melody" {
+            "melody"
+        } else {
+            "line"
+        }
+        .to_string();
+    }
+    let mut ff = hl.clone();
+    ff.fighters = vec![left.to_string(), right.to_string()];
+    ff.handicap = vec![1.0, 1.0];
+    ff.dmg_scale = 1.0;
+    let m = &mut ff.music;
+    if theme != m.theme {
+        m.theme = theme.to_string();
+        m.theme_options.clear();
+    }
+    for v in m.theme_options.values_mut() {
+        if let OptionValue::Str(name) = v
+            && name != left
+            && name != right
+        {
+            *name = left.to_string();
+        }
+    }
+    m.roles = [(left.to_string(), rl), (right.to_string(), rr)].into_iter().collect();
+    m.lines.clear();
+    m.solos.clear();
+    m.title_hits.clear();
+    m.mix.clear();
+    let p = &mut ff.picture;
+    p.title_lines.clear();
+    p.title_balls = None;
+    p.middle = None;
     Ok(ff)
 }
 
@@ -115,11 +351,12 @@ mod tests {
 
     #[test]
     fn the_starter_is_a_valid_fight() {
-        for (left, right) in [("FLUTE", "TROMBONE"), ("TROMBONE", "FLUTE")] {
+        // the series' handicap (the kit's DMG_SIDE), with the sides
+        for (left, right, handicap) in [("FLUTE", "TROMBONE", [2.0, 0.4]), ("TROMBONE", "FLUTE", [0.4, 2.0])] {
             let ff = starter(left, right).unwrap_or_else(|e| panic!("{left} vs {right}: {e}"));
             assert_eq!(crate::validate(&ff), Ok(()), "{left} vs {right}");
             assert_eq!(ff.fighters, [left, right]);
-            assert_eq!(ff.handicap, [1.0, 1.0]);
+            assert_eq!(ff.handicap, handicap);
             assert_eq!(ff.seed, None);
             assert_eq!(ff.series_tag, None);
             assert_eq!(ff.picture.fx_seed, None);
@@ -140,22 +377,25 @@ mod tests {
     }
 
     #[test]
-    fn a_pair_without_music_says_so() {
+    fn a_pair_that_is_no_kit_pair_says_so() {
         let message = |left: &str, right: &str| match starter(left, right) {
             Err(e @ ContentError::NoMusic { .. }) => e.to_string(),
             other => panic!("{left} vs {right}: {other:?}"),
         };
-        assert_eq!(message("FLUTE", "PIANO"), "No music is written for Flute vs Piano yet.");
+        // every pair of two different kit fighters has a starter; a mirror match or a name that is no kit fighter
+        // has none
+        assert!(starter("FLUTE", "PIANO").is_ok() && starter("BASS DRUM", "ALTO SAX").is_ok());
+        assert_eq!(message("FLUTE", "KAZOO"), "No music is written for Flute vs Kazoo yet.");
         assert_eq!(
-            starter("FLUTE", "PIANO").unwrap_err(),
+            starter("KAZOO", "PIANO").unwrap_err(),
             ContentError::NoMusic {
-                left: "Flute".into(),
+                left: "Kazoo".into(),
                 right: "Piano".into()
             }
         );
         assert_eq!(
-            message("BASS DRUM", "ALTO SAX"),
-            "No music is written for Bass drum vs Alto sax yet."
+            message("BASS DRUM", "BASS DRUM"),
+            "No music is written for Bass drum vs Bass drum yet."
         );
         assert_eq!(message("FLUTE", "FLUTE"), "No music is written for Flute vs Flute yet.");
         assert_eq!(message("", ""), "No music is written for  vs  yet.");

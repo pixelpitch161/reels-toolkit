@@ -458,14 +458,14 @@ mod tests {
         );
         // a draft that is no fight at all ends the run the same way
         let mut lost = draft_with([1.0, 1.0]);
-        lost.fighters[1] = "PIANO".to_string();
+        lost.fighters[1] = "FLUTE".to_string(); // every pair of two kit fighters has music now; a mirror has none
         engine.send(Command::AutoBalance { r#gen: 3, draft: lost });
         let Event::BalanceFailed { r#gen, text } = wait_for(&engine, 10.0, failed) else {
             panic!("a failed run is answered BalanceFailed, not Problem");
         };
         assert_eq!(
             (r#gen, text.as_str()),
-            (3, "No music is written for Flute vs Piano yet.")
+            (3, "No music is written for Flute vs Flute yet.")
         );
         engine.send(Command::Shutdown);
         std::fs::remove_dir(&root).expect("the engine left its temp folder empty");
