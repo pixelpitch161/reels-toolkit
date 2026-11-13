@@ -1,8 +1,7 @@
 //! VIOLA: one of the older fighters (milestone 4), ported in its Task 11 against its reference kit module
 //! (`tools/studio_export/older/fighters/viola.py`, the reference kit module moved from
-//! `projects/ballfight_viola_vs_violin/` (#42)). Until then every entry point here says it has none: the picture
-//! draws VIOLA as the bare ball, the score has no part for it, the app has no card for it, and the app does not
-//! offer it (the registry's `PORTED`, which only a register task changes).
+//! `projects/ballfight_viola_vs_violin/` (#42)): its look, voice, part and card. The app does not offer it until a
+//! register task adds it to the registry's `PORTED`.
 //!
 //! The port fills this folder only: `look.rs`, `sound.rs`, `voice.rs`, `card.rs`, `state.rs` (what the look and the
 //! part both derive from the recording) and the entry points below. Nothing outside it names VIOLA's types, so
@@ -29,15 +28,15 @@ pub fn look() -> Option<Box<dyn Look>> {
     Some(look::look())
 }
 
-/// Its instrument voice (its `pp_bridge` entry, or its episode's own synth), or `None` while it is not ported.
+/// Its instrument voice (`pp_bridge`'s entry: `viola_lowpoly`'s bowed viola).
 pub fn voice() -> Option<Arc<dyn Voice>> {
-    None
+    Some(Arc::new(voice::ViolaVoice))
 }
 
-/// `fighters.sound('VIOLA', M, k)`: its part on side `k` of the fight `ff`, or `None` while it is not ported.
+/// `fighters.sound('VIOLA', M, k)`: its part on side `k` of the fight `ff`.
 pub fn sound(k: usize, ff: &FightFile) -> Option<Box<dyn Sound>> {
-    let _ = (k, ff);
-    None
+    let _ = ff;
+    Some(Box::new(sound::ViolaSound::new(k)))
 }
 
 /// Its model (`data/models/VIOLA.json`, written by the export tool's `models` for one roster name), compiled in:
@@ -49,3 +48,8 @@ pub const MUSIC_FEEDS_FIGHT: bool = false;
 
 /// The extra lines its part declares beside its own (HORN: `HORN THEME`).
 pub const EXTRA_LINES: &[&str] = &[];
+
+/// The voices its part plays besides its own (`M.note('CELLO', ...)`: the crush's cello, ruling M4-R10). The kit's
+/// `M.note` reaches every voice of the series; the Studio's music context knows only the fighters' and the theme's,
+/// so a soundtrack with the VIOLA needs the CELLO's voice added to it (a shared change, reported NEEDS_CONTEXT).
+pub const PART_VOICES: &[&str] = &["CELLO"];
