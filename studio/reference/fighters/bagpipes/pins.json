@@ -7,8 +7,8 @@
  "pins": [
   {
    "path": "fighters/bagpipes/checks_rows.json",
-   "sha256": "88020564de6875d31c39d8583e1824e54f6db16647bff7cfbd47f42cdd7cf6eb",
-   "bytes": 34093,
+   "sha256": "26f490227f27f6eb0be74024c182847a2813cfad7b8c09a07abf418a3fe8e946",
+   "bytes": 33999,
    "export": "fighter_bagpipes"
   },
   {
