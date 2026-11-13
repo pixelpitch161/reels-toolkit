@@ -16,7 +16,12 @@ plan m4 Task 5). Every patch below is one exact text replacement in the episode'
   glows, fringes, flashbulbs, rope wobble strength and its HUD holds.
 - `harness`: #39's beat ramp (0.10 s; the kit's 0.12 s) and #39's bus name ('bari'; the kit's 'bari sax', M4-R9).
 
-    python -m tools.studio_export origin fighters/bari_sax     Gate O: writes studio/reference/fighters/bari_sax/origin.json"""
+Steps 1 to 5 (Template F): the opponent FLUTE at the reference handicap (0.3, 0.6) (ruling M3-R34): at (1.0, 1.0)
+BARI SAX won 199 of 200 fights against FLUTE (median K.O. 18.9 s); at (0.3, 0.6) it wins about 68 % (82 of 120, both
+corners, seeds 1 to 60), median K.O. 47.7 s, 5 of 120 without a K.O.
+
+    python -m tools.studio_export origin fighters/bari_sax     Gate O: writes studio/reference/fighters/bari_sax/origin.json
+    python -m tools.studio_export fighter_bari_sax             the Template F references (after Gate O)"""
 from . import m3refs
 
 R_ = 'render.py'
@@ -152,9 +157,32 @@ BARI_LAYERS = [
          "    if False:                         # v2: CABLE SNAP, until the crash")]),
 ]
 
+# ---------------------------------------------------------------- #39's audio.py: the shared buses, the BARI SAX's own only
+# (the lines of its own placements on fx, drums and solo; its K.O. clanks only when it is the one that falls apart)
+KEEP = (516, 517, 531, 535, 536, 537, 539, 541, 544, 545, 551, 554, 555, 585, 587, 599, 604, 605, 607, 624, 625, 652)
+CLANKS = 619
+SHARED = ('fx', 'drums', 'solo')
+SILENCE = [(A_, "    mix = A.Mix(T.DUR + 4.0)\n",
+            "    mix = A.Mix(T.DUR + 4.0); _keep = set(" + repr(KEEP) + ") | ({" + str(CLANKS) + "} if NAMES[LOSE] == "
+            "'BARI SAX' else set()); _place = mix.place; mix.place = lambda bus, *a, **kw: mix.bus(bus) if bus in "
+            + repr(SHARED) + " and sys._getframe(1).f_lineno not in _keep else _place(bus, *a, **kw)\n")]
+
 SPEC = dict(
     name='BARI SAX',
     opponent='FLUTE',
+    fights=dict(handicap=(0.3, 0.6)),             # the reference handicap (M3-R34): see the docstring
+    scenarios=m3refs.default_scenarios('BARI SAX', 'FLUTE') + [
+        # plan m4 Table O4: a hop sails over the swing (seed 7: 11.7 s, seed 2 swapped: 8.1 s), one caught at the
+        # hop's edge (seed 3: 4.5 s, seed 4 swapped: 4.5 s); the swing aimed where a hop lands (every seed: 4.05 s)
+        dict(name='vs_bassoon', seeds=(3, 7), opponent='BASSOON'),
+        dict(name='vs_bassoon_swapped', seeds=(2, 4), opponent='BASSOON', swapped=True),
+        # the swing aimed round an anchored whirl (7.63 s)
+        dict(name='vs_bass_clarinet', seeds=(1, 2, 3), opponent='BASS CLARINET'),
+        # the copy sweep: EUPHONIUM copies GROWL (its shockwave) and draws it through BARI SAX's look (M3-R3)
+        dict(name='copy_euphonium', seeds=(10, 13, 5), opponent='EUPHONIUM', overrides=dict(LV_DMG=m3refs.LV)),
+        dict(name='copy_euphonium_swapped', seeds=(5, 1, 2), opponent='EUPHONIUM', swapped=True,
+             overrides=dict(LV_DMG=m3refs.LV)),
+    ],
     origin=dict(
         episode='ballfight_bassoon_vs_barisax',
         config=dict(MOOD='big_top',                 # #39's ska punk is not a kit mood yet: the BARI SAX's own bus only
@@ -169,7 +197,9 @@ SPEC = dict(
         harness=[dict(name="#39's beat ramp (0.10 s; the kit's 0.12 s)", beat_pulse_pre=0.10),
                  dict(name="#39's bus name: the kit's 'bari sax' is #39's 'bari' (ruling M4-R9)",
                       call='ballfight.kit.fighters.bari_sax:origin_harness')],
-        buses=['bari'],
+        silence=SILENCE,
+        fights=[dict(seed=77, buses=['bari', 'fx', 'drums']),          # #39's own fight: it loses
+                dict(seed=3, frames=16, buses=['bari', 'solo', 'fx', 'drums'])],   # it wins: the stinger, the solo
     ),
 )
 
