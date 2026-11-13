@@ -49,7 +49,11 @@ pub(super) fn flash_times(ev: &[Event], looks: &[Box<dyn Look>], t_ko: f64) -> V
         .iter()
         .filter(|e| {
             e.kind == "ability"
-                || (e.kind == "hit" && super::owner(e).is_some_and(|k| looks[k].flash_hits().contains(&e.s(7))))
+                || (e.kind == "hit"
+                    && super::owner(e).is_some_and(|k| {
+                        // (opt-in flash_hit: the look decides for its hits, else its flash_hits)
+                        looks[k].flash_hit(e).unwrap_or_else(|| looks[k].flash_hits().contains(&e.s(7)))
+                    }))
         })
         .map(|e| e.t)
         .collect();
@@ -89,6 +93,13 @@ impl PictureCtx {
         let g = &self.show.grid;
         let dl = &self.lists;
         let wk = self.win_k(t);
+        // (opt-in crowd_laugh) lk = max over the looks that laugh, from 0
+        let mut lk = 0.0;
+        for look in &self.looks {
+            if let Some(v) = look.crowd_laugh(self, t) {
+                lk = py_max(lk, v);
+            }
+        }
         let mut items: Vec<(f64, Item)> = Vec::new();
         // vis = np.einsum('ij,ij->i', STAND_N, cam.pos[None] - STAND_C) > 0
         let facing = |n: &[V3], c: &[V3]| -> Vec<usize> {
@@ -158,6 +169,15 @@ impl PictureCtx {
                         y -= 1.0;
                     }
                     let rh = 0.15 * cam.f / dh[j];
+                    // (opt-in crowd_laugh) heads bob "ha-ha-ha", bodies rock and lean back, each at its own phase
+                    let mut sway = 0.0;
+                    if lk > 0.0 {
+                        let ph = q.ph * 6.28;
+                        y -= lk
+                            * (1.2 + 1.2 * dmath::sin(2.0 * dmath::PI * 5.2 * t + ph).abs())
+                            * py_max(1.0, rh * 0.8);
+                        sway = lk * 1.3 * dmath::sin(2.0 * dmath::PI * 1.7 * t + ph) * py_max(1.0, rh * 0.6);
+                    }
                     if !(-6.0 < x && x < W as f64 + 6.0 && -6.0 < y && y < H as f64 + 10.0) {
                         continue;
                     }
@@ -177,7 +197,11 @@ impl PictureCtx {
                     // crowd_lit = 1.0 + 0.9 * FL.tint(heads, tc)
                     let body: V3 = std::array::from_fn(|c| {
                         let lit = 1.0 + 0.9 * tint[j][c];
-                        np::clip(CROWD_COLS[q.ci][c] * tone[c] * spill * lit, 0.0, 255.0)
+                        if lk > 0.0 {
+                            np::clip(CROWD_COLS[q.ci][c] * tone[c] * spill * lit * (1.0 + 0.25 * lk), 0.0, 255.0)
+                        } else {
+                            np::clip(CROWD_COLS[q.ci][c] * tone[c] * spill * lit, 0.0, 255.0)
+                        }
                     });
                     let pic = &mut fr.pil;
                     pil::ellipse(
@@ -187,9 +211,14 @@ impl PictureCtx {
                         None,
                         1,
                     );
+                    let head = if lk > 0.0 {
+                        (x - rh + sway, y - rh, x + rh + sway, y + rh)
+                    } else {
+                        (x - rh, y - rh, x + rh, y + rh)
+                    };
                     pil::ellipse(
                         pic,
-                        (x - rh, y - rh, x + rh, y + rh),
+                        head,
                         Some(&ink(body.map(|v| v * 0.62))),
                         None,
                         1,
@@ -197,12 +226,20 @@ impl PictureCtx {
                     // rim light from the ring on the heads (they face it)
                     if rh >= 1.5 {
                         let rim = body.map(|v| np::clip(v * 1.5 + 30.0, 0.0, 255.0));
-                        pil::line(
-                            pic,
-                            &[(x - rh * 0.6, y - rh * 0.8), (x + rh * 0.6, y - rh * 0.8)],
-                            &ink(rim),
-                            1,
-                        );
+                        let ends = if lk > 0.0 {
+                            [(x - rh * 0.6 + sway, y - rh * 0.8), (x + rh * 0.6 + sway, y - rh * 0.8)]
+                        } else {
+                            [(x - rh * 0.6, y - rh * 0.8), (x + rh * 0.6, y - rh * 0.8)]
+                        };
+                        pil::line(pic, &ends, &ink(rim), 1);
+                    }
+                    // (opt-in crowd_laugh) arms thrown up, every third person
+                    if lk > 0.3 && rh >= 1.2 && j % 3 == 0 {
+                        let ya = y + 0.9 * rh;
+                        let arm = ink(body.map(|v| v * 0.8));
+                        let up = ya - 1.6 * rh * lk;
+                        pil::line(pic, &[(x - 1.6 * rh, ya), (x - 2.1 * rh + sway, up)], &arm, 1);
+                        pil::line(pic, &[(x + 1.6 * rh, ya), (x + 2.1 * rh + sway, up)], &arm, 1);
                     }
                     let ph = q.ph;
                     // phones up (lots more for the champion)

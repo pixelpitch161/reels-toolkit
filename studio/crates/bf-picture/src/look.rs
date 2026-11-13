@@ -590,6 +590,29 @@ pub trait Look: Send + Sync {
     /// Opt-in `after_post(img, F, drawn)`: the frame in bytes after the post effects, before the count-in; what it
     /// notes goes to the frame's draw log (`ui._note`). TURNTABLES: the VHS rewind and its glyph; VIOLA: the rests.
     fn after_post(&self, p: &PictureCtx, img: &mut Img<u8>, log: &mut DrawLog, f: &FrameCtx<'_>, drawn: &[DrawnBall]) {}
+
+    // ------------------------------------------------------------ VIOLA's opt-ins (plan m4 Task 11)
+    // Three more of #42's layers no hook above can express (`picture_patches.py`, its VIOLA section). Each default
+    // changes nothing.
+
+    /// Opt-in `crowd_laugh(t)`: the crowd's laugh at `t` (0..1), or `None` (the default: a look without the
+    /// opt-in). The crowd takes the largest of the looks' laughs (from 0): heads bob, bodies rock and lean, brighter,
+    /// every third one's arms up. VIOLA: VIOLA JOKE's laugh.
+    fn crowd_laugh(&self, p: &PictureCtx, t: f64) -> Option<f64> {
+        None
+    }
+
+    /// Opt-in `flash_hit(e)`: whether this hit of its sets off the crowd's flashbulbs, instead of the
+    /// [`Look::flash_hits`] test, or `None` (the default: that test). VIOLA: only VIOLA JOKE's note (`e[8] == 2`).
+    fn flash_hit(&self, e: &Event) -> Option<bool> {
+        None
+    }
+
+    /// Opt-in `spark_events`: more event kinds that throw the default spark spray (a `wall` event's), added to the
+    /// kinds the sparks read (every look's, in order). VIOLA: `crushed`, a dart flattened by a rolling note.
+    fn spark_events(&self) -> &[&str] {
+        &[]
+    }
 }
 
 /// One pixel of a ball's inside for [`Look::ball_glass`]: Python's `geo` there (`dx`, `dy` the pixel's offset from the

@@ -160,7 +160,7 @@ pub(crate) fn over(dst: f64, src: f64, a: f64) -> f64 {
 
 /// `door_offset(t)` on the timeline `g`, with [`OPEN_PX`] where Python returns `None`: see
 /// [`TitleCard::door_offset`].
-fn door_offset(g: &Grid, t: f64) -> f64 {
+pub fn door_offset(g: &Grid, t: f64) -> f64 {
     if t >= g.dur - g.t_close {
         // the run-up: the doors slide shut, closed on the last frame
         let u = (t - (g.dur - g.t_close)) / (g.t_close - 1.0 / f64::from(g.fps));
