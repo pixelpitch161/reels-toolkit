@@ -36,8 +36,8 @@ pub fn voice() -> Option<Arc<dyn Voice>> {
 
 /// `fighters.sound('SYNTH', M, k)`: its part on side `k` of the fight `ff`, or `None` while it is not ported.
 pub fn sound(k: usize, ff: &FightFile) -> Option<Box<dyn Sound>> {
-    let _ = (k, ff);
-    None
+    let _ = ff;
+    Some(Box::new(sound::SynthSound { k }))
 }
 
 /// Its model (`data/models/SYNTH.json`, written by the export tool's `models` for one roster name), compiled in:
