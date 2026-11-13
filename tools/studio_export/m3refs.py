@@ -683,9 +683,15 @@ def existing_copy(sha, folder, also=()):
     """the repo-relative path of a committed reference recording with these bytes, or None. Only the top-level
     manifest (milestones 0 to 2), the folder's own shard and the folders named in `also` (a pair gate's theme
     folder, which holds the kit recording of its config) are searched, never another port's folder, so one port's
-    files never depend on another's"""
+    files never depend on another's. A committed file this run is deleting (delete_committed: a left.bfrec moved to
+    the cache) is no copy: the folder will not hold it, and a cache run, which reads the manifests after the move,
+    does not find it either (storage plan B's remakes left `same_as` entries naming four such files)"""
+    st = run_state().stages.get(folder)
+    going = {os.path.normcase(p) for p in st.deletes} if st else set()
     for shard in (manifest.top(), ref_dir(folder, manifest.NAME), *(ref_dir(a, manifest.NAME) for a in also)):
         for e in manifest.load(shard):
+            if os.path.normcase(os.path.join(common.REPO, *e['path'].split('/'))) in going:
+                continue
             if e['sha256'] == sha and e['path'].endswith('.bfrec'):
                 return e['path']
     return None
@@ -1865,6 +1871,147 @@ def budget_cmd(args):
     if over:
         raise SystemExit('budget: over: ' + ', '.join(f"{r['folder']} ({r['bytes']:,d} > {r['limit']:,d})"
                                                       for r in over))
+
+
+# ---------------------------------------------------------------- drift: what a cache run would find, without the kit
+# A cache run of a folder must reproduce every committed file byte for byte (that is how anyone proves the
+# references come from the kit), but a fighter's takes 5 to 15 minutes, so it is no routine check. drift(folder)
+# recomputes, in well under a second, the parts of a folder's committed JSON that follow from its inputs alone, with
+# the functions the export itself calls (normalize, read_config, episode_facts, existing_copy, cached_copy):
+#
+# - fighters: fight.json's `spec` (normalize of the module's SPEC), `left` (where the left recording lives: the
+#   pinned cache file, or a committed file a manifest lists) and `same_as` (existing_copy of every pinned cache
+#   recording's SHA-256: the stale entry plan B left behind when it moved a left.bfrec to the cache);
+# - themes: each config's values in theme.json (read_config: a value recorded after the folder was made, such as
+#   ROLES, MIX, SOLO or TITLE_HITS, is missing), its `recording`, and voicing_methods / the configs' list;
+# - episodes: episode.json's values (episode_facts) and its `recording`.
+#
+# Whatever drift() reports, a cache run would stop on (`... would change`). What it cannot see (the kit's own
+# numbers: a recording's bytes, a master's SHA-256) only the cache run proves. m3refs_checks runs it on every folder.
+def _plain(obj):
+    """obj as its committed JSON reads back (tuples as lists, floats as written)"""
+    return json.loads(common.dumps(obj))
+
+
+def _read_json(folder, name):
+    with open(ref_dir(folder, name), encoding='utf-8') as f:
+        return json.load(f)
+
+
+def _spec_of(folder):
+    """the SPEC of the module that makes the folder"""
+    import importlib
+    return importlib.import_module(f'{__package__}.{export_for(folder)}').SPEC
+
+
+def _listed(path):
+    """a repo-relative path a manifest lists (the top-level one or a folder's shard)"""
+    return any(e['path'] == path for e in manifest.load(manifest.shard_of(path)))
+
+
+def _recording_drift(folder, where, got, pins, in_cache, cached_from=None):
+    """problems with a theme's or pair's `recording` entry: what place_recording would write, judged without the
+    recording's bytes. A dict must be a pin of this folder (or of `cached_from`) with that SHA-256; a path must be a
+    file a manifest lists; the folder's own committed copy is what only in_cache=False makes"""
+    if isinstance(got, dict):
+        own = pins.get(got.get('cache'))
+        theirs = read_pins(cached_from).get(got.get('cache')) if cached_from else None
+        pin_ = own or theirs
+        if set(got) != {'cache', 'sha256'} or pin_ is None or pin_['sha256'] != got['sha256']:
+            return [f'{where}: {got} is not a pinned cache recording of {folder}'
+                    + (f' or {cached_from}' if cached_from else '')]
+        if own and not in_cache:
+            return [f'{where}: in the cache, but the spec does not say recordings_in_cache']
+        return []
+    path = f'{REF}/{got}'
+    if not _listed(path):
+        return [f'{where}: {got} is not a file a manifest lists (a remake made it; it has moved since)']
+    if got.startswith(f'{folder}/') and in_cache:
+        return [f'{where}: committed in the folder, but the spec says recordings_in_cache (a remake moves it)']
+    return []
+
+
+def fighter_drift(folder, fight=None, look=None):
+    """drift of fighters/<slug>/ (`fight`, `look`: fight.json and look.json as read, by default from disk)"""
+    fight = _read_json(folder, 'fight.json') if fight is None else fight
+    look = _read_json(folder, 'look.json') if look is None else look
+    pins = read_pins(folder)
+    spec = normalize(_spec_of(folder))
+    out = []
+    plain = _plain(spec)
+    keys = sorted(k for k in set(fight['spec']) | set(plain) if fight['spec'].get(k) != plain.get(k))
+    if keys:
+        out.append(f"{folder}/fight.json: spec differs from normalize(SPEC) in {', '.join(keys)}")
+    left = {k: v for k, v in fight['left'].items() if k in ('file', 'cache', 'sha256')}
+    if spec.get('left_in_cache'):
+        pin_ = pins.get(f'{folder}/left.bfrec')
+        want = dict(cache=f'{folder}/left.bfrec', sha256=pin_ and pin_['sha256'])
+        if pin_ is None or left != want:
+            out.append(f'{folder}/fight.json: left is {left}, not the pinned cache file {want}')
+    elif set(left) != {'file'} or not _listed(f"{REF}/{left['file']}"):
+        out.append(f'{folder}/fight.json: left is {left}, not a file a manifest lists')
+    look_left = {k: v for k, v in look.get('left', {}).items() if k in ('file', 'cache', 'sha256')}
+    if look_left != left:
+        out.append(f'{folder}/look.json: left is {look_left}, fight.json says {left}')
+    want = {}
+    for r, p in sorted(pins.items()):
+        rel = r[len(folder) + 1:]
+        if rel == 'right.bfrec' or (rel.startswith('scenarios/') and rel.endswith('.bfrec')):
+            copy = existing_copy(p['sha256'], folder)
+            if copy:
+                want[r] = copy
+    if fight['same_as'] != want:
+        gone = {k: v for k, v in fight['same_as'].items() if want.get(k) != v}
+        new = {k: v for k, v in want.items() if fight['same_as'].get(k) != v}
+        out.append(f'{folder}/fight.json: same_as differs from what the pins and manifests give: committed {gone}, '
+                   f'would be {new}')
+    return out
+
+
+def theme_drift(folder, theme=None):
+    """drift of themes/<name>/ (`theme`: theme.json as read, by default from disk)"""
+    theme = _read_json(folder, 'theme.json') if theme is None else theme
+    spec = theme_spec(_spec_of(folder))
+    pins = read_pins(folder)
+    out = []
+    if theme['voicing_methods'] != list(spec['voicings']):
+        out.append(f"{folder}/theme.json: voicing_methods {theme['voicing_methods']}, the spec "
+                   f"{list(spec['voicings'])}")
+    if [c['config'] for c in theme['configs']] != list(spec['configs']):
+        out.append(f"{folder}/theme.json: configs {[c['config'] for c in theme['configs']]}, the spec "
+                   f"{list(spec['configs'])}")
+    for c in theme['configs']:
+        facts = _plain(read_config(c['config']))
+        own = set(c) - {'seed', 'recording', 'winner', 't_ko', 'bed_alone'}
+        diff = sorted(k for k in own | set(facts) if c.get(k, '<absent>') != facts.get(k, '<absent>'))
+        if diff:
+            out.append(f"{folder}/theme.json: {c['config']}: {', '.join(diff)} differ from read_config "
+                       f"(missing: {', '.join(k for k in diff if k not in c) or 'none'})")
+        out += _recording_drift(folder, f"{folder}/theme.json: {c['config']}: recording", c['recording'], pins,
+                                spec['recordings_in_cache'])
+    return out
+
+
+def episode_drift(folder, episode=None):
+    """drift of episodes/<pair>/ (`episode`: episode.json as read, by default from disk)"""
+    episode = _read_json(folder, 'episode.json') if episode is None else episode
+    spec = _spec_of(folder)
+    facts = _plain(episode_facts(spec['config']))
+    out = []
+    diff = sorted(k for k in facts if episode.get(k, '<absent>') != facts[k])
+    if diff:
+        out.append(f"{folder}/episode.json: {', '.join(diff)} differ from episode_facts "
+                   f"(missing: {', '.join(k for k in diff if k not in episode) or 'none'})")
+    theme = f"themes/{facts['mood']}"
+    out += _recording_drift(folder, f'{folder}/episode.json: recording', episode['recording'], read_pins(folder),
+                            bool(spec.get('recording_in_cache')), cached_from=theme)
+    return out
+
+
+def drift(folder):
+    """what a cache run of the folder would find changed that can be told without the kit ([] when nothing)"""
+    area = check_folder(folder).split('/')[0]
+    return dict(fighters=fighter_drift, themes=theme_drift, episodes=episode_drift)[area](folder)
 
 
 # ---------------------------------------------------------------- the cache command

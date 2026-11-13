@@ -177,6 +177,14 @@ From milestone 3 the reference data of a fighter, a theme or a pair gate lives i
   its pin, and at the end `check_pins` re-hashes them all. So regenerating the cache never touches the working
   tree. The folder's export is the one its pins name (else `fighter_<slug>`, `theme_<name>`, `episode_<pair>` by
   the area).
+- **The invariant**: for every committed folder, `cache <folder>` reproduces its pins and every committed file. A
+  fighter's cache run takes 5 to 15 minutes, so the routine check is the cheap half of it: `m3refs.drift(folder)`
+  recomputes, without the kit and in seconds for the whole set, what a folder's JSON holds from its own inputs
+  (fight.json's `spec`, `left` and `same_as` from the module's SPEC, the pins and the manifests; theme.json's and
+  episode.json's config values from `read_config` / `episode_facts`, and where each recording lives). m3refs_checks'
+  `every_folder_reproduces_its_inputs` fails naming each difference: a framework change that writes a key a merged
+  folder lacks, or a pointer at a file that moved, shows there before anyone runs a cache. Run `cache all` itself
+  after any change to what an export computes from the kit.
 - A **remake** (`remake <area>/<name>`) is the one command that makes a folder again whole after its spec changed:
   committed files, shard and pins together (changed pins replaced, stale ones dropped), all or nothing. A port types
   it for its own folder before it is merged; on a merged folder it is a **controller decision**, recorded in the
