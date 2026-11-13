@@ -1,15 +1,26 @@
 //! Weapon kind `blade` in thrust mode, TROMBONE's slide lance: its roster settings (`fight.py` `Ball.__init__`,
 //! `Fight.__init__`, `start_thrust`, `thrust_step`, the thrust grid in the fight loop).
+//!
+//! A blade with no `mode` spins (VIOLIN's bow, milestone 4: the spinning branch of `blade_step`, 780 to 825, with
+//! `spin`, `spin_grow` and `spin_max`). It is a stub until VIOLIN's port: while [`SPIN_PORTED`] is false such an entry
+//! loads as `WeaponCfg::Unsupported("blade")`; the port fills [`parse_spin`] (and the fields the spinning branch reads)
+//! and sets it.
 
 use serde_json::Value as Json;
 
 use crate::roster::{Entry, RosterError};
 
-/// A blade's mode. Only the thrust lance is ported so far.
+/// Whether the engine runs the spinning blade (a `blade` with no `mode`). While false the roster reads one as
+/// `WeaponCfg::Unsupported("blade")`, which the engine refuses in words.
+pub const SPIN_PORTED: bool = false;
+
+/// A blade's mode.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum BladeMode {
     /// `mode = 'thrust'`: the lance aims at the enemy and shoots out on the grid.
     Thrust,
+    /// No `mode`: the blade spins round the ball (VIOLIN's bow; a stub until [`SPIN_PORTED`]).
+    Spin,
 }
 
 /// Weapon kind `blade` in thrust mode (`fight.py` `Ball.__init__`, `Fight.__init__`, `start_thrust`,
@@ -50,6 +61,14 @@ pub struct BladeCfg {
     pub knock: f64,
     /// Whether the live lance swats enemy projectiles (`.get('parry')`, falsy when absent).
     pub parry: bool,
+    /// A spinning blade's rate in rad/s (`Ball.__init__`'s `w.get('spin', 0.0)`); 0.0 for a thrust blade, whose entry
+    /// may not hold the key.
+    pub spin: f64,
+    /// A spinning blade's rate added per landed hit (`w.get('spin_grow')`, 0.0 = falsy: no growth); 0.0 for a thrust
+    /// blade.
+    pub spin_grow: f64,
+    /// The rate it never grows past (`w['spin_max']`, read only when `spin_grow` is set); 0.0 for a thrust blade.
+    pub spin_max: f64,
 }
 
 /// The largest `frets0` a roster entry may give. A landed thrust adds one fret, so a count that starts here stays a
@@ -114,7 +133,16 @@ pub(crate) fn parse(e: &Entry, w: &Json, style: String) -> Result<BladeCfg, Rost
             Some(Json::Bool(b)) => *b,
             Some(_) => return Err(e.err("weapon.parry", "must be true or false")),
         },
+        spin: 0.0,
+        spin_grow: 0.0,
+        spin_max: 0.0,
     })
+}
+
+/// Reads a spinning-blade weapon entry (a `blade` with no `mode`); called only when [`SPIN_PORTED`] is true. A stub
+/// until VIOLIN's port, which reads the fields the spinning branch of `blade_step` reads (780 to 825).
+pub(crate) fn parse_spin(e: &Entry, _w: &Json, _style: String) -> Result<BladeCfg, RosterError> {
+    Err(e.err("weapon.mode", "a spinning blade is not ported yet"))
 }
 
 /// [`parse`]'s checks made again on typed settings (`FighterCfg::check`).

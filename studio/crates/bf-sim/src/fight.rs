@@ -13,7 +13,8 @@
 //! anchored, hopping, smashed, walking, grabbed, airborne or strutting ball). Those checks are made here already, on
 //! the per-ball states of [`Ball`] (their defaults are what Python's `getattr` gives a ball that never had the
 //! attribute, so a fight of FLUTE and TROMBONE never takes them), each with the Python lines it stands for; the older
-//! kinds' (a rewinding ball, a per-ball radius or mass) are still marked `SLOT`. Where a kit kind's own code runs
+//! ten fighters' too (milestone 4: a rewinding ball, a per-ball radius or mass, a resting ball's guard), read through
+//! [`radius`], [`mass`] and [`rewinding`]. Where a kit kind's own code runs
 //! (the walker's pinned step, the projectiles, the gates of `abilities_step`), the call goes to that kind's module.
 //!
 //! Every such place is a socket: with `Fight::trace_sockets` on (the engine's own tests), it logs its name, so a test
@@ -28,7 +29,7 @@ use bf_core::rng::Generator;
 
 use std::collections::BTreeSet;
 
-use crate::abilities::{self, copy, hook, slap, snip};
+use crate::abilities::{self, copy, hook, rewind, slap, snip};
 use crate::ball::{Ball, Slot};
 use crate::geom::{self, V2};
 use crate::kinds::striker::Striker;
@@ -265,6 +266,37 @@ pub struct Fight<'a> {
     pub swan: abilities::swan::State,
     /// Ability kind `copy`'s state (EUPHONIUM).
     pub copy: abilities::copy::State,
+    // The older ten fighters' kinds (milestone 4), stubs until their ports: `self.strings` is `trap`'s, `self.surfs`
+    // `surf`'s, `self.notes` `rests`', `self.clamps` `clamp`'s, `self.lashes` `lash`'s, and `self.spouts` and
+    // `self.x33_log` are `x33`'s (above).
+    /// Weapon kind `pulse`'s state (DRUMS).
+    pub pulse: kinds::pulse::State,
+    /// Weapon kind `inflate`'s state (BAGPIPES).
+    pub inflate: kinds::inflate::State,
+    /// Weapon kind `bite`'s state (ACCORDION).
+    pub bite: kinds::bite::State,
+    /// Weapon kind `trap`'s state (HARP).
+    pub trap: kinds::trap::State,
+    /// Weapon kind `surf`'s state (UKULELE).
+    pub surf: kinds::surf::State,
+    /// Weapon kind `scratch_floor`'s state (TURNTABLES).
+    pub scratch_floor: kinds::scratch_floor::State,
+    /// Weapon kind `tether`'s state (SYNTH).
+    pub tether: kinds::tether::State,
+    /// Weapon kind `wrecking`'s state (BARI SAX).
+    pub wrecking: kinds::wrecking::State,
+    /// Weapon kind `rests`'s state (VIOLA).
+    pub rests: kinds::rests::State,
+    /// Ability kind `clamp`'s state (ACCORDION).
+    pub clamp: abilities::clamp::State,
+    /// Ability kind `rewind`'s state (TURNTABLES).
+    pub rewind: abilities::rewind::State,
+    /// Ability kind `lash`'s state (SYNTH).
+    pub lash: abilities::lash::State,
+    /// Ability kind `snap`'s state (BARI SAX).
+    pub snap: abilities::snap::State,
+    /// Ability kind `joke`'s state (VIOLA).
+    pub joke: abilities::joke::State,
     /// The engine's own tests only: `Some` turns on the socket trace (every socket the fight reaches logs its name
     /// here, in order; see [`Fight::socket`]). `None` in every fight the app runs, where a socket costs a test of
     /// this field and nothing else.
@@ -394,6 +426,20 @@ impl<'a> Fight<'a> {
             prelude: Default::default(),
             swan: Default::default(),
             copy: Default::default(),
+            pulse: Default::default(),
+            inflate: Default::default(),
+            bite: Default::default(),
+            trap: Default::default(),
+            surf: Default::default(),
+            scratch_floor: Default::default(),
+            tether: Default::default(),
+            wrecking: Default::default(),
+            rests: Default::default(),
+            clamp: Default::default(),
+            rewind: Default::default(),
+            lash: Default::default(),
+            snap: Default::default(),
+            joke: Default::default(),
             #[cfg(any(test, feature = "testing"))]
             trace_sockets: None,
         }
@@ -444,8 +490,11 @@ impl<'a> Fight<'a> {
     pub fn damage(&mut self, att: usize, vic: usize, dmg: f64, kind: &str, at: V2, sub: i64) -> bool {
         let [x, y] = at;
         self.socket("damage.skips");
-        // fight.py 325 to 334: a victim sunk in shadow (#38), smashed (#44) or airborne (#47 swan, #51 dive) cannot be
-        // hit. (325 to 326, `rw_left`: the kind `rewind`, older than the kit's. SLOT.)
+        // fight.py 325 to 334: a rewinding victim (#31, REWIND), one sunk in shadow (#38), smashed (#44) or airborne
+        // (#47 swan, #51 dive) cannot be hit
+        if rewinding(self, vic) {
+            return false;
+        }
         let v = &self.balls[vic];
         if v.shadow > 0.0 || v.smashed > 0.0 || v.swan.is_some() || v.dive.is_some() {
             return false;
@@ -465,7 +514,11 @@ impl<'a> Fight<'a> {
             // opt-in (#36, crossovers): per-fighter damage handicap
             d *= hc[att];
         }
-        // fight.py 342 to 343: a resting victim's `guard` (#42, the kind `rests`, older than the kit's). SLOT.
+        // fight.py 342 to 343: a resting victim (#42, COUNTING RESTS) takes x its weapon's `guard`
+        self.socket("damage.guard");
+        if self.balls[vic].resting {
+            d *= self.balls[vic].guard;
+        }
         self.socket("damage.detuned");
         // fight.py 344 to 346: an out-of-tune attacker's hits land weaker (#37)
         let a = &self.balls[att];
@@ -542,14 +595,14 @@ impl<'a> Fight<'a> {
     /// The generator is drawn once per rope bounce, in ball order and, for a ball that crosses two ropes in one step,
     /// the x rope first.
     pub fn move_step(&mut self, dt: f64) {
-        let (a, r) = (self.rules.a, self.rules.r);
+        let a = self.rules.a;
         for k in 0..2 {
             self.socket("move.skips");
-            // fight.py 3131 to 3150: a ball that another step drives is skipped here: swallowed, stunned, anchored,
-            // mid-hop, smashed, mid-step, grabbed or pinned, airborne, strutting or diving. (3131 to 3132, a rewinding
-            // ball: the kind `rewind`, older than the kit's. SLOT.)
+            // fight.py 3131 to 3150: a ball that another step drives is skipped here: rewinding, swallowed, stunned,
+            // anchored, mid-hop, smashed, mid-step, grabbed or pinned, airborne, strutting or diving
             let b = &self.balls[k];
-            if b.held
+            if rewinding(self, k)
+                || b.held
                 || b.stun > 0.0
                 || b.anc.is_some()
                 || b.air
@@ -579,7 +632,7 @@ impl<'a> Fight<'a> {
                 s *= b.slow_mult;
             }
             // fight.py 3159 to 3160: a per-ball speed factor (`getattr(B, 'vmul', None)`: THE EMBRACE's rush and SWAN
-            // SONG, CELLO's; the crowd's poses, WALK THE BAR and STAGE DIVE, TENOR SAX's; and the older inflate)
+            // SONG, CELLO's; the crowd's poses, WALK THE BAR and STAGE DIVE, TENOR SAX's; and BAGPIPES' inflate)
             if let Some(m) = b.vmul {
                 s *= m;
             }
@@ -589,9 +642,9 @@ impl<'a> Fight<'a> {
             b.p = [b.p[0] + v[0] * dt, b.p[1] + v[1] * dt];
             b.v = v;
             for ax in 0..2 {
+                // fight.py 3165: lim = A - getattr(B, 'rad', R), the ball's own radius (#30 v2, inflate)
+                let lim = a - radius(self, k);
                 let b = &mut self.balls[k];
-                // fight.py 3165: a per-ball radius `rad` (inflate) would replace R here. Kind not ported.
-                let lim = a - r;
                 if b.p[ax].abs() > lim {
                     b.p[ax] = lim.copysign(b.p[ax]) * 2.0 - b.p[ax];
                     b.v[ax] = -b.v[ax];
@@ -617,16 +670,24 @@ impl<'a> Fight<'a> {
         // ball vs ball
         let d = geom::sub(self.balls[1].p, self.balls[0].p);
         let dist = geom::hypot(d);
-        // fight.py 3179: per-ball radii (inflate, older than the kit's kinds) would replace R + R. SLOT.
-        let (r_p, r_q) = (r, r);
+        // fight.py 3179: rP, rQ = getattr(P, 'rad', R), getattr(Q, 'rad', R), the balls' own radii (#30 v2)
+        let (r_p, r_q) = (radius(self, 0), radius(self, 1));
         self.socket("move.clash");
-        // fight.py 3180 to 3187: no clash with a ball that is swallowed, in shadow, mid-hop, smashed, grabbed,
-        // airborne or diving (or rewinding: the kind `rewind`, older than the kit's; SLOT). Python's `and` tests
-        // these only when the balls overlap; they read state and change nothing, so the order does not matter.
-        let apart = |b: &Ball| {
-            b.held || b.shadow > 0.0 || b.air || b.smashed > 0.0 || b.grabbed || b.swan.is_some() || b.dive.is_some()
+        // fight.py 3180 to 3187: no clash with a ball that is rewinding, swallowed, in shadow, mid-hop, smashed,
+        // grabbed, airborne or diving. Python's `and` tests these only when the balls overlap; they read state and
+        // change nothing, so the order does not matter.
+        let apart = |k: usize| {
+            let b = &self.balls[k];
+            rewinding(self, k)
+                || b.held
+                || b.shadow > 0.0
+                || b.air
+                || b.smashed > 0.0
+                || b.grabbed
+                || b.swan.is_some()
+                || b.dive.is_some()
         };
-        if dist < r_p + r_q && !apart(&self.balls[0]) && !apart(&self.balls[1]) {
+        if dist < r_p + r_q && !apart(0) && !apart(1) {
             let m = geom::py_max(dist, 1e-9);
             let n = [d[0] / m, d[1] / m];
             let over = r_p + r_q - dist;
@@ -639,11 +700,11 @@ impl<'a> Fight<'a> {
                 // fight.py 3194 to 3208: the other ball takes the whole overlap and bounces off it; pinned against
                 // the ropes, the walker stops short instead (no squeezing through them)
                 let (w, o, sg) = if w_p { (0, 1, 1.0) } else { (1, 0, -1.0) };
+                // lim_ = A - getattr(O_, 'rad', R) (3197): the other ball's own radius
+                let lim = a - radius(self, o);
                 // O_.p = O_.p + sg_ * n * over
                 let ob = &mut self.balls[o];
                 ob.p = [ob.p[0] + sg * n[0] * over, ob.p[1] + sg * n[1] * over];
-                // lim_ = A - getattr(O_, 'rad', R): per-ball radii are the older kind `inflate`'s (SLOT)
-                let lim = a - r;
                 let cl = [geom::np_clip(ob.p[0], -lim, lim), geom::np_clip(ob.p[1], -lim, lim)];
                 let back = geom::sub(ob.p, cl);
                 // `back_.any()`: a coordinate that is not zero (NaN counts, as numpy's truth test does)
@@ -664,9 +725,30 @@ impl<'a> Fight<'a> {
                 if vo < 0.0 {
                     ob.v = [ob.v[0] - 2.0 * vo * sg * n[0], ob.v[1] - 2.0 * vo * sg * n[1]];
                 }
+            } else if self.balls[0].mass.is_some() || self.balls[1].mass.is_some() {
+                // fight.py 3209 to 3216: `hasattr(P, 'mass') or hasattr(Q, 'mass')` (#30 v2, inflate): unequal masses,
+                // the light ball gives
+                let (m_p, m_q) = (mass(self, 0), mass(self, 1));
+                let [p, q] = &mut self.balls;
+                // P.p -= n * over * mQ / (mP + mQ); Q.p += n * over * mP / (mP + mQ): numpy's order, per element
+                p.p = [
+                    p.p[0] - n[0] * over * m_q / (m_p + m_q),
+                    p.p[1] - n[1] * over * m_q / (m_p + m_q),
+                ];
+                q.p = [
+                    q.p[0] + n[0] * over * m_p / (m_p + m_q),
+                    q.p[1] + n[1] * over * m_p / (m_p + m_q),
+                ];
+                let (vp, vq) = (geom::dot(p.v, n), geom::dot(q.v, n));
+                if vp - vq > 0.0 {
+                    // P.v += 2 * mQ / (mP + mQ) * (vq - vp) * n: the scalars first (Python floats), then the vector
+                    let cp = 2.0 * m_q / (m_p + m_q) * (vq - vp);
+                    let cq = 2.0 * m_p / (m_p + m_q) * (vp - vq);
+                    p.v = [p.v[0] + cp * n[0], p.v[1] + cp * n[1]];
+                    q.v = [q.v[0] + cq * n[0], q.v[1] + cq * n[1]];
+                }
             } else {
-                // fight.py 3209 to 3216: unequal masses (`mass`: the kind `inflate`, older than the kit's). SLOT.
-                // What follows is the equal-mass branch (3217 to 3223).
+                // fight.py 3217 to 3223: equal masses
                 let [p, q] = &mut self.balls;
                 p.p = [p.p[0] - n[0] * over / 2.0, p.p[1] - n[1] * over / 2.0];
                 q.p = [q.p[0] + n[0] * over / 2.0, q.p[1] + n[1] * over / 2.0];
@@ -697,7 +779,13 @@ impl<'a> Fight<'a> {
                 }
                 self.ev("clash", -1, vec![Value::Float(mid[0]), Value::Float(mid[1])]);
             }
-            // fight.py 3233 to 3234: `clash_hooks` (inflate's contact damage, older than the kit's kinds). SLOT.
+            // fight.py 3233 to 3234: `for hk in getattr(self, 'clash_hooks', ())`: each inflater's contact damage
+            // (#30 v2), in the order `inflate_setup` registered them (ball order)
+            self.socket("move.clash_hooks");
+            let hooks = [0, 1].map(|k| kinds::inflate::is(self, k));
+            for k in (0..2).filter(|&k| hooks[k]) {
+                kinds::inflate::clash(self, k);
+            }
         }
         // fight.py 3235 to 3278: the projectiles (`steer`, their flight, `ricochet`, those that leave the ring, those
         // that hit a ball, the volley and roll growth, the nudge), on `self.keys`. The kit fires them from the roll
@@ -755,8 +843,7 @@ impl<'a> Fight<'a> {
             }
             for slot in [Slot::Unlock1, Slot::Unlock2] {
                 self.socket("abilities.gates");
-                // fight.py 3034 to 3049: an unlock of kind snip, hook, slap or copy waits for its moment (one of kind
-                // rewind, older than the kit's, too: SLOT)
+                // fight.py 3034 to 3049: an unlock of kind rewind, snip, hook, slap or copy waits for its moment
                 let Some(r) = self.balls[k].ready[slot.index()] else {
                     continue;
                 };
@@ -775,12 +862,15 @@ impl<'a> Fight<'a> {
         }
     }
 
-    /// `abilities_step`'s gates (`fight.py` 3035 to 3049), for an unlock that is not locked: a snip (3037 to 3039), a
+    /// `abilities_step`'s gates (`fight.py` 3035 to 3049), for an unlock that is not locked: a rewind (3035 to 3036), a
+    /// snip (3037 to 3039), a
     /// hook (3040 to 3042) or a slap (3043 to 3045) waits until its `*_ready` says so, and a copy waits while what it
     /// would copy is a snip that is not ready (3046 to 3049). The ready tests are the kinds' own.
     fn waits(&self, k: usize, slot: Slot) -> bool {
         let ab = slot.of(self.balls[k].cfg);
         match ab.kind {
+            // 3035 to 3036: a rewind waits for damage worth undoing (milestone 4, TURNTABLES)
+            AbilityKind::Rewind => !rewind::ready(self, k, ab),
             AbilityKind::Snip => !snip::ready(self, k, ab),
             AbilityKind::Hook => !hook::ready(self, k, ab),
             AbilityKind::Slap => !slap::ready(self, k, ab),
@@ -797,6 +887,24 @@ impl<'a> Fight<'a> {
 /// so it starts no attack (the beat grid and the 16th grids that ask).
 pub fn stunned(f: &Fight, k: usize) -> bool {
     f.balls[k].stun > 0.0 || f.balls[k].shadow > 0.0
+}
+
+/// `getattr(B, 'rad', R)`: fighter `k`'s radius, its own (#30 v2, BAG INFLATE) or the shared `Rules::r`. Every site
+/// `fight.py` reads it calls this (`move` 3165, 3179, 3197; the projectiles' hit test 3252; the older kinds' contacts).
+pub fn radius(f: &Fight, k: usize) -> f64 {
+    f.balls[k].rad.unwrap_or(f.rules.r)
+}
+
+/// `getattr(B, 'mass', 1.0)`: fighter `k`'s mass (#30 v2, BAG INFLATE), 1.0 for a ball that never had one (`move`
+/// 3210).
+pub fn mass(f: &Fight, k: usize) -> f64 {
+    f.balls[k].mass.unwrap_or(1.0)
+}
+
+/// `getattr(B, 'rw_left', 0.0) > 0`: fighter `k` is rewinding (#31, REWIND), so it is intangible: `damage` (325),
+/// `move` (3131, 3180), the projectiles (3246), THE EMBRACE's grab (4142) and the older kinds' contacts skip it.
+pub fn rewinding(f: &Fight, k: usize) -> bool {
+    f.balls[k].rw_left > 0.0
 }
 
 /// Runs one fight to its K.O. (or to `t_max`) and returns its recording, made by this app
@@ -828,6 +936,23 @@ pub fn run_with_unported(setup: &Setup, record: bool) -> Result<Recording, SimEr
 #[doc(hidden)]
 pub fn run_traced(setup: &Setup, record: bool) -> Result<(Recording, Vec<&'static str>), SimError> {
     let mut fight = Fight::new(setup, record)?;
+    fight.trace_sockets = Some(std::cell::RefCell::new(Vec::new()));
+    let frames = schedule::run(&mut fight);
+    let trace = fight
+        .trace_sockets
+        .take()
+        .map(std::cell::RefCell::into_inner)
+        .unwrap_or_default();
+    Ok((record::recording(fight, frames), trace))
+}
+
+/// [`run_traced`] through the test entry `Fight::with_unported`: a fighter of a kind not ported is let in (and that
+/// kind does nothing). For `tests/sockets_older.rs` (the older ten fighters, whose kinds are stubs); not a fight of the
+/// series.
+#[cfg(any(test, feature = "testing"))]
+#[doc(hidden)]
+pub fn run_traced_with_unported(setup: &Setup, record: bool) -> Result<(Recording, Vec<&'static str>), SimError> {
+    let mut fight = Fight::with_unported(setup, record)?;
     fight.trace_sockets = Some(std::cell::RefCell::new(Vec::new()));
     let frames = schedule::run(&mut fight);
     let trace = fight

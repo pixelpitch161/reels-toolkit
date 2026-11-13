@@ -30,7 +30,7 @@ use bf_core::harmony::{self, Harmony};
 use bf_core::lines::RollRowsError;
 use bf_core::py;
 
-use crate::fight::{Fight, Key};
+use crate::fight::{Fight, Key, radius, rewinding};
 use crate::geom::{self, V2};
 use crate::record::{Frames, KMAX};
 use crate::roster::{FighterCfg, RollCfg, WeaponCfg};
@@ -376,7 +376,7 @@ pub fn hold_step(f: &mut Fight) {
 /// `ricochet` are for curving and bouncing volleys, kinds older than the kit's: no projectile of the kit curves or
 /// bounces. The volley growth 3263 to 3266 is the older kind `volley`'s.)
 pub fn keys_move(f: &mut Fight, dt: f64) {
-    let (a, r) = (f.rules.a, f.rules.r);
+    let a = f.rules.a;
     if !f.keys.is_empty() {
         // self.kp = self.kp + self.kv * dt
         for key in &mut f.keys {
@@ -394,13 +394,16 @@ pub fn keys_move(f: &mut Fight, dt: f64) {
         return;
     }
     for k in 0..2 {
-        // 3246 to 3247, `rw_left`: the kind `rewind`, older than the kit's
+        // 3246 to 3247: projectiles pass through a rewinding ball (TURNTABLES' REWIND, milestone 4)
+        if rewinding(f, k) {
+            continue;
+        }
         if !f.keys.iter().any(|key| key.own != k) {
             continue;
         }
         let b_p = f.balls[k].p;
-        // m = enemy & (dd < getattr(B, 'rad', R) + self.R.KEY_R)
-        let reach = r + f.rules.key_r;
+        // m = enemy & (dd < getattr(B, 'rad', R) + self.R.KEY_R): the ball's own radius (BAGPIPES, milestone 4)
+        let reach = radius(f, k) + f.rules.key_r;
         let m: Vec<bool> = f
             .keys
             .iter()

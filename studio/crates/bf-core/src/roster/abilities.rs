@@ -13,9 +13,11 @@ pub mod arc;
 pub mod barrage;
 pub mod beam;
 pub mod cannons;
+pub mod clamp;
 pub mod company_front;
 pub mod copy;
 pub mod detune;
+pub mod double_stop;
 pub mod drum_roll;
 pub mod encore;
 pub mod endless;
@@ -24,16 +26,23 @@ pub mod flick;
 pub mod fork;
 pub mod heartbeat;
 pub mod hook;
+pub mod joke;
+pub mod lash;
 pub mod lights_out;
+pub mod melody;
 pub mod mountain;
 pub mod octave;
+pub mod offbeat;
 pub mod prelude;
+pub mod rewind;
 pub mod rhapsody;
 pub mod runoff;
 pub mod runway;
 pub mod slap;
 pub mod smash;
+pub mod snap;
 pub mod snip;
+pub mod spout;
 pub mod stagedive;
 pub mod stampede;
 pub mod stun;
@@ -171,6 +180,24 @@ pub enum AbilityKind {
     Copy,
     /// `barrage`: EUPHONIUM's NOT A TUBA (`fight.py` `trigger` 2900 to 2901).
     Barrage,
+    /// `clamp`: ACCORDION's FULL BELLOWS (`fight.py` `trigger` 2876 to 2877; milestone 4).
+    Clamp,
+    /// `rewind`: TURNTABLES's REWIND (`fight.py` `trigger` 2866 to 2867; milestone 4).
+    Rewind,
+    /// `lash`: SYNTH's SAWTOOTH (`fight.py` `trigger` 2868 to 2869; milestone 4).
+    Lash,
+    /// `spout`: UKULELE's UKE-NADO (`fight.py` `trigger` 2872 to 2873; milestone 4).
+    Spout,
+    /// `offbeat`: BARI SAX's SKANK (`fight.py` `trigger` 2911 to 2914; milestone 4).
+    Offbeat,
+    /// `snap`: BARI SAX's CABLE SNAP (`fight.py` `trigger` 2919 to 2920; milestone 4).
+    Snap,
+    /// `double_stop`: VIOLA's DOUBLE STOP (`fight.py` `trigger` 2928 to 2929; milestone 4).
+    DoubleStop,
+    /// `melody`: VIOLA's MELODY AT LAST (`fight.py` `trigger` 2923 to 2927; milestone 4).
+    Melody,
+    /// `joke`: VIOLA's VIOLA JOKE (`fight.py` `trigger` 2921 to 2922; milestone 4).
+    Joke,
     /// A kind the engine has not ported yet, or a ported kind with an option it has not ported, written
     /// `kind+option` (OBOE's `"wave+detune"`).
     Unsupported(String),
@@ -253,6 +280,24 @@ pub enum AbilitySettings {
     Copy(copy::CopyCfg),
     /// Kind `barrage`.
     Barrage(barrage::BarrageCfg),
+    /// Kind `clamp`.
+    Clamp(clamp::ClampCfg),
+    /// Kind `rewind`.
+    Rewind(rewind::RewindCfg),
+    /// Kind `lash`.
+    Lash(lash::LashCfg),
+    /// Kind `spout`.
+    Spout(spout::SpoutCfg),
+    /// Kind `offbeat`.
+    Offbeat(offbeat::OffbeatCfg),
+    /// Kind `snap`.
+    Snap(snap::SnapCfg),
+    /// Kind `double_stop`.
+    DoubleStop(double_stop::DoubleStopCfg),
+    /// Kind `melody`.
+    Melody(melody::MelodyCfg),
+    /// Kind `joke`.
+    Joke(joke::JokeCfg),
 }
 
 impl AbilityKind {
@@ -302,6 +347,15 @@ impl AbilityKind {
             AbilityKind::Cannons => "cannons",
             AbilityKind::Copy => "copy",
             AbilityKind::Barrage => "barrage",
+            AbilityKind::Clamp => "clamp",
+            AbilityKind::Rewind => "rewind",
+            AbilityKind::Lash => "lash",
+            AbilityKind::Spout => "spout",
+            AbilityKind::Offbeat => "offbeat",
+            AbilityKind::Snap => "snap",
+            AbilityKind::DoubleStop => "double_stop",
+            AbilityKind::Melody => "melody",
+            AbilityKind::Joke => "joke",
             AbilityKind::Unsupported(kind) => kind.split('+').next().unwrap_or(kind),
         }
     }
@@ -351,6 +405,15 @@ impl AbilityKind {
             "cannons" if cannons::PORTED => AbilityKind::Cannons,
             "copy" if copy::PORTED => AbilityKind::Copy,
             "barrage" if barrage::PORTED => AbilityKind::Barrage,
+            "clamp" if clamp::PORTED => AbilityKind::Clamp,
+            "rewind" if rewind::PORTED => AbilityKind::Rewind,
+            "lash" if lash::PORTED => AbilityKind::Lash,
+            "spout" if spout::PORTED => AbilityKind::Spout,
+            "offbeat" if offbeat::PORTED => AbilityKind::Offbeat,
+            "snap" if snap::PORTED => AbilityKind::Snap,
+            "double_stop" if double_stop::PORTED => AbilityKind::DoubleStop,
+            "melody" if melody::PORTED => AbilityKind::Melody,
+            "joke" if joke::PORTED => AbilityKind::Joke,
             other => AbilityKind::Unsupported(other.to_string()),
         }
     }
@@ -399,6 +462,15 @@ impl AbilityKind {
             AbilityKind::Cannons => cannons::REQUIRED,
             AbilityKind::Copy => copy::REQUIRED,
             AbilityKind::Barrage => barrage::REQUIRED,
+            AbilityKind::Clamp => clamp::REQUIRED,
+            AbilityKind::Rewind => rewind::REQUIRED,
+            AbilityKind::Lash => lash::REQUIRED,
+            AbilityKind::Spout => spout::REQUIRED,
+            AbilityKind::Offbeat => offbeat::REQUIRED,
+            AbilityKind::Snap => snap::REQUIRED,
+            AbilityKind::DoubleStop => double_stop::REQUIRED,
+            AbilityKind::Melody => melody::REQUIRED,
+            AbilityKind::Joke => joke::REQUIRED,
             AbilityKind::Unsupported(_) => &[],
         }
     }
@@ -449,6 +521,15 @@ impl AbilityKind {
             AbilityKind::Cannons => cannons::ALLOWED,
             AbilityKind::Copy => copy::ALLOWED,
             AbilityKind::Barrage => barrage::ALLOWED,
+            AbilityKind::Clamp => clamp::ALLOWED,
+            AbilityKind::Rewind => rewind::ALLOWED,
+            AbilityKind::Lash => lash::ALLOWED,
+            AbilityKind::Spout => spout::ALLOWED,
+            AbilityKind::Offbeat => offbeat::ALLOWED,
+            AbilityKind::Snap => snap::ALLOWED,
+            AbilityKind::DoubleStop => double_stop::ALLOWED,
+            AbilityKind::Melody => melody::ALLOWED,
+            AbilityKind::Joke => joke::ALLOWED,
             AbilityKind::Unsupported(_) => &[],
         }
     }
@@ -505,6 +586,15 @@ fn settings(e: &Entry, prefix: &str, kind: &AbilityKind, ab: &Json) -> Result<Ab
         AbilityKind::Cannons => AbilitySettings::Cannons(cannons::parse(e, prefix, ab)?),
         AbilityKind::Copy => AbilitySettings::Copy(copy::parse(e, prefix, ab)?),
         AbilityKind::Barrage => AbilitySettings::Barrage(barrage::parse(e, prefix, ab)?),
+        AbilityKind::Clamp => AbilitySettings::Clamp(clamp::parse(e, prefix, ab)?),
+        AbilityKind::Rewind => AbilitySettings::Rewind(rewind::parse(e, prefix, ab)?),
+        AbilityKind::Lash => AbilitySettings::Lash(lash::parse(e, prefix, ab)?),
+        AbilityKind::Spout => AbilitySettings::Spout(spout::parse(e, prefix, ab)?),
+        AbilityKind::Offbeat => AbilitySettings::Offbeat(offbeat::parse(e, prefix, ab)?),
+        AbilityKind::Snap => AbilitySettings::Snap(snap::parse(e, prefix, ab)?),
+        AbilityKind::DoubleStop => AbilitySettings::DoubleStop(double_stop::parse(e, prefix, ab)?),
+        AbilityKind::Melody => AbilitySettings::Melody(melody::parse(e, prefix, ab)?),
+        AbilityKind::Joke => AbilitySettings::Joke(joke::parse(e, prefix, ab)?),
     })
 }
 
@@ -554,6 +644,15 @@ pub(crate) fn kind_check(e: &Entry, prefix: &str, ab: &AbilityCfg) -> Result<(),
         AbilityKind::Cannons => cannons::check(e, prefix, ab),
         AbilityKind::Copy => copy::check(e, prefix, ab),
         AbilityKind::Barrage => barrage::check(e, prefix, ab),
+        AbilityKind::Clamp => clamp::check(e, prefix, ab),
+        AbilityKind::Rewind => rewind::check(e, prefix, ab),
+        AbilityKind::Lash => lash::check(e, prefix, ab),
+        AbilityKind::Spout => spout::check(e, prefix, ab),
+        AbilityKind::Offbeat => offbeat::check(e, prefix, ab),
+        AbilityKind::Snap => snap::check(e, prefix, ab),
+        AbilityKind::DoubleStop => double_stop::check(e, prefix, ab),
+        AbilityKind::Melody => melody::check(e, prefix, ab),
+        AbilityKind::Joke => joke::check(e, prefix, ab),
     }
 }
 

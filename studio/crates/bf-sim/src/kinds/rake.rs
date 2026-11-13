@@ -21,6 +21,7 @@ pub use bf_core::roster::kinds::rake::{rake_lateral, sweep_front};
 use crate::abilities::x33;
 use crate::fight::Fight;
 use crate::geom::{self, V2};
+use crate::kinds::surf;
 use crate::roster::{RakeCfg, WeaponCfg};
 
 /// One stroke in flight (`self.rakes`' dict, made by `fire_rake`).
@@ -97,7 +98,8 @@ fn weapon<'a>(f: &Fight<'a>, k: usize) -> &'a RakeCfg {
 
 /// The `dc` 16th block of `run()` (5970 to 5974) for one fighter, after the caller's stun test: `dc_main =
 /// int(round(4 * every))`, `dc_every = max(1, int(round(dc_main / ab_mult(k))))`, and on `dc_k % dc_every == 0`
-/// `fire_rake(k, dc_k % dc_main == 0)`. (5974 calls `fire_<kind>`: the `dash`, `cone` and `surf` of older kinds. SLOT.)
+/// `fire_rake(k, dc_k % dc_main == 0)`. (5974 calls `fire_<kind>`: a surf's is `kinds::surf::tick`, milestone 4; the
+/// `dash` and `cone` are frozen kinds'.)
 pub fn tick(f: &mut Fight, k: usize, dc_k: i64) {
     let w = weapon(f, k);
     // the roster refuses a grid that rounds to 0 (Python's `dc_k % dc_main` raises)
@@ -176,12 +178,17 @@ pub fn dash_cone_step(f: &mut Fight, dt: f64) {
 /// self.spouts`): the strokes, then the whips and the sweeps ([`x33::step`]), in Python's order.
 pub fn surf_rake_step(f: &mut Fight, dt: f64) {
     // 586 to 587: R, V, A (V and A are read only by the surf and spout branches)
-    // 588 to 609: `self.surfs`, filled only by `fire_surf` (an older kind's weapon). SLOT.
+    // 588 to 609: `self.surfs` (UKULELE's surf, milestone 4), while there are any
+    if surf::live(f) {
+        surf::surfs_step(f);
+    }
     rakes_step(f);
     // 630 to 670: the whips and the sweeps
     x33::step(f);
-    // 671 to 699: `self.spouts`, filled only by the ability `spout` (an older kind's). SLOT.
-    let _ = dt;
+    // 671 to 699: `self.spouts` (UKULELE's UKE-NADO, milestone 4), while there are any
+    if x33::spouts_live(f) {
+        x33::spouts_step(f, dt);
+    }
 }
 
 /// The rake branch of `surf_rake_step` (610 to 629): each stroke moves across; the first step its band (the

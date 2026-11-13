@@ -6,9 +6,11 @@
 //! Python order and every stage names the lines it mirrors. Every kind of the kit has its call here already (a
 //! socket), behind the same test Python makes (the fighters of the kind, `B.w['kind'] == ...`), calling the kind's
 //! module; a kind not ported is a stub that no fighter reaches (its `is` is false until the roster reads the kind).
-//! The kinds older than the kit's are `SLOT` comments at their place. Within a stage, Python's order is the order of
-//! the lines named. With `Fight::trace_sockets` on, every socket logs its name (`tests/sockets.rs` checks the order
-//! against `tests/sockets_order.txt`).
+//! The older ten fighters' kinds (milestone 4) have their sockets too, calling stubs until their ports; the kinds
+//! of frozen versions and of the retired fighters (`volley`, `orbit`, the `beam` weapon, `flail`, `aura`, `bellows`,
+//! `dash`, `cone`, `pack`, `rattle`, `quake`, `charge`, `pull`) are `SLOT` comments at their place. Within a stage,
+//! Python's order is the order of the lines named. With `Fight::trace_sockets` on, every socket logs its name
+//! (`tests/sockets.rs` and `tests/sockets_older.rs` check the order against `tests/sockets_order.txt`).
 //!
 //! One step, in order:
 //!
@@ -31,12 +33,15 @@
 use bf_core::event::Value;
 use bf_core::py;
 
-use crate::abilities::{self, beam, flick, hook, lights_out, prelude, smash, snip, stampede, swan, x33};
+use crate::abilities::{
+    self, beam, clamp, flick, hook, lash, lights_out, prelude, rewind, smash, snap, snip, stampede, swan, x33,
+};
 use crate::fight::{Fight, stunned};
 use crate::geom;
 use crate::kinds::{
-    anchor, blade, combo, crowd, drill, echo, grapple, jump, lightning, line, mortar, rake, roll, roll_charge,
-    spotlight, striker, swallow, tiptoe, tune, walk,
+    anchor, bite, blade, combo, crowd, drill, echo, grapple, inflate, jump, lightning, line, mortar, pulse, rake,
+    rests, roll, roll_charge, scratch_floor, spotlight, striker, surf, swallow, tether, tiptoe, trap, tune, walk,
+    wrecking,
 };
 use crate::record::Frames;
 use crate::roster::AbilityKind;
@@ -68,9 +73,21 @@ pub struct Schedule {
     /// `next16t`: the thrusters' own 16th counter (`fight.py` 5776): the next 16th of the video the thrust grid
     /// reaches. It starts at `k16_0` and moves only while a fighter's weapon thrusts.
     pub next16t: i64,
+    /// `next16`: the pulse weapons' 16th counter (5745; DRUMS, milestone 4; the `on16` volleys share it, a frozen
+    /// kind's). It moves only while a fighter has a pulse.
+    pub next16: i64,
     /// `dc_next`: the dash / cone / surf / rake weapons' 16th counter (5752 to 5753; its `dc_k0` is `k16_0`, the
-    /// same formula). Of those kinds the kit has the rake (ACOUSTIC).
+    /// same formula). Of those kinds the kit has the rake (ACOUSTIC) and UKULELE's surf (milestone 4).
     pub dc_next: i64,
+    /// `n16b`: the `grid16` weapons' counter (5755: `inflate` and `bite`, milestone 4; `aura` and `bellows` are
+    /// frozen kinds).
+    pub n16b: i64,
+    /// `next16c`: the tethers' (SYNTH, 5778).
+    pub next16c: i64,
+    /// `n16w`: the wreckers' (BARI SAX, 5845).
+    pub n16w: i64,
+    /// `n16v`: the resters' (VIOLA, 5861).
+    pub n16v: i64,
     /// `n16e`: the echo's (HORN, 5790).
     pub n16e: i64,
     /// `n16j`: the jump's (CLARINET, 5796).
@@ -101,8 +118,8 @@ pub struct Schedule {
     /// `n16d`: the drill's (SOUSAPHONE, 5903).
     pub n16d: i64,
     // Python keeps one counter per kind (`next16`, `dc_next`, `n16b`, `next16c`, `next16k`, `next16t`, `n16p`, ...):
-    // each moves only while a fighter has its kind, so they are separate fields, never one shared counter. The older
-    // kinds' (`next16`, `n16b`, `next16c`, `n16p`, `n16w`, `n16v`) come with those kinds.
+    // each moves only while a fighter has its kind, so they are separate fields, never one shared counter. The frozen
+    // `pack`'s `n16p` is not kept.
 }
 
 /// The fighters (in ball order) that pass `is`, taken before a loop over them, as Python makes its lists (`echoers`,
@@ -128,14 +145,19 @@ impl Schedule {
         // first 16th of the fight
         let k16_0 = (r.t_fight / s16 - 1e-6).ceil() as i64;
         // Kind setups, in the Python order. Each is `if a fighter has the kind: setup(k)`, some with a record key.
-        // 5756 to 5762: combo (flail and inflate are older kinds: SLOT), in ball order
+        // 5746 to 5755: the lists `pulse`, `rewinders`, `dc` and `grid16` are made by each block's own `is` test below
+        // (`pullers` and `v16` are frozen kinds'); their counters start at `k16_0`.
+        // 5756 to 5762: combo, then inflate (BAGPIPES, milestone 4), in ball order (flail is a frozen kind's: SLOT)
         fight.socket("setup.combo");
+        fight.socket("setup.inflate");
         for k in 0..2 {
             if combo::is(fight, k) {
                 combo::setup(fight, k);
+            } else if inflate::is(fight, k) {
+                inflate::setup(fight, k);
             }
         }
-        //   5763 to 5764  `RAD` (inflate, an older kind)
+        // 5763 to 5764: `RAD` when a fighter inflates (`Frames::new`)
         // 5765 to 5774: the swallowers and the strikers, in ball order, one loop. The striker's `setup` also starts
         // `t_strike` at the weapon's (5770); `next16k = k16_0` is below; the record gets `COB` when a fighter is a
         // striker (`record.rs`).
@@ -150,7 +172,8 @@ impl Schedule {
         // 5775 to 5776: the thrusters need no setup (the lance's state is the ball's, from `Ball.__init__`);
         // `next16t = k16_0` is below. The record's `EXT`, `SLW`, `CRV` (5779 to 5780) follow `Fight::uses_ext`
         // (`record.rs`).
-        //   5777 to 5778  tether; 5781 to 5786  pack (older kinds)
+        // 5777 to 5778: the tethers need no setup (`next16c`, below; `_tether` makes the state on first use)
+        //   5781 to 5786  pack (a frozen kind)
         // 5787 to 5792: echo
         fight.socket("setup.echo");
         for k in which(fight, echo::is) {
@@ -183,14 +206,24 @@ impl Schedule {
         for k in which(fight, tiptoe::is) {
             tiptoe::setup(fight, k);
         }
-        //   5836 to 5850  rattle, wrecking, snap (older kinds)
+        //   5836 to 5841  rattle (a frozen kind)
+        // 5842 to 5845: wrecking (BARI SAX, milestone 4); `WRECK` and the snappers' `SNAP` (5846 to 5850) are
+        // `Frames::new`'s
+        fight.socket("setup.wrecking");
+        for k in which(fight, wrecking::is) {
+            wrecking::setup(fight, k);
+        }
         // 5851 to 5853: the hookers need no setup (`HOOK`)
         // 5854 to 5857: lightning
         fight.socket("setup.lightning");
         for k in which(fight, lightning::is) {
             lightning::setup(fight, k);
         }
-        //   5858 to 5863  rests (an older kind)
+        // 5858 to 5863: rests (VIOLA, milestone 4; `REST` and `NOTES` are `Frames::new`'s)
+        fight.socket("setup.rests");
+        for k in which(fight, rests::is) {
+            rests::setup(fight, k);
+        }
         // 5864 to 5869: grapple
         fight.socket("setup.grapple");
         for k in which(fight, grapple::is) {
@@ -253,6 +286,11 @@ impl Schedule {
             n16s: k16_0,
             n16c: k16_0,
             n16d: k16_0,
+            next16: k16_0,
+            n16b: k16_0,
+            next16c: k16_0,
+            n16w: k16_0,
+            n16v: k16_0,
         }
     }
 
@@ -279,7 +317,7 @@ impl Schedule {
                 if stunned(fight, k) {
                     continue;
                 }
-                //   5928 to 5933  volley (not on16), beam weapon (older kinds)
+                //   5928 to 5933  volley (not on16), beam weapon (frozen kinds)
                 // 5934 to 5935
                 fight.socket("beat.combo");
                 if combo::is(fight, k) {
@@ -295,22 +333,46 @@ impl Schedule {
                 if striker::is_striker(fight, k) {
                     striker::beat(fight, k, self.kb);
                 }
-                // 5940 to 5941 (`line` or the older `trap`)
+                // 5940 to 5941: `hazard_beat`, for a `line` or a `trap` (HARP, milestone 4: its branch)
                 fight.socket("beat.line");
                 if line::is(fight, k) {
                     line::beat(fight, k, self.kb);
+                } else if trap::is(fight, k) {
+                    trap::beat(fight, k, self.kb);
                 }
-                //   5942 to 5945  scratch_floor, tether (older kinds)
+                // 5942 to 5943 (TURNTABLES, milestone 4)
+                fight.socket("beat.scratch_floor");
+                if scratch_floor::is(fight, k) {
+                    scratch_floor::beat(fight, k, self.kb);
+                }
+                // 5944 to 5945 (SYNTH, milestone 4)
+                fight.socket("beat.tether");
+                if tether::is(fight, k) {
+                    tether::beat(fight, k, self.kb);
+                }
             }
             // The thrust blade has no entry here: it starts on the 16th grid (stage 3).
         }
 
         // 3. The 16th-note counters (5946 to 6095), each `if <fighters of the kind> and t + 1e-9 >= <counter> * s16`,
         //    in this order:
-        //   5946 to 5963  pulse / volley on16 (`next16`) (older kinds)
-        // 5964 to 5974: dash / cone / surf / rake (`dc_next`), a stunned fighter skipped; the rake's own block body
+        // 5946 to 5963: the pulses (`next16`, DRUMS, milestone 4), a stunned fighter skipped (the `on16` volleys of
+        // 5958 to 5963 are a frozen kind's)
+        fight.socket("tick.pulse");
+        let pulsers = [0, 1].map(|k| pulse::is(fight, k));
+        if pulsers.contains(&true) && fight.t + 1e-9 >= self.next16 as f64 * self.s16 {
+            let k16 = self.next16 - self.k16_0;
+            self.next16 += 1;
+            for k in (0..2).filter(|&k| pulsers[k]) {
+                if !stunned(fight, k) {
+                    pulse::tick(fight, k, k16);
+                }
+            }
+        }
+        // 5964 to 5974: dash / cone / surf / rake (`dc_next`), a stunned fighter skipped; each kind's own block body
+        // (`fire_<kind>`: the rake's, and UKULELE's surf, milestone 4; dash and cone are frozen kinds')
         fight.socket("tick.rake");
-        let dc = [0, 1].map(|k| rake::is(fight, k));
+        let dc = [0, 1].map(|k| rake::is(fight, k) || surf::is(fight, k));
         if dc.contains(&true) && fight.t + 1e-9 >= self.dc_next as f64 * self.s16 {
             let dc_k = self.dc_next - self.k16_0;
             self.dc_next += 1;
@@ -318,10 +380,43 @@ impl Schedule {
                 if stunned(fight, k) {
                     continue;
                 }
-                rake::tick(fight, k, dc_k);
+                if rake::is(fight, k) {
+                    rake::tick(fight, k, dc_k);
+                } else {
+                    surf::tick(fight, k, dc_k);
+                }
             }
         }
-        //   5975 to 5986  aura / bellows / inflate / bite (`n16b`), tether (`next16c`) (older kinds)
+        // 5975 to 5980: `grid16_fire` (`n16b`) for an `inflate` or a `bite` (BAGPIPES, ACCORDION, milestone 4: each
+        // kind's branch), a stunned fighter skipped (`aura` and `bellows` are frozen kinds')
+        fight.socket("tick.grid16");
+        let grid16 = [0, 1].map(|k| inflate::is(fight, k) || bite::is(fight, k));
+        if grid16.contains(&true) && fight.t + 1e-9 >= self.n16b as f64 * self.s16 {
+            let k16b = self.n16b - self.k16_0;
+            self.n16b += 1;
+            for k in (0..2).filter(|&k| grid16[k]) {
+                if stunned(fight, k) {
+                    continue;
+                }
+                if inflate::is(fight, k) {
+                    inflate::grid16_fire(fight, k, k16b);
+                } else {
+                    bite::grid16_fire(fight, k, k16b);
+                }
+            }
+        }
+        // 5981 to 5986: the tethers' cable pulses (`next16c`, SYNTH, milestone 4), a stunned fighter skipped
+        fight.socket("tick.tether");
+        self.counter(
+            fight,
+            tether::is,
+            |s| &mut s.next16c,
+            |f, k, k16| {
+                if !stunned(f, k) {
+                    tether::tick(f, k, k16);
+                }
+            },
+        );
         // 5987 to 5993: the strikers' cobras lunge on the 16th grid, every `every` beats (haste divides it). The
         // counter moves only when a fighter is a striker (`strikers`, 5771, is the list of those fighters).
         fight.socket("tick.striker");
@@ -358,7 +453,7 @@ impl Schedule {
                 }
             }
         }
-        //   6001 to 6008  pack (`n16p`, an older kind)
+        //   6001 to 6008  pack (`n16p`, a frozen kind)
         // 6009 to 6014: echo, a stunned fighter skipped
         fight.socket("tick.echo");
         self.counter(
@@ -383,7 +478,13 @@ impl Schedule {
         // 6030 to 6034: anchor
         fight.socket("tick.anchor");
         self.counter(fight, anchor::is, |s| &mut s.n16a, anchor::tick);
-        //   6035 to 6049  rattle (`n16r`), wrecking (`n16w`), rests (`n16v`) (older kinds)
+        //   6035 to 6039  rattle (`n16r`, a frozen kind)
+        // 6040 to 6044: wrecking (`n16w`, BARI SAX, milestone 4)
+        fight.socket("tick.wrecking");
+        self.counter(fight, wrecking::is, |s| &mut s.n16w, wrecking::tick);
+        // 6045 to 6049: rests (`n16v`, VIOLA, milestone 4)
+        fight.socket("tick.rests");
+        self.counter(fight, rests::is, |s| &mut s.n16v, rests::tick);
         // 6050 to 6054: lightning
         fight.socket("tick.lightning");
         self.counter(fight, lightning::is, |s| &mut s.n16l, lightning::tick);
@@ -443,7 +544,7 @@ impl Schedule {
         }
 
         // 5. Steps that steer a ball before it moves (6108 to 6114).
-        //   6108 to 6109  `pull_step` for a weapon with `pull` (an older option)
+        //   6108 to 6109  `pull_step` for a weapon with `pull` (a frozen version's option)
         // 6110 to 6112: LIGHTS OUT, for either ball (a copied one too) while any fighter has the kind
         fight.socket("steer.lights_out");
         if (0..2).any(|k| has(fight, k, AbilityKind::LightsOut)) {
@@ -460,7 +561,13 @@ impl Schedule {
         // 6. Motion (6115).
         fight.move_step(dt);
 
-        // 7. `rewind_step` (6116 to 6117) (an older kind).
+        // 7. `rewind_step` (6116 to 6117): `if rewinders` (the fighters with a `rewind` ability: TURNTABLES, milestone
+        //    4)
+        fight.socket("rewind.step");
+        let rewinders = which(fight, |f, k| has(f, k, AbilityKind::Rewind));
+        if !rewinders.is_empty() {
+            rewind::rewind_step(fight, dt, &rewinders);
+        }
 
         // 8. Each fighter's weapon step (6118 to 6136), for k in ball order, by weapon kind. It is one loop over the
         //    balls: with TROMBONE on the left, its blade steps before the FLUTE's cobras.
@@ -472,13 +579,28 @@ impl Schedule {
             if blade::is_blade(fight, k) {
                 blade::step(fight, k, dt);
             }
-            //   6121 to 6122  orbit (an older kind)
+            //   6121 to 6122  orbit (a frozen kind)
             // 6123 to 6124
             fight.socket("weapon.combo");
             if combo::is(fight, k) {
                 combo::step(fight, k, dt);
             }
-            //   6125 to 6132  flail, scratch_floor, tether, inflate (older kinds)
+            //   6125 to 6126  flail (a frozen kind)
+            // 6127 to 6128 (TURNTABLES, milestone 4)
+            fight.socket("weapon.scratch_floor");
+            if scratch_floor::is(fight, k) {
+                scratch_floor::step(fight, k, dt);
+            }
+            // 6129 to 6130 (SYNTH, milestone 4)
+            fight.socket("weapon.tether");
+            if tether::is(fight, k) {
+                tether::step(fight, k, dt);
+            }
+            // 6131 to 6132 (BAGPIPES, milestone 4)
+            fight.socket("weapon.inflate");
+            if inflate::is(fight, k) {
+                inflate::step(fight, k, dt);
+            }
             // 6133 to 6134
             fight.socket("weapon.swallow");
             if swallow::is(fight, k) {
@@ -492,17 +614,26 @@ impl Schedule {
         }
 
         // 9. Lashes, beams and hazards (6137 to 6142).
-        //   6137 to 6138  `lash_step` (an older kind)
+        // 6137 to 6138: `if getattr(self, 'lashes', None)` (SYNTH's SAWTOOTH, milestone 4)
+        fight.socket("stage9.lashes");
+        if lash::live(fight) {
+            lash::lash_step(fight, dt);
+        }
         // 6139 to 6140: `if self.beams or any(B.w['kind'] == 'beam' ...)`: the ability beams (TRUMPET's HIGH C; the
         // `beam` weapon is an older kind)
         fight.socket("stage9.beams");
         if beam::live(fight) {
             beam::beams_step(fight, dt);
         }
-        // 6141 to 6142: `if self.lines or self.strings` (the pipes; strings are the older `trap`'s)
+        // 6141 to 6142: `if self.lines or self.strings`: `hazards_step`, the pipes' half (1393 to 1416), then the
+        // strings' half (1417 to 1434, HARP's `trap`, milestone 4: run only while there are strings, which is the same
+        // as Python's loop over an empty list)
         fight.socket("stage9.hazards");
-        if line::live(fight) {
+        if line::live(fight) || trap::live(fight) {
             line::hazards_step(fight, dt);
+            if trap::live(fight) {
+                trap::strings_step(fight, dt);
+            }
         }
 
         // 10. `effects_step` (6143): the rings spread and hit, then the slams land, then the arcs emit. It runs on
@@ -510,7 +641,7 @@ impl Schedule {
         abilities::effects_step(fight, dt);
 
         // 11. The later kinds' steps (6144 to 6202), in this order.
-        //   6144 to 6145  pack (an older kind)
+        //   6144 to 6145  pack (a frozen kind)
         // 6146 to 6147
         fight.socket("later.echo");
         for k in which(fight, echo::is) {
@@ -555,7 +686,17 @@ impl Schedule {
         for k in which(fight, |f, k| has(f, k, AbilityKind::Hook)) {
             hook::hook_step(fight, k, dt);
         }
-        //   6165 to 6170  rattle, wrecking, snap (older kinds)
+        //   6165 to 6166  rattle (a frozen kind)
+        // 6167 to 6168 (BARI SAX, milestone 4)
+        fight.socket("later.wrecking");
+        for k in which(fight, wrecking::is) {
+            wrecking::step(fight, k, dt);
+        }
+        // 6169 to 6170: the snappers (BARI SAX's CABLE SNAP, milestone 4)
+        fight.socket("later.snap");
+        for k in which(fight, |f, k| has(f, k, AbilityKind::Snap)) {
+            snap::snap_step(fight, k, dt);
+        }
         // 6171 to 6172
         fight.socket("later.tiptoe");
         for k in which(fight, tiptoe::is) {
@@ -606,7 +747,11 @@ impl Schedule {
         for k in which(fight, roll_charge::is) {
             roll_charge::step(fight, k, dt);
         }
-        //   6191 to 6192  notes (`rests`, an older kind)
+        // 6191 to 6192: `if getattr(self, 'notes', None)` (VIOLA's whole notes, milestone 4)
+        fight.socket("later.notes");
+        if rests::live(fight) {
+            rests::notes_step(fight, dt);
+        }
         // 6193 to 6194: `if getattr(self, 'splinters', None)` (the smash's)
         fight.socket("later.splinters");
         if smash::live(fight) {
@@ -617,12 +762,17 @@ impl Schedule {
         if dc.contains(&true) {
             rake::dash_cone_step(fight, dt);
         }
-        // 6197 to 6198: `if dc or self.whips or self.sweeps or self.spouts` (spouts are an older kind's)
+        // 6197 to 6198: `if dc or self.whips or self.sweeps or self.spouts` (the spouts are UKULELE's, milestone 4)
         fight.socket("later.surf_rake");
         if dc.contains(&true) || x33::live(fight) {
             rake::surf_rake_step(fight, dt);
         }
-        //   6199 to 6202  suction, clamps (older kinds)
+        //   6199 to 6200  suction (a frozen kind)
+        // 6201 to 6202: `if self.clamps` (ACCORDION's FULL BELLOWS, milestone 4)
+        fight.socket("later.clamps");
+        if clamp::live(fight) {
+            clamp::clamps_step(fight);
+        }
 
         // 12. Levels and abilities (6203).
         fight.socket("abilities");

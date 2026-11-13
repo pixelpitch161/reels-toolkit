@@ -1,6 +1,6 @@
 //! Ability kinds `whip` (ACOUSTIC's FINGERPICK), `sweep` (ACOUSTIC's BIG STRUM): `fight.py` `trigger` 2872 to 2873;
 //! `ab_x33` 566 to 577 and the whips and sweeps of `surf_rake_step` (630 to 670), which `kinds::rake::surf_rake_step`
-//! calls. The third kind of the branch, `spout` (578 to 583, 671 to 699), is older than the kit's: SLOT.
+//! calls. The third kind of the branch, `spout` (578 to 583, 671 to 699: UKULELE's UKE-NADO), is a stub until its port.
 //!
 //! Python keeps both on the fight (`self.whips`, `self.sweeps`); here they are [`State`], `Fight::x33`. No copier
 //! runs this code: `whip` and `sweep` are not in IDENTITY CRISIS's `COPYABLE` (2802), and the copy of the rake as a
@@ -78,6 +78,15 @@ pub struct Sweep {
     pub hit: bool,
 }
 
+/// One UKE-NADO (`self.spouts`' dict, ability kind `spout`): its fields are filled in by UKULELE's port (milestone 4).
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct Spout {}
+
+/// One point of a waterspout's path (`self.x33_log`'s tuple `(round(t, 5), owner, x, y)`, written every 4th step of
+/// a spout, 690 to 691): its fields are filled in by UKULELE's port (milestone 4).
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct SpoutPoint {}
+
 /// This ability's per-fight state (`Fight::x33`).
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct State {
@@ -85,6 +94,11 @@ pub struct State {
     pub whips: Vec<Whip>,
     /// `self.sweeps`.
     pub sweeps: Vec<Sweep>,
+    /// `self.spouts` (UKULELE's UKE-NADO, milestone 4: empty until its port).
+    pub spouts: Vec<Spout>,
+    /// `self.x33_log`: the waterspouts' path, which `run()` returns as `X33_SPOUT` when it holds anything (6220 to
+    /// 6221). Empty until UKULELE's port.
+    pub x33_log: Vec<SpoutPoint>,
 }
 
 /// `trigger`, kinds `whip` and `sweep` (2872 to 2873): `ab_x33(k, ab, kind)` (566 to 577), `kind` being the ability's
@@ -131,15 +145,40 @@ pub fn start(f: &mut Fight, k: usize, ab: &AbilityCfg, kind: &str) {
             ];
             f.ev("sweep", k as i64, data);
         }
-        // 578 to 583: `spout` (an older kind). SLOT.
+        // 578 to 583: `spout` (milestone 4, UKULELE's UKE-NADO)
+        "spout" => start_spout(f, k, ab),
         other => panic!("ab_x33 has no branch for {other}"),
     }
 }
 
-/// Whether `self.whips` or `self.sweeps` holds anything: half of the test before `surf_rake_step` (`run()` 6197;
-/// `self.spouts`, the other half's third list, belongs to an older kind).
+/// `ab_x33`'s `spout` branch (578 to 583): UKE-NADO, a waterspout that sweeps the ring after the enemy. A stub until
+/// UKULELE's port (milestone 4): no fighter has the kind before `roster::abilities::spout::PORTED`.
+pub fn start_spout(f: &mut Fight, _k: usize, _ab: &AbilityCfg) {
+    f.socket("stub:abilities::x33::start_spout");
+}
+
+/// Whether `self.whips`, `self.sweeps` or `self.spouts` holds anything: the lists of the test before
+/// `surf_rake_step` (`run()` 6197).
 pub fn live(f: &Fight) -> bool {
-    !f.x33.whips.is_empty() || !f.x33.sweeps.is_empty()
+    !f.x33.whips.is_empty() || !f.x33.sweeps.is_empty() || !f.x33.spouts.is_empty()
+}
+
+/// Whether `self.spouts` holds anything (the test before [`spouts_step`]).
+pub fn spouts_live(f: &Fight) -> bool {
+    !f.x33.spouts.is_empty()
+}
+
+/// The spouts of `surf_rake_step(dt)` (671 to 699), after the sweeps; `kinds::rake::surf_rake_step` calls it. A stub
+/// until UKULELE's port.
+pub fn spouts_step(f: &mut Fight, _dt: f64) {
+    f.socket("stub:abilities::x33::spouts_step");
+}
+
+/// `out['X33_SPOUT'] = self.x33_log` (`run()` 6220 to 6221): the waterspouts' path as the recording's `X33_SPOUT`,
+/// called when the log holds anything. A stub until UKULELE's port (`None`: no key).
+pub(crate) fn spout_log(f: &Fight) -> Option<bf_core::recording::Array> {
+    f.socket("stub:abilities::x33::spout_log");
+    None
 }
 
 /// The whips and sweeps of `surf_rake_step` (630 to 670), after its strokes.
