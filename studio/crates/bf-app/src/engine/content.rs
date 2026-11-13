@@ -73,9 +73,11 @@ fn make_roster() -> Roster {
             })
         })
         .collect();
-    // each roster fighter with the themes it can be played in (against itself: see `refused_by`)
+    // each offered fighter with the themes it can be played in (against itself: see `refused_by`); a roster fighter
+    // not offered yet (an older fighter before its port) refuses nothing, since nobody can pick it
     let plays: Vec<(&str, Vec<&str>)> = cfgs
         .iter()
+        .filter(|f| available.contains(&f.name.as_str()))
         .map(|f| (f.name.as_str(), bf_content::themes_for(&f.name, &f.name)))
         .collect();
     let themes = bf_content::theme_names()

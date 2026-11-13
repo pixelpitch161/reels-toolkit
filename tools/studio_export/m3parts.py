@@ -652,6 +652,8 @@ def voice_child(cfg, name, pitches, vels, durs, notes_out):
 # ---------------------------------------------------------------- the checks
 def _checks_init(folder):
     """pool worker start: the config, then kit.picture, for checks.Frames (checks._draw reads checks._PICTURE)"""
+    from . import older                               # the older reference kit modules (plan m4 Task 2), before
+    older.install()                                   # the kit is imported, as in `_child`
     from . import checks as CK
     for k in THREAD_VARS:
         os.environ[k] = '1'
