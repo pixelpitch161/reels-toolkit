@@ -216,7 +216,21 @@ impl PictureCtx {
             return;
         }
         let n = xs.len();
+        let c = CanvasCtx {
+            t,
+            i: f.i,
+            in_fight: f.in_fight,
+            fs,
+            sxp: &sxp,
+            szp: &szp,
+            ys: &ys,
+            xs: &xs,
+        };
         let mut alb: Vec<V3> = (0..n).map(|j| canvas_albedo(sxp[j], szp[j])).collect();
+        // the looks' albedo (opt-in `canvas_albedo`)
+        for look in &self.looks {
+            look.canvas_albedo(self, &mut alb, &c);
+        }
         let dither: Vec<f64> = (0..n).map(|j| bayer(xs[j], ys[j])).collect();
         // fading marks
         self.fx.mk.apply(&mut alb, &sxp, &szp, self.fx_clock(t), Some(&dither));
@@ -246,16 +260,6 @@ impl PictureCtx {
             ic.push(light);
         }
         // decals: each fighter's canvas light, the rings (in the run's order), then after-decals (darkening)
-        let c = CanvasCtx {
-            t,
-            i: f.i,
-            in_fight: f.in_fight,
-            fs,
-            sxp: &sxp,
-            szp: &szp,
-            ys: &ys,
-            xs: &xs,
-        };
         for look in &self.looks {
             look.canvas_first(self, &mut ic, &c);
         }
@@ -270,11 +274,18 @@ impl PictureCtx {
         for look in &self.looks {
             look.canvas_after(self, &mut ic, &c);
         }
+        // col = alb * Ic, then the looks' paint over the lit canvas (opt-in `canvas_paint`)
+        let mut col: Vec<V3> = (0..n)
+            .map(|j| std::array::from_fn(|ch| alb[j][ch] * ic[j][ch]))
+            .collect();
+        for look in &self.looks {
+            look.canvas_paint(self, &mut col, &ic, &c);
+        }
         for j in 0..n {
             let at = arr.at(xs[j], ys[j]);
-            for ch in 0..3 {
+            for (ch, &v) in col[j].iter().enumerate() {
                 // arr[ys, xs] = np.floor(col / 5 + BAYER_FULL[ys, xs, None]) * 5
-                arr.data[at + ch] = ((alb[j][ch] * ic[j][ch] / 5.0 + dither[j]).floor() * 5.0) as f32;
+                arr.data[at + ch] = ((v / 5.0 + dither[j]).floor() * 5.0) as f32;
             }
             depth.data[ys[j] * W + xs[j]] = dc[ys[j] * W + xs[j]] as f32;
         }

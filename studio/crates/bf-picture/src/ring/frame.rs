@@ -38,7 +38,7 @@ pub enum Stage {
     /// The canvas, lit per pixel and dithered, with the looks' canvas overlays: the float buffers.
     Canvas,
     /// After the painter pass: back post and ropes, the balls, the looks' items, the side posts, front ropes and
-    /// post.
+    /// post, and the late balls (`ball_late`).
     Painter,
     /// After both looks' over-ring effects and the K.O. shards.
     OverRing,
@@ -64,7 +64,7 @@ pub enum Stage {
     Scrim,
     /// After both looks' crisp overlays and the post effects.
     PostFx,
-    /// The picture cut to bytes, with the count-in drawn.
+    /// The picture cut to bytes, with the looks' `after_post` and the count-in drawn.
     Countdown,
     /// After the HP numbers, the fight HUD and the captions.
     Hud,
@@ -257,6 +257,8 @@ impl Picture {
         p.draw_rope_side(&mut fr, &cam, &l, t, 3);
         // ---------------- balls, the fighters' items, posts (painter by depth)
         let mut items: Vec<(f64, Item)> = Vec::new();
+        // a late ball and its look's items_ball are drawn after the front ropes (opt-in `ball_late`)
+        let mut late_items: Vec<(f64, Item)> = Vec::new();
         for corner in [RED, BLUE] {
             let w = scene::to_world(CORNERS[corner][0], CORNERS[corner][1], 0.7);
             items.push((cam.depth(&[w])[0], Item::Post(corner)));
@@ -268,9 +270,11 @@ impl Picture {
             // pw = S.to_world(p[0], p[1], st.get('paint_h', R + st['lift']))
             let pw = scene::to_world(st.p[0], st.p[1], st.paint_h.unwrap_or(R + st.lift));
             let dz = cam.depth(&[pw])[0] - st.air_bias;
-            items.push((dz, Item::Ball(k)));
+            let late = p.looks.iter().any(|l| l.ball_late(p, k, &fc, st));
+            let dest = if late { &mut late_items } else { &mut items };
+            dest.push((dz, Item::Ball(k)));
             for (dz, pay) in p.looks[k].items_ball(p, &fc, st) {
-                items.push((dz, Item::Look(k, pay)));
+                dest.push((dz, Item::Look(k, pay)));
             }
         }
         for k in 0..2 {
@@ -279,24 +283,30 @@ impl Picture {
             }
         }
         // items.sort(key=lambda it: -it[0]): a stable sort, far to near
-        items.sort_by(|a, b| (-a.0 + 0.0).total_cmp(&(-b.0 + 0.0)));
+        let by_depth = |a: &(f64, Item), b: &(f64, Item)| (-a.0 + 0.0).total_cmp(&(-b.0 + 0.0));
+        items.sort_by(by_depth);
         let mut drawn: Vec<DrawnBall> = Vec::new();
-        for (_, item) in &items {
-            match item {
-                Item::Post(corner) => p.draw_post(&mut fr, &cam, &l, *corner),
-                Item::Ball(k) => {
-                    let (mut arr, mut depth) = (fr.array(), fr.depth());
-                    let (s, rp) = p.draw_ball(&mut arr, &mut depth, &cam, *k, &fs[*k], t);
-                    drawn.push(DrawnBall { k: *k, s, rp });
-                    fr.set_array(&arr, Some(&depth));
+        let paint = |fr: &mut Frame, items: &[(f64, Item)], drawn: &mut Vec<DrawnBall>| {
+            for (_, item) in items {
+                match item {
+                    Item::Post(corner) => p.draw_post(fr, &cam, &l, *corner),
+                    Item::Ball(k) => {
+                        let (mut arr, mut depth) = (fr.array(), fr.depth());
+                        let (s, rp) = p.draw_ball(&mut arr, &mut depth, &cam, *k, &fs[*k], t);
+                        drawn.push(DrawnBall { k: *k, s, rp });
+                        fr.set_array(&arr, Some(&depth));
+                    }
+                    Item::Look(k, pay) => p.looks[*k].draw_item(p, &fc, fr, pay),
                 }
-                Item::Look(k, pay) => p.looks[*k].draw_item(p, &fc, &mut fr, pay),
             }
-        }
+        };
+        paint(&mut fr, &items, &mut drawn);
         // ---------------- front ropes + posts
         p.draw_rope_side(&mut fr, &cam, &l, t, 0);
         p.draw_rope_side(&mut fr, &cam, &l, t, 1);
         p.draw_post(&mut fr, &cam, &l, FRONT);
+        late_items.sort_by(by_depth);
+        paint(&mut fr, &late_items, &mut drawn);
         let (mut arr, mut depth) = (fr.array(), fr.depth());
         stage!(Stage::Painter, StagePic::F32(arr), Some(depth));
         // ---------------- the fighters' effects over the ring, shards, sparks
@@ -467,8 +477,12 @@ impl Picture {
         stage!(Stage::PostFx, StagePic::from(&img), None);
         let mut out = img.to_bytes();
         drop(img);
-        // ---------------- UI: countdown, HP numbers in the balls, fight HUD, captions
         let mut log = DrawLog::new();
+        // the looks' overlays on the bytes (opt-in `after_post`)
+        for look in &p.looks {
+            look.after_post(p, &mut out, &mut log, &fc, &drawn);
+        }
+        // ---------------- UI: countdown, HP numbers in the balls, fight HUD, captions
         p.countdown(&mut out, &mut log, t, cs);
         stage!(Stage::Countdown, StagePic::U8(out), None);
         // the title card covers the HUD: skip it

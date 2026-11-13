@@ -27,9 +27,11 @@ use crate::img::{Img, RgbF};
 use crate::lighting::Lights;
 use crate::raster::Frame;
 use crate::ring::PictureCtx;
+use crate::ring::ropes::RopeEv;
 use crate::ring::state::{BallState, Wave};
 use crate::title::GLASS;
 use crate::title::layout::Layout;
+use crate::ui::DrawLog;
 
 /// The phase `fighter(k, t)` is in when it calls [`Look::state`]: Python's `'rev'`, `'fight'` and `'tail'`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -514,6 +516,94 @@ pub trait Look: Send + Sync {
     fn focus_points(&self, p: &PictureCtx, t: f64, st: &BallState) -> Vec<(V3, String)> {
         Vec::new()
     }
+
+    // ------------------------------------------------------------ the older looks' opt-ins (milestone 4)
+    // A layer of an older episode that no hook above can express has one named opt-in here, and the same one in
+    // Python as a run-time patch of `kit/picture.py` (`tools/studio_export/older/picture_patches.py`). Each default
+    // changes nothing, so a look that does not implement it draws exactly what it drew before (the kit calls the
+    // hook only on a look that has it, `hasattr`; the defaults here make calling every look the same thing).
+    // Every look's opt-in is called (both sides, in `LOOKS` order) unless the method says otherwise.
+
+    /// Opt-in `canvas_albedo(alb, C)`: the canvas albedo of every canvas pixel (`float64`), after `S.canvas_albedo`
+    /// and before the fading marks. TURNTABLES: the record that turns under the ring.
+    fn canvas_albedo(&self, p: &PictureCtx, alb: &mut [V3], c: &CanvasCtx<'_>) {}
+
+    /// Opt-in `canvas_paint(col, Ic, C)`: the lit canvas colour (`alb * Ic`, `float64`) of every canvas pixel, before
+    /// it is dithered; `ic` is the light it was lit by. BAGPIPES: WAR CRY's tartan ring.
+    fn canvas_paint(&self, p: &PictureCtx, col: &mut [V3], ic: &[V3], c: &CanvasCtx<'_>) {}
+
+    /// Opt-in `ball_tint(kk, st, t, col)`: ball `kk`'s colour, as its glass mix and its rim read it. Returns the
+    /// colour. VIOLA: VIOLA JOKE's frozen ball.
+    fn ball_tint(&self, p: &PictureCtx, kk: usize, st: &BallState, t: f64, col: V3) -> V3 {
+        col
+    }
+
+    /// Opt-in `ball_glass(kk, st, t, inner, geo)`: ball `kk`'s inner glass at one pixel of its inside (`float64`),
+    /// after the sink's darkening and before it is laid on the frame. Python hands the whole patch (`geo` holds `dx`,
+    /// `dy`, `nz`, `band`, `inside`) and uses only the inside; a look whose arithmetic is per pixel (every numpy
+    /// expression of the episodes is) is the same called pixel by pixel. BAGPIPES: the bag's tartan stretched over
+    /// the swollen ball.
+    fn ball_glass(&self, p: &PictureCtx, kk: usize, st: &BallState, t: f64, px: &GlassPx, inner: &mut V3) {}
+
+    /// Opt-in `ball_lit(kk, st, t, lit)`: a change to ball `kk`'s lit instrument sprite, applied after its own
+    /// look's tint ([`BallSprite::tint`]) and before the sink, or `None` (the default: nothing). Like the tint it
+    /// works on the `float32` picture, so under a numpy-scalar glow (`BallState::glow_np`) the `float64` product is
+    /// rounded to `float32` before it, as for a tint. VIOLA: the frozen instrument greyed.
+    fn ball_lit<'a>(&'a self, p: &'a PictureCtx, kk: usize, st: &BallState, t: f64) -> Option<Tint<'a>> {
+        None
+    }
+
+    /// Opt-in `ball_after_sprite(kk, st, t, arr, s, rp)`: draws on the `float32` frame after ball `kk`'s sprite and
+    /// before its rim, edge and highlight; `s` is the ball's centre on the screen (after a squash) and `rp` its
+    /// radius in pixels. BARI SAX: the harness's straps and ring.
+    #[allow(clippy::too_many_arguments)] // the Python signature
+    fn ball_after_sprite(
+        &self,
+        p: &PictureCtx,
+        kk: usize,
+        st: &BallState,
+        t: f64,
+        arr: &mut Img<f32>,
+        s: (f64, f64),
+        rp: f64,
+    ) {
+    }
+
+    /// Opt-in `ball_late(kk, F, st)`: whether ball `kk` is drawn late: after the front ropes and post and before
+    /// [`Look::over_ring`], with its own look's [`Look::items_ball`], instead of in the painter pass. Any look may
+    /// say so (the looks are asked in order until one does). BARI SAX: swung up over a front rope.
+    fn ball_late(&self, p: &PictureCtx, kk: usize, f: &FrameCtx<'_>, st: &BallState) -> bool {
+        false
+    }
+
+    /// Opt-in `rope_press(s, y, t, P, yy)`: the heights of the points of one rope (side `s`, height `y`) at `t`:
+    /// `yy` holds `y - sag` on entry; `pts` are the points' ring-frame `[x, z]` before the rope's give. BARI SAX: the
+    /// ropes pressed down under the swing.
+    fn rope_press(&self, p: &PictureCtx, s: usize, y: f64, t: f64, pts: &[[f64; 2]], yy: &mut [f64]) {}
+
+    /// Opt-in `rope_events()`: more rope events, added to `ROPE_EV` once the picture is built (after the effects)
+    /// and sorted with the recording's as Python sorts the tuples. BARI SAX: a pressed rope springing back.
+    fn rope_events(&self, p: &PictureCtx) -> Vec<RopeEv> {
+        Vec::new()
+    }
+
+    /// Opt-in `after_post(img, F, drawn)`: the frame in bytes after the post effects, before the count-in; what it
+    /// notes goes to the frame's draw log (`ui._note`). TURNTABLES: the VHS rewind and its glyph; VIOLA: the rests.
+    fn after_post(&self, p: &PictureCtx, img: &mut Img<u8>, log: &mut DrawLog, f: &FrameCtx<'_>, drawn: &[DrawnBall]) {}
+}
+
+/// One pixel of a ball's inside for [`Look::ball_glass`]: Python's `geo` there (`dx`, `dy` the pixel's offset from the
+/// centre in radii, after a squash; `nz` the sphere's depth; `band` the dithered light band) and the pixel itself.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct GlassPx {
+    /// The screen column.
+    pub x: usize,
+    /// The screen row.
+    pub y: usize,
+    pub dx: f64,
+    pub dy: f64,
+    pub nz: f64,
+    pub band: f64,
 }
 
 /// Every default, as the Python base class: the bare ball.

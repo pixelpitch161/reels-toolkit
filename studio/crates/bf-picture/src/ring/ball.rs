@@ -13,6 +13,7 @@ use super::{PictureCtx, bayer};
 use crate::camera::Cam;
 use crate::config::{H, W};
 use crate::img::Img;
+use crate::look::GlassPx;
 use crate::np;
 use crate::scene::{self, R_BALL as R};
 use crate::sprite::{self, SpriteKey};
@@ -83,7 +84,11 @@ impl PictureCtx {
             return (s, rp);
         }
         let (rx, ry) = (if sq { rp * sx_ } else { rp }, if sq { rp * sy_ } else { rp });
-        let col = self.col[k];
+        // its colour, then the looks' tints of it (opt-in `ball_tint`)
+        let mut col = self.col[k];
+        for l in &self.looks {
+            col = l.ball_tint(self, k, st, t, col);
+        }
         let glow = st.glow;
         let (_, _, mut roll) = self.view[k];
         // its own glass, then the debuffs: a soured glass, a seasick tilt
@@ -104,6 +109,7 @@ impl PictureCtx {
             dx: f64,
             dy: f64,
             d2: f64,
+            nz: f64,
             band: f64,
         }
         let mut cells = Vec::with_capacity(((xb - xa) * (yb - ya)) as usize);
@@ -125,19 +131,31 @@ impl PictureCtx {
                     dx,
                     dy,
                     d2,
+                    nz,
                     band,
                 });
             }
         }
-        // the glass: reg[m] = reg[m] * 0.12 + inner[sl][m] * 0.88
+        // the glass: reg[m] = reg[m] * 0.12 + inner[sl][m] * 0.88, the looks' glass first (opt-in `ball_glass`)
         for c in cells.iter().filter(|c| c.d2 <= 1.0) {
+            let mut inner: [f64; 3] = std::array::from_fn(|ch| {
+                let v = tone[ch] * (0.70 + 0.36 * c.band);
+                if sunk { v * (1.0 - 0.72 * sink) } else { v }
+            });
+            let gp = GlassPx {
+                x: c.x,
+                y: c.y,
+                dx: c.dx,
+                dy: c.dy,
+                nz: c.nz,
+                band: c.band,
+            };
+            for l in &self.looks {
+                l.ball_glass(self, k, st, t, &gp, &mut inner);
+            }
             let px = arr.px_mut(c.x, c.y);
             for ch in 0..3 {
-                let mut inner = tone[ch] * (0.70 + 0.36 * c.band);
-                if sunk {
-                    inner *= 1.0 - 0.72 * sink;
-                }
-                px[ch] = (f64::from(px[ch] * 0.12f32) + inner * 0.88) as f32;
+                px[ch] = (f64::from(px[ch] * 0.12f32) + inner[ch] * 0.88) as f32;
             }
         }
         // the instrument
@@ -170,9 +188,11 @@ impl PictureCtx {
                 let (w, h) = ((ax1 - ax0) as usize, (ay1 - ay0) as usize);
                 // lit = sub[..., :3].astype(np.float32) * (1.06 + 0.3 * glow)
                 let tint = over.as_ref().and_then(|o| o.tint.as_ref());
+                // the looks' changes to it (opt-in `ball_lit`), after the tint
+                let lits: Vec<_> = self.looks.iter().filter_map(|l| l.ball_lit(self, k, st, t)).collect();
                 // a numpy-scalar glow makes the whole of `lit` float64, the sink's factor too (ruling M3-R37); a
                 // tint is written for a float32 picture, so under one the float64 product is rounded to float32 first
-                let wide = st.glow_np && tint.is_none();
+                let wide = st.glow_np && tint.is_none() && lits.is_empty();
                 let mut lit: Img<f32> = Img::new(w, h, 3);
                 for yy in 0..h {
                     for xx in 0..w {
@@ -192,6 +212,9 @@ impl PictureCtx {
                 if let Some(tint) = tint {
                     tint(&mut lit);
                 }
+                for l in &lits {
+                    l(&mut lit);
+                }
                 if sunk && !wide {
                     let dark = (1.0 - 0.72 * sink) as f32;
                     for v in &mut lit.data {
@@ -209,6 +232,10 @@ impl PictureCtx {
                     }
                 }
             }
+        }
+        // the looks' drawing over the sprite (opt-in `ball_after_sprite`)
+        for l in &self.looks {
+            l.ball_after_sprite(self, k, st, t, arr, s, rp);
         }
         // the rim, the dark edge and the highlight
         let rc: [f64; 3] = std::array::from_fn(|ch| {
