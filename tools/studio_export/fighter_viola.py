@@ -14,6 +14,11 @@ its scratch copy of render.py (never of projects/):
 Each patch replaces one whole block of render.py (one function, or one statement) by the same block with the listed
 edits made: one patch per block keeps origin.json inside its 20 KB budget, and the edits below are the reviewable part.
 
+Ruling M4-R10: the 'cellos' bus is not compared (Gate O's buses are 'viola' and 'laugh'; proofs() lists it as not
+compared): the crush's cello note draws from the shared CELLO noise stream, whose position the stand-in bed cannot
+reproduce; the exact proof is carried to the orchestral_drill theme gate (Task 30) and the viola_vs_violin pair gate
+(Task 41). In Rust the crush's cello draws from the bed's CELLO noise stream, in the kit's order.
+
 The harness is empty: #42's camera (SY 288) and beat ramp (0.12 s) are the kit's. Buses: 'viola' and 'laugh' (the
 VIOLA's own); its placements on the bed's buses (fx, cellos, drums, bass808) cannot be compared alone.
 
@@ -177,6 +182,10 @@ EXPORTS = {}
 #     proven: Gate O's frames at that seed (#42's sim.py patched to load it) and (a)'s buses.
 #     python -c "from tools.studio_export import fighter_viola as F; F.proofs()"
 WIN_SEED = 5
+NOT_COMPARED = {'cellos': "ruling M4-R10: the crush's cello note draws from the shared CELLO noise stream, whose "
+                          "position depends on every cello note the bed played before it (#42's bed plays many, the "
+                          "stand-in bed none); proven exactly at the orchestral_drill theme gate (Task 30) and the "
+                          "viola_vs_violin pair gate (Task 41)"}
 AUDIO = 'audio.py'
 VIOLA_SECTION = ('    # ------------------------------------------------ VIOLA: the rests',
                  '    # ------------------------------------------------ the K.O. moment')
@@ -287,6 +296,9 @@ def bus_proof(seed):
     if er['buses'] != kr['buses']:
         failures.append('the episode places the VIOLA on %s, the kit on %s' % (er['buses'], kr['buses']))
     for bus in sorted(set(er['buses']) & set(kr['buses'])):
+        if bus in NOT_COMPARED:
+            rows.append(dict(bus=bus, not_compared=NOT_COMPARED[bus]))
+            continue
         summary, bad = O.compare_bus('VIOLA', bus, eb[bus], kb[bus], i0, i1, O.BAR_DB)
         rows.append(dict(bus=bus, peak=summary['peak'], whole=summary['whole']))
         if bad:

@@ -1,0 +1,6 @@
+{
+ "format": 1,
+ "entries": [
+  {"path": "studio/reference/fighters/viola/origin.json", "sha256": "1187d4fbcc4e69892cd9b5bb3bef073271e5c4dd6fb4f76fa2a536bb312bc46e", "bytes": 19456, "tool": "tools.studio_export.older.origin", "commit": "1871c4fd7d95d34191ff94a81f9f8c1a135178cc", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"}
+ ]
+}

@@ -22,7 +22,12 @@ whoosh, MELODY AT LAST's lead (VIOLA_LEAD); the title chord on the C string, the
 when it falls apart, the stinger and the solo when it wins, the pizzicato run home, the climb into the title slam.
 
 Draw functions are #42's styles.py, imported from the episode's scratch copy (studio/reference/.cache/m4/origin/), never
-retyped; render.py's layer code and audio.py's part are moved here with their names."""
+retyped; render.py's layer code and audio.py's part are moved here with their names.
+
+Two series-frame differences from #42, accepted by the controller (Gate O review): #42's VIOLA JOKE shakes the ropes at
+t = the victim's index in seconds (`WAVE_EV += [(e[3], 0.9) ...]`: about 1.15 to 2.2 s, before FIGHT!; the kit's rope
+hook times a wobble at its event, so this module leaves it out); the 'laugh' bus's reverb send (0.3 in #42's master) is
+lost, since the kit's master reads levels for a Sound's own bus only."""
 PORTED = True
 
 import importlib.util
