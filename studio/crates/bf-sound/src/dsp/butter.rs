@@ -260,18 +260,34 @@ fn butter_zpk(kind: FilterKind, freqs: &[f64], order: usize, fs: f64) -> Zpk {
     bilinear_zpk(analog, fs)
 }
 
-/// `np.convolve(a, v)` (mode `'full'`) on complex arrays: each output is a dot product added from zero, in the
-/// order of the longer operand.
+/// `np.convolve(a, v)` (mode `'full'`) on complex arrays, as numpy 2.5.3 adds it (`_pyarray_correlate` with the
+/// reversed window, each output `CDOUBLE_dot`: `0 +` the BLAS `zdotu` of the overlap). For fewer than 8 products
+/// numpy's OpenBLAS adds the four kinds of real product apart, each fused into its own running sum from zero
+/// (`re re`, `im im`, `re im`, `im re`), and gives `(re re - im im, re im + im re)`: written from that description
+/// and checked against numpy bit for bit. Longer overlaps go through vector kernels that are not repeated here.
+///
+/// # Panics
+/// If the shorter operand has 8 or more samples (`np.poly` convolves with 2).
 fn convolve(a: &[C], v: &[C]) -> Vec<C> {
     let (a, v) = if v.len() > a.len() { (v, a) } else { (a, v) };
+    assert!(
+        v.len() < 8,
+        "convolve: a window of {} samples needs the BLAS vector kernel",
+        v.len()
+    );
     let (n1, n2) = (a.len(), v.len());
     (0..n1 + n2 - 1)
         .map(|k| {
-            let mut sum = C::ZERO;
+            let [mut rr, mut ii, mut ri, mut ir] = [0.0; 4];
+            // the overlap in the order of `a`, against the window reversed
             for j in k.saturating_sub(n2 - 1)..=k.min(n1 - 1) {
-                sum = sum + a[j] * v[k - j];
+                let (x, y) = (a[j], v[k - j]);
+                rr = dmath::fma(x.re, y.re, rr);
+                ii = dmath::fma(x.im, y.im, ii);
+                ri = dmath::fma(x.re, y.im, ri);
+                ir = dmath::fma(x.im, y.re, ir);
             }
-            sum
+            C::new(0.0 + (rr - ii), 0.0 + (ri + ir))
         })
         .collect()
 }

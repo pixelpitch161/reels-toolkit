@@ -298,6 +298,7 @@ manual is `studio/docs/porting-a-fighter.md`.
 | Name | Module | Files |
 | --- | --- | --- |
 | `checks` | `checks.py` | `studio/reference/checks/flute_vs_trombone.json` (its own interpreter; compares its soundtrack with the `audio.wav` of `stems`; draws 673 frames in 5 processes; order 60) |
+| `convolve` | `convolve_vectors.py` | `studio/reference/dsp/convolve.npz` and its sidecar `.json`: `np.dot` (one BLAS `ddot`) and `np.convolve(a, v, mode)` in modes `'same'` and `'full'`, at lengths on both sides of numpy's small-window loop (11) and of the BLAS kernel's blocks (16, 32), and at the engine's moving averages; for `bf_sound::dsp::conv`, which must give their bits |
 | `dsp` | `dsp_vectors.py` | `studio/reference/dsp/{butter,filters,resample,fftconvolve,numpy,ufuncs,generators}.npz`, each with its sidecar `.json` (order 40) |
 | `fights` | `fights.py` | `studio/reference/fights/flute_vs_trombone/{ep392,seed1,seed2,seed3,seed500}.bfrec` |
 | `frames` | `frames.py` | `studio/reference/frames/flute_vs_trombone/{f<frame>.png,frames.json}` (43 frames), and `studio/reference/frames/exceptions.toml` if it does not exist yet |

@@ -2,7 +2,10 @@
 //!
 //! Both are the transposed direct form II, with the additions and multiplications in scipy's order, so on the same
 //! coefficients they give the same bits as scipy 1.18.1 (`_sosfilt.pyx` `_sosfilt_float`, `_lfilter.cc` `filt`).
-//! What scipy refuses (`_validate_sos`, the checks of `lfilter` and of `_lfilter.cc`) is refused here with a panic.
+//! `lfilter` with a single `a` coefficient is scipy's `np.convolve` road ([`convolve_full`]). What scipy refuses
+//! (`_validate_sos`, the checks of `lfilter` and of `_lfilter.cc`) is refused here with a panic.
+
+use super::conv::convolve_full;
 
 /// Second-order sections as scipy orders them: each row is `b0 b1 b2 a0 a1 a2`.
 pub type Sos = Vec<[f64; 6]>;
@@ -70,12 +73,10 @@ fn normalised(b: &[f64], a: &[f64], samples: usize) -> (Vec<f64>, Vec<f64>) {
     (pad(b), pad(a))
 }
 
-/// One sample through the transposed direct form II of `_lfilter.cc`; `z` holds `b.len() - 1` delays.
+/// One sample through the transposed direct form II of `_lfilter.cc`; `z` holds `b.len() - 1` delays (at least
+/// one: a single coefficient each side takes scipy's other road).
 fn lfilter_run(b: &[f64], a: &[f64], z: &mut [f64], x: f64) -> f64 {
     let n = b.len();
-    if n == 1 {
-        return x * b[0];
-    }
     let y = z[0] + b[0] * x;
     for k in 1..n - 1 {
         z[k - 1] = z[k] + x * b[k] - y * a[k];
@@ -86,8 +87,8 @@ fn lfilter_run(b: &[f64], a: &[f64], z: &mut [f64], x: f64) -> f64 {
 
 /// `scipy.signal.lfilter(b, a, x)` on a mono signal, from rest.
 ///
-/// scipy takes another road when `a` has one coefficient (`np.convolve(b / a[0], x)`, cut to `len(x)`): the same
-/// sum of the same products, but added in the order of numpy's dot product, so there the last bits can differ.
+/// scipy takes another road when `a` has one coefficient: `np.convolve(b / a[0], x)` cut to `len(x)`, which is
+/// [`convolve_full`] here (the same products, added in numpy's order).
 ///
 /// # Panics
 /// Where scipy raises: `b` or `a` is empty; `a[0]` is zero; `a` has a single coefficient and `x` is empty (scipy's
@@ -96,8 +97,18 @@ fn lfilter_run(b: &[f64], a: &[f64], z: &mut [f64], x: f64) -> f64 {
 /// returns infinities and NaN; both are refused here like any other zero.
 pub fn lfilter(b: &[f64], a: &[f64], x: &[f64]) -> Vec<f64> {
     let (b, a) = normalised(b, a, x.len());
+    if a.len() == 1 {
+        return fir(&b, x);
+    }
     let mut z = vec![0.0; b.len() - 1];
     x.iter().map(|&v| lfilter_run(&b, &a, &mut z, v)).collect()
+}
+
+/// scipy's road for a single `a` coefficient (`b` already divided by it): `np.convolve(b, x)[:len(x)]`.
+fn fir(b: &[f64], x: &[f64]) -> Vec<f64> {
+    let mut y = convolve_full(b, x);
+    y.truncate(x.len());
+    y
 }
 
 /// `scipy.signal.lfilter(b, a, x, axis=0)` on a stereo signal: each channel filtered on its own, from rest.
@@ -106,6 +117,16 @@ pub fn lfilter(b: &[f64], a: &[f64], x: &[f64]) -> Vec<f64> {
 /// As [`lfilter`].
 pub fn lfilter_stereo(b: &[f64], a: &[f64], x: &[[f64; 2]]) -> Vec<[f64; 2]> {
     let (b, a) = normalised(b, a, x.len());
+    if a.len() == 1 {
+        // np.apply_along_axis: each channel on its own
+        let left: Vec<f64> = x.iter().map(|f| f[0]).collect();
+        let right: Vec<f64> = x.iter().map(|f| f[1]).collect();
+        return fir(&b, &left)
+            .into_iter()
+            .zip(fir(&b, &right))
+            .map(|(l, r)| [l, r])
+            .collect();
+    }
     let mut zl = vec![0.0; b.len() - 1];
     let mut zr = vec![0.0; b.len() - 1];
     x.iter()

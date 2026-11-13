@@ -16,12 +16,9 @@
 //! **The alto's generator and the ALTO SAX.** The sax notes' breath comes from the old alto module's generator,
 //! which the ALTO SAX's voice and part draw from too. The kit makes the fighters' parts before the score starts, and
 //! the ALTO SAX's part measures its voice's level then (`self.g0 = M.inst_gain(M.CFG[k]['pp'])`, a note of the
-//! ALTO SAX's voice drawn from that generator), so in a fight with the ALTO SAX the kit's generator has moved on by
-//! that note before the bed's first sax note. The Studio's ALTO SAX part measures its level at its first tone,
-//! which under this bed comes after the title's sax pads: [`MamboClassic`] therefore asks the music context for the
-//! ALTO SAX's level (cached for the part) just before its own sax notes, so both are drawn in the kit's order.
-//! (The bed alone of a fight with the ALTO SAX, a test of this theme only, would then differ from the kit's, whose
-//! base `Sound` measures nothing; no reference config has one.)
+//! ALTO SAX's voice drawn from that generator), so in a fight with the ALTO SAX the generator has moved on by that
+//! note before the bed's first sax note. The Studio's build does the same: it makes both parts (`Sound::made`)
+//! before any bed method, so this bed draws in the kit's order without knowing who fights.
 
 use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex};
@@ -42,9 +39,6 @@ const H: &str = "mambo";
 /// The PIANO's and the CONTRABASS's Pixel Pitch voice ids, which the bed plays itself.
 const PIANO: &str = "PIANO";
 const CONTRABASS: &str = "CONTRABASS";
-
-/// The fighter whose part measures the alto generator's voice when the kit makes it (`kit/fighters/alto_sax.py`).
-const ALTO_SAX: &str = "ALTO SAX";
 
 /// A key of the kit's `self._c`: the method's tag and its key fields, a duration as `round(dur, 3)` (by its bits;
 /// a rounded zero is +0.0, as Python's `-0.0 == 0.0`).
@@ -191,14 +185,8 @@ impl MamboClassic {
         Ok(x.to_vec())
     }
 
-    /// `self.sax(m, dur, vel)`: the old alto's voice. In a fight with the ALTO SAX its part's level is measured first
-    /// (the module's text says why).
+    /// `self.sax(m, dur, vel)`: the old alto's voice.
     fn sax(&self, ctx: &MusicCtx, m: i32, dur: f64, vel: f64) -> Result<Arc<[f64]>, MusicError> {
-        for cfg in ctx.cfg {
-            if cfg.name == ALTO_SAX {
-                ctx.inst_gain(&cfg.pp)?;
-            }
-        }
         ctx.note(
             ALTO,
             f64::from(m),

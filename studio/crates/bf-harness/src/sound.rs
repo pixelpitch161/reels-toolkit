@@ -9,7 +9,6 @@ use bf_core::show::Show;
 use bf_sound::SR;
 use bf_sound::master::Soundtrack;
 use bf_sound::mix::Mix;
-use bf_sound::traits::BaseSound;
 use bf_sound::voice::PpNoise;
 use bf_sound::wav::sample_i16;
 use bf_testdata::Npz;
@@ -292,10 +291,11 @@ pub fn fighter_soundtrack(
         ff.music.roles.insert(name.to_string(), r.to_string());
     }
     let show = Show::new(rec, &ff).unwrap_or_else(|e| panic!("{name}: the show: {e}"));
-    let mut build = SoundBuild::new(&show, rec, &ff).unwrap_or_else(|e| panic!("{name}: the sound build: {e}"));
     let k = usize::from(swapped);
     assert_eq!(show.names[k], name);
-    build.sounds[1 - k] = Box::new(BaseSound { k: 1 - k });
+    // both real parts are made, then the silent stand-in takes the other side (the kit's harness; ruling M3-R49)
+    let build =
+        SoundBuild::with_stand_in(&show, rec, &ff, 1 - k).unwrap_or_else(|e| panic!("{name}: the sound build: {e}"));
     summarise(&build)
 }
 
