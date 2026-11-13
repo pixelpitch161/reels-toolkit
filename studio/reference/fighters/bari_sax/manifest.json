@@ -1,6 +1,6 @@
 {
  "format": 1,
  "entries": [
-  {"path": "studio/reference/fighters/bari_sax/origin.json", "sha256": "8ebcb97856c5ee43ea7e97dd61a30e1f9a26fffd3c98f205ae13aed1c2977271", "bytes": 31675, "tool": "tools.studio_export.older.origin", "commit": "87383da41d520bcb8ee54c7ccc874b0ca3d089e0", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"}
+  {"path": "studio/reference/fighters/bari_sax/origin.json", "sha256": "98e14e201fb8232b4d85c993c53f74815e72caab352674e834e3588e9ad3dab1", "bytes": 29477, "tool": "tools.studio_export.older.origin", "commit": "5306366d9af60327ce63eae06d3878479b405c23", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"}
  ]
 }

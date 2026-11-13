@@ -22,9 +22,10 @@ Not moved (they draw or play nothing for today's BARI SAX): v1's WINDOW RATTLER 
 including the 1.45 high leap over the swing, drawn by the BASSOON's look), its BOCAL HOOK swirl on the bari.
 
 Picture opt-ins (older/picture_patches.py): ball_after_sprite (the harness), ball_late (over a front rope), rope_press
-and rope_events (the pressed ropes and their spring-back), and two this port adds: ball_under (the swing's smear and
+and rope_events (the pressed ropes and their spring-back), and three this port adds: ball_under (the swing's smear and
 trail, drawn into the ball's own frame array right before the glass: #39 drew them with no 8-bit round trip between) and
-ability_hold (SKANK's and CABLE SNAP's HUD hold, kinds the kit's `_hold` does not list).
+ability_hold (SKANK's and CABLE SNAP's HUD hold, kinds the kit's `_hold` does not list) and shake_more (the crash's
+second jolt).
 
 Sound (#39 audio.py's BARI SAX part, unchanged; bus 'bari sax', #39's 'bari': Gate O's harness renames it, M4-R9;
  gain 1.3, send 0.2,
@@ -369,12 +370,11 @@ class Look(base.Look):
         return None
 
     # ---------------------------------------------------------------- effects (reelkit.fx), in #39's order
-    def fx_setup(self):
-        """the crash's second jolt (#39 adds two shakes per crater: 2.5 at the crash, 1.2 at +0.09 s)"""
-        P = self.P
-        for e in P.EV:
-            if e[1] == 'crater' and e[2] == self.k and e[0] <= P.T_KO:
-                P.SHK.add(e[0] + 0.09, 1.2)
+    def shake_more(self, e):
+        """(opt-in) the crash's second jolt (#39 adds two shakes per crater: 2.5 at the crash, 1.2 at +0.09 s)"""
+        if e[1] == 'crater' and e[2] == self.k and e[0] <= self.P.T_KO:
+            return [(e[0] + 0.09, 1.2)]
+        return []
 
     def fx_event(self, e):
         P, k = self.P, self.k
