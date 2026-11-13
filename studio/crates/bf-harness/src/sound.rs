@@ -293,7 +293,7 @@ pub fn fighter_soundtrack(
     let show = Show::new(rec, &ff).unwrap_or_else(|e| panic!("{name}: the show: {e}"));
     let k = usize::from(swapped);
     assert_eq!(show.names[k], name);
-    // the silent stand-in takes the other side before the parts are made, so it measures no level
+    // both real parts are made, then the silent stand-in takes the other side (the kit's harness; ruling M3-R49)
     let build =
         SoundBuild::with_stand_in(&show, rec, &ff, 1 - k).unwrap_or_else(|e| panic!("{name}: the sound build: {e}"));
     summarise(&build)

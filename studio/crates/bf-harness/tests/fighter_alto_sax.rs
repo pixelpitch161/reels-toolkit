@@ -31,7 +31,10 @@ fn the_first_sweep_is_the_kits_to_the_last_bit() {
 
 /// The kit makes the ALTO SAX's part before the score, and its `__init__` measures the voice's level
 /// (`self.g0 = M.inst_gain(...)`: a note of the alto, drawn from the alto generator). So a build has drawn that note
-/// once the parts are made, before any bed method; with the ALTO SAX as the silent stand-in it has not.
+/// once the parts are made, before any bed method. The kit's harness makes both real parts and only then swaps in
+/// the silent stand-in (ruling M3-R49), so the note is drawn whichever side stands in. The kit, on this fight (seed
+/// 4) with the ALTO SAX swapped out after `import kit.music`: `altosax60_lowpoly._RN.random()` is
+/// `0x1.c0b3a96190b76p-2`.
 #[test]
 fn the_part_measures_its_level_when_it_is_made() {
     use bf_content::SoundBuild;
@@ -47,10 +50,11 @@ fn the_part_measures_its_level_when_it_is_made() {
     let show = Show::new(&rec, &ff).expect("the show");
     let k = show.names.iter().position(|n| n == NAME).expect("the ALTO SAX fights");
     let next = |b: SoundBuild| b.ctx.noise().expect("the noise").1.alto.random();
-    let fresh = bf_sound::voice::PpNoise::start().1.alto.random();
-    assert_ne!(next(SoundBuild::new(&show, &rec, &ff).expect("the build")), fresh);
-    let other = SoundBuild::with_stand_in(&show, &rec, &ff, 1 - k).expect("the build");
-    assert_ne!(next(other), fresh);
-    let silent = SoundBuild::with_stand_in(&show, &rec, &ff, k).expect("the build");
-    assert_eq!(next(silent), fresh);
+    let kit = f64::from_bits(0x3FDC_0B3A_9619_0B76);
+    assert_ne!(bf_sound::voice::PpNoise::start().1.alto.random(), kit);
+    assert_eq!(next(SoundBuild::new(&show, &rec, &ff).expect("the build")), kit);
+    for silent in [k, 1 - k] {
+        let build = SoundBuild::with_stand_in(&show, &rec, &ff, silent).expect("the build");
+        assert_eq!(next(build), kit, "side {silent} the stand-in");
+    }
 }

@@ -190,8 +190,9 @@ impl<'a> SoundBuild<'a> {
     }
 
     /// The build of [`SoundBuild::new`] with side `silent` (0 or 1) the kit's base `Sound`, which plays nothing: a
-    /// fighter's sound gate, whose other side is a silent stand-in. The stand-in takes its place before the parts
-    /// are made, so only the real part's [`Sound::made`] runs (a stand-in measures no level).
+    /// fighter's sound gate, whose other side is a silent stand-in. As the kit's harness does (ruling M3-R49), both
+    /// real parts are made first (their [`Sound::made`], left then right: a level the stand-in's fighter measures
+    /// stays measured, and its draws stay drawn), and only then does the stand-in take its side.
     ///
     /// # Errors
     /// As [`SoundBuild::new`].
@@ -205,9 +206,9 @@ impl<'a> SoundBuild<'a> {
         silent: usize,
     ) -> Result<SoundBuild<'a>, ContentError> {
         assert!(silent < 2, "a side is 0 or 1, not {silent}");
-        let mut build = SoundBuild::unmade(show, rec, ff)?;
+        let mut build = SoundBuild::new(show, rec, ff)?;
         build.sounds[silent] = Box::new(bf_sound::traits::BaseSound { k: silent });
-        build.made()
+        Ok(build)
     }
 
     /// The build before its parts are made.
