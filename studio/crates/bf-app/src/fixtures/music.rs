@@ -18,6 +18,14 @@ pub fn vm() -> ViewModel {
     vm
 }
 
+/// The mock-up's take on the Composed arrangement, the Trombone keeping its written line.
+pub fn composed() -> ViewModel {
+    let mut vm = vm();
+    vm.draft.arrangement = Some(crate::state::COMPOSED.to_string());
+    vm.draft.pinned = Some(vec!["TROMBONE".to_string()]);
+    vm
+}
+
 /// Music before a seed is picked: the base on Music with handicap `[2.0, 0.4]`, no seed and no take, Trombone on
 /// bass, the music seed 417.
 pub fn no_seed() -> ViewModel {

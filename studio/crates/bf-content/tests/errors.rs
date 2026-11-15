@@ -85,7 +85,7 @@ fn unknown_arrangement_is_an_error() {
     let mut ff = EPISODE.ff.clone();
     ff.music.arrangement = "jazz".into();
     // `FightFile::validate` knows the arrangements already, in its words.
-    let want = r#"music.arrangement: "jazz" is not an arrangement (this app has: classic)"#;
+    let want = r#"music.arrangement: "jazz" is not an arrangement (this app has: classic, composed)"#;
     assert_eq!(validate(&ff).unwrap_err().to_string(), want);
     assert_eq!(build_soundtrack(&EPISODE.rec, &ff).unwrap_err().to_string(), want);
 }

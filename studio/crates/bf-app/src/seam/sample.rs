@@ -245,6 +245,8 @@ pub fn pair_music(draft: &Draft) -> PairMusic {
         scale: theme.map_or_else(String::new, |t| t.scale.clone()),
         roles: [0, 1].map(|side| if draft.bass == Some(side) { "bass" } else { "melody" }.to_string()),
         options: Vec::new(),
+        arrangement: "classic".to_string(),
+        pinned: Vec::new(),
     }
 }
 

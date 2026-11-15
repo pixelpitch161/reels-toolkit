@@ -281,6 +281,55 @@ impl ViewModel {
             )
         })
     }
+
+    /// Whether the take plays the Composed arrangement: the owner's pick, else the fight file's own (Classic when
+    /// it names none).
+    pub fn composed(&self) -> bool {
+        let written = self.pair_music.as_ref().map(|m| m.arrangement.as_str());
+        self.draft.arrangement.as_deref().or(written) == Some(COMPOSED)
+    }
+
+    /// Whether the fighter on `side` keeps its line and solo as written under Composed: the owner's pick, else the
+    /// fight file's own list.
+    pub fn pinned(&self, side: usize) -> bool {
+        let name = &self.draft.fighters[side];
+        match (&self.draft.pinned, &self.pair_music) {
+            (Some(list), _) => list.contains(name),
+            (None, Some(m)) => m.pinned.contains(name),
+            (None, None) => false,
+        }
+    }
+
+    /// The take's levels in one line: "Levels: pass", or the first failing check's reason. `None` before the
+    /// take's sound is built.
+    pub fn levels_words(&self) -> Option<String> {
+        let checks = &self.take.music.as_ref()?.checks;
+        Some(match checks.iter().find(|c| !c.pass) {
+            Some(failed) => format!("Levels: {} fails. {}", failed.title, failed.note),
+            None => "Levels: pass".to_string(),
+        })
+    }
+}
+
+/// The arrangement played from the theme's classic bed and the fighters' written lines.
+pub const CLASSIC: &str = "classic";
+/// The arrangement that follows the fight, with lines written for each take.
+pub const COMPOSED: &str = "composed";
+
+/// The music seed after `seed` for "Re-roll music": another one from 1 to 9999, the same each time from the same
+/// seed.
+pub fn next_music_seed(seed: u64) -> u64 {
+    let mut x = seed
+        .wrapping_mul(6_364_136_223_846_793_005)
+        .wrapping_add(1_442_695_040_888_963_407);
+    loop {
+        x ^= x >> 29;
+        let next = x % 9999 + 1;
+        if next != seed {
+            return next;
+        }
+        x = x.wrapping_mul(6_364_136_223_846_793_005).wrapping_add(1);
+    }
 }
 
 /// What the owner does with the render queue.
@@ -326,6 +375,15 @@ pub enum Action {
     UseSeed,
     SetChordLoop(usize),
     SetBass(usize),
+    /// The Music screen's "Arrangement": `classic` or `composed`.
+    SetArrangement(String),
+    /// "Re-roll music": a new music seed, nothing else.
+    RerollMusic,
+    /// "Keep this fighter's line": the fighter on `side` keeps its written line and solo under Composed.
+    SetPinned {
+        side: usize,
+        keep: bool,
+    },
     SetCaptionTab(Platform),
     SetCaption {
         platform: Platform,
@@ -388,6 +446,8 @@ pub(crate) struct MusicKey {
     pub bass: Option<usize>,
     pub chord_loop: usize,
     pub music_seed: u64,
+    pub arrangement: Option<String>,
+    pub pinned: Option<Vec<String>>,
 }
 
 /// The app's state: the view model plus what the screens never show.
@@ -540,6 +600,9 @@ impl AppState {
             Action::UseSeed => self.use_seed(),
             Action::SetChordLoop(i) => self.set_chord_loop(i),
             Action::SetBass(side) => self.set_bass(side),
+            Action::SetArrangement(name) => self.set_arrangement(&name),
+            Action::RerollMusic => self.reroll_music(),
+            Action::SetPinned { side, keep } => self.set_pinned(side, keep),
             Action::SetCaptionTab(platform) => self.vm.caption_tab = platform,
             Action::SetCaption { platform, text } => self.set_caption(platform, text),
             Action::Transport(a) => fx.push(Effect::Player(PlayerCmd::Transport(a))),
@@ -690,6 +753,8 @@ fn empty_draft() -> Draft {
             shorts: String::new(),
         },
         captions_edited: false,
+        arrangement: None,
+        pinned: None,
         base: None,
     }
 }

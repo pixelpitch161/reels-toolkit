@@ -76,6 +76,8 @@ impl AppState {
             bass: d.bass,
             chord_loop: d.chord_loop,
             music_seed: d.music_seed,
+            arrangement: d.arrangement.clone(),
+            pinned: d.pinned.clone(),
         }
     }
 
@@ -406,6 +408,36 @@ impl AppState {
         if can {
             self.vm.draft.bass = Some(side);
         }
+    }
+
+    /// The arrangement, when it is one this app has.
+    pub(super) fn set_arrangement(&mut self, name: &str) {
+        if bf_core::fightfile::ARRANGEMENTS.contains(&name) {
+            self.vm.draft.arrangement = Some(name.to_string());
+        }
+    }
+
+    /// A new music seed; everything else stays.
+    pub(super) fn reroll_music(&mut self) {
+        self.vm.draft.music_seed = super::next_music_seed(self.vm.draft.music_seed);
+    }
+
+    /// Whether the fighter on `side` keeps its written line and solo under Composed.
+    pub(super) fn set_pinned(&mut self, side: usize, keep: bool) {
+        if side > 1 {
+            return;
+        }
+        let name = self.vm.draft.fighters[side].clone();
+        let mut list: Vec<String> = [0, 1]
+            .into_iter()
+            .filter(|&s| self.vm.pinned(s))
+            .map(|s| self.vm.draft.fighters[s].clone())
+            .filter(|n| *n != name)
+            .collect();
+        if keep {
+            list.push(name);
+        }
+        self.vm.draft.pinned = Some(list);
     }
 
     /// The owner's own caption. The fight file has one caption line, so the Instagram and TikTok texts share their

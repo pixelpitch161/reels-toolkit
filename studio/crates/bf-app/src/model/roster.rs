@@ -159,6 +159,10 @@ pub struct PairMusic {
     pub roles: [String; 2],
     /// The theme options it sets, by name; an option it leaves out is at the theme's default.
     pub options: Vec<(String, OptionSet)>,
+    /// Its arrangement (`classic` or `composed`; empty reads as `classic`).
+    pub arrangement: String,
+    /// The fighters whose lines it keeps as written under Composed.
+    pub pinned: Vec<String>,
 }
 
 /// The part that is the bass line.

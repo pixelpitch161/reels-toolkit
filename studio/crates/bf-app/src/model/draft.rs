@@ -28,6 +28,14 @@ pub struct Draft {
     /// Which fighter (0 or 1) plays bass, if either can.
     pub bass: Option<usize>,
     pub music_seed: u64,
+    /// The arrangement the owner picked on the Music screen (`classic` or `composed`); `None` plays the fight file's
+    /// own.
+    #[serde(default)]
+    pub arrangement: Option<String>,
+    /// The fighters (roster names) whose lines and solos are kept as written under Composed, when the owner has
+    /// said; `None` keeps the fight file's own list.
+    #[serde(default)]
+    pub pinned: Option<Vec<String>>,
     pub captions: CaptionTexts,
     /// The owner has typed in a caption, so drafted captions no longer replace it.
     pub captions_edited: bool,
@@ -63,6 +71,8 @@ mod tests {
                 shorts: String::new(),
             },
             captions_edited: false,
+            arrangement: None,
+            pinned: None,
             base: None,
         }
     }

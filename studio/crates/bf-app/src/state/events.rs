@@ -158,6 +158,8 @@ impl AppState {
             music_seed: 1,
             captions: self.vm.draft.captions.clone(),
             captions_edited: false,
+            arrangement: None,
+            pinned: None,
             base: None,
         };
         self.vm.roster = Some(roster);
