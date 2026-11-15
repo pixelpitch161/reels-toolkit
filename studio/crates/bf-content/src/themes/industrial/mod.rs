@@ -11,6 +11,7 @@
 //! the episode's rule (the pipes on the chord tones from G4 to A5, the grinder's power chord from D4 up).
 
 mod classic;
+pub mod layers;
 
 use bf_core::dmath::{self, PI};
 use bf_core::harmony::{HarmonyError, parse_chord};
