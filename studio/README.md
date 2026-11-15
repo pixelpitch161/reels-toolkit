@@ -3,6 +3,10 @@
 A native Rust engine for BALLFIGHT episodes: the fight, the picture, the sound and the export, ported from the Python
 kit in `projects/ballfight/` and checked against it. Design: `docs/studio/2026-11-10-ballfight-studio-design.md`.
 
+**Rust is now the source of truth for BALLFIGHT. The Python kit in `projects/ballfight/` is a frozen archive: it is
+kept so old episodes replay, and no new work goes there.** The kit's README is left as it is; `docs/studio/HANDOFF.md`
+gives the one line the owner may ask a session to add to it.
+
 ## Crates
 
 | Crate | Job | Depends on |
@@ -15,7 +19,8 @@ kit in `projects/ballfight/` and checked against it. Design: `docs/studio/2026-1
 | `bf-content` | Fighters, themes, the registry and the pair rules | sim, picture, sound |
 | `bf-export` | Checks, encode, render job, output folders | story, picture, sound, content |
 | `bf-cli` | The `ballfight` command line | all |
-| `bf-app` | BALLFIGHT Studio, the desktop app (egui): the five steps, the live preview with sound, the shortlist, the render queue, the Library and Settings, on the real engine (`--fixtures` runs it on sample data) | core, story, sim, picture, sound, content, export |
+| `bf-pack` | Packaging: the pinned ffmpeg and its checked download, the package folder, the install and its shortcuts, removal, `update.toml` and version numbers; the `ballfight-pack` command | nothing |
+| `bf-app` | BALLFIGHT Studio, the desktop app (egui): the five steps, the live preview with sound, the shortlist, the render queue, the Library and Settings, on the real engine (`--fixtures` runs it on sample data), its start-up checks, fault reports and updates | core, story, sim, picture, sound, content, export, pack |
 
 ## Building and testing
 
@@ -125,10 +130,43 @@ BARI SAX, DRUMS, HARP, SYNTH, TURNTABLES, UKULELE, VIOLA, VIOLIN) and 12 older t
 the eye and the ear (the owner's decision of Nov 14), each older fighter starting on its own home theme. A pair is
 offered only the themes whose music has every hit its fighters' parts play (no Dark disco or Heist for a pair with
 the TROMBONE, ORGAN, TUBA, EUPHONIUM or HORN, which play a big drum hit those two lack). The seed finder balances an
-uneven pairing (Auto-balance). The Studio is the source of truth for BALLFIGHT; the kit and its README are left as
-they are. Known limits: `docs/studio/HANDOFF.md`. There is no installer yet (milestone 6).
+uneven pairing (Auto-balance). New pairings start on the Composed music (the story-driven arrangement with the
+composer's lines and solos); the series' own match-ups and imported episodes keep Classic, and the Music screen
+switches between them. Known limits: `docs/studio/HANDOFF.md`. The owner double-clicks the installed copy (see
+Packaging below); a build in `target\` is a build session's own copy.
 `--fixtures` runs the same window on sample data, `--data-dir <folder>` keeps its settings, queue and cache in
 another folder, and `--smoke` opens it, paints 30 frames and closes it. Details: `crates/bf-app/README.md`.
+
+## Packaging
+
+The owner's copy is installed by `ballfight-pack` (crate `bf-pack`; details in `crates/bf-pack/README.md`).
+
+- **The package** is the program folder as installed: `ballfight-studio.exe`, `ballfight.ico`, `ffmpeg\` (the pinned
+  ffmpeg with its licence and `ABOUT.txt`), `guide\` (from `packaging/guide`) and `MANIFEST.txt` (every file's size
+  and SHA-256). `ballfight-pack package --exe <ballfight-studio.exe> --out <new folder>` makes one;
+  `ballfight-pack install --exe <ballfight-studio.exe> --from <the owner's clone>` installs it into
+  `%LOCALAPPDATA%\Programs\BALLFIGHT Studio` with a desktop and a Start menu shortcut (no installer, no admin rights,
+  nothing in the registry).
+- **The pin.** `packaging/ffmpeg.toml` names the ffmpeg archive (address, size, SHA-256) and each file taken from it.
+  `ballfight-pack fetch-ffmpeg --cache <folder> --out <folder>` downloads and checks it. Nothing downloaded is ever
+  committed.
+- **The release job.** CI (`.github/workflows/studio.yml`) makes the package on every push and checks every file
+  against its manifest and the pin. It uploads nothing: with the update route in use, the owner's PC builds its own.
+- **The tags.** A version reaches the owner only through a tag `studio-v<version>` (or `studio-v<version>-rc.N`)
+  pushed on a green commit whose `[workspace.package] version` is that version. The steps are in
+  `docs/studio/HANDOFF.md` ("How a version reaches the owner").
+
+**The update route in use: A, build on this PC** (decision D1 of
+`docs/studio/2026-11-11-ballfight-studio-plan-m6-packaging.md`). The Update button fetches the newest release tag into
+the app's own copy of the repo (`%LOCALAPPDATA%\BALLFIGHT Studio\data\source`), builds it with `cargo build --release
+--locked -p bf-app` at below-normal priority, checks that the new exe names the tag's version and commit, and swaps
+it in on "Restart now". The app never handles a credential: git signs in by itself.
+
+**Switching to route B** (build in the cloud, download): add the download source (`bf-app/src/update/download.rs`,
+the packaging plan's Task B1), a release job that attaches the package and its `SHA256SUMS.txt` to a GitHub Release
+for each tag, and `route = "download"` in `update.toml`. Everything after "a new exe exists" (staging, the check,
+the swap, "Go back") stays as it is.
+
 ## Determinism
 
 Results must be bit-identical on every PC: fights, frames and sound. The encoded mp4 is the one exception: x264

@@ -1,61 +1,172 @@
 # BALLFIGHT Studio: handoff brief (updated Nov 15)
 
-## Status (Nov 15): 30 fighters, 26 themes, every pairing starts
+## Status (Nov 15): the packaged Studio, 30 fighters, 26 themes, the music system
 
-**What exists.** BALLFIGHT Studio is a native Windows program in the `studio/` folder of this repo: the engine (the
-fight, the story and seed search, the balance, the picture, the sound, the quality checks and the video encode)
-and the app's window on top of it, with its five steps (Match-up, Balance, Seeds, Music, Render), a live preview
-with sound, the shortlist of seeds, the render queue, the Library of finished videos and Settings. Everything it
-shows and saves is made by the real engine. The Studio is now the source of truth for BALLFIGHT: the Python kit in
-`projects/ballfight/` is left exactly as it is and its README is not updated.
+**Rust is now the source of truth for BALLFIGHT. The Python kit in `projects/ballfight/` is a frozen archive: it is
+kept so old episodes replay, and no new work goes there.** Its README is not edited by this build (nothing under
+`projects/` is). If the owner asks, a session may add this one line to the top of `projects/ballfight/README.md`, and
+nothing else:
 
-**The roster today.**
+> This kit is a frozen archive: BALLFIGHT is now made with BALLFIGHT Studio (`studio/`), and no new work goes here.
 
-- **30 fighters, all offered in the app.** The 20 kit fighters (ACOUSTIC, ALTO SAX, BASS CLARINET, BASS DRUM,
-  BASSOON, CELLO, CLARINET, CONTRABASS, ELECTRIC, EUPHONIUM, FLUTE, HORN, OBOE, ORGAN, PIANO, SOUSAPHONE, TENOR SAX,
-  TROMBONE, TRUMPET, TUBA) are proven exact against the Python kit. The 10 older fighters (ACCORDION, BAGPIPES,
-  BARI SAX, DRUMS, HARP, SYNTH, TURNTABLES, UKULELE, VIOLA, VIOLIN) are ported "close enough for the eye test", as
-  the owner decided on Nov 14: they fight, look and sound like themselves, but are not checked bit for bit against
-  their old episodes.
-- **26 themes.** The 14 kit themes are exact (baroque storm, big top, bossa noir, brass trailer, dark disco, dark
-  drumline, dark tango, heist, horror trap, hot jazz, mambo, prog duel, second line, stadium rock). The 12 older
-  themes are ported by ear (Balkan fire, brass house, dark breakbeat, drift phonk, gothic horror, industrial, noir
-  jazz, orchestral drill, sea shanty, ska-punk, spaghetti western, villain march).
-- **Every one of the 870 pairings starts** (30 fighters, each against each of the other 29, either side). Each
-  older fighter starts on its own home theme. A pair is offered only the themes whose music has every hit its
-  fighters play.
-- **The seed finder balances.** When a pairing is uneven, Auto-balance sets the handicap so the fight is fair, and
-  the search then finds seeds that fit the story. GUITAR and SAX stay retired and are never offered.
+**What the owner has.** BALLFIGHT Studio, a Windows program installed in a plain folder with a desktop and a Start
+menu shortcut (no installer, no admin prompt). It opens on its five steps (Match-up, Balance, Seeds, Music, Render),
+with a live preview with sound, the shortlist of seeds, the render queue, the Library of finished videos and
+Settings. Everything it shows and saves is made by the real engine. It comes with its own ffmpeg and a one-page
+guide (`guide\index.html` in the program folder, written with the app's own pictures). It updates itself: the
+Update button in the toolbar, then "Build version X", then "Restart now", and "Go back" to the version before.
+Removal is a button in Settings; it keeps settings, the queue, logs and every video.
 
-**What the owner can make now.** Any of the 870 pairings, on any theme the pair is offered: pick the two fighters,
-balance, pick a seed from the shortlist with its picture and sound, and render a checked 61 s video with its cover
-and caption into `Videos\BALLFIGHT`.
+**What it can make.** Any of the 870 pairings (30 fighters, each against each of the other 29, either side), on any
+theme the pair is offered: pick the two fighters, balance, pick a seed from the shortlist with its picture and
+sound, choose the music, and render a checked 61 s video with its cover and caption into `Videos\BALLFIGHT`.
 
-**Proof that it matches the kit** (details in `docs/studio/m3-measurements.md`). Every kit pairing passed its pair
-gate (17 pairs plus milestone 1's FLUTE vs TROMBONE). Rendered from the kit's own fights, 17 of the 18 kit episodes
-pass all 15 checks; the 18th is TROMBONE vs HORN (see the limits below). Of the six crossover pairings, the two the
-kit can fit also render with all 15 checks.
+**The roster** (counted from the registry: `bf_content::registry::PORTED` holds 30 names,
+`bf_content::themes::PORTED_THEMES` 26).
 
-**How fast it is** (milestones 1 and 2, this PC): a whole 61 s video takes about 82 seconds (goal under 60 s; most of
-it is the video encoder); the seed search runs about 6,000 to 7,000 fights a second.
+- **The 20 kit fighters are exact** against the Python kit: ACOUSTIC, ALTO SAX, BASS CLARINET, BASS DRUM, BASSOON,
+  CELLO, CLARINET, CONTRABASS, ELECTRIC, EUPHONIUM, FLUTE, HORN, OBOE, ORGAN, PIANO, SOUSAPHONE, TENOR SAX, TROMBONE,
+  TRUMPET, TUBA.
+- **The 10 older fighters were ported "close enough for the eye test"**, as the owner decided on Nov 14: ACCORDION,
+  BAGPIPES, BARI SAX, DRUMS, HARP, SYNTH, TURNTABLES, UKULELE, VIOLA, VIOLIN. They fight, look and sound like
+  themselves, but are not checked bit for bit against their old episodes. Each starts on its own home theme.
+- **The 14 kit themes are exact**: baroque storm, big top, bossa noir, brass trailer, dark disco, dark drumline, dark
+  tango, heist, horror trap, hot jazz, mambo, prog duel, second line, stadium rock.
+- **The 12 older themes were ported the same way, by eye and ear**: Balkan fire, brass house, dark breakbeat, drift
+  phonk, gothic horror, industrial, noir jazz, orchestral drill, sea shanty, ska-punk, spaghetti western, villain
+  march.
+- A pair is offered only the themes whose music has every hit its fighters play. When a pairing is uneven,
+  Auto-balance sets the handicap so the fight is fair. GUITAR and SAX stay retired: their roster entries are kept so
+  old episodes replay, and they are never offered.
 
-**How it is started today.** There is no installer yet (milestone 6). The program is built from the code:
-`cargo build --release -p bf-app` in the `studio` folder makes `studio\target\release\ballfight-studio.exe`, which is
-the app. Its settings and queue live in `%APPDATA%\BALLFIGHT Studio`, its shortlist cache in
-`%LOCALAPPDATA%\BALLFIGHT Studio`. It needs ffmpeg to save videos (Settings says whether it found it). The
-`ballfight` command line (`studio/README.md`) runs every step without the window.
+**The music system** (milestone 5, `docs/studio/2026-11-15-ballfight-studio-plan-m5-music.md`). Each fight has an
+arrangement, switched on the Music screen:
 
-**What is left.**
+- **Composed**, the default for every new pairing: the theme's layered arrangement follows the fight's story (fills
+  at lead changes, a breakdown at a desperation move, everything in for the final exchange, the tape stop at the
+  K.O., the victory section, the build back into frame 0), and each fighter's line and victory solo are written by
+  the composer from its musical personality and the music seed. The Music screen re-rolls the music seed and can
+  keep one fighter's line as it is.
+- **Classic**: each theme's ported bed with the fighters' kit lines and solos. The series' own match-ups (a kit pair,
+  an older episode's pair, and every imported episode) keep Classic, so they sound as they always did. Classic is
+  one click away for any other fight.
 
-1. **Milestone 5, the music system: waiting for the owner's choice.** The three options are: skip it for now
-   (recommended), a lean story layer on top of today's themes, or a full composer. Nothing is built until the owner
-   picks one.
-2. **Milestone 6, the guide and the release:** the installer, the Update button and the owner's guide (plan:
-   `docs/studio/2026-11-11-ballfight-studio-plan-m6-packaging.md`, tasks 17 to 19 still to do).
-3. **Milestone 3's last two tasks** (62 and 63): the long measurement runs and the tidy list. The measurements file
+**Proof that it matches the kit** (`docs/studio/m3-measurements.md`). Every kit pairing passed its pair gate (17
+pairs plus milestone 1's FLUTE vs TROMBONE). Rendered from the kit's own fights, 17 of the 18 kit episodes pass all
+15 checks; the 18th is TROMBONE vs HORN (see the limits below).
+
+**How fast it is** (this PC, `docs/studio/m6-measurements.md`): the seed search runs about 6,000 to 7,000 fights a
+second; a whole 61 s video takes about 82 seconds with "Best quality" (most of it is the video encoder) and less
+with "Faster" (Settings).
+
+## Where the program and its data live
+
+The installed program (`bf-pack`, `studio/crates/bf-pack/README.md`):
+
+```
+%LOCALAPPDATA%\Programs\BALLFIGHT Studio\
+  ballfight-studio.exe   ballfight.ico   update.toml   MANIFEST.txt
+  ffmpeg\ffmpeg.exe  ffmpeg\ffprobe.exe  ffmpeg\LICENSE.txt  ffmpeg\ABOUT.txt
+  guide\index.html  guide\pictures\*.png
+  .next\       (only while an update waits for a restart)
+  .previous\   (the version before the last update, for "Go back")
+%APPDATA%\Microsoft\Windows\Start Menu\Programs\BALLFIGHT Studio.lnk
+<Desktop>\BALLFIGHT Studio.lnk
+```
+
+The app's data:
+
+```
+%APPDATA%\BALLFIGHT Studio\config\     settings.toml  queue.json
+%LOCALAPPDATA%\BALLFIGHT Studio\cache\  shortlists\
+%LOCALAPPDATA%\BALLFIGHT Studio\data\   logs\  source\  build\  downloads\
+```
+
+`logs\` holds `start.txt` (what the last start found: version, graphics card, ffmpeg, output folder, any error) and
+`crash-YYYYMMDD-HHMMSS.txt` fault reports (the newest 20). When something goes wrong, ask the owner for those files.
+`source\` is the app's own copy of the repo for updates, `build\` its build folder (several GB), `downloads\` the
+ffmpeg archive. Videos go to `Videos\BALLFIGHT\<a>_vs_<b>\` unless Settings says otherwise.
+
+**How the owner starts it:** the owner double-clicks the app. Build sessions use the `ballfight` command line and
+the app's options as `studio/README.md` and `studio/crates/bf-app/README.md` describe.
+
+## How a version reaches the owner
+
+Updates follow release tags, not a branch (route A of the packaging plan's decision D1: the app builds the new
+version on this PC; no download, no token in the app).
+
+1. Bump `[workspace.package] version` in `studio/Cargo.toml` (and let cargo update `Cargo.lock`).
+2. Add the version's frozen saved files (the rule for `tests/compat/<version>/`, below).
+3. Run the gates (below), merge, and wait for CI (`.github/workflows/studio.yml`) to be green on that commit.
+4. Push the tag `studio-v<version>` on that commit (`studio-v<version>-rc.1` for a candidate).
+5. The owner clicks Update in the app. The app fetches the newest `studio-v*` tag into `data\source`, runs
+   `cargo build --release --locked -p bf-app` there at below-normal priority, checks that the new exe names the
+   tag's version and commit, and offers "Restart now".
+
+A tag's version must equal the workspace version. A version tagged twice is not offered again (it is not newer). A
+pre-release is offered only to an app that is itself a pre-release of that version or older.
+
+**The rule for `tests/compat/<version>/`.** Every release adds a folder for its own version, made once with the
+app's own code and then frozen; no folder is ever rewritten. From `studio/`:
+`BF_BLESS=1 cargo test --release -p bf-app --test compat make_this_versions_files` (it refuses a folder that already
+holds files), then add the new folder's SHA-256s to `FROZEN` in `crates/bf-app/tests/compat.rs`, as
+`tests/compat/0.1.0/README.md` describes.
+
+## What a build session needs on this PC
+
+- Git, signed in to GitHub (the credential manager is already set up), and rustup. The toolchain is pinned in
+  `studio/rust-toolchain.toml` (1.99.1); rustup fetches it by itself.
+- Work in `studio/`. The gates before any commit: `cargo fmt --check`, `cargo clippy --workspace --all-targets -- -D
+  warnings`, `cargo test --workspace`; before a release also `cargo test --workspace --release` and the ignored tests
+  by name that `studio/README.md` lists.
+- The reference Python (`.studio-tools\py313`) only for the exact route below.
+- **Nothing under `projects/`, `reelkit/` or `series/` is ever edited.** `git status --short projects reelkit series`
+  must be empty before every commit.
+
+## How to add a fighter
+
+The default is the **quick route** the 10 older fighters used (the owner's Nov 14 decision, ruling M4-R16): a
+faithful-looking, faithful-sounding port, judged by eye and ear. The seed finder handicaps pairs to be fair, so a
+new fighter's fights need not match anything bit for bit. A theme is added the same way (its folder in
+`bf-content/src/themes/`, its bed, its arrangement table, its card, `PORTED_THEMES`).
+
+1. **Kinds.** Any new weapon or ability is a new module (`bf-core/src/roster/kinds|abilities/` and
+   `bf-sim/src/kinds|abilities/`); existing ones are not changed, so no existing fight changes.
+2. **Its folder** in `studio/crates/bf-content/src/fighters/<slug>/`, shaped like a merged one (`organ`, `contrabass`,
+   `bagpipes`, `bari_sax`, `turntables`): its look, voice and part, card, title pattern, and its musical personality
+   (`personality.rs`, 2 to 4 signature motifs). Its colour is a new, unique one in the table of
+   `docs/ballfight/RULES.md`.
+3. **Offer it:** add the name to `PORTED` in `bf-content/src/registry.rs`, and give it a starter pairing and a home
+   theme in `bf-content/src/starter.rs`, as the older fighters have.
+4. **Proof, small:** a short test file like `studio/crates/bf-sim/tests/violin_quick.rs` (its fights against 3 or 4
+   different fighters run to the end and a K.O. happens in a normal share of seeds), run with
+   `cargo test -p bf-sim --test <slug>_quick`; `cargo test -p bf-content` (the registry and personality tests take
+   the new name). Then from `studio/`, with a fight file for the new pairing:
+   `ballfight search <fight file> --stop 10`, then `ballfight render <fight file> --out <folder> --seed N` with one
+   of its fits. Look at a few frames (the card, mid-fight with an ability, the K.O.; `ballfight frame <fight file>
+   --frame N --out <file.png>`) next to the old episode's look; the render's own checks pass, or the report says
+   which one fails and why that is acceptable.
+5. `cargo fmt`, `cargo clippy --workspace --all-targets -- -D warnings`, `cargo test --workspace`, then the release
+   steps above.
+
+**The exact route (optional)**, used by the 20 kit fighters in milestone 3, only when a fighter must match a Python
+reference bit for bit: export its references from the frozen kit (`python -m tools.studio_export fighter_<slug>`,
+then `cache fighters/<slug>`, with the Python and environment of `studio/README.md`; an export reads the kit and
+never writes to it), then pass the gates of
+`docs/studio/2026-11-11-ballfight-studio-plan-m3-kit-roster.md` Task 6 step 5: `cargo test -p bf-sim --test
+fighter_<slug>` (and with `-- --include-ignored`), `cargo test --release -p bf-sim --test fighter_<slug> stats`,
+`cargo test -p bf-content --test look_<slug> --test voice_<slug> --test sound_<slug>` (and with
+`--include-ignored`), and milestone 1's `replay`, `golden_frames` and `stems` unchanged.
+
+## What is left
+
+1. **Milestone 6's last steps:** the user guide and its pictures (Task 17, being written now) and the release
+   itself with its checklist (Task 19, version 1.0.0), both in
+   `docs/studio/2026-11-11-ballfight-studio-plan-m6-packaging.md`.
+2. **Milestone 3's last two tasks** (62 and 63): the long measurement runs and the tidy list. The measurements file
    says which sections are still empty and why.
 
-**Known limits** (from the milestone 3 and 4 ledgers):
+## Known limits
 
 - **TROMBONE vs HORN on brass trailer has no seed that passes every check.** The kit's own fight (seed 140) and its
   first ten fits all fail the loudness check: after a late K.O. the brass trailer ending is too quiet. The kit gives
@@ -74,10 +185,14 @@ the app. Its settings and queue live in `%APPDATA%\BALLFIGHT Studio`, its shortl
 - **A fight the Studio runs itself is its own fight**: it matches the kit's fight for at least the first 25 seconds,
   then tiny rounding differences take over (by design).
 - **The preview's speed tests can fail when the PC is busy**; they pass on a quiet PC.
+- **The folder dialog may open behind the app** (it has no parent window; `studio/crates/bf-app/README.md`).
+- **The exe's own icon in Explorer** is Windows' generic one; the shortcuts and the window have the app's icon.
 
-The owner is building the BALLFIGHT software in its own project. **Start here, then read the files
-below in this order.** Everything about how a fight is simulated, drawn, scored and rendered already exists in this
-repo as the episode kit; the software is a front end + packaging on top of it, not a rewrite.
+## Background from before the port (history)
+
+The sections below were written before the Studio existed, when the plan was a front end on top of the Python kit.
+They are kept for the series rules and the reading list; where they speak of the Python kit as the engine, the
+Studio has replaced it.
 
 ## 1. Read these (in order, ~600 lines total)
 
@@ -88,7 +203,7 @@ repo as the episode kit; the software is a front end + packaging on top of it, n
    crossover rules, retired fighters, no episode number, no approval waits).
 4. `docs/PLAYBOOK.md`: the video rules behind them (61.0 s, 1080x1920, 30 fps, safe zone, loop point, loudness, flashes).
 5. One finished kit episode end to end: `projects/ballfight/examples/flute_vs_trombone/` (a ~60-line config) and its
-   episode folder, to see a config → mp4 run.
+   episode folder, to see a config to mp4 run.
 
 Don't read the other ~55 idea files, logs or old episode folders unless a task needs one (they're history).
 
@@ -129,7 +244,7 @@ Don't read the other ~55 idea files, logs or old episode folders unless a task n
 - PC specs: Windows version, CPU cores, RAM, free disk (a render keeps ~1.2 GB of raw frames), GPU (not needed).
 - Where outputs go (default `Videos\BALLFIGHT\<a>_vs_<b>\`) and what each export includes (mp4, caption.txt, config).
 - How much control they want in v1: fighter pick, sides, mood, tempo, handicap slider / auto-balance, seed browser,
-  schematic preview, history (PLAN.md's list), and anything later (arenas, 3–4 fighter brawls, tournaments, the
+  schematic preview, history (PLAN.md's list), and anything later (arenas, 3 or 4 fighter brawls, tournaments, the
   "all instruments vs the band director" boss fight from `docs/ideas/requests.md`).
 - Whether the app stays in this repo (recommended: it imports the kit directly) and how they'll get updates (git pull).
 - Whether new fighters / moods will still come from building sessions (yes so far: the ideas chat drafts, a session builds,
