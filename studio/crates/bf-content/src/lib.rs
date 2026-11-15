@@ -9,6 +9,7 @@
 //! before any fight exists ([`title_preview`]).
 
 mod cards;
+pub mod composer;
 mod error;
 pub mod fighters;
 mod pair_rules;
