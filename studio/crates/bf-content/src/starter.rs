@@ -394,6 +394,20 @@ fn episodes() -> &'static [EpisodeFight] {
     })
 }
 
+/// The pairs that start from an older episode config (its theme offered), as written: left then right.
+pub fn episode_pairs() -> Vec<[&'static str; 2]> {
+    episodes()
+        .iter()
+        .filter_map(|e| {
+            let [a, b] = [e.ff.fighters.first()?, e.ff.fighters.get(1)?];
+            let names = available();
+            let a = names.iter().copied().find(|n| n == a)?;
+            let b = names.iter().copied().find(|n| n == b)?;
+            episode_pair(a, b).map(|_| [a, b])
+        })
+        .collect()
+}
+
 /// An older fighter's own episode config: its newest one by episode number whose theme is offered.
 fn own_episode(name: &str) -> Option<&'static EpisodeFight> {
     episodes()

@@ -125,6 +125,21 @@ fn make_roster() -> Roster {
             })
         })
         .collect();
+    let episode_pairs = bf_content::episode_pairs()
+        .into_iter()
+        .flat_map(|[a, b]| [[a, b], [b, a]])
+        .filter_map(|[a, b]| {
+            let ff = bf_content::starter(a, b).ok()?;
+            let fighters = [a.to_string(), b.to_string()];
+            Some(KitPair {
+                roles: convert::written_parts(&ff, &fighters),
+                handicap: [*ff.handicap.first()?, *ff.handicap.get(1)?],
+                fighters,
+                theme: ff.music.theme.clone(),
+                chord_loop: ff.music.chord_loop.clone(),
+            })
+        })
+        .collect();
     Roster {
         fighters,
         themes,
@@ -132,6 +147,7 @@ fn make_roster() -> Roster {
         start: START.map(str::to_string),
         app_version: env!("CARGO_PKG_VERSION").to_string(),
         kit_pairs,
+        episode_pairs,
     }
 }
 
