@@ -10,6 +10,7 @@
 //! `cargo test -p bf-app --release --test ui real::a_whole_video_with_the_real_engine -- --ignored`.
 
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::RecvTimeoutError;
 use std::sync::{Arc, Mutex};
 use std::thread::JoinHandle;
@@ -35,12 +36,33 @@ use crate::common::{REF, app_harness, gpu};
 const TICK: Duration = Duration::from_millis(20);
 /// How long the relay waits for a command before it passes the engine's events on.
 const RELAY_TICK: Duration = Duration::from_millis(5);
+/// How long dropping the relay waits for its thread to end.
+const RELAY_END: Duration = Duration::from_secs(30);
 
 thread_local! {
     /// The commands the relay of this test's app held back, looked at by every wait.
     static HELD: std::cell::RefCell<Option<Refused>> = const { std::cell::RefCell::new(None) };
     /// When this test must have ended, at the latest.
     static DEADLINE: std::cell::Cell<Option<Instant>> = const { std::cell::Cell::new(None) };
+    /// How the relay of this test's app is doing, looked at by every wait.
+    static LIFE: std::cell::RefCell<Option<Arc<Life>>> = const { std::cell::RefCell::new(None) };
+}
+
+/// How the relay thread is doing: whether it has ended, and whether by a panic.
+#[derive(Default)]
+struct Life {
+    ended: AtomicBool,
+    panicked: AtomicBool,
+}
+
+/// Held by the relay thread: marks the relay ended when the thread ends, by a return or by a panic.
+struct Ending(Arc<Life>);
+
+impl Drop for Ending {
+    fn drop(&mut self) {
+        self.0.panicked.store(std::thread::panicking(), Ordering::SeqCst);
+        self.0.ended.store(true, Ordering::SeqCst);
+    }
 }
 
 /// A fresh folder under the system temp folder, removed when dropped: the settings, the queue, the shortlists and
@@ -75,9 +97,13 @@ type Refused = Arc<Mutex<Vec<Command>>>;
 
 /// The real engine behind the test's own seam: commands from the app pass through on their way to the engine,
 /// except `PickFolder` and `RevealFolder`, which are kept in `refused` and never passed on; the engine's events are
-/// passed back and wake the app. When the engine stops, so does this, so `BfApp::close` sees it stop.
+/// passed back and wake the app. When the engine stops, so does this, so `BfApp::close` sees it stop. Dropping it
+/// (also while a failed test unwinds, with the app still open) ends the relay and so the engine, and waits for the
+/// relay's thread a bounded time: a panic there fails the test.
 struct Watched {
     refused: Refused,
+    life: Arc<Life>,
+    quit: Arc<AtomicBool>,
     relay: Option<JoinHandle<()>>,
 }
 
@@ -87,8 +113,16 @@ impl Watched {
         let real = engine::spawn(Arc::new(|| {}), config);
         let refused: Refused = Arc::default();
         let held = refused.clone();
+        let life: Arc<Life> = Arc::default();
+        let quit = Arc::new(AtomicBool::new(false));
+        let (ending, quitting) = (Ending(life.clone()), quit.clone());
         let relay = std::thread::spawn(move || {
+            let _ending = ending;
             loop {
+                // The test is over (or failed): dropping `real` ends the engine.
+                if quitting.load(Ordering::SeqCst) {
+                    return;
+                }
                 match side.commands.recv_timeout(RELAY_TICK) {
                     Ok(c @ (Command::PickFolder { .. } | Command::RevealFolder { .. })) => {
                         held.lock().unwrap().push(c);
@@ -113,6 +147,8 @@ impl Watched {
             app_end,
             Watched {
                 refused,
+                life,
+                quit,
                 relay: Some(relay),
             },
         )
@@ -127,8 +163,21 @@ impl Watched {
 
 impl Drop for Watched {
     fn drop(&mut self) {
-        if let Some(relay) = self.relay.take() {
-            let _ = relay.join();
+        let Some(relay) = self.relay.take() else {
+            return;
+        };
+        self.quit.store(true, Ordering::SeqCst);
+        let deadline = Instant::now() + RELAY_END;
+        while !relay.is_finished() && Instant::now() < deadline {
+            std::thread::sleep(TICK);
+        }
+        // A test already failing keeps its own message: a second panic would abort the run.
+        if std::thread::panicking() {
+            return;
+        }
+        assert!(relay.is_finished(), "the engine relay did not end within {RELAY_END:?}");
+        if let Err(panic) = relay.join() {
+            std::panic::resume_unwind(panic);
         }
     }
 }
@@ -157,6 +206,7 @@ fn real_app<'a>(temp: &Temp, workers: usize) -> (Harness<'a, BfApp>, Relay) {
         let (engine, w) = Watched::start(Arc::new(move || ctx.request_repaint()), config);
         let refused = w.refused.clone();
         HELD.with(|h| *h.borrow_mut() = Some(refused));
+        LIFE.with(|l| *l.borrow_mut() = Some(w.life.clone()));
         *keep.lock().unwrap() = Some(w);
         BfApp::new(
             cc,
@@ -188,10 +238,33 @@ fn close(mut harness: Harness<'_, BfApp>, watched: &Relay) {
 }
 
 /// Steps the app, looking again every 20 ms, until `done` holds; fails with `what` after `seconds`, at once when the
-/// app asked for a window outside it (the relay held the command back), and when the test's own deadline has passed.
+/// app asked for a window outside it (the relay held the command back), at once when the relay has ended (by a
+/// panic, or because the engine stopped), and when the test's own deadline has passed. Each message names the
+/// problems the app shows, so a panic the engine caught and reported is in it.
 fn wait_until(harness: &mut Harness<'_, BfApp>, what: &str, seconds: u64, done: impl Fn(&Harness<'_, BfApp>) -> bool) {
     let deadline = Instant::now() + Duration::from_secs(seconds);
     while !done(harness) {
+        let shown: Vec<String> = harness
+            .state()
+            .state
+            .vm
+            .notices
+            .iter()
+            .map(|n| n.text.clone())
+            .collect();
+        LIFE.with(|l| {
+            if let Some(life) = &*l.borrow() {
+                assert!(
+                    !life.ended.load(Ordering::SeqCst),
+                    "while waiting for {what}, the engine relay ended ({}); the app shows {shown:?}",
+                    if life.panicked.load(Ordering::SeqCst) {
+                        "it panicked"
+                    } else {
+                        "the engine stopped"
+                    }
+                );
+            }
+        });
         HELD.with(|h| {
             if let Some(refused) = &*h.borrow() {
                 let refused = refused.lock().unwrap();
@@ -204,10 +277,13 @@ fn wait_until(harness: &mut Harness<'_, BfApp>, what: &str, seconds: u64, done: 
         if let Some(end) = DEADLINE.with(std::cell::Cell::get) {
             assert!(
                 Instant::now() < end,
-                "the test ran past its deadline while waiting for {what}"
+                "the test ran past its deadline while waiting for {what}; the app shows {shown:?}"
             );
         }
-        assert!(Instant::now() < deadline, "waited {seconds} s for {what}");
+        assert!(
+            Instant::now() < deadline,
+            "waited {seconds} s for {what}; the app shows {shown:?}"
+        );
         harness.step();
         std::thread::sleep(TICK);
     }
@@ -287,13 +363,14 @@ fn the_real_match_up_screen() {
     let (mut harness, watched) = real_app(&temp, 2);
     // the counts follow the registry: every fighter it offers is ready
     let roster = content::roster();
+    let total = roster.fighters.len();
     let ready = roster.fighters.iter().filter(|f| f.available).count();
-    assert!((2..=20).contains(&ready), "{ready} ready");
-    // the roster header: "20 fighters" once every fighter is built, else "N of 20 ready"
-    let ready_line = if ready == 20 {
-        "20 fighters".to_string()
+    assert!((2..=total).contains(&ready), "{ready} of {total} ready");
+    // the roster header: "N fighters" once every fighter is built, else "R of N ready"
+    let ready_line = if ready == total {
+        format!("{total} fighters")
     } else {
-        format!("{ready} of 20 ready")
+        format!("{ready} of {total} ready")
     };
     let themes = roster.themes.len();
     let status_line = format!(
@@ -339,7 +416,7 @@ fn the_real_match_up_screen() {
         assert!(!chip.accesskit_node().is_disabled(), "{} can be picked", f.display);
     }
     let waiting: Vec<_> = roster.fighters.iter().filter(|f| !f.available).collect();
-    assert_eq!(waiting.len(), 20 - ready);
+    assert_eq!(waiting.len(), total - ready);
     for f in waiting {
         let chip = harness
             .query_all_by_label(&f.display)
