@@ -16,7 +16,9 @@ cargo build --release -p bf-app
 ```
 
 The program is `target/release/ballfight-studio.exe`. Started with no option it is the real app on the real engine
-(`engine::spawn`), with the 20 kit fighters and the 14 kit themes (it opens on FLUTE against TROMBONE):
+(`engine::spawn`), with all 30 fighters and 26 themes (it opens on FLUTE against TROMBONE). The owner runs the
+installed copy (`studio/README.md`, Packaging); a build in `target\` is a build session's own copy, and it never
+looks at updates:
 
 - Its settings and queue are in `%APPDATA%\BALLFIGHT Studio\config` and its shortlist cache in
   `%LOCALAPPDATA%\BALLFIGHT Studio\cache` (`store::Paths::system`). They are read once, before the first frame;
@@ -45,6 +47,31 @@ The options:
 - `--smoke` opens the window, paints 30 frames, closes it and exits with code 0, with no sound and its files in a
   temp folder of its own. `ballfight-studio.exe --smoke` is the quick check that the real app starts on this PC (it
   opens on Match-up with the title card); `--fixtures --smoke` does the same for the sample interface.
+- `--version` prints one line, for example `BALLFIGHT Studio 1.0.0 (a842e11, 12 Nov 2026)` (the version, the commit
+  and the commit's date), and exits 0 without opening a window. A release build has no console of its own, so the
+  line goes to the output it was given (`cmd`'s `> file` or a pipe) or to the console of the program that started
+  it. The update checks a newly built exe with it.
+- `--finish-update <pid>` is how an update is put in place, never typed by hand: the new version, started from the
+  program folder's `.next`, waits for program `<pid>` to end, swaps itself in and starts the app again (exit 0, or
+  1 with the reason in `logs\finish.txt`). It refuses unless it runs from `.next` inside a real installed copy.
+- `--guide-pictures <folder> --data-dir <temp>` (the user guide's work, plan M6 Task 17) runs the real app in a real
+  window, drives it through the guide's steps and saves each of the guide's pictures into `<folder>`, then closes.
+- `--test-fault-report` (in no help text) makes the interface fault on purpose after the first frame, so the release
+  checklist can see a real fault report and its message box.
+- `--preview-bench [--seed N] [--seconds 20] [--threads T]` measures the preview without a window and prints one
+  `name value` line per measurement.
+
+**The start log and fault reports**, in the run's `logs` folder (`%LOCALAPPDATA%\BALLFIGHT Studio\data\logs` for
+the installed app, or under `--data-dir`):
+
+- `start.txt` records the last start: the version, whether this copy is installed, the data folders, the update
+  check, the graphics card, ffmpeg and the output folder, and any error. A second copy (which only brings the open
+  window forward) does not write it.
+- `crash-YYYYMMDD-HHMMSS.txt` is written for every fault in the app's own code (`report.rs`): the version and commit,
+  Windows' version, the maths check's line, the time, the thread, the message, its file and line, and the stack. It
+  never holds settings, file contents, captions or the owner's user name. The newest 20 are kept. A fault on the
+  interface thread also shows a message box naming the report.
+- A start that cannot go on says why in a message box (there is no window yet) and in `start.txt`.
 
 ### Known limits
 

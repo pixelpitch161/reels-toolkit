@@ -9,7 +9,7 @@ Interface mock-ups (five screens): https://claude.ai/artifact/DWR46mnrEU6mTxyt6i
 ## 1. Goal and what success looks like
 
 A Windows desktop app, written in Rust, that lets the user pick two instruments, find a good honest fight, and render
-the finished 61 s BALLFIGHT video, with no Claude tokens spent on fights between existing fighters. Claude sessions
+the finished 61 s BALLFIGHT video, with no session work spent on fights between existing fighters. Build sessions
 are only needed for new fighters, new themes and new features.
 
 Success for version one:
@@ -30,7 +30,7 @@ Success for version one:
 | Picture approach | Faithful port drawn on the CPU across all cores. wgpu runs the window, interface and live display. |
 | Seeds | The Studio has its own seed numbers. Old Python seeds are not promised to give the same fight. |
 | Seed picking | Ranked shortlist plus filters, and a box to watch any seed number. |
-| New fighters and themes | Claude builds them in a session; they arrive in an app update. No in-app workshop, no script mods. |
+| New fighters and themes | A build session makes them; they arrive in an app update. No in-app workshop, no script mods. |
 | Rendering | A render queue. The user picks every seed. Software x264 only. |
 | Music | "Reacts and varies": layered themes that follow the fight, fighters that compose fresh lines per take. |
 | Scope now | Core loop, music controls, the ten older fighters and their themes, cover image = the VS title card. |
@@ -104,7 +104,7 @@ be added without touching the others.
 | `bf-sound` | Synthesis and mixing: oscillators, filters, envelopes, reverb, buses, master, the `Voice`, `Sound` and `Theme` traits, the arranger and composer | core |
 | `bf-content` | Every fighter and every theme, one folder each, plus the registry and the pair-rule table | sim, picture, sound |
 | `bf-export` | The checks, the ffmpeg encode, the render job, output folders | story, picture, sound, content |
-| `bf-cli` | `ballfight` command line: every step without a window. Used by tests, CI and Claude sessions | all |
+| `bf-cli` | `ballfight` command line: every step without a window. Used by tests, CI and build sessions | all |
 | `bf-app` | The desktop app (eframe + egui on wgpu) | all |
 
 **Data flow.** Fight file -> `bf-sim` produces a **recording** (per-frame state arrays plus the event list) ->
@@ -277,7 +277,7 @@ the roster and theme list from the registry.
 - The 14 kit themes and the 12 older episodes' themes (drift phonk, Balkan fire, noir jazz, sea shanty, dark
   breakbeat, villain march, spaghetti western, gothic horror, brass house, ska-punk, industrial, orchestral drill).
 
-**Adding a fighter after launch.** A Claude session adds any new weapon or ability kind as a new module in `bf-sim`
+**Adding a fighter after launch.** A build session adds any new weapon or ability kind as a new module in `bf-sim`
 without changing existing ones, creates the fighter's folder, and runs: the self-replay test (no existing fight
 changed), balance against several opponents, a preview clip, and the safe-zone and flash checks. Once the port is
 complete, Rust is the source of truth and the Python kit is a frozen archive. `HANDOFF.md` and the kit README are
