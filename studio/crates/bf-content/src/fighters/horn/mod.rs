@@ -46,3 +46,6 @@ pub const MUSIC_FEEDS_FIGHT: bool = false;
 
 /// The extra line its part reads beside its own: STOPPED HORN's `HORN THEME`.
 pub const EXTRA_LINES: &[&str] = &["HORN THEME"];
+
+/// Its musical personality (milestone 5).
+pub mod personality;

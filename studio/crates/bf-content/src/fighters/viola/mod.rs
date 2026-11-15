@@ -53,3 +53,6 @@ pub const EXTRA_LINES: &[&str] = &[];
 /// `M.note` reaches every voice of the series; the Studio's music context knows only the fighters' and the theme's,
 /// so the soundtrack adds the CELLO's voice to a fight with the VIOLA ([`crate::fighters::part_voices`]).
 pub const PART_VOICES: &[&str] = &["CELLO"];
+
+/// Its musical personality (milestone 5).
+pub mod personality;

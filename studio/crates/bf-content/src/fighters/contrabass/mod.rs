@@ -47,3 +47,6 @@ pub const MUSIC_FEEDS_FIGHT: bool = false;
 
 /// No extra lines.
 pub const EXTRA_LINES: &[&str] = &[];
+
+/// Its musical personality (milestone 5).
+pub mod personality;

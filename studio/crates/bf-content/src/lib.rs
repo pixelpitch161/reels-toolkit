@@ -12,6 +12,7 @@ mod cards;
 mod error;
 pub mod fighters;
 mod pair_rules;
+pub mod personality;
 mod picture;
 mod registry;
 mod soundtrack;
@@ -22,6 +23,7 @@ pub use cards::{FighterCard, Section, ThemeCard, card, note_name, pair_rule_text
 pub use error::ContentError;
 pub use fighters::look_for;
 pub use pair_rules::pair_rules;
+pub use personality::{Ornament, Personality, Role, Step, personality};
 pub use picture::{build_picture, mesh, title_preview};
 pub use registry::{PORTED, RETIRED, available, music_feeds_fight, name_status, roster};
 pub use soundtrack::{SoundBuild, build_soundtrack, validate};
