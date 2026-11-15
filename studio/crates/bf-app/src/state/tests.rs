@@ -682,6 +682,49 @@ fn a_failed_take_says_why() {
     assert!(matches!(&played(&fx)[..], [PlayerCmd::Clear]), "no title card yet");
 }
 
+/// TROMBONE vs HORN in the brass trailer theme: every fit's quiet ending fails the same check. Once each fight on
+/// the shortlist has failed it, the next-fit offer runs out and the words say the theme is the trouble; new
+/// music forgets what failed.
+#[test]
+fn every_fit_failing_the_same_check_says_try_another_theme() {
+    let mut s = ready();
+    let mut list = sample_list();
+    list.rows.truncate(2);
+    list.rows.iter_mut().for_each(|r| r.fits = true);
+    let [a, b] = [list.rows[0].seed, list.rows[1].seed];
+    s.apply(Event::Shortlist {
+        r#gen: s.generation(),
+        list,
+    });
+    let mut failing = sample::music();
+    failing.checks[0].pass = false;
+    let fail = |s: &mut AppState, seed: u64| {
+        let take = take_of(&s.dispatch(Action::SelectSeed(seed)));
+        s.apply(Event::TakeSound {
+            take,
+            audio: quiet(),
+            music: failing.clone(),
+        });
+    };
+    fail(&mut s, a);
+    assert_eq!(s.vm.next_fit(), Some(b));
+    assert_eq!(s.vm.theme_way_out(), None);
+    fail(&mut s, b);
+    assert_eq!(s.vm.next_fit(), None, "both fits failed");
+    let words = "Every fight found so far fails the check \"Loudness\" with this theme. Try another theme.";
+    assert_eq!(s.vm.theme_way_out().as_deref(), Some(words));
+    assert!(
+        s.vm.failed_take_words()
+            .is_some_and(|w| w.ends_with("Every fight found so far fails it with this theme. Try another theme.")),
+        "{:?}",
+        s.vm.failed_take_words()
+    );
+    // other music (here another chord loop; another theme the same) forgets what failed
+    s.dispatch(Action::SetChordLoop(1));
+    assert!(s.vm.failed_fits.is_empty());
+    assert_eq!(s.vm.theme_way_out(), None);
+}
+
 #[test]
 fn a_seed_with_no_winner_cannot_be_used() {
     let mut s = ready();

@@ -24,7 +24,7 @@ use egui::{
 use crate::model::roster::{BASS_ROLE, part_words};
 use crate::model::take::{Lane, LaneGroup, MusicView};
 use crate::model::{Step, View};
-use crate::state::{Action, ViewModel};
+use crate::state::{Action, PICK_THEME, ViewModel};
 use crate::theme::{
     BAND_CLIP, CONTROL_H, FAINT, GROUP, HAIRLINE, HOVER, LINE, LINE_SOFT, MUTED, RADIUS, RAISED, TEXT, TEXT_STRONG,
     VALUE_W, body, large_fill, rgb, section, small, value as mono,
@@ -608,6 +608,11 @@ fn loudness(ui: &mut Ui, vm: &ViewModel, out: &mut Vec<Action>) {
                     Some(next) => {
                         if buttons::boxed(ui, &format!("Use seed {next}")).clicked() {
                             out.push(Action::SelectSeed(next));
+                        }
+                    }
+                    None if vm.theme_way_out().is_some() => {
+                        if buttons::boxed(ui, PICK_THEME).clicked() {
+                            out.push(Action::Go(View::Step(Step::Matchup)));
                         }
                     }
                     None => {

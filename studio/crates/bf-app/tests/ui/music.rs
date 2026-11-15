@@ -963,6 +963,46 @@ fn a_take_that_fails_a_check_offers_the_next_fit() {
     assert_eq!(harness.state().log, vec![Action::Go(View::Step(Step::Seeds))]);
 }
 
+/// When every fight on the shortlist has failed the same check, Music says the theme is the trouble and offers the
+/// theme picker on Match-up in place of "Go to seeds".
+#[test]
+fn every_fit_failing_the_same_check_offers_another_theme() {
+    let _gpu = gpu();
+    let mut vm = music::vm();
+    vm.shortlist = Shortlist {
+        rows: bf_app::seam::sample::stories(),
+        fits_total: 14,
+        checked: 18_240,
+        state: SearchState::Searching,
+        workers: 7,
+    };
+    vm.take.music.as_mut().unwrap().checks[0].pass = false;
+    let title = vm.take.music.as_ref().unwrap().checks[0].title.clone();
+    vm.failed_fits = vm
+        .shortlist
+        .rows
+        .iter()
+        .filter(|r| r.fits)
+        .map(|r| (r.seed, title.clone()))
+        .collect();
+    let seed = vm.draft.seed.expect("a seed");
+    if !vm.failed_fits.iter().any(|(s, _)| *s == seed) {
+        vm.failed_fits.push((seed, title.clone()));
+    }
+    let mut harness = showing(REF, vm);
+    assert!(has(
+        &harness,
+        &format!(
+            "Seed {seed} fails the check \"{title}\", so its video would stop there and nothing would be saved. Every \
+             fight found so far fails it with this theme. Try another theme."
+        )
+    ));
+    assert!(!has(&harness, "Go to seeds"));
+    harness.get_by_label("Pick another theme").click();
+    harness.run();
+    assert_eq!(harness.state().log, vec![Action::Go(View::Step(Step::Matchup))]);
+}
+
 #[test]
 fn music_matches_for_cello_vs_contrabass() {
     let _gpu = gpu();

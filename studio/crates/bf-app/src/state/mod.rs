@@ -79,6 +79,9 @@ pub struct ViewModel {
     pub filters: FilterSpec,
     pub shortlist: Shortlist,
     pub take: TakeView,
+    /// The fights whose takes failed a check with this fight and this music, each with the first check it failed,
+    /// in the order found. Forgotten when the fight or its music changes.
+    pub failed_fits: Vec<(u64, String)>,
     pub transport: TransportView,
     pub caption_tab: Platform,
     pub folder: FolderState,
@@ -101,6 +104,11 @@ pub struct ViewModel {
     /// Settings' "Remove" row: the button, the question, or the removal on its way.
     pub removal: upkeep::RemovalView,
 }
+
+/// What to do when every fight tried fails the same check ([`ViewModel::theme_way_out`]).
+pub const PICK_THEME_WORDS: &str = "Try another theme.";
+/// The button that opens Match-up, where the theme is picked.
+pub const PICK_THEME: &str = "Pick another theme";
 
 /// A neutral grey for a fighter the roster does not know (yet).
 const NO_COLOR: [u8; 3] = [0x80, 0x80, 0x80];
@@ -215,8 +223,9 @@ impl ViewModel {
 
     /// The next fight on the shortlist that fits the beat sheet after the draft's seed, in the shortlist's order
     /// (from the top again after the last; the first that fits when the seed is not on it). `None` when no other
-    /// fight on it fits.
+    /// fight on it fits, or every other one already failed a check with this music.
     pub fn next_fit(&self) -> Option<u64> {
+        let failed = |seed: u64| self.failed_fits.iter().any(|(s, _)| *s == seed);
         let fits: Vec<u64> = self.shortlist.rows.iter().filter(|r| r.fits).map(|r| r.seed).collect();
         let at = self.draft.seed.and_then(|s| fits.iter().position(|&f| f == s));
         let (after, before) = match at {
@@ -227,7 +236,23 @@ impl ViewModel {
             .iter()
             .chain(before)
             .copied()
-            .find(|&s| Some(s) != self.draft.seed)
+            .find(|&s| Some(s) != self.draft.seed && !failed(s))
+    }
+
+    /// When the take fails a check, no other fight on the shortlist is left to try, and every fight tried failed
+    /// that same check (the draft's own seed among them): the theme is the trouble, so what to say ("Every fight
+    /// found so far fails the check "Loudness" with this theme. Try another theme."). `None` otherwise.
+    pub fn theme_way_out(&self) -> Option<String> {
+        let seed = self.draft.seed?;
+        let failed = self.take.music.as_ref()?.checks.iter().find(|c| !c.pass)?;
+        let tried = self.failed_fits.iter().any(|(s, _)| *s == seed);
+        if !tried || self.next_fit().is_some() || self.failed_fits.iter().any(|(_, title)| *title != failed.title) {
+            return None;
+        }
+        Some(format!(
+            "Every fight found so far fails the check \"{}\" with this theme. {PICK_THEME_WORDS}",
+            failed.title
+        ))
     }
 
     /// When the take's soundtrack fails one of its checks (a fit can: the search does not listen to the music,
@@ -236,9 +261,10 @@ impl ViewModel {
     pub fn failed_take_words(&self) -> Option<String> {
         let seed = self.draft.seed?;
         let failed = self.take.music.as_ref()?.checks.iter().find(|c| !c.pass)?;
-        let next = match self.next_fit() {
-            Some(n) => format!("Try seed {n}, the next fight that fits."),
-            None => "Try another seed.".to_string(),
+        let next = match (self.next_fit(), self.theme_way_out()) {
+            (Some(n), _) => format!("Try seed {n}, the next fight that fits."),
+            (None, Some(_)) => format!("Every fight found so far fails it with this theme. {PICK_THEME_WORDS}"),
+            (None, None) => "Try another seed.".to_string(),
         };
         Some(format!(
             "Seed {seed} fails the check \"{}\", so its video would stop there and nothing would be saved. {next}",
@@ -441,6 +467,7 @@ impl AppState {
             update: SampleUpkeep::not_installed(None).view(),
             app_line: crate::version::line(),
             removal: upkeep::RemovalView::Closed,
+            failed_fits: Vec::new(),
         };
         let mut state = AppState::bare(vm);
         state.after_restart();
