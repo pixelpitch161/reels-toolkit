@@ -922,7 +922,7 @@ mod tests {
         let mut ff = FightFile::parse(include_str!("../../../fights/flute_vs_trombone.toml")).unwrap();
         let rms = |x: &[[f64; 2]]| {
             let r = (x.iter().map(|s| s[0] * s[0] + s[1] * s[1]).sum::<f64>() / (2 * x.len()) as f64).sqrt();
-            20.0 * (r + 1e-12).log10()
+            20.0 * bf_core::dmath::log10(r + 1e-12)
         };
         let classic = crate::build_soundtrack(&rec, &ff).unwrap();
         ff.music.lines.clear();

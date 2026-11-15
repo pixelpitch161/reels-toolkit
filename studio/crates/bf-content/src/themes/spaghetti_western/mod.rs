@@ -257,7 +257,10 @@ pub fn whip(vel: f64, seed: u64) -> Vec<f64> {
         .map(|i| {
             let t = t[i];
             if t < 0.10 {
-                swish[i] * clip(t / 0.10, 0.0, 1.0).powi(2) * 0.35 * vel
+                {
+                    let a = clip(t / 0.10, 0.0, 1.0);
+                    swish[i] * (a * a) * 0.35 * vel
+                }
             } else {
                 let tc = t - 0.10;
                 let crack = hiss[i] * dmath::exp(-tc / 0.006)
