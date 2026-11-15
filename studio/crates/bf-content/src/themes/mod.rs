@@ -58,11 +58,12 @@ pub const CLASSIC: &str = "classic";
 /// here is tested, never offered. The big top comes first, since a new match-up starts on the first theme offered
 /// (it is the starting pair's theme); the others follow in the kit's alphabetical order of moods. A theme is offered
 /// for a pair only when its bed has every hook both parts play ([`themes_for`], ruling M3-R2).
-pub const PORTED_THEMES: [&str; 20] = [
+pub const PORTED_THEMES: [&str; 24] = [
     "big_top",
     "baroque_storm",
     "balkan_fire",
     "bossa_noir",
+    "brass_house",
     "brass_trailer",
     "dark_breakbeat",
     "dark_disco",
@@ -72,10 +73,13 @@ pub const PORTED_THEMES: [&str; 20] = [
     "heist",
     "horror_trap",
     "hot_jazz",
+    "industrial",
     "mambo",
+    "orchestral_drill",
     "prog_duel",
     "sea_shanty",
     "second_line",
+    "ska_punk",
     "spaghetti_western",
     "stadium_rock",
     "villain_march",
@@ -494,7 +498,7 @@ mod tests {
     #[test]
     fn validate_refuses_exactly_the_themes_a_pair_is_not_offered() {
         let offered = themes_for("FLUTE", "TROMBONE");
-        assert_eq!(offered.len(), 18);
+        assert_eq!(offered.len(), 22);
         for name in PORTED_THEMES {
             let mut ff = episode();
             ff.music.theme = name.to_string();

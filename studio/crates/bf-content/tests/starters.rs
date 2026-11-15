@@ -374,7 +374,7 @@ fn the_crossovers_soundtracks_and_frames_are_the_kits() {
 #[test]
 fn themes_for_leaves_out_exactly_the_themes_without_a_boom() {
     let all = bf_content::theme_names();
-    assert_eq!(all.len(), 20);
+    assert_eq!(all.len(), 24);
     for (a, b) in ordered_pairs() {
         let booms = PLAYS_A_BOOM.contains(&a) || PLAYS_A_BOOM.contains(&b);
         let want: Vec<&str> = all
