@@ -23,6 +23,7 @@
 //! power chords on it), and its strum plays [`strum_tones`], the harmony's own chord tones from E4 up.
 
 mod classic;
+pub mod layers;
 
 use bf_core::dmath::{self, PI};
 use bf_core::fightfile::OptionValue;

@@ -12,6 +12,7 @@
 //! line of the same shape from the chord's tones ([`lullaby`]).
 
 mod classic;
+pub mod layers;
 
 use bf_core::dmath::{self, PI};
 use bf_core::harmony::{Harmony, HarmonyError};

@@ -11,6 +11,7 @@
 //! [`bass_tones`], [`comp_voicing`], [`pad_voicing`]).
 
 mod classic;
+pub mod layers;
 
 use bf_core::dmath::{self, PI};
 use bf_core::harmony::{Harmony, HarmonyError};

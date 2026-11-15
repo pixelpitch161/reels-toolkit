@@ -14,6 +14,7 @@
 //! B1 up and the fifth above.
 
 mod classic;
+pub mod layers;
 
 use bf_core::dmath::{self, PI};
 use bf_core::harmony::{Harmony, HarmonyError};
