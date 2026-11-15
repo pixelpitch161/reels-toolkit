@@ -546,6 +546,10 @@ fn rows(ui: &mut Ui, vm: &ViewModel, list: Rect, out: &mut Vec<Action>) {
             if row.has_focus() {
                 ring = Some(row.rect);
             }
+            // The guide's picture of a stopped job is cropped to its row (`guide::FAILED_ROW`).
+            if matches!(job.state, JobState::Failed { .. }) {
+                crate::guide::mark(ui.ctx(), crate::guide::FAILED_ROW, row.rect);
+            }
             let (line, _) = ui.allocate_exact_size(vec2(ui.available_width(), 1.0), Sense::hover());
             ui.painter().rect_filled(line, 0.0, HAIRLINE);
         }
