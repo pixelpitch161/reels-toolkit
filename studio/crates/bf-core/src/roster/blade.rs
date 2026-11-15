@@ -2,9 +2,7 @@
 //! `Fight.__init__`, `start_thrust`, `thrust_step`, the thrust grid in the fight loop).
 //!
 //! A blade with no `mode` spins (VIOLIN's bow, milestone 4: the spinning branch of `blade_step`, 780 to 825, with
-//! `spin`, `spin_grow` and `spin_max`). It is a stub until VIOLIN's port: while [`SPIN_PORTED`] is false such an entry
-//! loads as `WeaponCfg::Unsupported("blade")`; the port fills [`parse_spin`] (and the fields the spinning branch reads)
-//! and sets it.
+//! `spin`, `spin_grow`, `spin_max` and `cooldown`), read by [`parse_spin`].
 
 use serde_json::Value as Json;
 
@@ -12,7 +10,7 @@ use crate::roster::{Entry, RosterError};
 
 /// Whether the engine runs the spinning blade (a `blade` with no `mode`). While false the roster reads one as
 /// `WeaponCfg::Unsupported("blade")`, which the engine refuses in words.
-pub const SPIN_PORTED: bool = false;
+pub const SPIN_PORTED: bool = true;
 
 /// A blade's mode.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -69,6 +67,8 @@ pub struct BladeCfg {
     pub spin_grow: f64,
     /// The rate it never grows past (`w['spin_max']`, read only when `spin_grow` is set); 0.0 for a thrust blade.
     pub spin_max: f64,
+    /// Seconds a spinning blade rests after a hit or a block (`w['cooldown']`); 0.0 for a thrust blade.
+    pub cooldown: f64,
 }
 
 /// The largest `frets0` a roster entry may give. A landed thrust adds one fret, so a count that starts here stays a
@@ -136,13 +136,65 @@ pub(crate) fn parse(e: &Entry, w: &Json, style: String) -> Result<BladeCfg, Rost
         spin: 0.0,
         spin_grow: 0.0,
         spin_max: 0.0,
+        cooldown: 0.0,
     })
 }
 
-/// Reads a spinning-blade weapon entry (a `blade` with no `mode`); called only when [`SPIN_PORTED`] is true. A stub
-/// until VIOLIN's port, which reads the fields the spinning branch of `blade_step` reads (780 to 825).
-pub(crate) fn parse_spin(e: &Entry, _w: &Json, _style: String) -> Result<BladeCfg, RosterError> {
-    Err(e.err("weapon.mode", "a spinning blade is not ported yet"))
+/// The keys a spinning-blade entry may hold.
+const SPIN_KEYS: [&str; 13] = [
+    "kind",
+    "style",
+    "base",
+    "grow",
+    "max_len",
+    "frets0",
+    "spin",
+    "spin_grow",
+    "spin_max",
+    "dmg",
+    "cooldown",
+    "parry",
+    "knock",
+];
+
+/// Reads a spinning-blade weapon entry (a `blade` with no `mode`): the fields the spinning branch of `blade_step`
+/// reads (780 to 825). It has no thrust grid (`every` 0.0).
+pub(crate) fn parse_spin(e: &Entry, w: &Json, style: String) -> Result<BladeCfg, RosterError> {
+    let p = "weapon";
+    e.only(w, p, "a spinning blade", &SPIN_KEYS)?;
+    let spin_grow = e.f64_or(w, p, "spin_grow", 0.0)?;
+    Ok(BladeCfg {
+        style,
+        mode: BladeMode::Spin,
+        every: 0.0,
+        rest: None,
+        base: e.f64_or(w, p, "base", 0.0)?,
+        grow: e.f64(w, p, "grow")?,
+        max_len: e.f64(w, p, "max_len")?,
+        frets0: match w.get("frets0") {
+            Some(v) => frets0_value(e, e.int(v, "weapon.frets0")?)?,
+            None => 0,
+        },
+        t_out: 0.0,
+        t_hold: 0.0,
+        t_back: 0.0,
+        aim_rate: 0.0,
+        dmg: e.f64(w, p, "dmg")?,
+        knock: e.f64_or(w, p, "knock", 0.8)?,
+        parry: match w.get("parry") {
+            None | Some(Json::Null) => false,
+            Some(Json::Bool(b)) => *b,
+            Some(_) => return Err(e.err("weapon.parry", "must be true or false")),
+        },
+        spin: e.f64_or(w, p, "spin", 0.0)?,
+        spin_grow,
+        spin_max: if spin_grow != 0.0 {
+            e.f64(w, p, "spin_max")?
+        } else {
+            0.0
+        },
+        cooldown: e.f64(w, p, "cooldown")?,
+    })
 }
 
 /// [`parse`]'s checks made again on typed settings (`FighterCfg::check`).

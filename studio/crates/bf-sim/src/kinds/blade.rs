@@ -13,9 +13,7 @@
 //! ball now), `thr` (when the thrust in progress started), `thr_hit`, `thr_k` (the thrust's time scale), with the
 //! reach in `blade_len` and the growth count in `frets`. None of this code draws from the generator.
 //!
-//! A blade without `mode = 'thrust'` spins (the rest of `blade_step`, 780 to 825: VIOLIN's bow, milestone 4):
-//! [`spin_step`], a stub until VIOLIN's port, which the roster reads as unsupported until then
-//! (`roster::blade::SPIN_PORTED`).
+//! A blade without `mode = 'thrust'` spins (the rest of `blade_step`, 780 to 825: VIOLIN's bow): [`spin_step`].
 
 use bf_core::dmath;
 use bf_core::event::Value;
@@ -189,10 +187,89 @@ pub fn step(fight: &mut Fight, k: usize, dt: f64) {
     }
 }
 
-/// The spinning branch of `blade_step(k, dt)` (780 to 825, with `spin_grow` and `spin_max`): VIOLIN's bow. A stub
-/// until VIOLIN's port (milestone 4): no fighter has a spinning blade before `roster::blade::SPIN_PORTED`.
-pub fn spin_step(fight: &mut Fight, _k: usize, _dt: f64) {
-    fight.socket("stub:kinds::blade::spin_step");
+/// The spinning branch of `blade_step(k, dt)` (780 to 825, with `spin_grow` and `spin_max`): VIOLIN's bow. The
+/// blade turns `spin_dir * spin * haste` rad/s; enemy projectiles it sweeps through die (`parry`); when it sweeps
+/// across the enemy within reach (and is not cooling down) it hits (`dmg`, a knock out and along the spin), and a
+/// landed hit grows the reach (`grow` up to `max_len`) and the spin (`spin_grow` up to `spin_max`). A shield bounces
+/// it back the other way.
+pub fn spin_step(fight: &mut Fight, k: usize, dt: f64) {
+    let w = weapon(fight, k);
+    let mult = fight.ab_mult(k);
+    let (r, key_r) = (fight.rules.r, fight.rules.key_r);
+    let b = &mut fight.balls[k];
+    let dth = b.spin_dir * b.spin * mult * dt;
+    let th0 = b.th;
+    b.th = py::fmod_py(b.th + dth, 2.0 * dmath::PI);
+    b.cool = geom::py_max(0.0, b.cool - dt);
+    let (bp, reach) = (b.p, r + b.blade_len);
+    // parry: enemy projectiles the blade sweeps through
+    if w.parry && fight.keys.iter().any(|key| key.own != k) {
+        let hit: Vec<bool> = fight
+            .keys
+            .iter()
+            .map(|key| {
+                let rel = geom::sub(key.p, bp);
+                let dist = geom::hypot(rel);
+                if key.own == k || dist <= r * 0.8 || dist >= reach + key_r {
+                    return false;
+                }
+                let phi = dmath::atan2(rel[1], rel[0]);
+                let half = dmath::asin(geom::py_min(1.0, key_r / geom::py_max(dist, 1e-6))) + 0.04;
+                geom::swept(th0, dth, phi, half)
+            })
+            .collect();
+        if hit.contains(&true) {
+            fight.kill_keys(&hit, "parry", k as i64);
+        }
+    }
+    // hit the opponent
+    if fight.balls[k].cool > 0.0 {
+        return;
+    }
+    let rel = geom::sub(fight.balls[1 - k].p, bp);
+    let dist = geom::hypot(rel);
+    if dist - r >= reach {
+        return;
+    }
+    let phi = dmath::atan2(rel[1], rel[0]);
+    let half = dmath::asin(geom::py_min(1.0, r / geom::py_max(dist, 1e-6)));
+    if !geom::swept(th0, dth, phi, half) {
+        return;
+    }
+    let h = [bp[0] + rel[0] / dist * (dist - r), bp[1] + rel[1] / dist * (dist - r)];
+    if fight.balls[1 - k].shield > 0.0 {
+        let data = vec![
+            Value::Int(k as i64),
+            Value::Float(h[0]),
+            Value::Float(h[1]),
+            Value::Str("blade".to_string()),
+        ];
+        fight.ev("block", (1 - k) as i64, data);
+        // the blade bounces off the shield and reverses
+        let b = &mut fight.balls[k];
+        b.spin_dir *= -1.0;
+        b.cool = w.cooldown;
+        return;
+    }
+    let frets = fight.balls[k].frets;
+    let landed = fight.damage(k, 1 - k, w.dmg, "blade", h, frets);
+    fight.balls[k].cool = w.cooldown;
+    let (th, sd) = (fight.balls[k].th, fight.balls[k].spin_dir);
+    let away = [
+        rel[0] / dist + 0.6 * (-dmath::sin(th) * sd),
+        rel[1] / dist + 0.6 * (dmath::cos(th) * sd),
+    ];
+    fight.knock(1 - k, away, w.knock);
+    if landed {
+        let b = &mut fight.balls[k];
+        if b.blade_len + w.grow <= w.max_len + 1e-9 {
+            b.blade_len += w.grow;
+            b.frets += 1;
+        }
+        if w.spin_grow != 0.0 {
+            b.spin = geom::py_min(w.spin_max, b.spin + w.spin_grow);
+        }
+    }
 }
 
 #[cfg(test)]

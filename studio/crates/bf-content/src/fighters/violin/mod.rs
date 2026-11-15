@@ -1,12 +1,6 @@
-//! VIOLIN: one of the older fighters (milestone 4), ported in its Task 14 against its reference kit module
-//! (`tools/studio_export/older/fighters/violin.py`, the reference kit module moved from
-//! `projects/ballfight_viola_vs_violin/` (#42, as #28 drew it)). Until then every entry point here says it has
-//! none: the picture draws VIOLIN as the bare ball, the score has no part for it, the app has no card for it, and
-//! the app does not offer it (the registry's `PORTED`, which only a register task changes).
+//! VIOLIN: one of the older fighters (milestone 4), a quick port (ruling M4-R16) of #42 (`projects/ballfight_viola_vs_violin/`, as #28 drew it): its look, voice, part and card. The app offers it once the registry's `PORTED` names it.
 //!
-//! The port fills this folder only: `look.rs`, `sound.rs`, `voice.rs`, `card.rs`, `state.rs` (what the look and the
-//! part both derive from the recording) and the entry points below. Nothing outside it names VIOLIN's types, so
-//! nothing outside it changes. Its music settings do not feed its fight (`MUSIC_FEEDS_FIGHT` stays false: none of
+//! Nothing outside this folder names VIOLIN's types. Its music settings do not feed its fight (`MUSIC_FEEDS_FIGHT` stays false: none of
 //! the older ten reads the music, checked against `kit/story.py`).
 
 use std::sync::Arc;
@@ -24,25 +18,24 @@ pub mod voice;
 
 pub use card::{CARD, card};
 
-/// `fighters.look('VIOLIN', P, k)`: its look, or `None` while it is not ported (the bare ball is drawn then).
+/// `fighters.look('VIOLIN', P, k)`.
 pub fn look() -> Option<Box<dyn Look>> {
-    None
+    Some(Box::new(look::ViolinLook::default()))
 }
 
-/// Its instrument voice (its `pp_bridge` entry, or its episode's own synth), or `None` while it is not ported.
+/// Its instrument voice (its `pp_bridge` entry).
 pub fn voice() -> Option<Arc<dyn Voice>> {
-    None
+    Some(Arc::new(voice::ViolinVoice))
 }
 
-/// `fighters.sound('VIOLIN', M, k)`: its part on side `k` of the fight `ff`, or `None` while it is not ported.
+/// `fighters.sound('VIOLIN', M, k)`: its part on side `k` of the fight `ff`.
 pub fn sound(k: usize, ff: &FightFile) -> Option<Box<dyn Sound>> {
-    let _ = (k, ff);
-    None
+    let _ = ff;
+    Some(Box::new(sound::ViolinSound::new(k)))
 }
 
-/// Its model (`data/models/VIOLIN.json`, written by the export tool's `models` for one roster name), compiled in:
-/// `Some(include_str!("../../../data/models/VIOLIN.json"))` once ported, `None` until then.
-pub const MESH: Option<&str> = None;
+/// Its model (`data/models/VIOLIN.json`, written by the export tool's `models` for one roster name), compiled in.
+pub const MESH: Option<&str> = Some(include_str!("../../../data/models/VIOLIN.json"));
 
 /// Whether its music settings (key, chord loop, its line) feed its fight: false for every older fighter.
 pub const MUSIC_FEEDS_FIGHT: bool = false;

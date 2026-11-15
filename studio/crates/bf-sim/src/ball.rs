@@ -45,8 +45,8 @@ impl Slot {
 
 /// One fighter's ball. Field names are `fight.py`'s.
 ///
-/// `Ball.__init__` also sets `cool`, `pull`, `beam_w`, `charge`, `dash_t`, `dash_hit`, `dash_main` and `rake_dir`:
-/// state of the spinning blade, pulse, beam and dash kinds, none of them ported. They come with their kinds.
+/// `Ball.__init__` also sets `pull`, `beam_w`, `charge`, `dash_t`, `dash_hit`, `dash_main` and `rake_dir`:
+/// state of the pulse, beam and dash kinds, none of them ported. They come with their kinds.
 ///
 /// The per-ball states that the shared engine reads for the kit's other kinds (`move`, `damage`, `knock`, `_stunned`,
 /// the timers, `abilities_step`) are here too, from `stun` on, at what Python's `getattr(B, name, default)` gives a
@@ -104,6 +104,8 @@ pub struct Ball<'a> {
     pub thr_hit: bool,
     /// Thrust: the time scale of the current thrust (haste).
     pub thr_k: f64,
+    /// A spinning blade: seconds until it may hit again (`Ball.__init__`'s `cool = 0.0`).
+    pub cool: f64,
     /// A curving volley's current turn rate in deg/s (`w.get('curve', 0.0)`; no ported kind curves).
     pub curve_now: f64,
     /// Seconds left of a slow on this ball.
@@ -232,6 +234,7 @@ impl<'a> Ball<'a> {
             thr: None,
             thr_hit: false,
             thr_k: 1.0,
+            cool: 0.0,
             curve_now: 0.0,
             slow: 0.0,
             slow_mult: 1.0,
