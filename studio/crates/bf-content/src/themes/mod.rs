@@ -452,7 +452,7 @@ mod tests {
 
     /// Ruling M3-R2: every ordered pair of kit fighters is offered every theme, except `dark_disco` and `heist` for a
     /// pair with a fighter that plays a boom; a name that is no kit fighter is offered none. (The kit fighters are
-    /// the 20, TURNTABLES and BARI SAX the app offers; the rest of the older ten are not offered yet.)
+    /// the 20, TURNTABLES, BARI SAX and SYNTH the app offers; the rest of the older ten are not offered yet.)
     #[test]
     fn a_pair_is_offered_every_theme_its_parts_can_play() {
         let names: Vec<&str> = crate::available();

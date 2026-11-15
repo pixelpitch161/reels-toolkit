@@ -40,6 +40,7 @@ pub const PORTED: [&str; 22] = [
     "EUPHONIUM",
     "BARI SAX",
     "TURNTABLES",
+    "SYNTH",
 ];
 
 /// Every roster entry (the kit's 20 and the older ten, offered or not), in `fighters.py`'s order, every number as
@@ -136,7 +137,8 @@ mod tests {
 
     #[test]
     fn available_is_the_ported_fighters_in_roster_order() {
-        // every kit fighter, TURNTABLES and BARI SAX, in fighters.py's order whatever the order of `PORTED`; no fighter twice
+        // every kit fighter, TURNTABLES, BARI SAX and SYNTH, in fighters.py's order whatever the order of `PORTED`; no
+        // fighter twice
         assert_eq!(
             available(),
             vec![
@@ -149,6 +151,7 @@ mod tests {
                 "ACOUSTIC",
                 "TRUMPET",
                 "TURNTABLES",
+                "SYNTH",
                 "CLARINET",
                 "OBOE",
                 "BASS CLARINET",

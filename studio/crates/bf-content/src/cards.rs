@@ -81,6 +81,7 @@ const SCORE: [(&str, Section); 22] = [
     ("ELECTRIC", Section::Strings),
     ("PIANO", Section::Keys),
     ("ORGAN", Section::Keys),
+    ("SYNTH", Section::Keys),
     ("TURNTABLES", Section::Percussion),
     ("BASS DRUM", Section::Percussion),
 ];
@@ -195,7 +196,7 @@ mod tests {
                 count(Section::Keys),
                 count(Section::Percussion)
             ],
-            [8, 6, 4, 2, 2]
+            [8, 6, 4, 3, 2]
         );
         assert_eq!(&order[..2], &["FLUTE", "OBOE"]);
         assert_eq!(order.last(), Some(&"BASS DRUM"));
