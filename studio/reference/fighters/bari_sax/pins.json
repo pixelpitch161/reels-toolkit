@@ -7,8 +7,8 @@
  "pins": [
   {
    "path": "fighters/bari_sax/checks_rows.json",
-   "sha256": "42f35b0a9cdd382ebf30eb2aadcbdf74622495cbb139dca27a8f0a642361868c",
-   "bytes": 34067,
+   "sha256": "261a7fe9d7a4132d34e9a506be3a8da2e7ecdf3c66d8729a75093dc2ea71b109",
+   "bytes": 34042,
    "export": "fighter_bari_sax"
   },
   {
