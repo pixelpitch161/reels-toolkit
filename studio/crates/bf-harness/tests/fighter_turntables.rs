@@ -21,7 +21,7 @@ fn whole_fights_are_the_kits() {
     let (mut n, mut heals) = (0, 0);
     for f in &files {
         let py = bf_core::recording::Recording::read(f).unwrap_or_else(|e| panic!("{}: {e}", f.display()));
-        let setup = setup_of(&py);
+        let setup = bf_harness::fight::setup_like(&py);
         let rs = bf_sim::run(&setup, true).expect("the fight runs");
         let what = f.file_name().unwrap().to_string_lossy();
         let first = rs
@@ -49,35 +49,6 @@ fn whole_fights_are_the_kits() {
     println!("{n} whole fights agree with the kit's ({heals} rewinds)");
 }
 
-/// `fight::setup_like` with TURNTABLES's roster entry from `bf-sim/tests/older_roster.json` (the compiled-in roster
-/// has the older ten only from their register task on), the other fighter from the compiled-in roster.
-fn setup_of(py: &bf_core::recording::Recording) -> bf_sim::Setup<'static> {
-    use bf_core::event::Value as Ev;
-    static OLDER: std::sync::OnceLock<Vec<bf_core::roster::FighterCfg>> = std::sync::OnceLock::new();
-    let older = OLDER.get_or_init(|| {
-        bf_core::roster::parse_roster(include_str!("../../bf-sim/tests/older_roster.json")).expect("the older roster")
-    });
-    let find = |name: &str| -> &'static bf_core::roster::FighterCfg {
-        older
-            .iter()
-            .chain(bf_harness::fight::roster())
-            .find(|f| f.name == name)
-            .unwrap_or_else(|| panic!("{name} is in neither roster"))
-    };
-    let rule = |k: &str| match py.rules.get(k) {
-        Some(Ev::Float(x)) => *x,
-        Some(Ev::Int(n)) => *n as f64,
-        other => panic!("rules.{k} is {other:?}"),
-    };
-    let mut rules = bf_sim::rules::Rules::new(rule("bpm"), rule("t_fight"));
-    rules.apply(&py.rules).expect("the recording's rules apply");
-    bf_sim::Setup {
-        fighters: [find(&py.names[0]), find(&py.names[1])],
-        rules,
-        seed: py.seed,
-    }
-}
-
 /// The kit's 2,000 statistics fights (`stats_rows.json` of the pinned cache: TURNTABLES left against FLUTE at the
 /// folder's rules, seeds 1 to 2,000): the engine gives each one's winner and K.O. time to the bit.
 #[test]
@@ -90,7 +61,7 @@ fn the_kits_statistics_fights_end_as_the_kits() {
             .expect("JSON");
     let rows = rows["rows"].as_array().expect("rows");
     assert_eq!(rows.len(), 2000);
-    let base = setup_of(&left);
+    let base = bf_harness::fight::setup_like(&left);
     let mut wins = 0;
     for r in rows {
         let seed = r["seed"].as_u64().expect("seed");
