@@ -13,6 +13,7 @@ use bf_app::model::{Notice, Settings, Step, View};
 use bf_app::preview::audio::NoAudio;
 use bf_app::seam::fake::{self, Pace};
 use bf_app::seam::{Command, EngineHandle, EngineSide, Event, channel, sample};
+use bf_app::store::history::load_history;
 use bf_app::store::queue_file::load_queue;
 use bf_app::store::settings::{load_settings, save_settings};
 use bf_app::store::{Paths, Writer};
@@ -250,6 +251,18 @@ fn a_whole_video_in_clicks() {
     let slowest = harness.state().slowest_update_ms;
     assert!(slowest < 20.0, "the slowest update took {slowest} ms");
     harness.state_mut().shutdown();
+    drop(harness);
+    // The finished video is in the matchup history on disk, through the app's own writer.
+    let (history, notice) = load_history(&temp.paths().history());
+    assert_eq!(notice, None);
+    let row = history
+        .fights
+        .iter()
+        .find(|r| r.seed == Some(18433))
+        .expect("the video's row");
+    assert_eq!(row.fighters, ["FLUTE".to_string(), "TROMBONE".to_string()]);
+    assert_eq!(row.made, fake::SAMPLE_FINISHED_AT);
+    assert!(!row.uploaded);
 }
 
 #[test]

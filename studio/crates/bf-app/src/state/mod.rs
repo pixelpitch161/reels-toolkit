@@ -708,7 +708,9 @@ impl AppState {
             }
             // The library is scanned each time it opens.
             View::Library => self.scan_library(fx),
-            View::Matchups | View::Settings => {}
+            // A delete question does not outlive the visit it was asked in.
+            View::Matchups => self.vm.matchups.asking_delete = false,
+            View::Settings => {}
         }
     }
 

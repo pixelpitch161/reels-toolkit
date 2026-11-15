@@ -87,13 +87,14 @@ fn corners(r: egui::Rect) -> [[f32; 2]; 2] {
 }
 
 /// The labels of the toolbar, left to right.
-const TOOLBAR: [&str; 10] = [
+const TOOLBAR: [&str; 11] = [
     "BALLFIGHT Studio",
     "1 Match-up",
     "2 Balance",
     "3 Seeds",
     "4 Music",
     "5 Render",
+    "Matchups",
     "Library",
     "Queue",
     "Update",

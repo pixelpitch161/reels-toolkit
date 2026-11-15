@@ -47,7 +47,7 @@ pub fn load_history(path: &Path) -> (History, Option<Notice>) {
         .ok()
         .and_then(|text| toml::from_str::<History>(text).ok());
     if let Some(history) = parsed {
-        return (history, None);
+        return (tidy(history), None);
     }
     let text = match move_aside(path, "corrupt").or_else(|_| keep_copy(path, "corrupt", &bytes)) {
         Ok(aside) => format!(
@@ -66,6 +66,31 @@ pub fn load_history(path: &Path) -> (History, Option<Notice>) {
         }
     };
     (starter(), Some(Notice { text }))
+}
+
+/// A history as read from a file, made safe to show: a row naming a retired fighter (only a hand-edited file can
+/// hold one) is left out, and a row whose id another row already has gets a new id, so every row is told apart.
+fn tidy(mut h: History) -> History {
+    let retired = |name: &str| bf_core::fightfile::RETIRED.contains(&name);
+    h.fights
+        .retain(|row| !row.fighters.iter().any(|f| retired(f)) && !row.winner.as_deref().is_some_and(retired));
+    let mut next = h
+        .fights
+        .iter()
+        .map(|row| row.id.saturating_add(1))
+        .max()
+        .unwrap_or(0)
+        .max(h.next_id);
+    let mut seen = std::collections::BTreeSet::new();
+    for row in &mut h.fights {
+        if !seen.insert(row.id) {
+            row.id = next;
+            seen.insert(next);
+            next = next.saturating_add(1);
+        }
+    }
+    h.next_id = next;
+    h
 }
 
 /// Writes the history file whole and atomically, making its folder if needed.
@@ -117,6 +142,67 @@ mod tests {
         h.record(["FLUTE".to_string(), "TROMBONE".to_string()], 2210, None, 1_763_208_000);
         h.set_uploaded(3, false);
         save_history(&path, &h).unwrap();
+        assert_eq!(load_history(&path), (h, None));
+    }
+
+    #[test]
+    fn a_hand_edited_file_loses_retired_names_and_duplicate_ids() {
+        let root = TempRoot::new("a_hand_edited_file_loses_retired_names_and_duplicate_ids");
+        let path = root.paths().history();
+        fs::create_dir_all(path.parent().unwrap()).unwrap();
+        let text = r#"next_id = 1
+[[fights]]
+id = 0
+fighters = ["GUITAR", "PIANO"]
+made = 1
+uploaded = true
+[[fights]]
+id = 0
+fighters = ["FLUTE", "TUBA"]
+made = 2
+[[fights]]
+id = 0
+fighters = ["FLUTE", "OBOE"]
+made = 3
+"#;
+        fs::write(&path, text).unwrap();
+        let (h, notice) = load_history(&path);
+        assert_eq!(notice, None);
+        let ids: Vec<(u64, &str)> = h.fights.iter().map(|r| (r.id, r.fighters[1].as_str())).collect();
+        assert_eq!(ids, vec![(0, "TUBA"), (1, "OBOE")]);
+        assert_eq!(h.next_id, 2);
+    }
+
+    /// The history file cannot be opened at start (another program holds it): the starter rows are used, and before
+    /// the first save the owner's file is kept as `history.unread-1.toml`, never written over.
+    #[cfg(windows)]
+    #[test]
+    fn an_unread_history_is_kept_before_the_first_save() {
+        use std::os::windows::fs::OpenOptionsExt;
+
+        use crate::store::Writer;
+        let root = TempRoot::new("an_unread_history_is_kept_before_the_first_save");
+        let paths = root.paths();
+        let path = paths.history();
+        let mut own = starter();
+        own.record(["FLUTE".to_string(), "TROMBONE".to_string()], 2210, None, 1_794_744_000);
+        save_history(&path, &own).unwrap();
+        let before = fs::read(&path).unwrap();
+        let held = fs::OpenOptions::new().read(true).share_mode(0).open(&path).unwrap();
+        let (h, notice) = load_history(&path);
+        drop(held);
+        assert_eq!(h, starter());
+        let text = notice.unwrap().text;
+        assert!(
+            text.starts_with("The matchup history file could not be opened"),
+            "{text}"
+        );
+        assert!(text.contains("history.unread-1.toml"), "{text}");
+        let writer = Writer::start(paths.clone());
+        writer.history(&h);
+        writer.flush();
+        assert!(writer.problems().is_empty());
+        assert_eq!(fs::read(paths.config.join("history.unread-1.toml")).unwrap(), before);
         assert_eq!(load_history(&path), (h, None));
     }
 

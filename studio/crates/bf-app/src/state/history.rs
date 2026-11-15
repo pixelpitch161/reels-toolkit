@@ -109,6 +109,17 @@ mod tests {
     }
 
     #[test]
+    fn coming_back_to_the_tab_drops_the_question() {
+        let mut s = app();
+        s.dispatch(Action::SelectFight(27));
+        s.dispatch(Action::AskDeleteFight);
+        s.dispatch(Action::Go(crate::model::View::Library));
+        s.dispatch(Action::Go(crate::model::View::Matchups));
+        assert!(!s.vm.matchups.asking_delete);
+        assert_eq!(s.vm.matchups.selected, Some(27));
+    }
+
+    #[test]
     fn asking_with_nothing_selected_asks_nothing() {
         let mut s = app();
         s.dispatch(Action::AskDeleteFight);
