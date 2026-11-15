@@ -905,12 +905,16 @@ mod tests {
         let f = FighterCfg::from_json(&flute_with_kind(None, Some(("low", "kazoo")))).expect("loads");
         assert_eq!(f.low.kind, AbilityKind::Unsupported("kazoo".into()));
         assert_eq!((f.low.kind.name(), f.low.get("radius")), ("kazoo", Some(9.0)));
-        // a spinning blade (no mode) is not the thrust lance
-        let spin = weapon_with("TROMBONE", "mode", None);
-        assert_eq!(
-            FighterCfg::from_json(&spin).unwrap().weapon,
-            WeaponCfg::Unsupported("blade".into())
-        );
+        // a spinning blade (no mode) is not the thrust lance: VIOLIN's bow, with the spin's own fields
+        match fighter("VIOLIN").weapon {
+            WeaponCfg::Blade(w) => {
+                assert_eq!(w.mode, BladeMode::Spin);
+                assert_eq!((w.spin, w.spin_grow, w.spin_max, w.cooldown), (2.4, 0.7, 14.0, 0.18));
+            }
+            other => panic!("VIOLIN's bow loads as {other:?}"),
+        }
+        // the lance's thrust keys are not a spinning blade's
+        assert!(FighterCfg::from_json(&weapon_with("TROMBONE", "mode", None)).is_err());
     }
 
     /// The 18 weapon kinds of the kit's other fighters each have their module (`roster::kinds::<kind>`): a roster
