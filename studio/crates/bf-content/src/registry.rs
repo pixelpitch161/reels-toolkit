@@ -17,7 +17,7 @@ const ROSTER_JSON: &str = include_str!("../data/roster.json");
 
 /// The fighters whose weapon and abilities the engine has ported, in no particular order (grows as fighters are
 /// ported).
-pub const PORTED: [&str; 21] = [
+pub const PORTED: [&str; 22] = [
     "FLUTE",
     "TROMBONE",
     "PIANO",
@@ -39,6 +39,7 @@ pub const PORTED: [&str; 21] = [
     "BASS DRUM",
     "EUPHONIUM",
     "TURNTABLES",
+    "SYNTH",
 ];
 
 /// Every roster entry (the kit's 20 and the older ten, offered or not), in `fighters.py`'s order, every number as
@@ -135,7 +136,7 @@ mod tests {
 
     #[test]
     fn available_is_the_ported_fighters_in_roster_order() {
-        // every kit fighter and TURNTABLES, in fighters.py's order whatever the order of `PORTED`; no fighter twice
+        // every kit fighter, TURNTABLES and SYNTH, in fighters.py's order whatever the order of `PORTED`; no fighter twice
         assert_eq!(
             available(),
             vec![
@@ -148,6 +149,7 @@ mod tests {
                 "ACOUSTIC",
                 "TRUMPET",
                 "TURNTABLES",
+                "SYNTH",
                 "CLARINET",
                 "OBOE",
                 "BASS CLARINET",
