@@ -1,6 +1,6 @@
 # Matchup history: design (short)
 
-Date: 2026-11-15. Asked for and decided by Aedan in the project thread "Track matchups already rendered".
+Date: 2026-11-15. Approved by Aedan 2026-11-15. Asked for and decided by Aedan in the project thread "Track matchups already rendered".
 
 ## Intent
 
