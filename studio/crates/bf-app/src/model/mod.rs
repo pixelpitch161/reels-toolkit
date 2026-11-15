@@ -6,6 +6,7 @@
 
 pub mod balance;
 pub mod draft;
+pub mod history;
 pub mod library;
 pub mod queue;
 pub mod roster;
