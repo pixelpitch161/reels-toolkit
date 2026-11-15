@@ -150,8 +150,7 @@ fn parts_of(name: &str) -> Vec<String> {
 
 /// A fighter's home config (`bf_content::home_config`): its theme, chord loop and its own part there.
 fn home(name: &str) -> Option<Home> {
-    let pair = bf_content::home_config(name)?;
-    let (_, ff) = bf_content::kit_pair_fights().into_iter().find(|(p, _)| *p == pair)?;
+    let ff = bf_content::home_fight(name)?;
     Some(Home {
         theme: ff.music.theme.clone(),
         chord_loop: ff.music.chord_loop.clone(),

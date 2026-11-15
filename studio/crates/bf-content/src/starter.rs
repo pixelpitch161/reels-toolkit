@@ -12,7 +12,7 @@ use std::sync::OnceLock;
 
 use bf_core::fightfile::{Captions, FightFile, OptionValue};
 
-use crate::themes::themes_for;
+use crate::themes::{PORTED_THEMES, themes_for};
 use crate::{ContentError, available, card, pair_rules};
 
 /// The series' kit configs as fight files (plan Table S4 and milestone 1's `flute_vs_trombone`): the pair's folder
@@ -164,15 +164,242 @@ pub fn kit_pair_fights() -> Vec<(&'static str, &'static FightFile)> {
 /// newest kit config by episode number, an example only when it has no other. `None` for a name not offered that no
 /// kit config has.
 ///
-/// An offered fighter without a kit config of its own (an older fighter) borrows FLUTE's and plays the melody there.
+/// An offered fighter without a kit config of its own (an older fighter) starts from its own episode's config (the
+/// newest one whose theme is offered); one with none offered yet borrows FLUTE's and plays the melody there.
 pub fn home_config(name: &str) -> Option<&'static str> {
     own_home_config(name).or_else(|| {
         if available().contains(&name) {
-            own_home_config("FLUTE")
+            own_episode(name).map(|e| e.pair).or_else(|| own_home_config("FLUTE"))
         } else {
             None
         }
     })
+}
+
+/// A fighter's home config ([`home_config`]) as its fight file.
+pub fn home_fight(name: &str) -> Option<&'static FightFile> {
+    home(name)
+}
+
+/// An older episode's music as a kit config (plan m4 Task 5's `tools/studio_export/older/configs/<pair>/episode.py`):
+/// its pair folder name, episode number, fighters, theme, tempo, key, scale, intro, loop, tail and the roles it names.
+/// A config whose `CHORDS` no single loop gives (ORGAN vs HARP's three sections) keeps its first section's loop and
+/// its last two bars as the tail.
+struct Episode {
+    pair: &'static str,
+    episode: u32,
+    fighters: [&'static str; 2],
+    theme: &'static str,
+    bpm: f64,
+    key: &'static str,
+    scale: &'static str,
+    intro: [&'static str; 2],
+    chord_loop: &'static [&'static str],
+    tail: &'static [&'static str],
+    roles: &'static [(&'static str, &'static str)],
+}
+
+/// Shorthand for an [`Episode`] row.
+#[allow(clippy::too_many_arguments)]
+const fn ep(
+    pair: &'static str,
+    episode: u32,
+    fighters: [&'static str; 2],
+    theme: &'static str,
+    bpm: f64,
+    (key, scale): (&'static str, &'static str),
+    intro: [&'static str; 2],
+    chord_loop: &'static [&'static str],
+    tail: &'static [&'static str],
+    roles: &'static [(&'static str, &'static str)],
+) -> Episode {
+    Episode {
+        pair,
+        episode,
+        fighters,
+        theme,
+        bpm,
+        key,
+        scale,
+        intro,
+        chord_loop,
+        tail,
+        roles,
+    }
+}
+
+/// The older episodes' configs (TROMBONE vs TUBA's #36 is left out: that pair keeps its kit config).
+const EPISODES: [Episode; 9] = [
+    ep(
+        "drums_vs_violin",
+        28,
+        ["DRUMS", "VIOLIN"],
+        "balkan_fire",
+        140.0,
+        ("D", "harmonic minor"),
+        ["Dm", "A"],
+        &["Dm", "Dm", "Gm", "A"],
+        &["Gm", "A"],
+        &[],
+    ),
+    ep(
+        "bagpipes_vs_accordion",
+        30,
+        ["BAGPIPES", "ACCORDION"],
+        "sea_shanty",
+        122.0,
+        ("A", "dorian"),
+        ["Am", "E"],
+        &["Am", "G", "Am", "Em"],
+        &["E"],
+        &[],
+    ),
+    ep(
+        "turntables_vs_synth",
+        31,
+        ["TURNTABLES", "SYNTH"],
+        "dark_breakbeat",
+        138.0,
+        ("F", "minor"),
+        ["Fm", "C"],
+        &["Fm", "Db", "Bbm", "C"],
+        &["C"],
+        &[],
+    ),
+    ep(
+        "tuba_vs_flute",
+        32,
+        ["TUBA", "FLUTE"],
+        "villain_march",
+        126.0,
+        ("C", "harmonic minor"),
+        ["Cm", "G"],
+        &["Cm", "Ab", "Db", "G"],
+        &["Ab", "G"],
+        &[("TUBA", "bass"), ("FLUTE", "melody")],
+    ),
+    ep(
+        "ukulele_vs_acoustic",
+        33,
+        ["UKULELE", "ACOUSTIC"],
+        "spaghetti_western",
+        130.0,
+        ("A", "minor"),
+        ["Am", "E"],
+        &["Am", "G", "F", "E"],
+        &["Am", "F", "E"],
+        &[("UKULELE", "melody"), ("ACOUSTIC", "rhythm")],
+    ),
+    ep(
+        "organ_vs_harp",
+        35,
+        ["ORGAN", "HARP"],
+        "gothic_horror",
+        126.0,
+        ("D", "minor"),
+        ["Dm", "A"],
+        &["Dm", "Dm", "Bb", "A"],
+        &["Dm", "A"],
+        &[],
+    ),
+    ep(
+        "bassoon_vs_barisax",
+        39,
+        ["BASSOON", "BARI SAX"],
+        "ska_punk",
+        170.0,
+        ("E", "minor"),
+        ["Em", "B"],
+        &["Em", "C", "D", "B"],
+        &["B"],
+        &[("BASSOON", "melody"), ("BARI SAX", "bass")],
+    ),
+    ep(
+        "barisax_vs_bassclarinet",
+        40,
+        ["BARI SAX", "BASS CLARINET"],
+        "industrial",
+        126.0,
+        ("G", "minor"),
+        ["Gm", "D"],
+        &["Gm", "Eb", "Cm", "D"],
+        &["Eb", "D"],
+        &[("BARI SAX", "bass"), ("BASS CLARINET", "counter")],
+    ),
+    ep(
+        "viola_vs_violin",
+        42,
+        ["VIOLA", "VIOLIN"],
+        "orchestral_drill",
+        140.0,
+        ("C", "harmonic minor"),
+        ["Cm", "G"],
+        &["Cm", "Cm", "Ab", "Ab", "Fm", "Fm", "G", "G"],
+        &["Ab", "G"],
+        &[],
+    ),
+];
+
+/// An older episode config as a fight file: its pair folder name, episode number and fight.
+struct EpisodeFight {
+    pair: &'static str,
+    episode: u32,
+    ff: FightFile,
+}
+
+/// The older episode configs whose theme is offered ([`PORTED_THEMES`]), as fight files: FLUTE's home config (what
+/// an older fighter borrowed before) with the episode's fighters, theme, tempo, key, scale, chords and roles, the
+/// kit's sketch lines and solos, no title hits, no mix, no title-card opt-ins and a neutral handicap.
+fn episodes() -> &'static [EpisodeFight] {
+    static FIGHTS: OnceLock<Vec<EpisodeFight>> = OnceLock::new();
+    FIGHTS.get_or_init(|| {
+        let flute = own_home_config("FLUTE")
+            .and_then(|pair| kit_pairs().iter().find(|p| p.pair == pair))
+            .map(|p| &p.ff)
+            .expect("FLUTE's home config");
+        let texts = |v: &[&str]| v.iter().map(|s| s.to_string()).collect::<Vec<_>>();
+        EPISODES
+            .iter()
+            .filter(|e| PORTED_THEMES.contains(&e.theme))
+            .map(|e| {
+                let mut ff = flute.clone();
+                ff.fighters = texts(&e.fighters);
+                ff.handicap = vec![1.0, 1.0];
+                ff.dmg_scale = 1.0;
+                ff.tempo_bpm = e.bpm;
+                let m = &mut ff.music;
+                m.theme = e.theme.to_string();
+                m.theme_options.clear();
+                m.key = e.key.to_string();
+                m.scale = e.scale.to_string();
+                m.chords_intro = texts(&e.intro);
+                m.chord_loop = texts(e.chord_loop);
+                m.chords_tail = texts(e.tail);
+                m.roles = e.roles.iter().map(|&(f, r)| (f.to_string(), r.to_string())).collect();
+                m.lines.clear();
+                m.solos.clear();
+                m.title_hits.clear();
+                m.mix.clear();
+                let p = &mut ff.picture;
+                p.title_lines.clear();
+                p.title_balls = None;
+                p.middle = None;
+                EpisodeFight {
+                    pair: e.pair,
+                    episode: e.episode,
+                    ff,
+                }
+            })
+            .collect()
+    })
+}
+
+/// An older fighter's own episode config: its newest one by episode number whose theme is offered.
+fn own_episode(name: &str) -> Option<&'static EpisodeFight> {
+    episodes()
+        .iter()
+        .filter(|e| e.ff.fighters.iter().any(|f| f == name))
+        .max_by_key(|e| e.episode)
 }
 
 fn own_home_config(name: &str) -> Option<&'static str> {
@@ -185,7 +412,11 @@ fn own_home_config(name: &str) -> Option<&'static str> {
 
 fn home(name: &str) -> Option<&'static FightFile> {
     let pair = home_config(name)?;
-    kit_pairs().iter().find(|p| p.pair == pair).map(|p| &p.ff)
+    kit_pairs()
+        .iter()
+        .find(|p| p.pair == pair)
+        .map(|p| &p.ff)
+        .or_else(|| episodes().iter().find(|e| e.pair == pair).map(|e| &e.ff))
 }
 
 /// The tags every Instagram draft ends with.
@@ -229,6 +460,8 @@ pub fn starter(left: &str, right: &str) -> Result<FightFile, ContentError> {
         ff.fighters.reverse();
         ff.handicap.reverse();
         ff
+    } else if let Some(ff) = episode_pair(left, right) {
+        ff
     } else {
         crossover(left, right)?
     };
@@ -258,13 +491,44 @@ fn crossover(left: &str, right: &str) -> Result<FightFile, ContentError> {
         .into_iter()
         .find(|t| offered.contains(t))
         .unwrap_or(FALLBACK_THEME);
-    let role_of = |h: &FightFile, name: &str| match h.music.roles.get(name) {
-        Some(role) => Ok(role.clone()),
-        None if own_home_config(name).is_none() => Ok("melody".to_string()),
-        None => Err(no_music(left, right)),
+    let (Some(rl), Some(rr)) = (role_of(hl, left), role_of(hr, right)) else {
+        return Err(no_music(left, right));
     };
-    let rl = role_of(hl, left)?;
-    let mut rr = role_of(hr, right)?;
+    Ok(arrange(hl.clone(), left, right, theme, rl, rr))
+}
+
+/// `name`'s part in its home config `h`: the one it names, else the melody for a fighter without a kit config.
+fn role_of(h: &FightFile, name: &str) -> Option<String> {
+    match h.music.roles.get(name) {
+        Some(role) => Some(role.clone()),
+        None if own_home_config(name).is_none() => Some("melody".to_string()),
+        None => None,
+    }
+}
+
+/// The fight file of a pair with an older episode config (in either order) whose theme the pair is offered: that
+/// config's music with the sides as given, each fighter's part the one the config names, else its home part (the
+/// same clash rule as a crossover). `None` for any other pair.
+fn episode_pair(left: &str, right: &str) -> Option<FightFile> {
+    let e = episodes()
+        .iter()
+        .find(|e| e.ff.fighters == [left, right] || e.ff.fighters == [right, left])?;
+    let theme = e.ff.music.theme.as_str();
+    if !themes_for(left, right).contains(&theme) {
+        return None;
+    }
+    let part = |name: &str| {
+        e.ff.music
+            .roles
+            .get(name)
+            .cloned()
+            .or_else(|| role_of(home(name)?, name))
+    };
+    Some(arrange(e.ff.clone(), left, right, theme, part(left)?, part(right)?))
+}
+
+/// `ff` (a home or episode config) as `left` vs `right` on `theme` with the parts `rl` and `rr` (see [`starter`]).
+fn arrange(mut ff: FightFile, left: &str, right: &str, theme: &str, rl: String, mut rr: String) -> FightFile {
     if rr == rl {
         rr = if card(right).is_some_and(|c| c.can_play_bass) && rl != "bass" {
             "bass"
@@ -275,7 +539,6 @@ fn crossover(left: &str, right: &str) -> Result<FightFile, ContentError> {
         }
         .to_string();
     }
-    let mut ff = hl.clone();
     ff.fighters = vec![left.to_string(), right.to_string()];
     ff.handicap = vec![1.0, 1.0];
     ff.dmg_scale = 1.0;
@@ -301,7 +564,7 @@ fn crossover(left: &str, right: &str) -> Result<FightFile, ContentError> {
     p.title_lines.clear();
     p.title_balls = None;
     p.middle = None;
-    Ok(ff)
+    ff
 }
 
 /// The post texts drafted for `left` vs `right` from the fighters' emoji and tags (spec section 9). A fighter
