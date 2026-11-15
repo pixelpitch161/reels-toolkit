@@ -30,6 +30,7 @@ impl AppState {
         let music = self.music_key();
         if self.music.as_ref() != Some(&music) {
             let had = self.music.replace(music).is_some();
+            self.vm.failed_fits.clear();
             if had && self.vm.draft.seed.is_some() {
                 self.ask_take(fx);
             }
@@ -89,6 +90,7 @@ impl AppState {
         self.measuring = false;
         self.balance_stopped = false;
         self.vm.take = TakeView::default();
+        self.vm.failed_fits.clear();
         self.wanted = None;
         if fighters_changed {
             // The pair rules, the problem and the title card were the other pair's (or the other order's).

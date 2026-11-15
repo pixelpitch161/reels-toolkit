@@ -25,9 +25,9 @@ use egui::{
 
 use crate::model::library::FolderState;
 use crate::model::queue::{FailHint, Job, JobState, STEP_ORDER, StepKey, StepLine, StepState};
-use crate::model::{JobId, Platform, Step};
+use crate::model::{JobId, Platform, Step, View};
 use crate::state::queue_run::why_not_add;
-use crate::state::{Action, QueueAction, ViewModel};
+use crate::state::{Action, PICK_THEME, QueueAction, ViewModel};
 use crate::theme::{
     CONTROL_H, FAINT, GROUND, HAIRLINE, LINE, LINE_SOFT, MUTED, ON_LIGHT, RADIUS, RADIUS_ROW, RAISED, TEXT,
     TEXT_STRONG, body, rgb, section, small, value as mono,
@@ -325,6 +325,10 @@ fn waiting_to_add(ui: &mut Ui, vm: &ViewModel, rect: Rect, reason: &str, out: &m
     if let Some(next) = vm.failed_take_words().and(vm.next_fit()) {
         buttons_w += GAP + button_w(ui, &format!("Use seed {next}"));
     }
+    let pick_theme = vm.theme_way_out().is_some();
+    if pick_theme {
+        buttons_w += GAP + button_w(ui, PICK_THEME);
+    }
     let words_w = (rect.width() - buttons_w - LABEL_GAP).max(0.0);
     let words_h = wrapped_h(ui, reason, body(), words_w);
     let height = words_h.max(CONTROL_H);
@@ -340,6 +344,10 @@ fn waiting_to_add(ui: &mut Ui, vm: &ViewModel, rect: Rect, reason: &str, out: &m
         && buttons::boxed(&mut c, &format!("Use seed {next}")).clicked()
     {
         out.push(Action::SelectSeed(next));
+    }
+    // every fight tried fails the same check: the theme is the trouble
+    if pick_theme && buttons::boxed(&mut c, PICK_THEME).clicked() {
+        out.push(Action::Go(View::Step(Step::Matchup)));
     }
     let top = if words_h < CONTROL_H {
         rect.min.y + (CONTROL_H - words_h) / 2.0

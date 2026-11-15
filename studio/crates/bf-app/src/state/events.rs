@@ -110,6 +110,11 @@ impl AppState {
                 if self.wanted != Some(take) {
                     return;
                 }
+                if let (Some(seed), Some(failed)) = (self.vm.draft.seed, music.checks.iter().find(|c| !c.pass))
+                    && !self.vm.failed_fits.iter().any(|(s, _)| *s == seed)
+                {
+                    self.vm.failed_fits.push((seed, failed.title.clone()));
+                }
                 self.vm.take.music = Some(music);
                 fx.push(Effect::Player(PlayerCmd::Sound { take, audio }));
             }

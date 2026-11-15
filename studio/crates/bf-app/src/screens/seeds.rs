@@ -19,7 +19,7 @@ use egui::{
 use crate::model::shortlist::{FilterSpec, Finish, SearchState};
 use crate::model::story::StoryView;
 use crate::model::{Step, View};
-use crate::state::{Action, ViewModel};
+use crate::state::{Action, PICK_THEME, ViewModel};
 use crate::theme::{
     CONTROL_H, LINE_SOFT, MUTED, RADIUS_ROW, TEXT, TEXT_STRONG, VALUE_W, body, rgb, section, small, strong,
     value as mono,
@@ -744,7 +744,15 @@ fn footer_row(ui: &mut Ui, vm: &ViewModel, inside: Rect, out: &mut Vec<Action>) 
         SearchState::Stopped => ("Search stopped.", Some(("Keep searching", Action::SearchOn))),
         SearchState::Full => ("The shortlist is full.", None),
     };
-    let words = format!("{fits} the beat sheet, from {checked} checked. {state}");
+    let mut words = format!("{fits} the beat sheet, from {checked} checked. {state}");
+    // every fight tried fails the same check with this theme: say so, and offer the theme picker on Match-up
+    let button = match vm.theme_way_out() {
+        Some(way_out) => {
+            words = way_out;
+            Some((PICK_THEME, Action::Go(View::Step(Step::Matchup))))
+        }
+        None => button,
+    };
     let mut child = ui.new_child(
         UiBuilder::new()
             .id_salt("footer")
