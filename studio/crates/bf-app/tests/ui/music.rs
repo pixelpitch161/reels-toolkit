@@ -4,6 +4,7 @@
 use bf_app::app::BfApp;
 use bf_app::engine::{self, EngineConfig, content, convert};
 use bf_app::fixtures::music;
+use bf_app::model::draft::Draft;
 use bf_app::model::queue::Queue;
 use bf_app::model::shortlist::{SearchState, Shortlist};
 use bf_app::model::take::CheckLine;
@@ -23,7 +24,9 @@ use crate::common::{MIN, REF, app_harness, gpu, pixels};
 
 const FIRST_LOOP: &str = "Em  Am  B7  Em  C  Am  B7  B7";
 const SECOND_LOOP: &str = "Em  C  Am  B7  Em  C  Am  B7";
-const TAKES_LINE: &str = "New takes arrive with the music system. This version plays the series' own arrangement.";
+const CLASSIC_LINE: &str = "The theme's own band part, and each fighter plays its series line.";
+const CLASSIC_WHY: &str =
+    "Classic plays the series' own lines, so the music seed is not used. Pick Composed to use it.";
 const TEMPO_LINE: &str = "Tempo is set on Match-up, because it changes the fight.";
 const NO_SEED: &str = "Pick a seed first. The music is built for the fight you choose.";
 const FAILING: &str = "The opening is 2.1 dB quieter than the ending, and the limit is 1.5 dB.";
@@ -92,8 +95,10 @@ fn the_words_that_stay() {
         "The title card is 0.4 LU under the fight.",
         "Fighters above the music",
         "Both fighters sit above the band in their own range.",
-        "Music that follows the fight, with fills on lead changes and fresh lines for every take, arrives with the \
-         music system.",
+        "Classic",
+        "Composed",
+        CLASSIC_LINE,
+        "Levels: pass",
         FIRST_LOOP,
         SECOND_LOOP,
     ] {
@@ -155,7 +160,12 @@ fn the_controls_column_is_300_wide() {
         vec![rgb(PANEL), rgb(LINE_SOFT), rgb(PANEL)],
         "a 1 px line on its right"
     );
-    let heading = harness.get_by_label("Arrangement").rect();
+    let heading = harness
+        .query_all_by_label("Arrangement")
+        .filter(|n| n.accesskit_node().role() == Role::Label)
+        .map(|n| n.rect())
+        .find(|r| r.min.x >= CONTROLS_W)
+        .expect("the arrangement's header");
     assert_eq!(
         heading.min.x,
         CONTROLS_W + 14.0,
@@ -174,7 +184,7 @@ fn placeholders_are_disabled_and_say_why() {
     assert!(seed.accesskit_node().is_disabled());
     let reroll = harness.get_by_label("Re-roll music");
     assert!(reroll.accesskit_node().is_disabled());
-    assert!(has(&harness, TAKES_LINE), "the stated line");
+    assert!(has(&harness, CLASSIC_LINE), "the stated line");
     assert!(!has(&harness, "What the music listens for"));
     assert!(!has(
         &harness,
@@ -187,8 +197,8 @@ fn placeholders_are_disabled_and_say_why() {
             Role::ComboBox,
             "The key comes with the chord loop in this version.",
         ),
-        ("Music seed", Role::TextInput, "New takes arrive with the music system."),
-        ("Re-roll music", Role::Button, "New takes arrive with the music system."),
+        ("Music seed", Role::TextInput, CLASSIC_WHY),
+        ("Re-roll music", Role::Button, CLASSIC_WHY),
     ] {
         assert!(!has(&harness, why), "{label}: not before hovering");
         by_role(&harness, label, role).hover();
@@ -364,6 +374,107 @@ fn loudness_lines_show_pass_and_fail() {
     assert!(workspace.contains_rect(note), "{note:?}");
 }
 
+/// Task 8: a failing take says so in its levels line, with the reason.
+#[test]
+fn a_failing_take_shows_its_reason() {
+    let _gpu = gpu();
+    let mut vm = music::vm();
+    vm.take.music.as_mut().unwrap().checks[0] = CheckLine {
+        title: "Loudness".to_string(),
+        pass: false,
+        note: FAILING.to_string(),
+    };
+    let harness = showing(REF, vm);
+    assert!(has(&harness, &format!("Levels: Loudness fails. {FAILING}")));
+    assert!(!has(&harness, "Levels: pass"));
+}
+
+#[test]
+fn the_switch_sets_the_arrangement() {
+    let _gpu = gpu();
+    let mut harness = showing(REF, music::vm());
+    let classic = by_role(&harness, "Classic", Role::RadioButton);
+    assert_eq!(classic.accesskit_node().toggled(), Some(Toggled::True));
+    classic.click();
+    harness.run();
+    assert!(harness.state().log.is_empty(), "the chosen one is not asked for again");
+    by_role(&harness, "Composed", Role::RadioButton).click();
+    harness.run();
+    assert_eq!(
+        harness.state().log,
+        vec![Action::SetArrangement("composed".to_string())]
+    );
+    let state = &harness.state().state.vm;
+    assert_eq!(state.draft.arrangement.as_deref(), Some("composed"));
+    let ff = convert::fight_file(&state.draft).expect("a fight file");
+    assert_eq!(ff.music.arrangement, "composed");
+    assert!(has(
+        &harness,
+        "The band follows the fight, and each fighter gets a line written for this take."
+    ));
+    assert!(
+        !by_role(&harness, "Music seed", Role::TextInput)
+            .accesskit_node()
+            .is_disabled()
+    );
+}
+
+#[test]
+fn re_roll_changes_only_the_music_seed() {
+    let _gpu = gpu();
+    let mut harness = showing(REF, music::composed());
+    let before = harness.state().state.vm.draft.clone();
+    let reroll = harness.get_by_label("Re-roll music");
+    assert!(!reroll.accesskit_node().is_disabled());
+    reroll.click();
+    harness.run();
+    assert_eq!(harness.state().log, vec![Action::RerollMusic]);
+    let after = harness.state().state.vm.draft.clone();
+    assert_ne!(after.music_seed, before.music_seed);
+    assert!((1..=9999).contains(&after.music_seed));
+    assert_eq!(
+        Draft {
+            music_seed: before.music_seed,
+            ..after.clone()
+        },
+        before,
+        "nothing else changes"
+    );
+    let shown = format!("{:04}", after.music_seed);
+    assert_eq!(
+        by_role(&harness, "Music seed", Role::TextInput).value().as_deref(),
+        Some(shown.as_str())
+    );
+}
+
+#[test]
+fn each_fighter_can_keep_its_line() {
+    let _gpu = gpu();
+    let mut harness = showing(REF, music::composed());
+    let flute = "Keep Flute's line as written";
+    let trombone = "Keep Trombone's line as written";
+    assert_eq!(
+        harness.get_by_label(trombone).accesskit_node().toggled(),
+        Some(Toggled::True)
+    );
+    assert_eq!(
+        harness.get_by_label(flute).accesskit_node().toggled(),
+        Some(Toggled::False)
+    );
+    harness.get_by_label(flute).scroll_to_me();
+    harness.run();
+    harness.get_by_label(flute).click();
+    harness.run();
+    assert_eq!(harness.state().log, vec![Action::SetPinned { side: 0, keep: true }]);
+    let draft = &harness.state().state.vm.draft;
+    assert_eq!(draft.pinned, Some(vec!["TROMBONE".to_string(), "FLUTE".to_string()]));
+    let ff = convert::fight_file(draft).expect("a fight file");
+    assert_eq!(ff.music.pinned, ["TROMBONE", "FLUTE"]);
+    // on Classic there is nothing to keep
+    let harness = showing(REF, music::vm());
+    assert!(!has(&harness, flute) && !has(&harness, trombone));
+}
+
 #[test]
 fn clips_sit_at_their_times() {
     let _gpu = gpu();
@@ -460,10 +571,12 @@ fn assert_ring(harness: &mut Harness<'_, BfApp>, rect: Rect, sides: &str, what: 
 }
 
 /// The controls Tab reaches on the screen with a take, in reading order, with their roles.
-const FOCUSABLE: [(&str, Role); 4] = [
+const FOCUSABLE: [(&str, Role); 6] = [
     ("Theme", Role::ComboBox),
     (FIRST_LOOP, Role::Button),
     (SECOND_LOOP, Role::Button),
+    ("Classic", Role::RadioButton),
+    ("Composed", Role::RadioButton),
     ("Go to render", Role::Button),
 ];
 
@@ -1043,6 +1156,8 @@ fn tab_walks_the_bass_and_the_next_fit() {
             (SECOND_LOOP, Role::Button),
             ("Flute", Role::RadioButton),
             ("Trombone", Role::RadioButton),
+            ("Classic", Role::RadioButton),
+            ("Composed", Role::RadioButton),
             (offer, Role::Button),
             ("Go to render", Role::Button),
         ];

@@ -585,6 +585,8 @@ impl Engine {
             music_seed: 1,
             captions: sample::captions(),
             captions_edited: false,
+            arrangement: None,
+            pinned: None,
             base: None,
         }
     }
@@ -839,6 +841,8 @@ mod tests {
             music_seed: 1,
             captions: sample::captions(),
             captions_edited: false,
+            arrangement: None,
+            pinned: None,
             base: None,
         }
     }

@@ -5,10 +5,11 @@
 //! Live: the theme, the chord loop (each of the theme's loops, and the fight file's own when it is none of them) and,
 //! when both fighters' cards can play bass and one of them does, who plays bass. Read-only: the theme's options as
 //! the fight file sets them ("The sequel", "No bass drums", "Plugged: Electric") and each fighter's part (ruling
-//! M3-R8). Drawn but disabled, each saying why when hovered: the key (it follows the theme), the music seed and
-//! "Re-roll music" (new takes arrive with the music system). The lanes are plain blocks showing where each part of
-//! the built soundtrack sounds; they carry no names until the music system gives the parts names (section 9). A
-//! take whose loudness checks fail says that its video would stop there, and offers the next fight that fits.
+//! M3-R8). The arrangement (Classic or Composed); on Composed the music seed with "Re-roll music" and, for each
+//! fighter, whether it keeps its written line (the pin). On Classic the music seed and "Re-roll music" are drawn
+//! disabled and say why when hovered, as the key does (it follows the theme). The lanes are plain blocks showing
+//! where each part of the built soundtrack sounds. Under them, the take's levels in one line ("Levels: pass" or the
+//! reason it fails); a take that fails says that its video would stop there, and offers the next fight that fits.
 //!
 //! The screen is drawn from the view model alone and pushes what the owner does; the only things it remembers are
 //! egui's own (where the two scroll areas are scrolled, which control has the keyboard, whether the theme's list is
@@ -24,7 +25,7 @@ use egui::{
 use crate::model::roster::{BASS_ROLE, part_words};
 use crate::model::take::{Lane, LaneGroup, MusicView};
 use crate::model::{Step, View};
-use crate::state::{Action, PICK_THEME, ViewModel};
+use crate::state::{Action, CLASSIC, COMPOSED, PICK_THEME, ViewModel};
 use crate::theme::{
     BAND_CLIP, CONTROL_H, FAINT, GROUP, HAIRLINE, HOVER, LINE, LINE_SOFT, MUTED, RADIUS, RAISED, TEXT, TEXT_STRONG,
     VALUE_W, body, large_fill, rgb, section, small, value as mono,
@@ -89,10 +90,17 @@ const RING_ROOM: f32 = 4.0;
 
 /// Why the key cannot be changed.
 pub const KEY_WHY: &str = "The key comes with the chord loop in this version.";
-/// Why the music seed and "Re-roll music" cannot be used.
-pub const TAKES_WHY: &str = "New takes arrive with the music system.";
-/// The line under them.
-pub const TAKES_LINE: &str = "New takes arrive with the music system. This version plays the series' own arrangement.";
+/// Why the music seed and "Re-roll music" cannot be used on Classic.
+pub const CLASSIC_WHY: &str =
+    "Classic plays the series' own lines, so the music seed is not used. Pick Composed to use it.";
+/// Under the arrangement switch, on Classic and on Composed.
+pub const CLASSIC_LINE: &str = "The theme's own band part, and each fighter plays its series line.";
+pub const COMPOSED_LINE: &str = "The band follows the fight, and each fighter gets a line written for this take.";
+/// Under the music seed on Composed.
+pub const REROLL_LINE: &str = "Re-roll music writes new lines and solos for the same fight.";
+/// Under the music seed on Composed, when a fighter's notes are its weapon.
+pub const REROLL_FIGHT_LINE: &str = "Re-roll music writes new lines and solos. A fighter here fights with its notes, \
+                                     so the fight changes too.";
 /// Under the fight file's own chord loop.
 pub const OWN_LOOP: &str = "The last loop is this match-up's own, from the series.";
 /// Under the theme's options.
@@ -177,6 +185,15 @@ fn controls_column(ui: &mut Ui, vm: &ViewModel, out: &mut Vec<Action>) {
                 let inner_h = rect.height() - 2.0 * f32::from(CONTROLS_PAD.1);
                 controls(ui, vm, inner_h, out);
             });
+        // A control that just got the keyboard is scrolled into view with room for its focus ring.
+        let column = ui.min_rect().x_range();
+        let focused = ui.memory(|m| m.focused());
+        if let Some(r) = focused.and_then(|id| ui.ctx().read_response(id))
+            && r.gained_focus()
+            && column.contains(r.rect.center().x)
+        {
+            ui.scroll_to_rect(r.rect.expand(RING_ROOM), None);
+        }
     });
 }
 
@@ -286,19 +303,40 @@ fn controls(ui: &mut Ui, vm: &ViewModel, inner_h: f32, out: &mut Vec<Action>) {
 
     divider(ui);
     ui.add_space(GROUP_GAP);
+    let composed = vm.composed();
+    group_label(ui, "Arrangement");
+    let styles = [("Classic", None), ("Composed", None)];
+    if let Some(i) = buttons::segmented(ui, "Arrangement", &styles, Some(usize::from(composed)), width)
+        && (i == 1) != composed
+    {
+        out.push(Action::SetArrangement(
+            if i == 1 { COMPOSED } else { CLASSIC }.to_string(),
+        ));
+    }
+    ui.add_space(LABEL_GAP);
+    hint(ui, if composed { COMPOSED_LINE } else { CLASSIC_LINE });
+    ui.add_space(GROUP_GAP);
+
     group_label(ui, "This take");
     ui.horizontal(|ui| {
         plain(ui, RichText::new("Music seed").font(body()).color(MUTED));
         let seed = format!("{:04}", vm.draft.music_seed);
         let look = ReadLook {
             compact: true,
-            why: Some(TAKES_WHY),
+            why: (!composed).then_some(CLASSIC_WHY),
         };
         fields::read_field_with(ui, "Music seed", &seed, VALUE_W, look);
-        buttons::disabled(ui, "Re-roll music", TAKES_WHY);
+        if !composed {
+            buttons::disabled(ui, "Re-roll music", CLASSIC_WHY);
+        } else if buttons::boxed(ui, "Re-roll music").clicked() {
+            out.push(Action::RerollMusic);
+        }
     });
-    ui.add_space(LABEL_GAP);
-    hint(ui, TAKES_LINE);
+    if composed {
+        ui.add_space(LABEL_GAP);
+        let feeds = (0..2).any(|side| vm.fighter(side).is_some_and(|f| f.music_feeds_fight));
+        hint(ui, if feeds { REROLL_FIGHT_LINE } else { REROLL_LINE });
+    }
     ui.add_space(GROUP_GAP);
 
     divider(ui);
@@ -315,6 +353,14 @@ fn controls(ui: &mut Ui, vm: &ViewModel, inner_h: f32, out: &mut Vec<Action>) {
                 hint(ui, &card.music_text);
             });
         });
+        if composed {
+            ui.add_space(LABEL_GAP);
+            let on = vm.pinned(side);
+            let label = format!("Keep {}'s line as written", names[side]);
+            if buttons::wrapped_switch(ui, &label, on, width).clicked() {
+                out.push(Action::SetPinned { side, keep: !on });
+            }
+        }
     }
 
     let tempo = "Tempo is set on Match-up, because it changes the fight.";
@@ -579,6 +625,12 @@ fn loudness(ui: &mut Ui, vm: &ViewModel, out: &mut Vec<Action>) {
                 ui,
                 "Checked as soon as the take is built, so a problem shows here and not in the queue.",
             );
+            if let Some(words) = vm.levels_words() {
+                ui.add_space(UNDER_GAP);
+                let failed = music.is_some_and(|m| m.checks.iter().any(|c| !c.pass));
+                let colour = if failed { TEXT_STRONG } else { TEXT };
+                wrapped(ui, RichText::new(words).font(body()).color(colour));
+            }
             for check in music.map_or(&[][..], |m| &m.checks[..]) {
                 ui.add_space(UNDER_GAP);
                 let (icon, colour) = if check.pass {
@@ -622,12 +674,6 @@ fn loudness(ui: &mut Ui, vm: &ViewModel, out: &mut Vec<Action>) {
                     }
                 }
             }
-            ui.add_space(UNDER_GAP);
-            hint(
-                ui,
-                "Music that follows the fight, with fills on lead changes and fresh lines for every take, arrives \
-                 with the music system.",
-            );
         });
 }
 

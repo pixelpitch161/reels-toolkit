@@ -238,6 +238,8 @@ pub fn pair_music(base: &FightFile, fighters: &[String; 2]) -> PairMusic {
                 Some((key.clone(), set))
             })
             .collect(),
+        arrangement: base.music.arrangement.clone(),
+        pinned: base.music.pinned.clone(),
     }
 }
 

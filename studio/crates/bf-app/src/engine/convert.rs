@@ -129,6 +129,14 @@ pub(crate) fn build(draft: &Draft) -> Result<FightFile, Unusable> {
         ff.music.roles.insert(name.clone(), part);
     }
     ff.music.music_seed = draft.music_seed;
+    if let Some(arrangement) = &draft.arrangement {
+        ff.music.arrangement.clone_from(arrangement);
+    }
+    if let Some(pinned) = &draft.pinned {
+        ff.music.pinned = pinned.iter().filter(|p| draft.fighters.contains(p)).cloned().collect();
+    } else {
+        ff.music.pinned.retain(|p| draft.fighters.contains(p));
+    }
     ff.captions = captions(&draft.captions);
     ff.app_version = env!("CARGO_PKG_VERSION").to_string();
     bf_content::validate(&ff).map_err(|e| unusable(&e))?;
@@ -196,6 +204,8 @@ pub fn draft_of(ff: &FightFile, toml: &str) -> Draft {
         music_seed: ff.music.music_seed,
         captions: caption_texts(&ff.captions),
         captions_edited: true,
+        arrangement: None,
+        pinned: None,
         base: Some(toml.to_string()),
         fighters,
     }

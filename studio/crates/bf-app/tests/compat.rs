@@ -602,6 +602,8 @@ fn make_this_versions_files() {
             shorts: String::new(),
         },
         captions_edited: false,
+        arrangement: None,
+        pinned: None,
         base: None,
     };
     assert_eq!(draft.fighters, ["FLUTE", "TROMBONE"], "the starting pair");
