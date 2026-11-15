@@ -114,7 +114,12 @@ impl PictureCtx {
     /// `sparks(arr, cam, t)`: the spark sprays of the last 0.32 s, one pixel a spark, and the white impact point
     /// of a look's `spark_flash` hits.
     pub(super) fn sparks(&self, arr: &mut Img<f32>, cam: &Cam, t: f64) {
-        for i in self.events_between(t - 0.32, t, &["hit", "parry", "block", "wall", "cleared", "fade"]) {
+        // (opt-in spark_events: the looks' extra kinds after the kit's)
+        let mut kinds: Vec<&str> = vec!["hit", "parry", "block", "wall", "cleared", "fade"];
+        for look in &self.looks {
+            kinds.extend_from_slice(look.spark_events());
+        }
+        for i in self.events_between(t - 0.32, t, &kinds) {
             let e = &self.rec.events[i];
             let dt = t - e.t;
             let hit = e.kind == "hit";

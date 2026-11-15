@@ -46,6 +46,11 @@ EXAMPLE = 'flute_vs_trombone'
 OFF_EXAMPLES = ('flute_vs_trombone', 'bassclarinet_vs_euphonium', 'trombone_vs_horn')
 OFF_FRAMES = (0, 60, 108, 150, 450, 600, 900, 1200, 1350, 1500, 1520, 1600, 1700, 1800)
 STUB_SIDE = 1                                    # the stub look draws the TROMBONE's side
+# Task 4's ten opt-ins, in registration order (the Rust test's OPTINS). Later ports register more opt-ins of their
+# own in picture_patches.py (VIOLA's three: older_vectors_viola.py proves them); this export checks these ten only,
+# all ten installed, every one used by its stub.
+OPTINS = ('canvas_albedo', 'canvas_paint', 'ball_tint', 'ball_glass', 'ball_lit', 'ball_after_sprite', 'ball_late',
+          'rope_press', 'rope_events', 'after_post')
 DART_T = 20.0                                    # draw_dart's replays: the example's camera and lights at this time
 CAP = 10                                         # recorded calls kept per helper, family and episode
 KEEP_FIRST = 4
@@ -562,6 +567,12 @@ def optins():
         off[ex] = b
     on = got[('on',)]
     calls = on['calls']
+    missing = [n for n in OPTINS if n not in on['optins']]
+    if missing:
+        raise SystemExit(f'older_vectors: opt-ins {missing} are not installed ({on["optins"]})')
+    on['optins'] = [n for n in on['optins'] if n in OPTINS]
+    if on['optins'] != list(OPTINS):
+        raise SystemExit(f'older_vectors: the opt-ins are registered out of order: {on["optins"]}')
     for name in on['optins']:
         if not calls.get(name):
             raise SystemExit(f'older_vectors: the stub look never used opt-in {name} ({calls})')

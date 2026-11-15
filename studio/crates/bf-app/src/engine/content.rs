@@ -417,7 +417,7 @@ mod tests {
     #[test]
     fn the_real_roster() {
         let r = roster();
-        assert_eq!(r.fighters.len(), 24);
+        assert_eq!(r.fighters.len(), 25);
         let names: Vec<&str> = r.fighters.iter().map(|f| f.name.as_str()).collect();
         assert_eq!(names, bf_content::shown_order());
         let on: Vec<&str> = r
@@ -649,7 +649,7 @@ mod tests {
     }
 
     /// The roster knows how every new match-up starts exactly as the engine's starter makes it (theme, the place
-    /// of its chord loop, handicap, parts), for all 552 ordered pairs of offered fighters, so the interface can set
+    /// of its chord loop, handicap, parts), for all 600 ordered pairs of offered fighters, so the interface can set
     /// the draft at once when a fighter is picked.
     #[test]
     fn the_roster_starts_every_pair_as_the_engine_does() {
@@ -660,7 +660,7 @@ mod tests {
             .filter(|f| f.available)
             .map(|f| f.name.clone())
             .collect();
-        assert_eq!(offered.len(), 24);
+        assert_eq!(offered.len(), 25);
         assert_eq!(r.kit_pairs.len(), 18);
         let mut pairs = 0;
         for a in &offered {
@@ -690,7 +690,7 @@ mod tests {
                 assert_eq!(r.start_of(&fighters), Some(want), "{a} vs {b}");
             }
         }
-        assert_eq!(pairs, 552);
+        assert_eq!(pairs, 600);
         // the kit's frozen handicaps, swapped with the sides
         let start = |a: &str, b: &str| r.start_of(&[a.to_string(), b.to_string()]).expect("a start");
         assert_eq!(start("FLUTE", "TROMBONE").handicap, [2.0, 0.4]);

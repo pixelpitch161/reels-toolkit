@@ -340,7 +340,7 @@ fn check_events(ev: &[Event]) -> Result<(), PictureError> {
             {
                 Some("is not [t, 'rope', ball, axis 0 or 1, side 1 or -1, x, y, speed]")
             }
-            "parry" | "block" | "wall" | "cleared" | "fade" if !(num(e, 4) && num(e, 5)) => {
+            "parry" | "block" | "wall" | "cleared" | "fade" | "crushed" if !(num(e, 4) && num(e, 5)) => {
                 Some("has no position in elements 4 and 5")
             }
             _ => None,

@@ -184,6 +184,15 @@ pub fn extra_lines(fighter: &str) -> &'static [&'static str] {
     entry(fighter).map_or(&[], |e| e.extra_lines)
 }
 
+/// The voices the fighter's part plays besides its own (VIOLA: the crush's `CELLO`); empty for every other. The
+/// soundtrack adds them to the fight's voices when neither fighter nor the theme plays them already.
+pub fn part_voices(fighter: &str) -> &'static [&'static str] {
+    match fighter {
+        "VIOLA" => viola::PART_VOICES,
+        _ => &[],
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -2083,38 +2083,35 @@ kind `offbeat`) adds `skank` (until).
 <!-- kind:rests -->
 #### `rests` (weapon kind of VIOLA)
 
-`fight.py` 5021 to 5107, 5137 to 5181, 342 to 343. Not ported yet (milestone 4, Task 3 made its sockets): its port fills
-this section in (the meaning of each field, as 6.2 and 6.3 do for FLUTE and TROMBONE), from the lines below.
+`fight.py` 5021 to 5107, 5137 to 5181, 342 to 343; ported in `bf-sim/src/kinds/rests.rs` (`bf-core/src/roster/kinds/
+rests.rs` for its roster numbers). On every beat of its own 16th counter the fighter rests for `int(every) - 1`
+counted beats (one under MELODY AT LAST), taking x `guard` damage while it rests, then fires a whole note: aimed
+ahead of the enemy (its predicted spot after the note's travel x `lead`, plus a seeded wobble of up to `jitter`
+degrees, the kind's one draw from the fight's generator), radius `base` + `grow` per landed note up to `max_reach`
+(the ball's blade length), it rolls at `roll` for `hold` beats, bouncing off the ropes, crushes the enemy once on
+contact (`dmg`, growing by `dmg_grow` per landed note up to `dmg_max`; `knock`) and flattens every enemy projectile it
+rolls over. A note dropped from above (VIOLA JOKE) lands on its spot at `t_land`, crushes there, then rolls on.
 
-**Record keys.**
+**Record keys** (both only when a fighter of the fight uses this kind; ragged lists, a list per frame):
 
-- `REST`: added to `rec` at `run()` 5862 to 5863, written by `snap` 5616 to 5620:
+- `REST`: per ball, `[resting (0.0 or 1.0), the rest being counted (an int, 0 when not resting), MELODY AT LAST on
+  (0.0 or 1.0)]`.
+- `NOTES`: every whole note on the canvas, `(owner, x, y, radius, t0, t1, t_land, id, kind, hit)`: the fighter that
+  fired it (int), where it is (ring units), its radius, when it appeared, when it is gone, when it lands (`t0` for one
+  that rolls at once), its id (counting up over the fight), its kind (0 the weapon's, 1 DOUBLE STOP's, 2 VIOLA
+  JOKE's) and whether it has crushed the enemy (0 or 1).
 
-  ```python
-  if 'REST' in rec:                                   # #42, only recorded when a fighter uses the 'rests' kind
-      rec['REST'].append([[float(getattr(Bj, 'resting', False)), getattr(Bj, 'rest_count', 0),
-                           float(self.t < getattr(Bj, 'melody_until', -1.0))] for Bj in (B0, B1)])
-      rec['NOTES'].append([(N['owner'], float(N['c'][0]), float(N['c'][1]), N['r'], N['t0'], N['t1'], N['t_land'],
-                            N['id'], N['kind'], int(N['hit'])) for N in self.notes])
-  ```
-- `NOTES`: added to `rec` at `run()` 5862 to 5863, written by `snap` 5616 to 5620:
+**Events** (`who` the fighter; coordinates are ring units):
 
-  ```python
-  if 'REST' in rec:                                   # #42, only recorded when a fighter uses the 'rests' kind
-      rec['REST'].append([[float(getattr(Bj, 'resting', False)), getattr(Bj, 'rest_count', 0),
-                           float(self.t < getattr(Bj, 'melody_until', -1.0))] for Bj in (B0, B1)])
-      rec['NOTES'].append([(N['owner'], float(N['c'][0]), float(N['c'][1]), N['r'], N['t0'], N['t1'], N['t_land'],
-                            N['id'], N['kind'], int(N['hit'])) for N in self.notes])
-  ```
+| Kind | Fields after `who` | When |
+| --- | --- | --- |
+| `note` | id (int), `x, y` where it appears, the aim (radians), its radius, its kind (int), `t_land`, `t1` | each note (5061) |
+| `rest` | the rest counted (1, 2, ...), MELODY AT LAST on (0 or 1) (ints) | each counted beat (5082) |
+| `crush` | the note's id (int), `x, y` where it crushes | a note reaches the enemy (5099) |
+| `crushed` | `kill_keys`: the flattened projectile's owner's, the note's owner, where, its id | a note rolls over a projectile (5161) |
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
-
-- 5061: `self.ev('note', k, N['id'], float(c[0]), float(c[1]), aim, N['r'], kind, N['t_land'], N['t1'])`
-- 5082: `self.ev('rest', k, j + 1, int(mel))`
-- 5099: `self.ev('crush', k, N['id'], hx, hy)`
-- 5100: `landed = self.damage(k, o, N['dmg'], 'note', hx, hy, N['kind'])`
-- 5161: `self.kill_keys(m, 'crushed', N['owner'])`
+A crush also gives a `hit` of kind `note` whose sub-number is the note's kind (5100), or a `block` when the enemy is
+shielded.
 
 <!-- /kind:rests -->
 
@@ -2262,46 +2259,44 @@ the crash, the crater's reach beyond contact. `snap_aim` (spot x, z, t_snap, t_c
 <!-- kind:double_stop -->
 #### `double_stop` (ability kind of VIOLA)
 
-`fight.py` 2928 to 2929, 5108 to 5117. Not ported yet (milestone 4, Task 3 made its sockets): its port fills this
-section in (the meaning of each field, as 6.2 and 6.3 do for FLUTE and TROMBONE), from the lines below.
+`fight.py` 2928 to 2929, 5108 to 5117; ported in `bf-sim/src/kinds/rests.rs` (`start_double_stop`). Instead of this
+beat's rest, two whole notes of kind 1 at once: one at the enemy, one where it is heading (its velocity x the notes'
+travel time x `lead2`).
 
 **Record keys.** None of its own.
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
-
-- 5116: `self.ev('double', k)`
+**Events:** `double` (the fighter, no fields) after its two `note` events (5116).
 
 <!-- /kind:double_stop -->
 
 <!-- kind:melody -->
 #### `melody` (ability kind of VIOLA)
 
-`fight.py` 2923 to 2927. Not ported yet (milestone 4, Task 3 made its sockets): its port fills this section in (the
-meaning of each field, as 6.2 and 6.3 do for FLUTE and TROMBONE), from the lines below.
+`fight.py` 2923 to 2927; ported in `bf-sim/src/kinds/rests.rs` (`start_melody`). For its `dur_beats` and half a beat
+the rests shrink to `int(rest)` beats a note (from the beat after it fires); `REST`'s third field is 1.0 meanwhile.
 
 **Record keys.** None of its own.
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
-
-- 2927: `self.ev('melody', k, B.melody_until)`
+**Events:** `melody` (the fighter, the time it ends: a float) (2927).
 
 <!-- /kind:melody -->
 
 <!-- kind:joke -->
 #### `joke` (ability kind of VIOLA)
 
-`fight.py` 2921 to 2922, 5118 to 5136. Not ported yet (milestone 4, Task 3 made its sockets): its port fills this
-section in (the meaning of each field, as 6.2 and 6.3 do for FLUTE and TROMBONE), from the lines below.
+`fight.py` 2921 to 2922, 5118 to 5136; ported in `bf-sim/src/abilities/joke.rs` (the note is the `rests` kind's
+`joke_note`). The enemy freezes for `stun_beats` beats (not while shielded, rewinding or in shadow) while the biggest
+whole note (`size` x the current note radius, `dmg`, `knock`, kind 2) drops onto its spot, landing `tele` beats later,
+then rolls on along the enemy's old heading for a whole note. Nothing here draws from the generator.
 
 **Record keys.** None of its own.
 
-**Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
-`self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
+**Events:**
 
-- 5129: `self.ev('stun', o, k, st)`
-- 5135: `self.ev('joke', k, o, N['t_land'], float(N['c'][0]), float(N['c'][1]))`
+| Kind | `who` | Fields after `who` | When |
+| --- | --- | --- | --- |
+| `stun` | the victim | the fighter (int), the length in seconds | the freeze (5129) |
+| `joke` | the fighter | the victim (int), `t_land`, `x, y` where the note lands | after the note's `note` event (5135) |
 
 <!-- /kind:joke -->
 
