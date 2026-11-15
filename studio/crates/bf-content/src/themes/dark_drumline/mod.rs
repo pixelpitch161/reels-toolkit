@@ -44,6 +44,7 @@ pub static THEME: Theme = Theme {
     voices: &[],
     own_voice: super::no_own_voice,
     classic: classic::classic,
+    composed: Some(|o, c, s| Ok(Box::new(layers::composed(o, c, s)?))),
 };
 
 /// `DRUMLINE`'s two keys: `bass_drums` (`dl.get('bass_drums', True)`) and `after_ko` (default false).

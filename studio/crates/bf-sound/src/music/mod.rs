@@ -71,6 +71,7 @@ pub use self::shape::{
     VIBRATO_DELAY, VIBRATO_DEPTH, VIBRATO_RATE, bend, colour_hp, fit, gliss, vibrato, wah,
 };
 pub use self::thin::{Thinner, h01, h01_37, q16, thin_37};
+pub use self::timeline::ComposedPart;
 use crate::SRF;
 use crate::dsp;
 use crate::synth::{self, FILTER_O};
@@ -191,6 +192,10 @@ pub struct MusicCtx<'a> {
     /// with the fighters' voices, as the kit's `note` has one `_VC` and one `_GAIN` keyed by the voice's name: a
     /// theme voice that is also a fighter's is that fighter's voice, one cache and one gain.
     pub theme_voices: Vec<Arc<dyn Voice>>,
+    /// The composed arrangement's parts, by fighter (empty under the classic arrangement): a fighter here plays its
+    /// whole-song line and its solo from here instead of the fight file's ([`MusicCtx::line_at`],
+    /// [`MusicCtx::solo_entries`]). The build fills it before the parts are made.
+    pub composed: BTreeMap<String, ComposedPart>,
     /// `RUN['HP']`: both fighters' HP at every recorded frame, frame after frame.
     hp: &'a [f64],
     state: Mutex<State>,
@@ -286,6 +291,7 @@ impl<'a> MusicCtx<'a> {
             cfg,
             voices,
             theme_voices,
+            composed: BTreeMap::new(),
             hp,
             state: Mutex::new(State::new(PpNoise::start())),
         })

@@ -32,6 +32,7 @@ pub static THEME: Theme = Theme {
     voices: &[],
     own_voice: super::no_own_voice,
     classic: |_| Ok(Box::new(SeaShantyClassic::new())),
+    composed: Some(layers::composed),
 };
 
 /// What the interface says about the sea shanty.

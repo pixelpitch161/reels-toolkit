@@ -45,6 +45,7 @@ pub static THEME: Theme = Theme {
     voices: &["ACOUSTIC"],
     own_voice: super::no_own_voice,
     classic: |options| Ok(Box::new(StadiumRockClassic::new(plugged(options)))),
+    composed: Some(layers::composed),
 };
 
 /// `PLUGGED`: the fighter whose lead plugs the band in (default the left corner's, as the kit's `M.NAMES[0]`).

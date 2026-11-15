@@ -616,7 +616,7 @@ fn other_values_out_of_range() {
     );
     assert_eq!(
         parse_err(&with("arrangement = \"classic\"", "arrangement = \"remix\"")),
-        r#"music.arrangement: "remix" is not an arrangement (this app has: classic)"#
+        r#"music.arrangement: "remix" is not an arrangement (this app has: classic, composed)"#
     );
     assert_eq!(
         parse_err(&with(r#"chords_intro = ["Em", "B7"]"#, r#"chords_intro = ["Em"]"#)),

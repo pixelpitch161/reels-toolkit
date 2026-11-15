@@ -20,6 +20,7 @@
 use std::sync::Arc;
 
 use crate::mix::{Mix, Sig};
+use crate::music::signal::{MomentKind, Phase, StorySignal};
 use crate::music::{MusicCtx, MusicError, Samples};
 use crate::traits::{Bed, BedHook, Played};
 
@@ -269,6 +270,54 @@ pub fn band_hit(kind: LayerKind, tones: &[i32], s16: u32) -> Vec<Hit> {
     }
 }
 
+/// The story signal's moments as the cues a layered bed listens to: each lead change, captioned ability and
+/// desperation move where it lands, and a final-exchange cue on the first sixteenth of every bar of the final
+/// exchange (and where it starts), so every layer is in for all of it.
+pub fn cues(signal: &StorySignal) -> Vec<Cue> {
+    let mut out: Vec<Cue> = signal
+        .moments
+        .iter()
+        .filter_map(|m| {
+            let kind = match m.kind {
+                MomentKind::LeadChange { .. } => CueKind::LeadChange,
+                MomentKind::Ability { .. } => CueKind::Ability,
+                MomentKind::Desperation { .. } => CueKind::Desperation,
+                MomentKind::FinalExchange => CueKind::FinalExchange,
+                _ => return None,
+            };
+            Some(Cue {
+                bar: m.bar,
+                s16: (m.step % 16) as u32,
+                kind,
+            })
+        })
+        .collect();
+    for b in signal.bars.iter().filter(|b| b.phase == Phase::FinalExchange) {
+        if !out.iter().any(|c| c.bar == b.bar && c.kind == CueKind::FinalExchange) {
+            out.push(Cue {
+                bar: b.bar,
+                s16: 0,
+                kind: CueKind::FinalExchange,
+            });
+        }
+    }
+    out
+}
+
+/// `tones` (lowest first) with the chord's lowest root first and the others after it in order, so a bass starts
+/// on the root (an inverted range would otherwise start it on the third or fifth). Unchanged when the range holds
+/// no root or the chord does not parse.
+pub fn root_first(mut tones: Vec<i32>, chord: &str) -> Vec<i32> {
+    let Ok(root) = bf_core::harmony::parse_chord(chord).map(|c| c.pcs()[0]) else {
+        return tones;
+    };
+    if let Some(i) = tones.iter().position(|m| m.rem_euclid(12) == root.rem_euclid(12)) {
+        let r = tones.remove(i);
+        tones.insert(0, r);
+    }
+    tones
+}
+
 /// The Composed arrangement of a theme: its layers and table over its classic bed.
 pub struct LayeredBed {
     classic: Box<dyn Bed>,
@@ -385,9 +434,15 @@ impl LayeredBed {
         for (i, layer) in self.layers.iter().enumerate() {
             let tones = if layer.kind.tonal() {
                 let (lo, hi) = layer.range;
-                ctx.harmony
+                let tones = ctx
+                    .harmony
                     .chord_tones(lo, hi, &chord)
-                    .map_err(|e| MusicError::new("layers", e.to_string()))?
+                    .map_err(|e| MusicError::new("layers", e.to_string()))?;
+                if layer.kind == LayerKind::Bass {
+                    root_first(tones, &chord)
+                } else {
+                    tones
+                }
             } else {
                 Vec::new()
             };
@@ -523,8 +578,10 @@ impl Bed for LayeredBed {
         }
         Ok(())
     }
-    /// The build layers in the last bar, up to the seam.
+    /// The classic bed's build into frame 0 (its riser and roll), with the build layers in the last bar, up to the
+    /// seam.
     fn last_bars(&self, ctx: &MusicCtx, mix: &mut Mix) -> Played {
+        self.classic.last_bars(ctx, mix)?;
         let grid = &ctx.show.grid;
         self.play_bar(ctx, mix, Section::Build, grid.n_bars.saturating_sub(1), Some(grid.dur))
     }
@@ -648,6 +705,25 @@ mod tests {
             (mix.bus("drums").unwrap().to_vec(), mix.bus("bass").unwrap().to_vec())
         };
         assert_eq!(render(11), render(11));
+    }
+
+    #[test]
+    fn a_bass_starts_on_the_root_and_the_final_exchange_is_cued_bar_by_bar() {
+        // C major from E2 up: the root comes first, the rest keep their order
+        assert_eq!(root_first(vec![40, 43, 48, 52], "C"), [48, 40, 43, 52]);
+        assert_eq!(root_first(vec![40, 43], "C"), [40, 43]);
+        let ep = episode();
+        let (ctx, _) = context(&ep);
+        let sig = StorySignal::from(&ctx).unwrap();
+        let cs = cues(&sig);
+        for b in sig.bars.iter().filter(|b| b.phase == Phase::FinalExchange) {
+            assert!(
+                cs.iter().any(|c| c.bar == b.bar && c.kind == CueKind::FinalExchange),
+                "bar {}",
+                b.bar
+            );
+        }
+        assert!(cs.iter().all(|c| c.s16 < 16));
     }
 
     #[test]

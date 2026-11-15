@@ -51,6 +51,7 @@ pub static THEME: Theme = Theme {
     voices: &[],
     own_voice: super::no_own_voice,
     classic,
+    composed: Some(|o, c, s| Ok(Box::new(layers::composed(o, c, s)?))),
 };
 
 /// The option the mood reads besides the music: `TRAILER = dict(sequel=True)`.

@@ -34,6 +34,7 @@ pub static THEME: Theme = Theme {
     voices: &[PIANO],
     own_voice: super::no_own_voice,
     classic: |_| Ok(Box::new(NoirJazzClassic::new())),
+    composed: Some(layers::composed),
 };
 
 /// #29's loop: i - bVI7 - iv - V7 in C minor.

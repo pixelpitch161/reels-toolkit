@@ -36,6 +36,7 @@ fn fight_file(theme: &str) -> FightFile {
     m.chord_loop = p.chord_loop.iter().map(|c| c.to_string()).collect();
     m.chords_tail = p.tail.iter().map(|c| c.to_string()).collect();
     m.lines.clear();
+    m.arrangement = "classic".to_string();
     ff
 }
 

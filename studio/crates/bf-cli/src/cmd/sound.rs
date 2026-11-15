@@ -1,4 +1,5 @@
-//! `ballfight sound <fight.toml> --out audio.wav [--stems DIR] [--seed N | --rec F]`: build the soundtrack and save
+//! `ballfight sound <fight.toml> --out audio.wav [--stems DIR] [--seed N | --rec F] [--arrangement A]
+//! [--music-seed N]`: build the soundtrack and save
 //! the master as a 16-bit stereo .wav (48 kHz, 2,928,640 frames, as the video holds it); `--stems` also saves each
 //! bus as `<bus>.wav` in that folder (made if missing; it must be empty).
 
@@ -25,10 +26,17 @@ pub struct Args {
     /// Read this recording instead of fighting the seed.
     #[arg(long, value_name = "FILE")]
     rec: Option<PathBuf>,
+    /// The arrangement to play: classic or composed (default: the fight file's).
+    #[arg(long, value_name = "NAME", value_parser = crate::arrangement)]
+    arrangement: Option<String>,
+    /// The composer's seed (default: the fight file's music seed).
+    #[arg(long, value_name = "N")]
+    music_seed: Option<u64>,
 }
 
 pub fn run(a: &Args, ctx: &Ctx) -> Done {
-    let ff = load_fight(&a.fight)?;
+    let mut ff = load_fight(&a.fight)?;
+    crate::music_flags(&mut ff, &a.fight, a.arrangement.as_ref(), a.music_seed)?;
     new_file(&a.out)?;
     if let Some(dir) = &a.stems {
         empty_folder(dir)?;

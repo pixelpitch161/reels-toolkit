@@ -32,6 +32,12 @@ pub struct Args {
     /// Render this recording instead of fighting the seed.
     #[arg(long, value_name = "FILE")]
     rec: Option<PathBuf>,
+    /// The arrangement to play: classic or composed (default: the fight file's); the saved fight file names it.
+    #[arg(long, value_name = "NAME", value_parser = crate::arrangement)]
+    arrangement: Option<String>,
+    /// The composer's seed (default: the fight file's music seed); the saved fight file names it.
+    #[arg(long, value_name = "N")]
+    music_seed: Option<u64>,
     /// Only frames A to B-1 (a clip for a quick look), for example 0:90.
     #[arg(long, value_name = "A:B", value_parser = clip)]
     frames: Option<Range<usize>>,
@@ -57,6 +63,7 @@ fn clip(text: &str) -> Result<Range<usize>, String> {
 
 pub fn run(a: &Args, ctx: &Ctx) -> Done {
     let mut ff = load_fight(&a.fight)?;
+    crate::music_flags(&mut ff, &a.fight, a.arrangement.as_ref(), a.music_seed)?;
     if std::fs::metadata(&a.out).is_ok_and(|m| !m.is_dir()) {
         return Err(Fail(format!(
             "the output folder {} is not a folder (a file has that name), so nothing was made; choose another.",

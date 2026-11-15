@@ -35,6 +35,9 @@ impl FightFile {
         o.push_str("\n[music]\n");
         let _ = writeln!(o, "theme = {}", w_str(&m.theme));
         let _ = writeln!(o, "arrangement = {}", w_str(&m.arrangement));
+        if !m.pinned.is_empty() {
+            let _ = writeln!(o, "pinned = {}", w_strs(&m.pinned));
+        }
         let _ = writeln!(o, "key = {}", w_str(&m.key));
         let _ = writeln!(o, "scale = {}", w_str(&m.scale));
         let _ = writeln!(o, "chords_intro = {}", w_strs(&m.chords_intro));

@@ -316,9 +316,11 @@ fn loop_line(p: &Personality, role: Role, pitch: &Pitch, rng: &mut Generator) ->
         if role != Role::Bass && phrase_len >= 3 && motif_end <= 2 * PER_BAR {
             let first = motif[0].1;
             let to = nearest(&pitch.chord_tones(&chords[lb + 2]), first + 2);
+            // moved by the same interval, then each note kept in key (the nearest tone of the scale over the chord)
+            let in_key = pitch.scale_tones(&chords[lb + 2]);
             let echo: Vec<(usize, i32, usize)> = motif
                 .iter()
-                .map(|&(s, m, l)| (s, pitch.fold(m + to - first), l))
+                .map(|&(s, m, l)| (s, nearest(&in_key, pitch.fold(m + to - first)), l))
                 .collect();
             place(&mut out, &mut taken, 2 * PER_BAR + offset, &echo);
         }

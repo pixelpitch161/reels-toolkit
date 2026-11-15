@@ -7,8 +7,41 @@ use bf_core::harmony::HarmonyError;
 use bf_core::lines::DEFAULT_LINE_PER_BAR;
 use bf_core::recording::Array;
 
+use bf_core::py::round_half_even;
+
 use super::MusicCtx;
 use super::error::MusicError;
+
+/// A fighter's part under the composed arrangement: a line written out for every bar of the song and a solo.
+#[derive(Clone, Debug, PartialEq)]
+pub struct ComposedPart {
+    /// The line, `per_bar` notes a bar from bar 0 of the song (`None` holds the note before it).
+    pub song: Vec<Option<i32>>,
+    /// Notes a bar (8: 8ths).
+    pub per_bar: usize,
+    /// The victory solo, `(beat, note or chord, beats)`.
+    pub solo: Vec<(f64, SoloNote, f64)>,
+}
+
+impl ComposedPart {
+    /// The note at `t` (the slot nearest `t`, as a loop line is read), with bars `bar` seconds long. A rest holds
+    /// the note before it, since most parts cannot rest; the line's first note stands in before any; `None` only
+    /// for a line with no note at all.
+    pub fn note_at(&self, t: f64, bar: f64) -> Option<i32> {
+        if self.song.is_empty() || self.per_bar == 0 {
+            return None;
+        }
+        let slot = round_half_even(t / (bar / self.per_bar as f64)).max(0.0) as usize;
+        let slot = slot.min(self.song.len() - 1);
+        self.song[..=slot]
+            .iter()
+            .rev()
+            .flatten()
+            .next()
+            .or_else(|| self.song.iter().flatten().next())
+            .copied()
+    }
+}
 
 impl MusicCtx<'_> {
     /// The side of the fighter `name`, whose roster entry a default line or solo is made from (Python looks
@@ -51,6 +84,9 @@ impl MusicCtx<'_> {
                     return Ok(cur);
                 }
             }
+        }
+        if let Some(part) = self.composed.get(name) {
+            return Ok(part.note_at(t, self.show.grid.bar));
         }
         match self.ff.music.lines.get(name) {
             Some(line) => self.harmony.line_note(line, t).map_err(bad),
@@ -98,6 +134,9 @@ impl MusicCtx<'_> {
     pub fn solo_entries(&self, name: &str) -> Result<Vec<(f64, SoloNote, f64)>, MusicError> {
         const H: &str = "solo";
         let k = self.side(H, name)?;
+        if let Some(part) = self.composed.get(name) {
+            return Ok(part.solo.clone());
+        }
         match self.ff.music.solos.get(name) {
             Some(solo) => Ok(solo.clone()),
             None => self
