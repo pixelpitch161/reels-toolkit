@@ -451,12 +451,12 @@ mod tests {
     const PLAYS_A_BOOM: [&str; 5] = ["TROMBONE", "ORGAN", "TUBA", "EUPHONIUM", "HORN"];
 
     /// Ruling M3-R2: every ordered pair of kit fighters is offered every theme, except `dark_disco` and `heist` for a
-    /// pair with a fighter that plays a boom; a name that is no kit fighter is offered none. (The fighters are
-    /// the 21 the app offers: the kit 20 and BAGPIPES; the other older fighters are not offered yet.)
+    /// pair with a fighter that plays a boom; a name that is no kit fighter is offered none. (The kit fighters are
+    /// the 20, TURNTABLES and BAGPIPES the app offers; the rest of the older ten are not offered yet.)
     #[test]
     fn a_pair_is_offered_every_theme_its_parts_can_play() {
         let names: Vec<&str> = crate::available();
-        assert_eq!(names.len(), 21);
+        assert_eq!(names.len(), 22);
         for &a in &names {
             for &b in &names {
                 let want: Vec<&str> = PORTED_THEMES

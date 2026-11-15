@@ -1992,10 +1992,11 @@ fills this section in (the meaning of each field, as 6.2 and 6.3 do for FLUTE an
 <!-- kind:scratch_floor -->
 #### `scratch_floor` (weapon kind of TURNTABLES)
 
-`fight.py` 1713 to 1762. Not ported yet (milestone 4, Task 3 made its sockets): its port fills this section in (the
-meaning of each field, as 6.2 and 6.3 do for FLUTE and TROMBONE), from the lines below.
+`fight.py` 1713 to 1762 (`scratch_beat`, `scratch_step`), ported (milestone 4, Task 8). Every `every` beats (a haste
+divides it) the floor jerks forward, then back half way through the scratch; each jerk flings the opponent round the
+ring centre; the first rope the opponent hits within `window` s of a jerk is a rope slam.
 
-**Record keys.** None of its own.
+**Record keys.** None of its own: the scratch's strength is the ball's `blade_len`, recorded in `BL`.
 
 **Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
 `self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
@@ -2003,6 +2004,11 @@ meaning of each field, as 6.2 and 6.3 do for FLUTE and TROMBONE), from the lines
 - 1729: `self.ev('scratch', k, d, float(B.blade_len), sgn)`
 - 1750: `self.ev('jerk', k, sgn, float(O.p[0]), float(O.p[1]), float(B.blade_len))`
 - 1756: `if self.damage(k, 1 - k, dmg, 'scratch', e[5], e[6]):`
+
+Fields: `scratch`: the scratch's length in seconds (`dur_beats` beats), its strength, its direction (1.0 forward, -1.0
+back; alternating). `jerk`: the jerk's direction, the opponent's x and z when it is flung, the strength (the knock).
+The hit: kind `scratch` at the rope event's x and z, `dmg` x min(`cap`, impact speed / the shared speed). A rewinding
+opponent is not flung (no `jerk` event).
 
 <!-- /kind:scratch_floor -->
 
@@ -2141,16 +2147,20 @@ section in (the meaning of each field, as 6.2 and 6.3 do for FLUTE and TROMBONE)
 <!-- kind:rewind -->
 #### `rewind` (ability kind of TURNTABLES)
 
-`fight.py` 2866 to 2867, 1927 to 1998, 3035 to 3036. Not ported yet (milestone 4, Task 3 made its sockets): its port
-fills this section in (the meaning of each field, as 6.2 and 6.3 do for FLUTE and TROMBONE), from the lines below.
+`fight.py` 2866 to 2867, 1927 to 1998, 3035 to 3036, ported (milestone 4, Task 8). The ball keeps a record of
+itself one substep a line, `window` s deep; REWIND (only when it would undo at least `min_undo` HP) puts its HP back
+to the recorded value and zips it back along the recorded path in `zip_beats` beats, intangible meanwhile.
 
-**Record keys.** None of its own.
+**Record keys.** None of its own (the zip is in `P` and `HP`).
 
 **Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
 `self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
 
 - 1961: `self.ev('heal', k, heal, then[0])`
 - 1982: `self.ev('rewound', k, float(B.p[0]), float(B.p[1]))`
+
+Fields: `heal`: the HP given back, the time the record went back to (unrounded). `rewound`: where the zip ended (x,
+z); the ball then flies on with the heading it had then, at the shared speed.
 
 <!-- /kind:rewind -->
 

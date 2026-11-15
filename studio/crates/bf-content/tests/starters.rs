@@ -73,10 +73,10 @@ fn as_a_starter(mut ff: FightFile, left: &str, right: &str) -> FightFile {
 #[test]
 fn every_ordered_pair_has_a_starter_the_studio_accepts() {
     let names = available();
-    assert_eq!(names.len(), 20, "the kit fighters offered");
+    assert_eq!(names.len(), 22, "the kit fighters, TURNTABLES and BAGPIPES offered");
     let pairs = ordered_pairs();
     assert_eq!(pairs.len(), names.len() * (names.len() - 1));
-    assert_eq!(pairs.len(), 380);
+    assert_eq!(pairs.len(), 462);
     let mut problems = Vec::new();
     for &(a, b) in &pairs {
         let ff = match starter(a, b) {
@@ -103,7 +103,7 @@ fn every_ordered_pair_has_a_starter_the_studio_accepts() {
     }
     assert!(
         problems.is_empty(),
-        "{} of 380:\n{}",
+        "{} of 462:\n{}",
         problems.len(),
         problems.join("\n")
     );
@@ -168,7 +168,12 @@ fn the_kit_pairs_start_from_their_fight_files_in_both_orders() {
 #[test]
 fn every_fighter_has_the_kits_home_config() {
     let doc = crossovers();
-    let mut names: Vec<&str> = available();
+    // the older fighters offered (no kit config of their own) borrow FLUTE's home config
+    const OLDER: [&str; 2] = ["BAGPIPES", "TURNTABLES"];
+    for name in OLDER {
+        assert_eq!(home_config(name), home_config("FLUTE"), "{name}");
+    }
+    let mut names: Vec<&str> = available().into_iter().filter(|n| !OLDER.contains(n)).collect();
     names.sort_unstable();
     assert_eq!(texts(&doc["fighters"]), names, "the kit fighters");
     for name in &names {
