@@ -1,8 +1,7 @@
 //! DRUMS: one of the older fighters (milestone 4), ported in its Task 17 against its reference kit module
 //! (`tools/studio_export/older/fighters/drums.py`, the reference kit module moved from
-//! `projects/ballfight_drums_vs_violin/` (#28)). Until then every entry point here says it has none: the picture
-//! draws DRUMS as the bare ball, the score has no part for it, the app has no card for it, and the app does not
-//! offer it (the registry's `PORTED`, which only a register task changes).
+//! `projects/ballfight_drums_vs_violin/` (#28)), quick-ported close enough for the eye (ruling M4-R16). The app does not offer it until the registry's
+//! `PORTED` lists it (a register task).
 //!
 //! The port fills this folder only: `look.rs`, `sound.rs`, `voice.rs`, `card.rs`, `state.rs` (what the look and the
 //! part both derive from the recording) and the entry points below. Nothing outside it names DRUMS's types, so
@@ -24,25 +23,25 @@ pub mod voice;
 
 pub use card::{CARD, card};
 
-/// `fighters.look('DRUMS', P, k)`: its look, or `None` while it is not ported (the bare ball is drawn then).
+/// `fighters.look('DRUMS', P, k)`: its look.
 pub fn look() -> Option<Box<dyn Look>> {
-    None
+    Some(Box::new(look::DrumsLook::default()))
 }
 
 /// Its instrument voice (its `pp_bridge` entry, or its episode's own synth), or `None` while it is not ported.
 pub fn voice() -> Option<Arc<dyn Voice>> {
-    None
+    Some(Arc::new(voice::DrumsVoice))
 }
 
 /// `fighters.sound('DRUMS', M, k)`: its part on side `k` of the fight `ff`, or `None` while it is not ported.
 pub fn sound(k: usize, ff: &FightFile) -> Option<Box<dyn Sound>> {
-    let _ = (k, ff);
-    None
+    let _ = ff;
+    Some(Box::new(sound::DrumsSound::new(k)))
 }
 
 /// Its model (`data/models/DRUMS.json`, written by the export tool's `models` for one roster name), compiled in:
 /// `Some(include_str!("../../../data/models/DRUMS.json"))` once ported, `None` until then.
-pub const MESH: Option<&str> = None;
+pub const MESH: Option<&str> = Some(include_str!("../../../data/models/DRUMS.json"));
 
 /// Whether its music settings (key, chord loop, its line) feed its fight: false for every older fighter.
 pub const MUSIC_FEEDS_FIGHT: bool = false;

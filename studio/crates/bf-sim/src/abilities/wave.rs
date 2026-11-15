@@ -90,7 +90,11 @@ pub fn step(fight: &mut Fight, dt: f64) {
             if landed && grow {
                 // fight.py 3078 to 3082: a ring with `grow` (the walk's step ring, CONTRABASS; and the older pulse
                 // weapon's) grows its owner's reach: the walk's code
-                kinds::walk::ring_grow(fight, owner);
+                if kinds::pulse::is(fight, owner) {
+                    kinds::pulse::ring_grow(fight, owner);
+                } else {
+                    kinds::walk::ring_grow(fight, owner);
+                }
             }
         }
         // fight.py 3083 to 3086, `if len(self.kp) and W.get('clears', True)`: the walk's step ring, the stampede's
