@@ -105,7 +105,7 @@ pub fn sub808(m0: i32, m1: i32, dur: f64, slide: f64, vel: f64) -> Vec<f64> {
             } else {
                 0.0
             };
-            f0 * (f1 / f0).powf(u * u * (3.0 - 2.0 * u)) * (1.0 + 0.5 * dmath::exp(-t / 0.02))
+            f0 * dmath::pow(f1 / f0, u * u * (3.0 - 2.0 * u)) * (1.0 + 0.5 * dmath::exp(-t / 0.02))
         })
         .collect();
     let ph = dsp::cumsum(&f);
