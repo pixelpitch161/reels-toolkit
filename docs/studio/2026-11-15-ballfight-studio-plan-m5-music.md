@@ -143,7 +143,8 @@ Waves run up to 3 workers at once. Wave 3's two tasks can run side by side: Task
   1. FLUTE vs TROMBONE on big top (a kit pair on a kit theme).
   2. CELLO vs TRUMPET on dark tango (a kit crossover).
   3. VIOLIN vs BAGPIPES on Balkan fire (two older fighters on an older theme).
-  Each Composed clip uses a passing seed from the shortlist. A one-page note beside them says which is which.
+  If a pair is not offered the theme named (`themes_for`), use the first theme it is offered. Each Composed clip
+  uses a passing seed from the shortlist. A one-page note beside them says which is which.
 - **Check:** every clip passes the levels check. Then the owner listens. **If the owner likes Composed**, one small
   follow-up commit makes it the default for new pairings in `starter.rs` and updates `docs/studio/HANDOFF.md`;
   otherwise their notes become the next round of tuning in Tasks 4 to 6.
