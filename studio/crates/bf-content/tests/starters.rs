@@ -388,6 +388,8 @@ fn the_crossovers_soundtracks_and_frames_are_the_kits() {
         );
         let mut ff = starter(a, b).unwrap_or_else(|e| panic!("{a} vs {b}: {e}"));
         ff.seed = Some(seed);
+        // the kit-exact gate is the Classic arrangement (a new pairing starts on Composed)
+        ff.music.arrangement = "classic".to_string();
         // the soundtrack
         let show = Show::new(&rec, &ff).unwrap_or_else(|e| panic!("{a} vs {b}: the show: {e}"));
         let build = bf_content::SoundBuild::new(&show, &rec, &ff).unwrap_or_else(|e| panic!("{a} vs {b}: {e}"));

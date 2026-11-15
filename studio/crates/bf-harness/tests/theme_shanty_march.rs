@@ -11,6 +11,7 @@ const PAIRS: [(&str, &str); 3] = [("TUBA", "FLUTE"), ("BAGPIPES", "TROMBONE"), (
 /// The pair's starter under `name`; with `preset`, the theme's first preset's tempo, key and chords too.
 fn fight_file(a: &str, b: &str, name: &str, preset: bool) -> FightFile {
     let mut ff = starter(a, b).expect("a starter");
+    ff.music.arrangement = "classic".to_string();
     ff.music.theme = name.to_string();
     // The home theme's options and mix are its own.
     ff.music.theme_options.clear();

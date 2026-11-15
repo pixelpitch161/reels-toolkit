@@ -667,6 +667,17 @@ mod tests {
         }
     }
 
+    /// A new pairing starts on Composed; a kit pair keeps Classic. Both read back as written.
+    #[test]
+    fn a_new_pairing_starts_composed() {
+        let kit = starter("FLUTE", "TROMBONE").unwrap();
+        assert_eq!(kit.music.arrangement, "classic");
+        let new = starter("FLUTE", "PIANO").unwrap();
+        assert_eq!(new.music.arrangement, "composed");
+        assert_eq!(crate::validate(&new), Ok(()));
+        assert_eq!(FightFile::parse(&new.to_toml()).as_ref(), Ok(&new));
+    }
+
     #[test]
     fn the_two_orders_are_different_fights() {
         let a = starter("FLUTE", "TROMBONE").expect("flute vs trombone");

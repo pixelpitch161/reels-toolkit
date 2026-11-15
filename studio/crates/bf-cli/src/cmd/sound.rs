@@ -1,4 +1,5 @@
-//! `ballfight sound <fight.toml> --out audio.wav [--stems DIR] [--seed N | --rec F] [--arrangement A] [--music-seed N]`: build the soundtrack and save
+//! `ballfight sound <fight.toml> --out audio.wav [--stems DIR] [--seed N | --rec F] [--arrangement A]
+//! [--music-seed N]`: build the soundtrack and save
 //! the master as a 16-bit stereo .wav (48 kHz, 2,928,640 frames, as the video holds it); `--stems` also saves each
 //! bus as `<bus>.wav` in that folder (made if missing; it must be empty).
 

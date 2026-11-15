@@ -12,6 +12,7 @@ fn fight_file(theme: &str, a: &str, b: &str) -> FightFile {
     let t = themes::theme(theme).unwrap_or_else(|| panic!("{theme} is not listed"));
     let p: &Preset = &t.card.presets[0];
     let mut ff = starter(a, b).unwrap_or_else(|e| panic!("{a} v {b}: {e}"));
+    ff.music.arrangement = "classic".to_string();
     ff.tempo_bpm = p.bpm;
     let m = &mut ff.music;
     m.theme = theme.to_string();

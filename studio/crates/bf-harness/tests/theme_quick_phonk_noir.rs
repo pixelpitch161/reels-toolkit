@@ -10,6 +10,7 @@ use bf_core::fightfile::FightFile;
 /// The pair's starter under `name`; with `preset`, the theme's preset `p`'s tempo, key and chords too.
 fn fight_file(a: &str, b: &str, name: &str, preset: Option<usize>) -> FightFile {
     let mut ff = starter(a, b).expect("a starter");
+    ff.music.arrangement = "classic".to_string();
     ff.music.theme = name.to_string();
     ff.music.theme_options.clear();
     ff.music.mix.clear();

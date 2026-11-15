@@ -717,7 +717,11 @@ mod tests {
         let sig = StorySignal::from(&ctx).unwrap();
         let cs = cues(&sig);
         for b in sig.bars.iter().filter(|b| b.phase == Phase::FinalExchange) {
-            assert!(cs.iter().any(|c| c.bar == b.bar && c.kind == CueKind::FinalExchange), "bar {}", b.bar);
+            assert!(
+                cs.iter().any(|c| c.bar == b.bar && c.kind == CueKind::FinalExchange),
+                "bar {}",
+                b.bar
+            );
         }
         assert!(cs.iter().all(|c| c.s16 < 16));
     }

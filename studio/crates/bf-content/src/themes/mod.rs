@@ -706,7 +706,7 @@ mod tests {
             voices,
             own_voice: own,
             classic: |_| Err(not_ported("voiced")),
-        composed: None,
+            composed: None,
         }
     }
 
@@ -789,7 +789,7 @@ mod tests {
             voices,
             own_voice: no_own_voice,
             classic: |_| Err(not_ported("unported_bed")),
-        composed: None,
+            composed: None,
         };
         assert_eq!(
             crate::soundtrack::validate_with(&episode(), &bed)
