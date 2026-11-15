@@ -45,11 +45,13 @@ pub enum Step {
     Render,
 }
 
-/// What the workspace shows: one of the steps, the Library or Settings.
+/// What the workspace shows: one of the steps, the Library, the Matchups list or Settings.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum View {
     Step(Step),
     Library,
+    /// Every fight made, with its Uploaded tick (`screens::matchups`).
+    Matchups,
     Settings,
 }
 

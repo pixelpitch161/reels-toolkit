@@ -357,6 +357,48 @@ pub fn wrapped_switch(ui: &mut Ui, label: &str, on: bool, width: f32) -> Respons
     switch_row(ui, label, on, Some(width))
 }
 
+/// A tick box's side.
+pub const TICK_BOX: f32 = 14.0;
+
+/// A tick box named `name` (a check box in the accessibility tree), with no words beside it: a square 14 x 14
+/// outline (1 px, corner 2), `FAINT` and empty when off (`TEXT` while hovered); filled `TEXT` with an `ON_LIGHT`
+/// tick when on. It is 14 wide and as tall as the room left (14 to 26); clicking it reports a click. Inside a
+/// disabled parent it is `FAINT` throughout and takes no clicks.
+pub fn tick_box(ui: &mut Ui, name: &str, on: bool) -> Response {
+    let enabled = ui.is_enabled();
+    let sense = if enabled { Sense::click() } else { Sense::hover() };
+    let height = ui.available_height().clamp(TICK_BOX, CONTROL_H);
+    let (rect, response) = ui.allocate_exact_size(vec2(TICK_BOX, height), sense);
+    response.widget_info(|| WidgetInfo::selected(Role::CheckBox, enabled, on, name));
+    if ui.is_rect_visible(rect) {
+        let painter = exact_painter(ui);
+        let square = Rect::from_min_size(
+            pos2(rect.min.x, (rect.center().y - TICK_BOX / 2.0).round()),
+            vec2(TICK_BOX, TICK_BOX),
+        );
+        let colour = if enabled && (on || response.hovered()) {
+            TEXT
+        } else {
+            FAINT
+        };
+        if on {
+            painter.rect_filled(square, RADIUS, colour);
+            let tick = vec![
+                square.min + vec2(3.0, 7.0),
+                square.min + vec2(6.0, 10.0),
+                square.min + vec2(11.0, 4.0),
+            ];
+            painter.line(tick, Stroke::new(1.5, ON_LIGHT));
+        } else {
+            painter.rect_stroke(square, RADIUS, Stroke::new(1.0, colour), StrokeKind::Inside);
+        }
+        if response.has_focus() {
+            widget_ring(ui, square, f32::from(RADIUS));
+        }
+    }
+    response
+}
+
 fn switch_row(ui: &mut Ui, label: &str, on: bool, wrap: Option<f32>) -> Response {
     let enabled = ui.is_enabled();
     let words_x = SWITCH_W + SWITCH_GAP;

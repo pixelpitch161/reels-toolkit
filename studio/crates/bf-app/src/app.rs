@@ -21,7 +21,7 @@ use crate::model::take::Frame;
 use crate::model::{Notice, Settings, Step, View};
 use crate::preview::audio::AudioOut;
 use crate::preview::player::{Now, Player};
-use crate::screens::{balance, library, matchup, music, render, seeds, settings, shell, stage, timeline};
+use crate::screens::{balance, library, matchup, matchups, music, render, seeds, settings, shell, stage, timeline};
 use crate::seam::fake::{self, Pace};
 use crate::seam::{Command, EngineHandle, Waker};
 use crate::state::{Action, AppState, Effect, ViewModel};
@@ -504,6 +504,7 @@ fn workspace(ui: &mut Ui, vm: &ViewModel, out: &mut Vec<Action>) {
         View::Step(Step::Music) => music::show(ui, vm, out),
         View::Step(Step::Render) => render::show(ui, vm, out),
         View::Library => library::show(ui, vm, out),
+        View::Matchups => matchups::show(ui, vm, out),
         View::Settings => settings::show(ui, vm, out),
     }
 }
