@@ -114,6 +114,15 @@ fn may_rewind(f: &FighterCfg) -> bool {
         .any(|ab| ab.kind.is_ported() && ab.kind.name() == "rewind")
 }
 
+/// Whether a fighter's ball can be airborne: a ported weapon of kind `wrecking` (BARI SAX's swing) or `tiptoe`, or a
+/// ported ability of kind `snap` (BARI SAX's SNAP). `move` skips a ball mid-hop (`fight.py` 3139).
+fn may_fly(f: &FighterCfg) -> bool {
+    matches!(f.weapon, WeaponCfg::Wrecking(_) | WeaponCfg::Tiptoe(_))
+        || [&f.unlock1, &f.unlock2, &f.low]
+            .iter()
+            .any(|ab| ab.kind.is_ported() && ab.kind.name() == "snap")
+}
+
 /// Whether the engine has ported every kind of a fighter (its weapon and its three abilities).
 fn fully_ported(f: &FighterCfg) -> bool {
     !matches!(f.weapon, WeaponCfg::Unsupported(_))
@@ -214,7 +223,8 @@ fn each_older_fighter_against_flute_reaches_the_sockets_in_fight_py_order() {
     };
     let step_with_beat = of(&order, &["step", "beat"]);
     let step_alone = of(&order, &["step"]);
-    // a step with ball `k`'s `move.speeds` left out: `move` skips a rewinding ball (fight.py 3131), and only then
+    // a step with ball `k`'s `move.speeds` left out: `move` skips a rewinding ball (fight.py 3131) or one mid-hop
+    // (3139), and only then
     let without_speeds = |want: &[String], k: usize| -> Vec<String> {
         let at = want
             .iter()
@@ -274,7 +284,7 @@ fn each_older_fighter_against_flute_reaches_the_sockets_in_fight_py_order() {
                     } else {
                         &step_alone
                     };
-                    if may_rewind(x) && got != *want {
+                    if (may_rewind(x) || may_fly(x)) && got != *want {
                         assert_eq!(got, without_speeds(want, k), "{what}: step {}", step + 1);
                     } else {
                         assert_eq!(got, *want, "{what}: step {}", step + 1);

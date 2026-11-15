@@ -53,6 +53,10 @@ impl PictureCtx {
         st: &BallState,
         t: f64,
     ) -> ((f64, f64), f64) {
+        // (older opt-in ball_under) every look may draw right under the ball, into its own frame array
+        for l in &self.looks {
+            l.ball_under(self, k, st, t, arr, cam);
+        }
         let sink = st.sink;
         let sunk = sink != 0.0;
         // pw = S.to_world(p[0], p[1], (R * (1 - 0.75 * sink) if sink else R) + st['lift'])

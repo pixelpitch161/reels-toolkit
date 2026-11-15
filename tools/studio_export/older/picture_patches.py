@@ -29,6 +29,12 @@ look may define (the Rust `Look` method of the same name, in bf-picture/src/look
                                      effects), sorted as the kit's list. BARI SAX: a pressed rope springing back
     after_post(img, F, drawn) -> img the frame in bytes after the post effects, before the count-in. TURNTABLES: the
                                      VHS rewind and its glyph; VIOLA: the rests and their counts
+    ball_under(kk, st, t, arr, cam)  draws on ball kk's frame array (in place) right before the ball is drawn into it
+                                     (no 8-bit round trip between). BARI SAX: the swing's smear and trail
+    ability_hold(slot) -> s or None  how long its HUD row stays lit after a use (None: the kit's _hold). BARI SAX:
+                                     SKANK's beats, CABLE SNAP until the crash
+    shake_more(e) -> [(t, px)]       more camera jolts for one of its events, besides shake(e). BARI SAX: the crash's
+                                     second jolt
 
     PATCHES      [(name, fn)] in registration order
     register(name)   decorator: fn() is called once by older.install(), before the kit is imported
@@ -269,3 +275,52 @@ def _after_post():
           "    for Lk in LOOKS:                                                  # (older opt-in after_post)\n"
           "        if hasattr(Lk, 'after_post'):\n"
           "            img = Lk.after_post(img, F, drawn)\n")
+
+
+# ---------------------------------------------------------------- BARI SAX's opt-ins (plan m4 Task 9)
+# ball_under(kk, st, t, arr, cam)   draws on ball kk's frame array (in place) right before the ball is drawn into it,
+#                                  with no 8-bit round trip between (an items_ball item has one): BARI SAX's swing
+#                                  smear and coral trail under the ball (#39 draw_swing_fx before draw_ball)
+# ability_hold(slot) -> s or None  how long its HUD row stays lit after a use, for an ability kind the kit's _hold()
+#                                  does not list (None: the kit's): BARI SAX's SKANK (offbeat) and CABLE SNAP (snap)
+@register('ball_under')
+def _ball_under():
+    _text('ball_under', 'draw_ball',
+          "    sink = st.get('sink', 0.0)",
+          "    for L_ in LOOKS:                                                 # (older opt-in ball_under)\n"
+          "        if hasattr(L_, 'ball_under'):\n"
+          "            L_.ball_under(k, st, t, arr, cam)\n"
+          "    sink = st.get('sink', 0.0)")
+
+
+def _ability_holds(P):
+    if any(hasattr(L, 'ability_hold') for L in P.LOOKS):
+        P.ABIL_HOLD = [{slot: P._hold(k, slot) for slot, _ in P.SLOTS} for k in (0, 1)]
+
+
+@register('ability_hold')
+def _ability_hold():
+    _text('ability_hold', '_hold',
+          "    ab = CFG[k]['abilities'][slot]\n",
+          "    ab = CFG[k]['abilities'][slot]\n"
+          "    if hasattr(LOOKS[k], 'ability_hold'):                            # (older opt-in ability_hold)\n"
+          "        h_ = LOOKS[k].ability_hold(slot)\n"
+          "        if h_ is not None:\n"
+          "            return h_\n")
+    POST.append(('ability_hold', _ability_holds))
+
+
+# shake_more(e) -> [(t, px)]       more camera jolts for one of its events, besides shake(e) (added to SHK once the
+#                                  module is built; SHK keeps the strongest live jolt, so their order is no matter):
+#                                  BARI SAX's CABLE SNAP crash (#39 adds 2.5 at the crash and 1.2 at +0.09 s)
+def _more_shakes(P):
+    for e in P.EV:
+        k = P.owner(e)
+        if k is not None and hasattr(P.LOOKS[k], 'shake_more'):
+            for t, a in P.LOOKS[k].shake_more(e):
+                P.SHK.add(t, a)
+
+
+@register('shake_more')
+def _shake_more():
+    POST.append(('shake_more', _more_shakes))

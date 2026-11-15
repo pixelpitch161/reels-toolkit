@@ -13,18 +13,20 @@
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, OnceLock};
 
+use bf_core::event::Event;
 use bf_core::fightfile::FightFile;
 use bf_core::py::fmod_py;
 use bf_core::recording::Recording;
 use bf_core::roster::{FighterCfg, parse_roster};
 use bf_core::show::Show;
-use bf_picture::camera::V3;
+use bf_picture::camera::{Cam, V3};
 use bf_picture::config::{H, W};
 use bf_picture::img::Img;
 use bf_picture::look::{CanvasCtx, DefaultLook, DrawnBall, FrameCtx, GlassPx, Look, Tint};
 use bf_picture::ring::ropes::RopeEv;
 use bf_picture::ring::state::BallState;
 use bf_picture::ring::{Picture, PictureCtx};
+use bf_picture::scene;
 use bf_picture::sprite::Mesh;
 use bf_picture::ui::{DrawLog, Kind};
 use bf_testdata::{reference, repo_root};
@@ -32,7 +34,7 @@ use serde_json::Value;
 use sha2::{Digest, Sha256};
 
 /// The opt-ins, in the order `picture_patches.py` registers them.
-const OPTINS: [&str; 10] = [
+const OPTINS: [&str; 13] = [
     "canvas_albedo",
     "canvas_paint",
     "ball_tint",
@@ -43,6 +45,9 @@ const OPTINS: [&str; 10] = [
     "rope_press",
     "rope_events",
     "after_post",
+    "ball_under",
+    "ability_hold",
+    "shake_more",
 ];
 
 fn fighter(name: &str) -> FighterCfg {
@@ -144,7 +149,7 @@ fn wrong_rows(pic: &Picture, rows: &[Value]) -> Vec<String> {
 }
 
 /// How many times each opt-in of [`StubLook`] changed something (the kit's stub counts the same calls).
-static CALLS: [AtomicUsize; 10] = [const { AtomicUsize::new(0) }; 10];
+static CALLS: [AtomicUsize; 13] = [const { AtomicUsize::new(0) }; 13];
 
 fn hit(name: &str) {
     let i = OPTINS.iter().position(|n| *n == name).expect("an opt-in");
@@ -295,6 +300,38 @@ impl Look for StubLook {
             .collect();
         CALLS[8].store(out.len(), Ordering::Relaxed);
         out
+    }
+
+    fn ball_under(&self, _p: &PictureCtx, kk: usize, st: &BallState, _t: f64, arr: &mut Img<f32>, cam: &Cam) {
+        if kk != self.k {
+            return;
+        }
+        // s = cam.wp(S.to_world(p[0], p[1], 0.0)[None])[0]; y = int(s[1]) + 2; xa, xb = int(s[0]) -+ 8 clipped
+        let s = cam.wp(&[scene::to_world(st.p[0], st.p[1], 0.0)])[0];
+        let y = s.1 as i64 + 2;
+        let (xa, xb) = ((s.0 as i64 - 8).max(0), (s.0 as i64 + 8).min(W as i64));
+        if 0 <= y && y < H as i64 && xb > xa {
+            for x in xa..xb {
+                arr.px_mut(x as usize, y as usize).copy_from_slice(&[0.0, 255.0, 0.0]);
+            }
+            hit("ball_under");
+        }
+    }
+
+    fn ability_hold(&self, _p: &PictureCtx, slot: &str) -> Option<f64> {
+        if slot != "unlock1" {
+            return None;
+        }
+        hit("ability_hold");
+        Some(1.5)
+    }
+
+    fn shake_more(&self, _p: &PictureCtx, e: &Event) -> Vec<(f64, f64)> {
+        if e.kind == "hit" && e.i(2) == self.k as i64 {
+            hit("shake_more");
+            return vec![(e.t + 0.2, 2.0)];
+        }
+        Vec::new()
     }
 
     fn after_post(
