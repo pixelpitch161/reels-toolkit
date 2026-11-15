@@ -12,6 +12,7 @@ mod cards;
 pub mod composer;
 mod error;
 pub mod fighters;
+pub mod fit;
 mod pair_rules;
 pub mod personality;
 mod picture;
