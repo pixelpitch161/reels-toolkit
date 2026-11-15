@@ -119,9 +119,14 @@ ballfight bench   fights/flute_vs_trombone.toml [--out <folder>] [--only fights,
 `bf-app` is BALLFIGHT Studio itself. `cargo build --release -p bf-app` makes `target/release/ballfight-studio.exe`;
 double-click it (or start it with no option) for the real app on the real engine: pick the match-up, balance it,
 search seeds, choose one with its picture and sound, then queue the video. Videos go to `Videos\BALLFIGHT` unless
-Settings says otherwise. Today it offers all 20 kit fighters and all 14 kit themes; a pair is offered only the
-themes whose music has every hit its fighters' parts play (no Dark disco or Heist for a pair with the TROMBONE,
-ORGAN, TUBA, EUPHONIUM or HORN, which play a big drum hit those two lack). There is no installer yet (milestone 6).
+Settings says otherwise. Today it offers 30 fighters and 26 themes, and every one of the 870 pairings starts: the
+20 kit fighters and 14 kit themes are exact against the Python kit, and the 10 older fighters (ACCORDION, BAGPIPES,
+BARI SAX, DRUMS, HARP, SYNTH, TURNTABLES, UKULELE, VIOLA, VIOLIN) and 12 older themes are ported close enough for
+the eye and the ear (the owner's decision of Nov 14), each older fighter starting on its own home theme. A pair is
+offered only the themes whose music has every hit its fighters' parts play (no Dark disco or Heist for a pair with
+the TROMBONE, ORGAN, TUBA, EUPHONIUM or HORN, which play a big drum hit those two lack). The seed finder balances an
+uneven pairing (Auto-balance). The Studio is the source of truth for BALLFIGHT; the kit and its README are left as
+they are. Known limits: `docs/studio/HANDOFF.md`. There is no installer yet (milestone 6).
 `--fixtures` runs the same window on sample data, `--data-dir <folder>` keeps its settings, queue and cache in
 another folder, and `--smoke` opens it, paints 30 frames and closes it. Details: `crates/bf-app/README.md`.
 ## Determinism
@@ -176,3 +181,21 @@ git status --short studio/reference projects reelkit series
   `python -m tools.studio_export adopt <path>` after it is blessed.
 - The set stays under 150 MB (`du -sh studio/reference`, with `.cache/` deleted or left out). Past that it moves to
   Git LFS (design, section 12).
+
+### The export and porting commands that still matter
+
+Since the owner's decision of Nov 14 (ruling M4-R16), a new fighter or theme is ported for the eye and the ear: its
+fights run without errors, a few rendered frames and a short clip look and sound right, and the app offers it. No
+new kit-parity gate or `origin` gate is made for it. These commands keep the existing reference set honest (from
+the repo root, with the Python above; `tools/studio_export/README.md` has the details):
+
+```
+.studio-tools\py313\Scripts\python.exe -m tools.studio_export budget                   # sizes against the budgets (under 147 MB in all)
+.studio-tools\py313\Scripts\python.exe -m tools.studio_export verify                   # re-hash every file in the manifest
+.studio-tools\py313\Scripts\python.exe -m tools.studio_export.unit_checks.m3refs_checks   # every folder still reproduces its inputs
+.studio-tools\py313\Scripts\python.exe -m tools.studio_export remake fighters/flute    # re-make one kit folder whole, when the kit side changes
+.studio-tools\py313\Scripts\python.exe -m tools.studio_export cache all                # re-make the pinned cache (5 to 15 minutes a fighter)
+```
+
+A quick check of a new port from `studio/`: `ballfight search <fight file> --stop 10`, then
+`ballfight render <fight file> --out <folder> --seed N` with one of its fits.
