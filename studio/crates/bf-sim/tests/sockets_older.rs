@@ -299,11 +299,19 @@ fn each_older_fighter_against_flute_reaches_the_sockets_in_fight_py_order() {
                     m
                 });
                 let get = |s: &str| n.get(s).copied().unwrap_or(0);
-                blocks(&trace, &["damage.skips", "damage.guard", "damage.detuned"], &what);
+                // a ported older kind may end a call of `damage` after its skips (a rewinding ball takes no hit), so for
+                // its fighter only the guard block and the lower bound hold; an unported one is held to all of it
+                let ported = runs_an_older_kind(x);
+                if ported {
+                    blocks(&trace, &["damage.guard", "damage.detuned"], &what);
+                    assert!(get("damage.skips") >= get("damage.guard"), "{what}");
+                } else {
+                    blocks(&trace, &["damage.skips", "damage.guard", "damage.detuned"], &what);
+                }
                 // a call of `damage` lands (`hit`) or meets a shield (`block`); FLUTE's fangs write their own blocks
                 assert!(get("damage.skips") >= count(&rec, "hit"), "{what}");
                 assert!(
-                    get("damage.skips") <= count(&rec, "hit") + count(&rec, "block"),
+                    ported || get("damage.skips") <= count(&rec, "hit") + count(&rec, "block"),
                     "{what}"
                 );
                 // no walker here: every overlap is a clash, and the inflaters' hooks follow it
@@ -321,7 +329,7 @@ fn each_older_fighter_against_flute_reaches_the_sockets_in_fight_py_order() {
                     }
                 }
                 // the older kinds' sockets are reached and do nothing while unported: no event of theirs
-                let unported = !runs_an_older_kind(x);
+                let unported = !ported;
                 for kind in [
                     "inflate",
                     "bite",

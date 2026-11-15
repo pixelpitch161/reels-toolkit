@@ -37,7 +37,7 @@ pub fn snap(m: f64, vel: f64) -> Vec<f64> {
             ph += f;
             let x =
                 dmath::sin(2.0 * PI * ph / bf_sound::SRF) * dmath::exp(-t / 0.09) + 0.5 * h * dmath::exp(-t / 0.015);
-            (2.0 * x).tanh() * vel
+            dmath::tanh(2.0 * x) * vel
         })
         .collect()
 }

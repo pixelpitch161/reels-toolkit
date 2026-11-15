@@ -107,7 +107,7 @@ impl HarpLook {
         let (alpha, drawn) = Self::string_state(s, t)?;
         let (a, b) = (s.a, s.b);
         let d = [b[0] - a[0], b[1] - a[1]];
-        let dl = d[0].hypot(d[1]) + 1e-9;
+        let dl = dmath::hypot(d[0], d[1]) + 1e-9;
         let nrm = [-d[1] / dl, d[0] / dl];
         let n = 17;
         let pts = (0..n)
@@ -273,7 +273,7 @@ impl Look for HarpLook {
                 let (a, b) = ([e.f(4), e.f(5)], [e.f(6), e.f(7)]);
                 // it grows from the end nearer the harp as it stood when it laid the string
                 let hp = p.fighter(k, e.t).p;
-                let near_b = (hp[0] - b[0]).hypot(hp[1] - b[1]) < (hp[0] - a[0]).hypot(hp[1] - a[1]);
+                let near_b = dmath::hypot(hp[0] - b[0], hp[1] - b[1]) < dmath::hypot(hp[0] - a[0], hp[1] - a[1]);
                 let (a, b) = if near_b { (b, a) } else { (a, b) };
                 Str {
                     id: e.i(3),

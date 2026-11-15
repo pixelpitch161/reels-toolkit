@@ -80,7 +80,7 @@ fn squeal(dur: f64) -> Vec<f64> {
             p1 += f;
             p2 += f * 2.02;
             let v = dmath::sin(2.0 * PI * p1 / SRF) + 0.35 * dmath::sin(2.0 * PI * p2 / SRF);
-            (2.8 * v).tanh() * clip(t / 0.03, 0.0, 1.0) * dmath::exp(-t / (dur * 0.55))
+            dmath::tanh(2.8 * v) * clip(t / 0.03, 0.0, 1.0) * dmath::exp(-t / (dur * 0.55))
         })
         .collect();
     let s = scratch(dur, 13);

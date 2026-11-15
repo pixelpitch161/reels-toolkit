@@ -93,7 +93,8 @@ pub fn bite_open(t: f64, t0: f64, t_snap: f64) -> Option<(f64, f64)> {
     }
     if t < t_snap - 0.06 {
         let u = (t - t0) / py_max(1e-6, t_snap - 0.06 - t0);
-        let e = 1.0 - (1.0 - py_min(1.0, u)).powi(2);
+        let w = 1.0 - py_min(1.0, u);
+        let e = 1.0 - w * w;
         return Some((e, py_min(1.0, u * 1.6)));
     }
     if t < t_snap {
@@ -140,7 +141,8 @@ fn clamp_state(t: f64, c: &Clamp) -> Option<([f64; 2], [f64; 2], f64)> {
     }
     if t < c.t_snap - 0.12 {
         let u = py_min(1.0, (t - c.t0) / py_max(1e-6, c.t_snap - 0.12 - c.t0) * 1.4);
-        let e = 1.0 - (1.0 - u).powi(3);
+        let w = 1.0 - u;
+        let e = 1.0 - w * w * w;
         return Some((lerp(c.c, far, e), lerp(c.c, near, e), py_min(1.0, (t - c.t0) / 0.1)));
     }
     if t < c.t_snap {
