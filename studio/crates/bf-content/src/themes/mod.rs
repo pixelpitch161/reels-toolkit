@@ -58,21 +58,29 @@ pub const CLASSIC: &str = "classic";
 /// here is tested, never offered. The big top comes first, since a new match-up starts on the first theme offered
 /// (it is the starting pair's theme); the others follow in the kit's alphabetical order of moods. A theme is offered
 /// for a pair only when its bed has every hook both parts play ([`themes_for`], ruling M3-R2).
-pub const PORTED_THEMES: [&str; 14] = [
+pub const PORTED_THEMES: [&str; 22] = [
     "big_top",
     "baroque_storm",
+    "balkan_fire",
     "bossa_noir",
+    "brass_house",
     "brass_trailer",
+    "dark_breakbeat",
     "dark_disco",
     "dark_drumline",
     "dark_tango",
+    "gothic_horror",
     "heist",
     "horror_trap",
     "hot_jazz",
     "mambo",
     "prog_duel",
+    "sea_shanty",
     "second_line",
+    "ska_punk",
+    "spaghetti_western",
     "stadium_rock",
+    "villain_march",
 ];
 
 /// A theme's options as one fight has them: every option of the theme's schema, by its name, with the fight
@@ -412,12 +420,20 @@ mod tests {
 
     #[test]
     fn the_registry_has_every_kit_theme_and_offers_them_all() {
-        // every kit theme is offered once, the big top (the starting pair's theme) first
+        // every kit theme and every ported older one is offered once, the big top (the starting pair's theme) first
         let offered = theme_names();
         assert_eq!(offered[0], "big_top");
         let mut sorted = offered.clone();
         sorted.sort_unstable();
-        assert_eq!(sorted, KIT_MOODS);
+        let mut want: Vec<&str> = KIT_MOODS.to_vec();
+        want.extend(
+            OLDER_MOODS
+                .iter()
+                .copied()
+                .filter(|n| theme(n).is_some_and(|t| t.ported)),
+        );
+        want.sort_unstable();
+        assert_eq!(sorted, want);
         // the registry lists the 26 in alphabetical order: the kit's and the older episodes'
         let names: Vec<&str> = all_themes().iter().map(|t| t.name).collect();
         let mut all: Vec<&str> = KIT_MOODS.iter().chain(&OLDER_MOODS).copied().collect();
@@ -480,7 +496,7 @@ mod tests {
     #[test]
     fn validate_refuses_exactly_the_themes_a_pair_is_not_offered() {
         let offered = themes_for("FLUTE", "TROMBONE");
-        assert_eq!(offered.len(), 12);
+        assert_eq!(offered.len(), 20);
         for name in PORTED_THEMES {
             let mut ff = episode();
             ff.music.theme = name.to_string();
