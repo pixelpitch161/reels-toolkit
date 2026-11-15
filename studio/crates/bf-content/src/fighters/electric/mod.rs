@@ -50,3 +50,6 @@ pub const MUSIC_FEEDS_FIGHT: bool = false;
 
 /// The extra lines its part declares beside its own (HORN: `HORN THEME`).
 pub const EXTRA_LINES: &[&str] = &[];
+
+/// Its musical personality (milestone 5).
+pub mod personality;
