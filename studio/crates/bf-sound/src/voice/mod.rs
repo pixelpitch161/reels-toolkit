@@ -43,6 +43,10 @@ pub struct ModuleNoise {
     /// `violin_lowpoly.rng = np.random.default_rng(9)`: one `random()` a note for the vibrato's phase in
     /// `bowed` (the CELLO's voice).
     pub violin: Generator,
+    /// `turntables60_lowpoly._RNG = np.random.default_rng(130)`: the organ stab's 3 ms click of noise in `v_organ`
+    /// (the TURNTABLES's voice). Its import already draws from it (`_src_fresh`: 2,205 then 16,317 normals for
+    /// the scratch source `SRC`), so a build starts it there ([`ModuleNoise::TURNTABLES_STATE`]).
+    pub turntables: Generator,
 }
 
 impl ModuleNoise {
@@ -51,9 +55,20 @@ impl ModuleNoise {
     /// The seed of `violin_lowpoly.rng`.
     pub const VIOLIN_SEED: u64 = 9;
 
-    /// Both generators where a soundtrack build starts: fresh generators of their seeds.
+    /// The seed of `turntables60_lowpoly._RNG`.
+    pub const TURNTABLES_SEED: u64 = 130;
+    /// `turntables60_lowpoly._RNG`'s `state` after the module's import (Python's
+    /// `_RNG.bit_generator.state` once `pp_bridge.module('turntables60_lowpoly')` has loaded it): a fresh
+    /// `default_rng(130)` advanced by the 2,205 + 16,317 normals of `_src_fresh`.
+    pub const TURNTABLES_STATE: u128 = 201128124896158119870448215587948488083;
+    /// Its `inc`, which never changes.
+    pub const TURNTABLES_INC: u128 = 268633966611757921360168043673300817673;
+
+    /// The generators where a soundtrack build starts: fresh generators of their seeds, the TURNTABLES's where its
+    /// module's import leaves it.
     pub fn start() -> ModuleNoise {
         ModuleNoise {
+            turntables: Generator::from_state(Self::TURNTABLES_STATE, Self::TURNTABLES_INC),
             alto: Generator::new(Self::ALTO_SEED),
             violin: Generator::new(Self::VIOLIN_SEED),
         }
@@ -129,6 +144,38 @@ pub mod pp;
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_turntables_generator_starts_where_its_modules_import_leaves_it() {
+        // a fresh default_rng(130) and the two draws of `_src_fresh`
+        let mut g = Generator::new(ModuleNoise::TURNTABLES_SEED);
+        let (mut a, mut b) = (vec![0.0; 2205], vec![0.0; 16_317]);
+        g.fill_normal(0.0, 1.0, &mut a);
+        g.fill_normal(0.0, 1.0, &mut b);
+        let mut from_start = ModuleNoise::start().turntables;
+        let (mut x, mut y) = (vec![0.0; 4], vec![0.0; 4]);
+        g.fill_normal(0.0, 1.0, &mut x);
+        from_start.fill_normal(0.0, 1.0, &mut y);
+        assert_eq!(x, y);
+        // Python's next four: `_RNG.normal(0, 1, 4)` right after the import
+        let want = [
+            "-0x1.1bd1286f11373p-1",
+            "0x1.891babf422927p-1",
+            "0x1.f5e66ab25970ep-2",
+            "0x1.a8f2990529ba0p-1",
+        ];
+        let got: Vec<String> = y.iter().map(|v| hexf(*v)).collect();
+        assert_eq!(got, want);
+    }
+
+    /// Python's `float.hex()` of a normal number (13 hex digits).
+    fn hexf(v: f64) -> String {
+        let bits = v.to_bits();
+        let sign = if bits >> 63 == 1 { "-" } else { "" };
+        let exp = ((bits >> 52) & 0x7ff) as i64 - 1023;
+        let man = bits & ((1u64 << 52) - 1);
+        format!("{sign}0x1.{man:013x}p{exp}")
+    }
 
     #[test]
     fn the_stream_is_a_fresh_generator_of_seed_77() {

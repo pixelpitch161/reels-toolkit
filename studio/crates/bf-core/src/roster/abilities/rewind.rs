@@ -2,28 +2,25 @@
 //! (`_rewind_ab`, `_rewind_then`, `rewind_ready`, `start_rewind`, `rewind_step`); the gate in `abilities_step` 3035 to
 //! 3036; a rewinding ball is intangible (`rw_left`).
 //!
-//! A stub until TURNTABLES's port (milestone 4): [`PORTED`] is false, so an ability of kind `rewind` loads as
-//! `AbilityKind::Unsupported("rewind")` and no fight can have it. The port lists the numbers `fight.py` reads as
-//! `ab[name]` in [`REQUIRED`] and every key it reads in [`ALLOWED`], fills [`RewindCfg`] (what is not a number: lists,
-//! tables), [`parse`] and [`check`], and sets [`PORTED`].
+//! The ball undoes the damage it took in the last `window` s (HP back to its recorded value then) and zips back along
+//! its own recorded path to where it was then, in `zip_beats` beats, intangible while it zips. It waits until that
+//! would undo at least `min_undo` HP (`ab.get('min_undo', 0.0)`).
 
 use serde_json::Value as Json;
 
 use crate::roster::{AbilityCfg, Entry, RosterError};
 
-/// Whether the engine runs ability kind `rewind`. While false the roster reads it as
-/// `AbilityKind::Unsupported("rewind")`, which the engine refuses in words.
-pub const PORTED: bool = false;
+/// Whether the engine runs ability kind `rewind`.
+pub const PORTED: bool = true;
 
-/// The numbers `fight.py` reads as `ab[name]` for this kind (a group of names: one of them, as `dur` or `dur_beats`).
-/// An unlock's `every_bars` is checked for every kind.
-pub const REQUIRED: &[&[&str]] = &[];
+/// The numbers `fight.py` reads as `ab[name]` for this kind. An unlock's `every_bars` is checked for every kind.
+pub const REQUIRED: &[&[&str]] = &[&["window"], &["zip_beats"]];
 
 /// Every key `fight.py` reads from an ability of this kind; an entry holding another key loads as
 /// `Unsupported("rewind+<key>")`.
-pub const ALLOWED: &[&str] = &["name", "kind", "every_bars"];
+pub const ALLOWED: &[&str] = &["name", "kind", "every_bars", "window", "zip_beats", "min_undo"];
 
-/// What an ability of kind `rewind` holds besides its numbers (empty until the port).
+/// What an ability of kind `rewind` holds besides its numbers: nothing.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct RewindCfg {}
 
@@ -33,7 +30,16 @@ pub(crate) fn parse(_e: &Entry, _prefix: &str, _ab: &Json) -> Result<RewindCfg, 
     Ok(RewindCfg {})
 }
 
-/// The kind's own checks on an entry's numbers, at load time and again in `FighterCfg::check`.
-pub(crate) fn check(_e: &Entry, _prefix: &str, _ab: &AbilityCfg) -> Result<(), RosterError> {
+/// The kind's own checks on an entry's numbers: the history is `int(round(window / DT)) + 3` deep and the zip divides
+/// by its length, so `window` must be a finite number of at least 0 and `zip_beats` above 0.
+pub(crate) fn check(e: &Entry, prefix: &str, ab: &AbilityCfg) -> Result<(), RosterError> {
+    let window = ab.get("window").unwrap_or(0.0);
+    if !(window.is_finite() && (0.0..=60.0).contains(&window)) {
+        return Err(e.err(&format!("{prefix}.window"), "a rewind's window is 0 to 60 s"));
+    }
+    let zip = ab.get("zip_beats").unwrap_or(0.0);
+    if !(zip.is_finite() && zip > 0.0) {
+        return Err(e.err(&format!("{prefix}.zip_beats"), "a rewind's zip takes more than 0 beats"));
+    }
     Ok(())
 }
