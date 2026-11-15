@@ -18,6 +18,10 @@ use crate::themes::dark_breakbeat::thunder_crack;
 /// The name the bed's errors carry.
 const H: &str = "spaghetti_western";
 
+/// How much louder the victory (the lighter gallop under the solo) and the ride-out play: #33 lifted them by up to
+/// 3.3 dB in its own master (`GAIN_PTS`); the Studio's master has no lift, so the bed carries it.
+const VICTORY_LIFT: f64 = 2.6;
+
 /// The bed's own buses, which the K.O. tape-stops.
 const BUSES: [&str; 6] = ["perc", "twang", "choir", "whistle", "strings", "bell"];
 
@@ -61,7 +65,9 @@ impl SpaghettiWesternClassic {
 
     /// `bed(mix, b, light)`: one bar: the gallop, the twang bass, the choir, the bell, the strings and the snare by
     /// section.
-    fn bar(&self, ctx: &MusicCtx, mix: &mut Mix, b: usize, light: bool) -> Played {
+    fn bar(&self, ctx: &MusicCtx, mix: &mut Mix, b: usize, light: bool, lift: f64) -> Played {
+        let put =
+            |mix: &mut Mix, bus: &str, x: Vec<f64>, t: f64, gain: f64, pan: f64| put(mix, bus, x, t, gain * lift, pan);
         let g = &ctx.show.grid;
         let (beat, s16) = (g.beat, g.s16);
         let t0 = b as f64 * g.bar;
@@ -151,8 +157,8 @@ impl Bed for SpaghettiWesternClassic {
     fn buses(&self) -> &[(&'static str, (f64, f64))] {
         &[
             ("perc", (1.0, 0.15)),
-            ("twang", (0.55, 0.3)),
-            ("choir", (1.0, 0.6)),
+            ("twang", (0.75, 0.3)),
+            ("choir", (1.25, 0.6)),
             ("bell", (0.9, 0.5)),
             ("strings", (1.0, 0.4)),
             ("whistle", (1.0, 0.9)),
@@ -277,7 +283,7 @@ impl Bed for SpaghettiWesternClassic {
     fn fight(&self, ctx: &MusicCtx, mix: &mut Mix, bar_ko: usize) -> Played {
         let g = &ctx.show.grid;
         for b in 2..=bar_ko {
-            self.bar(ctx, mix, b, false)?;
+            self.bar(ctx, mix, b, false, 1.0)?;
         }
         self.whistle_phrase(ctx, mix, 2, 0.075);
         let s2 = section_start(g.n_bars, 18);
@@ -322,10 +328,10 @@ impl Bed for SpaghettiWesternClassic {
         Ok(())
     }
 
-    /// A lighter gallop under the solo, up to the ride-out.
+    /// A lighter gallop under the solo, up to the ride-out, [`VICTORY_LIFT`] louder.
     fn victory(&self, ctx: &MusicCtx, mix: &mut Mix, b_solo: usize) -> Played {
         for b in b_solo..ctx.show.grid.n_bars.saturating_sub(1) {
-            self.bar(ctx, mix, b, true)?;
+            self.bar(ctx, mix, b, true, VICTORY_LIFT)?;
         }
         Ok(())
     }
@@ -334,6 +340,9 @@ impl Bed for SpaghettiWesternClassic {
     /// frame drum and the twang climb the chord, a riser, the choir, the whistle's long note.
     fn last_bars(&self, ctx: &MusicCtx, mix: &mut Mix) -> Played {
         let g = &ctx.show.grid;
+        let put = |mix: &mut Mix, bus: &str, x: Vec<f64>, t: f64, gain: f64, pan: f64| {
+            put(mix, bus, x, t, gain * VICTORY_LIFT, pan)
+        };
         let t_last = g.n_bars.saturating_sub(1) as f64 * g.bar;
         let tail = g.dur - t_last;
         let ch = chord(ctx, g.n_bars.saturating_sub(1))?;
