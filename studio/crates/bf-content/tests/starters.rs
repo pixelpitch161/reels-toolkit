@@ -18,7 +18,7 @@ use sha2::{Digest, Sha256};
 const NO_BOOM: [&str; 2] = ["dark_disco", "heist"];
 
 /// The fighters whose part plays the bed's `boom` (the HORN when the bed has no `trailer_hit`).
-const PLAYS_A_BOOM: [&str; 5] = ["TROMBONE", "ORGAN", "TUBA", "EUPHONIUM", "HORN"];
+const PLAYS_A_BOOM: [&str; 6] = ["TROMBONE", "ORGAN", "TUBA", "EUPHONIUM", "HORN", "BARI SAX"];
 
 fn crossovers() -> Value {
     let path = bf_testdata::reference("episodes/crossovers/crossovers.json");
@@ -73,10 +73,10 @@ fn as_a_starter(mut ff: FightFile, left: &str, right: &str) -> FightFile {
 #[test]
 fn every_ordered_pair_has_a_starter_the_studio_accepts() {
     let names = available();
-    assert_eq!(names.len(), 20, "the kit fighters offered");
+    assert_eq!(names.len(), 22, "the kit fighters and the older ones ported");
     let pairs = ordered_pairs();
     assert_eq!(pairs.len(), names.len() * (names.len() - 1));
-    assert_eq!(pairs.len(), 380);
+    assert_eq!(pairs.len(), 462);
     let mut problems = Vec::new();
     for &(a, b) in &pairs {
         let ff = match starter(a, b) {
@@ -168,7 +168,11 @@ fn the_kit_pairs_start_from_their_fight_files_in_both_orders() {
 #[test]
 fn every_fighter_has_the_kits_home_config() {
     let doc = crossovers();
-    let mut names: Vec<&str> = available();
+    // the kit's fighters (an older one borrows FLUTE's home)
+    let mut names: Vec<&str> = available()
+        .into_iter()
+        .filter(|n| !bf_content::fighters::OLDER.contains(n))
+        .collect();
     names.sort_unstable();
     assert_eq!(texts(&doc["fighters"]), names, "the kit fighters");
     for name in &names {
