@@ -18,6 +18,7 @@
 //! chords (proven for every chord the harmony parses by the theme's own test, from `voicings.json`).
 
 mod classic;
+pub mod layers;
 
 use bf_core::dmath::{self, PI};
 use bf_core::harmony::{Harmony, HarmonyError};

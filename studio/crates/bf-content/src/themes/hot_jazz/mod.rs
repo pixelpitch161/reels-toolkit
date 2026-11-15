@@ -23,6 +23,7 @@
 //! `voices`, so the build hands the ported TUBA voice (`fighters::tuba`) to the music context.
 
 mod classic;
+pub mod layers;
 
 use bf_core::dmath::{self, PI};
 use bf_core::harmony::{Harmony, HarmonyError};
