@@ -448,15 +448,15 @@ mod tests {
 
     /// The fighters whose part plays the bed's `boom` without asking (the HORN only when the bed has no
     /// `trailer_hit`): `dark_disco` and `heist` have neither, so the kit would crash on any pair with one of them.
-    const PLAYS_A_BOOM: [&str; 5] = ["TROMBONE", "ORGAN", "TUBA", "EUPHONIUM", "HORN"];
+    const PLAYS_A_BOOM: [&str; 6] = ["TROMBONE", "ORGAN", "TUBA", "EUPHONIUM", "HORN", "BARI SAX"];
 
     /// Ruling M3-R2: every ordered pair of kit fighters is offered every theme, except `dark_disco` and `heist` for a
     /// pair with a fighter that plays a boom; a name that is no kit fighter is offered none. (The kit fighters are
-    /// the 20 the app offers; the older ten in the roster are not offered yet.)
+    /// the 20, TURNTABLES and BARI SAX the app offers; the rest of the older ten are not offered yet.)
     #[test]
     fn a_pair_is_offered_every_theme_its_parts_can_play() {
         let names: Vec<&str> = crate::available();
-        assert_eq!(names.len(), 20);
+        assert_eq!(names.len(), 22);
         for &a in &names {
             for &b in &names {
                 let want: Vec<&str> = PORTED_THEMES

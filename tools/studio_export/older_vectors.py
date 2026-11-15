@@ -445,6 +445,28 @@ def stub_look(base, P):
             calls['rope_events'] = len(out)
             return out
 
+        def ball_under(self, kk, st, t, arr, cam):
+            if kk != self.k:
+                return
+            s = cam.wp(self.P.S.to_world(st['p'][0], st['p'][1], 0.0)[None])[0]
+            y = int(s[1]) + 2
+            xa, xb = max(0, int(s[0]) - 8), min(W, int(s[0]) + 8)
+            if 0 <= y < H and xb > xa:
+                arr[y, xa:xb] = (0.0, 255.0, 0.0)
+                hit('ball_under')
+
+        def ability_hold(self, slot):
+            if slot != 'unlock1':
+                return None
+            hit('ability_hold')
+            return 1.5
+
+        def shake_more(self, e):
+            if e[1] == 'hit' and e[2] == self.k:
+                hit('shake_more')
+                return [(e[0] + 0.2, 2.0)]
+            return []
+
         def after_post(self, img, F, drawn):
             for k, (s_, rp) in drawn.items():
                 if k != self.k:

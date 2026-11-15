@@ -317,7 +317,8 @@ impl Look for Spy {
     fn focus_points(&self, p: &PictureCtx, t: f64, st: &BallState) -> Vec<(V3, String)> {
         self.inner.focus_points(p, t, st)
     }
-    // the older looks' opt-ins (plan m4 Task 4), forwarded unlogged (the kit's hook log has no entry for them)
+    // the older looks' picture opt-ins (plan m4 Tasks 4 and 9): passed through, not noted (the export's spies do not
+    // list them)
     fn canvas_albedo(&self, p: &PictureCtx, alb: &mut [V3], c: &CanvasCtx<'_>) {
         self.inner.canvas_albedo(p, alb, c);
     }
@@ -366,6 +367,15 @@ impl Look for Spy {
     }
     fn spark_events(&self) -> &[&str] {
         self.inner.spark_events()
+    }
+    fn ball_under(&self, p: &PictureCtx, kk: usize, st: &BallState, t: f64, arr: &mut Img<f32>, cam: &Cam) {
+        self.inner.ball_under(p, kk, st, t, arr, cam);
+    }
+    fn ability_hold(&self, p: &PictureCtx, slot: &str) -> Option<f64> {
+        self.inner.ability_hold(p, slot)
+    }
+    fn shake_more(&self, p: &PictureCtx, e: &Event) -> Vec<(f64, f64)> {
+        self.inner.shake_more(p, e)
     }
 }
 

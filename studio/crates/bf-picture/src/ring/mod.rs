@@ -538,6 +538,14 @@ impl Picture {
             look.setup(&p, k);
         }
         let looks = Vec::from(looks);
+        // (older opt-in ability_hold) ABIL_HOLD made again with each look's own holds
+        for (k, l) in looks.iter().enumerate() {
+            for (s, (slot, _)) in hud::SLOTS.iter().enumerate() {
+                if let Some(h) = l.ability_hold(&p, slot) {
+                    p.abil.hold[k][s] = h;
+                }
+            }
+        }
         // FL_COL = COL[k] * LOOKS[k].flare_scale: near-white fighters scaled down
         p.fl_col = [0, 1].map(|k| p.col[k].map(|c| c * looks[k].flare_scale()));
         p.shk = effects::shake(&p, &looks);

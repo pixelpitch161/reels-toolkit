@@ -613,6 +613,23 @@ pub trait Look: Send + Sync {
     fn spark_events(&self) -> &[&str] {
         &[]
     }
+    /// Opt-in `ball_under(kk, st, t, arr, cam)`: draws on the `float32` frame ball `kk` is about to be drawn into,
+    /// right before it (every look in order, at the top of `draw_ball`): no 8-bit round trip between, as an
+    /// [`Look::items_ball`] item has. BARI SAX: the swing's smear and coral trail under the ball.
+    #[allow(clippy::too_many_arguments)] // the Python signature
+    fn ball_under(&self, p: &PictureCtx, kk: usize, st: &BallState, t: f64, arr: &mut Img<f32>, cam: &Cam) {}
+
+    /// Opt-in `ability_hold(slot)`: how long its own HUD row `slot` stays lit after a use, in seconds, or `None` for
+    /// the kit's `_hold`. BARI SAX: SKANK for its beats, CABLE SNAP until the crash.
+    fn ability_hold(&self, p: &PictureCtx, slot: &str) -> Option<f64> {
+        None
+    }
+
+    /// Opt-in `shake_more(e)`: more camera jolts `(t, px)` for one of its events, besides [`Look::shake`] (the
+    /// shake keeps the strongest live jolt, so their order does not matter). BARI SAX: the crash's second jolt.
+    fn shake_more(&self, p: &PictureCtx, e: &Event) -> Vec<(f64, f64)> {
+        Vec::new()
+    }
 }
 
 /// One pixel of a ball's inside for [`Look::ball_glass`]: Python's `geo` there (`dx`, `dy` the pixel's offset from the

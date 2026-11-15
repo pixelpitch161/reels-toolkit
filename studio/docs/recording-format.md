@@ -1985,10 +1985,11 @@ fills this section in (the meaning of each field, as 6.2 and 6.3 do for FLUTE an
 <!-- kind:scratch_floor -->
 #### `scratch_floor` (weapon kind of TURNTABLES)
 
-`fight.py` 1713 to 1762. Not ported yet (milestone 4, Task 3 made its sockets): its port fills this section in (the
-meaning of each field, as 6.2 and 6.3 do for FLUTE and TROMBONE), from the lines below.
+`fight.py` 1713 to 1762 (`scratch_beat`, `scratch_step`), ported (milestone 4, Task 8). Every `every` beats (a haste
+divides it) the floor jerks forward, then back half way through the scratch; each jerk flings the opponent round the
+ring centre; the first rope the opponent hits within `window` s of a jerk is a rope slam.
 
-**Record keys.** None of its own.
+**Record keys.** None of its own: the scratch's strength is the ball's `blade_len`, recorded in `BL`.
 
 **Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
 `self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
@@ -1996,6 +1997,11 @@ meaning of each field, as 6.2 and 6.3 do for FLUTE and TROMBONE), from the lines
 - 1729: `self.ev('scratch', k, d, float(B.blade_len), sgn)`
 - 1750: `self.ev('jerk', k, sgn, float(O.p[0]), float(O.p[1]), float(B.blade_len))`
 - 1756: `if self.damage(k, 1 - k, dmg, 'scratch', e[5], e[6]):`
+
+Fields: `scratch`: the scratch's length in seconds (`dur_beats` beats), its strength, its direction (1.0 forward, -1.0
+back; alternating). `jerk`: the jerk's direction, the opponent's x and z when it is flung, the strength (the knock).
+The hit: kind `scratch` at the rope event's x and z, `dmg` x min(`cap`, impact speed / the shared speed). A rewinding
+opponent is not flung (no `jerk` event).
 
 <!-- /kind:scratch_floor -->
 
@@ -2026,8 +2032,16 @@ meaning of each field, as 6.2 and 6.3 do for FLUTE and TROMBONE), from the lines
 <!-- kind:wrecking -->
 #### `wrecking` (weapon kind of BARI SAX)
 
-`fight.py` 3594 to 3786. Not ported yet (milestone 4, Task 3 made its sockets): its port fills this section in (the
-meaning of each field, as 6.2 and 6.3 do for FLUTE and TROMBONE), from the lines below.
+`fight.py` 3594 to 3786 (BARI SAX's WRECKING BALL, ported in milestone 4 Task 9: `bf-sim/src/kinds/wrecking.rs`).
+
+`WRECK` is a `(frames, 2, 9)` float array, one row a ball: `[phase, h, L, bottom x, bottom z, hook x, hook z, t0,
+t1]`. `phase` is 0 between cycles (only `L` = the cable's length `blade_len` is set then), 1 the cable dropping, 2
+hoisted back, 3 the swing, 4 dropped on the ropes and slung back in; `h` the ball's height off the canvas (0 until the
+lift starts); `L` the cable's length (`blade_len` until the hook bites, then the swing's); the swing's bottom and the
+point the hook bit (the ball's own position until the hook bites); the phase's start and end times.
+`cable` (t_hook), `swing` (start x, z, end x, z, bottom x, z, L, theta, t0, t1, kind 0 / 1 SKANK), `smash` (x, z,
+speed 0 to 1), `wreck_out` (x0, z0, x1, z1, t0, t1), `wreck_in` (x, z); hits of kind `wreck` (sub 0). SKANK (ability
+kind `offbeat`) adds `skank` (until).
 
 **Record keys.**
 
@@ -2131,16 +2145,20 @@ section in (the meaning of each field, as 6.2 and 6.3 do for FLUTE and TROMBONE)
 <!-- kind:rewind -->
 #### `rewind` (ability kind of TURNTABLES)
 
-`fight.py` 2866 to 2867, 1927 to 1998, 3035 to 3036. Not ported yet (milestone 4, Task 3 made its sockets): its port
-fills this section in (the meaning of each field, as 6.2 and 6.3 do for FLUTE and TROMBONE), from the lines below.
+`fight.py` 2866 to 2867, 1927 to 1998, 3035 to 3036, ported (milestone 4, Task 8). The ball keeps a record of
+itself one substep a line, `window` s deep; REWIND (only when it would undo at least `min_undo` HP) puts its HP back
+to the recorded value and zips it back along the recorded path in `zip_beats` beats, intangible meanwhile.
 
-**Record keys.** None of its own.
+**Record keys.** None of its own (the zip is in `P` and `HP`).
 
 **Events and hits** (each `self.ev(kind, who, ...)` and `self.damage(att, vic, dmg, what, x, y, sub)` call, and each
 `self.kill_keys(mask, why, by)`, whose events are `why`, with its line):
 
 - 1961: `self.ev('heal', k, heal, then[0])`
 - 1982: `self.ev('rewound', k, float(B.p[0]), float(B.p[1]))`
+
+Fields: `heal`: the HP given back, the time the record went back to (unrounded). `rewound`: where the zip ended (x,
+z); the ball then flies on with the heading it had then, at the shared speed.
 
 <!-- /kind:rewind -->
 
@@ -2182,8 +2200,9 @@ this section in (the meaning of each field, as 6.2 and 6.3 do for FLUTE and TROM
 <!-- kind:offbeat -->
 #### `offbeat` (ability kind of BARI SAX)
 
-`fight.py` 2911 to 2914, 3666 to 3684. Not ported yet (milestone 4, Task 3 made its sockets): its port fills this
-section in (the meaning of each field, as 6.2 and 6.3 do for FLUTE and TROMBONE), from the lines below.
+`fight.py` 2911 to 2914, 3666 to 3684 (BARI SAX's SKANK, ported in milestone 4 Task 9, in
+`bf-sim/src/kinds/wrecking.rs`): `skank` (the time it lasts until); while it lasts a cable drops every bar on the
+weapon's `skank_off16`, its swing a `swing` event of kind 1.
 
 **Record keys.** None of its own.
 
@@ -2198,8 +2217,13 @@ section in (the meaning of each field, as 6.2 and 6.3 do for FLUTE and TROMBONE)
 <!-- kind:snap -->
 #### `snap` (ability kind of BARI SAX)
 
-`fight.py` 2919 to 2920, 3787 to 3856. Not ported yet (milestone 4, Task 3 made its sockets): its port fills this
-section in (the meaning of each field, as 6.2 and 6.3 do for FLUTE and TROMBONE), from the lines below.
+`fight.py` 2919 to 2920, 3787 to 3856 (BARI SAX's CABLE SNAP, ported in milestone 4 Task 9:
+`bf-sim/src/abilities/snap.rs`).
+
+`SNAP` is a `(frames, 2, 8)` float array, one row a ball: `[on, h, spot x, spot z, t0, t_snap, t_crash, radius]`, all
+zeros when no CABLE SNAP is under way: 1 while one is, the ball's height, the spot it falls on, its start, the snap and
+the crash, the crater's reach beyond contact. `snap_aim` (spot x, z, t_snap, t_crash, radius), `cable_snap`, `crater`
+(x, z, radius, hit 0 / 1); hits of kind `crash` (sub 0).
 
 **Record keys.**
 

@@ -161,8 +161,21 @@ pub fn kit_pair_fights() -> Vec<(&'static str, &'static FightFile)> {
 }
 
 /// A fighter's home config (the music a crossover with it on the left starts from), by its pair folder name: its
-/// newest kit config by episode number, an example only when it has no other. `None` for a name no kit config has.
+/// newest kit config by episode number, an example only when it has no other. `None` for a name not offered that no
+/// kit config has.
+///
+/// An offered fighter without a kit config of its own (an older fighter) borrows FLUTE's and plays the melody there.
 pub fn home_config(name: &str) -> Option<&'static str> {
+    own_home_config(name).or_else(|| {
+        if available().contains(&name) {
+            own_home_config("FLUTE")
+        } else {
+            None
+        }
+    })
+}
+
+fn own_home_config(name: &str) -> Option<&'static str> {
     kit_pairs()
         .iter()
         .filter(|p| p.ff.fighters.iter().any(|f| f == name))
@@ -245,7 +258,11 @@ fn crossover(left: &str, right: &str) -> Result<FightFile, ContentError> {
         .into_iter()
         .find(|t| offered.contains(t))
         .unwrap_or(FALLBACK_THEME);
-    let role_of = |h: &FightFile, name: &str| h.music.roles.get(name).cloned().ok_or_else(|| no_music(left, right));
+    let role_of = |h: &FightFile, name: &str| match h.music.roles.get(name) {
+        Some(role) => Ok(role.clone()),
+        None if own_home_config(name).is_none() => Ok("melody".to_string()),
+        None => Err(no_music(left, right)),
+    };
     let rl = role_of(hl, left)?;
     let mut rr = role_of(hr, right)?;
     if rr == rl {

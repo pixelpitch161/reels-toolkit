@@ -16,12 +16,19 @@ use crate::np;
 use crate::np::index::py_slice;
 use crate::scene::{self, R_BALL as R};
 
-/// `SHK`: a little camera shake on heavy hits: each look's `shake(e)` for its own events, then 2.5 at the K.O.
+/// `SHK`: a little camera shake on heavy hits: each look's `shake(e)` (and opt-in `shake_more(e)`) for its own
+/// events, then 2.5 at the K.O.
 pub(super) fn shake(p: &PictureCtx, looks: &[Box<dyn Look>]) -> Shake {
     let mut shk = Shake::new(2.5, 0.09, 0.45);
     for e in &p.rec.events {
         if let Some(a) = owner(e).and_then(|k| looks[k].shake(p, e)) {
             shk.add(e.t, a);
+        }
+        // (older opt-in shake_more) more jolts for the event (added once the module is built: the order is no matter)
+        if let Some(k) = owner(e) {
+            for (t, a) in looks[k].shake_more(p, e) {
+                shk.add(t, a);
+            }
         }
     }
     shk.add(p.t_ko, 2.5);
