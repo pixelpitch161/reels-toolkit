@@ -37,6 +37,7 @@ pub static THEME: Theme = Theme {
     voices: &[],
     own_voice: super::no_own_voice,
     classic: |_| Ok(Box::new(ProgDuelClassic::new())),
+    composed: Some(layers::composed),
 };
 
 /// #45's loop in A minor.

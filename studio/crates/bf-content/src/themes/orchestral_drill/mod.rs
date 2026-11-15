@@ -33,6 +33,7 @@ pub static THEME: Theme = Theme {
     voices: &[CELLO],
     own_voice: super::no_own_voice,
     classic: |_| Ok(Box::new(OrchestralDrillClassic::new())),
+    composed: Some(layers::composed),
 };
 
 /// #42's loop: i - bVI - iv - V in C harmonic minor, two bars each.

@@ -14,6 +14,7 @@ use std::collections::BTreeMap;
 use std::sync::Arc;
 
 use bf_core::fightfile::{FightFile, OptionValue};
+use bf_sound::music::layers::Cue;
 use bf_sound::traits::Bed;
 use bf_sound::voice::Voice;
 
@@ -53,6 +54,9 @@ pub mod villain_march;
 
 /// The arrangement every theme has: the one that reproduces the kit's bed.
 pub const CLASSIC: &str = "classic";
+
+/// The arrangement of milestone 5: the theme's layered bed and the composer's lines and solos.
+pub const COMPOSED: &str = "composed";
 
 /// The themes the app offers, by name (grows only in the register tasks). A theme that is ported but not listed
 /// here is tested, never offered. The big top comes first, since a new match-up starts on the first theme offered
@@ -154,7 +158,13 @@ pub struct Theme {
     pub own_voice: fn(&str) -> Option<Arc<dyn Voice>>,
     /// Its classic arrangement, for the fight's options.
     pub classic: fn(&ThemeOptions) -> Result<Box<dyn Bed>, ContentError>,
+    /// Its composed arrangement (milestone 5: the layered bed over the classic one), for the fight's options, its
+    /// story cues and the music seed; `None` for a theme without one yet, which plays its classic bed there.
+    pub composed: Option<ComposedBed>,
 }
+
+/// A theme's composed arrangement: the fight's options, its story cues and the music seed.
+pub type ComposedBed = fn(&ThemeOptions, Vec<Cue>, u64) -> Result<Box<dyn Bed>, ContentError>;
 
 /// A theme with no voice of its own.
 pub fn no_own_voice(pp: &str) -> Option<Arc<dyn Voice>> {
@@ -277,13 +287,31 @@ impl Theme {
     /// # Errors
     /// The theme has no such arrangement (`music.arrangement`), or its bed refuses (a theme that is not ported).
     pub fn bed(&self, arrangement: &str, options: &ThemeOptions) -> Result<Box<dyn Bed>, ContentError> {
-        if arrangement != CLASSIC {
-            return Err(ContentError::field(
+        self.bed_with(arrangement, options, Vec::new(), 0)
+    }
+
+    /// The theme's bed in the arrangement `arrangement` for the fight's `options`: [`CLASSIC`], its classic bed;
+    /// [`COMPOSED`], its layered bed listening to the story `cues` and drawing on the music `seed`, or its classic
+    /// bed for a theme that has no composed arrangement yet. [`Theme::bed`] is this with no cues (what the checks
+    /// before a recording need: the hooks and the buses).
+    ///
+    /// # Errors
+    /// As [`Theme::bed`].
+    pub fn bed_with(
+        &self,
+        arrangement: &str,
+        options: &ThemeOptions,
+        cues: Vec<Cue>,
+        seed: u64,
+    ) -> Result<Box<dyn Bed>, ContentError> {
+        match (arrangement, self.composed) {
+            (CLASSIC, _) | (COMPOSED, None) => (self.classic)(options),
+            (COMPOSED, Some(composed)) => composed(options, cues, seed),
+            _ => Err(ContentError::field(
                 "music.arrangement",
                 format!("{} has no arrangement {arrangement:?}", self.name),
-            ));
+            )),
         }
-        (self.classic)(options)
     }
 }
 
@@ -530,6 +558,7 @@ mod tests {
         voices: &[],
         own_voice: no_own_voice,
         classic: |_| Err(not_ported("not_ported_yet")),
+        composed: None,
     };
 
     /// The older episodes' themes are listed and, while their stub is not ported, never offered.
@@ -597,6 +626,7 @@ mod tests {
         voices: &[],
         own_voice: no_own_voice,
         classic: |_| Err(not_ported("test_theme")),
+        composed: None,
     };
 
     #[test]
@@ -676,6 +706,7 @@ mod tests {
             voices,
             own_voice: own,
             classic: |_| Err(not_ported("voiced")),
+        composed: None,
         }
     }
 
@@ -758,6 +789,7 @@ mod tests {
             voices,
             own_voice: no_own_voice,
             classic: |_| Err(not_ported("unported_bed")),
+        composed: None,
         };
         assert_eq!(
             crate::soundtrack::validate_with(&episode(), &bed)

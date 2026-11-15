@@ -33,6 +33,7 @@ pub static THEME: Theme = Theme {
     voices: &[],
     own_voice: super::no_own_voice,
     classic: |_| Ok(Box::new(DriftPhonkClassic::new())),
+    composed: Some(|o, c, s| Ok(Box::new(layers::composed(o, c, s)?))),
 };
 
 /// #27's loop: E5 E5 C5 B5.

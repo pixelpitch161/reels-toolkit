@@ -453,7 +453,8 @@ const SHORTS_TAGS: &str = "#music #pixelart";
 ///   theme's options (one that names a fighter not in the pair names the left fighter); both play the kit's sketch
 ///   line and solo, no title hits, no mix, no title-card opt-ins; the left keeps its home role, the right takes its
 ///   own unless that is the same, then `bass` if its card can play bass and the left's is not `bass`, else `melody`
-///   unless the left plays the melody, else `line`; handicap 1.0 each, damage scale 1.0.
+///   unless the left plays the melody, else `line`; handicap 1.0 each, damage scale 1.0. Such a new pairing starts
+///   on the `composed` arrangement; a kit pair and an older episode's pair keep `classic`.
 ///
 /// Either way: no seed, no series tag, the kit's default particle seed, the pair's rules, drafted captions and this
 /// app's version.
@@ -508,7 +509,10 @@ fn crossover(left: &str, right: &str) -> Result<FightFile, ContentError> {
     let (Some(rl), Some(rr)) = (role_of(hl, left), role_of(hr, right)) else {
         return Err(no_music(left, right));
     };
-    Ok(arrange(hl.clone(), left, right, theme, rl, rr))
+    let mut ff = arrange(hl.clone(), left, right, theme, rl, rr);
+    // a new pairing starts on the composed arrangement (milestone 5); Classic is one click away
+    ff.music.arrangement = crate::themes::COMPOSED.to_string();
+    Ok(ff)
 }
 
 /// `name`'s part in its home config `h`: the one it names, else the melody for a fighter without a kit config.

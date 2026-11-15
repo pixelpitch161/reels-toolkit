@@ -45,6 +45,7 @@ pub static THEME: Theme = Theme {
     voices: &["TUBA"],
     own_voice: super::no_own_voice,
     classic: |_| Ok(Box::new(HotJazzClassic::new())),
+    composed: None,
 };
 
 /// #46's loop: i - iv - bVI7 - V7 in D minor.

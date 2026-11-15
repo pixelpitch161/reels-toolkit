@@ -32,6 +32,7 @@ pub static THEME: Theme = Theme {
     voices: &[],
     own_voice: super::no_own_voice,
     classic: |_| Ok(Box::new(IndustrialClassic::new())),
+    composed: None,
 };
 
 /// #40's loop: i - bVI - iv - V in G minor.

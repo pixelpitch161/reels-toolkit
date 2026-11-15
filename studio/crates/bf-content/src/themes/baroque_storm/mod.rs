@@ -48,6 +48,7 @@ pub static THEME: Theme = Theme {
     voices: &[],
     own_voice: super::no_own_voice,
     classic: |_| Ok(Box::new(BaroqueStormClassic::new())),
+    composed: Some(|o, c, s| Ok(Box::new(layers::composed(o, c, s)?))),
 };
 
 /// What the interface says about the baroque storm.

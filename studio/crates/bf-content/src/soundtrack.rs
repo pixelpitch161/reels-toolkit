@@ -18,7 +18,9 @@ use bf_core::roster::FighterCfg;
 use bf_core::show::Show;
 use bf_sound::master::{Levels, MASTER_CEILING, Soundtrack, master};
 use bf_sound::mix::Mix;
-use bf_sound::music::{MusicCtx, MusicError};
+use bf_sound::music::layers::cues;
+use bf_sound::music::signal::StorySignal;
+use bf_sound::music::{ComposedPart, MusicCtx, MusicError};
 use bf_sound::score::score;
 use bf_sound::traits::{Bed, Sound};
 use bf_sound::voice::Voice;
@@ -26,8 +28,10 @@ use bf_sound::voice::Voice;
 use bf_core::fightfile::is_extra_line;
 use bf_sound::master::BUS;
 
+use crate::composer::{PER_BAR, compose};
 use crate::error::ContentError;
 use crate::fighters;
+use crate::personality::{Role, personality};
 use crate::registry::{name_status, roster};
 use crate::themes::{self, Theme};
 
@@ -214,7 +218,9 @@ impl<'a> SoundBuild<'a> {
     /// The build before its parts are made.
     fn unmade(show: &'a Show, rec: &'a Recording, ff: &'a FightFile) -> Result<SoundBuild<'a>, ContentError> {
         let theme = theme_of(ff)?;
-        let bed = theme_bed(theme, ff)?;
+        let composed = ff.music.arrangement == themes::COMPOSED;
+        // the classic bed is made first, as it always was; the composed one needs the story signal of the context
+        let classic = if composed { None } else { Some(theme_bed(theme, ff)?) };
         let [a, b] = [player(&show.names[0], 0, ff)?, player(&show.names[1], 1, ff)?];
         let mut voices = theme.bed_voices()?;
         // the voices a part plays besides its own (VIOLA's crush: the CELLO), when nobody in the fight plays them
@@ -224,7 +230,11 @@ impl<'a> SoundBuild<'a> {
                 voices.push(v);
             }
         }
-        let ctx = MusicCtx::new(show, rec, ff, [a.cfg, b.cfg], [a.voice, b.voice], voices)?;
+        let mut ctx = MusicCtx::new(show, rec, ff, [a.cfg, b.cfg], [a.voice, b.voice], voices)?;
+        let bed = match classic {
+            Some(bed) => bed,
+            None => compose_into(theme, &mut ctx)?,
+        };
         Ok(SoundBuild {
             ctx,
             bed,
@@ -309,6 +319,47 @@ impl<'a> SoundBuild<'a> {
     pub fn master(&self, mix: &Mix) -> Soundtrack {
         master(mix, &self.levels(), self.bed.as_ref(), MASTER_CEILING)
     }
+}
+
+/// The composed arrangement of `ctx`'s fight under `theme`: the story signal is read from the context, each fighter
+/// that is not pinned (`music.pinned`) and has a personality gets the composer's whole-song line and victory solo
+/// (in its role, else the first its personality takes), and the theme's layered bed listens to the signal's cues
+/// with the music seed. A pinned fighter keeps the fight file's line and solo as written.
+///
+/// # Errors
+/// The signal cannot be read from the run, or the theme's bed refuses.
+fn compose_into(theme: &Theme, ctx: &mut MusicCtx) -> Result<Box<dyn Bed>, ContentError> {
+    let ff = ctx.ff;
+    let signal = StorySignal::from(ctx)?;
+    let seed = ff.music.music_seed;
+    for (k, name) in ctx.show.names.clone().iter().enumerate() {
+        if ff.music.pinned.contains(name) {
+            continue;
+        }
+        let Some(p) = personality(name) else {
+            continue;
+        };
+        let asked = match ff.music.roles.get(name).map(String::as_str) {
+            Some("bass") => Role::Bass,
+            Some("melody") => Role::Melody,
+            _ => Role::Answer,
+        };
+        let role = if p.roles.contains(&asked) {
+            asked
+        } else {
+            p.roles.first().copied().unwrap_or(Role::Melody)
+        };
+        let c = compose(p, role, k, &ctx.harmony, &signal, seed);
+        ctx.composed.insert(
+            name.clone(),
+            ComposedPart {
+                song: c.song,
+                per_bar: PER_BAR,
+                solo: c.solo,
+            },
+        );
+    }
+    theme.bed_with(themes::COMPOSED, &theme.options_of(ff)?, cues(&signal), seed)
 }
 
 /// The kit making the two parts (`kit/music.py`: `SOUNDS = [FIGHTER_MODULES.sound(NAMES[k], M, k) for k in (0,
@@ -468,6 +519,7 @@ mod tests {
         voices: &[],
         own_voice: crate::themes::no_own_voice,
         classic: no_boom,
+        composed: None,
     };
 
     /// Review Focus 1 (ruling M3-R2): the TROMBONE's PEDAL TONE calls `bed.boom` without asking, so the kit would

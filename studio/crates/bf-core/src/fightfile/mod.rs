@@ -55,8 +55,9 @@ pub const RETIRED: [&str; 2] = ["GUITAR", "SAX"];
 /// The arenas this app has (`ring` in version one).
 pub const ARENAS: [&str; 1] = ["ring"];
 
-/// The arrangements this app has (`classic` in Milestone 1).
-pub const ARRANGEMENTS: [&str; 1] = ["classic"];
+/// The arrangements this app has: `classic` (the theme's ported bed and the fighters' own lines, the default when a
+/// file gives none) and `composed` (milestone 5: the theme's layered bed with composed lines and solos).
+pub const ARRANGEMENTS: [&str; 2] = ["classic", "composed"];
 
 /// How many fighters a fight has.
 pub const FIGHTERS: usize = 2;
@@ -161,8 +162,11 @@ pub struct FightFile {
 pub struct Music {
     /// The theme (the kit's mood), such as `big_top`.
     pub theme: String,
-    /// The arrangement (`classic` in Milestone 1; the default).
+    /// The arrangement: `classic` (the default when a file gives none) or `composed`.
     pub arrangement: String,
+    /// The fighters whose lines and solos are kept as written under the `composed` arrangement (format 2, optional:
+    /// none when a file gives none). Every other fighter plays the composer's line and solo there.
+    pub pinned: Vec<String>,
     /// The key's note name, such as `E`.
     pub key: String,
     /// The scale's name (default `minor`, as in the kit).
@@ -465,6 +469,11 @@ impl Music {
                     ARRANGEMENTS.join(", ")
                 ),
             ));
+        }
+        for name in &self.pinned {
+            if !fighters.iter().any(|f| f == name) {
+                return Err(err("music.pinned", format!("{name:?} is not one of the fighters")));
+            }
         }
         harmony::pitch_class(&self.key).map_err(|e| err("music.key", e.to_string()))?;
         harmony::scale(&self.scale).map_err(|e| err("music.scale", e.to_string()))?;

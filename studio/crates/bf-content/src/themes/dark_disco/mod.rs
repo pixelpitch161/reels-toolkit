@@ -37,6 +37,7 @@ pub static THEME: Theme = Theme {
     voices: &[],
     own_voice: super::no_own_voice,
     classic: |_| Ok(Box::new(DarkDiscoClassic::new())),
+    composed: Some(|o, c, s| Ok(Box::new(layers::composed(o, c, s)?))),
 };
 
 /// #51's loop in A minor.

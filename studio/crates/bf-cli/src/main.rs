@@ -448,6 +448,33 @@ pub fn num(x: f64) -> Value {
     serde_json::Number::from_f64(x).map_or(Value::Null, Value::Number)
 }
 
+/// `--arrangement classic|composed` (sound and render).
+pub fn arrangement(text: &str) -> Result<String, String> {
+    let t = text.trim();
+    if bf_core::fightfile::ARRANGEMENTS.contains(&t) {
+        Ok(t.to_string())
+    } else {
+        Err(format!(
+            "{text} is not an arrangement; give classic (the theme's own bed) or composed (the layered bed and \
+             composed lines)"
+        ))
+    }
+}
+
+/// The fight file's music with `--arrangement` and `--music-seed` put in (each only when given), checked again.
+pub fn music_flags(ff: &mut FightFile, path: &Path, arrangement: Option<&String>, music_seed: Option<u64>) -> Done {
+    if arrangement.is_none() && music_seed.is_none() {
+        return Ok(());
+    }
+    if let Some(a) = arrangement {
+        ff.music.arrangement = a.clone();
+    }
+    if let Some(s) = music_seed {
+        ff.music.music_seed = s;
+    }
+    bf_content::validate(ff).map_err(|e| Fail(format!("{}: {e}.", path.display())))
+}
+
 /// `--encode best|faster` (render and bench) as the encoder setting.
 pub fn encode_speed(text: &str) -> Result<bf_export::EncodeSpeed, String> {
     bf_export::EncodeSpeed::from_name(text.trim()).ok_or_else(|| {

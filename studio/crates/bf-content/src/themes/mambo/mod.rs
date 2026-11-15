@@ -46,6 +46,7 @@ pub static THEME: Theme = Theme {
     voices: &["CONTRABASS", "PIANO", ALTO],
     own_voice: alto::own_voice,
     classic: |_| Ok(Box::new(MamboClassic::new())),
+    composed: None,
 };
 
 /// #50's loop: i - iv - V7 - i - i - iv - bVI7 - V7 in G minor.

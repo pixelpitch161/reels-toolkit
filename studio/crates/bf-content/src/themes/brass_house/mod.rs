@@ -33,6 +33,7 @@ pub static THEME: Theme = Theme {
     voices: &[],
     own_voice: super::no_own_voice,
     classic: |_| Ok(Box::new(BrassHouseClassic::new())),
+    composed: Some(|o, c, s| Ok(Box::new(layers::composed(o, c, s)?))),
 };
 
 /// #36's loop, i - bVI - iv - V.

@@ -42,6 +42,7 @@ pub static THEME: Theme = Theme {
     voices: &[],
     own_voice: super::no_own_voice,
     classic: |_| Ok(Box::new(BossaNoirClassic::new())),
+    composed: Some(|o, c, s| Ok(Box::new(layers::composed(o, c, s)?))),
 };
 
 /// The minor bossa's ii-V cycle of #49.

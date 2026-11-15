@@ -84,9 +84,10 @@ const TOP_KEYS: [(&str, u32); 13] = [
 ];
 
 /// The `[music]` keys, in the canonical order, each with the format it came in.
-const MUSIC_KEYS: [(&str, u32); 14] = [
+const MUSIC_KEYS: [(&str, u32); 15] = [
     ("theme", 1),
     ("arrangement", 1),
+    ("pinned", 2),
     ("key", 1),
     ("scale", 1),
     ("chords_intro", 1),
@@ -239,6 +240,10 @@ impl Music {
         Ok(Music {
             theme: as_str(required(t, p, "theme")?, "music.theme")?.to_string(),
             arrangement: opt_str(t, p, "arrangement")?.unwrap_or_else(|| ARRANGEMENTS[0].to_string()),
+            pinned: match t.get("pinned") {
+                Some(v) => str_list(v, "music.pinned")?,
+                None => Vec::new(),
+            },
             key: as_str(required(t, p, "key")?, "music.key")?.to_string(),
             scale: opt_str(t, p, "scale")?.unwrap_or_else(|| "minor".to_string()),
             chords_intro: str_list(required(t, p, "chords_intro")?, "music.chords_intro")?,

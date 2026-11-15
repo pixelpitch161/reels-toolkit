@@ -40,6 +40,7 @@ pub static THEME: Theme = Theme {
     voices: &[],
     own_voice: super::no_own_voice,
     classic: |_| Ok(Box::new(HorrorTrapClassic::new())),
+    composed: None,
 };
 
 /// #55's loop in E minor.

@@ -41,6 +41,7 @@ pub static THEME: Theme = Theme {
     voices: &[TUBA],
     own_voice: super::no_own_voice,
     classic: |_| Ok(Box::new(SecondLineClassic::new())),
+    composed: Some(layers::composed),
 };
 
 /// The Pixel Pitch voice the sousaphone plays (`M.note('TUBA', ...)`).
