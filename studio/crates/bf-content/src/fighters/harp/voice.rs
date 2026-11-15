@@ -42,7 +42,7 @@ pub fn harp_tone(f: f64, dur: f64, v: f64, bright: f64, sus: f64, body: f64) -> 
         if fk > 9000.0 {
             break;
         }
-        let a = ((PI * kf * 0.28).sin().abs() + 0.05) / dmath::pow(kf, 1.5 - 0.8 * bright);
+        let a = (dmath::sin(PI * kf * 0.28).abs() + 0.05) / dmath::pow(kf, 1.5 - 0.8 * bright);
         let dk = (1.0 + 0.5 * (kf - 1.0)) * (0.55 + f / 650.0) / sus;
         for (i, o) in x.iter_mut().enumerate() {
             let t = i as f64 / SRF;

@@ -39,7 +39,7 @@ fn reed_wt(kn: usize) -> Arc<Vec<f64>> {
     let mut tb = vec![0.0; 2048];
     for k in 1..=kn {
         let kf = k as f64;
-        let amp = dmath::pow(kf, -TILT) * (1.0 + NAS * dmath::exp(-((kf - 4.0) / 2.2).powi(2)));
+        let amp = dmath::pow(kf, -TILT) * (1.0 + NAS * dmath::exp(-((kf - 4.0) / 2.2) * ((kf - 4.0) / 2.2)));
         for (i, v) in tb.iter_mut().enumerate() {
             *v += amp * dmath::sin(2.0 * PI * kf * i as f64 / 2048.0);
         }
