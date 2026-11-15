@@ -452,7 +452,7 @@ impl SynthLook {
                 let Some(jj) = ids_in.iter().position(|&c| c == v.cid) else {
                     continue;
                 };
-                if !(0.0 <= uu && uu <= 1.0) {
+                if !(0.0..=1.0).contains(&uu) {
                     continue;
                 }
                 let bow = (jj as f64 - (ids_in.len() as f64 - 1.0) / 2.0) * 0.24;
@@ -814,7 +814,7 @@ impl Look for SynthLook {
     fn canvas(&self, p: &PictureCtx, ic: &mut [V3], c: &CanvasCtx<'_>) {
         let t = c.t;
         // P.WIN != self.k or not C.t >= P.T_SOLO - 0.01
-        if p.win != self.k || !(t >= p.t_solo - 0.01) {
+        if p.win != self.k || t.partial_cmp(&(p.t_solo - 0.01)).is_none_or(|o| o.is_lt()) {
             return;
         }
         let beat = p.show.grid.beat;
