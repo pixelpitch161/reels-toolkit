@@ -38,6 +38,10 @@ pub struct JobSpec {
     pub fight_toml: String,
     /// The output folder the video's own folder goes in.
     pub out_root: std::path::PathBuf,
+    /// The two fighters' roster names, left then right, for the matchup history. Missing in a job queued before
+    /// the history was kept; such a job records nothing when it finishes.
+    #[serde(default)]
+    pub fighters: Option<[String; 2]>,
 }
 
 /// One line of a job's check list.
@@ -91,10 +95,15 @@ pub enum JobState {
         done: u32,
         total: u32,
     },
-    /// Saved in `folder`, in `seconds`.
+    /// Saved in `folder`, in `seconds`; `winner` is the winning side (0 left, 1 right) and `finished_at` the
+    /// time it finished, in seconds since 1970 UTC (both missing in a job saved before they were kept).
     Done {
         folder: std::path::PathBuf,
         seconds: f64,
+        #[serde(default)]
+        winner: Option<usize>,
+        #[serde(default)]
+        finished_at: u64,
     },
     /// Stopped: `headline` names the step, `detail` gives the numbers and what to do.
     Failed {
@@ -283,8 +292,18 @@ impl Queue {
                 job.state = JobState::Rendering { done, total };
                 false
             }
-            JobUpdate::Done { folder, seconds } => {
-                job.state = JobState::Done { folder, seconds };
+            JobUpdate::Done {
+                folder,
+                seconds,
+                winner,
+                finished_at,
+            } => {
+                job.state = JobState::Done {
+                    folder,
+                    seconds,
+                    winner,
+                    finished_at,
+                };
                 true
             }
             JobUpdate::Failed { headline, detail, hint } => {
@@ -399,9 +418,12 @@ pub enum JobUpdate {
         total: u32,
         seconds: f32,
     },
+    /// Saved in `folder`, in `seconds`; `winner` is the winning side, `finished_at` seconds since 1970 UTC.
     Done {
         folder: std::path::PathBuf,
         seconds: f64,
+        winner: Option<usize>,
+        finished_at: u64,
     },
     Failed {
         headline: String,
@@ -416,8 +438,28 @@ mod tests {
     use super::*;
 
     #[test]
+    fn a_queue_saved_before_fighters_were_kept_still_loads() {
+        let text = r#"{"jobs":[{"id":1,"spec":{"title":"Flute vs Trombone","colors":[[1,2,3],[4,5,6]],
+            "theme":"Big top","seed":18433,"fight_toml":"seed = 18433","out_root":"Videos"},
+            "state":{"Done":{"folder":"Videos/flute_vs_trombone","seconds":48.0}},"steps":[],"interrupted":false}],
+            "paused":false,"next_id":2}"#;
+        let queue: Queue = serde_json::from_str(text).unwrap();
+        let job = &queue.jobs[0];
+        assert_eq!(job.spec.fighters, None);
+        assert!(matches!(
+            job.state,
+            JobState::Done {
+                winner: None,
+                finished_at: 0,
+                ..
+            }
+        ));
+    }
+
+    #[test]
     fn a_queue_round_trips_through_serde() {
         let spec = JobSpec {
+            fighters: None,
             title: "Flute vs Trombone".to_string(),
             colors: [[0xde, 0xe8, 0xf6], [0x78, 0xf0, 0xb8]],
             theme: "Big top".to_string(),
@@ -449,6 +491,8 @@ mod tests {
                 job(
                     3,
                     JobState::Done {
+                        winner: None,
+                        finished_at: 0,
                         folder: "Videos/BALLFIGHT/flute_vs_trombone".into(),
                         seconds: 48.0,
                     },
@@ -472,6 +516,7 @@ mod tests {
 
     fn spec(title: &str) -> JobSpec {
         JobSpec {
+            fighters: None,
             title: title.to_string(),
             colors: [[0xde, 0xe8, 0xf6], [0x78, 0xf0, 0xb8]],
             theme: "Big top".to_string(),
@@ -483,6 +528,8 @@ mod tests {
 
     fn done() -> JobUpdate {
         JobUpdate::Done {
+            winner: None,
+            finished_at: 0,
             folder: "Videos/BALLFIGHT/flute_vs_trombone".into(),
             seconds: 48.0,
         }
@@ -693,6 +740,8 @@ mod tests {
         assert_eq!(
             state(&q, a),
             JobState::Done {
+                winner: None,
+                finished_at: 0,
                 folder: "Videos/BALLFIGHT/flute_vs_trombone".into(),
                 seconds: 48.0,
             }

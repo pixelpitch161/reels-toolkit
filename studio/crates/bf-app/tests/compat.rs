@@ -290,6 +290,7 @@ fn a_queue_from_0_1_0_reads_with_its_warning() {
     assert!(!queue.paused);
     assert_eq!(queue.next_id, 3);
     let spec = |seed| JobSpec {
+        fighters: None,
         title: "Flute vs Trombone".to_string(),
         colors: [FLUTE, TROMBONE],
         theme: THEME_DISPLAY_0_1_0.to_string(),
@@ -302,6 +303,8 @@ fn a_queue_from_0_1_0_reads_with_its_warning() {
     assert_eq!(
         done.state,
         JobState::Done {
+            winner: None,
+            finished_at: 0,
             folder: Path::new(OUTPUT_FOLDER).join(VIDEO_FOLDER),
             seconds: DONE_SECONDS,
         }
@@ -656,6 +659,8 @@ fn make_this_versions_files() {
     queue.apply(
         done,
         JobUpdate::Done {
+            winner: None,
+            finished_at: 0,
             folder: out_root.join(VIDEO_FOLDER),
             seconds: DONE_SECONDS,
         },

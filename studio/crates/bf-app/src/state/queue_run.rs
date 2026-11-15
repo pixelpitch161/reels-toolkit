@@ -348,6 +348,17 @@ impl AppState {
             JobUpdate::Done { .. } | JobUpdate::Failed { .. } | JobUpdate::Cancelled
         );
         let is_done = matches!(update, JobUpdate::Done { .. });
+        let finished = match &update {
+            JobUpdate::Done {
+                winner, finished_at, ..
+            } => self.vm.queue.job(id).and_then(|job| {
+                job.spec
+                    .fighters
+                    .clone()
+                    .map(|f| (f, job.spec.seed, *winner, *finished_at))
+            }),
+            _ => None,
+        };
         if let JobUpdate::Frames { done, total, seconds } = update {
             self.run.frames = Some((id, done, total, seconds));
         }
@@ -360,6 +371,11 @@ impl AppState {
             }
             // Review Focus 4: whatever the end, the queue goes on.
             self.save_and_run_next(fx);
+            if let Some((fighters, seed, winner, made)) = finished {
+                let winner = winner.and_then(|side| fighters.get(side).cloned());
+                self.vm.history.record(fighters, seed, winner, made);
+                fx.push(Effect::SaveHistory(self.vm.history.clone()));
+            }
             if is_done {
                 self.scan_library(fx);
             }

@@ -32,6 +32,7 @@ fn videos() -> PathBuf {
 /// A job's spec: `title`, the two colours, the theme's shown name and the seed, saved under `Videos\BALLFIGHT`.
 pub fn spec(title: &str, colors: [[u8; 3]; 2], theme: &str, seed: u64) -> JobSpec {
     JobSpec {
+        fighters: None,
         title: title.to_string(),
         colors,
         theme: theme.to_string(),
@@ -109,6 +110,8 @@ pub fn queue() -> Queue {
             }
             CELLO => {
                 job.state = JobState::Done {
+                    winner: None,
+                    finished_at: 0,
                     folder: videos().join("cello_vs_contrabass"),
                     seconds: 48.0,
                 };

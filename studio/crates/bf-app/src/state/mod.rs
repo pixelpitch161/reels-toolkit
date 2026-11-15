@@ -17,6 +17,7 @@ use std::path::PathBuf;
 
 use crate::model::balance::BalanceStats;
 use crate::model::draft::{CaptionTexts, Draft};
+use crate::model::history::History;
 use crate::model::library::{FolderState, LibraryEntry};
 use crate::model::queue::Queue;
 use crate::model::roster::{BASS_ROLE, PairMusic, Roster, RosterEntry, ThemeEntry, bass_can_move, parts_with_bass};
@@ -89,6 +90,8 @@ pub struct ViewModel {
     pub ffmpeg: Option<Result<String, String>>,
     pub queue: Queue,
     pub selected_job: Option<JobId>,
+    /// Every fight made (`model::history`); the Matchups tab lists it, the roster chips count from it.
+    pub history: History,
     pub library: LibraryView,
     pub settings: Settings,
     /// The PC's cores.
@@ -426,6 +429,7 @@ pub enum Effect {
     Player(PlayerCmd),
     SaveSettings(Settings),
     SaveQueue(Queue),
+    SaveHistory(History),
 }
 
 /// What feeds the fight (§4): an answer belongs to the current fight only while this stays the same.
@@ -519,6 +523,7 @@ impl AppState {
             ffmpeg: None,
             queue,
             selected_job: None,
+            history: History::default(),
             library: LibraryView::default(),
             settings,
             cores,

@@ -65,6 +65,7 @@ impl Drop for Temp {
 /// What the app starts with on `engine`: the temp folder's settings and writer, no sound device, an empty queue.
 fn boot(engine: EngineHandle, temp: &Temp) -> Boot {
     Boot {
+        history: bf_app::model::history::History::default(),
         engine,
         writer: Some(Writer::start(temp.paths())),
         audio: Box::new(NoAudio::new("No sound device in tests.")),
@@ -85,6 +86,7 @@ fn sample_app<'a>(temp: &Temp) -> Harness<'a, BfApp> {
         BfApp::new(
             cc,
             Boot {
+                history: bf_app::model::history::History::default(),
                 engine,
                 writer: Some(Writer::start(paths)),
                 audio: Box::new(NoAudio::new("No sound device in tests.")),
@@ -474,6 +476,7 @@ fn the_sample_app_says_so_in_the_status_bar() {
         let mut app = BfApp::new(
             cc,
             Boot {
+                history: bf_app::model::history::History::default(),
                 engine,
                 writer: Some(Writer::start(paths)),
                 audio: Box::new(NoAudio::new("No sound device in tests.")),

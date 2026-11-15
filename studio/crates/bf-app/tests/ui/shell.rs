@@ -50,6 +50,7 @@ impl Drop for Temp {
 /// What the app starts with on a hand-held seam: no writer, no sound device, 2 workers on 8 cores.
 fn boot(engine: EngineHandle) -> Boot {
     Boot {
+        history: bf_app::model::history::History::default(),
         engine,
         writer: None,
         audio: Box::new(NoAudio::new("No sound device in tests.")),
@@ -101,6 +102,7 @@ const TOOLBAR: [&str; 10] = [
 
 fn job(title: &str) -> JobSpec {
     JobSpec {
+        fighters: None,
         title: title.to_string(),
         colors: [[0x68, 0x5c, 0xec], [0x80, 0x80, 0x8c]],
         theme: "Big top".to_string(),
