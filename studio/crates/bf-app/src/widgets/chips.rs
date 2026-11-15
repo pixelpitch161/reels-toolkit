@@ -362,9 +362,12 @@ fn left_of(points: &[Pos2], x: f32) -> Vec<Pos2> {
 /// by the corners), a 14 round disc (2 px ring in the colour, filled with it at one third opacity), the name, and
 /// at the right "Left" or "Right" (`small`, `MUTED`) when `side` is `Some(0)` or `Some(1)` (any other side counts as
 /// not chosen). A chosen chip has the selected look: `SELECTED` fill, a 1.5 px `TEXT` ring inside, the name in Plex
-/// Sans Medium `TEXT_STRONG`. A name too long for the chip ends in an ellipsis.
+/// Sans Medium `TEXT_STRONG`. A name too long for the chip ends in an ellipsis. A chip not in a corner with a
+/// `count` of 1 or more shows "×{count}" in that place instead (`small`, `MUTED`): how many uploaded fights the Left
+/// fighter has had with this one.
 ///
-/// Its accessible name is "Flute", "Flute, left corner" or "Flute, right corner". A chip that is not `available`, or
+/// Its accessible name is "Flute", "Flute, left corner" or "Flute, right corner", and with a count shown it gains
+/// ", fought 2 times" (", fought 1 time"). A chip that is not `available`, or
 /// sits in a disabled `Ui`, is drawn `FAINT` (bar, disc and name) and takes no clicks; one not available says "Not
 /// built yet. It arrives in an update." on hover.
 pub fn roster_chip(
@@ -372,6 +375,7 @@ pub fn roster_chip(
     display: &str,
     color: [u8; 3],
     side: Option<usize>,
+    count: Option<u32>,
     available: bool,
     width: f32,
 ) -> ChipOut {
@@ -383,9 +387,13 @@ pub fn roster_chip(
         Some(1) => Some(("Right", "right")),
         _ => None,
     };
-    let name = match corner {
-        Some((_, which)) => format!("{display}, {which} corner"),
-        None => display.to_owned(),
+    // The corner's word wins over the count.
+    let count = count.filter(|&n| n >= 1 && corner.is_none());
+    let name = match (corner, count) {
+        (Some((_, which)), _) => format!("{display}, {which} corner"),
+        (None, Some(1)) => format!("{display}, fought 1 time"),
+        (None, Some(n)) => format!("{display}, fought {n} times"),
+        (None, None) => display.to_owned(),
     };
     response.widget_info(|| WidgetInfo::selected(Role::Button, enabled, corner.is_some(), &name));
     if !available {
@@ -430,6 +438,12 @@ pub fn roster_chip(
             let node = ui.interact(label_rect, response.id.with("side"), Sense::hover());
             node.widget_info(|| WidgetInfo::labeled(Role::Label, true, label));
             painter.galley(at, galley, MUTED);
+        } else if let Some(n) = count {
+            let colour = if enabled { MUTED } else { FAINT };
+            let galley = painter.layout_no_wrap(format!("×{n}"), small(), colour);
+            let at = pos2(right - galley.size().x, rect.center().y - galley.size().y / 2.0).round();
+            right = at.x - CHIP_GAP;
+            painter.galley(at, galley, colour);
         }
         let left = rect.min.x + CHIP_DISC_LEFT + CHIP_DISC + CHIP_GAP;
         let (font, colour) = match (enabled, chosen) {

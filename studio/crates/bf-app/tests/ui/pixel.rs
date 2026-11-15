@@ -203,7 +203,7 @@ fn the_series_names_fit_the_corner_card() {
 fn chip_harness(side: Option<usize>, available: bool, out: &Cell<ChipOut>) -> Harness<'_> {
     common::widget_harness((260.0, 80.0), move |ui| {
         on_panel(ui);
-        let got = chips::roster_chip(ui, "Flute", FLUTE, side, available, 122.0);
+        let got = chips::roster_chip(ui, "Flute", FLUTE, side, None, available, 122.0);
         if got.left || got.right {
             out.set(got);
         }
@@ -365,7 +365,7 @@ fn chips_and_rows_paint_their_focus_ring_even_at_a_panel_edge() {
             ui.add_space(12.0);
         };
         clipped(ui, &|ui| {
-            chips::roster_chip(ui, "Trombone", TROMBONE, None, true, 150.0);
+            chips::roster_chip(ui, "Trombone", TROMBONE, None, None, true, 150.0);
         });
         clipped(ui, &|ui| {
             chips::object_row(ui, "Seed 18433", false, 38.0, |ui| ui.label("18433"));
@@ -405,7 +405,7 @@ fn a_chip_in_a_disabled_parent_is_faint_and_takes_no_input() {
     let mut harness = common::widget_harness((300.0, 120.0), |ui| {
         on_panel(ui);
         ui.add_enabled_ui(false, |ui| {
-            let got = chips::roster_chip(ui, "Oboe", OBOE, None, true, 122.0);
+            let got = chips::roster_chip(ui, "Oboe", OBOE, None, None, true, 122.0);
             if got.left || got.right {
                 out.set(got);
             }
@@ -442,7 +442,15 @@ fn a_long_name_stays_inside_its_chip() {
     let _gpu = common::gpu();
     let mut harness = common::widget_harness((300.0, 60.0), |ui| {
         on_panel(ui);
-        chips::roster_chip(ui, "Bass clarinet and a very long name", OBOE, Some(1), true, 120.0);
+        chips::roster_chip(
+            ui,
+            "Bass clarinet and a very long name",
+            OBOE,
+            Some(1),
+            None,
+            true,
+            120.0,
+        );
     });
     harness.run();
     let rect = harness
@@ -513,7 +521,7 @@ fn two_chips_with_one_name_do_not_clash() {
     let mut harness = common::widget_harness((300.0, 100.0), |ui| {
         on_panel(ui);
         for i in 0..2 {
-            if chips::roster_chip(ui, "Flute", FLUTE, None, true, 122.0).left {
+            if chips::roster_chip(ui, "Flute", FLUTE, None, None, true, 122.0).left {
                 let mut got = clicks.get();
                 got[i] += 1;
                 clicks.set(got);
@@ -924,10 +932,10 @@ fn gallery(ui: &mut Ui) {
     });
     ui.horizontal(|ui| {
         ui.spacing_mut().item_spacing.x = 6.0;
-        chips::roster_chip(ui, "Flute", FLUTE, Some(0), true, 122.0);
-        chips::roster_chip(ui, "Oboe", OBOE, None, true, 122.0);
-        chips::roster_chip(ui, "Trombone", TROMBONE, None, true, 122.0);
-        chips::roster_chip(ui, "Tuba", TUBA, None, false, 122.0);
+        chips::roster_chip(ui, "Flute", FLUTE, Some(0), None, true, 122.0);
+        chips::roster_chip(ui, "Oboe", OBOE, None, None, true, 122.0);
+        chips::roster_chip(ui, "Trombone", TROMBONE, None, None, true, 122.0);
+        chips::roster_chip(ui, "Tuba", TUBA, None, None, false, 122.0);
     });
     let row = |ui: &mut Ui, seed: &str, winner: &str, colour: [u8; 3]| {
         ui.label(egui::RichText::new(seed).font(theme::value()));

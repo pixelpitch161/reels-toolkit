@@ -1045,3 +1045,55 @@ fn the_whole_kit_roster() {
     assert!(name.min.y > portrait.max.y, "under the portrait");
     assert_eq!(harness.unnamed_widgets(), Vec::<String>::new());
 }
+
+/// Whether a roster chip (a button) is named exactly `name`.
+fn chip_named(harness: &Harness<'_, BfApp>, name: &str) -> bool {
+    harness
+        .query_all_by_label(name)
+        .any(|n| n.accesskit_node().role() == Role::Button)
+}
+
+#[test]
+fn chips_count_the_left_fighters_uploaded_fights() {
+    let _gpu = gpu();
+    let harness = showing(REF, matchup::counted());
+    assert!(chip_named(&harness, "Clarinet, fought 2 times"));
+    assert!(chip_named(&harness, "Tuba, fought 1 time"));
+    assert!(chip_named(&harness, "Sousaphone, fought 1 time"));
+    // Not uploaded: no count.
+    assert!(chip_named(&harness, "Oboe"));
+    // The corner's word wins over the count.
+    assert!(chip_named(&harness, "Trombone, right corner"));
+    assert!(
+        harness.query_all_by_label("×2").next().is_none(),
+        "the count is painted, not a node"
+    );
+}
+
+#[test]
+fn the_counts_follow_the_left_fighter() {
+    let _gpu = gpu();
+    let mut vm = matchup::counted();
+    vm.draft.fighters = ["TROMBONE".to_string(), "FLUTE".to_string()];
+    let harness = showing(REF, vm);
+    assert!(chip_named(&harness, "Horn, fought 2 times"));
+    assert!(chip_named(&harness, "Tuba, fought 1 time"));
+    assert!(chip_named(&harness, "Clarinet"));
+}
+
+#[test]
+fn no_counts_with_the_left_corner_empty() {
+    let _gpu = gpu();
+    let mut vm = matchup::counted();
+    vm.draft.fighters[0] = String::new();
+    let harness = showing(REF, vm);
+    assert!(chip_named(&harness, "Clarinet"));
+    assert!(chip_named(&harness, "Tuba"));
+}
+
+#[test]
+fn match_up_with_counts_matches() {
+    let _gpu = gpu();
+    let mut harness = showing(REF, matchup::counted());
+    harness.snapshot("matchup_counts_1440x900");
+}

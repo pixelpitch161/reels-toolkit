@@ -475,6 +475,8 @@ fn chip_grid(ui: &mut Ui, vm: &ViewModel, fighters: &[&RosterEntry], widest: f32
     let width = ui.available_width();
     let columns = grid_columns(width, widest);
     let chip_w = ((width - CHIP_GAP_X * (columns as f32 - 1.0)) / columns as f32).floor();
+    // How many uploaded fights the Left fighter has had with each other fighter (nothing with the corner empty).
+    let counts = vm.history.uploaded_counts(&vm.draft.fighters[0]);
     for (i, row) in fighters.chunks(columns).enumerate() {
         if i > 0 {
             ui.add_space(CHIP_GAP_Y);
@@ -483,7 +485,16 @@ fn chip_grid(ui: &mut Ui, vm: &ViewModel, fighters: &[&RosterEntry], widest: f32
             ui.spacing_mut().item_spacing.x = CHIP_GAP_X;
             for fighter in row {
                 let side = vm.draft.fighters.iter().position(|name| name == &fighter.name);
-                let got = roster_chip(ui, &fighter.display, fighter.color, side, fighter.available, chip_w);
+                let count = counts.get(&fighter.name).copied();
+                let got = roster_chip(
+                    ui,
+                    &fighter.display,
+                    fighter.color,
+                    side,
+                    count,
+                    fighter.available,
+                    chip_w,
+                );
                 for (picked, corner) in [(got.left, 0), (got.right, 1)] {
                     if picked {
                         out.push(Action::PickFighter {
