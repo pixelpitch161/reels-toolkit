@@ -1,18 +1,27 @@
 //! ACCORDION's panel on the VS card: `title.py` `_pleats`, pleats parallel to the divider.
 //!
-//! Not ported yet. ACCORDION is one of the older fighters (milestone 4): this stays a stub until then.
-//! While [`PORTED`] is false a card for ACCORDION is refused ([`crate::title::TitleError::PatternNotPorted`]) and
-//! [`pattern`] is never called. Porting it: the body of `_pleats` here, `PORTED = true`, and nothing else (the
-//! table in `patterns/mod.rs` already names this file).
+//! Bands 14 px wide running parallel to the divider, alternately lighter and darker.
+
+use bf_core::py;
 
 use crate::img::RgbF;
-use crate::title::layout::Layout;
+use crate::title::layout::{self, Layout};
 
 /// Whether [`pattern`] is the kit's `_pleats`.
-pub const PORTED: bool = false;
+pub const PORTED: bool = true;
 
-/// `_pleats(base)`: the panel's `(H, W, 3)` `float64` gradient, changed in place; `card` is the card's layout
-/// (where the Python reads `title.BALLS`). Not ported: does nothing.
+/// `_pleats(base)`: the panel's `(H, W, 3)` `float64` gradient, changed in place; `card` is not read.
 pub fn pattern(base: &mut RgbF, card: &Layout) {
-    let _ = (base, card);
+    let _ = card;
+    let side = layout::side();
+    for y in 0..base.h {
+        for x in 0..base.w {
+            // s = (SIDE / 14.0) % 2; base * np.where(s < 1, 1.06, 0.84)
+            let s = py::fmod_py(side.px(x, y)[0] / 14.0, 2.0);
+            let k = if s < 1.0 { 1.06 } else { 0.84 };
+            for v in base.px_mut(x, y).iter_mut() {
+                *v *= k;
+            }
+        }
+    }
 }
