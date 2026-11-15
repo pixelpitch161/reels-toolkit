@@ -24,14 +24,12 @@ impl AppState {
                 view.asking_delete = view.selected.is_some_and(|id| self.vm.history.fight(id).is_some());
             }
             Action::KeepFight => view.asking_delete = false,
-            Action::DeleteFight(id) => {
-                if self.vm.history.delete(id) {
-                    if view.selected == Some(id) {
-                        view.selected = None;
-                    }
-                    view.asking_delete = false;
-                    fx.push(Effect::SaveHistory(self.vm.history.clone()));
+            Action::DeleteFight(id) if self.vm.history.delete(id) => {
+                if view.selected == Some(id) {
+                    view.selected = None;
                 }
+                view.asking_delete = false;
+                fx.push(Effect::SaveHistory(self.vm.history.clone()));
             }
             _ => {}
         }
