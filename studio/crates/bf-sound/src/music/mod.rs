@@ -35,6 +35,7 @@
 mod error;
 mod events;
 mod fx;
+pub mod layers;
 mod num;
 mod shape;
 pub mod signal;
