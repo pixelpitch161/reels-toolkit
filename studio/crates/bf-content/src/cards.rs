@@ -60,7 +60,7 @@ pub struct ThemeCard {
 }
 
 /// Every roster fighter in score order, with its section.
-const SCORE: [(&str, Section); 20] = [
+const SCORE: [(&str, Section); 21] = [
     ("FLUTE", Section::Woodwinds),
     ("OBOE", Section::Woodwinds),
     ("CLARINET", Section::Woodwinds),
@@ -81,6 +81,7 @@ const SCORE: [(&str, Section); 20] = [
     ("PIANO", Section::Keys),
     ("ORGAN", Section::Keys),
     ("BASS DRUM", Section::Percussion),
+    ("TURNTABLES", Section::Percussion),
 ];
 
 /// The tags both ported fighters carry.
