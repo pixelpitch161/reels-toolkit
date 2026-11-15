@@ -363,13 +363,14 @@ fn the_real_match_up_screen() {
     let (mut harness, watched) = real_app(&temp, 2);
     // the counts follow the registry: every fighter it offers is ready
     let roster = content::roster();
+    let total = roster.fighters.len();
     let ready = roster.fighters.iter().filter(|f| f.available).count();
-    assert!((2..=20).contains(&ready), "{ready} ready");
-    // the roster header: "20 fighters" once every fighter is built, else "N of 20 ready"
-    let ready_line = if ready == 20 {
-        "20 fighters".to_string()
+    assert!((2..=total).contains(&ready), "{ready} of {total} ready");
+    // the roster header: "N fighters" once every fighter is built, else "R of N ready"
+    let ready_line = if ready == total {
+        format!("{total} fighters")
     } else {
-        format!("{ready} of 20 ready")
+        format!("{ready} of {total} ready")
     };
     let themes = roster.themes.len();
     let status_line = format!(
@@ -415,7 +416,7 @@ fn the_real_match_up_screen() {
         assert!(!chip.accesskit_node().is_disabled(), "{} can be picked", f.display);
     }
     let waiting: Vec<_> = roster.fighters.iter().filter(|f| !f.available).collect();
-    assert_eq!(waiting.len(), 20 - ready);
+    assert_eq!(waiting.len(), total - ready);
     for f in waiting {
         let chip = harness
             .query_all_by_label(&f.display)
