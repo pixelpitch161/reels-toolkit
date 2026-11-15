@@ -54,17 +54,40 @@ pub static CARD: ThemeCard = ThemeCard {
     bars: (24, 42),
 };
 
-/// The episode that played the gothic horror (#35; `tools/studio_export/older/configs/organ_vs_harp`).
-pub static PRESETS: [Preset; 1] = [Preset {
-    config: "ballfight_organ_vs_harp",
-    fighters: ["ORGAN", "HARP"],
-    bpm: 126.0,
-    key: "D",
-    scale: "minor",
-    intro: ["Dm", "A"],
-    chord_loop: &LOOP,
-    tail: &["Dm", "A"],
-}];
+/// The episode that played the gothic horror (#35; `tools/studio_export/older/configs/organ_vs_harp`), once for each
+/// of its card's loops (the climb and the pound in the episode's key and tempo), so every loop brings its key.
+pub static PRESETS: [Preset; 3] = [
+    Preset {
+        config: "ballfight_organ_vs_harp",
+        fighters: ["ORGAN", "HARP"],
+        bpm: 126.0,
+        key: "D",
+        scale: "minor",
+        intro: ["Dm", "A"],
+        chord_loop: &LOOP,
+        tail: &["Dm", "A"],
+    },
+    Preset {
+        config: "ballfight_organ_vs_harp",
+        fighters: ["ORGAN", "HARP"],
+        bpm: 126.0,
+        key: "D",
+        scale: "minor",
+        intro: ["Dm", "A"],
+        chord_loop: &CLIMB,
+        tail: &["Dm", "A"],
+    },
+    Preset {
+        config: "ballfight_organ_vs_harp",
+        fighters: ["ORGAN", "HARP"],
+        bpm: 126.0,
+        key: "D",
+        scale: "minor",
+        intro: ["Dm", "A"],
+        chord_loop: &POUND,
+        tail: &["Dm", "A"],
+    },
+];
 
 /// Python's `int(x)` for a length (never below 0).
 fn length(x: f64) -> usize {
