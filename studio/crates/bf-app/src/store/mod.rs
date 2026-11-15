@@ -5,6 +5,7 @@
 //! power cut in the middle of a write leaves the previous file as it was. A file the app cannot use is moved aside
 //! (`settings.toml` -> `settings.corrupt-1.toml`), never deleted.
 
+pub mod history;
 pub mod library;
 pub mod queue_file;
 pub mod settings;
@@ -20,6 +21,7 @@ use std::thread::JoinHandle;
 use std::time::Duration;
 
 use crate::model::Settings;
+use crate::model::history::History;
 use crate::model::queue::Queue;
 
 /// The app's storage folders.
@@ -63,6 +65,11 @@ impl Paths {
     /// `config/queue.json`.
     pub fn queue(&self) -> PathBuf {
         self.config.join("queue.json")
+    }
+
+    /// `config/history.toml`.
+    pub fn history(&self) -> PathBuf {
+        self.config.join("history.toml")
     }
 
     /// `cache/shortlists`.
@@ -201,6 +208,14 @@ const QUEUE_FILE: Kind = Kind {
     old_file: "the old queue file",
     try_again: "Change the queue again to try once more.",
     could_not: "The render queue could not be saved to",
+};
+
+const HISTORY_FILE: Kind = Kind {
+    unread_tag: "unread",
+    not_saved: "The matchup history was not saved to",
+    old_file: "the old history file",
+    try_again: "Change the history again to try once more.",
+    could_not: "The matchup history could not be saved to",
 };
 
 /// Saves one file to `path` with `save`, first keeping aside an old file there that could not be read at start.
@@ -371,6 +386,8 @@ struct State {
     settings: Option<Settings>,
     /// The newest queue not yet taken by the thread.
     queue: Option<Queue>,
+    /// The newest matchup history not yet taken by the thread.
+    history: Option<History>,
     /// How many writes have been asked for.
     asked: u64,
     /// `asked` as it was when the newest finished round of writes began.
@@ -454,6 +471,14 @@ impl Writer {
         self.shared.work.notify_one();
     }
 
+    /// Asks for the matchup history to be saved. Returns at once.
+    pub fn history(&self, h: &History) {
+        let mut state = self.shared.lock();
+        state.history = Some(h.clone());
+        state.asked += 1;
+        self.shared.work.notify_one();
+    }
+
     /// Waits until everything asked for so far is on disk, or has failed and is in `problems`.
     pub fn flush(&self) {
         let mut state = self.shared.lock();
@@ -531,7 +556,7 @@ fn run(shared: &Shared, paths: &Paths) {
         {
             let mut state = shared.lock();
             loop {
-                let pending = state.settings.is_some() || state.queue.is_some();
+                let pending = state.settings.is_some() || state.queue.is_some() || state.history.is_some();
                 #[cfg(test)]
                 let pending = pending && !state.held;
                 if pending || state.closing {
@@ -539,7 +564,7 @@ fn run(shared: &Shared, paths: &Paths) {
                 }
                 state = shared.work.wait(state).unwrap_or_else(|poisoned| poisoned.into_inner());
             }
-            if state.closing && state.settings.is_none() && state.queue.is_none() {
+            if state.closing && state.settings.is_none() && state.queue.is_none() && state.history.is_none() {
                 return;
             }
         }
@@ -553,6 +578,7 @@ struct InFlight<'a> {
     shared: &'a Shared,
     settings: Option<Settings>,
     queue: Option<Queue>,
+    history: Option<History>,
 }
 
 impl Drop for InFlight<'_> {
@@ -567,6 +593,9 @@ impl Drop for InFlight<'_> {
         if state.queue.is_none() {
             state.queue = self.queue.take();
         }
+        if state.history.is_none() {
+            state.history = self.history.take();
+        }
     }
 }
 
@@ -576,11 +605,13 @@ fn write_pending(shared: &Shared, paths: &Paths) {
         shared,
         settings: None,
         queue: None,
+        history: None,
     };
     let mark = {
         let mut state = shared.lock();
         in_flight.settings = state.settings.take();
         in_flight.queue = state.queue.take();
+        in_flight.history = state.history.take();
         state.asked
     };
     let mut problems = Vec::new();
@@ -604,6 +635,14 @@ fn write_pending(shared: &Shared, paths: &Paths) {
             Some(problem) => problems.push(problem),
         }
         in_flight.queue = None;
+    }
+    if let Some(h) = &in_flight.history {
+        let path = paths.history();
+        match save_keeping_unread(&path, &HISTORY_FILE, || history::save_history(&path, h)) {
+            None => files += 1,
+            Some(problem) => problems.push(problem),
+        }
+        in_flight.history = None;
     }
     let mut state = shared.lock();
     for problem in problems {
@@ -681,6 +720,7 @@ mod tests {
         assert_eq!(paths.cache, root.join("cache"));
         assert_eq!(paths.settings(), root.join("config").join("settings.toml"));
         assert_eq!(paths.queue(), root.join("config").join("queue.json"));
+        assert_eq!(paths.history(), root.join("config").join("history.toml"));
         assert_eq!(paths.shortlists(), root.join("cache").join("shortlists"));
     }
 
@@ -970,6 +1010,19 @@ mod tests {
         writer.flush();
         assert_eq!(queue_file::load_queue(&paths.queue()), (queue, None));
         assert_eq!(files_in(&paths.config), vec!["queue.json"]);
+    }
+
+    #[test]
+    fn the_writer_saves_the_history() {
+        let root = TempRoot::new("the_writer_saves_the_history");
+        let paths = root.paths();
+        let writer = Writer::start(paths.clone());
+        let mut h = history::starter();
+        h.record(["FLUTE".to_string(), "TROMBONE".to_string()], 2210, None, 1_763_208_000);
+        writer.history(&h);
+        writer.flush();
+        assert_eq!(history::load_history(&paths.history()), (h, None));
+        assert_eq!(files_in(&paths.config), vec!["history.toml"]);
     }
 
     #[test]
