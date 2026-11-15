@@ -52,7 +52,7 @@ fn rad(rec: &Recording, i: usize, k: usize) -> f64 {
 }
 
 /// Table O4's link (a per-ball radius and mass, `move` 3165 to 3216 and every kind reading `getattr(O, 'rad', R)`):
-/// BAGPIPES against each kit fighter but FLUTE (the template's own), three seeds with it left and three swapped (the
+/// BAGPIPES against CONTRABASS and ORGAN (ruling M4-R16 keeps two), two seeds with it left and two swapped (the
 /// `with_<x>` groups). In every one the engine's events are the kit's, and against each kit fighter some hit of the
 /// fighter's own lands while the bag is swollen (its radius above the shared one at the hit's frame): every kit
 /// kind's contact meets a swollen ball. Ignored: reads the pinned cache; `prefix` proves the fights to the floor,
@@ -83,7 +83,11 @@ fn contacts_against_a_swollen_bag() {
             .count();
         *swollen.entry(enemy).or_default() += n;
     }
-    assert_eq!(fights.len(), 19 * 6, "19 kit fighters, three seeds a side");
+    assert_eq!(
+        fights.len(),
+        2 * 4,
+        "two kit fighters (CONTRABASS, ORGAN), two seeds a side"
+    );
     let none: Vec<&String> = swollen.iter().filter(|(_, n)| **n == 0).map(|(e, _)| e).collect();
     assert!(
         none.is_empty(),

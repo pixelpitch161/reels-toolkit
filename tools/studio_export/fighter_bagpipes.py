@@ -199,10 +199,12 @@ ORIGIN = dict(
 KIT = ('ACOUSTIC', 'ALTO SAX', 'BASS CLARINET', 'BASS DRUM', 'BASSOON', 'CELLO', 'CLARINET', 'CONTRABASS',
        'ELECTRIC', 'EUPHONIUM', 'HORN', 'OBOE', 'ORGAN', 'PIANO', 'SOUSAPHONE', 'TENOR SAX', 'TROMBONE', 'TRUMPET',
        'TUBA')                                   # (FLUTE: the template's own scenarios)
+# (ruling M4-R16: the every-kit-fighter contact sweep is not needed; two of them a side, two seeds, are kept)
+CONTACTS = ('CONTRABASS', 'ORGAN')
 LOW = dict(LV_DMG=m3refs.LV, LOW_HP=92.0)
 SCENARIOS = (m3refs.default_scenarios('BAGPIPES', 'FLUTE')
-             + [dict(name=f'with_{m3refs.slug(o)}', seeds=(1, 2, 3), opponent=o) for o in KIT]
-             + [dict(name=f'with_{m3refs.slug(o)}_swapped', seeds=(1, 2, 3), opponent=o, swapped=True) for o in KIT]
+             + [dict(name=f'with_{m3refs.slug(o)}', seeds=(1, 2), opponent=o) for o in CONTACTS]
+             + [dict(name=f'with_{m3refs.slug(o)}_swapped', seeds=(1, 2), opponent=o, swapped=True) for o in CONTACTS]
              + [dict(name='copy_sweep', seeds=(1, 2, 3), opponent='EUPHONIUM', overrides=dict(LOW)),
                 dict(name='copy_sweep_swapped', seeds=(1, 2, 3), opponent='EUPHONIUM', overrides=dict(LOW),
                      swapped=True)])

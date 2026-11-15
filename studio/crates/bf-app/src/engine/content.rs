@@ -417,7 +417,7 @@ mod tests {
     #[test]
     fn the_real_roster() {
         let r = roster();
-        assert_eq!(r.fighters.len(), 20);
+        assert_eq!(r.fighters.len(), 21);
         let names: Vec<&str> = r.fighters.iter().map(|f| f.name.as_str()).collect();
         assert_eq!(names, bf_content::shown_order());
         let on: Vec<&str> = r
@@ -649,7 +649,7 @@ mod tests {
     }
 
     /// The roster knows how every new match-up starts exactly as the engine's starter makes it (theme, the place
-    /// of its chord loop, handicap, parts), for all 380 ordered pairs of offered fighters, so the interface can set
+    /// of its chord loop, handicap, parts), for all 380 ordered pairs of the kit's fighters (BAGPIPES's 40 wait for Task 42's starters), so the interface can set
     /// the draft at once when a fighter is picked.
     #[test]
     fn the_roster_starts_every_pair_as_the_engine_does() {
@@ -660,9 +660,9 @@ mod tests {
             .filter(|f| f.available)
             .map(|f| f.name.clone())
             .collect();
-        assert_eq!(offered.len(), 20);
+        assert_eq!(offered.len(), 21);
         assert_eq!(r.kit_pairs.len(), 18);
-        let mut pairs = 0;
+        let (mut pairs, mut started) = (0, 0);
         for a in &offered {
             for b in &offered {
                 if a == b {
@@ -670,6 +670,14 @@ mod tests {
                 }
                 pairs += 1;
                 let fighters = [a.clone(), b.clone()];
+                // an older fighter has no home config until its starters are written (plan m4 Task 42): its pairs
+                // refuse in words and the roster has no start for them
+                if bf_content::home_config(a).is_none() || bf_content::home_config(b).is_none() {
+                    assert!(bf_content::starter(a, b).is_err(), "{a} vs {b}");
+                    assert_eq!(r.start_of(&fighters), None, "{a} vs {b}");
+                    continue;
+                }
+                started += 1;
                 let ff = bf_content::starter(a, b).unwrap_or_else(|e| panic!("{a} vs {b}: {e}"));
                 let theme = r
                     .themes
@@ -690,7 +698,7 @@ mod tests {
                 assert_eq!(r.start_of(&fighters), Some(want), "{a} vs {b}");
             }
         }
-        assert_eq!(pairs, 380);
+        assert_eq!((pairs, started), (420, 380));
         // the kit's frozen handicaps, swapped with the sides
         let start = |a: &str, b: &str| r.start_of(&[a.to_string(), b.to_string()]).expect("a start");
         assert_eq!(start("FLUTE", "TROMBONE").handicap, [2.0, 0.4]);
