@@ -21,6 +21,7 @@
 //! the bed has both (`_pit`, under `hasattr`): this bed has them ([`bf_sound::traits::Bed::has_pit`]).
 
 mod classic;
+pub mod layers;
 
 use bf_core::dmath::{self, PI};
 use bf_core::fightfile::OptionValue;

@@ -21,6 +21,7 @@
 //! it is), so only a delay that holds a zero is walked, to keep its sign. A test holds it to `dsp::lfilter`'s bits.
 
 mod classic;
+pub mod layers;
 
 use bf_core::dmath::{self, PI};
 use bf_core::harmony::{Harmony, HarmonyError};

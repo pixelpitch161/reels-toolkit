@@ -16,6 +16,7 @@
 //! `bed.boom` cannot play under this theme (ruling M3-R2: such pairs are refused).
 
 mod classic;
+pub mod layers;
 
 use bf_core::dmath::{self, PI};
 use bf_core::harmony::{Harmony, HarmonyError};
