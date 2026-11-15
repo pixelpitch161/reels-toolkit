@@ -130,7 +130,11 @@ fn note_axes(cam: &Cam) -> (V3, V3, V3) {
     let nb = norm3(b);
     b = [b[0] / nb, b[1] / nb, b[2] / nb];
     // np.cross(a, b)
-    let mut n = [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+    let mut n = [
+        a[1] * b[2] - a[2] * b[1],
+        a[2] * b[0] - a[0] * b[2],
+        a[0] * b[1] - a[1] * b[0],
+    ];
     if dot3(n, sub(cam.pos, cam.target)) < 0.0 {
         n = [-n[0], -n[1], -n[2]];
     }
@@ -154,6 +158,7 @@ fn wp(cc: V3, a: V3, b: V3, nrm: V3, pq: [f64; 2], w: f64) -> V3 {
 
 /// The kind of one face of a note: `'face'`, `'rim'` or `'hole'`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[allow(clippy::enum_variant_names)] // the kit's own names
 enum Face {
     Face,
     Rim,
@@ -165,8 +170,14 @@ fn note_quads(cam: &Cam, c: [f64; 2], r: f64, phi: f64, lift: f64, scale: f64) -
     let r = r * scale * DRAW;
     let (a, b, nrm) = note_axes(cam);
     let cc = note_centre(c, r, phi, lift, b);
-    let o: Vec<[f64; 2]> = oval(NOTE_A, NOTE_B, 0.0, phi).iter().map(|p| [p[0] * r, p[1] * r]).collect();
-    let ih: Vec<[f64; 2]> = oval(HOLE_A, HOLE_B, hole_tilt(), phi).iter().map(|p| [p[0] * r, p[1] * r]).collect();
+    let o: Vec<[f64; 2]> = oval(NOTE_A, NOTE_B, 0.0, phi)
+        .iter()
+        .map(|p| [p[0] * r, p[1] * r])
+        .collect();
+    let ih: Vec<[f64; 2]> = oval(HOLE_A, HOLE_B, hole_tilt(), phi)
+        .iter()
+        .map(|p| [p[0] * r, p[1] * r])
+        .collect();
     let th = THICK * r / 2.0;
     let w = |pq: [f64; 2], d: f64| wp(cc, a, b, nrm, pq, d);
     let mut out = Vec::with_capacity(K_PTS * 4);
@@ -174,7 +185,11 @@ fn note_quads(cam: &Cam, c: [f64; 2], r: f64, phi: f64, lift: f64, scale: f64) -
         let j1 = (j + 1) % K_PTS;
         for sgn in [1.0, -1.0] {
             let d = sgn * th;
-            out.push(([w(o[j], d), w(o[j1], d), w(ih[j1], d), w(ih[j], d)], mul(nrm, sgn), Face::Face));
+            out.push((
+                [w(o[j], d), w(o[j1], d), w(ih[j1], d), w(ih[j], d)],
+                mul(nrm, sgn),
+                Face::Face,
+            ));
         }
         let mo = [(o[j][0] + o[j1][0]) / 2.0, (o[j][1] + o[j1][1]) / 2.0];
         let rad: V3 = std::array::from_fn(|i| a[i] * mo[0] + b[i] * mo[1]);
@@ -185,7 +200,11 @@ fn note_quads(cam: &Cam, c: [f64; 2], r: f64, phi: f64, lift: f64, scale: f64) -
         let radi: V3 = std::array::from_fn(|i| -(a[i] * mi[0] + b[i] * mi[1]));
         let ni = norm3(radi) + 1e-9;
         let radi = radi.map(|v| v / ni);
-        out.push(([w(ih[j], th), w(ih[j1], th), w(ih[j1], -th), w(ih[j], -th)], radi, Face::Hole));
+        out.push((
+            [w(ih[j], th), w(ih[j1], th), w(ih[j1], -th), w(ih[j], -th)],
+            radi,
+            Face::Hole,
+        ));
     }
     out
 }
@@ -211,7 +230,18 @@ fn ink(x: V3) -> [u8; 3] {
 /// `draw_note(fr, cam, L, shade, c, r, phi, col, lift, scale, glow)`: paints a whole note (far quads first), then a
 /// lit edge along the top of its outer oval.
 #[allow(clippy::too_many_arguments)] // the Python signature
-fn draw_note(fr: &mut Frame, cam: &Cam, l: &Lights, c: [f64; 2], r: f64, phi: f64, col: V3, lift: f64, scale: f64, glow: f64) {
+fn draw_note(
+    fr: &mut Frame,
+    cam: &Cam,
+    l: &Lights,
+    c: [f64; 2],
+    r: f64,
+    phi: f64,
+    col: V3,
+    lift: f64,
+    scale: f64,
+    glow: f64,
+) {
     let quads = note_quads(cam, c, r, phi, lift, scale);
     let ctr: Vec<V3> = quads.iter().map(|(q, _, _)| mean4(q)).collect();
     let d = cam.depth(&ctr);
@@ -241,7 +271,10 @@ fn draw_note(fr: &mut Frame, cam: &Cam, l: &Lights, c: [f64; 2], r: f64, phi: f6
     let (a, b, n) = note_axes(cam);
     let rr = r * scale * DRAW;
     let cc = note_centre(c, rr, phi, lift, b);
-    let o: Vec<[f64; 2]> = oval(NOTE_A, NOTE_B, 0.0, phi).iter().map(|p| [p[0] * rr, p[1] * rr]).collect();
+    let o: Vec<[f64; 2]> = oval(NOTE_A, NOTE_B, 0.0, phi)
+        .iter()
+        .map(|p| [p[0] * rr, p[1] * rr])
+        .collect();
     let w = n.map(|v| v * THICK * rr / 2.0);
     let top: Vec<V3> = o
         .iter()
@@ -415,7 +448,9 @@ impl ViolaLook {
         self.tracks.get_or_init(|| {
             let mut out: Vec<Track> = Vec::new();
             for i in 0..p.run.nsim {
-                let Some(Value::List(rows)) = p.run.nested("NOTES", i) else { continue };
+                let Some(Value::List(rows)) = p.run.nested("NOTES", i) else {
+                    continue;
+                };
                 for row in rows {
                     let Value::List(v) = row else { continue };
                     if num(&v[0]) as usize != self.k {
@@ -489,19 +524,32 @@ impl ViolaLook {
                 lift = 4.6 * (1.0 - s * s);
                 phi = 0.4 * dmath::sin(6.0 * s);
             }
-            let mut sc = if d.tl <= d.t0 + 1e-6 { ease(py_min(1.0, (tt - d.t0) / 0.10)) } else { 1.0 };
+            let mut sc = if d.tl <= d.t0 + 1e-6 {
+                ease(py_min(1.0, (tt - d.t0) / 0.10))
+            } else {
+                1.0
+            };
             sc *= 1.0 - ss(d.t1 - 0.14, d.t1, tt);
-            if let Some(h) = d.hit {
-                if 0.0 <= tt - h && tt - h < 0.25 {
-                    glow = 1.0 - (tt - h) / 0.25;
-                }
+            if let Some(h) = d.hit
+                && 0.0 <= tt - h
+                && tt - h < 0.25
+            {
+                glow = 1.0 - (tt - h) / 0.25;
             }
             if tt - d.t0 < 0.15 {
                 glow = py_max(glow, 1.0 - (tt - d.t0) / 0.15);
             }
             sc *= fade;
             if sc > 0.03 {
-                out.push(NoteView { c, phi, r: d.r, lift, sc, glow, owner: d.owner });
+                out.push(NoteView {
+                    c,
+                    phi,
+                    r: d.r,
+                    lift,
+                    sc,
+                    glow,
+                    owner: d.owner,
+                });
             }
         }
         out
@@ -523,7 +571,9 @@ impl ViolaLook {
         let Some(Value::List(balls)) = p.run.nested("REST", p.sim_i(t)) else {
             return (false, 0, false);
         };
-        let Value::List(r) = &balls[self.k] else { panic!("REST: a row per ball") };
+        let Value::List(r) = &balls[self.k] else {
+            panic!("REST: a row per ball")
+        };
         (num(&r[0]) as i64 != 0, num(&r[1]) as i64, num(&r[2]) as i64 != 0)
     }
 
@@ -549,7 +599,10 @@ impl ViolaLook {
         let mut best = 0.0;
         for &(t0, ..) in &self.jokes {
             if t0 <= t && t < t0 + LAUGH + 0.4 {
-                best = py_max(best, py_min(1.0, (t - t0) / 0.12) * (1.0 - ss(t0 + LAUGH, t0 + LAUGH + 0.4, t)));
+                best = py_max(
+                    best,
+                    py_min(1.0, (t - t0) / 0.12) * (1.0 - ss(t0 + LAUGH, t0 + LAUGH + 0.4, t)),
+                );
             }
         }
         best
@@ -579,7 +632,9 @@ impl ViolaLook {
     /// `draw_rests(img, t, drawn)`: the giant quarter rest and the count, the rising eighths.
     fn draw_rests(&self, p: &PictureCtx, img: &mut Rgb8, log: &mut DrawLog, t: f64, drawn: &[DrawnBall]) {
         let k = self.k;
-        let Some(db) = drawn.iter().find(|d| d.k == k) else { return };
+        let Some(db) = drawn.iter().find(|d| d.k == k) else {
+            return;
+        };
         let g = &p.show.grid;
         let (resting, count, _) = self.rest_state(p, t);
         let ((sx, sy), rp) = (db.s, db.rp);
@@ -616,7 +671,16 @@ impl ViolaLook {
                         ink(self.col.map(|v| np::clip(v * 0.5 + 90.0, 0.0, 255.0)))
                     };
                     let dg = (j + 1).to_string();
-                    label(img, log, &dg, (x + j * (adv + 2)) as i32, y as i32, c, 1, Some([10, 20, 26]));
+                    label(
+                        img,
+                        log,
+                        &dg,
+                        (x + j * (adv + 2)) as i32,
+                        y as i32,
+                        c,
+                        1,
+                        Some([10, 20, 26]),
+                    );
                 }
             }
         }
@@ -627,21 +691,39 @@ impl ViolaLook {
             .copied()
             .filter(|&te| {
                 let a = py_min(t, p.t_ko) - te;
-                0.0 <= a && a < 0.9 && mk > 0.0
+                (0.0..0.9).contains(&a) && mk > 0.0
             })
             .collect();
         if t >= p.t_hs && k == p.win {
             // the champion's solo: eighths on each note
-            rising = p.solo_t.iter().copied().filter(|&s| 0.0 <= t - s && t - s < 0.9).collect();
+            rising = p
+                .solo_t
+                .iter()
+                .copied()
+                .filter(|&s| 0.0 <= t - s && t - s < 0.9)
+                .collect();
         }
         let eighth = glyph(&EIGHTH_GLYPH, 1);
         for (j, &te) in rising.iter().enumerate() {
             let age = (if t < p.t_hs { py_min(t, p.t_ko) } else { t }) - te;
-            let side = if np::f64_to_i64(te * 10.0).rem_euclid(2) != 0 { 1.0 } else { -1.0 };
+            let side = if np::f64_to_i64(te * 10.0).rem_euclid(2) != 0 {
+                1.0
+            } else {
+                -1.0
+            };
             let x = sx + (8.0 + 3.0 * j as f64) * side + 4.0 * dmath::sin(age * 7.0);
             let y = sy - rp * 0.4 - 26.0 * age;
             let col = ink(self.col.map(|v| np::clip(v * 0.5 + 125.0, 0.0, 255.0))).map(f64::from);
-            stamp_glyph(img, &eighth, x, y, col, 1.0 - ss(0.5, 0.9, age), [16.0, 12.0, 26.0], false);
+            stamp_glyph(
+                img,
+                &eighth,
+                x,
+                y,
+                col,
+                1.0 - ss(0.5, 0.9, age),
+                [16.0, 12.0, 26.0],
+                false,
+            );
         }
     }
 }
@@ -735,7 +817,10 @@ impl Look for ViolaLook {
         let frz = self.frz(p, kk, t);
         if frz > 0.0 {
             let grey = [168.0, 176.0, 196.0];
-            return (std::array::from_fn(|c| glass[c] * (1.0 - 0.3 * frz) + grey[c] * 0.3 * frz), roll);
+            return (
+                std::array::from_fn(|c| glass[c] * (1.0 - 0.3 * frz) + grey[c] * 0.3 * frz),
+                roll,
+            );
         }
         (glass, roll)
     }
@@ -757,7 +842,7 @@ impl Look for ViolaLook {
         Some(Box::new(move |lit: &mut Img<f32>| {
             let keep = (1.0 - 0.7 * frz) as f32;
             let add = [20.0, 24.0, 40.0];
-            for px in lit.data.chunks_exact_mut(3) {
+            for px in lit.data.as_chunks_mut::<3>().0 {
                 // g_ = lit.mean(-1, keepdims=True), in float32
                 let g = ((px[0] + px[1]) + px[2]) / 3.0f32;
                 let g85 = g * 0.85f32;
@@ -838,7 +923,11 @@ impl Look for ViolaLook {
                 ..Emit::default()
             };
             fx.pa.emit(t, up(x, z, 0.1), "dust", &dust);
-            let chips = Emit { n: Some(if big { 8 } else { 4 }), col: Some(INKY.to_vec()), ..Emit::default() };
+            let chips = Emit {
+                n: Some(if big { 8 } else { 4 }),
+                col: Some(INKY.to_vec()),
+                ..Emit::default()
+            };
             fx.pa.emit(t, pos, "chips", &chips);
             fx.mk.add(
                 t,
@@ -869,13 +958,26 @@ impl Look for ViolaLook {
             if e.f(9) <= t + 1e-6 {
                 let k = e.i(2) as usize;
                 fx.fl.add(t, up(x, z, 0.5), p.col[k], 1.3, 0.45, 0.03, 0.25, 0.0);
-                let motes = Emit { n: Some(5), col: Some(vec![p.col[k].map(|c| c * 0.5 + 120.0)]), ..Emit::default() };
+                let motes = Emit {
+                    n: Some(5),
+                    col: Some(vec![p.col[k].map(|c| c * 0.5 + 120.0)]),
+                    ..Emit::default()
+                };
                 fx.pa.emit(t, up(x, z, 0.3), "motes", &motes);
             }
         } else if e.kind == "joke" {
             // the target glows while the note falls
             let (k, tl, x, z) = (e.i(2) as usize, e.f(4), e.f(5), e.f(6));
-            fx.fl.add(t + 0.05, up(x, z, 2.0), p.col[k], 2.2, 0.6, 0.03, py_max(0.3, tl - t), 0.0);
+            fx.fl.add(
+                t + 0.05,
+                up(x, z, 2.0),
+                p.col[k],
+                2.2,
+                0.6,
+                0.03,
+                py_max(0.3, tl - t),
+                0.0,
+            );
         }
     }
 
@@ -960,14 +1062,18 @@ impl Look for ViolaLook {
         self.notes(p, f)
             .iter()
             .map(|n| {
-                let d = f.cam.depth(&[scene::to_world(n.c[0], n.c[1], 0.5 * n.r * n.sc + n.lift)])[0];
+                let d = f
+                    .cam
+                    .depth(&[scene::to_world(n.c[0], n.c[1], 0.5 * n.r * n.sc + n.lift)])[0];
                 (d, Box::new(NoteItem(*n)) as Payload)
             })
             .collect()
     }
 
     fn draw_item(&self, p: &PictureCtx, f: &FrameCtx<'_>, fr: &mut Frame, payload: &Payload) {
-        let Some(NoteItem(n)) = payload.downcast_ref::<NoteItem>() else { return };
+        let Some(NoteItem(n)) = payload.downcast_ref::<NoteItem>() else {
+            return;
+        };
         let glow = py_max(n.glow, 0.5 * self.melody_k(p, f.t));
         draw_note(fr, f.cam, f.l, n.c, n.r, n.phi, p.col[n.owner], n.lift, n.sc, glow);
     }
@@ -1030,8 +1136,14 @@ impl Look for ViolaLook {
                 // tumbling flat chips in its varnish
                 let tri = [
                     at([sx + d[0] * size, sz + d[1] * size]),
-                    at([sx - d[0] * size * 0.7 + nn[0] * size * 0.8, sz - d[1] * size * 0.7 + nn[1] * size * 0.8]),
-                    at([sx - d[0] * size * 0.4 - nn[0] * size * 0.7, sz - d[1] * size * 0.4 - nn[1] * size * 0.7]),
+                    at([
+                        sx - d[0] * size * 0.7 + nn[0] * size * 0.8,
+                        sz - d[1] * size * 0.7 + nn[1] * size * 0.8,
+                    ]),
+                    at([
+                        sx - d[0] * size * 0.4 - nn[0] * size * 0.7,
+                        sz - d[1] * size * 0.4 - nn[1] * size * 0.7,
+                    ]),
                 ];
                 let k = 0.75 + 0.25 * dmath::cos(rot * 2.0);
                 let col = WOOD_COL.map(|v| np::clip(v * k * 1.2, 0.0, 255.0));

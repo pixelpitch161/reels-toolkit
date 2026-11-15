@@ -216,7 +216,15 @@ impl<'a> SoundBuild<'a> {
         let theme = theme_of(ff)?;
         let bed = theme_bed(theme, ff)?;
         let [a, b] = [player(&show.names[0], 0, ff)?, player(&show.names[1], 1, ff)?];
-        let ctx = MusicCtx::new(show, rec, ff, [a.cfg, b.cfg], [a.voice, b.voice], theme.bed_voices()?)?;
+        let mut voices = theme.bed_voices()?;
+        // the voices a part plays besides its own (VIOLA's crush: the CELLO), when nobody in the fight plays them
+        for name in show.names.iter().flat_map(|n| crate::fighters::part_voices(n)) {
+            let played = a.cfg.pp == *name || b.cfg.pp == *name || voices.iter().any(|v| v.name() == *name);
+            if !played && let Some(v) = crate::fighters::voice(name) {
+                voices.push(v);
+            }
+        }
+        let ctx = MusicCtx::new(show, rec, ff, [a.cfg, b.cfg], [a.voice, b.voice], voices)?;
         Ok(SoundBuild {
             ctx,
             bed,

@@ -51,7 +51,10 @@ fn whole_fights_are_the_kits() {
         jokes += rs.events.iter().filter(|e| e.kind == "joke").count();
         n += 1;
     }
-    assert!(n >= 3 && crushes > 0 && jokes > 0, "{n} fights, {crushes} crushes, {jokes} jokes");
+    assert!(
+        n >= 3 && crushes > 0 && jokes > 0,
+        "{n} fights, {crushes} crushes, {jokes} jokes"
+    );
     println!("{n} whole fights agree with the kit's ({crushes} crushes, {jokes} jokes)");
 }
 

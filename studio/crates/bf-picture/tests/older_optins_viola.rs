@@ -135,7 +135,11 @@ impl Look for StubLook {
         if t < a || t >= b + 0.5 {
             return Some(0.0);
         }
-        Some(if t < b { bf_core::py::py_min(1.0, (t - a) / 0.5) } else { 1.0 - (t - b) / 0.5 })
+        Some(if t < b {
+            bf_core::py::py_min(1.0, (t - a) / 0.5)
+        } else {
+            1.0 - (t - b) / 0.5
+        })
     }
 
     fn flash_hit(&self, _e: &Event) -> Option<bool> {
@@ -188,7 +192,10 @@ fn a_look_without_viola_opt_ins_draws_as_before() {
     assert!(rows.len() >= 15, "{} frames", rows.len());
     let wrong = wrong_rows(&pic, rows);
     assert!(wrong.is_empty(), "frames that are not the kit's: {wrong:?}");
-    assert_eq!(pic.ctx().flash_t.len() as u64, doc()["on"]["base_n_flash"].as_u64().expect("a count"));
+    assert_eq!(
+        pic.ctx().flash_t.len() as u64,
+        doc()["on"]["base_n_flash"].as_u64().expect("a count")
+    );
 }
 
 /// On: the stub's frames and draw logs are the patched kit's, and they are not the off frames.
@@ -200,7 +207,14 @@ fn the_viola_opt_ins_draw_as_the_kits() {
     let wrong = wrong_rows(pic, rows);
     assert!(wrong.is_empty(), "frames that are not the kit's: {wrong:?}");
     let changed = on["changed"].as_array().expect("the changed frames").len();
-    assert!(changed * 2 >= rows.len(), "the stub changed only {changed} of {} frames", rows.len());
+    assert!(
+        changed * 2 >= rows.len(),
+        "the stub changed only {changed} of {} frames",
+        rows.len()
+    );
     assert_eq!(pic.ctx().flash_t.len() as u64, on["n_flash"].as_u64().expect("a count"));
-    assert!(on["n_flash"].as_u64() > on["base_n_flash"].as_u64(), "flash_hit added no flashbulbs");
+    assert!(
+        on["n_flash"].as_u64() > on["base_n_flash"].as_u64(),
+        "flash_hit added no flashbulbs"
+    );
 }

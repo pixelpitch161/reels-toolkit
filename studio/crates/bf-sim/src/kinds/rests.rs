@@ -149,7 +149,11 @@ fn fire_note(f: &mut Fight, k: usize, a: Fire) -> usize {
         Some(t_land) => {
             let c = clip(a.tgt.expect("a dropped note has its target"));
             let v = a.v.unwrap_or([0.0, 0.0]);
-            let aim = if geom::hypot(v) > 1e-9 { dmath::atan2(v[1], v[0]) } else { 0.0 };
+            let aim = if geom::hypot(v) > 1e-9 {
+                dmath::atan2(v[1], v[0])
+            } else {
+                0.0
+            };
             (c, v, aim, t_land)
         }
     };
@@ -311,12 +315,28 @@ pub fn start_double_stop(f: &mut Fight, k: usize, ab: &AbilityCfg) {
     let w = weapon(f, k);
     let (bp, op) = (f.balls[k].p, f.balls[o].p);
     let tl = py_max(0.0, geom::hypot(geom::sub(op, bp)) - f.rules.r - f.balls[k].blade_len) / w.roll;
-    fire_note(f, k, Fire { tgt: Some(op), kind: 1, ..Fire::default() });
+    fire_note(
+        f,
+        k,
+        Fire {
+            tgt: Some(op),
+            kind: 1,
+            ..Fire::default()
+        },
+    );
     // O.p + O.v * tl * ab.get('lead2', 1.6)
     let (op, ov) = (f.balls[o].p, f.balls[o].v);
     let lead2 = ab.get("lead2").unwrap_or(1.6);
     let tgt = geom::add(op, geom::scale(geom::scale(ov, tl), lead2));
-    fire_note(f, k, Fire { tgt: Some(tgt), kind: 1, ..Fire::default() });
+    fire_note(
+        f,
+        k,
+        Fire {
+            tgt: Some(tgt),
+            kind: 1,
+            ..Fire::default()
+        },
+    );
     f.ev("double", k as i64, Vec::new());
 }
 
@@ -339,7 +359,11 @@ pub(crate) fn joke_note(f: &mut Fight, k: usize, param: impl Fn(&str) -> f64) {
     let ov = f.balls[o].v;
     let vn = geom::hypot(ov);
     // v = O.v / vn * B.w['roll'] if vn > 1e-9 else np.zeros(2)
-    let v = if vn > 1e-9 { geom::scale(geom::div(ov, vn), w.roll) } else { [0.0, 0.0] };
+    let v = if vn > 1e-9 {
+        geom::scale(geom::div(ov, vn), w.roll)
+    } else {
+        [0.0, 0.0]
+    };
     let r = py_max(f.balls[k].blade_len, w.base) * param("size");
     let fire = Fire {
         tgt: Some(f.balls[o].p),
@@ -352,7 +376,12 @@ pub(crate) fn joke_note(f: &mut Fight, k: usize, param: impl Fn(&str) -> f64) {
     };
     let i = fire_note(f, k, fire);
     let n = &f.rests.notes[i];
-    let data = vec![Value::Int(o as i64), Value::Float(n.t_land), Value::Float(n.c[0]), Value::Float(n.c[1])];
+    let data = vec![
+        Value::Int(o as i64),
+        Value::Float(n.t_land),
+        Value::Float(n.c[0]),
+        Value::Float(n.c[1]),
+    ];
     f.ev("joke", k as i64, data);
 }
 

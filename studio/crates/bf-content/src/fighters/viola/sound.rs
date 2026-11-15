@@ -327,7 +327,10 @@ pub fn crowd_laugh(dur: f64, n_voices: u64, seed: u64) -> Result<[Vec<f64>; 2], 
 /// [`crowd_laugh`] with its defaults (2.1 s), made once: it is the same every time.
 fn the_laugh() -> Result<&'static [Vec<f64>; 2], MusicError> {
     static LAUGH: OnceLock<Result<[Vec<f64>; 2], MusicError>> = OnceLock::new();
-    LAUGH.get_or_init(|| crowd_laugh(2.1, 34, 55)).as_ref().map_err(Clone::clone)
+    LAUGH
+        .get_or_init(|| crowd_laugh(2.1, 34, 55))
+        .as_ref()
+        .map_err(Clone::clone)
 }
 
 /// `sub808(m0, m1, dur, slide=0.0, vel=1.0)`: the 808, a sine sub with a punchy pitch drop on the attack,
@@ -423,7 +426,10 @@ fn num(v: &Value) -> Result<f64, MusicError> {
     match v {
         Value::Float(x) => Ok(*x),
         Value::Int(n) => Ok(*n as f64),
-        other => Err(MusicError::new(H, format!("a NOTES record holds {other:?}, not a number"))),
+        other => Err(MusicError::new(
+            H,
+            format!("a NOTES record holds {other:?}, not a number"),
+        )),
     }
 }
 
@@ -656,7 +662,9 @@ impl Sound for ViolaSound {
                         put(mix, &bus, x, ts, 0.26 * g, -0.25);
                     } else if lead > 0.04 {
                         // the leader: doubled an octave down
-                        let x = self.col(ctx, &self.viola(ctx, 48.max(m - 12), dur, 0.7, 0.0)?, ts, 1.0)?.0;
+                        let x = self
+                            .col(ctx, &self.viola(ctx, 48.max(m - 12), dur, 0.7, 0.0)?, ts, 1.0)?
+                            .0;
                         put(mix, &bus, x, ts, 0.16 * g, -0.2);
                     }
                 }
@@ -717,7 +725,14 @@ impl Sound for ViolaSound {
                 let x = self.viola(ctx, mm, dl * beat * 0.97, 0.95, accent)?;
                 let (sig, g, _) = self.col(ctx, &x, ts, 0.5)?;
                 put(mix, &bus, sig, ts, 0.50 * g, -0.1);
-                let low = self.col(ctx, &self.viola(ctx, 48.max(mm - 12), dl * beat * 0.97, 0.7, 0.0)?, ts, 1.0)?.0;
+                let low = self
+                    .col(
+                        ctx,
+                        &self.viola(ctx, 48.max(mm - 12), dl * beat * 0.97, 0.7, 0.0)?,
+                        ts,
+                        1.0,
+                    )?
+                    .0;
                 put(mix, &bus, low, ts, 0.14, -0.2);
                 prev = Some(mm);
             }
@@ -733,7 +748,14 @@ impl Sound for ViolaSound {
         let t_hs = ctx.show.t_hs;
         for (j, m) in [67, 63, 60, 55, 51, 48].into_iter().enumerate() {
             let j = j as f64;
-            put(mix, &bus, self.viola(ctx, m, 0.12, 0.8, 0.0)?, t_hs + 0.1 * j, 0.24, (j - 2.5) / 6.0);
+            put(
+                mix,
+                &bus,
+                self.viola(ctx, m, 0.12, 0.8, 0.0)?,
+                t_hs + 0.1 * j,
+                0.24,
+                (j - 2.5) / 6.0,
+            );
         }
         Ok(())
     }
@@ -753,7 +775,14 @@ impl Sound for ViolaSound {
             if ts > grid.t_reassemble - 0.05 {
                 break;
             }
-            put(mix, "solo", self.viola(ctx, m, d * grid.beat * 0.95, 0.95, 0.3)?, ts, 0.52, 0.0);
+            put(
+                mix,
+                "solo",
+                self.viola(ctx, m, d * grid.beat * 0.95, 0.95, 0.3)?,
+                ts,
+                0.52,
+                0.0,
+            );
         }
         Ok(())
     }
@@ -775,7 +804,14 @@ impl Sound for ViolaSound {
         let grid = &ctx.show.grid;
         let t35 = (grid.n_bars as f64 - 1.0) * grid.bar;
         for (bt, m) in [55, 59, 62, 67].into_iter().enumerate() {
-            put(mix, &bus, self.viola(ctx, m, 0.3, 0.9, 0.0)?, t35 + bt as f64 * grid.beat, 0.20, -0.2);
+            put(
+                mix,
+                &bus,
+                self.viola(ctx, m, 0.3, 0.9, 0.0)?,
+                t35 + bt as f64 * grid.beat,
+                0.20,
+                -0.2,
+            );
         }
         Ok(())
     }

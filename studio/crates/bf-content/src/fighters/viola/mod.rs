@@ -1,7 +1,7 @@
 //! VIOLA: one of the older fighters (milestone 4), ported in its Task 11 against its reference kit module
 //! (`tools/studio_export/older/fighters/viola.py`, the reference kit module moved from
-//! `projects/ballfight_viola_vs_violin/` (#42)): its look, voice, part and card. The app does not offer it until a
-//! register task adds it to the registry's `PORTED`.
+//! `projects/ballfight_viola_vs_violin/` (#42)): its look, voice, part and card. The app offers it (the registry's
+//! `PORTED`).
 //!
 //! The port fills this folder only: `look.rs`, `sound.rs`, `voice.rs`, `card.rs`, `state.rs` (what the look and the
 //! part both derive from the recording) and the entry points below. Nothing outside it names VIOLA's types, so
@@ -51,5 +51,5 @@ pub const EXTRA_LINES: &[&str] = &[];
 
 /// The voices its part plays besides its own (`M.note('CELLO', ...)`: the crush's cello, ruling M4-R10). The kit's
 /// `M.note` reaches every voice of the series; the Studio's music context knows only the fighters' and the theme's,
-/// so a soundtrack with the VIOLA needs the CELLO's voice added to it (a shared change, reported NEEDS_CONTEXT).
+/// so the soundtrack adds the CELLO's voice to a fight with the VIOLA ([`crate::fighters::part_voices`]).
 pub const PART_VOICES: &[&str] = &["CELLO"];

@@ -19,7 +19,16 @@ pub const REQUIRED: &[&[&str]] = &[&["stun_beats"], &["size"], &["dmg"], &["knoc
 
 /// Every key `fight.py` reads from an ability of this kind; an entry holding another key loads as
 /// `Unsupported("joke+<key>")`.
-pub const ALLOWED: &[&str] = &["name", "kind", "every_bars", "stun_beats", "size", "dmg", "knock", "tele"];
+pub const ALLOWED: &[&str] = &[
+    "name",
+    "kind",
+    "every_bars",
+    "stun_beats",
+    "size",
+    "dmg",
+    "knock",
+    "tele",
+];
 
 /// What an ability of kind `joke` holds besides its numbers: nothing.
 #[derive(Clone, Debug, Default, PartialEq)]

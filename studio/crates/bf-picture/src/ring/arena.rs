@@ -52,7 +52,9 @@ pub(super) fn flash_times(ev: &[Event], looks: &[Box<dyn Look>], t_ko: f64) -> V
                 || (e.kind == "hit"
                     && super::owner(e).is_some_and(|k| {
                         // (opt-in flash_hit: the look decides for its hits, else its flash_hits)
-                        looks[k].flash_hit(e).unwrap_or_else(|| looks[k].flash_hits().contains(&e.s(7)))
+                        looks[k]
+                            .flash_hit(e)
+                            .unwrap_or_else(|| looks[k].flash_hits().contains(&e.s(7)))
                     }))
         })
         .map(|e| e.t)
@@ -172,10 +174,10 @@ impl PictureCtx {
                     // (opt-in crowd_laugh) heads bob "ha-ha-ha", bodies rock and lean back, each at its own phase
                     let mut sway = 0.0;
                     if lk > 0.0 {
+                        #[allow(clippy::approx_constant)] // the kit's own 6.28
                         let ph = q.ph * 6.28;
-                        y -= lk
-                            * (1.2 + 1.2 * dmath::sin(2.0 * dmath::PI * 5.2 * t + ph).abs())
-                            * py_max(1.0, rh * 0.8);
+                        y -=
+                            lk * (1.2 + 1.2 * dmath::sin(2.0 * dmath::PI * 5.2 * t + ph).abs()) * py_max(1.0, rh * 0.8);
                         sway = lk * 1.3 * dmath::sin(2.0 * dmath::PI * 1.7 * t + ph) * py_max(1.0, rh * 0.6);
                     }
                     if !(-6.0 < x && x < W as f64 + 6.0 && -6.0 < y && y < H as f64 + 10.0) {
@@ -198,7 +200,11 @@ impl PictureCtx {
                     let body: V3 = std::array::from_fn(|c| {
                         let lit = 1.0 + 0.9 * tint[j][c];
                         if lk > 0.0 {
-                            np::clip(CROWD_COLS[q.ci][c] * tone[c] * spill * lit * (1.0 + 0.25 * lk), 0.0, 255.0)
+                            np::clip(
+                                CROWD_COLS[q.ci][c] * tone[c] * spill * lit * (1.0 + 0.25 * lk),
+                                0.0,
+                                255.0,
+                            )
                         } else {
                             np::clip(CROWD_COLS[q.ci][c] * tone[c] * spill * lit, 0.0, 255.0)
                         }
@@ -216,13 +222,7 @@ impl PictureCtx {
                     } else {
                         (x - rh, y - rh, x + rh, y + rh)
                     };
-                    pil::ellipse(
-                        pic,
-                        head,
-                        Some(&ink(body.map(|v| v * 0.62))),
-                        None,
-                        1,
-                    );
+                    pil::ellipse(pic, head, Some(&ink(body.map(|v| v * 0.62))), None, 1);
                     // rim light from the ring on the heads (they face it)
                     if rh >= 1.5 {
                         let rim = body.map(|v| np::clip(v * 1.5 + 30.0, 0.0, 255.0));

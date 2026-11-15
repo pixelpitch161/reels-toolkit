@@ -114,7 +114,10 @@ pub(crate) fn check(e: &Entry, w: &RestsCfg) -> Result<(), RosterError> {
         return Err(e.err(&format!("{p}.every"), why));
     }
     if w.roll == 0.0 || !w.roll.is_finite() {
-        return Err(e.err(&format!("{p}.roll"), "must be a finite number other than 0 (a note's rolling speed)"));
+        return Err(e.err(
+            &format!("{p}.roll"),
+            "must be a finite number other than 0 (a note's rolling speed)",
+        ));
     }
     Ok(())
 }
@@ -139,7 +142,7 @@ mod tests {
     use crate::roster::{AbilityKind, FighterCfg, WeaponCfg, parse_roster};
 
     fn viola() -> FighterCfg {
-        let older = parse_roster(include_str!("../../../../bf-sim/tests/older_roster.json")).unwrap();
+        let older = parse_roster(include_str!("../../../../bf-content/data/roster.json")).unwrap();
         older.into_iter().find(|f| f.name == "VIOLA").unwrap()
     }
 
@@ -150,7 +153,17 @@ mod tests {
             panic!("VIOLA's weapon is {:?}", cfg.weapon)
         };
         assert_eq!(
-            (w.every, w.guard, w.base, w.grow, w.max_reach, w.roll, w.hold, w.lead, w.jitter),
+            (
+                w.every,
+                w.guard,
+                w.base,
+                w.grow,
+                w.max_reach,
+                w.roll,
+                w.hold,
+                w.lead,
+                w.jitter
+            ),
             (4.0, 0.5, 0.45, 0.04, 0.8, 2.0, 4.0, 0.5, 12.0)
         );
         assert_eq!((w.dmg, w.dmg_grow, w.dmg_max, w.knock), (3.0, 0.04, 3.4, 1.4));
