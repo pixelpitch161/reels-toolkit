@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BALLFIGHT Studio guide</title>
+<style>
+  body { margin: 0; background: #1e1e1e; color: #e2e2e2; font: 16px/1.55 "Segoe UI", system-ui, sans-serif; }
+  main { max-width: 860px; margin: 0 auto; padding: 24px 20px 64px; }
+  h1 { color: #ffffff; font-size: 28px; margin: 8px 0 4px; }
+  h2 { color: #ffffff; font-size: 20px; margin: 40px 0 8px; padding-top: 16px; border-top: 1px solid #444444; }
+  p, li { margin: 6px 0; }
+  ul { padding-left: 22px; }
+  .lead { color: #a0a0a0; }
+  b.ui { color: #ffffff; background: #333333; border: 1px solid #444444; border-radius: 4px; padding: 0 5px;
+         font-weight: 600; white-space: nowrap; }
+  img { display: block; max-width: 100%; height: auto; margin: 12px 0; border: 1px solid #444444;
+        border-radius: 6px; background: #282828; }
+  nav { background: #282828; border: 1px solid #444444; border-radius: 6px; padding: 10px 16px; margin: 16px 0; }
+  nav a { color: #e2e2e2; margin-right: 14px; white-space: nowrap; }
+</style>
+</head>
+<body>
+<main>
+<h1>BALLFIGHT Studio guide</h1>
+<p class="lead">How to make a fight video, step by step. The five steps run left to right along the top of the window.</p>
+<nav>
+  <a href="#start">Starting</a> <a href="#matchup">Match-up</a> <a href="#balance">Balance</a>
+  <a href="#seeds">Seeds</a> <a href="#music">Music</a> <a href="#render">Render</a> <a href="#queue">Queue</a>
+  <a href="#library">Library</a> <a href="#settings">Settings</a> <a href="#updating">Updating</a>
+  <a href="#wrong">Problems</a> <a href="#removing">Removing</a>
+</nav>
+
+<h2 id="start">Starting the app</h2>
+<p>Double-click <b>BALLFIGHT Studio</b> on the desktop or in the Start menu. The window opens on Match-up.
+Only one copy opens at a time: starting it again brings the open window to the front.</p>
+<p>The top bar holds the five steps, then <b class="ui">Library</b>, <b class="ui">Queue</b> and <b class="ui">Settings</b>. The stage in the
+middle plays the fight; the timeline under it shows where the K.O. lands. The status bar at the bottom says what
+the app is doing.</p>
+
+<h2 id="matchup">1 Match-up</h2>
+<img src="pictures/1-matchup.png" alt="The Match-up screen with Flute and Trombone picked">
+<p>Pick the two fighters. Click a fighter in the <b class="ui">Roster</b> to put it in the left corner, and
+right-click to put it in the right corner. The picture shows the guide's own match-up: Flute against Trombone.</p>
+<ul>
+  <li><b class="ui">Swap sides</b> trades the corners.</li>
+  <li><b class="ui">Theme</b> picks the music style and <b class="ui">Tempo</b> how fast it goes. Tempo changes the
+  fight itself, so it lives here.</li>
+  <li><b class="ui">Pair rules</b> lists anything special these two do to each other.</li>
+</ul>
+<p>When you are happy, press <b class="ui">Balance this match-up</b>.</p>
+
+<h2 id="balance">2 Balance</h2>
+<img src="pictures/2-balance.png" alt="The Balance screen with the win split in range">
+<p>The app fights the pair thousands of times to see who wins. The bar at the top shows each fighter's share of
+the wins. The aim is a fair fight: the marker should sit between 40% and 60%, under <b class="ui">In range</b>.
+Flute against Trombone already has the series' own handicap, so it starts in range.</p>
+<ul>
+  <li><b class="ui">Auto-balance</b> tries handicaps until the split is fair. <b class="ui">Stop balancing</b>
+  ends it early.</li>
+  <li>The <b class="ui">Damage handicap</b> sliders let you set it by hand. <b class="ui">Reset both to ×1.00</b>
+  starts again.</li>
+  <li><b class="ui">When the K.O. lands</b> shows the spread of finishing times.</li>
+</ul>
+<p>Then press <b class="ui">Search seeds</b>.</p>
+
+<h2 id="seeds">3 Seeds</h2>
+<img src="pictures/3-seeds.png" alt="The Seeds screen with a shortlist and a seed playing">
+<p>Every seed is a different fight between the same two fighters. The app searches thousands of them and keeps a
+shortlist of the ones that tell a good story: a comeback, lead changes and a late K.O. Click a row to watch it on
+the stage, and press play at the bottom left to watch it move.</p>
+<ul>
+  <li><b class="ui">Filters</b> narrow the shortlist: who wins, how many <b class="ui">Lead changes</b>, and when
+  the K.O. lands.</li>
+  <li><b class="ui">Stop search</b> and <b class="ui">Keep searching</b> pause and carry on.</li>
+  <li><b class="ui">Watch any seed</b> plays a seed by its number.</li>
+</ul>
+<p>When one looks right, press <b class="ui">Use seed</b>.</p>
+
+<h2 id="music">4 Music</h2>
+<img src="pictures/4-music.png" alt="The Music screen with the arrangement and the levels line">
+<p>This is the soundtrack of the chosen fight. You can listen to it on the stage while you change it.</p>
+<ul>
+  <li><b class="ui">Arrangement</b> has two choices. <b class="ui">Classic</b> plays each fighter's written line
+  as it is. <b class="ui">Composed</b> writes fresh lines and solos that follow the fight. New match-ups start on
+  Composed.</li>
+  <li><b class="ui">Music seed</b> is the number the composed music grows from. <b class="ui">Re-roll music</b>
+  gives a new one: new lines and solos for the same fight, nothing else changes. On Classic these two are greyed
+  out, because nothing is composed.</li>
+  <li><b class="ui">Keep Flute's line as written</b> (one tick for each fighter) keeps that fighter's written line and solo
+  while the rest is composed. Use it when one part already sounds right.</li>
+  <li><b class="ui">Chord loop</b> changes the harmony. When both fighters can play bass, you can also pick who does.</li>
+</ul>
+<p>Under the lanes, the levels line should read <b class="ui">Levels: pass</b>. If it fails, it says why and offers
+the next fight that fits. Then press <b class="ui">Go to render</b>.</p>
+
+<h2 id="render">5 Render</h2>
+<img src="pictures/5-render.png" alt="The Render screen with a caption and one video rendering">
+<p>Here the fight becomes an mp4 with sound.</p>
+<ul>
+  <li><b class="ui">Caption</b> is drafted for you, one tab each for <b class="ui">Instagram</b>,
+  <b class="ui">TikTok</b> and <b class="ui">Shorts</b>. Edit it freely; it is saved next to the video.</li>
+  <li><b class="ui">Saves to</b> shows the folder. <b class="ui">Change folder</b> picks another.</li>
+  <li><b class="ui">Add to queue</b> sends the video to the queue. You can carry on with the next fight while it
+  renders.</li>
+</ul>
+<p>On the right, the checks run one by one while the video is made: loudness, flashes, the loop point and more. A
+video is only saved when every check passes.</p>
+
+<h2 id="queue">The queue</h2>
+<p>The queue is the list on the Render screen; <b class="ui">Queue</b> in the top bar takes you there. Videos render one at a time, top first.</p>
+<ul>
+  <li><b class="ui">Pause queue</b> holds the line after the current video; the same button then carries on.</li>
+  <li><b class="ui">Cancel</b> stops a video that is rendering. Nothing of it is saved.</li>
+  <li>Drag a waiting video up or down to change the order. Right-click a waiting video to move it up, down
+  or to the front.</li>
+  <li><b class="ui">Open folder</b> shows a finished video in its folder.</li>
+</ul>
+<p>The queue survives closing the app. A video that was rendering when the app closed waits to start again.</p>
+
+<h2 id="library">The Library</h2>
+<img src="pictures/library.png" alt="The Library with finished videos">
+<p>Every video in your output folder, newest first. Pick one, then <b class="ui">Reopen</b> to bring its fight
+back into the five steps (to make a new version), or <b class="ui">Open folder</b> to see its files. Each video's
+folder holds the mp4, its cover picture, its caption and its fight file.</p>
+
+<h2 id="settings">Settings</h2>
+<img src="pictures/settings.png" alt="The Settings screen">
+<ul>
+  <li><b class="ui">Output folder</b>: where videos are saved.</li>
+  <li><b class="ui">Worker threads</b>: how much of the PC the app uses. Fewer leaves more room for other programs
+  while a video renders.</li>
+  <li><b class="ui">Video encoding</b>: <b class="ui">Best quality</b> or <b class="ui">Faster</b>. It applies to
+  the next video that starts.</li>
+  <li><b class="ui">Problems</b>: where fault reports are kept. <b class="ui">Open the reports folder</b> shows
+  them.</li>
+  <li><b class="ui">Guide</b>: <b class="ui">Open the guide</b> opens this page.</li>
+</ul>
+
+<h2 id="updating">Updating</h2>
+<img src="pictures/update-ready.png" alt="The Updates row with a new version to build">
+<p>The app looks for a newer version by itself. When one is there, the <b class="ui">Update</b> button appears in
+the top bar and the <b class="ui">Updates</b> row in Settings says so.</p>
+<ul>
+  <li>Press <b class="ui">Build version</b> (it names the new version). The app builds it while you keep working.
+  <b class="ui">Stop building</b> cancels.</li>
+  <li>When it is ready, press <b class="ui">Restart now</b>. The app closes and opens again on the new version.
+  Your settings, queue and videos stay as they were.</li>
+  <li>If the new version is worse, press <b class="ui">Go back</b> (it names the earlier version) to return to it.</li>
+</ul>
+
+<h2 id="wrong">When something goes wrong</h2>
+<img src="pictures/failed-job.png" alt="A video in the queue stopped at the loudness check">
+<ul>
+  <li><b>A stopped video.</b> The row names the check that stopped it, gives the numbers, and says what to try, as
+  in <b class="ui">Stopped at the loudness check</b> above. Nothing was saved. Press
+  <b class="ui">Open in Music</b> to fix it, or try another seed, then <b class="ui">Queue again</b>.</li>
+  <li><b>ffmpeg missing.</b> ffmpeg is the part that writes the mp4, and it comes with the app. If the Video encoder line in Settings says
+  ffmpeg was not found, videos cannot be saved. Ask for the app to be
+  installed again.</li>
+  <li><b>The output folder cannot be used.</b> Render and the Library say so. Press
+  <b class="ui">Change folder</b> to pick another, or create the missing one with the button beside it.</li>
+  <li><b>The app closes on its own.</b> It writes a fault report first and tells you where it is. Settings,
+  <b class="ui">Open the reports folder</b>, shows them. Send the newest report along when you ask for help.</li>
+  <li><b>Who to ask.</b> For new fighters, new themes, new features or a problem these steps do not fix, start a
+  new build session and describe what you want or what happened.</li>
+</ul>
+
+<h2 id="removing">Removing the app</h2>
+<p>In Settings, press <b class="ui">Remove BALLFIGHT Studio from this PC</b>. The app first lists exactly what it
+would remove and asks; <b class="ui">Keep it</b> changes nothing, <b class="ui">Remove the app</b> goes ahead.</p>
+<p>What goes: the program and its Start menu and desktop shortcuts. What stays: your settings, the queue, fault
+reports and logs, and your videos. They are kept in folders of their own.</p>
+</main>
+</body>
+</html>

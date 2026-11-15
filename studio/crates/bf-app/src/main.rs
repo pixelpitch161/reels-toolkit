@@ -21,6 +21,9 @@
 //!   program folder's `.next`, waits for program `<pid>` to end, swaps itself in and starts the app again. It opens
 //!   no window and exits 0 when the swap worked, else 1. It refuses (exit 1, nothing read further, written or
 //!   started) unless this exe sits in a folder named `.next` whose parent is a real installed copy (see `finish_dir`).
+//! - `--guide-pictures <folder>` (in no help text) takes the guide's pictures into `<folder>` from the real app in
+//!   its real window (`guide::Pictures`), then closes: exit 0 when every picture was saved, else 1. Use it with
+//!   `--data-dir` (else a temp folder of its own); its videos go in that folder's `Videos`.
 //! - `--test-fault-report` (in no help text) makes the interface thread fault on purpose after the first painted
 //!   frame, so the release checklist can see a real fault report and its message box from the shipped exe.
 //! - `--preview-bench [--seed N] [--seconds 20] [--threads T]` opens no window: it makes the starter fight's take
@@ -102,6 +105,8 @@ const SMOKE_FRAMES: u32 = 30;
 const SAMPLE_NOTE: &str = "Sample data, not a real fight";
 /// The option that makes the interface thread fault on purpose (the release checklist's look at a real report).
 const FAULT_FLAG: &str = "--test-fault-report";
+/// The option that takes the guide's pictures (`guide::Pictures`).
+const GUIDE_FLAG: &str = "--guide-pictures";
 /// The fault `--test-fault-report` makes.
 const FAULT_MESSAGE: &str = "A fault made on purpose by --test-fault-report, to check that fault reports work.";
 
@@ -112,6 +117,8 @@ struct Args {
     fixtures: bool,
     data_dir: Option<PathBuf>,
     test_fault: bool,
+    /// `--guide-pictures <folder>`: where the guide's pictures go.
+    guide: Option<PathBuf>,
 }
 
 /// What the program is asked to do.
@@ -161,6 +168,12 @@ fn parse(args: impl IntoIterator<Item = OsString>) -> Result<Args, String> {
             Some("--smoke") => parsed.smoke = true,
             Some("--fixtures") => parsed.fixtures = true,
             Some(FAULT_FLAG) => parsed.test_fault = true,
+            Some(GUIDE_FLAG) => match args.next() {
+                Some(dir) if !dir.is_empty() && !dir.to_string_lossy().starts_with("--") => {
+                    parsed.guide = Some(PathBuf::from(dir));
+                }
+                _ => return Err("--guide-pictures needs a folder after it.".to_string()),
+            },
             Some("--data-dir") => match args.next() {
                 // An option in its place ("--data-dir --fixtures") is not a folder.
                 Some(dir) if !dir.is_empty() && !dir.to_string_lossy().starts_with("--") => {
@@ -283,7 +296,7 @@ fn second_copy(brought_forward: bool) -> Option<&'static str> {
 /// Whether this start looks at an unfinished update (`swap::at_start`, which may move files in the program folder
 /// and takes the swap lock): only an installed copy's real start, never a smoke or fixtures run.
 fn looks_at_updates(installed: bool, args: &Args) -> bool {
-    installed && !args.smoke && !args.fixtures
+    installed && !args.smoke && !args.fixtures && args.guide.is_none()
 }
 
 /// What the start does about `swap::at_start`'s answer.
@@ -607,8 +620,12 @@ impl eframe::App for Wrapped {
 fn run(args: Args) -> ExitCode {
     // A smoke or fixtures run never touches the owner's own settings folder: its files go in a folder of its own
     // under the system temp folder, removed when the window has closed. `--data-dir` names the folder instead.
-    let temp_root = (args.data_dir.is_none() && (args.smoke || args.fixtures)).then(|| {
-        let kind = if args.smoke { "smoke" } else { "fixtures" };
+    let temp_root = (args.data_dir.is_none() && (args.smoke || args.fixtures || args.guide.is_some())).then(|| {
+        let kind = match (args.smoke, args.guide.is_some()) {
+            (true, _) => "smoke",
+            (false, true) => "guide",
+            _ => "fixtures",
+        };
         std::env::temp_dir().join(format!("bf-{kind}-{}", std::process::id()))
     });
     let paths = match (&args.data_dir, &temp_root) {
@@ -667,6 +684,10 @@ fn start(
     }
     // A smoke run's videos would go to its own temp folder too: it never looks at the owner's Videos folder.
     if let (true, Some(root), Some(paths)) = (args.smoke, temp_root, &paths) {
+        smoke_settings(root, paths);
+    }
+    // So do the guide pictures' videos: in the data folder's own `Videos`.
+    if let (Some(_), Some(root), Some(paths)) = (&args.guide, temp_root.or(args.data_dir.as_deref()), &paths) {
         smoke_settings(root, paths);
     }
 
@@ -738,8 +759,11 @@ fn start(
         smoke,
         fixtures,
         test_fault,
+        guide,
         ..
     } = args;
+    let pictures: Arc<Mutex<Option<String>>> = Arc::default();
+    let window_pictures = Arc::clone(&pictures);
     let (window_log, window_look) = (Arc::clone(&log), Arc::clone(look));
     let result = eframe::run_native(
         TITLE,
@@ -770,7 +794,7 @@ fn start(
             if fixtures {
                 app.status_note = Some(SAMPLE_NOTE.to_string());
             }
-            let real = !(smoke || fixtures);
+            let real = !(smoke || fixtures || guide.is_some());
             app.state
                 .set_upkeep(bf_app::seam::upkeep::for_this_start(&cc.egui_ctx, real, reports));
             // ffmpeg and the output folder, off the interface thread: each a line in start.txt when it answers.
@@ -784,6 +808,10 @@ fn start(
                 })
                 .ok();
             *window_look.lock().unwrap_or_else(PoisonError::into_inner) = handle;
+            if let Some(folder) = guide {
+                let _ = std::fs::create_dir_all(&folder);
+                return Ok(Box::new(bf_app::guide::Pictures::new(app, folder, window_pictures)));
+            }
             let app: Box<dyn eframe::App> = Box::new(Wrapped {
                 app: Box::new(app),
                 painted: 0,
@@ -793,7 +821,9 @@ fn start(
             Ok(app)
         }),
     );
+    let failed = pictures.lock().unwrap_or_else(PoisonError::into_inner).take();
     let code = match result {
+        Ok(()) if failed.is_some() => ExitCode::from(1),
         Ok(()) => ExitCode::SUCCESS,
         Err(err) => {
             log.add(format!("The window could not be opened: {err}"));

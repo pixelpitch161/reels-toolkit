@@ -136,7 +136,7 @@ fn settings_rows(ui: &mut Ui, vm: &ViewModel, out: &mut Vec<Action>) {
 /// from the top.
 fn row(ui: &mut Ui, label: &str, add: impl FnOnce(&mut Ui)) {
     let width = ui.available_width();
-    ui.horizontal_top(|ui| {
+    let drawn = ui.horizontal_top(|ui| {
         ui.spacing_mut().item_spacing.x = 0.0;
         ui.allocate_ui_with_layout(vec2(LABEL_W, CONTROL_H), Layout::left_to_right(Align::Center), |ui| {
             ui.set_min_size(vec2(LABEL_W, CONTROL_H));
@@ -153,6 +153,10 @@ fn row(ui: &mut Ui, label: &str, add: impl FnOnce(&mut Ui)) {
             add(ui);
         });
     });
+    // The guide's picture of the update row is cropped to it (`guide::UPDATES_ROW`).
+    if label == "Updates" {
+        crate::guide::mark(ui.ctx(), crate::guide::UPDATES_ROW, drawn.response.rect);
+    }
 }
 
 /// Body `TEXT` that wraps at the row's width, its first line level with the row's label.

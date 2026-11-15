@@ -50,7 +50,7 @@ const MONTHS: [&str; 12] = [
 
 /// Every fixture view model of the screens (Tasks 17 to 24, and Settings' update and removal states of milestone 6
 /// Task 13), with a name for the failure message.
-fn fixtures() -> Vec<(&'static str, ViewModel)> {
+pub(crate) fn fixtures() -> Vec<(&'static str, ViewModel)> {
     let mut all = screens();
     all.extend(settings::each_update_state());
     all.push(("settings asking to remove", settings::asking_removal()));
@@ -82,7 +82,7 @@ fn screens() -> Vec<(&'static str, ViewModel)> {
 }
 
 /// The shell showing `vm` as it is, settled.
-fn showing<'a>(vm: ViewModel) -> Harness<'a, BfApp> {
+pub(crate) fn showing<'a>(vm: ViewModel) -> Harness<'a, BfApp> {
     let mut harness = app_harness(REF, move |cc| BfApp::showing(cc, vm));
     harness.run();
     harness
@@ -105,7 +105,7 @@ fn is_caption_box(node: &egui_kittest::Node<'_>) -> bool {
 
 /// Every accessible name and every text on screen (a label keeps its text in its value), except what is typed in
 /// the caption box.
-fn texts(harness: &Harness<'_, BfApp>) -> Vec<String> {
+pub(crate) fn texts(harness: &Harness<'_, BfApp>) -> Vec<String> {
     harness
         .query_all_by(|_| true)
         .flat_map(|n| {
@@ -122,7 +122,7 @@ fn texts(harness: &Harness<'_, BfApp>) -> Vec<String> {
 }
 
 /// The words of the fighters' and themes' names as shown.
-fn name_words(vm: &ViewModel) -> Vec<String> {
+pub(crate) fn name_words(vm: &ViewModel) -> Vec<String> {
     let roster = vm.roster.as_ref().expect("every fixture has the roster");
     roster
         .fighters
@@ -155,7 +155,7 @@ fn is_note(word: &str) -> bool {
 /// The capitalised words of `text` that break the sentence-case rule. After its first word, a word may start with
 /// a capital only if it follows ". " or ": ", holds a digit, a backslash or an underscore, is a note or chord name,
 /// one of `NAMES`, a three-letter month, or a word of `names` (the fighters' and themes' names as shown).
-fn breaks(text: &str, names: &[String]) -> Vec<String> {
+pub(crate) fn breaks(text: &str, names: &[String]) -> Vec<String> {
     let words: Vec<&str> = text.split_whitespace().collect();
     let mut bad = Vec::new();
     for pair in words.windows(2) {
