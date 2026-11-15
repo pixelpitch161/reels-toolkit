@@ -229,6 +229,7 @@ pub fn roster() -> Roster {
         start: ["FLUTE".to_string(), "TROMBONE".to_string()],
         app_version: "0.1.0".to_string(),
         kit_pairs: Vec::new(),
+        episode_pairs: Vec::new(),
     }
 }
 

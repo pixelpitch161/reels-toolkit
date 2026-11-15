@@ -267,6 +267,8 @@ pub struct Roster {
     pub app_version: String,
     /// The series' kit configs: the pairs that start from their own fight file.
     pub kit_pairs: Vec<KitPair>,
+    /// The pairs that start from an older episode's config, one entry for each order (handicap 1.0 each).
+    pub episode_pairs: Vec<KitPair>,
 }
 
 impl Roster {
@@ -297,7 +299,8 @@ impl Roster {
     }
 
     /// How a new match-up of `fighters` starts, as the engine's starter makes it (`bf_content::starter`): a kit
-    /// pair from its kit config (the other order swaps the handicap and the parts); any other pair from the left
+    /// pair from its kit config (the other order swaps the handicap and the parts); a pair with an older episode's
+    /// config from that config ([`Roster::episode_pairs`], each order its own); any other pair from the left
     /// fighter's home config, in its theme when the pair can play it, else the right fighter's home theme, else the
     /// first theme offered (the big top), with an even handicap, the left fighter's home part and the right one's
     /// own unless that is the same (then the bass when its card can play bass and the left's part is not the bass,
@@ -329,6 +332,14 @@ impl Roster {
                 theme: kit.theme.clone(),
                 handicap: [kit.handicap[1], kit.handicap[0]],
                 roles: [kit.roles[1].clone(), kit.roles[0].clone()],
+            });
+        }
+        if let Some(ep) = self.episode_pairs.iter().find(|k| k.fighters == *fighters) {
+            return Some(PairStart {
+                chord_loop: index(&ep.theme, &ep.chord_loop),
+                theme: ep.theme.clone(),
+                handicap: ep.handicap,
+                roles: ep.roles.clone(),
             });
         }
         let entry = |name: &str| self.fighters.iter().find(|f| f.name == name);

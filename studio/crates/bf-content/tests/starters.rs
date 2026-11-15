@@ -182,9 +182,65 @@ fn every_fighter_has_the_kits_home_config() {
         10,
         "TURNTABLES, BARI SAX, SYNTH, BAGPIPES, VIOLA, UKULELE, VIOLIN, HARP, ACCORDION and DRUMS"
     );
-    for name in &older {
-        assert_eq!(home_config(name), home_config("FLUTE"), "{name}");
+    // the older fighters start from their own episode's config (its newest one whose theme is offered), else FLUTE's
+    let ported = bf_content::theme_names();
+    for (name, episodes) in [
+        ("BAGPIPES", &[("bagpipes_vs_accordion", "sea_shanty")][..]),
+        ("ACCORDION", &[("bagpipes_vs_accordion", "sea_shanty")]),
+        (
+            "BARI SAX",
+            &[
+                ("barisax_vs_bassclarinet", "industrial"),
+                ("bassoon_vs_barisax", "ska_punk"),
+            ],
+        ),
+        ("SYNTH", &[("turntables_vs_synth", "dark_breakbeat")]),
+        ("TURNTABLES", &[("turntables_vs_synth", "dark_breakbeat")]),
+        ("VIOLA", &[("viola_vs_violin", "orchestral_drill")]),
+        (
+            "VIOLIN",
+            &[
+                ("viola_vs_violin", "orchestral_drill"),
+                ("drums_vs_violin", "balkan_fire"),
+            ],
+        ),
+        ("UKULELE", &[("ukulele_vs_acoustic", "spaghetti_western")]),
+        ("HARP", &[("organ_vs_harp", "gothic_horror")]),
+        ("DRUMS", &[("drums_vs_violin", "balkan_fire")]),
+    ] {
+        assert!(older.contains(&name), "{name}");
+        let want = episodes
+            .iter()
+            .find(|(_, theme)| ported.contains(theme))
+            .map_or(home_config("FLUTE"), |(pair, _)| Some(*pair));
+        assert_eq!(home_config(name), want, "{name}");
     }
+    // a pair with an episode config starts from its music in both orders, with a neutral handicap
+    for (a, b, theme) in [
+        ("BAGPIPES", "ACCORDION", "sea_shanty"),
+        ("ORGAN", "HARP", "gothic_horror"),
+        ("TURNTABLES", "SYNTH", "dark_breakbeat"),
+        ("UKULELE", "ACOUSTIC", "spaghetti_western"),
+        ("VIOLA", "VIOLIN", "orchestral_drill"),
+        ("DRUMS", "VIOLIN", "balkan_fire"),
+        ("TUBA", "FLUTE", "villain_march"),
+        ("BASSOON", "BARI SAX", "ska_punk"),
+        ("BARI SAX", "BASS CLARINET", "industrial"),
+    ] {
+        if !ported.contains(&theme) {
+            continue;
+        }
+        for (l, r) in [(a, b), (b, a)] {
+            let ff = starter(l, r).unwrap_or_else(|e| panic!("{l} vs {r}: {e}"));
+            assert_eq!(ff.music.theme, theme, "{l} vs {r}");
+            assert_eq!(ff.handicap, [1.0, 1.0], "{l} vs {r}");
+        }
+    }
+    assert_eq!(starter("BAGPIPES", "ACCORDION").unwrap().tempo_bpm, 122.0);
+    assert_eq!(
+        starter("UKULELE", "ACOUSTIC").unwrap().music.roles["ACOUSTIC"],
+        "rhythm"
+    );
     let mut names: Vec<&str> = available()
         .into_iter()
         .filter(|n| !bf_content::fighters::OLDER.contains(n))
