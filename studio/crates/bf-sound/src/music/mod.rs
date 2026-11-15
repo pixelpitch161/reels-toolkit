@@ -37,6 +37,7 @@ mod events;
 mod fx;
 mod num;
 mod shape;
+pub mod signal;
 #[cfg(test)]
 pub(crate) mod testkit;
 #[cfg(test)]
