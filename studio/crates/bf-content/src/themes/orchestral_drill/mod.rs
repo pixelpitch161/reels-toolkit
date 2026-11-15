@@ -9,6 +9,7 @@
 //! cellos on the chord tones from C2 to G3, the basses an octave over the 808).
 
 mod classic;
+pub mod layers;
 
 use bf_core::dmath::{self, PI};
 use bf_core::harmony::{HarmonyError, parse_chord};

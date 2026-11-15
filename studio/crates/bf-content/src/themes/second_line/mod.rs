@@ -19,6 +19,7 @@
 //! context through [`Theme::voices`], never the TUBA's part.
 
 mod classic;
+pub mod layers;
 
 use bf_core::dmath::{self, PI};
 use bf_core::harmony::{Harmony, HarmonyError};
