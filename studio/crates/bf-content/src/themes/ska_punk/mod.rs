@@ -51,17 +51,31 @@ pub static CARD: ThemeCard = ThemeCard {
     bars: (24, 43),
 };
 
-/// The episode that played the ska punk (#39 v4; `tools/studio_export/older/configs/bassoon_vs_barisax`).
-pub static PRESETS: [Preset; 1] = [Preset {
-    config: "ballfight_bassoon_vs_barisax",
-    fighters: ["BASSOON", "BARI SAX"],
-    bpm: 170.0,
-    key: "E",
-    scale: "minor",
-    intro: ["Em", "B"],
-    chord_loop: &LOOP,
-    tail: &["B"],
-}];
+/// The episode that played the ska punk (#39 v4; `tools/studio_export/older/configs/bassoon_vs_barisax`). The first
+/// (the default) is at 140 BPM, where the seed search finds fair fights readily; the second is the episode's own 170
+/// BPM, where fair seeds are rarer (7 in 4,000 balanced against 10 at 140).
+pub static PRESETS: [Preset; 2] = [
+    Preset {
+        config: "ballfight_bassoon_vs_barisax",
+        fighters: ["BASSOON", "BARI SAX"],
+        bpm: 140.0,
+        key: "E",
+        scale: "minor",
+        intro: ["Em", "B"],
+        chord_loop: &LOOP,
+        tail: &["B"],
+    },
+    Preset {
+        config: "ballfight_bassoon_vs_barisax",
+        fighters: ["BASSOON", "BARI SAX"],
+        bpm: 170.0,
+        key: "E",
+        scale: "minor",
+        intro: ["Em", "B"],
+        chord_loop: &LOOP,
+        tail: &["B"],
+    },
+];
 
 /// Python's `int(x)` for a length (never below 0).
 fn length(x: f64) -> usize {
