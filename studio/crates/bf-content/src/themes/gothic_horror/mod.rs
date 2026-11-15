@@ -12,6 +12,7 @@
 //! up; [`voicing`] and [`pedal`] are that rule, for every chord the harmony parses.
 
 mod classic;
+pub mod layers;
 
 use bf_core::dmath::{self, PI};
 use bf_core::harmony::{Harmony, HarmonyError};

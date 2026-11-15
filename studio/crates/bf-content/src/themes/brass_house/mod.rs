@@ -13,6 +13,7 @@
 //! chord's tones from F4 up (four), [`stab_voicing`] its tones from C5 up (three).
 
 mod classic;
+pub mod layers;
 
 use bf_core::dmath::{self, PI};
 use bf_core::harmony::{Harmony, HarmonyError};

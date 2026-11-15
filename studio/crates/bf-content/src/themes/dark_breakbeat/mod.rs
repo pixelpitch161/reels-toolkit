@@ -8,6 +8,7 @@
 //! octave, the chord's tones in the pad's).
 
 mod classic;
+pub mod layers;
 
 use bf_core::dmath::{self, PI};
 use bf_core::harmony::{Harmony, HarmonyError, parse_chord};
