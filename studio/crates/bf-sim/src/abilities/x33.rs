@@ -1,6 +1,6 @@
 //! Ability kinds `whip` (ACOUSTIC's FINGERPICK), `sweep` (ACOUSTIC's BIG STRUM): `fight.py` `trigger` 2872 to 2873;
 //! `ab_x33` 566 to 577 and the whips and sweeps of `surf_rake_step` (630 to 670), which `kinds::rake::surf_rake_step`
-//! calls. The third kind of the branch, `spout` (578 to 583, 671 to 699: UKULELE's UKE-NADO), is a stub until its port.
+//! calls. The third kind of the branch, `spout` (578 to 583, 671 to 699: UKULELE's UKE-NADO), chases the enemy.
 //!
 //! Python keeps both on the fight (`self.whips`, `self.sweeps`); here they are [`State`], `Fight::x33`. No copier
 //! runs this code: `whip` and `sweep` are not in IDENTITY CRISIS's `COPYABLE` (2802), and the copy of the rake as a
@@ -78,14 +78,52 @@ pub struct Sweep {
     pub hit: bool,
 }
 
-/// One UKE-NADO (`self.spouts`' dict, ability kind `spout`): its fields are filled in by UKULELE's port (milestone 4).
-#[derive(Clone, Debug, Default, PartialEq)]
-pub struct Spout {}
+/// One UKE-NADO (`self.spouts`' dict, ability kind `spout`).
+#[derive(Clone, Debug, PartialEq)]
+pub struct Spout {
+    /// Who sent it.
+    pub owner: usize,
+    /// Where it is.
+    pub p: V2,
+    /// Where it heads (radians).
+    pub ang: f64,
+    /// When it started.
+    pub t0: f64,
+    /// Seconds it lives.
+    pub life: f64,
+    /// Units a second it moves.
+    pub speed: f64,
+    /// Radians a second it turns at most.
+    pub turn: f64,
+    /// Its radius.
+    pub radius: f64,
+    /// Seconds between two hits.
+    pub tick: f64,
+    /// Damage of a hit.
+    pub dmg: f64,
+    /// Hits at most.
+    pub max_ticks: f64,
+    /// Knockback of a hit.
+    pub knock: f64,
+    /// Hits so far.
+    pub ticks: i64,
+    /// When it last hit.
+    pub last: f64,
+    /// Steps so far.
+    pub n: i64,
+}
 
 /// One point of a waterspout's path (`self.x33_log`'s tuple `(round(t, 5), owner, x, y)`, written every 4th step of
-/// a spout, 690 to 691): its fields are filled in by UKULELE's port (milestone 4).
+/// a spout, 690 to 691).
 #[derive(Clone, Debug, Default, PartialEq)]
-pub struct SpoutPoint {}
+pub struct SpoutPoint {
+    /// `round(t, 5)`.
+    pub t: f64,
+    /// Who sent it.
+    pub owner: usize,
+    /// Where it was.
+    pub p: V2,
+}
 
 /// This ability's per-fight state (`Fight::x33`).
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -94,10 +132,10 @@ pub struct State {
     pub whips: Vec<Whip>,
     /// `self.sweeps`.
     pub sweeps: Vec<Sweep>,
-    /// `self.spouts` (UKULELE's UKE-NADO, milestone 4: empty until its port).
+    /// `self.spouts` (UKULELE's UKE-NADO).
     pub spouts: Vec<Spout>,
     /// `self.x33_log`: the waterspouts' path, which `run()` returns as `X33_SPOUT` when it holds anything (6220 to
-    /// 6221). Empty until UKULELE's port.
+    /// 6221).
     pub x33_log: Vec<SpoutPoint>,
 }
 
@@ -151,10 +189,35 @@ pub fn start(f: &mut Fight, k: usize, ab: &AbilityCfg, kind: &str) {
     }
 }
 
-/// `ab_x33`'s `spout` branch (578 to 583): UKE-NADO, a waterspout that sweeps the ring after the enemy. A stub until
-/// UKULELE's port (milestone 4): no fighter has the kind before `roster::abilities::spout::PORTED`.
-pub fn start_spout(f: &mut Fight, _k: usize, _ab: &AbilityCfg) {
-    f.socket("stub:abilities::x33::start_spout");
+/// `ab_x33`'s `spout` branch (578 to 583): UKE-NADO, a waterspout 1.2 R in front of the ball toward the enemy that
+/// sweeps the ring after it. Event `spout`: x, y, the aim.
+pub fn start_spout(f: &mut Fight, k: usize, ab: &AbilityCfg) {
+    let (bp, op) = (f.balls[k].p, f.balls[1 - k].p);
+    let d = geom::sub(op, bp);
+    let aim = dmath::atan2(d[1], d[0]);
+    let p = geom::add(bp, geom::scale([dmath::cos(aim), dmath::sin(aim)], f.rules.r * 1.2));
+    f.x33.spouts.push(Spout {
+        owner: k,
+        p,
+        ang: aim,
+        t0: f.t,
+        life: param(ab, "life"),
+        speed: param(ab, "speed"),
+        turn: param(ab, "turn"),
+        radius: param(ab, "radius"),
+        tick: param(ab, "tick"),
+        dmg: param(ab, "dmg"),
+        max_ticks: param(ab, "max_ticks"),
+        knock: param(ab, "knock"),
+        ticks: 0,
+        last: -9.0,
+        n: 0,
+    });
+    f.ev(
+        "spout",
+        k as i64,
+        vec![Value::Float(p[0]), Value::Float(p[1]), Value::Float(aim)],
+    );
 }
 
 /// Whether `self.whips`, `self.sweeps` or `self.spouts` holds anything: the lists of the test before
@@ -168,17 +231,83 @@ pub fn spouts_live(f: &Fight) -> bool {
     !f.x33.spouts.is_empty()
 }
 
-/// The spouts of `surf_rake_step(dt)` (671 to 699), after the sweeps; `kinds::rake::surf_rake_step` calls it. A stub
-/// until UKULELE's port.
-pub fn spouts_step(f: &mut Fight, _dt: f64) {
-    f.socket("stub:abilities::x33::spouts_step");
+/// The spouts of `surf_rake_step(dt)` (671 to 699), after the sweeps; `kinds::rake::surf_rake_step` calls it. Each
+/// spout turns toward the enemy (at most `turn * dt`), moves, bounces off the ropes, logs its place every 4th step,
+/// and within `radius + R` of the enemy hits it every `tick` s (`hit` with `e[7] = 'spout'`, `e[8]` the tick; a knock
+/// spun round it); it ends after its life or its last tick (event `spout_end`: x, y).
+pub fn spouts_step(f: &mut Fight, dt: f64) {
+    let (r, a_) = (f.rules.r, f.rules.a);
+    let mut done = vec![false; f.x33.spouts.len()];
+    for (i, gone) in done.iter_mut().enumerate() {
+        let o = 1 - f.x33.spouts[i].owner;
+        let op = f.balls[o].p;
+        let t = f.t;
+        let sp = &mut f.x33.spouts[i];
+        let d = geom::sub(op, sp.p);
+        let want = dmath::atan2(d[1], d[0]);
+        sp.ang += geom::np_clip(geom::wrap(want - sp.ang), -sp.turn * dt, sp.turn * dt);
+        sp.p = geom::add(
+            sp.p,
+            geom::scale([dmath::cos(sp.ang), dmath::sin(sp.ang)], sp.speed * dt),
+        );
+        let lim = a_ - sp.radius;
+        for ax in 0..2 {
+            if sp.p[ax].abs() > lim {
+                sp.p[ax] = lim.copysign(sp.p[ax]) * 2.0 - sp.p[ax];
+                let mut v = [dmath::cos(sp.ang), dmath::sin(sp.ang)];
+                v[ax] = -v[ax];
+                sp.ang = dmath::atan2(v[1], v[0]);
+            }
+        }
+        sp.n += 1;
+        let sp = sp.clone();
+        if sp.n % 4 == 0 {
+            f.x33.x33_log.push(SpoutPoint {
+                t: py::round_nd(t, 5),
+                owner: sp.owner,
+                p: sp.p,
+            });
+        }
+        let dist = geom::hypot(d);
+        if dist < sp.radius + r && t - sp.last >= sp.tick - 1e-9 && (sp.ticks as f64) < sp.max_ticks {
+            let ticks = sp.ticks + 1;
+            f.x33.spouts[i].last = t;
+            f.x33.spouts[i].ticks = ticks;
+            let rel = geom::div(d, py::py_max(dist, 1e-9));
+            let tang = [-rel[1], rel[0]];
+            let h = geom::sub(op, geom::scale(rel, r));
+            f.damage(sp.owner, o, sp.dmg, "spout", h, ticks);
+            f.knock(o, geom::add(geom::scale(tang, 0.9), geom::scale(rel, 0.4)), sp.knock);
+        }
+        let sp = &f.x33.spouts[i];
+        if f.t - sp.t0 >= sp.life || (sp.ticks as f64) >= sp.max_ticks {
+            *gone = true;
+            let (owner, p) = (sp.owner, sp.p);
+            f.ev("spout_end", owner as i64, vec![Value::Float(p[0]), Value::Float(p[1])]);
+        }
+    }
+    let mut it = done.into_iter();
+    f.x33.spouts.retain(|_| !it.next().unwrap_or(false));
 }
 
 /// `out['X33_SPOUT'] = self.x33_log` (`run()` 6220 to 6221): the waterspouts' path as the recording's `X33_SPOUT`,
-/// called when the log holds anything. A stub until UKULELE's port (`None`: no key).
-pub(crate) fn spout_log(f: &Fight) -> Option<bf_core::recording::Array> {
-    f.socket("stub:abilities::x33::spout_log");
-    None
+/// called when the log holds anything. A recording's arrays are per frame, so the log is a ragged list of `frames`
+/// rows: row `i` holds the points `[t, owner, x, y]` logged after frame `i - 1` up to frame `i` (the last row takes
+/// the rest). `None` for a fight that did not record.
+pub(crate) fn spout_log(f: &Fight, frames: usize) -> Option<bf_core::recording::Array> {
+    if frames == 0 {
+        return None;
+    }
+    let fps = f64::from(f.rules.fps);
+    let mut rows = vec![Vec::new(); frames];
+    for q in &f.x33.x33_log {
+        let j = ((q.t - f.rules.t_fight) * fps - 1e-6).ceil().max(0.0) as usize;
+        let row = [q.t, q.owner as f64, q.p[0], q.p[1]].map(Value::Float);
+        rows[j.min(frames - 1)].push(Value::List(row.to_vec()));
+    }
+    Some(bf_core::recording::Array::Nested(Value::List(
+        rows.into_iter().map(Value::List).collect(),
+    )))
 }
 
 /// The whips and sweeps of `surf_rake_step` (630 to 670), after its strokes.

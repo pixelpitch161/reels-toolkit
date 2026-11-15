@@ -1,8 +1,6 @@
-//! UKULELE: one of the older fighters (milestone 4), ported in its Task 13 against its reference kit module
-//! (`tools/studio_export/older/fighters/ukulele.py`, the reference kit module moved from
-//! `projects/ballfight_ukulele_vs_acoustic/` (#33 v3)). Until then every entry point here says it has none: the
-//! picture draws UKULELE as the bare ball, the score has no part for it, the app has no card for it, and the app
-//! does not offer it (the registry's `PORTED`, which only a register task changes).
+//! UKULELE: one of the older fighters (milestone 4), ported quickly (ruling M4-R16) from
+//! its episode `projects/ballfight_ukulele_vs_acoustic/` (#33 v3), close enough for the eye and ear. The app offers
+//! it once a register task adds it to the registry's `PORTED`.
 //!
 //! The port fills this folder only: `look.rs`, `sound.rs`, `voice.rs`, `card.rs`, `state.rs` (what the look and the
 //! part both derive from the recording) and the entry points below. Nothing outside it names UKULELE's types, so
@@ -26,23 +24,23 @@ pub use card::{CARD, card};
 
 /// `fighters.look('UKULELE', P, k)`: its look, or `None` while it is not ported (the bare ball is drawn then).
 pub fn look() -> Option<Box<dyn Look>> {
-    None
+    Some(Box::new(look::UkuleleLook::default()))
 }
 
 /// Its instrument voice (its `pp_bridge` entry, or its episode's own synth), or `None` while it is not ported.
 pub fn voice() -> Option<Arc<dyn Voice>> {
-    None
+    Some(Arc::new(voice::UkuleleVoice))
 }
 
 /// `fighters.sound('UKULELE', M, k)`: its part on side `k` of the fight `ff`, or `None` while it is not ported.
 pub fn sound(k: usize, ff: &FightFile) -> Option<Box<dyn Sound>> {
-    let _ = (k, ff);
-    None
+    let _ = ff;
+    Some(Box::new(sound::UkuleleSound::new(k)))
 }
 
 /// Its model (`data/models/UKULELE.json`, written by the export tool's `models` for one roster name), compiled in:
 /// `Some(include_str!("../../../data/models/UKULELE.json"))` once ported, `None` until then.
-pub const MESH: Option<&str> = None;
+pub const MESH: Option<&str> = Some(include_str!("../../../data/models/UKULELE.json"));
 
 /// Whether its music settings (key, chord loop, its line) feed its fight: false for every older fighter.
 pub const MUSIC_FEEDS_FIGHT: bool = false;

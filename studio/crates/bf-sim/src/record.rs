@@ -391,8 +391,12 @@ impl Frames {
 pub(crate) fn recording(fight: Fight, frames: Option<Frames>) -> Recording {
     let mut arrays = frames.map(Frames::into_arrays).unwrap_or_default();
     // fight.py 6220 to 6221: `if self.x33_log: out['X33_SPOUT'] = self.x33_log` (UKULELE's UKE-NADO, milestone 4)
+    let frames_n = match arrays.get("HP") {
+        Some(Array::F64 { shape, .. } | Array::I64 { shape, .. }) => shape.first().copied().unwrap_or(0),
+        _ => 0,
+    };
     if !fight.x33.x33_log.is_empty()
-        && let Some(log) = x33::spout_log(&fight)
+        && let Some(log) = x33::spout_log(&fight, frames_n)
     {
         arrays.insert("X33_SPOUT".to_string(), log);
     }
