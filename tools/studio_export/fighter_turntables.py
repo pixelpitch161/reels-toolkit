@@ -156,10 +156,10 @@ SHARED_BUSES = ['fx', 'bass']
 FRAMES = [110, 375, 385, 397, 429, 510, 645, 647, 659, 753, 915, 1185, 1235, 1247, 1260, 1271, 1320, 1401, 1452, 1455,
           1470, 1492, 1537, 1582]
 
-# Template F' (plan m4 Review Focus 1, Table O4: a rewinding ball is intangible to every kind): TURNTABLES against each
-# of the 20 kit fighters, three seeds each side (FLUTE's are the template's own); EUPHONIUM's are the copy sweep
-KIT = ('PIANO', 'TUBA', 'TROMBONE', 'HORN', 'ORGAN', 'ACOUSTIC', 'TRUMPET', 'CLARINET', 'OBOE', 'BASS CLARINET',
-       'EUPHONIUM', 'BASSOON', 'ELECTRIC', 'CELLO', 'CONTRABASS', 'ALTO SAX', 'TENOR SAX', 'SOUSAPHONE', 'BASS DRUM')
+# Template F' (plan m4 Review Focus 1, Table O4: a rewinding ball is intangible to every kind): TURNTABLES against a
+# few kit fighters, three seeds each side (FLUTE's are the template's own); EUPHONIUM's are the copy sweep. The whole
+# 19-fighter sweep made the folder too big for its budget; ruling M4-R16 (the eye test) keeps a few
+KIT = ('EUPHONIUM', 'PIANO', 'ORGAN', 'BASS DRUM')
 VERSUS = [dict(name=f"kit_{o.lower().replace(' ', '_')}{'_swapped' if sw else ''}", seeds=(1, 2, 3), opponent=o,
                swapped=sw) for o in KIT for sw in (False, True)]
 
