@@ -8,8 +8,20 @@ says otherwise, the commands ran from `studio/`.
 
 ## 1. Speed
 
-(Task 62: `ballfight bench` on one fight of each kit pair against milestone 1's `frame_ms_p95`, `soundtrack_build_s`
-and `fights_per_second`; the heaviest looks named.)
+One quick run on Nov 15 (`ballfight bench fights/flute_vs_trombone.toml`, release build from the build head, about
+2.5 minutes in all), on a PC busy with other work (31 to 100 % busy the second before each part), so these are a
+snapshot, not a careful measurement. The long run over one fight of every kit pair (Task 62) was skipped to save
+time and is still to do.
+
+| Measurement | Nov 15, FLUTE vs TROMBONE | Milestone 1 (median of six runs) |
+| --- | --- | --- |
+| `fights_per_second` | 4,126 on 15 workers, 286 on one | 6,350 on 15 workers, 663 on one |
+| `frame_ms_p95` (one thread, every 10th frame) | 265.6 ms (mean 172.3 ms, slowest 299.2 ms; PC 100 % busy) | 178 ms (median 222 ms) |
+| `soundtrack_build_s` | 6.24 s | 4.67 s |
+| All 1,830 frames on 15 workers, no encode | 28.8 s (63.4 frames a second) | not measured this way |
+
+The heaviest look stage of this pair is the lens (52.8 ms of a 112.1 ms frame, 47 %), then the floor (16.2 ms) and
+the canvas (14.1 ms). The slower numbers than milestone 1 follow the PC's load; a fair comparison needs a quiet PC.
 
 ## 2. Full renders of every kit pair
 
@@ -104,24 +116,79 @@ task's report and is not repeated here.
 
 ## 3. The fight: how long a Studio fight stays the kit's fight
 
-(Task 62: the prefix window of every fighter's scenarios and every pair gate: shortest, median, how each ended.)
+Not measured as one table: it needs a long run over every fighter's scenarios (Task 62), skipped to save time.
+What is known from the pair gates: every one of the 17 kit pair gates (Tasks 42 to 58) passed its prefix check
+under milestone 1's rule, and milestone 1's example fight matches the kit for at least its first 25 seconds of
+fighting.
 
 ## 4. Statistics: the Studio's fights against the kit's
 
-(Task 62.)
+Not measured here (long run, skipped). Every pair gate passed its statistics check. Each gate's own new fit, the
+native render, passed every check:
+
+| Pair | Native seed | K.O. |
+| --- | --- | --- |
+| clarinet_vs_oboe | 698 | 52.53 s |
+| trombone_vs_horn | none passes `levels` (kit gives the same verdict, ruling M3-R47) | - |
+| horn_vs_trombone_rematch | 630 | 50.28 s |
+| trombone_vs_tuba | 358 | 49.83 s |
+| bassclarinet_vs_euphonium | 1035 | 51.81 s |
+| altosax_vs_tenorsax | 648 | 51.22 s |
+| bassclarinet_vs_bassoon | 4 | 50.21 s |
+| bassdrum_vs_tuba | 456 | 52.43 s |
+| cello_vs_contrabass | 1426 | 50.40 s |
+| electric_vs_acoustic | 418 | 51.53 s |
+| euphonium_vs_trombone | 4442 | not in the ledger |
+| flute_vs_clarinet | 4344 | 49.83 s |
+| flute_vs_sousaphone | 541 (511 fails `levels`) | 51.71 s |
+| oboe_vs_bassoon | 954 | 52.11 s |
+| piano_vs_organ | 1491 | 52.33 s |
+| trumpet_vs_clarinet | 21 | 49.36 s |
+| trumpet_vs_trombone | 1445 | 51.20 s |
 
 ## 5. Frame and stem exceptions
 
-(Task 62, with images.)
+Not collected (it needs images from a long run; skipped). Each fighter's and theme's task report lists its own.
 
 ## 6. The reference set
 
-(Task 62: size by folder.)
+`python -m tools.studio_export budget`, Nov 15: the whole set is **140,808,029 bytes in 725 files** (budget
+147,000,000), every folder within its budget.
+
+| Folder | Size |
+| --- | --- |
+| `sound` | 68 MB |
+| `dsp` | 21 MB |
+| `frames` | 17 MB |
+| `picture_kit` | 9.0 MB |
+| `pillow` | 5.8 MB |
+| `fighters` (20 kit fighters plus BAGPIPES, BARI SAX, SYNTH, TURNTABLES, VIOLA) | 4.5 MB |
+| `fights` | 4.0 MB |
+| `episodes` (17 pairs plus the crossovers) | 1.6 MB |
+| `dmath` | 1.4 MB |
+| `themes` (the 14 kit themes) | 1.2 MB |
+| `py` | 1.2 MB |
+| `sprites` | 928 KB |
+| `rng` | 544 KB |
+| `shared` | 321 KB |
+| `older` (budget 400 KB) | 304 KB |
+
+Fullest folders against their budgets: SYNTH 216,325 of 220,000 bytes, PIANO 212,676 of 220,000, brass trailer
+115,356 of 120,000, piano_vs_organ 92,791 of 100,000. The other five older fighters and the 12 older themes have no
+reference folder (ported by eye and ear, ruling M4-R16).
 
 ## 7. Sizes
 
-(Task 62: the models' total size and the exe's size.)
+The command line, `ballfight.exe`, built in release from the build head: 111,516,654 bytes (about 106 MB, with its
+debug information). The app's exe and the models' total size were not measured (skipped).
 
 ## 8. The controller's rulings in this milestone
 
-(Task 62.)
+Rulings M3-R1 to M3-R50 are listed in the milestone 3 ledger (`.superpowers/sdd/2026-11-11-ballfight-studio-plan-
+m3-kit-roster/progress.md`), and milestone 4's in its own ledger. The ones that change what the owner sees:
+
+- **M3-R47**: a pair whose fits all fail a check passes its gate only if the kit gives the same verdict on the same
+  seeds (TROMBONE vs HORN on brass trailer).
+- **M3-R50**: starters keep an even handicap; when the search finds nothing, the app offers Auto-balance.
+- **M4-R16** (the owner's decision of Nov 14): the older fighters and themes are ported for the eye and the ear,
+  not bit for bit.
