@@ -108,26 +108,26 @@ impl ContraLook {
     }
 
     /// The blast as a wedge of sound with wavefronts rolling out.
-    fn draw_horn(&self, arr: &mut Img<f32>, cam: &Cam, c: [f64; 2], h: Horn, fade: f64, t: f64, col: V3) {
+    fn draw_horn(arr: &mut Img<f32>, cam: &Cam, c: [f64; 2], h: Horn, fade: f64, t: f64, col: V3) {
         let y = R * 0.7;
         let (r0, r1) = (R * 0.9, 2.0 * R + h.reach);
         // the swell: it opens over the first 80 ms
         let open = py_min(1.0, (t - h.t0) / 0.08);
         let r1 = r0 + (r1 - r0) * open;
         let body = cam.wp(&wedge(c, h.aim, h.half, r0, r1, y));
-        ring::layer_blend(arr, &[body], toward_white(col, 0.35), 0.20 * fade, None);
+        ring::layer_blend(arr, &[body], toward_white(col, 0.25), 0.42 * fade, None);
         let core = cam.wp(&wedge(c, h.aim, h.half * 0.45, r0, r1, y));
-        ring::layer_blend(arr, &[core], toward_white(col, 0.6), 0.16 * fade, None);
+        ring::layer_blend(arr, &[core], toward_white(col, 0.55), 0.30 * fade, None);
         // three wavefronts, bowed, rolling out at 5 units a second
         let span = (r1 - r0).max(1e-3);
         for j in 0..3 {
             let r = r0 + ((t - h.t0) * 5.0 + span * j as f64 / 3.0) % span;
-            let band = cam.wp(&wedge(c, h.aim, h.half * 0.95, r, r + 0.07, y));
+            let band = cam.wp(&wedge(c, h.aim, h.half * 0.95, r, r + 0.10, y));
             ring::layer_blend(
                 arr,
                 &[band],
                 toward_white(col, 0.75),
-                0.42 * fade * (1.0 - (r - r0) / span),
+                0.85 * fade * (1.0 - 0.6 * (r - r0) / span),
                 None,
             );
         }
@@ -141,10 +141,10 @@ impl ContraLook {
             let q = [c[0] + d * dmath::cos(a), c[1] + d * dmath::sin(a)];
             let r = 0.32 + 0.06 * ((j % 3) as f64) + 0.03 * dmath::sin(1.3 * t + j as f64);
             let blob = cam.wp(&circle(q, r, R * (0.6 + 0.15 * (j % 2) as f64), 14));
-            ring::layer_blend(arr, &[blob], FOG, 0.16 * k_, None);
+            ring::layer_blend(arr, &[blob], FOG, 0.40 * k_, None);
         }
         let veil = cam.wp(&circle(c, R * 1.25, R, 18));
-        ring::layer_blend(arr, &[veil], FOG, 0.30 * k_, None);
+        ring::layer_blend(arr, &[veil], FOG, 0.40 * k_, None);
     }
 
     /// MOTORBOAT: puffs where the ball was a moment ago, popping on the 16ths.
@@ -258,7 +258,7 @@ impl Look for ContraLook {
             self.draw_wake(p, f, arr);
         }
         if let Some((h, fade)) = self.horn_at(t).filter(|_| t <= p.t_ko) {
-            self.draw_horn(arr, cam, st.p, h, fade, t, col);
+            Self::draw_horn(arr, cam, st.p, h, fade, t, col);
         }
         for b in &self.beams {
             let u = t - b.t;

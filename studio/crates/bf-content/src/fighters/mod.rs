@@ -73,6 +73,15 @@ pub const OLDER: [&str; 10] = [
 /// them.
 pub const STUDIO: [&str; 1] = ["CONTRABASS CLARINET"];
 
+/// The two lines a fighter's name takes on the VS card when one line would be too small (the kit's `TITLE_LINES`,
+/// which its configs set per episode); `None` for a name that fits on one.
+pub fn title_lines(fighter: &str) -> Option<(&'static str, &'static str)> {
+    match fighter {
+        "CONTRABASS CLARINET" => Some(("CONTRABASS", "CLARINET")),
+        _ => None,
+    }
+}
+
 /// What one fighter's folder offers: its `mod.rs`'s entry points.
 #[derive(Clone, Copy)]
 pub struct Entry {

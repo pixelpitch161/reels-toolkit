@@ -2,8 +2,9 @@
 
 Writes studio/crates/bf-content/data/models/CONTRABASS CLARINET.json in the shape the export's `models` writes
 (format 1, faces with P, n, rgb, spec, emit, two, gid; y up; centred on its bounding box and scaled to fit a unit
-sphere). The body is the folded metal "paperclip": four silver runs joined by U-bends, a black mouthpiece on a crook
-at the top left, an up-turned bell at the top right, gold key pads on the front of the runs and a thin endpin.
+sphere). The body is the folded metal "paperclip" as photos of the Leblanc 340 show it: three tall silver runs
+packed side by side with a rounded loop on top, the crook and black mouthpiece out to the left, rods and pads down
+the front, a small bell turned forward at the bottom and a long endpin.
 
 Run from the repo root: python -m tools.studio_export.new_models.contrabass_clarinet (plain Python, no numpy).
 """
@@ -45,15 +46,14 @@ def arc(cx, cy, r, a0, a1, n):
 
 
 def path():
-    """the body's centre line, mouthpiece end first: four runs and three U-bends in the x-y plane"""
-    xs, top, bot, half = (-0.24, -0.08, 0.08, 0.24), 0.56, -0.58, 0.08
-    pts = [[xs[0], top, 0.0], [xs[0], bot, 0.0]]
+    """the body's centre line, crook end first: three tall runs packed side by side, joined by a U-bend at the
+    bottom and the rounded loop at the top (Leblanc's "paperclip", from photos of the Leblanc 340)"""
+    xs, top, bot, half = (-0.10, 0.0, 0.10), 0.62, -0.62, 0.05
+    pts = [[xs[0], 0.50, 0.0], [xs[0], bot, 0.0]]
     pts += arc(xs[0] + half, bot, half, math.pi, 2 * math.pi, 6)[1:]
     pts += [[xs[1], top, 0.0]]
     pts += arc(xs[1] + half, top, half, math.pi, 0.0, 6)[1:]
-    pts += [[xs[2], bot, 0.0]]
-    pts += arc(xs[2] + half, bot, half, math.pi, 2 * math.pi, 6)[1:]
-    pts += [[xs[3], 0.46, 0.0]]
+    pts += [[xs[2], -0.56, 0.0]]
     return pts
 
 
@@ -97,29 +97,40 @@ def disc(faces, c, r, n, col, spec, sides=SIDES):
 
 
 def build():
+    """from reference photos (Jay C. Easton's clarinet family gallery; fellerich.lu's Leblanc 340): a tall narrow silver
+    column with a rounded loop on top, the crook leaving the first run high on the left with the black mouthpiece
+    angled down, a forest of rods and pads down the front, the small bell turned forward at the bottom, and a long
+    thin endpin to the floor"""
     faces = []
     body = path()
-    tube(faces, body, [0.055] * len(body), SILVER, 0.95)
-    # the bell: up from the last run's top, flaring
-    bell = [[0.24, 0.46 + 0.05 * j, 0.0] for j in range(8)]
-    tube(faces, bell, [0.055 + 0.11 * (j / 7) ** 2.2 for j in range(8)], SILVER_HI, 0.95)
-    # the bell's mouth: a dark disc just inside the rim, seen from above and the front
-    disc(faces, [0.24, 0.80, 0.0], 0.15, [0.0, 1.0, 0.0], DARK, 0.0)
-    # the crook and the mouthpiece, up and out from the first run
-    crook = [[-0.24, 0.56, 0.0], [-0.26, 0.64, 0.0], [-0.30, 0.70, 0.0], [-0.34, 0.74, 0.0]]
-    tube(faces, crook, [0.045] * len(crook), SILVER, 0.9)
-    mouth = [[-0.34, 0.74, 0.0], [-0.37, 0.80, 0.0], [-0.39, 0.86, 0.0]]
-    tube(faces, mouth, [0.04, 0.035, 0.02], DARK, 0.45)
-    # gold key pads on the front of the runs (z+), and their mirror on the back
-    for x in (-0.24, -0.08, 0.08, 0.24):
-        for j, y in enumerate((-0.38, -0.18, 0.02, 0.22, 0.40)):
-            if x == 0.24 and y > 0.4:
-                continue
-            for z in (1.0, -1.0):
-                disc(faces, [x, y + 0.03 * (j % 2), 0.058 * z], 0.032, [0.0, 0.0, z], GOLD, 0.2, sides=6)
-    # the endpin: a thin dark rod under the lowest bend
-    pin = [[0.0, -0.66, 0.0], [0.0, -0.86, 0.0]]
-    tube(faces, pin, [0.014, 0.008], PIN, 0.0)
+    tube(faces, body, [0.048] * len(body), SILVER, 0.95)
+    # the bell: off the bottom of the last run, curling forward (z+) and up, flaring
+    bell = [[0.10, -0.56, 0.0], [0.10, -0.62, 0.02], [0.10, -0.65, 0.07], [0.10, -0.63, 0.12],
+            [0.10, -0.58, 0.16], [0.10, -0.52, 0.18]]
+    tube(faces, bell, [0.048, 0.05, 0.055, 0.065, 0.085, 0.11], SILVER_HI, 0.95)
+    disc(faces, [0.10, -0.515, 0.182], 0.09, [0.0, 0.6, 0.8], DARK, 0.0)
+    # the crook: out to the left from high on the first run, then the black mouthpiece angled down and out
+    crook = [[-0.10, 0.50, 0.0], [-0.12, 0.53, 0.0], [-0.20, 0.53, 0.0], [-0.27, 0.50, 0.0]]
+    tube(faces, crook, [0.026] * len(crook), SILVER, 0.9)
+    mouth = [[-0.27, 0.50, 0.0], [-0.31, 0.46, 0.0], [-0.34, 0.42, 0.0]]
+    tube(faces, mouth, [0.024, 0.02, 0.012], DARK, 0.45)
+    # the key work: long rods down the front between the runs, and pads on every run
+    for x in (-0.05, 0.05):
+        rod = [[x, 0.52, 0.06], [x, -0.52, 0.06]]
+        tube(faces, rod, [0.007, 0.007], SILVER_HI, 0.9)
+    for i, x in enumerate((-0.10, 0.0, 0.10)):
+        for j in range(9):
+            y = -0.48 + 0.12 * j + 0.04 * i
+            disc(faces, [x, y, 0.05], 0.03, [0.0, 0.0, 1.0], GOLD, 0.2, sides=6)
+            if j % 2 == 0:
+                disc(faces, [x, y + 0.05, -0.05], 0.026, [0.0, 0.0, -1.0], GOLD, 0.2, sides=6)
+    # the side keys on the outer runs
+    for x, nx in ((-0.10, -1.0), (0.10, 1.0)):
+        for y in (-0.30, -0.05, 0.20):
+            disc(faces, [x + 0.049 * nx, y, 0.0], 0.022, [nx, 0.0, 0.0], GOLD, 0.2, sides=6)
+    # the endpin: a long thin rod from the bottom bend to the floor
+    pin = [[-0.04, -0.68, 0.0], [-0.04, -1.02, 0.0]]
+    tube(faces, pin, [0.010, 0.006], PIN, 0.0)
     return faces
 
 
