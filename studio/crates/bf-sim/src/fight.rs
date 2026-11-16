@@ -200,6 +200,8 @@ pub struct Fight<'a> {
     pub swallow: kinds::swallow::State,
     /// Weapon kind `echo`'s state (HORN).
     pub echo: kinds::echo::State,
+    /// Weapon kind `foghorn`'s state (CONTRABASS CLARINET, made in the Studio).
+    pub foghorn: kinds::foghorn::State,
     /// Weapon kind `line`'s state (ORGAN): the pipes' hazards.
     pub line: kinds::line::State,
     /// Weapon kind `rake`'s state (ACOUSTIC).
@@ -228,6 +230,10 @@ pub struct Fight<'a> {
     pub crowd: kinds::crowd::State,
     /// Weapon kind `drill`'s state (SOUSAPHONE).
     pub drill: kinds::drill::State,
+    /// Weapon kind `mallets`'s state (MARIMBA, a Studio kind): the mallets in the air and its abilities' timers.
+    pub mallets: kinds::mallets::State,
+    /// Weapon kind `needle`'s state (PICCOLO, a Studio kind): the needles in the air and its abilities' timers.
+    pub needle: kinds::needle::State,
     /// Weapon kind `roll_charge`'s state (BASS DRUM).
     pub roll_charge: kinds::roll_charge::State,
     /// Ability kind `sustain`'s state (PIANO).
@@ -285,6 +291,8 @@ pub struct Fight<'a> {
     pub tether: kinds::tether::State,
     /// Weapon kind `wrecking`'s state (BARI SAX).
     pub wrecking: kinds::wrecking::State,
+    /// Weapon kind `plunger`'s state and its DERBY HAT and STOP-TIME (CORNET).
+    pub plunger: kinds::plunger::State,
     /// Weapon kind `rests`'s state (VIOLA).
     pub rests: kinds::rests::State,
     /// Ability kind `clamp`'s state (ACCORDION).
@@ -393,6 +401,7 @@ impl<'a> Fight<'a> {
             roll: Default::default(),
             swallow: Default::default(),
             echo: Default::default(),
+            foghorn: Default::default(),
             line: Default::default(),
             rake: Default::default(),
             combo: Default::default(),
@@ -408,6 +417,8 @@ impl<'a> Fight<'a> {
             crowd: Default::default(),
             drill: Default::default(),
             roll_charge: Default::default(),
+            mallets: Default::default(),
+            needle: Default::default(),
             sustain: Default::default(),
             arc: Default::default(),
             runoff: Default::default(),
@@ -434,6 +445,7 @@ impl<'a> Fight<'a> {
             scratch_floor: Default::default(),
             tether: Default::default(),
             wrecking: Default::default(),
+            plunger: Default::default(),
             rests: Default::default(),
             clamp: Default::default(),
             rewind: Default::default(),
@@ -886,7 +898,7 @@ impl<'a> Fight<'a> {
 /// `_stunned(k)` (`fight.py` 2355 to 2357): fighter `k` is stunned (#37, SQUEAK) or sunk in shadow (#38, LIGHTS OUT),
 /// so it starts no attack (the beat grid and the 16th grids that ask).
 pub fn stunned(f: &Fight, k: usize) -> bool {
-    f.balls[k].stun > 0.0 || f.balls[k].shadow > 0.0
+    f.balls[k].stun > 0.0 || f.balls[k].shadow > 0.0 || f.balls[k].muffle > 0.0
 }
 
 /// `getattr(B, 'rad', R)`: fighter `k`'s radius, its own (#30 v2, BAG INFLATE) or the shared `Rules::r`. Every site

@@ -16,11 +16,14 @@ pub mod cannons;
 pub mod clamp;
 pub mod company_front;
 pub mod copy;
+pub mod dead_stroke;
+pub mod derby;
 pub mod detune;
 pub mod double_stop;
 pub mod drum_roll;
 pub mod encore;
 pub mod endless;
+pub mod five_octaves;
 pub mod flash_spin;
 pub mod flick;
 pub mod fork;
@@ -33,11 +36,13 @@ pub mod melody;
 pub mod mountain;
 pub mod octave;
 pub mod offbeat;
+pub mod over_band;
 pub mod prelude;
 pub mod rewind;
 pub mod rhapsody;
 pub mod runoff;
 pub mod runway;
+pub mod shatter;
 pub mod slap;
 pub mod smash;
 pub mod snap;
@@ -45,12 +50,14 @@ pub mod snip;
 pub mod spout;
 pub mod stagedive;
 pub mod stampede;
+pub mod stoptime;
 pub mod stun;
 pub mod subtone;
 pub mod sustain;
 pub mod swan;
 pub mod sweep;
 pub mod tapping;
+pub mod tremolo;
 pub mod twin;
 pub mod vibrato;
 pub mod whip;
@@ -190,6 +197,10 @@ pub enum AbilityKind {
     Spout,
     /// `offbeat`: BARI SAX's SKANK (`fight.py` `trigger` 2911 to 2914; milestone 4).
     Offbeat,
+    /// `derby`: CORNET's DERBY HAT (a from-scratch fighter).
+    Derby,
+    /// `stoptime`: CORNET's STOP-TIME (a from-scratch fighter).
+    Stoptime,
     /// `snap`: BARI SAX's CABLE SNAP (`fight.py` `trigger` 2919 to 2920; milestone 4).
     Snap,
     /// `double_stop`: VIOLA's DOUBLE STOP (`fight.py` `trigger` 2928 to 2929; milestone 4).
@@ -198,6 +209,16 @@ pub enum AbilityKind {
     Melody,
     /// `joke`: VIOLA's VIOLA JOKE (`fight.py` `trigger` 2921 to 2922; milestone 4).
     Joke,
+    /// `tremolo`: MARIMBA's TREMOLO (a Studio kind).
+    Tremolo,
+    /// `dead_stroke`: MARIMBA's DEAD STROKE (a Studio kind).
+    DeadStroke,
+    /// `five_octaves`: MARIMBA's FIVE OCTAVES (a Studio kind).
+    FiveOctaves,
+    /// `over_band`: PICCOLO's OVER THE BAND (a Studio kind).
+    OverBand,
+    /// `shatter`: PICCOLO's GLASS SHATTER (a Studio kind).
+    Shatter,
     /// A kind the engine has not ported yet, or a ported kind with an option it has not ported, written
     /// `kind+option` (OBOE's `"wave+detune"`).
     Unsupported(String),
@@ -290,6 +311,10 @@ pub enum AbilitySettings {
     Spout(spout::SpoutCfg),
     /// Kind `offbeat`.
     Offbeat(offbeat::OffbeatCfg),
+    /// Kind `derby`.
+    Derby(derby::DerbyCfg),
+    /// Kind `stoptime`.
+    Stoptime(stoptime::StoptimeCfg),
     /// Kind `snap`.
     Snap(snap::SnapCfg),
     /// Kind `double_stop`.
@@ -298,6 +323,16 @@ pub enum AbilitySettings {
     Melody(melody::MelodyCfg),
     /// Kind `joke`.
     Joke(joke::JokeCfg),
+    /// Kind `tremolo`.
+    Tremolo(tremolo::TremoloCfg),
+    /// Kind `dead_stroke`.
+    DeadStroke(dead_stroke::DeadStrokeCfg),
+    /// Kind `five_octaves`.
+    FiveOctaves(five_octaves::FiveOctavesCfg),
+    /// Kind `over_band`.
+    OverBand(over_band::OverBandCfg),
+    /// Kind `shatter`.
+    Shatter(shatter::ShatterCfg),
 }
 
 impl AbilityKind {
@@ -352,10 +387,17 @@ impl AbilityKind {
             AbilityKind::Lash => "lash",
             AbilityKind::Spout => "spout",
             AbilityKind::Offbeat => "offbeat",
+            AbilityKind::Derby => "derby",
+            AbilityKind::Stoptime => "stoptime",
             AbilityKind::Snap => "snap",
             AbilityKind::DoubleStop => "double_stop",
             AbilityKind::Melody => "melody",
             AbilityKind::Joke => "joke",
+            AbilityKind::Tremolo => "tremolo",
+            AbilityKind::DeadStroke => "dead_stroke",
+            AbilityKind::FiveOctaves => "five_octaves",
+            AbilityKind::OverBand => "over_band",
+            AbilityKind::Shatter => "shatter",
             AbilityKind::Unsupported(kind) => kind.split('+').next().unwrap_or(kind),
         }
     }
@@ -410,10 +452,17 @@ impl AbilityKind {
             "lash" if lash::PORTED => AbilityKind::Lash,
             "spout" if spout::PORTED => AbilityKind::Spout,
             "offbeat" if offbeat::PORTED => AbilityKind::Offbeat,
+            "derby" if derby::PORTED => AbilityKind::Derby,
+            "stoptime" if stoptime::PORTED => AbilityKind::Stoptime,
             "snap" if snap::PORTED => AbilityKind::Snap,
             "double_stop" if double_stop::PORTED => AbilityKind::DoubleStop,
             "melody" if melody::PORTED => AbilityKind::Melody,
             "joke" if joke::PORTED => AbilityKind::Joke,
+            "tremolo" if tremolo::PORTED => AbilityKind::Tremolo,
+            "dead_stroke" if dead_stroke::PORTED => AbilityKind::DeadStroke,
+            "five_octaves" if five_octaves::PORTED => AbilityKind::FiveOctaves,
+            "over_band" if over_band::PORTED => AbilityKind::OverBand,
+            "shatter" if shatter::PORTED => AbilityKind::Shatter,
             other => AbilityKind::Unsupported(other.to_string()),
         }
     }
@@ -467,10 +516,17 @@ impl AbilityKind {
             AbilityKind::Lash => lash::REQUIRED,
             AbilityKind::Spout => spout::REQUIRED,
             AbilityKind::Offbeat => offbeat::REQUIRED,
+            AbilityKind::Derby => derby::REQUIRED,
+            AbilityKind::Stoptime => stoptime::REQUIRED,
             AbilityKind::Snap => snap::REQUIRED,
             AbilityKind::DoubleStop => double_stop::REQUIRED,
             AbilityKind::Melody => melody::REQUIRED,
             AbilityKind::Joke => joke::REQUIRED,
+            AbilityKind::Tremolo => tremolo::REQUIRED,
+            AbilityKind::DeadStroke => dead_stroke::REQUIRED,
+            AbilityKind::FiveOctaves => five_octaves::REQUIRED,
+            AbilityKind::OverBand => over_band::REQUIRED,
+            AbilityKind::Shatter => shatter::REQUIRED,
             AbilityKind::Unsupported(_) => &[],
         }
     }
@@ -526,10 +582,17 @@ impl AbilityKind {
             AbilityKind::Lash => lash::ALLOWED,
             AbilityKind::Spout => spout::ALLOWED,
             AbilityKind::Offbeat => offbeat::ALLOWED,
+            AbilityKind::Derby => derby::ALLOWED,
+            AbilityKind::Stoptime => stoptime::ALLOWED,
             AbilityKind::Snap => snap::ALLOWED,
             AbilityKind::DoubleStop => double_stop::ALLOWED,
             AbilityKind::Melody => melody::ALLOWED,
             AbilityKind::Joke => joke::ALLOWED,
+            AbilityKind::Tremolo => tremolo::ALLOWED,
+            AbilityKind::DeadStroke => dead_stroke::ALLOWED,
+            AbilityKind::FiveOctaves => five_octaves::ALLOWED,
+            AbilityKind::OverBand => over_band::ALLOWED,
+            AbilityKind::Shatter => shatter::ALLOWED,
             AbilityKind::Unsupported(_) => &[],
         }
     }
@@ -591,10 +654,17 @@ fn settings(e: &Entry, prefix: &str, kind: &AbilityKind, ab: &Json) -> Result<Ab
         AbilityKind::Lash => AbilitySettings::Lash(lash::parse(e, prefix, ab)?),
         AbilityKind::Spout => AbilitySettings::Spout(spout::parse(e, prefix, ab)?),
         AbilityKind::Offbeat => AbilitySettings::Offbeat(offbeat::parse(e, prefix, ab)?),
+        AbilityKind::Derby => AbilitySettings::Derby(derby::parse(e, prefix, ab)?),
+        AbilityKind::Stoptime => AbilitySettings::Stoptime(stoptime::parse(e, prefix, ab)?),
         AbilityKind::Snap => AbilitySettings::Snap(snap::parse(e, prefix, ab)?),
         AbilityKind::DoubleStop => AbilitySettings::DoubleStop(double_stop::parse(e, prefix, ab)?),
         AbilityKind::Melody => AbilitySettings::Melody(melody::parse(e, prefix, ab)?),
         AbilityKind::Joke => AbilitySettings::Joke(joke::parse(e, prefix, ab)?),
+        AbilityKind::Tremolo => AbilitySettings::Tremolo(tremolo::parse(e, prefix, ab)?),
+        AbilityKind::DeadStroke => AbilitySettings::DeadStroke(dead_stroke::parse(e, prefix, ab)?),
+        AbilityKind::FiveOctaves => AbilitySettings::FiveOctaves(five_octaves::parse(e, prefix, ab)?),
+        AbilityKind::OverBand => AbilitySettings::OverBand(over_band::parse(e, prefix, ab)?),
+        AbilityKind::Shatter => AbilitySettings::Shatter(shatter::parse(e, prefix, ab)?),
     })
 }
 
@@ -649,10 +719,17 @@ pub(crate) fn kind_check(e: &Entry, prefix: &str, ab: &AbilityCfg) -> Result<(),
         AbilityKind::Lash => lash::check(e, prefix, ab),
         AbilityKind::Spout => spout::check(e, prefix, ab),
         AbilityKind::Offbeat => offbeat::check(e, prefix, ab),
+        AbilityKind::Derby => derby::check(e, prefix, ab),
+        AbilityKind::Stoptime => stoptime::check(e, prefix, ab),
         AbilityKind::Snap => snap::check(e, prefix, ab),
         AbilityKind::DoubleStop => double_stop::check(e, prefix, ab),
         AbilityKind::Melody => melody::check(e, prefix, ab),
         AbilityKind::Joke => joke::check(e, prefix, ab),
+        AbilityKind::Tremolo => tremolo::check(e, prefix, ab),
+        AbilityKind::DeadStroke => dead_stroke::check(e, prefix, ab),
+        AbilityKind::FiveOctaves => five_octaves::check(e, prefix, ab),
+        AbilityKind::OverBand => over_band::check(e, prefix, ab),
+        AbilityKind::Shatter => shatter::check(e, prefix, ab),
     }
 }
 

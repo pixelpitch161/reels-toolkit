@@ -39,9 +39,9 @@ use crate::abilities::{
 use crate::fight::{Fight, stunned};
 use crate::geom;
 use crate::kinds::{
-    anchor, bite, blade, combo, crowd, drill, echo, grapple, inflate, jump, lightning, line, mortar, pulse, rake,
-    rests, roll, roll_charge, scratch_floor, spotlight, striker, surf, swallow, tether, tiptoe, trap, tune, walk,
-    wrecking,
+    anchor, bite, blade, combo, crowd, drill, echo, foghorn, grapple, inflate, jump, lightning, line, mallets, mortar,
+    needle, plunger, pulse, rake, rests, roll, roll_charge, scratch_floor, spotlight, striker, surf, swallow, tether,
+    tiptoe, trap, tune, walk, wrecking,
 };
 use crate::record::Frames;
 use crate::roster::AbilityKind;
@@ -84,6 +84,8 @@ pub struct Schedule {
     pub n16b: i64,
     /// `next16c`: the tethers' (SYNTH, 5778).
     pub next16c: i64,
+    /// `n16p`: the plunger's (CORNET, a from-scratch fighter).
+    pub n16p: i64,
     /// `n16w`: the wreckers' (BARI SAX, 5845).
     pub n16w: i64,
     /// `n16v`: the resters' (VIOLA, 5861).
@@ -117,6 +119,10 @@ pub struct Schedule {
     pub n16c: i64,
     /// `n16d`: the drill's (SOUSAPHONE, 5903).
     pub n16d: i64,
+    /// `n16x`: the mallets' (MARIMBA, a Studio kind: after every kit kind).
+    pub n16x: i64,
+    /// `n16n`: the needles' (PICCOLO, a Studio kind: after every kit kind).
+    pub n16n: i64,
     // Python keeps one counter per kind (`next16`, `dc_next`, `n16b`, `next16c`, `next16k`, `next16t`, `n16p`, ...):
     // each moves only while a fighter has its kind, so they are separate fields, never one shared counter. The frozen
     // `pack`'s `n16p` is not kept.
@@ -169,6 +175,12 @@ impl Schedule {
                 striker::setup(fight, k);
             }
         }
+        // the Studio's own kinds (no `fight.py` line): the foghorn's bell faces the enemy
+        for k in 0..2 {
+            if foghorn::is(fight, k) {
+                foghorn::setup(fight, k);
+            }
+        }
         // 5775 to 5776: the thrusters need no setup (the lance's state is the ball's, from `Ball.__init__`);
         // `next16t = k16_0` is below. The record's `EXT`, `SLW`, `CRV` (5779 to 5780) follow `Fight::uses_ext`
         // (`record.rs`).
@@ -212,6 +224,11 @@ impl Schedule {
         fight.socket("setup.wrecking");
         for k in which(fight, wrecking::is) {
             wrecking::setup(fight, k);
+        }
+        // CORNET's plunger (a from-scratch fighter)
+        fight.socket("setup.plunger");
+        for k in which(fight, plunger::is) {
+            plunger::setup(fight, k);
         }
         // 5851 to 5853: the hookers need no setup (`HOOK`)
         // 5854 to 5857: lightning
@@ -260,6 +277,16 @@ impl Schedule {
         for k in which(fight, roll_charge::is) {
             roll_charge::setup(fight, k);
         }
+        // MARIMBA (a Studio kind, after every kit kind)
+        fight.socket("setup.mallets");
+        for k in which(fight, mallets::is) {
+            mallets::setup(fight, k);
+        }
+        // PICCOLO (a Studio kind, after every kit kind)
+        fight.socket("setup.needle");
+        for k in which(fight, needle::is) {
+            needle::setup(fight, k);
+        }
         Schedule {
             steps_per_frame,
             k0,
@@ -286,10 +313,13 @@ impl Schedule {
             n16s: k16_0,
             n16c: k16_0,
             n16d: k16_0,
+            n16x: k16_0,
+            n16n: k16_0,
             next16: k16_0,
             n16b: k16_0,
             next16c: k16_0,
             n16w: k16_0,
+            n16p: k16_0,
             n16v: k16_0,
         }
     }
@@ -327,6 +357,10 @@ impl Schedule {
                 fight.socket("beat.swallow");
                 if swallow::is(fight, k) {
                     swallow::beat(fight, k, self.kb);
+                }
+                // the Studio's own kinds (no `fight.py` line)
+                if foghorn::is(fight, k) {
+                    foghorn::beat(fight, k, self.kb);
                 }
                 // 5938 to 5939: basket drops
                 fight.socket("beat.striker");
@@ -521,6 +555,15 @@ impl Schedule {
         // 6091 to 6095: roll_charge (on `n16r`, the counter the older `rattle` shares)
         fight.socket("tick.roll_charge");
         self.counter(fight, roll_charge::is, |s| &mut s.n16r, roll_charge::tick);
+        // CORNET's plunger (`n16p`, a from-scratch fighter)
+        fight.socket("tick.plunger");
+        self.counter(fight, plunger::is, |s| &mut s.n16p, plunger::tick);
+        // MARIMBA's mallets (a Studio kind, after every kit kind)
+        fight.socket("tick.mallets");
+        self.counter(fight, mallets::is, |s| &mut s.n16x, mallets::tick);
+        // PICCOLO's needles (a Studio kind, after every kit kind)
+        fight.socket("tick.needle");
+        self.counter(fight, needle::is, |s| &mut s.n16n, needle::tick);
 
         // 4. The timers (6096 to 6107).
         for k in 0..2 {
@@ -534,6 +577,7 @@ impl Schedule {
             // 0.0 here, which stays 0.0
             b.stun = geom::py_max(0.0, b.stun - dt);
             b.detune_t = geom::py_max(0.0, b.detune_t - dt);
+            b.muffle = geom::py_max(0.0, b.muffle - dt);
             // 6104 to 6107: the pieces snap back together (#44)
             if b.smashed > 0.0 {
                 b.smashed = geom::py_max(0.0, b.smashed - dt);
@@ -605,6 +649,10 @@ impl Schedule {
             fight.socket("weapon.swallow");
             if swallow::is(fight, k) {
                 swallow::step(fight, k, dt);
+            }
+            // the Studio's own kinds (no `fight.py` line)
+            if foghorn::is(fight, k) {
+                foghorn::step(fight, k, dt);
             }
             // 6135 to 6136
             fight.socket("weapon.striker");
@@ -692,6 +740,14 @@ impl Schedule {
         for k in which(fight, wrecking::is) {
             wrecking::step(fight, k, dt);
         }
+        // CORNET's plunger, and its DERBY HAT and STOP-TIME for either ball (a copied one too)
+        fight.socket("later.plunger");
+        for k in which(fight, plunger::is) {
+            plunger::step(fight, k, dt);
+        }
+        if plunger::abilities_live(fight) {
+            plunger::abilities_step(fight);
+        }
         // 6169 to 6170: the snappers (BARI SAX's CABLE SNAP, milestone 4)
         fight.socket("later.snap");
         for k in which(fight, |f, k| has(f, k, AbilityKind::Snap)) {
@@ -772,6 +828,16 @@ impl Schedule {
         fight.socket("later.clamps");
         if clamp::live(fight) {
             clamp::clamps_step(fight);
+        }
+        // MARIMBA's mallets and FIVE OCTAVES (a Studio kind, after every kit kind)
+        fight.socket("later.mallets");
+        if mallets::live(fight) {
+            mallets::step(fight, dt);
+        }
+        // PICCOLO's needles and GLASS SHATTER (a Studio kind, after every kit kind)
+        fight.socket("later.needle");
+        if needle::live(fight) {
+            needle::step(fight, dt);
         }
 
         // 12. Levels and abilities (6203).

@@ -75,12 +75,11 @@ fn every_ordered_pair_has_a_starter_the_studio_accepts() {
     let names = available();
     assert_eq!(
         names.len(),
-        30,
-        "the kit's 20 and the older ten offered: the whole roster"
+        30 + bf_content::fighters::NEW.len(),
+        "the kit's 20, the older ten and the fighters made from scratch offered: the whole roster"
     );
     let pairs = ordered_pairs();
     assert_eq!(pairs.len(), names.len() * (names.len() - 1));
-    assert_eq!(pairs.len(), 870);
     let mut problems = Vec::new();
     for &(a, b) in &pairs {
         let ff = match starter(a, b) {
@@ -226,6 +225,7 @@ fn every_fighter_has_the_kits_home_config() {
         ("TUBA", "FLUTE", "villain_march"),
         ("BASSOON", "BARI SAX", "ska_punk"),
         ("BARI SAX", "BASS CLARINET", "industrial"),
+        ("CONTRABASS CLARINET", "FLUTE", "industrial"),
     ] {
         if !ported.contains(&theme) {
             continue;
@@ -241,9 +241,18 @@ fn every_fighter_has_the_kits_home_config() {
         starter("UKULELE", "ACOUSTIC").unwrap().music.roles["ACOUSTIC"],
         "rhythm"
     );
+    // a fighter made from scratch with no home of its own (no kit config, no episode row) borrows FLUTE's home
+    // config; CONTRABASS CLARINET has its own row (against FLUTE, in industrial)
+    for name in bf_content::fighters::NEW
+        .iter()
+        .filter(|n| **n != "CONTRABASS CLARINET")
+    {
+        assert_eq!(home_config(name), home_config("FLUTE"), "{name}");
+    }
+    assert_eq!(home_config("CONTRABASS CLARINET"), Some("contrabassclarinet_vs_flute"));
     let mut names: Vec<&str> = available()
         .into_iter()
-        .filter(|n| !bf_content::fighters::OLDER.contains(n))
+        .filter(|n| !bf_content::fighters::OLDER.contains(n) && !bf_content::fighters::NEW.contains(n))
         .collect();
     names.sort_unstable();
     assert_eq!(texts(&doc["fighters"]), names, "the kit fighters");
