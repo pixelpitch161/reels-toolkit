@@ -31,7 +31,8 @@ pub use kinds::{
 };
 pub use kinds::{
     bite::BiteCfg, foghorn::FoghornCfg, inflate::InflateCfg, pulse::PulseCfg, rests::RestsCfg,
-    scratch_floor::ScratchFloorCfg, surf::SurfCfg, tether::TetherCfg, trap::TrapCfg, wrecking::WreckingCfg,
+    scratch_floor::ScratchFloorCfg, surf::SurfCfg, tether::TetherCfg, trap::TrapCfg, wingbeat::WingbeatCfg,
+    wrecking::WreckingCfg,
 };
 pub use striker::StrikerCfg;
 
@@ -129,19 +130,22 @@ pub const OLDER_ABILITY_KINDS: [(&str, bool); 9] = [
 
 /// The weapon kinds of the fighters made from scratch in the Studio (no Python kit reference), each with its module's
 /// `PORTED`, as [`OLDER_WEAPON_KINDS`].
-pub const NEW_WEAPON_KINDS: [(&str, bool); 3] = [
+pub const NEW_WEAPON_KINDS: [(&str, bool); 4] = [
     ("plunger", kinds::plunger::PORTED),
     ("mallets", kinds::mallets::PORTED),
     ("foghorn", kinds::foghorn::PORTED),
+    ("wingbeat", kinds::wingbeat::PORTED),
 ];
 
 /// The ability kinds of the fighters made from scratch in the Studio, each with its module's `PORTED`.
-pub const NEW_ABILITY_KINDS: [(&str, bool); 5] = [
+pub const NEW_ABILITY_KINDS: [(&str, bool); 7] = [
     ("derby", abilities::derby::PORTED),
     ("stoptime", abilities::stoptime::PORTED),
     ("tremolo", abilities::tremolo::PORTED),
     ("dead_stroke", abilities::dead_stroke::PORTED),
     ("five_octaves", abilities::five_octaves::PORTED),
+    ("flank", abilities::flank::PORTED),
+    ("take_wing", abilities::take_wing::PORTED),
 ];
 
 /// One fighter's roster entry.
@@ -239,6 +243,8 @@ pub enum WeaponCfg {
     Foghorn(kinds::foghorn::FoghornCfg),
     /// Kind `mallets` (MARIMBA's MALLET RUN, a Studio kind), typed by `roster::kinds::mallets`.
     Mallets(kinds::mallets::MalletsCfg),
+    /// Kind `wingbeat` (FLUGELHORN's WINGBEAT, a Studio kind), typed by `roster::kinds::wingbeat`.
+    Wingbeat(kinds::wingbeat::WingbeatCfg),
     /// A kind the engine has not ported yet (a spinning blade, with no `mode`, is `"blade"` until
     /// [`blade::SPIN_PORTED`]).
     Unsupported(String),
@@ -465,6 +471,7 @@ impl Entry<'_> {
             "plunger" if kinds::plunger::PORTED => Ok(WeaponCfg::Plunger(kinds::plunger::parse(self, w)?)),
             "foghorn" if kinds::foghorn::PORTED => Ok(WeaponCfg::Foghorn(kinds::foghorn::parse(self, w)?)),
             "mallets" if kinds::mallets::PORTED => Ok(WeaponCfg::Mallets(kinds::mallets::parse(self, w)?)),
+            "wingbeat" if kinds::wingbeat::PORTED => Ok(WeaponCfg::Wingbeat(kinds::wingbeat::parse(self, w)?)),
             _ => Ok(WeaponCfg::Unsupported(kind)),
         }
     }
@@ -563,6 +570,7 @@ impl FighterCfg {
             WeaponCfg::Plunger(w) => kinds::plunger::check(&e, w)?,
             WeaponCfg::Foghorn(w) => kinds::foghorn::check(&e, w)?,
             WeaponCfg::Mallets(w) => kinds::mallets::check(&e, w)?,
+            WeaponCfg::Wingbeat(w) => kinds::wingbeat::check(&e, w)?,
             WeaponCfg::Unsupported(_) => {}
         }
         let slots = [
@@ -638,6 +646,7 @@ impl WeaponCfg {
             WeaponCfg::Plunger(w) => return kinds::plunger::main16(w),
             WeaponCfg::Foghorn(w) => return kinds::foghorn::main16(w),
             WeaponCfg::Mallets(w) => return kinds::mallets::main16(w),
+            WeaponCfg::Wingbeat(w) => return kinds::wingbeat::main16(w),
             WeaponCfg::Unsupported(_) => return None,
         };
         Some(crate::py::round_half_even(4.0 * every))
@@ -686,6 +695,7 @@ impl WeaponCfg {
             WeaponCfg::Plunger(w) => kinds::plunger::ball_start(w),
             WeaponCfg::Foghorn(w) => kinds::foghorn::ball_start(w),
             WeaponCfg::Mallets(w) => kinds::mallets::ball_start(w),
+            WeaponCfg::Wingbeat(w) => kinds::wingbeat::ball_start(w),
             WeaponCfg::Unsupported(_) => BallStart::default(),
         }
     }
@@ -725,6 +735,7 @@ impl WeaponCfg {
             WeaponCfg::Plunger(_) => "plunger",
             WeaponCfg::Foghorn(_) => "foghorn",
             WeaponCfg::Mallets(_) => "mallets",
+            WeaponCfg::Wingbeat(_) => "wingbeat",
             WeaponCfg::Unsupported(kind) => kind,
         }
     }

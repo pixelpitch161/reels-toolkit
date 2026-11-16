@@ -41,7 +41,7 @@ use crate::geom;
 use crate::kinds::{
     anchor, bite, blade, combo, crowd, drill, echo, foghorn, grapple, inflate, jump, lightning, line, mallets, mortar,
     plunger, pulse, rake, rests, roll, roll_charge, scratch_floor, spotlight, striker, surf, swallow, tether, tiptoe,
-    trap, tune, walk, wrecking,
+    trap, tune, walk, wingbeat, wrecking,
 };
 use crate::record::Frames;
 use crate::roster::AbilityKind;
@@ -177,6 +177,9 @@ impl Schedule {
         for k in 0..2 {
             if foghorn::is(fight, k) {
                 foghorn::setup(fight, k);
+            }
+            if wingbeat::is(fight, k) {
+                wingbeat::setup(fight, k);
             }
         }
         // 5775 to 5776: the thrusters need no setup (the lance's state is the ball's, from `Ball.__init__`);
@@ -353,6 +356,9 @@ impl Schedule {
                 // the Studio's own kinds (no `fight.py` line)
                 if foghorn::is(fight, k) {
                     foghorn::beat(fight, k, self.kb);
+                }
+                if wingbeat::is(fight, k) {
+                    wingbeat::beat(fight, k, self.kb);
                 }
                 // 5938 to 5939: basket drops
                 fight.socket("beat.striker");
@@ -643,6 +649,9 @@ impl Schedule {
             if foghorn::is(fight, k) {
                 foghorn::step(fight, k, dt);
             }
+            if wingbeat::is(fight, k) {
+                wingbeat::step(fight, k, dt);
+            }
             // 6135 to 6136
             fight.socket("weapon.striker");
             if striker::is_striker(fight, k) {
@@ -736,6 +745,11 @@ impl Schedule {
         }
         if plunger::abilities_live(fight) {
             plunger::abilities_step(fight);
+        }
+        // FLUGELHORN's FLANKING CALL and TAKE WING for either ball (a copied one too)
+        fight.socket("later.wingbeat");
+        if wingbeat::abilities_live(fight) {
+            wingbeat::abilities_step(fight, dt);
         }
         // 6169 to 6170: the snappers (BARI SAX's CABLE SNAP, milestone 4)
         fight.socket("later.snap");

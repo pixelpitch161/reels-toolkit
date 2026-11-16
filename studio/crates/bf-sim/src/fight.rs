@@ -202,6 +202,8 @@ pub struct Fight<'a> {
     pub echo: kinds::echo::State,
     /// Weapon kind `foghorn`'s state (CONTRABASS CLARINET, made in the Studio).
     pub foghorn: kinds::foghorn::State,
+    /// Weapon kind `wingbeat`'s state and its FLANKING CALL and TAKE WING (FLUGELHORN, a Studio kind).
+    pub wingbeat: kinds::wingbeat::State,
     /// Weapon kind `line`'s state (ORGAN): the pipes' hazards.
     pub line: kinds::line::State,
     /// Weapon kind `rake`'s state (ACOUSTIC).
@@ -400,6 +402,7 @@ impl<'a> Fight<'a> {
             swallow: Default::default(),
             echo: Default::default(),
             foghorn: Default::default(),
+            wingbeat: Default::default(),
             line: Default::default(),
             rake: Default::default(),
             combo: Default::default(),

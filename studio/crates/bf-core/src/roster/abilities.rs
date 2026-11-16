@@ -24,6 +24,7 @@ pub mod drum_roll;
 pub mod encore;
 pub mod endless;
 pub mod five_octaves;
+pub mod flank;
 pub mod flash_spin;
 pub mod flick;
 pub mod fork;
@@ -54,6 +55,7 @@ pub mod subtone;
 pub mod sustain;
 pub mod swan;
 pub mod sweep;
+pub mod take_wing;
 pub mod tapping;
 pub mod tremolo;
 pub mod twin;
@@ -213,6 +215,10 @@ pub enum AbilityKind {
     DeadStroke,
     /// `five_octaves`: MARIMBA's FIVE OCTAVES (a Studio kind).
     FiveOctaves,
+    /// `flank`: FLUGELHORN's FLANKING CALL (a Studio kind).
+    Flank,
+    /// `take_wing`: FLUGELHORN's TAKE WING (a Studio kind).
+    TakeWing,
     /// A kind the engine has not ported yet, or a ported kind with an option it has not ported, written
     /// `kind+option` (OBOE's `"wave+detune"`).
     Unsupported(String),
@@ -323,6 +329,10 @@ pub enum AbilitySettings {
     DeadStroke(dead_stroke::DeadStrokeCfg),
     /// Kind `five_octaves`.
     FiveOctaves(five_octaves::FiveOctavesCfg),
+    /// Kind `flank`.
+    Flank(flank::FlankCfg),
+    /// Kind `take_wing`.
+    TakeWing(take_wing::TakeWingCfg),
 }
 
 impl AbilityKind {
@@ -386,6 +396,8 @@ impl AbilityKind {
             AbilityKind::Tremolo => "tremolo",
             AbilityKind::DeadStroke => "dead_stroke",
             AbilityKind::FiveOctaves => "five_octaves",
+            AbilityKind::Flank => "flank",
+            AbilityKind::TakeWing => "take_wing",
             AbilityKind::Unsupported(kind) => kind.split('+').next().unwrap_or(kind),
         }
     }
@@ -449,6 +461,8 @@ impl AbilityKind {
             "tremolo" if tremolo::PORTED => AbilityKind::Tremolo,
             "dead_stroke" if dead_stroke::PORTED => AbilityKind::DeadStroke,
             "five_octaves" if five_octaves::PORTED => AbilityKind::FiveOctaves,
+            "flank" if flank::PORTED => AbilityKind::Flank,
+            "take_wing" if take_wing::PORTED => AbilityKind::TakeWing,
             other => AbilityKind::Unsupported(other.to_string()),
         }
     }
@@ -511,6 +525,8 @@ impl AbilityKind {
             AbilityKind::Tremolo => tremolo::REQUIRED,
             AbilityKind::DeadStroke => dead_stroke::REQUIRED,
             AbilityKind::FiveOctaves => five_octaves::REQUIRED,
+            AbilityKind::Flank => flank::REQUIRED,
+            AbilityKind::TakeWing => take_wing::REQUIRED,
             AbilityKind::Unsupported(_) => &[],
         }
     }
@@ -575,6 +591,8 @@ impl AbilityKind {
             AbilityKind::Tremolo => tremolo::ALLOWED,
             AbilityKind::DeadStroke => dead_stroke::ALLOWED,
             AbilityKind::FiveOctaves => five_octaves::ALLOWED,
+            AbilityKind::Flank => flank::ALLOWED,
+            AbilityKind::TakeWing => take_wing::ALLOWED,
             AbilityKind::Unsupported(_) => &[],
         }
     }
@@ -645,6 +663,8 @@ fn settings(e: &Entry, prefix: &str, kind: &AbilityKind, ab: &Json) -> Result<Ab
         AbilityKind::Tremolo => AbilitySettings::Tremolo(tremolo::parse(e, prefix, ab)?),
         AbilityKind::DeadStroke => AbilitySettings::DeadStroke(dead_stroke::parse(e, prefix, ab)?),
         AbilityKind::FiveOctaves => AbilitySettings::FiveOctaves(five_octaves::parse(e, prefix, ab)?),
+        AbilityKind::Flank => AbilitySettings::Flank(flank::parse(e, prefix, ab)?),
+        AbilityKind::TakeWing => AbilitySettings::TakeWing(take_wing::parse(e, prefix, ab)?),
     })
 }
 
@@ -708,6 +728,8 @@ pub(crate) fn kind_check(e: &Entry, prefix: &str, ab: &AbilityCfg) -> Result<(),
         AbilityKind::Tremolo => tremolo::check(e, prefix, ab),
         AbilityKind::DeadStroke => dead_stroke::check(e, prefix, ab),
         AbilityKind::FiveOctaves => five_octaves::check(e, prefix, ab),
+        AbilityKind::Flank => flank::check(e, prefix, ab),
+        AbilityKind::TakeWing => take_wing::check(e, prefix, ab),
     }
 }
 

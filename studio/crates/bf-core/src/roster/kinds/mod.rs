@@ -32,4 +32,5 @@ pub mod tiptoe;
 pub mod trap;
 pub mod tune;
 pub mod walk;
+pub mod wingbeat;
 pub mod wrecking;
