@@ -96,6 +96,8 @@ $rows = @()
 foreach ($co in $checkouts) {
     if (-not (Test-Path -LiteralPath $co)) { continue }
     $isMain = ($co -ieq $Main)
+    # A separate clone has its own copy of GitHub's branches; refresh it so "merged" is judged on today's branch.
+    if (-not $isMain -and (Test-Path -LiteralPath "$co\.git" -PathType Container)) { git -C $co fetch -q origin 2>$null }
     $branch = (git -C $co branch --show-current 2>$null)
     $dirty = [bool](git -C $co status --porcelain 2>$null)
     $pushed = $false; $merged = $false
