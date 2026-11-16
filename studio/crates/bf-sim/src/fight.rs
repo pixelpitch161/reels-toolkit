@@ -285,6 +285,8 @@ pub struct Fight<'a> {
     pub tether: kinds::tether::State,
     /// Weapon kind `wrecking`'s state (BARI SAX).
     pub wrecking: kinds::wrecking::State,
+    /// Weapon kind `plunger`'s state and its DERBY HAT and STOP-TIME (CORNET).
+    pub plunger: kinds::plunger::State,
     /// Weapon kind `rests`'s state (VIOLA).
     pub rests: kinds::rests::State,
     /// Ability kind `clamp`'s state (ACCORDION).
@@ -434,6 +436,7 @@ impl<'a> Fight<'a> {
             scratch_floor: Default::default(),
             tether: Default::default(),
             wrecking: Default::default(),
+            plunger: Default::default(),
             rests: Default::default(),
             clamp: Default::default(),
             rewind: Default::default(),
@@ -886,7 +889,7 @@ impl<'a> Fight<'a> {
 /// `_stunned(k)` (`fight.py` 2355 to 2357): fighter `k` is stunned (#37, SQUEAK) or sunk in shadow (#38, LIGHTS OUT),
 /// so it starts no attack (the beat grid and the 16th grids that ask).
 pub fn stunned(f: &Fight, k: usize) -> bool {
-    f.balls[k].stun > 0.0 || f.balls[k].shadow > 0.0
+    f.balls[k].stun > 0.0 || f.balls[k].shadow > 0.0 || f.balls[k].muffle > 0.0
 }
 
 /// `getattr(B, 'rad', R)`: fighter `k`'s radius, its own (#30 v2, BAG INFLATE) or the shared `Rules::r`. Every site

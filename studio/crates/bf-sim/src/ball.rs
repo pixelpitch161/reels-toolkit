@@ -118,6 +118,8 @@ pub struct Ball<'a> {
     /// Seconds left out of tune (#37, ILL WIND; `getattr(B, 'detune_t', 0.0)`): its hits land weaker (`damage` 345
     /// to 346).
     pub detune_t: f64,
+    /// Seconds left muffled (CORNET's DERBY HAT): it keeps moving but starts no attack ([`crate::fight::stunned`]).
+    pub muffle: f64,
     /// How much weaker an out-of-tune ball's hits land (`_detune` 2447 to 2451): `1.0 - detune_w * detune_d`.
     pub detune_w: f64,
     /// The depth of the detune (`_detune`).
@@ -240,6 +242,7 @@ impl<'a> Ball<'a> {
             slow_mult: 1.0,
             stun: 0.0,
             detune_t: 0.0,
+            muffle: 0.0,
             detune_w: 0.0,
             detune_d: 0.0,
             shadow: 0.0,

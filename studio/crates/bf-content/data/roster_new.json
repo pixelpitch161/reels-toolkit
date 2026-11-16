@@ -1,0 +1,41 @@
+{
+ "about": "The fighters made from scratch in the Studio (no Python kit reference; Rust is their source of truth), in the same format as roster.json and appended to it by bf_content::registry::roster(). Edited by hand: one entry per fighter, each from its design doc (docs/superpowers/specs/).",
+ "format": 1,
+ "fighters": [
+  {
+   "name": "CORNET",
+   "color": [232, 120, 140],
+   "dark": [138, 52, 70],
+   "corner": "red",
+   "view": [0, 16, 0],
+   "weapon": {
+    "kind": "plunger",
+    "style": "plunger",
+    "name": "PLUNGER MUTE",
+    "every": 2,
+    "off16": 0,
+    "speed": 9.0,
+    "lead": 0.3,
+    "base": 3.0,
+    "grow": 0.15,
+    "max_reach": 4.2,
+    "hold": 2,
+    "hold_grow": 0.5,
+    "hold_max": 3,
+    "snap": 1.4,
+    "dmg_stick": 1.0,
+    "dmg": 1.2,
+    "pull": 0.5,
+    "cup_r": 0.15
+   },
+   "abilities": {
+    "unlock1": {"name": "WA-WA", "kind": "shield", "dur_beats": 6, "every_bars": 6},
+    "unlock2": {"name": "DERBY HAT", "kind": "derby", "tele": 1.5, "radius": 0.9, "dmg": 3.0, "dur_beats": 4, "every_bars": 5},
+    "low": {"name": "STOP-TIME", "kind": "stoptime", "n": 4, "freeze": 0.6, "boost": 2.2, "dmg": 5.0, "knock": 1.4, "speed": 8.0, "radius": 3.2, "dmg_break": 9.0, "knock_break": 1.8}
+   },
+   "pp": "CORNET",
+   "register": [55, 79],
+   "idiom": "wah"
+  }
+ ]
+}
