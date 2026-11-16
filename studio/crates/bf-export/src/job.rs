@@ -33,7 +33,7 @@ use bf_picture::ring::{FrameReport, Picture, upscale3};
 use bf_sound::wav::wav16_bytes;
 use bf_story::{BeatSheet, story};
 
-use crate::checks::{BandPlan, CheckResult, Kept, panic_text, pre_render_keeping};
+use crate::checks::{BandPlan, CheckResult, Kept, even_out, panic_text, pre_render_keeping};
 use crate::encode::{ENCODING_NOTE, EncodeSpeed, Encoder, Ffmpeg, find_ffmpeg};
 use crate::output::{TempFolder, caption_text, clip_folder_name, folder_stem, png_bytes, prepare_root, taken};
 use crate::probe::verify_until;
@@ -238,7 +238,14 @@ impl Job<'_> {
     fn make(&self, tmp: &mut TempFolder, stop: &dyn Fn() -> Result<(), ExportError>) -> Result<(), ExportError> {
         let (ff, rec, on, name) = (self.ff, self.rec, self.on, self.name);
         on(JobEvent::Stage(stage::SOUNDTRACK));
-        let st = build_soundtrack(rec, ff)?;
+        let mut st = build_soundtrack(rec, ff)?;
+        // a whole video whose loudness would fail the levels check is evened out first, so it renders
+        let evened = if self.whole { even_out(&st.master) } else { None };
+        let evened_note = evened.map(|e| {
+            let note = e.note();
+            st.master = e.master;
+            note
+        });
         stop()?;
         let pic = build_picture(Arc::clone(rec), ff)?;
         stop()?;
@@ -254,6 +261,7 @@ impl Job<'_> {
             let plan = BandPlan::of(ff)?;
             let (results, drawn) = pre_render_keeping(&pic, &st, show, &story, &plan, self.workers, self.cancel)
                 .ok_or_else(ExportError::cancelled)?;
+            let results = with_note(results, evened_note.as_deref());
             report(results, on)?;
             stop()?;
             kept = drawn;
@@ -322,6 +330,16 @@ impl Job<'_> {
         }
         stop()
     }
+}
+
+/// The results with `note` (what the level fix did) added to the levels check's summary.
+fn with_note(mut results: Vec<CheckResult>, note: Option<&str>) -> Vec<CheckResult> {
+    if let Some(note) = note {
+        for r in results.iter_mut().filter(|r| r.name == "levels") {
+            r.summary = format!("{} {note}", r.summary);
+        }
+    }
+    results
 }
 
 /// Sends every result, then fails with the first that did not pass.
