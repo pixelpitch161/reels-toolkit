@@ -290,9 +290,12 @@ mod tests {
         // every roster fighter has its folder, and a fighter the app offers has everything in it; a folder a port
         // has filled before the register task offers it may hold anything (nothing here names its state)
         // the roster holds the kit's 20 and the older ten (milestone 4), each once
-        assert_eq!(roster().len(), 30);
+        assert_eq!(roster().len(), 30 + STUDIO.len());
         assert_eq!(
-            roster().iter().filter(|f| !OLDER.contains(&f.name.as_str())).count(),
+            roster()
+                .iter()
+                .filter(|f| !OLDER.contains(&f.name.as_str()) && !STUDIO.contains(&f.name.as_str()))
+                .count(),
             20
         );
         for f in roster() {

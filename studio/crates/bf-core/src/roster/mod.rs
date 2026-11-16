@@ -29,9 +29,8 @@ pub use kinds::{
     walk::WalkCfg,
 };
 pub use kinds::{
-    foghorn::FoghornCfg,
-    bite::BiteCfg, inflate::InflateCfg, pulse::PulseCfg, rests::RestsCfg, scratch_floor::ScratchFloorCfg,
-    surf::SurfCfg, tether::TetherCfg, trap::TrapCfg, wrecking::WreckingCfg,
+    bite::BiteCfg, foghorn::FoghornCfg, inflate::InflateCfg, pulse::PulseCfg, rests::RestsCfg,
+    scratch_floor::ScratchFloorCfg, surf::SurfCfg, tether::TetherCfg, trap::TrapCfg, wrecking::WreckingCfg,
 };
 pub use striker::StrikerCfg;
 

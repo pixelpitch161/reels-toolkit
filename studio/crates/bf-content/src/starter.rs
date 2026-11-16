@@ -229,7 +229,7 @@ const fn ep(
 }
 
 /// The older episodes' configs (TROMBONE vs TUBA's #36 is left out: that pair keeps its kit config).
-const EPISODES: [Episode; 9] = [
+const EPISODES: [Episode; 10] = [
     ep(
         "drums_vs_violin",
         28,
@@ -337,6 +337,20 @@ const EPISODES: [Episode; 9] = [
         &["Cm", "Cm", "Ab", "Ab", "Fm", "Fm", "G", "G"],
         &["Ab", "G"],
         &[],
+    ),
+    // CONTRABASS CLARINET, made in the Studio (no episode: 0): its home, the lowest voice against the highest, in
+    // the industrial grind of #40 (BARI SAX vs BASS CLARINET)
+    ep(
+        "contrabassclarinet_vs_flute",
+        0,
+        ["CONTRABASS CLARINET", "FLUTE"],
+        "industrial",
+        126.0,
+        ("G", "minor"),
+        ["Gm", "D"],
+        &["Gm", "Eb", "Cm", "D"],
+        &["Eb", "D"],
+        &[("CONTRABASS CLARINET", "bass"), ("FLUTE", "melody")],
     ),
 ];
 

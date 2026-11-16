@@ -140,7 +140,10 @@ mod tests {
     #[test]
     fn the_studio_entry_reads() {
         let roster = parse_roster(ENTRY).expect("the studio roster");
-        let f = roster.iter().find(|f| f.name == "CONTRABASS CLARINET").expect("its entry");
+        let f = roster
+            .iter()
+            .find(|f| f.name == "CONTRABASS CLARINET")
+            .expect("its entry");
         let WeaponCfg::Foghorn(w) = &f.weapon else {
             panic!("not a foghorn: {:?}", f.weapon)
         };

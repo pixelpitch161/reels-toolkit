@@ -39,8 +39,8 @@ use crate::abilities::{
 use crate::fight::{Fight, stunned};
 use crate::geom;
 use crate::kinds::{
-    anchor, bite, blade, combo, crowd, drill, echo, foghorn, grapple, inflate, jump, lightning, line, mortar, pulse, rake,
-    rests, roll, roll_charge, scratch_floor, spotlight, striker, surf, swallow, tether, tiptoe, trap, tune, walk,
+    anchor, bite, blade, combo, crowd, drill, echo, foghorn, grapple, inflate, jump, lightning, line, mortar, pulse,
+    rake, rests, roll, roll_charge, scratch_floor, spotlight, striker, surf, swallow, tether, tiptoe, trap, tune, walk,
     wrecking,
 };
 use crate::record::Frames;

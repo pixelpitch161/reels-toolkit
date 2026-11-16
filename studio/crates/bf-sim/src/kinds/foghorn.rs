@@ -142,10 +142,7 @@ pub fn step(f: &mut Fight, k: usize, dt: f64) {
     }
     let dist = geom::hypot(rel);
     let off = geom::wrap(dmath::atan2(rel[1], rel[0]) - blast.aim).abs();
-    let inside = dist > 1e-6
-        && dist - 2.0 * r < blast.reach
-        && off <= geom::radians(w.spread)
-        && !f.balls[1 - k].held;
+    let inside = dist > 1e-6 && dist - 2.0 * r < blast.reach && off <= geom::radians(w.spread) && !f.balls[1 - k].held;
     if inside {
         let along = [dmath::cos(blast.aim), dmath::sin(blast.aim)];
         if !blast.touched {
