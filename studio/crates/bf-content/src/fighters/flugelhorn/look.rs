@@ -314,9 +314,9 @@ impl Look for FlugelLook {
                 let along = gy;
                 let across = gx + 0.15 * dmath::sin(along * 6.0);
                 let shape = (1.0 - (along * 2.0).abs()).max(0.0);
-                let vane = if across.abs() < 0.14 * shape { 0.07 } else { 0.0 };
+                let vane = if across.abs() < 0.14 * shape { 0.12 } else { 0.0 };
                 let barb = if vane > 0.0 && ((along * 40.0).fract() < 0.25) {
-                    0.03
+                    0.05
                 } else {
                     0.0
                 };

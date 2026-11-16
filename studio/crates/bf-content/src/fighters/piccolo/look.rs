@@ -213,6 +213,11 @@ impl PiccoloLook {
 }
 
 impl Look for PiccoloLook {
+    /// Its own panel on the VS card ([`crate::fighters::shared::panels::piccolo`]).
+    fn title_pattern(&self, base: &mut bf_picture::img::RgbF) {
+        crate::fighters::shared::panels::piccolo(base);
+    }
+
     fn shards(&self) -> Vec<String> {
         [("wood", 6), ("key", 4), ("glass", 4)]
             .iter()

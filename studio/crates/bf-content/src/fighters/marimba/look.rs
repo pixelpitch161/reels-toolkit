@@ -185,6 +185,11 @@ impl MarimbaLook {
 }
 
 impl Look for MarimbaLook {
+    /// Its own panel on the VS card ([`crate::fighters::shared::panels::marimba`]).
+    fn title_pattern(&self, base: &mut bf_picture::img::RgbF) {
+        crate::fighters::shared::panels::marimba(base);
+    }
+
     fn shards(&self) -> Vec<String> {
         [("bar", 8), ("tube", 4), ("head", 2)]
             .iter()

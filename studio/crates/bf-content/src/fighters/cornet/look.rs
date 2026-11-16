@@ -141,6 +141,11 @@ fn draw_hat(fr: &mut Frame, cam: &Cam, x: f64, z: f64, y: f64, spin: f64, col: V
 }
 
 impl Look for CornetLook {
+    /// Its own panel on the VS card ([`crate::fighters::shared::panels::cornet`]).
+    fn title_pattern(&self, base: &mut bf_picture::img::RgbF) {
+        crate::fighters::shared::panels::cornet(base);
+    }
+
     /// Its shatter parts: brass tubing, the three valve caps and chips of the bell (drawn as TRUMPET's).
     fn shards(&self) -> Vec<String> {
         [("tube", 5), ("valve", 3), ("brass", 5)]

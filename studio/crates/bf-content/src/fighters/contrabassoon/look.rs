@@ -213,6 +213,11 @@ fn draw_spray(arr: &mut Img<f32>, cam: &Cam, x: f64, z: f64, age: f64) {
 }
 
 impl Look for ContrabassoonLook {
+    /// Its own panel on the VS card ([`crate::fighters::shared::panels::contrabassoon`]).
+    fn title_pattern(&self, base: &mut bf_picture::img::RgbF) {
+        crate::fighters::shared::panels::contrabassoon(base);
+    }
+
     /// Its shatter parts: maple sticks, silver keys and bends, the reed.
     fn shards(&self) -> Vec<String> {
         [("wood", 7), ("key", 6), ("reed", 2)]

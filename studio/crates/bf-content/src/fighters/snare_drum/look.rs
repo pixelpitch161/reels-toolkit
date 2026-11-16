@@ -177,6 +177,11 @@ impl SnareDrumLook {
 }
 
 impl Look for SnareDrumLook {
+    /// Its own panel on the VS card ([`crate::fighters::shared::panels::snare_drum`]).
+    fn title_pattern(&self, base: &mut bf_picture::img::RgbF) {
+        crate::fighters::shared::panels::snare_drum(base);
+    }
+
     fn shards(&self) -> Vec<String> {
         [("shell", 6), ("hoop", 4), ("stick", 2)]
             .iter()

@@ -22,5 +22,6 @@
 pub mod hash;
 pub mod older;
 pub mod padded;
+pub mod panels;
 pub mod reeds;
 pub mod slap;

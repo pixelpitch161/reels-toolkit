@@ -190,6 +190,11 @@ impl MellophoneLook {
 }
 
 impl Look for MellophoneLook {
+    /// Its own panel on the VS card ([`crate::fighters::shared::panels::mellophone`]).
+    fn title_pattern(&self, base: &mut bf_picture::img::RgbF) {
+        crate::fighters::shared::panels::mellophone(base);
+    }
+
     /// Its shatter parts: silver tubing, the three valve caps and chips of the bell (drawn as TRUMPET's).
     fn shards(&self) -> Vec<String> {
         [("tube", 6), ("valve", 3), ("brass", 5)]

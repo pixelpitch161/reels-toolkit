@@ -199,6 +199,11 @@ impl TimpaniLook {
 }
 
 impl Look for TimpaniLook {
+    /// Its own panel on the VS card ([`crate::fighters::shared::panels::timpani`]).
+    fn title_pattern(&self, base: &mut bf_picture::img::RgbF) {
+        crate::fighters::shared::panels::timpani(base);
+    }
+
     fn shards(&self) -> Vec<String> {
         [("copper", 8), ("rod", 4), ("head", 3)]
             .iter()

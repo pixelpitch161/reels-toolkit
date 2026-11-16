@@ -152,6 +152,11 @@ impl SopranoSaxLook {
 }
 
 impl Look for SopranoSaxLook {
+    /// Its own panel on the VS card ([`crate::fighters::shared::panels::soprano_sax`]).
+    fn title_pattern(&self, base: &mut bf_picture::img::RgbF) {
+        crate::fighters::shared::panels::soprano_sax(base);
+    }
+
     /// Its shatter parts: brass, keys and pearls (drawn as ALTO SAX's).
     fn shards(&self) -> Vec<String> {
         [("brass", 6), ("key", 4), ("pearl", 3)]
