@@ -279,7 +279,16 @@ impl Look for MarimbaLook {
             if t > p.t_ko {
                 break;
             }
-            fx.fl.add(t, self.at(p, self.k, t, R), col.map(|c| c * 0.5), 1.6, 0.6, 0.03, 0.3, 0.0);
+            fx.fl.add(
+                t,
+                self.at(p, self.k, t, R),
+                col.map(|c| c * 0.5),
+                1.6,
+                0.6,
+                0.03,
+                0.3,
+                0.0,
+            );
         }
         for &(t, _) in &self.pins {
             if t > p.t_ko {
@@ -293,7 +302,8 @@ impl Look for MarimbaLook {
                 ..Emit::default()
             };
             fx.pa.emit(t, pos, "dust", &dust);
-            fx.bu.add(t, self.at(p, 1 - self.k, t, R), [235.0, 225.0, 210.0], 1.2, None, false);
+            fx.bu
+                .add(t, self.at(p, 1 - self.k, t, R), [235.0, 225.0, 210.0], 1.2, None, false);
         }
         // FIVE OCTAVES: a flare and a burst of gold
         if let Some(t) = self.five.filter(|&t| t <= p.t_ko) {
@@ -311,7 +321,14 @@ impl Look for MarimbaLook {
 
     fn fx_event(&self, p: &PictureCtx, fx: &mut Fx, e: &Event) {
         if e.kind == "hit" && owner(e) == self.k && how(e) == "mallet" {
-            fx.bu.add(e.t, up(e.f(5), e.f(6), R * 0.6), heat(p.col[self.k], e.i(8)), 0.7, None, true);
+            fx.bu.add(
+                e.t,
+                up(e.f(5), e.f(6), R * 0.6),
+                heat(p.col[self.k], e.i(8)),
+                0.7,
+                None,
+                true,
+            );
         }
     }
 
@@ -332,12 +349,18 @@ impl Look for MarimbaLook {
         }
         let col = p.col[self.k];
         let trem = Self::in_window(&self.tremolo, f.t);
-        let armed = Self::in_window(&self.dead, f.t) && !self.pins.iter().any(|&(t, _)| {
-            self.dead.iter().any(|&(a, b)| a <= t && t <= f.t && f.t < b)
-        });
+        let armed = Self::in_window(&self.dead, f.t)
+            && !self
+                .pins
+                .iter()
+                .any(|&(t, _)| self.dead.iter().any(|&(a, b)| a <= t && t <= f.t && f.t < b));
         for m in self.live(p, f.t) {
             let head = if m.octave { heat(col, 4) } else { heat(col, m.b) };
-            let head = if armed && !m.octave { head.map(|c| c * 0.55) } else { head };
+            let head = if armed && !m.octave {
+                head.map(|c| c * 0.55)
+            } else {
+                head
+            };
             draw_mallet(arr, f.cam, m.x, m.z, (m.vx, m.vz), head, m.octave);
             if trem && !m.octave {
                 // TREMOLO: its partner buzzes beside it

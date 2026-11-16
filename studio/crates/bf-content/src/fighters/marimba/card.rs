@@ -35,7 +35,15 @@ mod tests {
     #[test]
     fn the_card_is_written() {
         let c = card().expect("MARIMBA's card");
-        for text in [c.weapon, c.text, c.abilities[0], c.abilities[1], c.abilities[2], c.colour, c.usually_plays] {
+        for text in [
+            c.weapon,
+            c.text,
+            c.abilities[0],
+            c.abilities[1],
+            c.abilities[2],
+            c.colour,
+            c.usually_plays,
+        ] {
             assert!(!text.trim().is_empty());
             assert!(text.starts_with(|ch: char| ch.is_uppercase()), "{text:?}");
             assert_ne!(text, text.to_uppercase(), "{text:?} shouts");

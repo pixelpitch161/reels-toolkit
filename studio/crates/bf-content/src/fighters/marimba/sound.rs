@@ -185,7 +185,13 @@ impl Sound for MarimbaSound {
             let Some(&m) = base.get(&b.id) else { continue };
             let tq = ctx.q16(b.t);
             let n = self.step_up(ctx, m, b.b, tq)?;
-            self.put(ctx, mix, &self.mar(f64::from(n), 0.3 * beat, 0.6 + 0.08 * b.b.min(4) as f64)?, tq, 0.22)?;
+            self.put(
+                ctx,
+                mix,
+                &self.mar(f64::from(n), 0.3 * beat, 0.6 + 0.08 * b.b.min(4) as f64)?,
+                tq,
+                0.22,
+            )?;
         }
         // the landings: a chord tone under the line and a wooden knock
         for e in state::ends(ev, k) {
@@ -235,7 +241,12 @@ impl Sound for MarimbaSound {
                 break;
             }
             let m = f64::from(self.top(ctx) - 24);
-            let dead: Vec<f64> = self.mar(m, 0.0, 1.0)?.iter().take((0.09 * 48_000.0) as usize).copied().collect();
+            let dead: Vec<f64> = self
+                .mar(m, 0.0, 1.0)?
+                .iter()
+                .take((0.09 * 48_000.0) as usize)
+                .copied()
+                .collect();
             self.put(ctx, mix, &dead, t, 0.45)?;
             mix.place("fx", &Sig::Mono(synth::thud(0.3, 140.0, 55.0, 23)), t, 0.22, 0.0);
         }
@@ -248,7 +259,13 @@ impl Sound for MarimbaSound {
         let notes = ctx.harmony.scale_notes(top - 24, top, None).map_err(bad)?;
         for (j, m) in notes.iter().rev().enumerate() {
             let x = self.mar(f64::from(*m), 0.1, 0.8 - 0.03 * j as f64)?;
-            mix.place(&self.bus(ctx), &Sig::Mono(x.to_vec()), ctx.show.t_hs + j as f64 * 0.04, 0.26, 0.0);
+            mix.place(
+                &self.bus(ctx),
+                &Sig::Mono(x.to_vec()),
+                ctx.show.t_hs + j as f64 * 0.04,
+                0.26,
+                0.0,
+            );
         }
         Ok(())
     }
@@ -276,7 +293,13 @@ impl Sound for MarimbaSound {
                 let n = (d * 4.0) as usize;
                 for i in 1..n {
                     let xi = self.mar(f64::from(m), 0.05, 0.6)?;
-                    mix.place("solo", &Sig::Mono(xi.to_vec()), ts + i as f64 * grid.beat / 4.0, 0.22, 0.0);
+                    mix.place(
+                        "solo",
+                        &Sig::Mono(xi.to_vec()),
+                        ts + i as f64 * grid.beat / 4.0,
+                        0.22,
+                        0.0,
+                    );
                 }
             }
         }
