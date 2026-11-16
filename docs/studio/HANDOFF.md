@@ -123,6 +123,27 @@ holds files), then add the new folder's SHA-256s to `FROZEN` in `crates/bf-app/t
 - **Nothing under `projects/`, `reelkit/` or `series/` is ever edited.** `git status --short projects reelkit series`
   must be empty before every commit.
 
+### Disk space: build folders (read before making a worktree)
+
+One Rust build folder (`target`) of this repo grows to 30-95 GB, and the owner's F: drive filled twice (Nov 14 and
+Nov 16, 2026) from threads each keeping their own. The rules:
+
+- **Default: no worktree.** Build in the main folder, so its one `studio\target` is shared. (One shared
+  `CARGO_TARGET_DIR` for several checkouts building at the same time gave stale-crate errors, so sharing is only for
+  one checkout.)
+- **If a thread needs its own checkout**, make it as a git worktree at `.wt\<name>` (git-excluded) and point its
+  builds at `.wt\<name>-target`: `$env:CARGO_TARGET_DIR = "<repo>\.wt\<name>-target"`, and
+  `$env:CARGO_PROFILE_DEV_DEBUG = "line-tables-only"` to roughly halve its debug build. Never put clones, worktrees or
+  `target-*` folders anywhere else (not next to the repo, not in `studio\`), so the cleanup script finds them.
+- **At most three own build folders at once.** Before making one, run the cleanup script's report and check free
+  space on F: (keep at least 150 GB free).
+- **When the work is merged and pushed, clean up before ending the thread:**
+  `powershell -ExecutionPolicy Bypass -File studio\scripts\clean-builds.ps1 -Apply`. It lists every checkout with
+  its size; it deletes only checkouts that are clean, pushed and merged into the build branch, and never one a program
+  is running from. `-TrimMain` also drops the main folder's debug build when nothing uses it. Without `-Apply` it only
+  reports.
+- Keep `studio\reference\.cache` (pinned test data, slow to remake); the script never touches `studio\reference`.
+
 ## How to add a fighter
 
 The default is the **quick route** the 10 older fighters used (the owner's Nov 14 decision, ruling M4-R16): a

@@ -18,3 +18,6 @@ series/instrument-history/*.png
 studio/target*/
 !studio/reference/**
 studio/reference/.cache/
+
+# Thread worktrees and their build folders (see docs/studio/HANDOFF.md, Disk space)
+/.wt/
