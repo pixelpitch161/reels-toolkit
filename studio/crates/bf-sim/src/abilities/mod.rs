@@ -53,7 +53,7 @@ use bf_core::event::Value;
 
 use crate::ball::Slot;
 use crate::fight::Fight;
-use crate::kinds::{crowd, drill, jump, lightning, mortar, rests, roll_charge, spotlight, tiptoe, tune, wrecking};
+use crate::kinds::{crowd, drill, jump, lightning, mortar, plumbing, rests, roll_charge, spotlight, tiptoe, tune, wrecking};
 use crate::roster::{AbilityCfg, AbilityKind};
 
 /// `ab[name]`: a number of an ability's roster entry that its kind cannot do without.
@@ -180,6 +180,10 @@ pub fn fire<'a>(fight: &mut Fight<'a>, k: usize, ab: &'a AbilityCfg) {
         AbilityKind::Melody => rests::start_melody(fight, k, ab),
         // 2928 to 2929 (milestone 4: VIOLA's DOUBLE STOP, in its weapon's module)
         AbilityKind::DoubleStop => rests::start_double_stop(fight, k, ab),
+        // CONTRABASSOON (made from scratch), in its weapon's module
+        AbilityKind::WaterKey => plumbing::start_water_key(fight, k, ab),
+        AbilityKind::HotPipes => plumbing::start_hot_pipes(fight, k, ab),
+        AbilityKind::PipeBox => plumbing::start_box(fight, k, ab),
         // 2930 to 2932
         AbilityKind::Rhapsody => jump::start_rhapsody(fight, k, ab),
         // 2933 to 2935

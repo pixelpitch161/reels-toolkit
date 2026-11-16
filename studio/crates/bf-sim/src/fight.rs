@@ -277,6 +277,8 @@ pub struct Fight<'a> {
     pub bite: kinds::bite::State,
     /// Weapon kind `trap`'s state (HARP).
     pub trap: kinds::trap::State,
+    /// Weapon kind `plumbing`'s state (CONTRABASSOON, made from scratch).
+    pub plumbing: kinds::plumbing::State,
     /// Weapon kind `surf`'s state (UKULELE).
     pub surf: kinds::surf::State,
     /// Weapon kind `scratch_floor`'s state (TURNTABLES).
@@ -430,6 +432,7 @@ impl<'a> Fight<'a> {
             inflate: Default::default(),
             bite: Default::default(),
             trap: Default::default(),
+            plumbing: Default::default(),
             surf: Default::default(),
             scratch_floor: Default::default(),
             tether: Default::default(),

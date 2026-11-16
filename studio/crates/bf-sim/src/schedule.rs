@@ -40,7 +40,7 @@ use crate::fight::{Fight, stunned};
 use crate::geom;
 use crate::kinds::{
     anchor, bite, blade, combo, crowd, drill, echo, grapple, inflate, jump, lightning, line, mortar, pulse, rake,
-    rests, roll, roll_charge, scratch_floor, spotlight, striker, surf, swallow, tether, tiptoe, trap, tune, walk,
+    plumbing, rests, roll, roll_charge, scratch_floor, spotlight, striker, surf, swallow, tether, tiptoe, trap, tune, walk,
     wrecking,
 };
 use crate::record::Frames;
@@ -339,6 +339,9 @@ impl Schedule {
                     line::beat(fight, k, self.kb);
                 } else if trap::is(fight, k) {
                     trap::beat(fight, k, self.kb);
+                } else if plumbing::is(fight, k) {
+                    // CONTRABASSOON's U-BEND (made from scratch): a pipe on its beats
+                    plumbing::beat(fight, k, self.kb);
                 }
                 // 5942 to 5943 (TURNTABLES, milestone 4)
                 fight.socket("beat.scratch_floor");
@@ -751,6 +754,10 @@ impl Schedule {
         fight.socket("later.notes");
         if rests::live(fight) {
             rests::notes_step(fight, dt);
+        }
+        // CONTRABASSOON's pipes, boxes and sprays (made from scratch; no Python line)
+        if plumbing::live(fight) {
+            plumbing::step(fight);
         }
         // 6193 to 6194: `if getattr(self, 'splinters', None)` (the smash's)
         fight.socket("later.splinters");

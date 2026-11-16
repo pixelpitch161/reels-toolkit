@@ -1699,6 +1699,59 @@
    "pp": "BASS DRUM",
    "register": [28, 50],
    "idiom": "drum"
+  },
+  {
+   "name": "CONTRABASSOON",
+   "color": [150, 34, 44],
+   "dark": [84, 16, 22],
+   "corner": "red",
+   "view": [8, 20, 0],
+   "weapon": {
+    "kind": "plumbing",
+    "style": "ubend",
+    "name": "U-BEND",
+    "every": 4,
+    "max_pipes": 3,
+    "leg": 0.8,
+    "gap": 0.7,
+    "thick": 0.09,
+    "lead": 1.6,
+    "dmg": 2.3,
+    "dmg_grow": 0.15,
+    "dmg_max": 3.6,
+    "cool": 0.4,
+    "knock": 0.6,
+    "own_boost": 0.5
+   },
+   "abilities": {
+    "unlock1": {
+     "name": "WATER KEY",
+     "kind": "water_key",
+     "beats": 1,
+     "reach": 0.9,
+     "dmg": 2.5,
+     "knock": 1.2,
+     "every_bars": 3
+    },
+    "unlock2": {
+     "name": "HOT PIPES",
+     "kind": "hot_pipes",
+     "dur_beats": 8,
+     "mult": 2.0,
+     "every_bars": 6
+    },
+    "low": {
+     "name": "FIVE AND A HALF METRES",
+     "kind": "pipe_box",
+     "beats": 4,
+     "half": 1.0,
+     "dmg": 2.0,
+     "cool": 0.2
+    }
+   },
+   "pp": "CONTRABASSOON",
+   "register": [34, 62],
+   "idiom": "grumble"
   }
  ]
 }
