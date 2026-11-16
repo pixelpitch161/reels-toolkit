@@ -12,6 +12,7 @@ pub mod altissimo;
 pub mod arc;
 pub mod barrage;
 pub mod beam;
+pub mod buzz_roll;
 pub mod cannons;
 pub mod clamp;
 pub mod company_front;
@@ -24,6 +25,7 @@ pub mod drum_roll;
 pub mod encore;
 pub mod endless;
 pub mod five_octaves;
+pub mod flam;
 pub mod flash_spin;
 pub mod flick;
 pub mod fork;
@@ -39,6 +41,7 @@ pub mod offbeat;
 pub mod prelude;
 pub mod rewind;
 pub mod rhapsody;
+pub mod rimshot;
 pub mod runoff;
 pub mod runway;
 pub mod slap;
@@ -213,6 +216,12 @@ pub enum AbilityKind {
     DeadStroke,
     /// `five_octaves`: MARIMBA's FIVE OCTAVES (a Studio kind).
     FiveOctaves,
+    /// `flam`: SNARE DRUM's FLAM (a Studio kind).
+    Flam,
+    /// `rimshot`: SNARE DRUM's RIMSHOT (a Studio kind).
+    Rimshot,
+    /// `buzz_roll`: SNARE DRUM's BUZZ ROLL (a Studio kind).
+    BuzzRoll,
     /// A kind the engine has not ported yet, or a ported kind with an option it has not ported, written
     /// `kind+option` (OBOE's `"wave+detune"`).
     Unsupported(String),
@@ -323,6 +332,12 @@ pub enum AbilitySettings {
     DeadStroke(dead_stroke::DeadStrokeCfg),
     /// Kind `five_octaves`.
     FiveOctaves(five_octaves::FiveOctavesCfg),
+    /// Kind `flam`.
+    Flam(flam::FlamCfg),
+    /// Kind `rimshot`.
+    Rimshot(rimshot::RimshotCfg),
+    /// Kind `buzz_roll`.
+    BuzzRoll(buzz_roll::BuzzRollCfg),
 }
 
 impl AbilityKind {
@@ -386,6 +401,9 @@ impl AbilityKind {
             AbilityKind::Tremolo => "tremolo",
             AbilityKind::DeadStroke => "dead_stroke",
             AbilityKind::FiveOctaves => "five_octaves",
+            AbilityKind::Flam => "flam",
+            AbilityKind::Rimshot => "rimshot",
+            AbilityKind::BuzzRoll => "buzz_roll",
             AbilityKind::Unsupported(kind) => kind.split('+').next().unwrap_or(kind),
         }
     }
@@ -449,6 +467,9 @@ impl AbilityKind {
             "tremolo" if tremolo::PORTED => AbilityKind::Tremolo,
             "dead_stroke" if dead_stroke::PORTED => AbilityKind::DeadStroke,
             "five_octaves" if five_octaves::PORTED => AbilityKind::FiveOctaves,
+            "flam" if flam::PORTED => AbilityKind::Flam,
+            "rimshot" if rimshot::PORTED => AbilityKind::Rimshot,
+            "buzz_roll" if buzz_roll::PORTED => AbilityKind::BuzzRoll,
             other => AbilityKind::Unsupported(other.to_string()),
         }
     }
@@ -511,6 +532,9 @@ impl AbilityKind {
             AbilityKind::Tremolo => tremolo::REQUIRED,
             AbilityKind::DeadStroke => dead_stroke::REQUIRED,
             AbilityKind::FiveOctaves => five_octaves::REQUIRED,
+            AbilityKind::Flam => flam::REQUIRED,
+            AbilityKind::Rimshot => rimshot::REQUIRED,
+            AbilityKind::BuzzRoll => buzz_roll::REQUIRED,
             AbilityKind::Unsupported(_) => &[],
         }
     }
@@ -575,6 +599,9 @@ impl AbilityKind {
             AbilityKind::Tremolo => tremolo::ALLOWED,
             AbilityKind::DeadStroke => dead_stroke::ALLOWED,
             AbilityKind::FiveOctaves => five_octaves::ALLOWED,
+            AbilityKind::Flam => flam::ALLOWED,
+            AbilityKind::Rimshot => rimshot::ALLOWED,
+            AbilityKind::BuzzRoll => buzz_roll::ALLOWED,
             AbilityKind::Unsupported(_) => &[],
         }
     }
@@ -645,6 +672,9 @@ fn settings(e: &Entry, prefix: &str, kind: &AbilityKind, ab: &Json) -> Result<Ab
         AbilityKind::Tremolo => AbilitySettings::Tremolo(tremolo::parse(e, prefix, ab)?),
         AbilityKind::DeadStroke => AbilitySettings::DeadStroke(dead_stroke::parse(e, prefix, ab)?),
         AbilityKind::FiveOctaves => AbilitySettings::FiveOctaves(five_octaves::parse(e, prefix, ab)?),
+        AbilityKind::Flam => AbilitySettings::Flam(flam::parse(e, prefix, ab)?),
+        AbilityKind::Rimshot => AbilitySettings::Rimshot(rimshot::parse(e, prefix, ab)?),
+        AbilityKind::BuzzRoll => AbilitySettings::BuzzRoll(buzz_roll::parse(e, prefix, ab)?),
     })
 }
 
@@ -708,6 +738,9 @@ pub(crate) fn kind_check(e: &Entry, prefix: &str, ab: &AbilityCfg) -> Result<(),
         AbilityKind::Tremolo => tremolo::check(e, prefix, ab),
         AbilityKind::DeadStroke => dead_stroke::check(e, prefix, ab),
         AbilityKind::FiveOctaves => five_octaves::check(e, prefix, ab),
+        AbilityKind::Flam => flam::check(e, prefix, ab),
+        AbilityKind::Rimshot => rimshot::check(e, prefix, ab),
+        AbilityKind::BuzzRoll => buzz_roll::check(e, prefix, ab),
     }
 }
 

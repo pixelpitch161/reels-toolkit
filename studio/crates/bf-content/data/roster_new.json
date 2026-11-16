@@ -120,6 +120,57 @@
    "pp": "MARIMBA",
    "register": [60, 96],
    "idiom": "mallets"
+  },
+  {
+   "name": "SNARE DRUM",
+   "color": [255, 48, 128],
+   "dark": [150, 18, 70],
+   "corner": "red",
+   "view": [10, 20, 0],
+   "weapon": {
+    "kind": "sticks",
+    "style": "sticks",
+    "name": "PARADIDDLE",
+    "step16": 2,
+    "out16": 1,
+    "spread": 35.0,
+    "base": 1.2,
+    "grow": 0.06,
+    "max_reach": 2.4,
+    "dmg": 1.4,
+    "accent": 1.5,
+    "knock": 0.35
+   },
+   "abilities": {
+    "unlock1": {
+     "name": "FLAM",
+     "kind": "flam",
+     "dur_beats": 8,
+     "mult": 0.5,
+     "every_bars": 4
+    },
+    "unlock2": {
+     "name": "RIMSHOT",
+     "kind": "rimshot",
+     "dur_beats": 8,
+     "dmg_k": 3.0,
+     "knock_k": 2.5,
+     "stun_beats": 1,
+     "every_bars": 5
+    },
+    "low": {
+     "name": "BUZZ ROLL",
+     "kind": "buzz_roll",
+     "beats": 4,
+     "radius": 2.2,
+     "tick16": 1,
+     "dmg": 0.8,
+     "knock": 0.12
+    }
+   },
+   "pp": "SNARE DRUM",
+   "register": [60, 84],
+   "idiom": "rudiment"
   }
  ]
 }

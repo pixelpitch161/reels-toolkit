@@ -124,7 +124,7 @@ fn the_order_file_names_every_socket_once_per_place() {
     // per-fighter places are listed for fighter 0, then fighter 1
     let names = |when: &str| of(&order, &[when]);
     assert_eq!(names("setup").len(), 21);
-    assert_eq!(names("frame").len(), 23);
+    assert_eq!(names("frame").len(), 24);
     assert_eq!(names("beat").iter().filter(|n| *n == "beat.stunned").count(), 2);
 }
 
