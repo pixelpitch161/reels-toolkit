@@ -39,8 +39,8 @@ use crate::abilities::{
 use crate::fight::{Fight, stunned};
 use crate::geom;
 use crate::kinds::{
-    anchor, bite, blade, combo, crowd, drill, echo, grapple, inflate, jump, lightning, line, mortar, pulse, rake,
-    rests, roll, roll_charge, scratch_floor, spotlight, striker, surf, swallow, tether, tiptoe, trap, tune, walk,
+    anchor, bite, blade, combo, crowd, drill, echo, grapple, inflate, jump, lightning, line, mallets, mortar, pulse,
+    rake, rests, roll, roll_charge, scratch_floor, spotlight, striker, surf, swallow, tether, tiptoe, trap, tune, walk,
     wrecking,
 };
 use crate::record::Frames;
@@ -117,6 +117,8 @@ pub struct Schedule {
     pub n16c: i64,
     /// `n16d`: the drill's (SOUSAPHONE, 5903).
     pub n16d: i64,
+    /// `n16x`: the mallets' (MARIMBA, a Studio kind: after every kit kind).
+    pub n16x: i64,
     // Python keeps one counter per kind (`next16`, `dc_next`, `n16b`, `next16c`, `next16k`, `next16t`, `n16p`, ...):
     // each moves only while a fighter has its kind, so they are separate fields, never one shared counter. The frozen
     // `pack`'s `n16p` is not kept.
@@ -260,6 +262,11 @@ impl Schedule {
         for k in which(fight, roll_charge::is) {
             roll_charge::setup(fight, k);
         }
+        // MARIMBA (a Studio kind, after every kit kind)
+        fight.socket("setup.mallets");
+        for k in which(fight, mallets::is) {
+            mallets::setup(fight, k);
+        }
         Schedule {
             steps_per_frame,
             k0,
@@ -286,6 +293,7 @@ impl Schedule {
             n16s: k16_0,
             n16c: k16_0,
             n16d: k16_0,
+            n16x: k16_0,
             next16: k16_0,
             n16b: k16_0,
             next16c: k16_0,
@@ -521,6 +529,9 @@ impl Schedule {
         // 6091 to 6095: roll_charge (on `n16r`, the counter the older `rattle` shares)
         fight.socket("tick.roll_charge");
         self.counter(fight, roll_charge::is, |s| &mut s.n16r, roll_charge::tick);
+        // MARIMBA's mallets (a Studio kind, after every kit kind)
+        fight.socket("tick.mallets");
+        self.counter(fight, mallets::is, |s| &mut s.n16x, mallets::tick);
 
         // 4. The timers (6096 to 6107).
         for k in 0..2 {
@@ -772,6 +783,11 @@ impl Schedule {
         fight.socket("later.clamps");
         if clamp::live(fight) {
             clamp::clamps_step(fight);
+        }
+        // MARIMBA's mallets and FIVE OCTAVES (a Studio kind, after every kit kind)
+        fight.socket("later.mallets");
+        if mallets::live(fight) {
+            mallets::step(fight, dt);
         }
 
         // 12. Levels and abilities (6203).

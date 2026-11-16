@@ -115,16 +115,17 @@ fn the_order_file_names_every_socket_once_per_place() {
             .contains(&s.when.as_str()),
             "{s:?}"
         );
-        let ok = s
-            .lines
-            .split('-')
-            .all(|n| n.parse::<u32>().is_ok_and(|n| (300..=6300).contains(&n)));
+        // a Studio kind's socket (MARIMBA's mallets, after every kit kind) has no fight.py line: `studio`
+        let ok = s.lines == "studio"
+            || s.lines
+                .split('-')
+                .all(|n| n.parse::<u32>().is_ok_and(|n| (300..=6300).contains(&n)));
         assert!(ok, "{s:?}: a fight.py line or range");
     }
     // per-fighter places are listed for fighter 0, then fighter 1
     let names = |when: &str| of(&order, &[when]);
-    assert_eq!(names("setup").len(), 19);
-    assert_eq!(names("frame").len(), 21);
+    assert_eq!(names("setup").len(), 20);
+    assert_eq!(names("frame").len(), 22);
     assert_eq!(names("beat").iter().filter(|n| *n == "beat.stunned").count(), 2);
 }
 
@@ -317,6 +318,6 @@ fn every_fighter_not_ported_is_refused_in_words() {
         }
     }
     // the whole roster: the kit's 20 and the older ten (milestone 4)
-    assert_eq!(refused + passed, 30);
+    assert_eq!(refused + passed, 30 + bf_core::roster::STUDIO_FIGHTERS.len());
     assert!(passed >= 2, "FLUTE and TROMBONE at least");
 }

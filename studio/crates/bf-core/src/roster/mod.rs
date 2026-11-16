@@ -24,9 +24,9 @@ pub use abilities::{AbilityCfg, AbilityKind, AbilitySettings, SlowCfg};
 pub use blade::{BladeCfg, BladeMode, MAX_FRETS0};
 pub use kinds::{
     anchor::AnchorCfg, combo::ComboCfg, crowd::CrowdCfg, drill::DrillCfg, echo::EchoCfg, grapple::GrappleCfg,
-    jump::JumpCfg, lightning::LightningCfg, line::LineCfg, mortar::MortarCfg, rake::RakeCfg, roll::RollCfg,
-    roll_charge::RollChargeCfg, spotlight::SpotlightCfg, swallow::SwallowCfg, tiptoe::TiptoeCfg, tune::TuneCfg,
-    walk::WalkCfg,
+    jump::JumpCfg, lightning::LightningCfg, line::LineCfg, mallets::MalletsCfg, mortar::MortarCfg, rake::RakeCfg,
+    roll::RollCfg, roll_charge::RollChargeCfg, spotlight::SpotlightCfg, swallow::SwallowCfg, tiptoe::TiptoeCfg,
+    tune::TuneCfg, walk::WalkCfg,
 };
 pub use kinds::{
     bite::BiteCfg, inflate::InflateCfg, pulse::PulseCfg, rests::RestsCfg, scratch_floor::ScratchFloorCfg,
@@ -56,6 +56,10 @@ pub const KIT_WEAPON_KINDS: [(&str, bool); 18] = [
     ("drill", kinds::drill::PORTED),
     ("roll_charge", kinds::roll_charge::PORTED),
 ];
+
+/// The fighters made in the Studio after the kit (no Python reference: Rust is their source of truth), in roster
+/// order after the kit's 20 and the older ten. Each brings its own weapon and ability kinds.
+pub const STUDIO_FIGHTERS: &[&str] = &["MARIMBA"];
 
 /// The kit's further ability kinds, each with its module's `PORTED` (`shield` and FLUTE's and TROMBONE's kinds are
 /// always ported).
@@ -215,6 +219,8 @@ pub enum WeaponCfg {
     Wrecking(kinds::wrecking::WreckingCfg),
     /// Kind `rests` (VIOLA's COUNTING RESTS; milestone 4), typed by `roster::kinds::rests`.
     Rests(kinds::rests::RestsCfg),
+    /// Kind `mallets` (MARIMBA's MALLET RUN, a Studio kind), typed by `roster::kinds::mallets`.
+    Mallets(kinds::mallets::MalletsCfg),
     /// A kind the engine has not ported yet (a spinning blade, with no `mode`, is `"blade"` until
     /// [`blade::SPIN_PORTED`]).
     Unsupported(String),
@@ -438,6 +444,7 @@ impl Entry<'_> {
             "tether" if kinds::tether::PORTED => Ok(WeaponCfg::Tether(kinds::tether::parse(self, w)?)),
             "wrecking" if kinds::wrecking::PORTED => Ok(WeaponCfg::Wrecking(kinds::wrecking::parse(self, w)?)),
             "rests" if kinds::rests::PORTED => Ok(WeaponCfg::Rests(kinds::rests::parse(self, w)?)),
+            "mallets" if kinds::mallets::PORTED => Ok(WeaponCfg::Mallets(kinds::mallets::parse(self, w)?)),
             _ => Ok(WeaponCfg::Unsupported(kind)),
         }
     }
@@ -533,6 +540,7 @@ impl FighterCfg {
             WeaponCfg::Tether(w) => kinds::tether::check(&e, w)?,
             WeaponCfg::Wrecking(w) => kinds::wrecking::check(&e, w)?,
             WeaponCfg::Rests(w) => kinds::rests::check(&e, w)?,
+            WeaponCfg::Mallets(w) => kinds::mallets::check(&e, w)?,
             WeaponCfg::Unsupported(_) => {}
         }
         let slots = [
@@ -605,6 +613,7 @@ impl WeaponCfg {
             WeaponCfg::Tether(w) => return kinds::tether::main16(w),
             WeaponCfg::Wrecking(w) => return kinds::wrecking::main16(w),
             WeaponCfg::Rests(w) => return kinds::rests::main16(w),
+            WeaponCfg::Mallets(w) => return kinds::mallets::main16(w),
             WeaponCfg::Unsupported(_) => return None,
         };
         Some(crate::py::round_half_even(4.0 * every))
@@ -650,6 +659,7 @@ impl WeaponCfg {
             WeaponCfg::Tether(w) => kinds::tether::ball_start(w),
             WeaponCfg::Wrecking(w) => kinds::wrecking::ball_start(w),
             WeaponCfg::Rests(w) => kinds::rests::ball_start(w),
+            WeaponCfg::Mallets(w) => kinds::mallets::ball_start(w),
             WeaponCfg::Unsupported(_) => BallStart::default(),
         }
     }
@@ -686,6 +696,7 @@ impl WeaponCfg {
             WeaponCfg::Tether(_) => "tether",
             WeaponCfg::Wrecking(_) => "wrecking",
             WeaponCfg::Rests(_) => "rests",
+            WeaponCfg::Mallets(_) => "mallets",
             WeaponCfg::Unsupported(kind) => kind,
         }
     }
@@ -717,7 +728,10 @@ mod tests {
     fn kit_roster() -> Vec<FighterCfg> {
         let all = parse_roster(ROSTER).expect("the roster loads");
         assert_eq!(all.iter().filter(|f| OLDER.contains(&f.name.as_str())).count(), 10);
-        let kit: Vec<FighterCfg> = all.into_iter().filter(|f| !OLDER.contains(&f.name.as_str())).collect();
+        let kit: Vec<FighterCfg> = all
+            .into_iter()
+            .filter(|f| !OLDER.contains(&f.name.as_str()) && !STUDIO_FIGHTERS.contains(&f.name.as_str()))
+            .collect();
         assert_eq!(kit.len(), 20);
         kit
     }
@@ -749,7 +763,7 @@ mod tests {
     #[test]
     fn the_whole_roster_loads_in_order() {
         let r = parse_roster(ROSTER).expect("loads");
-        assert_eq!(r.len(), 30);
+        assert_eq!(r.len(), 30 + STUDIO_FIGHTERS.len());
         assert_eq!(r[0].name, "PIANO");
         assert_eq!(r[1].name, "DRUMS");
         // the kit's 20 keep their own order among the 30
@@ -1438,7 +1452,7 @@ mod tests {
     #[test]
     fn flute_and_trombone_hold_only_typed_keys() {
         // the real roster loads (all 30), and the two ported fighters pass the unknown-key check
-        assert_eq!(parse_roster(ROSTER).expect("loads").len(), 30);
+        assert_eq!(parse_roster(ROSTER).expect("loads").len(), 30 + STUDIO_FIGHTERS.len());
         for name in ["FLUTE", "TROMBONE"] {
             let f = fighter(name);
             assert!(!matches!(f.weapon, WeaponCfg::Unsupported(_)), "{name}");
