@@ -5,8 +5,8 @@ P, n, rgb, spec, emit, gid, two), centred on its bounding box and scaled to fit 
 TRUMPET.json: x along the instrument (mouthpiece at -x, bell at +x), y up (the valve buttons on top), z depth.
 
 The proportions (in centimetres before scaling) follow a B-flat cornet: about 36 cm from mouthpiece to bell rim, a
-12 cm bell, three piston valves close to the middle, the main tuning loop below and the shepherd's-crook curl of the
-leadpipe near the mouthpiece. The constants marked PHOTO are the ones to check against photos of real cornets.
+12 cm bell, three piston valves close to the middle, the leadpipe's big loop below and the shepherd's crook of the
+bell tube at the mouthpiece end. The constants marked PHOTO are the ones to check against photos of real cornets.
 
 Run from the clone root: python studio/tools/models/cornet_model.py
 """
@@ -107,57 +107,76 @@ def cylinder_y(x, z, y0, y1, r, rgb, spec=0.9):
     sweep([[x, y0, z], [x, y1, z]], r, rgb, spec, caps=True)
 
 
-TUBE = 0.55          # PHOTO: tubing radius (about 11 mm bore with the wall)
-VALVES_X = [-1.6, 1.0, 3.6]   # PHOTO: three piston casings, close together
-CASING_R = 0.85
-CASING_Y = (-3.4, 3.0)
-BELL_X = (8.5, 17.0)  # PHOTO: the bell section, shorter than a trumpet's
-BELL_R = 4.6          # PHOTO: a bell rim of about 12 cm (the flare's last segment reaches the rim)
+# Measured from a side photo of a modern B-flat cornet (Wikimedia Commons "Cornet 001.jpg", bell to the right,
+# about 27 px per cm), with the middle valve at x = 0 and the bell's axis about 7 cm above the valves' middle.
+TUBE = 0.55          # PHOTO: tubing radius (about 11 mm across)
+VALVES_X = [-2.66, 0.0, 2.66]   # PHOTO: three piston casings, close together with small gaps, at the middle
+CASING_R = 1.05      # PHOTO: casings about 21 mm across
+CASING_Y = (-6.4, 6.2)
+BELL_Y = 6.9         # PHOTO: the bell's axis (and the bell tube on top) runs just above the valve caps
+BELL_X = (4.0, 19.4)  # PHOTO: the flare starts over the third valve and ends at the rim
+BELL_R = 6.1          # PHOTO: a bell rim of about 12 cm
+FLARE = 1.7           # PHOTO: the flare's exponent; the photo's radii are about 1.5, 3.2, 5 cm at 1/4, 2/3, 6/7
+CROOK = (-10.1, 0.45, 6.3)   # PHOTO: the shepherd's crook on the mouthpiece side: centre x, centre y, radius
+LEAD_Y = 5.3          # PHOTO: the leadpipe's height, just under the bell tube
+LEAD_Z = -1.5         # the leadpipe and its loop sit on the far side of the casings
+LOOP_R = 5.3          # PHOTO: the big loop that turns the leadpipe down and back (its right end at about x = 11.5)
 
 # the valve casings, their caps, stems and pearl buttons
 for x in VALVES_X:
     cylinder_y(x, 0.0, CASING_Y[0], CASING_Y[1], CASING_R, BRASS)
-    cylinder_y(x, 0.0, CASING_Y[1], CASING_Y[1] + 0.5, CASING_R * 1.12, BRASS_HI)
-    cylinder_y(x, 0.0, CASING_Y[0] - 0.6, CASING_Y[0], CASING_R * 1.12, BRASS_HI)
-    cylinder_y(x, 0.0, CASING_Y[1] + 0.5, CASING_Y[1] + 1.6, 0.22, BRASS_HI)
-    cylinder_y(x, 0.0, CASING_Y[1] + 1.6, CASING_Y[1] + 2.0, 0.62, PEARL, spec=0.4)
+    cylinder_y(x, 0.0, CASING_Y[1], CASING_Y[1] + 1.2, CASING_R * 1.12, BRASS_HI)
+    cylinder_y(x, 0.0, CASING_Y[0] - 0.9, CASING_Y[0], CASING_R * 1.12, BRASS_HI)
+    cylinder_y(x, 0.0, CASING_Y[1] + 1.2, CASING_Y[1] + 2.8, 0.25, BRASS_HI)
+    cylinder_y(x, 0.0, CASING_Y[1] + 2.8, CASING_Y[1] + 3.3, 0.95, PEARL, spec=0.4)
 
-# the bell section: from the third casing up and out to the bell (the bell's flare is exponential)
-bell_path = line([VALVES_X[2] + CASING_R, 2.2, 0.0], [BELL_X[0], 2.2, 0.0], 3)
-sweep(bell_path, TUBE, BRASS)
-n = 10
-flare = [[BELL_X[0] + (BELL_X[1] - BELL_X[0]) * k / n, 2.2, 0.0] for k in range(n + 1)]
-radii = [TUBE + (BELL_R - TUBE) * (math.exp(3.2 * k / n) - 1) / (math.exp(3.2) - 1) for k in range(n + 1)]
+# the bell tube on top, from the crook to the flare, and the flare (exponential) to the rim
+sweep(line([CROOK[0], BELL_Y, 0.0], [BELL_X[0], BELL_Y, 0.0], 3), TUBE, BRASS)
+n = 12
+flare = [[BELL_X[0] + (BELL_X[1] - BELL_X[0]) * k / n, BELL_Y, 0.0] for k in range(n + 1)]
+
+
+def flare_r(t):
+    return TUBE + (BELL_R - TUBE) * (math.exp(FLARE * t) - 1) / (math.exp(FLARE) - 1)
+
+
+radii = [flare_r(k / n) for k in range(n + 1)]
 sweep(flare, radii, BRASS, two=True)
 # the bell's dark throat, seen from in front
 throat_x = BELL_X[1] - 0.9
-throat_r = TUBE + (BELL_R - TUBE) * (math.exp(3.2 * (throat_x - BELL_X[0]) / (BELL_X[1] - BELL_X[0])) - 1) / (math.exp(3.2) - 1)
-face([[throat_x, 2.2 + throat_r * 0.92 * math.cos(2 * math.pi * j / 10), throat_r * 0.92 * math.sin(2 * math.pi * j / 10)]
+throat_r = flare_r((throat_x - BELL_X[0]) / (BELL_X[1] - BELL_X[0]))
+face([[throat_x, BELL_Y + throat_r * 0.92 * math.cos(2 * math.pi * j / 10), throat_r * 0.92 * math.sin(2 * math.pi * j / 10)]
       for j in range(10)], DARK, spec=0.1, two=True, out=[1.0, 0.0, 0.0])
 
-# the main tuning loop below: out of the first casing, left, round and back (PHOTO: its length)
-loop = (line([VALVES_X[0] - CASING_R, -2.6, 0.0], [-9.0, -2.6, 0.0], 3)
-        + arc([-9.0, -0.4], 2.2, 270, 90, 0.0, 0.0, 8)[1:]
-        + line([-9.0, 1.8, 0.0], [-5.6, 1.8, 0.0], 2)[1:])
-sweep(loop, TUBE, BRASS)
-# the slide's brace
-cylinder_y(-7.0, 0.0, -2.6, 1.8, 0.16, BRASS_HI)
+# the shepherd's crook: the bell tube turns down round the mouthpiece end and comes back along the bottom into the
+# first valve
+cx, cy, cr = CROOK
+crook = (arc([cx, cy], cr, 90, 270, 0.0, 0.0, 12)
+         + line([cx, cy - cr, 0.0], [VALVES_X[0] - CASING_R, -4.2, 0.0], 3)[1:])
+sweep(crook, TUBE, BRASS)
 
-# the leadpipe with the shepherd's-crook curl near the mouthpiece (PHOTO: the curl's size and place), behind the
-# loop (z < 0), into the second casing
-lead = (line([-17.5, 0.6, -1.4], [-12.5, 0.6, -1.4], 3)
-        + arc([-12.5, -0.9], 1.5, 90, -250, -1.4, -1.4, 14)[1:]
-        + line([-12.5 + 1.5 * math.cos(math.radians(-250)), -0.9 + 1.5 * math.sin(math.radians(-250)), -1.4],
-               [VALVES_X[1], 0.4, -1.0], 4)[1:])
-sweep(lead, TUBE * 0.85, BRASS)
+# the leadpipe: straight from the mouthpiece over the valves, round the big loop at the bell end, back along the
+# bottom and up a small curl into the first valve (on the far side)
+lx = 11.5 - LOOP_R
+lead = (line([-11.9, LEAD_Y, LEAD_Z], [lx, LEAD_Y, LEAD_Z], 4)
+        + arc([lx, LEAD_Y - LOOP_R], LOOP_R, 90, -90, LEAD_Z, LEAD_Z, 8)[1:]
+        + line([lx, LEAD_Y - 2 * LOOP_R, LEAD_Z], [-4.0, LEAD_Y - 2 * LOOP_R, LEAD_Z], 3)[1:]
+        + arc([-4.0, -2.4], 2.9, 270, 90, LEAD_Z, LEAD_Z, 6)[1:]
+        + line([-4.0, 0.5, LEAD_Z], [VALVES_X[0], 0.5, -0.6], 1)[1:])
+sweep(lead, TUBE * 0.9, BRASS)
 
-# the mouthpiece: a stem and a cup at the left end
-sweep(line([-20.0, 0.6, -1.4], [-17.5, 0.6, -1.4], 2), [0.75, 0.42, 0.35], BRASS_HI, spec=0.9)
-cylinder_tip = [[-20.4, 0.6, -1.4], [-20.0, 0.6, -1.4]]
-sweep(cylinder_tip, 0.8, DARK, spec=0.1, caps=True)
+# the third valve's slide, sticking out under the bell
+slide = (line([VALVES_X[2] + CASING_R, -0.2, 0.8], [15.0, -0.2, 0.8], 3)
+         + arc([15.0, -2.75], 2.55, 90, -90, 0.8, 0.8, 6)[1:]
+         + line([15.0, -5.3, 0.8], [11.5, -5.3, 0.8], 1)[1:])
+sweep(slide, TUBE * 0.85, BRASS)
 
-# the finger hook and the water key, small brass details on top of the leadpipe
-sweep(arc([-3.6, 2.8], 0.5, 180, 0, -0.6, -0.6, 4), 0.14, BRASS_HI)
+# the mouthpiece: a tapering stem and the cup's rim at the left end
+sweep(line([-16.2, LEAD_Y, LEAD_Z], [-11.9, LEAD_Y, LEAD_Z], 2), [1.2, 0.5, 0.42], BRASS_HI, spec=0.9)
+sweep([[-16.6, LEAD_Y, LEAD_Z], [-16.2, LEAD_Y, LEAD_Z]], 1.3, DARK, spec=0.1, caps=True)
+
+# the finger hook on top of the leadpipe, just past the third valve
+sweep(arc([6.4, LEAD_Y + 1.3], 0.6, 180, -20, LEAD_Z, LEAD_Z, 4), 0.16, BRASS_HI)
 
 # centre on the bounding box, scale to the unit sphere
 pts = [p for f in faces for p in f['P']]
