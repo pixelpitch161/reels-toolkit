@@ -40,8 +40,8 @@ use crate::fight::{Fight, stunned};
 use crate::geom;
 use crate::kinds::{
     anchor, bite, blade, combo, crowd, drill, echo, foghorn, grapple, inflate, jump, lightning, line, mallets, mortar,
-    plunger, pulse, rake, rests, roll, roll_charge, scratch_floor, slapback, spotlight, striker, surf, swallow, tether,
-    tiptoe, trap, tune, walk, wrecking,
+    needle, plunger, pulse, rake, rests, roll, roll_charge, scratch_floor, slapback, spotlight, striker, surf, swallow,
+    tether, tiptoe, trap, tune, walk, wrecking,
 };
 use crate::record::Frames;
 use crate::roster::AbilityKind;
@@ -121,6 +121,8 @@ pub struct Schedule {
     pub n16d: i64,
     /// `n16x`: the mallets' (MARIMBA, a Studio kind: after every kit kind).
     pub n16x: i64,
+    /// `n16n`: the needles' (PICCOLO, a Studio kind: after every kit kind).
+    pub n16n: i64,
     /// `n16sb`: the slapback's (MELLOPHONE, a Studio kind: after every kit kind).
     pub n16sb: i64,
     // Python keeps one counter per kind (`next16`, `dc_next`, `n16b`, `next16c`, `next16k`, `next16t`, `n16p`, ...):
@@ -282,6 +284,11 @@ impl Schedule {
         for k in which(fight, mallets::is) {
             mallets::setup(fight, k);
         }
+        // PICCOLO (a Studio kind, after every kit kind)
+        fight.socket("setup.needle");
+        for k in which(fight, needle::is) {
+            needle::setup(fight, k);
+        }
         // MELLOPHONE (a Studio kind, after every kit kind)
         fight.socket("setup.slapback");
         for k in which(fight, slapback::is) {
@@ -314,6 +321,7 @@ impl Schedule {
             n16c: k16_0,
             n16d: k16_0,
             n16x: k16_0,
+            n16n: k16_0,
             n16sb: k16_0,
             next16: k16_0,
             n16b: k16_0,
@@ -561,6 +569,9 @@ impl Schedule {
         // MARIMBA's mallets (a Studio kind, after every kit kind)
         fight.socket("tick.mallets");
         self.counter(fight, mallets::is, |s| &mut s.n16x, mallets::tick);
+        // PICCOLO's needles (a Studio kind, after every kit kind)
+        fight.socket("tick.needle");
+        self.counter(fight, needle::is, |s| &mut s.n16n, needle::tick);
         // MELLOPHONE's slapback (a Studio kind, after every kit kind)
         fight.socket("tick.slapback");
         self.counter(fight, slapback::is, |s| &mut s.n16sb, slapback::tick);
@@ -833,6 +844,11 @@ impl Schedule {
         fight.socket("later.mallets");
         if mallets::live(fight) {
             mallets::step(fight, dt);
+        }
+        // PICCOLO's needles and GLASS SHATTER (a Studio kind, after every kit kind)
+        fight.socket("later.needle");
+        if needle::live(fight) {
+            needle::step(fight, dt);
         }
         // MELLOPHONE's waves, echoes and moves (a Studio kind, after every kit kind)
         fight.socket("later.slapback");

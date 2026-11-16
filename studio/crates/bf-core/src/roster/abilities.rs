@@ -37,12 +37,14 @@ pub mod melody;
 pub mod mountain;
 pub mod octave;
 pub mod offbeat;
+pub mod over_band;
 pub mod prelude;
 pub mod press_box;
 pub mod rewind;
 pub mod rhapsody;
 pub mod runoff;
 pub mod runway;
+pub mod shatter;
 pub mod slap;
 pub mod smash;
 pub mod snap;
@@ -216,6 +218,10 @@ pub enum AbilityKind {
     DeadStroke,
     /// `five_octaves`: MARIMBA's FIVE OCTAVES (a Studio kind).
     FiveOctaves,
+    /// `over_band`: PICCOLO's OVER THE BAND (a Studio kind).
+    OverBand,
+    /// `shatter`: PICCOLO's GLASS SHATTER (a Studio kind).
+    Shatter,
     /// `horns_up`: MELLOPHONE's HORNS UP (a Studio kind).
     HornsUp,
     /// `press_box`: MELLOPHONE's PRESS BOX (a Studio kind).
@@ -332,6 +338,10 @@ pub enum AbilitySettings {
     DeadStroke(dead_stroke::DeadStrokeCfg),
     /// Kind `five_octaves`.
     FiveOctaves(five_octaves::FiveOctavesCfg),
+    /// Kind `over_band`.
+    OverBand(over_band::OverBandCfg),
+    /// Kind `shatter`.
+    Shatter(shatter::ShatterCfg),
     /// Kind `horns_up`.
     HornsUp(horns_up::HornsUpCfg),
     /// Kind `press_box`.
@@ -401,6 +411,8 @@ impl AbilityKind {
             AbilityKind::Tremolo => "tremolo",
             AbilityKind::DeadStroke => "dead_stroke",
             AbilityKind::FiveOctaves => "five_octaves",
+            AbilityKind::OverBand => "over_band",
+            AbilityKind::Shatter => "shatter",
             AbilityKind::HornsUp => "horns_up",
             AbilityKind::PressBox => "press_box",
             AbilityKind::StadiumEcho => "stadium_echo",
@@ -467,6 +479,8 @@ impl AbilityKind {
             "tremolo" if tremolo::PORTED => AbilityKind::Tremolo,
             "dead_stroke" if dead_stroke::PORTED => AbilityKind::DeadStroke,
             "five_octaves" if five_octaves::PORTED => AbilityKind::FiveOctaves,
+            "over_band" if over_band::PORTED => AbilityKind::OverBand,
+            "shatter" if shatter::PORTED => AbilityKind::Shatter,
             "horns_up" if horns_up::PORTED => AbilityKind::HornsUp,
             "press_box" if press_box::PORTED => AbilityKind::PressBox,
             "stadium_echo" if stadium_echo::PORTED => AbilityKind::StadiumEcho,
@@ -532,6 +546,8 @@ impl AbilityKind {
             AbilityKind::Tremolo => tremolo::REQUIRED,
             AbilityKind::DeadStroke => dead_stroke::REQUIRED,
             AbilityKind::FiveOctaves => five_octaves::REQUIRED,
+            AbilityKind::OverBand => over_band::REQUIRED,
+            AbilityKind::Shatter => shatter::REQUIRED,
             AbilityKind::HornsUp => horns_up::REQUIRED,
             AbilityKind::PressBox => press_box::REQUIRED,
             AbilityKind::StadiumEcho => stadium_echo::REQUIRED,
@@ -599,6 +615,8 @@ impl AbilityKind {
             AbilityKind::Tremolo => tremolo::ALLOWED,
             AbilityKind::DeadStroke => dead_stroke::ALLOWED,
             AbilityKind::FiveOctaves => five_octaves::ALLOWED,
+            AbilityKind::OverBand => over_band::ALLOWED,
+            AbilityKind::Shatter => shatter::ALLOWED,
             AbilityKind::HornsUp => horns_up::ALLOWED,
             AbilityKind::PressBox => press_box::ALLOWED,
             AbilityKind::StadiumEcho => stadium_echo::ALLOWED,
@@ -672,6 +690,8 @@ fn settings(e: &Entry, prefix: &str, kind: &AbilityKind, ab: &Json) -> Result<Ab
         AbilityKind::Tremolo => AbilitySettings::Tremolo(tremolo::parse(e, prefix, ab)?),
         AbilityKind::DeadStroke => AbilitySettings::DeadStroke(dead_stroke::parse(e, prefix, ab)?),
         AbilityKind::FiveOctaves => AbilitySettings::FiveOctaves(five_octaves::parse(e, prefix, ab)?),
+        AbilityKind::OverBand => AbilitySettings::OverBand(over_band::parse(e, prefix, ab)?),
+        AbilityKind::Shatter => AbilitySettings::Shatter(shatter::parse(e, prefix, ab)?),
         AbilityKind::HornsUp => AbilitySettings::HornsUp(horns_up::parse(e, prefix, ab)?),
         AbilityKind::PressBox => AbilitySettings::PressBox(press_box::parse(e, prefix, ab)?),
         AbilityKind::StadiumEcho => AbilitySettings::StadiumEcho(stadium_echo::parse(e, prefix, ab)?),
@@ -738,6 +758,8 @@ pub(crate) fn kind_check(e: &Entry, prefix: &str, ab: &AbilityCfg) -> Result<(),
         AbilityKind::Tremolo => tremolo::check(e, prefix, ab),
         AbilityKind::DeadStroke => dead_stroke::check(e, prefix, ab),
         AbilityKind::FiveOctaves => five_octaves::check(e, prefix, ab),
+        AbilityKind::OverBand => over_band::check(e, prefix, ab),
+        AbilityKind::Shatter => shatter::check(e, prefix, ab),
         AbilityKind::HornsUp => horns_up::check(e, prefix, ab),
         AbilityKind::PressBox => press_box::check(e, prefix, ab),
         AbilityKind::StadiumEcho => stadium_echo::check(e, prefix, ab),

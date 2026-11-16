@@ -122,6 +122,53 @@
    "idiom": "mallets"
   },
   {
+   "name": "PICCOLO",
+   "color": [248, 240, 144],
+   "dark": [150, 140, 60],
+   "corner": "blue",
+   "view": [30, 20, 0],
+   "weapon": {
+    "kind": "needle",
+    "style": "needle",
+    "name": "PIERCING NOTE",
+    "every": 1,
+    "speed": 24.0,
+    "n0": 1,
+    "grow": 0.5,
+    "n_max": 5,
+    "dmg": 0.7,
+    "knock": 0.25,
+    "hit_r": 0.06
+   },
+   "abilities": {
+    "unlock1": {
+     "name": "TRILL",
+     "kind": "haste",
+     "mult": 2.0,
+     "dur_beats": 8,
+     "every_bars": 4
+    },
+    "unlock2": {
+     "name": "OVER THE BAND",
+     "kind": "over_band",
+     "dur_beats": 8,
+     "every_bars": 5
+    },
+    "low": {
+     "name": "GLASS SHATTER",
+     "kind": "shatter",
+     "n": 24,
+     "beats": 2,
+     "speed": 5.0,
+     "dmg": 0.5,
+     "knock": 0.1
+    }
+   },
+   "pp": "PICCOLO",
+   "register": [74, 105],
+   "idiom": "needle"
+  },
+  {
    "name": "MELLOPHONE",
    "color": [40, 24, 244],
    "dark": [18, 10, 130],
