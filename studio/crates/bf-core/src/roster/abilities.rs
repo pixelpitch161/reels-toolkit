@@ -27,6 +27,7 @@ pub mod five_octaves;
 pub mod flash_spin;
 pub mod flick;
 pub mod fork;
+pub mod full_set;
 pub mod heartbeat;
 pub mod hook;
 pub mod joke;
@@ -36,6 +37,7 @@ pub mod melody;
 pub mod mountain;
 pub mod octave;
 pub mod offbeat;
+pub mod pedal_slide;
 pub mod prelude;
 pub mod rewind;
 pub mod rhapsody;
@@ -213,6 +215,10 @@ pub enum AbilityKind {
     DeadStroke,
     /// `five_octaves`: MARIMBA's FIVE OCTAVES (a Studio kind).
     FiveOctaves,
+    /// `pedal_slide`: TIMPANI's PEDAL SLIDE (a Studio kind).
+    PedalSlide,
+    /// `full_set`: TIMPANI's FULL SET (a Studio kind).
+    FullSet,
     /// A kind the engine has not ported yet, or a ported kind with an option it has not ported, written
     /// `kind+option` (OBOE's `"wave+detune"`).
     Unsupported(String),
@@ -323,6 +329,10 @@ pub enum AbilitySettings {
     DeadStroke(dead_stroke::DeadStrokeCfg),
     /// Kind `five_octaves`.
     FiveOctaves(five_octaves::FiveOctavesCfg),
+    /// Kind `pedal_slide`.
+    PedalSlide(pedal_slide::PedalSlideCfg),
+    /// Kind `full_set`.
+    FullSet(full_set::FullSetCfg),
 }
 
 impl AbilityKind {
@@ -386,6 +396,8 @@ impl AbilityKind {
             AbilityKind::Tremolo => "tremolo",
             AbilityKind::DeadStroke => "dead_stroke",
             AbilityKind::FiveOctaves => "five_octaves",
+            AbilityKind::PedalSlide => "pedal_slide",
+            AbilityKind::FullSet => "full_set",
             AbilityKind::Unsupported(kind) => kind.split('+').next().unwrap_or(kind),
         }
     }
@@ -449,6 +461,8 @@ impl AbilityKind {
             "tremolo" if tremolo::PORTED => AbilityKind::Tremolo,
             "dead_stroke" if dead_stroke::PORTED => AbilityKind::DeadStroke,
             "five_octaves" if five_octaves::PORTED => AbilityKind::FiveOctaves,
+            "pedal_slide" if pedal_slide::PORTED => AbilityKind::PedalSlide,
+            "full_set" if full_set::PORTED => AbilityKind::FullSet,
             other => AbilityKind::Unsupported(other.to_string()),
         }
     }
@@ -511,6 +525,8 @@ impl AbilityKind {
             AbilityKind::Tremolo => tremolo::REQUIRED,
             AbilityKind::DeadStroke => dead_stroke::REQUIRED,
             AbilityKind::FiveOctaves => five_octaves::REQUIRED,
+            AbilityKind::PedalSlide => pedal_slide::REQUIRED,
+            AbilityKind::FullSet => full_set::REQUIRED,
             AbilityKind::Unsupported(_) => &[],
         }
     }
@@ -575,6 +591,8 @@ impl AbilityKind {
             AbilityKind::Tremolo => tremolo::ALLOWED,
             AbilityKind::DeadStroke => dead_stroke::ALLOWED,
             AbilityKind::FiveOctaves => five_octaves::ALLOWED,
+            AbilityKind::PedalSlide => pedal_slide::ALLOWED,
+            AbilityKind::FullSet => full_set::ALLOWED,
             AbilityKind::Unsupported(_) => &[],
         }
     }
@@ -645,6 +663,8 @@ fn settings(e: &Entry, prefix: &str, kind: &AbilityKind, ab: &Json) -> Result<Ab
         AbilityKind::Tremolo => AbilitySettings::Tremolo(tremolo::parse(e, prefix, ab)?),
         AbilityKind::DeadStroke => AbilitySettings::DeadStroke(dead_stroke::parse(e, prefix, ab)?),
         AbilityKind::FiveOctaves => AbilitySettings::FiveOctaves(five_octaves::parse(e, prefix, ab)?),
+        AbilityKind::PedalSlide => AbilitySettings::PedalSlide(pedal_slide::parse(e, prefix, ab)?),
+        AbilityKind::FullSet => AbilitySettings::FullSet(full_set::parse(e, prefix, ab)?),
     })
 }
 
@@ -708,6 +728,8 @@ pub(crate) fn kind_check(e: &Entry, prefix: &str, ab: &AbilityCfg) -> Result<(),
         AbilityKind::Tremolo => tremolo::check(e, prefix, ab),
         AbilityKind::DeadStroke => dead_stroke::check(e, prefix, ab),
         AbilityKind::FiveOctaves => five_octaves::check(e, prefix, ab),
+        AbilityKind::PedalSlide => pedal_slide::check(e, prefix, ab),
+        AbilityKind::FullSet => full_set::check(e, prefix, ab),
     }
 }
 

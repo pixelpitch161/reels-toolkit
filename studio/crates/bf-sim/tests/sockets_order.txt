@@ -58,6 +58,7 @@ setup.crowd                5894-5899     setup
 setup.drill                5900-5905     setup
 setup.roll_charge          5906-5911     setup
 setup.mallets              5911          setup
+setup.kettles              5911          setup
 
 # ---- a frame: snap 5509 to 5732, in order
 snap.K                     5509-5514     frame
@@ -83,6 +84,7 @@ snap.FLICK                 5705-5711     frame
 snap.RCHG                  5713-5732     frame
 snap.PLG                   5732          frame
 snap.MALLETS               5732          frame
+snap.KETTLES               5732          frame
 
 # ---- a step: run() 5919 to 6204
 clock                      5919          step
@@ -126,6 +128,7 @@ tick.drill                 6086-6090     step
 tick.roll_charge           6091-6095     step
 tick.plunger               6095          step
 tick.mallets               6095          step
+tick.kettles               6095          step
 # the timers, fighter 0 then fighter 1: stun, detune, the smashed timer (6100 to 6107)
 timers                     6100-6107     step
 timers                     6100-6107     step
@@ -202,6 +205,7 @@ later.dash_cone            6195-6196     step
 later.surf_rake            6197-6198     step
 later.clamps               6201-6202     step
 later.mallets              6202          step
+later.kettles              6202          step
 # abilities_step (6203; 3012 to 3053): the charged beams, then fighter 0's turn, then fighter 1's
 abilities                  6203          step
 abilities.charged_beam     3013-3016     step

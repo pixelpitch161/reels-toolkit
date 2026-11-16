@@ -120,6 +120,59 @@
    "pp": "MARIMBA",
    "register": [60, 96],
    "idiom": "mallets"
+    },
+  {
+   "name": "TIMPANI",
+   "color": [178, 184, 196],
+   "dark": [92, 98, 112],
+   "corner": "red",
+   "view": [24, 0, 0],
+   "weapon": {
+    "kind": "kettles",
+    "style": "kettles",
+    "name": "TWO KETTLES",
+    "every": 2,
+    "air16": 2,
+    "spot": 0.5,
+    "r_low": 0.6,
+    "r_high": 0.45,
+    "r_mid": 0.52,
+    "speed_low": 4.5,
+    "reach_low": 2.6,
+    "dmg_low": 2.6,
+    "knock_low": 1.2,
+    "speed_high": 8.0,
+    "reach_high": 1.6,
+    "dmg_high": 1.9,
+    "knock_high": 0.8,
+    "pair_t": 0.6,
+    "dmg_pair": 2.2
+   },
+   "abilities": {
+    "unlock1": {
+     "name": "PEDAL SLIDE",
+     "kind": "pedal_slide",
+     "dur_beats": 2,
+     "speed": 2.4,
+     "dmg": 2.0,
+     "knock": 1.0,
+     "every_bars": 4
+    },
+    "unlock2": {
+     "name": "CROSS-STICKING",
+     "kind": "haste",
+     "mult": 4.0,
+     "dur_beats": 4,
+     "every_bars": 6
+    },
+    "low": {
+     "name": "FULL SET",
+     "kind": "full_set"
+    }
+   },
+   "pp": "TIMPANI",
+   "register": [38, 57],
+   "idiom": "timpani"
   }
  ]
 }
