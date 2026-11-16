@@ -32,6 +32,7 @@ pub use kinds::{
     bite::BiteCfg, inflate::InflateCfg, pulse::PulseCfg, rests::RestsCfg, scratch_floor::ScratchFloorCfg,
     surf::SurfCfg, tether::TetherCfg, trap::TrapCfg, wrecking::WreckingCfg,
 };
+pub use kinds::plunger::PlungerCfg;
 pub use striker::StrikerCfg;
 
 /// The kit's further weapon kinds, each with its module's `PORTED`: a kind loads as `WeaponCfg::Unsupported` exactly
@@ -126,6 +127,16 @@ pub const OLDER_ABILITY_KINDS: [(&str, bool); 9] = [
     ("joke", abilities::joke::PORTED),
 ];
 
+/// The weapon kinds of the fighters made from scratch in the Studio (no Python kit reference), each with its module's
+/// `PORTED`, as [`OLDER_WEAPON_KINDS`].
+pub const NEW_WEAPON_KINDS: [(&str, bool); 1] = [("plunger", kinds::plunger::PORTED)];
+
+/// The ability kinds of the fighters made from scratch in the Studio, each with its module's `PORTED`.
+pub const NEW_ABILITY_KINDS: [(&str, bool); 2] = [
+    ("derby", abilities::derby::PORTED),
+    ("stoptime", abilities::stoptime::PORTED),
+];
+
 /// One fighter's roster entry.
 #[derive(Clone, Debug, PartialEq)]
 pub struct FighterCfg {
@@ -215,6 +226,8 @@ pub enum WeaponCfg {
     Wrecking(kinds::wrecking::WreckingCfg),
     /// Kind `rests` (VIOLA's COUNTING RESTS; milestone 4), typed by `roster::kinds::rests`.
     Rests(kinds::rests::RestsCfg),
+    /// Kind `plunger` (CORNET's PLUNGER MUTE; a from-scratch fighter), typed by `roster::kinds::plunger`.
+    Plunger(kinds::plunger::PlungerCfg),
     /// A kind the engine has not ported yet (a spinning blade, with no `mode`, is `"blade"` until
     /// [`blade::SPIN_PORTED`]).
     Unsupported(String),
@@ -438,6 +451,7 @@ impl Entry<'_> {
             "tether" if kinds::tether::PORTED => Ok(WeaponCfg::Tether(kinds::tether::parse(self, w)?)),
             "wrecking" if kinds::wrecking::PORTED => Ok(WeaponCfg::Wrecking(kinds::wrecking::parse(self, w)?)),
             "rests" if kinds::rests::PORTED => Ok(WeaponCfg::Rests(kinds::rests::parse(self, w)?)),
+            "plunger" if kinds::plunger::PORTED => Ok(WeaponCfg::Plunger(kinds::plunger::parse(self, w)?)),
             _ => Ok(WeaponCfg::Unsupported(kind)),
         }
     }
@@ -533,6 +547,7 @@ impl FighterCfg {
             WeaponCfg::Tether(w) => kinds::tether::check(&e, w)?,
             WeaponCfg::Wrecking(w) => kinds::wrecking::check(&e, w)?,
             WeaponCfg::Rests(w) => kinds::rests::check(&e, w)?,
+            WeaponCfg::Plunger(w) => kinds::plunger::check(&e, w)?,
             WeaponCfg::Unsupported(_) => {}
         }
         let slots = [
@@ -605,6 +620,7 @@ impl WeaponCfg {
             WeaponCfg::Tether(w) => return kinds::tether::main16(w),
             WeaponCfg::Wrecking(w) => return kinds::wrecking::main16(w),
             WeaponCfg::Rests(w) => return kinds::rests::main16(w),
+            WeaponCfg::Plunger(w) => return kinds::plunger::main16(w),
             WeaponCfg::Unsupported(_) => return None,
         };
         Some(crate::py::round_half_even(4.0 * every))
@@ -650,6 +666,7 @@ impl WeaponCfg {
             WeaponCfg::Tether(w) => kinds::tether::ball_start(w),
             WeaponCfg::Wrecking(w) => kinds::wrecking::ball_start(w),
             WeaponCfg::Rests(w) => kinds::rests::ball_start(w),
+            WeaponCfg::Plunger(w) => kinds::plunger::ball_start(w),
             WeaponCfg::Unsupported(_) => BallStart::default(),
         }
     }
@@ -686,6 +703,7 @@ impl WeaponCfg {
             WeaponCfg::Tether(_) => "tether",
             WeaponCfg::Wrecking(_) => "wrecking",
             WeaponCfg::Rests(_) => "rests",
+            WeaponCfg::Plunger(_) => "plunger",
             WeaponCfg::Unsupported(kind) => kind,
         }
     }

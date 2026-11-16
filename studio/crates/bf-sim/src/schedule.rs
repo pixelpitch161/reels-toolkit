@@ -41,7 +41,7 @@ use crate::geom;
 use crate::kinds::{
     anchor, bite, blade, combo, crowd, drill, echo, grapple, inflate, jump, lightning, line, mortar, pulse, rake,
     rests, roll, roll_charge, scratch_floor, spotlight, striker, surf, swallow, tether, tiptoe, trap, tune, walk,
-    wrecking,
+    plunger, wrecking,
 };
 use crate::record::Frames;
 use crate::roster::AbilityKind;
@@ -84,6 +84,8 @@ pub struct Schedule {
     pub n16b: i64,
     /// `next16c`: the tethers' (SYNTH, 5778).
     pub next16c: i64,
+    /// `n16p`: the plunger's (CORNET, a from-scratch fighter).
+    pub n16p: i64,
     /// `n16w`: the wreckers' (BARI SAX, 5845).
     pub n16w: i64,
     /// `n16v`: the resters' (VIOLA, 5861).
@@ -213,6 +215,11 @@ impl Schedule {
         for k in which(fight, wrecking::is) {
             wrecking::setup(fight, k);
         }
+        // CORNET's plunger (a from-scratch fighter)
+        fight.socket("setup.plunger");
+        for k in which(fight, plunger::is) {
+            plunger::setup(fight, k);
+        }
         // 5851 to 5853: the hookers need no setup (`HOOK`)
         // 5854 to 5857: lightning
         fight.socket("setup.lightning");
@@ -290,6 +297,7 @@ impl Schedule {
             n16b: k16_0,
             next16c: k16_0,
             n16w: k16_0,
+            n16p: k16_0,
             n16v: k16_0,
         }
     }
@@ -521,6 +529,9 @@ impl Schedule {
         // 6091 to 6095: roll_charge (on `n16r`, the counter the older `rattle` shares)
         fight.socket("tick.roll_charge");
         self.counter(fight, roll_charge::is, |s| &mut s.n16r, roll_charge::tick);
+        // CORNET's plunger (`n16p`, a from-scratch fighter)
+        fight.socket("tick.plunger");
+        self.counter(fight, plunger::is, |s| &mut s.n16p, plunger::tick);
 
         // 4. The timers (6096 to 6107).
         for k in 0..2 {
@@ -534,6 +545,7 @@ impl Schedule {
             // 0.0 here, which stays 0.0
             b.stun = geom::py_max(0.0, b.stun - dt);
             b.detune_t = geom::py_max(0.0, b.detune_t - dt);
+            b.muffle = geom::py_max(0.0, b.muffle - dt);
             // 6104 to 6107: the pieces snap back together (#44)
             if b.smashed > 0.0 {
                 b.smashed = geom::py_max(0.0, b.smashed - dt);
@@ -691,6 +703,14 @@ impl Schedule {
         fight.socket("later.wrecking");
         for k in which(fight, wrecking::is) {
             wrecking::step(fight, k, dt);
+        }
+        // CORNET's plunger, and its DERBY HAT and STOP-TIME for either ball (a copied one too)
+        fight.socket("later.plunger");
+        for k in which(fight, plunger::is) {
+            plunger::step(fight, k, dt);
+        }
+        if plunger::abilities_live(fight) {
+            plunger::abilities_step(fight);
         }
         // 6169 to 6170: the snappers (BARI SAX's CABLE SNAP, milestone 4)
         fight.socket("later.snap");
