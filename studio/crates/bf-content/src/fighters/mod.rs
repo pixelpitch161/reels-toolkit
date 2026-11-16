@@ -37,6 +37,7 @@ pub mod organ;
 pub mod piano;
 pub mod sousaphone;
 pub mod tenor_sax;
+pub mod timpani;
 pub mod trombone;
 pub mod trumpet;
 pub mod tuba;
@@ -75,7 +76,7 @@ pub const OLDER: [&str; 10] = [
 
 /// The fighters made from scratch in the Studio (no Python kit reference; `data/roster_new.json`), each with its
 /// folder here.
-pub const NEW: [&str; 3] = ["CORNET", "CONTRABASS CLARINET", "MARIMBA"];
+pub const NEW: [&str; 4] = ["CORNET", "CONTRABASS CLARINET", "MARIMBA", "TIMPANI"];
 
 /// The two lines a fighter's name takes on the VS card when one line would be too small (the kit's `TITLE_LINES`,
 /// which its configs set per episode); `None` for a name that fits on one.
@@ -157,6 +158,7 @@ pub fn entry(fighter: &str) -> Option<Entry> {
         "CORNET" => entry!(cornet),
         "CONTRABASS CLARINET" => entry!(contrabass_clarinet),
         "MARIMBA" => entry!(marimba),
+        "TIMPANI" => entry!(timpani),
         _ => return None,
     })
 }

@@ -721,7 +721,7 @@ mod tests {
     use super::*;
     use crate::personality::personality;
 
-    const ALL: [&str; 31] = [
+    const ALL: [&str; 32] = [
         "ACOUSTIC",
         "ALTO SAX",
         "BASS CLARINET",
@@ -753,6 +753,7 @@ mod tests {
         "VIOLA",
         "VIOLIN",
         "MARIMBA",
+        "TIMPANI",
     ];
 
     fn v(names: &[&str]) -> Vec<String> {
