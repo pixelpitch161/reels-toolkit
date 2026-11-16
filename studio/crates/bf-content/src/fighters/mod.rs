@@ -53,6 +53,9 @@ pub mod ukulele;
 pub mod viola;
 pub mod violin;
 
+// the fighters made from scratch in the Studio
+pub mod cornet;
+
 /// The ten older fighters (spec section 10, plan m4 Table O1), in alphabetical order: each has its folder here, a
 /// stub until its port, offered only once a register task lists it in `PORTED`.
 pub const OLDER: [&str; 10] = [
@@ -67,6 +70,10 @@ pub const OLDER: [&str; 10] = [
     "VIOLA",
     "VIOLIN",
 ];
+
+/// The fighters made from scratch in the Studio (no Python kit reference; `data/roster_new.json`), each with its
+/// folder here.
+pub const NEW: [&str; 1] = ["CORNET"];
 
 /// What one fighter's folder offers: its `mod.rs`'s entry points.
 #[derive(Clone, Copy)]
@@ -136,6 +143,7 @@ pub fn entry(fighter: &str) -> Option<Entry> {
         "UKULELE" => entry!(ukulele),
         "VIOLA" => entry!(viola),
         "VIOLIN" => entry!(violin),
+        "CORNET" => entry!(cornet),
         _ => return None,
     })
 }
@@ -283,10 +291,13 @@ mod tests {
     fn every_kit_fighter_has_a_folder() {
         // every roster fighter has its folder, and a fighter the app offers has everything in it; a folder a port
         // has filled before the register task offers it may hold anything (nothing here names its state)
-        // the roster holds the kit's 20 and the older ten (milestone 4), each once
-        assert_eq!(roster().len(), 30);
+        // the roster holds the kit's 20, the older ten (milestone 4) and the fighters made from scratch, each once
+        assert_eq!(roster().len(), 30 + NEW.len());
         assert_eq!(
-            roster().iter().filter(|f| !OLDER.contains(&f.name.as_str())).count(),
+            roster()
+                .iter()
+                .filter(|f| !OLDER.contains(&f.name.as_str()) && !NEW.contains(&f.name.as_str()))
+                .count(),
             20
         );
         for f in roster() {
