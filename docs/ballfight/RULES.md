@@ -110,6 +110,9 @@ styles, ready for crossovers and a tournament bracket.
 | SOUSAPHONE | marching crimson | (210, 30, 60) | | BASS DRUM | gunmetal | (128, 128, 140) |
 | CORNET | rose brass | (232, 120, 140) | | | | |
 | CONTRABASS CLARINET (Studio, Nov 16) | abyss teal | (24, 124, 132) | | | | |
+| PICCOLO (Studio, Nov 16) | lemon | (248, 240, 144) | | | | |
+| SOPRANO SAX (Studio, Nov 16) | signal green | (0, 232, 16) | | | | |
+| MELLOPHONE (Studio, Nov 16) | band royal | (40, 24, 244) | | | | |
 | TIMPANI (Studio, Nov 16) | silver | (178, 184, 196) | | | | |
 
   Spares (Cello, later fighters): pick a colour clearly apart from all of these and add it here.

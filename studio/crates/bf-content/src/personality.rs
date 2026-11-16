@@ -89,6 +89,9 @@ fighters! {
     "CORNET" => cornet,
     "CONTRABASS CLARINET" => contrabass_clarinet,
     "MARIMBA" => marimba,
+    "PICCOLO" => piccolo,
+    "SOPRANO SAX" => soprano_sax,
+    "MELLOPHONE" => mellophone,
     "TIMPANI" => timpani,
 }
 
