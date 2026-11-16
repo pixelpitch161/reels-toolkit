@@ -1,4 +1,4 @@
-﻿//! What the interface shows about fighters and themes (Task 26): the roster's sections in score order, the corner
+//! What the interface shows about fighters and themes (Task 26): the roster's sections in score order, the corner
 //! card and the music text of each ported fighter, each theme's card, the words for each pair rule, and note names.
 //!
 //! Every text is the interface reference's own (sections 5.1 and 5.4).
