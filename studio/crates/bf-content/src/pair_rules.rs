@@ -58,7 +58,9 @@ mod tests {
         let roster = bf_core::roster::parse_roster(include_str!("../data/roster.json")).expect("the roster loads");
         let roster: Vec<_> = roster
             .into_iter()
-            .filter(|f| !crate::fighters::OLDER.contains(&f.name.as_str()))
+            .filter(|f| {
+                !crate::fighters::OLDER.contains(&f.name.as_str()) && !crate::fighters::NEW.contains(&f.name.as_str())
+            })
             .collect();
         assert_eq!(roster.len(), 20);
         let mut with_rules = 0;

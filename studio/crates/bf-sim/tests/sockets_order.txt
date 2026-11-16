@@ -64,6 +64,7 @@ setup.mallets              5911          setup
 setup.needle               5911          setup
 setup.swarm                5911          setup
 setup.slapback             5911          setup
+setup.kettles              5911          setup
 
 # ---- a frame: snap 5509 to 5732, in order
 snap.K                     5509-5514     frame
@@ -92,6 +93,7 @@ snap.MALLETS               5732          frame
 snap.NEEDLES               5732          frame
 snap.HRN                   5732          frame
 snap.SLAP                  5732          frame
+snap.KETTLES               5732          frame
 
 # ---- a step: run() 5919 to 6204
 clock                      5919          step
@@ -138,6 +140,7 @@ tick.mallets               6095          step
 tick.needle                6095          step
 tick.swarm                 6095          step
 tick.slapback              6095          step
+tick.kettles               6095          step
 # the timers, fighter 0 then fighter 1: stun, detune, the smashed timer (6100 to 6107)
 timers                     6100-6107     step
 timers                     6100-6107     step
@@ -218,6 +221,7 @@ later.mallets              6202          step
 later.needle               6202          step
 later.swarm                6202          step
 later.slapback             6202          step
+later.kettles              6202          step
 # abilities_step (6203; 3012 to 3053): the charged beams, then fighter 0's turn, then fighter 1's
 abilities                  6203          step
 abilities.charged_beam     3013-3016     step

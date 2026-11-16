@@ -39,9 +39,9 @@ use crate::abilities::{
 use crate::fight::{Fight, stunned};
 use crate::geom;
 use crate::kinds::{
-    anchor, bite, blade, combo, crowd, drill, echo, foghorn, grapple, inflate, jump, lightning, line, mallets, mortar,
-    needle, plunger, pulse, rake, rests, roll, roll_charge, scratch_floor, slapback, spotlight, striker, surf, swallow,
-    swarm, tether, tiptoe, trap, tune, walk, wingbeat, wrecking,
+    anchor, bite, blade, combo, crowd, drill, echo, foghorn, grapple, inflate, jump, kettles, lightning, line, mallets,
+    mortar, needle, plumbing, plunger, pulse, rake, rests, roll, roll_charge, scratch_floor, slapback, spotlight,
+    striker, surf, swallow, swarm, tether, tiptoe, trap, tune, walk, wingbeat, wrecking,
 };
 use crate::record::Frames;
 use crate::roster::AbilityKind;
@@ -127,6 +127,8 @@ pub struct Schedule {
     pub n16z: i64,
     /// `n16sb`: the slapback's (MELLOPHONE, a Studio kind: after every kit kind).
     pub n16sb: i64,
+    /// `n16y`: the kettles' (TIMPANI, a Studio kind: after every kit kind).
+    pub n16y: i64,
     // Python keeps one counter per kind (`next16`, `dc_next`, `n16b`, `next16c`, `next16k`, `next16t`, `n16p`, ...):
     // each moves only while a fighter has its kind, so they are separate fields, never one shared counter. The frozen
     // `pack`'s `n16p` is not kept.
@@ -304,6 +306,11 @@ impl Schedule {
         for k in which(fight, slapback::is) {
             slapback::setup(fight, k);
         }
+        // TIMPANI (a Studio kind, after every kit kind)
+        fight.socket("setup.kettles");
+        for k in which(fight, kettles::is) {
+            kettles::setup(fight, k);
+        }
         Schedule {
             steps_per_frame,
             k0,
@@ -334,6 +341,7 @@ impl Schedule {
             n16n: k16_0,
             n16z: k16_0,
             n16sb: k16_0,
+            n16y: k16_0,
             next16: k16_0,
             n16b: k16_0,
             next16c: k16_0,
@@ -395,6 +403,9 @@ impl Schedule {
                     line::beat(fight, k, self.kb);
                 } else if trap::is(fight, k) {
                     trap::beat(fight, k, self.kb);
+                } else if plumbing::is(fight, k) {
+                    // CONTRABASSOON's U-BEND (made in the Studio): a pipe on its beats
+                    plumbing::beat(fight, k, self.kb);
                 }
                 // 5942 to 5943 (TURNTABLES, milestone 4)
                 fight.socket("beat.scratch_floor");
@@ -592,6 +603,9 @@ impl Schedule {
         // MELLOPHONE's slapback (a Studio kind, after every kit kind)
         fight.socket("tick.slapback");
         self.counter(fight, slapback::is, |s| &mut s.n16sb, slapback::tick);
+        // TIMPANI's kettles (a Studio kind, after every kit kind)
+        fight.socket("tick.kettles");
+        self.counter(fight, kettles::is, |s| &mut s.n16y, kettles::tick);
 
         // 4. The timers (6096 to 6107).
         for k in 0..2 {
@@ -844,6 +858,10 @@ impl Schedule {
         if rests::live(fight) {
             rests::notes_step(fight, dt);
         }
+        // CONTRABASSOON's pipes, boxes and sprays (made in the Studio; no Python line)
+        if plumbing::live(fight) {
+            plumbing::step(fight);
+        }
         // 6193 to 6194: `if getattr(self, 'splinters', None)` (the smash's)
         fight.socket("later.splinters");
         if smash::live(fight) {
@@ -884,6 +902,11 @@ impl Schedule {
         fight.socket("later.slapback");
         if slapback::live(fight) {
             slapback::step(fight, dt);
+        }
+        // TIMPANI's kettles, hops and rings (a Studio kind, after every kit kind)
+        fight.socket("later.kettles");
+        if kettles::live(fight) {
+            kettles::step(fight, dt);
         }
 
         // 12. Levels and abilities (6203).

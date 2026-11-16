@@ -240,6 +240,8 @@ pub struct Fight<'a> {
     pub swarm: kinds::swarm::State,
     /// Weapon kind `slapback`'s state (MELLOPHONE, a Studio kind): the waves, the echoes on the ropes, its moves' timers.
     pub slapback: kinds::slapback::State,
+    /// Weapon kind `kettles`'s state (TIMPANI, a Studio kind): the kettles, their rings, the hops.
+    pub kettles: kinds::kettles::State,
     /// Weapon kind `roll_charge`'s state (BASS DRUM).
     pub roll_charge: kinds::roll_charge::State,
     /// Ability kind `sustain`'s state (PIANO).
@@ -289,6 +291,8 @@ pub struct Fight<'a> {
     pub bite: kinds::bite::State,
     /// Weapon kind `trap`'s state (HARP).
     pub trap: kinds::trap::State,
+    /// Weapon kind `plumbing`'s state (CONTRABASSOON, made from scratch).
+    pub plumbing: kinds::plumbing::State,
     /// Weapon kind `surf`'s state (UKULELE).
     pub surf: kinds::surf::State,
     /// Weapon kind `scratch_floor`'s state (TURNTABLES).
@@ -428,6 +432,7 @@ impl<'a> Fight<'a> {
             needle: Default::default(),
             swarm: Default::default(),
             slapback: Default::default(),
+            kettles: Default::default(),
             sustain: Default::default(),
             arc: Default::default(),
             runoff: Default::default(),
@@ -450,6 +455,7 @@ impl<'a> Fight<'a> {
             inflate: Default::default(),
             bite: Default::default(),
             trap: Default::default(),
+            plumbing: Default::default(),
             surf: Default::default(),
             scratch_floor: Default::default(),
             tether: Default::default(),

@@ -54,8 +54,8 @@ use bf_core::event::Value;
 use crate::ball::Slot;
 use crate::fight::Fight;
 use crate::kinds::{
-    crowd, drill, jump, lightning, mallets, mortar, needle, plunger, rests, roll_charge, slapback, spotlight, swarm,
-    tiptoe, tune, wingbeat, wrecking,
+    crowd, drill, jump, kettles, lightning, mallets, mortar, needle, plumbing, plunger, rests, roll_charge, slapback,
+    spotlight, swarm, tiptoe, tune, wingbeat, wrecking,
 };
 use crate::roster::{AbilityCfg, AbilityKind};
 
@@ -183,6 +183,10 @@ pub fn fire<'a>(fight: &mut Fight<'a>, k: usize, ab: &'a AbilityCfg) {
         AbilityKind::Melody => rests::start_melody(fight, k, ab),
         // 2928 to 2929 (milestone 4: VIOLA's DOUBLE STOP, in its weapon's module)
         AbilityKind::DoubleStop => rests::start_double_stop(fight, k, ab),
+        // CONTRABASSOON (made in the Studio), in its weapon's module
+        AbilityKind::WaterKey => plumbing::start_water_key(fight, k, ab),
+        AbilityKind::HotPipes => plumbing::start_hot_pipes(fight, k, ab),
+        AbilityKind::PipeBox => plumbing::start_box(fight, k, ab),
         // 2930 to 2932
         AbilityKind::Rhapsody => jump::start_rhapsody(fight, k, ab),
         // 2933 to 2935
@@ -245,6 +249,9 @@ pub fn fire<'a>(fight: &mut Fight<'a>, k: usize, ab: &'a AbilityCfg) {
         AbilityKind::HornsUp => slapback::start_horns_up(fight, k, ab),
         AbilityKind::PressBox => slapback::start_press_box(fight, k, ab),
         AbilityKind::StadiumEcho => slapback::start_stadium_echo(fight, k, ab),
+        // TIMPANI's (Studio kinds, in its weapon's module)
+        AbilityKind::PedalSlide => kettles::start_pedal_slide(fight, k, ab),
+        AbilityKind::FullSet => kettles::start_full_set(fight, k, ab),
         // FLUGELHORN's (Studio kinds, in its weapon's module)
         AbilityKind::Flank => wingbeat::start_flank(fight, k, ab),
         AbilityKind::TakeWing => wingbeat::start_take_wing(fight, k, ab),

@@ -113,6 +113,8 @@ styles, ready for crossovers and a tournament bracket.
 | PICCOLO (Studio, Nov 16) | lemon | (248, 240, 144) | | | | |
 | SOPRANO SAX (Studio, Nov 16) | signal green | (0, 232, 16) | | | | |
 | MELLOPHONE (Studio, Nov 16) | band royal | (40, 24, 244) | | | | |
+| TIMPANI (Studio, Nov 16) | silver | (178, 184, 196) | | | | |
+| CONTRABASSOON (Studio, Nov 16) | oxblood | (150, 34, 44) | | | | |
 | FLUGELHORN (Studio, Nov 16) | sage | (150, 176, 140) | | | | |
 
   Spares (Cello, later fighters): pick a colour clearly apart from all of these and add it here.

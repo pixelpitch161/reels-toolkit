@@ -37,6 +37,7 @@ pub mod organ;
 pub mod piano;
 pub mod sousaphone;
 pub mod tenor_sax;
+pub mod timpani;
 pub mod trombone;
 pub mod trumpet;
 pub mod tuba;
@@ -55,6 +56,7 @@ pub mod violin;
 
 // the fighters made from scratch in the Studio
 pub mod contrabass_clarinet;
+pub mod contrabassoon;
 pub mod cornet;
 pub mod flugelhorn;
 pub mod marimba;
@@ -79,13 +81,15 @@ pub const OLDER: [&str; 10] = [
 
 /// The fighters made from scratch in the Studio (no Python kit reference; `data/roster_new.json`), each with its
 /// folder here.
-pub const NEW: [&str; 7] = [
+pub const NEW: [&str; 9] = [
     "CORNET",
     "CONTRABASS CLARINET",
     "MARIMBA",
     "PICCOLO",
     "SOPRANO SAX",
     "MELLOPHONE",
+    "TIMPANI",
+    "CONTRABASSOON",
     "FLUGELHORN",
 ];
 
@@ -94,6 +98,7 @@ pub const NEW: [&str; 7] = [
 pub fn title_lines(fighter: &str) -> Option<(&'static str, &'static str)> {
     match fighter {
         "CONTRABASS CLARINET" => Some(("CONTRABASS", "CLARINET")),
+        "CONTRABASSOON" => Some(("CONTRA", "BASSOON")),
         _ => None,
     }
 }
@@ -172,6 +177,8 @@ pub fn entry(fighter: &str) -> Option<Entry> {
         "PICCOLO" => entry!(piccolo),
         "SOPRANO SAX" => entry!(soprano_sax),
         "MELLOPHONE" => entry!(mellophone),
+        "TIMPANI" => entry!(timpani),
+        "CONTRABASSOON" => entry!(contrabassoon),
         "FLUGELHORN" => entry!(flugelhorn),
         _ => return None,
     })

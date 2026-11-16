@@ -88,10 +88,12 @@ fighters! {
     "TURNTABLES" => turntables, "UKULELE" => ukulele, "VIOLA" => viola, "VIOLIN" => violin,
     "CORNET" => cornet,
     "CONTRABASS CLARINET" => contrabass_clarinet,
+    "CONTRABASSOON" => contrabassoon,
     "MARIMBA" => marimba,
     "PICCOLO" => piccolo,
     "SOPRANO SAX" => soprano_sax,
     "MELLOPHONE" => mellophone,
+    "TIMPANI" => timpani,
     "FLUGELHORN" => flugelhorn,
 }
 

@@ -346,8 +346,15 @@ pub fn name_layout(mask: &PixelMask, name: &str, beside: f32, under: f32) -> Nam
         .filter(|(_, c)| **c == ' ')
         .map(|(i, _)| i)
         .min_by(|a, b| (*a as f32 - middle).abs().total_cmp(&(*b as f32 - middle).abs()));
-    if let Some(at) = split {
-        let two = two_lines(mask, at, chars.len() - at - 1);
+    // two lines at the space nearest the middle; a single word too long for a line of its own under the portrait
+    // (CONTRABASSOON) splits at its middle letter instead ("CONTRA" over "BASSOON")
+    let halves = match split {
+        Some(at) => Some((at, 1)),
+        None if !fits(mask.w, NAME_SMALL, under) && chars.len() > 1 => Some((chars.len() / 2, 0)),
+        None => None,
+    };
+    if let Some((at, gap)) = halves {
+        let two = two_lines(mask, at, chars.len() - at - gap, gap);
         if fits(two.w, NAME_SMALL, beside) && two.h * NAME_SMALL as usize <= PORTRAIT as usize {
             return NameLayout {
                 mask: two,
@@ -371,12 +378,12 @@ pub fn name_layout(mask: &PixelMask, name: &str, beside: f32, under: f32) -> Nam
     }
 }
 
-/// `mask` (one line of pixel letters) as two lines: the `first` letters, then the `rest` after the space that
-/// follows them, `LINE_GAP` font pixels apart, both from the left.
-fn two_lines(mask: &PixelMask, first: usize, rest: usize) -> PixelMask {
+/// `mask` (one line of pixel letters) as two lines: the `first` letters, then the `rest` after the `gap` letters
+/// that follow them (1 for a space, 0 inside a word), `LINE_GAP` font pixels apart, both from the left.
+fn two_lines(mask: &PixelMask, first: usize, rest: usize, gap: usize) -> PixelMask {
     let line_w = |n: usize| (n * LETTER_ADV).saturating_sub(1);
     let (w1, w2) = (line_w(first), line_w(rest));
-    let from2 = (first + 1) * LETTER_ADV;
+    let from2 = (first + gap) * LETTER_ADV;
     let w = w1.max(w2).max(1);
     let h = 2 * mask.h + LINE_GAP;
     let at = |x: usize, y: usize| x < mask.w && mask.on.get(y * mask.w + x).copied().unwrap_or(false);

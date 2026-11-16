@@ -1,0 +1,34 @@
+Timpani reference photos, all from Wikimedia Commons (1280 px wide copies, downloaded 2026-11-16).
+For modelling reference only. CC BY / CC BY-SA images need the author credit if ever shown publicly.
+
+01_above_head_rim_rods_yamaha_copper.jpg
+  Source: https://commons.wikimedia.org/wiki/File:Civic_Orchestra_of_Chicago_Timpani.jpg
+  Author: sheila miguez from Chicago, IL    Licence: CC BY-SA 2.0
+
+02_side_struts_base_pedal_ludwig_set.jpg
+  Source: https://commons.wikimedia.org/wiki/File:Ludwig_Professional_timpani_01.jpg
+  Author: Moreau1    Licence: Public domain
+
+03_side_diagram_parts_labelled.jpg   (line drawing, Italian labels; no clean real side-view photo exists on Commons)
+  Source: https://commons.wikimedia.org/wiki/File:Timpani_descrizione.jpg
+  Author: Fabrizio bastianini at Italian Wikipedia    Licence: Public domain
+
+04_closeup_rim_hoop_rods_gauge.jpg   (my crop of file 01)
+  Source: https://commons.wikimedia.org/wiki/File:Civic_Orchestra_of_Chicago_Timpani.jpg
+  Author: sheila miguez from Chicago, IL    Licence: CC BY-SA 2.0 (cropped)
+
+05_closeup_rim_hoop_struts_ludwig.jpg   (my crop of file 02)
+  Source: https://commons.wikimedia.org/wiki/File:Ludwig_Professional_timpani_01.jpg
+  Author: Moreau1    Licence: Public domain (cropped)
+
+06_mallets_pair_white_felt.jpg
+  Source: https://commons.wikimedia.org/wiki/File:Hayman_02-N_timpani_mallets.jpg
+  Author: http://muzyczny.pl    Licence: CC BY-SA 4.0
+
+07_mallets_range_felt_colours.jpg
+  Source: https://commons.wikimedia.org/wiki/File:Timpani_sticks.jpg
+  Author: Flamurai at English Wikipedia    Licence: CC BY-SA 3.0
+
+08_set_of_4_from_above_player.jpg
+  Source: https://commons.wikimedia.org/wiki/File:Timpanist_069_(20742047478).jpg
+  Author: Philadelphia Youth Orchestra from USA    Licence: CC BY-SA 2.0

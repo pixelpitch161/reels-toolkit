@@ -229,7 +229,7 @@ const fn ep(
 }
 
 /// The older episodes' configs (TROMBONE vs TUBA's #36 is left out: that pair keeps its kit config).
-const EPISODES: [Episode; 10] = [
+const EPISODES: [Episode; 11] = [
     ep(
         "drums_vs_violin",
         28,
@@ -325,6 +325,20 @@ const EPISODES: [Episode; 10] = [
         &["Gm", "Eb", "Cm", "D"],
         &["Eb", "D"],
         &[("BARI SAX", "bass"), ("BASS CLARINET", "counter")],
+    ),
+    // CONTRABASSOON's home config: a fighter made from scratch has no episode (number 0); its pipes suit
+    // `industrial`, BASSOON is its natural rival.
+    ep(
+        "contrabassoon_vs_bassoon",
+        0,
+        ["CONTRABASSOON", "BASSOON"],
+        "industrial",
+        128.0,
+        ("G", "minor"),
+        ["Gm", "D"],
+        &["Gm", "Gm", "Eb", "D"],
+        &["Eb", "D"],
+        &[("CONTRABASSOON", "bass"), ("BASSOON", "melody")],
     ),
     ep(
         "viola_vs_violin",
