@@ -51,6 +51,26 @@ fn by_role<'t, 'h>(harness: &'t Harness<'h, BfApp>, label: &'t str, role: Role) 
         .unwrap_or_else(|| panic!("a {role:?} named {label}"))
 }
 
+/// Whether the open theme dropdown offers `label`: hovers each of its groups in turn, leaving open the first one
+/// that lists it.
+fn theme_offered(harness: &mut Harness<'_, BfApp>, label: &str) -> bool {
+    let groups: Vec<String> = harness
+        .query_all_by_role(Role::MenuItem)
+        .filter_map(|n| n.accesskit_node().label())
+        .collect();
+    groups.iter().any(|group| {
+        harness
+            .query_all_by_label(group)
+            .find(|n| n.accesskit_node().role() == Role::MenuItem)
+            .expect("the group")
+            .hover();
+        harness.run();
+        harness
+            .query_all_by_label(label)
+            .any(|n| n.accesskit_node().role() == Role::ListBoxOption)
+    })
+}
+
 /// The rect of the lane name `name` in the arrangement's name column.
 fn lane_name(harness: &Harness<'_, BfApp>, name: &str) -> Rect {
     let workspace = harness.state().layout.workspace;
@@ -295,6 +315,7 @@ fn choosing_a_theme_pushes() {
     let mut harness = showing(REF, vm);
     by_role(&harness, "Theme", Role::ComboBox).click();
     harness.run();
+    assert!(theme_offered(&mut harness, "Dark disco"));
     by_role(&harness, "Dark disco", Role::ListBoxOption).click();
     harness.run();
     assert_eq!(harness.state().log, vec![Action::SetTheme("dark_disco".to_string())]);
@@ -326,15 +347,11 @@ fn a_theme_the_pair_cannot_play_is_not_offered() {
         by_role(&harness, "Theme", Role::ComboBox).click();
         harness.run();
         assert!(
-            harness
-                .query_all_by_label("Mambo")
-                .any(|n| n.accesskit_node().role() == Role::ListBoxOption),
+            theme_offered(&mut harness, "Mambo"),
             "{step}: a theme the pair can play is offered"
         );
         assert!(
-            !harness
-                .query_all_by_label("Heist")
-                .any(|n| n.accesskit_node().role() == Role::ListBoxOption),
+            !theme_offered(&mut harness, "Heist"),
             "{step}: a theme that refuses the TROMBONE is not offered"
         );
     }
@@ -344,6 +361,7 @@ fn a_theme_the_pair_cannot_play_is_not_offered() {
     let mut harness = showing(REF, vm);
     by_role(&harness, "Theme", Role::ComboBox).click();
     harness.run();
+    assert!(theme_offered(&mut harness, "Heist"));
     by_role(&harness, "Heist", Role::ListBoxOption).click();
     harness.run();
     assert_eq!(harness.state().log, vec![Action::SetTheme("heist".to_string())]);

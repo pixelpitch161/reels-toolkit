@@ -346,27 +346,25 @@ fn the_dropdown_lists_and_returns() {
     assert_eq!(picked.get(), Some(1));
 }
 
-/// A grouped dropdown's headings are not options; picking an item returns its index.
+/// A grouped dropdown's list shows only its groups; hovering one opens a submenu of its options, and picking one
+/// returns its index and closes the list.
 #[test]
-fn the_grouped_dropdown_skips_headings() {
-    use buttons::MenuEntry::{Heading, Item};
+fn the_grouped_dropdown_opens_groups_on_hover() {
     let _gpu = common::gpu();
     let picked = Cell::new(None);
-    let entries = [
-        Heading("Recommended for this pair".to_string()),
-        Item {
-            index: 1,
-            label: "Dark disco".to_string(),
+    let groups = [
+        buttons::MenuGroup {
+            name: "Recommended for this pair".to_string(),
+            items: vec![(1, "Dark disco".to_string())],
         },
-        Heading("Folk & World".to_string()),
-        Item {
-            index: 0,
-            label: "Big top".to_string(),
+        buttons::MenuGroup {
+            name: "Folk & World".to_string(),
+            items: vec![(0, "Big top".to_string()), (2, "Mambo".to_string())],
         },
     ];
-    let mut harness = common::widget_harness((300.0, 220.0), |ui| {
+    let mut harness = common::widget_harness((600.0, 320.0), |ui| {
         on_panel(ui);
-        if let Some(index) = buttons::dropdown_grouped(ui, "Theme", &entries, "Big top", 0, 220.0) {
+        if let Some(index) = buttons::dropdown_grouped(ui, "Theme", &groups, "Big top", 0, 220.0) {
             picked.set(Some(index));
         }
     });
@@ -374,18 +372,35 @@ fn the_grouped_dropdown_skips_headings() {
     assert_eq!(harness.get_by_label("Theme").value().as_deref(), Some("Big top"));
     harness.get_by_label("Theme").click();
     harness.run();
-    let options = |label: &str| {
+    let count = |harness: &egui_kittest::Harness<'_>, label: &str, role: Role| {
         harness
             .query_all_by_label(label)
-            .filter(|n| n.accesskit_node().role() == Role::ListBoxOption)
+            .filter(|n| n.accesskit_node().role() == role)
             .count()
     };
-    assert_eq!(options("Folk & World"), 0, "a heading is not an option");
-    assert_eq!(options("Dark disco"), 1);
-    harness.get_by_label("Dark disco").click();
+    assert_eq!(count(&harness, "Folk & World", Role::MenuItem), 1, "a group is listed");
+    assert_eq!(
+        count(&harness, "Mambo", Role::ListBoxOption),
+        0,
+        "its themes wait for a hover"
+    );
+    harness.get_by_label("Folk & World").hover();
     harness.run();
+    assert_eq!(
+        count(&harness, "Mambo", Role::ListBoxOption),
+        1,
+        "hovering opens the group"
+    );
+    assert_eq!(
+        count(&harness, "Dark disco", Role::ListBoxOption),
+        0,
+        "one group at a time"
+    );
+    harness.get_by_label("Mambo").click();
+    harness.run();
+    assert_eq!(count(&harness, "Folk & World", Role::MenuItem), 0, "the list closes");
     drop(harness);
-    assert_eq!(picked.get(), Some(1));
+    assert_eq!(picked.get(), Some(2));
 }
 
 #[test]
