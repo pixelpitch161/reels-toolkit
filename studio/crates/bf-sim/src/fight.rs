@@ -242,6 +242,8 @@ pub struct Fight<'a> {
     pub slapback: kinds::slapback::State,
     /// Weapon kind `kettles`'s state (TIMPANI, a Studio kind): the kettles, their rings, the hops.
     pub kettles: kinds::kettles::State,
+    /// Weapon kind `sticks`'s state (SNARE DRUM, a Studio kind): the jabs in flight and its abilities' timers.
+    pub sticks: kinds::sticks::State,
     /// Weapon kind `roll_charge`'s state (BASS DRUM).
     pub roll_charge: kinds::roll_charge::State,
     /// Ability kind `sustain`'s state (PIANO).
@@ -433,6 +435,7 @@ impl<'a> Fight<'a> {
             swarm: Default::default(),
             slapback: Default::default(),
             kettles: Default::default(),
+            sticks: Default::default(),
             sustain: Default::default(),
             arc: Default::default(),
             runoff: Default::default(),

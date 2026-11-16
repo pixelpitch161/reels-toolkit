@@ -55,7 +55,7 @@ use crate::ball::Slot;
 use crate::fight::Fight;
 use crate::kinds::{
     crowd, drill, jump, kettles, lightning, mallets, mortar, needle, plumbing, plunger, rests, roll_charge, slapback,
-    spotlight, swarm, tiptoe, tune, wingbeat, wrecking,
+    spotlight, sticks, swarm, tiptoe, tune, wingbeat, wrecking,
 };
 use crate::roster::{AbilityCfg, AbilityKind};
 
@@ -255,6 +255,10 @@ pub fn fire<'a>(fight: &mut Fight<'a>, k: usize, ab: &'a AbilityCfg) {
         // FLUGELHORN's (Studio kinds, in its weapon's module)
         AbilityKind::Flank => wingbeat::start_flank(fight, k, ab),
         AbilityKind::TakeWing => wingbeat::start_take_wing(fight, k, ab),
+        // SNARE DRUM's (Studio kinds, in its weapon's module)
+        AbilityKind::Flam => sticks::start_flam(fight, k, ab),
+        AbilityKind::Rimshot => sticks::start_rimshot(fight, k, ab),
+        AbilityKind::BuzzRoll => sticks::start_buzz_roll(fight, k, ab),
         // no branch: Python announces it and does nothing else
         AbilityKind::Unsupported(_) => {}
     }

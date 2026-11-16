@@ -95,6 +95,7 @@ fighters! {
     "MELLOPHONE" => mellophone,
     "TIMPANI" => timpani,
     "FLUGELHORN" => flugelhorn,
+    "SNARE DRUM" => snare_drum,
 }
 
 #[cfg(test)]

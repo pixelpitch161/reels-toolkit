@@ -995,7 +995,7 @@ fn a_column_scrolled_to_a_chosen_chip_does_not_fade_it_and_shows_its_bar() {
     );
 }
 
-/// Task 60: the real roster's Match-up (all 37 fighters, every one offered, and the 26 themes): no chip says
+/// Task 60: the real roster's Match-up (all 40 fighters, every one offered, and the 26 themes): no chip says
 /// "not built", the status bar counts what the app has, and the 13-letter BASS CLARINET fits its corner card at 21
 /// tall on two lines (the 10-letter CONTRABASS at 21 under the portrait).
 #[test]
@@ -1005,7 +1005,7 @@ fn the_whole_kit_roster() {
     let mut harness = showing(REF, vm.clone());
     harness.run();
     assert!(
-        harness.query_by_label("39 fighters, 26 themes").is_some(),
+        harness.query_by_label("40 fighters, 26 themes").is_some(),
         "the status bar"
     );
     assert!(harness.query_all_by_label(NOT_BUILT).next().is_none());

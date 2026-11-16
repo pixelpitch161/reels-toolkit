@@ -22,7 +22,7 @@ use crate::fight::Fight;
 use crate::geom;
 use crate::kinds::{
     anchor, crowd, drill, echo, grapple, inflate, kettles, mallets, mortar, needle, plunger, rests, roll, roll_charge,
-    slapback, spotlight, striker, swarm, tiptoe, tune, walk, wrecking,
+    slapback, spotlight, sticks, striker, swarm, tiptoe, tune, walk, wrecking,
 };
 
 /// `KMAX`: the most projectiles a frame records.
@@ -115,6 +115,7 @@ impl Frames {
             swarm::record_keys(fight),
             slapback::record_keys(fight),
             kettles::record_keys(fight),
+            sticks::record_keys(fight),
         ];
         Frames {
             ext: fight.uses_ext.then(Default::default),
@@ -284,7 +285,7 @@ impl Frames {
         // fight.py 5529 to 5732: the kit's other kinds' keys, each written by its kind while the record has it, in
         // `snap`'s order (WRECK 5577, SNAP 5588 and REST 5616 are the older ten fighters', milestone 4; HOUNDS 5529
         // and RATTLE 5595 are frozen kinds': SLOT)
-        let kinds: [KindSnap; 25] = [
+        let kinds: [KindSnap; 26] = [
             ("snap.ECHO", echo::record_keys, echo::snap),               // 5539 to 5549
             ("snap.DET", tune::record_keys, tune::snap),                // 5550 to 5554
             ("snap.SNIP", snip::record_keys, snip::snap),               // 5555 to 5561
@@ -310,6 +311,7 @@ impl Frames {
             ("snap.HRN", swarm::record_keys, swarm::snap),              // SOPRANO SAX
             ("snap.SLAP", slapback::record_keys, slapback::snap),       // MELLOPHONE, a Studio kind
             ("snap.KETTLES", kettles::record_keys, kettles::snap),      // a Studio kind (TIMPANI)
+            ("snap.STICKS", sticks::record_keys, sticks::snap),         // SNARE DRUM, a Studio kind
         ];
         for (socket, keys, snap) in kinds {
             fight.socket(socket);

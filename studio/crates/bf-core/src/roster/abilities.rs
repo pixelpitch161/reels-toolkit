@@ -13,6 +13,7 @@ pub mod arc;
 pub mod barrage;
 pub mod beam;
 pub mod buzz;
+pub mod buzz_roll;
 pub mod cannons;
 pub mod clamp;
 pub mod company_front;
@@ -25,6 +26,7 @@ pub mod drum_roll;
 pub mod encore;
 pub mod endless;
 pub mod five_octaves;
+pub mod flam;
 pub mod flank;
 pub mod flash_spin;
 pub mod flick;
@@ -50,6 +52,7 @@ pub mod press_box;
 pub mod queen;
 pub mod rewind;
 pub mod rhapsody;
+pub mod rimshot;
 pub mod runoff;
 pub mod runway;
 pub mod shatter;
@@ -258,6 +261,12 @@ pub enum AbilityKind {
     Flank,
     /// `take_wing`: FLUGELHORN's TAKE WING (a Studio kind).
     TakeWing,
+    /// `flam`: SNARE DRUM's FLAM (a Studio kind).
+    Flam,
+    /// `rimshot`: SNARE DRUM's RIMSHOT (a Studio kind).
+    Rimshot,
+    /// `buzz_roll`: SNARE DRUM's BUZZ ROLL (a Studio kind).
+    BuzzRoll,
     /// A kind the engine has not ported yet, or a ported kind with an option it has not ported, written
     /// `kind+option` (OBOE's `"wave+detune"`).
     Unsupported(String),
@@ -398,6 +407,12 @@ pub enum AbilitySettings {
     Flank(flank::FlankCfg),
     /// Kind `take_wing`.
     TakeWing(take_wing::TakeWingCfg),
+    /// Kind `flam`.
+    Flam(flam::FlamCfg),
+    /// Kind `rimshot`.
+    Rimshot(rimshot::RimshotCfg),
+    /// Kind `buzz_roll`.
+    BuzzRoll(buzz_roll::BuzzRollCfg),
 }
 
 impl AbilityKind {
@@ -476,6 +491,9 @@ impl AbilityKind {
             AbilityKind::FullSet => "full_set",
             AbilityKind::Flank => "flank",
             AbilityKind::TakeWing => "take_wing",
+            AbilityKind::Flam => "flam",
+            AbilityKind::Rimshot => "rimshot",
+            AbilityKind::BuzzRoll => "buzz_roll",
             AbilityKind::Unsupported(kind) => kind.split('+').next().unwrap_or(kind),
         }
     }
@@ -554,6 +572,9 @@ impl AbilityKind {
             "full_set" if full_set::PORTED => AbilityKind::FullSet,
             "flank" if flank::PORTED => AbilityKind::Flank,
             "take_wing" if take_wing::PORTED => AbilityKind::TakeWing,
+            "flam" if flam::PORTED => AbilityKind::Flam,
+            "rimshot" if rimshot::PORTED => AbilityKind::Rimshot,
+            "buzz_roll" if buzz_roll::PORTED => AbilityKind::BuzzRoll,
             other => AbilityKind::Unsupported(other.to_string()),
         }
     }
@@ -631,6 +652,9 @@ impl AbilityKind {
             AbilityKind::FullSet => full_set::REQUIRED,
             AbilityKind::Flank => flank::REQUIRED,
             AbilityKind::TakeWing => take_wing::REQUIRED,
+            AbilityKind::Flam => flam::REQUIRED,
+            AbilityKind::Rimshot => rimshot::REQUIRED,
+            AbilityKind::BuzzRoll => buzz_roll::REQUIRED,
             AbilityKind::Unsupported(_) => &[],
         }
     }
@@ -710,6 +734,9 @@ impl AbilityKind {
             AbilityKind::FullSet => full_set::ALLOWED,
             AbilityKind::Flank => flank::ALLOWED,
             AbilityKind::TakeWing => take_wing::ALLOWED,
+            AbilityKind::Flam => flam::ALLOWED,
+            AbilityKind::Rimshot => rimshot::ALLOWED,
+            AbilityKind::BuzzRoll => buzz_roll::ALLOWED,
             AbilityKind::Unsupported(_) => &[],
         }
     }
@@ -795,6 +822,9 @@ fn settings(e: &Entry, prefix: &str, kind: &AbilityKind, ab: &Json) -> Result<Ab
         AbilityKind::FullSet => AbilitySettings::FullSet(full_set::parse(e, prefix, ab)?),
         AbilityKind::Flank => AbilitySettings::Flank(flank::parse(e, prefix, ab)?),
         AbilityKind::TakeWing => AbilitySettings::TakeWing(take_wing::parse(e, prefix, ab)?),
+        AbilityKind::Flam => AbilitySettings::Flam(flam::parse(e, prefix, ab)?),
+        AbilityKind::Rimshot => AbilitySettings::Rimshot(rimshot::parse(e, prefix, ab)?),
+        AbilityKind::BuzzRoll => AbilitySettings::BuzzRoll(buzz_roll::parse(e, prefix, ab)?),
     })
 }
 
@@ -873,6 +903,9 @@ pub(crate) fn kind_check(e: &Entry, prefix: &str, ab: &AbilityCfg) -> Result<(),
         AbilityKind::FullSet => full_set::check(e, prefix, ab),
         AbilityKind::Flank => flank::check(e, prefix, ab),
         AbilityKind::TakeWing => take_wing::check(e, prefix, ab),
+        AbilityKind::Flam => flam::check(e, prefix, ab),
+        AbilityKind::Rimshot => rimshot::check(e, prefix, ab),
+        AbilityKind::BuzzRoll => buzz_roll::check(e, prefix, ab),
     }
 }
 

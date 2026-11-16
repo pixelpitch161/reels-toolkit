@@ -41,7 +41,7 @@ use crate::geom;
 use crate::kinds::{
     anchor, bite, blade, combo, crowd, drill, echo, foghorn, grapple, inflate, jump, kettles, lightning, line, mallets,
     mortar, needle, plumbing, plunger, pulse, rake, rests, roll, roll_charge, scratch_floor, slapback, spotlight,
-    striker, surf, swallow, swarm, tether, tiptoe, trap, tune, walk, wingbeat, wrecking,
+    sticks, striker, surf, swallow, swarm, tether, tiptoe, trap, tune, walk, wingbeat, wrecking,
 };
 use crate::record::Frames;
 use crate::roster::AbilityKind;
@@ -129,6 +129,8 @@ pub struct Schedule {
     pub n16sb: i64,
     /// `n16y`: the kettles' (TIMPANI, a Studio kind: after every kit kind).
     pub n16y: i64,
+    /// `n16sd`: the sticks' (SNARE DRUM, a Studio kind).
+    pub n16sd: i64,
     // Python keeps one counter per kind (`next16`, `dc_next`, `n16b`, `next16c`, `next16k`, `next16t`, `n16p`, ...):
     // each moves only while a fighter has its kind, so they are separate fields, never one shared counter. The frozen
     // `pack`'s `n16p` is not kept.
@@ -311,6 +313,10 @@ impl Schedule {
         for k in which(fight, kettles::is) {
             kettles::setup(fight, k);
         }
+        // SNARE DRUM (a Studio kind, no socket)
+        for k in which(fight, sticks::is) {
+            sticks::setup(fight, k);
+        }
         Schedule {
             steps_per_frame,
             k0,
@@ -342,6 +348,7 @@ impl Schedule {
             n16z: k16_0,
             n16sb: k16_0,
             n16y: k16_0,
+            n16sd: k16_0,
             next16: k16_0,
             n16b: k16_0,
             next16c: k16_0,
@@ -606,6 +613,8 @@ impl Schedule {
         // TIMPANI's kettles (a Studio kind, after every kit kind)
         fight.socket("tick.kettles");
         self.counter(fight, kettles::is, |s| &mut s.n16y, kettles::tick);
+        // SNARE DRUM's sticks (a Studio kind, no socket)
+        self.counter(fight, sticks::is, |s| &mut s.n16sd, sticks::tick);
 
         // 4. The timers (6096 to 6107).
         for k in 0..2 {
@@ -907,6 +916,10 @@ impl Schedule {
         fight.socket("later.kettles");
         if kettles::live(fight) {
             kettles::step(fight, dt);
+        }
+        // SNARE DRUM's jabs and BUZZ ROLL (a Studio kind, no socket)
+        if sticks::live(fight) {
+            sticks::step(fight);
         }
 
         // 12. Levels and abilities (6203).

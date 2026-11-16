@@ -61,7 +61,7 @@ const fn t(category: &'static str, likes: &'static [(&'static str, u8)], lo: f64
     }
 }
 
-const FIGHTERS: [(&str, FighterFit); 39] = [
+const FIGHTERS: [(&str, FighterFit); 40] = [
     ("FLUTE", f(&["airy", "high", "classical", "folk"], 3)),
     ("PICCOLO", f(&["airy", "high", "folk", "classical"], 3)),
     ("OBOE", f(&["reedy", "high", "classical", "folk"], 2)),
@@ -101,6 +101,7 @@ const FIGHTERS: [(&str, FighterFit); 39] = [
     ("TURNTABLES", f(&["electric", "percussive", "club"], 3)),
     ("DRUMS", f(&["percussive", "rock", "club"], 3)),
     ("BASS DRUM", f(&["percussive", "low", "rock"], 1)),
+    ("SNARE DRUM", f(&["percussive", "high", "rock", "folk"], 3)),
 ];
 
 const JAZZ: &str = CATEGORIES[0];
