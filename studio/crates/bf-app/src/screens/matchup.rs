@@ -324,7 +324,8 @@ pub struct NameLayout {
 
 /// The corner card's name (interface reference 5.1: 28 tall when it fits, 21 when it does not): on one line beside
 /// the portrait at 28 or 21; else, for a name of two words or more, on two lines beside it at 21 (split at the space
-/// nearest its middle: "BASS" over "CLARINET"); else on a line of its own under the portrait, at 21 when that fits.
+/// nearest its middle: "BASS" over "CLARINET"); else on a line of its own under the portrait, at 21 when that fits,
+/// or, when even that is too wide, on two lines under it at 21 ("CONTRABASS" over "CLARINET").
 /// `name` is the roster name the mask spells, one mask column group of `LETTER_ADV` per letter.
 pub fn name_layout(mask: &PixelMask, name: &str, beside: f32, under: f32) -> NameLayout {
     let fits = |w: usize, scale: u32, room: f32| (w * scale as usize) as f32 <= room;
@@ -359,6 +360,14 @@ pub fn name_layout(mask: &PixelMask, name: &str, beside: f32, under: f32) -> Nam
                 mask: two,
                 scale: NAME_SMALL,
                 under: false,
+            };
+        }
+        // too long for one line under it at 21 (CONTRABASS CLARINET): two lines under it at 21
+        if !fits(mask.w, NAME_SMALL, under) && fits(two.w, NAME_SMALL, under) {
+            return NameLayout {
+                mask: two,
+                scale: NAME_SMALL,
+                under: true,
             };
         }
     }

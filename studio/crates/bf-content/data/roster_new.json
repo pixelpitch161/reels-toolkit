@@ -1,0 +1,178 @@
+{
+ "about": "The fighters made from scratch in the Studio (no Python kit reference; Rust is their source of truth), in the same format as roster.json and appended to it by bf_content::registry::roster(). Edited by hand: one entry per fighter, each from its design doc (docs/superpowers/specs/).",
+ "format": 1,
+ "fighters": [
+  {
+   "name": "CORNET",
+   "color": [232, 120, 140],
+   "dark": [138, 52, 70],
+   "corner": "red",
+   "view": [0, 16, 0],
+   "weapon": {
+    "kind": "plunger",
+    "style": "plunger",
+    "name": "PLUNGER MUTE",
+    "every": 2,
+    "off16": 0,
+    "speed": 9.0,
+    "lead": 0.3,
+    "base": 3.0,
+    "grow": 0.15,
+    "max_reach": 4.2,
+    "hold": 2,
+    "hold_grow": 0.5,
+    "hold_max": 3,
+    "snap": 1.4,
+    "dmg_stick": 1.0,
+    "dmg": 1.2,
+    "pull": 0.5,
+    "cup_r": 0.15
+   },
+   "abilities": {
+    "unlock1": {"name": "WA-WA", "kind": "shield", "dur_beats": 6, "every_bars": 6},
+    "unlock2": {"name": "DERBY HAT", "kind": "derby", "tele": 1.5, "radius": 0.9, "dmg": 3.0, "dur_beats": 4, "every_bars": 5},
+    "low": {"name": "STOP-TIME", "kind": "stoptime", "n": 4, "freeze": 0.6, "boost": 2.2, "dmg": 5.0, "knock": 1.4, "speed": 8.0, "radius": 3.2, "dmg_break": 9.0, "knock_break": 1.8}
+   },
+   "pp": "CORNET",
+   "register": [55, 79],
+   "idiom": "wah"
+  },
+  {
+   "name": "CONTRABASS CLARINET",
+   "color": [24, 124, 132],
+   "dark": [10, 58, 64],
+   "corner": "red",
+   "view": [0, 22, 0],
+   "weapon": {
+    "kind": "foghorn",
+    "style": "foghorn",
+    "name": "FOGHORN",
+    "every": 4,
+    "spread": 28.0,
+    "base": 1.6,
+    "grow": 0.12,
+    "max_reach": 2.6,
+    "dur": 0.55,
+    "push": 1.8,
+    "steer": 18.0,
+    "dmg": 1.5,
+    "dmg_wall": 2.6,
+    "slam_t": 0.5,
+    "aim_rate": 5.0
+   },
+   "abilities": {
+    "unlock1": {"name": "FOG BANK", "kind": "shield", "dur_beats": 6, "every_bars": 6},
+    "unlock2": {"name": "MOTORBOAT", "kind": "haste", "mult": 2.0, "dur_beats": 8, "every_bars": 6},
+    "low": {"name": "SHIP'S HORN", "kind": "beam", "charge_beats": 1, "lead": 1.0, "len": 7.0, "width": 1.3,
+            "dmg": 11.0, "knock": 1.8, "hold": 0.45}
+   },
+   "pp": "CONTRABASS CLARINET",
+   "register": [26, 58],
+   "idiom": "foghorn"
+  },
+  {
+   "name": "MARIMBA",
+   "color": [160, 80, 160],
+   "dark": [94, 44, 94],
+   "corner": "blue",
+   "view": [30, 20, 0],
+   "weapon": {
+    "kind": "mallets",
+    "style": "mallets",
+    "name": "MALLET RUN",
+    "every": 1,
+    "speed": 5.0,
+    "bounces": 4,
+    "n0": 1,
+    "grow": 0.25,
+    "n_max": 4,
+    "dmg": 1.3,
+    "dmg_step": 0.5,
+    "knock": 0.3,
+    "hit_r": 0.12
+   },
+   "abilities": {
+    "unlock1": {
+     "name": "TREMOLO",
+     "kind": "tremolo",
+     "dur_beats": 4,
+     "mult": 0.6,
+     "every_bars": 3
+    },
+    "unlock2": {
+     "name": "DEAD STROKE",
+     "kind": "dead_stroke",
+     "dur_beats": 8,
+     "pin_beats": 0.5,
+     "every_bars": 4
+    },
+    "low": {
+     "name": "FIVE OCTAVES",
+     "kind": "five_octaves",
+     "n": 61,
+     "beats": 2,
+     "speed": 4.5,
+     "dmg": 0.45,
+     "knock": 0.15,
+     "bounces": 1
+    }
+   },
+   "pp": "MARIMBA",
+   "register": [60, 96],
+   "idiom": "mallets"
+  },
+  {
+   "name": "CONTRABASSOON",
+   "color": [150, 34, 44],
+   "dark": [84, 16, 22],
+   "corner": "red",
+   "view": [8, 20, 0],
+   "weapon": {
+    "kind": "plumbing",
+    "style": "ubend",
+    "name": "U-BEND",
+    "every": 4,
+    "max_pipes": 3,
+    "leg": 0.8,
+    "gap": 0.7,
+    "thick": 0.09,
+    "lead": 1.6,
+    "dmg": 2.3,
+    "dmg_grow": 0.15,
+    "dmg_max": 3.6,
+    "cool": 0.4,
+    "knock": 0.6,
+    "own_boost": 0.5
+   },
+   "abilities": {
+    "unlock1": {
+     "name": "WATER KEY",
+     "kind": "water_key",
+     "beats": 1,
+     "reach": 0.9,
+     "dmg": 2.5,
+     "knock": 1.2,
+     "every_bars": 3
+    },
+    "unlock2": {
+     "name": "HOT PIPES",
+     "kind": "hot_pipes",
+     "dur_beats": 8,
+     "mult": 2.0,
+     "every_bars": 6
+    },
+    "low": {
+     "name": "FIVE AND A HALF METRES",
+     "kind": "pipe_box",
+     "beats": 4,
+     "half": 1.0,
+     "dmg": 2.0,
+     "cool": 0.2
+    }
+   },
+   "pp": "CONTRABASSOON",
+   "register": [34, 62],
+   "idiom": "grumble"
+  }
+ ]
+}

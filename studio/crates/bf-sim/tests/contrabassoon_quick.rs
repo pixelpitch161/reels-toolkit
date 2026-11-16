@@ -6,7 +6,11 @@ use bf_sim::roster::{FighterCfg, parse_roster};
 use bf_sim::{Rules, Setup, run};
 
 fn roster() -> Vec<FighterCfg> {
-    parse_roster(include_str!("../../bf-content/data/roster.json")).expect("the roster loads")
+    {
+        let mut all = parse_roster(include_str!("../../bf-content/data/roster.json")).expect("the roster loads");
+        all.extend(parse_roster(include_str!("../../bf-content/data/roster_new.json")).expect("the new roster loads"));
+        all
+    }
 }
 
 fn how(e: &bf_core::event::Event) -> &str {
@@ -63,11 +67,11 @@ fn contrabassoon_fights_to_the_end() {
 fn the_box_holds_the_enemy() {
     let all = roster();
     let me = all.iter().find(|f| f.name == "CONTRABASSOON").expect("CONTRABASSOON");
-    let tuba = all.iter().find(|f| f.name == "TUBA").expect("TUBA");
+    let foe = all.iter().find(|f| f.name == "TROMBONE").expect("TROMBONE");
     let mut checked = 0;
-    for seed in 1..=8 {
+    for seed in 1..=24 {
         let setup = Setup {
-            fighters: [me, tuba],
+            fighters: [me, foe],
             rules: Rules::new(132.0, 3.5),
             seed,
         };
@@ -85,10 +89,10 @@ fn the_box_holds_the_enemy() {
             let t = (n + rec.f0) as f64 / fps;
             if t > b.t + 0.05 && t < off - 0.05 {
                 let (x, y) = (row[2], row[3]);
-                assert!((x - cx).abs() < h && (y - cy).abs() < h, "seed {seed}: TUBA left the box at {t}");
+                assert!((x - cx).abs() < h && (y - cy).abs() < h, "seed {seed}: TROMBONE left the box at {t}");
                 checked += 1;
             }
         }
     }
-    assert!(checked > 0, "no box in 8 fights");
+    assert!(checked > 0, "no box in 24 fights");
 }

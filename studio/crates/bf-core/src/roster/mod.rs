@@ -22,15 +22,16 @@ pub mod striker;
 
 pub use abilities::{AbilityCfg, AbilityKind, AbilitySettings, SlowCfg};
 pub use blade::{BladeCfg, BladeMode, MAX_FRETS0};
+pub use kinds::plunger::PlungerCfg;
 pub use kinds::{
     anchor::AnchorCfg, combo::ComboCfg, crowd::CrowdCfg, drill::DrillCfg, echo::EchoCfg, grapple::GrappleCfg,
-    jump::JumpCfg, lightning::LightningCfg, line::LineCfg, mortar::MortarCfg, rake::RakeCfg, roll::RollCfg,
-    roll_charge::RollChargeCfg, spotlight::SpotlightCfg, swallow::SwallowCfg, tiptoe::TiptoeCfg, tune::TuneCfg,
-    walk::WalkCfg,
+    jump::JumpCfg, lightning::LightningCfg, line::LineCfg, mallets::MalletsCfg, mortar::MortarCfg, rake::RakeCfg,
+    roll::RollCfg, roll_charge::RollChargeCfg, spotlight::SpotlightCfg, swallow::SwallowCfg, tiptoe::TiptoeCfg,
+    tune::TuneCfg, walk::WalkCfg,
 };
 pub use kinds::{
-    bite::BiteCfg, inflate::InflateCfg, pulse::PulseCfg, rests::RestsCfg, scratch_floor::ScratchFloorCfg,
-    plumbing::PlumbingCfg, surf::SurfCfg, tether::TetherCfg, trap::TrapCfg, wrecking::WreckingCfg,
+    bite::BiteCfg, foghorn::FoghornCfg, inflate::InflateCfg, pulse::PulseCfg, rests::RestsCfg,
+    scratch_floor::ScratchFloorCfg, surf::SurfCfg, tether::TetherCfg, plumbing::PlumbingCfg, trap::TrapCfg, wrecking::WreckingCfg,
 };
 pub use striker::StrikerCfg;
 
@@ -126,6 +127,23 @@ pub const OLDER_ABILITY_KINDS: [(&str, bool); 9] = [
     ("joke", abilities::joke::PORTED),
 ];
 
+/// The weapon kinds of the fighters made from scratch in the Studio (no Python kit reference), each with its module's
+/// `PORTED`, as [`OLDER_WEAPON_KINDS`].
+pub const NEW_WEAPON_KINDS: [(&str, bool); 3] = [
+    ("plunger", kinds::plunger::PORTED),
+    ("mallets", kinds::mallets::PORTED),
+    ("foghorn", kinds::foghorn::PORTED),
+];
+
+/// The ability kinds of the fighters made from scratch in the Studio, each with its module's `PORTED`.
+pub const NEW_ABILITY_KINDS: [(&str, bool); 5] = [
+    ("derby", abilities::derby::PORTED),
+    ("stoptime", abilities::stoptime::PORTED),
+    ("tremolo", abilities::tremolo::PORTED),
+    ("dead_stroke", abilities::dead_stroke::PORTED),
+    ("five_octaves", abilities::five_octaves::PORTED),
+];
+
 /// One fighter's roster entry.
 #[derive(Clone, Debug, PartialEq)]
 pub struct FighterCfg {
@@ -204,7 +222,7 @@ pub enum WeaponCfg {
     Bite(kinds::bite::BiteCfg),
     /// Kind `trap` (HARP's the strings; milestone 4), typed by `roster::kinds::trap`.
     Trap(kinds::trap::TrapCfg),
-    /// Kind `plumbing` (CONTRABASSOON's U-BEND, made from scratch), typed by `roster::kinds::plumbing`.
+    /// Kind `plumbing` (CONTRABASSOON's U-BEND; made in the Studio), typed by `roster::kinds::plumbing`.
     Plumbing(kinds::plumbing::PlumbingCfg),
     /// Kind `surf` (UKULELE's SURF'S UP; milestone 4), typed by `roster::kinds::surf`.
     Surf(kinds::surf::SurfCfg),
@@ -217,6 +235,12 @@ pub enum WeaponCfg {
     Wrecking(kinds::wrecking::WreckingCfg),
     /// Kind `rests` (VIOLA's COUNTING RESTS; milestone 4), typed by `roster::kinds::rests`.
     Rests(kinds::rests::RestsCfg),
+    /// Kind `plunger` (CORNET's PLUNGER MUTE; a from-scratch fighter), typed by `roster::kinds::plunger`.
+    Plunger(kinds::plunger::PlungerCfg),
+    /// Kind `foghorn` (CONTRABASS CLARINET's FOGHORN; made in the Studio), typed by `roster::kinds::foghorn`.
+    Foghorn(kinds::foghorn::FoghornCfg),
+    /// Kind `mallets` (MARIMBA's MALLET RUN, a Studio kind), typed by `roster::kinds::mallets`.
+    Mallets(kinds::mallets::MalletsCfg),
     /// A kind the engine has not ported yet (a spinning blade, with no `mode`, is `"blade"` until
     /// [`blade::SPIN_PORTED`]).
     Unsupported(String),
@@ -441,6 +465,9 @@ impl Entry<'_> {
             "tether" if kinds::tether::PORTED => Ok(WeaponCfg::Tether(kinds::tether::parse(self, w)?)),
             "wrecking" if kinds::wrecking::PORTED => Ok(WeaponCfg::Wrecking(kinds::wrecking::parse(self, w)?)),
             "rests" if kinds::rests::PORTED => Ok(WeaponCfg::Rests(kinds::rests::parse(self, w)?)),
+            "plunger" if kinds::plunger::PORTED => Ok(WeaponCfg::Plunger(kinds::plunger::parse(self, w)?)),
+            "foghorn" if kinds::foghorn::PORTED => Ok(WeaponCfg::Foghorn(kinds::foghorn::parse(self, w)?)),
+            "mallets" if kinds::mallets::PORTED => Ok(WeaponCfg::Mallets(kinds::mallets::parse(self, w)?)),
             _ => Ok(WeaponCfg::Unsupported(kind)),
         }
     }
@@ -537,6 +564,9 @@ impl FighterCfg {
             WeaponCfg::Tether(w) => kinds::tether::check(&e, w)?,
             WeaponCfg::Wrecking(w) => kinds::wrecking::check(&e, w)?,
             WeaponCfg::Rests(w) => kinds::rests::check(&e, w)?,
+            WeaponCfg::Plunger(w) => kinds::plunger::check(&e, w)?,
+            WeaponCfg::Foghorn(w) => kinds::foghorn::check(&e, w)?,
+            WeaponCfg::Mallets(w) => kinds::mallets::check(&e, w)?,
             WeaponCfg::Unsupported(_) => {}
         }
         let slots = [
@@ -610,6 +640,9 @@ impl WeaponCfg {
             WeaponCfg::Tether(w) => return kinds::tether::main16(w),
             WeaponCfg::Wrecking(w) => return kinds::wrecking::main16(w),
             WeaponCfg::Rests(w) => return kinds::rests::main16(w),
+            WeaponCfg::Plunger(w) => return kinds::plunger::main16(w),
+            WeaponCfg::Foghorn(w) => return kinds::foghorn::main16(w),
+            WeaponCfg::Mallets(w) => return kinds::mallets::main16(w),
             WeaponCfg::Unsupported(_) => return None,
         };
         Some(crate::py::round_half_even(4.0 * every))
@@ -656,6 +689,9 @@ impl WeaponCfg {
             WeaponCfg::Tether(w) => kinds::tether::ball_start(w),
             WeaponCfg::Wrecking(w) => kinds::wrecking::ball_start(w),
             WeaponCfg::Rests(w) => kinds::rests::ball_start(w),
+            WeaponCfg::Plunger(w) => kinds::plunger::ball_start(w),
+            WeaponCfg::Foghorn(w) => kinds::foghorn::ball_start(w),
+            WeaponCfg::Mallets(w) => kinds::mallets::ball_start(w),
             WeaponCfg::Unsupported(_) => BallStart::default(),
         }
     }
@@ -693,6 +729,9 @@ impl WeaponCfg {
             WeaponCfg::Tether(_) => "tether",
             WeaponCfg::Wrecking(_) => "wrecking",
             WeaponCfg::Rests(_) => "rests",
+            WeaponCfg::Plunger(_) => "plunger",
+            WeaponCfg::Foghorn(_) => "foghorn",
+            WeaponCfg::Mallets(_) => "mallets",
             WeaponCfg::Unsupported(kind) => kind,
         }
     }
@@ -720,17 +759,11 @@ mod tests {
         "VIOLIN",
     ];
 
-    /// The fighters made from scratch after the port (their kinds have their own tests).
-    const NEW: [&str; 1] = ["CONTRABASSOON"];
-
-    /// The kit's 20 fighters: the roster without the older ten and the new ones.
+    /// The kit's 20 fighters: the roster without the older ten.
     fn kit_roster() -> Vec<FighterCfg> {
         let all = parse_roster(ROSTER).expect("the roster loads");
         assert_eq!(all.iter().filter(|f| OLDER.contains(&f.name.as_str())).count(), 10);
-        let kit: Vec<FighterCfg> = all
-            .into_iter()
-            .filter(|f| !OLDER.contains(&f.name.as_str()) && !NEW.contains(&f.name.as_str()))
-            .collect();
+        let kit: Vec<FighterCfg> = all.into_iter().filter(|f| !OLDER.contains(&f.name.as_str())).collect();
         assert_eq!(kit.len(), 20);
         kit
     }
@@ -762,7 +795,7 @@ mod tests {
     #[test]
     fn the_whole_roster_loads_in_order() {
         let r = parse_roster(ROSTER).expect("loads");
-        assert_eq!(r.len(), 30 + NEW.len());
+        assert_eq!(r.len(), 30);
         assert_eq!(r[0].name, "PIANO");
         assert_eq!(r[1].name, "DRUMS");
         // the kit's 20 keep their own order among the 30
@@ -1451,7 +1484,7 @@ mod tests {
     #[test]
     fn flute_and_trombone_hold_only_typed_keys() {
         // the real roster loads (all 30), and the two ported fighters pass the unknown-key check
-        assert_eq!(parse_roster(ROSTER).expect("loads").len(), 30 + NEW.len());
+        assert_eq!(parse_roster(ROSTER).expect("loads").len(), 30);
         for name in ["FLUTE", "TROMBONE"] {
             let f = fighter(name);
             assert!(!matches!(f.weapon, WeaponCfg::Unsupported(_)), "{name}");

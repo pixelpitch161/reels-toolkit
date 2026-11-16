@@ -86,7 +86,10 @@ fighters! {
     "TROMBONE" => trombone, "TRUMPET" => trumpet, "TUBA" => tuba, "ACCORDION" => accordion,
     "BAGPIPES" => bagpipes, "BARI SAX" => bari_sax, "DRUMS" => drums, "HARP" => harp, "SYNTH" => synth,
     "TURNTABLES" => turntables, "UKULELE" => ukulele, "VIOLA" => viola, "VIOLIN" => violin,
+    "CORNET" => cornet,
+    "CONTRABASS CLARINET" => contrabass_clarinet,
     "CONTRABASSOON" => contrabassoon,
+    "MARIMBA" => marimba,
 }
 
 #[cfg(test)]
@@ -96,13 +99,13 @@ mod tests {
     use crate::roster;
 
     #[test]
-    fn all_thirty_have_a_playable_personality() {
+    fn every_fighter_has_a_playable_personality() {
         let mut names: Vec<String> = roster().iter().map(|f| f.name.clone()).collect();
         names.extend(OLDER.iter().map(|s| s.to_string()));
         names.retain(|n| entry(n).is_some());
         names.sort();
         names.dedup();
-        assert_eq!(names.len(), 31);
+        assert_eq!(names.len(), 30 + crate::fighters::NEW.len());
         for n in &names {
             let p = personality(n).unwrap_or_else(|| panic!("{n}"));
             assert!((2..=4).contains(&p.motifs.len()), "{n}");

@@ -15,9 +15,12 @@ pub use bf_core::fightfile::RETIRED;
 /// The exported roster.
 const ROSTER_JSON: &str = include_str!("../data/roster.json");
 
+/// The fighters made from scratch in the Studio (no Python kit reference), appended to the exported roster.
+const ROSTER_NEW_JSON: &str = include_str!("../data/roster_new.json");
+
 /// The fighters whose weapon and abilities the engine has ported, in no particular order (grows as fighters are
 /// ported).
-pub const PORTED: [&str; 31] = [
+pub const PORTED: [&str; 34] = [
     "FLUTE",
     "TROMBONE",
     "PIANO",
@@ -48,6 +51,9 @@ pub const PORTED: [&str; 31] = [
     "HARP",
     "ACCORDION",
     "DRUMS",
+    "CORNET",
+    "CONTRABASS CLARINET",
+    "MARIMBA",
     "CONTRABASSOON",
 ];
 
@@ -58,7 +64,11 @@ pub const PORTED: [&str; 31] = [
 /// When the compiled-in roster cannot be read (a broken export; the tests read it on every build).
 pub fn roster() -> &'static [FighterCfg] {
     static ROSTER: OnceLock<Vec<FighterCfg>> = OnceLock::new();
-    ROSTER.get_or_init(|| parse_roster(ROSTER_JSON).unwrap_or_else(|e| panic!("the compiled-in {e}")))
+    ROSTER.get_or_init(|| {
+        let mut all = parse_roster(ROSTER_JSON).unwrap_or_else(|e| panic!("the compiled-in {e}"));
+        all.extend(parse_roster(ROSTER_NEW_JSON).unwrap_or_else(|e| panic!("the compiled-in new {e}")));
+        all
+    })
 }
 
 /// The fighters the app offers: [`PORTED`], in roster order.
@@ -118,16 +128,15 @@ mod tests {
     ];
 
     #[test]
-    fn roster_has_the_kit_20_and_the_older_10_and_no_retired() {
+    fn roster_has_the_kit_20_the_older_10_the_studio_ones_and_no_retired() {
         let r = roster();
-        assert_eq!(r.len(), 31);
-        // fighters.py's order, which starts with the first fighters the kit had
+        assert_eq!(r.len(), 30 + crate::fighters::NEW.len());
+        // fighters.py's order, which starts with the first fighters the kit had, then the fighters made from scratch
         let names: Vec<&str> = r.iter().map(|f| f.name.as_str()).collect();
+        assert_eq!(&names[30..], crate::fighters::NEW);
+        let names = &names[..30];
         assert_eq!(&names[..4], &["PIANO", "DRUMS", "VIOLIN", "BAGPIPES"]);
-        let (older, mut kit): (Vec<&str>, Vec<&str>) = names
-            .iter()
-            .filter(|n| !crate::fighters::NEW.contains(n))
-            .partition(|n| crate::fighters::OLDER.contains(n));
+        let (older, mut kit): (Vec<&str>, Vec<&str>) = names.iter().partition(|n| crate::fighters::OLDER.contains(n));
         assert_eq!(&kit[..4], &["PIANO", "TUBA", "FLUTE", "TROMBONE"]);
         kit.sort_unstable();
         assert_eq!(kit, KIT);
@@ -183,6 +192,9 @@ mod tests {
                 "TENOR SAX",
                 "SOUSAPHONE",
                 "BASS DRUM",
+                "CORNET",
+                "CONTRABASS CLARINET",
+                "MARIMBA",
                 "CONTRABASSOON",
             ]
         );
