@@ -191,6 +191,7 @@ mod tests {
 
     fn spec(title: &str) -> JobSpec {
         JobSpec {
+            fighters: None,
             title: title.to_string(),
             colors: [[0xde, 0xe8, 0xf6], [0x78, 0xf0, 0xb8]],
             theme: "Big top".to_string(),
@@ -202,6 +203,8 @@ mod tests {
 
     fn done() -> JobUpdate {
         JobUpdate::Done {
+            winner: None,
+            finished_at: 0,
             folder: r"C:\Users\Zoë Ångström\Videos\BALLFIGHT 動画\flute_vs_trombone".into(),
             seconds: 48.25,
         }

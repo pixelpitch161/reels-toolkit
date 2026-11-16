@@ -90,6 +90,7 @@ fn upkeep_sent(harness: &Harness<'_, BfApp>) -> Vec<Request> {
 /// A video rendering.
 fn rendering(mut vm: ViewModel) -> ViewModel {
     let id = vm.queue.add(JobSpec {
+        fighters: None,
         title: "Tuba vs Bass drum".to_string(),
         colors: [[0x68, 0x5c, 0xec], [0x80, 0x80, 0x8c]],
         theme: "Big top".to_string(),

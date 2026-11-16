@@ -51,9 +51,9 @@ pub fn keys(ctx: &Context, out: &mut Vec<Action>) {
     }
 }
 
-/// The toolbar: the app's name, the five steps (the current one inverted, also while the Library or Settings is
-/// open), then on the right "Library", "Queue" with the count of videos rendering and waiting, "Update" ([`update`])
-/// and "Settings". "Library" and "Settings" are inverted while their view is open.
+/// The toolbar: the app's name, the five steps (the current one inverted, also while another view is open), then on
+/// the right "Matchups", "Library", "Queue" with the count of videos rendering and waiting, "Update" ([`update`]) and
+/// "Settings". "Matchups", "Library" and "Settings" are inverted while their view is open.
 ///
 /// It is drawn every frame, so it also carries out what the update needs of the window: a repaint each second while
 /// a new version is being built, and closing the window (which saves first) once the upkeep says the app should
@@ -88,6 +88,9 @@ pub fn toolbar(ui: &mut Ui, vm: &ViewModel, out: &mut Vec<Action>) {
             }
             if buttons::toggle(ui, "Library", vm.view == View::Library).clicked() {
                 out.push(Action::Go(View::Library));
+            }
+            if buttons::toggle(ui, "Matchups", vm.view == View::Matchups).clicked() {
+                out.push(Action::Go(View::Matchups));
             }
         });
     });

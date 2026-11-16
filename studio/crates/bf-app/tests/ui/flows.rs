@@ -13,6 +13,7 @@ use bf_app::model::{Notice, Settings, Step, View};
 use bf_app::preview::audio::NoAudio;
 use bf_app::seam::fake::{self, Pace};
 use bf_app::seam::{Command, EngineHandle, EngineSide, Event, channel, sample};
+use bf_app::store::history::load_history;
 use bf_app::store::queue_file::load_queue;
 use bf_app::store::settings::{load_settings, save_settings};
 use bf_app::store::{Paths, Writer};
@@ -65,6 +66,7 @@ impl Drop for Temp {
 /// What the app starts with on `engine`: the temp folder's settings and writer, no sound device, an empty queue.
 fn boot(engine: EngineHandle, temp: &Temp) -> Boot {
     Boot {
+        history: bf_app::model::history::History::default(),
         engine,
         writer: Some(Writer::start(temp.paths())),
         audio: Box::new(NoAudio::new("No sound device in tests.")),
@@ -85,6 +87,7 @@ fn sample_app<'a>(temp: &Temp) -> Harness<'a, BfApp> {
         BfApp::new(
             cc,
             Boot {
+                history: bf_app::model::history::History::default(),
                 engine,
                 writer: Some(Writer::start(paths)),
                 audio: Box::new(NoAudio::new("No sound device in tests.")),
@@ -248,6 +251,18 @@ fn a_whole_video_in_clicks() {
     let slowest = harness.state().slowest_update_ms;
     assert!(slowest < 20.0, "the slowest update took {slowest} ms");
     harness.state_mut().shutdown();
+    drop(harness);
+    // The finished video is in the matchup history on disk, through the app's own writer.
+    let (history, notice) = load_history(&temp.paths().history());
+    assert_eq!(notice, None);
+    let row = history
+        .fights
+        .iter()
+        .find(|r| r.seed == Some(18433))
+        .expect("the video's row");
+    assert_eq!(row.fighters, ["FLUTE".to_string(), "TROMBONE".to_string()]);
+    assert_eq!(row.made, fake::SAMPLE_FINISHED_AT);
+    assert!(!row.uploaded);
 }
 
 #[test]
@@ -474,6 +489,7 @@ fn the_sample_app_says_so_in_the_status_bar() {
         let mut app = BfApp::new(
             cc,
             Boot {
+                history: bf_app::model::history::History::default(),
                 engine,
                 writer: Some(Writer::start(paths)),
                 audio: Box::new(NoAudio::new("No sound device in tests.")),

@@ -182,6 +182,7 @@ fn enqueue(draft: &Draft, out_root: PathBuf) -> Event {
             seed,
             fight_toml: ff.to_toml(),
             out_root,
+            fighters: Some(draft.fighters.clone()),
         },
     }
 }
@@ -266,6 +267,7 @@ fn render(
         Err(_) if cancel.load(Ordering::SeqCst) => return send(JobUpdate::Cancelled),
         Err(update) => return send(update),
     };
+    let winner = rec.winner;
     let opts = job_opts(out_root, ctx.workers(), ctx.config.clip.clone(), speed);
     let steps = Mutex::new(Steps::default());
     let on = |e: JobEvent| {
@@ -285,6 +287,10 @@ fn render(
                 ends.push(JobUpdate::Done {
                     folder,
                     seconds: t0.elapsed().as_secs_f64(),
+                    winner,
+                    finished_at: std::time::SystemTime::now()
+                        .duration_since(std::time::UNIX_EPOCH)
+                        .map_or(0, |d| d.as_secs()),
                 });
                 (ends, None)
             }
@@ -720,6 +726,7 @@ mod tests {
 
     fn spec_of(title: &str) -> JobSpec {
         JobSpec {
+            fighters: None,
             title: title.to_string(),
             colors: [[0; 3]; 2],
             theme: "Big top".to_string(),
@@ -1009,7 +1016,7 @@ mod tests {
                 speed: crate::model::EncodeChoice::Best,
             });
             let updates = job_until_end(&engine, 7, 240.0);
-            let Some(JobUpdate::Done { folder, seconds }) = updates.last().cloned() else {
+            let Some(JobUpdate::Done { folder, seconds, .. }) = updates.last().cloned() else {
                 panic!("{updates:?}");
             };
             assert!(seconds > 0.0 && seconds.is_finite());

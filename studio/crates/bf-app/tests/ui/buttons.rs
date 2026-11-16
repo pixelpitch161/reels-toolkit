@@ -729,7 +729,7 @@ fn clipped_region(ui: &mut Ui) {
     let area = egui::ScrollArea::vertical().id_salt("chip area").max_height(60.0);
     buttons::scrolled(&mut child, area, |ui| {
         for display in ["Oboe", "Tuba", "Harp"] {
-            chips::roster_chip(ui, display, [0xde, 0xe8, 0xf6], None, true, 120.0);
+            chips::roster_chip(ui, display, [0xde, 0xe8, 0xf6], None, None, true, 120.0);
         }
     });
 }

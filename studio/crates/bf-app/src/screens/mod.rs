@@ -1,6 +1,7 @@
 pub mod balance;
 pub mod library;
 pub mod matchup;
+pub mod matchups;
 pub mod music;
 pub mod render;
 pub mod seeds;

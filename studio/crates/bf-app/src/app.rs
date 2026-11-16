@@ -15,15 +15,17 @@ use eframe::wgpu;
 use egui::{CentralPanel, Color32, Frame as Fill, Margin, Panel, Rect, Stroke, TextureHandle, TextureOptions, Ui};
 
 use crate::engine::{self, EngineConfig, STOP_WAIT};
+use crate::model::history::History;
 use crate::model::queue::Queue;
 use crate::model::take::Frame;
 use crate::model::{Notice, Settings, Step, View};
 use crate::preview::audio::AudioOut;
 use crate::preview::player::{Now, Player};
-use crate::screens::{balance, library, matchup, music, render, seeds, settings, shell, stage, timeline};
+use crate::screens::{balance, library, matchup, matchups, music, render, seeds, settings, shell, stage, timeline};
 use crate::seam::fake::{self, Pace};
 use crate::seam::{Command, EngineHandle, Waker};
 use crate::state::{Action, AppState, Effect, ViewModel};
+use crate::store::history::{load_history, starter as starter_history};
 use crate::store::queue_file::load_queue;
 use crate::store::settings::{default_settings, load_settings};
 use crate::store::{Paths, Writer};
@@ -52,7 +54,9 @@ pub struct Boot {
     pub audio: Box<dyn AudioOut>,
     pub settings: Settings,
     pub queue: Queue,
-    /// What loading the settings and the queue had to say.
+    /// Every fight made (the matchup history).
+    pub history: History,
+    /// What loading the settings, the queue and the history had to say.
     pub notices: Vec<Notice>,
     /// The PC's cores.
     pub cores: usize,
@@ -193,19 +197,21 @@ pub fn start_with(
     let cores = std::thread::available_parallelism().map_or(1, std::num::NonZero::get);
     engine::files::set_parent_window(cc);
     let mut notices = Vec::new();
-    let (settings, queue, writer) = match paths.clone() {
+    let (settings, queue, history, writer) = match paths.clone() {
         Some(paths) => {
             let (settings, settings_notice) = load_settings(&paths.settings(), cores);
             let (queue, queue_notice) = load_queue(&paths.queue());
+            let (history, history_notice) = load_history(&paths.history());
             notices.extend(settings_notice);
             notices.extend(queue_notice);
-            (settings, queue, Some(Writer::start(paths)))
+            notices.extend(history_notice);
+            (settings, queue, history, Some(Writer::start(paths)))
         }
         None => {
             notices.push(Notice {
                 text: NO_FOLDER.to_string(),
             });
-            (default_settings(cores), Queue::new(), None)
+            (default_settings(cores), Queue::new(), starter_history(), None)
         }
     };
     let engine = match kind {
@@ -219,6 +225,7 @@ pub fn start_with(
         audio: open_audio(),
         settings,
         queue,
+        history,
         notices,
         cores,
     };
@@ -315,7 +322,8 @@ impl BfApp {
         interface_first();
         theme::install(&cc.egui_ctx);
         let workers = boot.settings.workers;
-        let (state, pending) = AppState::new(boot.settings, boot.queue, boot.notices, boot.cores);
+        let (mut state, pending) = AppState::new(boot.settings, boot.queue, boot.notices, boot.cores);
+        state.vm.history = boot.history;
         let started = Instant::now();
         let now: Now = Box::new(move || started.elapsed());
         let player = Player::new(workers, boot.audio, now, waker(&cc.egui_ctx));
@@ -476,6 +484,11 @@ fn carry_out(link: &mut Link, effects: Vec<Effect>) {
                     writer.queue(&queue);
                 }
             }
+            (Link::Live(live), Effect::SaveHistory(history)) => {
+                if let Some(writer) = &live.writer {
+                    writer.history(&history);
+                }
+            }
             (Link::Showing { sent }, Effect::Send(command)) => sent.push(command),
             (Link::Showing { .. } | Link::Blank, _) => {}
         }
@@ -491,6 +504,7 @@ fn workspace(ui: &mut Ui, vm: &ViewModel, out: &mut Vec<Action>) {
         View::Step(Step::Music) => music::show(ui, vm, out),
         View::Step(Step::Render) => render::show(ui, vm, out),
         View::Library => library::show(ui, vm, out),
+        View::Matchups => matchups::show(ui, vm, out),
         View::Settings => settings::show(ui, vm, out),
     }
 }

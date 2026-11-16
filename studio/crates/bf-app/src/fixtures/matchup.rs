@@ -11,6 +11,19 @@ pub fn vm() -> ViewModel {
     vm
 }
 
+/// [`vm`] with the matchup history: the 27 earlier episodes, a second uploaded Flute vs Clarinet and an unticked
+/// Flute vs Oboe, so Flute's chips count Clarinet 2, Sousaphone 1 and Tuba 1, and Oboe nothing (Flute's one
+/// uploaded fight with Trombone does not show: Trombone is in the Right corner, whose word wins).
+pub fn counted() -> ViewModel {
+    let mut vm = vm();
+    let mut history = crate::store::history::starter();
+    let again = history.record(["FLUTE".to_string(), "CLARINET".to_string()], 515, None, 1_794_744_000);
+    history.set_uploaded(again, true);
+    history.record(["FLUTE".to_string(), "OBOE".to_string()], 516, None, 1_794_744_000);
+    vm.history = history;
+    vm
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

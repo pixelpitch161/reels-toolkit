@@ -211,6 +211,7 @@ fn real_app<'a>(temp: &Temp, workers: usize) -> (Harness<'a, BfApp>, Relay) {
         BfApp::new(
             cc,
             Boot {
+                history: bf_app::model::history::History::default(),
                 engine,
                 writer: Some(Writer::start(paths)),
                 audio: Box::new(NoAudio::new("No sound device in tests.")),

@@ -8,6 +8,7 @@
 
 pub mod events;
 pub mod fight;
+pub mod history;
 pub mod queue_run;
 pub mod seeds;
 pub mod upkeep;
@@ -17,6 +18,7 @@ use std::path::PathBuf;
 
 use crate::model::balance::BalanceStats;
 use crate::model::draft::{CaptionTexts, Draft};
+use crate::model::history::History;
 use crate::model::library::{FolderState, LibraryEntry};
 use crate::model::queue::Queue;
 use crate::model::roster::{BASS_ROLE, PairMusic, Roster, RosterEntry, ThemeEntry, bass_can_move, parts_with_bass};
@@ -89,6 +91,10 @@ pub struct ViewModel {
     pub ffmpeg: Option<Result<String, String>>,
     pub queue: Queue,
     pub selected_job: Option<JobId>,
+    /// Every fight made (`model::history`); the Matchups tab lists it, the roster chips count from it.
+    pub history: History,
+    /// The Matchups tab's selection and question.
+    pub matchups: MatchupsView,
     pub library: LibraryView,
     pub settings: Settings,
     /// The PC's cores.
@@ -411,6 +417,26 @@ pub enum Action {
     KeepApp,
     /// "Open the reports folder": the fault reports folder in the PC's file browser (`RevealFolder`).
     OpenReports,
+    /// A row of the Matchups tab is picked.
+    SelectFight(u64),
+    /// A row's Uploaded tick is clicked.
+    SetUploaded {
+        id: u64,
+        uploaded: bool,
+    },
+    /// The Matchups footer's "Delete": asks before deleting the selected row.
+    AskDeleteFight,
+    /// "Keep it": the question goes away.
+    KeepFight,
+    /// The question's "Delete": the row goes from the history.
+    DeleteFight(u64),
+}
+
+/// The Matchups tab's own state: the selected row, and whether its deletion is being asked about.
+#[derive(Clone, Debug, PartialEq, Default)]
+pub struct MatchupsView {
+    pub selected: Option<u64>,
+    pub asking_delete: bool,
 }
 
 /// What the state asks for in return.
@@ -426,6 +452,7 @@ pub enum Effect {
     Player(PlayerCmd),
     SaveSettings(Settings),
     SaveQueue(Queue),
+    SaveHistory(History),
 }
 
 /// What feeds the fight (§4): an answer belongs to the current fight only while this stays the same.
@@ -519,6 +546,8 @@ impl AppState {
             ffmpeg: None,
             queue,
             selected_job: None,
+            history: History::default(),
+            matchups: MatchupsView::default(),
             library: LibraryView::default(),
             settings,
             cores,
@@ -622,6 +651,12 @@ impl AppState {
             Action::Upkeep(r) => self.upkeep_request(r),
             Action::AskRemove => self.ask_remove(),
             Action::KeepApp => self.keep_app(),
+            // The matchup history (`history.rs`).
+            a @ (Action::SelectFight(_)
+            | Action::SetUploaded { .. }
+            | Action::AskDeleteFight
+            | Action::KeepFight
+            | Action::DeleteFight(_)) => self.history_action(a, &mut fx),
             Action::OpenReports => {
                 if let Some(path) = self.vm.update.reports.clone() {
                     fx.push(Effect::Send(Command::RevealFolder { path }));
@@ -673,6 +708,8 @@ impl AppState {
             }
             // The library is scanned each time it opens.
             View::Library => self.scan_library(fx),
+            // A delete question does not outlive the visit it was asked in.
+            View::Matchups => self.vm.matchups.asking_delete = false,
             View::Settings => {}
         }
     }

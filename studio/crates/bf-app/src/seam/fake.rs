@@ -531,6 +531,7 @@ impl Engine {
                 seed,
                 fight_toml,
                 out_root,
+                fighters: Some(draft.fighters.clone()),
             },
         });
     }
@@ -640,6 +641,9 @@ fn fight_toml(draft: &Draft) -> Option<String> {
 
 /// A job's answers: the ten check lines in order, the frame counts while the frames are drawn, then `Done`; or, for
 /// a fight file whose seed ends in 2, the failed loudness check. A file that cannot be read renders all the same.
+/// When every sample video finishes: 2025-11-15 12:00 UTC, so the history the sample engine makes is the same each run.
+pub const SAMPLE_FINISHED_AT: u64 = 1_763_208_000;
+
 fn job_items(id: JobId, fight_toml: &str, out_root: &Path) -> Vec<(Duration, Event)> {
     let file = fight_toml.parse::<toml::Table>().ok();
     let seed = file
@@ -721,6 +725,8 @@ fn job_items(id: JobId, fight_toml: &str, out_root: &Path) -> Vec<(Duration, Eve
         job(JobUpdate::Done {
             folder,
             seconds: JOB_SECONDS,
+            winner: Some(0),
+            finished_at: SAMPLE_FINISHED_AT,
         }),
     ));
     items
@@ -1290,7 +1296,7 @@ mod tests {
         }
 
         match updates.last().unwrap() {
-            JobUpdate::Done { folder, seconds } => {
+            JobUpdate::Done { folder, seconds, .. } => {
                 assert_eq!(*folder, root.join("flute_vs_trombone"));
                 assert_eq!(*seconds, 6.0);
             }
@@ -1776,6 +1782,8 @@ mod tests {
         assert_eq!(
             job.state,
             JobState::Done {
+                winner: Some(0),
+                finished_at: SAMPLE_FINISHED_AT,
                 folder: root.join("flute_vs_trombone"),
                 seconds: 6.0,
             }

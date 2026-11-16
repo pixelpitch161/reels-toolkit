@@ -204,6 +204,7 @@ fn all_well() -> AppState {
 
 fn spec(title: &str) -> JobSpec {
     JobSpec {
+        fighters: None,
         title: title.to_string(),
         colors: [[0x68, 0x5c, 0xec], [0x80, 0x80, 0x8c]],
         theme: "Big top".to_string(),
@@ -223,6 +224,8 @@ fn job(id: JobId, update: JobUpdate) -> Event {
 
 fn done() -> JobUpdate {
     JobUpdate::Done {
+        winner: None,
+        finished_at: 0,
         folder: root().join("tuba_vs_bass_drum"),
         seconds: 48.0,
     }
@@ -1404,4 +1407,82 @@ mod upkeep {
         s.set_upkeep(Box::new(SampleUpkeep::showing(v)));
         assert_eq!(s.vm.view, View::Settings);
     }
+}
+
+/// The history saves among `effects`.
+fn history_saves(effects: &[Effect]) -> Vec<crate::model::history::History> {
+    effects
+        .iter()
+        .filter_map(|e| match e {
+            Effect::SaveHistory(h) => Some(h.clone()),
+            _ => None,
+        })
+        .collect()
+}
+
+/// An app rendering Flute vs Trombone, seed 9120, whose job knows its fighters.
+fn rendering_with_fighters() -> AppState {
+    let mut s = ready();
+    let mut spec = spec("Flute vs Trombone");
+    spec.fighters = Some(["FLUTE".to_string(), "TROMBONE".to_string()]);
+    s.apply(Event::Enqueued { spec });
+    assert_eq!(s.vm.queue.rendering(), Some(1));
+    s
+}
+
+fn done_at(winner: Option<usize>, finished_at: u64) -> JobUpdate {
+    JobUpdate::Done {
+        folder: root().join("flute_vs_trombone"),
+        seconds: 48.0,
+        winner,
+        finished_at,
+    }
+}
+
+#[test]
+fn a_finished_render_adds_the_fight_to_the_history() {
+    let mut s = rendering_with_fighters();
+    let fx = s.apply(job(1, done_at(Some(0), 1_763_208_000)));
+    let rows = &s.vm.history.fights;
+    assert_eq!(rows.len(), 1, "{rows:?}");
+    assert_eq!(rows[0].fighters, ["FLUTE".to_string(), "TROMBONE".to_string()]);
+    assert_eq!(rows[0].seed, Some(9120));
+    assert_eq!(rows[0].winner.as_deref(), Some("FLUTE"));
+    assert_eq!(rows[0].made, 1_763_208_000);
+    assert!(!rows[0].uploaded);
+    assert_eq!(history_saves(&fx), vec![s.vm.history.clone()]);
+}
+
+#[test]
+fn rendering_the_same_fight_again_keeps_one_row() {
+    let mut s = rendering_with_fighters();
+    s.apply(job(1, done_at(Some(0), 100)));
+    s.vm.history.set_uploaded(0, true);
+    let mut spec = spec("Flute vs Trombone");
+    spec.fighters = Some(["FLUTE".to_string(), "TROMBONE".to_string()]);
+    s.apply(Event::Enqueued { spec });
+    s.apply(job(2, done_at(Some(1), 200)));
+    let rows = &s.vm.history.fights;
+    assert_eq!(rows.len(), 1, "{rows:?}");
+    assert_eq!(rows[0].made, 200);
+    assert_eq!(rows[0].winner.as_deref(), Some("TROMBONE"));
+    assert!(rows[0].uploaded);
+}
+
+#[test]
+fn a_failed_or_cancelled_render_records_nothing() {
+    for end in [failed(), JobUpdate::Cancelled] {
+        let mut s = rendering_with_fighters();
+        let fx = s.apply(job(1, end));
+        assert!(s.vm.history.fights.is_empty());
+        assert!(history_saves(&fx).is_empty());
+    }
+}
+
+#[test]
+fn a_job_without_fighters_records_nothing() {
+    let mut s = two_jobs();
+    let fx = s.apply(job(1, done_at(Some(0), 100)));
+    assert!(s.vm.history.fights.is_empty());
+    assert!(history_saves(&fx).is_empty());
 }

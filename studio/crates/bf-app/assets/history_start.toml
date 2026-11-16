@@ -1,0 +1,219 @@
+# The episodes made before BALLFIGHT Studio, from the matchup tracker.
+# Made by studio/scripts/history_from_tracker.py; copied in when no history exists.
+next_id = 27
+
+[[fights]]
+id = 0
+fighters = ["DRUMS", "VIOLIN"]
+seed = 568
+winner = "DRUMS"
+made = 1792756800
+uploaded = true
+
+[[fights]]
+id = 1
+fighters = ["BAGPIPES", "ACCORDION"]
+seed = 1442
+winner = "ACCORDION"
+made = 1792843200
+uploaded = true
+
+[[fights]]
+id = 2
+fighters = ["TURNTABLES", "SYNTH"]
+seed = 1339
+winner = "SYNTH"
+made = 1792843200
+uploaded = true
+
+[[fights]]
+id = 3
+fighters = ["TUBA", "FLUTE"]
+seed = 514
+winner = "FLUTE"
+made = 1792843200
+uploaded = true
+
+[[fights]]
+id = 4
+fighters = ["UKULELE", "ACOUSTIC"]
+seed = 1130
+winner = "UKULELE"
+made = 1792843200
+uploaded = true
+
+[[fights]]
+id = 5
+fighters = ["TROMBONE", "HORN"]
+seed = 140
+winner = "TROMBONE"
+made = 1792843200
+uploaded = true
+
+[[fights]]
+id = 6
+fighters = ["ORGAN", "HARP"]
+seed = 237
+winner = "ORGAN"
+made = 1792843200
+uploaded = true
+
+[[fights]]
+id = 7
+fighters = ["TROMBONE", "TUBA"]
+seed = 358
+winner = "TUBA"
+made = 1792929600
+uploaded = true
+
+[[fights]]
+id = 8
+fighters = ["CLARINET", "OBOE"]
+seed = 654
+winner = "CLARINET"
+made = 1793016000
+uploaded = true
+
+[[fights]]
+id = 9
+fighters = ["BASS CLARINET", "EUPHONIUM"]
+seed = 1269
+winner = "BASS CLARINET"
+made = 1793016000
+uploaded = true
+
+[[fights]]
+id = 10
+fighters = ["BASSOON", "BARI SAX"]
+seed = 77
+winner = "BASSOON"
+made = 1793016000
+uploaded = true
+
+[[fights]]
+id = 11
+fighters = ["BARI SAX", "BASS CLARINET"]
+seed = 128
+winner = "BARI SAX"
+made = 1793016000
+uploaded = true
+
+[[fights]]
+id = 12
+fighters = ["FLUTE", "TROMBONE"]
+seed = 392
+winner = "TROMBONE"
+made = 1793102400
+uploaded = true
+
+[[fights]]
+id = 13
+fighters = ["VIOLA", "VIOLIN"]
+seed = 8219
+winner = "VIOLA"
+made = 1793102400
+uploaded = true
+
+[[fights]]
+id = 14
+fighters = ["ELECTRIC", "ACOUSTIC"]
+seed = 418
+winner = "ACOUSTIC"
+made = 1793102400
+uploaded = true
+
+[[fights]]
+id = 15
+fighters = ["PIANO", "ORGAN"]
+seed = 638
+winner = "ORGAN"
+made = 1793102400
+uploaded = true
+
+[[fights]]
+id = 16
+fighters = ["TRUMPET", "CLARINET"]
+seed = 8410
+winner = "CLARINET"
+made = 1793188800
+uploaded = true
+
+[[fights]]
+id = 17
+fighters = ["CELLO", "CONTRABASS"]
+seed = 2455
+winner = "CONTRABASS"
+made = 1793188800
+uploaded = true
+
+[[fights]]
+id = 18
+fighters = ["EUPHONIUM", "TROMBONE"]
+seed = 4604
+winner = "TROMBONE"
+made = 1793188800
+uploaded = true
+
+[[fights]]
+id = 19
+fighters = ["FLUTE", "CLARINET"]
+seed = 3864
+winner = "FLUTE"
+made = 1793275200
+uploaded = true
+
+[[fights]]
+id = 20
+fighters = ["TRUMPET", "TROMBONE"]
+seed = 1001
+winner = "TRUMPET"
+made = 1793275200
+uploaded = true
+
+[[fights]]
+id = 21
+fighters = ["ALTO SAX", "TENOR SAX"]
+seed = 621
+winner = "ALTO SAX"
+made = 1793275200
+uploaded = true
+
+[[fights]]
+id = 22
+fighters = ["OBOE", "BASSOON"]
+seed = 954
+winner = "BASSOON"
+made = 1793275200
+uploaded = true
+
+[[fights]]
+id = 23
+fighters = ["FLUTE", "SOUSAPHONE"]
+seed = 146
+winner = "SOUSAPHONE"
+made = 1793361600
+uploaded = true
+
+[[fights]]
+id = 24
+fighters = ["HORN", "TROMBONE"]
+seed = 630
+winner = "HORN"
+made = 1793361600
+uploaded = true
+
+[[fights]]
+id = 25
+fighters = ["BASS CLARINET", "BASSOON"]
+seed = 4
+winner = "BASSOON"
+made = 1793448000
+uploaded = true
+
+[[fights]]
+id = 26
+fighters = ["BASS DRUM", "TUBA"]
+seed = 132
+winner = "TUBA"
+made = 1793448000
+uploaded = true
