@@ -1,6 +1,6 @@
 //! The theme dropdown of the Match-up and Music screens: the themes the pair may be set in (ruling M3-R2), the
-//! recommended ones first under "★ Recommended" (each again under its own group), then each category's themes under
-//! its heading (design `docs/superpowers/specs/2026-11-15-theme-categories-design.md`).
+//! recommended ones first under "Recommended for this pair", then the rest under their categories' headings (each
+//! theme once, so its label names one option; the app's font has no star glyph) (design `docs/superpowers/specs/2026-11-15-theme-categories-design.md`).
 
 use egui::Ui;
 
@@ -8,13 +8,7 @@ use crate::model::roster::Roster;
 use crate::widgets::buttons::{self, MenuEntry};
 
 /// The heading over the recommended themes.
-pub const RECOMMENDED_HEADING: &str = "★ Recommended";
-
-/// A recommended theme's label in the Recommended group ("★ Dark tango"), so it differs from its label in its own
-/// group.
-pub fn recommended_label(display: &str) -> String {
-    format!("★ {display}")
-}
+pub const RECOMMENDED_HEADING: &str = "Recommended for this pair";
 
 /// The picker's lines for `fighters`: each item's index is the theme's place in `roster.themes`.
 pub fn entries(roster: &Roster, fighters: &[String; 2]) -> Vec<MenuEntry> {
@@ -25,12 +19,19 @@ pub fn entries(roster: &Roster, fighters: &[String; 2]) -> Vec<MenuEntry> {
         out.push(MenuEntry::Heading(RECOMMENDED_HEADING.to_string()));
         out.extend(recommended.iter().map(|t| MenuEntry::Item {
             index: index(&t.name),
-            label: recommended_label(&t.display),
+            label: t.display.clone(),
         }));
     }
     for (group, themes) in roster.grouped(fighters) {
+        let rest: Vec<_> = themes
+            .into_iter()
+            .filter(|t| !recommended.iter().any(|r| r.name == t.name))
+            .collect();
+        if rest.is_empty() {
+            continue;
+        }
         out.push(MenuEntry::Heading(group));
-        out.extend(themes.iter().map(|t| MenuEntry::Item {
+        out.extend(rest.iter().map(|t| MenuEntry::Item {
             index: index(&t.name),
             label: t.display.clone(),
         }));

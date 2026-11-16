@@ -436,8 +436,7 @@ pub fn dropdown(ui: &mut Ui, name: &str, options: &[String], chosen: usize, widt
 pub enum MenuEntry {
     /// A group's name: `MUTED` small text, 20 tall, not pickable and not a list option.
     Heading(String),
-    /// A pickable option: `index` is what picking it returns. Two items may share an index (a theme listed under
-    /// "Recommended" and under its own group), as long as their labels differ.
+    /// A pickable option: `index` is what picking it returns.
     Item { index: usize, label: String },
 }
 

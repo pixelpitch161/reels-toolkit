@@ -14,7 +14,7 @@
 
 - Recommendations never hide or remove a theme. `Roster::themes_for` (ruling M3-R2) stays the only filter.
 - Picking a theme or a pair never changes the tempo. Only the "Use" button does.
-- No colour for the recommended state. The ★ is a glyph, and headings are `MUTED` text.
+- No colour for the recommended state: headings are `MUTED` text. No ★ glyph either, because the app font (IBM Plex Sans) has none and egui panics on a missing glyph.
 - The trait vocabulary is closed: brassy, reedy, airy, bowed, plucked, keys, electric, percussive, high, low, folk, jazz, classical, rock, club, sinister.
 - Categories, in order: Jazz & Latin, Folk & World, Cinematic & Dark, Rock & Punk, Electronic & Club.
 - Windows is the only target. UI tests run on the PC, and the content and model unit tests also run anywhere.
@@ -24,7 +24,7 @@
 - A pair where both fighters share no traits with any theme: still exactly three recommended (ties go to category order), never zero.
 - A pair whose playable list is under three themes (refusals): recommend all of them, never more than are offered.
 - Fixture rosters with a theme missing from the fit table (empty category): it shows under a trailing "Other" heading and stays pickable.
-- A recommended theme's label in the list ("★ Dark tango") must not clash with the plain one for the accessibility tree, so tests picking "Dark tango" by label find exactly one option.
+- Each theme is listed once (recommended ones only under "Recommended for this pair"), so tests picking "Dark tango" by label find exactly one option.
 - A theme whose tempo range, once snapped, would leave the theme's `bars` range: the recommended bars are clamped into `bars`.
 
 ---
@@ -63,7 +63,7 @@ Scoring: fit = the sum of the theme's like weights for the traits the fighter ha
 - Test: `studio/crates/bf-app/tests/ui/buttons.rs`
 
 **Interfaces:**
-- Produces: `pub enum MenuEntry { Heading(String), Item { index: usize, label: String } }`, `pub fn dropdown_grouped(ui, name: &str, entries: &[MenuEntry], value: &str, chosen: usize, width: f32) -> Option<usize>` (returns the picked item's `index`; headings are 20 tall, `MUTED` small text, and not clickable), `pub fn theme_picker(ui, roster: &Roster, draft: &Draft, width: f32) -> Option<String>` (a "★ Recommended" heading with "★ {display}" items, then each group).
+- Produces: `pub enum MenuEntry { Heading(String), Item { index: usize, label: String } }`, `pub fn dropdown_grouped(ui, name: &str, entries: &[MenuEntry], value: &str, chosen: usize, width: f32) -> Option<usize>` (returns the picked item's `index`; headings are 20 tall, `MUTED` small text, and not clickable), `pub fn theme_picker(ui, roster: &Roster, draft: &Draft, width: f32) -> Option<String>` (a "Recommended for this pair" heading with its items, then each group without those).
 
 - [ ] UI test `grouped_dropdown_skips_headings`: headings are not list options, and clicking an item returns its index.
 - [ ] Swap both screens' dropdown calls for `theme_picker`. The existing music tests (`choosing_a_theme_pushes`, `a_theme_the_pair_cannot_play_is_not_offered`) must keep passing unchanged. Commit.

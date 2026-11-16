@@ -89,7 +89,7 @@ Theme dropdown:
 
 ```
 Theme  [ Dark tango            v ]
-        ★ Recommended
+        Recommended for this pair
           Dark tango
           Noir jazz
           Gothic horror
@@ -100,8 +100,9 @@ Theme  [ Dark tango            v ]
           ...
 ```
 
-The recommended themes appear twice: in the Recommended group and under their own category.
-Headings are muted and can't be selected. The ★ is a glyph, not a colour.
+The recommended themes are listed once, in the Recommended group only. Headings are muted and
+can't be selected. (Build note: the first draft had a ★ and listed them twice. The app font has
+no ★, and a duplicate would make two options with the same name.)
 
 Tempo row:
 
