@@ -36,7 +36,7 @@ fn air(dur: f64, seed: u64, lo: f64, hi: f64) -> Vec<f64> {
         .zip(&x)
         .map(|(&t, v)| {
             let u = (t / dur.max(1e-6)).clamp(0.0, 1.0);
-            v * (std::f64::consts::PI * u).sin()
+            v * bf_core::dmath::sin(bf_core::dmath::PI * u)
         })
         .collect()
 }

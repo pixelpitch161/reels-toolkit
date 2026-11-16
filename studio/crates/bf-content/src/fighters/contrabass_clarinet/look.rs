@@ -319,7 +319,7 @@ impl Look for ContraLook {
             for x in 0..w {
                 let (fx, fy) = (x as f64, y as f64);
                 let band = 0.5 + 0.5 * dmath::sin(fy / 23.0 + 0.6 * dmath::sin(fx / 61.0));
-                let r = ((fx - cx).powi(2) + (fy - cy).powi(2)).sqrt();
+                let r = ((fx - cx) * (fx - cx) + (fy - cy) * (fy - cy)).sqrt();
                 let ringv = if (r / 34.0).fract() < 0.18 { 0.10 } else { 0.0 };
                 let px = base.px_mut(x, y);
                 for v in px.iter_mut() {
