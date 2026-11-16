@@ -515,13 +515,22 @@ impl Worker {
         let Some(turn) = SoundTurn::take(&self.sound_turn, me, ctx) else {
             return Ok(());
         };
-        let st = bf_content::build_soundtrack(&rec, &ff).map_err(|e| plain(&e))?;
+        let mut st = bf_content::build_soundtrack(&rec, &ff).map_err(|e| plain(&e))?;
+        // the render evens out a soundtrack that would fail the levels check; Music plays and checks the same
+        let evened = bf_export::checks::even_out(&st.master).map(|e| {
+            let note = e.note();
+            st.master = e.master;
+            note
+        });
         if !me.heard(ctx) {
             // finished, and thrown away
             return Ok(());
         }
         let names = [show.names[0].as_str(), show.names[1].as_str()];
-        let (checks, lanes) = sound_views(&st, &show, &ff, names, colors);
+        let (mut checks, lanes) = sound_views(&st, &show, &ff, names, colors);
+        if let (Some(note), Some(line)) = (evened, checks.iter_mut().find(|l| l.title == "Loudness")) {
+            line.note = format!("{} {note}", line.note);
+        }
         let audio = AudioTake {
             samples: st.master.iter().map(|f| [f[0] as f32, f[1] as f32]).collect(),
         };
