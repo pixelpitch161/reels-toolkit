@@ -14,10 +14,10 @@ import math
 import os
 
 # PHOTO colours, sampled from the photo guide (gold lacquer ramp, pearls, mouthpiece, cork, pads)
-GOLD = [208.0, 192.0, 130.0]      # base lacquer #D0C082
-GOLD_HI = [240.0, 213.0, 142.0]   # light #F0D58E
-GOLD_DK = [161.0, 140.0, 57.0]    # rods, mid-dark #A18C39
-NECK = [184.0, 170.0, 111.0]      # the neck, paler and more olive #B8AA6F
+GOLD = [212.0, 169.0, 100.0]      # base lacquer #D4A964 (photo 04, warm)
+GOLD_HI = [245.0, 210.0, 156.0]   # light #F5D29C
+GOLD_DK = [128.0, 79.0, 39.0]     # rods, mid-dark #804F27
+NECK = GOLD                       # the neck: the body's lacquer in every photo
 RING = [74.0, 65.0, 41.0]         # the receiver ring #4A4129
 CUP = [221.0, 186.0, 108.0]       # key cups #DDBA6C
 PEARL = [252.0, 242.0, 240.0]     # mother-of-pearl touches #FCF2F0
@@ -162,35 +162,35 @@ pcts = [20 + 74 * k / 10 for k in range(11)]
 sweep(axis(pcts), [body_r(p) for p in pcts], GOLD, spec=0.9)
 # the bell: a short flare in the last 6 %, a rolled rim, and the dark throat inside
 bell = [94.0, 96.0, 98.0, 99.4, 100.0]
-sweep(axis(bell), [1.9, 2.1, 2.7, 3.4, 3.75], GOLD_HI, spec=1.0, two=True)
+sweep(axis(bell), [1.9, 2.1, 2.7, 3.4, 3.75], GOLD, spec=1.0, two=True)
 sweep(axis([99.5, 100.2]), 3.82, RIM, spec=1.0, caps=False)
 face([[3.4 * math.cos(2 * math.pi * j / SIDES), y_at(99.6), 3.4 * math.sin(2 * math.pi * j / SIDES)]
       for j in range(SIDES)], THROAT, spec=0.0, two=True)
 
 # the six pearl touches down the front, in two hands of three, each in a gold cup twice its size; they grow slightly
-for n, pct in enumerate((28.0, 34.0, 40.0, 52.0, 57.0, 62.0)):
+for n, pct in enumerate((31.0, 35.5, 40.0, 52.5, 56.0, 60.0)):
     r = body_r(pct)
     s = 0.42 + 0.03 * n
     sweep([[0.0, y_at(pct), r - 0.05], [0.0, y_at(pct), r + 0.28]], s, CUP, spec=0.9, caps=True)
-    sweep([[0.0, y_at(pct), r + 0.28], [0.0, y_at(pct), r + 0.36]], s * 0.55, PEARL, spec=1.0, caps=True)
+    sweep([[0.0, y_at(pct), r + 0.28], [0.0, y_at(pct), r + 0.36]], s * 0.8, PEARL, spec=1.0, caps=True)
 
-# the palm-key fins at the upper left (20 to 30 %): flat, swept-back paddles, the clearest break in the outline
-for pct0, pct1, out in ((21.0, 27.0, 0.9), (24.0, 30.0, 1.15)):
+# the palm-key fins at the upper right (22 to 34 %, the same side as the low keys in photos 01 and 02): flat, swept-back paddles, the clearest break in the outline
+for pct0, pct1, out in ((22.0, 29.0, 0.6), (26.0, 34.0, 0.75)):
     r0, r1 = body_r(pct0), body_r(pct1)
-    fin = [[-r0, y_at(pct0), 0.1], [-(r0 + out), y_at(pct0 + 1.2), 0.25], [-(r1 + out * 0.8), y_at(pct1), 0.25],
-           [-r1, y_at(pct1), 0.1]]
+    fin = [[r0, y_at(pct0), 0.1], [r0 + out, y_at(pct0 + 1.2), 0.25], [r1 + out * 0.8, y_at(pct1), 0.25],
+           [r1, y_at(pct1), 0.1]]
     face(fin, GOLD_HI, spec=0.9, two=True)
 
-# the side rods down the player's right (20 to 92 %) and a shorter pair on the left (45 to 75 %), on ball posts
-for dz, (p0, p1), side in ((0.25, (20.0, 92.0), 1.0), (-0.25, (24.0, 90.0), 1.0),
-                           (0.2, (45.0, 75.0), -1.0), (-0.2, (47.0, 73.0), -1.0)):
+# the side rods: a long pair on each side (41 to 87 % by the low keys, 19 to 59 % on the other), on ball posts
+for dz, (p0, p1), side in ((0.25, (41.0, 87.0), 1.0), (-0.25, (43.0, 85.0), 1.0),
+                           (0.2, (19.0, 59.0), -1.0), (-0.2, (21.0, 57.0), -1.0)):
     rod = [[side * (body_r(p) + 0.35), y_at(p), dz] for p in (p0, (p0 + p1) / 2, p1)]
     sweep(rod, 0.11, GOLD_DK, spec=0.9)
     for p in (p0, (p0 + p1) / 2, p1):
         sweep([[side * body_r(p), y_at(p), dz], [side * (body_r(p) + 0.38), y_at(p), dz]], 0.1, GOLD_DK, spec=0.8)
 
 # the big low-key cups on the right (80 to 94 %), about as wide as the tube there, standing off on posts
-for pct in (82.0, 86.5, 91.0):
+for pct in (78.0, 82.0, 86.0):
     r = body_r(pct)
     sweep([[r - 0.1, y_at(pct), 0.0], [r + 0.55, y_at(pct), 0.0]], r * 0.62, CUP, spec=0.9, caps=True)
 # two side-key cups at the upper right
@@ -198,8 +198,8 @@ for pct in (33.0, 44.0):
     r = body_r(pct)
     sweep([[r - 0.05, y_at(pct), 0.15], [r + 0.3, y_at(pct), 0.15]], 0.45, CUP, spec=0.9, caps=True)
 
-# the thumb rest on the back (57 %) and black felts on the right edge (35 and 55 %)
-sweep([[0.0, y_at(57.0), -body_r(57.0)], [0.0, y_at(57.0), -(body_r(57.0) + 0.5)]], 0.3, FELT, spec=0.2, caps=True)
+# the thumb rest on the back (62 %) and black felts on the right edge (35 and 55 %)
+sweep([[0.0, y_at(62.0), -body_r(62.0)], [0.0, y_at(62.0), -(body_r(62.0) + 0.5)]], 0.3, FELT, spec=0.2, caps=True)
 for pct in (35.0, 55.0):
     r = body_r(pct)
     sweep([[r + 0.3, y_at(pct), 0.45], [r + 0.55, y_at(pct), 0.45]], 0.2, FELT, spec=0.1, caps=True)
