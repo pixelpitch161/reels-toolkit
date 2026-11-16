@@ -6,12 +6,32 @@
 
 /// The traits fighters have and themes like.
 pub const TRAITS: [&str; 16] = [
-    "brassy", "reedy", "airy", "bowed", "plucked", "keys", "electric", "percussive", "high", "low", "folk", "jazz",
-    "classical", "rock", "club", "sinister",
+    "brassy",
+    "reedy",
+    "airy",
+    "bowed",
+    "plucked",
+    "keys",
+    "electric",
+    "percussive",
+    "high",
+    "low",
+    "folk",
+    "jazz",
+    "classical",
+    "rock",
+    "club",
+    "sinister",
 ];
 
 /// The theme picker's categories, in the order it lists them.
-pub const CATEGORIES: [&str; 5] = ["Jazz & Latin", "Folk & World", "Cinematic & Dark", "Rock & Punk", "Electronic & Club"];
+pub const CATEGORIES: [&str; 5] = [
+    "Jazz & Latin",
+    "Folk & World",
+    "Cinematic & Dark",
+    "Rock & Punk",
+    "Electronic & Club",
+];
 
 /// A fighter's traits (3 to 5 of [`TRAITS`]) and energy: 1 heavy and stately, 3 fast and bright.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -34,7 +54,11 @@ const fn f(traits: &'static [&'static str], energy: u8) -> FighterFit {
 }
 
 const fn t(category: &'static str, likes: &'static [(&'static str, u8)], lo: f64, hi: f64) -> ThemeFit {
-    ThemeFit { category, likes, tempo: (lo, hi) }
+    ThemeFit {
+        category,
+        likes,
+        tempo: (lo, hi),
+    }
 }
 
 const FIGHTERS: [(&str, FighterFit); 30] = [
@@ -77,32 +101,227 @@ const ROCK: &str = CATEGORIES[3];
 const CLUB: &str = CATEGORIES[4];
 
 const THEMES: [(&str, ThemeFit); 26] = [
-    ("hot_jazz", t(JAZZ, &[("jazz", 2), ("brassy", 1), ("reedy", 1), ("high", 1)], 128.0, 160.0)),
-    ("noir_jazz", t(JAZZ, &[("jazz", 2), ("reedy", 1), ("low", 1), ("sinister", 1), ("keys", 1)], 110.0, 140.0)),
-    ("bossa_noir", t(JAZZ, &[("plucked", 2), ("jazz", 1), ("airy", 1), ("reedy", 1)], 110.0, 138.0)),
-    ("mambo", t(JAZZ, &[("brassy", 2), ("jazz", 1), ("percussive", 1), ("keys", 1)], 120.0, 150.0)),
-    ("dark_tango", t(JAZZ, &[("bowed", 2), ("keys", 1), ("reedy", 1), ("sinister", 1), ("low", 1)], 108.0, 128.0)),
-    ("second_line", t(JAZZ, &[("brassy", 2), ("jazz", 2), ("percussive", 1), ("low", 1)], 110.0, 136.0)),
-    ("balkan_fire", t(FOLK, &[("folk", 2), ("brassy", 1), ("reedy", 1), ("keys", 1)], 128.0, 160.0)),
-    ("sea_shanty", t(FOLK, &[("folk", 2), ("keys", 1), ("bowed", 1), ("low", 1)], 108.0, 130.0)),
-    ("spaghetti_western", t(FOLK, &[("plucked", 2), ("brassy", 1), ("folk", 1), ("sinister", 1)], 116.0, 140.0)),
-    ("big_top", t(FOLK, &[("brassy", 1), ("folk", 1), ("sinister", 1), ("keys", 1), ("low", 1)], 118.0, 140.0)),
-    ("baroque_storm", t(CINEMA, &[("classical", 2), ("bowed", 1), ("keys", 1), ("high", 1)], 128.0, 155.0)),
-    ("orchestral_drill", t(CINEMA, &[("classical", 2), ("brassy", 1), ("bowed", 1), ("club", 1), ("low", 1)], 128.0, 150.0)),
-    ("brass_trailer", t(CINEMA, &[("brassy", 2), ("classical", 1), ("percussive", 1), ("low", 1)], 110.0, 130.0)),
-    ("villain_march", t(CINEMA, &[("sinister", 2), ("brassy", 1), ("low", 1), ("classical", 1)], 112.0, 134.0)),
-    ("gothic_horror", t(CINEMA, &[("sinister", 2), ("keys", 1), ("bowed", 1), ("classical", 1)], 112.0, 134.0)),
-    ("heist", t(CINEMA, &[("jazz", 1), ("sinister", 1), ("plucked", 1), ("bowed", 1)], 108.0, 128.0)),
-    ("dark_drumline", t(CINEMA, &[("percussive", 2), ("brassy", 1), ("sinister", 1), ("low", 1)], 116.0, 136.0)),
-    ("stadium_rock", t(ROCK, &[("rock", 2), ("electric", 1), ("percussive", 1), ("brassy", 1)], 116.0, 136.0)),
-    ("prog_duel", t(ROCK, &[("rock", 1), ("keys", 1), ("electric", 1), ("classical", 1)], 122.0, 144.0)),
-    ("ska_punk", t(ROCK, &[("brassy", 2), ("rock", 1), ("reedy", 1), ("high", 1)], 140.0, 166.0)),
+    (
+        "hot_jazz",
+        t(
+            JAZZ,
+            &[("jazz", 2), ("brassy", 1), ("reedy", 1), ("high", 1)],
+            128.0,
+            160.0,
+        ),
+    ),
+    (
+        "noir_jazz",
+        t(
+            JAZZ,
+            &[("jazz", 2), ("reedy", 1), ("low", 1), ("sinister", 1), ("keys", 1)],
+            110.0,
+            140.0,
+        ),
+    ),
+    (
+        "bossa_noir",
+        t(
+            JAZZ,
+            &[("plucked", 2), ("jazz", 1), ("airy", 1), ("reedy", 1)],
+            110.0,
+            138.0,
+        ),
+    ),
+    (
+        "mambo",
+        t(
+            JAZZ,
+            &[("brassy", 2), ("jazz", 1), ("percussive", 1), ("keys", 1)],
+            120.0,
+            150.0,
+        ),
+    ),
+    (
+        "dark_tango",
+        t(
+            JAZZ,
+            &[("bowed", 2), ("keys", 1), ("reedy", 1), ("sinister", 1), ("low", 1)],
+            108.0,
+            128.0,
+        ),
+    ),
+    (
+        "second_line",
+        t(
+            JAZZ,
+            &[("brassy", 2), ("jazz", 2), ("percussive", 1), ("low", 1)],
+            110.0,
+            136.0,
+        ),
+    ),
+    (
+        "balkan_fire",
+        t(
+            FOLK,
+            &[("folk", 2), ("brassy", 1), ("reedy", 1), ("keys", 1)],
+            128.0,
+            160.0,
+        ),
+    ),
+    (
+        "sea_shanty",
+        t(
+            FOLK,
+            &[("folk", 2), ("keys", 1), ("bowed", 1), ("low", 1)],
+            108.0,
+            130.0,
+        ),
+    ),
+    (
+        "spaghetti_western",
+        t(
+            FOLK,
+            &[("plucked", 2), ("brassy", 1), ("folk", 1), ("sinister", 1)],
+            116.0,
+            140.0,
+        ),
+    ),
+    (
+        "big_top",
+        t(
+            FOLK,
+            &[("brassy", 1), ("folk", 1), ("sinister", 1), ("keys", 1), ("low", 1)],
+            118.0,
+            140.0,
+        ),
+    ),
+    (
+        "baroque_storm",
+        t(
+            CINEMA,
+            &[("classical", 2), ("bowed", 1), ("keys", 1), ("high", 1)],
+            128.0,
+            155.0,
+        ),
+    ),
+    (
+        "orchestral_drill",
+        t(
+            CINEMA,
+            &[("classical", 2), ("brassy", 1), ("bowed", 1), ("club", 1), ("low", 1)],
+            128.0,
+            150.0,
+        ),
+    ),
+    (
+        "brass_trailer",
+        t(
+            CINEMA,
+            &[("brassy", 2), ("classical", 1), ("percussive", 1), ("low", 1)],
+            110.0,
+            130.0,
+        ),
+    ),
+    (
+        "villain_march",
+        t(
+            CINEMA,
+            &[("sinister", 2), ("brassy", 1), ("low", 1), ("classical", 1)],
+            112.0,
+            134.0,
+        ),
+    ),
+    (
+        "gothic_horror",
+        t(
+            CINEMA,
+            &[("sinister", 2), ("keys", 1), ("bowed", 1), ("classical", 1)],
+            112.0,
+            134.0,
+        ),
+    ),
+    (
+        "heist",
+        t(
+            CINEMA,
+            &[("jazz", 1), ("sinister", 1), ("plucked", 1), ("bowed", 1)],
+            108.0,
+            128.0,
+        ),
+    ),
+    (
+        "dark_drumline",
+        t(
+            CINEMA,
+            &[("percussive", 2), ("brassy", 1), ("sinister", 1), ("low", 1)],
+            116.0,
+            136.0,
+        ),
+    ),
+    (
+        "stadium_rock",
+        t(
+            ROCK,
+            &[("rock", 2), ("electric", 1), ("percussive", 1), ("brassy", 1)],
+            116.0,
+            136.0,
+        ),
+    ),
+    (
+        "prog_duel",
+        t(
+            ROCK,
+            &[("rock", 1), ("keys", 1), ("electric", 1), ("classical", 1)],
+            122.0,
+            144.0,
+        ),
+    ),
+    (
+        "ska_punk",
+        t(
+            ROCK,
+            &[("brassy", 2), ("rock", 1), ("reedy", 1), ("high", 1)],
+            140.0,
+            166.0,
+        ),
+    ),
     ("brass_house", t(CLUB, &[("club", 2), ("brassy", 2)], 120.0, 130.0)),
-    ("dark_disco", t(CLUB, &[("club", 2), ("electric", 1), ("bowed", 1), ("sinister", 1)], 112.0, 124.0)),
-    ("dark_breakbeat", t(CLUB, &[("percussive", 2), ("club", 1), ("electric", 1), ("sinister", 1)], 130.0, 150.0)),
-    ("drift_phonk", t(CLUB, &[("sinister", 2), ("club", 1), ("low", 1), ("electric", 1)], 120.0, 140.0)),
-    ("horror_trap", t(CLUB, &[("sinister", 2), ("club", 1), ("low", 1)], 130.0, 150.0)),
-    ("industrial", t(CLUB, &[("percussive", 2), ("electric", 1), ("sinister", 1), ("rock", 1)], 118.0, 134.0)),
+    (
+        "dark_disco",
+        t(
+            CLUB,
+            &[("club", 2), ("electric", 1), ("bowed", 1), ("sinister", 1)],
+            112.0,
+            124.0,
+        ),
+    ),
+    (
+        "dark_breakbeat",
+        t(
+            CLUB,
+            &[("percussive", 2), ("club", 1), ("electric", 1), ("sinister", 1)],
+            130.0,
+            150.0,
+        ),
+    ),
+    (
+        "drift_phonk",
+        t(
+            CLUB,
+            &[("sinister", 2), ("club", 1), ("low", 1), ("electric", 1)],
+            120.0,
+            140.0,
+        ),
+    ),
+    (
+        "horror_trap",
+        t(CLUB, &[("sinister", 2), ("club", 1), ("low", 1)], 130.0, 150.0),
+    ),
+    (
+        "industrial",
+        t(
+            CLUB,
+            &[("percussive", 2), ("electric", 1), ("sinister", 1), ("rock", 1)],
+            118.0,
+            134.0,
+        ),
+    ),
 ];
 
 /// The fit of the roster fighter `name` ("BASS CLARINET"), or `None` for a name that has none.
@@ -124,7 +343,10 @@ mod tests {
         for name in crate::shown_order() {
             let fit = fighter_fit(name).unwrap_or_else(|| panic!("{name} has a fit"));
             assert!((3..=5).contains(&fit.traits.len()), "{name}: 3 to 5 traits");
-            assert!(fit.traits.iter().all(|t| TRAITS.contains(t)), "{name}: traits from the list");
+            assert!(
+                fit.traits.iter().all(|t| TRAITS.contains(t)),
+                "{name}: traits from the list"
+            );
             assert!((1..=3).contains(&fit.energy), "{name}: energy 1 to 3");
         }
     }

@@ -55,6 +55,7 @@ fn make_roster() -> Roster {
             let cfg = cfgs.iter().find(|f| f.name == name)?;
             let section = section(bf_content::section(name)?);
             let on = available.contains(&name);
+            let fit = bf_content::fit::fighter_fit(name);
             Some(RosterEntry {
                 name: name.to_string(),
                 display: wording::display_name(name),
@@ -70,6 +71,8 @@ fn make_roster() -> Roster {
                 },
                 home: if on { home(name) } else { None },
                 parts: parts_of(name),
+                traits: fit.map_or_else(Vec::new, |f| f.traits.iter().map(|t| t.to_string()).collect()),
+                energy: fit.map_or(0, |f| f.energy),
             })
         })
         .collect();
@@ -84,6 +87,7 @@ fn make_roster() -> Roster {
         .into_iter()
         .filter_map(|name| {
             let t = bf_content::theme_card(name)?;
+            let fit = bf_content::fit::theme_fit(name);
             Some(ThemeEntry {
                 name: name.to_string(),
                 display: t.display.to_string(),
@@ -109,6 +113,9 @@ fn make_roster() -> Roster {
                 bars: t.bars,
                 refuses: refused_by(name, &plays),
                 options: theme_options(name),
+                category: fit.map_or_else(String::new, |f| f.category.to_string()),
+                likes: fit.map_or_else(Vec::new, |f| f.likes.iter().map(|(t, w)| (t.to_string(), *w)).collect()),
+                tempo: fit.map_or((0.0, 0.0), |f| f.tempo),
             })
         })
         .collect();

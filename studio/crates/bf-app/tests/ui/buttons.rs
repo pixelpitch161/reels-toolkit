@@ -346,6 +346,53 @@ fn the_dropdown_lists_and_returns() {
     assert_eq!(picked.get(), Some(1));
 }
 
+/// A grouped dropdown's headings are not options; picking an item returns its index, also when two items share one.
+#[test]
+fn the_grouped_dropdown_skips_headings() {
+    use buttons::MenuEntry::{Heading, Item};
+    let _gpu = common::gpu();
+    let picked = Cell::new(None);
+    let entries = [
+        Heading("★ Recommended".to_string()),
+        Item {
+            index: 1,
+            label: "★ Dark disco".to_string(),
+        },
+        Heading("Electronic & Club".to_string()),
+        Item {
+            index: 0,
+            label: "Big top".to_string(),
+        },
+        Item {
+            index: 1,
+            label: "Dark disco".to_string(),
+        },
+    ];
+    let mut harness = common::widget_harness((300.0, 220.0), |ui| {
+        on_panel(ui);
+        if let Some(index) = buttons::dropdown_grouped(ui, "Theme", &entries, "Big top", 0, 220.0) {
+            picked.set(Some(index));
+        }
+    });
+    harness.run();
+    assert_eq!(harness.get_by_label("Theme").value().as_deref(), Some("Big top"));
+    harness.get_by_label("Theme").click();
+    harness.run();
+    let options = |label: &str| {
+        harness
+            .query_all_by_label(label)
+            .filter(|n| n.accesskit_node().role() == Role::ListBoxOption)
+            .count()
+    };
+    assert_eq!(options("Electronic & Club"), 0, "a heading is not an option");
+    assert_eq!(options("Dark disco"), 1);
+    assert_eq!(options("★ Dark disco"), 1);
+    harness.get_by_label("★ Dark disco").click();
+    harness.run();
+    drop(harness);
+    assert_eq!(picked.get(), Some(1));
+}
+
 #[test]
 fn the_dropdown_looks_as_the_reference_says() {
     let _gpu = common::gpu();
