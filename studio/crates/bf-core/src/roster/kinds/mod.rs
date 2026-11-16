@@ -15,6 +15,7 @@ pub mod jump;
 pub mod lightning;
 pub mod line;
 pub mod mortar;
+pub mod plumbing;
 pub mod pulse;
 pub mod rake;
 pub mod rests;

@@ -30,7 +30,7 @@ pub use kinds::{
 };
 pub use kinds::{
     bite::BiteCfg, inflate::InflateCfg, pulse::PulseCfg, rests::RestsCfg, scratch_floor::ScratchFloorCfg,
-    surf::SurfCfg, tether::TetherCfg, trap::TrapCfg, wrecking::WreckingCfg,
+    plumbing::PlumbingCfg, surf::SurfCfg, tether::TetherCfg, trap::TrapCfg, wrecking::WreckingCfg,
 };
 pub use striker::StrikerCfg;
 
@@ -204,6 +204,8 @@ pub enum WeaponCfg {
     Bite(kinds::bite::BiteCfg),
     /// Kind `trap` (HARP's the strings; milestone 4), typed by `roster::kinds::trap`.
     Trap(kinds::trap::TrapCfg),
+    /// Kind `plumbing` (CONTRABASSOON's U-BEND, made from scratch), typed by `roster::kinds::plumbing`.
+    Plumbing(kinds::plumbing::PlumbingCfg),
     /// Kind `surf` (UKULELE's SURF'S UP; milestone 4), typed by `roster::kinds::surf`.
     Surf(kinds::surf::SurfCfg),
     /// Kind `scratch_floor` (TURNTABLES's THE RING IS THE RECORD; milestone 4), typed by
@@ -431,6 +433,7 @@ impl Entry<'_> {
             "inflate" if kinds::inflate::PORTED => Ok(WeaponCfg::Inflate(kinds::inflate::parse(self, w)?)),
             "bite" if kinds::bite::PORTED => Ok(WeaponCfg::Bite(kinds::bite::parse(self, w)?)),
             "trap" if kinds::trap::PORTED => Ok(WeaponCfg::Trap(kinds::trap::parse(self, w)?)),
+            "plumbing" if kinds::plumbing::PORTED => Ok(WeaponCfg::Plumbing(kinds::plumbing::parse(self, w)?)),
             "surf" if kinds::surf::PORTED => Ok(WeaponCfg::Surf(kinds::surf::parse(self, w)?)),
             "scratch_floor" if kinds::scratch_floor::PORTED => {
                 Ok(WeaponCfg::ScratchFloor(kinds::scratch_floor::parse(self, w)?))
@@ -528,6 +531,7 @@ impl FighterCfg {
             WeaponCfg::Inflate(w) => kinds::inflate::check(&e, w)?,
             WeaponCfg::Bite(w) => kinds::bite::check(&e, w)?,
             WeaponCfg::Trap(w) => kinds::trap::check(&e, w)?,
+            WeaponCfg::Plumbing(w) => kinds::plumbing::check(&e, w)?,
             WeaponCfg::Surf(w) => kinds::surf::check(&e, w)?,
             WeaponCfg::ScratchFloor(w) => kinds::scratch_floor::check(&e, w)?,
             WeaponCfg::Tether(w) => kinds::tether::check(&e, w)?,
@@ -600,6 +604,7 @@ impl WeaponCfg {
             WeaponCfg::Inflate(w) => return kinds::inflate::main16(w),
             WeaponCfg::Bite(w) => return kinds::bite::main16(w),
             WeaponCfg::Trap(w) => return kinds::trap::main16(w),
+            WeaponCfg::Plumbing(w) => return kinds::plumbing::main16(w),
             WeaponCfg::Surf(w) => return kinds::surf::main16(w),
             WeaponCfg::ScratchFloor(w) => return kinds::scratch_floor::main16(w),
             WeaponCfg::Tether(w) => return kinds::tether::main16(w),
@@ -645,6 +650,7 @@ impl WeaponCfg {
             WeaponCfg::Inflate(w) => kinds::inflate::ball_start(w),
             WeaponCfg::Bite(w) => kinds::bite::ball_start(w),
             WeaponCfg::Trap(w) => kinds::trap::ball_start(w),
+            WeaponCfg::Plumbing(w) => kinds::plumbing::ball_start(w),
             WeaponCfg::Surf(w) => kinds::surf::ball_start(w),
             WeaponCfg::ScratchFloor(w) => kinds::scratch_floor::ball_start(w),
             WeaponCfg::Tether(w) => kinds::tether::ball_start(w),
@@ -681,6 +687,7 @@ impl WeaponCfg {
             WeaponCfg::Inflate(_) => "inflate",
             WeaponCfg::Bite(_) => "bite",
             WeaponCfg::Trap(_) => "trap",
+            WeaponCfg::Plumbing(_) => "plumbing",
             WeaponCfg::Surf(_) => "surf",
             WeaponCfg::ScratchFloor(_) => "scratch_floor",
             WeaponCfg::Tether(_) => "tether",

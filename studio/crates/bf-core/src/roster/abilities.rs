@@ -54,6 +54,9 @@ pub mod tapping;
 pub mod twin;
 pub mod vibrato;
 pub mod whip;
+pub mod water_key;
+pub mod hot_pipes;
+pub mod pipe_box;
 
 /// An ability.
 #[derive(Clone, Debug, PartialEq)]
@@ -198,6 +201,12 @@ pub enum AbilityKind {
     Melody,
     /// `joke`: VIOLA's VIOLA JOKE (`fight.py` `trigger` 2921 to 2922; milestone 4).
     Joke,
+    /// `water_key`: CONTRABASSOON's WATER KEY (made from scratch, Nov 16, 2026).
+    WaterKey,
+    /// `hot_pipes`: CONTRABASSOON's HOT PIPES (made from scratch, Nov 16, 2026).
+    HotPipes,
+    /// `pipe_box`: CONTRABASSOON's FIVE AND A HALF METRES (made from scratch, Nov 16, 2026).
+    PipeBox,
     /// A kind the engine has not ported yet, or a ported kind with an option it has not ported, written
     /// `kind+option` (OBOE's `"wave+detune"`).
     Unsupported(String),
@@ -298,6 +307,12 @@ pub enum AbilitySettings {
     Melody(melody::MelodyCfg),
     /// Kind `joke`.
     Joke(joke::JokeCfg),
+    /// Kind `water_key`.
+    WaterKey(water_key::WaterKeyCfg),
+    /// Kind `hot_pipes`.
+    HotPipes(hot_pipes::HotPipesCfg),
+    /// Kind `pipe_box`.
+    PipeBox(pipe_box::PipeBoxCfg),
 }
 
 impl AbilityKind {
@@ -356,6 +371,9 @@ impl AbilityKind {
             AbilityKind::DoubleStop => "double_stop",
             AbilityKind::Melody => "melody",
             AbilityKind::Joke => "joke",
+            AbilityKind::WaterKey => "water_key",
+            AbilityKind::HotPipes => "hot_pipes",
+            AbilityKind::PipeBox => "pipe_box",
             AbilityKind::Unsupported(kind) => kind.split('+').next().unwrap_or(kind),
         }
     }
@@ -414,6 +432,9 @@ impl AbilityKind {
             "double_stop" if double_stop::PORTED => AbilityKind::DoubleStop,
             "melody" if melody::PORTED => AbilityKind::Melody,
             "joke" if joke::PORTED => AbilityKind::Joke,
+            "water_key" if water_key::PORTED => AbilityKind::WaterKey,
+            "hot_pipes" if hot_pipes::PORTED => AbilityKind::HotPipes,
+            "pipe_box" if pipe_box::PORTED => AbilityKind::PipeBox,
             other => AbilityKind::Unsupported(other.to_string()),
         }
     }
@@ -471,6 +492,9 @@ impl AbilityKind {
             AbilityKind::DoubleStop => double_stop::REQUIRED,
             AbilityKind::Melody => melody::REQUIRED,
             AbilityKind::Joke => joke::REQUIRED,
+            AbilityKind::WaterKey => water_key::REQUIRED,
+            AbilityKind::HotPipes => hot_pipes::REQUIRED,
+            AbilityKind::PipeBox => pipe_box::REQUIRED,
             AbilityKind::Unsupported(_) => &[],
         }
     }
@@ -530,6 +554,9 @@ impl AbilityKind {
             AbilityKind::DoubleStop => double_stop::ALLOWED,
             AbilityKind::Melody => melody::ALLOWED,
             AbilityKind::Joke => joke::ALLOWED,
+            AbilityKind::WaterKey => water_key::ALLOWED,
+            AbilityKind::HotPipes => hot_pipes::ALLOWED,
+            AbilityKind::PipeBox => pipe_box::ALLOWED,
             AbilityKind::Unsupported(_) => &[],
         }
     }
@@ -595,6 +622,9 @@ fn settings(e: &Entry, prefix: &str, kind: &AbilityKind, ab: &Json) -> Result<Ab
         AbilityKind::DoubleStop => AbilitySettings::DoubleStop(double_stop::parse(e, prefix, ab)?),
         AbilityKind::Melody => AbilitySettings::Melody(melody::parse(e, prefix, ab)?),
         AbilityKind::Joke => AbilitySettings::Joke(joke::parse(e, prefix, ab)?),
+        AbilityKind::WaterKey => AbilitySettings::WaterKey(water_key::parse(e, prefix, ab)?),
+        AbilityKind::HotPipes => AbilitySettings::HotPipes(hot_pipes::parse(e, prefix, ab)?),
+        AbilityKind::PipeBox => AbilitySettings::PipeBox(pipe_box::parse(e, prefix, ab)?),
     })
 }
 
@@ -653,6 +683,9 @@ pub(crate) fn kind_check(e: &Entry, prefix: &str, ab: &AbilityCfg) -> Result<(),
         AbilityKind::DoubleStop => double_stop::check(e, prefix, ab),
         AbilityKind::Melody => melody::check(e, prefix, ab),
         AbilityKind::Joke => joke::check(e, prefix, ab),
+        AbilityKind::WaterKey => water_key::check(e, prefix, ab),
+        AbilityKind::HotPipes => hot_pipes::check(e, prefix, ab),
+        AbilityKind::PipeBox => pipe_box::check(e, prefix, ab),
     }
 }
 
