@@ -206,6 +206,8 @@ pub fn roster() -> Roster {
                 card: Some(card(&name, display)),
                 home: None,
                 parts: Vec::new(),
+                traits: Vec::new(),
+                energy: 0,
                 name,
             }
         })
@@ -224,6 +226,9 @@ pub fn roster() -> Roster {
             bars: (24, 42),
             refuses: Vec::new(),
             options: Vec::new(),
+            category: String::new(),
+            likes: Vec::new(),
+            tempo: (0.0, 0.0),
         }],
         vs: mask("VS"),
         start: ["FLUTE".to_string(), "TROMBONE".to_string()],

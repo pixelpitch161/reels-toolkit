@@ -77,6 +77,10 @@ pub struct RosterEntry {
     pub home: Option<Home>,
     /// The parts it plays in the series' kit configs ("bass", "riff"), each once; empty when the app knows none.
     pub parts: Vec<String>,
+    /// Its traits for scoring themes ("brassy", "low", "folk"); empty when the app knows none.
+    pub traits: Vec<String>,
+    /// 1 heavy and stately to 3 fast and bright, for the recommended tempo; 0 when the app knows none.
+    pub energy: u8,
 }
 
 /// A fighter's home config, as far as a new match-up needs it (milestone 3 Task 59: its newest kit config).
@@ -226,6 +230,12 @@ pub struct ThemeEntry {
     pub refuses: Vec<String>,
     /// Its options (the trailer's sequel, the drumline's bass drums, the plugged fighter): none for most themes.
     pub options: Vec<ThemeOptionEntry>,
+    /// The theme picker's group it sits in ("Jazz & Latin"); empty puts it under "Other".
+    pub category: String,
+    /// The fighter traits it likes, each weighted 1 or 2.
+    pub likes: Vec<(String, u8)>,
+    /// The bpm range its recommended tempo is placed in; `(0.0, 0.0)` when the app knows none.
+    pub tempo: (f64, f64),
 }
 
 impl ThemeEntry {
@@ -275,7 +285,92 @@ pub struct Roster {
     pub episode_pairs: Vec<KitPair>,
 }
 
+/// The theme picker's groups, in order; a theme with a category not among them is listed under [`OTHER`].
+pub use bf_content::fit::CATEGORIES;
+/// The last group: themes with no known category.
+pub const OTHER: &str = "Other";
+/// How many themes the picker recommends.
+pub const RECOMMENDED: usize = 3;
+/// What a fighter's home theme adds to a theme's score: enough to put it among the recommended.
+const HOME_BONUS: u32 = 100;
+
 impl Roster {
+    /// The themes the pair `fighters` may be set in, grouped as the picker lists them: [`CATEGORIES`] in order, then
+    /// [`OTHER`], each with its themes in the roster's order. Groups with no theme are left out.
+    pub fn grouped(&self, fighters: &[String; 2]) -> Vec<(String, Vec<&ThemeEntry>)> {
+        let themes = self.themes_for(fighters);
+        fn group_of(t: &ThemeEntry) -> &str {
+            if CATEGORIES.contains(&t.category.as_str()) {
+                t.category.as_str()
+            } else {
+                OTHER
+            }
+        }
+        CATEGORIES
+            .iter()
+            .chain(std::iter::once(&OTHER))
+            .map(|&g| {
+                (
+                    g.to_string(),
+                    themes.iter().copied().filter(|t| group_of(t) == g).collect::<Vec<_>>(),
+                )
+            })
+            .filter(|(_, ts)| !ts.is_empty())
+            .collect()
+    }
+
+    /// The themes recommended for `fighters`, best first: the [`RECOMMENDED`] best scores among the themes the pair
+    /// may be set in. A fighter's fit for a theme is the sum of the weights of the traits it has that the theme likes;
+    /// a theme scores twice the weaker fighter's fit plus the stronger's, and [`HOME_BONUS`] for each fighter whose
+    /// home theme it is. Ties keep the picker's order ([`Roster::grouped`]).
+    pub fn recommended(&self, fighters: &[String; 2]) -> Vec<&ThemeEntry> {
+        let entry = |name: &str| self.fighters.iter().find(|f| f.name == name);
+        let pair = [entry(&fighters[0]), entry(&fighters[1])];
+        let score = |t: &ThemeEntry| {
+            let fit = |f: Option<&RosterEntry>| -> u32 {
+                f.map_or(0, |f| {
+                    t.likes
+                        .iter()
+                        .filter(|(trait_, _)| f.traits.contains(trait_))
+                        .map(|(_, w)| u32::from(*w))
+                        .sum()
+                })
+            };
+            let (a, b) = (fit(pair[0]), fit(pair[1]));
+            let home = pair
+                .iter()
+                .flatten()
+                .filter(|f| f.home.as_ref().is_some_and(|h| h.theme == t.name))
+                .count() as u32;
+            2 * a.min(b) + a.max(b) + HOME_BONUS * home
+        };
+        let mut ordered: Vec<&ThemeEntry> = self.grouped(fighters).into_iter().flat_map(|(_, ts)| ts).collect();
+        // a stable sort: ties keep the picker's order
+        ordered.sort_by_key(|t| std::cmp::Reverse(score(t)));
+        ordered.truncate(RECOMMENDED);
+        ordered
+    }
+
+    /// The tempo recommended for `fighters` in the theme `theme`, in bpm: the theme's tempo range, from its low end
+    /// for a pair of energy 1 to its high end for a pair of energy 3 (the two energies averaged). `None` when the
+    /// theme is unknown or has no range; a fighter of unknown energy counts as 2.
+    pub fn recommended_bpm(&self, fighters: &[String; 2], theme: &str) -> Option<f64> {
+        let t = self.themes.iter().find(|t| t.name == theme)?;
+        let (lo, hi) = t.tempo;
+        if !(lo.is_finite() && hi.is_finite() && lo > 0.0 && lo < hi) {
+            return None;
+        }
+        let energy = |name: &str| {
+            self.fighters
+                .iter()
+                .find(|f| f.name == name)
+                .filter(|f| (1..=3).contains(&f.energy))
+                .map_or(2.0, |f| f64::from(f.energy))
+        };
+        let avg = f64::midpoint(energy(&fighters[0]), energy(&fighters[1]));
+        Some(lo + (avg - 1.0) / 2.0 * (hi - lo))
+    }
+
     /// The themes the pair `fighters` (left corner first) may be set in, in the order they are offered: those that
     /// refuse neither fighter (ruling M3-R2). The pickers list only these.
     pub fn themes_for(&self, fighters: &[String; 2]) -> Vec<&ThemeEntry> {
@@ -374,5 +469,123 @@ impl Roster {
             handicap: [1.0, 1.0],
             roles: [rl, rr],
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// The sample roster with five themes: `(name, category, likes)`, a range of 100 to 140 bpm each.
+    /// A test theme: its name, category and likes.
+    type Spec<'a> = (&'a str, &'a str, &'a [(&'a str, u8)]);
+
+    fn roster(themes: &[Spec<'_>]) -> Roster {
+        let mut r = crate::seam::sample::roster();
+        let base = r.themes[0].clone();
+        r.themes = themes
+            .iter()
+            .map(|(name, category, likes)| ThemeEntry {
+                name: name.to_string(),
+                display: name.to_string(),
+                category: category.to_string(),
+                likes: likes.iter().map(|(t, w)| (t.to_string(), *w)).collect(),
+                tempo: (100.0, 140.0),
+                ..base.clone()
+            })
+            .collect();
+        let set = |r: &mut Roster, name: &str, traits: &[&str], energy: u8| {
+            let f = r.fighters.iter_mut().find(|f| f.name == name).unwrap();
+            f.traits = traits.iter().map(|t| t.to_string()).collect();
+            f.energy = energy;
+        };
+        set(&mut r, "FLUTE", &["airy", "high", "folk"], 3);
+        set(&mut r, "TUBA", &["brassy", "low", "folk"], 1);
+        r
+    }
+
+    fn pair() -> [String; 2] {
+        ["FLUTE".to_string(), "TUBA".to_string()]
+    }
+
+    fn five() -> Roster {
+        roster(&[
+            ("a", "Rock & Punk", &[("rock", 2)]),
+            ("b", "Jazz & Latin", &[("brassy", 2)]),
+            ("c", "Folk & World", &[("folk", 2)]),
+            ("d", "", &[("airy", 2), ("brassy", 2)]),
+            ("e", "Jazz & Latin", &[("high", 1)]),
+        ])
+    }
+
+    fn names(ts: &[&ThemeEntry]) -> Vec<String> {
+        ts.iter().map(|t| t.name.clone()).collect()
+    }
+
+    #[test]
+    fn groups_follow_the_category_order_with_other_last() {
+        let r = five();
+        let g: Vec<(String, Vec<String>)> = r.grouped(&pair()).into_iter().map(|(g, ts)| (g, names(&ts))).collect();
+        let want = [
+            ("Jazz & Latin", vec!["b", "e"]),
+            ("Folk & World", vec!["c"]),
+            ("Rock & Punk", vec!["a"]),
+            ("Other", vec!["d"]),
+        ];
+        assert_eq!(
+            g,
+            want.map(|(g, ts)| (g.to_string(), ts.into_iter().map(String::from).collect()))
+        );
+    }
+
+    #[test]
+    fn three_suiting_both_are_recommended() {
+        // c: both fit 2 → 6; d: 2 and 2 → 6; b: 0 and 2 → 2; e: 1 and 0 → 1; a: 0
+        assert_eq!(names(&five().recommended(&pair())), ["c", "d", "b"]);
+    }
+
+    #[test]
+    fn a_home_theme_is_always_recommended() {
+        let mut r = five();
+        r.fighters.iter_mut().find(|f| f.name == "TUBA").unwrap().home = Some(Home {
+            theme: "a".to_string(),
+            chord_loop: Vec::new(),
+            role: "bass".to_string(),
+        });
+        assert_eq!(names(&r.recommended(&pair()))[0], "a");
+    }
+
+    #[test]
+    fn only_playable_themes_are_recommended() {
+        let mut r = five();
+        for t in &mut r.themes[1..] {
+            t.refuses = vec!["TUBA".to_string()];
+        }
+        assert_eq!(names(&r.recommended(&pair())), ["a"]);
+    }
+
+    #[test]
+    fn no_shared_traits_still_gives_three_in_picker_order() {
+        let r = five();
+        let strangers = ["OBOE".to_string(), "HARP".to_string()];
+        assert_eq!(names(&r.recommended(&strangers)), ["b", "e", "c"]);
+    }
+
+    #[test]
+    fn the_recommended_tempo_follows_the_energy() {
+        let mut r = five();
+        assert_eq!(r.recommended_bpm(&pair(), "a"), Some(120.0));
+        let both = |r: &mut Roster, e: u8| {
+            for f in &mut r.fighters {
+                f.energy = e;
+            }
+        };
+        both(&mut r, 1);
+        assert_eq!(r.recommended_bpm(&pair(), "a"), Some(100.0));
+        both(&mut r, 3);
+        assert_eq!(r.recommended_bpm(&pair(), "a"), Some(140.0));
+        assert_eq!(r.recommended_bpm(&pair(), "nope"), None);
+        r.themes[0].tempo = (0.0, 0.0);
+        assert_eq!(r.recommended_bpm(&pair(), "a"), None);
     }
 }

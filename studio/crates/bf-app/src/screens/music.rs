@@ -25,6 +25,7 @@ use egui::{
 use crate::model::roster::{BASS_ROLE, part_words};
 use crate::model::take::{Lane, LaneGroup, MusicView};
 use crate::model::{Step, View};
+use crate::screens::theme_picker::theme_picker;
 use crate::state::{Action, CLASSIC, COMPOSED, PICK_THEME, ViewModel};
 use crate::theme::{
     BAND_CLIP, CONTROL_H, FAINT, GROUP, HAIRLINE, HOVER, LINE, LINE_SOFT, MUTED, RADIUS, RAISED, TEXT, TEXT_STRONG,
@@ -205,21 +206,13 @@ fn controls(ui: &mut Ui, vm: &ViewModel, inner_h: f32, out: &mut Vec<Action>) {
     let theme = vm.theme();
 
     group_label(ui, "Theme");
-    // only the themes this pair can be set in (ruling M3-R2)
-    let themes = vm
-        .roster
-        .as_ref()
-        .map_or_else(Vec::new, |r| r.themes_for(&vm.draft.fighters));
-    let options: Vec<String> = themes.iter().map(|t| t.display.clone()).collect();
-    let chosen = themes
-        .iter()
-        .position(|t| t.name == vm.draft.theme)
-        .unwrap_or(usize::MAX);
-    if let Some(i) = buttons::dropdown(ui, "Theme", &options, chosen, width)
-        && let Some(picked) = themes.get(i)
-        && picked.name != vm.draft.theme
-    {
-        out.push(Action::SetTheme(picked.name.clone()));
+    // only the themes this pair can be set in (ruling M3-R2), recommended first, then by category
+    if let Some(roster) = vm.roster.as_ref() {
+        if let Some(picked) = theme_picker(ui, roster, &vm.draft.fighters, &vm.draft.theme, width) {
+            out.push(Action::SetTheme(picked));
+        }
+    } else {
+        buttons::dropdown(ui, "Theme", &[], usize::MAX, width);
     }
     ui.add_space(GROUP_GAP);
 

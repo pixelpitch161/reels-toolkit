@@ -1045,3 +1045,17 @@ fn the_whole_kit_roster() {
     assert!(name.min.y > portrait.max.y, "under the portrait");
     assert_eq!(harness.unnamed_widgets(), Vec::<String>::new());
 }
+
+/// With a tempo range on the theme, the Tempo row offers the recommended tempo; clicking it sets those bars.
+#[test]
+fn the_recommended_tempo_is_one_click_away() {
+    let _gpu = gpu();
+    let mut vm = matchup::vm();
+    let roster = vm.roster.as_mut().unwrap();
+    roster.themes[0].tempo = (100.0, 110.0);
+    let mut harness = showing(REF, vm);
+    // energies unknown count as 2: the middle of the range, 105 bpm, is 27 bars (106.23 bpm)
+    harness.get_by_label("Use 106 bpm").click();
+    harness.run();
+    assert_eq!(harness.state().log, vec![Action::SetBars(27)]);
+}

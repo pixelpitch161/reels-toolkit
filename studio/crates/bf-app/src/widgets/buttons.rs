@@ -32,7 +32,7 @@ use egui::{
 
 use super::icons::{self, Icon};
 use crate::theme::{
-    CONTROL_H, FAINT, GROUND, HOVER, LINE, MUTED, ON_LIGHT, RADIUS, RAISED, TEXT, TEXT_STRONG, VALUE_H, body,
+    CONTROL_H, FAINT, GROUND, HOVER, LINE, MUTED, ON_LIGHT, RADIUS, RAISED, TEXT, TEXT_STRONG, VALUE_H, body, small,
 };
 
 /// Side padding of a button's label.
@@ -428,6 +428,38 @@ fn menu_list_style(style: &mut Style) {
 /// dropdowns of one name do not clash.
 pub fn dropdown(ui: &mut Ui, name: &str, options: &[String], chosen: usize, width: f32) -> Option<usize> {
     let value = options.get(chosen).map_or("", String::as_str);
+    dropdown_with(ui, name, value, width, |ui| menu_items(ui, options, chosen))
+}
+
+/// One line of a grouped dropdown's list ([`dropdown_grouped`]).
+#[derive(Clone, Debug, PartialEq)]
+pub enum MenuEntry {
+    /// A group's name: `MUTED` small text, 20 tall, not pickable and not a list option.
+    Heading(String),
+    /// A pickable option: `index` is what picking it returns.
+    Item { index: usize, label: String },
+}
+
+/// A dropdown like [`dropdown`] whose list is split into groups by headings. It shows `value`, and the items whose
+/// index is `chosen` are lit when nothing is hovered or focused. Returns the index of the item picked this frame.
+pub fn dropdown_grouped(
+    ui: &mut Ui,
+    name: &str,
+    entries: &[MenuEntry],
+    value: &str,
+    chosen: usize,
+    width: f32,
+) -> Option<usize> {
+    dropdown_with(ui, name, value, width, |ui| grouped_items(ui, entries, chosen))
+}
+
+fn dropdown_with(
+    ui: &mut Ui,
+    name: &str,
+    value: &str,
+    width: f32,
+    list: impl FnOnce(&mut Ui) -> Option<usize>,
+) -> Option<usize> {
     if !ui.is_enabled() {
         faint_dropdown(ui, name, value, width);
         return None;
@@ -460,7 +492,7 @@ pub fn dropdown(ui: &mut Ui, name: &str, options: &[String], chosen: usize, widt
                     );
                 })
                 .popup_style(menu_list_style.into())
-                .show_ui(ui, |ui| picked = menu_items(ui, options, chosen))
+                .show_ui(ui, |ui| picked = list(ui))
                 .response
         })
         .inner
@@ -537,6 +569,54 @@ fn menu_items(ui: &mut Ui, options: &[String], chosen: usize) -> Option<usize> {
         paint_label(painter, response.rect, option, label, Some(MENU_PAD_X), max_w);
     }
     let clicked = responses.iter().position(Response::clicked);
+    if clicked.is_some() {
+        ui.close();
+    }
+    clicked
+}
+
+/// The height of a heading in a grouped dropdown's list.
+const HEADING_H: f32 = 20.0;
+
+/// The lines of a grouped dropdown's list: headings, and items drawn as [`menu_items`] draws them. Returns the index
+/// of the item clicked, and closes the list when one is.
+fn grouped_items(ui: &mut Ui, entries: &[MenuEntry], chosen: usize) -> Option<usize> {
+    let width = ui.available_width();
+    let mut items: Vec<(usize, &str, Response)> = Vec::new();
+    let mut headings: Vec<(Rect, &str)> = Vec::new();
+    for entry in entries {
+        match entry {
+            MenuEntry::Heading(text) => {
+                let (rect, _) = ui.allocate_exact_size(vec2(width, HEADING_H), Sense::hover());
+                headings.push((rect, text));
+            }
+            MenuEntry::Item { index, label } => {
+                let (_, response) = ui.allocate_exact_size(vec2(width, ITEM_H), Sense::click());
+                response.widget_info(|| WidgetInfo::selected(Role::ListBoxOption, true, *index == chosen, label));
+                items.push((*index, label, response));
+            }
+        }
+    }
+    let lit = (items.iter().position(|(_, _, r)| r.has_focus()))
+        .or_else(|| items.iter().position(|(_, _, r)| r.hovered()))
+        .or_else(|| items.iter().position(|(i, _, _)| *i == chosen));
+    let painter = ui.painter();
+    for (rect, text) in headings {
+        let galley = painter.layout_no_wrap(text.to_owned(), small(), MUTED);
+        let pos = pos2(rect.min.x + MENU_PAD_X, rect.center().y - galley.size().y / 2.0).round();
+        painter.galley(pos, galley, MUTED);
+    }
+    for (n, (_, label, response)) in items.iter().enumerate() {
+        let colour = if Some(n) == lit {
+            painter.rect_filled(response.rect, RADIUS, TEXT);
+            ON_LIGHT
+        } else {
+            TEXT
+        };
+        let max_w = response.rect.width() - 2.0 * MENU_PAD_X;
+        paint_label(painter, response.rect, label, colour, Some(MENU_PAD_X), max_w);
+    }
+    let clicked = items.iter().find(|(_, _, r)| r.clicked()).map(|(i, _, _)| *i);
     if clicked.is_some() {
         ui.close();
     }

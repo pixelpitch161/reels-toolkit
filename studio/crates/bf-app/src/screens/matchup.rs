@@ -21,6 +21,7 @@ use egui::{Align, Frame, Label, Layout, Margin, Rect, RichText, ScrollArea, Sens
 use crate::model::draft::Draft;
 use crate::model::roster::{PixelMask, Roster, RosterEntry, Section};
 use crate::model::{Step, View};
+use crate::screens::theme_picker::theme_picker;
 use crate::state::{Action, ViewModel};
 use crate::theme::{
     CONTROL_H, LABEL_W, LINE_SOFT, MUTED, RADIUS, TEXT, TEXT_STRONG, body, rgb, section, small, strong, value,
@@ -532,15 +533,9 @@ fn bottom_strip(ui: &mut Ui, vm: &ViewModel, roster: &Roster, out: &mut Vec<Acti
 
     strip_row(ui, |ui| {
         cell(ui, LABEL_W, CONTROL_H, RichText::new("Theme").font(body()).color(MUTED));
-        // only the themes this pair can be set in (ruling M3-R2)
-        let themes = roster.themes_for(&draft.fighters);
-        let options: Vec<String> = themes.iter().map(|t| t.display.clone()).collect();
-        let chosen = themes.iter().position(|t| t.name == draft.theme).unwrap_or(usize::MAX);
-        if let Some(i) = buttons::dropdown(ui, "Theme", &options, chosen, THEME_W)
-            && let Some(picked) = themes.get(i)
-            && picked.name != draft.theme
-        {
-            out.push(Action::SetTheme(picked.name.clone()));
+        // only the themes this pair can be set in (ruling M3-R2), recommended first, then by category
+        if let Some(picked) = theme_picker(ui, roster, &draft.fighters, &draft.theme, THEME_W) {
+            out.push(Action::SetTheme(picked));
         }
         if let Some(theme) = theme {
             line(ui, RichText::new(&theme.text).font(small()).color(MUTED));
@@ -553,7 +548,10 @@ fn bottom_strip(ui: &mut Ui, vm: &ViewModel, roster: &Roster, out: &mut Vec<Acti
         let button_w = |label: &str| (text_width(ui, label, body()) + 2.0 * BUTTON_PAD_X).ceil();
         let buttons_w = button_w(SWAP) + ITEM_GAP + button_w(BALANCE);
         let range = theme.map_or((draft.bars, draft.bars), |t| t.bars);
-        tempo_controls(ui, draft, range, buttons_w, out);
+        let suggested = roster
+            .recommended_bpm(&draft.fighters, &draft.theme)
+            .map(|bpm| nearest_bars(draft, (range.0.min(range.1), range.0.max(range.1)), bpm));
+        tempo_controls(ui, draft, range, suggested, buttons_w, out);
         ui.add_space((ui.available_width() - buttons_w).max(0.0));
         if buttons::boxed(ui, SWAP).clicked() {
             out.push(Action::SwapSides);
@@ -610,12 +608,25 @@ fn text_width(ui: &Ui, text: &str, font: egui::FontId) -> f32 {
 }
 
 /// "Tempo", the slider over the theme's `bars` range in whole bars, the value field in bpm and the note "{bars} bars
-/// fit in 61 seconds", leaving `keep` (and the gap before it) free at the row's right end. The slider is as wide as
+/// fit in 61 seconds" (or, when the recommended bar count `suggested` differs from the draft's, the flat button
+/// "Use {bpm} bpm" that sets it: [`use_tempo_label`]), leaving `keep` (and the gap before it) free at the row's right end. The slider is as wide as
 /// the row allows, at most 220; the note is cut short when even the narrowest slider leaves it too little room.
-fn tempo_controls(ui: &mut Ui, draft: &Draft, range: (u32, u32), keep: f32, out: &mut Vec<Action>) {
+fn tempo_controls(
+    ui: &mut Ui,
+    draft: &Draft,
+    range: (u32, u32),
+    suggested: Option<u32>,
+    keep: f32,
+    out: &mut Vec<Action>,
+) {
     let range = (range.0.min(range.1), range.0.max(range.1));
+    let suggested = suggested.filter(|&b| b != draft.bars && (range.0..=range.1).contains(&b));
     let note = format!("{} bars fit in 61 seconds", draft.bars);
-    let note_w = text_width(ui, &note, small()).ceil();
+    let use_label = suggested.map(|b| use_tempo_label(tempo_of(draft, b)));
+    let note_w = match &use_label {
+        Some(label) => (text_width(ui, label, body()) + 2.0 * BUTTON_PAD_X).ceil(),
+        None => text_width(ui, &note, small()).ceil(),
+    };
     let room = ui.available_width() - keep - ITEM_GAP;
     let fixed = LABEL_W + ITEM_GAP + ITEM_GAP + FIELD_W + ITEM_GAP;
     let slider_w = (room - fixed - note_w - ITEM_GAP)
@@ -649,7 +660,22 @@ fn tempo_controls(ui: &mut Ui, draft: &Draft, range: (u32, u32), keep: f32, out:
     {
         out.push(Action::SetBars(bars));
     }
-    cell(ui, note_cell, CONTROL_H, RichText::new(note).font(small()).color(MUTED));
+    match (suggested, use_label) {
+        (Some(bars), Some(label)) => {
+            if buttons::flat(ui, &label).on_hover_text(USE_TEMPO_HINT).clicked() {
+                out.push(Action::SetBars(bars));
+            }
+        }
+        _ => cell(ui, note_cell, CONTROL_H, RichText::new(note).font(small()).color(MUTED)),
+    }
+}
+
+/// What hovering the recommended tempo's button says.
+pub const USE_TEMPO_HINT: &str = "The tempo recommended for this pair in this theme";
+
+/// The recommended tempo's button: "Use 132 bpm".
+pub fn use_tempo_label(bpm: f64) -> String {
+    format!("Use {bpm:.0} bpm")
 }
 
 #[cfg(test)]

@@ -7,4 +7,5 @@ pub mod seeds;
 pub mod settings;
 pub mod shell;
 pub mod stage;
+pub mod theme_picker;
 pub mod timeline;
