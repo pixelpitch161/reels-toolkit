@@ -70,7 +70,10 @@ fn the_wingbeat_fights_to_the_end() {
         "{fights} fights, {kos} K.O.s (it won {wins}, mean K.O. at {:.1} s), hits {hits:?}, abilities {abilities:?}",
         t_ko / f64::from(kos.max(1))
     );
-    assert!(hits.get("wingbeat").copied().unwrap_or(0) > fights, "claps landed: {hits:?}");
+    assert!(
+        hits.get("wingbeat").copied().unwrap_or(0) > fights,
+        "claps landed: {hits:?}"
+    );
     assert!(kos as usize * 4 >= fights * 3, "{kos} K.O.s in {fights} fights");
     for name in ["flank", "arc", "take_wing"] {
         assert!(abilities.contains(name), "{name} never fired: {abilities:?}");
