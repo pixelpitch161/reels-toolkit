@@ -140,14 +140,18 @@ if (-not $Apply) {
 }
 
 foreach ($r in $rows) {
-    if ($r.InUse) { Write-Host "In use, skipped: $($r.Path)"; continue }
     if ($r.Main) {
-        foreach ($t in $r.Targets | Where-Object { $_ -ne "$Main\studio\target" }) { Write-Host "Deleting $t"; Remove-Folder $t }
-        if ($TrimMain) {
+        # Extra build folders (studio\target-*) are checked one by one: the main folder itself is nearly always busy.
+        foreach ($t in $r.Targets | Where-Object { $_ -ne "$Main\studio\target" }) {
+            if (Test-InUse $t) { Write-Host "In use, skipped: $t" } else { Write-Host "Deleting $t"; Remove-Folder $t }
+        }
+        if ($TrimMain -and -not $r.InUse) {
             foreach ($t in "$Main\studio\target\debug", "$Main\studio\target\tmp") { Write-Host "Deleting $t"; Remove-Folder $t }
         }
+        elseif ($TrimMain) { Write-Host "In use, debug build kept: $Main\studio\target" }
         continue
     }
+    if ($r.InUse) { Write-Host "In use, skipped: $($r.Path)"; continue }
     if (-not ($r.Clean -and $r.Pushed -and $r.Merged)) {
         Write-Host "Not finished (uncommitted, unpushed or unmerged), kept: $($r.Path)"
         continue
