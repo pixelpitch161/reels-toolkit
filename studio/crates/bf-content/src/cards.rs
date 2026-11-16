@@ -60,7 +60,7 @@ pub struct ThemeCard {
 }
 
 /// Every roster fighter in score order, with its section.
-const SCORE: [(&str, Section); 33] = [
+const SCORE: [(&str, Section); 34] = [
     ("FLUTE", Section::Woodwinds),
     ("OBOE", Section::Woodwinds),
     ("CLARINET", Section::Woodwinds),
@@ -71,6 +71,7 @@ const SCORE: [(&str, Section); 33] = [
     ("TENOR SAX", Section::Woodwinds),
     ("BARI SAX", Section::Woodwinds),
     ("BAGPIPES", Section::Woodwinds),
+    ("PICCOLO", Section::Woodwinds),
     ("TRUMPET", Section::Brass),
     ("CORNET", Section::Brass),
     ("HORN", Section::Brass),
@@ -206,7 +207,7 @@ mod tests {
                 count(Section::Keys),
                 count(Section::Percussion)
             ],
-            [10, 7, 8, 4, 4]
+            [11, 7, 8, 4, 4]
         );
         assert_eq!(&order[..2], &["FLUTE", "OBOE"]);
         assert_eq!(order.last(), Some(&"BASS DRUM"));
