@@ -97,11 +97,35 @@ version on this PC; no download, no token in the app).
 
 1. Bump `[workspace.package] version` in `studio/Cargo.toml` (and let cargo update `Cargo.lock`).
 2. Add the version's frozen saved files (the rule for `tests/compat/<version>/`, below).
-3. Run the gates (below), merge, and wait for CI (`.github/workflows/studio.yml`) to be green on that commit.
+3. Run the **quick install check** (below), commit and push. Don't wait for CI (`.github/workflows/studio.yml`):
+   it runs the full suite in the background, and anything it catches is fixed in the next version.
 4. Push the tag `studio-v<version>` on that commit (`studio-v<version>-rc.1` for a candidate).
 5. The owner clicks Update in the app. The app fetches the newest `studio-v*` tag into `data\source`, runs
    `cargo build --release --locked -p bf-app` there at below-normal priority, checks that the new exe names the
    tag's version and commit, and offers "Restart now".
+
+### Quick install check (the default for every install)
+
+The owner, Nov 16, 2026: speed over exhaustive checks. The full release suite (3,679 tests in 170 groups) took about
+77 minutes on this PC: about 42 minutes to compile the test programs and about 32 minutes to run them. Installs don't
+run it. From `studio/`, in the main folder:
+
+1. `cargo build --release -p bf-app -p bf-pack` (the two exes the install uses).
+2. `cargo test --release -p bf-app` (the app's own tests and every screen and flow, including the real-roster check
+   of the fighter and theme counts in `tests/ui/matchup.rs`; about 5 minutes of running).
+3. `cargo test --release -p bf-cli --test e2e` (one whole video renders end to end; about 1 minute).
+4. Only the tests for what changed since the last tag (`git diff --stat studio-v<last>..HEAD`): for a new or changed
+   fighter, its `cargo test --release -p bf-harness --test fighter_<name>`; for a changed crate, `cargo test
+   --release -p <crate>`. Skip the other fighters' match checks, the theme parity checks and the composer sweeps.
+
+Then install with `studio\target\release\ballfight-pack.exe install --exe studio\target\release\ballfight-studio.exe
+--from <repo root>`. On this PC, five `bf-app` update/search tests can time out when many tests run at once; rerun
+them alone before calling them failures. The fighter tests for bagpipes, bari_sax, synth, turntables and viola fail
+here only because their git-ignored cache files are missing.
+
+The GUITAR and SAX guard test (`bf-app/tests/retired.rs`) was removed on the owner's word (Nov 16, 2026: "The
+checks for Guitar and Sax are unnecessary and you can remove those altogether"). The two stay retired; only the
+test is gone.
 
 A tag's version must equal the workspace version. A version tagged twice is not offered again (it is not newer). A
 pre-release is offered only to an app that is itself a pre-release of that version or older.
@@ -117,8 +141,12 @@ holds files), then add the new folder's SHA-256s to `FROZEN` in `crates/bf-app/t
 - Git, signed in to GitHub (the credential manager is already set up), and rustup. The toolchain is pinned in
   `studio/rust-toolchain.toml` (1.99.1); rustup fetches it by itself.
 - Work in `studio/`. The gates before any commit: `cargo fmt --check`, `cargo clippy --workspace --all-targets -- -D
-  warnings`, `cargo test --workspace`; before a release also `cargo test --workspace --release` and the ignored tests
-  by name that `studio/README.md` lists.
+  warnings`, `cargo test --workspace` (GitHub CI runs these). An install runs only the quick install check above.
+- **Feature and fighter work tests only what is needed** (the owner, Nov 16, 2026: "For adding features, make the
+  tests only test what is necessary."). While building, and before merging, run only the tests of the crates and
+  fighters you changed (`cargo test -p <crate>`, `--test fighter_<name>`), plus `cargo check --workspace
+  --all-targets` so nothing else breaks to compile, and the count snapshots in `bf-app/tests/ui` when a count
+  changes. Don't run the whole suite; GitHub CI does that.
 - The reference Python (`.studio-tools\py313`) only for the exact route below.
 - **Nothing under `projects/`, `reelkit/` or `series/` is ever edited.** `git status --short projects reelkit series`
   must be empty before every commit.
