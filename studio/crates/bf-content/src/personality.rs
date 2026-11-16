@@ -89,6 +89,7 @@ fighters! {
     "CORNET" => cornet,
     "CONTRABASS CLARINET" => contrabass_clarinet,
     "MARIMBA" => marimba,
+    "MELLOPHONE" => mellophone,
 }
 
 #[cfg(test)]

@@ -24,8 +24,10 @@ never install; very lenient balance check; the model is made from real web photo
 | LV3 | PRESS BOX | `press_box` (new) | For `dur_beats` every echo leaves as two waves, `spread` degrees either side of the enemy. |
 | LOW | STADIUM ECHO | `stadium_echo` (new) | One giant wave (`half_w` big). It passes through the enemy (one hit per leg) and echoes off every rope after `delay` beats, re-aimed and louder by `dmg_step`, until `beats` beats (2 bars) are up. |
 
-Colour: oxblood (150, 44, 44), dark (88, 22, 24), the maroon of a band uniform. Plume rose and plum, shown on the
-artifact, were too close to SNARE DRUM's proposed cherry and MARIMBA's jacaranda. Added to RULES.md's colour table.
+Colour: band royal (40, 24, 244), dark (18, 10, 130), the royal blue of a band uniform. Plume rose and plum, shown on
+the artifact, were too close to SNARE DRUM's proposed cherry and MARIMBA's jacaranda; oxblood read as SOUSAPHONE's
+crimson in a test frame. Band royal is the colour furthest (CIELAB) from every colour on the roster (nearest: TUBA's
+indigo, 43 apart). Added to RULES.md's colour table.
 
 ## Constraints
 

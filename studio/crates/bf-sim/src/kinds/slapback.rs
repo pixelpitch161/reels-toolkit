@@ -203,6 +203,7 @@ fn turn(d: V2, ang: f64) -> V2 {
 }
 
 /// A wave of fighter `k` leaves `p` along the unit direction `d`.
+#[allow(clippy::too_many_arguments)]
 fn blow(f: &mut Fight, k: usize, p: V2, d: V2, generation: i64, echoes: i64, stun: f64, shape: Shape) {
     let lim = f.rules.a - 0.02;
     let p = [geom::np_clip(p[0], -lim, lim), geom::np_clip(p[1], -lim, lim)];

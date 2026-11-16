@@ -123,8 +123,8 @@
   },
   {
    "name": "MELLOPHONE",
-   "color": [150, 44, 44],
-   "dark": [88, 22, 24],
+   "color": [40, 24, 244],
+   "dark": [18, 10, 130],
    "corner": "red",
    "view": [0, 18, 0],
    "weapon": {
