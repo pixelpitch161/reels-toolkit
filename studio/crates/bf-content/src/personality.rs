@@ -86,6 +86,7 @@ fighters! {
     "TROMBONE" => trombone, "TRUMPET" => trumpet, "TUBA" => tuba, "ACCORDION" => accordion,
     "BAGPIPES" => bagpipes, "BARI SAX" => bari_sax, "DRUMS" => drums, "HARP" => harp, "SYNTH" => synth,
     "TURNTABLES" => turntables, "UKULELE" => ukulele, "VIOLA" => viola, "VIOLIN" => violin,
+    "CONTRABASSOON" => contrabassoon,
 }
 
 #[cfg(test)]
@@ -101,7 +102,7 @@ mod tests {
         names.retain(|n| entry(n).is_some());
         names.sort();
         names.dedup();
-        assert_eq!(names.len(), 30);
+        assert_eq!(names.len(), 31);
         for n in &names {
             let p = personality(n).unwrap_or_else(|| panic!("{n}"));
             assert!((2..=4).contains(&p.motifs.len()), "{n}");

@@ -75,12 +75,11 @@ fn every_ordered_pair_has_a_starter_the_studio_accepts() {
     let names = available();
     assert_eq!(
         names.len(),
-        30,
-        "the kit's 20 and the older ten offered: the whole roster"
+        30 + bf_content::fighters::NEW.len(),
+        "the kit's 20, the older ten and the new ones offered: the whole roster"
     );
     let pairs = ordered_pairs();
     assert_eq!(pairs.len(), names.len() * (names.len() - 1));
-    assert_eq!(pairs.len(), 870);
     let mut problems = Vec::new();
     for &(a, b) in &pairs {
         let ff = match starter(a, b) {
@@ -243,7 +242,7 @@ fn every_fighter_has_the_kits_home_config() {
     );
     let mut names: Vec<&str> = available()
         .into_iter()
-        .filter(|n| !bf_content::fighters::OLDER.contains(n))
+        .filter(|n| !bf_content::fighters::OLDER.contains(n) && !bf_content::fighters::NEW.contains(n))
         .collect();
     names.sort_unstable();
     assert_eq!(texts(&doc["fighters"]), names, "the kit fighters");

@@ -720,11 +720,17 @@ mod tests {
         "VIOLIN",
     ];
 
-    /// The kit's 20 fighters: the roster without the older ten.
+    /// The fighters made from scratch after the port (their kinds have their own tests).
+    const NEW: [&str; 1] = ["CONTRABASSOON"];
+
+    /// The kit's 20 fighters: the roster without the older ten and the new ones.
     fn kit_roster() -> Vec<FighterCfg> {
         let all = parse_roster(ROSTER).expect("the roster loads");
         assert_eq!(all.iter().filter(|f| OLDER.contains(&f.name.as_str())).count(), 10);
-        let kit: Vec<FighterCfg> = all.into_iter().filter(|f| !OLDER.contains(&f.name.as_str())).collect();
+        let kit: Vec<FighterCfg> = all
+            .into_iter()
+            .filter(|f| !OLDER.contains(&f.name.as_str()) && !NEW.contains(&f.name.as_str()))
+            .collect();
         assert_eq!(kit.len(), 20);
         kit
     }
@@ -756,7 +762,7 @@ mod tests {
     #[test]
     fn the_whole_roster_loads_in_order() {
         let r = parse_roster(ROSTER).expect("loads");
-        assert_eq!(r.len(), 30);
+        assert_eq!(r.len(), 30 + NEW.len());
         assert_eq!(r[0].name, "PIANO");
         assert_eq!(r[1].name, "DRUMS");
         // the kit's 20 keep their own order among the 30
@@ -1445,7 +1451,7 @@ mod tests {
     #[test]
     fn flute_and_trombone_hold_only_typed_keys() {
         // the real roster loads (all 30), and the two ported fighters pass the unknown-key check
-        assert_eq!(parse_roster(ROSTER).expect("loads").len(), 30);
+        assert_eq!(parse_roster(ROSTER).expect("loads").len(), 30 + NEW.len());
         for name in ["FLUTE", "TROMBONE"] {
             let f = fighter(name);
             assert!(!matches!(f.weapon, WeaponCfg::Unsupported(_)), "{name}");

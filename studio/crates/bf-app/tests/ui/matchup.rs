@@ -1005,7 +1005,7 @@ fn the_whole_kit_roster() {
     let mut harness = showing(REF, vm.clone());
     harness.run();
     assert!(
-        harness.query_by_label("30 fighters, 26 themes").is_some(),
+        harness.query_by_label("31 fighters, 26 themes").is_some(),
         "the status bar"
     );
     assert!(harness.query_all_by_label(NOT_BUILT).next().is_none());

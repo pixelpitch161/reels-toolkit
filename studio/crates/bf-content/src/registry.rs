@@ -17,7 +17,7 @@ const ROSTER_JSON: &str = include_str!("../data/roster.json");
 
 /// The fighters whose weapon and abilities the engine has ported, in no particular order (grows as fighters are
 /// ported).
-pub const PORTED: [&str; 30] = [
+pub const PORTED: [&str; 31] = [
     "FLUTE",
     "TROMBONE",
     "PIANO",
@@ -48,6 +48,7 @@ pub const PORTED: [&str; 30] = [
     "HARP",
     "ACCORDION",
     "DRUMS",
+    "CONTRABASSOON",
 ];
 
 /// Every roster entry (the kit's 20 and the older ten, offered or not), in `fighters.py`'s order, every number as
@@ -119,11 +120,14 @@ mod tests {
     #[test]
     fn roster_has_the_kit_20_and_the_older_10_and_no_retired() {
         let r = roster();
-        assert_eq!(r.len(), 30);
+        assert_eq!(r.len(), 31);
         // fighters.py's order, which starts with the first fighters the kit had
         let names: Vec<&str> = r.iter().map(|f| f.name.as_str()).collect();
         assert_eq!(&names[..4], &["PIANO", "DRUMS", "VIOLIN", "BAGPIPES"]);
-        let (older, mut kit): (Vec<&str>, Vec<&str>) = names.iter().partition(|n| crate::fighters::OLDER.contains(n));
+        let (older, mut kit): (Vec<&str>, Vec<&str>) = names
+            .iter()
+            .filter(|n| !crate::fighters::NEW.contains(n))
+            .partition(|n| crate::fighters::OLDER.contains(n));
         assert_eq!(&kit[..4], &["PIANO", "TUBA", "FLUTE", "TROMBONE"]);
         kit.sort_unstable();
         assert_eq!(kit, KIT);
@@ -179,6 +183,7 @@ mod tests {
                 "TENOR SAX",
                 "SOUSAPHONE",
                 "BASS DRUM",
+                "CONTRABASSOON",
             ]
         );
         assert_eq!(available().len(), PORTED.len());
