@@ -87,6 +87,7 @@ fighters! {
     "BAGPIPES" => bagpipes, "BARI SAX" => bari_sax, "DRUMS" => drums, "HARP" => harp, "SYNTH" => synth,
     "TURNTABLES" => turntables, "UKULELE" => ukulele, "VIOLA" => viola, "VIOLIN" => violin,
     "CORNET" => cornet,
+    "MARIMBA" => marimba,
 }
 
 #[cfg(test)]

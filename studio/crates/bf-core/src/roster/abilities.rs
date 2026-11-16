@@ -16,12 +16,14 @@ pub mod cannons;
 pub mod clamp;
 pub mod company_front;
 pub mod copy;
+pub mod dead_stroke;
 pub mod derby;
 pub mod detune;
 pub mod double_stop;
 pub mod drum_roll;
 pub mod encore;
 pub mod endless;
+pub mod five_octaves;
 pub mod flash_spin;
 pub mod flick;
 pub mod fork;
@@ -46,13 +48,14 @@ pub mod snip;
 pub mod spout;
 pub mod stagedive;
 pub mod stampede;
-pub mod stun;
 pub mod stoptime;
+pub mod stun;
 pub mod subtone;
 pub mod sustain;
 pub mod swan;
 pub mod sweep;
 pub mod tapping;
+pub mod tremolo;
 pub mod twin;
 pub mod vibrato;
 pub mod whip;
@@ -204,6 +207,12 @@ pub enum AbilityKind {
     Melody,
     /// `joke`: VIOLA's VIOLA JOKE (`fight.py` `trigger` 2921 to 2922; milestone 4).
     Joke,
+    /// `tremolo`: MARIMBA's TREMOLO (a Studio kind).
+    Tremolo,
+    /// `dead_stroke`: MARIMBA's DEAD STROKE (a Studio kind).
+    DeadStroke,
+    /// `five_octaves`: MARIMBA's FIVE OCTAVES (a Studio kind).
+    FiveOctaves,
     /// A kind the engine has not ported yet, or a ported kind with an option it has not ported, written
     /// `kind+option` (OBOE's `"wave+detune"`).
     Unsupported(String),
@@ -308,6 +317,12 @@ pub enum AbilitySettings {
     Melody(melody::MelodyCfg),
     /// Kind `joke`.
     Joke(joke::JokeCfg),
+    /// Kind `tremolo`.
+    Tremolo(tremolo::TremoloCfg),
+    /// Kind `dead_stroke`.
+    DeadStroke(dead_stroke::DeadStrokeCfg),
+    /// Kind `five_octaves`.
+    FiveOctaves(five_octaves::FiveOctavesCfg),
 }
 
 impl AbilityKind {
@@ -368,6 +383,9 @@ impl AbilityKind {
             AbilityKind::DoubleStop => "double_stop",
             AbilityKind::Melody => "melody",
             AbilityKind::Joke => "joke",
+            AbilityKind::Tremolo => "tremolo",
+            AbilityKind::DeadStroke => "dead_stroke",
+            AbilityKind::FiveOctaves => "five_octaves",
             AbilityKind::Unsupported(kind) => kind.split('+').next().unwrap_or(kind),
         }
     }
@@ -428,6 +446,9 @@ impl AbilityKind {
             "double_stop" if double_stop::PORTED => AbilityKind::DoubleStop,
             "melody" if melody::PORTED => AbilityKind::Melody,
             "joke" if joke::PORTED => AbilityKind::Joke,
+            "tremolo" if tremolo::PORTED => AbilityKind::Tremolo,
+            "dead_stroke" if dead_stroke::PORTED => AbilityKind::DeadStroke,
+            "five_octaves" if five_octaves::PORTED => AbilityKind::FiveOctaves,
             other => AbilityKind::Unsupported(other.to_string()),
         }
     }
@@ -487,6 +508,9 @@ impl AbilityKind {
             AbilityKind::DoubleStop => double_stop::REQUIRED,
             AbilityKind::Melody => melody::REQUIRED,
             AbilityKind::Joke => joke::REQUIRED,
+            AbilityKind::Tremolo => tremolo::REQUIRED,
+            AbilityKind::DeadStroke => dead_stroke::REQUIRED,
+            AbilityKind::FiveOctaves => five_octaves::REQUIRED,
             AbilityKind::Unsupported(_) => &[],
         }
     }
@@ -548,6 +572,9 @@ impl AbilityKind {
             AbilityKind::DoubleStop => double_stop::ALLOWED,
             AbilityKind::Melody => melody::ALLOWED,
             AbilityKind::Joke => joke::ALLOWED,
+            AbilityKind::Tremolo => tremolo::ALLOWED,
+            AbilityKind::DeadStroke => dead_stroke::ALLOWED,
+            AbilityKind::FiveOctaves => five_octaves::ALLOWED,
             AbilityKind::Unsupported(_) => &[],
         }
     }
@@ -615,6 +642,9 @@ fn settings(e: &Entry, prefix: &str, kind: &AbilityKind, ab: &Json) -> Result<Ab
         AbilityKind::DoubleStop => AbilitySettings::DoubleStop(double_stop::parse(e, prefix, ab)?),
         AbilityKind::Melody => AbilitySettings::Melody(melody::parse(e, prefix, ab)?),
         AbilityKind::Joke => AbilitySettings::Joke(joke::parse(e, prefix, ab)?),
+        AbilityKind::Tremolo => AbilitySettings::Tremolo(tremolo::parse(e, prefix, ab)?),
+        AbilityKind::DeadStroke => AbilitySettings::DeadStroke(dead_stroke::parse(e, prefix, ab)?),
+        AbilityKind::FiveOctaves => AbilitySettings::FiveOctaves(five_octaves::parse(e, prefix, ab)?),
     })
 }
 
@@ -675,6 +705,9 @@ pub(crate) fn kind_check(e: &Entry, prefix: &str, ab: &AbilityCfg) -> Result<(),
         AbilityKind::DoubleStop => double_stop::check(e, prefix, ab),
         AbilityKind::Melody => melody::check(e, prefix, ab),
         AbilityKind::Joke => joke::check(e, prefix, ab),
+        AbilityKind::Tremolo => tremolo::check(e, prefix, ab),
+        AbilityKind::DeadStroke => dead_stroke::check(e, prefix, ab),
+        AbilityKind::FiveOctaves => five_octaves::check(e, prefix, ab),
     }
 }
 

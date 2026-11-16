@@ -22,17 +22,17 @@ pub mod striker;
 
 pub use abilities::{AbilityCfg, AbilityKind, AbilitySettings, SlowCfg};
 pub use blade::{BladeCfg, BladeMode, MAX_FRETS0};
+pub use kinds::plunger::PlungerCfg;
 pub use kinds::{
     anchor::AnchorCfg, combo::ComboCfg, crowd::CrowdCfg, drill::DrillCfg, echo::EchoCfg, grapple::GrappleCfg,
-    jump::JumpCfg, lightning::LightningCfg, line::LineCfg, mortar::MortarCfg, rake::RakeCfg, roll::RollCfg,
-    roll_charge::RollChargeCfg, spotlight::SpotlightCfg, swallow::SwallowCfg, tiptoe::TiptoeCfg, tune::TuneCfg,
-    walk::WalkCfg,
+    jump::JumpCfg, lightning::LightningCfg, line::LineCfg, mallets::MalletsCfg, mortar::MortarCfg, rake::RakeCfg,
+    roll::RollCfg, roll_charge::RollChargeCfg, spotlight::SpotlightCfg, swallow::SwallowCfg, tiptoe::TiptoeCfg,
+    tune::TuneCfg, walk::WalkCfg,
 };
 pub use kinds::{
     bite::BiteCfg, inflate::InflateCfg, pulse::PulseCfg, rests::RestsCfg, scratch_floor::ScratchFloorCfg,
     surf::SurfCfg, tether::TetherCfg, trap::TrapCfg, wrecking::WreckingCfg,
 };
-pub use kinds::plunger::PlungerCfg;
 pub use striker::StrikerCfg;
 
 /// The kit's further weapon kinds, each with its module's `PORTED`: a kind loads as `WeaponCfg::Unsupported` exactly
@@ -129,12 +129,16 @@ pub const OLDER_ABILITY_KINDS: [(&str, bool); 9] = [
 
 /// The weapon kinds of the fighters made from scratch in the Studio (no Python kit reference), each with its module's
 /// `PORTED`, as [`OLDER_WEAPON_KINDS`].
-pub const NEW_WEAPON_KINDS: [(&str, bool); 1] = [("plunger", kinds::plunger::PORTED)];
+pub const NEW_WEAPON_KINDS: [(&str, bool); 2] =
+    [("plunger", kinds::plunger::PORTED), ("mallets", kinds::mallets::PORTED)];
 
 /// The ability kinds of the fighters made from scratch in the Studio, each with its module's `PORTED`.
-pub const NEW_ABILITY_KINDS: [(&str, bool); 2] = [
+pub const NEW_ABILITY_KINDS: [(&str, bool); 5] = [
     ("derby", abilities::derby::PORTED),
     ("stoptime", abilities::stoptime::PORTED),
+    ("tremolo", abilities::tremolo::PORTED),
+    ("dead_stroke", abilities::dead_stroke::PORTED),
+    ("five_octaves", abilities::five_octaves::PORTED),
 ];
 
 /// One fighter's roster entry.
@@ -228,6 +232,8 @@ pub enum WeaponCfg {
     Rests(kinds::rests::RestsCfg),
     /// Kind `plunger` (CORNET's PLUNGER MUTE; a from-scratch fighter), typed by `roster::kinds::plunger`.
     Plunger(kinds::plunger::PlungerCfg),
+    /// Kind `mallets` (MARIMBA's MALLET RUN, a Studio kind), typed by `roster::kinds::mallets`.
+    Mallets(kinds::mallets::MalletsCfg),
     /// A kind the engine has not ported yet (a spinning blade, with no `mode`, is `"blade"` until
     /// [`blade::SPIN_PORTED`]).
     Unsupported(String),
@@ -452,6 +458,7 @@ impl Entry<'_> {
             "wrecking" if kinds::wrecking::PORTED => Ok(WeaponCfg::Wrecking(kinds::wrecking::parse(self, w)?)),
             "rests" if kinds::rests::PORTED => Ok(WeaponCfg::Rests(kinds::rests::parse(self, w)?)),
             "plunger" if kinds::plunger::PORTED => Ok(WeaponCfg::Plunger(kinds::plunger::parse(self, w)?)),
+            "mallets" if kinds::mallets::PORTED => Ok(WeaponCfg::Mallets(kinds::mallets::parse(self, w)?)),
             _ => Ok(WeaponCfg::Unsupported(kind)),
         }
     }
@@ -548,6 +555,7 @@ impl FighterCfg {
             WeaponCfg::Wrecking(w) => kinds::wrecking::check(&e, w)?,
             WeaponCfg::Rests(w) => kinds::rests::check(&e, w)?,
             WeaponCfg::Plunger(w) => kinds::plunger::check(&e, w)?,
+            WeaponCfg::Mallets(w) => kinds::mallets::check(&e, w)?,
             WeaponCfg::Unsupported(_) => {}
         }
         let slots = [
@@ -621,6 +629,7 @@ impl WeaponCfg {
             WeaponCfg::Wrecking(w) => return kinds::wrecking::main16(w),
             WeaponCfg::Rests(w) => return kinds::rests::main16(w),
             WeaponCfg::Plunger(w) => return kinds::plunger::main16(w),
+            WeaponCfg::Mallets(w) => return kinds::mallets::main16(w),
             WeaponCfg::Unsupported(_) => return None,
         };
         Some(crate::py::round_half_even(4.0 * every))
@@ -667,6 +676,7 @@ impl WeaponCfg {
             WeaponCfg::Wrecking(w) => kinds::wrecking::ball_start(w),
             WeaponCfg::Rests(w) => kinds::rests::ball_start(w),
             WeaponCfg::Plunger(w) => kinds::plunger::ball_start(w),
+            WeaponCfg::Mallets(w) => kinds::mallets::ball_start(w),
             WeaponCfg::Unsupported(_) => BallStart::default(),
         }
     }
@@ -704,6 +714,7 @@ impl WeaponCfg {
             WeaponCfg::Wrecking(_) => "wrecking",
             WeaponCfg::Rests(_) => "rests",
             WeaponCfg::Plunger(_) => "plunger",
+            WeaponCfg::Mallets(_) => "mallets",
             WeaponCfg::Unsupported(kind) => kind,
         }
     }

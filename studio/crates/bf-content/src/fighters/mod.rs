@@ -55,6 +55,7 @@ pub mod violin;
 
 // the fighters made from scratch in the Studio
 pub mod cornet;
+pub mod marimba;
 
 /// The ten older fighters (spec section 10, plan m4 Table O1), in alphabetical order: each has its folder here, a
 /// stub until its port, offered only once a register task lists it in `PORTED`.
@@ -73,7 +74,7 @@ pub const OLDER: [&str; 10] = [
 
 /// The fighters made from scratch in the Studio (no Python kit reference; `data/roster_new.json`), each with its
 /// folder here.
-pub const NEW: [&str; 1] = ["CORNET"];
+pub const NEW: [&str; 2] = ["CORNET", "MARIMBA"];
 
 /// What one fighter's folder offers: its `mod.rs`'s entry points.
 #[derive(Clone, Copy)]
@@ -144,6 +145,7 @@ pub fn entry(fighter: &str) -> Option<Entry> {
         "VIOLA" => entry!(viola),
         "VIOLIN" => entry!(violin),
         "CORNET" => entry!(cornet),
+        "MARIMBA" => entry!(marimba),
         _ => return None,
     })
 }

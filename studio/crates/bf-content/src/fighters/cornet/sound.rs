@@ -267,7 +267,7 @@ mod tests {
 
     #[test]
     fn a_wah_keeps_the_length_and_opens_in_the_middle() {
-        let x: Vec<f64> = (0..4800).map(|i| (i as f64 * 0.2).sin() * 0.5).collect();
+        let x: Vec<f64> = (0..4800).map(|i| bf_core::dmath::sin(i as f64 * 0.2) * 0.5).collect();
         let y = wah(&x, 0.05);
         assert_eq!(y.len(), x.len());
         assert!(y.iter().all(|v| v.is_finite()));
