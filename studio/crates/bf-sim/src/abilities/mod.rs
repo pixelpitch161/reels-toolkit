@@ -54,7 +54,7 @@ use bf_core::event::Value;
 use crate::ball::Slot;
 use crate::fight::Fight;
 use crate::kinds::{
-    crowd, drill, jump, lightning, mortar, plunger, rests, roll_charge, spotlight, tiptoe, tune, wrecking,
+    crowd, drill, jump, lightning, mallets, mortar, plunger, rests, roll_charge, spotlight, tiptoe, tune, wrecking,
 };
 use crate::roster::{AbilityCfg, AbilityKind};
 
@@ -229,6 +229,10 @@ pub fn fire<'a>(fight: &mut Fight<'a>, k: usize, ab: &'a AbilityCfg) {
         // CORNET (a from-scratch fighter, in its weapon's module)
         AbilityKind::Derby => plunger::start_derby(fight, k, ab),
         AbilityKind::Stoptime => plunger::start_stoptime(fight, k, ab),
+        // MARIMBA's (Studio kinds, in its weapon's module)
+        AbilityKind::Tremolo => mallets::start_tremolo(fight, k, ab),
+        AbilityKind::DeadStroke => mallets::start_dead_stroke(fight, k, ab),
+        AbilityKind::FiveOctaves => mallets::start_five_octaves(fight, k, ab),
         // no branch: Python announces it and does nothing else
         AbilityKind::Unsupported(_) => {}
     }

@@ -88,6 +88,7 @@ fighters! {
     "TURNTABLES" => turntables, "UKULELE" => ukulele, "VIOLA" => viola, "VIOLIN" => violin,
     "CORNET" => cornet,
     "CONTRABASS CLARINET" => contrabass_clarinet,
+    "MARIMBA" => marimba,
 }
 
 #[cfg(test)]

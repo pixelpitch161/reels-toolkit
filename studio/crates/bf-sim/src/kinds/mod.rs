@@ -20,6 +20,7 @@ pub mod inflate;
 pub mod jump;
 pub mod lightning;
 pub mod line;
+pub mod mallets;
 pub mod mortar;
 pub mod plunger;
 pub mod pulse;
