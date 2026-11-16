@@ -53,6 +53,9 @@ pub mod ukulele;
 pub mod viola;
 pub mod violin;
 
+// the Studio fighters (written for the Studio, no kit reference)
+pub mod marimba;
+
 /// The ten older fighters (spec section 10, plan m4 Table O1), in alphabetical order: each has its folder here, a
 /// stub until its port, offered only once a register task lists it in `PORTED`.
 pub const OLDER: [&str; 10] = [
@@ -136,6 +139,7 @@ pub fn entry(fighter: &str) -> Option<Entry> {
         "UKULELE" => entry!(ukulele),
         "VIOLA" => entry!(viola),
         "VIOLIN" => entry!(violin),
+        "MARIMBA" => entry!(marimba),
         _ => return None,
     })
 }
@@ -284,9 +288,14 @@ mod tests {
         // every roster fighter has its folder, and a fighter the app offers has everything in it; a folder a port
         // has filled before the register task offers it may hold anything (nothing here names its state)
         // the roster holds the kit's 20 and the older ten (milestone 4), each once
-        assert_eq!(roster().len(), 30);
+        // (and the Studio's own fighters)
+        let studio = bf_core::roster::STUDIO_FIGHTERS;
+        assert_eq!(roster().len(), 30 + studio.len());
         assert_eq!(
-            roster().iter().filter(|f| !OLDER.contains(&f.name.as_str())).count(),
+            roster()
+                .iter()
+                .filter(|f| !OLDER.contains(&f.name.as_str()) && !studio.contains(&f.name.as_str()))
+                .count(),
             20
         );
         for f in roster() {

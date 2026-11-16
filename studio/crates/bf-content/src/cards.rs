@@ -60,7 +60,7 @@ pub struct ThemeCard {
 }
 
 /// Every roster fighter in score order, with its section.
-const SCORE: [(&str, Section); 30] = [
+const SCORE: [(&str, Section); 31] = [
     ("FLUTE", Section::Woodwinds),
     ("OBOE", Section::Woodwinds),
     ("CLARINET", Section::Woodwinds),
@@ -74,6 +74,7 @@ const SCORE: [(&str, Section); 30] = [
     ("HORN", Section::Brass),
     ("TROMBONE", Section::Brass),
     ("EUPHONIUM", Section::Brass),
+    ("MARIMBA", Section::Percussion),
     ("TUBA", Section::Brass),
     ("SOUSAPHONE", Section::Brass),
     ("VIOLIN", Section::Strings),

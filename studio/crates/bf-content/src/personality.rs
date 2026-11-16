@@ -81,7 +81,7 @@ macro_rules! fighters {
 fighters! {
     "ACOUSTIC" => acoustic, "ALTO SAX" => alto_sax, "BASS CLARINET" => bass_clarinet, "BASS DRUM" => bass_drum,
     "BASSOON" => bassoon, "CELLO" => cello, "CLARINET" => clarinet, "CONTRABASS" => contrabass,
-    "ELECTRIC" => electric, "EUPHONIUM" => euphonium, "FLUTE" => flute, "HORN" => horn, "OBOE" => oboe,
+    "ELECTRIC" => electric, "EUPHONIUM" => euphonium, "MARIMBA" => marimba, "FLUTE" => flute, "HORN" => horn, "OBOE" => oboe,
     "ORGAN" => organ, "PIANO" => piano, "SOUSAPHONE" => sousaphone, "TENOR SAX" => tenor_sax,
     "TROMBONE" => trombone, "TRUMPET" => trumpet, "TUBA" => tuba, "ACCORDION" => accordion,
     "BAGPIPES" => bagpipes, "BARI SAX" => bari_sax, "DRUMS" => drums, "HARP" => harp, "SYNTH" => synth,

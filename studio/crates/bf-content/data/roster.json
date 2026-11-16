@@ -1705,7 +1705,7 @@
    "color": [160, 80, 160],
    "dark": [94, 44, 94],
    "corner": "blue",
-   "view": [20, 20, 0],
+   "view": [30, 20, 0],
    "weapon": {
     "kind": "mallets",
     "style": "mallets",
