@@ -168,6 +168,7 @@
    "register": [74, 105],
    "idiom": "needle"
   },
+  {"name": "SOPRANO SAX", "color": [0, 232, 16], "dark": [0, 104, 12], "corner": "blue", "view": [0, 18, 0], "weapon": {"kind": "swarm", "style": "swarm", "name": "HORNET SWARM", "every": 4, "off16": 0, "start": 3, "max": 7, "speed": 5.5, "steer": 5.0, "life": 3, "dmg": 1.5, "knock": 0.35, "bee_r": 0.13}, "abilities": {"unlock1": {"name": "KICK THE HIVE", "kind": "hive", "dur_beats": 4, "dmg": 1.2, "every_bars": 6}, "unlock2": {"name": "BUZZ OFF", "kind": "buzz", "dur_beats": 4, "dmg": 1.5, "knock": 1.2, "every_bars": 5}, "low": {"name": "QUEEN", "kind": "queen", "dur_beats": 8, "speed": 4.5, "dmg": 3.5, "knock": 0.9, "gap": 1}}, "pp": "SOPRANO SAX", "register": [58, 86], "idiom": "buzz"},
   {
    "name": "MELLOPHONE",
    "color": [40, 24, 244],

@@ -29,6 +29,7 @@ pub mod slapback;
 pub mod spotlight;
 pub mod surf;
 pub mod swallow;
+pub mod swarm;
 pub mod tether;
 pub mod tiptoe;
 pub mod trap;

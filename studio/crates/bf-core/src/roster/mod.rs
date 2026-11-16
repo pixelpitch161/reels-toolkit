@@ -23,6 +23,7 @@ pub mod striker;
 pub use abilities::{AbilityCfg, AbilityKind, AbilitySettings, SlowCfg};
 pub use blade::{BladeCfg, BladeMode, MAX_FRETS0};
 pub use kinds::plunger::PlungerCfg;
+pub use kinds::swarm::SwarmCfg;
 pub use kinds::{
     anchor::AnchorCfg, combo::ComboCfg, crowd::CrowdCfg, drill::DrillCfg, echo::EchoCfg, grapple::GrappleCfg,
     jump::JumpCfg, lightning::LightningCfg, line::LineCfg, mallets::MalletsCfg, mortar::MortarCfg, needle::NeedleCfg,
@@ -130,16 +131,17 @@ pub const OLDER_ABILITY_KINDS: [(&str, bool); 9] = [
 
 /// The weapon kinds of the fighters made from scratch in the Studio (no Python kit reference), each with its module's
 /// `PORTED`, as [`OLDER_WEAPON_KINDS`].
-pub const NEW_WEAPON_KINDS: [(&str, bool); 5] = [
+pub const NEW_WEAPON_KINDS: [(&str, bool); 6] = [
     ("plunger", kinds::plunger::PORTED),
     ("mallets", kinds::mallets::PORTED),
+    ("swarm", kinds::swarm::PORTED),
     ("foghorn", kinds::foghorn::PORTED),
     ("needle", kinds::needle::PORTED),
     ("slapback", kinds::slapback::PORTED),
 ];
 
 /// The ability kinds of the fighters made from scratch in the Studio, each with its module's `PORTED`.
-pub const NEW_ABILITY_KINDS: [(&str, bool); 10] = [
+pub const NEW_ABILITY_KINDS: [(&str, bool); 13] = [
     ("derby", abilities::derby::PORTED),
     ("stoptime", abilities::stoptime::PORTED),
     ("tremolo", abilities::tremolo::PORTED),
@@ -147,6 +149,9 @@ pub const NEW_ABILITY_KINDS: [(&str, bool); 10] = [
     ("five_octaves", abilities::five_octaves::PORTED),
     ("over_band", abilities::over_band::PORTED),
     ("shatter", abilities::shatter::PORTED),
+    ("hive", abilities::hive::PORTED),
+    ("buzz", abilities::buzz::PORTED),
+    ("queen", abilities::queen::PORTED),
     ("horns_up", abilities::horns_up::PORTED),
     ("press_box", abilities::press_box::PORTED),
     ("stadium_echo", abilities::stadium_echo::PORTED),
@@ -251,6 +256,8 @@ pub enum WeaponCfg {
     Mallets(kinds::mallets::MalletsCfg),
     /// Kind `needle` (PICCOLO's PIERCING NOTE, a Studio kind), typed by `roster::kinds::needle`.
     Needle(kinds::needle::NeedleCfg),
+    /// Kind `swarm` (SOPRANO SAX's HORNET SWARM, a Studio kind), typed by `roster::kinds::swarm`.
+    Swarm(kinds::swarm::SwarmCfg),
     /// A kind the engine has not ported yet (a spinning blade, with no `mode`, is `"blade"` until
     /// [`blade::SPIN_PORTED`]).
     Unsupported(String),
@@ -479,6 +486,7 @@ impl Entry<'_> {
             "slapback" if kinds::slapback::PORTED => Ok(WeaponCfg::Slapback(kinds::slapback::parse(self, w)?)),
             "mallets" if kinds::mallets::PORTED => Ok(WeaponCfg::Mallets(kinds::mallets::parse(self, w)?)),
             "needle" if kinds::needle::PORTED => Ok(WeaponCfg::Needle(kinds::needle::parse(self, w)?)),
+            "swarm" if kinds::swarm::PORTED => Ok(WeaponCfg::Swarm(kinds::swarm::parse(self, w)?)),
             _ => Ok(WeaponCfg::Unsupported(kind)),
         }
     }
@@ -579,6 +587,7 @@ impl FighterCfg {
             WeaponCfg::Slapback(w) => kinds::slapback::check(&e, w)?,
             WeaponCfg::Mallets(w) => kinds::mallets::check(&e, w)?,
             WeaponCfg::Needle(w) => kinds::needle::check(&e, w)?,
+            WeaponCfg::Swarm(w) => kinds::swarm::check(&e, w)?,
             WeaponCfg::Unsupported(_) => {}
         }
         let slots = [
@@ -656,6 +665,7 @@ impl WeaponCfg {
             WeaponCfg::Slapback(w) => return kinds::slapback::main16(w),
             WeaponCfg::Mallets(w) => return kinds::mallets::main16(w),
             WeaponCfg::Needle(w) => return kinds::needle::main16(w),
+            WeaponCfg::Swarm(w) => return kinds::swarm::main16(w),
             WeaponCfg::Unsupported(_) => return None,
         };
         Some(crate::py::round_half_even(4.0 * every))
@@ -706,6 +716,7 @@ impl WeaponCfg {
             WeaponCfg::Slapback(w) => kinds::slapback::ball_start(w),
             WeaponCfg::Mallets(w) => kinds::mallets::ball_start(w),
             WeaponCfg::Needle(w) => kinds::needle::ball_start(w),
+            WeaponCfg::Swarm(w) => kinds::swarm::ball_start(w),
             WeaponCfg::Unsupported(_) => BallStart::default(),
         }
     }
@@ -747,6 +758,7 @@ impl WeaponCfg {
             WeaponCfg::Slapback(_) => "slapback",
             WeaponCfg::Mallets(_) => "mallets",
             WeaponCfg::Needle(_) => "needle",
+            WeaponCfg::Swarm(_) => "swarm",
             WeaponCfg::Unsupported(kind) => kind,
         }
     }

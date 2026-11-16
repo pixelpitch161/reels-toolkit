@@ -54,8 +54,8 @@ use bf_core::event::Value;
 use crate::ball::Slot;
 use crate::fight::Fight;
 use crate::kinds::{
-    crowd, drill, jump, lightning, mallets, mortar, needle, plunger, rests, roll_charge, slapback, spotlight, tiptoe,
-    tune, wrecking,
+    crowd, drill, jump, lightning, mallets, mortar, needle, plunger, rests, roll_charge, slapback, spotlight, swarm,
+    tiptoe, tune, wrecking,
 };
 use crate::roster::{AbilityCfg, AbilityKind};
 
@@ -237,6 +237,10 @@ pub fn fire<'a>(fight: &mut Fight<'a>, k: usize, ab: &'a AbilityCfg) {
         // PICCOLO's (Studio kinds, in its weapon's module)
         AbilityKind::OverBand => needle::start_over_band(fight, k, ab),
         AbilityKind::Shatter => needle::start_shatter(fight, k, ab),
+        // SOPRANO SAX (a Studio kind, in its weapon's module)
+        AbilityKind::Hive => swarm::start_hive(fight, k, ab),
+        AbilityKind::Buzz => swarm::start_buzz(fight, k, ab),
+        AbilityKind::Queen => swarm::start_queen(fight, k, ab),
         // MELLOPHONE's (Studio kinds, in its weapon's module)
         AbilityKind::HornsUp => slapback::start_horns_up(fight, k, ab),
         AbilityKind::PressBox => slapback::start_press_box(fight, k, ab),

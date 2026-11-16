@@ -22,7 +22,7 @@ use crate::fight::Fight;
 use crate::geom;
 use crate::kinds::{
     anchor, crowd, drill, echo, grapple, inflate, mallets, mortar, needle, plunger, rests, roll, roll_charge, slapback,
-    spotlight, striker, tiptoe, tune, walk, wrecking,
+    spotlight, striker, swarm, tiptoe, tune, walk, wrecking,
 };
 
 /// `KMAX`: the most projectiles a frame records.
@@ -112,6 +112,7 @@ impl Frames {
             plunger::record_keys(fight),
             mallets::record_keys(fight),
             needle::record_keys(fight),
+            swarm::record_keys(fight),
             slapback::record_keys(fight),
         ];
         Frames {
@@ -282,7 +283,7 @@ impl Frames {
         // fight.py 5529 to 5732: the kit's other kinds' keys, each written by its kind while the record has it, in
         // `snap`'s order (WRECK 5577, SNAP 5588 and REST 5616 are the older ten fighters', milestone 4; HOUNDS 5529
         // and RATTLE 5595 are frozen kinds': SLOT)
-        let kinds: [KindSnap; 23] = [
+        let kinds: [KindSnap; 24] = [
             ("snap.ECHO", echo::record_keys, echo::snap),               // 5539 to 5549
             ("snap.DET", tune::record_keys, tune::snap),                // 5550 to 5554
             ("snap.SNIP", snip::record_keys, snip::snap),               // 5555 to 5561
@@ -305,6 +306,7 @@ impl Frames {
             ("snap.PLG", plunger::record_keys, plunger::snap),          // CORNET
             ("snap.MALLETS", mallets::record_keys, mallets::snap),      // a Studio kind
             ("snap.NEEDLES", needle::record_keys, needle::snap),        // PICCOLO, a Studio kind
+            ("snap.HRN", swarm::record_keys, swarm::snap),              // SOPRANO SAX
             ("snap.SLAP", slapback::record_keys, slapback::snap),       // MELLOPHONE, a Studio kind
         ];
         for (socket, keys, snap) in kinds {

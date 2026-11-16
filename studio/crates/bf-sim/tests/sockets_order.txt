@@ -25,6 +25,8 @@
 # quake, charge, pull) have no socket: they stay `SLOT` comments in the code. CORNET's plunger (a from-scratch fighter,
 # no fight.py line) is listed beside its neighbours with their nearest line: setup, tick, later and `snap.PLG`;
 # MARIMBA's mallets (from scratch too) the same way: setup, tick, later and `snap.MALLETS`; PICCOLO's needles too:
+# setup, tick, later and `snap.NEEDLES`.
+# SOPRANO SAX's swarm likewise (`snap.HRN`).
 # setup, tick, later and `snap.NEEDLES`; MELLOPHONE's slapback after them: setup, tick, later and `snap.SLAP`.
 #
 # Sockets that live inside a kind's own step are not traced and not listed here: the bite's and the inflate's branches
@@ -60,6 +62,7 @@ setup.drill                5900-5905     setup
 setup.roll_charge          5906-5911     setup
 setup.mallets              5911          setup
 setup.needle               5911          setup
+setup.swarm                5911          setup
 setup.slapback             5911          setup
 
 # ---- a frame: snap 5509 to 5732, in order
@@ -87,6 +90,7 @@ snap.RCHG                  5713-5732     frame
 snap.PLG                   5732          frame
 snap.MALLETS               5732          frame
 snap.NEEDLES               5732          frame
+snap.HRN                   5732          frame
 snap.SLAP                  5732          frame
 
 # ---- a step: run() 5919 to 6204
@@ -132,6 +136,7 @@ tick.roll_charge           6091-6095     step
 tick.plunger               6095          step
 tick.mallets               6095          step
 tick.needle                6095          step
+tick.swarm                 6095          step
 tick.slapback              6095          step
 # the timers, fighter 0 then fighter 1: stun, detune, the smashed timer (6100 to 6107)
 timers                     6100-6107     step
@@ -210,6 +215,7 @@ later.surf_rake            6197-6198     step
 later.clamps               6201-6202     step
 later.mallets              6202          step
 later.needle               6202          step
+later.swarm                6202          step
 later.slapback             6202          step
 # abilities_step (6203; 3012 to 3053): the charged beams, then fighter 0's turn, then fighter 1's
 abilities                  6203          step
