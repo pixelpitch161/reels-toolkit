@@ -54,7 +54,8 @@ use bf_core::event::Value;
 use crate::ball::Slot;
 use crate::fight::Fight;
 use crate::kinds::{
-    crowd, drill, jump, lightning, mallets, mortar, plunger, rests, roll_charge, spotlight, tiptoe, tune, wrecking,
+    crowd, drill, jump, lightning, mallets, mortar, plunger, rests, roll_charge, spotlight, swarm, tiptoe, tune,
+    wrecking,
 };
 use crate::roster::{AbilityCfg, AbilityKind};
 
@@ -233,6 +234,10 @@ pub fn fire<'a>(fight: &mut Fight<'a>, k: usize, ab: &'a AbilityCfg) {
         AbilityKind::Tremolo => mallets::start_tremolo(fight, k, ab),
         AbilityKind::DeadStroke => mallets::start_dead_stroke(fight, k, ab),
         AbilityKind::FiveOctaves => mallets::start_five_octaves(fight, k, ab),
+        // SOPRANO SAX (a Studio kind, in its weapon's module)
+        AbilityKind::Hive => swarm::start_hive(fight, k, ab),
+        AbilityKind::Buzz => swarm::start_buzz(fight, k, ab),
+        AbilityKind::Queen => swarm::start_queen(fight, k, ab),
         // no branch: Python announces it and does nothing else
         AbilityKind::Unsupported(_) => {}
     }

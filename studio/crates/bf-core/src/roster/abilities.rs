@@ -12,6 +12,7 @@ pub mod altissimo;
 pub mod arc;
 pub mod barrage;
 pub mod beam;
+pub mod buzz;
 pub mod cannons;
 pub mod clamp;
 pub mod company_front;
@@ -28,6 +29,7 @@ pub mod flash_spin;
 pub mod flick;
 pub mod fork;
 pub mod heartbeat;
+pub mod hive;
 pub mod hook;
 pub mod joke;
 pub mod lash;
@@ -37,6 +39,7 @@ pub mod mountain;
 pub mod octave;
 pub mod offbeat;
 pub mod prelude;
+pub mod queen;
 pub mod rewind;
 pub mod rhapsody;
 pub mod runoff;
@@ -213,6 +216,12 @@ pub enum AbilityKind {
     DeadStroke,
     /// `five_octaves`: MARIMBA's FIVE OCTAVES (a Studio kind).
     FiveOctaves,
+    /// `hive`: SOPRANO SAX's KICK THE HIVE (a Studio kind).
+    Hive,
+    /// `buzz`: SOPRANO SAX's BUZZ OFF (a Studio kind).
+    Buzz,
+    /// `queen`: SOPRANO SAX's QUEEN (a Studio kind).
+    Queen,
     /// A kind the engine has not ported yet, or a ported kind with an option it has not ported, written
     /// `kind+option` (OBOE's `"wave+detune"`).
     Unsupported(String),
@@ -323,6 +332,12 @@ pub enum AbilitySettings {
     DeadStroke(dead_stroke::DeadStrokeCfg),
     /// Kind `five_octaves`.
     FiveOctaves(five_octaves::FiveOctavesCfg),
+    /// Kind `hive`.
+    Hive(hive::HiveCfg),
+    /// Kind `buzz`.
+    Buzz(buzz::BuzzCfg),
+    /// Kind `queen`.
+    Queen(queen::QueenCfg),
 }
 
 impl AbilityKind {
@@ -386,6 +401,9 @@ impl AbilityKind {
             AbilityKind::Tremolo => "tremolo",
             AbilityKind::DeadStroke => "dead_stroke",
             AbilityKind::FiveOctaves => "five_octaves",
+            AbilityKind::Hive => "hive",
+            AbilityKind::Buzz => "buzz",
+            AbilityKind::Queen => "queen",
             AbilityKind::Unsupported(kind) => kind.split('+').next().unwrap_or(kind),
         }
     }
@@ -449,6 +467,9 @@ impl AbilityKind {
             "tremolo" if tremolo::PORTED => AbilityKind::Tremolo,
             "dead_stroke" if dead_stroke::PORTED => AbilityKind::DeadStroke,
             "five_octaves" if five_octaves::PORTED => AbilityKind::FiveOctaves,
+            "hive" if hive::PORTED => AbilityKind::Hive,
+            "buzz" if buzz::PORTED => AbilityKind::Buzz,
+            "queen" if queen::PORTED => AbilityKind::Queen,
             other => AbilityKind::Unsupported(other.to_string()),
         }
     }
@@ -511,6 +532,9 @@ impl AbilityKind {
             AbilityKind::Tremolo => tremolo::REQUIRED,
             AbilityKind::DeadStroke => dead_stroke::REQUIRED,
             AbilityKind::FiveOctaves => five_octaves::REQUIRED,
+            AbilityKind::Hive => hive::REQUIRED,
+            AbilityKind::Buzz => buzz::REQUIRED,
+            AbilityKind::Queen => queen::REQUIRED,
             AbilityKind::Unsupported(_) => &[],
         }
     }
@@ -575,6 +599,9 @@ impl AbilityKind {
             AbilityKind::Tremolo => tremolo::ALLOWED,
             AbilityKind::DeadStroke => dead_stroke::ALLOWED,
             AbilityKind::FiveOctaves => five_octaves::ALLOWED,
+            AbilityKind::Hive => hive::ALLOWED,
+            AbilityKind::Buzz => buzz::ALLOWED,
+            AbilityKind::Queen => queen::ALLOWED,
             AbilityKind::Unsupported(_) => &[],
         }
     }
@@ -645,6 +672,9 @@ fn settings(e: &Entry, prefix: &str, kind: &AbilityKind, ab: &Json) -> Result<Ab
         AbilityKind::Tremolo => AbilitySettings::Tremolo(tremolo::parse(e, prefix, ab)?),
         AbilityKind::DeadStroke => AbilitySettings::DeadStroke(dead_stroke::parse(e, prefix, ab)?),
         AbilityKind::FiveOctaves => AbilitySettings::FiveOctaves(five_octaves::parse(e, prefix, ab)?),
+        AbilityKind::Hive => AbilitySettings::Hive(hive::parse(e, prefix, ab)?),
+        AbilityKind::Buzz => AbilitySettings::Buzz(buzz::parse(e, prefix, ab)?),
+        AbilityKind::Queen => AbilitySettings::Queen(queen::parse(e, prefix, ab)?),
     })
 }
 
@@ -708,6 +738,9 @@ pub(crate) fn kind_check(e: &Entry, prefix: &str, ab: &AbilityCfg) -> Result<(),
         AbilityKind::Tremolo => tremolo::check(e, prefix, ab),
         AbilityKind::DeadStroke => dead_stroke::check(e, prefix, ab),
         AbilityKind::FiveOctaves => five_octaves::check(e, prefix, ab),
+        AbilityKind::Hive => hive::check(e, prefix, ab),
+        AbilityKind::Buzz => buzz::check(e, prefix, ab),
+        AbilityKind::Queen => queen::check(e, prefix, ab),
     }
 }
 

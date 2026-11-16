@@ -232,6 +232,8 @@ pub struct Fight<'a> {
     pub drill: kinds::drill::State,
     /// Weapon kind `mallets`'s state (MARIMBA, a Studio kind): the mallets in the air and its abilities' timers.
     pub mallets: kinds::mallets::State,
+    /// Weapon kind `swarm`'s state (SOPRANO SAX, a Studio kind): its hornets and its abilities' timers.
+    pub swarm: kinds::swarm::State,
     /// Weapon kind `roll_charge`'s state (BASS DRUM).
     pub roll_charge: kinds::roll_charge::State,
     /// Ability kind `sustain`'s state (PIANO).
@@ -416,6 +418,7 @@ impl<'a> Fight<'a> {
             drill: Default::default(),
             roll_charge: Default::default(),
             mallets: Default::default(),
+            swarm: Default::default(),
             sustain: Default::default(),
             arc: Default::default(),
             runoff: Default::default(),

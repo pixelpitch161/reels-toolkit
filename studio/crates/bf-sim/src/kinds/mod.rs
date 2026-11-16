@@ -33,6 +33,7 @@ pub mod spotlight;
 pub mod striker;
 pub mod surf;
 pub mod swallow;
+pub mod swarm;
 pub mod tether;
 pub mod tiptoe;
 pub mod trap;
