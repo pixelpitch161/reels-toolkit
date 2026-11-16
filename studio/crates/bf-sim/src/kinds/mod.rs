@@ -29,6 +29,7 @@ pub mod rests;
 pub mod roll;
 pub mod roll_charge;
 pub mod scratch_floor;
+pub mod slapback;
 pub mod spotlight;
 pub mod striker;
 pub mod surf;

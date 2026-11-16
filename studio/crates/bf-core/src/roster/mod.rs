@@ -31,7 +31,8 @@ pub use kinds::{
 };
 pub use kinds::{
     bite::BiteCfg, foghorn::FoghornCfg, inflate::InflateCfg, pulse::PulseCfg, rests::RestsCfg,
-    scratch_floor::ScratchFloorCfg, surf::SurfCfg, tether::TetherCfg, trap::TrapCfg, wrecking::WreckingCfg,
+    scratch_floor::ScratchFloorCfg, slapback::SlapbackCfg, surf::SurfCfg, tether::TetherCfg, trap::TrapCfg,
+    wrecking::WreckingCfg,
 };
 pub use striker::StrikerCfg;
 
@@ -129,19 +130,23 @@ pub const OLDER_ABILITY_KINDS: [(&str, bool); 9] = [
 
 /// The weapon kinds of the fighters made from scratch in the Studio (no Python kit reference), each with its module's
 /// `PORTED`, as [`OLDER_WEAPON_KINDS`].
-pub const NEW_WEAPON_KINDS: [(&str, bool); 3] = [
+pub const NEW_WEAPON_KINDS: [(&str, bool); 4] = [
     ("plunger", kinds::plunger::PORTED),
     ("mallets", kinds::mallets::PORTED),
     ("foghorn", kinds::foghorn::PORTED),
+    ("slapback", kinds::slapback::PORTED),
 ];
 
 /// The ability kinds of the fighters made from scratch in the Studio, each with its module's `PORTED`.
-pub const NEW_ABILITY_KINDS: [(&str, bool); 5] = [
+pub const NEW_ABILITY_KINDS: [(&str, bool); 8] = [
     ("derby", abilities::derby::PORTED),
     ("stoptime", abilities::stoptime::PORTED),
     ("tremolo", abilities::tremolo::PORTED),
     ("dead_stroke", abilities::dead_stroke::PORTED),
     ("five_octaves", abilities::five_octaves::PORTED),
+    ("horns_up", abilities::horns_up::PORTED),
+    ("press_box", abilities::press_box::PORTED),
+    ("stadium_echo", abilities::stadium_echo::PORTED),
 ];
 
 /// One fighter's roster entry.
@@ -237,6 +242,8 @@ pub enum WeaponCfg {
     Plunger(kinds::plunger::PlungerCfg),
     /// Kind `foghorn` (CONTRABASS CLARINET's FOGHORN; made in the Studio), typed by `roster::kinds::foghorn`.
     Foghorn(kinds::foghorn::FoghornCfg),
+    /// Kind `slapback` (MELLOPHONE's SLAPBACK; made in the Studio), typed by `roster::kinds::slapback`.
+    Slapback(kinds::slapback::SlapbackCfg),
     /// Kind `mallets` (MARIMBA's MALLET RUN, a Studio kind), typed by `roster::kinds::mallets`.
     Mallets(kinds::mallets::MalletsCfg),
     /// A kind the engine has not ported yet (a spinning blade, with no `mode`, is `"blade"` until
@@ -464,6 +471,7 @@ impl Entry<'_> {
             "rests" if kinds::rests::PORTED => Ok(WeaponCfg::Rests(kinds::rests::parse(self, w)?)),
             "plunger" if kinds::plunger::PORTED => Ok(WeaponCfg::Plunger(kinds::plunger::parse(self, w)?)),
             "foghorn" if kinds::foghorn::PORTED => Ok(WeaponCfg::Foghorn(kinds::foghorn::parse(self, w)?)),
+            "slapback" if kinds::slapback::PORTED => Ok(WeaponCfg::Slapback(kinds::slapback::parse(self, w)?)),
             "mallets" if kinds::mallets::PORTED => Ok(WeaponCfg::Mallets(kinds::mallets::parse(self, w)?)),
             _ => Ok(WeaponCfg::Unsupported(kind)),
         }
@@ -562,6 +570,7 @@ impl FighterCfg {
             WeaponCfg::Rests(w) => kinds::rests::check(&e, w)?,
             WeaponCfg::Plunger(w) => kinds::plunger::check(&e, w)?,
             WeaponCfg::Foghorn(w) => kinds::foghorn::check(&e, w)?,
+            WeaponCfg::Slapback(w) => kinds::slapback::check(&e, w)?,
             WeaponCfg::Mallets(w) => kinds::mallets::check(&e, w)?,
             WeaponCfg::Unsupported(_) => {}
         }
@@ -637,6 +646,7 @@ impl WeaponCfg {
             WeaponCfg::Rests(w) => return kinds::rests::main16(w),
             WeaponCfg::Plunger(w) => return kinds::plunger::main16(w),
             WeaponCfg::Foghorn(w) => return kinds::foghorn::main16(w),
+            WeaponCfg::Slapback(w) => return kinds::slapback::main16(w),
             WeaponCfg::Mallets(w) => return kinds::mallets::main16(w),
             WeaponCfg::Unsupported(_) => return None,
         };
@@ -685,6 +695,7 @@ impl WeaponCfg {
             WeaponCfg::Rests(w) => kinds::rests::ball_start(w),
             WeaponCfg::Plunger(w) => kinds::plunger::ball_start(w),
             WeaponCfg::Foghorn(w) => kinds::foghorn::ball_start(w),
+            WeaponCfg::Slapback(w) => kinds::slapback::ball_start(w),
             WeaponCfg::Mallets(w) => kinds::mallets::ball_start(w),
             WeaponCfg::Unsupported(_) => BallStart::default(),
         }
@@ -724,6 +735,7 @@ impl WeaponCfg {
             WeaponCfg::Rests(_) => "rests",
             WeaponCfg::Plunger(_) => "plunger",
             WeaponCfg::Foghorn(_) => "foghorn",
+            WeaponCfg::Slapback(_) => "slapback",
             WeaponCfg::Mallets(_) => "mallets",
             WeaponCfg::Unsupported(kind) => kind,
         }

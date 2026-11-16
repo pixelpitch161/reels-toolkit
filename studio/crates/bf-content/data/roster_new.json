@@ -120,6 +120,61 @@
    "pp": "MARIMBA",
    "register": [60, 96],
    "idiom": "mallets"
+  },
+  {
+   "name": "MELLOPHONE",
+   "color": [150, 44, 44],
+   "dark": [88, 22, 24],
+   "corner": "red",
+   "view": [0, 18, 0],
+   "weapon": {
+    "kind": "slapback",
+    "style": "slapback",
+    "name": "SLAPBACK",
+    "every": 2,
+    "speed": 5.0,
+    "half_w": 0.32,
+    "delay": 0.5,
+    "n0": 1,
+    "grow": 0.5,
+    "n_max": 3,
+    "dmg": 1.4,
+    "dmg_step": 1.0,
+    "knock": 0.4
+   },
+   "abilities": {
+    "unlock1": {
+     "name": "HORNS UP",
+     "kind": "horns_up",
+     "n": 3,
+     "speed": 9.0,
+     "dmg": 1.2,
+     "knock": 0.3,
+     "stun_beats": 0.5,
+     "every_bars": 4
+    },
+    "unlock2": {
+     "name": "PRESS BOX",
+     "kind": "press_box",
+     "dur_beats": 8,
+     "spread": 18,
+     "every_bars": 6
+    },
+    "low": {
+     "name": "STADIUM ECHO",
+     "kind": "stadium_echo",
+     "beats": 8,
+     "speed": 4.5,
+     "half_w": 0.9,
+     "delay": 0.25,
+     "dmg": 3.5,
+     "dmg_step": 0.8,
+     "knock": 1.0
+    }
+   },
+   "pp": "MELLOPHONE",
+   "register": [53, 84],
+   "idiom": "slapback"
   }
  ]
 }

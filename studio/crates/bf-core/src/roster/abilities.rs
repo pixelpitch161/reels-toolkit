@@ -29,6 +29,7 @@ pub mod flick;
 pub mod fork;
 pub mod heartbeat;
 pub mod hook;
+pub mod horns_up;
 pub mod joke;
 pub mod lash;
 pub mod lights_out;
@@ -37,6 +38,7 @@ pub mod mountain;
 pub mod octave;
 pub mod offbeat;
 pub mod prelude;
+pub mod press_box;
 pub mod rewind;
 pub mod rhapsody;
 pub mod runoff;
@@ -46,6 +48,7 @@ pub mod smash;
 pub mod snap;
 pub mod snip;
 pub mod spout;
+pub mod stadium_echo;
 pub mod stagedive;
 pub mod stampede;
 pub mod stoptime;
@@ -213,6 +216,12 @@ pub enum AbilityKind {
     DeadStroke,
     /// `five_octaves`: MARIMBA's FIVE OCTAVES (a Studio kind).
     FiveOctaves,
+    /// `horns_up`: MELLOPHONE's HORNS UP (a Studio kind).
+    HornsUp,
+    /// `press_box`: MELLOPHONE's PRESS BOX (a Studio kind).
+    PressBox,
+    /// `stadium_echo`: MELLOPHONE's STADIUM ECHO (a Studio kind).
+    StadiumEcho,
     /// A kind the engine has not ported yet, or a ported kind with an option it has not ported, written
     /// `kind+option` (OBOE's `"wave+detune"`).
     Unsupported(String),
@@ -323,6 +332,12 @@ pub enum AbilitySettings {
     DeadStroke(dead_stroke::DeadStrokeCfg),
     /// Kind `five_octaves`.
     FiveOctaves(five_octaves::FiveOctavesCfg),
+    /// Kind `horns_up`.
+    HornsUp(horns_up::HornsUpCfg),
+    /// Kind `press_box`.
+    PressBox(press_box::PressBoxCfg),
+    /// Kind `stadium_echo`.
+    StadiumEcho(stadium_echo::StadiumEchoCfg),
 }
 
 impl AbilityKind {
@@ -386,6 +401,9 @@ impl AbilityKind {
             AbilityKind::Tremolo => "tremolo",
             AbilityKind::DeadStroke => "dead_stroke",
             AbilityKind::FiveOctaves => "five_octaves",
+            AbilityKind::HornsUp => "horns_up",
+            AbilityKind::PressBox => "press_box",
+            AbilityKind::StadiumEcho => "stadium_echo",
             AbilityKind::Unsupported(kind) => kind.split('+').next().unwrap_or(kind),
         }
     }
@@ -449,6 +467,9 @@ impl AbilityKind {
             "tremolo" if tremolo::PORTED => AbilityKind::Tremolo,
             "dead_stroke" if dead_stroke::PORTED => AbilityKind::DeadStroke,
             "five_octaves" if five_octaves::PORTED => AbilityKind::FiveOctaves,
+            "horns_up" if horns_up::PORTED => AbilityKind::HornsUp,
+            "press_box" if press_box::PORTED => AbilityKind::PressBox,
+            "stadium_echo" if stadium_echo::PORTED => AbilityKind::StadiumEcho,
             other => AbilityKind::Unsupported(other.to_string()),
         }
     }
@@ -511,6 +532,9 @@ impl AbilityKind {
             AbilityKind::Tremolo => tremolo::REQUIRED,
             AbilityKind::DeadStroke => dead_stroke::REQUIRED,
             AbilityKind::FiveOctaves => five_octaves::REQUIRED,
+            AbilityKind::HornsUp => horns_up::REQUIRED,
+            AbilityKind::PressBox => press_box::REQUIRED,
+            AbilityKind::StadiumEcho => stadium_echo::REQUIRED,
             AbilityKind::Unsupported(_) => &[],
         }
     }
@@ -575,6 +599,9 @@ impl AbilityKind {
             AbilityKind::Tremolo => tremolo::ALLOWED,
             AbilityKind::DeadStroke => dead_stroke::ALLOWED,
             AbilityKind::FiveOctaves => five_octaves::ALLOWED,
+            AbilityKind::HornsUp => horns_up::ALLOWED,
+            AbilityKind::PressBox => press_box::ALLOWED,
+            AbilityKind::StadiumEcho => stadium_echo::ALLOWED,
             AbilityKind::Unsupported(_) => &[],
         }
     }
@@ -645,6 +672,9 @@ fn settings(e: &Entry, prefix: &str, kind: &AbilityKind, ab: &Json) -> Result<Ab
         AbilityKind::Tremolo => AbilitySettings::Tremolo(tremolo::parse(e, prefix, ab)?),
         AbilityKind::DeadStroke => AbilitySettings::DeadStroke(dead_stroke::parse(e, prefix, ab)?),
         AbilityKind::FiveOctaves => AbilitySettings::FiveOctaves(five_octaves::parse(e, prefix, ab)?),
+        AbilityKind::HornsUp => AbilitySettings::HornsUp(horns_up::parse(e, prefix, ab)?),
+        AbilityKind::PressBox => AbilitySettings::PressBox(press_box::parse(e, prefix, ab)?),
+        AbilityKind::StadiumEcho => AbilitySettings::StadiumEcho(stadium_echo::parse(e, prefix, ab)?),
     })
 }
 
@@ -708,6 +738,9 @@ pub(crate) fn kind_check(e: &Entry, prefix: &str, ab: &AbilityCfg) -> Result<(),
         AbilityKind::Tremolo => tremolo::check(e, prefix, ab),
         AbilityKind::DeadStroke => dead_stroke::check(e, prefix, ab),
         AbilityKind::FiveOctaves => five_octaves::check(e, prefix, ab),
+        AbilityKind::HornsUp => horns_up::check(e, prefix, ab),
+        AbilityKind::PressBox => press_box::check(e, prefix, ab),
+        AbilityKind::StadiumEcho => stadium_echo::check(e, prefix, ab),
     }
 }
 
