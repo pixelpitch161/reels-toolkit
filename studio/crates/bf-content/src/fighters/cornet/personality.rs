@@ -13,11 +13,7 @@ pub static PERSONALITY: Personality = Personality {
     home: 58, // B-flat 3: the cornet's own key
     scale: [0, 2, 4, 5, 7, 9, 10],
     register: (55, 79),
-    rhythms: &[
-        &[0, 3, 4, 8, 11, 12],
-        &[0, 2, 6, 8, 12, 14],
-        &[0, 4, 7, 8, 10, 12],
-    ],
+    rhythms: &[&[0, 3, 4, 8, 11, 12], &[0, 2, 6, 8, 12, 14], &[0, 4, 7, 8, 10, 12]],
     intervals: &[2, 3, 1],
     ornament: Ornament::Slide,
     roles: &[Role::Melody, Role::Answer],

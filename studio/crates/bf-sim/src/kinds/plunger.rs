@@ -242,7 +242,11 @@ pub fn step(f: &mut Fight, k: usize, dt: f64) {
                     let b = &mut f.balls[k];
                     b.blade_len = geom::py_min(b.blade_len + w.grow, w.max_reach);
                     f.plunger.hold[k] = geom::py_min(f.plunger.hold[k] + w.hold_grow, w.hold_max);
-                    f.ev("plunger_stick", k as i64, vec![Value::Float(cup.p[0]), Value::Float(cup.p[1])]);
+                    f.ev(
+                        "plunger_stick",
+                        k as i64,
+                        vec![Value::Float(cup.p[0]), Value::Float(cup.p[1])],
+                    );
                 } else {
                     cup.phase = CupPhase::Back;
                     f.ev("plunger_pop", k as i64, vec![Value::Int(2)]);
@@ -436,4 +440,3 @@ pub(crate) fn snap(f: &Fight, out: &mut Frames) {
     }
     out.push_f64("PLG", &[2, 7], &row);
 }
-

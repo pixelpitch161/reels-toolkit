@@ -122,10 +122,16 @@ pub(crate) fn check(e: &Entry, w: &PlungerCfg) -> Result<(), RosterError> {
         return Err(e.err("weapon.speed", format!("{} would never reach anything", w.speed)));
     }
     if !(w.base > 0.0 && w.max_reach >= w.base) {
-        return Err(e.err("weapon.max_reach", "the reach must start above 0 and grow to at least base"));
+        return Err(e.err(
+            "weapon.max_reach",
+            "the reach must start above 0 and grow to at least base",
+        ));
     }
     if !(w.hold > 0.0 && w.hold_max >= w.hold) {
-        return Err(e.err("weapon.hold_max", "the hold must start above 0 and grow to at least hold"));
+        return Err(e.err(
+            "weapon.hold_max",
+            "the hold must start above 0 and grow to at least hold",
+        ));
     }
     Ok(())
 }

@@ -229,7 +229,7 @@ const fn ep(
 }
 
 /// The older episodes' configs (TROMBONE vs TUBA's #36 is left out: that pair keeps its kit config).
-const EPISODES: [Episode; 9] = [
+const EPISODES: [Episode; 10] = [
     ep(
         "drums_vs_violin",
         28,
@@ -337,6 +337,20 @@ const EPISODES: [Episode; 9] = [
         &["Cm", "Cm", "Ab", "Ab", "Fm", "Fm", "G", "G"],
         &["Ab", "G"],
         &[],
+    ),
+    // CONTRABASS CLARINET, made in the Studio (no episode: 0): its home, the lowest voice against the highest, in
+    // the industrial grind of #40 (BARI SAX vs BASS CLARINET)
+    ep(
+        "contrabassclarinet_vs_flute",
+        0,
+        ["CONTRABASS CLARINET", "FLUTE"],
+        "industrial",
+        126.0,
+        ("G", "minor"),
+        ["Gm", "D"],
+        &["Gm", "Eb", "Cm", "D"],
+        &["Eb", "D"],
+        &[("CONTRABASS CLARINET", "bass"), ("FLUTE", "melody")],
     ),
 ];
 
@@ -480,6 +494,15 @@ pub fn starter(left: &str, right: &str) -> Result<FightFile, ContentError> {
     } else {
         crossover(left, right)?
     };
+    // a fighter whose name is too long for one line on the VS card brings its own two lines
+    for name in [left, right] {
+        if let Some((a, b)) = crate::fighters::title_lines(name) {
+            ff.picture
+                .title_lines
+                .entry(name.to_string())
+                .or_insert((a.to_string(), b.to_string()));
+        }
+    }
     ff.app_version = env!("CARGO_PKG_VERSION").to_string();
     ff.seed = None;
     ff.series_tag = None;

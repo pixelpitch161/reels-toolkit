@@ -55,7 +55,10 @@ pub(crate) fn parse(_e: &Entry, _prefix: &str, _ab: &Json) -> Result<StoptimeCfg
 pub(crate) fn check(e: &Entry, prefix: &str, ab: &AbilityCfg) -> Result<(), RosterError> {
     let n = ab.get("n").unwrap_or(0.0);
     if !(2.0..=64.0).contains(&n) || n.fract() != 0.0 {
-        return Err(e.err(&format!("{prefix}.n"), format!("{n} beats is not a whole number from 2 to 64")));
+        return Err(e.err(
+            &format!("{prefix}.n"),
+            format!("{n} beats is not a whole number from 2 to 64"),
+        ));
     }
     Ok(())
 }

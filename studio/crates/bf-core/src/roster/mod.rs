@@ -22,6 +22,7 @@ pub mod striker;
 
 pub use abilities::{AbilityCfg, AbilityKind, AbilitySettings, SlowCfg};
 pub use blade::{BladeCfg, BladeMode, MAX_FRETS0};
+pub use kinds::plunger::PlungerCfg;
 pub use kinds::{
     anchor::AnchorCfg, combo::ComboCfg, crowd::CrowdCfg, drill::DrillCfg, echo::EchoCfg, grapple::GrappleCfg,
     jump::JumpCfg, lightning::LightningCfg, line::LineCfg, mortar::MortarCfg, rake::RakeCfg, roll::RollCfg,
@@ -29,10 +30,9 @@ pub use kinds::{
     walk::WalkCfg,
 };
 pub use kinds::{
-    bite::BiteCfg, inflate::InflateCfg, pulse::PulseCfg, rests::RestsCfg, scratch_floor::ScratchFloorCfg,
-    surf::SurfCfg, tether::TetherCfg, trap::TrapCfg, wrecking::WreckingCfg,
+    bite::BiteCfg, foghorn::FoghornCfg, inflate::InflateCfg, pulse::PulseCfg, rests::RestsCfg,
+    scratch_floor::ScratchFloorCfg, surf::SurfCfg, tether::TetherCfg, trap::TrapCfg, wrecking::WreckingCfg,
 };
-pub use kinds::plunger::PlungerCfg;
 pub use striker::StrikerCfg;
 
 /// The kit's further weapon kinds, each with its module's `PORTED`: a kind loads as `WeaponCfg::Unsupported` exactly
@@ -228,6 +228,8 @@ pub enum WeaponCfg {
     Rests(kinds::rests::RestsCfg),
     /// Kind `plunger` (CORNET's PLUNGER MUTE; a from-scratch fighter), typed by `roster::kinds::plunger`.
     Plunger(kinds::plunger::PlungerCfg),
+    /// Kind `foghorn` (CONTRABASS CLARINET's FOGHORN; made in the Studio), typed by `roster::kinds::foghorn`.
+    Foghorn(kinds::foghorn::FoghornCfg),
     /// A kind the engine has not ported yet (a spinning blade, with no `mode`, is `"blade"` until
     /// [`blade::SPIN_PORTED`]).
     Unsupported(String),
@@ -452,6 +454,7 @@ impl Entry<'_> {
             "wrecking" if kinds::wrecking::PORTED => Ok(WeaponCfg::Wrecking(kinds::wrecking::parse(self, w)?)),
             "rests" if kinds::rests::PORTED => Ok(WeaponCfg::Rests(kinds::rests::parse(self, w)?)),
             "plunger" if kinds::plunger::PORTED => Ok(WeaponCfg::Plunger(kinds::plunger::parse(self, w)?)),
+            "foghorn" if kinds::foghorn::PORTED => Ok(WeaponCfg::Foghorn(kinds::foghorn::parse(self, w)?)),
             _ => Ok(WeaponCfg::Unsupported(kind)),
         }
     }
@@ -548,6 +551,7 @@ impl FighterCfg {
             WeaponCfg::Wrecking(w) => kinds::wrecking::check(&e, w)?,
             WeaponCfg::Rests(w) => kinds::rests::check(&e, w)?,
             WeaponCfg::Plunger(w) => kinds::plunger::check(&e, w)?,
+            WeaponCfg::Foghorn(w) => kinds::foghorn::check(&e, w)?,
             WeaponCfg::Unsupported(_) => {}
         }
         let slots = [
@@ -621,6 +625,7 @@ impl WeaponCfg {
             WeaponCfg::Wrecking(w) => return kinds::wrecking::main16(w),
             WeaponCfg::Rests(w) => return kinds::rests::main16(w),
             WeaponCfg::Plunger(w) => return kinds::plunger::main16(w),
+            WeaponCfg::Foghorn(w) => return kinds::foghorn::main16(w),
             WeaponCfg::Unsupported(_) => return None,
         };
         Some(crate::py::round_half_even(4.0 * every))
@@ -667,6 +672,7 @@ impl WeaponCfg {
             WeaponCfg::Wrecking(w) => kinds::wrecking::ball_start(w),
             WeaponCfg::Rests(w) => kinds::rests::ball_start(w),
             WeaponCfg::Plunger(w) => kinds::plunger::ball_start(w),
+            WeaponCfg::Foghorn(w) => kinds::foghorn::ball_start(w),
             WeaponCfg::Unsupported(_) => BallStart::default(),
         }
     }
@@ -704,6 +710,7 @@ impl WeaponCfg {
             WeaponCfg::Wrecking(_) => "wrecking",
             WeaponCfg::Rests(_) => "rests",
             WeaponCfg::Plunger(_) => "plunger",
+            WeaponCfg::Foghorn(_) => "foghorn",
             WeaponCfg::Unsupported(kind) => kind,
         }
     }

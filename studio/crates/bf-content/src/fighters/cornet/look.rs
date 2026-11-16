@@ -11,13 +11,13 @@ use bf_core::event::Event;
 use bf_core::roster::FighterCfg;
 use bf_picture::camera::{Cam, V3};
 use bf_picture::config::BAYER;
+use bf_picture::img::Img;
 use bf_picture::look::{CanvasCtx, FrameCtx, Look, Payload};
+use bf_picture::np;
 use bf_picture::raster::Frame;
 use bf_picture::ring::PictureCtx;
 use bf_picture::ring::state::Wave;
 use bf_picture::scene::{self, R_BALL as R};
-use bf_picture::img::Img;
-use bf_picture::np;
 
 use crate::fighters::trumpet::TrumpetLook;
 
@@ -116,9 +116,19 @@ fn draw_cup(fr: &mut Frame, cam: &Cam, cx: f64, cz: f64, bx: f64, bz: f64) {
     let n = np::hypot(dx, dz).max(1e-9);
     let (ux, uz) = (dx / n, dz / n);
     let (hx, hz) = (cx - ux * 0.3, cz - uz * 0.3);
-    fr.line(cam, &[scene::to_world(hx, hz, 0.5), scene::to_world(cx, cz, 0.5)], WOOD, 3);
+    fr.line(
+        cam,
+        &[scene::to_world(hx, hz, 0.5), scene::to_world(cx, cz, 0.5)],
+        WOOD,
+        3,
+    );
     fr.poly(cam, &ngon(cx, cz, 0.52, 0.19, 10, 0.0), RIM, true);
-    fr.poly(cam, &ngon(cx + ux * 0.02, cz + uz * 0.02, 0.56, 0.14, 10, 0.3), RUBBER, true);
+    fr.poly(
+        cam,
+        &ngon(cx + ux * 0.02, cz + uz * 0.02, 0.56, 0.14, 10, 0.3),
+        RUBBER,
+        true,
+    );
 }
 
 /// The bowler: a felt brim, a crown of two stacked rings and the band in the cornet's colour.

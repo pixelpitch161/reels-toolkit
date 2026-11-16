@@ -39,9 +39,9 @@ use crate::abilities::{
 use crate::fight::{Fight, stunned};
 use crate::geom;
 use crate::kinds::{
-    anchor, bite, blade, combo, crowd, drill, echo, grapple, inflate, jump, lightning, line, mortar, pulse, rake,
-    rests, roll, roll_charge, scratch_floor, spotlight, striker, surf, swallow, tether, tiptoe, trap, tune, walk,
-    plunger, wrecking,
+    anchor, bite, blade, combo, crowd, drill, echo, foghorn, grapple, inflate, jump, lightning, line, mortar, plunger,
+    pulse, rake, rests, roll, roll_charge, scratch_floor, spotlight, striker, surf, swallow, tether, tiptoe, trap,
+    tune, walk, wrecking,
 };
 use crate::record::Frames;
 use crate::roster::AbilityKind;
@@ -169,6 +169,12 @@ impl Schedule {
                 swallow::setup(fight, k);
             } else if striker::is_striker(fight, k) {
                 striker::setup(fight, k);
+            }
+        }
+        // the Studio's own kinds (no `fight.py` line): the foghorn's bell faces the enemy
+        for k in 0..2 {
+            if foghorn::is(fight, k) {
+                foghorn::setup(fight, k);
             }
         }
         // 5775 to 5776: the thrusters need no setup (the lance's state is the ball's, from `Ball.__init__`);
@@ -335,6 +341,10 @@ impl Schedule {
                 fight.socket("beat.swallow");
                 if swallow::is(fight, k) {
                     swallow::beat(fight, k, self.kb);
+                }
+                // the Studio's own kinds (no `fight.py` line)
+                if foghorn::is(fight, k) {
+                    foghorn::beat(fight, k, self.kb);
                 }
                 // 5938 to 5939: basket drops
                 fight.socket("beat.striker");
@@ -617,6 +627,10 @@ impl Schedule {
             fight.socket("weapon.swallow");
             if swallow::is(fight, k) {
                 swallow::step(fight, k, dt);
+            }
+            // the Studio's own kinds (no `fight.py` line)
+            if foghorn::is(fight, k) {
+                foghorn::step(fight, k, dt);
             }
             // 6135 to 6136
             fight.socket("weapon.striker");

@@ -60,11 +60,12 @@ pub struct ThemeCard {
 }
 
 /// Every roster fighter in score order, with its section.
-const SCORE: [(&str, Section); 31] = [
+const SCORE: [(&str, Section); 32] = [
     ("FLUTE", Section::Woodwinds),
     ("OBOE", Section::Woodwinds),
     ("CLARINET", Section::Woodwinds),
     ("BASS CLARINET", Section::Woodwinds),
+    ("CONTRABASS CLARINET", Section::Woodwinds),
     ("BASSOON", Section::Woodwinds),
     ("ALTO SAX", Section::Woodwinds),
     ("TENOR SAX", Section::Woodwinds),
@@ -186,12 +187,12 @@ mod tests {
     fn every_offered_fighter_has_a_section() {
         // the fighters the app offers (the roster's older ten are not offered until their ports)
         let r: Vec<_> = roster().iter().filter(|f| PORTED.contains(&f.name.as_str())).collect();
-        assert_eq!(r.len(), 31);
+        assert_eq!(r.len(), 32);
         for f in &r {
             assert!(section(&f.name).is_some(), "{} has no section", f.name);
         }
         let order = shown_order();
-        assert_eq!(order.len(), 31);
+        assert_eq!(order.len(), 32);
         for f in &r {
             assert_eq!(order.iter().filter(|n| **n == f.name).count(), 1, "{}", f.name);
         }
@@ -204,7 +205,7 @@ mod tests {
                 count(Section::Keys),
                 count(Section::Percussion)
             ],
-            [9, 7, 8, 4, 3]
+            [10, 7, 8, 4, 3]
         );
         assert_eq!(&order[..2], &["FLUTE", "OBOE"]);
         assert_eq!(order.last(), Some(&"BASS DRUM"));

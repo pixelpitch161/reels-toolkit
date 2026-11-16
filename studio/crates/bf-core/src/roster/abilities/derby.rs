@@ -15,7 +15,16 @@ pub const PORTED: bool = true;
 pub const REQUIRED: &[&[&str]] = &[&["tele"], &["radius"], &["dmg"], &["dur", "dur_beats"]];
 
 /// Every key the engine reads from an ability of this kind.
-pub const ALLOWED: &[&str] = &["name", "kind", "every_bars", "tele", "radius", "dmg", "dur", "dur_beats"];
+pub const ALLOWED: &[&str] = &[
+    "name",
+    "kind",
+    "every_bars",
+    "tele",
+    "radius",
+    "dmg",
+    "dur",
+    "dur_beats",
+];
 
 /// What an ability of kind `derby` holds besides its numbers: nothing.
 #[derive(Clone, Debug, Default, PartialEq)]

@@ -21,8 +21,8 @@ use crate::abilities::{flick, hook, lights_out, snap, snip, x33};
 use crate::fight::Fight;
 use crate::geom;
 use crate::kinds::{
-    anchor, crowd, drill, echo, grapple, inflate, mortar, rests, roll, roll_charge, spotlight, striker, tiptoe, tune,
-    plunger, walk, wrecking,
+    anchor, crowd, drill, echo, grapple, inflate, mortar, plunger, rests, roll, roll_charge, spotlight, striker,
+    tiptoe, tune, walk, wrecking,
 };
 
 /// `KMAX`: the most projectiles a frame records.

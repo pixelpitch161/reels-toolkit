@@ -14,7 +14,14 @@ fn roster() -> Vec<FighterCfg> {
 }
 
 const ENEMIES: [&str; 8] = [
-    "TRUMPET", "TUBA", "FLUTE", "BARI SAX", "EUPHONIUM", "CLARINET", "VIOLIN", "CORNET",
+    "TRUMPET",
+    "TUBA",
+    "FLUTE",
+    "BARI SAX",
+    "EUPHONIUM",
+    "CLARINET",
+    "VIOLIN",
+    "CORNET",
 ];
 
 #[test]
@@ -45,7 +52,10 @@ fn cornet_fights_to_the_end() {
                 hats += n("derby_land");
                 stops += n("stop");
                 breaks += n("break");
-                assert!(n("plunger") > 0, "CORNET against {enemy}, corner {k}, seed {seed}: never threw");
+                assert!(
+                    n("plunger") > 0,
+                    "CORNET against {enemy}, corner {k}, seed {seed}: never threw"
+                );
                 if let Some(w) = rec.winner {
                     kos += 1;
                     if w == k {

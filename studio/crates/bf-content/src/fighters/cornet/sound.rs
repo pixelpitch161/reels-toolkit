@@ -56,7 +56,10 @@ impl CornetSound {
     fn tones(&self, ctx: &MusicCtx, ch: &str, lo: i32, hi: i32) -> Result<Vec<i32>, MusicError> {
         let v = ctx.harmony.chord_tones(lo, hi, ch).map_err(bad)?;
         if v.is_empty() {
-            return Err(MusicError::new(H, format!("the chord {ch:?} has no tone from {lo} to {hi}")));
+            return Err(MusicError::new(
+                H,
+                format!("the chord {ch:?} has no tone from {lo} to {hi}"),
+            ));
         }
         Ok(v)
     }
@@ -145,7 +148,13 @@ impl Sound for CornetSound {
             match kind {
                 "plunger_stick" => {
                     // the cup bites: a pop, then a muted chord tone
-                    mix.place("fx", &Sig::Mono(synth::thud(0.12, 420.0, 160.0, THUD_SEED)), tq, 0.18, 0.0);
+                    mix.place(
+                        "fx",
+                        &Sig::Mono(synth::thud(0.12, 420.0, 160.0, THUD_SEED)),
+                        tq,
+                        0.18,
+                        0.0,
+                    );
                     let ms = self.tones(ctx, ch, 60, 74)?;
                     let x = wah(&self.horn(ctx, ms[0], beat * 0.9, 0.8, 1.0)?, beat * 0.3);
                     mix.place(&bus, &Sig::Mono(x), tq, 0.24, 0.1);
@@ -159,7 +168,13 @@ impl Sound for CornetSound {
                 }
                 "derby_land" => {
                     if event_number(H, e, 5)? > 0.5 {
-                        mix.place("fx", &Sig::Mono(synth::thud(0.3, 140.0, 60.0, THUD_SEED)), tq, 0.28, 0.0);
+                        mix.place(
+                            "fx",
+                            &Sig::Mono(synth::thud(0.3, 140.0, 60.0, THUD_SEED)),
+                            tq,
+                            0.28,
+                            0.0,
+                        );
                     }
                 }
                 "stop" => {
@@ -176,12 +191,24 @@ impl Sound for CornetSound {
                         let x = self.horn(ctx, m, s16 * 1.2, 0.95, 1.2)?;
                         mix.place(&bus, &Sig::Mono(x), tq + j as f64 * s16 * 0.5, 0.26, 0.0);
                     }
-                    mix.place("fx", &Sig::Mono(synth::thud(0.5, 110.0, 40.0, THUD_SEED)), tq, 0.30, 0.0);
+                    mix.place(
+                        "fx",
+                        &Sig::Mono(synth::thud(0.5, 110.0, 40.0, THUD_SEED)),
+                        tq,
+                        0.30,
+                        0.0,
+                    );
                 }
                 "hit" => {
                     if event_is_str(H, e, 7, "stoptime")? {
                         let pan = clip(event_number(H, e, 5)? / 3.5, -0.6, 0.6);
-                        mix.place("fx", &Sig::Mono(synth::thud(0.2, 300.0, 90.0, THUD_SEED)), tq, 0.22, pan);
+                        mix.place(
+                            "fx",
+                            &Sig::Mono(synth::thud(0.2, 300.0, 90.0, THUD_SEED)),
+                            tq,
+                            0.22,
+                            pan,
+                        );
                     }
                 }
                 "ability" => {
@@ -216,7 +243,13 @@ impl Sound for CornetSound {
         let t_hs = ctx.show.t_hs;
         for j in 0..6 {
             let x = wah(&self.horn(ctx, 74 - 2 * j, 0.12, 0.7, 0.8)?, 0.05);
-            mix.place(&bus, &Sig::Mono(x), t_hs + 0.08 * j as f64, 0.20, (j as f64 - 2.5) / 6.0);
+            mix.place(
+                &bus,
+                &Sig::Mono(x),
+                t_hs + 0.08 * j as f64,
+                0.20,
+                (j as f64 - 2.5) / 6.0,
+            );
         }
         Ok(())
     }
@@ -267,7 +300,7 @@ mod tests {
 
     #[test]
     fn a_wah_keeps_the_length_and_opens_in_the_middle() {
-        let x: Vec<f64> = (0..4800).map(|i| (i as f64 * 0.2).sin() * 0.5).collect();
+        let x: Vec<f64> = (0..4800).map(|i| bf_core::dmath::sin(i as f64 * 0.2) * 0.5).collect();
         let y = wah(&x, 0.05);
         assert_eq!(y.len(), x.len());
         assert!(y.iter().all(|v| v.is_finite()));

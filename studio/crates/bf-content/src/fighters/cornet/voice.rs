@@ -57,7 +57,10 @@ mod tests {
         let note = CornetVoice.note(&mut noise, 67.0, 0.9, 0.3);
         assert_eq!(note, pp::to_48k(&synth(67.0, 0.9, 0.3)));
         assert_eq!(noise.nz(4), PpNoise::start().nz(4));
-        assert_ne!(synth(67.0, 0.9, 0.3), crate::fighters::trumpet::voice::synth(67.0, 0.9, 0.3));
+        assert_ne!(
+            synth(67.0, 0.9, 0.3),
+            crate::fighters::trumpet::voice::synth(67.0, 0.9, 0.3)
+        );
         assert_eq!((CornetVoice.register(), CornetVoice.name()), (REGISTER, "CORNET"));
     }
 }

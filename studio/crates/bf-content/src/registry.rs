@@ -20,7 +20,7 @@ const ROSTER_NEW_JSON: &str = include_str!("../data/roster_new.json");
 
 /// The fighters whose weapon and abilities the engine has ported, in no particular order (grows as fighters are
 /// ported).
-pub const PORTED: [&str; 31] = [
+pub const PORTED: [&str; 32] = [
     "FLUTE",
     "TROMBONE",
     "PIANO",
@@ -52,6 +52,7 @@ pub const PORTED: [&str; 31] = [
     "ACCORDION",
     "DRUMS",
     "CORNET",
+    "CONTRABASS CLARINET",
 ];
 
 /// Every roster entry (the kit's 20 and the older ten, offered or not), in `fighters.py`'s order, every number as
@@ -125,7 +126,7 @@ mod tests {
     ];
 
     #[test]
-    fn roster_has_the_kit_20_and_the_older_10_and_no_retired() {
+    fn roster_has_the_kit_20_the_older_10_the_studio_ones_and_no_retired() {
         let r = roster();
         assert_eq!(r.len(), 30 + crate::fighters::NEW.len());
         // fighters.py's order, which starts with the first fighters the kit had, then the fighters made from scratch
@@ -190,6 +191,7 @@ mod tests {
                 "SOUSAPHONE",
                 "BASS DRUM",
                 "CORNET",
+                "CONTRABASS CLARINET",
             ]
         );
         assert_eq!(available().len(), PORTED.len());

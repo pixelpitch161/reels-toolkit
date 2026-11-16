@@ -225,6 +225,7 @@ fn every_fighter_has_the_kits_home_config() {
         ("TUBA", "FLUTE", "villain_march"),
         ("BASSOON", "BARI SAX", "ska_punk"),
         ("BARI SAX", "BASS CLARINET", "industrial"),
+        ("CONTRABASS CLARINET", "FLUTE", "industrial"),
     ] {
         if !ported.contains(&theme) {
             continue;
@@ -240,10 +241,15 @@ fn every_fighter_has_the_kits_home_config() {
         starter("UKULELE", "ACOUSTIC").unwrap().music.roles["ACOUSTIC"],
         "rhythm"
     );
-    // a fighter made from scratch (no kit config, no episode) borrows FLUTE's home config
-    for name in bf_content::fighters::NEW {
+    // a fighter made from scratch with no home of its own (no kit config, no episode row) borrows FLUTE's home
+    // config; CONTRABASS CLARINET has its own row (against FLUTE, in industrial)
+    for name in bf_content::fighters::NEW
+        .iter()
+        .filter(|n| **n != "CONTRABASS CLARINET")
+    {
         assert_eq!(home_config(name), home_config("FLUTE"), "{name}");
     }
+    assert_eq!(home_config("CONTRABASS CLARINET"), Some("contrabassclarinet_vs_flute"));
     let mut names: Vec<&str> = available()
         .into_iter()
         .filter(|n| !bf_content::fighters::OLDER.contains(n) && !bf_content::fighters::NEW.contains(n))
