@@ -120,11 +120,14 @@ mod tests {
     #[test]
     fn roster_has_the_kit_20_and_the_older_10_and_no_retired() {
         let r = roster();
-        assert_eq!(r.len(), 30);
+        assert_eq!(r.len(), 30 + bf_core::roster::STUDIO_FIGHTERS.len());
         // fighters.py's order, which starts with the first fighters the kit had
         let names: Vec<&str> = r.iter().map(|f| f.name.as_str()).collect();
         assert_eq!(&names[..4], &["PIANO", "DRUMS", "VIOLIN", "BAGPIPES"]);
-        let (older, mut kit): (Vec<&str>, Vec<&str>) = names.iter().partition(|n| crate::fighters::OLDER.contains(n));
+        let (older, mut kit): (Vec<&str>, Vec<&str>) = names
+            .iter()
+            .filter(|n| !bf_core::roster::STUDIO_FIGHTERS.contains(n))
+            .partition(|n| crate::fighters::OLDER.contains(n));
         assert_eq!(&kit[..4], &["PIANO", "TUBA", "FLUTE", "TROMBONE"]);
         kit.sort_unstable();
         assert_eq!(kit, KIT);
@@ -180,6 +183,7 @@ mod tests {
                 "TENOR SAX",
                 "SOUSAPHONE",
                 "BASS DRUM",
+                "MARIMBA",
             ]
         );
         assert_eq!(available().len(), PORTED.len());
