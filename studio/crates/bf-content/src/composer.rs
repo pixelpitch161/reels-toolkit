@@ -721,7 +721,7 @@ mod tests {
     use super::*;
     use crate::personality::personality;
 
-    const ALL: [&str; 32] = [
+    const ALL: [&str; 36] = [
         "ACOUSTIC",
         "ALTO SAX",
         "BASS CLARINET",
@@ -753,6 +753,10 @@ mod tests {
         "VIOLA",
         "VIOLIN",
         "MARIMBA",
+        "PICCOLO",
+        "SOPRANO SAX",
+        "MELLOPHONE",
+        "TIMPANI",
         "CONTRABASSOON",
     ];
 

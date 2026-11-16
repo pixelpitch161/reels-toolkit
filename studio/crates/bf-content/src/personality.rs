@@ -90,6 +90,10 @@ fighters! {
     "CONTRABASS CLARINET" => contrabass_clarinet,
     "CONTRABASSOON" => contrabassoon,
     "MARIMBA" => marimba,
+    "PICCOLO" => piccolo,
+    "SOPRANO SAX" => soprano_sax,
+    "MELLOPHONE" => mellophone,
+    "TIMPANI" => timpani,
 }
 
 #[cfg(test)]

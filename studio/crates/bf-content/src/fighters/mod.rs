@@ -37,6 +37,7 @@ pub mod organ;
 pub mod piano;
 pub mod sousaphone;
 pub mod tenor_sax;
+pub mod timpani;
 pub mod trombone;
 pub mod trumpet;
 pub mod tuba;
@@ -58,6 +59,9 @@ pub mod contrabass_clarinet;
 pub mod contrabassoon;
 pub mod cornet;
 pub mod marimba;
+pub mod mellophone;
+pub mod piccolo;
+pub mod soprano_sax;
 
 /// The ten older fighters (spec section 10, plan m4 Table O1), in alphabetical order: each has its folder here, a
 /// stub until its port, offered only once a register task lists it in `PORTED`.
@@ -76,7 +80,16 @@ pub const OLDER: [&str; 10] = [
 
 /// The fighters made from scratch in the Studio (no Python kit reference; `data/roster_new.json`), each with its
 /// folder here.
-pub const NEW: [&str; 4] = ["CORNET", "CONTRABASS CLARINET", "MARIMBA", "CONTRABASSOON"];
+pub const NEW: [&str; 8] = [
+    "CORNET",
+    "CONTRABASS CLARINET",
+    "MARIMBA",
+    "PICCOLO",
+    "SOPRANO SAX",
+    "MELLOPHONE",
+    "TIMPANI",
+    "CONTRABASSOON",
+];
 
 /// The two lines a fighter's name takes on the VS card when one line would be too small (the kit's `TITLE_LINES`,
 /// which its configs set per episode); `None` for a name that fits on one.
@@ -158,8 +171,12 @@ pub fn entry(fighter: &str) -> Option<Entry> {
         "VIOLIN" => entry!(violin),
         "CORNET" => entry!(cornet),
         "CONTRABASS CLARINET" => entry!(contrabass_clarinet),
-        "CONTRABASSOON" => entry!(contrabassoon),
         "MARIMBA" => entry!(marimba),
+        "PICCOLO" => entry!(piccolo),
+        "SOPRANO SAX" => entry!(soprano_sax),
+        "MELLOPHONE" => entry!(mellophone),
+        "TIMPANI" => entry!(timpani),
+        "CONTRABASSOON" => entry!(contrabassoon),
         _ => return None,
     })
 }

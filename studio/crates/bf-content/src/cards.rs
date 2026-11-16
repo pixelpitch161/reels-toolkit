@@ -1,4 +1,4 @@
-//! What the interface shows about fighters and themes (Task 26): the roster's sections in score order, the corner
+﻿//! What the interface shows about fighters and themes (Task 26): the roster's sections in score order, the corner
 //! card and the music text of each ported fighter, each theme's card, the words for each pair rule, and note names.
 //!
 //! Every text is the interface reference's own (sections 5.1 and 5.4).
@@ -60,7 +60,7 @@ pub struct ThemeCard {
 }
 
 /// Every roster fighter in score order, with its section.
-const SCORE: [(&str, Section); 34] = [
+const SCORE: [(&str, Section); 38] = [
     ("FLUTE", Section::Woodwinds),
     ("OBOE", Section::Woodwinds),
     ("CLARINET", Section::Woodwinds),
@@ -69,12 +69,15 @@ const SCORE: [(&str, Section); 34] = [
     ("CONTRABASSOON", Section::Woodwinds),
     ("BASSOON", Section::Woodwinds),
     ("ALTO SAX", Section::Woodwinds),
+    ("SOPRANO SAX", Section::Woodwinds),
     ("TENOR SAX", Section::Woodwinds),
     ("BARI SAX", Section::Woodwinds),
     ("BAGPIPES", Section::Woodwinds),
+    ("PICCOLO", Section::Woodwinds),
     ("TRUMPET", Section::Brass),
     ("CORNET", Section::Brass),
     ("HORN", Section::Brass),
+    ("MELLOPHONE", Section::Brass),
     ("TROMBONE", Section::Brass),
     ("EUPHONIUM", Section::Brass),
     ("TUBA", Section::Brass),
@@ -94,6 +97,7 @@ const SCORE: [(&str, Section); 34] = [
     ("TURNTABLES", Section::Percussion),
     ("DRUMS", Section::Percussion),
     ("MARIMBA", Section::Percussion),
+    ("TIMPANI", Section::Percussion),
     ("BASS DRUM", Section::Percussion),
 ];
 
@@ -207,7 +211,7 @@ mod tests {
                 count(Section::Keys),
                 count(Section::Percussion)
             ],
-            [11, 7, 8, 4, 4]
+            [13, 8, 8, 4, 5]
         );
         assert_eq!(&order[..2], &["FLUTE", "OBOE"]);
         assert_eq!(order.last(), Some(&"BASS DRUM"));
