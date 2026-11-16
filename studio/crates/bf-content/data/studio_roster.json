@@ -1,0 +1,39 @@
+{
+ "about": "Fighters made in the Studio itself (no Python kit module or past episode behind them), in the shape of roster.json, which the export writes. The registry appends them after the exported roster. Edited by hand; each entry's design is in docs/studio/.",
+ "format": 1,
+ "fighters": [
+  {
+   "name": "CONTRABASS CLARINET",
+   "color": [24, 124, 132],
+   "dark": [10, 58, 64],
+   "corner": "red",
+   "view": [0, 22, 0],
+   "weapon": {
+    "kind": "foghorn",
+    "style": "foghorn",
+    "name": "FOGHORN",
+    "every": 4,
+    "spread": 28.0,
+    "base": 1.6,
+    "grow": 0.12,
+    "max_reach": 2.6,
+    "dur": 0.55,
+    "push": 1.8,
+    "steer": 18.0,
+    "dmg": 1.5,
+    "dmg_wall": 2.6,
+    "slam_t": 0.5,
+    "aim_rate": 5.0
+   },
+   "abilities": {
+    "unlock1": {"name": "FOG BANK", "kind": "shield", "dur_beats": 6, "every_bars": 6},
+    "unlock2": {"name": "MOTORBOAT", "kind": "haste", "mult": 2.0, "dur_beats": 8, "every_bars": 6},
+    "low": {"name": "SHIP'S HORN", "kind": "beam", "charge_beats": 1, "lead": 1.0, "len": 7.0, "width": 1.3,
+            "dmg": 11.0, "knock": 1.8, "hold": 0.45}
+   },
+   "pp": "CONTRABASS CLARINET",
+   "register": [26, 58],
+   "idiom": "foghorn"
+  }
+ ]
+}

@@ -28,6 +28,7 @@ pub mod bassoon;
 pub mod cello;
 pub mod clarinet;
 pub mod contrabass;
+pub mod contrabass_clarinet;
 pub mod electric;
 pub mod euphonium;
 pub mod flute;
@@ -67,6 +68,10 @@ pub const OLDER: [&str; 10] = [
     "VIOLA",
     "VIOLIN",
 ];
+
+/// The fighters made in the Studio itself (`data/studio_roster.json`), in its order: no kit module or episode behind
+/// them.
+pub const STUDIO: [&str; 1] = ["CONTRABASS CLARINET"];
 
 /// What one fighter's folder offers: its `mod.rs`'s entry points.
 #[derive(Clone, Copy)]
@@ -136,6 +141,7 @@ pub fn entry(fighter: &str) -> Option<Entry> {
         "UKULELE" => entry!(ukulele),
         "VIOLA" => entry!(viola),
         "VIOLIN" => entry!(violin),
+        "CONTRABASS CLARINET" => entry!(contrabass_clarinet),
         _ => return None,
     })
 }

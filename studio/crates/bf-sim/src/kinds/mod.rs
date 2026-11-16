@@ -14,6 +14,7 @@ pub mod combo;
 pub mod crowd;
 pub mod drill;
 pub mod echo;
+pub mod foghorn;
 pub mod grapple;
 pub mod inflate;
 pub mod jump;

@@ -15,9 +15,12 @@ pub use bf_core::fightfile::RETIRED;
 /// The exported roster.
 const ROSTER_JSON: &str = include_str!("../data/roster.json");
 
+/// The fighters made in the Studio itself (no kit module behind them), appended after the exported roster.
+const STUDIO_ROSTER_JSON: &str = include_str!("../data/studio_roster.json");
+
 /// The fighters whose weapon and abilities the engine has ported, in no particular order (grows as fighters are
 /// ported).
-pub const PORTED: [&str; 30] = [
+pub const PORTED: [&str; 31] = [
     "FLUTE",
     "TROMBONE",
     "PIANO",
@@ -48,6 +51,7 @@ pub const PORTED: [&str; 30] = [
     "HARP",
     "ACCORDION",
     "DRUMS",
+    "CONTRABASS CLARINET",
 ];
 
 /// Every roster entry (the kit's 20 and the older ten, offered or not), in `fighters.py`'s order, every number as
@@ -57,7 +61,11 @@ pub const PORTED: [&str; 30] = [
 /// When the compiled-in roster cannot be read (a broken export; the tests read it on every build).
 pub fn roster() -> &'static [FighterCfg] {
     static ROSTER: OnceLock<Vec<FighterCfg>> = OnceLock::new();
-    ROSTER.get_or_init(|| parse_roster(ROSTER_JSON).unwrap_or_else(|e| panic!("the compiled-in {e}")))
+    ROSTER.get_or_init(|| {
+        let mut all = parse_roster(ROSTER_JSON).unwrap_or_else(|e| panic!("the compiled-in {e}"));
+        all.extend(parse_roster(STUDIO_ROSTER_JSON).unwrap_or_else(|e| panic!("the compiled-in studio {e}")));
+        all
+    })
 }
 
 /// The fighters the app offers: [`PORTED`], in roster order.
@@ -117,9 +125,13 @@ mod tests {
     ];
 
     #[test]
-    fn roster_has_the_kit_20_and_the_older_10_and_no_retired() {
+    fn roster_has_the_kit_20_the_older_10_the_studio_ones_and_no_retired() {
         let r = roster();
-        assert_eq!(r.len(), 30);
+        assert_eq!(r.len(), 30 + crate::fighters::STUDIO.len());
+        // the fighters made in the Studio come last, after the exported roster
+        let tail: Vec<&str> = r[30..].iter().map(|f| f.name.as_str()).collect();
+        assert_eq!(tail, crate::fighters::STUDIO);
+        let r = &r[..30];
         // fighters.py's order, which starts with the first fighters the kit had
         let names: Vec<&str> = r.iter().map(|f| f.name.as_str()).collect();
         assert_eq!(&names[..4], &["PIANO", "DRUMS", "VIOLIN", "BAGPIPES"]);
@@ -179,6 +191,7 @@ mod tests {
                 "TENOR SAX",
                 "SOUSAPHONE",
                 "BASS DRUM",
+                "CONTRABASS CLARINET",
             ]
         );
         assert_eq!(available().len(), PORTED.len());
