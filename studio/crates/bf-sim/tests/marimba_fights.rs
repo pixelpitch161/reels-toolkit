@@ -7,7 +7,9 @@ use bf_sim::roster::{FighterCfg, parse_roster};
 use bf_sim::{Rules, Setup, run};
 
 fn roster() -> Vec<FighterCfg> {
-    parse_roster(include_str!("../../bf-content/data/roster.json")).expect("the roster loads")
+    let mut all = parse_roster(include_str!("../../bf-content/data/roster.json")).expect("the roster loads");
+    all.extend(parse_roster(include_str!("../../bf-content/data/roster_new.json")).expect("the new roster loads"));
+    all
 }
 
 #[test]

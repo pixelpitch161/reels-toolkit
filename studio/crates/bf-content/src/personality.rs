@@ -81,11 +81,13 @@ macro_rules! fighters {
 fighters! {
     "ACOUSTIC" => acoustic, "ALTO SAX" => alto_sax, "BASS CLARINET" => bass_clarinet, "BASS DRUM" => bass_drum,
     "BASSOON" => bassoon, "CELLO" => cello, "CLARINET" => clarinet, "CONTRABASS" => contrabass,
-    "ELECTRIC" => electric, "EUPHONIUM" => euphonium, "MARIMBA" => marimba, "FLUTE" => flute, "HORN" => horn, "OBOE" => oboe,
+    "ELECTRIC" => electric, "EUPHONIUM" => euphonium, "FLUTE" => flute, "HORN" => horn, "OBOE" => oboe,
     "ORGAN" => organ, "PIANO" => piano, "SOUSAPHONE" => sousaphone, "TENOR SAX" => tenor_sax,
     "TROMBONE" => trombone, "TRUMPET" => trumpet, "TUBA" => tuba, "ACCORDION" => accordion,
     "BAGPIPES" => bagpipes, "BARI SAX" => bari_sax, "DRUMS" => drums, "HARP" => harp, "SYNTH" => synth,
     "TURNTABLES" => turntables, "UKULELE" => ukulele, "VIOLA" => viola, "VIOLIN" => violin,
+    "CORNET" => cornet,
+    "MARIMBA" => marimba,
 }
 
 #[cfg(test)]
@@ -101,7 +103,7 @@ mod tests {
         names.retain(|n| entry(n).is_some());
         names.sort();
         names.dedup();
-        assert_eq!(names.len(), 30 + bf_core::roster::STUDIO_FIGHTERS.len());
+        assert_eq!(names.len(), 30 + crate::fighters::NEW.len());
         for n in &names {
             let p = personality(n).unwrap_or_else(|| panic!("{n}"));
             assert!((2..=4).contains(&p.motifs.len()), "{n}");

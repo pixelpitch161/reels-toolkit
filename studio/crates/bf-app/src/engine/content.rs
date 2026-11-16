@@ -441,7 +441,7 @@ mod tests {
     #[test]
     fn the_real_roster() {
         let r = roster();
-        assert_eq!(r.fighters.len(), 30 + bf_core::roster::STUDIO_FIGHTERS.len());
+        assert_eq!(r.fighters.len(), 30 + bf_content::fighters::NEW.len());
         let names: Vec<&str> = r.fighters.iter().map(|f| f.name.as_str()).collect();
         assert_eq!(names, bf_content::shown_order());
         let on: Vec<&str> = r
@@ -684,7 +684,7 @@ mod tests {
             .filter(|f| f.available)
             .map(|f| f.name.clone())
             .collect();
-        assert_eq!(offered.len(), bf_content::PORTED.len());
+        assert_eq!(offered.len(), 30 + bf_content::fighters::NEW.len());
         assert_eq!(r.kit_pairs.len(), 18);
         let mut pairs = 0;
         for a in &offered {

@@ -17,6 +17,7 @@ pub mod clamp;
 pub mod company_front;
 pub mod copy;
 pub mod dead_stroke;
+pub mod derby;
 pub mod detune;
 pub mod double_stop;
 pub mod drum_roll;
@@ -47,6 +48,7 @@ pub mod snip;
 pub mod spout;
 pub mod stagedive;
 pub mod stampede;
+pub mod stoptime;
 pub mod stun;
 pub mod subtone;
 pub mod sustain;
@@ -193,6 +195,10 @@ pub enum AbilityKind {
     Spout,
     /// `offbeat`: BARI SAX's SKANK (`fight.py` `trigger` 2911 to 2914; milestone 4).
     Offbeat,
+    /// `derby`: CORNET's DERBY HAT (a from-scratch fighter).
+    Derby,
+    /// `stoptime`: CORNET's STOP-TIME (a from-scratch fighter).
+    Stoptime,
     /// `snap`: BARI SAX's CABLE SNAP (`fight.py` `trigger` 2919 to 2920; milestone 4).
     Snap,
     /// `double_stop`: VIOLA's DOUBLE STOP (`fight.py` `trigger` 2928 to 2929; milestone 4).
@@ -299,6 +305,10 @@ pub enum AbilitySettings {
     Spout(spout::SpoutCfg),
     /// Kind `offbeat`.
     Offbeat(offbeat::OffbeatCfg),
+    /// Kind `derby`.
+    Derby(derby::DerbyCfg),
+    /// Kind `stoptime`.
+    Stoptime(stoptime::StoptimeCfg),
     /// Kind `snap`.
     Snap(snap::SnapCfg),
     /// Kind `double_stop`.
@@ -367,6 +377,8 @@ impl AbilityKind {
             AbilityKind::Lash => "lash",
             AbilityKind::Spout => "spout",
             AbilityKind::Offbeat => "offbeat",
+            AbilityKind::Derby => "derby",
+            AbilityKind::Stoptime => "stoptime",
             AbilityKind::Snap => "snap",
             AbilityKind::DoubleStop => "double_stop",
             AbilityKind::Melody => "melody",
@@ -428,6 +440,8 @@ impl AbilityKind {
             "lash" if lash::PORTED => AbilityKind::Lash,
             "spout" if spout::PORTED => AbilityKind::Spout,
             "offbeat" if offbeat::PORTED => AbilityKind::Offbeat,
+            "derby" if derby::PORTED => AbilityKind::Derby,
+            "stoptime" if stoptime::PORTED => AbilityKind::Stoptime,
             "snap" if snap::PORTED => AbilityKind::Snap,
             "double_stop" if double_stop::PORTED => AbilityKind::DoubleStop,
             "melody" if melody::PORTED => AbilityKind::Melody,
@@ -488,6 +502,8 @@ impl AbilityKind {
             AbilityKind::Lash => lash::REQUIRED,
             AbilityKind::Spout => spout::REQUIRED,
             AbilityKind::Offbeat => offbeat::REQUIRED,
+            AbilityKind::Derby => derby::REQUIRED,
+            AbilityKind::Stoptime => stoptime::REQUIRED,
             AbilityKind::Snap => snap::REQUIRED,
             AbilityKind::DoubleStop => double_stop::REQUIRED,
             AbilityKind::Melody => melody::REQUIRED,
@@ -550,6 +566,8 @@ impl AbilityKind {
             AbilityKind::Lash => lash::ALLOWED,
             AbilityKind::Spout => spout::ALLOWED,
             AbilityKind::Offbeat => offbeat::ALLOWED,
+            AbilityKind::Derby => derby::ALLOWED,
+            AbilityKind::Stoptime => stoptime::ALLOWED,
             AbilityKind::Snap => snap::ALLOWED,
             AbilityKind::DoubleStop => double_stop::ALLOWED,
             AbilityKind::Melody => melody::ALLOWED,
@@ -618,6 +636,8 @@ fn settings(e: &Entry, prefix: &str, kind: &AbilityKind, ab: &Json) -> Result<Ab
         AbilityKind::Lash => AbilitySettings::Lash(lash::parse(e, prefix, ab)?),
         AbilityKind::Spout => AbilitySettings::Spout(spout::parse(e, prefix, ab)?),
         AbilityKind::Offbeat => AbilitySettings::Offbeat(offbeat::parse(e, prefix, ab)?),
+        AbilityKind::Derby => AbilitySettings::Derby(derby::parse(e, prefix, ab)?),
+        AbilityKind::Stoptime => AbilitySettings::Stoptime(stoptime::parse(e, prefix, ab)?),
         AbilityKind::Snap => AbilitySettings::Snap(snap::parse(e, prefix, ab)?),
         AbilityKind::DoubleStop => AbilitySettings::DoubleStop(double_stop::parse(e, prefix, ab)?),
         AbilityKind::Melody => AbilitySettings::Melody(melody::parse(e, prefix, ab)?),
@@ -679,6 +699,8 @@ pub(crate) fn kind_check(e: &Entry, prefix: &str, ab: &AbilityCfg) -> Result<(),
         AbilityKind::Lash => lash::check(e, prefix, ab),
         AbilityKind::Spout => spout::check(e, prefix, ab),
         AbilityKind::Offbeat => offbeat::check(e, prefix, ab),
+        AbilityKind::Derby => derby::check(e, prefix, ab),
+        AbilityKind::Stoptime => stoptime::check(e, prefix, ab),
         AbilityKind::Snap => snap::check(e, prefix, ab),
         AbilityKind::DoubleStop => double_stop::check(e, prefix, ab),
         AbilityKind::Melody => melody::check(e, prefix, ab),

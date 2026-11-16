@@ -505,7 +505,7 @@ mod tests {
     #[test]
     fn a_pair_is_offered_every_theme_its_parts_can_play() {
         let names: Vec<&str> = crate::available();
-        assert_eq!(names.len(), crate::PORTED.len());
+        assert_eq!(names.len(), 30 + crate::fighters::NEW.len());
         for &a in &names {
             for &b in &names {
                 let want: Vec<&str> = PORTED_THEMES

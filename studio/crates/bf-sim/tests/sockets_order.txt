@@ -22,7 +22,9 @@
 # spinning blade, and the abilities clamp, rewind, lash, spout, offbeat, snap, double_stop, melody, joke) have their
 # sockets too, at the lines below (`tests/sockets_older.rs` runs each of them against FLUTE). The kinds of frozen
 # versions and of the retired fighters (volley, orbit, the beam weapon, flail, aura, bellows, dash, cone, pack, rattle,
-# quake, charge, pull) have no socket: they stay `SLOT` comments in the code.
+# quake, charge, pull) have no socket: they stay `SLOT` comments in the code. CORNET's plunger (a from-scratch fighter,
+# no fight.py line) is listed beside its neighbours with their nearest line: setup, tick, later and `snap.PLG`;
+# MARIMBA's mallets (from scratch too) the same way: setup, tick, later and `snap.MALLETS`.
 #
 # Sockets that live inside a kind's own step are not traced and not listed here: the bite's and the inflate's branches
 # of `grid16_fire` (1487 to 1507) are behind `tick.grid16`, `hazard_beat`'s trap branch (1324 to 1332) behind
@@ -45,6 +47,7 @@ setup.mortar               5809-5817     setup
 setup.anchor               5818-5826     setup
 setup.tiptoe               5830-5835     setup
 setup.wrecking             5842-5846     setup
+setup.plunger              5846          setup
 setup.lightning            5854-5857     setup
 setup.rests                5858-5863     setup
 setup.grapple              5864-5869     setup
@@ -54,7 +57,7 @@ setup.spotlight            5888-5893     setup
 setup.crowd                5894-5899     setup
 setup.drill                5900-5905     setup
 setup.roll_charge          5906-5911     setup
-setup.mallets              studio        setup
+setup.mallets              5911          setup
 
 # ---- a frame: snap 5509 to 5732, in order
 snap.K                     5509-5514     frame
@@ -78,7 +81,8 @@ snap.SPOT                  5671-5681     frame
 snap.CROWD                 5682-5704     frame
 snap.FLICK                 5705-5711     frame
 snap.RCHG                  5713-5732     frame
-snap.MALLETS               studio        frame
+snap.PLG                   5732          frame
+snap.MALLETS               5732          frame
 
 # ---- a step: run() 5919 to 6204
 clock                      5919          step
@@ -120,7 +124,8 @@ tick.spotlight             6076-6080     step
 tick.crowd                 6081-6085     step
 tick.drill                 6086-6090     step
 tick.roll_charge           6091-6095     step
-tick.mallets               studio        step
+tick.plunger               6095          step
+tick.mallets               6095          step
 # the timers, fighter 0 then fighter 1: stun, detune, the smashed timer (6100 to 6107)
 timers                     6100-6107     step
 timers                     6100-6107     step
@@ -179,6 +184,7 @@ later.shells               6157-6158     step
 later.anchor               6159-6162     step
 later.hook                 6163-6164     step
 later.wrecking             6167-6168     step
+later.plunger              6168          step
 later.snap                 6169-6170     step
 later.tiptoe               6171-6172     step
 later.walk                 6173-6174     step
@@ -195,7 +201,7 @@ later.splinters            6193-6194     step
 later.dash_cone            6195-6196     step
 later.surf_rake            6197-6198     step
 later.clamps               6201-6202     step
-later.mallets              studio        step
+later.mallets              6202          step
 # abilities_step (6203; 3012 to 3053): the charged beams, then fighter 0's turn, then fighter 1's
 abilities                  6203          step
 abilities.charged_beam     3013-3016     step

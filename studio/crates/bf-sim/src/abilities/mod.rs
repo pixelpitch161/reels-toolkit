@@ -54,7 +54,7 @@ use bf_core::event::Value;
 use crate::ball::Slot;
 use crate::fight::Fight;
 use crate::kinds::{
-    crowd, drill, jump, lightning, mallets, mortar, rests, roll_charge, spotlight, tiptoe, tune, wrecking,
+    crowd, drill, jump, lightning, mallets, mortar, plunger, rests, roll_charge, spotlight, tiptoe, tune, wrecking,
 };
 use crate::roster::{AbilityCfg, AbilityKind};
 
@@ -226,6 +226,9 @@ pub fn fire<'a>(fight: &mut Fight<'a>, k: usize, ab: &'a AbilityCfg) {
         AbilityKind::DrumRoll => roll_charge::start_drum_roll(fight, k, ab),
         // 2987 to 2988
         AbilityKind::Cannons => roll_charge::start_cannons(fight, k, ab),
+        // CORNET (a from-scratch fighter, in its weapon's module)
+        AbilityKind::Derby => plunger::start_derby(fight, k, ab),
+        AbilityKind::Stoptime => plunger::start_stoptime(fight, k, ab),
         // MARIMBA's (Studio kinds, in its weapon's module)
         AbilityKind::Tremolo => mallets::start_tremolo(fight, k, ab),
         AbilityKind::DeadStroke => mallets::start_dead_stroke(fight, k, ab),

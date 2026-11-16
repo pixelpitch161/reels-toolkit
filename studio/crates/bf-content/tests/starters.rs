@@ -75,8 +75,8 @@ fn every_ordered_pair_has_a_starter_the_studio_accepts() {
     let names = available();
     assert_eq!(
         names.len(),
-        30 + bf_core::roster::STUDIO_FIGHTERS.len(),
-        "the kit's 20 and the older ten offered: the whole roster"
+        30 + bf_content::fighters::NEW.len(),
+        "the kit's 20, the older ten and the fighters made from scratch offered: the whole roster"
     );
     let pairs = ordered_pairs();
     assert_eq!(pairs.len(), names.len() * (names.len() - 1));
@@ -240,9 +240,13 @@ fn every_fighter_has_the_kits_home_config() {
         starter("UKULELE", "ACOUSTIC").unwrap().music.roles["ACOUSTIC"],
         "rhythm"
     );
+    // a fighter made from scratch (no kit config, no episode) borrows FLUTE's home config
+    for name in bf_content::fighters::NEW {
+        assert_eq!(home_config(name), home_config("FLUTE"), "{name}");
+    }
     let mut names: Vec<&str> = available()
         .into_iter()
-        .filter(|n| !bf_content::fighters::OLDER.contains(n) && !bf_core::roster::STUDIO_FIGHTERS.contains(n))
+        .filter(|n| !bf_content::fighters::OLDER.contains(n) && !bf_content::fighters::NEW.contains(n))
         .collect();
     names.sort_unstable();
     assert_eq!(texts(&doc["fighters"]), names, "the kit fighters");

@@ -61,7 +61,7 @@ fn roster() -> Vec<FighterCfg> {
 fn kit() -> Vec<FighterCfg> {
     let kit: Vec<FighterCfg> = roster()
         .into_iter()
-        .filter(|f| !OLDER.contains(&f.name.as_str()) && !bf_core::roster::STUDIO_FIGHTERS.contains(&f.name.as_str()))
+        .filter(|f| !OLDER.contains(&f.name.as_str()))
         .collect();
     assert_eq!(kit.len(), 20);
     kit

@@ -38,6 +38,7 @@ use bf_sound::wav::sample_i16;
 use bf_story::Story;
 
 pub mod band;
+pub mod evenout;
 pub mod flash;
 pub mod focus;
 pub mod levels;
@@ -46,6 +47,7 @@ pub mod loudness;
 pub mod safezone;
 
 pub use self::band::band;
+pub use self::evenout::{Evened, even_out};
 pub use self::flash::{flash, flash_span};
 pub use self::focus::focus;
 pub use self::levels::levels;
