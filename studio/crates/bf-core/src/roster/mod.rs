@@ -26,9 +26,9 @@ pub use kinds::plunger::PlungerCfg;
 pub use kinds::swarm::SwarmCfg;
 pub use kinds::{
     anchor::AnchorCfg, combo::ComboCfg, crowd::CrowdCfg, drill::DrillCfg, echo::EchoCfg, grapple::GrappleCfg,
-    jump::JumpCfg, lightning::LightningCfg, line::LineCfg, mallets::MalletsCfg, mortar::MortarCfg, rake::RakeCfg,
-    roll::RollCfg, roll_charge::RollChargeCfg, spotlight::SpotlightCfg, swallow::SwallowCfg, tiptoe::TiptoeCfg,
-    tune::TuneCfg, walk::WalkCfg,
+    jump::JumpCfg, lightning::LightningCfg, line::LineCfg, mallets::MalletsCfg, mortar::MortarCfg, needle::NeedleCfg,
+    rake::RakeCfg, roll::RollCfg, roll_charge::RollChargeCfg, spotlight::SpotlightCfg, swallow::SwallowCfg,
+    tiptoe::TiptoeCfg, tune::TuneCfg, walk::WalkCfg,
 };
 pub use kinds::{
     bite::BiteCfg, foghorn::FoghornCfg, inflate::InflateCfg, pulse::PulseCfg, rests::RestsCfg,
@@ -130,20 +130,23 @@ pub const OLDER_ABILITY_KINDS: [(&str, bool); 9] = [
 
 /// The weapon kinds of the fighters made from scratch in the Studio (no Python kit reference), each with its module's
 /// `PORTED`, as [`OLDER_WEAPON_KINDS`].
-pub const NEW_WEAPON_KINDS: [(&str, bool); 4] = [
+pub const NEW_WEAPON_KINDS: [(&str, bool); 5] = [
     ("plunger", kinds::plunger::PORTED),
     ("mallets", kinds::mallets::PORTED),
     ("swarm", kinds::swarm::PORTED),
     ("foghorn", kinds::foghorn::PORTED),
+    ("needle", kinds::needle::PORTED),
 ];
 
 /// The ability kinds of the fighters made from scratch in the Studio, each with its module's `PORTED`.
-pub const NEW_ABILITY_KINDS: [(&str, bool); 8] = [
+pub const NEW_ABILITY_KINDS: [(&str, bool); 10] = [
     ("derby", abilities::derby::PORTED),
     ("stoptime", abilities::stoptime::PORTED),
     ("tremolo", abilities::tremolo::PORTED),
     ("dead_stroke", abilities::dead_stroke::PORTED),
     ("five_octaves", abilities::five_octaves::PORTED),
+    ("over_band", abilities::over_band::PORTED),
+    ("shatter", abilities::shatter::PORTED),
     ("hive", abilities::hive::PORTED),
     ("buzz", abilities::buzz::PORTED),
     ("queen", abilities::queen::PORTED),
@@ -244,6 +247,8 @@ pub enum WeaponCfg {
     Foghorn(kinds::foghorn::FoghornCfg),
     /// Kind `mallets` (MARIMBA's MALLET RUN, a Studio kind), typed by `roster::kinds::mallets`.
     Mallets(kinds::mallets::MalletsCfg),
+    /// Kind `needle` (PICCOLO's PIERCING NOTE, a Studio kind), typed by `roster::kinds::needle`.
+    Needle(kinds::needle::NeedleCfg),
     /// Kind `swarm` (SOPRANO SAX's HORNET SWARM, a Studio kind), typed by `roster::kinds::swarm`.
     Swarm(kinds::swarm::SwarmCfg),
     /// A kind the engine has not ported yet (a spinning blade, with no `mode`, is `"blade"` until
@@ -472,6 +477,7 @@ impl Entry<'_> {
             "plunger" if kinds::plunger::PORTED => Ok(WeaponCfg::Plunger(kinds::plunger::parse(self, w)?)),
             "foghorn" if kinds::foghorn::PORTED => Ok(WeaponCfg::Foghorn(kinds::foghorn::parse(self, w)?)),
             "mallets" if kinds::mallets::PORTED => Ok(WeaponCfg::Mallets(kinds::mallets::parse(self, w)?)),
+            "needle" if kinds::needle::PORTED => Ok(WeaponCfg::Needle(kinds::needle::parse(self, w)?)),
             "swarm" if kinds::swarm::PORTED => Ok(WeaponCfg::Swarm(kinds::swarm::parse(self, w)?)),
             _ => Ok(WeaponCfg::Unsupported(kind)),
         }
@@ -571,6 +577,7 @@ impl FighterCfg {
             WeaponCfg::Plunger(w) => kinds::plunger::check(&e, w)?,
             WeaponCfg::Foghorn(w) => kinds::foghorn::check(&e, w)?,
             WeaponCfg::Mallets(w) => kinds::mallets::check(&e, w)?,
+            WeaponCfg::Needle(w) => kinds::needle::check(&e, w)?,
             WeaponCfg::Swarm(w) => kinds::swarm::check(&e, w)?,
             WeaponCfg::Unsupported(_) => {}
         }
@@ -647,6 +654,7 @@ impl WeaponCfg {
             WeaponCfg::Plunger(w) => return kinds::plunger::main16(w),
             WeaponCfg::Foghorn(w) => return kinds::foghorn::main16(w),
             WeaponCfg::Mallets(w) => return kinds::mallets::main16(w),
+            WeaponCfg::Needle(w) => return kinds::needle::main16(w),
             WeaponCfg::Swarm(w) => return kinds::swarm::main16(w),
             WeaponCfg::Unsupported(_) => return None,
         };
@@ -696,6 +704,7 @@ impl WeaponCfg {
             WeaponCfg::Plunger(w) => kinds::plunger::ball_start(w),
             WeaponCfg::Foghorn(w) => kinds::foghorn::ball_start(w),
             WeaponCfg::Mallets(w) => kinds::mallets::ball_start(w),
+            WeaponCfg::Needle(w) => kinds::needle::ball_start(w),
             WeaponCfg::Swarm(w) => kinds::swarm::ball_start(w),
             WeaponCfg::Unsupported(_) => BallStart::default(),
         }
@@ -736,6 +745,7 @@ impl WeaponCfg {
             WeaponCfg::Plunger(_) => "plunger",
             WeaponCfg::Foghorn(_) => "foghorn",
             WeaponCfg::Mallets(_) => "mallets",
+            WeaponCfg::Needle(_) => "needle",
             WeaponCfg::Swarm(_) => "swarm",
             WeaponCfg::Unsupported(kind) => kind,
         }
