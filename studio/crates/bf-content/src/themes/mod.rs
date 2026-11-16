@@ -52,6 +52,18 @@ pub mod ska_punk;
 pub mod spaghetti_western;
 pub mod villain_march;
 
+// the Studio's own themes (2026-11-16): no kit mood behind them, built on one shared frame
+pub mod celtic_reel;
+pub mod drumline_metal;
+pub mod fresh;
+pub mod heroic_fanfare;
+pub mod highlife;
+pub mod liquid_dnb;
+pub mod mariachi;
+pub mod pep_band_punk;
+pub mod samba_bateria;
+pub mod surf_rock;
+
 /// The arrangement every theme has: the one that reproduces the kit's bed.
 pub const CLASSIC: &str = "classic";
 
@@ -62,7 +74,7 @@ pub const COMPOSED: &str = "composed";
 /// here is tested, never offered. The big top comes first, since a new match-up starts on the first theme offered
 /// (it is the starting pair's theme); the others follow in the kit's alphabetical order of moods. A theme is offered
 /// for a pair only when its bed has every hook both parts play ([`themes_for`], ruling M3-R2).
-pub const PORTED_THEMES: [&str; 26] = [
+pub const PORTED_THEMES: [&str; 35] = [
     "big_top",
     "baroque_storm",
     "balkan_fire",
@@ -89,6 +101,15 @@ pub const PORTED_THEMES: [&str; 26] = [
     "spaghetti_western",
     "stadium_rock",
     "villain_march",
+    "celtic_reel",
+    "drumline_metal",
+    "heroic_fanfare",
+    "highlife",
+    "liquid_dnb",
+    "mariachi",
+    "pep_band_punk",
+    "samba_bateria",
+    "surf_rock",
 ];
 
 /// A theme's options as one fight has them: every option of the theme's schema, by its name, with the fight
@@ -322,42 +343,51 @@ pub(crate) fn not_ported(name: &str) -> ContentError {
 
 /// Every theme, in alphabetical order (the ported and the not yet ported): the kit's fourteen moods and the twelve
 /// beds of the older episodes (milestone 4, plan m4 Table O2), each a stub until its port.
-static THEMES: [&Theme; 26] = [
+static THEMES: [&Theme; 35] = [
     &balkan_fire::THEME,
     &baroque_storm::THEME,
     &big_top::THEME,
     &bossa_noir::THEME,
     &brass_house::THEME,
     &brass_trailer::THEME,
+    &celtic_reel::THEME,
     &dark_breakbeat::THEME,
     &dark_disco::THEME,
     &dark_drumline::THEME,
     &dark_tango::THEME,
     &drift_phonk::THEME,
+    &drumline_metal::THEME,
     &gothic_horror::THEME,
     &heist::THEME,
+    &heroic_fanfare::THEME,
+    &highlife::THEME,
     &horror_trap::THEME,
     &hot_jazz::THEME,
     &industrial::THEME,
+    &liquid_dnb::THEME,
     &mambo::THEME,
+    &mariachi::THEME,
     &noir_jazz::THEME,
     &orchestral_drill::THEME,
+    &pep_band_punk::THEME,
     &prog_duel::THEME,
+    &samba_bateria::THEME,
     &sea_shanty::THEME,
     &second_line::THEME,
     &ska_punk::THEME,
     &spaghetti_western::THEME,
     &stadium_rock::THEME,
+    &surf_rock::THEME,
     &villain_march::THEME,
 ];
 
-/// The names of the themes this app offers ([`PORTED_THEMES`]: every kit theme, the big top first). Which of them
+/// The names of the themes this app offers ([`PORTED_THEMES`]: every kit theme, the big top first, then the Studio's own). Which of them
 /// a pair may play is [`themes_for`].
 pub fn theme_names() -> Vec<&'static str> {
     PORTED_THEMES.to_vec()
 }
 
-/// The theme `name` (offered or not), or `None` for a name that is none of the 26.
+/// The theme `name` (offered or not), or `None` for a name that is none of the 35.
 pub fn theme(name: &str) -> Option<&'static Theme> {
     THEMES.iter().copied().find(|t| t.name == name)
 }
@@ -435,6 +465,19 @@ mod tests {
     }
 
     /// The older episodes' beds (plan m4 Table O2).
+    /// The Studio's own themes (2026-11-16).
+    const STUDIO_THEMES: [&str; 9] = [
+        "celtic_reel",
+        "drumline_metal",
+        "heroic_fanfare",
+        "highlife",
+        "liquid_dnb",
+        "mariachi",
+        "pep_band_punk",
+        "samba_bateria",
+        "surf_rock",
+    ];
+
     const OLDER_MOODS: [&str; 12] = [
         "balkan_fire",
         "brass_house",
@@ -464,11 +507,17 @@ mod tests {
                 .copied()
                 .filter(|n| theme(n).is_some_and(|t| t.ported)),
         );
+        want.extend(STUDIO_THEMES);
         want.sort_unstable();
         assert_eq!(sorted, want);
-        // the registry lists the 26 in alphabetical order: the kit's and the older episodes'
+        // the registry lists the 35 in alphabetical order: the kit's, the older episodes' and the Studio's own
         let names: Vec<&str> = all_themes().iter().map(|t| t.name).collect();
-        let mut all: Vec<&str> = KIT_MOODS.iter().chain(&OLDER_MOODS).copied().collect();
+        let mut all: Vec<&str> = KIT_MOODS
+            .iter()
+            .chain(&OLDER_MOODS)
+            .chain(&STUDIO_THEMES)
+            .copied()
+            .collect();
         all.sort_unstable();
         assert_eq!(names, all);
         for name in PORTED_THEMES {
@@ -528,7 +577,7 @@ mod tests {
     #[test]
     fn validate_refuses_exactly_the_themes_a_pair_is_not_offered() {
         let offered = themes_for("FLUTE", "TROMBONE");
-        assert_eq!(offered.len(), 24);
+        assert_eq!(offered.len(), 33);
         for name in PORTED_THEMES {
             let mut ff = episode();
             ff.music.theme = name.to_string();

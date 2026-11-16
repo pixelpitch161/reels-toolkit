@@ -110,7 +110,7 @@ const CINEMA: &str = CATEGORIES[2];
 const ROCK: &str = CATEGORIES[3];
 const CLUB: &str = CATEGORIES[4];
 
-const THEMES: [(&str, ThemeFit); 26] = [
+const THEMES: [(&str, ThemeFit); 35] = [
     (
         "hot_jazz",
         t(
@@ -330,6 +330,94 @@ const THEMES: [(&str, ThemeFit); 26] = [
             &[("percussive", 2), ("electric", 1), ("sinister", 1), ("rock", 1)],
             118.0,
             134.0,
+        ),
+    ),
+    // the Studio's own themes (2026-11-16)
+    (
+        "surf_rock",
+        t(
+            ROCK,
+            &[("plucked", 2), ("electric", 1), ("rock", 1), ("high", 1)],
+            150.0,
+            168.0,
+        ),
+    ),
+    (
+        "pep_band_punk",
+        t(
+            ROCK,
+            &[("brassy", 2), ("rock", 2), ("percussive", 1), ("high", 1)],
+            150.0,
+            168.0,
+        ),
+    ),
+    (
+        "drumline_metal",
+        t(
+            ROCK,
+            &[
+                ("percussive", 2),
+                ("rock", 1),
+                ("low", 1),
+                ("brassy", 1),
+                ("sinister", 1),
+            ],
+            132.0,
+            160.0,
+        ),
+    ),
+    (
+        "celtic_reel",
+        t(
+            FOLK,
+            &[("folk", 2), ("airy", 2), ("reedy", 1), ("high", 1)],
+            112.0,
+            132.0,
+        ),
+    ),
+    (
+        "mariachi",
+        t(
+            FOLK,
+            &[("brassy", 2), ("plucked", 1), ("folk", 1), ("high", 1)],
+            130.0,
+            160.0,
+        ),
+    ),
+    (
+        "highlife",
+        t(
+            FOLK,
+            &[("brassy", 2), ("plucked", 1), ("folk", 1), ("jazz", 1)],
+            112.0,
+            128.0,
+        ),
+    ),
+    (
+        "samba_bateria",
+        t(
+            JAZZ,
+            &[("percussive", 2), ("high", 1), ("brassy", 1), ("club", 1)],
+            98.0,
+            112.0,
+        ),
+    ),
+    (
+        "heroic_fanfare",
+        t(
+            CINEMA,
+            &[("brassy", 2), ("classical", 2), ("high", 1), ("airy", 1)],
+            100.0,
+            128.0,
+        ),
+    ),
+    (
+        "liquid_dnb",
+        t(
+            CLUB,
+            &[("airy", 2), ("reedy", 1), ("club", 1), ("high", 1)],
+            160.0,
+            168.0,
         ),
     ),
 ];
