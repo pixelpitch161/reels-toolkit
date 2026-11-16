@@ -122,6 +122,109 @@
    "idiom": "mallets"
   },
   {
+   "name": "PICCOLO",
+   "color": [248, 240, 144],
+   "dark": [150, 140, 60],
+   "corner": "blue",
+   "view": [30, 20, 0],
+   "weapon": {
+    "kind": "needle",
+    "style": "needle",
+    "name": "PIERCING NOTE",
+    "every": 1,
+    "speed": 24.0,
+    "n0": 1,
+    "grow": 0.5,
+    "n_max": 5,
+    "dmg": 0.7,
+    "knock": 0.25,
+    "hit_r": 0.06
+   },
+   "abilities": {
+    "unlock1": {
+     "name": "TRILL",
+     "kind": "haste",
+     "mult": 2.0,
+     "dur_beats": 8,
+     "every_bars": 4
+    },
+    "unlock2": {
+     "name": "OVER THE BAND",
+     "kind": "over_band",
+     "dur_beats": 8,
+     "every_bars": 5
+    },
+    "low": {
+     "name": "GLASS SHATTER",
+     "kind": "shatter",
+     "n": 24,
+     "beats": 2,
+     "speed": 5.0,
+     "dmg": 0.5,
+     "knock": 0.1
+    }
+   },
+   "pp": "PICCOLO",
+   "register": [74, 105],
+   "idiom": "needle"
+  },
+  {"name": "SOPRANO SAX", "color": [0, 232, 16], "dark": [0, 104, 12], "corner": "blue", "view": [0, 18, 0], "weapon": {"kind": "swarm", "style": "swarm", "name": "HORNET SWARM", "every": 4, "off16": 0, "start": 3, "max": 7, "speed": 5.5, "steer": 5.0, "life": 3, "dmg": 1.5, "knock": 0.35, "bee_r": 0.13}, "abilities": {"unlock1": {"name": "KICK THE HIVE", "kind": "hive", "dur_beats": 4, "dmg": 1.2, "every_bars": 6}, "unlock2": {"name": "BUZZ OFF", "kind": "buzz", "dur_beats": 4, "dmg": 1.5, "knock": 1.2, "every_bars": 5}, "low": {"name": "QUEEN", "kind": "queen", "dur_beats": 8, "speed": 4.5, "dmg": 3.5, "knock": 0.9, "gap": 1}}, "pp": "SOPRANO SAX", "register": [58, 86], "idiom": "buzz"},
+  {
+   "name": "MELLOPHONE",
+   "color": [40, 24, 244],
+   "dark": [18, 10, 130],
+   "corner": "red",
+   "view": [0, 18, 0],
+   "weapon": {
+    "kind": "slapback",
+    "style": "slapback",
+    "name": "SLAPBACK",
+    "every": 2,
+    "speed": 5.0,
+    "half_w": 0.32,
+    "delay": 0.5,
+    "n0": 1,
+    "grow": 0.5,
+    "n_max": 3,
+    "dmg": 1.4,
+    "dmg_step": 1.0,
+    "knock": 0.4
+   },
+   "abilities": {
+    "unlock1": {
+     "name": "HORNS UP",
+     "kind": "horns_up",
+     "n": 3,
+     "speed": 9.0,
+     "dmg": 1.2,
+     "knock": 0.3,
+     "stun_beats": 0.5,
+     "every_bars": 4
+    },
+    "unlock2": {
+     "name": "PRESS BOX",
+     "kind": "press_box",
+     "dur_beats": 8,
+     "spread": 18,
+     "every_bars": 6
+    },
+    "low": {
+     "name": "STADIUM ECHO",
+     "kind": "stadium_echo",
+     "beats": 8,
+     "speed": 4.5,
+     "half_w": 0.9,
+     "delay": 0.25,
+     "dmg": 3.5,
+     "dmg_step": 0.8,
+     "knock": 1.0
+    }
+   },
+   "pp": "MELLOPHONE",
+   "register": [53, 84],
+   "idiom": "slapback"
+  },
+  {
    "name": "FLUGELHORN",
    "color": [150, 176, 140],
    "dark": [76, 96, 70],

@@ -12,6 +12,7 @@ pub mod altissimo;
 pub mod arc;
 pub mod barrage;
 pub mod beam;
+pub mod buzz;
 pub mod cannons;
 pub mod clamp;
 pub mod company_front;
@@ -29,7 +30,9 @@ pub mod flash_spin;
 pub mod flick;
 pub mod fork;
 pub mod heartbeat;
+pub mod hive;
 pub mod hook;
+pub mod horns_up;
 pub mod joke;
 pub mod lash;
 pub mod lights_out;
@@ -37,16 +40,21 @@ pub mod melody;
 pub mod mountain;
 pub mod octave;
 pub mod offbeat;
+pub mod over_band;
 pub mod prelude;
+pub mod press_box;
+pub mod queen;
 pub mod rewind;
 pub mod rhapsody;
 pub mod runoff;
 pub mod runway;
+pub mod shatter;
 pub mod slap;
 pub mod smash;
 pub mod snap;
 pub mod snip;
 pub mod spout;
+pub mod stadium_echo;
 pub mod stagedive;
 pub mod stampede;
 pub mod stoptime;
@@ -215,6 +223,22 @@ pub enum AbilityKind {
     DeadStroke,
     /// `five_octaves`: MARIMBA's FIVE OCTAVES (a Studio kind).
     FiveOctaves,
+    /// `over_band`: PICCOLO's OVER THE BAND (a Studio kind).
+    OverBand,
+    /// `shatter`: PICCOLO's GLASS SHATTER (a Studio kind).
+    Shatter,
+    /// `hive`: SOPRANO SAX's KICK THE HIVE (a Studio kind).
+    Hive,
+    /// `buzz`: SOPRANO SAX's BUZZ OFF (a Studio kind).
+    Buzz,
+    /// `queen`: SOPRANO SAX's QUEEN (a Studio kind).
+    Queen,
+    /// `horns_up`: MELLOPHONE's HORNS UP (a Studio kind).
+    HornsUp,
+    /// `press_box`: MELLOPHONE's PRESS BOX (a Studio kind).
+    PressBox,
+    /// `stadium_echo`: MELLOPHONE's STADIUM ECHO (a Studio kind).
+    StadiumEcho,
     /// `flank`: FLUGELHORN's FLANKING CALL (a Studio kind).
     Flank,
     /// `take_wing`: FLUGELHORN's TAKE WING (a Studio kind).
@@ -329,6 +353,22 @@ pub enum AbilitySettings {
     DeadStroke(dead_stroke::DeadStrokeCfg),
     /// Kind `five_octaves`.
     FiveOctaves(five_octaves::FiveOctavesCfg),
+    /// Kind `over_band`.
+    OverBand(over_band::OverBandCfg),
+    /// Kind `shatter`.
+    Shatter(shatter::ShatterCfg),
+    /// Kind `hive`.
+    Hive(hive::HiveCfg),
+    /// Kind `buzz`.
+    Buzz(buzz::BuzzCfg),
+    /// Kind `queen`.
+    Queen(queen::QueenCfg),
+    /// Kind `horns_up`.
+    HornsUp(horns_up::HornsUpCfg),
+    /// Kind `press_box`.
+    PressBox(press_box::PressBoxCfg),
+    /// Kind `stadium_echo`.
+    StadiumEcho(stadium_echo::StadiumEchoCfg),
     /// Kind `flank`.
     Flank(flank::FlankCfg),
     /// Kind `take_wing`.
@@ -396,6 +436,14 @@ impl AbilityKind {
             AbilityKind::Tremolo => "tremolo",
             AbilityKind::DeadStroke => "dead_stroke",
             AbilityKind::FiveOctaves => "five_octaves",
+            AbilityKind::OverBand => "over_band",
+            AbilityKind::Shatter => "shatter",
+            AbilityKind::Hive => "hive",
+            AbilityKind::Buzz => "buzz",
+            AbilityKind::Queen => "queen",
+            AbilityKind::HornsUp => "horns_up",
+            AbilityKind::PressBox => "press_box",
+            AbilityKind::StadiumEcho => "stadium_echo",
             AbilityKind::Flank => "flank",
             AbilityKind::TakeWing => "take_wing",
             AbilityKind::Unsupported(kind) => kind.split('+').next().unwrap_or(kind),
@@ -461,6 +509,14 @@ impl AbilityKind {
             "tremolo" if tremolo::PORTED => AbilityKind::Tremolo,
             "dead_stroke" if dead_stroke::PORTED => AbilityKind::DeadStroke,
             "five_octaves" if five_octaves::PORTED => AbilityKind::FiveOctaves,
+            "over_band" if over_band::PORTED => AbilityKind::OverBand,
+            "shatter" if shatter::PORTED => AbilityKind::Shatter,
+            "hive" if hive::PORTED => AbilityKind::Hive,
+            "buzz" if buzz::PORTED => AbilityKind::Buzz,
+            "queen" if queen::PORTED => AbilityKind::Queen,
+            "horns_up" if horns_up::PORTED => AbilityKind::HornsUp,
+            "press_box" if press_box::PORTED => AbilityKind::PressBox,
+            "stadium_echo" if stadium_echo::PORTED => AbilityKind::StadiumEcho,
             "flank" if flank::PORTED => AbilityKind::Flank,
             "take_wing" if take_wing::PORTED => AbilityKind::TakeWing,
             other => AbilityKind::Unsupported(other.to_string()),
@@ -525,6 +581,14 @@ impl AbilityKind {
             AbilityKind::Tremolo => tremolo::REQUIRED,
             AbilityKind::DeadStroke => dead_stroke::REQUIRED,
             AbilityKind::FiveOctaves => five_octaves::REQUIRED,
+            AbilityKind::OverBand => over_band::REQUIRED,
+            AbilityKind::Shatter => shatter::REQUIRED,
+            AbilityKind::Hive => hive::REQUIRED,
+            AbilityKind::Buzz => buzz::REQUIRED,
+            AbilityKind::Queen => queen::REQUIRED,
+            AbilityKind::HornsUp => horns_up::REQUIRED,
+            AbilityKind::PressBox => press_box::REQUIRED,
+            AbilityKind::StadiumEcho => stadium_echo::REQUIRED,
             AbilityKind::Flank => flank::REQUIRED,
             AbilityKind::TakeWing => take_wing::REQUIRED,
             AbilityKind::Unsupported(_) => &[],
@@ -591,6 +655,14 @@ impl AbilityKind {
             AbilityKind::Tremolo => tremolo::ALLOWED,
             AbilityKind::DeadStroke => dead_stroke::ALLOWED,
             AbilityKind::FiveOctaves => five_octaves::ALLOWED,
+            AbilityKind::OverBand => over_band::ALLOWED,
+            AbilityKind::Shatter => shatter::ALLOWED,
+            AbilityKind::Hive => hive::ALLOWED,
+            AbilityKind::Buzz => buzz::ALLOWED,
+            AbilityKind::Queen => queen::ALLOWED,
+            AbilityKind::HornsUp => horns_up::ALLOWED,
+            AbilityKind::PressBox => press_box::ALLOWED,
+            AbilityKind::StadiumEcho => stadium_echo::ALLOWED,
             AbilityKind::Flank => flank::ALLOWED,
             AbilityKind::TakeWing => take_wing::ALLOWED,
             AbilityKind::Unsupported(_) => &[],
@@ -663,6 +735,14 @@ fn settings(e: &Entry, prefix: &str, kind: &AbilityKind, ab: &Json) -> Result<Ab
         AbilityKind::Tremolo => AbilitySettings::Tremolo(tremolo::parse(e, prefix, ab)?),
         AbilityKind::DeadStroke => AbilitySettings::DeadStroke(dead_stroke::parse(e, prefix, ab)?),
         AbilityKind::FiveOctaves => AbilitySettings::FiveOctaves(five_octaves::parse(e, prefix, ab)?),
+        AbilityKind::OverBand => AbilitySettings::OverBand(over_band::parse(e, prefix, ab)?),
+        AbilityKind::Shatter => AbilitySettings::Shatter(shatter::parse(e, prefix, ab)?),
+        AbilityKind::Hive => AbilitySettings::Hive(hive::parse(e, prefix, ab)?),
+        AbilityKind::Buzz => AbilitySettings::Buzz(buzz::parse(e, prefix, ab)?),
+        AbilityKind::Queen => AbilitySettings::Queen(queen::parse(e, prefix, ab)?),
+        AbilityKind::HornsUp => AbilitySettings::HornsUp(horns_up::parse(e, prefix, ab)?),
+        AbilityKind::PressBox => AbilitySettings::PressBox(press_box::parse(e, prefix, ab)?),
+        AbilityKind::StadiumEcho => AbilitySettings::StadiumEcho(stadium_echo::parse(e, prefix, ab)?),
         AbilityKind::Flank => AbilitySettings::Flank(flank::parse(e, prefix, ab)?),
         AbilityKind::TakeWing => AbilitySettings::TakeWing(take_wing::parse(e, prefix, ab)?),
     })
@@ -728,6 +808,14 @@ pub(crate) fn kind_check(e: &Entry, prefix: &str, ab: &AbilityCfg) -> Result<(),
         AbilityKind::Tremolo => tremolo::check(e, prefix, ab),
         AbilityKind::DeadStroke => dead_stroke::check(e, prefix, ab),
         AbilityKind::FiveOctaves => five_octaves::check(e, prefix, ab),
+        AbilityKind::OverBand => over_band::check(e, prefix, ab),
+        AbilityKind::Shatter => shatter::check(e, prefix, ab),
+        AbilityKind::Hive => hive::check(e, prefix, ab),
+        AbilityKind::Buzz => buzz::check(e, prefix, ab),
+        AbilityKind::Queen => queen::check(e, prefix, ab),
+        AbilityKind::HornsUp => horns_up::check(e, prefix, ab),
+        AbilityKind::PressBox => press_box::check(e, prefix, ab),
+        AbilityKind::StadiumEcho => stadium_echo::check(e, prefix, ab),
         AbilityKind::Flank => flank::check(e, prefix, ab),
         AbilityKind::TakeWing => take_wing::check(e, prefix, ab),
     }
