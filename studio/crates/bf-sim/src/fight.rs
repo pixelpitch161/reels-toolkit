@@ -202,6 +202,8 @@ pub struct Fight<'a> {
     pub echo: kinds::echo::State,
     /// Weapon kind `foghorn`'s state (CONTRABASS CLARINET, made in the Studio).
     pub foghorn: kinds::foghorn::State,
+    /// Weapon kind `wingbeat`'s state and its FLANKING CALL and TAKE WING (FLUGELHORN, a Studio kind).
+    pub wingbeat: kinds::wingbeat::State,
     /// Weapon kind `line`'s state (ORGAN): the pipes' hazards.
     pub line: kinds::line::State,
     /// Weapon kind `rake`'s state (ACOUSTIC).
@@ -234,6 +236,12 @@ pub struct Fight<'a> {
     pub mallets: kinds::mallets::State,
     /// Weapon kind `needle`'s state (PICCOLO, a Studio kind): the needles in the air and its abilities' timers.
     pub needle: kinds::needle::State,
+    /// Weapon kind `swarm`'s state (SOPRANO SAX, a Studio kind): its hornets and its abilities' timers.
+    pub swarm: kinds::swarm::State,
+    /// Weapon kind `slapback`'s state (MELLOPHONE, a Studio kind): the waves, the echoes on the ropes, its moves' timers.
+    pub slapback: kinds::slapback::State,
+    /// Weapon kind `kettles`'s state (TIMPANI, a Studio kind): the kettles, their rings, the hops.
+    pub kettles: kinds::kettles::State,
     /// Weapon kind `sticks`'s state (SNARE DRUM, a Studio kind): the jabs in flight and its abilities' timers.
     pub sticks: kinds::sticks::State,
     /// Weapon kind `roll_charge`'s state (BASS DRUM).
@@ -285,6 +293,8 @@ pub struct Fight<'a> {
     pub bite: kinds::bite::State,
     /// Weapon kind `trap`'s state (HARP).
     pub trap: kinds::trap::State,
+    /// Weapon kind `plumbing`'s state (CONTRABASSOON, made from scratch).
+    pub plumbing: kinds::plumbing::State,
     /// Weapon kind `surf`'s state (UKULELE).
     pub surf: kinds::surf::State,
     /// Weapon kind `scratch_floor`'s state (TURNTABLES).
@@ -404,6 +414,7 @@ impl<'a> Fight<'a> {
             swallow: Default::default(),
             echo: Default::default(),
             foghorn: Default::default(),
+            wingbeat: Default::default(),
             line: Default::default(),
             rake: Default::default(),
             combo: Default::default(),
@@ -421,6 +432,9 @@ impl<'a> Fight<'a> {
             roll_charge: Default::default(),
             mallets: Default::default(),
             needle: Default::default(),
+            swarm: Default::default(),
+            slapback: Default::default(),
+            kettles: Default::default(),
             sticks: Default::default(),
             sustain: Default::default(),
             arc: Default::default(),
@@ -444,6 +458,7 @@ impl<'a> Fight<'a> {
             inflate: Default::default(),
             bite: Default::default(),
             trap: Default::default(),
+            plumbing: Default::default(),
             surf: Default::default(),
             scratch_floor: Default::default(),
             tether: Default::default(),

@@ -61,7 +61,7 @@ const fn t(category: &'static str, likes: &'static [(&'static str, u8)], lo: f64
     }
 }
 
-const FIGHTERS: [(&str, FighterFit); 35] = [
+const FIGHTERS: [(&str, FighterFit); 40] = [
     ("FLUTE", f(&["airy", "high", "classical", "folk"], 3)),
     ("PICCOLO", f(&["airy", "high", "folk", "classical"], 3)),
     ("OBOE", f(&["reedy", "high", "classical", "folk"], 2)),
@@ -70,15 +70,20 @@ const FIGHTERS: [(&str, FighterFit); 35] = [
     ("CONTRABASS CLARINET", f(&["reedy", "low", "sinister"], 1)),
     ("BASSOON", f(&["reedy", "low", "classical", "sinister"], 1)),
     ("ALTO SAX", f(&["reedy", "high", "jazz", "club"], 3)),
+    ("SOPRANO SAX", f(&["reedy", "high", "jazz", "folk"], 3)),
     ("TENOR SAX", f(&["reedy", "jazz", "rock", "club"], 2)),
     ("BARI SAX", f(&["reedy", "low", "jazz", "club"], 2)),
     ("BAGPIPES", f(&["reedy", "high", "folk"], 3)),
     ("TRUMPET", f(&["brassy", "high", "jazz", "classical"], 3)),
     ("CORNET", f(&["brassy", "jazz", "folk"], 2)),
+    ("FLUGELHORN", f(&["brassy", "jazz", "club"], 2)),
     ("HORN", f(&["brassy", "classical", "sinister"], 2)),
+    ("MELLOPHONE", f(&["brassy", "high", "folk", "rock"], 3)),
     ("TROMBONE", f(&["brassy", "low", "jazz"], 2)),
     ("EUPHONIUM", f(&["brassy", "low", "classical", "folk"], 2)),
     ("MARIMBA", f(&["percussive", "high", "folk", "jazz"], 3)),
+    ("TIMPANI", f(&["percussive", "low", "classical", "sinister"], 2)),
+    ("CONTRABASSOON", f(&["reedy", "low", "sinister", "classical"], 1)),
     ("TUBA", f(&["brassy", "low", "folk"], 1)),
     ("SOUSAPHONE", f(&["brassy", "low", "jazz", "folk"], 2)),
     ("VIOLIN", f(&["bowed", "high", "classical", "folk"], 3)),

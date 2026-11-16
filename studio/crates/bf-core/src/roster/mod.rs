@@ -24,15 +24,17 @@ pub use abilities::{AbilityCfg, AbilityKind, AbilitySettings, SlowCfg};
 pub use blade::{BladeCfg, BladeMode, MAX_FRETS0};
 pub use kinds::plunger::PlungerCfg;
 pub use kinds::sticks::SticksCfg;
+pub use kinds::swarm::SwarmCfg;
 pub use kinds::{
     anchor::AnchorCfg, combo::ComboCfg, crowd::CrowdCfg, drill::DrillCfg, echo::EchoCfg, grapple::GrappleCfg,
-    jump::JumpCfg, lightning::LightningCfg, line::LineCfg, mallets::MalletsCfg, mortar::MortarCfg, needle::NeedleCfg,
-    rake::RakeCfg, roll::RollCfg, roll_charge::RollChargeCfg, spotlight::SpotlightCfg, swallow::SwallowCfg,
-    tiptoe::TiptoeCfg, tune::TuneCfg, walk::WalkCfg,
+    jump::JumpCfg, kettles::KettlesCfg, lightning::LightningCfg, line::LineCfg, mallets::MalletsCfg, mortar::MortarCfg,
+    needle::NeedleCfg, rake::RakeCfg, roll::RollCfg, roll_charge::RollChargeCfg, spotlight::SpotlightCfg,
+    swallow::SwallowCfg, tiptoe::TiptoeCfg, tune::TuneCfg, walk::WalkCfg,
 };
 pub use kinds::{
-    bite::BiteCfg, foghorn::FoghornCfg, inflate::InflateCfg, pulse::PulseCfg, rests::RestsCfg,
-    scratch_floor::ScratchFloorCfg, surf::SurfCfg, tether::TetherCfg, trap::TrapCfg, wrecking::WreckingCfg,
+    bite::BiteCfg, foghorn::FoghornCfg, inflate::InflateCfg, plumbing::PlumbingCfg, pulse::PulseCfg, rests::RestsCfg,
+    scratch_floor::ScratchFloorCfg, slapback::SlapbackCfg, surf::SurfCfg, tether::TetherCfg, trap::TrapCfg,
+    wingbeat::WingbeatCfg, wrecking::WreckingCfg,
 };
 pub use striker::StrikerCfg;
 
@@ -130,16 +132,20 @@ pub const OLDER_ABILITY_KINDS: [(&str, bool); 9] = [
 
 /// The weapon kinds of the fighters made from scratch in the Studio (no Python kit reference), each with its module's
 /// `PORTED`, as [`OLDER_WEAPON_KINDS`].
-pub const NEW_WEAPON_KINDS: [(&str, bool); 5] = [
+pub const NEW_WEAPON_KINDS: [(&str, bool); 9] = [
     ("plunger", kinds::plunger::PORTED),
     ("mallets", kinds::mallets::PORTED),
+    ("swarm", kinds::swarm::PORTED),
     ("sticks", kinds::sticks::PORTED),
     ("foghorn", kinds::foghorn::PORTED),
     ("needle", kinds::needle::PORTED),
+    ("slapback", kinds::slapback::PORTED),
+    ("kettles", kinds::kettles::PORTED),
+    ("wingbeat", kinds::wingbeat::PORTED),
 ];
 
 /// The ability kinds of the fighters made from scratch in the Studio, each with its module's `PORTED`.
-pub const NEW_ABILITY_KINDS: [(&str, bool); 10] = [
+pub const NEW_ABILITY_KINDS: [(&str, bool); 20] = [
     ("derby", abilities::derby::PORTED),
     ("stoptime", abilities::stoptime::PORTED),
     ("tremolo", abilities::tremolo::PORTED),
@@ -147,6 +153,16 @@ pub const NEW_ABILITY_KINDS: [(&str, bool); 10] = [
     ("five_octaves", abilities::five_octaves::PORTED),
     ("over_band", abilities::over_band::PORTED),
     ("shatter", abilities::shatter::PORTED),
+    ("hive", abilities::hive::PORTED),
+    ("buzz", abilities::buzz::PORTED),
+    ("queen", abilities::queen::PORTED),
+    ("horns_up", abilities::horns_up::PORTED),
+    ("press_box", abilities::press_box::PORTED),
+    ("stadium_echo", abilities::stadium_echo::PORTED),
+    ("pedal_slide", abilities::pedal_slide::PORTED),
+    ("full_set", abilities::full_set::PORTED),
+    ("flank", abilities::flank::PORTED),
+    ("take_wing", abilities::take_wing::PORTED),
     ("flam", abilities::flam::PORTED),
     ("rimshot", abilities::rimshot::PORTED),
     ("buzz_roll", abilities::buzz_roll::PORTED),
@@ -230,6 +246,8 @@ pub enum WeaponCfg {
     Bite(kinds::bite::BiteCfg),
     /// Kind `trap` (HARP's the strings; milestone 4), typed by `roster::kinds::trap`.
     Trap(kinds::trap::TrapCfg),
+    /// Kind `plumbing` (CONTRABASSOON's U-BEND; made in the Studio), typed by `roster::kinds::plumbing`.
+    Plumbing(kinds::plumbing::PlumbingCfg),
     /// Kind `surf` (UKULELE's SURF'S UP; milestone 4), typed by `roster::kinds::surf`.
     Surf(kinds::surf::SurfCfg),
     /// Kind `scratch_floor` (TURNTABLES's THE RING IS THE RECORD; milestone 4), typed by
@@ -245,10 +263,18 @@ pub enum WeaponCfg {
     Plunger(kinds::plunger::PlungerCfg),
     /// Kind `foghorn` (CONTRABASS CLARINET's FOGHORN; made in the Studio), typed by `roster::kinds::foghorn`.
     Foghorn(kinds::foghorn::FoghornCfg),
+    /// Kind `slapback` (MELLOPHONE's SLAPBACK; made in the Studio), typed by `roster::kinds::slapback`.
+    Slapback(kinds::slapback::SlapbackCfg),
     /// Kind `mallets` (MARIMBA's MALLET RUN, a Studio kind), typed by `roster::kinds::mallets`.
     Mallets(kinds::mallets::MalletsCfg),
     /// Kind `needle` (PICCOLO's PIERCING NOTE, a Studio kind), typed by `roster::kinds::needle`.
     Needle(kinds::needle::NeedleCfg),
+    /// Kind `swarm` (SOPRANO SAX's HORNET SWARM, a Studio kind), typed by `roster::kinds::swarm`.
+    Swarm(kinds::swarm::SwarmCfg),
+    /// Kind `kettles` (TIMPANI's TWO KETTLES, a Studio kind), typed by `roster::kinds::kettles`.
+    Kettles(kinds::kettles::KettlesCfg),
+    /// Kind `wingbeat` (FLUGELHORN's WINGBEAT, a Studio kind), typed by `roster::kinds::wingbeat`.
+    Wingbeat(kinds::wingbeat::WingbeatCfg),
     /// Kind `sticks` (SNARE DRUM's PARADIDDLE, a Studio kind), typed by `roster::kinds::sticks`.
     Sticks(kinds::sticks::SticksCfg),
     /// A kind the engine has not ported yet (a spinning blade, with no `mode`, is `"blade"` until
@@ -467,6 +493,7 @@ impl Entry<'_> {
             "inflate" if kinds::inflate::PORTED => Ok(WeaponCfg::Inflate(kinds::inflate::parse(self, w)?)),
             "bite" if kinds::bite::PORTED => Ok(WeaponCfg::Bite(kinds::bite::parse(self, w)?)),
             "trap" if kinds::trap::PORTED => Ok(WeaponCfg::Trap(kinds::trap::parse(self, w)?)),
+            "plumbing" if kinds::plumbing::PORTED => Ok(WeaponCfg::Plumbing(kinds::plumbing::parse(self, w)?)),
             "surf" if kinds::surf::PORTED => Ok(WeaponCfg::Surf(kinds::surf::parse(self, w)?)),
             "scratch_floor" if kinds::scratch_floor::PORTED => {
                 Ok(WeaponCfg::ScratchFloor(kinds::scratch_floor::parse(self, w)?))
@@ -476,8 +503,12 @@ impl Entry<'_> {
             "rests" if kinds::rests::PORTED => Ok(WeaponCfg::Rests(kinds::rests::parse(self, w)?)),
             "plunger" if kinds::plunger::PORTED => Ok(WeaponCfg::Plunger(kinds::plunger::parse(self, w)?)),
             "foghorn" if kinds::foghorn::PORTED => Ok(WeaponCfg::Foghorn(kinds::foghorn::parse(self, w)?)),
+            "slapback" if kinds::slapback::PORTED => Ok(WeaponCfg::Slapback(kinds::slapback::parse(self, w)?)),
             "mallets" if kinds::mallets::PORTED => Ok(WeaponCfg::Mallets(kinds::mallets::parse(self, w)?)),
             "needle" if kinds::needle::PORTED => Ok(WeaponCfg::Needle(kinds::needle::parse(self, w)?)),
+            "swarm" if kinds::swarm::PORTED => Ok(WeaponCfg::Swarm(kinds::swarm::parse(self, w)?)),
+            "kettles" if kinds::kettles::PORTED => Ok(WeaponCfg::Kettles(kinds::kettles::parse(self, w)?)),
+            "wingbeat" if kinds::wingbeat::PORTED => Ok(WeaponCfg::Wingbeat(kinds::wingbeat::parse(self, w)?)),
             "sticks" if kinds::sticks::PORTED => Ok(WeaponCfg::Sticks(kinds::sticks::parse(self, w)?)),
             _ => Ok(WeaponCfg::Unsupported(kind)),
         }
@@ -569,6 +600,7 @@ impl FighterCfg {
             WeaponCfg::Inflate(w) => kinds::inflate::check(&e, w)?,
             WeaponCfg::Bite(w) => kinds::bite::check(&e, w)?,
             WeaponCfg::Trap(w) => kinds::trap::check(&e, w)?,
+            WeaponCfg::Plumbing(w) => kinds::plumbing::check(&e, w)?,
             WeaponCfg::Surf(w) => kinds::surf::check(&e, w)?,
             WeaponCfg::ScratchFloor(w) => kinds::scratch_floor::check(&e, w)?,
             WeaponCfg::Tether(w) => kinds::tether::check(&e, w)?,
@@ -576,8 +608,12 @@ impl FighterCfg {
             WeaponCfg::Rests(w) => kinds::rests::check(&e, w)?,
             WeaponCfg::Plunger(w) => kinds::plunger::check(&e, w)?,
             WeaponCfg::Foghorn(w) => kinds::foghorn::check(&e, w)?,
+            WeaponCfg::Slapback(w) => kinds::slapback::check(&e, w)?,
             WeaponCfg::Mallets(w) => kinds::mallets::check(&e, w)?,
             WeaponCfg::Needle(w) => kinds::needle::check(&e, w)?,
+            WeaponCfg::Swarm(w) => kinds::swarm::check(&e, w)?,
+            WeaponCfg::Kettles(w) => kinds::kettles::check(&e, w)?,
+            WeaponCfg::Wingbeat(w) => kinds::wingbeat::check(&e, w)?,
             WeaponCfg::Sticks(w) => kinds::sticks::check(&e, w)?,
             WeaponCfg::Unsupported(_) => {}
         }
@@ -646,6 +682,7 @@ impl WeaponCfg {
             WeaponCfg::Inflate(w) => return kinds::inflate::main16(w),
             WeaponCfg::Bite(w) => return kinds::bite::main16(w),
             WeaponCfg::Trap(w) => return kinds::trap::main16(w),
+            WeaponCfg::Plumbing(w) => return kinds::plumbing::main16(w),
             WeaponCfg::Surf(w) => return kinds::surf::main16(w),
             WeaponCfg::ScratchFloor(w) => return kinds::scratch_floor::main16(w),
             WeaponCfg::Tether(w) => return kinds::tether::main16(w),
@@ -653,8 +690,12 @@ impl WeaponCfg {
             WeaponCfg::Rests(w) => return kinds::rests::main16(w),
             WeaponCfg::Plunger(w) => return kinds::plunger::main16(w),
             WeaponCfg::Foghorn(w) => return kinds::foghorn::main16(w),
+            WeaponCfg::Slapback(w) => return kinds::slapback::main16(w),
             WeaponCfg::Mallets(w) => return kinds::mallets::main16(w),
             WeaponCfg::Needle(w) => return kinds::needle::main16(w),
+            WeaponCfg::Swarm(w) => return kinds::swarm::main16(w),
+            WeaponCfg::Kettles(w) => return kinds::kettles::main16(w),
+            WeaponCfg::Wingbeat(w) => return kinds::wingbeat::main16(w),
             WeaponCfg::Sticks(w) => return kinds::sticks::main16(w),
             WeaponCfg::Unsupported(_) => return None,
         };
@@ -696,6 +737,7 @@ impl WeaponCfg {
             WeaponCfg::Inflate(w) => kinds::inflate::ball_start(w),
             WeaponCfg::Bite(w) => kinds::bite::ball_start(w),
             WeaponCfg::Trap(w) => kinds::trap::ball_start(w),
+            WeaponCfg::Plumbing(w) => kinds::plumbing::ball_start(w),
             WeaponCfg::Surf(w) => kinds::surf::ball_start(w),
             WeaponCfg::ScratchFloor(w) => kinds::scratch_floor::ball_start(w),
             WeaponCfg::Tether(w) => kinds::tether::ball_start(w),
@@ -703,8 +745,12 @@ impl WeaponCfg {
             WeaponCfg::Rests(w) => kinds::rests::ball_start(w),
             WeaponCfg::Plunger(w) => kinds::plunger::ball_start(w),
             WeaponCfg::Foghorn(w) => kinds::foghorn::ball_start(w),
+            WeaponCfg::Slapback(w) => kinds::slapback::ball_start(w),
             WeaponCfg::Mallets(w) => kinds::mallets::ball_start(w),
             WeaponCfg::Needle(w) => kinds::needle::ball_start(w),
+            WeaponCfg::Swarm(w) => kinds::swarm::ball_start(w),
+            WeaponCfg::Kettles(w) => kinds::kettles::ball_start(w),
+            WeaponCfg::Wingbeat(w) => kinds::wingbeat::ball_start(w),
             WeaponCfg::Sticks(w) => kinds::sticks::ball_start(w),
             WeaponCfg::Unsupported(_) => BallStart::default(),
         }
@@ -737,6 +783,7 @@ impl WeaponCfg {
             WeaponCfg::Inflate(_) => "inflate",
             WeaponCfg::Bite(_) => "bite",
             WeaponCfg::Trap(_) => "trap",
+            WeaponCfg::Plumbing(_) => "plumbing",
             WeaponCfg::Surf(_) => "surf",
             WeaponCfg::ScratchFloor(_) => "scratch_floor",
             WeaponCfg::Tether(_) => "tether",
@@ -744,8 +791,12 @@ impl WeaponCfg {
             WeaponCfg::Rests(_) => "rests",
             WeaponCfg::Plunger(_) => "plunger",
             WeaponCfg::Foghorn(_) => "foghorn",
+            WeaponCfg::Slapback(_) => "slapback",
             WeaponCfg::Mallets(_) => "mallets",
             WeaponCfg::Needle(_) => "needle",
+            WeaponCfg::Swarm(_) => "swarm",
+            WeaponCfg::Kettles(_) => "kettles",
+            WeaponCfg::Wingbeat(_) => "wingbeat",
             WeaponCfg::Sticks(_) => "sticks",
             WeaponCfg::Unsupported(kind) => kind,
         }

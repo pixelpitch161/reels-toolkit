@@ -12,6 +12,7 @@ pub mod altissimo;
 pub mod arc;
 pub mod barrage;
 pub mod beam;
+pub mod buzz;
 pub mod buzz_roll;
 pub mod cannons;
 pub mod clamp;
@@ -26,11 +27,16 @@ pub mod encore;
 pub mod endless;
 pub mod five_octaves;
 pub mod flam;
+pub mod flank;
 pub mod flash_spin;
 pub mod flick;
 pub mod fork;
+pub mod full_set;
 pub mod heartbeat;
+pub mod hive;
 pub mod hook;
+pub mod horns_up;
+pub mod hot_pipes;
 pub mod joke;
 pub mod lash;
 pub mod lights_out;
@@ -39,7 +45,11 @@ pub mod mountain;
 pub mod octave;
 pub mod offbeat;
 pub mod over_band;
+pub mod pedal_slide;
+pub mod pipe_box;
 pub mod prelude;
+pub mod press_box;
+pub mod queen;
 pub mod rewind;
 pub mod rhapsody;
 pub mod rimshot;
@@ -51,6 +61,7 @@ pub mod smash;
 pub mod snap;
 pub mod snip;
 pub mod spout;
+pub mod stadium_echo;
 pub mod stagedive;
 pub mod stampede;
 pub mod stoptime;
@@ -59,10 +70,12 @@ pub mod subtone;
 pub mod sustain;
 pub mod swan;
 pub mod sweep;
+pub mod take_wing;
 pub mod tapping;
 pub mod tremolo;
 pub mod twin;
 pub mod vibrato;
+pub mod water_key;
 pub mod whip;
 
 /// An ability.
@@ -212,6 +225,12 @@ pub enum AbilityKind {
     Melody,
     /// `joke`: VIOLA's VIOLA JOKE (`fight.py` `trigger` 2921 to 2922; milestone 4).
     Joke,
+    /// `water_key`: CONTRABASSOON's WATER KEY (made in the Studio).
+    WaterKey,
+    /// `hot_pipes`: CONTRABASSOON's HOT PIPES (made in the Studio).
+    HotPipes,
+    /// `pipe_box`: CONTRABASSOON's FIVE AND A HALF METRES (made in the Studio).
+    PipeBox,
     /// `tremolo`: MARIMBA's TREMOLO (a Studio kind).
     Tremolo,
     /// `dead_stroke`: MARIMBA's DEAD STROKE (a Studio kind).
@@ -222,6 +241,26 @@ pub enum AbilityKind {
     OverBand,
     /// `shatter`: PICCOLO's GLASS SHATTER (a Studio kind).
     Shatter,
+    /// `hive`: SOPRANO SAX's KICK THE HIVE (a Studio kind).
+    Hive,
+    /// `buzz`: SOPRANO SAX's BUZZ OFF (a Studio kind).
+    Buzz,
+    /// `queen`: SOPRANO SAX's QUEEN (a Studio kind).
+    Queen,
+    /// `horns_up`: MELLOPHONE's HORNS UP (a Studio kind).
+    HornsUp,
+    /// `press_box`: MELLOPHONE's PRESS BOX (a Studio kind).
+    PressBox,
+    /// `stadium_echo`: MELLOPHONE's STADIUM ECHO (a Studio kind).
+    StadiumEcho,
+    /// `pedal_slide`: TIMPANI's PEDAL SLIDE (a Studio kind).
+    PedalSlide,
+    /// `full_set`: TIMPANI's FULL SET (a Studio kind).
+    FullSet,
+    /// `flank`: FLUGELHORN's FLANKING CALL (a Studio kind).
+    Flank,
+    /// `take_wing`: FLUGELHORN's TAKE WING (a Studio kind).
+    TakeWing,
     /// `flam`: SNARE DRUM's FLAM (a Studio kind).
     Flam,
     /// `rimshot`: SNARE DRUM's RIMSHOT (a Studio kind).
@@ -332,6 +371,12 @@ pub enum AbilitySettings {
     Melody(melody::MelodyCfg),
     /// Kind `joke`.
     Joke(joke::JokeCfg),
+    /// Kind `water_key`.
+    WaterKey(water_key::WaterKeyCfg),
+    /// Kind `hot_pipes`.
+    HotPipes(hot_pipes::HotPipesCfg),
+    /// Kind `pipe_box`.
+    PipeBox(pipe_box::PipeBoxCfg),
     /// Kind `tremolo`.
     Tremolo(tremolo::TremoloCfg),
     /// Kind `dead_stroke`.
@@ -342,6 +387,26 @@ pub enum AbilitySettings {
     OverBand(over_band::OverBandCfg),
     /// Kind `shatter`.
     Shatter(shatter::ShatterCfg),
+    /// Kind `hive`.
+    Hive(hive::HiveCfg),
+    /// Kind `buzz`.
+    Buzz(buzz::BuzzCfg),
+    /// Kind `queen`.
+    Queen(queen::QueenCfg),
+    /// Kind `horns_up`.
+    HornsUp(horns_up::HornsUpCfg),
+    /// Kind `press_box`.
+    PressBox(press_box::PressBoxCfg),
+    /// Kind `stadium_echo`.
+    StadiumEcho(stadium_echo::StadiumEchoCfg),
+    /// Kind `pedal_slide`.
+    PedalSlide(pedal_slide::PedalSlideCfg),
+    /// Kind `full_set`.
+    FullSet(full_set::FullSetCfg),
+    /// Kind `flank`.
+    Flank(flank::FlankCfg),
+    /// Kind `take_wing`.
+    TakeWing(take_wing::TakeWingCfg),
     /// Kind `flam`.
     Flam(flam::FlamCfg),
     /// Kind `rimshot`.
@@ -408,11 +473,24 @@ impl AbilityKind {
             AbilityKind::DoubleStop => "double_stop",
             AbilityKind::Melody => "melody",
             AbilityKind::Joke => "joke",
+            AbilityKind::WaterKey => "water_key",
+            AbilityKind::HotPipes => "hot_pipes",
+            AbilityKind::PipeBox => "pipe_box",
             AbilityKind::Tremolo => "tremolo",
             AbilityKind::DeadStroke => "dead_stroke",
             AbilityKind::FiveOctaves => "five_octaves",
             AbilityKind::OverBand => "over_band",
             AbilityKind::Shatter => "shatter",
+            AbilityKind::Hive => "hive",
+            AbilityKind::Buzz => "buzz",
+            AbilityKind::Queen => "queen",
+            AbilityKind::HornsUp => "horns_up",
+            AbilityKind::PressBox => "press_box",
+            AbilityKind::StadiumEcho => "stadium_echo",
+            AbilityKind::PedalSlide => "pedal_slide",
+            AbilityKind::FullSet => "full_set",
+            AbilityKind::Flank => "flank",
+            AbilityKind::TakeWing => "take_wing",
             AbilityKind::Flam => "flam",
             AbilityKind::Rimshot => "rimshot",
             AbilityKind::BuzzRoll => "buzz_roll",
@@ -476,11 +554,24 @@ impl AbilityKind {
             "double_stop" if double_stop::PORTED => AbilityKind::DoubleStop,
             "melody" if melody::PORTED => AbilityKind::Melody,
             "joke" if joke::PORTED => AbilityKind::Joke,
+            "water_key" if water_key::PORTED => AbilityKind::WaterKey,
+            "hot_pipes" if hot_pipes::PORTED => AbilityKind::HotPipes,
+            "pipe_box" if pipe_box::PORTED => AbilityKind::PipeBox,
             "tremolo" if tremolo::PORTED => AbilityKind::Tremolo,
             "dead_stroke" if dead_stroke::PORTED => AbilityKind::DeadStroke,
             "five_octaves" if five_octaves::PORTED => AbilityKind::FiveOctaves,
             "over_band" if over_band::PORTED => AbilityKind::OverBand,
             "shatter" if shatter::PORTED => AbilityKind::Shatter,
+            "hive" if hive::PORTED => AbilityKind::Hive,
+            "buzz" if buzz::PORTED => AbilityKind::Buzz,
+            "queen" if queen::PORTED => AbilityKind::Queen,
+            "horns_up" if horns_up::PORTED => AbilityKind::HornsUp,
+            "press_box" if press_box::PORTED => AbilityKind::PressBox,
+            "stadium_echo" if stadium_echo::PORTED => AbilityKind::StadiumEcho,
+            "pedal_slide" if pedal_slide::PORTED => AbilityKind::PedalSlide,
+            "full_set" if full_set::PORTED => AbilityKind::FullSet,
+            "flank" if flank::PORTED => AbilityKind::Flank,
+            "take_wing" if take_wing::PORTED => AbilityKind::TakeWing,
             "flam" if flam::PORTED => AbilityKind::Flam,
             "rimshot" if rimshot::PORTED => AbilityKind::Rimshot,
             "buzz_roll" if buzz_roll::PORTED => AbilityKind::BuzzRoll,
@@ -543,11 +634,24 @@ impl AbilityKind {
             AbilityKind::DoubleStop => double_stop::REQUIRED,
             AbilityKind::Melody => melody::REQUIRED,
             AbilityKind::Joke => joke::REQUIRED,
+            AbilityKind::WaterKey => water_key::REQUIRED,
+            AbilityKind::HotPipes => hot_pipes::REQUIRED,
+            AbilityKind::PipeBox => pipe_box::REQUIRED,
             AbilityKind::Tremolo => tremolo::REQUIRED,
             AbilityKind::DeadStroke => dead_stroke::REQUIRED,
             AbilityKind::FiveOctaves => five_octaves::REQUIRED,
             AbilityKind::OverBand => over_band::REQUIRED,
             AbilityKind::Shatter => shatter::REQUIRED,
+            AbilityKind::Hive => hive::REQUIRED,
+            AbilityKind::Buzz => buzz::REQUIRED,
+            AbilityKind::Queen => queen::REQUIRED,
+            AbilityKind::HornsUp => horns_up::REQUIRED,
+            AbilityKind::PressBox => press_box::REQUIRED,
+            AbilityKind::StadiumEcho => stadium_echo::REQUIRED,
+            AbilityKind::PedalSlide => pedal_slide::REQUIRED,
+            AbilityKind::FullSet => full_set::REQUIRED,
+            AbilityKind::Flank => flank::REQUIRED,
+            AbilityKind::TakeWing => take_wing::REQUIRED,
             AbilityKind::Flam => flam::REQUIRED,
             AbilityKind::Rimshot => rimshot::REQUIRED,
             AbilityKind::BuzzRoll => buzz_roll::REQUIRED,
@@ -612,11 +716,24 @@ impl AbilityKind {
             AbilityKind::DoubleStop => double_stop::ALLOWED,
             AbilityKind::Melody => melody::ALLOWED,
             AbilityKind::Joke => joke::ALLOWED,
+            AbilityKind::WaterKey => water_key::ALLOWED,
+            AbilityKind::HotPipes => hot_pipes::ALLOWED,
+            AbilityKind::PipeBox => pipe_box::ALLOWED,
             AbilityKind::Tremolo => tremolo::ALLOWED,
             AbilityKind::DeadStroke => dead_stroke::ALLOWED,
             AbilityKind::FiveOctaves => five_octaves::ALLOWED,
             AbilityKind::OverBand => over_band::ALLOWED,
             AbilityKind::Shatter => shatter::ALLOWED,
+            AbilityKind::Hive => hive::ALLOWED,
+            AbilityKind::Buzz => buzz::ALLOWED,
+            AbilityKind::Queen => queen::ALLOWED,
+            AbilityKind::HornsUp => horns_up::ALLOWED,
+            AbilityKind::PressBox => press_box::ALLOWED,
+            AbilityKind::StadiumEcho => stadium_echo::ALLOWED,
+            AbilityKind::PedalSlide => pedal_slide::ALLOWED,
+            AbilityKind::FullSet => full_set::ALLOWED,
+            AbilityKind::Flank => flank::ALLOWED,
+            AbilityKind::TakeWing => take_wing::ALLOWED,
             AbilityKind::Flam => flam::ALLOWED,
             AbilityKind::Rimshot => rimshot::ALLOWED,
             AbilityKind::BuzzRoll => buzz_roll::ALLOWED,
@@ -687,11 +804,24 @@ fn settings(e: &Entry, prefix: &str, kind: &AbilityKind, ab: &Json) -> Result<Ab
         AbilityKind::DoubleStop => AbilitySettings::DoubleStop(double_stop::parse(e, prefix, ab)?),
         AbilityKind::Melody => AbilitySettings::Melody(melody::parse(e, prefix, ab)?),
         AbilityKind::Joke => AbilitySettings::Joke(joke::parse(e, prefix, ab)?),
+        AbilityKind::WaterKey => AbilitySettings::WaterKey(water_key::parse(e, prefix, ab)?),
+        AbilityKind::HotPipes => AbilitySettings::HotPipes(hot_pipes::parse(e, prefix, ab)?),
+        AbilityKind::PipeBox => AbilitySettings::PipeBox(pipe_box::parse(e, prefix, ab)?),
         AbilityKind::Tremolo => AbilitySettings::Tremolo(tremolo::parse(e, prefix, ab)?),
         AbilityKind::DeadStroke => AbilitySettings::DeadStroke(dead_stroke::parse(e, prefix, ab)?),
         AbilityKind::FiveOctaves => AbilitySettings::FiveOctaves(five_octaves::parse(e, prefix, ab)?),
         AbilityKind::OverBand => AbilitySettings::OverBand(over_band::parse(e, prefix, ab)?),
         AbilityKind::Shatter => AbilitySettings::Shatter(shatter::parse(e, prefix, ab)?),
+        AbilityKind::Hive => AbilitySettings::Hive(hive::parse(e, prefix, ab)?),
+        AbilityKind::Buzz => AbilitySettings::Buzz(buzz::parse(e, prefix, ab)?),
+        AbilityKind::Queen => AbilitySettings::Queen(queen::parse(e, prefix, ab)?),
+        AbilityKind::HornsUp => AbilitySettings::HornsUp(horns_up::parse(e, prefix, ab)?),
+        AbilityKind::PressBox => AbilitySettings::PressBox(press_box::parse(e, prefix, ab)?),
+        AbilityKind::StadiumEcho => AbilitySettings::StadiumEcho(stadium_echo::parse(e, prefix, ab)?),
+        AbilityKind::PedalSlide => AbilitySettings::PedalSlide(pedal_slide::parse(e, prefix, ab)?),
+        AbilityKind::FullSet => AbilitySettings::FullSet(full_set::parse(e, prefix, ab)?),
+        AbilityKind::Flank => AbilitySettings::Flank(flank::parse(e, prefix, ab)?),
+        AbilityKind::TakeWing => AbilitySettings::TakeWing(take_wing::parse(e, prefix, ab)?),
         AbilityKind::Flam => AbilitySettings::Flam(flam::parse(e, prefix, ab)?),
         AbilityKind::Rimshot => AbilitySettings::Rimshot(rimshot::parse(e, prefix, ab)?),
         AbilityKind::BuzzRoll => AbilitySettings::BuzzRoll(buzz_roll::parse(e, prefix, ab)?),
@@ -755,11 +885,24 @@ pub(crate) fn kind_check(e: &Entry, prefix: &str, ab: &AbilityCfg) -> Result<(),
         AbilityKind::DoubleStop => double_stop::check(e, prefix, ab),
         AbilityKind::Melody => melody::check(e, prefix, ab),
         AbilityKind::Joke => joke::check(e, prefix, ab),
+        AbilityKind::WaterKey => water_key::check(e, prefix, ab),
+        AbilityKind::HotPipes => hot_pipes::check(e, prefix, ab),
+        AbilityKind::PipeBox => pipe_box::check(e, prefix, ab),
         AbilityKind::Tremolo => tremolo::check(e, prefix, ab),
         AbilityKind::DeadStroke => dead_stroke::check(e, prefix, ab),
         AbilityKind::FiveOctaves => five_octaves::check(e, prefix, ab),
         AbilityKind::OverBand => over_band::check(e, prefix, ab),
         AbilityKind::Shatter => shatter::check(e, prefix, ab),
+        AbilityKind::Hive => hive::check(e, prefix, ab),
+        AbilityKind::Buzz => buzz::check(e, prefix, ab),
+        AbilityKind::Queen => queen::check(e, prefix, ab),
+        AbilityKind::HornsUp => horns_up::check(e, prefix, ab),
+        AbilityKind::PressBox => press_box::check(e, prefix, ab),
+        AbilityKind::StadiumEcho => stadium_echo::check(e, prefix, ab),
+        AbilityKind::PedalSlide => pedal_slide::check(e, prefix, ab),
+        AbilityKind::FullSet => full_set::check(e, prefix, ab),
+        AbilityKind::Flank => flank::check(e, prefix, ab),
+        AbilityKind::TakeWing => take_wing::check(e, prefix, ab),
         AbilityKind::Flam => flam::check(e, prefix, ab),
         AbilityKind::Rimshot => rimshot::check(e, prefix, ab),
         AbilityKind::BuzzRoll => buzz_roll::check(e, prefix, ab),
